@@ -3,9 +3,8 @@
     Copyright (C) 1997,1998  Matt Kimball
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    it under the terms of the GNU General Public License version 2 as 
+    published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -123,6 +122,8 @@ struct nethost {
   int transit;
   int saved[SAVED_PINGS];
   int saved_seq_offset;
+  struct mplslen mpls;
+  struct mplslen mplss[MAXPATH];
 };
 
 
@@ -298,8 +299,10 @@ void net_send_query(int index)
 
   ttl = index + 1;
 
+#ifdef ENABLE_IPV6
   /* offset for ipv6 checksum calculation */
   int offset = 6;
+#endif
 
   if ( packetsize < MINPACKET ) packetsize = MINPACKET;
   if ( packetsize > MAXPACKET ) packetsize = MAXPACKET;
@@ -433,7 +436,7 @@ void net_send_query(int index)
 
 /*   We got a return on something we sent out.  Record the address and
      time.  */
-void net_process_ping(int seq, void * addr, struct timeval now) 
+void net_process_ping(int seq, struct mplslen mpls, void * addr, struct timeval now) 
 {
   int index;
   int totusec;
@@ -466,10 +469,12 @@ void net_process_ping(int seq, void * addr, struct timeval now)
 		(void *) &unspec_addr, af ) == 0 ) {
     /* should be out of if as addr can change */
     addrcpy( (void *) &(host[index].addr), addrcopy, af );
+    host[index].mpls = mpls;
     display_rawhost(index, (void *) &(host[index].addr));
 
   /* multi paths by Min */
     addrcpy( (void *) &(host[index].addrs[0]), addrcopy, af );
+    host[index].mplss[0] = mpls;
   } else {
     for( i=0; i<MAXPATH; ) {
       if( addrcmp( (void *) &(host[index].addrs[i]), (void *) &addrcopy,
@@ -481,6 +486,10 @@ void net_process_ping(int seq, void * addr, struct timeval now)
     if( addrcmp( (void *) &(host[index].addrs[i]), addrcopy, af ) != 0 && 
         i<MAXPATH ) {
       addrcpy( (void *) &(host[index].addrs[i]), addrcopy, af );
+      host[index].mplss[i] = mpls;
+      
+      /* rafaelmartins: multi path support to '--raw' */
+      display_rawhost(index, (void *) &(host[index].addrs[i]));
     }
   /* end multi paths */
   }
@@ -561,6 +570,10 @@ void net_process_return(void)
   int echoreplytype = 0, timeexceededtype = 0, unreachabletype = 0;
   int sequence = 0;
 
+  /* MPLS decoding */
+  struct mplslen mpls;
+  mpls.labels = 0;
+
   gettimeofday(&now, NULL);
   switch ( af ) {
   case AF_INET:
@@ -619,6 +632,10 @@ void net_process_return(void)
         header = (struct ICMPHeader *)(packet + sizeof (struct IPHeader) + 
                                                 sizeof (struct ICMPHeader) + 
                                                 sizeof (struct IPHeader));
+
+        if(num > 160)
+          decodempls(num, packet, &mpls, 156);
+
       break;
 #ifdef ENABLE_IPV6
       case AF_INET6:
@@ -628,6 +645,10 @@ void net_process_return(void)
         header = (struct ICMPHeader *) ( packet + 
                                          sizeof (struct ICMPHeader) +
                                          sizeof (struct ip6_hdr) );
+
+        if(num > 140)
+          decodempls(num, packet, &mpls, 136);
+
         break;
 #endif
       }
@@ -652,6 +673,10 @@ void net_process_return(void)
         udpheader = (struct UDPHeader *)(packet + sizeof (struct IPHeader) +
                                                   sizeof (struct ICMPHeader) +
                                                   sizeof (struct IPHeader));
+
+        if(num > 160)
+          decodempls(num, packet, &mpls, 156);
+
       break;
 #ifdef ENABLE_IPV6
       case AF_INET6:
@@ -661,6 +686,10 @@ void net_process_return(void)
         udpheader = (struct UDPHeader *) ( packet +
                                            sizeof (struct ICMPHeader) +
                                            sizeof (struct ip6_hdr) );
+
+        if(num > 140)
+          decodempls(num, packet, &mpls, 136);
+
         break;
 #endif
       }
@@ -670,7 +699,7 @@ void net_process_return(void)
   }
 
   if (sequence)
-    net_process_ping(sequence, (void *)fromaddress, now);
+    net_process_ping (sequence, mpls, (void *) fromaddress, now);
 }
 
 
@@ -685,6 +714,15 @@ ip_t *net_addrs(int at, int i)
   return (ip_t *)&(host[at].addrs[i]);
 }
 
+void *net_mpls(int at)
+{
+  return (struct mplslen *)&(host[at].mplss);
+}
+
+void *net_mplss(int at, int i)
+{
+  return (struct mplslen *)&(host[at].mplss[i]);
+}
 
 int net_loss(int at) 
 {
@@ -898,10 +936,13 @@ int net_send_batch(void)
   return 0;
 }
 
+
 static void set_fd_flags(int fd)
 {
 #if defined(HAVE_FCNTL) && defined(FD_CLOEXEC)
   int oldflags;
+
+  if (fd < 0) return; 
 
   oldflags = fcntl(fd, F_GETFD);
   if (oldflags == -1) {
@@ -945,7 +986,8 @@ int net_preopen(void)
   set_fd_flags(recvsock4);
 #ifdef ENABLE_IPV6
   recvsock6 = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
-  set_fd_flags(recvsock6);
+  if (recvsock6 >= 0)
+     set_fd_flags(recvsock6);
 #endif
 
   return 0;
@@ -1205,7 +1247,7 @@ void sockaddrtop( struct sockaddr * saddr, char * strptr, size_t len ) {
   switch ( saddr->sa_family ) {
   case AF_INET:
     sa4 = (struct sockaddr_in *) saddr;
-    strncpy( strptr, inet_ntoa( (struct in_addr) sa4->sin_addr ), len - 1 );
+    strncpy( strptr, inet_ntoa( sa4->sin_addr ), len - 1 );
     strptr[ len - 1 ] = '\0';
     return;
 #ifdef ENABLE_IPV6
@@ -1251,5 +1293,44 @@ void addrcpy( char * a, char * b, int af ) {
     memcpy( a, b, sizeof (struct in6_addr) );
     break;
 #endif
+  }
+}
+
+/* Decode MPLS */
+void decodempls(int num, char *packet, struct mplslen *mpls, int offset) {
+
+  int i;
+  unsigned int ext_ver, ext_res, ext_chk, obj_hdr_len;
+  u_char obj_hdr_class, obj_hdr_type;
+
+  /* loosely derived from the traceroute-nanog.c
+   * decoding by Jorge Boncompte */
+  ext_ver = packet[offset]>>4;
+  ext_res = (packet[offset]&15)+ packet[offset+1];
+  ext_chk = ((unsigned int)packet[offset+2]<<8)+packet[offset+3];
+
+  /* Check for ICMP extension header */
+  if (ext_ver == 2 && ext_res == 0 && ext_chk != 0 && num >= (offset+6)) {
+    obj_hdr_len = ((int)packet[offset+4]<<8)+packet[offset+5];
+    obj_hdr_class = packet[offset+6];
+    obj_hdr_type = packet[offset+7];
+
+    /* make sure we have an MPLS extension */
+    if (obj_hdr_len >= 8 && obj_hdr_class == 1 && obj_hdr_type == 1) {
+      /* how many labels do we have?  will be at least 1 */
+      mpls->labels = (obj_hdr_len-4)/4;
+
+      /* save all label objects */
+      for(i=0; (i<mpls->labels) && (i < MAXLABELS) && (num >= (offset+8)+(i*4)); i++) {
+
+        /* piece together the 20 byte label value */
+        mpls->label[i] = ((unsigned long) (packet[(offset+8)+(i*4)] << 12 & 0xff000) +
+            (unsigned int) (packet[(offset+9)+(i*4)] << 4 & 0xff0) +
+            (packet[(offset+10)+(i*4)] >> 4 & 0xf));
+        mpls->exp[i] = (packet[(offset+10)+(i*4)] >> 1) & 0x7;
+        mpls->s[i] = (packet[(offset+10)+(i*4)] & 0x1); /* should be 1 if only one label */
+        mpls->ttl[i] = packet[(offset+11)+(i*4)];
+      }
+    }
   }
 }
