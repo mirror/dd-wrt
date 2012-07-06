@@ -167,7 +167,7 @@ static void set_sock_priority(int sock) {
 	/* set the TOS bit for either ipv4 or ipv6 */
 #ifdef IPTOS_LOWDELAY
 	val = IPTOS_LOWDELAY;
-#ifdef IPPROTO_IPV6
+#if defined(IPPROTO_IPV6) && defined(IPV6_TCLASS)
 	setsockopt(sock, IPPROTO_IPV6, IPV6_TCLASS, (void*)&val, sizeof(val));
 #endif
 	setsockopt(sock, IPPROTO_IP, IP_TOS, (void*)&val, sizeof(val));
@@ -259,7 +259,7 @@ int dropbear_listen(const char* address, const char* port,
 		linger.l_linger = 5;
 		setsockopt(sock, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof(linger));
 
-#ifdef IPV6_V6ONLY
+#if defined(IPPROTO_IPV6) && defined(IPV6_V6ONLY)
 		if (res->ai_family == AF_INET6) {
 			int on = 1;
 			if (setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, 
@@ -803,12 +803,6 @@ void * m_strdup(const char * str) {
 	return ret;
 }
 
-void __m_free(void* ptr) {
-	if (ptr != NULL) {
-		free(ptr);
-	}
-}
-
 void * m_realloc(void* ptr, size_t size) {
 
 	void *ret;
@@ -833,7 +827,7 @@ void m_burn(void *data, unsigned int len) {
 	if (data == NULL)
 		return;
 	while (len--) {
-		*p++ = 0x66;
+		*p++ = 0x0;
 	}
 }
 

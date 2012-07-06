@@ -137,6 +137,7 @@ static void sesssigchild_handler(int UNUSED(dummy)) {
 
 	sa_chld.sa_handler = sesssigchild_handler;
 	sa_chld.sa_flags = SA_NOCLDSTOP;
+	sigemptyset(&sa_chld.sa_mask);
 	sigaction(SIGCHLD, &sa_chld, NULL);
 	TRACE(("leave sigchld handler"))
 }
@@ -217,6 +218,8 @@ static int newchansess(struct Channel *channel) {
 
 	struct ChanSess *chansess;
 
+	TRACE(("new chansess %p", channel))
+
 	dropbear_assert(channel->typedata == NULL);
 
 	chansess = (struct ChanSess*)m_malloc(sizeof(struct ChanSess));
@@ -278,6 +281,10 @@ static void closechansess(struct Channel *channel) {
 
 	m_free(chansess->cmd);
 	m_free(chansess->term);
+
+#ifdef ENABLE_SVR_PUBKEY_OPTIONS
+	m_free(chansess->original_command);
+#endif
 
 	if (chansess->tty) {
 		/* write the utmp/wtmp login record */
@@ -924,10 +931,8 @@ static void execchild(void *user_data) {
 	}
 	
 #ifdef ENABLE_SVR_PUBKEY_OPTIONS
-	if (ses.authstate.pubkey_options &&
-			ses.authstate.pubkey_options->original_command) {
-		addnewvar("SSH_ORIGINAL_COMMAND", 
-			ses.authstate.pubkey_options->original_command);
+	if (chansess->original_command) {
+		addnewvar("SSH_ORIGINAL_COMMAND", chansess->original_command);
 	}
 #endif
 
@@ -976,6 +981,7 @@ void svr_chansessinitialise() {
 	svr_ses.lastexit.exitpid = -1; /* Nothing has exited yet */
 	sa_chld.sa_handler = sesssigchild_handler;
 	sa_chld.sa_flags = SA_NOCLDSTOP;
+	sigemptyset(&sa_chld.sa_mask);
 	if (sigaction(SIGCHLD, &sa_chld, NULL) < 0) {
 		dropbear_exit("signal() error");
 	}
