@@ -1,5 +1,5 @@
 AC_INIT(mtr.c)
-AM_INIT_AUTOMAKE(mtr, 0.75)
+AM_INIT_AUTOMAKE(mtr, 0.82)
 
 
 AC_SUBST(GTK_OBJ)
@@ -16,7 +16,7 @@ AC_CHECK_SIZEOF(unsigned int, 4)
 AC_CHECK_SIZEOF(unsigned long, 4)
 
 AC_CHECK_HEADERS(ncurses.h ncurses/curses.h curses.h cursesX.h sys/types.h fcntl.h)
-AC_CHECK_HEADERS(sys/xti.h)
+AC_CHECK_HEADERS(socket.h sys/socket.h sys/xti.h)
 
 # Some doc I found somewhere. :-) -- REW
 # - Macro: AC_CHECK_FUNC (FUNCTION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]])
@@ -48,16 +48,16 @@ AC_ARG_ENABLE(ipv6,
 [  --disable-ipv6          Do not enable IPv6],
 WANTS_IPV6=$enableval, WANTS_IPV6=yes)
    
-if test "x$WANTS_GTK" = "xyes"; then
-        AM_PATH_GTK_2_0(2.4.0, CFLAGS="$CFLAGS $GTK_CFLAGS"
-                           LIBS="$LIBS $GTK_LIBS -lm",
-                           AC_MSG_WARN(Building without GTK2 display support)
-                   AC_DEFINE(NO_GTK, 1, [Define if you don't have the GTK+ libraries available.])
-                           GTK_OBJ="")
-else
+#if test "x$WANTS_GTK" = "xyes"; then
+#        AM_PATH_GTK_2_0(2.6.0, CFLAGS="$CFLAGS $GTK_CFLAGS"
+#                           LIBS="$LIBS $GTK_LIBS -lm",
+#                           AC_MSG_WARN(Building without GTK2 display support)
+#                   AC_DEFINE(NO_GTK, 1, [Define if you don't have the GTK+ libraries available.])
+#                           GTK_OBJ="")
+#else
 	AC_DEFINE(NO_GTK)
 	GTK_OBJ=""
-fi
+#fi
 
 AC_CHECK_FUNC(socket, , 
   AC_CHECK_LIB(socket, socket, , AC_MSG_ERROR(No socket library found)))
@@ -72,10 +72,10 @@ AC_CHECK_FUNC(gethostbyname, ,
 AC_CHECK_FUNCS(seteuid)
 #  AC_CHECK_FUNC(setuid, , AC_MSG_ERROR (I Need either seteuid or setuid))
 
-AC_CHECK_FUNC(res_mkquery, , 
-  AC_CHECK_LIB(bind, res_mkquery, , 
-   AC_CHECK_LIB(resolv, res_mkquery, ,
-     AC_CHECK_LIB(resolv, __res_mkquery, , AC_MSG_ERROR(No resolver library found)))))
+#AC_CHECK_FUNC(res_mkquery, ,
+#  AC_CHECK_LIB(bind, res_mkquery, ,
+#   AC_CHECK_LIB(resolv, res_mkquery, ,
+#     AC_CHECK_LIB(resolv, __res_mkquery, , AC_MSG_ERROR(No resolver library found)))))
 # This next line would override the just detected-or-not -lresolv. 
 # This apparently hurts BSD. And it's bad practise. So it should go. 
 # However, it probably didn't get added for nothing..... Holler if
@@ -97,6 +97,12 @@ AC_CHECK_DECLS(errno, , , [[
 
 AC_CHECK_TYPE(socklen_t, AC_DEFINE([HAVE_SOCKLEN_T], [], [Define if your system has socklen_t]) , , [[
 #include <netinet/in.h>
+#ifdef HAVE_SOCKET_H
+#include <socket.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
 ]])
 
 AC_CHECK_TYPE(struct in_addr, AC_DEFINE([HAVE_STRUCT_INADDR], [], [Define if you have struct in_addr]), , [[
@@ -108,7 +114,13 @@ AC_MSG_CHECKING(for C flags to get more warnings)
 ac_save_CFLAGS="$CFLAGS"
 if test "x$ac_cv_c_compiler_gnu" = "xyes" ; then
   dnl gcc is the easiest C compiler
-  warning_CFLAGS="-Wall -Wno-pointer-sign"
+  warning_CFLAGS="-Wall"
+  # Check if compiler supports -Wno-pointer-sign and add it if supports
+  CFLAGS_saved="$CFLAGS"
+  CFLAGS="$CFLAGS -Wno-pointer-sign"
+  AC_COMPILE_IFELSE([ AC_LANG_SOURCE([[ int foo; ]])],
+                  [ warning_CFLAGS="${warning_CFLAGS} -Wno-pointer-sign" ],)
+  CFLAGS="$CFLAGS_saved"
 else
   dnl Vendor supplied C compilers are a bit tricky
   case "$host_os" in
