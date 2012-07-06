@@ -3,9 +3,8 @@
     Copyright (C) 1997,1998  Matt Kimball
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    it under the terms of the GNU General Public License version 2 as 
+    published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,6 +30,8 @@
 #include "net.h"
 #include "dns.h"
 
+#define MAXLOADBAL 5
+
 extern int dns;
 extern char LocalHostname[];
 extern char *Hostname;
@@ -51,8 +52,10 @@ void report_open(void)
 
 void report_close(void) 
 {
-  int i, j, at, max;
+  int i, j, k, at, max, z, w;
+  struct mplslen *mpls, *mplss;
   ip_t *addr;
+  ip_t *addr2 = NULL;  
   char name[81];
   char buf[1024];
   char fmt[16];
@@ -100,7 +103,7 @@ void report_close(void)
   at  = net_min();
   for(; at < max; at++) {
     addr = net_addr(at);
-    
+    mpls = net_mpls(at);
     if( addrcmp( (void *) addr, (void *) &unspec_addr, af ) == 0 ) {
       sprintf(name, "???");
     } else {
@@ -114,7 +117,7 @@ void report_close(void)
       }
     }
 
-    snprintf( fmt, sizeof(fmt), " %%2d. %%-%ds", len_hosts);
+    snprintf( fmt, sizeof(fmt), " %%2d.|-- %%-%ds", len_hosts);
     snprintf(buf, sizeof(buf), fmt, at+1, name);
     len = reportwide ? strlen(buf) : len_hosts;  
     for( i=0; i<MAXFLD; i++ ) {
@@ -132,6 +135,53 @@ void report_close(void)
       len +=  data_fields[j].length;
     }
     printf("%s\n",buf);
+
+    /* Thales (thales@paponline.net) -- 
+     * This feature show 'loadbalances' on routes 
+     */
+    
+    /* z is starting at 1 because addrs[0] is the same that addr */
+    for (z = 1; z < MAXPATH ; z++) {
+      addr2 = net_addrs(at, z);
+      mplss = net_mplss(at, z);
+      int found = 0;
+      if ((addrcmp ((void *) &unspec_addr, (void *) addr2, af)) == 0)
+        break;
+      for (w = 0; w < z; w++)
+        /* Thales -- Ok... checking if there are ips repeated on same hop */
+        if ((addrcmp ((void *) addr2, (void *) net_addrs (at,w), af)) == 0) {
+           found = 1;
+           break;
+        }   
+
+      if (!found) {
+  
+        if (mpls->labels && z == 1 && enablempls) {
+          for (k=0; k < mpls->labels; k++) {
+            printf("    |  |+-- [MPLS: Lbl %lu Exp %u S %u TTL %u]\n", mpls->label[k], mpls->exp[k], mpls->s[k], mpls->ttl[k]);
+          }
+        }
+
+        if (z == 1) {
+          printf ("    |  `|-- %s\n", strlongip(addr2));
+          for (k=0; k < mplss->labels && enablempls; k++) {
+            printf("    |   +-- [MPLS: Lbl %lu Exp %u S %u TTL %u]\n", mplss->label[k], mplss->exp[k], mplss->s[k], mplss->ttl[k]);
+          }
+        } else {
+          printf ("    |   |-- %s\n", strlongip(addr2));
+          for (k=0; k < mplss->labels && enablempls; k++) {
+            printf("    |   +-- [MPLS: Lbl %lu Exp %u S %u TTL %u]\n", mplss->label[k], mplss->exp[k], mplss->s[k], mplss->ttl[k]);
+          }
+        }
+      }
+    }
+
+    /* No multipath */
+    if(mpls->labels && z == 1 && enablempls) {
+      for (k=0; k < mpls->labels; k++) {
+        printf("    |   +-- [MPLS: Lbl %lu Exp %u S %u TTL %u]\n", mpls->label[k], mpls->exp[k], mpls->s[k], mpls->ttl[k]);
+      }
+    }
   }
 }
 
