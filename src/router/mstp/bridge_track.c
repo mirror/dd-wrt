@@ -517,17 +517,19 @@ void MSTP_OUT_flush_all_fids(per_tree_port_t * ptp)
     driver_flush_all_fids(ptp);
 }
 
-/* 802.1Q-2005 wants per-port ageing time.
- * We do not support it, so set ageing time for the whole bridge.
- */
-void MSTP_OUT_set_ageing_time(bridge_t * br, unsigned int ageingTime)
+void MSTP_OUT_set_ageing_time(port_t *prt, unsigned int ageingTime)
 {
     unsigned int actual_ageing_time;
+    bridge_t *br = prt->bridge;
 
-    actual_ageing_time = driver_set_ageing_time(br, ageingTime);
-    INFO_BRNAME(br, "Setting new ageing time to %u", actual_ageing_time);
+    actual_ageing_time = driver_set_ageing_time(prt, ageingTime);
+    INFO_PRTNAME(br, prt, "Setting new ageing time to %u", actual_ageing_time);
 
-    /* Translate new ageing time to the kernel bridge code */
+    /*
+     * Translate new ageing time to the kernel bridge code.
+     * Kernel bridging code does not support per-port ageing time,
+     * so set ageing time for the whole bridge.
+     */
     if(0 > br_set_ageing_time(br->sysdeps.name, actual_ageing_time))
         ERROR_BRNAME(br, "Couldn't set new ageing time in kernel bridge");
 }
