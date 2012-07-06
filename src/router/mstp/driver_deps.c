@@ -49,11 +49,11 @@ void driver_flush_all_fids(per_tree_port_t *ptp)
 }
 
 /*
- * Set new ageing time (in seconds) for the bridge.
+ * Set new ageing time (in seconds) for the port.
  * Return new actual ageing time from driver (the ageing timer granularity
  *  in the hardware can be more than 1 sec)
  */
-unsigned int driver_set_ageing_time(bridge_t *br, unsigned int ageingTime)
+unsigned int driver_set_ageing_time(port_t *prt, unsigned int ageingTime)
 {
     /* TODO: do set new ageing time */
     return ageingTime;

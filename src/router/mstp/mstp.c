@@ -197,7 +197,6 @@ bool MSTP_IN_bridge_create(bridge_t *br, __u8 *macaddr)
     assign(br->Transmit_Hold_Count, 6u); /* 17.14 of 802.1D */
     assign(br->Migrate_Time, 3u); /* 17.14 of 802.1D */
     assign(br->Ageing_Time, 300u);/* 8.8.3 Table 8-3 */
-    assign(br->rapidAgeingWhile, 0u);
 
     br->uptime = 0;
 
@@ -236,6 +235,7 @@ bool MSTP_IN_port_create_and_add_tail(port_t *prt, __u16 portno)
     assign(prt->ExternalPortPathCost, MAX_PATH_COST); /* 13.37.1 */
     prt->AdminEdgePort = false; /* 13.25 */
     prt->AutoEdge = true;       /* 13.25 */
+    assign(prt->rapidAgeingWhile, 0u);
 
     /* The following are initialized in BEGIN state:
      * - mdelayWhile. mcheck, sendRSTP: in Port Protocol Migration SM
@@ -433,12 +433,14 @@ void MSTP_IN_one_second(bridge_t *br)
             ++(tree->time_since_topology_change);
 
     FOREACH_PORT_IN_BRIDGE(prt, br)
-        PTSM_tick(prt);
-    /* support for rapid ageing */
-    if(br->rapidAgeingWhile)
     {
-        if((--(br->rapidAgeingWhile)) == 0)
-            MSTP_OUT_set_ageing_time(br, br->Ageing_Time);
+        PTSM_tick(prt);
+        /* support for rapid ageing */
+        if(prt->rapidAgeingWhile)
+        {
+            if((--(prt->rapidAgeingWhile)) == 0)
+                MSTP_OUT_set_ageing_time(prt, br->Ageing_Time);
+        }
     }
 
     br_state_machines_run(br);
@@ -1859,8 +1861,8 @@ static void set_fdbFlush(per_tree_port_t *ptp)
         per_tree_port_t *cist = GET_CIST_PTP_FROM_PORT(prt);
         unsigned int FwdDelay = cist->designatedTimes.Forward_Delay;
         /* Initiate rapid ageing */
-        MSTP_OUT_set_ageing_time(br, FwdDelay);
-        assign(br->rapidAgeingWhile, FwdDelay);
+        MSTP_OUT_set_ageing_time(prt, FwdDelay);
+        assign(prt->rapidAgeingWhile, FwdDelay);
         ptp->fdbFlush = false;
     }
 }
@@ -2269,12 +2271,14 @@ static void updtRolesTree(tree_t *tree)
                                      + ptp->InternalPortPathCost)
                       );
             }
-            else
+            else if(cist) /* Yes, this check might be superfluous,
+                           * but I want to be on the safe side */
             {
                 assign(root_path_priority.ExtRootPathCost,
                        __cpu_to_be32(__be32_to_cpu(root_path_priority.ExtRootPathCost)
                                      + prt->ExternalPortPathCost)
                       );
+                assign(root_path_priority.RRootID, tree->BridgeIdentifier);
                 assign(root_path_priority.IntRootPathCost,
                        __constant_cpu_to_be32(0));
             }

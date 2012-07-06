@@ -393,7 +393,6 @@ typedef struct
     unsigned int Transmit_Hold_Count; /* 13.22.g */
     unsigned int Migrate_Time;        /* 13.22.h */
     unsigned int Ageing_Time;  /* 8.8.3 */
-    unsigned int rapidAgeingWhile;
 
     __u16 vid2fid[MAX_VID + 1];
     __be16 fid2mstid[MAX_FID + 1];
@@ -468,6 +467,8 @@ typedef struct
     admin_p2p_t AdminP2P; /* 6.4.3 */
     bool AdminEdgePort; /* 13.22.k */
     bool AutoEdge; /* 13.22.m */
+
+    unsigned int rapidAgeingWhile;
 
     /* State machines */
     PRSM_states_t PRSM_state;
@@ -563,7 +564,7 @@ void MSTP_IN_set_mst_config_id(bridge_t *br, __u16 revision, __u8 *name);
 /* External actions (outputs) */
 void MSTP_OUT_set_state(per_tree_port_t *ptp, int new_state);
 void MSTP_OUT_flush_all_fids(per_tree_port_t *ptp);
-void MSTP_OUT_set_ageing_time(bridge_t *br, unsigned int ageingTime);
+void MSTP_OUT_set_ageing_time(port_t *prt, unsigned int ageingTime);
 void MSTP_OUT_tx_bpdu(port_t *prt, bpdu_t *bpdu, int size);
 
 /* Structures for communicating with user */
