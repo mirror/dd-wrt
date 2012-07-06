@@ -3,9 +3,8 @@
     Copyright (C) 1997,1998  Matt Kimball
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    it under the terms of the GNU General Public License version 2 as 
+    published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -41,6 +40,8 @@ int net_max(void);
 int net_min(void);
 int net_last(int at);
 ip_t * net_addr(int at);
+void * net_mpls(int at);
+void * net_mplss(int, int);
 int net_loss(int at);
 int net_drop(int at);
 int net_last(int at);
@@ -87,6 +88,7 @@ void addrcpy( char * a, char * b, int af );
 
 #define MAXPACKET 4470		/* largest test packet size */
 #define MINPACKET 28		/* 20 bytes IP header and 8 bytes ICMP or UDP */
+#define MAXLABELS 8 		/* http://kb.juniper.net/KB2190 (+ 3 just in case) */
 
 /* stuff used by display such as report, curses... --Min */
 #define MAXFLD 20		/* max stats fields to display */
@@ -120,3 +122,14 @@ extern unsigned char fld_active[];
 extern char available_options[];
 
 ip_t unspec_addr;
+
+/* MPLS label object */
+struct mplslen {
+  unsigned long label[MAXLABELS]; /* label value */
+  uint8 exp[MAXLABELS]; /* experimental bits */
+  uint8 ttl[MAXLABELS]; /* MPLS TTL */
+  char s[MAXLABELS]; /* bottom of stack */
+  char labels; /* how many labels did we get? */
+};
+
+void decodempls(int, char *, struct mplslen *, int);

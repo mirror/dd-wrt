@@ -3,9 +3,8 @@
     Copyright (C) 1997,1998  Matt Kimball
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    it under the terms of the GNU General Public License version 2 as 
+    published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,7 +21,7 @@
 /* Don't put a trailing comma in enumeration lists. Some compilers 
    (notably the one on Irix 5.2) do not like that. -- REW */ 
 enum { ActionNone,  ActionQuit,  ActionReset,  ActionDisplay, 
-       ActionClear, ActionPause, ActionResume, ActionDNS, 
+       ActionClear, ActionPause, ActionResume, ActionMPLS, ActionDNS, 
        ActionScrollDown, ActionScrollUp  };
 enum { DisplayReport, DisplayCurses, DisplayGTK, DisplaySplit, 
        DisplayRaw,    DisplayXML,    DisplayCSV, DisplayTXT};

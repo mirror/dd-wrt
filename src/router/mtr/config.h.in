@@ -64,6 +64,9 @@
 /* Define to 1 if you have the `seteuid' function. */
 #undef HAVE_SETEUID
 
+/* Define to 1 if you have the <socket.h> header file. */
+#undef HAVE_SOCKET_H
+
 /* Define if your system has socklen_t */
 #undef HAVE_SOCKLEN_T
 
@@ -81,6 +84,9 @@
 
 /* Define if you have struct in_addr */
 #undef HAVE_STRUCT_INADDR
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#undef HAVE_SYS_SOCKET_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
@@ -120,6 +126,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

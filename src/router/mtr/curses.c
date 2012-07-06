@@ -3,9 +3,8 @@
     Copyright (C) 1997,1998  Matt Kimball
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+    it under the terms of the GNU General Public License version 2 as 
+    published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -112,6 +111,8 @@ int mtr_curses_keyaction(void)
     return ActionReset;
   if (tolower(c) == 'd')
     return ActionDisplay;
+  if (tolower(c) == 'e')
+    return ActionMPLS;
   if (tolower(c) == 'n')
     return ActionDNS;
   if (c == '+')
@@ -264,6 +265,7 @@ int mtr_curses_keyaction(void)
     mvprintw(2, 0, "Command:\n" );
     printw("  ?|h     help\n" );
     printw("  d       switching display mode\n" );
+    printw("  e       toggle MPLS information on/off\n" );
     printw("  n       toggle DNS on/off\n" );
     printw("  o str   set the columns to display, default str='LRS N BAWV'\n" );
     printw("  j       toggle latency(LS NABWV)/jitter(DR AGJMXI) stats\n" );
@@ -289,11 +291,12 @@ void mtr_curses_hosts(int startstat)
 {
   int max;
   int at;
+  struct mplslen *mpls, *mplss;
   ip_t *addr, *addrs;
   int y, x;
   char *name;
 
-  int i, j;
+  int i, j, k;
   int hd_len;
   char buf[1024];
 
@@ -302,6 +305,7 @@ void mtr_curses_hosts(int startstat)
   for(at = net_min () + display_offset; at < max; at++) {
     printw("%2d. ", at + 1);
     addr = net_addr(at);
+    mpls = net_mpls(at);
 
     if( addrcmp( (void *) addr, (void *) &unspec_addr, af ) != 0 ) {
       name = dns_lookup(addr);
@@ -340,9 +344,20 @@ void mtr_curses_hosts(int startstat)
       buf[hd_len] = 0;
       printw("%s", buf);
 
+      for (k=0; k < mpls->labels && enablempls; k++) {
+        if((k+1 < mpls->labels) || (mpls->labels == 1)) {
+           /* if we have more labels */
+           printw("\n    [MPLS: Lbl %lu Exp %u S %u TTL %u]", mpls->label[k], mpls->exp[k], mpls->s[k], mpls->ttl[k]);
+        } else {
+           /* bottom label */
+           printw("\n    [MPLS: Lbl %lu Exp %u S %u TTL %u]", mpls->label[k], mpls->exp[k], mpls->s[k], mpls->ttl[k]);
+        }
+      }
+
       /* Multi path by Min */
       for (i=0; i < MAXPATH; i++ ) {
         addrs = net_addrs(at, i);
+        mplss = net_mplss(at, i);
 	if ( addrcmp( (void *) addrs, (void *) addr, af ) == 0 ) continue;
 	if ( addrcmp( (void *) addrs, (void *) &unspec_addr, af ) == 0 ) break;
 
@@ -352,6 +367,9 @@ void mtr_curses_hosts(int startstat)
 	  printw("\n    %s", name);
         } else {
 	  printw("\n    %s", strlongip( addrs ) );
+        }
+        for (k=0; k < mplss->labels && enablempls; k++) {
+          printw("\n    [MPLS: Lbl %lu Exp %u S %u TTL %u]", mplss->label[k], mplss->exp[k], mplss->s[k], mplss->ttl[k]);
         }
         attroff(A_BOLD);
       }
