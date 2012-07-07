@@ -661,4 +661,32 @@ struct tc_qfq_stats {
 	__u32 lmax;
 };
 
+/* CODEL */
+
+enum {
+	TCA_CODEL_UNSPEC,
+	TCA_CODEL_TARGET,
+	TCA_CODEL_LIMIT,
+	TCA_CODEL_INTERVAL,
+	TCA_CODEL_ECN,
+	__TCA_CODEL_MAX
+};
+
+#define TCA_CODEL_MAX	(__TCA_CODEL_MAX - 1)
+
+struct tc_codel_xstats {
+	__u32	maxpacket; /* largest packet we've seen so far */
+	__u32	count;
+	__u32	lastcount;
+	__u32	ldelay; /* in-queue delay seen by most recently dequeued packet */
+	__u32	drop_next;
+	__u32	drop_overlimit;
+	__u32	ecn_mark;
+	__u32	dropping;
+	__u32	state1;
+	__u32	state2;
+	__u32	state3;
+	__u32	states;
+};
+
 #endif
