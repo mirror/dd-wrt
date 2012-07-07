@@ -406,18 +406,9 @@ static struct platform_driver ar231x_driver = {
 	.remove = __devexit_p(ar231x_remove),
 };
 
-int __init ar231x_module_init(void)
-{
-	return platform_driver_register(&ar231x_driver);
-}
 
-void __exit ar231x_module_cleanup(void)
-{
-	platform_driver_unregister(&ar231x_driver);
-}
 
-module_init(ar231x_module_init);
-module_exit(ar231x_module_cleanup);
+module_platform_driver(ar231x_driver);
 
 
 static void ar231x_free_descriptors(struct net_device *dev)
@@ -779,7 +770,7 @@ static void ar231x_load_rx_ring(struct net_device *dev, int nr_bufs)
 		if (sp->rx_skb[idx])
 			break;
 
-		skb = netdev_alloc_skb(dev, AR2313_BUFSIZE);
+		skb = netdev_alloc_skb_ip_align(dev, AR2313_BUFSIZE);
 		if (!skb) {
 			printk("\n\n\n\n %s: No memory in system\n\n\n\n",
 				   __FUNCTION__);
