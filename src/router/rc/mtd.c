@@ -506,6 +506,7 @@ int mtd_write(const char *path, const char *mtd)
 
 		int length = ROUNDUP(count, mtd_info.erasesize);
 		int base = erase_info.start;
+#ifdef HAVE_80211AC
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 		      again:;
 			fprintf(stderr,
@@ -521,14 +522,32 @@ int mtd_write(const char *path, const char *mtd)
 				skipoffset++;
 				goto again;
 			}
-			lseek(mtd_fd,
-			      (i + skipoffset) * mtd_info.erasesize, SEEK_SET);
+			lseek(mtd_fd, (i + skipoffset) * mtd_info.erasesize, SEEK_SET);
 			if (write(mtd_fd,buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
 				perror(mtd);
 				goto fail;
 			}
 
 		}
+#else
+		for (i = 0; i < (length / mtd_info.erasesize); i++) {
+			fprintf(stderr,
+				"write block [%ld] at [0x%08X]        \n",
+				i * mtd_info.erasesize,
+				base + (i * mtd_info.erasesize));
+			erase_info.start = base + (i * mtd_info.erasesize);
+			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
+			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0
+			    || write(mtd_fd, buf + (i * mtd_info.erasesize),
+				     mtd_info.erasesize) !=
+			    mtd_info.erasesize) {
+				perror(mtd);
+				goto fail;
+			}
+		}
+
+
+#endif
 	}
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
