@@ -384,7 +384,9 @@ static void handle_index(void)
 	// ip changes changes
 	handle = start_service_nofree_f("anchorfreednat", handle);
 	handle = start_service_nofree("wan_boot", handle);
+#ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
+#endif
 //    if( handle )
 //      dlclose( handle );
 }
