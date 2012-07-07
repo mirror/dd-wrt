@@ -140,7 +140,7 @@ u8 *find_radio_config(char *flash_limit, char *bconfig)
 	for (rconfig = (u32) bconfig + 0x1000;
 	     (rconfig < (u32) flash_limit);
 	     rconfig += 0x1000) {
-		if (*(int *)rconfig != 0xffffffff) {
+		if (*(int *)rconfig != 0xffffffff && *(int *)rconfig != 0x52434b53) {
 			dataFound = 1;
 			break;
 		}

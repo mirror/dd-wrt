@@ -13,6 +13,7 @@
 #include <linux/notifier.h>
 #include <linux/reboot.h>
 #include <linux/init.h>
+#include <linux/platform_device.h>
 
 #include <asm/io.h>
 #include <asm/uaccess.h>
@@ -259,10 +260,15 @@ static struct miscdevice ar2315_wdt_miscdev = {
 	.fops	= &ar2315_wdt_fops,
 };
 
-static int __init 
-ar2315_wdt_init(void)
+static int
+ar2315_wdt_probe(struct platform_device *dev)
 {
 	int ret = 0;
+	ret = request_irq(AR531X_MISC_IRQ_WATCHDOG, ar2315_wdt_interrupt, IRQF_DISABLED, "ar2315_wdt", NULL);
+	if (ret) {
+		printk(KERN_ERR "wdt: IRQ %d is not free.\n", AR531X_MISC_IRQ_WATCHDOG);
+		goto out;
+	}
 
 	if (ar2315_wdt_set_heartbeat(heartbeat)) {
 		ar2315_wdt_set_heartbeat(60);
@@ -272,12 +278,7 @@ ar2315_wdt_init(void)
 	ar2315_wdt_print_info();
 	ar2315_wdt_ping();
 	printk("%s using heartbeat %d s cycles %u\n", __func__, heartbeat, S_TO_CYCLES(heartbeat));
-	ret = request_irq(AR531X_MISC_IRQ_WATCHDOG, ar2315_wdt_interrupt, IRQF_DISABLED, "ar2315_wdt", NULL);
 	ar2315_wdt_print_info();
-	if (ret) {
-		printk(KERN_ERR "wdt: IRQ %d is not free.\n", AR531X_MISC_IRQ_WATCHDOG);
-		goto out;
-	}
 	ret = misc_register(&ar2315_wdt_miscdev);
 	if (ret) {
 		printk(KERN_ERR "%s: cannot register miscdev on minor=%d (err=%d)\n",
@@ -291,13 +292,39 @@ ar2315_wdt_init(void)
 	return ret;
 }
 
-static void __exit 
-ar2315_wdt_exit(void)
+static int
+ar2315_wdt_remove(struct platform_device *dev)
 {
-	printk("%s\n", __func__);
 	misc_deregister(&ar2315_wdt_miscdev);
 	free_irq(AR531X_MISC_IRQ_WATCHDOG, NULL);
+	return 0;
 }
 
-module_init(ar2315_wdt_init);
-module_exit(ar2315_wdt_exit);
+static struct platform_driver ar2315_wdt_driver = {
+	.probe = ar2315_wdt_probe,
+	.remove = ar2315_wdt_remove,
+	.driver = {
+		.name = "ar2315_wdt",
+		.owner = THIS_MODULE,
+	},
+};
+
+
+
+static int __init
+init_ar2315_wdt(void)
+{
+	int ret = platform_driver_register(&ar2315_wdt_driver);
+	if(ret)
+		printk(KERN_INFO "ar2315_wdt: error registering platfom driver!");
+	return ret;
+}
+
+static void __exit
+exit_ar2315_wdt(void)
+{
+	platform_driver_unregister(&ar2315_wdt_driver);
+}
+
+module_init(init_ar2315_wdt);
+module_exit(exit_ar2315_wdt);
