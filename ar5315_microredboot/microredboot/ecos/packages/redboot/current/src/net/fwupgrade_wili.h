@@ -9,7 +9,6 @@ extern int fw_check_image_wili(unsigned char *addr, unsigned long maxlen,
 
 /* these variables will be initialized in do_tftpd() */
 CYG_ADDRWORD BASE_ADDR;
-CYG_ADDRWORD FW_TEMP_BASE;
 /***********************************************************************************/
 
 #endif				/* __wilibox_fw__ */
