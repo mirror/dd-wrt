@@ -303,27 +303,23 @@ void do_tftpd(int argc, char *argv[])
 	 * Then before writing to flash each partition (kernel, ramdisk)
 	 * will be moved to FW_TEMP_BASE (thus this address will be in FIS mem entry
 	 */
-	FW_TEMP_BASE =
+	BASE_ADDR =
 	    ((CYG_ADDRWORD) mem_segments[0].start + 0x03ff) & ~0x03ff;
 	/* note: memory addresses from 80700000 are reserved ? anyway, do not use them  */
-//      BASE_ADDR = ((CYG_ADDRWORD)mem_segments[0].end & ~0x03ff) - MAX_IMAGE_SIZE;
-	BASE_ADDR =
-	    (((CYG_ADDRWORD) mem_segments[0].start + 0x03ff) & ~0x03ff) +
-	    MAX_PART_SIZE;
 	if ((BASE_ADDR + MAX_IMAGE_SIZE) >= 0x80730000)
 		diag_printf
 		    ("Warning: memory buffer for uploaded file may be on reserved RAM area.\n");
 
 #if 1
 	/* hack: on ar531x, elf image should always be at 0x80002000 base, so adjust if possible */
-	if ((FW_TEMP_BASE < 0x80002000)
-	    && (FW_TEMP_BASE + MAX_PART_SIZE <= BASE_ADDR))
-		FW_TEMP_BASE = 0x80002000;
+//	if ((FW_TEMP_BASE < 0x80002000)
+//	    && (FW_TEMP_BASE + MAX_PART_SIZE <= BASE_ADDR))
+//		FW_TEMP_BASE = 0x80002000;
 #endif
 
 	diag_printf
-	    ("TFTPD is running (using memory ranges: %p - %p, %p - %p).\n",
-	     FW_TEMP_BASE, BASE_ADDR, BASE_ADDR, BASE_ADDR + MAX_IMAGE_SIZE);
+	    ("TFTPD is running (using memory ranges: %p - %p).\n",
+	     BASE_ADDR, BASE_ADDR + MAX_IMAGE_SIZE);
 
 	__udp_install_listener(&udp_skt, IPPORT_TFTPD, tftpd_handler);
 
