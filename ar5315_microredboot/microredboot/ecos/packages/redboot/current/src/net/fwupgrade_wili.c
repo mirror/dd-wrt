@@ -71,7 +71,7 @@ extern void fis_update_directory(void);
  * crypto [4 bytes] from the start of file till signature's crc field (including)
  */
 /* fwupdate.bin size */
-#define MAX_IMAGE_SIZE		0x7E0000	/* 4mb - 64k */
+#define MAX_IMAGE_SIZE		0x800000	/* 4mb - 64k */
 
 /* max size for single partition - typicaly this is cramfs size */
 #define MAX_PART_SIZE		0x800000	/* 3mb - valid only for ar531x */
