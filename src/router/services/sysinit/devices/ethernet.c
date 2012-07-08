@@ -92,7 +92,19 @@ static int detect_ethernet_devices(void)
 	{
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
-	} else if (detect("82547"))	// Intel Gigabit
+	} else if (detect("82542"))	// Intel Gigabit
+	{
+		returncode = try_module("e1000");
+		returncode = try_module("e1000e");
+	} else if (detect("82543"))	// Intel Gigabit
+	{
+		returncode = try_module("e1000");
+		returncode = try_module("e1000e");
+	} else if (detect("82544"))	// Intel Gigabit
+	{
+		returncode = try_module("e1000");
+		returncode = try_module("e1000e");
+	} else if (detect("82545"))	// Intel Gigabit
 	{
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
@@ -100,11 +112,11 @@ static int detect_ethernet_devices(void)
 	{
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
-	} else if (detect("82545"))	// Intel Gigabit / VMWare 64 bit mode 
+	} else if (detect("82547"))	// Intel Gigabit
 	{
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
-	} else if (detect("82543"))	// Intel Gigabit / VMWare 64 bit mode 
+	} else if (detect("82571"))	// Intel Gigabit 
 	{
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
@@ -112,7 +124,16 @@ static int detect_ethernet_devices(void)
 	{
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
+	} else if (detect("82573"))	// Intel Gigabit 
+	{
+		returncode = try_module("e1000");
+		returncode = try_module("e1000e");
 	} else if (detect("82574"))	// Intel Gigabit 
+	{
+		returncode = try_module("e1000");
+		returncode = try_module("e1000e");
+	}
+	} else if (detect("82583"))	// Intel Gigabit 
 	{
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
