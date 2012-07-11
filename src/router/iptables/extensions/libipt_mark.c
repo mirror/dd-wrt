@@ -65,6 +65,44 @@ parse(int c, char **argv, int invert, unsigned int *flags,
 	return 1;
 }
 
+static int
+parse_v1(int c, char **argv, int invert, unsigned int *flags,
+      const struct ipt_entry *entry,
+      unsigned int *nfcache,
+      struct ipt_entry_match **match)
+{
+	struct xt_mark_mtinfo1 *markinfo = (struct xt_mark_mtinfo1 *)(*match)->data;
+
+	switch (c) {
+		char *end;
+	case '1':
+		check_inverse(optarg, &invert, &optind, 0);
+#ifdef KERNEL_64_USERSPACE_32
+		markinfo->mark = strtoull(optarg, &end, 0);
+		if (*end == '/') {
+			markinfo->mask = strtoull(end+1, &end, 0);
+		} else
+			markinfo->mask = 0xffffffffffffffffULL;
+#else
+		markinfo->mark = strtoul(optarg, &end, 0);
+		if (*end == '/') {
+			markinfo->mask = strtoul(end+1, &end, 0);
+		} else
+			markinfo->mask = 0xffffffff;
+#endif
+		if (*end != '\0' || end == optarg)
+			exit_error(PARAMETER_PROBLEM, "Bad MARK value `%s'", optarg);
+		if (invert)
+			markinfo->invert = 1;
+		*flags = 1;
+		break;
+
+	default:
+		return 0;
+	}
+	return 1;
+}
+
 #ifdef KERNEL_64_USERSPACE_32
 static void
 print_mark(unsigned long long mark, unsigned long long mask, int numeric)
@@ -110,6 +148,21 @@ print(const struct ipt_ip *ip,
 	print_mark(info->mark, info->mask, numeric);
 }
 
+static void
+print_v1(const struct ipt_ip *ip,
+      const struct ipt_entry_match *match,
+      int numeric)
+{
+	const struct xt_mark_mtinfo1 *info = (const struct xt_mark_mtinfo1 *)match->data;
+
+	printf("mark match ");
+
+	if (info->invert)
+		printf("!");
+	
+	print_mark(info->mark, info->mask, numeric);
+}
+
 /* Saves the union ipt_matchinfo in parsable form to stdout. */
 static void
 save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
@@ -123,9 +176,24 @@ save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
 	print_mark(info->mark, info->mask, 0);
 }
 
-static struct iptables_match mark = { 
+static void
+save_v1(const struct ipt_ip *ip, const struct ipt_entry_match *match)
+{
+	const struct xt_mark_mtinfo1 *info = (const struct xt_mark_mtinfo1 *)match->data;
+
+	if (info->invert)
+		printf(" !");
+
+	printf(" --mark");
+	print_mark(info->mark, info->mask, 0);
+}
+
+
+
+static struct iptables_match mark_v0 = { 
 	.next		= NULL,
 	.name		= "mark",
+	.revision	= 0,
 	.version	= IPTABLES_VERSION,
 	.size		= IPT_ALIGN(sizeof(struct ipt_mark_info)),
 	.userspacesize	= IPT_ALIGN(sizeof(struct ipt_mark_info)),
@@ -137,7 +205,23 @@ static struct iptables_match mark = {
 	.extra_opts	= opts
 };
 
+static struct iptables_match mark_v1 = { 
+	.next		= NULL,
+	.name		= "mark",
+	.revision	= 1,
+	.version	= IPTABLES_VERSION,
+	.size		= IPT_ALIGN(sizeof(struct xt_mark_mtinfo1)),
+	.userspacesize	= IPT_ALIGN(sizeof(struct xt_mark_mtinfo1)),
+//	.help		= &help,
+	.parse		= &parse_v1,
+	.final_check	= &final_check,
+	.print		= &print_v1,
+	.save		= &save_v1,
+	.extra_opts	= opts
+};
+
 void _init(void)
 {
-	register_match(&mark);
+	register_match(&mark_v0);
+	register_match(&mark_v1);
 }
