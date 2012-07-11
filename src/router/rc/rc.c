@@ -176,6 +176,20 @@ int get_wanface(int argc, char **argv)
 	return 0;
 }
 
+int get_nfmark(int argc, char **argv)
+{
+	if (argc < 3) {
+		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n"
+						"	services: FORWARD\n"
+						"		  SPUTNIK\n"
+						"		  QOS\n\n"
+						"	eg: get_nfmark QOS 10");
+		return 1;
+	}
+
+	fprintf(stdout, "%s\n", get_NFServiceMark(argv[1], atol(argv[2])) );
+}
+
 int gratarp(int argc, char **argv)
 {
 
@@ -239,6 +253,7 @@ static struct MAIN maincalls[] = {
 	{"hb_disconnect", "hb_disconnect", NULL},
 	{"gpio", "gpio", NULL},
 	{"beep", "beep", NULL},
+	{"ledtracking", "ledtracking", NULL},
 	// {"listen", NULL, &listen_main},
 	// {"check_ps", NULL, &check_ps_main},
 	{"ddns_success", "ddns_success", NULL},
@@ -284,6 +299,7 @@ static struct MAIN maincalls[] = {
 	{"regshell", NULL, &reg_main},
 #endif
 	{"gratarp", NULL, &gratarp},
+	{"get_nfmark", NULL, &get_nfmark},
 };
 
 int main(int argc, char **argv)
