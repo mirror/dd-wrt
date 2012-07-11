@@ -133,12 +133,22 @@ parse_v2(int c, char **argv, int invert, unsigned int *flags,
 		= (struct xt_mark_tginfo2 *)(*target)->data;
 
 	char *end;
-	unsigned long mark,mask,val;
+	unsigned long mark = 0;
+	unsigned long mask = ~0U;
+	unsigned long val;
 	mark = strtoul(optarg, &end, 0);
+	if (end == optarg)
+		exit_error(PARAMETER_PROBLEM, "Bad MARK value `%s'", optarg);
+	
 	if (*end == '/') {
 	    mask = strtoul(end+1,&end,0);
 	    }
-	string_to_number_l(optarg, 0, 0, &val);
+	if (*end != '\0')
+		exit_error(PARAMETER_PROBLEM, "Bad MARK value `%s'", optarg);
+	
+	if (string_to_number_l(optarg, 0, 0, &val))
+	    	exit_error(PARAMETER_PROBLEM, "Bad MARK value `%s'", optarg);
+
 
 	switch (c) {
 	case '1':
