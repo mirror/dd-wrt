@@ -6,4 +6,9 @@ struct xt_mark_info {
     u_int8_t invert;
 };
 
+struct xt_mark_mtinfo1 {
+	__u32 mark, mask;
+	__u8 invert;
+};
+
 #endif /*_XT_MARK_H*/
