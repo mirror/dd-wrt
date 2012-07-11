@@ -677,10 +677,10 @@ void ej_show_paypal(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp,
 		  "<input type=\"image\" src=\"images/paypal.gif\" name=\"submit\" />");
 	websWrite(wp, "</form>");
-	websWrite(wp,
-		  "<br /><script type=\"text/javascript\">Capture(donate.mb)</script><br />\n");
-	websWrite(wp,
-		  "<a href=\"https://www.moneybookers.com/app/send.pl\" target=\"_blank\">\n");
+	//websWrite(wp,
+	//	  "<br /><script type=\"text/javascript\">Capture(donate.mb)</script><br />\n");
+	//websWrite(wp,
+	//	  "<a href=\"https://www.moneybookers.com/app/send.pl\" target=\"_blank\">\n");
 	// #ifdef HAVE_MICRO
 	// websWrite (wp,
 	// "<img style=\"border-width: 1px; border-color: #8B8583;\"
