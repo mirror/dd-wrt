@@ -26,6 +26,8 @@ static struct option opts[] = {
 	{ "set-mark", 1, 0, '1' },
 	{ "and-mark", 1, 0, '2' },
 	{ "or-mark", 1, 0, '3' },
+	{ "xor-mark", 1, 0, '4' },
+	{ "set-xmark", 1, 0, '5' },
 	{ 0 }
 };
 
@@ -121,6 +123,56 @@ parse_v1(int c, char **argv, int invert, unsigned int *flags,
 	return 1;
 }
 
+
+static int
+parse_v2(int c, char **argv, int invert, unsigned int *flags,
+	 const struct ipt_entry *entry,
+	 struct ipt_entry_target **target)
+{
+	struct xt_mark_tginfo2 *markinfo
+		= (struct xt_mark_tginfo2 *)(*target)->data;
+
+	char *end;
+	unsigned long mark,mask,val;
+	mark = strtoul(optarg, &end, 0);
+	if (*end == '/') {
+	    mask = strtoul(end+1,&end,0);
+	    }
+	string_to_number_l(optarg, 0, 0, &val);
+
+	switch (c) {
+	case '1':
+	        markinfo->mark = mark;
+	        markinfo->mask = mark | mask;
+		break;
+	case '2':
+	        markinfo->mark = 0;
+	        markinfo->mask = ~val;
+		break;
+	case '3':
+	        markinfo->mark = markinfo->mask = val;
+		break;
+	case '4':
+	        markinfo->mark = val;
+	        markinfo->mask = 0;
+	        break;
+	case '5':
+	        markinfo->mark = mark;
+	        markinfo->mask = mask;
+		break;
+	default:
+		return 0;
+	}
+
+	if (*flags)
+		exit_error(PARAMETER_PROBLEM,
+			   "MARK target: Can't specify --set-mark twice");
+
+	*flags = 1;
+	return 1;
+}
+
+
 #ifdef KERNEL_64_USERSPACE_32
 static void
 print_mark(unsigned long long mark)
@@ -181,6 +233,26 @@ print_v1(const struct ipt_ip *ip,
 	print_mark(markinfo->mark);
 }
 
+static void
+print_v2(const struct ipt_ip *ip,
+	 const struct ipt_entry_target *target,
+	 int numeric)
+{
+	const struct xt_mark_tginfo2 *info = (const struct xt_mark_tginfo2 *)target->data;
+
+	if (info->mark == 0)
+		printf(" MARK and 0x%x", (unsigned int)(uint32_t)~info->mask);
+	else if (info->mark == info->mask)
+		printf(" MARK or 0x%x", info->mark);
+	else if (info->mask == 0)
+		printf(" MARK xor 0x%x", info->mark);
+	else if (info->mask == 0xffffffffU)
+		printf(" MARK set 0x%x", info->mark);
+	else
+		printf(" MARK xset 0x%x/0x%x", info->mark, info->mask);
+}
+
+
 /* Saves the union ipt_targinfo in parsable form to stdout. */
 static void
 save_v1(const struct ipt_ip *ip, const struct ipt_entry_target *target)
@@ -200,6 +272,14 @@ save_v1(const struct ipt_ip *ip, const struct ipt_entry_target *target)
 		break;
 	}
 	print_mark(markinfo->mark);
+}
+
+static void
+save_v2(const struct ipt_ip *ip, const struct ipt_entry_target *target)
+{
+	const struct xt_mark_tginfo2 *info = (const struct xt_mark_tginfo2 *)target->data;
+
+	printf(" --set-xmark 0x%x/0x%x", info->mark, info->mask);
 }
 
 static
@@ -233,6 +313,23 @@ struct iptables_target mark_v1 = {
 	.final_check	= &final_check,
 	.print		= &print_v1,
 	.save		= &save_v1,
+	.extra_opts	= opts
+};
+
+static
+struct iptables_target mark_v2= {
+	.next		= NULL,
+	.name		= "MARK",
+	.version	= IPTABLES_VERSION,
+	.revision	= 2,
+	.size          = IPT_ALIGN(sizeof(struct xt_mark_tginfo2)),
+	.userspacesize = IPT_ALIGN(sizeof(struct xt_mark_tginfo2)),
+//	.help		= &help,
+	.init		= &init,
+	.parse		= &parse_v2,
+	.final_check	= &final_check,
+	.print		= &print_v2,
+	.save		= &save_v2,
 	.extra_opts	= opts
 };
 
