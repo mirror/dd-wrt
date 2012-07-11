@@ -183,7 +183,7 @@ int get_nfmark(int argc, char **argv)
 						"	services: FORWARD\n"
 						"		  SPUTNIK\n"
 						"		  QOS\n\n"
-						"	eg: get_nfmark QOS 10");
+						"	eg: get_nfmark QOS 10\n");
 		return 1;
 	}
 
