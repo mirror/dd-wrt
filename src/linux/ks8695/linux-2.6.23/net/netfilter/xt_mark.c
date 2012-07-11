@@ -34,6 +34,22 @@ match(const struct sk_buff *skb,
 	return ((skb->mark & info->mask) == info->mark) ^ info->invert;
 }
 
+
+static bool
+mark_mt(const struct sk_buff *skb,
+      const struct net_device *in,
+      const struct net_device *out,
+      const struct xt_match *match,
+      const void *matchinfo,
+      int offset,
+      unsigned int protoff,
+      bool *hotdrop)
+{
+	const struct xt_mark_mtinfo1 *info = matchinfo;
+
+	return ((skb->mark & info->mask) == info->mark) ^ info->invert;
+}
+
 static bool
 checkentry(const char *tablename,
 	   const void *entry,
@@ -102,6 +118,22 @@ static struct xt_match xt_mark_match[] __read_mostly = {
 		.match		= match,
 		.matchsize	= sizeof(struct xt_mark_info),
 		.me		= THIS_MODULE,
+	},
+	{
+		.name           = "mark",
+		.revision       = 1,
+		.family         = AF_INET,
+		.match          = mark_mt,
+		.matchsize      = sizeof(struct xt_mark_mtinfo1),
+		.me             = THIS_MODULE,
+	},
+	{
+		.name           = "mark",
+		.revision       = 1,
+		.family         = AF_INET6,
+		.match          = mark_mt,
+		.matchsize      = sizeof(struct xt_mark_mtinfo1),
+		.me             = THIS_MODULE,
 	},
 };
 
