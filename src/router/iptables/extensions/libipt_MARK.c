@@ -347,4 +347,5 @@ void _init(void)
 {
 	register_target(&mark_v0);
 	register_target(&mark_v1);
+	register_target(&mark_v2);
 }
