@@ -10,4 +10,9 @@ struct ipt_mark_info {
     u_int8_t invert;
 };
 
+struct xt_mark_mtinfo1 {
+	unsigned long mark, mask;
+	u_int8_t invert;
+};
+
 #endif /*_IPT_MARK_H*/
