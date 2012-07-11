@@ -138,17 +138,15 @@ parse_v2(int c, char **argv, int invert, unsigned int *flags,
 	unsigned long val;
 	mark = strtoul(optarg, &end, 0);
 	if (end == optarg)
-		exit_error(PARAMETER_PROBLEM, "Bad MARK value `%s'", optarg);
-	
+		exit_error(PARAMETER_PROBLEM, "Bad MARK value (mask) `%s' %d", optarg,mark);
+		
 	if (*end == '/') {
 	    mask = strtoul(end+1,&end,0);
 	    }
 	if (*end != '\0')
-		exit_error(PARAMETER_PROBLEM, "Bad MARK value `%s'", optarg);
+		exit_error(PARAMETER_PROBLEM, "Bad MARK value (garbage at end) `%s'", optarg);
 	
-	if (string_to_number_l(optarg, 0, 0, &val))
-	    	exit_error(PARAMETER_PROBLEM, "Bad MARK value `%s'", optarg);
-
+	string_to_number_l(optarg, 0, 0, &val);
 
 	switch (c) {
 	case '1':
@@ -332,8 +330,8 @@ struct iptables_target mark_v2= {
 	.name		= "MARK",
 	.version	= IPTABLES_VERSION,
 	.revision	= 2,
-	.size          = IPT_ALIGN(sizeof(struct xt_mark_tginfo2)),
-	.userspacesize = IPT_ALIGN(sizeof(struct xt_mark_tginfo2)),
+	.size           = IPT_ALIGN(sizeof(struct xt_mark_tginfo2)),
+	.userspacesize  = IPT_ALIGN(sizeof(struct xt_mark_tginfo2)),
 //	.help		= &help,
 	.init		= &init,
 	.parse		= &parse_v2,
