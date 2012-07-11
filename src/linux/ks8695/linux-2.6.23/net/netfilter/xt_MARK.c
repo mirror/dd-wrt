@@ -63,6 +63,20 @@ target_v1(struct sk_buff **pskb,
 	(*pskb)->mark = mark;
 	return XT_CONTINUE;
 }
+static unsigned int
+mark_tg(struct sk_buff **pskb,
+	  const struct net_device *in,
+	  const struct net_device *out,
+	  unsigned int hooknum,
+	  const struct xt_target *target,
+	  const void *targinfo)
+
+{
+	const struct xt_mark_tginfo2 *info = targinfo;
+	(*pskb)->mark = ((*pskb)->mark & ~info->mask) ^ info->mark;
+	return XT_CONTINUE;
+}
+
 
 
 static bool
@@ -160,14 +174,12 @@ static struct xt_target xt_mark_target[] __read_mostly = {
 		.me		= THIS_MODULE,
 	},
 	{
-		.name		= "MARK",
-		.family		= AF_INET6,
-		.revision	= 0,
-		.checkentry	= checkentry_v0,
-		.target		= target_v0,
-		.targetsize	= sizeof(struct xt_mark_target_info),
-		.table		= "mangle",
-		.me		= THIS_MODULE,
+		.name           = "MARK",
+		.revision       = 2,
+		.family         = AF_INET,
+		.target         = mark_tg,
+		.targetsize     = sizeof(struct xt_mark_tginfo2),
+		.me             = THIS_MODULE,
 	},
 };
 
