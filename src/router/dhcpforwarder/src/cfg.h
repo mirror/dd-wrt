@@ -1,20 +1,17 @@
-// $Id: cfg.h,v 1.10 2004/06/16 10:48:02 ensc Exp $    --*- c++ -*--
-
-// Copyright (C) 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-//  
+// Copyright (C) 2002, 2003, 2004, 2008
+//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
-//  
+// the Free Software Foundation; version 3 of the License.
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-//  
+// along with this program. If not, see http://www.gnu.org/licenses/.
 
 #ifndef H_DHCP_FORWARDER_SRC_CONFIG_H
 #define H_DHCP_FORWARDER_SRC_CONFIG_H
@@ -30,11 +27,20 @@
 #include "util.h"
 #include "compat.h"
 
+
 struct InterfaceInfo {
     char	name[IFNAMSIZ];	//< name of the interface
     char	aid[IFNAMSIZ];	//< agent id
     bool	has_clients;	//< tells if DHCP clients are on this interface
     bool	has_servers;	//< tells if DHCP servers are on this interface
+    uint16_t	port_server;	/** port on which for client requests will be
+				    listened.  Value will be stored in network
+				    byte order. Interesting both for has_clients
+				    and for has_servers case. */
+    uint16_t	port_client;	/** port from which requests to servers will be
+				    sended out.  Value will be stored in network
+				    byte order. Interesting for has_servers case
+				    only. */
     bool	allow_bcast;	//< honor bcast-flag and send to bcast address?
 
     bool	need_mac;	//< tells if MAC will be required
@@ -63,7 +69,7 @@ struct ServerInfo {
     ServerInfoType			type;
       /*@observer@*/
     struct InterfaceInfo *		iface;
-    
+
     union {
 	struct {
 	    struct in_addr		ip;
@@ -110,7 +116,7 @@ struct ConfigInfo {
     gid_t				gid;
     char				chroot_path[PATH_MAX];
     struct UlimitInfoList		ulimits;
-    
+
     char				logfile_name[PATH_MAX];
     int					loglevel;
 
@@ -122,8 +128,15 @@ struct ConfigInfo {
       // Commandline options
     /*@observer@*/
     char const *			conffile_name;
-    bool				do_fork;
+    enum { dmFORK, dmFG, dmSTOP }	daemon_mode;
     bool				do_bindall;
+
+    unsigned long			compat_hacks;
+};
+
+extern unsigned long	g_compat_hacks;
+enum {
+  COMPAT_HACK_CLIENT_ADDRESSING	=  0
 };
 
   /*@-superuser@*/
@@ -135,11 +148,11 @@ extern int	initializeSystem(int argc, /*@in@*/char *argv[],
   /*@globals errno, fileSystem, internalState@*/
   /*@modifies *ifs, *servers, *fds, fileSystem, errno, internalState@*/
   /*@requires (maxRead(argv)+1)==argc
-           /\ maxSet(ifs)==0
+	   /\ maxSet(ifs)==0
 	   /\ maxSet(servers)==0
 	   /\ maxRead(fds)==0@*/  ;
   /*@=superuser@*/
-    
+
 #endif	// H_DHCP_FORWARDER_SRC_CONFIG_H
 
   // Local Variables:

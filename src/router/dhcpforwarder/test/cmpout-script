@@ -1,5 +1,21 @@
 #! /bin/sh
 
+# Copyright (C) 2004, 2008
+#               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see http://www.gnu.org/licenses/.
+
+
 : ${srcdir:=.}
 
 set -- `echo "$0"."$@" | sed -e 's!\.! !g'`
@@ -12,4 +28,18 @@ inp=${base}.in
 out=${base}.out
 
 set -e
-./$2 ${inp} | cmp ${out}
+export TEST_IF0=iface0
+export TEST_IF1=iface1
+export TEST_IF0_C=681
+export TEST_IF0_S=671
+export TEST_IP0=192.168.0.1
+export TEST_IP1=10.1.1.1
+export TEST_IP2=10.1.2.1
+export TEST_FILE0=file0
+export TEST_FILE1=file1
+export TEST_NAME0=name0
+export TEST_NAME1=name1
+
+: ${CMP:=cmp ${out}}
+
+${DEBUG} ./$2 ${inp} | $CMP

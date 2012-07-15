@@ -1,5 +1,3 @@
-// $Id: recvfromflags.c,v 1.7 2002/07/11 17:02:20 ensc Exp $    --*- c++ -*--
-
 /* Based on advio/recvfromflags.c in W.R.Stevens's "Unix Network Programming,
  * Vol I", section 20.2 */
 
@@ -48,14 +46,14 @@ recvfrom_flags(int fd, void *ptr, size_t nbytes,
   assertDefined(msg.msg_name);
   assertDefined(msg.msg_control);
     /*@=compdef@*/
-  
+
     /*@-mustdefine@*/
   if (n<0) return(n);
     /*@=mustdefine@*/
 
   *salenptr          = msg.msg_namelen;	/* pass back results */
   *flagsp            = msg.msg_flags;	/* pass back results */
-  
+
   if (pktp)
     memset(pktp, 0, sizeof(struct in_pktinfo));	/* 0.0.0.0, i/f = 0 */
 
@@ -74,10 +72,10 @@ recvfrom_flags(int fd, void *ptr, size_t nbytes,
       *pktp = *reinterpret_cast(struct in_pktinfo *)(CMSG_DATA(cmptr));
       continue;
     }
-	  
+
   }
     /*@=compmempass@*/
-  
+
   return(n);
 }
 
