@@ -1,20 +1,17 @@
-// $Id: wrappers.h,v 1.15 2004/06/22 10:46:56 ensc Exp $    --*- c++ -*--
-
-// Copyright (C) 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-//  
+// Copyright (C) 2002, 2003, 2004, 2008
+//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
-//  
+// the Free Software Foundation; version 3 of the License.
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-//  
+// along with this program. If not, see http://www.gnu.org/licenses/.
 
 #ifndef DHCP_FORWARDER_SRC_WRAPPERS_H
 #define DHCP_FORWARDER_SRC_WRAPPERS_H
@@ -46,7 +43,7 @@ FatalErrnoError(bool condition, int retval, char const msg[]) /*@*/
 {
   if (!condition)	return;
 
-#if 0  
+#if 0
   char		*str = strerror(errno);
   write(2, msg, strlen(msg));
   write(2, ": ", 2);
@@ -68,8 +65,17 @@ inline static /*@observer@*/ struct group const *
 Egetgrnam(char const *name)
    /*@*/
 {
-  /*@observer@*/struct group const	*res = getgrnam(name);
-  FatalErrnoError(res==0, 1, "getgrnam()");
+  /*@observer@*/struct group const	*res;
+
+  errno = 0;
+  res   = getgrnam(name);
+  FatalErrnoError(res==0 && errno!=0, 1, "getgrnam()");
+  if (res==0) {
+    write(2, "getgrnam(\"", 10);
+    write(2, name, strlen(name));
+    write(2, "\"): no such group\n", 18);
+    exit(1);
+  }
 
     /*@-freshtrans@*/
     /*@-mustfreefresh@*/
@@ -83,8 +89,16 @@ inline static /*@observer@*/ struct passwd const *
 Egetpwnam(char const *name)
     /*@*/
 {
-  struct passwd const	*res = getpwnam(name);
-  FatalErrnoError(res==0, 1, "getpwnam()");
+  struct passwd const	*res;
+  errno = 0;
+  res   = getpwnam(name);
+  FatalErrnoError(res==0 && errno!=0, 1, "getpwnam()");
+  if (res==0) {
+    write(2, "getpwnam(\"", 10);
+    write(2, name, strlen(name));
+    write(2, "\"): no such user\n", 17);
+    exit(1);
+  }
 
   return res;
 }
@@ -110,7 +124,7 @@ Echroot(char const path[])
 {
     /*@-superuser@*/
   FatalErrnoError(chroot(path)==-1, 1, "chroot()");
-    /*@=superuser@*/  
+    /*@=superuser@*/
 }
 
 /*@unused@*/
@@ -214,7 +228,7 @@ Eopen(char const *pathname, int flags, int mode)
 }
 
 /*@unused@*/
-inline static int 
+inline static int
 Esocket(int domain, int type, int protocol)
     /*@globals internalState@*/
     /*@modifies internalState@*/
@@ -266,7 +280,7 @@ Esetrlimit(int resource, /*@in@*/struct rlimit const *rlim)
   FatalErrnoError(setrlimit(
 #if (defined(__GLIBC__) && __GLIBC__>=2) && defined(__cplusplus) && defined(_GNU_SOURCE)
 		    static_cast(__rlimit_resource)(resource),
-#else  
+#else
 		    resource,
 #endif
 		    rlim)==-1, 1, "setrlimit()");
@@ -283,7 +297,7 @@ Wselect(int n,
     /*@modifies internalState, errno, *readfds, *writefds, *exceptfds, *timeout@*/
 {
   register int			res;
-  
+
   retry:
   res = select(n, readfds, writefds, exceptfds, timeout);
   if (res==-1) {
@@ -305,7 +319,7 @@ Wrecv(int s,
 
   retry:
   res = recv(s, buf, len, flags);
-  
+
   if (res==-1) {
     if (errno==EINTR) goto retry;
   }
@@ -328,13 +342,13 @@ WrecvfromInet4(int s,
   retry:
   res = recvfrom(s, buf, len, flags,
 		 reinterpret_cast(struct sockaddr *)(from), &size);
-  
+
   if (res==-1) {
     if (errno==EINTR) goto retry;
   }
 
   if (res==-1 || size!=sizeof(*from) ||
-    /*@-type@*/from->sin_family!=AF_INET/*@=type@*/) 
+    /*@-type@*/from->sin_family!=AF_INET/*@=type@*/)
     res = -1;
 
   return static_cast(size_t)(res);
@@ -359,7 +373,7 @@ WrecvfromFlagsInet4(int					s,
   res = recvfrom_flags(s, buf, len, flags,
 		       reinterpret_cast(struct sockaddr *)(from), &size,
 		       pktp);
-  
+
   if (res==-1) {
     if (errno==EINTR) goto retry;
   }
@@ -381,7 +395,7 @@ Wsendto(int s,
 	/*@in@*/const struct sockaddr *to, socklen_t to_len)
     /*@requires maxRead(msg) >= len@*/
     /*@globals internalState, errno@*/
-    /*@modifies internalState, errno@*/  
+    /*@modifies internalState, errno@*/
 {
   register ssize_t		res;
 

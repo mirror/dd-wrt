@@ -1,5 +1,17 @@
-dnl $Id: ensc_developing.m4,v 1.14 2003/12/04 19:51:00 ensc Exp $
-
+dnl Copyright (C) 2003, 2004, 2008
+dnl               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+dnl
+dnl This program is free software; you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation; version 2 and/or 3 of the License.
+dnl
+dnl This program is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl
+dnl You should have received a copy of the GNU General Public License
+dnl along with this program. If not, see http://www.gnu.org/licenses/.
 
 AC_DEFUN([ENSC_DEVELOPING],
 [
@@ -30,8 +42,8 @@ AC_DEFUN([ENSC_DEVELOPING],
 
 		DEVELOPING_STRICT_CFLAGS=['-Wold-style-cast -Wunreachable-code -Wshadow']
 		DEVELOPING_CFLAGS=['-W -Werror -g3 -O0 -Woverloaded-virtual -Wsign-promo -Wsynth
-			            -Wchar-subscripts -Wparentheses -Wsequence-point -Wswitch
-                                    -Wfloat-equal -Wpointer-arith']
+				    -Wchar-subscripts -Wparentheses -Wsequence-point -Wswitch
+				    -Wfloat-equal -Wpointer-arith']
 	fi
 
 	AC_SUBST([$1])
@@ -48,9 +60,9 @@ AC_DEFUN([__ENSC_RELEASE],
 				     [disable settings which are creating faster/smaller code]),
 		      [case "${enableval}" in
 			  yes|no) enable_release="${enableval}";;
-	 		  *)      AC_MSG_ERROR([bad value ${enableval} for --disable-release]) ;;
+			  *)      AC_MSG_ERROR([bad value ${enableval} for --disable-release]) ;;
 		       esac],
-	              [ enable_release=${default} ])
+		      [ enable_release=${default} ])
 
 	if test x"${enable_release}" = xno; then
 		ensc_is_release=no
