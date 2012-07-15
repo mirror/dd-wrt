@@ -1,2 +1,0 @@
-unifdef-y += big_endian.h
-unifdef-y += little_endian.h
