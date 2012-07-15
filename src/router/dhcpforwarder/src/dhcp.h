@@ -1,20 +1,17 @@
-// $Id: dhcp.h,v 1.14 2004/06/22 10:46:56 ensc Exp $    --*- c++ -*--
-
-// Copyright (C) 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-//  
+// Copyright (C) 2002, 2008
+//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
-//  
+// the Free Software Foundation; version 3 of the License.
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-//  
+// along with this program. If not, see http://www.gnu.org/licenses/.
 
 #ifndef DHCP_FORWARDER_SRC_DHCP_H
 #define DHCP_FORWARDER_SRC_DHCP_H
@@ -42,7 +39,7 @@ struct DHCPHeader  {
     in_addr_t	yiaddr;
     in_addr_t	siaddr;
     in_addr_t	giaddr;
-    
+
     uint8_t	chaddr[16];
     uint8_t	sname[64];
     uint8_t	file[128];
@@ -100,9 +97,9 @@ enum {
 };
 
 enum {
-  cdPAD 	= 0u,
+  cdPAD	= 0u,
   cdRELAY_AGENT = 82u,
-  cdEND 	= 255u
+  cdEND	= 255u
 };
 
 enum {
@@ -133,7 +130,7 @@ DHCP_removeOption(struct DHCPSingleOption *opt,
   size_t		len = DHCP_getOptionLength(opt);
   char * const		start = reinterpret_cast(char *)(opt);
   char const * const	end   = reinterpret_cast(char const *)(end_opt);
-  
+
   assert(opt <= end_opt);
   if (start+len > end) return;	// TODO: broken option-list ... what to do?
 
@@ -153,7 +150,7 @@ DHCP_zeroOption(struct DHCPSingleOption *opt)
   size_t	len = DHCP_getOptionLength(opt);
   size_t	i;
 
-    
+
   for (i=0; i<len; ++i) {
     reinterpret_cast(uint8_t *)(opt)[i] = cdPAD;
   }

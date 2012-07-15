@@ -1,4 +1,20 @@
-## $Id: dhcp-forwarder.spec.in,v 1.17 2004/08/19 20:24:49 ensc Exp $	--*- rpm-spec -*--
+## --*- rpm-spec -*--
+
+# Copyright (C) 2004, 2008
+#               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+#  
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 3 of the License.
+#  
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#  
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see http://www.gnu.org/licenses/.
+
 
 ## This package understands the following switches:
 ## --without dietlibc   ...   disable usage of dietlibc
@@ -19,12 +35,14 @@
 %define minitsvcdir	%minitdir/services/dhcp-fwd
 %define service		dhcp-fwd
 
+%{!?release_func:%define release_func() %1}
+
 Summary:	A DHCP relay agent
 Name:		dhcp-forwarder
-Version:	0.7
-Release:	0
+Version:	0.10
+Release:	%release_func 0
 Epoch:		0
-License:	GPL
+License:	GPLv3
 Group:		System Environment/Daemons
 URL:		http://www.tu-chemnitz.de/~ensc/dhcp-fwd
 Source0:	http://www.tu-chemnitz.de/~ensc/dhcp-fwd/files/%name-%version.tar.bz2

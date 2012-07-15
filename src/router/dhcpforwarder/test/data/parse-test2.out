@@ -1,3 +1,4 @@
+compathacks=0
 uid=1
 gid=1
 chroot_path='/var/tmp'
@@ -15,9 +16,9 @@ ulimits={9, data={
   locks     -> (8192, 8192)
   nofile    -> (8000, 8000)}}
 interfaces={len=3, data={
-  'eth0', 'eth0-name', 1, 0, 0, 192.168.42.23
-  'eth1', 'X', 0, 0, 1, 255.255.255.255
-  'eth2', '', 1, 1, 0, 10.0.0.2}}
+  'eth0', 'eth0-name', 1, 0, 0, 68, 67, 192.168.42.23
+  'eth1', 'X', 0, 0, 1, 68, 67, 255.255.255.255
+  'eth2', '', 1, 1, 0, 68, 67, 10.0.0.2}}
 servers={len=3, data={
   UNICAST, 192.168.31.41, &eth2
   UNICAST, 192.168.31.42, &eth2

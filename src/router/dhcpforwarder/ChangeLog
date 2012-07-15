@@ -1,1433 +1,1955 @@
-2004-08-19 22:30  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 5a7b0a7119262ba41c236c7e95cf21d272374215
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Apr 29 18:45:06 2012 +0200
 
-	* NEWS, configure.ac: version 0.7
+    version 0.10
 
-2004-08-19 22:24  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 9e15d018efbcbcb51fffbd4a201c5bbebacb015f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Apr 30 12:55:30 2012 +0200
 
-	* dhcp-forwarder.spec.in: added support for 'fedora-usermgmt' (enabled with '--with fedora' switch)
+    m4: wrap source code into AC_LANG_SOURCE
 
-2004-08-19 19:09  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 41d35910ab8e67b78186e5071672296288b0024e
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Apr 29 18:33:17 2012 +0200
 
-	* dhcp-forwarder.spec.in: added comments about available '--with ...' switches
-	conditionalized build of -minit subpackage
+    fixed client addressing
+    
+    Responses are sent now to the yiaddr instead of to the ciaddr. The
+    generation of broadcast vs. unicast message more consistent with RFC
+    2131 now
+    
+    This non-trivial patch was provided by Robin Haberkorn.
 
-2004-08-19 19:07  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f00168b62c48e2f99aba70c52ad1f49a9535a629
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Apr 29 18:14:19 2012 +0200
 
-	* configure.ac: added checks for 'struct ether_header'
+    added compathack configuration option
 
-2004-08-19 19:07  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 0ec3bdca47107fc511001aa48d352a687b02492a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Apr 29 17:17:05 2012 +0200
 
-	* src/compat.h: do not redefine 'struct ether_header' (in dietlibc since version 0.27)
+    contrib: use 'ln -sf' instead of 'ln -s' to install minit run link
 
-2004-08-19 19:07  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 423e4e00f98a19acba37c338f5b90ed4b5ab2f74
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Apr 29 17:16:14 2012 +0200
 
-	* m4/ensc_diet.m4: ENSC_DIET_TYPE_CHECK: added; it generalizes the type-checking code
+    added systemd unit
 
-2004-06-22 12:47  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3444eabc9a25d92303207869609151a784071134
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Apr 29 16:59:53 2012 +0200
 
-	* splint.conf: updated
+    added emacs tag
 
-2004-06-22 12:46  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit cf62c68fcc3ae5fa09407e352e6bd657790cbd27
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Apr 29 16:51:24 2012 +0200
 
-	* src/: cfg.c, dhcp.h, logging.h, main.c, parser.c, wrappers.h: updated some splint annotations
+    gitignore: updated
 
-2004-06-17 13:56  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 144025d79fd66f0a31391c5d323c57d7781834fc
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Apr 29 16:49:44 2012 +0200
 
-	* NEWS, configure.ac: version 0.6
+    removed compat/if_packet.h
+    
+    workaround is not needed for aeons anymore and causes problems with
+    recent kernel headers.
 
-2004-06-17 13:49  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 449e79d4c4e9c4b680b3ffaf525e5a087cada0d2
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Apr 29 16:43:57 2012 +0200
 
-	* test/parseTest.c: workaround different uids/gids for 'bin'
+    output: removed duplicate dot in timestamp
 
-2004-06-17 13:30  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 73cb0c929e7dbad66a8b716b1e9d791a47aa2151
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Apr 29 18:40:10 2012 +0200
 
-	* Makefile.am: added CVS2CL_* variables
+    prepared next release
 
-2004-06-16 21:11  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d336b48e3506ab9d89080eedc48ebeb2c5033ccd
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 14 22:26:00 2010 +0100
 
-	* contrib/: Makefile-files, dhcp-fwd.params: initial checkin
+    version 0.9
 
-2004-06-16 21:10  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 816a959a2d448a1612a1ea644d98c77b4e81576d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 14 22:19:57 2010 +0100
 
-	* Makefile.am: - removed *-contrib targets and contrib files; they are now in
-	  contrib/Makefile-files
-	- include contrib/Makefile-files
+    * m4 a344c01...5664a0b (2):
+      > enhanced gpgsig target to sign all dist-archives
+      > added check for gpg
 
-2004-06-16 21:10  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 5c9b1e0c3b09359f301cbad45d9102482092a4bf
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 14 22:18:21 2010 +0100
 
-	* configure.ac: use ENSC_INITRDDIR()
+    create .xz tarball instead of .bz2 ones
 
-2004-06-16 21:09  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 0b1d68bfcf116d6c013b30be952af7d136d3c2e0
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 14 22:16:10 2010 +0100
 
-	* dhcp-forwarder.spec.in: - added minit support
-	- removed superfluous %%doc attribute of %%_mandir entries
-	- removed superfluous curlies
-	- use 'install-contrib' and cleaned up %%install section
-	- moved /etc/sysconfig/* file into -sysv subpackage; it is not used by
-	  -minit anymore
-	- minor cleanups
+    die, cvs, die!
 
-2004-06-16 12:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit eb9bdceda7c5267dc7a122a8e109b4a51340743f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 14 21:57:23 2010 +0100
 
-	* .cvsignore: updated
+    disable silent-rules by default
 
-2004-06-16 12:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 097d985edfa9858319db3485734b5a98fb0cb74f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 14 21:57:10 2010 +0100
 
-	* doc/dhcp-fwd.man: documented the changes in the 'server ...' command (the additional interface)
+    disabled 'validate.am' which interferes with silent rules
 
-2004-06-16 12:50  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 479fb8e5aca35c757f234dc646fb0358509cb786
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 14 21:41:02 2010 +0100
 
-	* test/data/: parse-test1.in, parse-test1.out, parse-test2.in,
-	  parse-test2.out: added/updated testcases for the new interface-of-sender feature
+    set SO_REUSEADDR for client sockets
+    
+    This allows to run dhcp-forwarder and a dhcp server like dnsmasq (with
+    'bind-interfaces' option) on the same host.
+    
+    Patch was provided by Stefan Keller <sk@open.ch>.
 
-2004-06-16 12:49  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit c12acb342df610f91e0397eab0a20a7b3bec0c9f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 14 21:34:15 2010 +0100
 
-	* test/parseTest.c: applied changes in the sender-fd interface
+    prevent compiler warnings about uninitialized variables
 
-2004-06-16 12:49  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit dca430e70e6c8fc80f8f638701e3d7e33c61484c
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 14 21:33:58 2010 +0100
 
-	* test/cmpout-script: initialize $srcdir when needed
+    added AM_SILENT_RULES
 
-2004-06-16 12:48  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 598517b4d29f9c202e58abd2f8efae51ca0e7710
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Mar 1 13:17:14 2009 +0100
 
-	* src/parser.c: allowed to specify an interface for the sending sockets
+    fixed inconsistencies in the naming of default configuration file
+    
+    Now it is named 'dhcp-fwd.conf' everywhere. Previously, 'dhcp-fwd.cfg'
+    was used at some places
 
-2004-06-16 12:48  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 9074dec6f3d2f8077bb63d2995f318a144b75e67
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 30 20:09:20 2008 +0100
 
-	* src/main.c: applied changes in the sender-fd structures
+    whitespace cleanups
 
-2004-06-16 12:48  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit c8e61e9e7dd8968e0650ad599a2d52525dd80b5b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 30 18:03:33 2008 +0100
 
-	* src/cfg.h: changed to structures to allowe to specify the used interface for
-	sending sockets
+    version 0.8
 
-2004-06-16 12:47  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a5f107d1ad16527a5e477ce6f91f4518e822da8d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 30 11:25:39 2008 +0100
 
-	* src/cfg.c: allowed to specify the used interface for sending sockets
-	set SO_REUSEADDR for the sending socket
+    allowed loopback interface
 
-2004-04-30 15:38  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 9140bc75ced2b4786aeaa70cf8aea7982e56ce2d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Dec 30 11:21:43 2008 +0100
 
-	* src/: cfg.c, cfg.h, main.c: added code to use SO_BINDTODEVICE for the sender_fd when there is
-	exactly one interface tagged with 'has_servers'
+    workaround kernel bug which causes -EINVAL errors when interface name is shorter than sizeof int
 
-2004-04-30 15:37  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit abf92ffe0ece7b9487c4f554a20cb0a75b9f84e9
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 29 11:33:49 2008 +0100
 
-	* dhcp-forwarder.spec.in: splitted into -sysv and -minit subpackages
+    minor cosmetical cleanups
 
-2004-04-30 15:35  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit de8222385a97926fe4f34dcf7fde3bc413bcdd12
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 29 11:31:41 2008 +0100
 
-	* configure.ac: added ENSC_CHANGELOG
+    added 'ports' configuration option to specify client/server ports to be used on the specified interface
 
-2003-12-12 01:47  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 611b70ac6e1d15dc5a35575713c1707981c9022a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 29 11:26:16 2008 +0100
 
-	* m4/: ensc_cflags.m4, validate.am: fixed bad quoting
+    init fd for interfaces only when it has clients or servers
 
-2003-12-12 01:47  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 06067f861bbfa45601f8fe7217665838b0dc3471
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Dec 28 22:17:33 2008 +0100
 
-	* m4/changelog.am: added cvs2log/rcslog support
+    added '-N' option to raise SIGSTOP after initialization
 
-2003-12-12 01:47  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 5042570281dfe598a39eb638a00399b1a136f6f6
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Dec 28 22:15:00 2008 +0100
 
-	* m4/ensc_changelog.m4: initial checkin
+    updated NEWS
 
-2003-12-04 20:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 867579121c1424c891eb77f6d29fdcea23800796
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Dec 28 21:14:20 2008 +0100
 
-	* m4/ensc_initrddir.m4: initial checkin (imported from util-vserver)
+    initial checkin
 
-2003-12-04 20:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d9a401a1cd2dde45e47e94b0bfbe6bdbfe664b02
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Dec 28 21:14:10 2008 +0100
 
-	* m4/ensc_developing.m4: do not use '-O3' anymore at '--enable-release'
+    updated gitignore file
 
-2003-08-05 15:06  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b46a1e96f4baecb0409c984e6653d7f8adfaffd0
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Dec 28 21:13:58 2008 +0100
 
-	* m4/: changelog.am, diet.am, doxygen.am, gpgsig.am, pkgconfig.am,
-	  substrule.am, validate.am, wwwpublish.am: s!#!##! to avoid cluttering of the generated makefile with copyright-notices
+    removed old CVS files
 
-2003-07-15 21:47  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 45f4d2f378c145a395d6849ecb0309d3ce5280aa
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Dec 28 21:11:33 2008 +0100
 
-	* NEWS, configure.ac: version 0.5
+    added m4 submodule
 
-2003-07-15 21:47  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit c441040d4a911756221475c09db5114c78000225
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Dec 28 16:53:07 2008 +0100
 
-	* contrib/dhcp-fwd.init: cleanups
+    updated for git
 
-2003-07-15 19:09  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b2fa775a8a21d5be48e3dd8aa3efad86d869330f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Dec 28 16:52:55 2008 +0100
 
-	* .cvsignore: added INSTALL and .X_*
+    removed m4 from DIST_SUBDIRS; this is handled automatically by recent automake
 
-2003-07-15 19:07  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d8b54686c8ae9c275e4ef140f316b36bf7859a9a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Dec 28 15:08:52 2008 +0100
 
-	* src/: cfg.h, splint_compat.h: minor cosmetical changes
+    use GPLv3 license file
 
-2003-07-03 16:14  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f5f2971dca63fbb000621e9bf56816513e411f02
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Dec 28 15:05:47 2008 +0100
 
-	* dhcp-forwarder.spec.in: minor cosmetical changes
+    removed SVN/CVS tags + emacs filemode tags
 
-2003-07-03 16:14  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit eb3ad4f6a601109dfb0b3738eb4fbf603b55eb94
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sun Dec 28 14:41:12 2008 +0100
 
-	* INSTALL[DEAD]: removed since autogenerated
+    relicensed from GPLv2 to GPLv3; updated year and address of FSF foundation in copyright notices
 
-2003-07-03 16:13  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 959d3d6f108f80986cf236d742d6e57db6cf9225
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Dec 27 17:26:24 2008 +0100
 
-	* contrib/dhcp-fwd.init: fixed 'condrestart'
-	minor cosmetical fixes
+    free correct mmap'ed memory
 
-2003-07-03 15:32  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a6d70f744f7c7abe5f9c9f1f74bf44ec69328eb2
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Dec 27 16:33:01 2008 +0100
 
-	* src/parser.c: simplified interface-construction
+    added samples for $VAR feature
 
-2003-07-01 04:22  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 780b47e529a4fe924a61d3180c95bc9ab7a9d2e6
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Dec 27 16:31:28 2008 +0100
 
-	* contrib/dhcp-fwd.sysconfig: commented out DHCPFWD_OPTIONS
+    whitespace cleanups
 
-2003-07-01 04:22  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f645792b1776a832fc34e2f7095804df38e6705a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Dec 27 16:11:25 2008 +0100
 
-	* contrib/dhcp-fwd.init: modernized
+    added test cases for the new $VAR expansion
 
-2003-07-01 04:22  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b6fe755ea39a525026826c0f715792f241160781
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Dec 27 16:10:38 2008 +0100
 
-	* contrib/dhcp-fwd.conf: fixed typos
+    allow $VAR like expansion of values in the configuration file
 
-2003-07-01 04:00  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 46b63e044308549ae330853b40a37d2d5315d65c
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Dec 27 14:25:39 2008 +0100
 
-	* src/parser.c: allow dots in interface-names; issue reported by Svetlin Simeonov
+    use $DEBUG env in front of executed test-program
 
-2003-07-01 03:55  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit e2f09e1df28e15ea67507d6e016411d75ed46f06
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Dec 27 14:24:06 2008 +0100
 
-	* .cvsignore: added autom4te.cache
+    updated splint related make-rules (which does not mean that splint works anymore)
 
-2003-07-01 03:53  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 171e969650e82189d26c7a75e466019a03d47bda
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Dec 27 14:23:08 2008 +0100
 
-	* splint.conf: s!ENABLE_LOGGING!WITH_LOGGING!
+    use mmap(2) for handling configuration file
 
-2003-07-01 03:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit bf0fcceccaf5c99ce31b65221d4b760b582c0b68
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 26 23:36:49 2005 +0000
 
-	* tools/buildTokenTable.c[DEAD]: moved into precompiled_parser branch
+    updated svn:ignore
 
-2003-07-01 03:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a861dc235fa8ba70e2c43524eabb52f1b216dce6
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 26 23:35:09 2005 +0000
 
-	* tools/buildTokenTable.c: initial checkin
+    Egetgrnam()/Egetpwnam(): improved error-handling; when get*nam()
+    returns 0, check errno to see if a real error occured or if the
+    user/group could not be found (reported by Florian Forster)
 
-2003-07-01 03:48  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a7be54eca4f9367b8e81d69beb3305e610ab4153
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 26 23:32:53 2005 +0000
 
-	* Makefile.am: s!ENABLE_LOGGING!WITH_LOGGING!
+    updated
 
-2003-07-01 03:44  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 045f1efc1ba6d99a6c2b4d8e4b76c39994303af5
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 26 23:32:26 2005 +0000
 
-	* src/parser.c: removed duplicate initialization
+    initialize 'ulimit' to avoid bogus compiler warning
 
-2003-07-01 03:42  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 58cc86d26b3f49d76dd8fd1f1a61cb17901298ca
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 26 23:32:05 2005 +0000
 
-	* src/parser.c: moved precompiled-parser into a separate branch
+    removed parentheses to avoid compiler warnings
 
-2003-07-01 03:39  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit e940b208d8b62f67c8203cb9d95251ad5e5e5e36
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 26 23:31:25 2005 +0000
 
-	* src/parser.c: initialize parser-table at compile-time
+    use new dietlibc auto* stuff
+    use ENSC_CHECK_CC_FLAG instead of LF_CHECK_CC_FLAG
 
-2003-07-01 03:37  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit acbd8ce8bf8dd5fc24897a863c526fc597a869f6
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 26 22:42:58 2005 +0000
 
-	* src/: parser-const.h[DEAD], parser-tokentbl.h[DEAD]: removed from this branch
+    updated
 
-2003-07-01 03:35  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 1eabb9e4f6e8bafa520eaf043d72b8539e4bf3b0
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 26 22:42:35 2005 +0000
 
-	* src/: parser-const.h, parser-tokentbl.h: Initial checkin
+    initial checkin
 
-2003-07-01 03:21  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit c8683a0436ad7893bd03565165639a659a73bf11
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Dec 26 22:42:23 2005 +0000
 
-	* src/parser.c: initialize structures completely
+    use %release_func
 
-2003-07-01 01:31  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 206d572c07571f746754418bbdc991c13aa7434e
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Dec 23 01:17:31 2004 +0000
 
-	* src/: logging.h, main.c, output.c: s!ENABLE_LOGGING!WITH_LOGGING!
+    added timestamps
 
-2003-07-01 01:30  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 37af63fe1219df566891b0cb256cf6dbefcd892c
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Dec 23 00:58:10 2004 +0000
 
-	* src/cfg.c: fixed last patch
+    updated/added copyright notices
+    updated timestamps
 
-2003-07-01 01:29  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 247be9a8596c917af68aae8ae77e048cc3fa1359
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Dec 23 00:57:58 2004 +0000
 
-	* src/cfg.c: added --version/--help cli-option
-	minor code cleanups
+    updated/added copyright notices
 
-2003-07-01 01:25  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f59262b97a479e4292278d50780414b8c5c8cc13
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Dec 23 00:49:01 2004 +0000
 
-	* dhcp-forwarder.spec.in: major cleanups
+    fixed spelling of optDHCP_COOKIE for big-endian systems
 
-2003-07-01 01:24  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3928ac37ae380b1a00a7ea294ace880acba57dde
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 19 20:30:45 2004 +0000
 
-	* configure.ac: s!ENABLE_LOGGING!WITH_LOGGING!
-	s!/*@@--namechecks@*/!/*@-namechecks@*/!
+    version 0.7
 
-2003-07-01 01:22  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 7ac79ba65f6f90f2d16699810095eadb54389678
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 19 20:24:49 2004 +0000
 
-	* README: fixed typos
+    added support for 'fedora-usermgmt' (enabled with '--with fedora' switch)
 
-2003-07-01 01:20  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a054b0a4ca9986c5255c77e3dcd2715e4116e168
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 19 17:09:15 2004 +0000
 
-	* test/writeTest.c: made it C89 compliant by returning EXIT_SUCCESS in main()
+    added comments about available '--with ...' switches
+    conditionalized build of -minit subpackage
 
-2003-07-01 01:19  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 4b9acdf6782c28bf1a3114f97591d456d4445c08
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 19 17:07:47 2004 +0000
 
-	* test/data/: parse-test1.in, parse-test1.out: added dots-in-iface testcase
+    added checks for 'struct ether_header'
 
-2003-06-20 13:36  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 2da7078919a61c52010cca0790e96c693afc5980
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 19 17:07:33 2004 +0000
 
-	* m4/ensc_cflags.m4: changed ENSC_CHECK_DEFAULT_FLAG
+    do not redefine 'struct ether_header' (in dietlibc since version 0.27)
 
-2003-05-02 16:46  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3e2f7225c8aa5783f54b687e326a44dd7586d301
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jun 22 10:47:00 2004 +0000
 
-	* Makefile.am: s!/etc!$(sysconfdir)!
+    updated
 
-2003-01-30 03:12  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 4593e8754971bd7d43d28c08e3eef08534cc017e
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jun 22 10:46:56 2004 +0000
 
-	* m4/ensc_developing.m4: Removed __USE_MALLOC stuff; it does not work with gcc>=3.2 anymore
+    updated some splint annotations
 
-2003-01-30 03:12  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit fa4ca9b8088ae29074af074f002f705b6374e6b9
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 17 11:56:17 2004 +0000
 
-	* m4/ensc_cflags.m4: Typo
+    version 0.6
 
-2003-01-30 02:57  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 2bed8938c3420da5c371c79c6ed95d40554a5270
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 17 11:49:10 2004 +0000
 
-	* m4/ensc_cflags.m4: Fixed C++ language-checks
+    workaround different uids/gids for 'bin'
 
-2003-01-23 19:28  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 4e7a0706346ba4e679da0f763018860804d964da
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 17 11:30:27 2004 +0000
 
-	* m4/wwwpublish.am: Added .timestamp file to clean-rule
+    added CVS2CL_* variables
 
-2003-01-23 19:28  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 9e768edbba8e6f024c9676c9b34b440cfa8dcc1b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 19:11:43 2004 +0000
 
-	* m4/validate.am: Made it a little bit more robust when used with non-GNU make
+    initial checkin
 
-2002-12-10 17:25  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit da3c012a9a6d43964c854d43a180b26a1d1cb098
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 19:10:47 2004 +0000
 
-	* m4/ensc_tools.m4: Fixed detection of CHOWN_REFERENCE/CHMOD_REFERENCE
+    - removed *-contrib targets and contrib files; they are now in
+      contrib/Makefile-files
+    - include contrib/Makefile-files
 
-2002-11-22 19:49  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 0303ebafcaf3e1c401706e37c722d574079b0725
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 19:10:01 2004 +0000
 
-	* m4/ensc_cflags.m4: Added ENSC_CHECK_DEFAULT_FLAG
+    use ENSC_INITRDDIR()
 
-2002-11-18 22:39  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 8b60545f283656df2072fadad491bd8f3e309ffd
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 19:09:50 2004 +0000
 
-	* m4/ensc_compat.m4: Fixed detection of in_addr_t with strict compiler-settings
+    - added minit support
+    - removed superfluous %%doc attribute of %%_mandir entries
+    - removed superfluous curlies
+    - use 'install-contrib' and cleaned up %%install section
+    - moved /etc/sysconfig/* file into -sysv subpackage; it is not used by
+      -minit anymore
+    - minor cleanups
 
-2002-11-16 03:17  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit ffd277cad68fc55c1297019ce817e5f24994a887
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 10:52:18 2004 +0000
 
-	* m4/ensc_diet.m4: s!==!=!
+    updated
 
-2002-11-15 17:58  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit ee867bc6f611c8fa2b3c6e369dfd772dc0751e9d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 10:51:02 2004 +0000
 
-	* m4/wwwpublish.am: initial checkin
+    documented the changes in the 'server ...' command (the additional interface)
 
-2002-11-14 23:56  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a9105467b87066575491c59db2c8aa64d9077f77
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 10:50:27 2004 +0000
 
-	* m4/ensc_diet.m4: - Added DIETFLAGS
-	- Added fix for broken compilername detection of 'diet'
-	- Added __ENSC_DIET_FUNC_CHECK which checks if a function is available
-	  with dietlibc
-	- Added ENSC_DIET_CHECK_ETHER which checks for the existence of the
-	  ether_* functions in dietlibc
+    added/updated testcases for the new interface-of-sender feature
 
-2002-11-14 23:55  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b00f0bd29bc988c7fb972f5f0aef79ef2f79f613
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 10:49:53 2004 +0000
 
-	* m4/ensc_developing.m4: fixed/changed some flags
+    applied changes in the sender-fd interface
 
-2002-11-14 23:54  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 38a36e210930ef1dcc9e43f06528a2014801d8c6
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 10:49:39 2004 +0000
 
-	* m4/ensc_cflags.m4: initial checkin
+    initialize $srcdir when needed
 
-2002-11-14 23:54  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit c4aed542ad0d318741d6231138c35b8b11517622
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 10:48:56 2004 +0000
 
-	* m4/diet.am: Added DIETFLAGS
+    allowed to specify an interface for the sending sockets
 
-2002-08-30 14:53  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 11cc929f204055f788eafed53e10c6e63e414b44
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 10:48:36 2004 +0000
 
-	* src/cfg.c: Added '-n' to cmdline-documentation
+    applied changes in the sender-fd structures
 
-2002-08-30 14:34  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 99b66b8be027df5be7a661953854af1c295468c7
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 10:48:02 2004 +0000
 
-	* src/logging.c: Made sure, that the last character in the output-string is *always*
-	'\0'
+    changed to structures to allowe to specify the used interface for
+    sending sockets
 
-2002-08-29 18:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 51053f4b51ce1c4c4e5310dd233ad9b0b991029b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 16 10:47:36 2004 +0000
 
-	* NEWS, README, configure.ac: Version 0.4
+    allowed to specify the used interface for sending sockets
+    set SO_REUSEADDR for the sending socket
 
-2002-08-29 18:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a144c06b4c4dadf95cc9d0df926cc2bf9db29af0
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Apr 30 13:38:37 2004 +0000
 
-	* .cvsignore: Added compile-test dir
+    added code to use SO_BINDTODEVICE for the sender_fd when there is
+    exactly one interface tagged with 'has_servers'
 
-2002-08-29 17:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 428bfe458b4501f5197ee3f195ac7d7500dc48e3
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Apr 30 13:37:15 2004 +0000
 
-	* test/Makefile.am: Added test/compile-test
+    splitted into -sysv and -minit subpackages
 
-2002-08-29 17:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 6a724f1d309e2c42ae17a70c98aa90d5e7ed9f48
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Apr 30 13:35:59 2004 +0000
 
-	* test/compile-test: initial checkin
+    added ENSC_CHANGELOG
 
-2002-08-29 17:39  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 79e4e48f7f842617f04a4f532ce7b933616d795f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 15 19:47:59 2003 +0000
 
-	* src/: cfg.h, dhcp.h: Don't include <config.h> in headers anymore
+    version 0.5
 
-2002-08-29 17:39  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 71145a07a24883da50c59444b37bea35a614d637
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 15 19:47:39 2003 +0000
 
-	* contrib/dhcp-fwd.init: Use /bin/bash as interpreter
+    cleanups
 
-2002-08-29 16:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 470515350e07b3d4bfa248a12b2251b27639b2be
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 15 17:09:36 2003 +0000
 
-	* contrib/dhcp-fwd.init: fixed 'restart' command
+    added INSTALL and .X_*
 
-2002-08-29 16:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 050d9c6760cd7dfd61bd26d54e826b8b05f7effe
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 15 17:08:32 2003 +0000
 
-	* m4/changelog.am: rcs2log will be called with '-l 0' now
-	made Makefile a dependency of ChangeLog
+    minor cosmetical changes
 
-2002-08-29 16:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 05e583f296659e912545e43de2a4c00b6d6cc769
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 3 14:14:18 2003 +0000
 
-	* src/main.c: Fixed reverted logic in alloca()-errordetection
+    minor cosmetical changes
 
-2002-08-29 16:06  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit e0d7ff0fc051dae2524642bf6d4dee834e107b25
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 3 14:14:01 2003 +0000
 
-	* README: Updated memory-footprint numbers and documented how they were achieved
+    removed since autogenerated
 
-2002-08-29 15:54  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 222030d484bc31d1bc1176812906513f5a6d6cfb
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 3 14:13:30 2003 +0000
 
-	* README: Removed missing documentation from buglist; we have a man-page
+    fixed 'condrestart'
+    minor cosmetical fixes
 
-2002-08-29 15:50  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 70345da64e94896ca2845b8851d3f356e947e67a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 3 13:32:52 2003 +0000
 
-	* README: Removed resource-limits paragraph from buglist; they can be configured
-	at runtime
+    simplified interface-construction
 
-2002-08-29 15:28  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 1ae814eae9e700127f5381e6c35edd8f293565a7
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 02:22:36 2003 +0000
 
-	* src/wrappers.h: Removed Ealloca() function; it makes no sense to write an error-wrapper
-	around alloca()
+    commented out DHCPFWD_OPTIONS
 
-2002-08-29 15:25  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 92d15298d12a253a6c4b13089708849c63e6ca9f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 02:22:17 2003 +0000
 
-	* src/main.c: FIX: fixed broken usage of alloca()
-	fixed compiler warning
+    modernized
 
-2002-08-29 15:25  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 7f6a6f121dc8d1a14ce22959ce4c201c882548aa
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 02:22:09 2003 +0000
 
-	* src/logging.c: Fixed potential fault when giving out exactly 256 chars
+    fixed typos
 
-2002-08-29 15:24  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit aba7515f3143ecd2a8772e95c654e85e6942ba7b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 02:00:37 2003 +0000
 
-	* src/dhcp.h: Including <assert.h> now
+    allow dots in interface-names; issue reported by Svetlin Simeonov
 
-2002-08-29 15:24  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 098fb56dbe93fa2e77a65061a09bfc43eeffacb2
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 01:55:20 2003 +0000
 
-	* etc/dhcp-fwd.cfg: Local adaptations
+    added autom4te.cache
 
-2002-08-29 15:24  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b759e0bdd82c136ede5770d3a462334f1e933e9d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 01:53:16 2003 +0000
 
-	* m4/ensc_diet.m4: Fixed broken evaluation of the --enable-dietlibc value
+    s!ENABLE_LOGGING!WITH_LOGGING!
 
-2002-08-29 15:23  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f76782ae4b94d91c4b93e53735471ed7cf3736dc
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 01:51:49 2003 +0000
 
-	* compat/if_packet.h, m4/ensc_compat.m4: Do not try to autodetect L2-protocol includes; just use the way suggested
-	in packet(7).
+    moved into precompiled_parser branch
 
-2002-08-29 00:24  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 36cafdd8264f46744a2bba24cb612d340701d030
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 01:51:19 2003 +0000
 
-	* NEWS, configure.ac: Version 0.3.2
+    initial checkin
 
-2002-08-29 00:24  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 7707383b5cc15ff32652f684aea0c9497e533f6e
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 01:48:02 2003 +0000
 
-	* Makefile.am: Added compat/if_packet.h
+    s!ENABLE_LOGGING!WITH_LOGGING!
 
-2002-08-29 00:21  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit ec762d66000e18fc6c89e02723c8bafdecb64ea9
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 01:44:47 2003 +0000
 
-	* src/main.c: Using compatibility-wrapper for <netpacket/packet.h> now
+    removed duplicate initialization
 
-2002-08-29 00:20  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a05569b527a4b695daadee6e26a7eb5fa218dfee
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 01:42:20 2003 +0000
 
-	* src/wrappers.h: Added setsid() wrapper
+    moved precompiled-parser into a separate branch
 
-2002-08-29 00:20  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f5354371440cd9572f7b5b48d0b636742d279611
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 01:39:36 2003 +0000
 
-	* src/cfg.c: - Added code to write pid-file when using -n option
-	- Cleaned up initialization-code by splitting it into smaller functions
-	- setsid() will now be called after forking; reported by Michal Pokrywka
+    initialize parser-table at compile-time
 
-2002-08-29 00:20  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit abf89c3c4b384b19f53ec8bc296b7989f4ee79b6
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 01:37:07 2003 +0000
 
-	* src/cfg.h: - Write pid-file also when using '-n' option
-	- Cleaned up initialization-code by splitting it into smaller functions
+    removed from this branch
 
-2002-08-29 00:18  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 10382973f1b1786a12772ea857d8cc8310c3a9ba
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 01:35:52 2003 +0000
 
-	* m4/ensc_compat.m4: Added check for <netpacket/packet.h>
+    Initial checkin
 
-2002-08-29 00:18  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 5242b9f5b9533e74424362e5d080cebde470a9bc
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jul 1 01:21:27 2003 +0000
 
-	* compat/if_packet.h: initial checkin
+    initialize structures completely
 
-2002-08-28 22:45  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b2e10e140617c2c667d184a15bedd88ac9df6704
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Jun 30 23:32:39 2003 +0000
 
-	* contrib/dhcp-fwd.sysconfig: initial checkin
+    s!ENABLE_LOGGING!WITH_LOGGING!
 
-2002-08-28 22:45  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 7755a59c30995e0c6ce4de6744fb39cb666b193f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Jun 30 23:30:40 2003 +0000
 
-	* Makefile.am, dhcp-forwarder.spec.in, contrib/dhcp-fwd.init: Added /etc/sysconfig/dhcp-fwd
+    fixed last patch
 
-2002-08-28 02:26  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 1d875a1270ec8cbf08dda79a31d4a64acb059910
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Jun 30 23:29:58 2003 +0000
 
-	* doc/dhcp-fwd.man: Documented '-n' switch
+    added --version/--help cli-option
+    minor code cleanups
 
-2002-08-27 21:43  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 2d0babf6bccd356aa815c5f69bc32f26badf8178
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Jun 30 23:25:41 2003 +0000
 
-	* src/cfg.c: - Used getopt() to parse cmdline
-	- Added '-n' option to prevent fork (is currently just an alias of the
-	  already existing '-d' option)
+    major cleanups
 
-2002-08-27 19:59  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 532961f7f8821d86e52749f8fc070c3f35d1c837
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Jun 30 23:24:40 2003 +0000
 
-	* m4/ensc_developing.m4: Made NDEBUG evaluate to true
-	Fixed Typo
+    s!ENABLE_LOGGING!WITH_LOGGING!
+    s!/*@@--namechecks@*/!/*@-namechecks@*/!
 
-2002-08-27 19:58  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d4a09a1d276532ba31958bc7140a4d901459e02b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Jun 30 23:22:53 2003 +0000
 
-	* contrib/dhcp-fwd.conf: Added note about dietlibc and non-files NSS
+    fixed typos
 
-2002-08-27 19:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 45152c32ff63d9be6b36516c95f1cda01428d4a1
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Jun 30 23:20:04 2003 +0000
 
-	* src/dhcp.h: minor formatting changes
+    made it C89 compliant by returning EXIT_SUCCESS in main()
 
-2002-08-27 19:19  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit aad27bdd8cdc3f737349ceec5024e2f6580af48d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Jun 30 23:19:39 2003 +0000
 
-	* src/: cfg.c, cfg.h, parser.c: Allowed non-ethernet interfaces on server-side; thanks to
-	Michal Pokrywka for reporting this
+    added dots-in-iface testcase
 
-2002-08-06 03:44  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 12e1ae8e1c01bcba1ce5bbc1f2675541d11928d3
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri May 2 14:46:55 2003 +0000
 
-	* src/main.c: Remove agent-id option by moving memory; WinNT is complaining when
-	padding it with cdPAD
+    s!/etc!$(sysconfdir)!
 
-2002-08-06 03:42  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit acb6b98619b57aec2974d4f9aef1522a2c8bf98d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Aug 30 12:53:44 2002 +0000
 
-	* src/dhcp.h: Added DHCP_removeOption() function
+    Added '-n' to cmdline-documentation
 
-2002-07-12 15:10  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 86f0a07c86412c253262a15462f1c78f35461b66
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Aug 30 12:34:57 2002 +0000
 
-	* NEWS, README, configure.ac, dhcp-forwarder.spec.in: Version 0.3
+    Made sure, that the last character in the output-string is *always*
+    '\0'
 
-2002-07-12 13:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit cbf9c1ab04d50d24c6286e93affe690e9ff9d5aa
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 16:40:51 2002 +0000
 
-	* src/: cfg.c, output.c, wrappers.h: Fixed mode of newly created files
+    Version 0.4
 
-2002-07-12 13:23  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 885eceb0fb3b8065a929ff129ecb62ba5321f9c8
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 16:40:42 2002 +0000
 
-	* Makefile.am, README, dhcp-forwarder.spec.in,
-	  contrib/dhcp-fwd.conf: Renamed dhcpfwd to dhcp-fwd
+    Added compile-test dir
 
-2002-07-12 12:34  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 581b822d063a87540a72212b9f15a4dc1db0dd11
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 15:40:16 2002 +0000
 
-	* README: Fixed some IPs... just to be correctly...
+    Added test/compile-test
 
-2002-07-12 01:07  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 21cc948488434b73ce99726851ba84e5a164243d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 15:40:07 2002 +0000
 
-	* dhcp-forwarder.spec.in: Typos
-	Added PreReq's
+    initial checkin
 
-2002-07-12 01:07  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 6fa79bc724c6b4cb770cb4db8f4eb61daf321f7c
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 15:39:53 2002 +0000
 
-	* contrib/dhcp-fwd.init: Added config: tag
+    Don't include <config.h> in headers anymore
 
-2002-07-12 00:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 00b8b8e6acec1e92f0098c83a7431ac2ae7fa51b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 15:39:32 2002 +0000
 
-	* NEWS, configure.ac, src/logging.c: Version 0.2.5
+    Use /bin/bash as interpreter
 
-2002-07-12 00:39  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 07d32f22a387e4c3b48f7fbb443742407c7de893
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 14:52:32 2002 +0000
 
-	* test/: parseTest.c, data/parse-test1.out, data/parse-test2.out: Typo
+    fixed 'restart' command
 
-2002-07-12 00:39  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d0789e0b9cd550bef3ddeaf2609b0449e575806a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 14:51:35 2002 +0000
 
-	* src/wrappers.h: Reworked broken *etrlimit() prototype hack
+    Fixed reverted logic in alloca()-errordetection
 
-2002-07-12 00:38  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 5d0aa36cbf2d7b9c558ade1a4ad9a5db786b85fa
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 14:06:34 2002 +0000
 
-	* src/output.c: Fixed formating bug in writeMsgTimestamp()
-	Fixed assigning of logfile-fd
+    Updated memory-footprint numbers and documented how they were achieved
 
-2002-07-12 00:37  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 036559c91dec779e173d4435bbb93e352a4512bd
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 13:54:49 2002 +0000
 
-	* contrib/dhcp-fwd.conf, doc/dhcp-fwd.man: Documented 'logfile' option
+    Removed missing documentation from buglist; we have a man-page
 
-2002-07-11 19:04  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 75af8dc0f7786566b6f939e518d8a118adacf2a7
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 13:50:58 2002 +0000
 
-	* Makefile.am: Rearranged sources to prevent calling splint with duplicate filenames
+    Removed resource-limits paragraph from buglist; they can be configured
+    at runtime
 
-2002-07-11 19:04  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 0402bd9d4671559f4ecde24d09cbcf2b33f1ce30
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 13:28:47 2002 +0000
 
-	* m4/ensc_compat.m4: Added test for broken set*limit() headers
+    Removed Ealloca() function; it makes no sense to write an error-wrapper
+    around alloca()
 
-2002-07-11 19:02  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d8b3ffb8c82a6ace03a076568d5ed7fb35e9eff4
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 13:25:47 2002 +0000
 
-	* contrib/dhcp-fwd.conf: Added sample configuration for 'ulimit' option
+    FIX: fixed broken usage of alloca()
+    fixed compiler warning
 
-2002-07-11 19:02  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b80152560b61b93a8f0aa08fb92392cbbdc16ddc
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 13:25:06 2002 +0000
 
-	* src/: logging.c, logging.h, main.c, recvfromflags.c,
-	  recvfromflags.h: Applied changes of the logging-mechanism
+    Fixed potential fault when giving out exactly 256 chars
 
-2002-07-11 18:59  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit dd9817eda62e9ca2056514902d0c381a024f870a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 13:24:43 2002 +0000
 
-	* src/: output.c, output.h: Added logfile support
+    Including <assert.h> now
 
-2002-07-11 18:58  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 5fc799f88e40be0fb7b5906145c31a235e42d915
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 13:24:23 2002 +0000
 
-	* src/parser.c: Put single assert() into a block to make g++ silent
+    Local adaptations
 
-2002-07-11 18:57  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit fcddab90e2f5cd49b7ea8497af2dbecadc2a501e
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Aug 29 13:23:31 2002 +0000
 
-	* src/wrappers.h: Added Edup*() and Eopen() wrappers
-	Added workaround for broken glibc setrlimit() prototypes
+    Do not try to autodetect L2-protocol includes; just use the way suggested
+    in packet(7).
 
-2002-07-11 18:56  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 908d2a2e5aa5f83c35b6a281bff1eb8ab6c6d534
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Aug 28 22:24:13 2002 +0000
 
-	* test/parseTest.c: Added missing <stdlib.h> include
-	Detect calling without arguments
+    Version 0.3.2
 
-2002-07-11 18:44  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3124bd0aeaa6bab4a9f7a0b63265e508b90a42b7
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Aug 28 22:24:02 2002 +0000
 
-	* src/dhcp.h: Fixed cast in DHCP_zeroOption()
+    Added compat/if_packet.h
 
-2002-07-11 18:43  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a7e34f0566384ca9866cf90905255e0ef84bd6e5
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Aug 28 22:21:16 2002 +0000
 
-	* src/cfg.c: Removed @bounds*@ annotations; they are not supported yet...
-	Added logfile-support
+    Using compatibility-wrapper for <netpacket/packet.h> now
 
-2002-07-11 18:42  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 02050cd763980d35753ee4cc8d61fb65a3387ad7
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Aug 28 22:20:44 2002 +0000
 
-	* doc/dhcp-fwd.man: Added documentation for 'ulimit' config-option
+    Added setsid() wrapper
 
-2002-07-11 14:19  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 90ff25f46985e400d3291b890e851b16e699640f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Aug 28 22:20:26 2002 +0000
 
-	* src/: cfg.c, wrappers.h: SECFIX: Drop supplemental groups also
+    - Write pid-file also when using '-n' option
+    - Cleaned up initialization-code by splitting it into smaller functions
 
-2002-07-11 13:19  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit e6ad75d662f49987ab2fad956b241e3a9524deef
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Aug 28 22:20:26 2002 +0000
 
-	* NEWS, configure.ac: Version 0.2.4
+    - Added code to write pid-file when using -n option
+    - Cleaned up initialization-code by splitting it into smaller functions
+    - setsid() will now be called after forking; reported by Michal Pokrywka
 
-2002-07-11 13:18  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d30f797c0b4aa1f1f3401685713feed34d797952
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Aug 28 22:18:16 2002 +0000
 
-	* test/Makefile.am: Use ..src/* objects directly
+    initial checkin
 
-2002-07-11 13:18  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 98b7c3d259f8e2da8cd353fd95dc2a9bac489b0d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Aug 28 20:45:53 2002 +0000
 
-	* test/: parseTest.c, data/parse-test1.out: Fixed handling of RLIM_INFINITY
+    initial checkin
 
-2002-07-10 11:59  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit dfd4ba9af043a880fb92922a07072d096429cff8
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Aug 28 20:45:45 2002 +0000
 
-	* src/logging.c: Added missing '#include <stdarg.h>'
+    Added /etc/sysconfig/dhcp-fwd
 
-2002-07-10 11:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 7b80499d17b53d6b58fc28e736d18ee1a0e763c9
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Aug 28 00:26:44 2002 +0000
 
-	* src/: assertions.h, compat.h, dhcp.h, inet.h, logging.c,
-	  logging.h, main.c, output.c, output.h, parser.h, recvfromflags.h,
-	  splint.h, splint_compat.h, util.h, wrappers.h: Refined splint annotations to allow -strict checking
+    Documented '-n' switch
 
-2002-07-10 11:39  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 9c35b0e5c20d02db66dfba0c12d5edd2ab3847d1
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Aug 27 19:43:59 2002 +0000
 
-	* src/parser.c: Made ulimits configurably at runtime
-	Made parsing more robust
-	Extended integer parsing
-	Refined splint annotations to allow -strict checking
+    - Used getopt() to parse cmdline
+    - Added '-n' option to prevent fork (is currently just an alias of the
+      already existing '-d' option)
 
-2002-07-10 11:20  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 501d5d2c497dffb58d963856ddd3315d7c0b05c4
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Aug 27 17:58:55 2002 +0000
 
-	* src/: cfg.c, cfg.h: Made ulimits configurably at runtime
-	Refined splint annotations to allow -strict checking
+    Added note about dietlibc and non-files NSS
 
-2002-07-10 11:18  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit ebc8f732c01400f72424c884b38b7605a82b564e
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Aug 27 17:40:26 2002 +0000
 
-	* test/: .cvsignore, Makefile.am, parseTest.c, writeTest.c,
-	  data/parse-test1.in, data/parse-test1.out, data/parse-test2.in,
-	  data/parse-test2.out, data/write.out, cmpout-script: Initial checkin
+    minor formatting changes
 
-2002-07-10 04:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d73c5e87425cfe78d6d64a2a3362333689b62fab
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Aug 27 17:19:45 2002 +0000
 
-	* src/ulimit_codes.h: Initial checkin
+    Allowed non-ethernet interfaces on server-side; thanks to
+    Michal Pokrywka for reporting this
 
-2002-07-10 04:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b09e66eae31a6f0011e51e79e27c38bd5a0f6d0c
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Aug 6 01:44:38 2002 +0000
 
-	* m4/ensc_developing.m4: Made NDEBUG really a boolean...
+    Remove agent-id option by moving memory; WinNT is complaining when
+    padding it with cdPAD
 
-2002-07-10 04:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 02247f1c2c0bd60b51078c0cdd0e6bae6ce3b742
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Aug 6 01:42:53 2002 +0000
 
-	* splint.conf: Adjusted settings to our needs
+    Added DHCP_removeOption() function
 
-2002-07-10 04:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit fdc32030c143dddc04b384e89fde613a310c6766
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 12 13:12:52 2002 +0000
 
-	* configure.ac: Added testsuite files
-	Refined splint options in config.h
+    Version 0.3
 
-2002-07-10 04:50  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 34922c64f3845fa15732d8296985f63dcc12556a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 12 11:52:54 2002 +0000
 
-	* Makefile.am: Added src/ulimit_codes.h
+    Fixed mode of newly created files
 
-2002-07-05 17:02  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f58d625e48bf7cb7d978ac1ce063df7b669fec93
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 12 11:23:31 2002 +0000
 
-	* m4/ensc_compat.m4: Added '-pedantic' to cover some more broken cases...
+    Renamed dhcpfwd to dhcp-fwd
 
-2002-07-05 17:01  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 424acc3d757061d4926eb5f4b1ace9b19bee1187
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 12 10:34:46 2002 +0000
 
-	* src/cfg.c: Made syslimits struct static
+    Fixed some IPs... just to be correctly...
 
-2002-07-05 16:18  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a7cab9a6c6c2b33be8c5c043e82dc14c57c363f4
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 23:07:50 2002 +0000
 
-	* splint.conf: Define RLIMIT_LOCKS to prevent preprocessor warning
+    Typos
+    Added PreReq's
 
-2002-07-05 16:17  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 0d151e3e2b1618ee28b2683d154d7e04d2263ab2
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 23:07:04 2002 +0000
 
-	* src/cfg.c: Made syslimits global
+    Added config: tag
 
-2002-07-05 15:48  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 30f207fafbec7d2862b8b5a7a904e8a162669c85
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 22:40:51 2002 +0000
 
-	* configure.ac, m4/ensc_compat.m4, src/cfg.c, src/compat.h,
-	  src/main.c, src/recvfromflags.c: Fixes to compile with egcs-1.1.2
+    Version 0.2.5
 
-2002-07-05 15:10  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit bcc899f7b3be56047d343a5517badbd40cc9acf9
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 22:39:39 2002 +0000
 
-	* m4/ensc_compat.m4: Initial checkin
+    Typo
 
-2002-07-05 15:09  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 33b548f1aa932bd609533ed9ee205db81f9c3eff
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 22:39:22 2002 +0000
 
-	* src/.cvsignore: Added .*.swp files
+    Reworked broken *etrlimit() prototype hack
 
-2002-07-05 15:09  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 82848239edce66b4bffbe36574695a942f057bca
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 22:38:48 2002 +0000
 
-	* Makefile.m4.am, m4/ensc_diet.m4, src/compat.h: in_addr_t related fixes to compile with borken libc's
+    Fixed formating bug in writeMsgTimestamp()
+    Fixed assigning of logfile-fd
 
-2002-07-05 14:33  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 77df1dc94f9053a5e34950ae6ca98f554ee9c58d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 22:37:50 2002 +0000
 
-	* m4/changelog.am: Adopted to behavior of recent rcs2log
+    Documented 'logfile' option
 
-2002-07-05 14:18  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 685ddfdb86df68aa363f0bf7ca614f94758a66e2
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 17:04:56 2002 +0000
 
-	* NEWS, configure.ac, dhcp-forwarder.spec.in: Version 0.2.3
+    Rearranged sources to prevent calling splint with duplicate filenames
 
-2002-07-05 14:17  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 63b82a07af4a8489ac8f9a743b1ef76cef05f1cd
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 17:02:40 2002 +0000
 
-	* README: Updated memory-footprints
+    Added sample configuration for 'ulimit' option
 
-2002-07-05 14:15  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit c3e6337640739b93d62624017d161ea9d7bd7c1b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 17:02:20 2002 +0000
 
-	* contrib/dhcp-fwd.conf: Documented 'ip' field
-	Fixed bad server ip
+    Applied changes of the logging-mechanism
 
-2002-07-05 13:57  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 21d7393eb3fef3460a73fe61b754786d4445a61e
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 16:59:42 2002 +0000
 
-	* .cvsignore, src/.cvsignore: Added some splint-related files
+    Added logfile support
 
-2002-07-05 13:57  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 634c56922c298c9ba6a75ac639ab1fdeb36ffd39
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 16:58:47 2002 +0000
 
-	* README: Minor fixes
+    Put single assert() into a block to make g++ silent
 
-2002-07-05 13:56  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 1f07c51a4576f8a68cc73303da14b70a0591105d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 16:57:17 2002 +0000
 
-	* src/splint_compat.h: Added vsnprintf() prototype
+    Added Edup*() and Eopen() wrappers
+    Added workaround for broken glibc setrlimit() prototypes
 
-2002-07-05 13:55  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 11f09d163561540c403809aeacb4390e87da0b66
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 16:56:27 2002 +0000
 
-	* src/logging.c: Added lot of (probably unnecessary) code to make buffer-overflows
-	impossible
+    Added missing <stdlib.h> include
+    Detect calling without arguments
 
-2002-07-05 13:46  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d72b837f237941e3d0509ed1c4004f05f3af17f4
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 16:44:20 2002 +0000
 
-	* src/dhcp.h: Added splint annotations
+    Fixed cast in DHCP_zeroOption()
 
-2002-07-05 13:46  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a21b649195f5fc9cc072811250b18899b800a7c9
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 16:43:54 2002 +0000
 
-	* src/main.c: use if_real_ip instead of if_ip in lookupFD()
+    Removed @bounds*@ annotations; they are not supported yet...
+    Added logfile-support
 
-2002-07-05 13:45  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 44a74cb12faf882bb6ed1ab41b970de3abb9a3bc
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 16:42:56 2002 +0000
 
-	* src/cfg.h: - Added if_real_ip field to struct InterfaceInfo to work correctly
-	  with modified 'giaddr' (IP_PKTINFO returns the real ip and not the
-	  ip the packet was sent to)
+    Added documentation for 'ulimit' config-option
 
-2002-07-05 13:45  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit c267d9efbb7ef0037850b82d2ac2d22609803f6e
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 12:19:07 2002 +0000
 
-	* src/cfg.c: - Added if_real_ip field to struct InterfaceInfo to work correctly
-	  with modified 'giaddr' (IP_PKTINFO returns the real ip and not the
-	  ip the packet was sent to)
-	- Removed FSIZE and NPROC limits since they break logging and fork()
-	  on some systems
-	- Added diagnostic on failed fork
-	- limit resources in child only; workarounds some problems with fork()
+    SECFIX: Drop supplemental groups also
 
-2002-07-05 05:05  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 4b407deb4580f6e4633766f28058e2960c8e1e3b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 11:19:27 2002 +0000
 
-	* NEWS, configure.ac: Version 0.2.2
+    Version 0.2.4
 
-2002-07-05 05:05  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 8000f25adc91260c5af23e03579082730d1e1c60
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 11:18:44 2002 +0000
 
-	* Makefile.am: Added splint-rules
+    Use ..src/* objects directly
 
-2002-07-05 05:04  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 1a82c7d482758b4106e77c917d045243a52d47ea
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 11 11:18:00 2002 +0000
 
-	* README: Added some documentation regarding user and chroot setup
-	Added resource-limits to the test-list
-	Added sample configuration
+    Fixed handling of RLIM_INFINITY
 
-2002-07-05 05:03  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit dcd13196f03dcb00e72ab31add6303719d567ca4
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jul 10 09:59:30 2002 +0000
 
-	* doc/dhcp-fwd.man: Documented 'ip' option
+    Added missing '#include <stdarg.h>'
 
-2002-07-05 05:03  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d5ca3fddb261a1fdcf195f2a0c5ee8153cb28ad3
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jul 10 09:40:13 2002 +0000
 
-	* m4/ensc_diet.m4: Added ENSC_DIET_CHECK_IN_ADDR_T macro to check existence of in_addr_t
-	type
+    Refined splint annotations to allow -strict checking
 
-2002-07-05 05:02  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 4b460b84e5fc5a9e44b2d1f0c4b96fe677f9e819
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jul 10 09:39:18 2002 +0000
 
-	* src/wrappers.h: Added Esetrlimit() wrapper
+    Made ulimits configurably at runtime
+    Made parsing more robust
+    Extended integer parsing
+    Refined splint annotations to allow -strict checking
 
-2002-07-05 05:02  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f5b75a7d59cb26df615dd78be08e0a831afa992f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jul 10 09:20:51 2002 +0000
 
-	* src/splint_compat.h: Added RLIMIT_* and INADDR_NONE constants
+    Made ulimits configurably at runtime
+    Refined splint annotations to allow -strict checking
 
-2002-07-05 05:02  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3f34590779f52498a0b41ba1c2f01cb8801a4e70
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jul 10 09:18:41 2002 +0000
 
-	* src/recvfromflags.c: Fixed msg.msg_iovlen (commited inadvertently a splint-testcase)
+    Initial checkin
 
-2002-07-05 05:01  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 6f332f6153cfc7e63ca7aaa014564ef1b53cc093
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jul 10 02:52:41 2002 +0000
 
-	* src/parser.c: Added support for 'ip' config option
+    Initial checkin
 
-2002-07-05 05:00  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit eb2c8f48aa4f3b57c1af4178bb59f9fdf7a74d5c
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jul 10 02:52:14 2002 +0000
 
-	* src/main.c: Changed fd_set -> fdset paramname to fixed some compilation issues
-	Fixed acADD_ID case
-	Fixed handling of packet with our giaddr
+    Adjusted settings to our needs
 
-2002-07-05 04:59  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d4abd8d7a8ce8143d4c3316710618cd8826f62ac
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jul 10 02:51:10 2002 +0000
 
-	* src/logging.c: Fixed length-calculation
-	Using strn* functions now
+    Added testsuite files
+    Refined splint options in config.h
 
-2002-07-05 04:58  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit fac8c9d6b67091210b6fb786ec9bd2d474d462ed
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jul 10 02:50:40 2002 +0000
 
-	* src/dhcp.h: Fixed bad endianess for bcast-flags
-	Fixed broken and server-killing recursion in DHCP_nextSingleOptionConst
+    Added src/ulimit_codes.h
 
-2002-07-05 04:57  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 4d045e7d90885539cd8aad50209af9eaa8bddeee
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 15:01:51 2002 +0000
 
-	* src/compat.h: Fixed in_addr_t detection
+    Made syslimits struct static
 
-2002-07-05 04:57  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 6da1e5c3a35ecd7c7b756deed643bf7df54da93f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 14:18:44 2002 +0000
 
-	* src/cfg.h: Fixed include for PATH_MAX
+    Define RLIMIT_LOCKS to prevent preprocessor warning
 
-2002-07-05 04:56  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 5a27ff3f5b43747fad47bfac6d68cad59ab1d4e9
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 14:17:44 2002 +0000
 
-	* src/cfg.c: Added support for setting giaddr
-	Calling setrlimit() after initialization
+    Made syslimits global
 
-2002-07-04 18:57  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3456ef0442ee9f4479f40a1f4f646c00a996e2cf
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 13:48:19 2002 +0000
 
-	* configure.ac: Added include-guards in config.h
-	Added check for splint
+    Fixes to compile with egcs-1.1.2
 
-2002-07-04 18:56  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 1976ceb373b7c692aab1c8975df82da724fdc82e
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 13:09:57 2002 +0000
 
-	* splint.conf: Fixed params
+    Added .*.swp files
 
-2002-07-04 18:56  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f3dfcace1128fa0f6ad5ade5d882ff54fe1262ed
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 13:09:36 2002 +0000
 
-	* src/logging.c: Fixed bad format-specifier in printf()
+    in_addr_t related fixes to compile with borken libc's
 
-2002-07-04 18:55  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b1124ec66201866e659f0a53491a569dc779c37c
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 12:18:25 2002 +0000
 
-	* src/: main.c, parser.c: Added/corrected/changed lot of splint annotations
-	Renamed config.* to cfg.*
+    Version 0.2.3
 
-2002-07-04 18:55  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 604011930e3f5aa531be370531ac0e5537bcc2b1
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 12:17:07 2002 +0000
 
-	* src/: assertions.h, compat.h, dhcp.h, inet.h, parser.h,
-	  recvfromflags.c, recvfromflags.h, splint.h, splint_compat.h,
-	  wrappers.h: Added/corrected/changed lot of splint annotations
+    Updated memory-footprints
 
-2002-07-04 18:54  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f7ac1e467c8363c169ca67f6bddc494cd20f1a09
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 12:15:27 2002 +0000
 
-	* src/: cfg.c, cfg.h, config.c[DEAD], config.h[DEAD]: Renamed config.* to cfg.*; prevents naming conflicts in splint
-	Added/corrected/changed lot of splint annotations
+    Documented 'ip' field
+    Fixed bad server ip
 
-2002-07-04 12:42  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d86ea7376abbab481b2a133d44f2d51c833a82ae
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 11:57:43 2002 +0000
 
-	* src/splint.h: Initial checkin
+    Added some splint-related files
 
-2002-07-04 12:42  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 98bdd9b3ab1fc0f549de56ac7416511ba526a14b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 11:57:02 2002 +0000
 
-	* src/splint_compat.h: Added a lot of functions, macros and typedefs being erroneously in
-	lib/unix.h
+    Minor fixes
 
-2002-07-04 12:41  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b77b73518d0be0e6260984966c8de49eebeab723
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 11:56:01 2002 +0000
 
-	* src/util.h: Removed bool-typedef (now in compat.h)
+    Added vsnprintf() prototype
 
-2002-07-04 12:39  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 8744467e6470c0a66e2cafcddccae45fd67ffa6f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 11:55:44 2002 +0000
 
-	* src/parser.h: Fixed splint annotations
+    Added lot of (probably unnecessary) code to make buffer-overflows
+    impossible
 
-2002-07-04 12:39  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 1115e9123c78b25b4b18eb5eda77959588f6984d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 11:46:50 2002 +0000
 
-	* src/: parser.c, recvfromflags.c, recvfromflags.h, wrappers.h: Splint related fixes and annotations
+    Added splint annotations
 
-2002-07-04 12:38  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 824f330d759a2968be81e8eae4d37f5f1f0c673f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 11:46:37 2002 +0000
 
-	* src/: output.c, main.c: FIX: remove agent-info in REPLY's
-	Adapted changes in the dhcp.flags field
-	Splint related fixes and added annotations
-	Minor code cleanups
+    use if_real_ip instead of if_ip in lookupFD()
 
-2002-07-04 12:36  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3e25feca6bc0ac9c993839edf7f3e39826b2ac4f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 11:45:53 2002 +0000
 
-	* src/logging.c: Fixed bad behavior when packet is neither a REPLY nor REQUEST
-	Added some error-handling to satisfy splint
-	Splint related fixes and added annotations
+    - Added if_real_ip field to struct InterfaceInfo to work correctly
+      with modified 'giaddr' (IP_PKTINFO returns the real ip and not the
+      ip the packet was sent to)
 
-2002-07-04 12:33  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 27268c18a289ffac4b1acf765e3c4f32532138f2
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 11:45:44 2002 +0000
 
-	* src/dhcp.h: - Removed difficult bitfield construct of the dhcp.flags field; it makes
-	  too much work to cover any endianess...
-	- Added DHCP_zeroOption() function
-	- Splint related fixes and added annotations
+    - Added if_real_ip field to struct InterfaceInfo to work correctly
+      with modified 'giaddr' (IP_PKTINFO returns the real ip and not the
+      ip the packet was sent to)
+    - Removed FSIZE and NPROC limits since they break logging and fork()
+      on some systems
+    - Added diagnostic on failed fork
+    - limit resources in child only; workarounds some problems with fork()
 
-2002-07-04 12:32  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 958aed8cab8d12428402da0b21f321a1175572d2
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 03:05:20 2002 +0000
 
-	* src/: config.h, inet.h: Splint related fixes and added annotations
+    Version 0.2.2
 
-2002-07-04 12:31  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 63946f924f002b021550846cf2250f7cc3659ca6
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 03:05:06 2002 +0000
 
-	* src/config.c: Closing fd 0 now
-	Splint related fixes
-	Minor code cleanups
+    Added splint-rules
 
-2002-07-04 12:30  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 09720f624f4e0b687e2dc7e7ca4dde3d86a3fdcc
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 03:04:49 2002 +0000
 
-	* src/compat.h: Splint related fixes
+    Added some documentation regarding user and chroot setup
+    Added resource-limits to the test-list
+    Added sample configuration
 
-2002-07-04 03:31  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 667ab53e976ddfee3a6cecd34e636179f061cc21
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 03:03:45 2002 +0000
 
-	* m4/substrule.am: s!substrule!substvar!
+    Documented 'ip' option
 
-2002-07-04 03:31  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 589b783d0be57e25a0b003e7409990520bfb0ee4
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 03:02:57 2002 +0000
 
-	* m4/ensc_developing.m4: Make NDEBUG a boolean ('(!0)')to make splint quiet
+    Added Esetrlimit() wrapper
 
-2002-07-04 03:30  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3b4790a7c3198a0e56c56a6aa6fb02f100c4efb0
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 03:02:42 2002 +0000
 
-	* configure.ac: Minor cosmetical changes
+    Added RLIMIT_* and INADDR_NONE constants
 
-2002-07-04 03:30  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 167494dc7b9cd144a5d85794b314d8926a898e07
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 03:02:18 2002 +0000
 
-	* Makefile.m4.am: Added substrule.am
+    Fixed msg.msg_iovlen (commited inadvertently a splint-testcase)
 
-2002-07-04 03:30  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit afb5deabdcb2aee585ed55a52253175e19ef69a5
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 03:01:11 2002 +0000
 
-	* Makefile.am: Added splint-rules
+    Added support for 'ip' config option
 
-2002-07-04 03:29  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 077be70bb129ec9603dc3f0581b5e9f627c40b9a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 03:00:50 2002 +0000
 
-	* INSTALL: Updated to text of automake-1.6.2
+    Changed fd_set -> fdset paramname to fixed some compilation issues
+    Fixed acADD_ID case
+    Fixed handling of packet with our giaddr
 
-2002-06-28 18:38  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 2d9c5c487d19432f8cacd6b99d65372540e29cd9
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 02:59:07 2002 +0000
 
-	* src/parser.c: FIX: closing cfg-file after parsing it
+    Fixed length-calculation
+    Using strn* functions now
 
-2002-06-17 23:21  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 13adf687df7b46b7654f1ad9c75d64f247967f75
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 02:58:31 2002 +0000
 
-	* dhcp-forwarder.spec.in: Added full URL to Source0
-	Call 'service ... restart' in %postun
-	Added some doc regarding the homedir
+    Fixed bad endianess for bcast-flags
+    Fixed broken and server-killing recursion in DHCP_nextSingleOptionConst
 
-2002-06-17 23:20  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 0baac9a0cf19fcc366b21b6aebf86e8e636dc6a7
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 02:57:37 2002 +0000
 
-	* Makefile.am, m4/substrule.am: Generalized and outsourced the sed-substitution stuff
+    Fixed in_addr_t detection
 
-2002-06-17 23:06  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b780ab1cb1526c5c5815a405e30b634b27fe4b81
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 02:57:11 2002 +0000
 
-	* configure.ac: Added some tests suggested by 'autoscan'
+    Fixed include for PATH_MAX
 
-2002-06-14 19:37  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit ee7370faf954b41a9d686634f355bd52ef78fea1
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jul 5 02:56:55 2002 +0000
 
-	* NEWS, configure.ac: Version 0.2
+    Added support for setting giaddr
+    Calling setrlimit() after initialization
 
-2002-06-14 19:36  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit dc291b8895407f8491eafb0bb1d82451273904f6
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 16:57:19 2002 +0000
 
-	* dhcp-forwarder.spec.in: Added mandir
+    Added include-guards in config.h
+    Added check for splint
 
-2002-06-14 19:36  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 9247d6c44f8a3831f982d2e81c8f5b367e94080b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 16:56:14 2002 +0000
 
-	* README: Updated
+    Fixed params
 
-2002-06-14 19:36  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 082d91d5bd9476e3422e5eb7bcd26befeaf35df1
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 16:56:03 2002 +0000
 
-	* Makefile.am: Added man-page
+    Fixed bad format-specifier in printf()
 
-2002-06-14 19:36  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit e4ac7d7c58892830bf60d8e0b6fc510382faacea
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 16:55:48 2002 +0000
 
-	* doc/: .cvsignore, dhcp-fwd.man: Initial checkin
+    Added/corrected/changed lot of splint annotations
+    Renamed config.* to cfg.*
 
-2002-06-14 14:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 7bb17bbf516365a7fa31cf05be919a1194b828c6
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 16:55:15 2002 +0000
 
-	* NEWS, configure.ac: Version 0.1.3
+    Added/corrected/changed lot of splint annotations
 
-2002-06-14 14:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 21d2c93d24c333be8c6dbbbd321e6c2773ba6b98
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 16:54:02 2002 +0000
 
-	* .cvsignore: Added config.cache
+    Renamed config.* to cfg.*; prevents naming conflicts in splint
+    Added/corrected/changed lot of splint annotations
 
-2002-06-14 14:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 05489b6b938d142578aa7523cfeb120cc24b5204
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 10:42:43 2002 +0000
 
-	* INSTALL: Added hint about README
+    Initial checkin
 
-2002-06-14 14:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3422d05d0afc76f9406bc37b13f8f7693e8512d7
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 10:42:33 2002 +0000
 
-	* README: Updated memory footprints
-	Added and corrected doc
+    Added a lot of functions, macros and typedefs being erroneously in
+    lib/unix.h
 
-2002-06-14 14:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b907bfe18a14adf47896646c3370630c17585a46
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 10:41:36 2002 +0000
 
-	* m4/ensc_diet.m4: Do not cache ensc_use_dietlibc anymore
-	Cache setting of the DIET environment variable
-	Autodetect dietlibc
+    Removed bool-typedef (now in compat.h)
 
-2002-06-14 12:54  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit fd872d1868354ade8007272e06cc3df249c5aa1f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 10:40:57 2002 +0000
 
-	* .cvsignore: Added temporary www-files
+    Splint related fixes and annotations
 
-2002-06-14 12:53  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 263ea9fbb4982b032c08b4e47ab2fafbea5be919
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 10:39:39 2002 +0000
 
-	* configure.ac: Requires automake-1.6 now
-	Fixed '--disable-dietlibc' case
+    Fixed splint annotations
 
-2002-06-14 12:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit beabf12ad509ddd6d97cc9241d1bb2160ea83967
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 10:38:50 2002 +0000
 
-	* README: Added INSTALLATION section
-	Beautified
+    FIX: remove agent-info in REPLY's
+    Adapted changes in the dhcp.flags field
+    Splint related fixes and added annotations
+    Minor code cleanups
 
-2002-06-14 12:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 8dd844d7c8fc802128b26df5963e6e96d99a4ce5
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 10:36:17 2002 +0000
 
-	* Makefile.am: Added www-distribution stuff
+    Fixed bad behavior when packet is neither a REPLY nor REQUEST
+    Added some error-handling to satisfy splint
+    Splint related fixes and added annotations
 
-2002-06-14 12:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 8e94450227d64bbe981a73bf6a905ad7c76163b0
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 10:34:00 2002 +0000
 
-	* ChangeLog.sed: Added me
+    Splint related fixes and added annotations
 
-2002-06-13 13:07  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 1c98030f659edae2cbd18967eb03c7f9f9924a08
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 10:33:52 2002 +0000
 
-	* configure.ac: Version 0.1
+    - Removed difficult bitfield construct of the dhcp.flags field; it makes
+      too much work to cover any endianess...
+    - Added DHCP_zeroOption() function
+    - Splint related fixes and added annotations
 
-2002-06-13 13:07  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 31c81cab06d542e38659164ec6a66a0635f6b68c
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 10:31:46 2002 +0000
 
-	* dhcp-forwarder.spec.in: Added '--without dietlibc' option
-	Added description
+    Closing fd 0 now
+    Splint related fixes
+    Minor code cleanups
 
-2002-06-13 13:06  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 20c7e04277e8d49d7fc37c34bf509594b5a5337b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 10:30:35 2002 +0000
 
-	* Makefile.am, Makefile.m4.am: Added gpgsig.am
+    Splint related fixes
 
-2002-06-13 13:06  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a8e0d93679318ff611b6e52c59f3ff366f31caa6
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 01:30:47 2002 +0000
 
-	* m4/: diet.am, ensc_diet.m4: Fixed usage of DIET so 'gcc' instead of ' gcc' will be executed when
-	disabling dietlibc
+    Minor cosmetical changes
 
-2002-06-13 13:05  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 01718f7afed16a34e195b30b540f361df51cdb2a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 01:30:16 2002 +0000
 
-	* m4/gpgsig.am: initial checkin
+    Added substrule.am
 
-2002-06-12 22:12  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 2ada564fd5b200de1c2cdae2020a788850a87940
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 01:30:00 2002 +0000
 
-	* src/parser.c: Fixed EXITFATAL not to show trailing '\0' in messages
+    Added splint-rules
 
-2002-06-12 22:11  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 649d22bd6382c104527a0c6a3a7b3444ee642ef3
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jul 4 01:29:41 2002 +0000
 
-	* src/output.c: Minor code cleanups
+    Updated to text of automake-1.6.2
 
-2002-06-12 22:11  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 15264cdaafba590064c92f09294a60c8a7fbe9f9
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 28 16:38:01 2002 +0000
 
-	* src/config.c: Added showHelp()/showVersion() functions
-	Fixed broken pidfile stuff
+    FIX: closing cfg-file after parsing it
 
-2002-06-12 22:10  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit bcbb9d32a802aaf9640ef901bfb6313db99520bc
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Jun 17 21:21:57 2002 +0000
 
-	* README: Added some doc
+    Added full URL to Source0
+    Call 'service ... restart' in %postun
+    Added some doc regarding the homedir
 
-2002-06-12 11:48  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d9a013c1d3444ae51d0d32149481b6b88abde8bb
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Jun 17 21:20:54 2002 +0000
 
-	* src/.cvsignore: Initial checkin
+    Generalized and outsourced the sed-substitution stuff
 
-2002-06-12 11:47  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit e23d80108c82a06bc2fe1bc1afcf765da219fa82
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Mon Jun 17 21:06:18 2002 +0000
 
-	* src/main.c: Fixed hwtype recognition (again...)
+    Added some tests suggested by 'autoscan'
 
-2002-06-12 02:53  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 00eb30deb307e98befe0766ee1a9f95493db7baf
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 17:37:42 2002 +0000
 
-	* src/config.c: Beautified
+    Version 0.2
 
-2002-06-12 02:53  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit d708029fd85b4a39a86b026ae337012ac04524b1
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 17:36:50 2002 +0000
 
-	* .cvsignore: Added ./compile
+    Added mandir
 
-2002-06-12 02:53  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 98619a5c9ff337748be738b7deb244d1abe1ee28
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 17:36:36 2002 +0000
 
-	* src/logging.c: Initial checkin
+    Updated
 
-2002-06-12 02:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 6f53282787cdb843e99cec3d5e0fe245ebda4f10
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 17:36:23 2002 +0000
 
-	* src/wrappers.h: Made code more deterministic
-	Added local variables
+    Added man-page
 
-2002-06-12 02:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit c53b2c541a81e09e3b26459e0a3fa28c4d52578e
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 17:36:09 2002 +0000
 
-	* src/recvfromflags.h: Beautified code
-	Added local variables
+    Initial checkin
 
-2002-06-12 02:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit cad18e51f940adfab2d6965dcf1614b7e75075ff
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 12:52:57 2002 +0000
 
-	* src/recvfromflags.c: Added some doc
-	Beautified code
-	Added local variables
+    Version 0.1.3
 
-2002-06-12 02:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3f90a472adb01eb202c2f66ee244e041572176f2
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 12:52:44 2002 +0000
 
-	* src/main.c: Fixed logging
-	Added check if BOOTREPLY comes from an interface with servers
-	Added some doc
-	Removed printf()'s
-	Fixed hwtype-check
-	Removed unnecessary (and probably wrong) compiler hints
+    Added config.cache
 
-2002-06-12 02:44  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f5d1f6120ea1bb51aa257a76872b03eac6c6fc72
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 12:52:35 2002 +0000
 
-	* src/logging.h: Added local variables
-	Added logDHCPPackage() prototype
+    Added hint about README
 
-2002-06-12 02:44  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 5b8782c7d4d4a0076581decadf5bba6fc146348e
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 12:52:07 2002 +0000
 
-	* src/dhcp.h: Added local variables
-	Fixed #include's
+    Updated memory footprints
+    Added and corrected doc
 
-2002-06-12 02:43  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a6f4d86acebf512de0f0ae85b219ff78c5951b55
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 10:54:22 2002 +0000
 
-	* src/: compat.h, util.h: Added local variables
-	Moved in_addr_t typedef from util.h to compat.h
+    Added temporary www-files
 
-2002-06-12 02:42  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 30a3efcfdee2c017c0b0b477e39a5f84f1fe3d8f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 10:53:33 2002 +0000
 
-	* src/: assertions.h, config.h, inet.h, output.c, output.h,
-	  parser.h, splint_compat.h: Added local variables
+    Requires automake-1.6 now
+    Fixed '--disable-dietlibc' case
 
-2002-06-12 02:41  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit be35504f7756ddc0e6bdf9d26f6b31e8038b6d75
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 10:52:59 2002 +0000
 
-	* m4/ensc_diet.m4: Corrected namespace of variables
+    Added INSTALLATION section
+    Beautified
 
-2002-06-12 02:41  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3c9653ede1e01e84b28bd086df2e5c3b20a19e4b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 10:51:34 2002 +0000
 
-	* contrib/dhcp-fwd.conf: Added documentation
+    Added www-distribution stuff
 
-2002-06-12 02:41  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 17735e0a3c4053e8772c3247d8076a4d72df30ff
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Fri Jun 14 10:51:14 2002 +0000
 
-	* Makefile.am: Added '--enable-logging' support
-	Added sample-configuration to EXTRA_DIST
+    Added me
 
-2002-06-12 02:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 5140f08aed4a99bc5911ae16565a397fc985ea09
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 13 11:07:19 2002 +0000
 
-	* README: Added some notes
+    Version 0.1
 
-2002-06-12 02:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 9f9c24943ae72e691981e8728de25d09d803704b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 13 11:07:10 2002 +0000
 
-	* dhcp-forwarder.spec.in: Generalized
+    Added '--without dietlibc' option
+    Added description
 
-2002-06-12 02:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3687f7616ca2f27126b3061eb73876275ddd969d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 13 11:06:48 2002 +0000
 
-	* configure.ac: Added '--enable-logging' option
-	Added fixes for dietlibc
+    Added gpgsig.am
 
-2002-06-12 02:35  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 1799c23e57380362f3c866855ebe30c9bd500725
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 20:12:16 2002 +0000
 
-	* src/wrappers.c[DEAD]: Obsoleted; removed
+    Fixed EXITFATAL not to show trailing '\0' in messages
 
-2002-06-06 03:24  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3c8c6caff21c71ab3954f3d5dbfe412b89a2bdd1
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 20:11:51 2002 +0000
 
-	* src/main.c: Major enhancements
-	... should now work ...
+    Minor code cleanups
 
-2002-06-06 03:24  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit ca378fcb4a04db9dff349f43a73cc9157f16f6f3
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 20:11:22 2002 +0000
 
-	* src/wrappers.h: Fixed some casts
+    Added showHelp()/showVersion() functions
+    Fixed broken pidfile stuff
 
-2002-06-06 03:23  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f47657e4c5d3aad1de9b47e743394ed93422c301
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 20:10:52 2002 +0000
 
-	* src/util.h: Made 'false' and 'true' enums
+    Added some doc
 
-2002-06-06 03:23  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 8f0e258505e381b54607dd27f0695db0fb1ef852
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 09:48:10 2002 +0000
 
-	* src/parser.c: Fixed diagnostic
-	Added some explicit casts
+    Initial checkin
 
-2002-06-06 03:22  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit ad0fc1a8cafa0d1cbcf4743b18d96985d82a92da
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 09:47:57 2002 +0000
 
-	* src/inet.h: Made const int's enum's
+    Fixed hwtype recognition (again...)
 
-2002-06-06 03:22  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit fe3e5f2b77b992d92b03290ab36824e817ff1e79
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:53:51 2002 +0000
 
-	* src/dhcp.h: Fixed mbz field
-	Made const int's enum's
+    Beautified
 
-2002-06-06 03:22  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f0c5bbccd94f19a75c26fb30df4c473a4d49eb54
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:53:43 2002 +0000
 
-	* src/config.c: Fixed diagnostic-output
-	Added some inline's
+    Added ./compile
 
-2002-06-06 03:21  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit e94e2d85d62075f5fed9e8a41aeab3d445f83fb4
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:53:32 2002 +0000
 
-	* src/wrappers.c: Initial checkin
+    Initial checkin
 
-2002-06-06 03:21  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 2fcaed72b1f8c1feaf7adb655251d032005f2659
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:52:51 2002 +0000
 
-	* Makefile.am: Cleanups
-	Use m4/diet.am
-	Added output.c
+    Made code more deterministic
+    Added local variables
 
-2002-06-06 03:20  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 0a0855db0e6eed0652d8c89059d4ed90e25cdd1b
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:52:26 2002 +0000
 
-	* AUTHORS: Added me
+    Beautified code
+    Added local variables
 
-2002-06-04 11:41  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 2049dab255b51f1eb423b71cd46080786a3cb069
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:52:02 2002 +0000
 
-	* Makefile.m4.am: Added some files to the MACRO_FILES list
+    Added some doc
+    Beautified code
+    Added local variables
 
-2002-06-04 11:41  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 6129a7a141e2a5f86c00f695547c548eb65f974c
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:51:13 2002 +0000
 
-	* configure.ac: Moved diet-check into own .m4 file
-	Added ENSC_RELEASE
+    Fixed logging
+    Added check if BOOTREPLY comes from an interface with servers
+    Added some doc
+    Removed printf()'s
+    Fixed hwtype-check
+    Removed unnecessary (and probably wrong) compiler hints
 
-2002-06-04 11:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 06102ece393ddaf052f3bc9252f8899c8a0c48b9
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:44:32 2002 +0000
 
-	* dhcp-forwarder.spec.in: Made it ready for distribution...
+    Added local variables
+    Added logDHCPPackage() prototype
 
-2002-06-04 11:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 673acecc80a991ca9ed02c380e3a699d70819c52
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:44:08 2002 +0000
 
-	* src/: config.c, config.h, main.c, parser.c, parser.h, wrappers.h: Addded major enhancements
+    Added local variables
+    Fixed #include's
 
-2002-06-04 11:39  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 813c560f22cbbc1844a4672d033fc374e1422b55
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:43:46 2002 +0000
 
-	* src/assertions.h: Added prototypes for non-existing test-functions
-	Disable check if NDEBUG is set
+    Added local variables
+    Moved in_addr_t typedef from util.h to compat.h
 
-2002-06-04 11:28  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 4424153d0df1ae73007ff278187bb29d4f972d2f
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:42:51 2002 +0000
 
-	* contrib/dhcp-fwd.conf, contrib/dhcp-fwd.init, m4/diet.am,
-	  m4/ensc_diet.m4, src/logging.h, src/output.c, src/output.h: Initial checkin
+    Added local variables
 
-2002-06-01 06:00  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f25cde9527caa6262d6e1b607ecc8a4d34444eea
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:41:24 2002 +0000
 
-	* configure.ac: Added dist-bzip2
-	Added ENSC_STANDARD_TOOLS
-	Added m4/Makefile & spec-file
+    Added documentation
 
-2002-06-01 06:00  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit ed4e24d03108fc39d1547050fba983702019e721
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:41:09 2002 +0000
 
-	* Makefile.am: Added SUBDIRS tags
-	Added ACLOCAL_AMFLAGS
-	Added EXTRA_DIST
-	Added validate & changelog plugins
+    Added '--enable-logging' support
+    Added sample-configuration to EXTRA_DIST
 
-2002-06-01 05:59  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 284a04be34d04b769d23eb32ef6e071f37116882
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:40:36 2002 +0000
 
-	* ChangeLog.sed, Makefile.m4.am, dhcp-forwarder.spec.in: Initial checkin
+    Added some notes
 
-2002-06-01 05:58  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit acc83c37f916edb38db9ba5c56aad72d395dee9d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:40:27 2002 +0000
 
-	* .cvsignore: Added validation-file
-	Generalized package-names
+    Generalized
 
-2002-06-01 05:34  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit a204d7500c497159bbd348634cdc2aee22dfb2c8
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:40:10 2002 +0000
 
-	* .cvsignore, AUTHORS, COPYING, INSTALL, Makefile.am, NEWS, README,
-	  THANKS, configure.ac, splint.conf, etc/dhcp-fwd.cfg,
-	  src/assertions.h, src/compat.h, src/config.c, src/config.h,
-	  src/dhcp.h, src/inet.h, src/main.c, src/parser.c, src/parser.h,
-	  src/recvfromflags.c, src/recvfromflags.h, src/splint_compat.h,
-	  src/util.h, src/wrappers.h: initial checkin
+    Added '--enable-logging' option
+    Added fixes for dietlibc
 
-2002-05-04 07:53  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit cf54d10ffc72062d34aad977b8419d66baf060d0
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Wed Jun 12 00:35:39 2002 +0000
 
-	* m4/ensc_developing.m4: Corrected help-string
+    Obsoleted; removed
 
-2002-05-03 21:37  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit ea7b3f324f25a844127a2d65198ec7d7e378e64a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 6 01:24:24 2002 +0000
 
-	* m4/ensc_ldapcxx.m4: initial checkin
+    Major enhancements
+    ... should now work ...
 
-2002-05-03 21:32  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 767cf2cf84301cd5cf4be650cad3494b8bce65b8
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 6 01:24:02 2002 +0000
 
-	* m4/ensc_enscdebug.m4: Use '-L... -l...' instead of '.../...'
+    Fixed some casts
 
-2002-05-03 21:32  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 2f5a944eff21ff6cab3947a2fd4d2caf081f0137
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 6 01:23:34 2002 +0000
 
-	* m4/ensc_db.m4: Fixed case when first tested version is not found
+    Made 'false' and 'true' enums
 
-2002-05-01 23:22  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit fd0d72345202970537104b96db7853b0e978d63c
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 6 01:23:18 2002 +0000
 
-	* m4/changelog.am: Fixed 'distcheck'
+    Fixed diagnostic
+    Added some explicit casts
 
-2002-04-26 14:44  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit b32b660e9762b4a68877cce70b45fc47bdf36a39
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 6 01:22:47 2002 +0000
 
-	* m4/changelog.am: Initial checkin
+    Made const int's enum's
 
-2002-04-26 14:21  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 59afee1e3a8115429ef5a7d07421d96f57ef54e9
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 6 01:22:39 2002 +0000
 
-	* m4/ensc_rdtscll.m4: Initial checkin
+    Fixed mbz field
+    Made const int's enum's
 
-2002-04-25 02:28  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 0c9f52f9303d7242df3549f70498497c4baccf73
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 6 01:22:11 2002 +0000
 
-	* m4/ensc_db.m4: Added check for MINOR-version
-	Added DB_LTLIBS
+    Fixed diagnostic-output
+    Added some inline's
 
-2002-04-25 02:04  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 32ddaf1db925e23838f825df87e7ac7acbce0ce5
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 6 01:21:42 2002 +0000
 
-	* m4/ensc_db.m4: s!DB_CFLAGS!DB_CXXFLAGS!
+    Initial checkin
 
-2002-04-25 01:53  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit cf79d019910fb6ada4d2cd4b86c098a7c22bbf3d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 6 01:21:15 2002 +0000
 
-	* m4/ensc_db.m4: initial checkin
+    Cleanups
+    Use m4/diet.am
+    Added output.c
 
-2002-04-22 16:03  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit ea9a6c67651788b173313d9efe43cdd306fbfeb0
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Thu Jun 6 01:20:42 2002 +0000
 
-	* m4/doxygen.am: Fixed bad s!{...}!(...)!
+    Added me
 
-2002-04-22 15:46  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 98869fe4eeee57a39c6db0fde1026cfcc8054a77
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jun 4 09:41:24 2002 +0000
 
-	* m4/validate.am: s!{...}!(...)!
-	Made it work without calling ENSC_STANDARD_TOOLS
-	Added install-data-local & install-exec-local targets
+    Added some files to the MACRO_FILES list
 
-2002-04-22 15:45  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 41219dbdef4f4e05d28266481d13d227e94c7bb2
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jun 4 09:41:01 2002 +0000
 
-	* m4/: doxygen.am, pkgconfig.am: s!{...}!(...)!
-	Made it work without calling ENSC_STANDARD_TOOLS
+    Moved diet-check into own .m4 file
+    Added ENSC_RELEASE
 
-2002-04-16 10:40  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 27757a099b33ee4310ad086cf4ebea1c8847040a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jun 4 09:40:33 2002 +0000
 
-	* m4/ensc_enscdebug.m4: Applied changes of the enscdebug include-strategy
+    Made it ready for distribution...
 
-2002-04-16 10:39  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 668d6cd6348768b7ab47839895c9f428ce88feda
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jun 4 09:40:09 2002 +0000
 
-	* m4/ensc_flexlexer.m4: Remove lex.yy.o also
+    Addded major enhancements
 
-2002-04-13 04:53  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 8e489b0113605f8fbb9bb3865de1c1bdac3a8d88
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jun 4 09:39:11 2002 +0000
 
-	* m4/ensc_flexlexer.m4: Initial checkin
+    Added prototypes for non-existing test-functions
+    Disable check if NDEBUG is set
 
-2002-04-13 04:52  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit dc2cdfbf04b5b33565ae351cbd012ed997f2f948
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Tue Jun 4 09:28:44 2002 +0000
 
-	* m4/pkgconfig.am: - Added substitutions for include/lib-flags which do not contain
-	  standard-paths
-	- Added pkgconf_LIBFLAGS, pkgconf_INCFLAGS, pkgconf_PKGINCFLAGS
-	  variables to provide own values
-	- Added BAD_INC_PATHS and BAD_LIB_PATHS variables containing standard
-	  search-paths for include-files/libraries; these vars can/should be
-	  overridden when calling 'make'
+    Initial checkin
 
-2002-03-29 15:43  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit cbeabe74528aa5220bf9cce26aab386d840d2a34
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Jun 1 04:00:52 2002 +0000
 
-	* m4/doxygen.am: Added DOXYTARGET support
+    Added dist-bzip2
+    Added ENSC_STANDARD_TOOLS
+    Added m4/Makefile & spec-file
 
-2002-03-29 04:38  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit f8434cf7e8382cfea0efce7c399818ded85542b3
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Jun 1 04:00:15 2002 +0000
 
-	* m4/doxygen.am: Initial checkin
+    Added SUBDIRS tags
+    Added ACLOCAL_AMFLAGS
+    Added EXTRA_DIST
+    Added validate & changelog plugins
 
-2002-03-29 02:18  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 67ba3df96ff9a3cd42c38cf7f0310150cd9d62b1
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Jun 1 03:59:26 2002 +0000
 
-	* m4/validate.am: Added copyright
-	Added distclean-* rules
+    Initial checkin
 
-2002-03-29 02:18  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 0517fb4e21af927647b6144f39b68e24673a31f3
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Jun 1 03:58:49 2002 +0000
 
-	* m4/pkgconfig.am: Fixed dist-pkgconfig target
+    Added validation-file
+    Generalized package-names
 
-2002-03-28 16:19  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 3398c2cccd909915ed3b102943dac8adc495b90d
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Jun 1 03:34:24 2002 +0000
 
-	* m4/ensc_developing.m4: Made the usage of __USE_MALLOC selectable by '--disable-stl-malloc'
+    initial checkin
 
-2002-03-22 23:51  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+commit 72a1bb803e3809566022613e3e4d026b40f8847a
+Author: Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+Date:   Sat Jun 1 03:34:24 2002 +0000
 
-	* m4/ensc_developing.m4: Added __USE_MALLOC macro
-
-2002-03-20 02:02  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/ensc_enscdebug.m4: Initial checkin
-
-2002-03-20 01:30  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/ensc_developing.m4: Added lot of developing-flags
-
-2002-03-20 01:24  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/ensc_developing.m4: Splitted ENSC_RELEASE into a __ENSC_RELEASE defun to enable its usage
-	in AC_REQUIRE()
-
-2002-03-19 22:44  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/: pkgconfig.am, validate.am: Initial checkin
-
-2002-03-19 22:44  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/Makefile.am: Make usage of the automake 'include' feature
-
-2002-03-19 22:44  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/ensc_tools.m4: Added CP_P macro
-
-2002-02-12 00:14  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/ensc_developing.m4: Added ENSC_RELEASE
-	Added CXXFLAGS for development
-
-2002-01-09 11:32  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/Makefile.am: Made it more generally...
-
-2001-11-27 23:24  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/ensc_tools.m4: Added doxygen, SGML_TOOLS and GRAPH_TOOLS
-
-2001-11-15 22:42  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/Makefile.am[DEAD]: Removed Makefile.am from project repository; it's project specific
-
-2001-11-01 23:58  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/ensc_tools.m4: Added some standard tools
-	Added ENSC_TEX_TOOLS macro
-
-2001-11-01 23:57  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/Makefile.am: Removed include'ing of global Makefile
-
-2001-10-26 16:00  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/ensc_python.m4: Quoted ${PYTHON}
-
-2001-10-26 14:56  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/: Makefile.am, ensc_database.m4, ensc_developing.m4,
-	  ensc_isdn.m4, ensc_tools.m4: Minor fix in the $Id$ string
-
-2001-10-26 14:56  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/ensc_python.m4: Quoted ${PYTHON}
-	Added ENSC_PYCHECKER
-
-2001-10-26 01:27  Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-
-	* m4/: Makefile.am, ensc_database.m4, ensc_developing.m4,
-	  ensc_isdn.m4, ensc_python.m4, ensc_tools.m4: Initial checkin
-
+    New repository initialized by cvs2svn.
