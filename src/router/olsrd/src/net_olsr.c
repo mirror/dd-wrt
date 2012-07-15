@@ -336,6 +336,8 @@ net_output(struct interface *ifp)
 {
   struct sockaddr_in *sin = NULL;
   struct sockaddr_in6 *sin6 = NULL;
+  struct sockaddr_in dst;
+  struct sockaddr_in6 dst6;
   struct ptf *tmp_ptf_list;
   union olsr_packet *outmsg;
   int retval;
@@ -354,7 +356,6 @@ net_output(struct interface *ifp)
   outmsg->v4.olsr_packlen = htons(ifp->netbuf.pending);
 
   if (olsr_cnf->ip_version == AF_INET) {
-    struct sockaddr_in dst;
     /* IP version 4 */
     sin = (struct sockaddr_in *)&ifp->int_broadaddr;
 
@@ -365,7 +366,6 @@ net_output(struct interface *ifp)
     if (sin->sin_port == 0)
       sin->sin_port = htons(olsr_cnf->olsrport);
   } else {
-    struct sockaddr_in6 dst6;
     /* IP version 6 */
     sin6 = (struct sockaddr_in6 *)&ifp->int6_multaddr;
     /* Copy sin */
