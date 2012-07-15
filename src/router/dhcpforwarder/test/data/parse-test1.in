@@ -1,27 +1,42 @@
 user		bin
 group		bin
 
+compathack	0
+compathack	2
+
 chroot		/var/tmp
 logfile		/var/tmp/dhcp-fwd.log
 loglevel	1
 
 pidfile         /var/run/dhcp-fwd.pid
-
+pidfile		$TEST_FILE0
 
 if eth0		true	false	false
 if eth1		false	false	true
 if eth2		true	true	false
-if eth3.1	true	true	true
+if \eth3.1	true	true	true
+if $TEST_IF0	true	true	true
+if $TEST_IF1	true	true	true
+
+ports eth0	680	    670
+ports $TEST_IF0	$TEST_IF0_C $TEST_IF0_S
+ports $TEST_IF1	682	    672
 
 name eth0	eth0-name
 name eth1	X
+name $TEST_IF0	$TEST_NAME0
+name $TEST_IF1	$TEST_NAME1
 
 ip eth0		192.168.42.23
 ip eth2		10.0.0.2
+ip $TEST_IF0	$TEST_IP0
+ip $TEST_IF1	$TEST_IP1
 
 server		ip 192.168.31.41
 server		ip 192.168.31.42
+server		ip $TEST_IP2
 server		bcast eth0
+server		bcast $TEST_IF1
 
 ulimit stack	100K
 ulimit data	10k

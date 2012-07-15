@@ -1,20 +1,17 @@
-// $Id: cfg.c,v 1.19 2004/06/22 10:46:56 ensc Exp $    --*- c++ -*--
-
-// Copyright (C) 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-//  
+// Copyright (C) 2002, 2003, 2004, 2008, 2010
+//               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; version 2 of the License.
-//  
+// the Free Software Foundation; version 3 of the License.
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-//  
+// along with this program. If not, see http://www.gnu.org/licenses/.
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -29,6 +26,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include <arpa/inet.h>
 #include <sys/param.h>
@@ -49,9 +47,8 @@ exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn))
   /*@*/ ;
 
   /*@noreturn@*/
-static void scEXITFATAL(/*@in@*//*@sef@*/char const *msg) /*@*/; 
-
 #ifdef NEED_PRINTF
+static void scEXITFATAL(/*@in@*//*@sef@*/char const *msg) /*@*/;
 #define scEXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 #else
 #define scEXITFATAL(msg)	exit(-1)
@@ -88,19 +85,24 @@ initClientFD(struct FdInfo *fd,
   int const		ON = 1;
 
   assert(fd!=0 && iface!=0);
-  
+
   fd->iface = iface;
   fd->fd    = Esocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
   Esetsockopt(fd->fd, SOL_IP,     IP_PKTINFO,      &ON, sizeof ON);
   Esetsockopt(fd->fd, SOL_SOCKET, SO_BROADCAST,    &ON, sizeof ON);
-  Esetsockopt(fd->fd, SOL_SOCKET, SO_BINDTODEVICE, iface->name, strlen(iface->name)+1);
+  /* workaround linux kernel bug which causes -EINVAL on short interface
+   * names */
+  Esetsockopt(fd->fd, SOL_SOCKET, SO_BINDTODEVICE, iface->name,
+	      MAX(strlen(iface->name)+1,sizeof(int)));
+
+  Esetsockopt(fd->fd, SOL_SOCKET, SO_REUSEADDR, &ON, sizeof ON);
 
   memset(&s, 0, sizeof(s));
-  
+
     /*@-type@*/
   s.sin_family      = AF_INET; /*@=type@*/
-  s.sin_port        = htons(DHCP_PORT_SERVER);
+  s.sin_port        = iface->port_server;
   s.sin_addr.s_addr = htonl(INADDR_ANY);
 
   Ebind(fd->fd, &s);
@@ -131,14 +133,16 @@ initSenderFD(struct InterfaceInfo const *iface)
     // used for sending only...
   Esetsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &ON, sizeof ON);
   if (iface)
+    /* workaround linux kernel bug which causes -EINVAL on short interface
+     * names */
     Esetsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,
-		iface->name, strlen(iface->name)+1);
+		iface->name, MAX(strlen(iface->name)+1, sizeof(int)));
 
   memset(&s, 0, sizeof(s));
-  
+
     /*@-type@*/
   s.sin_family      = AF_INET; /*@=type@*/
-  s.sin_port        = htons(DHCP_PORT_CLIENT);
+  s.sin_port        = iface ? iface->port_client : htons(DHCP_PORT_CLIENT);
   s.sin_addr.s_addr = htonl(INADDR_ANY);
 
   Ebind(fd, &s);
@@ -158,8 +162,9 @@ sockaddrToHwAddr(/*@in@*/struct sockaddr const	*addr,
   switch (addr->sa_family) {
     case ARPHRD_EETHER	:
     case ARPHRD_IEEE802	:
+    case ARPHRD_LOOPBACK:
     case ARPHRD_ETHER	:  *len = ETH_ALEN; break;
-    default		:  scEXITFATAL("Unsupported hardware-type"); 
+    default		:  scEXITFATAL("Unsupported hardware-type");
   }
 
   assert(*len <= ETH_ALEN);
@@ -206,7 +211,7 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
     if (ifinfo->if_ip==INADDR_NONE)
       ifinfo->if_ip = ifinfo->if_real_ip;
   }
-  
+
   Eclose(fd);
 
   return;
@@ -217,11 +222,11 @@ fillInterfaceInfo(struct InterfaceInfoList *ifs)
 
 static char const /*@null@*//*@observer@*/ *
 getSenderIfaceName(struct InterfaceInfoList const * const ifs,
-		   bool                    		  do_it)
+		   bool		  do_it)
 {
   struct InterfaceInfo const *	res = 0;
   struct InterfaceInfo const *	ptr = (ifs->len==0 || ifs->dta==0) ? 0 : ifs->dta + ifs->len;
-  
+
   if (!do_it) return 0;
 
   while (ptr>ifs->dta) {
@@ -238,19 +243,19 @@ getSenderIfaceName(struct InterfaceInfoList const * const ifs,
 }
 
 inline static void
-initFDs(/*@out@*/struct FdInfoList 		*fds,
+initFDs(/*@out@*/struct FdInfoList		*fds,
 	/*@in@*/struct ConfigInfo const	* const	cfg)
     /*@globals internalState, fileSystem@*/
     /*@modifies internalState, fileSystem, *fds, cfg->servers@*/
     /*@requires maxRead(fds)>=0 /\ maxSet(fds)>=0 /\ maxSet(fds->sender_fd)>=0@*/
 {
-  size_t					i, idx;
+  size_t					i;
   struct InterfaceInfoList const * const	ifs = &cfg->interfaces;
   struct ServerInfo *				servers;
   int						bind_all_fd = -1;
 
   assert(cfg->servers.dta==0 || cfg->servers.len!=0);
-  
+
   for (servers = cfg->servers.dta;
        /*@-nullptrarith@*/servers < cfg->servers.dta + cfg->servers.len/*@=nullptrarith@*/;
        ++servers) {
@@ -279,19 +284,24 @@ initFDs(/*@out@*/struct FdInfoList 		*fds,
   }
 
   initRawFD(&fds->raw_fd);
-  
+
   fds->len = ifs->len;
   fds->dta = static_cast(struct FdInfo*)(Emalloc(fds->len *
 						 (sizeof(*fds->dta))));
 
   assert(fds->dta!=0 || fds->len==0);
   assert(ifs->dta!=0 || ifs->len==0);
-  
-  for (idx=0, i=0; i<ifs->len; ++i, ++idx) {
+
+  fds->len = 0;
+  for (i=0; i<ifs->len; ++i) {
     assert(ifs->dta!=0);
     assert(fds->dta!=0);
-    
-    initClientFD(&fds->dta[idx], &ifs->dta[i]);
+
+    if (!ifs->dta[i].has_clients && !ifs->dta[i].has_servers)
+      continue;
+
+    initClientFD(&fds->dta[fds->len], &ifs->dta[i]);
+    ++fds->len;
   }
 }
 
@@ -301,13 +311,13 @@ getConfig(/*@in@*/char const				*filename,
     /*@globals internalState, fileSystem@*/
     /*@modifies *cfg, internalState, fileSystem@*/
     /*@requires maxRead(cfg)>=0
-             /\ PATH_MAX >= 1
+	     /\ PATH_MAX >= 1
 	     /\ maxRead(cfg->conffile_name)>=1
-             /\ (maxSet(cfg->chroot_path)+1)  == PATH_MAX
+	     /\ (maxSet(cfg->chroot_path)+1)  == PATH_MAX
 	     /\ (maxSet(cfg->logfile_name)+1) == PATH_MAX
 	     /\ (maxSet(cfg->pidfile_name)+1) == PATH_MAX@*/
     /*@ensures  maxRead(cfg->chroot_path)>=0
-             /\ maxRead(cfg->logfile_name)>=0
+	     /\ maxRead(cfg->logfile_name)>=0
 	     /\ maxRead(cfg->pidfile_name)>=0
 	     /\ maxRead(cfg->servers.dta)>=0
 	     /\ maxRead(cfg->interfaces.dta)>=0@*/
@@ -329,7 +339,7 @@ getConfig(/*@in@*/char const				*filename,
   cfg->loglevel        = 0;
 
   cfg->pidfile_name[0] = '\0';
-  
+
   parse(filename, cfg);
     /*@-boundsread@*/
   fillInterfaceInfo(&cfg->interfaces);
@@ -348,15 +358,18 @@ showVersion() /*@*/
 inline static void
 showHelp(/*@in@*//*@nullterminated@*/char const *cmd) /*@*/
 {
-/*  char const	msg[] = (" [-v] [-h] [-c <filename>] [-n] [-d]\n\n"
-			 "  -v              show version\n"
-			 "  -h              show help\n"
-			 "  -c <filename>   read configuration from <filename>\n"
-			 "  -n              do not fork separate process\n"
-			 "  -d              debug-mode; same as '-n'\n\n"
-			 "Report bugs to Enrico Scholz <"
-			 PACKAGE_BUGREPORT
-			 ">\n");
+/*
+  char const	msg[] =
+    " [-v] [-h] [-c <filename>] [-n] [-N] [-d]\n\n"
+    "  -v              show version\n"
+    "  -h              show help\n"
+    "  -c <filename>   read configuration from <filename>\n"
+    "  -n              do not fork separate process\n"
+    "  -N              do not fork and raise SIGSTOP signal\n"
+    "  -d              debug-mode; same as '-n'\n\n"
+    "Report bugs to Enrico Scholz <"
+    PACKAGE_BUGREPORT
+    ">\n";
 
   showVersion();
   (void)write(1, "\nusage: ", 8	);
@@ -373,7 +386,7 @@ limitResources(/*@in@*/struct UlimitInfoList const *limits)
   size_t			i;
 
   assert(limits->len==0 || limits->dta!=0);
-  
+
   for (i=0; i<limits->len; ++i) {
     assert(limits->dta!=0);
     Esetrlimit(limits->dta[i].code, &limits->dta[i].rlim);
@@ -397,26 +410,28 @@ initializeDaemon(/*@in@*/struct ConfigInfo const *cfg)
     /*@modifies fileSystem, internalState@*/
 {
   assert(cfg!=0);
-  
-  if (cfg->do_fork) (void)Esetsid();
+
+  if (cfg->daemon_mode == dmFORK) (void)Esetsid();
 
   Eclose(1);
-      
+
   if (cfg->chroot_path[0]!='\0') {
     Echdir (cfg->chroot_path);
       /*@-superuser@*/
     Echroot(cfg->chroot_path);
       /*@=superuser@*/
   }
-  
+
   Esetgroups(1, &cfg->gid);
   Esetgid(cfg->gid);
   Esetuid(cfg->uid);
 
   limitResources(&cfg->ulimits);
 
-  if (cfg->do_fork) return 0;
-  else              return getpid();
+  if (cfg->daemon_mode == dmFORK)
+    return 0;
+  else
+    return getpid();
 }
 
 inline static void
@@ -427,14 +442,15 @@ parseCommandline(int argc, char *argv[],
   assert(cfg!=0);
 
   while (true) {
-    int c = getopt(argc, argv, "vhdnc:-");
+    int c = getopt(argc, argv, "vhdnNc:-");
     if (c==-1) break;
 
     switch (c) {
       case 'v'	:  showVersion();     exit(0);
       case 'h'	:  showHelp(argv[0]); exit(0);
       case 'd'	:
-      case 'n'	:  cfg->do_fork       = false;  break;
+      case 'n'	:  cfg->daemon_mode   = dmFG;   break;
+      case 'N'	:  cfg->daemon_mode   = dmSTOP; break;
       case 'c'	:  cfg->conffile_name = optarg; break;
       case '-'	:
 	if (strcmp(argv[optind], "--version")==0) { showVersion();     exit(0); }
@@ -444,7 +460,7 @@ parseCommandline(int argc, char *argv[],
 	scEXITFATAL("Use '-h' to get help about possible options");
     }
   }
-  
+
   if (argv[optind]!=0) scEXITFATAL("No extra-args allowed; use '-h' to get help.");
 }
 
@@ -460,8 +476,9 @@ initializeSystem(int argc, char *argv[],
   int				pidfile_fd;
 
   cfg.conffile_name = CFG_FILENAME;
-  cfg.do_fork       = true;
+  cfg.daemon_mode   = dmFORK;
   cfg.do_bindall    = false;
+  cfg.compat_hacks  = 0;
 
   parseCommandline(argc, argv, &cfg);
 
@@ -470,14 +487,16 @@ initializeSystem(int argc, char *argv[],
 
   pidfile_fd = Eopen(cfg.pidfile_name, O_WRONLY|O_CREAT, 0444);
   openMsgfile(cfg.logfile_name);
-  
+
   *ifs     = cfg.interfaces;
   *servers = cfg.servers;
 
   Eclose(0);
 
-  if (cfg.do_fork) pid = fork();
-  else             pid = 0;
+  if (cfg.daemon_mode == dmFORK)
+    pid = fork();
+  else
+    pid = 0;
 
   pidfile_pid = 0;
 
@@ -487,7 +506,7 @@ initializeSystem(int argc, char *argv[],
       pidfile_pid = initializeDaemon(&cfg);
 	/*@=usereleased@*/
       break;
-      
+
     case -1	:  perror("fork()");  break;
     default	:  pidfile_pid = pid; break;
   }
@@ -496,11 +515,17 @@ initializeSystem(int argc, char *argv[],
     writeUInt(pidfile_fd, pidfile_pid);
     (void)write(pidfile_fd, "\n", 1);
   }
-	  
+
   freeLimitList(&cfg.ulimits);
 
     /* It is too late to handle an error here. So just ignore it... */
   (void)close(pidfile_fd);
+
+  if (cfg.daemon_mode == dmSTOP)
+    raise(SIGSTOP);
+
+  g_compat_hacks = cfg.compat_hacks;
+
   return pid;
 }
   /*@=superuser@*/

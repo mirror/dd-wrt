@@ -1,25 +1,28 @@
-## $Id: Makefile-files,v 1.1 2004/06/16 19:11:43 ensc Exp $	--*- makefile -*--
-
-## Copyright (C) 2004 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-##  
+## -*- makefile -*-
+## Copyright (C) 2004, 2008, 2012
+##               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; version 2 of the License.
-##  
+## the Free Software Foundation; version 3 of the License.
+##
 ## This program is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
-##  
+##
 ## You should have received a copy of the GNU General Public License
-## along with this program; if not, write to the Free Software
-## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+## along with this program. If not, see http://www.gnu.org/licenses/.
 
+systemd_unitdir =	@SYSTEMD_UNITDIR@
 
 contrib_FILES =		contrib/dhcp-fwd.conf \
 			contrib/dhcp-fwd.init \
 			contrib/dhcp-fwd.sysconfig \
-			contrib/dhcp-fwd.params
+			contrib/dhcp-fwd.params \
+			contrib/dhcp-forwarder.service.in
+
+contrib_gen_FILES =	contrib/dhcp-forwarder.service
 
 EXTRA_DIST +=		$(contrib_FILES)
 
@@ -27,16 +30,25 @@ EXTRA_DIST +=		$(contrib_FILES)
 rhsysconfigdir		=  $(sysconfdir)/sysconfig
 minitdir		=  $(sysconfdir)/minit
 
-install-contrib:	$(contrib_FILES)
+$(contrib_gen_FILES):%:	%.in
+			$(MAKE) substvar VARS='sysconfdir sbindir' INFILE='$<' OUTFILE='$@'
+
+install-contrib:	$(contrib_FILES) .install-contrib-gen
 			$(mkinstalldirs) $(DESTDIR){$(initrddir),$(rhsysconfigdir),$(minitdir)/services/dhcp-fwd}
 			$(INSTALL_DATA)   contrib/dhcp-fwd.conf      $(DESTDIR)$(sysconfdir)/dhcp-fwd.conf
 			$(INSTALL_SCRIPT) contrib/dhcp-fwd.init      $(DESTDIR)$(initrddir)/dhcp-fwd
 			$(INSTALL_DATA)   contrib/dhcp-fwd.sysconfig $(DESTDIR)$(rhsysconfigdir)/dhcp-fwd
 
-			ln -s $(sbindir)/dhcp-fwd                    $(DESTDIR)$(minitdir)/services/dhcp-fwd/run
+			ln -sf $(sbindir)/dhcp-fwd                   $(DESTDIR)$(minitdir)/services/dhcp-fwd/run
 			$(INSTALL_DATA) contrib/dhcp-fwd.params      $(DESTDIR)$(minitdir)/services/dhcp-fwd/params
 			touch $(DESTDIR)$(minitdir)/services/dhcp-fwd/respawn
 			chmod 0644 $(DESTDIR)$(minitdir)/services/dhcp-fwd/respawn
+
+.install-contrib-gen:	.install-contrib_dhcp-forwarder.service
+
+.install-contrib_dhcp-forwarder.service:	contrib/dhcp-forwarder.service
+			$(mkinstalldirs) $(DESTDIR)$(systemd_unitdir)
+			$(INSTALL_DATA) $< $(DESTDIR)$(systemd_unitdir)/dhcp-forwarder.service
 
 uninstall-contrib:
 			rm -f $(DESTDIR)$(minitdir)/services/dhcp-fwd/run

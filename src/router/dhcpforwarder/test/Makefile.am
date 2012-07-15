@@ -1,22 +1,17 @@
-## $Id: Makefile.am,v 1.3 2002/08/29 15:40:16 ensc Exp $
-
-# Copyright (C) 2002 Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
-#  
+# Copyright (C) 2002, 2008
+#               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
-#  
+# the Free Software Foundation; version 3 of the License.
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#  
+#
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-#  
-
-
+# along with this program. If not, see http://www.gnu.org/licenses/.
 
 check_PROGRAMS		=  writeTest parseTest
 
@@ -24,7 +19,7 @@ writeTest_SOURCES	=  writeTest.c
 writeTest_LDADD		=  ../src/output.o
 
 parseTest_SOURCES	=  parseTest.c
-parseTest_LDADD		=  ../src/output.o ../src/parser.o 
+parseTest_LDADD		=  ../src/output.o ../src/parser.o
 
 AM_CPPFLAGS		=  -I $(top_srcdir)/src
 

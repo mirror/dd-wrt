@@ -1,4 +1,17 @@
-dnl $Id: ensc_tools.m4,v 1.6 2002/12/10 16:25:59 ensc Exp $
+dnl Copyright (C) 2002, 2004, 2008, 2010
+dnl               Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+dnl
+dnl This program is free software; you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation; version 2 and/or 3 of the License.
+dnl
+dnl This program is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl
+dnl You should have received a copy of the GNU General Public License
+dnl along with this program. If not, see http://www.gnu.org/licenses/.
 
 AC_DEFUN([ENSC_STANDARD_TOOLS],
 [
@@ -18,6 +31,7 @@ AC_DEFUN([ENSC_STANDARD_TOOLS],
 	AC_PATH_PROGS(LN,    ln)
 	AC_PATH_PROGS(DIRNAME, dirname)
 	AC_PATH_PROGS(MKDIR, mkdir)
+	AC_PATH_PROGS(GPG,   gpg)
 
 	RM_F='${RM} -f'
 	AC_SUBST(RM_F)
@@ -76,7 +90,7 @@ AC_DEFUN([ENSC_TEX_TOOLS],
 
 AC_DEFUN([ENSC_SGML_TOOLS],
 [
-	AC_PATH_PROGS(JADE,     	jade)
+	AC_PATH_PROGS(JADE,		jade)
 	AC_PATH_PROGS(JADETEX,		jadetex)
 	AC_PATH_PROGS(PDFJADETEX,	pdfjadetex)
 	AC_PATH_PROGS(NSGMLS,		nsgmls)
