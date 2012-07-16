@@ -1153,7 +1153,7 @@ static int compatible_revision(const char *name, u_int8_t revision, int opt)
 	max_rev = getsockopt(sockfd, IPPROTO_IP, opt, &rev, &s);
 	if (max_rev < 0) {
 		/* Definitely don't support this? */
-		if (errno == EPROTONOSUPPORT) {
+		if (errno == ENOENT || errno == EPROTONOSUPPORT) {
 			close(sockfd);
 			return 0;
 		} else if (errno == ENOPROTOOPT) {
@@ -1161,8 +1161,8 @@ static int compatible_revision(const char *name, u_int8_t revision, int opt)
 			/* Assume only revision 0 support (old kernel) */
 			return (revision == 0);
 		} else {
-			fprintf(stderr, "getsockopt failed strangely: %s\n",
-				strerror(errno));
+			fprintf(stderr, "getsockopt failed strangely: %s (%s rev %d)\n",
+				strerror(errno),name,revision);
 			exit(1);
 		}
 	}
