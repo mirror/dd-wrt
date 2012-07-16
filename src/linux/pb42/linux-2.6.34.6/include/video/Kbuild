@@ -1,2 +1,0 @@
-unifdef-y += sisfb.h uvesafb.h
-unifdef-y += edid.h
