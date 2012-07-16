@@ -1,3 +1,0 @@
-config MINI_FO
-	tristate "Mini fanout overlay filesystem"
-
