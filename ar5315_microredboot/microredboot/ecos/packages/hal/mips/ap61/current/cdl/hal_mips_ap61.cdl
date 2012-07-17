@@ -184,7 +184,7 @@ cdl_package CYGPKG_HAL_MIPS_AP61 {
     cdl_option CYGNUM_FLASH_END_RESERVED_BYTES {
 	display		"Reserved room at end of flash"
 	flavor		data
-	calculated	0x10000
+	default_value	0x10000
 	description	"Important information is placed at the end of flash
 		         by the manufacturer.  It must not be modified or
 			 erased, or the board may not function correctly."

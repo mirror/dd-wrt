@@ -383,6 +383,22 @@ ap51:
 	cp redboot/ap51/ram/install/bin/redboot.rom images/redboot_ap51_16M_8M_kendin.rom
 	cp redboot/ap51/ram/install/bin/redboot.img images/redboot_ap51_16M_8M_kendin.elf
 
+# RAM version
+	$(PLATFORM_RAM_START) \
+	ecosconfig add flash; \
+	ecosconfig add eth_drivers; \
+	ecosconfig add compress_zlib; \
+	ecosconfig add compress_7zip; \
+	ecosconfig import $(REDBOOT_DIR)/options/serial/115200_baud; \
+	ecosconfig import $(REDBOOT_DIR)/options/RAM/16MB_ram; \
+	ecosconfig import $(REDBOOT_DIR)/options/flash/8MB_ruckusrom; \
+	ecosconfig import $(REDBOOT_DIR)/options/flash/flash_width_32; \
+	ecosconfig import $(REDBOOT_DIR)/options/eth/kendin_phy; \
+	$(PLATFORM_BLD_CUST)
+	$(PLATFORM_RAM_BUILD)
+	cp redboot/ap51/ram/install/bin/redboot.rom images/redboot_ap51_16M_8M_ruckus.rom
+	cp redboot/ap51/ram/install/bin/redboot.img images/redboot_ap51_16M_8M_ruckus.elf
+
 
 	echo "#define RAM_SIZE 0x1000000" > boot/src/ramconfig.h
 # RAM version
