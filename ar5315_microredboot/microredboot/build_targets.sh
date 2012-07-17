@@ -2,6 +2,8 @@
 rm -f images/*
 make ap51 ap61 RESETBUTTON=0x06 FIS=0
 mkdir images_default
+mkdir images_ruckus_vf2111
+mv images/*ruckus*.rom images_ruckus_vf2111 
 cp images/*.rom images_default 
 
 rm -f images/*

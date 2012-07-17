@@ -312,7 +312,7 @@ hal_ar2316_flash_setup(void)
 #Warning! Currently works for only 4MB and 8MB
 #endif // CYGNUM_FLASH_SIZE
 	ar531x_radio_configuration += 0x1000) {
-        if (*(int *)ar531x_radio_configuration != 0xffffffff) {
+        if (*(int *)ar531x_radio_configuration != 0xffffffff && *(int *)ar531x_radio_configuration != 0x52434b53) {
             ar531x_flash_data_found = 1;
             break;
         }

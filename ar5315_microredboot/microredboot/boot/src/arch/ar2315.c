@@ -275,7 +275,7 @@ static int spiflash_probe_chip(void)
 		flash_size = FLASH_16MB;
 		break;
 	default:
-		puts("Read of flash device signature failed!\n");
+		printf("Read of flash device signature failed! (SIG %X)\n",sig);
 		return (0);
 	}
 

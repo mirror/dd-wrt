@@ -53,6 +53,7 @@ static unsigned int getLinux(void)
 	int count = 0;
 	unsigned int redboot_fis =
 	    redboot_offset(flashbase + flashsize, sectorsize);
+	printf("Found FIS Directory on [0x%08X]\n",redboot_fis);
 	unsigned char *p = (unsigned char *)redboot_fis;
 	struct fis_image_desc *fis = (struct fis_image_desc *)p;
 	/* search for fis partiton linux*,vmlinux* or kernel */
