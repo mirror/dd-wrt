@@ -574,8 +574,14 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 
 	if (nvram_match("wan_proto", "disabled"))
 		fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
-	else
-		fprintf(fp, "own_ip_addr=%s\n", get_wan_ipaddr());
+	else {
+		char *wip = get_wan_ipaddr();
+		if (strlen(wip))
+			fprintf(fp, "own_ip_addr=%s\n", wip);
+		else
+			fprintf(fp, "own_ip_addr=%s\n",
+				nvram_safe_get("lan_ipaddr"));
+	}
 
 	if (nvram_match("wl0_key", ""))
 		strcat(keyidstr, "1");

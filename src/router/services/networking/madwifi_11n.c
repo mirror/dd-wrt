@@ -60,8 +60,8 @@
 static int setsysctrl(const char *dev, const char *control, u_long value)
 {
 	char val[32];
-	sprintf(val,"%li",value);
-	writevaproc(val,"/proc/sys/dev/%s/%s", dev, control);
+	sprintf(val, "%li", value);
+	writevaproc(val, "/proc/sys/dev/%s/%s", dev, control);
 
 	return 0;
 }
@@ -1118,7 +1118,6 @@ void configure_single_11n(int count)
 		else
 			setupSupplicant(var, NULL);
 		}
-
 
 #ifdef HAVE_RELAYD
 	if (strcmp(apm, "sta") && strcmp(apm, "wet")) {
