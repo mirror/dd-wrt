@@ -188,18 +188,18 @@ for iface in $InternalDevice; do
             if [ $Verbosity -gt 6 ]; then logger "filter::NoCat: Allowing traffic tagged with class: $fwmark from network: $net inbound on interface: $iface."; fi
             if [ $LAN2WAN_RULE_NR -gt 0 ]; then
                 # Use lan2wan rule to chain filter rules onto the firewall access when we are running on EWRT
-                $fwd -i $iface -s $net -m mark --mark $fwmark -j lan2wan
+                $fwd -i $iface -s $net -m mark --mark `get_nfmark HOTSPOT $fwmark` -j lan2wan
                 # This is added in case lan2wan simply RETURNS instead of REJECT, DROP or ACCEPT, which is the case if no policy is activated
-                $fwd -i $iface -s $net -m mark --mark $fwmark -j $TARGET_ACCEPT
+                $fwd -i $iface -s $net -m mark --mark `get_nfmark HOTSPOT $fwmark` -j $TARGET_ACCEPT
             else
-                $fwd -i $iface -s $net -m mark --mark $fwmark -j ACCEPT
+                $fwd -i $iface -s $net -m mark --mark `get_nfmark HOTSPOT $fwmark` -j ACCEPT
 #	        $fwd -o $iface -d $net -m mark --mark $fwmark -j ACCEPT
             fi
         
 	    # Masquerade permitted connections.
             if [ $RouteOnly -eq 0 ]; then
                 if [ $Verbosity -gt 5 ]; then logger "nat::NoCat - Traffic tagged with class: $fwmark from network: $net will MASQUERADE on outbound interface: $ExternalDevice."; fi
-                $nat -o $ExternalDevice -s $net -m mark --mark $fwmark -j MASQUERADE
+                $nat -o $ExternalDevice -s $net -m mark --mark `get_nfmark HOTSPOT $fwmark` -j MASQUERADE
             fi
 	done
 
@@ -251,7 +251,7 @@ for iface in $InternalDevice; do
 		    # Force unauthenticated DNS traffic through our DNS server.
 		    # Of course, only the first rule of this type will match.
 		    # But it's easier to leave them all in ATM.
-		    $redirect -i $InternalDevice -m mark --mark 4 -p $prot \
+		    $redirect -i $InternalDevice -m mark --mark `get_nfmark HOTSPOT 4` -p $prot \
 		        --dport 53 -j DNAT --to-destination $dns:53
 		done
 	    done
@@ -260,7 +260,7 @@ for iface in $InternalDevice; do
 
     # Set packets from internal devices to fw mark 4, or 'denied', by default.
     if [ $Verbosity -gt 4 ]; then logger "mangle::NoCat: Deny packets from interface: $iface by default (i.e. give them class: 4)"; fi
-    $mangle -i $iface -j MARK --set-mark 4
+    $mangle -i $iface -j MARK --set-mark `get_nfmark HOTSPOT 4`
 done
 
 # Redirect outbound non-auth web traffic to the local gateway process
@@ -276,7 +276,7 @@ fi
 for port in 80; do
     if [ $Verbosity -gt 4 ]; then logger "nat::Nocat_Capture: REDIRECTING outbound, unauthenticated, traffic on port: $port to the local gateway"; fi
     for mark in $nonauth; do
-	$redirect -m mark --mark $mark -p tcp --dport $port  -j DNAT \
+	$redirect -m mark --mark `get_nfmark HOTSPOT $mark` -p tcp --dport $port  -j DNAT \
 	    --to-destination $GatewayAddr:$GatewayPort
     done
 done
@@ -310,8 +310,8 @@ if [ "$IncludePorts" ]; then
   # Enable all ports in IncludePorts
   for iface in $InternalDevice; do
     for port in $IncludePorts; do
-      $ports -p tcp -i $iface --dport $port -m mark --mark 3 -j ACCEPT
-      $ports -p udp -i $iface --dport $port -m mark --mark 3 -j ACCEPT
+      $ports -p tcp -i $iface --dport $port -m mark --mark `get_nfmark HOTSPOT 3` -j ACCEPT
+      $ports -p udp -i $iface --dport $port -m mark --mark `get_nfmark HOTSPOT 3` -j ACCEPT
     done
 
     # Always permit access to the GatewayPort (or we can't logout)
@@ -319,16 +319,16 @@ if [ "$IncludePorts" ]; then
     $ports -p udp -i $iface --dport $GatewayPort -j ACCEPT
   
     # ...and disable access to the rest.
-    $ports -p tcp -i $iface -m mark --mark 3 -j DROP
-    $ports -p udp -i $iface -m mark --mark 3 -j DROP
+    $ports -p tcp -i $iface -m mark --mark `get_nfmark HOTSPOT 3` -j DROP
+    $ports -p udp -i $iface -m mark --mark `get_nfmark HOTSPOT 3` -j DROP
   done
 
 elif [ "$ExcludePorts" ]; then
   # If ExcludePorts has entries, simply deny access to them.
   for iface in $InternalDevice; do
     for port in $ExcludePorts; do
-	$ports -p tcp -i $iface --dport $port -m mark --mark 3 -j DROP
-	$ports -p udp -i $iface --dport $port -m mark --mark 3 -j DROP
+	$ports -p tcp -i $iface --dport $port -m mark --mark `get_nfmark HOTSPOT 3` -j DROP
+	$ports -p udp -i $iface --dport $port -m mark --mark `get_nfmark HOTSPOT 3` -j DROP
     done
   done
 fi
