@@ -221,32 +221,32 @@ add_client_mac_srvfilter(char *name, char *type, char *data, char *level,
 
 	if (strstr(type, "udp") || strstr(type, "both")) {
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --dport %s -m mac --mac-source %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --dport %s -m mac --mac-source %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --sport %s -m mac --mac-source %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --sport %s -m mac --mac-source %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 	}
 
 	if (strstr(type, "tcp") || strstr(type, "both")) {
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --dport %s -m mac --mac-source %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --dport %s -m mac --mac-source %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --sport %s -m mac --mac-source %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --sport %s -m mac --mac-source %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 	}
 
 	if (strstr(type, "l7")) {
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto %s -m mac --mac-source %s -j MARK --set-mark %d",
-		     name, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto %s -m mac --mac-source %s -j MARK --set-mark %s",
+		     name, client, qos_nfmark(base+idx));
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -m mac --mac-source %s -m opendpi --%s -j MARK --set-mark %d",
-		     client, name, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -m mac --mac-source %s -m opendpi --%s -j MARK --set-mark %s",
+		     client, name, qos_nfmark(base+idx));
 	}
 #endif
 
@@ -284,26 +284,26 @@ add_client_mac_srvfilter(char *name, char *type, char *data, char *level,
 			insmod("ipt_ipp2p");
 
 			sysprintf
-			    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m ipp2p --%s -m mac --mac-source %s -j MARK --set-mark %d",
-			     proto, client, base + idx);
+			    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m ipp2p --%s -m mac --mac-source %s -j MARK --set-mark %s",
+			     proto, client, qos_nfmark(base+idx));
 
 			if (!strcmp(proto, "bit")) {
 				// bittorrent detection enhanced 
 #ifdef HAVE_MICRO
 				sysprintf
 				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt -m mac --mac-source %s -j MARK --set-mark %s",
-				     client, base + idx);
+				     client, qos_nfmark(base+idx));
 #else
 				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 4 -m length --length 0:550 -m layer7 --l7proto bt -m mac --mac-source %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_IN 4 -m length --length 0:550 -m layer7 --l7proto bt -m mac --mac-source %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 #endif
 				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt1 -m mac --mac-source %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt1 -m mac --mac-source %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt2 -m mac --mac-source %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt2 -m mac --mac-source %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 			}
 		}
 	}
@@ -320,86 +320,86 @@ add_client_ip_srvfilter(char *name, char *type, char *data, char *level,
 
 	if (strstr(type, "udp") || strstr(type, "both")) {
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --dport %s -s %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --dport %s -s %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --sport %s -s %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --sport %s -s %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --dport %s -d %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --dport %s -d %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --sport %s -d %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --sport %s -d %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --dport %s -s %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --dport %s -s %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --sport %s -s %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --sport %s -s %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --dport %s -d %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --dport %s -d %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --sport %s -d %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --sport %s -d %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 	}
 
 	if (strstr(type, "tcp") || strstr(type, "both")) {
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --dport %s -s %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --dport %s -s %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --sport %s -s %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --sport %s -s %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --dport %s -d %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --dport %s -d %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --sport %s -d %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --sport %s -d %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --dport %s -s %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --dport %s -s %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --sport %s -s %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --sport %s -s %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --dport %s -d %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --dport %s -d %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --sport %s -d %s -j MARK --set-mark %d",
-		     data, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --sport %s -d %s -j MARK --set-mark %s",
+		     data, client, qos_nfmark(base+idx));
 	}
 
 	if (strstr(type, "l7")) {
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto %s -s %s -j MARK --set-mark %d",
-		     name, client, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto %s -s %s -j MARK --set-mark %s",
+		     name, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto %s -d %s -j MARK --set-mark %d",
-		     name, client, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto %s -d %s -j MARK --set-mark %s",
+		     name, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto %s -s %s -j MARK --set-mark %d",
-		     name, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto %s -s %s -j MARK --set-mark %s",
+		     name, client, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto %s -d %s -j MARK --set-mark %d",
-		     name, client, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto %s -d %s -j MARK --set-mark %s",
+		     name, client, qos_nfmark(base+idx));
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -s %s -m opendpi --%s -j MARK --set-mark %d",
-		     client, name, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -s %s -m opendpi --%s -j MARK --set-mark %s",
+		     client, name, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -d %s -m opendpi --%s -j MARK --set-mark %d",
-		     client, name, base + idx);
+		    ("iptables -t mangle -I FILTER_OUT 3 -d %s -m opendpi --%s -j MARK --set-mark %s",
+		     client, name, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -s %s -m opendpi --%s -j MARK --set-mark %d",
-		     client, name, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -s %s -m opendpi --%s -j MARK --set-mark %s",
+		     client, name, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -d %s -m opendpi --%s -j MARK --set-mark %d",
-		     client, name, base + idx);
+		    ("iptables -t mangle -I FILTER_IN 4 -d %s -m opendpi --%s -j MARK --set-mark %s",
+		     client, name, qos_nfmark(base+idx));
 	}
 #endif
 
@@ -437,75 +437,98 @@ add_client_ip_srvfilter(char *name, char *type, char *data, char *level,
 			insmod("ipt_ipp2p");
 
 			sysprintf
-			    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m ipp2p --%s -s %s -j MARK --set-mark %d",
-			     proto, client, base + idx);
+			    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m ipp2p --%s -s %s -j MARK --set-mark %s",
+			     proto, client, qos_nfmark(base+idx));
 			sysprintf
-			    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m ipp2p --%s -d %s -j MARK --set-mark %d",
-			     proto, client, base + idx);
+			    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m ipp2p --%s -d %s -j MARK --set-mark %s",
+			     proto, client, qos_nfmark(base+idx));
 			sysprintf
-			    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m ipp2p --%s -s %s -j MARK --set-mark %d",
-			     proto, client, base + idx);
+			    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m ipp2p --%s -s %s -j MARK --set-mark %s",
+			     proto, client, qos_nfmark(base+idx));
 			sysprintf
-			    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m ipp2p --%s -d %s -j MARK --set-mark %d",
-			     proto, client, base + idx);
+			    ("iptables -t mangle -I FILTER_IN 4 -p tcp -m ipp2p --%s -d %s -j MARK --set-mark %s",
+			     proto, client, qos_nfmark(base+idx));
 
 			if (!strcmp(proto, "bit")) {
 				// bittorrent detection enhanced 
 #ifdef HAVE_MICRO
 				sysprintf
 				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s",
-				     client, base + idx);
+				     client, qos_nfmark(base+idx));
 				sysprintf
 				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s",
-				     client, base + idx);
+				     client, qos_nfmark(base+idx));
 				sysprintf
 				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s",
-				     client, base + idx);
+				     client, qos_nfmark(base+idx));
 				sysprintf
 				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s",
-				     client, base + idx);
+				     client, qos_nfmark(base+idx));
 #else
 				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m length --length 0:550 -m layer7 --l7proto bt -s %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_OUT 3 -m length --length 0:550 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m length --length 0:550 -m layer7 --l7proto bt -d %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_OUT 3 -m length --length 0:550 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 4 -m length --length 0:550 -m layer7 --l7proto bt -s %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_IN 4 -m length --length 0:550 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 4 -m length --length 0:550 -m layer7 --l7proto bt -d %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_IN 4 -m length --length 0:550 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 #endif
 				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt1 -s %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt1 -s %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt1 -d %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt1 -d %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt1 -s %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt1 -s %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt1 -d %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt1 -d %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt2 -s %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt2 -s %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt2 -d %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt2 -d %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt2 -s %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt2 -s %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt2 -d %s -j MARK --set-mark %d",
-				     client, base + idx);
+				    ("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt2 -d %s -j MARK --set-mark %s",
+				     client, qos_nfmark(base+idx));
 			}
 		}
 	}
 }
+
+#if !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+char *get_tcfmark(uint32 mark)
+{	
+	static char tcfmark[24];
+	char nfmark[24];
+	char *ntoken = NULL;
+	
+	memset(&tcfmark, 0, sizeof(tcfmark));
+	memset(&nfmark, 0, sizeof(nfmark));
+	
+	strcpy(nfmark, qos_nfmark(mark));
+		
+	ntoken = strtok(nfmark, "/");
+	strcat(tcfmark, ntoken);
+	
+	ntoken = strtok(NULL, "/");
+	strcat(tcfmark, " ");
+	strcat(tcfmark, ntoken);
+	
+	return tcfmark;
+}
+#endif 
 
 #ifdef HAVE_AQOS
 void
@@ -537,6 +560,7 @@ add_client_classes(unsigned int base, unsigned int level)
 	unsigned long uprate=0, downrate=0;		
 	int lanrate = lanlimit;
 #endif
+	
 	switch (level) {
 		case 100:
 			uprate = uplimit;
@@ -663,38 +687,39 @@ add_client_classes(unsigned int base, unsigned int level)
 		}
 	}
 
+#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)	
 	// filter rules
 	sysprintf
 	    ("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d",
 	     wan_dev, base, base + 1);
 	sysprintf
 	    ("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d",
-	     wan_dev, base + 1, base + 2);
+	     wan_dev, base+1, base + 2);
 	sysprintf
 	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-	     wan_dev, base + 2, base + 3);
+	     wan_dev, base+2, base + 3);
 	sysprintf
 	    ("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d",
-	     wan_dev, base + 3, base + 4);
+	     wan_dev, base+3, base + 4);
 	sysprintf
 	    ("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d",
-	     wan_dev, base + 4, base + 5);
+	     wan_dev, base+4, base + 5);
 
 	sysprintf
 	    ("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d",
 	     "imq0", base, base + 1);
 	sysprintf
 	    ("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d",
-	     "imq0", base + 1, base + 2);
+	     "imq0", base+1, base + 2);
 	sysprintf
 	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-	     "imq0", base + 2, base + 3);
+	     "imq0", base+2, base + 3);
 	sysprintf
 	    ("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d",
-	     "imq0", base + 3, base + 4);
+	     "imq0", base+3, base + 4);
 	sysprintf
 	    ("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d",
-	     "imq0", base + 4, base + 5);
+	     "imq0", base+4, base + 5);
 
 	if (nvram_match("wshaper_dev", "LAN")) {
 		sysprintf
@@ -702,17 +727,69 @@ add_client_classes(unsigned int base, unsigned int level)
 		     "imq1", base, base + 1);
 		sysprintf
 		    ("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d",
-		     "imq1", base + 1, base + 2);
+		     "imq1", base+1, base + 2);
 		sysprintf
 		    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-		     "imq1", base + 2, base + 3);
+		     "imq1", base+2, base + 3);
 		sysprintf
 		    ("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d",
-		     "imq1", base + 3, base + 4);
+		     "imq1", base+3, base + 4);
 		sysprintf
-		    ("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d",
-		     "imq1", base + 4, base + 5);
+		    ("tc filter add dev %s protocol ip pref 9 handle 0x%x‚	 fw classid 1:%d",
+		     "imq1", base+4, base + 5);
 	}
+#else
+	sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 wan_dev, get_tcfmark(base), base+1);
+	sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 wan_dev, get_tcfmark(base+1), base+2);
+	sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 wan_dev, get_tcfmark(base+2), base+3);
+	sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 wan_dev, get_tcfmark(base+3), base+4);
+	sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 wan_dev, get_tcfmark(base+4), base+5);
+	
+	sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 "imq0", get_tcfmark(base), base+1);
+	sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 "imq0", get_tcfmark(base+1), base+2);
+	sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 "imq0", get_tcfmark(base+2), base+3);
+	sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 "imq0", get_tcfmark(base+3), base+4);
+	sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 "imq0", get_tcfmark(base+4), base+5);
+	
+	if (nvram_match("wshaper_dev", "LAN")) {
+		sysprintf
+			("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+			 "imq1", get_tcfmark(base), base+1);
+		sysprintf
+			("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+			 "imq1", get_tcfmark(base+1), base+2);
+		sysprintf
+			("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+			 "imq1", get_tcfmark(base+2), base+3);
+		sysprintf
+			("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+			 "imq1", get_tcfmark(base+3), base+4);
+		sysprintf
+			("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+			 "imq1", get_tcfmark(base+4), base+5);	
+	}
+#endif
+
 	// leaf qdiscs
 	sysprintf
 	    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
@@ -768,7 +845,7 @@ add_client_classes(unsigned int base, unsigned int level)
 #ifdef HAVE_AQOS
 void
 add_usermac(char *mac, int base, char *upstream, char *downstream,
-	    char *lanstream)
+			char *lanstream)
 {
 	unsigned int uprate = atoi(upstream);
 	unsigned int downrate = atoi(downstream);
@@ -776,10 +853,14 @@ add_usermac(char *mac, int base, char *upstream, char *downstream,
 
 	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
+	
+	char nullmask[24];
+	strcpy(nullmask, qos_nfmark(0));
 
 	system2("iptables -t mangle -D FILTER_IN -j CONNMARK --save");
-	system2
-	    ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	sysprintf
+	    ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s", 
+		 qos_nfmark(0x64));
 	system2("iptables -t mangle -D FILTER_IN -j RETURN");
 
 	add_client_classes(base, uprate, downrate, lanrate, 0);
@@ -795,12 +876,13 @@ add_usermac(char *mac, int base, char *upstream, char *downstream,
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
 	sysprintf
-	    ("iptables -t mangle -A FILTER_IN -m mac --mac-source %s -m mark --mark 0 -j MARK --set-mark %d",
-	     mac, base);
+	    ("iptables -t mangle -A FILTER_IN -m mac --mac-source %s -m mark --mark %s -j MARK --set-mark %s",
+	     mac, nullmask, qos_nfmark(base));
 
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
-	system2
-	    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	sysprintf
+	    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
+		 qos_nfmark(0x64));
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 }
 
@@ -816,9 +898,13 @@ add_userip(char *ip, int base, char *upstream, char *downstream,
 	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
 
+	char nullmask[24];
+	strcpy(nullmask, qos_nfmark(0));
+	
 	system2("iptables -t mangle -D FILTER_IN -j CONNMARK --save");
-	system2
-	    ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	sysprintf
+	    ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
+		 qos_nfmark(0x64));
 	system2("iptables -t mangle -D FILTER_IN -j RETURN");
 
 	system2
@@ -842,21 +928,22 @@ add_userip(char *ip, int base, char *upstream, char *downstream,
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
 	sysprintf
-	    ("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark 0 -j MARK --set-mark %d",
-	     ip, base);
+	    ("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark %s -j MARK --set-mark %s",
+	     ip, nullmask, qos_nfmark(base));
 	sysprintf
-	    ("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark 0 -j MARK --set-mark %d",
-	     ip, base);
+	    ("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark %s -j MARK --set-mark %s",
+	     ip, nullmask, qos_nfmark(base));
 	sysprintf
-	    ("iptables -t mangle -A FILTER_IN -s %s -m mark --mark 0 -j MARK --set-mark %d",
-	     ip, base);
+	    ("iptables -t mangle -A FILTER_IN -s %s -m mark --mark %s -j MARK --set-mark %s",
+	     ip, nullmask, qos_nfmark(base));
 	sysprintf
-	    ("iptables -t mangle -A FILTER_IN -d %s -m mark --mark 0 -j MARK --set-mark %d",
-	     ip, base);
+	    ("iptables -t mangle -A FILTER_IN -d %s -m mark --mark %s -j MARK --set-mark %s",
+	     ip, nullmask, qos_nfmark(base));
 
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
-	system2
-	    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	sysprintf
+	    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
+		 qos_nfmark(0x64));
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 
 	system2
@@ -868,9 +955,7 @@ add_userip(char *ip, int base, char *upstream, char *downstream,
 	system2("iptables -t mangle -A FILTER_OUT -j RETURN");
 }
 #endif
-#endif
-
-
+#endif	// HAVE_SVQOS
 
 int buf_to_file(char *path, char *buf)
 {
@@ -5513,7 +5598,7 @@ int gratarp_main(char *iface)
  *
  *                                             31       23       15       7      0
  * port_forwards         1 bit(s) offset 31  > 10000000 00000000 00000000 00000000
- * sputnik agent         8 bit(s) offset 23  > 01111111 10000000 00000000 00000000
+ * hotspot				 8 bit(s) offset 23  > 01111111 10000000 00000000 00000000
  * quality of service   13 bit(s) offset 10  > 00000000 01111111 11111100 00000000
  *
  * the remaining 11 bits are currently not in use
@@ -5527,16 +5612,22 @@ struct NF_MASKS {
 
 static struct NF_MASKS service_masks[] = {
 	{"FORWARD", 1, 31},
-	{"SPUTNIK", 8, 23},
+	{"HOTSPOT", 8, 23},
 	{"QOS", 13, 10},
 };
 
 char *get_NFServiceMark(char *service, uint32 mark)
 {
+	static char buffer[24];
+	memset(&buffer, 0, sizeof(buffer));
+	
+#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
+// no mask support possible in kernel 2.4
+	sprintf(buffer, "0x%x", mark);
+	return buffer; 
+#else
 	int x, offset, bitpos;
 	uint32 nfmark = 0, nfmask = 0;
-
-	static char buffer[24];
 
 	for (x = 0; x < sizeof(service_masks) / sizeof(struct NF_MASKS); x++) {
 		if (strcmp(service, service_masks[x].service_name) == 0) {
@@ -5552,11 +5643,10 @@ char *get_NFServiceMark(char *service, uint32 mark)
 				nfmask |= (1 << bitpos);
 
 			sprintf(buffer, "0x%x/0x%x", nfmark, nfmask);
-			//fprintf(stderr, "%s\n", buffer);
-
 			return buffer;
 		}
 	}
 	return "0xffffffff/0xffffffff";
+#endif
 }
 

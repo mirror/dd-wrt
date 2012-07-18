@@ -35,16 +35,6 @@
 #include <rc.h>
 #include <services.h>
 
-extern char *get_mtu_val(void);
-extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
-extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
-
-#ifdef HAVE_AQOS
-extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate, unsigned int level);
-#else
-extern void add_client_classes(unsigned int base, unsigned int level);
-#endif
-
 static char *get_wanface(void)
 {
 	char *dev = get_wan_face();
@@ -74,6 +64,22 @@ static int client_bridged_enabled(void)
 }
 
 #ifdef HAVE_SVQOS
+
+extern char *get_mtu_val(void);
+extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
+extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
+extern char *get_NFServiceMark(char *service, uint32 mark);
+
+#if !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+extern char *get_tcfmark(uint32 mark);
+#endif
+
+#ifdef HAVE_AQOS
+extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate, unsigned int level);
+#else
+extern void add_client_classes(unsigned int base, unsigned int level);
+#endif
+
 void svqos_reset_ports(void)
 {
 #ifndef HAVE_XSCALE
@@ -244,6 +250,9 @@ void aqos_tables(void)
 	char level[32], level2[32], level3[32], data[32], type[32], prio[32];
 	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
 	
+	char nullmask[24];
+	strcpy(nullmask, qos_nfmark(0));
+	
 	int base = 210;
 	int ret = 0;
 
@@ -267,8 +276,8 @@ void aqos_tables(void)
 
 		// not service-prioritized, then default class		
 		sysprintf
-			("iptables -t mangle -A FILTER_IN -m mac --mac-source %s -m mark --mark 0 -j MARK --set-mark %d",
-			 data, base+3);
+			("iptables -t mangle -A FILTER_IN -m mac --mac-source %s -m mark --mark %s -j MARK --set-mark %s",
+			 data, nullmask, qos_nfmark(base+3));
 		
 		base += 10;
 	}
@@ -294,17 +303,17 @@ void aqos_tables(void)
 		
 		// not service-prioritized, then default class		
 		sysprintf
-			("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark 0 -j MARK --set-mark %d",
-			 data, base+3);
+			("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark %s -j MARK --set-mark %s",
+			 data, nullmask, qos_nfmark(base+3));
 		sysprintf
-			("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark 0 -j MARK --set-mark %d",
-			 data, base+3);
+			("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark %s -j MARK --set-mark %s",
+			 data, nullmask, qos_nfmark(base+3));
 		sysprintf
-			("iptables -t mangle -A FILTER_IN -s %s -m mark --mark 0 -j MARK --set-mark %d",
-			 data, base+3);
+			("iptables -t mangle -A FILTER_IN -s %s -m mark --mark %s -j MARK --set-mark %s",
+			 data, nullmask, qos_nfmark(base+3));
 		sysprintf
-			("iptables -t mangle -A FILTER_IN -d %s -m mark --mark 0 -j MARK --set-mark %d",
-			 data, base+3);
+			("iptables -t mangle -A FILTER_IN -d %s -m mark --mark %s -j MARK --set-mark %s",
+			 data, nullmask, qos_nfmark(base+3));
 		
 		base += 10;
 	}
@@ -323,12 +332,87 @@ int svqos_iptables(void)
 	char *wshaper_dev = nvram_get("wshaper_dev");	
 	char *wan_dev = get_wanface();
 	
+	char nullmask[24];
+	strcpy(nullmask, qos_nfmark(0));
+	
 	insmod("ipt_mark");
 	insmod("xt_mark");
 	insmod("ipt_CONNMARK");
 	insmod("xt_CONNMARK");
 	insmod("ipt_mac");
 	insmod("xt_mac");
+	
+#if !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+	// if kernel version later then 2.4, overwrite all old tc filter
+	
+	sysprintf("tc filter del dev %s pref %d", wan_dev, 1);
+	sysprintf("tc filter del dev %s pref %d", wan_dev, 3);
+	sysprintf("tc filter del dev %s pref %d", wan_dev, 5);
+	sysprintf("tc filter del dev %s pref %d", wan_dev, 8);
+	sysprintf("tc filter del dev %s pref %d", wan_dev, 9);
+
+	sysprintf
+	("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+	 wan_dev, get_tcfmark(100), 100);
+	sysprintf
+	("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+	 wan_dev, get_tcfmark(10), 10);
+	sysprintf
+	("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+	 wan_dev, get_tcfmark(20), 20);
+	sysprintf
+	("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+	 wan_dev, get_tcfmark(30), 30);
+	sysprintf
+	("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+	 wan_dev, get_tcfmark(40), 40);
+	
+	sysprintf("tc filter del dev %s pref %d", "imq0", 1);
+	sysprintf("tc filter del dev %s pref %d", "imq0", 3);
+	sysprintf("tc filter del dev %s pref %d", "imq0", 5);
+	sysprintf("tc filter del dev %s pref %d", "imq0", 8);
+	sysprintf("tc filter del dev %s pref %d", "imq0", 9);
+	
+	sysprintf
+	("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+	 "imq0", get_tcfmark(100), 100);
+	sysprintf
+	("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+	 "imq0", get_tcfmark(10), 10);
+	sysprintf
+	("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+	 "imq0", get_tcfmark(20), 20);
+	sysprintf
+	("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+	 "imq0", get_tcfmark(30), 30);
+	sysprintf
+	("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+	 "imq0", get_tcfmark(40), 40);
+	
+	if (nvram_match("wshaper_dev", "LAN")) {
+		sysprintf("tc filter del dev %s pref %d", "imq1", 1);
+		sysprintf("tc filter del dev %s pref %d", "imq1", 3);
+		sysprintf("tc filter del dev %s pref %d", "imq1", 5);
+		sysprintf("tc filter del dev %s pref %d", "imq1", 8);
+		sysprintf("tc filter del dev %s pref %d", "imq1", 9);
+		
+		sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 "imq1", get_tcfmark(100), 100);
+		sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 "imq1", get_tcfmark(10), 10);
+		sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 "imq1", get_tcfmark(20), 20);
+		sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 "imq1", get_tcfmark(30), 30);
+		sysprintf
+		("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
+		 "imq1", get_tcfmark(40), 40);	
+	}
+#endif
 	
 #ifdef HAVE_OPENDPI	
 	insmod("/lib/opendpi/xt_opendpi.ko");
@@ -350,14 +434,16 @@ int svqos_iptables(void)
 	system2("iptables -t mangle -X FILTER_OUT");
 	system2("iptables -t mangle -N FILTER_OUT");
 	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --restore");
-	system2("iptables -t mangle -A FILTER_OUT -m mark --mark 0 -j SVQOS_SVCS");
+	sysprintf("iptables -t mangle -A FILTER_OUT -m mark --mark %s -j SVQOS_SVCS",
+			nullmask);
 
 	system2("iptables -t mangle -F FILTER_IN");
 	system2("iptables -t mangle -X FILTER_IN");
 	system2("iptables -t mangle -N FILTER_IN");
 	system2("iptables -t mangle -A FILTER_IN -j FOO");
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --restore");
-	system2("iptables -t mangle -A FILTER_IN -m mark --mark 0 -j SVQOS_SVCS");
+	sysprintf("iptables -t mangle -A FILTER_IN -m mark --mark %s -j SVQOS_SVCS",
+			nullmask);
 
 	sysprintf("iptables -t mangle -D PREROUTING -j FILTER_IN");
 	sysprintf("iptables -t mangle -I PREROUTING -j FILTER_IN");
@@ -419,11 +505,11 @@ int svqos_iptables(void)
 		system2("iptables -t mangle -F VPN_DSCP");
 		system2("iptables -t mangle -X VPN_DSCP");
 		system2("iptables -t mangle -N VPN_DSCP");
-		system2("iptables -t mangle -A VPN_DSCP -m dscp --dscp 10 -j MARK --set-mark 100");
-		system2("iptables -t mangle -A VPN_DSCP -m dscp --dscp 1 -j MARK --set-mark 10");
-		system2("iptables -t mangle -A VPN_DSCP -m dscp --dscp 2 -j MARK --set-mark 20");
-		system2("iptables -t mangle -A VPN_DSCP -m dscp --dscp 3 -j MARK --set-mark 30");
-		system2("iptables -t mangle -A VPN_DSCP -m dscp --dscp 4 -j MARK --set-mark 40");
+		sysprintf("iptables -t mangle -A VPN_DSCP -m dscp --dscp 10 -j MARK --set-mark %s", qos_nfmark(100));
+		sysprintf("iptables -t mangle -A VPN_DSCP -m dscp --dscp 1 -j MARK --set-mark %s", qos_nfmark(10));
+		sysprintf("iptables -t mangle -A VPN_DSCP -m dscp --dscp 2 -j MARK --set-mark %s", qos_nfmark(20));
+		sysprintf("iptables -t mangle -A VPN_DSCP -m dscp --dscp 3 -j MARK --set-mark %s", qos_nfmark(30));
+		sysprintf("iptables -t mangle -A VPN_DSCP -m dscp --dscp 4 -j MARK --set-mark %s", qos_nfmark(40));
 		system2("iptables -t mangle -A VPN_DSCP -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
 		system2("iptables -t mangle -A VPN_DSCP -j RETURN");
 		
@@ -477,7 +563,7 @@ int svqos_iptables(void)
 			
 			/* incomming data */
 			sysprintf("iptables -t mangle -I VPN_IN 1 -i %s -j MARK --set-mark %s",
-					  data, level);
+					  data, qos_nfmark(atol(level)));
 
 			/* outgoing data */
 			if (is_in_bridge(data))
@@ -524,8 +610,8 @@ int svqos_iptables(void)
 		
 		// not service-prioritized, then default class		
 		sysprintf
-			("iptables -t mangle -A FILTER_IN -m mark --mark 0 -m mac --mac-source %s -j MARK --set-mark %d",
-			 data, base+3);
+			("iptables -t mangle -A FILTER_IN -m mark --mark %s -m mac --mac-source %s -j MARK --set-mark %s",
+			 nullmask, data, qos_nfmark(base+3));
 		
 		base += 10;
 	}
@@ -553,17 +639,17 @@ int svqos_iptables(void)
 		
 		// not service-prioritized, then default class		
 		sysprintf
-			("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark 0 -j MARK --set-mark %d",
-			 data, base+3);
+			("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark %s -j MARK --set-mark %s",
+			 data, nullmask, qos_nfmark(base+3));
 		sysprintf
-			("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark 0 -j MARK --set-mark %d",
-			 data, base+3);
+			("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark %s -j MARK --set-mark %s",
+			 data, nullmask, qos_nfmark(base+3));
 		sysprintf
-			("iptables -t mangle -A FILTER_IN -m mark --mark 0 -s %s -j MARK --set-mark %d",
-			 data, base+3);
+			("iptables -t mangle -A FILTER_IN -s %s -m mark --mark 0 -j MARK --set-mark %s",
+			 data, nullmask, qos_nfmark(base+3));
 		sysprintf
-			("iptables -t mangle -A FILTER_IN -m mark --mark 0 -d %s -j MARK --set-mark %d",
-			 data, base+3);
+			("iptables -t mangle -A FILTER_IN -d %s -m mark --mark 0 -j MARK --set-mark %s",
+			 data, nullmask, qos_nfmark(base+3));
 		
 		base += 10;
 	}
@@ -572,8 +658,9 @@ int svqos_iptables(void)
 	
 	// if OSPF is active put it into the Express bucket for outgoing QoS
 	if (nvram_match("wk_mode", "ospf"))
-		system2
-		    ("iptables -t mangle -A FILTER_OUT -p ospf -j MARK --set-mark 20");
+		sysprintf
+		    ("iptables -t mangle -A FILTER_OUT -p ospf -j MARK --set-mark %s", 
+			 nullmask);
 
 	if(!strcmp(wshaper_dev, "LAN")) {
 		// don't let packages pass to iptables without ebtables loaded
@@ -601,48 +688,48 @@ int svqos_iptables(void)
 		{
 			sysprintf
 				("iptables -t mangle -A SVQOS_SVCS -p udp -m udp --dport %s -j MARK --set-mark %s",
-				 data, level);
+				 data, qos_nfmark(atol(level)));
 			sysprintf
 				("iptables -t mangle -A SVQOS_SVCS -p udp -m udp --sport %s -j MARK --set-mark %s",
-				 data, level);
+				 data, qos_nfmark(atol(level)));
 			
 			// workaround for non functional iptables matches
 			sysprintf
-				("iptables -t mangle -I FOO -p udp -m udp --dport %s -j MARK --set-mark 0x0",
-				 data);
+				("iptables -t mangle -I FOO -p udp -m udp --dport %s -j MARK --set-mark %s",
+				 data, "0xFFFFFFFF/0xFFFFFFFF");
 			sysprintf
-				("iptables -t mangle -I FOO -p udp -m udp --sport %s -j MARK --set-mark 0x0",
-				 data);
+				("iptables -t mangle -I FOO -p udp -m udp --sport %s -j MARK --set-mark %s",
+				 data, "0xFFFFFFFF/0xFFFFFFFF");
 		}
 		
 		if (strstr(type, "tcp") || strstr(type, "both")) 
 		{
 			sysprintf
 				("iptables -t mangle -A SVQOS_SVCS -p tcp -m tcp --dport %s -j MARK --set-mark %s",
-				 data, level);
+				 data, qos_nfmark(atol(level)));
 			sysprintf
 				("iptables -t mangle -A SVQOS_SVCS -p tcp -m tcp --sport %s -j MARK --set-mark %s",
-				 data, level);
+				 data, qos_nfmark(atol(level)));
 			
 			// workaround for non functional iptables matches
 			sysprintf
-				("iptables -t mangle -I FOO -p tcp -m tcp --dport %s -j MARK --set-mark 0x0",
-				 data);
+				("iptables -t mangle -I FOO -p tcp -m tcp --dport %s -j MARK --set-mark %s",
+				 data, "0xFFFFFFFF/0xFFFFFFFF");
 			sysprintf
-				("iptables -t mangle -I FOO -p tcp -m tcp --sport %s -j MARK --set-mark 0x0",
-				 data);
+				("iptables -t mangle -I FOO -p tcp -m tcp --sport %s -j MARK --set-mark %s",
+				 data, "0xFFFFFFFF/0xFFFFFFFF");
 		}
 		
 		if (strstr(type, "l7")) 
 		{
 			sysprintf
 				("iptables -t mangle -A SVQOS_SVCS -m layer7 --l7proto %s -j MARK --set-mark %s",
-				 name, level);
+				 name, qos_nfmark(atol(level)));
 			
 			// workaround for non functional iptables matches
 			sysprintf
-				("iptables -t mangle -I FOO -m layer7 --l7proto %s -j MARK --set-mark 0x0",
-				 name);
+				("iptables -t mangle -I FOO -m layer7 --l7proto %s -j MARK --set-mark %s",
+				 name, "0xFFFFFFFF/0xFFFFFFFF");
 		}
 		
 #ifdef HAVE_OPENDPI
@@ -650,12 +737,12 @@ int svqos_iptables(void)
 		{
 			sysprintf
 				("iptables -t mangle -A SVQOS_SVCS -m opendpi --%s -j MARK --set-mark %s",
-				 name, level);
+				 name, qos_nfmark(atol(level)));
 			
 			// workaround for non functional iptables matches
 			sysprintf
-				("iptables -t mangle -I FOO -m opendpi --%s -j MARK --set-mark 0x0",
-				 name);
+				("iptables -t mangle -I FOO -m opendpi --%s -j MARK --set-mark %s",
+				 name, "0xFFFFFFFF/0xFFFFFFFF");
 		}
 #endif
 		
@@ -695,12 +782,12 @@ int svqos_iptables(void)
 				insmod("ipt_ipp2p");
 				sysprintf
 					("iptables -t mangle -A SVQOS_SVCS -p tcp -m ipp2p --%s -j MARK --set-mark %s",
-					 proto, level);
+					 proto, qos_nfmark(atol(level)));
 				
 				// workaround for non functional iptables matches
 				sysprintf
-					("iptables -t mangle -I FOO -p tcp -m ipp2p --%s -j MARK --set-mark 0x0",
-					 proto);
+					("iptables -t mangle -I FOO -p tcp -m ipp2p --%s -j MARK --set-mark %s",
+					 proto, "0xFFFFFFFF/0xFFFFFFFF");
 				
 				if (!strcmp(proto, "bit")) 
 				{
@@ -708,27 +795,30 @@ int svqos_iptables(void)
 #ifdef HAVE_MICRO
 				sysprintf
 					("iptables -t mangle -A SVQOS_SVCS -m layer7 --l7proto bt -j MARK --set-mark %s\n",
-					 level);
+					 qos_nfmark(atol(level)));
 					
 				// workaround for non functional iptables matches
 				sysprintf
-					("iptables -t mangle -I FOO -m layer7 --l7proto bt -j MARK --set-mark 0x0");
+					("iptables -t mangle -I FOO -m layer7 --l7proto bt -j MARK --set-mark %s", 
+					 "0xFFFFFFFF/0xFFFFFFFF");
 #else
 				sysprintf
 					("iptables -t mangle -A SVQOS_SVCS -m length --length 0:550 -m layer7 --l7proto bt -j MARK --set-mark %s\n",
-					 level);
+					 qos_nfmark(atol(level)));
 					
 				// workaround for non functional iptables matches
 				sysprintf
-					("iptables -t mangle -I FOO -m length --length 0:550 -m layer7 --l7proto bt -j MARK --set-mark 0x0");
+					("iptables -t mangle -I FOO -m length --length 0:550 -m layer7 --l7proto bt -j MARK --set-mark %s",
+					 "0xFFFFFFFF/0xFFFFFFFF");
 #endif
 				sysprintf
 					("iptables -t mangle -A SVQOS_SVCS -m layer7 --l7proto bt2 -j MARK --set-mark %s\n",
-					 level);
+					 qos_nfmark(atol(level)));
 
 				// workaround for non functional iptables matches
 				sysprintf
-					("iptables -t mangle -I FOO -m layer7 --l7proto bt2 -j MARK --set-mark 0x0");
+					("iptables -t mangle -I FOO -m layer7 --l7proto bt2 -j MARK --set-mark %s",
+					 "0xFFFFFFFF/0xFFFFFFFF");
 				}
 			}
 		}
@@ -736,7 +826,8 @@ int svqos_iptables(void)
 			
 	// close mark-tables 
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
-	system2("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	sysprintf("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
+			qos_nfmark(0x64));
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 	
 	system2("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");
