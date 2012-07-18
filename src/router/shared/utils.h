@@ -837,7 +837,16 @@ void lcdmessaged(char *dual, char *message);
 extern char *getBridgeMTU(char *);
 extern char *getMTU(char *);
 
+/* NF packet marks */
+char *get_NFServiceMark(char *service, uint32 mark);
+
 #ifdef HAVE_SVQOS
+#define qos_nfmark(x) get_NFServiceMark("QOS", (uint32)(x))
+
+#if !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
+extern char *get_tcfmark(uint32 mark);
+#endif
+
 extern char *get_wshaper_dev(void);
 extern char *get_mtu_val(void);
 extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
@@ -979,9 +988,6 @@ struct arph {
 #define BCAST		"\xff\xff\xff\xff\xff\xff"
 
 int gratarp_main(char *iface);
-
-/* NF packet marks */
-char *get_NFServiceMark(char *service, uint32 mark);
 
 int writeproc(char *path,char *value);
 
