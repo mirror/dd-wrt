@@ -298,12 +298,12 @@ int usb_get_descriptor(usb_dev_handle *udev, unsigned char type,
 	unsigned char index, void *buf, int size);
 
 /* <arch>.c */
-int usb_bulk_write(usb_dev_handle *dev, int ep, char *bytes, int size,
+int usb_bulk_write(usb_dev_handle *dev, int ep, const char *bytes, int size,
 	int timeout);
 int usb_bulk_read(usb_dev_handle *dev, int ep, char *bytes, int size,
 	int timeout);
-int usb_interrupt_write(usb_dev_handle *dev, int ep, char *bytes, int size,
-        int timeout);
+int usb_interrupt_write(usb_dev_handle *dev, int ep, const char *bytes,
+	int size, int timeout);
 int usb_interrupt_read(usb_dev_handle *dev, int ep, char *bytes, int size,
         int timeout);
 int usb_control_msg(usb_dev_handle *dev, int requesttype, int request,
