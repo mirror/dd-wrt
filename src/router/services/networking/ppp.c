@@ -211,10 +211,9 @@ int ipdown_main(int argc, char **argv)
 	}
 	if (nvram_match("wan_proto", "pptp")) {
 		eval("route", "del", "default");
-			nvram_set("wan_gateway",
-				  nvram_safe_get("wan_gateway_buf"));
-			eval("route", "add", "default", "gw",
-			     nvram_safe_get("wan_gateway"));
+		nvram_set("wan_gateway", nvram_safe_get("wan_gateway_buf"));
+		eval("route", "add", "default", "gw",
+		     nvram_safe_get("wan_gateway"));
 		sysprintf
 		    ("iptables -t nat -A POSTROUTING -o %s -j MASQUERADE\n",
 		     nvram_safe_get("pptp_ifname"));

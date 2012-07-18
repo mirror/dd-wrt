@@ -674,9 +674,15 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			if (nvram_match("wan_proto", "disabled"))
 				fprintf(fp, "own_ip_addr=%s\n",
 					nvram_safe_get("lan_ipaddr"));
-			else
-				fprintf(fp, "own_ip_addr=%s\n",
-					get_wan_ipaddr());
+			else {
+				char *wip = get_wan_ipaddr();
+				if (strlen(wip))
+					fprintf(fp, "own_ip_addr=%s\n",
+						wip);
+				else
+					fprintf(fp, "own_ip_addr=%s\n",
+						nvram_safe_get("lan_ipaddr"));
+			}
 			fprintf(fp, "eap_server=0\n");
 			fprintf(fp, "auth_algs=1\n");
 			fprintf(fp, "radius_retry_primary_interval=60\n");

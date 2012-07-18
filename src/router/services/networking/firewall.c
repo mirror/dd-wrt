@@ -825,7 +825,7 @@ static void nat_postrouting(void)
 		if (isClient()) {
 			wan_ifname_tun = getSTA();
 		}
-		
+
 		if (nvram_match("wan_proto", "pptp")) {
 			struct in_addr ifaddr;
 			osl_ifaddr(nvram_safe_get("pptp_ifname"), &ifaddr);
