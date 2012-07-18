@@ -22,6 +22,7 @@
 
 #include "libusbi.h"
 
+#include <IOKit/IOTypes.h>
 #include <IOKit/IOCFBundle.h>
 #include <IOKit/usb/IOUSBLib.h>
 #include <IOKit/IOCFPlugIn.h>
@@ -112,6 +113,10 @@
 
 #endif
 
+#if !defined(IO_OBJECT_NULL)
+#define IO_OBJECT_NULL ((io_object_t) 0)
+#endif
+
 typedef IOCFPlugInInterface *io_cf_plugin_ref_t;
 typedef IONotificationPortRef io_notification_port_t;
 
@@ -121,6 +126,8 @@ struct darwin_device_priv {
   UInt32                location;
   char                  sys_path[21];
   usb_device_t        **device;
+  int                   open_count;
+  UInt8                 first_config, active_config;
 };
 
 struct darwin_device_handle_priv {
@@ -128,10 +135,11 @@ struct darwin_device_handle_priv {
   CFRunLoopSourceRef   cfSource;
   int                  fds[2];
 
-  struct __darwin_interface {
+  struct darwin_interface {
     usb_interface_t    **interface;
     uint8_t              num_endpoints;
     CFRunLoopSourceRef   cfSource;
+    uint64_t             frames[256];
     uint8_t            endpoint_addrs[USB_MAXENDPOINTS];
   } interfaces[USB_MAXINTERFACES];
 };
@@ -139,6 +147,7 @@ struct darwin_device_handle_priv {
 struct darwin_transfer_priv {
   /* Isoc */
   IOUSBIsocFrame *isoc_framelist;
+  size_t num_iso_packets;
 
   /* Control */
 #if !defined (LIBUSB_NO_TIMEOUT_DEVICE)
