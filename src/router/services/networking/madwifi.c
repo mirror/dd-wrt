@@ -64,8 +64,8 @@
 static int setsysctrl(const char *dev, const char *control, u_long value)
 {
 	char val[32];
-	sprintf(val,"%li",value);
-	writevaproc(val,"/proc/sys/dev/%s/%s", dev, control);
+	sprintf(val, "%li", value);
+	writevaproc(val, "/proc/sys/dev/%s/%s", dev, control);
 
 	return 0;
 }
@@ -350,7 +350,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			fprintf(fp, "\tidentity=\"%s\"\n",
 				nvram_prefix_get("tls8021xuser", prefix));
 			sprintf(psk, "/tmp/%s", prefix);
-			mkdir(psk,0700);
+			mkdir(psk, 0700);
 			sprintf(psk, "/tmp/%s/ca.pem", prefix);
 			sprintf(ath, "%s_tls8021xca", prefix);
 			write_nvram(psk, ath);
@@ -396,7 +396,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			fprintf(fp, "\tpassword=\"%s\"\n",
 				nvram_prefix_get("peap8021xpasswd", prefix));
 			sprintf(psk, "/tmp/%s", prefix);
-			mkdir(psk,0700);
+			mkdir(psk, 0700);
 			sprintf(psk, "/tmp/%s/ca.pem", prefix);
 			sprintf(ath, "%s_peap8021xca", prefix);
 			if (!nvram_match(ath, "")) {
@@ -433,7 +433,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				nvram_prefix_get("ttls8021xpasswd", prefix));
 			if (strlen(nvram_nget("%s_ttls8021xca", prefix)) > 0) {
 				sprintf(psk, "/tmp/%s", prefix);
-				mkdir(psk,0700);
+				mkdir(psk, 0700);
 				sprintf(psk, "/tmp/%s/ca.pem", prefix);
 				sprintf(ath, "%s_ttls8021xca", prefix);
 				write_nvram(psk, ath);
@@ -767,7 +767,10 @@ void addWPS(FILE * fp, char *prefix, int configured)
 	    || !strcmp(prefix, "ath1")) {
 		fprintf(fp, "eap_server=1\n");
 		if (nvram_match("wps_enabled", "1")) {
-			config_methods = (char *)realloc(config_methods, strlen(config_methods) + sizeof(" push_button") + 1);
+			config_methods =
+			    (char *)realloc(config_methods,
+					    strlen(config_methods) +
+					    sizeof(" push_button") + 1);
 			strcat(config_methods, " push_button");
 		}
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
@@ -798,16 +801,17 @@ void addWPS(FILE * fp, char *prefix, int configured)
 		}
 		if (nvram_match("wps_registrar", "1")) {
 			fprintf(fp, "ap_setup_locked=0\n");
-			fprintf(fp, "upnp_iface=%s\n", nvram_safe_get("lan_ifname"));
-			fprintf(fp, "model_description=Wireless Access Point\n");
+			fprintf(fp, "upnp_iface=%s\n",
+				nvram_safe_get("lan_ifname"));
+			fprintf(fp,
+				"model_description=Wireless Access Point\n");
 //# If UUID is not configured, it will be generated based on local MAC address. 
 			char uuid[64];
 			get_uuid(uuid);
 			fprintf(fp, "uuid=%s\n", uuid);
 //# In case of external registrar add conf for non-conforming Windows 7 / Vista Clients
 			fprintf(fp, "pbc_in_m1=1\n");
-		}
-		else
+		} else
 			fprintf(fp, "ap_setup_locked=1\n");
 //              fprintf(fp, "ap_pin=%s\n",nvram_safe_get("pincode"));
 #ifdef HAVE_WZRHPAG300NH
@@ -823,7 +827,7 @@ void addWPS(FILE * fp, char *prefix, int configured)
 		fprintf(fp, "os_version=01020300\n");
 		fprintf(fp, "friendly_name=DD-WRT WPS Access Point\n");
 		fprintf(fp, "config_methods=%s\n", config_methods);
-		//	"config_methods=label display push_button keypad\n");
+		//      "config_methods=label display push_button keypad\n");
 	}
 	free(config_methods);
 #endif
@@ -1005,10 +1009,15 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			if (nvram_match("wan_proto", "disabled"))
 				fprintf(fp, "own_ip_addr=%s\n",
 					nvram_safe_get("lan_ipaddr"));
-			else
-				fprintf(fp, "own_ip_addr=%s\n",
-					get_wan_ipaddr());
-
+			else {
+				char *wip = get_wan_ipaddr();
+				if (strlen(wip))
+					fprintf(fp, "own_ip_addr=%s\n",
+						wip);
+				else
+					fprintf(fp, "own_ip_addr=%s\n",
+						nvram_safe_get("lan_ipaddr"));
+			}
 			fprintf(fp, "eap_server=0\n");
 			fprintf(fp, "auth_algs=1\n");
 			fprintf(fp, "radius_retry_primary_interval=60\n");
@@ -2371,7 +2380,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	country = nvram_default_get(regdomain, "UNITED_STATES");
 	sysprintf("iw reg set 00");
 	sysprintf("iw reg set %s", getIsoName(country));
-	sleep (4);
+	sleep(4);
 #endif
 	for (i = 0; i < c; i++)
 		adjust_regulatory(i);
