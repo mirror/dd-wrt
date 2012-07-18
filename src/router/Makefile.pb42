@@ -245,6 +245,9 @@ endif
 ifeq ($(CONFIG_DIR615E),y)
 	cp $(LINUXDIR)/.config_dir615e $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_DIR615I),y)
+	cp $(LINUXDIR)/.config_dir615i $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_TG2521),y)
 	cp $(LINUXDIR)/.config_tg2521 $(LINUXDIR)/.config
 endif
@@ -296,6 +299,12 @@ ifeq ($(CONFIG_WRT160NL),y)
 	sed -i 's/\# CONFIG_WRT160NL is not set/CONFIG_WRT160NL=y/g' $(LINUXDIR)/.config
 endif
 endif
+ifeq ($(CONFIG_DIR615I),y)
+	echo CONFIG_DIR615I=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_DIR615I is not set" >> $(LINUXDIR)/.config
+endif
+
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
@@ -487,6 +496,7 @@ ifneq ($(CONFIG_USBIP),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/staging/usbip
 endif
 ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/usb
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
@@ -722,8 +732,8 @@ ifeq ($(CONFIG_LSX),y)
 endif
 ifeq ($(CONFIG_WP543),y)
 	-./tools/compex/mkmylofw -B WP543 \
-		-p0x30000:0x7d0000:alp:0x80060000 \
-		-b0x30000:0x7d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
+		-p0x30000:0x3d0000:alp:0x80060000 \
+		-b0x30000:0x3d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
 		mips-uclibc/wp543.img
 endif
 ifeq ($(CONFIG_WP546),y)
@@ -989,6 +999,12 @@ ifeq ($(CONFIG_DIR615E),y)
 	dd if=$(ARCH)-uclibc/aligned.uimage of=$(ARCH)-uclibc/dir601-uimage.bin bs=3735552 conv=sync
 	cat tools/dir601.tag >> $(ARCH)-uclibc/dir601-uimage.bin
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ap93-firmware.bin $(ARCH)-uclibc/aligned.uimage	
+endif
+ifeq ($(CONFIG_DIR615I),y)
+	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
+	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
+	dd if=$(ARCH)-uclibc/aligned.uimage of=$(ARCH)-uclibc/dir615i1-uimage.bin bs=3801062 conv=sync
+	cat tools/dir615i1.tag >> $(ARCH)-uclibc/dir615i1-uimage.bin
 endif
 ifeq ($(CONFIG_WRT160NL),y)
 	./tools/wrt160nl/pad $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/aligned.uimage
