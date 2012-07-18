@@ -43,7 +43,7 @@ fi
 # Mark outbound traffic from this node.
 # Because we use insert, we must insert below rule 1, 
 # since rule 1 starts out by marking packets not authed via this chain as such (class 4)
-iptables -t mangle $cmd NoCat $pos -m mac --mac-source $mac -s $ip -j MARK --set-mark $mark
+iptables -t mangle $cmd NoCat $pos -m mac --mac-source $mac -s $ip -j MARK --set-mark `get_nfmark HOTSPOT $mark`
 
 # Traffic counting in FORWARDED chains
 if [ "$InternalDevice" ]; then
