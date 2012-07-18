@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef __LIBUSB_USBFS_H__
-#define __LIBUSB_USBFS_H__
+#ifndef LIBUSB_USBFS_H
+#define LIBUSB_USBFS_H
 
 #define SYSFS_DEVICE_PATH "/sys/bus/usb/devices"
 
@@ -60,9 +60,11 @@ struct usbfs_getdriver {
 	char driver[USBFS_MAXDRIVERNAME + 1];
 };
 
-#define USBFS_URB_DISABLE_SPD	1
-#define USBFS_URB_ISO_ASAP	2
-#define USBFS_URB_QUEUE_BULK	0x10
+#define USBFS_URB_SHORT_NOT_OK		0x01
+#define USBFS_URB_ISO_ASAP			0x02
+#define USBFS_URB_BULK_CONTINUATION	0x04
+#define USBFS_URB_QUEUE_BULK		0x10
+#define USBFS_URB_ZERO_PACKET		0x40
 
 enum usbfs_urb_type {
 	USBFS_URB_TYPE_ISO = 0,
