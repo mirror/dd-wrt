@@ -1,6 +1,15 @@
 This file lists notable changes in each release. For the full history of all
 changes, see ChangeLog.
 
+2012-04-24: libusb-compat-0.1.4 release
+ * Change usb_*_write() prototypes to use const for read-only parameters
+ * Fix #42 usb_detach_kernel_driver_np() error mapping
+ * Prefer libtoolize over glibtoolize in autogen.sh
+
+2009-07-09: libusb-compat-0.1.3 release
+ * Fix cross-compiling
+ * Improved error code compatibility
+
 2009-06-11: libusb-compat-0.1.2 release
  * Handle libusb initialization failure
 

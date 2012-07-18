@@ -2,6 +2,8 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
+includedir=@includedir@
+libdir=@libdir@
 exec_prefix_set=no
 
 usage()
@@ -50,8 +52,8 @@ while test $# -gt 0; do
       exit 0
       ;;
     --cflags)
-      if test "@includedir@" != /usr/include ; then
-        includes="-I@includedir@"
+      if test "$includedir" != /usr/include ; then
+        includes="-I$includedir"
       fi
       echo_cflags=yes
       ;;
@@ -75,5 +77,5 @@ if test "$echo_cflags" = "yes"; then
 	echo $includes
 fi
 if test "$echo_libs" = "yes"; then
-	echo -L@libdir@ -lusb
+	echo -L$libdir -lusb
 fi
