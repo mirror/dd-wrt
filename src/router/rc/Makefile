@@ -887,6 +887,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startstop
 	cd $(INSTALLDIR)/sbin && ln -sf rc startstop_f
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
+	cd $(INSTALLDIR)/sbin && ln -sf rc get_nfmark
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox httpd
 #ifeq ($(CONFIG_BIRD),y)
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox bird
