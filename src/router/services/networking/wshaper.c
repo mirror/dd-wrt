@@ -437,6 +437,7 @@ int svqos_iptables(void)
 	insmod("/lib/opendpi/xt_opendpi.ko");
 #endif
 	insmod("ipt_layer7");
+	insmod("xt_layer7");
 
 	// set-up mark/filter tables
 
