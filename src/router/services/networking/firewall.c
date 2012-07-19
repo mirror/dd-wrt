@@ -1522,6 +1522,8 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 				for (i = 0; i < strlen(realname); i++)
 					realname[i] = tolower(realname[i]);
 				insmod("ipt_layer7");
+				insmod("xt_layer7");
+				
 				save2file
 				    ("-A advgrp_%d -m layer7 --l7proto %s -j %s\n",
 				     seq, realname, log_drop);
@@ -1580,6 +1582,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 						     seq, log_drop);
 #else
 						insmod("ipt_layer7");
+						insmod("xt_layer7");
 #ifdef HAVE_MICRO
 						save2file
 						    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
@@ -1618,6 +1621,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 
 #else
 		insmod("ipt_layer7");
+		insmod("xt_layer7");
 #ifdef HAVE_MICRO
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
@@ -3320,6 +3324,7 @@ void stop_firewall(void)
 	}
 	rmmod("ipt_webstr");
 	rmmod("ipt_layer7");
+	rmmod("xt_layer7");
 	rmmod("ipt_ipp2p");
 	if (nvram_invmatch("apd_enable", "0")) {
 		rmmod("ipt_mark");
