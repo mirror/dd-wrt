@@ -103,6 +103,8 @@
  "pptpd_rip"  "PPTPD"  "NULL"  "FALSE" "0"
  "pptpd_auth"  "PPTPD"  "NULL"  "FALSE" "0"
  "pptpd_conn"  "PPTPD"  "NULL"   "FALSE" "0"
+ "pptpd_mtu"  "PPTPD"  "NULL"   "FALSE" "0"
+ "pptpd_mru"  "PPTPD"  "NULL"   "FALSE" "0"
  "pptp_server_ip" "PPTP" "MERGEIPADDRS" "FALSE" "0"
  "pptp_server_name" "PPTP" "NULL" "FALSE" "0"
  "pptp_use_dhcp"  "PPTP use DHCP" "CHOICE" "2" "0" "1" "FALSE" "0"
