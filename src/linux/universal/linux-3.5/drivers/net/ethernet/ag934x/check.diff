@@ -1,0 +1,85 @@
+Index: ../ag71xx/ag71xx.h
+===================================================================
+--- ../ag71xx/ag71xx.h	(revision 19295)
++++ ../ag71xx/ag71xx.h	(working copy)
+@@ -322,6 +322,14 @@
+ #define MII_CFG_CLK_DIV_14	5
+ #define MII_CFG_CLK_DIV_20	6
+ #define MII_CFG_CLK_DIV_28	7
++#define MII_CFG_CLK_DIV_34	8
++#define MII_CFG_CLK_DIV_42	9
++#define MII_CFG_CLK_DIV_50	10
++#define MII_CFG_CLK_DIV_58	11
++#define MII_CFG_CLK_DIV_66	12
++#define MII_CFG_CLK_DIV_74	13
++#define MII_CFG_CLK_DIV_82	14
++#define MII_CFG_CLK_DIV_98	15
+ #define MII_CFG_RESET		BIT(31)
+ 
+ #define MII_CMD_WRITE		0x0
+Index: ../ag71xx/ag71xx_mdio.c
+===================================================================
+--- ../ag71xx/ag71xx_mdio.c	(revision 19295)
++++ ../ag71xx/ag71xx_mdio.c	(working copy)
+@@ -103,6 +103,12 @@
+ 
+ 	if (am->pdata->is_ar7240)
+ 		t = MII_CFG_CLK_DIV_6;
++	else if (am->pdata->is_ar9330)
++		t = MII_CFG_CLK_DIV_98;
++	else if (am->pdata->builtin_switch && !am->pdata->is_ar934x)
++		t = MII_CFG_CLK_DIV_10;
++	else if (!am->pdata->builtin_switch && am->pdata->is_ar934x)
++		t = MII_CFG_CLK_DIV_58;
+ 	else
+ 		t = MII_CFG_CLK_DIV_28;
+ 
+@@ -119,7 +125,7 @@
+ {
+ 	struct ag71xx_mdio *am = bus->priv;
+ 
+-	if (am->pdata->is_ar7240)
++	if (am->pdata->builtin_switch)
+ 		return ar7240sw_phy_read(bus, addr, reg);
+ 	else
+ 		return ag71xx_mdio_mii_read(am, addr, reg);
+@@ -129,7 +135,7 @@
+ {
+ 	struct ag71xx_mdio *am = bus->priv;
+ 
+-	if (am->pdata->is_ar7240)
++	if (am->pdata->builtin_switch)
+ 		ar7240sw_phy_write(bus, addr, reg, val);
+ 	else
+ 		ag71xx_mdio_mii_write(am, addr, reg, val);
+Index: ../ag71xx/ag71xx_dev.c
+===================================================================
+--- ../ag71xx/ag71xx_dev.c	(revision 19295)
++++ ../ag71xx/ag71xx_dev.c	(working copy)
+@@ -196,17 +196,24 @@
+ 
+ 	switch (ar71xx_soc) {
+ 	case AR71XX_SOC_AR7240:
++		mdio_data->is_ar7240 = 1;
++		/* fall through */
+ 	case AR71XX_SOC_AR7241:
++		mdio_data->builtin_switch = 1;
++		break;
+ 	case AR71XX_SOC_AR9330:
++		mdio_data->is_ar9330 = 1;
++		/* fall through */
+ 	case AR71XX_SOC_AR9331:
+-		mdio_data->is_ar7240 = 1;
++		mdio_data->builtin_switch = 1;
+ 		break;
+ 
+ 	case AR71XX_SOC_AR9341:
+ 	case AR71XX_SOC_AR9342:
+ 	case AR71XX_SOC_AR9344:
+ 		if (id == 1)
+-			mdio_data->is_ar7240 = 1;
++			mdio_data->builtin_switch = 1;
++		mdio_data->is_ar934x = 1;
+ 		break;
+ 
+ 	default:
