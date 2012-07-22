@@ -46,6 +46,7 @@ pppd-clean pppd-distclean: pppd-symlinks
 	$(MAKE) -C pppd.new/pppd/plugins/rp-pppoe clean
 	$(MAKE) -C pppd.new/pppd/plugins/pppoatm clean
 	$(MAKE) -C pppd.new/pppd/plugins/radius clean
+	$(MAKE) -C pppd.new/pppd/plugins/pppol2tp clean
 	$(MAKE) -C pppd.new/pppd clean
 
 pppd-install:
