@@ -20,6 +20,8 @@
  *  as published by the Free Software Foundation; either version
  *  2 of the License, or (at your option) any later version.
  */
+#define __packed			__attribute__((packed))
+
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
