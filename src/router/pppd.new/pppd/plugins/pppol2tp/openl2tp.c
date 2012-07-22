@@ -18,6 +18,7 @@
  *****************************************************************************/
 
 /* pppd plugin for interfacing to openl2tpd */
+#define __packed			__attribute__((packed))
 
 #include <unistd.h>
 #include <string.h>
