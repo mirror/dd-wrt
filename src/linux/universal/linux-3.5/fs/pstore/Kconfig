@@ -1,0 +1,30 @@
+config PSTORE
+	bool "Persistent store support"
+	default n
+	help
+	   This option enables generic access to platform level
+	   persistent storage via "pstore" filesystem that can
+	   be mounted as /dev/pstore.  Only useful if you have
+	   a platform level driver that registers with pstore to
+	   provide the data, so you probably should just go say "Y"
+	   (or "M") to a platform specific persistent store driver
+	   (e.g. ACPI_APEI on X86) which will select this for you.
+	   If you don't have a platform persistent store driver,
+	   say N.
+
+config PSTORE_RAM
+	tristate "Log panic/oops to a RAM buffer"
+	depends on PSTORE
+	depends on HAS_IOMEM
+	depends on HAVE_MEMBLOCK
+	select REED_SOLOMON
+	select REED_SOLOMON_ENC8
+	select REED_SOLOMON_DEC8
+	help
+	  This enables panic and oops messages to be logged to a circular
+	  buffer in RAM where it can be read back at some later point.
+
+	  Note that for historical reasons, the module will be named
+	  "ramoops.ko".
+
+	  For more information, see Documentation/ramoops.txt.
