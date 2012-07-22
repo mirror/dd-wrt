@@ -21,6 +21,7 @@
 * 2 of the License, or (at your option) any later version.
 *
 ***********************************************************************/
+#define __packed			__attribute__((packed))
 
 static char const RCSID[] =
 "$Id: plugin.c,v 1.17 2008/06/15 04:35:50 paulus Exp $";
