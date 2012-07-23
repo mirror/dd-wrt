@@ -108,11 +108,11 @@ static inline int ddebug_remove_module(const char *mod)
 static inline int ddebug_dyndbg_module_param_cb(char *param, char *val,
 						const char *modname)
 {
-/*	if (strstr(param, "dyndbg")) {
+	if (strstr(param, "dyndbg")) {
 		printk(KERN_WARNING "dyndbg param is supported only in "
 			"CONFIG_DYNAMIC_DEBUG builds\n");
 		return 0;
-	}*/
+	}
 	return -EINVAL;
 }
 
