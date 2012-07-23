@@ -24,7 +24,7 @@ export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -
 endif
 ifeq ($(ARCH),powerpc)
 export OPENSSL_TARGET := linux-ppc
-export OPENSSL_MAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections
+export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),i386)
 export OPENSSL_TARGET := linux-i386
