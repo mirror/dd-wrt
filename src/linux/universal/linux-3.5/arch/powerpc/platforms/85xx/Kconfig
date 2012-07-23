@@ -112,6 +112,7 @@ config RB1000
 	select MT_VIC
 	select RB_AUX
 	select RB_IOMAP
+	select OF_DYNAMIC
 	help
 	  This option enables support for the Mikrotik RB1000 board
 

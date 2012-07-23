@@ -2,6 +2,7 @@
 #include <asm/machdep.h>
 #include <asm/mpic.h>
 #include <asm/mtvic.h>
+#include <linux/of.h>
 #include <linux/of_platform.h>
 #include <sysdev/fsl_pci.h>
 #include <asm/rb_aux.h>
@@ -131,8 +132,7 @@ static void __init rb1000_pic_init(void)
 	out_be32(gcr, in_be32(gcr) | (1 << 29));
 	iounmap(gcr);
 
-	mpic = mpic_alloc(np, r.start,
-			  MPIC_WANTS_RESET | MPIC_BIG_ENDIAN,
+	mpic = mpic_alloc(np, r.start, MPIC_BIG_ENDIAN,
 			  1, 0, " OpenPIC ");
 	
 	for (i = 0; i < 31; ++i) {
