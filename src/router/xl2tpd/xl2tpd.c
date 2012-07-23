@@ -13,7 +13,6 @@
  * Main Daemon source.
  *
  */
-
 #define _ISOC99_SOURCE
 #define _XOPEN_SOURCE
 #define _BSD_SOURCE
