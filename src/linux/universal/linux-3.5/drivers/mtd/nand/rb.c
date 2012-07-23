@@ -133,7 +133,6 @@ int rb_nand_probe(struct nand_chip *nand, int booter)
 
 	nand->ecc.mode = NAND_ECC_SOFT;
 	nand->chip_delay = 25;
-	nand->options |= NAND_NO_AUTOINCR;
 	rmtd.priv = nand;
 
 	if (nand_scan(&rmtd, 1) && nand_scan(&rmtd, 1)

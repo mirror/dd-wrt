@@ -4,7 +4,7 @@
 #include <asm/mpic.h>
 #include <asm/mtvic.h>
 
-struct irq_host *virq_host;
+struct irq_domain *virq_host;
 EXPORT_SYMBOL(virq_host);
 
 unsigned get_virq_nr(unsigned hwirq)
@@ -26,13 +26,13 @@ static struct irq_chip softirq_chip = {
 	.irq_unmask	= mtvic_unmask_irq,
 };
 
-static int mtvic_map(struct irq_host *h, unsigned int virq, irq_hw_number_t hw)
+static int mtvic_map(struct irq_domain *h, unsigned int virq, irq_hw_number_t hw)
 {
 	irq_set_chip_and_handler(virq, &softirq_chip, handle_simple_irq);
 	return 0;
 }
 
-static struct irq_host_ops mtvic_ops = {
+static struct irq_domain_ops mtvic_ops = {
 	.map = mtvic_map,
 };
 
@@ -40,8 +40,9 @@ void __init mtvic_init(int def)
 {
 	static unsigned virqs;
 
-	virq_host = irq_alloc_host(NULL, IRQ_HOST_MAP_LINEAR, 32,
-				   &mtvic_ops, 32);
+
+	virq_host = irq_domain_add_linear(NULL , 32, &mtvic_ops, NULL);
+
 	virq_host->host_data = &virqs;
 
 	if (def)

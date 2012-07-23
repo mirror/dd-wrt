@@ -702,7 +702,7 @@ static int check_backup_oob(struct mtd_info *mtd, struct nand_chip *chip,
 }
 
 static int read_page_raw_dummy(struct mtd_info *mtd, struct nand_chip *chip,
-			       uint8_t *buf, int page)
+			       uint8_t *buf, int oob_required, int page)
 {
 	return 0;
 }
@@ -1715,7 +1715,6 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 					use_backup = check_backup_oob(mtd, chip,
 								      bpage);
 				}
-				sndcmd = 1;
 				if (use_backup) {
 					void *rptr;
 					chip->cmdfunc(mtd, NAND_CMD_READ0,
@@ -1725,7 +1724,7 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 
 					rptr = chip->ecc.read_page_raw;
 					chip->ecc.read_page_raw = read_page_raw_dummy;
-					ret = chip->ecc.read_page(mtd, chip, bufpoi, page);
+					ret = chip->ecc.read_page(mtd, chip, bufpoi, oob_required, page);
 					chip->ecc.read_page_raw = rptr;
 				}
 			}
@@ -2209,7 +2208,7 @@ static void nand_write_page_swecc(struct mtd_info *mtd, struct nand_chip *chip,
 		nand_calculate_ecc_mlc(p + 0x200, chip->oob_poi + 34);
 		nand_calculate_ecc_mlc(p + 0x400, chip->oob_poi + 44);
 		nand_calculate_ecc_mlc(p + 0x600, chip->oob_poi + 54);
-		chip->ecc.write_page_raw(mtd, chip, buf);
+		chip->ecc.write_page_raw(mtd, chip, buf, 1);
 		return;
 	}
 
