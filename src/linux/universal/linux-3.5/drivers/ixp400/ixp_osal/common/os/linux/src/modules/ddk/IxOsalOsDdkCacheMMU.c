@@ -211,3 +211,57 @@ ixOsalCacheDmaFree (void *ptr)
 	free_pages ((unsigned int) memptr, order);
     }
 }
+/*
+ * 2.6 kernels do not export the required cache functions.
+ */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0))
+
+#define _IX_STR(x) #x
+#define IX_STR(x) _IX_STR(x)
+#define IX_CLM IX_STR(IX_OSAL_CACHE_LINE_SIZE-1)
+
+/*
+ * reimplementation of kernel's invalidate_dcache_range()
+ */
+void
+ixOsalCacheInvalidateRange(unsigned long start, unsigned long size)
+{
+  __asm__
+    ("    tst    %0, #" IX_CLM "\n"
+     "    mcrne  p15, 0, %0, c7, c10, 1      @ clean D cache line\n"
+     "    bic    %0, %0, #" IX_CLM "\n"
+     "    tst    %1, #" IX_CLM "\n"
+     "    mcrne  p15, 0, %1, c7, c10, 1      @ clean D cache line\n"
+     "1:  mcr    p15, 0, %0, c7, c6, 1       @ invalidate D cache line\n"
+     "    add    %0, %0, #" IX_STR(IX_OSAL_CACHE_LINE_SIZE) "\n"
+     "    cmp    %0, %1\n"
+     "    blo    1b\n"
+     "    mcr    p15, 0, %0, c7, c10, 4      @ drain write & fill buffer\n"
+     : /* no output */
+     : "r"(start), "r"(size)
+     : "cc");
+}
+
+/*
+ * reimplementation of kernel's invalidate_dcache_range()
+ */
+void
+ixOsalCacheFlushRange(unsigned long start, unsigned long size)
+{
+  __asm__
+    ("    bic    %0, %0, #" IX_CLM "\n"     
+    "1:  mcr    p15, 0, %0, c7, c10, 1      @ clean D cache line\n"
+     "    add    %0, %0, #" IX_STR(IX_OSAL_CACHE_LINE_SIZE) "\n"
+     "    cmp    %0, %1\n"
+     "    blo    1b\n"
+     "    mcr    p15, 0, %0, c7, c10, 4      @ drain write & fill buffer\n"
+     : /* no output */
+     : "r"(start), "r"(size)
+     : "cc");
+}
+
+#undef _IX_STR
+#undef IX_STR
+#undef IX_CLM
+
+#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)) */
