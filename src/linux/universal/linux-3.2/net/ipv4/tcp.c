@@ -2277,8 +2277,6 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
 			err = -EINVAL;
 		else
 			tp->thin_dupack = val;
-			if (tp->thin_dupack)
-				tcp_disable_early_retrans(tp);
 		break;
 
 	case TCP_CORK:
