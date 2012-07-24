@@ -11,12 +11,32 @@ export CC_PASS=$8
 export CC_SERVERPASS=$9
 #key
 mkdir -p clients
-if [ -e ${CC_COMMONNAME}-key.pem ] ; then
+if [ -e clients/${CC_COMMONNAME}-key.pem ] ; then
     echo "do not regenerate request" ;
 else
     openssl req -batch -nodes -new -x509 -keyout clients/${CC_COMMONNAME}-key.pem -out clients/${CC_COMMONNAME}-req.pem -days $DEFDAYS -config client.cnf ;
     openssl x509 -x509toreq -in clients/${CC_COMMONNAME}-req.pem -signkey clients/${CC_COMMONNAME}-key.pem -out clients/${CC_COMMONNAME}-tmp.pem ;
 fi
-openssl ca -batch -config server.cnf -days $DEFDAYS -policy policy_anything -out clients/${CC_COMMONNAME}-cert.pem -passin pass:`grep output_password server.cnf | sed 's/.*=//;s/^ *//'` -extensions xpclient_ext -extfile xpextensions -infiles clients/${CC_COMMONNAME}-tmp.pem 
-openssl pkcs12 -export -in clients/${CC_COMMONNAME}-cert.pem -passout pass:${CC_PASS} -out clients/${CC_COMMONNAME}-cert.p12 -inkey clients/${CC_COMMONNAME}-key.pem -descert
+# create date in UTC (exclude timezone)
+start=$(awk -v tz=`nvram get time_zone` ' BEGIN { print strftime("%y%m%d%H%M%SZ", mktime(strftime("%Y %m %d %H %M %S 0")) - (tz * 3600), "") } ') start="-startdate $start" || start=""
+echo using start: $start
+# append startdate to ca, use ca.cnf
+openssl ca -batch \
+	-config ca.cnf \
+	-days $DEFDAYS $start \
+	-policy policy_anything \
+	-out clients/${CC_COMMONNAME}-cert.pem \
+	-passin pass:`grep output_password server.cnf | sed 's/.*=//;s/^ *//'` \
+	-extensions xpclient_ext \
+	-extfile xpextensions \
+	-infiles clients/${CC_COMMONNAME}-tmp.pem 
+#openssl pkcs12 -export -in clients/${CC_COMMONNAME}-cert.pem -passout pass:${CC_PASS} -out clients/${CC_COMMONNAME}-cert.p12 -inkey clients/${CC_COMMONNAME}-key.pem -descert
+# add ca cert to p12-file
+openssl pkcs12 -export \
+	-in clients/${CC_COMMONNAME}-cert.pem \
+	-inkey clients/${CC_COMMONNAME}-key.pem \
+	-certfile ca.pem \
+	-passout pass:${CC_PASS} \
+	-out clients/${CC_COMMONNAME}-cert.p12 \
+	-descert
 #rm -f clients/${CC_COMMONNAME}-tmp.pem
