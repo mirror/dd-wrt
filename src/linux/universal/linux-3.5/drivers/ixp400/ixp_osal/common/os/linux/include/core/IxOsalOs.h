@@ -123,11 +123,14 @@
 
 #if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
 
-#define IX_OSAL_OS_CACHE_INVALIDATE(addr, size)  \
-    (dma_sync_single_for_device(NULL, (void*)addr, (size_t) size, DMA_FROM_DEVICE))
+extern void ixOsalCacheInvalidateRange(unsigned long start, unsigned long size); 
+extern void ixOsalCacheFlushRange(unsigned long start, unsigned long size); 
+ 
+#define IX_OSAL_OS_CACHE_INVALIDATE(addr, size) \
+	ixOsalCacheInvalidateRange((unsigned long)addr, (unsigned long)addr + size) 
 
 #define IX_OSAL_OS_CACHE_FLUSH(addr, size) \
-    (dma_sync_single_for_device(NULL, (void*)addr, (size_t) size, DMA_TO_DEVICE))
+	ixOsalCacheFlushRange((unsigned long)addr, (unsigned long)addr + size ) 
 
 #else /* !KERNEL_VERSION 2.6 */
 

@@ -48,6 +48,12 @@
 
 #include <linux/module.h>
 #include "IxOsal.h"
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0))
+EXPORT_SYMBOL (ixOsalCacheInvalidateRange);
+EXPORT_SYMBOL (ixOsalCacheFlushRange);
+#endif
+
 /*
 EXPORT_SYMBOL (ixOsalIrqBind);*/
 EXPORT_SYMBOL (ixOsalIrqUnbind);
@@ -63,7 +69,6 @@ EXPORT_SYMBOL (ixOsalCacheDmaFree);
 EXPORT_SYMBOL (ixOsalTimestampGet);
 EXPORT_SYMBOL (ixOsalTimestampResolutionGet);
 EXPORT_SYMBOL (ixOsalSysClockRateGet);
-
 #ifdef ENABLE_PCI
 EXPORT_SYMBOL (ixOsalPciDeviceFind);
 EXPORT_SYMBOL (ixOsalPciSlotAddress);
