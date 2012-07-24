@@ -1001,7 +1001,7 @@ CONFIG_USB_UHCI_HCD=m
 #
 # USB Device Class drivers
 #
-# CONFIG_USB_ACM is not set
+CONFIG_USB_ACM=m
 CONFIG_USB_PRINTER=m
 
 #
