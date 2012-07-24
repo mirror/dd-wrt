@@ -7780,9 +7780,10 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 		memset(&sizefs, 0, sizeof(sizefs));
 
 	websWrite(wp, "var %s = {\n\
+  	free: %llu,\n\
   	used: %llu,\n\
   	size: %llu\n\
-  	};\n", argv[1], ((uint64_t) sizefs.f_bsize * (sizefs.f_blocks - sizefs.f_bfree)), ((uint64_t) sizefs.f_bsize * sizefs.f_blocks));
+  	};\n", argv[1], ((uint64_t) sizefs.f_bsize * sizefs.f_bfree), ((uint64_t) sizefs.f_bsize * (sizefs.f_blocks - sizefs.f_bfree)), ((uint64_t) sizefs.f_bsize * sizefs.f_blocks));
 }
 
 void ej_statnv(webs_t wp, int argc, char_t ** argv)
