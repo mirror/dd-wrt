@@ -2130,6 +2130,7 @@ wl_basic.preamble="Kratka preambula";
 wl_basic.clientRelaydDefaultGwMode="Privzeti način prehoda";
 wl_basic.b="Samo B";
 wl_basic.a="Samo A";
+wl_basic.ac="Samo AC";
 wl_basic.na="NA mešano";
 wl_basic.ng="NG mešano";
 wl_basic.n5="Samo N (5 GHz)";

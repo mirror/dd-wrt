@@ -1978,6 +1978,7 @@ wl_basic.mixed="Gemischt";
 wl_basic.b="Nur-B";
 wl_basic.a="Nur-A";
 wl_basic.na="NA-Gemischt";
+wl_basic.ac="Nur-AC";
 wl_basic.ng="NG-Gemischt";
 wl_basic.n5="Nur-N (5 GHz)";
 wl_basic.n2="Nur-N (2.4 GHz)";
