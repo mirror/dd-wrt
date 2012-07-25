@@ -1815,6 +1815,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
+		nvram_nset("0", "%s_bss_opmode_cap_reqd", prefix);
 		if (has_5ghz(prefix) && !has_2ghz(prefix))
 			nvram_nset("1", "%s_nband", prefix);
 		else
@@ -1830,6 +1831,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
+		nvram_nset("0", "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("2", "%s_nband", prefix);
 /* g-only */
 	} else if (!strcmp(value, "g-only")) {
@@ -1839,6 +1841,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
+		nvram_nset("1", "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("2", "%s_nband", prefix);
 /* ng-only */
 	} else if (!strcmp(value, "ng-only")) {
@@ -1846,6 +1849,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset("2", "%s_nmode", prefix);
 		nvram_nset("2", "%s_gmode", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
+		nvram_nset("1", "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("2", "%s_nband", prefix);
 /* b-only */
 	} else if (!strcmp(value, "b-only")) {
@@ -1858,6 +1862,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
+		nvram_nset("0", "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("2", "%s_nband", prefix);
 /* n-only or n2-only */
 	} else if (!strcmp(value, "n-only") || !strcmp(value, "n2-only")) {
@@ -1865,6 +1870,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset("1", "%s_gmode", prefix);
 		nvram_nset("2", "%s_nmode", prefix);
 		nvram_nset("1", "%s_nreqd", prefix);
+		nvram_nset("2", "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("off", "%s_afterburner", prefix);	// From
 		// 3.61.13.0
 		nvram_nset("n", "%s_phytype", prefix);
@@ -1874,6 +1880,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("2", "%s_nmode", prefix);
 		nvram_nset("1", "%s_nreqd", prefix);
+		nvram_nset("2", "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("off", "%s_afterburner", prefix);	// From
 		// 3.61.13.0
 		nvram_nset("n", "%s_phytype", prefix);
@@ -1883,6 +1890,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset(value, "%s_net_mode", prefix);
 		nvram_nset("2", "%s_nmode", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
+		nvram_nset("1", "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("off", "%s_afterburner", prefix);	// From
 		// 3.61.13.0
 		nvram_nset("n", "%s_phytype", prefix);
@@ -1894,6 +1902,13 @@ void convert_wl_gmode(char *value, char *prefix)
 		if (!has_mimo(prefix))
 			nvram_nset("a", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
+		nvram_nset("1", "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nset("1", "%s_nband", prefix);
+	} else if (!strcmp(value, "ac-only")) {
+		nvram_nset(value, "%s_net_mode", prefix);
+		nvram_nset("2", "%s_nmode", prefix);
+		nvram_nset("1", "%s_nreqd", prefix);
+		nvram_nset("3", "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("1", "%s_nband", prefix);
 	}
 }
