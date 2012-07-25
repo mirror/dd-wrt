@@ -1545,6 +1545,7 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Mixelt";
 wl_basic.b="Csak-B";
 wl_basic.a="Csak-A";
+wl_basic.ac="Csak-AC";
 wl_basic.na="NA-Mixelt";
 wl_basic.ng="NG-Mixelt";
 wl_basic.n5="Csak-N (5 GHz)";

@@ -2128,6 +2128,7 @@ wl_basic.preamble="Short Preamble";
 wl_basic.clientRelaydDefaultGwMode="Default GW Mode";
 wl_basic.b="Samo B";
 wl_basic.a="Samo A";
+wl_basic.ac="Samo AC";
 wl_basic.na="Miješano NA";
 wl_basic.ng="Miješano NG";
 wl_basic.n5="Samo N (5 GHz)";
