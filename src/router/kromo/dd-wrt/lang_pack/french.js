@@ -1606,6 +1606,7 @@ wl_basic.mixed="Mixte";
 wl_basic.preamble="Short Preamble";
 wl_basic.b="B-uniquement";
 wl_basic.a="A-uniquement";
+wl_basic.ac="AC-uniquement";
 wl_basic.na="NA-Mixte";
 wl_basic.ng="NG-Mixte";
 wl_basic.n5="N-uniquement (5 GHz)";
