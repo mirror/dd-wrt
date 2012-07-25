@@ -1969,6 +1969,7 @@ wl_basic.preamble="Preambul scurt";
 wl_basic.clientRelaydDefaultGwMode="Mod GW implicit";
 wl_basic.b="Doar-B";
 wl_basic.a="Doar-A";
+wl_basic.ac="Doar-AC";
 wl_basic.na="Mixt-NA";
 wl_basic.ng="Mixt-NG";
 wl_basic.n5="Doar-N (5 GHz)";
