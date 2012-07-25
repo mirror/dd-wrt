@@ -39,7 +39,7 @@ LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared 
 
 BCFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CFLAGS = $(BCFLAGS) -I$(LINUXDIR)/brcm/wl/bcmwifi/include
+CFLAGS = $(BCFLAGS) -I$(LINUXDIR)/brcm/shared/bcmwifi/include
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
