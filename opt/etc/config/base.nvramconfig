@@ -186,6 +186,7 @@
  "limit_ssh"  "Limit ssh access"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "limit_telnet"  "Limit telnet access"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "limit_pptp"  "Limit pptp access"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
+ "limit_ftp"  "Limit ftp access"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "ipsec_pass"  "IPSec Pass Through"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "pptp_pass"  "PPTP Pass Through"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "l2tp_pass"  "L2TP Pass Through"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
