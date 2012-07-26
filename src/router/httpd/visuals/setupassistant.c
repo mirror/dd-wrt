@@ -1101,7 +1101,7 @@ void sas_show_netmode(webs_t wp, char *prefix)
 	if (has_ac(prefix)) {
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n",
-			  nvram_selmatch(wl_net_mode,
+			  nvram_selmatch(wp, wl_net_mode,
 				      "ac-only") ?
 			  "selected=\\\"selected\\\"" : "");
 	}
