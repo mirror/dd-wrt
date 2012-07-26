@@ -257,9 +257,11 @@ static int usb_process_path(char *path, char *fs, char *target)
 		ret = eval("ntfs-3g", path, mount_point);
 	} else
 #endif
-		ret =
-		    eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path,
+		if (!strcmp(fs, "vfat"))
+			ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path,
 			 mount_point);
+		else
+		   ret = eval("/bin/mount", "-t", fs, path, mount_point);
 
 	if (ret != 0) {		//give it another try
 #ifdef HAVE_NTFS3G
