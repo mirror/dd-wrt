@@ -39,6 +39,9 @@ function submitcheck(F) {
 	if(F._limit_pptp){
 		F.limit_pptp.value = F._limit_pptp.checked ? 1 : 0;
 	}
+	if(F._limit_ftp){
+		F.limit_ftp.value = F._limit_ftp.checked ? 1 : 0;
+	}
 	F.save_button.value = sbutton.saving;
 	
 }
@@ -176,9 +179,12 @@ addEvent(window, "unload", function() {
 										<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_limit_pptp" <% nvram_checked("limit_pptp", "1"); %> /><% tran("firewall.pptp"); %>
 										</div>
+										<div class="setting">
+											<input class="spaceradio" type="checkbox" value="1" name="_limit_ftp" <% nvram_checked("limit_ftp", "1"); %> /><% tran("firewall.ftp"); %>
+										</div>
 								</fieldset>
 								<% ifdef("MICRO", "-->"); %>
-<br />								</div>
+								<br /></div>
 								<% show_modules(".websecurity"); %>
 								<% ifdef("MICRO", "<!--"); %>
 								<h2><% tran("log.h2"); %></h2>
