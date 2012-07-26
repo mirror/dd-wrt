@@ -2002,6 +2002,20 @@ static void filter_input(void)
 		}
 	}
 #endif
+#ifdef HAVE_FTP
+	if (nvram_match("proftpd_enable", "1")
+		&& nvram_match("proftpd_wan", "1")) {
+		if (nvram_match("limit_ftp", "1")) {
+			save2file
+			    ("-A INPUT -i %s -p tcp --dport %d -j logbrute\n",
+			     wanface, nvram_safe_get("proftpd_port"));
+		} else {
+			save2file
+			    ("-A INPUT -i %s -p tcp --dport %d -j ACCEPT\n",
+			     wanface, nvram_safe_get("proftpd_port"));
+			}
+	}
+#endif
 /*#ifdef HAVE_AP_SERV
 	save2file("-A INPUT -i %s -p udp --dport 22359 -j ACCEPT\n",lanface);
 	save2file("-A INPUT -i %s -p udp --sport 22359 -j ACCEPT\n",lanface);
@@ -2580,7 +2594,7 @@ static void filter_table(void)
 	}
 #ifndef HAVE_MICRO
 	if (nvram_match("limit_pptp", "1") || nvram_match("limit_ssh", "1")
-	    || nvram_match("limit_telnet", "1")) {
+	    || nvram_match("limit_telnet" || nvram_match("limit_ftp", "1")) {
 		save2file(":logbrute - [0:0]\n");
 		save2file
 		    ("-A logbrute -m recent --set --name BRUTEFORCE --rsource\n");
