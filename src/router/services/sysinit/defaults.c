@@ -1349,6 +1349,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_ftp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #endif
 #elif HAVE_SAGAR
 	{"filter", "off", 0},	/* Firewall Protection [on|off] */
