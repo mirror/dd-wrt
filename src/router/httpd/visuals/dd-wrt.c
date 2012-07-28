@@ -5949,6 +5949,7 @@ void show_80211X(webs_t wp, char *prefix)
 	 * _8021xaddopt
 	 */
 	char type[32];
+	char var[80];
 
 	sprintf(type, "%s_8021xtype", prefix);
 	nvram_default_get(type, "ttls");
@@ -6157,17 +6158,20 @@ void show_80211X(webs_t wp, char *prefix)
 	websWrite(wp, "<div id=\"idtls%s\">\n", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 // -> added habeIchVergessen
- 	websWrite(wp,
+	websWrite(wp, "<div class=\"setting\">\n");
+	sprintf(var, "%s_tls8021xkeyxchng", prefix);
+	nvram_default_get(var, "wep");
+	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.keyxchng)</script></div>\n");
 	websWrite(wp, "<select name=\"%s_tls8021xkeyxchng\"> size=\"1\"\n", prefix);
-	websWrite(wp, "<option value=\"radius_web\" %s>Radius/WEB</option>\n",
-		  selmatch(var, "8021x", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"wpa2enterprise\" %s>WPA2 Enterprise</option>\n",
-		  selmatch(var, "wpa2enterprise", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"wpa2enterprise_mixed\" %s>WPA2 Enterprise (Mixed)</option>\n",
-		  selmatch(var, "wpa2enterprise_mixed", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"wpaenterprise\" %s>WPA Enterprise</option>\n",
-		  selmatch(var, "wpaenterprise", "selected=\"selected\""));	
+	websWrite(wp, "<option value=\"web\" %s>Radius/WEB</option>\n",
+		  selmatch(var, "wep", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
+		  selmatch(var, "wpa2", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"wpa2mixed\" %s>WPA2 Enterprise (Mixed)</option>\n",
+		  selmatch(var, "wpa2mixed", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
+		  selmatch(var, "wpa", "selected=\"selected\""));
 	websWrite(wp, "</select></div>\n");
 // <- added habeIchVergessen
 	websWrite(wp,
