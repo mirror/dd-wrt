@@ -6156,6 +6156,20 @@ void show_80211X(webs_t wp, char *prefix)
 	// tls authentication
 	websWrite(wp, "<div id=\"idtls%s\">\n", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
+// -> added habeIchVergessen
+ 	websWrite(wp,
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.keyxchng)</script></div>\n");
+	websWrite(wp, "<select name=\"%s_tls8021xkeyxchng\"> size=\"1\"\n", prefix);
+	websWrite(wp, "<option value=\"radius_web\" %s>Radius/WEB</option>\n",
+		  selmatch(var, "8021x", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"wpa2enterprise\" %s>WPA2 Enterprise</option>\n",
+		  selmatch(var, "wpa2enterprise", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"wpa2enterprise_mixed\" %s>WPA2 Enterprise (Mixed)</option>\n",
+		  selmatch(var, "wpa2enterprise_mixed", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"wpaenterprise\" %s>WPA Enterprise</option>\n",
+		  selmatch(var, "wpaenterprise", "selected=\"selected\""));	
+	websWrite(wp, "</select></div>\n");
+// <- added habeIchVergessen
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(share.user)</script></div>\n");
 	websWrite(wp,
