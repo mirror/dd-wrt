@@ -2594,7 +2594,7 @@ static void filter_table(void)
 	}
 #ifndef HAVE_MICRO
 	if (nvram_match("limit_pptp", "1") || nvram_match("limit_ssh", "1")
-	    || nvram_match("limit_telnet" || nvram_match("limit_ftp", "1")) {
+	    || nvram_match("limit_telnet","1") || nvram_match("limit_ftp", "1")) {
 		save2file(":logbrute - [0:0]\n");
 		save2file
 		    ("-A logbrute -m recent --set --name BRUTEFORCE --rsource\n");
