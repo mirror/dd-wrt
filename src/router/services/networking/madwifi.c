@@ -345,7 +345,27 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
 		fprintf(fp, "\tscan_ssid=1\n");
 		if (nvram_prefix_match("8021xtype", prefix, "tls")) {
-			fprintf(fp, "\tkey_mgmt=IEEE8021X\n");
+// -> added habeIchVergessen
+			char *keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
+			// standard
+			if (strncmp("radius_web", keyExchng, 10))
+				fprintf(fp, "\tkey_mgmt=IEEE8021X\n");
+			if (strncmp("wpa", keyExchng, 3)) {
+				fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
+				if (strcmp("wpa2enterprise", keyExchng)) {
+					fprintf(fp, "\tpairwise=CCMP\n");
+					fprintf(fp, "\tgroup=CCMP\n");
+				}
+				if (strcmp("wpa2enterprise_mixed", keyExchng)) {
+					fprintf(fp, "\tpairwise=CCMP TKIP\n");
+					fprintf(fp, "\tgroup=CCMP TKIP\n");
+				}
+				if (strcmp("wpaenterprise", keyExchng)) {
+					fprintf(fp, "\tpairwise=TKIP\n");
+					fprintf(fp, "\tgroup=TKIP\n");
+				}
+			}
+// <- added habeIchVergessen
 			fprintf(fp, "\teap=TLS\n");
 			fprintf(fp, "\tidentity=\"%s\"\n",
 				nvram_prefix_get("tls8021xuser", prefix));
