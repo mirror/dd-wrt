@@ -128,7 +128,7 @@ ifeq ($(CONFIG_CORENET),y)
 	cp corenet/images/* $(INSTALLDIR)/www/images
 	cp corenet/*.asp $(INSTALLDIR)/www/
 	cp corenet/common.js $(INSTALLDIR)/www
-	cp ../bisi/*.asp $(INSTALLDIR)/www
+#	cp ../bisi/*.asp $(INSTALLDIR)/www
 	cp -f corenet/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
 endif
 ifeq ($(CONFIG_XIOCOM),y)
