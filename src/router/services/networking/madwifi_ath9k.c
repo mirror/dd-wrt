@@ -856,24 +856,18 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		if (nvram_prefix_match("8021xtype", prefix, "tls")) {
 // -> added habeIchVergessen
 			char *keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
-			// standard
-			if (strncmp("radius_web", keyExchng, 10))
-				fprintf(fp, "\tkey_mgmt=IEEE8021X\n");
-			if (strncmp("wpa", keyExchng, 3)) {
-				fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
-				if (strcmp("wpa2enterprise", keyExchng)) {
-					fprintf(fp, "\tpairwise=CCMP\n");
-					fprintf(fp, "\tgroup=CCMP\n");
-				}
-				if (strcmp("wpa2enterprise_mixed", keyExchng)) {
-					fprintf(fp, "\tpairwise=CCMP TKIP\n");
-					fprintf(fp, "\tgroup=CCMP TKIP\n");
-				}
-				if (strcmp("wpaenterprise", keyExchng)) {
-					fprintf(fp, "\tpairwise=TKIP\n");
-					fprintf(fp, "\tgroup=TKIP\n");
-				}
-			}
+			char *wpa0opts[40];
+			if (strlen(keyExchng)==0)
+			    nvram_nset("wep","%s_tls8021xkeyxchng", prefix);
+			sprintf(wpaOpts, "");
+			keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
+			if (strcmp("wpa2", keyExchng) == 0)
+				sprintf(wpaOpts, "\tpairwise=CCMP\n\tgroup=CCMP\n");
+			if (strcmp("wpa2mixed", keyExchng) == 0)
+                         	sprintf(wpaOpts, "\tpairwise=CCMP TKIP\n\tgroup=CCMP TKIP\n");
+			if (strcmp("wpa", keyExchng) == 0)
+                        	sprintf(wpaOpts, "\tpairwise=TKIP\n\tgroup=TKIP\n");
+			fprintf(fp, "\tkey_mgmt=%s\n%s", (strlen(wpaOpts) == 0 ? "IEEE8021X" : "WPA-EAP"), wpaOpts);
 // <- added habeIchVergessen
 			fprintf(fp, "\teap=TLS\n");
 			fprintf(fp, "\tidentity=\"%s\"\n",
