@@ -745,6 +745,9 @@ _8021xprv
 	copytonv(wp, "%s_peap8021xuser", prefix);
 	copytonv(wp, "%s_peap8021xanon", prefix);
 	copytonv(wp, "%s_peap8021xpasswd", prefix);
+// -> added habeIchVergessen
+	copytonv(wp, "%s_tls8021xkeyxchng", prefix);
+// <- added habeIchVergessen
 	copytonv(wp, "%s_peap8021xphase2", prefix);
 	copytonv(wp, "%s_peap8021xca", prefix);
 	copytonv(wp, "%s_peap8021xaddopt", prefix);
