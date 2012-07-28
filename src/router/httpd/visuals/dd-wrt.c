@@ -931,7 +931,7 @@ void ej_show_default_level(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(qos.enabledefaultlvls)</script></div>\n");
 	websWrite(wp,
-		  "<input type=\"checkbox\" onclick=\"defaultlvl_grey(this.checked,this.form)\" name=\"svqos_defaults\" value=\"1\" %s\ />\n",
+		  "<input type=\"checkbox\" onclick=\"defaultlvl_grey(this.checked,this.form)\" name=\"svqos_defaults\" value=\"1\" %s />\n",
 			nvram_match("svqos_defaults", "1") ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
