@@ -123,7 +123,6 @@ struct radiusdb *loadradiusdb(void)
 			db->users[i].expiration = 0;
 
 		if (curlen < db->users[i].fieldlen) {
-		{
 			db->users[i].enabled = readword(fp);
 			curlen += 4;		
 		} else
