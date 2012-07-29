@@ -108,11 +108,11 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
   }
 
   /* Do not log to world-writeable directories */
-  if (st.st_mode & S_IWOTH) {
-    pr_log_pri(PR_LOG_NOTICE, "error: %s is a world writeable directory", lf);
-    destroy_pool(tmp_pool);
-    return PR_LOG_WRITABLE_DIR;
-  }
+//  if (st.st_mode & S_IWOTH) {
+//    pr_log_pri(PR_LOG_NOTICE, "error: %s is a world writeable directory", lf);
+//    destroy_pool(tmp_pool);
+//    return PR_LOG_WRITABLE_DIR;
+//  }
 
   /* Restore the path separator so that checks on the file itself may be
    * done.
