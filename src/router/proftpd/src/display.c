@@ -153,7 +153,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
   res = pr_fs_getsize2(fh->fh_path, &fs_size);
   if (res < 0 &&
       errno != ENOSYS) {
-    (void) pr_log_debug(DEBUG7, "error getting filesystem size for '%s': %s",
+    pr_log_debug(DEBUG7, "error getting filesystem size for '%s': %s",
       fh->fh_path, strerror(errno));
     fs_size = 0;
   }
