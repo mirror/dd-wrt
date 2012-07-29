@@ -126,6 +126,7 @@ void start_ftpsrv(void)
 				nvram_safe_get("proftpd_authserverip"),
 				nvram_safe_get("proftpd_acctserverport"),
 				nvram_safe_get("proftpd_sharedkey"));
+			fprintf(fp,"RadiusUserInfo 0 0 %s /bin/false\n",nvram_safe_get("proftpd_dir"));
 		}
 			
 // Anonymous ftp - read only
