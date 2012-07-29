@@ -6,3 +6,8 @@
  "proftpd_anon" "ProFtpd anonymous" "CHOICE" "2" "0" "1"  "FALSE" "0"
  "proftpd_anon_subdir" "ProFtpd anonymous home sub dir" "NULL" "TRUE" "0"
  "proftpd_wan" "Allow WAN connections" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "proftpd_rad" "Use Radius Auth" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "proftpd_authserverip" "" "NULL"  "TRUE" "0" 
+ "proftpd_authserverport" "" "RANGE"  "1"  "65535"  "FALSE" "0"  
+ "proftpd_acctserverport" "" "RANGE"  "1"  "65535"  "FALSE" "0"
+ "proftpd_sharedkey" "" "PASSWORD2" "63" "TRUE" "0" 

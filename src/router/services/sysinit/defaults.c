@@ -2926,6 +2926,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"proftpd_writeen", "off", 0},
 	{"proftpd_anon", "0", 0},
 	{"proftpd_anon_subdir", "", 0},
+	{"proftpd_rad", "0", 0},
+	{"proftpd_authserverip", "", 0},
+	{"proftpd_authserverport", "1812", 0},		
+	{"proftpd_acctserverport", "1813", 0},	
+	{"proftpd_sharedkey", "", 0},
 #endif
 #ifdef HAVE_SAMBA3
 	{"samba3_enable", "0", 0},
