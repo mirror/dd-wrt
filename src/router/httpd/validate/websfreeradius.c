@@ -110,6 +110,7 @@ void add_radius_user(webs_t wp)
 	db->users[db->usercount].downstream = 0;
 	db->users[db->usercount].upstream = 0;
 	db->users[db->usercount].expiration = 0;
+	db->users[db->usercount].enabled = 1;
 	db->usercount++;
 	writeradiusdb(db);
 	freeradiusdb(db);
