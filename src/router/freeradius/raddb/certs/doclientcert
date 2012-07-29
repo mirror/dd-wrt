@@ -18,7 +18,9 @@ else
     openssl x509 -x509toreq -in clients/${CC_COMMONNAME}-req.pem -signkey clients/${CC_COMMONNAME}-key.pem -out clients/${CC_COMMONNAME}-tmp.pem ;
 fi
 # create date in UTC (exclude timezone)
-start=$(awk -v tz=`nvram get time_zone` ' BEGIN { print strftime("%y%m%d%H%M%SZ", mktime(strftime("%Y %m %d %H %M %S 0")) - (tz * 3600), "") } ') start="-startdate $start" || start=""
+start=$(awk -v tz=`nvram get time_zone` -v dlt=`nvram get daylight_time` ' BEGIN { print strftime("%y%m%d%H%M%SZ", mktime(strftime("%Y %m %d %H %M %S 0")) - ((dlt - tz) * 3600), "") } ') && \
+        start="-startdate $start" || \
+        start=""
 echo using start: $start
 # append startdate to ca, use ca.cnf
 openssl ca -batch \
@@ -30,7 +32,6 @@ openssl ca -batch \
 	-extensions xpclient_ext \
 	-extfile xpextensions \
 	-infiles clients/${CC_COMMONNAME}-tmp.pem 
-#openssl pkcs12 -export -in clients/${CC_COMMONNAME}-cert.pem -passout pass:${CC_PASS} -out clients/${CC_COMMONNAME}-cert.p12 -inkey clients/${CC_COMMONNAME}-key.pem -descert
 # add ca cert to p12-file
 openssl pkcs12 -export \
 	-in clients/${CC_COMMONNAME}-cert.pem \
