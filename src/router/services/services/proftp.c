@@ -85,7 +85,6 @@ void start_ftpsrv(void)
 		"DefaultAddress  %s\n"
 		"ServerType      standalone\n"
 		"DefaultServer   on\n"
-		"AuthUserFile    /tmp/proftpd/etc/passwd\n"
 		"ScoreboardFile  /tmp/proftpd/etc/proftpd.scoreboard\n"
 		"Port            %s\n"
 		"Umask           022\n"
@@ -113,7 +112,22 @@ void start_ftpsrv(void)
 		nvram_safe_get("proftpd_dir"),
 		nvram_safe_get("proftpd_dir"),
 		nvram_match("proftpd_writeen", "on") ? "" : "    DenyAll\n");
-
+		
+		if (nvram_match("proftpd_rad", "0"))
+			fprintf(fp,"AuthUserFile	/tmp/proftpd/etc/passwd\n");
+		else {
+			fprintf(fp,"AuthOrder mod_radius.c\n"
+				"RadiusEngine	on\n"
+				"RadiusAuthServer	%s:%s	%s 20\n"
+				"RadiusAcctServer	%s:%s	%s 20\n",
+				nvram_safe_get("proftpd_authserverip"),
+				nvram_safe_get("proftpd_authserverport"),
+				nvram_safe_get("proftpd_sharedkey"),
+				nvram_safe_get("proftpd_authserverip"),
+				nvram_safe_get("proftpd_acctserverport"),
+				nvram_safe_get("proftpd_sharedkey"));
+		}
+			
 // Anonymous ftp - read only
 	if (nvram_match("proftpd_anon", "1")) {
 		fprintf(fp,
