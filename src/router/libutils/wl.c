@@ -586,7 +586,6 @@ static int getcenterchannel(chanspec_t chspec)
 #else
 
 #ifndef CHSPEC_IS40
-
 #define WL_CHANSPEC_CTL_SB_MASK		0x0300
 #define WL_CHANSPEC_CTL_SB_LOWER	0x0100
 #define WL_CHANSPEC_CTL_SB_UPPER	0x0200
@@ -716,7 +715,9 @@ int getchannels(unsigned int *retlist, char *ifname)
 		c = list->element[i];
 		int cspec = c & 0x700;
 		int cbw = c & 0x3800;
+//		fprintf(stderr,"wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
 		if ((cbw == mask) && (cspec == spec)) {
+//		fprintf(stderr,"take wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
 
 			int channel = getcenterchannel(c);
 
