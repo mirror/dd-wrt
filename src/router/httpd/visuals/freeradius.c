@@ -111,7 +111,7 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
   					<th><script type=\"text/javascript\">Capture(freeradius.expiration)</script></th>\n\
   					<th>&nbsp;</th>\n\
   					<th>&nbsp;</th>\n\
-  					<th><script type=\"text/javascript\">Capture(freeradius.enabled)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(share.enabled)</script></th>\n\
   				</tr>\n");
 
 	unsigned int i;
