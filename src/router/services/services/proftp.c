@@ -118,8 +118,8 @@ void start_ftpsrv(void)
 		else {
 			fprintf(fp,"AuthOrder mod_radius.c\n"
 				"RadiusEngine	on\n"
-				"RadiusAuthServer	%s:%s	%s 20\n"
-				"RadiusAcctServer	%s:%s	%s 20\n",
+				"RadiusAuthServer	%s:%s	%s 5\n"
+				"RadiusAcctServer	%s:%s	%s 5\n",
 				nvram_safe_get("proftpd_authserverip"),
 				nvram_safe_get("proftpd_authserverport"),
 				nvram_safe_get("proftpd_sharedkey"),
