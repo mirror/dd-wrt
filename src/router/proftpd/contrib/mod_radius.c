@@ -2672,12 +2672,17 @@ MODRET radius_getgroups(cmd_rec *cmd) {
     /* Check for NULL values */
     if (cmd->argv[1]) {
       gids = (array_header *) cmd->argv[1];
-
+     
       if (radius_have_user_info)
          *((gid_t *) push_array(gids)) = radius_passwd.pw_gid;
 
       for (i = 0; i < radius_addl_group_count; i++)
+      {
+      if (!radius_addl_group_ids)
+        *((gid_t *) push_array(gids)) = 0;
+       else
         *((gid_t *) push_array(gids)) = radius_addl_group_ids[i];
+      }
     }
 
     if (cmd->argv[2]) {
@@ -2687,7 +2692,12 @@ MODRET radius_getgroups(cmd_rec *cmd) {
         *((char **) push_array(groups)) = radius_prime_group_name;
 
       for (i = 0; i < radius_addl_group_count; i++)
+      {
+        if (radius_addl_group_names)
         *((char **) push_array(groups)) = radius_addl_group_names[i];
+        else
+        *((char **) push_array(groups)) = "root";
+      }
     }
 
     /* Increment this count, for the sake of proper reporting back to the
