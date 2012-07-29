@@ -38,16 +38,6 @@
 					<input class="spaceradio" type="radio" name="proftpd_wan" value="1" <% nvram_checked("proftpd_wan", "1"); %> /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" name="proftpd_wan" value="0" <% nvram_checked("proftpd_wan", "0"); %> /><% tran("share.disable"); %>
 				</div>
-				<div class="setting">
-					<div class="label"><% tran("nas.proftpd_passw"); %></div>
-					<textarea id="proftpd_passw" name="proftpd_passw" cols="60" rows="4"></textarea>
-					<script type="text/javascript">
-					//<![CDATA[
-					var proftpd_passw = fix_cr( '<% nvram_get("proftpd_passw"); %>' );
-					document.getElementById("proftpd_passw").value = proftpd_passw;
-					//]]>
-					</script>
-				</div>
 				<div class="setting">					
 					<div class="label"><% tran("nas.proftpd_anon"); %></div>
 					<input class="spaceradio" type="radio" value="1" name="proftpd_anon" <% nvram_checked("proftpd_anon","1"); %> onclick="show_layer_ext(this, 'ftpanon', true)" /><% tran("share.enable"); %>&nbsp;
@@ -60,4 +50,57 @@
 				</div>
 			</div>	
 			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.pppoesrv_auth"); %></div>
+				<input class="spaceradio" type="radio" name="proftpd_enabled" value="1" <% nvram_checked("proftpd_rad", "1"); %> onclick="toggle_layer_ext(this, 'idftprad', 'idftplocal', true)" /><% tran("radius.legend"); %>
+				<input class="spaceradio" type="radio" name="proftpd_enabled" value="0" <% nvram_checked("proftpd_rad", "0"); %> onclick="toggle_layer_ext(this, 'idftprad', 'idftplocal', false)" /><% tran("nas.proftpd_passw"); %>
+			</div>
 		</fieldset><br />
+
+		<div id="idftplocal">
+			<fieldset>
+				<legend>Radius <% tran("service.pppoesrv_chaps"); %></legend>
+					<div class="setting">
+						<div class="label"><% tran("nas.proftpd_passw"); %></div>
+						<textarea id="proftpd_passw" name="proftpd_passw" cols="60" rows="4"></textarea>
+						<script type="text/javascript">
+						//<![CDATA[
+						var proftpd_passw = fix_cr( '<% nvram_get("proftpd_passw"); %>' );
+						document.getElementById("proftpd_passw").value = proftpd_passw;
+						//]]>
+						</script>
+					</div>
+			</fieldset><br />
+		</div>
+
+		<div id="idftprad">
+			<fieldset>
+				<legend>Radius <% tran("service.pppoesrv_auth"); %></legend>
+					<div class="setting">
+						<div class="label"><% tran("service.pppoesrv_radip"); %></div>
+						<input maxlength="15" size="20" name="proftpd_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("proftpd_authserverip"); %>" />
+					</div>
+					<div class="setting">
+						<div class="label"><% tran("service.pppoesrv_radauthport"); %></div>
+						<input size="5" maxlength="5" class="num" name="proftpd_authserverport" value="<% nvram_get("proftpd_authserverport"); %>" />
+						<span class="default"><script type="text/javascript">
+						//<![CDATA[
+						document.write("(" + share.deflt + ": 1812)");
+						//]]>
+						</script></span>
+					</div>			
+					<div class="setting">
+						<div class="label"><% tran("service.pppoesrv_radaccport"); %></div>
+						<input size="5" maxlength="5" class="num" name="proftpd_acctserverport" value="<% nvram_get("proftpd_acctserverport"); %>" />
+						<span class="default"><script type="text/javascript">
+						//<![CDATA[
+						document.write("(" + share.deflt + ": 1813)");
+						//]]>
+						</script></span>
+					</div>
+					<div class="setting">
+						<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
+						<input size="20" maxlength="63" type="password" name="proftpd_sharedkey" value="d6ew5v1x2pc7st9m" />
+					</div>
+			</fieldset>
+		</div><br />
