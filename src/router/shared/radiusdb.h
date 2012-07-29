@@ -10,6 +10,7 @@ struct radiususer {
 	unsigned int downstream;
 	unsigned int upstream;
 	unsigned int expiration;
+	unsigned int enabled;
 //more fields can be added in future
 }  __attribute__((packed));
 

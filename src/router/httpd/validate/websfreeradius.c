@@ -237,6 +237,7 @@ static void save_radius_users(webs_t wp)
 	char downstream[] = { "passwordXXXXX" };
 	char upstream[] = { "usernameXXXXX" };
 	char expiration[] = { "expirationXXXXX" };
+	char enabled[] = { "enabledXXXXX" };
 	struct radiusdb *db = safe_malloc(sizeof(struct radiusdb));
 	char filename[128];
 	db->usercount = 0;
@@ -249,6 +250,7 @@ static void save_radius_users(webs_t wp)
 		sprintf(downstream, "downstream%d", db->usercount);
 		sprintf(upstream, "upstream%d", db->usercount);
 		sprintf(expiration, "expiration%d", db->usercount);
+		sprintf(enabled, "enabled%d", db->usercount);
 		char *u = websGetVar(wp, user, NULL);
 		if (!u)
 			break;
@@ -270,6 +272,10 @@ static void save_radius_users(webs_t wp)
 		char *e = websGetVar(wp, expiration, NULL);
 		if (!e)
 			break;
+
+		char *en = websGetVar(wp, enabled, NULL);
+		if (!en)
+			break;
 		db->users =
 		    realloc(db->users,
 			    sizeof(struct radiususer) * (db->usercount + 1));
@@ -288,6 +294,7 @@ static void save_radius_users(webs_t wp)
 			expiration = expiration + curtime;
 		}
 		db->users[db->usercount].expiration = expiration;
+		db->users[db->usercount].enabled = atoi(en);
 		db->usercount++;
 	}
 	writeradiusdb(db);

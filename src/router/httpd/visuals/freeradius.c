@@ -111,6 +111,7 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
   					<th><script type=\"text/javascript\">Capture(freeradius.expiration)</script></th>\n\
   					<th>&nbsp;</th>\n\
   					<th>&nbsp;</th>\n\
+  					<th><script type=\"text/javascript\">Capture(freeradius.enabled)</script></th>\n\
   				</tr>\n");
 
 	unsigned int i;
@@ -163,6 +164,11 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + freeradius.cert + \"\\\" onclick=\\\"openWindow('FreeRadiusCert-%d.asp', 630, 430,'Certificate');\\\" />\");\n//]]>\n</script></td>\n",
 				  i);
+			sprintf(vlan_name, "enabled%d", i);
+			websWrite(wp,
+				  "<td><input class=\"checkbox\" name=\"%s\" value=\"%d\" %s/></td>\n",
+				  vlan_name, db->users[i].enabled,db->users[i].enabled?"checked=\"checked\"":"");
+
 			websWrite(wp, "</tr>\n");
 		}
 		freeradiusdb(db);

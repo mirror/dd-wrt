@@ -122,6 +122,13 @@ struct radiusdb *loadradiusdb(void)
 		} else
 			db->users[i].expiration = 0;
 
+		if (curlen < db->users[i].fieldlen) {
+		{
+			db->users[i].enabled = readword(fp);
+			curlen += 4;		
+		} else
+			db->users[i].enabled = 1;
+
 		if ((db->users[i].fieldlen - curlen) > 0)	//for backward compatiblity
 			fseek(fp, db->users[i].fieldlen - curlen, SEEK_CUR);
 
@@ -164,6 +171,7 @@ void writeradiusdb(struct radiusdb *db)
 		writeword(db->users[i].downstream, fp);
 		writeword(db->users[i].upstream, fp);
 		writeword(db->users[i].expiration, fp);
+		writeword(db->users[i].enabled, fp);
 	}
 	fclose(fp);
 }
