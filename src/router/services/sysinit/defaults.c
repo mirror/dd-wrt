@@ -2920,6 +2920,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_FTP
 	{"proftpd_enable", "0", 0},
+	{"proftpd_wan", "0", 0},
 	{"proftpd_port", "21", 0},
 	{"proftpd_dir", "mnt", 0},
 	{"proftpd_passw", "", 0},
