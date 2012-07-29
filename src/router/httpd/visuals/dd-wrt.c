@@ -6157,14 +6157,12 @@ void show_80211X(webs_t wp, char *prefix)
 	// tls authentication
 	websWrite(wp, "<div id=\"idtls%s\">\n", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
-// -> added habeIchVergessen
-	websWrite(wp, "<div class=\"setting\">\n");
 	sprintf(var, "%s_tls8021xkeyxchng", prefix);
 	nvram_default_get(var, "wep");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.keyxchng)</script></div>\n");
 	websWrite(wp, "<select name=\"%s_tls8021xkeyxchng\"> size=\"1\"\n", prefix);
-	websWrite(wp, "<option value=\"web\" %s>Radius/WEB</option>\n",
+	websWrite(wp, "<option value=\"wep\" %s>Radius/WEP</option>\n",
 		  selmatch(var, "wep", "selected=\"selected\""));
 	websWrite(wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
 		  selmatch(var, "wpa2", "selected=\"selected\""));
@@ -6173,7 +6171,7 @@ void show_80211X(webs_t wp, char *prefix)
 	websWrite(wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
 		  selmatch(var, "wpa", "selected=\"selected\""));
 	websWrite(wp, "</select></div>\n");
-// <- added habeIchVergessen
+	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(share.user)</script></div>\n");
 	websWrite(wp,
