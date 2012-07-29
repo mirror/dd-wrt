@@ -166,7 +166,7 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 				  i);
 			sprintf(vlan_name, "enabled%d", i);
 			websWrite(wp,
-				  "<td><input class=\"checkbox\" name=\"%s\" value=\"%d\" %s/></td>\n",
+				  "<td><input type=\"checkbox\" name=\"%s\" value=\"%d\" %s/></td>\n",
 				  vlan_name, db->users[i].enabled,db->users[i].enabled?"checked=\"checked\"":"");
 
 			websWrite(wp, "</tr>\n");
