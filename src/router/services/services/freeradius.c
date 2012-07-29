@@ -159,6 +159,8 @@ void start_freeradius(void)
 				if (!db->users[i].user
 				    || !strlen(db->users[i].user))
 					continue;
+				if (!db->users[i].enabled)
+					continue;
 				fprintf(fp,
 					"%s        Cleartext-Password := \"%s\"",
 					db->users[i].user, db->users[i].passwd);
