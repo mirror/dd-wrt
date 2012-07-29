@@ -551,6 +551,7 @@ static void log_write(int priority, int f, char *s, int discard) {
   }
 }
 
+#ifdef NEED_PRINTF
 void pr_log_pri(int priority, const char *fmt, ...) {
   char buf[LOGBUFFER_SIZE] = {'\0'};
   va_list msg;
@@ -581,7 +582,7 @@ void pr_log_auth(int priority, const char *fmt, ...) {
 
   log_write(priority, LOG_AUTHPRIV, buf, FALSE);
 }
-
+#endif
 /* Disable logging to stderr, should be done right before forking
  * or disassociation from controlling tty.  After disabling stderr
  * logging, all messages go to syslog.
@@ -633,7 +634,7 @@ int pr_log_str2sysloglevel(const char *name) {
   errno = ENOENT;
   return -1;
 }
-
+#ifdef NEED_PRINTF
 void pr_log_debug(int level, const char *fmt, ...) {
   char buf[LOGBUFFER_SIZE] = {'\0'};
   va_list msg;
@@ -661,7 +662,7 @@ void pr_log_debug(int level, const char *fmt, ...) {
 
   log_write(PR_LOG_DEBUG, facility, buf, discard);
 }
-
+#endif
 static const char *get_log_event_name(unsigned int log_type) {
   const char *event_name = NULL;
 

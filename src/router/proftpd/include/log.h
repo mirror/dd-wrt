@@ -138,27 +138,37 @@ int log_opensyslog(const char *);
 int log_getfacility(void);
 void log_setfacility(int);
 
+#ifdef NEED_PRINTF
 void pr_log_pri(int, const char *, ...)
 #ifdef __GNUC__
        __attribute__ ((format (printf, 2, 3)));
 #else
        ;
 #endif
-
+#else
+#define pr_log_pri(a,b,...)  do { } while(0)
+#endif
+#ifdef NEED_PRINTF
 void pr_log_auth(int, const char *, ...)
 #ifdef __GNUC__
        __attribute__ ((format (printf, 2, 3)));
 #else
        ;
 #endif
+#else
+#define pr_log_auth(a,b,...)  do { } while(0)
+#endif
 
+#ifdef NEED_PRINTF
 void pr_log_debug(int, const char *, ...)
 #ifdef __GNUC__
        __attribute__ ((format (printf, 2, 3)));
 #else
        ;
 #endif
-
+#else
+#define pr_log_debug(a,b,...) do { } while(0)
+#endif
 int  pr_log_setdebuglevel(int);
 
 void log_stderr(int);
