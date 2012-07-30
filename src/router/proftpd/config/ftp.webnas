@@ -56,12 +56,13 @@
 				<input class="spaceradio" type="radio" name="proftpd_rad" value="0" <% nvram_checked("proftpd_rad", "0"); %> onclick="toggle_layer_ext(this, 'idftprad', 'idftplocal', false)" /><% tran("nas.proftpd_passw"); %>
 			</div>
 			</div>
+			</fieldset><br />
 
+			<div id="ftpen">
 			<div id="idftplocal">
 				<fieldset>
-					<legend>Radius <% tran("service.pppoesrv_chaps"); %></legend>
+					<legend>Radius <% tran("nas.proftpd_passw"); %></legend>
 						<div class="setting">
-							<div class="label"><% tran("nas.proftpd_passw"); %></div>
 							<textarea id="proftpd_passw" name="proftpd_passw" cols="60" rows="4"></textarea>
 							<script type="text/javascript">
 							//<![CDATA[
@@ -104,4 +105,4 @@
 						</div>
 				</fieldset>
 			</div>
-		</fieldset><br />
+			</div>
