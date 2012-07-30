@@ -4,7 +4,7 @@ freeradius-configure: openssl
 	sys_lib_search_path_spec="$(ARCH)-uclibc" \
 	MYSQL_CONFIG="no" \
 	ac_cv_lib_readline=no \
-	./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-shared \
+	./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" --enable-shared \
 	--program-prefix="" \
 	--program-suffix="" \
 	--prefix=/usr \
