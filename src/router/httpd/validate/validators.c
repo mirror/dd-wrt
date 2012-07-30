@@ -3395,6 +3395,7 @@ write_nvram:
 	}
 	if (strcmp(backuproute, &old[atoi(page) * STATIC_ROUTE_PAGE])) {
 		if (strlen(backuproute) > 0) {
+			nvram_set("nowebaction","1");
 			addAction("static_route_del");
 			addDeletion(backuproute);
 		}
