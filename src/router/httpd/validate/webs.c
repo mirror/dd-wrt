@@ -506,6 +506,7 @@ void addDeletion(char *word)
 void delete_static_route(webs_t wp)
 {
 	addAction("routing");
+        nvram_set("nowebaction","1");
 	char *buf = safe_malloc(2500);
 	char *buf_name = safe_malloc(2500);
 
@@ -1392,6 +1393,7 @@ void qos_save(webs_t wp)
 
 	if (strcmp(data, "0") == 0) {
 		addAction("qos");
+	        nvram_set("nowebaction","1");
 		applytake(value);
 		return;
 	}
@@ -1572,6 +1574,7 @@ void qos_save(webs_t wp)
 	nvram_set("svqos_port4bw", websGetVar(wp, "svqos_port4bw", NULL));
 
 	addAction("qos");
+	nvram_set("nowebaction","1");
 	applytake(value);
 
 }
@@ -3572,6 +3575,7 @@ void nassrv_save(webs_t wp)
 	validate_cgi(wp);
 
 	addAction("nassrv");
+	nvram_set("nowebaction","1");
 	applytake(value);
 }
 #endif
@@ -3682,6 +3686,7 @@ void nintendo_save(webs_t wp) {
 
 	if( atoi(websGetVar(wp, "spotpass", "")) != enabled) {
 		addAction("wireless");
+		nvram_set("nowebaction","1");
 	}
 	
 	nvram_set("spotpass", websGetVar(wp, "spotpass", "0"));
