@@ -218,6 +218,7 @@ extern void dropPrivs(void);
 #define IPV4ALEN     4
 #define SMALLBUF   256
 
+
 /* A PPPoE Packet, including Ethernet headers */
 typedef struct PPPoEPacketStruct {
     struct ethhdr ethHdr;	/* Ethernet header */
@@ -234,7 +235,7 @@ typedef struct PPPoEPacketStruct {
     unsigned int session:16;	/* PPPoE session */
     unsigned int length:16;	/* Payload length */
     unsigned char payload[ETH_DATA_LEN]; /* A bit of room to spare */
-} PPPoEPacket;
+} PPPoEPacket  __attribute__((packed));
 
 /* Header size of a PPPoE packet */
 #define PPPOE_OVERHEAD 6  /* type, code, session, length */
@@ -248,7 +249,7 @@ typedef struct PPPoETagStruct {
     unsigned int type:16;	/* tag type */
     unsigned int length:16;	/* Length of payload */
     unsigned char payload[ETH_DATA_LEN]; /* A LOT of room to spare */
-} PPPoETag;
+} PPPoETag  __attribute__((packed));
 /* Header size of a PPPoE tag */
 #define TAG_HDR_SIZE 4
 
