@@ -76,6 +76,7 @@ void aoss_save(webs_t wp)
 	{
 	    nvram_set("wps_registrar",registrar);
 	    addAction("wireless");
+	    nvram_set("nowebaction","1");
 	    service_restart();
 	}
 	// all other vars

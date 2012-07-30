@@ -1105,12 +1105,16 @@ int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 			"name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n",
 			act->name, act->type, act->service, act->sleep_time,
 			act->action);
-		addAction(act->service);
 		sleep_time = act->sleep_time;
 		action = act->action;
 		if (act->goname) {
 			start_gozila(act->goname, wp);
 		}
+		
+		if (nvram_get("nowebaction")==NULL) {
+			addAction(act->service);
+		} else
+			nvram_unset("nowebaction");
 	} else {
 		sleep_time = 0;
 		action = REFRESH;
@@ -1382,8 +1386,10 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
 			if ((act->action == SYS_RESTART)
 			    || (act->action == SERVICE_RESTART)) {
-
-				addAction(act->service);
+				if (nvram_get("nowebaction")==NULL) {
+					addAction(act->service);
+				}  else
+					nvram_unset("nowebaction");
 			}
 			sleep_time = act->sleep_time;
 			action = act->action;
