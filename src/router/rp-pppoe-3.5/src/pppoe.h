@@ -221,12 +221,14 @@ extern void dropPrivs(void);
 /* A PPPoE Packet, including Ethernet headers */
 typedef struct PPPoEPacketStruct {
     struct ethhdr ethHdr;	/* Ethernet header */
-#ifdef PACK_BITFIELDS_REVERSED
+#if __BYTE_ORDER == __BIG_ENDIAN
     unsigned int type:4;	/* PPPoE Type (must be 1) */
     unsigned int ver:4;		/* PPPoE Version (must be 1) */
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+    unsigned int ver:4;		/* PPPoE Version (must be 1) */
+    unsigned int type:4;	/* PPPoE Type (must be 1) */
 #else
-    unsigned int ver:4;		/* PPPoE Version (must be 1) */
-    unsigned int type:4;	/* PPPoE Type (must be 1) */
+#error "Could not determine the system's endianness"
 #endif
     unsigned int code:8;	/* PPPoE code */
     unsigned int session:16;	/* PPPoE session */
