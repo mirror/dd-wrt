@@ -235,7 +235,7 @@ typedef struct PPPoEPacketStruct {
     unsigned int session:16;	/* PPPoE session */
     unsigned int length:16;	/* Payload length */
     unsigned char payload[ETH_DATA_LEN]; /* A bit of room to spare */
-} PPPoEPacket  __attribute__((packed));
+} __attribute__((packed)) PPPoEPacket;
 
 /* Header size of a PPPoE packet */
 #define PPPOE_OVERHEAD 6  /* type, code, session, length */
@@ -249,7 +249,7 @@ typedef struct PPPoETagStruct {
     unsigned int type:16;	/* tag type */
     unsigned int length:16;	/* Length of payload */
     unsigned char payload[ETH_DATA_LEN]; /* A LOT of room to spare */
-} PPPoETag  __attribute__((packed));
+}  __attribute__((packed)) PPPoETag;
 /* Header size of a PPPoE tag */
 #define TAG_HDR_SIZE 4
 
