@@ -274,7 +274,7 @@ static void save_radius_users(webs_t wp)
 		if (!e)
 			break;
 
-		char *en = websGetVar(wp, enabled, NULL);
+		char *en = websGetVar(wp, enabled, "0"); // returns NULL if not set
 		if (!en)
 			break;
 		db->users =
