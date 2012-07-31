@@ -61,7 +61,7 @@
 			<div id="ftpen">
 			<div id="idftplocal">
 				<fieldset>
-					<legend>Radius <% tran("nas.proftpd_passw"); %></legend>
+					<legend><% tran("nas.proftpd_passw"); %></legend>
 						<div class="setting">
 							<textarea id="proftpd_passw" name="proftpd_passw" cols="60" rows="4"></textarea>
 							<script type="text/javascript">
