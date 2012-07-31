@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_radius -- a module for RADIUS authentication and accounting
  *
- * Copyright (c) 2001-2011 TJ Saunders
+ * Copyright (c) 2001-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
  * $Id: mod_radius.c,v 1.66 2011/08/16 16:13:02 castaglia Exp $
  */
 
-#define MOD_RADIUS_VERSION "mod_radius/0.9.1"
+#define MOD_RADIUS_VERSION "mod_radius/0.9.2"
 
 #include "conf.h"
 #include "privs.h"
@@ -371,9 +371,17 @@ static unsigned char radius_have_var(char *var) {
 static void radius_parse_var(char *var, int *attr_id, char **attr_default) {
   pool *tmp_pool = make_sub_pool(radius_pool);
   char *var_cpy = pstrdup(tmp_pool, var), *tmp = NULL;
+  size_t var_cpylen;
+
+  var_cpylen = strlen(var_cpy);
+  if (var_cpylen == 0) {
+    /* Empty string; nothing to do. */
+    destroy_pool(tmp_pool);
+    return;
+  }
 
   /* First, strip off the "$()" variable characters. */
-  var_cpy[strlen(var_cpy)-1] = '\0';
+  var_cpy[var_cpylen-1] = '\0';
   var_cpy += 2;
 
   /* Find the delimiting ':' */
@@ -411,6 +419,8 @@ static unsigned char radius_parse_gids_str(pool *p, char *gids_str,
     gid_t gid;
     char *endp = NULL;
 
+    pr_signals_handle();
+
     /* Make sure the given ID is a valid number. */
     gid = strtoul(val, &endp, 10);
 
@@ -437,7 +447,10 @@ static unsigned char radius_parse_groups_str(pool *p, char *groups_str,
 
   /* Add each name to the array. */
   while ((name = radius_argsep(&groups_str)) != NULL) {
-    char *tmp = pstrdup(p, name);
+    char *tmp;
+
+    pr_signals_handle();
+    tmp = pstrdup(p, name);
 
     /* Push the name into the name array. */
     *((char **) push_array(group_names)) = tmp;
@@ -717,7 +730,7 @@ static void radius_process_accpt_packet(radius_packet_t *packet) {
           "additional group names: defaulting to '%s'", radius_vendor_name,
           radius_addl_group_names_attr_id, radius_addl_group_names_str);
       }
-    }     
+    }
 
     if (radius_addl_group_ids_attr_id) {
       radius_attrib_t *attrib = radius_get_vendor_attrib(packet,
@@ -1017,8 +1030,9 @@ static void radius_process_group_info(config_rec *c) {
     radius_parse_var(param, &radius_prime_group_name_attr_id,
       &radius_prime_group_name);
 
-  } else 
+  } else {
     radius_prime_group_name = param;
+  }
 
   /* If the group name count is zero, then I know that the data will be
    * contained in a VSA.  Otherwise, the group names have already been parsed.
@@ -1039,7 +1053,7 @@ static void radius_process_group_info(config_rec *c) {
 
   } else {
     ngroups = *((unsigned int *) c->argv[1]);
-    radius_addl_group_names = (char **) c->argv[2];
+    groups = (char **) c->argv[2];
   }
 
   if (*((unsigned int *) c->argv[3]) == 0) {
@@ -1057,8 +1071,8 @@ static void radius_process_group_info(config_rec *c) {
     }
 
   } else {
-    ngids = *((unsigned int *) c->argv[1]);
-    radius_addl_group_ids = (gid_t *) c->argv[3];
+    ngids = *((unsigned int *) c->argv[3]);
+    gids = (gid_t *) c->argv[4];
   }
 
   if (!have_illegal_value &&
@@ -3088,6 +3102,7 @@ MODRET set_radiusgroupinfo(cmd_rec *cmd) {
   config_rec *c = NULL;
   unsigned char group_names_vsa = FALSE;
   unsigned char group_ids_vsa = FALSE;
+  unsigned int ngroups = 0, ngids = 0;
 
   CHECK_ARGS(cmd, 3);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
@@ -3116,7 +3131,6 @@ MODRET set_radiusgroupinfo(cmd_rec *cmd) {
     c->argv[2] = pstrdup(c->pool, cmd->argv[2]);
 
   } else {
-    unsigned int ngroups = 0;
     char **groups = NULL;
 
     if (!radius_parse_groups_str(c->pool, cmd->argv[2], &groups, &ngroups))
@@ -3133,7 +3147,6 @@ MODRET set_radiusgroupinfo(cmd_rec *cmd) {
     c->argv[4] = pstrdup(c->pool, cmd->argv[3]);
 
   } else {
-    unsigned int ngids = 0;
     gid_t *gids = NULL;
 
     if (!radius_parse_gids_str(c->pool, cmd->argv[3], &gids, &ngids))
@@ -3141,6 +3154,21 @@ MODRET set_radiusgroupinfo(cmd_rec *cmd) {
 
     *((unsigned int *) c->argv[3]) = ngids;
     c->argv[4] = (void *) gids;
+  }
+
+  if (ngroups > 0 &&
+      ngids > 0 &&
+      ngroups != ngids) {
+    char ngroups_str[32], ngids_str[32];
+
+    memset(ngroups_str, '\0', sizeof(ngroups_str));
+    snprintf(ngroups_str, sizeof(ngroups_str)-1, "%u", ngroups);
+
+    memset(ngids_str, '\0', sizeof(ngids_str));
+    snprintf(ngids_str, sizeof(ngids_str)-1, "%u", ngids);
+
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "mismatched number of group names (",
+      ngroups_str, ") and group IDs (", ngids_str, ")", NULL));
   }
 
   return PR_HANDLED(cmd);
