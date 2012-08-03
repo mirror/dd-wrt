@@ -114,6 +114,7 @@ addEvent(window, "unload", function() {
 						<input type="hidden" name="limit_ssh" />
 						<input type="hidden" name="limit_telnet" />
 						<input type="hidden" name="limit_pptp" />
+						<input type="hidden" name="limit_ftp" />
 						<h2><% tran("firewall.h2"); %></h2>
 						
 						<fieldset>
