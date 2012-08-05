@@ -2607,4 +2607,16 @@ void ej_sas_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</fieldset><br style=\"%s\"/>\n", stage_visible_css);
 	return;
 }
+
+void ej_show_sas(webs_t wp, int argc, char_t ** argv) {
+#ifndef HAVE_IAS
+	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(sas.title);</script></h2>\n");
+	websWrite(wp, "<fieldset>\n");
+	websWrite(wp, "	<legend><script type=\"text/javascript\">Capture(sas.title);</script></legend>\n");
+	websWrite(wp, "	<input type=\"button\" name=\"start_sas\" value=\"Start\" class=\"button\" onclick=\"document.location='SetupAssistant.asp'\">\n");
+	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "<br />\n");
+#endif
+}
+
 #endif
