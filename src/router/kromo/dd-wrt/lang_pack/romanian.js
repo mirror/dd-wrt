@@ -443,7 +443,7 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Ruter Milkfish SIP";
-bmenu.servicesAnchorFree="Rețeaua mea de reclame";
+//bmenu.servicesAnchorFree="Rețeaua mea de reclame";
 
 bmenu.statu="Stare";
 bmenu.statuRouter="Ruter";
@@ -783,43 +783,43 @@ hotspotsys.locationid="ID locație";
 hotspotsys.dhcp="Interfață DHCP";
 hotspotsys.net="Rețea la distanță";
 hotspotsys.customsplash="Splash personalizat (Walled Garden)";
-
-anchorfree.anchorfree="AnchorFree";
-anchorfree.titl="Rețeaua mea de reclame";
-anchorfree.h2="Rețeaua de reclame AnchorFree";
-anchorfree.anchorfree_revenue="Câștigați bani prin crearea hotspot-ului cu reclame AnchorFree";
-anchorfree.email="Email pentru primire raport câștiguri";
-anchorfree.ssid="Folosește SSID diferit";
-anchorfree.ssid_name="SSID";
-anchorfree.address_1="Strada";
-anchorfree.address_2="Strada (continuare)";
-anchorfree.city="Oraș";
-anchorfree.zip="Cod poștal sau ZIP";
-anchorfree.state="Județ / Stat";
-anchorfree.country="Țară";
-anchorfree.category="Categorie";
-anchorfree.publish="Publică hotspot-ul pe harta gratuită WiFi";
-anchorfree.serviceid="ID serviciu";
-anchorfree.servicestatus="Stare serviciu";
-anchorfree.agreement="Termeni și condiții";
-anchorfree.agree="ACCEPT ȘI SUNT DE ACORD";
-anchorfree.validaddr="trebuie furnizată o adresă validă dacă se dorește ca acest hotspot să fie publicat pe harta hotspot-urilor wifi!";
-anchorfree.validcity="trebuie furnizat un oraș sau un cod poștal/zip valid dacă se dorește ca acest hotspot să fie publicat pe harta hotspot-urilor wifi!";
-anchorfree.validcat="vă rog să alegeți o categorie de reclame pentru hotspot-ul dumneavoastră";
-anchorfree.validcountry="vă rog să selectați țara pentru hotspot-ul dumneavoastră";
-anchorfree.validterms="Trebuie să fiți de acord cu termenii și condițiile!";
-
-//help container
-hanchorfree.right1="Alăturați-vă rețelei de publicitate hotspot AnchorFree";
-hanchorfree.right2="AnchorFree operează o rețea hotspot de publicitate care permite utilizatorilor DD-WRT să obțină venituri din ce în ce mai mari.";
-hanchorfree.right3="Obțineți venituri mai mari cu publicitatea de la AnchorFree";
-hanchorfree.right4="Activând această capabilitate și creând un cont la AnchorFree (este gratuit și ușor), un cadru persistent cu reclame este inserat direct în browserele web, care vă va aduce câștiguri în fiecare lună. Câștigați minim 25 de dolari pe lună și AnchorFree vă va trimite banii automat în contul dumneavoastră.";
-hanchorfree.right5="Pentru mai multe informații vă rugăm să vizitați www.anchorfree.com";
-hanchorfree.right6="Activarea este ușoară";
-hanchorfree.right7="Serviciul odată activat, AnchorFree va trimite un email către deținătorul contului cu instrucțiuni simple pentru optimizarea hotspot-ului dumneavoastră, întrebări frecvente (FAQ), și alte informații pertinente pentru câștigarea banilor cu ajutorul ruterului. Prin acest ecran de configurare, AnchorFree inserează un cadru subțire, non-intruziv de publicitate direct în browserele web care accesează Internetul prin acest ruter.";
-hanchorfree.right8="Ajutor clienți";
-hanchorfree.right9="Aveți întrebări? Contactați-ne la boxhelp@anchorfree.com";
-
+//
+//anchorfree.anchorfree="AnchorFree";
+//anchorfree.titl="Rețeaua mea de reclame";
+//anchorfree.h2="Rețeaua de reclame AnchorFree";
+//anchorfree.anchorfree_revenue="Câștigați bani prin crearea hotspot-ului cu reclame AnchorFree";
+//anchorfree.email="Email pentru primire raport câștiguri";
+//anchorfree.ssid="Folosește SSID diferit";
+//anchorfree.ssid_name="SSID";
+//anchorfree.address_1="Strada";
+//anchorfree.address_2="Strada (continuare)";
+//anchorfree.city="Oraș";
+//anchorfree.zip="Cod poștal sau ZIP";
+//anchorfree.state="Județ / Stat";
+//anchorfree.country="Țară";
+//anchorfree.category="Categorie";
+//anchorfree.publish="Publică hotspot-ul pe harta gratuită WiFi";
+//anchorfree.serviceid="ID serviciu";
+//anchorfree.servicestatus="Stare serviciu";
+//anchorfree.agreement="Termeni și condiții";
+//anchorfree.agree="ACCEPT ȘI SUNT DE ACORD";
+//anchorfree.validaddr="trebuie furnizată o adresă validă dacă se dorește ca acest hotspot să fie publicat pe harta hotspot-urilor wifi!";
+//anchorfree.validcity="trebuie furnizat un oraș sau un cod poștal/zip valid dacă se dorește ca acest hotspot să fie publicat pe harta hotspot-urilor wifi!";
+//anchorfree.validcat="vă rog să alegeți o categorie de reclame pentru hotspot-ul dumneavoastră";
+//anchorfree.validcountry="vă rog să selectați țara pentru hotspot-ul dumneavoastră";
+//anchorfree.validterms="Trebuie să fiți de acord cu termenii și condițiile!";
+//
+////help container
+//hanchorfree.right1="Alăturați-vă rețelei de publicitate hotspot AnchorFree";
+//hanchorfree.right2="AnchorFree operează o rețea hotspot de publicitate care permite utilizatorilor DD-WRT să obțină venituri din ce în ce mai mari.";
+//hanchorfree.right3="Obțineți venituri mai mari cu publicitatea de la AnchorFree";
+//hanchorfree.right4="Activând această capabilitate și creând un cont la AnchorFree (este gratuit și ușor), un cadru persistent cu reclame este inserat direct în browserele web, care vă va aduce câștiguri în fiecare lună. Câștigați minim 25 de dolari pe lună și AnchorFree vă va trimite banii automat în contul dumneavoastră.";
+//hanchorfree.right5="Pentru mai multe informații vă rugăm să vizitați www.anchorfree.com";
+//hanchorfree.right6="Activarea este ușoară";
+//hanchorfree.right7="Serviciul odată activat, AnchorFree va trimite un email către deținătorul contului cu instrucțiuni simple pentru optimizarea hotspot-ului dumneavoastră, întrebări frecvente (FAQ), și alte informații pertinente pentru câștigarea banilor cu ajutorul ruterului. Prin acest ecran de configurare, AnchorFree inserează un cadru subțire, non-intruziv de publicitate direct în browserele web care accesează Internetul prin acest ruter.";
+//hanchorfree.right8="Ajutor clienți";
+//hanchorfree.right9="Aveți întrebări? Contactați-ne la boxhelp@anchorfree.com";
+//
 
 // ** Info.htm **//
 info.titl="Informații";

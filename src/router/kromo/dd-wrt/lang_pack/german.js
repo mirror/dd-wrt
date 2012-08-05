@@ -782,41 +782,41 @@ hotspotsys.customsplash="Angepasste Splash Seite (Walled Garden)";
 
 // **************************************************************** AnchorFree.asp *********************************************************//
 
-anchorfree.anchorfree="AnchorFree";
-anchorfree.title="Mit Hotspot Geld verdienen";
-anchorfree.anchorfree_revenue="Durch AnchorFree Hotspot mit Werbung, Geld verdienen";
-anchorfree.email="Email für Zahlungsberichte";
-anchorfree.ssid="Nutze alternative SSID";
-anchorfree.ssid_name="SSID";
-anchorfree.address_1="Addresse";
-anchorfree.address_2="Addresse 2";
-anchorfree.city="Stadt";
-anchorfree.zip="Postleitzahl";
-anchorfree.state="Bundesland";
-anchorfree.country="Land";
-anchorfree.category="Kategorie";
-anchorfree.publish="Hotspot auf WiFi Karte anzeigen";
-anchorfree.serviceid="Service ID";
-anchorfree.servicestatus="Service Status";
-anchorfree.agreement="Nutzungsbestimmungen";
-anchorfree.agree="Einverstanden";
-anchorfree.validaddr="Um den Hotspot korrekt auf der Karte anzeigen zu können, muß eine gültige Addresse angegeben werden!";
-anchorfree.validcity="Um den Hotspot korrekt auf der Karte anzeigen zu können, muß eine gültige Stadt oder Postleitzahl angegeben werden!";
-anchorfree.validcat="Bitte wählen Sie eine Kategorie für ihren Hotspot aus!";
-anchorfree.validcountry="Bitte geben Sie ihr Land an";
-anchorfree.validterms="Sie müssen den Nutzungsbestimmungen zustimmen!";
+//anchorfree.anchorfree="AnchorFree";
+//anchorfree.title="Mit Hotspot Geld verdienen";
+//anchorfree.anchorfree_revenue="Durch AnchorFree Hotspot mit Werbung, Geld verdienen";
+//anchorfree.email="Email für Zahlungsberichte";
+//anchorfree.ssid="Nutze alternative SSID";
+//anchorfree.ssid_name="SSID";
+//anchorfree.address_1="Addresse";
+//anchorfree.address_2="Addresse 2";
+//anchorfree.city="Stadt";
+//anchorfree.zip="Postleitzahl";
+//anchorfree.state="Bundesland";
+//anchorfree.country="Land";
+//anchorfree.category="Kategorie";
+//anchorfree.publish="Hotspot auf WiFi Karte anzeigen";
+//anchorfree.serviceid="Service ID";
+//anchorfree.servicestatus="Service Status";
+//anchorfree.agreement="Nutzungsbestimmungen";
+//anchorfree.agree="Einverstanden";
+//anchorfree.validaddr="Um den Hotspot korrekt auf der Karte anzeigen zu können, muß eine gültige Addresse angegeben werden!";
+//anchorfree.validcity="Um den Hotspot korrekt auf der Karte anzeigen zu können, muß eine gültige Stadt oder Postleitzahl angegeben werden!";
+//anchorfree.validcat="Bitte wählen Sie eine Kategorie für ihren Hotspot aus!";
+//anchorfree.validcountry="Bitte geben Sie ihr Land an";
+//anchorfree.validterms="Sie müssen den Nutzungsbestimmungen zustimmen!";
 
 
 
-hanchorfree.right1="Tritt dem AnchorFree Hotspot Werbenetzwerk bei";
-hanchorfree.right2="AnchorFree betreibt ein Hotspot Werbenetzwerk welches DD-WRT Nutzern wachsende Gewinnmöglichkeiten bietet";
-hanchorfree.right3="Generiere wachsende Gewinne durch die Nutzung von AnchorFree";
-hanchorfree.right4="Durch das Einschalten von AnchorFree und durch das erstellen des dazugehörigen Nutzerkontos (kostenlos und einfach), wird ein permantenter Werbebereich in die Aufgerufenen Webseiten eingefügt, welches zu einer Monatlichen Gewinnausschüttung führt.  Beginnend von einem Monatlichen Minimum von 25$, wird ihnen ihr Guthaben automatisch von AnchorFree überwiesen.";
-hanchorfree.right5="Für weitere Informationen besuchen sie bitte www.anchorfree.com";
-hanchorfree.right6="Das Einschalten ist Einfach";
-hanchorfree.right7="Einmal eingeschaltet, wird ihnen von AnchorFRee automatisch eine Email an Ihre registrierte email Addresse geschickt, welche einfache Anweisungen über die Optimierung ihres Hotspots, FAQs und andere wichtige Informationen über das Geld verdienen mit ihrem Router enthält. Durch dieses Konfigurationsmenü wird von AnchorFree ein kleines, nicht zu aufdringliches Werbebanner in die aufgerufenen Webseiten eingefügt.";
-hanchorfree.right8="Kunden unterstützung";
-hanchorfree.right9="Haben Sie Fragen? Kontaktieren Sie uns durch boxhelp@anchorfree.com";
+//hanchorfree.right1="Tritt dem AnchorFree Hotspot Werbenetzwerk bei";
+//hanchorfree.right2="AnchorFree betreibt ein Hotspot Werbenetzwerk welches DD-WRT Nutzern wachsende Gewinnmöglichkeiten bietet";
+//hanchorfree.right3="Generiere wachsende Gewinne durch die Nutzung von AnchorFree";
+//hanchorfree.right4="Durch das Einschalten von AnchorFree und durch das erstellen des dazugehörigen Nutzerkontos (kostenlos und einfach), wird ein permantenter Werbebereich in die Aufgerufenen Webseiten eingefügt, welches zu einer Monatlichen Gewinnausschüttung führt.  Beginnend von einem Monatlichen Minimum von 25$, wird ihnen ihr Guthaben automatisch von AnchorFree überwiesen.";
+//hanchorfree.right5="Für weitere Informationen besuchen sie bitte www.anchorfree.com";
+//hanchorfree.right6="Das Einschalten ist Einfach";
+//hanchorfree.right7="Einmal eingeschaltet, wird ihnen von AnchorFRee automatisch eine Email an Ihre registrierte email Addresse geschickt, welche einfache Anweisungen über die Optimierung ihres Hotspots, FAQs und andere wichtige Informationen über das Geld verdienen mit ihrem Router enthält. Durch dieses Konfigurationsmenü wird von AnchorFree ein kleines, nicht zu aufdringliches Werbebanner in die aufgerufenen Webseiten eingefügt.";
+//hanchorfree.right8="Kunden unterstützung";
+//hanchorfree.right9="Haben Sie Fragen? Kontaktieren Sie uns durch boxhelp@anchorfree.com";
 
 // **************************************************************** index_heartbeat.asp *********************************************************//
 

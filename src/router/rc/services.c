@@ -382,7 +382,7 @@ static void handle_index(void)
 	// accept connection
 	// anymore on wan/lan 
 	// ip changes changes
-	handle = start_service_nofree_f("anchorfreednat", handle);
+//	handle = start_service_nofree_f("anchorfreednat", handle);
 	handle = start_service_nofree("wan_boot", handle);
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
@@ -405,7 +405,7 @@ static void handle_router(void)
 //      dlclose( handle );
 }
 
-static void handle_anchorfree(void)
+/*static void handle_anchorfree(void)
 {
 	void *handle = NULL;
 
@@ -414,7 +414,7 @@ static void handle_anchorfree(void)
 //    if( handle )
 //      dlclose( handle );
 }
-
+*/
 static void handle_hotspot(void)
 {
 	void *handle = NULL;
@@ -575,7 +575,7 @@ static void handle_services(void)
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
-	handle = start_service_nofree_f("anchorfreednat", handle);
+//	handle = start_service_nofree_f("anchorfreednat", handle);
 //    if( handle )
 //      dlclose( handle );
 
@@ -647,7 +647,7 @@ static void handle_management(void)
 	handle = start_service_nofree("nas", handle);
 	handle = start_service_nofree("guest_nas", handle);
 #endif
-	handle = start_service_nofree_f("anchorfreednat", handle);
+//	handle = start_service_nofree_f("anchorfreednat", handle);
 
 //    if( handle )
 //      dlclose( handle );
@@ -730,7 +730,7 @@ static void handle_filters(void)
 #ifdef HAVE_MULTICAST
 	handle = startstop_nofree_f("igmp_proxy", handle);
 #endif
-	handle = start_service_nofree_f("anchorfreednat", handle);
+//	handle = start_service_nofree_f("anchorfreednat", handle);
 //    if( handle )
 //      dlclose( handle );
 }
@@ -753,7 +753,7 @@ static void handle_routing(void)
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
-	handle = start_service_nofree_f("anchorfreednat", handle);
+//	handle = start_service_nofree_f("anchorfreednat", handle);
 //    if( handle )
 //      dlclose( handle );
 
@@ -792,7 +792,7 @@ static void handle_forward(void)
 #endif
 	handle = start_service_nofree_f("wshaper", handle);
 	handle = start_service_nofree_f("wland", handle);
-	handle = start_service_nofree_f("anchorfreednat", handle);
+//	handle = start_service_nofree_f("anchorfreednat", handle);
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
@@ -834,7 +834,7 @@ static void handle_forwardupnp(void)
 	handle = stop_service_nofree("wland", handle);
 	handle = startstop_nofree_f("wshaper", handle);
 	handle = start_service_nofree_f("wland", handle);
-	handle = start_service_nofree_f("anchorfreednat", handle);
+//	handle = start_service_nofree_f("anchorfreednat", handle);
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
@@ -1135,7 +1135,7 @@ static struct SERVICES services_def[] = {
 	{"index", handle_index},
 	{"router", handle_router},
 	{"hotspot", handle_hotspot},
-	{"anchorfree", handle_anchorfree},
+//	{"anchorfree", handle_anchorfree},
 	{"services", handle_services},
 #if defined(HAVE_FTP) || defined(HAVE_SAMBA3)
 	{"nassrv", handle_nassrv},
@@ -1225,6 +1225,7 @@ int start_single_service_main(int argc, char **argv)
 	}
 	lcdmessage("");
 
+	nvram_unset("nowebaction");
 	nvram_unset("action_service");
 	nvram_unset("action_service_arg1");
 	return 0;
