@@ -70,6 +70,8 @@ static u32 wdt_clk_freq;
 static inline void ar71xx_wdt_keepalive(void)
 {
 	ar71xx_reset_wr(AR71XX_RESET_REG_WDOG, wdt_clk_freq * wdt_timeout);
+	/* flush write */
+	ar71xx_reset_rr(AR71XX_RESET_REG_WDOG);
 }
 
 static inline void ar71xx_wdt_enable(void)
@@ -78,12 +80,16 @@ static inline void ar71xx_wdt_enable(void)
 	ar71xx_wdt_keepalive();
 	udelay(2);
 	ar71xx_reset_wr(AR71XX_RESET_REG_WDOG_CTRL, WDOG_CTRL_ACTION_FCR);
+	/* flush write */
+	ar71xx_reset_rr(AR71XX_RESET_REG_WDOG);
 }
 
 static inline void ar71xx_wdt_disable(void)
 {
 	printk(KERN_DEBUG DRV_NAME ": disabling watchdog timer\n");
 	ar71xx_reset_wr(AR71XX_RESET_REG_WDOG_CTRL, WDOG_CTRL_ACTION_NONE);
+	/* flush write */
+	ar71xx_reset_rr(AR71XX_RESET_REG_WDOG);
 }
 
 static int ar71xx_wdt_set_timeout(int val)
@@ -118,6 +124,7 @@ static int ar71xx_wdt_release(struct inode *inode, struct file *file)
 	} else {
 		printk(KERN_CRIT DRV_NAME ": device closed unexpectedly, "
 					"watchdog timer will not stop!\n");
+		ar71xx_wdt_keepalive();
 	}
 
 	clear_bit(WDT_FLAGS_BUSY, &wdt_flags);
@@ -251,12 +258,6 @@ u32 soc = AR71XX_SOC_AR7130;
 		soc = AR71XX_SOC_AR9344;
 	}
 #endif
-
-
-
-
-
-
 
 
 	switch (soc) {
