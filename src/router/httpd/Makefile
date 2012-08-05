@@ -1001,11 +1001,11 @@ endif
 	
 httpd: cgi.o ej.o httpd.o broadcom.o \
        $(ADDOBJ) nvramsr.o callvalidate.o $(OBJS)
-	gcc -o write_web write_web.c
+#	gcc -o write_web write_web.c
 ifeq ($(CONFIG_XYSSL),y)
 	cd xyssl && make static
 endif
-	./write_web www 
+#	./write_web www 
 	$(CC) -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
