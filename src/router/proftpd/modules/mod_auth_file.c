@@ -23,7 +23,7 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: mod_auth_file.c,v 1.40 2011/05/23 21:11:56 castaglia Exp $
+ * $Id: mod_auth_file.c,v 1.40.2.1 2011/11/17 23:40:42 castaglia Exp $
  */
 
 #include "conf.h"
@@ -109,7 +109,7 @@ static struct passwd *af_getpasswd(const char *buf) {
   buffer = pwdbuf;
   pwd = &pwent;
 
-  strncpy(buffer, buf, BUFSIZ-1);
+  sstrncpy(buffer, buf, BUFSIZ-1);
   buffer[BUFSIZ-1] = '\0';
 
   for (cp = buffer, i = 0; i < NPWDFIELDS && cp; i++) {

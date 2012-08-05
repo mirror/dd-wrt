@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2011 The ProFTPD Project team
+ * Copyright (c) 2003-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Network ACL routines
- * $Id: netacl.c,v 1.25 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: netacl.c,v 1.25.2.1 2012/02/14 18:38:57 castaglia Exp $
  */
 
 #include "conf.h"
@@ -332,7 +332,7 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
     if (strpbrk(aclstr, "{[*?")) {
       register unsigned int i;
       size_t aclstr_len = strlen(aclstr);
-      pr_netacl_type_t acl_type = PR_NETACL_TYPE_IPGLOB;
+      pr_netacl_type_t netacl_type = PR_NETACL_TYPE_IPGLOB;
 
       /* Is this a DNS glob, or an IP address glob?  To find out, see if there
        * are any non-IP characters (i.e. alphabetical characters, taking IPv6
@@ -351,21 +351,21 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
               continue;
             }
 
-            acl_type = PR_NETACL_TYPE_DNSGLOB;
+            netacl_type = PR_NETACL_TYPE_DNSGLOB;
             break;
 
           } else {
-            acl_type = PR_NETACL_TYPE_DNSGLOB;
+            netacl_type = PR_NETACL_TYPE_DNSGLOB;
             break;
           }
 #else
-          acl_type = PR_NETACL_TYPE_DNSGLOB;
+          netacl_type = PR_NETACL_TYPE_DNSGLOB;
           break;
 #endif /* PR_USE_IPV6 */
         }
       }
 
-      acl->type = acl_type;
+      acl->type = netacl_type;
       acl->pattern = pstrdup(p, aclstr);
 
     } else if (*aclstr == '.') {

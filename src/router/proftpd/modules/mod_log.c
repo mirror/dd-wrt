@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Flexible logging module for proftpd
- * $Id: mod_log.c,v 1.124 2011/09/26 15:00:12 castaglia Exp $
+ * $Id: mod_log.c,v 1.124.2.1 2012/03/23 16:20:59 castaglia Exp $
  */
 
 #include "conf.h"
@@ -948,13 +948,15 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
 
     case META_LOCAL_IP:
       argp = arg;
-      sstrncpy(argp, pr_netaddr_get_ipstr(session.c->local_addr), sizeof(arg));
+      sstrncpy(argp, pr_netaddr_get_ipstr(pr_netaddr_get_sess_local_addr()),
+        sizeof(arg));
       m++;
       break;
 
     case META_LOCAL_FQDN:
       argp = arg;
-      sstrncpy(argp, pr_netaddr_get_dnsstr(session.c->local_addr), sizeof(arg));
+      sstrncpy(argp, pr_netaddr_get_dnsstr(pr_netaddr_get_sess_local_addr()),
+        sizeof(arg));
       m++;
       break;
 

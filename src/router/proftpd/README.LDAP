@@ -1,8 +1,8 @@
-mod_ldap v2.9.0
+mod_ldap v2.9.2
 ===============
 
-mod_ldap is a module that allows proftpd to do user authentication and
-name/UID lookups against an LDAP database.
+mod_ldap is a ProFTPD module that performs user authentication and
+name/UID/quota lookups against an LDAP directory.
 
 **Please note:** Read the Changes section below for mod_ldap v2.9 changes;
 some significant changes have been made. Do *NOT* upgrade to mod_ldap v2.9
@@ -12,8 +12,7 @@ Sections:
 1. Author
 2. How do I set up mod_ldap?
 3. Changes
-4. To Do
-5. Thanks
+4. Thanks
 
 
 =========
@@ -30,9 +29,6 @@ code improvements or ideas for development, please let me know!
 2. How do I set up mod_ldap?
 ============================
 
-If you are using a version of mod_ldap included with a ProFTPD release,
-you can simply:
-
 * tar xvzf proftpd-version.tar.gz
 * If you wish to use a newer version of mod_ldap that is not yet included
   with a release version of ProFTPD, download the file mod_ldap.c and say:
@@ -43,23 +39,18 @@ you can simply:
 * ./configure --with-modules=mod_ldap
 * make
 * make install
-* If your LDAP server runs OpenLDAP 1.x, you need to add schema definitions. 
-  Add the contents of posixAccount-objectclass to your slapd.oc.conf and
-  restart your LDAP server. If you plan on using mod_ldap for group lookups,
-  also add the contents of posixGroup-objectclass. OpenLDAP 2.x (and most
-  other LDAP servers) ship with these schema predefined.
 * The 'user-ldif' file contains a sample user ldif. Modify it to your liking
   and say ldapadd -D your-root-dn -w your-root-dn-password < ldif
 * You are *strongly* encouraged to read up on the LDAP config-file
   directives in proftpd-version/doc/Configuration.html. At bare minimum,
-  you'll need to have LDAPServer, LDAPDNInfo, and LDAPDoAuth configuration
-  directives in your proftpd.conf.
+  you'll need LDAPServer, LDAPBindDN, and LDAPUsers configuration directives
+  in your proftpd.conf.
 
   A set of basic mod_ldap configuration directives would look like:
 
-    LDAPServer            localhost
-    LDAPDNInfo            cn=your-dn,dc=example,dc=com dnpass
-    LDAPDoAuth            on "dc=users,dc=example,dc=com"
+    LDAPServer localhost
+    LDAPBindDN cn=your-dn,dc=example,dc=com dnpass
+    LDAPUsers "dc=users,dc=example,dc=com"
 
   Of course, you will need to update these configuration directives with
   the proper values for your environment.
@@ -68,9 +59,13 @@ you can simply:
 ==========
 3. Changes
 ==========
+v2.9.2:
+- Prevent segmentation fault when no user filters (second and third
+  arguments to LDAPUsers) are specified.
 
 v2.9.1:
 - Handle potential NULL return value from crypt(). (Bug #3551)
+- Update README to mention the LDAPDNInfo -> LDAPBindDN change in v2.9.0.
 
 v2.9.0:
 - Overhaul configuration directives, hopefully yielding a more
@@ -90,16 +85,18 @@ v2.9.0:
 
   For example, the previous configuration:
 
-	LDAPDoAuth on ou=people,dc=horde,dc=net (uid=%u)
-	LDAPDoUIDLookups on ou=people,dc=horde,dc=net (uidNumber=%u)
+    LDAPDNInfo cn=your-dn,dc=example,dc=com dnpass
+    LDAPDoAuth on ou=people,dc=horde,dc=net (uid=%u)
+    LDAPDoUIDLookups on ou=people,dc=horde,dc=net (uidNumber=%u)
     LDAPDoGIDLookups on ou=groups,dc=horde,dc=net
-	LDAPDoQuotaLookups on ou=people,dc=horde,dc=net (uid=%u) false,hard,10485760,0,0,0,0,0
+    LDAPDoQuotaLookups on ou=people,dc=horde,dc=net (uid=%u) false,hard,10485760,0,0,0,0,0
 
   becomes:
 
-	LDAPUsers ou=people,dc=horde,dc=net (uid=%u) (uidNumber=%u)
+    LDAPBindDN cn=your-dn,dc=example,dc=com dnpass
+    LDAPUsers ou=people,dc=horde,dc=net (uid=%u) (uidNumber=%u)
     LDAPGroups ou=groups,dc=horde,dc=net
-	LDAPDefaultQuota false,hard,10485760,0,0,0,0,0
+    LDAPDefaultQuota false,hard,10485760,0,0,0,0,0
 
 - Remove OpenSSL local verification of password hashes; 'LDAPAuthBinds on'
   should do exactly the same thing in a more secure and standard way.
@@ -565,20 +562,8 @@ v1.0:
 * Initial release of proftpd-ldap
 
 
-========
-4. To Do
-========
-
-* Debugging information needs to be significantly improved. Currently, error
-  messages (with the complete LDAP error message) are logged for any
-  failures, but it would be nice to have extended debugging information.
-* shadowAccount objectclass stuff - inactive, expiration, etc - Is there
-  any demand for this? It's been months since I've heard anyone express
-  interest.
-
-
 =========
-5. Thanks
+4. Thanks
 =========
 
 * Everyone listed in mod_ldap.c for contributing code.

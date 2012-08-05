@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mac.c,v 1.9 2011/09/09 18:13:53 castaglia Exp $
+ * $Id: mac.c,v 1.9.2.1 2012/03/13 00:23:38 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -153,6 +153,13 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
  
   key_sz = sftp_crypto_get_size(EVP_MD_block_size(mac->digest),
     EVP_MD_size(hash)); 
+
+  if (key_sz == 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "unable to determine key length for MAC '%s'", mac->algo);
+    errno = EINVAL;
+    return -1;
+  }
 
   key = malloc(key_sz);
   if (key == NULL) {

@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_rewrite -- a module for rewriting FTP commands
  *
- * Copyright (c) 2001-2011 TJ Saunders
+ * Copyright (c) 2001-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * This is mod_rewrite, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_rewrite.c,v 1.64 2011/09/24 05:33:59 castaglia Exp $
+ * $Id: mod_rewrite.c,v 1.64.2.1 2012/04/03 16:02:46 castaglia Exp $
  */
 
 #include "conf.h"
@@ -185,8 +185,9 @@ static char *rewrite_expand_var(cmd_rec *cmd, const char *subst_pattern,
         strcmp(cmd_name, C_XRMD) == 0) {
       return dir_abs_path(cmd->tmp_pool, cmd->arg, FALSE);
 
-    } else if (strcasecmp(cmd_name, "SITE CHGRP") == 0 ||
-               strcasecmp(cmd_name, "SITE CHMOD") == 0) {
+    } else if (cmd->argc >= 3 &&
+               (strcasecmp(cmd_name, "SITE CHGRP") == 0 ||
+                strcasecmp(cmd_name, "SITE CHMOD") == 0)) {
       register unsigned int i;
       char *tmp = "";
 
@@ -2341,6 +2342,12 @@ MODRET rewrite_fixup(cmd_rec *cmd) {
         strcasecmp(cmd->argv[1], "CHMOD") == 0) {
       register unsigned int i;
       char *tmp = "";
+
+      if (cmd->argc < 3) {
+        rewrite_log("%s %s has too few parameters (%d)", cmd->argv[0],
+          cmd->argv[1], cmd->argc);
+        return PR_DECLINED(cmd);
+      }
 
       cmd_name = pstrcat(cmd->pool, cmd->argv[0], " ", cmd->argv[1], NULL);
 

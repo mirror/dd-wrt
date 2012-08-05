@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Authentication module for ProFTPD
- * $Id: mod_auth.c,v 1.295 2011/05/23 21:11:56 castaglia Exp $
+ * $Id: mod_auth.c,v 1.295.2.1 2012/03/01 23:51:57 castaglia Exp $
  */
 
 #include "conf.h"
@@ -263,11 +263,13 @@ MODRET auth_log_pass(cmd_rec *cmd) {
   pr_log_auth(PR_LOG_NOTICE, "%s %s: Login successful.",
     (session.anon_config != NULL) ? "ANON" : C_USER, session.user);
 
-  /* And scrub the memory holding the password sent by the client, for
-   * safety/security.
-   */
-  passwd_len = strlen(cmd->arg);
-  pr_memscrub(cmd->arg, passwd_len);
+  if (cmd->arg != NULL) {
+    /* And scrub the memory holding the password sent by the client, for
+     * safety/security.
+     */
+    passwd_len = strlen(cmd->arg);
+    pr_memscrub(cmd->arg, passwd_len);
+  }
 
   return PR_DECLINED(cmd);
 }

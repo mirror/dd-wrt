@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp OpenSSL interface
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: crypto.c,v 1.20 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: crypto.c,v 1.20.2.2 2012/03/13 16:50:22 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -60,6 +60,11 @@ struct sftp_cipher {
    * be explicitly requested via SFTPCiphers.
    */
   int enabled;
+
+  /* Is this cipher usable when FIPS is enabled?  If FALSE, then this
+   * cipher must NOT be advertised to clients in the KEXINIT.
+   */
+  int fips_allowed;
 };
 
 /* Currently, OpenSSL does NOT support AES CTR modes (not sure why).
@@ -80,23 +85,23 @@ static struct sftp_cipher ciphers[] = {
    */
 
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
-  { "aes256-ctr",	NULL,		0,	NULL,			TRUE },
-  { "aes192-ctr",	NULL,		0,	NULL,			TRUE },
-  { "aes128-ctr",	NULL,		0,	NULL,			TRUE },
+  { "aes256-ctr",	NULL,		0,	NULL,	TRUE, TRUE },
+  { "aes192-ctr",	NULL,		0,	NULL,	TRUE, TRUE },
+  { "aes128-ctr",	NULL,		0,	NULL,	TRUE, TRUE },
 
 # ifndef HAVE_AES_CRIPPLED_OPENSSL
-  { "aes256-cbc",	"aes-256-cbc",	0,	EVP_aes_256_cbc,	TRUE },
-  { "aes192-cbc",	"aes-192-cbc",	0,	EVP_aes_192_cbc,	TRUE },
+  { "aes256-cbc",	"aes-256-cbc",	0,	EVP_aes_256_cbc, TRUE, TRUE },
+  { "aes192-cbc",	"aes-192-cbc",	0,	EVP_aes_192_cbc, TRUE, TRUE },
 # endif /* !HAVE_AES_CRIPPLED_OPENSSL */
 
-  { "aes128-cbc",	"aes-128-cbc",	0,	EVP_aes_128_cbc,	TRUE },
+  { "aes128-cbc",	"aes-128-cbc",	0,	EVP_aes_128_cbc, TRUE, TRUE },
 #endif
 
-  { "blowfish-ctr",	NULL,		0,	NULL,			TRUE },
-  { "blowfish-cbc",	"bf-cbc",	0,	EVP_bf_cbc,		TRUE },
-  { "cast128-cbc",	"cast5-cbc",	0,	EVP_cast5_cbc,		TRUE },
-  { "arcfour256",	"rc4",		1536,	EVP_rc4,		TRUE },
-  { "arcfour128",	"rc4",		1536,	EVP_rc4,		TRUE },
+  { "blowfish-ctr",	NULL,		0,	NULL,	TRUE, FALSE },
+  { "blowfish-cbc",	"bf-cbc",	0,	EVP_bf_cbc, TRUE, FALSE },
+  { "cast128-cbc",	"cast5-cbc",	0,	EVP_cast5_cbc, TRUE, FALSE },
+  { "arcfour256",	"rc4",		1536,	EVP_rc4, TRUE, FALSE },
+  { "arcfour128",	"rc4",		1536,	EVP_rc4, TRUE, FALSE },
 
 #if 0
   /* This cipher is explicitly NOT supported because it does not discard
@@ -106,13 +111,13 @@ static struct sftp_cipher ciphers[] = {
    * require explicit configuration via SFTPCiphers, and would generate
    * warnings about its unsafe use.
    */
-  { "arcfour",		"rc4",		0,	EVP_rc4,		FALSE },
+  { "arcfour",		"rc4",		0,	EVP_rc4, FALSE, FALSE },
 #endif
 
-  { "3des-ctr",		NULL,		0,	NULL,			TRUE },
-  { "3des-cbc",		"des-ede3-cbc",	0,	EVP_des_ede3_cbc,	TRUE },
-  { "none",		"null",		0,	EVP_enc_null,		FALSE },
-  { NULL, NULL, 0, NULL, FALSE }
+  { "3des-ctr",		NULL,		0,	NULL, TRUE, TRUE },
+  { "3des-cbc",		"des-ede3-cbc",	0,	EVP_des_ede3_cbc, TRUE, TRUE },
+  { "none",		"null",		0,	EVP_enc_null, FALSE, TRUE },
+  { NULL, NULL, 0, NULL, FALSE, FALSE }
 };
 
 struct sftp_digest {
@@ -131,16 +136,21 @@ struct sftp_digest {
    * explicitly requested via SFTPDigests.
    */
   int enabled;
+
+  /* Is this MAC usable when FIPS is enabled?  If FALSE, then this digest must
+   * NOT be advertised to clients in the KEXINIT.
+   */
+  int fips_allowed;
 };
 
 static struct sftp_digest digests[] = {
-  { "hmac-sha1",	"sha1",		EVP_sha1,	0,	TRUE },
-  { "hmac-sha1-96",	"sha1",		EVP_sha1,	12,	TRUE },
-  { "hmac-md5",		"md5",		EVP_md5,	0,	TRUE },
-  { "hmac-md5-96",	"md5",		EVP_md5,	12,	TRUE },
-  { "hmac-ripemd160",	"rmd160",	EVP_ripemd160,	0,	TRUE },
-  { "none",		"null",		EVP_md_null,	0,	FALSE },
-  { NULL, NULL, NULL, 0, FALSE }
+  { "hmac-sha1",	"sha1",		EVP_sha1,	0,	TRUE, TRUE },
+  { "hmac-sha1-96",	"sha1",		EVP_sha1,	12,	TRUE, TRUE },
+  { "hmac-md5",		"md5",		EVP_md5,	0,	TRUE, FALSE },
+  { "hmac-md5-96",	"md5",		EVP_md5,	12,	TRUE, FALSE },
+  { "hmac-ripemd160",	"rmd160",	EVP_ripemd160,	0,	TRUE, FALSE },
+  { "none",		"null",		EVP_md_null,	0,	FALSE, TRUE },
+  { NULL, NULL, NULL, 0, FALSE, FALSE }
 };
 
 static const char *trace_channel = "ssh2";
@@ -280,7 +290,7 @@ static const EVP_CIPHER *get_bf_ctr_cipher(void) {
 
   memset(&bf_ctr_cipher, 0, sizeof(EVP_CIPHER));
 
-  bf_ctr_cipher.nid = NID_undef;
+  bf_ctr_cipher.nid = NID_bf_cbc;
   bf_ctr_cipher.block_size = BF_BLOCK;
   bf_ctr_cipher.iv_len = BF_BLOCK;
   bf_ctr_cipher.key_len = 32;
@@ -427,7 +437,7 @@ static const EVP_CIPHER *get_des3_ctr_cipher(void) {
 
   memset(&des3_ctr_cipher, 0, sizeof(EVP_CIPHER));
 
-  des3_ctr_cipher.nid = NID_undef;
+  des3_ctr_cipher.nid = NID_des_ede3_ecb;
   des3_ctr_cipher.block_size = 8;
   des3_ctr_cipher.iv_len = 8;
   des3_ctr_cipher.key_len = 24;
@@ -436,6 +446,9 @@ static const EVP_CIPHER *get_des3_ctr_cipher(void) {
   des3_ctr_cipher.do_cipher = do_des3_ctr;
 
   des3_ctr_cipher.flags = EVP_CIPH_CBC_MODE|EVP_CIPH_VARIABLE_LENGTH|EVP_CIPH_ALWAYS_CALL_INIT|EVP_CIPH_CUSTOM_IV;
+#ifdef OPENSSL_FIPS
+  des3_ctr_cipher.flags |= EVP_CIPH_FLAG_FIPS;
+#endif /* OPENSSL_FIPS */
 
   return &des3_ctr_cipher;
 }
@@ -560,7 +573,24 @@ static const EVP_CIPHER *get_aes_ctr_cipher(int key_len) {
 
   memset(&aes_ctr_cipher, 0, sizeof(EVP_CIPHER));
 
-  aes_ctr_cipher.nid = NID_undef;
+  /* Set the NID depending on the key len. */
+  switch (key_len) {
+    case 16:
+      aes_ctr_cipher.nid = NID_aes_128_cbc;
+      break;
+
+    case 24:
+      aes_ctr_cipher.nid = NID_aes_192_cbc;
+      break;
+
+    case 32:
+      aes_ctr_cipher.nid = NID_aes_256_cbc;
+      break;
+
+    default:
+      aes_ctr_cipher.nid = NID_undef;
+  }
+
   aes_ctr_cipher.block_size = AES_BLOCK_SIZE;
   aes_ctr_cipher.iv_len = AES_BLOCK_SIZE;
   aes_ctr_cipher.key_len = key_len;
@@ -569,6 +599,9 @@ static const EVP_CIPHER *get_aes_ctr_cipher(int key_len) {
   aes_ctr_cipher.do_cipher = do_aes_ctr;
 
   aes_ctr_cipher.flags = EVP_CIPH_CBC_MODE|EVP_CIPH_VARIABLE_LENGTH|EVP_CIPH_ALWAYS_CALL_INIT|EVP_CIPH_CUSTOM_IV;
+#ifdef OPENSSL_FIPS
+  aes_ctr_cipher.flags |= EVP_CIPH_FLAG_FIPS;
+#endif /* OPENSSL_FIPS */
 
   return &aes_ctr_cipher;
 }
@@ -665,6 +698,19 @@ const char *sftp_crypto_get_kexinit_cipher_list(pool *p) {
 
       for (j = 0; ciphers[j].name; j++) {
         if (strcmp(c->argv[i], ciphers[j].name) == 0) {
+#ifdef OPENSSL_FIPS
+          if (FIPS_mode()) {
+            /* If FIPS mode is enabled, check whether the cipher is allowed
+             * for use.
+             */
+            if (ciphers[j].fips_allowed == FALSE) {
+              pr_trace_msg(trace_channel, 5,
+                "cipher '%s' is disabled in FIPS mode, skipping",
+                ciphers[j].name);
+              continue;
+            }
+          }
+#endif /* OPENSSL_FIPS */
           if (strncmp(c->argv[i], "none", 5) != 0) {
             if (EVP_get_cipherbyname(ciphers[j].openssl_name) != NULL) {
               res = pstrcat(p, res, *res ? "," : "",
@@ -704,6 +750,20 @@ const char *sftp_crypto_get_kexinit_cipher_list(pool *p) {
 
     for (i = 0; ciphers[i].name; i++) {
       if (ciphers[i].enabled) {
+#ifdef OPENSSL_FIPS
+          if (FIPS_mode()) {
+            /* If FIPS mode is enabled, check whether the cipher is allowed
+             * for use.
+             */
+            if (ciphers[i].fips_allowed == FALSE) {
+              pr_trace_msg(trace_channel, 5,
+                "cipher '%s' is disabled in FIPS mode, skipping",
+                ciphers[i].name);
+              continue;
+            }
+          }
+#endif /* OPENSSL_FIPS */
+
         if (strncmp(ciphers[i].name, "none", 5) != 0) {
           if (EVP_get_cipherbyname(ciphers[i].openssl_name) != NULL) {
             res = pstrcat(p, res, *res ? "," : "",
@@ -763,6 +823,20 @@ const char *sftp_crypto_get_kexinit_digest_list(pool *p) {
 
       for (j = 0; digests[j].name; j++) {
         if (strcmp(c->argv[i], digests[j].name) == 0) {
+#ifdef OPENSSL_FIPS
+          if (FIPS_mode()) {
+            /* If FIPS mode is enabled, check whether the MAC is allowed
+             * for use.
+             */
+            if (digests[j].fips_allowed == FALSE) {
+              pr_trace_msg(trace_channel, 5,
+                "digest '%s' is disabled in FIPS mode, skipping",
+                digests[j].name);
+              continue;
+            }
+          }
+#endif /* OPENSSL_FIPS */
+
           if (strncmp(c->argv[i], "none", 5) != 0) {
             if (EVP_get_digestbyname(digests[j].openssl_name) != NULL) {
               res = pstrcat(p, res, *res ? "," : "",
@@ -787,6 +861,20 @@ const char *sftp_crypto_get_kexinit_digest_list(pool *p) {
 
     for (i = 0; digests[i].name; i++) {
       if (digests[i].enabled) {
+#ifdef OPENSSL_FIPS
+          if (FIPS_mode()) {
+            /* If FIPS mode is enabled, check whether the digest is allowed
+             * for use.
+             */
+            if (digests[i].fips_allowed == FALSE) {
+              pr_trace_msg(trace_channel, 5,
+                "digest '%s' is disabled in FIPS mode, skipping",
+                digests[i].name);
+              continue;
+            }
+          }
+#endif /* OPENSSL_FIPS */
+
         if (strncmp(digests[i].name, "none", 5) != 0) {
           if (EVP_get_digestbyname(digests[i].openssl_name) != NULL) {
             res = pstrcat(p, res, *res ? "," : "",

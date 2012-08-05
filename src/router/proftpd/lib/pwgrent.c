@@ -62,7 +62,7 @@ static struct passwd *supp_getpwent(const char *buf) {
   buffer = pwdbuf;
   pwd = &pwent;
 
-  strncpy(buffer, buf, BUFSIZ-1);
+  sstrncpy(buffer, buf, BUFSIZ-1);
   buffer[BUFSIZ-1] = '\0';
 
   for(cp = buffer, i = 0; i < NPWDFIELDS && cp; i++) {
