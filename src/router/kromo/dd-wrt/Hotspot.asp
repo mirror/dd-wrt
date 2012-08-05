@@ -79,8 +79,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.wd_enable, 'idwifidog', <% nvram_else_match("wd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.wd_sslavailable, 'idwifidogssl', <% nvram_else_match("wd_sslavailable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.chilli_enable, 'idchilli', <% nvram_else_match("chilli_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.anchorfree_enable, 'idanchorfree', <% nvram_else_match("anchorfree_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.http_redirect_enable, 'idhttpredirect', <% nvram_else_match("http_redirect_enable", "1", "1", "0"); %> == 1);
+/	show_layer_ext(document.setup.http_redirect_enable, 'idhttpredirect', <% nvram_else_match("http_redirect_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.NC_enable, 'idnocat', <% nvram_else_match("NC_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.smtp_redirect_enable, 'smtpredirect', <% nvram_else_match("smtp_redirect_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.wd_auth, 'idauth', <% nvram_else_match("wd_auth", "1", "1", "0"); %> == 1);

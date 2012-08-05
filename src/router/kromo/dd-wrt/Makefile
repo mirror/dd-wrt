@@ -732,6 +732,7 @@ endif
 	rm -f $(INSTALLDIR)/www/graph_cpu.svg	
 	rm -f $(INSTALLDIR)/www/AnchorFree.asp
 	rm -f $(INSTALLDIR)/www/AnchorFree.live.asp
+	rm -f $(INSTALLDIR)/www/help/HAnchorFree.asp
 	
 ifeq ($(CONFIG_RAMON),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
