@@ -4333,8 +4333,8 @@ void start_wan_done(char *wan_ifname)
 	start_igmp_proxy();
 #endif
 	cprintf("ready\n");
-	start_anchorfree();
-	start_anchorfreednat();
+//	start_anchorfree();
+//	start_anchorfreednat();
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_NOWIFI
 	start_duallink();
