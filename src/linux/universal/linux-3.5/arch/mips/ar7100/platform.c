@@ -259,6 +259,7 @@ int __init ar7100_platform_init(void)
 	platform_device_register(&tl_wr1043nd_rtl8366_smi_device);
 #endif
 #endif
+	platform_device_register_simple("ar71xx-wdt", -1, NULL, 0);
 
 //	mips_machine_setup();
 return 0;
