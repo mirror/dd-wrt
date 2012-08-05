@@ -179,10 +179,14 @@ CFLAGS += $(DD_CFLAGS)
 
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DDEFAULT_COUNTRY_CODE=\"$(CONFIG_DEFAULT_COUNTRYCODE)\"
-VISOBJS += bfwireless.o intatstart.o
+VISOBJS += bfwireless.o
 VISOBJS += onlineupdateejs.o
-WEBSOBJS += onlineupdatewebs.o intatstartwebs.o
+WEBSOBJS += onlineupdatewebs.o
+ifeq($(CONFIG_IAS),y)
 OBJS += onlineupdatecgi.o
+VISOBJS += intatstart.o
+WEBSOBJS += intatstartwebs.o
+endif
 endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
