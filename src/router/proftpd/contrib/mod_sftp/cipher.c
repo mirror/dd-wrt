@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: cipher.c,v 1.9 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: cipher.c,v 1.9.2.1 2012/03/13 00:23:38 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -168,6 +168,13 @@ static int set_cipher_iv(struct sftp_cipher *cipher, const EVP_MD *hash,
     iv_sz = EVP_MD_size(hash);
   }
 
+  if (iv_sz == 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "unable to determine IV length for cipher '%s'", cipher->algo);
+    errno = EINVAL;
+    return -1;
+  }
+
   iv = malloc(iv_sz);
   if (iv == NULL) {
     pr_log_pri(PR_LOG_CRIT, MOD_SFTP_VERSION ": Out of memory!");
@@ -220,6 +227,13 @@ static int set_cipher_key(struct sftp_cipher *cipher, const EVP_MD *hash,
   key_sz = sftp_crypto_get_size(cipher->key_len > 0 ?
       cipher->key_len : EVP_CIPHER_key_length(cipher->cipher),
     EVP_MD_size(hash));
+
+  if (key_sz == 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "unable to determine key length for cipher '%s'", cipher->algo);
+    errno = EINVAL;
+    return -1;
+  }
 
   key = malloc(key_sz);
   if (key == NULL) {

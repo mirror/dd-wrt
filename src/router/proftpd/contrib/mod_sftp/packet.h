@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: packet.h,v 1.7 2011/05/23 20:40:13 castaglia Exp $
+ * $Id: packet.h,v 1.7.2.1 2012/03/11 18:45:17 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -95,6 +95,14 @@ int sftp_ssh2_packet_send(int, struct ssh2_packet *);
 int sftp_ssh2_packet_write(int, struct ssh2_packet *);
 
 int sftp_ssh2_packet_handle(void);
+
+/* These specialized functions are for handling the additional message types
+ * defined in RFC 4253, Section 11, e.g. during KEX.
+ */
+void sftp_ssh2_packet_handle_debug(struct ssh2_packet *);
+void sftp_ssh2_packet_handle_disconnect(struct ssh2_packet *);
+void sftp_ssh2_packet_handle_ignore(struct ssh2_packet *);
+void sftp_ssh2_packet_handle_unimplemented(struct ssh2_packet *);
 
 int sftp_ssh2_packet_rekey_reset(void);
 int sftp_ssh2_packet_rekey_set_seqno(uint32_t);

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006 The ProFTPD Project team
+ * Copyright (c) 2006-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Lastlog code
- * $Id: lastlog.c,v 1.2 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: lastlog.c,v 1.2.2.1 2012/02/17 22:44:06 castaglia Exp $
  */
 
 #include "conf.h"
@@ -41,7 +41,7 @@ int log_lastlog(uid_t uid, const char *user_name, const char *tty,
   sstrncpy(ll.ll_line, tty, sizeof(ll.ll_line));
   sstrncpy(ll.ll_host, pr_netaddr_get_ipstr(remote_addr),
     sizeof(ll.ll_host));
-  time(&ll.ll_time);
+  time((time_t *) &ll.ll_time);
 
   /* Determine whether lastlog is a file or a directory, and act
    * appropriately.

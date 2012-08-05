@@ -24,7 +24,7 @@
  * This is mod_exec, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_exec.c,v 1.20 2011/09/24 06:44:36 castaglia Exp $
+ * $Id: mod_exec.c,v 1.20.2.1 2011/12/13 21:33:37 castaglia Exp $
  */
 
 #include "conf.h"
@@ -626,7 +626,7 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
 
     (void) close(exec_stderr_pipe[1]);
     exec_stderr_pipe[1] = -1;
-   
+  
     if ((exec_opts & EXEC_OPT_LOG_STDOUT) ||
         (exec_opts & EXEC_OPT_LOG_STDERR) ||
         (exec_opts & EXEC_OPT_SEND_STDOUT) ||
@@ -636,7 +636,10 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
       struct timeval tv;
       time_t start_time = time(NULL);
 
-      res = waitpid(pid, &status, WNOHANG);
+      /* We set the result value to zero initially, so that at least one
+       * pass through the stdout/stderr reading code happens.
+       */
+      res = 0;
       while (res <= 0) {
         if (res < 0) {
           if (errno != EINTR) {
@@ -698,7 +701,6 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
         tv.tv_usec = 0L;
 
         fds = select(maxfd + 1, &readfds, NULL, NULL, &tv);
-
         if (fds == -1 &&
             errno == EINTR) {
           pr_signals_handle();

@@ -23,7 +23,7 @@
  * source distribution.
  *
  * $Libraries: -lmemcached -lmemcachedutil$
- * $Id: mod_memcache.c,v 1.15 2011/05/23 21:11:56 castaglia Exp $
+ * $Id: mod_memcache.c,v 1.15.2.1 2011/12/01 00:58:44 castaglia Exp $
  */
 
 #include "conf.h"
@@ -41,6 +41,8 @@ extern xaset_t *server_list;
 module memcache_module;
 
 static int memcache_logfd = -1;
+static pool *memcache_pool = NULL;
+static array_header *memcache_server_lists = NULL;
 
 /* Configuration handlers
  */
@@ -174,7 +176,7 @@ MODRET set_memcacheservers(cmd_rec *cmd) {
   config_rec *c;
   char *str = "";
   int ctxt;
-  memcached_server_st *memcache_servers;
+  memcached_server_st *memcache_servers = NULL;
 
   if (cmd->argc-1 < 1) {
     CONF_ERROR(cmd, "wrong number of parameters");
@@ -204,6 +206,9 @@ MODRET set_memcacheservers(cmd_rec *cmd) {
   }
 
   c->argv[0] = memcache_servers;
+
+  /* Add the libmemcached-allocated pointer to a list, for later freeing. */
+  *((memcached_server_st **) push_array(memcache_server_lists)) = memcache_servers;
   return PR_HANDLED(cmd);
 }
 
@@ -281,19 +286,27 @@ static void mcache_exit_ev(const void *event_data, void *user_data) {
 }
 
 static void mcache_restart_ev(const void *event_data, void *user_data) {
-  server_rec *s;
+  register unsigned int i;
+  memcached_server_st **mcache_servers = NULL;
 
-  for (s = (server_rec *) server_list->xas_list; s; s = s->next) {
-    config_rec *c;
-
-    c = find_config(s->conf, CONF_PARAM, "MemcacheServers", FALSE);
-    if (c) {
-      memcached_server_st *memcache_servers;
-
-      memcache_servers = c->argv[0];
-      memcached_server_list_free(memcache_servers);
-    }
+  mcache_servers = memcache_server_lists->elts;
+  for (i = 0; i < memcache_server_lists->nelts; i++) {
+    memcached_server_list_free(mcache_servers[i]);
   }
+
+  /* Make sure to clear the pointer in the Memcache API as well, to prevent
+   * a dangling pointer situation.
+   */
+  memcache_set_servers(NULL);
+
+  /* Now we can recycle the mod_memcache pool and its associated resources. */
+  destroy_pool(memcache_pool);
+
+  memcache_pool = make_sub_pool(permanent_pool);
+  pr_pool_tag(memcache_pool, MOD_MEMCACHE_VERSION);
+
+  memcache_server_lists = make_array(memcache_pool, 2,
+    sizeof(memcached_server_st **));
 }
 
 /* Initialization functions
@@ -301,6 +314,12 @@ static void mcache_restart_ev(const void *event_data, void *user_data) {
 
 static int mcache_init(void) {
   const char *version;
+
+  memcache_pool = make_sub_pool(permanent_pool);
+  pr_pool_tag(memcache_pool, MOD_MEMCACHE_VERSION);
+
+  memcache_server_lists = make_array(memcache_pool, 2,
+    sizeof(memcached_server_st **));
 
   memcache_init();
 

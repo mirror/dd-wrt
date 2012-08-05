@@ -786,6 +786,9 @@
 /* Define if you have the security library (-lsecurity).  */
 #undef HAVE_LIBSECURITY
 
+/* Define if you have the libtinfo library (-ltinfo).  */
+#undef HAVE_LIBTINFO
+
 /* Define if you have the addrinfo struct.  */
 #undef HAVE_STRUCT_ADDRINFO
 

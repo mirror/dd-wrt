@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp SCP
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: scp.c,v 1.64 2011/09/24 21:56:47 castaglia Exp $
+ * $Id: scp.c,v 1.64.2.3 2012/07/26 22:36:20 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -34,6 +34,11 @@
 #include "disconnect.h"
 
 #define SFTP_SCP_ST_MODE_MASK	(S_ISUID|S_ISGID|S_ISVTX|S_IRWXU|S_IRWXG|S_IRWXO)
+
+/* Define a maximum limit on the amount of data we buffer when handling
+ * fragmented control messages.
+ */
+#define SFTP_SCP_MAX_CTL_LEN	(PR_TUNABLE_PATH_MAX + 256)
 
 struct scp_path {
   char *path;
@@ -65,6 +70,11 @@ struct scp_path {
   const char *best_path;
   int recvd_finfo;
   int recvd_data;
+
+  /* For reading of control messages. */
+  pool *ctl_pool;
+  char *ctl_data;
+  uint32_t ctl_datalen;
 
   /* For the reading of bytes of files. */
   off_t recvlen;
@@ -368,6 +378,69 @@ static int write_confirm(pool *p, uint32_t channel_id, int code,
 
 /* Functions for receiving files from the client. */
 
+static int recv_ctl(uint32_t channel_id, struct scp_path *sp,
+    char *data, uint32_t datalen, char **ctl_data, uint32_t *ctl_datalen) {
+  register int i;
+  int have_newline = FALSE;
+  char *tmp;
+  uint32_t tmplen;
+
+  for (i = datalen-1; i >= 0; i--) {
+    if (data[i] == '\n') {
+      have_newline = TRUE;
+      break;
+    }
+  }
+
+  if (sp->ctl_data == NULL) {
+    if (have_newline == TRUE) {
+      *ctl_data = data;
+      *ctl_datalen = datalen;
+
+      return 1;
+    }
+
+    sp->ctl_pool = pr_pool_create_sz(scp_session->pool, 128);
+    sp->ctl_datalen = datalen;
+    sp->ctl_data = palloc(sp->ctl_pool, sp->ctl_datalen);
+    memmove(sp->ctl_data, data, datalen);
+
+    return 0;
+  }
+
+  /* Add the given data to the existing cache of data. */
+  tmplen = sp->ctl_datalen + datalen;
+  tmp = palloc(sp->ctl_pool, tmplen);
+  memmove(tmp, sp->ctl_data, sp->ctl_datalen);
+  memmove(tmp + sp->ctl_datalen, data, datalen);
+
+  sp->ctl_data = tmp;
+  sp->ctl_datalen = tmplen;
+
+  /* Now, if we saw a newline, we can return all of the cached data as the
+   * complete control message.
+   */
+  if (have_newline == TRUE) {
+    *ctl_data = sp->ctl_data;
+    *ctl_datalen = sp->ctl_datalen;
+
+    sp->ctl_data = NULL;
+    sp->ctl_datalen = 0;
+    destroy_pool(sp->ctl_pool);
+    sp->ctl_pool = NULL;
+    return 1;
+  }
+
+  if (sp->ctl_datalen >= SFTP_SCP_MAX_CTL_LEN) {
+    write_confirm(sp->ctl_pool, channel_id, 1,
+      "max control message size exceeded");
+    return 1;
+  }
+
+  /* Otherwise, we need to aggregate more data from the client. */
+  return 0;
+}
+
 static int recv_errors(pool *p, uint32_t channel_id, struct scp_path *sp,
     char *data, uint32_t datalen) {
 
@@ -412,9 +485,16 @@ static int recv_errors(pool *p, uint32_t channel_id, struct scp_path *sp,
 }
 
 static int recv_timeinfo(pool *p, uint32_t channel_id, struct scp_path *sp,
-    char *data, uint32_t datalen) {
+    char *buf, uint32_t buflen) {
   register unsigned int i;
-  char *msg, *ptr = NULL, *tmp = NULL;
+  char *data = NULL, *msg, *ptr = NULL, *tmp = NULL;
+  uint32_t datalen = 0;
+  int res;
+
+  res = recv_ctl(channel_id, sp, buf, buflen, &data, &datalen);
+  if (res != 1) {
+    return res;
+  }
 
   if (data[0] != 'T') {
     pr_trace_msg(trace_channel, 2, "expected T control message, got '%c'",
@@ -634,11 +714,17 @@ static int recv_filename(pool *p, uint32_t channel_id, char *name_str,
 }
 
 static int recv_finfo(pool *p, uint32_t channel_id, struct scp_path *sp,
-    char *data, uint32_t datalen) {
+    char *buf, uint32_t buflen) {
   register unsigned int i;
-  char *hiddenstore_path = NULL, *msg, *ptr = NULL;
-  int have_dir = FALSE;
+  char *data = NULL, *hiddenstore_path = NULL, *msg, *ptr = NULL;
+  uint32_t datalen = 0;
+  int have_dir = FALSE, res;
   cmd_rec *cmd = NULL;
+
+  res = recv_ctl(channel_id, sp, buf, buflen, &data, &datalen);
+  if (res != 1) {
+    return res;
+  }
 
   switch (data[0]) {
     case 'C':
@@ -682,8 +768,9 @@ static int recv_finfo(pool *p, uint32_t channel_id, struct scp_path *sp,
     !have_dir ? 'C' : 'D', msg);
 
   ptr = msg;
-  if (recv_perms(p, channel_id, ptr, &sp->perms) < 0)
+  if (recv_perms(p, channel_id, ptr, &sp->perms) < 0) {
     return 1;
+  }
 
   ptr = strchr(ptr, ' ');
   if (ptr == NULL) {
@@ -696,8 +783,9 @@ static int recv_finfo(pool *p, uint32_t channel_id, struct scp_path *sp,
 
   /* Advance past the space delimiter. */
   ptr++;
-  if (recv_filesz(p, channel_id, ptr, &sp->filesz) < 0)
+  if (recv_filesz(p, channel_id, ptr, &sp->filesz) < 0) {
     return 1;
+  }
 
   ptr = strchr(ptr, ' ');
   if (ptr == NULL) {
@@ -711,8 +799,9 @@ static int recv_finfo(pool *p, uint32_t channel_id, struct scp_path *sp,
 
   /* Advance past the space delimiter. */
   ptr++;
-  if (recv_filename(p, channel_id, ptr, sp) < 0)
+  if (recv_filename(p, channel_id, ptr, sp) < 0) {
     return 1;
+  }
 
   sp->recvd_finfo = TRUE;
 
@@ -973,9 +1062,16 @@ static int recv_data(pool *p, uint32_t channel_id, struct scp_path *sp,
 }
 
 static int recv_eod(pool *p, uint32_t channel_id, struct scp_path *sp,
-    char *data, uint32_t datalen) {
+    char *buf, uint32_t buflen) {
   struct scp_path *parent_sp;
-  int ok = TRUE;
+  int ok = TRUE, res;
+  char *data = NULL;
+  uint32_t datalen = 0;
+
+  res = recv_ctl(channel_id, sp, buf, buflen, &data, &datalen);
+  if (res != 1) {
+    return res;
+  }
 
   if (data[0] != 'E') {
     return 0;
@@ -1035,8 +1131,9 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
 
   if (!sp->checked_errors) {
     res = recv_errors(p, channel_id, sp, data, datalen);
-    if (res == 1)
+    if (res == 1) {
       return 1;
+    }
   }
 
   if (!sp->have_mode) {
@@ -1141,8 +1238,9 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
      * to continue one to the end-of-path processing.
      */
     res = recv_data(p, channel_id, sp, data, datalen);
-    if (res != 1)
+    if (res != 1) {
       return res;
+    }
   }
 
   /* The uploaded file may be smaller than an existing file; call
@@ -1649,6 +1747,9 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
 
         destroy_pool(cmd->pool);
         session.curr_cmd_rec = NULL;
+
+        write_confirm(p, channel_id, 1,
+          pstrcat(p, sp->path, ": ", strerror(xerrno), NULL));
         return 1;
       }
     }
@@ -1679,6 +1780,9 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
 
     destroy_pool(cmd->pool);
     session.curr_cmd_rec = NULL;
+
+    write_confirm(p, channel_id, 1,
+      pstrcat(p, sp->path, ": ", strerror(xerrno), NULL));
     return 1;
   }
 
@@ -1703,6 +1807,9 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
 
         destroy_pool(cmd->pool);
         session.curr_cmd_rec = NULL;
+
+        write_confirm(p, channel_id, 1,
+          pstrcat(p, sp->path, ": ", strerror(EPERM), NULL));
         return 1;
       }
 
@@ -1715,6 +1822,9 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
 
       destroy_pool(cmd->pool);
       session.curr_cmd_rec = NULL;
+
+      write_confirm(p, channel_id, 1,
+        pstrcat(p, sp->path, ": ", strerror(EPERM), NULL));
       return 1;
     }
   }
@@ -1731,6 +1841,9 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
 
       destroy_pool(cmd->pool);
       session.curr_cmd_rec = NULL;
+
+      write_confirm(p, channel_id, 1,
+        pstrcat(p, sp->path, ": ", strerror(EACCES), NULL));
       return 1;
     }
 
@@ -1751,6 +1864,9 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
 
       destroy_pool(cmd->pool);
       session.curr_cmd_rec = NULL;
+
+      write_confirm(p, channel_id, 1,
+        pstrcat(p, sp->path, ": ", strerror(xerrno), NULL));
 
       errno = xerrno;
       return 1;

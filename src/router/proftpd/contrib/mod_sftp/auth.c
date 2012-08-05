@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth.c,v 1.38 2011/08/04 21:15:19 castaglia Exp $
+ * $Id: auth.c,v 1.38.2.3 2012/03/30 21:08:26 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -267,6 +267,8 @@ static int setup_env(pool *p, char *user) {
   char *default_chdir, *default_root, *home_dir;
   const char *sess_ttyname = NULL, *xferlog = NULL;
   cmd_rec *cmd;
+
+  session.hide_password = TRUE;
 
   pw = pr_auth_getpwnam(p, user);
 
@@ -961,11 +963,11 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
      * queried.
      */
     if (send_userauth_methods() < 0) {
-      pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
-      pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
       pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
       pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
+
+      pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+      pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
 
       return -1;
     }
@@ -984,11 +986,11 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       pr_trace_msg(trace_channel, 10, "auth method '%s' not enabled", method);
 
       if (send_userauth_methods() < 0) {
-        pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
-        pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
         pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
         pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
+
+        pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+        pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
 
         return -1;
       }
@@ -1009,11 +1011,11 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       pr_trace_msg(trace_channel, 10, "auth method '%s' not enabled", method);
 
       if (send_userauth_methods() < 0) {
-        pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
-        pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
         pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
         pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
+
+        pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+        pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
 
         return -1;
       }
@@ -1034,11 +1036,11 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       pr_trace_msg(trace_channel, 10, "auth method '%s' not enabled", method);
 
       if (send_userauth_methods() < 0) {
-        pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
-        pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
         pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
         pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
+
+        pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+        pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
 
         return -1;
       }
@@ -1059,11 +1061,11 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       pr_trace_msg(trace_channel, 10, "auth method '%s' not enabled", method);
 
       if (send_userauth_methods() < 0) {
-        pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
-        pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
         pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
         pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
+
+        pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+        pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
 
         return -1;
       }
@@ -1076,19 +1078,27 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
     }
 
   } else {
-    pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
-    pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
-
     pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
     pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
+
+    pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "unsupported authentication method '%s' requested", method);
     return -1;
   }
 
+  /* Make sure that the password cmd_rec arg points back to the static
+   * string for passwords.
+   */
+  pass_cmd->arg = pstrdup(pkt->pool, "(hidden)");
+
   if (res <= 0) {
     int xerrno = errno;
+
+    pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
 
     pr_cmd_dispatch_phase(cmd, res == 0 ? POST_CMD : POST_CMD_ERR, 0);
     pr_cmd_dispatch_phase(cmd, res == 0 ? LOG_CMD : LOG_CMD_ERR, 0);

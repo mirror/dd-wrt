@@ -24,7 +24,7 @@
  * The file size to encode 294,903 of 48-bit fingerprints is just 1.3 MB,
  * which corresponds to less than 4.5 bytes per fingerprint.
  *
- * $Id: blacklist.c,v 1.2 2009/02/13 23:41:19 castaglia Exp $
+ * $Id: blacklist.c,v 1.2.4.2 2012/03/13 20:15:32 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -221,19 +221,49 @@ static int check_fp(int fd, const char *fp_str) {
 int sftp_blacklist_reject_key(pool *p, char *key_data, uint32_t key_datalen) {
   int fd, res;
   const char *fp;
-  char *hex, *ptr;
-  size_t hex_len;
+  char *digest_name = "none", *hex, *ptr;
+  size_t hex_len, hex_maxlen;
 
   if (blacklist_path == NULL) {
     /* No key blacklist configured, nothing to do. */
     return FALSE;
   }
 
-  fp = sftp_keys_get_fingerprint(p, key_data, key_datalen,
-    SFTP_KEYS_FP_DIGEST_MD5);
+#ifdef OPENSSL_FIPS
+  if (FIPS_mode()) {
+    /* Use SHA1 fingerprints when in FIPS mode, since FIPS does not allow the
+     * MD5 algorithm.
+     */
+    digest_name = "SHA1";
+    fp = sftp_keys_get_fingerprint(p, key_data, key_datalen,
+      SFTP_KEYS_FP_DIGEST_SHA1);
+
+    /* SHA1 digests are 20 bytes (40 bytes when hex-encoded). */
+    hex_maxlen = 40;
+
+  } else { 
+#endif /* OPENSSL_FIPS */
+    digest_name = "MD5";
+    fp = sftp_keys_get_fingerprint(p, key_data, key_datalen,
+      SFTP_KEYS_FP_DIGEST_MD5);
+
+    /* MD5 digests are 16 bytes (32 bytes when hex-encoded). */
+    hex_maxlen = 32;
+#ifdef OPENSSL_FIPS
+  }
+#endif /* OPENSSL_FIPS */
+
+  /* If we can't obtain a fingerprint for any reason, assume the key is OK. */
+  if (fp == NULL) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "unable to obtain %s fingerprint for checking against blacklist: %s",
+      digest_name, strerror(errno));
+    return FALSE;
+  }
 
   pr_trace_msg(trace_channel, 5,
-    "checking key fingerprint against SFTPKeyBlacklist '%s'", blacklist_path);
+    "checking key %s fingerprint against SFTPKeyBlacklist '%s'",
+    digest_name, blacklist_path);
 
   /* Get a version of the fingerprint sans the colon delimiters. */
   hex = pstrdup(p, fp);
@@ -246,9 +276,10 @@ int sftp_blacklist_reject_key(pool *p, char *key_data, uint32_t key_datalen) {
   *ptr = '\0';
 
   hex_len = strlen(hex);
-  if (hex_len != 32 ||
+  if (hex_len != hex_maxlen ||
       hex_len != strspn(hex, "0123456789abcdef")) {
-    pr_trace_msg(trace_channel, 3, "invalid fingerprint: '%s'", hex);
+    pr_trace_msg(trace_channel, 3, "invalid %s fingerprint: '%s'", digest_name,
+      hex);
     return FALSE;
   }
 

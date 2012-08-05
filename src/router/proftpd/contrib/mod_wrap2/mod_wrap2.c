@@ -1844,6 +1844,12 @@ MODRET wrap2_post_pass_err(cmd_rec *cmd) {
   if (!wrap2_engine)
     return PR_DECLINED(cmd);
 
+  /* Clear the values from the session struct as well, specifically
+   * session.user.  Failure to do so caused Bug#3727.
+   */
+  session.user = NULL;
+  session.group = NULL;
+   
   wrap2_ctxt = NULL;
   wrap2_allow_table = NULL;
   wrap2_deny_table = NULL;

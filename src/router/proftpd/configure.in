@@ -1,7 +1,7 @@
 dnl ProFTPD - FTP server daemon
 dnl Copyright (c) 1997, 1998 Public Flood Software
 dnl Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
-dnl Copyright (c) 2001-2011 The ProFTPD Project team
+dnl Copyright (c) 2001-2012 The ProFTPD Project team
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -467,6 +467,42 @@ AC_ARG_WITH(mysql-config,
     fi
   ])
 
+dnl Configuration location of openssl cmdline
+openssl_cmdline="openssl"
+AC_ARG_WITH(openssl-cmdline,
+  [AC_HELP_STRING(
+    [--with-openssl-cmdline=PATH],
+    [configure location of the openssl(1) command-line tool (default=openssl)])
+  ],
+  [
+    if test x"$withval" != x; then
+      openssl_cmdline=`echo "$withval"`
+
+      if test -z "$openssl_cmdline"; then
+        openssl_cmdline="no"
+
+      elif test x"$openssl_cmdline" = xno; then
+        # do nothing
+        foo=bar
+
+      elif test x"$openssl_cmdline" = xyes; then
+        # Use the default
+        openssl_cmdline="openssl"
+
+      elif test -x "$openssl_cmdline"; then
+        # do nothing
+        foo=bar
+
+      else
+        AC_MSG_ERROR([openssl path $openssl_cmdline is not executable])
+      fi
+
+    else
+      openssl_cmdline="no"
+    fi
+  ])
+
+
 dnl Configuration location of pg_config
 pg_config="pg_config"
 AC_ARG_WITH(postgres-config,
@@ -715,18 +751,26 @@ AC_ARG_ENABLE(nls,
       )
 
       dnl Similarly, the libiconv library is only needed on some non-GNU
-      dnl systems.
+      dnl systems.  Note that some systems redefine the iconv_open function
+      dnl to something else (Bug#3682), e.g. libiconv_open.
       AC_CHECK_LIB(iconv, iconv_open,
         [LIBS="$LIBS -liconv"
          AC_DEFINE(HAVE_LIBICONV, 1, [Define if libiconv is present.])
          AC_DEFINE(PR_USE_NLS, 1, [Define if using NLS support.])
          ENABLE_NLS="1"
         ],
-        [AC_CHECK_LIB(c, iconv_open,
-          [AC_DEFINE(PR_USE_NLS, 1, [Define if using NLS support.])
+        [AC_CHECK_LIB(iconv, libiconv_open,
+          [LIBS="$LIBS -liconv"
+           AC_DEFINE(HAVE_LIBICONV, 1, [Define if libiconv is present.])
+           AC_DEFINE(PR_USE_NLS, 1, [Define if using NLS support.])
            ENABLE_NLS="1"
           ],
-          [AC_MSG_ERROR([libiconv support, required for NLS, not present -- aborting])]
+          [AC_CHECK_LIB(c, iconv_open,
+            [AC_DEFINE(PR_USE_NLS, 1, [Define if using NLS support.])
+             ENABLE_NLS="1"
+            ],
+            [AC_MSG_ERROR([libiconv support, required for NLS, not present -- aborting])]
+          ])
         ])
       )
     fi
@@ -2064,6 +2108,13 @@ if test x"$enable_ncurses" != xno ; then
   fi
 fi
 
+dnl Check for the libtinfo library, which contains the halfdelay() curses
+dnl function on some systems (e.g. OpenSuSE); see Bug#3718.
+AC_CHECK_LIB(tinfo, halfdelay,
+  [ UTILS_LIBS="$UTILS_LIBS -ltinfo"
+    AC_DEFINE(HAVE_LIBTINFO, 1, [Define if you have libtinfo])
+  ])
+
 if test x"$enable_nonblocking_log_open" != xno; then
   AC_DEFINE(PR_USE_NONBLOCKING_LOG_OPEN, 1, [Define if using nonblocking open of log files])
 fi
@@ -2258,6 +2309,22 @@ for i in $all_modules; do
         pg_libdirs=`$pg_config --libdir 2>/dev/null`
         if test ! -z "pg_libdirs"; then
           ac_build_addl_libdirs="$ac_build_addl_libdirs -L$pg_libdirs"
+        fi
+
+        # I suspect that we will also need to look for -pthread here
+        # (a la Bug#3702), as a forums post about proftpd+postgres describes
+        # the same "Alarm clock" symptom as seen with MySQL; see:
+        #
+        #  http://forums.proftpd.org/smf/index.php/topic,1424.0.html
+
+        # pg_config --libs gives libs, with -l prefixes
+        pg_libs=`$pg_config --libs 2>/dev/null`
+        if test ! -z "$pg_libs"; then
+          for pg_lib in $pg_lib; do
+            if test x"$pg_lib" = x"-pthread"; then
+              LIBS="$LIBS -pthread"
+            fi
+          done
         fi
       fi
     fi
@@ -2454,6 +2521,21 @@ if test x"$pr_use_postgres" = xyes; then
   CPPFLAGS="$saved_cppflags"
   LDFLAGS="$saved_ldflags"
   LIBS="$saved_libs"
+
+  if test x"$openssl_cmdline" != xno; then
+    if `$openssl_cmdline version 2>/dev/null 1>&2`; then
+      openssl_cflags=`$openssl_cmdline version -f 2>/dev/null`
+      if test ! -z "$openssl_cflags"; then
+        # Look for the -pthread flag, indicating that this OpenSSL was built
+        # with threads support (see Bug#3795)
+        for openssl_cflag in $openssl_cflags; do 
+          if test x"$openssl_cflag" = x"-pthread"; then
+            LIBS="$LIBS -pthread"
+          fi
+        done
+      fi
+    fi
+  fi
 fi
 
 for module in $ac_shared_modules ; do
