@@ -25,7 +25,7 @@
 
 /**************************** Forward Declarations ****************************/
 
-static int 	compile(char_t *fileList, char_t *prefix);
+static int 	compile(char_t *fileList, char_t *prefix, FILE *cfile,FILE *www);
 static void usage();
 
 /*********************************** Code *************************************/
@@ -47,7 +47,7 @@ int gmain(int argc, char_t* argv[])
 	fileList = argv[2];
 	FILE *out=fopen(fileList,"wb");
 	int i;
-	for (i=3;i<argc;i++)
+	for (i=3;i<argc-2;i++)
 	    {
 	    FILE *t=fopen(argv[i],"rb");
 	    if (t==NULL)continue;
@@ -55,10 +55,13 @@ int gmain(int argc, char_t* argv[])
 	    fprintf(out,"%s\n",argv[i]);
 	    }
 	fclose(out);
-
-	if (compile(fileList, prefix) < 0) {
+	FILE *out1 = fopen(argv[argc-2],"wb");
+	FILE *out2 = fopen(argv[argc-1],"wb");
+	if (compile(fileList, prefix, out1,out2) < 0) {
 		return -1;
 	}
+	fclose(out1);
+	fclose(out2);
 	return 0;
 }
 
@@ -69,7 +72,7 @@ int gmain(int argc, char_t* argv[])
 
 static void usage()
 {
-	fprintf(stderr, "usage: webcomp prefix filelist >output.c\n");
+	fprintf(stderr, "usage: webcomp prefix filelist output.c pages\n");
 	exit(2);
 }
 
@@ -78,7 +81,7 @@ static void usage()
  *	Compile the web pages
  */
 
-static int compile(char_t *fileList, char_t *prefix)
+static int compile(char_t *fileList, char_t *prefix, FILE *stdout2, FILE *www)
 {
 	gstat_t			sbuf;
 	gstat_t			csbuf;
@@ -99,21 +102,21 @@ static int compile(char_t *fileList, char_t *prefix)
 	}
 
 	time(&now);
-	fprintf(stdout, "/*\n * webrom.c -- Compiled Web Pages\n *\n");
-	fprintf(stdout, " * Compiled by GoAhead WebCompile: %s */\n\n", 
+	fprintf(stdout2, "/*\n * webrom.c -- Compiled Web Pages\n *\n");
+	fprintf(stdout2, " * Compiled by GoAhead WebCompile: %s */\n\n", 
 		gctime(&now));
 //	fprintf(stdout, "#include \"wsIntrn.h\"\n\n");
 
-	fprintf(stdout, "#ifndef WEBS_PAGE_ROM\n");
-	fprintf(stdout, "websRomPageIndexType websRomPageIndex[] = {\n");
-	fprintf(stdout, "    { 0, 0 },\n};\n");
-	fprintf(stdout, "#else\n");
+	fprintf(stdout2, "#ifndef WEBS_PAGE_ROM\n");
+	fprintf(stdout2, "websRomPageIndexType websRomPageIndex[] = {\n");
+	fprintf(stdout2, "    { 0, 0 },\n};\n");
+	fprintf(stdout2, "#else\n");
 
 /*
  *	Open each input file and compile each web page
  */
 	nFile = 0;
-	fprintf(stdout, "static unsigned char pages[] = {\n");
+	fprintf(stdout2, "static unsigned char pages[] = {\n");
 	while (fgets(file, sizeof(file), lp) != NULL) {
 		if ((p = strchr(file, '\n')) || (p = strchr(file, '\r'))) {
 			*p = '\0';
@@ -140,25 +143,23 @@ static int compile(char_t *fileList, char_t *prefix)
 		while ((len = read(fd, buf, sizeof(buf))) > 0) {
 			p = buf;
 			for (i = 0; i < len; ) {
-				fprintf(stdout, "    ");
 				for (j = 0; p < &buf[len] && j < 16; j++, p++) {
-					fprintf(stdout, "%3d,", *p);
+					putc(*p,www);
 				}
 				i += j;
-				fprintf(stdout, "\n");
 			}
 		}
 
 		close(fd);
 		nFile++;
 	}
-	fprintf(stdout, "    0 };\n\n");
+	fprintf(stdout2, "    0 };\n\n");
 	fclose(lp);
 
 /*
  *	Now output the page index
  */
-	fprintf(stdout, "const websRomPageIndexType websRomPageIndex[] = {\n");
+	fprintf(stdout2, "const websRomPageIndexType websRomPageIndex[] = {\n");
 
 	if ((lp = fopen(fileList, "r")) == NULL) {
 		fprintf(stderr, "Can't open file list %s\n", fileList);
@@ -204,19 +205,20 @@ static int compile(char_t *fileList, char_t *prefix)
 			continue;
 		}*/
 		
-		fprintf(stdout, "    { \"%s\", %d },\n", cp, 
+		fprintf(stdout2, "    { \"%s\", %d },\n", cp, 
 			sbuf.st_size);
 		offset+=sbuf.st_size;
 		nFile++;
 	}
 	fclose(lp); 
 	
-	fprintf(stdout, "    { 0, 0 },\n");
-	fprintf(stdout, "};\n");
-	fprintf(stdout, "#endif /* WEBS_PAGE_ROM */\n");
+	fprintf(stdout2, "    { 0, 0 },\n");
+	fprintf(stdout2, "};\n");
+	fprintf(stdout2, "#endif /* WEBS_PAGE_ROM */\n");
 
 //	fclose(lp);
-	fflush(stdout);
+	fflush(stdout2);
+	fflush(www);
 	exit(0);
 	return 0;
 }
