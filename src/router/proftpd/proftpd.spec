@@ -1,4 +1,4 @@
-# $Id: proftpd.spec,v 1.79 2011/11/09 22:35:48 castaglia Exp $
+# $Id: proftpd.spec,v 1.79.2.5 2012/07/31 17:14:22 castaglia Exp $
 
 # Module List:
 #
@@ -43,10 +43,17 @@
 # RHEL5 and clones don't have suitably recent versions of pcre/libmemcached
 # so use --with rhel5 to inhibit those features when using --with everything
 
-%global proftpd_version           1.3.4
-%global release_cand_version      stable
+%global proftpd_version           1.3.4b
+
+# When doing a stable or maint release, this line is to be commented out.
+# When doing an RC, define it to be e.g. 'rc2'.
+#
+# NOTE: rpmbuild is really bloody stupid, and CANNOT handle a leading '#'
+# character followed by a '%' character.
+#global release_cand_version     rc1
+
 %global usecvsversion             0%{?_with_cvs:1}
-%global proftpd_cvs_version_main  1.3.4
+%global proftpd_cvs_version_main  1.3.4b
 %global proftpd_cvs_version_date  20110525
 
 # Handle optional functionality
@@ -210,6 +217,7 @@ Group:          Development/Libraries
 Requires:       proftpd = %{version}-%{release}
 # devel package requires the same devel packages as were build-required
 # for the main package
+Requires:	gcc, libtool
 Requires:       libacl-devel
 Requires:       libcap-devel
 Requires:       pkgconfig
@@ -536,6 +544,9 @@ rm -rf %{_builddir}/%{name}-%{version}
 %{_mandir}/man1/ftpwho.1*
 
 %changelog
+* Tue Jan 10 2012 Paul Howarth <paul@city-fan.org>
+- devel package requires gcc and libtool (for prxs)
+
 * Tue Oct  4 2011 Paul Howarth <paul@city-fan.org>
 - Upstream RPM package refactored to support Red Hat/Fedora based distributions
   from EL-5 onwards:

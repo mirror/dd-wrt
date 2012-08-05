@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp key mgmt (keys)
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: keys.c,v 1.16 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: keys.c,v 1.16.2.4 2012/04/24 20:09:04 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -540,7 +540,7 @@ static int get_passphrase(struct sftp_pkey *k, const char *path) {
   char prompt[256];
   FILE *fp;
   EVP_PKEY *pkey = NULL;
-  int fd, prompt_fd = -1, res;
+  int fd, prompt_fd = -1, res, xerrno;
   struct sftp_pkey_data pdata;
   register unsigned int attempt;
 
@@ -552,22 +552,29 @@ static int get_passphrase(struct sftp_pkey *k, const char *path) {
 
   PRIVS_ROOT
   fd = open(path, O_RDONLY);
+  xerrno = errno;
   PRIVS_RELINQUISH
 
   if (fd < 0) {
-    SYSerr(SYS_F_FOPEN, errno);
+    SYSerr(SYS_F_FOPEN, xerrno);
     return -1;
   }
 
   /* Make sure the fd isn't one of the big three. */
-  res = pr_fs_get_usable_fd(fd);
-  if (res >= 0) {
-    fd = res;
+  if (fd <= STDERR_FILENO) {
+    res = pr_fs_get_usable_fd(fd);
+    if (res >= 0) {
+      close(fd);
+      fd = res;
+    }
   }
 
   fp = fdopen(fd, "r");
   if (fp == NULL) {
-    SYSerr(SYS_F_FOPEN, errno);
+    xerrno = errno;
+
+    (void) close(fd); 
+    SYSerr(SYS_F_FOPEN, xerrno);
     return -1;
   }
 
@@ -718,7 +725,7 @@ static int pkey_cb(char *buf, int buflen, int rwflag, void *d) {
   k = (struct sftp_pkey *) d;
 
   if (k->host_pkey) {
-    strncpy(buf, k->host_pkey, buflen);
+    sstrncpy(buf, k->host_pkey, buflen);
     buf[buflen - 1] = '\0';
     return strlen(buf);
   }
@@ -984,9 +991,9 @@ int sftp_keys_compare_keys(pool *p, char *client_pubkey_data,
 
 const char *sftp_keys_get_fingerprint(pool *p, char *key_data,
     uint32_t key_datalen, int digest_algo) {
+  EVP_MD_CTX fp_ctx;
   const EVP_MD *digest;
-  EVP_MD_CTX ctx;
-  char *fp;
+  char *digest_name = "none", *fp;
   unsigned char *fp_data;
   unsigned int fp_datalen = 0;
   register unsigned int i;
@@ -994,6 +1001,12 @@ const char *sftp_keys_get_fingerprint(pool *p, char *key_data,
   switch (digest_algo) {
     case SFTP_KEYS_FP_DIGEST_MD5:
       digest = EVP_md5();
+      digest_name = "md5";
+      break;
+
+    case SFTP_KEYS_FP_DIGEST_SHA1:
+      digest = EVP_sha1();
+      digest_name = "sha1";
       break;
 
     default:
@@ -1003,10 +1016,46 @@ const char *sftp_keys_get_fingerprint(pool *p, char *key_data,
       return NULL;
   }
 
+  /* In OpenSSL 0.9.6, many of the EVP_Digest* functions returned void, not
+   * int.  Without these ugly OpenSSL version preprocessor checks, the
+   * compiler will error out with "void value not ignored as it ought to be".
+   */
+
+#if OPENSSL_VERSION_NUMBER >= 0x000907000L
+  if (EVP_DigestInit(&fp_ctx, digest) != 1) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error initializing %s digest: %s", digest_name,
+      sftp_crypto_get_errors());
+    errno = EPERM;
+    return NULL;
+  }
+#else
+  EVP_DigestInit(&fp_ctx, digest);
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x000907000L
+  if (EVP_DigestUpdate(&fp_ctx, key_data, key_datalen) != 1) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error updating %s digest: %s", digest_name, sftp_crypto_get_errors());
+    errno = EPERM;
+    return NULL;
+  }
+#else
+  EVP_DigestUpdate(&fp_ctx, key_data, key_datalen);
+#endif
+
   fp_data = palloc(p, EVP_MAX_MD_SIZE);
-  EVP_DigestInit(&ctx, digest);
-  EVP_DigestUpdate(&ctx, key_data, key_datalen);
-  EVP_DigestFinal(&ctx, fp_data, &fp_datalen);
+
+#if OPENSSL_VERSION_NUMBER >= 0x000907000L
+  if (EVP_DigestFinal(&fp_ctx, fp_data, &fp_datalen) != 1) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error finishing %s digest: %s", digest_name, sftp_crypto_get_errors());
+    errno = EPERM;
+    return NULL;
+  }
+#else
+  EVP_DigestFinal(&fp_ctx, fp_data, &fp_datalen);
+#endif
 
   /* Now encode that digest in fp_data as hex characters. */
   fp = "";

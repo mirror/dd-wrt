@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Routines to work with ProFTPD bindings
- * $Id: bindings.c,v 1.44 2011/09/21 05:03:05 castaglia Exp $
+ * $Id: bindings.c,v 1.44.2.1 2012/02/16 23:17:35 castaglia Exp $
  */
 
 #include "conf.h"
@@ -154,6 +154,9 @@ conn_t *pr_ipbind_get_listening_conn(server_rec *server, pr_netaddr_t *addr,
   pr_pool_tag(p, "Listening conn subpool");
 
   l = pr_inet_create_conn(p, -1, addr, port, FALSE);
+  if (l == NULL) {
+    return NULL;
+  }
 
   /* Inform any interested listeners that this socket was opened. */
   pr_inet_generate_socket_event("core.ctrl-listen", server, l->local_addr,
@@ -240,8 +243,10 @@ int pr_ipbind_add_binds(server_rec *serv) {
   while (c) {
     listen_conn = NULL;
 
+    pr_signals_handle();
+
     addr = pr_netaddr_get_addr(serv->pool, c->argv[0], NULL);
-    if (!addr) {
+    if (addr == NULL) {
       pr_log_pri(PR_LOG_NOTICE,
        "notice: unable to determine IP address of '%s'", (char *) c->argv[0]);
       c = find_config_next(c, c->next, CONF_PARAM, "_bind", FALSE);
@@ -254,6 +259,9 @@ int pr_ipbind_add_binds(server_rec *serv) {
     if (SocketBindTight &&
         serv->ServerPort) {
       listen_conn = pr_ipbind_get_listening_conn(serv, addr, serv->ServerPort);
+      if (listen_conn == NULL) {
+        return -1;
+      }
 
       PR_CREATE_IPBIND(serv, addr, serv->ServerPort);
       PR_OPEN_IPBIND(addr, serv->ServerPort, listen_conn, FALSE, FALSE, TRUE);
@@ -267,7 +275,6 @@ int pr_ipbind_add_binds(server_rec *serv) {
     c = find_config_next(c, c->next, CONF_PARAM, "_bind", FALSE);
   }
 
-  /* done */
   return 0;
 }
 
@@ -939,7 +946,7 @@ void free_bindings(void) {
   }
 }
 
-static void init_inetd_bindings(void) {
+static int init_inetd_bindings(void) {
   int res = 0;
   server_rec *serv = NULL;
   unsigned char *default_server = NULL, is_default = FALSE;
@@ -951,6 +958,9 @@ static void init_inetd_bindings(void) {
 
   main_server->listen = pr_inet_create_conn(main_server->pool, STDIN_FILENO,
     NULL, INPORT_ANY, FALSE);
+  if (main_server->listen == NULL) {
+    return -1;
+  }
 
   /* Note: Since we are being called via inetd/xinetd, any socket options
    * which may be attempted by listeners for this event may not work.
@@ -970,8 +980,9 @@ static void init_inetd_bindings(void) {
 
   default_server = get_param_ptr(main_server->conf, "DefaultServer", FALSE);
   if (default_server != NULL &&
-      *default_server == TRUE)
+      *default_server == TRUE) {
     is_default = TRUE;
+  }
 
   PR_CREATE_IPBIND(main_server, main_server->addr, main_server->ServerPort);
   PR_OPEN_IPBIND(main_server->addr, main_server->ServerPort,
@@ -994,8 +1005,9 @@ static void init_inetd_bindings(void) {
     is_default = FALSE;
     default_server = get_param_ptr(serv->conf, "DefaultServer", FALSE);
     if (default_server != NULL &&
-        *default_server == TRUE)
+        *default_server == TRUE) {
       is_default = TRUE;
+    }
 
     PR_CREATE_IPBIND(serv, serv->addr, serv->ServerPort);
     PR_OPEN_IPBIND(serv->addr, serv->ServerPort, serv->listen, is_default,
@@ -1003,10 +1015,10 @@ static void init_inetd_bindings(void) {
     PR_ADD_IPBINDS(serv);
   }
 
-  return;
+  return 0;
 }
 
-static void init_standalone_bindings(void) {
+static int init_standalone_bindings(void) {
   int res = 0;
   server_rec *serv = NULL;
   unsigned char *default_server = NULL, is_default = FALSE;
@@ -1037,9 +1049,13 @@ static void init_standalone_bindings(void) {
 
     main_server->listen = pr_ipbind_get_listening_conn(main_server,
       (SocketBindTight ? main_server->addr : NULL), main_server->ServerPort);
+    if (main_server->listen == NULL) {
+      return -1;
+    }
 
-  } else
+  } else {
     main_server->listen = NULL;
+  }
 
   default_server = get_param_ptr(main_server->conf, "DefaultServer", FALSE);
   if (default_server != NULL &&
@@ -1080,6 +1096,9 @@ static void init_standalone_bindings(void) {
 
         serv->listen = pr_ipbind_get_listening_conn(serv,
           (SocketBindTight ? serv->addr : NULL), serv->ServerPort);
+        if (serv->listen == NULL) {
+          return -1;
+        }
 
         PR_CREATE_IPBIND(serv, serv->addr, serv->ServerPort);
         PR_OPEN_IPBIND(serv->addr, serv->ServerPort, serv->listen, is_default,
@@ -1094,22 +1113,22 @@ static void init_standalone_bindings(void) {
           FALSE, TRUE);
         PR_ADD_IPBINDS(serv);
 
-      } else
+      } else {
         serv->listen = NULL;
+      }
 
     } else {
-
-      /* Because this server is sharing the connection with the
-       * main server, we need a cleanup handler to remove
-       * the server's reference when the original connection's
-       * pool is destroyed.
+      /* Because this server is sharing the connection with the main server,
+       * we need a cleanup handler to remove the server's reference when the
+       * original connection's pool is destroyed.
        */
 
       is_default = FALSE;
       default_server = get_param_ptr(serv->conf, "DefaultServer", FALSE);
       if (default_server != NULL &&
-          *default_server == TRUE)
+          *default_server == TRUE) {
         is_default = TRUE;
+      }
 
       serv->listen = main_server->listen;
       register_cleanup(serv->listen->pool, &serv->listen, server_cleanup_cb,
@@ -1136,11 +1155,11 @@ static void init_standalone_bindings(void) {
     }
   }
 
-  /* done */
-  return;
+  return 0;
 }
 
 void init_bindings(void) {
+  int res = 0;
 
 #ifdef PR_USE_IPV6
   int sock;
@@ -1151,15 +1170,22 @@ void init_bindings(void) {
     pr_netaddr_disable_ipv6();
 
   } else {
-    close(sock);
+    (void) close(sock);
   }
 #endif /* PR_USE_IPV6 */
 
-  if (ServerType == SERVER_INETD)
-    init_inetd_bindings();
+  if (ServerType == SERVER_INETD) {
+    res = init_inetd_bindings();
 
-  else if (ServerType == SERVER_STANDALONE)
-    init_standalone_bindings();
+  } else if (ServerType == SERVER_STANDALONE) {
+    res = init_standalone_bindings();
+  }
+
+  if (res < 0) {
+    pr_log_pri(PR_LOG_ERR, "%s",
+      "Unable to start proftpd; check logs for more details");
+    exit(1);
+  }
 
   return;
 }

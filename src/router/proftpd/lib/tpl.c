@@ -23,7 +23,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define TPL_VERSION 1.5
 
-static const char id[]="$Id: tpl.c,v 1.2 2011/04/30 23:04:12 castaglia Exp $";
+static const char id[]="$Id: tpl.c,v 1.2.2.1 2012/06/18 16:49:03 castaglia Exp $";
 
 
 #include <stdlib.h>  /* malloc */
@@ -54,7 +54,7 @@ typedef unsigned __int64 uint64_t;
 #endif
 
 
-#if ( defined __CYGWIN__ || defined __MINGW32__ || defined _WIN32 )
+#if ( defined __MINGW32__ || defined _WIN32 )
 #include "win/mman.h"   /* mmap */
 #else
 #include <sys/mman.h>   /* mmap */

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp key exchange (kex)
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: kex.c,v 1.26 2011/07/09 17:44:59 castaglia Exp $
+ * $Id: kex.c,v 1.26.2.2 2012/03/11 18:45:17 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -841,9 +841,12 @@ static array_header *parse_namelist(pool *p, const char *names) {
   list = make_array(p, 0, sizeof(const char *));
 
   names_len = strlen(names);
+  if (names_len == 0) {
+    return list;
+  }
 
   ptr = memchr(names, ',', names_len);
-  while (ptr) {
+  while (ptr != NULL) {
     char *elt;
     size_t elt_len;
 
@@ -857,6 +860,8 @@ static array_header *parse_namelist(pool *p, const char *names) {
 
     *((const char **) push_array(list)) = elt;
     names = ++ptr;
+
+    /* Add one for the ',' character we skipped over. */
     names_len -= elt_len;
 
     ptr = memchr(names, ',', names_len);
@@ -2888,6 +2893,77 @@ static int handle_kex_rsa(struct sftp_kex *kex) {
   return 0;
 }
 
+static struct ssh2_packet *recv_newkeys(pool *p, struct sftp_kex *kex) {
+  struct ssh2_packet *pkt = NULL;
+
+  pr_trace_msg(trace_channel, 9, "reading NEWKEYS message from client");
+
+  /* Keep looping until we get a NEWKEYS message, or we time out (hopefully
+   * via TimeoutLogin or somesuch).
+   */
+  while (pkt == NULL) {
+    int res;
+    char mesg_type;
+
+    pr_signals_handle();
+
+    pkt = sftp_ssh2_packet_create(p);
+    res = sftp_ssh2_packet_read(sftp_conn->rfd, pkt);
+    if (res < 0) {
+      int xerrno = errno;
+
+      destroy_kex(kex);
+      destroy_pool(pkt->pool);
+
+      errno = xerrno;
+      return NULL;
+    }
+
+    /* Per RFC 4253, Section 11, DEBUG, DISCONNECT, IGNORE, and UNIMPLEMENTED
+     * messages can occur at any time, even during KEX.  We have to be prepared
+     * for this, and Do The Right Thing(tm).
+     */
+
+    mesg_type = sftp_ssh2_packet_get_mesg_type(pkt);
+    switch (mesg_type) {
+      case SFTP_SSH2_MSG_NEWKEYS:
+        /* Exactly what we were looking for.  Excellent. */
+        break;
+
+      case SFTP_SSH2_MSG_DEBUG:
+        sftp_ssh2_packet_handle_debug(pkt);
+        pkt = NULL;
+        break;
+
+      case SFTP_SSH2_MSG_DISCONNECT:
+        sftp_ssh2_packet_handle_disconnect(pkt);
+        pkt = NULL;
+        break;
+
+      case SFTP_SSH2_MSG_IGNORE:
+        sftp_ssh2_packet_handle_ignore(pkt);
+        pkt = NULL;
+        break;
+
+      case SFTP_SSH2_MSG_UNIMPLEMENTED:
+        sftp_ssh2_packet_handle_ignore(pkt);
+        pkt = NULL;
+        break;
+
+      default:
+        /* For any other message type, it's considered a protocol error. */
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "expecting NEWKEYS message, received %s (%d), disconnecting",
+          sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type);
+        destroy_kex(kex);
+        destroy_pool(pkt->pool);
+        SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_PROTOCOL_ERROR, NULL);
+    }
+  }
+
+  return pkt;
+}
+
 int sftp_kex_handle(struct ssh2_packet *pkt) {
   int correct_guess = TRUE, res, sent_newkeys = FALSE;
   char mesg_type;
@@ -3106,27 +3182,7 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
     sent_newkeys = TRUE;
   }
 
-  pr_trace_msg(trace_channel, 9, "reading NEWKEYS message from client");
-
-  /* Read the client NEWKEYS mesg. */
-  pkt = sftp_ssh2_packet_create(kex_pool);
-
-  res = sftp_ssh2_packet_read(sftp_conn->rfd, pkt);
-  if (res < 0) {
-    destroy_kex(kex);
-    destroy_pool(pkt->pool);
-    return -1;
-  }
-
-  mesg_type = sftp_ssh2_packet_get_mesg_type(pkt);
-  if (mesg_type != SFTP_SSH2_MSG_NEWKEYS) {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "expecting NEWKEYS message, received %s (%d), disconnecting",
-      sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type);
-    destroy_kex(kex);
-    destroy_pool(pkt->pool);
-    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_PROTOCOL_ERROR, NULL);
-  }
+  pkt = recv_newkeys(kex_pool, kex);
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "NEWKEYS"));
   cmd->arg = "";

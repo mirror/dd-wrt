@@ -21,7 +21,7 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: cmd.c,v 1.8 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: cmd.c,v 1.8.2.1 2011/11/16 20:00:58 castaglia Exp $
  */
 
 #include "conf.h"
@@ -245,8 +245,13 @@ char *pr_cmd_get_displayable_str(cmd_rec *cmd, size_t *str_len) {
   }
 
   res = pr_table_get(cmd->notes, "displayable-str", NULL);
-  if (res)
+  if (res) {
+    if (str_len != NULL) {
+      *str_len = strlen(res);
+    }
+
     return res;
+  }
 
   argc = cmd->argc;
   argv = cmd->argv;
