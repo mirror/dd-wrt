@@ -187,12 +187,20 @@ static struct platform_device *ar7240_platform_devices[] __initdata = {
 	&ar7240_usb_ohci_device
 };
 
+static struct platform_device ar9344_nand_device = {
+	.name	= "ar9344-nand",
+	.id	= -1,
+};
+
 static struct platform_device *ar724x_platform_devices[] __initdata = {
 #ifdef CONFIG_MACH_HORNET
 	&ar933x_uart_device,
-	&ath_uart
+	&ath_uart,
 #else
-	&ar7240_uart
+	&ar7240_uart,
+#endif
+#ifdef CONFIG_RB2011
+	&ar9344_nand_device,
 #endif
 };
 
@@ -426,7 +434,8 @@ int __init ar7240_platform_init(void)
 	    ret = platform_add_devices(ar7240_platform_devices, 
                                 ARRAY_SIZE(ar7240_platform_devices));
         }
-        
+	platform_device_register_simple("ar71xx-wdt", -1, NULL, 0);
+    
 #ifdef CONFIG_MACH_HORNET
 	ee = (u8 *) KSEG1ADDR(0x1fff1000);
 	ar9xxx_add_device_wmac(ee, mac);
