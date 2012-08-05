@@ -2,7 +2,7 @@
  * mod_tls - An RFC2228 SSL/TLS module for ProFTPD
  *
  * Copyright (c) 2000-2002 Peter 'Luna' Runestig <peter@runestig.com>
- * Copyright (c) 2002-2011 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2002-2012 TJ Saunders <tj@castaglia.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modifi-
@@ -378,7 +378,14 @@ static char *tls_passphrase_provider = NULL;
 #define TLS_PROTO_TLS_V1		0x0002
 static unsigned int tls_protocol = TLS_PROTO_SSL_V3|TLS_PROTO_TLS_V1;
 
-static int tls_ssl_opts = SSL_OP_ALL|SSL_OP_NO_SSLv2|SSL_OP_SINGLE_DH_USE^SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS;
+#ifdef SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS
+static int tls_ssl_opts = (SSL_OP_ALL|SSL_OP_NO_SSLv2|SSL_OP_SINGLE_DH_USE)^SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS;
+#else
+/* OpenSSL-0.9.6 and earlier (yes, it appears people still have these versions
+ * installed) does not define the DONT_INSERT_EMPTY_FRAGMENTS option.
+ */
+static int tls_ssl_opts = SSL_OP_ALL|SSL_OP_NO_SSLv2|SSL_OP_SINGLE_DH_USE;
+#endif
 
 static int tls_required_on_auth = 0;
 static int tls_required_on_ctrl = 0;
@@ -413,6 +420,9 @@ static unsigned char *tls_authenticated = NULL;
 
 /* mod_tls cleanup flags */
 #define TLS_CLEANUP_FL_SESS_INIT	0x0001
+
+/* mod_tls OCSP constants */
+#define TLS_OCSP_RESP_MAX_AGE_SECS	300
 
 static char *tls_cipher_suite = NULL;
 static char *tls_crl_file = NULL, *tls_crl_path = NULL;
@@ -1673,6 +1683,9 @@ static int tls_get_pkcs12_passwd(server_rec *s, FILE *fp, const char *prompt,
         /* Always handle signals in a loop. */
         pr_signals_handle();
 
+        /* Clear the error queue at the start of the loop. */
+        ERR_clear_error();
+
         len = tls_passphrase_cb(buf, bufsz, 0, pdata);
         if (len > 0) {
           res = PKCS12_verify_mac(p12, buf, -1);
@@ -1699,7 +1712,6 @@ static int tls_get_pkcs12_passwd(server_rec *s, FILE *fp, const char *prompt,
           }
         }
  
-        ERR_clear_error();
         fprintf(stderr, "\nWrong password for this PKCS12 file.  Please try again.\n");
       }
     } else {
@@ -1764,27 +1776,34 @@ static int tls_get_passphrase(server_rec *s, const char *path,
   register unsigned int attempt;
 
   if (path) {
-    int fd, res;
+    int fd, res, xerrno;
 
     /* Open an fp on the cert file. */
     PRIVS_ROOT
     fd = open(path, O_RDONLY);
+    xerrno = errno;
     PRIVS_RELINQUISH
 
     if (fd < 0) {
-      SYSerr(SYS_F_FOPEN, errno);
+      SYSerr(SYS_F_FOPEN, xerrno);
       return -1;
     }
 
     /* Make sure the fd isn't one of the big three. */
-    res = pr_fs_get_usable_fd(fd);
-    if (res >= 0) {
-      fd = res;
+    if (fd <= STDERR_FILENO) {
+      res = pr_fs_get_usable_fd(fd);
+      if (res >= 0) {
+        close(fd);
+        fd = res;
+      }
     }
 
     keyf = fdopen(fd, "r");
     if (keyf == NULL) {
-      SYSerr(SYS_F_FOPEN, errno);
+      xerrno = errno;
+
+      (void) close(fd);
+      SYSerr(SYS_F_FOPEN, xerrno);
       return -1;
     }
   }
@@ -1803,8 +1822,10 @@ static int tls_get_passphrase(server_rec *s, const char *path,
 
     res = tls_get_pkcs12_passwd(s, keyf, prompt, buf, bufsz, flags, &pdata);
 
-    if (keyf)
+    if (keyf) {
       fclose(keyf);
+      keyf = NULL;
+    }
 
     /* Restore the normal stderr logging. */
     restore_prompt_fds();
@@ -1818,19 +1839,24 @@ static int tls_get_passphrase(server_rec *s, const char *path,
     /* Always handle signals in a loop. */
     pr_signals_handle();
 
+    /* Clear the error queue at the start of the loop. */
+    ERR_clear_error();
+
     pkey = PEM_read_PrivateKey(keyf, NULL, tls_passphrase_cb, &pdata);
     if (pkey)
       break;
 
-    if (keyf)
+    if (keyf) {
       fseek(keyf, 0, SEEK_SET);
+    }
 
-    ERR_clear_error();
     fprintf(stderr, "\nWrong passphrase for this key.  Please try again.\n");
   }
 
-  if (keyf)
+  if (keyf) {
     fclose(keyf);
+    keyf = NULL;
+  }
 
   /* Restore the normal stderr logging. */
   restore_prompt_fds();
@@ -1852,11 +1878,13 @@ static int tls_get_passphrase(server_rec *s, const char *path,
 
 #ifdef HAVE_MLOCK
    PRIVS_ROOT
-   if (mlock(buf, bufsz) < 0) 
+   if (mlock(buf, bufsz) < 0) {
      pr_log_debug(DEBUG1, MOD_TLS_VERSION
        ": error locking passphrase into memory: %s", strerror(errno));
-   else
+
+   } else {
      pr_log_debug(DEBUG1, MOD_TLS_VERSION ": passphrase locked into memory");
+   }
    PRIVS_RELINQUISH
 #endif
 
@@ -1934,13 +1962,13 @@ static int tls_pkey_cb(char *buf, int buflen, int rwflag, void *data) {
   k = (tls_pkey_t *) data;
 
   if ((k->flags & TLS_PKEY_USE_RSA) && k->rsa_pkey) {
-    strncpy(buf, k->rsa_pkey, buflen);
+    sstrncpy(buf, k->rsa_pkey, buflen);
     buf[buflen - 1] = '\0';
     return strlen(buf);
   }
 
   if ((k->flags & TLS_PKEY_USE_DSA) && k->dsa_pkey) {
-    strncpy(buf, k->dsa_pkey, buflen);
+    sstrncpy(buf, k->dsa_pkey, buflen);
     buf[buflen - 1] = '\0';
     return strlen(buf);
   }
@@ -2510,6 +2538,7 @@ static int tls_init_server(void) {
       PRIVS_RELINQUISH
       tls_log("error reading TLSRSACertificateFile '%s': %s", tls_rsa_cert_file,
         tls_get_errors());
+      fclose(fh);
       return -1;
     }
 
@@ -2550,6 +2579,15 @@ static int tls_init_server(void) {
         tls_rsa_key_file, tls_get_errors());
       return -1;
     }
+
+    res = SSL_CTX_check_private_key(ssl_ctx);
+    if (res != 1) {
+      PRIVS_RELINQUISH 
+
+      tls_log("error checking key from TLSRSACertificateKeyFile '%s': %s",
+        tls_rsa_key_file, tls_get_errors());
+      return -1;
+    }
   }
 
   if (tls_dsa_cert_file) {
@@ -2571,6 +2609,7 @@ static int tls_init_server(void) {
       PRIVS_RELINQUISH
       tls_log("error reading TLSDSACertificateFile '%s': %s", tls_dsa_cert_file,
         tls_get_errors());
+      fclose(fh);
       return -1;
     }
 
@@ -2607,6 +2646,15 @@ static int tls_init_server(void) {
       PRIVS_RELINQUISH
 
       tls_log("error loading TLSDSACertificateKeyFile '%s': %s",
+        tls_dsa_key_file, tls_get_errors());
+      return -1;
+    }
+
+    res = SSL_CTX_check_private_key(ssl_ctx);
+    if (res != 1) {
+      PRIVS_RELINQUISH
+
+      tls_log("error checking key from TLSDSACertificateKeyFile '%s': %s",
         tls_dsa_key_file, tls_get_errors());
       return -1;
     }
@@ -2693,6 +2741,25 @@ static int tls_init_server(void) {
 
       tls_log("error loading key from TLSPKCS12File '%s' %s", tls_pkcs12_file,
         tls_get_errors());
+
+      PKCS12_free(p12);
+
+      if (cert)
+        X509_free(cert);
+
+      if (pkey)
+        EVP_PKEY_free(pkey);
+
+      return -1;
+    }
+
+    res = SSL_CTX_check_private_key(ssl_ctx);
+    if (res != 1) {
+      PRIVS_RELINQUISH
+
+      tls_log("error checking key from TLSPKCS12File '%s': %s", tls_pkcs12_file,
+        tls_get_errors());
+
       PKCS12_free(p12);
 
       if (cert)
@@ -3388,7 +3455,10 @@ static void tls_end_sess(SSL *ssl, int strms, int flags) {
       }
     }
 
-    if (res == 0) {
+    /* If SSL_shutdown() returned -1 here, an error occurred during the
+     * shutdown.
+     */
+    if (res < 0) {
       long err_code;
 
       err_code = SSL_get_error(ssl, res);
@@ -3643,6 +3713,7 @@ static unsigned char tls_dotlogin_allow(const char *user) {
   struct passwd *pwd = NULL;
   pool *tmp_pool = NULL;
   unsigned char allow_user = FALSE;
+  int xerrno;
 
   if (!(tls_flags & TLS_SESS_ON_CTRL) ||
       !ctrl_ssl ||
@@ -3655,7 +3726,7 @@ static unsigned char tls_dotlogin_allow(const char *user) {
   pwd = pr_auth_getpwnam(tmp_pool, user);
   PRIVS_RELINQUISH
 
-  if (!pwd) {
+  if (pwd == NULL) {
     destroy_pool(tmp_pool);
     return FALSE;
   }
@@ -3674,10 +3745,11 @@ static unsigned char tls_dotlogin_allow(const char *user) {
 
   PRIVS_ROOT
   fp = fopen(buf, "r");
+  xerrno = errno;
   PRIVS_RELINQUISH
 
-  if (!fp) {
-    tls_log(".tlslogin check: unable to open '%s': %s", buf, strerror(errno));
+  if (fp == NULL) {
+    tls_log(".tlslogin check: unable to open '%s': %s", buf, strerror(xerrno));
     return FALSE;
   }
 
@@ -4388,6 +4460,7 @@ static int tls_verify_cb(int ok, X509_STORE_CTX *ctx) {
       case X509_V_ERR_CERT_HAS_EXPIRED:
       case X509_V_ERR_CERT_REVOKED:
       case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+      case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
       case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
       case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
       case X509_V_ERR_APPLICATION_VERIFICATION:
@@ -4411,17 +4484,6 @@ static int tls_verify_cb(int ok, X509_STORE_CTX *ctx) {
         ok = 0;
         break;
       }
-
-      case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
-        /* XXX this is strange. we get this error for certain clients
-         * (i.e. Jeff Altman's kftp) when all is ok. I think it's because the
-         * client is actually sending the whole CA cert. This must be figured
-         * out, but we let it pass for now. If the CA cert isn't available
-         * locally, we will fail anyway.
-         */
-        tls_log("%s", X509_verify_cert_error_string(ctx->error));
-        ok = 1;
-        break;
 
       default:
         tls_log("error verifying client certificate: [%d] %s",
@@ -4641,6 +4703,7 @@ static int tls_verify_ocsp_url(X509_STORE_CTX *ctx, X509 *cert,
   OCSP_RESPONSE *resp = NULL;
   OCSP_BASICRESP *basic_resp = NULL;
   SSL_CTX *ocsp_ssl_ctx = NULL;
+  ASN1_GENERALIZEDTIME *revtime, *thisupd, *nextupd;
 
   if (cert == NULL ||
       url == NULL) {
@@ -5030,9 +5093,31 @@ static int tls_verify_ocsp_url(X509_STORE_CTX *ctx, X509 *cert,
   }
 
   res = OCSP_resp_find_status(basic_resp, cert_id, &ocsp_cert_status,
-    &ocsp_reason, NULL, NULL, NULL);
+    &ocsp_reason, &revtime, &thisupd, &nextupd);
   if (res != 1) {
     tls_log("unable to retrieve cert status from OCSP response: %s",
+      tls_get_errors());
+
+    if (ocsp_ssl_ctx != NULL) {
+      SSL_CTX_free(ocsp_ssl_ctx);
+    }
+
+    OCSP_REQUEST_free(req);
+    OCSP_BASICRESP_free(basic_resp);
+    OCSP_RESPONSE_free(resp);
+    X509_free(issuing_cert);
+    BIO_free_all(conn);
+    OPENSSL_free(host);
+    OPENSSL_free(port);
+    OPENSSL_free(uri);
+
+    return FALSE;
+  }
+
+  /* Check the validity of the timestamps on the response. */
+  res = OCSP_check_validity(thisupd, nextupd, TLS_OCSP_RESP_MAX_AGE_SECS, -1);
+  if (res != 1) {
+    tls_log("unable validate OCSP response timestamps: %s",
       tls_get_errors());
 
     if (ocsp_ssl_ctx != NULL) {
@@ -5317,11 +5402,20 @@ int tls_sess_cache_unregister(const char *name) {
         tls_sess_caches = sc->next;
       }
 
-      if (sc->next)
+      if (sc->next) {
         sc->next->prev = sc->prev;
+      }
 
       sc->next = sc->prev = NULL;
       tls_sess_ncaches--;
+
+      /* If the session cache being unregistered is in use, update the
+       * session-cache-in-use pointer.
+       */
+      if (sc->cache == tls_sess_cache) {
+        tls_sess_cache_close();
+        tls_sess_cache = NULL;
+      }
 
       /* NOTE: a counter should be kept of the number of unregistrations,
        * as the memory for a registration is not freed on unregistration.
@@ -6968,6 +7062,7 @@ MODRET set_tlsoptions(cmd_rec *cmd) {
     } else if (strcmp(cmd->argv[i], "NoCertRequest") == 0) {
       opts |= TLS_OPT_NO_CERT_REQUEST;
 
+#ifdef SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS
     } else if (strcmp(cmd->argv[i], "NoEmptyFragments") == 0) {
       /* Unlike the other TLSOptions, this option is handled slightly
        * differently, due to the fact that option affects the creation
@@ -6975,6 +7070,9 @@ MODRET set_tlsoptions(cmd_rec *cmd) {
        *
        */
       tls_ssl_opts |= SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS;
+#else
+      pr_log_pri(PR_LOG_NOTICE, MOD_TLS_VERSION ": TLSOption NoEmptyFragments not supported (OpenSSL version is too old)");
+#endif
 
     } else if (strcmp(cmd->argv[i], "NoSessionReuseRequired") == 0) {
       opts |= TLS_OPT_NO_SESSION_REUSE_REQUIRED;
@@ -7508,6 +7606,11 @@ static void tls_shutdown_ev(const void *event_data, void *user_data) {
     }
   }
 
+  if (ssl_ctx != NULL) {
+    SSL_CTX_free(ssl_ctx);
+    ssl_ctx = NULL;
+  }
+
   RAND_cleanup();
 }
 
@@ -7627,12 +7730,14 @@ static void tls_get_passphrases(void) {
      * look for TLS*CertificateFile directives (when appropriate).
      */
     rsa = find_config(s->conf, CONF_PARAM, "TLSRSACertificateKeyFile", FALSE);
-    if (rsa == NULL)
+    if (rsa == NULL) {
       rsa = find_config(s->conf, CONF_PARAM, "TLSRSACertificateFile", FALSE);
+    }
 
     dsa = find_config(s->conf, CONF_PARAM, "TLSDSACertificateKeyFile", FALSE);
-    if (dsa == NULL)
+    if (dsa == NULL) {
       dsa = find_config(s->conf, CONF_PARAM, "TLSDSACertificateFile", FALSE);
+    }
 
     pkcs12 = find_config(s->conf, CONF_PARAM, "TLSPKCS12File", FALSE);
 
@@ -7875,20 +7980,37 @@ static void tls_postparse_ev(const void *event_data, void *user_data) {
  */
 
 static int tls_init(void) {
+  unsigned long openssl_version;
 
   /* Check that the OpenSSL headers used match the version of the
    * OpenSSL library used.
    *
    * For now, we only log if there is a difference.
    */
-  if (SSLeay() != OPENSSL_VERSION_NUMBER) {
-    pr_log_pri(PR_LOG_ERR, MOD_TLS_VERSION
-      ": compiled using OpenSSL version '%s' headers, but linked to "
-      "OpenSSL version '%s' library", OPENSSL_VERSION_TEXT,
-      SSLeay_version(SSLEAY_VERSION));
-    tls_log("compiled using OpenSSL version '%s' headers, but linked to "
-      "OpenSSL version '%s' library", OPENSSL_VERSION_TEXT,
-      SSLeay_version(SSLEAY_VERSION));
+  openssl_version = SSLeay();
+
+  if (openssl_version != OPENSSL_VERSION_NUMBER) {
+    int unexpected_version_mismatch = TRUE;
+
+    if (OPENSSL_VERSION_NUMBER >= 0x1000000fL) {
+      /* OpenSSL versions after 1.0.0 try to maintain ABI compatibility.
+       * So we will warn about header/library version mismatches only if
+       * the library is older than the headers.
+       */
+      if (openssl_version >= OPENSSL_VERSION_NUMBER) {
+        unexpected_version_mismatch = FALSE;
+      }
+    }
+
+    if (unexpected_version_mismatch == TRUE) {
+      pr_log_pri(PR_LOG_ERR, MOD_TLS_VERSION
+        ": compiled using OpenSSL version '%s' headers, but linked to "
+        "OpenSSL version '%s' library", OPENSSL_VERSION_TEXT,
+        SSLeay_version(SSLEAY_VERSION));
+      tls_log("compiled using OpenSSL version '%s' headers, but linked to "
+        "OpenSSL version '%s' library", OPENSSL_VERSION_TEXT,
+        SSLeay_version(SSLEAY_VERSION));
+    }
   }
 
   pr_log_debug(DEBUG2, MOD_TLS_VERSION ": using " OPENSSL_VERSION_TEXT);

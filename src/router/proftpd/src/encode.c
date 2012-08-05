@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2011 The ProFTPD Project team
+ * Copyright (c) 2006-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* UTF8/charset encoding/decoding
- * $Id: encode.c,v 1.31 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: encode.c,v 1.31.2.1 2012/04/06 16:45:31 castaglia Exp $
  */
 
 #include "conf.h"
@@ -211,10 +211,12 @@ int encode_init(void) {
 
 char *pr_decode_str(pool *p, const char *in, size_t inlen, size_t *outlen) {
 #ifdef HAVE_ICONV
-  size_t inbuflen, outbuflen;
+  size_t inbuflen, outbuflen, outbufsz;
   char *inbuf, outbuf[PR_TUNABLE_PATH_MAX*2], *res = NULL;
 
-  if (!p || !in || !outlen) {
+  if (p == NULL ||
+      in == NULL ||
+      outlen == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -246,7 +248,11 @@ char *pr_decode_str(pool *p, const char *in, size_t inlen, size_t *outlen) {
     return NULL;
 
   *outlen = sizeof(outbuf) - outbuflen;
-  res = pcalloc(p, *outlen);
+
+  /* We allocate one byte more, for a terminating NUL. */
+  outbufsz = sizeof(outbuf) - outbuflen + 1;
+  res = pcalloc(p, outbufsz);
+
   memcpy(res, outbuf, *outlen);
 
   return res;
@@ -259,10 +265,12 @@ char *pr_decode_str(pool *p, const char *in, size_t inlen, size_t *outlen) {
 
 char *pr_encode_str(pool *p, const char *in, size_t inlen, size_t *outlen) {
 #ifdef HAVE_ICONV
-  size_t inbuflen, outbuflen;
+  size_t inbuflen, outbuflen, outbufsz;
   char *inbuf, outbuf[PR_TUNABLE_PATH_MAX*2], *res;
 
-  if (!p || !in || !outlen) {
+  if (p == NULL ||
+      in == NULL ||
+      outlen == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -294,7 +302,11 @@ char *pr_encode_str(pool *p, const char *in, size_t inlen, size_t *outlen) {
     return NULL;
 
   *outlen = sizeof(outbuf) - outbuflen;
-  res = pcalloc(p, *outlen);
+
+  /* We allocate one byte more, for a terminating NUL. */
+  outbufsz = sizeof(outbuf) - outbuflen + 1;
+
+  res = pcalloc(p, outbufsz);
   memcpy(res, outbuf, *outlen);
 
   return res;

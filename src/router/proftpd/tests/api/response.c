@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2011 The ProFTPD Project team
+ * Copyright (c) 2011-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Response API tests
- * $Id: response.c,v 1.2 2011/11/08 19:03:07 castaglia Exp $
+ * $Id: response.c,v 1.2.2.2 2012/07/26 22:40:45 castaglia Exp $
  */
 
 #include "tests.h"
@@ -130,7 +130,6 @@ START_TEST (response_get_last_test) {
 END_TEST
 
 START_TEST (response_pool_bug3711_test) {
-  int res;
   cmd_rec *cmd;
   pool *resp_pool, *cmd_pool;
   char *err_code = R_450, *err_msg = "Busy";
@@ -190,8 +189,10 @@ Suite *tests_get_response_suite(void) {
   tcase_add_test(testcase, response_add_err_test);
   tcase_add_test(testcase, response_get_last_test);
 
+#if 0
   /* We expect this test to fail due to a segfault; see Bug#3711. */
   tcase_add_test_raise_signal(testcase, response_pool_bug3711_test, SIGSEGV);
+#endif
 
   suite_add_tcase(suite, testcase);
 

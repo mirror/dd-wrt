@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp sftp
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: fxp.c,v 1.134 2011/10/12 17:15:55 castaglia Exp $
+ * $Id: fxp.c,v 1.134.2.4 2012/05/30 17:26:59 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -1311,7 +1311,7 @@ static int fxp_attrs_set(pr_fh_t *fh, const char *path, struct stat *attrs,
       } else {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "client set permissions on '%s' to 0%o", path,
-          (unsigned int) attrs->st_mode);
+          (unsigned int) (attrs->st_mode & ~S_IFMT));
       }
     }
   }
@@ -2498,7 +2498,18 @@ static void fxp_packet_add_cache(char *data, uint32_t datalen) {
       fxp_packet_data_allocsz += sz;
     }
 
-    memcpy(curr_buf, data, datalen);
+    /* We explicitly want to use memmove(3) here rather than memcpy(3),
+     * since it is possible (and likely) that after reading data out
+     * of this buffer, there will be leftover data which is put back into
+     * the buffer, only at a different offset.  This means that the
+     * source and destination pointers CAN overlap; using memcpy(3) would
+     * lead to subtle memory copy issue (e.g. Bug#3743).
+     *
+     * This manifested as hard-to-reproduce SFTP upload/download stalls,
+     * segfaults, etc, due to corrupted memory being read out as
+     * packet lengths and such.
+     */
+    memmove(curr_buf, data, datalen);
     curr_buflen = datalen;
 
     return;
@@ -2543,8 +2554,18 @@ static void fxp_packet_add_cache(char *data, uint32_t datalen) {
       }
     }
 
-    /* Append the SSH2 data to the current unconsumed buffer. */
-    memcpy(curr_buf + curr_buflen, data, datalen);
+    /* We explicitly want to use memmove(3) here rather than memcpy(3),
+     * since it is possible (and likely) that after reading data out
+     * of this buffer, there will be leftover data which is put back into
+     * the buffer, only at a different offset.  This means that the
+     * source and destination pointers CAN overlap; using memcpy(3) would
+     * lead to subtle memory copy issue (e.g. Bug#3743).
+     *
+     * This manifested as hard-to-reproduce SFTP upload/download stalls,
+     * segfaults, etc, due to corrupted memory being read out as
+     * packet lengths and such.
+     */
+    memmove(curr_buf + curr_buflen, data, datalen);
     curr_buflen += datalen;
   }
 
@@ -6373,6 +6394,19 @@ static int fxp_handle_open(struct fxp_packet *fxp) {
     cmd2 = fxp_cmd_alloc(fxp->pool, C_RETR, path);
     cmd2->cmd_id = pr_cmd_get_id(C_RETR);
     session.curr_cmd = C_RETR;
+
+    /* We ignore any perms sent by the client for read-only requests.
+     *
+     * This happens because we explicitly call chown(2)/chmod(2) after
+     * open(2) in order to handle UserOwner/GroupOwner directive.  But this
+     * breaks the semantics of open(2), which does not change the mode of
+     * an existing file if the flags are O_RDONLY.
+     */
+    if (attr_flags & SSH2_FX_ATTR_PERMISSIONS) {
+      pr_trace_msg(trace_channel, 7,
+        "read-only OPEN request, ignoring perms sent by client");
+      attr_flags &= ~SSH2_FX_ATTR_PERMISSIONS;
+    }
   }
 
   if (cmd2) {
@@ -6462,6 +6496,26 @@ static int fxp_handle_open(struct fxp_packet *fxp) {
           "notice: error adding 'mod_xfer.file-modified' note: %s",
           strerror(errno));
       }
+    }
+  }
+
+  if (exists(path)) {
+    /* draft-ietf-secsh-filexfer-06.txt, section 7.1.1 specifically
+     * states that any attributes in a OPEN request are ignored if the
+     * file already exists.
+     */
+    if (attr_flags & SSH2_FX_ATTR_PERMISSIONS) {
+      pr_trace_msg(trace_channel, 15,
+        "OPEN request for existing path, ignoring perms sent by client");
+      attr_flags &= ~SSH2_FX_ATTR_PERMISSIONS;
+    }
+
+    if ((attr_flags & SSH2_FX_ATTR_UIDGID) ||
+        (attr_flags & SSH2_FX_ATTR_OWNERGROUP)) {
+      pr_trace_msg(trace_channel, 15,
+        "OPEN request for existing path, ignoring ownership sent by client");
+      attr_flags &= ~SSH2_FX_ATTR_UIDGID;
+      attr_flags &= ~SSH2_FX_ATTR_OWNERGROUP;
     }
   }
 

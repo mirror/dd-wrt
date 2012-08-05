@@ -3,7 +3,7 @@
  *          server, as well as several utility functions for other Controls
  *          modules
  *
- * Copyright (c) 2000-2011 TJ Saunders
+ * Copyright (c) 2000-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,14 +27,14 @@
  * This is mod_ctrls, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_ctrls.c,v 1.50 2011/07/31 22:07:03 castaglia Exp $
+ * $Id: mod_ctrls.c,v 1.50.2.2 2012/02/23 22:22:57 castaglia Exp $
  */
 
 #include "conf.h"
 #include "privs.h"
 #include "mod_ctrls.h"
 
-#define MOD_CTRLS_VERSION "mod_ctrls/0.9.4"
+#define MOD_CTRLS_VERSION "mod_ctrls/0.9.5"
 
 /* Master daemon in standalone mode? (from src/main.c) */
 extern unsigned char is_master;
@@ -479,19 +479,20 @@ static int ctrls_listen(const char *sock_file, int flags) {
     /* Make sure the path to which we want to bind this socket doesn't already
      * exist.
      */
-    unlink(sock_file);
+    (void) unlink(sock_file);
   }
 
   /* Fill in the socket structure fields */
   memset(&sock, 0, sizeof(sock));
 
   sock.sun_family = AF_UNIX;
-  strncpy(sock.sun_path, sock_file, strlen(sock_file));
+  sstrncpy(sock.sun_path, sock_file, sizeof(sock.sun_path));
 
   len = sizeof(sock);
 
   /* Bind the name to the descriptor */
-  pr_trace_msg(trace_channel, 1, "binding ctrls socket to '%s'", sock.sun_path);
+  pr_trace_msg(trace_channel, 1, "binding ctrls socket fd %d to path '%s'",
+    sockfd, sock.sun_path);
   if (bind(sockfd, (struct sockaddr *) &sock, len) < 0) {
     int xerrno = errno;
 
@@ -695,9 +696,10 @@ static int ctrls_timer_cb(CALLBACK_FRAME) {
     close(ctrls_sockfd);
     ctrls_sockfd = -1;
 
-    if (is_master)
+    if (is_master) {
       /* Remove the local socket path as well */
-      unlink(ctrls_sock_file);
+      (void) unlink(ctrls_sock_file);
+    }
 
     return 0;
   }
@@ -1146,7 +1148,28 @@ static void ctrls_shutdown_ev(const void *event_data, void *user_data) {
     }
   }
 
+  close(ctrls_sockfd);
+  ctrls_sockfd = -1;
+
+  /* Remove the local socket path as well */
+  (void) unlink(ctrls_sock_file);
   return;
+}
+
+static void ctrls_postparse_ev(const void *event_data, void *user_data) {
+  if (!ctrls_engine) {
+    return;
+  }
+
+  /* Start listening on the ctrl socket */
+  PRIVS_ROOT
+  ctrls_sockfd = ctrls_listen(ctrls_sock_file, CTRLS_LISTEN_FL_REMOVE_SOCKET);
+  PRIVS_RELINQUISH
+
+  /* Start a timer for the checking/processing of the ctrl socket.  */
+  pr_timer_remove(CTRLS_TIMER_ID, &ctrls_module);
+  pr_timer_add(ctrls_interval, CTRLS_TIMER_ID, &ctrls_module, ctrls_timer_cb,
+    "Controls polling");
 }
 
 static void ctrls_restart_ev(const void *event_data, void *user_data) {
@@ -1196,24 +1219,9 @@ static void ctrls_restart_ev(const void *event_data, void *user_data) {
     pr_ctrls_init_acl(ctrls_acttab[i].act_acl);
   }
 
+  pr_timer_remove(CTRLS_TIMER_ID, &ctrls_module);
   pr_alarms_unblock();
   return;
-}
-
-static void ctrls_startup_ev(const void *event_data, void *user_data) {
-  if (!ctrls_engine) {
-    return;
-  }
-
-  /* Start listening on the ctrl socket */
-  PRIVS_ROOT
-  ctrls_sockfd = ctrls_listen(ctrls_sock_file, CTRLS_LISTEN_FL_REMOVE_SOCKET);
-  PRIVS_RELINQUISH
-
-  /* Start a timer for the checking/processing of the ctrl socket.  */
-  pr_timer_remove(CTRLS_TIMER_ID, &ctrls_module);
-  pr_timer_add(ctrls_interval, CTRLS_TIMER_ID, &ctrls_module, ctrls_timer_cb,
-    "Controls polling");
 }
 
 /* Initialization routines
@@ -1249,7 +1257,7 @@ static int ctrls_init(void) {
 
   pr_event_register(&ctrls_module, "core.restart", ctrls_restart_ev, NULL);
   pr_event_register(&ctrls_module, "core.shutdown", ctrls_shutdown_ev, NULL);
-  pr_event_register(&ctrls_module, "core.startup", ctrls_startup_ev, NULL);
+  pr_event_register(&ctrls_module, "core.postparse", ctrls_postparse_ev, NULL);
 
   return 0;
 }

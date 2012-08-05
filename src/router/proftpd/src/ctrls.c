@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Controls API routines
- * $Id: ctrls.c,v 1.30 2011/06/05 22:45:14 castaglia Exp $
+ * $Id: ctrls.c,v 1.30.2.3 2012/02/24 01:14:24 castaglia Exp $
  */
 
 #include "conf.h"
@@ -942,7 +942,11 @@ int pr_ctrls_connect(const char *socket_file) {
   /* Create a Unix domain socket */
   sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sockfd < 0) {
+    int xerrno = errno;
+
     pr_signals_unblock();
+
+    errno = xerrno;
     return -1;
   }
 
@@ -966,15 +970,23 @@ int pr_ctrls_connect(const char *socket_file) {
 
   /* Make it a socket */
   if (bind(sockfd, (struct sockaddr *) &cl_sock, len) < 0) {
+    int xerrno = errno;
+
     unlink(cl_sock.sun_path);
     pr_signals_unblock();
+
+    errno = xerrno;
     return -1;
   }
 
   /* Set the proper mode */
   if (chmod(cl_sock.sun_path, PR_CTRLS_CL_MODE) < 0) {
+    int xerrno = errno;
+
     unlink(cl_sock.sun_path);
     pr_signals_unblock();
+
+    errno = xerrno;
     return -1;
   }
 
@@ -982,20 +994,28 @@ int pr_ctrls_connect(const char *socket_file) {
   memset(&ctrl_sock, 0, sizeof(ctrl_sock));
 
   ctrl_sock.sun_family = AF_UNIX;
-  strncpy(ctrl_sock.sun_path, socket_file, strlen(socket_file));
+  sstrncpy(ctrl_sock.sun_path, socket_file, sizeof(ctrl_sock.sun_path));
   len = sizeof(ctrl_sock);
 
   if (connect(sockfd, (struct sockaddr *) &ctrl_sock, len) < 0) {
+    int xerrno = errno;
+
     unlink(cl_sock.sun_path);
     pr_signals_unblock();
+
+    errno = xerrno;
     return -1;
   }
 
 #if !defined(SO_PEERCRED) && !defined(HAVE_GETPEEREID) && \
     !defined(HAVE_GETPEERUCRED) && defined(LOCAL_CREDS)
   if (ctrls_connect_local_creds(sockfd) < 0) {
+    int xerrno = errno;
+
     unlink(cl_sock.sun_path);
     pr_signals_unblock();
+
+    errno = xerrno;
     return -1;
   }
 #endif /* LOCAL_CREDS */
@@ -1962,7 +1982,7 @@ void init_ctrls(void) {
 
   memset(&sockun, 0, sizeof(sockun));
   sockun.sun_family = AF_UNIX;
-  sstrncpy(sockun.sun_path, sockpath, strlen(sockpath) + 1);
+  sstrncpy(sockun.sun_path, sockpath, sizeof(sockun.sun_path));
   socklen = sizeof(struct sockaddr_un);
 
   if (bind(sockfd, (struct sockaddr *) &sockun, socklen) < 0) {

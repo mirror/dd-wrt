@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* House initialization and main program loop
- * $Id: main.c,v 1.437 2011/11/09 17:32:35 castaglia Exp $
+ * $Id: main.c,v 1.437.2.3 2012/06/06 18:18:30 castaglia Exp $
  */
 
 #include "conf.h"
@@ -318,7 +318,18 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
 
         /* The client has successfully authenticated... */
         if (session.user) {
-          char *args = memchr(cmdargstr, ' ', cmdargstrlen);
+          char *args = NULL;
+
+          /* Be defensive, and check whether cmdargstrlen has a value.
+           * If it's zero, assume we need to use strchr(3), rather than
+           * memchr(2); see Bug#3714.
+           */
+          if (cmdargstrlen > 0) {
+            args = memchr(cmdargstr, ' ', cmdargstrlen);
+
+          } else {
+            args = strchr(cmdargstr, ' ');
+          }
 
           pr_scoreboard_entry_update(session.pid,
             PR_SCORE_CMD, "%s", cmd->argv[0], NULL, NULL);
@@ -1369,10 +1380,10 @@ static void fork_server(int fd, conn_t *l, unsigned char nofork) {
 
   if (main_server->listen) {
     if (main_server->listen->listen_fd == conn->rfd ||
-        main_server->listen->listen_fd == conn->wfd)
+        main_server->listen->listen_fd == conn->wfd) {
       main_server->listen->listen_fd = -1;
+    }
 
-    destroy_pool(main_server->listen->pool);
     main_server->listen = NULL;
   }
 
@@ -2737,12 +2748,12 @@ static void show_settings(void) {
    * we're a 32- or 64-bit machine.
    */
   res = uname(&uts);
-  if (res == 0) {
-    printf("  Platform: " PR_PLATFORM " [%s %s %s]\n", uts.sysname,
-      uts.release, uts.machine);
+  if (res < 0) {
+    printf("%s", "  Platform: " PR_PLATFORM " [unavailable]\n");
 
   } else {
-    printf("%s", "  Platform: " PR_PLATFORM " [unavailable]\n");
+    printf("  Platform: " PR_PLATFORM " [%s %s %s]\n", uts.sysname,
+      uts.release, uts.machine);
   }
 #else
   printf("%s", "  Platform: " PR_PLATFORM " [unknown]\n");

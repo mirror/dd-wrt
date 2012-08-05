@@ -22,8 +22,15 @@
  *
  * Changes are released under the GNU Public License, version 2.
  * Copyright (C) 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (C) 2010 The ProFTPD Project
+ * Copyright (C) 2010-2012 The ProFTPD Project
  */
+
+/* AIX requires this to be the first thing in the file.  */
+#if defined _AIX && !defined __GNUC__
+ #pragma alloca
+#endif
+
+#include <config.h>
 
 struct STRUCT
 {
@@ -1078,7 +1085,7 @@ EXT (INT opt, const CHAR *pattern, const CHAR *string, const CHAR *string_end,
   struct patternlist
   {
     struct patternlist *next;
-    CHAR str[];
+    CHAR str[0];
   } *list = NULL;
   struct patternlist **lastp = &list;
   size_t pattern_len = STRLEN (pattern);
@@ -1123,10 +1130,10 @@ EXT (INT opt, const CHAR *pattern, const CHAR *string, const CHAR *string_end,
 	    struct patternlist *newp;					      \
 									      \
 	    if (opt == L('?') || opt == L('@'))				      \
-	      newp = alloca (sizeof (struct patternlist)		      \
+	      newp = __alloca (sizeof (struct patternlist)		      \
 			     + (pattern_len * sizeof (CHAR)));		      \
 	    else							      \
-	      newp = alloca (sizeof (struct patternlist)		      \
+	      newp = __alloca (sizeof (struct patternlist)		      \
 			     + ((p - startp + 1) * sizeof (CHAR)));	      \
 	    *((CHAR *) MEMPCPY (newp->str, startp, p - startp)) = L('\0');    \
 	    newp->next = NULL;						      \

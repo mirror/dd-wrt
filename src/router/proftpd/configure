@@ -1631,6 +1631,10 @@ Optional Packages:
                           configure location of the MySQL mysql_config script
                           (default=mysql_config)
 
+  --with-openssl-cmdline=PATH
+                          configure location of the openssl(1) command-line
+                          tool (default=openssl)
+
   --with-postgres-config=PATH
                           configure location of the Postgres pg_config script
                           (default=pg_config)
@@ -3863,13 +3867,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:3866: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:3870: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3869: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:3873: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3872: output\"" >&5)
+  (eval echo "\"\$as_me:3876: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5091,7 +5095,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5094 "configure"' > conftest.$ac_ext
+  echo '#line 5098 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6207,7 +6211,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -6228,7 +6232,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -6941,11 +6945,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6944: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6948: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6948: \$? = $ac_status" >&5
+   echo "$as_me:6952: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7280,11 +7284,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7283: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7287: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7287: \$? = $ac_status" >&5
+   echo "$as_me:7291: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7385,11 +7389,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7388: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7392: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7392: \$? = $ac_status" >&5
+   echo "$as_me:7396: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7440,11 +7444,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7443: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7447: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7447: \$? = $ac_status" >&5
+   echo "$as_me:7451: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10209,7 +10213,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10212 "configure"
+#line 10216 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10305,7 +10309,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10308 "configure"
+#line 10312 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11550,7 +11554,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ;;
 esac
-rm -f conftest*
+rm -f -r conftest*
   if test $ac_cv_sys_file_offset_bits = unknown; then
     { echo "$as_me:$LINENO: checking for _LARGE_FILES value needed for large files" >&5
 echo $ECHO_N "checking for _LARGE_FILES value needed for large files... $ECHO_C" >&6; }
@@ -11671,7 +11675,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ;;
 esac
-rm -f conftest*
+rm -f -r conftest*
   fi
 fi
 
@@ -13030,6 +13034,43 @@ echo "$as_me: error: mysql_config path $my_config is not executable" >&2;}
 fi
 
 
+openssl_cmdline="openssl"
+
+# Check whether --with-openssl-cmdline was given.
+if test "${with_openssl_cmdline+set}" = set; then
+  withval=$with_openssl_cmdline;
+    if test x"$withval" != x; then
+      openssl_cmdline=`echo "$withval"`
+
+      if test -z "$openssl_cmdline"; then
+        openssl_cmdline="no"
+
+      elif test x"$openssl_cmdline" = xno; then
+        # do nothing
+        foo=bar
+
+      elif test x"$openssl_cmdline" = xyes; then
+        # Use the default
+        openssl_cmdline="openssl"
+
+      elif test -x "$openssl_cmdline"; then
+        # do nothing
+        foo=bar
+
+      else
+        { { echo "$as_me:$LINENO: error: openssl path $openssl_cmdline is not executable" >&5
+echo "$as_me: error: openssl path $openssl_cmdline is not executable" >&2;}
+   { (exit 1); exit 1; }; }
+      fi
+
+    else
+      openssl_cmdline="no"
+    fi
+
+fi
+
+
+
 pg_config="pg_config"
 
 # Check whether --with-postgres-config was given.
@@ -14100,7 +14141,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 14103 "configure"
+#line 14144 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -15457,7 +15498,7 @@ fi
 fi
 
 
-                  { echo "$as_me:$LINENO: checking for iconv_open in -liconv" >&5
+                        { echo "$as_me:$LINENO: checking for iconv_open in -liconv" >&5
 echo $ECHO_N "checking for iconv_open in -liconv... $ECHO_C" >&6; }
 if test "${ac_cv_lib_iconv_iconv_open+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -15533,6 +15574,82 @@ _ACEOF
          ENABLE_NLS="1"
 
 else
+  { echo "$as_me:$LINENO: checking for libiconv_open in -liconv" >&5
+echo $ECHO_N "checking for libiconv_open in -liconv... $ECHO_C" >&6; }
+if test "${ac_cv_lib_iconv_libiconv_open+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-liconv  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char libiconv_open ();
+int
+main ()
+{
+return libiconv_open ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_iconv_libiconv_open=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_iconv_libiconv_open=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_iconv_libiconv_open" >&5
+echo "${ECHO_T}$ac_cv_lib_iconv_libiconv_open" >&6; }
+if test $ac_cv_lib_iconv_libiconv_open = yes; then
+  LIBS="$LIBS -liconv"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBICONV 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define PR_USE_NLS 1
+_ACEOF
+
+           ENABLE_NLS="1"
+
+else
   { echo "$as_me:$LINENO: checking for iconv_open in -lc" >&5
 echo $ECHO_N "checking for iconv_open in -lc... $ECHO_C" >&6; }
 if test "${ac_cv_lib_c_iconv_open+set}" = set; then
@@ -15600,12 +15717,15 @@ cat >>confdefs.h <<\_ACEOF
 #define PR_USE_NLS 1
 _ACEOF
 
-           ENABLE_NLS="1"
+             ENABLE_NLS="1"
 
 else
   { { echo "$as_me:$LINENO: error: libiconv support, required for NLS, not present -- aborting" >&5
 echo "$as_me: error: libiconv support, required for NLS, not present -- aborting" >&2;}
    { (exit 1); exit 1; }; }
+
+fi
+
 
 fi
 
@@ -18690,7 +18810,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -18711,7 +18831,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -20677,7 +20797,7 @@ else
 echo "${ECHO_T}no" >&6; }
 
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 
 
@@ -22201,7 +22321,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_type_uid_t=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $ac_cv_type_uid_t" >&5
@@ -22558,7 +22678,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_type_getgroups=int
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 fi
@@ -22604,10 +22724,10 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   pr_cv_header_timer_t="no"
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $pr_cv_header_timer_t" >&5
@@ -26823,7 +26943,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   pr_cv_header_utmaxtype="no"
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $pr_cv_header_utmaxtype" >&5
@@ -26848,7 +26968,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   pr_cv_header_ut_host="no"
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $pr_cv_header_ut_host" >&5
@@ -26873,7 +26993,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   pr_cv_header_ut_exit="no"
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $pr_cv_header_ut_exit" >&5
@@ -26932,7 +27052,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   pr_cv_header_syslog_log_cron="no"
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $pr_cv_header_syslog_log_cron" >&5
@@ -26962,7 +27082,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   pr_cv_header_syslog_log_ftp="no"
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $pr_cv_header_syslog_log_ftp" >&5
@@ -27229,7 +27349,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_os_cray=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $ac_cv_os_cray" >&5
@@ -27508,7 +27628,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_prog_gcc_traditional=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 
   if test $ac_cv_prog_gcc_traditional = no; then
@@ -27525,7 +27645,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "$ac_pattern" >/dev/null 2>&1; then
   ac_cv_prog_gcc_traditional=yes
 fi
-rm -f conftest*
+rm -f -r conftest*
 
   fi
 fi
@@ -31757,6 +31877,78 @@ _ACEOF
   fi
 fi
 
+{ echo "$as_me:$LINENO: checking for halfdelay in -ltinfo" >&5
+echo $ECHO_N "checking for halfdelay in -ltinfo... $ECHO_C" >&6; }
+if test "${ac_cv_lib_tinfo_halfdelay+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltinfo  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char halfdelay ();
+int
+main ()
+{
+return halfdelay ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_tinfo_halfdelay=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_tinfo_halfdelay=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_tinfo_halfdelay" >&5
+echo "${ECHO_T}$ac_cv_lib_tinfo_halfdelay" >&6; }
+if test $ac_cv_lib_tinfo_halfdelay = yes; then
+   UTILS_LIBS="$UTILS_LIBS -ltinfo"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBTINFO 1
+_ACEOF
+
+
+fi
+
+
 if test x"$enable_nonblocking_log_open" != xno; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -32351,7 +32543,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   have_psstrings="no"
 fi
-rm -f conftest*
+rm -f -r conftest*
 
     if test "$have_psstrings" = "yes"; then
 	cat >>confdefs.h <<\_ACEOF
@@ -32446,7 +32638,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   pf_cv_argv_type="writeable"
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 { echo "$as_me:$LINENO: result: $pf_cv_argv_type" >&5
@@ -32639,6 +32831,22 @@ echo "$as_me: error: duplicate build request for $j -- aborting" >&2;}
         pg_libdirs=`$pg_config --libdir 2>/dev/null`
         if test ! -z "pg_libdirs"; then
           ac_build_addl_libdirs="$ac_build_addl_libdirs -L$pg_libdirs"
+        fi
+
+        # I suspect that we will also need to look for -pthread here
+        # (a la Bug#3702), as a forums post about proftpd+postgres describes
+        # the same "Alarm clock" symptom as seen with MySQL; see:
+        #
+        #  http://forums.proftpd.org/smf/index.php/topic,1424.0.html
+
+        # pg_config --libs gives libs, with -l prefixes
+        pg_libs=`$pg_config --libs 2>/dev/null`
+        if test ! -z "$pg_libs"; then
+          for pg_lib in $pg_lib; do
+            if test x"$pg_lib" = x"-pthread"; then
+              LIBS="$LIBS -pthread"
+            fi
+          done
         fi
       fi
     fi
@@ -33095,6 +33303,21 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
   CPPFLAGS="$saved_cppflags"
   LDFLAGS="$saved_ldflags"
   LIBS="$saved_libs"
+
+  if test x"$openssl_cmdline" != xno; then
+    if `$openssl_cmdline version 2>/dev/null 1>&2`; then
+      openssl_cflags=`$openssl_cmdline version -f 2>/dev/null`
+      if test ! -z "$openssl_cflags"; then
+        # Look for the -pthread flag, indicating that this OpenSSL was built
+        # with threads support (see Bug#3795)
+        for openssl_cflag in $openssl_cflags; do
+          if test x"$openssl_cflag" = x"-pthread"; then
+            LIBS="$LIBS -pthread"
+          fi
+        done
+      fi
+    fi
+  fi
 fi
 
 for module in $ac_shared_modules ; do
@@ -35003,7 +35226,7 @@ do
     cat >>$CONFIG_STATUS <<_ACEOF
     # First, check the format of the line:
     cat >"\$tmp/defines.sed" <<\\CEOF
-/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*\$/b def
+/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*/b def
 /^[	 ]*#[	 ]*define[	 ][	 ]*$ac_word_re[(	 ]/b def
 b
 :def

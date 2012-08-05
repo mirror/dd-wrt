@@ -1,4 +1,4 @@
-$Id: NEWS,v 1.1368 2011/11/09 17:47:17 castaglia Exp $
+$Id: NEWS,v 1.1368.2.43 2012/07/31 17:13:21 castaglia Exp $
 
 -----------------------------------------------------------------------------
   More details on the bugs listed below can be found by using the bug number
@@ -8,6 +8,71 @@ $Id: NEWS,v 1.1368 2011/11/09 17:47:17 castaglia Exp $
 
   where `N' is the bug number.
 -----------------------------------------------------------------------------
+
+1.3.4b - Released 31-Jul-2012
+--------------------------------
+- Bug 3713 - mod_tls cannot be compiled using Openssl 0.9.6.
+- Bug 3714 - ftpwho/ftptop are not showing command arguments (e.g. downloaded
+  file name).
+- Bug 3715 - MLSD/MLST fail when "DirFakeUser off" or "DirFakeGroup off" used.
+- Bug 3717 - proftpd fails to run with "Abort trap" error message.
+- Bug 3719 - LIST -R can loop endlessly if bad directory symlink exists.
+- Bug 3723 - mod_memcache segfault on server restart.
+- Bug 3724 - Unloading mod_quotatab causes segfault.
+- Bug 3682 - Configure does not detect libiconv under Gentoo FreeBSD.
+- Bug 3726 - mod_exec does not always capture stdout/stderr output from
+  executed command.
+- Bug 3727 - mod_wrap2 causes unexpected LogFormat %u expansion for SFTP
+  connections.
+- Bug 3729 - mod_ldap can segfault when LDAPUsers is used with no optional
+  filters.
+- Bug 3728 - Build failure in wtmp.c on Gentoo/FreeBSD on sparc.
+- Bug 3734 - DirFakeUser/DirFakeGroup off with name causes SIGSEGV for
+  MLSD/MLST commands.
+- Bug 3718 - ftptop fails to build on OpenSUSE.
+- Bug 3699 - ProFTPD crash on start up on Mac OSX Lion with NLS enabled.
+- Bug 3747 - Support option for displaying symlinks via MLSD using syntax
+  preferred by FileZilla.  The new FactsOptions directive can be used for
+  this purpose.
+- Bug 3742 - Improper handling of self-signed certificate in client-sent cert
+  list when "TLSVerifyClient on" is used.
+- Bug 3749 - Compile of src/netacl.c fails on Tru64 UNIX (OSF/1) due to
+  conflict with system header.
+- Bug 3743 - Random stalls/segfaults seen when transferring large files
+  via SFTP.
+- Bug 3752 - proftpd process exit status is zero for "Failed binding to
+  address, port N: Address already in use" startup failure.
+- Bug 3751 - mod_ban does not close/reopen the BanLog/BanTable file descriptors
+  on restart, causing a file descriptor leak.
+- Bug 3756 - mod_ctrls no longer listens on ControlsSocket after restart.
+- Bug 3748 - ProFTPD crashes when handling mod_gss authentication due to null
+  pointer.
+- Bug 3761 - SSH2 key exchange fails if client sends certain SSH message before
+  NEWKEYS.
+- Bug 3763 - Ensure that mod_sftp operates properly when OpenSSL FIPS mode is
+  enabled.
+- Bug 3767 - mod_rewrite segfault when handling SITE CHGRP without a parameter.
+- Bug 3769 - Ensure that encoded strings are NUL-terminated.
+- Bug 3732 - AIX build error: undefined symbol: .alloca.
+- Bug 3780 - AIX gives "error setting listen fd IP_TOS: Invalid argument".
+- Bug 3787 - Read-only SFTP OPEN request permissions not properly ignored.
+- Bug 3740 - Overwrite permission denied when reloading multiple times and
+  multiple <VirtualHost> sections in proftpd.conf.
+- Bug 3791 - Invalid handling of SCP control messages fragmented over multiple
+  SSH packets.
+- Bug 3794 - Cygwin build failure in lib/tpl.c due to wrong include of mman.h.
+- Bug 3795 - ProFTPD needs to use -pthread linker option if linking against
+  OpenSSL with thread support.
+- Bug 3790 - Logfile timestamps change to GMT after MFMT command.
+- Bug 3798 - Downloading nonexistent file via SCP results in timeout rather
+  than error.
+- Bug 3804 - ioctl(RPROTDIS) code no longer needed on Solaris 11.
+- Bug 3808 - Segfault in mod_tls when mod_tls_shmcache used.
+- Bug 3809 - Segfaults in mod_radius when configured with RadiusGroupInfo.
+
+1.3.4a - Released 11-Nov-2011
+--------------------------------
+- Bug 3712 - mod_wrap2/mod_load build errors: missing config.h.
 
 1.3.4 - Released 09-Nov-2011
 --------------------------------
@@ -106,7 +171,7 @@ $Id: NEWS,v 1.1368 2011/11/09 17:47:17 castaglia Exp $
   appending them.  APPE is now denied if HiddenStores is in effect.
 - Bug 3565 - Support a MaxCommandRate, for detecting and throttling clients
   which are sending commands too quickly.
-- Bug 3599 - ExtendedLog should support EXIT command, for logging when a
+- Bug 3559 - ExtendedLog should support EXIT command, for logging when a
   session ends.
 - Bug 3538 - WrapAllowMsg directive broken due to Bug#3423.
 - Bug 3604 - Support DirFakeUser, DirFakeGroup and DirFakeMode for MLSD/MLST

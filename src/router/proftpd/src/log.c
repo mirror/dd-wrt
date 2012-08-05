@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* ProFTPD logging support.
- * $Id: log.c,v 1.108 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: log.c,v 1.108.2.1 2012/03/14 00:11:57 castaglia Exp $
  */
 
 #include "conf.h"
@@ -363,6 +363,16 @@ int log_opensyslog(const char *fn) {
     if (syslog_sockfd < 0)
       return -1;
 
+    /* Find a usable fd for the just-opened socket fd. */
+    if (syslog_sockfd <= STDERR_FILENO) {
+      res = pr_fs_get_usable_fd(syslog_sockfd);
+      if (res > 0) {
+        (void) close(syslog_sockfd);
+        syslog_sockfd = res;
+      }
+    }
+
+    fcntl(syslog_sockfd, F_SETFD, FD_CLOEXEC);
     systemlog_fd = -1;
 
   } else if ((res = pr_log_openfile(systemlog_fn, &systemlog_fd,

@@ -1,4 +1,4 @@
-<!-- $Id: mod_facts.html,v 1.5 2011/07/06 17:14:35 castaglia Exp $ -->
+<!-- $Id: mod_facts.html,v 1.5.2.1 2012/07/31 16:59:59 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_facts.html,v $ -->
 
 <html>
@@ -41,6 +41,7 @@ ProFTPD source distribution:
 <h2>Directives</h2>
 <ul>
   <li><a href="#FactsAdvertise">FactsAdvertise</a>
+  <li><a href="#FactsOptions">FactsOptions</a>
 </ul>
 
 <hr>
@@ -73,6 +74,39 @@ you can disable the advertising of support for those commands using
     FactsAdvertise off
   &lt;/IfModule&gt;
 </pre>
+
+<hr>
+<h2><a name="FactsOptions">FactsOptions</a></h2>
+<strong>Syntax:</strong> FactsOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_facts<br>
+<strong>Compatibility:</strong> 1.3.4b and later
+
+<p>
+The <code>FactsOptions</code> directive is used to configure various optional
+behavior of <code>mod_facts</code>.  <b>Note</b>: all of the configured
+<code>FactsOptions</code> parameters <b>must</b> appear on the same line in the
+configuration; only the <i>first</i> <code>FactsOptions</code> directive that
+appears in the configuration is used.
+
+<p>
+The currently implemented options are:
+<ul>
+  <li><code>UseSlink</code><br>
+    <p>
+    Use this option to have <code>mod_facts</code> use the <i>broken</i>
+    "OS.unix=slink" syntax, preferred by FTP clients such as FileZilla, for
+    indicating symlinks, rather than the more correct "OS.unix=symlink"
+    syntax.  See
+    <a href="http://bugs.proftpd.org/show_bug.cgi?id=3318">Bug#3318</a> for
+    a more detailed discussion.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.4b</code>.
+  </li>
+</ul>
 
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
@@ -109,17 +143,39 @@ To work around this issue, you can add the following to your
   &lt;/IfModule&gt;
 </pre>
 This tells <code>proftpd</code> to not advertise to the client that it can
-support the <code>MLSD</code/<code>MLST</code> commands.
+support the <code>MLSD</code>/<code>MLST</code> commands.
+
+<p><a name="FactsSymlinks">
+<font color=red>Question</font>: Why does FileZilla not display symlinks
+properly, even though I have "ShowSymlinks on" in my <code>proftpd.conf</code>?<br>
+<font color=blue>Answer</font>: Newer versions of FileZilla (and other
+FTP clients) use the <code>MLSD</code> command for listing files, rather than
+the older <code>LIST</code> command.  And FileZilla and the
+<code>mod_facts</code> disagree on the proper syntax for indicating when a
+file is a symlink.
+
+<p>
+To work around this issue, you can add the following to your
+<code>proftpd.conf</code>:
+<pre>
+  &lt;IfModule mod_facts.c&gt;
+    FactsOptions UseSlink
+  &lt;/IfModule&gt;
+</pre>
+This tells the <code>mod_facts</code> module to use the improper
+"OS.unix=slink:<i>path</i>" syntax for symlinks; this is the syntax preferred
+by FileZilla (and perhaps other FTP clients). By default, the
+<code>mod_facts</code> module uses the better "OS.unix=symlink" syntax.
 
 <p>
 <hr><br>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011/07/06 17:14:35 $</i><br>
+Last Updated: <i>$Date: 2012/07/31 16:59:59 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2007-2011 TJ Saunders<br>
+&copy; Copyright 2007-2012 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

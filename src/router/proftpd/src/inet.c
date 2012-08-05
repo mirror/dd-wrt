@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,12 +25,13 @@
  */
 
 /* Inet support functions, many wrappers for netdb functions
- * $Id: inet.c,v 1.135 2011/09/21 05:03:05 castaglia Exp $
+ * $Id: inet.c,v 1.135.2.3 2012/07/27 16:27:57 castaglia Exp $
  */
 
 #include "conf.h"
 #include "privs.h"
 
+extern unsigned char is_master;
 extern server_rec *main_server;
 
 /* A private work pool for all pr_inet_* functions to use. */
@@ -450,14 +451,16 @@ conn_t *pr_inet_create_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
 
   c = init_conn(p, fd, bind_addr, port, retry_bind, TRUE);
 
-  /* This code is somewhat of a kludge, because error handling should
-   * NOT occur in inet.c, it should be handled by the caller.
-   */
-
-  if (c == NULL) {
-    pr_session_disconnect(NULL, PR_SESS_DISCONNECT_BY_APPLICATION, NULL);
+  if (!is_master) {
+    /* This code is somewhat of a kludge, because error handling should
+     * NOT occur in inet.c, it should be handled by the caller.
+     */
+    if (c == NULL) {
+      pr_session_disconnect(NULL, PR_SESS_DISCONNECT_BY_APPLICATION, NULL);
+    }
   }
 
+  errno = inet_errno;
   return c;
 }
 
@@ -1277,9 +1280,10 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, pr_netaddr_t *addr, int strm_type,
   res->mode = CM_OPEN;
 
 #if defined(HAVE_STROPTS_H) && defined(I_SRDOPT) && defined(RPROTDIS) && \
-    defined(SOLARIS2)
+    (defined(SOLARIS2_9) || defined(SOLARIS2_10))
   /* This is needed to work around control messages in STREAMS devices
-   * (as on Solaris 9/NFS).
+   * (as on Solaris 9/NFS).  The underlying issue is reported to be fixed
+   * in Solaris 11.
    */
   while (ioctl(res->rfd, I_SRDOPT, RPROTDIS) < 0) {
     if (errno == EINTR) {
@@ -1327,26 +1331,41 @@ void init_inet(void) {
   setprotoent(FALSE);
 #endif
 
+  /* AIX ships with a broken /etc/protocols file; the entry for 'ip' in that
+   * file defines a value of 252, which is unacceptable to the AIX
+   * setsockopt(2) system call (Bug#3780).
+   *
+   * To work around this, do not perform the /etc/protocols lookup for AIX;
+   * instead, keep the default IP_PROTO value defined in its other system
+   * headers.
+   */
+#ifndef _AIX
   pr = getprotobyname("ip"); 
-  if (pr != NULL)
+  if (pr != NULL) {
     ip_proto = pr->p_proto;
+  }
+#endif /* AIX */
 
 #ifdef PR_USE_IPV6
   pr = getprotobyname("ipv6"); 
-  if (pr != NULL)
+  if (pr != NULL) {
     ipv6_proto = pr->p_proto;
+  }
 #endif /* PR_USE_IPV6 */
 
   pr = getprotobyname("tcp");
-  if (pr != NULL)
+  if (pr != NULL) {
     tcp_proto = pr->p_proto;
+  }
 
 #ifdef HAVE_ENDPROTOENT
   endprotoent();
 #endif
 
-  if (inet_pool)
+  if (inet_pool) {
     destroy_pool(inet_pool);
+  }
+
   inet_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(inet_pool, "Inet Pool");
 }
