@@ -179,8 +179,7 @@ CFLAGS += $(DD_CFLAGS)
 
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DDEFAULT_COUNTRY_CODE=\"$(CONFIG_DEFAULT_COUNTRYCODE)\"
-VISOBJS += bfwireless.o
-VISOBJS += onlineupdateejs.o
+VISOBJS += bfwireless.o onlineupdateejs.o
 WEBSOBJS += onlineupdatewebs.o
 OBJS += onlineupdatecgi.o
 ifeq ($(CONFIG_IAS),y)
