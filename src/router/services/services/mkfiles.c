@@ -59,6 +59,9 @@ void setPassword(char *passwd)
 	// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
 	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
 		nvram_safe_get("newhttp_passwd"));
+#elif HAVE_IPR
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
+		nvram_safe_get("newhttp_passwd"));
 #else
 	fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
 #endif
@@ -121,6 +124,10 @@ void start_mkfiles(void)
 		// default username and password for Excel Networks
 		fprintf(fp,
 			"ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
+#elif HAVE_IPR
+		fprintf(fp,
+			"SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
+			nvram_safe_get("newhttp_passwd"));
 #else
 		fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n"
 			"reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",

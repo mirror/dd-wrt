@@ -3305,6 +3305,10 @@ void start_firewall(void)
 		sysprintf("iptables -I INPUT -s %s -j %s", var, log_accept);
 	}
 #endif
+#ifdef HAVE_IAS
+	if(nvram_match("ias_startup", "3"))
+		sysprintf("iptables -t nat -I PREROUTING -i br0 -p udp --dport 53 -j DNAT --to 192.168.11.1:55300");
+#endif
 	cprintf("ready");
 
 	cprintf("done\n");

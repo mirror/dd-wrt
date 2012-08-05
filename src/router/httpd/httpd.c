@@ -28,7 +28,7 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 ** SUCH DAMAGE.
 */
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,6 +51,8 @@
 #include <utils.h>
 #include <shutils.h>
 #include <sys/time.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
@@ -72,6 +74,10 @@
 
 #include <error.h>
 #include <sys/signal.h>
+
+#ifdef HAVE_IAS
+#include <sys/sysinfo.h>
+#endif
 
 #define SERVER_NAME "httpd"
 #define PROTOCOL "HTTP/1.0"
@@ -281,7 +287,11 @@ void send_authenticate(char *realm)
 	(void)snprintf(header, sizeof(header),
 		       "WWW-Authenticate: Basic realm=\"%s\"", realm);
 	send_error(401, "Unauthorized", header,
+#ifdef HAVE_BUFFALO
+		   "Authorization required. please note that the default username is \"admin\" in all newer releases");
+#else
 		   "Authorization required. please note that the default username is \"root\" in all newer releases");
+#endif
 }
 
 static void send_error(int status, char *title, char *extra_header, char *text)
@@ -597,6 +607,13 @@ static char *last_log_ip = NULL;
 static int registered = -1;
 static int registered_real = -1;
 char *request_url=NULL;
+#ifdef HAVE_IAS
+char ias_sid[20];
+char ias_http_client_mac[20];
+int ias_sid_timeout;
+void ias_sid_set();
+int ias_sid_valid();
+#endif
 
 #define LINE_LEN 10000
 static void handle_request(void)
@@ -604,7 +621,7 @@ static void handle_request(void)
 	char *query;
 	char *cur;
 	char *method, *path, *protocol, *authorization, *boundary, *referer,
-	    *host;
+	    *host, *useragent;
 	char *cp;
 	char *file=NULL;
 	FILE *exec;
@@ -681,8 +698,12 @@ static void handle_request(void)
 			     cp++) ;
 			*cp = '\0';
 			cur = ++cp;
+		} else if (strncasecmp(cur, "User-Agent:", 11) == 0) {
+			cp = &cur[11];
+			cp += strspn(cp, " \t");
+			useragent = cp;
+			cur = cp + strlen(cp) + 1;
 		}
-
 	}
 
 	if (strcasecmp(method, "get") != 0 && strcasecmp(method, "post") != 0) {
@@ -708,7 +729,10 @@ static void handle_request(void)
 		nodetect = 1;
 	if (nvram_match("no_crossdetect","1"))
 		nodetect = 1;
-
+#ifdef HAVE_IAS
+	if (nvram_match("ias_startup", "3") || nvram_match("ias_startup", "2"))
+		nodetect = 1;
+#endif
 	if (referer && host && nodetect == 0) {
 		int i;
 		int hlen = strlen(host);
@@ -780,6 +804,76 @@ static void handle_request(void)
 		file = "setupindex.asp";
 	}
 #else
+#ifdef HAVE_BUFFALO
+#ifdef HAVE_IAS
+	int ias_startup = atoi(nvram_safe_get("ias_startup"));
+	int ias_detected = 0;
+
+	if(ias_startup > 1) {
+	
+		if(endswith(file, "?ias_detect")) {
+			ias_detected = 1;
+			fprintf(stderr, "[HTTP PATH] %s detected (%d)\n", file, ias_startup);
+		}
+
+		if (!endswith(file, ".js") && !endswith(file, "detect.asp")
+		     && ias_detected == 0
+		     && nvram_match("ias_startup", "3")) {
+		
+			fprintf(stderr, "[HTTP PATH] %s redirect\n", file);
+			send_headers(302, "Found", "Location: http://192.168.11.1/detect.asp", "", 0, NULL);
+			return;
+			
+		} else if(ias_detected == 1) {
+			fprintf(stderr, "[HTTP PATH] %s redirected\n", file);
+			nvram_set("ias_startup", "2");
+		}	
+	}
+	
+	if(!ias_sid_valid()
+	   && (endswith(file, "InternetAtStart.asp") || endswith(file, "detect.asp") || endswith(file, "?ias_detect")) 
+           && strstr(useragent, "Android"))
+		ias_sid_set();
+	
+	char hostname[32];
+	if(strlen(host) < 32
+	   && ias_detected == 1
+	   && (nvram_match("ias_dnsresp", "1"))) {
+		strncpy(hostname, host, strspn(host, "123456789.:"));
+		if(!strcmp(hostname, nvram_get("lan_ipaddr"))) {
+			
+			nvram_unset("ias_dnsresp");	
+			
+			sysprintf("iptables -t nat -D PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:55300",
+				  nvram_get("lan_ipaddr"));
+		
+			char buf[128];
+			char call[64];
+			int pid;
+			char *statusfile = "/tmp/.ias_status";
+			FILE *fp;
+			
+			sprintf(call, "ps | grep \"dns_responder\" > %s", statusfile);
+			system(call);
+			fp = fopen(statusfile, "r");
+			if(fp) {
+				while (fgets(buf, sizeof(buf), fp)) {
+					if(strstr(buf, nvram_get("lan_ipaddr"))) {
+						if(sscanf(buf, "%d ", &pid)) {
+							sprintf(call, "kill %d", pid);
+							system(call);
+						}
+					}
+				}
+
+				fclose(fp);
+				unlink(statusfile);
+			}
+		
+		}
+	}
+#endif
+#endif
 	if (file[0] == '\0' || file[len - 1] == '/') {
 
 		{
@@ -787,10 +881,14 @@ static void handle_request(void)
 			{
 				file = "index.htm";
 			} else {
+#ifdef HAVE_IAS
+				file = "index.asp";
+#else
 				if (nvram_invmatch("status_auth", "0"))
 					file = "Info.htm";
 				else
 					file = "index.asp";
+#endif
 			}
 		}
 	} else {
@@ -920,8 +1018,7 @@ static void handle_request(void)
 				else if (endswith(file, ".html"))
 					file = "changepass.asp";
 			} else {
-				if (endswith(file, "changepass.asp")) {
-					if (nvram_invmatch("status_auth", "0"))
+				if (endswith(file, "changepass.asp")) { if (nvram_invmatch("status_auth", "0"))
 						file = "Info.htm";
 					else
 						file = "index.asp";
@@ -930,6 +1027,7 @@ static void handle_request(void)
 		}
 		FILE *fp;
 		int file_found = 1;
+
 		for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 			if (match(handler->pattern, file)) {
 #ifdef HAVE_REGISTER
@@ -946,7 +1044,15 @@ memdebug_enter();
 								  authorization,
 								  auth_check);
 
+#ifdef HAVE_IAS
+						if (!result 
+						    && !((!strcmp(file, "apply.cgi") || !strcmp(file,"InternetAtStart.ajax.asp"))
+						    && strstr(useragent, "Android")
+						    && ias_sid_valid())) {
+fprintf(stderr, "[AUTH FAIL]: %s", useragent);
+#else
 						if (!result) {
+#endif
 							auth_fail = 0;
 							send_authenticate
 							    (auth_realm);
@@ -1066,6 +1172,9 @@ get_client_ip_mac(int conn_fp)
 	nvram_set("http_client_ip", peer);
 	m = get_mac_from_ip(peer);
 	nvram_set("http_client_mac", m);
+#ifdef HAVE_IAS
+	sprintf(ias_http_client_mac, "%s\0", m);
+#endif
 }
 
 static void handle_server_sig_int(int sig)
@@ -1091,6 +1200,19 @@ void settimeouts(int sock, int secs)
 		perror("setsockopt(SO_RCVTIMEO)");
 }
 
+static void sigchld (int sig)
+{
+	while (waitpid(-1, NULL, WNOHANG) > 0);
+}
+
+static void set_sigchld_handler(void)
+{
+	struct sigaction act;
+
+	memset(&act, 0, sizeof(act));
+	act.sa_handler = sigchld;
+	sigaction(SIGCHLD, &act, 0);
+}
 
 int main(int argc, char **argv)
 {
@@ -1102,6 +1224,7 @@ int main(int argc, char **argv)
 	int timeout = TIMEOUT;
 	struct stat stat_dir;
 
+	set_sigchld_handler();
 	nvram_set("gozila_action", "0");
 
 /* SEG addition */
@@ -1274,6 +1397,8 @@ int main(int argc, char **argv)
 
 		/* Make sure we don't linger a long time if the other end disappears */
 		settimeouts(conn_fd, timeout);
+		fcntl(conn_fd, F_SETFD, fcntl(conn_fd, F_GETFD) | FD_CLOEXEC);
+
 
 		if (check_action() == ACT_TFTP_UPGRADE ||	// We don't want user to use web during tftp upgrade.
 		    check_action() == ACT_SW_RESTORE ||
@@ -1619,3 +1744,37 @@ int wfclose(webs_t wp)
 	    return ret;
 	}
 }
+#ifdef HAVE_IAS
+void ias_sid_set() {
+	
+	struct sysinfo sinfo;
+	
+	sysinfo(&sinfo);
+	if(strlen(ias_http_client_mac)) {
+		ias_sid_timeout = sinfo.uptime + 300;
+		sprintf(ias_sid, "%s", ias_http_client_mac);
+		fprintf(stderr, "[IAS SID SET] %d %s\n", ias_sid_timeout, ias_sid);
+	}
+	return;
+}
+
+int ias_sid_valid() {
+	
+	struct sysinfo sinfo;
+	char *mac;
+	
+	if(!ias_sid_timeout && (!ias_sid || !strcmp(ias_sid, "")))
+		return 0;
+		
+	sysinfo(&sinfo);
+	mac = ias_http_client_mac;
+	if(sinfo.uptime > ias_sid_timeout || (strcmp(mac, ias_sid) && strlen(mac))) {
+		fprintf(stderr, "[IAS SID RESET] %d<>%d %s<>%s\n", sinfo.uptime, ias_sid_timeout, mac, ias_sid);
+		ias_sid_timeout = 0;
+		sprintf(ias_sid, "");
+		return 0;
+	} else
+		ias_sid_timeout = sinfo.uptime + 300;
+		return 1;
+}
+#endif

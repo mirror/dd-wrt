@@ -637,11 +637,11 @@ void do_hostapd(char *fstr, char *prefix)
 	debug = nvram_nget("%s_wpa_debug", prefix);
 	if (debug != NULL) {
 		if (!strcmp(debug, "1"))
-			argv[argc++] = "-d";
+			argv[argc++] = "-ds";
 		else if (!strcmp(debug, "2"))
-			argv[argc++] = "-dd";
+			argv[argc++] = "-dds";
 		else if (!strcmp(debug, "3"))
-			argv[argc++] = "-ddd";
+			argv[argc++] = "-ddds";
 	}
 	argv[argc++] = fstr;
 	_evalpid(argv, NULL, 0, NULL);
@@ -839,7 +839,11 @@ void addWPS(FILE * fp, char *prefix, int configured)
 		fprintf(fp, "serial_number=12345\n");
 		fprintf(fp, "device_type=6-0050F204-1\n");
 		fprintf(fp, "os_version=01020300\n");
+#ifdef HAVE_BUFFALO
+		fprintf(fp, "friendly_name=BUFFALO %s\n", nvram_get("DD_BOARD"));
+#else
 		fprintf(fp, "friendly_name=DD-WRT WPS Access Point\n");
+#endif
 		fprintf(fp, "config_methods=%s\n", config_methods);
 		//      "config_methods=label display push_button keypad\n");
 	}

@@ -27,9 +27,9 @@ share.enable="Enable";
 share.enabled="Enabled";
 share.disable="Disable";
 share.disabled="Disabled";
-share.usrname="User Name";
+share.usrname="Username";
 share.passwd="Password";
-share.hostname="Host Name";
+share.hostname="Hostname";
 share.advanced="Advanced settings";
 share.vdsl="Advanced VLAN Tagging";
 share.vdslvlan7="T-Home VLAN 7 support";
@@ -309,15 +309,16 @@ errmsg.err24=" found in MAC address ";
 errmsg.err25="The key value is not correct.";
 errmsg.err26="The key length is not correct.";
 errmsg.err27="Illegal subnet mask.";
-errmsg.err28=" have illegal characters, must be [ 0 - 9 ].";
-errmsg.err29=" have illegal ascii code.";
-errmsg.err30=" have illegal hexadecimal digits.";
+errmsg.err28=" contained illegal characters, must be [ 0 - 9 ].";
+errmsg.err29=" contained illegal ascii code.";
+errmsg.err30=" contained illegal hexadecimal digits.";
 errmsg.err31=" value is illegal.";
 errmsg.err32="IP address and gateway is not at same subnet mask.";
 errmsg.err33="IP address and gateway can't be same.";
 errmsg.err34=" is not allowed to contain a space.";
 errmsg.err110="End number must be bigger then start number";
 errmsg.err111="Invalid IP address";
+errmsg.err112='Invalid input characters "<invchars>" in field "<fieldname>"';
 
 //Wol.asp error messages
 errmsg.err35="You must input a MAC address to run.";
@@ -493,7 +494,7 @@ alive.port="Proxy Port";
 
 //help container
 var halive = new Object();
-halive.right2="Choose when reboot the router. Cron must be enabled in the management tab.";
+halive.right2="Choose when reboot to the router. Cron must be enabled in the management tab.";
 halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<br/>IP Format is xxx.xxx.xxx.xxx .";
 
 
@@ -511,7 +512,7 @@ config.mess4="Only upload files backed up using this firmware and from the same 
 
 //help container
 var hconfig = new Object();
-hconfig.right2="You may backup your current configuration in case you need to reset the router back to its factory default settings.<br /><br />Click the <em>Backup</em> button to backup your current configuration.";
+hconfig.right2="You may back up your current configuration in case you need to reset the router back to its factory default settings.<br /><br />Click the <em>Backup</em> button to back up your current configuration.";
 hconfig.right4="Click the <em>Browse...</em> button to browse for a configuration file that is currently saved on your PC.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite all current configurations with the ones in the configuration file.";
 
 
@@ -543,8 +544,8 @@ ddnsm.all_noip="No WAN connection";
 
 //help container
 var hddns = new Object();
-hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manages changing IP addresses and updates your domain information dynamically. You must sign up for service through DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com or Custom.";
-hddns.right4="Type an integer number in the box to set the force update interval (in days). Updates should only be performed automatically when your IP address has changed. Beware of your DDNS provider update abuse policy to avoid your hostname or domain to be blocked.";
+hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manager changing IP addresses and updates your domain information dynamically. You must sign up for services through DynDNS.org, freedns.affraid.org, ZoneEdit.com, No-IP.com, or other similar dynamic DNS service.";
+hddns.right4="Type an integer number in the box to set the force update interval (in days). Updates should only be performed automatically when your IP address has changed. Be aware of your DNS provider's update abuse policy to avoid having your hostname or domain blocked.";
 
 
 // ** Diagnostics.asp **//
@@ -670,13 +671,13 @@ hfirewall.right2="Enable or disable the SPI firewall.";
 // ** Forward.asp **//
 var prforward = new Object();
 prforward.titl="Port Range Forwarding";
-prforward.h2="Port Range Forward";
+prforward.h2="Port Range Forwarding";
 prforward.legend="Forwards";
 prforward.app="Application";
 
 //help container
 var hprforward = new Object();
-hprforward.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
+hprforward.right2="Some applications require that specific ports be open in order to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and disable them when you are finished.";
 
 
 // ** P2P.asp **//
@@ -695,7 +696,7 @@ p2p.ctorrent_srv="Ctorrent Service";
 // ** ForwardSpec.asp **//
 var pforward = new Object();
 pforward.titl="Port Forwarding";
-pforward.h2="Port Forward";
+pforward.h2="Port Forwarding";
 pforward.legend="Forwards";
 pforward.app="Application";
 pforward.src="Source Net";
@@ -736,7 +737,7 @@ nas.proftpd_anon_subdir="Anonymous Home Sub-directory";
 nas.samba3_legend="File Sharing";
 
 var hnas = new Object();
-hnas.right2="User Password List: Enter one User Password per line. Password can be plain text or MD5 crypt.";
+hnas.right2="For the user password list, enter one password per line. Passwords can be plain text or MD5 crypt.";
 
 // ** Hotspot.asp **//
 var hotspot = new Object();
@@ -966,16 +967,16 @@ idx.ntp_client="NTP Client";
 
 //help container
 var hidx = new Object();
-hidx.right2="This setting is most commonly used by Cable operators.";
-hidx.right4="Enter the host name provided by your ISP.";
+hidx.right2="This setting is most commonly used by cable operators.";
+hidx.right4="Enter the hostname provided by your ISP.";
 hidx.right6="Enter the domain name provided by your ISP.";
-hidx.right8="This is the address of the router.";
+hidx.right8="This is the LAN-side IP address of the router.";
 hidx.right10="This is the subnet mask of the router.";
 hidx.right12="Allows the router to manage your IP addresses.";
 hidx.right14="The address you would like to start with.";
 hidx.right16="You may limit the number of addresses your router hands out. 0 means only predefined static leases will be handed out.";
-hidx.right18="Choose the time zone you are in and Summer Time (DST) period. The router can use local time or UTC time.";
-hidx.sas="The Setup Assistant guides you through the basic setup steps to configure your router.";
+hidx.right18="Choose the time you are in an summer time (DST) period. The router can use local time or UTC time.";
+hidx.sas="The setup assistant guides you through the basic setup steps to configure your router.";
 
 // ** DSL ** //
 var dsl = new Object();
@@ -1025,7 +1026,7 @@ log.accept="Accepted";
 var management = new Object();
 management.titl="Administration";
 management.h2="Router Management";
-management.changepassword="Your Router is currently not protected and uses an unsafe default username and password combination, please change it using the following dialog!";
+management.changepassword="Your router us corrently not protected and uses an unsafe default username and password combination; please change it using the following dialog!";
 management.psswd_legend="Router Password";
 management.psswd_user="Router Username";
 management.psswd_pass="Router Password";
@@ -1139,7 +1140,7 @@ networking.legend5="Multiple DHCP Server";
 //help container
 var hnetworking = new Object();
 hnetworking.right1="Multi DHCPD";
-hnetworking.right2="To use Multiple DHCPD enable DNSMasq as DHCP-Server";
+hnetworking.right2="To use multiple DHCPD, enable DNSMasq as a DHCP server.";
 
 // ** QoS.asp **//
 var qos = new Object();
@@ -1175,10 +1176,10 @@ var hqos = new Object();
 hqos.right1="";
 hqos.right2="Uplink:<br>Set this to 80%-95% (max) of your total upload limit.<br>Downlink:<br>Set this to 80%-100% (max) of your total download limit.";
 hqos.right3="";
-hqos.right4="Enable Per User Default Limits:<br>Enable the Default Level per user, else set the level for all users.";
+hqos.right4="Enable Per User Default Limits:<br>Enable the default level per user or set the level for all users.";
 hqos.right6="You may control your data rate with respect to the application that is consuming bandwidth.";
-hqos.right8="You may specify priority for all traffic from a given IP address or IP Range.";
-hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a Device Name, specifying priority and entering its MAC address.";
+hqos.right8="You may specify priority for all traffic from a given IP address or IP range.";
+hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a device name, specifying priority and entering its MAC address.";
 hqos.right12="You may control your data rate according to which physical LAN port your device is plugged into. You may assign Priorities accordingly for devices connected on LAN ports 1 through 4.";
 
 
@@ -1236,7 +1237,7 @@ route.static_ip="Destination LAN NET";
 //help container
 var hroute = new Object();
 hroute.right2="If the router is hosting your Internet connection, select <em>Gateway</em> mode. If another router exists on your network, select <em>Router</em> mode.";
-hroute.right4="This is the unique route number, you may set up to 50 routes.";
+hroute.right4="This is the unique router number; you may set up to 50 route.";
 hroute.right6="Enter the name you would like to assign to this route.";
 hroute.right8="This is the remote host to which you would like to assign the static route.";
 hroute.right10="Determines the host and the network portion.";
@@ -1490,15 +1491,15 @@ service.milkfish_contact="Contact";
 service.milkfish_agent="User Agent";
 service.milkfish_registrations="Active Registrations";
 //service.milkfish_="";//
-service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
-service.hmilkfish_right4="Enables/Disables From:-Headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled, if you want to allow callees to call you back if your WAN IP has changed";
-service.hmilkfish_right6="Callee calls back this Domain (instead of your WAN IP) when you send it as your From:-Domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect";
-service.hmilkfish_right8="Here goes your Milkfish Community Forum Username - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
-service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
-service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="Enables/Disables Dynamic SIP (i.e. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right2="Enable or disable your Milkfish SIP router.";
+service.hmilkfish_right4="Enable or disable from:-headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled if you want to allow callees to call you back if your WAN IP has changed.";
+service.hmilkfish_right6="Callee calls back this domain (instead of your WAN IP) when you send it as your from:-domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect.";
+service.hmilkfish_right8="Put your Milkfish community forum username here.  Register at yourname.homesip.net.";
+service.hmilkfish_right10="Put your Milkfish community forum password here. Register at yourname.homesip.net.";
+service.hmilkfish_right12="Enable or disable basic SIP tracing on your router.";
+service.hmilkfish_right14="Local SIP subscribers are locally managed SIP accounts.";
+service.hmilkfish_right16="Local SIP aliases are SIP forwards similar to Email forwards. Can be used to forward alphanumeric-to-numeric phone user accounts or vice versa.";
+service.hmilkfish_right18="Enable or disables dynamic SIP (i.e. Homesip.net service). You will need to set your username and password.";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1567,11 +1568,11 @@ status_lan.conratio="Ratio";
 
 //help container
 var hstatus_lan = new Object();
-hstatus_lan.right2="This is the Router's MAC Address, as seen on your local, Ethernet network.";
-hstatus_lan.right4="This shows the Router's IP Address, as it appears on your local, Ethernet network.";
-hstatus_lan.right6="When the Router is using a Subnet Mask, it is shown here.";
-hstatus_lan.right8="If you are using the Router as a DHCP server, that will be displayed here.";
-hstatus_lan.right10="By clicking on any MAC address, you will obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).";
+hstatus_lan.right2="This is the router's MAC address, as seen on your local Ethernet network.";
+hstatus_lan.right4="This shows the router's IP address as it appears on your local Ethernet network.";
+hstatus_lan.right6="When the router is using a subnet mask, it is shown here.";
+hstatus_lan.right8="If you are using the router as a DHCP server, that will be displayed here.";
+hstatus_lan.right10="By clicking on any MAC address, you will obtain the organizationally unique identifier of the network interface (IEEE Standar\ds OUI database search).";
 
 
 // ** Status_Bandwidth.asp **//
@@ -1589,7 +1590,7 @@ status_band.up="up";
 
 //help container
 var hstatus_band = new Object();
-hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
+hstatus_band.svg="Adobe's SVG plugin is required to display bandwidth graphs.";
 hstatus_band.right1="Click the label to switch unit (bytes/s or bits/s).";
 hstatus_band.right2="Click the label to choose graph scale type.";
 
@@ -1706,8 +1707,8 @@ status_gpsi.sat="Visible Satelites";
 
 //help container
 var hstatus_wireless = new Object();
-hstatus_wireless.right2="This is the Router's MAC Address, as seen on your local, wireless network.";
-hstatus_wireless.right4="As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, B-Only or Disabled) used by the network.";
+hstatus_wireless.right2="This is the router's MAC address, as seen on your local, wireless network.";
+hstatus_wireless.right4="As selected from the wireless tab, this will display the wireless mode (Mixed, G-Only, B-Only or Disabled) used by the network.";
 
 
 // ** Status_OpenVPN.asp **//
@@ -1765,7 +1766,7 @@ upnp.msg2="Delete all entries?";
 //help container
 var hupnp = new Object();
 hupnp.right2="Click the trash can to delete an individual entry.";
-hupnp.right4="Allows applications to automatically setup port forwardings.";
+hupnp.right4="Allows applications to automatically configure port forwarding.";
 
 
 // ** VPN.asp **//
@@ -1821,7 +1822,7 @@ wol.pass="SecureOn Password";
 //help container
 var hwol = new Object();
 hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
-hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>";
+hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>.";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network.";
 
 
@@ -1865,7 +1866,7 @@ aoss.start="Start AOSS negotiation";
 aoss.securitymodes="Security Modes";
 aoss.wpaaes="WPA AES";
 aoss.wpatkip="WPA TKIP";
-aoss.wep="WEP64 / 128";
+aoss.wep="WEP 64/128";
 aoss.client_name="Client Name";
 aoss.security="Security";
 aoss.connectivity="Connectivity";
@@ -1881,9 +1882,9 @@ aoss.wpsactivate="Activate PIN";
 aoss.wpsregister="Register PIN";
 aoss.wpsgenerate="Generate PIN";
 aoss.pinnotvalid="Invalid PIN, checksum not correct!";
-aoss.wpsenable="WPS Push Button";
+aoss.wpsenable="WPS Button";
 aoss.wpsstatus="WPS Status";
-aoss.externalregistrar="External Registrar";
+aoss.externalregistrar="PIN Method";
 aoss.release="Release";
 aoss.configure="Configure";
 
@@ -1913,7 +1914,7 @@ sec80211x.options="Additional Network Options";
 
 //help container
 var hwpa = new Object();
-hwpa.right2="You may choose from Disable, WEP, WPA Personal, WPA Enterprise, or RADIUS. All devices on your network must use the same security mode. With N-Mode you must use WPA2/AES";
+hwpa.right2="You may choose from Disable, WEP, WPA Personal, WPA Enterprise, or RADIUS. All devices on your network must use the same security mode. With N-Mode you must use WPA2/AES.";
 
 
 // ** WL_FilterTable.asp **//
@@ -2198,7 +2199,7 @@ wl_basic.ap83_vap_note="Adding more than three virtual interfaces will lead to l
 var hwl_basic = new Object();
 hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.<br/><b>Note :</b> when changing wireless mode, some advanced parameters are succeptible to be modified (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Sensitivity Range: ";
-hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely for broadcom firmwares. On Atheros based firmwares it will turn into auto ack timing mode";
+hwl_basic.right4="Adjusts the ACK timing. 0 disables ack timing completely for Broadcom firmwares. On Atheros based firmware, 0 enables auto ACK timing mode.";
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
@@ -2251,16 +2252,33 @@ hsas.other="Other Settings help text";
 
 // ** AOSS **//
 var haoss = new Object();
-haoss.basic="The \"AirStation One-Touch Secure System\" (AOSS) allows you to connect AOSS capable clients to your access point without requiring manual configuration.";
-haoss.securitymodes="The AOSS Security Modes define what client security modes are accepted for AOSS negotiation. If a Client only supports security modes that are not enabled it cannot connect.";
-haoss.wps="WPS enables support for the Wifi Protected Setup using the Push Button on your Router, or by using the PIN Method using the PIN printed on your client device or your client authentication application";
+haoss.basic="The \"AirStation One-Touch Secure System\" (AOSS) allows you to connect AOSS-capable clients to your access point without requiring manual configuration.";
+haoss.securitymodes="AOSS security modes define what client security modes are accepted for AOSS negotiation. If a client only supports security modes that are not enabled, it cannot connect.";
+haoss.wps="WPS enables support for Wi-Fi Protected Setup using the button on your router or the PIN that came with your client device.";
+
+var ias = new Object();
+ias.title = "Setup";
+ias.card_info = "Setup Card";
+ias.edit_note = "Click on any information in the Setup Card to edit it.";
+ias.assistant = "Run Setup Assistant";
+ias.print_setup_card = "Print Setup Card";
+ias.print_guest_card = "Print Guest Card";
+ias.apply_changes = "Apply Changes";
+ias.wlnetwork = "Wireless Network";
+ias.wlinfo_2_4_GHz = "(2.4 Ghz) - Compatible with 802.11n/g/b";
+ias.wlinfo_5_GHz = "(5 Ghz) - Compatible with 802.11n/a";
+ias.hl_setup_card = "Setup Card";
+ias.hl_client_access = "For Client Access";
+ias.hl_for_conf = "For Configuration";
+ias.hl_guest_card = "Guest Card";
+
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
 var dhcp = new Object();
 dhcp.titl="DHCP Active IP Table";
 dhcp.h2="DHCP Active IP Table";
 dhcp.server="DHCP Server IP Address :";
-dhcp.tclient="Client Host Name";
+dhcp.tclient="Client Hostname";
 
 var donate = new Object();
 donate.mb="You may also donate through the Moneybookers account mb@dd-wrt.com";
