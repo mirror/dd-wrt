@@ -42,7 +42,6 @@
 						<% ifndef("MILKFISH", "<!--"); %>
 						<li><a href="HMilkfish.asp"><% tran("bmenu.servicesMilkfish"); %></a></li>
 						<% ifndef("MILKFISH", "-->"); %>
-						<li><a href="HAnchorFree.asp"><% tran("bmenu.servicesAnchorFree"); %></a></li>
 					</ul>
 				</dd>
 				<dt><% tran("bmenu.security"); %></dt>
