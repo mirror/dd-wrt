@@ -91,6 +91,9 @@ endif
 ifeq ($(CONFIG_WZRG300NH),y)
   CFLAGS += -DHAVE_WZRG300NH
 endif
+ifeq ($(CONFIG_WZR300HP),y)
+  CFLAGS += -DHAVE_WZR300HP
+endif
 ifeq ($(CONFIG_3G),y)
   CFLAGS += -DHAVE_3G
 endif
@@ -200,6 +203,9 @@ ifeq ($(CONFIG_ESPOD),y)
 endif
 ifeq ($(CONFIG_CARLSONWIRELESS),y)
   CFLAGS += -DHAVE_CARLSONWIRELESS
+endif
+ifeq ($(CONFIG_IMMERSIVE),y)
+  CFLAGS += -DHAVE_IMMERSIVE
 endif
 ifeq ($(CONFIG_MERAKI),y)
   CFLAGS += -DHAVE_MERAKI

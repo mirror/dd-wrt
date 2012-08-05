@@ -1289,11 +1289,6 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 						continue;
 					}
 #endif
-#if defined(HAVE_IPR)
-					if(!strcmp(entry->d_name, "snmp.webservices") && !wp->userid) {
-						continue;
-					}
-#endif
 					sprintf(buf, "%s/%s", directories[idx],
 						entry->d_name);
 					result[resultcount] =
@@ -2280,6 +2275,12 @@ void ej_getrebootflags(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "1");
 #elif HAVE_X86
 	websWrite(wp, "1");
+#elif HAVE_WHR300HP
+	websWrite(wp, "3");
+#elif HAVE_WZR300HP
+	websWrite(wp, "3");
+#elif HAVE_WZR600DHP
+	websWrite(wp, "3");
 #else
 	websWrite(wp, "0");
 #endif
@@ -3149,7 +3150,6 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 
 #endif
 
-// web-writes html escaped (&#xxx;) nvram entries / test buffered
 int tf_webWriteESCNV(webs_t wp, const char *nvname)
 {
 	char buf[512];

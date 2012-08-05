@@ -639,6 +639,15 @@ void validate_reboot(webs_t wp, char *value, struct variable *v)
  */
 void validate_password(webs_t wp, char *value, struct variable *v)
 {
+#ifdef HAVE_IAS
+	if(!strcmp(value, "http_username")) {
+		nvram_set("http_userpln", value);
+		fprintf(stderr, "[SET USERNAME] %s\n", value);
+	} else if(!strcmp(value, "http_passwd")){
+		nvram_set("http_pwdpln", value);
+		fprintf(stderr, "[SET PASSWORD] %s\n", value);
+	}
+#endif
 	if (strcmp(value, TMP_PASSWD) && valid_name(wp, value, v)) {
 		nvram_set(v->name, zencrypt(value));
 

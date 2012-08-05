@@ -1030,6 +1030,22 @@ void start_lan(void)
 		nvram_setz(lan_ifnames, "vlan1 ath0");
 		PORTSETUPWAN("vlan2");
 	}
+#ifdef HAVE_SWCONFIG
+	system("swconfig dev eth0 set reset 1");
+	system("swconfig dev eth0 set enable_vlan 1");
+	if(nvram_match("wan_proto", "disabled") && nvram_match("fullswitch", "1")) {
+		system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4 5\"");
+	} else {
+#ifdef HAVE_WZRG300NH2
+		system("swconfig dev eth0 vlan 1 set ports \"0t 1 3 4 5\"");
+		system("swconfig dev eth0 vlan 2 set ports \"0t 2\"");
+#else
+		system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
+		system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+#endif
+	}
+	system("swconfig dev eth0 set apply");
+#endif
 	strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
@@ -2734,6 +2750,12 @@ void start_wan(int status)
 
 	eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
 
+	// wan test mode
+	if(nvram_match("wan_testmode", "1")) {
+		status = 0; // avoid redialing
+		fprintf(stderr, "[SERVICE WAN] testmode\n");
+	}
+
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
@@ -4044,6 +4066,11 @@ void start_wan_service(void)
 
 void start_wan_done(char *wan_ifname)
 {
+	if(nvram_match("wan_testmode", "1")) {
+		fprintf(stderr, "[WAN IF] testmode: skipping wan_done\n");
+		return;
+	}
+	
 	cprintf("%s %s\n", wan_ifname, nvram_safe_get("wan_proto"));
 
 	if (nvram_match("wan_proto", "l2tp")) {

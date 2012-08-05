@@ -84,6 +84,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "xirian", 0},
 #elif HAVE_CARLSONWIRELESS
 	{"router_style", "carlson", 0},
+#elif HAVE_IPR
+	{"router_style", "ipr", 0},
 #else
 	{"router_style", "elegant", 0},
 #endif
@@ -169,6 +171,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"lan_proto", "static", 0},	/* [static|dhcp] */
 #elif HAVE_CARLSONWIRELESS
 	{"lan_proto", "static", 0},	/* [static|dhcp] */
+#elif HAVE_IPR
+	{"lan_proto", "static", 0},	/* [static|dhcp] */
 #else
 	{"lan_proto", "dhcp", 0},	/* [static|dhcp] */
 #endif
@@ -222,6 +226,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},		/* ath0 regulatory domain */
 	{"ath1_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},		/* ath0 regulatory domain */
 	{"ath2_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},		/* ath0 regulatory domain */
+#elif HAVE_IPR
+	{"lan_ipaddr", "192.168.14.14", 0},	/* LAN ip address */
 #else
 	{"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #endif
@@ -583,6 +589,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"http_username", "$1$OIw4f9TB$/dcveO2p0zs7eH0gHgsyw0", 0},
 #elif HAVE_CARLSONWIRELESS
 	{"http_username", "$1$y5qEiLaV$/2cQErs8qxs./J3pl2l2F.", 0},	/* HTTP username) */
+#elif HAVE_IAS
+	{"http_username", "$1$LJZEFe0/$TMujOR/zbGMDwxgb3KP0J.", 0},
 #else
 	{"http_username", "bJ/GddyoJuiU2", 0},	/* Username */
 #endif
@@ -599,6 +607,8 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"http_passwd", "bJxJZz5DYRGxI", 0},	/* Password */
 #endif
+#elif HAVE_IAS
+	{"http_passwd", "$1$LJZEFe0/$yHSTW.W0nkBqSkWfcUnww.", 0},
 #elif HAVE_CORENET
 	{"http_passwd", "$1$YwPEyUx/$LLV6oaeof4WDEdpHPEMpA.", 0},	/* Username */
 	{"http_username", "$1$9wWnpX1Q$1fobI1HcfeXewVtWCnhxh.", 0},	/* Password */
@@ -610,6 +620,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"http_passwd", "$1$sur0onKC$Ltnjj7PBVQtmVTNYPb5XF0", 0},
 #elif HAVE_CARLSONWIRELESS
 	{"http_passwd", "$1$y5qEiLaV$KNvLd5jrLCfYko/e6e7lZ1", 0},	/* HTTP password) */
+#elif HAVE_IPR
+	{"http_passwd", "$1$E1quEPpk$d.nw/cqhR1qsi.ECGT5ed0", 0},	/* HTTP password) */
 #else
 	{"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
 #endif
@@ -618,9 +630,18 @@ struct nvram_tuple srouter_defaults[] = {
 	{"remote_ip", "0.0.0.0 0", 0},	/* allowed remote ip range */
 	{"http_wanport", "8080", 0},	/* WAN port to listen on */
 	{"http_lanport", "80", 0},	/* LAN port to listen on */
+#ifdef HAVE_IPR
+#ifdef HAVE_HTTPS
+	{"https_enable", "1", 0},	/* HTTPS server enable/disable */
+	{"http_enable", "0", 0},	/* HTTP server enable/disable */
+#else
+	{"http_enable", "1", 0},	/* HTTP server enable/disable */
+#endif
+#else
 	{"http_enable", "1", 0},	/* HTTP server enable/disable */
 #ifdef HAVE_HTTPS
 	{"https_enable", "0", 0},	/* HTTPS server enable/disable */
+#endif
 #endif
 	{"http_method", "post", 0},	/* HTTP method */
 #ifdef HAVE_SAGAR
@@ -785,14 +806,23 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_TMK)
-	{"wl0_ssid", "KMT", 0},	/* Service set ID (network name) */
+	{"wl0_ssid", "KMT", 0},		/* Service set ID (network name) */
 	{"ath0_ssid", "KMT", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_BKM)
 	{"wl0_ssid", "BKM-HSDL", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "BKM-HSDL", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_ERC)
-	{"wl0_ssid", "ERC", 0},	/* Service set ID (network name) */
+	{"wl0_ssid", "ERC", 0},		/* Service set ID (network name) */
 	{"ath0_ssid", "ERC", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_IPR)
+	{"wl0_ssid", "IPR", 0},		/* Service set ID (network name) */
+	{"ath0_ssid", "IPR", 0},	/* Service set ID (network name) */
+	{"ath0_regulatory", "1", 0},
+	{"ath0_channel", "6000", 0},	/* 6000/chan 200 -ath0 frequency */
+	{"ath0_txpwrdbm", "6", 0},
+	{"ath0_crypto", "aes", 0},		/* ath0 encryption type */
+	{"ath0_security_mode", "psk2", 0},	/* ath0 encryption type */
+	{"ath0_wpa_psk", "marcomarco14", 0},	/* ath0 encryption key */
 #else
 #ifndef HAVE_BUFFALO		
 	{"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
@@ -1319,6 +1349,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ree_resetme", "1", 0},
 #elif  HAVE_CARLSONWIRELESS
 	{"router_name", "CWT", 0},		/* Router name) */
+#elif HAVE_IPR
+	{"router_name", "IPR", 0},
 #else
 	{"router_name", MODEL_NAME, 0},	/* Router name string */
 #endif
@@ -2199,6 +2231,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"status_auth", "0", 0},
 #elif HAVE_ERC
 	{"status_auth", "0", 0},
+#elif HAVE_IPR
+	{"status_auth", "0", 0},
 #else
 	{"status_auth", "1", 0},
 #endif
@@ -2541,6 +2575,9 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_CARLSONWIRELESS
 	{"newhttp_username", "$1$y5qEiLaV$/2cQErs8qxs./J3pl2l2F.", 0},	/* HTTP username) */
 	{"newhttp_passwd", "$1$y5qEiLaV$KNvLd5jrLCfYko/e6e7lZ1", 0},	/* HTTP password) */
+#endif
+#ifdef HAVE_IPR
+	{"newhttp_passwd", "$1$hFOmcfz/$eYEVGPdzfrkGcA6MbUukF.", 0},
 #endif
 #ifdef HAVE_MADWIFI
 	/*
