@@ -408,7 +408,7 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Routeur SIP Milkfish";
-bmenu.servicesAnchorFree="Mon réseau publicitaire";
+//bmenu.servicesAnchorFree="Mon réseau publicitaire";
 
 bmenu.statu="État";
 bmenu.statuRouter="Routeur";
@@ -684,41 +684,41 @@ hotspot.wifidog_authsrvhttpport="Port HTTP du serveur d'authentification";
 hotspot.wifidog_authsrvpath="Chemin du serveur d'authentification";
 
 // AnchorFree
-anchorfree.anchorfree="AnchorFree";
-anchorfree.titl="Mon réseau publicitaire";
-anchorfree.h2="Réseau publicitaire AnchorFree";
-anchorfree.anchorfree_revenue="Gagnez de l'argent en créant un support publicitaire AnchorFree Hotspot";
-anchorfree.email="Votre courriel pour recevoir des rapports de revenus";
-anchorfree.ssid="Utilisez un SSID différent";
-anchorfree.ssid_name="SSID";
-anchorfree.address_1="Adresse";
-anchorfree.address_2="Adresse 2";
-anchorfree.city="Ville";
-anchorfree.zip="Code postal ou Zip";
-anchorfree.state="Comté/état/province";
-anchorfree.country="Pays";
-anchorfree.category="Catégorie";
-anchorfree.publish="Publication du Hotspot sur la carte";
-anchorfree.serviceid="ID Service";
-anchorfree.servicestatus="Etat du service";
-anchorfree.agreement="Conditions générales de vente";
-anchorfree.agree="Je suis d'accord et j'accepte";
-anchorfree.validaddr="champ d'adresse non valide pour être place sur la carte des réseaux sans fil gratuits !";
-anchorfree.validcity="champ du code poste ou ville invalide pour être place sur la carte des réseaux sans fil gratuits !";
-anchorfree.validcat="Choisissez s'il vous plaît une catégorie publicitaire pour votre Hotspot";
-anchorfree.validcountry="Choisissez s'il vous plaît un pays pour votre Hotspot";
-anchorfree.validterms="Vous devez être d'accord avec les conditions générales !";
-
-
-hanchorfree.right1="S'inscrire au réseau publicitaire AnchorFree's Hotspot";
-hanchorfree.right2="AnchorFree utilise le réseau publicitaire des hotspots permettant au client DD-WRT de produire des revenus progressifs.";
-hanchorfree.right3="Produisez des revenus progressifs avec la publicité d'AnchorFree";
-hanchorfree.right4="En activant, cette fonction et en créant un compte auprès de AnchorFree (gratuit et facile), un cadre publicitaire sera inséré directement sur le navigateur Web de l'utilisateur, qui vous fera gagner un paiement chaque mois. Gagnez pour un seuil minimum mensuel de 25$ et AnchorFree créditera automatiquement votre compte de ces fonds.";
-hanchorfree.right5="Pour plus d'informations : www.anchorfree.com";
-hanchorfree.right6="L'activation est facile";
-hanchorfree.right7="Une fois activé, AnchorFree enverra un courriel au propriétaire du compte enregistré avec des instructions simples sur l'optimisation de votre Hotspot, FAQ et d'autres informations pertinentes sur gain de l'argent avec votre routeur. Grâce à cet écran de configuration, AnchorFree insère un petit cadre publicitaire, non importun, directement dans le navigateur Web à l'accès à Internet du routeur.";
-hanchorfree.right8="Support client";
-hanchorfree.right9="Des questions ? Entrez en contact avec nous à boxhelp@anchorfree.com";
+//anchorfree.anchorfree="AnchorFree";
+//anchorfree.titl="Mon réseau publicitaire";
+//anchorfree.h2="Réseau publicitaire AnchorFree";
+//anchorfree.anchorfree_revenue="Gagnez de l'argent en créant un support publicitaire AnchorFree Hotspot";
+//anchorfree.email="Votre courriel pour recevoir des rapports de revenus";
+//anchorfree.ssid="Utilisez un SSID différent";
+//anchorfree.ssid_name="SSID";
+//anchorfree.address_1="Adresse";
+//anchorfree.address_2="Adresse 2";
+//anchorfree.city="Ville";
+//anchorfree.zip="Code postal ou Zip";
+//anchorfree.state="Comté/état/province";
+//anchorfree.country="Pays";
+//anchorfree.category="Catégorie";
+//anchorfree.publish="Publication du Hotspot sur la carte";
+//anchorfree.serviceid="ID Service";
+//anchorfree.servicestatus="Etat du service";
+//anchorfree.agreement="Conditions générales de vente";
+//anchorfree.agree="Je suis d'accord et j'accepte";
+//anchorfree.validaddr="champ d'adresse non valide pour être place sur la carte des réseaux sans fil gratuits !";
+//anchorfree.validcity="champ du code poste ou ville invalide pour être place sur la carte des réseaux sans fil gratuits !";
+//anchorfree.validcat="Choisissez s'il vous plaît une catégorie publicitaire pour votre Hotspot";
+//anchorfree.validcountry="Choisissez s'il vous plaît un pays pour votre Hotspot";
+//anchorfree.validterms="Vous devez être d'accord avec les conditions générales !";
+//
+//
+//hanchorfree.right1="S'inscrire au réseau publicitaire AnchorFree's Hotspot";
+//hanchorfree.right2="AnchorFree utilise le réseau publicitaire des hotspots permettant au client DD-WRT de produire des revenus progressifs.";
+//hanchorfree.right3="Produisez des revenus progressifs avec la publicité d'AnchorFree";
+//hanchorfree.right4="En activant, cette fonction et en créant un compte auprès de AnchorFree (gratuit et facile), un cadre publicitaire sera inséré directement sur le navigateur Web de l'utilisateur, qui vous fera gagner un paiement chaque mois. Gagnez pour un seuil minimum mensuel de 25$ et AnchorFree créditera automatiquement votre compte de ces fonds.";
+//hanchorfree.right5="Pour plus d'informations : www.anchorfree.com";
+//hanchorfree.right6="L'activation est facile";
+//hanchorfree.right7="Une fois activé, AnchorFree enverra un courriel au propriétaire du compte enregistré avec des instructions simples sur l'optimisation de votre Hotspot, FAQ et d'autres informations pertinentes sur gain de l'argent avec votre routeur. Grâce à cet écran de configuration, AnchorFree insère un petit cadre publicitaire, non importun, directement dans le navigateur Web à l'accès à Internet du routeur.";
+//hanchorfree.right8="Support client";
+//hanchorfree.right9="Des questions ? Entrez en contact avec nous à boxhelp@anchorfree.com";
 
 
 // ** Info.htm **//

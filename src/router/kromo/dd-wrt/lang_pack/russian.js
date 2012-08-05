@@ -414,7 +414,7 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Хот-спот";
 bmenu.servicesMilkfish="Маршрутизатор Milkfish SIP";
-bmenu.servicesAnchorFree="Моя рекламная сеть";
+//bmenu.servicesAnchorFree="Моя рекламная сеть";
 
 bmenu.statu="Статус";
 bmenu.statuRouter="Маршрутизатор";
@@ -700,41 +700,41 @@ hotspot.wifidog_authsrvssl="AuthServer SSL доступен";
 hotspot.wifidog_authsrvsslport="Порт AuthServer SSL";
 hotspot.wifidog_authsrvhttpport="Порт AuthServer HTTP";
 hotspot.wifidog_authsrvpath="Путь AuthServer";
-
-anchorfree.anchorfree="AnchorFree";
-anchorfree.titl="Моя рекламная сеть";
-anchorfree.h2="Рекламная сеть AnchorFree";
-anchorfree.anchorfree_revenue="Создайте рекламный хот-спот AnchorFree и зарабатывайте деньги";
-anchorfree.email="Высылать отчеты на E-Mail";
-anchorfree.ssid="Использовать другой SSID";
-anchorfree.ssid_name="SSID";
-anchorfree.address_1="Адрес";
-anchorfree.address_2="Адрес 2";
-anchorfree.city="Город";
-anchorfree.zip="Почтовый или Zip-код";
-anchorfree.state="Округ/штат/область";
-anchorfree.country="Страна";
-anchorfree.category="Категория";
-anchorfree.publish="Опубликовать хот-спот на карте WiFi";
-anchorfree.serviceid="ID службы";
-anchorfree.servicestatus="Статус службы";
-anchorfree.agreement="Условия соглашения";
-anchorfree.agree="Я ПРИНИМАЮ";
-anchorfree.validaddr="для публикации данного хот-спота на карте бесплатных точек WiFi необходимо сообщить корректный адрес!";
-anchorfree.validcity=" для публикации данного хот-спота на карте бесплатных точек WiFi необходимо сообщить корректное название города или почтовый код!";
-anchorfree.validcat="пожалуйста, выберите рекламную категорию вашего хот-спота";
-anchorfree.validcountry="пожалуйста, выберите страну вашего хот-спота";
-anchorfree.validterms="Вы должны принять условия соглашения!";
-
-hanchorfree.right1="Присоединяйтесь к рекламной сети хот-спотов AnchorFree";
-hanchorfree.right2="AnchorFree заведует рекламной сетью хот-спотов, которая позволяет пользователям DD-WRT получать растущие доходы от своего маршрутизатора.";
-hanchorfree.right3="Получайте растущий доход от распространения рекламы AnchorFree";
-hanchorfree.right4="После включения данной функции и создания учетной записи AnchorFree (это бесплатно и просто) в веб-страницы, просматриваемые пользователями, будет включен постоянный рекламный фрейм, который будет приносить вам ежемесячный доход. При превышении минимального месячного порога $25 AnchorFree автоматически переведет средства на ваш счет.";
-hanchorfree.right5="Чтобы узнать больше, пожалуйста, посетите сайт www.anchorfree.com";
-hanchorfree.right6="Активация очень проста";
-hanchorfree.right7="После активации AnchorFree вышлет по адресу владельца зарегистрированной учетной записи простые инструкции по оптимизации вашего хот-спота, FAQ и прочую информацию, которая поможет вам получать доход от вашего марштуризатора. С помощью конфигуратора экрана AnchorFree в интернет-страницы, получаемые через ваш маршрутизатор, будет вставляться узкий и ненавязчивый рекламный фрейм.";
-hanchorfree.right8="Поддержка пользователей";
-hanchorfree.right9="У вас есть вопросы? Напишите нам: boxhelp@anchorfree.com";
+//
+//anchorfree.anchorfree="AnchorFree";
+//anchorfree.titl="Моя рекламная сеть";
+//anchorfree.h2="Рекламная сеть AnchorFree";
+//anchorfree.anchorfree_revenue="Создайте рекламный хот-спот AnchorFree и зарабатывайте деньги";
+//anchorfree.email="Высылать отчеты на E-Mail";
+//anchorfree.ssid="Использовать другой SSID";
+//anchorfree.ssid_name="SSID";
+////anchorfree.address_1="Адрес";
+//////anchorfree.address_2="Адрес 2";
+////anchorfree.city="Город";
+////anchorfree.zip="Почтовый или Zip-код";
+////anchorfree.state="Округ/штат/область";
+////anchorfree.country="Страна";
+////anchorfree.category="Категория";
+////anchorfree.publish="Опубликовать хот-спот на карте WiFi";
+////anchorfree.serviceid="ID службы";
+////anchorfree.servicestatus="Статус службы";
+////anchorfree.agreement="Условия соглашения";
+////anchorfree.agree="Я ПРИНИМАЮ";
+////anchorfree.validaddr="для публикации данного хот-спота на карте бесплатных точек WiFi необходимо сообщить корректный адрес!";
+////anchorfree.validcity=" для публикации данного хот-спота на карте бесплатных точек WiFi необходимо сообщить корректное название города или почтовый код!";
+//anchorfree.validcat="пожалуйста, выберите рекламную категорию вашего хот-спота";
+//anchorfree.validcountry="пожалуйста, выберите страну вашего хот-спота";
+//anchorfree.validterms="Вы должны принять условия соглашения!";
+//
+//hanchorfree.right1="Присоединяйтесь к рекламной сети хот-спотов AnchorFree";
+//hanchorfree.right2="AnchorFree заведует рекламной сетью хот-спотов, которая позволяет пользователям DD-WRT получать растущие доходы от своего маршрутизатора.";
+//hanchorfree.right3="Получайте растущий доход от распространения рекламы AnchorFree";
+//hanchorfree.right4="После включения данной функции и создания учетной записи AnchorFree (это бесплатно и просто) в веб-страницы, просматриваемые пользователями, будет включен постоянный рекламный фрейм, который будет приносить вам ежемесячный доход. При превышении минимального месячного порога $25 AnchorFree автоматически переведет средства на ваш счет.";
+//hanchorfree.right5="Чтобы узнать больше, пожалуйста, посетите сайт www.anchorfree.com";
+//hanchorfree.right6="Активация очень проста";
+//hanchorfree.right7="После активации AnchorFree вышлет по адресу владельца зарегистрированной учетной записи простые инструкции по оптимизации вашего хот-спота, FAQ и прочую информацию, которая поможет вам получать доход от вашего марштуризатора. С помощью конфигуратора экрана AnchorFree в интернет-страницы, получаемые через ваш маршрутизатор, будет вставляться узкий и ненавязчивый рекламный фрейм.";
+//hanchorfree.right8="Поддержка пользователей";
+//hanchorfree.right9="У вас есть вопросы? Напишите нам: boxhelp@anchorfree.com";
 
 
 // ** Info.htm **//

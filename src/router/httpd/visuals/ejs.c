@@ -1618,7 +1618,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	 "", ""},
 	{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp",
 	 "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp",
-	 "AnchorFree.asp", "", ""},
+	 "", "", ""},
 	{"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", ""},
 	{"Filters.asp", "", "", "", "", "", "", "", "", "", "", ""},
 	{"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp",
@@ -1649,7 +1649,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		{"services", "servicesServices", "servicesRadius",
 		 "servicesPppoesrv", "servicesPptp", "servicesUSB",
 		 "servicesNAS", "servicesHotspot", "servicesNintendo",
-		 "servicesMilkfish", "servicesAnchorFree", "", ""},
+		 "servicesMilkfish", "", "", ""},
 		{"security", "firwall", "vpn", "", "", "", "", "", "", "", "",
 		 "", ""},
 		{"accrestriction", "webaccess", "", "", "", "", "", "", "", "",
@@ -1893,18 +1893,18 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp(menu[i][j], "Milkfish.asp"))
 					j++;
 #endif
-#ifdef HAVE_WIKINGS
-				if (!strcmp(menu[i][j], "AnchorFree.asp"))
-					j++;
-#endif
-#ifdef HAVE_ESPOD
-				if (!strcmp(menu[i][j], "AnchorFree.asp"))
-					j++;
-#endif
-#ifdef HAVE_CARLSONWIRELESS
-				if (!strcmp(menu[i][j], "AnchorFree.asp"))
-					j++;
-#endif
+//#ifdef HAVE_WIKINGS
+//				if (!strcmp(menu[i][j], "AnchorFree.asp"))
+//					j++;
+//#endif
+//#ifdef HAVE_ESPOD
+//				if (!strcmp(menu[i][j], "AnchorFree.asp"))
+//					j++;
+//#endif
+//#ifdef HAVE_CARLSONWIRELESS
+//				if (!strcmp(menu[i][j], "AnchorFree.asp"))
+//					j++;
+//#endif
 #ifndef HAVE_WOL
 				if (!strcmp(menu[i][j], "Wol.asp"))
 					j++;

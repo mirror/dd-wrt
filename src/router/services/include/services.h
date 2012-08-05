@@ -150,8 +150,8 @@ void stop_freeradius(void);
 void start_openvpn(void);
 void stop_openvpn(void);
 void stop_openvpn_wandone(void);
-void start_anchorfree(void);
-void start_anchorfreednat(void);
+//void start_anchorfree(void);
+//void start_anchorfreednat(void);
 void start_openvpnserverwan(void);
 void stop_openvpnserverwan(void);
 void start_openvpnserver(void);
@@ -162,7 +162,7 @@ void stop_atm(void);
 
 void start_wanup(void);
 
-void stop_anchorfree(void);
+//void stop_anchorfree(void);
 
 char *getMTU(char *ifname);
 char *getBridgeMTU(char *ifname);

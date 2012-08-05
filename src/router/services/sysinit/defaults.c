@@ -2898,7 +2898,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"reconnect_enable", "0", 0},
 	{"reconnect_hours", "0", 0},
 	{"reconnect_minutes", "0", 0},
-	{"af_enable", "0", 0},
+/*	{"af_enable", "0", 0},
 	{"af_email", "", 0},
 	{"af_ssid", "0", 0},
 	{"af_ssid_name", "AnchorFree WiFi", 0},
@@ -2910,7 +2910,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"af_country", "", 0},
 	{"af_category", "0", 0},
 	{"af_publish", "1", 0},
-	{"af_agree", "0", 0},
+	{"af_agree", "0", 0},*/
 #ifdef HAVE_WAVESAT
 	{"ofdm_mode", "disabled", 0},
 	{"ofdm_upstream", "3525000", 0},

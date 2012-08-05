@@ -439,7 +439,7 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Router";
-bmenu.servicesAnchorFree="Mitt Ad Nätverk";
+//bmenu.servicesAnchorFree="Mitt Ad Nätverk";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
@@ -767,41 +767,41 @@ hotspotsys.dhcp="DHCP Interface";
 hotspotsys.net="Fjärr Nätverk";
 hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
 
-anchorfree.anchorfree="AnchorFree";
-anchorfree.titl="Mitt Ad Nätverk";
-anchorfree.h2="AnchorFree Ad Nätverk";
-anchorfree.anchorfree_revenue="Tjäna pengar på att skapa en supporterad AnchorFree Hotspot";
-anchorfree.email="Email att skicka rapporter till";
-anchorfree.ssid="Använd annat SSID";
-anchorfree.ssid_name="SSID";
-anchorfree.address_1="Adress";
-anchorfree.address_2="Adress 2";
-anchorfree.city="Stad";
-anchorfree.zip="Postnummer";
-anchorfree.state="Län";
-anchorfree.country="Land";
-anchorfree.category="Kategori";
-anchorfree.publish="Publicera hotspot på den fria WiFi kartan";
-anchorfree.serviceid="Tjänst ID";
-anchorfree.servicestatus="Tjänst Status";
-anchorfree.agreement="Avtal och Villkor";
-anchorfree.agree="Jag ACCEPTERAR";
-anchorfree.validaddr="En giltig adress måste anges för att kunna publicera denna hotspot på wifi hotspot kartan!";
-anchorfree.validcity="En giltig stad/postkod måste anges för att kunna publicera denna hotspot på wifi hotspot kartan!";
-anchorfree.validcat="Ange gällande kategori för din hotspot";
-anchorfree.validcountry="Välj land för din hotspot";
-anchorfree.validterms="Du måste acceptera avtal och villkor!";
-
-hanchorfree.right1="Anslut AnchorFree's hotspot reklam nätverk";
-hanchorfree.right2="AnchorFree skapar hotspot reklam nätverk tillåter DD-WRT kunder att generera extra inkomster.";
-hanchorfree.right3="Generera inkomster från AnchorFree";
-hanchorfree.right4="Genom att aktivera och skapa ett konto hos AnchorFree (gratis och enkelt), en bestående reklam sida startas i klientens web browser, som sen genererar pengar på ditt konto. Tjäna minst 25 dollar så kommer AnchorFree automatiskt betala ut på ditt konto.";
-hanchorfree.right5="För mer information besök www.anchorfree.com";
-hanchorfree.right6="Aktiveringen är enkel";
-hanchorfree.right7="När du har aktiverat kommer AnchorFree sända mail till dig med instruktioner, FAQs, och annan information om hur man kan tjäna pengar på din router. Genom denna bild, AnchorFree sätter in en tunn, reklam bild direkt in i web browsern när man surfar från denna router.";
-hanchorfree.right8="Kund support";
-hanchorfree.right9="Frågor? Kontakta oss på boxhelp@anchorfree.com";
-
+//anchorfree.anchorfree="AnchorFree";
+//anchorfree.titl="Mitt Ad Nätverk";
+//anchorfree.h2="AnchorFree Ad Nätverk";
+//anchorfree.anchorfree_revenue="Tjäna pengar på att skapa en supporterad AnchorFree Hotspot";
+//anchorfree.email="Email att skicka rapporter till";
+//anchorfree.ssid="Använd annat SSID";
+//anchorfree.ssid_name="SSID";
+//anchorfree.address_1="Adress";
+//anchorfree.address_2="Adress 2";
+//anchorfree.city="Stad";
+//anchorfree.zip="Postnummer";
+//anchorfree.state="Län";
+//anchorfree.country="Land";
+//anchorfree.category="Kategori";
+//anchorfree.publish="Publicera hotspot på den fria WiFi kartan";
+//anchorfree.serviceid="Tjänst ID";
+//anchorfree.servicestatus="Tjänst Status";
+//anchorfree.agreement="Avtal och Villkor";
+//anchorfree.agree="Jag ACCEPTERAR";
+//anchorfree.validaddr="En giltig adress måste anges för att kunna publicera denna hotspot på wifi hotspot kartan!";
+//anchorfree.validcity="En giltig stad/postkod måste anges för att kunna publicera denna hotspot på wifi hotspot kartan!";
+//anchorfree.validcat="Ange gällande kategori för din hotspot";
+//anchorfree.validcountry="Välj land för din hotspot";
+//anchorfree.validterms="Du måste acceptera avtal och villkor!";
+//
+//hanchorfree.right1="Anslut AnchorFree's hotspot reklam nätverk";
+//hanchorfree.right2="AnchorFree skapar hotspot reklam nätverk tillåter DD-WRT kunder att generera extra inkomster.";
+//hanchorfree.right3="Generera inkomster från AnchorFree";
+//hanchorfree.right4="Genom att aktivera och skapa ett konto hos AnchorFree (gratis och enkelt), en bestående reklam sida startas i klientens web browser, som sen genererar pengar på ditt konto. Tjäna minst 25 dollar så kommer AnchorFree automatiskt betala ut på ditt konto.";
+//hanchorfree.right5="För mer information besök www.anchorfree.com";
+//hanchorfree.right6="Aktiveringen är enkel";
+//hanchorfree.right7="När du har aktiverat kommer AnchorFree sända mail till dig med instruktioner, FAQs, och annan information om hur man kan tjäna pengar på din router. Genom denna bild, AnchorFree sätter in en tunn, reklam bild direkt in i web browsern när man surfar från denna router.";
+//hanchorfree.right8="Kund support";
+//hanchorfree.right9="Frågor? Kontakta oss på boxhelp@anchorfree.com";
+//
 
 // ** Info.htm **
 info.titl="Info";
