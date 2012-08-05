@@ -554,6 +554,7 @@ extern int find_pattern(const char *data, size_t dlen,
 			const char *pattern, size_t plen,
 			char term, unsigned int *numoff, unsigned int *numlen);
 extern int tf_webWriteESCNV(webs_t wp, const char *nvname);
+extern int tf_webWriteESC(webs_t wp, const char *value);
 
 extern int find_match_pattern(char *name, size_t mlen,
 			      const char *data, const char *pattern, char *def);
