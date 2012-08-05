@@ -2085,6 +2085,34 @@ void radio_on(int idx)
 	}
 }
 
+int gettxantenna(char *ifname) {
+#ifdef HAVE_ATH9K
+	if (is_ath9k(ifname)) {
+#ifdef HAVE_CARLSONWIRELESS
+		if (!registered_has_cap(20))
+			return(1);
+#endif
+		return(mac80211_get_avail_tx_antenna(ifname));
+	}
+	else
+#endif
+		return(7);
+}
+
+int getrxantenna(char *ifname) {
+#ifdef HAVE_ATH9K
+	if (is_ath9k(ifname)) {
+#ifdef HAVE_CARLSONWIRELESS
+		if (!registered_has_cap(20))
+			return(1);
+#endif
+		return(mac80211_get_avail_rx_antenna(ifname));
+	}
+	else
+#endif
+		return(7);
+}
+
 #endif
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)

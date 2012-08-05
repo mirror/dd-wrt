@@ -111,6 +111,19 @@ ifneq ($(CONFIG_SPOTPASS),y)
 	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
 	cp buffalo/images/* $(INSTALLDIR)/www/images
 	cp buffalo/help/* $(INSTALLDIR)/www/help
+ifeq ($(CONFIG_IAS),y)
+	mkdir $(INSTALLDIR)/www/intatstart
+	mkdir $(INSTALLDIR)/www/intatstart/css
+	mkdir $(INSTALLDIR)/www/intatstart/js
+	mkdir $(INSTALLDIR)/www/intatstart/config
+	mkdir $(INSTALLDIR)/www/intatstart/lang_pack
+	cp -r ../../private/buffalo/intatstart/www/css/*.css $(INSTALLDIR)/www/intatstart/css
+	cp -r ../../private/buffalo/intatstart/www/css/images $(INSTALLDIR)/www/intatstart/css
+	cp -r ../../private/buffalo/intatstart/www/js/*.js $(INSTALLDIR)/www/intatstart/js
+	cp -r ../../private/buffalo/intatstart/www/config/*.webconfig $(INSTALLDIR)/www/intatstart/config
+	cp -r ../../private/buffalo/intatstart/www/lang_pack/*.js $(INSTALLDIR)/www/intatstart/lang_pack
+	cp -r ../../private/buffalo/intatstart/kromo/dd-wrt/* $(INSTALLDIR)/www/
+endif
 endif
 endif
 
@@ -119,6 +132,16 @@ ifeq ($(CONFIG_SPOTPASS),y)
 	cp nintendo/style.css $(INSTALLDIR)/www/style/nintendo
 	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
 	cp nintendo/images/* $(INSTALLDIR)/www/images
+endif
+
+ifeq ($(CONFIG_IPR),y)
+	mkdir $(INSTALLDIR)/www/style/ipr
+	cp ipr/Status_Router.asp $(INSTALLDIR)/www/
+	cp ipr/style.css $(INSTALLDIR)/www/style/ipr
+	cp ipr/favicon.ico $(INSTALLDIR)/www/images
+	cp ipr/images/* $(INSTALLDIR)/www/images
+	cp ipr/help/* $(INSTALLDIR)/www/help
+	cp ipr/About.htm $(INSTALLDIR)/www
 endif
 
 ifeq ($(CONFIG_CORENET),y)
@@ -674,6 +697,7 @@ endif
 ifneq ($(CONFIG_BUFFALO),y)
 	rm -f $(INSTALLDIR)/www/SetupAssistant.asp
 	rm -f $(INSTALLDIR)/www/sas_*.asp
+	rm -Rf $(INSTALLDIR)/www/intatstart
 endif
 ifneq ($(CONFIG_3G),y)
 	rm -f $(INSTALLDIR)/www/index_3g.asp
@@ -753,7 +777,11 @@ else
 ifeq ($(CONFIG_ESPOD),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/espod/common/ install
 else
+ifeq ($(CONFIG_IPR),y)
+	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/ipr/common/ install
+else
 	$(MAKE) -C $(SRCBASE)/router/kromo/common/ install
+endif
 endif
 endif
 endif

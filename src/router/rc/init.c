@@ -37,6 +37,8 @@
 #define startstop(a) sysprintf("startstop %s",a);
 #define startstop_f(a) sysprintf("startstop_f %s",a);
 
+extern struct nvram_tuple *srouter_defaults;
+
 static void set_term(int fd)
 {
 	struct termios tty;
@@ -541,6 +543,7 @@ int main(int argc, char **argv)
 #ifndef HAVE_TRIMAX
 #ifndef HAVE_WIKINGS
 #ifndef HAVE_ESPOD
+#ifndef HAVE_IPR
 #ifndef HAVE_NEXTMEDIA
 #ifndef HAVE_ERC
 #ifndef HAVE_CORENET
@@ -562,6 +565,7 @@ int main(int argc, char **argv)
 	fprintf(fp,
 		"DD-WRT v24-sp2 custom (c) 2012 NewMedia-NET GmbH\nRelease: "
 		BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
+#endif
 #endif
 #endif
 #endif

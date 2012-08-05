@@ -563,8 +563,6 @@ extern unsigned char key64[4][5];
 
 void generate_wep_key(webs_t wp)
 {
-	int i;
-	char buf[256];
 	char *prefix, *passphrase, *bit, *tx;
 
 #ifdef HAVE_MADWIFI
@@ -583,11 +581,21 @@ void generate_wep_key(webs_t wp)
 	sprintf(var, "%s_key", prefix);
 	tx = websGetVar(wp, var, NULL);
 	cprintf("gen wep key: bits = %s\n", bit);
+	
+	generate_wep_key_single(prefix, passphrase, bit, tx);
+}
+
+void generate_wep_key_single(char *prefix, char *passphrase, char *bit, char *tx) {
+
+	int i;
+	char buf[256];
+	char var[80];
+	
 	if (!prefix || !bit || !passphrase || !tx)
 		return;
 
 	gen_key(passphrase, atoi(bit));
-
+	
 	nvram_set("generate_key", "1");
 
 	if (atoi(bit) == 64) {
@@ -657,7 +665,6 @@ void generate_wep_key(webs_t wp)
 		nvram_nset(key3, "%s_key3", prefix);
 		nvram_nset(key4, "%s_key4", prefix);
 	}
-
 	return;
 }
 
@@ -2953,6 +2960,9 @@ void changepass(webs_t wp)
 		nvram_set("http_username", zencrypt(value));
 
 		system2("/sbin/setpasswd");
+#ifdef HAVE_IAS
+		nvram_set("http_userpln", value);
+#endif
 	}
 
 	if (pass && value && strcmp(pass, TMP_PASSWD)
@@ -2960,6 +2970,9 @@ void changepass(webs_t wp)
 		nvram_set("http_passwd", zencrypt(pass));
 
 		system2("/sbin/setpasswd");
+#ifdef HAVE_IAS
+		nvram_set("http_pwdpln", pass);
+#endif
 	}
 	nvram_commit();
 }

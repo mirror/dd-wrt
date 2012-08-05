@@ -83,6 +83,8 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #undef V
 #elif HAVE_CARLSONWIRELESS
 		websWrite(wp, "Carlson Wireless v5.3 (%s)", SVN_REVISION);
+#elif HAVE_IPR
+		websWrite(wp, "IPR-CP v1.0 (%s)", SVN_REVISION);
 #else
 
 		websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,

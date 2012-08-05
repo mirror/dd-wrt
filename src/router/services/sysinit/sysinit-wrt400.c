@@ -135,7 +135,9 @@ void start_sysinit(void)
 		MAC_ADD(mac2);
 //		eval("gpio","enable","2");
 #elif HAVE_WZRG300NH2
+#ifndef HAVE_WZR300HP
 		sysprintf("startservice bootloader_check");
+#endif
 		fseek(fp, 0x5120C, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
@@ -151,8 +153,12 @@ void start_sysinit(void)
 #ifdef HAVE_SWCONFIG
 		system("swconfig dev eth0 set reset 1");
 		system("swconfig dev eth0 set enable_vlan 1");
-		system("swconfig dev eth0 vlan 1 set ports \"0t 1 3 4 5\"");
-		system("swconfig dev eth0 vlan 2 set ports \"0t 2\"");
+		if(nvram_match("wan_proto", "disabled") && nvram_match("fullswitch", "1")) {
+			system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4 5\"");
+		} else {
+			system("swconfig dev eth0 vlan 1 set ports \"0t 1 3 4 5\"");
+			system("swconfig dev eth0 vlan 2 set ports \"0t 2\"");
+		}
 		system("swconfig dev eth0 set apply");
 #endif
 
@@ -184,8 +190,12 @@ void start_sysinit(void)
 #ifdef HAVE_SWCONFIG
 		system("swconfig dev eth0 set reset 1");
 		system("swconfig dev eth0 set enable_vlan 1");
-		system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
-		system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+		if(nvram_match("wan_proto", "disabled") && nvram_match("fullswitch", "1")) {
+			system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4 5\"");
+		} else {
+			system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
+			system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+		}
 		system("swconfig dev eth0 set apply");
 #endif
 
