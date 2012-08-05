@@ -3313,7 +3313,7 @@ void start_firewall(void)
 void stop_firewall(void)
 {
 	eval("iptables", "-t", "raw", "-F");
-	stop_anchorfree();
+//	stop_anchorfree();
 	/*
 	 * Make sure the DMZ-LED is off (from service.c) 
 	 */

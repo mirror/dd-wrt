@@ -418,7 +418,7 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="熱點";
 bmenu.servicesMilkfish="Milkfish SIP Router";
-bmenu.servicesAnchorFree="My Ad Network";
+//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="機器狀態";
 bmenu.statuRouter="路由器";
@@ -731,46 +731,46 @@ hotspot.wifidog_authsrvssl="AuthServer SSL 可用的";
 hotspot.wifidog_authsrvsslport="AuthServer SSL 埠";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP 埠";
 hotspot.wifidog_authsrvpath="AuthServer 路徑";
-
 //
-anchorfree.anchorfree="AnchorFree";
-anchorfree.title="My Ad Network";
-anchorfree.h2="AnchorFree Ad Network";
-anchorfree.anchorfree_revenue="透過建立支持廣告的 AnchorFree Hotspot 賺取收入";
-anchorfree.email="Email 收入的報告";
-anchorfree.ssid="使用不同的 SSID";
-anchorfree.ssid_name="SSID";
-anchorfree.address_1="地址";
-anchorfree.address_2="地址 2";
-anchorfree.city="城市名稱";
-anchorfree.zip="郵遞區號";
-anchorfree.state="縣/州/省";
-anchorfree.country="國家";
-anchorfree.category="類別";
-anchorfree.publish="刊載此 hotspot 於免費WiFi地圖上";
-anchorfree.serviceid="Service ID";
-anchorfree.servicestatus="服務狀態";
-anchorfree.agreement="條款和條件";
-anchorfree.agree="我同意並接受";
-anchorfree.validaddr="若這個 hotspot 要刊載於WiFi hotspot地圖上須提供一個正確的地址";
-anchorfree.validcity="若這個 hotspot 要刊載於WiFi hotspot地圖上須提供一個正確的 城市名稱 或 郵遞區號!";
-anchorfree.validcat="請選擇 hotspot 的廣告類別";
-anchorfree.validcountry="你的 hotspot 所在地";
-anchorfree.validterms="你必須同意條款和條件!";
-
-hanchorfree.right1="Join AnchorFree's hotspot advertising network";
-hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
-hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
-hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
-hanchorfree.right5="更多的資訊在 www.anchorfree.com";
-hanchorfree.right6="Activation is easy";
-hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
-hanchorfree.right8="客戶支援";
-hanchorfree.right9="有問題? 請與我們在連絡 boxhelp@anchorfree.com";
-
-
-// ** Info.htm **//
+////
+//anchorfree.anchorfree="AnchorFree";
+//anchorfree.title="My Ad Network";
+//anchorfree.h2="AnchorFree Ad Network";
+//anchorfree.anchorfree_revenue="透過建立支持廣告的 AnchorFree Hotspot 賺取收入";
+//anchorfree.email="Email 收入的報告";
+//anchorfree.ssid="使用不同的 SSID";
+//anchorfree.ssid_name="SSID";
+//anchorfree.address_1="地址";
+//anchorfree.address_2="地址 2";
+//anchorfree.city="城市名稱";
+//anchorfree.zip="郵遞區號";
+//anchorfree.state="縣/州/省";
+//anchorfree.country="國家";
+//anchorfree.category="類別";
+//anchorfree.publish="刊載此 hotspot 於免費WiFi地圖上";
+//anchorfree.serviceid="Service ID";
+//anchorfree.servicestatus="服務狀態";
+//anchorfree.agreement="條款和條件";
+//anchorfree.agree="我同意並接受";
+//anchorfree.validaddr="若這個 hotspot 要刊載於WiFi hotspot地圖上須提供一個正確的地址";
+//anchorfree.validcity="若這個 hotspot 要刊載於WiFi hotspot地圖上須提供一個正確的 城市名稱 或 郵遞區號!";
+//anchorfree.validcat="請選擇 hotspot 的廣告類別";
+//anchorfree.validcountry="你的 hotspot 所在地";
+//anchorfree.validterms="你必須同意條款和條件!";
 //
+//hanchorfree.right1="Join AnchorFree's hotspot advertising network";
+//hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
+//hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
+//hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
+//hanchorfree.right5="更多的資訊在 www.anchorfree.com";
+//hanchorfree.right6="Activation is easy";
+//hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
+//hanchorfree.right8="客戶支援";
+//hanchorfree.right9="有問題? 請與我們在連絡 boxhelp@anchorfree.com";
+//
+//
+//// ** Info.htm **//
+////
 info.titl="資訊";
 info.h2="系統資訊";
 info.wlanmac="無線 MAC";

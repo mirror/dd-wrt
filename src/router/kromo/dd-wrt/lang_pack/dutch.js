@@ -433,7 +433,7 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Router";
-bmenu.servicesAnchorFree="Mijn Reclame Hotspot";
+//bmenu.servicesAnchorFree="Mijn Reclame Hotspot";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
@@ -785,41 +785,41 @@ hotspot.wifidog_authsrvpath="AuthServer Pad";
 hotspot.wifidog_config="Firewall Regelset";
 
 
-anchorfree.anchorfree="AnchorFree";
-anchorfree.titl="Mijn Reclame Hotspot";
-anchorfree.h2="AnchorFree Reclame Hotspot";
-anchorfree.anchorfree_revenue="Inkomsten genereren met AnchorFree Hotspot Reclame";
-anchorfree.email="Email om inkomstenrapporten te ontvangen";
-anchorfree.ssid="Gebruik een verschillend SSID";
-anchorfree.ssid_name="SSID";
-anchorfree.address_1="Straat Adres";
-anchorfree.address_2="Straat Adres 2";
-anchorfree.city="Woonplaats";
-anchorfree.zip="Postcode of Zip Code";
-anchorfree.state="Land/Staat/Provincie";
-anchorfree.country="Land";
-anchorfree.category="Categorie";
-anchorfree.publish="Publiceer deze hotspot op de gratis WiFi kaart";
-anchorfree.serviceid="Service ID";
-anchorfree.servicestatus="Service Status";
-anchorfree.agreement="Voorwaarden";
-anchorfree.agree="IK ACCEPTEER DE VOORWAARDEN EN GA AKKOORD";
-anchorfree.validaddr="een geldig adres moet worden verstrekt indien deze hotspot moet worden gepubliceerd op de wifi hotspot kaart!";
-anchorfree.validcity="een geldige stad of post/zip code moet worden verstrekt indien deze hotspot moet worden gepubliceerd op de wifi hotspot kaart!";
-anchorfree.validcat="selecteer een categorie voor uw reclame hotspot";
-anchorfree.validcountry="selecteer het land voor uw hotspot";
-anchorfree.validterms="U moet akkoord gaan met de algemene voorwaarden!";
-
-
-hanchorfree.right1="Join AnchorFree's hotspot reclame netwerk";
-hanchorfree.right2="AnchorFree exploiteert een hotspot reclame netwerk dat DD-WRT gebruikers toestaat incrementele inkomsten te genereren.";
-hanchorfree.right3="Genereer incrementele inkomsten met advertenties van AnchorFree";
-hanchorfree.right4="Door het activeren van deze functie en het creëren van een account bij AnchorFree (Het is Gratis en makkelijk), een hardnekkig reclameframe wordt direct geintregeerd in de gebruikers webbrowsers, dat voor u elke maand een uitbetaling verdient.  Verdien met een minimale maandelijkse drempel van $25 en AnchorFree zal automatisch credit storten op uw account met fondsen.";
-hanchorfree.right5="Voor meer informatie bezoekt u www.anchorfree.com";
-hanchorfree.right6="Activatie is heel erg gemakkelijk";
-hanchorfree.right7="Zodra u heeft geactiveerd, stuurt AnchorFree u een email naar de geregistreerde accounteigenaar met eenvoudige instructies over het optimaliseren van uw hotspot, FAQs en andere relevante informatie over het verdienen van geld met uw router. Door dit configuratie scherm, voegt AnchorFree een dunne, niet-opdringerige reclameframe rechtstreeks aan de webbrowsers die toegang tot het internet maken via deze router.";
-hanchorfree.right8="Klantenservice";
-hanchorfree.right9="Heeft u vragen? Neem contact met ons op via boxhelp@anchorfree.com"; 
+//anchorfree.anchorfree="AnchorFree";
+//anchorfree.titl="Mijn Reclame Hotspot";
+//anchorfree.h2="AnchorFree Reclame Hotspot";
+//anchorfree.anchorfree_revenue="Inkomsten genereren met AnchorFree Hotspot Reclame";
+//anchorfree.email="Email om inkomstenrapporten te ontvangen";
+//anchorfree.ssid="Gebruik een verschillend SSID";
+//anchorfree.ssid_name="SSID";
+//anchorfree.address_1="Straat Adres";
+//anchorfree.address_2="Straat Adres 2";
+//anchorfree.city="Woonplaats";
+//anchorfree.zip="Postcode of Zip Code";
+//anchorfree.state="Land/Staat/Provincie";
+//anchorfree.country="Land";
+//anchorfree.category="Categorie";
+//anchorfree.publish="Publiceer deze hotspot op de gratis WiFi kaart";
+//anchorfree.serviceid="Service ID";
+//anchorfree.servicestatus="Service Status";
+//anchorfree.agreement="Voorwaarden";
+//anchorfree.agree="IK ACCEPTEER DE VOORWAARDEN EN GA AKKOORD";
+//anchorfree.validaddr="een geldig adres moet worden verstrekt indien deze hotspot moet worden gepubliceerd op de wifi hotspot kaart!";
+//anchorfree.validcity="een geldige stad of post/zip code moet worden verstrekt indien deze hotspot moet worden gepubliceerd op de wifi hotspot kaart!";
+//anchorfree.validcat="selecteer een categorie voor uw reclame hotspot";
+//anchorfree.validcountry="selecteer het land voor uw hotspot";
+//anchorfree.validterms="U moet akkoord gaan met de algemene voorwaarden!";
+//
+//
+//hanchorfree.right1="Join AnchorFree's hotspot reclame netwerk";
+//hanchorfree.right2="AnchorFree exploiteert een hotspot reclame netwerk dat DD-WRT gebruikers toestaat incrementele inkomsten te genereren.";
+//hanchorfree.right3="Genereer incrementele inkomsten met advertenties van AnchorFree";
+//hanchorfree.right4="Door het activeren van deze functie en het creëren van een account bij AnchorFree (Het is Gratis en makkelijk), een hardnekkig reclameframe wordt direct geintregeerd in de gebruikers webbrowsers, dat voor u elke maand een uitbetaling verdient.  Verdien met een minimale maandelijkse drempel van $25 en AnchorFree zal automatisch credit storten op uw account met fondsen.";
+//hanchorfree.right5="Voor meer informatie bezoekt u www.anchorfree.com";
+//hanchorfree.right6="Activatie is heel erg gemakkelijk";
+//hanchorfree.right7="Zodra u heeft geactiveerd, stuurt AnchorFree u een email naar de geregistreerde accounteigenaar met eenvoudige instructies over het optimaliseren van uw hotspot, FAQs en andere relevante informatie over het verdienen van geld met uw router. Door dit configuratie scherm, voegt AnchorFree een dunne, niet-opdringerige reclameframe rechtstreeks aan de webbrowsers die toegang tot het internet maken via deze router.";
+//hanchorfree.right8="Klantenservice";
+//hanchorfree.right9="Heeft u vragen? Neem contact met ons op via boxhelp@anchorfree.com"; 
 
 
 // ******************************************* Info.htm *******************************************//

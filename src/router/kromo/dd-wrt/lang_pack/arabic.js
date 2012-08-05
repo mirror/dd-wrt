@@ -410,7 +410,7 @@ bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
 bmenu.servicesHotspot="نقطة حارة";
 bmenu.servicesMilkfish="Milkfish SIP Router";
-bmenu.servicesAnchorFree="My Ad Network";
+//bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
 bmenu.statuRouter="راوتر";
@@ -715,41 +715,41 @@ hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
 
 
-anchorfree.anchorfree="AnchorFree";
-anchorfree.titl="My Ad Network";
-anchorfree.h2="AnchorFree Ad Network";
-anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
-anchorfree.email="Email to receive revenue reports";
-anchorfree.ssid="Use different SSID";
-anchorfree.ssid_name="SSID";
-anchorfree.address_1="Street Address";
-anchorfree.address_2="Street Address 2";
-anchorfree.city="City";
-anchorfree.zip="Postal or Zip Code";
-anchorfree.state="County/State/Province";
-anchorfree.country="Country";
-anchorfree.category="Category";
-anchorfree.publish="Publish this hotspot on the free WiFi map";
-anchorfree.serviceid="Service ID";
-anchorfree.servicestatus="Service Status";
-anchorfree.agreement="Terms and Conditions";
-anchorfree.agree="I ACCEPT AND AGREE";
-anchorfree.validaddr="a valid address field must be provided if this hotspot should be published on the wifi hotspot map!";
-anchorfree.validcity="a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!";
-anchorfree.validcat="please select a advertising category for your hotspot";
-anchorfree.validcountry="please select a country for your hotspot";
-anchorfree.validterms="You must agree to the terms & conditions!";
+//anchorfree.anchorfree="AnchorFree";
+//anchorfree.titl="My Ad Network";
+//anchorfree.h2="AnchorFree Ad Network";
+//anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
+//anchorfree.email="Email to receive revenue reports";
+//anchorfree.ssid="Use different SSID";
+//anchorfree.ssid_name="SSID";
+//anchorfree.address_1="Street Address";
+//anchorfree.address_2="Street Address 2";
+//anchorfree.city="City";
+//anchorfree.zip="Postal or Zip Code";
+//anchorfree.state="County/State/Province";
+//anchorfree.country="Country";
+//anchorfree.category="Category";
+//anchorfree.publish="Publish this hotspot on the free WiFi map";
+//anchorfree.serviceid="Service ID";
+//anchorfree.servicestatus="Service Status";
+//anchorfree.agreement="Terms and Conditions";
+//anchorfree.agree="I ACCEPT AND AGREE";
+//anchorfree.validaddr="a valid address field must be provided if this hotspot should be published on the wifi hotspot map!";
+//anchorfree.validcity="a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!";
+//anchorfree.validcat="please select a advertising category for your hotspot";
+//anchorfree.validcountry="please select a country for your hotspot";
+//anchorfree.validterms="You must agree to the terms & conditions!";
 
 
-hanchorfree.right1="Join AnchorFree's hotspot advertising network";
-hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
-hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
-hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
-hanchorfree.right5="For more information please visit www.anchorfree.com";
-hanchorfree.right6="Activation is easy";
-hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
-hanchorfree.right8="Customer support";
-hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
+//hanchorfree.right1="Join AnchorFree's hotspot advertising network";
+//hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
+//hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
+//hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
+//hanchorfree.right5="For more information please visit www.anchorfree.com";
+//hanchorfree.right6="Activation is easy";
+//hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
+//hanchorfree.right8="Customer support";
+//hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
 
 
 // ** Info.htm **//
