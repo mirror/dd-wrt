@@ -222,7 +222,7 @@ obj-$(CONFIG_POLARSSL) += polarssl
 obj-$(CONFIG_MSTP) += mstp
 obj-$(CONFIG_IPETH) += ipeth
 
-obj-y+=anchorfree
+#obj-y+=anchorfree
 obj-y+=ttraff
 #obj-y+=speedtest
 obj-$(CONFIG_MKIMAGE) += mkimage
