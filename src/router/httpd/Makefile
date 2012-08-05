@@ -977,7 +977,7 @@ endif
 
 
 
-vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visuals ../private/buffalo
+vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visuals ../private/buffalo ../private/buffalo/intatstart/httpd/validate ../private/buffalo/intatstart/httpd/visuals
 
 
 all: generate validate.so visuals.so httpd cert
@@ -1011,7 +1011,7 @@ ifneq ($(CONFIG_NOSSL),y)
 endif
 ifeq ($(CONFIG_IAS),y)
 	install -d $(INSTALLDIR)/etc/config
-	install intatstart/config/admincard.webdisplay $(INSTALLDIR)/etc/config/admincard.webdisplay
+	install ../private/buffalo/intatstart/config/admincard.webdisplay $(INSTALLDIR)/etc/config/admincard.webdisplay
 endif
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf httpd httpsclient
 
