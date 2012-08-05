@@ -590,7 +590,6 @@ u32 rev=0;
 		ar71xx_ref_freq = (25 * 1000 * 1000);
 	}
 #endif
-	ar71xx_ahb_freq = ar7240_ahb_freq;
 
 #if 0
     board_be_handler = ar7240_be_handler;
@@ -614,6 +613,7 @@ u32 rev=0;
     ar71xx_detect_mem_size();
 
     Uart16550Init();
+    ar71xx_ahb_freq = ar7240_ahb_freq;
 #ifdef CONFIG_MACH_HORNET
     serial_print("Booting %s(Hornet)...\n",get_system_type());
     /* clear wmac reset */
