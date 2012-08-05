@@ -3150,7 +3150,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 
 #endif
 
-int tf_webWriteESCNV(webs_t wp, const char *nvname)
+int tf_webWriteESC(webs_t wp, const char *value)
 {
 	char buf[512];
 	int n;
@@ -3159,7 +3159,7 @@ int tf_webWriteESCNV(webs_t wp, const char *nvname)
 
 	n = 0;
 	r = 0;
-	for (c = nvram_safe_get(nvname); *c; c++) {
+	for (c = value; *c; c++) {
 		if ((isprint(*c)) && (*c != '"') && (*c != '&')
 		    && (*c != '<') && (*c != '>') && (*c != '\'')
 		    && (*c != '\\')) {
@@ -3181,6 +3181,15 @@ int tf_webWriteESCNV(webs_t wp, const char *nvname)
 	wfflush(wp);
 	return r;
 }
+
+
+
+int tf_webWriteESCNV(webs_t wp, const char *nvname)
+{
+	return tf_webWriteESC(wp,nvram_safe_get(nvname));
+}
+
+
 
 int tf_webWriteJS(webs_t wp, const char *s)
 {
