@@ -182,8 +182,8 @@ CFLAGS += -DHAVE_BUFFALO -DDEFAULT_COUNTRY_CODE=\"$(CONFIG_DEFAULT_COUNTRYCODE)\
 VISOBJS += bfwireless.o
 VISOBJS += onlineupdateejs.o
 WEBSOBJS += onlineupdatewebs.o
-ifeq ($(CONFIG_IAS),y)
 OBJS += onlineupdatecgi.o
+ifeq ($(CONFIG_IAS),y)
 VISOBJS += intatstart.o
 WEBSOBJS += intatstartwebs.o
 endif
