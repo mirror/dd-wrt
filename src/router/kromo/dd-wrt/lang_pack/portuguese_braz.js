@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//      Update (19365 based)               - DD-WRT V24 SP2 by mrc_torres 17/JUN/2012       //
+//      Update (19597 based)               - DD-WRT V24 SP2 by mrc_torres 05/AUG/2012       //
 //      Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006       //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -423,7 +423,7 @@ bmenu.webaccess="Acesso à Internet";
 bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Encaminhamento de Faixa de Portas";
 bmenu.applicationspforwarding="Encaminhamento de Portas";
-bmenu.applicationsptriggering="Port Triggering";
+bmenu.applicationsptriggering="Disparo de Portas";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
@@ -652,7 +652,7 @@ prforward.legend="Encaminhamentos";
 prforward.app="Aplicação";
 
 //help container
-hprforward.right2="Determinadas aplicações podem requerer a abertura de portas específicas para que funcionem corretamente. Exemplos dessas aplicações incluem servidores e alguns jogos on-line. Quando uma requisição à uma determinada porta chega da Internet, o roteador irá rotear os dados para o computador especificado. Devido à interesses em segurança, você pode limitar o encaminhamento de portas para somente às portas em uso, e desmarcar a opção <em>" + share.enable +"</em> após ter finalizado.";
+hprforward.right2="Determinadas aplicações podem requerer a abertura de portas específicas para que funcionem corretamente. Exemplos dessas aplicações incluem servidores e alguns jogos on-line. Quando uma requisição a uma determinada porta chega da Internet, o roteador irá rotear os dados para o computador especificado. Devido a interesses em segurança, você pode limitar o encaminhamento de portas para somente as portas em uso, e desmarcar a opção <em>" + share.enable +"</em> após ter finalizado.";
 
 
 // ** P2P.asp **//
@@ -676,7 +676,7 @@ pforward.from="Da Porta";
 pforward.to="Para a Porta";
 
 //help container
-hpforward.right2="Determinadas aplicações podem requerer a abertura de portas específicas para que funcionem corretamente. Exemplos dessas aplicações incluem servidores e alguns jogos on-line. Quando uma requisição à uma determinada porta chega da Internet, o roteador irá rotear os dados para o computador especificado. Devido à interesses em segurança, você pode limitar o encaminhamento de portas para somente às portas em uso, e desmarcar a opção <em>Habilitar</em> após ter finalizado.";
+hpforward.right2="Determinadas aplicações podem requerer a abertura de portas específicas para que funcionem corretamente. Exemplos dessas aplicações incluem servidores e alguns jogos on-line. Quando uma requisição a uma determinada porta chega da Internet, o roteador irá rotear os dados para o computador especificado. Devido a interesses em segurança, você pode limitar o encaminhamento de portas para somente as portas em uso, e desmarcar a opção <em>Habilitar</em> após ter finalizado.";
 
 // ** USB.asp **//
 usb.titl="USB";
@@ -924,7 +924,7 @@ idx.wanport="Atribuição de Porta WAN";
 idx.ntp_client="Cliente NTP";
 
 //help container
-hidx.right2="Estas configurações são comumente usadas por provedores à Cabo.";
+hidx.right2="Estas configurações são comumente usadas por provedores a Cabo.";
 hidx.right4="Insira o Host Name fornecido pelo seu ISP.";
 hidx.right6="Insira o Nome de Domínio fornecido pelo seu ISP.";
 hidx.right8="Este é o Endereço IP do roteador para sua rede local.";
@@ -1049,7 +1049,7 @@ management.net_udptimeout="Timeout UDP (em segundos)";
 management.clock_legend="Overclocking";
 management.clock_frq="Freqüência";
 management.clock_support="Não Suportado";
-management.mmc_legend="Suporte à Cartão MMC/SD";
+management.mmc_legend="Suporte a Cartão MMC/SD";
 management.mmc_srv="Dispositivo MMC";
 management.mmc_gpiosel="Seleção de pinos GPIO";
 management.mmc_gpiopins="Pinos GPIO";
@@ -1087,7 +1087,7 @@ networking.legend5="Servidores DHCP Múltiplos";
 
 //help container
 hnetworking.right1="Multi DHCPD";
-hnetworking.right2="Para utilizar DHCPDs Múltiplos habilite o DNSMasq como Servidor DHCP";
+hnetworking.right2="Para utilizar DHCPDs Múltiplos habilite o DNSMasq como Servidor DHCP.";
 
 // ** QoS.asp **//
 qos.titl="Qualidade de Serviço";
@@ -1099,6 +1099,7 @@ qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
 qos.gaming="Otimizar para Jogos";
 qos.legend2="Prioridade dos Serviços";
+qos.prio_m="Manual";
 qos.prio_x="Isento";
 qos.prio_p="Premium";
 qos.prio_e="Express";
@@ -1179,7 +1180,7 @@ route.static_ip="Endereço IP da LAN de Destino";
 //help container
 hroute.right2="Se o roteador está hospedando sua conexão à Internet, selecione o modo <em>Gateway</em>. Se existir algum outro roteador na sua rede, selecione o modo <em>Router</em>.";
 hroute.right4="Este é o número único da rota, você pode definir até 50 rotas.";
-hroute.right6="Insira o nome desejado que deseja associar à esta regra.";
+hroute.right6="Insira o nome que deseja associar a esta rota.";
 hroute.right8="Este é o host remoto ao qual você gostaria de atribuir a rota estática.";
 hroute.right10="Determina o host e a porção de rede a qual pertence a rota.";
 
@@ -1207,7 +1208,7 @@ service.kaid_orbdeepport="Porta ORB Profunda";
 
 //DHCPd
 service.dhcp_legend="Cliente DHCP";
-service.dhcp_vendor="Ajustar Vendorclass";
+service.dhcp_vendor="Configurar Vendor Class";
 service.dhcp_reqip="Requerer o IP";
 service.dhcp_legend2="Servidor DHCP";
 service.dhcp_srv="Daemon DHCP";
@@ -1219,7 +1220,7 @@ service.dhcp_option="Opções Adicionais do DHCPd";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="DNS Local";
-service.dnsmasq_no_dns_rebind="Sem DNS Rebind";
+service.dnsmasq_no_dns_rebind="Negar DNS Rebind";
 service.dnsmasq_opt="Opções Adicionais de DNSMasq";
 
 //pptp.webservices
@@ -1338,7 +1339,7 @@ service.vpn_tlscip="Cifra TLS";
 service.vpn_route="Roteamento Baseado em Políticas";
 
 //help container
-hstatus_vpn.right1="<i>Roteamento Baseado em Políticas:</i><br>Adicione IPs/Redes no formato 0.0.0.0/0 para forçar clientes a NÃO usar o tunel como gateway padrão. Uma linha por IP/REDE. Redirecionar Gateway DEVE estar habilitado.<br><i>Endereço IP/Máscara de Sub-Rede:</i><br>Deve ser configurado quando se está utilizando o modo DHCP-Proxy e TAP local NÃO está em modo bridged";
+hstatus_vpn.right1="<i>Roteamento Baseado em Políticas:</i><br>Adicione IPs/Redes no formato 0.0.0.0/0 para forçar clientes a NÃO usar o tunel como gateway padrão. Uma linha por IP/REDE. Redirecionar Gateway DEVE estar habilitado.<br><i>Endereço IP/Máscara de Sub-Rede:</i><br>Deve ser configurado quando se está utilizando o modo DHCP-Proxy e TAP local NÃO está em modo bridged.";
 hstatus_vpn.right2="<i>Configurações Adicionais:</i><br>Para entregar rotas a clientes adicione \'push \"route IP mask gateway\"\', para entregar DNS/WINS adicione \'push \"dhcp-option DNS (ou WINS) IP\"\' à configuração.";
 
 //vnc.repeater
@@ -1382,7 +1383,7 @@ service.rstats_usrdir="Diretório de Usuário";
 service.nstx_legend="Tunelamento de IP sobre DNS";
 service.nstx_srv="Daemon nstx";
 service.nstx_ipenable="Aribuir a este IP somente";
-service.nstx_log="Ligar mensagens de debug";
+service.nstx_log="Ativar mensagens de debug";
 
 //ttraff.webservices
 service.ttraff_legend="Contador de Tráfego Internet";
@@ -1581,7 +1582,7 @@ status_inet.delete_confirm="AVISO! Isto irá apagar todos os dados de tráfego. Pr
 
 
 //help container
-hstatus_inet.right2="Exibe todas as informações reuqeridas pelo seu ISP para conexão com a Internet. Estas informações são fornecidas através da aba de <i>Configuração</i>. Você pode <em>Conectar</em> ou <em>Desconectar</em> sua conexão aqui, clicando no botão.";
+hstatus_inet.right2="Exibe todas as informações requeridas pelo seu ISP para conexão com a Internet. Estas informações são fornecidas através da aba de Configuração. Você pode <em>Conectar</em> ou <em>Desconectar</em> sua conexão aqui, clicando no botão.";
 hstatus_inet.right4="Exibe o tráfego de Internet do seu roteador desde o último reboot.";
 hstatus_inet.right6="Exibe o tráfego de Internet do seu roteador por mês. Passe o mouse sobre o gráfico para ver os dados diários. Os dados são armazenados na nvram.";
 
@@ -1730,7 +1731,7 @@ wol.pass="Senha SecureOn";
 
 //help container
 hwol.right2="Esta página lhe permite <em>Acordar</em> hosts na sua rede local (ex.: conectado localmente ao roteador). Você pode acordar hosts manualmente clicando em <em>"+sbutton.wol+"</em> ou você pode programar um agendamento automático de acordar graças ao "+wol.srv+".";
-hwol.right4="Endereços MAC são inseridos no formato xx:xx:xx:xx:xx:xx (ex.: 01:23:45:67:89:AB) e deve ser separados por um <em>ESPAÇO</em>";
+hwol.right4="Endereços MAC são inseridos no formato xx:xx:xx:xx:xx:xx (ex.: 01:23:45:67:89:AB) e devem ser separados por um <em>ESPAÇO</em>.";
 hwol.right6="O Endereço IP é tipicamente o endereço broadcast para a rede local, mas pode ser um endereço remoto se o host alvo não estiver conectado à rede local do roteador.";
 
 
@@ -1805,14 +1806,15 @@ nintendo.spotpass.enable="Habilitar Nintendo SpotPass";
 nintendo.spotpass.servers="Permitir Servidores";
 
 sec80211x.xsuptype="Tipo XSupplicant";
+sec80211x.keyxchng="Gerenciamento de Chave EAP";
 sec80211x.servercertif="Certificado Público do Servidor";
 sec80211x.clientcertif="Certificado do Cliente";
 sec80211x.phase2="Fase2";
-sec80211x.anon="Identidade Anônnima";
+sec80211x.anon="Identidade Anônima";
 sec80211x.options="Opções de Rede Adicionais";
 
 //help container
-hwpa.right2="Você pode escolher entre <em>Desabilitado</em>, <em>WEP</em>, <em>Chave WPA Pré-Compartilhada</em>, <em>WPA Enterprise</em>, ou <em>RADIUS</em>. Todos os dispositivos na sua rede deverão usar o mesmo modo de segurança. No modo N você DEVE utilizar WPA2/AES";
+hwpa.right2="Você pode escolher entre <em>Desabilitado</em>, <em>WEP</em>, <em>Chave WPA Pré-Compartilhada</em>, <em>WPA Enterprise</em>, ou <em>RADIUS</em>. Todos os dispositivos na sua rede deverão usar o mesmo modo de segurança. No modo N você DEVE utilizar WPA2/AES.";
 
 
 // ** WL_FilterTable.asp **//
@@ -1872,8 +1874,8 @@ wl_mac.h2="Filtro de MACs Wireless";
 wl_mac.legend="Filtro de MACs";
 wl_mac.label="Usar Filtro de MACs";
 wl_mac.label2="Modo do Filtro";
-wl_mac.deny="Impede que os clientes listados acessem a rede wireless";
-wl_mac.allow="Permite que somente os clientes listados acessem a rede wireless";
+wl_mac.deny="Impedir que os clientes listados acessem a rede wireless";
+wl_mac.allow="Permitir que somente os clientes listados acessem a rede wireless";
 
 // ** WiMAX
 wl_wimax.titl="WiMAX";
@@ -2084,7 +2086,7 @@ wl_basic.ap83_vap_note="Adicionar mais que três interfaces virtuais irá resultar
 //help container
 hwl_basic.right2="Se você deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se você deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em><br/><b>Nota :</b> alterando o modo wireless, alguns parâmetros avançados são suscetíveis de serem modificados (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" ou \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Escala de Sensibilidade: ";
-hwl_basic.right4="Ajuste do sincronismo ACK. Se desejar desabilitar o sincronismo ACK completamente em firmwares Broadcom use o valor 0. Em firmwares baseados em Atheros irá ativar o modo de sincronismo ack automático.";
+hwl_basic.right4="Ajuste do sincronismo ACK. Se desejar desabilitar o sincronismo ACK completamente em firmwares Broadcom use o valor 0. Em firmwares baseados em Atheros irá ativar o modo de sincronismo ACK automático.";
 hwl_basic.right6="Clique a qualquer momento para habilitar ou desabilitar o sinal do rádio (<em>verde</em> indica acesso Wireless permitido e <em>vermelho</em> indica acesso Wireless bloqueado)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
