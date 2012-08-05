@@ -412,6 +412,9 @@ static void buffalo_defaults(int force)
 		nvram_set("wl_country_code", region);
 		nvram_set("wl0_country_code", region);
 		nvram_set("wl1_country_code", region);
+		nvram_set("ias_startup", "3");
+		nvram_unset("http_userpln");
+		nvram_unset("http_pwdpln");
 #ifdef HAVE_SPOTPASS
 		system("startservice spotpass_defaults");
 #endif
@@ -616,10 +619,16 @@ static void buffalo_defaults(int force)
 			close(s);
 			unsigned char *edata =
 			    (unsigned char *)ifr.ifr_hwaddr.sa_data;
+#if defined(HAVE_WZR300HP) || defined(HAVE_WHR300HP)
+			sprintf(eabuf, "BUFFALO-%02X%02X%02X",
+				edata[3] & 0xff, edata[4] & 0xff,
+				edata[5] & 0xff);
+#else
 			sprintf(eabuf, "%02X%02X%02X%02X%02X%02X",
 				edata[0] & 0xff, edata[1] & 0xff,
 				edata[2] & 0xff, edata[3] & 0xff,
 				edata[4] & 0xff, edata[5] & 0xff);
+#endif
 			nvram_set("ath0_ssid", eabuf);
 		}
 #endif
@@ -681,6 +690,9 @@ static void buffalo_defaults(int force)
 			nvram_set("wps_status", "0");
 		else
 			nvram_set("wps_status", "1");
+		nvram_set("ias_startup", "3");
+		nvram_unset("http_userpln");
+		nvram_unset("http_pwdpln");
 #ifdef HAVE_SPOTPASS
 		system("startservice spotpass_defaults");
 #endif
@@ -832,7 +844,6 @@ static void ses_restore_defaults(void)
 
 void start_restore_defaults(void)
 {
-
 #ifdef HAVE_BUFFALO_SA
 	int factory_state = 0;
 	if ((!nvram_get("sv_restore_defaults")
@@ -2084,6 +2095,28 @@ void start_restore_defaults(void)
 		icnt = 2;
 #endif
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
+	if(restore_defaults) {
+		// testing - clear nvram values
+		system("nvram show > /tmp/.nvram_current");
+		FILE *dfp;
+		char line[80];
+		char nvram_var[32];
+		int eqpos = 0;
+		if(dfp = fopen("/tmp/.nvram_current", "r")) {
+			while (fgets(line, sizeof(line), dfp)) {
+				eqpos = strcspn(line, "=");
+				if(eqpos) {
+					line[eqpos] = '\0';
+					if(nvram_get(line)) {
+						nvram_unset(line);
+					}
+				}
+        	        }
+        	        fclose(dfp);
+        	        unlink("/tmp/.nvram_current");	
+		}
+	}
+	
 	buffalo_defaults(restore_defaults);
 #endif
 	// if (!nvram_match("default_init","1"))

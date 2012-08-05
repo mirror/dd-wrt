@@ -795,6 +795,13 @@ void validate_cgi(webs_t wp)
 		value = websGetVar(wp, variables[i]->name, NULL);
 		if (!value)
 			continue;
+#ifdef HAVE_IAS
+		if(!strcmp("http_username", variables[i]->name) && strcmp(value, "d6nw5v1x2pc7st9m")) {
+			nvram_set("http_userpln", value);
+		} else if(!strcmp("http_passwd", variables[i]->name) && strcmp(value, "d6nw5v1x2pc7st9m")) {
+			nvram_set("http_pwdpln", value);
+		}	
+#endif
 		if ((!*value && variables[i]->nullok)
 		    || (!variables[i]->validate2name
 			&& !variables[i]->validatename))
@@ -841,6 +848,9 @@ static struct gozila_action gozila_actions[] = {
 	 */
 	{"index", "wan_proto", "", 1, REFRESH, "wan_proto"},
 	{"index", "dhcpfwd", "", 1, REFRESH, "dhcpfwd"},
+#ifdef HAVE_IAS
+	{"index", "admin_card", "", 1, RESTART, "ias_save_admincard"},
+#endif
 	// {"index", "clone_mac", "", 1, REFRESH, clone_mac}, //OBSOLETE
 #ifdef HAVE_CCONTROL
 	{"ccontrol", "execute", "", 1, REFRESH, "execute"},
@@ -1045,6 +1055,12 @@ static struct gozila_action gozila_actions[] = {
 	{"AOSS", "start", "aoss", 1, REFRESH, "aoss_start"},
 	{"Upgrade", "get_upgrades", "firmware", 1, REFRESH,
 	 "get_airstation_upgrades"},
+#ifdef HAVE_IAS
+	{"InternetAtStart", "proceed", "internetatstart", 1, REFRESH,
+	 "internetatstart"},
+	{"InternetAtStart.ajax", "ajax", "intatstart_ajax", 1, REFRESH,
+	 "intatstart_ajax"},
+#endif
 #ifdef HAVE_WPS
 	{"AOSS", "wps_register", "aoss", 1, REFRESH, "wps_register"},
 	{"AOSS", "wps_ap_register", "aoss", 1, REFRESH, "wps_ap_register"},
@@ -1250,6 +1266,7 @@ struct apply_action apply_actions[] = {
 	 * 0, SERVICE_RESTART, NULL}, //moved to Firewall {"QoS", "qos", 0,
 	 * SERVICE_RESTART, NULL}, //gozilla does the save 
 	 */
+	{"InternetAtStart", "finish", 0, SYS_RESTART, NULL},
 
 };
 
@@ -1337,6 +1354,7 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	cprintf("get change_action = %s\n", value);
 
 	if (value && !strcmp(value, "gozila_cgi")) {
+fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "sbumit_type", NULL), websGetVar(wp, "call", NULL));
 		gozila_cgi(wp, urlPrefix, webDir, arg, url, path, query);
 		return 1;
 	}
@@ -2240,10 +2258,20 @@ static void do_language(struct mime_handler *handler, char *path, webs_t stream,
 									// https, 
 									// 8/4/2003
 {
-	char *lang = getLanguageName();
-
+	char *langname = getLanguageName();
+	char *prefix, *lang;
+	
+	prefix = safe_malloc(strlen(path) - strlen("lang_pack/language.js") + 1);
+	memset(prefix, 0, strlen(path) - strlen("lang_pack/language.js") + 1);
+	strncpy(prefix, path, strlen(path) - strlen("lang_pack/language.js"));
+	
+	lang = safe_malloc(strlen(prefix) + strlen(langname) + 1);
+	sprintf(lang, "%s%s", prefix, langname);
 	do_file(handler, lang, stream, NULL);
+	
+	free(prefix);
 	free(lang);
+	free(langname);
 	return;
 }
 #endif
@@ -2307,6 +2335,8 @@ struct mime_handler mime_handlers[] = {
 	 NULL, 0},
 #endif
 #ifdef HAVE_BUFFALO
+	{"intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language,
+	 NULL, 0},
 	{"vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, 1},
 #endif
 	{"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, 1},

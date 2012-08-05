@@ -1112,6 +1112,8 @@ void setRouter(char *name)
 #endif
 #elif HAVE_CARLSONWIRELESS
 	nvram_set(NVROUTER, "LH-135/270 ST");
+#elif HAVE_IPR
+	nvram_set(NVROUTER, "IPR-DATKS-501");
 #else
 	if (name)
 		nvram_set(NVROUTER, name);
@@ -1625,7 +1627,11 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WHRHPG300N
 #ifdef HAVE_BUFFALO
+#ifdef HAVE_WHR300HP
+	setRouter("WHR-300HP");
+#else
 	setRouter("WHR-HP-G300N");
+#endif
 #else
 	setRouter("Buffalo WHR-HP-G300N");
 #endif
@@ -1894,7 +1900,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 #ifdef HAVE_BUFFALO
+#ifdef HAVE_WZR300HP
+	setRouter("WZR-300HP");
+#else
 	setRouter("WZR-HP-G300NH2");
+#endif
 #else
 	setRouter("Buffalo WZR-HP-G300NH2");
 #endif
@@ -1919,7 +1929,11 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRHPAG300NH
 #ifdef HAVE_BUFFALO
+#ifdef HAVE_WZR600DHP
+	setRouter("WZR-600DHP");
+#else
 	setRouter("WZR-HP-AG300H");
+#endif
 #else
 	setRouter("Buffalo WZR-HP-AG300H");
 #endif

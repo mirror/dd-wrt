@@ -988,41 +988,88 @@ show_security_prefix(webs_t wp, int argc, char_t ** argv, char *prefix,
 		  "<select name=\"%s_security_mode\" onchange=\"SelMode('%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n",
 		  prefix, prefix, prefix);
 	websWrite(wp,
+#ifdef HAVE_IAS
+		  "<option value=\"disabled\" %s>%s</option>\n",
+		  selmatch(var, "psk", "selected=\"selected\""), ias_enc_label("disabled"));
+#else
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",
 		  selmatch(var, "disabled", "selected=\\\"selected\\\""));
+#endif
+#ifdef HAVE_IAS
+	websWrite(wp, "<option value=\"psk\" %s>%s</option>\n",
+		  selmatch(var, "psk", "selected=\"selected\""), ias_enc_label("psk"));
+#else
 	websWrite(wp, "<option value=\"psk\" %s>WPA Personal</option>\n",
 		  selmatch(var, "psk", "selected=\"selected\""));
+#endif
 	sprintf(sta, "%s_mode", prefix);
 	if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
 		websWrite(wp,
+#ifdef HAVE_IAS
+			  "<option value=\"wpa\" %s>%s</option>\n",
+			  selmatch(var, "wpa", "selected=\"selected\""), ias_enc_label("wpa"));
+#else
 			  "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
 			  selmatch(var, "wpa", "selected=\"selected\""));
+#endif
 	}
+#ifdef HAVE_IAS
+	websWrite(wp, "<option value=\"psk2\" %s>%s</option>\n",
+		  selmatch(var, "psk2", "selected=\"selected\""), ias_enc_label("psk2"));
+#else
 	websWrite(wp, "<option value=\"psk2\" %s>WPA2 Personal</option>\n",
 		  selmatch(var, "psk2", "selected=\"selected\""));
+#endif
 	if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
 		websWrite(wp,
+#ifdef HAVE_IAS
+			  "<option value=\"wpa2\" %s>%s</option>\n",
+			  selmatch(var, "wpa2", "selected=\"selected\""), ias_enc_label("wpa2"));
+#else
 			  "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
 			  selmatch(var, "wpa2", "selected=\"selected\""));
+#endif
 	}
 #ifdef HAVE_RT2880
 	if (!primary || nvram_match(sta, "ap"))
 #endif
 		websWrite(wp,
+#ifdef HAVE_IAS
+			  "<option value=\"psk psk2\" %s>%s</option>\n",
+			  selmatch(var, "psk psk2", "selected=\"selected\""), ias_enc_label("psk psk2"));
+#else
 			  "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
 			  selmatch(var, "psk psk2", "selected=\"selected\""));
+#endif
 
 	if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
 		websWrite(wp,
+#ifdef HAVE_IAS
+			  "<option value=\"wpa wpa2\" %s>%s</option>\n",
+			  selmatch(var, "wpa wpa2", "selected=\"selected\""), ias_enc_label("wpa wpa2"));
+#else
 			  "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
 			  selmatch(var, "wpa wpa2", "selected=\"selected\""));
+#endif
 
+#ifdef HAVE_IAS
+	if(!is_ath9k(prefix))
+// disabled -> not implemented for newer wireless drivers
+		websWrite(wp, "<option value=\"radius\" %s>%s</option>\n",
+			  selmatch(var, "radius", "selected=\"selected\""), ias_enc_label("radius"));
+#else
 		websWrite(wp, "<option value=\"radius\" %s>RADIUS</option>\n",
 			  selmatch(var, "radius", "selected=\"selected\""));
+#endif
 	}
 
+#ifdef HAVE_IAS
+	websWrite(wp, "<option value=\"wep\" %s>%s</option>\n",
+		  selmatch(var, "wep", "selected=\"selected\""), ias_enc_label("wep"));
+#else
 	websWrite(wp, "<option value=\"wep\" %s>WEP</option>\n",
 		  selmatch(var, "wep", "selected=\"selected\""));
+#endif
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
 #ifndef HAVE_RT2880

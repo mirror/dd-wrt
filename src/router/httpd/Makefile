@@ -179,9 +179,9 @@ CFLAGS += $(DD_CFLAGS)
 
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DDEFAULT_COUNTRY_CODE=\"$(CONFIG_DEFAULT_COUNTRYCODE)\"
-VISOBJS += bfwireless.o
+VISOBJS += bfwireless.o intatstart.o
 VISOBJS += onlineupdateejs.o
-WEBSOBJS += onlineupdatewebs.o
+WEBSOBJS += onlineupdatewebs.o intatstartwebs.o
 OBJS += onlineupdatecgi.o
 endif
 ifeq ($(CONFIG_RB500),y)
@@ -211,6 +211,9 @@ ifeq ($(CONFIG_WPS),y)
 endif
 ifeq ($(CONFIG_AOSS),y)
   CFLAGS += -DHAVE_AOSS
+endif
+ifeq ($(CONFIG_IAS),y)
+  CFLAGS += -DHAVE_IAS
 endif
 ifeq ($(CONFIG_RELAYD),y)
   CFLAGS += -DHAVE_RELAYD
@@ -323,6 +326,9 @@ CFLAGS += -DHAVE_CARLSONWIRELESS
 endif
 ifeq ($(CONFIG_IMMERSIVE),y)
 CFLAGS += -DHAVE_IMMERSIVE
+endif
+ifeq ($(CONFIG_IPR),y)
+CFLAGS += -DHAVE_IPR
 endif
 ifeq ($(CONFIG_VILIM),y)
 CFLAGS += -DHAVE_VILIM
@@ -820,6 +826,15 @@ endif
 ifeq ($(CONFIG_WHRHPGN),y)
 CFLAGS += -DHAVE_WHRHPGN
 endif
+ifeq ($(CONFIG_WHR300HP),y)
+CFLAGS += -DHAVE_WHR300HP
+endif
+ifeq ($(CONFIG_WZR300HP),y)
+CFLAGS += -DHAVE_WZR300HP
+endif
+ifeq ($(CONFIG_WZR600DHP),y)
+CFLAGS += -DHAVE_WZR600DHP
+endif
 ifeq ($(CONFIG_HORNET),y)
 CFLAGS += -DHAVE_HORNET
 endif
@@ -990,13 +1005,21 @@ ifneq ($(CONFIG_NOSSL),y)
 	install -d $(INSTALLDIR)/etc
 	install *.pem $(INSTALLDIR)/etc
 endif
+ifeq ($(CONFIG_IAS),y)
+	install -d $(INSTALLDIR)/etc/config
+	install intatstart/config/admincard.webdisplay $(INSTALLDIR)/etc/config/admincard.webdisplay
+endif
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf httpd httpsclient
 
 cert:
 ifeq ($(CONFIG_CARLSONWIRELESS),y)
 	./gencert_carlsonwireless.sh
 else
+ifeq ($(CONFIG_IPR),y)
+	./gencert_ipr.sh
+else
 	./gencert.sh
+endif
 endif
 	
 httpd: cgi.o ej.o httpd.o broadcom.o \

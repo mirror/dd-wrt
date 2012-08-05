@@ -276,6 +276,7 @@ addEvent(window, "unload", function() {
 
 		//]]>
 		</script>
+		<% ias_wwwincludes(); %>
 	</head>
 
 	<body class="gui">
@@ -302,14 +303,8 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="ppp_mlppp" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
 						
-							<% ifndef("HAVE_BUFFALO", "<!--"); %>
-							<h2><script type="text/javascript">Capture(sas.title);</script></h2>
-							<fieldset>
-								<legend><script type="text/javascript">Capture(sas.title);</script></legend>
-								<input type="button" name="start_sas" value="Start" class="button" onclick="document.location='SetupAssistant.asp'">
-							</fieldset>
-							<br />
-							<% ifndef("HAVE_BUFFALO", "-->"); %>	
+							<% show_sas(); %>
+							<% show_admincard(); %>
 							<% ifdef("WET", "<!--"); %>
 							<% ifdef("STA", "<!--"); %>
 							<h2><script type="text/javascript">Capture(idx.h2);</script></h2>

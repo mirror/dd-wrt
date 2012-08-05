@@ -188,6 +188,13 @@ int start_services_main(int argc, char **argv)
 #ifdef HAVE_SPOTPASS
 	handle = start_service_nofree_f("spotpass", handle);
 #endif
+#ifdef HAVE_IAS
+	if(atoi(nvram_safe_get("ias_startup")) > 0) {
+		nvram_set("ias_startup", "3");
+		nvram_set("ias_dnsresp", "1");
+		system("/usr/sbin/dns_responder 192.168.11.1 55300 &");
+	}
+#endif
 //    if( handle )
 //      dlclose( handle );
 

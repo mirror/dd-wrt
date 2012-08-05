@@ -233,6 +233,9 @@ endif
 ifeq ($(CONFIG_AOSS),y)
   CFLAGS += -DHAVE_AOSS
 endif
+ifeq ($(CONFIG_IAS),y)
+  CFLAGS += -DHAVE_IAS
+endif
 ifeq ($(CONFIG_AP_SERV),y)
   CFLAGS += -DHAVE_AP_SERV
 endif

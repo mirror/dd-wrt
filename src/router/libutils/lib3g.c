@@ -775,6 +775,22 @@ static struct DEVICES devicelist[] = {
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
 
+char *get3GDeviceVendor(void) {
+
+	char *vendor = "unknown";
+	int devicecount = 0;
+	while (devicelist[devicecount].vendor != 0xffff) {
+		if (scanFor
+		    (devicelist[devicecount].vendor,
+		     devicelist[devicecount].product)) {
+			return devicelist[devicecount].name;
+			
+		}
+		devicecount++;
+	}
+	return vendor;
+}
+
 char *get3GControlDevice(void)
 {
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
