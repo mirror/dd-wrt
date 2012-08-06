@@ -1421,8 +1421,15 @@ u_int ieee80211_mhz2ieee(u_int freq)
 
 int wifi_getchannel(char *ifname)
 {
-	struct iwreq wrq;
 	int channel;
+#ifdef HAVE_ATH9K
+	if (is_ath9k(ifname)) {
+		int f = getFrequency_mac80211(ifname);
+		return ieee80211_mhz2ieee(f);
+	}
+#endif
+
+	struct iwreq wrq;
 
 	(void)memset(&wrq, 0, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
@@ -1436,6 +1443,9 @@ int wifi_getchannel(char *ifname)
 	freq /= 1000000.0;
 	cprintf("wifi channel %f\n", freq);
 	channel = ieee80211_mhz2ieee(freq);
+
+
+
 
 	return channel;
 }
