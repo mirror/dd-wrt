@@ -244,9 +244,11 @@ static void ieee80211n_switch_pri_sec(struct hostapd_iface *iface)
 {
 	if (iface->conf->secondary_channel > 0) {
 		iface->conf->channel += 4;
+		iface->conf->frequency += 20;
 		iface->conf->secondary_channel = -1;
 	} else {
 		iface->conf->channel -= 4;
+		iface->conf->frequency -= 20;
 		iface->conf->secondary_channel = 1;
 	}
 }
