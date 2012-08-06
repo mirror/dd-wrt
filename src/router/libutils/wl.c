@@ -1454,6 +1454,12 @@ int wifi_getfreq(char *ifname)
 {
 	struct iwreq wrq;
 
+#ifdef HAVE_ATH9K
+	if (is_ath9k(ifname)) {
+		return getFrequency_mac80211(ifname);
+	}
+#endif
+
 	(void)memset(&wrq, 0, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
