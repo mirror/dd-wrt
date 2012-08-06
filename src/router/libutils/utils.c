@@ -1611,8 +1611,15 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "1");
 	nvram_default_get("ath0_txantenna", "1");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_RB2011
+	setRouter("Mikrotik RB2011");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR825C1
-	setRouter("Atheros DIR825-C1");
+	setRouter("Dlink DIR825-C1");
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	nvram_default_get("ath1_rxantenna", "3");
@@ -4498,6 +4505,16 @@ int led_control(int type, int act)
 		usb_power = 0x01a;
 		usb_gpio = 0x001;
 		ses_gpio = 0x11b;
+		break;
+#elif HAVE_RB2011
+	case ROUTER_BOARD_WHRHPGN:
+//		diag_gpio = 0x10f;
+//		connected_gpio = 0x112;
+//		disconnected_gpio = 0x113;
+//		power_gpio = 0x10e;
+//              usb_power = 0x01a;
+//		usb_gpio = 0x10b;
+//              ses_gpio = 0x11b;
 		break;
 #elif HAVE_DIR825C1
 	case ROUTER_BOARD_WHRHPGN:
