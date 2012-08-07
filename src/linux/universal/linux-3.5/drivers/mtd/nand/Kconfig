@@ -509,6 +509,12 @@ config MTD_NAND_RB_PPC
 	depends on MTD_NAND && (RB_PPC || RB1000 || RB800)
 	select MTD_NAND_RB
 
+config MTD_NAND_RB400
+	bool "Support for RB2011 nand"
+	depends on MTD_NAND && RB2011
+	select MTD_NAND_RB
+
+
 config MTD_NAND_RB
 	tristate
 

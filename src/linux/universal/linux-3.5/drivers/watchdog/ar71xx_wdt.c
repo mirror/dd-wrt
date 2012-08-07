@@ -286,7 +286,6 @@ u32 soc = AR71XX_SOC_AR7130;
 
 	max_timeout = (0xfffffffful / wdt_clk_freq);
 	wdt_timeout = (max_timeout < WDT_TIMEOUT) ? max_timeout : WDT_TIMEOUT;
-
 	if (ar71xx_reset_rr(AR71XX_RESET_REG_WDOG_CTRL) & WDOG_CTRL_LAST_RESET)
 		boot_status = WDIOF_CARDRESET;
 
@@ -330,7 +329,7 @@ static int __init ar71xx_wdt_init(void)
 {
 	return platform_driver_register(&ar71xx_wdt_driver);
 }
-module_init(ar71xx_wdt_init);
+late_initcall(ar71xx_wdt_init);
 
 static void __exit ar71xx_wdt_exit(void)
 {
