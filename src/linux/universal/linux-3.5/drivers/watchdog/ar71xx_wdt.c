@@ -299,7 +299,7 @@ u32 soc = AR71XX_SOC_AR7130;
 
 	printk(KERN_INFO DRV_DESC " version " DRV_VERSION "\n");
 
-	printk(KERN_DEBUG DRV_NAME ": timeout=%d secs (max=%d)\n",
+	printk(KERN_INFO DRV_NAME ": timeout=%d secs (max=%d)\n",
 					wdt_timeout, max_timeout);
 
 	return 0;
