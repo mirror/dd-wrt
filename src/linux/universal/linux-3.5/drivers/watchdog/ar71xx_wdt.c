@@ -237,7 +237,11 @@ static int __devinit ar71xx_wdt_probe(struct platform_device *pdev)
 u32 id;
 u32 t;
 u32 rev=0;
+#ifdef CONFIG_MACH_HORNET
+u32 soc = AR71XX_SOC_AR9331;
+#else
 u32 soc = AR71XX_SOC_AR7130;
+#endif
 #if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET)
 	id = ar7240_reg_rd(AR7240_REV_ID);
         if (is_ar7240()) {
