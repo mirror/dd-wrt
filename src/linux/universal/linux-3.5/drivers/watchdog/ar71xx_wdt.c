@@ -35,7 +35,7 @@
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
-#ifdef CONFIG_MACH_AR7240
+#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET)
 #include "ar7240.h"
 
 #ifdef CONFIG_WASP_SUPPORT
@@ -238,7 +238,7 @@ u32 id;
 u32 t;
 u32 rev=0;
 u32 soc = AR71XX_SOC_AR7130;
-#ifdef CONFIG_MACH_AR7240
+#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET)
 	id = ar7240_reg_rd(AR7240_REV_ID);
         if (is_ar7240()) {
 		soc = AR71XX_SOC_AR7240;
@@ -271,7 +271,7 @@ u32 soc = AR71XX_SOC_AR7130;
 	case AR71XX_SOC_AR9132:
 		wdt_clk_freq = ar71xx_ahb_freq;
 		break;
-#ifdef CONFIG_MACH_AR7240
+#if defined(CONFIG_MACH_AR7240)  || defined(CONFIG_MACH_HORNET)
 	case AR71XX_SOC_AR9330:
 	case AR71XX_SOC_AR9331:
 	case AR71XX_SOC_AR9341:
