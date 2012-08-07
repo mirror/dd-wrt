@@ -242,7 +242,7 @@ u32 soc = AR71XX_SOC_AR9331;
 #else
 u32 soc = AR71XX_SOC_AR7130;
 #endif
-#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET)
+#if defined(CONFIG_MACH_AR7240)
 	id = ar7240_reg_rd(AR7240_REV_ID);
         if (is_ar7240()) {
 		soc = AR71XX_SOC_AR7240;
@@ -299,8 +299,8 @@ u32 soc = AR71XX_SOC_AR7130;
 
 	printk(KERN_INFO DRV_DESC " version " DRV_VERSION "\n");
 
-	printk(KERN_INFO DRV_NAME ": timeout=%d secs (max=%d)\n",
-					wdt_timeout, max_timeout);
+	printk(KERN_INFO DRV_NAME ": timeout=%d secs (max=%d) ref freq=%d\n",
+					wdt_timeout, max_timeout, wdt_clk_freq);
 
 	return 0;
 
