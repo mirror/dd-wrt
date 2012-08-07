@@ -278,6 +278,8 @@ u32 soc = AR71XX_SOC_AR7130;
 #if defined(CONFIG_MACH_AR7240)  || defined(CONFIG_MACH_HORNET)
 	case AR71XX_SOC_AR9330:
 	case AR71XX_SOC_AR9331:
+		wdt_clk_freq = ar71xx_ahb_freq;
+		break;
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
