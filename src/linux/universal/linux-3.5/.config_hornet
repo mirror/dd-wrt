@@ -1142,7 +1142,7 @@ CONFIG_WATCHDOG_CORE=y
 #
 # Watchdog Device Drivers
 #
-CONFIG_SOFT_WATCHDOG=y
+CONFIG_SOFT_WATCHDOG=m
 
 #
 # USB-based Watchdog Cards
