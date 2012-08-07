@@ -4252,6 +4252,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("mixed",   "%s_net_mode", prefix)
 		     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 			websWrite(wp,
@@ -4262,11 +4263,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			fprintf(stderr, "[CHANNEL WIDTH] 20/40 (1)\n");
 		}
 	}
-	if (!is_ath11n(prefix) ||  is_ath9k(prefix) ||
+	if (!is_ath11n(prefix) || is_ath9k(prefix) ||
 	    || (is_ath11n(prefix)
 		&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("mixed", "%s_net_mode", prefix)
 		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
 #endif
