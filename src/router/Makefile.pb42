@@ -281,6 +281,9 @@ endif
 ifeq ($(CONFIG_DIR825C1),y)
 	cp $(LINUXDIR)/.config_dir825c1 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_RB2011),y)
+	cp $(LINUXDIR)/.config_rb2011 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_KERNEL_ELF_CORE),y)
 	sed -i 's/\# CONFIG_ELF_CORE is not set/CONFIG_ELF_CORE=y/g' $(LINUXDIR)/.config
 endif
@@ -748,8 +751,8 @@ ifeq ($(CONFIG_UBNTM),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ar7420-firmware.bin $(ARCH)-uclibc/aligned.uimage
-	tools/ubnt/src/mkfwimage -v XM.ar7240.v6.0.0.60000.110900.1000 -o $(ARCH)-uclibc/ubntm-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
-	tools/ubnt/src/mkfwimage -v BZ.ar7240.v6.0.0.60000.110900.1000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+	tools/ubnt/src/mkfwimage -v XM.ar7240.v5.5.60000.133900.2000 -o $(ARCH)-uclibc/ubntm-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+	tools/ubnt/src/mkfwimage -v BZ.ar7240.v5.5.60000.133900.2000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 endif
 ifeq ($(CONFIG_WHRHPGN),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
@@ -1113,8 +1116,12 @@ ifeq ($(CONFIG_WRT400),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/root.wrt400 bs=1048576 conv=sync
 	./tools/wrt400/wrt400 $(ARCH)-uclibc/root.wrt400 $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/wrt400-firmware.bin
 endif
-
-
+ifeq ($(CONFIG_RB2011),y)
+	rm -f $(LINUXDIR)/usr/initramfs_data.cpio.lzma
+	rm -f $(LINUXDIR)/vmlinux
+	rm -f $(LINUXDIR)/vmlinux.o
+	make -f Makefile.pb42 kernel
+endif
 include rules/all.mk
 
 .PHONY: all clean distclean mrproper install package
