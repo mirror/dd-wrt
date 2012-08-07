@@ -242,7 +242,7 @@ case "$arg" in
 		output=${cpio_list}
 		echo "$output_file" | grep -q "\.gz$" && compr="gzip -n -9 -f"
 		echo "$output_file" | grep -q "\.bz2$" && compr="bzip2 -9 -f"
-		echo "$output_file" | grep -q "\.lzma$" && compr="lzma -9 -f"
+		echo "$output_file" | grep -q "\.lzma$" && compr="lzma e -d25 -lc2 -lp2 -pb2 -eos -si -so "
 		echo "$output_file" | grep -q "\.xz$" && \
 				compr="xz --check=crc32 --lzma2=dict=1MiB"
 		echo "$output_file" | grep -q "\.lzo$" && compr="lzop -9 -f"
@@ -303,7 +303,8 @@ if [ ! -z ${output_file} ]; then
 	if [ "${is_cpio_compressed}" = "compressed" ]; then
 		cat ${cpio_tfile} > ${output_file}
 	else
-		(cat ${cpio_tfile} | ${compr}  - > ${output_file}) \
+		echo "${cpio_tfile} ${compr}"
+		(cat ${cpio_tfile} | ${compr} > ${output_file}) \
 		|| (rm -f ${output_file} ; false)
 	fi
 	[ -z ${cpio_file} ] && rm ${cpio_tfile}

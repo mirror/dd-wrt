@@ -1903,3 +1903,5 @@ CONFIG_IXGBE_PTP=y
 # CONFIG_NLM_XLR_BOARD is not set
 # CONFIG_GPIO_MM_LANTIQ is not set
 # CONFIG_GPIO_STP_XWAY is not set
+# CONFIG_RB1200 is not set
+# CONFIG_RB2011 is not set
