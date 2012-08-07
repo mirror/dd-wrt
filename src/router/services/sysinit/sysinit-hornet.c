@@ -104,17 +104,44 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
 			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
-		fprintf(stderr, "configure eth1 to %s\n", mac);
+		fprintf(stderr, "configure eth0 to %s\n", mac);
 		MAC_SUB(mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		MAC_ADD(mac);
 		MAC_ADD(mac);
+		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 #ifndef HAVE_ATH9K
 		MAC_SUB(mac);
 #endif
 
 	}
+#else
+	FILE *fp = fopen("/dev/mtdblock/5", "rb");
+	char mac[32];
+	if (fp) {
+		unsigned char buf2[256];
+		fseek(fp, 0, SEEK_SET);
+		fread(buf2, 256, 1, fp);
+		fclose(fp);
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fprintf(stderr, "configure eth0 to %s\n", mac);
+		eval("ifconfig", "eth0", "hw", "ether", mac);
+		MAC_ADD(mac);
+		fprintf(stderr, "configure eth1 to %s\n", mac);
+		eval("ifconfig", "eth1", "hw", "ether", mac);
+#ifndef HAVE_ATH9K
+		MAC_SUB(mac);
+#endif
+
+	}
+
+
 #endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
