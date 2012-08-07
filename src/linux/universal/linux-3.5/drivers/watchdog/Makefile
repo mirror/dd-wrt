@@ -174,7 +174,11 @@ else
 ifeq ($(CONFIG_MACH_AR7100),y)
 obj-$(CONFIG_SOFT_WATCHDOG) += ar71xx_wdt.o
 else
+ifeq ($(CONFIG_MACH_HORNET),y)
+obj-$(CONFIG_SOFT_WATCHDOG) += ar71xx_wdt.o
+else
 obj-$(CONFIG_SOFT_WATCHDOG) += softdog.o
+endif
 endif
 endif
 
