@@ -265,6 +265,7 @@ wasp_sys_frequency(void)
 	}
 
 	ath_ref_clk_freq = ref;
+	ar71xx_ref_freq = ref;
 
 	printk("%s: ", __func__);
 
@@ -576,20 +577,6 @@ u32 rev=0;
 
 
 
-#ifdef CONFIG_MACH_HORNET
-    if ( ar7240_reg_rd(HORNET_BOOTSTRAP_STATUS) & HORNET_BOOTSTRAP_SEL_25M_40M_MASK )
-		ar71xx_ref_freq = (40 * 1000 * 1000);
-    else
-		ar71xx_ref_freq = (25 * 1000 * 1000);
-#endif
-
-#ifdef CONFIG_WASP_SUPPORT
-	if ((ar7240_reg_rd(ATH_BOOTSTRAP_REG) & ATH_REF_CLK_40)) {
-		ar71xx_ref_freq = (40 * 1000 * 1000);
-	} else {
-		ar71xx_ref_freq = (25 * 1000 * 1000);
-	}
-#endif
 
 #if 0
     board_be_handler = ar7240_be_handler;
@@ -614,6 +601,7 @@ u32 rev=0;
 
     Uart16550Init();
     ar71xx_ahb_freq = ar7240_ahb_freq;
+
 #ifdef CONFIG_MACH_HORNET
     serial_print("Booting %s(Hornet)...\n",get_system_type());
     /* clear wmac reset */
@@ -884,6 +872,8 @@ hornet_sys_frequency(void)
         ref_clock_rate = 40 * 1000000;
     else
         ref_clock_rate = 25 * 1000000;
+
+    ar71xx_ref_freq = ref_clock_rate;
 
     pllreg   = ar7240_reg_rd(AR7240_CPU_PLL_CONFIG);
     clockreg = ar7240_reg_rd(AR7240_CPU_CLOCK_CONTROL);    
