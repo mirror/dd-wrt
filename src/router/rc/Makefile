@@ -154,6 +154,9 @@ endif
 ifeq ($(CONFIG_RB2011),y)
 CFLAGS += -DHAVE_RB2011
 endif
+ifeq ($(CONFIG_WDR4300),y)
+CFLAGS += -DHAVE_WDR4300
+endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 endif
