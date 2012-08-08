@@ -4437,6 +4437,15 @@ if (!is_ath11n(prefix))
 }
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 else {
+	int maxrx = 7;
+	int maxtx = 7;
+	#ifdef HAVE_ATH9K
+	int prefixcount;
+	sscanf(prefix,"ath%d",&prefixcount);
+	int phy_idx = get_ath9k_phy_idx(prefixcount);
+	int maxrx = mac80211_get_avail_rx_antenna(phy_idx);
+	int maxtx = mac80211_get_avail_tx_antenna(phy_idx);
+	#endif
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.txchainmask)</script></div><select name=\"%s\" >\n",
 		  wl_txantenna);
@@ -4445,14 +4454,17 @@ else {
 		  "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
 		  nvram_match(wl_txantenna,
 			      "1") ? "selected=\\\"selected\\\"" : "");
+	if (maxtx > 1)
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
 		  nvram_match(wl_txantenna,
 			      "3") ? "selected=\\\"selected\\\"" : "");
+	if (maxtx > 3)
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
 		  nvram_match(wl_txantenna,
 			      "5") ? "selected=\\\"selected\\\"" : "");
+	if (maxtx>5)
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
 		  nvram_match(wl_txantenna,
@@ -4469,14 +4481,17 @@ else {
 		  "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
 		  nvram_match(wl_rxantenna,
 			      "1") ? "selected=\\\"selected\\\"" : "");
+	if (maxrx > 1)
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
 		  nvram_match(wl_rxantenna,
 			      "3") ? "selected=\\\"selected\\\"" : "");
+	if (maxrx > 3)
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"5\\\" %s >1+3</option>\");\n",
 		  nvram_match(wl_rxantenna,
 			      "5") ? "selected=\\\"selected\\\"" : "");
+	if (maxrx > 5)
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"7\\\" %s >1+2+3</option>\");\n",
 		  nvram_match(wl_rxantenna,
