@@ -2609,7 +2609,9 @@ void start_drivers(void)
 	fprintf(stderr, "[USB] checking...\n");
 	if (nvram_match("usb_enable", "1")) {
 		led_control(USB_POWER, LED_ON);
+		led_control(USB_POWER1, LED_ON);
 		led_control(LED_USB, LED_ON);
+		led_control(LED_USB1, LED_ON);
 
 		insmod("nls_base");
 		insmod("usb-common");
@@ -2715,8 +2717,10 @@ void start_drivers(void)
 #endif
 
 		led_control(USB_POWER, LED_OFF);
+		led_control(USB_POWER1, LED_OFF);
 
 		led_control(LED_USB, LED_OFF);
+		led_control(LED_USB1, LED_OFF);
 	}
 #endif
 
