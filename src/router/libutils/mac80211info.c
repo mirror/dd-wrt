@@ -61,6 +61,7 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data);
 static void __attribute__((constructor)) mac80211_init(void) {
 	static bool bunl;
 	if (!bunl) {
+		fprintf(stderr,"init\n");
 		unl_genl_init(&unl, "nl80211");
 		bunl=1;
 	}
@@ -224,7 +225,7 @@ int mac80211_get_coverageclass(char *interface) {
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) return 0;
 
-	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, true);
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
 		return 0;
@@ -897,14 +898,15 @@ static int mac80211_get_antennas(int phy,int which,int direction) {
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
 	int ret=0;
-
-	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, true);
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
 		return 0;
 	gnlh=nlmsg_data(nlmsg_hdr(msg));
+
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
 		  genlmsg_attrlen(gnlh, 0), NULL);
+
 	if (which == 0 && direction == 0) {
 		if (tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX])
 		     ret = ((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX]));
@@ -955,3 +957,14 @@ int mac80211_get_configured_tx_antenna(int phy) {
 int mac80211_get_configured_rx_antenna(int phy) {
 	return(mac80211_get_antennas(phy,1,1));
 	}
+
+
+#ifdef TEST
+void main(int argc,char *argv[])
+{
+fprintf(stderr,"phy0 %d %d %d %d\n",mac80211_get_avail_tx_antenna(0),mac80211_get_avail_rx_antenna(0),mac80211_get_configured_tx_antenna(0),mac80211_get_configured_rx_antenna(0));
+fprintf(stderr,"phy1 %d %d %d %d\n",mac80211_get_avail_tx_antenna(1),mac80211_get_avail_rx_antenna(1),mac80211_get_configured_tx_antenna(1),mac80211_get_configured_rx_antenna(1));
+}
+
+
+#endif
