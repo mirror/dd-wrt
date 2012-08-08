@@ -3304,8 +3304,8 @@ void start_wan(int status)
 			fp = fopen("/tmp/ppp/options.pppoe", "w");
 			if (strlen(username) && strlen(passwd)) {
 				fprintf(fp,
-					"chap-secrets /tmp/ppp/chap-secrets");
-				fprintf(fp, "pap-secrets /tmp/ppp/pap-secrets");
+					"chap-secrets /tmp/ppp/chap-secrets\n");
+				fprintf(fp, "pap-secrets /tmp/ppp/pap-secrets\n");
 			}
 
 			fprintf(fp, "defaultroute\n");
@@ -3437,9 +3437,9 @@ void start_wan(int status)
 		fp = fopen("/tmp/ppp/options.pppoe", "w");
 		// rp-pppoe kernelmode plugin
 #if defined(HAVE_ADM5120) && !defined(HAVE_WP54G) && !defined(HAVE_NP28G)
-		fprintf(fp, "plugin /lib/rp-pppoe.so");
+		fprintf(fp, "plugin /lib/rp-pppoe.so\n");
 #else
-		fprintf(fp, "plugin /usr/lib/rp-pppoe.so");
+		fprintf(fp, "plugin /usr/lib/rp-pppoe.so\n");
 #endif
 		if (nvram_invmatch("pppoe_service", ""))
 			fprintf(fp, " rp_pppoe_service %s",
