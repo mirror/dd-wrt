@@ -82,21 +82,20 @@ static void makeipup(void)
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
 	fprintf(fp, "#!/bin/sh\n");
-		/* block ppp discovery when server is full
-		if we have max concurrent connections -> ignore new PPP discovery 
-		if wan = ppp && wan = enabled => ppp - 1 */
+	if (nvram_match("filter", "on")) // only needed if firewall is enabled
+		fprintf(fp, "iptables -I INPUT -i $1 -j ACCEPT\n");
 	if (nvram_match("pppoeserver_clip", "local"))
 		fprintf(fp, 
-		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
-		//	just an uptime test
-		//"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
-		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
-		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
 		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
-		"startservice set_routes\n");	// reinitialize 
+		"startservice set_routes\n"	// reinitialize 
+		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
+		//	just an uptime test
+		//"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
+		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
+		);
 		//	per peer shaping
 	if (nvram_match("pppoeradius_enabled", "1")) {
 		fprintf(fp, "IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"
