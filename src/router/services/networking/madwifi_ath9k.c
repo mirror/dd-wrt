@@ -157,19 +157,41 @@ void configure_single_ath9k(int count)
 #else
 	int cpeonly = 0;
 #endif
+	int maxrxchain = mac80211_get_avail_rx_antenna(phy_idx);
+	int maxtxchain = mac80211_get_avail_tx_antenna(phy_idx);
+	int txchain;
+	int rxchain;
 	if (strlen(nvram_safe_get(rxantenna)) == 0
 	    || strlen(nvram_safe_get(txantenna)) == 0) {
-		char rxdefstr[32];
-		char txdefstr[32];
-		sprintf(txdefstr, "%d", mac80211_get_avail_tx_antenna(phy_idx));
-		sprintf(rxdefstr, "%d", mac80211_get_avail_rx_antenna(phy_idx));
+		txchain = maxtxchain;
+		rxchain = maxrxchain;
+	} else {
+		txchain = atoi(nvram_safe_get(txantenna));
+		rxchain = atoi(nvram_safe_get(rxantenna));
+	}
+	int reset=0;	
+	if (txchain > maxtxchain) {
+		reset = 1;
+		txchain = maxtxchain;
+	}
+	if (rxchain > maxrxchain) {
+		reset = 1;
+		rxchain = maxrxchain;
+	}
+
+	char rxdefstr[32];
+	char txdefstr[32];
+	sprintf(txdefstr, "%d", rxchain);
+	sprintf(rxdefstr, "%d", txchain);
+	if (reset) {
+		nvram_set(txantenna,txdefstr);
+		nvram_set(rxantenna,rxdefstr);
+	} else {
 		nvram_default_get(txantenna, txdefstr);
 		nvram_default_get(rxantenna, rxdefstr);
 	}
-	mac80211_set_antennas(phy_idx,
-			      atoi(nvram_safe_get(txantenna)),
-			      atoi(nvram_safe_get(rxantenna))
-	    );
+	
+	mac80211_set_antennas(phy_idx,txchain,rxchain);
 
 	sprintf(wl, "ath%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
