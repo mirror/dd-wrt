@@ -1618,6 +1618,13 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_rxantenna", "3");
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WDR4300
+	setRouter("TPLINK TL-WDR4300 v1");
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("ath1_rxantenna", "7");
+	nvram_default_get("ath1_txantenna", "7");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR825C1
 	setRouter("Dlink DIR825-C1");
 	nvram_default_get("ath0_rxantenna", "3");
@@ -4507,6 +4514,16 @@ int led_control(int type, int act)
 		ses_gpio = 0x11b;
 		break;
 #elif HAVE_RB2011
+	case ROUTER_BOARD_WHRHPGN:
+//		diag_gpio = 0x10f;
+//		connected_gpio = 0x112;
+//		disconnected_gpio = 0x113;
+//		power_gpio = 0x10e;
+//              usb_power = 0x01a;
+//		usb_gpio = 0x10b;
+//              ses_gpio = 0x11b;
+		break;
+#elif HAVE_WDR4300
 	case ROUTER_BOARD_WHRHPGN:
 //		diag_gpio = 0x10f;
 //		connected_gpio = 0x112;
