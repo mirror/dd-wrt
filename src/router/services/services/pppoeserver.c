@@ -91,6 +91,7 @@ static void makeipup(void)
 		"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
 		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
 		"startservice set_routes\n"	// reinitialize 
+		"echo \"$PPPD_PID\t$1\t$5\t$PEERNAME\" >> /tmp/pppoe_connected\n"
 		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
 		//	just an uptime test
 		//"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
