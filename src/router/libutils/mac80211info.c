@@ -61,7 +61,6 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data);
 static void __attribute__((constructor)) mac80211_init(void) {
 	static bool bunl;
 	if (!bunl) {
-		fprintf(stderr,"init\n");
 		unl_genl_init(&unl, "nl80211");
 		bunl=1;
 	}
