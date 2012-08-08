@@ -533,7 +533,7 @@ u32 rev=0;
 
 
 	id = ar7240_reg_rd(AR7240_REV_ID);
-
+	
         if (is_ar7240()) {
 		ar71xx_soc = AR71XX_SOC_AR7240;
 		ar71xx_soc_rev = id & AR724X_REV_ID_REVISION_MASK;
@@ -612,6 +612,7 @@ u32 rev=0;
     serial_print("Booting AR7240(Python)...\n");
 #endif
     is_ar9000=1;
+    printk(KERN_INFO "sys id = %X %s\n",id,get_system_type());
 //#if 0
 //    serial_setup();
 //#endif

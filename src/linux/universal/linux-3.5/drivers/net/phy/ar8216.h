@@ -25,6 +25,8 @@
 #define AR8316_NUM_VLANS	4096
 
 /* Atheros specific MII registers */
+#define MII_ATH_MMD_ADDR		0x0d
+#define MII_ATH_MMD_DATA		0x0e
 #define MII_ATH_DBG_ADDR		0x1d
 #define MII_ATH_DBG_DATA		0x1e
 
@@ -196,6 +198,8 @@
 #define   AR8327_PAD_RGMII_EN			BIT(26)
 
 #define AR8327_REG_POWER_ON_STRIP		0x010
+#define   AR8327_POWER_ON_STRIP_POWER_ON_SEL	BIT(31)
+#define   AR8327_POWER_ON_STRIP_LED_OPEN_EN	BIT(24)
 
 #define AR8327_REG_INT_STATUS0			0x020
 #define   AR8327_INT0_VT_DONE			BIT(20)
@@ -332,15 +336,6 @@ enum {
 	AR8216_PORT_STATE_LISTEN = 2,
 	AR8216_PORT_STATE_LEARN = 3,
 	AR8216_PORT_STATE_FORWARD = 4
-};
-
-/* device */
-enum {
-  UNKNOWN = 0,
-  AR8216 = 8216,
-  AR8236 = 8236,
-  AR8316 = 8316,
-  AR8327 = 8327,
 };
 
 #endif
