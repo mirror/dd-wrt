@@ -720,6 +720,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		if ((nvram_selnmatch(wp, "n-only", "%s_net_mode", prefix)
 		     || nvram_selnmatch(wp, "ng-only", "%s_net_mode", prefix)
 		     || nvram_selnmatch(wp, "n2-only", "%s_net_mode", prefix)
+		     || nvram_selnmatch(wp, "mixed", "%s_net_mode", prefix)
 		     || nvram_selnmatch(wp, "n5-only", "%s_net_mode", prefix)
 		     || nvram_selnmatch(wp, "na-only", "%s_net_mode", prefix)))
 		    {
@@ -739,6 +740,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		    || nvram_selnmatch(wp, "ng-only", "%s_net_mode", prefix)
 		    || nvram_selnmatch(wp, "n2-only", "%s_net_mode", prefix)
 		    || nvram_selnmatch(wp, "n5-only", "%s_net_mode", prefix)
+		    || nvram_selnmatch(wp, "mixed", "%s_net_mode", prefix)
 		    || nvram_selnmatch(wp, "na-only", "%s_net_mode", prefix))))
 #endif
 {
