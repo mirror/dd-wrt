@@ -4124,9 +4124,11 @@ int led_control(int type, int act)
 	int wlan0_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
 	int wlan1_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
 	int usb_gpio = 0x0ff;
+	int usb_gpio1 = 0x0ff;
 	int sec0_gpio = 0x0ff;	// security leds, wrt600n
 	int sec1_gpio = 0x0ff;
 	int usb_power = 0x0ff;
+	int usb_power1 = 0x0ff;
 	int v1func = 0;
 	int connblue = nvram_match("connblue", "1") ? 1 : 0;
 
@@ -4525,13 +4527,12 @@ int led_control(int type, int act)
 		break;
 #elif HAVE_WDR4300
 	case ROUTER_BOARD_WHRHPGN:
-//		diag_gpio = 0x10f;
-//		connected_gpio = 0x112;
-//		disconnected_gpio = 0x113;
-//		power_gpio = 0x10e;
-//              usb_power = 0x01a;
-//		usb_gpio = 0x10b;
-//              ses_gpio = 0x11b;
+		usb_gpio = 0x10b;
+		usb_gpio1 = 0x10c;
+		usb_power = 0x015; 
+		usb_power1 = 0x016;
+		diag_gpio = 0x10e;
+		connected_gpio = 0x10f;
 		break;
 #elif HAVE_DIR825C1
 	case ROUTER_BOARD_WHRHPGN:
@@ -4950,6 +4951,9 @@ int led_control(int type, int act)
 	case USB_POWER:
 		use_gpio = usb_power;
 		break;
+	case USB_POWER1:
+		use_gpio = usb_power1;
+		break;
 	case LED_DIAG:
 		if (act == LED_ON)
 			led_control(LED_DIAG_DISABLED, LED_OFF);
@@ -4993,6 +4997,9 @@ int led_control(int type, int act)
 		break;
 	case LED_USB:
 		use_gpio = usb_gpio;
+		break;
+	case LED_USB1:
+		use_gpio = usb_gpio1;
 		break;
 	case LED_SEC0:
 		use_gpio = sec0_gpio;
