@@ -86,21 +86,14 @@ static void makeipup(void)
 		if we have max concurrent connections -> ignore new PPP discovery 
 		if wan = ppp && wan = enabled => ppp - 1 */
 	if (nvram_match("pppoeserver_clip", "local"))
-		fprintf(fp, /*"if [ `ifconfig|grep ppp -c` -ge `nvram get pppoeserver_clcount` ]\n"
-		"then if [ `lsmod|grep ebtables -c` -eq 0 ] "
-		"&& [ `lsmod|grep ebtable_filter -c` -eq 0 ]\n"
-		"\t then insmod ebtables\n"
-		"\t\t insmod ebtable_filter\n" "\t fi\n"
-		"\t if [ `ebtables -L|grep PPP_DISC|grep DROP -c` -eq 0 ]\n"
-		"\t then ebtables -I INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP\n"	//drop pppoe discovery
-		"\t fi\n" "fi\n" */
-		"echo \"$PPPD_PID\t$1\t$5\t$PEERNAME\" >> /tmp/pppoe_connected\n"
+		fprintf(fp, 
+		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
 		//	just an uptime test
-		"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
+		//"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
 		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
 		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
-		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
+		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
 		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
 		"startservice set_routes\n");	// reinitialize 
@@ -269,6 +262,19 @@ static void do_pppoeconfig(FILE * fp)
 
 void start_pppoeserver(void)
 {
+/*	//	calculate uptime for the GUI
+	fp = fopen("/tmp/pppoeserver/calc-uptime.sh", "w");
+	fprintf(fp, "#!/bin/sh\n"
+		"pppoe_connected=/tmp/pppoe_connected\n"
+	//for i in `cat pppoe_connected |awk '{print $4}'` ; do sed '%i,s/`awk '{print $4}'`/neu/g' pppoe_connected > pppoe_connected.tmp ; done
+		"for i in `cat pppoe_connected |awk '{print $4}'` ; do\n"
+		"\tCONTIME=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $1}'`\n"
+		"SENT=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $2}'`\n"
+		"done\n"
+		)			
+	fclose(fp);
+	chmod("/tmp/pppoeserver/calc-uptime.sh", 0744);*/
+		
 	FILE *fp;
 	if (nvram_default_match("pppoeserver_enabled", "1", "0")) {
 		add_pppoe_natrule();
