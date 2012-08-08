@@ -25,6 +25,7 @@ static char const RCSID[] =
 #include <sys/wait.h>
 #include <errno.h>
 #include <stddef.h>
+#include <fcntl.h>
 
 #include "event.h"
 #include "hash.h"
@@ -57,7 +58,6 @@ static int Pipe[2] = {-1, -1};
 static pid_t MyPid = (pid_t) -1;
 
 static EventHandler *PipeHandler = NULL;
-static sig_atomic_t PipeFull = 0;
 static hash_table child_process_table;
 
 static unsigned int child_hash(void *data)
@@ -93,9 +93,10 @@ DoPipe(EventSelector *es,
     int i;
     sigset_t set;
 
-    /* Clear buffer */
-    read(fd, buf, 64);
-    PipeFull = 0;
+    /* Clear pipe */
+    while (read(fd, buf, 64) == 64) {
+	;
+    }
 
     /* Fire handlers */
     for (i=0; i<MAX_SIGNALS; i++) {
@@ -144,10 +145,9 @@ sig_handler(int sig)
     }
 
     SignalHandlers[sig].fired = 1;
-    if (!PipeFull) {
-	write(Pipe[1], &sig, 1);
-	PipeFull = 1;
-    }
+    int errno_save = errno;
+    write(Pipe[1], &sig, 1);
+    errno = errno_save;
 }
 
 /**********************************************************************
@@ -194,6 +194,9 @@ child_handler(int sig)
 static int
 SetupPipes(EventSelector *es)
 {
+    int flags;
+    int i;
+
     /* If already done, do nothing */
     if (PipeHandler) return 0;
 
@@ -208,6 +211,19 @@ SetupPipes(EventSelector *es)
     /* Open pipe to self */
     if (pipe(Pipe) < 0) {
 	return -1;
+    }
+
+    /* Make pipes non-blocking */
+    for (i=0; i<=1; i++) {
+	flags = fcntl(Pipe[i], F_GETFL, 0);
+	if (flags != -1) {
+	    flags = fcntl(Pipe[i], F_SETFL, flags | O_NONBLOCK);
+	}
+	if (flags == -1) {
+	    close(Pipe[0]);
+	    close(Pipe[1]);
+	    return -1;
+	}
     }
 
     PipeHandler = Event_AddHandler(es, Pipe[0],

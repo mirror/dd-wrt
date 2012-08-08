@@ -138,6 +138,9 @@ static int UseLinuxKernelModePPPoE = 0;
 /* File with PPPD options */
 static char *pppoptfile = NULL;
 
+static char *pppd_path = PPPD_PATH;
+static char *pppoe_path = PPPOE_PATH;
+
 static int Debug = 0;
 static int CheckPoolSyntax = 0;
 
@@ -1021,6 +1024,8 @@ usage(char const *argv0)
     printf( "   -f disc:sess   -- Set Ethernet frame types (hex).\n");
     printf( "   -s             -- Use synchronous PPP mode.\n");
     printf( "   -X pidfile     -- Write PID and lock pidfile.\n");
+    printf( "   -q /path/pppd  -- Specify full path to pppd.\n");
+    printf( "   -Q /path/pppoe -- Specify full path to pppoe.\n");
 #ifdef HAVE_LINUX_KERNEL_PPPOE
     printf( "   -k             -- Use kernel-mode PPPoE.\n");
 #endif
@@ -1076,9 +1081,9 @@ pppoeserver_main(int argc, char **argv)
 #endif
 
 #ifndef HAVE_LINUX_KERNEL_PPPOE
-    char *options = "X:ix:hI:C:L:R:T:m:FN:f:O:o:sp:lrudPc:S:1";
+    char *options = "X:ix:hI:C:L:R:T:m:FN:f:O:o:sp:lrudPc:S:1q:Q:";
 #else
-    char *options = "X:ix:hI:C:L:R:T:m:FN:f:O:o:skp:lrudPc:S:1";
+    char *options = "X:ix:hI:C:L:R:T:m:FN:f:O:o:skp:lrudPc:S:1q:Q:";
 #endif
 
     if (getuid() != geteuid() ||
@@ -1131,6 +1136,21 @@ pppoeserver_main(int argc, char **argv)
 	    }
 	    NumServiceNames++;
 	    break;
+	case 'q':
+	    pppd_path = strdup(optarg);
+	    if (!pppd_path) {
+		fprintf(stderr, "Out of memory");
+		exit(1);
+	    }
+	    break;
+	case 'Q':
+	    pppoe_path = strdup(optarg);
+	    if (!pppoe_path) {
+		fprintf(stderr, "Out of memory");
+		exit(1);
+	    }
+	    break;
+
 	case 'c':
 #ifndef HAVE_LICENSE
 	    printf( "Clustering capability not available.\n");
@@ -1635,10 +1655,8 @@ serverProcessPacket(Interface *i)
 	return;
     }
 
-    /* Check length */
-    if (ntohs(packet.length) + HDR_SIZE > len) {
-	syslog(LOG_ERR, "Bogus PPPoE length field (%u)",
-	       (unsigned int) ntohs(packet.length));
+    if (len < HDR_SIZE) {
+	/* Impossible - ignore */
 	return;
     }
 
@@ -1647,6 +1665,14 @@ serverProcessPacket(Interface *i)
 	/* Syslog an error */
 	return;
     }
+
+    /* Check length */
+    if (ntohs(packet.length) + HDR_SIZE > len) {
+	syslog(LOG_ERR, "Bogus PPPoE length field (%u)",
+	       (unsigned int) ntohs(packet.length));
+	return;
+    }
+
     switch(packet.code) {
     case CODE_PADI:
 	processPADI(i, &packet, len);
@@ -1754,7 +1780,7 @@ startPPPDUserMode(ClientSession *session)
 
     /* Let's hope service-name does not have ' in it... */
     snprintf(buffer, SMALLBUF, "%s -n -I %s -e %u:%02x:%02x:%02x:%02x:%02x:%02x%s -S '%s'",
-	     PPPOE_PATH, session->ethif->name,
+	     pppoe_path, session->ethif->name,
 	     (unsigned int) ntohs(session->sess),
 	     session->eth[0], session->eth[1], session->eth[2],
 	     session->eth[3], session->eth[4], session->eth[5],
@@ -1800,7 +1826,7 @@ startPPPDUserMode(ClientSession *session)
 	argv[c++] = buffer;
     }
     argv[c++] = NULL;
-    execv(PPPD_PATH, argv);
+    execv(pppd_path, argv);
     exit(EXIT_FAILURE);
 }
 
@@ -1878,7 +1904,7 @@ startPPPDLinuxKernelMode(ClientSession *session)
 	argv[c++] = buffer;
     }
     argv[c++] = NULL;
-    execv(PPPD_PATH, argv);
+    execv(pppd_path, argv);
     exit(EXIT_FAILURE);
 }
 
