@@ -4443,8 +4443,8 @@ else {
 	int prefixcount;
 	sscanf(prefix,"ath%d",&prefixcount);
 	int phy_idx = get_ath9k_phy_idx(prefixcount);
-	int maxrx = mac80211_get_avail_rx_antenna(phy_idx);
-	int maxtx = mac80211_get_avail_tx_antenna(phy_idx);
+	maxrx = mac80211_get_avail_rx_antenna(phy_idx);
+	maxtx = mac80211_get_avail_tx_antenna(phy_idx);
 	#endif
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.txchainmask)</script></div><select name=\"%s\" >\n",
@@ -5511,8 +5511,8 @@ if (!strcmp(prefix, "wl1"))
 	int prefixcount;
 	sscanf(prefix,"ath%d",&prefixcount);
 	int phy_idx = get_ath9k_phy_idx(prefixcount);
-	int maxrx = mac80211_get_avail_rx_antenna(phy_idx);
-	int maxtx = mac80211_get_avail_tx_antenna(phy_idx);
+	maxrx = mac80211_get_avail_rx_antenna(phy_idx);
+	maxtx = mac80211_get_avail_tx_antenna(phy_idx);
 	#endif
 		websWrite(wp,
 			  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.txchainmask)</script></div><select name=\"%s\" >\n",
