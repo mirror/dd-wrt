@@ -11,6 +11,7 @@
 #include <linux/serial_core.h>
 #include <linux/serial.h>
 #include <linux/serial_8250.h>
+#include <linux/etherdevice.h>
 
 #include <asm/mach-ar7240/ar7240.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -239,6 +240,45 @@ static struct mdio_board_info db120_mdio0_info[] = {
  };
 
 
+
+static struct ar8327_pad_cfg wdr4300_ar8327_pad0_cfg = {
+	.mode = AR8327_PAD_MAC_RGMII,
+	.txclk_delay_en = true,
+	.rxclk_delay_en = true,
+	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
+	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
+};
+
+static struct ar8327_led_cfg wdr4300_ar8327_led_cfg = {
+	.led_ctrl0 = 0xc737c737,
+	.led_ctrl1 = 0x00000000,
+	.led_ctrl2 = 0x00000000,
+	.led_ctrl3 = 0x0030c300,
+	.open_drain = false,
+};
+
+static struct ar8327_platform_data wdr4300_ar8327_data = {
+	.pad0_cfg = &wdr4300_ar8327_pad0_cfg,
+	.cpuport_cfg = {
+		.force_link = 1,
+		.speed = AR8327_PORT_SPEED_1000,
+		.duplex = 1,
+		.txpause = 1,
+		.rxpause = 1,
+	},
+	.led_cfg = &wdr4300_ar8327_led_cfg,
+};
+
+static struct mdio_board_info wdr4300_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 0,
+		.platform_data = &wdr4300_ar8327_data,
+	},
+};
+
+
+
 extern __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
 void ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
 
@@ -260,6 +300,29 @@ return NULL;
 
 enum ar71xx_soc_type ar71xx_soc;
 EXPORT_SYMBOL_GPL(ar71xx_soc);
+
+
+void __init ath79_init_mac(unsigned char *dst, const unsigned char *src,
+			    int offset)
+{
+	int t;
+
+	if (!is_valid_ether_addr(src)) {
+		memset(dst, '\0', ETH_ALEN);
+		return;
+	}
+
+	t = (((u32) src[3]) << 16) + (((u32) src[4]) << 8) + ((u32) src[5]);
+	t += offset;
+
+	dst[0] = src[0];
+	dst[1] = src[1];
+	dst[2] = src[2];
+	dst[3] = (t >> 16) & 0xff;
+	dst[4] = (t >> 8) & 0xff;
+	dst[5] = t & 0xff;
+}
+
 
 #if defined(CONFIG_DIR825C1) || defined(CONFIG_DIR615I)
 #define DIR825C1_MAC_LOCATION_0			0x1ffe0004
@@ -290,7 +353,7 @@ int __init ar7240_platform_init(void)
 {
 	int ret;
 	void *ee;
-#ifdef CONFIG_WR741
+#if defined(CONFIG_WR741) || defined(CONFIG_WDR4300)
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 #else
 	u8 *mac = NULL;//(u8 *) KSEG1ADDR(0x1fff0000);
@@ -337,9 +400,15 @@ int __init ar7240_platform_init(void)
 	void __iomem *base;
 	u32 t;
 
+
+#ifndef CONFIG_WDR4300
 #ifdef CONFIG_DIR825C1
 	dir825b1_read_ascii_mac(mac0, DIR825C1_MAC_LOCATION_0);
 	dir825b1_read_ascii_mac(mac1, DIR825C1_MAC_LOCATION_1);
+#endif
+#else
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);
 #endif
 
 #ifndef CONFIG_DIR615I
@@ -349,8 +418,11 @@ int __init ar7240_platform_init(void)
 	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
 	       AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
+#ifdef CONFIG_WDR4300
+	t |= AR934X_ETH_CFG_RGMII_GMAC0;
+#else
 	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
-
+#endif
 	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
 
 
@@ -388,7 +460,9 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
 #else
+#ifndef CONFIG_WDR4300
 	ar71xx_add_device_mdio(1, 0x0);
+#endif
 	ar71xx_add_device_mdio(0, 0x0);
 
 #ifdef CONFIG_DIR825C1
@@ -397,10 +471,17 @@ int __init ar7240_platform_init(void)
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
 #endif
 
+#ifdef CONFIG_WDR4300
+
+	mdiobus_register_board_info(wdr4300_mdio0_info,
+				    ARRAY_SIZE(wdr4300_mdio0_info));
+
+#else
+
 	mdiobus_register_board_info(db120_mdio0_info,
 				    ARRAY_SIZE(db120_mdio0_info));
 
-
+#endif
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
@@ -408,6 +489,7 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_add_device_eth(0);
 
+#ifndef CONFIG_WDR4300
 	/* GMAC1 is connected to the internal switch */
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, art + DB120_MAC1_OFFSET, 0);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
@@ -415,6 +497,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
 	ar71xx_add_device_eth(1);
+#endif
 #endif
 
 #endif

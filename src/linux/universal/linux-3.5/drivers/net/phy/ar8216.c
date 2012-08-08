@@ -43,6 +43,13 @@ struct ar8216_priv;
 
 #define AR8XXX_CAP_GIGE		BIT(0)
 
+enum {
+	AR8XXX_VER_AR8216 = 0x01,
+	AR8XXX_VER_AR8236 = 0x03,
+	AR8XXX_VER_AR8316 = 0x10,
+	AR8XXX_VER_AR8327 = 0x12,
+};
+
 struct ar8xxx_chip {
 	unsigned long caps;
 
@@ -65,7 +72,8 @@ struct ar8216_priv {
 	const struct net_device_ops *ndo_old;
 	struct net_device_ops ndo;
 	struct mutex reg_mutex;
-	int chip_type;
+	u8 chip_ver;
+	u8 chip_rev;
 	const struct ar8xxx_chip *chip;
 	bool initialized;
 	bool port4_phy;
@@ -87,6 +95,26 @@ struct ar8216_priv {
 static inline bool ar8xxx_has_gige(struct ar8216_priv *priv)
 {
 	return priv->chip->caps & AR8XXX_CAP_GIGE;
+}
+
+static inline bool chip_is_ar8216(struct ar8216_priv *priv)
+{
+	return priv->chip_ver == AR8XXX_VER_AR8216;
+}
+
+static inline bool chip_is_ar8236(struct ar8216_priv *priv)
+{
+	return priv->chip_ver == AR8XXX_VER_AR8236;
+}
+
+static inline bool chip_is_ar8316(struct ar8216_priv *priv)
+{
+	return priv->chip_ver == AR8XXX_VER_AR8316;
+}
+
+static inline bool chip_is_ar8327(struct ar8216_priv *priv)
+{
+	return priv->chip_ver == AR8XXX_VER_AR8327;
 }
 
 static inline void
@@ -160,6 +188,17 @@ ar8216_phy_dbg_write(struct ar8216_priv *priv, int phy_addr,
 	mutex_lock(&bus->mdio_lock);
 	bus->write(bus, phy_addr, MII_ATH_DBG_ADDR, dbg_addr);
 	bus->write(bus, phy_addr, MII_ATH_DBG_DATA, dbg_data);
+	mutex_unlock(&bus->mdio_lock);
+}
+
+static void
+ar8216_phy_mmd_write(struct ar8216_priv *priv, int phy_addr, u16 addr, u16 data)
+{
+	struct mii_bus *bus = priv->phy->bus;
+
+	mutex_lock(&bus->mdio_lock);
+	bus->write(bus, phy_addr, MII_ATH_MMD_ADDR, addr);
+	bus->write(bus, phy_addr, MII_ATH_MMD_DATA, data);
 	mutex_unlock(&bus->mdio_lock);
 }
 
@@ -362,7 +401,7 @@ ar8216_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 {
 	u32 header;
 
-	if (priv->vlan && port == AR8216_PORT_CPU && priv->chip_type == AR8216)
+	if (chip_is_ar8216(priv) && priv->vlan && port == AR8216_PORT_CPU)
 		header = AR8216_PORT_CTRL_HEADER;
 	else
 		header = 0;
@@ -416,8 +455,8 @@ ar8216_init_port(struct ar8216_priv *priv, int port)
                                 AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
 			AR8216_PORT_STATUS_TXMAC |
 			AR8216_PORT_STATUS_RXMAC |
-			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
-			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_TXFLOW : 0) |
+			(chip_is_ar8316(priv) ? AR8216_PORT_STATUS_RXFLOW : 0) |
+			(chip_is_ar8316(priv) ? AR8216_PORT_STATUS_TXFLOW : 0) |
 			AR8216_PORT_STATUS_DUPLEX);
 	} else {
 		priv->write(priv, AR8216_REG_PORT_STATUS(port),
@@ -664,10 +703,39 @@ ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 	return t;
 }
 
+static void
+ar8327_phy_fixup(struct ar8216_priv *priv, int phy)
+{
+	switch (priv->chip_rev) {
+	case 1:
+		/* For 100M waveform */
+		ar8216_phy_dbg_write(priv, phy, 0, 0x02ea);
+		/* Turn on Gigabit clock */
+		ar8216_phy_dbg_write(priv, phy, 0x3d, 0x68a0);
+		break;
+
+	case 2:
+		ar8216_phy_mmd_write(priv, phy, 0x7, 0x3c);
+		ar8216_phy_mmd_write(priv, phy, 0x4007, 0x0);
+		/* fallthrough */
+	case 4:
+		ar8216_phy_mmd_write(priv, phy, 0x3, 0x800d);
+		ar8216_phy_mmd_write(priv, phy, 0x4003, 0x803f);
+
+		ar8216_phy_dbg_write(priv, phy, 0x3d, 0x6860);
+		ar8216_phy_dbg_write(priv, phy, 0x5, 0x2c46);
+		ar8216_phy_dbg_write(priv, phy, 0x3c, 0x6000);
+		break;
+	}
+}
+
 static int
 ar8327_hw_init(struct ar8216_priv *priv)
 {
 	struct ar8327_platform_data *pdata;
+	struct ar8327_led_cfg *led_cfg;
+	struct mii_bus *bus;
+	u32 pos, new_pos;
 	u32 t;
 	int i;
 
@@ -682,16 +750,40 @@ ar8327_hw_init(struct ar8216_priv *priv)
 	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
 	priv->write(priv, AR8327_REG_PAD6_MODE, t);
 
-	priv->write(priv, AR8327_REG_POWER_ON_STRIP, 0x40000000);
+	pos = priv->read(priv, AR8327_REG_POWER_ON_STRIP);
+	new_pos = pos;
 
-	/* fixup PHYs */
-	for (i = 0; i < AR8327_NUM_PHYS; i++) {
-		/* For 100M waveform */
-		ar8216_phy_dbg_write(priv, i, 0, 0x02ea);
+	led_cfg = pdata->led_cfg;
+	if (led_cfg) {
+		if (led_cfg->open_drain)
+			new_pos |= AR8327_POWER_ON_STRIP_LED_OPEN_EN;
+		else
+			new_pos &= ~AR8327_POWER_ON_STRIP_LED_OPEN_EN;
 
-		/* Turn on Gigabit clock */
-		ar8216_phy_dbg_write(priv, i, 0x3d, 0x68a0);
+		priv->write(priv, AR8327_REG_LED_CTRL0, led_cfg->led_ctrl0);
+		priv->write(priv, AR8327_REG_LED_CTRL1, led_cfg->led_ctrl1);
+		priv->write(priv, AR8327_REG_LED_CTRL2, led_cfg->led_ctrl2);
+		priv->write(priv, AR8327_REG_LED_CTRL3, led_cfg->led_ctrl3);
 	}
+
+	if (new_pos != pos) {
+		new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
+		priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
+	}
+
+	bus = priv->phy->bus;
+	for (i = 0; i < AR8327_NUM_PHYS; i++) {
+		ar8327_phy_fixup(priv, i);
+
+		/* start aneg on the PHY */
+		mdiobus_write(bus, i, MII_ADVERTISE, ADVERTISE_ALL |
+						     ADVERTISE_PAUSE_CAP |
+						     ADVERTISE_PAUSE_ASYM);
+		mdiobus_write(bus, i, MII_CTRL1000, ADVERTISE_1000FULL);
+		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
+	}
+
+	msleep(1000);
 
 	return 0;
 }
@@ -1159,8 +1251,6 @@ ar8216_id_chip(struct ar8216_priv *priv)
 	u16 id;
 	int i;
 
-	priv->chip_type = UNKNOWN;
-
 	val = ar8216_mii_read(priv, AR8216_REG_CTRL);
 	if (val == ~0)
 		return -ENODEV;
@@ -1178,30 +1268,27 @@ ar8216_id_chip(struct ar8216_priv *priv)
 			return -ENODEV;
 	}
 
-	switch (id) {
-	case 0x0101:
-		priv->chip_type = AR8216;
+	priv->chip_ver = (id & AR8216_CTRL_VERSION) >> AR8216_CTRL_VERSION_S;
+	priv->chip_rev = (id & AR8216_CTRL_REVISION);
+
+	switch (priv->chip_ver) {
+	case AR8XXX_VER_AR8216:
 		priv->chip = &ar8216_chip;
 		break;
-	case 0x0301:
-		priv->chip_type = AR8236;
+	case AR8XXX_VER_AR8236:
 		priv->chip = &ar8236_chip;
 		break;
-	case 0x1000:
-	case 0x1001:
-		priv->chip_type = AR8316;
+	case AR8XXX_VER_AR8316:
 		priv->chip = &ar8316_chip;
 		break;
-	case 0x1202:
-		priv->chip_type = AR8327;
+	case AR8XXX_VER_AR8327:
 		priv->mii_lo_first = true;
 		priv->chip = &ar8327_chip;
 		break;
 	default:
 		printk(KERN_DEBUG
 			"ar8216: Unknown Atheros device [ver=%d, rev=%d, phy_id=%04x%04x]\n",
-			(int)(id >> AR8216_CTRL_VERSION_S),
-			(int)(id & AR8216_CTRL_REVISION),
+			priv->chip_ver, priv->chip_rev,
 			mdiobus_read(priv->phy->bus, priv->phy->addr, 2),
 			mdiobus_read(priv->phy->bus, priv->phy->addr, 3));
 
@@ -1237,7 +1324,7 @@ ar8216_config_init(struct phy_device *pdev)
 			pdev->advertising |= ADVERTISED_1000baseT_Full;
 		}
 
-		if (priv->chip_type == AR8316) {
+		if (chip_is_ar8316(priv)) {
 			/* check if we're attaching to the switch twice */
 			pdev = pdev->bus->phy_map[0];
 			if (!pdev) {
@@ -1267,9 +1354,6 @@ ar8216_config_init(struct phy_device *pdev)
 		return 0;
 	}
 
-	printk(KERN_INFO "%s: AR%d switch driver attached.\n",
-		pdev->attached_dev->name, priv->chip_type);
-
 	if (ar8xxx_has_gige(priv))
 		pdev->supported = SUPPORTED_1000baseT_Full;
 	else
@@ -1287,7 +1371,7 @@ ar8216_config_init(struct phy_device *pdev)
 	swdev->ops = &ar8216_sw_ops;
 	swdev->ports = AR8216_NUM_PORTS;
 
-	if (priv->chip_type == AR8316) {
+	if (chip_is_ar8316(priv)) {
 		swdev->name = "Atheros AR8316";
 		swdev->vlans = AR8X16_MAX_VLANS;
 
@@ -1295,11 +1379,11 @@ ar8216_config_init(struct phy_device *pdev)
 			/* port 5 connected to the other mac, therefore unusable */
 			swdev->ports = (AR8216_NUM_PORTS - 1);
 		}
-	} else if (priv->chip_type == AR8236) {
+	} else if (chip_is_ar8236(priv)) {
 		swdev->name = "Atheros AR8236";
 		swdev->vlans = AR8216_NUM_VLANS;
 		swdev->ports = AR8216_NUM_PORTS;
-	} else if (priv->chip_type == AR8327) {
+	} else if (chip_is_ar8327(priv)) {
 		swdev->name = "Atheros AR8327";
 		swdev->vlans = AR8X16_MAX_VLANS;
 		swdev->ports = AR8327_NUM_PORTS;
@@ -1311,6 +1395,9 @@ ar8216_config_init(struct phy_device *pdev)
 	ret = register_switch(&priv->dev, pdev->attached_dev);
 	if (ret)
 		goto err_free_priv;
+
+	printk(KERN_INFO "%s: %s switch driver attached.\n",
+		pdev->attached_dev->name, swdev->name);
 
 	priv->init = true;
 
@@ -1325,7 +1412,7 @@ ar8216_config_init(struct phy_device *pdev)
 	dev->phy_ptr = priv;
 
 	/* VID fixup only needed on ar8216 */
-	if (pdev->addr == 0 && priv->chip_type == AR8216) {
+	if (chip_is_ar8216(priv) && pdev->addr == 0) {
 		dev->priv_flags |= IFF_NO_IP_ALIGN;
 		dev->eth_mangle_rx = ar8216_mangle_rx;
 		dev->eth_mangle_tx = ar8216_mangle_tx;
