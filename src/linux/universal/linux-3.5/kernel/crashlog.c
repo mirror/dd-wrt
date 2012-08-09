@@ -23,6 +23,7 @@
 
 #include <linux/module.h>
 #include <linux/bootmem.h>
+#include <linux/memblock.h>
 #include <linux/debugfs.h>
 #include <linux/crashlog.h>
 #include <linux/kmsg_dump.h>
@@ -55,7 +56,8 @@ static bool first = true;
 
 extern struct list_head *crashlog_modules;
 
-void __init crashlog_init_mem(bootmem_data_t *bdata)
+#ifndef CONFIG_NO_BOOTMEM
+void __init crashlog_init_bootmem(bootmem_data_t *bdata)
 {
 	unsigned long addr;
 
@@ -70,6 +72,23 @@ void __init crashlog_init_mem(bootmem_data_t *bdata)
 	}
 	crashlog_addr = addr;
 }
+#endif
+
+#ifdef CONFIG_HAVE_MEMBLOCK
+void __init crashlog_init_memblock(phys_addr_t addr, phys_addr_t size)
+{
+	if (crashlog_addr)
+		return;
+
+	addr += size - CRASHLOG_OFFSET;
+	if (memblock_reserve(addr, CRASHLOG_SIZE)) {
+		printk("Crashlog failed to allocate RAM at address 0x%lx\n", (unsigned long) addr);
+		return;
+	}
+
+	crashlog_addr = addr;
+}
+#endif
 
 static void __init crashlog_copy(void)
 {
