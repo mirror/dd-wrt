@@ -1471,12 +1471,6 @@ pppoeserver_main(int argc, char **argv)
 	rp_fatal("Could not create EventSelector -- probably out of memory");
     }
 
-    /* Set signal handlers for SIGTERM and SIGINT */
-    if (Event_HandleSignal(event_selector, SIGTERM, termHandler) < 0 ||
-	Event_HandleSignal(event_selector, SIGINT, termHandler) < 0) {
-	fatalSys("Event_HandleSignal");
-    }
-
     /* Control channel */
 #ifdef HAVE_LICENSE
     if (control_init(argc, argv, event_selector)) {
@@ -1617,6 +1611,12 @@ pppoeserver_main(int argc, char **argv)
 	snprintf(buf, sizeof(buf), "%lu\n", (unsigned long) getpid());
 	write(LockFD, buf, strlen(buf));
 	/* Do not close fd... use it to retain lock */
+    }
+
+    /* Set signal handlers for SIGTERM and SIGINT */
+    if (Event_HandleSignal(event_selector, SIGTERM, termHandler) < 0 ||
+	Event_HandleSignal(event_selector, SIGINT, termHandler) < 0) {
+	fatalSys("Event_HandleSignal");
     }
 
     /* Tell parent all is cool */
