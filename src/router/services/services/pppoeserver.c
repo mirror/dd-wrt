@@ -86,8 +86,8 @@ static void makeipup(void)
 		fprintf(fp, "iptables -I INPUT -i $1 -j ACCEPT\n");
 	if (nvram_match("pppoeserver_clip", "local"))
 		fprintf(fp, 
+ 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
-		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
 		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
 		"startservice set_routes\n"	// reinitialize 
@@ -133,9 +133,10 @@ static void makeipup(void)
 		"mv /tmp/pppoe_peer.db.tmp /tmp/pppoe_peer.db\n"
 		"echo \"$CONTIME\t\t$SENT\t\t$RCVD\t\t$PEERNAME\" >> /tmp/pppoe_peer.db\n"
 		//
-		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
-		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
-		"iptables -D FORWARD -i $1 -j ACCEPT\n");	//
+		"iptables -D FORWARD -i $1 -j ACCEPT\n"
+		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");	
+	if (nvram_match("filter", "on")) // only needed if firewall is enabled
+		fprintf(fp, "iptables -D INPUT -i $1 -j ACCEPT\n");
 	/*if (nvram_match("pppoeserver_clip", "local"))
 		fprintf(fp, 
 		"if [ `ifconfig|grep ppp -c` -lt `nvram get pppoeserver_clcount` ]\n"
