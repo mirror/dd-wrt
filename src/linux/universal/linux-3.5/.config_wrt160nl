@@ -1932,3 +1932,4 @@ CONFIG_IXGBE_PTP=y
 # CONFIG_GPIO_STP_XWAY is not set
 # CONFIG_RB1200 is not set
 # CONFIG_RB2011 is not set
+# CONFIG_CRASHLOG is not set
