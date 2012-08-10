@@ -626,8 +626,6 @@ int recv_tt_query(struct sk_buff *skb, struct hard_iface *recv_if)
 			if (unlikely(skb_headlen(skb) <
 				     sizeof(struct tt_query_packet) + tt_len))
 				goto out;
-			/* skb_linearize() possibly changed skb->data */
-			tt_query = (struct tt_query_packet *)skb->data;
 
 			handle_tt_response(bat_priv, tt_query);
 		} else {
