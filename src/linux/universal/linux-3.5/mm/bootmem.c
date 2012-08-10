@@ -178,7 +178,7 @@ static unsigned long __init free_all_bootmem_core(bootmem_data_t *bdata)
 	if (!bdata->node_bootmem_map)
 		return 0;
 
-	crashlog_init_mem(bdata);
+	crashlog_init_bootmem(bdata);
 	start = bdata->node_min_pfn;
 	end = bdata->node_low_pfn;
 
