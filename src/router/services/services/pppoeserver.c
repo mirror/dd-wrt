@@ -82,6 +82,10 @@ static void makeipup(void)
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
 	fprintf(fp, "#!/bin/sh\n");
+		"while [ -e /tmp/pppoeserver/pppoesrv.lock ]\n" //suspend new clients while file access is locked
+	   "\tdo sleep 1\n"
+	   "\tdone\n"
+	   "touch /tmp/pppoeserver/pppoesrv.lock\n"
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
 		fprintf(fp, "iptables -I INPUT -i $1 -j ACCEPT\n");
 	if (nvram_match("pppoeserver_clip", "local"))
@@ -111,12 +115,17 @@ static void makeipup(void)
 			"\t tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"
 			"fi\n");
 		}
+		"rm /tmp/pppoeserver/pppoesrv.lock\n"
 //tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 100Mbit
 //eg: tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 10Mbit
 //burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
 	fprintf(fp, "#!/bin/sh\n" 
+	   "while [ -e /tmp/pppoeserver/pppoesrv.lock ]\n"
+	   "\tdo sleep 1\n"
+	   "\tdone\n"
+	   "touch /tmp/pppoeserver/pppoesrv.lock\n"
 		"grep -v $PPPD_PID /tmp/pppoe_connected > /tmp/pppoe_connected.tmp\n"	//
 		"mv /tmp/pppoe_connected.tmp /tmp/pppoe_connected\n"	//
 		//	just an uptime test
@@ -137,14 +146,10 @@ static void makeipup(void)
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");	
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
 		fprintf(fp, "iptables -D INPUT -i $1 -j ACCEPT\n");
-	/*if (nvram_match("pppoeserver_clip", "local"))
-		fprintf(fp, 
-		"if [ `ifconfig|grep ppp -c` -lt `nvram get pppoeserver_clcount` ]\n"
-		"then ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP\n"
-		"fi\n"); */
 	if (nvram_match("pppoeradius_enabled", "1"))
 		fprintf(fp, "tc qdisc del root dev $1\n" "sleep 1\n"
 			"tc qdisc del dev $1 ingress\n");
+		"rm /tmp/pppoeserver/pppoesrv.lock\n"
 	fclose(fp);
 
 	chmod("/tmp/pppoeserver/ip-up", 0744);
@@ -189,7 +194,7 @@ static void do_pppoeconfig(FILE * fp)
 	fprintf(fp, "auth\n" 
 		"refuse-eap\n"	// be sure using best auth methode
 		"refuse-pap\n"	//
-		"refuse-chap\n"	//
+		"refuse-chap\n"	//erlauben???
 		"refuse-mschap\n"	//
 		"require-mschap-v2\n"
 		"nopcomp\n"	// no protocol field compression
@@ -264,6 +269,7 @@ static void do_pppoeconfig(FILE * fp)
 void start_pppoeserver(void)
 {
 /*	//	calculate uptime for the GUI
+	//proc/net/dev differenz = speed. inerface aus datei.
 	fp = fopen("/tmp/pppoeserver/calc-uptime.sh", "w");
 	fprintf(fp, "#!/bin/sh\n"
 		"pppoe_connected=/tmp/pppoe_connected\n"
@@ -397,6 +403,7 @@ void stop_pppoeserver(void)
 	if (stop_process("pppoe-server", "pppoe server")) {
 		del_pppoe_natrule();
 		unlink("/tmp/pppoe_connected");
+	//	unlink("/tmp/pppoeserver/calc-uptime.sh");
 	//	backup peer data
 		if (nvram_match("sys_enable_jffs2", "1"))
 		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/");
