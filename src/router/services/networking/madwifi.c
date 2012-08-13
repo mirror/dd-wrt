@@ -2398,7 +2398,6 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	country = nvram_default_get(regdomain, "UNITED_STATES");
 	sysprintf("iw reg set 00");
 	sysprintf("iw reg set %s", getIsoName(country));
-	sleep(4);
 #endif
 	for (i = 0; i < c; i++)
 		adjust_regulatory(i);
