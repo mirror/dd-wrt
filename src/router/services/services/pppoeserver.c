@@ -115,7 +115,7 @@ static void makeipup(void)
 			"\t tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"
 			"fi\n");
 		}
-		"rm /tmp/pppoeserver/pppoesrv.lock\n"
+		"rm -f /tmp/pppoeserver/pppoesrv.lock\n"
 //tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 100Mbit
 //eg: tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 10Mbit
 //burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
@@ -149,7 +149,7 @@ static void makeipup(void)
 	if (nvram_match("pppoeradius_enabled", "1"))
 		fprintf(fp, "tc qdisc del root dev $1\n" "sleep 1\n"
 			"tc qdisc del dev $1 ingress\n");
-		"rm /tmp/pppoeserver/pppoesrv.lock\n"
+		"rm -f /tmp/pppoeserver/pppoesrv.lock\n"
 	fclose(fp);
 
 	chmod("/tmp/pppoeserver/ip-up", 0744);
