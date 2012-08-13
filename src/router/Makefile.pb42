@@ -1121,6 +1121,8 @@ endif
 ifeq ($(CONFIG_WDR4300),y)
 	-./tools/tplink/mktplinkfw -B TL-WDR4300 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4300-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4300-firmware.bin mips-uclibc/tplink-TL-WDR4300-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR4310 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4310-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4310-firmware.bin mips-uclibc/tplink-TL-WDR4310-firmware.bin
 endif
 
 ifeq ($(CONFIG_WRT400),y)
