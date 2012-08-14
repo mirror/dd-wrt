@@ -291,7 +291,7 @@ servpoet-rpms: servpoet-tgz
 	cd .. && rpm -ba servpoet.spec
 
 clean:
-	rm -f *.o pppoe pppoe-sniff pppoe-server core rp-pppoe.so plugin/*.o plugin/libplugin.a *~
+	rm -f *.o pppoe-relay pppoe pppoe-sniff pppoe-server core rp-pppoe.so plugin/*.o plugin/libplugin.a *~
 	test -f licensed-only/Makefile && $(MAKE) -C licensed-only clean || true
 	test -f libevent/Makefile && $(MAKE) -C libevent clean || true
 	test -f l2tp/Makefile && $(MAKE) -C l2tp clean || true
