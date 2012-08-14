@@ -62,6 +62,8 @@ static char const RCSID[] =
 
 char pppd_version[] = VERSION;
 
+static int seen_devnam[2] = {0, 0};
+
 /* From sys-linux.c in pppd -- MUST FIX THIS! */
 extern int new_style_driver;
 
@@ -305,6 +307,7 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
     int r = 1;
     int fd;
     struct ifreq ifr;
+    int seen_idx = doit ? 1 : 0;
 
     /* If "devnam" has already been set, ignore.
        This prevents kernel from doing modprobes against random
@@ -315,7 +318,7 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
 
        Patch based on suggestion from Mike Ireton.
     */
-    if (devnam[0]) {
+    if (seen_devnam[seen_idx]) {
 	if (OldDevnameHook) return OldDevnameHook(cmd, argv, doit);
 	return 0;
     }
@@ -358,32 +361,35 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
     /* Close socket */
     close(fd);
     if (r) {
-	strncpy(devnam, cmd, sizeof(devnam));
-	if (the_channel != &pppoe_channel) {
+	seen_devnam[seen_idx] = 1;
+	if (doit) {
+	    strncpy(devnam, cmd, sizeof(devnam));
+	    if (the_channel != &pppoe_channel) {
 
-	    the_channel = &pppoe_channel;
-	    modem = 0;
+		the_channel = &pppoe_channel;
+		modem = 0;
 
-	    lcp_allowoptions[0].neg_accompression = 0;
-	    lcp_wantoptions[0].neg_accompression = 0;
+		lcp_allowoptions[0].neg_accompression = 0;
+		lcp_wantoptions[0].neg_accompression = 0;
 
-	    lcp_allowoptions[0].neg_asyncmap = 0;
-	    lcp_wantoptions[0].neg_asyncmap = 0;
+		lcp_allowoptions[0].neg_asyncmap = 0;
+		lcp_wantoptions[0].neg_asyncmap = 0;
 
-	    lcp_allowoptions[0].neg_pcompression = 0;
-	    lcp_wantoptions[0].neg_pcompression = 0;
+		lcp_allowoptions[0].neg_pcompression = 0;
+		lcp_wantoptions[0].neg_pcompression = 0;
 
-	    ipcp_allowoptions[0].neg_vj=0;
-	    ipcp_wantoptions[0].neg_vj=0;
+		ipcp_allowoptions[0].neg_vj=0;
+		ipcp_wantoptions[0].neg_vj=0;
 
-	    ccp_allowoptions[0].deflate = 0 ;
-	    ccp_wantoptions[0].deflate = 0 ;
+		ccp_allowoptions[0].deflate = 0 ;
+		ccp_wantoptions[0].deflate = 0 ;
 
-	    ccp_allowoptions[0].bsd_compress = 0;
-	    ccp_wantoptions[0].bsd_compress = 0;
+		ccp_allowoptions[0].bsd_compress = 0;
+		ccp_wantoptions[0].bsd_compress = 0;
 
 
-	    PPPOEInitDevice();
+		PPPOEInitDevice();
+	    }
 	}
 	return 1;
     }
