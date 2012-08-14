@@ -81,7 +81,7 @@ static void makeipup(void)
 
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
-	fprintf(fp, "#!/bin/sh\n");
+	fprintf(fp, "#!/bin/sh\n"
 		"while [ -e /tmp/pppoeserver/pppoesrv.lock ]\n" //suspend new clients while file access is locked
 	   "\tdo sleep 1\n"
 	   "\tdone\n"
