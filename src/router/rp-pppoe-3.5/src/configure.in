@@ -25,6 +25,7 @@ AC_CHECK_HEADERS(linux/if_pppox.h, [], [],
 #include<sys/socket.h>
 #include<net/ethernet.h>
 #include<linux/if.h>
+#include<linux/in.h>
 ])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -64,13 +65,16 @@ dnl If we were given "--enable-plugin" without a path, take a stab at where
 dnl the pppd source code might be.
 
 if test "$ac_cv_pluginpath" = "yes" ; then
-	AC_PATH_PROG(PPPD_H, pppd/pppd.h, NOTFOUND, "/usr/include:/usr/local/include:$PATH:../../$PPPD_DIR")
-	if test "$PPPD_H" = "NOTFOUND" ; then
-		ac_cv_pluginpath=no
-        else
-		ac_cv_pluginpath=`dirname "$PPPD_H"`
-		ac_cv_pluginpath=`dirname "$ac_cv_pluginpath"`
+    for i in /usr/include /usr/local/include ; do
+	if test -r $i/pppd/pppd.h; then
+	    ac_cv_pluginpath=$i
 	fi
+    done
+fi
+
+if test "$ac_cv_pluginpath" = "yes" ; then
+    echo "*** Could not fined pppd/pppd.h anywhere... not building plugin"
+    ac_cv_pluginpath=no
 fi
 
 AC_ARG_ENABLE(licenses, [  --enable-licenses=lic_path      build commercial version], ac_cv_licpath=$enableval, ac_cv_licpath=no)
@@ -105,12 +109,17 @@ if test "$ac_cv_header_linux_if_pppox_h" = yes ; then
 	fi
 fi
 
+if test "$PPPD_INCDIR" = "" ; then
+   PPPD_INCDIR=/usr/include
+fi
+
 if test "$ac_cv_debugging" = "yes" ; then
    AC_DEFINE(DEBUGGING_ENABLED)
 fi
 
 AC_SUBST(LINUX_KERNELMODE_PLUGIN)
 AC_SUBST(PPPD_INCDIR)
+AC_SUBST(PPPD_H)
 
 dnl Determine whether or not to build PPPoE relay
 PPPOE_RELAY=""
@@ -157,6 +166,7 @@ fi
 AC_TRY_RUN([#include <sys/socket.h>
 #include <net/ethernet.h>
 #include <linux/if.h>
+#include <linux/in.h>
 #include <linux/if_pppox.h>
 int main()
 {
@@ -180,7 +190,7 @@ fi
 
 dnl GCC warning level
 if test "$GCC" = yes; then
-	CFLAGS="$CFLAGS -Wall -Wstrict-prototypes -ansi"
+	CFLAGS="$CFLAGS -fno-strict-aliasing -Wall -Wstrict-prototypes"
 fi
 
 dnl If we couldn't find pppd, die
