@@ -37,7 +37,13 @@ void ndr_print_ntprinting_printer_info(struct ndr_print *ndr, const char *name, 
 enum ndr_err_code ndr_push_ntprinting_printer(struct ndr_push *ndr, int ndr_flags, const struct ntprinting_printer *r);
 enum ndr_err_code ndr_pull_ntprinting_printer(struct ndr_pull *ndr, int ndr_flags, struct ntprinting_printer *r);
 void ndr_print_ntprinting_printer(struct ndr_print *ndr, const char *name, const struct ntprinting_printer *r);
+enum ndr_err_code ndr_push_decode_ntprinting_form(struct ndr_push *ndr, int flags, const struct decode_ntprinting_form *r);
+enum ndr_err_code ndr_pull_decode_ntprinting_form(struct ndr_pull *ndr, int flags, struct decode_ntprinting_form *r);
 void ndr_print_decode_ntprinting_form(struct ndr_print *ndr, const char *name, int flags, const struct decode_ntprinting_form *r);
+enum ndr_err_code ndr_push_decode_ntprinting_driver(struct ndr_push *ndr, int flags, const struct decode_ntprinting_driver *r);
+enum ndr_err_code ndr_pull_decode_ntprinting_driver(struct ndr_pull *ndr, int flags, struct decode_ntprinting_driver *r);
 void ndr_print_decode_ntprinting_driver(struct ndr_print *ndr, const char *name, int flags, const struct decode_ntprinting_driver *r);
+enum ndr_err_code ndr_push_decode_ntprinting_printer(struct ndr_push *ndr, int flags, const struct decode_ntprinting_printer *r);
+enum ndr_err_code ndr_pull_decode_ntprinting_printer(struct ndr_pull *ndr, int flags, struct decode_ntprinting_printer *r);
 void ndr_print_decode_ntprinting_printer(struct ndr_print *ndr, const char *name, int flags, const struct decode_ntprinting_printer *r);
 #endif /* _HEADER_NDR_ntprinting */

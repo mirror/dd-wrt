@@ -972,7 +972,7 @@ cache directory (G)
 </h3></div></div></div><a class="indexterm" name="id311183"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#CASESENSITIVE">case sensitive</a>.</p></dd></dl></div></div><div class="section" title="case sensitive (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id311208"></a>
 
 case sensitive (S)
-</h3></div></div></div><a class="indexterm" name="id311209"></a><a name="CASESENSITIVE"></a><div class="variablelist"><dl><dt></dt><dd><p>See the discussion in the section <a class="link" href="smb.conf.5.html#NAMEMANGLING" target="_top">name mangling</a>.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>case sensitive</code></em> = <code class="literal">no</code>
+</h3></div></div></div><a class="indexterm" name="id311209"></a><a name="CASESENSITIVE"></a><div class="variablelist"><dl><dt></dt><dd><p>See the discussion in the section <a class="link" href="smb.conf.5.html#NAMEMANGLING" target="_top">name mangling</a>.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>case sensitive</code></em> = <code class="literal">auto</code>
 </em></span>
 </p></dd></dl></div></div><div class="section" title="change notify (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id311253"></a>
 
@@ -2000,10 +2000,10 @@ enable asu support (G)
     an [ADMIN$} file share.  Disabling this parameter allows for creating 
     an [ADMIN$] file share in smb.conf.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>enable asu support</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="enable core files (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id315841"></a>
+</p></dd></dl></div></div><div class="section" title="enable core files (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id315842"></a>
 
 enable core files (G)
-</h3></div></div></div><a class="indexterm" name="id315842"></a><a name="ENABLECOREFILES"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies whether core dumps should be written
+</h3></div></div></div><a class="indexterm" name="id315843"></a><a name="ENABLECOREFILES"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies whether core dumps should be written
 	on internal exits. Normally set to <code class="constant">yes</code>.
 	You should never need to change this.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>enable core files</code></em> = <code class="literal">yes</code>
@@ -2026,15 +2026,15 @@ enable privileges (G)
 	Please read the extended description provided in the Samba HOWTO documentation.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>enable privileges</code></em> = <code class="literal">yes</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="enable spoolss (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id315960"></a>
+</p></dd></dl></div></div><div class="section" title="enable spoolss (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id315961"></a>
 
 enable spoolss (G)
-</h3></div></div></div><a class="indexterm" name="id315961"></a><a name="ENABLESPOOLSS"></a><div class="variablelist"><dl><dt></dt><dd><p>Inverted synonym for <a class="link" href="smb.conf.5.html#DISABLESPOOLSS" target="_top">disable spoolss</a>.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>enable spoolss</code></em> = <code class="literal">yes</code>
+</h3></div></div></div><a class="indexterm" name="id315962"></a><a name="ENABLESPOOLSS"></a><div class="variablelist"><dl><dt></dt><dd><p>Inverted synonym for <a class="link" href="smb.conf.5.html#DISABLESPOOLSS" target="_top">disable spoolss</a>.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>enable spoolss</code></em> = <code class="literal">yes</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="encrypt passwords (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id316012"></a>
+</p></dd></dl></div></div><div class="section" title="encrypt passwords (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id316013"></a>
 
 encrypt passwords (G)
-</h3></div></div></div><a class="indexterm" name="id316013"></a><a name="ENCRYPTPASSWORDS"></a><div class="variablelist"><dl><dt></dt><dd><p>This boolean controls whether encrypted passwords 
+</h3></div></div></div><a class="indexterm" name="id316014"></a><a name="ENCRYPTPASSWORDS"></a><div class="variablelist"><dl><dt></dt><dd><p>This boolean controls whether encrypted passwords 
     will be negotiated with the client. Note that Windows NT 4.0 SP3 and 
     above and also Windows 98 will by default expect encrypted passwords 
     unless a registry entry is changed. To use encrypted passwords in 
@@ -2057,10 +2057,10 @@ encrypt passwords (G)
     causes <code class="literal">smbd</code> to authenticate against another 
 	server.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>encrypt passwords</code></em> = <code class="literal">yes</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="enhanced browsing (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id316113"></a>
+</p></dd></dl></div></div><div class="section" title="enhanced browsing (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id316114"></a>
 
 enhanced browsing (G)
-</h3></div></div></div><a class="indexterm" name="id316114"></a><a name="ENHANCEDBROWSING"></a><div class="variablelist"><dl><dt></dt><dd><p>This option enables a couple of enhancements to 
+</h3></div></div></div><a class="indexterm" name="id316115"></a><a name="ENHANCEDBROWSING"></a><div class="variablelist"><dl><dt></dt><dd><p>This option enables a couple of enhancements to 
 	cross-subnet browse propagation that have been added in Samba 
 	but which are not standard in Microsoft implementations.  
 	</p><p>The first enhancement to browse propagation consists of a regular
@@ -2134,7 +2134,7 @@ fake directory create times (S)
 	ensures directories always predate their contents and an NMAKE build 
 	will proceed as expected.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>fake directory create times</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="fake oplocks (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id316390"></a>
+</p></dd></dl></div></div><div class="section" title="fake oplocks (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id316391"></a>
 
 fake oplocks (S)
 </h3></div></div></div><a class="indexterm" name="id316392"></a><a name="FAKEOPLOCKS"></a><div class="variablelist"><dl><dt></dt><dd><p>Oplocks are the way that SMB clients get permission 
@@ -2221,13 +2221,13 @@ force directory security mode (S)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>force directory security mode</code></em> = <code class="literal">700</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="group"><div class="titlepage"><div><div><h3 class="title"><a name="id316787"></a>
+</p></dd></dl></div></div><div class="section" title="group"><div class="titlepage"><div><div><h3 class="title"><a name="id316788"></a>
 
 <a name="GROUP"></a>group
-</h3></div></div></div><a class="indexterm" name="id316788"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#FORCEGROUP">force group</a>.</p></dd></dl></div></div><div class="section" title="force group (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id316819"></a>
+</h3></div></div></div><a class="indexterm" name="id316789"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#FORCEGROUP">force group</a>.</p></dd></dl></div></div><div class="section" title="force group (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id316820"></a>
 
 force group (S)
-</h3></div></div></div><a class="indexterm" name="id316820"></a><a name="FORCEGROUP"></a><div class="variablelist"><dl><dt></dt><dd><p>This specifies a UNIX group name that will be 
+</h3></div></div></div><a class="indexterm" name="id316821"></a><a name="FORCEGROUP"></a><div class="variablelist"><dl><dt></dt><dd><p>This specifies a UNIX group name that will be 
     assigned as the default primary group for all users connecting 
     to this service. This is useful for sharing files by ensuring 
     that all access to files on service will use the named group for 
@@ -2277,10 +2277,10 @@ force printername (S)
     not be able to delete printer connections from their local Printers 
     folder.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>force printername</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="force security mode (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id317001"></a>
+</p></dd></dl></div></div><div class="section" title="force security mode (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id317002"></a>
 
 force security mode (S)
-</h3></div></div></div><a class="indexterm" name="id317002"></a><a name="FORCESECURITYMODE"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id317003"></a><a name="FORCESECURITYMODE"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This parameter controls what UNIX permission bits can be modified when a Windows NT client is manipulating 
     the UNIX permission on a file using the native NT security dialog box.
 	</p><p>
@@ -2334,10 +2334,10 @@ force user (S)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>force user</code></em> = <code class="literal">auser</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="fstype (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id317216"></a>
+</p></dd></dl></div></div><div class="section" title="fstype (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id317217"></a>
 
 fstype (S)
-</h3></div></div></div><a class="indexterm" name="id317217"></a><a name="FSTYPE"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id317218"></a><a name="FSTYPE"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This parameter allows the administrator to configure the string that specifies the type of filesystem a share 
 	is using that is reported by <a class="citerefentry" href="smbd.8.html"><span class="citerefentry"><span class="refentrytitle">smbd</span>(8)</span></a> 
 	when a client queries the filesystem type for a share. The default type is <code class="constant">NTFS</code> for compatibility 
@@ -2363,10 +2363,10 @@ get quota command (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>get quota command</code></em> = <code class="literal">/usr/local/sbin/query_quota</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="getwd cache (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id317471"></a>
+</p></dd></dl></div></div><div class="section" title="getwd cache (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id317472"></a>
 
 getwd cache (G)
-</h3></div></div></div><a class="indexterm" name="id317472"></a><a name="GETWDCACHE"></a><div class="variablelist"><dl><dt></dt><dd><p>This is a tuning option. When this is enabled a 
+</h3></div></div></div><a class="indexterm" name="id317473"></a><a name="GETWDCACHE"></a><div class="variablelist"><dl><dt></dt><dd><p>This is a tuning option. When this is enabled a 
     caching algorithm will be used to reduce the time taken for getwd() 
     calls. This can have a significant impact on performance, especially 
     when the <a class="link" href="smb.conf.5.html#WIDESMBCONFOPTIONS" target="_top">wide smbconfoptions</a> parameter is set to <code class="constant">no</code>.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>getwd cache</code></em> = <code class="literal">yes</code>
@@ -2392,13 +2392,13 @@ guest account (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>guest account</code></em> = <code class="literal">ftp</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="public"><div class="titlepage"><div><div><h3 class="title"><a name="id317628"></a>
+</p></dd></dl></div></div><div class="section" title="public"><div class="titlepage"><div><div><h3 class="title"><a name="id317629"></a>
 
 <a name="PUBLIC"></a>public
-</h3></div></div></div><a class="indexterm" name="id317630"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#GUESTOK">guest ok</a>.</p></dd></dl></div></div><div class="section" title="guest ok (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id317659"></a>
+</h3></div></div></div><a class="indexterm" name="id317630"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#GUESTOK">guest ok</a>.</p></dd></dl></div></div><div class="section" title="guest ok (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id317660"></a>
 
 guest ok (S)
-</h3></div></div></div><a class="indexterm" name="id317660"></a><a name="GUESTOK"></a><div class="variablelist"><dl><dt></dt><dd><p>If this parameter is <code class="constant">yes</code> for 
+</h3></div></div></div><a class="indexterm" name="id317661"></a><a name="GUESTOK"></a><div class="variablelist"><dl><dt></dt><dd><p>If this parameter is <code class="constant">yes</code> for 
     a service, then no password is required to connect to the service. 
     Privileges will be those of the <a class="link" href="smb.conf.5.html#GUESTACCOUNT" target="_top">guest account</a>.</p><p>This parameter nullifies the benefits of setting
     <a class="link" href="smb.conf.5.html#RESTRICTANONYMOUS" target="_top">restrict anonymous = 2</a>
@@ -2408,10 +2408,10 @@ guest ok (S)
 </p></dd></dl></div></div><div class="section" title="only guest"><div class="titlepage"><div><div><h3 class="title"><a name="id317745"></a>
 
 <a name="ONLYGUEST"></a>only guest
-</h3></div></div></div><a class="indexterm" name="id317746"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#GUESTONLY">guest only</a>.</p></dd></dl></div></div><div class="section" title="guest only (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id317777"></a>
+</h3></div></div></div><a class="indexterm" name="id317746"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#GUESTONLY">guest only</a>.</p></dd></dl></div></div><div class="section" title="guest only (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id317778"></a>
 
 guest only (S)
-</h3></div></div></div><a class="indexterm" name="id317778"></a><a name="GUESTONLY"></a><div class="variablelist"><dl><dt></dt><dd><p>If this parameter is <code class="constant">yes</code> for 
+</h3></div></div></div><a class="indexterm" name="id317779"></a><a name="GUESTONLY"></a><div class="variablelist"><dl><dt></dt><dd><p>If this parameter is <code class="constant">yes</code> for 
     a service, then only guest connections to the service are permitted. 
     This parameter will have no effect if <a class="link" href="smb.conf.5.html#GUESTOK" target="_top">guest ok</a> is not set for the service.</p><p>See the section below on <a class="link" href="smb.conf.5.html#SECURITY" target="_top">security</a> for more information about this option.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>guest only</code></em> = <code class="literal">no</code>
@@ -2447,7 +2447,7 @@ hide files = /.*/DesktopFolderDB/TrashFor%m/resource.frk/
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>hide files</code></em> = <code class="literal">
 # no file are hidden</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="hide special files (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id317966"></a>
+</p></dd></dl></div></div><div class="section" title="hide special files (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id317967"></a>
 
 hide special files (S)
 </h3></div></div></div><a class="indexterm" name="id317968"></a><a name="HIDESPECIALFILES"></a><div class="variablelist"><dl><dt></dt><dd><p>
@@ -2461,10 +2461,10 @@ hide unreadable (S)
 </h3></div></div></div><a class="indexterm" name="id318009"></a><a name="HIDEUNREADABLE"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter prevents clients from seeing the
 		existance of files that cannot be read. Defaults to off.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>hide unreadable</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="hide unwriteable files (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id318049"></a>
+</p></dd></dl></div></div><div class="section" title="hide unwriteable files (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id318050"></a>
 
 hide unwriteable files (S)
-</h3></div></div></div><a class="indexterm" name="id318050"></a><a name="HIDEUNWRITEABLEFILES"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id318051"></a><a name="HIDEUNWRITEABLEFILES"></a><div class="variablelist"><dl><dt></dt><dd><p>
     This parameter prevents clients from seeing the existance of files that cannot be written to. 
     Defaults to off. Note that unwriteable directories are shown as usual.
     </p><p>Default: <span class="emphasis"><em><em class="parameter"><code>hide unwriteable files</code></em> = <code class="literal">no</code>
@@ -2555,10 +2555,10 @@ hosts deny (S)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>hosts deny</code></em> = <code class="literal">150.203.4. badhost.mynet.edu.au</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="idmap backend (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id318679"></a>
+</p></dd></dl></div></div><div class="section" title="idmap backend (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id318680"></a>
 
 idmap backend (G)
-</h3></div></div></div><a class="indexterm" name="id318680"></a><a name="IDMAPBACKEND"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id318681"></a><a name="IDMAPBACKEND"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	The idmap backend provides a plugin interface for Winbind to use
 	varying backends to store SID/uid/gid mapping tables.
 	</p><p>
@@ -2670,7 +2670,7 @@ idmap config (G)
 </h3></div></div></div><a class="indexterm" name="id319003"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#IDMAPGID">idmap gid</a>.</p></dd></dl></div></div><div class="section" title="idmap gid (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id319034"></a>
 
 idmap gid (G)
-</h3></div></div></div><a class="indexterm" name="id319035"></a><a name="IDMAPGID"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id319036"></a><a name="IDMAPGID"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	The idmap gid parameter specifies the range of group ids
 	for the default idmap configuration. It is now deprecated
 	in favour of <a class="link" href="smb.conf.5.html#IDMAPCONFIG*:RANGE" target="_top">idmap config * : range</a>.
@@ -2681,7 +2681,7 @@ idmap gid (G)
 </p></dd></dl></div></div><div class="section" title="idmap negative cache time (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id319118"></a>
 
 idmap negative cache time (G)
-</h3></div></div></div><a class="indexterm" name="id319119"></a><a name="IDMAPNEGATIVECACHETIME"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies the number of seconds that Winbind's
+</h3></div></div></div><a class="indexterm" name="id319120"></a><a name="IDMAPNEGATIVECACHETIME"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies the number of seconds that Winbind's
 	idmap interface will cache negative SID/uid/gid query results.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>idmap negative cache time</code></em> = <code class="literal">120</code>
 </em></span>
@@ -2702,7 +2702,7 @@ idmap uid (G)
 </p></dd></dl></div></div><div class="section" title="include (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id319274"></a>
 
 include (G)
-</h3></div></div></div><a class="indexterm" name="id319275"></a><a name="INCLUDE"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id319276"></a><a name="INCLUDE"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This allows you to include one config file inside another.  The file is included literally, as though typed 
 	in place.
 	</p><p>
@@ -2736,7 +2736,7 @@ inherit acls (S)
     Windows ACLs correctly.
 </p><p>Default: <span class="emphasis"><em><em class="parameter"><code>inherit acls</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="inherit owner (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id319416"></a>
+</p></dd></dl></div></div><div class="section" title="inherit owner (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id319417"></a>
 
 inherit owner (S)
 </h3></div></div></div><a class="indexterm" name="id319418"></a><a name="INHERITOWNER"></a><div class="variablelist"><dl><dt></dt><dd><p>The ownership of new files and directories 
@@ -2748,7 +2748,7 @@ inherit owner (S)
 	delete them and to ensure that newly create files in a user's
 	roaming profile directory are actually owner by the user.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>inherit owner</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="inherit permissions (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id319464"></a>
+</p></dd></dl></div></div><div class="section" title="inherit permissions (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id319465"></a>
 
 inherit permissions (S)
 </h3></div></div></div><a class="indexterm" name="id319466"></a><a name="INHERITPERMISSIONS"></a><div class="variablelist"><dl><dt></dt><dd><p>
@@ -2777,10 +2777,10 @@ init logon delayed hosts (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>init logon delayed hosts</code></em> = <code class="literal">150.203.5. myhost.mynet.de</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="init logon delay (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id319676"></a>
+</p></dd></dl></div></div><div class="section" title="init logon delay (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id319677"></a>
 
 init logon delay (G)
-</h3></div></div></div><a class="indexterm" name="id319677"></a><a name="INITLOGONDELAY"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id319678"></a><a name="INITLOGONDELAY"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This parameter specifies a delay in milliseconds for the hosts configured
 	for delayed initial samlogon with
 	<a class="link" href="smb.conf.5.html#INITLOGONDELAYEDHOSTS" target="_top">init logon delayed hosts</a>.
@@ -2861,10 +2861,10 @@ Basically you should only use this option if you strike difficulties.</p><p>Defa
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>keepalive</code></em> = <code class="literal">600</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="kerberos method (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id320099"></a>
+</p></dd></dl></div></div><div class="section" title="kerberos method (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id320100"></a>
 
 kerberos method (G)
-</h3></div></div></div><a class="indexterm" name="id320100"></a><a name="KERBEROSMETHOD"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id320101"></a><a name="KERBEROSMETHOD"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	Controls how kerberos tickets are verified.
 	</p><p>Valid options are:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>secrets only - use only the secrets.tdb for
 	  ticket verification (default)</p></li><li class="listitem"><p>system keytab - use only the system keytab
@@ -2881,7 +2881,7 @@ kerberos method (G)
 	  specify the location of the keytab file.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>kerberos method</code></em> = <code class="literal">secrets only</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="kernel change notify (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id320188"></a>
+</p></dd></dl></div></div><div class="section" title="kernel change notify (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id320189"></a>
 
 kernel change notify (S)
 </h3></div></div></div><a class="indexterm" name="id320190"></a><a name="KERNELCHANGENOTIFY"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies whether Samba should ask the 
@@ -2929,10 +2929,10 @@ lanman auth (G)
     permited.  Not all clients support NTLMv2, and most will require
     special configuration to use it.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>lanman auth</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="large readwrite (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id320411"></a>
+</p></dd></dl></div></div><div class="section" title="large readwrite (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id320412"></a>
 
 large readwrite (G)
-</h3></div></div></div><a class="indexterm" name="id320412"></a><a name="LARGEREADWRITE"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter determines whether or not
+</h3></div></div></div><a class="indexterm" name="id320413"></a><a name="LARGEREADWRITE"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter determines whether or not
     <a class="citerefentry" href="smbd.8.html"><span class="citerefentry"><span class="refentrytitle">smbd</span>(8)</span></a> supports the new 64k
     streaming read and write variant SMB requests introduced with
     Windows 2000. Note that due to Windows 2000 client redirector bugs
@@ -2990,7 +2990,7 @@ ldap debug level (G)
 </p></dd></dl></div></div><div class="section" title="ldap debug threshold (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id320708"></a>
 
 ldap debug threshold (G)
-</h3></div></div></div><a class="indexterm" name="id320709"></a><a name="LDAPDEBUGTHRESHOLD"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id320710"></a><a name="LDAPDEBUGTHRESHOLD"></a><div class="variablelist"><dl><dt></dt><dd><p>
 		This parameter controls the Samba debug level at which
 		the ldap library debug output is
 		printed in the Samba logs. See the description of
@@ -2999,18 +2999,18 @@ ldap debug threshold (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>ldap debug threshold</code></em> = <code class="literal">5</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="ldap delete dn (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id320772"></a>
+</p></dd></dl></div></div><div class="section" title="ldap delete dn (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id320773"></a>
 
 ldap delete dn (G)
-</h3></div></div></div><a class="indexterm" name="id320773"></a><a name="LDAPDELETEDN"></a><div class="variablelist"><dl><dt></dt><dd><p> This parameter specifies whether a delete
+</h3></div></div></div><a class="indexterm" name="id320774"></a><a name="LDAPDELETEDN"></a><div class="variablelist"><dl><dt></dt><dd><p> This parameter specifies whether a delete
 	operation in the ldapsam deletes the complete entry or only the attributes
 	specific to Samba.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>ldap delete dn</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="ldap deref (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id320814"></a>
+</p></dd></dl></div></div><div class="section" title="ldap deref (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id320815"></a>
 
 ldap deref (G)
-</h3></div></div></div><a class="indexterm" name="id320815"></a><a name="LDAPDEREF"></a><div class="variablelist"><dl><dt></dt><dd><p>This option controls whether Samba should tell the LDAP library
+</h3></div></div></div><a class="indexterm" name="id320816"></a><a name="LDAPDEREF"></a><div class="variablelist"><dl><dt></dt><dd><p>This option controls whether Samba should tell the LDAP library
 	to use a certain alias dereferencing method. The default is
 	<span class="emphasis"><em>auto</em></span>, which means that the default setting of the
 	ldap client library will be kept. Other possible values are
@@ -3021,10 +3021,10 @@ ldap deref (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>ldap deref</code></em> = <code class="literal">searching</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="ldap follow referral (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id320892"></a>
+</p></dd></dl></div></div><div class="section" title="ldap follow referral (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id320893"></a>
 
 ldap follow referral (G)
-</h3></div></div></div><a class="indexterm" name="id320893"></a><a name="LDAPFOLLOWREFERRAL"></a><div class="variablelist"><dl><dt></dt><dd><p>This option controls whether to follow LDAP referrals or not when
+</h3></div></div></div><a class="indexterm" name="id320894"></a><a name="LDAPFOLLOWREFERRAL"></a><div class="variablelist"><dl><dt></dt><dd><p>This option controls whether to follow LDAP referrals or not when
 	searching for entries in the LDAP database. Possible values are
 	<span class="emphasis"><em>on</em></span> to enable following referrals,
 	<span class="emphasis"><em>off</em></span> to disable this, and
@@ -3109,10 +3109,10 @@ ldap replication sleep (G)
 	The value is specified in milliseconds, the maximum value is 5000 (5 seconds).
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>ldap replication sleep</code></em> = <code class="literal">1000</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="ldapsam:editposix (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id321415"></a>
+</p></dd></dl></div></div><div class="section" title="ldapsam:editposix (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id321416"></a>
 
 ldapsam:editposix (G)
-</h3></div></div></div><a class="indexterm" name="id321416"></a><a name="LDAPSAM:EDITPOSIX"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id321417"></a><a name="LDAPSAM:EDITPOSIX"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	Editposix is an option that leverages ldapsam:trusted to make it simpler to manage a domain controller
 	eliminating the need to set up custom scripts to add and manage the posix users and groups. This option
 	will instead directly manipulate the ldap tree to create, remove and modify user and group entries.
@@ -3190,7 +3190,7 @@ ldapsam:editposix (G)
 	</pre><p>
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>ldapsam:editposix</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="ldapsam:trusted (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id321520"></a>
+</p></dd></dl></div></div><div class="section" title="ldapsam:trusted (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id321521"></a>
 
 ldapsam:trusted (G)
 </h3></div></div></div><a class="indexterm" name="id321522"></a><a name="LDAPSAM:TRUSTED"></a><div class="variablelist"><dl><dt></dt><dd><p>
@@ -3252,10 +3252,10 @@ ldap ssl (G)
 	for more information on	<a class="link" href="smb.conf.5.html#LDAPSSLADS" target="_top">ldap ssl ads</a>.
         </p><p>Default: <span class="emphasis"><em><em class="parameter"><code>ldap ssl</code></em> = <code class="literal">start tls</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="ldap suffix (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id321861"></a>
+</p></dd></dl></div></div><div class="section" title="ldap suffix (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id321862"></a>
 
 ldap suffix (G)
-</h3></div></div></div><a class="indexterm" name="id321862"></a><a name="LDAPSUFFIX"></a><div class="variablelist"><dl><dt></dt><dd><p>Specifies the base for all ldap suffixes and for storing the sambaDomain object.</p><p>
+</h3></div></div></div><a class="indexterm" name="id321863"></a><a name="LDAPSUFFIX"></a><div class="variablelist"><dl><dt></dt><dd><p>Specifies the base for all ldap suffixes and for storing the sambaDomain object.</p><p>
 	The ldap suffix will be appended to the values specified for the <a class="link" href="smb.conf.5.html#LDAPUSERSUFFIX" target="_top">ldap user suffix</a>,
 	 <a class="link" href="smb.conf.5.html#LDAPGROUPSUFFIX" target="_top">ldap group suffix</a>, <a class="link" href="smb.conf.5.html#LDAPMACHINESUFFIX" target="_top">ldap machine suffix</a>, and the
 	 <a class="link" href="smb.conf.5.html#LDAPIDMAPSUFFIX" target="_top">ldap idmap suffix</a>. Each of these should be given only a DN relative to the
@@ -3264,10 +3264,10 @@ ldap suffix (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>ldap suffix</code></em> = <code class="literal">dc=samba,dc=org</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="ldap timeout (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id321977"></a>
+</p></dd></dl></div></div><div class="section" title="ldap timeout (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id321978"></a>
 
 ldap timeout (G)
-</h3></div></div></div><a class="indexterm" name="id321978"></a><a name="LDAPTIMEOUT"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id321979"></a><a name="LDAPTIMEOUT"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This parameter defines the number of seconds that Samba should use as timeout for LDAP operations.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>ldap timeout</code></em> = <code class="literal">15</code>
 </em></span>
@@ -3282,7 +3282,7 @@ ldap user suffix (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>ldap user suffix</code></em> = <code class="literal">ou=people</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="level2 oplocks (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id322096"></a>
+</p></dd></dl></div></div><div class="section" title="level2 oplocks (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id322097"></a>
 
 level2 oplocks (S)
 </h3></div></div></div><a class="indexterm" name="id322098"></a><a name="LEVEL2OPLOCKS"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter controls whether Samba supports
@@ -3340,7 +3340,7 @@ lm interval (G)
 </p></dd></dl></div></div><div class="section" title="load printers (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id322388"></a>
 
 load printers (G)
-</h3></div></div></div><a class="indexterm" name="id322389"></a><a name="LOADPRINTERS"></a><div class="variablelist"><dl><dt></dt><dd><p>A boolean variable that controls whether all 
+</h3></div></div></div><a class="indexterm" name="id322390"></a><a name="LOADPRINTERS"></a><div class="variablelist"><dl><dt></dt><dd><p>A boolean variable that controls whether all 
     printers in the printcap will be loaded for browsing by default. 
     See the <a class="link" href="smb.conf.5.html#PRINTERS" target="_top">printers</a> section for 
     more details.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>load printers</code></em> = <code class="literal">yes</code>
@@ -3358,10 +3358,10 @@ local master (G)
 	will <span class="emphasis"><em>participate</em></span> in elections for local master browser.</p><p>Setting this value to <code class="constant">no</code> will cause <code class="literal">nmbd</code> <span class="emphasis"><em>never</em></span> to become a local 
 master browser.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>local master</code></em> = <code class="literal">yes</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="lock dir"><div class="titlepage"><div><div><h3 class="title"><a name="id322538"></a>
+</p></dd></dl></div></div><div class="section" title="lock dir"><div class="titlepage"><div><div><h3 class="title"><a name="id322539"></a>
 
 <a name="LOCKDIR"></a>lock dir
-</h3></div></div></div><a class="indexterm" name="id322539"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#LOCKDIRECTORY">lock directory</a>.</p></dd></dl></div></div><div class="section" title="lock directory (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id322570"></a>
+</h3></div></div></div><a class="indexterm" name="id322540"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#LOCKDIRECTORY">lock directory</a>.</p></dd></dl></div></div><div class="section" title="lock directory (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id322570"></a>
 
 lock directory (G)
 </h3></div></div></div><a class="indexterm" name="id322571"></a><a name="LOCKDIRECTORY"></a><div class="variablelist"><dl><dt></dt><dd><p>This option specifies the directory where lock 
@@ -3418,7 +3418,7 @@ log file (G)
 </p></dd></dl></div></div><div class="section" title="debuglevel"><div class="titlepage"><div><div><h3 class="title"><a name="id322870"></a>
 
 <a name="DEBUGLEVEL"></a>debuglevel
-</h3></div></div></div><a class="indexterm" name="id322871"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#LOGLEVEL">log level</a>.</p></dd></dl></div></div><div class="section" title="log level (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id322901"></a>
+</h3></div></div></div><a class="indexterm" name="id322872"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#LOGLEVEL">log level</a>.</p></dd></dl></div></div><div class="section" title="log level (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id322901"></a>
 
 log level (G)
 </h3></div></div></div><a class="indexterm" name="id322902"></a><a name="LOGLEVEL"></a><div class="variablelist"><dl><dt></dt><dd><p>
@@ -3526,7 +3526,7 @@ logon path = \\PROFILESERVER\PROFILE\%U
 </pre><p>
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>logon path</code></em> = <code class="literal">\\%N\%U\profile</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="logon script (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id323502"></a>
+</p></dd></dl></div></div><div class="section" title="logon script (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id323503"></a>
 
 logon script (G)
 </h3></div></div></div><a class="indexterm" name="id323504"></a><a name="LOGONSCRIPT"></a><div class="variablelist"><dl><dt></dt><dd><p>
@@ -3577,7 +3577,7 @@ log writeable files on exit (G)
 	consistency checks on.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>log writeable files on exit</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="lppause command (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id323706"></a>
+</p></dd></dl></div></div><div class="section" title="lppause command (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id323707"></a>
 
 lppause command (S)
 </h3></div></div></div><a class="indexterm" name="id323708"></a><a name="LPPAUSECOMMAND"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies the command to be 
@@ -3623,7 +3623,7 @@ lpq cache time (G)
 </p></dd></dl></div></div><div class="section" title="lpq command (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id323954"></a>
 
 lpq command (S)
-</h3></div></div></div><a class="indexterm" name="id323955"></a><a name="LPQCOMMAND"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies the command to be 
+</h3></div></div></div><a class="indexterm" name="id323956"></a><a name="LPQCOMMAND"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies the command to be 
     executed on the server host in order to obtain <code class="literal">lpq
     </code>-style printer status information.</p><p>This command should be a program or script which 
     takes a printer name as its only parameter and outputs printer 
@@ -3645,7 +3645,7 @@ lpq command (S)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>lpq command</code></em> = <code class="literal">/usr/bin/lpq -P%p</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="lpresume command (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id324070"></a>
+</p></dd></dl></div></div><div class="section" title="lpresume command (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id324071"></a>
 
 lpresume command (S)
 </h3></div></div></div><a class="indexterm" name="id324072"></a><a name="LPRESUMECOMMAND"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies the command to be 
@@ -3766,7 +3766,7 @@ mangle prefix (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>mangle prefix</code></em> = <code class="literal">4</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="mangling char (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id324740"></a>
+</p></dd></dl></div></div><div class="section" title="mangling char (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id324741"></a>
 
 mangling char (S)
 </h3></div></div></div><a class="indexterm" name="id324742"></a><a name="MANGLINGCHAR"></a><div class="variablelist"><dl><dt></dt><dd><p>This controls what character is used as 
@@ -3801,10 +3801,10 @@ map acl inherit (S)
     POSIX ACL mapping code.
     </p><p>Default: <span class="emphasis"><em><em class="parameter"><code>map acl inherit</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="map archive (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id324929"></a>
+</p></dd></dl></div></div><div class="section" title="map archive (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id324930"></a>
 
 map archive (S)
-</h3></div></div></div><a class="indexterm" name="id324930"></a><a name="MAPARCHIVE"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id324931"></a><a name="MAPARCHIVE"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This controls whether the DOS archive attribute 
 	should be mapped to the UNIX owner execute bit.  The DOS archive bit 
 	is set when a file has been modified since its last backup.  One 
@@ -3817,10 +3817,10 @@ map archive (S)
 	<a class="link" href="smb.conf.5.html#CREATEMASK" target="_top">create mask</a> for details.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>map archive</code></em> = <code class="literal">yes</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="map hidden (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id324998"></a>
+</p></dd></dl></div></div><div class="section" title="map hidden (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id324999"></a>
 
 map hidden (S)
-</h3></div></div></div><a class="indexterm" name="id324999"></a><a name="MAPHIDDEN"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id325000"></a><a name="MAPHIDDEN"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This controls whether DOS style hidden files should be mapped to the UNIX world execute bit.
 	</p><p>
 	Note that this requires the <a class="link" href="smb.conf.5.html#CREATEMASK" target="_top">create mask</a> to be set such that the world execute 
@@ -3865,10 +3865,10 @@ map system (S)
 	<a class="link" href="smb.conf.5.html#CREATEMASK" target="_top">create mask</a> for details.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>map system</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="map to guest (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id325261"></a>
+</p></dd></dl></div></div><div class="section" title="map to guest (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id325262"></a>
 
 map to guest (G)
-</h3></div></div></div><a class="indexterm" name="id325262"></a><a name="MAPTOGUEST"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is only useful in <a class="link" href="smb.conf.5.html#SECURITY" target="_top">SECURITY = 
+</h3></div></div></div><a class="indexterm" name="id325263"></a><a name="MAPTOGUEST"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is only useful in <a class="link" href="smb.conf.5.html#SECURITY" target="_top">SECURITY = 
     security</a> modes other than <em class="parameter"><code>security = share</code></em> 
     and <em class="parameter"><code>security = server</code></em>
     - i.e. <code class="constant">user</code>, and <code class="constant">domain</code>.</p><p>This parameter can take four different values, which tell
@@ -3910,10 +3910,10 @@ map to guest (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>map to guest</code></em> = <code class="literal">Bad User</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="map untrusted to domain (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id325477"></a>
+</p></dd></dl></div></div><div class="section" title="map untrusted to domain (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id325478"></a>
 
 map untrusted to domain (G)
-</h3></div></div></div><a class="indexterm" name="id325478"></a><a name="MAPUNTRUSTEDTODOMAIN"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id325479"></a><a name="MAPUNTRUSTEDTODOMAIN"></a><div class="variablelist"><dl><dt></dt><dd><p>
     If a client connects to smbd using an untrusted domain name, such as
     BOGUS\user, smbd replaces the BOGUS domain with it's SAM name before
     attempting to authenticate that user.  In the case where smbd is acting as
@@ -3931,10 +3931,10 @@ map untrusted to domain (G)
     effect.
     </p><p>Default: <span class="emphasis"><em><em class="parameter"><code>map untrusted to domain</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="max connections (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id325535"></a>
+</p></dd></dl></div></div><div class="section" title="max connections (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id325536"></a>
 
 max connections (S)
-</h3></div></div></div><a class="indexterm" name="id325536"></a><a name="MAXCONNECTIONS"></a><div class="variablelist"><dl><dt></dt><dd><p>This option allows the number of simultaneous connections to a service to be limited.
+</h3></div></div></div><a class="indexterm" name="id325537"></a><a name="MAXCONNECTIONS"></a><div class="variablelist"><dl><dt></dt><dd><p>This option allows the number of simultaneous connections to a service to be limited.
     If <em class="parameter"><code>max connections</code></em> is greater than 0 then connections
     will be refused if this number of connections to the service are already open. A value 
     of zero mean an unlimited number of connections may be made.</p><p>Record lock files are used to implement this feature. The lock files will be stored in 
@@ -3942,7 +3942,7 @@ max connections (S)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>max connections</code></em> = <code class="literal">10</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="max disk size (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id325616"></a>
+</p></dd></dl></div></div><div class="section" title="max disk size (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id325617"></a>
 
 max disk size (G)
 </h3></div></div></div><a class="indexterm" name="id325618"></a><a name="MAXDISKSIZE"></a><div class="variablelist"><dl><dt></dt><dd><p>This option allows you to put an upper limit 
@@ -3971,10 +3971,10 @@ max log size (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>max log size</code></em> = <code class="literal">1000</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="max mux (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id325770"></a>
+</p></dd></dl></div></div><div class="section" title="max mux (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id325771"></a>
 
 max mux (G)
-</h3></div></div></div><a class="indexterm" name="id325771"></a><a name="MAXMUX"></a><div class="variablelist"><dl><dt></dt><dd><p>This option controls the maximum number of 
+</h3></div></div></div><a class="indexterm" name="id325772"></a><a name="MAXMUX"></a><div class="variablelist"><dl><dt></dt><dd><p>This option controls the maximum number of 
     outstanding simultaneous SMB operations that Samba tells the client 
 	it will allow. You should never need to set this parameter.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>max mux</code></em> = <code class="literal">50</code>
 </em></span>
@@ -4022,10 +4022,10 @@ max protocol (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>max protocol</code></em> = <code class="literal">LANMAN1</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="max reported print jobs (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id326098"></a>
+</p></dd></dl></div></div><div class="section" title="max reported print jobs (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id326099"></a>
 
 max reported print jobs (S)
-</h3></div></div></div><a class="indexterm" name="id326099"></a><a name="MAXREPORTEDPRINTJOBS"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id326100"></a><a name="MAXREPORTEDPRINTJOBS"></a><div class="variablelist"><dl><dt></dt><dd><p>
     This parameter limits the maximum number of jobs displayed in a port monitor for 
     Samba printer queue at any given moment. If this number is exceeded, the excess 
     jobs will not be shown. A value of zero means there is no limit on the number of 
@@ -4067,10 +4067,10 @@ max ttl (G)
     requesting a name using either a broadcast packet or from a WINS server. You should 
 	never need to change this parameter. The default is 3 days.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>max ttl</code></em> = <code class="literal">259200</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="max wins ttl (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id326357"></a>
+</p></dd></dl></div></div><div class="section" title="max wins ttl (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id326358"></a>
 
 max wins ttl (G)
-</h3></div></div></div><a class="indexterm" name="id326358"></a><a name="MAXWINSTTL"></a><div class="variablelist"><dl><dt></dt><dd><p>This option tells <a class="citerefentry" href="smbd.8.html"><span class="citerefentry"><span class="refentrytitle">smbd</span>(8)</span></a> when acting as a WINS server
+</h3></div></div></div><a class="indexterm" name="id326359"></a><a name="MAXWINSTTL"></a><div class="variablelist"><dl><dt></dt><dd><p>This option tells <a class="citerefentry" href="smbd.8.html"><span class="citerefentry"><span class="refentrytitle">smbd</span>(8)</span></a> when acting as a WINS server
 	(<a class="link" href="smb.conf.5.html#WINSSUPPORT" target="_top">wins support = yes</a>) what the maximum
     'time to live' of NetBIOS names that <code class="literal">nmbd</code> 
     will grant will be (in seconds). You should never need to change this
@@ -4079,7 +4079,7 @@ max wins ttl (G)
 </p></dd></dl></div></div><div class="section" title="max xmit (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id326426"></a>
 
 max xmit (G)
-</h3></div></div></div><a class="indexterm" name="id326427"></a><a name="MAXXMIT"></a><div class="variablelist"><dl><dt></dt><dd><p>This option controls the maximum packet size 
+</h3></div></div></div><a class="indexterm" name="id326428"></a><a name="MAXXMIT"></a><div class="variablelist"><dl><dt></dt><dd><p>This option controls the maximum packet size 
     that will be negotiated by Samba. The default is 16644, which 
     matches the behavior of Windows 2000.  A value below 2048 is likely to cause problems.
     You should never need to change this parameter from its default value.
@@ -4090,7 +4090,7 @@ max xmit (G)
 </p></dd></dl></div></div><div class="section" title="message command (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id326486"></a>
 
 message command (G)
-</h3></div></div></div><a class="indexterm" name="id326487"></a><a name="MESSAGECOMMAND"></a><div class="variablelist"><dl><dt></dt><dd><p>This specifies what command to run when the 
+</h3></div></div></div><a class="indexterm" name="id326488"></a><a name="MESSAGECOMMAND"></a><div class="variablelist"><dl><dt></dt><dd><p>This specifies what command to run when the 
 	server receives a WinPopup style message.</p><p>This would normally be a command that would 
 	deliver the message somehow. How this is to be done is 
 	up to your imagination.</p><p>An example is:
@@ -4154,7 +4154,7 @@ min protocol (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>min protocol</code></em> = <code class="literal">NT1</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="min receivefile size (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id326830"></a>
+</p></dd></dl></div></div><div class="section" title="min receivefile size (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id326831"></a>
 
 min receivefile size (G)
 </h3></div></div></div><a class="indexterm" name="id326832"></a><a name="MINRECEIVEFILESIZE"></a><div class="variablelist"><dl><dt></dt><dd><p>This option changes the behavior of <a class="citerefentry" href="smbd.8.html"><span class="citerefentry"><span class="refentrytitle">smbd</span>(8)</span></a> when processing SMBwriteX calls. Any incoming
@@ -4169,7 +4169,7 @@ nonzero. The maximum value is 128k. Values greater than 128k will be silently se
 </p></dd></dl></div></div><div class="section" title="min wins ttl (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id326892"></a>
 
 min wins ttl (G)
-</h3></div></div></div><a class="indexterm" name="id326893"></a><a name="MINWINSTTL"></a><div class="variablelist"><dl><dt></dt><dd><p>This option tells <a class="citerefentry" href="nmbd.8.html"><span class="citerefentry"><span class="refentrytitle">nmbd</span>(8)</span></a>
+</h3></div></div></div><a class="indexterm" name="id326894"></a><a name="MINWINSTTL"></a><div class="variablelist"><dl><dt></dt><dd><p>This option tells <a class="citerefentry" href="nmbd.8.html"><span class="citerefentry"><span class="refentrytitle">nmbd</span>(8)</span></a>
     when acting as a WINS server (<a class="link" href="smb.conf.5.html#WINSSUPPORT" target="_top">wins support = yes</a>) what the minimum 'time to live' 
     of NetBIOS names that <code class="literal">nmbd</code> will grant will be (in 
     seconds). You should never need to change this parameter.  The default 
@@ -4197,10 +4197,10 @@ msdfs root (S)
 	and so on.  For more information on setting up a Dfs tree on
 	Samba, refer to the MSDFS chapter in the Samba3-HOWTO book.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>msdfs root</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="multicast dns register (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327085"></a>
+</p></dd></dl></div></div><div class="section" title="multicast dns register (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327086"></a>
 
 multicast dns register (G)
-</h3></div></div></div><a class="indexterm" name="id327086"></a><a name="MULTICASTDNSREGISTER"></a><div class="variablelist"><dl><dt></dt><dd><p>If compiled with proper support for it, Samba will
+</h3></div></div></div><a class="indexterm" name="id327087"></a><a name="MULTICASTDNSREGISTER"></a><div class="variablelist"><dl><dt></dt><dd><p>If compiled with proper support for it, Samba will
         announce itself with multicast DNS services like for example
         provided by the Avahi daemon.</p><p>This parameter allows disabling Samba to register
 	itself.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>multicast dns register</code></em> = <code class="literal">yes</code>
@@ -4249,15 +4249,15 @@ name resolve order (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>name resolve order</code></em> = <code class="literal">lmhosts bcast host</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="ncalrpc dir (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327372"></a>
+</p></dd></dl></div></div><div class="section" title="ncalrpc dir (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327373"></a>
 
 ncalrpc dir (G)
-</h3></div></div></div><a class="indexterm" name="id327373"></a><a name="NCALRPCDIR"></a><div class="variablelist"><dl><dt></dt><dd><p>This directory will hold a series of named pipes to allow RPC over inter-process communication.  </p>.
+</h3></div></div></div><a class="indexterm" name="id327374"></a><a name="NCALRPCDIR"></a><div class="variablelist"><dl><dt></dt><dd><p>This directory will hold a series of named pipes to allow RPC over inter-process communication.  </p>.
 	<p>This will allow Samba and other unix processes to interact over DCE/RPC without using TCP/IP.  Additionally a sub-directory 'np' has restricted permissions, and allows a trusted communication channel between Samba processes</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>ncalrpc dir</code></em> = <code class="literal">${prefix}/var/ncalrpc</code>
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>ncalrpc dir</code></em> = <code class="literal">/var/run/samba/ncalrpc</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="netbios aliases (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327436"></a>
+</p></dd></dl></div></div><div class="section" title="netbios aliases (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327437"></a>
 
 netbios aliases (G)
 </h3></div></div></div><a class="indexterm" name="id327438"></a><a name="NETBIOSALIASES"></a><div class="variablelist"><dl><dt></dt><dd><p>This is a list of NetBIOS names that nmbd will 
@@ -4270,10 +4270,10 @@ netbios aliases (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>netbios aliases</code></em> = <code class="literal">TEST TEST1 TEST2</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="netbios name (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327498"></a>
+</p></dd></dl></div></div><div class="section" title="netbios name (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327499"></a>
 
 netbios name (G)
-</h3></div></div></div><a class="indexterm" name="id327499"></a><a name="NETBIOSNAME"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id327500"></a><a name="NETBIOSNAME"></a><div class="variablelist"><dl><dt></dt><dd><p>
 		This sets the NetBIOS name by which a Samba server is known. By default it is the same as the first component
 		of the host's DNS name. If a machine is a browse server or logon server this name (or the first component of
 		the hosts DNS name) will be the name that these services are advertised under.
@@ -4338,7 +4338,7 @@ nt acl support (S)
 </p></dd></dl></div></div><div class="section" title="ntlm auth (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327800"></a>
 
 ntlm auth (G)
-</h3></div></div></div><a class="indexterm" name="id327801"></a><a name="NTLMAUTH"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter determines whether or not <a class="citerefentry" href="smbd.8.html"><span class="citerefentry"><span class="refentrytitle">smbd</span>(8)</span></a> will attempt to
+</h3></div></div></div><a class="indexterm" name="id327802"></a><a name="NTLMAUTH"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter determines whether or not <a class="citerefentry" href="smbd.8.html"><span class="citerefentry"><span class="refentrytitle">smbd</span>(8)</span></a> will attempt to
     authenticate users using the NTLM encrypted password response.
     If disabled, either the lanman password hash or an NTLMv2 response
     will need to be sent by the client.</p><p>If this option, and <code class="literal">lanman
@@ -4355,24 +4355,24 @@ nt pipe support (G)
     pipes. This is a developer debugging option and can be left
 	alone.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>nt pipe support</code></em> = <code class="literal">yes</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="nt status support (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327913"></a>
+</p></dd></dl></div></div><div class="section" title="nt status support (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327914"></a>
 
 nt status support (G)
-</h3></div></div></div><a class="indexterm" name="id327914"></a><a name="NTSTATUSSUPPORT"></a><div class="variablelist"><dl><dt></dt><dd><p>This boolean parameter controls whether <a class="citerefentry" href="smbd.8.html"><span class="citerefentry"><span class="refentrytitle">smbd</span>(8)</span></a> will negotiate NT specific status
+</h3></div></div></div><a class="indexterm" name="id327915"></a><a name="NTSTATUSSUPPORT"></a><div class="variablelist"><dl><dt></dt><dd><p>This boolean parameter controls whether <a class="citerefentry" href="smbd.8.html"><span class="citerefentry"><span class="refentrytitle">smbd</span>(8)</span></a> will negotiate NT specific status
     support with Windows NT/2k/XP clients. This is a developer debugging option and should be left alone.
     If this option is set to <code class="constant">no</code> then Samba offers
     exactly the same DOS error codes that versions prior to Samba 2.2.3
     reported.</p><p>You should not need to ever disable this parameter.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>nt status support</code></em> = <code class="literal">yes</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="null passwords (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327971"></a>
+</p></dd></dl></div></div><div class="section" title="null passwords (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id327972"></a>
 
 null passwords (G)
-</h3></div></div></div><a class="indexterm" name="id327972"></a><a name="NULLPASSWORDS"></a><div class="variablelist"><dl><dt></dt><dd><p>Allow or disallow client access to accounts that have null passwords. </p><p>See also <a class="citerefentry" href="smbpasswd.5.html"><span class="citerefentry"><span class="refentrytitle">smbpasswd</span>(5)</span></a>.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>null passwords</code></em> = <code class="literal">no</code>
+</h3></div></div></div><a class="indexterm" name="id327973"></a><a name="NULLPASSWORDS"></a><div class="variablelist"><dl><dt></dt><dd><p>Allow or disallow client access to accounts that have null passwords. </p><p>See also <a class="citerefentry" href="smbpasswd.5.html"><span class="citerefentry"><span class="refentrytitle">smbpasswd</span>(5)</span></a>.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>null passwords</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="obey pam restrictions (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id328023"></a>
+</p></dd></dl></div></div><div class="section" title="obey pam restrictions (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id328024"></a>
 
 obey pam restrictions (G)
-</h3></div></div></div><a class="indexterm" name="id328024"></a><a name="OBEYPAMRESTRICTIONS"></a><div class="variablelist"><dl><dt></dt><dd><p>When Samba 3.0 is configured to enable PAM support
+</h3></div></div></div><a class="indexterm" name="id328025"></a><a name="OBEYPAMRESTRICTIONS"></a><div class="variablelist"><dl><dt></dt><dd><p>When Samba 3.0 is configured to enable PAM support
     (i.e. --with-pam), this parameter will control whether or not Samba
     should obey PAM's account and session management directives.  The 
     default behavior is to use PAM for clear text authentication only
@@ -4410,7 +4410,7 @@ oplock break wait time (G)
 	DO NOT CHANGE THIS PARAMETER UNLESS YOU HAVE READ AND UNDERSTOOD THE SAMBA OPLOCK CODE.
 	</p></div><p>Default: <span class="emphasis"><em><em class="parameter"><code>oplock break wait time</code></em> = <code class="literal">0</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="oplock contention limit (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id328212"></a>
+</p></dd></dl></div></div><div class="section" title="oplock contention limit (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id328213"></a>
 
 oplock contention limit (S)
 </h3></div></div></div><a class="indexterm" name="id328214"></a><a name="OPLOCKCONTENTIONLIMIT"></a><div class="variablelist"><dl><dt></dt><dd><p>
@@ -4477,10 +4477,10 @@ os level (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>os level</code></em> = <code class="literal">65</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="pam password change (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id328521"></a>
+</p></dd></dl></div></div><div class="section" title="pam password change (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id328522"></a>
 
 pam password change (G)
-</h3></div></div></div><a class="indexterm" name="id328522"></a><a name="PAMPASSWORDCHANGE"></a><div class="variablelist"><dl><dt></dt><dd><p>With the addition of better PAM support in Samba 2.2, 
+</h3></div></div></div><a class="indexterm" name="id328523"></a><a name="PAMPASSWORDCHANGE"></a><div class="variablelist"><dl><dt></dt><dd><p>With the addition of better PAM support in Samba 2.2, 
     this parameter, it is possible to use PAM's password change control 
     flag for Samba.  If enabled, then PAM will be used for password
     changes when requested by an SMB client instead of the program listed in 
@@ -4509,10 +4509,10 @@ paranoid server security (G)
     this check, which involves deliberatly attempting a
     bad logon to the remote server.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>paranoid server security</code></em> = <code class="literal">yes</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="passdb backend (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id328709"></a>
+</p></dd></dl></div></div><div class="section" title="passdb backend (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id328710"></a>
 
 passdb backend (G)
-</h3></div></div></div><a class="indexterm" name="id328710"></a><a name="PASSDBBACKEND"></a><div class="variablelist"><dl><dt></dt><dd><p>This option allows the administrator to chose which backend
+</h3></div></div></div><a class="indexterm" name="id328711"></a><a name="PASSDBBACKEND"></a><div class="variablelist"><dl><dt></dt><dd><p>This option allows the administrator to chose which backend
     will be used for storing user and possibly group information.  This allows 
     you to swap between different storage mechanisms without recompile. </p><p>The parameter value is divided into two parts, the backend's name, and a 'location'
     string that has meaning only to that particular backed.  These are separated
@@ -4556,7 +4556,7 @@ passdb expand explicit (G)
 	%G_osver% in which %G would have been substituted by the user's primary group.
     </p><p>Default: <span class="emphasis"><em><em class="parameter"><code>passdb expand explicit</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="passwd chat debug (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id328896"></a>
+</p></dd></dl></div></div><div class="section" title="passwd chat debug (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id328897"></a>
 
 passwd chat debug (G)
 </h3></div></div></div><a class="indexterm" name="id328898"></a><a name="PASSWDCHATDEBUG"></a><div class="variablelist"><dl><dt></dt><dd><p>This boolean specifies if the passwd chat script 
@@ -4638,10 +4638,10 @@ passwd program (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>passwd program</code></em> = <code class="literal">/bin/passwd %u</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="password level (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id329345"></a>
+</p></dd></dl></div></div><div class="section" title="password level (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id329346"></a>
 
 password level (G)
-</h3></div></div></div><a class="indexterm" name="id329346"></a><a name="PASSWORDLEVEL"></a><div class="variablelist"><dl><dt></dt><dd><p>Some client/server combinations have difficulty 
+</h3></div></div></div><a class="indexterm" name="id329347"></a><a name="PASSWORDLEVEL"></a><div class="variablelist"><dl><dt></dt><dd><p>Some client/server combinations have difficulty 
     with mixed-case passwords.  One offending client is Windows for 
     Workgroups, which for some reason forces passwords to upper 
     case when using the LANMAN1 protocol, but leaves them alone when 
@@ -4744,7 +4744,7 @@ perfcount module (G)
 </h3></div></div></div><a class="indexterm" name="id329857"></a><a name="PERFCOUNTMODULE"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies the perfcount backend to be used when monitoring SMB
 	operations.  Only one perfcount module may be used, and it must implement all of the
 	apis contained in the smb_perfcount_handler structure defined in smb.h.
-	</p><p><span class="emphasis"><em>No default</em></span></p></dd></dl></div></div><div class="section" title="pid directory (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id329886"></a>
+	</p><p><span class="emphasis"><em>No default</em></span></p></dd></dl></div></div><div class="section" title="pid directory (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id329887"></a>
 
 pid directory (G)
 </h3></div></div></div><a class="indexterm" name="id329888"></a><a name="PIDDIRECTORY"></a><div class="variablelist"><dl><dt></dt><dd><p>
@@ -4765,7 +4765,7 @@ posix locking (S)
 	to "no", unless you are sharing from an NFS mount, which is not a good idea in the first place.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>posix locking</code></em> = <code class="literal">yes</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="postexec (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id330000"></a>
+</p></dd></dl></div></div><div class="section" title="postexec (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id330001"></a>
 
 postexec (S)
 </h3></div></div></div><a class="indexterm" name="id330002"></a><a name="POSTEXEC"></a><div class="variablelist"><dl><dt></dt><dd><p>This option specifies a command to be run 
@@ -4779,7 +4779,7 @@ postexec (S)
 </p></dd></dl></div></div><div class="section" title="preexec close (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id330070"></a>
 
 preexec close (S)
-</h3></div></div></div><a class="indexterm" name="id330071"></a><a name="PREEXECCLOSE"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id330072"></a><a name="PREEXECCLOSE"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This boolean option controls whether a non-zero return code from <a class="link" href="smb.conf.5.html#PREEXEC" target="_top">preexec</a> 
 	should close the service being connected to.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>preexec close</code></em> = <code class="literal">no</code>
@@ -4790,7 +4790,7 @@ preexec close (S)
 </h3></div></div></div><a class="indexterm" name="id330124"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#PREEXEC">preexec</a>.</p></dd></dl></div></div><div class="section" title="preexec (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id330154"></a>
 
 preexec (S)
-</h3></div></div></div><a class="indexterm" name="id330155"></a><a name="PREEXEC"></a><div class="variablelist"><dl><dt></dt><dd><p>This option specifies a command to be run whenever 
+</h3></div></div></div><a class="indexterm" name="id330156"></a><a name="PREEXEC"></a><div class="variablelist"><dl><dt></dt><dd><p>This option specifies a command to be run whenever 
 	the service is connected to. It takes the usual substitutions.</p><p>An interesting example is to send the users a welcome 
 	message every time they log in. Maybe a message of the day? Here 
 	is an example:</p><p>
@@ -4802,10 +4802,10 @@ preexec (S)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>preexec</code></em> = <code class="literal">echo \"%u connected to %S from %m (%I)\" &gt;&gt; /tmp/log</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="prefered master"><div class="titlepage"><div><div><h3 class="title"><a name="id330255"></a>
+</p></dd></dl></div></div><div class="section" title="prefered master"><div class="titlepage"><div><div><h3 class="title"><a name="id330256"></a>
 
 <a name="PREFEREDMASTER"></a>prefered master
-</h3></div></div></div><a class="indexterm" name="id330256"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#PREFERREDMASTER">preferred master</a>.</p></dd></dl></div></div><div class="section" title="preferred master (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id330288"></a>
+</h3></div></div></div><a class="indexterm" name="id330257"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#PREFERREDMASTER">preferred master</a>.</p></dd></dl></div></div><div class="section" title="preferred master (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id330288"></a>
 
 preferred master (G)
 </h3></div></div></div><a class="indexterm" name="id330289"></a><a name="PREFERREDMASTER"></a><div class="variablelist"><dl><dt></dt><dd><p>
@@ -4831,10 +4831,10 @@ preload modules (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>preload modules</code></em> = <code class="literal">/usr/lib/samba/passdb/mysql.so</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="auto services"><div class="titlepage"><div><div><h3 class="title"><a name="id330432"></a>
+</p></dd></dl></div></div><div class="section" title="auto services"><div class="titlepage"><div><div><h3 class="title"><a name="id330433"></a>
 
 <a name="AUTOSERVICES"></a>auto services
-</h3></div></div></div><a class="indexterm" name="id330433"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#PRELOAD">preload</a>.</p></dd></dl></div></div><div class="section" title="preload (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id330464"></a>
+</h3></div></div></div><a class="indexterm" name="id330434"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#PRELOAD">preload</a>.</p></dd></dl></div></div><div class="section" title="preload (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id330464"></a>
 
 preload (G)
 </h3></div></div></div><a class="indexterm" name="id330465"></a><a name="PRELOAD"></a><div class="variablelist"><dl><dt></dt><dd><p>This is a list of services that you want to be 
@@ -4874,7 +4874,7 @@ printable (S)
 </p></dd></dl></div></div><div class="section" title="printcap cache time (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id330692"></a>
 
 printcap cache time (G)
-</h3></div></div></div><a class="indexterm" name="id330693"></a><a name="PRINTCAPCACHETIME"></a><div class="variablelist"><dl><dt></dt><dd><p>This option specifies the number of seconds before the printing
+</h3></div></div></div><a class="indexterm" name="id330694"></a><a name="PRINTCAPCACHETIME"></a><div class="variablelist"><dl><dt></dt><dd><p>This option specifies the number of seconds before the printing
     subsystem is again asked for the known printers.
     </p><p>Setting this parameter to 0 disables any rescanning for new 
     or removed printers after the initial startup.
@@ -4971,7 +4971,7 @@ print command (S)
 </p></dd></dl></div></div><div class="section" title="printer admin (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id331202"></a>
 
 printer admin (S)
-</h3></div></div></div><a class="indexterm" name="id331203"></a><a name="PRINTERADMIN"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id331204"></a><a name="PRINTERADMIN"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This lists users who can do anything to printers
 	via the remote administration interfaces offered
 	by MS-RPC (usually using a NT workstation).
@@ -5006,7 +5006,7 @@ printer name (S)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>printer name</code></em> = <code class="literal">laserwriter</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="printing (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id331380"></a>
+</p></dd></dl></div></div><div class="section" title="printing (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id331381"></a>
 
 printing (S)
 </h3></div></div></div><a class="indexterm" name="id331382"></a><a name="PRINTING"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameters controls how printer status  information is
@@ -5026,10 +5026,10 @@ printing (S)
     [printers]</a> section.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>printing</code></em> = <code class="literal">Depends on the operating system, see
 <code class="literal">testparm -v.</code></code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="printjob username (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id331526"></a>
+</p></dd></dl></div></div><div class="section" title="printjob username (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id331527"></a>
 
 printjob username (S)
-</h3></div></div></div><a class="indexterm" name="id331527"></a><a name="PRINTJOBUSERNAME"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies which user information will be 
+</h3></div></div></div><a class="indexterm" name="id331528"></a><a name="PRINTJOBUSERNAME"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies which user information will be 
     passed to the printing system. Usually, the username is sent,
     but in some cases, e.g. the domain prefix is useful, too.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>printjob username</code></em> = <code class="literal">%U</code>
 </em></span>
@@ -5105,10 +5105,10 @@ queuepause command (S)
     path in the command as the PATH may not be available to the 
 	server.</p><p><span class="emphasis"><em>No default</em></span></p><p>Example: <span class="emphasis"><em><em class="parameter"><code>queuepause command</code></em> = <code class="literal">disable %p</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="queueresume command (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id331831"></a>
+</p></dd></dl></div></div><div class="section" title="queueresume command (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id331832"></a>
 
 queueresume command (S)
-</h3></div></div></div><a class="indexterm" name="id331832"></a><a name="QUEUERESUMECOMMAND"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies the command to be 
+</h3></div></div></div><a class="indexterm" name="id331833"></a><a name="QUEUERESUMECOMMAND"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies the command to be 
     executed on the server host in order to resume the printer queue. It 
     is the command to undo the behavior that is caused by the 
     previous parameter (<a class="link" href="smb.conf.5.html#QUEUEPAUSECOMMAND" target="_top">queuepause command</a>).</p><p>This command should be a program or script which takes 
@@ -5123,10 +5123,10 @@ queueresume command (S)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>queueresume command</code></em> = <code class="literal">enable %p</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="read list (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id331925"></a>
+</p></dd></dl></div></div><div class="section" title="read list (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id331926"></a>
 
 read list (S)
-</h3></div></div></div><a class="indexterm" name="id331926"></a><a name="READLIST"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id331927"></a><a name="READLIST"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This is a list of users that are given read-only access to a service. If the connecting user is in this list
 	then they will not be given write access, no matter what the <a class="link" href="smb.conf.5.html#READONLY" target="_top">read only</a> option is set
 	to. The list can include group names using the syntax described in the <a class="link" href="smb.conf.5.html#INVALIDUSERS" target="_top">invalid users</a>
@@ -5148,7 +5148,7 @@ read only (S)
 </p></dd></dl></div></div><div class="section" title="read raw (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id332092"></a>
 
 read raw (G)
-</h3></div></div></div><a class="indexterm" name="id332093"></a><a name="READRAW"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter controls whether or not the server 
+</h3></div></div></div><a class="indexterm" name="id332094"></a><a name="READRAW"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter controls whether or not the server 
     will support the raw read SMB requests when transferring data 
     to clients.</p><p>If enabled, raw reads allow reads of 65535 bytes in 
     one packet. This typically provides a major performance benefit.
@@ -5290,10 +5290,10 @@ reset on zero vc (G)
 
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>reset on zero vc</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="restrict anonymous (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id332615"></a>
+</p></dd></dl></div></div><div class="section" title="restrict anonymous (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id332616"></a>
 
 restrict anonymous (G)
-</h3></div></div></div><a class="indexterm" name="id332616"></a><a name="RESTRICTANONYMOUS"></a><div class="variablelist"><dl><dt></dt><dd><p>The setting of this parameter determines whether user and
+</h3></div></div></div><a class="indexterm" name="id332617"></a><a name="RESTRICTANONYMOUS"></a><div class="variablelist"><dl><dt></dt><dd><p>The setting of this parameter determines whether user and
     group list information is returned for an anonymous connection.
     and mirrors the effects of the
 </p><pre class="programlisting">
@@ -5558,10 +5558,10 @@ send spnego principal (G)
     </p><p>Note that Windows XP SP2 and later versions already ignored
     this value in all circumstances. </p><p>Default: <span class="emphasis"><em><em class="parameter"><code>send spnego principal</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="server schannel (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id334053"></a>
+</p></dd></dl></div></div><div class="section" title="server schannel (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id334054"></a>
 
 server schannel (G)
-</h3></div></div></div><a class="indexterm" name="id334054"></a><a name="SERVERSCHANNEL"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id334055"></a><a name="SERVERSCHANNEL"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This controls whether the server offers or even demands the use of the netlogon schannel.
 	<a class="link" href="smb.conf.5.html#SERVERSCHANNEL" target="_top">server schannel = no</a> does not offer the schannel, <a class="link" href="smb.conf.5.html#SERVERSCHANNEL" target="_top">server schannel = auto</a> offers the schannel but does not enforce it, and <a class="link" href="smb.conf.5.html#SERVERSCHANNEL" target="_top">server schannel = yes</a> denies access if the client is not able to speak netlogon schannel.
 	This is only the case for Windows NT4 before SP4.
@@ -5585,7 +5585,7 @@ server signing (G)
 </p></dd></dl></div></div><div class="section" title="server string (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id334218"></a>
 
 server string (G)
-</h3></div></div></div><a class="indexterm" name="id334219"></a><a name="SERVERSTRING"></a><div class="variablelist"><dl><dt></dt><dd><p>This controls what string will show up in the printer comment box in print 
+</h3></div></div></div><a class="indexterm" name="id334220"></a><a name="SERVERSTRING"></a><div class="variablelist"><dl><dt></dt><dd><p>This controls what string will show up in the printer comment box in print 
         manager and next to the IPC connection in <code class="literal">net view</code>. It 
         can be any string that you wish to show to your users.</p><p>It also sets what will appear in browse lists next 
 	to the machine name.</p><p>A <em class="parameter"><code>%v</code></em> will be replaced with the Samba 
@@ -5606,7 +5606,7 @@ set directory (S)
 	for details.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>set directory</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="set primary group script (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id334362"></a>
+</p></dd></dl></div></div><div class="section" title="set primary group script (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id334363"></a>
 
 set primary group script (G)
 </h3></div></div></div><a class="indexterm" name="id334364"></a><a name="SETPRIMARYGROUPSCRIPT"></a><div class="variablelist"><dl><dt></dt><dd><p>Thanks to the Posix subsystem in NT a Windows User has a
@@ -5634,10 +5634,10 @@ set quota command (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>set quota command</code></em> = <code class="literal">/usr/local/sbin/set_quota</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="share:fake_fscaps (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id334593"></a>
+</p></dd></dl></div></div><div class="section" title="share:fake_fscaps (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id334594"></a>
 
 share:fake_fscaps (G)
-</h3></div></div></div><a class="indexterm" name="id334594"></a><a name="SHARE:FAKE_FSCAPS"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id334595"></a><a name="SHARE:FAKE_FSCAPS"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This is needed to support some special application that makes
 	QFSINFO calls to check whether we set the SPARSE_FILES bit
 	(0x40). If this bit is not set that particular application
@@ -5696,7 +5696,7 @@ show add printer wizard (G)
 </p></dd></dl></div></div><div class="section" title="shutdown script (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id334866"></a>
 
 shutdown script (G)
-</h3></div></div></div><a class="indexterm" name="id334867"></a><a name="SHUTDOWNSCRIPT"></a><div class="variablelist"><dl><dt></dt><dd><p>This a full path name to a script called by 
+</h3></div></div></div><a class="indexterm" name="id334868"></a><a name="SHUTDOWNSCRIPT"></a><div class="variablelist"><dl><dt></dt><dd><p>This a full path name to a script called by 
 	 <a class="citerefentry" href="smbd.8.html"><span class="citerefentry"><span class="refentrytitle">smbd</span>(8)</span></a> that should 
 	start a shutdown procedure.</p><p>If the connected user posseses the <code class="constant">SeRemoteShutdownPrivilege</code>,
 	right, this command will be run as root.</p><p>The %z %t %r %f variables are expanded as follows:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><em class="parameter"><code>%z</code></em> will be substituted with the
@@ -5913,10 +5913,10 @@ strict allocate (S)
     files. Examples are ext3, ZFS, HFS+ and most others, so be aware if you
     activate this setting on those filesystems.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>strict allocate</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="strict locking (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id335993"></a>
+</p></dd></dl></div></div><div class="section" title="strict locking (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id335994"></a>
 
 strict locking (S)
-</h3></div></div></div><a class="indexterm" name="id335994"></a><a name="STRICTLOCKING"></a><div class="variablelist"><dl><dt></dt><dd><p>
+</h3></div></div></div><a class="indexterm" name="id335995"></a><a name="STRICTLOCKING"></a><div class="variablelist"><dl><dt></dt><dd><p>
 	This is an enumerated type that controls the handling of file locking in the server. When this is set to <code class="constant">yes</code>,
 	the server will check every read and write access for file locks, and deny access if locks exist. This can be slow on 
 	some systems.
@@ -5979,7 +5979,7 @@ sync always (S)
     <code class="constant">yes</code> in order for this parameter to have 
     any effect.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>sync always</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="syslog only (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id336270"></a>
+</p></dd></dl></div></div><div class="section" title="syslog only (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id336271"></a>
 
 syslog only (G)
 </h3></div></div></div><a class="indexterm" name="id336272"></a><a name="SYSLOGONLY"></a><div class="variablelist"><dl><dt></dt><dd><p>
@@ -6259,7 +6259,7 @@ username map = /usr/local/samba/lib/users.map
 </h3></div></div></div><a class="indexterm" name="id337403"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#USERNAME">username</a>.</p></dd></dl></div></div><div class="section" title="users"><div class="titlepage"><div><div><h3 class="title"><a name="id337433"></a>
 
 <a name="USERS"></a>users
-</h3></div></div></div><a class="indexterm" name="id337434"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#USERNAME">username</a>.</p></dd></dl></div></div><div class="section" title="username (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id337464"></a>
+</h3></div></div></div><a class="indexterm" name="id337434"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#USERNAME">username</a>.</p></dd></dl></div></div><div class="section" title="username (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id337465"></a>
 
 username (S)
 </h3></div></div></div><a class="indexterm" name="id337466"></a><a name="USERNAME"></a><div class="variablelist"><dl><dt></dt><dd><p>Multiple users may be specified in a comma-delimited 
@@ -6552,7 +6552,7 @@ veto oplock files = /.*SEM/
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>veto oplock files</code></em> = <code class="literal">
 # No files are vetoed for oplock grants</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="vfs object"><div class="titlepage"><div><div><h3 class="title"><a name="id338566"></a>
+</p></dd></dl></div></div><div class="section" title="vfs object"><div class="titlepage"><div><div><h3 class="title"><a name="id338567"></a>
 
 <a name="VFSOBJECT"></a>vfs object
 </h3></div></div></div><a class="indexterm" name="id338568"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter is a synonym for <a class="link" href="#VFSOBJECTS">vfs objects</a>.</p></dd></dl></div></div><div class="section" title="vfs objects (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id338598"></a>
@@ -6568,7 +6568,7 @@ vfs objects (S)
 </p></dd></dl></div></div><div class="section" title="volume (S)"><div class="titlepage"><div><div><h3 class="title"><a name="id338656"></a>
 
 volume (S)
-</h3></div></div></div><a class="indexterm" name="id338657"></a><a name="VOLUME"></a><div class="variablelist"><dl><dt></dt><dd><p>This allows you to override the volume label 
+</h3></div></div></div><a class="indexterm" name="id338658"></a><a name="VOLUME"></a><div class="variablelist"><dl><dt></dt><dd><p>This allows you to override the volume label 
 	returned for a share. Useful for CDROMs with installation programs 
 	that insist on a particular volume label.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>volume</code></em> = <code class="literal">
 # the name of the share</code>
@@ -6592,7 +6592,7 @@ wide links (S)
 	if you wish to change this coupling between the two parameters.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>wide links</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="winbind cache time (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id338772"></a>
+</p></dd></dl></div></div><div class="section" title="winbind cache time (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id338773"></a>
 
 winbind cache time (G)
 </h3></div></div></div><a class="indexterm" name="id338774"></a><a name="WINBINDCACHETIME"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies the number of 
@@ -6767,7 +6767,7 @@ winbind rpc only (G)
 </p></dd></dl></div></div><div class="section" title="winbind separator (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id339662"></a>
 
 winbind separator (G)
-</h3></div></div></div><a class="indexterm" name="id339663"></a><a name="WINBINDSEPARATOR"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter allows an admin to define the character 
+</h3></div></div></div><a class="indexterm" name="id339664"></a><a name="WINBINDSEPARATOR"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter allows an admin to define the character 
 	used when listing a username of the form of <em class="replaceable"><code>DOMAIN
 	</code></em>\<em class="replaceable"><code>user</code></em>.  This parameter 
 	is only applicable when using the <code class="filename">pam_winbind.so</code>
@@ -6792,7 +6792,7 @@ winbind trusted domains only (G)
 	Refer to the <a class="citerefentry" href="idmap_nss.8.html"><span class="citerefentry"><span class="refentrytitle">idmap_nss</span>(8)</span></a> man page for more information.
 	</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>winbind trusted domains only</code></em> = <code class="literal">no</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="winbind use default domain (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id339806"></a>
+</p></dd></dl></div></div><div class="section" title="winbind use default domain (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id339807"></a>
 
 winbind use default domain (G)
 </h3></div></div></div><a class="indexterm" name="id339808"></a><a name="WINBINDUSEDEFAULTDOMAIN"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter specifies whether the
@@ -6832,10 +6832,10 @@ wins hook (G)
 			addresses currently registered for that name. If this list is 
 			empty then the name should be deleted.</p></li></ul></div><p>An example script that calls the BIND dynamic DNS update 
 	program <code class="literal">nsupdate</code> is provided in the examples 
-	directory of the Samba source code. </p><p><span class="emphasis"><em>No default</em></span></p></dd></dl></div></div><div class="section" title="wins proxy (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id339975"></a>
+	directory of the Samba source code. </p><p><span class="emphasis"><em>No default</em></span></p></dd></dl></div></div><div class="section" title="wins proxy (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id339976"></a>
 
 wins proxy (G)
-</h3></div></div></div><a class="indexterm" name="id339976"></a><a name="WINSPROXY"></a><div class="variablelist"><dl><dt></dt><dd><p>This is a boolean that controls if <a class="citerefentry" href="nmbd.8.html"><span class="citerefentry"><span class="refentrytitle">nmbd</span>(8)</span></a> will respond to broadcast name 
+</h3></div></div></div><a class="indexterm" name="id339977"></a><a name="WINSPROXY"></a><div class="variablelist"><dl><dt></dt><dd><p>This is a boolean that controls if <a class="citerefentry" href="nmbd.8.html"><span class="citerefentry"><span class="refentrytitle">nmbd</span>(8)</span></a> will respond to broadcast name 
 	queries on behalf of  other hosts. You may need to set this 
 	to <code class="constant">yes</code> for some older clients.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>wins proxy</code></em> = <code class="literal">no</code>
 </em></span>
@@ -6861,10 +6861,10 @@ wins server (G)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>wins server</code></em> = <code class="literal">192.9.200.1 192.168.2.61</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="wins support (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id340131"></a>
+</p></dd></dl></div></div><div class="section" title="wins support (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id340132"></a>
 
 wins support (G)
-</h3></div></div></div><a class="indexterm" name="id340132"></a><a name="WINSSUPPORT"></a><div class="variablelist"><dl><dt></dt><dd><p>This boolean controls if the <a class="citerefentry" href="nmbd.8.html"><span class="citerefentry"><span class="refentrytitle">nmbd</span>(8)</span></a> process in Samba will act as a WINS server. You should 
+</h3></div></div></div><a class="indexterm" name="id340133"></a><a name="WINSSUPPORT"></a><div class="variablelist"><dl><dt></dt><dd><p>This boolean controls if the <a class="citerefentry" href="nmbd.8.html"><span class="citerefentry"><span class="refentrytitle">nmbd</span>(8)</span></a> process in Samba will act as a WINS server. You should 
 	not set this to <code class="constant">yes</code> unless you have a multi-subnetted network and 
 	you wish a particular <code class="literal">nmbd</code> to be your WINS server. 
 	Note that you should <span class="emphasis"><em>NEVER</em></span> set this to <code class="constant">yes</code>
@@ -6928,10 +6928,10 @@ write list (S)
 </em></span>
 </p><p>Example: <span class="emphasis"><em><em class="parameter"><code>write list</code></em> = <code class="literal">admin, root, @staff</code>
 </em></span>
-</p></dd></dl></div></div><div class="section" title="write raw (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id340513"></a>
+</p></dd></dl></div></div><div class="section" title="write raw (G)"><div class="titlepage"><div><div><h3 class="title"><a name="id340514"></a>
 
 write raw (G)
-</h3></div></div></div><a class="indexterm" name="id340514"></a><a name="WRITERAW"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter controls whether or not the server 
+</h3></div></div></div><a class="indexterm" name="id340515"></a><a name="WRITERAW"></a><div class="variablelist"><dl><dt></dt><dd><p>This parameter controls whether or not the server 
     will support raw write SMB's when transferring data from clients. 
     You should never need to change this parameter.</p><p>Default: <span class="emphasis"><em><em class="parameter"><code>write raw</code></em> = <code class="literal">yes</code>
 </em></span>
