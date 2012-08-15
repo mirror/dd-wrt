@@ -770,7 +770,7 @@ _PUBLIC_ void ndr_print_ntprinting_printer(struct ndr_print *ndr, const char *na
 	}
 }
 
-static enum ndr_err_code ndr_push_decode_ntprinting_form(struct ndr_push *ndr, int flags, const struct decode_ntprinting_form *r)
+_PUBLIC_ enum ndr_err_code ndr_push_decode_ntprinting_form(struct ndr_push *ndr, int flags, const struct decode_ntprinting_form *r)
 {
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_push_ntprinting_form(ndr, NDR_SCALARS, &r->in.form));
@@ -780,7 +780,7 @@ static enum ndr_err_code ndr_push_decode_ntprinting_form(struct ndr_push *ndr, i
 	return NDR_ERR_SUCCESS;
 }
 
-static enum ndr_err_code ndr_pull_decode_ntprinting_form(struct ndr_pull *ndr, int flags, struct decode_ntprinting_form *r)
+_PUBLIC_ enum ndr_err_code ndr_pull_decode_ntprinting_form(struct ndr_pull *ndr, int flags, struct decode_ntprinting_form *r)
 {
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_pull_ntprinting_form(ndr, NDR_SCALARS, &r->in.form));
@@ -812,7 +812,7 @@ _PUBLIC_ void ndr_print_decode_ntprinting_form(struct ndr_print *ndr, const char
 	ndr->depth--;
 }
 
-static enum ndr_err_code ndr_push_decode_ntprinting_driver(struct ndr_push *ndr, int flags, const struct decode_ntprinting_driver *r)
+_PUBLIC_ enum ndr_err_code ndr_push_decode_ntprinting_driver(struct ndr_push *ndr, int flags, const struct decode_ntprinting_driver *r)
 {
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_push_ntprinting_driver(ndr, NDR_SCALARS, &r->in.driver));
@@ -822,7 +822,7 @@ static enum ndr_err_code ndr_push_decode_ntprinting_driver(struct ndr_push *ndr,
 	return NDR_ERR_SUCCESS;
 }
 
-static enum ndr_err_code ndr_pull_decode_ntprinting_driver(struct ndr_pull *ndr, int flags, struct decode_ntprinting_driver *r)
+_PUBLIC_ enum ndr_err_code ndr_pull_decode_ntprinting_driver(struct ndr_pull *ndr, int flags, struct decode_ntprinting_driver *r)
 {
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_pull_ntprinting_driver(ndr, NDR_SCALARS, &r->in.driver));
@@ -854,7 +854,7 @@ _PUBLIC_ void ndr_print_decode_ntprinting_driver(struct ndr_print *ndr, const ch
 	ndr->depth--;
 }
 
-static enum ndr_err_code ndr_push_decode_ntprinting_printer(struct ndr_push *ndr, int flags, const struct decode_ntprinting_printer *r)
+_PUBLIC_ enum ndr_err_code ndr_push_decode_ntprinting_printer(struct ndr_push *ndr, int flags, const struct decode_ntprinting_printer *r)
 {
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_push_ntprinting_printer(ndr, NDR_SCALARS|NDR_BUFFERS, &r->in.printer));
@@ -864,7 +864,7 @@ static enum ndr_err_code ndr_push_decode_ntprinting_printer(struct ndr_push *ndr
 	return NDR_ERR_SUCCESS;
 }
 
-static enum ndr_err_code ndr_pull_decode_ntprinting_printer(struct ndr_pull *ndr, int flags, struct decode_ntprinting_printer *r)
+_PUBLIC_ enum ndr_err_code ndr_pull_decode_ntprinting_printer(struct ndr_pull *ndr, int flags, struct decode_ntprinting_printer *r)
 {
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_pull_ntprinting_printer(ndr, NDR_SCALARS|NDR_BUFFERS, &r->in.printer));
