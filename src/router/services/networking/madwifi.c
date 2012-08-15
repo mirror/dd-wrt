@@ -76,6 +76,9 @@ static void setdistance(char *device, int distance, int chanbw)
 		setsysctrl(device, "distance", distance);
 }
 #endif
+#ifdef HAVE_ATH9K
+static int firstconfig = 0;
+#endif
 
 // returns the number of installed atheros devices/cards
 
@@ -95,6 +98,7 @@ static void deconfigure_single(int count)
 	char vifs[128];
 #ifdef HAVE_ATH9K
 	if (is_ath9k(dev)) {
+		firstconfig = 0;
 		deconfigure_single_ath9k(count);
 		return;
 	}
@@ -1443,6 +1447,15 @@ static void configure_single(int count)
 		led_control(LED_SEC1, LED_OFF);
 #ifdef HAVE_ATH9K
 	if (is_ath9k(dev)) {
+		if (!firstconfig) {
+			firstconfig = 1;
+			char regdomain[16];
+			char *country;
+			sprintf(regdomain, "ath0_regdomain");
+			country = nvram_default_get(regdomain, "UNITED_STATES");
+			sysprintf("iw reg set 00");
+			sysprintf("iw reg set %s", getIsoName(country));
+		}
 		configure_single_ath9k(count);
 		ath9k_start_supplicant(count);
 		return;
@@ -2391,14 +2404,6 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	int i;
 	int changed = 0;
 
-#ifdef HAVE_ATH9K
-	char regdomain[16];
-	char *country;
-	sprintf(regdomain, "ath0_regdomain");
-	country = nvram_default_get(regdomain, "UNITED_STATES");
-	sysprintf("iw reg set 00");
-	sysprintf("iw reg set %s", getIsoName(country));
-#endif
 	for (i = 0; i < c; i++)
 		adjust_regulatory(i);
 
