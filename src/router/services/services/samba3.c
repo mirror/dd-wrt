@@ -90,6 +90,7 @@ void start_samba3(void)
 			"passdb backend = smbpasswd\n"
 			"log file = /var/smbd.log\n"
 			"max log size = 1000\n"
+			"max protocol = SMB2\n"
 			"socket options = TCP_NODELAY\n"
 			"printing = none\n"
 			"load printers = No\n"
