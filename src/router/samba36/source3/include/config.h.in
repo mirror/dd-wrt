@@ -1275,6 +1275,9 @@
 /* Define to 1 if you have the `ldap' library (-lldap). */
 #undef HAVE_LIBLDAP
 
+/* Whether libmd5 conformant to rfc1321 is available. */
+#undef HAVE_LIBMD5
+
 /* Define to 1 if you have the `nscd' library (-lnscd). */
 #undef HAVE_LIBNSCD
 
@@ -1418,6 +1421,9 @@
 
 /* Whether the macro for makedev is available */
 #undef HAVE_MAKEDEV
+
+/* Whether md5.h is available. */
+#undef HAVE_MD5_H
 
 /* Define to 1 if you have the `memalign' function. */
 #undef HAVE_MEMALIGN

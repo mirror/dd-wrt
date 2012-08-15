@@ -745,6 +745,7 @@ ONEFS_LIBS
 TERMLDFLAGS
 TERMLIBS
 CUPS_CONFIG
+CRYPTO_MD5_OBJ
 LIBREPLACE_LIBS
 LIBREPLACE_OBJS
 LIBDL
@@ -13965,6 +13966,76 @@ _ACEOF
 fi
 
 done
+
+
+for ac_header in md5.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "md5.h" "ac_cv_header_md5_h" "$ac_includes_default"
+if test "x$ac_cv_header_md5_h" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_MD5_H 1
+_ACEOF
+
+fi
+
+done
+
+if test x"$ac_cv_header_md5_h" = x"yes"; then
+
+$as_echo "#define HAVE_MD5_H 1" >>confdefs.h
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MD5Update in -lmd5" >&5
+$as_echo_n "checking for MD5Update in -lmd5... " >&6; }
+if test "${ac_cv_lib_md5_MD5Update+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmd5  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char MD5Update ();
+int
+main ()
+{
+return MD5Update ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_md5_MD5Update=yes
+else
+  ac_cv_lib_md5_MD5Update=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_md5_MD5Update" >&5
+$as_echo "$ac_cv_lib_md5_MD5Update" >&6; }
+if test "x$ac_cv_lib_md5_MD5Update" = x""yes; then :
+
+		LIBS="${LIBS} -lmd5"
+		CRYPTO_MD5_OBJ=
+
+$as_echo "#define HAVE_LIBMD5 1" >>confdefs.h
+
+else
+
+		CRYPTO_MD5_OBJ="../lib/crypto/md5.o"
+fi
+
+else
+	CRYPTO_MD5_OBJ="../lib/crypto/md5.o"
+fi
+
 
 
 for ac_header in rpcsvc/yp_prot.h
