@@ -20,7 +20,7 @@ AC_CONFIG_SRCDIR([main/asterisk.c])
 AC_CONFIG_AUX_DIR(`pwd`)
 
 AC_COPYRIGHT("Asterisk")
-AC_REVISION($Revision: 355608 $)
+AC_REVISION($Revision: 361955 $)
 
 # preserve any CFLAGS or LDFLAGS that may be set
 # NOTE: This must be done before calling any macros that end up
@@ -451,7 +451,6 @@ AST_EXT_LIB_SETUP([TIMERFD], [timerfd], [timerfd])
 AST_EXT_LIB_SETUP([TINFO], [Term Info], [tinfo])
 AST_EXT_LIB_SETUP([TONEZONE], [tonezone], [tonezone])
 AST_EXT_LIB_SETUP([UNIXODBC], [unixODBC], [unixodbc])
-AST_EXT_LIB_SETUP([USB], [usb], [usb])
 AST_EXT_LIB_SETUP([VORBIS], [Vorbis], [vorbis])
 AST_EXT_LIB_SETUP([VPB], [Voicetronix API], [vpb])
 AST_EXT_LIB_SETUP([X11], [X11], [x11])
@@ -982,6 +981,21 @@ else
 fi
 AC_SUBST(AST_SHADOW_WARNINGS)
 
+AC_MSG_CHECKING(for -march=native support)
+if $(${CC} -march=native -S -o /dev/null -xc /dev/null > /dev/null 2>&1); then
+	if test "${CONFIG_CFLAGS}" = ""; then
+		AC_MSG_RESULT(yes)
+		AST_NATIVE_ARCH=1
+	else
+		AC_MSG_RESULT(user CFLAGS present)
+		AST_NATIVE_ARCH=
+	fi
+else
+	AC_MSG_RESULT(no)
+	AST_NATIVE_ARCH=
+fi
+AC_SUBST(AST_NATIVE_ARCH)
+
 AC_MSG_CHECKING(for sysinfo)
 AC_LINK_IFELSE(
         [AC_LANG_PROGRAM([#include <sys/sysinfo.h>],
@@ -1107,6 +1121,11 @@ AC_CHECK_TOOL(PKGCONFIG, pkg-config, No)
 AST_EXT_LIB_CHECK([ALSA], [asound], [snd_spcm_init], [alsa/asoundlib.h], [-lm -ldl])
 
 AST_EXT_LIB_CHECK([BFD], [bfd], [bfd_openr], [bfd.h])
+
+if test "${PBX_BFD}" = "0"; then
+  # Fedora/RedHat/CentOS require extra libraries
+  AST_EXT_LIB_CHECK([BFD], [bfd], [bfd_check_format], [bfd.h], [-ldl -liberty])
+fi
 
 if test "x${OSARCH}" = "xlinux-gnu" ; then
   AST_EXT_LIB_CHECK([CAP], [cap], [cap_from_text], [sys/capability.h])
@@ -2048,7 +2067,7 @@ fi
 AST_EXT_TOOL_CHECK([GMIME], [gmime-config], [], [], [#include <gmime/gmime.h>], [gboolean q = g_mime_check_version(0,0,0);])
 if test "x${PBX_GMIME}" = "x0" -a "${PKGCONFIG}" != "No"; then
 	# Later versions of GMime use pkg-config
-	for ver in 2.0 2.2 2.4; do
+	for ver in 2.0 2.2 2.4 2.6; do
 		if ! ${PKGCONFIG} --exists gmime-$ver; then
 			continue
 		fi
@@ -2072,8 +2091,6 @@ if test "${tonezone_does_not_need_lm}" = "no" ; then
 fi
 
 AST_EXT_LIB_CHECK([TONEZONE], [tonezone], [tone_zone_find], [dahdi/tonezone.h], [${tonezone_extra} ${DAHDI_INCLUDE}])
-
-AST_EXT_LIB_CHECK([USB], [usb], [usb_init], [usb.h], [])
 
 if test "${OSARCH}" = "OpenBSD";
 then

@@ -23,6 +23,9 @@
  * \author Matthew Fredrickson <creslin@digium.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
 
 #include "asterisk.h"
 
@@ -115,13 +118,6 @@ static int pri_gendigittimeout = 8000;
 
 #define DCHAN_AVAILABLE	(DCHAN_NOTINALARM | DCHAN_UP)
 
-#define PRI_DEADLOCK_AVOIDANCE(p) \
-	do { \
-		sig_pri_unlock_private(p); \
-		usleep(1); \
-		sig_pri_lock_private(p); \
-	} while (0)
-
 static int pri_active_dchan_index(struct sig_pri_span *pri);
 
 static const char *sig_pri_call_level2str(enum sig_pri_call_level level)
@@ -190,12 +186,17 @@ static void sig_pri_set_outgoing(struct sig_pri_chan *p, int is_outgoing)
 
 void sig_pri_set_alarm(struct sig_pri_chan *p, int in_alarm)
 {
+	if (sig_pri_is_alarm_ignored(p->pri)) {
+		/* Always set not in alarm */
+		in_alarm = 0;
+	}
+
 	/*
-	 * Clear the channel restart flag when the channel alarm changes
-	 * to prevent the flag from getting stuck when the link goes
-	 * down.
+	 * Clear the channel restart state when the channel alarm
+	 * changes to prevent the state from getting stuck when the link
+	 * goes down.
 	 */
-	p->resetting = 0;
+	p->resetting = SIG_PRI_RESET_IDLE;
 
 	p->inalarm = in_alarm;
 	if (p->calls->set_alarm) {
@@ -340,16 +341,17 @@ static void sig_pri_lock_private(struct sig_pri_chan *p)
 
 static inline int pri_grab(struct sig_pri_chan *p, struct sig_pri_span *pri)
 {
-	int res;
 	/* Grab the lock first */
-	do {
-		res = ast_mutex_trylock(&pri->lock);
-		if (res) {
-			PRI_DEADLOCK_AVOIDANCE(p);
-		}
-	} while (res);
+	while (ast_mutex_trylock(&pri->lock)) {
+		/* Avoid deadlock */
+		sig_pri_unlock_private(p);
+		sched_yield();
+		sig_pri_lock_private(p);
+	}
 	/* Then break the poll */
-	pthread_kill(pri->master, SIGURG);
+	if (pri->master != AST_PTHREADT_NULL) {
+		pthread_kill(pri->master, SIGURG);
+	}
 	return 0;
 }
 
@@ -437,35 +439,41 @@ static int pri_to_ast_presentation(int pri_presentation)
 	int ast_presentation;
 
 	switch (pri_presentation) {
-	case PRES_ALLOWED_USER_NUMBER_NOT_SCREENED:
-		ast_presentation = AST_PRES_ALLOWED_USER_NUMBER_NOT_SCREENED;
+	case PRI_PRES_ALLOWED | PRI_PRES_USER_NUMBER_UNSCREENED:
+		ast_presentation = AST_PRES_ALLOWED | AST_PRES_USER_NUMBER_UNSCREENED;
 		break;
-	case PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN:
-		ast_presentation = AST_PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN;
+	case PRI_PRES_ALLOWED | PRI_PRES_USER_NUMBER_PASSED_SCREEN:
+		ast_presentation = AST_PRES_ALLOWED | AST_PRES_USER_NUMBER_PASSED_SCREEN;
 		break;
-	case PRES_ALLOWED_USER_NUMBER_FAILED_SCREEN:
-		ast_presentation = AST_PRES_ALLOWED_USER_NUMBER_FAILED_SCREEN;
+	case PRI_PRES_ALLOWED | PRI_PRES_USER_NUMBER_FAILED_SCREEN:
+		ast_presentation = AST_PRES_ALLOWED | AST_PRES_USER_NUMBER_FAILED_SCREEN;
 		break;
-	case PRES_ALLOWED_NETWORK_NUMBER:
-		ast_presentation = AST_PRES_ALLOWED_NETWORK_NUMBER;
+	case PRI_PRES_ALLOWED | PRI_PRES_NETWORK_NUMBER:
+		ast_presentation = AST_PRES_ALLOWED | AST_PRES_NETWORK_NUMBER;
 		break;
-	case PRES_PROHIB_USER_NUMBER_NOT_SCREENED:
-		ast_presentation = AST_PRES_PROHIB_USER_NUMBER_NOT_SCREENED;
+
+	case PRI_PRES_RESTRICTED | PRI_PRES_USER_NUMBER_UNSCREENED:
+		ast_presentation = AST_PRES_RESTRICTED | AST_PRES_USER_NUMBER_UNSCREENED;
 		break;
-	case PRES_PROHIB_USER_NUMBER_PASSED_SCREEN:
-		ast_presentation = AST_PRES_PROHIB_USER_NUMBER_PASSED_SCREEN;
+	case PRI_PRES_RESTRICTED | PRI_PRES_USER_NUMBER_PASSED_SCREEN:
+		ast_presentation = AST_PRES_RESTRICTED | AST_PRES_USER_NUMBER_PASSED_SCREEN;
 		break;
-	case PRES_PROHIB_USER_NUMBER_FAILED_SCREEN:
-		ast_presentation = AST_PRES_PROHIB_USER_NUMBER_FAILED_SCREEN;
+	case PRI_PRES_RESTRICTED | PRI_PRES_USER_NUMBER_FAILED_SCREEN:
+		ast_presentation = AST_PRES_RESTRICTED | AST_PRES_USER_NUMBER_FAILED_SCREEN;
 		break;
-	case PRES_PROHIB_NETWORK_NUMBER:
-		ast_presentation = AST_PRES_PROHIB_NETWORK_NUMBER;
+	case PRI_PRES_RESTRICTED | PRI_PRES_NETWORK_NUMBER:
+		ast_presentation = AST_PRES_RESTRICTED | AST_PRES_NETWORK_NUMBER;
 		break;
-	case PRES_NUMBER_NOT_AVAILABLE:
+
+	case PRI_PRES_UNAVAILABLE | PRI_PRES_USER_NUMBER_UNSCREENED:
+	case PRI_PRES_UNAVAILABLE | PRI_PRES_USER_NUMBER_PASSED_SCREEN:
+	case PRI_PRES_UNAVAILABLE | PRI_PRES_USER_NUMBER_FAILED_SCREEN:
+	case PRI_PRES_UNAVAILABLE | PRI_PRES_NETWORK_NUMBER:
 		ast_presentation = AST_PRES_NUMBER_NOT_AVAILABLE;
 		break;
+
 	default:
-		ast_presentation = AST_PRES_PROHIB_USER_NUMBER_NOT_SCREENED;
+		ast_presentation = AST_PRES_RESTRICTED | AST_PRES_USER_NUMBER_UNSCREENED;
 		break;
 	}
 
@@ -486,35 +494,41 @@ static int ast_to_pri_presentation(int ast_presentation)
 	int pri_presentation;
 
 	switch (ast_presentation) {
-	case AST_PRES_ALLOWED_USER_NUMBER_NOT_SCREENED:
-		pri_presentation = PRES_ALLOWED_USER_NUMBER_NOT_SCREENED;
+	case AST_PRES_ALLOWED | AST_PRES_USER_NUMBER_UNSCREENED:
+		pri_presentation = PRI_PRES_ALLOWED | PRI_PRES_USER_NUMBER_UNSCREENED;
 		break;
-	case AST_PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN:
-		pri_presentation = PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN;
+	case AST_PRES_ALLOWED | AST_PRES_USER_NUMBER_PASSED_SCREEN:
+		pri_presentation = PRI_PRES_ALLOWED | PRI_PRES_USER_NUMBER_PASSED_SCREEN;
 		break;
-	case AST_PRES_ALLOWED_USER_NUMBER_FAILED_SCREEN:
-		pri_presentation = PRES_ALLOWED_USER_NUMBER_FAILED_SCREEN;
+	case AST_PRES_ALLOWED | AST_PRES_USER_NUMBER_FAILED_SCREEN:
+		pri_presentation = PRI_PRES_ALLOWED | PRI_PRES_USER_NUMBER_FAILED_SCREEN;
 		break;
-	case AST_PRES_ALLOWED_NETWORK_NUMBER:
-		pri_presentation = PRES_ALLOWED_NETWORK_NUMBER;
+	case AST_PRES_ALLOWED | AST_PRES_NETWORK_NUMBER:
+		pri_presentation = PRI_PRES_ALLOWED | PRI_PRES_NETWORK_NUMBER;
 		break;
-	case AST_PRES_PROHIB_USER_NUMBER_NOT_SCREENED:
-		pri_presentation = PRES_PROHIB_USER_NUMBER_NOT_SCREENED;
+
+	case AST_PRES_RESTRICTED | AST_PRES_USER_NUMBER_UNSCREENED:
+		pri_presentation = PRI_PRES_RESTRICTED | PRI_PRES_USER_NUMBER_UNSCREENED;
 		break;
-	case AST_PRES_PROHIB_USER_NUMBER_PASSED_SCREEN:
-		pri_presentation = PRES_PROHIB_USER_NUMBER_PASSED_SCREEN;
+	case AST_PRES_RESTRICTED | AST_PRES_USER_NUMBER_PASSED_SCREEN:
+		pri_presentation = PRI_PRES_RESTRICTED | PRI_PRES_USER_NUMBER_PASSED_SCREEN;
 		break;
-	case AST_PRES_PROHIB_USER_NUMBER_FAILED_SCREEN:
-		pri_presentation = PRES_PROHIB_USER_NUMBER_FAILED_SCREEN;
+	case AST_PRES_RESTRICTED | AST_PRES_USER_NUMBER_FAILED_SCREEN:
+		pri_presentation = PRI_PRES_RESTRICTED | PRI_PRES_USER_NUMBER_FAILED_SCREEN;
 		break;
-	case AST_PRES_PROHIB_NETWORK_NUMBER:
-		pri_presentation = PRES_PROHIB_NETWORK_NUMBER;
+	case AST_PRES_RESTRICTED | AST_PRES_NETWORK_NUMBER:
+		pri_presentation = PRI_PRES_RESTRICTED | PRI_PRES_NETWORK_NUMBER;
 		break;
-	case AST_PRES_NUMBER_NOT_AVAILABLE:
+
+	case AST_PRES_UNAVAILABLE | AST_PRES_USER_NUMBER_UNSCREENED:
+	case AST_PRES_UNAVAILABLE | AST_PRES_USER_NUMBER_PASSED_SCREEN:
+	case AST_PRES_UNAVAILABLE | AST_PRES_USER_NUMBER_FAILED_SCREEN:
+	case AST_PRES_UNAVAILABLE | AST_PRES_NETWORK_NUMBER:
 		pri_presentation = PRES_NUMBER_NOT_AVAILABLE;
 		break;
+
 	default:
-		pri_presentation = PRES_PROHIB_USER_NUMBER_NOT_SCREENED;
+		pri_presentation = PRI_PRES_RESTRICTED | PRI_PRES_USER_NUMBER_UNSCREENED;
 		break;
 	}
 
@@ -1130,7 +1144,8 @@ static void pri_find_dchan(struct sig_pri_span *pri)
  */
 static int sig_pri_is_chan_in_use(struct sig_pri_chan *pvt)
 {
-	return pvt->owner || pvt->call || pvt->allocated || pvt->resetting || pvt->inalarm;
+	return pvt->owner || pvt->call || pvt->allocated || pvt->inalarm
+		|| pvt->resetting != SIG_PRI_RESET_IDLE;
 }
 
 /*!
@@ -1175,10 +1190,11 @@ static void sig_pri_lock_owner(struct sig_pri_span *pri, int chanpos)
 			/* We got the lock */
 			break;
 		}
-		/* We must unlock the PRI to avoid the possibility of a deadlock */
-		ast_mutex_unlock(&pri->lock);
-		PRI_DEADLOCK_AVOIDANCE(pri->pvts[chanpos]);
-		ast_mutex_lock(&pri->lock);
+
+		/* Avoid deadlock */
+		sig_pri_unlock_private(pri->pvts[chanpos]);
+		DEADLOCK_AVOIDANCE(&pri->lock);
+		sig_pri_lock_private(pri->pvts[chanpos]);
 	}
 }
 
@@ -1692,7 +1708,7 @@ static void pri_check_restart(struct sig_pri_span *pri)
 	}
 	if (pri->resetpos < pri->numchans) {
 		/* Mark the channel as resetting and restart it */
-		pri->pvts[pri->resetpos]->resetting = 1;
+		pri->pvts[pri->resetpos]->resetting = SIG_PRI_RESET_ACTIVE;
 		pri_reset(pri->pri, PVT_TO_CHANNEL(pri->pvts[pri->resetpos]));
 	} else {
 		pri->resetting = 0;
@@ -4435,7 +4451,6 @@ static int sig_pri_handle_hold(struct sig_pri_span *pri, pri_event *ev)
 	int retval;
 	int chanpos_old;
 	int chanpos_new;
-	struct ast_channel *bridged;
 	struct ast_channel *owner;
 
 	chanpos_old = pri_find_principle_by_call(pri, ev->hold.call);
@@ -4456,9 +4471,11 @@ static int sig_pri_handle_hold(struct sig_pri_span *pri, pri_event *ev)
 	if (!owner) {
 		goto done_with_private;
 	}
-	bridged = ast_bridged_channel(owner);
-	if (!bridged) {
-		/* Cannot hold a call that is not bridged. */
+	if (pri->pvts[chanpos_old]->call_level != SIG_PRI_CALL_LEVEL_CONNECT) {
+		/*
+		 * Make things simple.  Don't allow placing a call on hold that
+		 * is not connected.
+		 */
 		goto done_with_owner;
 	}
 	chanpos_new = pri_find_empty_nobch(pri);
@@ -5060,7 +5077,7 @@ static void *pri_dchannel(void *vpri)
 #endif	/* defined(HAVE_PRI_CALL_WAITING) */
 					{
 						/* We will not accept incoming call waiting calls. */
-						pri_hangup(pri->pri, e->ring.call, PRI_CAUSE_INCOMPATIBLE_DESTINATION);
+						pri_hangup(pri->pri, e->ring.call, PRI_CAUSE_NORMAL_CIRCUIT_CONGESTION);
 						break;
 					}
 #if defined(HAVE_PRI_CALL_WAITING)
@@ -5081,13 +5098,40 @@ static void *pri_dchannel(void *vpri)
 							"Span %d: SETUP on unconfigured channel %d/%d\n",
 							pri->span, PRI_SPAN(e->ring.channel),
 							PRI_CHANNEL(e->ring.channel));
-					} else if (!sig_pri_is_chan_available(pri->pvts[chanpos])) {
-						/* This is where we handle initial glare */
-						ast_debug(1,
-							"Span %d: SETUP requested unavailable channel %d/%d.  Attempting to renegotiate.\n",
-							pri->span, PRI_SPAN(e->ring.channel),
-							PRI_CHANNEL(e->ring.channel));
-						chanpos = -1;
+					} else {
+						switch (pri->pvts[chanpos]->resetting) {
+						case SIG_PRI_RESET_IDLE:
+							break;
+						case SIG_PRI_RESET_ACTIVE:
+							/*
+							 * The peer may have lost the expected ack or not received the
+							 * RESTART yet.
+							 */
+							pri->pvts[chanpos]->resetting = SIG_PRI_RESET_NO_ACK;
+							break;
+						case SIG_PRI_RESET_NO_ACK:
+							/* The peer likely is not going to ack the RESTART. */
+							ast_debug(1,
+								"Span %d: Second SETUP while waiting for RESTART ACKNOWLEDGE on channel %d/%d\n",
+								pri->span, PRI_SPAN(e->ring.channel),
+								PRI_CHANNEL(e->ring.channel));
+
+							/* Assume we got the ack. */
+							pri->pvts[chanpos]->resetting = SIG_PRI_RESET_IDLE;
+							if (pri->resetting) {
+								/* Go on to the next idle channel to RESTART. */
+								pri_check_restart(pri);
+							}
+							break;
+						}
+						if (!sig_pri_is_chan_available(pri->pvts[chanpos])) {
+							/* This is where we handle initial glare */
+							ast_debug(1,
+								"Span %d: SETUP requested unavailable channel %d/%d.  Attempting to renegotiate.\n",
+								pri->span, PRI_SPAN(e->ring.channel),
+								PRI_CHANNEL(e->ring.channel));
+							chanpos = -1;
+						}
 					}
 #if defined(ALWAYS_PICK_CHANNEL)
 					if (e->ring.flexible) {
@@ -5909,12 +5953,12 @@ static void *pri_dchannel(void *vpri)
 #if defined(FORCE_RESTART_UNAVAIL_CHANS)
 				if (e->hangup.cause == PRI_CAUSE_REQUESTED_CHAN_UNAVAIL
 					&& pri->sig != SIG_BRI_PTMP && !pri->resetting
-					&& !pri->pvts[chanpos]->resetting) {
+					&& pri->pvts[chanpos]->resetting == SIG_PRI_RESET_IDLE) {
 					ast_verb(3,
 						"Span %d: Forcing restart of channel %d/%d since channel reported in use\n",
 						pri->span, pri->pvts[chanpos]->logicalspan,
 						pri->pvts[chanpos]->prioffset);
-					pri->pvts[chanpos]->resetting = 1;
+					pri->pvts[chanpos]->resetting = SIG_PRI_RESET_ACTIVE;
 					pri_reset(pri->pri, PVT_TO_CHANNEL(pri->pvts[chanpos]));
 				}
 #endif	/* defined(FORCE_RESTART_UNAVAIL_CHANS) */
@@ -6057,12 +6101,12 @@ static void *pri_dchannel(void *vpri)
 #if defined(FORCE_RESTART_UNAVAIL_CHANS)
 				if (e->hangup.cause == PRI_CAUSE_REQUESTED_CHAN_UNAVAIL
 					&& pri->sig != SIG_BRI_PTMP && !pri->resetting
-					&& !pri->pvts[chanpos]->resetting) {
+					&& pri->pvts[chanpos]->resetting == SIG_PRI_RESET_IDLE) {
 					ast_verb(3,
 						"Span %d: Forcing restart of channel %d/%d since channel reported in use\n",
 						pri->span, pri->pvts[chanpos]->logicalspan,
 						pri->pvts[chanpos]->prioffset);
-					pri->pvts[chanpos]->resetting = 1;
+					pri->pvts[chanpos]->resetting = SIG_PRI_RESET_ACTIVE;
 					pri_reset(pri->pri, PVT_TO_CHANNEL(pri->pvts[chanpos]));
 				}
 #endif	/* defined(FORCE_RESTART_UNAVAIL_CHANS) */
@@ -6126,7 +6170,8 @@ static void *pri_dchannel(void *vpri)
 					   channel number, so we have to figure it out...  This must be why
 					   everybody resets exactly a channel at a time. */
 					for (x = 0; x < pri->numchans; x++) {
-						if (pri->pvts[x] && pri->pvts[x]->resetting) {
+						if (pri->pvts[x]
+							&& pri->pvts[x]->resetting != SIG_PRI_RESET_IDLE) {
 							chanpos = x;
 							sig_pri_lock_private(pri->pvts[chanpos]);
 							ast_debug(1,
@@ -6140,7 +6185,7 @@ static void *pri_dchannel(void *vpri)
 									pri->pvts[chanpos]->prioffset);
 								pri->pvts[chanpos]->owner->_softhangup |= AST_SOFTHANGUP_DEV;
 							}
-							pri->pvts[chanpos]->resetting = 0;
+							pri->pvts[chanpos]->resetting = SIG_PRI_RESET_IDLE;
 							ast_verb(3,
 								"Span %d: Channel %d/%d successfully restarted\n",
 								pri->span, pri->pvts[chanpos]->logicalspan,
@@ -6159,6 +6204,15 @@ static void *pri_dchannel(void *vpri)
 					}
 				} else {
 					sig_pri_lock_private(pri->pvts[chanpos]);
+					if (pri->pvts[chanpos]->resetting == SIG_PRI_RESET_IDLE) {
+						/* The channel is not in the resetting state. */
+						ast_debug(1,
+							"Span %d: Unexpected or late restart ack on channel %d/%d (Ignoring)\n",
+							pri->span, pri->pvts[chanpos]->logicalspan,
+							pri->pvts[chanpos]->prioffset);
+						sig_pri_unlock_private(pri->pvts[chanpos]);
+						break;
+					}
 					if (pri->pvts[chanpos]->owner) {
 						ast_log(LOG_WARNING,
 							"Span %d: Got restart ack on channel %d/%d with owner\n",
@@ -6166,7 +6220,7 @@ static void *pri_dchannel(void *vpri)
 							pri->pvts[chanpos]->prioffset);
 						pri->pvts[chanpos]->owner->_softhangup |= AST_SOFTHANGUP_DEV;
 					}
-					pri->pvts[chanpos]->resetting = 0;
+					pri->pvts[chanpos]->resetting = SIG_PRI_RESET_IDLE;
 					ast_verb(3,
 						"Span %d: Channel %d/%d successfully restarted\n",
 						pri->span, pri->pvts[chanpos]->logicalspan,
@@ -7778,6 +7832,18 @@ void sig_pri_chan_alarm_notify(struct sig_pri_chan *p, int noalarm)
 	pri_rel(p->pri);
 }
 
+/*!
+ * \brief Determine if layer 1 alarms are ignored.
+ *
+ * \param p Channel private pointer.
+ *
+ * \return TRUE if the alarm is ignored.
+ */
+int sig_pri_is_alarm_ignored(struct sig_pri_span *pri)
+{
+	return pri->layer1_ignored;
+}
+
 struct sig_pri_chan *sig_pri_chan_new(void *pvt_data, struct sig_pri_callback *callback, struct sig_pri_span *pri, int logicalspan, int channo, int trunkgroup)
 {
 	struct sig_pri_chan *p;
@@ -7942,7 +8008,7 @@ int pri_send_keypad_facility_exec(struct sig_pri_chan *p, const char *digits)
 
 int pri_send_callrerouting_facility_exec(struct sig_pri_chan *p, enum ast_channel_state chanstate, const char *destination, const char *original, const char *reason)
 {
-	int res = -1;
+	int res;
 
 	sig_pri_lock_private(p);
 

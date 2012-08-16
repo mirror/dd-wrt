@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 341074 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 361142 $")
 
 #include <signal.h>
 
@@ -388,12 +388,12 @@ static int realtime_matchmore(struct ast_channel *chan, const char *context, con
 
 static struct ast_switch realtime_switch =
 {
-        name:                   "Realtime",
-        description:   		"Realtime Dialplan Switch",
-        exists:                 realtime_exists,
-        canmatch:               realtime_canmatch,
-        exec:                   realtime_exec,
-        matchmore:              realtime_matchmore,
+	.name			= "Realtime",
+	.description		= "Realtime Dialplan Switch",
+	.exists			= realtime_exists,
+	.canmatch		= realtime_canmatch,
+	.exec			= realtime_exec,
+	.matchmore		= realtime_matchmore,
 };
 
 static int unload_module(void)

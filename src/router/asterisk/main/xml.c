@@ -21,11 +21,15 @@
  * \author Eliel C. Sardanons (LU1ALY) <eliels@gmail.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 #include "asterisk/xml.h"
 #include "asterisk/logger.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 258517 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #if defined(HAVE_LIBXML2)
 #include <libxml/parser.h>

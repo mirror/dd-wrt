@@ -36,7 +36,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 346086 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 360712 $")
 
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -1888,6 +1888,7 @@ static int jingle_load_config(void)
 		}
 		cat = ast_category_browse(cfg, cat);
 	}
+	ast_config_destroy(cfg);
 	jingle_free_candidates(global_candidates);
 	return 1;
 }

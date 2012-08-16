@@ -23,9 +23,13 @@
  * \author Mark Spencer <markster@digium.com> 
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 355721 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -51,10 +55,50 @@ static AST_RWLIST_HEAD_STATIC(translators, ast_translator);
  *  \note These must stay in this order.  They are ordered by most optimal selection first.
  */
 enum path_samp_change {
-	RATE_CHANGE_NONE = 0, /*!< path uses the same sample rate consistently */
-	RATE_CHANGE_UPSAMP = 1, /*!< path will up the sample rate during a translation */
-	RATE_CHANGE_DOWNSAMP = 2, /*!< path will have to down the sample rate during a translation. */
-	RATE_CHANGE_UPSAMP_DOWNSAMP = 3, /*!< path will both up and down the sample rate during translation */
+
+	/* Lossless Source Translation Costs */
+
+	/*! [lossless -> lossless] original sampling */
+	AST_TRANS_COST_LL_LL_ORIGSAMP = 400000,
+	/*! [lossless -> lossy]    original sampling */
+	AST_TRANS_COST_LL_LY_ORIGSAMP = 600000,
+
+	/*! [lossless -> lossless] up sample */
+	AST_TRANS_COST_LL_LL_UPSAMP   = 800000,
+	/*! [lossless -> lossy]    up sample */
+	AST_TRANS_COST_LL_LY_UPSAMP   = 825000,
+
+	/*! [lossless -> lossless] down sample */
+	AST_TRANS_COST_LL_LL_DOWNSAMP = 850000,
+	/*! [lossless -> lossy]    down sample */
+	AST_TRANS_COST_LL_LY_DOWNSAMP = 875000,
+
+	/*! [lossless -> unknown]    unknown.
+	 * This value is for a lossless source translation
+	 * with an unknown destination and or sample rate conversion. */
+	AST_TRANS_COST_LL_UNKNOWN     = 885000,
+
+	/* Lossy Source Translation Costs */
+
+	/*! [lossy -> lossless]    original sampling */
+	AST_TRANS_COST_LY_LL_ORIGSAMP = 900000,
+	/*! [lossy -> lossy]       original sampling */
+	AST_TRANS_COST_LY_LY_ORIGSAMP = 915000,
+
+	/*! [lossy -> lossless]    up sample */
+	AST_TRANS_COST_LY_LL_UPSAMP   = 930000,
+	/*! [lossy -> lossy]       up sample */
+	AST_TRANS_COST_LY_LY_UPSAMP   = 945000,
+
+	/*! [lossy -> lossless]    down sample */
+	AST_TRANS_COST_LY_LL_DOWNSAMP = 960000,
+	/*! [lossy -> lossy]       down sample */
+	AST_TRANS_COST_LY_LY_DOWNSAMP = 975000,
+
+	/*! [lossy -> unknown]    unknown.
+	 * This value is for a lossy source translation
+	 * with an unknown destination and or sample rate conversion. */
+	AST_TRANS_COST_LY_UNKNOWN     = 985000,
 };
 
 struct translator_path {
@@ -417,20 +461,44 @@ static void calc_cost(struct ast_translator *t, int seconds)
 
 static enum path_samp_change get_rate_change_result(format_t src, format_t dst)
 {
+	int src_ll = src == AST_FORMAT_SLINEAR || src == AST_FORMAT_SLINEAR16;
+	int dst_ll = dst == AST_FORMAT_SLINEAR || src == AST_FORMAT_SLINEAR16;
 	int src_rate = ast_format_rate(src);
 	int dst_rate = ast_format_rate(dst);
 
-	/* if src rate is less than dst rate, a sample upgrade is required */
-	if (src_rate < dst_rate) {
-		return RATE_CHANGE_UPSAMP;
+	if (src_ll) {
+		if (dst_ll && (src_rate == dst_rate)) {
+			return AST_TRANS_COST_LL_LL_ORIGSAMP;
+		} else if (!dst_ll && (src_rate == dst_rate)) {
+			return AST_TRANS_COST_LL_LY_ORIGSAMP;
+		} else if (dst_ll && (src_rate < dst_rate)) {
+			return AST_TRANS_COST_LL_LL_UPSAMP;
+		} else if (!dst_ll && (src_rate < dst_rate)) {
+			return AST_TRANS_COST_LL_LY_UPSAMP;
+		} else if (dst_ll && (src_rate > dst_rate)) {
+			return AST_TRANS_COST_LL_LL_DOWNSAMP;
+		} else if (!dst_ll && (src_rate > dst_rate)) {
+			return AST_TRANS_COST_LL_LY_DOWNSAMP;
+		} else {
+			return AST_TRANS_COST_LL_UNKNOWN;
+		}
+	} else {
+		if (dst_ll && (src_rate == dst_rate)) {
+			return AST_TRANS_COST_LY_LL_ORIGSAMP;
+		} else if (!dst_ll && (src_rate == dst_rate)) {
+			return AST_TRANS_COST_LY_LY_ORIGSAMP;
+		} else if (dst_ll && (src_rate < dst_rate)) {
+			return AST_TRANS_COST_LY_LL_UPSAMP;
+		} else if (!dst_ll && (src_rate < dst_rate)) {
+			return AST_TRANS_COST_LY_LY_UPSAMP;
+		} else if (dst_ll && (src_rate > dst_rate)) {
+			return AST_TRANS_COST_LY_LL_DOWNSAMP;
+		} else if (!dst_ll && (src_rate > dst_rate)) {
+			return AST_TRANS_COST_LY_LY_DOWNSAMP;
+		} else {
+			return AST_TRANS_COST_LY_UNKNOWN;
+		}
 	}
-
-	/* if src rate is larger than dst rate, a downgrade is required */
-	if (src_rate > dst_rate) {
-		return RATE_CHANGE_DOWNSAMP;
-	}
-
-	return RATE_CHANGE_NONE;
 }
 
 /*!
@@ -517,11 +585,8 @@ static void rebuild_matrix(int samples)
 					/* Is x->y->z a better choice than x->z?
 					 * There are three conditions for x->y->z to be a better choice than x->z
 					 * 1. if there is no step directly between x->z then x->y->z is the best and only current option.
-					 * 2. if x->y->z costs less and the sample rate conversion is no less optimal.
-					 * 3. if x->y->z results in a more optimal sample rate conversion. */
+					 * 2. if x->y->z results in a more optimal sample rate conversion. */
 					if (!tr_matrix[x][z].step) {
-						better_choice = 1;
-					} else if ((newcost < tr_matrix[x][z].cost) && (new_rate_change <= tr_matrix[x][z].rate_change)) {
 						better_choice = 1;
 					} else if (new_rate_change < tr_matrix[x][z].rate_change) {
 						better_choice = 1;
@@ -542,16 +607,7 @@ static void rebuild_matrix(int samples)
 					 * 
 					 * if both paths require a change in rate, and they are not in the same direction
 					 * then this is a up sample down sample conversion scenario. */
-					if ((tr_matrix[x][y].rate_change > RATE_CHANGE_NONE) &&
-						(tr_matrix[y][z].rate_change > RATE_CHANGE_NONE) &&
-						(tr_matrix[x][y].rate_change != tr_matrix[y][z].rate_change)) {
-
-						tr_matrix[x][z].rate_change = RATE_CHANGE_UPSAMP_DOWNSAMP;
-					} else {
-						/* else just set the rate change to whichever is worse */
-						tr_matrix[x][z].rate_change = tr_matrix[x][y].rate_change > tr_matrix[y][z].rate_change
-							? tr_matrix[x][y].rate_change : tr_matrix[y][z].rate_change;
-					}
+					tr_matrix[x][z].rate_change = tr_matrix[x][y].rate_change + tr_matrix[y][z].rate_change;
 
 					ast_debug(3, "Discovered %d cost path from %s to %s, via %s\n", tr_matrix[x][z].cost,
 						  ast_getformatname(1LL << x), ast_getformatname(1LL << z), ast_getformatname(1LL << y));
@@ -666,6 +722,11 @@ static char *handle_cli_core_show_translation(struct ast_cli_entry *e, int cmd, 
 			if (!(format_list[i].bits & AST_FORMAT_AUDIO_MASK) || (format_list[i].bits == input_src)) {
 				continue;
 			}
+			/* Note that dst can never be -1, as an element of format_list will have
+			 * at least one bit set.  src cannot be -1 as well, as it is previously
+			 * sanitized - hence it is safe to directly index tr_matrix with the results
+			 * of powerof.
+			 */
 			dst = powerof(format_list[i].bits);
 			src = powerof(input_src);
 			ast_str_reset(str);
@@ -1016,6 +1077,7 @@ format_t ast_translate_available_formats(format_t dest, format_t src)
 	format_t x;
 	format_t src_audio = src & AST_FORMAT_AUDIO_MASK;
 	format_t src_video = src & AST_FORMAT_VIDEO_MASK;
+	format_t x_bits;
 
 	/* if we don't have a source format, we just have to try all
 	   possible destination formats */
@@ -1023,12 +1085,19 @@ format_t ast_translate_available_formats(format_t dest, format_t src)
 		return dest;
 
 	/* If we have a source audio format, get its format index */
-	if (src_audio)
+	if (src_audio) {
 		src_audio = powerof(src_audio);
+	}
 
 	/* If we have a source video format, get its format index */
-	if (src_video)
+	if (src_video) {
 		src_video = powerof(src_video);
+	}
+
+	/* Note that src_audio and src_video are guaranteed to not be
+	 * negative at this point, as we ensured they were non-zero.  It is
+	 * safe to use the return value of powerof as an index into tr_matrix.
+	 */
 
 	AST_RWLIST_RDLOCK(&translators);
 
@@ -1051,14 +1120,16 @@ format_t ast_translate_available_formats(format_t dest, format_t src)
 			continue;
 
 		/* if we don't have a translation path from the src
-		   to this format, remove it from the result */
-		if (!tr_matrix[src_audio][powerof(x)].step) {
+		   to this format, remove it from the result.  Note that x_bits
+		   cannot be less than 0 as x will always have one bit set to 1 */
+		x_bits = powerof(x);
+		if (!tr_matrix[src_audio][x_bits].step) {
 			res &= ~x;
 			continue;
 		}
 
 		/* now check the opposite direction */
-		if (!tr_matrix[powerof(x)][src_audio].step)
+		if (!tr_matrix[x_bits][src_audio].step)
 			res &= ~x;
 	}
 
@@ -1081,14 +1152,16 @@ format_t ast_translate_available_formats(format_t dest, format_t src)
 			continue;
 
 		/* if we don't have a translation path from the src
-		   to this format, remove it from the result */
-		if (!tr_matrix[src_video][powerof(x)].step) {
+		   to this format, remove it from the result.  Note that x_bits
+		   cannot be less than 0 as x will always have one bit set to 1 */
+		x_bits = powerof(x);
+		if (!tr_matrix[src_video][x_bits].step) {
 			res &= ~x;
 			continue;
 		}
 
 		/* now check the opposite direction */
-		if (!tr_matrix[powerof(x)][src_video].step)
+		if (!tr_matrix[x_bits][src_video].step)
 			res &= ~x;
 	}
 

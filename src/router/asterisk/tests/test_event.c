@@ -49,7 +49,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 332176 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 357940 $")
 
 #include "asterisk/module.h"
 #include "asterisk/utils.h"
@@ -603,6 +603,25 @@ AST_TEST_DEFINE(event_sub_test)
 		AST_EVENT_IE_END);
 	if (sub_res != AST_EVENT_SUB_EXISTS) {
 		ast_test_status_update(test, "Str FOO/bar subscription did not exist\n");
+		res = AST_TEST_FAIL;
+	}
+
+	/* Make sure that the tech portion of the device string is case-insensitive */
+	sub_res = ast_event_check_subscriber(AST_EVENT_CUSTOM,
+		AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, "foo/bar",
+		AST_EVENT_IE_END);
+	if (sub_res != AST_EVENT_SUB_EXISTS) {
+		ast_test_status_update(test, "Str FOO/bar subscription lacks proper case-sensitivity for device strings\n");
+		res = AST_TEST_FAIL;
+	}
+
+	/* Make sure that the non-tech portion of the device string is case-sensitive
+	 * and fails to match appropriately */
+	sub_res = ast_event_check_subscriber(AST_EVENT_CUSTOM,
+		AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, "FOO/BAR",
+		AST_EVENT_IE_END);
+	if (sub_res == AST_EVENT_SUB_EXISTS) {
+		ast_test_status_update(test, "Str FOO/bar subscription lacks proper case-sensitivity for device strings\n");
 		res = AST_TEST_FAIL;
 	}
 

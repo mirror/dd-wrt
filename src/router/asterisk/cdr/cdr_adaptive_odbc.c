@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 360712 $")
 
 #include <sys/types.h>
 #include <time.h>
@@ -263,6 +263,7 @@ static int load_config(void)
 		else
 			ast_free(tableptr);
 	}
+	ast_config_destroy(cfg);
 	return res;
 }
 
@@ -421,6 +422,11 @@ static int odbc_log(struct ast_cdr *cdr)
 				case SQL_CHAR:
 				case SQL_VARCHAR:
 				case SQL_LONGVARCHAR:
+#ifdef HAVE_ODBC_WCHAR
+				case SQL_WCHAR:
+				case SQL_WVARCHAR:
+				case SQL_WLONGVARCHAR:
+#endif
 				case SQL_BINARY:
 				case SQL_VARBINARY:
 				case SQL_LONGVARBINARY:

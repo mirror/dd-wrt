@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 366880 $")
 
 #include "asterisk/channel.h"
 #include "asterisk/pbx.h"
@@ -132,7 +132,6 @@ AST_APP_OPTIONS(page_opts, {
 	AST_APP_OPTION('r', PAGE_RECORD),
 	AST_APP_OPTION('s', PAGE_SKIP),
 	AST_APP_OPTION('i', PAGE_IGNORE_FORWARDS),
-	AST_APP_OPTION('i', PAGE_IGNORE_FORWARDS),
 	AST_APP_OPTION_ARG('A', PAGE_ANNOUNCE, OPT_ARG_ANNOUNCE),
 	AST_APP_OPTION('n', PAGE_NOCALLERANNOUNCE),
 });
@@ -178,6 +177,11 @@ static int page_exec(struct ast_channel *chan, const char *data)
 
 	if (!ast_strlen_zero(args.options)) {
 		ast_app_parse_options(page_opts, &flags, opts, args.options);
+	} else {
+		/* opts must be initialized if there wasn't an options string. */
+		for (i = 0; i < OPT_ARG_ARRAY_SIZE; i++) {
+			opts[i] = NULL;
+		}
 	}
 
 	if (!ast_strlen_zero(args.timeout)) {
@@ -244,6 +248,7 @@ static int page_exec(struct ast_channel *chan, const char *data)
 		/* Append technology and resource */
 		if (ast_dial_append(dial, tech, resource) == -1) {
 			ast_log(LOG_ERROR, "Failed to add %s to outbound dial\n", tech);
+			ast_dial_destroy(dial);
 			continue;
 		}
 
@@ -296,6 +301,8 @@ static int page_exec(struct ast_channel *chan, const char *data)
 		/* Destroy dialing structure */
 		ast_dial_destroy(dial);
 	}
+
+	ast_free(dial_list);
 
 	return -1;
 }

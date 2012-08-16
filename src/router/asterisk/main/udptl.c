@@ -48,10 +48,13 @@
  * - app_fax.c
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 339625 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include <sys/time.h>
 #include <signal.h>
@@ -517,7 +520,7 @@ static int udptl_rx_packet(struct ast_udptl *s, uint8_t *buf, unsigned int len)
 
 static int udptl_build_packet(struct ast_udptl *s, uint8_t *buf, unsigned int buflen, uint8_t *ifp, unsigned int ifp_len)
 {
-	uint8_t fec[LOCAL_FAX_MAX_DATAGRAM * 2];
+	uint8_t fec[LOCAL_FAX_MAX_DATAGRAM * 2] = { 0, };
 	int i;
 	int j;
 	int seq;
@@ -1355,10 +1358,10 @@ static void __ast_udptl_reload(int reload)
 				ast_log(LOG_WARNING, "Disabling UDPTL checksums is not supported on this operating system!\n");
 #endif
 		}
-		if ((s = ast_variable_retrieve(cfg, "general", "T38FaxUdpEC"))) {
+		if (ast_variable_retrieve(cfg, "general", "T38FaxUdpEC")) {
 			ast_log(LOG_WARNING, "T38FaxUdpEC in udptl.conf is no longer supported; use the t38pt_udptl configuration option in sip.conf instead.\n");
 		}
-		if ((s = ast_variable_retrieve(cfg, "general", "T38FaxMaxDatagram"))) {
+		if (ast_variable_retrieve(cfg, "general", "T38FaxMaxDatagram")) {
 			ast_log(LOG_WARNING, "T38FaxMaxDatagram in udptl.conf is no longer supported; value is now supplied by T.38 applications.\n");
 		}
 		if ((s = ast_variable_retrieve(cfg, "general", "UDPTLFECEntries"))) {

@@ -1,12 +1,2821 @@
-2012-04-23  Asterisk Development Team <asteriskteam@digium.com>
+2012-07-30  Asterisk Development Team <asteriskteam@digium.com>
 
-	* Asterisk 1.8.11.1 Released.
+	* Asterisk 1.8.15.0 Released.
+
+2012-07-11  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Asterisk 1.8.15.0-rc1 Released.
+
+2012-07-10 13:33 +0000 [r369869]  Kinsey Moore <kmoore@digium.com>
+
+	* apps/app_stack.c, main/pbx.c: Improve Goto and GotoIf related
+	  documentation Correct documentation on labeliftrue and
+	  labeliffalse parameters of GotoIf() and update several other
+	  locations that use the same syntax. (closes issue ASTERISK-20007)
+	  Patch-by: Leif Madsen Reported-by: WIMPy
+
+2012-07-09 17:05 +0000 [r369818]  Jason Parker <jparker@digium.com>
+
+	* configs/sip_notify.conf.sample: Add Digium phones context to
+	  sip_notify sample config. This makes it so that they can be
+	  reconfigured remotely. (closes issue ASTERISK-19910)
+
+2012-07-09 14:38 +0000 [r369792]  Jonathan Rose <jrose@digium.com>
+
+	* channels/chan_sip.c: chan_sip: Fix small behavioral change
+	  accidentally introduced in r369750 When removing the warning for
+	  AST_CONTROL_FLASH from sip_indicate, I also inadvertently changed
+	  the return value, which would likely make the indication not be
+	  sent in audio. This fixes that while still removing the warning
+	  message.
+
+2012-07-06 20:54 +0000 [r369750]  Jonathan Rose <jrose@digium.com>
+
+	* channels/chan_sip.c: chan_sip: Add case for FLASH control frames
+	  so that we don't display a warning. chan_sip channels can receive
+	  flash control frames when connected to analog phones and possibly
+	  for other reasons. There really isn't a reason to warn when these
+	  frames are received, we can safely ignore them. Patches:
+	  dahdi_sip_flash.diff uploaded by Jonathan Rose (license 6182)
+
+2012-07-06 18:40 +0000 [r369708-369731]  Mark Michelson <mmichelson@digium.com>
+
+	* main/tcptls.c: Remove a superfluous and dangerous freeing of an
+	  SSL_CTX. The problem here is that multiple server sessions share
+	  a SSL_CTX. When one session ended, the SSL_CTX would be freed and
+	  set NULL, leaving the other sessions unable to function. The code
+	  being removed is superfluous because the SSL_CTX structures for
+	  servers will be properly freed when ast_ssl_teardown is called.
+	  (closes issue ASTERISK-20074) Reported by Trevor Helmsley
+	  Patches: ASTERISK-20074.diff uploaded by Mark Michelson (license
+	  #5049) Testers: Trevor Helmsley
+
+	* main/bridging.c: Fix bridging thread leak. The bridge thread was
+	  exiting but was never being reaped using pthread_join(). This has
+	  been fixed now by calling pthread_join() in ast_bridge_destroy().
+	  (closes issue ASTERISK-19834) Reported by Marcus Hunger Review:
+	  https://reviewboard.asterisk.org/r/2012
+
+2012-07-05 19:01 +0000 [r369652]  Kinsey Moore <kmoore@digium.com>
+
+	* apps/app_voicemail.c: AST-2012-011: Resolve heap corruption issue
+	  with voicemail The heard and deleted arrays in the voicemail
+	  state structure were not handled properly following the memory
+	  leak fix in r354890 and a fix for an invalid free in r356797.
+	  This could result in accessing and writing into freed memory. The
+	  allocation for these arrays has been reworked to avoid the
+	  possibility of invalid frees, access of freed memory, and crashes
+	  that were occurring as a result of this. Locking around accesses
+	  and modifications of the voicemail state structure members
+	  dh_arraysize, heard, and deleted has been added to prevent
+	  simultaneous modification and access when IMAP storage is in use.
+	  If IMAP storage is not in use, this locking is not compiled in.
+	  Review: https://reviewboard.asterisk.org/r/1994/ (closes issue
+	  ASTERISK-19923) Reported by: Dan Delaney Tested by: Dan Delaney,
+	  Julian Yap Patches: vm_alloc_fix.diff uploaded by kmoore (license
+	  6273)
+
+2012-07-05 17:01 +0000 [r369626]  Matthew Jordan <mjordan@digium.com>
+
+	* channels/chan_sip.c: Do not send a BYE when a provisional
+	  response arrives during a re-INVITE Commits r369557 and r369579
+	  were done to improve handling of re-INVITEs when the UA that was
+	  supposed to receive the re-INVITE fails to respond. A limitation
+	  of those patches occurred when a UA sent a provisional response
+	  to the re-INVITE. This triggered a sending of a BYE in
+	  check_pending. This patch tweaks the handling of the re-INVITE
+	  such that a BYE is not sent in response to those messages. (issue
+	  ASTERISK-19992) Reported by: Steve Davies Tested by: Steve Davies
+	  patches: (reinvite_tweak.diff license #5012 by Steve Davies)
+
+2012-07-03 16:58 +0000 [r369557-369579]  Terry Wilson <twilson@digium.com>
+
+	* channels/chan_sip.c: More improvements to re-INVITEs timing out
+	  after a provisional response There is no need to call
+	  check_pendings() on a final response to an INVITE when destroying
+	  the scheduler entry as it will be done later during normal
+	  processing. (issue ASTERISK-19992)
+
+	* channels/sip/include/sip.h, channels/chan_sip.c: Better handle
+	  re-INVITEs with provisional but no final repsonses A previous
+	  attempt at fixing this issue had negative side effects related to
+	  attended transfers which this patch should resolve. Many thanks
+	  to Steve Davies for all of the good suggestions and testing.
+	  (closes issue ASTERISK-19992) Reported by: Steve Davies Tested
+	  by: Steve Davies, Terry Wilson Review:
+	  https://reviewboard.asterisk.org/r/2009/
+
+2012-06-29 16:52 +0000 [r369471-369490]  Joshua Colp <jcolp@digium.com>
+
+	* channels/chan_sip.c: With some configurations a transport is not
+	  actually specified so assume UDP in these cases.
+
+	* channels/chan_sip.c: Make the address family filter specific to
+	  the transport. (closes issue ASTERISK-16618) Reported by: Leif
+	  Madsen Review: https://reviewboard.asterisk.org/r/1667/
+
+2012-06-27 20:58 +0000 [r369436]  Terry Wilson <twilson@digium.com>
+
+	* channels/sip/include/sip.h, channels/chan_sip.c: AST-2012-010:
+	  Clean up after a reinvite that never gets a final response The
+	  basic problem is that if a re-INVITE is sent by Asterisk and it
+	  receives a provisional response, but no final response, then the
+	  dialog is never torn down. In addition to leaking memory, this
+	  also leaks file descriptors and will eventually lead to Asterisk
+	  no longer being able to process calls. This patch just keeps
+	  track of whether there is an outstanding re-INVITE, and if there
+	  is goes ahead and cleans up everything as though there was no
+	  outstanding reinvite. Review:
+	  https://reviewboard.asterisk.org/r/2009/ (closes issue
+	  ASTERISK-19992) Reported by: Steve Davies Tested by: Steve
+	  Davies, Terry Wilson
+
+2012-06-26 13:21 +0000 [r369366-369390]  Matthew Jordan <mjordan@digium.com>
+
+	* main/adsi.c: Fix crash in unloading of res_adsi module When
+	  res_adsi is unloaded, it removes the ADSI functions that it
+	  previously installed by passing a NULL adsi_funcs pointer to
+	  ast_adsi_install_funcs. This function was not checking whether or
+	  not the adsi_funcs pointer passed in was NULL before
+	  dereferencing it to check whether or not the version of the
+	  functions matches what the core was expecting it. This patch
+	  makes it so that the version is only checked if a potentially
+	  valid adsi_funcs pointer was passed in. Passing in NULL removes
+	  the installed functions, bypassing the version check.
+
+	* main/cdr.c: Tweak CDR change in r369351 As Tilghman pointed out
+	  on review 1996, the check to see if a CDR end time has been set
+	  is sufficient to know whether or not the duration value can be
+	  used. The check-in done for r369351 forgot to include this
+	  change.
+
+2012-06-25 19:13 +0000 [r369352]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/sip/include/sip.h, channels/chan_sip.c: Re-fix how local
+	  tag is generated when sending a 481 to an INVITE. Match our local
+	  tag to whatever to-tag was sent in the initial INVITE. Because
+	  the size of the to-tag may not fit in the buffer in the sip_pvt,
+	  it has been changed to a string field. (closes issue
+	  ASTERISK-19892) reported by Walter Doekes Review:
+	  https://reviewboard.asterisk.org/r/1977
+
+2012-06-25 19:12 +0000 [r369351]  Matthew Jordan <mjordan@digium.com>
+
+	* main/cdr.c: Fix incorrect duration reporting in CDRs created in
+	  batch mode Certain places in core/cdr.c would, if the duration
+	  value were 0, calculate the duration as being the delta between
+	  the current time and the time at which the CDR record was
+	  started. While this does not typically cause a problem in
+	  non-batch mode, this can cause an issue in batch mode where CDR
+	  records are gathered and written long after those calls have
+	  ended. In particular, this affects calls that were never
+	  answered, as those are expected to have a duration of 0. Often,
+	  this would result in CDR logs with a significant number of calls
+	  with lengthy durations, but dispositions of "BUSY". Note that
+	  this does not affect cdr_csv, as that backend does not use
+	  ast_cdr_getvar and instead directly reports the duration value.
+	  The affected core backends include cdr_apative_odbc and
+	  cdr_custom; other extended or deprecated CDR backends may
+	  potentially still directly manipulate the duration values. (issue
+	  ASTERISK-19860) Reported by: Thomas Arimont (issue AST-883)
+	  Reported by: Thomas Arimont Tested by: Matt Jordan Review:
+	  https://reviewboard.asterisk.org/r/1996/
+
+2012-06-25 15:57 +0000 [r369327]  Richard Mudgett <rmudgett@digium.com>
+
+	* main/features.c: Fix Bridge application occasionally returning to
+	  the wrong location. * Fix do_bridge_masquerade() getting the
+	  resume location from the zombie channel. The code must not touch
+	  a clone channel after it has masqueraded it. The clone channel
+	  has become a zombie and is starting to hangup. (closes issue
+	  ASTERISK-19985) Reported by: jamicque Patches:
+	  jira_asterisk_19985_v1.8.patch (license #5621) patch uploaded by
+	  rmudgett Tested by: jamicque
+
+2012-06-25 15:50 +0000 [r369302-369324]  Mark Michelson <mmichelson@digium.com>
+
+	* main/adsi.c (added): Forgot to svn add this file in my last
+	  commit.
+
+	* res/res_adsi.exports.in (removed), include/asterisk/adsi.h,
+	  main/Makefile, res/res_adsi.c: Eliminate embedding of res_adsi.so
+	  module. The way this is done is to stop using the optional API.
+	  Instead, res_adsi.so, when loaded fills in a table of function
+	  pointers. Review: https://reviewboard.asterisk.org/r/1991
+
+	* channels/chan_sip.c: Be more consistent with the return code for
+	  requests received from invalid domain. When Asterisk receives an
+	  INVITE from an external domain when allowexternaldomains=no send
+	  a 403 instead of a 404. This is consistent with Asterisk's
+	  behavior when receiving a REGISTER in this situation. (Closes
+	  issue ASTERISK-19601) Reported by Matthew Jordan Patches:
+	  ASTERISK-19601-no401.patch uploaded by Mark Michelson (License
+	  #5049)
+
+2012-06-23 00:04 +0000 [r369235-369282]  Richard Mudgett <rmudgett@digium.com>
+
+	* main/features.c: Fix Bridge application and AMI Bridge action
+	  error handling. * Fix AMI Bridge action disconnecting the AMI
+	  link on error. * Fix AMI Bridge action and Bridge application not
+	  checking if their masquerades were successful. * Fix Bridge
+	  application running the h-exten when it should not. * Made
+	  do_bridge_masquerade() return if the masquerade was successful so
+	  the Bridge application and AMI Bridge action could deal with it
+	  correctly. * Made bridge_call_thread_launch() hangup the passed
+	  in channels if the bridge_call_thread fails to start. Those
+	  channels would have been orphaned. * Made builtin_atxfer() check
+	  the success of the transfer masquerade setup.
+
+	* apps/app_queue.c: Explicitly check caller hangup in app Queue
+	  rather than a polluted res2 value.
+
+	* apps/app_dial.c: Check if PBX was started and fix F and F(x)
+	  action logic in Dial application.
+
+	* main/ccss.c: Check if PBX was started for generic CCSS recall.
+
+	* channels/chan_sip.c: Change incorrect chan_sip zombie hangup
+	  debug message. They are all zombies now.
+
+2012-06-22 19:28 +0000 [r369214]  Terry Wilson <twilson@digium.com>
+
+	* channels/chan_sip.c: Don't crash on a guest directmedia call A
+	  sip_pvt may not have relatedpeer set if a call doesn't match up
+	  with a peer. If there is no relatedpeer, there is no direct media
+	  ACL to apply, so just return that it is allowed. (closes issue
+	  ASTERISK-20040) Reported by: Terry Wilson
+
+2012-06-22 17:14 +0000 [r369195]  Kinsey Moore <kmoore@digium.com>
+
+	* channels/chan_sip.c: Don't parse media stream state for SIP video
+	  streams The sendonly/recvonly/sendrecv/inactive media stream
+	  attributes were parsed for video, but nothing was ever done with
+	  them. With this code removed, an UNSUPPORTED message is produced
+	  when these attributes are used in conjunction with a video stream
+	  which is the better behavior since they were never really
+	  supported in the first place.
+
+2012-06-20 17:33 +0000 [r369130-369146]  Alexandr Anikin <may@telecom-service.ru>
+
+	* addons/ooh323c/src/ooq931.c, addons/ooh323c/src/ooCalls.c: fix
+	  locking issue on empty callList (issue ASTERISK-19298) Reported
+	  by: Dmitry Melekhov Patches: ASTERISK-18322-2.patch
+
+	* addons/chan_ooh323.c: fix compile error (1.8 don't have
+	  ast_channel_name macro)
+
+2012-06-20 02:03 +0000 [r369108]  Michael L. Young <elgueromexicano@gmail.com>
+
+	* include/asterisk/netsock2.h, main/netsock2.c: Fix NULL pointer
+	  segfault in ast_sockaddr_parse() While working with
+	  ast_parse_arg() to perform a validity check, a segfault occurred.
+	  The segfault occurred due to passing a NULL pointer to
+	  ast_sockaddr_parse() from ast_parse_arg(). According to the
+	  documentation in config.h, "result pointer to the result. NULL is
+	  valid here, and can be used to perform only the validity checks."
+	  This patch fixes the segfault by checking for a NULL pointer.
+	  This patch also adds documentation to netsock2.h about why it is
+	  necessary to check for a NULL pointer. (Closes issue
+	  ASTERISK-20006) Reported by: Michael L. Young Tested by: Michael
+	  L. Young Patches: asterisk-20006-netsock-null-ptr.diff uploaded
+	  by Michael L. Young (license 5026) Review:
+	  https://reviewboard.asterisk.org/r/1990/
+
+2012-06-19 23:28 +0000 [r369090]  Alexandr Anikin <may@telecom-service.ru>
+
+	* addons/chan_ooh323.c: check rtptimeouts in ooh323 channels as per
+	  config file (rtp voice, video, udptl except rtcp) (closes issue
+	  ASTERISK-19179) Reported by: TSAREGORODTSEV Yury Patches:
+	  19179-ooh323-2.patch
+
+2012-06-19 15:30 +0000 [r369066]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/chan_sip.c: Fix request routing issue when outboundproxy
+	  is used. Asterisk was incorrectly setting the destination of
+	  CANCELs and ACKs for error responses to the URI of the initial
+	  INVITE. This resulted in further requests, such as INVITEs with
+	  authentication credentials, to be routed incorrectly. Instead,
+	  when these CANCEL or ACKs are to be sent, we should simply keep
+	  the destination the same as what it previously was. There is no
+	  need to alter it any. (closes issue ASTERISK-20008) Reported by
+	  Marcus Hunger Patches: ASTERISK-20008.patch uploaded by Mark
+	  Michelson (license #5049)
+
+2012-06-18 18:07 +0000 [r369043]  Richard Mudgett <rmudgett@digium.com>
+
+	* main/features.c: Fix monitoring calls put in a parking lot. * Fix
+	  a regression that was introduced by -r366167 which effectively
+	  disabled monitoring parked calls. (closes issue ASTERISK-20012)
+	  Reported by: sdolloff Tested by: rmudgett
+
+2012-06-15 15:57 +0000 [r369001-369002]  Kevin P. Fleming <kpfleming@digium.com>
+
+	* build_tools/find_missing_support_level (added): Add a script to
+	  enable finding source files without support-levels defined.
+
+	* main/devicestate.c, main/astfd.c, main/ssl.c,
+	  main/taskprocessor.c, main/astobj2.c, main/indications.c,
+	  main/config.c, main/loader.c, main/term.c, main/cli.c,
+	  channels/sig_analog.c, main/framehook.c, main/strcompat.c,
+	  main/plc.c, res/ais/evt.c, main/fskmodem_int.c, main/syslog.c,
+	  main/stdtime/localtime.c, main/db.c, main/bridging.c,
+	  channels/sig_ss7.c, main/datastore.c, main/sched.c,
+	  channels/sip/sdp_crypto.c, main/pbx.c, main/strings.c,
+	  channels/vcodecs.c, channels/iax2-provision.c, main/aoc.c,
+	  pbx/dundi-parser.c, main/cel.c, channels/iax2-parser.c,
+	  main/chanvars.c, main/netsock.c, main/data.c, main/srv.c,
+	  channels/chan_misdn.c, main/privacy.c,
+	  channels/sip/dialplan_functions.c, main/fixedjitterbuf.c,
+	  main/test.c, main/audiohook.c, main/alaw.c, main/asterisk.c,
+	  main/timing.c, main/global_datastores.c, main/fskmodem_float.c,
+	  main/ccss.c, channels/sip/reqresp_parser.c,
+	  channels/misdn/isdn_msg_parser.c, main/utils.c, main/xml.c,
+	  main/autochan.c, main/enum.c, channels/misdn/isdn_lib.c,
+	  main/fskmodem.c, channels/misdn_config.c, main/io.c,
+	  res/ael/pval.c, main/channel.c, main/cdr.c, main/ulaw.c,
+	  main/dial.c, main/tdd.c, main/heap.c, channels/console_gui.c,
+	  channels/misdn/ie.c, main/logger.c, channels/console_board.c,
+	  main/app.c, main/image.c, main/dns.c, main/lock.c, main/stun.c,
+	  main/dnsmgr.c, channels/sip/srtp.c, main/translate.c,
+	  main/slinfactory.c, main/jitterbuf.c, main/acl.c,
+	  channels/sig_pri.c, main/tcptls.c, main/hashtab.c,
+	  main/abstract_jb.c, main/callerid.c, main/file.c,
+	  res/snmp/agent.c, main/astmm.c, channels/misdn/portinfo.c,
+	  main/event.c, channels/sip/config_parser.c, channels/vgrabbers.c,
+	  main/xmldoc.c, main/dsp.c, main/udptl.c, main/netsock2.c,
+	  main/autoservice.c, main/rtp_engine.c, main/frame.c,
+	  main/security_events.c, res/ais/clm.c, main/threadstorage.c,
+	  main/say.c, channels/console_video.c: Add support-level
+	  indications to many more source files. Since we now have tools
+	  that scan through the source tree looking for files with specific
+	  support levels, we need to ensure that every file that is a
+	  component of a 'core' or 'extended' module (or the main Asterisk
+	  binary) is explicitly marked with its support level. This patch
+	  adds support-level indications to many more source files in tree,
+	  but avoids adding them to third-party libraries that are included
+	  in the tree and to source files that don't end up involved in
+	  Asterisk itself.
+
+2012-06-14 15:23 +0000 [r368898-368927]  Mark Michelson <mmichelson@digium.com>
+
+	* main/Makefile: Revert Makefile change to remove embedding
+	  res_adsi.so The change has resulted in a linking error for
+	  certain versions of GCC. This is much worse than the original
+	  issue, so for now, temporarily revert the change. A more thorough
+	  change will be sought out.
+
+	* funcs/func_volume.c: Fix a deadlock that occurs when func_volume
+	  is used on a local channel. This was discovered by trying to
+	  perform a call forward to an extension that makes use of
+	  func_volume. When the local channel is optimized away, the
+	  datastore on the local;2 channel would have its audiohook
+	  destroyed rather than detaching the audiohook from the channel
+	  and then destroying it. With this patch, func_volume's datastore
+	  destructor takes the proper route of detaching the audiohook and
+	  then destroying it. (closes issue ASTERISK-19611) reported by
+	  Volker Sauer Patches: ASTERISK-19611.patch uploaded by Mark
+	  Michelson (license #5049)
+
+2012-06-13 20:26 +0000 [r368894]  Matthew Jordan <mjordan@digium.com>
+
+	* res/res_smdi.c, res/res_adsi.c: Mark res_smdi/res_adsi as 'core'
+	  supported modules Recently, various issues surrounding weak
+	  symbols have caused problems with modules that rely on that
+	  feature to be enabled in menuselect. This includes app_voicemail
+	  and chan_dahdi, as they both rely upon res_smdi and res_adsi,
+	  which, in certain circumstances, may not be enabled by default in
+	  menuselect. Because res_smdi/res_adsi are dependencies for
+	  chan_dahdi/app_voicemail, this patch marks both as 'core'
+	  supported modules. This will allow both app_voicemail and
+	  chan_dahdi to be enabled as well, regardless of whether or not
+	  that system supports weak symbols. (issue AST-900) Reported by:
+	  Thomas Arimont (issue AST-885) Reported by: Denis Alberto
+	  Martinez
+
+2012-06-13 19:00 +0000 [r368873]  Mark Michelson <mmichelson@digium.com>
+
+	* main/Makefile: Remove forced linking of res_adsi.o In GCC 4.5+
+	  the result is that Asterisk has a phantom module loaded at
+	  startup, claiming to be res_adsi. (closes issue ASTERISK-19920)
+	  reported by Leif Madsen
+
+2012-06-13 14:27 +0000 [r368830-368852]  Matthew Jordan <mjordan@digium.com>
+
+	* Makefile: Do not install empty directories; add ASTLIBDIR r368830
+	  modified the installation script to only create a directory if
+	  that directory does not exist. If some directory variable was
+	  empty, it would attempt to create the empty location. It also
+	  failed to create the ASTLIBDIR directory. This patch fixes it
+	  such that the correct directories are made and only created if a
+	  value specifying them actually exists.
+
+	* Makefile: Do not perform install on existing directories If a
+	  directory already exists, performing a 'make install' will remove
+	  the permissions associated with the current directory and replace
+	  them with the permissions of the user executing the install. This
+	  patch changes this behavior to only perform an install on the
+	  directory if the directory does not exist. Thus, if a user later
+	  changes the permissions on that directory, those permissions will
+	  be preserved in subsequent installs. Review:
+	  https://reviewboard.asterisk.org/r/1986 Review:
+	  https://reviewboard.asterisk.org/r/1864 (closes issue
+	  ASTERISK-19492) Reported by: Karl Fife Tested by: Paul Belanger,
+	  Tilghman Lesher patches: ASTERISK-19492 by pabelanger (uploaded
+	  by mjordan)
+
+2012-06-12 15:36 +0000 [r368807]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/chan_sip.c: Set the Caller ID "tag" on peers even if
+	  remote party information is present. On incoming calls, we were
+	  setting the cid_tag on the dialog only if there was no remote
+	  party information (Remote-Party-ID or P-Asserted-Identity)
+	  present. The Caller ID tag is an invented parameter, though, and
+	  should be set no matter the circumstance. (closes issue
+	  ASTERISK-19859) Reported by Thomas Arimont (closes issue AST-884)
+	  Reported by Trey Blancher
+
+2012-06-11 17:03 +0000 [r368759]  Richard Mudgett <rmudgett@digium.com>
+
+	* include/asterisk/channel.h, channels/chan_iax2.c, main/channel.c,
+	  channels/chan_dahdi.c, channels/sig_analog.c,
+	  channels/chan_sip.c: Fix deadlock potential with
+	  ast_set_hangupsource() calls. Calling ast_set_hangupsource() with
+	  the channel lock held can result in a deadlock because the
+	  function also locks the bridged channel. (issue ASTERISK-19537)
+	  (closes issue AST-891) Reported by: Guenther Kelleter Tested by:
+	  Guenther Kelleter (closes issue ASTERISK-19801) Reported by: Alec
+	  Davis
+
+2012-06-11 15:13 +0000 [r368719-368738]  Kinsey Moore <kmoore@digium.com>
+
+	* apps/app_queue.c, main/loader.c, channels/chan_dahdi.c,
+	  res/res_config_odbc.c, channels/sip/dialplan_functions.c,
+	  pbx/pbx_config.c, apps/app_directory.c, res/res_odbc.c,
+	  res/res_speech.c, apps/app_voicemail.c, main/udptl.c,
+	  channels/sip/sdp_crypto.c, channels/chan_sip.c, res/res_fax.c,
+	  main/say.c, funcs/func_strings.c, channels/sip/reqresp_parser.c:
+	  Fix coverity UNUSED_VALUE findings in core support level files
+	  Most of these were just saving returned values without using them
+	  and in some cases the variable being saved to could be removed as
+	  well. (issue ASTERISK-19672)
+
+	* main/md5.c: Fix compilation in dev-mode Backport a compilation
+	  fix in md5.c from trunk that only showed up in dev-mode under
+	  certain compiler versions.
+
+2012-07-10  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Asterisk 1.8.14.0 Released.
+
+2012-07-06  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Asterisk 1.8.14.0-rc2 Released.
+
+	* AST-2012-010: Possible Resource Leak on Uncompleted Re-INVITE
+  	  transactions
+
+	* AST-2012-011: Remote Crash Vulnerability in VoiceMail Application
+
+	* Fix crash on a guest directmedia call
+
+	  A sip_pvt may not have relatedpeer set if a call doesn't match up
+	  with a peer.  If there is no relatedpeer, there is no direct media
+	  ACL to apply, so just return that is is allowed.
+
+	  (closes issue ASTERISK-20040)
+	
+	* Fix request routing issue when outboundproxy is used
+
+	  Asterisk was incorrectly setting the destination of CANCELs and ACKs
+	  for error responses to the URI of the initial INVITE.  This resulted
+	  in further requests, such as INVITEs with authentication
+	  credentials, to be routed incorrectly.  Instead when these CANCEL or
+	  ACKs are to be esnt, we should simply keep the destination the same
+	  as what it previously was.  There is no need to alter it any.
+
+	  (closes issue ASTERISK-20008)
+	
+	* Fix monitoring calls put in a parking lot
+
+	  Fix a regression that was introduced by r366167 which effectively
+	  disabled monitoring parked calls.
+
+	  (closes issue ASTERISK-20012)
+
+2012-06-08  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Asterisk 1.8.14.0-rc1 Released.
+
+2012-06-06 21:27 +0000 [r368644]  Richard Mudgett <rmudgett@digium.com>
+
+	* channels/chan_dahdi.c, channels/sig_analog.c: Fix POTS flash hook
+	  to orignate a second call deadlock. A deadlock can occur when a
+	  POTS phone tries to flash hook to originate a second call for
+	  3-way or transfer. If another process is scanning the channels
+	  container when the POTS line flash hooks then a deadlock will
+	  occur. * Release the channel and private locks when creating a
+	  new channel as a result of a flash hook. (closes issue
+	  ASTERISK-19842) Reported by: rmudgett Tested by: rmudgett
+
+2012-06-06 19:13 +0000 [r368625]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/chan_sip.c: Fix a specific scenario where ACKs are not
+	  matched. If a dialog-starting INVITE contains a to-tag, then
+	  Asterisk will respond with a 481. In this case, the resulting
+	  incoming ACK would not be matched, so Asterisk would continue
+	  retransmitting the 481 until the transaction times out. There
+	  were two issues. Asterisk, upon creating a sip_pvt would generate
+	  a local tag. However, when the time came to transmit the 481,
+	  since there was a to-tag in the INVITE, Asterisk would place this
+	  original to-tag in the 481 response. When the ACK came in,
+	  Asterisk would attempt to match the to-tag in the ACK to the
+	  generated local tag. Unfortunately, Asterisk never actually
+	  transmitted a response with the generated local tag, so the
+	  to-tag in the ACK would not match. The other problem was that
+	  when the 481 was sent, nothing was set on the sip_pvt to indicate
+	  what CSeq is expected in the ACK. To fix the first problem, we
+	  zero out the to-tag seen in the incoming INVITE. This way,
+	  Asterisk, when time to send a response, will send its generated
+	  local tag instead. To fix the second problem, we set the
+	  sip_pvt's pendinginvite to the CSeq of the INVITE when we send a
+	  481. (closes issue ASTERISK-19892) Reported by Mark Michelson
+
+2012-06-06 17:20 +0000 [r368604]  Matthew Jordan <mjordan@digium.com>
+
+	* build_tools/make_version: Add feature modifier to versions
+	  produced from branches Certain branches, such as Certified
+	  Asterisk, may have a modifier added to them that specifies the
+	  features available in that branch. For branches, this modifier is
+	  expected to be reflected in the location of the branch in
+	  subversion. For example, a subversion of URL of
+	  /certified/branches/1.8.11 would have a feature modifier of
+	  'certified'. This is slightly different then how features are
+	  determined for tags, where the feature is part of the actual tag
+	  name, e.g., "10.5.0-digiumphones". In keeping with the
+	  nomenclature used for tags, the feature specifier for branches is
+	  translated and placed after the revision numbers. For the example
+	  given previously, this would result in a branch version of
+	  "Asterisk SVN-branch-1.8.11-cert-rXXXXXX".
+
+2012-06-06 16:07 +0000 [r368586]  Kinsey Moore <kmoore@digium.com>
+
+	* channels/chan_sip.c: Ensure overlapping hold flags do not
+	  conflict When changing between different modes of hold, the flags
+	  were not being cleared out properly causing a failure to change
+	  hold states. (closes issue ASTERISK-19919) Patch-by: Morten
+	  Tryfoss Reported-by: Morten Tryfoss
+
+2012-06-06 01:08 +0000 [r368567]  Richard Mudgett <rmudgett@digium.com>
+
+	* main/features.c: Fix parked call performing a DTMF blind transfer
+	  after being retrieved. When a parked call was retrieved from the
+	  parking lot, it could not do a blind transfer because it caused
+	  the involved calls to be hung up unconditionally. * Made the
+	  ParkedCall application return the ast_bridge_call() return value.
+	  (closes issue ABE-2862) Reported by: Vlad Povorozniuc
+
+2012-06-05 15:26 +0000 [r368520-368533]  Kinsey Moore <kmoore@digium.com>
+
+	* apps/app_minivm.c: Resolve some build warnings My newly upgraded
+	  compiler caught these usages of uninitialized values. They
+	  weren't actually used.
+
+	* apps/app_voicemail.c: Ensure that pages and emails are sent using
+	  RFC822-compliant date format When localization was added to
+	  app_voicemail, these headers were altered when they should have
+	  remained in en_US format for RFC compliance. This reverts the
+	  changes to those two lines. (closes issue ASTERISK-19876)
+
+2012-06-04 21:56 +0000 [r368498]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/chan_sip.c: Relay proper SIP responses on calling side.
+	  Revision 351130 broke corect HANGUPCAUSE setting for the 404 case
+	  in chan_sip. Other cases were also potentially broken. This patch
+	  fixes the relaying of causes to be what they used to be. (closes
+	  issue ASTERISK-19914) Reported by Pavel Troller Tested by Walter
+	  Doekes (via a reviewboard test to be committed later) Patches:
+	  chan_sip.diff uploaded by Pavel Troller (license #6302)
+
+2012-06-04 21:10 +0000 [r368405-368469]  Richard Mudgett <rmudgett@digium.com>
+
+	* UPGRADE.txt: Document BLINDTRANSFER behavior change. (issue
+	  ASTERISK-19322) (closes issue ASTERISK-19875) Reported by: call
+
+	* main/channel.c: Fix potential deadlock between masquerade and
+	  chan_local. * Restructure ast_do_masquerade() to not hold channel
+	  locks while it calls ast_indicate(). * Simplify many calls to
+	  ast_do_masquerade() since it will never return a failure now. If
+	  it does fail internally because a channel driver callback
+	  operation failed, the only thing ast_do_masquerade() can do is
+	  generate a warning message about strange things may happen and
+	  press on. * Fixed the call to ast_bridged_channel() in
+	  ast_do_masquerade(). This change fixes half of the deadlock
+	  reported in ASTERISK-19801 between masquerades and chan_iax.
+	  (closes issue ASTERISK-19537) Reported by: rmudgett Tested by:
+	  rmudgett Review: https://reviewboard.asterisk.org/r/1915/
+
+2012-06-01 23:21 +0000 [r368308]  Richard Mudgett <rmudgett@digium.com>
+
+	* apps/app_stack.c: Fix deadlock when Gosub used with alternate
+	  dialplan switches. Attempting to remove a channel from
+	  autoservice with the channel lock held will result in deadlock. *
+	  Restructured gosub_exec() to not call ast_parseable_goto() and
+	  ast_exists_extension() with the channel lock held. (closes issue
+	  ASTERISK-19764) Reported by: rmudgett Tested by: rmudgett
+
+2012-06-01 18:18 +0000 [r368218]  Kevin P. Fleming <kpfleming@digium.com>
+
+	* channels/chan_sip.c: Improve SDP parsing warning messages *
+	  'Unsupported media type' is only reported when that is in fact
+	  the case, not when a supported media type is included in an 'm'
+	  line that has an invalid format. * All warning messages related
+	  to parsing 'm' lines now include the 'm' line contents. * (minor
+	  bugfix) newline added to port-number-zero warning messages. *
+	  Warning messages improved to use RFC-specified terminology for
+	  various items. * Warnings for offers that include more than one
+	  port for a single media type now include the media type. Review:
+	  https://reviewboard.asterisk.org/r/1811/
+
+2012-06-01 03:25 +0000 [r368092]  Michael L. Young <elgueromexicano@gmail.com>
+
+	* funcs/func_channel.c: Add documentation to function CHANNEL for
+	  options echocan_mode and buffers The ability to set
+	  "echocan_mode" and "buffers" through the dialplan was added to
+	  chan_dahdi some time ago. This patch adds some documentation to
+	  func_channel. (Closes issue ASTERISK-19911) Reported by: Dale
+	  Noll Tested by: Michael L. Young Patches:
+	  asterisk-19911-branch18.diff uploaded by Michael L. Young
+	  (license 5026) Review: https://reviewboard.asterisk.org/r/1949/
+
+2012-05-31 18:00 +0000 [r367906-368039]  Richard Mudgett <rmudgett@digium.com>
+
+	* main/db1-ast/btree/bt_open.c, apps/app_queue.c,
+	  channels/chan_iax2.c, pbx/pbx_config.c, res/ael/pval.c,
+	  main/tcptls.c, main/manager.c, res/res_config_odbc.c,
+	  channels/chan_sip.c, channels/chan_agent.c, funcs/func_math.c,
+	  main/features.c: Coverity Report: Fix issues for error type
+	  REVERSE_INULL (core modules) * Fixes findings:
+	  0-2,5,7-15,24-26,28-31 (issue ASTERISK-19648) Reported by: Matt
+	  Jordan
+
+	* channels/sig_pri.c, channels/sig_ss7.c: Use the
+	  DEADLOCK_AVOIDANCE() macro instead. (issue ASTERISK-19854)
+
+	* channels/sig_pri.c, channels/sig_ss7.c: Fix deadlock when
+	  executing CLI "pri show channels" and "ss7 show channels"
+	  commands. * Fix sig_pri_lock_owner() to avoid deadlock properly.
+	  * Code pri_grab() better. * Fix sig_ss7_lock_owner() to avoid
+	  deadlock properly. * Code ss7_grab() better. (closes issue
+	  ASTERISK-19854) Reported by: Jaxon Patches:
+	  jira_asterisk_19854_v1.8.6.patch (license #5621) patch uploaded
+	  by rmudgett (Modified to do the same thing to sig_ss7) Tested by:
+	  Jaxon
+
+	* apps/app_meetme.c: Coverity Report: Fix issues for error type
+	  REVERSE_INULL (deprecated modules) * Fix only issue pointed out
+	  by deprecated_REVERSE_INULL.txt for app_meetme.c in find_user().
+	  * Change use of %i to %d in sscanf() in find_user(). The use of
+	  %i gives unexpected parsing because it can accept hex, octal, and
+	  decimal integer formats. * Changed other uses of %i in
+	  app_meetme() to use %d for consistency. (issue ASTERISK-19648)
+	  Reported by: Matt Jordan
+
+2012-05-29 18:30 +0000 [r367843]  Matthew Jordan <mjordan@digium.com>
+
+	* channels/chan_skinny.c: AST-2012-008: Fix remote crash
+	  vulnerability in chan_skinny When a skinny session is
+	  unregistered, the corresponding device pointer is set to NULL in
+	  the channel private data. If the client was not in the on-hook
+	  state at the time the connection was closed, the device pointer
+	  can later be dereferenced if a message or channel event attempts
+	  to use a line's pointer to said device. The patches prevent this
+	  from occurring by checking the line's pointer in message handlers
+	  and channel callbacks that can fire after an unregistration
+	  attempt. (closes issue ASTERISK-19905) Reported by: Christoph
+	  Hebeisen Tested by: mjordan, Damien Wedhorn Patches:
+	  AST-2012-008-1.8.diff uploaded by mjordan (license 6283)
+	  AST-2012-008-10.diff uploaded by mjordan (license 6283)
+
+2012-05-25 16:28 +0000 [r367781]  Richard Mudgett <rmudgett@digium.com>
+
+	* channels/chan_iax2.c: AST-2012-007: Fix IAX receiving HOLD
+	  without suggested MOH class crash. * Made schedule_delivery() set
+	  the received frame f->data.ptr to NULL if the datalen is zero. *
+	  Fix queue_signalling() memcpy() size error. * Made
+	  queue_signalling() not use C++ keyword variable names. (closes
+	  issue ASTERISK-19597) Reported by: mgrobecker Patches:
+	  jira_asterisk_19597_v1.8.patch (license #5621) patch uploaded by
+	  rmudgett Tested by: rmudgett, Michael L. Young
+
+2012-05-25 02:27 +0000 [r367730]  Michael L. Young <elgueromexicano@gmail.com>
+
+	* channels/chan_sip.c: Fix pvt_sip for inbound call to use peer's
+	  allowtransfer setting The pvt_sip allowtransfer was not being set
+	  to that of the peer's setting. Therefore, the global
+	  allowtransfer setting was being used instead which would lead to
+	  calls not being transfered if the global setting was set to 'no'
+	  despite the setting on the peer being 'yes' and vice versa, calls
+	  would be allowed to transfer even if the peer's setting was 'no'
+	  but the global setting was 'yes'. (Closes issue ASTERISK-19856)
+	  Reported by: Jacek Tested by: Michael L. Young, Jacek Patches:
+	  issue-asterisk-19856-branch10-v3.diff uploaded by Michael L.
+	  Young (license 5026) Review:
+	  https://reviewboard.asterisk.org/r/1923/
+
+2012-05-24 22:21 +0000 [r367469-367678]  Richard Mudgett <rmudgett@digium.com>
+
+	* apps/app_queue.c, apps/app_dial.c: Fix Dial I option ignored if
+	  dial forked and one fork redirects. The Dial and Queue I option
+	  is intended to block connected line updates and redirecting
+	  updates. However, it is a feature that when a call is locally
+	  redirected, the I option is disabled if the redirected call runs
+	  as a local channel so the administrator can have an opportunity
+	  to setup new connected line information. Unfortunately, the Dial
+	  and Queue I option is disabled for *all* forked calls if one of
+	  those calls is redirected. * Make the Dial and Queue I option
+	  apply to each outgoing call leg independently. Now if one
+	  outgoing call leg is locally redirected, the other outgoing calls
+	  are not affected. * Made Dial not pass any redirecting updates
+	  when forking calls. Redirecting updates do not make sense for
+	  this scenario. * Made Queue not pass any redirecting updates when
+	  using the ringall strategy. Redirecting updates do not make sense
+	  for this scenario. * Fixed deadlock potential with chan_local
+	  when Dial and Queue send redirecting updates for a local
+	  redirect. * Converted the Queue stillgoing flag to a boolean
+	  bitfield. (closes issue ASTERISK-19511) Reported by: rmudgett
+	  Tested by: rmudgett Review:
+	  https://reviewboard.asterisk.org/r/1920/
+
+	* main/pbx.c: Fix WaitExten(x,m(musicclass)) string termination.
+	  The AST_CONTROL_HOLD MOH class from the WaitExten application can
+	  now be queued onto a channel, passed over local channels with the
+	  /m option, and passed over IAX channels.
+
+2012-05-23 20:27 +0000 [r367416]  Mark Michelson <mmichelson@digium.com>
+
+	* main/tcptls.c: Only call SSL_CTX_free if DO_SSL is defined.
+	  Thanks to Paul Belanger for pointing out this error.
+
+2012-05-23 13:06 +0000 [r367362]  Matthew Jordan <mjordan@digium.com>
+
+	* channels/chan_sip.c: Update a peer's LastMsgsSent when the peer
+	  is notified of waiting messages Previously, MWI logic utilized a
+	  counter called 'lastmsgssent' to know whether or not MWI NOTIFY
+	  requests had been sent to a specific peer. When MWI notifications
+	  were changed to use the internal event framework, this value was
+	  no longer needed for its original purpose. Hence, it was no
+	  longer updated with the new/old message counts for a peer.
+	  However, the value was still presented when, either by AMI or
+	  CLI, a 'sip show peer [peer]' command was executed. The output of
+	  the command would always display the erroneous value of
+	  32767/65535 for 'LastMsgsSent'. This patch makes it so that the
+	  value of lastmsgssent is updated appropriately. The value should
+	  now display the new/old message counts for a particular peer.
+	  (closes issue ASTERISK-17866) Reported by: Steve Davies patches
+	  by: ast-17866-rb1272.patch (License #5041 by irroot) Modified
+	  slightly for this commit Review:
+	  https://reviewboard.asterisk.org/r/1939
+
+2012-05-22 17:14 +0000 [r367266-367292]  Terry Wilson <twilson@digium.com>
+
+	* include/asterisk/channel.h, main/cel.c, main/asterisk.c,
+	  main/channel.c, include/asterisk/cel.h: Fix race condition for
+	  CEL LINKEDID_END event This patch fixes to situations that could
+	  cause the CEL LINKEDID_END event to be missed. 1) During a core
+	  stop gracefully, modules are unloaded when ast_active_channels ==
+	  0. The LINKDEDID_END event fires during the channel destructor.
+	  This means that occasionally, the cel_* module will be unloaded
+	  before the channel is destroyed. It seemed generally useful to
+	  wait until the refcount of all channels == 0 before unloading, so
+	  I added a channel counter and used it in the shutdown code. 2)
+	  During a masquerade, ast_channel_change_linkedid is called. It
+	  calls ast_cel_check_retire_linkedid which unrefs the linkedid in
+	  the linkedids container in cel.c. It didn't ref the new linkedid.
+	  Now it does. Review: https://reviewboard.asterisk.org/r/1900/
+
+	* channels/chan_sip.c: Resolve crash in subscribing for MWI
+	  notifications ASTOBJ_UNREF sets the variable to NULL after
+	  unreffing it, so the variable should definitely not be used after
+	  that. To solve this in the two cases that affect subscribing for
+	  MWI notifications, we instead save the ref locally, and unref
+	  them in the error conditions. (closes issue ASTERISK-19827)
+	  Reported by: B. R Review:
+	  https://reviewboard.asterisk.org/r/1940/
+
+2012-05-18 17:47 +0000 [r367002-367027]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/chan_dahdi.c, main/say.c: Address MISSING_BREAK static
+	  analysis reports some more. This addresses core findings 4 and 6.
+	  Moises Silva helped me by stating that a break could be safely
+	  added to the case where it is added in chan_dahdi.c In say.c, I
+	  have added a comment indicating that static analysis complains
+	  but that it is currently unknown if this is correct. This fixes
+	  all core findings of this type. (closes issue ASTERISK-19662)
+	  reported by Matthew Jordan
+
+	* include/asterisk/tcptls.h, main/tcptls.c, channels/chan_sip.c:
+	  Fix memory leak of SSL_CTX structures in TLS core. SSL_CTX
+	  structures were allocated but never freed. This was a bigger
+	  issue for clients than servers since new SSL_CTX structures could
+	  be allocated for each connection. Servers, on the other hand,
+	  typically set up a single SSL_CTX for their lifetime. This is
+	  solved in two ways: 1. In __ssl_setup(), if a tcptls_cfg has an
+	  ssl_ctx on it, it is freed so that a new one can take its place.
+	  2. A companion to ast_ssl_setup() called ast_ssl_teardown() has
+	  been added so that servers can properly free their SSL_CTXs.
+	  (issue ASTERISK-19278)
+
+2012-05-18 15:42 +0000 [r366944]  Matthew Jordan <mjordan@digium.com>
+
+	* main/cli.c, channels/chan_sip.c, funcs/func_odbc.c: Fix more
+	  memory leaks This patch adds to what was fixed in r366880.
+	  Specifically, it addresses the following: * chan_sip: dispose of
+	  an allocated frame in off nominal code paths in sip_rtp_read *
+	  func_odbc: when disposing of an allocated resultset, ensure that
+	  any rows that were appended to that resultset are also disposed
+	  of * cli: free the created return string buffer in another off
+	  nominal code path (issue ASTERISK-19665) Reported by: Matt Jordan
+	  Review: https://reviewboard.asterisk.org/r/1922/
+
+2012-05-18 14:16 +0000 [r366882]  Kinsey Moore <kmoore@digium.com>
+
+	* channels/sip/config_parser.c: Reorder and renumber tests
+	  appropriately It appears that a patch did not apply properly when
+	  adding tests 12 and 13 and test 11 was duplicated. These tests
+	  have been reordered and renumbered such that they make sense.
+
+2012-05-18 13:58 +0000 [r366880]  Matthew Jordan <mjordan@digium.com>
+
+	* res/res_calendar_caldav.c, res/res_musiconhold.c,
+	  res/res_jabber.c, apps/app_queue.c, channels/chan_iax2.c,
+	  main/enum.c, main/editline/term.c, main/config.c, res/res_srtp.c,
+	  main/editline/tokenizer.c, main/cli.c, channels/chan_dahdi.c,
+	  main/data.c, funcs/func_odbc.c, apps/app_minivm.c,
+	  main/features.c, main/editline/readline.c,
+	  channels/sip/config_parser.c, main/xmldoc.c, res/res_calendar.c,
+	  apps/app_voicemail.c, res/res_rtp_asterisk.c, main/netsock2.c,
+	  res/res_calendar_icalendar.c, res/res_calendar_exchange.c,
+	  main/pbx.c, apps/app_page.c, channels/chan_sip.c,
+	  funcs/func_dialgroup.c, apps/app_record.c: Fix a variety of
+	  memory leaks This patch addresses a number of memory leaks in a
+	  variety of modules that were found by a static analysis tool. A
+	  brief summary of the changes: * app_minivm: free ast_str objects
+	  on off nominal paths * app_page: free the ast_dial object if the
+	  requested channel technology cannot be appended to the dialing
+	  structure * app_queue: if a penalty rule failed to match any
+	  existing rule list names, the created rule would not be inserted
+	  and its memory would be leaked * app_read: dispose of the created
+	  silence detector in the presence of off nominal circumstances *
+	  app_voicemail: dispose of an allocated unique ID field for MWI
+	  event un-subscribe requests in off nominal paths; dispose of
+	  configuration objects when using the secret.conf option *
+	  chan_dahdi: dispose of the allocated frame produced by
+	  ast_dsp_process * chan_iax2: properly unref peer in CLI command
+	  "iax2 unregister" * chan_sip: dispose of the allocated frame
+	  produced by sip_rtp_read's call of ast_dsp_process; free memory
+	  in parse unit tests * func_dialgroup: properly deref ao2 object
+	  grhead in nominal path of dialgroup_read * func_odbc: free
+	  resultset in off nominal paths of odbc_read * cli: free
+	  match_list in off nominal paths of CLI match completion * config:
+	  free comment_buffer/list_buffer when configuration file load is
+	  unchanged; free the same buffers any time they were created and
+	  config files were processed * data: free XML nodes in various
+	  places * enum: free context buffer in off nominal paths *
+	  features: free ast_call_feature in off nominal paths of
+	  applicationmap config processing * netsock2: users of
+	  ast_sockaddr_resolve pass in an ast_sockaddr struct that is
+	  allocated by the method. Failures in ast_sockaddr_resolve could
+	  result in the users of the method not knowing whether or not the
+	  buffer was allocated. The method will now not allocate the
+	  ast_sockaddr struct if it will return failure. * pbx: cleanup
+	  hash table traversals in off nominal paths; free ignore pattern
+	  buffer if it already exists for the specified context * xmldoc:
+	  cleanup various nodes when we no longer need them *
+	  main/editline: various cleanup of pointers not being freed before
+	  being assigned to other memory, cleanup along off nominal paths *
+	  menuselect/mxml: cleanup of value buffer for an attribute when
+	  that attribute did not specify a value * res_calendar*: responses
+	  are allocated via the various *_request method returns and should
+	  not be allocated in the various write_event methods; ensure
+	  attendee buffer is freed if no data exists in the parsed node;
+	  ensure that calendar objects are de-ref'd appropriately *
+	  res_jabber: free buffer in off nominal path * res_musiconhold:
+	  close the DIR* object in off nominal paths * res_rtp_asterisk: if
+	  we run out of ports, close the rtp socket object and free the rtp
+	  object * res_srtp: if we fail to create the session in libsrtp,
+	  destroy the temporary ast_srtp object (issue ASTERISK-19665)
+	  Reported by: Matt Jordan Review:
+	  https://reviewboard.asterisk.org/r/1922
+
+2012-05-17 14:40 +0000 [r366791]  Jonathan Rose <jrose@digium.com>
+
+	* channels/chan_sip.c: chan_sip: Fix missed locking of opposing pvt
+	  for directmedia acl from r366547 It also required deadlock
+	  avoidance since two sip_pvts structs needed to be locked
+	  simultaneously. Trunk handles it differently, so this is a 1.8
+	  and 10 patch only. (issue AST-876)
+
+2012-05-17 12:51 +0000 [r366740]  Matthew Jordan <mjordan@digium.com>
+
+	* res/res_calendar_ews.c, channels/chan_dahdi.c: Fix checking
+	  bounds of array index after using it; improper sizeof This patch
+	  fixes two problems pointed out by a static analysis tool. * In
+	  chan_dahdi, when an event is handled the index of the sub channel
+	  is first obtained. In very off nominal cases, the method that
+	  determines the index can return a negative value. In the event
+	  handling code, whether or not the index returned is valid was
+	  being checked after that value was used to index into an array.
+	  This patch makes it so the value is checked before any indexing
+	  is done. * In res_calendar_ews, sizeof was being passed a pointer
+	  instead of the struct to determine the amount of memory to
+	  allocate. (issue ASTERISK-19651) Reported by: Matt Jordan (closes
+	  issue ASTERISK-19671) Reported by: Matt Jordan
+
+2012-05-16 15:52 +0000 [r366597-366650]  Mark Michelson <mmichelson@digium.com>
+
+	* main/http.c: Fix incorrect default port number for HTTP server.
+	  Thanks to Tzafrir Cohen for bringing this up on the Asterisk
+	  developers mailing list.
+
+	* channels/chan_sip.c: Correct misuse of ast_strip_quoted() when
+	  getting a Diversion header's reason parameter. The use here was
+	  assuming that the pointer would be updated, but the updated
+	  string is actually returned by ast_strip_quoted() instead.
+
+2012-05-15 20:14 +0000 [r366547]  Jonathan Rose <jrose@digium.com>
+
+	* channels/chan_sip.c: chan_sip: Check the right channel's host
+	  address for directmediapermit/deny Prior to this patch, when
+	  checking the addresses for directmediapermit and directmediadeny,
+	  Asterisk would check the host address of the channel permit/deny
+	  was specified, which differs from the expectations of both our
+	  users and the development team. Instead, directmediapermit/deny
+	  now checks against the address of the channel that the peer with
+	  the ACL is connected to. (issue AST-876) Review:
+	  https://reviewboard.asterisk.org/r/1899/
+
+2012-05-14 19:57 +0000 [r366389-366409]  Mark Michelson <mmichelson@digium.com>
+
+	* pbx/dundi-parser.c: Fix two more coverity constant expression
+	  result findings. These correspond to findings 0 and 1 in the core
+	  findings of ASTERISK-19649. After contacting Mark Spencer, he was
+	  unsure of what the intent behind these lines of code were, so
+	  they are being axed. For Asterisk 1.8 and 10, the output of
+	  debugging DUNDi frames will not be changed, but for trunk the
+	  "Retry" portion will be omitted since it does not properly
+	  distinguish retransmissions from initial frames. (closes issue
+	  ASTERISK-19649) Reported by Matthew Jordan
+
+	* channels/chan_sip.c: Fix broken reinvite glare scenario. To make
+	  a long story short, reinvite glares were broken because Asterisk
+	  would invert the To and From headers when ACKing a 491 response.
+	  The reason was because the initreq of the dialog was being
+	  changed to the incoming glared reinvite instead of being set to
+	  the outgoing glared reinvite. This change has three parts * In
+	  handle_incoming, we never will reject an ACK because it has a
+	  to-tag present, even if we think the request may be out of
+	  dialog. * In handle_request_invite, we do not change the initreq
+	  when receiving a reinvite to which we will respond with a 491. *
+	  In handle_request_invite, several superflous settings up
+	  pendinginvite have been removed since this is dones automatically
+	  by transmit_response_reliable Review:
+	  https://reviewboard.asterisk.org/r/1911
+
+2012-05-11 23:53 +0000 [r366296]  Russell Bryant <russell@russellbryant.com>
+
+	* addons/format_mp3.c: format_mp3: Fix a possible crash mp3_read().
+	  This patch fixes a potential crash in mp3_read() by not assuming
+	  that dbuf has enough data to finish filling up the output buffer.
+	  The patch also makes sure that the dbuf state gets reset after we
+	  know we read everything out of it already. In passing, this patch
+	  includes some other cleanups of this module, including stripping
+	  trailing whitespace, formatting fixes based on coding guidelines,
+	  and removing a number of unused members from the private state
+	  struct. (closes issue ASTERISK-19761) Reported by: Chris
+	  Maciejewsk Tested by: Chris Maciejewsk
+
+2012-05-10 23:38 +0000 [r366240]  Richard Mudgett <rmudgett@digium.com>
+
+	* main/channel.c: * Made ast_change_name() hold the channels
+	  container lock while changing the channel name. * Eliminate
+	  redundant list not empty check in clone_variables().
+
+2012-05-10 20:50 +0000 [r366167]  Kinsey Moore <kmoore@digium.com>
+
+	* main/devicestate.c, pbx/dundi-parser.c, channels/chan_iax2.c,
+	  channels/iax2-parser.c, main/config.c, res/res_monitor.c,
+	  main/channel.c, main/cdr.c, res/ael/pval.c, main/data.c,
+	  channels/chan_dahdi.c, main/tcptls.c, main/manager.c,
+	  main/features.c, main/app.c, main/event.c, pbx/pbx_dundi.c,
+	  res/res_odbc.c, main/xmldoc.c, apps/app_voicemail.c,
+	  funcs/func_speex.c, main/pbx.c, res/res_calendar_icalendar.c,
+	  channels/chan_sip.c, funcs/func_lock.c, channels/chan_agent.c,
+	  channels/sip/reqresp_parser.c: Resolve FORWARD_NULL static
+	  analysis warnings This resolves core findings from ASTERISK-19650
+	  numbers 0-2, 6, 7, 9-11, 14-20, 22-24, 28, 30-32, 34-36, 42-56,
+	  82-84, 87, 89-90, 93-102, 104, 105, 109-111, and 115. Finding
+	  numbers 26, 33, and 29 were already resolved. Those skipped were
+	  either extended/deprecated or in areas of code that shouldn't be
+	  disturbed. (Closes issue ASTERISK-19650)
+
+2012-05-10 16:47 +0000 [r366094]  Jonathan Rose <jrose@digium.com>
+
+	* channels/iax2-provision.c, apps/app_queue.c,
+	  channels/chan_iax2.c, res/ael/ael.flex, funcs/func_devstate.c,
+	  main/asterisk.c, main/db.c, main/xmldoc.c, apps/app_voicemail.c,
+	  main/pbx.c, channels/sig_analog.c, channels/chan_sip.c,
+	  funcs/func_lock.c, main/features.c, main/acl.c: Coverity Report:
+	  Fix issues for error type CHECKED_RETURN for core (issue
+	  ASTERISK-19658) Reported by: Matt Jordan Review:
+	  https://reviewboard.asterisk.org/r/1905/
+
+2012-05-10 16:10 +0000 [r366052]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/chan_sip.c: Close the proper tcptls_session when session
+	  creation fails. (issue AST-998) Reported by: Thomas Arimont
+	  Tested by: Thomas Arimont
+
+2012-05-10 15:35 +0000 [r365989-366048]  Jonathan Rose <jrose@digium.com>
+
+	* apps/app_chanspy.c, apps/app_page.c, funcs/func_cdr.c,
+	  main/features.c, apps/app_disa.c: Coverity Report: Fix issues for
+	  error type UNINIT in Core supported modules (issue
+	  ASTERISK-19652) Reported by: Matt Jordan Review:
+	  https://reviewboard.asterisk.org/r/1909/
+
+	* codecs/codec_dahdi.c: Block on frameout if the hardware has
+	  enough samples to complete a frame. Fixes some problems with
+	  skipping audio in elaborate scenarios involving multiple codecs
+	  by making codec_dahdi operate in a more synchronous fashion
+	  similar to codec_g729. This change also fixes the use of file
+	  conversion tools from Asterisk's CLI. This change may cause the
+	  thread responsible for transcoding audio to block briefly (Shaun
+	  Ruffell describes this as 'several milliseconds') while waiting
+	  for the hardware transcoder. (closes issue ASTERISK-19643)
+	  reported by: Shaun Ruffell Patches:
+	  0001-codec_dahdi-Block-on-frameout-the-hardware-has-enoug.patch
+	  uploaded by Shaun Ruffell (license 5417)
+
+2012-05-09 16:11 +0000 [r365896]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/chan_sip.c: Prevent sip_pvt refleak when an ast_channel
+	  outlasts its corresponding sip_pvt. chan_sip was coded under the
+	  assumption that a SIP dialog with an owner channel will always be
+	  destroyed after the owner channel has been hung up. However,
+	  there are situations where the SIP dialog can time out and auto
+	  destruct before the corresponding channel has hung up. A typical
+	  example of this would be if the 'h' extension in the dialplan
+	  takes a long time to complete. In such cases,
+	  __sip_autodestruct() would complain about the dialog being auto
+	  destroyed with an owner channel still in place. The problem is
+	  that even once the owner channel was hung up, the sip_pvt would
+	  still be linked in its ao2_container because nothing would ever
+	  unlink it. The fix for this is that if __sip_autodestruct() is
+	  called for a sip_pvt that still has an owner channel in place,
+	  the destruction is rescheduled for 10 seconds in the future. This
+	  will continue until the owner channel is finally hung up. (closes
+	  issue ASTERISK-19425) reported by David Cunningham Patches:
+	  ASTERISK-19425.patch uploaded by Mark Michelson (License #5049)
+	  (closes issue ASTERISK-19455) reported by Dean Vesvuio Tested by
+	  Dean Vesvuio
+
+2012-05-08 20:14 +0000 [r365631-365692]  Richard Mudgett <rmudgett@digium.com>
+
+	* apps/app_followme.c: * Fix FollowMe memory leak on error paths in
+	  app_exec(). * Fix FollowMe leaving recorded caller name file on
+	  error paths in app_exec(). * Use correct buffer dimension define
+	  in struct call_followme.moh[] and struct fm_args.namerecloc[].
+	  This fixes unexpected namerecloc filename length restriction.
+
+	* apps/app_followme.c: * Fix accept/decline DTMF buffer overwrite
+	  in FollowMe. * Made use MAX_YN_STRING define to make all
+	  accept/decline DTMF buffers the same size. Just using 20 isn't
+	  good enough when someone didn't get the memo. * Fix stupid use of
+	  a global variable in FollowMe. (ynlongest) * Fix bit field
+	  declarations in FollowMe. * Fix FollowMe n option documentation.
+
+2012-05-08 15:48 +0000 [r365574]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/chan_sip.c: Send more accurate identification
+	  information in dialog-info SIP NOTIFYs. This uses the calling
+	  channel's caller ID and connected line information to populate
+	  the remote and local identities in the dialog-info NOTIFY when an
+	  extension is ringing. There is a bit of an oddity here, and that
+	  is that we seed the remote target with the To header of the
+	  outbound call rather than the from header. This is because it was
+	  reported that seeding with the from header caused hints to be
+	  broken with certain SNOM devices. A comment has been added to the
+	  code to explain this. (closes issue ASTERISK-16735) reported by
+	  Maciej Krajewski patches: local_remote_hint2.diff uploaded by
+	  Mark Michelson (license #5049) 16735_tweak1.diff uploaded by Mark
+	  Michelson (license #5049) Tested by Niccolo Belli
+
+2012-05-07 18:40 +0000 [r365476]  Richard Mudgett <rmudgett@digium.com>
+
+	* tests/test_config.c: Fix type punned compiler warning in
+	  test_config.c
+
+2012-05-07 18:36 +0000 [r365474]  Matthew Jordan <mjordan@digium.com>
+
+	* apps/app_voicemail.c, main/pbx.c: Support VoiceMail d() option
+	  when extension does not exist in channel's context The VoiceMail
+	  d([c]) option is documented to accept digits for a new extension
+	  in context <c>, if played during the greeting. This option works
+	  fine if the extension being redirected to has an extension with
+	  the same initial digit in the channel's current context. If that
+	  digit did not happen to exist in some extension, a dialplan match
+	  would fail and the user would not be redirected. This patch fixes
+	  it such that if the <c> option is used, the extensions are
+	  matched in that context as opposed to the caller's original
+	  context. (closes issue ASTERISK-18243) Reported by: mjordan
+	  Tested by: mjordan Review:
+	  https://reviewboard.asterisk.org/r/1892
+
+2012-05-07 16:01 +0000 [r365460]  Mark Michelson <mmichelson@digium.com>
+
+	* main/audiohook.c, res/res_speech.c, channels/sig_analog.c,
+	  main/abstract_jb.c, res/res_agi.c: Fix findings 0-3, 5, and 8 for
+	  Coverity MISSING_BREAK errors. (Issue ASTERISK-19662)
+
+2012-05-04 22:12 +0000 [r365398]  Kinsey Moore <kmoore@digium.com>
+
+	* apps/app_followme.c, channels/chan_iax2.c,
+	  channels/sip/config_parser.c, pbx/pbx_config.c,
+	  apps/app_chanspy.c, apps/app_stack.c, main/config.c,
+	  apps/app_voicemail.c, channels/chan_sip.c, funcs/func_aes.c,
+	  main/features.c: Fix many issues from the NULL_RETURNS Coverity
+	  report Most of the changes here are trivial NULL checks. There
+	  are a couple optimizations to remove the need to check for NULL
+	  and outboundproxy parsing in chan_sip.c was rewritten to avoid
+	  use of strtok. Additionally, a bug was found and fixed with the
+	  parsing of outboundproxy when "outboundproxy=," was set. (Closes
+	  issue ASTERISK-19654)
+
+2012-05-04 16:24 +0000 [r365313]  Richard Mudgett <rmudgett@digium.com>
+
+	* channels/chan_local.c: Fix local channel chains optimizing
+	  themselves out of a call. * Made chan_local.c:check_bridge()
+	  check the return value of ast_channel_masquerade(). In long
+	  chains of local channels, the masquerade occasionally fails to
+	  get setup because there is another masquerade already setup on an
+	  adjacent local channel in the chain. * Made the outgoing local
+	  channel (the ;2 channel) flush one voice or video frame per
+	  optimization attempt. * Made sure that the outgoing local channel
+	  also does not have any frames in its queue before the masquerade.
+	  * Made do the masquerade immediately to minimize the chance that
+	  the outgoing channel queue does not get any new frames added and
+	  thus unconditionally flushed. * Made block indication -1 (Stop
+	  tones) event when the local channel is going to optimize itself
+	  out. When the call is answered, a chain of local channels pass
+	  down a -1 indication for each bridge. This blizzard of -1 events
+	  really slows down the optimization process. (closes issue
+	  ASTERISK-16711) Reported by: Alec Davis Tested by: rmudgett, Alec
+	  Davis Review: https://reviewboard.asterisk.org/r/1894/
+
+2012-05-04 15:48 +0000 [r365298]  Mark Michelson <mmichelson@digium.com>
+
+	* res/res_rtp_asterisk.c: Fix core FINDING 2, FINDING 3, and
+	  FINDING 4 from Coverity's CONSTANT_EXPRESSION_RESULT report.
+	  These three all are in RTP code that attempts to print the number
+	  of sequence number cycles in an RTCP RR report. The code was
+	  masking out the upper 16 bits and then shifting the number right
+	  by 16 bits. This led to an all zero result in all cases. The fix
+	  is to do the shift without the bit masking. (issue
+	  ASTERISK-19649)
+
+2012-05-03 14:54 +0000 [r365143-365159]  Alexandr Anikin <may@telecom-service.ru>
+
+	* addons/ooh323c/src/h323/H323-MESSAGES.h,
+	  addons/ooh323c/src/h323/H323-MESSAGESEnc.c,
+	  addons/ooh323c/src/ooh323.c: Fix warning of Coverity Static
+	  analysis, change H225ProtocolIdentifier from value to pointer per
+	  functions that use this. (close issue ASTERISK-19670) Reported
+	  by: Matt Jordan Patches: ASTERISK-19670.patch (License #5415)
+
+	* addons/ooh323c/src/ooq931.c: Fix coverity static analysis
+	  warning, allocate full ie structure instead of without data
+	  buffer (close issue ASTERISK-19674) Reported by: Matt Jordan
+	  Patches: ASTERISK-19674.patch (License #5415)
+
+2012-06-04  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Asterisk 1.8.13.0 Released.
+
+2012-05-30  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Asterisk 1.8.13.0-rc2 Released.
+
+	* Resolve crash in subscribing for MWI notifications.
+
+	  ASTOBJ_UNREF sets the variable to NULL after unreffing it, so the
+	  variable should definitely not be used after that. To solve this in
+	  the two cases that affect subscribing for MWI notifications, we
+	  instead save the ref locally, and unref them in the error
+	  conditions.
+
+	  (closes issue ASTERISK-19827)
+	  Reported by: B. R.
+	  Review: https://reviewboard.asterisk.org/r/1940/
+
+	* AST-2012-007
+
+	* AST-2012-008
+
+
+2012-05-03  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Asterisk 1.8.13.0-rc1 Released.
+
+2012-05-02 17:02 +0000 [r365006-365068]  Terry Wilson <twilson@digium.com>
+
+	* main/cel.c, channels/chan_local.c: Don't leak a ref if out of
+	  memory and can't link the linkedid If the ao2_link fails, we are
+	  most likely out of memory and bad things are going to happen.
+	  Before those bad things happen, make sure to clean up the
+	  linkedid references. This patch also adds a comment explaining
+	  why linkedid can't be passed to both local channel allocations
+	  and combines two ao2_ref calls into 1. Review:
+	  https://reviewboard.asterisk.org/r/1895/
+
+	* main/cel.c, channels/chan_local.c: Fix a CEL LINKEDID_END race
+	  and local channel linkedids This patch has the ;2 channel inherit
+	  the linkedid of the ;1 channel and fixes the race condition by no
+	  longer scanning the channel list for "other" channels with the
+	  same linkedid. Instead, cel.c has an ao2 container of linkedid
+	  strings and uses the refcount of the string as a counter of how
+	  many channels with the linkedid exist. Not only does this
+	  eliminate the race condition, but it also allows us to look up
+	  the linkedid by the hashed key instead of traversing the entire
+	  channel list. Review: https://reviewboard.asterisk.org/r/1895/
+
+2012-05-01 23:11 +0000 [r364902]  Richard Mudgett <rmudgett@digium.com>
+
+	* main/astobj2.c: Fixed __ao2_ref() validating user_data twice.
+	  (closes issue ASTERISK-19755) Reported by: Gunther Kelleter
+	  Patches: ao2_ref.patch (license #6372) patch uploaded by Gunther
+	  Kelleter
+
+2012-05-01 23:08 +0000 [r364899]  Mark Michelson <mmichelson@digium.com>
+
+	* funcs/func_volume.c: Fix Coverity-reported ARRAY_VS_SINGLETON
+	  error. As it turned out, this wasn't a huge deal. We were calling
+	  ast_app_parse_options() for a set of options of which none took
+	  arguments. The proper thing to do for this case is to pass NULL
+	  for the "args" parameter here. We were instead passing a
+	  seemingly-randomly chosen char * from the function. While this
+	  would never get written to, you can rest assured things would
+	  have gotten bad had new options (which took arguments) been added
+	  to func_volume. (closes issue ASTERISK-19656)
+
+2012-05-01 21:37 +0000 [r364841]  Jason Parker <jparker@digium.com>
+
+	* main/manager.c: Prevent a potential crash when using manager
+	  hooks. Found by me while poking at DPMA-127.
+
+2012-05-01 21:36 +0000 [r364840]  Richard Mudgett <rmudgett@digium.com>
+
+	* channels/chan_local.c: * Fix error path resouce leak in
+	  local_request(). * Restructure local_request() to reduce
+	  indentation.
+
+2012-05-01 19:03 +0000 [r364786]  Kinsey Moore <kmoore@digium.com>
+
+	* apps/app_confbridge.c: Play conf-placeintoconf message to the
+	  correct channel Correct the code in app_confbridge to play the
+	  conf-placeintoconf message to the marked user entering the bridge
+	  instead of to the conference while the marked user hears silence.
+	  (closes issue ASTERISK-19641) Reported-by: Mark A Walters
+
+2012-05-01 18:16 +0000 [r364769]  Jonathan Rose <jrose@digium.com>
+
+	* main/app.c: Fix bad check in voicemail functions for
+	  ast_inboxcount2_func Check looks for ast_inboxcount_func instead
+	  of ast_inboxcount2_func on ast_inboxcount2_func calls. (closes
+	  issue ASTERISK-19718) Reported by: Corey Farrell Patches:
+	  ast_app_inboxcount2-null-refcheck.patch uploaded by Corey Farrell
+	  (license 5909)
+
+2012-04-30 19:39 +0000 [r364706]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/chan_sip.c: Revert improved identities sent in
+	  dialog-info NOTIFY requests in r360862 Revision 360862 was
+	  intended to improve identities sent in dialog-info NOTIFY
+	  requests. Some users reported that hint became broken once this
+	  was done. It's not clear exactly what part of the patch has
+	  caused this regression, but broken hints are bad. For now, this
+	  revision is being reverted so that the next releases of Asterisk
+	  do not have bad behavior in them. The original reported issue
+	  will have to be fixed differently in the next version of
+	  Asterisk. (issue ASTERISK-16735)
+
+2012-04-30 16:37 +0000 [r364649]  Alexandr Anikin <may@telecom-service.ru>
+
+	* addons/ooh323cDriver.c: Fix use freed pointer in return value
+	  from call thread (issue ASTERISK-19663) Reported by: Matt Jordan
+	  Patches: ASTERISK-19663-ooh323.patch (License #5415)
+
+2012-04-30 15:51 +0000 [r364635]  Mark Murawki <markm@intellasoft.net>
+
+	* main/logger.c: Sanatize result from bfd_find_nearest_line
+	  (BETTER_BACKTRACES) bfd_find_nearest_line can possibly set file
+	  to null resulting in a crash when strrchr(file) runs (closes
+	  issue ASTERISK-19815) Reported by Mark Murawski Tested by Mark
+	  Murawski
+
+2012-04-29 19:31 +0000 [r364578]  Matthew Jordan <mjordan@digium.com>
+
+	* formats/format_g723.c, formats/format_h263.c,
+	  formats/format_h264.c, formats/format_sln16.c,
+	  formats/format_wav_gsm.c, formats/format_siren14.c,
+	  formats/format_gsm.c, formats/format_g719.c,
+	  formats/format_siren7.c, formats/format_g729.c,
+	  formats/format_ilbc.c, formats/format_sln.c,
+	  formats/format_vox.c, formats/format_wav.c, formats/format_pcm.c:
+	  Fix error that caused truncate operations to fail Another very
+	  inappropriate placement of a ')' (again introduced in r362151)
+	  caused the various truncate operations to attempt to truncate the
+	  sound file at a position of '0'. (issue ASTERISK-19655) Reported
+	  by: Matt Jordan (issue ASTERISK-19810) Reported by: colbec
+
+2012-04-27 21:48 +0000 [r364341]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/chan_sip.c: Don't attempt to make use of the
+	  dynamic_exclude_static ACL if DNS lookup fails. (closes issue
+	  ASTERISK-18321) Reported by Dan Lukes Patches:
+	  ASTERISK-18321.patch by Mark Michelson (license #5049)
+
+2012-04-27 21:45 +0000 [r364340]  Terry Wilson <twilson@digium.com>
+
+	* tests/test_config.c (added), main/config.c: Fix ast_parse_arg
+	  numeric type range checking and add tests ast_parse_arg wasn't
+	  checking for strto* parse errors or limiting the results by the
+	  actual range of the numeric types. This patch fixes that and adds
+	  unit tests as well. Review:
+	  https://reviewboard.asterisk.org/r/1879/
+
+2012-04-27 19:26 +0000 [r364277]  Matthew Jordan <mjordan@digium.com>
+
+	* include/asterisk/time.h: Prevent overflow in calculation in
+	  ast_tvdiff_ms on 32-bit machines The method ast_tvdiff_ms
+	  attempts to calculate the difference, in milliseconds, between
+	  two timeval structs, and return the difference in a 64-bit
+	  integer. Unfortunately, it assumes that the long tv_sec/tv_usec
+	  members in the timeval struct are large enough to hold the
+	  calculated values before it returns. On 64-bit machines, this
+	  might be the case, as a long may be 64-bits. On 32-bit machines,
+	  however, a long may be less (32-bits), in which case, the
+	  calculation can overflow. This overflow caused significant
+	  problems in MixMonitor, which uses the method to determine if an
+	  audio factory, which has not presented audio to an audiohook, is
+	  merely late in providing said audio or will never provide audio.
+	  In an overflow situation, the audiohook would incorrectly
+	  determine that an audio factory that will never provide audio is
+	  merely late instead. This led to situations where a MixMonitor
+	  never recorded any audio. Note that this happened most frequently
+	  when that MixMonitor was started by the ConfBridge application
+	  itself, or when the MixMonitor was attached to a Local channel.
+	  (issue ASTERISK-19497) Reported by: Ben Klang Tested by: Ben
+	  Klang Patches: 32-bit-time-overflow-10-2012-04-26.diff (license
+	  #6283) by mjordan (closes issue ASTERISK-19727) Reported by: Mark
+	  Murawski Tested by: Michael L. Young Patches:
+	  32-bit-time-overflow-2012-04-27.diff (license #6283) by mjordan)
+	  (closes issue ASTERISK-19471) Reported by: feyfre Tested by:
+	  feyfre (issue ASTERISK-19426) Reported by: Johan Wilfer Review:
+	  https://reviewboard.asterisk.org/r/1889/
+
+2012-04-27 18:57 +0000 [r364258]  Kinsey Moore <kmoore@digium.com>
+
+	* channels/chan_sip.c: Allow SIP pvts involved in Replaces
+	  transfers to fall out of reference sooner Unref the SIP pvt
+	  stored in the refer structure as soon as it is no longer needed
+	  so that the pvt and associated file descriptors can be freed
+	  sooner. This change makes a reference decrement unnecessary in
+	  code that handles SIP BYE/Also transfers which should not touch
+	  the reference anyway. (related to issue ASTERISK-19579)
+
+2012-04-27 14:42 +0000 [r364203]  Matthew Jordan <mjordan@digium.com>
+
+	* channels/chan_sip.c: Allow for reloading SRTP crypto keys within
+	  the same SIP dialog As a continuation of the patch in r356604,
+	  which allowed for the reloading of SRTP keys in re-INVITE
+	  transfer scenarios, this patch addresses the more common case
+	  where a new key is requested within the context of a current SIP
+	  dialog. This can occur, for example, when certain phones request
+	  a SIP hold. Previously, once a dialog was associated with an SRTP
+	  object, any subsequent attempt to process crypto keys in any SDP
+	  offer - either the current one or a new offer in a new SIP
+	  request - were ignored. This patch changes this behavior to only
+	  ignore subsequent crypto keys within the current SDP offer, but
+	  allows future SDP offers to change the keys. (issue
+	  ASTERISK-19253) Reported by: Thomas Arimont Tested by: Thomas
+	  Arimont Review: https://reviewboard.asteriskorg/r/1885/
+
+2012-04-26 21:10 +0000 [r364060-364108]  Richard Mudgett <rmudgett@digium.com>
+
+	* apps/app_directed_pickup.c: Update Pickup application
+	  documentation. (With feeling this time.)
+
+	* main/features.c: Fix DTMF atxfer running h exten after the wrong
+	  bridge ends. When party B does an attended transfer of party A to
+	  party C, the attending bridge between party B and C should not be
+	  running an h exten when the bridge ends. Running an h exten now
+	  sets a softhangup flag to ensure that an AGI will run in dead AGI
+	  mode. * Set the AST_FLAG_BRIDGE_HANGUP_DONT on the party B
+	  channel for the attending bridge between party B and C. (closes
+	  issue AST-870) (closes issue ASTERISK-19717) Reported by: Mario
+	  (closes issue ASTERISK-19633) Reported by: Andrey Solovyev
+	  Patches: jira_asterisk_19633_v1.8.patch (license #5621) patch
+	  uploaded by rmudgett Tested by: rmudgett, Andrey Solovyev, Mario
+
+2012-04-26 19:24 +0000 [r364046]  Terry Wilson <twilson@digium.com>
+
+	* main/asterisk.c: Add more constness to the end_buf pointer in the
+	  netconsole issue ASTERISK-18308 Review:
+	  https://reviewboard.asterisk.org/r/1876/
+
+2012-04-26 13:24 +0000 [r363986]  Kinsey Moore <kmoore@digium.com>
+
+	* channels/chan_sip.c: Fix reference leaks involving SIP Replaces
+	  transfers The reference held for SIP blind transfers using the
+	  Replaces header in an INVITE was never freed on success and also
+	  failed to be freed in some error conditions. This caused a file
+	  descriptor leak since the RTP structures in use at the time of
+	  the transfer were never freed. This reference leak and another
+	  relating to subscriptions in the same code path have now been
+	  corrected. (closes issue ASTERISK-19579)
+
+2012-04-26 09:44 +0000 [r363934]  Alec L Davis <sivad.a@paradise.net.nz>
+
+	* channels/chan_sip.c: chan_sip: [general] maxforwards, not checked
+	  for a value greater than 255 The peer maxforwards is checked for
+	  both '< 1' and '> 255', but the default 'maxforwards' in the
+	  [general] section is only checked for '< 1' alecdavis (license
+	  585) Reported by: alecdavis Tested by: alecdavis Review:
+	  https://reviewboard.asterisk.org/r/1888/
+
+2012-04-26 03:11 +0000 [r363375-363875]  Richard Mudgett <rmudgett@digium.com>
+
+	* apps/app_directed_pickup.c: Update Pickup application
+	  documentation. (Even better)
+
+	* apps/app_directed_pickup.c: Update Pickup application
+	  documentation.
+
+	* channels/sig_pri.c, channels/chan_dahdi.c: Make
+	  DAHDISendCallreroutingFacility wait 5 seconds for a reply before
+	  disconnecting the call. Some switches may not handle the
+	  call-deflection/call-rerouting message if the call is
+	  disconnected too soon after being sent. Asteisk was not waiting
+	  for any reply before disconnecting the call. * Added a 5 second
+	  delay before disconnecting the call to wait for a potential
+	  response if the peer does not disconnect first. (closes issue
+	  ASTERISK-19708) Reported by: mehdi Shirazi Patches:
+	  jira_asterisk_19708_v1.8.patch (license #5621) patch uploaded by
+	  rmudgett Tested by: rmudgett
+
+	* channels/sig_pri.c, channels/sig_pri.h, channels/chan_dahdi.c:
+	  Clear ISDN channel resetting state if the peer continues to use
+	  it. Some ISDN switches occasionally fail to send a RESTART
+	  ACKNOWLEDGE in response to a RESTART request. * Made the second
+	  SETUP received after sending a RESTART request clear the channel
+	  resetting state as if the peer had sent the expected RESTART
+	  ACKNOWLEDGE before continuing to process the SETUP. The peer may
+	  not be sending the expected RESTART ACKNOWLEDGE. (issue
+	  ASTERISK-19608) (issue AST-844) (issue AST-815) Patches:
+	  jira_ast_815_v1.8.patch (license #5621) patch uploaded by
+	  rmudgett (modified)
+
+	* main/features.c: Fix recalled party B feature flags for a failed
+	  DTMF atxfer. 1) B calls A with Dial option T 2) B DTMF atxfer to
+	  C 3) B hangs up 4) C does not answer 5) B is called back 6) B
+	  answers 7) B cannot initiate transfers anymore * Add dial
+	  features datastore to recalled party B channel that is a copy of
+	  the original party B channel's dial features datastore. *
+	  Extracted add_features_datastore() from
+	  add_features_datastores(). * Renamed struct ast_dial_features
+	  features_caller and features_callee members to my_features and
+	  peer_features respectively. These better names eliminate the need
+	  for some explanatory comments. * Simplified code accessing the
+	  struct ast_dial_features datastore. (closes issue ASTERISK-19383)
+	  Reported by: lgfsantos
+
+	* main/features.c: Hangup affected channel in error paths of
+	  bridge_call_thread().
+
+2012-04-23 16:02 +0000 [r363209]  Tilghman Lesher <tilghman@meg.abyt.es>
+
+	* main/astfd.c: On some platforms, O_RDONLY is not a flag to be
+	  checked, but merely the absence of O_RDWR and O_WRONLY. The POSIX
+	  specification does not mandate how these 3 flags must be
+	  specified, only that one of the three must be specified in every
+	  call.
+
+2012-04-23 14:33 +0000 [r363141]  Jonathan Rose <jrose@digium.com>
+
+	* main/manager.c, /: AST-2012-004: Fix an error that allows AMI
+	  users to run shell commands sans authorization. As detailed in
+	  the advisory, AMI users without write authorization for SYSTEM
+	  class AMI actions were able to run system commands by going
+	  through other AMI commands which did not require that
+	  authorization. Specifically, GetVar and Status allowed users to
+	  do this by setting their variable/s options to the SHELL or EVAL
+	  functions. Also, within 1.8, 10, and trunk there was a similar
+	  flaw with the Originate action that allowed users with originate
+	  permission to run MixMonitor and supply a shell command in the
+	  Data argument. That flaw is fixed in those versions of this
+	  patch. (closes issue ASTERISK-17465) Reported By: David Woolley
+	  Patches: 162_ami_readfunc_security_r2.diff uploaded by jrose
+	  (license 6182) 18_ami_readfunc_security_r2.diff uploaded by jrose
+	  (license 6182) 10_ami_readfunc_security_r2.diff uploaded by jrose
+	  (license 6182) ........ Merged revisions 363117 from
+	  http://svn.asterisk.org/svn/asterisk/branches/1.6.2
+
+2012-04-23 14:05 +0000 [r363102-363106]  Matthew Jordan <mjordan@digium.com>
+
+	* channels/chan_sip.c: AST-2012-006: Fix crash in UPDATE handling
+	  when no channel owner exists If Asterisk receives a SIP UPDATE
+	  request after a call has been terminated and the channel has been
+	  destroyed but before the SIP dialog has been destroyed, a
+	  condition exists where a connected line update would be attempted
+	  on a non-existing channel. This would cause Asterisk to crash.
+	  The patch resolves this by first ensuring that the SIP dialog has
+	  an owning channel before attempting a connected line update. If
+	  an UPDATE request is received and no channel is associated with
+	  the dialog, a 481 response is sent. (closes issue ASTERISK-19770)
+	  Reported by: Thomas Arimont Tested by: Matt Jordan Patches:
+	  ASTERISK-19278-2012-04-16.diff uploaded by Matt Jordan (license
+	  6283)
+
+	* /, channels/chan_skinny.c: AST-2012-005: Fix remotely exploitable
+	  heap overflow in keypad button handling When handling a keypad
+	  button message event, the received digit is placed into a fixed
+	  length buffer that acts as a queue. When a new message event is
+	  received, the length of that buffer is not checked before placing
+	  the new digit on the end of the queue. The situation exists where
+	  sufficient keypad button message events would occur that would
+	  cause the buffer to be overrun. This patch explicitly checks that
+	  there is sufficient room in the buffer before appending a new
+	  digit. (closes issue ASTERISK-19592) Reported by: Russell Bryant
+	  ........ Merged revisions 363100 from
+	  http://svn.asterisk.org/svn/asterisk/branches/1.6.2
+
+2012-04-21 01:44 +0000 [r362997]  Richard Mudgett <rmudgett@digium.com>
+
+	* apps/app_dial.c: Update app_dial M and U option GOTO return value
+	  documentation.
+
+2012-04-20 16:09 +0000 [r362815-362868]  Terry Wilson <twilson@digium.com>
+
+	* main/asterisk.c: OpenBSD doesn't have rawmemchr, use strchr
+	  (closes issue ASTERISK-19758) Reported by: Barry Miller Tested
+	  by: Terry Wilson Patches: 362758-diff uploaded by Barry Miller
+	  (license 5434)
+
+	* apps/app_speech_utils.c: Document Speech* apps hangup on failure
+	  and suggest TryExec The Speech API apps return -1 on failure,
+	  which will hang up the channel. This may not be desirable
+	  behavior for some, but it isn't something that can be changed
+	  without breaking people's dialplans or writing an option to all
+	  of the Speech apps that does what TryExec already does. This
+	  patch documents the hangup behavior of the apps, and suggests
+	  TryExec as the solution. (closes issue AST-813)
+
+2012-04-19 21:58 +0000 [r362729]  Walter Doekes <walter+asterisk@wjd.nu>
+
+	* funcs/func_version.c: Fix documentation for
+	  ${VERSION(ASTERISK_VERSION_NUM)}.
+
+2012-04-19 21:05 +0000 [r362680]  Michael L. Young <elgueromexicano@gmail.com>
+
+	* tests/test_linkedlists.c, tests/test_poll.c: Add leading and
+	  trailing backslashes A couple of unit tests did not have have
+	  leading or trailing backslashes when setting their test category
+	  resulting in a warning message being displayed. Added the
+	  backslash where needed.
+
+2012-04-19 20:59 +0000 [r362677]  Richard Mudgett <rmudgett@digium.com>
+
+	* configs/queues.conf.sample: Update membermacro and membergosub
+	  documentation in queues.conf.sample.
+
+2012-04-19 15:53 +0000 [r362586]  Sean Bright <sean@malleable.com>
+
+	* apps/app_externalivr.c: Prevent a crash in ExternalIVR when the
+	  'S' command is sent first. If the first command sent from an
+	  ExternalIVR client is an 'S' command, we were blindly removing
+	  the first element from the play list and deferencing it, even if
+	  it was NULL. This corrects that and also locks appropriately in
+	  one place. (issue ASTERISK-17889) Reported by: Chris Maciejewski
+
+2012-04-19 14:26 +0000 [r362536]  Terry Wilson <twilson@digium.com>
+
+	* main/asterisk.c: Handle multiple commands per connection via
+	  netconsole Asterisk would accept multiple NULL-delimited CLI
+	  commands via the netconsole socket, but would occasionally miss a
+	  command due to the command not being completely read into the
+	  buffer. This patch ensures that any partial commands get moved to
+	  the front of the read buffer, appended to, and properly sent.
+	  (closes issue ASTERISK-18308) Review:
+	  https://reviewboard.asterisk.org/r/1876/
+
+2012-04-19 02:08 +0000 [r362485]  Matthew Jordan <mjordan@digium.com>
+
+	* apps/app_sms.c, main/stdtime/localtime.c, utils/extconf.c,
+	  addons/chan_mobile.c, main/asterisk.c, channels/chan_unistim.c,
+	  main/frame.c, main/tdd.c, main/jitterbuf.c: Fix a variety of
+	  potential buffer overflows * chan_mobile: Fixed an overrun where
+	  the cind_state buffer (an integer array of size 16) would be
+	  overrun due to improper bounds checking. At worst, the buffer can
+	  be overrun by a total of 48 bytes (assuming 4-byte integers),
+	  which would still leave it within the allocated memory of struct
+	  hfp. This would corrupt other elements in that struct but not
+	  necessarily cause any further issues. * app_sms: The array imsg
+	  is of size 250, while the array (ud) that the data is copied into
+	  is of size 160. If the size of the inbound message is greater
+	  then 160, up to 90 bytes could be overrun in ud. This would
+	  corrupt the user data header (array udh) adjacent to ud. *
+	  chan_unistim: A number of invalid memmoves are corrected. These
+	  would move data (which may or may not be valid) into the ends of
+	  these buffers. * asterisk: ast_console_toggle_loglevel does not
+	  check that the console log level being set is less then or equal
+	  to the allowed log levels of 32. * frame: In
+	  ast_codec_pref_prepend, if any occurrence of the specified codec
+	  is not found, the value used to index into the array pref->order
+	  would be one greater then the maximum size of the array. *
+	  jitterbuf: If the element being placed into the jitter buffer
+	  lands in the last available slot in the jitter history buffer,
+	  the insertion sort attempts to move the last entry in the buffer
+	  into one slot past the maximum length of the buffer. Note that
+	  this occurred for both the min and max jitter history buffers. *
+	  tdd: If a read from fsk_serial returns a character that is
+	  greater then 32, an attempt to read past one of the statically
+	  defined arrays containing the values that character maps to would
+	  occur. * localtime: struct ast_time and tm are not the same size
+	  - ast_time is larger, although it contains the elements of tm
+	  within it in the same layout. Hence, when using memcpy to copy
+	  the contents of tm into ast_time, the size of tm should be used,
+	  as opposed to the size of ast_time. * extconf: this treats
+	  ast_timing's minmask array as if it had a length of 48, when it
+	  has defined the size of the array as 24. pbx.h defines minmask as
+	  having a size of 48. (issue ASTERISK-19668) Reported by: Matt
+	  Jordan
+
+2012-04-18 16:20 +0000 [r362428]  Richard Mudgett <rmudgett@digium.com>
+
+	* channels/sig_pri.c, channels/sig_pri.h, channels/chan_dahdi.c,
+	  configs/chan_dahdi.conf.sample: Add ability to ignore layer 1
+	  alarms for BRI PTMP lines. Several telcos bring the BRI PTMP
+	  layer 1 down when the line is idle. When layer 1 goes down,
+	  Asterisk cannot make outgoing calls. Incoming calls could fail as
+	  well because the alarm processing is handled by a different code
+	  path than the Q.931 messages. * Add the layer1_presence
+	  configuration option to ignore layer 1 alarms when the telco
+	  brings layer 1 down. This option can be configured by span while
+	  the similar DAHDI driver teignorered=1 option is system wide.
+	  This option unlike layer2_persistence does not require libpri
+	  v1.4.13 or newer. Related to JIRA AST-598 JIRA ABE-2845
+
+2012-04-17 21:18 +0000 [r362355-362368]  Matthew Jordan <mjordan@digium.com>
+
+	* main/frame.c: Handle case where an unknown format is used to get
+	  the preferred codec size In ast_codec_pref_getsize, if an unknown
+	  format is passed to the method, no preferred codec will be
+	  selected and a negative number will be used to index into the
+	  format list. The method now logs an unknown format as a warning,
+	  and returns an empty format list. (issue ASTERISK-19655) Reported
+	  by: Matt Jordan Review: https://reviewboard.asterisk.org/r/1863/
+
+	* res/res_musiconhold.c, res/res_rtp_asterisk.c, res/res_agi.c: Fix
+	  places in resources where a negative return value could impact
+	  execution This patch addresses a number of modules in resources
+	  that did not handle the negative return value from function calls
+	  adequately. This includes: * res_agi.c: if the result of the read
+	  function is a negative number, indicating some failure, the
+	  result would instead be treated as the number of bytes read. This
+	  patch now treats negative results in the same manner as an end of
+	  file condition, with the exception that it also logs the error
+	  code indicated by the return. * res_musiconhold.c: if spawn_mp3
+	  fails to assign a file descriptor to srcfd, and instead assigns a
+	  negative value, that file descriptor could later be passed to
+	  functions that require a valid file descriptor. If spawn_mp3
+	  fails, we now immediately retry instead of continuing in the
+	  logic. * res_rtp_asterisk.c: if no codec can be matched between
+	  two RTP instances in a peer to peer bridge, we immediately return
+	  instead of attempting to use the codec payload type as an index
+	  to determine the appropriate negotiated codec. (issue
+	  ASTERISK-19655) Reported by: Matt Jordan Review:
+	  https://reviewboard.asterisk.org/r/1863/
+
+	* main/asterisk.c, main/manager.c, main/translate.c: Fix places in
+	  main where a negative return value could impact execution This
+	  patch addresses a number of modules in main that did not handle
+	  the negative return value from function calls adequately, or were
+	  not sufficiently clear that the conditions leading to improper
+	  handling of the return values could not occur. This includes: *
+	  asterisk.c: A negative return value from the read function would
+	  be used directly as an index into a buffer. We now check for
+	  success of the read function prior to using its result as an
+	  index. * manager.c: Check for failures in mkstemp and lseek when
+	  handling the temporary file created for processing data returned
+	  from a CLI command in action_command. Also check that the result
+	  of an lseek is sanitized prior to using it as the size of a
+	  memory map to allocate. * translate.c: Note in the appropriate
+	  locations where powerof cannot return a negative value, due to
+	  proper checks placed on the inputs to that function. (issue
+	  ASTERISK-19655) Reported by: Matt Jordan Review:
+	  https://reviewboard.asterisk.org/r/1863/
+
+	* funcs/func_env.c: Fix places where a negative return from ftello
+	  could be used as invalid input In a variety of locations in both
+	  reading and writing a file, the result from the C library
+	  function ftello is used as input to other functions. For the
+	  parameters and functions in question, a negative value is invalid
+	  input. This patch checks the return value from the ftello
+	  function to determine if we were able to determine the current
+	  position in the file stream and, if not, fail gracefully. (issue
+	  ASTERISK-19655) Reported by: Matt Jordan Review:
+	  https://reviewboard.asterisk.org/r/1863/
+
+2012-04-17 20:43 +0000 [r362354]  Jonathan Rose <jrose@digium.com>
+
+	* main/utils.c, res/res_config_curl.c, res/res_config_pgsql.c,
+	  res/res_config_odbc.c: Make use of va_args more appropriate to
+	  form in various res_config modules plus utils. A number of
+	  va_copy operations weren't matched with a corresponding va_end in
+	  res_config_odbc. Also, there was a potential for va_end to be
+	  invoked twice on the same va_arg in utils, which would mean
+	  invoking va_end on an undefined variable... which is bad. va_end
+	  is removed from various functions in config_pgsql and config_curl
+	  since they aren't making their own copy. The invokers of those
+	  functions are responsible for calling va_end on them. (issue
+	  ASTERISK-19451) Reported by: Walter Doekes Review:
+	  https://reviewboard.asterisk.org/r/1848/
+
+2012-04-17 18:25 +0000 [r362304]  Matthew Jordan <mjordan@digium.com>
+
+	* formats/format_sln16.c, formats/format_wav_gsm.c,
+	  formats/format_siren14.c, formats/format_gsm.c,
+	  formats/format_g719.c, formats/format_siren7.c,
+	  formats/format_sln.c, formats/format_vox.c, formats/format_wav.c,
+	  formats/format_pcm.c: Fix error that caused seek format
+	  operations to set max file size to '1' or '0' A very
+	  inappropriate placement of a ')' (introduced in r362151) caused
+	  the maximum size of a file to be set as the result of a
+	  comparison operation, as opposed to the result of the ftello
+	  operation. This resulted in seeking being restricted to the
+	  beginning of the file, or 1 byte into the file. Thanks to the
+	  Asterisk Test Suite for properly freaking out about this on at
+	  least one test. (issue ASTERISK-19655) Reported by: Matt Jordan
+
+2012-04-17 02:37 +0000 [r362253]  Michael L. Young <elgueromexicano@gmail.com>
+
+	* channels/chan_sip.c: Turn off warning message when bind address
+	  is set to any. When a bind address is set to an ANY address
+	  (udpbindport=::), a warning message is displayed stating that
+	  "Address remapping activated in sip.conf but we're using IPv6,
+	  which doesn't need it. Please remove 'localnet' and/or
+	  'externaddr' settings." But if one is running dual stack, we
+	  shouldn't be told to turn those settings off. This patch checks
+	  if the bind address is an ANY address or not. The warning message
+	  will now only be displayed if the bind address is NOT an ANY
+	  address and IPv6 is being used. Also, updated the copyright year.
+	  (closes issue ASTERISK-19456) Reported by: Michael L. Young
+	  Tested by: Michael L. Young Patches: chan_sip_ipv6_message.diff
+	  uploaded by Michael L. Young (license 5026)
+
+2012-04-16 21:56 +0000 [r362151-362204]  Matthew Jordan <mjordan@digium.com>
+
+	* channels/chan_dahdi.c, channels/chan_agent.c: Fix negative return
+	  handling in channel drivers In chan_agent, while handling a
+	  channel indicate, the agent channel driver must obtain a lock on
+	  both the agent channel, as well as the channel the agent channel
+	  is using. To do so, it attempts to lock the other channel first,
+	  then unlock the agent channel which is locked prior to entry into
+	  the indicate handler. If this unlock fails with a negative return
+	  value, which can occur if the object passed to agent_indicate is
+	  an invalid ao2 object or is NULL, the return value is passed
+	  directly to strerror, which can only accept positive integer
+	  values. In chan_dahdi, the return value of dahdi_get_index is
+	  used to directly index into the sub-channel array. If
+	  dahd_get_index returns a negative value, it would use that value
+	  to index into the array, which could cause an invalid memory
+	  access. If dahdi_get_index returns a negative number, we now
+	  default to SUB_REAL. (issue ASTERISK-19655) Reported by: Matt
+	  Jordan Review: https://reviewboard.asterisk.org/r/1863/
+
+	* apps/app_voicemail.c: Fix handling of negative return code when
+	  storing voicemails in ODBC storage When storing a voicemail
+	  message using an ODBC connection to a database, the voicemail
+	  message is first stored on disk. The sound file associated with
+	  the message is read into memory before being transmitted to the
+	  database. When this occurs, a failure in the C library's lseek
+	  function would cause a negative value to be passed to the mmap as
+	  the size of the memory map to create. This would almost certainly
+	  cause the creation of the memory map to fail, resulting in the
+	  message being lost. (issue ASTERISK-19655) Reported by: Matt
+	  Jordan Review: https://reviewboard.asterisk.org/r/1863
+
+	* formats/format_g723.c, formats/format_h263.c,
+	  formats/format_h264.c, formats/format_sln16.c,
+	  formats/format_wav_gsm.c, formats/format_siren14.c,
+	  formats/format_gsm.c, formats/format_g719.c,
+	  formats/format_siren7.c, formats/format_g729.c,
+	  formats/format_ilbc.c, formats/format_sln.c,
+	  formats/format_vox.c, formats/format_wav.c, formats/format_pcm.c:
+	  Check for IO stream failures in various format's truncate/seek
+	  operations For the formats that support seek and/or truncate
+	  operations, many of the C library calls used to determine or set
+	  the current position indicator in the file stream were not being
+	  checked. In some situations, if an error occurred, a negative
+	  value would be returned from the library call. This could then be
+	  interpreted inappropriately as positional data. This patch checks
+	  the return values from these library calls before using them in
+	  subsequent operations. (issue ASTERISK-19655) Reported by: Matt
+	  Jordan Review: https://reviewboard.asterisk.org/r/1863/
+
+2012-04-13 15:54 +0000 [r362079-362082]  Jonathan Rose <jrose@digium.com>
+
+	* apps/app_forkcdr.c: Make ForkCDR e option not set end time of the
+	  newly forked CDR log Prior to this patch, ForkCDR's e option
+	  would immediately set the end time of the forked CDR to that of
+	  the CDR that is being terminated. This resulted in the new CDR's
+	  end time being roughly the same as it's beginning time (which is
+	  in turn roughly the same as the original's end time). (closes
+	  issue ASTERISK-19164) Reported by: Steve Davies Patches:
+	  cdr_fork_end.v10.patch uploaded by Steve Davies (license 5012)
+
+	* apps/app_meetme.c: Send relative path named recordings to the
+	  meetme directory instead of sounds Prior to this patch, no effort
+	  was made to parse the path name to determine a proper destination
+	  for recordings of MeetMe's r option. This fixes that. Review:
+	  https://reviewboard.asterisk.org/r/1846/
+
+2012-04-12 16:18 +0000 [r361955-361972]  Kinsey Moore <kmoore@digium.com>
+
+	* channels/chan_iax2.c: Make trunkfreq take effect when set
+	  Previously, setting trunkfreq had no effect on initial load or on
+	  reload and only ever used the default value. This causes
+	  trunkfreq to be used appropriately on initial load and reload.
+	  (closes issue ASTERISK-19521) Patch-by: Jaco Kroon
+
+	* Makefile.rules, makeopts.in, codecs/lpc10/Makefile, Makefile,
+	  build_tools/cflags.xml, build_tools/menuselect-deps.in,
+	  codecs/gsm/src/k6opt.s, configure, codecs/gsm/Makefile,
+	  configure.ac: Simplify build system architecture optimization
+	  This change to the build system rips out any usage of PROC along
+	  with architecture-specific optimizations in favor of using
+	  -march=native where it is supported. This fixes broken builds on
+	  64bit Intel systems and results in better optimized code on
+	  systems running GCC 4.2+. Review:
+	  https://reviewboard.asterisk.org/r/1852/ (closes issue
+	  ASTERISK-19462)
+
+2012-04-10 21:43 +0000 [r361854]  Richard Mudgett <rmudgett@digium.com>
+
+	* channels/chan_dahdi.c: Prevent invalid access of free'd memory if
+	  DAHDI channel during an MWI event In the MWI processing loop,
+	  when a valid event occurs the temporary caller ID information is
+	  deallocated. If a new DAHDI channel is successfully created, the
+	  event is passed up to the analog_ss_thread without error and the
+	  loop exits. If, however, the DAHDI channel is not created, then
+	  the caller ID struct has been free'd, and the gains reset to
+	  their previous level. This will almost certainly cause an invalid
+	  access to the free'd memory, either in subsequent calls to
+	  callerid_free or calls to callerid_feed. * Rework the -r361705
+	  patch to better manage the cs and mtd allocated resources. *
+	  Fixed use of mwimonitoractive flag to be correct if the
+	  mwi_thread() fails to start.
+
+2012-04-10 19:57 +0000 [r361657-361803]  Matthew Jordan <mjordan@digium.com>
+
+	* main/http.c: Fix crash caused by unloading or reloading of
+	  res_http_post When unlinking itself from the registered HTTP
+	  URIs, res_http_post could inadvertently free all URIs registered
+	  with the HTTP server. This patch modifies the unregister method
+	  to only free the URI that is actually being unregistered, as
+	  opposed to all of them.
+
+	* funcs/func_curl.c: Allow func_curl to exit gracefully if list
+	  allocation fails during write If the global_curl_info data
+	  structure could not be allocated, the datastore associated with
+	  the operation would be free'd, but the function would not return.
+	  This would later dereference the datastore, almost certainly
+	  causing Asterisk to crash. With this patch, if the data structure
+	  is not allocated the method will return an error code, and not
+	  attempt any further operation.
+
+	* channels/chan_dahdi.c: Prevent invalid access of free'd memory if
+	  DAHDI channel during an MWI event In the MWI processing loop,
+	  when a valid event occurs the temporary caller ID information is
+	  deallocated. If a new DAHDI channel is successfully created, the
+	  event is passed up to the analog_ss_thread without error and the
+	  loop exits. If, however, the DAHDI channel is not created, then
+	  the caller ID struct has been free'd, and the gains reset to
+	  their previous level. This will almost certainly cause an invalid
+	  access to the free'd memory, either in subsequent calls to
+	  callerid_free or calls to callerid_feed. This patch makes it so
+	  that we only free the caller ID structure if a DAHDI channel is
+	  successfully created, and we bump the gains back up if we fail to
+	  make a DAHDI channel.
+
+	* funcs/func_global.c: Change SHARED function to use a safe
+	  traversal when modifying a variable When the SHARED function
+	  modifies a variable, it removes it from its list of variables and
+	  reinserts the new value at the head of the list of variables.
+	  Doing this inside a standard list traversal can be dangerous, as
+	  the standard list traversal does not account for the list being
+	  changed. While the code in question should not cause a use after
+	  free violation due to its breaking out of the loop after freeing
+	  the variable, it could lead to a maintenance issue if the loop
+	  was modified. This also fixes a violation reported by a static
+	  analysis tool, which also makes this code easier to maintain in
+	  the future.
+
+2012-04-06 21:50 +0000 [r361558-361606]  Matthew Jordan <mjordan@digium.com>
+
+	* res/res_calendar_ews.c: Fix memory leak in res_calendar_ews when
+	  event email address node is empty If the XML calendar data
+	  returned by a Microsoft Exchange Web Service specifies an XML
+	  Event E-Mail Address ("EmailAddress"), and no e-mail address is
+	  provided, a condition existed where an ast_calendar_attendee
+	  struct would be allocated but not appended to the list of
+	  attendees. Because of that, the memory associated with the
+	  attendee would never be freed. This patch frees the memory if no
+	  e-mail address is provided.
+
+	* apps/app_meetme.c: Fix memory leak when using MeetMeAdmin 'e'
+	  option with user specified A memory leak/reference counting leak
+	  occurs if the MeetMeAdmin 'e' command (eject last user that
+	  joined) is used in conjunction with a specified user. Regardless
+	  of the command being executed, if a user is specified for the
+	  command, MeetMeAdmin will look up that user. Because the 'e'
+	  option kicks the last user that joined, as opposed to the one
+	  specified, the reference to the user specified by the command
+	  would be leaked when the user variable was assigned to the last
+	  user that joined.
+
+2012-04-06 18:09 +0000 [r361471]  Kinsey Moore <kmoore@digium.com>
+
+	* apps/app_ices.c, channels/chan_gtalk.c, channels/chan_iax2.c,
+	  res/res_config_sqlite.c, res/res_srtp.c, main/cdr.c,
+	  main/tcptls.c, funcs/func_channel.c, channels/console_gui.c,
+	  apps/app_sms.c, apps/app_chanspy.c, addons/chan_mobile.c,
+	  channels/chan_mgcp.c, main/xmldoc.c, apps/app_voicemail.c,
+	  res/res_clioriginate.c, channels/chan_unistim.c, main/pbx.c,
+	  channels/chan_sip.c, res/res_fax.c, funcs/func_strings.c,
+	  channels/console_video.c, formats/format_ogg_vorbis.c: Add
+	  missing newlines to CLI logging
+
+2012-04-06 16:27 +0000 [r361403-361412]  Paul Belanger <paul.belanger@polybeacon.com>
+
+	* funcs/func_sysinfo.c: Fix typo in svn:keywords
+
+	* bridges/bridge_multiplexed.c, bridges/bridge_builtin_features.c:
+	  Fix typo in svn:keywords
+
+2012-04-06 15:47 +0000 [r361380]  Russell Bryant <russell@russellbryant.com>
+
+	* apps/rpt_flow.pdf (removed), configs/rpt.conf.sample (removed),
+	  configs/usbradio.conf.sample (removed): Remove a few more files
+	  related to chan_usbradio and app_rpt.
+
+2012-04-06 14:01 +0000 [r361332]  Matthew Jordan <mjordan@digium.com>
+
+	* channels/chan_sip.c: Fix a typo in the warning messages for an
+	  ignored media stream Added a '\n' to the warning messages when we
+	  ignore a media stream due to the port number being '0'. (closes
+	  issue ASTERISK-19646) Reported by: Badalian Vyacheslav
+
+2012-04-06 13:30 +0000 [r361329]  Kinsey Moore <kmoore@digium.com>
+
+	* apps/app_dial.c: Remove unnecessary error message in app_dial.c
+	  The error message for failure to stop autoservice after a gosub
+	  or macro call during a dial was removed for macro while Asterisk
+	  1.4 was still being actively developed. The corresponding gosub
+	  error message was never removed. (closes issue ASTERISK-19551)
+
+2012-04-05 16:36 +0000 [r361201-361269]  Jonathan Rose <jrose@digium.com>
+
+	* apps/app_meetme.c: Fix MusicOnHold in MeetMe so that it always
+	  uses the class if it's been defined There were a few instances of
+	  restarting music on hold in meetme that would cause Asterisk to
+	  revert to the default class of music on hold for no adequate
+	  reason. Review: https://reviewboard.asterisk.org/r/1844/
+
+	* addons/ooh323cDriver.c: Fix some stuff involving calls to memcpy
+	  and memset The important parts of the patch were already applied
+	  through other updates. (closes issue ASTERISK-19445) Reported by:
+	  Makoto Dei Patches: memset-memcpy-length.patch uploaded by Makoto
+	  Dei (license 5027)
+
+	* funcs/func_devstate.c: Make 'help devstate change' display
+	  properly (get rid of excess comma) (closes issue ASTERISK-19444)
+	  Reported by: Makoto Dei Patches:
+	  devstate-change-usage-truncate.patch uploaded by Makoto Dei
+	  (license 5027)
+
+2012-05-02  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Asterisk 1.8.12.0 Released.
+
+2012-05-01  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Asterisk 1.8.12.0-rc3 Released.
+
+        * channels/chan_sip.c: Revert revision 360862
+
+        Revision 360862 was intended to improve identities sent in
+	dialog-info NOTIFY requests. Some users reported that hint became
+	broken once this was done. It's not clear exactly what part of
+	the patch has caused this regression, but broken hints are bad.
+
+        For now, this revision is being reverted so that the next releases of
+        Asterisk do not have bad behavior in them.  The original reported
+ 	issue will have to be fixed differently in the next version of
+	Asterisk.
+
+	(issue ASTERISK-16735)
+
+2012-04-24  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Asterisk 1.8.12.0-rc2 Released.
 
 	* AST-2012-004
 
 	* AST-2012-005
 
 	* AST-2012-006
+
+2012-04-04  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Asterisk 1.8.12.0-rc1 Released.
+
+2012-04-04 16:29 +0000 [r361090-361142]  Jonathan Rose <jrose@digium.com>
+
+	* main/app.c, pbx/pbx_realtime.c, apps/app_externalivr.c,
+	  channels/chan_iax2.c, apps/app_milliwatt.c, main/channel.c,
+	  pbx/pbx_loopback.c, addons/chan_ooh323.c, channels/chan_sip.c:
+	  Replace GNU old-style field designator extensions to fix clang
+	  warnings (issue ASTERISK-19540) Reported by: Makoto Dei Patches:
+	  clang-gnu-designator.patch uploaded by Makoto Dei (license 5027)
+
+	* apps/app_meetme.c: Make the MeetMeAdmin N command (mute all
+	  nonadmins) not mute admins (Closes Issue ASTERISK-19335) Reported
+	  by: Johan Wilfer Review: https://reviewboard.asterisk.org/r/1843/
+
+2012-04-03 20:08 +0000 [r360987-361040]  Kinsey Moore <kmoore@digium.com>
+
+	* apps/app_transfer.c: Fix the display of documentation for
+	  Transfer This came up while fixing documentation generation for
+	  many other cases where the argument separator was not being
+	  displayed properly. Now that it is displayed properly, it shows
+	  up in the wrong place for Transfer since the '/' is only required
+	  if Tech is present. (related to issue ASTERISK-18168)
+
+	* channels/chan_sip.c: Stop sending out RTCP if RTP is inactive
+	  This change prevents Asterisk from sending RTCP receiver reports
+	  during a remote bridge since it is no longer receiving media and
+	  should not be reporting anything. (related to ASTERISK-19366)
+
+2012-03-30 21:26 +0000 [r360933]  Richard Mudgett <rmudgett@digium.com>
+
+	* main/logger.c: Fix logger deadlock on Asterisk shutdown. The
+	  logger_thread() had an exit path that failed to release the
+	  logmsgs list lock. * Make logger_thread() exit path unlock the
+	  logmsgs list lock. * Made ast_log() not queue any messages to the
+	  logmsgs list if the close_logger_thread flag is set. (issue
+	  ASTERISK-19463) Reported by: Matt Jordan
+
+2012-03-29 23:32 +0000 [r360862-360884]  Mark Michelson <mmichelson@digium.com>
+
+	* main/features.c: Fix potential race condition during call pickup.
+	  Prior to this patch, a connected line update was queued during
+	  call pickup and then an answer frame was queued. The original
+	  caller would presumably then have his connected line updated and
+	  then the call would be answered. In actuality, the answer frame
+	  was not how the call ended up being answered. Rather, an odd
+	  section in app_dial that checks if the called channel's state is
+	  up. The result is that the order of the connected line update and
+	  the answer were variable. In most cases, this wasn't actually a
+	  bad thing. However, if the 'I' option was passed to dial, the
+	  connected line update would be inhibited. The fix is to queued
+	  the connected line after the answer frame is queued. This way the
+	  race in app_dial is between two conditions resulting in an
+	  answer. This way the connected line update occurs after the
+	  answer every time. (closes issue ASTERISK-19183) Reported by:
+	  Thomas Arimont Tested by: Thomas Arimont Mark Michelson Patches:
+	  ASTERISK-19183.patch uploaded by Mark Michelson (license 5049)
+
+	* channels/chan_sip.c: Improve accuracy of identifying information
+	  sent in dialog-info SIP NOTIFY requests. This change makes use of
+	  connected party information in addition to caller ID in order to
+	  populate local and remote XML elements in the dialog-info
+	  NOTIFYs. (closes issue ASTERISK-16735) Reported by: Maciej
+	  Krajewski Tested by: Maciej Krajewski Patches:
+	  local_remote_hint2.diff uploaded by Mark Michelson (license 5049)
+
+2012-03-28 19:06 +0000 [r360712]  Terry Wilson <twilson@digium.com>
+
+	* cdr/cdr_adaptive_odbc.c, addons/cdr_mysql.c,
+	  channels/chan_gtalk.c, channels/chan_jingle.c,
+	  addons/chan_ooh323.c: Destroy configs when they are no longer
+	  used https://reviewboard.asterisk.org/r/1834/
+
+2012-03-27 16:59 +0000 [r360625]  Mark Michelson <mmichelson@digium.com>
+
+	* channels/chan_sip.c: Make a debug message regarding subscription
+	  changes more accurate. I was getting confused during some testing
+	  why Asterisk was saying that a subscription was being added when
+	  it was clearly being removed. This fixes that confusion.
+
+2012-03-27 14:32 +0000 [r360488-360574]  Jonathan Rose <jrose@digium.com>
+
+	* configure: Updates config with bootstrap where I changed
+	  configure.ac in r360488 (issue ASTERISK-17842) Reported by: Bryon
+	  Clark
+
+	* configure.ac: Fix BETTER_BACKTRACES library detection for
+	  Fedora/RedHat/CentOS (closes ASTERISK-17842) Reported by: Bryon
+	  Clark Patches: 20110512__issue19278.diff.txt uploaded by Tilghman
+	  Lesher (license 5003) configure_bfd_with_dl_and_iberty.patch
+	  uploaded by Bryon Clark (license 6157)
+
+2012-03-26 18:37 +0000 [r360471-360474]  Paul Belanger <pabelanger@digium.com>
+
+	* CHANGES: Update CHANGES for r360471
+
+	* CHANGES: Fix Asterisk version typo
+
+	* main/dnsmgr.c: Increase verbosity level for ast_verb messages
+	  While this does not fix the issue of the CLI being flooded by
+	  'doing dnsmgr_lookup' messages, increasing the verbosity level
+	  above 5 should help minimize it.
+
+2012-03-24 23:46 +0000 [r360356-360413]  Russell Bryant <russell@russellbryant.com>
+
+	* funcs/func_curl.c: func_curl: Fix leak of an ast_str in error
+	  handling code path.
+
+	* apps/app_page.c: app_page: Fix a memory leak on every Page().
+	  dial_list is a dynamically allocated array that is allocated at
+	  the beginning of Page() based on how many devices will be dialed.
+	  This was never being freed.
+
+	* apps/app_jack.c: app_jack: fix datastore memory leak in error
+	  handling path.
+
+	* res/ael/ael.tab.h, main/ast_expr2.c, main/ast_expr2.h,
+	  res/ael/ael.tab.c, main/ast_expr2f.c, res/ael/ael_lex.c: Rebuild
+	  parsers. This is needed to include the last fix to
+	  main/ast_expr2.y. The changes look much bigger as this
+	  regeneration of the code was done with newer versions of flex and
+	  bison.
+
+	* main/ast_expr2.y: expression parser: Fix (theoretical) memory
+	  leak. Fix a memory leak that is very unlikely to actually happen.
+	  If a malloc() succeeded, but the following strdup() failed, the
+	  memory from the original malloc() would be leaked.
+
+2012-03-24 00:35 +0000 [r360262-360309]  Richard Mudgett <rmudgett@digium.com>
+
+	* channels/sig_pri.c, main/channel.c: Make number not available
+	  presentation also set screening to network provided. Q.951
+	  indicates that when the presentation indicator is "Number not
+	  available due to interworking" for a number then the screening
+	  indicator field should be "Network provided". * Made
+	  ast_party_id_presentation() return AST_PRES_NUMBER_NOT_AVAILABLE
+	  when the presentation is "Number not available due to
+	  interworking". This fix makes Asterisk consistent and it also
+	  makes it consistent with earlier branches as far as this
+	  presentation value is concerned. * Made pri_to_ast_presentation()
+	  and ast_to_pri_presentation() conversions handle the "Number not
+	  available due to interworking" case better in sig_pri.c. This
+	  change is possible because the minimum required libpri version
+	  (v1.4.11) has the necessary defines in libpri.h.
+
+	* channels/chan_sip.c: Add missing initialization of
+	  update_redirecting in chan_sip.c
+
+2012-03-21 14:51 +0000 [r360138]  Jonathan Rose <jrose@digium.com>
+
+	* contrib/scripts/install_prereq: Update install_prereq script to
+	  include missing GSM library for debian amd move SQLite3. (closes
+	  issue ASTERISK-19367) Reported by: Andrew Latham Patches:
+	  debian_install_prereq.diff uploaded by Andrew Latham (license
+	  5985)
+
+2012-03-21 13:19 +0000 [r360087]  Tzafrir Cohen <tzafrir.cohen@xorcom.com>
+
+	* configure, configure.ac: Also detect gmime 2.6 Also detect gmime
+	  version 2.6 (Michael Biebl) Signed-off-by: Tzafrir Cohen (License
+	  #5035) <tzafrir.cohen@xorcom.com>
+
+2012-03-21 13:19 +0000 [r360086]  Matthew Jordan <mjordan@digium.com>
+
+	* channels/chan_sip.c: Ensure Asterisk sends a BYE when pending on
+	  the final response to a re-INVITE When Asterisk detects a hangup
+	  and cannot send a BYE due to a pending INVITE, it sets the
+	  pendingbye flag and waits for the final response to that INVITE.
+	  When the response is received, it transmits the BYE. If, however,
+	  that INVITE request is a pending re-INVITE, it needs to first
+	  send a CANCEL request to terminate the pending re-INVITE. In that
+	  circumstance, Asterisk was, in some scenarios, clearing the
+	  pendingbye flag after processing the CANCEL request and not
+	  checking for a pending BYE when receiving the final 487 response
+	  to the INVITE. This patch ensures that if the pendingbye flag is
+	  set, it is honored regardless of the nature of the INVITE request
+	  currently in flight. (closes issue ASTERISK-19365) Reported by:
+	  Thomas Arimont Tested by: Thomas Arimont Patches:
+	  bugASTERISK-19365_2012_03_08.patch uploaded by mjordan (license
+	  6283) Review: https://reviewboard.asterisk.org/r/1807
+
+2012-03-20 20:32 +0000 [r360033]  Kinsey Moore <kmoore@digium.com>
+
+	* apps/app_echo.c: Prevent Echo() from relaying control, null, and
+	  modem frames Echo()'s description states that it echoes audio,
+	  video, and DTMF except for # while it actually echoes any frame
+	  that it receives other than DTMF #. This was causing frame storms
+	  in the test suite in some circumstances where Echo() was attached
+	  to both ends of a pair of local channels and control frames were
+	  being periodically generated. Echo()'s behavior and description
+	  have been modifed so that it only echoes media and non-# DTMF
+	  frames.
+
+2012-03-20 17:21 +0000 [r359979]  Richard Mudgett <rmudgett@digium.com>
+
+	* include/asterisk/manager.h, main/manager.c: Allow AMI action
+	  callback to be reentrant. Fix AMI module reload deadlock
+	  regression from ASTERISK-18479 when it tried to fix the race
+	  between calling an AMI action callback and unregistering that
+	  action. Refixes ASTERISK-13784 broken by ASTERISK-17785 change.
+	  Locking the ao2 object guaranteed that there were no active
+	  callbacks that mattered when ast_manager_unregister() was called.
+	  Unfortunately, this causes the deadlock situation. The patch
+	  stops locking the ao2 object to allow multiple threads to invoke
+	  the callback re-entrantly. There is no way to guarantee a module
+	  unload will not crash because of an active callback. The code
+	  attempts to minimize the chance with the registered flag and the
+	  maximum 5 second delay before ast_manager_unregister() returns.
+	  The trunk version of the patch changes the API to fix the race
+	  condition correctly to prevent the module code from unloading
+	  from memory while an action callback is active. * Don't hold the
+	  lock while calling the AMI action callback. (closes issue
+	  ASTERISK-19487) Reported by: Philippe Lindheimer Review:
+	  https://reviewboard.asterisk.org/r/1818/ Review:
+	  https://reviewboard.asterisk.org/r/1820/
+
+2012-03-16 20:13 +0000 [r359892]  Jonathan Rose <jrose@digium.com>
+
+	* apps/app_chanspy.c: Prevent chanspy from binding to zombie
+	  channels This patch addresses a bug with chanspy on local
+	  channels which roughly 50% of the time would create a situation
+	  where chanspy can latch onto a zombie channel, keeping the zombie
+	  alive forever and causing the channel doing the spying to never
+	  be able to hang up. (closes issue ASTERISK-19493) Reported by:
+	  lvl Review: https://reviewboard.asterisk.org/r/1819/
+
+2012-03-16 08:22 +0000 [r359809]  Alec L Davis <sivad.a@paradise.net.nz>
+
+	* channels/sip/include/sip.h: Missed lastinvite CSeq int to
+	  uint32_t change from Review:
+	  https://reviewboard.asterisk.org/r/1699/
+
+2012-03-15 19:01 +0000 [r359656-359706]  Matthew Jordan <mjordan@digium.com>
+
+	* main/utils.c: Fix remotely exploitable stack overflow in HTTP
+	  manager There exists a remotely exploitable stack buffer overflow
+	  in HTTP digest authentication handling in Asterisk. The
+	  particular method in question is only utilized by HTTP AMI. When
+	  parsing the digest information, the length of the string is not
+	  checked when it is copied into temporary buffers allocated on the
+	  stack. This patch fixes this behavior by parsing out pre-defined
+	  key/value pairs and avoiding unnecessary copies to the stack.
+	  (closes issue ASTERISK-19542) Reported by: Russell Bryant Tested
+	  by: Matt Jordan
+
+	* apps/app_milliwatt.c, /: Fix remotely exploitable stack overrun
+	  in Milliwatt Milliwatt is vulnerable to a remotely exploitable
+	  stack overrun when using the 'o' option. This occurs due to the
+	  milliwatt_generate function not accounting for
+	  AST_FRIENDLY_OFFSET when calculating the maximum number of
+	  samples it can put in the output buffer. This patch resolves this
+	  issue by taking into account AST_FRIENDLY_OFFSET when determining
+	  the maximum number of samples allowed. Note that at no point is
+	  remote code execution possible. The data that is written into the
+	  buffer is the pre-defined Milliwatt data, and not custom data.
+	  (closes issue ASTERISK-19541) Reported by: Russell Bryant Tested
+	  by: Matt Jordan Patches: milliwatt_stack_overrun.rev1.txt by
+	  Russell Bryant (license 6283) Note that this patch was written by
+	  Russell, even though Matt uploaded it ........ Merged revisions
+	  359645 from http://svn.asterisk.org/svn/asterisk/branches/1.6.2
+
+2012-03-15 18:17 +0000 [r359609]  Richard Mudgett <rmudgett@digium.com>
+
+	* apps/app_queue.c, apps/app_dial.c: Add missing connected line
+	  macro calls to initial dial for Dial and Queue apps. The
+	  connected line interception macros do not get executed when the
+	  outgoing channel is initially created and that channel's
+	  caller-id is implicitly imported into the incoming channel's
+	  connected line data. If you are using the interception macros,
+	  you would expect that they get run for every change to a
+	  channel's connected line information outside of normal dialplan
+	  execution. Review: https://reviewboard.asterisk.org/r/1817/
+
+2012-03-15 00:52 +0000 [r359452-359558]  Russell Bryant <russell@russellbryant.com>
+
+	* channels/chan_iax2.c: chan_iax2: Fix use of uninitialized
+	  sockaddr_in in try_transfer(). Initialize a struct sockaddr_in in
+	  try_transfer() so that the code isn't (potentially) trying to
+	  read from it while uninitialized.
+
+	* channels/chan_gtalk.c: chan_gtalk: Fix use of uninitialized vars
+	  in config handling. Fix potential use of context, parkinglot, and
+	  prefs before they are initialized.
+
+	* channels/chan_gtalk.c: chan_gtalk: Fix potential use of
+	  uninitialized variable. Avoid potential use of idroster in
+	  gtalk_alloc() before it has been initialized.
+
+	* apps/app_chanisavail.c: app_chanisavail: Fix use of uninitialized
+	  variable. Ensure that status is set before it is used by
+	  resetting it during each loop iteration. This could have resulted
+	  in incorrect results from this app.
+
+	* main/udptl.c: udptl: Ensure fec[] in udptl_build_packet() is
+	  initialized. Scan results indicated that this array could be used
+	  uninitialized. At a quick look, it looks correct. In any case,
+	  initializing it is a Good Thing (tm).
+
+	* include/asterisk/app.h: app.h: Always initialize
+	  AST_DECLARE_APP_ARGS(). This patch ensures that the struct
+	  defined by AST_DECLARE_APP_ARGS() is always fully initialized.
+	  I'm not sure if this fixes any real bugs, but it silences a bunch
+	  of warnings from coverity, and is generally a good thing to do
+	  anyway.
+
+2012-03-14 22:20 +0000 [r359451]  Richard Mudgett <rmudgett@digium.com>
+
+	* include/asterisk/channel.h, main/channel.c,
+	  channels/chan_agent.c: Fix deadlock potential with some
+	  ast_indicate/ast_indicate_data calls. Calling
+	  ast_indicate()/ast_indicate_data() with the channel lock held can
+	  result in a deadlock with a local channel because of how local
+	  channels need to avoid deadlock.
+
+2012-03-14 17:32 +0000 [r359356]  Matthew Jordan <mjordan@digium.com>
+
+	* main/jitterbuf.c: Fix incorrect jitter buffer overflow due to
+	  missed resynchronizations When a change in time occurs, such that
+	  the timestamps associated with frames being placed into an
+	  adaptive jitter buffer (implemented in jitterbuf.c) are
+	  significantly different then the previously inserted frames, the
+	  jitter buffer checks to see if it needs to be resynched to the
+	  new time frame. If three consecutive packets break the threshold,
+	  the jitter buffer resynchs itself to the new timestamps. This
+	  currently only occurs when history is calculated, and hence only
+	  on JB_TYPE_VOICE frames. JB_TYPE_CONTROL frames, on the other
+	  hand, are never passed to the history calculations. Because of
+	  this, if the jump in time is greater then the maximum allowed
+	  length of the jitter buffer, the JB_TYPE_CONTROL frames are
+	  dropped and no resynchronization occurs. Alterntively, if the
+	  overfill logic is not triggered, the JB_TYPE_CONTROL frame will
+	  be placed into the buffer, but with a time reference that is not
+	  applicable. Subsequent JB_TYPE_VOICE frames will quickly trigger
+	  the overflow logic until reads from the jitter buffer reach the
+	  errant JB_TYPE_CONTROL frame. This patch allows JB_TYPE_CONTROL
+	  frames to resynch the jitter buffer. As JB_TYPE_CONTROL frames
+	  are unlikely to occur in multiples, it perform the
+	  resynchronization on any JB_TYPE_CONTROL frame that breaks the
+	  resynch threshold. Note that this only impacts chan_iax2, as
+	  other consumers of the adaptive jitter buffer use the abstract
+	  jitter buffer API, which does not use JB_TYPE_CONTROL frames.
+	  Review: https://reviewboard.asterisk.org/r/1814/ (closes issue
+	  ASTERISK-18964) Reported by: Kris Shaw Tested by: Kris Shaw, Matt
+	  Jordan Patches: jitterbuffer-2012-2-26.diff uploaded by Kris Shaw
+	  (license 5722)
+
+2012-03-14 17:17 +0000 [r359344]  Richard Mudgett <rmudgett@digium.com>
+
+	* apps/app_dial.c, main/channel.c: Fix Dial m and r options and
+	  forked calls generating warnings for voice frames. When connected
+	  line support was added, the wait_for_answer() variable single
+	  changed its meaning slightly. Unfortunately, the places where
+	  single was used did not necessarily get updated to reflect that
+	  change. Also audio/video frames were sent to all forked calls
+	  when the endpoints were never made compatible. * Don't pass
+	  audio/video media frames when the channels have not been made
+	  compatible. * Added handling of AST_CONTROL_SRCCHANGE to
+	  app_dial.c. * Fixed app_dial.c passing on AST_CONTROL_HOLD
+	  because that frame can also pass a requested MOH class. (closes
+	  issue ASTERISK-16901) Reported by: Chris Gentle (closes issue
+	  ASTERISK-17541) Reported by: clint Review:
+	  https://reviewboard.asterisk.org/r/1805/
+
+2012-03-14 10:52 +0000 [r359050-359259]  Russell Bryant <russell@russellbryant.com>
+
+	* include/asterisk/logger.h, main/logger.c: Fix bogus reads/writes
+	  of console log levels in asterisk.c This patch updates the
+	  NUMLOGLEVELS define in logger.h to 32, to match the fact that
+	  logger.c implements 32 log levels (because of the custom log
+	  level stuff). asterisk.c uses this define to size an array of
+	  levels per remote console. This array is modified in
+	  ast_console_toggle_loglevel(), which is called by the "logger set
+	  level" CLI command. While the documentation for the CLI command
+	  doesn't make it terribly obvious, you can use this CLI command to
+	  toggle a custom log level on a remote console, as well. However,
+	  doing so led to an invalid array index in asterisk.c. This array
+	  is read from any time a log message is written to a console. So,
+	  all custom log level messages resulted in a bogus read if a
+	  remote console was connected.
+
+	* apps/app_externalivr.c, channels/chan_iax2.c: Fix invalid
+	  reads/writes due to incorrect sizeof(). These few places in the
+	  code used sizeof() on h_addr in struct hostent. This is
+	  sizeof(char *). The correct way to get the size of this address
+	  is to use h_length. This error would result in reads/writes of 8
+	  bytes instead of 4 on 64-bit machines.
+
+	* main/sched.c: Fix inaccurate sizeof() in sched.c. This code just
+	  needed sizeof(int), not sizeof(int *).
+
+	* utils/astman.c: Fix incorrect sizeof() in astman.
+
+	* res/res_crypto.c: Fix incorrect usage of sizeof() in res_crypto.
+	  In this case, just remove the memset(). There was a redundant
+	  memset that is done correctly just 2 lines later.
+
+	* res/res_adsi.c: Fix broken usage of sizeof() in res_adsi.
+
+	* main/features.c: Fix incorrect sizeof() usage in features.c. This
+	  didn't actually result in a bug anywhere, luckily. The only place
+	  where the result of these memcpys was used is in app_dial, and
+	  the only field that it read out of ast_call_feature was the first
+	  one, which is an int, so these memcpys always copied just enough
+	  to avoid a problem.
+
+	* main/md5.c: Fix incorrect sizeof() on a pointer in MD5Final().
+
+	* main/pbx.c: Don't use a buffer after it goes out of scope. 's' is
+	  set to 'workspace'. Make sure 'workspace' doesn't go out of scope
+	  while the reference to it via 's' is still used.
+
+	* res/ais/ais.h, res/res_ais.c, res/ais/clm.c, res/ais/evt.c: Dump
+	  cache of published events when a node joins the cluster. Also use
+	  a more reliable method for stopping the poll() thread.
+
+	* makeopts.in, apps/app_rpt.c (removed), channels/chan_usbradio.c
+	  (removed), channels/xpmr (removed),
+	  build_tools/menuselect-deps.in, configure,
+	  include/asterisk/autoconfig.h.in, configure.ac: Remove
+	  chan_usbradio and app_rpt. These modules are being maintained
+	  outside of the tree and have been for a long time now, so it
+	  doesn't make sense to keep them here. Review:
+	  https://reviewboard.asterisk.org/r/1764/
+
+2012-03-13 20:31 +0000 [r358943-358978]  Terry Wilson <twilson@digium.com>
+
+	* main/features.c: Fix setting CDR variables in the hangup
+	  extension A previous CDR fix for setting CDR variables during a
+	  bridge via custom dialplan features broke setting CDR variables
+	  in the hangup extension. This patch fixes the issue. Review:
+	  https://reviewboard.asterisk.org/r/1794/
+
+	* main/devicestate.c, include/asterisk/devicestate.h,
+	  channels/chan_sip.c, tests/test_devicestate.c: Make hints for
+	  invalid SIP devices return Unavail, not idle This patch
+	  drastically simplifies the device state aggegation code. The old
+	  method was not only overly complex, but also made it impossible
+	  to return AST_DEVICE_INVALID from the aggregation code. The unit
+	  test update is as a result of fixing that bug. The SIP change
+	  stems from a bug introduced by removing a DNS lookup for
+	  hostname-based SIP channels. (closes issue ASTERISK-16702)
+	  Review: https://reviewboard.asterisk.org/r/1808/
+
+2012-03-13 16:54 +0000 [r358810-358859]  Tilghman Lesher <tilghman@meg.abyt.es>
+
+	* UPGRADE.txt, CHANGES: Requested changes documenting the fixed AEL
+	  functionality.
+
+	* utils/ael_main.c, apps/app_stack.c, utils/conf2ael.c,
+	  res/ael/pval.c, funcs/func_dialplan.c, tests/test_gosub.c: Enable
+	  macros in 1.8 to find the next highest "h" extension in a
+	  context, like in 1.4. This change restores functionality that was
+	  present in 1.4, when AEL macros were implemented with the Macro
+	  dialplan application. Macros are fraught with functionality
+	  issues, because they consume a large portion of the underlying
+	  application stack. This limits the ability of AEL users to call
+	  many layers of subroutines, an issue which Gosub does not have
+	  (originally tested to 100,000 levels deep). Therefore, starting
+	  in 1.6.0, AEL macros were implemented with Gosub. However, there
+	  were some implicit behaviors of Macro, which were not replicated
+	  at the same time as with the transition to Gosub, one of which is
+	  documented in the related issue. In particular, the "h" extension
+	  is designed to execute not in the Macro context, but in the
+	  topmost calling context. Due to legacy issues with a misapplied
+	  bugfix many years ago, when a macro exited in 1.4, it looks in
+	  all calling contexts, bubbling up from the deepest level until it
+	  finds an "h" extension. Since AEL hides the complexity of the
+	  underlying dialplan logic from the AEL programmer, it's
+	  reasonable to assume that this behavior should not change in the
+	  transition from Asterisk 1.4 LTS to Asterisk 1.8 LTS, lest we
+	  break working AEL configurations in the transition to Asterisk
+	  1.8 LTS. This fix is the result, which implements a search for
+	  the "h" extension in all calling Gosub contexts. Fixes
+	  ASTERISK-19336 Patch: 20120308__ael_bugfix_for_trunk__2.diff
+	  (License #5003) by Tilghman Lesher (with slight modifications for
+	  1.8) Tested by: Johan Wilfer Review:
+	  https://reviewboard.asterisk.org/r/1776/
+
+2012-03-08 16:39 +0000 [r358643]  Jonathan Rose <jrose@digium.com>
+
+	* channels/chan_sip.c: Make transfer not ignore port information
+	  with SIP. Attempting to transfer with SIP to an address like
+	  1XXXXX@ip.ad.re.ss:5061 would fail because port would be cut from
+	  the host string and ignored. This simply keeps chan_sip from
+	  cutting off the port number during these kinds of transfers.
+	  (closes issue ASTERISK-19321) Reported by: Federico Alves Review:
+	  https://reviewboard.asterisk.org/r/1790/diff/#index_header
+
+2012-03-07 18:25 +0000 [r358530]  Richard Mudgett <rmudgett@digium.com>
+
+	* channels/sig_ss7.c: Change directly setting _softhangup in
+	  sig_ss7.c to use ast_softhangup_nolock(). Update to: (issue
+	  ASTERISK-19372)
+
+2012-03-07 16:11 +0000 [r358484]  Sean Bright <sean@malleable.com>
+
+	* codecs/codec_dahdi.c: Return g729 and g723.1 frames with the
+	  number of samples set properly. If the wctc4xxp returns more than
+	  a single packet, we need to update the number of samples in the
+	  returned frame accordingly. Acked-by: Shaun Ruffell
+	  <sruffell@digium.com>
+
+2012-03-07 15:16 +0000 [r358435-358438]  Terry Wilson <twilson@digium.com>
+
+	* configs/cdr_adaptive_odbc.conf.sample: Set snarkiness = 0 in
+	  cdr_adaptive_odbc.conf.sample
+
+	* cdr/cdr_adaptive_odbc.c, cel/cel_odbc.c: Add detection for ODBC
+	  WCHAR fields Without detecting these types, cel_odbc blows up
+	  when the character set for the table is utf8. This also wraps
+	  cdr_adaptive_odbc's use of those types in the HAVE_ODBC_WCHAR
+	  #ifdef seen in other parts of the code.
+
+2012-03-06 17:44 +0000 [r358260-358377]  Richard Mudgett <rmudgett@digium.com>
+
+	* channels/chan_dahdi.c: Fix ring cadance setup for outgoing calls
+	  on FXS ports. * Fix referencing the wrong variable in
+	  chan_dahdi.c:my_set_cadence(). Thanks to Sean Bright for
+	  compiling with -Wshadow and finding this bug.
+
+	* channels/sig_ss7.c: Drop SS7 call if not connected yet when
+	  INCOMPLETE/BUSY/CONGESTION. SS7 is a trunk protocol and should
+	  clear a failed call as soon as possible. * Made SS7 hangup a call
+	  immediately if it has not connected yet for
+	  INCOMPLETE/BUSY/CONGESTION causes. Otherwise, play an appropriate
+	  inband tone. (closes issue ASTERISK-19372) Reported by: Igor
+	  Nikolaev
+
+	* channels/sig_ss7.c, channels/chan_dahdi.c, channels/sig_ss7.h:
+	  Setup DSP when SS7 call is connected or early media is available.
+	  Outgoing SS7 calls fail to detect incoming DTMF so any bridged
+	  channel that requires out-of-band DTMF will not work. * Added
+	  sig_ss7_open_media() calls at appropriate places in sig_ss7.c.
+	  The new call converts conditionaled out unconverted code and
+	  shows that the code really did something useful. * Improved some
+	  chan_dahdi DTMF debug messages to help track DTMF handling.
+	  (closes issue ASTERISK-19312) Reported by: Igor Nikolaev
+
+2012-03-05 18:49 +0000 [r358214]  Jonathan Rose <jrose@digium.com>
+
+	* main/manager.c: Eliminate double close of file descriptor in
+	  manager.c The process_output function in manager.c attempted to
+	  call fclose and close immediately afterwards. Since fclose
+	  implies close, this resulted in a potential double free on file
+	  descriptors. This patch changes that behavior and also adds error
+	  checking to fclose and close depending on which was deemed
+	  necessary. Also error messages. Thanks to Rosen Iliev for
+	  pointing out the location of the problem. (closes issue
+	  ASTERISK-18453) Reported By: Jaco Kroon Review:
+	  https://reviewboard.asterisk.org/r/1793/
+
+2012-03-05 16:41 +0000 [r358162]  Joshua Colp <jcolp@digium.com>
+
+	* channels/chan_sip.c: Defer sending the connected line reinvite if
+	  a reinvite is already in progress. (issue ASTERISK-19355)
+	  Reported by: tomaso (closes issue AST-825)
+
+2012-03-05 15:54 +0000 [r358115]  Kinsey Moore <kmoore@digium.com>
+
+	* channels/chan_sip.c: Ensure Asterisk acknowledges ACKs to 4xx on
+	  Replaces errors Asterisk was not setting pendinginvite in the
+	  upper half of handle_request_invite such that the 4xx was
+	  retransmitted repeatedly even though an ack was received for
+	  every retransmission. (closes issue ASTERISK-19303) Patch-by:
+	  Jeremiah Gowdy
+
+2012-03-02 23:27 +0000 [r357986-358029]  Terry Wilson <twilson@digium.com>
+
+	* channels/xpmr/xpmr.c, channels/chan_usbradio.c: Fix
+	  unused-but-set-variable warnings All of these were pretty
+	  obviously unused. Some were unused because the code that used
+	  them was #if 0'd. In those cases, I just commented out the
+	  unused-but-set variables.
+
+	* channels/misdn/isdn_msg_parser.c, channels/misdn/isdn_lib.c,
+	  channels/chan_misdn.c: Correct some set-but-unused variable
+	  warnings in the mISDN library. (from kpfleming's commit to trunk
+	  r356292)
+
+	* channels/xpmr/xpmr.c: Make chan_usbradio compile under dev mode
+	  x=++x and x=x=1? Really?
+
+2012-03-02 21:02 +0000 [r357940]  Kinsey Moore <kmoore@digium.com>
+
+	* main/event.c, include/asterisk/strings.h, main/ccss.c,
+	  tests/test_event.c: Fix case-sensitivity for device-specific
+	  event subscriptions and CCSS This change fixes case-sensitivity
+	  for device-specific subscriptions such that the technology
+	  identifier is case-insensitive while the remainder of the device
+	  string is still case-sensitive. This should also preserve the
+	  original case of the device string as passed in to the event
+	  system. CCSS is the only feature affected as it is the only
+	  consumer of device-specific event subscriptions. The second part
+	  of this patch addresses similar case-sensitivity issues within
+	  CCSS itself that prevented it from functioning correctly after
+	  the fix to the events system. This adds a unit test to verify
+	  that the event system works as expected. (closes issue
+	  ASTERISK-19422) Review: https://reviewboard.asterisk.org/r/1780/
+
+2012-03-02 18:34 +0000 [r357894]  Richard Mudgett <rmudgett@digium.com>
+
+	* channels/sig_pri.c, main/channel.c: Remove ISDN hold restriction
+	  for non-bridged calls. The check if an ISDN call is bridged
+	  before it could be placed on hold is not necessary and is overly
+	  restrictive. The check was originally done to prevent problems
+	  with call transfers in case a user tried to transfer a call
+	  connected to an application to another call connected to an
+	  application. The ISDN transfer code has not required this
+	  restriction for quite some time because ECT could transfer any
+	  two active calls to each other. * Remove ISDN hold restriction
+	  for calls connected to applications. * Made
+	  ast_waitfordigit_full() ignore AST_CONTROL_HOLD and
+	  AST_CONTROL_UNHOLD instead of generating a warning message.
+	  (closes issue ASTERISK-19388) Reported by: Birger Harzenetter
+	  Tested by: rmudgett
+
+2012-03-02 15:58 +0000 [r357811]  Sean Bright <sean@malleable.com>
+
+	* channels/chan_iax2.c: The default value for mohinterpret is the
+	  empty string, so when resetting to default values don't
+	  explicitly set the value to "default."
+
+2012-03-02 15:45 +0000 [r357809]  Richard Mudgett <rmudgett@digium.com>
+
+	* apps/app_chanspy.c: Fix channel reference leak in ChanSpy. * Fix
+	  next_channel() channel reference leak in ChanSpy. (closes issue
+	  ASTERISK-19461) Reported by: Irontec Patches:
+	  app_chanspy_iteartor_next_unref.patch (license #6213) patch
+	  uploaded by Irontec (issue ASTERISK-17515)
+
+2012-03-02 00:59 +0000 [r357760-357761]  Mark Michelson <mmichelson@digium.com>
+
+	* main/channel.c: Fix race condition that can cause important
+	  control frames (such as a hangup) to be missed. This takes two
+	  actions. 1. Move the reading of the alertpipe in __ast_read() to
+	  immediately before the removal of frames from the readq. This
+	  means we won't do something silly like read from the alertpipe,
+	  then ignore the fact that there's a frame to get from the readq
+	  since channel's fdno is the AST_TIMING_FD. 2. When
+	  ast_settimeout() sets the rate to 0 and the timingfunc to NULL,
+	  if the channel's fdno is the AST_TIMING_FD, then set the fdno to
+	  -1. This is because if the rate is 0 and the timingfunc is NULL,
+	  it means that the channel's timing fd is being invalidated, so
+	  any pending reads should not occur. This may actually solve more
+	  issues than the referenced one below, but it's not known at this
+	  time for sure. (closes issue ASTERISK-19223) reported by
+	  Frank-Michael Wittig Review:
+	  https://reviewboard.asterisk.org/r/1779
+
+	* main/translate.c: Second attempt to get optimal translation paths
+	  when codec_resample is used. This borrows code heavily from
+	  changes made in translation code in Asterisk 10. This uses the
+	  quality and sample rate change of translation in order to pick
+	  paths rather than the computational cost of translations.
+	  Computational cost is used solely in determining if a single
+	  translation step from a specific translator is better than the
+	  same translation step provided by a different translator. (closes
+	  issue ASTERISK-16821) reported by Andrew Lindh Review:
+	  https://reviewboard.asterisk.org/r/1772
+
+2012-03-01 14:18 +0000 [r357665]  Kinsey Moore <kmoore@digium.com>
+
+	* main/acl.c: Prevent outbound SIP NOTIFY packets from displaying a
+	  port of 0 In the change from 1.6.2 to 1.8, ast_sockaddr was
+	  introduced which changed the behavior of ast_find_ourip such that
+	  port number was wiped out. This caused the port in internip
+	  (which is used for Contact and Call-ID on NOTIFYs) to be 0. This
+	  change causes ast_find_ourip to be port-preserving again. (closes
+	  issue ASTERISK-19430)
+
+2012-02-29 19:41 +0000 [r357575]  Walter Doekes <walter+asterisk@wjd.nu>
+
+	* apps/app_dial.c: Fix copying of CDR(accountcode) to local
+	  channels. In r203638, during the addition of the Channel Event
+	  Logging, in mid-2009, this got broken in trunk and ended up in
+	  asterisk 1.8 and higher. This fixes so the CDR(accountcode) from
+	  the calling channel is available to dialed channels again as well
+	  as showing up properly in the CDR's. (closes issue
+	  ASTERISK-19384) Patches: accountcode.patch (License #6033) by
+	  jamicque Review: https://reviewboard.asterisk.org/r/1775/
+	  Reviewed by: Richard Mudgett
+
+2012-02-28 22:27 +0000 [r357455-357490]  Jonathan Rose <jrose@digium.com>
+
+	* UPGRADE.txt, configs/sip.conf.sample: Adding transport=udp to
+	  sample sip.conf - Also changes version of Asterisk 1.8 in UPGRADE
+	  (issue ASTERISK-19352) Reported by: jamicque Patches:
+	  asterisk-19352-transport-warning-message-v1.patch uploaded by
+	  Michael L. Young (license 5026)
+
+	* cdr/cdr_adaptive_odbc.c: Add additional character type types to
+	  supported data types for cdr_adaptive_odbc The reporter was uable
+	  to use varchar utf8_unicode_ci with cdr_adaptive_odbc, so this
+	  patch adds those along with some other character types to the
+	  list of types cdr_adaptive_odbc will work using the varchar
+	  conditions. The problem wasn't really UTF8 characters as much as
+	  it was a failure to respond to the exact type that was
+	  declared/in use on that database. (closes issue ASTERISK-19334)
+	  Reported By: Igor Nikolaev Patches: cdr_adaptive_odbc.patch
+	  uploaded by Igor Nikolaev (license 6236)
+
+2012-02-28 21:19 +0000 [r357416]  Tilghman Lesher <tilghman@meg.abyt.es>
+
+	* apps/app_stack.c: Correctly reset the dialplan priority. When the
+	  stack frame is allocated, we save the address to which we should
+	  return, when the Gosub returns. However, if we just want to
+	  restore the priority, then we need to subtract 1 before setting
+	  it. Otherwise, when a Gosub goes to a nonexistent address, it
+	  will skip a priority in the dialplan. This is because when we
+	  return from an application, the PBX increments the priority for
+	  us.
+
+2012-02-28 20:57 +0000 [r357407]  Richard Mudgett <rmudgett@digium.com>
+
+	* channels/sig_pri.c: Use more reasonable cause code when rejecting
+	  incoming call waiting calls. (closes issue ASTERISK-19397)
+	  Reported by: Birger Harzenetter Patches: nochannel-cause.patch
+	  (license #5870) patch uploaded by Birger Harzenetter
+
+2012-02-28 20:26 +0000 [r357356-357386]  Jonathan Rose <jrose@digium.com>
+
+	* UPGRADE.txt: Moves UPGRADE.txt notes from r357356 to a new
+	  section specific to 1.8.12 (issue ASTERISK-19352) reported by:
+	  jamicque
+
+	* UPGRADE.txt: Adds UPGRADE.txt notes to r357266 indicating changes
+	  to transport option (issue ASTERISK-19352) Reported by: jamicque
+
+2012-02-28 19:32 +0000 [r357352]  Richard Mudgett <rmudgett@digium.com>
+
+	* apps/app_page.c: Remove dupliate 'i' option table entry in
+	  app_page.c. (closes issue ASTERISK-19310) Reported by: Makoto Dei
+	  Patches: app_page-duplicate-i-option.patch (license #5027) patch
+	  uploaded by Makoto Dei
+
+2012-02-28 18:00 +0000 [r357266]  Jonathan Rose <jrose@digium.com>
+
+	* channels/chan_sip.c: Changes transport option in sip.conf so that
+	  using multiple instances doesn't stack. Prior to this patch,
+	  Using "transport=" multiple times would cause them to add to one
+	  another like allow/deny. This patch changes that behavior to
+	  simply use the transport option specified last. Also, if no
+	  transport option is applied now, the default will automatically
+	  be UDP. (closes ASTERISK-19352) Reported by: jamicque Patches:
+	  asterisk-19352-transport-warning-message-v1.patch uploaded by
+	  Michael L. Young (license 5026)
+	  issueA19352_no_transport_is_udp.patch uploaded by Walter Doekes
+	  (license 5674) Review:
+	  https://reviewboard.asterisk.org/r/1745/diff/#index_header
+
+2012-02-28 14:45 +0000 [r357212]  Kevin P. Fleming <kpfleming@digium.com>
+
+	* Makefile.rules: Make COMPILE_DOUBLE magic actually work. The
+	  build system has some special magic to ensure that if Asterisk is
+	  built with --enable-dev-mode *and* DONT_OPTIMIZE, that all the
+	  source is still compiled with the optimizer enabled (even though
+	  the result will be thrown away), because the compiler is able to
+	  find a great deal of coding errors and bugs as a result of
+	  running its optimizers. Unfortunately at some point this mode got
+	  broken, and the 'throwaway' compile of the code was no longer
+	  done with the optimizer enabled. This patch corrects that
+	  problem.
+
+2012-02-27 23:34 +0000 [r357093]  Richard Mudgett <rmudgett@digium.com>
+
+	* main/channel.c: Fix callerid of Originated calls. Thanks to Matt
+	  Riddell for tracking this down. (closes issue ASTERISK-19385)
+	  Reported by: ornix
 
 2012-03-29  Asterisk Development Team <asteriskteam@digium.com>
 

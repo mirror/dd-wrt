@@ -27,9 +27,13 @@
  * - See ModMngMnt
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 356291 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use ast_config_AST_MODULE_DIR */
@@ -1066,13 +1070,13 @@ int load_modules(unsigned int preload_only)
 			if (mod->flags.running)
 				continue;
 
-			order = add_to_load_order(mod->resource, &load_order, 0);
+			add_to_load_order(mod->resource, &load_order, 0);
 		}
 
 #ifdef LOADABLE_MODULES
 		/* if we are allowed to load dynamic modules, scan the directory for
 		   for all available modules and add them as well */
-		if ((dir  = opendir(ast_config_AST_MODULE_DIR))) {
+		if ((dir = opendir(ast_config_AST_MODULE_DIR))) {
 			while ((dirent = readdir(dir))) {
 				int ld = strlen(dirent->d_name);
 

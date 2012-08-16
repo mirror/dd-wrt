@@ -19,7 +19,7 @@
 
 #if !defined(STANDALONE) && !defined(STANDALONE2)	\
 	
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 293197 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 360356 $")
 #else
 #ifndef __USE_ISOC99
 #define __USE_ISOC99 1
@@ -532,6 +532,9 @@ make_str (const char *s)
 
 	vp = (struct val *) malloc (sizeof (*vp));
 	if (vp == NULL || ((vp->u.s = strdup (s)) == NULL)) {
+		if (vp) {
+			free(vp);
+		}
 		ast_log(LOG_WARNING,"malloc() failed\n");
 		return(NULL);
 	}

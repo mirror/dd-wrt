@@ -1,7 +1,7 @@
 /*
  * GUI for console video.
  * The routines here are in charge of loading the keypad and handling events.
- * $Revision: 196072 $
+ * $Revision: 369001 $
  */
 
 /*
@@ -77,6 +77,10 @@ new regions inside the keypad pictureas comments
 
  *
  */
+
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
 
 #include "asterisk.h"
 #include "console_video.h"
@@ -976,7 +980,7 @@ static void eventhandler(struct video_desc *env, const char *caption)
 			case SDL_ACTIVEEVENT:
 #if 0 /* do not react, we don't want to die because the window is minimized */
 				if (ev[i].active.gain == 0 && ev[i].active.state & SDL_APPACTIVE) {
-					ast_log(LOG_WARNING, "/* somebody has killed us ? */");
+					ast_log(LOG_WARNING, "/* somebody has killed us ? */\n");
 					ast_cli_command(gui->outfd, "stop now");
 				}
 #endif
@@ -1635,7 +1639,7 @@ static int keypad_cfg_read(struct gui_info *gui, const char *val)
 	if (gui->kp_size == 0) {
 		gui->kp = ast_calloc(10, sizeof(e));
 		if (gui->kp == NULL) {
-			ast_log(LOG_WARNING, "cannot allocate kp");
+			ast_log(LOG_WARNING, "cannot allocate kp\n");
 			return 0;
 		}
 		gui->kp_size = 10;
@@ -1643,7 +1647,7 @@ static int keypad_cfg_read(struct gui_info *gui, const char *val)
 	if (gui->kp_size == gui->kp_used) { /* must allocate */
 		struct keypad_entry *a = ast_realloc(gui->kp, sizeof(e)*(gui->kp_size+10));
 		if (a == NULL) {
-			ast_log(LOG_WARNING, "cannot reallocate kp");
+			ast_log(LOG_WARNING, "cannot reallocate kp\n");
 			return 0;
 		}
 		gui->kp = a;

@@ -23,11 +23,15 @@
  * \author Mark Spencer <markster@digium.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
 #ifdef __AST_DEBUG_MALLOC
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 196272 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_LOG_DIR */
 #include <stddef.h>

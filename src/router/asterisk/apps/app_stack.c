@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
  
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369869 $")
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
@@ -73,10 +73,14 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 			<parameter name="condition" required="true" />
 			<parameter name="destination" required="true" argsep=":">
 				<argument name="labeliftrue" hasparams="optional">
+					<para>Continue at <replaceable>labeliftrue</replaceable> if the condition is true.
+					Takes the form similar to Goto() of [[context,]extension,]priority.</para>
 					<argument name="arg1" required="true" multiple="true" />
 					<argument name="argN" />
 				</argument>
 				<argument name="labeliffalse" hasparams="optional">
+					<para>Continue at <replaceable>labeliffalse</replaceable> if the condition is false.
+					Takes the form similar to Goto() of [[context,]extension,]priority.</para>
 					<argument name="arg1" required="true" multiple="true" />
 					<argument name="argN" />
 				</argument>
@@ -93,6 +97,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 			<ref type="application">MacroIf</ref>
 			<ref type="function">IF</ref>
 			<ref type="application">GotoIf</ref>
+			<ref type="application">Goto</ref>
 		</see-also>
 	</application>
 	<application name="Return" language="en_US">
@@ -164,6 +169,24 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 			<ref type="application">GosubIf</ref>
 			<ref type="application">Return</ref>
 		</see-also>
+	</function>
+	<function name="STACK_PEEK" language="en_US">
+		<synopsis>
+			View info about the location which called Gosub
+		</synopsis>
+		<syntax>
+			<parameter name="n" required="true" />
+			<parameter name="which" required="true" />
+			<parameter name="suppress" required="false" />
+		</syntax>
+		<description>
+			<para>Read the calling <literal>c</literal>ontext, <literal>e</literal>xtension,
+			<literal>p</literal>riority, or <literal>l</literal>abel, as specified by
+			<replaceable>which</replaceable>, by going up <replaceable>n</replaceable> frames
+			in the Gosub stack.  If <replaceable>suppress</replaceable> is true, then if the
+			number of available stack frames is exceeded, then no error message will be
+			printed.</para>
+		</description>
 	</function>
 	<agi name="gosub" language="en_US">
 		<synopsis>
@@ -285,12 +308,14 @@ static void gosub_free(void *data)
 
 static int pop_exec(struct ast_channel *chan, const char *data)
 {
-	struct ast_datastore *stack_store = ast_channel_datastore_find(chan, &stack_info, NULL);
+	struct ast_datastore *stack_store;
 	struct gosub_stack_frame *oldframe;
 	AST_LIST_HEAD(, gosub_stack_frame) *oldlist;
 
-	if (!stack_store) {
+	ast_channel_lock(chan);
+	if (!(stack_store = ast_channel_datastore_find(chan, &stack_info, NULL))) {
 		ast_log(LOG_WARNING, "%s called with no gosub stack allocated.\n", app_pop);
+		ast_channel_unlock(chan);
 		return 0;
 	}
 
@@ -304,19 +329,22 @@ static int pop_exec(struct ast_channel *chan, const char *data)
 	} else {
 		ast_debug(1, "%s called with an empty gosub stack\n", app_pop);
 	}
+	ast_channel_unlock(chan);
 	return 0;
 }
 
 static int return_exec(struct ast_channel *chan, const char *data)
 {
-	struct ast_datastore *stack_store = ast_channel_datastore_find(chan, &stack_info, NULL);
+	struct ast_datastore *stack_store;
 	struct gosub_stack_frame *oldframe;
 	AST_LIST_HEAD(, gosub_stack_frame) *oldlist;
 	const char *retval = data;
 	int res = 0;
 
-	if (!stack_store) {
+	ast_channel_lock(chan);
+	if (!(stack_store = ast_channel_datastore_find(chan, &stack_info, NULL))) {
 		ast_log(LOG_ERROR, "Return without Gosub: stack is unallocated\n");
+		ast_channel_unlock(chan);
 		return -1;
 	}
 
@@ -327,6 +355,7 @@ static int return_exec(struct ast_channel *chan, const char *data)
 
 	if (!oldframe) {
 		ast_log(LOG_ERROR, "Return without Gosub: stack is empty\n");
+		ast_channel_unlock(chan);
 		return -1;
 	} else if (oldframe->is_agi) {
 		/* Exit from AGI */
@@ -338,16 +367,28 @@ static int return_exec(struct ast_channel *chan, const char *data)
 
 	/* Set a return value, if any */
 	pbx_builtin_setvar_helper(chan, "GOSUB_RETVAL", S_OR(retval, ""));
+	ast_channel_unlock(chan);
 	return res;
 }
 
 static int gosub_exec(struct ast_channel *chan, const char *data)
 {
-	struct ast_datastore *stack_store = ast_channel_datastore_find(chan, &stack_info, NULL);
+	struct ast_datastore *stack_store;
 	AST_LIST_HEAD(, gosub_stack_frame) *oldlist;
-	struct gosub_stack_frame *newframe, *lastframe;
-	char argname[15], *tmp = ast_strdupa(data), *label, *endparen;
-	int i, max_argc = 0;
+	struct gosub_stack_frame *newframe;
+	struct gosub_stack_frame *lastframe;
+	char argname[15];
+	char *parse;
+	char *label;
+	char *caller_id;
+	char *orig_context;
+	char *orig_exten;
+	char *dest_context;
+	char *dest_exten;
+	int orig_priority;
+	int dest_priority;
+	int i;
+	int max_argc = 0;
 	AST_DECLARE_APP_ARGS(args2,
 		AST_APP_ARG(argval)[100];
 	);
@@ -357,23 +398,83 @@ static int gosub_exec(struct ast_channel *chan, const char *data)
 		return -1;
 	}
 
-	if (!stack_store) {
-		ast_debug(1, "Channel %s has no datastore, so we're allocating one.\n", chan->name);
+	/*
+	 * Separate the arguments from the label
+	 *
+	 * NOTE:  You cannot use ast_app_separate_args for this, because
+	 * '(' cannot be used as a delimiter.
+	 */
+	parse = ast_strdupa(data);
+	label = strsep(&parse, "(");
+	if (parse) {
+		char *endparen;
+
+		endparen = strrchr(parse, ')');
+		if (endparen) {
+			*endparen = '\0';
+		} else {
+			ast_log(LOG_WARNING, "Ouch.  No closing paren: '%s'?\n", data);
+		}
+		AST_STANDARD_RAW_ARGS(args2, parse);
+	} else {
+		args2.argc = 0;
+	}
+
+	ast_channel_lock(chan);
+	orig_context = ast_strdupa(chan->context);
+	orig_exten = ast_strdupa(chan->exten);
+	orig_priority = chan->priority;
+	ast_channel_unlock(chan);
+
+	if (ast_parseable_goto(chan, label)) {
+		ast_log(LOG_ERROR, "%s address is invalid: '%s'\n", app_gosub, data);
+		goto error_exit;
+	}
+
+	ast_channel_lock(chan);
+	dest_context = ast_strdupa(chan->context);
+	dest_exten = ast_strdupa(chan->exten);
+	dest_priority = chan->priority;
+	if (ast_test_flag(chan, AST_FLAG_IN_AUTOLOOP)) {
+		++dest_priority;
+	}
+	caller_id = S_COR(chan->caller.id.number.valid, chan->caller.id.number.str, NULL);
+	if (caller_id) {
+		caller_id = ast_strdupa(caller_id);
+	}
+	ast_channel_unlock(chan);
+
+	if (!ast_exists_extension(chan, dest_context, dest_exten, dest_priority, caller_id)) {
+		ast_log(LOG_ERROR, "Attempt to reach a non-existent destination for %s: (Context:%s, Extension:%s, Priority:%d)\n",
+			app_gosub, dest_context, dest_exten, dest_priority);
+		goto error_exit;
+	}
+
+	/* Now we know that we're going to a new location */
+
+	ast_channel_lock(chan);
+
+	/* Find stack datastore return list. */
+	if (!(stack_store = ast_channel_datastore_find(chan, &stack_info, NULL))) {
+		ast_debug(1, "Channel %s has no datastore, so we're allocating one.\n",
+			chan->name);
 		stack_store = ast_datastore_alloc(&stack_info, NULL);
 		if (!stack_store) {
-			ast_log(LOG_ERROR, "Unable to allocate new datastore.  Gosub will fail.\n");
-			return -1;
+			ast_log(LOG_ERROR, "Unable to allocate new datastore.  %s failed.\n",
+				app_gosub);
+			goto error_exit_locked;
 		}
 
 		oldlist = ast_calloc(1, sizeof(*oldlist));
 		if (!oldlist) {
-			ast_log(LOG_ERROR, "Unable to allocate datastore list head.  Gosub will fail.\n");
+			ast_log(LOG_ERROR, "Unable to allocate datastore list head.  %s failed.\n",
+				app_gosub);
 			ast_datastore_free(stack_store);
-			return -1;
+			goto error_exit_locked;
 		}
+		AST_LIST_HEAD_INIT(oldlist);
 
 		stack_store->data = oldlist;
-		AST_LIST_HEAD_INIT(oldlist);
 		ast_channel_datastore_add(chan, stack_store);
 	} else {
 		oldlist = stack_store->data;
@@ -383,50 +484,18 @@ static int gosub_exec(struct ast_channel *chan, const char *data)
 		max_argc = lastframe->arguments;
 	}
 
-	/* Separate the arguments from the label */
-	/* NOTE:  you cannot use ast_app_separate_args for this, because '(' cannot be used as a delimiter. */
-	label = strsep(&tmp, "(");
-	if (tmp) {
-		endparen = strrchr(tmp, ')');
-		if (endparen)
-			*endparen = '\0';
-		else
-			ast_log(LOG_WARNING, "Ouch.  No closing paren: '%s'?\n", (char *)data);
-		AST_STANDARD_RAW_ARGS(args2, tmp);
-	} else
-		args2.argc = 0;
-
-	/* Mask out previous arguments in this invocation */
+	/* Mask out previous Gosub arguments in this invocation */
 	if (args2.argc > max_argc) {
 		max_argc = args2.argc;
 	}
 
-	/* Create the return address, but don't save it until we know that the Gosub destination exists */
-	newframe = gosub_allocate_frame(chan->context, chan->exten, chan->priority + 1, max_argc);
-
+	/* Create the return address */
+	newframe = gosub_allocate_frame(orig_context, orig_exten, orig_priority + 1, max_argc);
 	if (!newframe) {
-		return -1;
+		goto error_exit_locked;
 	}
 
-	if (ast_parseable_goto(chan, label)) {
-		ast_log(LOG_ERROR, "Gosub address is invalid: '%s'\n", (char *)data);
-		ast_free(newframe);
-		return -1;
-	}
-
-	if (!ast_exists_extension(chan, chan->context, chan->exten,
-		ast_test_flag(chan, AST_FLAG_IN_AUTOLOOP) ? chan->priority + 1 : chan->priority,
-		S_COR(chan->caller.id.number.valid, chan->caller.id.number.str, NULL))) {
-		ast_log(LOG_ERROR, "Attempt to reach a non-existent destination for gosub: (Context:%s, Extension:%s, Priority:%d)\n",
-				chan->context, chan->exten, ast_test_flag(chan, AST_FLAG_IN_AUTOLOOP) ? chan->priority + 1 : chan->priority);
-		ast_copy_string(chan->context, newframe->context, sizeof(chan->context));
-		ast_copy_string(chan->exten, newframe->extension, sizeof(chan->exten));
-		chan->priority = newframe->priority;
-		ast_free(newframe);
-		return -1;
-	}
-
-	/* Now that we know for certain that we're going to a new location, set our arguments */
+	/* Set our arguments */
 	for (i = 0; i < max_argc; i++) {
 		snprintf(argname, sizeof(argname), "ARG%d", i + 1);
 		frame_set_var(chan, newframe, argname, i < args2.argc ? args2.argval[i] : "");
@@ -436,12 +505,23 @@ static int gosub_exec(struct ast_channel *chan, const char *data)
 	frame_set_var(chan, newframe, "ARGC", argname);
 
 	/* And finally, save our return address */
-	oldlist = stack_store->data;
 	AST_LIST_LOCK(oldlist);
 	AST_LIST_INSERT_HEAD(oldlist, newframe, entries);
 	AST_LIST_UNLOCK(oldlist);
+	ast_channel_unlock(chan);
 
 	return 0;
+
+error_exit:
+	ast_channel_lock(chan);
+
+error_exit_locked:
+	/* Restore the original dialplan location. */
+	ast_copy_string(chan->context, orig_context, sizeof(chan->context));
+	ast_copy_string(chan->exten, orig_exten, sizeof(chan->exten));
+	chan->priority = orig_priority;
+	ast_channel_unlock(chan);
+	return -1;
 }
 
 static int gosubif_exec(struct ast_channel *chan, const char *data)
@@ -483,44 +563,49 @@ static int gosubif_exec(struct ast_channel *chan, const char *data)
 
 static int local_read(struct ast_channel *chan, const char *cmd, char *data, char *buf, size_t len)
 {
-	struct ast_datastore *stack_store = ast_channel_datastore_find(chan, &stack_info, NULL);
+	struct ast_datastore *stack_store;
 	AST_LIST_HEAD(, gosub_stack_frame) *oldlist;
 	struct gosub_stack_frame *frame;
 	struct ast_var_t *variables;
 
-	if (!stack_store)
+	ast_channel_lock(chan);
+	if (!(stack_store = ast_channel_datastore_find(chan, &stack_info, NULL))) {
+		ast_channel_unlock(chan);
 		return -1;
+	}
 
 	oldlist = stack_store->data;
 	AST_LIST_LOCK(oldlist);
 	if (!(frame = AST_LIST_FIRST(oldlist))) {
 		/* Not within a Gosub routine */
 		AST_LIST_UNLOCK(oldlist);
+		ast_channel_unlock(chan);
 		return -1;
 	}
 
 	AST_LIST_TRAVERSE(&frame->varshead, variables, entries) {
 		if (!strcmp(data, ast_var_name(variables))) {
 			const char *tmp;
-			ast_channel_lock(chan);
 			tmp = pbx_builtin_getvar_helper(chan, data);
 			ast_copy_string(buf, S_OR(tmp, ""), len);
-			ast_channel_unlock(chan);
 			break;
 		}
 	}
 	AST_LIST_UNLOCK(oldlist);
+	ast_channel_unlock(chan);
 	return 0;
 }
 
 static int local_write(struct ast_channel *chan, const char *cmd, char *var, const char *value)
 {
-	struct ast_datastore *stack_store = ast_channel_datastore_find(chan, &stack_info, NULL);
+	struct ast_datastore *stack_store;
 	AST_LIST_HEAD(, gosub_stack_frame) *oldlist;
 	struct gosub_stack_frame *frame;
 
-	if (!stack_store) {
+	ast_channel_lock(chan);
+	if (!(stack_store = ast_channel_datastore_find(chan, &stack_info, NULL))) {
 		ast_log(LOG_ERROR, "Tried to set LOCAL(%s), but we aren't within a Gosub routine\n", var);
+		ast_channel_unlock(chan);
 		return -1;
 	}
 
@@ -528,10 +613,12 @@ static int local_write(struct ast_channel *chan, const char *cmd, char *var, con
 	AST_LIST_LOCK(oldlist);
 	frame = AST_LIST_FIRST(oldlist);
 
-	if (frame)
+	if (frame) {
 		frame_set_var(chan, frame, var, value);
+	}
 
 	AST_LIST_UNLOCK(oldlist);
+	ast_channel_unlock(chan);
 
 	return 0;
 }
@@ -574,6 +661,89 @@ static int peek_read(struct ast_channel *chan, const char *cmd, char *data, char
 static struct ast_custom_function peek_function = {
 	.name = "LOCAL_PEEK",
 	.read = peek_read,
+};
+
+static int stackpeek_read(struct ast_channel *chan, const char *cmd, char *data, struct ast_str **str, ssize_t len)
+{
+	struct ast_datastore *stack_store;
+	AST_LIST_HEAD(, gosub_stack_frame) *oldlist;
+	struct gosub_stack_frame *frame;
+	int n;
+	AST_DECLARE_APP_ARGS(args,
+		AST_APP_ARG(n);
+		AST_APP_ARG(which);
+		AST_APP_ARG(suppress);
+	);
+
+	if (!chan) {
+		ast_log(LOG_ERROR, "STACK_PEEK must be called on an active channel\n");
+		return -1;
+	}
+
+	data = ast_strdupa(data);
+	AST_STANDARD_APP_ARGS(args, data);
+
+	n = atoi(args.n);
+	if (n <= 0) {
+		ast_log(LOG_ERROR, "STACK_PEEK must be called with a positive peek value\n");
+		return -1;
+	}
+
+	ast_channel_lock(chan);
+	if (!(stack_store = ast_channel_datastore_find(chan, &stack_info, NULL))) {
+		if (!ast_true(args.suppress)) {
+			ast_log(LOG_ERROR, "STACK_PEEK called on a channel without a gosub stack\n");
+		}
+		ast_channel_unlock(chan);
+		return -1;
+	}
+
+	oldlist = stack_store->data;
+
+	AST_LIST_LOCK(oldlist);
+	AST_LIST_TRAVERSE(oldlist, frame, entries) {
+		if (--n == 0) {
+			break;
+		}
+	}
+
+	if (!frame) {
+		/* Too deep */
+		if (!ast_true(args.suppress)) {
+			ast_log(LOG_ERROR, "Stack peek of '%s' is more stack frames than I have\n", args.n);
+		}
+		ast_channel_unlock(chan);
+		return -1;
+	}
+
+	args.which = ast_skip_blanks(args.which);
+
+	switch (args.which[0]) {
+	case 'l': /* label */
+		ast_str_set(str, len, "%s,%s,%d", frame->context, frame->extension, frame->priority - 1);
+		break;
+	case 'c': /* context */
+		ast_str_set(str, len, "%s", frame->context);
+		break;
+	case 'e': /* extension */
+		ast_str_set(str, len, "%s", frame->extension);
+		break;
+	case 'p': /* priority */
+		ast_str_set(str, len, "%d", frame->priority - 1);
+		break;
+	default:
+		ast_log(LOG_ERROR, "Unknown argument '%s' to STACK_PEEK\n", args.which);
+	}
+
+	AST_LIST_UNLOCK(oldlist);
+	ast_channel_unlock(chan);
+
+	return 0;
+}
+
+static struct ast_custom_function stackpeek_function = {
+	.name = "STACK_PEEK",
+	.read2 = stackpeek_read,
 };
 
 static int handle_gosub(struct ast_channel *chan, AGI *agi, int argc, const char * const *argv)
@@ -642,8 +812,15 @@ static int handle_gosub(struct ast_channel *chan, AGI *agi, int argc, const char
 			struct ast_pbx *pbx = chan->pbx;
 			struct ast_pbx_args args;
 			struct ast_datastore *stack_store = ast_channel_datastore_find(chan, &stack_info, NULL);
-			AST_LIST_HEAD(, gosub_stack_frame) *oldlist = stack_store->data;
-			struct gosub_stack_frame *cur = AST_LIST_FIRST(oldlist);
+			AST_LIST_HEAD(, gosub_stack_frame) *oldlist;
+			struct gosub_stack_frame *cur;
+			if (!stack_store) {
+				ast_log(LOG_WARNING, "No GoSub stack remaining after AGI GoSub execution.\n");
+				ast_free(gosub_args);
+				return RESULT_FAILURE;
+			}
+			oldlist = stack_store->data;
+			cur = AST_LIST_FIRST(oldlist);
 			cur->is_agi = 1;
 
 			memset(&args, 0, sizeof(args));
@@ -687,6 +864,7 @@ static int unload_module(void)
 	ast_unregister_application(app_gosub);
 	ast_custom_function_unregister(&local_function);
 	ast_custom_function_unregister(&peek_function);
+	ast_custom_function_unregister(&stackpeek_function);
 
 	return 0;
 }
@@ -701,12 +879,14 @@ static int load_module(void)
 	ast_register_application_xml(app_gosub, gosub_exec);
 	ast_custom_function_register(&local_function);
 	ast_custom_function_register(&peek_function);
+	ast_custom_function_register(&stackpeek_function);
 
 	return 0;
 }
 
-AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Dialplan subroutines (Gosub, Return, etc)",
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT | AST_MODFLAG_LOAD_ORDER, "Dialplan subroutines (Gosub, Return, etc)",
 		.load = load_module,
 		.unload = unload_module,
+		.load_pri = AST_MODPRI_APP_DEPEND,
 		.nonoptreq = "res_agi",
 		);

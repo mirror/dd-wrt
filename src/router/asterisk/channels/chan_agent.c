@@ -38,7 +38,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 353999 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368039 $")
 
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -517,21 +517,27 @@ static struct agent_pvt *add_agent(const char *agent, int pending)
 /*!
  * Deletes an agent after doing some clean up.
  * Further documentation: How safe is this function ? What state should the agent be to be cleaned.
+ *
+ * \warning XXX This function seems to be very unsafe.
+ * Potential for double free and use after free among other
+ * problems.
+ *
  * \param p Agent to be deleted.
  * \returns Always 0.
  */
 static int agent_cleanup(struct agent_pvt *p)
 {
-	struct ast_channel *chan = NULL;
+	struct ast_channel *chan;
+
 	ast_mutex_lock(&p->lock);
 	chan = p->owner;
 	p->owner = NULL;
-	chan->tech_pvt = NULL;
 	/* Release ownership of the agent to other threads (presumably running the login app). */
 	p->app_sleep_cond = 1;
 	p->app_lock_flag = 0;
 	ast_cond_signal(&p->app_complete_cond);
 	if (chan) {
+		chan->tech_pvt = NULL;
 		chan = ast_channel_release(chan);
 	}
 	if (p->dead) {
@@ -540,7 +546,9 @@ static int agent_cleanup(struct agent_pvt *p)
 		ast_cond_destroy(&p->app_complete_cond);
 		ast_cond_destroy(&p->login_wait_cond);
 		ast_free(p);
-        }
+	} else {
+		ast_mutex_unlock(&p->lock);
+	}
 	return 0;
 }
 
@@ -668,7 +676,9 @@ static struct ast_frame *agent_read(struct ast_channel *ast)
 			break;
 		case AST_FRAME_DTMF_END:
 			if (!p->acknowledged && (f->subclass.integer == p->acceptdtmf)) {
-				ast_verb(3, "%s acknowledged\n", p->chan->name);
+				if (p->chan) {
+					ast_verb(3, "%s acknowledged\n", p->chan->name);
+				}
 				p->acknowledged = 1;
 				ast_frfree(f);
 				f = &answer_frame;
@@ -780,7 +790,7 @@ static int agent_indicate(struct ast_channel *ast, int condition, const void *da
 		while (ast_channel_trylock(p->chan)) {
 			int res;
 			if ((res = ast_channel_unlock(ast))) {
-				ast_log(LOG_ERROR, "chan_agent bug! Channel was not locked upon entry to agent_indicate: %s\n", strerror(res));
+				ast_log(LOG_ERROR, "chan_agent bug! Channel was not locked upon entry to agent_indicate: %s\n", res > 0 ? strerror(res) : "Bad ao2obj data");
 				ast_mutex_unlock(&p->lock);
 				return -1;
 			}
@@ -966,9 +976,7 @@ static int agent_hangup(struct ast_channel *ast)
 		p->chan->_bridge = NULL;
 		/* If they're dead, go ahead and hang up on the agent now */
 		if (p->dead) {
-			ast_channel_lock(p->chan);
 			ast_softhangup(p->chan, AST_SOFTHANGUP_EXPLICIT);
-			ast_channel_unlock(p->chan);
 		} else if (p->loginstart) {
 			indicate_chan = ast_channel_ref(p->chan);
 			tmp_moh = ast_strdupa(p->moh);
@@ -977,11 +985,9 @@ static int agent_hangup(struct ast_channel *ast)
 	ast_mutex_unlock(&p->lock);
 
 	if (indicate_chan) {
-		ast_channel_lock(indicate_chan);
 		ast_indicate_data(indicate_chan, AST_CONTROL_HOLD,
 			S_OR(tmp_moh, NULL),
 			!ast_strlen_zero(tmp_moh) ? strlen(tmp_moh) + 1 : 0);
-		ast_channel_unlock(indicate_chan);
 		indicate_chan = ast_channel_unref(indicate_chan);
 	}
 

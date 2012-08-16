@@ -23,9 +23,13 @@
  * \author Mark Spencer <markster@digium.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 317474 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -258,7 +262,11 @@ int iax_provision_version(unsigned int *version, const char *template, int force
 	memset(&ied, 0, sizeof(ied));
 
 	ast_mutex_lock(&provlock);
-	ast_db_get("iax/provisioning/cache", template, tmp, sizeof(tmp));
+	if (!(ast_db_get("iax/provisioning/cache", template, tmp, sizeof(tmp)))) {
+		ast_log(LOG_ERROR, "ast_db_get failed to retrieve iax/provisioning/cache\n");
+		ast_mutex_unlock(&provlock);
+		return -1;
+	}
 	if (sscanf(tmp, "v%30x", version) != 1) {
 		if (strcmp(tmp, "u")) {
 			ret = iax_provision_build(&ied, version, template, force);

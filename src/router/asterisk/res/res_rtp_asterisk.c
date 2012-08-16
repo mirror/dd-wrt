@@ -34,7 +34,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 351611 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 366880 $")
 
 #include <sys/time.h>
 #include <signal.h>
@@ -566,6 +566,8 @@ static int ast_rtp_new(struct ast_rtp_instance *instance,
 		/* See if we ran out of ports or if the bind actually failed because of something other than the address being in use */
 		if (x == startplace || errno != EADDRINUSE) {
 			ast_log(LOG_ERROR, "Oh dear... we couldn't allocate a port for RTP instance '%p'\n", instance);
+			close(rtp->s);
+			ast_free(rtp);
 			return -1;
 		}
 	}
@@ -1933,7 +1935,7 @@ static struct ast_frame *ast_rtcp_read(struct ast_rtp_instance *instance)
 				ast_verbose("  Fraction lost: %ld\n", (((long) ntohl(rtcpheader[i + 1]) & 0xff000000) >> 24));
 				ast_verbose("  Packets lost so far: %d\n", rtp->rtcp->reported_lost);
 				ast_verbose("  Highest sequence number: %ld\n", (long) (ntohl(rtcpheader[i + 2]) & 0xffff));
-				ast_verbose("  Sequence number cycles: %ld\n", (long) (ntohl(rtcpheader[i + 2]) & 0xffff) >> 16);
+				ast_verbose("  Sequence number cycles: %ld\n", (long) (ntohl(rtcpheader[i + 2])) >> 16);
 				ast_verbose("  Interarrival jitter: %u\n", rtp->rtcp->reported_jitter);
 				ast_verbose("  Last SR(our NTP): %lu.%010lu\n",(unsigned long) ntohl(rtcpheader[i + 4]) >> 16,((unsigned long) ntohl(rtcpheader[i + 4]) << 16) * 4096);
 				ast_verbose("  DLSR: %4.4f (sec)\n",ntohl(rtcpheader[i + 5])/65536.0);
@@ -1960,7 +1962,7 @@ static struct ast_frame *ast_rtcp_read(struct ast_rtp_instance *instance)
 					      (((long) ntohl(rtcpheader[i + 1]) & 0xff000000) >> 24),
 					      rtp->rtcp->reported_lost,
 					      (long) (ntohl(rtcpheader[i + 2]) & 0xffff),
-					      (long) (ntohl(rtcpheader[i + 2]) & 0xffff) >> 16,
+					      (long) (ntohl(rtcpheader[i + 2])) >> 16,
 					      rtp->rtcp->reported_jitter,
 					      (unsigned long) ntohl(rtcpheader[i + 4]) >> 16, ((unsigned long) ntohl(rtcpheader[i + 4]) << 16) * 4096,
 					      ntohl(rtcpheader[i + 5])/65536.0,
@@ -1984,7 +1986,7 @@ static struct ast_frame *ast_rtcp_read(struct ast_rtp_instance *instance)
 					      (((long) ntohl(rtcpheader[i + 1]) & 0xff000000) >> 24),
 					      rtp->rtcp->reported_lost,
 					      (long) (ntohl(rtcpheader[i + 2]) & 0xffff),
-					      (long) (ntohl(rtcpheader[i + 2]) & 0xffff) >> 16,
+					      (long) (ntohl(rtcpheader[i + 2])) >> 16,
 					      rtp->rtcp->reported_jitter,
 					      (unsigned long) ntohl(rtcpheader[i + 4]) >> 16,
 					      ((unsigned long) ntohl(rtcpheader[i + 4]) << 16) * 4096,
@@ -2043,6 +2045,11 @@ static int bridge_p2p_rtp_write(struct ast_rtp_instance *instance, unsigned int 
 
 	/* Otherwise adjust bridged payload to match */
 	bridged_payload = ast_rtp_codecs_payload_code(ast_rtp_instance_get_codecs(instance1), payload_type.asterisk_format, payload_type.code);
+
+	/* If no codec could be matched between instance and instance1, then somehow things were made incompatible while we were still bridged.  Bail. */
+	if (bridged_payload < 0) {
+		return -1;
+	}
 
 	/* If the payload coming in is not one of the negotiated ones then send it to the core, this will cause formats to change and the bridge to break */
 	if (!(ast_rtp_instance_get_codecs(instance1)->payloads[bridged_payload].code)) {
