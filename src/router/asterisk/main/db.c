@@ -27,9 +27,13 @@
  * licensing even further) we elect to use DB1 which is BSD licensed 
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 345682 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use ast_config_AST_DB */
@@ -778,7 +782,9 @@ int astdb_init(void)
 		return -1;
 	}
 
+	/* Ignore check_return warning from Coverity for dbinit below */
 	dbinit();
+
 	ast_cli_register_multiple(cli_database, ARRAY_LEN(cli_database));
 	ast_manager_register_xml("DBGet", EVENT_FLAG_SYSTEM | EVENT_FLAG_REPORTING, manager_dbget);
 	ast_manager_register_xml("DBPut", EVENT_FLAG_SYSTEM, manager_dbput);

@@ -28,6 +28,10 @@
 <member name="test_astobj2" displayname="ASTOBJ2 Unit Test" remove_on_change="tests/test_astobj2.o tests/test_astobj2.so">
 	<depend>TEST_FRAMEWORK</depend>
 </member>
+<member name="test_db" displayname="AstDB test module" remove_on_change="tests/test_db.o tests/test_db.so">
+	<depend>TEST_FRAMEWORK</depend>
+	<support_level>core</support_level>
+</member>
 <member name="test_devicestate" displayname="Device State Test" remove_on_change="tests/test_devicestate.o tests/test_devicestate.so">
 	<depend>TEST_FRAMEWORK</depend>
 </member>
@@ -39,6 +43,7 @@
 </member>
 <member name="test_expr" displayname="Expression evaluation tests" remove_on_change="tests/test_expr.o tests/test_expr.so">
 	<depend>TEST_FRAMEWORK</depend>
+	<support_level>core</support_level>
 </member>
 <member name="test_func_file" displayname="FILE() Tests" remove_on_change="tests/test_func_file.o tests/test_func_file.so">
 	<depend>TEST_FRAMEWORK</depend>
@@ -49,11 +54,19 @@
 <member name="test_heap" displayname="Heap test module" remove_on_change="tests/test_heap.o tests/test_heap.so">
 	<depend>TEST_FRAMEWORK</depend>
 </member>
+<member name="test_linkedlists" displayname="Test Linked Lists" remove_on_change="tests/test_linkedlists.o tests/test_linkedlists.so">
+	<depend>TEST_FRAMEWORK</depend>
+	<support_level>core</support_level>
+</member>
 <member name="test_locale" displayname="Locale tests" remove_on_change="tests/test_locale.o tests/test_locale.so">
 	<defaultenabled>no</defaultenabled>
 </member>
 <member name="test_logger" displayname="Logger Test Module" remove_on_change="tests/test_logger.o tests/test_logger.so">
 	<defaultenabled>no</defaultenabled>
+</member>
+<member name="test_netsock2" displayname="Netsock2 test module" remove_on_change="tests/test_netsock2.o tests/test_netsock2.so">
+	<depend>TEST_FRAMEWORK</depend>
+	<support_level>core</support_level>
 </member>
 <member name="test_pbx" displayname="PBX test module" remove_on_change="tests/test_pbx.o tests/test_pbx.so">
 	<depend>TEST_FRAMEWORK</depend>

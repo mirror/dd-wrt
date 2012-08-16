@@ -30,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 342661 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 362680 $")
 
 #include "asterisk/module.h"
 #include "asterisk/test.h"
@@ -85,7 +85,7 @@ AST_TEST_DEFINE(single_ll_tests)
 	switch (cmd) {
 	case TEST_INIT:
 		info->name = "ll_tests";
-		info->category = "/main/linkedlists";
+		info->category = "/main/linkedlists/";
 		info->summary = "single linked list unit test";
 		info->description =
 			"Test the single linked list API";

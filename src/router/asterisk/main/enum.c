@@ -45,9 +45,13 @@
  * \todo The service type selection needs to be redone.
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 329471 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -790,6 +794,7 @@ int ast_get_enum(struct ast_channel *chan, const char *number, char *dst, int ds
 
 		if (sdl > strlen(number)) {	/* Number too short for this sdl? */
 			ast_log(LOG_WARNING, "I-ENUM: subdomain location %d behind number %s\n", sdl, number);
+			ast_free(context);
 			return 0;
 		}
 		ast_copy_string(left, number + sdl, sizeof(left));
@@ -802,6 +807,7 @@ int ast_get_enum(struct ast_channel *chan, const char *number, char *dst, int ds
 		/* check the space we need for middle */
 		if ((sdl * 2 + strlen(middle) + 2) > sizeof(middle)) {
 			ast_log(LOG_WARNING, "ast_get_enum: not enough space for I-ENUM rewrite.\n");
+			ast_free(context);
 			return -1;
 		}
 
@@ -819,6 +825,7 @@ int ast_get_enum(struct ast_channel *chan, const char *number, char *dst, int ds
 
 	if (strlen(left) * 2 + 2 > sizeof(domain)) {
 		ast_log(LOG_WARNING, "string to long in ast_get_enum\n");
+		ast_free(context);
 		return -1;
 	}
 

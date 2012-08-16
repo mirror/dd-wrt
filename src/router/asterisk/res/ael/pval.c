@@ -23,9 +23,13 @@
  * 
  */
 
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 299449 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -1160,7 +1164,11 @@ static pval *get_goto_target(pval *item)
 	pval *curr_ext = get_extension_or_contxt(item); /* containing exten, or macro */
 	pval *curr_cont;
 	
-	if (item->u1.list && !item->u1.list->next && !strstr((item->u1.list)->u1.str,"${")) {
+	if (!item->u1.list) {
+		return NULL;
+	}
+
+	if (!item->u1.list->next && !strstr((item->u1.list)->u1.str,"${")) {
 		struct pval *x = find_label_in_current_extension((char*)((item->u1.list)->u1.str), curr_ext);
 			return x;
 	}
@@ -1219,21 +1227,24 @@ static pval *get_goto_target(pval *item)
 			return x;
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 static void check_goto(pval *item)
 {
+	if (!item->u1.list) {
+		return;
+	}
+
 	/* check for the target of the goto-- does it exist? */
 	if ( !(item->u1.list)->next && !(item->u1.list)->u1.str ) {
 		ast_log(LOG_ERROR,"Error: file %s, line %d-%d: goto:  empty label reference found!\n",
 				item->filename, item->startline, item->endline);
 		errs++;
 	}
-	
+
 	/* just one item-- the label should be in the current extension */
-	
-	if (item->u1.list && !item->u1.list->next && !strstr((item->u1.list)->u1.str,"${")) {
+	if (!item->u1.list->next && !strstr(item->u1.list->u1.str,"${")) {
 		struct pval *z = get_extension_or_contxt(item);
 		struct pval *x = 0;
 		if (z)
@@ -4423,6 +4434,20 @@ static void fix_gotos_in_extensions(struct ael_extension *exten)
 	}
 }
 
+static int context_used(struct ael_extension *exten_list, struct ast_context *context)
+{
+	struct ael_extension *exten;
+	/* Check the simple elements first */
+	if (ast_walk_context_extensions(context, NULL) || ast_walk_context_includes(context, NULL) || ast_walk_context_ignorepats(context, NULL) || ast_walk_context_switches(context, NULL)) {
+		return 1;
+	}
+	for (exten = exten_list; exten; exten = exten->next_exten) {
+		if (exten->context == context) {
+			return 1;
+		}
+	}
+	return 0;
+}
 
 int ast_compile_ael2(struct ast_context **local_contexts, struct ast_hashtab *local_table, struct pval *root)
 {
@@ -4604,6 +4629,71 @@ int ast_compile_ael2(struct ast_context **local_contexts, struct ast_hashtab *lo
 			
 		}
 	}
+
+	/* Create default "h" bubble context */
+	if (ast_custom_function_find("DIALPLAN_EXISTS") && ast_custom_function_find("STACK_PEEK")) {
+		int i;
+		const char *h_context = "ael-builtin-h-bubble";
+		struct ael_priority *np;
+		struct {
+			int priority;
+			const char *app;
+			const char *arg;
+		} steps[] = {
+			/* Start high, to avoid conflict with existing h extensions */
+			{ 1, "Goto", "9991" },
+			/* Save the context, because after the StackPop, it disappears */
+			{ 9991, "Set", "~~parentcxt~~=${STACK_PEEK(1,c,1)}" },
+			/* If we're not in a Gosub frame, exit */
+			{ 9992, "GotoIf", "$[\"${~~parentcxt~~}\"=\"\"]?9996" },
+			/* Check for an "h" extension in that context */
+			{ 9993, "GotoIf", "${DIALPLAN_EXISTS(${~~parentcxt~~},h,1)}?9994:9996" },
+			/* Pop off the stack frame to prevent an infinite loop */
+			{ 9994, "StackPop", "" },
+			/* Finally, go there. */
+			{ 9995, "Goto", "${~~parentcxt~~},h,1" },
+			/* Just an empty priority for jumping out early */
+			{ 9996, "NoOp", "" }
+		};
+		context = ast_context_find_or_create(local_contexts, local_table, h_context, registrar);
+		if (context_used(exten_list, context)) {
+			int found = 0;
+			while (!found) {
+				/* Pick a new context name that is not used. */
+				char h_context_template[] = "/tmp/ael-builtin-h-bubble-XXXXXX";
+				int fd = mkstemp(h_context_template);
+				unlink(h_context_template);
+				close(fd);
+				context = ast_context_find_or_create(local_contexts, local_table, h_context_template + 5, registrar);
+				found = !context_used(exten_list, context);
+			}
+			h_context = ast_get_context_name(context);
+		}
+		exten = new_exten();
+		exten->context = context;
+		exten->name = strdup("h");
+
+		for (i = 0; i < ARRAY_LEN(steps); i++) {
+			np = new_prio();
+			np->type = AEL_APPCALL;
+			np->priority_num = steps[i].priority;
+			np->app = strdup(steps[i].app);
+			np->appargs = strdup(steps[i].arg);
+			linkprio(exten, np, NULL);
+		}
+		attach_exten(&exten_list, exten);
+
+		/* Include the default "h" bubble context in each macro context */
+		for (exten = exten_list; exten; exten = exten->next_exten) {
+			/* All macros contain a "~~s~~" extension, and it's the first created.  If
+			 * we perchance get a non-macro context, it's no big deal; the logic is
+			 * designed to exit out smoothly if not called from within a Gosub. */
+			if (!strcmp(exten->name, "~~s~~")) {
+				ast_context_add_include2(exten->context, h_context, registrar);
+			}
+		}
+	}
+
 	/* moved these from being done after a macro or extension were processed,
 	   to after all processing is done, for the sake of fixing gotos to labels inside cases... */
 	/* I guess this would be considered 2nd pass of compiler now... */
@@ -5803,7 +5893,7 @@ pval* pvalGlobalsWalkStatements( pval *p, pval **next_statement )
 {
 	if (!pvalCheckType(p, "pvalGlobalsWalkStatements", PV_GLOBALS))
 		return 0;
-	if (!next_statement) {
+	if (!*next_statement) {
 		*next_statement = p;
 		return p;
 	} else {
@@ -5824,7 +5914,7 @@ void pvalTopLevAddObject( pval *p, pval *contextOrObj )
 
 pval *pvalTopLevWalkObjects(pval *p, pval **next_obj )
 {
-	if (!next_obj) {
+	if (!*next_obj) {
 		*next_obj = p;
 		return p;
 	} else {

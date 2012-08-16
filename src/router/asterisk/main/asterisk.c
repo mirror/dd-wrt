@@ -59,9 +59,13 @@
   
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 350888 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include "asterisk/_private.h"
 
@@ -1097,6 +1101,11 @@ int ast_safe_system(const char *s)
 void ast_console_toggle_loglevel(int fd, int level, int state)
 {
 	int x;
+
+	if (level >= NUMLOGLEVELS) {
+		level = NUMLOGLEVELS - 1;
+	}
+
 	for (x = 0;x < AST_MAX_CONNECTS; x++) {
 		if (fd == consoles[x].fd) {
 			/*
@@ -1252,14 +1261,17 @@ static void *netconsole(void *vconsole)
 {
 	struct console *con = vconsole;
 	char hostname[MAXHOSTNAMELEN] = "";
-	char tmp[512];
+	char inbuf[512];
+	char outbuf[512];
+	const char * const end_buf = inbuf + sizeof(inbuf);
+	char *start_read = inbuf;
 	int res;
 	struct pollfd fds[2];
-	
+
 	if (gethostname(hostname, sizeof(hostname)-1))
 		ast_copy_string(hostname, "<Unknown>", sizeof(hostname));
-	snprintf(tmp, sizeof(tmp), "%s/%ld/%s\n", hostname, (long)ast_mainpid, ast_get_version());
-	fdprint(con->fd, tmp);
+	snprintf(outbuf, sizeof(outbuf), "%s/%ld/%s\n", hostname, (long)ast_mainpid, ast_get_version());
+	fdprint(con->fd, outbuf);
 	for (;;) {
 		fds[0].fd = con->fd;
 		fds[0].events = POLLIN;
@@ -1275,24 +1287,49 @@ static void *netconsole(void *vconsole)
 			continue;
 		}
 		if (fds[0].revents) {
-			res = read_credentials(con->fd, tmp, sizeof(tmp) - 1, con);
-			if (res < 1) {
+			int cmds_read, bytes_read;
+			if ((bytes_read = read_credentials(con->fd, start_read, end_buf - start_read, con)) < 1) {
 				break;
 			}
-			tmp[res] = 0;
-			if (strncmp(tmp, "cli quit after ", 15) == 0) {
-				ast_cli_command_multiple_full(con->uid, con->gid, con->fd, res - 15, tmp + 15);
+			/* XXX This will only work if it is the first command, and I'm not sure fixing it is worth the effort. */
+			if (strncmp(inbuf, "cli quit after ", 15) == 0) {
+				ast_cli_command_multiple_full(con->uid, con->gid, con->fd, bytes_read - 15, inbuf + 15);
 				break;
 			}
-			ast_cli_command_multiple_full(con->uid, con->gid, con->fd, res, tmp);
+			/* ast_cli_command_multiple_full will only process individual commands terminated by a
+			 * NULL and not trailing partial commands. */
+			if (!(cmds_read = ast_cli_command_multiple_full(con->uid, con->gid, con->fd, bytes_read + start_read - inbuf, inbuf))) {
+				/* No commands were read. We either have a short read on the first command
+				 * with space left, or a command that is too long */
+				if (start_read + bytes_read < end_buf) {
+					start_read += bytes_read;
+				} else {
+					ast_log(LOG_ERROR, "Command too long! Skipping\n");
+					start_read = inbuf;
+				}
+				continue;
+			}
+			if (start_read[bytes_read - 1] == '\0') {
+				/* The read ended on a command boundary, start reading again at the head of inbuf */
+				start_read = inbuf;
+				continue;
+			}
+			/* If we get this far, we have left over characters that have not been processed.
+			 * Advance to the character after the last command read by ast_cli_command_multiple_full.
+			 * We are guaranteed to have at least cmds_read NULLs */
+			while (cmds_read-- && (start_read = strchr(start_read, '\0'))) {
+				start_read++;
+			}
+			memmove(inbuf, start_read, end_buf - start_read);
+			start_read = end_buf - start_read + inbuf;
 		}
 		if (fds[1].revents) {
-			res = read_credentials(con->p[0], tmp, sizeof(tmp), con);
+			res = read_credentials(con->p[0], outbuf, sizeof(outbuf), con);
 			if (res < 1) {
 				ast_log(LOG_ERROR, "read returned %d\n", res);
 				break;
 			}
-			res = write(con->fd, tmp, res);
+			res = write(con->fd, outbuf, res);
 			if (res < 1)
 				break;
 		}
@@ -1422,7 +1459,11 @@ static int ast_makesocket(void)
 		ast_log(LOG_WARNING, "Unable to register network verboser?\n");
 	}
 
-	ast_pthread_create_background(&lthread, NULL, listener, NULL);
+	if (ast_pthread_create_background(&lthread, NULL, listener, NULL)) {
+		ast_log(LOG_WARNING, "Unable to create listener thread.\n");
+		close(ast_socket);
+		return -1;
+	}
 
 	if (!ast_strlen_zero(ast_config_AST_CTL_OWNER)) {
 		struct passwd *pw;
@@ -1657,7 +1698,7 @@ static int can_safely_quit(shutdown_nice_t niceness, int restart)
 		for (;;) {
 			time(&e);
 			/* Wait up to 15 seconds for all channels to go away */
-			if ((e - s) > 15 || !ast_active_channels() || shuttingdown != niceness) {
+			if ((e - s) > 15 || !ast_undestroyed_channels() || shuttingdown != niceness) {
 				break;
 			}
 			/* Sleep 1/10 of a second */
@@ -1671,7 +1712,7 @@ static int can_safely_quit(shutdown_nice_t niceness, int restart)
 			ast_verbose("Waiting for inactivity to perform %s...\n", restart ? "restart" : "halt");
 		}
 		for (;;) {
-			if (!ast_active_channels() || shuttingdown != niceness) {
+			if (!ast_undestroyed_channels() || shuttingdown != niceness) {
 				break;
 			}
 			sleep(1);
@@ -2256,6 +2297,7 @@ static int ast_el_read_char(EditLine *editline, char *cp)
 						quit_handler(0, SHUTDOWN_FAST, 0);
 					}
 				}
+				continue;
 			}
 
 			buf[res] = '\0';
@@ -2548,7 +2590,9 @@ static char *cli_complete(EditLine *editline, int ch)
 	if (ast_opt_remote) {
 		snprintf(buf, sizeof(buf), "_COMMAND NUMMATCHES \"%s\" \"%s\"", lf->buffer, ptr); 
 		fdsend(ast_consock, buf);
-		res = read(ast_consock, buf, sizeof(buf) - 1);
+		if ((res = read(ast_consock, buf, sizeof(buf) - 1)) < 0) {
+			return (char*)(CC_ERROR);
+		}
 		buf[res] = '\0';
 		nummatches = atoi(buf);
 
@@ -3184,9 +3228,8 @@ static void *canary_thread(void *unused)
 	sleep(120);
 
 	for (;;) {
-		stat(canary_filename, &canary_stat);
 		now = ast_tvnow();
-		if (now.tv_sec > canary_stat.st_mtime + 60) {
+		if (stat(canary_filename, &canary_stat) || now.tv_sec > canary_stat.st_mtime + 60) {
 			ast_log(LOG_WARNING,
 				"The canary is no more.  He has ceased to be!  "
 				"He's expired and gone to meet his maker!  "

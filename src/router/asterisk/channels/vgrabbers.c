@@ -17,7 +17,7 @@
 /*
  * Video grabbers used in console_video.
  *
- * $Revision: 130733 $
+ * $Revision: 369001 $
  *
  * Each grabber is implemented through open/read/close calls,
  * plus an additional move() function used e.g. to change origin
@@ -44,8 +44,12 @@
  *                        `->--[enc_out]
  */
 
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
+
 #include "asterisk.h"
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 130733 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 #include <sys/ioctl.h>
 #include "asterisk/file.h"
 #include "asterisk/utils.h"	/* ast_calloc */

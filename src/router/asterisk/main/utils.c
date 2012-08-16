@@ -23,9 +23,13 @@
  * Please consult the CODING GUIDELINES for more information.
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 360466 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include <ctype.h>
 #include <sys/stat.h>
@@ -1754,8 +1758,6 @@ void __ast_string_field_ptr_build_va(struct ast_string_field_mgr *mgr,
 	}
 
 	needed = vsnprintf(target, available, format, ap1) + 1;
-
-	va_end(ap1);
 
 	if (needed > available) {
 		/* the allocation could not be satisfied using the field's current allocation

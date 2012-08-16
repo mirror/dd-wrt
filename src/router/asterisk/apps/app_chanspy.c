@@ -35,7 +35,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 352955 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 366048 $")
 
 #include <ctype.h>
 #include <errno.h>
@@ -526,7 +526,8 @@ static int channel_spy(struct ast_channel *chan, struct ast_autochan *spyee_auto
 
 	/* We now hold the channel lock on spyee */
 
-	if (ast_check_hangup(chan) || ast_check_hangup(spyee_autochan->chan)) {
+	if (ast_check_hangup(chan) || ast_check_hangup(spyee_autochan->chan) ||
+			ast_test_flag(spyee_autochan->chan, AST_FLAG_ZOMBIE)) {
 		return 0;
 	}
 
@@ -745,8 +746,10 @@ redo:
 	}
 
 	if (!strncmp(next->name, "DAHDI/pseudo", pseudo_len)) {
+		ast_channel_unref(next);
 		goto redo;
 	} else if (next == chan) {
+		ast_channel_unref(next);
 		goto redo;
 	}
 
@@ -762,13 +765,10 @@ static int common_exec(struct ast_channel *chan, struct ast_flags *flags,
 	const char *context, const char *mailbox, const char *name_context)
 {
 	char nameprefix[AST_NAME_STRLEN];
-	char peer_name[AST_NAME_STRLEN + 5];
 	char exitcontext[AST_MAX_CONTEXT] = "";
 	signed char zero_volume = 0;
 	int waitms;
 	int res;
-	char *ptr;
-	int num;
 	int num_spyed_upon = 1;
 	struct ast_channel_iterator *iter = NULL;
 
@@ -858,7 +858,6 @@ static int common_exec(struct ast_channel *chan, struct ast_flags *flags,
 				next_channel(iter, autochan, chan), next_autochan = NULL) {
 			int igrp = !mygroup;
 			int ienf = !myenforced;
-			char *s;
 
 			if (autochan->chan == prev) {
 				ast_autochan_destroy(autochan);
@@ -943,22 +942,34 @@ static int common_exec(struct ast_channel *chan, struct ast_flags *flags,
 				continue;
 			}
 
-			strcpy(peer_name, "spy-");
-			strncat(peer_name, autochan->chan->name, AST_NAME_STRLEN - 4 - 1);
-			ptr = strchr(peer_name, '/');
-			*ptr++ = '\0';
-			ptr = strsep(&ptr, "-");
-
-			for (s = peer_name; s < ptr; s++)
-				*s = tolower(*s);
 
 			if (!ast_test_flag(flags, OPTION_QUIET)) {
+				char peer_name[AST_NAME_STRLEN + 5];
+				char *ptr, *s;
+
+				strcpy(peer_name, "spy-");
+				strncat(peer_name, autochan->chan->name, AST_NAME_STRLEN - 4 - 1);
+				if ((ptr = strchr(peer_name, '/'))) {
+					*ptr++ = '\0';
+					for (s = peer_name; s < ptr; s++) {
+						*s = tolower(*s);
+					}
+					if ((s = strchr(ptr, '-'))) {
+						*s = '\0';
+					}
+				}
+
 				if (ast_test_flag(flags, OPTION_NAME)) {
 					const char *local_context = S_OR(name_context, "default");
 					const char *local_mailbox = S_OR(mailbox, ptr);
-					res = ast_app_sayname(chan, local_mailbox, local_context);
+					if (local_mailbox) {
+						res = ast_app_sayname(chan, local_mailbox, local_context);
+					} else {
+						res = -1;
+					}
 				}
 				if (!ast_test_flag(flags, OPTION_NAME) || res < 0) {
+					int num;
 					if (!ast_test_flag(flags, OPTION_NOTECH)) {
 						if (ast_fileexists(peer_name, NULL, NULL) > 0) {
 							res = ast_streamfile(chan, peer_name, chan->language);
@@ -973,8 +984,9 @@ static int common_exec(struct ast_channel *chan, struct ast_flags *flags,
 							res = ast_say_character_str(chan, peer_name, "", chan->language);
 						}
 					}
-					if ((num = atoi(ptr)))
-						ast_say_digits(chan, atoi(ptr), "", chan->language);
+					if (ptr && (num = atoi(ptr))) {
+						ast_say_digits(chan, num, "", chan->language);
+					}
 				}
 			}
 
@@ -1074,7 +1086,7 @@ static int chanspy_exec(struct ast_channel *chan, const char *data)
 			if (strchr("0123456789*#", tmp) && tmp != '\0') {
 				user_options.exit = tmp;
 			} else {
-				ast_log(LOG_NOTICE, "Argument for option 'x' must be a valid DTMF digit.");
+				ast_log(LOG_NOTICE, "Argument for option 'x' must be a valid DTMF digit.\n");
 			}
 		}
 
@@ -1083,7 +1095,7 @@ static int chanspy_exec(struct ast_channel *chan, const char *data)
 			if (strchr("0123456789*#", tmp) && tmp != '\0') {
 				user_options.cycle = tmp;
 			} else {
-				ast_log(LOG_NOTICE, "Argument for option 'c' must be a valid DTMF digit.");
+				ast_log(LOG_NOTICE, "Argument for option 'c' must be a valid DTMF digit.\n");
 			}
 		}
 
@@ -1199,7 +1211,7 @@ static int extenspy_exec(struct ast_channel *chan, const char *data)
 			if (strchr("0123456789*#", tmp) && tmp != '\0') {
 				user_options.exit = tmp;
 			} else {
-				ast_log(LOG_NOTICE, "Argument for option 'x' must be a valid DTMF digit.");
+				ast_log(LOG_NOTICE, "Argument for option 'x' must be a valid DTMF digit.\n");
 			}
 		}
 
@@ -1208,7 +1220,7 @@ static int extenspy_exec(struct ast_channel *chan, const char *data)
 			if (strchr("0123456789*#", tmp) && tmp != '\0') {
 				user_options.cycle = tmp;
 			} else {
-				ast_log(LOG_NOTICE, "Argument for option 'c' must be a valid DTMF digit.");
+				ast_log(LOG_NOTICE, "Argument for option 'c' must be a valid DTMF digit.\n");
 			}
 		}
 
@@ -1238,6 +1250,7 @@ static int extenspy_exec(struct ast_channel *chan, const char *data)
 		}
 
 	} else {
+		/* Coverity - This uninit_use should be ignored since this macro initializes the flags */
 		ast_clear_flag(&flags, AST_FLAGS_ALL);
 	}
 
@@ -1282,6 +1295,7 @@ static int dahdiscan_exec(struct ast_channel *chan, const char *data)
 	int res;
 	char *mygroup = NULL;
 
+	/* Coverity - This uninit_use should be ignored since this macro initializes the flags */
 	ast_clear_flag(&flags, AST_FLAGS_ALL);
 
 	if (!ast_strlen_zero(data)) {

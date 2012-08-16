@@ -23,9 +23,13 @@
  * \author Russell Bryant <russell@digium.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 335497 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include "asterisk/_private.h"
 
@@ -411,8 +415,16 @@ static int match_sub_ie_val_to_event(const struct ast_event_ie_val *sub_ie_val, 
 		res = (sub_ie_val->payload.uint & event_ie_val->payload.uint);
 		break;
 	case AST_EVENT_IE_PLTYPE_STR:
-		res = !strcmp(sub_ie_val->payload.str, event_ie_val->payload.str);
+	{
+		const char *substr = sub_ie_val->payload.str;
+		const char *estr = event_ie_val->payload.str;
+		if (sub_ie_val->ie_type == AST_EVENT_IE_DEVICE) {
+			substr = ast_tech_to_upper(ast_strdupa(substr));
+			estr = ast_tech_to_upper(ast_strdupa(estr));
+		}
+		res = !strcmp(substr, estr);
 		break;
+	}
 	case AST_EVENT_IE_PLTYPE_RAW:
 		res = (sub_ie_val->raw_datalen == event_ie_val->raw_datalen
 			&& !memcmp(sub_ie_val->payload.raw, event_ie_val->payload.raw,
@@ -576,8 +588,19 @@ static int match_ie_val(const struct ast_event *event,
 		}
 
 		str = event2 ? ast_event_get_ie_str(event2, ie_val->ie_type) : ie_val->payload.str;
-		if (str && !strcmp(str, ast_event_get_ie_str(event, ie_val->ie_type))) {
-			return 1;
+		if (str) {
+			const char *e1str, *e2str;
+			e1str = ast_event_get_ie_str(event, ie_val->ie_type);
+			e2str = str;
+
+			if (ie_val->ie_type == AST_EVENT_IE_DEVICE) {
+				e1str = ast_tech_to_upper(ast_strdupa(e1str));
+				e2str = ast_tech_to_upper(ast_strdupa(e2str));
+			}
+
+			if (!strcmp(e1str, e2str)) {
+				return 1;
+			}
 		}
 
 		return 0;
@@ -820,7 +843,13 @@ int ast_event_sub_append_ie_str(struct ast_event_sub *sub,
 		return -1;
 	}
 
-	ie_val->payload.hash = ast_str_hash(str);
+	if (ie_type == AST_EVENT_IE_DEVICE) {
+		char *uppertech = ast_strdupa(str);
+		ast_tech_to_upper(uppertech);
+		ie_val->payload.hash = ast_str_hash(uppertech);
+	} else {
+		ie_val->payload.hash = ast_str_hash(str);
+	}
 
 	AST_LIST_INSERT_TAIL(&sub->ie_vals, ie_val, entry);
 
@@ -1116,7 +1145,13 @@ int ast_event_append_ie_str(struct ast_event **event, enum ast_event_ie_type ie_
 	str_payload = alloca(payload_len);
 
 	strcpy(str_payload->str, str);
-	str_payload->hash = ast_str_hash(str);
+	if (ie_type == AST_EVENT_IE_DEVICE) {
+		char *uppertech = ast_strdupa(str);
+		ast_tech_to_upper(uppertech);
+		str_payload->hash = ast_str_hash(uppertech);
+	} else {
+		str_payload->hash = ast_str_hash(str);
+	}
 
 	return ast_event_append_ie_raw(event, ie_type, str_payload, payload_len);
 }
@@ -1250,8 +1285,9 @@ struct ast_event *ast_event_new(enum ast_event_type type, ...)
 			break;
 		}
 
+		/* realloc inside one of the append functions failed */
 		if (!event) {
-			break;
+			return NULL;
 		}
 	}
 

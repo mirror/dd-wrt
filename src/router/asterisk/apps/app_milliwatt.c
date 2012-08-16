@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 360466 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 361142 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -117,9 +117,9 @@ static int milliwatt_generate(struct ast_channel *chan, void *data, int len, int
 }
 
 static struct ast_generator milliwattgen = {
-	alloc: milliwatt_alloc,
-	release: milliwatt_release,
-	generate: milliwatt_generate,
+	.alloc = milliwatt_alloc,
+	.release = milliwatt_release,
+	.generate = milliwatt_generate,
 };
 
 static int old_milliwatt_exec(struct ast_channel *chan)

@@ -23,9 +23,13 @@
  * \author Mark Michelson <mmichelson@digium.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 268894 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include "asterisk/global_datastores.h"
 #include "asterisk/linkedlists.h"

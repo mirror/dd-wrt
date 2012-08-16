@@ -62,7 +62,6 @@ export ASTCONFPATH
 export ASTKEYDIR
 
 export OSARCH			# Operating system
-export PROC			# Processor type
 
 export NOISY_BUILD		# Used in Makefile.rules
 export MENUSELECT_CFLAGS	# Options selected in menuselect.
@@ -161,39 +160,6 @@ OTHER_SUBDIR_CFLAGS="-I$(ASTTOPDIR)/include"
 # Create OPTIONS variable, but probably we can assign directly to ASTCFLAGS
 OPTIONS=
 
-ifeq ($(OSARCH),linux-gnu)
-  ifeq ($(PROC),x86_64)
-    # You must have GCC 3.4 to use k8, otherwise use athlon
-    PROC=k8
-    #PROC=athlon
-  endif
-
-  ifeq ($(PROC),sparc64)
-    #The problem with sparc is the best stuff is in newer versions of gcc (post 3.0) only.
-    #This works for even old (2.96) versions of gcc and provides a small boost either way.
-    #A ultrasparc cpu is really v9 but the stock debian stable 3.0 gcc doesn't support it.
-    #So we go lowest common available by gcc and go a step down, still a step up from
-    #the default as we now have a better instruction set to work with. - Belgarath
-    PROC=ultrasparc
-    OPTIONS+=$(shell if $(CC) -mtune=$(PROC) -S -o /dev/null -xc /dev/null >/dev/null 2>&1; then echo "-mtune=$(PROC)"; fi)
-    OPTIONS+=$(shell if $(CC) -mcpu=v8 -S -o /dev/null -xc /dev/null >/dev/null 2>&1; then echo "-mcpu=v8"; fi)
-    OPTIONS+=-fomit-frame-pointer
-  endif
-
-  ifeq ($(PROC),arm)
-    # The Cirrus logic is the only heavily shipping arm processor with a real floating point unit
-    ifeq ($(SUB_PROC),maverick)
-      OPTIONS+=-fsigned-char -mcpu=ep9312
-    else
-      ifeq ($(SUB_PROC),xscale)
-        OPTIONS+=-fsigned-char -mcpu=xscale
-      else
-        OPTIONS+=-fsigned-char 
-      endif
-    endif
-  endif
-endif
-
 ifeq ($(findstring -save-temps,$(_ASTCFLAGS) $(ASTCFLAGS)),)
   ifeq ($(findstring -pipe,$(_ASTCFLAGS) $(ASTCFLAGS)),)
     _ASTCFLAGS+=-pipe
@@ -220,20 +186,7 @@ ifneq ($(findstring BSD,$(OSARCH)),)
   _ASTCFLAGS+=-isystem /usr/local/include
 endif
 
-ifeq ($(findstring -march,$(_ASTCFLAGS) $(ASTCFLAGS)),)
-  ifneq ($(PROC),ultrasparc)
-    _ASTCFLAGS+=$(shell if $(CC) -march=$(PROC) -S -o /dev/null -xc /dev/null >/dev/null 2>&1; then echo "-march=$(PROC)"; fi)
-  endif
-endif
-
-ifeq ($(PROC),ppc)
-  _ASTCFLAGS+=-fsigned-char
-endif
-
 ifeq ($(OSARCH),FreeBSD)
-  ifeq ($(PROC),i386)
-    _ASTCFLAGS+=-march=i686
-  endif
   # -V is understood by BSD Make, not by GNU make.
   BSDVERSION=$(shell make -V OSVERSION -f /usr/share/mk/bsd.port.subdir.mk)
   _ASTCFLAGS+=$(shell if test $(BSDVERSION) -lt 500016 ; then echo "-D_THREAD_SAFE"; fi)
@@ -513,39 +466,23 @@ update:
 
 NEWHEADERS=$(notdir $(wildcard include/asterisk/*.h))
 OLDHEADERS=$(filter-out $(NEWHEADERS) $(notdir $(DESTDIR)$(ASTHEADERDIR)),$(notdir $(wildcard $(DESTDIR)$(ASTHEADERDIR)/*.h)))
+INSTALLDIRS="$(ASTLIBDIR)" "$(MODULES_DIR)" "$(ASTSBINDIR)" "$(ASTETCDIR)" "$(ASTVARRUNDIR)" \
+	"$(ASTSPOOLDIR)" "$(ASTSPOOLDIR)/dictate" "$(ASTSPOOLDIR)/meetme" \
+	"$(ASTSPOOLDIR)/monitor" "$(ASTSPOOLDIR)/system" "$(ASTSPOOLDIR)/tmp" \
+	"$(ASTSPOOLDIR)/voicemail" "$(ASTHEADERDIR)" "$(ASTHEADERDIR)/doxygen" \
+	"$(ASTLOGDIR)" "$(ASTLOGDIR)/cdr-csv" "$(ASTLOGDIR)/cdr-custom" \
+	"$(ASTLOGDIR)/cel-custom" "$(ASTDATADIR)" "$(ASTDATADIR)/documentation" \
+	"$(ASTDATADIR)/documentation/thirdparty" "$(ASTDATADIR)/firmware" \
+	"$(ASTDATADIR)/firmware/iax" "$(ASTDATADIR)/images" "$(ASTDATADIR)/keys" \
+	"$(ASTDATADIR)/phoneprov" "$(ASTDATADIR)/static-http" "$(ASTDATADIR)/sounds" \
+	"$(ASTDATADIR)/moh" "$(ASTMANDIR)/man8" "$(AGI_DIR)" "$(ASTDBDIR)"
 
 installdirs:
-	$(INSTALL) -d "$(DESTDIR)$(MODULES_DIR)"
-	$(INSTALL) -d "$(DESTDIR)$(ASTSBINDIR)"
-	$(INSTALL) -d "$(DESTDIR)$(ASTETCDIR)"
-	$(INSTALL) -d "$(DESTDIR)$(ASTVARRUNDIR)"
-	$(INSTALL) -d "$(DESTDIR)$(ASTSPOOLDIR)"
-	$(INSTALL) -d "$(DESTDIR)$(ASTSPOOLDIR)/dictate"
-	$(INSTALL) -d "$(DESTDIR)$(ASTSPOOLDIR)/meetme"
-	$(INSTALL) -d "$(DESTDIR)$(ASTSPOOLDIR)/monitor"
-	$(INSTALL) -d "$(DESTDIR)$(ASTSPOOLDIR)/system"
-	$(INSTALL) -d "$(DESTDIR)$(ASTSPOOLDIR)/tmp"
-	$(INSTALL) -d "$(DESTDIR)$(ASTSPOOLDIR)/voicemail"
-	$(INSTALL) -d "$(DESTDIR)$(ASTHEADERDIR)"
-	$(INSTALL) -d "$(DESTDIR)$(ASTHEADERDIR)/doxygen"
-	$(INSTALL) -d "$(DESTDIR)$(ASTLOGDIR)"
-	$(INSTALL) -d "$(DESTDIR)$(ASTLOGDIR)/cdr-csv"
-	$(INSTALL) -d "$(DESTDIR)$(ASTLOGDIR)/cdr-custom"
-	$(INSTALL) -d "$(DESTDIR)$(ASTLOGDIR)/cel-custom"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)/documentation"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)/documentation/thirdparty"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)/firmware"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)/firmware/iax"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)/images"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)/keys"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)/phoneprov"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)/static-http"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)/sounds"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDATADIR)/moh"
-	$(INSTALL) -d "$(DESTDIR)$(ASTMANDIR)/man8"
-	$(INSTALL) -d "$(DESTDIR)$(AGI_DIR)"
-	$(INSTALL) -d "$(DESTDIR)$(ASTDBDIR)"
+	@for i in $(INSTALLDIRS); do \
+		if [ ! -z "$${i}" -a ! -d "$(DESTDIR)$${i}" ]; then \
+			$(INSTALL) -d "$(DESTDIR)$${i}"; \
+		fi; \
+	done
 
 bininstall: _all installdirs $(SUBDIRS_INSTALL)
 	$(INSTALL) -m 755 main/asterisk "$(DESTDIR)$(ASTSBINDIR)/"
