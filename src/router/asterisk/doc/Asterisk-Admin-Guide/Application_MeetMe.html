@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Application_MeetMe</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Application_MeetMe
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Mar 30, 2011 by <font color="#0050B2">wikibot</font>.
+				    </div>
+
+				    <h1><a name="Application_MeetMe-MeetMe%28%29"></a>MeetMe()</h1>
+
+<h3><a name="Application_MeetMe-Synopsis"></a>Synopsis</h3>
+<p>MeetMe conference bridge.</p>
+
+<h3><a name="Application_MeetMe-Description"></a>Description</h3>
+<p>Enters the user into a specified MeetMe conference. If the <em>confno</em> is omitted, the user will be prompted to enter one. User can exit the conference by hangup, or if the <tt>p</tt> option is specified, by pressing <tt>#</tt>. </p>
+
+<p>The DAHDI kernel modules and at least one hardware driver (or dahdi_dummy) must be present for conferencing to operate properly. In addition, the chan_dahdi channel driver must be loaded for the The DAHDI kernel modules and at least one hardware driver (or dahdi_dummy) must be present for conferencing to operate properly. In addition, the chan_dahdi channel driver must be loaded for the <tt>i</tt> and <tt>r</tt> options to operate at all.</p>
+
+<h3><a name="Application_MeetMe-Syntax"></a>Syntax</h3>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>MeetMe([confno[,options[,pin]]])</pre>
+</div></div>
+
+<h5><a name="Application_MeetMe-Arguments"></a>Arguments</h5>
+
+<ul>
+	<li><tt>confno</tt> - The conference number</li>
+	<li><tt>options</tt>
+	<ul>
+		<li><tt>a</tt> - Set admin mode.</li>
+		<li><tt>A</tt> - Set marked mode.</li>
+		<li><tt>b</tt> - Run AGI script specified in <tt>MEETME_AGI_BACKGROUND</tt> Default:<br/>
+<tt>conf-background.agi</tt>. This does not work with non-DAHDI channels in the same conference).This does not work with non-DAHDI channels in the same conference).</li>
+		<li><tt>c</tt> - Announce user(s) count on joining a conference.</li>
+		<li><tt>C</tt> - Continue in dialplan when kicked out of conference.</li>
+		<li><tt>d</tt> - Dynamically add conference.</li>
+		<li><tt>D</tt> - Dynamically add conference, prompting for a PIN.</li>
+		<li><tt>e</tt> - Select an empty conference.</li>
+		<li><tt>E</tt> - Select an empty pinless conference.</li>
+		<li><tt>F</tt> - Pass DTMF through the conference.</li>
+		<li><tt>G</tt> - Play an intro announcement in conference.
+		<ul>
+			<li><tt>x</tt> - The file to playback</li>
+		</ul>
+		</li>
+		<li><tt>i</tt> - Announce user join/leave with review.</li>
+		<li><tt>I</tt> - Announce user join/leave without review.</li>
+		<li><tt>l</tt> - Set listen only mode (Listen only, no talking).</li>
+		<li><tt>m</tt> - Set initially muted.</li>
+		<li><tt>M</tt> - Enable music on hold when the conference has a single caller. Optionally, specify a musiconhold class to use. If one is not provided, it will use the channel's currently set music class, or <tt>default</tt>.
+		<ul>
+			<li><tt>class</tt></li>
+		</ul>
+		</li>
+		<li><tt>o</tt> - Set talker optimization - treats talkers who aren't speaking as being muted, meaning (a) No encode is done on transmission and (b) Received audio that is not registered as talking is omitted causing no buildup in background noise.</li>
+		<li><tt>p</tt> - Allow user to exit the conference by pressing <tt>#</tt> (default) or any of the defined keys. If keys contain <tt>*</tt> this will override option <tt>s</tt>. The key used is set to channel variable <tt>MEETME_EXIT_KEY</tt>.
+		<ul>
+			<li><tt>keys</tt></li>
+		</ul>
+		</li>
+		<li><tt>P</tt> - Always prompt for the pin even if it is specified.</li>
+		<li><tt>q</tt> - Quiet mode (don't play enter/leave sounds).</li>
+		<li><tt>r</tt> - Record conference (records as <tt>MEETME_RECORDINGFILE</tt> using format <tt>MEETME_RECORDINGFORMAT</tt>. Default filename is <tt>meetme-conf-rec-${CONFNO}-${UNIQUEID</tt>} and the default format is wav.</li>
+		<li><tt>s</tt> - Present menu (user or admin) when <tt>*</tt> is received (send to menu).</li>
+		<li><tt>t</tt> - Set talk only mode. (Talk only, no listening).</li>
+		<li><tt>T</tt> - Set talker detection (sent to manager interface and meetme list).</li>
+		<li><tt>w</tt> - Wait until the marked user enters the conference.
+		<ul>
+			<li><tt>secs</tt></li>
+		</ul>
+		</li>
+		<li><tt>x</tt> - Close the conference when last marked user exits</li>
+		<li><tt>X</tt> - Allow user to exit the conference by entering a valid single digit extension <tt>MEETME_EXIT_CONTEXT</tt> or the current context if that variable is not defined.</li>
+		<li><tt>1</tt> - Do not play message when first person enters</li>
+		<li><tt>S</tt> - Kick the user <em>x</em> seconds <b>after</b> he entered into the conference.
+		<ul>
+			<li><tt>x</tt></li>
+		</ul>
+		</li>
+		<li><tt>L</tt> - Limit the conference to <em>x</em> ms. Play a warning when <em>y</em> ms are left. Repeat the warning every <em>z</em> ms. The following special variables can be used with this option: File to play when time is up. File to play as warning if <em>y</em> is defined. The default is to say the time remaining.
+		<ul>
+			<li><tt>x</tt></li>
+			<li><tt>y</tt></li>
+			<li><tt>z</tt></li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+	<li><tt>pin</tt></li>
+</ul>
+
+
+
+<h3><a name="Application_MeetMe-SeeAlso"></a>See Also</h3>
+
+<p><a href="Application_MeetMeCount.html" title="Application_MeetMeCount">Application&#95;MeetMeCount</a><br/>
+<a href="Application_MeetMeAdmin.html" title="Application_MeetMeAdmin">Application&#95;MeetMeAdmin</a><br/>
+<a href="Application_MeetMeChannelAdmin.html" title="Application_MeetMeChannelAdmin">Application&#95;MeetMeChannelAdmin</a></p>
+
+
+<h3><a name="Application_MeetMe-ImportVersion"></a>Import Version</h3>
+<p>This documentation was imported from Asterisk version SVN-branch-1.8-r311874.</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Oct 04, 2011 12:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>
