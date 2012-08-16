@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Function_FILE</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Function_FILE
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Mar 30, 2011 by <font color="#0050B2">wikibot</font>.
+				    </div>
+
+				    <h1><a name="Function_FILE-FILE%28%29"></a>FILE()</h1>
+
+<h3><a name="Function_FILE-Synopsis"></a>Synopsis</h3>
+<p>Read or write text file.</p>
+
+<h3><a name="Function_FILE-Description"></a>Description</h3>
+<p>Read and write text file in character and line mode. </p>
+
+<p>Examples: </p>
+
+<p>Read mode (byte): </p>
+
+<p> ;reads the entire content of the file. </p>
+
+<p> Set(foo=${FILE(/tmp/test.txt)}) </p>
+
+<p> ;reads from the 11th byte to the end of the file (i.e. skips the first 10). </p>
+
+<p> Set(foo=${FILE(/tmp/test.txt,10)}) </p>
+
+<p> ;reads from the 11th to 20th byte in the file (i.e. skip the first 10, then read 10 bytes). </p>
+
+<p> Set(foo=${FILE(/tmp/test.txt,10,10)}) </p>
+
+<p>Read mode (line): </p>
+
+<p> ; reads the 3rd line of the file. </p>
+
+<p> Set(foo=${FILE(/tmp/test.txt,3,1,l)}) </p>
+
+<p> ; reads the 3rd and 4th lines of the file. </p>
+
+<p> Set(foo=${FILE(/tmp/test.txt,3,2,l)}) </p>
+
+<p> ; reads from the third line to the end of the file. </p>
+
+<p> Set(foo=${FILE(/tmp/test.txt,3,,l)}) </p>
+
+<p> ; reads the last three lines of the file. </p>
+
+<p> Set(foo=${FILE(/tmp/test.txt,-3,,l)}) </p>
+
+<p> ; reads the 3rd line of a DOS-formatted file. </p>
+
+<p> Set(foo=${FILE(/tmp/test.txt,3,1,l,d)}) </p>
+
+<p>Write mode (byte): </p>
+
+<p> ; truncate the file and write "bar" </p>
+
+<p> Set(FILE(/tmp/test.txt)=bar) </p>
+
+<p> ; Append "bar" </p>
+
+<p> Set(FILE(/tmp/test.txt,,,a)=bar) </p>
+
+<p> ; Replace the first byte with "bar" (replaces 1 character with 3) </p>
+
+<p> Set(FILE(/tmp/test.txt,0,1)=bar) </p>
+
+<p> ; Replace 10 bytes beginning at the 21st byte of the file with "bar" </p>
+
+<p> Set(FILE(/tmp/test.txt,20,10)=bar) </p>
+
+<p> ; Replace all bytes from the 21st with "bar" </p>
+
+<p> Set(FILE(/tmp/test.txt,20)=bar) </p>
+
+<p> ; Insert "bar" after the 4th character </p>
+
+<p> Set(FILE(/tmp/test.txt,4,0)=bar) </p>
+
+<p>Write mode (line): </p>
+
+<p> ; Replace the first line of the file with "bar" </p>
+
+<p> Set(FILE(/tmp/foo.txt,0,1,l)=bar) </p>
+
+<p> ; Replace the last line of the file with "bar" </p>
+
+<p> Set(FILE(/tmp/foo.txt,-1,,l)=bar) </p>
+
+<p> ; Append "bar" to the file with a newline </p>
+
+<p> Set(FILE(/tmp/foo.txt,,,al)=bar)</p>
+
+<h3><a name="Function_FILE-Syntax"></a>Syntax</h3>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>FILE(filename[,offset[,length[,options[,format]]]])</pre>
+</div></div>
+
+<h5><a name="Function_FILE-Arguments"></a>Arguments</h5>
+<ul>
+	<li><tt>filename</tt></li>
+	<li><tt>offset</tt> - Maybe specified as any number. If negative, <em>offset</em> specifies the number of bytes back from the end of the file.</li>
+	<li><tt>length</tt> - If specified, will limit the length of the data read to that size. If negative, trims <em>length</em> bytes from the end of the file.</li>
+	<li><tt>options</tt>
+	<ul>
+		<li><tt>l</tt> - Line mode: offset and length are assumed to be measured in lines, instead of byte offsets.</li>
+		<li><tt>a</tt> - In write mode only, the append option is used to append to the end of the file, instead of overwriting the existing file.</li>
+		<li><tt>d</tt> - In write mode and line mode only, this option does not automatically append a newline string to the end of a value. This is useful for deleting lines, instead of setting them to blank.</li>
+	</ul>
+	</li>
+	<li><tt>format</tt> - The <em>format</em> parameter may be used to delimit the type of line terminators in line mode.
+	<ul>
+		<li><tt>u</tt> - Unix newline format.</li>
+		<li><tt>d</tt> - DOS newline format.</li>
+		<li><tt>m</tt> - Macintosh newline format.</li>
+	</ul>
+	</li>
+</ul>
+
+
+
+<h3><a name="Function_FILE-SeeAlso"></a>See Also</h3>
+<p><a href="Function_FILE_COUNT_LINE.html" title="Function_FILE_COUNT_LINE">Function&#95;FILE&#95;COUNT&#95;LINE</a><br/>
+<a href="Function_FILE_FORMAT.html" title="Function_FILE_FORMAT">Function&#95;FILE&#95;FORMAT</a></p>
+
+
+<h3><a name="Function_FILE-ImportVersion"></a>Import Version</h3>
+<p>This documentation was imported from Asterisk version SVN-branch-1.8-r311874.</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Oct 04, 2011 12:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>
