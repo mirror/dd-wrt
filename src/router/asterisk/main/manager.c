@@ -47,7 +47,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 363208 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368039 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use various ast_config_AST_* */
@@ -3617,7 +3617,7 @@ static int action_command(struct mansession *s, const struct message *m)
 {
 	const char *cmd = astman_get_header(m, "Command");
 	const char *id = astman_get_header(m, "ActionID");
-	char *buf, *final_buf;
+	char *buf = NULL, *final_buf = NULL;
 	char template[] = "/tmp/ast-ami-XXXXXX";	/* template for temporary file */
 	int fd;
 	off_t l;
@@ -3632,7 +3632,11 @@ static int action_command(struct mansession *s, const struct message *m)
 		return 0;
 	}
 
-	fd = mkstemp(template);
+	if ((fd = mkstemp(template)) < 0) {
+		ast_log(AST_LOG_WARNING, "Failed to create temporary file for command: %s\n", strerror(errno));
+		astman_send_error(s, m, "Command response construction error");
+		return 0;
+	}
 
 	astman_append(s, "Response: Follows\r\nPrivilege: Command\r\n");
 	if (!ast_strlen_zero(id)) {
@@ -3640,30 +3644,45 @@ static int action_command(struct mansession *s, const struct message *m)
 	}
 	/* FIXME: Wedge a ActionID response in here, waiting for later changes */
 	ast_cli_command(fd, cmd);	/* XXX need to change this to use a FILE * */
-	l = lseek(fd, 0, SEEK_END);	/* how many chars available */
+	/* Determine number of characters available */
+	if ((l = lseek(fd, 0, SEEK_END)) < 0) {
+		ast_log(LOG_WARNING, "Failed to determine number of characters for command: %s\n", strerror(errno));
+		goto action_command_cleanup;
+	}
 
 	/* This has a potential to overflow the stack.  Hence, use the heap. */
-	buf = ast_calloc(1, l + 1);
-	final_buf = ast_calloc(1, l + 1);
-	if (buf) {
-		lseek(fd, 0, SEEK_SET);
-		if (read(fd, buf, l) < 0) {
-			ast_log(LOG_WARNING, "read() failed: %s\n", strerror(errno));
-		}
-		buf[l] = '\0';
-		if (final_buf) {
-			term_strip(final_buf, buf, l);
-			final_buf[l] = '\0';
-		}
-		astman_append(s, "%s", S_OR(final_buf, buf));
-		ast_free(buf);
+	buf = ast_malloc(l + 1);
+	final_buf = ast_malloc(l + 1);
+
+	if (!buf || !final_buf) {
+		ast_log(LOG_WARNING, "Failed to allocate memory for temporary buffer\n");
+		goto action_command_cleanup;
 	}
+
+	if (lseek(fd, 0, SEEK_SET) < 0) {
+		ast_log(LOG_WARNING, "Failed to set position on temporary file for command: %s\n", strerror(errno));
+		goto action_command_cleanup;
+	}
+
+	if (read(fd, buf, l) < 0) {
+		ast_log(LOG_WARNING, "read() failed: %s\n", strerror(errno));
+		goto action_command_cleanup;
+	}
+
+	buf[l] = '\0';
+	term_strip(final_buf, buf, l);
+	final_buf[l] = '\0';
+	astman_append(s, "%s", final_buf);
+
+action_command_cleanup:
+
 	close(fd);
 	unlink(template);
 	astman_append(s, "--END COMMAND--\r\n\r\n");
-	if (final_buf) {
-		ast_free(final_buf);
-	}
+
+	ast_free(buf);
+	ast_free(final_buf);
+
 	return 0;
 }
 
@@ -4051,7 +4070,7 @@ static int action_originate(struct mansession *s, const struct message *m)
 		format = 0;
 		ast_parse_allow_disallow(NULL, &format, codecs, 1);
 	}
-	if (!ast_strlen_zero(app)) {
+	if (!ast_strlen_zero(app) && s->session) {
 		int bad_appdata = 0;
 		/* To run the System application (or anything else that goes to
 		 * shell), you must have the additional System privilege */
@@ -4416,10 +4435,22 @@ static int action_reload(struct mansession *s, const struct message *m)
 	const char *module = astman_get_header(m, "Module");
 	int res = ast_module_reload(S_OR(module, NULL));
 
-	if (res == 2) {
+	switch (res) {
+	case -1:
+		astman_send_error(s, m, "A reload is in progress");
+		break;
+	case 0:
+		astman_send_error(s, m, "No such module");
+		break;
+	case 1:
+		astman_send_error(s, m, "Module does not support reload");
+		break;
+	case 2:
 		astman_send_ack(s, m, "Module Reloaded");
-	} else {
-		astman_send_error(s, m, s == 0 ? "No such module" : "Module does not support reload");
+		break;
+	default:
+		astman_send_error(s, m, "An unknown error occurred");
+		break;
 	}
 	return 0;
 }
@@ -5738,7 +5769,7 @@ static void process_output(struct mansession *s, struct ast_str **out, struct as
 	fprintf(s->f, "%c", 0);
 	fflush(s->f);
 
-	if ((l = ftell(s->f))) {
+	if ((l = ftell(s->f)) > 0) {
 		if (MAP_FAILED == (buf = mmap(NULL, l, PROT_READ | PROT_WRITE, MAP_PRIVATE, s->fd, 0))) {
 			ast_log(LOG_WARNING, "mmap failed.  Manager output was not processed\n");
 		} else {
@@ -5753,10 +5784,20 @@ static void process_output(struct mansession *s, struct ast_str **out, struct as
 		xml_translate(out, "", params, format);
 	}
 
-	fclose(s->f);
-	s->f = NULL;
-	close(s->fd);
-	s->fd = -1;
+	if (s->f) {
+		if (fclose(s->f)) {
+			ast_log(LOG_ERROR, "fclose() failed: %s\n", strerror(errno));
+		}
+		s->f = NULL;
+		s->fd = -1;
+	} else if (s->fd != -1) {
+		if (close(s->fd)) {
+			ast_log(LOG_ERROR, "close() failed: %s\n", strerror(errno));
+		}
+		s->fd = -1;
+	} else {
+		ast_log(LOG_ERROR, "process output attempted to close file/file descriptor on mansession without a valid file or file descriptor.\n");
+	}
 }
 
 static int generic_http_callback(struct ast_tcptls_session_instance *ser,
@@ -6078,7 +6119,7 @@ static int auth_http_callback(struct ast_tcptls_session_instance *ser,
 		ast_md5_hash(resp_hash, resp);
 	}
 
-	if (!d.nonce  || strncasecmp(d.response, resp_hash, strlen(resp_hash))) {
+	if (strncasecmp(d.response, resp_hash, strlen(resp_hash))) {
 		/* Something was wrong, so give the client to try with a new challenge */
 		AST_RWLIST_UNLOCK(&users);
 		nonce = 0;
@@ -6786,7 +6827,7 @@ static int __init_manager(int reload)
 				if (user_writetimeout) {
 					int value = atoi(user_writetimeout);
 					if (value < 100) {
-						ast_log(LOG_WARNING, "Invalid writetimeout value '%s' at users.conf line %d\n", var->value, var->lineno);
+						ast_log(LOG_WARNING, "Invalid writetimeout value '%d' in users.conf\n", value);
 					} else {
 						user->writetimeout = value;
 					}

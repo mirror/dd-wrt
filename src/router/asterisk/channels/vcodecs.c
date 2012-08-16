@@ -16,8 +16,12 @@
 
 /*
  * Video codecs support for console_video.c
- * $Revision: 196072 $
+ * $Revision: 369001 $
  */
+
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
 
 #include "asterisk.h"
 #include "console_video.h"

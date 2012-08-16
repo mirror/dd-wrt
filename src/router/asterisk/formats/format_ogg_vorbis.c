@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 355608 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 361471 $")
 
 #include <vorbis/codec.h>
 #include <vorbis/vorbisenc.h>
@@ -305,7 +305,7 @@ static struct ast_frame *ogg_vorbis_read(struct ast_filestream *fs,
 	long bytes_read;
 
 	if (desc->writing) {
-		ast_log(LOG_WARNING, "Reading is not suport on OGG/Vorbis on write files.");
+		ast_log(LOG_WARNING, "Reading is not suport on OGG/Vorbis on write files.\n");
 		return NULL;
 	}
 

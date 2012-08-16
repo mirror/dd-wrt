@@ -36,7 +36,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 350023 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 367906 $")
 
 #include <dahdi/user.h>
 
@@ -2135,12 +2135,12 @@ static int can_write(struct ast_channel *chan, struct ast_flags64 *confflags)
 static void send_talking_event(struct ast_channel *chan, struct ast_conference *conf, struct ast_conf_user *user, int talking)
 {
 	ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeTalking",
-	      "Channel: %s\r\n"
-	      "Uniqueid: %s\r\n"
-	      "Meetme: %s\r\n"
-	      "Usernum: %d\r\n"
-	      "Status: %s\r\n",
-	      chan->name, chan->uniqueid, conf->confno, user->user_no, talking ? "on" : "off");
+		"Channel: %s\r\n"
+		"Uniqueid: %s\r\n"
+		"Meetme: %s\r\n"
+		"Usernum: %d\r\n"
+		"Status: %s\r\n",
+		chan->name, chan->uniqueid, conf->confno, user->user_no, talking ? "on" : "off");
 }
 
 static void set_user_talking(struct ast_channel *chan, struct ast_conference *conf, struct ast_conf_user *user, int talking, int monitor)
@@ -3050,12 +3050,12 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 				}
 
 				ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeMute",
-						"Channel: %s\r\n"
-						"Uniqueid: %s\r\n"
-						"Meetme: %s\r\n"
-						"Usernum: %i\r\n"
-						"Status: on\r\n",
-						chan->name, chan->uniqueid, conf->confno, user->user_no);
+					"Channel: %s\r\n"
+					"Uniqueid: %s\r\n"
+					"Meetme: %s\r\n"
+					"Usernum: %d\r\n"
+					"Status: on\r\n",
+					chan->name, chan->uniqueid, conf->confno, user->user_no);
 			}
 
 			/* If I should be un-muted but am not talker, un-mute me */
@@ -3068,12 +3068,12 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 				}
 
 				ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeMute",
-						"Channel: %s\r\n"
-						"Uniqueid: %s\r\n"
-						"Meetme: %s\r\n"
-						"Usernum: %i\r\n"
-						"Status: off\r\n",
-						chan->name, chan->uniqueid, conf->confno, user->user_no);
+					"Channel: %s\r\n"
+					"Uniqueid: %s\r\n"
+					"Meetme: %s\r\n"
+					"Usernum: %d\r\n"
+					"Status: off\r\n",
+					chan->name, chan->uniqueid, conf->confno, user->user_no);
 			}
 			
 			if ((user->adminflags & (ADMINFLAG_MUTED | ADMINFLAG_SELFMUTED)) && 
@@ -3081,12 +3081,12 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 				talkreq_manager = 1;
 
 				ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeTalkRequest",
-					      "Channel: %s\r\n"
-							      "Uniqueid: %s\r\n"
-							      "Meetme: %s\r\n"
-							      "Usernum: %i\r\n"
-							      "Status: on\r\n",
-							      chan->name, chan->uniqueid, conf->confno, user->user_no);
+					"Channel: %s\r\n"
+					"Uniqueid: %s\r\n"
+					"Meetme: %s\r\n"
+					"Usernum: %d\r\n"
+					"Status: on\r\n",
+					chan->name, chan->uniqueid, conf->confno, user->user_no);
 			}
 
 			
@@ -3094,12 +3094,12 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 				!(user->adminflags & ADMINFLAG_T_REQUEST) && (talkreq_manager)) {
 				talkreq_manager = 0;
 				ast_manager_event(chan, EVENT_FLAG_CALL, "MeetmeTalkRequest",
-					      "Channel: %s\r\n"
-							      "Uniqueid: %s\r\n"
-							      "Meetme: %s\r\n"
-							      "Usernum: %i\r\n"
-							      "Status: off\r\n",
-							     chan->name, chan->uniqueid, conf->confno, user->user_no);
+					"Channel: %s\r\n"
+					"Uniqueid: %s\r\n"
+					"Meetme: %s\r\n"
+					"Usernum: %d\r\n"
+					"Status: off\r\n",
+					chan->name, chan->uniqueid, conf->confno, user->user_no);
 			}
 			
 			/* If I have been kicked, exit the conference */
@@ -3657,7 +3657,7 @@ static int conf_run(struct ast_channel *chan, struct ast_conference *conf, struc
 								}
 								if (musiconhold && mohtempstopped && confsilence > MEETME_DELAYDETECTENDTALK) {
 									mohtempstopped = 0;
-									ast_moh_start(chan, NULL, NULL);
+									conf_start_moh(chan, optargs[OPT_ARG_MOH_CLASS]);
 								}
 							}
 						} else {
@@ -3679,7 +3679,7 @@ bailoutandtrynormal:
 						}
 						if (musiconhold && mohtempstopped && confsilence > MEETME_DELAYDETECTENDTALK) {
 							mohtempstopped = 0;
-							ast_moh_start(chan, NULL, NULL);
+							conf_start_moh(chan, optargs[OPT_ARG_MOH_CLASS]);
 						}
 					}
 				} else {
@@ -4463,9 +4463,8 @@ static struct ast_conf_user *find_user(struct ast_conference *conf, const char *
 {
 	struct ast_conf_user *user = NULL;
 	int cid;
-	
-	sscanf(callerident, "%30i", &cid);
-	if (conf && callerident) {
+
+	if (conf && callerident && sscanf(callerident, "%30d", &cid) == 1) {
 		user = ao2_find(conf->usercontainer, &cid, 0);
 		/* reference decremented later in admin_exec */
 		return user;
@@ -4586,6 +4585,12 @@ static int admin_exec(struct ast_channel *chan, const char *data) {
 	case 101: /* e: Eject last user*/
 	{
 		int max_no = 0;
+
+		/* If they passed in a user, disregard it */
+		if (user) {
+			ao2_ref(user, -1);
+		}
+
 		ao2_callback(cnf->usercontainer, OBJ_NODATA, user_max_cmp, &max_no);
 		user = ao2_find(cnf->usercontainer, &max_no, 0);
 		if (!ast_test_flag64(&user->userflags, CONFFLAG_ADMIN))
@@ -4601,7 +4606,7 @@ static int admin_exec(struct ast_channel *chan, const char *data) {
 		user->adminflags |= ADMINFLAG_MUTED;
 		break;
 	case 78: /* N: Mute all (non-admin) users */
-		ao2_callback(cnf->usercontainer, OBJ_NODATA, user_set_muted_cb, NULL);
+		ao2_callback(cnf->usercontainer, OBJ_NODATA, user_set_muted_cb, &cnf);
 		break;					
 	case 109: /* m: Unmute */ 
 		user->adminflags &= ~(ADMINFLAG_MUTED | ADMINFLAG_SELFMUTED | ADMINFLAG_T_REQUEST);
@@ -4870,6 +4875,31 @@ static int action_meetmelist(struct mansession *s, const struct message *m)
 	return 0;
 }
 
+/*! \internal
+ * \brief creates directory structure and assigns absolute path from relative paths for filenames
+ *
+ * \param filename contains the absolute or relative path to the desired file
+ * \param buffer stores completed filename, absolutely must be a buffer of PATH_MAX length
+ */
+static void filename_parse(char *filename, char *buffer)
+{
+	char *slash;
+	if (ast_strlen_zero(filename)) {
+		ast_log(LOG_WARNING, "No file name was provided for a file save option.\n");
+	} else if (filename[0] != '/') {
+		snprintf(buffer, PATH_MAX, "%s/meetme/%s", ast_config_AST_SPOOL_DIR, filename);
+	} else {
+		ast_copy_string(buffer, filename, PATH_MAX);
+	}
+
+	slash = buffer;
+	if ((slash = strrchr(slash, '/'))) {
+		*slash = '\0';
+		ast_mkdir(buffer, 0777);
+		*slash = '/';
+	}
+}
+
 static void *recordthread(void *args)
 {
 	struct ast_conference *cnf = args;
@@ -4879,10 +4909,14 @@ static void *recordthread(void *args)
 	int res = 0;
 	int x;
 	const char *oldrecordingfilename = NULL;
+	char filename_buffer[PATH_MAX];
 
 	if (!cnf || !cnf->lchan) {
 		pthread_exit(0);
 	}
+
+	filename_buffer[0] = '\0';
+	filename_parse(cnf->recordingfilename, filename_buffer);
 
 	ast_stopstream(cnf->lchan);
 	flags = O_CREAT | O_TRUNC | O_WRONLY;
@@ -4895,9 +4929,9 @@ static void *recordthread(void *args)
 			AST_LIST_UNLOCK(&confs);
 			break;
 		}
-		if (!s && cnf->recordingfilename && (cnf->recordingfilename != oldrecordingfilename)) {
-			s = ast_writefile(cnf->recordingfilename, cnf->recordingformat, NULL, flags, 0, AST_FILE_MODE);
-			oldrecordingfilename = cnf->recordingfilename;
+		if (!s && !(ast_strlen_zero(filename_buffer)) && (filename_buffer != oldrecordingfilename)) {
+			s = ast_writefile(filename_buffer, cnf->recordingformat, NULL, flags, 0, AST_FILE_MODE);
+			oldrecordingfilename = filename_buffer;
 		}
 		
 		f = ast_read(cnf->lchan);

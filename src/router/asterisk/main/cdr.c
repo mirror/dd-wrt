@@ -31,9 +31,13 @@
  */
 
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 321547 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369366 $")
 
 #include <signal.h>
 
@@ -289,9 +293,9 @@ void ast_cdr_getvar(struct ast_cdr *cdr, const char *name, char **ret, char *wor
 		cdr_get_tv(cdr->answer, raw ? NULL : fmt, workspace, workspacelen);
 	else if (!strcasecmp(name, "end"))
 		cdr_get_tv(cdr->end, raw ? NULL : fmt, workspace, workspacelen);
-	else if (!strcasecmp(name, "duration"))
-		snprintf(workspace, workspacelen, "%ld", cdr->duration ? cdr->duration : (long)ast_tvdiff_ms(ast_tvnow(), cdr->start) / 1000);
-	else if (!strcasecmp(name, "billsec"))
+	else if (!strcasecmp(name, "duration")) {
+		snprintf(workspace, workspacelen, "%ld", cdr->end.tv_sec != 0 ? cdr->duration : (long)ast_tvdiff_ms(ast_tvnow(), cdr->start) / 1000);
+	} else if (!strcasecmp(name, "billsec"))
 		snprintf(workspace, workspacelen, "%ld", cdr->billsec || cdr->answer.tv_sec == 0 ? cdr->billsec : (long)ast_tvdiff_ms(ast_tvnow(), cdr->answer) / 1000);
 	else if (!strcasecmp(name, "disposition")) {
 		if (raw) {
@@ -554,7 +558,7 @@ void ast_cdr_merge(struct ast_cdr *to, struct ast_cdr *from)
 		}
 
 		if (ast_test_flag(to, AST_CDR_FLAG_LOCKED)) {
-			ast_log(LOG_WARNING, "Merging into locked CDR... no choice.");
+			ast_log(LOG_WARNING, "Merging into locked CDR... no choice.\n");
 			to = zcdr; /* safety-- if all there are is locked CDR's, then.... ?? */
 			lto = NULL;
 		}
@@ -573,7 +577,9 @@ void ast_cdr_merge(struct ast_cdr *to, struct ast_cdr *from)
 				lfrom = lfrom->next;
 			}
 			/* rip off the last entry and put a copy of the to at the end */
-			llfrom->next = to;
+			if (llfrom) {
+				llfrom->next = to;
+			}
 			from = lfrom;
 		} else {
 			/* save copy of the current *to cdr */
@@ -589,10 +595,11 @@ void ast_cdr_merge(struct ast_cdr *to, struct ast_cdr *from)
 			}
 			from->next = NULL;
 			/* rip off the last entry and put a copy of the to at the end */
-			if (llfrom == from)
+			if (llfrom == from) {
 				to = to->next = ast_cdr_dup(&tcdr);
-			else
+			} else if (llfrom) {
 				to = llfrom->next = ast_cdr_dup(&tcdr);
+			}
 			from = lfrom;
 		}
 	}

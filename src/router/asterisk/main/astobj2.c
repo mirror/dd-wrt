@@ -17,9 +17,14 @@
 /*
  * Function implementing astobj2 objects.
  */
+
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 342487 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/astobj2.h"
@@ -229,11 +234,6 @@ int __ao2_ref_debug(void *user_data, const int delta, char *tag, char *file, int
 
 int __ao2_ref(void *user_data, const int delta)
 {
-	struct astobj2 *obj = INTERNAL_OBJ(user_data);
-
-	if (obj == NULL)
-		return -1;
-
 	return internal_ao2_ref(user_data, delta);
 }
 

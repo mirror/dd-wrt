@@ -22,7 +22,7 @@ endif
 
 # Basic set of sources and flags/libraries/includes
 OBJS:=menuselect.o strcompat.o
-CFLAGS:=-g -c -D_GNU_SOURCE -Wall
+CFLAGS+=-g -D_GNU_SOURCE -Wall
 
 ifeq ($(MENUSELECT_DEBUG),yes)
   CFLAGS += -DMENUSELECT_DEBUG
@@ -64,14 +64,14 @@ all: $(ALL_TGTS)
 $(OBJS) $(C_OBJS) $(N_OBJS) $(G_OBJS) $(M_OBJS): autoconfig.h menuselect.h
 
 makeopts autoconfig.h: autoconfig.h.in makeopts.in
-	@./configure $(CONFIGURE_SILENT) CC= LD= AR= CFLAGS=
+	@./configure $(CONFIGURE_SILENT)
 
 $(ALL_TGTS): mxml/libmxml.a
 
 ifdef C_OBJS
 menuselect_curses.o: CFLAGS+=$(C_INCLUDE)
 cmenuselect: $(OBJS) $(C_OBJS)
-	$(CC) -o $@ $^ $(C_LIBS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(C_LIBS)
 else
 cmenuselect:
 endif
@@ -79,7 +79,7 @@ endif
 ifdef G_OBJS
 menuselect_gtk.o: CFLAGS+=$(G_INCLUDE)
 gmenuselect: $(OBJS) $(G_OBJS)
-	$(CC) -o $@ $^ $(G_LIBS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(G_LIBS)
 else
 gmenuselect:
 endif
@@ -87,13 +87,13 @@ endif
 ifdef N_OBJS
 menuselect_newt.o: CFLAGS+=$(N_INCLUDE)
 nmenuselect: $(OBJS) $(N_OBJS)
-	$(CC) -o $@ $^ $(N_LIBS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(N_LIBS)
 else
 nmenuselect:
 endif
 
 menuselect: $(OBJS) $(M_OBJS)
-	$(CC) -o $@ $^ $(M_LIBS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(M_LIBS)
 
 mxml/libmxml.a:
 	@if test ! -f mxml/Makefile ; then cd mxml && ./configure ; fi

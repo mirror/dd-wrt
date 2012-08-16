@@ -23,9 +23,13 @@
  * \author Mark Spencer <markster@digium.com> 
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 344661 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use ast_config_AST_MODULE_DIR */
@@ -2340,16 +2344,20 @@ char **ast_cli_completion_matches(const char *text, const char *word)
 		max_equal = i;
 	}
 
-	if (!(retstr = ast_malloc(max_equal + 1)))
+	if (!(retstr = ast_malloc(max_equal + 1))) {
+		ast_free(match_list);
 		return NULL;
-	
+	}
+
 	ast_copy_string(retstr, match_list[1], max_equal + 1);
 	match_list[0] = retstr;
 
 	/* ensure that the array is NULL terminated */
 	if (matches + 1 >= match_list_len) {
-		if (!(match_list = ast_realloc(match_list, (match_list_len + 1) * sizeof(*match_list))))
+		if (!(match_list = ast_realloc(match_list, (match_list_len + 1) * sizeof(*match_list)))) {
+			ast_free(retstr);
 			return NULL;
+		}
 	}
 	match_list[matches + 1] = NULL;
 

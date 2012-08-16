@@ -23,9 +23,13 @@
  * \author Mark Spencer <markster@digium.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 281575 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #ifdef DEBUG_SCHEDULER
 #define DEBUG(a) do { \
@@ -469,7 +473,7 @@ int _ast_sched_del(struct sched_context *con, int id, const char *file, int line
 	struct sched *s, tmp = {
 		.id = id,
 	};
-	int *last_id = ast_threadstorage_get(&last_del_id, sizeof(int *));
+	int *last_id = ast_threadstorage_get(&last_del_id, sizeof(int));
 
 	DEBUG(ast_debug(1, "ast_sched_del(%d)\n", id));
 

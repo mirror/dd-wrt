@@ -30,14 +30,18 @@
  * thus not compiling in AST_DEVMODE, or don't have swscale, in which case
  * you can try to compile #defining OLD_FFMPEG here.
  *
- * $Revision: 284597 $
+ * $Revision: 369001 $
  */
 
 //#define DROP_PACKETS 5       /* if set, drop this % of video packets */
 //#define OLD_FFMPEG	1	/* set for old ffmpeg with no swscale */
 
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
+
 #include "asterisk.h"
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 284597 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 #include <sys/ioctl.h>
 #include "asterisk/cli.h"
 #include "asterisk/file.h"
@@ -657,7 +661,7 @@ static void my_scale(struct fbuf_t *in, AVPicture *p_in,
 			eff_w, eff_h, out->pix_fmt,
 			SWS_BICUBIC, NULL, NULL, NULL);
 		if (convert_ctx == NULL) {
-			ast_log(LOG_ERROR, "FFMPEG::convert_cmodel : swscale context initialization failed");
+			ast_log(LOG_ERROR, "FFMPEG::convert_cmodel : swscale context initialization failed\n");
 			return;
 		}
 		if (0)

@@ -1977,6 +1977,7 @@ mxml_parse_element(mxml_node_t *node,	/* I  - Element node */
       {
         mxml_error("Missing value for attribute '%s' in element %s!",
 	           name, node->value.element.name);
+        free(value);
         return (EOF);
       }
 

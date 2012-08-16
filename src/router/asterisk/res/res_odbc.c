@@ -38,7 +38,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 356917 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368738 $")
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
@@ -363,6 +363,10 @@ static int mark_transaction_active(struct ast_channel *chan, struct odbc_txn_fra
 
 	if (!chan && tx && tx->owner) {
 		chan = tx->owner;
+	}
+
+	if (!chan) {
+		return -1;
 	}
 
 	ast_channel_lock(chan);
@@ -1628,7 +1632,7 @@ static int acf_transaction_write(struct ast_channel *chan, const char *cmd, char
 				pbx_builtin_setvar_helper(chan, "ODBC_RESULT", "INVALID_DB");
 				return -1;
 			}
-			if (!(tx = find_transaction(chan, obj, value, 0))) {
+			if (!find_transaction(chan, obj, value, 0)) {
 				pbx_builtin_setvar_helper(chan, "ODBC_RESULT", "FAILED_TO_CREATE");
 				return -1;
 			}
