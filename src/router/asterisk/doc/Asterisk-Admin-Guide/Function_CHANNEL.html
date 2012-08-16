@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Function_CHANNEL</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Function_CHANNEL
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Apr 20, 2011 by <font color="#0050B2">wikibot</font>.
+				    </div>
+
+				    <h1><a name="Function_CHANNEL-CHANNEL%28%29"></a>CHANNEL()</h1>
+
+<h3><a name="Function_CHANNEL-Synopsis"></a>Synopsis</h3>
+<p>Gets/sets various pieces of information about the channel.</p>
+
+<h3><a name="Function_CHANNEL-Description"></a>Description</h3>
+<p>Gets/sets various pieces of information about the channel, additional <em>item</em> may be available from the channel driver; see its documentation for details. Any <em>item</em> requested that is not available on the current channel will return an empty string.</p>
+
+<h3><a name="Function_CHANNEL-Syntax"></a>Syntax</h3>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CHANNEL(item)</pre>
+</div></div>
+
+<h5><a name="Function_CHANNEL-Arguments"></a>Arguments</h5>
+<ul>
+	<li><tt>item</tt> - Standard items (provided by all channel technologies) are: <b>chan_sip</b> provides the following additional options: <b>chan_iax2</b> provides the following additional options: <b>chan_dahdi</b> provides the following additional options:
+	<ul>
+		<li><tt>audioreadformat</tt> - R/O format currently being read.</li>
+		<li><tt>audionativeformat</tt> - R/O format used natively for audio.</li>
+		<li><tt>audiowriteformat</tt> - R/O format currently being written.</li>
+		<li><tt>callgroup</tt> - R/W call groups for call pickup.</li>
+		<li><tt>channeltype</tt> - R/O technology used for channel.</li>
+		<li><tt>checkhangup</tt> - R/O Whether the channel is hanging up (1/0)</li>
+		<li><tt>language</tt> - R/W language for sounds played.</li>
+		<li><tt>musicclass</tt> - R/W class (from musiconhold.conf) for hold music.</li>
+		<li><tt>name</tt> - The name of the channel</li>
+		<li><tt>parkinglot</tt> - R/W parkinglot for parking.</li>
+		<li><tt>rxgain</tt> - R/W set rxgain level on channel drivers that support it.</li>
+		<li><tt>secure_bridge_signaling</tt> - Whether or not channels bridged to this channel require secure signaling</li>
+		<li><tt>secure_bridge_media</tt> - Whether or not channels bridged to this channel require secure media</li>
+		<li><tt>state</tt> - R/O state for channel</li>
+		<li><tt>tonezone</tt> - R/W zone for indications played</li>
+		<li><tt>transfercapability</tt> - R/W ISDN Transfer Capability, one of:
+		<ul>
+			<li><tt>SPEECH</tt></li>
+			<li><tt>DIGITAL</tt></li>
+			<li><tt>RESTRICTED_DIGITAL</tt></li>
+			<li><tt>3K1AUDIO</tt></li>
+			<li><tt>DIGITAL_W_TONES</tt></li>
+			<li><tt>VIDEO</tt></li>
+		</ul>
+		</li>
+		<li><tt>txgain</tt> - R/W set txgain level on channel drivers that support it.</li>
+		<li><tt>videonativeformat</tt> - R/O format used natively for video</li>
+		<li><tt>trace</tt> - R/W whether or not context tracing is enabled, only available <b>if CHANNEL_TRACE is defined</b>.</li>
+		<li><tt>peerip</tt> - R/O Get the IP address of the peer.</li>
+		<li><tt>recvip</tt> - R/O Get the source IP address of the peer.</li>
+		<li><tt>from</tt> - R/O Get the URI from the From: header.</li>
+		<li><tt>uri</tt> - R/O Get the URI from the Contact: header.</li>
+		<li><tt>useragent</tt> - R/O Get the useragent.</li>
+		<li><tt>peername</tt> - R/O Get the name of the peer.</li>
+		<li><tt>t38passthrough</tt> - R/O <tt>1</tt> if T38 is offered or enabled in this channel, otherwise <tt>0</tt></li>
+		<li><tt>rtpqos</tt> - R/O Get QOS information about the RTP stream  This option takes two additional arguments:  Argument 1:<br/>
+<tt>audio</tt> Get data about the audio stream  <tt>video</tt> Get data about the video stream  <tt>text</tt> Get data about the text stream  Argument 2:<br/>
+<tt>local_ssrc</tt> Local SSRC (stream ID)  <tt>local_lostpackets</tt> Local lost packets  <tt>local_jitter</tt> Local calculated jitter  <tt>local_maxjitter</tt> Local calculated jitter (maximum)  <tt>local_minjitter</tt> Local calculated jitter (minimum)  <tt>local_normdevjitter</tt> Local calculated jitter (normal deviation)  <tt>local_stdevjitter</tt> Local calculated jitter (standard deviation)  <tt>local_count</tt> Number of received packets  <tt>remote_ssrc</tt> Remote SSRC (stream ID)  <tt>remote_lostpackets</tt> Remote lost packets  <tt>remote_jitter</tt> Remote reported jitter  <tt>remote_maxjitter</tt> Remote calculated jitter (maximum)  <tt>remote_minjitter</tt> Remote calculated jitter (minimum)  <tt>remote_normdevjitter</tt> Remote calculated jitter (normal deviation)  <tt>remote_stdevjitter</tt> Remote calculated jitter (standard deviation)  <tt>remote_count</tt> Number of transmitted packets  <tt>rtt</tt> Round trip time  <tt>maxrtt</tt> Round trip time (maximum)  <tt>minrtt</tt> Round trip time (minimum)  <tt>normdevrtt</tt> Round trip time (normal deviation)  <tt>stdevrtt</tt> Round trip time (standard deviation)  <tt>all</tt> All statistics (in a form suited to logging, but not for parsing)</li>
+		<li><tt>rtpdest</tt> - R/O Get remote RTP destination information.  This option takes one additional argument:  Argument 1:<br/>
+<tt>audio</tt> Get audio destination  <tt>video</tt> Get video destination  <tt>text</tt> Get text destination</li>
+		<li><tt>dahdi_channel</tt> - R/O DAHDI channel related to this channel.</li>
+		<li><tt>dahdi_span</tt> - R/O DAHDI span related to this channel.</li>
+		<li><tt>dahdi_type</tt> - R/O DAHDI channel type, one of:
+		<ul>
+			<li><tt>analog</tt></li>
+			<li><tt>mfc/r2</tt></li>
+			<li><tt>pri</tt></li>
+			<li><tt>pseudo</tt></li>
+			<li><tt>ss7</tt></li>
+		</ul>
+		</li>
+		<li><tt>keypad_digits</tt> - R/O PRI Keypad digits that came in with the SETUP message.</li>
+		<li><tt>reversecharge</tt> - R/O PRI Reverse Charging Indication, one of:
+		<ul>
+			<li><tt>-1</tt> - None</li>
+			<li>{{ 1}} - Reverse Charging Requested</li>
+		</ul>
+		</li>
+		<li><tt>no_media_path</tt> - R/O PRI Nonzero if the channel has no B channel. The channel is either on hold or a call waiting call.</li>
+	</ul>
+	</li>
+</ul>
+
+
+
+<h3><a name="Function_CHANNEL-SeeAlso"></a>See Also</h3>
+
+
+<h3><a name="Function_CHANNEL-ImportVersion"></a>Import Version</h3>
+<p>This documentation was imported from Asterisk version SVN-branch-1.8-r314358.</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Oct 04, 2011 12:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

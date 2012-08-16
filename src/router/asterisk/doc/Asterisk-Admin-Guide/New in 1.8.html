@@ -1,0 +1,699 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : New in 1.8</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : New in 1.8
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on May 04, 2011 by <font color="#0050B2">mdavenport</font>.
+				    </div>
+
+				    <div>
+<ul>
+    <li><a href='#Newin1.8-Overview'>Overview</a></li>
+<ul>
+    <li><a href='#Newin1.8-InBrief'>In Brief</a></li>
+    <li><a href='#Newin1.8-DetailedListing'>Detailed Listing</a></li>
+<ul>
+    <li><a href='#Newin1.8-SIPChanges'>SIP Changes</a></li>
+    <li><a href='#Newin1.8-IAX2Changes'>IAX2 Changes</a></li>
+    <li><a href='#Newin1.8-MGCPChanges'>MGCP Changes</a></li>
+    <li><a href='#Newin1.8-XMPPGoogleTalk%2FJinglechanges'>XMPP Google Talk/Jingle changes</a></li>
+    <li><a href='#Newin1.8-Applications'>Applications</a></li>
+    <li><a href='#Newin1.8-DialplanFunctions'>Dialplan Functions</a></li>
+    <li><a href='#Newin1.8-DialplanVariables'>Dialplan Variables</a></li>
+    <li><a href='#Newin1.8-Queuechanges'>Queue changes</a></li>
+    <li><a href='#Newin1.8-mISDNchanneldriver%28chanmisdn%29changes'>mISDN channel driver (chan_misdn) changes</a></li>
+    <li><a href='#Newin1.8-thirdpartymISDNenhancements'>thirdparty mISDN enhancements</a></li>
+    <li><a href='#Newin1.8-libprichanneldriver%28chandahdi%29DAHDIchanges'>libpri channel driver (chan_dahdi) DAHDI changes</a></li>
+    <li><a href='#Newin1.8-AsteriskManagerInterface'>Asterisk Manager Interface</a></li>
+    <li><a href='#Newin1.8-ChannelEventLogging'>Channel Event Logging</a></li>
+    <li><a href='#Newin1.8-CDR'>CDR</a></li>
+    <li><a href='#Newin1.8-CalendaringforAsterisk'>Calendaring for Asterisk</a></li>
+    <li><a href='#Newin1.8-CallCompletionSupplementaryServicesforAsterisk'>Call Completion Supplementary Services for Asterisk</a></li>
+    <li><a href='#Newin1.8-MulticastRTPSupport'>Multicast RTP Support</a></li>
+    <li><a href='#Newin1.8-SecurityEventsFramework'>Security Events Framework</a></li>
+    <li><a href='#Newin1.8-Fax'>Fax</a></li>
+    <li><a href='#Newin1.8-Miscellaneous'>Miscellaneous</a></li>
+    <li><a href='#Newin1.8-CLIChanges'>CLI Changes</a></li>
+</ul>
+</ul>
+</ul></div>
+
+<h1><a name="Newin1.8-Overview"></a>Overview</h1>
+
+<p>A listing of new capabilities in Asterisk 1.8</p>
+<h2><a name="Newin1.8-InBrief"></a>In Brief</h2>
+
+<p>Asterisk 1.8 introduces a number of new features since the previous 1.6.2 release.  Highlights include:</p>
+
+<ul>
+	<li>Secure RTP (SRTP)</li>
+	<li>IPv6 Support for SIP</li>
+	<li>Connected Party Identification Support - COLP and CONP.</li>
+	<li>Calendaring Integration for CalDAV, iCal, Exchange or EWS calendars</li>
+	<li>A new call logging system, Channel Event Logging (CEL)</li>
+	<li>Distributed Device State, including Message Waiting Indicator using Jabber/XMPP PubSub</li>
+	<li>Call Completion Supplementary Services (CCSS) Support, including Call Completion on Busy Subscriber (CCBS) and Call Completion on No Response (CCNR)</li>
+	<li>Advice of Charge, including AOC-S, AOC-D, and AOC-E Support</li>
+	<li>Multicast RTP</li>
+	<li>ISDN Q.SIG Call Rerouting and Call Deflection</li>
+	<li>Google Talk and Google Voice integration</li>
+	<li>Audio Pitch Shifting (for fun and profit)</li>
+</ul>
+
+
+
+<h2><a name="Newin1.8-DetailedListing"></a>Detailed Listing</h2>
+
+<h3><a name="Newin1.8-SIPChanges"></a>SIP Changes</h3>
+<ul>
+	<li>Added preferred_codec_only option in sip.conf. This feature limits the joint<br/>
+   codecs sent in response to an INVITE to the single most preferred codec.</li>
+	<li>Added SIP_CODEC_OUTBOUND dialplan variable which can be used to set the codec<br/>
+   to be used for the outgoing call. It must be one of the codecs configured<br/>
+   for the device.</li>
+	<li>Added tlsprivatekey option to sip.conf.  This allows a separate .pem file<br/>
+   to be used for holding a private key.  If tlsprivatekey is not specified,<br/>
+   tlscertfile is searched for both public and private key.</li>
+	<li>Added tlsclientmethod option to sip.conf.  This allows the protocol for<br/>
+   outbound client connections to be specified.</li>
+	<li>The sendrpid parameter has been expanded to include the options<br/>
+   'rpid' and 'pai'. Setting sendrpid to 'rpid' will cause Remote-Party-ID<br/>
+   header to be sent (equivalent to setting sendrpid=yes) and setting<br/>
+   sendrpid to 'pai' will cause P-Asserted-Identity header to be sent.</li>
+	<li>The 'ignoresdpversion' behavior has been made automatic when the SDP received<br/>
+   is in response to a T.38 re-INVITE that Asterisk initiated. In this situation,<br/>
+   since the call will fail if Asterisk does not process the incoming SDP, Asterisk<br/>
+   will accept the SDP even if the SDP version number is not properly incremented,<br/>
+   but will generate a warning in the log indicating that the SIP peer that sent<br/>
+   the SDP should have the 'ignoresdpversion' option set.</li>
+	<li>The 'nat' option has now been been changed to have yes, no, force_rport, and<br/>
+   comedia as valid values. Setting it to yes forces RFC 3581 behavior and enables<br/>
+   symmetric RTP support. Setting it to no only enables RFC 3581 behavior if the<br/>
+   remote side requests it and disables symmetric RTP support. Setting it to<br/>
+   force_rport forces RFC 3581 behavior and disables symmetric RTP support.<br/>
+   Setting it to comedia enables RFC 3581 behavior if the remote side requests it<br/>
+   and enables symmetric RTP support.</li>
+	<li>Slave SIP channels now set HASH(SIP_CAUSE,&lt;slave-channel-name&gt;) on each<br/>
+   response.  This permits the master channel to know how each channel dialled<br/>
+   in a multi-channel setup resolved in an individual way.</li>
+	<li>Added 'externtcpport' and 'externtlsport' options to allow custom port<br/>
+   configuration for the externip and externhost options when tcp or tls is used.</li>
+	<li>Added support for message body (stored in content variable) to SIP NOTIFY message<br/>
+   accessible via AMI and CLI.</li>
+	<li>Added 'media_address' configuration option which can be used to explicitly specify<br/>
+   the IP address to use in the SDP for media (audio, video, and text) streams.</li>
+	<li>Added 'unsolicited_mailbox' configuration option which specifies the virtual mailbox<br/>
+   that the new/old count should be stored on if an unsolicited MWI NOTIFY message is<br/>
+   received.</li>
+	<li>Added 'use_q850_reason' configuration option for generating and parsing<br/>
+   if available  Reason: Q.850;cause=&lt;cause code&gt; header. It is implemented<br/>
+   in some gateways for better passing PRI/SS7 cause codes via SIP.</li>
+	<li>When dialing SIP peers, a new component may be added to the end of the dialstring<br/>
+   to indicate that a specific remote IP address or host should be used when dialing<br/>
+   the particular peer. The dialstring format is SIP/peer/exten/host_or_IP.</li>
+	<li>SRTP SDES support for encrypting calls to/from Asterisk over SIP. The<br/>
+   ability to selectively force bridged channels to also be encrypted is also<br/>
+   implemented. Branching in the dialplan can be done based on whether or not<br/>
+   a channel has secure media and/or signaling.</li>
+	<li>Added directmediapermit/directmediadeny to limit which peers can send direct media<br/>
+   to each other</li>
+	<li>Added the 'snom_aoc_enabled' option to turn on support for sending Advice of<br/>
+   Charge messages to snom phones.</li>
+	<li>Added support for G.719 media streams.</li>
+	<li>Added support for 16khz signed linear media streams.</li>
+	<li>SIP is now able to bind to and communicate with IPv6 addresses. In addition,<br/>
+   RTP has been outfitted with the same abilities.</li>
+	<li>Added support for setting the Max-Forwards: header in SIP requests. Setting is<br/>
+   available in device configurations as well as in the dial plan.</li>
+	<li>Addition of the 'subscribe_network_change' option for turning on and off<br/>
+   res_stun_monitor module support in chan_sip.</li>
+	<li>Addition of the 'auth_options_requests' option for turning on and off<br/>
+   authentication for OPTIONS requests in chan_sip.</li>
+</ul>
+
+
+
+<h3><a name="Newin1.8-IAX2Changes"></a>IAX2 Changes</h3>
+<ul>
+	<li>Added rtsavesysname option into iax.conf to allow the systname to be saved<br/>
+   on realtime updates.</li>
+	<li>Added the ability for chan_iax2 to inform the dialplan whether or not<br/>
+   encryption is being used. This interoperates with the SIP SRTP implementation<br/>
+   so that a secure SIP call can be bridged to a secure IAX call when the<br/>
+   dialplan requires bridged channels to be "secure".</li>
+	<li>Addition of the 'subscribe_network_change' option for turning on and off<br/>
+   res_stun_monitor module support in chan_iax.</li>
+</ul>
+
+
+
+<h3><a name="Newin1.8-MGCPChanges"></a>MGCP Changes</h3>
+<ul>
+	<li>Added ability to preset channel variables on indicated lines with the setvar<br/>
+   configuration option.  Also, clearvars=all resets the list of variables back<br/>
+   to none.</li>
+	<li>PacketCable NCS 1.0 support has been added for Docsis/Eurodocsis Networks.<br/>
+   See configs/res_pktccops.conf for more information.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-XMPPGoogleTalk%2FJinglechanges"></a>XMPP Google Talk/Jingle changes</h3>
+<ul>
+	<li>Added the externip option to gtalk.conf.</li>
+	<li>Added the stunaddr option to gtalk.conf which allows for the automatic<br/>
+    retrieval of the external ip from a stun server.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-Applications"></a>Applications</h3>
+<ul>
+	<li>Added 'p' option to PickupChan() to allow for picking up channel by the first<br/>
+   match to a partial channel name.</li>
+	<li>Added .m3u support for Mp3Player application.</li>
+	<li>Added progress option to the app_dial D() option.  When progress DTMF is<br/>
+   present, those values are sent immediately upon receiving a PROGRESS message<br/>
+   regardless if the call has been answered or not.</li>
+	<li>Added functionality to the app_dial F() option to continue with execution<br/>
+   at the current location when no parameters are provided.</li>
+	<li>Added the 'a' option to app_dial to answer the calling channel before any<br/>
+   announcements or macros are executed.</li>
+	<li>Modified app_dial to set answertime when the called channel answers even if<br/>
+   the called channel hangs up during playback of an announcement.</li>
+	<li>Modified app_dial 'r' option to support an additional parameter to play an<br/>
+   indication tone from indications.conf</li>
+	<li>Added c() option to app_chanspy. This option allows custom DTMF to be set<br/>
+   to cycle through the next available channel.  By default this is still '*'.</li>
+	<li>Added x() option to app_chanspy.  This option allows DTMF to be set to<br/>
+   exit the application.</li>
+	<li>The Voicemail application has been improved to automatically ignore messages<br/>
+   that only contain silence.</li>
+	<li>If you set maxmsg to 0 in voicemail.conf, Voicemail will consider the<br/>
+   associated mailbox(es) to be greetings-only.</li>
+	<li>The ChanSpy application now has the 'S' option, which makes the application<br/>
+   automatically exit once it hits a point where no more channels are available<br/>
+   to spy on.</li>
+	<li>The ChanSpy application also now has the 'E' option, which spies on a single<br/>
+   channel and exits when that channel hangs up.</li>
+	<li>The MeetMe application now turns on the DENOISE() function by default, for<br/>
+   each participant.  In our tests, this has significantly decreased background<br/>
+   noise (especially noisy data centers).</li>
+	<li>Voicemail now permits storage of secrets in a separate file, located in the<br/>
+   spool directory of each individual user.  The control for this is located in<br/>
+   the "passwordlocation" option in voicemail.conf.  Please see the sample<br/>
+   configuration for more information.</li>
+	<li>The ChanIsAvail application now exposes the returned cause code using a separate<br/>
+   variable, AVAILCAUSECODE, instead of overwriting the device state in AVAILSTATUS.</li>
+	<li>Added 'd' option to app_followme.  This option disables the "Please hold"<br/>
+   announcement.</li>
+	<li>Added 'y' option to app_record. This option enables a mode where any DTMF digit<br/>
+   received will terminate recording.</li>
+	<li>Voicemail now supports per mailbox settings for folders when using IMAP storage.<br/>
+   Previously the folder could only be set per context, but has now been extended <br/>
+   using the imapfolder option.</li>
+	<li>Voicemail now supports per mailbox settings for nextaftercmd and minsecs.</li>
+	<li>Voicemail now allows the pager date format to be specified separately from the<br/>
+   email date format.</li>
+	<li>New applications JabberJoin, JabberLeave, and JabberSendGroup have been added<br/>
+   to allow joining, leaving, and sending text to group chats.</li>
+	<li>MeetMe has a new option 'G' to play an announcement before joining a conference.</li>
+	<li>Page has a new option 'A&#40;x&#41;' which will playback an announcement simultaneously<br/>
+   to all paged phones (and optionally excluding the caller's one using the new<br/>
+   option 'n') before the call is bridged.</li>
+	<li>The 'f' option to Dial has been augmented to take an optional argument. If no<br/>
+   argument is provided, the 'f' option works as it always has. If an argument is<br/>
+   provided, then the connected party information of all outgoing channels created<br/>
+   during the Dial will be set to the argument passed to the 'f' option.</li>
+	<li>Dial now inherits the GOSUB_RETVAL from the peer, when the U() option runs a<br/>
+   Gosub on the peer.</li>
+	<li>The OSP lookup application adds in/outbound network ID, optional security,<br/>
+   number portability, QoS reporting, destination IP port, custom info and service<br/>
+   type features.</li>
+	<li>Added new application VMSayName that will play the recorded name of the voicemail<br/>
+   user if it exists, otherwise will play the mailbox number.</li>
+	<li>Added custom device states to ConfBridge bridges.  Use 'confbridge:&lt;name&gt;' to<br/>
+   retrieve state for a particular bridge, where &lt;name&gt; is the conference name</li>
+	<li>app_directory now allows exiting at any time using the operator or pound key.</li>
+	<li>Voicemail now supports setting a locale per-mailbox.</li>
+	<li>Two new applications are provided for declining counting phrases in multiple<br/>
+   languages.  See the application notes for SayCountedNoun and SayCountedAdj for<br/>
+   more information.</li>
+	<li>Voicemail now runs the externnotify script when pollmailboxes is activated and<br/>
+   notices a change.</li>
+	<li>Voicemail now includes rdnis within msgXXXX.txt file.</li>
+	<li>Added 'D' command to ExternalIVR full details in <a href="http://wiki.asterisk.org">http://wiki.asterisk.org</a></li>
+</ul>
+
+
+<h3><a name="Newin1.8-DialplanFunctions"></a>Dialplan Functions</h3>
+<ul>
+	<li>SRVQUERY and SRVRESULT functions added. This can be used to query and iterate<br/>
+   over SRV records associated with a specific service. From the CLI, type<br/>
+   'core show function SRVQUERY' and 'core show function SRVRESULT' for more<br/>
+   details on how these may be used.</li>
+	<li>PITCH_SHIFT dialplan function added. This function can be used to modify the<br/>
+   pitch of a channel's tx and rx audio streams.</li>
+	<li>Added new dialplan functions CONNECTEDLINE and REDIRECTING which permits<br/>
+   setting various connected line and redirecting party information.</li>
+	<li>CALLERID and CONNECTEDLINE dialplan functions have been extended to<br/>
+   support ISDN subaddressing.</li>
+	<li>The CHANNEL() function now supports the "name" and "checkhangup" options.</li>
+	<li>For DAHDI channels, the CHANNEL() dialplan function now allows<br/>
+   the dialplan to request changes in the configuration of the active<br/>
+   echo canceller on the channel (if any), for the current call only.<br/>
+   The syntax is:</li>
+</ul>
+
+
+<p>   exten =&gt; s,n,Set(CHANNEL(echocan_mode)=off)</p>
+
+<p>   The possible values are:</p>
+
+<p>     on - normal mode (the echo canceller is actually reinitialized)<br/>
+     off - disabled<br/>
+     fax - FAX/data mode (NLP disabled if possible, otherwise completely<br/>
+           disabled)<br/>
+     voice - voice mode (returns from FAX mode, reverting the changes that<br/>
+             were made when FAX mode was requested)</p>
+<ul>
+	<li>Added new dialplan function MASTER_CHANNEL(), which permits retrieving<br/>
+   and setting variables on the channel which created the current channel.<br/>
+   Administrators should take care to avoid naming conflicts, when multiple<br/>
+   channels are dialled at once, especially when used with the Local channel<br/>
+   construct (which all could set variables on the master channel).  Usage<br/>
+   of the HASH() dialplan function, with the key set to the name of the slave<br/>
+   channel, is one approach that will avoid conflicts.</li>
+	<li>Added new dialplan function MUTEAUDIO() for muting inbound and/or outbound<br/>
+   audio in a channel.</li>
+	<li>func_odbc now allows multiple row results to be retrieved without using<br/>
+   mode=multirow.  If rowlimit is set, then additional rows may be retrieved<br/>
+   from the same query by using the name of the function which retrieved the<br/>
+   first row as an argument to ODBC_FETCH().</li>
+	<li>Added JABBER_RECEIVE, which permits receiving XMPP messages from the<br/>
+   dialplan. This function returns the content of the received message.</li>
+	<li>Added REPLACE, which searches a given variable name for a set of characters,<br/>
+   then either replaces them with a single character or deletes them.</li>
+	<li>Added PASSTHRU, which literally passes the same argument back as its return<br/>
+   value.  The intent is to be able to use a literal string argument to<br/>
+   functions that currently require a variable name as an argument.</li>
+	<li>HASH-associated variables now can be inherited across channel creation, by<br/>
+   prefixing the name of the hash at assignment with the appropriate number of<br/>
+   underscores, just like variables.</li>
+	<li>GROUP_MATCH_COUNT has been improved to allow regex matching on category</li>
+	<li>CHANNEL(secure_bridge_signaling) and CHANNEL(secure_bridge_media) to set/get<br/>
+   whether or not channels that are bridged to the current channel will be<br/>
+   required to have secure signaling and/or media.</li>
+	<li>CHANNEL(secure_signaling) and CHANNEL(secure_media) to get whether or not<br/>
+   the current channel has secure signaling and/or media.</li>
+	<li>For DAHDI/ISDN channels, the CHANNEL() dialplan function now supports the<br/>
+   "no_media_path" option.<br/>
+   Returns "0" if there is a B channel associated with the call.<br/>
+   Returns "1" if no B channel is associated with the call.  The call is either<br/>
+   on hold or is a call waiting call.</li>
+	<li>Added option to dialplan function CDR(), the 'f' option<br/>
+   allows for high resolution times for billsec and duration fields.</li>
+	<li>FILE() now supports line-mode and writing.</li>
+	<li>Added FIELDNUM(), which returns the 1-based offset of a field in a list.</li>
+	<li>FRAME_TRACE(), for tracking internal ast_frames on a channel.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-DialplanVariables"></a>Dialplan Variables</h3>
+<ul>
+	<li>Added DYNAMIC_FEATURENAME which holds the last triggered dynamic feature.</li>
+	<li>Added DYNAMIC_PEERNAME which holds the unique channel name on the other side<br/>
+   and is set when a dynamic feature is triggered.</li>
+	<li>Added PARKINGLOT which can be used with parkeddynamic feature.conf option<br/>
+   to dynamically create a new parking lot matching the value this varible is<br/>
+   set to.</li>
+	<li>Added PARKINGDYNAMIC which represents the template parkinglot defined in<br/>
+   features.conf that should be the base for dynamic parkinglots.</li>
+	<li>Added PARKINGDYNCONTEXT which tells what context a newly created dynamic<br/>
+   parkinglot should have.</li>
+	<li>Added PARKINGDYNPOS which holds what parking positions a dynamic parkinglot<br/>
+   should have.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-Queuechanges"></a>Queue changes</h3>
+<ul>
+	<li>Added "ready" option to QUEUE_MEMBER counting to count free agents whose wrap-up<br/>
+   timeout has expired.</li>
+	<li>Added 'R' option to app_queue.  This option stops moh and indicates ringing<br/>
+   to the caller when an Agent's phone is ringing.  This can be used to indicate<br/>
+   to the caller that their call is about to be picked up, which is nice when<br/>
+   one has been on hold for an extened period of time.</li>
+	<li>A new config option, penaltymemberslimit, has been added to queues.conf.<br/>
+   When set this option will disregard penalty settings when a queue has too<br/>
+   few members.</li>
+	<li>A new option, 'I' has been added to both app_queue and app_dial.<br/>
+   By setting this option, Asterisk will not update the caller with<br/>
+   connected line changes or redirecting party changes when they occur.</li>
+	<li>A 'relative-peroidic-announce' option has been added to queues.conf.  When<br/>
+   enabled, this option will cause periodic announce times to be calculated<br/>
+   from the end of announcements rather than from the beginning.</li>
+	<li>The autopause option in queues.conf can be passed a new value, "all." The<br/>
+   result is that if a member becomes auto-paused, he will be paused in all<br/>
+   queues for which he is a member, not just the queue that failed to reach<br/>
+   the member.</li>
+	<li>Added dialplan function QUEUE_EXISTS to check if a queue exists</li>
+	<li>The queue logger now allows events to optionally propagate to a file,<br/>
+   even when realtime logging is turned on.  Additionally, realtime logging<br/>
+   supports sending the event arguments to 5 individual fields, although it<br/>
+   will fallback to the previous data definition, if the new table layout is<br/>
+   not found.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-mISDNchanneldriver%28chanmisdn%29changes"></a>mISDN channel driver (chan_misdn) changes</h3>
+<ul>
+	<li>Added display_connected parameter to misdn.conf to put a display string<br/>
+   in the CONNECT message containing the connected name and/or number if<br/>
+   the presentation setting permits it.</li>
+	<li>Added display_setup parameter to misdn.conf to put a display string<br/>
+   in the SETUP message containing the caller name and/or number if the<br/>
+   presentation setting permits it.</li>
+	<li>Made misdn.conf parameters localdialplan and cpndialplan take a -1 to<br/>
+   indicate the dialplan settings are to be obtained from the asterisk<br/>
+   channel.</li>
+	<li>Made misdn.conf parameter callerid accept the "name" &lt;number&gt; format<br/>
+   used by the rest of the system.</li>
+	<li>Made use the nationalprefix and internationalprefix misdn.conf<br/>
+   parameters to prefix any received number from the ISDN link if that<br/>
+   number has the corresponding Type-Of-Number.  NOTE:  This includes<br/>
+   comparing the incoming call's dialed number against the MSN list.</li>
+	<li>Added the following new parameters: unknownprefix, netspecificprefix,<br/>
+   subscriberprefix, and abbreviatedprefix in misdn.conf to prefix any<br/>
+   received number from the ISDN link if that number has the corresponding<br/>
+   Type-Of-Number.</li>
+	<li>Added new dialplan application misdn_command which permits controlling<br/>
+   the CCBS/CCNR functionality.</li>
+	<li>Added new dialplan function mISDN_CC which permits retrieval of various<br/>
+   values from an active call completion record.</li>
+	<li>For PTP, you should manually send the COLR of the redirected-to party<br/>
+   for an incomming redirected call if the incoming call could experience<br/>
+   further redirects.  Just set the REDIRECTING(to-num,i) = ${EXTEN} and<br/>
+   set the REDIRECTING(to-pres) to the COLR.  A call has been redirected<br/>
+   if the REDIRECTING(from-num) is not empty.</li>
+	<li>For outgoing PTP redirected calls, you now need to use the inhibit&#40;i&#41;<br/>
+   option on all of the REDIRECTING statements before dialing the<br/>
+   redirected-to party.  You still have to set the REDIRECTING(to-xxx,i)<br/>
+   and the REDIRECTING(from-xxx,i) values.  The PTP call will update the<br/>
+   redirecting-to presentation (COLR) when it becomes available.</li>
+	<li>Added outgoing_colp parameter to misdn.conf to filter outgoing COLP<br/>
+   information.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-thirdpartymISDNenhancements"></a>thirdparty mISDN enhancements</h3>
+<p>mISDN has been modified by Digium, Inc. to greatly expand facility message<br/>
+support to allow:</p>
+<ul>
+	<li>Enhanced COLP support for call diversion and transfer.</li>
+	<li>CCBS/CCNR support.</li>
+</ul>
+
+
+<p>The latest modified mISDN v1.1.x based version is available at:
+<a href="http://svn.digium.com/svn/thirdparty/mISDN/trunk">http://svn.digium.com/svn/thirdparty/mISDN/trunk</a>
+<a href="http://svn.digium.com/svn/thirdparty/mISDNuser/trunk">http://svn.digium.com/svn/thirdparty/mISDNuser/trunk</a></p>
+
+<p>Tagged versions of the modified mISDN code are available under:
+<a href="http://svn.digium.com/svn/thirdparty/mISDN/tags">http://svn.digium.com/svn/thirdparty/mISDN/tags</a>
+<a href="http://svn.digium.com/svn/thirdparty/mISDNuser/tags">http://svn.digium.com/svn/thirdparty/mISDNuser/tags</a></p>
+
+<h3><a name="Newin1.8-libprichanneldriver%28chandahdi%29DAHDIchanges"></a>libpri channel driver (chan_dahdi) DAHDI changes</h3>
+<ul>
+	<li>The channel variable PRIREDIRECTREASON is now just a status variable<br/>
+   and it is also deprecated.  Use the REDIRECTING(reason) dialplan function<br/>
+   to read and alter the reason.</li>
+	<li>For Q.SIG and ETSI PRI/BRI-PTP, you should manually send the COLR of the<br/>
+   redirected-to party for an incomming redirected call if the incoming call<br/>
+   could experience further redirects.  Just set the<br/>
+   REDIRECTING(to-num,i) = CALLERID(dnid) and set the REDIRECTING(to-pres)<br/>
+   to the COLR.  A call has been redirected if the REDIRECTING(count) is not<br/>
+   zero.</li>
+	<li>For outgoing Q.SIG and ETSI PRI/BRI-PTP redirected calls, you need to<br/>
+   use the inhibit&#40;i&#41; option on all of the REDIRECTING statements before<br/>
+   dialing the redirected-to party.  You still have to set the<br/>
+   REDIRECTING(to-xxx,i) and the REDIRECTING(from-xxx,i) values.  The call<br/>
+   will update the redirecting-to presentation (COLR) when it becomes available.</li>
+	<li>Added the ability to ignore calls that are not in a Multiple Subscriber<br/>
+   Number (MSN) list for PTMP CPE interfaces.</li>
+	<li>Added dynamic range compression support for dahdi channels.  It is<br/>
+   configured via the rxdrc and txdrc parameters in chan_dahdi.conf.</li>
+	<li>Added support for ISDN calling and called subaddress with partial support<br/>
+   for connected line subaddress.</li>
+	<li>Added support for BRI PTMP NT mode. (Requires latest LibPRI.)</li>
+	<li>Added handling of received HOLD/RETRIEVE messages and the optional ability<br/>
+   to transfer a held call on disconnect similar to an analog phone.</li>
+	<li>Added CallRerouting/CallDeflection support for Q.SIG, ETSI PTP, ETSI PTMP.<br/>
+   Will reroute/deflect an outgoing call when receive the message.<br/>
+   Can use the DAHDISendCallreroutingFacility to send the message for the<br/>
+   supported switches.</li>
+	<li>Added standard location to add options to chan_dahdi dialing:<br/>
+   Dial(DAHDI/g1[/extension[/options]])<br/>
+   Current options:<br/>
+   K(&lt;keypad_digits&gt;)<br/>
+   R Reverse charging indication</li>
+	<li>Added Reverse Charging Indication (Collect calls) send/receive option.<br/>
+   Send reverse charging in SETUP message with the chan_dahdi R dialing option.<br/>
+   Dial(DAHDI/g1/extension/R)<br/>
+   Access received reverse charge in SETUP message by: ${CHANNEL(reversecharge)}<br/>
+   (requires latest LibPRI)</li>
+	<li>Added ability to send/receive keypad digits in the SETUP message.<br/>
+   Send keypad digits in SETUP message with the chan_dahdi K(&lt;keypad_digits&gt;)<br/>
+   dialing option.  Dial(DAHDI/g1/[~mdavenport:extension]/K(&lt;keypad_digits&gt;))<br/>
+   Access any received keypad digits in SETUP message by: ${CHANNEL(keypad_digits)}<br/>
+   (requires latest LibPRI)</li>
+	<li>Added ability to send and receive ETSI Explicit Call Transfer (ECT) messages<br/>
+   to eliminate tromboned calls.  A tromboned call goes out an interface and comes<br/>
+   back into the same interface.  Tromboned calls happen because of call routing,<br/>
+   call deflection, call forwarding, and call transfer.</li>
+	<li>Added the ability to send and receive ETSI Advice-Of-Charge messages.</li>
+	<li>Added the ability to support call waiting calls.  (The SETUP has no B channel<br/>
+   assigned.)</li>
+	<li>Added Malicious Call ID (MCID) event to the AMI call event class.</li>
+	<li>Added Message Waiting Indication (MWI) support for ISDN PTMP endpoints (phones).</li>
+</ul>
+
+
+<h3><a name="Newin1.8-AsteriskManagerInterface"></a>Asterisk Manager Interface</h3>
+<ul>
+	<li>The Hangup action now accepts a Cause header which may be used to<br/>
+   set the channel's hangup cause.</li>
+	<li>sslprivatekey option added to manager.conf and http.conf.  Adds the ability<br/>
+   to specify a separate .pem file to hold a private key.  By default sslcert<br/>
+   is used to hold both the public and private key.</li>
+	<li>Options in manager.conf and http.conf with the 'ssl' prefix have been replaced<br/>
+   for options containing the 'tls' prefix.  For example, 'sslenable' is now<br/>
+   'tlsenable'.  This has been done in effort to keep ssl and tls options consistent<br/>
+   across all .conf files. All affected sample.conf files have been modified to<br/>
+   reflect this change.  Previous options such as 'sslenable' still work,<br/>
+   but options with the 'tls' prefix are preferred.</li>
+	<li>Added a MuteAudio AMI action for muting inbound and/or outbound audio<br/>
+   in a channel. (res_mutestream.so)</li>
+	<li>The configuration file manager.conf now supports a channelvars option, which<br/>
+   specifies a list of channel variables to include in each channel-oriented<br/>
+   event.</li>
+	<li>The redirect command now has new parameters ExtraContext, ExtraExtension,<br/>
+   and ExtraPriority to allow redirecting the second channel to a different<br/>
+   location than the first.</li>
+	<li>Added new event "JabberStatus" in the Jabber module to monitor buddies<br/>
+   status.</li>
+	<li>Added a "MixMonitorMute" AMI action for muting inbound and/or outbound audio<br/>
+   in a MixMonitor recording.</li>
+	<li>The 'iax2 show peers' output is now similar to the expected output of<br/>
+   'sip show peers'.</li>
+	<li>Added Advice-Of-Charge events (AOC-S, AOC-D, and AOC-E) in the new<br/>
+   aoc event class.</li>
+	<li>Added Advice-Of-Charge manager action, AOCMessage, for generating AOC-D and<br/>
+   AOC-E messages on a channel.</li>
+	<li>A DBGetComplete event now follows a DBGetResponse, to make the DBGet action<br/>
+   conform more closely to similar events.</li>
+	<li>Added a new eventfilter option per user to allow whitelisting and blacklisting<br/>
+   of events.</li>
+	<li>Added optional parkinglot variable for park command.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-ChannelEventLogging"></a>Channel Event Logging</h3>
+<ul>
+	<li>A new interface, CEL, is introduced here. CEL logs single events, much like<br/>
+   the AMI, but it differs from the AMI in that it logs to db backends much<br/>
+   like CDR does; is based on the event subsystem introduced by Russell, and<br/>
+   can share in all its benefits; allows multiple backends to operate like CDR;<br/>
+   is specialized to event data that would be of concern to billing sytems,<br/>
+   like CDR. Backends for logging and accounting calls have been produced,<br/>
+   but a new CDR backend is still in development.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-CDR"></a>CDR</h3>
+<ul>
+	<li>'linkedid' and 'peeraccount' are new CDR fields available to CDR aficionados.<br/>
+   linkedid is based on uniqueID, but spreads to other channels as transfers, dials,<br/>
+   etc are performed. Thus the pieces of CDR can be grouped into multilegged sets.</li>
+	<li>Multiple files and formats can now be specified in cdr_custom.conf.</li>
+	<li>cdr_syslog has been added which allows CDRs to be written directly to syslog.<br/>
+   See configs/cdr_syslog.conf.sample for more information.</li>
+	<li>A 'sequence' field has been added to CDRs which can be combined with<br/>
+   linkedid or uniqueid to uniquely identify a CDR.</li>
+	<li>Handling of billsec and duration field has changed. If your table definition<br/>
+   specifies those fields as float,double or similar they will now be logged with<br/>
+   microsecond accuracy instead of a whole integer.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-CalendaringforAsterisk"></a>Calendaring for Asterisk</h3>
+<ul>
+	<li>A new set of modules were added supporing calendar integration with Asterisk.<br/>
+   Dialplan functions for reading from and writing to calendars are included,<br/>
+   as well as the ability to execute dialplan logic upon calendar event notifications.<br/>
+   iCalendar, CalDAV, and Exchange Server calendars (via res_calendar_exchange for<br/>
+   Exchange Server 2003 with no write or attendee support, and res_calendar_ews for<br/>
+   Exchange Server 2007+ with full write and attendee support) are supported (Exchange<br/>
+   2003 support does not support forms-based authentication).</li>
+</ul>
+
+
+<h3><a name="Newin1.8-CallCompletionSupplementaryServicesforAsterisk"></a>Call Completion Supplementary Services for Asterisk</h3>
+<ul>
+	<li>Call completion support has been added for SIP, DAHDI/ISDN, and DAHDI/analog.<br/>
+   DAHDI/ISDN supports call completion for the following switch types:<br/>
+   EuroIsdn(ETSI) for PTP and PTMP modes, and Qsig.<br/>
+   See <a href="http://wiki.asterisk.org">http://wiki.asterisk.org</a> for details.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-MulticastRTPSupport"></a>Multicast RTP Support</h3>
+<ul>
+	<li>A new RTP engine and channel driver have been added which supports Multicast RTP.<br/>
+   The channel driver can be used with the Page application to perform multicast RTP<br/>
+   paging. The dial string format is: MulticastRTP/&lt;type&gt;/&lt;destination&gt;/&lt;control address&gt;<br/>
+   Type can be either basic or linksys.<br/>
+   Destination is the IP address and port for the RTP packets.<br/>
+   Control address is specific to the linksys type and is used for sending the control<br/>
+   packets unique to them.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-SecurityEventsFramework"></a>Security Events Framework</h3>
+<ul>
+	<li>Asterisk has a new C API for reporting security events.  The module res_security_log<br/>
+   sends these events to the "security" logger level.  Currently, AMI is the only<br/>
+   Asterisk component that reports security events.  However, SIP support will be<br/>
+   coming soon.  For more information on the security events framework, see the<br/>
+   "Security Events" chapter of the included documentation - doc/AST.pdf.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-Fax"></a>Fax</h3>
+<ul>
+	<li>A technology independent fax frontend (res_fax) has been added to Asterisk.</li>
+	<li>A spandsp based fax backend (res_fax_spandsp) has been added.</li>
+	<li>The app_fax module has been deprecated in favor of the res_fax module and<br/>
+   the new res_fax_spandsp backend.</li>
+	<li>The SendFAX and ReceiveFAX applications now send their log messages to a<br/>
+   'fax' logger level, instead of to the generic logger levels. To see these<br/>
+   messages, the system's logger.conf file will need to direct the 'fax' logger<br/>
+   level to one or more destinations; the logger.conf.sample file includes an<br/>
+   example of how to do this. Note that if the 'fax' logger level is <b>not</b><br/>
+   directed to at least one destination, log messages generated by these<br/>
+   applications will be lost, and that if the 'fax' logger level is directed to<br/>
+   the console, the 'core set verbose' and 'core set debug' CLI commands will<br/>
+   have no effect on whether the messages appear on the console or not.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-Miscellaneous"></a>Miscellaneous</h3>
+<ul>
+	<li>The transmit_silence_during_record option in asterisk.conf.sample has been removed.<br/>
+   Now, in order to enable transmitting silence during record the transmit_silence<br/>
+   option should be used.  transmit_silence_during_record remains a valid option, but<br/>
+   defaults to the behavior of the transmit_silence option.</li>
+	<li>Addition of the Unit Test Framework API for managing registration and execution<br/>
+   of unit tests with the purpose of verifying the operation of C functions.</li>
+	<li>SendText is now implemented in chan_gtalk and chan_jingle. It will simply send<br/>
+   XMPP text messages to the remote JID.</li>
+	<li>Modules.conf has a new option - "require" - that marks a module as critical for<br/>
+   the execution of Asterisk.<br/>
+   If one of the required modules fail to load, Asterisk will exit with a return<br/>
+   code set to 2.</li>
+	<li>An 'X' option has been added to the asterisk application which enables #exec support.<br/>
+   This allows #exec to be used in asterisk.conf.</li>
+	<li>jabber.conf supports a new option auth_policy that toggles auto user registration.</li>
+	<li>A new lockconfdir option has been added to asterisk.conf to protect the<br/>
+   configuration directory (/etc/asterisk by default) during reloads.</li>
+	<li>The parkeddynamic option has been added to features.conf to enable the creation<br/>
+   of dynamic parkinglots.</li>
+	<li>chan_dahdi now supports reporting alarms over AMI either by channel or span via<br/>
+   the reportalarms config option.</li>
+	<li>chan_dahdi supports dialing configuring and dialing by device file name.<br/>
+   DAHDI/span-name!local!1 will use /dev/dahdi/span-name/local/1 . Likewise<br/>
+   it may appear in chan_dahdi.conf as 'channel =&gt; span-name!local!1'.</li>
+	<li>A new options for chan_dahdi.conf: 'ignore_failed_channels'. Boolean.<br/>
+   False by default. If set, chan_dahdi will ignore failed 'channel' entries.<br/>
+   Handy for the above name-based syntax as it does not depend on<br/>
+   initialization order.</li>
+	<li>The Realtime dialplan switch now caches entries for 1 second.  This provides a<br/>
+   significant increase in performance (about 3X) for installations using this switchtype.</li>
+	<li>Distributed devicestate now supports the use of the XMPP protocol, in addition to<br/>
+   AIS.  For more information, please see <a href="http://wiki.asterisk.org">http://wiki.asterisk.org</a></li>
+	<li>The addition of G.719 pass-through support.</li>
+	<li>Added support for 16khz Speex audio.  This can be enabled by using 'allow=speex16'<br/>
+   during device configuration.</li>
+	<li>The UNISTIM channel driver (chan_unistim) has been updated to support devices that<br/>
+   have less than 3 lines on the LCD.</li>
+	<li>Realtime now supports database failover.  See the sample extconfig.conf for details.</li>
+	<li>The addition of improved translation path building for wideband codecs.  Sample<br/>
+   rate changes during translation are now avoided unless absolutely necessary.</li>
+	<li>The addition of the res_stun_monitor module for monitoring and reacting to network<br/>
+   changes while behind a NAT.</li>
+</ul>
+
+
+<h3><a name="Newin1.8-CLIChanges"></a>CLI Changes</h3>
+<ul>
+	<li>The 'core set debug' and 'core set verbose' commands, in previous versions, could<br/>
+   optionally accept a filename, to apply the setting only to the code generated from<br/>
+   that source file when Asterisk was built. However, there are some modules in Asterisk<br/>
+   that are composed of multiple source files, so this did not result in the behavior<br/>
+   that users expected. In this version, 'core set debug' and 'core set verbose'<br/>
+   can optionally accept <b>module</b> names instead (with or without the .so extension),<br/>
+   which applies the setting to the entire module specified, regardless of which source<br/>
+   files it was built from.</li>
+	<li>New 'manager show settings' command showing the current settings loaded from<br/>
+   manager.conf. </li>
+	<li>Added 'all' keyword to the CLI command "channel request hangup" so that you can send<br/>
+   the channel hangup request to all channels.</li>
+	<li>Added a "core reload" CLI command that executes a global reload of Asterisk.</li>
+</ul>
+
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Oct 04, 2011 12:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>
