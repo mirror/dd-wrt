@@ -22,11 +22,15 @@
  * \author Sean Bright <sean@malleable.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 #include "asterisk/utils.h"
 #include "asterisk/syslog.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 203605 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include <syslog.h>
 

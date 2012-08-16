@@ -14,9 +14,13 @@
  * \author Thorsten Lockert <tholo@voop.as>
  */
 
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 352955 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 /*
  * There is some collision collision between netsmp and asterisk names,

@@ -23,9 +23,13 @@
  * \author Dwayne Hubbard <dhubbard@digium.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 352955 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/module.h"

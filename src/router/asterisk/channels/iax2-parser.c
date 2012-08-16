@@ -23,9 +23,13 @@
  * \author Mark Spencer <markster@digium.com> 
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 243943 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -1192,7 +1196,7 @@ struct iax_frame *iax_frame_new(int direction, int datalen, unsigned int cacheab
 		AST_LIST_TRAVERSE_SAFE_END;
 	}
 	if (!fr) {
-		if (iax_frames->size >= FRAME_CACHE_MAX_SIZE && smallest) {
+		if (iax_frames && iax_frames->size >= FRAME_CACHE_MAX_SIZE && smallest) {
 			/* Make useless cache into something more useful */
 			AST_LIST_REMOVE(&iax_frames->list, smallest, list);
 			if (!(fr = ast_realloc(smallest, sizeof(*fr) + datalen))) {

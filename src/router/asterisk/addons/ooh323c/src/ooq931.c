@@ -140,7 +140,7 @@ EXTERN int ooQ931Decode
       }
       else {
          ie = (Q931InformationElement*) memAlloc (pctxt, 
-                                        sizeof(*ie) - sizeof(ie->data));
+                                        sizeof(*ie));
          if(!ie)
          {
             OOTRACEERR3("Error:Memory - ooQ931Decode - ie(%s, %s)\n", 
@@ -2316,7 +2316,7 @@ int ooH323MakeCall(char *dest, char *callToken, ooCallOptions *opts)
       else
          OO_CLRFLAG(call->flags, OO_M_TUNNELING);
 
-      if(opts->disableGk)
+      if(opts->disableGk || gH323ep.gkClient == NULL)
          OO_SETFLAG(call->flags, OO_M_DISABLEGK);
       else
          OO_CLRFLAG(call->flags, OO_M_DISABLEGK);

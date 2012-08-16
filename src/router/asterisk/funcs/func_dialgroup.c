@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 343336 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 366880 $")
 
 #include <sys/stat.h>
 
@@ -165,6 +165,7 @@ static int dialgroup_read(struct ast_channel *chan, const char *cmd, char *data,
 		ao2_ref(entry, -1);
 	}
 	ao2_iterator_destroy(&i);
+	ao2_ref(grhead, -1);
 
 	return res;
 }

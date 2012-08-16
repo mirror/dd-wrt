@@ -25,9 +25,13 @@
  * \author Mikael Magnusson <mikma@users.sourceforge.net>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 268894 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include "asterisk/utils.h"
 #include "include/srtp.h"

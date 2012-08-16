@@ -23,9 +23,13 @@
  * \author Mark Spencer <markster@digium.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 182847 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include <termios.h>
 #include <sys/ioctl.h>

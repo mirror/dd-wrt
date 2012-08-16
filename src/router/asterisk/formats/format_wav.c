@@ -30,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 344048 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 364578 $")
 
 #include "asterisk/mod_format.h"
 #include "asterisk/module.h"
@@ -41,6 +41,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 344048 $")
 /* Portions of the conversion code are by guido@sienanet.it */
 
 #define	WAV_BUF_SIZE	320
+
+#define WAV_HEADER_SIZE 44
 
 struct wav_desc {	/* format-specific parameters */
 	int hz;
@@ -452,13 +454,25 @@ static int wav_write(struct ast_filestream *fs, struct ast_frame *f)
 
 static int wav_seek(struct ast_filestream *fs, off_t sample_offset, int whence)
 {
-	off_t min, max, cur, offset = 0, samples;
+	off_t min = WAV_HEADER_SIZE, max, cur, offset = 0, samples;
 
 	samples = sample_offset * 2; /* SLINEAR is 16 bits mono, so sample_offset * 2 = bytes */
-	min = 44; /* wav header is 44 bytes */
-	cur = ftello(fs->f);
-	fseeko(fs->f, 0, SEEK_END);
-	max = ftello(fs->f);
+
+	if ((cur = ftello(fs->f)) < 0) {
+		ast_log(AST_LOG_WARNING, "Unable to determine current position in wav filestream %p: %s\n", fs, strerror(errno));
+		return -1;
+	}
+
+	if (fseeko(fs->f, 0, SEEK_END) < 0) {
+		ast_log(AST_LOG_WARNING, "Unable to seek to end of wav filestream %p: %s\n", fs, strerror(errno));
+		return -1;
+	}
+
+	if ((max = ftello(fs->f)) < 0) {
+		ast_log(AST_LOG_WARNING, "Unable to determine max position in wav filestream %p: %s\n", fs, strerror(errno));
+		return -1;
+	}
+
 	if (whence == SEEK_SET)
 		offset = samples + min;
 	else if (whence == SEEK_CUR || whence == SEEK_FORCECUR)
@@ -475,8 +489,21 @@ static int wav_seek(struct ast_filestream *fs, off_t sample_offset, int whence)
 
 static int wav_trunc(struct ast_filestream *fs)
 {
-	if (ftruncate(fileno(fs->f), ftello(fs->f)))
+	int fd;
+	off_t cur;
+
+	if ((fd = fileno(fs->f)) < 0) {
+		ast_log(AST_LOG_WARNING, "Unable to determine file descriptor for wav filestream %p: %s\n", fs, strerror(errno));
 		return -1;
+	}
+	if ((cur = ftello(fs->f)) < 0) {
+		ast_log(AST_LOG_WARNING, "Unable to determine current position in wav filestream %p: %s\n", fs, strerror(errno));
+		return -1;
+	}
+	/* Truncate file to current length */
+	if (ftruncate(fd, cur)) {
+		return -1;
+	}
 	return update_header(fs->f);
 }
 

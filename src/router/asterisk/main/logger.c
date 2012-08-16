@@ -25,9 +25,13 @@
  * \author Mark Spencer <markster@digium.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 337973 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 /* When we include logger.h again it will trample on some stuff in syslog.h, but
  * nothing we care about in here. */
@@ -162,7 +166,7 @@ static FILE *qlog;
  * logchannels list.
  */
 
-static char *levels[32] = {
+static char *levels[NUMLOGLEVELS] = {
 	"DEBUG",
 	"---EVENT---",		/* no longer used */
 	"NOTICE",
@@ -173,7 +177,7 @@ static char *levels[32] = {
 };
 
 /*! \brief Colors used in the console for logging */
-static const int colors[32] = {
+static const int colors[NUMLOGLEVELS] = {
 	COLOR_BRGREEN,
 	COLOR_BRBLUE,		/* no longer used */
 	COLOR_YELLOW,
@@ -1062,6 +1066,7 @@ static void *logger_thread(void *data)
 		AST_LIST_LOCK(&logmsgs);
 		if (AST_LIST_EMPTY(&logmsgs)) {
 			if (close_logger_thread) {
+				AST_LIST_UNLOCK(&logmsgs);
 				break;
 			} else {
 				ast_cond_wait(&logcond, &logmsgs.lock);
@@ -1179,8 +1184,6 @@ void close_logger(void)
 	closelog(); /* syslog */
 
 	AST_RWLIST_UNLOCK(&logchannels);
-
-	return;
 }
 
 /*!
@@ -1267,15 +1270,18 @@ void ast_log(int level, const char *file, int line, const char *function, const 
 	/* If the logger thread is active, append it to the tail end of the list - otherwise skip that step */
 	if (logthread != AST_PTHREADT_NULL) {
 		AST_LIST_LOCK(&logmsgs);
-		AST_LIST_INSERT_TAIL(&logmsgs, logmsg, list);
-		ast_cond_signal(&logcond);
+		if (close_logger_thread) {
+			/* Logger is either closing or closed.  We cannot log this message. */
+			ast_free(logmsg);
+		} else {
+			AST_LIST_INSERT_TAIL(&logmsgs, logmsg, list);
+			ast_cond_signal(&logcond);
+		}
 		AST_LIST_UNLOCK(&logmsgs);
 	} else {
 		logger_print_normal(logmsg);
 		ast_free(logmsg);
 	}
-
-	return;
 }
 
 #ifdef HAVE_BKTR
@@ -1380,6 +1386,9 @@ char **ast_bt_get_symbols(void **addresses, size_t num_frames)
 				if (!bfd_find_nearest_line(bfdobj, section, syms, offset - section->vma, &file, &func, &line)) {
 					continue;
 				}
+
+                                /* file can possibly be null even with a success result from bfd_find_nearest_line */
+                                file = file ? file : "";
 
 				/* Stack trace output */
 				found++;

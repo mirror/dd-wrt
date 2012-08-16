@@ -36,7 +36,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 366094 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -187,6 +187,7 @@ static enum ast_device_state custom_devstate_callback(const char *data)
 {
 	char buf[256] = "";
 
+	/* Ignore check_return warning from Coverity fow ast_db_get below */
 	ast_db_get(astdb_family, data, buf, sizeof(buf));
 
 	return ast_devstate_val(buf);
@@ -250,7 +251,7 @@ static char *handle_cli_devstate_change(struct ast_cli_entry *e, int cmd, struct
 			"       Change a custom device to a new state.\n"
 			"       The possible values for the state are:\n"
 			"UNKNOWN | NOT_INUSE | INUSE | BUSY | INVALID | UNAVAILABLE | RINGING\n"
-			"RINGINUSE | ONHOLD\n",
+			"RINGINUSE | ONHOLD\n"
 			"\n"
 			"Examples:\n"
 			"       devstate change Custom:mystate1 INUSE\n"

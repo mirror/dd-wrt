@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 359110 $")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_KEY_DIR */
 #include <openssl/ssl.h>
@@ -116,7 +116,6 @@ static int pw_cb(char *buf, int size, int rwflag, void *userdata)
 		key->infd = -2;
 		return -1;
 	}
-	memset(buf, 0, sizeof(buf));
 	tmp = ast_hide_password(key->infd);
 	memset(buf, 0, size);
 	res = read(key->infd, buf, size);

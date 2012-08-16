@@ -141,7 +141,7 @@
 	</application>
 	<application name="DAHDISendCallreroutingFacility" language="en_US">
 		<synopsis>
-			Send QSIG call rerouting facility over a PRI.
+			Send an ISDN call rerouting/deflection facility message.
 		</synopsis>
 		<syntax argsep=",">
 			<parameter name="destination" required="true">
@@ -155,8 +155,9 @@
 			</parameter>
 		</syntax>
 		<description>
-			<para>This application will send a Callrerouting Facility IE over the
-			current channel.</para>
+			<para>This application will send an ISDN switch specific call
+			rerouting/deflection facility message over the current channel.
+			Supported switches depend upon the version of libpri in use.</para>
 		</description>
 	</application>
 	<application name="DAHDIAcceptR2Call" language="en_US">
@@ -180,11 +181,12 @@
 		<syntax>
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
 			<parameter name="DAHDIChannel" required="true">
-				<para>DAHDI channel name to transfer.</para>
+				<para>DAHDI channel number to transfer.</para>
 			</parameter>
 		</syntax>
 		<description>
-			<para>Transfer a DAHDI channel.</para>
+			<para>Simulate a flash hook event by the user connected to the channel.</para>
+			<note><para>Valid only for analog channels.</para></note>
 		</description>
 	</manager>
 	<manager name="DAHDIHangup" language="en_US">
@@ -194,11 +196,12 @@
 		<syntax>
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
 			<parameter name="DAHDIChannel" required="true">
-				<para>DAHDI channel name to hangup.</para>
+				<para>DAHDI channel number to hangup.</para>
 			</parameter>
 		</syntax>
 		<description>
-			<para>Hangup a DAHDI channel.</para>
+			<para>Simulate an on-hook event by the user connected to the channel.</para>
+			<note><para>Valid only for analog channels.</para></note>
 		</description>
 	</manager>
 	<manager name="DAHDIDialOffhook" language="en_US">
@@ -207,10 +210,15 @@
 		</synopsis>
 		<syntax>
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
-			<parameter name="DAHDIChannel" required="true" />
-			<parameter name="Number" required="true" />
+			<parameter name="DAHDIChannel" required="true">
+				<para>DAHDI channel number to dial digits.</para>
+			</parameter>
+			<parameter name="Number" required="true">
+				<para>Digits to dial.</para>
+			</parameter>
 		</syntax>
 		<description>
+			<para>Generate DTMF control frames to the bridged peer.</para>
 		</description>
 	</manager>
 	<manager name="DAHDIDNDon" language="en_US">
@@ -219,9 +227,13 @@
 		</synopsis>
 		<syntax>
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
-			<parameter name="DAHDIChannel" required="true" />
+			<parameter name="DAHDIChannel" required="true">
+				<para>DAHDI channel number to set DND on.</para>
+			</parameter>
 		</syntax>
 		<description>
+			<para>Equivalent to the CLI command "dahdi set dnd <variable>channel</variable> on".</para>
+			<note><para>Feature only supported by analog channels.</para></note>
 		</description>
 	</manager>
 	<manager name="DAHDIDNDoff" language="en_US">
@@ -230,20 +242,27 @@
 		</synopsis>
 		<syntax>
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
-			<parameter name="DAHDIChannel" required="true" />
+			<parameter name="DAHDIChannel" required="true">
+				<para>DAHDI channel number to set DND off.</para>
+			</parameter>
 		</syntax>
 		<description>
+			<para>Equivalent to the CLI command "dahdi set dnd <variable>channel</variable> off".</para>
+			<note><para>Feature only supported by analog channels.</para></note>
 		</description>
 	</manager>
 	<manager name="DAHDIShowChannels" language="en_US">
 		<synopsis>
-			Show status DAHDI channels.
+			Show status of DAHDI channels.
 		</synopsis>
 		<syntax>
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
-			<parameter name="DAHDIChannel" required="true" />
+			<parameter name="DAHDIChannel">
+				<para>Specify the specific channel number to show.  Show all channels if zero or not present.</para>
+			</parameter>
 		</syntax>
 		<description>
+			<para>Similar to the CLI command "dahdi show channels".</para>
 		</description>
 	</manager>
 	<manager name="DAHDIRestart" language="en_US">
@@ -254,6 +273,7 @@
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
 		</syntax>
 		<description>
+			<para>Equivalent to the CLI command "dahdi restart".</para>
 		</description>
 	</manager>
 	<application name="IAX2Provision" language="en_US">
@@ -321,7 +341,9 @@
 				</enumlist>
 			</parameter>
 		</syntax>
-		<description></description>
+		<description>
+			<para>Gets information associated with the specified IAX2 peer.</para>
+		</description>
 		<see-also>
 			<ref type="function">SIPPEER</ref>
 		</see-also>
@@ -333,7 +355,9 @@
 		<syntax>
 			<parameter name="varname" required="true" />
 		</syntax>
-		<description></description>
+		<description>
+			<para>Gets or sets a variable that is sent to a remote IAX2 peer during call setup.</para>
+		</description>
 	</function>
 	<manager name="IAXpeers" language="en_US">
 		<synopsis>
@@ -453,7 +477,7 @@
 	</application>
 	<function name="SIP_HEADER" language="en_US">
 		<synopsis>
-			Gets the specified SIP header.
+			Gets the specified SIP header from an incoming INVITE message.
 		</synopsis>
 		<syntax>
 			<parameter name="name" required="true" />
@@ -721,6 +745,23 @@
 			<para>Show one SKINNY line with details on current status.</para>
 		</description>
 	</manager>
+	<application name="AELSub" language="en_US">
+		<synopsis>
+			Launch subroutine built with AEL
+		</synopsis>
+		<syntax>
+			<parameter name="routine" required="true">
+				<para>Named subroutine to execute.</para>
+			</parameter>
+			<parameter name="args" required="false" />
+		</syntax>
+		<description>
+			<para>Execute the named subroutine, defined in AEL, from another dialplan
+			language, such as extensions.conf, Realtime extensions, or Lua.</para>
+			<para>The purpose of this application is to provide a sane entry point into
+			AEL subroutines, the implementation of which may change from time to time.</para>
+		</description>
+	</application>
 	<function name="DUNDILOOKUP" language="en_US">
 		<synopsis>
 			Do a DUNDi lookup of a phone number.
@@ -926,7 +967,13 @@
 						<para>Set the channels' account code to the password that is entered</para>
 					</option>
 					<option name="d">
-						<para>Interpret the given path as database key, not a literal file</para>
+						<para>Interpret the given path as database key, not a literal file.</para>
+						<note>
+							<para>The value is not used at all in the authentication when using this option.
+							If the family/key is set to <literal>/pin/100</literal> (value does not matter)
+							then the password field needs to be set to <literal>/pin</literal> and the pin entered
+							by the user would be authenticated against <literal>100</literal>.</para>
+						</note>
 					</option>
 					<option name="m">
 						<para>Interpret the given path as a file which contains a list of account
@@ -1369,7 +1416,7 @@
                                                 <para>Do not play message when first person enters</para>
                                         </option>
                                         <option name="s">
-                                                <para>Present menu (user or admin) when <literal>*</literal> is received
+                                                <para>Present menu (user or admin) when <literal>#</literal> is received
                                                 (send to menu).</para>
                                         </option>
                                         <option name="w">
@@ -1566,6 +1613,11 @@
 					a call to be answered. Exit to that extension if it exists in the
 					current context, or the context defined in the <variable>EXITCONTEXT</variable> variable,
 					if it exists.</para>
+					<note>
+						<para>Many SIP and ISDN phones cannot send DTMF digits until the call is
+						connected.  If you wish to use this option with these phones, you
+						can use the <literal>Answer</literal> application before dialing.</para>
+					</note>
 				</option>
 				<option name="D" argsep=":">
 					<argument name="called" />
@@ -1583,23 +1635,33 @@
 				</option>
 				<option name="f">
 					<argument name="x" required="false" />
-					<para>If <replaceable>x</replaceable> is not provided, force the callerid of the <emphasis>calling</emphasis> 
-					channel to be set as the extension associated with the channel using a dialplan <literal>hint</literal>.
+					<para>If <replaceable>x</replaceable> is not provided, force the CallerID sent on a call-forward or
+					deflection to the dialplan extension of this Dial() using a dialplan <literal>hint</literal>.
 					For example, some PSTNs do not allow CallerID to be set to anything
-					other than the number assigned to the caller. If <replaceable>x</replaceable> is provided, though, then
-					this option behaves quite differently. Any outgoing channel created will have its connected party information
-					set to <replaceable>x</replaceable></para>
+					other than the numbers assigned to you.
+					If <replaceable>x</replaceable> is provided, force the CallerID sent to <replaceable>x</replaceable>.</para>
 				</option>
 				<option name="F" argsep="^">
 					<argument name="context" required="false" />
 					<argument name="exten" required="false" />
 					<argument name="priority" required="true" />
-					<para>When the caller hangs up, transfer the called party
-					to the specified destination and continue execution at that location.</para>
+					<para>When the caller hangs up, transfer the <emphasis>called</emphasis> party
+					to the specified destination and <emphasis>start</emphasis> execution at that location.</para>
+					<note>
+						<para>Any channel variables you want the called channel to inherit from the caller channel must be
+						prefixed with one or two underbars ('_').</para>
+					</note>
 				</option>
 				<option name="F">
-					<para>Proceed with dialplan execution at the next priority in the current extension if the
-					source channel hangs up.</para>
+					<para>When the caller hangs up, transfer the <emphasis>called</emphasis> party to the next priority of the current extension
+					and <emphasis>start</emphasis> execution at that location.</para>
+					<note>
+						<para>Any channel variables you want the called channel to inherit from the caller channel must be
+						prefixed with one or two underbars ('_').</para>
+					</note>
+					<note>
+						<para>Using this option from a Macro() or GoSub() might not make sense as there would be no return points.</para>
+					</note>
 				</option>
 				<option name="g">
 					<para>Proceed with dialplan execution at the next priority in the current extension if the
@@ -1617,17 +1679,25 @@
 					</note>
 				</option>
 				<option name="h">
-					<para>Allow the called party to hang up by sending the <literal>*</literal> DTMF digit.</para>
+					<para>Allow the called party to hang up by sending the DTMF sequence
+					defined for disconnect in <filename>features.conf</filename>.</para>
 				</option>
 				<option name="H">
-					<para>Allow the calling party to hang up by hitting the <literal>*</literal> DTMF digit.</para>
+					<para>Allow the calling party to hang up by sending the DTMF sequence
+					defined for disconnect in <filename>features.conf</filename>.</para>
+					<note>
+						<para>Many SIP and ISDN phones cannot send DTMF digits until the call is
+						connected.  If you wish to allow DTMF disconnect before the dialed
+						party answers with these phones, you can use the <literal>Answer</literal>
+						application before dialing.</para>
+					</note>
 				</option>
 				<option name="i">
 					<para>Asterisk will ignore any forwarding requests it may receive on this dial attempt.</para>
 				</option>
 				<option name="I">
-					<para>Asterisk will ignore any connected line update requests or redirecting party update
-					requests it may receiveon this dial attempt.</para>
+					<para>Asterisk will ignore any connected line update requests or any redirecting party
+					update requests it may receive on this dial attempt.</para>
 				</option>
 				<option name="k">
 					<para>Allow the called party to enable parking of the call by sending
@@ -1744,9 +1814,12 @@
 					that if Caller*ID is present, do not screen the call.</para>
 				</option>
 				<option name="o">
-					<para>Specify that the Caller*ID that was present on the <emphasis>calling</emphasis> channel
-					be set as the Caller*ID on the <emphasis>called</emphasis> channel. This was the
-					behavior of Asterisk 1.0 and earlier.</para>
+					<argument name="x" required="false" />
+					<para>If <replaceable>x</replaceable> is not provided, specify that the CallerID that was present on the
+					<emphasis>calling</emphasis> channel be stored as the CallerID on the <emphasis>called</emphasis> channel.
+					This was the behavior of Asterisk 1.0 and earlier.
+					If <replaceable>x</replaceable> is provided, specify the CallerID stored on the <emphasis>called</emphasis> channel.
+					Note that o(${CALLERID(all)}) is similar to option o without the parameter.</para>
 				</option>
 				<option name="O">
 					<argument name="mode">
@@ -1786,7 +1859,8 @@
 				</option>
 				<option name="s">
 					<argument name="x" required="true" />
-					<para>Force the outgoing callerid tag parameter to be set to the string <replaceable>x</replaceable></para>
+					<para>Force the outgoing callerid tag parameter to be set to the string <replaceable>x</replaceable>.</para>
+					<para>Works with the f option.</para>
 				</option>
 				<option name="t">
 					<para>Allow the called party to transfer the calling party by sending the
@@ -1851,6 +1925,7 @@
 						<literal>prohib</literal>
 						<literal>unavailable</literal></para>
 					</argument>
+					<para>Works with the f option.</para>
 				</option>
 				<option name="w">
 					<para>Allow the called party to enable recording of the call by sending
@@ -1894,7 +1969,7 @@
 			<para>If the <variable>OUTBOUND_GROUP</variable> variable is set, all peer channels created by this
 			application will be put into that group (as in Set(GROUP()=...).
 			If the <variable>OUTBOUND_GROUP_ONCE</variable> variable is set, all peer channels created by this
-			application will be put into that group (as in Set(GROUP()=...). Unlike OUTBOUND_GROUP,
+			application will be put into that group (as in Set(GROUP()=...). Unlike <variable>OUTBOUND_GROUP</variable>,
 			however, the variable will be unset after use.</para>
 
 			<para>This application sets the following channel variables:</para>
@@ -1999,9 +2074,11 @@
 		<synopsis>
 			Pickup a ringing channel.
 		</synopsis>
-		<syntax>
-			<parameter name="channel" required="true" />
-			<parameter name="channel2" multiple="true" />
+		<syntax >
+			<parameter name="Technology/Resource" argsep="&amp;" required="true">
+				<argument name="Technology/Resource" required="true" />
+				<argument name="Technology2/Resource2" required="false" multiple="true" />
+			</parameter>
 			<parameter name="options" required="false">
 				<optionlist>
 					<option name="p">
@@ -2028,7 +2105,8 @@
 			<parameter name="dial-context" required="false">
 				<para>This is the dialplan context to use when looking for an
 				extension that the user has selected, or when jumping to the
-				<literal>o</literal> or <literal>a</literal> extension.</para>
+				<literal>o</literal> or <literal>a</literal> extension. If not
+				specified, the current context will be used.</para>
 			</parameter>
 			<parameter name="options" required="false">
 				<optionlist>
@@ -2178,6 +2256,8 @@
 		<description>
 			<para>Echos back any audio, video or DTMF frames read from the calling 
 			channel back to itself. Note: If '#' detected application exits</para>
+			<para>This application does not automatically answer and should be
+			preceeded by an application such as Answer() or Progress().</para>
 		</description>
 	</application>
 	<application name="Exec" language="en_US">
@@ -2287,10 +2367,10 @@
 			all DTMF events received on the channel, and notification if the channel is
 			hung up. The received on the channel, and notification if the channel is hung
 			up. The application will not be forcibly terminated when the channel is hung up.
-			See <filename>doc/externalivr.txt</filename> for a protocol specification.</para>
+			For more information see <filename>doc/AST.pdf</filename>.</para>
 		</description>
 	</application>
-	<application name="SendFAX" language="en_US">
+	<application name="SendFAX" language="en_US" module="app_fax">
 		<synopsis>
 			Send a Fax
 		</synopsis>
@@ -2335,7 +2415,7 @@
 			</variablelist>
 		</description>
 	</application>
-	<application name="ReceiveFAX" language="en_US">
+	<application name="ReceiveFAX" language="en_US" module="app_fax">
 		<synopsis>
 			Receive a Fax
 		</synopsis>
@@ -2420,20 +2500,24 @@
 			<parameter name="followmeid" required="true" />
 			<parameter name="options">
 				<optionlist>
-					<option name="s">
-						<para>Playback the incoming status message prior to starting
-						the follow-me step(s)</para>
-					</option>
 					<option name="a">
 						<para>Record the caller's name so it can be announced to the
 						callee on each step.</para>
+					</option>
+					<option name="d">
+						<para>Disable the 'Please hold while we try to connect your call' announcement.</para>
+					</option>
+					<option name="I">
+						<para>Asterisk will ignore any connected line update requests
+						it may receive on this dial attempt.</para>
 					</option>
 					<option name="n">
 						<para>Playback the unreachable status message if we've run out
 						of steps to reach the or the callee has elected not to be reachable.</para>
 					</option>
-					<option name="d">
-						<para>Disable the 'Please hold while we try to connect your call' announcement.</para>
+					<option name="s">
+						<para>Playback the incoming status message prior to starting
+						the follow-me step(s)</para>
 					</option>
 				</optionlist>
 			</parameter>
@@ -2835,10 +2919,13 @@
 					</option>
 					<option name="p" hasparams="optional">
 						<para>Allow user to exit the conference by pressing <literal>#</literal> (default)
-						or any of the defined keys. If keys contain <literal>*</literal> this will override
-						option <literal>s</literal>. The key used is set to channel variable
+						or any of the defined keys.  The key used is set to channel variable
 						<variable>MEETME_EXIT_KEY</variable>.</para>
 						<argument name="keys" required="true" />
+						<note>
+							<para>Option <literal>s</literal> has priority for <literal>*</literal>
+							since it cannot change its activation code.</para>
+						</note>
 					</option>
 					<option name="P">
 						<para>Always prompt for the pin even if it is specified.</para>
@@ -2873,6 +2960,10 @@
 						<para>Allow user to exit the conference by entering a valid single digit
 						extension <variable>MEETME_EXIT_CONTEXT</variable> or the current context
 						if that variable is not defined.</para>
+						<note>
+							<para>Option <literal>s</literal> has priority for <literal>*</literal>
+							since it cannot change its activation code.</para>
+						</note>
 					</option>
 					<option name="1">
 						<para>Do not play message when first person enters</para>
@@ -2907,7 +2998,7 @@
 			<para>Enters the user into a specified MeetMe conference.  If the <replaceable>confno</replaceable>
 			is omitted, the user will be prompted to enter one.  User can exit the conference by hangup, or
 			if the <literal>p</literal> option is specified, by pressing <literal>#</literal>.</para>
-			<note><para>The DAHDI kernel modules and at least one hardware driver (or dahdi_dummy)
+			<note><para>The DAHDI kernel modules and a functional DAHDI timing source (see dahdi_test)
 			must be present for conferencing to operate properly. In addition, the chan_dahdi channel driver
 			must be loaded for the <literal>i</literal> and <literal>r</literal> options to operate at
 			all.</para></note>
@@ -3058,7 +3149,7 @@
 		</syntax>
 		<description>
 			<para>Run admin <replaceable>command</replaceable> for a specific
-			<replaceable>channel</replaceable> in any coference.</para>
+			<replaceable>channel</replaceable> in any conference.</para>
 		</description>
 	</application>
 	<application name="SLAStation" language="en_US">
@@ -3585,6 +3676,8 @@
 		</syntax>
 		<description>
 			<para>Records the audio on the current channel to the specified file.</para>
+			<para>This application does not automatically answer and should be preceeded by
+			an application such as Answer or Progress().</para>
 			<variablelist>
 				<variable name="MIXMONITOR_FILENAME">
 					<para>Will contain the filename used to record.</para>
@@ -3643,7 +3736,8 @@
 		</syntax>
 		<description>
 			<para>Plays the Morse code equivalent of the passed string.</para>
-
+			<para>This application does not automatically answer and should be preceeded by
+			an application such as Answer() or Progress().</para>
 			<para>This application uses the following variables:</para>
 			<variablelist>
 				<variable name="MORSEDITLEN">
@@ -3672,9 +3766,11 @@
 		<description>
 			<para>Executes mpg123 to play the given location, which typically would be a mp3 filename
 			or m3u playlist filename or a URL. Please read http://en.wikipedia.org/wiki/M3U
-			to see how M3U playlist file format is like, Example usage would be 
+			to see how M3U playlist file format is like, Example usage would be
 			exten => 1234,1,MP3Player(/var/lib/asterisk/playlist.m3u)
 			User can exit by pressing any key on the dialpad, or by hanging up.</para>
+			<para>This application does not automatically answer and should be preceeded by an
+			application such as Answer() or Progress().</para>
 		</description>
 	</application>
 
@@ -4280,6 +4376,9 @@
 			<parameter name="minlength">
 				<para>Minimum allowable digits in the input callerid number. Defaults to <literal>10</literal>.</para>
 			</parameter>
+			<parameter name="options">
+				<para>Position reserved for options.</para>
+			</parameter>
 			<parameter name="context">
 				<para>Context to check the given callerid against patterns.</para>
 			</parameter>
@@ -4408,6 +4507,8 @@
 			up by another user.</para>
 			<para>This application will return to the dialplan if the queue does not exist, or
 			any of the join options cause the caller to not enter the queue.</para>
+			<para>This application does not automatically answer and should be preceeded
+			by an application such as Answer(), Progress(), or Ringing().</para>
 			<para>This application sets the following channel variable upon completion:</para>
 			<variablelist>
 				<variable name="QUEUESTATUS">
@@ -4423,14 +4524,19 @@
 			</variablelist>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
 			<ref type="application">AddQueueMember</ref>
 			<ref type="application">RemoveQueueMember</ref>
 			<ref type="application">PauseQueueMember</ref>
 			<ref type="application">UnpauseQueueMember</ref>
-			<ref type="application">AgentLogin</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
 			<ref type="function">QUEUE_MEMBER_COUNT</ref>
-			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
 			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<application name="AddQueueMember" language="en_US">
@@ -4459,10 +4565,19 @@
 			</variablelist>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
 			<ref type="application">RemoveQueueMember</ref>
 			<ref type="application">PauseQueueMember</ref>
 			<ref type="application">UnpauseQueueMember</ref>
-			<ref type="application">AgentLogin</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<application name="RemoveQueueMember" language="en_US">
@@ -4488,9 +4603,18 @@
 		</description>
 		<see-also>
 			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
 			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
 			<ref type="application">PauseQueueMember</ref>
 			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<application name="PauseQueueMember" language="en_US">
@@ -4522,7 +4646,19 @@
 			<para>Example: PauseQueueMember(,SIP/3000)</para>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
 			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<application name="UnpauseQueueMember" language="en_US">
@@ -4551,7 +4687,19 @@
 			<para>Example: UnpauseQueueMember(,SIP/3000)</para>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
 			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<application name="QueueLog" language="en_US">
@@ -4571,6 +4719,18 @@
 		</description>
 		<see-also>
 			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<function name="QUEUE_VARIABLES" language="en_US">
@@ -4611,6 +4771,21 @@
 			<para>Makes the following queue variables available.</para>
 			<para>Returns <literal>0</literal> if queue is found and setqueuevar is defined, <literal>-1</literal> otherwise.</para>
 		</description>
+		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
+		</see-also>
 	</function>
 	<function name="QUEUE_MEMBER" language="en_US">
 		<synopsis>
@@ -4638,6 +4813,21 @@
 		<description>
 			<para>Returns the number of members currently associated with the specified <replaceable>queuename</replaceable>.</para>
 		</description>
+		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
+		</see-also>
 	</function>
 	<function name="QUEUE_MEMBER_COUNT" language="en_US">
 		<synopsis>
@@ -4651,7 +4841,19 @@
 			<warning><para>This function has been deprecated in favor of the <literal>QUEUE_MEMBER()</literal> function</para></warning>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
 			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</function>
 	<function name="QUEUE_EXISTS" language="en_US">
@@ -4664,6 +4866,21 @@
 		<description>
 			<para>Returns 1 if the specified queue exists, 0 if it does not</para>
 		</description>
+		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
+		</see-also>
 	</function>
 	<function name="QUEUE_WAITING_COUNT" language="en_US">
 		<synopsis>
@@ -4675,6 +4892,21 @@
 		<description>
 			<para>Returns the number of callers currently waiting in the specified <replaceable>queuename</replaceable>.</para>
 		</description>
+		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
+		</see-also>
 	</function>
 	<function name="QUEUE_MEMBER_LIST" language="en_US">
 		<synopsis>
@@ -4687,7 +4919,19 @@
 			<para>Returns a comma-separated list of members associated with the specified <replaceable>queuename</replaceable>.</para>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
 			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</function>
 	<function name="QUEUE_MEMBER_PENALTY" language="en_US">
@@ -4701,13 +4945,27 @@
 		<description>
 			<para>Gets or sets queue members penalty.</para>
 		</description>
+		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
+		</see-also>
 	</function>
 	<manager name="Queues" language="en_US">
 		<synopsis>
 			Queues.
 		</synopsis>
 		<syntax>
-			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
 		</syntax>
 		<description>
 		</description>
@@ -5128,6 +5386,8 @@
 			file name is never seen by the end user, there is no need to
 			implement complicated spelling rules.  We simply record the word
 			"men" in the sound file named "mans".</para>
+			<para>This application does not automatically answer and should be
+			preceeded by an application such as Answer() or Progress.</para>
 		</description>
 		<see-also>
 			<ref type="application">SayCountedAdj</ref>
@@ -5165,6 +5425,9 @@
 			will play sound file "newa" (containing the word "novaya"), but
 			SayCountedAdj(5,new,f) will play sound file "newx" (containing the
 			word "novikh").</para>
+			<para>This application does not automatically answer and should be
+			preceeded by an application such as Answer(), Progress(), or
+			Proceeding().</para>
 		</description>
 		<see-also>
 			<ref type="application">SayCountedNoun</ref>
@@ -6079,6 +6342,9 @@
 				</variable>
 			</variablelist>
 		</description>
+		<see-also>
+			<ref type="application">VoiceMailMain</ref>
+		</see-also>
 	</application>
 	<application name="VoiceMailMain" language="en_US">
 		<synopsis>
@@ -6137,6 +6403,9 @@
 				</enum>
 			</enumlist>
 		</description>
+		<see-also>
+			<ref type="application">VoiceMail</ref>
+		</see-also>
 	</application>
 	<application name="MailboxExists" language="en_US">
 		<synopsis>
@@ -6604,8 +6873,8 @@
 			completion configuration parameter for a channel. Note that setting
 			a configuration parameter will only change the parameter for the
 			duration of the call.
-			
-			For more information on call completion in Asterisk, see <filename>doc/tex/ccss.tex</filename>.
+
+			For more information see <filename>doc/AST.pdf</filename>.
 			For more information on call completion parameters, see <filename>configs/ccss.conf.sample</filename>.</para>
 		</description>
 	</function>
@@ -6651,7 +6920,8 @@
 				</enumlist>
 			</parameter>
 			<parameter name="CID">
-				<para>Optional Caller*ID</para>
+				<para>Optional Caller*ID to parse instead of using the Caller*ID from the
+				channel. This parameter is only optional when reading the Caller*ID.</para>
 			</parameter>
 		</syntax>
 		<description>
@@ -6939,7 +7209,9 @@
 			with this function, and this variable will be stored on the cdr.</para>
 			<note><para>For setting CDR values, the <literal>l</literal> flag does not apply to
 			setting the <literal>accountcode</literal>, <literal>userfield</literal>, or
-			<literal>amaflags</literal>.</para></note>
+			<literal>amaflags</literal>.</para><para>CDRs can only be modified before the bridge
+			between two channels is torn down. For example, CDRs may not be modified after the
+			<literal>Dial</literal> application has returned.</para></note>
 			<para>Raw values for <literal>disposition</literal>:</para>
 			<enumlist>
 				<enum name="0">
@@ -7120,14 +7392,6 @@
 						<para>     <literal>remote_normdevjitter</literal>Remote calculated jitter (normal deviation)</para>
 						<para>     <literal>remote_stdevjitter</literal>Remote calculated jitter (standard deviation)</para>
 						<para>     <literal>remote_count</literal>      Number of transmitted packets</para>
-						<para>     <literal>remote_ssrc</literal>       Remote SSRC (stream ID)</para>
-						<para>     <literal>remote_lostpackets</literal>Remote lost packets</para>
-						<para>     <literal>remote_jitter</literal>     Remote reported jitter</para>
-						<para>     <literal>remote_maxjitter</literal>  Remote calculated jitter (maximum)</para>
-						<para>     <literal>remote_minjitter</literal>  Remote calculated jitter (minimum)</para>
-						<para>     <literal>remote_normdevjitter</literal>Remote calculated jitter (normal deviation)</para>
-						<para>     <literal>remote_stdevjitter</literal>Remote calculated jitter (standard deviation)</para>
-						<para>     <literal>remote_count</literal>      Number of transmitted packets</para>
 						<para>     <literal>rtt</literal>               Round trip time</para>
 						<para>     <literal>maxrtt</literal>            Round trip time (maximum)</para>
 						<para>     <literal>minrtt</literal>            Round trip time (minimum)</para>
@@ -7156,12 +7420,35 @@
 				</enumlist>
 				<para><emphasis>chan_dahdi</emphasis> provides the following additional options:</para>
 				<enumlist>
-					<enum name="reversecharge">
-						<para>R/O Reverse Charging Indication, one of:</para>
+					<enum name="dahdi_channel">
+						<para>R/O DAHDI channel related to this channel.</para>
+					</enum>
+					<enum name="dahdi_span">
+						<para>R/O DAHDI span related to this channel.</para>
+					</enum>
+					<enum name="dahdi_type">
+						<para>R/O DAHDI channel type, one of:</para>
 						<enumlist>
-							<enum name="-1 - None" />
-							<enum name="1 - Reverse Charging Requested" />
+							<enum name="analog" />
+							<enum name="mfc/r2" />
+							<enum name="pri" />
+							<enum name="pseudo" />
+							<enum name="ss7" />
 						</enumlist>
+					</enum>
+					<enum name="keypad_digits">
+						<para>R/O PRI Keypad digits that came in with the SETUP message.</para>
+					</enum>
+					<enum name="reversecharge">
+						<para>R/O PRI Reverse Charging Indication, one of:</para>
+						<enumlist>
+							<enum name="-1"> <para>None</para></enum>
+							<enum name=" 1"> <para>Reverse Charging Requested</para></enum>
+						</enumlist>
+					</enum>
+					<enum name="no_media_path">
+						<para>R/O PRI Nonzero if the channel has no B channel.
+						The channel is either on hold or a call waiting call.</para>
 					</enum>
 				</enumlist>
 			</parameter>
@@ -7186,6 +7473,110 @@
 		</description>
 	</function>
 
+	<function name="CURL" language="en_US">
+		<synopsis>
+			Retrieve content from a remote web or ftp server
+		</synopsis>
+		<syntax>
+			<parameter name="url" required="true" />
+			<parameter name="post-data">
+				<para>If specified, an <literal>HTTP POST</literal> will be
+				performed with the content of
+				<replaceable>post-data</replaceable>, instead of an
+				<literal>HTTP GET</literal> (default).</para>
+			</parameter>
+		</syntax>
+		<description />
+		<see-also>
+			<ref type="function">CURLOPT</ref>
+		</see-also>
+	</function>
+	<function name="CURLOPT" language="en_US">
+		<synopsis>
+			Sets various options for future invocations of CURL.
+		</synopsis>
+		<syntax>
+			<parameter name="key" required="yes">
+				<enumlist>
+					<enum name="cookie">
+						<para>A cookie to send with the request.  Multiple
+						cookies are supported.</para>
+					</enum>
+					<enum name="conntimeout">
+						<para>Number of seconds to wait for a connection to succeed</para>
+					</enum>
+					<enum name="dnstimeout">
+						<para>Number of seconds to wait for DNS to be resolved</para>
+					</enum>
+					<enum name="ftptext">
+						<para>For FTP URIs, force a text transfer (boolean)</para>
+					</enum>
+					<enum name="ftptimeout">
+						<para>For FTP URIs, number of seconds to wait for a
+						server response</para>
+					</enum>
+					<enum name="header">
+						<para>Include header information in the result
+						(boolean)</para>
+					</enum>
+					<enum name="httptimeout">
+						<para>For HTTP(S) URIs, number of seconds to wait for a
+						server response</para>
+					</enum>
+					<enum name="maxredirs">
+						<para>Maximum number of redirects to follow</para>
+					</enum>
+					<enum name="proxy">
+						<para>Hostname or IP address to use as a proxy server</para>
+					</enum>
+					<enum name="proxytype">
+						<para>Type of <literal>proxy</literal></para>
+						<enumlist>
+							<enum name="http" />
+							<enum name="socks4" />
+							<enum name="socks5" />
+						</enumlist>
+					</enum>
+					<enum name="proxyport">
+						<para>Port number of the <literal>proxy</literal></para>
+					</enum>
+					<enum name="proxyuserpwd">
+						<para>A <replaceable>username</replaceable><literal>:</literal><replaceable>password</replaceable>
+						combination to use for authenticating requests through a
+						<literal>proxy</literal></para>
+					</enum>
+					<enum name="referer">
+						<para>Referer URL to use for the request</para>
+					</enum>
+					<enum name="useragent">
+						<para>UserAgent string to use for the request</para>
+					</enum>
+					<enum name="userpwd">
+						<para>A <replaceable>username</replaceable><literal>:</literal><replaceable>password</replaceable>
+						to use for authentication when the server response to
+						an initial request indicates a 401 status code.</para>
+					</enum>
+					<enum name="ssl_verifypeer">
+						<para>Whether to verify the server certificate against
+						a list of known root certificate authorities (boolean).</para>
+					</enum>
+					<enum name="hashcompat">
+						<para>Assuming the responses will be in <literal>key1=value1&amp;key2=value2</literal>
+						format, reformat the response such that it can be used
+						by the <literal>HASH</literal> function.</para>
+					</enum>
+				</enumlist>
+			</parameter>
+		</syntax>
+		<description>
+			<para>Options may be set globally or per channel.  Per-channel
+			settings will override global settings.</para>
+		</description>
+		<see-also>
+			<ref type="function">CURL</ref>
+			<ref type="function">HASH</ref>
+		</see-also>
+	</function>
 	<function name="SORT" language="en_US">
 		<synopsis>
 			Sorts a list of key/vals into a list of keys, based upon the vals.	
@@ -7457,7 +7848,7 @@
 			</parameter>
 		</syntax>
 		<description>
-			<para>For more information see <filename>doc/asterisk.pdf</filename>.</para>
+			<para>For more information see <filename>doc/AST.pdf</filename>.</para>
 		</description>
 	</function>
 	<function name="TXTCIDNAME" language="en_US">
@@ -8171,6 +8562,12 @@
 			If there is no match, NULL will be returned by the function.
 			On a write, this function will always return NULL.</para>
 		</description>
+		<see-also>
+			<ref type="function">REALTIME_STORE</ref>
+			<ref type="function">REALTIME_DESTROY</ref>
+			<ref type="function">REALTIME_FIELD</ref>
+			<ref type="function">REALTIME_HASH</ref>
+		</see-also>
 	</function>
 	<function name="REALTIME_STORE" language="en_US">
 		<synopsis>
@@ -8188,6 +8585,12 @@
 			creates channel variable named RTSTOREID, which contains value of unique ID.
 			Currently, a maximum of 30 field/value pairs is supported.</para>
 		</description>
+		<see-also>
+			<ref type="function">REALTIME</ref>
+			<ref type="function">REALTIME_DESTROY</ref>
+			<ref type="function">REALTIME_FIELD</ref>
+			<ref type="function">REALTIME_HASH</ref>
+		</see-also>
 	</function>
 	<function name="REALTIME_DESTROY" language="en_US">
 		<synopsis>
@@ -8204,6 +8607,12 @@
 			<para>This function acts in the same way as REALTIME(....) does, except that
 			it destroys the matched record in the RT engine.</para>
 		</description>
+		<see-also>
+			<ref type="function">REALTIME</ref>
+			<ref type="function">REALTIME_STORE</ref>
+			<ref type="function">REALTIME_FIELD</ref>
+			<ref type="function">REALTIME_HASH</ref>
+		</see-also>
 	</function>
 	<function name="REALTIME_FIELD" language="en_US">
 		<synopsis>
@@ -8221,6 +8630,12 @@
 			<replaceable>value</replaceable>.  When written to, the REALTIME_FIELD() function
 			performs identically to the REALTIME() function.</para>
 		</description>
+		<see-also>
+			<ref type="function">REALTIME</ref>
+			<ref type="function">REALTIME_STORE</ref>
+			<ref type="function">REALTIME_DESTROY</ref>
+			<ref type="function">REALTIME_HASH</ref>
+		</see-also>
 	</function>
 	<function name="REALTIME_HASH" language="en_US">
 		<synopsis>
@@ -8238,6 +8653,12 @@
 			it can be assigned to the HASH() function.  The HASH() function then provides
 			a suitable method for retrieving each field value of the record.</para>
 		</description>
+		<see-also>
+			<ref type="function">REALTIME</ref>
+			<ref type="function">REALTIME_STORE</ref>
+			<ref type="function">REALTIME_DESTROY</ref>
+			<ref type="function">REALTIME_FIELD</ref>
+		</see-also>
 	</function>
 	<function name="SHA1" language="en_US">
 		<synopsis>
@@ -8914,6 +9335,13 @@
 			<parameter name="direction" required="true">
 				<para>Must be <literal>TX</literal> or <literal>RX</literal>.</para>
 			</parameter>
+			<parameter name="options">
+				<optionlist>
+					<option name="p">
+						<para>Enable DTMF volume control</para>
+					</option>
+				</optionlist>
+			</parameter>
 		</syntax>
 		<description>
 			<para>The VOLUME function can be used to increase or decrease the <literal>tx</literal> or
@@ -8921,6 +9349,8 @@
 			<para>For example:</para>
 			<para>Set(VOLUME(TX)=3)</para>
 			<para>Set(VOLUME(RX)=2)</para>
+			<para>Set(VOLUME(TX,p)=3)</para>
+			<para>Set(VOLUME(RX,p)=3></para>
 		</description>
 	</function>
 	<application name="CallCompletionRequest" language="en_US">
@@ -8931,6 +9361,21 @@
 		<description>
 			<para>Request call completion service for a previously failed
 			call attempt.</para>
+			<para>This application sets the following channel variables:</para>
+			<variablelist>
+				<variable name="CC_REQUEST_RESULT">
+					<para>This is the returned status of the request.</para>
+					<value name="SUCCESS" />
+					<value name="FAIL" />
+				</variable>
+				<variable name="CC_REQUEST_REASON">
+					<para>This is the reason the request failed.</para>
+					<value name="NO_CORE_INSTANCE" />
+					<value name="NOT_GENERIC" />
+					<value name="TOO_MANY_REQUESTS" />
+					<value name="UNSPECIFIED" />
+				</variable>
+			</variablelist>
 		</description>
 	</application>
 	<application name="CallCompletionCancel" language="en_US">
@@ -8940,6 +9385,20 @@
 		<syntax />
 		<description>
 			<para>Cancel a Call Completion Request.</para>
+			<para>This application sets the following channel variables:</para>
+			<variablelist>
+				<variable name="CC_CANCEL_RESULT">
+					<para>This is the returned status of the cancel.</para>
+					<value name="SUCCESS" />
+					<value name="FAIL" />
+				</variable>
+				<variable name="CC_CANCEL_REASON">
+					<para>This is the reason the cancel failed.</para>
+					<value name="NO_CORE_INSTANCE" />
+					<value name="NOT_GENERIC" />
+					<value name="UNSPECIFIED" />
+				</variable>
+			</variablelist>
 		</description>
 	</application>
 	<manager name="DataGet" language="en_US">
@@ -9028,11 +9487,11 @@
 					</option>
 					<option name="k">
 						<para>Allow the called party to enable parking of the call by sending
-						the DTMF sequence defined for call parking in features.conf.</para>
+						the DTMF sequence defined for call parking in <filename>features.conf</filename>.</para>
 					</option>
 					<option name="K">
 						<para>Allow the calling party to enable parking of the call by sending
-						 the DTMF sequence defined for call parking in features.conf.</para>
+						 the DTMF sequence defined for call parking in <filename>features.conf</filename>.</para>
 					</option>
 					<option name="L(x[:y][:z])">
 						<para>Limit the call to <replaceable>x</replaceable> ms. Play a warning
@@ -9063,19 +9522,19 @@
 					</option>
 					<option name="t">
 						<para>Allow the called party to transfer the calling party by sending the
-						DTMF sequence defined in features.conf.</para>
+						DTMF sequence defined in <filename>features.conf</filename>.</para>
 					</option>
 					<option name="T">
 						<para>Allow the calling party to transfer the called party by sending the
-						DTMF sequence defined in features.conf.</para>
+						DTMF sequence defined in <filename>features.conf</filename>.</para>
 					</option>
 					<option name="w">
 						<para>Allow the called party to enable recording of the call by sending
-						the DTMF sequence defined for one-touch recording in features.conf.</para>
+						the DTMF sequence defined for one-touch recording in <filename>features.conf</filename>.</para>
 					</option>
 					<option name="W">
 						<para>Allow the calling party to enable recording of the call by sending
-						the DTMF sequence defined for one-touch recording in features.conf.</para>
+						the DTMF sequence defined for one-touch recording in <filename>features.conf</filename>.</para>
 					</option>
 					<option name="x">
 						<para>Cause the called party to be hung up after the bridge, instead of being
@@ -9101,17 +9560,32 @@
 	</application>
 	<application name="ParkedCall" language="en_US">
 		<synopsis>
-			Answer a parked call.
+			Retrieve a parked call.
 		</synopsis>
 		<syntax>
-			<parameter name="exten" required="true" />
+			<parameter name="exten">
+				<para>Parking space extension to retrieve a parked call.
+				If not provided then the first available parked call in the
+				parking lot will be retrieved.</para>
+			</parameter>
+			<parameter name="parking_lot_name">
+				<para>Specify from which parking lot to retrieve a parked call.</para>
+				<para>The parking lot used is selected in the following order:</para>
+				<para>1) parking_lot_name option</para>
+				<para>2) <variable>PARKINGLOT</variable> variable</para>
+				<para>3) <literal>CHANNEL(parkinglot)</literal> function
+				(Possibly preset by the channel driver.)</para>
+				<para>4) Default parking lot.</para>
+			</parameter>
 		</syntax>
 		<description>
-			<para>Used to connect to a parked call. This application is always
-			registered internally and does not need to be explicitly added
-			into the dialplan, although you should include the <literal>parkedcalls</literal>
-			context. If no extension is provided, then the first available
-			parked call will be acquired.</para>
+			<para>Used to retrieve a parked call from a parking lot.</para>
+			<note>
+				<para>Parking lots automatically create and manage dialplan extensions in
+				the parking lot context.  You do not need to explicitly use this
+				application in your dialplan.  Instead, all you should do is include the
+				parking lot context in your dialplan.</para>
+			</note>
 		</description>
 		<see-also>
 			<ref type="application">Park</ref>
@@ -9149,27 +9623,47 @@
 					</option>
 				</optionlist>
 			</parameter>
+			<parameter name="parking_lot_name">
+				<para>Specify in which parking lot to park a call.</para>
+				<para>The parking lot used is selected in the following order:</para>
+				<para>1) parking_lot_name option</para>
+				<para>2) <variable>PARKINGLOT</variable> variable</para>
+				<para>3) <literal>CHANNEL(parkinglot)</literal> function
+				(Possibly preset by the channel driver.)</para>
+				<para>4) Default parking lot.</para>
+			</parameter>
 		</syntax>
 		<description>
 			<para>Used to park yourself (typically in combination with a supervised
-			transfer to know the parking space). This application is always
-			registered internally and does not need to be explicitly added
-			into the dialplan, although you should include the <literal>parkedcalls</literal>
-			context (or the context specified in <filename>features.conf</filename>).</para>
-			<para>If you set the <variable>PARKINGLOT</variable> variable, the call will be parked
-			in the specifed parking context. Note setting this variable overrides the <variable>
-			PARKINGLOT</variable> set by the <literal>CHANNEL</literal> function.</para>
-			<para>If you set the <variable>PARKINGEXTEN</variable> variable to an extension in your
-			parking context, Park() will park the call on that extension, unless
-			it already exists. In that case, execution will continue at next priority.</para>
-			<para>If you set the <variable>PARKINGLOT</variable> variable, Park() will park the call
-			in that parkinglot.</para>
-			<para>If you set the <variable>PARKINGDYNAMIC</variable> variable, this parkinglot from features.conf
-			will be used as template for the newly created dynamic lot.</para>
-			<para>If you set the <variable>PARKINGDYNCONTEXT</variable> variable the newly created dynamic
+			transfer to know the parking space).</para>
+			<para>If you set the <variable>PARKINGEXTEN</variable> variable to a
+			parking space extension in the parking lot, Park() will attempt to park the call
+			on that extension.  If the extension is already is in use then execution
+			will continue at the next priority.</para>
+			<para>If the <literal>parkeddynamic</literal> option is enabled in <filename>features.conf</filename>
+			the following variables can be used to dynamically create new parking lots.</para>
+			<para>If you set the <variable>PARKINGDYNAMIC</variable> variable and this parking lot
+			exists then it will be used as a template for the newly created dynamic lot.  Otherwise,
+			the default parking lot will be used.</para>
+			<para>If you set the <variable>PARKINGDYNCONTEXT</variable> variable then the newly created dynamic
 			parking lot will use this context.</para>
-			<para>If you set the <variable>PARKINGDYNPOS</variable> variable the newly created dynamic parkinglot
+			<para>If you set the <variable>PARKINGDYNEXTEN</variable> variable then the newly created dynamic
+			parking lot will use this extension to access the parking lot.</para>
+			<para>If you set the <variable>PARKINGDYNPOS</variable> variable then the newly created dynamic parking lot
 			will use those parking postitions.</para>
+			<note>
+				<para>This application must be used as the first extension priority
+				to be recognized as a parking access extension.  DTMF transfers
+				and some channel drivers need this distinction to operate properly.
+				The parking access extension in this case is treated like a dialplan
+				hint.</para>
+			</note>
+			<note>
+				<para>Parking lots automatically create and manage dialplan extensions in
+				the parking lot context.  You do not need to explicitly use this
+				application in your dialplan.  Instead, all you should do is include the
+				parking lot context in your dialplan.</para>
+			</note>
 		</description>
 		<see-also>
 			<ref type="application">ParkAndAnnounce</ref>
@@ -9197,13 +9691,13 @@
 				<para>Channel name to park.</para>
 			</parameter>
 			<parameter name="Channel2" required="true">
-				<para>Channel to announce park info to (and return to if timeout).</para>
+				<para>Channel to return to if timeout.</para>
 			</parameter>
 			<parameter name="Timeout">
 				<para>Number of milliseconds to wait before callback.</para>
 			</parameter>
 			<parameter name="Parkinglot">
-				<para>Parking lot to park channel in.</para>
+				<para>Specify in which parking lot to park the channel.</para>
 			</parameter>
 		</syntax>
 		<description>
@@ -9289,6 +9783,12 @@
 			<parameter name="ActionID">
 				<para>ActionID for this transaction. Will be returned.</para>
 			</parameter>
+			<parameter name="Username" required="true">
+				<para>Username to login with as specified in manager.conf.</para>
+			</parameter>
+			<parameter name="Secret">
+				<para>Secret to login with as specified in manager.conf.</para>
+			</parameter>
 		</syntax>
 		<description>
 			<para>Login Manager.</para>
@@ -9300,6 +9800,12 @@
 		</synopsis>
 		<syntax>
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
+			<parameter name="AuthType" required="true">
+				<para>Digest algorithm to use in the challenge. Valid values are:</para>
+				<enumlist>
+					<enum name="MD5" />
+				</enumlist>
+			</parameter>
 		</syntax>
 		<description>
 			<para>Generate a challenge for MD5 authentication.</para>
@@ -9358,6 +9864,9 @@
 		</syntax>
 		<description>
 			<para>Set a global or local channel variable.</para>
+			<note>
+				<para>If a channel name is not provided then the variable is global.</para>
+			</note>
 		</description>
 	</manager>
 	<manager name="Getvar" language="en_US">
@@ -9375,6 +9884,9 @@
 		</syntax>
 		<description>
 			<para>Get the value of a global or local channel variable.</para>
+			<note>
+				<para>If a channel name is not provided then the variable is global.</para>
+			</note>
 		</description>
 	</manager>
 	<manager name="GetConfig" language="en_US">
@@ -10054,7 +10566,7 @@
 		</description>
 		<see-also>
 			<ref type="application">Congestion</ref>
-			<ref type="application">Progess</ref>
+			<ref type="application">Progress</ref>
 			<ref type="application">Playtones</ref>
 			<ref type="application">Hangup</ref>
 		</see-also>
@@ -10074,7 +10586,7 @@
 		</description>
 		<see-also>
 			<ref type="application">Busy</ref>
-			<ref type="application">Progess</ref>
+			<ref type="application">Progress</ref>
 			<ref type="application">Playtones</ref>
 			<ref type="application">Hangup</ref>
 		</see-also>
@@ -10124,7 +10636,7 @@
 			<para>If the location that is put into the channel information is bogus, and asterisk cannot
 			find that location in the dialplan, then the execution engine will try to find and execute the code in
 			the <literal>i</literal> (invalid) extension in the current context. If that does not exist, it will try to execute the
-			<literal>h</literal> extension. If either or neither the <literal>h</literal> or <literal>i</literal> extensions
+			<literal>h</literal> extension. If neither the <literal>h</literal> nor <literal>i</literal> extensions
 			have been defined, the channel is hung up, and the execution of instructions on the channel is terminated.
 			What this means is that, for example, you specify a context that does not exist, then
 			it will not be possible to find the <literal>h</literal> or <literal>i</literal> extensions,
@@ -10161,7 +10673,7 @@
 			next instruction. If the target location is bogus, and does not exist, the execution engine will try
 			to find and execute the code in the <literal>i</literal> (invalid) extension in the current context.
 			If that does not exist, it will try to execute the <literal>h</literal> extension.
-			If either or neither the <literal>h</literal> or <literal>i</literal> extensions have been defined,
+			If neither the <literal>h</literal> nor <literal>i</literal> extensions have been defined,
 			the channel is hung up, and the execution of instructions on the channel is terminated.
 			Remember that this command can set the current context, and if the context specified
 			does not exist, then it will not be able to find any 'h' or 'i' extensions there, and
@@ -10415,7 +10927,7 @@
 		<description>
 			<para>This application will play the sounds that correspond to the given <replaceable>digits</replaceable>.
 			Optionally, a <replaceable>gender</replaceable> may be specified. This will use the language that is currently
-			set for the channel. See the LANGUAGE() function for more information on setting the language for the channel.</para>
+			set for the channel. See the CHANNEL() function for more information on setting the language for the channel.</para>
 		</description>
 		<see-also>
 			<ref type="application">SayAlpha</ref>
@@ -10456,10 +10968,9 @@
 			If the variable name is prefixed with <literal>__</literal>, the variable will be
 			inherited into channels created from the current channel and all children channels.</para>
 			<note><para>If (and only if), in <filename>/etc/asterisk/asterisk.conf</filename>, you have
-			a <literal>[compat]</literal> category, and you have <literal>app_set = 1.6</literal> under that,then
-			the behavior of this app changes, and does not strip surrounding quotes from the right hand side as
-			it did previously in 1.4. The <literal>app_set = 1.6</literal> is only inserted if <literal>make samples</literal>
-			is executed, or if users insert this by hand into the <filename>asterisk.conf</filename> file.
+			a <literal>[compat]</literal> category, and you have <literal>app_set = 1.4</literal> under that, then
+			the behavior of this app changes, and strips surrounding quotes from the right hand side as
+			it did previously in 1.4.
 			The advantages of not stripping out quoting, and not caring about the separator characters (comma and vertical bar)
 			were sufficient to make these changes in 1.6. Confusion about how many backslashes would be needed to properly
 			protect separators and quotes in various database access strings has been greatly
@@ -10544,7 +11055,8 @@
 					<option name="m">
 						<para>Provide music on hold to the caller while waiting for an extension.</para>
 						<argument name="x">
-							<para>Specify the class for music on hold.</para>
+							<para>Specify the class for music on hold. <emphasis>CHANNEL(musicclass) will
+							be used instead if set</emphasis></para>
 						</argument>
 					</option>
 				</optionlist>
@@ -10864,7 +11376,7 @@
 	</agi>
 	<agi name="hangup" language="en_US">
 		<synopsis>
-			Hangup the current channel.
+			Hangup a channel.
 		</synopsis>
 		<syntax>
 			<parameter name="channelname" />
@@ -11470,6 +11982,12 @@
     	<description>
 			<para>Check the specified calendar's current busy status.</para>
 		</description>
+		<see-also>
+			<ref type="function">CALENDAR_EVENT</ref>
+			<ref type="function">CALENDAR_QUERY</ref>
+			<ref type="function">CALENDAR_QUERY_RESULT</ref>
+			<ref type="function">CALENDAR_WRITE</ref>
+		</see-also>
 	</function>
 	<function name="CALENDAR_EVENT" language="en_US">
 		<synopsis>
@@ -11496,6 +12014,12 @@
 			<para>Whenever a calendar event notification call is made, the event data
 			may be accessed with this function.</para>
 		</description>
+		<see-also>
+			<ref type="function">CALENDAR_BUSY</ref>
+			<ref type="function">CALENDAR_QUERY</ref>
+			<ref type="function">CALENDAR_QUERY_RESULT</ref>
+			<ref type="function">CALENDAR_WRITE</ref>
+		</see-also>
 	</function>
 	<function name="CALENDAR_QUERY" language="en_US">
 		<synopsis>Query a calendar server and store the data on a channel
@@ -11515,6 +12039,12 @@
 			<para>Get a list of events in the currently accessible timeframe of the <replaceable>calendar</replaceable>
 			The function returns the id for accessing the result with CALENDAR_QUERY_RESULT()</para>
 		</description>
+		<see-also>
+			<ref type="function">CALENDAR_BUSY</ref>
+			<ref type="function">CALENDAR_EVENT</ref>
+			<ref type="function">CALENDAR_QUERY_RESULT</ref>
+			<ref type="function">CALENDAR_WRITE</ref>
+		</see-also>
 	</function>
 	<function name="CALENDAR_QUERY_RESULT" language="en_US">
 		<synopsis>
@@ -11550,6 +12080,12 @@
 			will return the data for that field. If multiple events matched the query, and <replaceable>entry</replaceable>
 			is provided, information from that event will be returned.</para>
 		</description>
+		<see-also>
+			<ref type="function">CALENDAR_BUSY</ref>
+			<ref type="function">CALENDAR_EVENT</ref>
+			<ref type="function">CALENDAR_QUERY</ref>
+			<ref type="function">CALENDAR_WRITE</ref>
+		</see-also>
 	</function>
 	<function name="CALENDAR_WRITE" language="en_US">
 		<synopsis>Write an event to a calendar</synopsis>
@@ -11576,9 +12112,15 @@
 			<para>Example: CALENDAR_WRITE(calendar,field1,field2,field3)=val1,val2,val3</para>
 			<para>The field and value arguments can easily be set/passed using the HASHKEYS() and HASH() functions</para>
 		</description>
+		<see-also>
+			<ref type="function">CALENDAR_BUSY</ref>
+			<ref type="function">CALENDAR_EVENT</ref>
+			<ref type="function">CALENDAR_QUERY</ref>
+			<ref type="function">CALENDAR_QUERY_RESULT</ref>
+		</see-also>
 	</function>
 
-	<application name="ReceiveFax" language="en_US">
+	<application name="ReceiveFAX" language="en_US" module="res_fax">
 		<synopsis>
 			Receive a FAX and save as a TIFF/F file.
 		</synopsis>
@@ -11607,7 +12149,7 @@
 			<ref type="function">FAXOPT</ref>
 		</see-also>
 	</application>
-	<application name="SendeFax" language="en_US">
+	<application name="SendFAX" language="en_US" module="res_fax">
 		<synopsis>
 			Sends a specified TIFF/F file as a FAX.
 		</synopsis>
@@ -11643,7 +12185,7 @@
 			<ref type="function">FAXOPT</ref>
 		</see-also>
 	</application>
-	<function name="FAXOPT" language="en_US">
+	<function name="FAXOPT" language="en_US" module="res_fax">
 		<synopsis>
 			Gets/sets various pieces of information about a fax session.
 		</synopsis>
@@ -12130,6 +12672,8 @@
 			Set(CHANNEL(musicclass)=...). If duration is given, hold music will be played
 			specified number of seconds. If duration is ommited, music plays indefinitely.
 			Returns <literal>0</literal> when done, <literal>-1</literal> on hangup.</para>
+			<para>This application does not automatically answer and should be preceeded by
+			an application such as Answer() or Progress().</para>
 		</description>
 	</application>
 	<application name="WaitMusicOnHold" language="en_US">

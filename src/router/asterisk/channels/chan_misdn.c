@@ -55,9 +55,10 @@
 	<depend>suppserv</depend>
 	<support_level>extended</support_level>
  ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 344965 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include <pthread.h>
 #include <sys/socket.h>
@@ -7404,7 +7405,6 @@ static struct ast_frame *misdn_read(struct ast_channel *ast)
 static int misdn_write(struct ast_channel *ast, struct ast_frame *frame)
 {
 	struct chan_list *ch;
-	int i  = 0;
 
 	if (!ast || !(ch = MISDN_ASTERISK_TECH_PVT(ast))) {
 		return -1;
@@ -7503,7 +7503,7 @@ static int misdn_write(struct ast_channel *ast, struct ast_frame *frame)
 
 	} else {
 		/* transmit without jitterbuffer */
-		i = misdn_lib_tx2misdn_frm(ch->bc, frame->data.ptr, frame->samples);
+		misdn_lib_tx2misdn_frm(ch->bc, frame->data.ptr, frame->samples);
 	}
 
 	return 0;

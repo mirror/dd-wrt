@@ -21,9 +21,13 @@
  * \author Mark Michelson <mmichelson@digium.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 321924 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369238 $")
 
 #include "asterisk/astobj2.h"
 #include "asterisk/strings.h"
@@ -1103,7 +1107,10 @@ static int generic_monitor_cmp_fn(void *obj, void *arg, int flags)
 
 static struct generic_monitor_instance_list *find_generic_monitor_instance_list(const char * const device_name)
 {
-	struct generic_monitor_instance_list finder = {.device_name = device_name};
+	struct generic_monitor_instance_list finder = {0};
+	char *uppertech = ast_strdupa(device_name);
+	ast_tech_to_upper(uppertech);
+	finder.device_name = uppertech;
 
 	return ao2_t_find(generic_monitors, &finder, OBJ_POINTER, "Finding generic monitor instance list");
 }
@@ -1125,15 +1132,18 @@ static struct generic_monitor_instance_list *create_new_generic_list(struct ast_
 {
 	struct generic_monitor_instance_list *generic_list = ao2_t_alloc(sizeof(*generic_list),
 			generic_monitor_instance_list_destructor, "allocate generic monitor instance list");
+	char * device_name;
 
 	if (!generic_list) {
 		return NULL;
 	}
 
-	if (!(generic_list->device_name = ast_strdup(monitor->interface->device_name))) {
+	if (!(device_name = ast_strdup(monitor->interface->device_name))) {
 		cc_unref(generic_list, "Failed to strdup the monitor's device name");
 		return NULL;
 	}
+	ast_tech_to_upper(device_name);
+	generic_list->device_name = device_name;
 
 	if (!(generic_list->sub = ast_event_subscribe(AST_EVENT_DEVICE_STATE,
 		generic_monitor_devstate_cb, "Requesting CC", NULL,
@@ -2584,8 +2594,13 @@ static void *generic_recall(void *data)
 			return NULL;
 		}
 	}
-	ast_cc_agent_recalling(agent->core_id, "Generic agent %s is recalling", agent->device_name);
-	ast_pbx_start(chan);
+	if (ast_pbx_start(chan)) {
+		ast_cc_failed(agent->core_id, "PBX failed to start for %s.", agent->device_name);
+		ast_hangup(chan);
+		return NULL;
+	}
+	ast_cc_agent_recalling(agent->core_id, "Generic agent %s is recalling",
+		agent->device_name);
 	return NULL;
 }
 

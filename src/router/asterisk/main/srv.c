@@ -29,9 +29,13 @@
  * \note Funding provided by nic.at
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 321392 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include <netinet/in.h>
 #include <arpa/nameser.h>

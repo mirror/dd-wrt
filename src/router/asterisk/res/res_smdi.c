@@ -32,12 +32,12 @@
  */
 
 /*** MODULEINFO
-	<support_level>extended</support_level>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368894 $")
 
 #include <termios.h>
 #include <sys/time.h>

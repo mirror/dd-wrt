@@ -18,6 +18,26 @@
 ===
 ===========================================================
 
+From 1.8.11 to 1.8.12:
+* In AEL dialplans, the "h" extension will now be inherited from prior
+  calling contexts, just as it had in 1.4.  If you have created an AEL
+  dialplan from scratch in earlier versions of 1.8, you may want to
+  check that the execution of "h" extensions in earlier contexts is what
+  you want.  If you want to interrupt this functionality, simply placing
+  an "h" extension in the macro where you want no inheritance to take
+  place should be sufficient.
+
+From 1.8.10 to 1.8.11:
+
+* The BLINDTRANSFER channel variable is deleted from a channel when it is
+  bridged to prevent subtle bugs in the parking feature.  The channel
+  variable is used by Asterisk internally for the Park application to work
+  properly.  If you were using it for your own purposes, copy it to your
+  own channel variable before the channel is bridged.
+
+* If no transport is specified in sip.conf, transport will default to UDP.
+  Also, if multiple transport= lines are used, only the last will be used.
+
 From 1.6.2 to 1.8:
 
 * When using TLS with Manager and the HTTP server, the desired port

@@ -42,7 +42,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 360360 $")
 
 #include <limits.h>
 
@@ -904,8 +904,14 @@ static int enable_jack_hook(struct ast_channel *chan, char *data)
 return_error:
 	ast_channel_unlock(chan);
 
-	if (jack_data)
+	if (jack_data) {
 		destroy_jack_data(jack_data);
+	}
+
+	if (datastore) {
+		datastore->data = NULL;
+		ast_datastore_free(datastore);
+	}
 
 	return -1;
 }

@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368898 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -90,6 +90,9 @@ static void destroy_callback(void *data)
 	struct volume_information *vi = data;
 
 	/* Destroy the audiohook, and destroy ourselves */
+	ast_audiohook_lock(&vi->audiohook);
+	ast_audiohook_detach(&vi->audiohook);
+	ast_audiohook_unlock(&vi->audiohook);
 	ast_audiohook_destroy(&vi->audiohook);
 	ast_free(vi);
 
@@ -206,7 +209,7 @@ static int volume_write(struct ast_channel *chan, const char *cmd, char *data, c
 	
 	if (!ast_strlen_zero(args.options)) {
 		struct ast_flags flags = { 0 };
-		ast_app_parse_options(volume_opts, &flags, &data, args.options);
+		ast_app_parse_options(volume_opts, &flags, NULL, args.options);
 		vi->flags = flags.flags;
 	} else { 
 		vi->flags = 0; 

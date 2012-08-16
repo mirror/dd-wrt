@@ -22,9 +22,13 @@
  * \author Eliel C. Sardanons (LU1ALY) <eliels@gmail.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 275105 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369001 $")
 
 #include "asterisk/_private.h"
 
@@ -1042,6 +1046,7 @@ static int data_search_cmp_ptr(const struct ast_data_search *root, const char *n
 	cmp_type = child->cmp_type;
 
 	if (sscanf(child->value, "%p", &node_ptr) <= 0) {
+		ao2_ref(child, -1);
 		return 1;
 	}
 
@@ -2186,6 +2191,7 @@ struct ast_xml_doc *ast_data_get_xml(const struct ast_data_query *query)
 
 	doc = ast_xml_new();
 	if (!doc) {
+		ast_data_free(res);
 		return NULL;
 	}
 
@@ -2496,18 +2502,20 @@ struct ast_data_iterator *ast_data_iterator_init(struct ast_data *tree,
 	struct ast_data *internal = tree;
 	char *path, *ptr = NULL;
 
+	if (!elements) {
+		return NULL;
+	}
+
 	/* tree is the node we want to use to iterate? or we are going
 	 * to iterate thow an internal node? */
-	if (elements) {
-		path = ast_strdupa(elements);
+	path = ast_strdupa(elements);
 
-		ptr = strrchr(path, '/');
-		if (ptr) {
-			*ptr = '\0';
-			internal = data_result_get_node(tree, path);
-			if (!internal) {
-				return NULL;
-			}
+	ptr = strrchr(path, '/');
+	if (ptr) {
+		*ptr = '\0';
+		internal = data_result_get_node(tree, path);
+		if (!internal) {
+			return NULL;
 		}
 	}
 

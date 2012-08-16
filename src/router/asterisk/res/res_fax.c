@@ -37,7 +37,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 354545 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 368738 $")
 
 #include "asterisk/io.h"
 #include "asterisk/file.h"
@@ -462,7 +462,7 @@ static int update_modem_bits(enum ast_fax_modems *bits, const char *value)
 	char *m[5], *tok, *v = (char *)value;
 	int i = 0, j;
 
-	if (!(tok = strchr(v, ','))) {
+	if (!strchr(v, ',')) {
 		m[i++] = v;
 		m[i] = NULL;
 	} else {
@@ -2581,7 +2581,7 @@ static char *cli_fax_show_sessions(struct ast_cli_entry *e, int cmd, struct ast_
 		ao2_lock(s);
 
 		if (!(filenames = generate_filenames_string(s->details, "", ", "))) {
-			ast_log(LOG_ERROR, "error printing filenames for 'fax show sessions' command");
+			ast_log(LOG_ERROR, "Error printing filenames for 'fax show sessions' command\n");
 			ao2_unlock(s);
 			ao2_ref(s, -1);
 			ao2_iterator_destroy(&i);

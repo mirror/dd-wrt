@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 354749 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 366048 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -197,7 +197,7 @@ AST_APP_OPTIONS(cdr_func_options, {
 static int cdr_read(struct ast_channel *chan, const char *cmd, char *parse,
 		    char *buf, size_t len)
 {
-	char *ret;
+	char *ret = NULL;
 	struct ast_flags flags = { 0 };
 	struct ast_cdr *cdr;
 	AST_DECLARE_APP_ARGS(args,
