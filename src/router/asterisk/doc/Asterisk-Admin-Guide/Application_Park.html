@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Application_Park</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Application_Park
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Aug 17, 2011 by <font color="#0050B2">wikibot</font>.
+				    </div>
+
+				    <h1><a name="Application_Park-Park%28%29"></a>Park()</h1>
+
+<h3><a name="Application_Park-Synopsis"></a>Synopsis</h3>
+<p>Park yourself.</p>
+
+<h3><a name="Application_Park-Description"></a>Description</h3>
+<p>Used to park yourself (typically in combination with a supervised transfer to know the parking space). </p>
+
+<p>If you set the If you set the <tt>None</tt> - <tt>PARKINGEXTEN</tt> variable to a parking space extension in the parking lot, Park() will attempt to park the call on that extension. If the extension is already is in use then execution will continue at the next priority. </p>
+
+<p>If the <tt>parkeddynamic</tt> option is enabled in <tt>features.conf</tt> the following variables can be used to dynamically create new parking lots. </p>
+
+<p>If you set the If you set the <tt>None</tt> - <tt>PARKINGDYNAMIC</tt> variable and this parking lot exists then it will be used as a template for the newly created dynamic lot. Otherwise, the default parking lot will be used. </p>
+
+<p>If you set the If you set the <tt>None</tt> - <tt>PARKINGDYNCONTEXT</tt> variable then the newly created dynamic parking lot will use this context. </p>
+
+<p>If you set the If you set the <tt>None</tt> - <tt>PARKINGDYNEXTEN</tt> variable then the newly created dynamic parking lot will use this extension to access the parking lot. </p>
+
+<p>If you set the If you set the <tt>None</tt> - <tt>PARKINGDYNPOS</tt> variable then the newly created dynamic parking lot will use those parking postitions. </p>
+
+<p>This application must be used as the first extension priority to be recognized as a parking access extension. DTMF transfers and some channel drivers need this distinction to operate properly. The parking access extension in this case is treated like a dialplan hint.This application must be used as the first extension priority to be recognized as a parking access extension. DTMF transfers and some channel drivers need this distinction to operate properly. The parking access extension in this case is treated like a dialplan hint. </p>
+
+<p>Parking lots automatically create and manage dialplan extensions in the parking lot context. You do not need to explicitly use this application in your dialplan. Instead, all you should do is include the parking lot context in your dialplan.Parking lots automatically create and manage dialplan extensions in the parking lot context. You do not need to explicitly use this application in your dialplan. Instead, all you should do is include the parking lot context in your dialplan.</p>
+
+<h3><a name="Application_Park-Syntax"></a>Syntax</h3>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Park([timeout[,return_context[,return_exten[,return_priority[,options[,parking_lot_name]]]]]])</pre>
+</div></div>
+
+<h5><a name="Application_Park-Arguments"></a>Arguments</h5>
+
+<ul>
+	<li><tt>timeout</tt> - A custom parking timeout for this parked call. Value in milliseconds.</li>
+	<li><tt>return_context</tt> - The context to return the call to after it times out.</li>
+	<li><tt>return_exten</tt> - The extension to return the call to after it times out.</li>
+	<li><tt>return_priority</tt> - The priority to return the call to after it times out.</li>
+	<li><tt>options</tt> - A list of options for this parked call.
+	<ul>
+		<li><tt>r</tt> - Send ringing instead of MOH to the parked call.</li>
+		<li><tt>R</tt> - Randomize the selection of a parking space.</li>
+		<li><tt>s</tt> - Silence announcement of the parking space number.</li>
+	</ul>
+	</li>
+	<li><tt>parking_lot_name</tt> - Specify in which parking lot to park a call. The parking lot used is selected in the following order: 1) parking_lot_name option 2) <tt>PARKINGLOT</tt> variable 3) <tt>CHANNEL(parkinglot)</tt> function (Possibly preset by the channel driver.) 4) Default parking lot.</li>
+</ul>
+
+
+
+<h3><a name="Application_Park-SeeAlso"></a>See Also</h3>
+
+<p><a href="Application_ParkAndAnnounce.html" title="Application_ParkAndAnnounce">Application&#95;ParkAndAnnounce</a><br/>
+<a href="Application_ParkedCall.html" title="Application_ParkedCall">Application&#95;ParkedCall</a></p>
+
+
+<h3><a name="Application_Park-ImportVersion"></a>Import Version</h3>
+<p>This documentation was imported from Asterisk version SVN-branch-1.8-r332176.</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Oct 04, 2011 12:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>
