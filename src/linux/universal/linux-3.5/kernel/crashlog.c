@@ -75,7 +75,7 @@ void __init crashlog_init_bootmem(bootmem_data_t *bdata)
 #endif
 
 #ifdef CONFIG_HAVE_MEMBLOCK
-void __init crashlog_init_memblock(phys_addr_t addr, phys_addr_t size)
+void __meminit crashlog_init_memblock(phys_addr_t addr, phys_addr_t size)
 {
 	if (crashlog_addr)
 		return;
