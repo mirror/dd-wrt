@@ -1,6 +1,14 @@
 # LIC: GPL
 Changes from Version 3.10 to 3.11:
 
+- Make the rp-pppoe.so plugin avoid calling exit() if the "persist" pppd
+  option was given.
+
+- Permit both PPPoE server and client to specify an MTU/MRU of 1500 assuming
+  the underlying Ethernet interface has an MTU of at least 1508.  The larger
+  MTU is negotiated per RFC 4638.  NOTE: Only available with kernel-mode
+  plugin, not user-mode pty redirector.
+
 - Get rid of hard-coded nobsdcomp, nodeflate, novj and novjccomp options
   in pppoe-server.
 

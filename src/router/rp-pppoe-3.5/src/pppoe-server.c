@@ -6,7 +6,7 @@
 *
 * Implementation of a user-space PPPoE server
 *
-* Copyright (C) 2000-2009 Roaring Penguin Software Inc.
+* Copyright (C) 2000-2012 Roaring Penguin Software Inc.
 *
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.
@@ -134,6 +134,9 @@ EventSelector *event_selector;
 
 /* Use Linux kernel-mode PPPoE? */
 static int UseLinuxKernelModePPPoE = 0;
+
+/* Requested max_ppp_payload */
+static UINT16_t max_ppp_payload = 0;
 
 /* File with PPPD options */
 static char *pppoptfile = NULL;
@@ -432,6 +435,15 @@ parsePADITags(UINT16_t type, UINT16_t len, unsigned char *data,
 	      void *extra)
 {
     switch(type) {
+    case TAG_PPP_MAX_PAYLOAD:
+	if (len == sizeof(max_ppp_payload)) {
+	    memcpy(&max_ppp_payload, data, sizeof(max_ppp_payload));
+	    max_ppp_payload = ntohs(max_ppp_payload);
+	    if (max_ppp_payload <= ETH_PPPOE_MTU) {
+		max_ppp_payload = 0;
+	    }
+	}
+	break;
     case TAG_SERVICE_NAME:
 	/* Copy requested service name */
 	requestedService.type = htons(type);
@@ -468,6 +480,15 @@ parsePADRTags(UINT16_t type, UINT16_t len, unsigned char *data,
 	      void *extra)
 {
     switch(type) {
+    case TAG_PPP_MAX_PAYLOAD:
+	if (len == sizeof(max_ppp_payload)) {
+	    memcpy(&max_ppp_payload, data, sizeof(max_ppp_payload));
+	    max_ppp_payload = ntohs(max_ppp_payload);
+	    if (max_ppp_payload <= ETH_PPPOE_MTU) {
+		max_ppp_payload = 0;
+	    }
+	}
+	break;
     case TAG_RELAY_SESSION_ID:
 	relayId.type = htons(type);
 	relayId.length = htons(len);
@@ -586,6 +607,8 @@ processPADI(Interface *ethif, PPPoEPacket *packet, int len)
     relayId.type = 0;
     hostUniq.type = 0;
     requestedService.type = 0;
+    max_ppp_payload = 0;
+
     parsePacket(packet, parsePADITags, NULL);
 
     /* If PADI specified non-default service name, and we do not offer
@@ -631,6 +654,27 @@ processPADI(Interface *ethif, PPPoEPacket *packet, int len)
     memcpy(cursor, &acname, acname_len + TAG_HDR_SIZE);
     cursor += acname_len + TAG_HDR_SIZE;
 
+    /* If we asked for an MTU, handle it */
+    if (max_ppp_payload > ETH_PPPOE_MTU && ethif->mtu > 0) {
+	/* Shrink payload to fit */
+	if (max_ppp_payload > ethif->mtu - TOTAL_OVERHEAD) {
+	    max_ppp_payload = ethif->mtu - TOTAL_OVERHEAD;
+	}
+	if (max_ppp_payload > ETH_JUMBO_LEN - TOTAL_OVERHEAD) {
+	    max_ppp_payload = ETH_JUMBO_LEN - TOTAL_OVERHEAD;
+	}
+	if (max_ppp_payload > ETH_PPPOE_MTU) {
+	    PPPoETag maxPayload;
+	    UINT16_t mru = htons(max_ppp_payload);
+	    maxPayload.type = htons(TAG_PPP_MAX_PAYLOAD);
+	    maxPayload.length = htons(sizeof(mru));
+	    memcpy(maxPayload.payload, &mru, sizeof(mru));
+	    CHECK_ROOM(cursor, pado.payload, sizeof(mru) + TAG_HDR_SIZE);
+	    memcpy(cursor, &maxPayload, sizeof(mru) + TAG_HDR_SIZE);
+	    cursor += sizeof(mru) + TAG_HDR_SIZE;
+	    plen += sizeof(mru) + TAG_HDR_SIZE;
+	}
+    }
     /* If no service-names specified on command-line, just send default
        zero-length name.  Otherwise, add all service-name tags */
     servname.type = htons(TAG_SERVICE_NAME);
@@ -790,6 +834,8 @@ processPADR(Interface *ethif, PPPoEPacket *packet, int len)
 	    return;
 	}
     }
+
+    max_ppp_payload = 0;
     parsePacket(packet, parsePADRTags, NULL);
 
     /* Check that everything's cool */
@@ -949,6 +995,29 @@ processPADR(Interface *ethif, PPPoEPacket *packet, int len)
     memcpy(cursor, &requestedService, TAG_HDR_SIZE+slen);
     cursor += TAG_HDR_SIZE+slen;
     plen += TAG_HDR_SIZE+slen;
+
+    /* If we asked for an MTU, handle it */
+    if (max_ppp_payload > ETH_PPPOE_MTU && ethif->mtu > 0) {
+	/* Shrink payload to fit */
+	if (max_ppp_payload > ethif->mtu - TOTAL_OVERHEAD) {
+	    max_ppp_payload = ethif->mtu - TOTAL_OVERHEAD;
+	}
+	if (max_ppp_payload > ETH_JUMBO_LEN - TOTAL_OVERHEAD) {
+	    max_ppp_payload = ETH_JUMBO_LEN - TOTAL_OVERHEAD;
+	}
+	if (max_ppp_payload > ETH_PPPOE_MTU) {
+	    PPPoETag maxPayload;
+	    UINT16_t mru = htons(max_ppp_payload);
+	    maxPayload.type = htons(TAG_PPP_MAX_PAYLOAD);
+	    maxPayload.length = htons(sizeof(mru));
+	    memcpy(maxPayload.payload, &mru, sizeof(mru));
+	    CHECK_ROOM(cursor, pads.payload, sizeof(mru) + TAG_HDR_SIZE);
+	    memcpy(cursor, &maxPayload, sizeof(mru) + TAG_HDR_SIZE);
+	    cursor += sizeof(mru) + TAG_HDR_SIZE;
+	    plen += sizeof(mru) + TAG_HDR_SIZE;
+	    cliSession->requested_mtu = max_ppp_payload;
+	}
+    }
 
     if (relayId.type) {
 	memcpy(cursor, &relayId, ntohs(relayId.length) + TAG_HDR_SIZE);
@@ -1459,7 +1528,8 @@ pppoeserver_main(int argc, char **argv)
     }
     /* Open all the interfaces */
     for (i=0; i<NumInterfaces; i++) {
-	interfaces[i].sock = openInterface(interfaces[i].name, Eth_PPPOE_Discovery, interfaces[i].mac);
+	interfaces[i].mtu = 0;
+	interfaces[i].sock = openInterface(interfaces[i].name, Eth_PPPOE_Discovery, interfaces[i].mac, &interfaces[i].mtu);
     }
 
     /* Ignore SIGPIPE */
@@ -1769,7 +1839,7 @@ void
 startPPPDUserMode(ClientSession *session)
 {
     /* Leave some room */
-    char *argv[32];
+    char *argv[64];
 
     char buffer[SMALLBUF];
 
@@ -1825,6 +1895,19 @@ startPPPDUserMode(ClientSession *session)
 	sprintf(buffer, "%u", (unsigned int) (ntohs(session->sess) - 1 - SessOffset));
 	argv[c++] = buffer;
     }
+    if (session->requested_mtu > 1492) {
+	sprintf(buffer, "%u", (unsigned int) session->requested_mtu);
+	argv[c++] = "mru";
+	argv[c++] = buffer;
+	argv[c++] = "mtu";
+	argv[c++] = buffer;
+    } else {
+	argv[c++] = "mru";
+	argv[c++] = "1492";
+	argv[c++] = "mtu";
+	argv[c++] = "1492";
+    }
+
     argv[c++] = NULL;
     execv(pppd_path, argv);
     exit(EXIT_FAILURE);
@@ -1902,6 +1985,18 @@ startPPPDLinuxKernelMode(ClientSession *session)
 	argv[c++] = "unit";
 	sprintf(buffer, "%u", (unsigned int) (ntohs(session->sess) - 1 - SessOffset));
 	argv[c++] = buffer;
+    }
+    if (session->requested_mtu > 1492) {
+	sprintf(buffer, "%u", (unsigned int) session->requested_mtu);
+	argv[c++] = "mru";
+	argv[c++] = buffer;
+	argv[c++] = "mtu";
+	argv[c++] = buffer;
+    } else {
+	argv[c++] = "mru";
+	argv[c++] = "1492";
+	argv[c++] = "mtu";
+	argv[c++] = "1492";
     }
     argv[c++] = NULL;
     execv(pppd_path, argv);
@@ -2068,6 +2163,7 @@ pppoe_alloc_session(void)
     ses->flags = 0;
     ses->startTime = time(NULL);
     ses->serviceName = "";
+    ses->requested_mtu = 0;
 #ifdef HAVE_LICENSE
     memset(ses->user, 0, MAX_USERNAME_LEN+1);
     memset(ses->realm, 0, MAX_USERNAME_LEN+1);
