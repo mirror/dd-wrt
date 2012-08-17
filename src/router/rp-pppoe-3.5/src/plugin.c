@@ -4,8 +4,8 @@
 *
 * pppd plugin for kernel-mode PPPoE on Linux
 *
-* Copyright (C) 2001 by Roaring Penguin Software Inc., Michal Ostrowski
-* and Jamal Hadi Salim.
+* Copyright (C) 2001-2012 by Roaring Penguin Software Inc.
+* Portions copyright 2000 Michal Ostrowski and Jamal Hadi Salim.
 *
 * Much code and many ideas derived from pppoe plugin by Michal
 * Ostrowski and Jamal Hadi Salim, which carries this copyright:
@@ -63,6 +63,7 @@ static char const RCSID[] =
 char pppd_version[] = VERSION;
 
 static int seen_devnam[2] = {0, 0};
+static char *pppoe_reqd_mac = NULL;
 
 /* From sys-linux.c in pppd -- MUST FIX THIS! */
 extern int new_style_driver;
@@ -86,6 +87,8 @@ static option_t Options[] = {
       "Attach to existing session (sessid:macaddr)" },
     { "rp_pppoe_verbose", o_int, &printACNames,
       "Be verbose about discovered access concentrators"},
+    { "rp_pppoe_mac", o_string, &pppoe_reqd_mac,
+      "Only connect to specified MAC address" },
     { NULL }
 };
 int (*OldDevnameHook)(char *cmd, char **argv, int doit) = NULL;
@@ -136,6 +139,33 @@ static int
 PPPOEConnectDevice(void)
 {
     struct sockaddr_pppox sp;
+    struct ifreq ifr;
+    int s;
+
+    /* Restore configuration */
+    lcp_allowoptions[0].mru = conn->mtu;
+    lcp_wantoptions[0].mru = conn->mru;
+
+    /* Update maximum MRU */
+    s = socket(AF_INET, SOCK_DGRAM, 0);
+    if (s < 0) {
+	error("Can't get MTU for %s: %m", conn->ifName);
+	return -1;
+    }
+    strncpy(ifr.ifr_name, conn->ifName, sizeof(ifr.ifr_name));
+    if (ioctl(s, SIOCGIFMTU, &ifr) < 0) {
+	error("Can't get MTU for %s: %m", conn->ifName);
+	close(s);
+	return -1;
+    }
+    close(s);
+
+    if (lcp_allowoptions[0].mru > ifr.ifr_mtu - TOTAL_OVERHEAD) {
+	lcp_allowoptions[0].mru = ifr.ifr_mtu - TOTAL_OVERHEAD;
+    }
+    if (lcp_wantoptions[0].mru > ifr.ifr_mtu - TOTAL_OVERHEAD) {
+	lcp_wantoptions[0].mru = ifr.ifr_mtu - TOTAL_OVERHEAD;
+    }
 
     /* Open session socket before discovery phase, to avoid losing session */
     /* packets sent by peer just after PADS packet (noted on some Cisco    */
@@ -146,6 +176,13 @@ PPPOEConnectDevice(void)
     if (conn->sessionSocket < 0) {
 	error("Failed to create PPPoE socket: %m");
 	return -1;
+    }
+
+    if (acName) {
+	SET_STRING(conn->acName, acName);
+    }
+    if (pppd_pppoe_service) {
+	SET_STRING(conn->serviceName, pppd_pppoe_service);
     }
 
     strlcpy(ppp_devnam, devnam, sizeof(ppp_devnam));
@@ -163,7 +200,7 @@ PPPOEConnectDevice(void)
 	}
     } else {
         conn->discoverySocket =
-            openInterface(conn->ifName, Eth_PPPOE_Discovery, conn->myEth);
+            openInterface(conn->ifName, Eth_PPPOE_Discovery, conn->myEth, NULL);
         discovery(conn);
 	if (conn->discoveryState != STATE_SESSION) {
 	    error("Unable to complete PPPoE Discovery");
@@ -428,6 +465,7 @@ plugin_init(void)
 * Nothing
 *%DESCRIPTION:
 * Prints a message plus the errno value to stderr and syslog and exits.
+*
 ***********************************************************************/
 void
 fatalSys(char const *str)
@@ -473,11 +511,57 @@ sysErr(char const *str)
     rp_fatal(str);
 }
 
+void pppoe_check_options(void)
+{
+    unsigned int mac[ETH_ALEN];
+    int i;
+
+    if (pppoe_reqd_mac != NULL) {
+        if (sscanf(pppoe_reqd_mac, "%x:%x:%x:%x:%x:%x",
+                   &mac[0], &mac[1], &mac[2], &mac[3],
+                   &mac[4], &mac[5]) != ETH_ALEN) {
+            option_error("cannot parse pppoe-mac option value");
+            exit(EXIT_OPTION_ERROR);
+        }
+        for (i = 0; i < 6; ++i)
+            conn->req_peer_mac[i] = mac[i];
+        conn->req_peer = 1;
+    }
+
+    lcp_allowoptions[0].neg_accompression = 0;
+    lcp_wantoptions[0].neg_accompression = 0;
+
+    lcp_allowoptions[0].neg_asyncmap = 0;
+    lcp_wantoptions[0].neg_asyncmap = 0;
+
+    lcp_allowoptions[0].neg_pcompression = 0;
+    lcp_wantoptions[0].neg_pcompression = 0;
+
+    if (lcp_allowoptions[0].mru > MAX_PPPOE_MTU) {
+        lcp_allowoptions[0].mru = MAX_PPPOE_MTU;
+    }
+    if (lcp_wantoptions[0].mru > MAX_PPPOE_MTU) {
+        lcp_wantoptions[0].mru = MAX_PPPOE_MTU;
+    }
+
+    /* Save configuration */
+    conn->mtu = lcp_allowoptions[0].mru;
+    conn->mru = lcp_wantoptions[0].mru;
+
+    ccp_allowoptions[0].deflate = 0;
+    ccp_wantoptions[0].deflate = 0;
+
+    ipcp_allowoptions[0].neg_vj = 0;
+    ipcp_wantoptions[0].neg_vj = 0;
+
+    ccp_allowoptions[0].bsd_compress = 0;
+    ccp_wantoptions[0].bsd_compress = 0;
+}
 
 struct channel pppoe_channel = {
     .options = Options,
     .process_extra_options = &PPPOEDeviceOptions,
-    .check_options = NULL,
+    .check_options = &pppoe_check_options,
     .connect = &PPPOEConnectDevice,
     .disconnect = &PPPOEDisconnectDevice,
     .establish_ppp = &generic_establish_ppp,
