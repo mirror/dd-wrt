@@ -693,7 +693,7 @@ l7filters filters_list[] = {
 	{
 	 "teamspeak", 0},	// TeamSpeak - VoIP application -
 	{
-	 "teamviewer", 0},
+	 "teamviewer", DPI},
 	{
 	 "teamviewer1", 0},
 	{
@@ -728,6 +728,8 @@ l7filters filters_list[] = {
 	 "tsp", 0},		// TSP - Berkely UNIX Time Synchronization
 	// Protocol
 #ifdef HAVE_OPENDPI
+	{
+	 "tuenti", 2},
 	{
 	 "tvants", 2},
 	{

@@ -931,6 +931,20 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
     a++;
   }
 #endif
+
+#ifdef NTOP_PROTOCOL_TEAMVIEWER
+  if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, NTOP_PROTOCOL_TEAMVIEWER) != 0) {
+    ipoque_struct->callback_buffer[a].func = ntop_search_teamview;
+    ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+        IPQ_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD;
+
+    IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+    IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, NTOP_PROTOCOL_TEAMVIEWER);
+    IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, NTOP_PROTOCOL_TEAMVIEWER);
+    a++;
+  }
+#endif
+
 #ifdef IPOQUE_PROTOCOL_DHCP
   if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_DHCP) != 0) {
     ipoque_struct->callback_buffer[a].func = ipoque_search_dhcp_udp;
@@ -3307,6 +3321,8 @@ unsigned int ntop_guess_undetected_protocol(u8 proto,
     else if(is_port(sport, dport, 23))  return(IPOQUE_PROTOCOL_TELNET);
     else if(is_port(sport, dport, 445)) return(IPOQUE_PROTOCOL_SMB);
     else if(is_port(sport, dport, 80))  return(IPOQUE_PROTOCOL_HTTP);
+    else if(is_port(sport, dport, 3000))  return(IPOQUE_PROTOCOL_HTTP); /* ntop */
+    else if(is_port(sport, dport, 3001))  return(IPOQUE_PROTOCOL_SSL);  /* ntop */
     else if(is_port(sport, dport, 8080) || is_port(sport, dport, 3128)) return(NTOP_PROTOCOL_HTTP_PROXY);
     else if(is_port(sport, dport, 389)) return(IPOQUE_PROTOCOL_LDAP);
     else if(is_port(sport, dport, 143) || is_port(sport, dport, 993)) return(IPOQUE_PROTOCOL_MAIL_IMAP);

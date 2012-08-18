@@ -349,6 +349,10 @@ struct ipoque_flow_tcp_struct {
 #ifdef NTOP_PROTOCOL_CITRIX
   u8 citrix_packet_id;
 #endif
+
+#ifdef NTOP_PROTOCOL_TEAMVIEWER
+  u8 teamviewer_stage;
+#endif
 } 
 
 #if !(defined(HAVE_NTOP) && defined(WIN32))
@@ -392,6 +396,9 @@ struct ipoque_flow_udp_struct {
 #endif
 #ifdef NTOP_PROTOCOL_SKYPE
   u8 skype_packet_id;
+#endif
+#ifdef NTOP_PROTOCOL_TEAMVIEWER
+  u8 teamviewer_stage;
 #endif
 }
 

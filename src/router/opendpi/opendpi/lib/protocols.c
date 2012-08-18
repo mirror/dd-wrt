@@ -105,3 +105,4 @@
 #include "protocols/crossfire.c"
 #include "protocols/fiesta.c"
 #include "protocols/http.c"
+#include "protocols/teamviewer.c"
