@@ -373,7 +373,7 @@ static void ntop_search_netflow(struct ipoque_detection_module_struct *ipoque_st
 static void ntop_search_sflow(struct ipoque_detection_module_struct *ipoque_struct);
 static void ntop_search_radius(struct ipoque_detection_module_struct *ipoque_struct);
 static void ntop_search_wsus(struct ipoque_detection_module_struct *ipoque_struct);
-
+static void ntop_search_teamview(struct ipoque_detection_module_struct *ipoque_struct);
 #endif
 
 
