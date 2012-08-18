@@ -193,11 +193,13 @@ typedef struct {
 #define NTOP_PROTOCOL_APPLE_ITUNES                              145
 #define NTOP_PROTOCOL_RADIUS                                    146
 #define NTOP_PROTOCOL_WINDOWS_UPDATE                            147 /* Thierry Laurion */
+#define NTOP_PROTOCOL_TEAMVIEWER                                148 /* xplico.org */
+#define NTOP_PROTOCOL_TUENTI					149
 
 /* NOTE: REMEMBER TO UPDATE IPOQUE_PROTOCOL_LONG_STRING / IPOQUE_PROTOCOL_SHORT_STRING */
 #endif
 
-#define IPOQUE_LAST_IMPLEMENTED_PROTOCOL                        147
+#define IPOQUE_LAST_IMPLEMENTED_PROTOCOL                        149
 
 
 #define IPOQUE_MAX_SUPPORTED_PROTOCOLS (IPOQUE_LAST_IMPLEMENTED_PROTOCOL + 1)
@@ -216,7 +218,7 @@ typedef struct {
     "FaceBook","Twitter","DropBox","Gmail","Google Maps","YouTube","Skype","Google","DCE RPC","NetFlow_IPFIX","sFlow", \
     "HTTP Connect","HTTP Proxy","Citrix","Netflix","Last.fm","Grooveshark", \
     "Skyfile_prepaid","Skyfile_rudics","Skyfile_postpaid","CitrixOnline_GotoMeeting","Apple","Webex",\
-    "WhatsApp","Apple_iCloud","Viber","Apple_iTunes","Radius","WindowsUpdate"
+    "WhatsApp","Apple_iCloud","Viber","Apple_iTunes","Radius","WindowsUpdate","TeamViewer","Tuenti"
 #define IPOQUE_PROTOCOL_SHORT_STRING "ukn","ftp","pop","smtp","imap","dns","ipp","http","mdns","ntp","netbios","nfs","ssdp", \
     "bgp","snmp","xdmcp","smb","syslog","dhcp","postgres","mysql","tds","ddl","i23v5","apple","directconnect","socrates","winmx", \
     "manolito","pando","filetopia","imesh","kontiki","openft","fasttrack","gnutella","edonkey","bittorrent","off","avi", \
@@ -229,7 +231,7 @@ typedef struct {
     "facebook","twitter","dropbox","gmail","gmaps","youtube","skype","google","dcerpc","netflow","sflow", \
     "http_connect","http_proxy","citrix","netflix","last.fm","grooveshark",\
     "skyfile_pre", "Skyfile_ru","skyfile_post","citrixonline","imessage_facetime","webex","whatsapp","icloud","viber","itunes", \
-    "radius","winupdate"
+    "radius","winupdate","teamviewer","tuenti"
 
 #ifdef __cplusplus
 }

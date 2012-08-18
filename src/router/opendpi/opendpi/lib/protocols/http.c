@@ -397,6 +397,27 @@ static void avi_check_http_payload(struct ipoque_detection_module_struct *ipoque
 }
 #endif
 
+#ifdef NTOP_PROTOCOL_TEAMVIEWER
+static void teamviewer_check_http_payload(struct ipoque_detection_module_struct *ipoque_struct)
+{
+    struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+    const u8 *pos;
+    
+    IPQ_LOG(NTOP_PROTOCOL_TEAMVIEWER, ipoque_struct, IPQ_LOG_DEBUG, "called teamviewer_check_http_payload: %u %u %u\n", 
+            packet->empty_line_position_set, flow->l4.tcp.http_empty_line_seen, packet->empty_line_position);
+
+    if (packet->empty_line_position_set == 0 || (packet->empty_line_position + 5) > (packet->payload_packet_len))
+        return;
+
+    pos = &packet->payload[packet->empty_line_position] + 2;
+
+    if (pos[0] == 0x17 && pos[1] == 0x24) {
+        IPQ_LOG(NTOP_PROTOCOL_TEAMVIEWER, ipoque_struct, IPQ_LOG_DEBUG, "TeamViewer content in http detected\n");
+        ipoque_int_http_add_connection(ipoque_struct, NTOP_PROTOCOL_TEAMVIEWER);
+    }
+}
+#endif
+
 #ifdef IPOQUE_PROTOCOL_OFF
 static void off_parse_packet_contentline(struct ipoque_detection_module_struct
 					 *ipoque_struct)
@@ -485,6 +506,7 @@ static ntop_protocol_match host_match[] = {
   { ".viber.com",        NTOP_PROTOCOL_VIBER },
   { ".last.fm",          NTOP_PROTOCOL_LASTFM },
   { ".grooveshark.com",  NTOP_PROTOCOL_GROOVESHARK },
+  { ".tuenti.com",       NTOP_PROTOCOL_TUENTI },
   { NULL, 0 }
 };
 
@@ -578,10 +600,6 @@ static void http_check_content_type_and_change_protocol(struct ipoque_detection_
     if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_REALMEDIA) != 0)
       realmedia_parse_packet_contentline(ipoque_struct);
 #endif
-#ifdef NTOP_PROTOCOL_WINDOWS_UPDATE    
-    if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, NTOP_PROTOCOL_WINDOWS_UPDATE) != 0)
-      windows_update_packet_useragentline(ipoque_struct);
-#endif
 #ifdef IPOQUE_PROTOCOL_WINDOWSMEDIA
     if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_WINDOWSMEDIA) != 0)
       windowsmedia_parse_packet_contentline(ipoque_struct);
@@ -610,6 +628,10 @@ static void http_check_content_type_and_change_protocol(struct ipoque_detection_
 #ifdef IPOQUE_PROTOCOL_XBOX
     if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_XBOX) != 0)
       xbox_parse_packet_useragentline(ipoque_struct);
+#endif
+#ifdef NTOP_PROTOCOL_WINDOWS_UPDATE    
+    if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, NTOP_PROTOCOL_WINDOWS_UPDATE) != 0)
+      windows_update_packet_useragentline(ipoque_struct);
 #endif
 #ifdef IPOQUE_PROTOCOL_WINDOWSMEDIA
     if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_WINDOWSMEDIA) != 0)
@@ -669,6 +691,10 @@ static void check_http_payload(struct ipoque_detection_module_struct *ipoque_str
   if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_AVI) != 0)
     avi_check_http_payload(ipoque_struct);
 #endif
+#ifdef NTOP_PROTOCOL_TEAMVIEWER
+  teamviewer_check_http_payload(ipoque_struct);
+#endif
+
 }
 
 /**
