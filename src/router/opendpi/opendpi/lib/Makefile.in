@@ -501,6 +501,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stun.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syslog.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tds.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teamviewer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/telnet.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tftp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/thunder.Plo@am__quote@
@@ -1238,6 +1239,13 @@ zattoo.lo: protocols/zattoo.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='protocols/zattoo.c' object='zattoo.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zattoo.lo `test -f 'protocols/zattoo.c' || echo '$(srcdir)/'`protocols/zattoo.c
+
+teamviewer.lo: protocols/teamviewer.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT teamviewer.lo -MD -MP -MF $(DEPDIR)/teamviewer.Tpo -c -o teamviewer.lo `test -f 'protocols/teamviewer.c' || echo '$(srcdir)/'`protocols/teamviewer.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/teamviewer.Tpo $(DEPDIR)/teamviewer.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='protocols/teamviewer.c' object='teamviewer.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o teamviewer.lo `test -f 'protocols/teamviewer.c' || echo '$(srcdir)/'`protocols/teamviewer.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
