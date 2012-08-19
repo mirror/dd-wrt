@@ -146,24 +146,25 @@ void start_mkfiles(void)
 	cprintf("%s:%d", __func__, __LINE__);
 	fprintf(fp, "root:x:0:\n");
 	fclose(fp);
+	
+	mkdir("/var/spool",0700);
 
-	system2("/bin/mkdir -p /var/spool");
-	system2("/bin/mkdir -p /var/spool/cron");
-	system2("/bin/mkdir -p /var/lock/subsys");
-	system2("/bin/mkdir -p /var/spool/cron/crontabs");
-	system2("/bin/touch /var/spool/cron/crontabs/root");
-	system2("/bin/mkdir -p /var/lib");
-	system2("/bin/mkdir -p /var/lib/misc");
-	system2("/bin/mkdir -p /var/tmp");
-
-	system2("/bin/mkdir -p /var/log");
-	system2("/bin/touch /var/log/messages");
+	mkdir("/var/spool/cron",0700);
+	mkdir("/var/lock",0700);
+	mkdir("/var/lock/subsys",0700);
+	mkdir("/var/spool/cron/crontabs",0700);
+	eval("touch","/var/spool/cron/crontabs/root");
+	mkdir("/var/lib",0700);
+	mkdir("/var/lib/misc",0700);
+	mkdir("/var/tmp",0700);
+	mkdir("/var/log",0700);	
+	eval("touch","/var/log/messages");
 	cprintf("%s:%d", __func__, __LINE__);
 
 #ifdef HAVE_SNMP
-	system2("/bin/mkdir -p /var/snmp");
+	mkdir("/var/snmp",0700);
 #endif
-	system2("/bin/chmod 0777 /tmp");
+	chmod("/tmp",0777);
 	cprintf("%s:%d", __func__, __LINE__);
 
 	dns_to_resolv();
