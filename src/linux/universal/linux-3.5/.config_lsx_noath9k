@@ -1381,5 +1381,3 @@ CONFIG_IXGBE_PTP=y
 # CONFIG_RB1200 is not set
 # CONFIG_RB2011 is not set
 # CONFIG_CRASHLOG is not set
-# CONFIG_SLUB_DEBUG is not set
-# CONFIG_SLUB_STATS is not set
