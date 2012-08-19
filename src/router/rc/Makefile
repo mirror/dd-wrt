@@ -888,6 +888,7 @@ ifeq ($(CONFIG_ADM5120),y)
 endif
 ifeq ($(CONFIG_PPPOESERVER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc addpppoeconnected
+	cd $(INSTALLDIR)/sbin && ln -sf rc delpppoeconnected
 	cd $(INSTALLDIR)/sbin && ln -sf rc addpppoetime
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
