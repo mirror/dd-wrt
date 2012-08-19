@@ -251,7 +251,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 	if (target)
 		sysprintf("mkdir -p /tmp/mnt/%s", target);
 	else
-		sysprintf("mkdir -p /tmp/mnt");
+		mkdir("/tmp/mnt",0700);
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
 		ret = eval("ntfs-3g", path, mount_point);
