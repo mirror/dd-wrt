@@ -350,19 +350,26 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fprintf(fp, "\tscan_ssid=1\n");
 		if (nvram_prefix_match("8021xtype", prefix, "tls")) {
 // -> added habeIchVergessen
-			char *keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
+			char *keyExchng =
+			    nvram_nget("%s_tls8021xkeyxchng", prefix);
 			char *wpaOpts[40];
-			if (strlen(keyExchng)==0)
-			    nvram_nset("wep","%s_tls8021xkeyxchng", prefix);
+			if (strlen(keyExchng) == 0)
+				nvram_nset("wep", "%s_tls8021xkeyxchng",
+					   prefix);
 			sprintf(wpaOpts, "");
 			keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
 			if (strcmp("wpa2", keyExchng) == 0)
-				sprintf(wpaOpts, "\tpairwise=CCMP\n\tgroup=CCMP\n");
+				sprintf(wpaOpts,
+					"\tpairwise=CCMP\n\tgroup=CCMP\n");
 			if (strcmp("wpa2mixed", keyExchng) == 0)
-                         	sprintf(wpaOpts, "\tpairwise=CCMP TKIP\n\tgroup=CCMP TKIP\n");
+				sprintf(wpaOpts,
+					"\tpairwise=CCMP TKIP\n\tgroup=CCMP TKIP\n");
 			if (strcmp("wpa", keyExchng) == 0)
-                        	sprintf(wpaOpts, "\tpairwise=TKIP\n\tgroup=TKIP\n");
-			fprintf(fp, "\tkey_mgmt=%s\n%s", (strlen(wpaOpts) == 0 ? "IEEE8021X" : "WPA-EAP"), wpaOpts);
+				sprintf(wpaOpts,
+					"\tpairwise=TKIP\n\tgroup=TKIP\n");
+			fprintf(fp, "\tkey_mgmt=%s\n%s",
+				(strlen(wpaOpts) ==
+				 0 ? "IEEE8021X" : "WPA-EAP"), wpaOpts);
 // <- added habeIchVergessen
 			fprintf(fp, "\teap=TLS\n");
 			fprintf(fp, "\tidentity=\"%s\"\n",
@@ -844,7 +851,8 @@ void addWPS(FILE * fp, char *prefix, int configured)
 		fprintf(fp, "device_type=6-0050F204-1\n");
 		fprintf(fp, "os_version=01020300\n");
 #ifdef HAVE_BUFFALO
-		fprintf(fp, "friendly_name=BUFFALO %s\n", nvram_get("DD_BOARD"));
+		fprintf(fp, "friendly_name=BUFFALO %s\n",
+			nvram_get("DD_BOARD"));
 #else
 		fprintf(fp, "friendly_name=DD-WRT WPS Access Point\n");
 #endif
@@ -1034,8 +1042,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			else {
 				char *wip = get_wan_ipaddr();
 				if (strlen(wip))
-					fprintf(fp, "own_ip_addr=%s\n",
-						wip);
+					fprintf(fp, "own_ip_addr=%s\n", wip);
 				else
 					fprintf(fp, "own_ip_addr=%s\n",
 						nvram_safe_get("lan_ipaddr"));
@@ -1455,6 +1462,16 @@ static void configure_single(int count)
 			country = nvram_default_get(regdomain, "UNITED_STATES");
 			sysprintf("iw reg set 00");
 			sysprintf("iw reg set %s", getIsoName(country));
+			eval("touch","/tmp/.crdalock"); // create lock file
+			int i = 40;	// max wait 4 sec
+			while (i--) {
+				FILE *fp = fopen("/tmp/.crdalock", "rb");
+				if (!fp)
+					break;
+				fclose(fp);
+				usleep(100 * 1000);	// wait 100 ms
+			}
+			eval("rm", "-f", "/tmp/.crdalock"); // delete lock file, no matter if crda still running. 4 sec is enough
 		}
 		configure_single_ath9k(count);
 		ath9k_start_supplicant(count);
