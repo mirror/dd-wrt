@@ -82,8 +82,8 @@ static void makeipup(void)
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
 	fprintf(fp, "#!/bin/sh\n"
-		"while [ -e /tmp/pppoeserver/pppoesrv.lock ]\n" //suspend new clients while file access is locked
-	   "\tdo sleep 1\n"
+		"while [ -e /tmp/pppoeserver/pppoesrv.lock ]; do\n" //suspend new clients while file access is locked
+	   "\tsleep 1\n"
 	   "\tdone\n"
 	   "touch /tmp/pppoeserver/pppoesrv.lock\n");
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
@@ -122,8 +122,8 @@ static void makeipup(void)
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
 	fprintf(fp, "#!/bin/sh\n" 
-	   "while [ -e /tmp/pppoeserver/pppoesrv.lock ]\n"
-	   "\tdo sleep 1\n"
+	   "while [ -e /tmp/pppoeserver/pppoesrv.lock ]; do\n"
+	   "\tsleep 1\n"
 	   "\tdone\n"
 	   "touch /tmp/pppoeserver/pppoesrv.lock\n"
 		"grep -v $PPPD_PID /tmp/pppoe_connected > /tmp/pppoe_connected.tmp\n"	//
