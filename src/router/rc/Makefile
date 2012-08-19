@@ -886,6 +886,10 @@ endif
 ifeq ($(CONFIG_ADM5120),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
 endif
+ifeq ($(CONFIG_PPPOESERVER),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc addpppoeconnected
+	cd $(INSTALLDIR)/sbin && ln -sf rc addpppoetime
+endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice_f
 #	cd $(INSTALLDIR)/sbin && ln -sf rc switch
