@@ -27,6 +27,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
@@ -34,16 +35,22 @@
 #include <services.h>
 #include <radiusdb.h>
 
+static void prep(void)
+{
+	if (!f_exists("/jffs/etc/freeradius/radiusd.conf")) {
+		//prepare files
+		mkdir("/jffs/etc", 0700);
+		mkdir("/jffs/etc/freeradius", 0700);
+		system("cp -r /etc/freeradius /jffs/etc");
+	}
+
+}
+
 void start_gen_radius_cert(void)
 {
 	if (nvram_match("cert_running", "1") && pidof("openssl") > 0)
 		return;		//already running
-	if (!f_exists("/jffs/etc/freeradius/radiusd.conf")) {
-		//prepare files
-		system("mkdir -p /jffs/etc/freeradius");
-		system("cp -r /etc/freeradius /jffs/etc");
-	}
-
+	prep();
 	gen_cert("/jffs/etc/freeradius/certs/server.cnf", TYPE_SERVER,
 		 nvram_safe_get("radius_common"),
 		 nvram_safe_get("radius_passphrase"));
@@ -92,12 +99,7 @@ void start_freeradius(void)
 #endif
 #endif
 #endif
-	if (!f_exists("/jffs/etc/freeradius/radiusd.conf")) {
-		//prepare files
-		system("mkdir -p /jffs/etc/freeradius");
-		system("cp -r /etc/freeradius /jffs/etc");
-	}
-
+	prep();
 	sysprintf
 	    ("sed \"s/port = 0/port = %s/g\" /etc/freeradius/radiusd.conf > /jffs/etc/freeradius/radiusd.conf",
 	     nvram_safe_get("radius_port"));
