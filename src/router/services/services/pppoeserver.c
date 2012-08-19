@@ -69,6 +69,34 @@ void del_pppoe_natrule(void)
 	}
 }
 
+void addpppoeconnected_main(int argc,char *argv[])
+{
+	static int lock=0;
+	
+	while(lock) {
+		usleep(100);
+	}
+	
+	lock=1;
+	sysprintf("echo \"%s\t%s\t%s\t%s\" >> /tmp/pppoe_connected",argv[1],argv[2],argv[3],argv[4]);
+	lock=0;
+}
+
+void addpppoetime_main(int argc,char *argv[])
+{
+	static int lock=0;
+	
+	while(lock) {
+		usleep(100);
+	}
+	
+	lock=1;
+	sysprintf("grep -v %s /tmp/pppoe_peer.db > /tmp/pppoe_peer.db.tmp",argv[1]);
+	sysprintf("mv /tmp/pppoe_peer.db.tmp /tmp/pppoe_peer.db");
+	sysprintf("echo \"%s\t\t%s\t\t%s\t\t%s\" >> /tmp/pppoe_peer.db",argv[2],argv[3],argv[4],argv[1]);
+	lock=0;
+}
+
 static void makeipup(void)
 {
 	int mss;
@@ -81,11 +109,7 @@ static void makeipup(void)
 
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
-	fprintf(fp, "#!/bin/sh\n"
-		"while [ -e /tmp/pppoeserver/pppoesrv.lock ]; do\n" //suspend new clients while file access is locked
-	   "\tsleep 1\n"
-	   "\tdone\n"
-	   "touch /tmp/pppoeserver/pppoesrv.lock\n");
+	fprintf(fp, "#!/bin/sh\n");
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
 		fprintf(fp, "iptables -I INPUT -i $1 -j ACCEPT\n");
 	if (nvram_match("pppoeserver_clip", "local"))
@@ -95,7 +119,7 @@ static void makeipup(void)
 		"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
 		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
 		"startservice set_routes\n"	// reinitialize 
-		"echo \"$PPPD_PID\t$1\t$5\t$PEERNAME\" >> /tmp/pppoe_connected\n"
+		"addpppoeconnected $PPPD_PID $1 $5 $PEERNAME\n"
 		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
 		//	just an uptime test
 		//"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
@@ -115,17 +139,12 @@ static void makeipup(void)
 			"\t tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"
 			"fi\n");
 		}
-	fprintf(fp,"rm -f /tmp/pppoeserver/pppoesrv.lock\n");
 //tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 100Mbit
 //eg: tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 10Mbit
 //burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
 	fprintf(fp, "#!/bin/sh\n" 
-	   "while [ -e /tmp/pppoeserver/pppoesrv.lock ]; do\n"
-	   "\tsleep 1\n"
-	   "\tdone\n"
-	   "touch /tmp/pppoeserver/pppoesrv.lock\n"
 		"grep -v $PPPD_PID /tmp/pppoe_connected > /tmp/pppoe_connected.tmp\n"	//
 		"mv /tmp/pppoe_connected.tmp /tmp/pppoe_connected\n"	//
 		//	just an uptime test
@@ -138,9 +157,7 @@ static void makeipup(void)
 		"CONTIME=$(($CONTIME+$CONNECT_TIME))\n"
 		"SENT=$(($SENT+$BYTES_SENT))\n"
 		"RCVD=$(($RCVD+$BYTES_RCVD))\n"
-		"grep -v $PEERNAME /tmp/pppoe_peer.db > /tmp/pppoe_peer.db.tmp\n"
-		"mv /tmp/pppoe_peer.db.tmp /tmp/pppoe_peer.db\n"
-		"echo \"$CONTIME\t\t$SENT\t\t$RCVD\t\t$PEERNAME\" >> /tmp/pppoe_peer.db\n"
+		"addpppoetime $PEERNAME $CONTIME $SENT $RCVD\n"
 		//
 		"iptables -D FORWARD -i $1 -j ACCEPT\n"
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");	
@@ -149,7 +166,6 @@ static void makeipup(void)
 	if (nvram_match("pppoeradius_enabled", "1"))
 		fprintf(fp, "tc qdisc del root dev $1\n"
 			"tc qdisc del dev $1 ingress\n");
-	fprintf(fp,"rm -f /tmp/pppoeserver/pppoesrv.lock\n");
 	fclose(fp);
 
 	chmod("/tmp/pppoeserver/ip-up", 0744);

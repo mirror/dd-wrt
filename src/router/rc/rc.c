@@ -278,6 +278,10 @@ static struct MAIN maincalls[] = {
 	{"getbridge", "getbridge", NULL},
 	{"getmask", "getmask", NULL},
 	{"stopservices", NULL, stop_services_main},
+#ifdef HAVE_PPPOESERVER
+	{"addpppoeconnected", "addpppoeconnected", NULL},
+	{"addpppoetime", "addpppoetime", NULL}, 
+#endif
 	{"startservices", NULL, start_services_main},
 	{"start_single_service", NULL, start_single_service_main},
 	{"startstop_f", NULL, startstop_main_f},
