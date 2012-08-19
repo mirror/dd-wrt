@@ -97,6 +97,25 @@ void addpppoetime_main(int argc,char *argv[])
 	lock=0;
 }
 
+void delpppoeconnected_main(int argc,char *argv[])
+{
+	static int lock=0;
+	
+	while(lock) {
+		usleep(100);
+	}
+	
+	lock=1;
+	sysprintf("grep -v %s /tmp/pppoe_connected > /tmp/pppoe_connected.tmp",argv[1]);
+	sysprintf("mv /tmp/pppoe_connected.tmp /tmp/pppoe_connected");
+		//	just an uptime test
+	sysprintf("grep -v %s /tmp/pppoe_uptime > /tmp/pppoe_uptime.tmp",argv[2]);
+	sysprintf("mv /tmp/pppoe_uptime.tmp /tmp/pppoe_uptime");
+	lock=0;
+
+
+}
+
 static void makeipup(void)
 {
 	int mss;
@@ -144,12 +163,8 @@ static void makeipup(void)
 //burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
-	fprintf(fp, "#!/bin/sh\n" 
-		"grep -v $PPPD_PID /tmp/pppoe_connected > /tmp/pppoe_connected.tmp\n"	//
-		"mv /tmp/pppoe_connected.tmp /tmp/pppoe_connected\n"	//
-		//	just an uptime test
-		"grep -v $PEERNAME /tmp/pppoe_uptime > /tmp/pppoe_uptime.tmp\n"	//
-		"mv /tmp/pppoe_uptime.tmp /tmp/pppoe_uptime\n"	//
+	fprintf(fp, "#!/bin/sh\n"
+		"delpppoeconnected $PPPD_PID $PEERNAME\n"
 		//	calc connected time and volume per peer
 		"CONTIME=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $1}'`\n"
 		"SENT=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $2}'`\n"
