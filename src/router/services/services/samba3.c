@@ -49,8 +49,8 @@ void start_samba3(void)
 	start_mkfiles();
 	sysprintf
 	    ("echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
-	sysprintf("mkdir -p /var/samba");
-	sysprintf("touch /var/samba/smbpasswd");
+	mkdir("/var/samba",0700);
+	eval("touch","/var/samba/smbpasswd");
 	if (nvram_match("samba3_advanced", "1")) {
 		write_nvram("/tmp/smb.conf", "samba3_conf");
 	} else {
@@ -132,7 +132,7 @@ void start_samba3(void)
 		}
 		fclose(fp);
 	}
-	sysprintf("chmod 777 /jffs");
+	chmod("/jffs",0777);
 	eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
 	eval("/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
 	syslog(LOG_INFO, "Samba3 : samba started\n");
