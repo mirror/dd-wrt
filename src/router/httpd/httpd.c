@@ -970,7 +970,7 @@ static void handle_request(void)
 			fclose(exec);
 		}
 
-		system2("chmod 700 /tmp/exec.tmp");
+		chmod("/tmp/exec.tmp",0700);
 		system2("/tmp/exec.tmp>/tmp/shellout.asp");
 
 		do_ej(NULL, "/tmp/shellout.asp", conn_fp, "");
