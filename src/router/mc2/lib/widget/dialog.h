@@ -14,6 +14,7 @@
 #include "lib/global.h"
 #include "lib/hook.h"           /* hook_t */
 #include "lib/keybind.h"        /* global_keymap_t */
+#include "lib/tty/mouse.h"      /* mouse_h */
 
 /*** defined constants ***************************************************************************/
 
@@ -24,7 +25,7 @@
 #define B_HELP          3
 #define B_USER          100
 
-#define dlg_move(h, _y, _x) tty_gotoyx (((Dlg_head *)(h))->y + _y, ((Dlg_head *)(h))->x + _x)
+#define dlg_move(h, _y, _x) tty_gotoyx (((Dlg_head *)(h))->y + (_y), ((Dlg_head *)(h))->x + (_x))
 
 /*** enums ***************************************************************************************/
 
@@ -62,9 +63,10 @@ typedef enum
 /* Dialog state */
 typedef enum
 {
-    DLG_ACTIVE = 0,             /* Dialog is visible and active */
-    DLG_SUSPENDED = 1,          /* Dialog is suspended */
-    DLG_CLOSED = 2              /* Dialog is closed */
+    DLG_CONSTRUCT = 0,          /* Dialog has been constructed but not run yet */
+    DLG_ACTIVE = 1,             /* Dialog is visible and active */
+    DLG_SUSPENDED = 2,          /* Dialog is suspended */
+    DLG_CLOSED = 3              /* Dialog is closed */
 } dlg_state_t;
 
 /* Dialog color constants */
@@ -122,10 +124,12 @@ struct Dlg_head
     /* Internal variables */
     GList *widgets;             /* widgets list */
     GList *current;             /* Curently active widget */
+    unsigned long widget_id;    /* maximum id of all widgets */
     void *data;                 /* Data can be passed to dialog */
     char *event_group;          /* Name of event group for this dialog */
 
     dlg_cb_fn callback;
+    mouse_h mouse;
     dlg_shortcut_str get_shortcut;      /* Shortcut string */
     dlg_title_str get_title;    /* useless for modal dialogs */
 };
@@ -153,13 +157,16 @@ void draw_box (Dlg_head * h, int y, int x, int ys, int xs, gboolean single);
 
 /* Creates a dialog head  */
 Dlg_head *create_dlg (gboolean modal, int y1, int x1, int lines, int cols,
-                      const int *colors, dlg_cb_fn callback,
+                      const int *colors, dlg_cb_fn callback, mouse_h mouse_handler,
                       const char *help_ctx, const char *title, dlg_flags_t flags);
 
 void dlg_set_default_colors (void);
 
-int add_widget_autopos (Dlg_head * dest, void *w, widget_pos_flags_t pos_flags);
-int add_widget (Dlg_head * dest, void *w);
+unsigned long add_widget_autopos (Dlg_head * dest, void *w, widget_pos_flags_t pos_flags,
+                                  const void *before);
+unsigned long add_widget (Dlg_head * dest, void *w);
+unsigned long add_widget_before (Dlg_head * h, void *w, void *before);
+void del_widget (void *w);
 
 /* sets size of dialog, leaving positioning to automatic mehtods
    according to dialog flags */
@@ -196,13 +203,14 @@ void dlg_erase (Dlg_head * h);
 void dlg_stop (Dlg_head * h);
 
 /* Widget selection */
-void dlg_select_widget (void *widget);
+void dlg_select_widget (void *w);
+void dlg_set_top_widget (void *w);
 void dlg_one_up (Dlg_head * h);
 void dlg_one_down (Dlg_head * h);
-int dlg_focus (Dlg_head * h);
+gboolean dlg_focus (Dlg_head * h);
 Widget *find_widget_type (const Dlg_head * h, callback_fn callback);
-Widget *dlg_find_by_id (const Dlg_head * h, unsigned int id);
-void dlg_select_by_id (const Dlg_head * h, unsigned int id);
+Widget *dlg_find_by_id (const Dlg_head * h, unsigned long id);
+void dlg_select_by_id (const Dlg_head * h, unsigned long id);
 
 /* Redraw all dialogs */
 void do_refresh (void);
@@ -220,8 +228,9 @@ dlg_widget_active (void *w)
     return ((Widget *) w1->owner->current->data == w1);
 }
 
+/* --------------------------------------------------------------------------------------------- */
 
-static inline unsigned int
+static inline unsigned long
 dlg_get_current_widget_id (const struct Dlg_head *h)
 {
     return ((Widget *) h->current->data)->id;

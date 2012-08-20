@@ -620,6 +620,8 @@ CHARSET_FALSE
 CHARSET_TRUE
 USE_DIFF_FALSE
 USE_DIFF_TRUE
+USE_ASPELL_FALSE
+USE_ASPELL_TRUE
 USE_EDIT_FALSE
 USE_EDIT_TRUE
 USE_SCREEN_SLANG_FALSE
@@ -629,6 +631,7 @@ USE_MAINTAINER_MODE_TRUE
 USE_NLS_FALSE
 USE_NLS_TRUE
 MAN_DATE
+EXTHELPERSDIR
 MCLIBS
 HAVE_TESTS_FALSE
 HAVE_TESTS_TRUE
@@ -654,6 +657,10 @@ ENABLE_VFS_SMB_TRUE
 subdirs
 ENABLE_VFS_FISH_FALSE
 ENABLE_VFS_FISH_TRUE
+ENABLE_VFS_SFTP_FALSE
+ENABLE_VFS_SFTP_TRUE
+LIBSSH_LIBS
+LIBSSH_CFLAGS
 ENABLE_VFS_FTP_FALSE
 ENABLE_VFS_FTP_TRUE
 ENABLE_VFS_UNDELFS_FALSE
@@ -669,10 +676,6 @@ ENABLE_VFS_TAR_FALSE
 ENABLE_VFS_TAR_TRUE
 ENABLE_VFS_CPIO_FALSE
 ENABLE_VFS_CPIO_TRUE
-HAVE_GMODULE_FALSE
-HAVE_GMODULE_TRUE
-GMODULE_LIBS
-GMODULE_CFLAGS
 X_EXTRA_LIBS
 X_LIBS
 X_PRE_LIBS
@@ -712,6 +715,10 @@ MKINSTALLDIRS
 X11_WWW
 ENABLE_MCLIB_FALSE
 ENABLE_MCLIB_TRUE
+HAVE_GMODULE_FALSE
+HAVE_GMODULE_TRUE
+GMODULE_LIBS
+GMODULE_CFLAGS
 GLIB_LIBS
 GLIB_CFLAGS
 DOXYGEN_PAPER_SIZE
@@ -789,6 +796,7 @@ CPP
 am__fastdepCC_FALSE
 am__fastdepCC_TRUE
 CCDEPMODE
+am__nodep
 AMDEPBACKSLASH
 AMDEP_FALSE
 AMDEP_TRUE
@@ -815,6 +823,8 @@ MAINTAINER_MODE_FALSE
 MAINTAINER_MODE_TRUE
 AM_BACKSLASH
 AM_DEFAULT_VERBOSITY
+AM_DEFAULT_V
+AM_V
 LIBMC_RELEASE
 LIBMC_VERSION
 am__untar
@@ -921,6 +931,7 @@ enable_vfs_sfs
 enable_vfs_extfs
 enable_vfs_undelfs
 enable_vfs_ftp
+enable_vfs_sftp
 enable_vfs_fish
 enable_vfs_smb
 with_smb_configdir
@@ -935,6 +946,7 @@ with_slang_libs
 with_ncurses_includes
 with_ncurses_libs
 with_edit
+enable_aspell
 with_diff_viewer
 with_homedir
 enable_background
@@ -957,9 +969,11 @@ PKG_CONFIG_LIBDIR
 DOXYGEN_PAPER_SIZE
 GLIB_CFLAGS
 GLIB_LIBS
-XMKMF
 GMODULE_CFLAGS
 GMODULE_LIBS
+XMKMF
+LIBSSH_CFLAGS
+LIBSSH_LIBS
 SLANG_CFLAGS
 SLANG_LIBS
 CHECK_CFLAGS
@@ -1620,9 +1634,11 @@ Optional Features:
   --enable-vfs-extfs      Support for extfs filesystem [yes]
   --enable-vfs-undelfs    Support for ext2 undelete filesystem [no]
   --enable-vfs-ftp        Support for FTP filesystem [yes]
+  --enable-vfs-sftp       Support for SFTP filesystem [auto]
   --enable-vfs-fish       Support for FISH filesystem [yes]
   --enable-vfs-smb        Support for SMB filesystem [no]
-  --enable-background     Support for background file operations [[yes]]
+  --enable-aspell         Enable aspell support for internal editor [no]
+  --enable-background     Support for background file operations [yes]
   --enable-charset        Support for charset selection and conversion [yes]
   --enable-werror         Handle all compiler warnings as errors
 
@@ -1633,7 +1649,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-pic              try to use only PIC/non-PIC objects [default=use
+  --with-pic[=PKGS]       try to use only PIC/non-PIC objects [default=use
                           both]
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
   --with-sysroot=DIR Search for dependent libraries within DIR
@@ -1673,7 +1689,7 @@ Optional Packages:
   --with-ncurses-libs=[DIR]
                           set path to ncurses library [default=/usr/lib]; make
                           sense only if --with-screen=ncurses
-  --with-edit              Enable internal editor [yes]
+  --with-edit             Enable internal editor [yes]
   --with-diff-viewer       Compile with diff viewer [yes]
   --with-homedir          Choose any place of user settings relative to home
                           dir, or XDG for respect XDG standards [XDG]
@@ -1696,11 +1712,14 @@ Some influential environment variables:
               a4wide (default), a4, letter, legal or executive
   GLIB_CFLAGS C compiler flags for GLIB, overriding pkg-config
   GLIB_LIBS   linker flags for GLIB, overriding pkg-config
-  XMKMF       Path to xmkmf, Makefile generator for X Window System
   GMODULE_CFLAGS
               C compiler flags for GMODULE, overriding pkg-config
   GMODULE_LIBS
               linker flags for GMODULE, overriding pkg-config
+  XMKMF       Path to xmkmf, Makefile generator for X Window System
+  LIBSSH_CFLAGS
+              C compiler flags for LIBSSH, overriding pkg-config
+  LIBSSH_LIBS linker flags for LIBSSH, overriding pkg-config
   SLANG_CFLAGS
               C compiler flags for SLANG, overriding pkg-config
   SLANG_LIBS  linker flags for SLANG, overriding pkg-config
@@ -3305,11 +3324,11 @@ MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}
 
 # We need awk for the "check" target.  The system "awk" is bad on
 # some platforms.
-# Always define AMTAR for backward compatibility.
+# Always define AMTAR for backward compatibility.  Yes, it's still used
+# in the wild :-(  We should find a proper way to deprecate it ...
+AMTAR='$${TAR-tar}'
 
-AMTAR=${AMTAR-"${am_missing_run}tar"}
-
-am__tar='${AMTAR} chof - "$$tardir"'; am__untar='${AMTAR} xf -'
+am__tar='$${TAR-tar} chof - "$$tardir"' am__untar='$${TAR-tar} xf -'
 
 
 
@@ -3331,6 +3350,33 @@ yes) AM_DEFAULT_VERBOSITY=0;;
 no)  AM_DEFAULT_VERBOSITY=1;;
 *)   AM_DEFAULT_VERBOSITY=0;;
 esac
+am_make=${MAKE-make}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $am_make supports nested variables" >&5
+$as_echo_n "checking whether $am_make supports nested variables... " >&6; }
+if ${am_cv_make_support_nested_variables+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if $as_echo 'TRUE=$(BAR$(V))
+BAR0=false
+BAR1=true
+V=1
+am__doit:
+	@$(TRUE)
+.PHONY: am__doit' | $am_make -f - >/dev/null 2>&1; then
+  am_cv_make_support_nested_variables=yes
+else
+  am_cv_make_support_nested_variables=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_make_support_nested_variables" >&5
+$as_echo "$am_cv_make_support_nested_variables" >&6; }
+if test $am_cv_make_support_nested_variables = yes; then
+    AM_V='$(V)'
+  AM_DEFAULT_V='$(AM_DEFAULT_VERBOSITY)'
+else
+  AM_V=$AM_DEFAULT_VERBOSITY
+  AM_DEFAULT_V=$AM_DEFAULT_VERBOSITY
+fi
 AM_BACKSLASH='\'
 
 
@@ -3483,6 +3529,7 @@ fi
 if test "x$enable_dependency_tracking" != xno; then
   am_depcomp="$ac_aux_dir/depcomp"
   AMDEPBACKSLASH='\'
+  am__nodep='_no'
 fi
  if test "x$enable_dependency_tracking" != xno; then
   AMDEP_TRUE=
@@ -4296,6 +4343,7 @@ else
   # instance it was reported that on HP-UX the gcc test will end up
   # making a dummy file named `D' -- because `-MD' means `put the output
   # in D'.
+  rm -rf conftest.dir
   mkdir conftest.dir
   # Copy depcomp to subdir because otherwise we won't find it if we're
   # using a relative directory.
@@ -4355,7 +4403,7 @@ else
 	break
       fi
       ;;
-    msvisualcpp | msvcmsys)
+    msvc7 | msvc7msys | msvisualcpp | msvcmsys)
       # This compiler won't grok `-c -o', but also, the minuso test has
       # not run yet.  These depmodes are late enough in the game, and
       # so weak that their functioning should not be impacted.
@@ -4884,8 +4932,8 @@ esac
 
 
 
-macro_version='2.4'
-macro_revision='1.3293'
+macro_version='2.4.2'
+macro_revision='1.3337'
 
 
 
@@ -5529,6 +5577,11 @@ else
     lt_cv_sys_max_cmd_len=196608
     ;;
 
+  os2*)
+    # The test takes a long time on OS/2.
+    lt_cv_sys_max_cmd_len=8192
+    ;;
+
   osf*)
     # Dr. Hans Ekkehard Plesser reports seeing a kernel panic running configure
     # due to this test when exec_disable_arg_limit is 1 on Tru64. It is not
@@ -5568,7 +5621,7 @@ else
       # If test is not a shell built-in, we'll probably end up computing a
       # maximum length that is only half of the actual maximum length, but
       # we can't tell.
-      while { test "X"`func_fallback_echo "$teststring$teststring" 2>/dev/null` \
+      while { test "X"`env echo "$teststring$teststring" 2>/dev/null` \
 	         = "X$teststring$teststring"; } >/dev/null 2>&1 &&
 	      test $i != 17 # 1/2 MB should be enough
       do
@@ -5997,7 +6050,7 @@ irix5* | irix6* | nonstopux*)
   lt_cv_deplibs_check_method=pass_all
   ;;
 
-# This must be Linux ELF.
+# This must be glibc/ELF.
 linux* | k*bsd*-gnu | kopensolaris*-gnu)
   lt_cv_deplibs_check_method=pass_all
   ;;
@@ -6637,13 +6690,13 @@ old_postuninstall_cmds=
 if test -n "$RANLIB"; then
   case $host_os in
   openbsd*)
-    old_postinstall_cmds="$old_postinstall_cmds~\$RANLIB -t \$oldlib"
+    old_postinstall_cmds="$old_postinstall_cmds~\$RANLIB -t \$tool_oldlib"
     ;;
   *)
-    old_postinstall_cmds="$old_postinstall_cmds~\$RANLIB \$oldlib"
+    old_postinstall_cmds="$old_postinstall_cmds~\$RANLIB \$tool_oldlib"
     ;;
   esac
-  old_archive_cmds="$old_archive_cmds~\$RANLIB \$oldlib"
+  old_archive_cmds="$old_archive_cmds~\$RANLIB \$tool_oldlib"
 fi
 
 case $host_os in
@@ -6790,6 +6843,7 @@ for ac_symprfx in "" "_"; do
     # which start with @ or ?.
     lt_cv_sys_global_symbol_pipe="$AWK '"\
 "     {last_section=section; section=\$ 3};"\
+"     /^COFF SYMBOL TABLE/{for(i in hide) delete hide[i]};"\
 "     /Section length .*#relocs.*(pick any)/{hide[last_section]=1};"\
 "     \$ 0!~/External *\|/{next};"\
 "     / 0+ UNDEF /{next}; / UNDEF \([^|]\)*()/{next};"\
@@ -7178,7 +7232,7 @@ $as_echo "$lt_cv_cc_needs_belf" >&6; }
     CFLAGS="$SAVE_CFLAGS"
   fi
   ;;
-sparc*-*solaris*)
+*-*solaris*)
   # Find out which ABI we are using.
   echo 'int i;' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
@@ -7189,7 +7243,20 @@ sparc*-*solaris*)
     case `/usr/bin/file conftest.o` in
     *64-bit*)
       case $lt_cv_prog_gnu_ld in
-      yes*) LD="${LD-ld} -m elf64_sparc" ;;
+      yes*)
+        case $host in
+        i?86-*-solaris*)
+          LD="${LD-ld} -m elf_x86_64"
+          ;;
+        sparc*-*-solaris*)
+          LD="${LD-ld} -m elf64_sparc"
+          ;;
+        esac
+        # GNU ld 2.21 introduced _sol2 emulations.  Use them if available.
+        if ${LD-ld} -V | grep _sol2 >/dev/null 2>&1; then
+          LD="${LD-ld}_sol2"
+        fi
+        ;;
       *)
 	if ${LD-ld} -64 -r -o conftest2.o conftest.o >/dev/null 2>&1; then
 	  LD="${LD-ld} -64"
@@ -7829,7 +7896,13 @@ else
 	$LTCC $LTCFLAGS $LDFLAGS -o libconftest.dylib \
 	  -dynamiclib -Wl,-single_module conftest.c 2>conftest.err
         _lt_result=$?
-	if test -f libconftest.dylib && test ! -s conftest.err && test $_lt_result = 0; then
+	# If there is a non-empty error log, and "single_module"
+	# appears in it, assume the flag caused a linker warning
+        if test -s conftest.err && $GREP single_module conftest.err; then
+	  cat conftest.err >&5
+	# Otherwise, if the output was created with a 0 exit code from
+	# the compiler, it worked.
+	elif test -f libconftest.dylib && test $_lt_result -eq 0; then
 	  lt_cv_apple_cc_single_mod=yes
 	else
 	  cat conftest.err >&5
@@ -7840,6 +7913,7 @@ else
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $lt_cv_apple_cc_single_mod" >&5
 $as_echo "$lt_cv_apple_cc_single_mod" >&6; }
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -exported_symbols_list linker flag" >&5
 $as_echo_n "checking for -exported_symbols_list linker flag... " >&6; }
 if ${lt_cv_ld_exported_symbols_list+:} false; then :
@@ -7872,6 +7946,7 @@ rm -f core conftest.err conftest.$ac_objext \
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $lt_cv_ld_exported_symbols_list" >&5
 $as_echo "$lt_cv_ld_exported_symbols_list" >&6; }
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -force_load linker flag" >&5
 $as_echo_n "checking for -force_load linker flag... " >&6; }
 if ${lt_cv_ld_force_load+:} false; then :
@@ -7893,7 +7968,9 @@ _LT_EOF
       echo "$LTCC $LTCFLAGS $LDFLAGS -o conftest conftest.c -Wl,-force_load,./libconftest.a" >&5
       $LTCC $LTCFLAGS $LDFLAGS -o conftest conftest.c -Wl,-force_load,./libconftest.a 2>conftest.err
       _lt_result=$?
-      if test -f conftest && test ! -s conftest.err && test $_lt_result = 0 && $GREP forced_load conftest 2>&1 >/dev/null; then
+      if test -s conftest.err && $GREP force_load conftest.err; then
+	cat conftest.err >&5
+      elif test -f conftest && test $_lt_result -eq 0 && $GREP forced_load conftest >/dev/null 2>&1 ; then
 	lt_cv_ld_force_load=yes
       else
 	cat conftest.err >&5
@@ -8031,7 +8108,22 @@ fi
 
 # Check whether --with-pic was given.
 if test "${with_pic+set}" = set; then :
-  withval=$with_pic; pic_mode="$withval"
+  withval=$with_pic; lt_p=${PACKAGE-default}
+    case $withval in
+    yes|no) pic_mode=$withval ;;
+    *)
+      pic_mode=default
+      # Look at the argument we got.  We use all the common list separators.
+      lt_save_ifs="$IFS"; IFS="${IFS}$PATH_SEPARATOR,"
+      for lt_pkg in $withval; do
+	IFS="$lt_save_ifs"
+	if test "X$lt_pkg" = "X$lt_p"; then
+	  pic_mode=yes
+	fi
+      done
+      IFS="$lt_save_ifs"
+      ;;
+    esac
 else
   pic_mode=default
 fi
@@ -8083,6 +8175,10 @@ LIBTOOL_DEPS="$ltmain"
 
 # Always use our own libtool.
 LIBTOOL='$(SHELL) $(top_builddir)/libtool'
+
+
+
+
 
 
 
@@ -8568,7 +8664,9 @@ lt_prog_compiler_static=
     case $cc_basename in
     nvcc*) # Cuda Compiler Driver 2.2
       lt_prog_compiler_wl='-Xlinker '
-      lt_prog_compiler_pic='-Xcompiler -fPIC'
+      if test -n "$lt_prog_compiler_pic"; then
+        lt_prog_compiler_pic="-Xcompiler $lt_prog_compiler_pic"
+      fi
       ;;
     esac
   else
@@ -8659,17 +8757,32 @@ lt_prog_compiler_static=
 	;;
       *)
 	case `$CC -V 2>&1 | sed 5q` in
-	*Sun\ F* | *Sun*Fortran*)
+	*Sun\ Ceres\ Fortran* | *Sun*Fortran*\ [1-7].* | *Sun*Fortran*\ 8.[0-3]*)
 	  # Sun Fortran 8.3 passes all unrecognized flags to the linker
 	  lt_prog_compiler_pic='-KPIC'
 	  lt_prog_compiler_static='-Bstatic'
 	  lt_prog_compiler_wl=''
+	  ;;
+	*Sun\ F* | *Sun*Fortran*)
+	  lt_prog_compiler_pic='-KPIC'
+	  lt_prog_compiler_static='-Bstatic'
+	  lt_prog_compiler_wl='-Qoption ld '
 	  ;;
 	*Sun\ C*)
 	  # Sun C 5.9
 	  lt_prog_compiler_pic='-KPIC'
 	  lt_prog_compiler_static='-Bstatic'
 	  lt_prog_compiler_wl='-Wl,'
+	  ;;
+        *Intel*\ [CF]*Compiler*)
+	  lt_prog_compiler_wl='-Wl,'
+	  lt_prog_compiler_pic='-fPIC'
+	  lt_prog_compiler_static='-static'
+	  ;;
+	*Portland\ Group*)
+	  lt_prog_compiler_wl='-Wl,'
+	  lt_prog_compiler_pic='-fpic'
+	  lt_prog_compiler_static='-Bstatic'
 	  ;;
 	esac
 	;;
@@ -9032,7 +9145,6 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
   hardcode_direct=no
   hardcode_direct_absolute=no
   hardcode_libdir_flag_spec=
-  hardcode_libdir_flag_spec_ld=
   hardcode_libdir_separator=
   hardcode_minus_L=no
   hardcode_shlibpath_var=unsupported
@@ -9282,8 +9394,7 @@ _LT_EOF
 	xlf* | bgf* | bgxlf* | mpixlf*)
 	  # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
 	  whole_archive_flag_spec='--whole-archive$convenience --no-whole-archive'
-	  hardcode_libdir_flag_spec=
-	  hardcode_libdir_flag_spec_ld='-rpath $libdir'
+	  hardcode_libdir_flag_spec='${wl}-rpath ${wl}$libdir'
 	  archive_cmds='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
 	  if test "x$supports_anon_versioning" = xyes; then
 	    archive_expsym_cmds='echo "{ global:" > $output_objdir/$libname.ver~
@@ -9662,6 +9773,7 @@ fi
 	# The linker will not automatically build a static lib if we build a DLL.
 	# _LT_TAGVAR(old_archive_from_new_cmds, )='true'
 	enable_shared_with_static_runtimes=yes
+	exclude_expsyms='_NULL_IMPORT_DESCRIPTOR|_IMPORT_DESCRIPTOR_.*'
 	export_symbols_cmds='$NM $libobjs $convenience | $global_symbol_pipe | $SED -e '\''/^[BCDGRS][ ]/s/.*[ ]\([^ ]*\)/\1,DATA/'\'' | $SED -e '\''/^[AITW][ ]/s/.*[ ]//'\'' | sort | uniq > $export_symbols'
 	# Don't use ranlib
 	old_postinstall_cmds='chmod 644 $oldlib'
@@ -9707,6 +9819,7 @@ fi
   hardcode_shlibpath_var=unsupported
   if test "$lt_cv_ld_force_load" = "yes"; then
     whole_archive_flag_spec='`for conv in $convenience\"\"; do test  -n \"$conv\" && new_convenience=\"$new_convenience ${wl}-force_load,$conv\"; done; func_echo_all \"$new_convenience\"`'
+
   else
     whole_archive_flag_spec=''
   fi
@@ -9735,10 +9848,6 @@ fi
       hardcode_shlibpath_var=no
       ;;
 
-    freebsd1*)
-      ld_shlibs=no
-      ;;
-
     # FreeBSD 2.2.[012] allows us to include c++rt0.o to get C++ constructor
     # support.  Future versions do this automatically, but an explicit c++rt0.o
     # does not break anything, and helps significantly (at the cost of a little
@@ -9751,7 +9860,7 @@ fi
       ;;
 
     # Unfortunately, older versions of FreeBSD 2 do not have this feature.
-    freebsd2*)
+    freebsd2.*)
       archive_cmds='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'
       hardcode_direct=yes
       hardcode_minus_L=yes
@@ -9790,7 +9899,6 @@ fi
       fi
       if test "$with_gnu_ld" = no; then
 	hardcode_libdir_flag_spec='${wl}+b ${wl}$libdir'
-	hardcode_libdir_flag_spec_ld='+b $libdir'
 	hardcode_libdir_separator=:
 	hardcode_direct=yes
 	hardcode_direct_absolute=yes
@@ -10414,11 +10522,6 @@ esac
 
 
 
-
-
-
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking dynamic linker characteristics" >&5
 $as_echo_n "checking dynamic linker characteristics... " >&6; }
 
@@ -10508,7 +10611,7 @@ need_version=unknown
 
 case $host_os in
 aix3*)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   library_names_spec='${libname}${release}${shared_ext}$versuffix $libname.a'
   shlibpath_var=LIBPATH
 
@@ -10517,7 +10620,7 @@ aix3*)
   ;;
 
 aix[4-9]*)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   need_lib_prefix=no
   need_version=no
   hardcode_into_libs=yes
@@ -10582,7 +10685,7 @@ beos*)
   ;;
 
 bsdi[45]*)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   need_version=no
   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
   soname_spec='${libname}${release}${shared_ext}$major'
@@ -10721,16 +10824,12 @@ darwin* | rhapsody*)
   ;;
 
 dgux*)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   need_lib_prefix=no
   need_version=no
   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname$shared_ext'
   soname_spec='${libname}${release}${shared_ext}$major'
   shlibpath_var=LD_LIBRARY_PATH
-  ;;
-
-freebsd1*)
-  dynamic_linker=no
   ;;
 
 freebsd* | dragonfly*)
@@ -10740,7 +10839,7 @@ freebsd* | dragonfly*)
     objformat=`/usr/bin/objformat`
   else
     case $host_os in
-    freebsd[123]*) objformat=aout ;;
+    freebsd[23].*) objformat=aout ;;
     *) objformat=elf ;;
     esac
   fi
@@ -10758,7 +10857,7 @@ freebsd* | dragonfly*)
   esac
   shlibpath_var=LD_LIBRARY_PATH
   case $host_os in
-  freebsd2*)
+  freebsd2.*)
     shlibpath_overrides_runpath=yes
     ;;
   freebsd3.[01]* | freebsdelf3.[01]*)
@@ -10778,17 +10877,18 @@ freebsd* | dragonfly*)
   ;;
 
 gnu*)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   need_lib_prefix=no
   need_version=no
   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libname}${shared_ext}'
   soname_spec='${libname}${release}${shared_ext}$major'
   shlibpath_var=LD_LIBRARY_PATH
+  shlibpath_overrides_runpath=no
   hardcode_into_libs=yes
   ;;
 
 haiku*)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   need_lib_prefix=no
   need_version=no
   dynamic_linker="$host_os runtime_loader"
@@ -10849,7 +10949,7 @@ hpux9* | hpux10* | hpux11*)
   ;;
 
 interix[3-9]*)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   need_lib_prefix=no
   need_version=no
   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
@@ -10865,7 +10965,7 @@ irix5* | irix6* | nonstopux*)
     nonstopux*) version_type=nonstopux ;;
     *)
 	if test "$lt_cv_prog_gnu_ld" = yes; then
-		version_type=linux
+		version_type=linux # correct to gnu/linux during the next big refactor
 	else
 		version_type=irix
 	fi ;;
@@ -10902,9 +11002,9 @@ linux*oldld* | linux*aout* | linux*coff*)
   dynamic_linker=no
   ;;
 
-# This must be Linux ELF.
+# This must be glibc/ELF.
 linux* | k*bsd*-gnu | kopensolaris*-gnu)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   need_lib_prefix=no
   need_version=no
   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
@@ -10990,7 +11090,7 @@ netbsd*)
   ;;
 
 newsos6)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
   shlibpath_var=LD_LIBRARY_PATH
   shlibpath_overrides_runpath=yes
@@ -11059,7 +11159,7 @@ rdos*)
   ;;
 
 solaris*)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   need_lib_prefix=no
   need_version=no
   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
@@ -11084,7 +11184,7 @@ sunos4*)
   ;;
 
 sysv4 | sysv4.3*)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
   soname_spec='${libname}${release}${shared_ext}$major'
   shlibpath_var=LD_LIBRARY_PATH
@@ -11108,7 +11208,7 @@ sysv4 | sysv4.3*)
 
 sysv4*MP*)
   if test -d /usr/nec ;then
-    version_type=linux
+    version_type=linux # correct to gnu/linux during the next big refactor
     library_names_spec='$libname${shared_ext}.$versuffix $libname${shared_ext}.$major $libname${shared_ext}'
     soname_spec='$libname${shared_ext}.$major'
     shlibpath_var=LD_LIBRARY_PATH
@@ -11139,7 +11239,7 @@ sysv5* | sco3.2v5* | sco5v6* | unixware* | OpenUNIX* | sysv4*uw2*)
 
 tpf*)
   # TPF is a cross-target only.  Preferred cross-host = GNU/Linux.
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   need_lib_prefix=no
   need_version=no
   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
@@ -11149,7 +11249,7 @@ tpf*)
   ;;
 
 uts4*)
-  version_type=linux
+  version_type=linux # correct to gnu/linux during the next big refactor
   library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
   soname_spec='${libname}${release}${shared_ext}$major'
   shlibpath_var=LD_LIBRARY_PATH
@@ -11918,6 +12018,8 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 CC="$lt_save_CC"
+
+
 
 
 
@@ -14574,6 +14676,212 @@ $as_echo "yes" >&6; }
 fi
     if test x"$glib_found" = xno; then
         as_fn_error $? "glib-2.0 not found or version too old (must be >= 2.8)" "$LINENO" 5
+    fi
+
+
+
+
+    g_module_supported=""
+
+    found_gmodule=no
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GMODULE" >&5
+$as_echo_n "checking for GMODULE... " >&6; }
+
+if test -n "$GMODULE_CFLAGS"; then
+    pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.8\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.8") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-no-export-2.0 >= 2.8" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$GMODULE_LIBS"; then
+    pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.8\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.8") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-no-export-2.0 >= 2.8" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gmodule-no-export-2.0 >= 2.8" 2>&1`
+        else
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors "gmodule-no-export-2.0 >= 2.8" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$GMODULE_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	GMODULE_CFLAGS=$pkg_cv_GMODULE_CFLAGS
+	GMODULE_LIBS=$pkg_cv_GMODULE_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	found_gmodule=yes
+fi
+    if test x"$found_gmodule" = xyes; then
+        g_module_supported="gmodule-no-export-2.0"
+    else
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GMODULE" >&5
+$as_echo_n "checking for GMODULE... " >&6; }
+
+if test -n "$GMODULE_CFLAGS"; then
+    pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.8\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.8") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-2.0 >= 2.8" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$GMODULE_LIBS"; then
+    pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.8\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.8") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-2.0 >= 2.8" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gmodule-2.0 >= 2.8" 2>&1`
+        else
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors "gmodule-2.0 >= 2.8" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$GMODULE_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	GMODULE_CFLAGS=$pkg_cv_GMODULE_CFLAGS
+	GMODULE_LIBS=$pkg_cv_GMODULE_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	found_gmodule=yes
+fi
+        if test x"$found_gmodule" = xyes; then
+            g_module_supported="gmodule-2.0"
+        fi
+    fi
+
+    case x"$g_module_supported" in
+        xgmodule-no-export-2.0|xgmodule-2.0)
+            if test x`$PKG_CONFIG --variable=gmodule_supported "$g_module_supported"` = xtrue; then
+
+$as_echo "#define HAVE_GMODULE 1" >>confdefs.h
+
+            else
+                g_module_supported=""
+            fi
+            ;;
+        *)
+            g_module_supported=""
+            ;;
+    esac
+
+     if test x"$g_module_supported" != x; then
+  HAVE_GMODULE_TRUE=
+  HAVE_GMODULE_FALSE='#'
+else
+  HAVE_GMODULE_TRUE='#'
+  HAVE_GMODULE_FALSE=
+fi
+
+
+                if test x$with_glib_static = xyes; then
+        new_GLIB_LIBS=
+        for i in $GLIB_LIBS; do
+            case x$i in
+            x-lglib*)
+                lib=glib ;;
+            x-lgmodule*)
+                lib=gmodule ;;
+            *)
+                lib=
+                add="$i" ;;
+            esac
+
+            if test -n "$lib"; then
+                lib1=`echo $i | sed 's/^-l//'`
+                if test -f "$GLIB_LIBDIR/lib${lib1}.a"; then
+                    add="$GLIB_LIBDIR/lib${lib1}.a"
+                else
+                    if test -f "$GLIB_LIBDIR/lib${lib}.a"; then
+                        add="$GLIB_LIBDIR/lib${lib}.a"
+                    else
+                        as_fn_error $? "Cannot find static $lib" "$LINENO" 5
+                    fi
+                fi
+            fi
+            new_GLIB_LIBS="$new_GLIB_LIBS $add"
+        done
+        GLIB_LIBS="$new_GLIB_LIBS"
     fi
 
 
@@ -19471,6 +19779,34 @@ done
 
 
 
+      for ac_header in OS.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "OS.h" "ac_cv_header_OS_h" "$ac_includes_default"
+if test "x$ac_cv_header_OS_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_OS_H 1
+_ACEOF
+
+fi
+
+done
+
+
+
+      for ac_header in netinet/in.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "netinet/in.h" "ac_cv_header_netinet_in_h" "$ac_includes_default"
+if test "x$ac_cv_header_netinet_in_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_NETINET_IN_H 1
+_ACEOF
+
+fi
+
+done
+
+
+
 
 
 for ac_func in listmntent getmntinfo
@@ -20906,7 +21242,7 @@ struct statvfs fsd;
 
 #if defined __APPLE__ && defined __MACH__
 #include <limits.h>
-/* On MacOS X >= 10.5, f_blocks in 'struct statvfs' is a 32-bit quantity;
+/* On Mac OS X >= 10.5, f_blocks in 'struct statvfs' is a 32-bit quantity;
    that commonly limits file systems to 4 TiB.  Whereas f_blocks in
    'struct statfs' is a 64-bit type, thanks to the large-file support
    that was enabled above.  In this case, don't use statvfs(); use statfs()
@@ -21029,7 +21365,7 @@ $as_echo "#define STAT_STATFS3_OSF1 1" >>confdefs.h
 fi
 
 if test $ac_fsusage_space = no; then
-  # glibc/Linux, MacOS X, FreeBSD < 5.0, NetBSD < 3.0, OpenBSD < 4.4.
+  # glibc/Linux, Mac OS X, FreeBSD < 5.0, NetBSD < 3.0, OpenBSD < 4.4.
   # (glibc/{Hurd,kFreeBSD}, FreeBSD >= 5.0, NetBSD >= 3.0,
   # OpenBSD >= 4.4, AIX, HP-UX, OSF/1, Cygwin already handled above.)
   # (On IRIX you need to include <sys/statfs.h>, not only <sys/mount.h> and
@@ -21362,6 +21698,196 @@ rm -f core conftest.err conftest.$ac_objext \
 
 
 
+
+
+
+  :
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      test $ac_cv_header_sys_param_h = yes &&
+  test $ac_cv_header_sys_mount_h = yes &&
+  for ac_header in nfs/vfs.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "nfs/vfs.h" "ac_cv_header_nfs_vfs_h" "$ac_includes_default"
+if test "x$ac_cv_header_nfs_vfs_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_NFS_VFS_H 1
+_ACEOF
+ for ac_header in nfs/nfs_client.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "nfs/nfs_client.h" "ac_cv_header_nfs_nfs_client_h" "$ac_includes_default"
+if test "x$ac_cv_header_nfs_nfs_client_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_NFS_NFS_CLIENT_H 1
+_ACEOF
+
+fi
+
+done
+
+fi
+
+done
+
+
+  statvfs_includes="\
+$ac_includes_default
+#include <sys/statvfs.h>
+"
+  statfs_includes="\
+$ac_includes_default
+#if HAVE_SYS_VFS_H
+# include <sys/vfs.h>
+#elif HAVE_SYS_MOUNT_H && HAVE_SYS_PARAM_H
+# include <sys/param.h>
+# include <sys/mount.h>
+# if HAVE_NETINET_IN_H && HAVE_NFS_NFS_CLNT_H && HAVE_NFS_VFS_H
+#  include <netinet/in.h>
+#  include <nfs/nfs_clnt.h>
+#  include <nfs/vfs.h>
+# endif
+#elif HAVE_OS_H
+# include <fs_info.h>
+#endif
+"
+      if case "$fu_cv_sys_stat_statvfs$fu_cv_sys_stat_statvfs64" in
+       *yes*) ;; *) false;; esac &&
+     { ac_fn_c_check_member "$LINENO" "struct statvfs" "f_basetype" "ac_cv_member_struct_statvfs_f_basetype" "$statvfs_includes
+"
+if test "x$ac_cv_member_struct_statvfs_f_basetype" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STATVFS_F_BASETYPE 1
+_ACEOF
+
+
+fi
+
+       test $ac_cv_member_struct_statvfs_f_basetype = yes ||
+       { ac_fn_c_check_member "$LINENO" "struct statvfs" "f_fstypename" "ac_cv_member_struct_statvfs_f_fstypename" "$statvfs_includes
+"
+if test "x$ac_cv_member_struct_statvfs_f_fstypename" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STATVFS_F_FSTYPENAME 1
+_ACEOF
+
+
+fi
+
+         test $ac_cv_member_struct_statvfs_f_fstypename = yes ||
+         { test $ac_cv_member_struct_statfs_f_fstypename != yes &&
+           { ac_fn_c_check_member "$LINENO" "struct statvfs" "f_type" "ac_cv_member_struct_statvfs_f_type" "$statvfs_includes
+"
+if test "x$ac_cv_member_struct_statvfs_f_type" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STATVFS_F_TYPE 1
+_ACEOF
+
+
+fi
+
+             test $ac_cv_member_struct_statvfs_f_type = yes; }; }; }; }
+  then
+    ac_fn_c_check_member "$LINENO" "struct statvfs" "f_namemax" "ac_cv_member_struct_statvfs_f_namemax" "$statvfs_includes
+"
+if test "x$ac_cv_member_struct_statvfs_f_namemax" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STATVFS_F_NAMEMAX 1
+_ACEOF
+
+
+fi
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$statvfs_includes
+int
+main ()
+{
+static statvfs s;
+          return (s.s_fsid ^ 0) == 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define STRUCT_STATVFS_F_FSID_IS_INTEGER 1" >>confdefs.h
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  else
+    ac_fn_c_check_member "$LINENO" "struct statfs" "f_namelen" "ac_cv_member_struct_statfs_f_namelen" "$statfs_includes
+"
+if test "x$ac_cv_member_struct_statfs_f_namelen" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STATFS_F_NAMELEN 1
+_ACEOF
+
+
+fi
+ac_fn_c_check_member "$LINENO" "struct statfs" "f_type" "ac_cv_member_struct_statfs_f_type" "$statfs_includes
+"
+if test "x$ac_cv_member_struct_statfs_f_type" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STATFS_F_TYPE 1
+_ACEOF
+
+
+fi
+ac_fn_c_check_member "$LINENO" "struct statfs" "f_frsize" "ac_cv_member_struct_statfs_f_frsize" "$statfs_includes
+"
+if test "x$ac_cv_member_struct_statfs_f_frsize" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STATFS_F_FRSIZE 1
+_ACEOF
+
+
+fi
+
+    if test $ac_cv_header_OS_h != yes; then
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$statfs_includes
+int
+main ()
+{
+static statfs s;
+            return (s.s_fsid ^ 0) == 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define STRUCT_STATFS_F_FSID_IS_INTEGER 1" >>confdefs.h
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    fi
+  fi
+
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X" >&5
 $as_echo_n "checking for X... " >&6; }
 
@@ -21555,7 +22081,9 @@ else
 $as_echo "libraries $x_libraries, headers $x_includes" >&6; }
 fi
 
-if test "$no_x" = yes; then
+
+
+    if test "$no_x" = yes; then
   # Not all programs may use this symbol, but it does not hurt to define it.
 
 $as_echo "#define X_DISPLAY_MISSING 1" >>confdefs.h
@@ -22046,219 +22574,19 @@ fi
 fi
 
 
-
-
-    g_module_supported=""
     if test x"$no_x" = xyes; then
         textmode_x11_support="no"
     else
-        found_gmodule=no
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GMODULE" >&5
-$as_echo_n "checking for GMODULE... " >&6; }
-
-if test -n "$GMODULE_CFLAGS"; then
-    pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.8\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.8") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-no-export-2.0 >= 2.8" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$GMODULE_LIBS"; then
-    pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.8\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.8") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-no-export-2.0 >= 2.8" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gmodule-no-export-2.0 >= 2.8" 2>&1`
-        else
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors "gmodule-no-export-2.0 >= 2.8" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$GMODULE_PKG_ERRORS" >&5
-
-	:
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	:
-else
-	GMODULE_CFLAGS=$pkg_cv_GMODULE_CFLAGS
-	GMODULE_LIBS=$pkg_cv_GMODULE_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	found_gmodule=yes
-fi
-        if test x"$found_gmodule" = xyes; then
-            g_module_supported="gmodule-no-export-2.0"
-        else
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GMODULE" >&5
-$as_echo_n "checking for GMODULE... " >&6; }
-
-if test -n "$GMODULE_CFLAGS"; then
-    pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.8\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.8") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-2.0 >= 2.8" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$GMODULE_LIBS"; then
-    pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.8\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.8") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-2.0 >= 2.8" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gmodule-2.0 >= 2.8" 2>&1`
-        else
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors "gmodule-2.0 >= 2.8" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$GMODULE_PKG_ERRORS" >&5
-
-	:
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	:
-else
-	GMODULE_CFLAGS=$pkg_cv_GMODULE_CFLAGS
-	GMODULE_LIBS=$pkg_cv_GMODULE_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	found_gmodule=yes
-fi
-            if test x"$found_gmodule" = xyes; then
-                g_module_supported="gmodule-2.0"
-            fi
-        fi
-
-        CPPFLAGS="$CPPFLAGS $X_CFLAGS"
-        case x"$g_module_supported" in
-            xgmodule-no-export-2.0|xgmodule-2.0)
-                if test x`$PKG_CONFIG --variable=gmodule_supported "$g_module_supported"` = xtrue; then
-
-$as_echo "#define HAVE_GMODULE 1" >>confdefs.h
-
-                else
-                    g_module_supported=""
-                fi
-                ;;
-            *)
-                MCLIBS="$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
-                g_module_supported=""
-                ;;
-        esac
-
 
 $as_echo "#define HAVE_TEXTMODE_X11_SUPPORT 1" >>confdefs.h
 
         textmode_x11_support="yes"
-    fi
 
-     if test x"$g_module_supported" != x; then
-  HAVE_GMODULE_TRUE=
-  HAVE_GMODULE_FALSE='#'
-else
-  HAVE_GMODULE_TRUE='#'
-  HAVE_GMODULE_FALSE=
-fi
+        CPPFLAGS="$CPPFLAGS $X_CFLAGS"
 
-
-                if test x$with_glib_static = xyes; then
-        new_GLIB_LIBS=
-        for i in $GLIB_LIBS; do
-            case x$i in
-            x-lglib*)
-                lib=glib ;;
-            x-lgmodule*)
-                lib=gmodule ;;
-            *)
-                lib=
-                add="$i" ;;
-            esac
-
-            if test -n "$lib"; then
-                lib1=`echo $i | sed 's/^-l//'`
-                if test -f "$GLIB_LIBDIR/lib${lib1}.a"; then
-                    add="$GLIB_LIBDIR/lib${lib1}.a"
-                else
-                    if test -f "$GLIB_LIBDIR/lib${lib}.a"; then
-                        add="$GLIB_LIBDIR/lib${lib}.a"
-                    else
-                        as_fn_error $? "Cannot find static $lib" "$LINENO" 5
-                    fi
-                fi
-            fi
-            new_GLIB_LIBS="$new_GLIB_LIBS $add"
-        done
-        GLIB_LIBS="$new_GLIB_LIBS"
+        if test x"$g_module_supported" = x; then
+            MCLIBS="$MCLIBS $X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+        fi
     fi
 
 
@@ -22688,6 +23016,111 @@ $as_echo "#define ENABLE_VFS_FTP 1" >>confdefs.h
 else
   ENABLE_VFS_FTP_TRUE='#'
   ENABLE_VFS_FTP_FALSE=
+fi
+
+
+
+    # Check whether --enable-vfs-sftp was given.
+if test "${enable_vfs_sftp+set}" = set; then :
+  enableval=$enable_vfs_sftp;
+fi
+
+    if test "$enable_vfs" != "no" -a x"$enable_vfs_sftp" != x"no"; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBSSH" >&5
+$as_echo_n "checking for LIBSSH... " >&6; }
+
+if test -n "$LIBSSH_CFLAGS"; then
+    pkg_cv_LIBSSH_CFLAGS="$LIBSSH_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libssh2 >= 1.2.5\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libssh2 >= 1.2.5") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBSSH_CFLAGS=`$PKG_CONFIG --cflags "libssh2 >= 1.2.5" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBSSH_LIBS"; then
+    pkg_cv_LIBSSH_LIBS="$LIBSSH_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libssh2 >= 1.2.5\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libssh2 >= 1.2.5") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBSSH_LIBS=`$PKG_CONFIG --libs "libssh2 >= 1.2.5" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBSSH_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libssh2 >= 1.2.5" 2>&1`
+        else
+	        LIBSSH_PKG_ERRORS=`$PKG_CONFIG --print-errors "libssh2 >= 1.2.5" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBSSH_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	LIBSSH_CFLAGS=$pkg_cv_LIBSSH_CFLAGS
+	LIBSSH_LIBS=$pkg_cv_LIBSSH_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	found_libssh=yes
+fi
+        if test x"$found_libssh" = "xyes"; then
+
+    if test x"$vfs_flags" = "x" ; then
+	vfs_flags="sftp"
+    else
+	vfs_flags="$vfs_flags, sftp"
+    fi
+
+
+$as_echo "#define ENABLE_VFS_SFTP 1" >>confdefs.h
+
+            MCLIBS="$MCLIBS $LIBSSH_LIBS"
+            enable_vfs_sftp="yes"
+        else
+            if test x"$enable_vfs_sftp" = x"yes"; then
+                                as_fn_error $? "libssh2 >= 1.2.5 library not found" "$LINENO" 5
+            fi
+            enable_vfs_sftp="no"
+        fi
+    fi
+     if test "$enable_vfs" = "yes" -a x"$enable_vfs_sftp" = x"yes"; then
+  ENABLE_VFS_SFTP_TRUE=
+  ENABLE_VFS_SFTP_FALSE='#'
+else
+  ENABLE_VFS_SFTP_TRUE='#'
+  ENABLE_VFS_SFTP_FALSE=
 fi
 
 
@@ -23629,7 +24062,6 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $result" >&5
 $as_echo "$result" >&6; }
 subshell="$result"
-
 
 
 
@@ -26687,23 +27119,74 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 
 
 
+
 # Check whether --with-edit was given.
 if test "${with_edit+set}" = set; then :
   withval=$with_edit;
 fi
 
 
-if test x$with_edit != xno; then
+    if test x$with_edit != xno; then
 
 $as_echo "#define USE_INTERNAL_EDIT 1" >>confdefs.h
 
-	use_edit=yes
-	edit_msg="yes"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: using internal editor" >&5
+            use_edit=yes
+            { $as_echo "$as_me:${as_lineno-$LINENO}: using internal editor" >&5
 $as_echo "$as_me: using internal editor" >&6;}
+    else
+            use_edit=no
+            edit_msg="no"
+    fi
+
+        # Check whether --enable-aspell was given.
+if test "${enable_aspell+set}" = set; then :
+  enableval=$enable_aspell;
+            if test "x$enableval" = xno; then
+                enable_aspell=no
+            else
+                enable_aspell=yes
+            fi
+
 else
-	edit_msg="no"
+  enable_aspell=no
+
 fi
+
+
+    if test x$with_edit != xno -a x$enable_aspell != xno; then
+            for ac_header in aspell.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "aspell.h" "ac_cv_header_aspell_h" "$ac_includes_default"
+if test "x$ac_cv_header_aspell_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ASPELL_H 1
+_ACEOF
+
+else
+
+                as_fn_error $? "Could not find aspell development headers" "$LINENO" 5
+
+fi
+
+done
+
+
+            if test x"$g_module_supported" != x; then
+
+$as_echo "#define HAVE_ASPELL 1" >>confdefs.h
+
+                edit_msg="yes with aspell support"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: using aspell for internal editor" >&5
+$as_echo "$as_me: using aspell for internal editor" >&6;}
+            else
+                enable_aspell=no
+                { $as_echo "$as_me:${as_lineno-$LINENO}: aspell support is disabled because gmodule support is not available" >&5
+$as_echo "$as_me: aspell support is disabled because gmodule support is not available" >&6;}
+            fi
+    else
+            edit_msg="yes"
+    fi
+
 
 
 # Check whether --with-diff_viewer was given.
@@ -26766,11 +27249,11 @@ fi
     # Check whether --enable-background was given.
 if test "${enable_background+set}" = set; then :
   enableval=$enable_background;
-	    if test "x$enableval" = xno; then
-		enable_background=no
-	    else
-		enable_background=yes
-	    fi
+        if test "x$enableval" = xno; then
+        enable_background=no
+        else
+        enable_background=yes
+        fi
 
 else
   enable_background=yes
@@ -28260,6 +28743,14 @@ fi
 
 
 
+
+if test x${libexecdir} = x'${exec_prefix}/libexec'; then
+    EXTHELPERSDIR=${prefix}/libexec/${PACKAGE}/ext.d
+else
+    EXTHELPERSDIR=${libexecdir}/${PACKAGE}/ext.d
+fi
+
+
 MAN_DATE="$(LC_ALL=C date "+%B %Y")"
 
 
@@ -28287,12 +28778,20 @@ else
   USE_SCREEN_SLANG_FALSE=
 fi
 
- if test -n "$use_edit"; then
+ if test x"$use_edit" = xyes ; then
   USE_EDIT_TRUE=
   USE_EDIT_FALSE='#'
 else
   USE_EDIT_TRUE='#'
   USE_EDIT_FALSE=
+fi
+
+ if test x"$enable_aspell" = xyes ; then
+  USE_ASPELL_TRUE=
+  USE_ASPELL_FALSE='#'
+else
+  USE_ASPELL_TRUE='#'
+  USE_ASPELL_FALSE=
 fi
 
  if test -n "$use_diff"; then
@@ -28323,7 +28822,7 @@ fi
 ac_config_files="$ac_config_files src/man2hlp/man2hlp"
 
 
-ac_config_files="$ac_config_files Makefile contrib/Makefile contrib/dist/Makefile contrib/dist/debian/Makefile contrib/dist/gentoo/Makefile contrib/dist/redhat/Makefile contrib/dist/redhat/mc.spec contrib/dist/pkginfo contrib/dist/prototype misc/Makefile misc/skins/Makefile misc/macros.d/Makefile misc/mc.ext src/Makefile src/consaver/Makefile src/editor/Makefile src/man2hlp/Makefile src/viewer/Makefile src/diffviewer/Makefile src/filemanager/Makefile src/vfs/Makefile src/vfs/cpio/Makefile src/vfs/extfs/Makefile src/vfs/extfs/helpers/Makefile src/vfs/extfs/helpers/a+ src/vfs/extfs/helpers/apt+ src/vfs/extfs/helpers/audio src/vfs/extfs/helpers/deb src/vfs/extfs/helpers/deba src/vfs/extfs/helpers/debd src/vfs/extfs/helpers/dpkg+ src/vfs/extfs/helpers/iso9660 src/vfs/extfs/helpers/hp48+ src/vfs/extfs/helpers/lslR src/vfs/extfs/helpers/mailfs src/vfs/extfs/helpers/patchfs src/vfs/extfs/helpers/rpms+ src/vfs/extfs/helpers/s3+ src/vfs/extfs/helpers/uace src/vfs/extfs/helpers/ualz src/vfs/extfs/helpers/uar src/vfs/extfs/helpers/uarc src/vfs/extfs/helpers/uarj src/vfs/extfs/helpers/uc1541 src/vfs/extfs/helpers/ucab src/vfs/extfs/helpers/uha src/vfs/extfs/helpers/ulha src/vfs/extfs/helpers/urar src/vfs/extfs/helpers/uzip src/vfs/extfs/helpers/uzoo src/vfs/fish/Makefile src/vfs/fish/helpers/Makefile src/vfs/ftpfs/Makefile src/vfs/local/Makefile src/vfs/sfs/Makefile src/vfs/smbfs/Makefile src/vfs/tar/Makefile src/vfs/undelfs/Makefile lib/Makefile lib/event/Makefile lib/filehighlight/Makefile lib/mcconfig/Makefile lib/search/Makefile lib/skin/Makefile lib/strutil/Makefile lib/tty/Makefile lib/vfs/Makefile lib/widget/Makefile misc/syntax/Makefile doc/Makefile doc/hints/Makefile doc/man/Makefile doc/man/es/Makefile doc/man/hu/Makefile doc/man/it/Makefile doc/man/pl/Makefile doc/man/ru/Makefile doc/man/sr/Makefile doc/hlp/Makefile doc/hlp/es/Makefile doc/hlp/hu/Makefile doc/hlp/it/Makefile doc/hlp/pl/Makefile doc/hlp/ru/Makefile doc/hlp/sr/Makefile intl/Makefile po/Makefile.in"
+ac_config_files="$ac_config_files Makefile contrib/Makefile contrib/dist/Makefile contrib/dist/debian/Makefile contrib/dist/gentoo/Makefile contrib/dist/redhat/Makefile contrib/dist/redhat/mc.spec contrib/dist/pkginfo contrib/dist/prototype misc/Makefile misc/skins/Makefile misc/ext.d/Makefile misc/ext.d/doc.sh misc/ext.d/misc.sh misc/ext.d/text.sh misc/ext.d/web.sh misc/macros.d/Makefile misc/mc.ext src/Makefile src/consaver/Makefile src/editor/Makefile src/man2hlp/Makefile src/viewer/Makefile src/diffviewer/Makefile src/filemanager/Makefile src/vfs/Makefile src/vfs/cpio/Makefile src/vfs/extfs/Makefile src/vfs/extfs/helpers/Makefile src/vfs/extfs/helpers/a+ src/vfs/extfs/helpers/apt+ src/vfs/extfs/helpers/audio src/vfs/extfs/helpers/deb src/vfs/extfs/helpers/deba src/vfs/extfs/helpers/debd src/vfs/extfs/helpers/dpkg+ src/vfs/extfs/helpers/iso9660 src/vfs/extfs/helpers/hp48+ src/vfs/extfs/helpers/lslR src/vfs/extfs/helpers/mailfs src/vfs/extfs/helpers/patchfs src/vfs/extfs/helpers/rpms+ src/vfs/extfs/helpers/s3+ src/vfs/extfs/helpers/uace src/vfs/extfs/helpers/ualz src/vfs/extfs/helpers/uar src/vfs/extfs/helpers/uarc src/vfs/extfs/helpers/uarj src/vfs/extfs/helpers/uc1541 src/vfs/extfs/helpers/ucab src/vfs/extfs/helpers/uha src/vfs/extfs/helpers/ulha src/vfs/extfs/helpers/ulib src/vfs/extfs/helpers/urar src/vfs/extfs/helpers/uzip src/vfs/extfs/helpers/uzoo src/vfs/fish/Makefile src/vfs/fish/helpers/Makefile src/vfs/ftpfs/Makefile src/vfs/sftpfs/Makefile src/vfs/local/Makefile src/vfs/sfs/Makefile src/vfs/smbfs/Makefile src/vfs/tar/Makefile src/vfs/undelfs/Makefile lib/Makefile lib/event/Makefile lib/filehighlight/Makefile lib/mcconfig/Makefile lib/search/Makefile lib/skin/Makefile lib/strutil/Makefile lib/tty/Makefile lib/vfs/Makefile lib/widget/Makefile misc/syntax/Makefile doc/Makefile doc/hints/Makefile doc/man/Makefile doc/man/es/Makefile doc/man/hu/Makefile doc/man/it/Makefile doc/man/pl/Makefile doc/man/ru/Makefile doc/man/sr/Makefile doc/hlp/Makefile doc/hlp/es/Makefile doc/hlp/hu/Makefile doc/hlp/it/Makefile doc/hlp/pl/Makefile doc/hlp/ru/Makefile doc/hlp/sr/Makefile intl/Makefile po/Makefile.in"
 
 
 if test x$enable_tests != xno; then
@@ -28550,12 +29049,12 @@ if test -z "${DX_COND_latex_TRUE}" && test -z "${DX_COND_latex_FALSE}"; then
   as_fn_error $? "conditional \"DX_COND_latex\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${ENABLE_MCLIB_TRUE}" && test -z "${ENABLE_MCLIB_FALSE}"; then
-  as_fn_error $? "conditional \"ENABLE_MCLIB\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${HAVE_GMODULE_TRUE}" && test -z "${HAVE_GMODULE_FALSE}"; then
   as_fn_error $? "conditional \"HAVE_GMODULE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${ENABLE_MCLIB_TRUE}" && test -z "${ENABLE_MCLIB_FALSE}"; then
+  as_fn_error $? "conditional \"ENABLE_MCLIB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ENABLE_VFS_CPIO_TRUE}" && test -z "${ENABLE_VFS_CPIO_FALSE}"; then
@@ -28580,6 +29079,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ENABLE_VFS_FTP_TRUE}" && test -z "${ENABLE_VFS_FTP_FALSE}"; then
   as_fn_error $? "conditional \"ENABLE_VFS_FTP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${ENABLE_VFS_SFTP_TRUE}" && test -z "${ENABLE_VFS_SFTP_FALSE}"; then
+  as_fn_error $? "conditional \"ENABLE_VFS_SFTP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ENABLE_VFS_FISH_TRUE}" && test -z "${ENABLE_VFS_FISH_FALSE}"; then
@@ -28624,6 +29127,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_EDIT_TRUE}" && test -z "${USE_EDIT_FALSE}"; then
   as_fn_error $? "conditional \"USE_EDIT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_ASPELL_TRUE}" && test -z "${USE_ASPELL_FALSE}"; then
+  as_fn_error $? "conditional \"USE_ASPELL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_DIFF_TRUE}" && test -z "${USE_DIFF_FALSE}"; then
@@ -29250,6 +29757,7 @@ pic_mode='`$ECHO "$pic_mode" | $SED "$delay_single_quote_subst"`'
 enable_fast_install='`$ECHO "$enable_fast_install" | $SED "$delay_single_quote_subst"`'
 SHELL='`$ECHO "$SHELL" | $SED "$delay_single_quote_subst"`'
 ECHO='`$ECHO "$ECHO" | $SED "$delay_single_quote_subst"`'
+PATH_SEPARATOR='`$ECHO "$PATH_SEPARATOR" | $SED "$delay_single_quote_subst"`'
 host_alias='`$ECHO "$host_alias" | $SED "$delay_single_quote_subst"`'
 host='`$ECHO "$host" | $SED "$delay_single_quote_subst"`'
 host_os='`$ECHO "$host_os" | $SED "$delay_single_quote_subst"`'
@@ -29332,7 +29840,6 @@ with_gnu_ld='`$ECHO "$with_gnu_ld" | $SED "$delay_single_quote_subst"`'
 allow_undefined_flag='`$ECHO "$allow_undefined_flag" | $SED "$delay_single_quote_subst"`'
 no_undefined_flag='`$ECHO "$no_undefined_flag" | $SED "$delay_single_quote_subst"`'
 hardcode_libdir_flag_spec='`$ECHO "$hardcode_libdir_flag_spec" | $SED "$delay_single_quote_subst"`'
-hardcode_libdir_flag_spec_ld='`$ECHO "$hardcode_libdir_flag_spec_ld" | $SED "$delay_single_quote_subst"`'
 hardcode_libdir_separator='`$ECHO "$hardcode_libdir_separator" | $SED "$delay_single_quote_subst"`'
 hardcode_direct='`$ECHO "$hardcode_direct" | $SED "$delay_single_quote_subst"`'
 hardcode_direct_absolute='`$ECHO "$hardcode_direct_absolute" | $SED "$delay_single_quote_subst"`'
@@ -29388,6 +29895,7 @@ _LTECHO_EOF'
 # Quote evaled strings.
 for var in SHELL \
 ECHO \
+PATH_SEPARATOR \
 SED \
 GREP \
 EGREP \
@@ -29438,7 +29946,6 @@ with_gnu_ld \
 allow_undefined_flag \
 no_undefined_flag \
 hardcode_libdir_flag_spec \
-hardcode_libdir_flag_spec_ld \
 hardcode_libdir_separator \
 exclude_expsyms \
 include_expsyms \
@@ -29542,6 +30049,11 @@ do
     "contrib/dist/prototype") CONFIG_FILES="$CONFIG_FILES contrib/dist/prototype" ;;
     "misc/Makefile") CONFIG_FILES="$CONFIG_FILES misc/Makefile" ;;
     "misc/skins/Makefile") CONFIG_FILES="$CONFIG_FILES misc/skins/Makefile" ;;
+    "misc/ext.d/Makefile") CONFIG_FILES="$CONFIG_FILES misc/ext.d/Makefile" ;;
+    "misc/ext.d/doc.sh") CONFIG_FILES="$CONFIG_FILES misc/ext.d/doc.sh" ;;
+    "misc/ext.d/misc.sh") CONFIG_FILES="$CONFIG_FILES misc/ext.d/misc.sh" ;;
+    "misc/ext.d/text.sh") CONFIG_FILES="$CONFIG_FILES misc/ext.d/text.sh" ;;
+    "misc/ext.d/web.sh") CONFIG_FILES="$CONFIG_FILES misc/ext.d/web.sh" ;;
     "misc/macros.d/Makefile") CONFIG_FILES="$CONFIG_FILES misc/macros.d/Makefile" ;;
     "misc/mc.ext") CONFIG_FILES="$CONFIG_FILES misc/mc.ext" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
@@ -29578,12 +30090,14 @@ do
     "src/vfs/extfs/helpers/ucab") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/ucab" ;;
     "src/vfs/extfs/helpers/uha") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/uha" ;;
     "src/vfs/extfs/helpers/ulha") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/ulha" ;;
+    "src/vfs/extfs/helpers/ulib") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/ulib" ;;
     "src/vfs/extfs/helpers/urar") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/urar" ;;
     "src/vfs/extfs/helpers/uzip") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/uzip" ;;
     "src/vfs/extfs/helpers/uzoo") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/uzoo" ;;
     "src/vfs/fish/Makefile") CONFIG_FILES="$CONFIG_FILES src/vfs/fish/Makefile" ;;
     "src/vfs/fish/helpers/Makefile") CONFIG_FILES="$CONFIG_FILES src/vfs/fish/helpers/Makefile" ;;
     "src/vfs/ftpfs/Makefile") CONFIG_FILES="$CONFIG_FILES src/vfs/ftpfs/Makefile" ;;
+    "src/vfs/sftpfs/Makefile") CONFIG_FILES="$CONFIG_FILES src/vfs/sftpfs/Makefile" ;;
     "src/vfs/local/Makefile") CONFIG_FILES="$CONFIG_FILES src/vfs/local/Makefile" ;;
     "src/vfs/sfs/Makefile") CONFIG_FILES="$CONFIG_FILES src/vfs/sfs/Makefile" ;;
     "src/vfs/smbfs/Makefile") CONFIG_FILES="$CONFIG_FILES src/vfs/smbfs/Makefile" ;;
@@ -30336,8 +30850,8 @@ $as_echo X"$file" |
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 #
 #   Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2003, 2004, 2005,
-#                 2006, 2007, 2008, 2009, 2010 Free Software Foundation,
-#                 Inc.
+#                 2006, 2007, 2008, 2009, 2010, 2011 Free Software
+#                 Foundation, Inc.
 #   Written by Gordon Matzigkeit, 1996
 #
 #   This file is part of GNU Libtool.
@@ -30390,6 +30904,9 @@ SHELL=$lt_SHELL
 
 # An echo program that protects backslashes.
 ECHO=$lt_ECHO
+
+# The PATH separator for the build system.
+PATH_SEPARATOR=$lt_PATH_SEPARATOR
 
 # The host system.
 host_alias=$host_alias
@@ -30691,10 +31208,6 @@ no_undefined_flag=$lt_no_undefined_flag
 # Flag to hardcode \$libdir into a binary during linking.
 # This must work even if \$libdir does not exist
 hardcode_libdir_flag_spec=$lt_hardcode_libdir_flag_spec
-
-# If ld is used when linking, flag to hardcode \$libdir into a binary
-# during linking.  This must work even if \$libdir does not exist.
-hardcode_libdir_flag_spec_ld=$lt_hardcode_libdir_flag_spec_ld
 
 # Whether we need a single "-rpath" flag with a separated argument.
 hardcode_libdir_separator=$lt_hardcode_libdir_separator

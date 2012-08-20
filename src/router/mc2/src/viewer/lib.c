@@ -44,10 +44,14 @@
 #include "lib/strutil.h"
 #include "lib/util.h"           /* save_file_position() */
 #include "lib/widget.h"
+#ifdef HAVE_CHARSET
 #include "lib/charsets.h"
+#endif
 
 #include "src/main.h"
+#ifdef HAVE_CHARSET
 #include "src/selcodepage.h"
+#endif
 
 #include "internal.h"
 #include "mcviewer.h"
@@ -75,17 +79,30 @@ void
 mcview_toggle_magic_mode (mcview_t * view)
 {
     char *filename, *command;
+    dir_list *dir;
+    int *dir_count, *dir_idx;
 
     mcview_altered_magic_flag = 1;
     view->magic_mode = !view->magic_mode;
+
+    /* reinit view */
     filename = vfs_path_to_str (view->filename_vpath);
     command = g_strdup (view->command);
-
+    dir = view->dir;
+    dir_count = view->dir_count;
+    dir_idx = view->dir_idx;
+    view->dir = NULL;
+    view->dir_count = NULL;
+    view->dir_idx = NULL;
     mcview_done (view);
     mcview_init (view);
     mcview_load (view, command, filename, 0);
+    view->dir = dir;
+    view->dir_count = dir_count;
+    view->dir_idx = dir_idx;
     g_free (filename);
     g_free (command);
+
     view->dpy_bbar_dirty = TRUE;
     view->dirty++;
 }
@@ -218,7 +235,6 @@ mcview_init (mcview_t * view)
     for (i = 0; i < sizeof (view->marks) / sizeof (view->marks[0]); i++)
         view->marks[i] = 0;
 
-    view->move_dir = 0;
     view->update_steps = 0;
     view->update_activate = 0;
 
@@ -276,6 +292,18 @@ mcview_done (mcview_t * view)
     view->last_search_string = NULL;
     mcview_nroff_seq_free (&view->search_nroff_seq);
     mcview_hexedit_free_change_list (view);
+
+    if (mc_global.mc_run_mode == MC_RUN_VIEWER && view->dir != NULL)
+    {
+        /* mcviewer is the owner of file list */
+        clean_dir (view->dir, *view->dir_count);
+        g_free (view->dir->list);
+        g_free (view->dir_count);
+        g_free (view->dir_idx);
+        g_free (view->dir);
+    }
+
+    view->dir = NULL;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -309,16 +337,14 @@ mcview_set_codeset (mcview_t * view)
 
 /* --------------------------------------------------------------------------------------------- */
 
+#ifdef HAVE_CHARSET
 void
 mcview_select_encoding (mcview_t * view)
 {
-#ifdef HAVE_CHARSET
     if (do_select_codepage ())
         mcview_set_codeset (view);
-#else
-    (void) view;
-#endif
 }
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 

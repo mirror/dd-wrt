@@ -91,6 +91,7 @@ free_my_statfs (void)
 
 }
 
+#ifdef HAVE_CHARSET
 int
 select_charset (int center_y, int center_x, int current_charset, gboolean seldisplay)
 {
@@ -101,6 +102,7 @@ select_charset (int center_y, int center_x, int current_charset, gboolean seldis
 
     return 0;
 }
+#endif
 
 void
 update_xterm_title_path (void)
@@ -180,11 +182,10 @@ do_sort (dir_list * list, sortfn * sort, int top, gboolean reverse,
 }
 
 int
-regex_command (const vfs_path_t *filename, const char *action, int *move_dir)
+regex_command (const vfs_path_t *filename, const char *action)
 {
     (void) filename;
     (void) action;
-    (void) move_dir;
 
     return 0;
 }

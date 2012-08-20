@@ -543,7 +543,6 @@ fish_open_archive_int (struct vfs_class *me, struct vfs_s_super *super)
     if (fish_info (me, super))
         SUP->scr_env = fish_set_env (SUP->host_flags);
 
-    vfs_print_message (_("fish: Connected, home %s."), super->path_element->path);
 #if 0
     super->name =
         g_strconcat ("sh://", super->path_element->user, "@", super->path_element->host, "/",
@@ -711,17 +710,23 @@ fish_dir_load (struct vfs_class *me, struct vfs_s_inode *dir, char *remote_path)
                 char *temp;
                 char *data_start = buffer + 1;
                 char *filename = data_start;
-                char *linkname = data_start;
-                char *filename_bound = filename + strlen (filename);
-                char *linkname_bound = filename_bound;
+                char *filename_bound;
+
+                filename_bound = filename + strlen (filename);
+
                 if (!strcmp (data_start, "\".\"") || !strcmp (data_start, "\"..\""))
                     break;      /* We'll do "." and ".." ourselves */
 
                 if (S_ISLNK (ST.st_mode))
                 {
+                    char *linkname;
+                    char *linkname_bound;
                     /* we expect: "escaped-name" -> "escaped-name"
                        //     -> cannot occur in filenames,
                        //     because it will be escaped to -\> */
+
+
+                    linkname_bound = filename_bound;
 
                     if (*filename == '"')
                         ++filename;
@@ -1568,7 +1573,11 @@ fish_fill_names (struct vfs_class *me, fill_names_f func)
             }
             break;
         }
-        name = vfs_path_element_build_pretty_path_str (super->path_element);
+
+        name =
+            g_strconcat (vfs_fish_ops.prefix, VFS_PATH_URL_DELIMITER,
+                         super->path_element->user, "@", super->path_element->host, flags, "/",
+                         super->path_element->path, (char *) NULL);
         func (name);
         g_free (name);
     }

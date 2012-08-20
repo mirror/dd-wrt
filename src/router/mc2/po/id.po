@@ -3,14 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Andika Triwidada <andika@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-04-25 19:29+0300\n"
-"PO-Revision-Date: 2012-03-19 17:28+0000\n"
+"POT-Creation-Date: 2012-07-18 13:34+0300\n"
+"PO-Revision-Date: 2012-07-13 08:36+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
-"Language-Team: Indonesian (http://www.transifex.net/projects/p/mc/language/"
+"Language-Team: Indonesian (http://www.transifex.com/projects/p/mc/language/"
 "id/)\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
@@ -19,14 +20,14 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0\n"
 
 msgid "Warning: cannot load codepages list"
-msgstr ""
+msgstr "Peringatan: tak bisa memuat daftar codepage"
 
 msgid "7-bit ASCII"
-msgstr ""
+msgstr "ASCII 7 bit"
 
 #, c-format
 msgid "Cannot translate from %s to %s"
-msgstr ""
+msgstr "Tak bisa menerjemahkan dari %s ke %s"
 
 msgid "Event system already initialized"
 msgstr ""
@@ -54,15 +55,18 @@ msgid ""
 "User: %s\n"
 "Process ID: %d"
 msgstr ""
+"Berkas \"%s\" sedang disunting.\n"
+"Pengguna: %s\n"
+"ID Proses: %d"
 
 msgid "File locked"
-msgstr ""
+msgstr "Berkas dikunci"
 
 msgid "&Grab lock"
-msgstr ""
+msgstr "Pe&gang kunci"
 
 msgid "&Ignore lock"
-msgstr ""
+msgstr "Aba&ikan kunci"
 
 #, c-format
 msgid "Cannot create %s directory"
@@ -90,22 +94,22 @@ msgid ""
 msgstr ""
 
 msgid "Search string not found"
-msgstr ""
+msgstr "String yang dicari tak ditemukan"
 
 msgid "Not implemented yet"
-msgstr ""
+msgstr "Belum diimplementasi"
 
 msgid "Num of replace tokens not equal to num of found tokens"
-msgstr ""
+msgstr "Cacah token pengganti tak sama dengan cacah token yang ditemukan"
 
 #, c-format
 msgid "Invalid token number %d"
-msgstr ""
+msgstr "Nomor token %d tak valid"
 
 msgid "Regular expression error"
 msgstr ""
 
-msgid "&Normal"
+msgid "No&rmal"
 msgstr ""
 
 msgid "Re&gular expression"
@@ -122,12 +126,16 @@ msgid ""
 "Unable to load '%s' skin.\n"
 "Default skin has been loaded"
 msgstr ""
+"Tak bisa memuat skin '%s'.\n"
+"Skin bawaan telah dimuat."
 
 #, c-format
 msgid ""
 "Unable to parse '%s' skin.\n"
 "Default skin has been loaded"
 msgstr ""
+"Tak bisa mengurai skin '%s'.\n"
+"Skin bawaan telah dimuat."
 
 #, c-format
 msgid ""
@@ -137,97 +145,97 @@ msgid ""
 msgstr ""
 
 msgid "Function key 1"
-msgstr ""
+msgstr "Tombol fungsi 1"
 
 msgid "Function key 2"
-msgstr ""
+msgstr "Tombol fungsi 2"
 
 msgid "Function key 3"
-msgstr ""
+msgstr "Tombol fungsi 3"
 
 msgid "Function key 4"
-msgstr ""
+msgstr "Tombol fungsi 4"
 
 msgid "Function key 5"
-msgstr ""
+msgstr "Tombol fungsi 5"
 
 msgid "Function key 6"
-msgstr ""
+msgstr "Tombol fungsi 6"
 
 msgid "Function key 7"
-msgstr ""
+msgstr "Tombol fungsi 7"
 
 msgid "Function key 8"
-msgstr ""
+msgstr "Tombol fungsi 8"
 
 msgid "Function key 9"
-msgstr ""
+msgstr "Tombol fungsi 9"
 
 msgid "Function key 10"
-msgstr ""
+msgstr "Tombol fungsi 10"
 
 msgid "Function key 11"
-msgstr ""
+msgstr "Tombol fungsi 11"
 
 msgid "Function key 12"
-msgstr ""
+msgstr "Tombol fungsi 12"
 
 msgid "Function key 13"
-msgstr ""
+msgstr "Tombol fungsi 13"
 
 msgid "Function key 14"
-msgstr ""
+msgstr "Tombol fungsi 14"
 
 msgid "Function key 15"
-msgstr ""
+msgstr "Tombol fungsi 15"
 
 msgid "Function key 16"
-msgstr ""
+msgstr "Tombol fungsi 16"
 
 msgid "Function key 17"
-msgstr ""
+msgstr "Tombol fungsi 17"
 
 msgid "Function key 18"
-msgstr ""
+msgstr "Tombol fungsi 18"
 
 msgid "Function key 19"
-msgstr ""
+msgstr "Tombol fungsi 19"
 
 msgid "Function key 20"
-msgstr ""
+msgstr "Tombol fungsi 20"
 
 msgid "Backspace key"
-msgstr ""
+msgstr "Tombol backspace"
 
 msgid "End key"
-msgstr ""
+msgstr "Tombol end"
 
 msgid "Up arrow key"
-msgstr ""
+msgstr "Tombol panah atas"
 
 msgid "Down arrow key"
-msgstr ""
+msgstr "Tombol panah bawah"
 
 msgid "Left arrow key"
-msgstr ""
+msgstr "Tombol panah kiri"
 
 msgid "Right arrow key"
-msgstr ""
+msgstr "Tombol panah kanan"
 
 msgid "Home key"
-msgstr ""
+msgstr "Tombol home"
 
 msgid "Page Down key"
-msgstr ""
+msgstr "Tombol Page Down"
 
 msgid "Page Up key"
-msgstr ""
+msgstr "Tombol Page Up"
 
 msgid "Insert key"
-msgstr ""
+msgstr "Tombol insert"
 
 msgid "Delete key"
-msgstr ""
+msgstr "Tombol delete"
 
 msgid "Completion/M-tab"
 msgstr ""
@@ -236,94 +244,94 @@ msgid "Back Tabulation S-tab"
 msgstr ""
 
 msgid "+ on keypad"
-msgstr ""
+msgstr "+ pada keypad"
 
 msgid "- on keypad"
-msgstr ""
+msgstr "- pada keypad"
 
 msgid "Slash on keypad"
-msgstr ""
+msgstr "Garis miring pada keypad"
 
 msgid "* on keypad"
-msgstr ""
+msgstr "* pada keypad"
 
 msgid "Escape key"
-msgstr ""
+msgstr "Tombol escape"
 
 msgid "Left arrow keypad"
-msgstr ""
+msgstr "Panah kiri keypad"
 
 msgid "Right arrow keypad"
-msgstr ""
+msgstr "Panah kanan keypad"
 
 msgid "Up arrow keypad"
-msgstr ""
+msgstr "Panah naik keypad"
 
 msgid "Down arrow keypad"
-msgstr ""
+msgstr "Panah turun keypad"
 
 msgid "Home on keypad"
-msgstr ""
+msgstr "Home pada keypad"
 
 msgid "End on keypad"
-msgstr ""
+msgstr "End pada keypad"
 
 msgid "Page Down keypad"
-msgstr ""
+msgstr "Page Down keypad"
 
 msgid "Page Up keypad"
-msgstr ""
+msgstr "Page Up keypad"
 
 msgid "Insert on keypad"
-msgstr ""
+msgstr "Insert pada keypad"
 
 msgid "Delete on keypad"
-msgstr ""
+msgstr "Delete pada keypad"
 
 msgid "Enter on keypad"
-msgstr ""
+msgstr "Enter pada keypad"
 
 msgid "Function key 21"
-msgstr ""
+msgstr "Tombol fungsi 21"
 
 msgid "Function key 22"
-msgstr ""
+msgstr "Tombol fungsi 22"
 
 msgid "Function key 23"
-msgstr ""
+msgstr "Tombol fungsi 23"
 
 msgid "Function key 24"
-msgstr ""
+msgstr "Tombol fungsi 24"
 
 msgid "A1 key"
-msgstr ""
+msgstr "Tombol A1"
 
 msgid "C1 key"
-msgstr ""
+msgstr "Tombol C1"
 
 msgid "Plus"
-msgstr ""
+msgstr "Plus"
 
 msgid "Minus"
-msgstr ""
+msgstr "Minus"
 
 msgid "Asterisk"
-msgstr ""
+msgstr "Asterisk"
 
 msgid "Dot"
-msgstr ""
+msgstr "Dot"
 
 msgid "Less than"
-msgstr ""
+msgstr "Kurang dari"
 
 msgid "Great than"
-msgstr ""
+msgstr "Lebih dari"
 
 msgid "Equal"
-msgstr ""
+msgstr "Sama"
 
 msgid "Comma"
-msgstr ""
+msgstr "Koma"
 
 msgid "Apostrophe"
 msgstr ""
@@ -332,10 +340,10 @@ msgid "Colon"
 msgstr ""
 
 msgid "Exclamation mark"
-msgstr ""
+msgstr "Tanda seru"
 
 msgid "Question mark"
-msgstr ""
+msgstr "Tanda tanya"
 
 msgid "Ampersand"
 msgstr ""
@@ -368,34 +376,34 @@ msgid "Pipe"
 msgstr ""
 
 msgid "Left parenthesis"
-msgstr ""
+msgstr "Kurung buka"
 
 msgid "Right parenthesis"
-msgstr ""
+msgstr "Kurung tutup"
 
 msgid "Left bracket"
-msgstr ""
+msgstr "Kurung siku buka"
 
 msgid "Right bracket"
-msgstr ""
+msgstr "Kurung siku tutup"
 
 msgid "Left brace"
-msgstr ""
+msgstr "Kurung kurawal buka"
 
 msgid "Right brace"
-msgstr ""
+msgstr "Kurung kurawal tutup"
 
 msgid "Enter"
-msgstr ""
+msgstr "Enter"
 
 msgid "Tab key"
-msgstr ""
+msgstr "Tab"
 
 msgid "Space key"
-msgstr ""
+msgstr "Tombol spasi"
 
 msgid "Slash key"
-msgstr ""
+msgstr "Tombol garis miring"
 
 msgid "Backslash key"
 msgstr ""
@@ -408,13 +416,13 @@ msgid "At sign"
 msgstr ""
 
 msgid "Ctrl"
-msgstr ""
+msgstr "Ctrl"
 
 msgid "Alt"
-msgstr ""
+msgstr "Alt"
 
 msgid "Shift"
-msgstr ""
+msgstr "Shift"
 
 msgid "The TERM environment variable is unset!\n"
 msgstr ""
@@ -554,7 +562,7 @@ msgstr ""
 msgid "Launches the file viewer on a file"
 msgstr ""
 
-msgid "Edits one file"
+msgid "Edit files"
 msgstr ""
 
 msgid "Forces xterm features"
@@ -615,7 +623,8 @@ msgid ""
 "   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
 "   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
@@ -839,16 +848,6 @@ msgstr ""
 msgid "< Reload Current Syntax >"
 msgstr ""
 
-msgid "About"
-msgstr ""
-
-msgid ""
-"Copyright (C) 1996-2010 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
-
 #, c-format
 msgid "Cannot open %s for reading"
 msgstr ""
@@ -922,27 +921,6 @@ msgstr ""
 msgid "Save As"
 msgstr ""
 
-msgid "Syntax file edit"
-msgstr ""
-
-msgid "Which syntax file you want to edit?"
-msgstr ""
-
-msgid "&User"
-msgstr ""
-
-msgid "&System Wide"
-msgstr ""
-
-msgid "Menu edit"
-msgstr ""
-
-msgid "Which menu file do you want to edit?"
-msgstr ""
-
-msgid "&Local"
-msgstr ""
-
 msgid "Block is large, you may not be able to undo this action"
 msgstr ""
 
@@ -1007,12 +985,28 @@ msgstr ""
 msgid "&Save"
 msgstr ""
 
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes"
+msgid "Load"
 msgstr ""
 
-msgid "Load"
+msgid "Syntax file edit"
+msgstr ""
+
+msgid "Which syntax file you want to edit?"
+msgstr ""
+
+msgid "&User"
+msgstr ""
+
+msgid "&System wide"
+msgstr ""
+
+msgid "Menu edit"
+msgstr ""
+
+msgid "Which menu file do you want to edit?"
+msgstr ""
+
+msgid "&Local"
 msgstr ""
 
 msgid "Replace"
@@ -1022,7 +1016,22 @@ msgstr ""
 msgid "%ld replacements made"
 msgstr ""
 
-msgid "&Cancel quit"
+msgid "[NoName]"
+msgstr ""
+
+#, c-format
+msgid ""
+"File %s was modified.\n"
+"Save before close?"
+msgstr ""
+
+msgid "Close file"
+msgstr ""
+
+#, c-format
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file %s?"
 msgstr ""
 
 msgid "This function is not implemented"
@@ -1105,7 +1114,7 @@ msgid "Press any key:"
 msgstr ""
 
 msgid ""
-"Current text was modified without a file save\n"
+"Current text was modified without a file save.\n"
 "Continue discards these changes"
 msgstr ""
 
@@ -1141,10 +1150,16 @@ msgstr ""
 msgid "Confirm replace"
 msgstr ""
 
+msgid "NoName"
+msgstr ""
+
 msgid "&Open file..."
 msgstr ""
 
 msgid "&New"
+msgstr ""
+
+msgid "&Close"
 msgstr ""
 
 msgid "Save &as..."
@@ -1267,7 +1282,13 @@ msgstr ""
 msgid "Record/Repeat &actions"
 msgstr ""
 
-msgid "'ispell' s&pell check"
+msgid "S&pell check"
+msgstr ""
+
+msgid "C&heck word"
+msgstr ""
+
+msgid "Change spelling &language"
 msgstr ""
 
 msgid "&Mail..."
@@ -1289,6 +1310,24 @@ msgid "&Paste output of..."
 msgstr ""
 
 msgid "&External formatter"
+msgstr ""
+
+msgid "&Move"
+msgstr ""
+
+msgid "&Resize"
+msgstr ""
+
+msgid "&Toggle fullscreen"
+msgstr ""
+
+msgid "&Next"
+msgstr ""
+
+msgid "&Previous"
+msgstr ""
+
+msgid "&List..."
 msgstr ""
 
 msgid "&General..."
@@ -1325,6 +1364,9 @@ msgid "&Command"
 msgstr ""
 
 msgid "For&mat"
+msgstr ""
+
+msgid "&Window"
 msgstr ""
 
 msgid "&Options"
@@ -1387,6 +1429,19 @@ msgstr ""
 msgid "Editor options"
 msgstr ""
 
+msgid "About"
+msgstr ""
+
+msgid ""
+"Copyright (C) 1996-2012 the Free Software Foundation\n"
+"\n"
+"            A user friendly text editor\n"
+"         written for the Midnight Commander"
+msgstr ""
+
+msgid "Open files"
+msgstr ""
+
 msgid "Edit: "
 msgstr ""
 
@@ -1406,6 +1461,24 @@ msgid "ButtonBar|Delete"
 msgstr ""
 
 msgid "ButtonBar|PullDn"
+msgstr ""
+
+msgid "&Add word"
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
+msgid "Misspelled"
+msgstr ""
+
+msgid "Check word"
+msgstr ""
+
+msgid "Suggest"
+msgstr ""
+
+msgid "Select language"
 msgstr ""
 
 msgid "Load syntax file"
@@ -1807,6 +1880,9 @@ msgstr ""
 msgid "Which extension file you want to edit?"
 msgstr ""
 
+msgid "&System Wide"
+msgstr ""
+
 msgid "Highlighting groups file edit"
 msgstr ""
 
@@ -1860,6 +1936,9 @@ msgstr ""
 msgid "FTP to machine"
 msgstr ""
 
+msgid "SFTP to machine"
+msgstr ""
+
 msgid "Shell link to machine"
 msgstr ""
 
@@ -1897,13 +1976,13 @@ msgstr ""
 msgid "Cannot read directory contents"
 msgstr ""
 
+msgid "Parameter"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot create temporary command file\n"
 "%s"
-msgstr ""
-
-msgid "Parameter"
 msgstr ""
 
 #, c-format
@@ -2428,9 +2507,6 @@ msgstr ""
 msgid "Searching"
 msgstr ""
 
-msgid "&Move"
-msgstr ""
-
 msgid "&Remove"
 msgstr ""
 
@@ -2672,6 +2748,9 @@ msgid "FT&P link..."
 msgstr ""
 
 msgid "S&hell link..."
+msgstr ""
+
+msgid "S&FTP link..."
 msgstr ""
 
 msgid "SM&B link..."
@@ -3155,6 +3234,9 @@ msgstr ""
 msgid "Cannot run external panelize in a non-local directory"
 msgstr ""
 
+msgid "Modified git files"
+msgstr ""
+
 msgid "Find rejects after patching"
 msgstr ""
 
@@ -3523,10 +3605,6 @@ msgid "fish: Getting host info..."
 msgstr ""
 
 #, c-format
-msgid "fish: Connected, home %s."
-msgstr ""
-
-#, c-format
 msgid "fish: Reading directory %s..."
 msgstr ""
 
@@ -3677,6 +3755,62 @@ msgstr ""
 msgid ""
 "Warning: Invalid flag %c in %s:\n"
 "%s\n"
+msgstr ""
+
+#, c-format
+msgid "sftp: an error occured while reading %s: %s"
+msgstr ""
+
+msgid "sftp: Unable to get current user name."
+msgstr ""
+
+msgid "sftp: Invalid host name."
+msgstr ""
+
+msgid "sftp: Invalid port value."
+msgstr ""
+
+#, c-format
+msgid "sftp: %s"
+msgstr ""
+
+#, c-format
+msgid "sftp: making connection to %s"
+msgstr ""
+
+msgid "sftp: connection interrupted by user"
+msgstr ""
+
+#, c-format
+msgid "sftp: connection to server failed: %s"
+msgstr ""
+
+#, c-format
+msgid "sftp: Enter passphrase for %s "
+msgstr ""
+
+msgid "sftp: Passphrase is empty."
+msgstr ""
+
+#, c-format
+msgid "sftp: Enter password for %s "
+msgstr ""
+
+msgid "sftp: Password is empty."
+msgstr ""
+
+#, c-format
+msgid "sftp: Failure establishing SSH session: (%d)"
+msgstr ""
+
+msgid "sftp: No file handler data present for reading file"
+msgstr ""
+
+#, c-format
+msgid "sftp: (Ctrl-G break) Listing... %s"
+msgstr ""
+
+msgid "sftp: Listing done."
 msgstr ""
 
 #, c-format
@@ -3859,6 +3993,9 @@ msgstr ""
 msgid ""
 "Cannot save file:\n"
 "%s"
+msgstr ""
+
+msgid "&Cancel quit"
 msgstr ""
 
 msgid "View: "

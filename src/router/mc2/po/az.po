@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-04-25 19:29+0300\n"
-"PO-Revision-Date: 2012-03-19 17:28+0000\n"
+"POT-Creation-Date: 2012-07-18 13:34+0300\n"
+"PO-Revision-Date: 2012-07-13 08:36+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: az\n"
@@ -105,7 +105,7 @@ msgstr ""
 msgid "Regular expression error"
 msgstr ""
 
-msgid "&Normal"
+msgid "No&rmal"
 msgstr ""
 
 msgid "Re&gular expression"
@@ -556,8 +556,8 @@ msgstr ""
 msgid "Launches the file viewer on a file"
 msgstr "Faylda göstərici proqramı başladar"
 
-msgid "Edits one file"
-msgstr "Faylı düzəldər"
+msgid "Edit files"
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "Xterm qabiliyyətlərini zorlayar"
@@ -617,7 +617,8 @@ msgid ""
 "   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
 "   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
@@ -816,9 +817,9 @@ msgstr ""
 msgid "Diff:"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "\"%s\" is a directory"
-msgstr "\"%s\"'yi buraya köçürt :"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -839,16 +840,6 @@ msgid "< Auto >"
 msgstr ""
 
 msgid "< Reload Current Syntax >"
-msgstr ""
-
-msgid "About"
-msgstr ""
-
-msgid ""
-"Copyright (C) 1996-2010 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
 msgstr ""
 
 #, c-format
@@ -924,27 +915,6 @@ msgstr ""
 msgid "Save As"
 msgstr ""
 
-msgid "Syntax file edit"
-msgstr ""
-
-msgid "Which syntax file you want to edit?"
-msgstr ""
-
-msgid "&User"
-msgstr "&İstifadəçi"
-
-msgid "&System Wide"
-msgstr "&Sistem Genişliyi"
-
-msgid "Menu edit"
-msgstr ""
-
-msgid "Which menu file do you want to edit?"
-msgstr ""
-
-msgid "&Local"
-msgstr "Yer&li"
-
 msgid "Block is large, you may not be able to undo this action"
 msgstr ""
 
@@ -1009,13 +979,29 @@ msgstr ""
 msgid "&Save"
 msgstr "&Qeyd Et"
 
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes"
-msgstr ""
-
 msgid "Load"
 msgstr ""
+
+msgid "Syntax file edit"
+msgstr ""
+
+msgid "Which syntax file you want to edit?"
+msgstr ""
+
+msgid "&User"
+msgstr "&İstifadəçi"
+
+msgid "&System wide"
+msgstr ""
+
+msgid "Menu edit"
+msgstr ""
+
+msgid "Which menu file do you want to edit?"
+msgstr ""
+
+msgid "&Local"
+msgstr "Yer&li"
 
 msgid "Replace"
 msgstr ""
@@ -1024,7 +1010,22 @@ msgstr ""
 msgid "%ld replacements made"
 msgstr ""
 
-msgid "&Cancel quit"
+msgid "[NoName]"
+msgstr ""
+
+#, c-format
+msgid ""
+"File %s was modified.\n"
+"Save before close?"
+msgstr ""
+
+msgid "Close file"
+msgstr ""
+
+#, c-format
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file %s?"
 msgstr ""
 
 msgid "This function is not implemented"
@@ -1107,7 +1108,7 @@ msgid "Press any key:"
 msgstr ""
 
 msgid ""
-"Current text was modified without a file save\n"
+"Current text was modified without a file save.\n"
 "Continue discards these changes"
 msgstr ""
 
@@ -1143,10 +1144,16 @@ msgstr ""
 msgid "Confirm replace"
 msgstr ""
 
+msgid "NoName"
+msgstr ""
+
 msgid "&Open file..."
 msgstr "Fayl &aç..."
 
 msgid "&New"
+msgstr ""
+
+msgid "&Close"
 msgstr ""
 
 msgid "Save &as..."
@@ -1269,7 +1276,13 @@ msgstr ""
 msgid "Record/Repeat &actions"
 msgstr ""
 
-msgid "'ispell' s&pell check"
+msgid "S&pell check"
+msgstr ""
+
+msgid "C&heck word"
+msgstr ""
+
+msgid "Change spelling &language"
 msgstr ""
 
 msgid "&Mail..."
@@ -1291,6 +1304,24 @@ msgid "&Paste output of..."
 msgstr ""
 
 msgid "&External formatter"
+msgstr ""
+
+msgid "&Move"
+msgstr "&Daşı"
+
+msgid "&Resize"
+msgstr ""
+
+msgid "&Toggle fullscreen"
+msgstr ""
+
+msgid "&Next"
+msgstr ""
+
+msgid "&Previous"
+msgstr ""
+
+msgid "&List..."
 msgstr ""
 
 msgid "&General..."
@@ -1327,6 +1358,9 @@ msgid "&Command"
 msgstr ""
 
 msgid "For&mat"
+msgstr ""
+
+msgid "&Window"
 msgstr ""
 
 msgid "&Options"
@@ -1389,6 +1423,19 @@ msgstr "Qırma modu"
 msgid "Editor options"
 msgstr ""
 
+msgid "About"
+msgstr ""
+
+msgid ""
+"Copyright (C) 1996-2012 the Free Software Foundation\n"
+"\n"
+"            A user friendly text editor\n"
+"         written for the Midnight Commander"
+msgstr ""
+
+msgid "Open files"
+msgstr ""
+
 msgid "Edit: "
 msgstr ""
 
@@ -1408,6 +1455,25 @@ msgid "ButtonBar|Delete"
 msgstr ""
 
 msgid "ButtonBar|PullDn"
+msgstr ""
+
+#, fuzzy
+msgid "&Add word"
+msgstr "Təzə bir d&ədə əlavə et"
+
+msgid "Language"
+msgstr ""
+
+msgid "Misspelled"
+msgstr ""
+
+msgid "Check word"
+msgstr ""
+
+msgid "Suggest"
+msgstr ""
+
+msgid "Select language"
 msgstr ""
 
 msgid "Load syntax file"
@@ -1809,6 +1875,9 @@ msgstr "Uzantılar faylı düzəldilməsi"
 msgid "Which extension file you want to edit?"
 msgstr ""
 
+msgid "&System Wide"
+msgstr "&Sistem Genişliyi"
+
 msgid "Highlighting groups file edit"
 msgstr ""
 
@@ -1862,6 +1931,9 @@ msgstr "'%s' simvolik körpü deyildir"
 msgid "FTP to machine"
 msgstr ""
 
+msgid "SFTP to machine"
+msgstr ""
+
 msgid "Shell link to machine"
 msgstr ""
 
@@ -1899,13 +1971,13 @@ msgstr ""
 msgid "Cannot read directory contents"
 msgstr ""
 
+msgid "Parameter"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot create temporary command file\n"
 "%s"
-msgstr ""
-
-msgid "Parameter"
 msgstr ""
 
 #, c-format
@@ -2430,9 +2502,6 @@ msgstr "%s Axtarılır"
 msgid "Searching"
 msgstr "Axtarılır"
 
-msgid "&Move"
-msgstr "&Daşı"
-
 msgid "&Remove"
 msgstr "&Sil"
 
@@ -2674,6 +2743,9 @@ msgid "FT&P link..."
 msgstr "FT&P bağı ..."
 
 msgid "S&hell link..."
+msgstr ""
+
+msgid "S&FTP link..."
 msgstr ""
 
 msgid "SM&B link..."
@@ -3158,6 +3230,9 @@ msgstr "Borulama bacarılmadı"
 msgid "Cannot run external panelize in a non-local directory"
 msgstr ""
 
+msgid "Modified git files"
+msgstr ""
+
 msgid "Find rejects after patching"
 msgstr "Yamaladıqdan sonrakı rəddləri ('reject') tap"
 
@@ -3448,9 +3523,8 @@ msgstr ""
 msgid "Data types:"
 msgstr ""
 
-#, fuzzy
 msgid "Root directory:"
-msgstr "qovluq"
+msgstr ""
 
 msgid "System data"
 msgstr ""
@@ -3557,10 +3631,6 @@ msgstr "balıq: Əl sıxışmalı yol..."
 
 msgid "fish: Getting host info..."
 msgstr ""
-
-#, c-format
-msgid "fish: Connected, home %s."
-msgstr "balıq: Bağlandı, ev %s dir(dır)."
 
 #, c-format
 msgid "fish: Reading directory %s..."
@@ -3718,6 +3788,66 @@ msgid ""
 msgstr ""
 "Xəbərdarlıq: %2$s də xətalı %1$c bayrağı:\n"
 "%3$s\n"
+
+#, c-format
+msgid "sftp: an error occured while reading %s: %s"
+msgstr ""
+
+msgid "sftp: Unable to get current user name."
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Invalid host name."
+msgstr "ftpfs : Keçərsiz Ev sahibi adı."
+
+#, fuzzy
+msgid "sftp: Invalid port value."
+msgstr "ftpfs : Keçərsiz Ev sahibi adı."
+
+#, c-format
+msgid "sftp: %s"
+msgstr ""
+
+#, fuzzy, c-format
+msgid "sftp: making connection to %s"
+msgstr "ftpfs : %s a(ə) bağlanılır"
+
+#, fuzzy
+msgid "sftp: connection interrupted by user"
+msgstr "ftpfs : bağlantı istifadəçi tərəfindən kəsildi"
+
+#, fuzzy, c-format
+msgid "sftp: connection to server failed: %s"
+msgstr "ftpfs : vericiyə bağlantı qurula bilmədi: %s"
+
+#, c-format
+msgid "sftp: Enter passphrase for %s "
+msgstr ""
+
+msgid "sftp: Passphrase is empty."
+msgstr ""
+
+#, fuzzy, c-format
+msgid "sftp: Enter password for %s "
+msgstr "ftpfs : istifadəçi parolu göndərilir"
+
+msgid "sftp: Password is empty."
+msgstr ""
+
+#, c-format
+msgid "sftp: Failure establishing SSH session: (%d)"
+msgstr ""
+
+msgid "sftp: No file handler data present for reading file"
+msgstr ""
+
+#, c-format
+msgid "sftp: (Ctrl-G break) Listing... %s"
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Listing done."
+msgstr "Sıralama modu"
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -3903,6 +4033,9 @@ msgid ""
 "%s"
 msgstr ""
 
+msgid "&Cancel quit"
+msgstr ""
+
 msgid "View: "
 msgstr ""
 
@@ -3923,6 +4056,3 @@ msgstr ""
 
 msgid "Continue from beginning?"
 msgstr ""
-
-#~ msgid "fish: Setting up current directory..."
-#~ msgstr "balıq: Hazırkı qovluq hazırlanır..."

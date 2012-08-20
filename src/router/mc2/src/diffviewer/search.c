@@ -31,7 +31,9 @@
 #include "lib/strutil.h"
 #include "lib/tty/key.h"
 #include "lib/widget.h"
+#ifdef HAVE_CHARSET
 #include "lib/charsets.h"
+#endif
 
 #include "src/history.h"
 
@@ -135,7 +137,7 @@ mcdiffview_dialog_search (WDiff * dview)
     QuickDialog search_input = {
         SEARCH_DLG_WIDTH, SEARCH_DLG_HEIGHT, -1, -1,
         N_("Search"), "[Input Line Keys]",
-        search_widgets, NULL, FALSE
+        search_widgets, NULL, NULL, FALSE
     };
 
     mcdiffview_dialog_fix_buttons_positions (&search_input);

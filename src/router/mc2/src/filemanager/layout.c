@@ -515,7 +515,7 @@ init_layout (void)
 
     layout_dlg =
         create_dlg (TRUE, 0, 0, 14, width,
-                    dialog_colors, layout_callback, "[Layout]",
+                    dialog_colors, layout_callback, NULL, "[Layout]",
                     _("Layout"), DLG_CENTER | DLG_REVERSE);
 
     /* buttons */
@@ -557,7 +557,7 @@ init_layout (void)
     }
 
     equal_split = panels_layout.horizontal_split ?
-                        panels_layout.horizontal_equal : panels_layout.vertical_equal;
+        panels_layout.horizontal_equal : panels_layout.vertical_equal;
 
     /* "Panel split" groupbox */
     bright_widget = button_new (6, 14, B_2RIGHT, NARROW_BUTTON, "&>", b_left_right_cback);
@@ -751,6 +751,59 @@ setup_panels (void)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+void
+panels_split_equal (void)
+{
+    if (panels_layout.horizontal_split)
+        panels_layout.horizontal_equal = TRUE;
+    else
+        panels_layout.vertical_equal = TRUE;
+
+    layout_change ();
+    do_refresh ();
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+panels_split_more (void)
+{
+    if (panels_layout.horizontal_split)
+    {
+        panels_layout.horizontal_equal = FALSE;
+        panels_layout.top_panel_size++;
+    }
+    else
+    {
+        panels_layout.vertical_equal = FALSE;
+        panels_layout.left_panel_size++;
+    }
+
+    layout_change ();
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+panels_split_less (void)
+{
+    if (panels_layout.horizontal_split)
+    {
+        panels_layout.horizontal_equal = FALSE;
+        panels_layout.top_panel_size--;
+    }
+    else
+    {
+        panels_layout.vertical_equal = FALSE;
+        panels_layout.left_panel_size--;
+    }
+
+    layout_change ();
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 
 void
 setup_cmdline (void)

@@ -28,10 +28,13 @@ src/editor/choosesyntax.c
 src/editor/edit.c
 src/editor/editcmd.c
 src/editor/editcmd_dialogs.c
+src/editor/editdraw.c
 src/editor/edit-impl.h
 src/editor/editmenu.c
 src/editor/editoptions.c
 src/editor/editwidget.c
+src/editor/spell.c
+src/editor/spell_dialogs.c
 src/editor/syntax.c
 src/execute.c
 src/filemanager/achown.c
@@ -68,6 +71,11 @@ src/vfs/extfs/extfs.c
 src/vfs/fish/fish.c
 src/vfs/ftpfs/ftpfs.c
 src/vfs/sfs/sfs.c
+src/vfs/sftpfs/config_parcer.c
+src/vfs/sftpfs/connection.c
+src/vfs/sftpfs/file.c
+src/vfs/sftpfs/vfs_class.c
+src/vfs/sftpfs/vfs_subclass.c
 src/vfs/smbfs/smbfs.c
 src/vfs/tar/tar.c
 src/vfs/undelfs/undelfs.c

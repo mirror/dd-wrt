@@ -43,7 +43,9 @@
 #include "lib/util.h"
 #include "lib/widget.h"
 #include "lib/strutil.h"
+#ifdef HAVE_CHARSET
 #include "lib/charsets.h"
+#endif
 #include "lib/event.h"          /* mc_event_raise() */
 
 #include "src/filemanager/cmd.h"        /* do_edit_at_line(), view_other_cmd() */
@@ -52,7 +54,9 @@
 
 #include "src/keybind-defaults.h"
 #include "src/history.h"
+#ifdef HAVE_CHARSET
 #include "src/selcodepage.h"
+#endif
 
 #include "ydiff.h"
 #include "internal.h"
@@ -109,48 +113,6 @@ TAB_SKIP (int ts, int pos)
         return ts - pos % ts;
     else
         return 8 - pos % 8;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static void
-dview_set_codeset (WDiff * dview)
-{
-#ifdef HAVE_CHARSET
-    const char *encoding_id = NULL;
-
-    dview->utf8 = TRUE;
-    encoding_id =
-        get_codepage_id (mc_global.source_codepage >=
-                         0 ? mc_global.source_codepage : mc_global.display_codepage);
-    if (encoding_id != NULL)
-    {
-        GIConv conv;
-        conv = str_crt_conv_from (encoding_id);
-        if (conv != INVALID_CONV)
-        {
-            if (dview->converter != str_cnv_from_term)
-                str_close_conv (dview->converter);
-            dview->converter = conv;
-        }
-        dview->utf8 = (gboolean) str_isutf8 (encoding_id);
-    }
-#else
-    (void) dview;
-#endif
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static void
-dview_select_encoding (WDiff * dview)
-{
-#ifdef HAVE_CHARSET
-    if (do_select_codepage ())
-        dview_set_codeset (dview);
-#else
-    (void) dview;
-#endif
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -630,31 +592,22 @@ dview_get_utf (char *str, int *char_width, gboolean * result)
     if (str == NULL)
     {
         *result = FALSE;
-        width = 0;
         return 0;
     }
 
     res = g_utf8_get_char_validated (str, -1);
 
     if (res < 0)
-    {
         ch = *str;
-        width = 0;
-    }
     else
     {
         ch = res;
         /* Calculate UTF-8 char width */
         next_ch = g_utf8_next_char (str);
-        if (next_ch)
-        {
+        if (next_ch != NULL)
             width = next_ch - str;
-        }
         else
-        {
             ch = 0;
-            width = 0;
-        }
     }
     *char_width = width;
     return ch;
@@ -2279,6 +2232,118 @@ dview_compute_areas (WDiff * dview)
 
 /* --------------------------------------------------------------------------------------------- */
 
+static void
+dview_reread (WDiff * dview)
+{
+    int ndiff;
+
+    destroy_hdiff (dview);
+    if (dview->a[0] != NULL)
+    {
+        g_array_foreach (dview->a[0], DIFFLN, cc_free_elt);
+        g_array_free (dview->a[0], TRUE);
+    }
+    if (dview->a[1] != NULL)
+    {
+        g_array_foreach (dview->a[1], DIFFLN, cc_free_elt);
+        g_array_free (dview->a[1], TRUE);
+    }
+
+    dview->a[0] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
+    dview->a[1] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
+
+    ndiff = redo_diff (dview);
+    if (ndiff >= 0)
+        dview->ndiff = ndiff;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+#ifdef HAVE_CHARSET
+static void
+dview_set_codeset (WDiff * dview)
+{
+    const char *encoding_id = NULL;
+
+    dview->utf8 = TRUE;
+    encoding_id =
+        get_codepage_id (mc_global.source_codepage >=
+                         0 ? mc_global.source_codepage : mc_global.display_codepage);
+    if (encoding_id != NULL)
+    {
+        GIConv conv;
+        conv = str_crt_conv_from (encoding_id);
+        if (conv != INVALID_CONV)
+        {
+            if (dview->converter != str_cnv_from_term)
+                str_close_conv (dview->converter);
+            dview->converter = conv;
+        }
+        dview->utf8 = (gboolean) str_isutf8 (encoding_id);
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+dview_select_encoding (WDiff * dview)
+{
+    if (do_select_codepage ())
+        dview_set_codeset (dview);
+
+    dview_reread (dview);
+    tty_touch_screen ();
+    repaint_screen ();
+}
+#endif /* HAVE_CHARSET */
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+dview_diff_options (WDiff * dview)
+{
+    const char *quality_str[] = {
+        N_("No&rmal"),
+        N_("&Fastest (Assume large files)"),
+        N_("&Minimal (Find a smaller set of change)")
+    };
+
+    QuickWidget diffopt_widgets[] = {
+        QUICK_BUTTON (6, 10, 14, OPTY, N_("&Cancel"), B_CANCEL, NULL),
+        QUICK_BUTTON (2, 10, 14, OPTY, N_("&OK"), B_ENTER, NULL),
+
+        QUICK_CHECKBOX (3, OPTX, 12, OPTY,
+                        N_("Strip &trailing carriage return"), &dview->opt.strip_trailing_cr),
+        QUICK_CHECKBOX (3, OPTX, 11, OPTY,
+                        N_("Ignore all &whitespace"), &dview->opt.ignore_all_space),
+        QUICK_CHECKBOX (3, OPTX, 10, OPTY,
+                        N_("Ignore &space change"), &dview->opt.ignore_space_change),
+        QUICK_CHECKBOX (3, OPTX, 9, OPTY,
+                        N_("Ignore tab &expansion"), &dview->opt.ignore_tab_expansion),
+        QUICK_CHECKBOX (3, OPTX, 8, OPTY,
+                        N_("&Ignore case"), &dview->opt.ignore_case),
+        QUICK_LABEL (3, OPTX, 7, OPTY, N_("Diff extra options")),
+        QUICK_RADIO (3, OPTX, 3, OPTY,
+                     3, (const char **) quality_str, (int *) &dview->opt.quality),
+        QUICK_LABEL (3, OPTX, 2, OPTY, N_("Diff algorithm")),
+
+        QUICK_END
+    };
+
+    QuickDialog diffopt = {
+        OPTX, OPTY, -1, -1,
+        N_("Diff Options"), "[Diff Options]",
+        diffopt_widgets, NULL, NULL, FALSE
+    };
+
+    if (quick_dialog (&diffopt) != B_CANCEL)
+    {
+        dview_reread (dview);
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 static int
 dview_init (WDiff * dview, const char *args, const char *file1, const char *file2,
             const char *label1, const char *label2, DSRC dsrc)
@@ -2326,8 +2391,9 @@ dview_init (WDiff * dview, const char *args, const char *file1, const char *file
     dview->hdiff = NULL;
     dview->dsrc = dsrc;
     dview->converter = str_cnv_from_term;
+#ifdef HAVE_CHARSET
     dview_set_codeset (dview);
-
+#endif
     dview->a[0] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
     dview->a[1] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
 
@@ -2368,77 +2434,6 @@ dview_init (WDiff * dview, const char *args, const char *file1, const char *file
     dview_compute_areas (dview);
 
     return 0;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static void
-dview_reread (WDiff * dview)
-{
-    int ndiff = dview->ndiff;
-
-    destroy_hdiff (dview);
-    if (dview->a[0] != NULL)
-    {
-        g_array_foreach (dview->a[0], DIFFLN, cc_free_elt);
-        g_array_free (dview->a[0], TRUE);
-    }
-    if (dview->a[1] != NULL)
-    {
-        g_array_foreach (dview->a[1], DIFFLN, cc_free_elt);
-        g_array_free (dview->a[1], TRUE);
-    }
-
-    dview->a[0] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
-    dview->a[1] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
-
-    ndiff = redo_diff (dview);
-    if (ndiff >= 0)
-        dview->ndiff = ndiff;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-static void
-dview_diff_options (WDiff * dview)
-{
-    const char *quality_str[] = {
-        N_("&Normal"),
-        N_("&Fastest (Assume large files)"),
-        N_("&Minimal (Find a smaller set of change)")
-    };
-
-    QuickWidget diffopt_widgets[] = {
-        QUICK_BUTTON (6, 10, 14, OPTY, N_("&Cancel"), B_CANCEL, NULL),
-        QUICK_BUTTON (2, 10, 14, OPTY, N_("&OK"), B_ENTER, NULL),
-
-        QUICK_CHECKBOX (3, OPTX, 12, OPTY,
-                        N_("Strip &trailing carriage return"), &dview->opt.strip_trailing_cr),
-        QUICK_CHECKBOX (3, OPTX, 11, OPTY,
-                        N_("Ignore all &whitespace"), &dview->opt.ignore_all_space),
-        QUICK_CHECKBOX (3, OPTX, 10, OPTY,
-                        N_("Ignore &space change"), &dview->opt.ignore_space_change),
-        QUICK_CHECKBOX (3, OPTX, 9, OPTY,
-                        N_("Ignore tab &expansion"), &dview->opt.ignore_tab_expansion),
-        QUICK_CHECKBOX (3, OPTX, 8, OPTY,
-                        N_("&Ignore case"), &dview->opt.ignore_case),
-        QUICK_LABEL (3, OPTX, 7, OPTY, N_("Diff extra options")),
-        QUICK_RADIO (3, OPTX, 3, OPTY,
-                     3, (const char **) quality_str, (int *) &dview->opt.quality),
-        QUICK_LABEL (3, OPTX, 2, OPTY, N_("Diff algorithm")),
-
-        QUICK_END
-    };
-
-    QuickDialog diffopt = {
-        OPTX, OPTY, -1, -1,
-        N_("Diff Options"), "[Diff Options]",
-        diffopt_widgets, NULL, FALSE
-    };
-
-    if (quick_dialog (&diffopt) != B_CANCEL)
-    {
-        dview_reread (dview);
-    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2602,8 +2597,8 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
                                     next_ch =
                                         convert_from_utf_to_current_c (next_ch, dview->converter);
                                 else
-#endif
                                     next_ch = convert_to_display_c (next_ch);
+#endif
 
                                 tty_print_anychar (next_ch);
                                 col++;
@@ -2678,8 +2673,8 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
                 else if (dview->utf8)
                     next_ch = convert_from_utf_to_current_c (next_ch, dview->converter);
                 else
-#endif
                     next_ch = convert_to_display_c (next_ch);
+#endif
 
                 tty_print_anychar (next_ch);
                 col++;
@@ -2848,16 +2843,16 @@ dview_labels (WDiff * dview)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-dview_event (Gpm_Event * event, void *x)
+dview_event (Gpm_Event * event, void *data)
 {
-    WDiff *dview = (WDiff *) x;
-    int result = MOU_NORMAL;
+    WDiff *dview = (WDiff *) data;
 
-    /* We are not interested in the release events */
+    if (!mouse_global_in_widget (event, data))
+        return MOU_UNHANDLED;
+
+    /* We are not interested in release events */
     if ((event->type & (GPM_DOWN | GPM_DRAG)) == 0)
-    {
-        return result;
-    }
+        return MOU_NORMAL;
 
     /* Wheel events */
     if ((event->buttons & GPM_B_UP) != 0 && (event->type & GPM_DOWN) != 0)
@@ -2873,7 +2868,7 @@ dview_event (Gpm_Event * event, void *x)
         dview_update (dview);
     }
 
-    return result;
+    return MOU_NORMAL;
 }
 
 static gboolean
@@ -3139,9 +3134,6 @@ dview_execute_cmd (WDiff * dview, unsigned long command)
 #ifdef HAVE_CHARSET
     case CK_SelectCodepage:
         dview_select_encoding (dview);
-        dview_reread (dview);
-        tty_touch_screen ();
-        repaint_screen ();
         break;
 #endif
     case CK_Cancel:
@@ -3160,7 +3152,9 @@ dview_handle_key (WDiff * dview, int key)
 {
     unsigned long command;
 
+#ifdef HAVE_CHARSET
     key = convert_from_input_c (key);
+#endif
 
     command = keybind_lookup_keymap_command (diff_map, key);
     if ((command != CK_IgnoreKey) && (dview_execute_cmd (dview, command) == MSG_HANDLED))
@@ -3308,7 +3302,7 @@ diff_view (const char *file1, const char *file2, const char *label1, const char 
 
     /* Create dialog and widgets, put them on the dialog */
     dview_dlg =
-        create_dlg (FALSE, 0, 0, LINES, COLS, NULL, dview_dialog_callback,
+        create_dlg (FALSE, 0, 0, LINES, COLS, NULL, dview_dialog_callback, NULL,
                     "[Diff Viewer]", NULL, DLG_WANT_TAB);
 
     dview = g_new0 (WDiff, 1);

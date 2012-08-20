@@ -33,6 +33,9 @@
 /* Support for sfs */
 #undef ENABLE_VFS_SFS
 
+/* Support for SFTP filesystem */
+#undef ENABLE_VFS_SFTP
+
 /* Define to enable VFS over SMB */
 #undef ENABLE_VFS_SMB
 
@@ -57,6 +60,12 @@
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
+
+/* Define to enable aspell support */
+#undef HAVE_ASPELL
+
+/* Define to 1 if you have the <aspell.h> header file. */
+#undef HAVE_ASPELL_H
 
 /* Define to 1 if you have the `asprintf' function. */
 #undef HAVE_ASPRINTF
@@ -270,11 +279,23 @@
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
+/* Define to 1 if you have the <netinet/in.h> header file. */
+#undef HAVE_NETINET_IN_H
+
 /* Define to 1 if you have the `next_dev' function. */
 #undef HAVE_NEXT_DEV
 
+/* Define to 1 if you have the <nfs/nfs_client.h> header file. */
+#undef HAVE_NFS_NFS_CLIENT_H
+
+/* Define to 1 if you have the <nfs/vfs.h> header file. */
+#undef HAVE_NFS_VFS_H
+
 /* Define to 1 if you have the <nl_types.h> header file. */
 #undef HAVE_NL_TYPES_H
+
+/* Define to 1 if you have the <OS.h> header file. */
+#undef HAVE_OS_H
 
 /* Define to 1 if you have the `pmap_getmaps' function. */
 #undef HAVE_PMAP_GETMAPS
@@ -386,8 +407,29 @@
 /* Define to 1 if `l_linger' is a member of `struct linger'. */
 #undef HAVE_STRUCT_LINGER_L_LINGER
 
+/* Define to 1 if `f_frsize' is a member of `struct statfs'. */
+#undef HAVE_STRUCT_STATFS_F_FRSIZE
+
 /* Define to 1 if `f_fstypename' is a member of `struct statfs'. */
 #undef HAVE_STRUCT_STATFS_F_FSTYPENAME
+
+/* Define to 1 if `f_namelen' is a member of `struct statfs'. */
+#undef HAVE_STRUCT_STATFS_F_NAMELEN
+
+/* Define to 1 if `f_type' is a member of `struct statfs'. */
+#undef HAVE_STRUCT_STATFS_F_TYPE
+
+/* Define to 1 if `f_basetype' is a member of `struct statvfs'. */
+#undef HAVE_STRUCT_STATVFS_F_BASETYPE
+
+/* Define to 1 if `f_fstypename' is a member of `struct statvfs'. */
+#undef HAVE_STRUCT_STATVFS_F_FSTYPENAME
+
+/* Define to 1 if `f_namemax' is a member of `struct statvfs'. */
+#undef HAVE_STRUCT_STATVFS_F_NAMEMAX
+
+/* Define to 1 if `f_type' is a member of `struct statvfs'. */
+#undef HAVE_STRUCT_STATVFS_F_TYPE
 
 /* Define to 1 if `st_blksize' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
@@ -697,6 +739,12 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* Define to 1 if the f_fsid member of struct statfs is an integer. */
+#undef STRUCT_STATFS_F_FSID_IS_INTEGER
+
+/* Define to 1 if the f_fsid member of struct statvfs is an integer. */
+#undef STRUCT_STATVFS_F_FSID_IS_INTEGER
 
 /* Define to make subshell support optional */
 #undef SUBSHELL_OPTIONAL

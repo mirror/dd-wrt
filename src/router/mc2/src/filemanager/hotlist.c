@@ -777,7 +777,7 @@ init_hotlist (int list_type)
 
     hotlist_dlg =
         create_dlg (TRUE, 0, 0, LINES - 2, hotlist_cols, dialog_colors,
-                    hotlist_callback, help_node, title, DLG_CENTER | DLG_REVERSE);
+                    hotlist_callback, NULL, help_node, title, DLG_CENTER | DLG_REVERSE);
 
     for (i = 0; i < BUTTONS; i++)
     {
@@ -788,7 +788,8 @@ init_hotlist (int list_type)
                                             hotlist_but[i].ret_cmd,
                                             hotlist_but[i].flags,
                                             hotlist_but[i].text,
-                                            hotlist_button_callback), hotlist_but[i].pos_flags);
+                                            hotlist_button_callback), hotlist_but[i].pos_flags,
+                                NULL);
     }
 
     /* We add the labels.
@@ -796,7 +797,7 @@ init_hotlist (int list_type)
      *    pname_group will hold name of current group
      */
     pname = label_new (UY - 11 + LINES, UX + 2, "");
-    add_widget_autopos (hotlist_dlg, pname, WPOS_KEEP_BOTTOM | WPOS_KEEP_LEFT);
+    add_widget_autopos (hotlist_dlg, pname, WPOS_KEEP_BOTTOM | WPOS_KEEP_LEFT, NULL);
     if (!hotlist_state.moving)
     {
         char label_text[BUF_TINY];
@@ -804,7 +805,7 @@ init_hotlist (int list_type)
         g_snprintf (label_text, sizeof (label_text), " %s ", _("Directory path"));
         add_widget_autopos (hotlist_dlg,
                             label_new (UY - 12 + LINES, UX + 2,
-                                       label_text), WPOS_KEEP_BOTTOM | WPOS_KEEP_LEFT);
+                                       label_text), WPOS_KEEP_BOTTOM | WPOS_KEEP_LEFT, NULL);
 
         /* This one holds the displayed pathname */
         pname_group = label_new (UY, UX + 2, _("Directory label"));
@@ -824,7 +825,7 @@ init_hotlist (int list_type)
 #endif /* !ENABLE_VFS */
         fill_listbox ();
 
-    add_widget_autopos (hotlist_dlg, l_hotlist, WPOS_KEEP_ALL);
+    add_widget_autopos (hotlist_dlg, l_hotlist, WPOS_KEEP_ALL, NULL);
     /* add listbox to the dialogs */
 }
 
@@ -841,7 +842,7 @@ init_movelist (int list_type, struct hotlist *item)
 
     movelist_dlg =
         create_dlg (TRUE, 0, 0, LINES - 6, movelist_cols, dialog_colors,
-                    hotlist_callback, "[Hotlist]", hdr, DLG_CENTER | DLG_REVERSE);
+                    hotlist_callback, NULL, "[Hotlist]", hdr, DLG_CENTER | DLG_REVERSE);
     g_free (hdr);
 
     for (i = 0; i < BUTTONS; i++)
@@ -1061,7 +1062,7 @@ add_new_entry_input (const char *header, const char *text1, const char *text2,
     {
         QuickDialog Quick_input = {
             len, lines1 + lines2 + 7, -1, -1, header,
-            help, quick_widgets, NULL, FALSE
+            help, quick_widgets, NULL, NULL, FALSE
         };
 
         for (i = 0; i < 7; i++)
@@ -1153,7 +1154,7 @@ add_new_group_input (const char *header, const char *label, char **result)
     {
         QuickDialog Quick_input = {
             len, lines + 6, -1, -1, header,
-            "[Hotlist]", quick_widgets, NULL, FALSE
+            "[Hotlist]", quick_widgets, NULL, NULL, FALSE
         };
 
         int relative_y[] = { 1, 1, 1, 0, 2 };   /* the relative_x component from the
