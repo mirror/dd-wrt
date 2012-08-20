@@ -76,9 +76,6 @@ static void setdistance(char *device, int distance, int chanbw)
 		setsysctrl(device, "distance", distance);
 }
 #endif
-#ifdef HAVE_ATH9K
-static int firstconfig = 0;
-#endif
 
 // returns the number of installed atheros devices/cards
 
@@ -98,7 +95,6 @@ static void deconfigure_single(int count)
 	char vifs[128];
 #ifdef HAVE_ATH9K
 	if (is_ath9k(dev)) {
-		firstconfig = 0;
 		deconfigure_single_ath9k(count);
 		return;
 	}
@@ -1454,25 +1450,6 @@ static void configure_single(int count)
 		led_control(LED_SEC1, LED_OFF);
 #ifdef HAVE_ATH9K
 	if (is_ath9k(dev)) {
-		if (!firstconfig) {
-			firstconfig = 1;
-			char regdomain[16];
-			char *country;
-			sprintf(regdomain, "ath0_regdomain");
-			country = nvram_default_get(regdomain, "UNITED_STATES");
-			sysprintf("iw reg set 00");
-			sysprintf("iw reg set %s", getIsoName(country));
-			eval("touch","/tmp/.crdalock"); // create lock file
-			int i = 40;	// max wait 4 sec
-			while (i--) {
-				FILE *fp = fopen("/tmp/.crdalock", "rb");
-				if (!fp)
-					break;
-				fclose(fp);
-				usleep(100 * 1000);	// wait 100 ms
-			}
-			eval("rm", "-f", "/tmp/.crdalock"); // delete lock file, no matter if crda still running. 4 sec is enough
-		}
 		configure_single_ath9k(count);
 		ath9k_start_supplicant(count);
 		return;
@@ -2420,6 +2397,35 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	int c = getdevicecount();
 	int i;
 	int changed = 0;
+#ifdef HAVE_ATH9K
+	char dev[32];
+	int hasath9k = 0;
+	for (i = 0; i < c; i++) {
+		sprintf(dev, "ath%d", i);
+		if (is_ath9k(dev)) {
+			hasath9k = 1;
+			break;
+		}
+	}
+	if (hasath9k) {
+		char regdomain[16];
+		char *country;
+		sprintf(regdomain, "ath0_regdomain");
+		country = nvram_default_get(regdomain, "UNITED_STATES");
+		sysprintf("iw reg set 00");
+		sysprintf("iw reg set %s", getIsoName(country));
+		eval("touch", "/tmp/.crdalock");	// create lock file
+		int i = 40;	// max wait 4 sec
+		while (i--) {
+			FILE *fp = fopen("/tmp/.crdalock", "rb");
+			if (!fp)
+				break;
+			fclose(fp);
+			usleep(100 * 1000);	// wait 100 ms
+		}
+		eval("rm", "-f", "/tmp/.crdalock");	// delete lock file, no matter if crda still running. 4 sec is enough
+	}
+#endif
 
 	for (i = 0; i < c; i++)
 		adjust_regulatory(i);
