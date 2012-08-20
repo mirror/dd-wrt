@@ -15,7 +15,7 @@
 //usage:       "[-o OUTFILE] [INFILE]"
 //usage:#define uudecode_full_usage "\n\n"
 //usage:       "Uudecode a file\n"
-//usage:       "Finds outfile name in uuencoded source unless -o is given"
+//usage:       "Finds OUTFILE in uuencoded source unless -o is given"
 //usage:
 //usage:#define uudecode_example_usage
 //usage:       "$ uudecode -o busybox busybox.uu\n"
@@ -125,10 +125,11 @@ int uudecode_main(int argc UNUSED_PARAM, char **argv)
 		mode = bb_strtou(line_ptr, NULL, 8);
 		if (outname == NULL) {
 			outname = strchr(line_ptr, ' ');
-			if ((outname == NULL) || (*outname == '\0')) {
+			if (!outname)
 				break;
-			}
 			outname++;
+			if (!outname[0])
+				break;
 		}
 		dst_stream = stdout;
 		if (NOT_LONE_DASH(outname)) {

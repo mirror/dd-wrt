@@ -57,10 +57,13 @@ void FAST_FUNC launch_helper(const char **argv)
 	G.helper_pid = xvfork();
 
 	i = (!G.helper_pid) * 2; // for parent:0, for child:2
-	close(pipes[i + 1]); // 1 or 3 - closing one write end
-	close(pipes[2 - i]); // 2 or 0 - closing one read end
-	xmove_fd(pipes[i], STDIN_FILENO); // 0 or 2 - using other read end
-	xmove_fd(pipes[3 - i], STDOUT_FILENO); // 3 or 1 - other write end
+	close(pipes[i + 1]);     // 1 or 3 - closing one write end
+	close(pipes[2 - i]);     // 2 or 0 - closing one read end
+	xmove_fd(pipes[i], STDIN_FILENO);      // 0 or 2 - using other read end
+	xmove_fd(pipes[3 - i], STDOUT_FILENO); // 3 or 1 - using other write end
+	// End result:
+	// parent stdout [3] -> child stdin [2]
+	// child stdout [1] -> parent stdin [0]
 
 	if (!G.helper_pid) {
 		// child: try to execute connection helper
@@ -116,7 +119,7 @@ static char* FAST_FUNC parse_url(char *url, char **user, char **pass)
 void FAST_FUNC encode_base64(char *fname, const char *text, const char *eol)
 {
 	enum {
-		SRC_BUF_SIZE = 45,  /* This *MUST* be a multiple of 3 */
+		SRC_BUF_SIZE = 57,  /* This *MUST* be a multiple of 3 */
 		DST_BUF_SIZE = 4 * ((SRC_BUF_SIZE + 2) / 3),
 	};
 #define src_buf text

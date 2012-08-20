@@ -80,6 +80,9 @@ enum {
 	OPTION_IP = 1,
 	OPTION_IP_PAIR,
 	OPTION_STRING,
+	/* Opts of STRING_HOST type will be sanitized before they are passed
+	 * to udhcpc script's environment: */
+	OPTION_STRING_HOST,
 //	OPTION_BOOLEAN,
 	OPTION_U8,
 	OPTION_U16,
@@ -88,6 +91,7 @@ enum {
 	OPTION_S32,
 	OPTION_BIN,
 	OPTION_STATIC_ROUTES,
+	OPTION_6RD,
 #if ENABLE_FEATURE_UDHCP_RFC3397
 	OPTION_DNS_STRING,  /* RFC1035 compressed domain name list */
 	OPTION_SIP_SERVERS,
@@ -103,7 +107,7 @@ enum {
 /* DHCP option codes (partial list). See RFC 2132 and
  * http://www.iana.org/assignments/bootp-dhcp-parameters/
  * Commented out options are handled by common option machinery,
- * uncommented ones have spacial cases (grep for them to see).
+ * uncommented ones have special cases (grep for them to see).
  */
 #define DHCP_PADDING            0x00
 #define DHCP_SUBNET             0x01
@@ -248,6 +252,7 @@ struct option_set *udhcp_find_option(struct option_set *opt_list, uint8_t code) 
 /*** Logging ***/
 
 #if defined CONFIG_UDHCP_DEBUG && CONFIG_UDHCP_DEBUG >= 1
+# define IF_UDHCP_VERBOSE(...) __VA_ARGS__
 extern unsigned dhcp_verbose;
 # define log1(...) do { if (dhcp_verbose >= 1) bb_info_msg(__VA_ARGS__); } while (0)
 # if CONFIG_UDHCP_DEBUG >= 2
@@ -263,6 +268,7 @@ void udhcp_dump_packet(struct dhcp_packet *packet) FAST_FUNC;
 #  define log3(...) ((void)0)
 # endif
 #else
+# define IF_UDHCP_VERBOSE(...)
 # define udhcp_dump_packet(...) ((void)0)
 # define log1(...) ((void)0)
 # define log2(...) ((void)0)
@@ -276,8 +282,6 @@ void udhcp_dump_packet(struct dhcp_packet *packet) FAST_FUNC;
 int FAST_FUNC udhcp_str2nip(const char *str, void *arg);
 /* 2nd param is "struct option_set**" */
 int FAST_FUNC udhcp_str2optset(const char *str, void *arg);
-
-uint16_t udhcp_checksum(void *addr, int count) FAST_FUNC;
 
 void udhcp_init_header(struct dhcp_packet *packet, char type) FAST_FUNC;
 
@@ -306,6 +310,9 @@ int arpping(uint32_t test_nip,
 		uint32_t from_ip,
 		uint8_t *from_mac,
 		const char *interface) FAST_FUNC;
+
+/* note: ip is a pointer to an IPv6 in network order, possibly misaliged */
+int sprint_nip6(char *dest, /*const char *pre,*/ const uint8_t *ip) FAST_FUNC;
 
 POP_SAVED_FUNCTION_VISIBILITY
 

@@ -38,7 +38,7 @@
 //usage:	)
 //usage:     "\n	-r		Read-only mount"
 //usage:     "\n	-w		Read-write mount (default)"
-//usage:     "\n	-t FSTYPE	Filesystem type"
+//usage:     "\n	-t FSTYPE[,...]	Filesystem type(s)"
 //usage:     "\n	-O OPT		Mount only filesystems with option OPT (-a only)"
 //usage:     "\n-o OPT:"
 //usage:	IF_FEATURE_MOUNT_LOOP(
@@ -340,6 +340,7 @@ enum { GETMNTENT_BUFSIZE = COMMON_BUFSIZE - offsetof(struct globals, getmntent_b
 #endif
 #define fslist            (G.fslist           )
 #define getmntent_buf     (G.getmntent_buf    )
+#define INIT_G() do { } while (0)
 
 #if ENABLE_FEATURE_MTAB_SUPPORT
 /*
@@ -522,12 +523,13 @@ static llist_t *get_block_backed_filesystems(void)
 
 		while ((buf = xmalloc_fgetline(f)) != NULL) {
 			if (strncmp(buf, "nodev", 5) == 0 && isspace(buf[5]))
-				continue;
+				goto next;
 			fs = skip_whitespace(buf);
 			if (*fs == '#' || *fs == '*' || !*fs)
-				continue;
+				goto next;
 
 			llist_add_to_end(&list, xstrdup(fs));
+ next:
 			free(buf);
 		}
 		if (ENABLE_FEATURE_CLEAN_UP) fclose(f);
@@ -819,31 +821,31 @@ enum {
  */
 
 struct nfs2_fh {
-	char                    data[32];
+	char            data[32];
 };
 struct nfs3_fh {
-	unsigned short          size;
-	unsigned char           data[64];
+	unsigned short  size;
+	unsigned char   data[64];
 };
 
 struct nfs_mount_data {
-	int		version;		/* 1 */
-	int		fd;			/* 1 */
-	struct nfs2_fh	old_root;		/* 1 */
-	int		flags;			/* 1 */
-	int		rsize;			/* 1 */
-	int		wsize;			/* 1 */
-	int		timeo;			/* 1 */
-	int		retrans;		/* 1 */
-	int		acregmin;		/* 1 */
-	int		acregmax;		/* 1 */
-	int		acdirmin;		/* 1 */
-	int		acdirmax;		/* 1 */
-	struct sockaddr_in addr;		/* 1 */
-	char		hostname[256];		/* 1 */
-	int		namlen;			/* 2 */
-	unsigned int	bsize;			/* 3 */
-	struct nfs3_fh	root;			/* 4 */
+	int		version;	/* 1 */
+	int		fd;		/* 1 */
+	struct nfs2_fh	old_root;	/* 1 */
+	int		flags;		/* 1 */
+	int		rsize;		/* 1 */
+	int		wsize;		/* 1 */
+	int		timeo;		/* 1 */
+	int		retrans;	/* 1 */
+	int		acregmin;	/* 1 */
+	int		acregmax;	/* 1 */
+	int		acdirmin;	/* 1 */
+	int		acdirmax;	/* 1 */
+	struct sockaddr_in addr;	/* 1 */
+	char		hostname[256];	/* 1 */
+	int		namlen;		/* 2 */
+	unsigned int	bsize;		/* 3 */
+	struct nfs3_fh	root;		/* 4 */
 };
 
 /* bits in the flags field */
@@ -858,6 +860,7 @@ enum {
 	NFS_MOUNT_VER3 = 0x0080,	/* 3 */
 	NFS_MOUNT_KERBEROS = 0x0100,	/* 3 */
 	NFS_MOUNT_NONLM = 0x0200,	/* 3 */
+	NFS_MOUNT_NOACL = 0x0800,	/* 4 */
 	NFS_MOUNT_NORDIRPLUS = 0x4000
 };
 
@@ -1122,6 +1125,7 @@ static NOINLINE int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 	int noac;
 	int nordirplus;
 	int nolock;
+	int noacl;
 
 	find_kernel_nfs_mount_version();
 
@@ -1141,7 +1145,7 @@ static NOINLINE int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 	pathname = s + 1;
 	*s = '\0';
 	/* Ignore all but first hostname in replicated mounts
-	   until they can be fully supported. (mack@sgi.com) */
+	 * until they can be fully supported. (mack@sgi.com) */
 	s = strchr(hostname, ',');
 	if (s) {
 		*s = '\0';
@@ -1194,6 +1198,7 @@ static NOINLINE int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 	nolock = 0;
 	noac = 0;
 	nordirplus = 0;
+	noacl = 0;
 	retry = 10000;		/* 10000 minutes ~ 1 week */
 	tcp = 1;			/* nfs-utils uses tcp per default */
 
@@ -1332,7 +1337,8 @@ static NOINLINE int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 				"tcp\0"
 				"udp\0"
 				"lock\0"
-				"rdirplus\0";
+				"rdirplus\0"
+				"acl\0";
 			int val = 1;
 			if (!strncmp(opt, "no", 2)) {
 				val = 0;
@@ -1382,6 +1388,9 @@ static NOINLINE int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 			case 11: //rdirplus
 				nordirplus = !val;
 				break;
+			case 12: // acl
+				noacl = !val;
+				break;
 			default:
 				bb_error_msg("unknown nfs mount option: %s%s", val ? "" : "no", opt);
 				goto fail;
@@ -1395,7 +1404,8 @@ static NOINLINE int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 		| (posix ? NFS_MOUNT_POSIX : 0)
 		| (nocto ? NFS_MOUNT_NOCTO : 0)
 		| (noac ? NFS_MOUNT_NOAC : 0)
-		| (nordirplus ? NFS_MOUNT_NORDIRPLUS : 0);
+		| (nordirplus ? NFS_MOUNT_NORDIRPLUS : 0)
+		| (noacl ? NFS_MOUNT_NOACL : 0);
 	if (nfs_mount_version >= 2)
 		data.flags |= (tcp ? NFS_MOUNT_TCP : 0);
 	if (nfs_mount_version >= 3)
@@ -1674,7 +1684,6 @@ static NOINLINE int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 
 	/* Perform actual mount */
  do_mount:
-	mp->mnt_type = (char*)"nfs";
 	retval = mount_it_now(mp, vfsflags, (char*)&data);
 	goto ret;
 
@@ -1699,8 +1708,43 @@ static NOINLINE int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 
 #else // !ENABLE_FEATURE_MOUNT_NFS
 
-// Never called. Call should be optimized out.
-int nfsmount(struct mntent *mp, long vfsflags, char *filteropts);
+/* Linux 2.6.23+ supports nfs mounts with options passed as a string.
+ * For older kernels, you must build busybox with ENABLE_FEATURE_MOUNT_NFS.
+ * (However, note that then you lose any chances that NFS over IPv6 would work).
+ */
+static int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
+{
+	len_and_sockaddr *lsa;
+	char *opts;
+	char *end;
+	char *dotted;
+	int ret;
+
+# if ENABLE_FEATURE_IPV6
+	end = strchr(mp->mnt_fsname, ']');
+	if (end && end[1] == ':')
+		end++;
+	else
+# endif
+		/* mount_main() guarantees that ':' is there */
+		end = strchr(mp->mnt_fsname, ':');
+
+	*end = '\0';
+	lsa = xhost2sockaddr(mp->mnt_fsname, /*port:*/ 0);
+	*end = ':';
+	dotted = xmalloc_sockaddr2dotted_noport(&lsa->u.sa);
+	if (ENABLE_FEATURE_CLEAN_UP) free(lsa);
+	opts = xasprintf("%s%saddr=%s",
+		filteropts ? filteropts : "",
+		filteropts ? "," : "",
+		dotted
+	);
+	if (ENABLE_FEATURE_CLEAN_UP) free(dotted);
+	ret = mount_it_now(mp, vfsflags, opts);
+	if (ENABLE_FEATURE_CLEAN_UP) free(opts);
+
+	return ret;
+}
 
 #endif // !ENABLE_FEATURE_MOUNT_NFS
 
@@ -1791,10 +1835,11 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 	}
 
 	// Might this be an NFS filesystem?
-	if (ENABLE_FEATURE_MOUNT_NFS
-	 && (!mp->mnt_type || strcmp(mp->mnt_type, "nfs") == 0)
+	if ((!mp->mnt_type || strncmp(mp->mnt_type, "nfs", 3) == 0)
 	 && strchr(mp->mnt_fsname, ':') != NULL
 	) {
+		if (!mp->mnt_type)
+			mp->mnt_type = (char*)"nfs";
 		rc = nfsmount(mp, vfsflags, filteropts);
 		goto report_error;
 	}
@@ -1810,7 +1855,7 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 		if (ENABLE_FEATURE_MOUNT_LOOP && S_ISREG(st.st_mode)) {
 			loopFile = bb_simplify_path(mp->mnt_fsname);
 			mp->mnt_fsname = NULL; // will receive malloced loop dev name
-			if (set_loop(&mp->mnt_fsname, loopFile, 0) < 0) {
+			if (set_loop(&mp->mnt_fsname, loopFile, 0, /*ro:*/ 0) < 0) {
 				if (errno == EPERM || errno == EACCES)
 					bb_error_msg(bb_msg_perm_denied_are_you_root);
 				else
@@ -1826,7 +1871,16 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 	// If we know the fstype (or don't need to), jump straight
 	// to the actual mount.
 	if (mp->mnt_type || (vfsflags & (MS_REMOUNT | MS_BIND | MS_MOVE))) {
-		rc = mount_it_now(mp, vfsflags, filteropts);
+		char *next;
+		for (;;) {
+			next = mp->mnt_type ? strchr(mp->mnt_type, ',') : NULL;
+			if (next)
+				*next = '\0';
+			rc = mount_it_now(mp, vfsflags, filteropts);
+			if (rc == 0 || !next)
+				break;
+			mp->mnt_type = next + 1;
+		}
 	} else {
 		// Loop through filesystem types until mount succeeds
 		// or we run out
@@ -1843,7 +1897,7 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 		for (fl = fslist; fl; fl = fl->link) {
 			mp->mnt_type = fl->data;
 			rc = mount_it_now(mp, vfsflags, filteropts);
-			if (!rc)
+			if (rc == 0)
 				break;
 		}
 	}
@@ -1944,6 +1998,8 @@ int mount_main(int argc UNUSED_PARAM, char **argv)
 	IF_NOT_DESKTOP(const int nonroot = 0;)
 
 	IF_DESKTOP(int nonroot = ) sanitize_env_if_suid();
+
+	INIT_G();
 
 	// Parse long options, like --bind and --move.  Note that -o option
 	// and --option are synonymous.  Yes, this means --remount,rw works.
