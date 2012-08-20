@@ -32,14 +32,20 @@
 #include "lib/search.h"
 #include "lib/strutil.h"
 #include "lib/widget.h"
+#ifdef HAVE_CHARSET
 #include "lib/charsets.h"
+#endif
 
 #include "src/main.h"
 #include "src/history.h"
 
-#include "src/editor/edit-widget.h"
+#include "src/editor/editwidget.h"
 #include "src/editor/etags.h"
 #include "src/editor/editcmd_dialogs.h"
+
+#ifdef HAVE_ASPELL
+#include "src/editor/spell.h"
+#endif
 
 /*** global variables ****************************************************************************/
 
@@ -137,7 +143,7 @@ editcmd_dialog_replace_show (WEdit * edit, const char *search_default, const cha
 
         QuickDialog Quick_input = {
             REPLACE_DLG_WIDTH, REPLACE_DLG_HEIGHT, -1, -1, N_("Replace"),
-            "[Input Line Keys]", quick_widgets, NULL, FALSE
+            "[Input Line Keys]", quick_widgets, NULL, NULL, FALSE
         };
 
         if (quick_dialog (&Quick_input) != B_CANCEL)
@@ -213,7 +219,7 @@ editcmd_dialog_search_show (WEdit * edit)
 
     QuickDialog Quick_input = {
         SEARCH_DLG_WIDTH, SEARCH_DLG_HEIGHT, -1, -1, N_("Search"),
-        "[Input Line Keys]", quick_widgets, NULL, TRUE
+        "[Input Line Keys]", quick_widgets, NULL, NULL, TRUE
     };
 
 #ifdef ENABLE_NLS
@@ -340,7 +346,7 @@ editcmd_dialog_raw_key_query (const char *heading, const char *query, int cancel
     int w = str_term_width1 (query) + 7;
 
     struct Dlg_head *raw_dlg =
-        create_dlg (TRUE, 0, 0, 7, w, dialog_colors, editcmd_dialog_raw_key_query_cb,
+        create_dlg (TRUE, 0, 0, 7, w, dialog_colors, editcmd_dialog_raw_key_query_cb, NULL,
                     NULL, heading, DLG_CENTER | DLG_TRYUP | DLG_WANT_TAB);
     add_widget (raw_dlg, input_new (3 - cancel, w - 5, input_get_default_colors (),
                                     2, "", 0, INPUT_COMPLETE_DEFAULT));
@@ -372,8 +378,8 @@ editcmd_dialog_completion_show (WEdit * edit, int max_len, int word_len,
     compl_dlg_h = num_compl + 2;
     compl_dlg_w = max_len + 4;
     start_x = edit->curs_col + edit->start_col - (compl_dlg_w / 2) +
-        EDIT_TEXT_HORIZONTAL_OFFSET + option_line_state_width;
-    start_y = edit->curs_row + EDIT_TEXT_VERTICAL_OFFSET + 1;
+        EDIT_TEXT_HORIZONTAL_OFFSET + (edit->fullscreen ? 0 : 1) + option_line_state_width;
+    start_y = edit->curs_row + EDIT_TEXT_VERTICAL_OFFSET + (edit->fullscreen ? 0 : 1) + 1;
 
     if (start_x < 0)
         start_x = 0;
@@ -392,7 +398,7 @@ editcmd_dialog_completion_show (WEdit * edit, int max_len, int word_len,
     /* create the dialog */
     compl_dlg =
         create_dlg (TRUE, start_y, start_x, compl_dlg_h, compl_dlg_w,
-                    dialog_colors, NULL, "[Completion]", NULL, DLG_COMPACT);
+                    dialog_colors, NULL, NULL, "[Completion]", NULL, DLG_COMPACT);
 
     /* create the listbox */
     compl_list = listbox_new (1, 1, compl_dlg_h - 2, compl_dlg_w - 2, FALSE, NULL);
@@ -461,8 +467,8 @@ editcmd_dialog_select_definition_show (WEdit * edit, char *match_expr, int max_l
     def_dlg_h = num_lines + 2;
     def_dlg_w = max_len + 4;
     start_x = edit->curs_col + edit->start_col - (def_dlg_w / 2) +
-        EDIT_TEXT_HORIZONTAL_OFFSET + option_line_state_width;
-    start_y = edit->curs_row + EDIT_TEXT_VERTICAL_OFFSET + 1;
+        EDIT_TEXT_HORIZONTAL_OFFSET + (edit->fullscreen ? 0 : 1) + option_line_state_width;
+    start_y = edit->curs_row + EDIT_TEXT_VERTICAL_OFFSET + (edit->fullscreen ? 0 : 1) + 1;
 
     if (start_x < 0)
         start_x = 0;
@@ -480,7 +486,7 @@ editcmd_dialog_select_definition_show (WEdit * edit, char *match_expr, int max_l
 
     /* create the dialog */
     def_dlg = create_dlg (TRUE, start_y, start_x, def_dlg_h, def_dlg_w,
-                          dialog_colors, NULL, "[Definitions]", match_expr, DLG_COMPACT);
+                          dialog_colors, NULL, NULL, "[Definitions]", match_expr, DLG_COMPACT);
 
     /* create the listbox */
     def_list = listbox_new (1, 1, def_dlg_h - 2, def_dlg_w - 2, FALSE, NULL);
@@ -628,7 +634,7 @@ editcmd_dialog_replace_prompt_show (WEdit * edit, char *from_text, char *to_text
     {
         QuickDialog Quick_input = {
             dlg_width, dlg_height, 0, 0, N_("Confirm replace"),
-            "[Input Line Keys]", quick_widgets, NULL, FALSE
+            "[Input Line Keys]", quick_widgets, NULL, NULL, FALSE
         };
 
         /* Sometimes menu can hide replaced text. I don't like it */

@@ -1,13 +1,13 @@
 /*
    Definitions of key bindings.
 
-   Copyright (C) 2009, 2011
+   Copyright (C) 2005, 2009, 2010, 2011, 2011, 2012
    The Free Software Foundation, Inc.
 
    Written by:
    Vitja Makarov, 2005
-   Ilia Maslakov <il.smind@gmail.com>, 2009
-   Andrew Borodin <aborodin@vmail.ru>, 2009, 2010
+   Ilia Maslakov <il.smind@gmail.com>, 2009, 2012
+   Andrew Borodin <aborodin@vmail.ru>, 2009, 2010, 2011, 2012
 
    This file is part of the Midnight Commander.
 
@@ -165,6 +165,9 @@ static name_keymap_t command_names[] = {
 #ifdef ENABLE_VFS_FTP
     {"ConnectFtp", CK_ConnectFtp},
 #endif
+#ifdef ENABLE_VFS_SFTP
+    {"ConnectSftp", CK_ConnectSftp},
+#endif
 #ifdef ENABLE_VFS_SMB
     {"ConnectSmb", CK_ConnectSmb},
 #endif
@@ -196,6 +199,9 @@ static name_keymap_t command_names[] = {
     {"HotListAdd", CK_HotListAdd},
     {"ShowHidden", CK_ShowHidden},
     {"SplitVertHoriz", CK_SplitVertHoriz},
+    {"SplitEqual", CK_SplitEqual},
+    {"SplitMore", CK_SplitMore},
+    {"SplitLess", CK_SplitLess},
     {"PutCurrentPath", CK_PutCurrentPath},
     {"PutOtherPath", CK_PutOtherPath},
     {"PutCurrentTagged", CK_PutCurrentTagged},
@@ -204,6 +210,8 @@ static name_keymap_t command_names[] = {
     {"Unselect", CK_Unselect},
 
     /* panel */
+    {"ScrollLeft", CK_ScrollLeft},
+    {"ScrollRight", CK_ScrollRight},
     {"PanelOtherCd", CK_PanelOtherCd},
     {"PanelOtherCdLink", CK_PanelOtherCdLink},
     {"CopySingle", CK_CopySingle},
@@ -245,6 +253,7 @@ static name_keymap_t command_names[] = {
 #endif
 
 #ifdef USE_INTERNAL_EDIT
+    {"Close", CK_Close},
     {"Tab", CK_Tab},
     {"Undo", CK_Undo},
     {"ScrollUp", CK_ScrollUp},
@@ -272,6 +281,11 @@ static name_keymap_t command_names[] = {
     {"MacroStartStopRecord", CK_MacroStartStopRecord},
     {"MacroDelete", CK_MacroDelete},
     {"RepeatStartStopRecord", CK_RepeatStartStopRecord},
+#ifdef HAVE_ASPELL
+    {"SpellCheck", CK_SpellCheck},
+    {"SpellCheckCurrentWord", CK_SpellCheckCurrentWord},
+    {"SpellCheckSelectLang", CK_SpellCheckSelectLang},
+#endif /* HAVE_ASPELL */
     {"BookmarkFlush", CK_BookmarkFlush},
     {"BookmarkNext", CK_BookmarkNext},
     {"BookmarkPrev", CK_BookmarkPrev},
@@ -306,6 +320,12 @@ static name_keymap_t command_names[] = {
     {"About", CK_About},
     /* An action to run external script from macro */
     {"ExecuteScript", CK_PipeBlock (0)},
+    {"WindowMove", CK_WindowMove},
+    {"WindowResize", CK_WindowResize},
+    {"WindowFullscreen", CK_WindowFullscreen},
+    {"WindowList", CK_WindowList},
+    {"WindowNext", CK_WindowNext},
+    {"WindowPrev", CK_WindowPrev},
 #endif /* USE_INTERNAL_EDIT */
 
     /* viewer */
@@ -325,9 +345,6 @@ static name_keymap_t command_names[] = {
     /* diff viewer */
     {"ShowSymbols", CK_ShowSymbols},
     {"SplitFull", CK_SplitFull},
-    {"SplitEqual", CK_SplitEqual},
-    {"SplitMore", CK_SplitMore},
-    {"SplitLess", CK_SplitLess},
     {"Tab2", CK_Tab2},
     {"Tab3", CK_Tab3},
     {"Tab4", CK_Tab4},

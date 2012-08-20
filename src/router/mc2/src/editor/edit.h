@@ -7,7 +7,7 @@
  *  \author Paul Sheer
  *  \date 1996, 1997
  *  \author Andrew Borodin
- *  \date 2009
+ *  \date 2009, 2012
  */
 
 #ifndef MC__EDIT_H
@@ -15,6 +15,7 @@
 
 #include "lib/global.h"         /* PATH_SEP_STR */
 #include "lib/fileloc.h"
+#include "lib/vfs/vfs.h"        /* vfs_path_t */
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
@@ -61,7 +62,8 @@ extern int show_right_margin;
 void edit_stack_init (void);
 void edit_stack_free (void);
 
-int edit_file (const vfs_path_t * _file_vpath, int line);
+gboolean edit_file (const vfs_path_t * file_vpath, int line);
+gboolean edit_files (const GList * files);
 
 char *edit_get_file_name (const WEdit * edit);
 int edit_get_curs_col (const WEdit * edit);

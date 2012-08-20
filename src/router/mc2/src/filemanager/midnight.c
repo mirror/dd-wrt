@@ -212,6 +212,9 @@ create_panel_menu (void)
 #ifdef ENABLE_VFS_FISH
     entries = g_list_prepend (entries, menu_entry_create (_("S&hell link..."), CK_ConnectFish));
 #endif
+#ifdef ENABLE_VFS_SFTP
+    entries = g_list_prepend (entries, menu_entry_create (_("S&FTP link..."), CK_ConnectSftp));
+#endif
 #ifdef ENABLE_VFS_SMB
     entries = g_list_prepend (entries, menu_entry_create (_("SM&B link..."), CK_ConnectSmb));
 #endif
@@ -579,7 +582,10 @@ create_panels (void)
         other_index = 1;
         current_mode = startup_left_mode;
         other_mode = startup_right_mode;
-        current_dir = mc_run_param0;
+        /* if mc_run_param0 is NULL, working directory will be used for the left panel */
+        current_dir = (char *) mc_run_param0;
+        /* mc_run_param1 is never NULL. It is setup from command line or from panels.ini
+         * (value of other_dir). mc_run_param1 will be used for the right panel */
         other_dir = mc_run_param1;
     }
     else
@@ -589,8 +595,21 @@ create_panels (void)
         other_index = 0;
         current_mode = startup_right_mode;
         other_mode = startup_left_mode;
-        current_dir = mc_run_param1;
-        other_dir = mc_run_param0;
+
+        /* if mc_run_param0 is not NULL (it was setup from command line), it will be used
+         * for the left panel, working directory will be used for the right one;
+         * if mc_run_param0 is NULL, working directory will be used for the right (active) panel,
+         * mc_run_param1 will be used for the left one */
+        if (mc_run_param0 != NULL)
+        {
+            current_dir = NULL;
+            other_dir = (char *) mc_run_param0;
+        }
+        else
+        {
+            current_dir = NULL;
+            other_dir = mc_run_param1;
+        }
     }
 
     /* 1. Get current dir */
@@ -601,7 +620,10 @@ create_panels (void)
     {
         vfs_path_t *vpath;
 
-        vpath = vfs_path_from_str (other_dir);
+        if (g_path_is_absolute (other_dir))
+            vpath = vfs_path_from_str (other_dir);
+        else
+            vpath = vfs_path_append_new (original_dir, other_dir, (char *) NULL);
         mc_chdir (vpath);
         vfs_path_free (vpath);
     }
@@ -614,7 +636,10 @@ create_panels (void)
     {
         vfs_path_t *vpath;
 
-        vpath = vfs_path_from_str (current_dir);
+        if (g_path_is_absolute (current_dir))
+            vpath = vfs_path_from_str (current_dir);
+        else
+            vpath = vfs_path_append_new (original_dir, current_dir, (char *) NULL);
         mc_chdir (vpath);
         vfs_path_free (vpath);
     }
@@ -656,20 +681,27 @@ static void
 put_current_path (void)
 {
     char *cwd_path;
-    vfs_path_t *cwd_vpath;
 
     if (!command_prompt)
         return;
 
-    cwd_vpath = remove_encoding_from_path (current_panel->cwd_vpath);
-    cwd_path = vfs_path_to_str (cwd_vpath);
-    command_insert (cmdline, cwd_path, FALSE);
+#ifdef HAVE_CHARSET
+    {
+        vfs_path_t *cwd_vpath;
 
+        cwd_vpath = remove_encoding_from_path (current_panel->cwd_vpath);
+        cwd_path = vfs_path_to_str (cwd_vpath);
+        vfs_path_free (cwd_vpath);
+    }
+#else
+    cwd_path = vfs_path_to_str (current_panel->cwd_vpath);
+#endif
+
+    command_insert (cmdline, cwd_path, FALSE);
     if (cwd_path[strlen (cwd_path) - 1] != PATH_SEP)
         command_insert (cmdline, PATH_SEP_STR, FALSE);
 
     g_free (cwd_path);
-    vfs_path_free (cwd_vpath);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -678,7 +710,6 @@ static void
 put_other_path (void)
 {
     char *cwd_path;
-    vfs_path_t *cwd_vpath;
 
     if (get_other_type () != view_listing)
         return;
@@ -686,15 +717,23 @@ put_other_path (void)
     if (!command_prompt)
         return;
 
-    cwd_vpath = remove_encoding_from_path (other_panel->cwd_vpath);
-    cwd_path = vfs_path_to_str (cwd_vpath);
-    command_insert (cmdline, cwd_path, FALSE);
+#ifdef HAVE_CHARSET
+    {
+        vfs_path_t *cwd_vpath;
 
+        cwd_vpath = remove_encoding_from_path (other_panel->cwd_vpath);
+        cwd_path = vfs_path_to_str (cwd_vpath);
+        vfs_path_free (cwd_vpath);
+    }
+#else
+    cwd_path = vfs_path_to_str (other_panel->cwd_vpath);
+#endif
+
+    command_insert (cmdline, cwd_path, FALSE);
     if (cwd_path[strlen (cwd_path) - 1] != PATH_SEP)
         command_insert (cmdline, PATH_SEP_STR, FALSE);
 
     g_free (cwd_path);
-    vfs_path_free (cwd_vpath);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -948,29 +987,24 @@ prepend_cwd_on_local (const char *filename)
 static gboolean
 mc_maybe_editor_or_viewer (void)
 {
-    int ret;
+    gboolean ret;
 
     switch (mc_global.mc_run_mode)
     {
 #ifdef USE_INTERNAL_EDIT
     case MC_RUN_EDITOR:
-        {
-            vfs_path_t *param_vpath;
-
-            param_vpath = vfs_path_from_str (mc_run_param0);
-            ret = edit_file (param_vpath, mc_args__edit_start_line);
-            vfs_path_free (param_vpath);
-        }
+        ret = edit_files ((GList *) mc_run_param0);
         break;
 #endif /* USE_INTERNAL_EDIT */
     case MC_RUN_VIEWER:
         {
-            vfs_path_t *vpath;
+            vfs_path_t *vpath = NULL;
 
-            vpath = prepend_cwd_on_local (mc_run_param0);
-            view_file (vpath, 0, 1);
+            if (mc_run_param0 != NULL && *(char *) mc_run_param0 != '\0')
+                vpath = prepend_cwd_on_local ((char *) mc_run_param0);
+
+            ret = view_file (vpath, 0, 1);
             vfs_path_free (vpath);
-            ret = 1;
             break;
         }
 #ifdef USE_DIFF_VIEW
@@ -979,10 +1013,10 @@ mc_maybe_editor_or_viewer (void)
         break;
 #endif /* USE_DIFF_VIEW */
     default:
-        ret = 0;
+        ret = FALSE;
     }
 
-    return (ret != 0);
+    return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1184,6 +1218,11 @@ midnight_execute_cmd (Widget * sender, unsigned long command)
         ftplink_cmd ();
         break;
 #endif
+#ifdef ENABLE_VFS_SFTP
+    case CK_ConnectSftp:
+        sftplink_cmd ();
+        break;
+#endif
 #ifdef ENABLE_VFS_SMB
     case CK_ConnectSmb:
         smblink_cmd ();
@@ -1314,6 +1353,15 @@ midnight_execute_cmd (Widget * sender, unsigned long command)
         break;
     case CK_SplitVertHoriz:
         toggle_panels_split ();
+        break;
+    case CK_SplitEqual:
+        panels_split_equal ();
+        break;
+    case CK_SplitMore:
+        panels_split_more ();
+        break;
+    case CK_SplitLess:
+        panels_split_less ();
         break;
     case CK_PanelTree:
         panel_tree_cmd ();
@@ -1550,6 +1598,50 @@ midnight_callback (Dlg_head * h, Widget * sender, dlg_msg_t msg, int parm, void 
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+static int
+midnight_event (Gpm_Event * event, void *data)
+{
+    Dlg_head *h = (Dlg_head *) data;
+    int ret = MOU_UNHANDLED;
+
+    if (event->y == h->y + 1)
+    {
+        /* menubar */
+        if (menubar_visible || the_menubar->is_active)
+            ret = ((Widget *) the_menubar)->mouse (event, the_menubar);
+        else
+        {
+            Widget *w;
+
+            w = get_panel_widget (0);
+            if (w->mouse != NULL)
+                ret = w->mouse (event, w);
+
+            if (ret == MOU_UNHANDLED)
+            {
+                w = get_panel_widget (1);
+                if (w->mouse != NULL)
+                    ret = w->mouse (event, w);
+            }
+
+            if (ret == MOU_UNHANDLED)
+                ret = ((Widget *) the_menubar)->mouse (event, the_menubar);
+        }
+    }
+    else if (event->y == h->y + h->lines && mc_global.keybar_visible)
+    {
+        /* buttonbar */
+
+        /* in general, this can be handled in default way (dlg_mouse_event)
+         * but let make it here to avoid walking in widget list */
+        ret = ((Widget *) the_bar)->mouse (event, the_bar);
+    }
+
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -1561,6 +1653,8 @@ update_menu (void)
     menubar_arrange (the_menubar);
     menubar_set_visible (the_menubar, menubar_visible);
 }
+
+/* --------------------------------------------------------------------------------------------- */
 
 void
 midnight_set_buttonbar (WButtonBar * b)
@@ -1669,7 +1763,7 @@ do_nc (void)
 #endif
 
     midnight_dlg = create_dlg (FALSE, 0, 0, LINES, COLS, midnight_colors, midnight_callback,
-                               "[main]", NULL, DLG_WANT_IDLE);
+                               midnight_event, "[main]", NULL, DLG_WANT_IDLE);
 
     if (mc_global.mc_run_mode == MC_RUN_FULL)
         setup_mc ();

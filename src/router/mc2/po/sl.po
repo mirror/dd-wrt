@@ -10,10 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-04-25 19:29+0300\n"
-"PO-Revision-Date: 2012-03-19 17:28+0000\n"
+"POT-Creation-Date: 2012-07-18 13:34+0300\n"
+"PO-Revision-Date: 2012-07-13 08:36+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
-"Language-Team: Slovenian (http://www.transifex.net/projects/p/mc/language/"
+"Language-Team: Slovenian (http://www.transifex.com/projects/p/mc/language/"
 "sl/)\n"
 "Language: sl\n"
 "MIME-Version: 1.0\n"
@@ -23,10 +23,10 @@ msgstr ""
 "%100==4 ? 2 : 3)\n"
 
 msgid "Warning: cannot load codepages list"
-msgstr "Opozorilo: ni mogoče naložiti seznama znakovnih naborov"
+msgstr "Opozorilo: ni mogoče naložiti seznama nabora znakov"
 
 msgid "7-bit ASCII"
-msgstr ""
+msgstr "7-bitni ASCII"
 
 #, c-format
 msgid "Cannot translate from %s to %s"
@@ -58,15 +58,18 @@ msgid ""
 "User: %s\n"
 "Process ID: %d"
 msgstr ""
+"Datoteka \"%s\" je že odprta za urejanje.\n"
+"Uporabnik:%s\n"
+"ID opravila:%d"
 
 msgid "File locked"
-msgstr ""
+msgstr "Datoteka je zaklenjena"
 
 msgid "&Grab lock"
-msgstr ""
+msgstr "&Zakleni"
 
 msgid "&Ignore lock"
-msgstr ""
+msgstr "&Prezri zaklep"
 
 #, c-format
 msgid "Cannot create %s directory"
@@ -94,22 +97,22 @@ msgid ""
 msgstr ""
 
 msgid "Search string not found"
-msgstr "Iskalnega niza ni mogoče najti"
+msgstr "Iskanega niza ni mogoče najti"
 
 msgid "Not implemented yet"
-msgstr "Možnost še ni podprta"
+msgstr "Možnost še ni na voljo"
 
 msgid "Num of replace tokens not equal to num of found tokens"
-msgstr ""
+msgstr "Število zamenjanih žetonov ni enako številu najdenih."
 
 #, c-format
 msgid "Invalid token number %d"
-msgstr ""
+msgstr "Neveljavno število žetona %d"
 
 msgid "Regular expression error"
 msgstr ""
 
-msgid "&Normal"
+msgid "No&rmal"
 msgstr ""
 
 msgid "Re&gular expression"
@@ -126,12 +129,16 @@ msgid ""
 "Unable to load '%s' skin.\n"
 "Default skin has been loaded"
 msgstr ""
+"Ni mogoče naložiti preobleke '%s'.\n"
+"Naložena je privzeta preobleka."
 
 #, c-format
 msgid ""
 "Unable to parse '%s' skin.\n"
 "Default skin has been loaded"
 msgstr ""
+"Ni mogoče razčleniti preobleke '%s'.\n"
+"Naložena je privzeta preobleka."
 
 #, c-format
 msgid ""
@@ -204,37 +211,37 @@ msgid "Backspace key"
 msgstr "Vračalka"
 
 msgid "End key"
-msgstr "Tipka End"
+msgstr "Tipka Konec"
 
 msgid "Up arrow key"
-msgstr "Pušcia navzgor"
+msgstr "Smerna tipka navzgor"
 
 msgid "Down arrow key"
-msgstr "Puščica navzgor"
+msgstr "Smerna tipka navzdol"
 
 msgid "Left arrow key"
-msgstr "Puščica levo"
+msgstr "Smerna tipka levo"
 
 msgid "Right arrow key"
-msgstr "Puščica desno"
+msgstr "Smerna tipka desno"
 
 msgid "Home key"
-msgstr "Tipka Home"
+msgstr "Tipka Domov"
 
 msgid "Page Down key"
-msgstr "Tipka Page Down"
+msgstr "Tipka Stran navzdol"
 
 msgid "Page Up key"
-msgstr "Tipka Page Up"
+msgstr "Tipka Stran navzgor"
 
 msgid "Insert key"
-msgstr "Tipka Insert"
+msgstr "Tipka Vstavi"
 
 msgid "Delete key"
-msgstr "Tipka Delete"
+msgstr "Tipka Izbriši"
 
 msgid "Completion/M-tab"
-msgstr "Dokončaj/tabulator"
+msgstr "Dopolni/predelčnica"
 
 msgid "Back Tabulation S-tab"
 msgstr ""
@@ -252,94 +259,94 @@ msgid "* on keypad"
 msgstr "* na številčni tipkovnici"
 
 msgid "Escape key"
-msgstr ""
+msgstr "Ubežna tipka"
 
 msgid "Left arrow keypad"
-msgstr "Puščica levo na številčni tipkovnici"
+msgstr "Smerna tipka levo na številčni tipkovnici"
 
 msgid "Right arrow keypad"
-msgstr "Puščica desno na številčni tipkovnici"
+msgstr "Smerna tipka desno na številčni tipkovnici"
 
 msgid "Up arrow keypad"
-msgstr "Puščica gor na številčni tipkovnici"
+msgstr "Smerna tipka navzgor na številčni tipkovnici"
 
 msgid "Down arrow keypad"
-msgstr "Puščica dol na številčni tipkovnici"
+msgstr "Smerna tipka navzdol na številčni tipkovnici"
 
 msgid "Home on keypad"
-msgstr "Tipka Home na številčni tipkovnici"
+msgstr "Tipka Domov na številčni tipkovnici"
 
 msgid "End on keypad"
-msgstr "Tipka End na številčni tipkovnici"
+msgstr "Tipka Konec na številčni tipkovnici"
 
 msgid "Page Down keypad"
-msgstr "Tipka Page Down na številčni tipkovnici"
+msgstr "Tipka Stran dol na številčni tipkovnici"
 
 msgid "Page Up keypad"
-msgstr "Tipka Page Up na številčni tipkovnici"
+msgstr "Tipka Stran gor na številčni tipkovnici"
 
 msgid "Insert on keypad"
-msgstr "Tipka Insert na številčni tipkovnici"
+msgstr "Tipka Vstavi na številčni tipkovnici"
 
 msgid "Delete on keypad"
-msgstr "Tipka Delete na številčni tipkovnici"
+msgstr "Tipka Izbriši na številčni tipkovnici"
 
 msgid "Enter on keypad"
-msgstr "Enter na številčni tipkovnici"
+msgstr "Vnosna tipka na številčni tipkovnici"
 
 msgid "Function key 21"
-msgstr ""
+msgstr "Funkcijska tipka 21"
 
 msgid "Function key 22"
-msgstr ""
+msgstr "Funkcijska tipka 22"
 
 msgid "Function key 23"
-msgstr ""
+msgstr "Funkcijska tipka 23"
 
 msgid "Function key 24"
-msgstr ""
+msgstr "Funkcijska tipka 24"
 
 msgid "A1 key"
-msgstr ""
+msgstr "Tipka A1"
 
 msgid "C1 key"
-msgstr ""
+msgstr "Tipka C1"
 
 msgid "Plus"
-msgstr "plus"
+msgstr "Plus"
 
 msgid "Minus"
-msgstr "minus"
+msgstr "Minus"
 
 msgid "Asterisk"
-msgstr "zvezdica"
+msgstr "Zvezdica"
 
 msgid "Dot"
-msgstr "pika"
+msgstr "Pika"
 
 msgid "Less than"
-msgstr "manj kot"
+msgstr "Manj kot"
 
 msgid "Great than"
-msgstr "večje kot"
+msgstr "Več kot"
 
 msgid "Equal"
-msgstr "je enako"
+msgstr "Je enako"
 
 msgid "Comma"
-msgstr "vejica"
+msgstr "Vejica"
 
 msgid "Apostrophe"
-msgstr ""
+msgstr "Narekovaj"
 
 msgid "Colon"
-msgstr "dvopičje"
+msgstr "Podpičje"
 
 msgid "Exclamation mark"
-msgstr "klicaj"
+msgstr "Klicaj"
 
 msgid "Question mark"
-msgstr "vprašaj"
+msgstr "Vprašaj"
 
 msgid "Ampersand"
 msgstr ""
@@ -412,13 +419,13 @@ msgid "At sign"
 msgstr ""
 
 msgid "Ctrl"
-msgstr ""
+msgstr "Ctrl"
 
 msgid "Alt"
-msgstr ""
+msgstr "Alt"
 
 msgid "Shift"
-msgstr ""
+msgstr "Shift"
 
 msgid "The TERM environment variable is unset!\n"
 msgstr "TERM okoljska spremenljivka ni nastavljena!\n"
@@ -560,8 +567,8 @@ msgstr "Nastavi stopnjo razhroščevanja"
 msgid "Launches the file viewer on a file"
 msgstr "Zažene pogled datoteke"
 
-msgid "Edits one file"
-msgstr "Urejuje eno datoteko"
+msgid "Edit files"
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "Prisili uporabo xterm dodatkov"
@@ -621,7 +628,8 @@ msgid ""
 "   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
 "   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
@@ -820,9 +828,9 @@ msgstr ""
 msgid "Diff:"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "\"%s\" is a directory"
-msgstr "%s ni imenik\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -843,16 +851,6 @@ msgid "< Auto >"
 msgstr ""
 
 msgid "< Reload Current Syntax >"
-msgstr ""
-
-msgid "About"
-msgstr ""
-
-msgid ""
-"Copyright (C) 1996-2010 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
 msgstr ""
 
 #, c-format
@@ -928,27 +926,6 @@ msgstr ""
 msgid "Save As"
 msgstr ""
 
-msgid "Syntax file edit"
-msgstr "Urejanje datoteke s sintakso"
-
-msgid "Which syntax file you want to edit?"
-msgstr ""
-
-msgid "&User"
-msgstr "&Uporabnik"
-
-msgid "&System Wide"
-msgstr "&Sistemsko"
-
-msgid "Menu edit"
-msgstr ""
-
-msgid "Which menu file do you want to edit?"
-msgstr ""
-
-msgid "&Local"
-msgstr "&Krajevno"
-
 msgid "Block is large, you may not be able to undo this action"
 msgstr ""
 
@@ -1013,13 +990,29 @@ msgstr ""
 msgid "&Save"
 msgstr "&Shrani"
 
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes"
-msgstr ""
-
 msgid "Load"
 msgstr ""
+
+msgid "Syntax file edit"
+msgstr "Urejanje datoteke s sintakso"
+
+msgid "Which syntax file you want to edit?"
+msgstr ""
+
+msgid "&User"
+msgstr "&Uporabnik"
+
+msgid "&System wide"
+msgstr ""
+
+msgid "Menu edit"
+msgstr ""
+
+msgid "Which menu file do you want to edit?"
+msgstr ""
+
+msgid "&Local"
+msgstr "&Krajevno"
 
 msgid "Replace"
 msgstr ""
@@ -1028,7 +1021,22 @@ msgstr ""
 msgid "%ld replacements made"
 msgstr ""
 
-msgid "&Cancel quit"
+msgid "[NoName]"
+msgstr ""
+
+#, c-format
+msgid ""
+"File %s was modified.\n"
+"Save before close?"
+msgstr ""
+
+msgid "Close file"
+msgstr ""
+
+#, c-format
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file %s?"
 msgstr ""
 
 msgid "This function is not implemented"
@@ -1111,7 +1119,7 @@ msgid "Press any key:"
 msgstr ""
 
 msgid ""
-"Current text was modified without a file save\n"
+"Current text was modified without a file save.\n"
 "Continue discards these changes"
 msgstr ""
 
@@ -1147,10 +1155,16 @@ msgstr ""
 msgid "Confirm replace"
 msgstr ""
 
+msgid "NoName"
+msgstr ""
+
 msgid "&Open file..."
 msgstr "&Odpri datoteko..."
 
 msgid "&New"
+msgstr ""
+
+msgid "&Close"
 msgstr ""
 
 msgid "Save &as..."
@@ -1273,7 +1287,13 @@ msgstr ""
 msgid "Record/Repeat &actions"
 msgstr ""
 
-msgid "'ispell' s&pell check"
+msgid "S&pell check"
+msgstr ""
+
+msgid "C&heck word"
+msgstr ""
+
+msgid "Change spelling &language"
 msgstr ""
 
 msgid "&Mail..."
@@ -1295,6 +1315,24 @@ msgid "&Paste output of..."
 msgstr ""
 
 msgid "&External formatter"
+msgstr ""
+
+msgid "&Move"
+msgstr "&Prestavi"
+
+msgid "&Resize"
+msgstr ""
+
+msgid "&Toggle fullscreen"
+msgstr ""
+
+msgid "&Next"
+msgstr ""
+
+msgid "&Previous"
+msgstr ""
+
+msgid "&List..."
 msgstr ""
 
 msgid "&General..."
@@ -1331,6 +1369,9 @@ msgid "&Command"
 msgstr ""
 
 msgid "For&mat"
+msgstr ""
+
+msgid "&Window"
 msgstr ""
 
 msgid "&Options"
@@ -1393,6 +1434,19 @@ msgstr "Način zavijanja"
 msgid "Editor options"
 msgstr ""
 
+msgid "About"
+msgstr ""
+
+msgid ""
+"Copyright (C) 1996-2012 the Free Software Foundation\n"
+"\n"
+"            A user friendly text editor\n"
+"         written for the Midnight Commander"
+msgstr ""
+
+msgid "Open files"
+msgstr ""
+
 msgid "Edit: "
 msgstr ""
 
@@ -1412,6 +1466,25 @@ msgid "ButtonBar|Delete"
 msgstr ""
 
 msgid "ButtonBar|PullDn"
+msgstr ""
+
+#, fuzzy
+msgid "&Add word"
+msgstr "&Dodaj novo"
+
+msgid "Language"
+msgstr ""
+
+msgid "Misspelled"
+msgstr ""
+
+msgid "Check word"
+msgstr ""
+
+msgid "Suggest"
+msgstr ""
+
+msgid "Select language"
 msgstr ""
 
 msgid "Load syntax file"
@@ -1813,6 +1886,9 @@ msgstr "Uredi datoteko s priponami"
 msgid "Which extension file you want to edit?"
 msgstr ""
 
+msgid "&System Wide"
+msgstr "&Sistemsko"
+
 msgid "Highlighting groups file edit"
 msgstr ""
 
@@ -1866,6 +1942,9 @@ msgstr "`%s' ni simbolična povezava"
 msgid "FTP to machine"
 msgstr ""
 
+msgid "SFTP to machine"
+msgstr ""
+
 msgid "Shell link to machine"
 msgstr ""
 
@@ -1903,13 +1982,13 @@ msgstr ""
 msgid "Cannot read directory contents"
 msgstr "Ne morem prebrati vsebine imenika"
 
+msgid "Parameter"
+msgstr ""
+
 #, c-format
 msgid ""
 "Cannot create temporary command file\n"
 "%s"
-msgstr ""
-
-msgid "Parameter"
 msgstr ""
 
 #, c-format
@@ -2437,9 +2516,6 @@ msgstr "Iščem %s"
 msgid "Searching"
 msgstr "Iščem"
 
-msgid "&Move"
-msgstr "&Prestavi"
-
 msgid "&Remove"
 msgstr "&Odstrani"
 
@@ -2685,6 +2761,9 @@ msgstr "FT&P povezava..."
 
 msgid "S&hell link..."
 msgstr "&Lupinska povezava..."
+
+msgid "S&FTP link..."
+msgstr ""
 
 msgid "SM&B link..."
 msgstr "SM&B povezava..."
@@ -3177,6 +3256,9 @@ msgstr "Zaprtje cevi neuspešno"
 msgid "Cannot run external panelize in a non-local directory"
 msgstr ""
 
+msgid "Modified git files"
+msgstr ""
+
 msgid "Find rejects after patching"
 msgstr "Poišči zavrnjene po patchingu"
 
@@ -3468,9 +3550,8 @@ msgstr ""
 msgid "Data types:"
 msgstr ""
 
-#, fuzzy
 msgid "Root directory:"
-msgstr "imenik"
+msgstr ""
 
 msgid "System data"
 msgstr ""
@@ -3579,10 +3660,6 @@ msgstr "fish: Rovanje različic..."
 
 msgid "fish: Getting host info..."
 msgstr ""
-
-#, c-format
-msgid "fish: Connected, home %s."
-msgstr "fish: Povezan, dom %s."
 
 #, c-format
 msgid "fish: Reading directory %s..."
@@ -3740,6 +3817,66 @@ msgid ""
 msgstr ""
 "Opozorilo: Neveljavna zastavica %c v %s:\n"
 "%s\n"
+
+#, c-format
+msgid "sftp: an error occured while reading %s: %s"
+msgstr ""
+
+msgid "sftp: Unable to get current user name."
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Invalid host name."
+msgstr "ftpfs: Neveljavno ime gostitelja."
+
+#, fuzzy
+msgid "sftp: Invalid port value."
+msgstr "ftpfs: Neveljavno ime gostitelja."
+
+#, c-format
+msgid "sftp: %s"
+msgstr ""
+
+#, fuzzy, c-format
+msgid "sftp: making connection to %s"
+msgstr "ftpfs: ustvarjam povezavo z %s"
+
+#, fuzzy
+msgid "sftp: connection interrupted by user"
+msgstr "ftpfs: uporabnik je prekinil povezavo"
+
+#, fuzzy, c-format
+msgid "sftp: connection to server failed: %s"
+msgstr "ftpfs: povezava do strežnika ni bila uspešna: %s"
+
+#, c-format
+msgid "sftp: Enter passphrase for %s "
+msgstr ""
+
+msgid "sftp: Passphrase is empty."
+msgstr ""
+
+#, fuzzy, c-format
+msgid "sftp: Enter password for %s "
+msgstr "ftpfs: pošiljam uporabnikovo geslo"
+
+msgid "sftp: Password is empty."
+msgstr ""
+
+#, c-format
+msgid "sftp: Failure establishing SSH session: (%d)"
+msgstr ""
+
+msgid "sftp: No file handler data present for reading file"
+msgstr ""
+
+#, c-format
+msgid "sftp: (Ctrl-G break) Listing... %s"
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Listing done."
+msgstr "Seznamski način"
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -3925,6 +4062,9 @@ msgid ""
 "%s"
 msgstr ""
 
+msgid "&Cancel quit"
+msgstr ""
+
 msgid "View: "
 msgstr ""
 
@@ -3945,6 +4085,3 @@ msgstr ""
 
 msgid "Continue from beginning?"
 msgstr ""
-
-#~ msgid "fish: Setting up current directory..."
-#~ msgstr "fish: Nastavljam trenutni imenik..."

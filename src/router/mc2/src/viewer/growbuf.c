@@ -160,7 +160,6 @@ mcview_growbuf_read_until (mcview_t * view, off_t ofs)
 #ifdef HAVE_ASSERT_H
             assert (view->datasource == DS_VFS_PIPE);
 #endif
-
             do
             {
                 nread = mc_read (view->ds_vfs_pipe, p, bytesfree);

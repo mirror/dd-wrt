@@ -142,6 +142,7 @@ mcview_get_ptr_file (mcview_t * view, off_t byte_index)
 #ifdef HAVE_ASSERT_H
     assert (view->datasource == DS_FILE);
 #endif
+
     mcview_file_load_data (view, byte_index);
     if (mcview_already_loaded (view->ds_file_offset, byte_index, view->ds_file_datalen))
         return (char *) (view->ds_file_data + (byte_index - view->ds_file_offset));
@@ -276,12 +277,12 @@ void
 mcview_set_byte (mcview_t * view, off_t offset, byte b)
 {
     (void) &b;
-
 #ifndef HAVE_ASSERT_H
     (void) offset;
 #else
     assert (offset < mcview_get_filesize (view));
     assert (view->datasource == DS_FILE);
+
 #endif
     view->ds_file_datalen = 0;  /* just force reloading */
 }
@@ -379,7 +380,7 @@ mcview_close_datasource (mcview_t * view)
 #ifdef HAVE_ASSERT_H
         assert (!"Unknown datasource type")
 #endif
-        ;
+            ;
     }
     view->datasource = DS_NONE;
 }

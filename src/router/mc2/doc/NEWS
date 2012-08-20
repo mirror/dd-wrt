@@ -1,53 +1,107 @@
-Version 4.8.1.3
+Version 4.8.4
 
-- Fixes
-    * Crash at Chown command (#2784)
-    * Crash when creating relative symlink (#2787)
-    * Directories are opened in wrong panels (#2783)
-    * Error message when entering into compressed tar and cpio archives (#2785)
-    * Fails to build from source with --enable-tests (#2786)
+- Core
 
-Version 4.8.1.2
+    * Use xdg-open by default in mc.ext.in if present to open files, fallback on current scheme otherwise (#2118)
+    * Improve of mouse event handling in dialogs (#2817)
+    * Show extended info about compiled-in paths for internal/external macros in the "mc -F" output (2495)
 
 - VFS
 
-    * Internal VFS reorganization (#2695)
+    * Added SFTP support (#1535)
+
+- Editor
+
+    * Multieditor: allow edit many files in one mcedit window (#2261, #2839)
+    * Aspell support for spell check (#2788)
+
+- Viewer
+
+    * Handle CK_FileNext/CK_FilePrev actions inside mcviewer (#2814)
 
 - Misc
 
-    * Code cleanup (#2781)
+    * Tweak and cleanup of code in case of --disable-charset option usage (#2827)
+    * File extension support:
+        - .gem - rubygems (#2797)
+        - .cpio.xz - compressed cpio archives (#2798)
+        - .webm - WebM video (#2746)
+        - .lib - gputils artifacts (#2751)
+
+- Fixes
+
+    * Build failure on FreeBSD 6 (#2808)
+    * src/filemanager/filegui.c does not compile on Solaris due to missing macros (#2825)
+    * Loss of data on copy to full partition (#2829)
+    * Crash at Chown command (#2784)
+    * Crash when creating relative symlink (#2787)
+    * Misinterpretation of dirs as command line arguments (#2783, #2805)
+    * Number of panelized files was limited to 127 (#2813)
+    * CK_History removes CK_HistoryNext entries (#2313)
+    * URL with port was stored wrong in history (#2833)
+    * Can't find 00 (zeroes) in patterns in hex search (#2795)
+    * Hotkey conflicts in 'Search' dialog (#2843)
+    * Error message when entering into compressed tar and cpio archives (#2785)
+    * Garbage directory listing in ftpfs (#2800)
+    * Incomplete sand256 skin (#2807)
+    * mcedit scripts are installed as data files (#1437)
+    * Fails to build from source with --enable-tests (#2786)
+    * Tests failure on PowerPC,S390,S390x (#2804)
+    * Fail to compile if --without-vfs configure option specified (#2834)
+    * do_panel_cd: FTBFS with --enable-tests on [kfreebsd-i386,kfreebsd-amd64,ia64,armhf] (#2803)
+
+Version 4.8.3
+
+- Misc
+
+    * Code cleanup (#2780)
 
 - Fixes
 
     * Broken support of XDG_* shell variables (#1851)
     * Segmentation fault while background copying (#2663)
+    * MC ignores second directory argument (#2762)
     * Interpretation of LANG variable needs to be case insensitive (#2386)
     * Cannot copy zero-length files with "Preallocate space" option (#2755)
     * Problem in the Copy operation with unchecked the "Preserve attributes" option (#2278)
-    * Cursor position reset after update when panel is panelized, but doesn't (#2766)
+    * * Cursor position reset after update when panel is panelized, but doesn't (#2766)
     * File selection reset after exit from the archive in the root (#2776)
+    * Hotlist: broken newly added entries if old-style path is present (#2753)
     * Can't rebind Fx keys in the file manager (#2384)
+    * "justified" menu alignment (#2756)
     * The last (or single) word of hyperlinks in the interactive help don't act on mouse clicks (#2763)
+    * 'cd' command is not working in shell link (#2758)
+    * mc hangs on switching screens (#2608)
     * Case sensitive search with SEARCH_TYPE_PCRE is broken (#2764)
+    * mcedit can't run w/o file as parameter (#2754)
     * mcedit can't record input char (#2757)
     * mcedit: save file on top of existing directory changes dir's permissions (#2761)
+    * Unable to edit gzipped files (#2759)
     * mcedit hangs up on replace with regexp contains '^' or '$' (#1868)
     * Segfault after open incorrect archive (#2775)
     * mcdiff crashes if one panel is not in the listing mode (#2769)
+    * The password for vfs sessions remains in input history (#2760)
+    * Showing directory sizes is broken in VFS'es (#2765)
+    * Stale symlinks in vfs (#2777)
     * Active VFS directories list contain incorrect current path (#2779)
     * Date not set properly in manpage (#2692)
     * Empty texinfo rule in mc.ext (#2774)
 
-
-Version 4.8.1.1
+Version 4.8.2
 
 - Core
 
     * Added new flag -X (--no-x11) to allow dont't use X11 to get the state of modifiers Alt, Ctrl, Shift (#86)
     * Support of '~' as home dir in 'Start at:' field in 'Find File' dialog (#2694)
     * Support of '~' as home dir in hotlists (#2747)
-    * Learning of 'Back Tab' now is possible from 'Learn keys' dialog (#2628)
+    * Learn of 'Back Tab' is possible now in 'Learn keys' dialog (#2628)
     * Optional '0x' prefix for hexadecimal search (#2705)
+    * Dynamically resize panels (#2465)
+    * New bindings (ScrollLeft, ScrollRight) for scroll long filenames in panels (#2731)
+
+- VFS
+
+    * Internal VFS reorganization (#2695)
 
 - Editor
 
@@ -62,10 +116,11 @@ Version 4.8.1.1
     * Added hotkeys for all radio/check-buttons in search/replace dialogs (#2704)
     * New file bindings:
         - .m4v, .ts - video (#2702)
-        - djv - DjVu?? (#2645)
+        - djv - DjVu? (#2645) 
     * Simplify mc.menu - remove LZMA|LZ and change p7 to 7z (#2703)
     * Updated list of known browsers: gnome-moz-remote mozilla firefox konqueror opera (#2725)
     * Added MC_HOME environment variable to set up home directory of MC (as part of #2738)
+    * Lot of code cleanup (#2740)
 
 - Fixes
 
@@ -81,7 +136,6 @@ Version 4.8.1.1
     * mcedit crashes when ~/.config is a file (#2738)
     * mcedit: reset selection after END/HOME/PgDn/PgUp (#2726)
     * 'make check' fails on arm and alpha (-z muldefs) (#2732)
-
 
 Version 4.8.1
 

@@ -232,12 +232,26 @@ chmod_callback (Dlg_head * h, Widget * sender, dlg_msg_t msg, int parm, void *da
         /* handle checkboxes */
         if (id >= 0)
         {
-            c_stat ^= check_perm[id].mode;
-            g_snprintf (buffer, sizeof (buffer), "%o", (unsigned int) c_stat);
-            label_set_text (statl, buffer);
-            chmod_toggle_select (h, id);
-            mode_change = TRUE;
-            return MSG_HANDLED;
+            gboolean sender_is_checkbox = FALSE;
+            unsigned int i;
+
+            /* whether action was sent by checkbox? */
+            for (i = 0; i < check_perm_num; i++)
+                if (sender == (Widget *) check_perm[i].check)
+                {
+                    sender_is_checkbox = TRUE;
+                    break;
+                }
+
+            if (sender_is_checkbox)
+            {
+                c_stat ^= check_perm[id].mode;
+                g_snprintf (buffer, sizeof (buffer), "%o", (unsigned int) c_stat);
+                label_set_text (statl, buffer);
+                chmod_toggle_select (h, id);
+                mode_change = TRUE;
+                return MSG_HANDLED;
+            }
         }
 
         return MSG_NOT_HANDLED;
@@ -292,7 +306,7 @@ init_chmod (const char *fname, const struct stat *sf_stat)
 
     ch_dlg =
         create_dlg (TRUE, 0, 0, lines, cols, dialog_colors,
-                    chmod_callback, "[Chmod]", _("Chmod command"), DLG_CENTER | DLG_REVERSE);
+                    chmod_callback, NULL, "[Chmod]", _("Chmod command"), DLG_CENTER | DLG_REVERSE);
 
     for (i = 0; i < chmod_but_num; i++)
     {
