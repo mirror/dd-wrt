@@ -205,6 +205,17 @@ config LOGIN
 	  Note that Busybox binary must be setuid root for this applet to
 	  work properly.
 
+config LOGIN_SESSION_AS_CHILD
+	bool "Run logged in session in a child process"
+	default y if PAM
+	depends on LOGIN
+	help
+	  Run the logged in session in a child process.  This allows
+	  login to clean up things such as utmp entries or PAM sessions
+	  when the login session is complete.  If you use PAM, you
+	  almost always would want this to be set to Y, else PAM session
+	  will not be cleaned up.
+
 config PAM
 	bool "Support for PAM (Pluggable Authentication Modules)"
 	default n
@@ -271,6 +282,13 @@ config CHPASSWD
 	help
 	  Reads a file of user name and password pairs from standard input
 	  and uses this information to update a group of existing users.
+
+config FEATURE_DEFAULT_PASSWD_ALGO
+	string "Default password encryption method (passwd -a, cryptpw -m parameter)"
+	default "des"
+	depends on PASSWD || CRYPTPW
+	help
+	  Possible choices are "d[es]", "m[d5]", "s[ha256]" or "sha512".
 
 config SU
 	bool "su"

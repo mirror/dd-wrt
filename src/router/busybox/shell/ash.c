@@ -6846,8 +6846,7 @@ evalvar(char *p, int flags, struct strlist *var_str_list)
 		patloc = expdest - (char *)stackblock();
 		if (NULL == subevalvar(p, /* varname: */ NULL, patloc, subtype,
 				startloc, varflags,
-//TODO: | EXP_REDIR too? All other such places do it too
-				/* quotes: */ flags & (EXP_FULL | EXP_CASE),
+				/* quotes: */ flags & (EXP_FULL | EXP_CASE | EXP_REDIR),
 				var_str_list)
 		) {
 			int amount = expdest - (
@@ -7435,6 +7434,12 @@ tryexec(IF_FEATURE_SH_STANDALONE(int applet_no,) char *cmd, char **argv, char **
 		 *
 		 * That is, do not use $SHELL, user's shell, or /bin/sh;
 		 * just call ourselves.
+		 *
+		 * Note that bash reads ~80 chars of the file, and if it sees
+		 * a zero byte before it sees newline, it doesn't try to
+		 * interpret it, but fails with "cannot execute binary file"
+		 * message and exit code 126. For one, this prevents attempts
+		 * to interpret foreign ELF binaries as shell scripts.
 		 */
 		char **ap;
 		char **new;
@@ -7465,9 +7470,7 @@ shellexec(char **argv, const char *path, int idx)
 	int e;
 	char **envp;
 	int exerrno;
-#if ENABLE_FEATURE_SH_STANDALONE
-	int applet_no = -1;
-#endif
+	int applet_no = -1; /* used only by FEATURE_SH_STANDALONE */
 
 	clearredir(/*drop:*/ 1);
 	envp = listvars(VEXPORT, VUNSET, /*end:*/ NULL);
@@ -7477,8 +7480,16 @@ shellexec(char **argv, const char *path, int idx)
 #endif
 	) {
 		tryexec(IF_FEATURE_SH_STANDALONE(applet_no,) argv[0], argv, envp);
+		if (applet_no >= 0) {
+			/* We tried execing ourself, but it didn't work.
+			 * Maybe /proc/self/exe doesn't exist?
+			 * Try $PATH search.
+			 */
+			goto try_PATH;
+		}
 		e = errno;
 	} else {
+ try_PATH:
 		e = ENOENT;
 		while ((cmdname = path_advance(&path, argv[0])) != NULL) {
 			if (--idx < 0 && pathopt == NULL) {
@@ -12888,6 +12899,10 @@ exitshell(void)
 	char *p;
 	int status;
 
+#if ENABLE_FEATURE_EDITING_SAVE_ON_EXIT
+	save_history(line_input_state);
+#endif
+
 	status = exitstatus;
 	TRACE(("pid %d, exitshell(%d)\n", getpid(), status));
 	if (setjmp(loc.loc)) {
@@ -13194,7 +13209,7 @@ int ash_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	if (sflag || minusc == NULL) {
-#if defined MAX_HISTORY && MAX_HISTORY > 0 && ENABLE_FEATURE_EDITING_SAVEHISTORY
+#if MAX_HISTORY > 0 && ENABLE_FEATURE_EDITING_SAVEHISTORY
 		if (iflag) {
 			const char *hp = lookupvar("HISTFILE");
 			if (hp)

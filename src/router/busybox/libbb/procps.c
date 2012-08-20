@@ -127,10 +127,11 @@ static unsigned long fast_strtoul_16(char **endptr)
 	char *str = *endptr;
 	unsigned long n = 0;
 
-	while ((c = *str++) != ' ') {
+	/* Need to stop on both ' ' and '\n' */
+	while ((c = *str++) > ' ') {
 		c = ((c|0x20) - '0');
 		if (c > 9)
-			// c = c + '0' - 'a' + 10:
+			/* c = c + '0' - 'a' + 10: */
 			c = c - ('a' - '0' - 10);
 		n = n*16 + c;
 	}
@@ -143,11 +144,12 @@ static unsigned long fast_strtoul_16(char **endptr)
 /* We cut a lot of corners here for speed */
 static unsigned long fast_strtoul_10(char **endptr)
 {
-	char c;
+	unsigned char c;
 	char *str = *endptr;
 	unsigned long n = *str - '0';
 
-	while ((c = *++str) != ' ')
+	/* Need to stop on both ' ' and '\n' */
+	while ((c = *++str) > ' ')
 		n = n*10 + (c - '0');
 
 	*endptr = str + 1; /* We skip trailing space! */
@@ -198,7 +200,7 @@ int FAST_FUNC procps_read_smaps(pid_t pid, struct smaprec *total,
 	memset(&currec, 0, sizeof(currec));
 	while (fgets(buf, PROCPS_BUFSIZE, file)) {
 		// Each mapping datum has this form:
-		// f7d29000-f7d39000 rw-s ADR M:m OFS FILE
+		// f7d29000-f7d39000 rw-s FILEOFS M:m INODE FILENAME
 		// Size:                nnn kB
 		// Rss:                 nnn kB
 		// .....
@@ -223,7 +225,7 @@ int FAST_FUNC procps_read_smaps(pid_t pid, struct smaprec *total,
 		tp = strchr(buf, '-');
 		if (tp) {
 			// We reached next mapping - the line of this form:
-			// f7d29000-f7d39000 rw-s ADR M:m OFS FILE
+			// f7d29000-f7d39000 rw-s FILEOFS M:m INODE FILENAME
 
 			if (cb) {
 				/* If we have a previous record, there's nothing more
@@ -242,7 +244,7 @@ int FAST_FUNC procps_read_smaps(pid_t pid, struct smaprec *total,
 
 			strncpy(currec.smap_mode, tp, sizeof(currec.smap_mode)-1);
 
-			// skipping "rw-s ADR M:m OFS "
+			// skipping "rw-s FILEOFS M:m INODE "
 			tp = skip_whitespace(skip_fields(tp, 4));
 			// filter out /dev/something (something != zero)
 			if (strncmp(tp, "/dev/", 5) != 0 || strcmp(tp, "/dev/zero\n") == 0) {
