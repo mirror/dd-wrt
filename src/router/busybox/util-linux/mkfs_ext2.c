@@ -48,15 +48,12 @@
 
 #include "libbb.h"
 //#include <linux/fs.h>
-#include <linux/ext2_fs.h>
+//#include <linux/ext2_fs.h>
+#include "bb_e2fs_defs.h"
 
 #define ENABLE_FEATURE_MKFS_EXT2_RESERVED_GDT 0
 #define ENABLE_FEATURE_MKFS_EXT2_DIR_INDEX    1
 
-// from e2fsprogs
-#define s_reserved_gdt_blocks s_padding1
-#define s_mkfs_time           s_reserved[0]
-#define s_flags               s_reserved[22]
 
 #define EXT2_HASH_HALF_MD4       1
 #define EXT2_FLAGS_SIGNED_HASH   0x0001
@@ -482,8 +479,10 @@ int mkfs_ext2_main(int argc UNUSED_PARAM, char **argv)
 	STORE_LE(sb->s_magic, EXT2_SUPER_MAGIC);
 	STORE_LE(sb->s_inode_size, inodesize);
 	// set "Required extra isize" and "Desired extra isize" fields to 28
-	if (inodesize != sizeof(*inode))
-		STORE_LE(sb->s_reserved[21], 0x001C001C);
+	if (inodesize != sizeof(*inode)) {
+		STORE_LE(sb->s_min_extra_isize, 0x001c);
+		STORE_LE(sb->s_want_extra_isize, 0x001c);
+	}
 	STORE_LE(sb->s_first_ino, EXT2_GOOD_OLD_FIRST_INO);
 	STORE_LE(sb->s_log_block_size, blocksize_log2 - EXT2_MIN_BLOCK_LOG_SIZE);
 	STORE_LE(sb->s_log_frag_size, blocksize_log2 - EXT2_MIN_BLOCK_LOG_SIZE);
@@ -615,7 +614,11 @@ int mkfs_ext2_main(int argc UNUSED_PARAM, char **argv)
 
 	// zero boot sectors
 	memset(buf, 0, blocksize);
-	PUT(0, buf, 1024); // N.B. 1024 <= blocksize, so buf[0..1023] contains zeros
+	// Disabled: standard mke2fs doesn't do this, and
+	// on SPARC this destroys Sun disklabel.
+	// Users who need/want zeroing can easily do it with dd.
+	//PUT(0, buf, 1024); // N.B. 1024 <= blocksize, so buf[0..1023] contains zeros
+
 	// zero inode tables
 	for (i = 0; i < ngroups; ++i)
 		for (n = 0; n < inode_table_blocks; ++n)

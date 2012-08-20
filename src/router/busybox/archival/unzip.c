@@ -32,7 +32,7 @@
 //usage:     "\n	-d DIR	Extract files into DIR"
 
 #include "libbb.h"
-#include "archive.h"
+#include "bb_archive.h"
 
 enum {
 #if BB_BIG_ENDIAN
@@ -235,7 +235,7 @@ static void unzip_create_leading_dirs(const char *fn)
 	/* Create all leading directories */
 	char *name = xstrdup(fn);
 	if (bb_make_directory(dirname(name), 0777, FILEUTILS_RECUR)) {
-		bb_error_msg_and_die("exiting"); /* bb_make_directory is noisy */
+		xfunc_die(); /* bb_make_directory is noisy */
 	}
 	free(name);
 }
@@ -249,15 +249,17 @@ static void unzip_extract(zip_header_t *zip_header, int dst_fd)
 			bb_copyfd_exact_size(zip_fd, dst_fd, size);
 	} else {
 		/* Method 8 - inflate */
-		inflate_unzip_result res;
-		if (inflate_unzip(&res, zip_header->formatted.cmpsize, zip_fd, dst_fd) < 0)
+		transformer_aux_data_t aux;
+		init_transformer_aux_data(&aux);
+		aux.bytes_in = zip_header->formatted.cmpsize;
+		if (inflate_unzip(&aux, zip_fd, dst_fd) < 0)
 			bb_error_msg_and_die("inflate error");
 		/* Validate decompression - crc */
-		if (zip_header->formatted.crc32 != (res.crc ^ 0xffffffffL)) {
+		if (zip_header->formatted.crc32 != (aux.crc32 ^ 0xffffffffL)) {
 			bb_error_msg_and_die("crc error");
 		}
 		/* Validate decompression - size */
-		if (zip_header->formatted.ucmpsize != res.bytes_out) {
+		if (zip_header->formatted.ucmpsize != aux.bytes_out) {
 			/* Don't die. Who knows, maybe len calculation
 			 * was botched somewhere. After all, crc matched! */
 			bb_error_msg("bad length");
@@ -595,7 +597,7 @@ int unzip_main(int argc, char **argv)
 					}
 					unzip_create_leading_dirs(dst_fn);
 					if (bb_make_directory(dst_fn, dir_mode, 0)) {
-						bb_error_msg_and_die("exiting");
+						xfunc_die();
 					}
 				} else {
 					if (!S_ISDIR(stat_buf.st_mode)) {
@@ -619,6 +621,7 @@ int unzip_main(int argc, char **argv)
 							i = 'y';
 						} else {
 							printf("replace %s? [y]es, [n]o, [A]ll, [N]one, [r]ename: ", dst_fn);
+							fflush_all();
 							if (!fgets(key_buf, sizeof(key_buf), stdin)) {
 								bb_perror_msg_and_die("can't read input");
 							}

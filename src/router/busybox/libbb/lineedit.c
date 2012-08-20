@@ -1351,7 +1351,8 @@ static void load_history(line_input_t *st_parm)
 
 		/* fill temp_h[], retaining only last MAX_HISTORY lines */
 		memset(temp_h, 0, sizeof(temp_h));
-		st_parm->cnt_history_in_file = idx = 0;
+		idx = 0;
+		st_parm->cnt_history_in_file = 0;
 		while ((line = xmalloc_fgetline(fp)) != NULL) {
 			if (line[0] == '\0') {
 				free(line);
@@ -1389,14 +1390,61 @@ static void load_history(line_input_t *st_parm)
 			st_parm->history[i++] = line;
 		}
 		st_parm->cnt_history = i;
+		if (ENABLE_FEATURE_EDITING_SAVE_ON_EXIT)
+			st_parm->cnt_history_in_file = i;
 	}
 }
 
-/* state->flags is already checked to be nonzero */
+#  if ENABLE_FEATURE_EDITING_SAVE_ON_EXIT
+void save_history(line_input_t *st)
+{
+	FILE *fp;
+
+	if (!st->hist_file)
+		return;
+	if (st->cnt_history <= st->cnt_history_in_file)
+		return;
+
+	fp = fopen(st->hist_file, "a");
+	if (fp) {
+		int i, fd;
+		char *new_name;
+		line_input_t *st_temp;
+
+		for (i = st->cnt_history_in_file; i < st->cnt_history; i++)
+			fprintf(fp, "%s\n", st->history[i]);
+		fclose(fp);
+
+		/* we may have concurrently written entries from others.
+		 * load them */
+		st_temp = new_line_input_t(st->flags);
+		st_temp->hist_file = st->hist_file;
+		st_temp->max_history = st->max_history;
+		load_history(st_temp);
+
+		/* write out temp file and replace hist_file atomically */
+		new_name = xasprintf("%s.%u.new", st->hist_file, (int) getpid());
+		fd = open(new_name, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+		if (fd >= 0) {
+			fp = xfdopen_for_write(fd);
+			for (i = 0; i < st_temp->cnt_history; i++)
+				fprintf(fp, "%s\n", st_temp->history[i]);
+			fclose(fp);
+			if (rename(new_name, st->hist_file) == 0)
+				st->cnt_history_in_file = st_temp->cnt_history;
+		}
+		free(new_name);
+		free_line_input_t(st_temp);
+	}
+}
+#  else
 static void save_history(char *str)
 {
 	int fd;
 	int len, len2;
+
+	if (!state->hist_file)
+		return;
 
 	fd = open(state->hist_file, O_WRONLY | O_CREAT | O_APPEND, 0600);
 	if (fd < 0)
@@ -1441,6 +1489,7 @@ static void save_history(char *str)
 		free_line_input_t(st_temp);
 	}
 }
+#  endif
 # else
 #  define load_history(a) ((void)0)
 #  define save_history(a) ((void)0)
@@ -1469,15 +1518,18 @@ static void remember_in_history(char *str)
 		for (i = 0; i < state->max_history-1; i++)
 			state->history[i] = state->history[i+1];
 		/* i == state->max_history-1 */
+# if ENABLE_FEATURE_EDITING_SAVE_ON_EXIT
+		if (state->cnt_history_in_file)
+			state->cnt_history_in_file--;
+# endif
 	}
 	/* i <= state->max_history-1 */
 	state->history[i++] = xstrdup(str);
 	/* i <= state->max_history */
 	state->cur_history = i;
 	state->cnt_history = i;
-# if MAX_HISTORY > 0 && ENABLE_FEATURE_EDITING_SAVEHISTORY
-	if ((state->flags & SAVE_HISTORY) && state->hist_file)
-		save_history(str);
+# if ENABLE_FEATURE_EDITING_SAVEHISTORY && !ENABLE_FEATURE_EDITING_SAVE_ON_EXIT
+	save_history(str);
 # endif
 	IF_FEATURE_EDITING_FANCY_PROMPT(num_ok_lines++;)
 }
@@ -2132,7 +2184,7 @@ int FAST_FUNC read_line_input(line_input_t *st, const char *prompt, char *comman
 	state = st ? st : (line_input_t*) &const_int_0;
 #if MAX_HISTORY > 0
 # if ENABLE_FEATURE_EDITING_SAVEHISTORY
-	if ((state->flags & SAVE_HISTORY) && state->hist_file)
+	if (state->hist_file)
 		if (state->cnt_history == 0)
 			load_history(state);
 # endif
@@ -2152,14 +2204,17 @@ int FAST_FUNC read_line_input(line_input_t *st, const char *prompt, char *comman
 #define command command_must_not_be_used
 
 	new_settings = initial_settings;
-	new_settings.c_lflag &= ~ICANON;        /* unbuffered input */
-	/* Turn off echoing and CTRL-C, so we can trap it */
-	new_settings.c_lflag &= ~(ECHO | ECHONL | ISIG);
-	/* Hmm, in linux c_cc[] is not parsed if ICANON is off */
+	/* ~ICANON: unbuffered input (most c_cc[] are disabled, VMIN/VTIME are enabled) */
+	/* ~ECHO, ~ECHONL: turn off echoing, including newline echoing */
+	/* ~ISIG: turn off INTR (ctrl-C), QUIT, SUSP */
+	new_settings.c_lflag &= ~(ICANON | ECHO | ECHONL | ISIG);
+	/* reads would block only if < 1 char is available */
 	new_settings.c_cc[VMIN] = 1;
+	/* no timeout (reads block forever) */
 	new_settings.c_cc[VTIME] = 0;
-	/* Turn off CTRL-C, so we can trap it */
-	new_settings.c_cc[VINTR] = _POSIX_VDISABLE;
+	/* Should be not needed if ISIG is off: */
+	/* Turn off CTRL-C */
+	/* new_settings.c_cc[VINTR] = _POSIX_VDISABLE; */
 	tcsetattr_stdin_TCSANOW(&new_settings);
 
 #if ENABLE_USERNAME_OR_HOMEDIR
@@ -2452,6 +2507,44 @@ int FAST_FUNC read_line_input(line_input_t *st, const char *prompt, char *comman
 				vi_cmdmode = 1;
 				input_backward(1);
 			}
+			/* Handle a few ESC-<key> combinations the same way
+			 * standard readline bindings (IOW: bash) do.
+			 * Often, Alt-<key> generates ESC-<key>.
+			 */
+			ic = lineedit_read_key(read_key_buffer, timeout);
+			switch (ic) {
+				//case KEYCODE_LEFT: - bash doesn't do this
+				case 'b':
+					ctrl_left();
+					break;
+				//case KEYCODE_RIGHT: - bash doesn't do this
+				case 'f':
+					ctrl_right();
+					break;
+				//case KEYCODE_DELETE: - bash doesn't do this
+				case 'd':  /* Alt-D */
+				{
+					/* Delete word forward */
+					int nc, sc = cursor;
+					ctrl_right();
+					nc = cursor;
+					input_backward(cursor - sc);
+					while (--nc >= cursor)
+						input_delete(1);
+					break;
+				}
+				case '\b':   /* Alt-Backspace(?) */
+				case '\x7f': /* Alt-Backspace(?) */
+				//case 'w': - bash doesn't do this
+				{
+					/* Delete word backward */
+					int sc = cursor;
+					ctrl_left();
+					while (sc-- > cursor)
+						input_delete(1);
+					break;
+				}
+			}
 			break;
 #endif /* FEATURE_COMMAND_EDITING_VI */
 
@@ -2480,9 +2573,11 @@ int FAST_FUNC read_line_input(line_input_t *st, const char *prompt, char *comman
 			input_backward(1);
 			break;
 		case KEYCODE_CTRL_LEFT:
+		case KEYCODE_ALT_LEFT: /* bash doesn't do it */
 			ctrl_left();
 			break;
 		case KEYCODE_CTRL_RIGHT:
+		case KEYCODE_ALT_RIGHT: /* bash doesn't do it */
 			ctrl_right();
 			break;
 		case KEYCODE_HOME:

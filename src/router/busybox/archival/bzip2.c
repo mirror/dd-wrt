@@ -17,9 +17,9 @@
 //usage:     "\n	-f	Force"
 
 #include "libbb.h"
-#include "archive.h"
+#include "bb_archive.h"
 
-#define CONFIG_BZIP2_FEATURE_SPEED 1
+#define CONFIG_BZIP2_FAST 1
 
 /* Speed test:
  * Compiled with gcc 4.2.1, run on Athlon 64 1800 MHz (512K L2 cache).
@@ -27,7 +27,7 @@
  * (time to compress gcc-4.2.1.tar is 126.4% compared to bbox).
  * At SPEED 5 difference is 32.7%.
  *
- * Test run of all CONFIG_BZIP2_FEATURE_SPEED values on a 11Mb text file:
+ * Test run of all CONFIG_BZIP2_FAST values on a 11Mb text file:
  *     Size   Time (3 runs)
  * 0:  10828  4.145 4.146 4.148
  * 1:  11097  3.845 3.860 3.861
@@ -111,7 +111,7 @@ IF_DESKTOP(long long) int bz_write(bz_stream *strm, void* rbuf, ssize_t rlen, vo
 }
 
 static
-IF_DESKTOP(long long) int FAST_FUNC compressStream(unpack_info_t *info UNUSED_PARAM)
+IF_DESKTOP(long long) int FAST_FUNC compressStream(transformer_aux_data_t *aux UNUSED_PARAM)
 {
 	IF_DESKTOP(long long) int total;
 	ssize_t count;
