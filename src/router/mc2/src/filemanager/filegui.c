@@ -62,6 +62,9 @@
 #define USE_STATVFS 0
 #endif
 
+
+#define USE_STATVFS 0
+
 #include <errno.h>
 #include <ctype.h>
 #include <stdio.h>
