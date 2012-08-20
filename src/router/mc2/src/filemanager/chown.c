@@ -177,7 +177,7 @@ init_chown (void)
     single_set = (current_panel->marked < 2) ? 3 : 0;
 
     ch_dlg =
-        create_dlg (TRUE, 0, 0, 18, 74, dialog_colors, chown_callback, "[Chown]",
+        create_dlg (TRUE, 0, 0, 18, 74, dialog_colors, chown_callback, NULL, "[Chown]",
                     _("Chown command"), DLG_CENTER | DLG_REVERSE);
 
     for (i = 0; i < BUTTONS - single_set; i++)
@@ -258,15 +258,13 @@ do_chown (uid_t u, gid_t g)
 static void
 apply_chowns (uid_t u, gid_t g)
 {
-    char *fname;
 
     need_update = end_chown = 1;
     do_chown (u, g);
 
     do
     {
-        fname = next_file ();
-
+        next_file ();
         do_chown (u, g);
     }
     while (current_panel->marked);

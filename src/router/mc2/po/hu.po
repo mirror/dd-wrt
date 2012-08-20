@@ -3,24 +3,16 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Arpad Biro <biro_arpad@yahoo.com>, 2003, 2004, 2005.
-# Gergely Szabo <szg@subogero.com>, 2009, 2011.
-# Gergely Szabó <szg@subogero.com>, 2011.
-# Laszlo Dvornik <rezuri@zoho.com>, 2011.
-# Rezso Pader <rezso@rezso.net>, 2011.
 # Rezső Páder <rezso@rezso.net>, 2012.
-# rezso <rezso@rezso.net>, 2011.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
-# Szabolcs Ban <shooby@gnome.hu>, 2001.
-# Szabolcs Szasz <sz@szasz.hu>, 2001.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-04-25 19:29+0300\n"
-"PO-Revision-Date: 2012-03-25 11:18+0000\n"
+"POT-Creation-Date: 2012-07-18 13:34+0300\n"
+"PO-Revision-Date: 2012-07-13 08:36+0000\n"
 "Last-Translator: Rezső Páder <rezso@rezso.net>\n"
-"Language-Team: Hungarian (http://www.transifex.net/projects/p/mc/language/"
+"Language-Team: Hungarian (http://www.transifex.com/projects/p/mc/language/"
 "hu/)\n"
 "Language: hu\n"
 "MIME-Version: 1.0\n"
@@ -124,8 +116,8 @@ msgstr "Hibás elem szám %d"
 msgid "Regular expression error"
 msgstr "reguláris kifejezés hiba"
 
-msgid "&Normal"
-msgstr "&Normális"
+msgid "No&rmal"
+msgstr ""
 
 msgid "Re&gular expression"
 msgstr "&Reguláris kifejezés"
@@ -582,8 +574,8 @@ msgstr "Nyomkövetési (debug) szint beállítása"
 msgid "Launches the file viewer on a file"
 msgstr "Fájlmegjelenítés indítása a megadott fájlon"
 
-msgid "Edits one file"
-msgstr "Fájl szerkesztése"
+msgid "Edit files"
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "Xterm-funkciók kikényszerítése"
@@ -645,29 +637,11 @@ msgid ""
 "   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
 "   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors KULCSSZÓ={ELŐTÉR},{HÁTTÉR},{ATTR}:KULCSSZÓ2=...\\n\n"
-"\\n\n"
-"Az {ELŐTÉR}, {HÁTTÉR} és {ATTR} elhagyható, ekkor az alapértelmezett lesz "
-"használva.\\n\n"
-"\\n\n"
-" Kulcsszavak:\\n\n"
-"   Globális:       errors, disabled, reverse, gauge, header\\n\n"
-"                 input, inputmark, inputunchanged, commandlinemark\\n\n"
-"                 bbarhotkey, bbarbutton, statusbar\\n\n"
-"   Fájlmegjelenítés: normal, selected, marked, markselect\\n\n"
-"   Párbeszéd dobozok: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,"
-"\\n\n"
-"                 errdhotfocus\\n\n"
-"   Menük:        menunormal, menuhot, menusel, menuhotsel, menuinactive\\n\n"
-"   Felugró menük:  pmenunormal, pmenusel, pmenutitle\\n\n"
-"   Szerkesztő:       editnormal, editbold, editmarked, editwhitespace,\\n\n"
-"                 editlinestate\\n\n"
-"   Megjelenítő:       viewbold, viewunderline, viewselected\\n\n"
-"   Súgó:         helpnormal, helpitalic, helpbold, helplink, helpslink\\n\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -889,9 +863,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Diff:"
 
-#, fuzzy, c-format
+#, c-format
 msgid "\"%s\" is a directory"
-msgstr "\"%s\" nem könyvtár\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -915,20 +889,6 @@ msgstr "< Automatikus >"
 
 msgid "< Reload Current Syntax >"
 msgstr "< Aktuális szintaktika újratöltése >"
-
-msgid "About"
-msgstr "Névjegy"
-
-msgid ""
-"Copyright (C) 1996-2010 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
-" Copyright (C) 1996-2010 the Free Software Foundation \n"
-"\n"
-"                a Midnight Commander\n"
-"        könnyen kezelhető szövegszerkesztője"
 
 #, c-format
 msgid "Cannot open %s for reading"
@@ -1003,27 +963,6 @@ msgstr "Fájlnév:"
 msgid "Save As"
 msgstr "Mentés másként"
 
-msgid "Syntax file edit"
-msgstr "Szintaxisfájl szerkesztése"
-
-msgid "Which syntax file you want to edit?"
-msgstr "Melyik szintaxisfájlt kívánja szerkeszteni?"
-
-msgid "&User"
-msgstr "&Sajátomat"
-
-msgid "&System Wide"
-msgstr "&Rendszerszintűt"
-
-msgid "Menu edit"
-msgstr "Menüszerkesztés"
-
-msgid "Which menu file do you want to edit?"
-msgstr "Melyik menüfájlt kívánja szerkeszteni?"
-
-msgid "&Local"
-msgstr "&Könyvtárét (helyi)"
-
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Nagy blokk, a művelet nem biztos hogy visszavonható."
 
@@ -1045,9 +984,8 @@ msgstr "Mentési mód"
 msgid "Save as"
 msgstr "Mentés másként"
 
-#, fuzzy
 msgid "Cannot save: destination is not a regular file"
-msgstr "Nem lehet megjeleníteni - speciális fájl."
+msgstr ""
 
 msgid "A file already exists with this name"
 msgstr "Már létezik ilyen nevű fájl."
@@ -1089,15 +1027,29 @@ msgstr "Fájl mentése"
 msgid "&Save"
 msgstr "M&entés"
 
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes"
-msgstr ""
-"A szöveg módosult a legutóbbi mentés óta.\n"
-"Ha továbblép, ezek a változások elvesznek."
-
 msgid "Load"
 msgstr "Betöltés"
+
+msgid "Syntax file edit"
+msgstr "Szintaxisfájl szerkesztése"
+
+msgid "Which syntax file you want to edit?"
+msgstr "Melyik szintaxisfájlt kívánja szerkeszteni?"
+
+msgid "&User"
+msgstr "&Sajátomat"
+
+msgid "&System wide"
+msgstr ""
+
+msgid "Menu edit"
+msgstr "Menüszerkesztés"
+
+msgid "Which menu file do you want to edit?"
+msgstr "Melyik menüfájlt kívánja szerkeszteni?"
+
+msgid "&Local"
+msgstr "&Könyvtárét (helyi)"
 
 msgid "Replace"
 msgstr "Csere"
@@ -1106,8 +1058,23 @@ msgstr "Csere"
 msgid "%ld replacements made"
 msgstr "%ld csere történt."
 
-msgid "&Cancel quit"
-msgstr "&Mégsem lép ki"
+msgid "[NoName]"
+msgstr ""
+
+#, c-format
+msgid ""
+"File %s was modified.\n"
+"Save before close?"
+msgstr ""
+
+msgid "Close file"
+msgstr ""
+
+#, c-format
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file %s?"
+msgstr ""
 
 msgid "This function is not implemented"
 msgstr "Ez a funkció nincs megvalósítva."
@@ -1189,7 +1156,7 @@ msgid "Press any key:"
 msgstr "Nyomjon meg egy billentyűt:"
 
 msgid ""
-"Current text was modified without a file save\n"
+"Current text was modified without a file save.\n"
 "Continue discards these changes"
 msgstr ""
 "A szöveg módosult a legutóbbi mentés óta.\n"
@@ -1229,11 +1196,17 @@ msgstr "Csere erre:"
 msgid "Confirm replace"
 msgstr "Csere megerősítése"
 
+msgid "NoName"
+msgstr ""
+
 msgid "&Open file..."
 msgstr "&Megnyitás..."
 
 msgid "&New"
 msgstr "&Új"
+
+msgid "&Close"
+msgstr ""
 
 msgid "Save &as..."
 msgstr "Mentés m&ásként"
@@ -1355,8 +1328,14 @@ msgstr "Makró &törlése..."
 msgid "Record/Repeat &actions"
 msgstr "&Akciók felvétele/ismétlése"
 
-msgid "'ispell' s&pell check"
-msgstr "&Helyesírás-ellenőrzés"
+msgid "S&pell check"
+msgstr ""
+
+msgid "C&heck word"
+msgstr ""
+
+msgid "Change spelling &language"
+msgstr ""
 
 msgid "&Mail..."
 msgstr "&Mail..."
@@ -1378,6 +1357,24 @@ msgstr "K&imenet beillesztése..."
 
 msgid "&External formatter"
 msgstr "Kü&lső formázó"
+
+msgid "&Move"
+msgstr "Át&helyezés"
+
+msgid "&Resize"
+msgstr ""
+
+msgid "&Toggle fullscreen"
+msgstr ""
+
+msgid "&Next"
+msgstr ""
+
+msgid "&Previous"
+msgstr ""
+
+msgid "&List..."
+msgstr ""
 
 msgid "&General..."
 msgstr "Á&ltalános..."
@@ -1414,6 +1411,9 @@ msgstr "&Parancs"
 
 msgid "For&mat"
 msgstr "For&mátum"
+
+msgid "&Window"
+msgstr ""
 
 msgid "&Options"
 msgstr "Beállítás&ok"
@@ -1475,6 +1475,19 @@ msgstr "Tördelés"
 msgid "Editor options"
 msgstr "A szövegszerkesztő beállításai"
 
+msgid "About"
+msgstr "Névjegy"
+
+msgid ""
+"Copyright (C) 1996-2012 the Free Software Foundation\n"
+"\n"
+"            A user friendly text editor\n"
+"         written for the Midnight Commander"
+msgstr ""
+
+msgid "Open files"
+msgstr ""
+
 msgid "Edit: "
 msgstr "Szerkeszt:"
 
@@ -1495,6 +1508,27 @@ msgstr "Töröl"
 
 msgid "ButtonBar|PullDn"
 msgstr "Főmenü"
+
+#, fuzzy
+msgid "&Add word"
+msgstr "Ú&j"
+
+msgid "Language"
+msgstr ""
+
+msgid "Misspelled"
+msgstr ""
+
+#, fuzzy
+msgid "Check word"
+msgstr "Csak &teljes szót"
+
+msgid "Suggest"
+msgstr ""
+
+#, fuzzy
+msgid "Select language"
+msgstr "&Csoport kijelölése"
 
 msgid "Load syntax file"
 msgstr "Szintaxisfájl betöltése"
@@ -1905,6 +1939,9 @@ msgstr "Kiterjesztésfájl szerkesztése"
 msgid "Which extension file you want to edit?"
 msgstr "Melyik kiterjesztésfájlt kívánja szerkeszteni?"
 
+msgid "&System Wide"
+msgstr "&Rendszerszintűt"
+
 msgid "Highlighting groups file edit"
 msgstr "Színkiemelés fájl szerkesztéses"
 
@@ -1962,6 +1999,9 @@ msgstr "\"%s\" nem szimbolikus link"
 msgid "FTP to machine"
 msgstr "FTP-kapcsolat"
 
+msgid "SFTP to machine"
+msgstr ""
+
 msgid "Shell link to machine"
 msgstr "Shell-kapcsolat egy másik géppel"
 
@@ -2003,6 +2043,9 @@ msgstr ""
 msgid "Cannot read directory contents"
 msgstr "Könyvtár tartalma nem olvasható"
 
+msgid "Parameter"
+msgstr "Paraméter"
+
 #, c-format
 msgid ""
 "Cannot create temporary command file\n"
@@ -2010,9 +2053,6 @@ msgid ""
 msgstr ""
 "Nem sikerült ideiglenes parancsfájlt létrehozni\n"
 "%s"
-
-msgid "Parameter"
-msgstr "Paraméter"
 
 #, c-format
 msgid " %s%s file error"
@@ -2620,9 +2660,6 @@ msgstr "\"%s\" keresése"
 msgid "Searching"
 msgstr "Keresés"
 
-msgid "&Move"
-msgstr "Át&helyezés"
-
 msgid "&Remove"
 msgstr "&Törlés"
 
@@ -2870,6 +2907,9 @@ msgstr "&FTP-kapcsolat..."
 
 msgid "S&hell link..."
 msgstr "Sh&ell-kapcsolat..."
+
+msgid "S&FTP link..."
+msgstr ""
 
 msgid "SM&B link..."
 msgstr "SM&B-kapcsolat..."
@@ -3358,6 +3398,9 @@ msgstr "Nem sikerült lezárni a csövet."
 msgid "Cannot run external panelize in a non-local directory"
 msgstr "Távoli/virtuális könyvtáron nem megy a  külső panel-parancsot"
 
+msgid "Modified git files"
+msgstr "Módosított git fájlok"
+
 msgid "Find rejects after patching"
 msgstr "\"patch\" parancs utáni problémajegyzékek (*.rej) keresése"
 
@@ -3661,9 +3704,8 @@ msgstr "Virtuális fájlrendszerek:"
 msgid "Data types:"
 msgstr "Adattípusok:"
 
-#, fuzzy
 msgid "Root directory:"
-msgstr "Home könyvtár: "
+msgstr ""
 
 msgid "System data"
 msgstr "Rendszer adatok"
@@ -3771,10 +3813,6 @@ msgstr "Fish: verzióegyeztetés..."
 
 msgid "fish: Getting host info..."
 msgstr "Fish: Gép info lekérdezés..."
-
-#, c-format
-msgid "fish: Connected, home %s."
-msgstr "Fish: kapcsolódva; könyvtár: %s"
 
 #, c-format
 msgid "fish: Reading directory %s..."
@@ -3934,6 +3972,66 @@ msgid ""
 msgstr ""
 "Figyelem: hibás jel (%c) ebben: %s:\n"
 "%s\n"
+
+#, fuzzy, c-format
+msgid "sftp: an error occured while reading %s: %s"
+msgstr "Hiba történt a felhasználói adatok migrálásakor: %s"
+
+msgid "sftp: Unable to get current user name."
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Invalid host name."
+msgstr "Ftpfs: hibás gépnév"
+
+#, fuzzy
+msgid "sftp: Invalid port value."
+msgstr "Ftpfs: hibás gépnév"
+
+#, fuzzy, c-format
+msgid "sftp: %s"
+msgstr "Ftpfs: %s"
+
+#, fuzzy, c-format
+msgid "sftp: making connection to %s"
+msgstr "Ftpfs: kapcsolódás a kiszolgálóhoz: %s"
+
+#, fuzzy
+msgid "sftp: connection interrupted by user"
+msgstr "Ftpfs: a kapcsolat a felhasználó kérésére megszakítva"
+
+#, fuzzy, c-format
+msgid "sftp: connection to server failed: %s"
+msgstr "Ftpfs: nem sikerült kapcsolódni a kiszolgálóhoz: %s"
+
+#, c-format
+msgid "sftp: Enter passphrase for %s "
+msgstr ""
+
+msgid "sftp: Passphrase is empty."
+msgstr ""
+
+#, fuzzy, c-format
+msgid "sftp: Enter password for %s "
+msgstr "Ftpfs: jelszó küldése..."
+
+msgid "sftp: Password is empty."
+msgstr ""
+
+#, c-format
+msgid "sftp: Failure establishing SSH session: (%d)"
+msgstr ""
+
+msgid "sftp: No file handler data present for reading file"
+msgstr ""
+
+#, c-format
+msgid "sftp: (Ctrl-G break) Listing... %s"
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Listing done."
+msgstr "Listázási mód"
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4130,6 +4228,9 @@ msgstr ""
 "Az fájl nem menthető:\n"
 "%s"
 
+msgid "&Cancel quit"
+msgstr "&Mégsem lép ki"
+
 msgid "View: "
 msgstr "Megnéz: "
 
@@ -4152,6 +4253,3 @@ msgstr "Keresés kész"
 
 msgid "Continue from beginning?"
 msgstr "Folytatás az elejéről?"
-
-#~ msgid "fish: Setting up current directory..."
-#~ msgstr "Fish: aktuális könyvtár beállítása..."

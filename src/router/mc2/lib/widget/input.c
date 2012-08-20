@@ -105,17 +105,21 @@ draw_history_button (WInput * in)
     char c;
     gboolean disabled = (((Widget *) in)->options & W_DISABLED) != 0;
 
-    c = in->history->next ? (in->history->prev ? '|' : 'v') : '^';
+    if (g_list_next (in->history_current) == NULL)
+        c = '^';
+    else if (g_list_previous (in->history_current) == NULL)
+        c = 'v';
+    else
+        c = '|';
+
     widget_move (&in->widget, 0, in->field_width - HISTORY_BUTTON_WIDTH);
     tty_setcolor (disabled ? DISABLED_COLOR : in->color[WINPUTC_HISTORY]);
+
 #ifdef LARGE_HISTORY_BUTTON
-    {
-        Dlg_head *h;
-        h = in->widget.owner;
-        tty_print_string ("[ ]");
-        widget_move (&in->widget, 0, in->field_width - HISTORY_BUTTON_WIDTH + 1);
-    }
+    tty_print_string ("[ ]");
+    widget_move (&in->widget, 0, in->field_width - HISTORY_BUTTON_WIDTH + 1);
 #endif
+
     tty_print_char (c);
 }
 
@@ -191,7 +195,8 @@ do_show_hist (WInput * in)
 
     len = get_history_length (in->history);
 
-    r = history_show (&in->history, &in->widget);
+    r = history_show (&in->history, &in->widget,
+                      g_list_position (in->history_current, in->history));
     if (r != NULL)
     {
         input_assign_text (in, r);
@@ -226,6 +231,11 @@ input_history_strip_password (char *url)
         colon = strchr (delim + strlen (VFS_PATH_URL_DELIMITER), ':');
     else
         colon = strchr (url, ':');
+
+    /* if 'colon' before 'at', 'colon' delimits user and password: user:password@host */
+    /* if 'colon' after 'at', 'colon' delimits host and port: user@host:port */
+    if (colon != NULL && colon > at)
+        colon = NULL;
 
     if (colon == NULL)
         return g_strdup (url);
@@ -268,6 +278,7 @@ push_history (WInput * in, const char *text)
         in->history_changed)
     {
         in->history = list_append_unique (in->history, t);
+        in->history_current = in->history;
         in->history_changed = TRUE;
     }
     else
@@ -628,12 +639,12 @@ hist_prev (WInput * in)
     if (in->need_push)
         push_history (in, in->buffer);
 
-    prev = g_list_previous (in->history);
+    prev = g_list_previous (in->history_current);
     if (prev != NULL)
     {
-        in->history = prev;
-        in->history_changed = TRUE;
         input_assign_text (in, (char *) prev->data);
+        in->history_current = prev;
+        in->history_changed = TRUE;
         in->need_push = FALSE;
     }
 }
@@ -655,14 +666,17 @@ hist_next (WInput * in)
     if (in->history == NULL)
         return;
 
-    next = g_list_next (in->history);
+    next = g_list_next (in->history_current);
     if (next == NULL)
+    {
         input_assign_text (in, "");
+        in->history_current = in->history;
+    }
     else
     {
-        in->history = next;
-        in->history_changed = TRUE;
         input_assign_text (in, (char *) next->data);
+        in->history_current = next;
+        in->history_changed = TRUE;
         in->need_push = FALSE;
     }
 }
@@ -826,6 +840,7 @@ input_load_history (const gchar * event_group_name, const gchar * event_name,
     (void) event_name;
 
     in->history = history_load (ev->cfg, in->history_name);
+    in->history_current = in->history;
 
     if (in->init_text == NULL)
         def_text = "";
@@ -914,6 +929,10 @@ static int
 input_event (Gpm_Event * event, void *data)
 {
     WInput *in = (WInput *) data;
+    Widget *w = (Widget *) data;
+
+    if (!mouse_global_in_widget (event, w))
+        return MOU_UNHANDLED;
 
     if ((event->type & GPM_DOWN) != 0)
     {
@@ -923,19 +942,25 @@ input_event (Gpm_Event * event, void *data)
 
     if ((event->type & (GPM_DOWN | GPM_DRAG)) != 0)
     {
-        dlg_select_widget (in);
+        Gpm_Event local;
 
-        if (event->x >= in->field_width - HISTORY_BUTTON_WIDTH + 1
+        local = mouse_get_local (event, w);
+
+        dlg_select_widget (w);
+
+        if (local.x >= in->field_width - HISTORY_BUTTON_WIDTH + 1
             && should_show_history_button (in))
             do_show_hist (in);
         else
         {
             in->point = str_length (in->buffer);
-            if (event->x + in->term_first_shown - 1 < str_term_width1 (in->buffer))
-                in->point = str_column_to_pos (in->buffer, event->x + in->term_first_shown - 1);
+            if (local.x + in->term_first_shown - 1 < str_term_width1 (in->buffer))
+                in->point = str_column_to_pos (in->buffer, local.x + in->term_first_shown - 1);
         }
+
         input_update (in, TRUE);
     }
+
     /* A lone up mustn't do anything */
     if (in->highlight && (event->type & (GPM_UP | GPM_DRAG)) != 0)
         return MOU_NORMAL;
@@ -995,6 +1020,7 @@ input_new (int y, int x, const int *input_colors, int width, const char *def_tex
 
     /* prepare to history setup */
     in->history = NULL;
+    in->history_current = NULL;
     in->history_changed = FALSE;
     in->history_name = NULL;
     if ((histname != NULL) && (*histname != '\0'))
@@ -1110,8 +1136,6 @@ input_handle_char (WInput * in, int key)
     cb_ret_t v;
     unsigned long command;
 
-    v = MSG_NOT_HANDLED;
-
     if (quote != 0)
     {
         input_free_completions (in);
@@ -1172,12 +1196,13 @@ input_assign_text (WInput * in, const char *text)
 {
     input_free_completions (in);
     g_free (in->buffer);
-    in->buffer = g_strdup (text);       /* was in->buffer->text */
-    in->current_max_size = strlen (in->buffer) + 1;
+    in->current_max_size = strlen (text) + 1;
+    in->buffer = g_strndup (text, in->current_max_size);        /* was in->buffer->text */
     in->point = str_length (in->buffer);
     in->mark = 0;
     in->need_push = TRUE;
     in->charpoint = 0;
+    input_update (in, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */

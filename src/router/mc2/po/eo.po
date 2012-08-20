@@ -3,15 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Keith Bowes <zooplah@gmail.com>, 2011, 2012.
+# Keith Bowes <zooplah@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-04-25 19:29+0300\n"
-"PO-Revision-Date: 2012-03-20 18:54+0000\n"
+"POT-Creation-Date: 2012-07-18 13:34+0300\n"
+"PO-Revision-Date: 2012-07-13 08:36+0000\n"
 "Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
-"Language-Team: Esperanto (http://www.transifex.net/projects/p/mc/language/"
+"Language-Team: Esperanto (http://www.transifex.com/projects/p/mc/language/"
 "eo/)\n"
 "Language: eo\n"
 "MIME-Version: 1.0\n"
@@ -115,8 +115,8 @@ msgstr "Nevalida era numero %d"
 msgid "Regular expression error"
 msgstr "Regulesprima eraro"
 
-msgid "&Normal"
-msgstr "&Normala"
+msgid "No&rmal"
+msgstr ""
 
 msgid "Re&gular expression"
 msgstr "Re&gulesprimo"
@@ -573,8 +573,8 @@ msgstr "Specifi senerarigan nivelon"
 msgid "Launches the file viewer on a file"
 msgstr "Plenumigi la dosiero-legilon je la dosiero"
 
-msgid "Edits one file"
-msgstr "Redakti unuopan dosieron"
+msgid "Edit files"
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "Devigi xterm-trajtojn"
@@ -634,28 +634,11 @@ msgid ""
 "   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
 "   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors ŜLOSILVORTO={TEKSTO},{FONO},{ATRIBUTO}:ŜLOSILVORTO_DUA=...\n"
-"\n"
-"{TEKSTO}, {FONO} kaj {ATRIBUTO} povas esti preterlasitaj; la aŭtomataj "
-"valoroj estos uzataj\n"
-"\n"
-" Ŝlosilvortoj:\n"
-"   Universala:       errors, disabled, reverse, gauge, header\n"
-"                     input, inputmark, inputunchanged, commandlinemark\n"
-"                     bbarhotkey, bbarbutton, statusbar\n"
-"   Dosiera elektilo: normal, selected, marked, markselect\n"
-"   Dialogujoj:       dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
-"                     errdhotfocus\n"
-"   Menuzono:         menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-"   Menuo:            pmenunormal, pmenusel, pmenutitle\n"
-"   Tekstoredaktilo:  editnormal, editbold, editmarked, editwhitespace,\n"
-"                     editlinestate\n"
-"   Legilo:           viewbold, viewunderline, viewselected\n"
-"   Helpo:            helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -704,7 +687,7 @@ msgstr ""
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
-msgstr "GNU Midnight Commander %s\n"
+msgstr "Midnight Commander de GNU, %s\n"
 
 msgid "Main options"
 msgstr "Ĉefa agordo"
@@ -875,9 +858,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Diff:"
 
-#, fuzzy, c-format
+#, c-format
 msgid "\"%s\" is a directory"
-msgstr "%s ne estas dosierujo\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -901,20 +884,6 @@ msgstr "< Aŭtomata >"
 
 msgid "< Reload Current Syntax >"
 msgstr "< Reŝargi nunan sintakson >"
-
-msgid "About"
-msgstr "Pri"
-
-msgid ""
-"Copyright (C) 1996-2010 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
-"Koprirajto © 1996-2010, Free Software Foundation\n"
-"\n"
-"            Afabla tekstoredaktilo\n"
-"         skribita por Midnight Commander"
 
 #, c-format
 msgid "Cannot open %s for reading"
@@ -989,27 +958,6 @@ msgstr "Enmeti dosiernomon:"
 msgid "Save As"
 msgstr "Konservi kiel"
 
-msgid "Syntax file edit"
-msgstr "Sintakso-dosiera redaktado"
-
-msgid "Which syntax file you want to edit?"
-msgstr "Kiun sintakso-dosiero vi volas redakti?"
-
-msgid "&User"
-msgstr "&Uzanto"
-
-msgid "&System Wide"
-msgstr "Tut&sisteme"
-
-msgid "Menu edit"
-msgstr "Menua redaktilo"
-
-msgid "Which menu file do you want to edit?"
-msgstr "Kiun menuo-dosiero vi volas redakti?"
-
-msgid "&Local"
-msgstr "&Loka"
-
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Bloko estas tra granda, do vi eble ne povos malfari tiun agon"
 
@@ -1031,9 +979,8 @@ msgstr "Reĝimo de redakta konservado"
 msgid "Save as"
 msgstr "Konservi kiel"
 
-#, fuzzy
 msgid "Cannot save: destination is not a regular file"
-msgstr "Ne eblas vidi: ne regula dosiero"
+msgstr ""
 
 msgid "A file already exists with this name"
 msgstr "Dosiero kun tiu nomo jam ekzistas"
@@ -1075,15 +1022,29 @@ msgstr "Konservi dosieron"
 msgid "&Save"
 msgstr "&Konservi"
 
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes"
-msgstr ""
-"Aktuala teksto estis modifita sen dosiera konservado.\n"
-"Daŭrigi forviŝas tiujn ŝanĝojn"
-
 msgid "Load"
 msgstr "Ŝargi"
+
+msgid "Syntax file edit"
+msgstr "Sintakso-dosiera redaktado"
+
+msgid "Which syntax file you want to edit?"
+msgstr "Kiun sintakso-dosiero vi volas redakti?"
+
+msgid "&User"
+msgstr "&Uzanto"
+
+msgid "&System wide"
+msgstr ""
+
+msgid "Menu edit"
+msgstr "Menua redaktilo"
+
+msgid "Which menu file do you want to edit?"
+msgstr "Kiun menuo-dosiero vi volas redakti?"
+
+msgid "&Local"
+msgstr "&Loka"
 
 msgid "Replace"
 msgstr "Anstataŭigi"
@@ -1092,8 +1053,23 @@ msgstr "Anstataŭigi"
 msgid "%ld replacements made"
 msgstr "%ld anstataŭigoj faritaj"
 
-msgid "&Cancel quit"
-msgstr "Ne &eliri"
+msgid "[NoName]"
+msgstr ""
+
+#, c-format
+msgid ""
+"File %s was modified.\n"
+"Save before close?"
+msgstr ""
+
+msgid "Close file"
+msgstr ""
+
+#, c-format
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file %s?"
+msgstr ""
 
 msgid "This function is not implemented"
 msgstr "Tiu funkcio ne estas realigita"
@@ -1176,11 +1152,11 @@ msgid "Press any key:"
 msgstr "Premu iun klavon:"
 
 msgid ""
-"Current text was modified without a file save\n"
+"Current text was modified without a file save.\n"
 "Continue discards these changes"
 msgstr ""
-"Aktuala teksto estis modifita sen dosiera konservado\n"
-"Daŭri forviŝas tiujn ŝanĝojn"
+"Aktuala teksto estis modifita sen dosiera konservado.\n"
+"Daŭrigi forviŝas tiujn ŝanĝojn"
 
 msgid "In se&lection"
 msgstr "En e&lekto"
@@ -1216,11 +1192,17 @@ msgstr "Anstataŭigi per:"
 msgid "Confirm replace"
 msgstr "Konfirmi anstataŭigon"
 
+msgid "NoName"
+msgstr ""
+
 msgid "&Open file..."
 msgstr "&Malfermi dosieron..."
 
 msgid "&New"
 msgstr "&Nova"
+
+msgid "&Close"
+msgstr ""
 
 msgid "Save &as..."
 msgstr "K&onservi kiel..."
@@ -1342,8 +1324,14 @@ msgstr "Forigi makr&oon..."
 msgid "Record/Repeat &actions"
 msgstr "Registri/refari &agojn"
 
-msgid "'ispell' s&pell check"
-msgstr "&Plenumi je 'ispell'"
+msgid "S&pell check"
+msgstr ""
+
+msgid "C&heck word"
+msgstr ""
+
+msgid "Change spelling &language"
+msgstr ""
 
 msgid "&Mail..."
 msgstr "&Retpoŝtilo..."
@@ -1365,6 +1353,24 @@ msgstr "Al&glui eligon el..."
 
 msgid "&External formatter"
 msgstr "&Ekstera aranĝilo"
+
+msgid "&Move"
+msgstr "&Movi"
+
+msgid "&Resize"
+msgstr ""
+
+msgid "&Toggle fullscreen"
+msgstr ""
+
+msgid "&Next"
+msgstr ""
+
+msgid "&Previous"
+msgstr ""
+
+msgid "&List..."
+msgstr ""
 
 msgid "&General..."
 msgstr "Ĝ&enerala..."
@@ -1401,6 +1407,9 @@ msgstr "&Komandoj"
 
 msgid "For&mat"
 msgstr "&Formati"
+
+msgid "&Window"
+msgstr ""
 
 msgid "&Options"
 msgstr "&Agordo"
@@ -1462,6 +1471,19 @@ msgstr "Linifalda reĝimo"
 msgid "Editor options"
 msgstr "Redaktilaj agordaĵoj"
 
+msgid "About"
+msgstr "Pri"
+
+msgid ""
+"Copyright (C) 1996-2012 the Free Software Foundation\n"
+"\n"
+"            A user friendly text editor\n"
+"         written for the Midnight Commander"
+msgstr ""
+
+msgid "Open files"
+msgstr ""
+
 msgid "Edit: "
 msgstr "Redakti: "
 
@@ -1482,6 +1504,27 @@ msgstr "ButtonBar|Forigi"
 
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|Menuzono"
+
+#, fuzzy
+msgid "&Add word"
+msgstr "&Aldoni novan"
+
+msgid "Language"
+msgstr ""
+
+msgid "Misspelled"
+msgstr ""
+
+#, fuzzy
+msgid "Check word"
+msgstr "Tutaj &vortoj"
+
+msgid "Suggest"
+msgstr ""
+
+#, fuzzy
+msgid "Select language"
+msgstr "Elekti &grupon"
 
 msgid "Load syntax file"
 msgstr "Ŝargi sintakso-dosieron"
@@ -1892,6 +1935,9 @@ msgstr "sufikso-dosiera redaktilo"
 msgid "Which extension file you want to edit?"
 msgstr "Kiun etendaĵan dosieron vi volas redakti?"
 
+msgid "&System Wide"
+msgstr "Tut&sisteme"
+
 msgid "Highlighting groups file edit"
 msgstr "Prilumi grupojn en dosiera redaktado"
 
@@ -1949,6 +1995,9 @@ msgstr "'%s' ne estas mola ligilo"
 msgid "FTP to machine"
 msgstr "FTP al servilo"
 
+msgid "SFTP to machine"
+msgstr ""
+
 msgid "Shell link to machine"
 msgstr "Ŝela ligilo al servilo"
 
@@ -1990,6 +2039,9 @@ msgstr ""
 msgid "Cannot read directory contents"
 msgstr "Ne eblas legi dosierujan enhavon"
 
+msgid "Parameter"
+msgstr "Parametro"
+
 #, c-format
 msgid ""
 "Cannot create temporary command file\n"
@@ -1997,9 +2049,6 @@ msgid ""
 msgstr ""
 "Ne eblas krei provizoran komandodosieron\n"
 "%s"
-
-msgid "Parameter"
-msgstr "Parametro"
 
 #, c-format
 msgid " %s%s file error"
@@ -2111,7 +2160,7 @@ msgid "&Abort"
 msgstr "Ĉ&esigi"
 
 msgid "Ski&p all"
-msgstr "&Preterlasi ĉion"
+msgstr "Preter&lasi ĉion"
 
 msgid "&Retry"
 msgstr "&Reprovi"
@@ -2604,9 +2653,6 @@ msgstr "Serĉanta en %s"
 msgid "Searching"
 msgstr "Serĉanta"
 
-msgid "&Move"
-msgstr "&Movi"
-
 msgid "&Remove"
 msgstr "&Forigi"
 
@@ -2726,7 +2772,7 @@ msgstr "Neniuj spacaj informoj"
 
 #, c-format
 msgid "Free space: %s/%s (%d%%)"
-msgstr "Restanta spaco: %s/%s (%d%%)"
+msgstr "Restanta spaco: %s el %s (%d%%)"
 
 #, c-format
 msgid "Type:      %s"
@@ -2854,6 +2900,9 @@ msgstr "FT&P-a ligilo..."
 
 msgid "S&hell link..."
 msgstr "Ŝ&ela ligilo..."
+
+msgid "S&FTP link..."
+msgstr ""
 
 msgid "SM&B link..."
 msgstr "SM&B-a ligilo..."
@@ -3343,6 +3392,9 @@ msgstr "Dukta fermo malsukcesis"
 msgid "Cannot run external panelize in a non-local directory"
 msgstr "Ne eblas plenumi eksterajn flanojn en fora dosierujo"
 
+msgid "Modified git files"
+msgstr "Modifitaj git-dosieroj"
+
 msgid "Find rejects after patching"
 msgstr "Trovi rifuzojn post flikado"
 
@@ -3585,7 +3637,7 @@ msgid ""
 "running on this terminal.\n"
 "Subshell support will be disabled."
 msgstr ""
-"GNU Midnight Commander jam estas\n"
+"Midnight Commander de GNU jam estas\n"
 "plenumiĝi en ĉi tiu terminalo.\n"
 "Subŝelo estos malebligita."
 
@@ -3648,9 +3700,8 @@ msgstr "Virtuala dosiersistemoj:"
 msgid "Data types:"
 msgstr "Datumtipoj:"
 
-#, fuzzy
 msgid "Root directory:"
-msgstr "Hejma dosierujo:"
+msgstr ""
 
 msgid "System data"
 msgstr "Sistemaj datumoj"
@@ -3758,10 +3809,6 @@ msgstr "fish: Konsentanta eldonon..."
 
 msgid "fish: Getting host info..."
 msgstr "fish: Akiranta gastiganto-informojn..."
-
-#, c-format
-msgid "fish: Connected, home %s."
-msgstr "fish: Konektita, hejmo %s."
 
 #, c-format
 msgid "fish: Reading directory %s..."
@@ -3921,6 +3968,66 @@ msgid ""
 msgstr ""
 "Averto: Nevalida marko %c in %s:\n"
 "%s\n"
+
+#, fuzzy, c-format
+msgid "sftp: an error occured while reading %s: %s"
+msgstr "Eraro okazis dum migri uzanto-agordon: %s"
+
+msgid "sftp: Unable to get current user name."
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Invalid host name."
+msgstr "ftpfs: Nevalida gastiganto-nomo."
+
+#, fuzzy
+msgid "sftp: Invalid port value."
+msgstr "ftpfs: Nevalida gastiganto-nomo."
+
+#, fuzzy, c-format
+msgid "sftp: %s"
+msgstr "ftpfs: %s"
+
+#, fuzzy, c-format
+msgid "sftp: making connection to %s"
+msgstr "ftpfs: konektiĝanta al %s"
+
+#, fuzzy
+msgid "sftp: connection interrupted by user"
+msgstr "ftpfs: konekto interrompita de uzanto"
+
+#, fuzzy, c-format
+msgid "sftp: connection to server failed: %s"
+msgstr "ftpfs: konekto al servilo fiaskis: %s"
+
+#, c-format
+msgid "sftp: Enter passphrase for %s "
+msgstr ""
+
+msgid "sftp: Passphrase is empty."
+msgstr ""
+
+#, fuzzy, c-format
+msgid "sftp: Enter password for %s "
+msgstr "ftpfs: sendi pasvorton"
+
+msgid "sftp: Password is empty."
+msgstr ""
+
+#, c-format
+msgid "sftp: Failure establishing SSH session: (%d)"
+msgstr ""
+
+msgid "sftp: No file handler data present for reading file"
+msgstr ""
+
+#, c-format
+msgid "sftp: (Ctrl-G break) Listing... %s"
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Listing done."
+msgstr "Lista reĝimo"
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4117,6 +4224,9 @@ msgstr ""
 "Ne eblas konservi dosieron:\n"
 "%s"
 
+msgid "&Cancel quit"
+msgstr "Ne &eliri"
+
 msgid "View: "
 msgstr "Vidi: "
 
@@ -4139,6 +4249,3 @@ msgstr "Serĉo finita"
 
 msgid "Continue from beginning?"
 msgstr "Ĉu deiri de la komenco?"
-
-#~ msgid "fish: Setting up current directory..."
-#~ msgstr "fish: Stariganta nunan dosierujon..."

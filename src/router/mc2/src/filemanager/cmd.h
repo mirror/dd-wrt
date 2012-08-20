@@ -38,6 +38,9 @@ typedef enum
 #ifdef ENABLE_VFS_FTP
 void ftplink_cmd (void);
 #endif
+#ifdef ENABLE_VFS_SFTP
+void sftplink_cmd (void);
+#endif
 #ifdef ENABLE_VFS_FISH
 void fishlink_cmd (void);
 #endif
@@ -49,9 +52,9 @@ void help_cmd (void);
 void smart_dirsize_cmd (void);
 void single_dirsize_cmd (void);
 void dirsizes_cmd (void);
-int view_file_at_line (const vfs_path_t * filename_vpath, int plain_view, int internal,
-                       int start_line);
-int view_file (const vfs_path_t * filename_vpath, int normal, int internal);
+gboolean view_file_at_line (const vfs_path_t * filename_vpath, int plain_view, int internal,
+                            int start_line);
+gboolean view_file (const vfs_path_t * filename_vpath, int normal, int internal);
 void view_cmd (void);
 void view_file_cmd (void);
 void view_raw_cmd (void);
@@ -98,7 +101,9 @@ void quick_cmd_no_menu (void);
 void info_cmd_no_menu (void);
 void quick_view_cmd (void);
 void toggle_listing_cmd (void);
+#ifdef HAVE_CHARSET
 void encoding_cmd (void);
+#endif
 
 /*** inline functions ****************************************************************************/
 #endif /* MC__CMD_H */

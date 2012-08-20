@@ -300,7 +300,7 @@ init_learn (void)
     do_refresh ();
 
     learn_dlg =
-        create_dlg (TRUE, 0, 0, 23, 78, dialog_colors, learn_callback,
+        create_dlg (TRUE, 0, 0, 23, 78, dialog_colors, learn_callback, NULL,
                     "[Learn keys]", learn_title, DLG_CENTER | DLG_REVERSE);
 
     for (i = 0; i < BUTTONS; i++)
@@ -373,7 +373,8 @@ learn_save (void)
 
             esc_str = strutils_escape (learnkeys[i].sequence, -1, ";\\", TRUE);
 
-            mc_config_set_string_raw_value (mc_main_config, section, key_name_conv_tab[i].name, esc_str);
+            mc_config_set_string_raw_value (mc_main_config, section, key_name_conv_tab[i].name,
+                                            esc_str);
 
             g_free (esc_str);
         }

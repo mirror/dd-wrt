@@ -91,6 +91,7 @@ typedef struct WPanel
     vfs_path_t *cwd_vpath;      /* Current Working Directory */
     vfs_path_t *lwd_vpath;      /* Last Working Directory */
     GList *dir_history;         /* directory history */
+    GList *dir_history_current; /* pointer to the current history item */
     char *hist_name;            /* directory history name for history file */
     int count;                  /* Number of files in dir structure */
     int marked;                 /* Count of marked files */
@@ -118,13 +119,17 @@ typedef struct WPanel
     char *panel_name;           /* The panel name */
     struct stat dir_stat;       /* Stat of current dir: used by execute () */
 
+#ifdef HAVE_CHARSET
     int codepage;               /* panel codepage */
+#endif
 
     gboolean searching;
     char search_buffer[MC_MAXFILENAMELEN];
     char prev_search_buffer[MC_MAXFILENAMELEN];
     char search_char[MB_LEN_MAX];       /*buffer for multibytes characters */
     int search_chpoint;         /*point after last characters in search_char */
+    int content_shift;          /* Number of characters of filename need to skip from left side. */
+    int max_shift;              /* Max shift for visible part of current panel */
 } WPanel;
 
 /*** global variables defined in .c file *********************************************************/
@@ -144,7 +149,11 @@ void panel_clean_dir (WPanel * panel);
 void panel_reload (WPanel * panel);
 void panel_set_sort_order (WPanel * panel, const panel_field_t * sort_order);
 void panel_re_sort (WPanel * panel);
+
+#ifdef HAVE_CHARSET
 void panel_change_encoding (WPanel * panel);
+vfs_path_t *remove_encoding_from_path (const vfs_path_t * vpath);
+#endif
 
 void update_panels (panel_update_flags_t flags, const char *current_file);
 int set_panel_formats (WPanel * p);
@@ -160,10 +169,6 @@ void file_mark (WPanel * panel, int idx, int val);
 void do_file_mark (WPanel * panel, int idx, int val);
 
 gboolean do_panel_cd (struct WPanel *panel, const vfs_path_t * new_dir_vpath, enum cd_enum cd_type);
-
-void directory_history_add (struct WPanel *panel, const char *dir);
-
-vfs_path_t *remove_encoding_from_path (const vfs_path_t * vpath);
 
 gsize panel_get_num_of_sortable_fields (void);
 const char **panel_get_sortable_fields (gsize *);

@@ -150,6 +150,7 @@ enum
     CK_Filter,
     CK_ConnectFish,
     CK_ConnectFtp,
+    CK_ConnectSftp,
     CK_ConnectSmb,
     CK_PanelInfo,
     CK_Jobs,
@@ -168,6 +169,9 @@ enum
     CK_Tree,
     CK_Undelete,
     CK_SplitVertHoriz,
+    CK_SplitEqual,
+    CK_SplitMore,
+    CK_SplitLess,
     CK_CompareFiles,
     CK_OptionsPanel,
     CK_LinkSymbolicRelative,
@@ -197,6 +201,8 @@ enum
     CK_SortByExt,
     CK_SortBySize,
     CK_SortByMTime,
+    CK_ScrollLeft,
+    CK_ScrollRight,
 
     /* dialog */
     CK_Ok = 300,
@@ -229,6 +235,7 @@ enum
     CK_EditFile,
     CK_InsertFile,
     CK_EditSyntaxFile,
+    CK_Close,
     /* block commands */
     CK_BlockSave,
     CK_BlockShiftLeft,
@@ -273,7 +280,17 @@ enum
     CK_RepeatStartRecord,
     CK_RepeatStopRecord,
     CK_RepeatStartStopRecord,
+    /* window commands */
+    CK_WindowMove,
+    CK_WindowResize,
+    CK_WindowFullscreen,
+    CK_WindowList,
+    CK_WindowNext,
+    CK_WindowPrev,
     /* misc commands */
+    CK_SpellCheck,
+    CK_SpellCheckCurrentWord,
+    CK_SpellCheckSelectLang,
     CK_InsertOverwrite,
     CK_ParagraphFormat,
     CK_MatchBracket,
@@ -304,9 +321,6 @@ enum
     /* diff viewer */
     CK_ShowSymbols = 700,
     CK_SplitFull,
-    CK_SplitEqual,
-    CK_SplitMore,
-    CK_SplitLess,
     CK_Tab2,
     CK_Tab3,
     CK_Tab4,

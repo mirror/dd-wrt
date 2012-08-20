@@ -4,18 +4,18 @@
 #
 # Translators:
 # David Martin <david.martin@telefonica.net>, 2011.
-# David Martín <david.martin@telefonica.net>, 2012.
-# David Martin <dmartina@excite.com>, 2011.
+# David Martín <david.martin@telefonica.net>, 2011, 2012.
+# David Martín <dmartina@excite.com>, 2011.
 # Ismael Olea <olea@hispafuentes.com>, 2000.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-04-25 19:29+0300\n"
-"PO-Revision-Date: 2012-03-23 00:05+0000\n"
+"POT-Creation-Date: 2012-07-18 13:34+0300\n"
+"PO-Revision-Date: 2012-07-13 08:36+0000\n"
 "Last-Translator: David Martin <david.martin@telefonica.net>\n"
-"Language-Team: Spanish (Castilian) (http://www.transifex.net/projects/p/mc/"
+"Language-Team: Spanish (Castilian) (http://www.transifex.com/projects/p/mc/"
 "language/es/)\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
@@ -119,8 +119,8 @@ msgstr "El elemento número %d no es válido"
 msgid "Regular expression error"
 msgstr "Error en expresión regular"
 
-msgid "&Normal"
-msgstr "&Normal"
+msgid "No&rmal"
+msgstr ""
 
 msgid "Re&gular expression"
 msgstr "e&Xpresión regular"
@@ -577,8 +577,8 @@ msgstr "Fijar el nivel de depuración"
 msgid "Launches the file viewer on a file"
 msgstr "Abrir un archivo con el visor"
 
-msgid "Edits one file"
-msgstr "Editar un archivo"
+msgid "Edit files"
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "Utilizar las posibilidades de xterm"
@@ -638,30 +638,11 @@ msgid ""
 "   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
 "   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors CONTEXTO={FRENTE},{FONDO},{ATRIBUTOS}:CONTEXTO2=...\n"
-"\n"
-"{FRENTE}, {FONDO} y {ATRIBUTOS} se pueden omitir y se utilizará el valor "
-"estándar\n"
-"\n"
-" Contextos:\n"
-"   Global:            errors, disabled, reverse, gauge, header\n"
-"                      input, inputmark, inputunchanged, commandlinemark\n"
-"                      bbarhotkey, bbarbutton, statusbar\n"
-"   Visor de archivos: normal, selected, marked, markselect\n"
-"   Diálogos:          dnormal, dfocus, dhotnormal, dhotfocus, "
-"errdhotnormal,\n"
-"                      errdhotfocus\n"
-"   Menús:             menunormal, menuhot, menusel, menuhotsel, "
-"menuinactive\n"
-"   Menús emergentes:  pmenunormal, pmenusel, pmenutitle\n"
-"   Editor:            editnormal, editbold, editmarked, editwhitespace,\n"
-"                      editlinestate\n"
-"   Visor:             viewbold, viewunderline, viewselected\n"
-"   Ayuda:             helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -881,9 +862,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Diff:"
 
-#, fuzzy, c-format
+#, c-format
 msgid "\"%s\" is a directory"
-msgstr "%s no es un directorio\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -909,20 +890,6 @@ msgstr "< Auto >"
 
 msgid "< Reload Current Syntax >"
 msgstr "< Releer sintaxis >"
-
-msgid "About"
-msgstr "Acerca de..."
-
-msgid ""
-"Copyright (C) 1996-2010 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
-"Copyright (C) 1996-2010 the Free Software Foundation\n"
-"\n"
-"            Un editor de texto amigable\n"
-"              para Midnight Commander"
 
 #, c-format
 msgid "Cannot open %s for reading"
@@ -997,27 +964,6 @@ msgstr "Teclee el nombre del archivo:"
 msgid "Save As"
 msgstr "Guardar como"
 
-msgid "Syntax file edit"
-msgstr "Editar archivo de sintaxis"
-
-msgid "Which syntax file you want to edit?"
-msgstr "¿Qué archivo de sintaxis desea editar?"
-
-msgid "&User"
-msgstr "&Usuario"
-
-msgid "&System Wide"
-msgstr "&Sistema"
-
-msgid "Menu edit"
-msgstr "Editar archivo de menú"
-
-msgid "Which menu file do you want to edit?"
-msgstr "¿Qué archivo de menú desea editar?"
-
-msgid "&Local"
-msgstr "&Local"
-
 msgid "Block is large, you may not be able to undo this action"
 msgstr "El bloque es enorme, quizás no se pueda deshacer esta acción."
 
@@ -1037,11 +983,10 @@ msgid "Edit Save Mode"
 msgstr "Modo de guardar"
 
 msgid "Save as"
-msgstr "guar&Dar como..."
+msgstr "Guardar como"
 
-#, fuzzy
 msgid "Cannot save: destination is not a regular file"
-msgstr "Imposible ver: no es un archivo ordinario"
+msgstr ""
 
 msgid "A file already exists with this name"
 msgstr "Ya existe un archivo con ese nombre."
@@ -1083,15 +1028,29 @@ msgstr "Guardar archivo"
 msgid "&Save"
 msgstr "&Guardar"
 
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes"
-msgstr ""
-"El texto actual ha sido modificado y no ha sido guardado\n"
-"Continuar descartará estos cambios."
-
 msgid "Load"
 msgstr "Cargar"
+
+msgid "Syntax file edit"
+msgstr "Editar archivo de sintaxis"
+
+msgid "Which syntax file you want to edit?"
+msgstr "¿Qué archivo de sintaxis desea editar?"
+
+msgid "&User"
+msgstr "&Usuario"
+
+msgid "&System wide"
+msgstr ""
+
+msgid "Menu edit"
+msgstr "Editar archivo de menú"
+
+msgid "Which menu file do you want to edit?"
+msgstr "¿Qué archivo de menú desea editar?"
+
+msgid "&Local"
+msgstr "&Local"
 
 msgid "Replace"
 msgstr "Reemplazar"
@@ -1100,8 +1059,23 @@ msgstr "Reemplazar"
 msgid "%ld replacements made"
 msgstr "%ld reemplazos hechos."
 
-msgid "&Cancel quit"
-msgstr "&Cancelar salida"
+msgid "[NoName]"
+msgstr ""
+
+#, c-format
+msgid ""
+"File %s was modified.\n"
+"Save before close?"
+msgstr ""
+
+msgid "Close file"
+msgstr ""
+
+#, c-format
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file %s?"
+msgstr ""
 
 msgid "This function is not implemented"
 msgstr "Esa función no está implementada."
@@ -1137,17 +1111,17 @@ msgid "Run sort"
 msgstr "Ordenar bloque de texto"
 
 msgid "Enter sort options (see manpage) separated by whitespace:"
-msgstr "Opciones para \"sort\" (ver manual), separadas por espacios:"
+msgstr "Opciones para «sort» (ver manual), separadas por espacios:"
 
 msgid "Sort"
 msgstr "Ordenar"
 
 msgid "Cannot execute sort command"
-msgstr "Imposible ejecutar \"sort\""
+msgstr "Imposible ejecutar «sort»"
 
 #, c-format
 msgid "Sort returned non-zero: %s"
-msgstr "\"sort\" devolvió un error: %s"
+msgstr "«sort» devolvió un error: %s"
 
 msgid "Paste output of external command"
 msgstr "Pegar desde otro programa"
@@ -1183,7 +1157,7 @@ msgid "Press any key:"
 msgstr "Presione cualquier tecla:"
 
 msgid ""
-"Current text was modified without a file save\n"
+"Current text was modified without a file save.\n"
 "Continue discards these changes"
 msgstr ""
 "El texto actual ha sido modificado y no ha sido guardado\n"
@@ -1223,11 +1197,17 @@ msgstr "Reemplazar con:"
 msgid "Confirm replace"
 msgstr "Confirmar cambios"
 
+msgid "NoName"
+msgstr ""
+
 msgid "&Open file..."
 msgstr "abrir archiv&O..."
 
 msgid "&New"
 msgstr "&Nuevo"
+
+msgid "&Close"
+msgstr ""
 
 msgid "Save &as..."
 msgstr "guar&Dar como..."
@@ -1278,13 +1258,13 @@ msgid "&Delete"
 msgstr "&Borrar"
 
 msgid "Co&py to clipfile"
-msgstr "copiar a un &Archivo..."
+msgstr "copiar a un &Archivo"
 
 msgid "&Cut to clipfile"
-msgstr "cortar a un arc&Hivo..."
+msgstr "cortar a un arc&Hivo"
 
 msgid "Pa&ste from clipfile"
-msgstr "pegar de un archi&Vo..."
+msgstr "pegar de un archi&Vo"
 
 msgid "&Beginning"
 msgstr "&Principio del archivo"
@@ -1344,13 +1324,19 @@ msgid "&Start/Stop record macro"
 msgstr "iniciar/parar grabación &Macro"
 
 msgid "Delete macr&o..."
-msgstr "&Borrar macro..."
+msgstr "&Eliminar macro..."
 
 msgid "Record/Repeat &actions"
 msgstr "grabar/repetir &Acciones"
 
-msgid "'ispell' s&pell check"
-msgstr "corregir orto&Grafía con \"ispell\""
+msgid "S&pell check"
+msgstr ""
+
+msgid "C&heck word"
+msgstr ""
+
+msgid "Change spelling &language"
+msgstr ""
 
 msgid "&Mail..."
 msgstr "&Correo..."
@@ -1372,6 +1358,24 @@ msgstr "peg&Ar desde otro programa..."
 
 msgid "&External formatter"
 msgstr "dar formato e&Xterno"
+
+msgid "&Move"
+msgstr "&Mover"
+
+msgid "&Resize"
+msgstr ""
+
+msgid "&Toggle fullscreen"
+msgstr ""
+
+msgid "&Next"
+msgstr ""
+
+msgid "&Previous"
+msgstr ""
+
+msgid "&List..."
+msgstr ""
 
 msgid "&General..."
 msgstr "&General..."
@@ -1408,6 +1412,9 @@ msgstr "&Utilidades"
 
 msgid "For&mat"
 msgstr "for&Mato"
+
+msgid "&Window"
+msgstr ""
 
 msgid "&Options"
 msgstr "&Opciones"
@@ -1469,6 +1476,19 @@ msgstr "Autoajuste de párrafo"
 msgid "Editor options"
 msgstr "Opciones del editor"
 
+msgid "About"
+msgstr "Acerca de..."
+
+msgid ""
+"Copyright (C) 1996-2012 the Free Software Foundation\n"
+"\n"
+"            A user friendly text editor\n"
+"         written for the Midnight Commander"
+msgstr ""
+
+msgid "Open files"
+msgstr ""
+
 msgid "Edit: "
 msgstr "Edición:"
 
@@ -1489,6 +1509,27 @@ msgstr "Borrar"
 
 msgid "ButtonBar|PullDn"
 msgstr "Menú"
+
+#, fuzzy
+msgid "&Add word"
+msgstr "&Añadir nuevo..."
+
+msgid "Language"
+msgstr ""
+
+msgid "Misspelled"
+msgstr ""
+
+#, fuzzy
+msgid "Check word"
+msgstr "&Palabras completas"
+
+msgid "Suggest"
+msgstr ""
+
+#, fuzzy
+msgid "Select language"
+msgstr "seleccionar &Grupo..."
 
 msgid "Load syntax file"
 msgstr "Cargar archivo de sintaxis"
@@ -1514,14 +1555,14 @@ msgstr ""
 "Midnight Commander no puede cambiar al directorio\n"
 "que el subshell dice que es el directorio actual.\n"
 "¿Acaso borró usted el directorio o se dio otros\n"
-"permisos con el comando \"su\"?"
+"permisos con el comando «su»?"
 
 msgid "The shell is already running a command"
 msgstr "El shell ya está ejecutando un comando"
 
 #, c-format
 msgid "Type `exit' to return to the Midnight Commander"
-msgstr "Teclee \"exit\" para regresar al Midnight Commander"
+msgstr "Teclee «exit» para regresar a Midnight Commander"
 
 #, c-format
 msgid "Cannot fetch a local copy of %s"
@@ -1899,6 +1940,9 @@ msgstr "Editar extensiones"
 msgid "Which extension file you want to edit?"
 msgstr "¿Qué archivo de extensiones desea editar?"
 
+msgid "&System Wide"
+msgstr "&Sistema"
+
 msgid "Highlighting groups file edit"
 msgstr "Editar colores de grupo"
 
@@ -1956,6 +2000,9 @@ msgstr "«%s» no es un enlace simbólico"
 msgid "FTP to machine"
 msgstr "Conexión por FTP"
 
+msgid "SFTP to machine"
+msgstr ""
+
 msgid "Shell link to machine"
 msgstr "Conexión por SSH"
 
@@ -1997,6 +2044,9 @@ msgstr ""
 msgid "Cannot read directory contents"
 msgstr "Imposible leer directorio"
 
+msgid "Parameter"
+msgstr "Parámetro"
+
 #, c-format
 msgid ""
 "Cannot create temporary command file\n"
@@ -2004,9 +2054,6 @@ msgid ""
 msgstr ""
 "Imposible crear el archivo temporal para comandos\n"
 "%s"
-
-msgid "Parameter"
-msgstr "Parámetro"
 
 #, c-format
 msgid " %s%s file error"
@@ -2409,7 +2456,7 @@ msgid "Directory scanning"
 msgstr "Analizando directorio"
 
 msgid "Cannot operate on \"..\"!"
-msgstr "¡Imposible operar sobre \"..\"!"
+msgstr "¡Imposible operar sobre «..»!"
 
 msgid "Sorry, I could not put the job in background"
 msgstr "Lo siento, no se pudo poner la tarea en 2º plano"
@@ -2612,9 +2659,6 @@ msgstr "Buscando %s"
 
 msgid "Searching"
 msgstr "Buscando"
-
-msgid "&Move"
-msgstr "&Mover"
 
 msgid "&Remove"
 msgstr "&Quitar"
@@ -2863,6 +2907,9 @@ msgstr "conexión por FT&P..."
 
 msgid "S&hell link..."
 msgstr "conexión por SS&H..."
+
+msgid "S&FTP link..."
+msgstr ""
 
 msgid "SM&B link..."
 msgstr "conexión por &SMB..."
@@ -3188,9 +3235,9 @@ msgid ""
 "manual reload of the directory. See the man page for\n"
 "the details."
 msgstr ""
-"El uso del \"cargado rápido\" puede ocasionar que el contenido\n"
+"El uso del «cargado rápido» puede ocasionar que el contenido\n"
 "del panel no siempre refleje el contenido del disco.  En ese\n"
-"caso use C-r para obligar al programa a actualizar los datos.\n"
+"caso use «C-r» para obligar al programa a actualizar los datos.\n"
 "Lea la página de manual para mayor información."
 
 #. TRANSLATORS: one single character to represent 'unsorted' sort mode
@@ -3352,6 +3399,9 @@ msgstr "Fallo al cerrar la tubería"
 msgid "Cannot run external panelize in a non-local directory"
 msgstr "Imposible ejecutar búsquedas externas en un directorio no local"
 
+msgid "Modified git files"
+msgstr "Archivos git modificados"
+
 msgid "Find rejects after patching"
 msgstr "Buscar archivos rechazados después de aplicar parches"
 
@@ -3503,10 +3553,10 @@ msgstr ""
 "Por favor, presione la tecla %s\n"
 "y espere hasta que este mensaje desaparezca.\n"
 "\n"
-"Luego, presione la tecla de nuevo y vea si el mensaje de \"OK\" aparece\n"
+"Luego, presione la tecla de nuevo y vea si el mensaje de «OK» aparece\n"
 "junto a su botón \n"
 "\n"
-"Si quiere cancelar, presione una vez la tecla Escape\n"
+"Si quiere cancelar, presione una vez la tecla «Escape»\n"
 "y espere."
 
 msgid "Cannot accept this key"
@@ -3655,9 +3705,8 @@ msgstr "Sistemas de archivos virtuales:"
 msgid "Data types:"
 msgstr "Tipos de datos:"
 
-#, fuzzy
 msgid "Root directory:"
-msgstr "Directorio de inicio:"
+msgstr ""
 
 msgid "System data"
 msgstr "Datos de sistema"
@@ -3767,10 +3816,6 @@ msgid "fish: Getting host info..."
 msgstr "fish: Obteniendo información del servidor..."
 
 #, c-format
-msgid "fish: Connected, home %s."
-msgstr "fish: Conectado, inicio en %s"
-
-#, c-format
 msgid "fish: Reading directory %s..."
 msgstr "fish: Leyendo el directorio %s..."
 
@@ -3865,7 +3910,7 @@ msgid "ftpfs: could not create socket: %s"
 msgstr "ftpfs: Imposible crear socket: %s"
 
 msgid "ftpfs: could not setup passive mode"
-msgstr "ftpfs: Imposible aplicar el \"modo pasivo\""
+msgstr "ftpfs: Imposible aplicar el «modo pasivo»"
 
 msgid "ftpfs: aborting transfer."
 msgstr "ftpfs: Abortando transferencia."
@@ -3928,6 +3973,66 @@ msgid ""
 msgstr ""
 "Atención: Bandera %c no válida en %s:\n"
 "%s\n"
+
+#, fuzzy, c-format
+msgid "sftp: an error occured while reading %s: %s"
+msgstr "Error en la migración de la configuración personal: %s"
+
+msgid "sftp: Unable to get current user name."
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Invalid host name."
+msgstr "ftpfs: Nombre de máquina incorrecto"
+
+#, fuzzy
+msgid "sftp: Invalid port value."
+msgstr "ftpfs: Nombre de máquina incorrecto"
+
+#, fuzzy, c-format
+msgid "sftp: %s"
+msgstr "ftpfs: %s"
+
+#, fuzzy, c-format
+msgid "sftp: making connection to %s"
+msgstr "ftpfs: Estableciendo conexión con %s"
+
+#, fuzzy
+msgid "sftp: connection interrupted by user"
+msgstr "ftpfs: Conexión abortada por el usuario"
+
+#, fuzzy, c-format
+msgid "sftp: connection to server failed: %s"
+msgstr "ftpfs: Conexión al servidor fracasó: %s"
+
+#, c-format
+msgid "sftp: Enter passphrase for %s "
+msgstr ""
+
+msgid "sftp: Passphrase is empty."
+msgstr ""
+
+#, fuzzy, c-format
+msgid "sftp: Enter password for %s "
+msgstr "ftpfs: Enviando contraseña de usuario"
+
+msgid "sftp: Password is empty."
+msgstr ""
+
+#, c-format
+msgid "sftp: Failure establishing SSH session: (%d)"
+msgstr ""
+
+msgid "sftp: No file handler data present for reading file"
+msgstr ""
+
+#, c-format
+msgid "sftp: (Ctrl-G break) Listing... %s"
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Listing done."
+msgstr "Listado"
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4124,6 +4229,9 @@ msgstr ""
 "Imposible guardar el archivo:\n"
 "%s"
 
+msgid "&Cancel quit"
+msgstr "&Cancelar salida"
+
 msgid "View: "
 msgstr "Ver:"
 
@@ -4146,6 +4254,3 @@ msgstr "Búsqueda finalizada"
 
 msgid "Continue from beginning?"
 msgstr "¿Continuar desde el principio?"
-
-#~ msgid "fish: Setting up current directory..."
-#~ msgstr "fish: Preparando directorio actual..."
