@@ -62,7 +62,7 @@ static const char usage_messages[] ALIGN1 = UNPACKED_USAGE;
 #if ENABLE_FEATURE_COMPRESS_USAGE
 
 static const char packed_usage[] ALIGN1 = { PACKED_USAGE };
-# include "archive.h"
+# include "bb_archive.h"
 static const char *unpack_usage_messages(void)
 {
 	char *outbuf = NULL;
@@ -634,7 +634,10 @@ static int busybox_main(char **argv)
 			"See source distribution for full notice.\n"
 			"\n"
 			"Usage: busybox [function] [arguments]...\n"
-			"   or: busybox --list[-full]\n"
+			"   or: busybox --list"IF_FEATURE_INSTALLER("[-full]")"\n"
+			IF_FEATURE_INSTALLER(
+			"   or: busybox --install [-s] [DIR]\n"
+			)
 			"   or: function [arguments]...\n"
 			"\n"
 			"\tBusyBox is a multi-call binary that combines many common Unix\n"
@@ -675,7 +678,7 @@ static int busybox_main(char **argv)
 		dup2(1, 2);
 		while (*a) {
 # if ENABLE_FEATURE_INSTALLER
-			if (argv[1][6]) /* --list-path? */
+			if (argv[1][6]) /* --list-full? */
 				full_write2_str(install_dir[APPLET_INSTALL_LOC(i)] + 1);
 # endif
 			full_write2_str(a);
@@ -705,7 +708,7 @@ static int busybox_main(char **argv)
 		 * -s: make symlinks
 		 * DIR: directory to install links to
 		 */
-		use_symbolic_links = (argv[2] && strcmp(argv[2], "-s") == 0 && argv++);
+		use_symbolic_links = (argv[2] && strcmp(argv[2], "-s") == 0 && ++argv);
 		install_links(busybox, use_symbolic_links, argv[2]);
 		return 0;
 	}

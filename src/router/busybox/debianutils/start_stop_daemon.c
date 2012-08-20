@@ -31,7 +31,8 @@ Options controlling process matching
 [TODO: can PROCESS_NAME be a full pathname? Should we require full match then
 with /proc/$PID/exe or argv[0] (comm can't be matched, it never contains path)]
         -x,--exec EXECUTABLE    Look for processes that were started with this
-                                command in /proc/$PID/cmdline.
+                                command in /proc/$PID/exe and /proc/$PID/cmdline
+                                (/proc/$PID/cmdline is a bbox extension)
                                 Unlike -n, we match against the full path:
                                 "ntpd" != "./ntpd" != "/path/to/ntpd"
         -p,--pidfile PID_FILE   Look for processes with PID from this file
@@ -68,7 +69,7 @@ Misc options:
 //usage:     "\n	-n,--name NAME		Match processes with NAME"
 //usage:     "\n				in comm field in /proc/PID/stat"
 //usage:     "\n	-x,--exec EXECUTABLE	Match processes with this command"
-//usage:     "\n				in /proc/PID/cmdline"
+//usage:     "\n				in /proc/PID/{exe,cmdline}"
 //usage:     "\n	-p,--pidfile FILE	Match a process with PID from the file"
 //usage:     "\n	All specified conditions must match"
 //usage:     "\n-S only:"
@@ -198,8 +199,18 @@ static int pid_is_exec(pid_t pid)
 {
 	ssize_t bytes;
 	char buf[sizeof("/proc/%u/cmdline") + sizeof(int)*3];
+	char *procname, *exelink;
+	int match;
 
-	sprintf(buf, "/proc/%u/cmdline", (unsigned)pid);
+	procname = buf + sprintf(buf, "/proc/%u/exe", (unsigned)pid) - 3;
+
+	exelink = xmalloc_readlink(buf);
+	match = (exelink && strcmp(execname, exelink) == 0);
+	free(exelink);
+	if (match)
+		return match;
+
+	strcpy(procname, "cmdline");
 	bytes = open_read_close(buf, G.execname_cmpbuf, G.execname_sizeof);
 	if (bytes > 0) {
 		G.execname_cmpbuf[bytes] = '\0';
@@ -474,7 +485,7 @@ int start_stop_daemon_main(int argc UNUSED_PARAM, char **argv)
 	*--argv = startas;
 	if (opt & OPT_BACKGROUND) {
 #if BB_MMU
-		bb_daemonize(DAEMON_DEVNULL_STDIO + DAEMON_CLOSE_EXTRA_FDS);
+		bb_daemonize(DAEMON_DEVNULL_STDIO + DAEMON_CLOSE_EXTRA_FDS + DAEMON_DOUBLE_FORK);
 		/* DAEMON_DEVNULL_STDIO is superfluous -
 		 * it's always done by bb_daemonize() */
 #else
@@ -502,8 +513,16 @@ int start_stop_daemon_main(int argc UNUSED_PARAM, char **argv)
 	if (opt & OPT_c) {
 		struct bb_uidgid_t ugid = { -1, -1 };
 		parse_chown_usergroup_or_die(&ugid, chuid);
-		if (ugid.gid != (gid_t) -1) xsetgid(ugid.gid);
-		if (ugid.uid != (uid_t) -1) xsetuid(ugid.uid);
+		if (ugid.uid != (uid_t) -1) {
+			struct passwd *pw = xgetpwuid(ugid.uid);
+			if (ugid.gid != (gid_t) -1)
+				pw->pw_gid = ugid.gid;
+			/* initgroups, setgid, setuid: */
+			change_identity(pw);
+		} else if (ugid.gid != (gid_t) -1) {
+			xsetgid(ugid.gid);
+			setgroups(1, &ugid.gid);
+		}
 	}
 #if ENABLE_FEATURE_START_STOP_DAEMON_FANCY
 	if (opt & OPT_NICELEVEL) {

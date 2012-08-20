@@ -3988,7 +3988,7 @@ int insmod_main(int argc, char **argv)
 
 	/* Grab the module name */
 	tmp1 = xstrdup(arg1);
-	tmp = basename(tmp1);
+	tmp = bb_basename(tmp1);
 	len = strlen(tmp);
 
 	if (uname(&myuname) == 0) {
