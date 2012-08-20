@@ -104,13 +104,11 @@ mc_def_getlocalcopy (const vfs_path_t * filename_vpath)
     fdin = -1;
     if (i == -1)
         goto fail;
+
     i = close (fdout);
     fdout = -1;
     if (i == -1)
-    {
-        fdout = -1;
         goto fail;
-    }
 
     if (mc_stat (filename_vpath, &mystat) != -1)
         mc_chmod (tmp_vpath, mystat.st_mode);
@@ -436,10 +434,12 @@ mc_opendir (const vfs_path_t * vpath)
 
     path_element->dir.info = info;
 
+#ifdef HAVE_CHARSET
     path_element->dir.converter = (path_element->encoding != NULL) ?
         str_crt_conv_from (path_element->encoding) : str_cnv_from_term;
     if (path_element->dir.converter == INVALID_CONV)
         path_element->dir.converter = str_cnv_from_term;
+#endif
 
     handle = vfs_new_handle (path_element->class, vfs_path_element_clone (path_element));
 
@@ -457,7 +457,9 @@ mc_readdir (DIR * dirp)
     struct vfs_class *vfs;
     struct dirent *entry = NULL;
     vfs_path_element_t *vfs_path_element;
+#ifdef HAVE_CHARSET
     estr_t state;
+#endif
 
     if (!mc_readdir_result)
     {
@@ -491,9 +493,14 @@ mc_readdir (DIR * dirp)
         entry = (*vfs->readdir) (vfs_path_element->dir.info);
         if (entry == NULL)
             return NULL;
+
         g_string_set_size (vfs_str_buffer, 0);
+#ifdef HAVE_CHARSET
         state =
             str_vfs_convert_from (vfs_path_element->dir.converter, entry->d_name, vfs_str_buffer);
+#else
+        g_string_assign (vfs_str_buffer, entry->d_name);
+#endif
         mc_readdir_result->d_ino = entry->d_ino;
         g_strlcpy (mc_readdir_result->d_name, vfs_str_buffer->str, MAXNAMLEN + 1);
     }
@@ -516,11 +523,14 @@ mc_closedir (DIR * dirp)
     {
         vfs_path_element_t *vfs_path_element;
         vfs_path_element = vfs_class_data_find_by_handle (handle);
+
+#ifdef HAVE_CHARSET
         if (vfs_path_element->dir.converter != str_cnv_from_term)
         {
             str_close_conv (vfs_path_element->dir.converter);
             vfs_path_element->dir.converter = INVALID_CONV;
         }
+#endif
 
         result = vfs->closedir ? (*vfs->closedir) (vfs_path_element->dir.info) : -1;
         vfs_free_handle (handle);
@@ -704,29 +714,24 @@ mc_chdir (const vfs_path_t * vpath)
             char *p;
 
             p = strchr (path_element->path, 0) - 1;
-            if (p != NULL && *p == PATH_SEP && p != path_element->path)
+            if (*p == PATH_SEP && p > path_element->path)
                 *p = '\0';
         }
+
 #ifdef ENABLE_VFS_NET
         {
-            struct vfs_s_subclass *subclass;
+            struct vfs_s_super *super;
 
-            subclass = (struct vfs_s_subclass *) path_element->class->data;
-            if (subclass != NULL)
+            super = vfs_get_super_by_vpath (vpath);
+            if (super != NULL && super->path_element != NULL)
             {
-                struct vfs_s_super *super = NULL;
-
-                (void) vfs_s_get_path (vpath, &super, 0);
-                if (super != NULL && super->path_element != NULL)
-                {
-                    g_free (super->path_element->path);
-                    super->path_element->path = g_strdup (path_element->path);
-                }
+                g_free (super->path_element->path);
+                super->path_element->path = g_strdup (path_element->path);
             }
         }
 #endif /* ENABLE_VFS_NET */
-
     }
+
     return 0;
 
   error_end:

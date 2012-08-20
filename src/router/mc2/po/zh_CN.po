@@ -3,16 +3,17 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Jake Li <gnozil@gmail.com>, 2011.
+# Jake Li <gnozil@gmail.com>, 2012.
+#   <qinghao1@foxmail.com>, 2012.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-04-25 19:29+0300\n"
-"PO-Revision-Date: 2012-03-19 17:28+0000\n"
-"Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
-"Language-Team: Chinese (China) (http://www.transifex.net/projects/p/mc/"
+"POT-Creation-Date: 2012-07-18 13:34+0300\n"
+"PO-Revision-Date: 2012-07-13 08:36+0000\n"
+"Last-Translator: Jake Li <gnozil@gmail.com>\n"
+"Language-Team: Chinese (China) (http://www.transifex.com/projects/p/mc/"
 "language/zh_CN/)\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
@@ -31,24 +32,24 @@ msgid "Cannot translate from %s to %s"
 msgstr "无法从 %s 翻译到 %s"
 
 msgid "Event system already initialized"
-msgstr ""
+msgstr "事件系统已经初始化"
 
 msgid "Failed to initialize event system"
-msgstr ""
+msgstr "初始化事件系统失败"
 
 msgid "Event system not initialized"
-msgstr ""
+msgstr "事件系统没有初始化"
 
 msgid "Check input data! Some of parameters are NULL!"
-msgstr ""
+msgstr "检查输入数据！有的参数为NULL！"
 
 #, c-format
 msgid "Unable to create group '%s' for events!"
-msgstr ""
+msgstr "无法创建事件组'%s' ！"
 
 #, c-format
 msgid "Unable to create event '%s'!"
-msgstr ""
+msgstr "无法创建事件 '%s'!"
 
 #, c-format
 msgid ""
@@ -74,11 +75,11 @@ msgid "Cannot create %s directory"
 msgstr "不能建立目录%s"
 
 msgid "FATAL: not a directory:"
-msgstr ""
+msgstr "严重错误：不是一个目录："
 
 #, c-format
 msgid "An error occured while migrating user settings: %s"
-msgstr ""
+msgstr "迁移用户设置时发生了错误：%s"
 
 #, c-format
 msgid ""
@@ -87,12 +88,18 @@ msgid ""
 "To get more info, please visit\n"
 "http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
 msgstr ""
+"你的旧设置被从 %s 迁移\n"
+"到 Freedesktop 推荐目录。\n"
+"更多信息，请访问\n"
+"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
 
 #, c-format
 msgid ""
 "Your old settings were migrated from %s\n"
 "to %s\n"
 msgstr ""
+"你的旧设置被从 %s 迁移\n"
+"到 %s\n"
 
 msgid "Search string not found"
 msgstr "没有找到要搜索的字符串"
@@ -108,19 +115,19 @@ msgid "Invalid token number %d"
 msgstr "无效的标记个数%d "
 
 msgid "Regular expression error"
-msgstr ""
+msgstr "正则表达式错误"
 
-msgid "&Normal"
-msgstr "普通(&N)"
+msgid "No&rmal"
+msgstr ""
 
 msgid "Re&gular expression"
 msgstr "正规表达式(&R)"
 
 msgid "He&xadecimal"
-msgstr ""
+msgstr "十六进制(&X)"
 
 msgid "Wil&dcard search"
-msgstr ""
+msgstr "通配符查找 (&D)"
 
 #, c-format
 msgid ""
@@ -144,6 +151,9 @@ msgid ""
 "on non-256 colors terminal.\n"
 "Default skin has been loaded"
 msgstr ""
+"不能在非256色终端上使用\n"
+"带256色支持的皮肤 '%s'。\n"
+"载入默认皮肤。"
 
 msgid "Function key 1"
 msgstr "F1"
@@ -242,7 +252,7 @@ msgid "Completion/M-tab"
 msgstr "补全/M-Tab"
 
 msgid "Back Tabulation S-tab"
-msgstr ""
+msgstr "后退制表 S-tab "
 
 msgid "+ on keypad"
 msgstr "小键盘 +"
@@ -356,7 +366,7 @@ msgid "Quotation mark"
 msgstr "引号"
 
 msgid "Percent sign"
-msgstr ""
+msgstr "百分号"
 
 msgid "Caret"
 msgstr "脱字符^"
@@ -453,7 +463,7 @@ msgid "Directory cache expired for %s"
 msgstr "%s 的目录缓存已过期"
 
 msgid "bytes transferred"
-msgstr "字节已经传输"
+msgstr "已传输字节数"
 
 msgid "Starting linear transfer..."
 msgstr "正在开始线性传输..."
@@ -542,10 +552,10 @@ msgid "Print data directory"
 msgstr "打印数据目录"
 
 msgid "Print extended info about used data directories"
-msgstr ""
+msgstr "打印已使用数据目录的扩展信息"
 
 msgid "Print configure options"
-msgstr ""
+msgstr "打印配置选项"
 
 msgid "Print last working directory to specified file"
 msgstr "将工作目录打印到指定文件"
@@ -565,14 +575,14 @@ msgstr "设置调试级别"
 msgid "Launches the file viewer on a file"
 msgstr "在文件上启动文件查看器"
 
-msgid "Edits one file"
-msgstr "编辑一个文件"
+msgid "Edit files"
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "强制使用 xterm 特性"
 
 msgid "Disable X11 support"
-msgstr ""
+msgstr "禁用 X11 支持"
 
 msgid "Tries to use an old highlight mouse tracking"
 msgstr ""
@@ -596,7 +606,7 @@ msgid "Load definitions of key bindings from specified file"
 msgstr "从指定的文件加载键绑定定义"
 
 msgid "Don't load definitions of key bindings from file, use defaults"
-msgstr ""
+msgstr "不从文件中载入键盘绑定定义，使用默认值"
 
 msgid "Requests to run in black and white"
 msgstr "请求运行在黑白模式"
@@ -626,7 +636,8 @@ msgid ""
 "   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
 "   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
@@ -644,6 +655,16 @@ msgid ""
 "Attributes:\n"
 "   bold, underline, reverse, blink; append more with '+'\n"
 msgstr ""
+"标准颜色：\n"
+"   black, gray, red, brightred, green, brightgreen, brown,\n"
+"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
+"   brightcyan, lightgray and white\n"
+"\n"
+"扩展颜色，当256色可用时：\n"
+"   color16 到 color255，或者 rgb000 到 rgb555 或者 gray0 到 gray23\n"
+"\n"
+"属性：\n"
+"   bold, underline, reverse, blink; 添加更多用 '+'\n"
 
 msgid "Color options"
 msgstr "颜色选项"
@@ -677,7 +698,7 @@ msgid "Terminal options"
 msgstr "终端选项 "
 
 msgid "Arguments parse error!"
-msgstr ""
+msgstr "参数解析错误！"
 
 msgid "No arguments given to the viewer."
 msgstr "查看器没有指定参数"
@@ -839,9 +860,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "差异："
 
-#, fuzzy, c-format
+#, c-format
 msgid "\"%s\" is a directory"
-msgstr "%s不是目录\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -865,20 +886,6 @@ msgstr "<自动>"
 
 msgid "< Reload Current Syntax >"
 msgstr "<重新加载当前语法>"
-
-msgid "About"
-msgstr "关于"
-
-msgid ""
-"Copyright (C) 1996-2010 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
-"版权所有 (C) 1996-2010 自由软件基金会(FSF)\n"
-"\n"
-"为 Midnight Commander 开发的\n"
-"       对用户友好的文字编辑器。"
 
 #, c-format
 msgid "Cannot open %s for reading"
@@ -953,27 +960,6 @@ msgstr "输入文件名："
 msgid "Save As"
 msgstr "保存为"
 
-msgid "Syntax file edit"
-msgstr "语法文件编辑"
-
-msgid "Which syntax file you want to edit?"
-msgstr "您要编辑哪个语法文件？"
-
-msgid "&User"
-msgstr "用户(&U)"
-
-msgid "&System Wide"
-msgstr "系统范围(&S)"
-
-msgid "Menu edit"
-msgstr "菜单编辑"
-
-msgid "Which menu file do you want to edit?"
-msgstr "您要编辑哪个菜单文件？"
-
-msgid "&Local"
-msgstr "本地(&L)"
-
 msgid "Block is large, you may not be able to undo this action"
 msgstr "块过大，您可能无法撤消这个动作。"
 
@@ -995,9 +981,8 @@ msgstr "编辑保存模式 "
 msgid "Save as"
 msgstr "保存为"
 
-#, fuzzy
 msgid "Cannot save: destination is not a regular file"
-msgstr "无法查看：不是常规文件"
+msgstr ""
 
 msgid "A file already exists with this name"
 msgstr "同名文件已存在"
@@ -1015,7 +1000,7 @@ msgid "Press macro hotkey:"
 msgstr "按下宏热键："
 
 msgid "Macro not deleted"
-msgstr ""
+msgstr "宏没有删除"
 
 msgid "Save macro"
 msgstr "保存宏"
@@ -1024,10 +1009,10 @@ msgid "Press the macro's new hotkey:"
 msgstr "为该宏按下新热键："
 
 msgid "Repeat last commands"
-msgstr ""
+msgstr "重复上一个命令"
 
 msgid "Repeat times:"
-msgstr ""
+msgstr "重复半数"
 
 #, c-format
 msgid "Confirm save file: \"%s\""
@@ -1039,15 +1024,29 @@ msgstr "保存文件"
 msgid "&Save"
 msgstr "保存(&S)"
 
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes"
-msgstr ""
-"当前文本被修改但没有保存文件。\n"
-"选择继续将丢失这些修改。"
-
 msgid "Load"
 msgstr "加载"
+
+msgid "Syntax file edit"
+msgstr "语法文件编辑"
+
+msgid "Which syntax file you want to edit?"
+msgstr "您要编辑哪个语法文件？"
+
+msgid "&User"
+msgstr "用户(&U)"
+
+msgid "&System wide"
+msgstr ""
+
+msgid "Menu edit"
+msgstr "菜单编辑"
+
+msgid "Which menu file do you want to edit?"
+msgstr "您要编辑哪个菜单文件？"
+
+msgid "&Local"
+msgstr "本地(&L)"
 
 msgid "Replace"
 msgstr "替换"
@@ -1056,8 +1055,23 @@ msgstr "替换"
 msgid "%ld replacements made"
 msgstr "替换了 %ld 处"
 
-msgid "&Cancel quit"
-msgstr "取消退出(&C)"
+msgid "[NoName]"
+msgstr ""
+
+#, c-format
+msgid ""
+"File %s was modified.\n"
+"Save before close?"
+msgstr ""
+
+msgid "Close file"
+msgstr ""
+
+#, c-format
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file %s?"
+msgstr ""
 
 msgid "This function is not implemented"
 msgstr "该功能尚未实现"
@@ -1139,10 +1153,10 @@ msgid "Press any key:"
 msgstr "按下任意键："
 
 msgid ""
-"Current text was modified without a file save\n"
+"Current text was modified without a file save.\n"
 "Continue discards these changes"
 msgstr ""
-"当前文字被修改但没有保存。\n"
+"当前文本被修改但没有保存文件。\n"
 "选择继续将丢失这些修改。"
 
 msgid "In se&lection"
@@ -1179,11 +1193,17 @@ msgstr "替换为："
 msgid "Confirm replace"
 msgstr "确认替换"
 
+msgid "NoName"
+msgstr ""
+
 msgid "&Open file..."
 msgstr "打开文件(&O)..."
 
 msgid "&New"
 msgstr "新建(&N)"
+
+msgid "&Close"
+msgstr ""
 
 msgid "Save &as..."
 msgstr "保存为(&a)...l"
@@ -1207,7 +1227,7 @@ msgid "&Undo"
 msgstr "撤消(&U)"
 
 msgid "&Redo"
-msgstr ""
+msgstr "重做(&R)"
 
 msgid "&Toggle ins/overw"
 msgstr "翻转插入/覆盖(&T)"
@@ -1267,7 +1287,7 @@ msgid "&Prev bookmark"
 msgstr "上一个书签(&P)"
 
 msgid "&Flush bookmarks"
-msgstr ""
+msgstr "清理书签(&F)"
 
 msgid "&Go to line..."
 msgstr "转到行(&G)"
@@ -1297,16 +1317,22 @@ msgid "&Refresh screen"
 msgstr "刷新屏幕(&R) "
 
 msgid "&Start/Stop record macro"
-msgstr ""
+msgstr "开始/停止录制宏 (&S)"
 
 msgid "Delete macr&o..."
 msgstr "删除宏(&O),,,"
 
 msgid "Record/Repeat &actions"
+msgstr "录制/重复动作(&A)"
+
+msgid "S&pell check"
 msgstr ""
 
-msgid "'ispell' s&pell check"
-msgstr "\"ispell\"拼写检查(&P)"
+msgid "C&heck word"
+msgstr ""
+
+msgid "Change spelling &language"
+msgstr ""
 
 msgid "&Mail..."
 msgstr "发送邮件(&M)..."
@@ -1328,6 +1354,24 @@ msgstr "粘贴输出(&P)..."
 
 msgid "&External formatter"
 msgstr "外部格式化工具(&E)"
+
+msgid "&Move"
+msgstr "移动(&M)"
+
+msgid "&Resize"
+msgstr ""
+
+msgid "&Toggle fullscreen"
+msgstr ""
+
+msgid "&Next"
+msgstr ""
+
+msgid "&Previous"
+msgstr ""
+
+msgid "&List..."
+msgstr ""
 
 msgid "&General..."
 msgstr "常规(&G)..."
@@ -1365,6 +1409,9 @@ msgstr "命令(&C)"
 msgid "For&mat"
 msgstr "格式化(&r)"
 
+msgid "&Window"
+msgstr ""
+
 msgid "&Options"
 msgstr "选项(&O) "
 
@@ -1381,7 +1428,7 @@ msgid "Word wrap line length:"
 msgstr "换行位置："
 
 msgid "&Group undo"
-msgstr ""
+msgstr "组撤消 (&G)"
 
 msgid "Cursor beyond end of line"
 msgstr "光标超出行末尾"
@@ -1425,6 +1472,19 @@ msgstr "换行模式"
 msgid "Editor options"
 msgstr "编辑器选项"
 
+msgid "About"
+msgstr "关于"
+
+msgid ""
+"Copyright (C) 1996-2012 the Free Software Foundation\n"
+"\n"
+"            A user friendly text editor\n"
+"         written for the Midnight Commander"
+msgstr ""
+
+msgid "Open files"
+msgstr ""
+
 msgid "Edit: "
 msgstr "编辑："
 
@@ -1445,6 +1505,27 @@ msgstr "ButtonBar|删除"
 
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|菜单"
+
+#, fuzzy
+msgid "&Add word"
+msgstr "添加新(&A)"
+
+msgid "Language"
+msgstr ""
+
+msgid "Misspelled"
+msgstr ""
+
+#, fuzzy
+msgid "Check word"
+msgstr "仅整词(&W)"
+
+msgid "Suggest"
+msgstr ""
+
+#, fuzzy
+msgid "Select language"
+msgstr "选择群组(&G)"
 
 msgid "Load syntax file"
 msgstr "加载语法文件"
@@ -1722,16 +1803,16 @@ msgid "set user ID on execution"
 msgstr "执行时设置用户 ID"
 
 msgid "Name:"
-msgstr ""
+msgstr "名字："
 
 msgid "Permissions (octal):"
-msgstr ""
+msgstr "权限(八进制):"
 
 msgid "Owner name:"
-msgstr ""
+msgstr "所有者名字："
 
 msgid "Group name:"
-msgstr ""
+msgstr "组名字："
 
 msgid "C&lear marked"
 msgstr "清除已标记的(&L)"
@@ -1854,6 +1935,9 @@ msgstr "扩展文件编辑"
 msgid "Which extension file you want to edit?"
 msgstr "您要编辑哪个扩展文件？"
 
+msgid "&System Wide"
+msgstr "系统范围(&S)"
+
 msgid "Highlighting groups file edit"
 msgstr "突出显示组文件编辑"
 
@@ -1909,6 +1993,9 @@ msgstr "\"%s\"不是符号链接"
 msgid "FTP to machine"
 msgstr "FTP 到机器"
 
+msgid "SFTP to machine"
+msgstr ""
+
 msgid "Shell link to machine"
 msgstr "Shell链接到机器"
 
@@ -1930,11 +2017,11 @@ msgstr "设置"
 
 #, c-format
 msgid "Setup saved to %s"
-msgstr ""
+msgstr "设置保存到 %s"
 
 #, c-format
 msgid "Unable to save setup to %s"
-msgstr ""
+msgstr "设置不能保存到 %s"
 
 msgid "Cannot execute commands on non-local filesystems"
 msgstr "您无法在非本地文件系统上执行命令"
@@ -1950,6 +2037,9 @@ msgstr ""
 msgid "Cannot read directory contents"
 msgstr "无法读取目录内容"
 
+msgid "Parameter"
+msgstr "参数"
+
 #, c-format
 msgid ""
 "Cannot create temporary command file\n"
@@ -1957,9 +2047,6 @@ msgid ""
 msgstr ""
 "无法创建临时命令文件\n"
 "%s"
-
-msgid "Parameter"
-msgstr "参数"
 
 #, c-format
 msgid " %s%s file error"
@@ -1976,7 +2063,7 @@ msgstr ""
 
 #, c-format
 msgid "%s file error"
-msgstr ""
+msgstr "%s 文件错误"
 
 #, c-format
 msgid ""
@@ -2068,7 +2155,7 @@ msgid "&Abort"
 msgstr "中止(&A)"
 
 msgid "Ski&p all"
-msgstr ""
+msgstr "路过全部 (&I)"
 
 msgid "&Retry"
 msgstr "重试(&R)"
@@ -2233,6 +2320,8 @@ msgid ""
 "Cannot preallocate space for target file \"%s\"\n"
 "%s"
 msgstr ""
+"不能预分配空间给目标文件 \"%s\"\n"
+"%s"
 
 #, c-format
 msgid ""
@@ -2417,35 +2506,35 @@ msgstr "后台进程：文件已存在"
 
 #, c-format
 msgid "Files processed: %zu/%zu"
-msgstr ""
+msgstr "处理的文件：%zu/%zu"
 
 #, c-format
 msgid "Files processed: %zu"
-msgstr ""
+msgstr "处理的文件：%zu"
 
 #, c-format
 msgid "Time: %s %s"
-msgstr ""
+msgstr "时间：%s %s"
 
 #, c-format
 msgid "Time: %s %s (%s)"
-msgstr ""
+msgstr "时间：%s %s (%s)"
 
 #, c-format
 msgid "Time: %s"
-msgstr ""
+msgstr "时间：%s"
 
 #, c-format
 msgid "Time: %s (%s)"
-msgstr ""
+msgstr "时间：%s (%s)"
 
 #, c-format
 msgid " Total: %s "
-msgstr ""
+msgstr "总共：%s"
 
 #, c-format
 msgid " Total: %s/%s "
-msgstr ""
+msgstr "总共：%s/%s "
 
 msgid "Source"
 msgstr "源"
@@ -2534,7 +2623,7 @@ msgid "File name:"
 msgstr "文件名："
 
 msgid "Ena&ble ignore directories:"
-msgstr ""
+msgstr "启用忽略目录(&B)："
 
 msgid "Start at:"
 msgstr "开始于："
@@ -2549,7 +2638,7 @@ msgstr "完成"
 #, c-format
 msgid "Finished (ignored %zd directory)"
 msgid_plural "Finished (ignored %zd directories)"
-msgstr[0] ""
+msgstr[0] "完成 (忽略 %zd 目录\t)"
 
 #, c-format
 msgid "Searching %s"
@@ -2557,9 +2646,6 @@ msgstr "正在搜索 %s"
 
 msgid "Searching"
 msgstr "正在搜索"
-
-msgid "&Move"
-msgstr "移动(&M)"
 
 msgid "&Remove"
 msgstr "删除(&R)"
@@ -2627,13 +2713,15 @@ msgstr "新建组名："
 
 #, c-format
 msgid "Are you sure you want to remove entry \"%s\"?"
-msgstr ""
+msgstr "你确定要删除 \"%s\"?"
 
 #, c-format
 msgid ""
 "Group \"%s\" is not empty.\n"
 "Remove it?"
 msgstr ""
+"组 \"%s\" 不是空的。\n"
+"要删除它吗？"
 
 msgid "Top level group"
 msgstr "顶级组"
@@ -2646,6 +2734,8 @@ msgid ""
 "MC was unable to write %s file,\n"
 "your old hotlist entries were not deleted"
 msgstr ""
+"MC 无法写文件 %s ，\n"
+"你旧的活动表条目被删除了"
 
 #, c-format
 msgid "Label for \"%s\":"
@@ -2669,14 +2759,14 @@ msgid "No node information"
 msgstr "没有节点信息"
 
 msgid "Free nodes:"
-msgstr ""
+msgstr "空闲结点："
 
 msgid "No space information"
 msgstr "没有空间信息"
 
 #, c-format
 msgid "Free space: %s/%s (%d%%)"
-msgstr ""
+msgstr "空余空间：%s/%s (%d%%)"
 
 #, c-format
 msgid "Type:      %s"
@@ -2717,7 +2807,7 @@ msgstr "大小：     %s"
 #, c-format
 msgid " (%ld block)"
 msgid_plural " (%ld blocks)"
-msgstr[0] " (%ld blocks)"
+msgstr[0] " (%ld 块)"
 
 #, c-format
 msgid "Owner:     %s/%s"
@@ -2804,6 +2894,9 @@ msgstr "FTP 链接(&P)..."
 msgid "S&hell link..."
 msgstr "S&hell链接..."
 
+msgid "S&FTP link..."
+msgstr ""
+
 msgid "SM&B link..."
 msgstr "SMB 链接(&B)..."
 
@@ -2862,7 +2955,7 @@ msgid "U&nselect group"
 msgstr "取消选择组(&U)"
 
 msgid "&Invert selection"
-msgstr ""
+msgstr "反选 (&I)"
 
 msgid "E&xit"
 msgstr "退出(&X)"
@@ -2886,7 +2979,7 @@ msgid "&Compare directories"
 msgstr "比较目录(&C)"
 
 msgid "C&ompare files"
-msgstr ""
+msgstr "比较文件 (&O)"
 
 msgid "E&xternal panelize"
 msgstr "外部面板(&X)"
@@ -2948,7 +3041,7 @@ msgstr "面板："
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"
 msgid_plural "You have %zd opened screens. Quit anyway?"
-msgstr[0] "You have %zd opened screens. Quit anyway?"
+msgstr[0] "你有 %zd 个打开的屏幕。真的要需要吗？"
 
 msgid "The Midnight Commander"
 msgstr "Midnight Commander"
@@ -2981,7 +3074,7 @@ msgid "ButtonBar|Mkdir"
 msgstr "ButtonBar|建目录"
 
 msgid "Memory exhausted!"
-msgstr ""
+msgstr "内存耗尽！"
 
 msgid "&Never"
 msgstr "从不(&N)"
@@ -3035,7 +3128,7 @@ msgid "Esc key mode"
 msgstr "ESC键模式"
 
 msgid "Preallocate &space"
-msgstr ""
+msgstr "预分配空间 (&s)"
 
 msgid "Mkdi&r autoname"
 msgstr "创建目录时自动命名(&R)"
@@ -3092,7 +3185,7 @@ msgid "A&uto save panels setup"
 msgstr "自动保存面板设置(&U)"
 
 msgid "Simple s&wap"
-msgstr "简单交换(&W)"
+msgstr "简单交换 (&W)"
 
 msgid "Re&verse files only"
 msgstr "仅反选文件(&V)"
@@ -3116,7 +3209,7 @@ msgid "Use SI si&ze units"
 msgstr "使用SI大小单位(&Z)"
 
 msgid "Show mi&ni-status"
-msgstr ""
+msgstr "显示最少状态 (&N)"
 
 msgid "Panel options"
 msgstr "面板选项"
@@ -3242,12 +3335,12 @@ msgstr "<readlink 失败>"
 #, c-format
 msgid "%s byte"
 msgid_plural "%s bytes"
-msgstr[0] "%s bytes"
+msgstr[0] "%s 字节"
 
 #, c-format
 msgid "%s in %d file"
 msgid_plural "%s in %d files"
-msgstr[0] "%s in %d files"
+msgstr[0] "%s in %d file"
 
 msgid "Panelize"
 msgstr ""
@@ -3287,6 +3380,9 @@ msgstr "关闭管道失败"
 
 msgid "Cannot run external panelize in a non-local directory"
 msgstr "在非本地目录不能运行外部面板化"
+
+msgid "Modified git files"
+msgstr "修改过的git 文件"
 
 msgid "Find rejects after patching"
 msgstr "应用补丁后查找被拒绝的补丁"
@@ -3487,9 +3583,11 @@ msgid ""
 "Failed to run:\n"
 "%s\n"
 msgstr ""
+"运行失败：\n"
+"%s\n"
 
 msgid "Home directory path is not absolute"
-msgstr ""
+msgstr "主目录路径不是绝对路径"
 
 #, c-format
 msgid ""
@@ -3497,6 +3595,9 @@ msgid ""
 "Failed while close:\n"
 "%s\n"
 msgstr ""
+"\n"
+"关闭失败：\n"
+"%s\n"
 
 msgid "Choose codepage"
 msgstr "选择代码页"
@@ -3539,22 +3640,22 @@ msgid "Warning: Cannot change to %s.\n"
 msgstr "警告：无法换到 %s。\n"
 
 msgid "Using the S-Lang library with terminfo database\n"
-msgstr "使用S-Lang库和terminfo数据库\n"
+msgstr "与terminfo数据库一起使用S-Lang程序库\n"
 
 msgid "Using the ncurses library\n"
-msgstr "使用ncurses库\n"
+msgstr "使用 ncurses 库\n"
 
 msgid "Using the ncursesw library\n"
-msgstr "使用ncursesw库\n"
+msgstr "使用 ncursesw 库\n"
 
 msgid "With builtin Editor\n"
 msgstr "内建编辑器\n"
 
 msgid "With optional subshell support\n"
-msgstr "With optional subshell support\n"
+msgstr "可选的子 shell 支持\n"
 
 msgid "With subshell support as default\n"
-msgstr "With subshell support as default\n"
+msgstr "默认支持子 shell\n"
 
 msgid "With support for background operations\n"
 msgstr "后台操作支持\n"
@@ -3576,7 +3677,7 @@ msgstr "多代码页支持\n"
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
-msgstr "依赖Glib %d.%d.%d\n"
+msgstr "由 GLib %d.%d.%d 构建\n"
 
 #, c-format
 msgid "Virtual File Systems:"
@@ -3586,27 +3687,26 @@ msgstr "虚拟文件系统:"
 msgid "Data types:"
 msgstr "数据类型"
 
-#, fuzzy
 msgid "Root directory:"
-msgstr "目录"
+msgstr ""
 
 msgid "System data"
-msgstr ""
+msgstr "系统数据"
 
 msgid "Config directory:"
-msgstr ""
+msgstr "配置目录"
 
 msgid "Data directory:"
-msgstr ""
+msgstr "数据目录"
 
 msgid "VFS plugins and scripts:"
-msgstr ""
+msgstr "VFS 插件和脚本："
 
 msgid "User data"
-msgstr ""
+msgstr "用户数据"
 
 msgid "Cache directory:"
-msgstr ""
+msgstr "缓存目录"
 
 #, c-format
 msgid ""
@@ -3699,10 +3799,6 @@ msgid "fish: Getting host info..."
 msgstr "fish：获取主机信息..."
 
 #, c-format
-msgid "fish: Connected, home %s."
-msgstr "fish：已连接，主目录%s，"
-
-#, c-format
 msgid "fish: Reading directory %s..."
 msgstr "fish：正在读取目录 %s..."
 
@@ -3722,10 +3818,10 @@ msgid "fish: Local read failed, sending zeros"
 msgstr "fish：本地读取失败，正在发送零"
 
 msgid "fish: storing zeros"
-msgstr "fish: 存贮空白字符"
+msgstr "fish: 存贮0字节"
 
 msgid "fish: storing file"
-msgstr "fish: 存贮文件"
+msgstr "fish: 保存文件中"
 
 msgid "Aborting transfer..."
 msgstr "正在中止传输..."
@@ -3787,7 +3883,7 @@ msgstr "ftpfs：连接服务器失败：%s"
 
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
-msgstr ""
+msgstr "等待重试... %d (Ctrl-G 取消)"
 
 msgid "ftpfs: invalid address family"
 msgstr "ftpfs：无效的地址族"
@@ -3832,7 +3928,7 @@ msgid "ftpfs: failed; nowhere to fallback to"
 msgstr "ftpfs：失败；没有后备"
 
 msgid "ftpfs: storing file"
-msgstr "ftpfs: 存贮文件"
+msgstr "ftpfs: 保存文件中"
 
 msgid ""
 "~/.netrc file has incorrect mode\n"
@@ -3843,7 +3939,7 @@ msgstr ""
 
 #, c-format
 msgid "%s: Warning: file %s not found\n"
-msgstr ""
+msgstr "%s: 警告：文件 %s 没有找到\n"
 
 #, c-format
 msgid ""
@@ -3860,6 +3956,66 @@ msgid ""
 msgstr ""
 "警告：%2$s 中有无效的标志 %1$c\n"
 "%3$s\n"
+
+#, fuzzy, c-format
+msgid "sftp: an error occured while reading %s: %s"
+msgstr "迁移用户设置时发生了错误：%s"
+
+msgid "sftp: Unable to get current user name."
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Invalid host name."
+msgstr "ftpfs：无效的主机名。"
+
+#, fuzzy
+msgid "sftp: Invalid port value."
+msgstr "ftpfs：无效的主机名。"
+
+#, fuzzy, c-format
+msgid "sftp: %s"
+msgstr "ftpfs: %s"
+
+#, fuzzy, c-format
+msgid "sftp: making connection to %s"
+msgstr "ftpfs：正在连接 %s"
+
+#, fuzzy
+msgid "sftp: connection interrupted by user"
+msgstr "ftpfs：连接被用户中断"
+
+#, fuzzy, c-format
+msgid "sftp: connection to server failed: %s"
+msgstr "ftpfs：连接服务器失败：%s"
+
+#, c-format
+msgid "sftp: Enter passphrase for %s "
+msgstr ""
+
+msgid "sftp: Passphrase is empty."
+msgstr ""
+
+#, fuzzy, c-format
+msgid "sftp: Enter password for %s "
+msgstr "ftpfs：正在发送用户口令"
+
+msgid "sftp: Password is empty."
+msgstr ""
+
+#, c-format
+msgid "sftp: Failure establishing SSH session: (%d)"
+msgstr ""
+
+msgid "sftp: No file handler data present for reading file"
+msgstr ""
+
+#, c-format
+msgid "sftp: (Ctrl-G break) Listing... %s"
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Listing done."
+msgstr "列表模式"
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4056,6 +4212,9 @@ msgstr ""
 "不能保存文件:\n"
 "%s"
 
+msgid "&Cancel quit"
+msgstr "取消退出(&C)"
+
 msgid "View: "
 msgstr "查看："
 
@@ -4077,7 +4236,4 @@ msgid "Search done"
 msgstr "搜索完成"
 
 msgid "Continue from beginning?"
-msgstr "从开始处继续？"
-
-#~ msgid "fish: Setting up current directory..."
-#~ msgstr "fish：正在设置当前目录..."
+msgstr "从头继续？"

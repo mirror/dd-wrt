@@ -138,6 +138,7 @@ panelize_callback (Dlg_head * h, Widget * sender, dlg_msg_t msg, int parm, void 
     {
     case DLG_INIT:
     case DLG_POST_KEY:
+    case DLG_FOCUS:
         tty_setcolor (MENU_ENTRY_COLOR);
         update_command ();
         return MSG_HANDLED;
@@ -191,7 +192,7 @@ init_panelize (void)
 
     panelize_dlg =
         create_dlg (TRUE, 0, 0, 22, panelize_cols, dialog_colors,
-                    panelize_callback, "[External panelize]",
+                    panelize_callback, NULL, "[External panelize]",
                     _("External panelize"), DLG_CENTER | DLG_REVERSE);
 
     for (i = 0; i < BUTTONS; i++)
@@ -599,6 +600,7 @@ load_panelize (void)
 
     if (!profile_keys || *profile_keys == NULL)
     {
+        add2panelize (g_strdup (_("Modified git files")), g_strdup ("git ls-files --modified"));
         add2panelize (g_strdup (_("Find rejects after patching")),
                       g_strdup ("find . -name \\*.rej -print"));
         add2panelize (g_strdup (_("Find *.orig after patching")),

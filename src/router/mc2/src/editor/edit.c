@@ -2,12 +2,13 @@
    Editor low level data handling and cursor fundamentals.
 
    Copyright (C) 1996, 1997, 1998, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007, 2008, 2009, 2010, 2011
+   2007, 2008, 2009, 2010, 2011, 2012
    The Free Software Foundation, Inc.
 
    Written by:
    Paul Sheer 1996, 1997
    Ilia Maslakov <il.smind@gmail.com> 2009, 2010, 2011
+   Andrew Borodin <aborodin@vmail.ru> 2012.
 
    This file is part of the Midnight Commander.
 
@@ -60,7 +61,6 @@
 #include "lib/charsets.h"       /* get_codepage_id */
 #endif
 
-#include "src/filemanager/cmd.h"        /* view_other_cmd() */
 #include "src/filemanager/usermenu.h"   /* user_menu_cmd() */
 
 #include "src/setup.h"          /* option_tab_spacing */
@@ -69,7 +69,10 @@
 #include "src/keybind-defaults.h"
 
 #include "edit-impl.h"
-#include "edit-widget.h"
+#include "editwidget.h"
+#ifdef HAVE_ASPELL
+#include "spell.h"
+#endif
 
 /*** global variables ****************************************************************************/
 
@@ -171,56 +174,6 @@ static long last_bracket = -1;
 static int left_of_four_spaces (WEdit * edit);
 
 /* --------------------------------------------------------------------------------------------- */
-
-static void
-edit_about (void)
-{
-    const char *header = N_("About");
-    const char *button_name = N_("&OK");
-    const char *const version = "MCEdit " VERSION;
-    char text[BUF_LARGE];
-
-    int win_len, version_len, button_len;
-    int cols, lines;
-
-    Dlg_head *about_dlg;
-
-#ifdef ENABLE_NLS
-    header = _(header);
-    button_name = _(button_name);
-#endif
-
-    button_len = str_term_width1 (button_name) + 5;
-    version_len = str_term_width1 (version);
-
-    g_snprintf (text, sizeof (text),
-                _("Copyright (C) 1996-2010 the Free Software Foundation\n\n"
-                  "            A user friendly text editor\n"
-                  "         written for the Midnight Commander"));
-
-    win_len = str_term_width1 (header);
-    win_len = max (win_len, version_len);
-    win_len = max (win_len, button_len);
-
-    /* count width and height of text */
-    str_msg_term_size (text, &lines, &cols);
-    lines += 9;
-    cols = max (win_len, cols) + 6;
-
-    /* dialog */
-    about_dlg = create_dlg (TRUE, 0, 0, lines, cols, dialog_colors, NULL,
-                            "[Internal File Editor]", header, DLG_CENTER | DLG_TRYUP);
-
-    add_widget (about_dlg, label_new (3, (cols - version_len) / 2, version));
-    add_widget (about_dlg, label_new (5, 3, text));
-    add_widget (about_dlg, button_new (lines - 3, (cols - button_len) / 2,
-                                       B_ENTER, NORMAL_BUTTON, button_name, NULL));
-
-    run_dlg (about_dlg);
-    destroy_dlg (about_dlg);
-}
-
-/* --------------------------------------------------------------------------------------------- */
 /**
  * Initialize the buffers for an empty files.
  */
@@ -242,17 +195,19 @@ edit_init_buffers (WEdit * edit)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
 /**
  * Load file OR text into buffers.  Set cursor to the beginning of file.
- * @returns 1 on error.
+ *
+ * @returns FALSE on error.
  */
 
-static int
+static gboolean
 edit_load_file_fast (WEdit * edit, const vfs_path_t * filename_vpath)
 {
     long buf, buf2;
     int file = -1;
-    int ret = 1;
+    gboolean ret = FALSE;
 
     edit->curs2 = edit->last_byte;
     buf2 = edit->curs2 >> S_EDIT_BUF_SIZE;
@@ -267,7 +222,7 @@ edit_load_file_fast (WEdit * edit, const vfs_path_t * filename_vpath)
         g_free (filename);
         edit_error_dialog (_("Error"), errmsg);
         g_free (errmsg);
-        return 1;
+        return FALSE;
     }
 
     if (!edit->buffers2[buf2])
@@ -288,11 +243,11 @@ edit_load_file_fast (WEdit * edit, const vfs_path_t * filename_vpath)
             if (mc_read (file, (char *) edit->buffers2[buf], EDIT_BUF_SIZE) < 0)
                 break;
         }
-        ret = 0;
+        ret = TRUE;
     }
-    while (0);
+    while (FALSE);
 
-    if (ret != 0)
+    if (!ret)
     {
         gchar *errmsg, *filename;
 
@@ -370,9 +325,16 @@ edit_insert_stream (WEdit * edit, FILE * f)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/** Open file and create it if necessary.  Return 0 for success, 1 for error.  */
+/**
+  * Open file and create it if necessary.
+  *
+  * @param edit           editor object
+  * @param filename_vpath file name
+  * @param st             buffer for store stat info
+  * @returns TRUE for success, FALSE for error.
+  */
 
-static int
+static gboolean
 check_file_access (WEdit * edit, const vfs_path_t * filename_vpath, struct stat *st)
 {
     int file;
@@ -396,11 +358,9 @@ check_file_access (WEdit * edit, const vfs_path_t * filename_vpath, struct stat 
             g_free (filename);
             goto cleanup;
         }
-        else
-        {
-            /* New file, delete it if it's not modified or saved */
-            edit->delete_file = 1;
-        }
+
+        /* New file, delete it if it's not modified or saved */
+        edit->delete_file = 1;
     }
 
     /* Check what we have opened */
@@ -448,55 +408,58 @@ check_file_access (WEdit * edit, const vfs_path_t * filename_vpath, struct stat 
     {
         edit_error_dialog (_("Error"), errmsg);
         g_free (errmsg);
-        return 1;
+        return FALSE;
     }
-    return 0;
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
 /**
  * Open the file and load it into the buffers, either directly or using
- * a filter.  Return 0 on success, 1 on error.
+ * a filter.  Return TRUE on success, FALSE on error.
  *
  * Fast loading (edit_load_file_fast) is used when the file size is
  * known.  In this case the data is read into the buffers by blocks.
  * If the file size is not known, the data is loaded byte by byte in
  * edit_insert_file.
+ *
+ * @param edit editor object
+ * @return TRUE if file was successfully opened and loaded to buffers, FALSE otherwise
  */
-
-static int
+static gboolean
 edit_load_file (WEdit * edit)
 {
-    int fast_load = 1;
+    gboolean fast_load = TRUE;
 
     /* Cannot do fast load if a filter is used */
     if (edit_find_filter (edit->filename_vpath) >= 0)
-        fast_load = 0;
-
+        fast_load = FALSE;
 
     /*
      * FIXME: line end translation should disable fast loading as well
      * Consider doing fseek() to the end and ftell() for the real size.
      */
-
     if (edit->filename_vpath != NULL)
     {
-
         /*
          * VFS may report file size incorrectly, and slow load is not a big
          * deal considering overhead in VFS.
          */
         if (!vfs_file_is_local (edit->filename_vpath))
-            fast_load = 0;
+            fast_load = FALSE;
 
         /* If we are dealing with a real file, check that it exists */
-        if (check_file_access (edit, edit->filename_vpath, &edit->stat1))
-            return 1;
+        if (!check_file_access (edit, edit->filename_vpath, &edit->stat1))
+        {
+            edit_clean (edit);
+            return FALSE;
+        }
     }
     else
     {
         /* nothing to load */
-        fast_load = 0;
+        fast_load = FALSE;
     }
 
     edit_init_buffers (edit);
@@ -518,13 +481,13 @@ edit_load_file (WEdit * edit)
             if (edit_insert_file (edit, edit->filename_vpath) < 0)
             {
                 edit_clean (edit);
-                return 1;
+                return FALSE;
             }
             edit->undo_stack_disable = 0;
         }
     }
     edit->lb = LB_ASIS;
-    return 0;
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -755,72 +718,6 @@ edit_get_prev_utf (WEdit * edit, long byte_index, int *char_width)
             return res;
         }
     }
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static int
-edit_backspace (WEdit * edit, const int byte_delete)
-{
-    int p = 0;
-    int cw = 1;
-    int i;
-
-    if (!edit->curs1)
-        return 0;
-
-    cw = 1;
-
-    if (edit->mark2 != edit->mark1)
-        edit_push_markers (edit);
-
-    if (edit->utf8 && byte_delete == 0)
-    {
-        edit_get_prev_utf (edit, edit->curs1, &cw);
-        if (cw < 1)
-            cw = 1;
-    }
-    for (i = 1; i <= cw; i++)
-    {
-        if (edit->mark1 >= edit->curs1)
-        {
-            edit->mark1--;
-            edit->end_mark_curs--;
-        }
-        if (edit->mark2 >= edit->curs1)
-            edit->mark2--;
-        if (edit->last_get_rule >= edit->curs1)
-            edit->last_get_rule--;
-
-        p = *(edit->buffers1[(edit->curs1 - 1) >> S_EDIT_BUF_SIZE] +
-              ((edit->curs1 - 1) & M_EDIT_BUF_SIZE));
-        if (!((edit->curs1 - 1) & M_EDIT_BUF_SIZE))
-        {
-            g_free (edit->buffers1[edit->curs1 >> S_EDIT_BUF_SIZE]);
-            edit->buffers1[edit->curs1 >> S_EDIT_BUF_SIZE] = NULL;
-        }
-        edit->last_byte--;
-        edit->curs1--;
-        edit_push_undo_action (edit, p);
-    }
-    edit_modification (edit);
-    if (p == '\n')
-    {
-        if (edit->book_mark)
-            book_mark_dec (edit, edit->curs_line);
-        edit->curs_line--;
-        edit->total_lines--;
-        edit->force |= REDRAW_AFTER_CURSOR;
-    }
-
-    if (edit->curs1 < edit->start_display)
-    {
-        edit->start_display--;
-        if (p == '\n')
-            edit->start_line--;
-    }
-
-    return p;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1886,12 +1783,12 @@ user_menu (WEdit * edit, const char *menu_file, int selected_entry)
         if (fd != NULL)
             fclose (fd);
     }
-    edit_cursor_move (edit, curs - edit->curs1);
-    edit_refresh_cmd (edit);
-    edit->force |= REDRAW_COMPLETELY;
-
     g_free (block_file);
     vfs_path_free (block_file_vpath);
+
+    edit_cursor_move (edit, curs - edit->curs1);
+    edit->force |= REDRAW_PAGE;
+    send_message ((Widget *) edit, WIDGET_DRAW, 0);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2094,7 +1991,54 @@ edit_write_stream (WEdit * edit, FILE * f)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+gboolean
+is_break_char (char c)
+{
+    return (isspace (c) || strchr ("{}[]()<>=|/\\!?~-+`'\",.;:#$%^&*", c));
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+char *
+edit_get_word_from_pos (WEdit * edit, long start_pos, long *start, gsize * len, gsize * cut)
+{
+    long word_start;
+    long cut_len = 0;
+    GString *match_expr;
+    unsigned char *bufpos;
+    int c1, c2;
+
+    for (word_start = start_pos; word_start != 0; word_start--, cut_len++)
+    {
+        c1 = edit_get_byte (edit, word_start);
+        c2 = edit_get_byte (edit, word_start - 1);
+
+        if (is_break_char (c1) != is_break_char (c2) || c1 == '\n' || c2 == '\n')
+            break;
+    }
+
+    bufpos = &edit->buffers1[word_start >> S_EDIT_BUF_SIZE][word_start & M_EDIT_BUF_SIZE];
+    match_expr = g_string_sized_new (16);
+
+    do
+    {
+        c1 = edit_get_byte (edit, word_start + match_expr->len);
+        c2 = edit_get_byte (edit, word_start + match_expr->len + 1);
+        g_string_append_c (match_expr, c1);
+    }
+    while (!(is_break_char (c1) != is_break_char (c2) || c1 == '\n' || c2 == '\n'));
+
+    *len = match_expr->len;
+    *start = word_start;
+    *cut = cut_len;
+
+    return g_string_free (match_expr, FALSE);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /** inserts a file at the cursor, returns count of inserted bytes on success */
+
 long
 edit_insert_file (WEdit * edit, const vfs_path_t * filename_vpath)
 {
@@ -2216,12 +2160,11 @@ edit_init (WEdit * edit, int y, int x, int lines, int cols, const vfs_path_t * f
     gboolean to_free = FALSE;
 
     option_auto_syntax = 1;     /* Resetting to auto on every invokation */
-    if (option_line_state)
-        option_line_state_width = LINE_STATE_WIDTH;
-    else
-        option_line_state_width = 0;
+    option_line_state_width = option_line_state ? LINE_STATE_WIDTH : 0;
 
-    if (edit == NULL)
+    if (edit != NULL)
+        edit_purge_widget (edit);
+    else
     {
 #ifdef ENABLE_NLS
         /*
@@ -2251,15 +2194,16 @@ edit_init (WEdit * edit, int y, int x, int lines, int cols, const vfs_path_t * f
         }
 #endif /* ENABLE_NLS */
         edit = g_malloc0 (sizeof (WEdit));
-        edit->search = NULL;
         to_free = TRUE;
     }
 
-    edit_purge_widget (edit);
+    edit->drag_state = MCEDIT_DRAG_NORMAL;
     edit->widget.y = y;
     edit->widget.x = x;
     edit->widget.lines = lines;
     edit->widget.cols = cols;
+    edit_save_size (edit);
+    edit->fullscreen = TRUE;
 
     edit->stat1.st_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
     edit->stat1.st_uid = getuid ();
@@ -2269,6 +2213,8 @@ edit_init (WEdit * edit, int y, int x, int lines, int cols, const vfs_path_t * f
     edit->over_col = 0;
     edit->bracket = -1;
     edit->force |= REDRAW_PAGE;
+
+    /* set file name before load file */
     edit_set_filename (edit, filename_vpath);
 
     edit->undo_stack_size = START_STACK_SIZE;
@@ -2283,7 +2229,7 @@ edit_init (WEdit * edit, int y, int x, int lines, int cols, const vfs_path_t * f
     edit->converter = str_cnv_from_term;
     edit_set_codeset (edit);
 
-    if (edit_load_file (edit))
+    if (!edit_load_file (edit))
     {
         /* edit_load_file already gives an error message */
         if (to_free)
@@ -2312,19 +2258,20 @@ edit_init (WEdit * edit, int y, int x, int lines, int cols, const vfs_path_t * f
     }
 
     edit_load_macro_cmd (edit);
+
     return edit;
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/** Clear the edit struct, freeing everything in it.  Return 1 on success */
 
-int
+/** Clear the edit struct, freeing everything in it.  Return TRUE on success */
+gboolean
 edit_clean (WEdit * edit)
 {
     int j = 0;
 
-    if (!edit)
-        return 0;
+    if (edit == NULL)
+        return FALSE;
 
     /* a stale lock, remove it */
     if (edit->locked)
@@ -2360,63 +2307,19 @@ edit_clean (WEdit * edit)
 
     edit_purge_widget (edit);
 
-    return 1;
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/** returns 1 on success */
 
-int
-edit_renew (WEdit * edit)
-{
-    int y = edit->widget.y;
-    int x = edit->widget.x;
-    int lines = edit->widget.lines;
-    int columns = edit->widget.cols;
-
-    edit_clean (edit);
-    return (edit_init (edit, y, x, lines, columns, NULL, 0) != NULL);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-/**
- * Load a new file into the editor.  If it fails, preserve the old file.
- * To do it, allocate a new widget, initialize it and, if the new file
- * was loaded, copy the data to the old widget.
- * Return 1 on success, 0 on failure.
- */
-
-int
-edit_reload (WEdit * edit, const vfs_path_t * filename_vpath)
-{
-    WEdit *e;
-    int y = edit->widget.y;
-    int x = edit->widget.x;
-    int lines = edit->widget.lines;
-    int columns = edit->widget.cols;
-
-    e = g_malloc0 (sizeof (WEdit));
-    e->widget = edit->widget;
-    if (edit_init (e, y, x, lines, columns, filename_vpath, 0) == NULL)
-    {
-        g_free (e);
-        return 0;
-    }
-    edit_clean (edit);
-    memcpy (edit, e, sizeof (WEdit));
-    g_free (e);
-    return 1;
-}
-
-/* --------------------------------------------------------------------------------------------- */
 /**
  * Load a new file into the editor and set line.  If it fails, preserve the old file.
  * To do it, allocate a new widget, initialize it and, if the new file
  * was loaded, copy the data to the old widget.
- * Return 1 on success, 0 on failure.
+ *
+ * @returns TRUE on success, FALSE on failure.
  */
-
-int
+gboolean
 edit_reload_line (WEdit * edit, const vfs_path_t * filename_vpath, long line)
 {
     WEdit *e;
@@ -2427,15 +2330,18 @@ edit_reload_line (WEdit * edit, const vfs_path_t * filename_vpath, long line)
 
     e = g_malloc0 (sizeof (WEdit));
     e->widget = edit->widget;
+
     if (edit_init (e, y, x, lines, columns, filename_vpath, line) == NULL)
     {
         g_free (e);
-        return 0;
+        return FALSE;
     }
+
     edit_clean (edit);
     memcpy (edit, e, sizeof (WEdit));
     g_free (e);
-    return 1;
+
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2852,6 +2758,72 @@ edit_delete (WEdit * edit, const int byte_delete)
         edit->total_lines--;
         edit->force |= REDRAW_AFTER_CURSOR;
     }
+    if (edit->curs1 < edit->start_display)
+    {
+        edit->start_display--;
+        if (p == '\n')
+            edit->start_line--;
+    }
+
+    return p;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+int
+edit_backspace (WEdit * edit, const int byte_delete)
+{
+    int p = 0;
+    int cw = 1;
+    int i;
+
+    if (edit->curs1 == 0)
+        return 0;
+
+    cw = 1;
+
+    if (edit->mark2 != edit->mark1)
+        edit_push_markers (edit);
+
+    if (edit->utf8 && byte_delete == 0)
+    {
+        edit_get_prev_utf (edit, edit->curs1, &cw);
+        if (cw < 1)
+            cw = 1;
+    }
+    for (i = 1; i <= cw; i++)
+    {
+        if (edit->mark1 >= edit->curs1)
+        {
+            edit->mark1--;
+            edit->end_mark_curs--;
+        }
+        if (edit->mark2 >= edit->curs1)
+            edit->mark2--;
+        if (edit->last_get_rule >= edit->curs1)
+            edit->last_get_rule--;
+
+        p = *(edit->buffers1[(edit->curs1 - 1) >> S_EDIT_BUF_SIZE] +
+              ((edit->curs1 - 1) & M_EDIT_BUF_SIZE));
+        if (!((edit->curs1 - 1) & M_EDIT_BUF_SIZE))
+        {
+            g_free (edit->buffers1[edit->curs1 >> S_EDIT_BUF_SIZE]);
+            edit->buffers1[edit->curs1 >> S_EDIT_BUF_SIZE] = NULL;
+        }
+        edit->last_byte--;
+        edit->curs1--;
+        edit_push_undo_action (edit, p);
+    }
+    edit_modification (edit);
+    if (p == '\n')
+    {
+        if (edit->book_mark)
+            book_mark_dec (edit, edit->curs_line);
+        edit->curs_line--;
+        edit->total_lines--;
+        edit->force |= REDRAW_AFTER_CURSOR;
+    }
+
     if (edit->curs1 < edit->start_display)
     {
         edit->start_display--;
@@ -3530,6 +3502,16 @@ edit_execute_key_command (WEdit * edit, unsigned long command, int char_for_inse
 void
 edit_execute_cmd (WEdit * edit, unsigned long command, int char_for_insertion)
 {
+    if (command == CK_WindowFullscreen)
+    {
+        edit_toggle_fullscreen (edit);
+        return;
+    }
+
+    /* handle window state */
+    if (edit_handle_move_resize (edit, command))
+        return;
+
     edit->force |= REDRAW_LINE;
 
     /* The next key press will unhighlight the found string, so update
@@ -4001,17 +3983,6 @@ edit_execute_cmd (WEdit * edit, unsigned long command, int char_for_insertion)
         edit_mark_current_line_cmd (edit);
         break;
 
-    case CK_ShowNumbers:
-        option_line_state = !option_line_state;
-        option_line_state_width = option_line_state ? LINE_STATE_WIDTH : 0;
-        edit->force |= REDRAW_PAGE;
-        break;
-
-    case CK_ShowMargin:
-        show_right_margin = !show_right_margin;
-        edit->force |= REDRAW_PAGE;
-        break;
-
     case CK_Bookmark:
         book_mark_clear (edit, edit->curs_line, BOOK_MARK_FOUND_COLOR);
         if (book_mark_query_color (edit, edit->curs_line, BOOK_MARK_COLOR))
@@ -4111,9 +4082,6 @@ edit_execute_cmd (WEdit * edit, unsigned long command, int char_for_insertion)
     case CK_Save:
         edit_save_confirm_cmd (edit);
         break;
-    case CK_EditFile:
-        edit_load_cmd (edit, EDIT_FILE_COMMON);
-        break;
     case CK_BlockSave:
         edit_save_block_cmd (edit);
         break;
@@ -4128,27 +4096,8 @@ edit_execute_cmd (WEdit * edit, unsigned long command, int char_for_insertion)
         edit_load_forward_cmd (edit);
         break;
 
-    case CK_EditSyntaxFile:
-        edit_load_cmd (edit, EDIT_FILE_SYNTAX);
-        break;
     case CK_SyntaxChoose:
         edit_syntax_dialog (edit);
-        break;
-
-    case CK_EditUserMenu:
-        edit_load_cmd (edit, EDIT_FILE_MENU);
-        break;
-
-    case CK_SyntaxOnOff:
-        option_syntax_highlighting ^= 1;
-        if (option_syntax_highlighting == 1)
-            edit_load_syntax (edit, NULL, edit->syntax_type);
-        edit->force |= REDRAW_PAGE;
-        break;
-
-    case CK_ShowTabTws:
-        enable_show_tabs_tws ^= 1;
-        edit->force |= REDRAW_PAGE;
         break;
 
     case CK_Search:
@@ -4177,33 +4126,17 @@ edit_execute_cmd (WEdit * edit, unsigned long command, int char_for_insertion)
     case CK_Find:
         edit_get_match_keyword_cmd (edit);
         break;
-    case CK_Quit:
-        dlg_stop (edit->widget.owner);
+#ifdef HAVE_ASPELL
+    case CK_SpellCheckCurrentWord:
+        edit_suggest_current_word (edit);
         break;
-    case CK_EditNew:
-        edit_new_cmd (edit);
+    case CK_SpellCheck:
+        edit_spellcheck_file (edit);
         break;
-    case CK_Help:
-        edit_help_cmd (edit);
+    case CK_SpellCheckSelectLang:
+        edit_set_spell_lang ();
         break;
-    case CK_Refresh:
-        edit_refresh_cmd (edit);
-        break;
-    case CK_SaveSetup:
-        save_setup_cmd ();
-        break;
-    case CK_About:
-        edit_about ();
-        break;
-    case CK_LearnKeys:
-        learn_keys ();
-        break;
-    case CK_Options:
-        edit_options_dialog (edit);
-        break;
-    case CK_OptionsSaveMode:
-        menu_save_mode_cmd ();
-        break;
+#endif
     case CK_Date:
         {
             char s[BUF_MEDIUM];
@@ -4241,9 +4174,6 @@ edit_execute_cmd (WEdit * edit, unsigned long command, int char_for_insertion)
         break;
     case CK_Mail:
         edit_mail_dialog (edit);
-        break;
-    case CK_Shell:
-        view_other_cmd ();
         break;
 #ifdef HAVE_CHARSET
     case CK_SelectCodepage:

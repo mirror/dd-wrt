@@ -3,17 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Joe Hansen <joedalton2@yahoo.dk>, 2011.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
-#   <theoliver@live.co.uk>, 2012.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-04-25 19:29+0300\n"
-"PO-Revision-Date: 2012-04-03 20:44+0000\n"
-"Last-Translator: OliverMller <theoliver@live.co.uk>\n"
-"Language-Team: Danish (http://www.transifex.net/projects/p/mc/language/da/)\n"
+"POT-Creation-Date: 2012-07-18 13:34+0300\n"
+"PO-Revision-Date: 2012-07-13 08:36+0000\n"
+"Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
+"Language-Team: Danish (http://www.transifex.com/projects/p/mc/language/da/)\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -110,8 +108,8 @@ msgstr "Ugyldigt symbolantal %d"
 msgid "Regular expression error"
 msgstr ""
 
-msgid "&Normal"
-msgstr "&Normal"
+msgid "No&rmal"
+msgstr ""
 
 msgid "Re&gular expression"
 msgstr "&Regulært udtryk"
@@ -565,8 +563,8 @@ msgstr "Angiv fejlsøgningsniveau"
 msgid "Launches the file viewer on a file"
 msgstr "Bruger filfremviseren på en fil"
 
-msgid "Edits one file"
-msgstr "Redigerer en fil"
+msgid "Edit files"
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "Fremtvinger xterm-funktioner"
@@ -626,7 +624,8 @@ msgid ""
 "   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
 "   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
@@ -839,9 +838,9 @@ msgstr ""
 msgid "Diff:"
 msgstr "Forskel:"
 
-#, fuzzy, c-format
+#, c-format
 msgid "\"%s\" is a directory"
-msgstr "%s er ikke en mappe\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -865,20 +864,6 @@ msgstr "< Auto >"
 
 msgid "< Reload Current Syntax >"
 msgstr "< Genindlæs aktuel syntaks >"
-
-msgid "About"
-msgstr "Om"
-
-msgid ""
-"Copyright (C) 1996-2010 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
-"Ophavsret 1996-2010 the Free Software Foundation\n"
-"\n"
-"         Et brugervenligt tekstredigeringsprogram\n"
-"         skrevet til Midnight Commander"
 
 #, c-format
 msgid "Cannot open %s for reading"
@@ -953,27 +938,6 @@ msgstr "Indtast filnavn:"
 msgid "Save As"
 msgstr "Gem som"
 
-msgid "Syntax file edit"
-msgstr "Redigering af syntaksfil"
-
-msgid "Which syntax file you want to edit?"
-msgstr "Hvilken syntaksfil ønsker du at redigere?"
-
-msgid "&User"
-msgstr "&Bruger"
-
-msgid "&System Wide"
-msgstr "Hele &systemet"
-
-msgid "Menu edit"
-msgstr "Menuredigering"
-
-msgid "Which menu file do you want to edit?"
-msgstr "Hvilken menufil ønsker du at redigere?"
-
-msgid "&Local"
-msgstr "&Lokal"
-
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Blok er stor, du vil måske ikke kunne fortryde denne handling"
 
@@ -995,9 +959,8 @@ msgstr "Rediger gemtilstand"
 msgid "Save as"
 msgstr "Gem som"
 
-#, fuzzy
 msgid "Cannot save: destination is not a regular file"
-msgstr "Kan ikke vise: Ikke en regulær fil"
+msgstr ""
 
 msgid "A file already exists with this name"
 msgstr "En fil findes allerede med dette navn"
@@ -1039,15 +1002,29 @@ msgstr "Gem fil"
 msgid "&Save"
 msgstr "&Gem"
 
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes"
-msgstr ""
-"Aktuel teskt blev ændret uden en filgemning.\n"
-"Fortsæt med at fjerne disse ændringer"
-
 msgid "Load"
 msgstr "Indlæs"
+
+msgid "Syntax file edit"
+msgstr "Redigering af syntaksfil"
+
+msgid "Which syntax file you want to edit?"
+msgstr "Hvilken syntaksfil ønsker du at redigere?"
+
+msgid "&User"
+msgstr "&Bruger"
+
+msgid "&System wide"
+msgstr ""
+
+msgid "Menu edit"
+msgstr "Menuredigering"
+
+msgid "Which menu file do you want to edit?"
+msgstr "Hvilken menufil ønsker du at redigere?"
+
+msgid "&Local"
+msgstr "&Lokal"
 
 msgid "Replace"
 msgstr "Erstat"
@@ -1056,8 +1033,23 @@ msgstr "Erstat"
 msgid "%ld replacements made"
 msgstr "%ld erstatninger foretaget"
 
-msgid "&Cancel quit"
-msgstr "&Afbryd afslut"
+msgid "[NoName]"
+msgstr ""
+
+#, c-format
+msgid ""
+"File %s was modified.\n"
+"Save before close?"
+msgstr ""
+
+msgid "Close file"
+msgstr ""
+
+#, c-format
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file %s?"
+msgstr ""
 
 msgid "This function is not implemented"
 msgstr "Denne funktion er ikke implementeret"
@@ -1139,11 +1131,11 @@ msgid "Press any key:"
 msgstr "Tryk på en tast:"
 
 msgid ""
-"Current text was modified without a file save\n"
+"Current text was modified without a file save.\n"
 "Continue discards these changes"
 msgstr ""
-"Aktuel tekst blev ændret uden en filgemning\n"
-"Fortsæt med at fjerne disse ændringer."
+"Aktuel teskt blev ændret uden en filgemning.\n"
+"Fortsæt med at fjerne disse ændringer"
 
 msgid "In se&lection"
 msgstr "I &markering"
@@ -1179,11 +1171,17 @@ msgstr "Erstat med:"
 msgid "Confirm replace"
 msgstr "Bekræft erstatning"
 
+msgid "NoName"
+msgstr ""
+
 msgid "&Open file..."
 msgstr "&Åbn fil..."
 
 msgid "&New"
 msgstr "&Ny"
+
+msgid "&Close"
+msgstr ""
 
 msgid "Save &as..."
 msgstr "Gem &som..."
@@ -1305,8 +1303,14 @@ msgstr "Slet makr&o..."
 msgid "Record/Repeat &actions"
 msgstr ""
 
-msgid "'ispell' s&pell check"
-msgstr "&Stavekontrol med »ispell«"
+msgid "S&pell check"
+msgstr ""
+
+msgid "C&heck word"
+msgstr ""
+
+msgid "Change spelling &language"
+msgstr ""
 
 msgid "&Mail..."
 msgstr "&Post..."
@@ -1328,6 +1332,24 @@ msgstr "&Indsæt uddata fra..."
 
 msgid "&External formatter"
 msgstr "&Eksternt formateringsværktøj"
+
+msgid "&Move"
+msgstr "&Flyt"
+
+msgid "&Resize"
+msgstr ""
+
+msgid "&Toggle fullscreen"
+msgstr ""
+
+msgid "&Next"
+msgstr ""
+
+msgid "&Previous"
+msgstr ""
+
+msgid "&List..."
+msgstr ""
 
 msgid "&General..."
 msgstr "&Generelt..."
@@ -1364,6 +1386,9 @@ msgstr "&Kommando"
 
 msgid "For&mat"
 msgstr "For&mat"
+
+msgid "&Window"
+msgstr ""
 
 msgid "&Options"
 msgstr "&Indstillinger"
@@ -1425,6 +1450,19 @@ msgstr "Ombrydningstilstand"
 msgid "Editor options"
 msgstr "Indstillinger for redigeringsprogram"
 
+msgid "About"
+msgstr "Om"
+
+msgid ""
+"Copyright (C) 1996-2012 the Free Software Foundation\n"
+"\n"
+"            A user friendly text editor\n"
+"         written for the Midnight Commander"
+msgstr ""
+
+msgid "Open files"
+msgstr ""
+
 msgid "Edit: "
 msgstr "Rediger: "
 
@@ -1445,6 +1483,27 @@ msgstr "Slet"
 
 msgid "ButtonBar|PullDn"
 msgstr "Træk ned"
+
+#, fuzzy
+msgid "&Add word"
+msgstr "&Tilføj ny"
+
+msgid "Language"
+msgstr ""
+
+msgid "Misspelled"
+msgstr ""
+
+#, fuzzy
+msgid "Check word"
+msgstr "&Hele ord"
+
+msgid "Suggest"
+msgstr ""
+
+#, fuzzy
+msgid "Select language"
+msgstr "Vælg &gruppe"
 
 msgid "Load syntax file"
 msgstr "Indlæs syntaksfil"
@@ -1724,16 +1783,16 @@ msgid "set user ID on execution"
 msgstr "sæt bruger-id ved kørsel"
 
 msgid "Name:"
-msgstr "Navn:"
+msgstr ""
 
 msgid "Permissions (octal):"
-msgstr "Rettigheder (oktal)"
+msgstr ""
 
 msgid "Owner name:"
-msgstr "Ejer navn:"
+msgstr ""
 
 msgid "Group name:"
-msgstr "Gruppe navn:"
+msgstr ""
 
 msgid "C&lear marked"
 msgstr "F&jern markerede"
@@ -1856,6 +1915,9 @@ msgstr "Rediger filendelse"
 msgid "Which extension file you want to edit?"
 msgstr "Hvilken filendelse ønsker du at redigere?"
 
+msgid "&System Wide"
+msgstr "Hele &systemet"
+
 msgid "Highlighting groups file edit"
 msgstr "Filredigering af fremhævede grupper"
 
@@ -1913,6 +1975,9 @@ msgstr "»%s« er ikke en symbolsk henvisning"
 msgid "FTP to machine"
 msgstr "FTP til maskine"
 
+msgid "SFTP to machine"
+msgstr ""
+
 msgid "Shell link to machine"
 msgstr "Skalhenvisning til maskine"
 
@@ -1954,6 +2019,9 @@ msgstr ""
 msgid "Cannot read directory contents"
 msgstr "Kan ikke læse mappeindhold"
 
+msgid "Parameter"
+msgstr "Parameter"
+
 #, c-format
 msgid ""
 "Cannot create temporary command file\n"
@@ -1961,9 +2029,6 @@ msgid ""
 msgstr ""
 "Kan ikke oprette midlertidig kommandofil\n"
 "%s"
-
-msgid "Parameter"
-msgstr "Parameter"
 
 #, c-format
 msgid " %s%s file error"
@@ -2564,9 +2629,6 @@ msgstr "Søger i %s"
 msgid "Searching"
 msgstr "Søger"
 
-msgid "&Move"
-msgstr "&Flyt"
-
 msgid "&Remove"
 msgstr "&Fjern"
 
@@ -2810,6 +2872,9 @@ msgstr "FT&P-henvisning..."
 
 msgid "S&hell link..."
 msgstr "S&kalhenvisning..."
+
+msgid "S&FTP link..."
+msgstr ""
 
 msgid "SM&B link..."
 msgstr "SM&B-henvisning..."
@@ -3299,6 +3364,9 @@ msgstr "Fejl under lukning af datakanal"
 msgid "Cannot run external panelize in a non-local directory"
 msgstr "Kan ikke køre ekstern panelisering i en mappe, der ikke er lokal"
 
+msgid "Modified git files"
+msgstr ""
+
 msgid "Find rejects after patching"
 msgstr "Find rester efter lapning"
 
@@ -3598,9 +3666,8 @@ msgstr "Virtuelle filsystemer:"
 msgid "Data types:"
 msgstr "Datatyper:"
 
-#, fuzzy
 msgid "Root directory:"
-msgstr "mappe"
+msgstr ""
 
 msgid "System data"
 msgstr ""
@@ -3708,10 +3775,6 @@ msgstr "fisk: Håndrystende version..."
 
 msgid "fish: Getting host info..."
 msgstr "fisk: Indhenter værtsinformation..."
-
-#, c-format
-msgid "fish: Connected, home %s."
-msgstr "fisk: Forbundet, hjem %s."
 
 #, c-format
 msgid "fish: Reading directory %s..."
@@ -3871,6 +3934,66 @@ msgid ""
 msgstr ""
 "Advarsel: Ugyldigt flag %c i %s:\n"
 "%s\n"
+
+#, c-format
+msgid "sftp: an error occured while reading %s: %s"
+msgstr ""
+
+msgid "sftp: Unable to get current user name."
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Invalid host name."
+msgstr "ftpfs: Ugyldigt værtsnavn."
+
+#, fuzzy
+msgid "sftp: Invalid port value."
+msgstr "ftpfs: Ugyldigt værtsnavn."
+
+#, fuzzy, c-format
+msgid "sftp: %s"
+msgstr "ftpfs: %s"
+
+#, fuzzy, c-format
+msgid "sftp: making connection to %s"
+msgstr "ftpfs: Laver forbindelse til %s"
+
+#, fuzzy
+msgid "sftp: connection interrupted by user"
+msgstr "ftpfs: Forbindelse afbrudt af bruger"
+
+#, fuzzy, c-format
+msgid "sftp: connection to server failed: %s"
+msgstr "ftpfs: Forbindelse til server mislykkedes: %s"
+
+#, c-format
+msgid "sftp: Enter passphrase for %s "
+msgstr ""
+
+msgid "sftp: Passphrase is empty."
+msgstr ""
+
+#, fuzzy, c-format
+msgid "sftp: Enter password for %s "
+msgstr "ftpfs: Sender brugeradgangskode"
+
+msgid "sftp: Password is empty."
+msgstr ""
+
+#, c-format
+msgid "sftp: Failure establishing SSH session: (%d)"
+msgstr ""
+
+msgid "sftp: No file handler data present for reading file"
+msgstr ""
+
+#, c-format
+msgid "sftp: (Ctrl-G break) Listing... %s"
+msgstr ""
+
+#, fuzzy
+msgid "sftp: Listing done."
+msgstr "Listemåde"
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4067,6 +4190,9 @@ msgstr ""
 "Kan ikke gemme fil:\n"
 "%s"
 
+msgid "&Cancel quit"
+msgstr "&Afbryd afslut"
+
 msgid "View: "
 msgstr "Vis: "
 
@@ -4088,7 +4214,4 @@ msgid "Search done"
 msgstr "Søgning færdig"
 
 msgid "Continue from beginning?"
-msgstr "Fortsæt fra begyndelsen?"
-
-#~ msgid "fish: Setting up current directory..."
-#~ msgstr "fisk: Indstiller den aktive mappe..."
+msgstr ""

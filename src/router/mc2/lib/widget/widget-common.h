@@ -6,11 +6,11 @@
 #ifndef MC__WIDGET_INTERNAL_H
 #define MC__WIDGET_INTERNAL_H
 
-#include "lib/tty/mouse.h"      /* mouse_h */
+#include "lib/tty/mouse.h"
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
-#define widget_move(w, _y, _x) tty_gotoyx (((Widget *)(w))->y + _y, ((Widget *)(w))->x + _x)
+#define widget_move(w, _y, _x) tty_gotoyx (((Widget *)(w))->y + (_y), ((Widget *)(w))->x + (_x))
 /* Sets/clear the specified flag in the options field */
 #define widget_option(w,f,i) \
     w.options = ((i) ? ((w).options | (f)) : ((w).options & (~(f))))
@@ -123,6 +123,10 @@ void widget_set_size (Widget * widget, int y, int x, int lines, int cols);
 /* select color for widget in dependance of state */
 void widget_selectcolor (struct Widget *w, gboolean focused, gboolean hotkey);
 void widget_erase (Widget * w);
+
+/* get mouse pointer location within widget */
+Gpm_Event mouse_get_local (const Gpm_Event * global, const Widget * w);
+gboolean mouse_global_in_widget (const Gpm_Event * event, const Widget * w);
 
 /*** inline functions ****************************************************************************/
 

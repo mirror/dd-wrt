@@ -224,7 +224,6 @@ mcview_move_left (mcview_t * view, off_t columns)
     if (view->hex_mode)
     {
         off_t old_cursor = view->hex_cursor;
-
 #ifdef HAVE_ASSERT_H
         assert (columns == 1);
 #endif
@@ -256,7 +255,6 @@ mcview_move_right (mcview_t * view, off_t columns)
     {
         off_t last_byte;
         off_t old_cursor = view->hex_cursor;
-
         last_byte = mcview_offset_doz (mcview_get_filesize (view), 1);
 #ifdef HAVE_ASSERT_H
         assert (columns == 1);
@@ -407,7 +405,11 @@ mcview_moveto_eol (mcview_t * view)
             else
                 view->dpy_text_column = eol - bol;
         }
-        view->dpy_text_column = max (0, view->dpy_text_column - view->data_area.width);
+
+        if (view->dpy_text_column < (off_t) view->data_area.width)
+            view->dpy_text_column = 0;
+        else
+            view->dpy_text_column = view->dpy_text_column - (off_t) view->data_area.width;
     }
     mcview_movement_fixups (view, FALSE);
 }

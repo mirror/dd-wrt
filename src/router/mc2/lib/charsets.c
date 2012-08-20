@@ -29,8 +29,6 @@
 
 #include <config.h>
 
-#ifdef HAVE_CHARSET
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,6 +49,8 @@ const char *cp_display = NULL;
 const char *cp_source = NULL;
 
 /*** file scope macro definitions ****************************************************************/
+
+#define UNKNCHAR '\001'
 
 #define OTHER_8BIT "Other_8_bit"
 
@@ -99,7 +99,6 @@ static void
 load_codepages_list_from_file (GPtrArray ** list, const char *fname)
 {
     FILE *f;
-    guint i;
     char buf[BUF_MEDIUM];
     char *default_codepage = NULL;
 
@@ -107,7 +106,7 @@ load_codepages_list_from_file (GPtrArray ** list, const char *fname)
     if (f == NULL)
         return;
 
-    for (i = 0; fgets (buf, sizeof buf, f) != NULL;)
+    while (fgets (buf, sizeof buf, f) != NULL)
     {
         /* split string into id and cpname */
         char *p = buf;
@@ -141,6 +140,8 @@ load_codepages_list_from_file (GPtrArray ** list, const char *fname)
             }
             else
             {
+                unsigned int i;
+
                 /* whether id is already present in list */
                 /* if yes, overwrite description */
                 for (i = 0; i < (*list)->len; i++)
@@ -571,5 +572,3 @@ convert_from_8bit_to_utf_c2 (const char input_char)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-
-#endif /* HAVE_CHARSET */
