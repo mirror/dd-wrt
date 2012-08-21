@@ -207,7 +207,7 @@ int main(void)
 	MediaServer_GetConfiguration()->ModelDescription = "Router with media sharing using attached USB storage.";
 	MediaServer_GetConfiguration()->ModelNumber = "DD-WRT";
 	MediaServer_GetConfiguration()->ModelURL = "http://www.dd-wrt.com";
-	 backendinit.Path = "/usr/local/share";
+	backendinit.Path = "/mnt";
 	DMSObject = DMS_Create(
 		MicroStackChain,
 		ILib_Pool,
