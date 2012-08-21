@@ -172,7 +172,7 @@ CONFIG_HOTPLUG=y
 CONFIG_PRINTK=y
 # CONFIG_BUG is not set
 # CONFIG_ELF_CORE is not set
-CONFIG_BASE_FULL=y
+# CONFIG_BASE_FULL is not set
 # CONFIG_FUTEX is not set
 # CONFIG_EPOLL is not set
 # CONFIG_SIGNALFD is not set
