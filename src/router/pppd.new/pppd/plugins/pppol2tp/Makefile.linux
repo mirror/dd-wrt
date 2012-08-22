@@ -1,5 +1,5 @@
 #CC	= gcc
-COPTS	= -O2 -g
+#COPTS	= $(COPTS)
 CFLAGS	= $(COPTS) -I$(LINUXDIR)/include -I. -I../.. -I../../../include -fPIC
 LDFLAGS	= -shared
 INSTALL	= install
