@@ -170,8 +170,6 @@ static void hostapd_dump_state(struct hostapd_data *hapd)
 #endif /* CONFIG_NO_RADIUS */
 	fclose(f);
 }
-
-
 int handle_dump_state_iface(struct hostapd_iface *iface, void *ctx)
 {
 	size_t i;
