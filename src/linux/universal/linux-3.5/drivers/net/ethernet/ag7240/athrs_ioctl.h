@@ -21,7 +21,7 @@
 #include <linux/types.h>
 #include <linux/spinlock_types.h>
 #include <linux/workqueue.h>
-#include <asm/system.h>
+//#include <asm/system.h>
 #include <linux/netdevice.h>
 #include <net/inet_ecn.h>                /* XXX for TOS */
 #include <linux/if_ether.h>
