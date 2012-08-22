@@ -846,7 +846,7 @@ hlr_auc_gw: $(HOBJS)
 
 clean:
 	$(MAKE) -C ../src clean
-	rm -f core *~ *.o hostapd hostapd_cli nt_password_hash hlr_auc_gw
+	rm -f core *~ *.o *.a hostapd hostapd_cli nt_password_hash hlr_auc_gw
 	rm -f *.d
 
 -include $(OBJS:%.o=%.d)
