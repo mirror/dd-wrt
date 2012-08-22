@@ -20,7 +20,7 @@
 #include <linux/types.h>
 #include <linux/spinlock_types.h>
 #include <linux/workqueue.h>
-#include <asm/system.h>
+//#include <asm/system.h>
 #include <linux/netdevice.h>
 #include <linux/version.h>
 #include "ar7240.h"
