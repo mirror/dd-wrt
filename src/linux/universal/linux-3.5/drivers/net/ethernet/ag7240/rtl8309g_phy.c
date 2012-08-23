@@ -224,6 +224,17 @@ BOOL rtl8309g_phy_setup(int ethUnit)
 			mdelay(150);
 		}
 	}
+
+	for (phyUnit = 0; phyUnit < RTK_8309G_PHY_MAX; phyUnit++) {
+		foundPhy = TRUE;
+		phyBase = RTK_8309G_PHYBASE(phyUnit);
+		phyAddr = RTK_8309G_PHYADDR(phyUnit);
+		id1 = 	phy_reg_read(phyBase, phyAddr ,RTL_8309G_PHY_ID1);
+		id2 = 	phy_reg_read(phyBase, phyAddr ,RTL_8309G_PHY_ID2);
+		printk(KERN_INFO "rtl phy%d id %X:%X\n",phyUnit,id1,id2);
+	}
+
+
 	return TRUE;
 }
 
