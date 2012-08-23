@@ -177,6 +177,13 @@ BOOL rtl8309g_phy_setup(int ethUnit)
 	uint32_t phyBase = 0;
 	BOOL foundPhy = FALSE;
 	uint32_t phyAddr = 0;
+	uint16_t id1,id2;
+	phyBase = RTK_8309G_PHYBASE(0);
+	phyAddr = RTK_8309G_PHYADDR(0);
+	id1 = 	phy_reg_read(phyBase, phyAddr ,RTL_8309G_PHY_ID1);
+	id2 = 	phy_reg_read(phyBase, phyAddr ,RTL_8309G_PHY_ID2);
+	printk(KERN_INFO "rtl phy id %X:%X\n",id1,id2);
+
 
 	if (!rtl8309g_init_flag) {
 		return FALSE;
