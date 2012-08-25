@@ -2677,6 +2677,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				if (nvram_match(wl_net_mode, "a-only")
 				    || nvram_match(wl_net_mode, "na-only")
 				    || nvram_match(wl_net_mode, "n5-only")
+				    || nvram_match(wl_net_mode, "ac-only")
 				    || (net_is_a
 					&& nvram_match(wl_net_mode, "mixed"))) {
 					if (chanlist[i] < 25)
@@ -2686,7 +2687,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						showit = 0;
 				}
 
-				if ((nvram_match(wl_net_mode, "na-only")
+				if ((nvram_match(wl_net_mode, "na-only") || nvram_match(wl_net_mode, "ac-only")
+
 				     || (net_is_a
 					 && nvram_match(wl_net_mode, "mixed"))
 				     || nvram_match(wl_net_mode, "n5-only"))
@@ -4560,6 +4562,7 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 		|| nvram_nmatch("mixed", "%s_net_mode", prefix)
 		|| nvram_nmatch("n2-only", "%s_net_mode", prefix)
 		|| nvram_nmatch("n5-only", "%s_net_mode", prefix)
+		|| nvram_nmatch("ac-only", "%s_net_mode", prefix)
 		|| nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 		show_channel(wp, prefix, prefix, 1);
 

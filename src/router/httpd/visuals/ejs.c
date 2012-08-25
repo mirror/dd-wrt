@@ -2653,6 +2653,8 @@ void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "Capture(wl_basic.n2)");
 	if (nvram_match(mode, "n5-only"))
 		websWrite(wp, "Capture(wl_basic.n5)");
+	if (nvram_match(mode, "ac-only"))
+		websWrite(wp, "Capture(wl_basic.ac)");
 	websWrite(wp, "</script>&nbsp;\n");
 }
 
