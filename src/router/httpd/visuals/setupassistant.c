@@ -838,6 +838,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 			|| nvram_selnmatch(wp, "mixed", "%s_net_mode", prefix)
 			|| nvram_selnmatch(wp, "n2-only", "%s_net_mode", prefix)
 			|| nvram_selnmatch(wp, "n5-only", "%s_net_mode", prefix)
+			|| nvram_selnmatch(wp, "ac-only", "%s_net_mode", prefix)
 			|| nvram_selnmatch(wp, "na-only", "%s_net_mode",
 					   prefix))) {
 
@@ -1337,6 +1338,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 			if (nvram_selmatch(wp, wl_net_mode, "a-only")
 			    || nvram_selmatch(wp, wl_net_mode, "na-only")
 			    || nvram_selmatch(wp, wl_net_mode, "n5-only")
+			    || nvram_selmatch(wp, wl_net_mode, "ac-only")
 			    || (net_is_a
 				&& nvram_selmatch(wp, wl_net_mode, "mixed"))) {
 				if (chanlist[i] < 25)
@@ -1346,7 +1348,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 					showit = 0;
 			}
 
-			if ((nvram_selmatch(wp, wl_net_mode, "na-only")
+			if ((nvram_selmatch(wp, wl_net_mode, "na-only") || nvram_selmatch(wp, wl_net_mode, "ac-only")
 			     || (net_is_a
 				 && nvram_selmatch(wp, wl_net_mode, "mixed"))
 			     || nvram_selmatch(wp, wl_net_mode, "n5-only"))
