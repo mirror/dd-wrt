@@ -4,7 +4,7 @@
 #include <linux/types.h>
 #include <linux/spinlock_types.h>
 #include <linux/workqueue.h>
-#include <asm/system.h>
+//#include <asm/system.h>
 #include <linux/netdevice.h>
 #include "ar7100.h"
 #include "ag7100_trc.h"
