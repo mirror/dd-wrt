@@ -11564,14 +11564,14 @@ if test -z "$GCC"; then
 else
         case $host in
         *-*-linux*)
-                DEBUG="-g -Wall -fsigned-char"
-                CFLAGS="-O20 -Wall -ffast-math -fsigned-char"
-                PROFILE="-Wall -W -pg -g -O20 -ffast-math -fsigned-char"
+                DEBUG="-Wall -fsigned-char"
+                CFLAGS="-Os -Wall -ffast-math -fsigned-char"
+                PROFILE="-Wall -W -pg -g -Os -ffast-math -fsigned-char"
 		;;
         sparc-sun-*)
-                DEBUG="-g -Wall -fsigned-char"
-                CFLAGS="-O20 -ffast-math -fsigned-char"
-                PROFILE="-pg -g -O20 -fsigned-char"
+                DEBUG="-Wall -fsigned-char"
+                CFLAGS="-Os -ffast-math -fsigned-char"
+                PROFILE="-pg -Os -fsigned-char"
 		;;
 	*-*-darwin*)
 		DEBUG="-fno-common -g -Wall -fsigned-char"
@@ -11579,9 +11579,9 @@ else
 		PROFILE="-fno-common -O4 -Wall -pg -g -fsigned-char -ffast-math"
 		;;
         *)
-                DEBUG="-g -Wall -fsigned-char"
-                CFLAGS="-O20 -fsigned-char"
-                PROFILE="-O20 -g -pg -fsigned-char"
+                DEBUG="-Wall -fsigned-char"
+                CFLAGS="-Os -fsigned-char"
+                PROFILE="-Os -pg -fsigned-char"
 		;;
         esac
 fi
