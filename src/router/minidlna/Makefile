@@ -172,6 +172,7 @@ distclean:
 
 install:
 	mkdir -p $(TARGETDIR)/usr/lib
+	mkdir -p $(TARGETDIR)/etc
 	mkdir -p $(TARGETDIR)/usr/sbin
 	install -m 755 minidlna/minidlna.conf $(TARGETDIR)/etc/
 	install -m 755 lib/libz.so.1  $(TARGETDIR)/usr/lib
