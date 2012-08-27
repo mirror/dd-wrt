@@ -221,6 +221,7 @@ obj-$(CONFIG_LAGUNA) += gsp_updater
 obj-$(CONFIG_POLARSSL) += polarssl
 obj-$(CONFIG_MSTP) += mstp
 obj-$(CONFIG_IPETH) += ipeth
+obj-$(CONFIG_MINIDLNA) += minidlna
 
 #obj-y+=anchorfree
 obj-y+=ttraff
