@@ -1,3 +1,0 @@
-LIBSWSCALE_$MAJOR {
-        global: *;
-};
