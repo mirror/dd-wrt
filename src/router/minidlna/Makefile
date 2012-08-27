@@ -64,7 +64,7 @@ zlib:
 
 ffmpeg:
 	if [ ! -f ./ffmpeg-0.11.1/config.mak ];then \
-	cd ffmpeg-0.11.1 && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)" --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter --disable-filters); \
+	cd ffmpeg-0.11.1 && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)" --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter --disable-filters --enable-small); \
 	fi
 
 libogg:
@@ -162,7 +162,7 @@ distclean:
 install:
 	mkdir -p $(TARGETDIR)/usr/lib
 	mkdir -p $(TARGETDIR)/usr/sbin
-	install -m 755 minidlna/minidlna.conf $(TARGETDIR)/usr/
+	install -m 755 minidlna/minidlna.conf $(TARGETDIR)/etc/
 	install -m 755 lib/libz.so.1  $(TARGETDIR)/usr/lib
 	install -m 755 lib/libvorbis.so.0 $(TARGETDIR)/usr/lib
 	install -m 755 lib/libFLAC.so.8 $(TARGETDIR)/usr/lib
