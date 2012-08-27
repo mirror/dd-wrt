@@ -1,0 +1,12 @@
+prefix=
+exec_prefix=
+libdir=${pcfiledir}
+includedir=/home/michael/DLNA/ffmpeg-0.5.1
+
+Name: libavutil
+Description: FFmpeg utility library
+Version: 49.15.0
+Requires: 
+Conflicts:
+Libs: ${libdir}/libavutil.a 
+Cflags: -I${includedir}

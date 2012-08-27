@@ -1,0 +1,12 @@
+prefix=
+exec_prefix=
+libdir=${pcfiledir}
+includedir=/home/michael/DLNA/ffmpeg-0.5.1
+
+Name: libavdevice
+Description: FFmpeg device handling library
+Version: 52.1.0
+Requires: libavformat = 52.31.0
+Conflicts:
+Libs: ${libdir}/libavdevice.a   -lm
+Cflags: -I${includedir}
