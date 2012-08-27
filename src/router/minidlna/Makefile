@@ -64,7 +64,7 @@ zlib:
 
 ffmpeg:
 	if [ ! -f ./ffmpeg-0.11.1/config.mak ];then \
-	cd ffmpeg-0.11.1 && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)" --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter); \
+	cd ffmpeg-0.11.1 && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)" --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter --disable-filters); \
 	fi
 
 libogg:
