@@ -151,6 +151,7 @@ void av_log_default_callback(void* ptr, int level, const char* fmt, va_list vl)
 static void (*av_log_callback)(void*, int, const char*, va_list) =
     av_log_default_callback;
 
+#ifdef NEED_PRINTF
 void av_log(void* avcl, int level, const char *fmt, ...)
 {
     AVClass* avc = avcl ? *(AVClass **) avcl : NULL;
@@ -168,7 +169,7 @@ void av_vlog(void* avcl, int level, const char *fmt, va_list vl)
     if(av_log_callback)
         av_log_callback(avcl, level, fmt, vl);
 }
-
+#endif
 int av_log_get_level(void)
 {
     return av_log_level;
