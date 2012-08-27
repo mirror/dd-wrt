@@ -14,7 +14,7 @@ AR=$(CROSS_COMPILE)ar
 RANLIB=$(CROSS_COMPILE)ranlib
 LN_S=ln -sf
 STRIP=$(CROSS_COMPILE)strip
-OPTFLAGS= -D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112 -I$(TOOL_CHAIN_PATH)/include/ -std=c99 -fomit-frame-pointer -g -Wdeclaration-after-statement -Wall -Wno-switch -Wdisabled-optimization -Wpointer-arith -Wredundant-decls -Wno-pointer-sign -Wcast-qual -Wwrite-strings -Wundef -Os -fno-math-errno -G 0 -mips32 
+OPTFLAGS= -D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112 -I$(TOOL_CHAIN_PATH)/include/ -std=c99 -fomit-frame-pointer -g -Wdeclaration-after-statement -Wall -Wno-switch -Wdisabled-optimization -Wpointer-arith -Wredundant-decls -Wno-pointer-sign -Wcast-qual -Wwrite-strings -Wundef -Os -fno-math-errno -G 0 $(COPTS) 
 VHOOKCFLAGS=-fPIC
 LDFLAGS=  -L$(TOOL_CHAIN_PATH)/lib -Wl,--warn-common -Wl,--as-needed -Wl,-rpath-link,$(BUILD_ROOT)/libpostproc -Wl,-rpath-link,$(BUILD_ROOT)/libswscale -Wl,-rpath-link,$(BUILD_ROOT)/libavfilter -Wl,-rpath-link,$(BUILD_ROOT)/libavdevice -Wl,-rpath-link,$(BUILD_ROOT)/libavformat -Wl,-rpath-link,$(BUILD_ROOT)/libavcodec -Wl,-rpath-link,$(BUILD_ROOT)/libavutil -Wl,-Bsymbolic
 FFSERVERLDFLAGS=-Wl,-E
@@ -35,7 +35,7 @@ EXESUF=
 EXTRA_VERSION=
 DEPEND_CMD=$(CC) $(CFLAGS) -MM $< | sed -e "/^\#.*/d" -e "s,^[[:space:]]*$(*F)\\.o,$(@D)/$(*F).o,"
 HOSTCC=gcc
-HOSTCFLAGS=-Os -g -Wall
+HOSTCFLAGS=$(COPTS) -g -Wall
 HOSTLDFLAGS=
 HOSTLIBS=-lm
 TARGET_EXEC=

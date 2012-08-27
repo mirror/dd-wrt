@@ -64,22 +64,22 @@ zlib:
 
 libogg:
 	if [ ! -f ./libogg-1.1.4/Makefile ];then \
-	cd libogg-1.1.4 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS=$(COPTS)); \
+	cd libogg-1.1.4 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)"); \
 	fi
 
 libexif:
 	if [ ! -f ./libexif-0.6.19/Makefile ];then \
-	cd libexif-0.6.19 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS=$(COPTS)); \
+	cd libexif-0.6.19 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)"); \
 	fi
 
 libjpeg:
 	if [ ! -f ./jpeg-7/Makefile ];then \
-	cd jpeg-7 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS=$(COPTS)); \
+	cd jpeg-7 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)"); \
 	fi
 
 sqlite3:
 	if [ ! -f ./sqlite-3.6.22/Makefile ];then \
-	cd sqlite-3.6.22 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS=$(COPTS) \
+	cd sqlite-3.6.22 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS)" \
 				--enable-threadsafe ); \
 	fi
 
@@ -90,14 +90,14 @@ libvorbis:
 				MINI_DLNA_PATH=$(MINI_DLNA_PATH)				
 	if [ ! -f ./libvorbis-1.2.3/Makefile ];then \
 	cd libvorbis-1.2.3 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
-					CFLAGS=$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.1.4/include/ \
+					CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.1.4/include/" \
 					LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.1.4/src/.libs/ \
 					); \
 	fi
 flac:
 	if [ ! -f ./flac-1.2.1/Makefile ];then \
 	cd flac-1.2.1 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
-				CFLAGS=$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.1.4/include/ \
+				CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.1.4/include/" \
 				LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.1.4/src/.libs/ \
 				); \
 	fi
@@ -105,27 +105,27 @@ flac:
 libid3tag:
 	if [ ! -f ./libid3tag-0.15.0b/Makefile ];then \
 	cd libid3tag-0.15.0b && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
-				CPPFLAGS=$(COPTS) -I$(MINI_DLNA_PATH)/zlib-1.2.3/ \
+				CPPFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/zlib-1.2.3/" \
 				LDFLAGS=-L$(MINI_DLNA_PATH)/zlib-1.2.3/ \
 				); \
 	fi
 clean:
-	for i in ${SUBDIRS}; do \
+	-for i in ${SUBDIRS}; do \
 		(cd $$i; make clean); \
 	done
-	rm ./lib/libz.so.1
-	rm ./lib/libvorbis.so.0
-	rm ./lib/libFLAC.so.8
-	rm ./lib/libogg.so.0
-	rm ./lib/libexif.so.12
-	rm ./lib/libavutil.so.49
-	rm ./lib/libavdevice.so.52
-	rm ./lib/libavformat.so.52
-	rm ./lib/libavcodec.so.52
-	rm ./lib/libsqlite3.so.0
-	rm ./lib/libjpeg.so.7
-	rm ./lib/libid3tag.so.0
-	rm ./lib/minidlna
+	-rm ./lib/libz.so.1
+	-rm ./lib/libvorbis.so.0
+	-rm ./lib/libFLAC.so.8
+	-rm ./lib/libogg.so.0
+	-rm ./lib/libexif.so.12
+	-rm ./lib/libavutil.so.49
+	-rm ./lib/libavdevice.so.52
+	-rm ./lib/libavformat.so.52
+	-rm ./lib/libavcodec.so.52
+	-rm ./lib/libsqlite3.so.0
+	-rm ./lib/libjpeg.so.7
+	-rm ./lib/libid3tag.so.0
+	-rm ./lib/minidlna
 copy: 
 	cp ./zlib-1.2.3/libz.so.1.2.3				./lib/libz.so.1 && \
 	cp ./libvorbis-1.2.3/lib/.libs/libvorbis.so.0.4.3	./lib/libvorbis.so.0 && \
@@ -141,18 +141,18 @@ copy:
 	cp ./libid3tag-0.15.0b/.libs/libid3tag.so.0.2.0 	./lib/libid3tag.so.0
 
 distclean:
-	cd ./libogg-1.1.4/	&& make distclean 
-	cd ./libexif-0.6.19/	&& make distclean
-	cd ./sqlite-3.6.22/	&& make distclean
-	cd ./libvorbis-1.2.3/	&& make distclean
-	cd ./libid3tag-0.15.0b/	&& make distclean
-	cd ./flac-1.2.1/	&& make distclean
-	cd ./zlib-1.2.3/	&& make clean
-	cd ./ffmpeg-0.5.1/	&& make clean
-	cd ./jpeg-7/		&& make distclean
-	cd ./minidlna/		&& make clean
-	rm ./lib/*.so.*
-	rm ./lib/minidlna
+	-cd ./libogg-1.1.4/	&& make distclean 
+	-cd ./libexif-0.6.19/	&& make distclean
+	-cd ./sqlite-3.6.22/	&& make distclean
+	-cd ./libvorbis-1.2.3/	&& make distclean
+	-cd ./libid3tag-0.15.0b/	&& make distclean
+	-cd ./flac-1.2.1/	&& make distclean
+	-cd ./zlib-1.2.3/	&& make clean
+	-cd ./ffmpeg-0.5.1/	&& make clean
+	-cd ./jpeg-7/		&& make distclean
+	-cd ./minidlna/		&& make clean
+	-rm ./lib/*.so.*
+	-rm ./lib/minidlna
 
 install:
 	$(CROSS_COMPILE)strip ./lib/*
