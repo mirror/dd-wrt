@@ -18,7 +18,7 @@
 
 CC=$(CROSS_COMPILE)gcc
 
-CFLAGS=-fPIC -Os -DUSE_MMAP
+CFLAGS=-fPIC $(COPTS) -DUSE_MMAP
 #CFLAGS=-O -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7
 #CFLAGS=-g -DDEBUG
 #CFLAGS=-O3 -Wall -Wwrite-strings -Wpointer-arith -Wconversion \

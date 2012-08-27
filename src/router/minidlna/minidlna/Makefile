@@ -78,7 +78,8 @@ install-conf:
 
 minidlna:	$(BASEOBJS) $(LNXOBJS)
 	@echo Linking $@
-	@$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(BASEOBJS) $(LNXOBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $(BASEOBJS) $(LNXOBJS) -Wl,--rpath -Wl,$(MINI_DLNA_PATH)/lib/ $(LIBS)
+#	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(BASEOBJS) $(LNXOBJS)  -Wl,--rpath -Wl,$(MINI_DLNA_PATH)/lib/ $(LIBS)
 
 
 #testupnpdescgen:	$(TESTUPNPDESCGENOBJS)
