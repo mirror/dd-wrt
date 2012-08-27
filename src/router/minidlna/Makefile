@@ -64,7 +64,18 @@ zlib:
 
 ffmpeg:
 	if [ ! -f ./ffmpeg-0.11.1/config.mak ];then \
-	cd ffmpeg-0.11.1 && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)" --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter --disable-filters --enable-small); \
+	cd ffmpeg-0.11.1 && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)" --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter --disable-filters --enable-small --disable-postproc --disable-network \
+	--enable-shared \
+	--enable-static \
+	--disable-debug \
+	--disable-doc \
+	--disable-dxva2 \
+	--enable-pthreads \
+	--disable-optimizations \
+	--enable-small \
+	--disable-stripping \
+	--enable-zlib \
+	--disable-outdevs); \
 	fi
 
 libogg:
