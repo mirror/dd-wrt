@@ -2977,6 +2977,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"samba3_pubacl", "1", 0},
 	{"samba3_advanced", "0", 0},
 #endif
+#ifdef HAVE_MINIDLNA
+	{"dlna_enable", "0", 0},
+#endif
 #ifdef HAVE_VNCREPEATER
 	{"vncr_enable", "0", 0},
 #endif

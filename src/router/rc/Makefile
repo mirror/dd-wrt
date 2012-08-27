@@ -587,6 +587,9 @@ endif
 ifeq ($(CONFIG_SAMBA3),y)
 CFLAGS += -DHAVE_SAMBA3
 endif
+ifeq ($(CONFIG_MINIDLNA),y)
+CFLAGS += -DHAVE_MINIDLNA
+endif
 
 ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
