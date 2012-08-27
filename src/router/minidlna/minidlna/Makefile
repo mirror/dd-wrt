@@ -14,16 +14,16 @@
 #CFLAGS = -Wall -g -Os -D_GNU_SOURCE
 
 CFLAGS = -Wall $(COPTS) -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__\
-         -I$(MINI_DLNA_PATH)/ffmpeg-0.5.1 \
-         -I$(MINI_DLNA_PATH)/ffmpeg-0.5.1/libavutil \
-         -I$(MINI_DLNA_PATH)/ffmpeg-0.5.1/libavcodec \
-         -I$(MINI_DLNA_PATH)/ffmpeg-0.5.1/libavformat \
+         -I$(MINI_DLNA_PATH)/ffmpeg-0.11.1 \
+         -I$(MINI_DLNA_PATH)/ffmpeg-0.11.1/libavutil \
+         -I$(MINI_DLNA_PATH)/ffmpeg-0.11.1/libavcodec \
+         -I$(MINI_DLNA_PATH)/ffmpeg-0.11.1/libavformat \
          -I$(MINI_DLNA_PATH)/sqlite-3.6.22 \
          -I$(MINI_DLNA_PATH)/libexif-0.6.19 \
          -I$(MINI_DLNA_PATH)/libid3tag-0.15.0b/include \
 		 -I$(MINI_DLNA_PATH)/libid3tag-0.15.0b/ \
-         -I$(MINI_DLNA_PATH)/libogg-1.1.4/include/ \
-         -I$(MINI_DLNA_PATH)/libvorbis-1.2.3/include/ \
+         -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/ \
+         -I$(MINI_DLNA_PATH)/libvorbis-1.3.3/include/ \
          -I$(MINI_DLNA_PATH)/jpeg-7 \
          -I$(MINI_DLNA_PATH)/flac-1.2.1/include/ \
          -L$(MINI_DLNA_PATH)/lib
