@@ -23,7 +23,7 @@
 //#define HAVE_ICONV_H
 #define DEFAULT_LOG_PATH "/var/log"
 /* Enable NETGEAR-specific tweaks. */
-#define NETGEAR
+// #define NETGEAR
 /* Enable ReadyNAS-specific tweaks. */
 /*#define READYNAS*/
 /* Compile in TiVo support. */
