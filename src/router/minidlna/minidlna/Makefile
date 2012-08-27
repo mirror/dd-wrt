@@ -13,7 +13,7 @@
 #CFLAGS = -Wall -O -D_GNU_SOURCE -g -DDEBUG
 #CFLAGS = -Wall -g -Os -D_GNU_SOURCE
 
-CFLAGS = -Wall -g -Os -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__\
+CFLAGS = -Wall $(COPTS) -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__\
          -I$(MINI_DLNA_PATH)/ffmpeg-0.5.1 \
          -I$(MINI_DLNA_PATH)/ffmpeg-0.5.1/libavutil \
          -I$(MINI_DLNA_PATH)/ffmpeg-0.5.1/libavcodec \
@@ -29,7 +29,7 @@ CFLAGS = -Wall -g -Os -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__\
          -L$(MINI_DLNA_PATH)/lib
 
 
-CC = $(CROSS_COMPILE)gcc
+CC = ccache $(CROSS_COMPILE)gcc
 RM = rm -f
 
 
