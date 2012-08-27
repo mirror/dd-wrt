@@ -16,11 +16,11 @@
 #
 #############################################################################################
 SUBDIRS += zlib-1.2.3
-SUBDIRS += ffmpeg-0.5.1
-SUBDIRS += libogg-1.1.4
+SUBDIRS += ffmpeg-0.11.1
+SUBDIRS += libogg-1.3.0
 SUBDIRS += libexif-0.6.19
 SUBDIRS += flac-1.2.1
-SUBDIRS += libvorbis-1.2.3
+SUBDIRS += libvorbis-1.3.3
 SUBDIRS += jpeg-7
 SUBDIRS += sqlite-3.6.22
 SUBDIRS += libid3tag-0.15.0b
@@ -40,7 +40,7 @@ CROSS_COMPILE=$(ARCH)-linux-uclibc-
 #CROSS=mipsel-linux-uclibc
 # comments ended, by Michael Jiang.
 
-all: zlib libogg libexif sqlite3 libvorbis flac libid3tag libjpeg
+all: zlib ffmpeg libogg libexif sqlite3 libvorbis flac libid3tag libjpeg
 	for i in $(SUBDIRS); do \
 		(cd $$i && make TOOL_CHAIN_PATH=$(TOOL_CHAIN_PATH) \
 				CROSS_COMPILE=$(CROSS_COMPILE) \
@@ -62,9 +62,14 @@ zlib:
 	HOST_COMPILE=$(HOST_COMPILE) \
 	MINI_DLNA_PATH=$(MINI_DLNA_PATH))
 
+ffmpeg:
+	if [ ! -f ./ffmpeg-0.11.1/config.mak ];then \
+	cd ffmpeg-0.11.1 && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)" --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-filters); \
+	fi
+
 libogg:
-	if [ ! -f ./libogg-1.1.4/Makefile ];then \
-	cd libogg-1.1.4 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)"); \
+	if [ ! -f ./libogg-1.3.0/Makefile ];then \
+	cd libogg-1.3.0 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)"); \
 	fi
 
 libexif:
@@ -84,21 +89,21 @@ sqlite3:
 	fi
 
 libvorbis:
-	cd libogg-1.1.4 && make TOOL_CHAIN_PATH=$(TOOL_CHAIN_PATH) \
+	cd libogg-1.3.0 && make TOOL_CHAIN_PATH=$(TOOL_CHAIN_PATH) \
 				CROSS_COMPILE=$(CROSS_COMPILE) \
 				HOST_COMPILE=$(HOST_COMPILE) \
 				MINI_DLNA_PATH=$(MINI_DLNA_PATH)				
-	if [ ! -f ./libvorbis-1.2.3/Makefile ];then \
-	cd libvorbis-1.2.3 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
-					CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.1.4/include/" \
-					LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.1.4/src/.libs/ \
+	if [ ! -f ./libvorbis-1.3.3/Makefile ];then \
+	cd libvorbis-1.3.3 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
+					CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/" \
+					LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.3.0/src/.libs/ \
 					); \
 	fi
 flac:
 	if [ ! -f ./flac-1.2.1/Makefile ];then \
 	cd flac-1.2.1 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
-				CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.1.4/include/" \
-				LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.1.4/src/.libs/ \
+				CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/" \
+				LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.3.0/src/.libs/ \
 				); \
 	fi
 
@@ -128,27 +133,27 @@ clean:
 	-rm ./lib/minidlna
 copy: 
 	cp ./zlib-1.2.3/libz.so.1.2.3				./lib/libz.so.1 && \
-	cp ./libvorbis-1.2.3/lib/.libs/libvorbis.so.0.4.3	./lib/libvorbis.so.0 && \
+	cp ./libvorbis-1.3.3/lib/.libs/libvorbis.so.0.4.6	./lib/libvorbis.so.0 && \
 	cp ./flac-1.2.1/src/libFLAC/.libs/libFLAC.so.8.2.0	./lib/libFLAC.so.8 && \
 	cp ./libexif-0.6.19/libexif/.libs/libexif.so.12.3.1 	./lib/libexif.so.12  && \
-	cp ./libogg-1.1.4/src/.libs/libogg.so.0.6.0		./lib/libogg.so.0 && \
-	cp ./ffmpeg-0.5.1/libavutil/libavutil.so.49		./lib/libavutil.so.49 && \
-	cp ./ffmpeg-0.5.1/libavdevice/libavdevice.so.52		./lib/libavdevice.so.52 && \
-	cp ./ffmpeg-0.5.1/libavformat/libavformat.so.52		./lib/libavformat.so.52 && \
-	cp ./ffmpeg-0.5.1/libavcodec/libavcodec.so.52		./lib/libavcodec.so.52 && \
+	cp ./libogg-1.3.0/src/.libs/libogg.so.0.8.0		./lib/libogg.so.0 && \
+	cp ./ffmpeg-0.11.1/libavutil/libavutil.so.51		./lib/libavutil.so.51 && \
+	cp ./ffmpeg-0.11.1/libavdevice/libavdevice.so.54		./lib/libavdevice.so.54 && \
+	cp ./ffmpeg-0.11.1/libavformat/libavformat.so.54		./lib/libavformat.so.54 && \
+	cp ./ffmpeg-0.11.1/libavcodec/libavcodec.so.54		./lib/libavcodec.so.54 && \
 	cp ./sqlite-3.6.22/.libs/libsqlite3.so.0.8.6 		./lib/libsqlite3.so.0 && \
 	cp ./jpeg-7/.libs/libjpeg.so.7.0.0			./lib/libjpeg.so.7 && \
 	cp ./libid3tag-0.15.0b/.libs/libid3tag.so.0.2.0 	./lib/libid3tag.so.0
 
 distclean:
-	-cd ./libogg-1.1.4/	&& make distclean 
+	-cd ./libogg-1.3.0/	&& make distclean 
 	-cd ./libexif-0.6.19/	&& make distclean
 	-cd ./sqlite-3.6.22/	&& make distclean
-	-cd ./libvorbis-1.2.3/	&& make distclean
+	-cd ./libvorbis-1.3.3/	&& make distclean
 	-cd ./libid3tag-0.15.0b/	&& make distclean
 	-cd ./flac-1.2.1/	&& make distclean
 	-cd ./zlib-1.2.3/	&& make clean
-	-cd ./ffmpeg-0.5.1/	&& make clean
+	-cd ./ffmpeg-0.11.1/	&& make distclean
 	-cd ./jpeg-7/		&& make distclean
 	-cd ./minidlna/		&& make clean
 	-rm ./lib/*.so.*
@@ -163,10 +168,10 @@ install:
 	install -m 755 lib/libFLAC.so.8 $(TARGETDIR)/usr/lib
 	install -m 755 lib/libexif.so.12 $(TARGETDIR)/usr/lib
 	install -m 755 lib/libogg.so.0 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libavutil.so.49 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libavdevice.so.52 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libavformat.so.52 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libavcodec.so.52 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libavutil.so.51 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libavdevice.so.54 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libavformat.so.54 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libavcodec.so.54 $(TARGETDIR)/usr/lib
 	install -m 755 lib/libsqlite3.so.0 $(TARGETDIR)/usr/lib
 	install -m 755 lib/libjpeg.so.7 $(TARGETDIR)/usr/lib
 	install -m 755 lib/libid3tag.so.0 $(TARGETDIR)/usr/lib
