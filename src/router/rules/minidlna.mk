@@ -10,4 +10,4 @@ minidlna-clean:
 	cd minidlna && make clean
 
 minidlna-install:
-	cd minidlna && make install TARGETDIR=$(ARCH)-uclibc/install/minidlna
+	cd minidlna && make install TARGETDIR=$(TOP)/$(ARCH)-uclibc/install/minidlna
