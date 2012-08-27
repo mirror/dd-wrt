@@ -1,0 +1,12 @@
+prefix=
+exec_prefix=
+libdir=${pcfiledir}
+includedir=/home/michael/WNDR4500_2010.12.21/bcm4718/ap/gpl/minidlna/ffmpeg-0.5.1
+
+Name: libavformat
+Description: FFmpeg container format library
+Version: 52.31.0
+Requires: libavcodec = 52.20.1
+Conflicts:
+Libs: ${libdir}/libavformat.a   -lm
+Cflags: -I${includedir}
