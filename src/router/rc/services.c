@@ -99,6 +99,9 @@ int start_services_main(int argc, char **argv)
 #ifdef HAVE_SAMBA3
 	handle = start_service_nofree_f("samba3", handle);
 #endif
+#ifdef HAVE_MINIDLNA
+	handle = start_service_nofree_f("dlna", handle);
+#endif
 #ifdef HAVE_SYSLOG
 	handle = start_service_nofree_f("syslog", handle);
 #endif
@@ -257,6 +260,9 @@ int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_SAMBA3
 	handle = stop_service_nofree("samba3", handle);
+#endif
+#ifdef HAVE_MINIDLNA
+	handle = stop_service_nofree("dlna", handle);
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
@@ -592,6 +598,9 @@ static void handle_nassrv(void)
 {
 	void *handle = NULL;
 
+#ifdef HAVE_MINIDLNA
+	handle = stop_service_nofree("dlna", handle);
+#endif
 #ifdef HAVE_FTP
 	handle = stop_service_nofree("ftpsrv", handle);
 #endif
@@ -601,6 +610,9 @@ static void handle_nassrv(void)
 #endif
 #ifdef HAVE_FTP
 	handle = start_service_nofree_f("ftpsrv", handle);
+#endif
+#ifdef HAVE_MINIDLNA
+	handle = start_service_nofree_f("dlna", handle);
 #endif
 //    if( handle )
 //      dlclose( handle );
@@ -1144,7 +1156,7 @@ static struct SERVICES services_def[] = {
 	{"hotspot", handle_hotspot},
 //	{"anchorfree", handle_anchorfree},
 	{"services", handle_services},
-#if defined(HAVE_FTP) || defined(HAVE_SAMBA3)
+#if defined(HAVE_FTP) || defined(HAVE_SAMBA3) || defined(HAVE_MINIDLNA)
 	{"nassrv", handle_nassrv},
 #endif
 	{"management", handle_management},
