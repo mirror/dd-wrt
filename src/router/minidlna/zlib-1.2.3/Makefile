@@ -54,7 +54,7 @@ OBJA =
 
 TEST_OBJS = example.o minigzip.o
 
-all: example$(EXE) minigzip$(EXE)
+all: example$(EXE) minigzip$(EXE) libz.a
 
 check: test
 test: all
