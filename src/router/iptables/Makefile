@@ -39,7 +39,18 @@ COPT_FLAGS:=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC
 COPT_FLAGS += -DNEED_PRINTF
 #endif
 #endif
+
+
+
 CFLAGS:=$(COPT_FLAGS) -Wall -Wunused -I$(KERNEL_DIR)/include -Iinclude/ -DIPTABLES_VERSION=\"$(IPTABLES_VERSION)\" #-g -DDEBUG #-pg # -DIPTC_DEBUG
+
+ifeq ($(CONFIG_HOTPLUG2),y)
+CFLAGS += -DNEW_KERNEL
+endif
+ifeq ($(CONFIG_BCMMODERN),y)
+CFLAGS += -DBCMMODERN
+endif
+
 NO_SHARED_LIBS=1
 DO_MULTI=1
 ifdef NO_SHARED_LIBS

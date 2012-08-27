@@ -7,8 +7,15 @@
 #include <getopt.h>
 #include <iptables.h>
 #include <linux/netfilter_ipv4/ip_conntrack.h>
+#ifdef BCMMODERN
+#include <linux/netfilter_ipv4/xtold_connlimit.h>
+#else
+#ifdef NEW_KERNEL
+#include <linux/netfilter_ipv4/xt_connlimit.h>
+#else
 #include <linux/netfilter_ipv4/ipt_connlimit.h>
-
+#endif
+#endif
 /* Function which prints out usage message. */
 static void
 help(void)
@@ -39,7 +46,7 @@ parse(int c, char **argv, int invert, unsigned int *flags,
 
 	if (0 == (*flags & 2)) {
 		/* set default mask unless we've already seen a mask option */
-		info->mask = htonl(0xFFFFFFFF);
+		info->v4_mask = htonl(0xFFFFFFFF);
 	}
 
 	switch (c) {
@@ -57,9 +64,9 @@ parse(int c, char **argv, int invert, unsigned int *flags,
 				"--connlimit-mask must be between 0 and 32");
 
 		if (i == 0)
-			info->mask = 0;
+			info->v4_mask = 0;
 		else
-			info->mask = htonl(0xFFFFFFFF << (32 - i));
+			info->v4_mask = htonl(0xFFFFFFFF << (32 - i));
 		*flags |= 2;
 		break;
 
@@ -100,7 +107,7 @@ print(const struct ipt_ip *ip,
 {
 	struct ipt_connlimit_info *info = (struct ipt_connlimit_info*)match->data;
 
-	printf("#conn/%d %s %d ", count_bits(info->mask),
+	printf("#conn/%d %s %d ", count_bits(info->v4_mask),
 	       info->inverse ? "<" : ">", info->limit);
 }
 
@@ -110,7 +117,7 @@ static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
 	struct ipt_connlimit_info *info = (struct ipt_connlimit_info*)match->data;
 
 	printf("%s--connlimit-above %d ",info->inverse ? "! " : "",info->limit);
-	printf("--connlimit-mask %d ",count_bits(info->mask));
+	printf("--connlimit-mask %d ",count_bits(info->v4_mask));
 }
 
 static struct iptables_match connlimit = {
