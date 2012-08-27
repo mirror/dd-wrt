@@ -29,13 +29,13 @@ TOOL_CHAIN_PATH=$(TOOLCHAIN)
 #/home/michael/DLNA
 MINI_DLNA_PATH=$(shell pwd)
 
-CFLAGS += -Os -fPIC
+CFLAGS += $(COPTS) -fPIC
 
 # [FIXME] added by Michael Jiang.
 # The below variables  should be modified when you use different platform.
-HOST=mips-linux-linux
+HOST=$(ARCH)-linux-linux
 HOST_COMPILE=$(HOST)-
-CROSS_COMPILE=mips-linux-uclibc-
+CROSS_COMPILE=$(ARCH)-linux-uclibc-
 #HOST_COMPILE=mipsel-linux-linux26-
 #CROSS=mipsel-linux-uclibc
 # comments ended, by Michael Jiang.
@@ -64,22 +64,22 @@ zlib:
 
 libogg:
 	if [ ! -f ./libogg-1.1.4/Makefile ];then \
-	cd libogg-1.1.4 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc); \
+	cd libogg-1.1.4 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS=$(COPTS)); \
 	fi
 
 libexif:
 	if [ ! -f ./libexif-0.6.19/Makefile ];then \
-	cd libexif-0.6.19 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc); \
+	cd libexif-0.6.19 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS=$(COPTS)); \
 	fi
 
 libjpeg:
 	if [ ! -f ./jpeg-7/Makefile ];then \
-	cd jpeg-7 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc); \
+	cd jpeg-7 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS=$(COPTS)); \
 	fi
 
 sqlite3:
 	if [ ! -f ./sqlite-3.6.22/Makefile ];then \
-	cd sqlite-3.6.22 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc CFLAGS=-Os \
+	cd sqlite-3.6.22 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS=$(COPTS) \
 				--enable-threadsafe ); \
 	fi
 
@@ -90,14 +90,14 @@ libvorbis:
 				MINI_DLNA_PATH=$(MINI_DLNA_PATH)				
 	if [ ! -f ./libvorbis-1.2.3/Makefile ];then \
 	cd libvorbis-1.2.3 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
-					CFLAGS=-I$(MINI_DLNA_PATH)/libogg-1.1.4/include/ \
+					CFLAGS=$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.1.4/include/ \
 					LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.1.4/src/.libs/ \
 					); \
 	fi
 flac:
 	if [ ! -f ./flac-1.2.1/Makefile ];then \
 	cd flac-1.2.1 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
-				CFLAGS=-I$(MINI_DLNA_PATH)/libogg-1.1.4/include/ \
+				CFLAGS=$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.1.4/include/ \
 				LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.1.4/src/.libs/ \
 				); \
 	fi
@@ -105,7 +105,7 @@ flac:
 libid3tag:
 	if [ ! -f ./libid3tag-0.15.0b/Makefile ];then \
 	cd libid3tag-0.15.0b && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
-				CPPFLAGS=-I$(MINI_DLNA_PATH)/zlib-1.2.3/ \
+				CPPFLAGS=$(COPTS) -I$(MINI_DLNA_PATH)/zlib-1.2.3/ \
 				LDFLAGS=-L$(MINI_DLNA_PATH)/zlib-1.2.3/ \
 				); \
 	fi
@@ -157,18 +157,18 @@ distclean:
 install:
 	$(CROSS_COMPILE)strip ./lib/*
 	install -m 755 minidlna/minidlna.conf $(TARGETDIR)/usr/
-	install -m 755 lib/libz.so.1  $(TARGETDIR)/lib
-	install -m 755 lib/libvorbis.so.0 $(TARGETDIR)/lib
-	install -m 755 lib/libFLAC.so.8 $(TARGETDIR)/lib
-	install -m 755 lib/libexif.so.12 $(TARGETDIR)/lib
-	install -m 755 lib/libogg.so.0 $(TARGETDIR)/lib
-	install -m 755 lib/libavutil.so.49 $(TARGETDIR)/lib
-	install -m 755 lib/libavdevice.so.52 $(TARGETDIR)/lib
-	install -m 755 lib/libavformat.so.52 $(TARGETDIR)/lib
-	install -m 755 lib/libavcodec.so.52 $(TARGETDIR)/lib
-	install -m 755 lib/libsqlite3.so.0 $(TARGETDIR)/lib
-	install -m 755 lib/libjpeg.so.7 $(TARGETDIR)/lib
-	install -m 755 lib/libid3tag.so.0 $(TARGETDIR)/lib
+	install -m 755 lib/libz.so.1  $(TARGETDIR)/usr/lib
+	install -m 755 lib/libvorbis.so.0 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libFLAC.so.8 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libexif.so.12 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libogg.so.0 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libavutil.so.49 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libavdevice.so.52 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libavformat.so.52 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libavcodec.so.52 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libsqlite3.so.0 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libjpeg.so.7 $(TARGETDIR)/usr/lib
+	install -m 755 lib/libid3tag.so.0 $(TARGETDIR)/usr/lib
 	install -m 755 lib/minidlna $(TARGETDIR)/usr/sbin/
 
 
