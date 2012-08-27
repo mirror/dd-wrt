@@ -300,8 +300,8 @@ if test "x$debug" = xtrue; then
 else
 	CPPFLAGS="-DNDEBUG $CPPFLAGS"
 	if test "x$GCC" = xyes; then
-		CPPFLAGS="-DFLaC__INLINE=__inline__ $CPPFLAGS"
-		CFLAGS="-O3 -funroll-loops -finline-functions -Wall -W -Winline $CFLAGS"
+		CPPFLAGS="$CPPFLAGS"
+		CFLAGS="$CFLAGS"
 	fi
 fi
 
