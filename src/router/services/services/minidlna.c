@@ -40,6 +40,7 @@ void start_dlna(void)
 	if (!nvram_match("dlna_enable", "1"))
 		return;
 	mkdir("/tmp/db", 0700);
+	eval("rm","-f","/tmp/db/files.db");
 	FILE *fp = fopen("/tmp/minidlna.conf", "wb");
 	fprintf(fp, "port=8200\n");
 	fprintf(fp, "network_interface=br0\n");
