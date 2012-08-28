@@ -4,17 +4,19 @@ SAMBA_USER="$(nvram get samba_user)"
 SAMBA_PASSWORD="$(nvram get samba_password)"
 SAMBA_SCRIPT="$(nvram get samba_script)"
 
-echo /tmp/smbshare
-umount /tmp/smbshare
+mkdir /tmp/mnt
+echo /mnt/smbshare
+umount /mnt/smbshare
 rmmod cifs
 if [ "$(nvram get samba_mount)" = "1" ]; then     
-    mkdir /tmp/smbshare
-    chmod 777 /tmp/smbshare
+    mkdir /mnt/smbshare
+    chmod 777 /mnt/smbshare
     insmod nls_base
     insmod cifs
-    mount.cifs $SAMBA_SHARE /tmp/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD"
+    insmod md4
+    mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD"
     if [ "$(nvram get samba_script)" != "" ]; then
-	exec "/tmp/smbshare/$SAMBA_SCRIPT"
+	exec "/mnt/smbshare/$SAMBA_SCRIPT"
     fi	
 fi
 
