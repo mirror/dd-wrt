@@ -16,9 +16,9 @@
 # To install in $HOME instead of /usr/local, use:
 #    make install prefix=$HOME
 
-CC=$(CROSS_COMPILE)gcc
+CC=ccache $(CROSS_COMPILE)gcc
 
-CFLAGS=-fPIC $(COPTS) -DUSE_MMAP
+CFLAGS=-fPIC $(COPTS) -DUSE_MMAP  -ffunction-sections -fdata-sections -Wl,--gc-sections
 #CFLAGS=-O -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7
 #CFLAGS=-g -DDEBUG
 #CFLAGS=-O3 -Wall -Wwrite-strings -Wpointer-arith -Wconversion \
