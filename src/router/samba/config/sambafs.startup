@@ -9,6 +9,7 @@ echo /mnt/smbshare
 umount /mnt/smbshare
 rmmod cifs
 if [ "$(nvram get samba_mount)" = "1" ]; then     
+    echo 4096 > /proc/sys/vm/min_free_kbytes
     mkdir /mnt/smbshare
     chmod 777 /mnt/smbshare
     insmod nls_base
