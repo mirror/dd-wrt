@@ -41,12 +41,17 @@ enum _log_facility
   L_TIVO,
   L_MAX
 };
-
 extern int log_level[L_MAX];
+
+#ifdef NEED_PRINTF
 extern int log_init(const char *fname, const char *debug);
 extern void log_err(int level, enum _log_facility facility, char *fname, int lineno, char *fmt, ...);
 
 #define DPRINTF(level, facility, fmt, arg...) do { log_err(level, facility, __FILE__, __LINE__, fmt, ##arg); } while (0)
-
+#else
+#define log_init(fname,debug)
+#define log_err(level,facility,fname,lineno,fmt, ...)  do {  } while(0)
+#define DPRINTF(level, facility, gmt, ...) do {  } while(0)
+#endif
 
 #endif /* __ERR_H__ */
