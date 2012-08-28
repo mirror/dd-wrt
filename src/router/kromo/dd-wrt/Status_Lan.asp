@@ -256,9 +256,9 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend4"); %></legend>
 								<table class="table center" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
 									<tr>
-										<th width="25%"><% tran("share.hostname"); %></th>
-										<th width="20%"><% tran("share.ip"); %></th>
-										<th width="20%"><% tran("share.mac"); %></th>
+										<th width="30%"><% tran("share.hostname"); %></th>
+										<th width="17%"><% tran("share.ip"); %></th>
+										<th width="18%"><% tran("share.mac"); %></th>
 										<th width="15%"><% tran("status_lan.concount"); %></th>
 										<th width="20%"><% tran("status_lan.conratio"); %> [<% nvram_get("ip_conntrack_max"); %>]</th>
 									</tr>
@@ -302,10 +302,10 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_lan.legend3"); %></legend>
 									<table class="table center" cellspacing="6" id="dhcp_leases_table" summary="dhcp leases table">
 										<tr>
-											<th width="46%"><% tran("share.hostname"); %></th>
+											<th width="43%"><% tran("share.hostname"); %></th>
 											<th width="17%"><% tran("share.ip"); %></th>
-											<th width="22%"><% tran("share.mac"); %></th>
-											<th width="15%"><script type="text/javascript">Capture(<% nvram_else_match("dhcp_dnsmasq","1","idx.dhcp_lease","share.expires"); %>)</script></th>
+											<th width="20%"><% tran("share.mac"); %></th>
+											<th width="20%"><script type="text/javascript">Capture(<% nvram_else_match("dhcp_dnsmasq","1","idx.dhcp_lease","share.expires"); %>)</script></th>
 											<th><% tran("share.del"); %></th>
 										</tr>
 									</table>
@@ -325,8 +325,8 @@ addEvent(window, "unload", function() {
 										<tr>
 											<th width="15%"><% tran("share.intrface"); %></th>
 											<th width="45%"><% tran("share.usrname"); %></th>
-											<th width="20%"><% tran("share.localip"); %></th>
-											<th width="20%"><% tran("share.remoteip"); %></th>
+											<th width="18%"><% tran("share.localip"); %></th>
+											<th width="22%"><% tran("share.remoteip"); %></th>
 											<th><% tran("share.del"); %></th>
 										</tr>
 									</table>
