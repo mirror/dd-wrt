@@ -398,7 +398,6 @@ void start_openvpn(void)
 			"ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
 );
 	}
-	fprintf(fp, "startservice set_routes\n");
 	fclose(fp);
 	
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
