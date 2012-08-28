@@ -163,32 +163,32 @@ clean:
 	-for i in ${SUBDIRS}; do \
 		(cd $$i; make clean); \
 	done
-	-rm ./lib/libz.so.1
-	-rm ./lib/libvorbis.so.0
-	-rm ./lib/libFLAC.so.8
-	-rm ./lib/libogg.so.0
-	-rm ./lib/libexif.so.12
-	-rm ./lib/libavutil.so.49
-	-rm ./lib/libavdevice.so.52
-	-rm ./lib/libavformat.so.52
-	-rm ./lib/libavcodec.so.52
-	-rm ./lib/libsqlite3.so.0
-	-rm ./lib/libjpeg.so.7
-	-rm ./lib/libid3tag.so.0
+	-rm ./lib/libz.a
+	-rm ./lib/libvorbis.a
+	-rm ./lib/libFLAC.a
+	-rm ./lib/libogg.a
+	-rm ./lib/libexif.a
+	-rm ./lib/libavutil.a
+	-rm ./lib/libavdevice.a
+	-rm ./lib/libavformat.a
+	-rm ./lib/libavcodec.a
+	-rm ./lib/libsqlite3.a
+	-rm ./lib/libjpeg.a
+	-rm ./lib/libid3tag.a
 	-rm ./lib/minidlna
 copy: 
-	cp ./zlib-1.2.3/libz.so.1.2.3				./lib/libz.so.1 && \
-	cp ./libvorbis-1.3.3/lib/.libs/libvorbis.so.0.4.6	./lib/libvorbis.so.0 && \
-	cp ./flac-1.2.1/src/libFLAC/.libs/libFLAC.so.8.2.0	./lib/libFLAC.so.8 && \
-	cp ./libexif-0.6.19/libexif/.libs/libexif.so.12.3.1 	./lib/libexif.so.12  && \
-	cp ./libogg-1.3.0/src/.libs/libogg.so.0.8.0		./lib/libogg.so.0 && \
-	cp ./ffmpeg-0.11.1/libavutil/libavutil.so.51		./lib/libavutil.so.51 && \
-	cp ./ffmpeg-0.11.1/libavdevice/libavdevice.so.54		./lib/libavdevice.so.54 && \
-	cp ./ffmpeg-0.11.1/libavformat/libavformat.so.54		./lib/libavformat.so.54 && \
-	cp ./ffmpeg-0.11.1/libavcodec/libavcodec.so.54		./lib/libavcodec.so.54 && \
-	cp ./sqlite-3.6.22/.libs/libsqlite3.so.0.8.6 		./lib/libsqlite3.so.0 && \
-	cp ./jpeg-7/.libs/libjpeg.so.7.0.0			./lib/libjpeg.so.7 && \
-	cp ./libid3tag-0.15.0b/.libs/libid3tag.so.0.2.0 	./lib/libid3tag.so.0
+	cp ./zlib-1.2.3/libz.a				./lib/libz.a && \
+	cp ./libvorbis-1.3.3/lib/.libs/libvorbis.a	./lib/libvorbis.a && \
+	cp ./flac-1.2.1/src/libFLAC/.libs/libFLAC.a		./lib/libFLAC.a && \
+	cp ./libexif-0.6.19/libexif/.libs/libexif.a 		./lib/libexif.a  && \
+	cp ./libogg-1.3.0/src/.libs/libogg.a		./lib/libogg.a && \
+	cp ./ffmpeg-0.11.1/libavutil/libavutil.a		./lib/libavutil.a && \
+	cp ./ffmpeg-0.11.1/libavdevice/libavdevice.a		./lib/libavdevice.a && \
+	cp ./ffmpeg-0.11.1/libavformat/libavformat.a		./lib/libavformat.a && \
+	cp ./ffmpeg-0.11.1/libavcodec/libavcodec.a		./lib/libavcodec.a && \
+	cp ./sqlite-3.6.22/.libs/libsqlite3.a 		./lib/libsqlite3.a && \
+	cp ./jpeg-7/.libs/libjpeg.a			./lib/libjpeg.a && \
+	cp ./libid3tag-0.15.0b/.libs/libid3tag.a 	./lib/libid3tag.a
 
 distclean:
 	-cd ./libogg-1.3.0/	&& make distclean 
@@ -209,18 +209,18 @@ install:
 	mkdir -p $(TARGETDIR)/etc
 	mkdir -p $(TARGETDIR)/usr/sbin
 	install -m 755 minidlna/minidlna.conf $(TARGETDIR)/etc/
-	install -m 755 lib/libz.so.1  $(TARGETDIR)/usr/lib
-	install -m 755 lib/libvorbis.so.0 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libFLAC.so.8 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libexif.so.12 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libogg.so.0 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libavutil.so.51 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libavdevice.so.54 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libavformat.so.54 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libavcodec.so.54 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libsqlite3.so.0 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libjpeg.so.7 $(TARGETDIR)/usr/lib
-	install -m 755 lib/libid3tag.so.0 $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libz.so.1  $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libvorbis.so.0 $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libFLAC.so.8 $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libexif.so.12 $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libogg.so.0 $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libavutil.so.51 $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libavdevice.so.54 $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libavformat.so.54 $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libavcodec.so.54 $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libsqlite3.so.0 $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libjpeg.so.7 $(TARGETDIR)/usr/lib
+#	install -m 755 lib/libid3tag.a $(TARGETDIR)/usr/lib
 	install -m 755 lib/minidlna $(TARGETDIR)/usr/sbin/
 
 
