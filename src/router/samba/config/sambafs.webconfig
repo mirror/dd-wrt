@@ -28,7 +28,7 @@
 			<div class="label"><% tran("share.fssize"); %></div>
 			<script type="text/javascript">
 			//<![CDATA[
-			<% statfs("/tmp/smbshare", "samba"); %>
+			<% statfs("/tmpp/mnt/smbshare", "samba"); %>
 			document.write( ((<% nvram_get("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.size) + ' / ' + scaleSize(samba.free)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 			//]]>
 			</script>
