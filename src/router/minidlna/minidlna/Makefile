@@ -13,7 +13,7 @@
 #CFLAGS = -Wall -O -D_GNU_SOURCE -g -DDEBUG
 #CFLAGS = -Wall -g -Os -D_GNU_SOURCE
 
-CFLAGS = -Wall $(COPTS) -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__\
+CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__\
          -I$(MINI_DLNA_PATH)/ffmpeg-0.11.1 \
          -I$(MINI_DLNA_PATH)/ffmpeg-0.11.1/libavutil \
          -I$(MINI_DLNA_PATH)/ffmpeg-0.11.1/libavcodec \

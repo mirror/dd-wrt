@@ -29,7 +29,7 @@ TOOL_CHAIN_PATH=$(TOOLCHAIN)
 #/home/michael/DLNA
 MINI_DLNA_PATH=$(shell pwd)
 
-CFLAGS += $(COPTS) -fPIC
+CFLAGS += $(COPTS) -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 # [FIXME] added by Michael Jiang.
 # The below variables  should be modified when you use different platform.
@@ -64,7 +64,7 @@ zlib:
 
 ffmpeg:
 	if [ ! -f ./ffmpeg-0.11.1/config.mak ];then \
-	cd ffmpeg-0.11.1 && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)" --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter --disable-filters --enable-small --disable-postproc --disable-network \
+	cd ffmpeg-0.11.1 && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections " --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter --disable-filters --enable-small --disable-postproc --disable-network \
 	--enable-shared \
 	--enable-static \
 	--disable-debug \
@@ -114,22 +114,22 @@ ffmpeg:
 
 libogg:
 	if [ ! -f ./libogg-1.3.0/Makefile ];then \
-	cd libogg-1.3.0 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)"); \
+	cd libogg-1.3.0 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections"); \
 	fi
 
 libexif:
 	if [ ! -f ./libexif-0.6.19/Makefile ];then \
-	cd libexif-0.6.19 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)"); \
+	cd libexif-0.6.19 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections"); \
 	fi
 
 libjpeg:
 	if [ ! -f ./jpeg-7/Makefile ];then \
-	cd jpeg-7 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)"); \
+	cd jpeg-7 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections"); \
 	fi
 
 sqlite3:
 	if [ ! -f ./sqlite-3.6.22/Makefile ];then \
-	cd sqlite-3.6.22 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS)" \
+	cd sqlite-3.6.22 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 				--enable-threadsafe ); \
 	fi
 
@@ -140,14 +140,14 @@ libvorbis:
 				MINI_DLNA_PATH=$(MINI_DLNA_PATH)				
 	if [ ! -f ./libvorbis-1.3.3/Makefile ];then \
 	cd libvorbis-1.3.3 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
-					CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/" \
+					CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 					LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.3.0/src/.libs/ \
 					); \
 	fi
 flac:
 	if [ ! -f ./flac-1.2.1/Makefile ];then \
 	cd flac-1.2.1 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
-				CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/" \
+				CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 				LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.3.0/src/.libs/ \
 				); \
 	fi
@@ -155,7 +155,7 @@ flac:
 libid3tag:
 	if [ ! -f ./libid3tag-0.15.0b/Makefile ];then \
 	cd libid3tag-0.15.0b && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
-				CPPFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/zlib-1.2.3/" \
+				CPPFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/zlib-1.2.3/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 				LDFLAGS=-L$(MINI_DLNA_PATH)/zlib-1.2.3/ \
 				); \
 	fi
