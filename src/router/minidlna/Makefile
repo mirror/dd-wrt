@@ -75,7 +75,41 @@ ffmpeg:
 	--enable-small \
 	--disable-stripping \
 	--enable-zlib \
-	--disable-outdevs); \
+	--disable-ffmpeg \
+	--disable-ffplay \
+	--disable-ffprobe \
+	--disable-ffserver \
+	--disable-outdevs \
+	--disable-avfilter \
+	--disable-postproc \
+	--disable-swscale \
+	--disable-everything \
+	--enable-decoder=aac \
+	--enable-decoder=ac3 \
+	--enable-decoder=flac \
+	--enable-decoder=h264 \
+	--enable-decoder=jpegls \
+	--enable-decoder=mp3 \
+	--enable-decoder=mpeg1video \
+	--enable-decoder=mpeg2video \
+	--enable-decoder=mpeg4 \
+	--enable-decoder=mpegvideo \
+	--enable-decoder=mwav1 \
+	--enable-decoder=mwav2 \
+	--enable-decoder=vc1 \
+	--enable-decoder=vc1_crystalhd \
+	--enable-decoder=png \
+	--enable-demuxer=aac \
+	--enable-demuxer=vc1 \
+	--enable-demuxer=ac3 \
+	--enable-demuxer=avi \
+	--enable-demuxer=flac \
+	--enable-demuxer=h264 \
+	--enable-demuxer=matroska \
+	--enable-demuxer=mov \
+	--enable-demuxer=mp3 \
+	--enable-demuxer=mpegvideo \
+	--enable-protocol=file); \
 	fi
 
 libogg:
