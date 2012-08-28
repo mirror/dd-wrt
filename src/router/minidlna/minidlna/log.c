@@ -29,7 +29,7 @@
 static FILE *log_fp = NULL;
 static int default_log_level = E_WARN;
 int log_level[L_MAX];
-
+#ifdef NEED_PRINTF
 char *facility_name[] = {
 	"general",
 	"artwork",
@@ -162,3 +162,4 @@ log_err(int level, enum _log_facility facility, char *fname, int lineno, char *f
 
 	return;
 }
+#endif
