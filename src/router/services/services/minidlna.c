@@ -44,6 +44,7 @@ void start_dlna(void)
 	fprintf(fp, "port=8200\n");
 	fprintf(fp, "network_interface=br0\n");
 	fprintf(fp, "media_dir=/mnt\n");	// comma separted list
+	fprintf(fp, "friendly_name=%s:DLNA\n",nvram_safe_get("DD_BOARD")); //enter any name you want here, but should be unique within a network
 	fprintf(fp,
 		"album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg\n");
 	fprintf(fp, "inotify=yes\n");
