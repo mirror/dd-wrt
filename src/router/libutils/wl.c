@@ -67,7 +67,7 @@ unsigned int ieee80211_ieee2mhz(unsigned int chan)
 	else if (chan < 27)
 		return ((2512) + ((chan - 15) * 20));
 	else
-		return ((5000) + (chan * 5));		
+		return ((5000) + (chan * 5));
 }
 
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
@@ -656,8 +656,8 @@ int getchannels(unsigned int *retlist, char *ifname)
 	int mask = 0;
 	int bw = atoi(nvram_nget("wl%d_nbw", wl));
 	if (!bw)
-	    bw = 20;
-	    
+		bw = 20;
+
 	int spec = 0;
 #ifdef WL_CHANSPEC_BW_8080
 	if (nvram_nmatch("8080", "wl%d_nbw", wl))
@@ -715,9 +715,9 @@ int getchannels(unsigned int *retlist, char *ifname)
 		c = list->element[i];
 		int cspec = c & 0x700;
 		int cbw = c & 0x3800;
-//		fprintf(stderr,"wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
+//              fprintf(stderr,"wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
 		if ((cbw == mask) && (cspec == spec)) {
-//		fprintf(stderr,"take wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
+//              fprintf(stderr,"take wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
 
 			int channel = getcenterchannel(c);
 
@@ -747,7 +747,7 @@ int getchannels(unsigned int *retlist, char *ifname)
 
 	return count;
 
-#else //HAVE_80211AC
+#else				//HAVE_80211AC
 
 	// int ret, num;
 	// num = (sizeof (*list) - 4) / 6; /* Maximum number of entries in the
@@ -1444,9 +1444,6 @@ int wifi_getchannel(char *ifname)
 	cprintf("wifi channel %f\n", freq);
 	channel = ieee80211_mhz2ieee(freq);
 
-
-
-
 	return channel;
 }
 
@@ -2068,7 +2065,17 @@ void radio_off(int idx)
 #ifdef HAVE_MADWIFI_MIMO
 	if (nvram_match("mimo_driver", "ath9k"))
 #endif
-		radio_off_ath9k(idx);
+	{
+		if (idx != -1) {
+			int cc = getdevicecount();
+			int i;
+			for (i = 0; i < cc; i++) {
+				radio_off_ath9k(i);
+			}
+		} else {
+			radio_off_ath9k(idx);
+		}
+	}
 #endif
 	if (idx != -1) {
 		writevaproc("1", "/proc/sys/dev/wifi%d/silent", idx);
@@ -2089,7 +2096,17 @@ void radio_on(int idx)
 #ifdef HAVE_MADWIFI_MIMO
 	if (nvram_match("mimo_driver", "ath9k"))
 #endif
-		radio_on_ath9k(idx);
+	{
+		if (idx != -1) {
+			int cc = getdevicecount();
+			int i;
+			for (i = 0; i < cc; i++) {
+				radio_on_ath9k(i);
+			}
+		} else {
+			radio_on_ath9k(idx);
+		}
+	}
 #endif
 	if (idx != -1)
 		writevaproc("0", "/proc/sys/dev/wifi%d/silent", idx);
@@ -2101,32 +2118,32 @@ void radio_on(int idx)
 	}
 }
 
-int gettxantenna(char *ifname) {
+int gettxantenna(char *ifname)
+{
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
 #ifdef HAVE_CARLSONWIRELESS
 		if (!registered_has_cap(20))
-			return(1);
+			return (1);
 #endif
-		return(mac80211_get_avail_tx_antenna(ifname));
-	}
-	else
+		return (mac80211_get_avail_tx_antenna(ifname));
+	} else
 #endif
-		return(7);
+		return (7);
 }
 
-int getrxantenna(char *ifname) {
+int getrxantenna(char *ifname)
+{
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
 #ifdef HAVE_CARLSONWIRELESS
 		if (!registered_has_cap(20))
-			return(1);
+			return (1);
 #endif
-		return(mac80211_get_avail_rx_antenna(ifname));
-	}
-	else
+		return (mac80211_get_avail_rx_antenna(ifname));
+	} else
 #endif
-		return(7);
+		return (7);
 }
 
 #endif
