@@ -19,8 +19,11 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     if [ "$(nvram get samba_script)" != "" ]; then
 	exec "/mnt/smbshare/$SAMBA_SCRIPT"
     fi	
+    stopservice dlna
     startservice dlna
+    stopservice ftpsrv
     startservice ftpsrv
+    stopservice samba3
     startservice samba3
 fi
 
