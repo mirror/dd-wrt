@@ -1548,7 +1548,7 @@ void radio_on_off_ath9k(int idx,int on) {
 	char debugstring[64];
 	int fp;
 
-	sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/diag",get_ath9k_phy_idx(idx));
+	sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag",get_ath9k_phy_idx(idx));
 	fp = open(debugstring, O_WRONLY);
 	if (fp) {
 		if (on)
@@ -2115,8 +2115,9 @@ void radio_on(int idx)
 	else {
 		int cc = getdevicecount();
 		int i;
-		for (i = 0; i < cc; i++)
+		for (i = 0; i < cc; i++) {
 			writevaproc("0", "/proc/sys/dev/wifi%d/silent", idx);
+		}
 	}
 }
 
