@@ -1544,18 +1544,20 @@ int getAssocMAC(char *ifname, char *mac)
 
 #ifdef HAVE_ATH9K
 
-void radio_off_ath9k(int idx)
-{
-	fprintf(stderr, "ath9k radio off: phy%d ath%d\n",
-		get_ath9k_phy_idx(idx), idx);
-	// TBD
-}
+void radio_on_off_ath9k(int idx,int on) {
+	char debugstring[64];
+	int fp;
 
-void radio_on_ath9k(int idx)
-{
-	fprintf(stderr, "ath9k radio on: phy%d ath%d\n", get_ath9k_phy_idx(idx),
-		idx);
-	// TBD
+	sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/diag",get_ath9k_phy_idx(idx));
+	fp = open(debugstring, O_WRONLY);
+	if (fp) {
+		if (on)
+			write(fp, "0", strlen("0"));
+		else
+			write(fp, "3", strlen("3"));
+		fprintf(stderr, "ath9k radio %d: phy%d ath%d\n",on ,get_ath9k_phy_idx(idx), idx);
+	close(fp);
+	}
 }
 
 #endif
@@ -2070,10 +2072,10 @@ void radio_off(int idx)
 			int cc = getdevicecount();
 			int i;
 			for (i = 0; i < cc; i++) {
-				radio_off_ath9k(i);
+				radio_on_off_ath9k(i,0);
 			}
 		} else {
-			radio_off_ath9k(idx);
+			radio_on_off_ath9k(idx,0);
 		}
 	}
 #endif
@@ -2101,10 +2103,10 @@ void radio_on(int idx)
 			int cc = getdevicecount();
 			int i;
 			for (i = 0; i < cc; i++) {
-				radio_on_ath9k(i);
+				radio_on_off_ath9k(i,1);
 			}
 		} else {
-			radio_on_ath9k(idx);
+			radio_on_off_ath9k(idx,1);
 		}
 	}
 #endif
