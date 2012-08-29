@@ -2068,7 +2068,7 @@ void radio_off(int idx)
 	if (nvram_match("mimo_driver", "ath9k"))
 #endif
 	{
-		if (idx != -1) {
+		if (idx == -1) {
 			int cc = getdevicecount();
 			int i;
 			for (i = 0; i < cc; i++) {
@@ -2099,7 +2099,7 @@ void radio_on(int idx)
 	if (nvram_match("mimo_driver", "ath9k"))
 #endif
 	{
-		if (idx != -1) {
+		if (idx == -1) {
 			int cc = getdevicecount();
 			int i;
 			for (i = 0; i < cc; i++) {
