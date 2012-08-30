@@ -1475,6 +1475,27 @@ int get_radiostate(char *ifname)
 {
 	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
 		return 0;
+#ifdef HAVE_ATH9K
+	if(is_ath9k(ifname)) {
+		char debugstring[64];
+		FILE *fp;
+		int idx;
+		char index[8];
+		char state[10];
+		
+		strncpy(index, ifname + 3, 1);
+		idx = atoi(index);
+		
+		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag",get_ath9k_phy_idx(idx));
+		fp = fopen(debugstring, "r");
+		if (fp) {
+			fread(state, sizeof(state), 1, fp); 
+			fclose(fp);
+			if(!strcmp(state, "0x00000003"))
+				return 0;
+		}
+	}
+#endif
 	struct ifreq ifr;
 	int skfd = getsocket();
 
