@@ -122,8 +122,19 @@ int hostapd_reload_config(struct hostapd_iface *iface)
 	iface->conf = newconf;
 
 	iface->freq = hostapd_hw_get_freq(hapd, hapd->iconf->channel);
+	hostapd_select_hw_mode(iface);
+	iface->freq = hostapd_hw_get_freq(hapd, newconf->channel);
 	if (iface->current_mode)
 		hostapd_prepare_rates(hapd, iface->current_mode);
+
+	if (hostapd_set_freq(hapd, newconf->hw_mode, iface->freq,
+			newconf->channel,
+			newconf->ieee80211n,
+			newconf->secondary_channel)) {
+		wpa_printf(MSG_ERROR, "Could not set channel for "
+			   "kernel driver");
+	}
+
 
 	for (j = 0; j < iface->num_bss; j++) {
 		hapd = iface->bss[j];

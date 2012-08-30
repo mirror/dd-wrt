@@ -156,8 +156,8 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 		channel = (bss->freq - 5000) / 5;
 	}
 
-	if (asprintf(&cmd, "RELOAD channel=%d sec_chan=0 hw_mode=%d ieee80211n=%d",
-		     channel, hw_mode, !!bss->ht_capab) < 0) {
+	if (asprintf(&cmd, "RELOAD channel=%d frequency=%d sec_chan=0 hw_mode=%d ieee80211n=%d",
+		     channel, bss->freq, hw_mode, !!bss->ht_capab) < 0) {
 		return -1;
 	}
 
@@ -168,6 +168,7 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 		wpa_printf(MSG_ERROR, "\nFailed to reload hostapd AP interfaces\n");
 		return -1;
 	}
+	wpa_printf(MSG_INFO, "\nreload hostapd channel=%d frequency=%d\n",channel,bss->freq);
 	return 0;
 }
 #endif
