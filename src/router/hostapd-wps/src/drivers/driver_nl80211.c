@@ -3230,8 +3230,10 @@ static int ieee80211_frequency_to_channel(int freq)
 	/* see 802.11 17.3.8.3.2 and Annex J */
 	if (freq == 2484)
 		return 14;
+	if (freq == 2407)
+		return 0;
 	else if (freq < 2412)
-		return (freq - 2412) / 5 + 256;
+		return (freq - 2407) / 5 + 256;
 	else if (freq < 2484)
 		return (freq - 2407) / 5;
 	else if (freq > 2484 && freq < 4000 )
