@@ -357,13 +357,15 @@ static struct hostapd_config *hostapd_ctrl_iface_config_read(const char *fname)
 
 		if ((val = get_option(opt, "channel=")))
 			conf->channel = atoi(val);
+		else if ((val = get_option(opt, "frequency=")))
+			conf->frequency = atoi(val);
 		else if ((val = get_option(opt, "ht_capab=")))
 			conf->ht_capab = atoi(val);
 		else if ((val = get_option(opt, "ht_capab_mask=")))
 			conf->ht_capab &= atoi(val);
 		else if ((val = get_option(opt, "sec_chan=")))
 			conf->secondary_channel = atoi(val);
-		else if ((val = get_option(opt, "hwmode=")))
+		else if ((val = get_option(opt, "hw_mode=")))
 			conf->hw_mode = atoi(val);
 		else if ((val = get_option(opt, "ieee80211n=")))
 			conf->ieee80211n = atoi(val);
