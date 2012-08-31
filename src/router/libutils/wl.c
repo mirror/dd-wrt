@@ -1568,6 +1568,8 @@ int getAssocMAC(char *ifname, char *mac)
 void radio_on_off_ath9k(int idx,int on) {
 	char debugstring[64];
 	int fp;
+	char authmode[16];
+	char tpt[8];
 
 	sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag",get_ath9k_phy_idx(idx));
 	fp = open(debugstring, O_WRONLY);
@@ -1577,7 +1579,28 @@ void radio_on_off_ath9k(int idx,int on) {
 		else
 			write(fp, "3", strlen("3"));
 		fprintf(stderr, "ath9k radio %d: phy%d ath%d\n",on ,get_ath9k_phy_idx(idx), idx);
-	close(fp);
+		close(fp);
+	}
+	
+	// LED
+	sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger", get_ath9k_phy_idx(idx));
+	fp = open(debugstring, O_WRONLY);
+	if (fp) {
+		if (on) {
+			sprintf(tpt, "phy%dtpt", get_ath9k_phy_idx(idx));
+			write(fp, tpt, strlen(tpt));
+			sprintf(authmode, "ath%d_auth_mode", idx);
+			if(nvram_get(authmode) && !nvram_match(authmode, "disabled")) {
+				// needs refinements
+				if(idx == 0)	
+					led_control(LED_SEC0, LED_ON);
+				else if(idx == 1)	
+					led_control(LED_SEC1, LED_ON);
+			}
+		} else {
+			write(fp, "none", strlen("none"));
+		}
+		close(fp);
 	}
 }
 
@@ -2111,6 +2134,8 @@ void radio_off(int idx)
 			writevaproc("1", "/proc/sys/dev/wifi%d/ledon", i);	// switch off led
 		}
 	}
+#ifdef HAVE_ATH9K
+#endif
 }
 
 void radio_on(int idx)
