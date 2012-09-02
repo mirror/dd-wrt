@@ -229,7 +229,9 @@ static void do_pppoeconfig(FILE * fp)
 		"refuse-mschap\n"	//
 		"require-mschap-v2\n"
 		"nopcomp\n"	// no protocol field compression
-		"default-mru\n"
+		//"default-mru\n"
+		"mtu %s\n"
+		"mru %s\n"
 		"default-asyncmap\n"
 		"noipdefault\n"
 		"defaultroute\n"
@@ -242,6 +244,8 @@ static void do_pppoeconfig(FILE * fp)
 		"lcp-echo-interval %s\n"
 		"lcp-echo-failure %s\n"
 		"idle %s\n",
+		nvram_safe_get("pppoeserver_mtu"),
+		nvram_safe_get("pppoeserver_mru"),
 		nvram_safe_get("pppoeserver_lcpechoint"),
 		nvram_safe_get("pppoeserver_lcpechofail"),
 		nvram_safe_get("pppoeserver_idle"));
