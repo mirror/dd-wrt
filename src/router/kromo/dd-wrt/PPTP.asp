@@ -112,7 +112,7 @@ addEvent(window, "unload", function() {
 			<input size="5" maxlength="5" class="num" name="pptpd_mtu" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("pptpd_mtu"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
-			document.write("(" + share.deflt + ": 1450)");
+			document.write("(" + share.deflt + ": 1436)");
 			//]]>
 			</script></span>
 		</div>
@@ -121,7 +121,7 @@ addEvent(window, "unload", function() {
 			<input size="5" maxlength="5" class="num" name="pptpd_mru" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("pptpd_mru"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
-			document.write("(" + share.deflt + ": 1450)");
+			document.write("(" + share.deflt + ": 1436)");
 			//]]>
 			</script></span>
 		</div>

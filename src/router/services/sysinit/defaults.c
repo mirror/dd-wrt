@@ -1767,8 +1767,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptpd_conn", "64", 0},
 	{"pptp_reorder", "0", 0},
 	{"pptp_extraoptions", "", 0},
-	{"pptpd_mtu", "1450", 0},
-	{"pptpd_mru", "1450", 0},
+	{"pptpd_mtu", "1436", 0},
+	{"pptpd_mru", "1436", 0},
 #ifdef HAVE_GGEW
 	{"pptp_encrypt", "1", 0},
 #else
