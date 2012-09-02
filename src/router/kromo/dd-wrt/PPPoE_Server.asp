@@ -196,6 +196,24 @@ addEvent(window, "unload", function() {
 				</script></span>
 			</div>
 			<div class="setting">
+				<div class="label"><% tran("service.pptpd_mtu"); %></div>
+				<input size="5" maxlength="5" class="num" name="pppoeserver_mtu" value="<% nvram_get("pppoeserver_mtu"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 1492)");
+				//]]>
+				</script></span>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.pptpd_mru"); %></div>
+				<input size="5" maxlength="5" class="num" name="pppoeserver_mru" value="<% nvram_get("pppoeserver_mru"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 1492)");
+				//]]>
+				</script></span>
+			</div>
+			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_auth"); %></div>
 				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="1" <% nvram_checked("pppoeradius_enabled", "1"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', true)" /><% tran("radius.legend"); %>
 				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="0" <% nvram_checked("pppoeradius_enabled", "0"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', false)" /><% tran("service.pppoesrv_chaps"); %>
