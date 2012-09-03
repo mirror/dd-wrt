@@ -94,7 +94,7 @@ void early_printk(const char *fmt, ...);
 extern int printk_needs_cpu(int cpu);
 extern void printk_tick(void);
 
-#ifdef CONFIG_PRINTK
+#if defined(CONFIG_PRINTK)  && !defined(CONFIG_NOPRINTK)
 asmlinkage __printf(5, 0)
 int vprintk_emit(int facility, int level,
 		 const char *dict, size_t dictlen,
