@@ -59,6 +59,7 @@ obj-$(CONFIG_MTD_LATCH_ADDR)	+= latch-addr-flash.o
 obj-$(CONFIG_MTD_LANTIQ)	+= lantiq-flash.o
 obj-$(CONFIG_MTD_AR531X)	+= ar531x_flash.o
 obj-$(CONFIG_MTD_EOC5610)	+= eoc5610_flash.o
+ifneq ($(CONFIG_PLAT_BCM5301X),y)
 obj-y				+= nvram.o 
 obj-$(CONFIG_MACH_AR7100)	+= nvram_kernel.o
 ifeq ($(CONFIG_RB2011),y)
@@ -80,3 +81,4 @@ obj-$(CONFIG_RALINK_RT2880)	+= nvram_kernel.o
 obj-$(CONFIG_RALINK_RT2883)	+= nvram_kernel.o
 obj-$(CONFIG_ATHEROS)		+= nvram_kernel.o
 obj-$(CONFIG_MTD_RALINK)        += ralink-flash.o
+endif
