@@ -1,5 +1,5 @@
 PROG        = usb_modeswitch
-VERS        = 1.1.4
+VERS        = 1.2.4
 #STRIP	    = strip
 #CC          = gcc
 CCFLAGS     = $(COPTS) -DNEED_PRINTF -Ilibusb-compat/libusb
@@ -24,8 +24,8 @@ configure:
 	cd libusb-compat && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" CXXFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" CPPFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" LIBUSB_1_0_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a" LIBUSB_1_0_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb"
 
 clean:
-#	    	cd libusb && make clean
-#	    	cd libusb-compat && make clean
+	    	cd libusb && make clean
+	    	cd libusb-compat && make clean
 	      $(RM) ./usb_modeswitch 
 	      $(RM) ./ozerocdoff
 

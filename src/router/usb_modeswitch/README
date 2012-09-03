@@ -20,7 +20,7 @@ mode internally, the storage device vanishes (in most cases), and a new device
 (TM)" since it eliminates the need for shipping a separate driver carrier.
 
 In the beginning, nothing of this was documented in any form and there was
-hardly any Linux support available.
+hardly any Linux/Unix support available.
 On the good side, most of the known devices are working out of the box in all
 modes with the available Linux modules like "usb-storage" or serial USB drivers.
 That leaves only the problem of the mode-switching from storage to whatever
@@ -29,14 +29,15 @@ the thing is supposed to do.
 Fortunately there are things like human intelligence, USB sniffing programs and
 "libusb". It is possible to eavesdrop the communication of the MS Windows
 driver, to isolate the command or action that does the switching, and to replay
-the same sequence in Linux.
+the same sequence in the Unix system.
 
 USB_ModeSwitch makes this process easy to handle by taking the relevant para-
 meters from a configuration file and doing all the initialization and communi-
 cation stuff, with heavy help from "libusb".
-It is mainly used automatically - via udev events and rules - to do the switch
-without any user interaction. But it can also be run as a command line tool,
-usually when trying to make unknown devices work.
+In Linux it is mainly to be used automatically - via udev events and rules -
+and doing the mode switch without any user interaction, but it can also be run
+as a command line tool, usually when trying to make hitherto unknown devices
+work on Unix systems.
 
 We have already collected a wide range of information on how to switch all
 sorts of devices. If you run into a new one that is unknown yet, don't despair:
@@ -79,9 +80,11 @@ dependencies as well:
 
    # make install-static
 
-These commands will install a small posix shell script, the dispatcher
-(wrapper) as script or as binary, a global config file, the core program and
-a man page.
+Note that the "static"/"shared" targets are NOT referring to the usb_modeswitch
+program, only to the dispatcher!
+Any one of these commands will install a small posix shell script, the
+dispatcher (wrapper) as script or as binary, a global config file, the core
+program and a man page.
 
 Install the data package as well and you are set.
 
@@ -157,10 +160,11 @@ forum (see above) or send it to the author (see below)!
 Whodunit
 ========
 
-Copyright 2007, 2008, 2009, 2010, 2011 Josua Dietze (mail to "usb_admin"
+Copyright 2007, 2008, 2009, 2010, 2011, 2012 Josua Dietze (mail to "usb_admin"
  at the domain "draisberghof.de" or write a personal message through the forum
  to "Josh")
- NO SUPPORT QUESTIONS VIA E-MAIL, use the forum!
+
+ !!! NO SUPPORT QUESTIONS VIA E-MAIL, use the forum !!!
 
 Major contributions:
 
@@ -227,4 +231,4 @@ Or find it as the file COPYING in this folder.
 
 
 
-Last revised: 2011-12-26, Josua Dietze
+Last revised: 2012-08-12, Josua Dietze
