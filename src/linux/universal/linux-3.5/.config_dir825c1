@@ -2080,3 +2080,4 @@ CONFIG_IXGBE_PTP=y
 # CONFIG_RB1200 is not set
 # CONFIG_RB2011 is not set
 # CONFIG_CRASHLOG is not set
+# CONFIG_ARCH_BRCM is not set
