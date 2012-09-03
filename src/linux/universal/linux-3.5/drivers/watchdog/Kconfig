@@ -211,7 +211,7 @@ config DW_WATCHDOG
 
 config MPCORE_WATCHDOG
 	tristate "MPcore watchdog"
-	depends on ARCH_CNS3XXX
+	depends on ARCH_CNS3XXX || PLAT_MPCORE
 	help
 	  Watchdog timer embedded into the MPcore system.
 
