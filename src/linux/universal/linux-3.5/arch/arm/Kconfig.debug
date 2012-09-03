@@ -329,6 +329,16 @@ choice
 		  Note that the system will appear to hang during boot if there
 		  is nothing connected to read from the DCC.
 
+	config DEBUG_BRCM_LL
+		bool "broadcom"
+		help
+		  Say Y here if you want the debug print routines to direct
+		  their output to UART 2. The port must have been initialised
+		  by the boot-loader before use.
+
+		  The uncompressor code port configuration is now handled
+		  by CONFIG_S3C_LOWLEVEL_UART_PORT.
+
 	config DEBUG_SEMIHOSTING
 		bool "Kernel low-level debug output via semihosting I"
 		help
