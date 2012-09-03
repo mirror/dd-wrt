@@ -2616,4 +2616,3 @@ CONFIG_NLATTR=y
 CONFIG_AVERAGE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
-# CONFIG_ARCH_BRCM is not set
