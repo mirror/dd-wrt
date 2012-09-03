@@ -1,3 +1,8 @@
+ifeq ($(CONFIG_PLAT_BCM5301X),y)
+EXTRA_CFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+endif
+
 #
 # Makefile for the linux arm-specific parts of the memory manager.
 #

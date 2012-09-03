@@ -307,6 +307,9 @@ ENTRY(\name\()_cache_fns)
 	.long	\name\()_dma_map_area
 	.long	\name\()_dma_unmap_area
 	.long	\name\()_dma_flush_range
+#ifdef CONFIG_PLAT_BCM5301X
+	.long	\name\()_dma_inv_range
+#endif
 	.size	\name\()_cache_fns, . - \name\()_cache_fns
 .endm
 
