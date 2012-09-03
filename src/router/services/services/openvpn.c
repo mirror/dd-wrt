@@ -291,17 +291,22 @@ void start_openvpn(void)
 	write_nvram("/tmp/openvpncl/client.crt", "openvpncl_client");
 	write_nvram("/tmp/openvpncl/client.key", "openvpncl_key");
 	write_nvram("/tmp/openvpncl/ta.key", "openvpncl_tlsauth");
+	write_nvram("/tmp/openvpncl/static.key", "openvpncl_static");
 	chmod("/tmp/openvpn/client.key", 0600);
 
 	FILE *fp = fopen("/tmp/openvpncl/openvpn.conf", "wb");
 	if (fp == NULL)
 		return;
-	if (nvram_invmatch("openvpncl_ca", ""))
-		fprintf(fp, "ca /tmp/openvpncl/ca.crt\n");
-	if (nvram_invmatch("openvpncl_client", ""))
-		fprintf(fp, "cert /tmp/openvpncl/client.crt\n");
-	if (nvram_invmatch("openvpncl_key", ""))
-		fprintf(fp, "key /tmp/openvpncl/client.key\n");
+	if (nvram_invmatch("openvpncl_static", ""))
+		fprintf(fp, "secret /tmp/openvpncl/static.key\n");
+	else {
+		if (nvram_invmatch("openvpncl_ca", ""))
+			fprintf(fp, "ca /tmp/openvpncl/ca.crt\n");
+		if (nvram_invmatch("openvpncl_client", ""))
+			fprintf(fp, "cert /tmp/openvpncl/client.crt\n");
+		if (nvram_invmatch("openvpncl_key", ""))
+			fprintf(fp, "key /tmp/openvpncl/client.key\n");
+		}
 	fprintf(fp,
 		"management 127.0.0.1 5001\n"
 		"management-log-cache 50\n"
