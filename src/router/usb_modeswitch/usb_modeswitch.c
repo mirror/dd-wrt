@@ -1,6 +1,6 @@
 /*
   Mode switching tool for controlling flip flop (multiple device) USB gear
-  Version 1.2.3, 2012/01/28
+  Version 1.2.4, 2012/08/12
 
   Copyright (C) 2007 - 2012 Josua Dietze (mail to "usb_admin" at the domain
   of the home page; or write a personal message through the forum to "Josh".
@@ -45,7 +45,7 @@
 
 /* Recommended tab size: 4 */
 
-#define VERSION "1.2.3"
+#define VERSION "1.2.4"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -384,7 +384,7 @@ int main(int argc, char **argv)
 	if (verbose)
 		printConfig();
 
-	/* Plausibility checks. The default IDs are mandatory */
+	/* Some sanity checks. The default IDs are mandatory */
 	if (!(DefaultVendor && DefaultProduct)) {
 		SHOW_PROGRESS(output,"No default vendor/product ID given. Aborting.\n\n");
 		exit(1);
@@ -457,9 +457,12 @@ int main(int argc, char **argv)
 	}
 
 	/* Get current configuration of default device
-	 * A configuration value of -1 denotes a quirky device which has
-	 * trouble determining the current configuration. Just use the first
-	 * branch (which may be incorrect)
+	 * A configuration value of -1 helps with quirky devices which have
+	 * trouble determining the current configuration. We are just using the
+	 * current config branch then.
+	 * This affects only single-configuration devices so it's no problem.
+	 * The dispatcher is using this always if no change of configuration
+	 * is required for switching
 	 */
 	if (Configuration > -1)
 		currentConfig = get_current_configuration(devh);
@@ -468,11 +471,15 @@ int main(int argc, char **argv)
 		currentConfig = 0;
 	}
 
+	if (Interface == -1)
+		Interface = dev->config[0].interface[0].altsetting[0].bInterfaceNumber;
+	SHOW_PROGRESS(output,"Using interface number %d\n", Interface);
+
 	/* Get class of default device/interface */
 	defaultClass = dev->descriptor.bDeviceClass;
-	interfaceClass = get_interface0_class(dev, currentConfig);
+	interfaceClass = get_interface_class(dev, currentConfig, Interface);
 	if (interfaceClass == -1) {
-		fprintf(stderr, "Error: getting the interface class failed. Aborting.\n\n");
+		fprintf(stderr, "Error: getting the class of interface %d failed. Does it exist? Aborting.\n\n",Interface);
 		exit(1);
 	}
 
@@ -485,9 +492,12 @@ int main(int argc, char **argv)
 			defaultClass = 8;
 		}
 
-	if (Interface == -1)
-		Interface = dev->config[0].interface[0].altsetting[0].bInterfaceNumber;
-	SHOW_PROGRESS(output,"Using first interface: 0x%02x\n", Interface);
+	if (strlen(MessageContent) && strncmp("55534243",MessageContent,8) == 0)
+		if (defaultClass != 8) {
+			fprintf(stderr, "Error: can't use storage command in MessageContent with interface %d;\n"
+				"       interface class is %d, should be 8. Aborting.\n\n", Interface, defaultClass);
+			exit(1);
+		}
 
 	/* Check or get endpoints */
 	if (strlen(MessageContent) || InquireDevice || CiscoMode) {
@@ -948,6 +958,10 @@ void switchSierraMode ()
 
 	SHOW_PROGRESS(output,"Trying to send Sierra control message\n");
 	ret = usb_control_msg(devh, 0x40, 0x0b, 00000001, 0, buffer, 0, 1000);
+	if (ret == -32) {
+		SHOW_PROGRESS(output," communication with device stopped. May have switched, continue ...\n");
+	    return;
+	}
 	if (ret != 0) {
 		fprintf(stderr, "Error: sending Sierra control message failed (error %d). Aborting.\n\n", ret);
 	    exit(1);
@@ -1641,6 +1655,28 @@ int get_interface0_class(struct usb_device *dev, int devconfig)
 	for (i=0; i<dev->descriptor.bNumConfigurations; i++)
 		if (dev->config[i].bConfigurationValue == devconfig)
 			return dev->config[i].interface[0].altsetting[0].bInterfaceClass;
+	return -1;
+}
+
+int get_interface_class(struct usb_device *dev, int cfgNumber, int ifcNumber)
+{
+	int i;
+	int j;
+	// some single-configuration devices balk on iteration, treat them separately
+	if (cfgNumber == 0)
+		for (i=0; i<dev->config[0].bNumInterfaces; i++) {
+//			SHOW_PROGRESS(output,"Test: looking at ifc %d, class is %d\n",i,dev->config[0].interface[i].altsetting[0].bInterfaceClass);
+			if (dev->config[0].interface[i].altsetting[0].bInterfaceNumber == ifcNumber)
+				return dev->config[0].interface[i].altsetting[0].bInterfaceClass;
+		}
+	else
+		for (j=0; j<dev->descriptor.bNumConfigurations; j++)
+			if (dev->config[j].bConfigurationValue == cfgNumber)
+				for (i=0; i<dev->config[j].bNumInterfaces; i++) {
+//					SHOW_PROGRESS(output,"Test: looking at ifc %d, class is %d\n",i,dev->config[j].interface[i].altsetting[0].bInterfaceClass);
+					if (dev->config[j].interface[i].altsetting[0].bInterfaceNumber == ifcNumber)
+						return dev->config[j].interface[i].altsetting[0].bInterfaceClass;
+				}
 	return -1;
 }
 
