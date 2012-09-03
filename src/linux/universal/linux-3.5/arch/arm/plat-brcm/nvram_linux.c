@@ -868,7 +868,7 @@ dev_nvram_init(void)
 	mutex_init(&nvram_sem);
 
 	/* Register char device */
-	if ((nvram_major = register_chrdev(0, "nvram", &dev_nvram_fops)) < 0) {
+	if ((nvram_major = register_chrdev(229, "nvram", &dev_nvram_fops)) < 0) {
 		ret = nvram_major;
 		goto err;
 	}
