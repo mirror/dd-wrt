@@ -26,6 +26,10 @@ pdev_fixup_irq(struct pci_dev *dev,
 	u8 pin, slot;
 	int irq = 0;
 
+#if defined(CONFIG_PLAT_BCM5301X)
+	if (pci_domain_nr(dev->bus) == 0)
+		return;
+#endif
 	/* If this device is not on the primary bus, we need to figure out
 	   which interrupt pin it will come in on.   We know which slot it
 	   will come in on 'cos that slot is where the bridge is.   Each
