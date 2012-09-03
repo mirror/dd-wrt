@@ -2,6 +2,11 @@
 History of USB_ModeSwitch
 =========================
 
+Version 1.2.4, 2012/08/12
+    Additional interface checks to prevent sending UFI commands to non-
+    storage interfaces (prompted by more ambiguous device IDs popping up);
+    change in SierraMode for handling newer devices which caused an error
+    abort before; Makefile fix for parallelized make runs
 Version 1.2.3, 2012/01/28
     Fixed two bugs both causing the embedded-jimsh install variant of the
     dispatcher crash (the "pure-script" install variant was NOT affected);
