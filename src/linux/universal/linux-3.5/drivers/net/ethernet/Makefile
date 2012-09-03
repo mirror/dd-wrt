@@ -132,3 +132,5 @@ obj-$(CONFIG_LANTIQ) += ifxatm/
 obj-$(CONFIG_AG934X) += ag934x/
 obj-$(CONFIG_RAETH) += raeth/
 obj-$(CONFIG_AR2313) += ar2313/
+obj-$(CONFIG_ET) += et/
+obj-$(CONFIG_BCM57XX) += bcm57xx/
