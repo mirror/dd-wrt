@@ -192,3 +192,9 @@ int ifconfig(char *name, int flags, char *addr, char *netmask);
 
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
+
+#ifdef HAVE_NINTENDO
+void start_spotpass(void);
+void stop_spotpass(void);
+void start_spotpass_defaults(void);
+#endif
