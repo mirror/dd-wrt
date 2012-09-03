@@ -2283,6 +2283,8 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #elif HAVE_MAGICBOX
 	{"ip_conntrack_max", "16384", 0},
+#elif HAVE_NORTHSTAR
+	{"ip_conntrack_max", "32768", 0},
 #elif HAVE_LAGUNA
 	{"ip_conntrack_max", "32768", 0},
 #elif HAVE_RB600
