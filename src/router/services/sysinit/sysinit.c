@@ -2107,7 +2107,7 @@ void start_restore_defaults(void)
 				eqpos = strcspn(line, "=");
 				if(eqpos) {
 					line[eqpos] = '\0';
-					if(nvram_get(line)) {
+					if(strcmp("region", line) && nvram_get(line)) {
 						nvram_unset(line);
 					}
 				}
