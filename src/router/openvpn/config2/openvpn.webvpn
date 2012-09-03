@@ -212,6 +212,16 @@
 		</script>
 	</div>
 	<div class="setting">		
+		<div class="label"><% tran("service.vpnd_static"); %></div>
+		<textarea cols="60" rows="2" id="openvpn_static" name="openvpn_static"> </textarea>
+		<script type="text/javascript">
+		//<![CDATA[		
+				var openvpn_static = fix_cr( '<% nvram_get("openvpn_static"); %>' );
+				document.getElementById("openvpn_static").value = openvpn_static;
+		//]]>
+		</script>
+	</div>
+	<div class="setting">		
 		<div class="label"><% tran("service.vpnd_config"); %></div>
 		<textarea cols="60" rows="10" id="openvpn_config" name="openvpn_config"> </textarea>
 		<script type="text/javascript">
