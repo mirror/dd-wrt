@@ -667,6 +667,11 @@ ifneq ($(CONFIG_MADWIFI),y)
 VISOBJS += wireless_broadcom.o
 endif
 endif
+ifeq ($(ARCHITECTURE),northstar)
+ifneq ($(CONFIG_MADWIFI),y)
+VISOBJS += wireless_broadcom.o
+endif
+endif
 
 
 
