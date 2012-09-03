@@ -421,7 +421,8 @@ static struct sk_buff *br_ip6_multicast_alloc_query(struct net_bridge *br,
 	struct ethhdr *eth;
 	u8 *hopopt;
 	unsigned long interval;
-
+	if (!ipv6_dev_get_saddr)
+	    return NULL;
 	skb = netdev_alloc_skb_ip_align(br->dev, sizeof(*eth) + sizeof(*ip6h) +
 						 8 + sizeof(*mldq));
 	if (!skb)
