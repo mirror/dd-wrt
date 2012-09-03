@@ -1,5 +1,6 @@
-EXTRA_CFLAGS+=-I$(srctree)/arch/arm/plat-brcm/bcminclude -DBCMDRIVER -Dlinux
-EXTRA_AFLAGS+=-I$(srctree)/arch/arm/plat-brcm/bcminclude -DBCMDRIVER -Dlinux
+EXTRA_CFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+
 #
 # Board-level BSP
 # Preliminary
