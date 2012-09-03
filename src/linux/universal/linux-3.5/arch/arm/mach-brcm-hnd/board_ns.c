@@ -494,8 +494,14 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 		
 		/* Setup rootfs MTD partition */
 		bcm947xx_flash_parts[nparts].name = "rootfs";
-		bcm947xx_flash_parts[nparts].size = rootfssize;
 		bcm947xx_flash_parts[nparts].offset = rfs_off;
+		bcm947xx_flash_parts[nparts].size = rootfssize;
+		size_t offs = bcm947xx_flash_parts[nparts].offset + bcm947xx_flash_parts[nparts].size;
+		offs += (mtd->erasesize - 1);
+		offs &= ~(mtd->erasesize - 1);
+		offs -= bcm947xx_flash_parts[nparts].offset;
+		bcm947xx_flash_parts[nparts].size = offs;
+
 		bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
 		nparts++;
 #ifdef CONFIG_FAILSAFE_UPGRADE
