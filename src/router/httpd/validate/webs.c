@@ -917,14 +917,15 @@ extern struct wl_client_mac *wl_client_macs;
 void add_active_mac(webs_t wp)
 {
 	int i, count = 0;
-	char *buf = malloc(4096);
+	int msize = 4608; // 18 chars * 256 entries
+	char *buf = malloc(msize);
 	char *cur = buf;
-	memset(buf, 0, 4096);
+	memset(buf, 0, msize);
 	char *ifname = websGetVar(wp, "ifname", NULL);
 
 	nvram_set("wl_active_add_mac", "1");
 
-	for (i = 0; i < MAX_LEASES; i++) {
+	for (i = 0; i < MAX_LEASES + 2; i++) {
 		char active_mac[] = "onXXX";
 		char *index = NULL;
 
@@ -935,11 +936,11 @@ void add_active_mac(webs_t wp)
 
 		count++;
 
-		cur += snprintf(cur, buf + 4096 - cur, "%s%s",
+		cur += snprintf(cur, buf + msize - cur, "%s%s",
 				cur == buf ? "" : " ",
 				wl_client_macs[atoi(index)].hwaddr);
 	}
-	for (i = 0; i < MAX_LEASES; i++) {
+	for (i = 0; i < MAX_LEASES + 2; i++) {
 		char active_mac[] = "offXXX";
 		char *index;
 
@@ -949,7 +950,7 @@ void add_active_mac(webs_t wp)
 			continue;
 
 		count++;
-		cur += snprintf(cur, buf + 4096 - cur, "%s%s",
+		cur += snprintf(cur, buf + msize - cur, "%s%s",
 				cur == buf ? "" : " ",
 				wl_client_macs[atoi(index)].hwaddr);
 	}
@@ -1747,6 +1748,114 @@ int get_vifcount(char *prefix)
 	return count;
 }
 
+#ifdef HAVE_GUESTPORT
+int gp_action = 0;
+
+void add_mdhcpd(char *iface, int start, int max, int leasetime) {
+	
+	char mdhcpd[32];
+	char *mdhcpds;
+	int var[8];
+
+	// add mdhcpd
+	if(atoi(nvram_safe_get("mdhcpd_count")) > 0)
+		sprintf(mdhcpd, " %s>On>%d>%d>%d", iface, start, max, leasetime);
+	else
+		sprintf(mdhcpd, "%s>On>%d>%d>%d", iface, start, max, leasetime);
+	mdhcpds = safe_malloc(strlen(nvram_safe_get("mdhcpd")) + strlen(mdhcpd) + 2);
+	sprintf(mdhcpds, "%s%s", nvram_safe_get("mdhcpd"), mdhcpd);
+	nvram_set("mdhcpd", mdhcpds);
+	free(mdhcpds);
+	
+	sprintf(var, "%d", atoi(nvram_safe_get("mdhcpd_count")) + 1);	
+	nvram_set("mdhcpd_count", var);
+}
+
+void remove_mdhcp(char *iface) {
+	
+	char *start, *next, *pref, *suff;
+	char *mdhcpds = safe_malloc(strlen(nvram_safe_get("mdhcpd")) + 1);
+	int len;
+	char var[4];
+
+	strcpy(mdhcpds, nvram_safe_get("mdhcpd"));
+	start = strstr(mdhcpds, iface);
+	//fprintf(stderr, "checking.... %s -> %s %s\n", mdhcpds, iface, start);
+	if(start) {
+		len = strlen(mdhcpds) - strlen(start);
+		if(len > 0) {
+			pref = safe_malloc(len);
+			strncpy(pref, mdhcpds, len - 1);
+			pref[len - 1] = '\0';
+		} else {
+			pref = safe_malloc(1);
+			pref[0] = '\0';
+		}
+		//fprintf(stderr, "[PREF] %s\n", pref);
+		
+		next = strchr(start, ' ');
+		if(next) {
+			// cut entry
+			len = strlen(next);
+			suff = safe_malloc(len + 1);
+			strncpy(suff, next, len);
+			suff[len - 1] = '\0';
+		} else {
+			// entry at the end?
+			suff = safe_malloc(1);
+			suff[0] = '\0';
+		}
+		
+		free(mdhcpds);
+		
+		//fprintf(stderr, "[PREF/SUFF] %s %s\n", pref, suff);	
+		len = strlen(pref) + strlen(suff);
+		mdhcpds = safe_malloc(len + 2);
+		sprintf(mdhcpds, "%s %s", pref, suff);
+		mdhcpds[len + 1] = '\0';
+		//fprintf(stderr, "[MDHCP] %s\n", mdhcpds);
+		nvram_set("mdhcpd", mdhcpds);
+		
+		len = atoi(nvram_safe_get("mdhcpd_count"));
+		if(len > 0) {
+			len--;
+			//fprintf(stderr, "[MDHCPDS] %d\n", len);
+			sprintf(var, "%d", len);
+			nvram_set("mdhcpd_count", var);
+		}
+		
+		free(mdhcpds);
+		free(pref);
+		free(suff);
+	}
+}
+
+void move_mdhcp(char *siface, char *tiface) {
+	
+	char *start;
+	char *mdhcpds = safe_malloc(strlen(nvram_safe_get("mdhcpd")) + 1);
+	int i, len, pos;
+	char iface[16];
+	
+	strcpy(mdhcpds, nvram_safe_get("mdhcpd"));
+	start = strstr(mdhcpds, siface);
+	if(start) {
+		strcpy(iface, tiface);
+		len = strlen(tiface);
+		pos = strlen(mdhcpds) - strlen(start);
+		for(i = 0; i < len; i++) {
+			mdhcpds[pos + i] = iface[i];
+		}
+		//fprintf(stderr, "[MDHCPD] %s->%s %d %s\n", siface, tiface, pos, mdhcpds);
+		nvram_set("mdhcpd", mdhcpds);
+		free(mdhcpds);
+	}
+}
+
+char *getFreeLocalIpNet() {
+	return "192.168.12.1";
+}
+#endif
 void add_vifs_single(char *prefix, int device)
 {
 	int count = get_vifcount(prefix);
@@ -1763,6 +1872,10 @@ void add_vifs_single(char *prefix, int device)
 	char *n = (char *)safe_malloc(strlen(vifs) + 8);
 	char v[80];
 	char v2[80];
+#ifdef HAVE_GUESTPORT
+        char guestport[16];
+        sprintf(guestport, "guestport_%s", prefix);
+#endif
 
 #ifdef HAVE_MADWIFI
 	// char *cou[] = { "a", "b", "c", "d", "e", "f" };
@@ -1830,6 +1943,62 @@ void add_vifs_single(char *prefix, int device)
 	nvram_set(v2, "1812");
 
 #endif
+#ifdef HAVE_GUESTPORT
+	char v3[80];
+	if(gp_action == 1) {
+		nvram_set(guestport, v);
+		
+		sprintf(v2, "%s_ssid", v);
+#ifdef HAVE_WZRHPAG300NH
+		if(has_5ghz(prefix))
+			nvram_set(v2, "GuestPort_A");
+		else
+			nvram_set(v2, "GuestPort_G");
+#else
+		nvram_set(v2, "GuestPort");
+#endif
+		
+		sprintf(v2, "%s_bridged", v);
+		nvram_set(v2, "0");
+	
+		sprintf(v2, "%s_ipaddr", v);
+		nvram_set(v2, getFreeLocalIpNet());
+
+		sprintf(v2, "%s_netmask", v);
+		nvram_set(v2, "255.255.255.0");
+		
+		sprintf(v2, "%s_security_mode", v);
+		nvram_set(v2, "psk psk2");
+		
+		sprintf(v2, "%s_akm", v);
+		nvram_set(v2, "psk psk2");
+		
+		sprintf(v2, "%s_crypto", v);
+		nvram_set(v2, "tkip+aes");
+		
+		sprintf(v2, "%s_wpa_psk", v);
+#ifdef HAVE_WZRHPAG300NH
+		if(has_5ghz(prefix))
+			sprintf(v3, "DEF-p_wireless_%s0_11a-wpapsk", prefix);
+		else
+			sprintf(v3, "DEF-p_wireless_%s0_11bg-wpapsk", prefix);
+#else
+		sprintf(v3, "DEF-p_wireless_%s_11bg-wpapsk", prefix);
+#endif
+		nvram_set(v2, getUEnv(v3));
+		
+		add_mdhcpd(v, 20, 200, 3600);
+
+		rep(v, '.', 'X');
+		
+		sprintf(v2, "%s_security_mode", v);
+		nvram_set(v2, "psk psk2");
+		
+		sprintf(v2, "%s_crypto", v);
+		nvram_set(v2, "tkip+aes");
+	}
+	gp_action = 0;
+#endif
 
 	// nvram_commit ();
 	free(n);
@@ -1842,8 +2011,61 @@ void add_vifs(webs_t wp)
 	if (prefix == NULL)
 		return;
 	int devcount = prefix[strlen(prefix) - 1] - '0';
-
+#ifdef HAVE_GUESTPORT
+	if(!strcmp(websGetVar(wp, "gp_modify", ""), "add")) {
+		gp_action = 1;
+	}
+#endif
 	add_vifs_single(prefix, devcount);
+}
+
+void move_vif(char *prefix, char *svif, char *tvif) {
+	
+	char filename[32];
+	char command[64];
+	
+	//fprintf(stderr, "[VIFS] move %s -> %s\n", svif, tvif);
+	sprintf(filename, "/tmp/.nvram_%s", svif);
+	sprintf(command, "nvram show | grep %s_ > /tmp/.nvram_%s", svif, svif);
+	//fprintf(stderr, "[VIFS] %s\n", command);
+	system(command);
+	
+	FILE *fp;
+	char line[80];
+	char var[16];
+	char tvifx[16];
+	char nvram_var[32];
+	char nvram_val[32];
+	int len;
+	int pos = 0;
+	int xpos;
+	
+	strcpy(tvifx, tvif);
+	rep(tvifx, '.', 'X');
+	
+	if(fp = fopen(filename, "r")) {
+		while (fgets(line, sizeof(line), fp)) {
+			pos = strcspn(line, "=");
+			if(pos) {
+				xpos = strcspn(line, "X");
+				len = strlen(svif);
+				strncpy(var, line + len, pos - len);
+				var[pos - len] = '\0';
+				if(xpos > 0 && xpos < pos) {
+					sprintf(nvram_var, "%s%s", tvifx, var);
+				} else {
+					sprintf(nvram_var, "%s%s", tvif, var);
+				}
+				
+				strncpy(nvram_val, line + pos + 1, strlen(line) - pos);
+				nvram_val[strlen(line) - pos - 2] = '\0';
+				//fprintf(stderr, "[VIF] %s %s\n", nvram_var, nvram_val);
+				nvram_set(nvram_var, nvram_val);
+			}
+        	}
+        	fclose(fp);
+        	unlink(filename);
+	}
 }
 
 void remove_vifs_single(char *prefix)
@@ -1859,10 +2081,75 @@ void remove_vifs_single(char *prefix)
 	int i;
 	int slen = strlen(copy);
 
+#ifdef HAVE_GUESTPORT
+	int q = 0;
+	int j;
+	int gp_found = 0;
+	char vif[16], pvif[16];
+        char guestport[16];
+        sprintf(guestport, "guestport_%s", prefix);
+
+	if(nvram_get(guestport)) {
+		if(gp_action == 2) {
+			for(i = 0; i <= slen; i++) {
+				if (copy[i] == 0x20 || i == slen) {
+					if(gp_found)
+						strcpy(pvif, vif);
+					if(o > 0)
+						q = o + 1;
+					o = i;
+					for(j = 0; j < o - q; j++) {
+						vif[j] = copy[j + q];
+					}
+					vif[j] = '\0';
+					
+					if(gp_found) {
+						move_vif(prefix, vif, pvif);
+					}
+					
+					if(nvram_match(guestport, vif))
+						gp_found = 1;
+				}
+			}	
+			remove_mdhcp(nvram_get(guestport));
+			nvram_unset(guestport);
+		} else {
+			o = slen;
+			for(i = slen; i >= 0; i--) {
+				if (copy[i] == 0x20 || i == 0) {
+					if(gp_found)
+						strcpy(pvif, vif);
+					if( i == 0)
+						q = i;
+					else
+						q = i + 1;
+					for(j = 0; j < o - q; j++) {
+						vif[j] = copy[j + q];
+					}
+					vif[j] = '\0';
+					
+					if(gp_found == slen) {
+						move_vif(prefix, pvif, vif);
+						nvram_set(guestport, vif);
+						move_mdhcp(pvif, vif);
+						gp_found = 0;
+					}
+					
+					if(nvram_match(guestport, vif))
+						gp_found = o;
+					o = i;
+				}
+			}
+		}
+	}
+	gp_action = 0;
+#endif
+	o = -1;
 	for (i = 0; i < slen; i++) {
 		if (copy[i] == 0x20)
 			o = i;
 	}
+	
 	if (o == -1) {
 		nvram_set(wif, "");
 	} else {
@@ -1888,7 +2175,11 @@ void remove_vifs_single(char *prefix)
 void remove_vifs(webs_t wp)
 {
 	char *prefix = websGetVar(wp, "iface", NULL);
-
+#ifdef HAVE_GUESTPORT
+	if(!strcmp(websGetVar(wp, "gp_modify", ""), "remove")) {
+		gp_action = 2;
+	}
+#endif
 	remove_vifs_single(prefix);
 }
 
@@ -2893,6 +3184,10 @@ void wireless_save(webs_t wp)
 	}
 	// nvram_commit ();
 	applytake(value);
+#ifdef HAVE_GUESTPORT
+	system("stopservice firewall");
+	system("startservice firewall");
+#endif
 }
 
 void hotspot_save(webs_t wp) {
