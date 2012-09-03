@@ -12,6 +12,7 @@
 #include <linux/init.h>
 #include <linux/linkage.h>
 #include <asm/assembler.h>
+#include <asm/memory.h>
 #include <asm/asm-offsets.h>
 #include <asm/hwcap.h>
 #include <asm/pgtable-hwdef.h>
@@ -170,7 +171,12 @@ __v7_ca15mp_setup:
 	mcreq	p15, 0, r0, c1, c0, 1
 #endif
 __v7_setup:
-	adr	r12, __v7_setup_stack		@ the local stack
+#ifdef CONFIG_PLAT_BCM5301X	
+	@ temporary local stack in RAM, physical address, MMU is off
+	ldr	r12, =__virt_to_phys(__v7_setup_stack)
+#else
+	adr	r12, __v7_setup_stack
+#endif
 	stmia	r12, {r0-r5, r7, r9, r11, lr}
 	bl	v7_flush_dcache_all
 	ldmia	r12, {r0-r5, r7, r9, r11, lr}
