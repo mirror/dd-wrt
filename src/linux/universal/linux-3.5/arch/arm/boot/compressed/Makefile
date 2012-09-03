@@ -62,6 +62,13 @@ ifeq ($(CONFIG_PXA_SHARPSL_DETECT_MACH_ID),y)
 OBJS		+= head-sharpsl.o
 endif
 
+ifeq ($(CONFIG_MACH_BRCM_NS),y)
+OBJS		+= head-mpcore.o
+OBJS		+= mpcore_cache.o
+$(obj)/mpcore_cache.S: arch/$(SRCARCH)/plat-brcm/mpcore_cache.S FORCE
+	$(call cmd,shipped)
+endif
+
 ifeq ($(CONFIG_CPU_ENDIAN_BE32),y)
 ifeq ($(CONFIG_CPU_CP15),y)
 OBJS		+= big-endian.o
