@@ -10,6 +10,7 @@
  "openvpn_crl"  "OpenVPN Certificate Revoke List"  "NULL"   "FALSE" "0"
  "openvpn_crt"  "OpenVPN Public Cert"  "NULL"   "FALSE" "0"
  "openvpn_key"  "OpenVPN Private Key"  "NULL"   "FALSE" "0"
+ "openvpn_static"  "OpenVPN Static Key"  "NULL"   "FALSE" "0"
  "openvpn_dh" "DH PEM" "NULL" "FALSE" "0"
  "openvpn_proto" "Tunnel Protocol" "CHOICE" "2" "udp" "tcp-server" "FALSE" "0"
  "openvpn_onwan" "Start type" "CHOICE" "2" "0" "1" "FALSE" "0"
