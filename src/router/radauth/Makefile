@@ -28,7 +28,7 @@ endif
 ifeq ($(CONFIG_RT61),y)
   CFLAGS += -DHAVE_RT2880 
 endif
-CFLAGS += -DNEED_PRINTF -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -DNEED_PRINTF -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(LINUXDIR)/brcm/shared/bcmwifi/include
 LDFLAGS += -L -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 ifeq ($(CONFIG_ATH9K),y)
