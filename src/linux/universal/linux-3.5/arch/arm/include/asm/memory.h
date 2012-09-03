@@ -280,6 +280,11 @@ static inline __deprecated void *bus_to_virt(unsigned long x)
 #define arch_is_coherent()		0
 #endif
 
+#else
+#ifdef CONFIG_PLAT_BCM5301X
+#define __virt_to_phys(x)	((x) - PAGE_OFFSET + PHYS_OFFSET)
+#define __phys_to_virt(x)	((x) - PHYS_OFFSET + PAGE_OFFSET)
+#endif
 #endif
 
 #include <asm-generic/memory_model.h>
