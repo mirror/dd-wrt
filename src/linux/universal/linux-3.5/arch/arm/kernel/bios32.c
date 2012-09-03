@@ -293,6 +293,9 @@ static inline int pdev_bad_for_parity(struct pci_dev *dev)
 
 }
 
+#ifdef CONFIG_PLAT_BCM5301X
+extern bool plat_fixup_bus(struct pci_bus *b);
+#endif
 /*
  * pcibios_fixup_bus - Called after each bus is probed,
  * but before its children are examined.
@@ -302,6 +305,12 @@ void pcibios_fixup_bus(struct pci_bus *bus)
 	struct pci_dev *dev;
 	u16 features = PCI_COMMAND_SERR | PCI_COMMAND_PARITY | PCI_COMMAND_FAST_BACK;
 
+
+
+#ifdef CONFIG_PLAT_BCM5301X
+	if (plat_fixup_bus(bus))
+		return;
+#endif
 	/*
 	 * Walk the devices on this bus, working out what we can
 	 * and can't support.
@@ -503,7 +512,9 @@ void __init pci_common_init(struct hw_pci *hw)
 			/*
 			 * Enable bridges
 			 */
+#ifndef CONFIG_PLAT_BCM5301X
 			pci_enable_bridges(bus);
+#endif
 		}
 
 		/*
@@ -560,6 +571,8 @@ resource_size_t pcibios_align_resource(void *data, const struct resource *res,
 	return start;
 }
 
+#ifndef CONFIG_PLAT_BCM5301X
+
 /**
  * pcibios_enable_device - Enable I/O and memory.
  * @dev: PCI device to be enabled
@@ -602,6 +615,7 @@ int pcibios_enable_device(struct pci_dev *dev, int mask)
 	}
 	return 0;
 }
+#endif
 
 int pci_mmap_page_range(struct pci_dev *dev, struct vm_area_struct *vma,
 			enum pci_mmap_state mmap_state, int write_combine)
