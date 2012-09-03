@@ -2255,6 +2255,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	char bufferif2[256];
 	char finalbuffer[512];
 	int count = 0;
+	int c = 0;
 	static char word[256];
 	char *next, *wordlist;
 
@@ -2298,7 +2299,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 //              if (contains(word, '.'))
 //                      sprintf(bufferif, "%s %s", bufferif, word);
 //      }
-	int c = getdevicecount();
+	c = getdevicecount();
 
 	for (i = 0; i < c; i++) {
 		char ath[32];
