@@ -2,6 +2,10 @@ menu "Self-contained MTD device drivers"
 	depends on MTD!=n
 	depends on HAS_IOMEM
 
+config MTD_BCMSFLASH
+	bool "Broadcom Serial Flash support"
+	depends on BCM47XX
+
 config MTD_PMC551
 	tristate "Ramix PMC551 PCI Mezzanine RAM card support"
 	depends on PCI
