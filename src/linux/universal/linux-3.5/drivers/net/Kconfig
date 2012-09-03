@@ -108,6 +108,7 @@ config MII
 	  ethernet card lacks MII.
 
 source "drivers/ieee802154/Kconfig"
+source "drivers/net/hnd/Kconfig"
 
 config IFB
 	tristate "Intermediate Functional Block support"
