@@ -917,6 +917,8 @@ struct netdev_fcoe_hbainfo {
  *	Used to add FDB entries to dump requests. Implementers should add
  *	entries to skb and update idx with the number of entries.
  */
+#define HAVE_NET_DEVICE_OPS
+
 struct net_device_ops {
 	int			(*ndo_init)(struct net_device *dev);
 	void			(*ndo_uninit)(struct net_device *dev);

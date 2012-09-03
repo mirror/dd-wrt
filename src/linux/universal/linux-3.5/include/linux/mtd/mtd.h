@@ -174,6 +174,10 @@ struct mtd_info {
 	const char *name;
 	int index;
 
+#ifdef CONFIG_BCM47XX
+	spinlock_t *mlock;
+#endif
+
 	/* ECC layout structure pointer - read only! */
 	struct nand_ecclayout *ecclayout;
 
