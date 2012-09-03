@@ -50,18 +50,23 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
+	write_nvram("/tmp/openvpn/static.key", "openvpn_static");
 
 	FILE *fp = fopen("/tmp/openvpn/openvpn.conf", "wb");
 	if (fp == NULL)
 		return;
-	if (nvram_invmatch("openvpn_dh", ""))
-		fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
-	if (nvram_invmatch("openvpn_ca", ""))
-		fprintf(fp, "ca /tmp/openvpn/ca.crt\n");
-	if (nvram_invmatch("openvpn_crt", ""))
-		fprintf(fp, "cert /tmp/openvpn/cert.pem\n");
-	if (nvram_invmatch("openvpn_key", ""))
-		fprintf(fp, "key /tmp/openvpn/key.pem\n");
+	if (nvram_invmatch("openvpn_static", ""))
+		fprintf(fp, "secret /tmp/openvpn/static.key\n");
+	else {	
+		if (nvram_invmatch("openvpn_dh", ""))
+			fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
+		if (nvram_invmatch("openvpn_ca", ""))
+			fprintf(fp, "ca /tmp/openvpn/ca.crt\n");
+		if (nvram_invmatch("openvpn_crt", ""))
+			fprintf(fp, "cert /tmp/openvpn/cert.pem\n");
+		if (nvram_invmatch("openvpn_key", ""))
+			fprintf(fp, "key /tmp/openvpn/key.pem\n");
+		}
 	//be sure Chris old style config is still working
 	if (nvram_match("openvpn_switch", "1")) {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
