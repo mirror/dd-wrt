@@ -12,7 +12,16 @@
 #include <linux/console.h>
 #include <linux/init.h>
 
-extern void printch(int);
+
+#if defined(CONFIG_PLAT_BCM5301X)
+#if defined(CONFIG_DEBUG_LL)
+ extern void printch(int);
+#else
+#define	printch(a)
+#endif
+#else
+ extern void printch(int);
+#endif
 
 static void early_write(const char *s, unsigned n)
 {

@@ -93,6 +93,9 @@ ENTRY(stext)
 
 	setmode	PSR_F_BIT | PSR_I_BIT | SVC_MODE, r9 @ ensure svc mode
 						@ and irqs disabled
+#ifdef	CONFIG_ARCH_HAS_HEAD_FIXUP
+	bl	__mach_head_fixup
+#endif
 	mrc	p15, 0, r9, c0, c0		@ get processor id
 	bl	__lookup_processor_type		@ r5=procinfo r9=cpuid
 	movs	r10, r5				@ invalid processor (r5=0)?
