@@ -183,5 +183,15 @@
 			//]]>
 			</script>
 		</div>
+		<div class="setting">		
+			<div class="label"><% tran("service.vpnd_static"); %></div>
+			<textarea cols="60" rows="2" id="openvpncl_static" name="openvpncl_static"></textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+				var openvpncl_static = fix_cr( '<% nvram_get("openvpncl_static"); %>' );
+				document.getElementById("openvpncl_static").value = openvpncl_static;
+			//]]>
+			</script>
+		</div>
 	</div>	
 </fieldset><br/>
