@@ -186,6 +186,9 @@ ifeq ($(CONFIG_IAS),y)
 VISOBJS += intatstart.o
 WEBSOBJS += intatstartwebs.o
 endif
+ifeq ($(CONFIG_GUESTPORT),y)
+CFLAGS += -DHAVE_GUESTPORT
+endif
 endif
 
 ifeq ($(CONFIG_RB500),y)
@@ -333,6 +336,9 @@ CFLAGS += -DHAVE_IMMERSIVE
 endif
 ifeq ($(CONFIG_IPR),y)
 CFLAGS += -DHAVE_IPR
+endif
+ifeq ($(CONFIG_ENEO),y)
+CFLAGS += -DHAVE_ENEO
 endif
 ifeq ($(CONFIG_VILIM),y)
 CFLAGS += -DHAVE_VILIM

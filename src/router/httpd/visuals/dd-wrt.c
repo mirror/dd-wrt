@@ -1104,6 +1104,10 @@ ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix)
 	char ssid[80];
 	char mac[16];
 
+#ifdef HAVE_GUESTPORT
+	char guestport[16];
+	sprintf(guestport, "guestport_%s", prefix);
+#endif
 	sprintf(mac, "%s_hwaddr", prefix);
 	char *vifs = nvram_nget("%s_vifs", prefix);
 
@@ -1124,6 +1128,10 @@ ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix)
 	show_security_prefix(wp, argc, argv, prefix, 1);
 	websWrite(wp, "</fieldset>\n<br />\n");
 	foreach(var, vifs, next) {
+#ifdef HAVE_GUESTPORT
+		if(nvram_match(guestport, var))
+			continue;
+#endif
 		sprintf(ssid, "%s_ssid", var);
 		websWrite(wp, "<fieldset>\n");
 		// cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
@@ -1141,7 +1149,29 @@ ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix)
 		show_security_prefix(wp, argc, argv, var, 0);
 		websWrite(wp, "</fieldset>\n<br />\n");
 	}
-
+#ifdef HAVE_GUESTPORT
+	foreach(var, vifs, next) {
+		if(nvram_match(guestport, var)) {
+			websWrite(wp, "<h2>Guestport</h2>\n");
+			
+			sprintf(ssid, "%s_ssid", var);
+			websWrite(wp, "<fieldset>\n");
+			websWrite(wp,
+				  "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
+				  IFMAP(var));
+			tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
+			// contains html tag
+			sprintf(mac, "%s_hwaddr", var);
+			if (nvram_get(mac))
+				websWrite(wp, "] HWAddr [%s", nvram_safe_get(mac));
+	
+			websWrite(wp, "]</legend>\n");
+			rep(var, '.', 'X');
+			show_security_prefix(wp, argc, argv, var, 0);
+			websWrite(wp, "</fieldset>\n<br />\n");
+		}
+	}
+#endif
 }
 
 void ej_show_security(webs_t wp, int argc, char_t ** argv)
@@ -3463,6 +3493,10 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	char ssid[80];
 	char vif[16];
 	char power[32];
+#ifdef HAVE_GUESTPORT
+	char guestport[16];
+	sprintf(guestport, "guestport_%s", prefix);
+#endif
 
 #ifdef HAVE_MADWIFI
 	char wmm[32];
@@ -3484,6 +3518,12 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	websWrite(wp,
 		  "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_vi)</script></h2>\n");
 	foreach(var, vifs, next) {
+#ifdef HAVE_GUESTPORT
+		if(nvram_match(guestport, var)) {
+			count++;
+			continue;
+		}
+#endif
 		sprintf(ssid, "%s_ssid", var);
 		websWrite(wp,
 			  "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
@@ -3731,6 +3771,139 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			  prefix);
 
 	websWrite(wp, "</div><br />\n");
+
+#ifdef HAVE_GUESTPORT
+	int gpfound = 0;
+	websWrite(wp, "<h2>Guestport</h2>\n");
+	foreach(var, vifs, next) {
+		if(nvram_match(guestport, var)) {
+			gpfound = 1;
+			
+			sprintf(ssid, "%s_ssid", var);
+			websWrite(wp,
+				  "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
+				  IFMAP(var));
+			tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
+			// contains html tag
+			char wl_macaddr[16];
+			sprintf(wl_macaddr, "%s_hwaddr", var);
+			if (nvram_get(wl_macaddr))
+				websWrite(wp, "] HWAddr [%s",
+					  nvram_safe_get(wl_macaddr));
+			websWrite(wp, "]</legend>\n");
+			
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp,
+				  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div>\n");
+			//fprintf(stderr, "[GUESTPORT] %s\n", ssid);
+			//fprintf(stderr, "[GUESTPORT] %s\n",nvram_safe_get(ssid));
+			websWrite(wp,
+				  "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
+				  var, nvram_safe_get(ssid));
+	
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp,
+				  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label5)</script></div>");
+			sprintf(ssid, "%s_closed", var);
+			websWrite(wp,
+				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+				  var, nvram_match(ssid,
+						   "0") ? "checked=\"checked\"" : "");
+			websWrite(wp,
+				  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+				  var, nvram_match(ssid,
+						   "1") ? "checked=\"checked\"" : "");
+			websWrite(wp, "</div>\n");
+			
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp,
+				  "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
+			char ip[32];
+
+			sprintf(ip, "%s_ipaddr", var);
+			char *ipv = nvram_safe_get(ip);
+
+			websWrite(wp,
+				  "<input type=\"hidden\" name=\"%s_ipaddr\" value=\"4\" />\n",
+				  var);
+			websWrite(wp,
+				  "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.",
+				  var, get_single_ip(ipv, 0));
+			websWrite(wp,
+				  "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.",
+				  var, get_single_ip(ipv, 1));
+			websWrite(wp,
+				  "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.",
+				  var, get_single_ip(ipv, 2));
+			websWrite(wp,
+				  "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_3\" value=\"%d\" />\n",
+				  var, get_single_ip(ipv, 3));
+			websWrite(wp, "</div>\n");
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp,
+				  "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
+			sprintf(ip, "%s_netmask", var);
+			ipv = nvram_safe_get(ip);
+		
+			websWrite(wp,
+				  "<input type=\"hidden\" name=\"%s_netmask\" value=\"4\" />\n",
+				  var);
+			websWrite(wp,
+				  "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.",
+				  var, get_single_ip(ipv, 0));
+			websWrite(wp,
+				  "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_1\" value=\"%d\" />.",
+				  var, get_single_ip(ipv, 1));
+			websWrite(wp,
+				  "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.",
+				  var, get_single_ip(ipv, 2));
+			websWrite(wp,
+				  "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />",
+				  var, get_single_ip(ipv, 3));
+			websWrite(wp, "</div>\n");
+		
+			sprintf(ssid, "%s_ap_isolate", var);
+			showRadio(wp, "wl_adv.label11", ssid);
+#ifdef HAVE_MADWIFI
+
+			if (nvram_nmatch("ap", "%s_mode", var)
+			    || nvram_nmatch("wdsap", "%s_mode", var)
+			    || nvram_nmatch("infra", "%s_mode", var)) {
+				sprintf(power, "%s_maxassoc", var);
+				websWrite(wp, "<div class=\"setting\">\n");
+				websWrite(wp,
+					  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label10)</script></div>\n");
+				websWrite(wp,
+					  "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_adv.label10)\" value=\"%s\" />\n",
+					  power, nvram_default_get(power, "256"));
+	
+				websWrite(wp,
+					  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n");
+				websWrite(wp, "</div>\n");
+			}
+#endif	// GUESTPORT				
+			websWrite(wp, "</fieldset><br />\n");
+		}
+	}
+	websWrite(wp, "<div class=\"center\">\n");
+#ifdef HAVE_MADWIFI
+	if (count < 8 && gpfound == 0)
+#elif HAVE_RT2880
+	if (count < 7 && gpfound == 0)
+#else
+	if (count < WL_MAXBSSCFG && gpfound == 0)
+#endif
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"$('gp_modify').value='add';vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+			  prefix);
+
+	if (gpfound == 1)
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"$('gp_modify').value='remove';vifs_remove_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+			  prefix);
+
+	websWrite(wp, "</div><br />\n");
+#endif
 	return 0;
 }
 
@@ -5718,6 +5891,9 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 		sprintf(buf, "wl%d", i);
 		ej_show_wireless_single(wp, buf);
 	}
+#endif
+#ifdef HAVE_GUESTPORT
+	websWrite(wp, "<input type=\"hidden\" name=\"gp_modify\" id=\"gp_modify\" value=\"\">\n");
 #endif
 	return;
 }
