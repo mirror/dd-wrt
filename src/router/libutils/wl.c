@@ -1481,7 +1481,7 @@ int get_radiostate(char *ifname)
 		FILE *fp;
 		int idx;
 		char index[8];
-		char state[10];
+		char state[11];
 		
 		strncpy(index, ifname + 3, 1);
 		idx = atoi(index);
@@ -1489,9 +1489,10 @@ int get_radiostate(char *ifname)
 		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag",get_ath9k_phy_idx(idx));
 		fp = fopen(debugstring, "r");
 		if (fp) {
-			fread(state, sizeof(state), 1, fp); 
+			fread(state, sizeof(state) - 1, 1, fp); 
 			fclose(fp);
-			if(!strcmp(state, "0x00000003"))
+			state[10] = '\0';
+			if(!strncmp(state, "0x00000003", 10))
 				return 0;
 		}
 	}
