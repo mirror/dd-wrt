@@ -337,6 +337,7 @@ static void ring_doorbell_for_active_rings(struct xhci_hcd *xhci,
 	}
 }
 
+
 /*
  * Find the segment that trb is in.  Start searching in start_seg.
  * If we must move past a segment that has a link TRB with a toggle cycle state
