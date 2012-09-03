@@ -86,6 +86,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "carlson", 0},
 #elif HAVE_IPR
 	{"router_style", "ipr", 0},
+#elif HAVE_ENEO
+	{"router_style", "eneo", 0},
 #else
 	{"router_style", "elegant", 0},
 #endif
