@@ -972,6 +972,18 @@ void start_restore_defaults(void)
 		{"wan_default", "eth0", 0},
 		{0, 0, 0}
 	};
+#elif HAVE_NORTHSTAR
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames",
+		 "vlan1 vlan2 eth1 eth2",
+		 0},
+		{"wan_ifname", "vlan2", 0},
+		{"wan_ifname2", "vlan2", 0},
+		{"wan_ifnames", "vlan2", 0},
+		{"wan_default", "vlan2", 0},
+		{0, 0, 0}
+	};
 #elif HAVE_MAGICBOX
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
@@ -1694,6 +1706,16 @@ void start_restore_defaults(void)
 		restore_defaults = 1;
 	}
 #elif HAVE_LAGUNA
+	linux_overrides = generic;
+	int brand = getRouterBrand();
+
+	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
+		// nvram_invmatch("os_name", 
+		// "linux"))
+	{
+		restore_defaults = 1;
+	}
+#elif HAVE_NORTHSTAR
 	linux_overrides = generic;
 	int brand = getRouterBrand();
 
