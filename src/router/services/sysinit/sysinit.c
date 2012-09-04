@@ -2808,6 +2808,7 @@ void start_nvram(void)
 	/*
 	 * broadcom 3.11.48.7 change some nvram name 
 	 */
+#if 0
 // TEMP!!!!
 nvram_set("wl_bss_opmode_cap_reqd", "2");
 nvram_set("wl_channel", "52");
@@ -2847,7 +2848,7 @@ nvram_set("vlan2_nat", "1");
 nvram_set("vlan_tagcount", "0");
 nvram_set("vlan_tags", "");
 nvram_set("wan_iface", "");
-
+#endif
 	nvram_unset("wl0_hwaddr");	// When disbale wireless, we must get 
 	// 
 	// null wireless mac */
