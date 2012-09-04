@@ -3301,7 +3301,7 @@ struct fsentry *getfsentries()
 	strcpy(entry->fstype,"dummy");
 	strcpy(entry->perms,"rw");
 	strcpy(entry->mp,"/mnt");
-	current->next = fsentry;
+	current->next = entry;
 	current = current->next;
 	return list;
 }
