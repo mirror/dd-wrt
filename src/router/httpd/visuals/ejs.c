@@ -3276,7 +3276,7 @@ struct fsentry *parsefsentry(char line[256])
 struct fsentry *getfsentries()
 {
 
-	char line[256];
+	char line[512];
 	FILE *fp;
 	struct fsentry *list, *current;
 	int count = 0;
