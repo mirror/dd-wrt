@@ -420,6 +420,8 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
+nvram_set("console_debug", "1");
+nvram_set("disable_watchdog", "1");
 #ifdef HAVE_BCMMODERN
 	mknod("/dev/nvram", S_IFCHR | 0644, makedev(229, 0));
 	mkdir("/dev/gpio", 0700);
@@ -1956,7 +1958,6 @@ void start_sysinit(void)
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
 			case ROUTER_ASUS_RTN66:
-			case ROUTER_D1800H:
 			case ROUTER_NETGEAR_WNDR4000:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
@@ -1964,6 +1965,9 @@ void start_sysinit(void)
 #else
 				modules = "bcm57xxlsys switch-core switch-robo";
 #endif
+				break;
+			case ROUTER_D1800H:
+				insmod("et");
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
 			case ROUTER_MOTOROLA:
@@ -2050,7 +2054,6 @@ void start_sysinit(void)
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_ASUS_RTN16:
 			case ROUTER_ASUS_RTN66:
-			case ROUTER_D1800H:
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
 			case ROUTER_NETGEAR_WNDR4000:
@@ -2060,6 +2063,9 @@ void start_sysinit(void)
 #else
 				modules = "bcm57xxlsys switch-core switch-robo";
 #endif
+				break;
+			case ROUTER_D1800H:
+				insmod("et");
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
 				modules =

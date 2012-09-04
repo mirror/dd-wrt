@@ -699,6 +699,40 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_txstreams", "0", 0},	/* 802.11n Tx Streams 0, 0 is invalid, WLCONF will
 					 * change it to a radio appropriate default
 					 */
+#ifdef HAVE_BCMMODERN
+	{ "wl_rifs_advert", "auto", 0},		/* RIFS mode advertisement */
+	{ "wl0_rifs_advert", "auto", 0},		/* RIFS mode advertisement */
+	{ "wl1_rifs_advert", "auto", 0},		/* RIFS mode advertisement */
+	{ "wl_stbc_tx", "auto", 0 },		/* Default STBC TX setting */
+	{ "wl_stbc_rx", "1", 0 },		/* Default STBC RX setting */
+	{ "wl_ampdu", "auto", 0 },		/* Default AMPDU setting */
+	/* Default AMPDU retry limit per-tid setting */
+	{ "wl_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0 },
+	/* Default AMPDU regular rate retry limit per-tid setting */
+	{ "wl_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0 },
+	{ "wl_amsdu", "auto", 0 },		/* Default AMSDU setting */
+	{ "wl_obss_coex", "1", 0 },		/* Default OBSS Coexistence setting - OFF */
+
+	{ "wl0_stbc_tx", "auto", 0 },		/* Default STBC TX setting */
+	{ "wl0_stbc_rx", "1", 0 },		/* Default STBC RX setting */
+	{ "wl0_ampdu", "auto", 0 },		/* Default AMPDU setting */
+	/* Default AMPDU retry limit per-tid setting */
+	{ "wl0_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0 },
+	/* Default AMPDU regular rate retry limit per-tid setting */
+	{ "wl0_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0 },
+	{ "wl0_amsdu", "auto", 0 },		/* Default AMSDU setting */
+	{ "wl0_obss_coex", "1", 0 },		/* Default OBSS Coexistence setting - OFF */
+	{ "wl1_stbc_tx", "auto", 0 },		/* Default STBC TX setting */
+	{ "wl1_stbc_rx", "1", 0 },		/* Default STBC RX setting */
+	{ "wl1_ampdu", "auto", 0 },		/* Default AMPDU setting */
+	/* Default AMPDU retry limit per-tid setting */
+	{ "wl1_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0 },
+	/* Default AMPDU regular rate retry limit per-tid setting */
+	{ "wl1_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0 },
+	{ "wl1_amsdu", "auto", 0 },		/* Default AMSDU setting */
+	{ "wl1_obss_coex", "1", 0 },		/* Default OBSS Coexistence setting - OFF */
+#endif
+
 	{"wl0_sta_retry_time", "5", 0},	/* 100% duty cycle for LED on router */
 #ifdef HAVE_DDLAN
 	{"wl_distance", "2000", 0},	/* ack timing, distance in meters */

@@ -2808,6 +2808,45 @@ void start_nvram(void)
 	/*
 	 * broadcom 3.11.48.7 change some nvram name 
 	 */
+// TEMP!!!!
+nvram_set("wl_bss_opmode_cap_reqd", "2");
+nvram_set("wl_channel", "52");
+nvram_set("wl_nband", "1");
+nvram_set("wl_nmode", "2");
+nvram_set("wl_nreqd", "1");
+
+nvram_set("wl0_authmode", "open");
+nvram_set("wl0_macmode1", "disabled");
+nvram_set("wl1_auth_mode", "none");
+nvram_set("wl1_authmode", "open");
+nvram_set("wl1_bss_opmode_cap_reqd", "2");
+nvram_set("wl1_vifs", "");
+
+nvram_set("af_dnathost", "0");
+nvram_set("af_dnatport", "0");
+nvram_set("af_registered", "0");
+nvram_set("af_serviceid", "0");
+nvram_set("br0_mtu", "1500");
+nvram_set("bridges", "br0>Off>32768>1500");
+nvram_set("bridges_count", "1");
+nvram_set("bridgesif", "");
+nvram_set("bridgesif_count", "0");
+nvram_set("browser_method", "USE_LAN");
+nvram_set("eth0_mtu", "1500");
+nvram_set("eth0_multicast", "0");
+nvram_set("eth0_nat", "1");
+nvram_set("eth1_mtu", "1500");
+nvram_set("eth2_mtu", "1500");
+nvram_set("vlan1_mtu", "1500");
+nvram_set("vlan1_multicast", "0");
+nvram_set("vlan1_nat", "1");
+nvram_set("vlan2_bridged", "1");
+nvram_set("vlan2_mtu", "1500");
+nvram_set("vlan2_multicast", "0");
+nvram_set("vlan2_nat", "1");
+nvram_set("vlan_tagcount", "0");
+nvram_set("vlan_tags", "");
+nvram_set("wan_iface", "");
 
 	nvram_unset("wl0_hwaddr");	// When disbale wireless, we must get 
 	// 
