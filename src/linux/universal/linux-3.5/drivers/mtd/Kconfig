@@ -358,4 +358,6 @@ source "drivers/mtd/ubi/Kconfig"
 
 source "drivers/mtd/ralink/Kconfig"
 
+source "drivers/mtd/47xxnand/Kconfig"
+
 endif # MTD
