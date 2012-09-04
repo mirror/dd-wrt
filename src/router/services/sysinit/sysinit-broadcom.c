@@ -420,8 +420,6 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-nvram_set("console_debug", "1");
-nvram_set("disable_watchdog", "1");
 #ifdef HAVE_BCMMODERN
 	mknod("/dev/nvram", S_IFCHR | 0644, makedev(229, 0));
 	mkdir("/dev/gpio", 0700);
