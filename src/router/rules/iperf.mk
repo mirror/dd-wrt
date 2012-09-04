@@ -1,5 +1,5 @@
 iperf-configure:
-	cd iperf && ./configure --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc"
+	cd iperf && ./configure --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc" CPPFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc"
 
 iperf:
 	$(MAKE) -C iperf
