@@ -10,6 +10,13 @@ ifeq ($(CONFIG_E2FSPROGS_ADV),y)
 	make -C btrfsprogs CC="$(CC)" CFLAGS="$(COPTS) -I$(TOP)/e2fsprogs/lib -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L$(TOP)/e2fsprogs/lib/uuid  -ffunction-sections -fdata-sections -Wl,--gc-sections" prefix=/usr
 endif
 
+e2fsprogs-clean:
+	make -C e2fsprogs clean
+ifeq ($(CONFIG_E2FSPROGS_ADV),y)
+	make -C xfsprogs DEBUG= Q= clean
+	make -C btrfsprogs CC="$(CC)" CFLAGS="$(COPTS) -I$(TOP)/e2fsprogs/lib -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L$(TOP)/e2fsprogs/lib/uuid  -ffunction-sections -fdata-sections -Wl,--gc-sections" prefix=/usr clean
+endif
+
 e2fsprogs-install:
 	-make -C e2fsprogs install DESTDIR=$(INSTALLDIR)/e2fsprogs
 ifeq ($(CONFIG_E2FSPROGS_ADV),y)
