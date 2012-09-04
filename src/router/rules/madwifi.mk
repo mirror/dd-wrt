@@ -123,6 +123,19 @@ madwifi-install:
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=laguna-le-elf install
 endif
+ifeq ($(ARCHITECTURE),northstar)
+madwifi:
+	@true
+
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+endif
+
 endif
 
 ifeq ($(ARCH),armeb)
