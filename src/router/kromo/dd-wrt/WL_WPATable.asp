@@ -34,7 +34,7 @@ function check_form(F) {
 				if(element.options[element.selectedIndex].value.substr(0,3) == "psk"
 				   || element.options[element.selectedIndex].value.substr(0,3) == "wpa") {
 					var iface = element.name.substr(0, element.name.length - 14);
-					var wpa_psk_input = $(iface + '_wpa_psk');
+					var wpa_psk_input = document.getElementById(iface+"_wpa_psk");
 					if(wpa_psk_input) {
 						result = valid_wpa_psk(wpa_psk_input, false);
 						wpa_psk_error = 0;
