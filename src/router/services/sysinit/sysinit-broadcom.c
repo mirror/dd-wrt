@@ -276,9 +276,10 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_LINKSYS_E4200:
 	case ROUTER_NETGEAR_WNDR4000:
 	case ROUTER_ASUS_RTN66:
-	case ROUTER_D1800H:
 	case ROUTER_NETCORE_NW715P:
-
+		break;
+	case ROUTER_D1800H:
+		insmod("wl");	// load module
 		break;
 	case ROUTER_WRT600N:
 		fprintf(stderr, "fixing wrt600n\n");
