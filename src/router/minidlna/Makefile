@@ -130,7 +130,7 @@ libjpeg:
 sqlite3:
 	if [ ! -f ./sqlite-3.6.22/Makefile ];then \
 	cd sqlite-3.6.22 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections -DSQLITE_OMIT_TRIGGERS" \
-				--enable-threadsafe --disable-dynamic-extensions --disable-dynamic-extensions ); \
+				--enable-threadsafe --enable-dynamic-extensions=no ); \
 	fi
 
 libvorbis:
