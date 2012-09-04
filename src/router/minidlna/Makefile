@@ -29,7 +29,7 @@ TOOL_CHAIN_PATH=$(TOOLCHAIN)
 #/home/michael/DLNA
 MINI_DLNA_PATH=$(shell pwd)
 
-CFLAGS += $(COPTS) -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 # [FIXME] added by Michael Jiang.
 # The below variables  should be modified when you use different platform.
