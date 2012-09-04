@@ -3296,6 +3296,13 @@ struct fsentry *getfsentries()
 		}
 		pclose(fp);
 	}
+	struct fsentry *entry = calloc(1, sizeof(struct fsentry));
+	strcpy(entry->fs,"/mnt");
+	strcpy(entry->fstype,"dummy");
+	strcpy(entry->perms,"rw");
+	strcpy(entry->mp,"/mnt");
+	current->next = fsentry;
+	current = current->next;
 	return list;
 }
 
