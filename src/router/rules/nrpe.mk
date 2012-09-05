@@ -16,7 +16,7 @@ nrpe-clean:
 	if test -e "nrpe/Makefile"; then make -C nrpe clean; fi
 	@true
 
-npre:
+npre-install:
 	install -D nrpe/src/nrpe $(INSTALLDIR)/nrpe/usr/bin/nrpe
 
 
