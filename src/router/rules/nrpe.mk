@@ -13,7 +13,7 @@ nrpe:
 	make -C nrpe
 
 nrpe-clean:
-	if test -e "nrpe/Makefile"; then make -C npre clean; fi
+	if test -e "nrpe/Makefile"; then make -C nrpe clean; fi
 	@true
 
 npre:
