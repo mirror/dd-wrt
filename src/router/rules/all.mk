@@ -239,6 +239,8 @@ include rules/dlna.mk
 include rules/polarssl.mk
 include rules/ipeth.mk
 include rules/minidlna.mk
+include rules/nrpe.mk
+include rules/links.mk
 
 #
 # Generic rules

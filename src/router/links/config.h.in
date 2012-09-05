@@ -1,0 +1,297 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define if you don't have vprintf but do have _doprnt.  */
+#undef HAVE_DOPRNT
+
+/* Define if you have the strftime function.  */
+#undef HAVE_STRFTIME
+
+/* Define if you have <sys/wait.h> that is POSIX.1 compatible.  */
+#undef HAVE_SYS_WAIT_H
+
+/* Define if you have the vprintf function.  */
+#undef HAVE_VPRINTF
+
+/* Define as __inline if that's what the C compiler calls it.  */
+#undef inline
+
+/* Define as the return type of signal handlers (int or void).  */
+#undef RETSIGTYPE
+
+/* Define to `unsigned' if <sys/types.h> doesn't define.  */
+#undef size_t
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* Define if you can safely include both <sys/time.h> and <time.h>.  */
+#undef TIME_WITH_SYS_TIME
+
+/* Define if your <sys/time.h> declares struct tm.  */
+#undef TM_IN_SYS_TIME
+
+/* Define if you have the MouOpen function.  */
+#undef HAVE_MOUOPEN
+
+/* Define if you have the _read_kbd function.  */
+#undef HAVE__READ_KBD
+
+/* Define if you have the cfmakeraw function.  */
+#undef HAVE_CFMAKERAW
+
+/* Define if you have the chmod function.  */
+#undef HAVE_CHMOD
+
+/* Define if you have the cygwin_conv_path function.  */
+#undef HAVE_CYGWIN_CONV_PATH
+
+/* Define if you have the cygwin_conv_to_full_win32_path function.  */
+#undef HAVE_CYGWIN_CONV_TO_FULL_WIN32_PATH
+
+/* Define if you have the getgrgid function.  */
+#undef HAVE_GETGRGID
+
+/* Define if you have the gethostbyaddr function.  */
+#undef HAVE_GETHOSTBYADDR
+
+/* Define if you have the getpagesize function.  */
+#undef HAVE_GETPAGESIZE
+
+/* Define if you have the getpid function.  */
+#undef HAVE_GETPID
+
+/* Define if you have the getpwuid function.  */
+#undef HAVE_GETPWUID
+
+/* Define if you have the getrlimit function.  */
+#undef HAVE_GETRLIMIT
+
+/* Define if you have the gettimeofday function.  */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define if you have the herror function.  */
+#undef HAVE_HERROR
+
+/* Define if you have the mkdir function.  */
+#undef HAVE_MKDIR
+
+/* Define if you have the popen function.  */
+#undef HAVE_POPEN
+
+/* Define if you have the raise function.  */
+#undef HAVE_RAISE
+
+/* Define if you have the select function.  */
+#undef HAVE_SELECT
+
+/* Define if you have the setpgid function.  */
+#undef HAVE_SETPGID
+
+/* Define if you have the setrlimit function.  */
+#undef HAVE_SETRLIMIT
+
+/* Define if you have the sigfillset function.  */
+#undef HAVE_SIGFILLSET
+
+/* Define if you have the strtol function.  */
+#undef HAVE_STRTOL
+
+/* Define if you have the strtoll function.  */
+#undef HAVE_STRTOLL
+
+/* Define if you have the strtoq function.  */
+#undef HAVE_STRTOQ
+
+/* Define if you have the strtoul function.  */
+#undef HAVE_STRTOUL
+
+/* Define if you have the tempnam function.  */
+#undef HAVE_TEMPNAM
+
+/* Define if you have the uname function.  */
+#undef HAVE_UNAME
+
+/* Define if you have the unixpath2win function.  */
+#undef HAVE_UNIXPATH2WIN
+
+/* Define if you have the winpath2unix function.  */
+#undef HAVE_WINPATH2UNIX
+
+/* Define if you have the <arpa/inet.h> header file.  */
+#undef HAVE_ARPA_INET_H
+
+/* Define if you have the <dirent.h> header file.  */
+#undef HAVE_DIRENT_H
+
+/* Define if you have the <fcntl.h> header file.  */
+#undef HAVE_FCNTL_H
+
+/* Define if you have the <gpm.h> header file.  */
+#undef HAVE_GPM_H
+
+/* Define if you have the <grp.h> header file.  */
+#undef HAVE_GRP_H
+
+/* Define if you have the <interix/interix.h> header file.  */
+#undef HAVE_INTERIX_INTERIX_H
+
+/* Define if you have the <io.h> header file.  */
+#undef HAVE_IO_H
+
+/* Define if you have the <limits.h> header file.  */
+#undef HAVE_LIMITS_H
+
+/* Define if you have the <ndir.h> header file.  */
+#undef HAVE_NDIR_H
+
+/* Define if you have the <net/socket.h> header file.  */
+#undef HAVE_NET_SOCKET_H
+
+/* Define if you have the <netinet/in_system.h> header file.  */
+#undef HAVE_NETINET_IN_SYSTEM_H
+
+/* Define if you have the <netinet/in_systm.h> header file.  */
+#undef HAVE_NETINET_IN_SYSTM_H
+
+/* Define if you have the <netinet/ip.h> header file.  */
+#undef HAVE_NETINET_IP_H
+
+/* Define if you have the <pwd.h> header file.  */
+#undef HAVE_PWD_H
+
+/* Define if you have the <sigaction.h> header file.  */
+#undef HAVE_SIGACTION_H
+
+/* Define if you have the <sys/cygwin.h> header file.  */
+#undef HAVE_SYS_CYGWIN_H
+
+/* Define if you have the <sys/dir.h> header file.  */
+#undef HAVE_SYS_DIR_H
+
+/* Define if you have the <sys/fmutex.h> header file.  */
+#undef HAVE_SYS_FMUTEX_H
+
+/* Define if you have the <sys/ioctl.h> header file.  */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define if you have the <sys/ndir.h> header file.  */
+#undef HAVE_SYS_NDIR_H
+
+/* Define if you have the <sys/resource.h> header file.  */
+#undef HAVE_SYS_RESOURCE_H
+
+/* Define if you have the <sys/select.h> header file.  */
+#undef HAVE_SYS_SELECT_H
+
+/* Define if you have the <sys/time.h> header file.  */
+#undef HAVE_SYS_TIME_H
+
+/* Define if you have the <sys/un.h> header file.  */
+#undef HAVE_SYS_UN_H
+
+/* Define if you have the <sys/utsname.h> header file.  */
+#undef HAVE_SYS_UTSNAME_H
+
+/* Define if you have the <time.h> header file.  */
+#undef HAVE_TIME_H
+
+/* Define if you have the <unistd.h> header file.  */
+#undef HAVE_UNISTD_H
+
+/* Define if you have the <wait.h> header file.  */
+#undef HAVE_WAIT_H
+
+/* Define if you have the dl library (-ldl).  */
+#undef HAVE_LIBDL
+
+/* Define if you have the gpm library (-lgpm).  */
+#undef HAVE_LIBGPM
+
+/* Define if you have the network library (-lnetwork).  */
+#undef HAVE_LIBNETWORK
+
+/* Define if you have the nsl library (-lnsl).  */
+#undef HAVE_LIBNSL
+
+/* Define if you have the socket library (-lsocket).  */
+#undef HAVE_LIBSOCKET
+
+/* Define if you have the z library (-lz).  */
+#undef HAVE_LIBZ
+
+/* Name of package */
+#undef PACKAGE
+
+/* Version number of package */
+#undef VERSION
+
+
+/* */
+#undef HAVE_TYPEOF
+
+/* */
+#undef HAVE_LONG_LONG
+
+/* */
+#undef HAVE_POINTER_COMPARISON_BUG
+
+/* */
+#undef HAVE_MAXINT_CONVERSION_BUG
+
+/* */
+#undef HAVE_SOCKLEN_T
+
+/* */
+#undef RENAME_OVER_EXISTING_FILES
+
+/* */
+#undef HAVE_STRLEN
+
+/* */
+#undef HAVE_STRCPY
+
+/* */
+#undef HAVE_STRCHR
+
+/* */
+#undef HAVE_STRRCHR
+
+/* */
+#undef HAVE_STRCMP
+
+/* */
+#undef HAVE_STRNCMP
+
+/* */
+#undef HAVE_STRCSPN
+
+/* */
+#undef HAVE_STRSTR
+
+/* */
+#undef HAVE_MEMMOVE
+
+/* */
+#undef HAVE_STRERROR
+
+/* */
+#undef HAVE_GETHOSTBYNAME
+
+/* */
+#undef HAVE_GETHOSTBYNAME_BUG
+
+/* */
+#undef HAVE_BEGINTHREAD
+
+/* */
+#undef HAVE_PTHREADS
+
+/* */
+#undef X2
+
+/* */
+#undef HAVE_SSL
+

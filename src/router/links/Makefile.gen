@@ -1,0 +1,78 @@
+ifeq ($(findstring ;,$(PATH)),;)
+# OS/2; compiler EMX
+_OS_=os2
+else
+# Unix, Linux or other clones; compiler GCC (and maybe CC?)
+_OS_=unix
+endif
+
+OPT=1
+
+ifeq ($(_OS_),os2)
+ifeq ($(CC),cc)
+CC=gcc
+endif
+LIBS=-lsocket -Zmt
+EXE=links.exe
+DFLAGS=-DHAVE_BEGINTHREAD -DHAVE_MOUOPEN -DHAVE_READ_KBD -DHAVE_SYS_SELECT_H -DHAVE_SYS_FMUTEX_H -Zmt
+ifneq ($(X11ROOT),)
+DFLAGS+= -DX2 -I$(X11ROOT)/XFree86/include
+LIBS+=-L$(X11ROOT)/XFree86/lib -lxf86_gcc
+endif
+else
+#F=-lefence
+LIBS=$(F)
+#-lgpm
+EXE=links
+endif
+
+ifeq ($(OPT),1)
+OFLAGS=-O3
+
+endif
+
+WARNINGS = -Wall
+
+CFLAGS = -DHAVE_CONFIG2_H $(DFLAGS) $(OFLAGS) $(WARNINGS) -g
+
+all : $(EXE)
+
+af_unix.o : af_unix.c links.h language.h
+beos.o : beos.c links.h language.h
+bfu.o : bfu.c links.h language.h
+bookmark.o : bookmark.c links.h language.h
+cache.o : cache.c links.h language.h
+charsets.o : charsets.c links.h language.h
+connect.o : connect.c links.h language.h
+cookies.o : cookies.c links.h language.h
+default.o : default.c links.h language.h
+dns.o : dns.c links.h language.h
+error.o : error.c links.h language.h
+file.o : file.c links.h language.h
+finger.o : finger.c links.h language.h
+ftp.o : ftp.c links.h language.h
+html_r.o : html_r.c links.h language.h
+html_tbl.o : html_tbl.c links.h language.h
+html.o : html.c links.h language.h
+http.o : http.c links.h language.h
+https.o : https.c links.h language.h
+kbd.o : kbd.c links.h language.h
+kbdbind.o : kbdbind.c links.h language.h
+language.o : language.c links.h language.h
+mailto.o : mailto.c links.h language.h
+main.o : main.c links.h language.h
+menu.o : menu.c links.h language.h
+os_dep.o : os_dep.c links.h language.h
+sched.o : sched.c links.h language.h
+select.o : select.c links.h language.h
+session.o : session.c links.h language.h
+smb.o : smb.c links.h language.h
+terminal.o : terminal.c links.h language.h
+types.o : types.c links.h language.h
+url.o : url.c links.h language.h
+view.o : view.c links.h language.h
+$(EXE) : af_unix.o beos.o bfu.o bookmark.o cache.o charsets.o connect.o cookies.o default.o dns.o error.o file.o finger.o ftp.o html_r.o html_tbl.o html.o http.o https.o kbd.o kbdbind.o language.o mailto.o main.o menu.o os_dep.o sched.o select.o session.o smb.o terminal.o types.o url.o view.o
+	$(CC) -o $(EXE) af_unix.o beos.o bfu.o bookmark.o cache.o charsets.o connect.o cookies.o default.o dns.o error.o file.o finger.o ftp.o html_r.o html_tbl.o html.o http.o https.o kbd.o kbdbind.o language.o main.o mailto.o menu.o os_dep.o sched.o select.o session.o smb.o terminal.o types.o url.o view.o $(LIBS)
+
+clean :
+	rm -f *.o
