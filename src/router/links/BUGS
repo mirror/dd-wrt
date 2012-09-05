@@ -1,0 +1,8 @@
+Known bugs:
+
+Frames don't work if there's more frames with same name. Turn them off in such
+case.
+
+You can't upload large files; it takes _lots_ of memory.
+
+vim: textwidth=80

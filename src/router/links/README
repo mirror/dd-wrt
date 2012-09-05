@@ -1,0 +1,52 @@
+Links
+
+Lynx-like text WWW browser
+
+Usage: links [options] <url>
+
+See end of file default.c for list of options. Most options can be set in luser
+interface or config file, so you do not need to care about them.
+
+GLOBAL KEYS:
+------------
+
+ESC,F9		menu
+F10		menu "files"
+TAB		next frame
+LEFT		back
+CTRL-r,R	reload
+g		goto URL dialog
+G		goto URL dialog with current URL
+a,A		add bookmark dialog
+s,S		bookmarks menu
+q,Q		quit with confirmation
+CTRL-c,C	quit without confirmation
+=		URL info
+|		header info
+\		toggle source
+
+
+KEYS WITHIN FRAME:
+------------------
+
+PGDN,SPACE	next page
+PGUP,b,B	previous page
+DOWN		next link
+UP		previous link
+INS,CTRL-p,P	scroll up
+DEL,CTRL-n,N	scroll down
+[		scroll left
+]		scroll right
+HOME		top of the document
+END		bottom of the document
+RIGHT,ENTER	follow link
+d,D		download link
+/		search (forward) dialog
+?		search (backward) dialog
+n		next search
+N		previous search
+f,F		frame at full screen
+0-9		repeat prefix or go to numbered link
+Alt-0-Alt-9	repeat prefix
+
+vim: textwidth=80

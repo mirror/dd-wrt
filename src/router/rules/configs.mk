@@ -222,6 +222,8 @@ obj-$(CONFIG_POLARSSL) += polarssl
 obj-$(CONFIG_MSTP) += mstp
 obj-$(CONFIG_IPETH) += ipeth
 obj-$(CONFIG_MINIDLNA) += minidlna
+obj-$(CONFIG_NRPE) += nrpe
+obj-$(CONFIG_LINKS) += links
 
 #obj-y+=anchorfree
 obj-y+=ttraff
