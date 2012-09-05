@@ -2304,8 +2304,7 @@ int check_cfe_nv(void)
 #endif
 	}
 	if (ret) {
-		fprintf(stderr,
-		    ("Some error found, we want to reboot!.....................\n");
+		fprintf(stderr,"Some error found, we want to reboot!.....................\n");
 		nvram_commit();
 		sys_reboot();
 	}
