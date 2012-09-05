@@ -1138,7 +1138,7 @@ void start_sysinit(void)
 			nvram_set("ledbh1", "11");
 			nvram_set("ledbh2", "11");
 			nvram_set("ledbh11", "130");
-			need_reboot = 1;
+//			need_reboot = 1;
 		}
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 		nvram_set("wan_ifname", "vlan2");
@@ -1929,7 +1929,7 @@ void start_sysinit(void)
 
 	if (need_reboot) {
 		nvram_commit();
-		cprintf("Need reboot now .....\n");
+		fprintf(stderr, "Need reboot now .....\n");
 		sys_reboot();
 	}
 
@@ -2304,7 +2304,7 @@ int check_cfe_nv(void)
 #endif
 	}
 	if (ret) {
-		cprintf
+		fprintf(stderr,
 		    ("Some error found, we want to reboot!.....................\n");
 		nvram_commit();
 		sys_reboot();
@@ -2470,7 +2470,7 @@ void start_overclocking(void)
 			sprintf(clkfr, "%d,%d", clk, clk2);
 		nvram_set("clkfreq", clkfr);
 		nvram_commit();
-		cprintf("Overclocking done, rebooting...\n");
+		fprintf(stderr,"Overclocking done, rebooting...\n");
 		sys_reboot();
 	}
 #endif
