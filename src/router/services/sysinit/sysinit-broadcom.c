@@ -437,6 +437,17 @@ void start_sysinit(void)
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");	// system watchdog
 #endif
+#ifdef HAVE_80211AC
+	printf(stderr,"boardnum %s\n",nvram_safe_get("boardnum"));
+	printf(stderr,"boardtype %s\n",nvram_safe_get("boardtype"));
+	printf(stderr,"boardrev %s\n",nvram_safe_get("boardrev"));
+	if (nvram_get("bootflags")==NULL)
+	    {
+	    fprintf(stderr,"nvram invalid, erase\n");
+	    eval("erase","nvram");
+	    sys_reboot();
+	    }
+#endif
 	/*
 	 * Setup console 
 	 */
@@ -1929,7 +1940,7 @@ void start_sysinit(void)
 
 	snprintf(buf, sizeof(buf), "/lib/modules/%s", name.release);
 	if (stat("/proc/modules", &tmp_stat) == 0 && stat(buf, &tmp_stat) == 0) {
-		char module[80], *modules, *next;
+		char module[80], *modules = "", *next;
 
 #ifdef HAVE_ACK
 		nvram_set("portprio_support", "0");	// no portprio support in NEWD or BCMMODERN
@@ -1965,7 +1976,7 @@ void start_sysinit(void)
 #endif
 				break;
 			case ROUTER_D1800H:
-				insmod("et");
+				modules = "et";
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
 			case ROUTER_MOTOROLA:
@@ -2063,7 +2074,7 @@ void start_sysinit(void)
 #endif
 				break;
 			case ROUTER_D1800H:
-				insmod("et");
+				modules = "et";
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
 				modules =
