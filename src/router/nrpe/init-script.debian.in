@@ -1,0 +1,34 @@
+#!/bin/sh
+# Start/stop the nrpe daemon.
+#
+# Contributed by Andrew Ryder 06-22-02
+# Slight mods by Ethan Galstad 07-09-02
+
+NrpeBin=@bindir@/nrpe
+NrpeCfg=@sysconfdir@/nrpe.cfg
+
+test -f $NrpeBin || exit 0
+
+case "$1" in
+start)	echo -n "Starting nagios remote plugin daemon: nrpe"
+        start-stop-daemon --start --quiet --exec $NrpeBin -- -c $NrpeCfg -d
+        echo "." 
+	;;
+stop)	echo -n "Stopping nagios remote plugin daemon: nrpe"
+        start-stop-daemon --stop --quiet --exec $NrpeBin
+        echo "."
+        ;;
+restart) echo -n "Restarting nagios remote plugin daemon: nrpe"
+        start-stop-daemon --stop --quiet --exec $NrpeBin
+        start-stop-daemon --start --quiet --exec $NrpeBin -- -c $NrpeCfg -d
+        echo "."
+        ;;
+reload|force-reload) echo -n "Reloading configuration files for nagios remote plugin daemon: nrpe"
+	# nrpe reloads automatically
+        echo "."
+        ;;
+*)	echo "Usage: /etc/init.d/nrpe start|stop|restart|reload|force-reload"
+        exit 1 
+        ;;
+esac
+exit 0
