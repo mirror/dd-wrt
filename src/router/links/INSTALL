@@ -1,0 +1,37 @@
+Links
+
+Compile:
+
+Unix - use ./configure; make
+	in some FreeBSD 3 distributions you have to set CFLAGS=-aout before
+	running ./configure.
+	Tested on Linux, FreeBSD, Solaris, IRIX
+	If counfigure fails, you can try generic makefile: make -f Makefile.gen
+
+OS/2 - you can use ./configure. If it fails or if you don't have bash, use
+	make -f Makefile.gen
+	The only supported compiler is EMX, you probably won't be able to
+	compile it with anything else
+
+	configure under OS/2 needs to know paths to gcc, make anb bash. Set (for
+	example):
+	SET HOSTTYPE=i586
+	SET MACHTYPE=i586-pc-os2
+	SET CONFIG_SHELL=d:/prg/gnu/bin/bash.exe
+	SET CC=d:/prg/emx/bin/gcc.exe
+	SET MAKE=d:/prg/emx/bin/make.exe
+	SET EMXOPT=-h100
+
+Dos, Windows - port it yourself
+
+Install:
+
+Unix - make install
+
+OS/2 - copy file links.exe somewhere to your path or create CMD file that runs
+	links
+
+WARNING: EMX has nasty limit of open files. Links will work badly or won't work
+	with default settings. Set variable EMXOPT=-h100 before you run links.
+
+vim: textwidth=80

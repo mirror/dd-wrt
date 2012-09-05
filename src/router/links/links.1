@@ -1,0 +1,486 @@
+.\" Process this file with groff -man -Tascii links.1
+.TH LINKS 1 "Oct, 2001"
+
+
+.SH NAME
+links \- lynx-like alternative character mode WWW browser
+
+
+.SH SYNOPSIS
+.B links
+.I "[options] URL"
+
+
+.SH DESCRIPTION
+.B links
+is a text mode WWW browser, supporting
+colors, correct table rendering, background downloading, menu
+driven configuration interface and slim code.
+.P 
+Frames are supported. You can have different file formats 
+associated with external viewers. mailto: and telnet:
+are supported via external clients.
+.P
+.I links
+can handle local (file://) or remote (http://, ftp:// or https://
+if there's compiled-in SSL support) URLs.
+.PP
+
+
+.SH OPTIONS
+Most options can be set in the user
+interface or config file, so usually you do not need to care about them.
+
+.TP
+\f3-anonymous\f1
+Restrict links so that it can run on an anonymous account.
+No local file browsing. No downloads. Executing of viewers
+is allowed, but user can't add or modify entries in
+association table.
+
+.TP
+\f3-assume-codepage \f2<codepage>\f1
+Use the given codepage when the webpage did not specify
+its codepage. (default: ISO 8859-1)
+
+.TP
+\f3-async-dns \f2<0>/<1>\f1
+Asynchronous DNS resolver on(1)/off(0). Default is on.
+
+.TP
+\f3-base-session \f2<number>\f1
+Linkses are connecting together, forming sessions by default. Normally,
+there's only one session with number 0. In this way, you can make him
+to form more sessions at once. See also \f3-no-connect\f1 option.
+
+.TP
+\f3-download-dir \f2<path>\f1
+Default download directory.
+(default: actual dir)
+
+.TP
+\f3-download-utime \f2<0>/<1>\f1
+Set time of download files on(1)/off(0). Default is off.
+
+.TP
+\f3-dump\f1
+Write a plain-text version of the given HTML document to stdout.
+
+.TP
+\f3-format-cache-size \f2<num>\f1
+Number of formatted document pages cached.
+(default: 5)
+
+.TP
+\f3-ftp.anonymous-password \f2<password>\f1
+Use this as the password for anonymous ftp sites.
+
+.TP
+\f3-ftp-proxy \f2<host:port>\f1
+Host and port number of the FTP proxy, or blank.
+(default: blank)
+
+.TP
+\f3-help\f1
+Print a help screen.
+
+.TP
+\f3-http-bugs.http10 \f2<0>/<1>\f1
+Turn use of HTTP/1.0 on(1)/off(0). Default is off.
+
+.TP
+\f3-http-bugs.allow-blacklist \f2<0>/<1>\f1
+Turn blacklist of buggy servers on(1)/off(0). Default is on.
+
+.TP
+\f3-http-bugs.bug-302-redirect \f2<0>/<1>\f1
+Turn broken redirect 302 (violates RFC, but compatible with Netscape)
+on(1)/off(0). Default is off.
+
+.TP
+\f3-http-bugs.bug_post-no-keepalive \f2<0>/<1>\f1
+Turn no keepalive connection after POST request (for some buggy
+PHP databases) on(1)/off(0). Default is off.
+
+.TP
+\f3-http-proxy \f2<host:port>\f1
+Host and port number of the HTTP proxy, or blank.
+(default: blank)
+
+.TP
+\f3-language \f2<langname>\f1
+Language to use in user interface.
+
+.TP
+\f3-max-connections \f2<max>\f1
+Maximum number of concurrent connections.
+(default: 10)
+
+.TP
+\f3-max-connections-to-host \f2<max>\f1
+Maximum number of concurrent connection to a given host.
+(default: 2)
+
+.TP
+\f3-memory-cache-size \f2<Kbytes>\f1
+Cache memory in Kilobytes.
+(default: 1024)
+
+.TP
+\f3-width \f2<size>\f1
+Size of screen in characters, used in combination with -dump.
+(default: 80)
+
+.TP
+\f3-no-connect\f1
+Runs links as a separate instance - instead of connecting to
+existing instance. Prevents him to connecting to an existing session.
+See also \f3-base-session\f1 option.
+
+.TP
+\f3-receive-timeout \f2<sec>\f1
+Timeout on receive.
+(default: 120)
+
+.TP
+\f3-retries \f2<retry>\f1
+Number of retries.
+(default: 3)
+
+.TP
+\f3-source\f1
+Write the given HTML document in source form to stdout.
+
+.TP
+\f3-unrestartable-receive-timeout \f2<sec>\f1
+Timeout on non restartable connections.
+(default: 600)
+
+.TP
+\f3-version\f1
+Print the 
+.I links
+version number and exit.
+
+
+.SH NAVIGATION KEYS
+You may optionally prefix each of this keys with a number, telling its
+repeat count (how much times to do it). You can also re-bind those keys,
+altough this feature is still in the state of testing, so undocumented.
+The keys you may use for navigation are:
+.TP
+.B PGDN
+page down
+.TP
+.B Space
+page down
+.TP
+.B PGUP
+page up
+.TP
+.B b
+page up
+.TP
+.B B
+page up
+.TP
+.B CursorDOWN
+next link/down
+.TP
+.B CursorUP
+prev link/up
+.TP
+.B ^INS
+copy to clipboard
+.TP
+.B ^C
+copy to clipboard
+.TP
+.B INS
+scroll up
+.TP
+.B ^P
+scroll up
+.TP
+.B DEL
+scroll down
+.TP
+.B ^N
+scroll down
+.TP
+.B [
+scroll left
+.TP
+.B ]
+scroll right
+.TP
+.B HOME
+home
+.TP
+.B END
+end of page
+.TP
+.B CursorRIGHT
+enter link/press button
+.TP
+.B ENTER
+enter link/press button
+.TP
+.B CursorLEFT
+go back
+.TP
+.B d
+download link
+.TP
+.B D
+download link
+.TP
+.B /
+search in the page
+.TP
+.B ?
+search back in the page
+.TP
+.B n
+find next match
+.TP
+.B N
+find next match backwards
+.TP
+.B f
+zoom actual frame
+.TP
+.B F
+zoom actual frame
+.TP
+.B ^R
+reload page
+.TP
+.B g
+go to URL
+.TP
+.B G
+go to the current URL
+.TP
+.B a
+add a new bookmark
+.TP
+.B A
+add a new bookmark
+.TP
+.B s
+bookmark manager
+.TP
+.B S
+bookmark manager
+.TP
+.B q
+quit
+.TP
+.B Q
+quit
+.TP
+.B =
+document information
+.TP
+.B |
+header information
+.TP
+.B \e
+toggle HTML source/rendered view
+.TP
+.B *
+toggle display of images
+.TP
+.B TAB
+next frame
+.TP
+.B ESC
+menu/escape
+.TP
+.B F9
+menu
+.TP
+.B F10
+file menu
+
+
+.SH EDITING KEYS
+The following keys can be used while editing a line/jumping to a URL:
+.TP
+.B CursorRIGHT
+move right
+.TP
+.B CursorLEFT
+move left
+.TP
+.B HOME
+jump to the beginning
+.TP
+.B ^A
+jump to the beginning
+.TP
+.B END
+jump to the end
+.TP
+.B ^E
+jump to the end
+.TP
+.B ^INS
+copy to clipboard
+.TP
+.B ^B
+copy to clipboard
+.TP
+.B ^X
+cut to clipboard
+.TP
+.B ^V
+paste from clipboard
+.TP
+.B ENTER
+enter line
+.TP
+.B BACKSPACE
+delete back character
+.TP
+.B ^H
+delete back character
+.TP
+.B DEL
+delete character
+.TP
+.B ^D
+delete character
+.TP
+.B ^U
+delete from beginning of the line
+.TP
+.B ^K
+delete to the end of the line
+.TP
+.B ^W
+auto complete line
+
+
+.SH ENVIRONMENT
+.TP
+
+.IP CONFIG_DIR
+The location of ".links/"
+
+.IP WWW_HOME
+Homepage location (as in 
+.B lynx
+)
+
+.IP LINKS_XTERM
+The command to run when selecting "File/New window" and if
+.B DISPLAY
+is defined (default "xterm -e")
+
+.IP LINKS_TWTERM
+The command to run when selecting "File/New window" and if
+.B TWDISPLAY
+is defined (default "twterm -e")
+
+.IP SHELL
+Used for "File/OS Shell" menu
+
+.IP COMSPEC
+Used for "File/OS Shell" menu in DOS/Windows
+
+
+.SH FILES
+.TP
+
+.IP "~/.links/links.cfg"
+Per-user config file, automatically created by
+.B links. 
+Its format is same as the one of
+.I user.cfg.
+
+.IP "~/.links/html.cfg"
+Per-user config file, automatically created by
+.B links.
+It contains HTML rendering options. Its format is same as the one of
+.I user.cfg.
+
+.IP "~/.links/user.cfg"
+Per-user config file, not overwritten while saving
+.B links
+configuration. You can add your own options there (e.g. keybindings).
+Each line consists from option name (same as the command-line one,
+but without leading dash and with dashes converted to underscores),
+space, and its value, in quotes if it's a string. Lines which start
+with # are considered as comments and skipped.
+
+.IP "~/.links/bookmarks"
+Bookmarks file
+
+.IP "~/.links/links.his"
+Sites history file
+
+.IP "~/.links/socket"
+Internal links socket for communication between its instances.
+
+
+.SH PLATFORMS
+.B links
+is known to work on Linux, FreeBSD, OpenBSD, Solaris, IRIX, HPUX, Digital Unix, AIX,
+OS/2 and BeOS.
+Port for Win32 is in state of beta testing.
+
+
+.SH BUGS
+Can't connect to some FTP servers (Novell, NT). Connection stays in "Request
+sent" state.
+.PP
+Frames don't work if there're more frames with same name. Turn them off in such
+case.
+.PP
+You can't upload large files; it takes _lots_ of memory.
+.PP
+You shouldn't press '^Z' when you are in a viewer
+.PP
+Please report any other bugs you find to
+.B Mikulas Patocka
+.BI <mikulas@artax.karlin.mff.cuni.cz>
+or to
+.B links mailing list
+.BI <links-list@linuxfromscratch.org>.
+
+
+.SH LICENSE
+.B links
+is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+
+.SH AUTHOR
+.I links
+was written by 
+.B Mikulas Patocka 
+.BI <mikulas@artax.karlin.mff.cuni.cz>.
+See file 
+.I AUTHORS
+in the source tree for a list of people contributing to this project.
+.P
+The homepage of links can be found at
+.BI http://links.browser.org/
+.P
+This manual page was written by Peter Gervai <grin@tolna.net>,
+using excerpts from a (yet?) unknown
+.I links
+fan
+for the Debian GNU/Linux system (but may be used by others).
+Contributions from Francis A. Holop. Extended, clarified
+and made more up-to-date by Petr Baudis <pasky@ji.cz>.
+
+
+.SH "SEE ALSO"
+.BR lynx (1),
+.BR w3m (1),
+.BR wget (1)

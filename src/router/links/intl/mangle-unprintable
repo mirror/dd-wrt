@@ -1,0 +1,10 @@
+#!/bin/sh
+i=128
+a="sed"
+while [ $i -lt 256 ]; do
+	oct="`printf %o $i`"
+	char="`printf \\\\$oct`"
+	a="$a -e 's/$char/\\\\$oct/g'"
+	i=`expr $i + 1`
+done
+eval "$a"
