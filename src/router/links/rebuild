@@ -1,0 +1,16 @@
+#!/bin/bash
+#export CFLAGS="-Wimplicit -Wreturn-type -Wuninitialized -g -O2"
+export CFLAGS="-Wall -g -O2 -ansi -U__STRICT_ANSI__"
+rm -f config.h configure Makefile config.cache
+rm -rf .deps
+autoheader
+rm -f autoh*
+aclocal
+automake
+autoconf
+#sed 's/\\\.am/\\\.\[aA]\[mM]/' <missing >missing.tmp
+#mv missing.tmp missing
+./configure
+make dist
+make clean
+make
