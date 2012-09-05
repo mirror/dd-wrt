@@ -1,0 +1,16 @@
+# default: on
+# description: NRPE (Nagios Remote Plugin Executor)
+service nrpe
+{
+       	flags           = REUSE
+        socket_type     = stream    
+	port		= @nrpe_port@    
+       	wait            = no
+        user            = @nrpe_user@
+	group		= @nrpe_group@
+       	server          = @bindir@/nrpe
+        server_args     = -c @sysconfdir@/nrpe.cfg --inetd
+       	log_on_failure  += USERID
+        disable         = no
+	only_from       = 127.0.0.1
+}
