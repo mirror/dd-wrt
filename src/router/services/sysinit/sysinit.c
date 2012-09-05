@@ -2117,7 +2117,8 @@ void start_restore_defaults(void)
 		icnt = 2;
 #endif
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
-	if(restore_defaults) {
+#ifndef HAVE_80211AC
+	if(restore_defaults) { // ganz schlechte idee
 		// testing - clear nvram values
 		system("nvram show > /tmp/.nvram_current");
 		FILE *dfp;
@@ -2138,6 +2139,7 @@ void start_restore_defaults(void)
         	        unlink("/tmp/.nvram_current");	
 		}
 	}
+#endif
 	
 	buffalo_defaults(restore_defaults);
 #endif
