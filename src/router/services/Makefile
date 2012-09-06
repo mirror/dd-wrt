@@ -613,13 +613,13 @@ ifeq ($(CONFIG_WG302V1),y)
   CFLAGS_EXTRA += -DHAVE_WG302V1
 endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS_EXTRA += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
+CFLAGS_EXTRA += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO 
+MAD_FLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-
-CFLAGS_EXTRA += -DHAVE_MADWIFI -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
-
+MAD_FLAGS += -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+CFLAGS_EXTRA += -DHAVE_MADWIFI
 ifneq ($(CONFIG_NOWIFI),y)
 OBJS += madwifi.o
 OBJS += ../wireless-tools/libiw.so.29
@@ -1279,14 +1279,14 @@ endif
 services.so: $(OBJS)
 #	$(AR) rcu -o $@.a $^
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-	$(CC) --shared -c $(NCFLAGS) -o $(NOBJS) $(NFILES)
+	$(CC) --shared -c $(NCFLAGS) $(MAD_FLAGS) -o $(NOBJS) $(NFILES)
 endif
 ifeq ($(CONFIG_ATH9K),y)
 ifneq ($(CONFIG_NOWIFI),y)
-	$(CC) -shared -c $(ATH9KCFLAGS) $(ATH9KFILES)
+	$(CC) -shared -c $(ATH9KCFLAGS)  $(MAD_FLAGS)  $(ATH9KFILES)
 endif
 endif
-	$(CC) --shared $(CFLAGS) -o $@ $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
+	$(CC) --shared $(CFLAGS)  $(MAD_FLAGS) -o $@ $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
 #	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
 	
 services.a: $(OBJS)
