@@ -290,6 +290,8 @@ void stop_ddns(void)
 	int ret;
 	stop_process("inadyn", "dynamic dns daemon");
 	unlink("/tmp/ddns/ddns.log");
+	unlink("/tmp/ddns/inadyn_ip.cache");
+	unlink("/tmp/ddns/inadyn_time.cache");
 
 	cprintf("done\n");
 
