@@ -462,7 +462,7 @@ endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 NOBJS += site_survey_madwifi_11n.o
 NFILES += tools/site_survey_madwifi_11n.c
-NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DMADWIFI_MIMO -I../madwifi.dev/madwifi_mimo.dev/core-I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
+NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DMADWIFI_MIMO -I../madwifi.dev/madwifi_mimo.dev/core -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
 MAD_FLAGS +=  -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h 
 endif
 ifeq ($(CONFIG_ATH9K),y)
@@ -1244,7 +1244,7 @@ endif
 include $(TOP)/rules/generic.mk
 CFLAGS_EXTRA += $(DD_CFLAGS)
 
-CFLAGS += $(CFLAGS_EXTRA)
+CFLAGS += $(CFLAGS_EXTRA) $(MAD_FLAGS)
 HCFLAGS += $(CFLAGS_EXTRA)
 
 vpath %.c sysinit sysinit/switchlib services tools networking utils $(TOP)/shared $(SRCBASE)/rts/src
