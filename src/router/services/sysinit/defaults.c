@@ -2686,8 +2686,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptpd_client_srvuser", "", 0},
 	{"pptpd_client_srvpass", "", 0},
 	{"pptpd_client_ipparam", "", 0},
-	{"pptpd_client_mtu", "1450", 0},
-	{"pptpd_client_mru", "1450", 0},
+	{"pptpd_client_mtu", "1436", 0},
+	{"pptpd_client_mru", "1436", 0},
 #ifdef HAVE_RADIOOFF
 #ifdef HAVE_AOSS
 	{"radiooff_button", "2", 0},

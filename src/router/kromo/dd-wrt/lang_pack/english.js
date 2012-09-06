@@ -1402,7 +1402,7 @@ service.vpn_route="Policy based Routing";
 
 //help container
 var hstatus_vpn = new Object();
-hstatus_vpn.right1="<i>Policy based Routing:</i><br>Add IPs/NETs in the form 0.0.0.0/0 to force clients NOT to use the tunnel as default gateway. One line per IP/NET. Redirect Gateway MUST be on.<br><i>IP Address/Netmask:</i><br>Must be set when using DHCP-Proxy mode and local TAP is NOT bridged";
+hstatus_vpn.right1="<i>Policy based Routing:</i><br>Add IPs/NETs in the form 0.0.0.0/0 to force clients NOT to use the tunnel as default gateway. One line per IP/NET. Redirect Gateway MUST be enabled.<br><i>IP Address/Netmask:</i><br>Must be set when using DHCP-Proxy mode and local TAP is NOT bridged";
 hstatus_vpn.right2="<i>Additional Config:</i><br>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.";
 
 //vnc.repeater
