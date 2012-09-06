@@ -49,8 +49,9 @@ ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv,
 	int co = 0;
 	sprintf(nb, "%s_bias", ifname);
 	bias = atoi(nvram_default_get(nb, "0"));
+	
 	// sprintf(it, "inactivity_time", ifname);
-	it = atoi(nvram_default_get("inacttime", "300000"));
+//	it = atoi(nvram_default_get("inacttime", "300000"));
 
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
@@ -67,7 +68,7 @@ ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv,
 		}
 		qual = wc->signal * 124 + 11600;
 		qual /= 10;
-		if (wc->inactive_time < it) {
+//		if (wc->inactive_time < it) {
 			if (cnt)
 				websWrite(wp, ",");
 			websWrite(wp,
@@ -81,7 +82,7 @@ ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv,
 				  wc->noise + bias,
 				  wc->signal - wc->noise, qual);
 			cnt++;
-		}
+//		}
 	}
 	free_wifi_clients(mac80211_info->wci);
 	free(mac80211_info);
