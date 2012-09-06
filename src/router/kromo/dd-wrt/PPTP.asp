@@ -236,7 +236,7 @@ addEvent(window, "unload", function() {
 			<input class="num" maxlength="4" size="5" name="pptpd_client_srvmtu" onblur="valid_range(this,0,1500,service.pptpd_mtu)" value="<% nvram_get("pptpd_client_srvmtu"); %>" />&nbsp;
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
-			document.write("(" + share.deflt + ": 1450)");
+			document.write("(" + share.deflt + ": 1436)");
 			//]]>
 			</script></span>
 		</div>
@@ -245,7 +245,7 @@ addEvent(window, "unload", function() {
 			<input class="num" maxlength="4" size="5" name="pptpd_client_srvmru" onblur="valid_range(this,0,1500,service.pptpd_mru)" value="<% nvram_get("pptpd_client_srvmru"); %>" />&nbsp;
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
-			document.write("(" + share.deflt + ": 1450)");
+			document.write("(" + share.deflt + ": 1436)");
 			//]]>
 			</script></span>
 		</div>
