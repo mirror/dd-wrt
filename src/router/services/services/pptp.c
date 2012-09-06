@@ -80,7 +80,7 @@ void start_pptpd(void)
 		"refuse-eap\n"
 		"refuse-chap\n" "refuse-mschap\n" "require-mschap-v2\n");
 	if (nvram_match("pptpd_forcemppe", "1"))
-		fprintf(fp, "mppe required,stateless\n");
+		fprintf(fp, "mppe required,stateless,no40,no56\n");
 	else
 		fprintf(fp, "mppe stateless\n");
 	fprintf(fp, "mppc\n" "debug\n" "logfd 2\n"
