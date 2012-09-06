@@ -501,7 +501,7 @@ nflash_mtd_init(void)
 	nflash.mtd.priv = &nflash;
 	nflash.mtd.owner = THIS_MODULE;
 	nflash.mtd.mlock = partitions_lock_init();
-	nflash.mtd.writebufsize = info->page_size;
+	nflash.mtd.writebufsize = info->pagesize;
 	if (!nflash.mtd.mlock)
 		return -ENOMEM;
 
