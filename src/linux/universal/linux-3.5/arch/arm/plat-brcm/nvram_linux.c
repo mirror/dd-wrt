@@ -476,7 +476,7 @@ nvram_nflash_commit(void)
 
 	/* Write partition up to end of data area */
 	i = header->len;
-	ret = nvram_mtd->write(nvram_mtd, offset, i, &len, buf);
+	ret = mtd_write(nvram_mtd, offset, i, &len, buf);
 	if (ret || len != i) {
 		printk(KERN_WARNING "nvram_commit: write error\n");
 		ret = -EIO;

@@ -598,7 +598,7 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 {
 	struct romfs_super_block *romfsb;
 	struct cramfs_super *cramfsb;
-	struct dummy_super_block *squashfsb;
+	struct squashfs_super_block *squashfsb;
 	struct trx_header *trx;
 	unsigned char buf[NFL_SECTOR_SIZE];
 	uint blocksize, mask, blk_offset, off, shift = 0;
