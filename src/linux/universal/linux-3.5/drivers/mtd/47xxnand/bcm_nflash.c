@@ -441,6 +441,8 @@ done:
 	if (erase->callback)
 		erase->callback(erase);
 
+	ret = erase->state == MTD_ERASE_DONE ? 0 : -EIO;
+
 	return ret;
 }
 
