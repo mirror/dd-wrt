@@ -506,7 +506,7 @@ int mtd_write(const char *path, const char *mtd)
 
 		int length = ROUNDUP(count, mtd_info.erasesize);
 		int base = erase_info.start;
-#ifdef HAVE_80211AC
+#if defined(HAVE_80211AC) && !defined(HAVE_NORTHSTAR)
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 		      again:;
 			fprintf(stderr,
