@@ -621,13 +621,16 @@ static int eth_poll(struct napi_struct *napi, int budget)
 			case 1:
 			case 2:
 			case 5:
-			case 6:
 			case 13:
 			case 14:
-				if (desc->l4f)
+				if (desc->l4f && desc->ipf)
 					skb->ip_summed = CHECKSUM_NONE;
 				else
 					skb->ip_summed = CHECKSUM_UNNECESSARY;
+			break;
+			
+			case 6:
+					skb->ip_summed = CHECKSUM_NONE;			    	
 			break;
 			default:
 				skb->ip_summed = CHECKSUM_NONE;
