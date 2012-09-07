@@ -2230,16 +2230,17 @@ int dwc_otg_pcd_init(struct platform_device *pdev)
 	 * with the block of code below it once the software is debugged for
 	 * this.  If is_dualspeed = 0 then the gadget driver should not report
 	 * a device qualifier descriptor when queried. */
-/*	if ((GET_CORE_IF(pcd)->core_params->speed == DWC_SPEED_PARAM_FULL) ||
+
+	if ((GET_CORE_IF(pcd)->core_params->speed == DWC_SPEED_PARAM_FULL) ||
 		((GET_CORE_IF(pcd)->hwcfg2.b.hs_phy_type == 2) &&
 		 (GET_CORE_IF(pcd)->hwcfg2.b.fs_phy_type == 1) &&
 		 (GET_CORE_IF(pcd)->core_params->ulpi_fs_ls))) {
-		pcd->gadget.is_dualspeed = 0;
+		pcd->gadget.max_speed = USB_SPEED_LOW;
 	}
 	else {
-		pcd->gadget.is_dualspeed = 1;
+		pcd->gadget.max_speed = USB_SPEED_HIGH;
 	}
-*/
+
 	if ((otg_dev->core_if->hwcfg2.b.op_mode == DWC_HWCFG2_OP_MODE_NO_SRP_CAPABLE_DEVICE) ||
 	(otg_dev->core_if->hwcfg2.b.op_mode == DWC_HWCFG2_OP_MODE_NO_SRP_CAPABLE_HOST) ||
 	(otg_dev->core_if->hwcfg2.b.op_mode == DWC_HWCFG2_OP_MODE_SRP_CAPABLE_DEVICE) ||
@@ -2253,9 +2254,11 @@ int dwc_otg_pcd_init(struct platform_device *pdev)
 
 	pcd->driver = 0;
 	/* Register the gadget device */
+printk("%s: 1\n",__func__);
 	retval = device_register(&pcd->gadget.dev);
 	if (retval != 0) {
 		kfree (pcd);
+printk("%s: 2\n",__func__);
 		return retval;
 	}
 

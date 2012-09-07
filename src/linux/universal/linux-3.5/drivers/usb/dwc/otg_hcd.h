@@ -197,6 +197,9 @@ typedef struct dwc_otg_qh {
 	/** (micro)frame at which last start split was initialized. */
 	uint16_t		start_split_frame;
 
+	u16 speed;
+	u16 frame_usecs[8];
+
 	/** @} */
 
 	/** Entry for QH in either the periodic or non-periodic schedule. */
@@ -299,6 +302,18 @@ typedef struct dwc_otg_hcd {
 	 * periodic transfers may occur in the same (micro)frame.
 	 */
 	uint16_t		periodic_usecs;
+
+	/*
+	 * Total bandwidth claimed so far for all periodic transfers
+	 * in a frame.
+	 * This will include a mixture of HS and FS transfers.
+	 * Units are microseconds per (micro)frame.
+	 * We have a budget per frame and have to schedule
+	 * transactions accordingly.
+	 * Watch out for the fact that things are actually scheduled for the
+	 * "next frame".
+	 */
+	u16 frame_usecs[8];
 
 	/**
 	 * Frame number read from the core at SOF. The value ranges from 0 to
@@ -461,6 +476,7 @@ extern int32_t dwc_otg_hcd_handle_wakeup_detected_intr(dwc_otg_hcd_t *dwc_otg_hc
 /** @{ */
 
 /* Implemented in dwc_otg_hcd_queue.c */
+extern int init_hcd_usecs(dwc_otg_hcd_t *hcd);
 extern dwc_otg_qh_t *dwc_otg_hcd_qh_create(dwc_otg_hcd_t *hcd, struct urb *urb);
 extern void dwc_otg_hcd_qh_init(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh, struct urb *urb);
 extern void dwc_otg_hcd_qh_free(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh);
@@ -502,21 +518,10 @@ static inline void dwc_otg_hcd_qtd_free(dwc_otg_qtd_t *qtd)
 	kfree(qtd);
 }
 
-/** Removes a QTD from list.
- * @param[in] hcd HCD instance.
- * @param[in] qtd QTD to remove from list. */
-static inline void dwc_otg_hcd_qtd_remove(dwc_otg_hcd_t *hcd, dwc_otg_qtd_t *qtd)
-{
-	unsigned long flags;
-	SPIN_LOCK_IRQSAVE(&hcd->lock, flags);
-	list_del(&qtd->qtd_list_entry);
-	SPIN_UNLOCK_IRQRESTORE(&hcd->lock, flags);
-}
-
 /** Remove and free a QTD */
 static inline void dwc_otg_hcd_qtd_remove_and_free(dwc_otg_hcd_t *hcd, dwc_otg_qtd_t *qtd)
 {
-	dwc_otg_hcd_qtd_remove(hcd, qtd);
+	list_del(&qtd->qtd_list_entry);
 	dwc_otg_hcd_qtd_free(qtd);
 }
 
