@@ -619,10 +619,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		/* RX Hardware checksum offload */
 		switch (desc->prot) {
 			case 1:
-			case 2:
 			case 5:
-			case 13:
-			case 14:
 				if (desc->l4f && desc->ipf)
 					skb->ip_summed = CHECKSUM_NONE;
 				else
@@ -630,6 +627,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 			break;
 			
 			case 6:
+			case 2:
 					skb->ip_summed = CHECKSUM_NONE;			    	
 			break;
 			default:
