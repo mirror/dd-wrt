@@ -1,3 +1,4 @@
+
 /*
  * Cavium CNS3xxx Gigabit driver for Linux
  *
@@ -27,7 +28,7 @@
 #include <mach/platform.h>
 
 #define DRV_NAME "cns3xxx_eth"
-
+#define HW_CHECKSUM 1
 #define RX_DESCS 512
 #define TX_DESCS 512
 #define SKB_DMA_REALIGN ((PAGE_SIZE - NET_SKB_PAD) % SMP_CACHE_BYTES)
@@ -617,25 +618,29 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		dev->stats.rx_bytes += length;
 
 		/* RX Hardware checksum offload */
+#ifdef HW_CHECKSUM
 		switch (desc->prot) {
 			case 1:
+			case 2:
 			case 5:
+			case 6:
 				if (desc->l4f && desc->ipf)
 					skb->ip_summed = CHECKSUM_NONE;
 				else
 					skb->ip_summed = CHECKSUM_UNNECESSARY;
 			break;
-			
-			case 6:
-			case 2:
-					skb->ip_summed = CHECKSUM_NONE;			    	
-			break;
 			default:
 				skb->ip_summed = CHECKSUM_NONE;
 			break;
 		}
-
-		napi_gro_receive(napi, skb);
+		if (skb->ip_summed == CHECKSUM_UNNECESSARY)
+			napi_gro_receive(napi, skb);
+		else
+			netif_receive_skb(skb);
+#else
+		skb->ip_summed = CHECKSUM_NONE;
+		netif_receive_skb(skb);
+#endif
 
 		received++;
 
@@ -712,6 +717,7 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 		tx_ring->phys_tab[index] = phys;
 
 		tx_ring->buff_tab[index] = skb;
+#ifdef HW_CHECKSUM
 		if (index == TX_DESCS - 1) {
 			tx_desc->config0 = END_OF_RING | FIRST_SEGMENT | LAST_SEGMENT |
 				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
@@ -721,6 +727,15 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
 				   	TCP_CHECKSUM | len;
 		}
+#else
+		if (index == TX_DESCS - 1) {
+			tx_desc->config0 = END_OF_RING | FIRST_SEGMENT | LAST_SEGMENT |
+				   	FORCE_ROUTE | len;
+		} else {
+			tx_desc->config0 = FIRST_SEGMENT | LAST_SEGMENT |
+				   	FORCE_ROUTE | len;
+		}
+#endif
 	} else {
 		unsigned int config;
 
@@ -741,8 +756,12 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 			tx_desc->pmap = pmap;
 			tx_ring->phys_tab[index] = phys;
 
+#ifdef HW_CHECKSUM
 			config = FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
 				TCP_CHECKSUM | len;
+#else
+			config = FORCE_ROUTE | len;
+#endif
 			if (i == nr_frags) {
 				config |= LAST_SEGMENT;
 				tx_ring->buff_tab[index] = skb;
@@ -770,6 +789,7 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 		tx_desc->pmap = pmap;
 		tx_ring->phys_tab[index] = phys;
 
+#ifdef HW_CHECKSUM
 		if (index == TX_DESCS - 1) {
 			tx_desc->config0 = END_OF_RING | FIRST_SEGMENT |
 				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
@@ -779,6 +799,15 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
 				   	TCP_CHECKSUM | len;
 		}
+#else
+		if (index == TX_DESCS - 1) {
+			tx_desc->config0 = END_OF_RING | FIRST_SEGMENT |
+				   	FORCE_ROUTE | len;
+		} else {
+			tx_desc->config0 = FIRST_SEGMENT |
+				   	FORCE_ROUTE | len;
+		}
+#endif
 	}
 
 	mb();
@@ -1127,8 +1156,11 @@ static int __devinit eth_init_one(struct platform_device *pdev)
 	if (!(napi_dev = alloc_etherdev(sizeof(struct sw))))
 		return -ENOMEM;
 	strcpy(napi_dev->name, "switch%d");
+#ifdef HW_CHECKSUM
 	napi_dev->features = NETIF_F_IP_CSUM | NETIF_F_SG;
-
+#else
+	napi_dev->features = NETIF_F_SG;
+#endif
 	SET_NETDEV_DEV(napi_dev, &pdev->dev);
 	sw = netdev_priv(napi_dev);
 	memset(sw, 0, sizeof(struct sw));
