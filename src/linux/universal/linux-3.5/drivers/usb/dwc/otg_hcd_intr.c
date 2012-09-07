@@ -606,6 +606,7 @@ static void deactivate_qh(dwc_otg_hcd_t *hcd,
 
 	DWC_DEBUGPL(DBG_HCDV, "  %s(%p,%p,%d)\n", __func__, hcd, qh, free_qtd);
 
+        spin_lock(&hcd->lock);
 	qtd = list_entry(qh->qtd_list.next, dwc_otg_qtd_t, qtd_list_entry);
 
 	if (qtd->complete_split) {
@@ -622,6 +623,7 @@ static void deactivate_qh(dwc_otg_hcd_t *hcd,
 
 	qh->channel = NULL;
 	qh->qtd_in_process = NULL;
+        spin_unlock(&hcd->lock);
 	dwc_otg_hcd_qh_deactivate(hcd, qh, continue_split);
 }
 
@@ -1712,6 +1714,7 @@ static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t *hcd,
 					  "for halting is unknown, hcint 0x%08x, intsts 0x%08x\n",
 					  __func__, hc->hc_num, hcint.d32,
 					  dwc_read_reg32(&hcd->core_if->core_global_regs->gintsts));
+                               clear_hc_int(hc_regs, chhltd);
 			}
 		}
 	} else {

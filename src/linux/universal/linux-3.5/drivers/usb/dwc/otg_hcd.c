@@ -166,7 +166,9 @@ static void kill_urbs_in_qh_list(dwc_otg_hcd_t *hcd, struct list_head *qh_list)
 	dwc_otg_qh_t		*qh;
 	struct list_head	*qtd_item;
 	dwc_otg_qtd_t		*qtd;
+	unsigned long		flags;
 
+	SPIN_LOCK_IRQSAVE(&hcd->lock, flags);
 	list_for_each(qh_item, qh_list) {
 		qh = list_entry(qh_item, dwc_otg_qh_t, qh_list_entry);
 		for (qtd_item = qh->qtd_list.next;
@@ -180,6 +182,7 @@ static void kill_urbs_in_qh_list(dwc_otg_hcd_t *hcd, struct list_head *qh_list)
 			dwc_otg_hcd_qtd_remove_and_free(hcd, qtd);
 		}
 	}
+	SPIN_UNLOCK_IRQRESTORE(&hcd->lock, flags);
 }
 
 /**
@@ -423,10 +426,14 @@ int dwc_otg_hcd_init(struct platform_device *pdev)
 	hcd->regs = otg_dev->base;
 	hcd->self.otg_port = 1;
 
+	/* Integrate TT in root hub, by default this is disbled. */
+	hcd->has_tt = 1;
+
 	/* Initialize the DWC OTG HCD. */
 	dwc_otg_hcd = hcd_to_dwc_otg_hcd(hcd);
 	dwc_otg_hcd->core_if = otg_dev->core_if;
 	otg_dev->hcd = dwc_otg_hcd;
+	init_hcd_usecs(dwc_otg_hcd);
 
 	/* */
 	spin_lock_init(&dwc_otg_hcd->lock);
@@ -644,6 +651,7 @@ static void qh_list_free(dwc_otg_hcd_t *hcd, struct list_head *qh_list)
 {
 	struct list_head 	*item;
 	dwc_otg_qh_t		*qh;
+	unsigned long flags;
 
 	if (!qh_list->next) {
 		/* The list hasn't been initialized yet. */
@@ -653,10 +661,12 @@ static void qh_list_free(dwc_otg_hcd_t *hcd, struct list_head *qh_list)
 	/* Ensure there are no QTDs or URBs left. */
 	kill_urbs_in_qh_list(hcd, qh_list);
 
+	SPIN_LOCK_IRQSAVE(&hcd->lock, flags);
 	for (item = qh_list->next; item != qh_list; item = qh_list->next) {
 		qh = list_entry(item, dwc_otg_qh_t, qh_list_entry);
 		dwc_otg_hcd_qh_remove_and_free(hcd, qh);
 	}
+	SPIN_UNLOCK_IRQRESTORE(&hcd->lock, flags);
 }
 
 /**
@@ -948,6 +958,10 @@ int dwc_otg_hcd_urb_dequeue(struct usb_hcd *hcd,
 	urb_qtd = (dwc_otg_qtd_t *)urb->hcpriv;
 	qh = (dwc_otg_qh_t *)ep->hcpriv;
 
+        if (urb_qtd == NULL) {
+            SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
+            return 0;
+        }
 #ifdef DEBUG
 	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
 		dump_urb_info(urb, "dwc_otg_hcd_urb_dequeue");
@@ -979,14 +993,16 @@ int dwc_otg_hcd_urb_dequeue(struct usb_hcd *hcd,
 	 */
 	dwc_otg_hcd_qtd_remove_and_free(dwc_otg_hcd, urb_qtd);
 	if (urb_qtd == qh->qtd_in_process) {
+                /* Note that dwc_otg_hcd_qh_deactivate() locks the spin_lock again */
+                SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
 		dwc_otg_hcd_qh_deactivate(dwc_otg_hcd, qh, 0);
 		qh->channel = NULL;
 		qh->qtd_in_process = NULL;
-	} else if (list_empty(&qh->qtd_list)) {
+	} else {
+            if (list_empty(&qh->qtd_list))
 		dwc_otg_hcd_qh_remove(dwc_otg_hcd, qh);
+            SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
 	}
-
-	SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
 
 	urb->hcpriv = NULL;
 
@@ -1038,7 +1054,6 @@ rescan:
 	ep->hcpriv = NULL;
 done:
 	SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
-
 }
 
 /** Handles host mode interrupts for the DWC_otg controller. Returns IRQ_NONE if
@@ -2195,6 +2210,7 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t *hcd)
 	DWC_DEBUGPL(DBG_HCD, "  Select Transactions\n");
 #endif
 
+	spin_lock(&hcd->lock);
 	/* Process entries in the periodic ready list. */
 	qh_ptr = hcd->periodic_sched_ready.next;
 	while (qh_ptr != &hcd->periodic_sched_ready &&
@@ -2243,6 +2259,7 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t *hcd)
 
 		hcd->non_periodic_channels++;
 	}
+	spin_unlock(&hcd->lock);
 
 	return ret_val;
 }
