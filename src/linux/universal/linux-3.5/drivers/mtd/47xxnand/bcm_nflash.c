@@ -511,7 +511,6 @@ nflash_mtd_init(void)
 	for (i = 0; i < info->numblocks; i++) {
 		if (hndnand_checkbadb(nflash.nfl, (i * info->blocksize)) != 0) {
 			nflash.map[i] = 1;
-			printk(KERN_INFO "bad block at %d\n",i);
 			bad++;
 		}
 	}
@@ -528,7 +527,7 @@ nflash_mtd_init(void)
 	if (!i){
 		parts[i].name = "nand";
 		parts[i].offset = 0;
-		parts[i].size = nflash.mtd.size - (48 * 131072);
+		parts[i].size = nflash.mtd.size - (bad * info->blocksize);
 		i++;
 	}
 	ret = add_mtd_partitions(&nflash.mtd, parts, i);
