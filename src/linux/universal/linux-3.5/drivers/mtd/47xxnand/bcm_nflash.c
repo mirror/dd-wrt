@@ -446,6 +446,7 @@ done:
 	return ret;
 }
 
+
 #if LINUX_VERSION_CODE < 0x20212 && defined(MODULE)
 #define nflash_mtd_init init_module
 #define nflash_mtd_exit cleanup_module
@@ -529,7 +530,7 @@ nflash_mtd_init(void)
 	if (!i){
 		parts[i].name = "nand";
 		parts[i].offset = 0;
-		parts[i].size = nflash.mtd.size - (bad * info->blocksize);
+		parts[i].size = nflash.mtd.size - ((bad*2) * info->blocksize);
 		i++;
 	}
 	ret = add_mtd_partitions(&nflash.mtd, parts, i);
