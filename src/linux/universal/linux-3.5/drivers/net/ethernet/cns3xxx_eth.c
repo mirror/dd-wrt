@@ -28,7 +28,7 @@
 #include <mach/platform.h>
 
 #define DRV_NAME "cns3xxx_eth"
-//#define HW_CHECKSUM 1
+#define HW_CHECKSUM 1
 #define RX_DESCS 512
 #define TX_DESCS 512
 #define SKB_DMA_REALIGN ((PAGE_SIZE - NET_SKB_PAD) % SMP_CACHE_BYTES)
