@@ -28,7 +28,7 @@
 #include <mach/platform.h>
 
 #define DRV_NAME "cns3xxx_eth"
-//#define HW_CHECKSUM 1
+#define HW_CHECKSUM 1
 #define RX_DESCS 512
 #define TX_DESCS 512
 #define SKB_DMA_REALIGN ((PAGE_SIZE - NET_SKB_PAD) % SMP_CACHE_BYTES)
@@ -679,6 +679,7 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 	int nr_frags = skb_shinfo(skb)->nr_frags;
 	struct skb_frag_struct *frag;
 	unsigned int i;
+	u32 config0;
 
 	if (pmap == 8)
 		pmap = (1 << 4);
@@ -717,27 +718,17 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 		tx_ring->phys_tab[index] = phys;
 
 		tx_ring->buff_tab[index] = skb;
+		config0 = FIRST_SEGMENT | LAST_SEGMENT | FORCE_ROUTE | len;
 #ifdef HW_CHECKSUM
-		if (index == TX_DESCS - 1) {
-			tx_desc->config0 = END_OF_RING | FIRST_SEGMENT | LAST_SEGMENT |
-				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
-				   	TCP_CHECKSUM | len;
-		} else {
-			tx_desc->config0 = FIRST_SEGMENT | LAST_SEGMENT |
-				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
-				   	TCP_CHECKSUM | len;
-		}
-#else
-		if (index == TX_DESCS - 1) {
-			tx_desc->config0 = END_OF_RING | FIRST_SEGMENT | LAST_SEGMENT |
-				   	FORCE_ROUTE | len;
-		} else {
-			tx_desc->config0 = FIRST_SEGMENT | LAST_SEGMENT |
-				   	FORCE_ROUTE | len;
-		}
+		if (skb->ip_summed == CHECKSUM_PARTIAL)
+			config0|= IP_CHECKSUM | UDP_CHECKSUM | TCP_CHECKSUM;
 #endif
+		if (index == TX_DESCS - 1) {
+			config0| = END_OF_RING;
+		}
+		tx_desc->config0 = config0;
+
 	} else {
-		unsigned int config;
 
 		index = ((index + nr_frags) % TX_DESCS);
 		tx_desc = &(tx_ring)->desc[index];
@@ -756,18 +747,19 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 			tx_desc->pmap = pmap;
 			tx_ring->phys_tab[index] = phys;
 
+			config0 = FORCE_ROUTE | len;
+
 #ifdef HW_CHECKSUM
-			config = FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
-				TCP_CHECKSUM | len;
-#else
-			config = FORCE_ROUTE | len;
+			if (skb->ip_summed == CHECKSUM_PARTIAL)
+				config0 |= IP_CHECKSUM | UDP_CHECKSUM | TCP_CHECKSUM;
 #endif
+
 			if (i == nr_frags) {
-				config |= LAST_SEGMENT;
+				config0 |= LAST_SEGMENT;
 				tx_ring->buff_tab[index] = skb;
 			}
 			if (index == TX_DESCS - 1)
-				config |= END_OF_RING;
+				config0 |= END_OF_RING;
 			tx_desc->config0 = config;
 
 			if (index == 0) {
@@ -789,25 +781,17 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 		tx_desc->pmap = pmap;
 		tx_ring->phys_tab[index] = phys;
 
+
+		config0 = FIRST_SEGMENT | FORCE_ROUTE | len;
 #ifdef HW_CHECKSUM
-		if (index == TX_DESCS - 1) {
-			tx_desc->config0 = END_OF_RING | FIRST_SEGMENT |
-				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
-				   	TCP_CHECKSUM | len;
-		} else {
-			tx_desc->config0 = FIRST_SEGMENT |
-				   	FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
-				   	TCP_CHECKSUM | len;
-		}
-#else
-		if (index == TX_DESCS - 1) {
-			tx_desc->config0 = END_OF_RING | FIRST_SEGMENT |
-				   	FORCE_ROUTE | len;
-		} else {
-			tx_desc->config0 = FIRST_SEGMENT |
-				   	FORCE_ROUTE | len;
-		}
+		if (skb->ip_summed == CHECKSUM_PARTIAL)
+			config0|= IP_CHECKSUM | UDP_CHECKSUM | TCP_CHECKSUM;
 #endif
+		if (index == TX_DESCS - 1) {
+			config0| = END_OF_RING;
+		}
+		tx_desc->config0 = config0;
+
 	}
 
 	mb();
