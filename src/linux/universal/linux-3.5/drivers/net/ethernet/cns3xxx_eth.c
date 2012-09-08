@@ -1233,8 +1233,11 @@ static int __devinit eth_init_one(struct platform_device *pdev)
 		dev->netdev_ops = &cns3xxx_netdev_ops;
 		dev->ethtool_ops = &cns3xxx_ethtool_ops;
 		dev->tx_queue_len = 1000;
+#ifdef HW_CHECKSUM
 		dev->features = NETIF_F_IP_CSUM | NETIF_F_SG;
-
+#else
+		dev->features = NETIF_F_SG;
+#endif
 		switch_port_tab[port->id] = port;
 		memcpy(dev->dev_addr, &plat->hwaddr[i], ETH_ALEN);
 
