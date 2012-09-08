@@ -36,8 +36,8 @@
 #define RX_POOL_ALLOC_SIZE (sizeof(struct rx_desc) * RX_DESCS)
 #define TX_POOL_ALLOC_SIZE (sizeof(struct tx_desc) * TX_DESCS)
 #define REGS_SIZE 336
-#define MAX_MRU (1536 + SKB_DMA_REALIGN)
-#define CNS3XXX_MAX_MTU (1536)
+#define CNS3XXX_MAX_MTU (9600)
+#define MAX_MRU (CNS3XXX_MAX_MTU + SKB_DMA_REALIGN)
 
 #define NAPI_WEIGHT 64
 
@@ -1155,6 +1155,10 @@ static int __devinit eth_init_one(struct platform_device *pdev)
 		err = -EBUSY;
 		goto err_free;
 	}
+	temp = __raw_readl(&sw->regs->phy_auto_addr);
+	temp &= ~(3 << 30);
+	temp |= (3 << 30); // maximum frame length: 9600 bytes
+	__raw_writel(temp, &sw->regs->phy_auto_addr);
 
 	for (i = 0; i < 4; i++) {
 		temp = __raw_readl(&sw->regs->mac_cfg[i]);
