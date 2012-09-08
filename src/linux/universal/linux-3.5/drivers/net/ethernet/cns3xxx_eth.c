@@ -724,7 +724,7 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 			config0|= IP_CHECKSUM | UDP_CHECKSUM | TCP_CHECKSUM;
 #endif
 		if (index == TX_DESCS - 1) {
-			config0| = END_OF_RING;
+			config0 |= END_OF_RING;
 		}
 		tx_desc->config0 = config0;
 
@@ -760,7 +760,7 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 			}
 			if (index == TX_DESCS - 1)
 				config0 |= END_OF_RING;
-			tx_desc->config0 = config;
+			tx_desc->config0 = config0;
 
 			if (index == 0) {
 				index = TX_DESCS - 1;
@@ -788,7 +788,7 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 			config0|= IP_CHECKSUM | UDP_CHECKSUM | TCP_CHECKSUM;
 #endif
 		if (index == TX_DESCS - 1) {
-			config0| = END_OF_RING;
+			config0 |= END_OF_RING;
 		}
 		tx_desc->config0 = config0;
 
