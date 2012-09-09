@@ -1142,11 +1142,11 @@ static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
 	new_mtu = 0;
 	for (i = 0; i < 3; i++) {
 		if (switch_port_tab[i]) {
-			if (!(plat->ports & (1 << i))) {
-				continue;
-			}
 			if (switch_port_tab[i]->mtu > new_mtu)
+			{
+				printk(KERN_INFO "port %d has higher mtu, reassign to %d\n",i,switch_port_tab[i]->mtu);
 				new_mtu = switch_port_tab[i]->mtu;
+			}
 		}
 	}
 
