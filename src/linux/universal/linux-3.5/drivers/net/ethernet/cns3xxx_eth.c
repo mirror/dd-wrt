@@ -607,6 +607,11 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		dev = switch_port_tab[desc->sp]->netdev;
 
 		length = desc->sdl;
+		if (length>sw->mtu)
+		    {
+		    printk(KERN_INFO "bug, received frame is bigger than %d (%d)\n",sw->mtu,length)
+		    length = sw->mtu;
+		    }
 		/* process received frame */
 		dma_unmap_single(&dev->dev, rx_ring->phys_tab[i],
 				 length, DMA_FROM_DEVICE);
@@ -1137,6 +1142,9 @@ static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
 	new_mtu = 0;
 	for (i = 0; i < 3; i++) {
 		if (switch_port_tab[i]) {
+			if (!(plat->ports & (1 << i))) {
+				continue;
+			}
 			if (switch_port_tab[i]->mtu > new_mtu)
 				new_mtu = switch_port_tab[i]->mtu;
 		}
@@ -1170,6 +1178,7 @@ static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
 				phys = dma_map_single(NULL, skb->data,
 					    new_mtu, DMA_FROM_DEVICE);
 				desc->sdp = phys; 
+				desc->sdl = new_mtu;
 				if (dma_mapping_error(NULL, desc->sdp)) {
 					dev_kfree_skb(skb);
 					skb = NULL;
