@@ -13,7 +13,7 @@ refuse-chap
 refuse-mschap
 nobsdcomp
 nodeflate
-#mppe required,stateless
+#require-mppe
 mppc
 lcp-echo-failure 30
 lcp-echo-interval 2
