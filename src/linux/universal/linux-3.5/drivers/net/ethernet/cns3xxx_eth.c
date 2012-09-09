@@ -37,6 +37,7 @@
 #define TX_POOL_ALLOC_SIZE (sizeof(struct tx_desc) * TX_DESCS)
 #define REGS_SIZE 336
 #define MAX_MRU 9500
+#define MAX_RX 9500 + 36 + SKB_DMA_REALIGN
 
 #define NAPI_WEIGHT 64
 
@@ -514,12 +515,12 @@ static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 	u32 mtu = sw->mtu;
 
 	for (received += rx_ring->alloc_count; received > 0; received--) {
-		if ((skb = dev_alloc_skb(mtu))) {
+		if ((skb = dev_alloc_skb(MAX_RX))) {
 			if (SKB_DMA_REALIGN)
 				skb_reserve(skb, SKB_DMA_REALIGN);
 			skb_reserve(skb, NET_IP_ALIGN);
 			phys = dma_map_single(NULL, skb->data,
-				    mtu, DMA_FROM_DEVICE);
+				    MAX_RX, DMA_FROM_DEVICE);
 			if (dma_mapping_error(NULL, phys)) {
 				dev_kfree_skb(skb);
 				/* Failed to map, better luck next time */
@@ -607,11 +608,6 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		dev = switch_port_tab[desc->sp]->netdev;
 
 		length = desc->sdl;
-		if (length>sw->mtu)
-		    {
-		    printk(KERN_INFO "bug, received frame is bigger than %d (%d)\n",sw->mtu,length);
-		    length = sw->mtu;
-		    }
 		/* process received frame */
 		dma_unmap_single(&dev->dev, rx_ring->phys_tab[i],
 				 length, DMA_FROM_DEVICE);
@@ -886,7 +882,7 @@ static int init_rings(struct sw *sw)
 	for (i = 0; i < RX_DESCS; i++) {
 		struct rx_desc *desc = &(rx_ring)->desc[i];
 		struct sk_buff *skb;
-		if (!(skb = dev_alloc_skb(mtu)))
+		if (!(skb = dev_alloc_skb(MAX_RX)))
 			return -ENOMEM;
 		if (SKB_DMA_REALIGN)
 			skb_reserve(skb, SKB_DMA_REALIGN);
@@ -898,7 +894,7 @@ static int init_rings(struct sw *sw)
 		desc->lsd = 1;
 
 		desc->sdp = dma_map_single(NULL, skb->data,
-					    mtu, DMA_FROM_DEVICE);
+					    MAX_RX, DMA_FROM_DEVICE);
 		if (dma_mapping_error(NULL, desc->sdp)) {
 			return -EIO;
 		}
@@ -944,7 +940,7 @@ static void destroy_rings(struct sw *sw)
 			if (skb) {
 				dma_unmap_single(NULL,
 						 desc->sdp,
-						 sw->mtu, DMA_FROM_DEVICE);
+						 MAX_RX, DMA_FROM_DEVICE);
 				dev_kfree_skb(skb);
 			}
 		}
@@ -1171,12 +1167,12 @@ static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
 					 DMA_FROM_DEVICE);
 			dev_kfree_skb(skb);
 
-			if ((skb = dev_alloc_skb(new_mtu))) {
+			if ((skb = dev_alloc_skb(MAX_RX))) {
 				if (SKB_DMA_REALIGN)
 					skb_reserve(skb, SKB_DMA_REALIGN);
 				skb_reserve(skb, NET_IP_ALIGN);
 				phys = dma_map_single(NULL, skb->data,
-					    new_mtu, DMA_FROM_DEVICE);
+					    MAX_RX, DMA_FROM_DEVICE);
 				desc->sdp = phys; 
 				desc->sdl = new_mtu;
 				if (dma_mapping_error(NULL, desc->sdp)) {
