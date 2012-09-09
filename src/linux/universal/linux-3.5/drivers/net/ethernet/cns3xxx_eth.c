@@ -283,6 +283,7 @@ struct sw {
 	struct cns3xxx_plat_info *plat;
 	struct _tx_ring *tx_ring;
 	struct _rx_ring *rx_ring;
+	u32 mtu;
 };
 
 struct port {
@@ -291,6 +292,7 @@ struct port {
 	struct sw *sw;
 	int id;			/* logical port ID */
 	int speed, duplex;
+	u32 mtu;
 };
 
 static spinlock_t mdio_lock;
@@ -510,14 +512,15 @@ static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 	struct rx_desc *desc = &(rx_ring)->desc[i];
 	struct sk_buff *skb;
 	unsigned int phys;
+	u32 mtu = sw->mtu;
 
 	for (received += rx_ring->alloc_count; received > 0; received--) {
-		if ((skb = dev_alloc_skb(MAX_MRU))) {
+		if ((skb = dev_alloc_skb(mtu))) {
 			if (SKB_DMA_REALIGN)
 				skb_reserve(skb, SKB_DMA_REALIGN);
 			skb_reserve(skb, NET_IP_ALIGN);
 			phys = dma_map_single(NULL, skb->data,
-				    CNS3XXX_MAX_MTU, DMA_FROM_DEVICE);
+				    mtu, DMA_FROM_DEVICE);
 			if (dma_mapping_error(NULL, phys)) {
 				dev_kfree_skb(skb);
 				/* Failed to map, better luck next time */
@@ -535,10 +538,10 @@ static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 		if (i == RX_DESCS - 1) {
 			i = 0;
 			desc->config0 = END_OF_RING | FIRST_SEGMENT |
-					LAST_SEGMENT | CNS3XXX_MAX_MTU;
+					LAST_SEGMENT | mtu;
 			desc = &(rx_ring)->desc[i];
 		} else {
-			desc->config0 = FIRST_SEGMENT | LAST_SEGMENT | CNS3XXX_MAX_MTU;
+			desc->config0 = FIRST_SEGMENT | LAST_SEGMENT | mtu;
 			i++;
 			desc++;
 		}
@@ -684,7 +687,7 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 	if (pmap == 8)
 		pmap = (1 << 4);
 
-	if (skb->len > CNS3XXX_MAX_MTU) {
+	if (skb->len > sw->mtu) {
 		dev_kfree_skb(skb);
 		dev->stats.tx_errors++;
 		return NETDEV_TX_OK;
@@ -858,7 +861,7 @@ static int init_rings(struct sw *sw)
 	int i;
 	struct _rx_ring *rx_ring = sw->rx_ring;
 	struct _tx_ring *tx_ring = sw->tx_ring;
-
+	u32 mtu = sw->mtu;
 	__raw_writel(0, &sw->regs->fs_dma_ctrl0);
 	__raw_writel(TS_SUSPEND | FS_SUSPEND, &sw->regs->dma_auto_poll_cfg);
 	__raw_writel(QUEUE_THRESHOLD, &sw->regs->dma_ring_ctrl);
@@ -879,19 +882,19 @@ static int init_rings(struct sw *sw)
 	for (i = 0; i < RX_DESCS; i++) {
 		struct rx_desc *desc = &(rx_ring)->desc[i];
 		struct sk_buff *skb;
-		if (!(skb = dev_alloc_skb(MAX_MRU)))
+		if (!(skb = dev_alloc_skb(mtu)))
 			return -ENOMEM;
 		if (SKB_DMA_REALIGN)
 			skb_reserve(skb, SKB_DMA_REALIGN);
 		skb_reserve(skb, NET_IP_ALIGN);
-		desc->sdl = CNS3XXX_MAX_MTU;
+		desc->sdl = mtu;
 		if (i == (RX_DESCS - 1))
 			desc->eor = 1;
 		desc->fsd = 1;
 		desc->lsd = 1;
 
 		desc->sdp = dma_map_single(NULL, skb->data,
-					    CNS3XXX_MAX_MTU, DMA_FROM_DEVICE);
+					    mtu, DMA_FROM_DEVICE);
 		if (dma_mapping_error(NULL, desc->sdp)) {
 			return -EIO;
 		}
@@ -937,7 +940,7 @@ static void destroy_rings(struct sw *sw)
 			if (skb) {
 				dma_unmap_single(NULL,
 						 desc->sdp,
-						 CNS3XXX_MAX_MTU, DMA_FROM_DEVICE);
+						 sw->mtu, DMA_FROM_DEVICE);
 				dev_kfree_skb(skb);
 			}
 		}
@@ -1114,13 +1117,97 @@ static int eth_set_mac(struct net_device *netdev, void *p)
 	return 0;
 }
 
+static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
+{
+	struct port *port = netdev_priv(netdev);
+	struct sw *sw = port->sw;
+	u32 temp;
+	int i;
+	struct _rx_ring *rx_ring = sw->rx_ring;
+	struct rx_desc *desc;
+	struct sk_buff *skb;
+
+	if (new_mtu > MAX_MRU)
+		return -EINVAL;
+
+	netdev->mtu = new_mtu;
+
+	new_mtu += 36 + SKB_DMA_REALIGN;
+	port->mtu = new_mtu;
+
+	new_mtu = 0;
+	for (i = 0; i < 3; i++) {
+		if (switch_port_tab[i]) {
+			if (switch_port_tab[i]->mtu > new_mtu)
+				new_mtu = switch_port_tab[i]->mtu;
+		}
+	}
+
+
+	if (new_mtu == sw->mtu)
+		return 0;
+
+	disable_irq(IRQ_CNS3XXX_SW_R0RXC);
+
+	sw->mtu = new_mtu;
+
+	/* Disable DMA */
+	__raw_writel(TS_SUSPEND | FS_SUSPEND, &sw->regs->dma_auto_poll_cfg);
+
+	for (i = 0; i < RX_DESCS; i++) {
+		desc = &(rx_ring)->desc[i];
+		/* Check if we own it, if we do, it will get set correctly
+		 * when it is re-used */
+		if (!desc->cown) {
+			skb = rx_ring->buff_tab[i];
+			dma_unmap_single(NULL, desc->sdp, desc->sdl,
+					 DMA_FROM_DEVICE);
+			dev_kfree_skb(skb);
+
+			if ((skb = dev_alloc_skb(new_mtu))) {
+				if (SKB_DMA_REALIGN)
+					skb_reserve(skb, SKB_DMA_REALIGN);
+				skb_reserve(skb, NET_IP_ALIGN);
+				desc->sdp = dma_map_single(NULL, skb->data,
+					    new_mtu, DMA_FROM_DEVICE);
+				if (dma_mapping_error(NULL, desc->sdp)) {
+					dev_kfree_skb(skb);
+					skb = NULL;
+				}
+			}
+
+			/* put the new buffer on RX-free queue */
+			rx_ring->buff_tab[i] = skb;
+
+			if (i == RX_DESCS - 1)
+				desc->config0 = END_OF_RING | FIRST_SEGMENT |
+						LAST_SEGMENT | new_mtu;
+			else
+				desc->config0 = FIRST_SEGMENT |
+						LAST_SEGMENT | new_mtu;
+		}
+	}
+
+	/* Re-ENABLE DMA */
+	temp = __raw_readl(&sw->regs->dma_auto_poll_cfg);
+	temp &= ~(TS_SUSPEND | FS_SUSPEND);
+	__raw_writel(temp, &sw->regs->dma_auto_poll_cfg);
+
+	__raw_writel((TS_POLL_EN | FS_POLL_EN), &sw->regs->dma_auto_poll_cfg);
+
+	enable_irq(IRQ_CNS3XXX_SW_R0RXC);
+
+	return 0;
+}
+
+
 static const struct net_device_ops cns3xxx_netdev_ops = {
 	.ndo_open = eth_open,
 	.ndo_stop = eth_close,
 	.ndo_start_xmit = eth_xmit,
 	.ndo_set_rx_mode = eth_rx_mode,
 	.ndo_do_ioctl = eth_ioctl,
-	.ndo_change_mtu = eth_change_mtu,
+	.ndo_change_mtu = cns3xxx_change_mtu,
 	.ndo_set_mac_address = eth_set_mac,
 	.ndo_validate_addr = eth_validate_addr,
 };
@@ -1155,6 +1242,9 @@ static int __devinit eth_init_one(struct platform_device *pdev)
 		err = -EBUSY;
 		goto err_free;
 	}
+
+	sw->mtu = 1536 + SKB_DMA_REALIGN;
+
 	temp = __raw_readl(&sw->regs->phy_auto_addr);
 	temp &= ~(3 << 30);
 	temp |= (3 << 30); // maximum frame length: 9600 bytes
@@ -1213,6 +1303,7 @@ static int __devinit eth_init_one(struct platform_device *pdev)
 		else
 			port->id = i;
 		port->sw = sw;
+		port->mtu = sw->mtu;
 
 		temp = __raw_readl(&sw->regs->mac_cfg[port->id]);
 		temp |= (PORT_DISABLE | PORT_BLOCK_STATE | PORT_LEARN_DIS);
