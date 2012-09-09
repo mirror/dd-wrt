@@ -1125,7 +1125,7 @@ static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
 	struct _rx_ring *rx_ring = sw->rx_ring;
 	struct rx_desc *desc;
 	struct sk_buff *skb;
-	unsigned int phys;
+	unsigned int phys = 0;
 	if (new_mtu > MAX_MRU)
 		return -EINVAL;
 
