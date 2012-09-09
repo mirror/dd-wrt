@@ -219,7 +219,7 @@ static void do_pppoeconfig(FILE * fp)
 	else
 		fprintf(fp, "mppc\n");
 	if (nvram_default_match("pppoeserver_encryption", "1", "0"))
-		fprintf(fp, "mppe required,no56,no40,stateless\n");
+		fprintf(fp, "require-mppe-128\n");
 	else
 		fprintf(fp, "nomppe\n");
 	fprintf(fp, "auth\n" 

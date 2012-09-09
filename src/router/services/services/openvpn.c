@@ -391,12 +391,9 @@ void start_openvpn(void)
 		}
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
-		fprintf(fp, "ip route add default via %s table 10\n",
-			nvram_safe_get("wan_gateway"));
-		//sort -r /var/log/openvpncl |grep gateway		
-		fprintf(fp,
+		fprintf(fp, "ip route add default via $ifconfig_remote table 10\n"
 			"for IP in `cat /tmp/openvpncl/policy_ips` ; do\n"
-			"	ip rule add from $IP table 10\n" "done\n");
+			"\t ip rule add from $IP table 10\n" "done\n");
 	}
 	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
 		&& nvram_match("openvpncl_tuntap", "tap")
@@ -438,21 +435,16 @@ void start_openvpn(void)
 		}
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
-		fprintf(fp, "ip route del default via %s table 10\n",
-			nvram_safe_get("wan_gateway"));
-		fprintf(fp,
+		fprintf(fp, "ip route del default via $ifconfig_remote table 10\n"
 			"for IP in `cat /tmp/openvpn/policy_ips` ; do\n"
-			"	ip rule del from $IP table 10\n" "done\n");
+			"\t ip rule del from $IP table 10\n" "done\n");
 	}
 	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
 		&& nvram_match("openvpncl_tuntap", "tap")
 		&& nvram_match("openvpncl_bridge", "1")) {
 		fprintf(fp, 
 			"ebtables -D FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
-			"ebtables -D OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
-			"#rmmod ebt_pkttype\n"
-			"#rmmod ebtable_filter\n"
-			"#rmmod ebtables\n");
+			"ebtables -D OUTPUT -o tap1 --pkttype-type multicast -j DROP\n");
 	}
 	fclose(fp);
 

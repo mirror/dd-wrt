@@ -123,7 +123,7 @@ static void create_pptp_config(char *servername, char *username)
 		fprintf(fp, "noccp\n");	// Disable CCP (Compression Control
 		// Protocol)
 	} else {
-		fprintf(fp, "mppe required,stateless\n");
+		fprintf(fp, "require-mppe\n");
 	}
 	fprintf(fp, "default-asyncmap\n");	// Disable asyncmap negotiation
 	fprintf(fp, "nopcomp\n");	// Disable protocol field compression
