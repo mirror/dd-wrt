@@ -1169,7 +1169,7 @@ static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
 				skb_reserve(skb, NET_IP_ALIGN);
 				phys = dma_map_single(NULL, skb->data,
 					    new_mtu, DMA_FROM_DEVICE);
-				desc->sdp = phys 
+				desc->sdp = phys; 
 				if (dma_mapping_error(NULL, desc->sdp)) {
 					dev_kfree_skb(skb);
 					skb = NULL;
