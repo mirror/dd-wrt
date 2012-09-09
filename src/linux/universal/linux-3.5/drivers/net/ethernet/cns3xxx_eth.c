@@ -36,8 +36,7 @@
 #define RX_POOL_ALLOC_SIZE (sizeof(struct rx_desc) * RX_DESCS)
 #define TX_POOL_ALLOC_SIZE (sizeof(struct tx_desc) * TX_DESCS)
 #define REGS_SIZE 336
-#define CNS3XXX_MAX_MTU (9600)
-#define MAX_MRU (CNS3XXX_MAX_MTU + SKB_DMA_REALIGN)
+#define MAX_MRU 9500
 
 #define NAPI_WEIGHT 64
 
@@ -1126,7 +1125,7 @@ static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
 	struct _rx_ring *rx_ring = sw->rx_ring;
 	struct rx_desc *desc;
 	struct sk_buff *skb;
-
+	unsigned int phys;
 	if (new_mtu > MAX_MRU)
 		return -EINVAL;
 
@@ -1168,16 +1167,20 @@ static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
 				if (SKB_DMA_REALIGN)
 					skb_reserve(skb, SKB_DMA_REALIGN);
 				skb_reserve(skb, NET_IP_ALIGN);
-				desc->sdp = dma_map_single(NULL, skb->data,
+				phys = dma_map_single(NULL, skb->data,
 					    new_mtu, DMA_FROM_DEVICE);
+				desc->sdp = phys 
 				if (dma_mapping_error(NULL, desc->sdp)) {
 					dev_kfree_skb(skb);
 					skb = NULL;
 				}
+			} else {
+				printk(KERN_INFO "error while allocating skb\n");
 			}
 
 			/* put the new buffer on RX-free queue */
 			rx_ring->buff_tab[i] = skb;
+			rx_ring->phys_tab[i] = phys;
 
 			if (i == RX_DESCS - 1)
 				desc->config0 = END_OF_RING | FIRST_SEGMENT |
