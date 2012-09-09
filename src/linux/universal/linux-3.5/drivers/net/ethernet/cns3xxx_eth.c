@@ -609,7 +609,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		length = desc->sdl;
 		if (length>sw->mtu)
 		    {
-		    printk(KERN_INFO "bug, received frame is bigger than %d (%d)\n",sw->mtu,length)
+		    printk(KERN_INFO "bug, received frame is bigger than %d (%d)\n",sw->mtu,length);
 		    length = sw->mtu;
 		    }
 		/* process received frame */
