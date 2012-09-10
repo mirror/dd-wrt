@@ -530,7 +530,7 @@ void start_nas_single(char *type, char *prefix)
 					    nvram_safe_get
 					    (ssid), "-w",
 					    sec_mode, "-g",
-					    nvram_safe_get(rekey), NULL};
+					    nvram_default_get(rekey,"3600"), NULL};
 			} else {
 				argv = (char *[]) {
 				"nas", "-P", pidfile, "-H",
@@ -541,7 +541,7 @@ void start_nas_single(char *type, char *prefix)
 					    nvram_safe_get
 					    (ssid), "-w",
 					    sec_mode, "-g",
-					    nvram_safe_get(rekey), NULL};
+					    nvram_default_get(rekey,"3600"), NULL};
 
 			}
 			_evalpid(argv, NULL, 0, &pid);
@@ -561,7 +561,7 @@ void start_nas_single(char *type, char *prefix)
 						nvram_safe_get(ssid),
 						"-w",
 						sec_mode, "-g",
-						nvram_safe_get(rekey), "-h",
+						nvram_default_get(rekey,"3600"), "-h",
 						nvram_safe_get(radius), "-p", nvram_safe_get(port),	// "-t", 
 						// //radius 
 						// rekey 
@@ -579,7 +579,7 @@ void start_nas_single(char *type, char *prefix)
 						nvram_safe_get(ssid),
 						"-w",
 						sec_mode, "-g",
-						nvram_safe_get(rekey), "-h",
+						nvram_default_get(rekey,"3600"), "-h",
 						nvram_safe_get(radius), "-p", nvram_safe_get(port),	// "-t", 
 						// //radius 
 						// rekey 
@@ -650,7 +650,7 @@ void start_nas_single(char *type, char *prefix)
 						nvram_safe_get(ssid),
 						"-w",
 						sec_mode, "-g",
-						nvram_safe_get(rekey),
+						nvram_default_get(rekey,"3600"),
 						NULL
 					};
 					_evalpid(argv, NULL, 0, &pid);
@@ -664,7 +664,7 @@ void start_nas_single(char *type, char *prefix)
 						nvram_safe_get(ssid),
 						"-w",
 						sec_mode, "-g",
-						nvram_safe_get(rekey),
+						nvram_default_get(rekey,"3600"),
 						NULL
 					};
 					_evalpid(argv, NULL, 0, &pid);
