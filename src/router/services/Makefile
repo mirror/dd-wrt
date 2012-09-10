@@ -14,14 +14,14 @@ endif
 endif
 
 BCFLAGS	= $(COPTS) -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd 
-BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/wl/bcmwifi/include
+BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/shared/bcmwifi/include
 BCFLAGS  += -fpic -I$(TOP)/services/include
 
 CFLAGS += $(BCFLAGS)
 
 HCFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
 HCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
-HCFLAGS  += -fpic -I$(TOP)/services/include -I$(LINUXDIR)/brcm/wl/bcmwifi/include
+HCFLAGS  += -fpic -I$(TOP)/services/include -I$(LINUXDIR)/brcm/shared/bcmwifi/include
 
 
 OBJS = services.o network.o firewall.o mssid.o wshaper.o ddns.o devinit.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
@@ -821,6 +821,9 @@ CFLAGS_EXTRA += -DHAVE_UBNTM
 endif
 ifeq ($(CONFIG_WHRHPGN),y)
 CFLAGS_EXTRA += -DHAVE_WHRHPGN
+endif
+ifeq ($(CONFIG_80211AC),y)
+CFLAGS_EXTRA += -DHAVE_80211AC
 endif
 
 ifeq ($(CONFIG_BCMMODERN),y)
