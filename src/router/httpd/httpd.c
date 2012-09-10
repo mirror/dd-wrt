@@ -287,7 +287,7 @@ void send_authenticate(char *realm)
 	(void)snprintf(header, sizeof(header),
 		       "WWW-Authenticate: Basic realm=\"%s\"", realm);
 	send_error(401, "Unauthorized", header,
-#ifdef HAVE_BUFFALO
+#if defined(HAVE_BUFFALO) && defined(HAVE_IAS)
 		   "Authorization required. please note that the default username is \"admin\" in all newer releases");
 #else
 		   "Authorization required. please note that the default username is \"root\" in all newer releases");
