@@ -4,7 +4,7 @@ PASS=$(/usr/sbin/nvram get pptpd_client_srvpass)
 SEC=$(/usr/sbin/nvram get pptpd_client_srvsec)
 MTU=$(/usr/sbin/nvram get pptpd_client_srvmtu)
 MRU=$(/usr/sbin/nvram get pptpd_client_srvmru)
-sleep 30
+sleep 10
 rm /tmp/pptpd_client/ -R
 mkdir /tmp/pptpd_client
 mkdir /tmp/ppp
