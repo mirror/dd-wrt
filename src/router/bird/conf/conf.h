@@ -12,7 +12,6 @@
 #include "lib/resource.h"
 #include "lib/timer.h"
 
-#define BIRD_FNAME_MAX 255	/* Would be better to use some UNIX define */
 
 /* Configuration structure */
 
@@ -91,7 +90,6 @@ void cfg_copy_list(list *dest, list *src, unsigned node_size);
 /* Lexer */
 
 extern int (*cf_read_hook)(byte *buf, unsigned int max, int fd);
-extern int (*cf_open_hook)(char *filename);
 
 struct symbol {
   struct symbol *next;
@@ -117,12 +115,14 @@ struct symbol {
 #define SYM_VARIABLE 0x100	/* 0x100-0x1ff are variable types */
 
 struct include_file_stack {
-        void	*stack; /* Internal lexer state */
-        unsigned int    conf_lino; /* Current file lineno (at include) */
-        char            conf_fname[BIRD_FNAME_MAX]; /* Current file name */
-        int             conf_fd; /* Current file descriptor */
-        struct include_file_stack *prev;
-        struct include_file_stack *next;
+  void *buffer;				/* Internal lexer state */
+  char *file_name;			/* File name */
+  int fd;				/* File descriptor */
+  int lino;				/* Current line num */
+  int depth;				/* Include depth, 0 = cannot include */
+
+  struct include_file_stack *prev;	/* Previous record in stack */
+  struct include_file_stack *up;	/* Parent (who included this file) */
 };
 
 extern struct include_file_stack *ifs;

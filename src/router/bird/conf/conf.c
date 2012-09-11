@@ -357,8 +357,8 @@ cf_error(char *msg, ...)
   if (bvsnprintf(buf, sizeof(buf), msg, args) < 0)
     strcpy(buf, "<bug: error message too long>");
   new_config->err_msg = cfg_strdup(buf);
-  new_config->err_lino = ifs->conf_lino;
-  new_config->err_file_name = ifs->conf_fname;
+  new_config->err_lino = ifs->lino;
+  new_config->err_file_name = ifs->file_name;
   longjmp(conf_jmpbuf, 1);
 }
 
