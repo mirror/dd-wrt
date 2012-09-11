@@ -95,12 +95,6 @@
 #define NR_MACGROUPS	5
 
 /*
- * Target table for port-forward related rules
- */
-#define FWDTARGET_NAT		1
-#define FWDTARGET_MANGLE	2
-
-/*
  * MARK number in mangle table 
  */
 #define MARK_OFFSET 	0x10
@@ -276,7 +270,7 @@ static int ip2cclass(char *ipaddr, char *new, int count)
 	return snprintf(new, count, "%d.%d.%d.", ip[0], ip[1], ip[2]);
 }
 
-static void parse_port_forward(char *wordlist, unsigned int target)
+static void parse_port_forward(char *wordlist)
 {
 	char var[256], *next;
 	char *name, *enable, *proto, *port, *ip;
@@ -329,26 +323,15 @@ static void parse_port_forward(char *wordlist, unsigned int target)
 			bzero(buff, sizeof(buff));
 
 			if (flag_dis == 0) {
-				switch (target)
-				{
-					case FWDTARGET_MANGLE:
-						save2file
-							("-A PREROUTING -p tcp -d %s --dport %s -j MARK --set-mark %s\n", 
-							 wanaddr, port, get_NFServiceMark("FORWARD", 1));
-						break;
-						
-					case FWDTARGET_NAT:
-						save2file
-							("-A PREROUTING -p tcp -d %s --dport %s "
-							 "-j DNAT --to-destination %s\n", wanaddr,
-							 port, ip);
+				save2file
+				    ("-A PREROUTING -p tcp -d %s --dport %s "
+				     "-j DNAT --to-destination %s\n", wanaddr,
+				     port, ip);
 
-						snprintf(buff, sizeof(buff),
-								 "-A FORWARD -p tcp "
-								 "-m tcp -d %s --dport %s -j %s\n", ip,
-								 port, log_accept);
-						break;
-				}
+				snprintf(buff, sizeof(buff),
+					 "-A FORWARD -p tcp "
+					 "-m tcp -d %s --dport %s -j %s\n", ip,
+					 port, log_accept);
 			} else {
 				if ((!dmzenable)
 				    || (dmzenable
@@ -370,26 +353,15 @@ static void parse_port_forward(char *wordlist, unsigned int target)
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
 			bzero(buff, sizeof(buff));
 			if (flag_dis == 0) {
-				switch (target)
-				{
-					case FWDTARGET_MANGLE:
-						save2file
-							("-A PREROUTING -p udp -d %s --dport %s -j MARK --set-mark %s\n", wanaddr,
-							 port, get_NFServiceMark("FORWARD", 1));
-						break;
-						
-					case FWDTARGET_NAT:
-						save2file
-							("-A PREROUTING -p udp -d %s --dport %s "
-							 "-j DNAT --to-destination %s\n", wanaddr,
-							 port, ip);
+				save2file
+				    ("-A PREROUTING -p udp -d %s --dport %s "
+				     "-j DNAT --to-destination %s\n", wanaddr,
+				     port, ip);
 
-						snprintf(buff, sizeof(buff),
-								 "-A FORWARD -p udp "
-								 "-m udp -d %s --dport %s -j %s\n", ip,
-								 port, log_accept);
-						break;
-				}
+				snprintf(buff, sizeof(buff),
+					 "-A FORWARD -p udp "
+					 "-m udp -d %s --dport %s -j %s\n", ip,
+					 port, log_accept);
 			} else {
 				if ((!dmzenable)
 				    || (dmzenable
@@ -411,7 +383,7 @@ static void parse_port_forward(char *wordlist, unsigned int target)
 }
 
 #ifdef HAVE_UPNP
-static void parse_upnp_forward(unsigned int target)
+static void parse_upnp_forward()
 {
 	char name[32];		// = "forward_portXXXXXXXXXX";
 	char value[1000];
@@ -520,53 +492,35 @@ static void parse_upnp_forward(unsigned int target)
 		}
 
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
-			switch(target) 
-			{
-				case FWDTARGET_MANGLE:
-					save2file
-						("-A PREROUTING -i %s -p tcp -d %s --dport %s "
-						 "-j MARK --set-mark %s\n", 
-						 wan, wanaddr, wan_port0, get_NFServiceMark("FORWARD", 1));
-					break;
+			save2file
+			    ("-A PREROUTING -i %s -p tcp -d %s --dport %s "
+			     "-j DNAT --to-destination %s%d:%s\n", wan, wanaddr,
+			     wan_port0, lan_cclass, get_single_ip(lan_ipaddr,
+								  3),
+			     lan_port0);
 
-				case FWDTARGET_NAT:
-					save2file
-						("-A PREROUTING -i %s -p tcp -d %s --dport %s "
-						 "-j DNAT --to-destination %s%d:%s\n", wan, wanaddr,
-						 wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
+			snprintf(buff, sizeof(buff), "-A FORWARD -p tcp "
+				 "-m tcp -d %s%d --dport %s -j %s\n",
+				 lan_cclass, get_single_ip(lan_ipaddr, 3),
+				 lan_port0, log_accept);
 
-					snprintf(buff, sizeof(buff), "-A FORWARD -p tcp "
-							 "-m tcp -d %s%d --dport %s -j %s\n",
-							 lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
-					break;
-			}
-	
 			count += strlen(buff) + 1;
 			suspense = realloc(suspense, count);
 			strcat(suspense, buff);
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
-			switch (target)
-			{
-				case FWDTARGET_MANGLE:
-					save2file
-						("-A PREROUTING -i %s -p udp -d %s --dport %s "
-						 "-j MARK --set-mark %s\n", wan, wanaddr,
-						 wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), get_NFServiceMark("FORWARD", 1));
-					break;
-					
-				case FWDTARGET_NAT:
-					save2file
-						("-A PREROUTING -i %s -p udp -d %s --dport %s "
-						 "-j DNAT --to-destination %s%d:%s\n", 
-						 wan, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
+			save2file
+			    ("-A PREROUTING -i %s -p udp -d %s --dport %s "
+			     "-j DNAT --to-destination %s%d:%s\n", wan, wanaddr,
+			     wan_port0, lan_cclass, get_single_ip(lan_ipaddr,
+								  3),
+			     lan_port0);
 
-					snprintf(buff, sizeof(buff), "-A FORWARD -p udp "
-							 "-m udp -d %s%d --dport %s -j %s\n",
-							 lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
-					break;
-			}
-			
+			snprintf(buff, sizeof(buff), "-A FORWARD -p udp "
+				 "-m udp -d %s%d --dport %s -j %s\n",
+				 lan_cclass, get_single_ip(lan_ipaddr, 3),
+				 lan_port0, log_accept);
+
 			count += strlen(buff) + 1;
 			suspense = realloc(suspense, count);
 			strcat(suspense, buff);
@@ -575,46 +529,23 @@ static void parse_upnp_forward(unsigned int target)
 }
 #endif
 static void create_spec_forward(char *proto, char *src, char *wanaddr,
-				char *from, char *ip, char *to, unsigned int target)
+				char *from, char *ip, char *to)
 {
 	char buff[256];
 	if (src && strlen(src) > 0) {
-		switch (target)
-		{
-			case FWDTARGET_MANGLE:
-				save2file
-					("-A PREROUTING -p %s -m %s -s %s -d %s --dport %s -j MARK --set-mark %s\n",
-					 proto, proto, src, wanaddr, from, get_NFServiceMark("FORWARD", 1));
-				break;
-				
-			case FWDTARGET_NAT:
-				save2file
-					("-A PREROUTING -p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
-					 proto, proto, src, wanaddr, from, ip, to);
-				snprintf(buff, sizeof(buff),
-						 "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n",
-						 proto, proto, src, ip, to, log_accept);
-				break;
-		}
+		save2file
+		    ("-A PREROUTING -p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
+		     proto, proto, src, wanaddr, from, ip, to);
+		snprintf(buff, sizeof(buff),
+			 "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n",
+			 proto, proto, src, ip, to, log_accept);
 	} else {
-		switch (target)
-		{
-			case FWDTARGET_MANGLE:
-				save2file
-					("-A PREROUTING -p %s -m %s -d %s --dport %s -j MARK --set-mark %s\n",
-					 proto, proto, wanaddr, from, get_NFServiceMark("FORWARD", 1));
-				break;
-				
-			case FWDTARGET_NAT:
-				save2file
-				("-A PREROUTING -p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
-				 proto, proto, wanaddr, from, ip, to);
-		
-				snprintf(buff, sizeof(buff),
-						 "-A FORWARD -p %s -m %s -d %s --dport %s -j %s\n",
-						 proto, proto, ip, to, log_accept);
-				break;
-		}
+		save2file
+		    ("-A PREROUTING -p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s\n",
+		     proto, proto, wanaddr, from, ip, to);
+		snprintf(buff, sizeof(buff),
+			 "-A FORWARD -p %s -m %s -d %s --dport %s -j %s\n",
+			 proto, proto, ip, to, log_accept);
 	}
 	count += strlen(buff) + 1;
 	suspense = realloc(suspense, count);
@@ -622,11 +553,11 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr,
 
 }
 
-static void parse_spec_forward(char *wordlist, unsigned int target)
+static void parse_spec_forward(char *wordlist)
 {
 	char var[256], *next;
 	char *name, *enable, *proto, *from, *to, *ip, *src;
-//	char buff[256];
+	char buff[256];
 
 	/*
 	 * name:enable:proto:ext_port>ip:int_port
@@ -674,35 +605,11 @@ static void parse_spec_forward(char *wordlist, unsigned int target)
 		 */
 
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
-			create_spec_forward("tcp", src, wanaddr, from, ip, to, target);
+			create_spec_forward("tcp", src, wanaddr, from, ip, to);
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
-			create_spec_forward("udp", src, wanaddr, from, ip, to, target);
+			create_spec_forward("udp", src, wanaddr, from, ip, to);
 		}
-	}
-}
-
-static void mangle_prerouting(void)
-{
-	/*
-	 * Initiate suspense string for parse_port_forward() 
-	 */
-	suspense = malloc(1);
-	*suspense = 0;
-	count = 1;
-	
-	if (has_gateway()) {
-		/*
-		 * Port forwarding 
-		 */
-//#ifdef HAVE_UPNP
-//		parse_upnp_forward(FWDTARGET_MANGLE);
-//#endif
-		parse_spec_forward(nvram_safe_get("forward_spec"), FWDTARGET_MANGLE);
-		parse_port_forward(nvram_safe_get("forward_port"), FWDTARGET_MANGLE);
-		
-		save2file
-			("-A PREROUTING -j CONNMARK --save\n");
 	}
 }
 
@@ -824,10 +731,10 @@ static void nat_prerouting(void)
 		 * Port forwarding 
 		 */
 #ifdef HAVE_UPNP
-		parse_upnp_forward(FWDTARGET_NAT);
+		parse_upnp_forward();
 #endif
-		parse_spec_forward(nvram_safe_get("forward_spec"), FWDTARGET_NAT);
-		parse_port_forward(nvram_safe_get("forward_port"), FWDTARGET_NAT);
+		parse_spec_forward(nvram_safe_get("forward_spec"));
+		parse_port_forward(nvram_safe_get("forward_port"));
 		/*
 		 * DD-WRT addition by Eric Sauvageau 
 		 */
@@ -933,19 +840,26 @@ static void nat_postrouting(void)
 			    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
 			     wan_ifname_tun, inet_ntoa(ifaddr));
 		}
+		char *method = "MASQUERADE";
 
-		if (!nvram_match("block_loopback", "0")) {
+		if (nvram_match("block_loopback", "1"))
+			method = "DROP";
+
+		// lan_netmask 
+		// is valid
+		if (nvram_match("block_loopback", "0")) {
+			save2file
+			    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
+			     lanface);
+		} else {
 			if (!nvram_match("br0_nat", "0"))
 				save2file
-					("-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j DROP\n",
-					 lanface, lan_cclass, loopmask,
-					 lan_cclass, loopmask);
-		} else
-			save2file("-A POSTROUTING -m mark --mark %s -j MASQUERADE\n", 
-						get_NFServiceMark("FORWARD", 1));
-	
+				    ("-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j %s\n",
+				     lanface, lan_cclass, loopmask,
+				     lan_cclass, loopmask, method);
+		}
 		char *next;
-//		char dev[16];
+		char dev[16];
 		char var[80];
 
 		char vifs[256];
@@ -964,20 +878,36 @@ static void nat_postrouting(void)
 					if (nvram_match(nat, "1")) {
 						save2file
 						    ("-A POSTROUTING -s %s0/%d -o %s -j SNAT --to-source %s\n",
-						     nvram_nget("%s_ipaddr", var),
-						     getmask(nvram_nget("%s_netmask",var)), 
-							 wanface, wanaddr);
-						
-						if (nvram_match("block_loopback", "1")) {
+						     nvram_nget
+						     ("%s_ipaddr",
+						      var),
+						     getmask
+						     (nvram_nget
+						      ("%s_netmask",
+						       var)), wanface, wanaddr);
+						if (nvram_match
+						    ("block_loopback", "0")) {
 							save2file
-								("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j DROP\n",
-								 var, 
-								 nvram_nget("%s_ipaddr", var), 
-								 getmask(nvram_nget("%s_netmask",var)),
-								 nvram_nget("%s_ipaddr", var),
-								 getmask(nvram_nget("%s_netmask",var)));
+							    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
+							     var);
+						} else {
+							save2file
+							    ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j %s\n",
+							     var,
+							     nvram_nget
+							     ("%s_ipaddr", var),
+							     getmask(nvram_nget
+								     ("%s_netmask",
+								      var)),
+							     nvram_nget
+							     ("%s_ipaddr", var),
+							     getmask(nvram_nget
+								     ("%s_netmask",
+								      var)),
+							     method);
 						}
 					}
+
 				}
 			}
 		}
@@ -1743,7 +1673,7 @@ static void lan2wan_chains(void)
 	int seq;
 	char buf[] = "filter_rulexxx";
 	char *data;
-	int offset=0, len=0;
+	int offset, len;
 	unsigned int mark = 0;
 	int up = 0;
 	int urlfilter = 1;
@@ -2612,9 +2542,6 @@ static void mangle_table(void)
 	save2file("*mangle\n"
 		  ":PREROUTING ACCEPT [0:0]\n" ":OUTPUT ACCEPT [0:0]\n");
 
-	if (wanactive() && nvram_match("block_loopback", "0")) 
-			mangle_prerouting();
-	
 	/*
 	 * Sveasoft add - avoid the "mark everything" rule, Reformed's PPPoE code 
 	 * should take care of this 
