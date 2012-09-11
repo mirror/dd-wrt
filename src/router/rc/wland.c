@@ -485,8 +485,6 @@ static void do_client_check(void)
 			eval("wl", "-i", ifname, "join",
 			     nvram_nget("wl%d_ssid", instance));
 		}
-		// join(nvram_get("wl_ssid"));
-		fclose(fp);
 	} else {
 #ifdef HAVE_DDLAN
 		nvram_set("cur_state",
