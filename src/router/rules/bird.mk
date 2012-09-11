@@ -7,7 +7,7 @@ bird-symlinks:
 	ln -s ../../conf/conf.h conf.h ; \
 	ln -s ../../sysdep/unix/config.Y config.Y ; \
 	ln -s ../../sysdep/unix/krt.Y krt.Y ; \
-	ln -s ../../sysdep/linux/netlink/netlink.Y netlink.Y ; \
+	ln -s ../../sysdep/linux/netlink.Y netlink.Y ; \
 	)
 	- (cd bird/obj/lib ; \
 	ln -s ../../lib/birdlib.h birdlib.h ; \
@@ -25,9 +25,7 @@ bird-symlinks:
 	ln -s ../../lib/ipv4.h ipv4.h ; \
 	ln -s ../../sysdep/unix/krt.c krt.c ; \
 	ln -s ../../sysdep/unix/krt.h krt.h ; \
-	ln -s ../../sysdep/linux/netlink/krt-iface.h krt-iface.h ; \
-	ln -s ../../sysdep/linux/netlink/krt-scan.h krt-scan.h ; \
-	ln -s ../../sysdep/linux/netlink/krt-set.h krt-set.h ; \
+	ln -s ../../sysdep/linux/krt-sys.h krt-sys.h ; \
 	ln -s ../../lib/lists.c lists.c ; \
 	ln -s ../../lib/lists.h lists.h ; \
 	ln -s ../../sysdep/unix/log.c log.c ; \
@@ -35,7 +33,7 @@ bird-symlinks:
 	ln -s ../../lib/md5.c md5.c ; \
 	ln -s ../../lib/md5.h md5.h ; \
 	ln -s ../../lib/mempool.c mempool.c ; \
-	ln -s ../../sysdep/linux/netlink/netlink.c netlink.c ; \
+	ln -s ../../sysdep/linux/netlink.c netlink.c ; \
 	ln -s ../../lib/patmatch.c patmatch.c ; \
 	ln -s ../../lib/printf.c printf.c ; \
 	ln -s ../../sysdep/unix/random.c random.c ; \
