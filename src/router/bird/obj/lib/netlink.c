@@ -1,1 +1,1 @@
-../../sysdep/linux/netlink/netlink.c
+../../sysdep/linux/netlink.c
