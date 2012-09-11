@@ -40,9 +40,9 @@ struct bgp_config {
   int rr_client;			/* Whether neighbor is RR client of me */
   int rs_client;			/* Whether neighbor is RS client of me */
   int advertise_ipv4;			/* Whether we should add IPv4 capability advertisement to OPEN message */
-  u32 route_limit;			/* Number of routes that may be imported, 0 means disable limit */
   int passive;				/* Do not initiate outgoing connection */
   int interpret_communities;		/* Hardwired handling of well-known communities */
+  int secondary;			/* Accept also non-best routes (i.e. RA_ACCEPTED) */
   unsigned connect_retry_time;
   unsigned hold_time, initial_hold_time;
   unsigned keepalive_time;
@@ -152,7 +152,6 @@ void bgp_conn_enter_established_state(struct bgp_conn *conn);
 void bgp_conn_enter_close_state(struct bgp_conn *conn);
 void bgp_conn_enter_idle_state(struct bgp_conn *conn);
 void bgp_store_error(struct bgp_proto *p, struct bgp_conn *c, u8 class, u32 code);
-int bgp_apply_limits(struct bgp_proto *p);
 void bgp_stop(struct bgp_proto *p, unsigned subcode);
 
 

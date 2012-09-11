@@ -361,7 +361,16 @@ routes in filters. The default value for new routes is
 be used in the future for broadcast, multicast and anycast
 routes). Read-only.
 <P>
-<DT><CODE><I>enum</I> dest</CODE><DD><P>Type of destination the packets should be sent to (<CODE>RTD_ROUTER</CODE> for forwarding to a neighboring router, <CODE>RTD_DEVICE</CODE> for routing to a directly-connected network, <CODE>RTD_BLACKHOLE</CODE> for packets to be silently discarded, <CODE>RTD_UNREACHABLE</CODE>, <CODE>RTD_PROHIBIT</CODE> for packets that should be returned with ICMP host unreachable / ICMP administratively prohibited messages). Read-only.
+<DT><CODE><I>enum</I> dest</CODE><DD><P>Type of destination the packets should be sent to
+(<CODE>RTD_ROUTER</CODE> for forwarding to a neighboring router,
+<CODE>RTD_DEVICE</CODE> for routing to a directly-connected network,
+<CODE>RTD_MULTIPATH</CODE> for multipath destinations,
+<CODE>RTD_BLACKHOLE</CODE> for packets to be silently discarded,
+<CODE>RTD_UNREACHABLE</CODE>, <CODE>RTD_PROHIBIT</CODE> for packets that
+should be returned with ICMP host unreachable / ICMP
+administratively prohibited messages). Can be changed, but
+only to <CODE>RTD_BLACKHOLE</CODE>, <CODE>RTD_UNREACHABLE</CODE> or
+<CODE>RTD_PROHIBIT</CODE>.
 <P>
 <DT><CODE><I>int</I> igp_metric</CODE><DD><P>The optional attribute that can be used to specify a distance
 to the network for routes that do not have a native protocol

@@ -219,7 +219,7 @@ chunk, not to the resource, hence you have to free it using
 <P><B>mb_allocz()</B> allocates memory of a given size, initializes it to
 zeroes and creates a memory block resource representing this memory
 chunk in the pool <B>p</B>.
-<P>Please note that <B>mb_alloc()</B> returns a pointer to the memory
+<P>Please note that <B>mb_allocz()</B> returns a pointer to the memory
 chunk, not to the resource, hence you have to free it using
 <B>mb_free()</B>, not <B>rfree()</B>.
 
@@ -639,7 +639,7 @@ hook functions to be called when new data have arrived to the receive buffer
 <P>
 <P><HR><H3>Function</H3>
 <P><I>sock *</I>
-<B>sk_new</B>
+<B>sock_new</B>
 (<I>pool *</I> <B>p</B>) --     create a socket
 <P>
 <H3>Arguments</H3>
@@ -651,6 +651,8 @@ hook functions to be called when new data have arrived to the receive buffer
 <P>This function creates a new socket resource. If you want to use it,
 you need to fill in all the required fields of the structure and
 call <B>sk_open()</B> to do the actual opening of the socket.
+<P>The real function name is <B>sock_new()</B>, <B>sk_new()</B> is a macro wrapper
+to avoid collision with OpenSSL.
 
 
 <HR><H3>Function</H3>

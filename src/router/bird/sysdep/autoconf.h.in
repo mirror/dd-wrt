@@ -62,3 +62,4 @@
 /* We have stdint.h */
 #undef HAVE_STDINT_H
 
+#define CONFIG_PATH ?

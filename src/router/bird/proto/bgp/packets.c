@@ -915,9 +915,6 @@ bgp_do_rx_update(struct bgp_conn *conn,
 	  if (n = net_find(p->p.table, prefix, pxlen))
 	    rte_update(p->p.table, n, &p->p, &p->p, NULL);
 	}
-
-      if (bgp_apply_limits(p) < 0)
-	goto done;
     }
 
  done:
@@ -1034,9 +1031,6 @@ bgp_do_rx_update(struct bgp_conn *conn,
 	      if (n = net_find(p->p.table, prefix, pxlen))
 		rte_update(p->p.table, n, &p->p, &p->p, NULL);
 	    }
-
-	  if (bgp_apply_limits(p) < 0)
-	    goto done;
 	}
     }
 

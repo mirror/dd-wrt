@@ -57,45 +57,6 @@ get_inaddr(ip_addr *a, struct in_addr *ia)
   ipa_ntoh(*a);
 }
 
-/*
- *  Multicasting in Linux systems is a real mess. Not only different kernels
- *  have different interfaces, but also different libc's export it in different
- *  ways. Horrible.
- */
-
-
-#if defined(CONFIG_LINUX_MC_MREQ) || defined(CONFIG_LINUX_MC_MREQ_BIND)
-/*
- *  Older kernels support only struct mreq which matches interfaces by their
- *  addresses and thus fails on unnumbered devices. On newer 2.0 kernels
- *  we can use SO_BINDTODEVICE to circumvent this problem.
- */
-
-#define MREQ_IFA struct in_addr
-#define MREQ_GRP struct ip_mreq
-static inline void fill_mreq_ifa(struct in_addr *m, struct iface *ifa UNUSED, ip_addr saddr, ip_addr maddr UNUSED)
-{
-  set_inaddr(m, saddr);
-}
-
-static inline void fill_mreq_grp(struct ip_mreq *m, struct iface *ifa, ip_addr saddr, ip_addr maddr)
-{
-  bzero(m, sizeof(*m));
-#ifdef CONFIG_LINUX_MC_MREQ_BIND
-  m->imr_interface.s_addr = INADDR_ANY;
-#else
-  set_inaddr(&m->imr_interface, saddr);
-#endif
-  set_inaddr(&m->imr_multiaddr, maddr);
-}
-#endif
-
-
-#ifdef CONFIG_LINUX_MC_MREQN
-/*
- *  2.1 and newer kernels use struct mreqn which passes ifindex, so no
- *  problems with unnumbered devices.
- */
 
 #ifndef HAVE_STRUCT_IP_MREQN
 /* Several versions of glibc don't define this structure, so we have to do it ourselves */
@@ -107,24 +68,19 @@ struct ip_mreqn
 };
 #endif
 
-#define MREQ_IFA struct ip_mreqn
-#define MREQ_GRP struct ip_mreqn
-#define fill_mreq_ifa fill_mreq
-#define fill_mreq_grp fill_mreq
 
-static inline void fill_mreq(struct ip_mreqn *m, struct iface *ifa, ip_addr saddr, ip_addr maddr)
+static inline void fill_mreqn(struct ip_mreqn *m, struct iface *ifa, ip_addr saddr, ip_addr maddr)
 {
   bzero(m, sizeof(*m));
   m->imr_ifindex = ifa->index;
   set_inaddr(&m->imr_address, saddr);
   set_inaddr(&m->imr_multiaddr, maddr);
 }
-#endif
 
 static inline char *
 sysio_setup_multicast(sock *s)
 {
-  MREQ_IFA m;
+  struct ip_mreqn m;
   int zero = 0;
 
   if (setsockopt(s->fd, SOL_IP, IP_MULTICAST_LOOP, &zero, sizeof(zero)) < 0)
@@ -134,18 +90,15 @@ sysio_setup_multicast(sock *s)
     return "IP_MULTICAST_TTL";
 
   /* This defines where should we send _outgoing_ multicasts */
-  fill_mreq_ifa(&m, s->iface, s->saddr, IPA_NONE);
+  fill_mreqn(&m, s->iface, s->saddr, IPA_NONE);
   if (setsockopt(s->fd, SOL_IP, IP_MULTICAST_IF, &m, sizeof(m)) < 0)
     return "IP_MULTICAST_IF";
 
-#if defined(CONFIG_LINUX_MC_MREQ_BIND) || defined(CONFIG_LINUX_MC_MREQN) 
-  {
-    struct ifreq ifr;
-    strcpy(ifr.ifr_name, s->iface->name);
-    if (setsockopt(s->fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0)
-      return "SO_BINDTODEVICE";
-  }
-#endif
+  /* Is this necessary? */
+  struct ifreq ifr;
+  strcpy(ifr.ifr_name, s->iface->name);
+  if (setsockopt(s->fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0)
+    return "SO_BINDTODEVICE";
 
   return NULL;
 }
@@ -153,10 +106,10 @@ sysio_setup_multicast(sock *s)
 static inline char *
 sysio_join_group(sock *s, ip_addr maddr)
 {
-  MREQ_GRP m;
+  struct ip_mreqn m;
 
   /* And this one sets interface for _receiving_ multicasts from */
-  fill_mreq_grp(&m, s->iface, s->saddr, maddr);
+  fill_mreqn(&m, s->iface, s->saddr, maddr);
   if (setsockopt(s->fd, SOL_IP, IP_ADD_MEMBERSHIP, &m, sizeof(m)) < 0)
     return "IP_ADD_MEMBERSHIP";
 
@@ -166,10 +119,10 @@ sysio_join_group(sock *s, ip_addr maddr)
 static inline char *
 sysio_leave_group(sock *s, ip_addr maddr)
 {
-  MREQ_GRP m;
+  struct ip_mreqn m;
 
   /* And this one sets interface for _receiving_ multicasts from */
-  fill_mreq_grp(&m, s->iface, s->saddr, maddr);
+  fill_mreqn(&m, s->iface, s->saddr, maddr);
   if (setsockopt(s->fd, SOL_IP, IP_DROP_MEMBERSHIP, &m, sizeof(m)) < 0)
     return "IP_DROP_MEMBERSHIP";
 
@@ -348,7 +301,7 @@ sk_set_min_ttl6(sock *s, int ttl)
     if (errno == ENOPROTOOPT)
       log(L_ERR "Kernel does not support IPv6 TTL security");
     else
-      log(L_ERR "sk_set_min_ttl4: setsockopt: %m");
+      log(L_ERR "sk_set_min_ttl6: setsockopt: %m");
 
     return -1;
   }

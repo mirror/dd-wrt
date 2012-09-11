@@ -48,7 +48,9 @@ typedef struct birdsock {
   char *password;				/* Password for MD5 authentication */
 } sock;
 
-sock *sk_new(pool *);			/* Allocate new socket */
+sock *sock_new(pool *);			/* Allocate new socket */
+#define sk_new(X) sock_new(X)		/* Wrapper to avoid name collision with OpenSSL */
+
 int sk_open(sock *);			/* Open socket */
 int sk_send(sock *, unsigned len);	/* Send data, <0=err, >0=ok, 0=sleep */
 int sk_send_to(sock *, unsigned len, ip_addr to, unsigned port); /* sk_send to given destination */

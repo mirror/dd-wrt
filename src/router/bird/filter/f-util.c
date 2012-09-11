@@ -19,7 +19,7 @@ f_new_inst(void)
   ret = cfg_alloc(sizeof(struct f_inst));
   ret->code = ret->aux = 0;
   ret->arg1 = ret->arg2 = ret->next = NULL;
-  ret->lineno = ifs->conf_lino;
+  ret->lineno = ifs->lino;
   return ret;
 }
 
@@ -60,7 +60,7 @@ f_generate_roa_check(struct symbol *sym, struct f_inst *prefix, struct f_inst *a
 {
   struct f_inst_roa_check *ret = cfg_allocz(sizeof(struct f_inst_roa_check));
   ret->i.code = P('R','C');
-  ret->i.lineno = ifs->conf_lino;
+  ret->i.lineno = ifs->lino;
   ret->i.arg1 = prefix;
   ret->i.arg2 = asn;
   /* prefix == NULL <-> asn == NULL */

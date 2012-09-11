@@ -97,7 +97,9 @@ ospf_lsack_send(struct ospf_neighbor *n, int queue)
 	if (ifa->type == OSPF_IT_BCAST)
 	{
 	  if ((ifa->state == OSPF_IS_DR) || (ifa->state == OSPF_IS_BACKUP))
-	    ospf_send_to(ifa, AllSPFRouters);
+	    ospf_send_to_all(ifa);
+	  else if (ifa->cf->real_bcast)
+	    ospf_send_to_bdr(ifa);
 	  else
 	    ospf_send_to(ifa, AllDRouters);
 	}
@@ -124,7 +126,9 @@ ospf_lsack_send(struct ospf_neighbor *n, int queue)
   if (ifa->type == OSPF_IT_BCAST)
   {
     if ((ifa->state == OSPF_IS_DR) || (ifa->state == OSPF_IS_BACKUP))
-      ospf_send_to(ifa, AllSPFRouters);
+      ospf_send_to_all(ifa);
+    else if (ifa->cf->real_bcast)
+      ospf_send_to_bdr(ifa);
     else
       ospf_send_to(ifa, AllDRouters);
   }

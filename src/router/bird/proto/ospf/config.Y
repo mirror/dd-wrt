@@ -107,7 +107,17 @@ static inline void
 check_defcost(int cost)
 {
   if ((cost <= 0) || (cost >= LSINFINITY))
-   cf_error("Default cost must be in range 1-%d", LSINFINITY);
+   cf_error("Default cost must be in range 1-%d", LSINFINITY-1);
+}
+
+static inline void
+set_instance_id(unsigned id)
+{
+#ifdef OSPFv3
+  OSPF_PATT->instance_id = id;
+#else
+  cf_error("Instance ID requires OSPFv3");
+#endif
 }
 
 CF_DECLS
@@ -120,7 +130,7 @@ CF_KEYWORDS(NONE, SIMPLE, AUTHENTICATION, STRICT, CRYPTOGRAPHIC)
 CF_KEYWORDS(ELIGIBLE, POLL, NETWORKS, HIDDEN, VIRTUAL, CHECK, LINK)
 CF_KEYWORDS(RX, BUFFER, LARGE, NORMAL, STUBNET, HIDDEN, SUMMARY, TAG, EXTERNAL)
 CF_KEYWORDS(WAIT, DELAY, LSADB, ECMP, LIMIT, WEIGHT, NSSA, TRANSLATOR, STABILITY)
-CF_KEYWORDS(GLOBAL, LSID, ROUTER, SELF)
+CF_KEYWORDS(GLOBAL, LSID, ROUTER, SELF, INSTANCE, REAL)
 
 %type <t> opttext
 %type <ld> lsadb_args
@@ -218,8 +228,8 @@ ospf_stubnet_item:
  ;
 
 ospf_vlink:
-   ospf_vlink_start '{' ospf_vlink_opts '}' { ospf_iface_finish(); }
- | ospf_vlink_start { ospf_iface_finish(); }
+   ospf_vlink_start ospf_instance_id '{' ospf_vlink_opts '}' { ospf_iface_finish(); }
+ | ospf_vlink_start ospf_instance_id { ospf_iface_finish(); }
  ;
 
 ospf_vlink_opts:
@@ -277,6 +287,7 @@ ospf_iface_item:
  | TYPE PTP { OSPF_PATT->type = OSPF_IT_PTP ; }
  | TYPE POINTOMULTIPOINT { OSPF_PATT->type = OSPF_IT_PTMP ; }
  | TYPE PTMP { OSPF_PATT->type = OSPF_IT_PTMP ; }
+ | REAL BROADCAST bool { OSPF_PATT->real_bcast = $3; if (OSPF_VERSION != 2) cf_error("Real broadcast option requires OSPFv2"); }
  | TRANSMIT DELAY expr { OSPF_PATT->inftransdelay = $3 ; if (($3<=0) || ($3>65535)) cf_error("Transmit delay must be in range 1-65535"); }
  | PRIORITY expr { OSPF_PATT->priority = $2 ; if (($2<0) || ($2>255)) cf_error("Priority must be in range 0-255"); }
  | STRICT NONBROADCAST bool { OSPF_PATT->strictnbma = $3 ; }
@@ -364,6 +375,11 @@ ospf_iface_start:
  }
 ;
 
+ospf_instance_id:
+   /* empty */
+ | INSTANCE expr { set_instance_id($2); }
+ ;
+
 ospf_iface_opts:
    /* empty */
  | ospf_iface_opts ospf_iface_item ';'
@@ -375,7 +391,7 @@ ospf_iface_opt_list:
  ;
 
 ospf_iface:
-  ospf_iface_start iface_patt_list ospf_iface_opt_list { ospf_iface_finish(); }
+  ospf_iface_start iface_patt_list ospf_instance_id ospf_iface_opt_list { ospf_iface_finish(); }
  ;
 
 opttext:

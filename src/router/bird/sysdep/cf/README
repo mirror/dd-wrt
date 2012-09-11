@@ -5,19 +5,9 @@ CONFIG_AUTO_ROUTES	Device routes are added automagically by the kernel
 CONFIG_SELF_CONSCIOUS	We're able to recognize whether route was installed by us
 CONFIG_MULTIPLE_TABLES	The kernel supports multiple routing tables
 CONFIG_ALL_TABLES_AT_ONCE	Kernel scanner wants to process all tables at once
+
 CONFIG_MC_PROPER_SRC	Multicast packets have source address according to socket saddr field
-CONFIG_RESTRICTED_PRIVILEGES	Implements restricted privileges using drop_uid()
-
-CONFIG_UNIX_IFACE	Use Unix interface scanner
-CONFIG_UNIX_SET		Use Unix route setting
-CONFIG_UNIX_DONTROUTE   Use setsockopts DONTROUTE (undef for *BSD)
 CONFIG_SKIP_MC_BIND	Don't call bind on multicast socket (def for *BSD)
-CONFIG_LINUX_SCAN	Use Linux /proc/net/route scanner
+CONFIG_UNIX_DONTROUTE	Use setsockopts DONTROUTE (undef for *BSD)
 
-CONFIG_ALL_MULTICAST	krt-iface: All devices support multicasting (i.e., ignore IFF_MULTICAST)
-CONFIG_UNNUM_MULTICAST	krt-iface: We support multicasts on unnumbered PtP devices
-
-CONFIG_LINUX_MC_MREQN	Linux: Use struct mreqn for multicasting
-CONFIG_LINUX_MC_MREQ	Linux: Use struct mreq
-CONFIG_LINUX_MC_MREQ_BIND	Linux: Use struct mreq and SO_BINDTODEVICE
-
+CONFIG_RESTRICTED_PRIVILEGES	Implements restricted privileges using drop_uid()

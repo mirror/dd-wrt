@@ -798,7 +798,7 @@ originate_sum_net_lsa(struct ospf_area *oa, struct fib_node *fn, int metric)
 
   body = originate_sum_net_lsa_body(po, &lsa.length, fn, metric);
   lsasum_calculate(&lsa, body);
-  en = lsa_install_new(po, &lsa, dom, body);
+  lsa_install_new(po, &lsa, dom, body);
   ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
 }
 
@@ -835,7 +835,7 @@ originate_sum_rt_lsa(struct ospf_area *oa, struct fib_node *fn, int metric, u32 
 
   body = originate_sum_rt_lsa_body(po, &lsa.length, lsa.id, metric, options);
   lsasum_calculate(&lsa, body);
-  en = lsa_install_new(po, &lsa, dom, body);
+  lsa_install_new(po, &lsa, dom, body);
   ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
 }
 
@@ -862,6 +862,9 @@ flush_sum_lsa(struct ospf_area *oa, struct fib_node *fn, int type)
 
   if ((en = ospf_hash_find_header(po->gr, oa->areaid, &lsa)) != NULL)
     {
+      OSPF_TRACE(D_EVENTS, "Flushing summary-LSA (id=%R, type=%d)",
+		 en->lsa.id, en->lsa.type);
+
       if ((type == ORT_NET) && check_sum_net_lsaid_collision(fn, en))
 	{
 	  log(L_ERR "%s: LSAID collision for %I/%d",
@@ -873,9 +876,6 @@ flush_sum_lsa(struct ospf_area *oa, struct fib_node *fn, int type)
       en->lsa.age = LSA_MAXAGE;
       en->lsa.sn = LSA_MAXSEQNO;
       lsasum_calculate(&en->lsa, sum);
-
-      OSPF_TRACE(D_EVENTS, "Flushing summary-LSA (id=%R, type=%d)",
-		 en->lsa.id, en->lsa.type);
       ospf_lsupd_flood(po, NULL, NULL, &en->lsa, oa->areaid, 1);
       if (can_flush_lsa(po)) flush_lsa(en, po);
     }
@@ -1117,7 +1117,7 @@ originate_ext_lsa(struct ospf_area *oa, struct fib_node *fn, int src,
   if (src) 
     fn->x1 = src;
 
-  en = lsa_install_new(po, &lsa, dom, body);
+  lsa_install_new(po, &lsa, dom, body);
   ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
 
   if (po->ebit == 0)
@@ -1131,15 +1131,11 @@ originate_ext_lsa(struct ospf_area *oa, struct fib_node *fn, int src,
 }
 
 void
-flush_ext_lsa(struct ospf_area *oa, struct fib_node *fn)
+flush_ext_lsa(struct ospf_area *oa, struct fib_node *fn, int nssa)
 {
   struct proto_ospf *po = oa->po;
   struct proto *p = &po->proto;
   struct top_hash_entry *en;
-  int nssa = oa_is_nssa(oa);
-
-  OSPF_TRACE(D_EVENTS, "Flushing %s-LSA for %I/%d",
-	     nssa ? "NSSA" : "AS-external", fn->prefix, fn->pxlen);
 
   u32 dom = nssa ? oa->areaid : 0;
   u32 type = nssa ? LSA_T_NSSA : LSA_T_EXT;
@@ -1147,6 +1143,9 @@ flush_ext_lsa(struct ospf_area *oa, struct fib_node *fn)
 
   if (en = ospf_hash_find(po->gr, dom, lsaid, po->router_id, type))
     {
+      OSPF_TRACE(D_EVENTS, "Flushing %s-LSA for %I/%d",
+		 nssa ? "NSSA" : "AS-external", fn->prefix, fn->pxlen);
+
       if (check_ext_lsa(en, fn, 0, IPA_NONE, 0) < 0)
 	{
 	  log(L_ERR "%s: LSAID collision for %I/%d",

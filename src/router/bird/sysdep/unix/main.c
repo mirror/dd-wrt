@@ -151,7 +151,7 @@ read_iproute_table(char *file, char *prefix, int max)
 #endif // PATH_IPROUTE_DIR
 
 
-static char *config_name = PATH_CONFIG;
+static char *config_name = PATH_CONFIG_FILE;
 
 static int
 cf_read(byte *dest, unsigned int len, int fd)
@@ -162,36 +162,13 @@ cf_read(byte *dest, unsigned int len, int fd)
   return l;
 }
 
-static int
-cf_open(char *filename)
-{
-  char full_name[BIRD_FNAME_MAX];
-  char *cur = filename;
-  int ret;
-
-  if (*filename != '/') {
-    char dir[BIRD_FNAME_MAX];
-    strncpy(dir, config_name, sizeof(dir));
-    dir[sizeof(dir)-1] = 0;
-    snprintf(full_name, sizeof(full_name), "%s/%s", dirname(dir), filename);
-    full_name[sizeof(full_name)-1] = 0;
-    cur = full_name;
-  }
-
-  if ((ret = open(cur, O_RDONLY)) == -1)
-    cf_error("Unable to open included configuration file: %s", cur);
-
-  return ret;
-}
-
-
 void
 sysdep_preconfig(struct config *c)
 {
   init_list(&c->logfiles);
 
 #ifdef PATH_IPROUTE_DIR
-  // read_iproute_table(PATH_IPROUTE_DIR "/rt_protos", "ipp_", 256);
+  read_iproute_table(PATH_IPROUTE_DIR "/rt_protos", "ipp_", 256);
   read_iproute_table(PATH_IPROUTE_DIR "/rt_realms", "ipr_", 256);
   read_iproute_table(PATH_IPROUTE_DIR "/rt_scopes", "ips_", 256);
   read_iproute_table(PATH_IPROUTE_DIR "/rt_tables", "ipt_", 256);
@@ -216,7 +193,6 @@ unix_read_config(struct config **cp, char *name)
   if (conf->file_fd < 0)
     return 0;
   cf_read_hook = cf_read;
-  cf_open_hook = cf_open;
   ret = config_parse(conf);
   close(conf->file_fd);
   return ret;
@@ -269,7 +245,7 @@ cmd_reconfig(char *name, int type)
   if (!unix_read_config(&conf, name))
     {
       if (conf->err_msg)
-	cli_msg(8002, "%s, line %d: %s", name, conf->err_lino, conf->err_msg);
+	cli_msg(8002, "%s, line %d: %s", conf->err_file_name, conf->err_lino, conf->err_msg);
       else
 	cli_msg(8002, "%s: %m", name);
       config_free(conf);
