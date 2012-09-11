@@ -23,8 +23,6 @@
 #endif
 
 #include <poll.h>
-#include <libdaemon/dfork.h>
-#include <libdaemon/dpid.h>
 
 struct Interface *IfaceList = NULL;
 
@@ -74,7 +72,6 @@ char usage_str[] =
 extern FILE *yyin;
 
 char *conf_file = NULL;
-char *pidfile = NULL;
 char *pname;
 int sock = -1;
 
@@ -96,14 +93,15 @@ void usage(void);
 int drop_root_privileges(const char *);
 int readin_config(char *);
 int check_conffile_perm(const char *, const char *);
-const char *get_pidfile(void);
+pid_t strtopid(char const * pidstr);
+void write_pid_file(char const *);
 void main_loop(void);
 
 int
 main(int argc, char *argv[])
 {
 	int c, log_method;
-	char *logfile;
+	char *logfile, *pidfile;
 	int facility;
 	char *username = NULL;
 	char *chrootdir = NULL;
@@ -112,7 +110,6 @@ main(int argc, char *argv[])
 #ifdef HAVE_GETOPT_LONG
 	int opt_idx;
 #endif
-	pid_t pid;
 
 	pname = ((pname=strrchr(argv[0],'/')) != NULL)?pname+1:argv[0];
 
@@ -293,45 +290,16 @@ main(int argc, char *argv[])
 	 * lets fork now...
 	 */
 
-	if (get_debuglevel() > 0) {
-		daemonize = 0;
+	if (get_debuglevel() == 0) {
+
+		if (daemonize) {
+			/* Detach from controlling terminal */
+			if (daemon(0, 0) < 0)
+				perror("daemon");
+		}
 	}
 
-	if (daemonize) {
-		if (daemon_retval_init()) {
-			flog(LOG_ERR, "Could not initialize daemon IPC.");
-			exit(1);
-		}
-
-		pid = daemon_fork();
-		if (-1 == pid) {
-			flog(LOG_ERR, "Could not fork: %s", strerror(errno));
-			daemon_retval_done();
-			exit(1);
-		}
-
-		if (0 < pid) {
-			if (daemon_retval_wait(0)) {
-				flog(LOG_ERR, "Could not daemonize.");
-				exit(1);
-			}
-			exit(0);
-		}
-
-		daemon_pid_file_proc = get_pidfile;
-		if (daemon_pid_file_is_running() >= 0) {
-			flog(LOG_ERR, "radvd already running, terminating.");
-			daemon_retval_send(1);
-			exit(1);
-		}
-		if (daemon_pid_file_create()) {
-			flog(LOG_ERR, "Cannot create radvd PID file, terminating: %s",
-					strerror(errno));
-			daemon_retval_send(2);
-			exit(1);
-		}
-		daemon_retval_send(0);
-	}
+	write_pid_file(pidfile);
 
 	/*
 	 *	config signal handlers
@@ -346,17 +314,62 @@ main(int argc, char *argv[])
 	main_loop();
 	flog(LOG_INFO, "sending stop adverts", pidfile);
 	stop_adverts();
-	if (daemonize) {
-		flog(LOG_INFO, "removing %s", pidfile);
-		unlink(pidfile);
-	}
+	flog(LOG_INFO, "removing %s", pidfile);
+	unlink(pidfile);
 
 	return 0;
 }
 
 
-const char *get_pidfile(void) {
-	return pidfile;
+pid_t strtopid(char const * pidstr)
+{
+	return atol(pidstr);
+}
+
+void write_pid_file(char const * pidfile)
+{
+	int fd, ret;
+	char pidstr[32];
+
+	if ((fd = open(pidfile, O_RDONLY, 0)) > 0)
+	{
+		ret = read(fd, pidstr, sizeof(pidstr) - 1);
+		if (ret < 0)
+		{
+			flog(LOG_ERR, "cannot read radvd pid file, terminating: %s", strerror(errno));
+			exit(1);
+		}
+		if (ret > 0) {
+				pid_t pid;
+				pidstr[ret] = '\0';
+				pid = strtopid(pidstr);
+				if (pid > 0 && !kill(pid, 0)) {
+					flog(LOG_ERR, "radvd already running, terminating.");
+					exit(1);
+				}
+		}
+		close(fd);
+		fd = open(pidfile, O_CREAT|O_TRUNC|O_WRONLY, 0644);
+	}
+	else	/* FIXME: not atomic if pidfile is on an NFS mounted volume */
+		fd = open(pidfile, O_CREAT|O_EXCL|O_WRONLY, 0644);
+
+	if (fd < 0)
+	{
+		flog(LOG_ERR, "cannot create radvd pid file, terminating: %s", strerror(errno));
+		exit(1);
+	}
+
+	snprintf(pidstr, sizeof(pidstr), "%ld\n", (long)getpid());
+
+	ret = write(fd, pidstr, strlen(pidstr));
+	if (ret != strlen(pidstr))
+	{
+		flog(LOG_ERR, "cannot write radvd pid file, terminating: %s", strerror(errno));
+		exit(1);
+	}
+
+	close(fd);
 }
 
 void main_loop(void)
