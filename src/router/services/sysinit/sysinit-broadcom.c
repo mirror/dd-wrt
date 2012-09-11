@@ -1140,6 +1140,29 @@ void start_sysinit(void)
 			nvram_set("ledbh11", "130");
 //			need_reboot = 1;
 		}
+		nvram_set("pci/1/1/maxp5ga0","40,100,100,66");
+		nvram_set("pci/1/1/maxp5ga1","40,100,100,66");
+		nvram_set("pci/1/1/maxp5ga2","40,100,100,66");
+		nvram_set("pci/1/1/mcsbw1605ghpo","0x00000000");
+		nvram_set("pci/1/1/mcsbw1605glpo","0x00000000");
+		nvram_set("pci/1/1/mcsbw205ghpo","0x00000000");
+		nvram_set("pci/1/1/mcsbw205glpo","0x00000000");
+		nvram_set("pci/1/1/mcsbw405ghpo","0x33333333");
+		nvram_set("pci/1/1/mcsbw405glpo","0x00000000");
+		nvram_set("pci/1/1/mcsbw805ghpo","0x11111111");
+		nvram_set("pci/1/1/mcsbw805glpo","0x00000000");
+		nvram_set("pci/2/1/cckbw202gpo","0x3333");
+		nvram_set("pci/2/1/cckbw20ul2gpo","0x3333");
+		nvram_set("pci/2/1/legofdmbw202gpo","0x11111111");
+		nvram_set("pci/2/1/legofdmbw20ul2gpo","0x11111111");
+		nvram_set("pci/2/1/maxp2ga0","52");
+		nvram_set("pci/2/1/maxp2ga1","52");
+		nvram_set("pci/2/1/maxp2ga2","52");
+		nvram_set("pci/2/1/mcs32po","0x0002");
+		nvram_set("pci/2/1/mcsbw202gpo","0x11111111");
+		nvram_set("pci/2/1/mcsbw20ul2gpo","0x11111111");
+		nvram_set("pci/2/1/mcsbw402gpo","0x88888888");
+
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 		nvram_set("wan_ifname", "vlan2");
 		break;
