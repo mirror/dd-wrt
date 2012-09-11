@@ -142,7 +142,7 @@ match(const struct sk_buff *skb,
 		*hotdrop = 1;
 		return 0;
 	}
-	connections = count_them(info->data,skb->nh.iph->saddr,info->mask,ct);
+	connections = count_them(info->data,skb->nh.iph->saddr,info->v4_mask,ct);
 	if (-1 == connections) {
 		printk("ipt_connlimit: Hmm, kmalloc failed :-(\n");
 		*hotdrop = 1; /* let's free some memory :-) */
@@ -152,7 +152,7 @@ match(const struct sk_buff *skb,
 #if DEBUG
 	printk("ipt_connlimit: src=%u.%u.%u.%u mask=%u.%u.%u.%u "
 	       "connections=%d limit=%d match=%s\n",
-	       NIPQUAD(skb->nh.iph->saddr), NIPQUAD(info->mask),
+	       NIPQUAD(skb->nh.iph->saddr), NIPQUAD(info->v4_mask),
 	       connections, info->limit, match ? "yes" : "no");
 #endif
 
