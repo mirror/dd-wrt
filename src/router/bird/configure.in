@@ -6,17 +6,20 @@ AC_REVISION($Id$)
 AC_INIT(conf/confbase.Y)
 AC_CONFIG_AUX_DIR(tools)
 
-AC_ARG_ENABLE(debug,[  --enable-debug          enable internal debugging routines (default: disabled)],,enable_debug=no)
-AC_ARG_ENABLE(memcheck,[  --enable-memcheck       check memory allocations when debugging (default: enabled)],,enable_memcheck=yes)
-AC_ARG_ENABLE(client,[  --enable-client         enable building of BIRD client (default: enabled)],,enable_client=yes)
-AC_ARG_ENABLE(ipv6,[  --enable-ipv6           enable building of IPv6 version (default: disabled)],,enable_ipv6=no)
-AC_ARG_WITH(sysconfig,[  --with-sysconfig=FILE   use specified BIRD system configuration file])
-AC_ARG_WITH(protocols,[  --with-protocols=LIST   include specified routing protocols (default: all)],,[with_protocols="all"])
-AC_ARG_WITH(sysinclude,[  --with-sysinclude=PATH  search for system includes on specified place])
-AC_ARG_WITH(iproutedir,[  --with-iproutedir=PATH  path to iproute2 config files (default: /etc/iproute2)],[given_iproutedir="yes"])
-AC_ARG_VAR([FLEX], [location of the Flex program]) 
-AC_ARG_VAR([BISON], [location of the Bison program]) 
-AC_ARG_VAR([M4], [location of the M4 program]) 
+AC_ARG_ENABLE(debug,	[  --enable-debug          enable internal debugging routines (default: disabled)],,enable_debug=no)
+AC_ARG_ENABLE(memcheck,	[  --enable-memcheck       check memory allocations when debugging (default: enabled)],,enable_memcheck=yes)
+AC_ARG_ENABLE(client,	[  --enable-client         enable building of BIRD client (default: enabled)],,enable_client=yes)
+AC_ARG_ENABLE(ipv6,	[  --enable-ipv6           enable building of IPv6 version (default: disabled)],,enable_ipv6=no)
+AC_ARG_WITH(suffix,	[  --with-suffix=STRING    use specified suffix for BIRD files (default: 6 for IPv6 version)],[given_suffix="yes"])
+AC_ARG_WITH(sysconfig,	[  --with-sysconfig=FILE   use specified BIRD system configuration file])
+AC_ARG_WITH(protocols,	[  --with-protocols=LIST   include specified routing protocols (default: all)],,[with_protocols="all"])
+AC_ARG_WITH(sysinclude,	[  --with-sysinclude=PATH  search for system includes on specified place])
+AC_ARG_WITH(runtimedir,	[  --with-runtimedir=PATH  path for runtime files (default: $(localstatedir)/run)],[runtimedir="$with_runtimedir"],[runtimedir="\$(localstatedir)/run"])
+AC_ARG_WITH(iproutedir,	[  --with-iproutedir=PATH  path to iproute2 config files (default: /etc/iproute2)],[given_iproutedir="yes"])
+AC_ARG_VAR([FLEX], [location of the Flex program])
+AC_ARG_VAR([BISON], [location of the Bison program])
+AC_ARG_VAR([M4], [location of the M4 program])
+
 
 if test "$srcdir" = . ; then
 	# Building in current directory => create obj directory holding all objects
@@ -39,20 +42,36 @@ esac
 AC_SUBST(objdir)
 AC_SUBST(exedir)
 AC_SUBST(srcdir_rel_mf)
+AC_SUBST(runtimedir)
 
 if test "$enable_ipv6" = yes ; then
 	ip=ipv6
-	SUFFIX6=6
+	SUFFIX=6
 	all_protocols=bgp,ospf,pipe,radv,rip,static
 else
 	ip=ipv4
-	SUFFIX6=""
+	SUFFIX=""
 	all_protocols=bgp,ospf,pipe,rip,static
 fi
+
+if test "$given_suffix" = yes ; then
+   	SUFFIX="$with_suffix"
+fi
+AC_SUBST(SUFFIX)
 
 if test "$with_protocols" = all ; then
 	with_protocols="$all_protocols"
 fi
+
+if test "$enable_debug" = yes ; then
+	CONFIG_FILE="bird$SUFFIX.conf"
+	CONTROL_SOCKET="bird$SUFFIX.ctl"
+else
+	CONFIG_FILE="\$(sysconfdir)/bird$SUFFIX.conf"
+	CONTROL_SOCKET="$runtimedir/bird$SUFFIX.ctl"
+fi
+AC_SUBST(CONFIG_FILE)
+AC_SUBST(CONTROL_SOCKET)
 
 AC_SEARCH_LIBS(clock_gettime,[c rt posix4])
 
@@ -105,19 +124,11 @@ elif test -f sysconfig.h ; then
 	sysdesc=sysconfig
 else
 	case "$ip:$host_os" in
-		ipv4:linux*)	BIRD_CHECK_LINUX_VERSION
+		ipv6:linux*)	sysdesc=linux-v6
 				default_iproutedir="/etc/iproute2"
-				case $bird_cv_sys_linux_version in
-					1.*|2.0.*)	sysdesc=linux-20 ;;
-					*)		sysdesc=linux-22 ;;
-					esac
 				;;
-		ipv6:linux*)	BIRD_CHECK_LINUX_VERSION
+		ipv4:linux*)	sysdesc=linux
 				default_iproutedir="/etc/iproute2"
-				case $bird_cv_sys_linux_version in
-					1.*|2.0.*)	AC_MSG_ERROR([This version of Linux doesn't support IPv6.]) ;;
-					*)		sysdesc=linux-v6 ;;
-					esac
 				;;
 		ipv6:netbsd*)	sysdesc=bsd-v6
 				CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
@@ -180,7 +191,7 @@ AC_MSG_RESULT(ok)
 AC_SUBST(protocols)
 
 case $sysdesc in
-	*/linux-22*|*/linux-v6*)
+	*/linux*|*/linux-v6*)
 		AC_CHECK_HEADER(linux/rtnetlink.h,,[AC_MSG_ERROR([Appropriate version of Linux kernel headers not found.])],[
 #include <asm/types.h>
 #include <sys/socket.h>
@@ -233,7 +244,6 @@ if test "$enable_client" = yes ; then
 fi
 AC_SUBST(CLIENT)
 AC_SUBST(CLIENT_LIBS)
-AC_SUBST(SUFFIX6)
 
 mkdir -p $objdir/sysdep
 AC_CONFIG_HEADERS([$objdir/sysdep/autoconf.h:sysdep/autoconf.h.in])

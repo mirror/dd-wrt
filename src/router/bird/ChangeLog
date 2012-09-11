@@ -1,3 +1,358 @@
+commit 94e2f1c111721d6213ea65cac5c53036e38e3973
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Aug 7 11:06:57 2012 +0200
+
+    NEWS and version update.
+
+commit c06de722ddf36f3d6aaabfd4ae9d74a3ea72bbf9
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Aug 6 11:09:13 2012 +0200
+
+    Some minor fixes.
+
+commit 5400c0e7f982757418a0aeb892459b52fbbcffc3
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Aug 6 02:42:24 2012 +0200
+
+    Fixes BGP subcode during global shutdown.
+
+commit bbcfd5a0485a8df9568d8da0fc524e272e3e7601
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Jul 26 13:59:50 2012 +0200
+
+    Fixes default route in OSPF multiple area setting.
+
+commit 48cf5e84e6ed17578e4ad43c5ef54d6ff7d825c4
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Jul 24 20:12:14 2012 +0200
+
+    Documentation update,
+
+commit 0e224d598579626e03d3727d5901ba2d654ac521
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Jul 22 12:35:04 2012 +0200
+
+    RDNSS and DNSSL documentation for RAdv.
+
+commit 36415e4b1dd769458cced44525ee74d26d15f9c6
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Jul 20 19:56:57 2012 +0200
+
+    Allows to redefine master table.
+
+commit c4b76d7b19cf48ddbcbe913c22ef7f1e8429f5ea
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Jul 18 19:35:30 2012 +0200
+
+    Rename sk_new() to avoid name collision with OpenSSL.
+
+commit 4be266a9831799dcc2e67e83fc83d9db43828a64
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Jul 18 19:29:33 2012 +0200
+
+    Implements wildcard matching in config file include.
+    
+    Also fixes some minor bugs in include.
+    
+    Thanks Kelly Cochran for suggestion and draft patch.
+
+commit abced4a91495e27fe86b142bc1967cec53bab3dc
+Merge: fc06fb6 7617026
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Jul 16 14:44:45 2012 +0200
+
+    Merge branch 'rt-accepted'
+    
+    Conflicts:
+    
+    	nest/config.Y
+    	nest/rt-table.c
+    	proto/bgp/bgp.c
+
+commit 761702644397886bd3c1be10fd55c01485b7c454
+Merge: 26822d8 553e405
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Jul 16 10:41:29 2012 +0200
+
+    Merge commit 'origin/rt-accepted' into rt-accepted
+
+commit 26822d8fe1376b2ffd902a3b5caa47f81a88e74e
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Jul 4 21:31:03 2012 +0200
+
+    Finalize RA_ACCEPTED handling.
+
+commit fc06fb62443c135773ee4c05ed83925cc47b046d
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Jul 7 10:40:00 2012 +0200
+
+    Implements RDNSS and DNSSL support for RAdv.
+
+commit 95127cbbb76e8870e029454a5313bc4b6ce69a4a
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon May 14 11:47:41 2012 +0200
+
+    Real broadcast mode for OSPFv2.
+
+commit 0ec031f7400fbacdd86b40ae1870c58715a7f108
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri May 11 18:52:59 2012 +0200
+
+    Allows to set instance ID for OSPFv3 interfaces.
+
+commit 47c447c42e0bfa1836d951d1e6c1a2236d39dcbb
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri May 4 23:05:47 2012 +0200
+
+    Minor cleanups.
+
+commit b7f3df79054aca327654c1fb4739c4ff02e59e6e
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri May 11 12:01:27 2012 +0200
+
+    Fixes a bug in RA_ACCEPTED handling.
+
+commit 95616c820248018f4999972cad315f2da60e4960
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri May 4 16:38:25 2012 +0200
+
+    Cleanup in sysdep KRT code, part 4.
+    
+    Adding some files that was accidentally removed
+    (instead of moved) in cleanup part 2.
+
+commit 064e7be5cd4dffd564b4ea41ba6d843492a55c97
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri May 4 00:20:23 2012 +0200
+
+    History deduplication in birdc.
+
+commit e14bd38087ed8ef1945dd0a3878cc560478145f0
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu May 3 14:04:56 2012 +0200
+
+    Fixes flushing of device routes.
+
+commit ab188fb76d7822350724b182106a19995a73d719
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu May 3 12:25:15 2012 +0200
+
+    Implements build options to specify socket dir and suffix.
+
+commit 7a2c48dafce9420a23fd57408c31eecfc20c4fe0
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Apr 30 22:34:06 2012 +0200
+
+    Cleanup in sysdep KRT code, part 3.
+    
+    Just one more renaming, old krt_set_notify() to krt_replace_rte().
+
+commit f1aceff59bbf942bc11c2e9a4c51e381c06f2b20
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Apr 30 22:21:52 2012 +0200
+
+    Cleanup in sysdep KRT code, part 2.
+    
+    Remove support for historic Linux kernels,
+    merge krt-iface, krt-set and krt-scan stub headers.
+
+commit 396dfa9042305f62da1f56589c4b98fac57fc2f6
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Apr 30 15:31:32 2012 +0200
+
+    Cleanup in sysdep KRT code, part 1.
+    
+    OS-dependent functions renamed to be more consistent,
+    prepared to merge krt-set and krt-scan headers.
+    
+    Name changes:
+    
+    struct krt_if_params -> struct kif_params
+    struct krt_if_status -> struct kif_status
+    struct krt_set/scan_params -> struct krt_params
+    struct krt_set/scan_status -> struct krt_status
+    
+    krt_if_params_same -> kif_sys_reconfigure
+    krt_if_copy_params -> kif_sys_copy_config
+    krt_set/scan_params_same -> krt_sys_reconfigure
+    krt_set/scan_copy_params -> krt_sys_copy_config
+    
+    krt_if_scan -> kif_do_scan
+    krt_set_notify -> krt_do_notify
+    krt_scan_fire -> krt_do_scan
+    
+    krt_if_ -> kif_sys_
+    krt_scan_ -> krt_sys_
+    krt_set_ -> krt_sys_
+
+commit 182a78957d60a4c91c1ff8d1ff0f09b1b64b70ba
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Apr 29 01:35:52 2012 +0200
+
+    Allows some modifications of dest attribute in filters.
+
+commit bf42207332e8e502d636038f1ec44aaea6ec50e0
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Apr 28 13:03:48 2012 +0200
+
+    Changes keyword 'exceed' to 'action'.
+
+commit ab758e4fb205346946f2d828236bd23efc2a419e
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Apr 28 12:59:40 2012 +0200
+
+    Some fixes in route export limits.
+
+commit d494df63ac3061accdff348511a565c021411b28
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Apr 27 00:04:51 2012 +0200
+
+    Some minor fixes.
+
+commit d9b77cc28115e5c1ef64c69722c9d1fd1392dcd1
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Apr 24 23:39:57 2012 +0200
+
+    Implements generalized export limits.
+    
+    And also fixes some minor bugs in limits.
+
+commit 3589546af4baa4d349409a318f8c9658dd11b3cc
+Merge: 7d0a31d cca9706
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Apr 24 23:37:01 2012 +0200
+
+    Merge commit 'origin/master'
+
+commit cca970666a90af02eaeb6848bbfc3d5a2222fa21
+Author: Ondrej Filip <feela@network.cz>
+Date:   Sun Apr 22 14:03:07 2012 +0200
+
+    Small typo in programmer's documentation.
+
+commit 7d0a31deed92971e274aa0314e12619f93c850c9
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Apr 21 21:05:36 2012 +0200
+
+    Fixes in generalized import limits.
+
+commit 334a0ed24d015e106558cc9eeef301c6f0d21aec
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Apr 20 21:04:55 2012 +0200
+
+    Fixes missing device attributes when exporting routes to kernel.
+    
+    Thanks to Howden Nick for the bugreport.
+
+commit 9b2b502be521b58a736f7b78644e89ee01b4418b
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Apr 20 21:04:55 2012 +0200
+
+    Fixes missing device attributes when exporting routes to kernel.
+    
+    Thanks to Howden Nick for the bugreport.
+
+commit f93e6f338e59e02b0cddea85e7d367948d9cf3f2
+Author: Ondrej Filip <feela@network.cz>
+Date:   Thu Apr 19 17:14:16 2012 +0200
+
+    Small clean up in debug texts
+
+commit 553e4054609e7aa8dcb92849c92a6fea73354f0e
+Author: Ondrej Filip <feela@network.cz>
+Date:   Thu Apr 19 17:12:13 2012 +0200
+
+    Small clean up in debug texts
+
+commit ebecb6f6a11bb418dd054cf12a2673ca0d9eac37
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Apr 15 15:28:29 2012 +0200
+
+    Implements generalized import hooks.
+    
+    Thanks to Alexander V. Chernikov for the original patch.
+
+commit 3e17e380598b9a512bb369f51a4cf55da269f608
+Merge: 00a09f3 ae8b300
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Apr 15 15:17:03 2012 +0200
+
+    Merge branch 'master' into rt-accepted
+
+commit ae8b300164a975597f9b6caea0b205af2e4db30b
+Merge: d360f12 ed7c4b0
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Apr 15 15:15:05 2012 +0200
+
+    Merge commit 'origin/master'
+
+commit d360f129e393298ff3e5309ec06a3baf170784fb
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Apr 15 15:13:12 2012 +0200
+
+    Fix static protocol w.r.t. some recent changes in protocol ahooks.
+
+commit 00a09f3c367e79297f827b52ec5f16842db1ac4e
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Apr 15 15:07:58 2012 +0200
+
+    Implement RA_ACCEPTED mode of route propagation.
+
+commit ed7c4b0cd530126b9a794f817f5d1d93556a1bce
+Author: Ondrej Filip <feela@network.cz>
+Date:   Mon Apr 9 14:19:28 2012 +0200
+
+    Small bugfix in error message related to reconfiguration.
+
+commit bf2abe2f515d7b7aaed5fb4f37af82169adcd2f2
+Merge: fb829de c0adf7e
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Mar 30 11:04:12 2012 +0200
+
+    Merge branch 'soon'
+    
+    Conflicts:
+    
+    	nest/proto.c
+    	nest/rt-table.c
+
+commit fb829de69052755a31d76d73e17525d050e5ff4d
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Mar 28 18:40:04 2012 +0200
+
+    Fixes responsiveness for protocol shutdown.
+    
+    When a protocol went down, all its routes were flushed in one step, that
+    may block BIRD for too much time. The patch fixes that by limiting
+    maximum number of routes flushed in one step.
+
+commit cb3cf95859d81c711337738f004675f43c8bbb0e
+Merge: c9df01d 16fc65a
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Mar 25 20:59:13 2012 +0200
+
+    Merge commit 'origin/master'
+
+commit c9df01d3215379c0463dd2a3b0c9b1700d6e2ac3
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Mar 25 19:44:14 2012 +0200
+
+    Fixes several minor bugs in kernel syncer.
+
+commit 9ba2798c65c02254ec000ab03a76fbbaae1ddc97
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Mar 23 01:17:02 2012 +0100
+
+    Adds krt_metric linux route attribute.
+
+commit 72aed1a00ba9e18116d6fd907f7e1a36d0a0a583
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Mar 23 00:26:26 2012 +0100
+
+    Adds krt_source route attribute.
+    
+    Thanks Jeremie Dimino for the original patch.
+
 commit 16fc65acc536d3788efe4c0554a2f52699fedc7f
 Author: Ondrej Filip <feela@network.cz>
 Date:   Thu Mar 22 14:52:40 2012 +0100
@@ -128,6 +483,23 @@ Date:   Thu Mar 15 12:18:26 2012 +0100
     Pair intervals in form (a,b)..(c,d) were mishanded.
     
     Thanks to Alexander Shikoff for the bugreport.
+
+commit c0adf7e9fc0bb920175a639c6f56ed7b4190f3e4
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Mar 15 11:58:08 2012 +0100
+
+    Better support for multitable protocols.
+    
+    The nest-protocol interaction is changed to better handle multitable
+    protocols. Multitable protocols now declare that by 'multitable' field,
+    which tells nest that a protocol handles things related to proto-rtable
+    interaction (table locking, announce hook adding, reconfiguration of
+    filters) itself.
+    
+    Filters and stats are moved to announce hooks, a protocol could have
+    different filters and stats to different tables.
+    
+    The patch is based on one from Alexander V. Chernikov, thanks.
 
 commit 46c1a583a5c1ea81e8d8f372bd7f614506a63938
 Author: Ondrej Zajicek <santiago@crfreenet.org>
