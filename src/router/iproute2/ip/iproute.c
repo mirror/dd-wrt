@@ -1,3 +1,4 @@
+#define NEED_PRINTF 1
 /*
  * iproute.c		"ip route".
  *
@@ -38,9 +39,9 @@
 #endif
 
 
-
+#ifndef NEED_PRINTF
 #define usage() exit(-1);
-/*
+#else
 static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
@@ -71,7 +72,7 @@ static void usage(void)
 	fprintf(stderr, "RTPROTO := [ kernel | boot | static | NUMBER ]\n");
 	exit(-1);
 }
-*/
+#endif
 
 static struct
 {
@@ -123,15 +124,15 @@ int print_route(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 	
 
 	if (n->nlmsg_type != RTM_NEWROUTE && n->nlmsg_type != RTM_DELROUTE) {
-//		fprintf(stderr, "Not a route: %08x %08x %08x\n",
-//			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
+		fprintf(stderr, "Not a route: %08x %08x %08x\n",
+			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
 		return 0;
 	}
 	if (filter.flushb && n->nlmsg_type != RTM_NEWROUTE)
 		return 0;
 	len -= NLMSG_LENGTH(sizeof(*r));
 	if (len < 0) {
-//		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
+		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
 		return -1;
 	}
 
@@ -589,7 +590,7 @@ int parse_one_nh(struct rtattr *rta, struct rtnexthop *rtnh, int *argcp, char **
 		} else if (strcmp(*argv, "dev") == 0) {
 			NEXT_ARG();
 			if ((rtnh->rtnh_ifindex = ll_name_to_index(*argv)) == 0) {
-//				fprintf(stderr, "Cannot find device \"%s\"\n", *argv);
+				fprintf(stderr, "Cannot find device \"%s\"\n", *argv);
 				exit(1);
 			}
 		} else if (strcmp(*argv, "weight") == 0) {
@@ -620,11 +621,11 @@ int parse_nexthops(struct nlmsghdr *n, struct rtmsg *r, int argc, char **argv)
 
 	while (argc > 0) {
 		if (strcmp(*argv, "nexthop") != 0) {
-//			fprintf(stderr, "Error: \"nexthop\" or end of line is expected instead of \"%s\"\n", *argv);
+			fprintf(stderr, "Error: \"nexthop\" or end of line is expected instead of \"%s\"\n", *argv);
 			exit(-1);
 		}
 		if (argc <= 1) {
-//			fprintf(stderr, "Error: unexpected end of line after \"nexthop\"\n");
+			fprintf(stderr, "Error: unexpected end of line after \"nexthop\"\n");
 			exit(-1);
 		}
 		memset(rtnh, 0, sizeof(*rtnh));
@@ -904,7 +905,7 @@ int iproute_modify(int cmd, unsigned flags, int argc, char **argv)
 
 		if (d) {
 			if ((idx = ll_name_to_index(d)) == 0) {
-//				fprintf(stderr, "Cannot find device \"%s\"\n", d);
+				fprintf(stderr, "Cannot find device \"%s\"\n", d);
 				return -1;
 			}
 			addattr32(&req.n, sizeof(req), RTA_OIF, idx);
@@ -1011,7 +1012,7 @@ static int iproute_list_or_flush(int argc, char **argv, int flush)
 	filter.tb = RT_TABLE_MAIN;
 
 	if (flush && argc <= 0) {
-//		fprintf(stderr, "\"ip route flush\" requires arguments.\n");
+		fprintf(stderr, "\"ip route flush\" requires arguments.\n");
 		return -1;
 	}
 
@@ -1147,7 +1148,7 @@ static int iproute_list_or_flush(int argc, char **argv, int flush)
 
 		if (id) {
 			if ((idx = ll_name_to_index(id)) == 0) {
-//				fprintf(stderr, "Cannot find device \"%s\"\n", id);
+				fprintf(stderr, "Cannot find device \"%s\"\n", id);
 				return -1;
 			}
 			filter.iif = idx;
@@ -1155,7 +1156,7 @@ static int iproute_list_or_flush(int argc, char **argv, int flush)
 		}
 		if (od) {
 			if ((idx = ll_name_to_index(od)) == 0) {
-//				fprintf(stderr, "Cannot find device \"%s\"\n", od);
+				fprintf(stderr, "Cannot find device \"%s\"\n", od);
 				return -1;
 			}
 			filter.oif = idx;
@@ -1191,14 +1192,14 @@ static int iproute_list_or_flush(int argc, char **argv, int flush)
 			filter.flushed = 0;
 #ifdef NEED_PRINTF
 			if (rtnl_dump_filter(&rth, print_route, stdout, NULL, NULL) < 0) {
-//				fprintf(stderr, "Flush terminated\n");
+				fprintf(stderr, "Flush terminated\n");
 				exit(1);
 			}
 #endif
 			if (filter.flushed == 0) {
 				if (round == 0) {
-//					if (filter.tb != -1 || do_ipv6 == AF_INET6)
-//						fprintf(stderr, "Nothing to flush.\n");
+					if (filter.tb != -1 || do_ipv6 == AF_INET6)
+						fprintf(stderr, "Nothing to flush.\n");
 				} else if (show_stats)
 					printf("*** Flush is complete after %d round%s ***\n", round, round>1?"s":"");
 				fflush(stdout);
@@ -1235,7 +1236,7 @@ static int iproute_list_or_flush(int argc, char **argv, int flush)
 	}
 
 	if (rtnl_dump_filter(&rth, print_route, stdout, NULL, NULL) < 0) {
-//		fprintf(stderr, "Dump terminated\n");
+		fprintf(stderr, "Dump terminated\n");
 		exit(1);
 	}
 #endif
@@ -1321,7 +1322,7 @@ int iproute_get(int argc, char **argv)
 	}
 
 	if (req.r.rtm_dst_len == 0) {
-//		fprintf(stderr, "need at least destination address\n");
+		fprintf(stderr, "need at least destination address\n");
 		exit(1);
 	}
 
@@ -1335,14 +1336,14 @@ int iproute_get(int argc, char **argv)
 
 		if (idev) {
 			if ((idx = ll_name_to_index(idev)) == 0) {
-//				fprintf(stderr, "Cannot find device \"%s\"\n", idev);
+				fprintf(stderr, "Cannot find device \"%s\"\n", idev);
 				return -1;
 			}
 			addattr32(&req.n, sizeof(req), RTA_IIF, idx);
 		}
 		if (odev) {
 			if ((idx = ll_name_to_index(odev)) == 0) {
-//				fprintf(stderr, "Cannot find device \"%s\"\n", odev);
+				fprintf(stderr, "Cannot find device \"%s\"\n", odev);
 				return -1;
 			}
 			addattr32(&req.n, sizeof(req), RTA_OIF, idx);
@@ -1361,17 +1362,17 @@ int iproute_get(int argc, char **argv)
 		struct rtattr * tb[RTA_MAX+1];
 
 		if (print_route(NULL, &req.n, (void*)stdout) < 0) {
-//			fprintf(stderr, "An error :-)\n");
+			fprintf(stderr, "An error :-)\n");
 			exit(1);
 		}
 
 		if (req.n.nlmsg_type != RTM_NEWROUTE) {
-//			fprintf(stderr, "Not a route?\n");
+			fprintf(stderr, "Not a route?\n");
 			return -1;
 		}
 		len -= NLMSG_LENGTH(sizeof(*r));
 		if (len < 0) {
-//			fprintf(stderr, "Wrong len %d\n", len);
+			fprintf(stderr, "Wrong len %d\n", len);
 			return -1;
 		}
 
@@ -1381,7 +1382,7 @@ int iproute_get(int argc, char **argv)
 			tb[RTA_PREFSRC]->rta_type = RTA_SRC;
 			r->rtm_src_len = 8*RTA_PAYLOAD(tb[RTA_PREFSRC]);
 		} else if (!tb[RTA_SRC]) {
-//			fprintf(stderr, "Failed to connect the route\n");
+			fprintf(stderr, "Failed to connect the route\n");
 			return -1;
 		}
 		if (!odev && tb[RTA_OIF])
@@ -1399,7 +1400,7 @@ int iproute_get(int argc, char **argv)
 #ifdef NEED_PRINTF
 
 	if (print_route(NULL, &req.n, (void*)stdout) < 0) {
-//		fprintf(stderr, "An error :-)\n");
+		fprintf(stderr, "An error :-)\n");
 		exit(1);
 	}
 #endif
@@ -1457,7 +1458,7 @@ int do_iproute(int argc, char **argv)
 	if (matches(*argv, "help") == 0)
 		usage();
 #endif
-//	fprintf(stderr, "Command \"%s\" is unknown, try \"ip route help\".\n", *argv);
+	fprintf(stderr, "Command \"%s\" is unknown, try \"ip route help\".\n", *argv);
 	exit(-1);
 }
 
