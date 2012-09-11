@@ -135,6 +135,14 @@ submit_server_command(char *cmd)
   num_lines = 2;
 }
 
+static void
+add_history_dedup(char *cmd)
+{
+  /* Add history line if it differs from the last one */
+  HIST_ENTRY *he = history_get(history_length);
+  if (!he || strcmp(he->line, cmd))
+    add_history(cmd);
+}
 
 static void
 got_line(char *cmd_buffer)
@@ -151,7 +159,7 @@ got_line(char *cmd_buffer)
       cmd = cmd_expand(cmd_buffer);
       if (cmd)
 	{
-	  add_history(cmd);
+	  add_history_dedup(cmd);
 
 	  if (!handle_internal_command(cmd))
 	    submit_server_command(cmd);
@@ -159,7 +167,7 @@ got_line(char *cmd_buffer)
 	  free(cmd);
 	}
       else
-	add_history(cmd_buffer);
+	add_history_dedup(cmd_buffer);
     }
   free(cmd_buffer);
 }

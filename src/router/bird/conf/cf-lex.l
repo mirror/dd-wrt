@@ -31,6 +31,12 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <libgen.h>
+#include <glob.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #define PARSER 1
 
@@ -64,27 +70,23 @@ struct sym_scope {
 };
 static struct sym_scope *conf_this_scope;
 
-#define MAX_INCLUDE_DEPTH 5
-
-static struct include_file_stack *ifs_head;
-static int ifs_depth;
-
 static int cf_hash(byte *c);
 static struct symbol *cf_find_sym(byte *c, unsigned int h0);
 
 linpool *cfg_mem;
 
 int (*cf_read_hook)(byte *buf, unsigned int max, int fd);
-int (*cf_open_hook)(char *filename);
 struct include_file_stack *ifs;
+static struct include_file_stack *ifs_head;
 
-#define YY_INPUT(buf,result,max) result = cf_read_hook(buf, max, ifs->conf_fd);
+#define MAX_INCLUDE_DEPTH 8
+
+#define YY_INPUT(buf,result,max) result = cf_read_hook(buf, max, ifs->fd);
 #define YY_NO_UNPUT
 #define YY_FATAL_ERROR(msg) cf_error(msg)
 
-static void new_include(void);
+static void cf_include(char *arg, int alen);
 static int check_eof(void);
-static struct include_file_stack *new_stack(struct include_file_stack *old);
 
 %}
 
@@ -103,7 +105,23 @@ WHITE [ \t]
 include   ^{WHITE}*include{WHITE}*\".*\"{WHITE}*;
 
 %%
-{include} { if(cf_open_hook) new_include(); }
+{include} {
+  char *start, *end;
+
+  if (!ifs->depth)
+    cf_error("Include not allowed in CLI");
+
+  start = strchr(yytext, '"');
+  start++;
+
+  end = strchr(start, '"');
+  *end = 0;
+
+  if (start == end)
+    cf_error("Include with empty argument");
+
+  cf_include(start, end-start);
+}
 
 {DIGIT}+\.{DIGIT}+\.{DIGIT}+\.{DIGIT}+ {
 #ifdef IPV6
@@ -200,11 +218,11 @@ else: {
 
 ["][^"\n]*\n	cf_error("Unterminated string");
 
-<INITIAL,COMMENT><<EOF>>	{ if(check_eof()) return END; }
+<INITIAL,COMMENT><<EOF>>	{ if (check_eof()) return END; }
 
 {WHITE}+
 
-\n	ifs->conf_lino++;
+\n	ifs->lino++;
 
 #	BEGIN(COMMENT);
 
@@ -213,14 +231,14 @@ else: {
 .	cf_error("Unknown character");
 
 <COMMENT>\n {
-  ifs->conf_lino++;
+  ifs->lino++;
   BEGIN(INITIAL);
 }
 
 <COMMENT>.
 
 <CCOMM>\*\/	BEGIN(INITIAL);
-<CCOMM>\n	ifs->conf_lino++;
+<CCOMM>\n	ifs->lino++;
 <CCOMM>\/\*	cf_error("Comment nesting not supported");
 <CCOMM><<EOF>>	cf_error("Unterminated comment");
 <CCOMM>.
@@ -246,48 +264,141 @@ cf_hash(byte *c)
   return h;
 }
 
-/* Open included file with properly swapped buffers */
-static void
-new_include(void)
+
+/*
+ * IFS stack - it contains structures needed for recursive processing
+ * of include in config files. On the top of the stack is a structure
+ * for currently processed file. Other structures are either for
+ * active files interrupted because of include directive (these have
+ * fd and flex buffer) or for inactive files scheduled to be processed
+ * later (when parent requested including of several files by wildcard
+ * match - these do not have fd and flex buffer yet).
+ *
+ * FIXME: Most of these ifs and include functions are really sysdep/unix.
+ *
+ * FIXME: Resources (fd, flex buffers and glob data) in IFS stack
+ * are not freed when cf_error() is called.
+ */
+
+static struct include_file_stack *
+push_ifs(struct include_file_stack *old)
 {
-  char *fname, *p = NULL;
+  struct include_file_stack *ret;
+  ret = cfg_allocz(sizeof(struct include_file_stack));
+  ret->lino = 1;
+  ret->prev = old;
+  return ret;
+}
 
-  if ((fname = strchr(yytext, '"')) != NULL) {
+static struct include_file_stack *
+pop_ifs(struct include_file_stack *old)
+{
+ yy_delete_buffer(old->buffer);
+ close(old->fd);
+ return old->prev;
+}
 
-    if ((p = strchr(++fname, '"')) != NULL) *p = '\0';
+static void
+enter_ifs(struct include_file_stack *new)
+{
+  if (!new->buffer)
+    {
+      new->fd = open(new->file_name, O_RDONLY);
+      if (new->fd < 0)
+        {
+          ifs = ifs->up;
+	  cf_error("Unable to open included file %s: %m", new->file_name);
+        }
 
-    if (ifs_depth >= MAX_INCLUDE_DEPTH)
-      cf_error("Max include depth reached.");
+      new->buffer = yy_create_buffer(NULL, YY_BUF_SIZE);
+    }
 
-    /* Save current stack */
-    ifs->stack = YY_CURRENT_BUFFER;
-    /* Prepare new stack */
-    ifs->next = new_stack(ifs);
-    ifs = ifs->next;
-    strcpy(ifs->conf_fname, fname); /* XXX: strlcpy should be here */
-    ifs->conf_fd = cf_open_hook(fname);
+  yy_switch_to_buffer(new->buffer);
+}
 
-    yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
-  }
+static void
+cf_include(char *arg, int alen)
+{
+  struct include_file_stack *base_ifs = ifs;
+  int new_depth, rv, i;
+  char *patt;
+  glob_t g;
+
+  new_depth = ifs->depth + 1;
+  if (new_depth > MAX_INCLUDE_DEPTH)
+    cf_error("Max include depth reached");
+
+  /* expand arg to properly handle relative filenames */
+  if (*arg != '/')
+    {
+      int dlen = strlen(ifs->file_name);
+      char *dir = alloca(dlen + 1);
+      patt = alloca(dlen + alen + 2);
+      memcpy(dir, ifs->file_name, dlen + 1);
+      sprintf(patt, "%s/%s", dirname(dir), arg);
+    }
+  else
+    patt = arg;
+
+  /* Skip globbing if there are no wildcards, mainly to get proper
+     response when the included config file is missing */
+  if (!strpbrk(arg, "?*["))
+    {
+      ifs = push_ifs(ifs);
+      ifs->file_name = cfg_strdup(patt);
+      ifs->depth = new_depth;
+      ifs->up = base_ifs;
+      enter_ifs(ifs);
+      return;
+    }
+
+  /* Expand the pattern */
+  rv = glob(patt, GLOB_ERR | GLOB_NOESCAPE, NULL, &g);
+  if (rv == GLOB_ABORTED)
+    cf_error("Unable to match pattern %s: %m", patt);
+  if ((rv != 0) || (g.gl_pathc <= 0))
+    return;
+
+  /*
+   * Now we put all found files to ifs stack in reverse order, they
+   * will be activated and processed in order as ifs stack is popped
+   * by pop_ifs() and enter_ifs() in check_eof().
+   */
+  for(i = g.gl_pathc - 1; i >= 0; i--)
+    {
+      char *fname = g.gl_pathv[i];
+      struct stat fs;
+
+      if (stat(fname, &fs) < 0)
+        cf_error("Unable to stat included file %s: %m", fname);
+
+      if (fs.st_mode & S_IFDIR)
+        continue;
+
+      /* Prepare new stack item */
+      ifs = push_ifs(ifs);
+      ifs->file_name = cfg_strdup(fname);
+      ifs->depth = new_depth;
+      ifs->up = base_ifs;
+    }
+
+  globfree(&g);
+  enter_ifs(ifs);
 }
 
 static int
 check_eof(void)
 {
-	if (ifs == ifs_head) {
-		/* EOF in main config file */
-		ifs->conf_lino = 1;
-		return 1;
-	}
+  if (ifs == ifs_head)
+    {
+      /* EOF in main config file */
+      ifs->lino = 1; /* Why this? */
+      return 1;
+    }
 
-	ifs_depth--;
-	close(ifs->conf_fd);
-	ifs = ifs->prev;
-	ifs->next = NULL;
-	
-	yy_delete_buffer(YY_CURRENT_BUFFER);
-	yy_switch_to_buffer(ifs->stack);
-	return 0;
+  ifs = pop_ifs(ifs);
+  enter_ifs(ifs);
+  return 0;
 }
 
 static struct symbol *
@@ -415,16 +526,6 @@ cf_lex_init_kh(void)
   kw_hash_inited = 1;
 }
 
-static struct include_file_stack *
-new_stack(struct include_file_stack *old)
-{
-  struct include_file_stack *ret;
-  ret = cfg_allocz(sizeof(struct include_file_stack));
-  ret->conf_lino = 1;
-  ret->prev = old;
-  return ret;
-}
-
 /**
  * cf_lex_init - initialize the lexer
  * @is_cli: true if we're going to parse CLI command, false for configuration
@@ -437,19 +538,23 @@ cf_lex_init(int is_cli, struct config *c)
 {
   if (!kw_hash_inited)
     cf_lex_init_kh();
-  ifs_head = new_stack(NULL);
-  ifs = ifs_head;
-  ifs_depth = 0;
-  if (!is_cli) {
-    ifs->conf_fd = c->file_fd;
-    ifs_depth = 1;
-    strcpy(ifs->conf_fname, c->file_name);
-  }
+
+  ifs_head = ifs = push_ifs(NULL);
+  if (!is_cli) 
+    {
+      ifs->file_name = c->file_name;
+      ifs->fd = c->file_fd;
+      ifs->depth = 1;
+    }
+
   yyrestart(NULL);
+  ifs->buffer = YY_CURRENT_BUFFER;
+
   if (is_cli)
     BEGIN(CLI);
   else
     BEGIN(INITIAL);
+
   conf_this_scope = cfg_allocz(sizeof(struct sym_scope));
   conf_this_scope->active = 1;
 }
