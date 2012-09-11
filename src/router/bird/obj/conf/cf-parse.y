@@ -40,7 +40,7 @@ check_u16(unsigned val)
 #define THIS_KRT ((struct krt_config *) this_proto)
 #define THIS_KIF ((struct kif_config *) this_proto)
 
-/* Headers from ../../sysdep/linux/netlink/netlink.Y */
+/* Headers from ../../sysdep/linux/netlink.Y */
 
 /* Headers from ../../nest/config.Y */
 
@@ -422,7 +422,17 @@ static inline void
 check_defcost(int cost)
 {
   if ((cost <= 0) || (cost >= LSINFINITY))
-   cf_error("Default cost must be in range 1-%d", LSINFINITY);
+   cf_error("Default cost must be in range 1-%d", LSINFINITY-1);
+}
+
+static inline void
+set_instance_id(unsigned id)
+{
+#ifdef OSPFv3
+  OSPF_PATT->instance_id = id;
+#else
+  cf_error("Instance ID requires OSPFv3");
+#endif
 }
 
 /* Headers from ../../proto/pipe/config.Y */
@@ -524,9 +534,9 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 %token DOWN
 /* Declarations from ../../sysdep/unix/krt.Y */
 
-%token KERNEL PERSIST SCAN TIME LEARN DEVICE ROUTES
+%token KERNEL PERSIST SCAN TIME LEARN DEVICE ROUTES KRT_SOURCE KRT_METRIC
 
-/* Declarations from ../../sysdep/linux/netlink/netlink.Y */
+/* Declarations from ../../sysdep/linux/netlink.Y */
 
 %token ASYNC TABLE KRT_PREFSRC KRT_REALM
 
@@ -534,9 +544,10 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 
 %token ROUTER ID PROTOCOL TEMPLATE PREFERENCE DISABLED DIRECT
 %token INTERFACE IMPORT EXPORT FILTER NONE STATES FILTERS
+%token LIMIT ACTION WARN BLOCK RESTART DISABLE
 %token PASSWORD FROM PASSIVE TO EVENTS PACKETS PROTOCOLS INTERFACES
 %token PRIMARY STATS COUNT FOR COMMANDS PREEXPORT GENERATE ROA MAX FLUSH
-%token LISTEN BGP V6ONLY DUAL ADDRESS PORT PASSWORDS DESCRIPTION
+%token LISTEN BGP V6ONLY DUAL ADDRESS PORT PASSWORDS DESCRIPTION SORTED
 %token RELOAD IN OUT MRTDUMP MESSAGES RESTRICT MEMORY IGP_METRIC
 
 
@@ -553,8 +564,9 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 %type <ro> roa_args
 %type <rot> roa_table_arg
 %type <sd> sym_args
-%type <i> proto_start echo_mask echo_size debug_mask debug_list debug_flag mrtdump_mask mrtdump_list mrtdump_flag export_or_preexport roa_mode
+%type <i> proto_start echo_mask echo_size debug_mask debug_list debug_flag mrtdump_mask mrtdump_list mrtdump_flag export_or_preexport roa_mode limit_action tab_sorted
 %type <ps> proto_patt proto_patt2
+%type <g> limit_spec
 
 %token SHOW STATUS
 %token SUMMARY
@@ -567,9 +579,7 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 %token NEIGHBORS
 %token ATTRIBUTES
 %token ECHO
-%token DISABLE
 %token ENABLE
-%token RESTART
 /* Declarations from ../../filter/config.Y */
 
 %token FUNCTION PRINT PRINTN UNSET RETURN ACCEPT REJECT QUITBIRD INT BOOL IP PREFIX PAIR QUAD EC SET STRING BGPMASK BGPPATH CLIST ECLIST IF THEN ELSE CASE TRUE FALSE RT RO UNKNOWN GENERIC GW NET MASK PROTO SOURCE SCOPE CAST DEST LEN DEFINED CONTAINS RESET PREPEND FIRST LAST MATCH ROA_CHECK EMPTY WHERE EVAL
@@ -589,7 +599,7 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 
 /* Declarations from ../../proto/bgp/config.Y */
 
-%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY BGP_EXT_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT PREFER OLDER MISSING LLADDR DROP IGNORE REFRESH INTERPRET COMMUNITIES BGP_ORIGINATOR_ID BGP_CLUSTER_LIST IGP GATEWAY RECURSIVE MED TTL SECURITY DETERMINISTIC
+%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY BGP_EXT_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES PREFER OLDER MISSING LLADDR DROP IGNORE REFRESH INTERPRET COMMUNITIES BGP_ORIGINATOR_ID BGP_CLUSTER_LIST IGP GATEWAY RECURSIVE MED TTL SECURITY DETERMINISTIC SECONDARY
 
 /* Declarations from ../../proto/ospf/config.Y */
 
@@ -601,7 +611,7 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 %token ELIGIBLE POLL NETWORKS HIDDEN VIRTUAL CHECK LINK
 %token RX BUFFER LARGE NORMAL STUBNET TAG EXTERNAL
 %token LSADB ECMP WEIGHT NSSA TRANSLATOR STABILITY
-%token GLOBAL LSID
+%token GLOBAL LSID INSTANCE REAL
 
 %type <t> opttext
 %type <ld> lsadb_args
@@ -823,17 +833,7 @@ cfg_name:
 /* Kernel syncer protocol */
 
 
-kern_proto_start: proto_start KERNEL {
-#ifndef CONFIG_MULTIPLE_TABLES
-     if (cf_krt)
-       cf_error("Kernel protocol already defined");
-#endif
-     cf_krt = this_proto = proto_config_new(&proto_unix_kernel, sizeof(struct krt_config), $1);
-     THIS_KRT->scan_time = 60;
-     THIS_KRT->learn = THIS_KRT->persist = 0;
-     krt_scan_construct(THIS_KRT);
-     krt_set_construct(THIS_KRT);
-   }
+kern_proto_start: proto_start KERNEL { this_proto = krt_init_config($1); }
  ;
 
 
@@ -856,14 +856,7 @@ kern_item:
 /* Kernel interface protocol */
 
 
-kif_proto_start: proto_start DEVICE {
-     if (cf_kif)
-       cf_error("Kernel device protocol already defined");
-     cf_kif = this_proto = proto_config_new(&proto_unix_iface, sizeof(struct kif_config), $1);
-     THIS_KIF->scan_time = 60;
-     init_list(&THIS_KIF->primary);
-     krt_if_construct(THIS_KIF);
-   }
+kif_proto_start: proto_start DEVICE { this_proto = kif_init_config($1); }
  ;
 
 
@@ -881,14 +874,15 @@ kif_item:
    }
  ;
 
-/* Grammar from ../../sysdep/linux/netlink/netlink.Y */
+
+/* Grammar from ../../sysdep/linux/netlink.Y */
 
 
 nl_item:
    KERNEL TABLE expr {
 	if ($3 <= 0 || $3 >= NL_NUM_TABLES)
 	  cf_error("Kernel routing table number out of range");
-	THIS_KRT->scan.table_id = $3;
+	THIS_KRT->sys.table_id = $3;
    }
  ;
 
@@ -934,9 +928,16 @@ listen_opt:
 
 /* Creation of routing tables */
 
+tab_sorted:
+          { $$ = 0; }
+ | SORTED { $$ = 1; }
+ ;
 
-newtab: TABLE SYM {
-   rt_new_table($2);
+
+newtab: TABLE SYM tab_sorted {
+   struct rtable_config *cf;
+   cf = rt_new_table($2);
+   cf->sorted = $3;
    }
  ;
 
@@ -997,6 +998,8 @@ proto_item:
  | MRTDUMP mrtdump_mask { this_proto->mrtdump = $2; }
  | IMPORT imexport { this_proto->in_filter = $2; }
  | EXPORT imexport { this_proto->out_filter = $2; }
+ | IMPORT LIMIT limit_spec { this_proto->in_limit = $3; }
+ | EXPORT LIMIT limit_spec { this_proto->out_limit = $3; }
  | TABLE rtable { this_proto->table = $2; }
  | ROUTER ID idval { this_proto->router_id = $3; }
  | DESCRIPTION TEXT { this_proto->dsc = $2; }
@@ -1007,6 +1010,23 @@ imexport:
  | where_filter
  | ALL { $$ = FILTER_ACCEPT; }
  | NONE { $$ = FILTER_REJECT; }
+ ;
+
+limit_action:
+   /* default */ { $$ = PLA_DISABLE; }
+ | ACTION WARN { $$ = PLA_WARN; }
+ | ACTION BLOCK { $$ = PLA_BLOCK; }
+ | ACTION RESTART { $$ = PLA_RESTART; }
+ | ACTION DISABLE { $$ = PLA_DISABLE; }
+ ;
+
+limit_spec:
+   expr limit_action {
+     struct proto_limit *l = cfg_allocz(sizeof(struct proto_limit));
+     l->limit = $1;
+     l->action = $2;
+     $$ = l;
+   }
  ;
 
 rtable:
@@ -1862,7 +1882,7 @@ static_attr:
  | SOURCE  { $$ = f_new_inst(); $$->aux = T_ENUM_RTS;   $$->a2.i = OFFSETOF(struct rta, source); }
  | SCOPE   { $$ = f_new_inst(); $$->aux = T_ENUM_SCOPE; $$->a2.i = OFFSETOF(struct rta, scope);  $$->a1.i = 1; }
  | CAST    { $$ = f_new_inst(); $$->aux = T_ENUM_RTC;   $$->a2.i = OFFSETOF(struct rta, cast); }
- | DEST    { $$ = f_new_inst(); $$->aux = T_ENUM_RTD;   $$->a2.i = OFFSETOF(struct rta, dest); }
+ | DEST    { $$ = f_new_inst(); $$->aux = T_ENUM_RTD;   $$->a2.i = OFFSETOF(struct rta, dest);   $$->a1.i = 1; }
  ;
 
 term:
@@ -2128,9 +2148,14 @@ bgp_proto:
  | bgp_proto CAPABILITIES bool ';' { BGP_CFG->capabilities = $3; }
  | bgp_proto ADVERTISE IPV4 bool ';' { BGP_CFG->advertise_ipv4 = $4; }
  | bgp_proto PASSWORD TEXT ';' { BGP_CFG->password = $3; }
- | bgp_proto ROUTE LIMIT expr ';' { BGP_CFG->route_limit = $4; }
+ | bgp_proto ROUTE LIMIT expr ';' {
+     this_proto->in_limit = cfg_allocz(sizeof(struct proto_limit));
+     this_proto->in_limit->limit = $4;
+     this_proto->in_limit->action = PLA_RESTART;
+   }
  | bgp_proto PASSIVE bool ';' { BGP_CFG->passive = $3; }
  | bgp_proto INTERPRET COMMUNITIES bool ';' { BGP_CFG->interpret_communities = $4; }
+ | bgp_proto SECONDARY bool ';' { BGP_CFG->secondary = $3; }
  | bgp_proto IGP TABLE rtable ';' { BGP_CFG->igp_table = $4; }
  | bgp_proto TTL SECURITY bool ';' { BGP_CFG->ttl_security = $4; }
  ;
@@ -2232,8 +2257,8 @@ ospf_stubnet_item:
  ;
 
 ospf_vlink:
-   ospf_vlink_start '{' ospf_vlink_opts '}' { ospf_iface_finish(); }
- | ospf_vlink_start { ospf_iface_finish(); }
+   ospf_vlink_start ospf_instance_id '{' ospf_vlink_opts '}' { ospf_iface_finish(); }
+ | ospf_vlink_start ospf_instance_id { ospf_iface_finish(); }
  ;
 
 ospf_vlink_opts:
@@ -2291,6 +2316,7 @@ ospf_iface_item:
  | TYPE PTP { OSPF_PATT->type = OSPF_IT_PTP ; }
  | TYPE POINTOMULTIPOINT { OSPF_PATT->type = OSPF_IT_PTMP ; }
  | TYPE PTMP { OSPF_PATT->type = OSPF_IT_PTMP ; }
+ | REAL BROADCAST bool { OSPF_PATT->real_bcast = $3; if (OSPF_VERSION != 2) cf_error("Real broadcast option requires OSPFv2"); }
  | TRANSMIT DELAY expr { OSPF_PATT->inftransdelay = $3 ; if (($3<=0) || ($3>65535)) cf_error("Transmit delay must be in range 1-65535"); }
  | PRIORITY expr { OSPF_PATT->priority = $2 ; if (($2<0) || ($2>255)) cf_error("Priority must be in range 0-255"); }
  | STRICT NONBROADCAST bool { OSPF_PATT->strictnbma = $3 ; }
@@ -2378,6 +2404,11 @@ ospf_iface_start:
  }
 ;
 
+ospf_instance_id:
+   /* empty */
+ | INSTANCE expr { set_instance_id($2); }
+ ;
+
 ospf_iface_opts:
    /* empty */
  | ospf_iface_opts ospf_iface_item ';'
@@ -2389,7 +2420,7 @@ ospf_iface_opt_list:
  ;
 
 ospf_iface:
-  ospf_iface_start iface_patt_list ospf_iface_opt_list { ospf_iface_finish(); }
+  ospf_iface_start iface_patt_list ospf_instance_id ospf_iface_opt_list { ospf_iface_finish(); }
  ;
 
 opttext:
@@ -2613,7 +2644,7 @@ cli_cmd: cmd_CONFIGURE | cmd_CONFIGURE_SOFT | cmd_DOWN | cmd_SHOW_STATUS | cmd_S
 proto: kern_proto '}' | kif_proto '}' | dev_proto '}' | bgp_proto '}' { bgp_check_config(BGP_CFG); }  | ospf_proto '}' { ospf_proto_finish(); }  | pipe_proto '}' | rip_cfg '}' { RIP_CFG->passwords = get_passwords(); }  | static_proto '}' ;
 kern_proto: kern_proto_start proto_name '{' | kern_proto proto_item ';' | kern_proto kern_item ';' | kern_proto nl_item ';' ;
 kif_proto: kif_proto_start proto_name '{' | kif_proto proto_item ';' | kif_proto kif_item ';' ;
-dynamic_attr: KRT_PREFSRC { $$ = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_KRT_PREFSRC); } | KRT_REALM { $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_KRT_REALM); } | IGP_METRIC
+dynamic_attr: KRT_SOURCE { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_KRT_SOURCE); } | KRT_METRIC { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_KRT_METRIC); } | KRT_PREFSRC { $$ = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_KRT_PREFSRC); } | KRT_REALM { $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_KRT_REALM); } | IGP_METRIC
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_GEN_IGP_METRIC); } | INVALID_TOKEN { $$ = NULL; } | BGP_ORIGIN
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_ENUM_BGP_ORIGIN, EA_CODE(EAP_BGP, BA_ORIGIN)); } | BGP_PATH
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_AS_PATH, T_PATH, EA_CODE(EAP_BGP, BA_AS_PATH)); } | BGP_NEXT_HOP
@@ -2634,7 +2665,7 @@ dynamic_attr: KRT_PREFSRC { $$ = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, E
 
 /* C Code from ../../sysdep/unix/krt.Y */
 
-/* C Code from ../../sysdep/linux/netlink/netlink.Y */
+/* C Code from ../../sysdep/linux/netlink.Y */
 
 /* C Code from ../../nest/config.Y */
 

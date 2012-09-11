@@ -5,7 +5,7 @@
  */
 
 /* System configuration file */
-#define SYSCONF_INCLUDE "sysdep/cf/linux-22.h"
+#define SYSCONF_INCLUDE "sysdep/cf/linux.h"
 
 /* Include debugging code */
 /* #undef DEBUGGING */
