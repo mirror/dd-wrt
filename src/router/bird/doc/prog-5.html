@@ -784,6 +784,17 @@ about a change in one of the tables, it converts it to a <B>rte_update()</B>
 in the other one.
 <P>To avoid pipe loops, Pipe keeps a `being updated' flag in each routing
 table.
+<P>A pipe has two announce hooks, the first connected to the main
+table, the second connected to the peer table. When a new route is
+announced on the main table, it gets checked by an export filter in
+ahook 1, and, after that, it is announced to the peer table via
+<B>rte_update()</B>, an import filter in ahook 2 is called. When a new
+route is announced in the peer table, an export filter in ahook2
+and an import filter in ahook 1 are used. Oviously, there is no
+need in filtering the same route twice, so both import filters are
+set to accept, while user configured 'import' and 'export' filters
+are used as export filters in ahooks 2 and 1. Route limits are
+handled similarly, but on the import side of ahooks.
 <P>
 <P>
 <H2><A NAME="ss5.4">5.4</A> <A HREF="prog.html#toc5.4">Routing Information Protocol</A>
@@ -863,6 +874,9 @@ and removed according to iface events from BIRD core handled by
 <B>radv_iface_notify()</B>, which processes asynchronous events (specified
 by RA_EV_* codes), and <B>radv_timer()</B>, which triggers sending RAs and
 computes the next timeout.
+<P>Supported standards:
+- RFC 4861 - main RA standard
+- RFC 6106 - DNS extensions (RDDNS, DNSSL)
 <P>
 <P>
 <H2><A NAME="ss5.6">5.6</A> <A HREF="prog.html#toc5.6">Static</A>

@@ -90,7 +90,7 @@ void dump_attrs(rte *e)
  * @p: protocol instance
  *
  * The start() hook is called by the core when it wishes to start
- * the instance.
+ * the instance. Multitable protocols should lock their tables here.
  *
  * Result: new protocol state
  */
@@ -107,6 +107,17 @@ int start(struct proto *p)
  * Returns: new protocol state
  */
 int shutdown(struct proto *p)
+{ DUMMY; }
+
+/**
+ * cleanup - request instance cleanup
+ * @p: protocol instance
+ *
+ * The cleanup() hook is called by the core when the protocol became
+ * hungry/down, i.e. all protocol ahooks and routes are flushed.
+ * Multitable protocols should unlock their tables here.
+ */
+void cleanup(struct proto *p)
 { DUMMY; }
 
 /**

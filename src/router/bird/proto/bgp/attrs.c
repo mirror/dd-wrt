@@ -1258,7 +1258,8 @@ same_group(rte *r, u32 lpref, u32 lasn)
 static inline int
 use_deterministic_med(rte *r)
 {
-  return ((struct bgp_proto *) r->attrs->proto)->cf->deterministic_med;
+  struct proto *P = r->attrs->proto;
+  return (P->proto == &proto_bgp) && ((struct bgp_proto *) P)->cf->deterministic_med;
 }
 
 int

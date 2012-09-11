@@ -224,6 +224,9 @@ static_start(struct proto *p)
   if (cf->igp_table)
     rt_lock_table(cf->igp_table->table);
 
+  /* We have to go UP before routes could be installed */
+  proto_notify_state(p, PS_UP);
+
   WALK_LIST(r, cf->other_routes)
     static_add(p, cf, r);
   return PS_UP;

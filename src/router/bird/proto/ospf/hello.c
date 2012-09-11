@@ -303,7 +303,7 @@ ospf_hello_send(struct ospf_iface *ifa, int kind, struct ospf_neighbor *dirn)
   {
   case OSPF_IT_BCAST:
   case OSPF_IT_PTP:
-    ospf_send_to(ifa, AllSPFRouters);
+    ospf_send_to_all(ifa);
     break;
 
   case OSPF_IT_NBMA:

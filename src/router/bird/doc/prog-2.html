@@ -213,7 +213,7 @@ the protocol.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>rte_announce</B>
-(<I>rtable *</I> <B>tab</B>, <I>unsigned</I> <B>type</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>, <I>ea_list *</I> <B>tmpa</B>) --     announce a routing table change
+(<I>rtable *</I> <B>tab</B>, <I>unsigned</I> <B>type</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>, <I>rte *</I> <B>before_old</B>, <I>ea_list *</I> <B>tmpa</B>) --     announce a routing table change
 <P>
 <H3>Arguments</H3>
 <P>
@@ -223,6 +223,7 @@ the protocol.
 <DT><I>net *</I> <B>net</B><DD><P>network in question
 <DT><I>rte *</I> <B>new</B><DD><P>the new route to be announced
 <DT><I>rte *</I> <B>old</B><DD><P>the previous route for the same network
+<DT><I>rte *</I> <B>before_old</B><DD><P>-- undescribed --
 <DT><I>ea_list *</I> <B>tmpa</B><DD><P>a list of temporary attributes belonging to the new route
 </DL>
 <H3>Description</H3>
@@ -260,17 +261,16 @@ the protocol gets called.
 
 <HR><H3>Function</H3>
 <P><I>void</I>
-<B>rte_update</B>
-(<I>rtable *</I> <B>table</B>, <I>net *</I> <B>net</B>, <I>struct proto *</I> <B>p</B>, <I>struct proto *</I> <B>src</B>, <I>rte *</I> <B>new</B>) --     enter a new update to a routing table
+<B>rte_update2</B>
+(<I>struct announce_hook *</I> <B>ah</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>struct proto *</I> <B>src</B>) --     enter a new update to a routing table
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>rtable *</I> <B>table</B><DD><P>table to be updated
+<DT><I>struct announce_hook *</I> <B>ah</B><DD><P>pointer to table announce hook
 <DT><I>net *</I> <B>net</B><DD><P>network node
-<DT><I>struct proto *</I> <B>p</B><DD><P>protocol submitting the update
-<DT><I>struct proto *</I> <B>src</B><DD><P>protocol originating the update
 <DT><I>rte *</I> <B>new</B><DD><P>a <I>rte</I> representing the new route or <I>NULL</I> for route removal.
+<DT><I>struct proto *</I> <B>src</B><DD><P>protocol originating the update
 </DL>
 <H3>Description</H3>
 <P>This function is called by the routing protocols whenever they discover
@@ -352,29 +352,15 @@ routing table module.
 
 
 <HR><H3>Function</H3>
-<P><I>void</I>
-<B>rt_prune</B>
-(<I>rtable *</I> <B>tab</B>) --     prune a routing table
-<P>
-<H3>Arguments</H3>
-<P>
-<DL>
-<DT><I>rtable *</I> <B>tab</B><DD><P>routing table to be pruned
-</DL>
-<H3>Description</H3>
-<P>This function is called whenever a protocol shuts down. It scans
-the routing table and removes all routes belonging to inactive
-protocols and also stale network entries.
-
-
-<HR><H3>Function</H3>
-<P><I>void</I>
-<B>rt_prune_all</B>
-(<B>void</B>) --     prune all routing tables
+<P><I>int</I>
+<B>rt_prune_loop</B>
+(<B>void</B>) --     prune routing tables
 <P>
 <H3>Description</H3>
-<P>
-<P>This function calls <B>rt_prune()</B> for all known routing tables.
+<P>The prune loop scans routing tables and removes routes belonging to
+inactive protocols and also stale network entries. Returns 1 when
+all such routes are pruned. It is a part of the protocol flushing
+loop.
 
 
 <HR><H3>Function</H3>
@@ -923,22 +909,44 @@ to values wanted by the protocol.
 <HR><H3>Function</H3>
 <P><I>struct announce_hook *</I>
 <B>proto_add_announce_hook</B>
-(<I>struct proto *</I> <B>p</B>, <I>struct rtable *</I> <B>t</B>) --  connect protocol to a routing table
+(<I>struct proto *</I> <B>p</B>, <I>struct rtable *</I> <B>t</B>, <I>struct proto_stats *</I> <B>stats</B>) --  connect protocol to a routing table
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
 <DT><I>struct rtable *</I> <B>t</B><DD><P>routing table to connect to
+<DT><I>struct proto_stats *</I> <B>stats</B><DD><P>per-table protocol statistics
 </DL>
 <H3>Description</H3>
 <P>This function creates a connection between the protocol instance <B>p</B>
 and the routing table <B>t</B>, making the protocol hear all changes in
 the table.
+<P>The announce hook is linked in the protocol ahook list and, if the
+protocol accepts routes, also in the table ahook list. Announce
+hooks are allocated from the routing table resource pool, they are
+unlinked from the table ahook list after the protocol went down,
+(in <B>proto_schedule_flush()</B>) and they are automatically freed after the
+protocol is flushed (in <B>proto_fell_down()</B>).
 <P>Unless you want to listen to multiple routing tables (as the Pipe
 protocol does), you needn't to worry about this function since the
 connection to the protocol's primary routing table is initialized
 automatically by the core code.
+
+
+<HR><H3>Function</H3>
+<P><I>struct announce_hook *</I>
+<B>proto_find_announce_hook</B>
+(<I>struct proto *</I> <B>p</B>, <I>struct rtable *</I> <B>t</B>) --  find announce hooks
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+<DT><I>struct rtable *</I> <B>t</B><DD><P>routing table
+</DL>
+<H3>Description</H3>
+<P>Returns pointer to announce hook or NULL
 
 
 <HR><H3>Function</H3>
@@ -1116,6 +1124,23 @@ when feeding is already running, in that case it is restarted.
 
 <HR><H3>Function</H3>
 <P><I>void</I>
+<B>proto_notify_limit</B>
+(<I>struct announce_hook *</I> <B>ah</B>, <I>struct proto_limit *</I> <B>l</B>, <I>u32</I> <B>rt_count</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct announce_hook *</I> <B>ah</B><DD><P>announce hook
+<DT><I>struct proto_limit *</I> <B>l</B><DD><P>limit being hit
+<DT><I>u32</I> <B>rt_count</B><DD><P>the number of routes 
+</DL>
+<H3>Description</H3>
+<P>The function is called by the route processing core when limit <B>l</B>
+is breached. It activates the limit and tooks appropriate action
+according to <B>l</B>-&gt;action.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
 <B>proto_notify_state</B>
 (<I>struct proto *</I> <B>p</B>, <I>unsigned</I> <B>ps</B>) --  notify core about protocol state change
 <P>
@@ -1255,7 +1280,7 @@ protocol to the debug output.
 </DL>
 <H3>Description</H3>
 <P>The <B>start()</B> hook is called by the core when it wishes to start
-the instance.
+the instance. Multitable protocols should lock their tables here.
 <H3>Result</H3>
 <P>new protocol state
 
@@ -1275,6 +1300,22 @@ the instance.
 the instance down for some reason.
 <H3>Returns</H3>
 <P>new protocol state
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>cleanup</B>
+(<I>struct proto *</I> <B>p</B>) --     request instance cleanup
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+</DL>
+<H3>Description</H3>
+<P>The <B>cleanup()</B> hook is called by the core when the protocol became
+hungry/down, i.e. all protocol ahooks and routes are flushed.
+Multitable protocols should unlock their tables here.
 
 
 <HR><H3>Function</H3>

@@ -352,7 +352,7 @@ mb_alloc(pool *p, unsigned size)
  * zeroes and creates a memory block resource representing this memory
  * chunk in the pool @p.
  *
- * Please note that mb_alloc() returns a pointer to the memory
+ * Please note that mb_allocz() returns a pointer to the memory
  * chunk, not to the resource, hence you have to free it using
  * mb_free(), not rfree().
  */

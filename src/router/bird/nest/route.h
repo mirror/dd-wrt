@@ -12,6 +12,7 @@
 #include "lib/lists.h"
 #include "lib/resource.h"
 #include "lib/timer.h"
+#include "nest/protocol.h"
 
 struct protocol;
 struct proto;
@@ -120,6 +121,7 @@ struct rtable_config {
   struct proto_config *krt_attached;	/* Kernel syncer attached to this table */
   int gc_max_ops;			/* Maximum number of operations before GC is run */
   int gc_min_time;			/* Minimum time between two consecutive GC runs */
+  byte sorted;				/* Routes of network are sorted according to rte_better() */
 };
 
 typedef struct rtable {
@@ -139,8 +141,10 @@ typedef struct rtable {
   int gc_counter;			/* Number of operations since last GC */
   bird_clock_t gc_time;			/* Time of last GC */
   byte gc_scheduled;			/* GC is scheduled */
+  byte prune_state;			/* Table prune state, 1 -> prune is running */
   byte hcu_scheduled;			/* Hostcache update is scheduled */
   byte nhu_state;			/* Next Hop Update state */
+  struct fib_iterator prune_fit;	/* Rtable prune FIB iterator */
   struct fib_iterator nhu_fit;		/* Next Hop Update FIB iterator */
 } rtable;
 
@@ -179,7 +183,7 @@ struct hostentry {
 typedef struct rte {
   struct rte *next;
   net *net;				/* Network this RTE belongs to */
-  struct proto *sender;			/* Protocol instance that sent the route to the routing table */
+  struct announce_hook *sender;		/* Announce hook used to send the route to the routing table */
   struct rta *attrs;			/* Attributes of this route */
   byte flags;				/* Flags (REF_...) */
   byte pflags;				/* Protocol-specific flags */
@@ -216,11 +220,12 @@ typedef struct rte {
   } u;
 } rte;
 
-#define REF_COW 1			/* Copy this rte on write */
+#define REF_COW		1		/* Copy this rte on write */
 
 /* Types of route announcement, also used as flags */
-#define RA_OPTIMAL 1			/* Announcement of optimal route change */
-#define RA_ANY 2			/* Announcement of any route change */
+#define RA_OPTIMAL	1		/* Announcement of optimal route change */
+#define RA_ACCEPTED	2		/* Announcement of first accepted route */
+#define RA_ANY		3		/* Announcement of any route change */
 
 struct config;
 
@@ -234,7 +239,8 @@ static inline net *net_find(rtable *tab, ip_addr addr, unsigned len) { return (n
 static inline net *net_get(rtable *tab, ip_addr addr, unsigned len) { return (net *) fib_get(&tab->fib, &addr, len); }
 rte *rte_find(net *net, struct proto *p);
 rte *rte_get_temp(struct rta *);
-void rte_update(rtable *tab, net *net, struct proto *p, struct proto *src, rte *new);
+void rte_update2(struct announce_hook *ah, net *net, rte *new, struct proto *src);
+static inline void rte_update(rtable *tab, net *net, struct proto *p, struct proto *src, rte *new) { rte_update2(p->main_ahook, net, new, src); }
 void rte_discard(rtable *tab, rte *old);
 void rte_dump(rte *);
 void rte_free(rte *);
@@ -244,7 +250,8 @@ void rt_dump(rtable *);
 void rt_dump_all(void);
 int rt_feed_baby(struct proto *p);
 void rt_feed_baby_abort(struct proto *p);
-void rt_prune_all(void);
+void rt_schedule_prune_all(void);
+int rt_prune_loop(void);
 struct rtable_config *rt_new_table(struct symbol *s);
 
 struct rt_show_data {

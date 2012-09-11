@@ -120,13 +120,24 @@ ospf_sk_open(struct ospf_iface *ifa)
   sk->saddr = ifa->addr->ip;
   if ((ifa->type == OSPF_IT_BCAST) || (ifa->type == OSPF_IT_PTP))
   {
-    sk->ttl = 1;	/* Hack, this will affect just multicast packets */
+    if (ifa->cf->real_bcast)
+    {
+      ifa->all_routers = ifa->addr->brd;
 
-    if (sk_setup_multicast(sk) < 0)
-      goto err;
+      if (sk_set_broadcast(sk, 1) < 0)
+        goto err;
+    }
+    else
+    {
+      ifa->all_routers = AllSPFRouters;
+      sk->ttl = 1;	/* Hack, this will affect just multicast packets */
 
-    if (sk_join_group(sk, AllSPFRouters) < 0)
-      goto err;
+      if (sk_setup_multicast(sk) < 0)
+        goto err;
+
+      if (sk_join_group(sk, ifa->all_routers) < 0)
+        goto err;
+    }
   }
 
   ifa->sk = sk;
@@ -265,7 +276,7 @@ ospf_iface_chstate(struct ospf_iface *ifa, u8 state)
     OSPF_TRACE(D_EVENTS, "Changing state of iface %s from %s to %s",
 	       ifa->iface->name, ospf_is[oldstate], ospf_is[state]);
 
-  if ((ifa->type == OSPF_IT_BCAST) && ifa->sk)
+  if ((ifa->type == OSPF_IT_BCAST) && !ifa->cf->real_bcast && ifa->sk)
   {
     if ((state == OSPF_IS_BACKUP) || (state == OSPF_IS_DR))
       ospf_sk_join_dr(ifa);
@@ -536,6 +547,7 @@ ospf_iface_new(struct ospf_area *oa, struct ifa *addr, struct ospf_iface_patt *i
 
   /* Check validity of interface type */
   int old_type = ifa->type;
+  u32 if_multi_flag = ip->real_bcast ? IF_BROADCAST : IF_MULTICAST;
 
 #ifdef OSPFv2
   if ((ifa->type == OSPF_IT_BCAST) && (addr->flags & IA_PEER))
@@ -545,10 +557,10 @@ ospf_iface_new(struct ospf_area *oa, struct ifa *addr, struct ospf_iface_patt *i
     ifa->type = OSPF_IT_PTMP;
 #endif
 
-  if ((ifa->type == OSPF_IT_BCAST) && !(iface->flags & IF_MULTICAST))
+  if ((ifa->type == OSPF_IT_BCAST) && !(iface->flags & if_multi_flag))
     ifa->type = OSPF_IT_NBMA;
 
-  if ((ifa->type == OSPF_IT_PTP) && !(iface->flags & IF_MULTICAST))
+  if ((ifa->type == OSPF_IT_PTP) && !(iface->flags & if_multi_flag))
     ifa->type = OSPF_IT_PTMP;
 
   if (ifa->type != old_type)
@@ -626,6 +638,9 @@ ospf_iface_reconfigure(struct ospf_iface *ifa, struct ospf_iface_patt *new)
 
   int new_stub = ospf_iface_stubby(new, ifa->addr);
   if (ifa->stub != new_stub)
+    return 0;
+
+  if (new->real_bcast != ifa->cf->real_bcast)
     return 0;
 
   ifa->cf = new;
@@ -1099,11 +1114,15 @@ ospf_if_notify(struct proto *p, unsigned flags, struct iface *iface)
 void
 ospf_iface_info(struct ospf_iface *ifa)
 {
-  char *strict = "";
+  char *more = "";
 
   if (ifa->strictnbma &&
       ((ifa->type == OSPF_IT_NBMA) || (ifa->type == OSPF_IT_PTMP)))
-    strict = "(strict)";
+    more = " (strict)";
+
+  if (ifa->cf->real_bcast &&
+      ((ifa->type == OSPF_IT_BCAST) || (ifa->type == OSPF_IT_PTP)))
+    more = " (real)";
 
   if (ifa->type == OSPF_IT_VLINK)
   {
@@ -1124,11 +1143,10 @@ ospf_iface_info(struct ospf_iface *ifa)
 #else /* OSPFv3 */
     cli_msg(-1015, "Interface %s (IID %d)", ifa->iface->name, ifa->instance_id);
 #endif
-    cli_msg(-1015, "\tType: %s %s", ospf_it[ifa->type], strict);
+    cli_msg(-1015, "\tType: %s%s", ospf_it[ifa->type], more);
     cli_msg(-1015, "\tArea: %R (%u)", ifa->oa->areaid, ifa->oa->areaid);
   }
-  cli_msg(-1015, "\tState: %s %s", ospf_is[ifa->state],
-	  ifa->stub ? "(stub)" : "");
+  cli_msg(-1015, "\tState: %s%s", ospf_is[ifa->state], ifa->stub ? " (stub)" : "");
   cli_msg(-1015, "\tPriority: %u", ifa->priority);
   cli_msg(-1015, "\tCost: %u", ifa->cost);
   if (ifa->oa->po->ecmp)
