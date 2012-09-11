@@ -852,12 +852,25 @@ interpret(struct f_inst *what)
     {
       struct rta *rta = (*f_rte)->attrs;
       switch (what->aux) {
-      case T_ENUM:
-	* ((char *) rta + what->a2.i) = v1.val.i;
-	break;
+
       case T_IP:
 	* (ip_addr *) ((char *) rta + what->a2.i) = v1.val.px.ip;
 	break;
+
+      case T_ENUM_SCOPE:
+	rta->scope = v1.val.i;
+	break;
+
+      case T_ENUM_RTD:
+	i = v1.val.i;
+	if ((i != RTD_BLACKHOLE) && (i != RTD_UNREACHABLE) && (i != RTD_PROHIBIT))
+	  runtime( "Destination can be changed only to blackhole, unreachable or prohibit" );
+	rta->dest = i;
+	rta->gw = IPA_NONE;
+	rta->iface = NULL;
+	rta->nexthops = NULL;
+	break;
+
       default:
 	bug( "Unknown type in set of static attribute" );
       }

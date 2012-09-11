@@ -542,22 +542,6 @@ bgp_active(struct bgp_proto *p)
   bgp_start_timer(conn->connect_retry_timer, delay);
 }
 
-int
-bgp_apply_limits(struct bgp_proto *p)
-{
-  if (p->cf->route_limit && (p->p.stats.imp_routes > p->cf->route_limit))
-    {
-      log(L_WARN "%s: Route limit exceeded, shutting down", p->p.name);
-      bgp_store_error(p, NULL, BE_AUTO_DOWN, BEA_ROUTE_LIMIT_EXCEEDED);
-      bgp_update_startup_delay(p);
-      bgp_stop(p, 1); // Errcode 6, 1 - max number of prefixes reached
-      return -1;
-    }
-
-  return 0;
-}
-
-
 /**
  * bgp_connect - initiate an outgoing connection
  * @p: BGP instance
@@ -864,28 +848,59 @@ bgp_start(struct proto *P)
   return PS_START;
 }
 
+extern int proto_restart;
+
 static int
 bgp_shutdown(struct proto *P)
 {
   struct bgp_proto *p = (struct bgp_proto *) P;
-  unsigned subcode;
+  unsigned subcode = 0;
 
   BGP_TRACE(D_EVENTS, "Shutdown requested");
-  bgp_store_error(p, NULL, BE_MAN_DOWN, 0);
 
-  if (P->reconfiguring)
+  switch (P->down_code)
     {
-      if (P->cf_new)
-	subcode = 6; // Errcode 6, 6 - other configuration change
+    case PDC_CF_REMOVE:
+    case PDC_CF_DISABLE:
+      subcode = 3; // Errcode 6, 3 - peer de-configured
+      break;
+
+    case PDC_CF_RESTART:
+      subcode = 6; // Errcode 6, 6 - other configuration change
+      break;
+
+    case PDC_CMD_DISABLE:
+    case PDC_CMD_SHUTDOWN:
+      subcode = 2; // Errcode 6, 2 - administrative shutdown
+      break;
+
+    case PDC_CMD_RESTART:
+      subcode = 4; // Errcode 6, 4 - administrative reset
+      break;
+
+    case PDC_IN_LIMIT_HIT:
+      subcode = 1; // Errcode 6, 1 - max number of prefixes reached
+      /* log message for compatibility */
+      log(L_WARN "%s: Route limit exceeded, shutting down", p->p.name);
+      goto limit;
+
+    case PDC_OUT_LIMIT_HIT:
+      subcode = proto_restart ? 4 : 2; // Administrative reset or shutdown
+
+    limit:
+      bgp_store_error(p, NULL, BE_AUTO_DOWN, BEA_ROUTE_LIMIT_EXCEEDED);
+      if (proto_restart)
+	bgp_update_startup_delay(p);
       else
-	subcode = 3; // Errcode 6, 3 - peer de-configured
+	p->startup_delay = 0;
+      goto done;
     }
-  else
-    subcode = 2; // Errcode 6, 2 - administrative shutdown
 
+  bgp_store_error(p, NULL, BE_MAN_DOWN, 0);
   p->startup_delay = 0;
-  bgp_stop(p, subcode);
 
+ done:
+  bgp_stop(p, subcode);
   return p->p.proto_state;
 }
 
@@ -909,7 +924,7 @@ bgp_init(struct proto_config *C)
   struct proto *P = proto_new(C, sizeof(struct bgp_proto));
   struct bgp_proto *p = (struct bgp_proto *) P;
 
-  P->accept_ra_types = RA_OPTIMAL;
+  P->accept_ra_types = c->secondary ? RA_ACCEPTED : RA_OPTIMAL;
   P->rt_notify = bgp_rt_notify;
   P->rte_better = bgp_rte_better;
   P->import_control = bgp_import_control;
@@ -955,12 +970,14 @@ bgp_check_config(struct bgp_config *c)
   if (internal && c->rs_client)
     cf_error("Only external neighbor can be RS client");
 
+
   if (c->multihop && (c->gw_mode == GW_DIRECT))
     cf_error("Multihop BGP cannot use direct gateway mode");
 
   if (c->multihop && (ipa_has_link_scope(c->remote_ip) || 
 		      ipa_has_link_scope(c->source_addr)))
     cf_error("Multihop BGP cannot be used with link-local addresses");
+
 
   /* Different default based on rs_client */
   if (!c->missing_lladdr)
@@ -969,6 +986,20 @@ bgp_check_config(struct bgp_config *c)
   /* Different default for gw_mode */
   if (!c->gw_mode)
     c->gw_mode = (c->multihop || internal) ? GW_RECURSIVE : GW_DIRECT;
+
+  /* Disable after error incompatible with restart limit action */
+  if (c->c.in_limit && (c->c.in_limit->action == PLA_RESTART) && c->disable_after_error)
+    c->c.in_limit->action = PLA_DISABLE;
+
+
+  if ((c->gw_mode == GW_RECURSIVE) && c->c.table->sorted)
+    cf_error("BGP in recursive mode prohibits sorted table");
+
+  if (c->deterministic_med && c->c.table->sorted)
+    cf_error("BGP with deterministic MED prohibits sorted table");
+
+  if (c->secondary && !c->c.table->sorted)
+    cf_error("BGP with secondary option requires sorted table");
 }
 
 static int
@@ -1116,14 +1147,13 @@ bgp_get_status(struct proto *P, byte *buf)
     bsprintf(buf, "%-14s%s%s", bgp_state_dsc(p), err1, err2);
 }
 
-static inline bird_clock_t tm_remains(timer *t)
-{ return t->expires ? t->expires - now : 0; }
-
 static void
 bgp_show_proto_info(struct proto *P)
 {
   struct bgp_proto *p = (struct bgp_proto *) P;
   struct bgp_conn *c = p->conn;
+
+  proto_show_basic_info(P);
 
   cli_msg(-1006, "  BGP state:          %s", bgp_state_dsc(p));
   cli_msg(-1006, "    Neighbor address: %I%J", p->cf->remote_ip, p->cf->iface);
@@ -1156,9 +1186,9 @@ bgp_show_proto_info(struct proto *P)
 	      p->rs_client ? " route-server" : "",
 	      p->as4_session ? " AS4" : "");
       cli_msg(-1006, "    Source address:   %I", p->source_addr);
-      if (p->cf->route_limit)
+      if (P->cf->in_limit)
 	cli_msg(-1006, "    Route limit:      %d/%d",
-		p->p.stats.imp_routes, p->cf->route_limit);
+		p->p.stats.imp_routes, P->cf->in_limit->limit);
       cli_msg(-1006, "    Hold timer:       %d/%d",
 	      tm_remains(c->hold_timer), c->hold_time);
       cli_msg(-1006, "    Keepalive timer:  %d/%d",

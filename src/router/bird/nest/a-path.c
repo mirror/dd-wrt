@@ -15,7 +15,6 @@
 #include "lib/string.h"
 #include "filter/filter.h"
 
-
 // static inline void put_as(byte *data, u32 as) { put_u32(data, as); }
 // static inline u32 get_as(byte *data) { return get_u32(data); }
 

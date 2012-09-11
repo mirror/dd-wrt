@@ -25,7 +25,8 @@ CF_KEYWORDS(BGP, LOCAL, NEIGHBOR, AS, HOLD, TIME, CONNECT, RETRY,
 	CLUSTER, ID, AS4, ADVERTISE, IPV4, CAPABILITIES, LIMIT, PASSIVE,
 	PREFER, OLDER, MISSING, LLADDR, DROP, IGNORE, ROUTE, REFRESH,
 	INTERPRET, COMMUNITIES, BGP_ORIGINATOR_ID, BGP_CLUSTER_LIST, IGP,
-	TABLE, GATEWAY, DIRECT, RECURSIVE, MED, TTL, SECURITY, DETERMINISTIC)
+	TABLE, GATEWAY, DIRECT, RECURSIVE, MED, TTL, SECURITY, DETERMINISTIC,
+	SECONDARY)
 
 CF_GRAMMAR
 
@@ -98,9 +99,14 @@ bgp_proto:
  | bgp_proto CAPABILITIES bool ';' { BGP_CFG->capabilities = $3; }
  | bgp_proto ADVERTISE IPV4 bool ';' { BGP_CFG->advertise_ipv4 = $4; }
  | bgp_proto PASSWORD TEXT ';' { BGP_CFG->password = $3; }
- | bgp_proto ROUTE LIMIT expr ';' { BGP_CFG->route_limit = $4; }
+ | bgp_proto ROUTE LIMIT expr ';' {
+     this_proto->in_limit = cfg_allocz(sizeof(struct proto_limit));
+     this_proto->in_limit->limit = $4;
+     this_proto->in_limit->action = PLA_RESTART;
+   }
  | bgp_proto PASSIVE bool ';' { BGP_CFG->passive = $3; }
  | bgp_proto INTERPRET COMMUNITIES bool ';' { BGP_CFG->interpret_communities = $4; }
+ | bgp_proto SECONDARY bool ';' { BGP_CFG->secondary = $3; }
  | bgp_proto IGP TABLE rtable ';' { BGP_CFG->igp_table = $4; }
  | bgp_proto TTL SECURITY bool ';' { BGP_CFG->ttl_security = $4; }
  ;

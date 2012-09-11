@@ -14,32 +14,45 @@ CF_DEFINES
 #define RADV_CFG ((struct radv_config *) this_proto)
 #define RADV_IFACE ((struct radv_iface_config *) this_ipatt)
 #define RADV_PREFIX this_radv_prefix
+#define RADV_RDNSS (&this_radv_rdnss)
+#define RADV_DNSSL (&this_radv_dnssl)
 
 static struct radv_prefix_config *this_radv_prefix;
+static struct radv_rdnss_config this_radv_rdnss;
+static struct radv_dnssl_config this_radv_dnssl;
+static list radv_dns_list;	/* Used by radv_rdnss and radv_dnssl */
+static u8 radv_mult_val;	/* Used by radv_mult for second return value */
+
 
 CF_DECLS
 
 CF_KEYWORDS(RADV, PREFIX, INTERFACE, MIN, MAX, RA, DELAY, INTERVAL,
 	MANAGED, OTHER, CONFIG, LINK, MTU, REACHABLE, TIME, RETRANS,
-	TIMER, CURRENT, HOP, LIMIT, DEFAULT, VALID, PREFERRED,
-	LIFETIME, SKIP, ONLINK, AUTONOMOUS)
+	TIMER, CURRENT, HOP, LIMIT, DEFAULT, VALID, PREFERRED, MULT,
+	LIFETIME, SKIP, ONLINK, AUTONOMOUS, RDNSS, DNSSL, NS, DOMAIN,
+	LOCAL)
 
+%type<i> radv_mult
 
 CF_GRAMMAR
 
-CF_ADDTO(proto, radv_proto '}')
+CF_ADDTO(proto, radv_proto)
 
 radv_proto_start: proto_start RADV
 {
   this_proto = proto_config_new(&proto_radv, sizeof(struct radv_config), $1);
   init_list(&RADV_CFG->patt_list);
   init_list(&RADV_CFG->pref_list);
+  init_list(&RADV_CFG->rdnss_list);
+  init_list(&RADV_CFG->dnssl_list);
 };
 
 radv_proto_item:
    proto_item
- | PREFIX radv_prefix { add_tail(&RADV_CFG->pref_list, NODE this_radv_prefix); }
  | INTERFACE radv_iface
+ | PREFIX radv_prefix { add_tail(&RADV_CFG->pref_list, NODE this_radv_prefix); }
+ | RDNSS { init_list(&radv_dns_list); } radv_rdnss { add_tail_list(&RADV_CFG->rdnss_list, &radv_dns_list); }
+ | DNSSL { init_list(&radv_dns_list); } radv_dnssl { add_tail_list(&RADV_CFG->dnssl_list, &radv_dns_list); }
  ;
 
 radv_proto_opts:
@@ -48,7 +61,7 @@ radv_proto_opts:
  ;
 
 radv_proto:
-   radv_proto_start proto_name '{' radv_proto_opts;
+   radv_proto_start proto_name '{' radv_proto_opts '}';
 
 
 radv_iface_start:
@@ -57,6 +70,8 @@ radv_iface_start:
   add_tail(&RADV_CFG->patt_list, NODE this_ipatt);
   init_list(&this_ipatt->ipn_list);
   init_list(&RADV_IFACE->pref_list);
+  init_list(&RADV_IFACE->rdnss_list);
+  init_list(&RADV_IFACE->dnssl_list);
 
   RADV_IFACE->min_ra_int = -1; /* undefined */
   RADV_IFACE->max_ra_int = DEFAULT_MAX_RA_INT;
@@ -77,6 +92,10 @@ radv_iface_item:
  | CURRENT HOP LIMIT expr { RADV_IFACE->current_hop_limit = $4; if (($4 < 0) || ($4 > 255))  cf_error("Current hop limit must be in range 0-255"); }
  | DEFAULT LIFETIME expr { RADV_IFACE->default_lifetime = $3; if (($3 < 0) || ($3 > 9000))  cf_error("Default lifetime must be in range 0-9000"); }
  | PREFIX radv_prefix { add_tail(&RADV_IFACE->pref_list, NODE this_radv_prefix); }
+ | RDNSS { init_list(&radv_dns_list); } radv_rdnss { add_tail_list(&RADV_IFACE->rdnss_list, &radv_dns_list); }
+ | DNSSL { init_list(&radv_dns_list); } radv_dnssl { add_tail_list(&RADV_IFACE->dnssl_list, &radv_dns_list); }
+ | RDNSS LOCAL bool { RADV_IFACE->rdnss_local = $3; }
+ | DNSSL LOCAL bool { RADV_IFACE->dnssl_local = $3; }
  ;
 
 radv_iface_finish:
@@ -151,6 +170,103 @@ radv_prefix_opt_list:
 radv_prefix:
   radv_prefix_start radv_prefix_opt_list radv_prefix_finish;
 
+
+
+radv_rdnss_node: ipa
+{
+  struct radv_rdnss_config *cf = cfg_allocz(sizeof(struct radv_rdnss_config));
+  add_tail(&radv_dns_list, NODE cf);
+
+  cf->server = $1;
+  cf->lifetime_mult = DEFAULT_DNS_LIFETIME_MULT;
+};
+
+radv_rdnss_start:
+{
+  RADV_RDNSS->lifetime = 0;
+  RADV_RDNSS->lifetime_mult = DEFAULT_DNS_LIFETIME_MULT;
+};
+
+radv_rdnss_item:
+ | NS radv_rdnss_node
+ | LIFETIME radv_mult { RADV_RDNSS->lifetime = $2; RADV_RDNSS->lifetime_mult = radv_mult_val; }
+ ;
+
+radv_rdnss_finish:
+{
+  if (EMPTY_LIST(radv_dns_list))
+    cf_error("No nameserver in RDNSS section");
+
+  struct radv_rdnss_config *cf;
+  WALK_LIST(cf, radv_dns_list)
+  {
+    cf->lifetime = RADV_RDNSS->lifetime;
+    cf->lifetime_mult = RADV_RDNSS->lifetime_mult;
+  }
+};
+
+radv_rdnss_opts:
+   /* empty */
+ | radv_rdnss_opts radv_rdnss_item ';'
+ ;
+
+radv_rdnss:
+   radv_rdnss_node
+ | '{' radv_rdnss_start radv_rdnss_opts '}' radv_rdnss_finish
+ ;
+
+
+radv_dnssl_node: TEXT
+{
+  struct radv_dnssl_config *cf = cfg_allocz(sizeof(struct radv_dnssl_config));
+  add_tail(&radv_dns_list, NODE cf);
+
+  cf->domain = $1;
+  cf->lifetime_mult = DEFAULT_DNS_LIFETIME_MULT;
+
+  if (radv_process_domain(cf) < 0)
+    cf_error("Invalid domain dame");
+};
+
+radv_dnssl_start:
+{
+  RADV_DNSSL->lifetime = 0;
+  RADV_DNSSL->lifetime_mult = DEFAULT_DNS_LIFETIME_MULT;
+};
+
+radv_dnssl_item:
+ | DOMAIN radv_dnssl_node
+ | LIFETIME radv_mult { RADV_DNSSL->lifetime = $2; RADV_DNSSL->lifetime_mult = radv_mult_val; }
+ ;
+
+radv_dnssl_finish:
+{
+  if (EMPTY_LIST(radv_dns_list))
+    cf_error("No domain in DNSSL section");
+
+  struct radv_dnssl_config *cf;
+  WALK_LIST(cf, radv_dns_list)
+  {
+    cf->lifetime = RADV_DNSSL->lifetime;
+    cf->lifetime_mult = RADV_DNSSL->lifetime_mult;
+  }
+};
+
+radv_dnssl_opts:
+   /* empty */
+ | radv_dnssl_opts radv_dnssl_item ';'
+ ;
+
+radv_dnssl:
+   radv_dnssl_node
+ | '{' radv_dnssl_start radv_dnssl_opts '}' radv_dnssl_finish
+ ;
+
+
+radv_mult:
+   expr { $$ = $1; radv_mult_val = 0; }
+ | MULT expr { $$ = 0; radv_mult_val = $2; if (($2 < 1) || ($2 > 254)) cf_error("Multiplier must be in range 1-254"); }
+ ;
 
 CF_CODE
 

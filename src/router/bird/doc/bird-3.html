@@ -141,11 +141,14 @@ and <CODE>protocol</CODE> times, and a <CODE>iso long</CODE> similar format
 defaults are here for a compatibility with older versions
 and might change in the future.
 <P>
-<DT><CODE>table <I>name</I></CODE><DD><P>Create a new routing table. The default
-routing table is created implicitly, other routing tables have
-to be added by this command.
+<DT><CODE>table <I>name</I> [sorted]</CODE><DD><P>Create a new routing table. The default routing table is
+created implicitly, other routing tables have to be added by
+this command. Option <CODE>sorted</CODE> can be used to enable
+sorting of routes, see 
+<A HREF="bird-2.html#dsc-sorted">sorted table</A>
+description for details.
 <P>
-<DT><CODE>roa table [ { roa table options ... } ] <I>name</I></CODE><DD><P>Create a new ROA (Route Origin Authorization) table. ROA
+<DT><CODE>roa table <I>name</I> [ { roa table options ... } ]</CODE><DD><P>Create a new ROA (Route Origin Authorization) table. ROA
 tables can be used to validate route origination of BGP
 routes. A ROA table contains ROA entries, each consist of a
 network prefix, a max prefix length and an AS number. A ROA
@@ -208,10 +211,34 @@ Other protocols does not support MRTdump yet.
 to override global router id for a given protocol. Default:
 uses global router id.
 <P>
-<DT><CODE>import all | none | filter <I>name</I> | filter { <I>filter commands</I> } | where <I>filter expression</I></CODE><DD><P>Specify a filter to be used for filtering routes coming from the protocol to the routing table. <CODE>all</CODE> is shorthand for <CODE>where true</CODE> and <CODE>none</CODE> is shorthand for <CODE>where false</CODE>. Default: <CODE>all</CODE>.
+<DT><CODE>import all | none | filter <I>name</I> | filter { <I>filter commands</I> } | where <I>filter expression</I></CODE><DD><P>Specify a filter to be used for filtering routes coming from
+the protocol to the routing table. <CODE>all</CODE> is shorthand for
+<CODE>where true</CODE> and <CODE>none</CODE> is shorthand for
+<CODE>where false</CODE>. Default: <CODE>all</CODE>.
 <P>
 <DT><CODE>export <I>filter</I></CODE><DD><P>This is similar to the <CODE>import</CODE> keyword, except that it
-works in the direction from the routing table to the protocol. Default: <CODE>none</CODE>.
+works in the direction from the routing table to the protocol.
+Default: <CODE>none</CODE>.
+<P>
+<DT><CODE>import limit <I>number</I> [action warn | block | restart | disable]</CODE><DD><P>Specify an import route limit (a maximum number of routes
+imported from the protocol) and optionally the action to be
+taken when the limit is hit. Warn action just prints warning
+log message. Block action ignores new routes coming from the
+protocol. Restart and disable actions shut the protocol down
+like appropriate commands. Disable is the default action if an
+action is not explicitly specified. Note that limits are reset
+during protocol reconfigure, reload or restart.
+Default: <CODE>none</CODE>.
+<P>
+<DT><CODE>export limit <I>number</I> [action warn | block | restart | disable]</CODE><DD><P>Specify an export route limit, works similarly to
+the <CODE>import limit</CODE> option, but for the routes exported
+to the protocol. This option is experimental, there are some
+problems in details of its behavior -- the number of exported
+routes can temporarily exceed the limit without triggering it
+during protocol reload, exported routes counter ignores route
+blocking and block action also blocks route updates of already
+accepted routes -- and these details will probably change in
+the future. Default: <CODE>none</CODE>.
 <P>
 <DT><CODE>description "<I>text</I>"</CODE><DD><P>This is an optional
 description of the protocol. It is displayed as a part of the

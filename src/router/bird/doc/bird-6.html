@@ -181,8 +181,10 @@ lookup for the IP address from <CODE>bgp_next_hop</CODE>. Recursive
 mode is the behavior specified by the BGP standard. Direct
 mode is simpler, does not require any routes in a routing
 table, and was used in older versions of BIRD, but does not
-handle well nontrivial iBGP setups and multihop. Default:
-<CODE>direct</CODE> for singlehop eBGP, <CODE>recursive</CODE> otherwise.
+handle well nontrivial iBGP setups and multihop.  Recursive
+mode is incompatible with 
+<A HREF="bird-2.html#dsc-sorted">sorted  tables</A>. Default: <CODE>direct</CODE> for singlehop eBGP,
+<CODE>recursive</CODE> otherwise.
 <P>
 <DT><CODE>igp table <I>name</I></CODE><DD><P>Specifies a table that is used
 as an IGP routing table. Default: the same as the table BGP is
@@ -227,6 +229,16 @@ BIRD does not implement obsoleted RFC 1863, but uses ad-hoc implementation,
 which behaves like plain EBGP but reduces modifications to advertised route
 attributes to be transparent (for example does not prepend its AS number to
 AS PATH attribute and keeps MED attribute). Default: disabled.
+<P>
+<DT><CODE>secondary <I>switch</I></CODE><DD><P>Usually, if an import filter
+rejects a selected route, no other route is propagated for
+that network. This option allows to try the next route in
+order until one that is accepted is found or all routes for
+that network are rejected. This can be used for route servers
+that need to propagate different tables to each client but do
+not want to have these tables explicitly (to conserve memory).
+This option requires that the connected routing table is
+<A HREF="bird-2.html#dsc-sorted">sorted</A>. Default: off.
 <P>
 <DT><CODE>enable route refresh <I>switch</I></CODE><DD><P>When BGP speaker
 changes its import filter, it has to re-examine all routes
@@ -274,7 +286,8 @@ to IPv4 mode with enabled capability advertisement only. Default: on.
 <P>
 <DT><CODE>route limit <I>number</I></CODE><DD><P>The maximal number of routes
 that may be imported from the protocol. If the route limit is
-exceeded, the connection is closed with error. Default: no limit.
+exceeded, the connection is closed with error. Limit is currently implemented as
+<CODE>import limit number exceed restart</CODE>. Default: no limit.
 <P>
 <DT><CODE>disable after error <I>switch</I></CODE><DD><P>When an error is encountered (either
 locally or by the other side), disable the instance automatically
@@ -332,7 +345,10 @@ selection is dependent on the order in which routes appeared).
 This option enables a different (and slower) algorithm
 implementing proper RFC 4271 route selection, which is
 deterministic. Alternative way how to get deterministic
-behavior is to use <CODE>med metric</CODE> option. Default: off.
+behavior is to use <CODE>med metric</CODE> option. This option is
+incompatible with 
+<A HREF="bird-2.html#dsc-sorted">sorted tables</A>.
+Default: off.
 <P>
 <DT><CODE>igp metric <I>switch</I></CODE><DD><P>Enable comparison of internal
 distances to boundary routers during best route selection. Default: on.
@@ -574,7 +590,7 @@ kernel table.
 <P>Because the kernel protocol is partially integrated with the
 connected routing table, there are two limitations - it is not
 possible to connect more kernel protocols to the same routing table
-and changing route attributes (even the kernel ones) in an export
+and changing route destination/gateway in an export
 filter of a kernel protocol does not work. Both limitations can be
 overcome using another routing table and the pipe protocol.
 <P>
@@ -610,6 +626,16 @@ are translated to appropriate system (and OS-specific) route attributes.
 We support these attributes:
 <P>
 <DL>
+<DT><CODE>int <CODE>krt_source</CODE></CODE><DD><P>The original source of the imported
+kernel route.  The value is system-dependent. On Linux, it is
+a value of the protocol field of the route. See
+/etc/iproute2/rt_protos for common values.  On BSD, it is
+based on STATIC and PROTOx flags. The attribute is read-only.
+<P>
+<DT><CODE>int <CODE>krt_metric</CODE></CODE><DD><P>The kernel metric of
+the route.  When multiple same routes are in a kernel routing
+table, the Linux kernel chooses one with lower metric.
+<P>
 <DT><CODE>ip <CODE>krt_prefsrc</CODE></CODE><DD><P>(Linux) The preferred source address.
 Used in source address selection for outgoing packets. Have to
 be one of IP addresses of the router.
@@ -730,7 +756,7 @@ protocol ospf &lt;name&gt; {
                         summary &lt;switch&gt;;
                         cost &lt;num&gt;;
                 }
-                interface &lt;interface pattern&gt; {
+                interface &lt;interface pattern&gt; [instance &lt;num&gt;] {
                         cost &lt;num&gt;;
                         stub &lt;switch&gt;;
                         hello &lt;num&gt;;
@@ -744,6 +770,7 @@ protocol ospf &lt;name&gt; {
                         type [broadcast|bcast|pointopoint|ptp|
                                 nonbroadcast|nbma|pointomultipoint|ptmp];
                         strict nonbroadcast &lt;switch&gt;;
+                        real broadcast &lt;switch&gt;;
                         check link &lt;switch&gt;;
                         ecmp weight &lt;num&gt;;
                         authentication [none|simple|cryptographic];
@@ -760,7 +787,7 @@ protocol ospf &lt;name&gt; {
                                 &lt;ip&gt; eligible;
                         };
                 };
-                virtual link &lt;id&gt; {
+                virtual link &lt;id&gt; [instance &lt;num&gt;] {
                         hello &lt;num&gt;;
                         retransmit &lt;num&gt;;
                         wait &lt;num&gt;;
@@ -865,13 +892,18 @@ networks for given network prefix. When option
 subnetworks of given stub network are suppressed. This might
 be used, for example, to aggregate generated stub networks.
 <P>
-<DT><CODE>interface <I>pattern</I></CODE><DD><P>Defines that the specified interfaces belong to the area being defined.
+<DT><CODE>interface <I>pattern</I> [instance <I>num</I>]</CODE><DD><P>Defines that the specified interfaces belong to the area being defined.
 See 
 <A HREF="bird-3.html#dsc-iface">interface</A> common option for detailed description.
+In OSPFv3, you can specify instance ID for that interface
+description, so it is possible to have several instances of
+that interface with different options or even in different areas.
 <P>
-<DT><CODE>virtual link <I>id</I></CODE><DD><P>Virtual link to router with the router id. Virtual link acts as a
-point-to-point interface belonging to backbone. The actual area is
-used as transport area. This item cannot be in the backbone.
+<DT><CODE>virtual link <I>id</I> [instance <I>num</I>]</CODE><DD><P>Virtual link to router with the router id. Virtual link acts
+as a point-to-point interface belonging to backbone. The
+actual area is used as transport area. This item cannot be in
+the backbone. In OSPFv3, you could also use several virtual
+links to one destination with different instance IDs.
 <P>
 <DT><CODE>cost <I>num</I></CODE><DD><P>Specifies output cost (metric) of an interface. Default value is 10.
 <P>
@@ -940,6 +972,15 @@ link.
 <P>
 <DT><CODE>strict nonbroadcast <I>switch</I></CODE><DD><P>If set, don't send hello to any undefined neighbor. This switch
 is ignored on other than NBMA or PtMP networks. Default value is no.
+<P>
+<DT><CODE>real broadcast <I>switch</I></CODE><DD><P>In <CODE>type broadcast</CODE> or <CODE>type ptp</CODE> network
+configuration, OSPF packets are sent as IP multicast
+packets. This option changes the behavior to using
+old-fashioned IP broadcast packets. This may be useful as a
+workaround if IP multicast for some reason does not work or
+does not work reliably. This is a non-standard option and
+probably is not interoperable with other OSPF
+implementations. Default value is no.
 <P>
 <DT><CODE>check link <I>switch</I></CODE><DD><P>If set, a hardware link state (reported by OS) is taken into
 consideration. When a link disappears (e.g. an ethernet cable is
@@ -1193,13 +1234,17 @@ advertisement packets to connected networks. These packets contain
 basic information about a local network (e.g. a list of network
 prefixes), which allows network hosts to autoconfigure network
 addresses and choose a default route. BIRD implements router behavior
-as defined in RFC 4861
-<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4861.txt">ftp://ftp.rfc-editor.org/in-notes/rfc4861.txt</A>.
+as defined in
+RFC 4861
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4861.txt">ftp://ftp.rfc-editor.org/in-notes/rfc4861.txt</A>
+and also the DNS extensions from
+RFC 6106
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc6106.txt">ftp://ftp.rfc-editor.org/in-notes/rfc6106.txt</A>.
 <P>
 <H3>Configuration</H3>
 
-<P>There are two classes of definitions in RAdv configuration --
-interface definitions and prefix definitions:
+<P>There are several classes of definitions in RAdv configuration --
+interface definitions, prefix definitions and DNS definitions:
 <P>
 <DL>
 <DT><CODE>interface <I>pattern [, ...]</I>  { <I>options</I> }</CODE><DD><P>Interface definitions specify a set of interfaces on which the
@@ -1208,7 +1253,7 @@ See
 <A HREF="bird-3.html#dsc-iface">interface</A> common options for
 detailed description.
 <P>
-<DT><CODE>prefix <I>prefix</I> { <I>options</I> }</CODE><DD><P>Prefix definitions allows to modify a list of advertised
+<DT><CODE>prefix <I>prefix</I> { <I>options</I> }</CODE><DD><P>Prefix definitions allow to modify a list of advertised
 prefixes. By default, the advertised prefixes are the same as
 the network prefixes assigned to the interface. For each
 network prefix, the matching prefix definition is found and
@@ -1221,6 +1266,22 @@ interface-specific definitions are processed before global
 definitions. As expected, the prefix definition is matching if
 the network prefix is a subnet of the prefix in prefix
 definition.
+<P>
+<DT><CODE>rdnss { <I>options</I> }</CODE><DD><P>RDNSS definitions allow to specify a list of advertised
+recursive DNS servers together with their options. As options
+are seldom necessary, there is also a short variant <CODE>rdnss
+<I>address</I></CODE> that just specifies one DNS server. Multiple
+definitions are cumulative. RDNSS definitions may also be
+interface-specific when used inside interface options. By
+default, interface uses both global and interface-specific
+options, but that can be changed by <CODE>rdnss local</CODE> option.
+<P>
+<DT><CODE>dnssl { <I>options</I> }</CODE><DD><P>DNSSL definitions allow to specify a list of advertised DNS
+search domains together with their options. Like <CODE>rdnss</CODE>
+above, multiple definitions are cumulative, they can be used
+also as interface-specific options and there is a short
+variant <CODE>dnssl <I>domain</I></CODE> that just specifies one DNS
+search domain.
 </DL>
 <P>
 <P>Interface specific options:
@@ -1231,8 +1292,8 @@ intervals. This option specifies the maximum length of these
 intervals, in seconds. Valid values are 4-1800. Default: 600
 <P>
 <DT><CODE>min ra interval <I>expr</I></CODE><DD><P>This option specifies the minimum length of that intervals, in
-seconds. Must be at least 3 and at most 3/4 * max ra interval.
-Default: about 1/3 * max ra interval.
+seconds. Must be at least 3 and at most 3/4 * <CODE>max ra interval</CODE>.
+Default: about 1/3 * <CODE>max ra interval</CODE>.
 <P>
 <DT><CODE>min delay <I>expr</I></CODE><DD><P>The minimum delay between two consecutive router advertisements,
 in seconds. Default: 3
@@ -1261,7 +1322,15 @@ by hosts. Valid values are 0-255, 0 means unspecified. Default: 64
 <DT><CODE>default lifetime <I>expr</I></CODE><DD><P>This option specifies the time (in seconds) how long (after
 the receipt of RA) hosts may use the router as a default
 router. 0 means do not use as a default router. Default: 3 *
-max ra interval.
+<CODE>max ra interval</CODE>.
+<P>
+<DT><CODE>rdnss local <I>bool</I></CODE><DD><P>Use only local (interface-specific) RDNSS definitions for this
+interface. Otherwise, both global and local definitions are
+used. Could also be used to disable RDNSS for given interface
+if no local definitons are specified. Default: no.
+<P>
+<DT><CODE>dnssl local <I>bool</I></CODE><DD><P>Use only local DNSSL definitions for this interface. See
+<CODE>rdnss local</CODE> option above. Default: no.
 </DL>
 <P>
 <P>
@@ -1286,6 +1355,38 @@ using stateless autoconfiguration remain preferred. Default:
 14400 (4 hours)
 </DL>
 <P>
+<P>
+<P>RDNSS specific options:
+<P>
+<DL>
+<DT><CODE>ns <I>address</I></CODE><DD><P>This option specifies one recursive DNS server. Can be used
+multiple times for multiple servers. It is mandatory to have
+at least one <CODE>ns</CODE> option in <CODE>rdnss</CODE> definition.
+<P>
+<DT><CODE>lifetime [mult] <I>expr</I></CODE><DD><P>This option specifies the time how long the RDNSS information
+may be used by clients after the receipt of RA. It is
+expressed either in seconds or (when <CODE>mult</CODE> is used) in
+multiples of <CODE>max ra interval</CODE>. Note that RDNSS information
+is also invalidated when <CODE>default lifetime</CODE> expires. 0
+means these addresses are no longer valid DNS servers.
+Default: 3 * <CODE>max ra interval</CODE>.
+</DL>
+<P>
+<P>
+<P>DNSSL specific options:
+<P>
+<DL>
+<DT><CODE>domain <I>address</I></CODE><DD><P>This option specifies one DNS search domain. Can be used
+multiple times for multiple domains. It is mandatory to have
+at least one <CODE>domain</CODE> option in <CODE>dnssl</CODE> definition.
+<P>
+<DT><CODE>lifetime [mult] <I>expr</I></CODE><DD><P>This option specifies the time how long the DNSSL information
+may be used by clients after the receipt of RA. Details are
+the same as for RDNSS <CODE>lifetime</CODE> option above.
+Default: 3 * <CODE>max ra interval</CODE>.
+</DL>
+<P>
+<P>
 <H3>Example</H3>
 
 <P>
@@ -1308,6 +1409,20 @@ protocol radv {
 
         prefix 2001:0DB8:2000::/48 {
                 autonomous off;         # Do not autoconfigure
+        };
+
+        rdnss 2001:0DB8:1234::10;       # Short form of RDNSS
+
+        rdnss {
+                lifetime mult 10;
+                ns 2001:0DB8:1234::11;
+                ns 2001:0DB8:1234::12;
+        };
+
+        dnssl {
+                lifetime 3600;
+                domain "abc.com";
+                domain "xyz.com";
         };
 }
 </PRE>

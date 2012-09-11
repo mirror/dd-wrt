@@ -15,9 +15,7 @@ struct krt_proto;
 struct kif_config;
 struct kif_proto;
 
-#include "lib/krt-scan.h"
-#include "lib/krt-set.h"
-#include "lib/krt-iface.h"
+#include "lib/krt-sys.h"
 
 /* Flags stored in net->n.flags, rest are in nest/route.h */
 
@@ -28,8 +26,10 @@ struct kif_proto;
 #define KRF_DELETE 3			/* Should be deleted */
 #define KRF_IGNORE 4			/* To be ignored */
 
-#define EA_KRT_PREFSRC EA_CODE(EAP_KRT, 0)
-#define EA_KRT_REALM EA_CODE(EAP_KRT, 1)
+#define EA_KRT_SOURCE	EA_CODE(EAP_KRT, 0)
+#define EA_KRT_METRIC	EA_CODE(EAP_KRT, 1)
+#define EA_KRT_PREFSRC	EA_CODE(EAP_KRT, 2)
+#define EA_KRT_REALM	EA_CODE(EAP_KRT, 3)
 
 /* Whenever we recognize our own routes, we allow learing of foreign routes */
 
@@ -43,8 +43,7 @@ extern struct protocol proto_unix_kernel;
 
 struct krt_config {
   struct proto_config c;
-  struct krt_set_params set;
-  struct krt_scan_params scan;
+  struct krt_params sys;	/* Sysdep params */
   int persist;			/* Keep routes when we exit */
   int scan_time;		/* How often we re-scan routes */
   int learn;			/* Learn routes from other sources */
@@ -53,9 +52,7 @@ struct krt_config {
 
 struct krt_proto {
   struct proto p;
-  struct krt_set_status set;
-  struct krt_scan_status scan;
-  struct krt_if_status iface;
+  struct krt_status sys;	/* Sysdep state */
 #ifdef KRT_ALLOW_LEARN
   struct rtable krt_table;	/* Internal table of inherited routes */
 #endif
@@ -67,7 +64,6 @@ struct krt_proto {
   int initialized;		/* First scan has already been finished */
 };
 
-extern struct proto_config *cf_krt;
 extern pool *krt_pool;
 
 #define KRT_CF ((struct krt_config *)p->p.cf)
@@ -77,6 +73,7 @@ extern pool *krt_pool;
   if (pr->p.debug & fl)				\
     { log(L_TRACE "%s: " msg, pr->p.name , ## args); } } while(0)
 
+struct proto_config * kif_init_config(int class);
 void kif_request_scan(void);
 void krt_got_route(struct krt_proto *p, struct rte *e);
 void krt_got_route_async(struct krt_proto *p, struct rte *e, int new);
@@ -99,46 +96,49 @@ struct kif_primary_item {
 
 struct kif_config {
   struct proto_config c;
-  struct krt_if_params iface;
+  struct kif_params sys;	/* Sysdep params */
   int scan_time;		/* How often we re-scan interfaces */
   list primary;			/* Preferences for primary addresses (struct kif_primary_item) */
 };
 
 struct kif_proto {
   struct proto p;
-  struct krt_if_status iface;
+  struct kif_status sys;	/* Sysdep state */
 };
-
-extern struct proto_config *cf_kif;
 
 #define KIF_CF ((struct kif_config *)p->p.cf)
 
-/* krt-scan.c */
+struct proto_config * krt_init_config(int class);
 
-void krt_scan_preconfig(struct config *);
-void krt_scan_postconfig(struct krt_config *);
-void krt_scan_construct(struct krt_config *);
-void krt_scan_start(struct krt_proto *, int);
-void krt_scan_shutdown(struct krt_proto *, int);
 
-void krt_scan_fire(struct krt_proto *);
+/* krt sysdep */
 
-/* krt-set.c */
+void krt_sys_init(struct krt_proto *);
+void krt_sys_start(struct krt_proto *, int);
+void krt_sys_shutdown(struct krt_proto *, int);
+int krt_sys_reconfigure(struct krt_proto *p UNUSED, struct krt_config *n, struct krt_config *o);
 
-void krt_set_construct(struct krt_config *);
-void krt_set_start(struct krt_proto *, int);
-void krt_set_shutdown(struct krt_proto *, int);
+void krt_sys_preconfig(struct config *);
+void krt_sys_postconfig(struct krt_config *);
+void krt_sys_init_config(struct krt_config *);
+void krt_sys_copy_config(struct krt_config *, struct krt_config *);
 
-int krt_capable(rte *e);
-void krt_set_notify(struct krt_proto *x, net *net, rte *new, rte *old);
+int  krt_capable(rte *e);
+void krt_do_scan(struct krt_proto *);
+void krt_replace_rte(struct krt_proto *p, net *n, rte *new, rte *old, struct ea_list *eattrs);
 
-/* krt-iface.c */
 
-void krt_if_construct(struct kif_config *);
-void krt_if_start(struct kif_proto *);
-void krt_if_shutdown(struct kif_proto *);
+/* kif sysdep */
 
-void krt_if_scan(struct kif_proto *);
-void krt_if_io_init(void);
+void kif_sys_init(struct kif_proto *);
+void kif_sys_start(struct kif_proto *);
+void kif_sys_shutdown(struct kif_proto *);
+int kif_sys_reconfigure(struct kif_proto *, struct kif_config *, struct kif_config *);
+
+void kif_sys_init_config(struct kif_config *);
+void kif_sys_copy_config(struct kif_config *, struct kif_config *);
+
+void kif_do_scan(struct kif_proto *);
+
 
 #endif

@@ -42,24 +42,33 @@
 #define DEFAULT_VALID_LIFETIME 86400
 #define DEFAULT_PREFERRED_LIFETIME 14400
 
+#define DEFAULT_DNS_LIFETIME_MULT 3
+
 
 struct radv_config
 {
   struct proto_config c;
   list patt_list;		/* List of iface configs (struct radv_iface_config) */
   list pref_list;		/* Global list of prefix configs (struct radv_prefix_config) */
+  list rdnss_list;		/* Global list of RDNSS configs (struct radv_rdnss_config) */
+  list dnssl_list;		/* Global list of DNSSL configs (struct radv_dnssl_config) */
 };
 
 struct radv_iface_config
 {
   struct iface_patt i;
   list pref_list;		/* Local list of prefix configs (struct radv_prefix_config) */
+  list rdnss_list;		/* Local list of RDNSS configs (struct radv_rdnss_config) */
+  list dnssl_list;		/* Local list of DNSSL configs (struct radv_dnssl_config) */
 
   u32 min_ra_int;		/* Standard options from RFC 4261 */
   u32 max_ra_int;
   u32 min_delay;
 
-  u8 managed;
+  u8 rdnss_local;		/* Global list is not used for RDNSS */
+  u8 dnssl_local;		/* Global list is not used for DNSSL */
+
+  u8 managed;			/* Standard options from RFC 4261 */
   u8 other_config;
   u32 link_mtu;
   u32 reachable_time;
@@ -80,6 +89,25 @@ struct radv_prefix_config
   u32 valid_lifetime;
   u32 preferred_lifetime;
 };
+
+struct radv_rdnss_config
+{
+  node n;
+  u32 lifetime;			/* Valid if lifetime_mult is 0 */
+  u16 lifetime_mult;		/* Lifetime specified as multiple of max_ra_int */
+  ip_addr server;		/* IP address of recursive DNS server */
+};
+
+struct radv_dnssl_config
+{
+  node n;
+  u32 lifetime;			/* Valid if lifetime_mult is 0 */
+  u16 lifetime_mult;		/* Lifetime specified as multiple of max_ra_int */
+  u8 dlen_first;		/* Length of first label in domain */
+  u8 dlen_all;			/* Both dlen_ filled in radv_process_domain() */
+  char *domain;			/* Domain for DNS search list, in processed form */
+};
+
 
 struct proto_radv
 {
@@ -123,6 +151,7 @@ struct radv_iface
 void radv_iface_notify(struct radv_iface *ifa, int event);
 
 /* packets.c */
+int radv_process_domain(struct radv_dnssl_config *cf);
 void radv_send_ra(struct radv_iface *ifa, int shutdown);
 int radv_sk_open(struct radv_iface *ifa);
 

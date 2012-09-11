@@ -29,6 +29,10 @@
  * radv_iface_notify(), which processes asynchronous events (specified
  * by RA_EV_* codes), and radv_timer(), which triggers sending RAs and
  * computes the next timeout.
+ *
+ * Supported standards:
+ * - RFC 4861 - main RA standard
+ * - RFC 6106 - DNS extensions (RDDNS, DNSSL)
  */
 
 static void

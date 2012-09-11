@@ -45,7 +45,27 @@ an <I>import</I> filter checks routes in the opposite direction.
 When the routing table gets a route from a protocol, it recalculates
 the selected route and broadcasts it to all protocols connected to
 the table. The protocols typically send the update to other routers
-in the network.
+in the network. Note that although most protocols are interested 
+in receiving just selected routes, some protocols (e.g. the <CODE>Pipe</CODE>
+protocol) receive and process all entries in routing tables (accepted
+by filters).
+<P>
+<P>
+<A NAME="dsc-sorted"></A> Usually, a routing table just chooses a
+selected route from a list of entries for one network. But if the
+<CODE>sorted</CODE> option is activated, these lists of entries are kept
+completely sorted (according to preference or some protocol-dependent
+metric).
+<P>This is needed for some features of some protocols
+(e.g. <CODE>secondary</CODE> option of BGP protocol, which allows to accept
+not just a selected route, but the first route (in the sorted list)
+that is accepted by filters), but it is incompatible with some other
+features (e.g. <CODE>deterministic med</CODE> option of BGP protocol, which
+activates a way of choosing selected route that cannot be described
+using comparison and ordering). Minor advantage is that routes are
+shown sorted in <CODE>show route</CODE>, minor disadvantage is that it is
+slightly more computationally expensive.
+<P>
 <P>
 <HR>
 <A HREF="bird-3.html">Next</A>
