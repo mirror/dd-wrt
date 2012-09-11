@@ -3133,6 +3133,40 @@ void app_udp_settable(void)
 	}
 }
 
+#ifdef HAVE_GUESTPORT
+void set_gprules(char *iface) {
+	char gport[32];
+	char giface[16];
+	char gvar[32];
+	char gipaddr[32];
+	char gnetmask[32];
+	
+	sprintf(gport, "guestport_%s", iface);
+	if(nvram_get(gport)) {
+		sprintf(giface, nvram_safe_get(gport));
+		
+		sprintf(gvar, "%s_ipaddr", giface);
+		sprintf(gipaddr, nvram_safe_get(gvar));
+		
+		sprintf(gvar, "%s_netmask", giface);
+		sprintf(gnetmask, nvram_safe_get(gvar));
+		
+		sysprintf("iptables -I INPUT -i %s -d %s/%s -m state --state NEW -j DROP",
+			  giface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+		
+		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -m state --state NEW -j DROP",
+			  giface, gipaddr);
+		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p udp --dport 67 -j ACCEPT", giface, gipaddr);
+		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p udp --dport 53 -j ACCEPT", giface, gipaddr);
+		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p tcp --dport 53 -j ACCEPT", giface, gipaddr);
+		
+		sysprintf("iptables -I FORWARD -i %s -m state --state NEW -j ACCEPT", giface);
+		sysprintf("iptables -I FORWARD -i %s -o br0 -m state --state NEW -j DROP", giface);
+		sysprintf("iptables -I FORWARD -i br0 -o %s -m state --state NEW -j DROP", giface);
+	}
+}
+#endif
+
 int isregistered_real(void);
 
 #ifdef DEVELOPE_ENV
@@ -3381,6 +3415,12 @@ void start_firewall(void)
 #ifdef HAVE_IAS
 	if(nvram_match("ias_startup", "3"))
 		sysprintf("iptables -t nat -I PREROUTING -i br0 -p udp --dport 53 -j DNAT --to 192.168.11.1:55300");
+#endif
+#ifdef HAVE_GUESTPORT
+	set_gprules("ath0");
+#ifdef HAVE_WZRHPAG300NH
+	set_gprules("ath1");
+#endif
 #endif
 	cprintf("ready");
 
