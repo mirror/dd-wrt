@@ -137,8 +137,6 @@ AC_CHECK_LIB(c, inet_ntop,,
 # prevent caching
 unset ac_cv_lib_inet6_inet_ntop
 
-PKG_CHECK_MODULES([DAEMON], libdaemon)
-
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS( \
@@ -176,7 +174,7 @@ dnl Checks for library functions.
 AC_CHECK_FUNCS(getopt_long)
 
 CONDITIONAL_SOURCES="device-${arch}.${OBJEXT} ${CONDITIONAL_SOURCES}"
-if test x${arch} = xlinux ; then
+if test x${arch} == xlinux ; then
 	CONDITIONAL_SOURCES="privsep-${arch}.${OBJEXT} ${CONDITIONAL_SOURCES}"
 	AC_DEFINE(USE_PRIVSEP, 1, [Use privsep])
 fi
@@ -189,7 +187,7 @@ AC_SUBST(PATH_RADVD_LOG)
 AC_SUBST(LOG_FACILITY)
 
 AM_CONFIG_HEADER(config.h)
-AC_OUTPUT(Makefile redhat/radvd.spec)
+AC_OUTPUT(Makefile)
 
 cat << EOF
 
