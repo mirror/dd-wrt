@@ -2889,11 +2889,20 @@ int internal_getRouterBrand()
 	}
 	if (boardnum == 00 && nvram_match("boardtype", "0xf52e")
 	    && nvram_match("boardrev", "0x1204")) {
+	if (nvram_match("product","WLI-H4-D1300"))
+	    {
 #ifdef HAVE_BUFFALO
-		setRouter("WZR-D1800H");	// renamed (and fixed reset button) wrt320n
+		setRouter("WLI-H4-D1300");
 #else
-		setRouter("Buffalo WZR-D1800H");	// renamed (and fixed reset button) wrt320n
+		setRouter("Buffalo WLI-H4-D1300");
 #endif
+	    }else {
+#ifdef HAVE_BUFFALO
+		setRouter("WZR-D1800H");
+#else
+		setRouter("Buffalo WZR-D1800H");
+#endif
+	    }
 		return ROUTER_D1800H;
 	}
 #ifndef HAVE_BUFFALO
