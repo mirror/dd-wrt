@@ -1,0 +1,54 @@
+menu "Android"
+
+config ANDROID
+	bool "Android Drivers"
+	default N
+	---help---
+	  Enable support for various drivers needed on the Android platform
+
+if ANDROID
+
+config ANDROID_BINDER_IPC
+	bool "Android Binder IPC Driver"
+	default n
+
+config ASHMEM
+	bool "Enable the Anonymous Shared Memory Subsystem"
+	default n
+	depends on SHMEM || TINY_SHMEM
+	help
+	  The ashmem subsystem is a new shared memory allocator, similar to
+	  POSIX SHM but with different behavior and sporting a simpler
+	  file-based API.
+
+config ANDROID_LOGGER
+	tristate "Android log driver"
+	default n
+
+config ANDROID_TIMED_OUTPUT
+	bool "Timed output class driver"
+	default y
+
+config ANDROID_TIMED_GPIO
+	tristate "Android timed gpio driver"
+	depends on GENERIC_GPIO && ANDROID_TIMED_OUTPUT
+	default n
+
+config ANDROID_LOW_MEMORY_KILLER
+	bool "Android Low Memory Killer"
+	default N
+	---help---
+	  Register processes to be killed when memory is low
+
+config ANDROID_INTF_ALARM_DEV
+	bool "Android alarm driver"
+	depends on RTC_CLASS
+	default n
+	help
+	  Provides non-wakeup and rtc backed wakeup alarms based on rtc or
+	  elapsed realtime, and a non-wakeup alarm on the monotonic clock.
+	  Also exports the alarm interface to user-space.
+
+endif # if ANDROID
+
+endmenu
