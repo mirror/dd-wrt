@@ -485,6 +485,8 @@ static void do_client_check(void)
 			eval("wl", "-i", ifname, "join",
 			     nvram_nget("wl%d_ssid", instance));
 		}
+		stopservice("nas");
+		startservice("nas");
 	} else {
 #ifdef HAVE_DDLAN
 		nvram_set("cur_state",
