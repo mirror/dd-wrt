@@ -133,23 +133,6 @@ if test "$bird_cv_struct_ip_mreqn" = yes ; then
 fi
 ])
 
-AC_DEFUN(BIRD_CHECK_LINUX_VERSION,
-[AC_CACHE_CHECK([Linux kernel version], bird_cv_sys_linux_version, [
-AC_REQUIRE_CPP()dnl
-cat > conftest.$ac_ext <<EOF
-[#]line __oline__ "configure"
-#include "confdefs.h"
-#include <linux/version.h>
-VERSION: UTS_RELEASE
-EOF
-bird_cv_sys_linux_version=`eval "$ac_cpp conftest.$ac_ext" 2>&AC_FD_CC | sed '/^VERSION/!d;s/^VERSION: "//;s/".*//'`
-rm -rf conftest*
-if test -z "$bird_cv_sys_linux_version" ; then
-	AC_MSG_RESULT([unknown])
-	AC_MSG_ERROR([Cannot determine kernel version])
-fi
-])])
-
 AC_DEFUN(BIRD_CHECK_GCC_OPTIONS,
 [AC_CACHE_VAL(bird_cv_c_option_no_pointer_sign, [
 cat >conftest.c <<EOF

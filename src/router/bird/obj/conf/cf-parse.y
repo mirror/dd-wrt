@@ -54,6 +54,7 @@ check_u16(unsigned val)
 static struct proto_config *this_proto;
 static struct iface_patt *this_ipatt;
 static struct iface_patt_node *this_ipn;
+static struct roa_table_config *this_roa_table;
 static list *this_p_list;
 static struct password_item *this_p_item;
 static int password_id;
@@ -61,7 +62,7 @@ static int password_id;
 static inline void
 reset_passwords(void)
 {
- this_p_list = NULL;
+  this_p_list = NULL;
 }
 
 static inline list *
@@ -72,6 +73,7 @@ get_passwords(void)
   return rv;
 }
 
+#define DIRECT_CFG ((struct rt_dev_config *) this_proto)
 
 /* Headers from ../../filter/config.Y */
 
@@ -140,6 +142,177 @@ f_new_pair_set(int fa, int ta, int fb, int tb)
   return lst;
 }
 
+#define EC_ALL 0xFFFFFFFF
+
+static struct f_tree *
+f_new_ec_item(u32 kind, u32 ipv4_used, u32 key, u32 vf, u32 vt)
+{
+  u64 fm, to;
+
+  if (ipv4_used || (key >= 0x10000)) {
+    check_u16(vf);
+    if (vt == EC_ALL)
+      vt = 0xFFFF;
+    else
+      check_u16(vt);
+  }
+
+  if (kind == EC_GENERIC) {
+    fm = ec_generic(key, vf);
+    to = ec_generic(key, vt);
+  }
+  else if (ipv4_used) {
+    fm = ec_ip4(kind, key, vf);
+    to = ec_ip4(kind, key, vt);
+  }
+  else if (key < 0x10000) {
+    fm = ec_as2(kind, key, vf);
+    to = ec_as2(kind, key, vt);
+  }
+  else {
+    fm = ec_as4(kind, key, vf);
+    to = ec_as4(kind, key, vt);
+  }
+
+  struct f_tree *t = f_new_tree();
+  t->right = t;
+  t->from.type = t->to.type = T_EC;
+  t->from.val.ec = fm;
+  t->to.val.ec = to;
+  return t;
+}
+
+static inline struct f_inst *
+f_generate_empty(struct f_inst *dyn)
+{ 
+  struct f_inst *e = f_new_inst();
+  e->code = 'E';
+
+  switch (dyn->aux & EAF_TYPE_MASK) {
+    case EAF_TYPE_AS_PATH:
+      e->aux = T_PATH;
+      break;
+    case EAF_TYPE_INT_SET:
+      e->aux = T_CLIST;
+      break;
+    case EAF_TYPE_EC_SET:
+      e->aux = T_ECLIST;
+      break;
+    default:
+      cf_error("Can't empty that attribute");
+  }
+
+  dyn->code = P('e','S');
+  dyn->a1.p = e;
+  return dyn;
+}
+
+
+static inline struct f_inst *
+f_generate_dpair(struct f_inst *t1, struct f_inst *t2)
+{
+  struct f_inst *rv;
+
+  if ((t1->code == 'c') && (t2->code == 'c')) {
+    if ((t1->aux != T_INT) || (t2->aux != T_INT))
+      cf_error( "Can't operate with value of non-integer type in pair constructor");
+
+    check_u16(t1->a2.i);
+    check_u16(t2->a2.i);
+
+    rv = f_new_inst();
+    rv->code = 'c';
+    rv->aux = T_PAIR;
+    rv->a2.i = pair(t1->a2.i, t2->a2.i);
+  }
+  else {
+    rv = f_new_inst();
+    rv->code = P('m', 'p');
+    rv->a1.p = t1;
+    rv->a2.p = t2;
+  }
+
+  return rv;
+}
+
+static inline struct f_inst *
+f_generate_ec(u16 kind, struct f_inst *tk, struct f_inst *tv)
+{
+  struct f_inst *rv;
+  int c1 = 0, c2 = 0, ipv4_used = 0;
+  u32 key = 0, val2 = 0;
+
+  if (tk->code == 'c') {
+    c1 = 1;
+
+    if (tk->aux == T_INT) {
+      ipv4_used = 0; key = tk->a2.i;
+    }
+    else if (tk->aux == T_QUAD) {
+      ipv4_used = 1; key = tk->a2.i;
+    }
+    else
+      cf_error("Can't operate with key of non-integer/IPv4 type in EC constructor");
+  }
+
+#ifndef IPV6
+  /* IP->Quad implicit conversion */
+  else if (tk->code == 'C') {
+    c1 = 1;
+    struct f_val *val = tk->a1.p;
+    if (val->type == T_IP) {
+      ipv4_used = 1; key = ipa_to_u32(val->val.px.ip);
+    }
+    else
+      cf_error("Can't operate with key of non-integer/IPv4 type in EC constructor");
+  }
+#endif
+
+  if (tv->code == 'c') {
+    if (tv->aux != T_INT)
+      cf_error("Can't operate with value of non-integer type in EC constructor");
+    c2 = 1;
+    val2 = tv->a2.i;
+  }
+
+  if (c1 && c2) {
+    u64 ec;
+  
+    if (kind == EC_GENERIC) {
+      ec = ec_generic(key, val2);
+    }
+    else if (ipv4_used) {
+      check_u16(val2);
+      ec = ec_ip4(kind, key, val2);
+    }
+    else if (key < 0x10000) {
+      ec = ec_as2(kind, key, val2);
+    }
+    else {
+      check_u16(val2);
+      ec = ec_as4(kind, key, val2);
+    }
+
+    NEW_F_VAL;
+    rv = f_new_inst();
+    rv->code = 'C';
+    rv->a1.p = val;    
+    val->type = T_EC;
+    val->val.ec = ec;
+  }
+  else {
+    rv = f_new_inst();
+    rv->code = P('m','c');
+    rv->aux = kind;
+    rv->a1.p = tk;
+    rv->a2.p = tv;
+  }
+
+  return rv;
+}
+
+
+
 /* Headers from ../../proto/bgp/config.Y */
 
 #include "proto/bgp/bgp.h"
@@ -159,6 +332,7 @@ f_new_pair_set(int fa, int ta, int fb, int tb)
 
 static struct ospf_area_config *this_area;
 static struct nbma_node *this_nbma;
+static list *this_nets;
 static struct area_net_config *this_pref;
 static struct ospf_stubnet_config *this_stubnet; 
 
@@ -198,8 +372,17 @@ ospf_iface_finish(void)
 static void
 ospf_area_finish(void)
 {
-  if ((this_area->areaid == 0) && (this_area->stub != 0))
-    cf_error( "Backbone area cannot be stub");
+  if ((this_area->areaid == 0) && (this_area->type != OPT_E))
+    cf_error("Backbone area cannot be stub/NSSA");
+
+  if (this_area->summary && (this_area->type == OPT_E))
+    cf_error("Only Stub/NSSA areas can use summary propagation");
+
+  if (this_area->default_nssa && ((this_area->type != OPT_N) || ! this_area->summary))
+    cf_error("Only NSSA areas with summary propagation can use NSSA default route");
+
+  if ((this_area->default_cost & LSA_EXT_EBIT) && ! this_area->default_nssa)
+    cf_error("Only NSSA default route can use type 2 metric");
 }
 
 static void
@@ -227,11 +410,19 @@ ospf_proto_finish(void)
     add_head(&cf->area_list, NODE ac);
     init_list(&ac->patt_list);
     init_list(&ac->net_list);
+    init_list(&ac->enet_list);
     init_list(&ac->stubnet_list);
   }
 
   if (!cf->abr && !EMPTY_LIST(cf->vlink_list))
-    cf_error( "No configured areas in OSPF");
+    cf_error( "Vlinks cannot be used on single area router");
+}
+
+static inline void
+check_defcost(int cost)
+{
+  if ((cost <= 0) || (cost >= LSINFINITY))
+   cf_error("Default cost must be in range 1-%d", LSINFINITY);
 }
 
 /* Headers from ../../proto/pipe/config.Y */
@@ -280,6 +471,11 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
   struct f_path_mask *h;
   struct password_item *p;
   struct rt_show_data *ra;
+  struct roa_show_data *ro;
+  struct sym_show_data *sd;
+  struct lsadb_show_data *ld;
+  struct iface *iface;
+  struct roa_table *rot;
   void *g;
   bird_clock_t time;
   struct prefix px;
@@ -295,6 +491,7 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 %token <a> IPA
 %token <s> SYM
 %token <t> TEXT
+%type <iface> ipa_scope
 
 %type <i> expr bool pxlen
 %type <time> datetime
@@ -335,12 +532,13 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 
 /* Declarations from ../../nest/config.Y */
 
-%token ROUTER ID PROTOCOL PREFERENCE DISABLED DIRECT
+%token ROUTER ID PROTOCOL TEMPLATE PREFERENCE DISABLED DIRECT
 %token INTERFACE IMPORT EXPORT FILTER NONE STATES FILTERS
 %token PASSWORD FROM PASSIVE TO EVENTS PACKETS PROTOCOLS INTERFACES
-%token PRIMARY STATS COUNT FOR COMMANDS PREEXPORT GENERATE
+%token PRIMARY STATS COUNT FOR COMMANDS PREEXPORT GENERATE ROA MAX FLUSH
 %token LISTEN BGP V6ONLY DUAL ADDRESS PORT PASSWORDS DESCRIPTION
 %token RELOAD IN OUT MRTDUMP MESSAGES RESTRICT MEMORY IGP_METRIC
+
 
 
 
@@ -352,13 +550,18 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 %type <r> rtable
 %type <s> optsym
 %type <ra> r_args
-%type <i> echo_mask echo_size debug_mask debug_list debug_flag mrtdump_mask mrtdump_list mrtdump_flag export_or_preexport
+%type <ro> roa_args
+%type <rot> roa_table_arg
+%type <sd> sym_args
+%type <i> proto_start echo_mask echo_size debug_mask debug_list debug_flag mrtdump_mask mrtdump_list mrtdump_flag export_or_preexport roa_mode
 %type <ps> proto_patt proto_patt2
 
 %token SHOW STATUS
 %token SUMMARY
 %token ROUTE
 %token SYMBOLS
+%token ADD
+%token DELETE
 %token DUMP RESOURCES
 %token SOCKETS
 %token NEIGHBORS
@@ -369,16 +572,16 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 %token RESTART
 /* Declarations from ../../filter/config.Y */
 
-%token FUNCTION PRINT PRINTN UNSET RETURN ACCEPT REJECT QUITBIRD INT BOOL IP PREFIX PAIR QUAD SET STRING BGPMASK BGPPATH CLIST IF THEN ELSE CASE TRUE FALSE GW NET MASK PROTO SOURCE SCOPE CAST DEST LEN DEFINED ADD DELETE CONTAINS RESET PREPEND FIRST LAST MATCH EMPTY WHERE EVAL
+%token FUNCTION PRINT PRINTN UNSET RETURN ACCEPT REJECT QUITBIRD INT BOOL IP PREFIX PAIR QUAD EC SET STRING BGPMASK BGPPATH CLIST ECLIST IF THEN ELSE CASE TRUE FALSE RT RO UNKNOWN GENERIC GW NET MASK PROTO SOURCE SCOPE CAST DEST LEN DEFINED CONTAINS RESET PREPEND FIRST LAST MATCH ROA_CHECK EMPTY WHERE EVAL
 
 %nonassoc THEN
 %nonassoc ELSE
 
-%type <x> term block cmds cmds_int cmd function_body constant print_one print_list var_list var_listn dynamic_attr static_attr function_call symbol dpair bgp_path_expr
+%type <x> term block cmds cmds_int cmd function_body constant constructor print_one print_list var_list var_listn dynamic_attr static_attr function_call symbol bgp_path_expr
 %type <f> filter filter_body where_filter
-%type <i> type break_command pair_expr
-%type <i32> pair_atom
-%type <e> pair_item set_item switch_item set_items switch_items switch_body
+%type <i> type break_command pair_expr ec_kind
+%type <i32> pair_atom ec_expr
+%type <e> pair_item ec_item set_item switch_item set_items switch_items switch_body
 %type <trie> fprefix_set
 %type <v> set_atom switch_atom fprefix fprefix_s fipa
 %type <s> decls declsn one_decl function_params 
@@ -386,20 +589,22 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 
 /* Declarations from ../../proto/bgp/config.Y */
 
-%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT PREFER OLDER MISSING LLADDR DROP IGNORE REFRESH INTERPRET COMMUNITIES BGP_ORIGINATOR_ID BGP_CLUSTER_LIST IGP GATEWAY RECURSIVE MED
+%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY BGP_EXT_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT PREFER OLDER MISSING LLADDR DROP IGNORE REFRESH INTERPRET COMMUNITIES BGP_ORIGINATOR_ID BGP_CLUSTER_LIST IGP GATEWAY RECURSIVE MED TTL SECURITY DETERMINISTIC
 
 /* Declarations from ../../proto/ospf/config.Y */
 
 %token OSPF AREA OSPF_METRIC1 OSPF_METRIC2 OSPF_TAG OSPF_ROUTER_ID
-%token RFC1583COMPAT STUB TICK COST RETRANSMIT
+%token RFC1583COMPAT STUB TICK COST COST2 RETRANSMIT
 %token HELLO TRANSMIT PRIORITY DEAD TYPE BROADCAST BCAST
 %token NONBROADCAST NBMA POINTOPOINT PTP POINTOMULTIPOINT PTMP
 %token SIMPLE AUTHENTICATION STRICT CRYPTOGRAPHIC
 %token ELIGIBLE POLL NETWORKS HIDDEN VIRTUAL CHECK LINK
-%token RX BUFFER LARGE NORMAL STUBNET
-%token LSADB ECMP WEIGHT
+%token RX BUFFER LARGE NORMAL STUBNET TAG EXTERNAL
+%token LSADB ECMP WEIGHT NSSA TRANSLATOR STABILITY
+%token GLOBAL LSID
 
 %type <t> opttext
+%type <ld> lsadb_args
 
 %token TOPOLOGY
 %token STATE
@@ -475,6 +680,11 @@ ipa:
      if ($1->class != SYM_IPA) cf_error("IP address expected");
      $$ = *(ip_addr *)$1->def;
    }
+ ;
+
+ipa_scope:
+   /* empty */ { $$ = NULL; }
+ | '%' SYM { $$ = if_get_by_name($2->name); }
  ;
 
 prefix:
@@ -618,8 +828,7 @@ kern_proto_start: proto_start KERNEL {
      if (cf_krt)
        cf_error("Kernel protocol already defined");
 #endif
-     cf_krt = this_proto = proto_config_new(&proto_unix_kernel, sizeof(struct krt_config));
-     this_proto->preference = DEF_PREF_INHERITED;
+     cf_krt = this_proto = proto_config_new(&proto_unix_kernel, sizeof(struct krt_config), $1);
      THIS_KRT->scan_time = 60;
      THIS_KRT->learn = THIS_KRT->persist = 0;
      krt_scan_construct(THIS_KRT);
@@ -650,8 +859,7 @@ kern_item:
 kif_proto_start: proto_start DEVICE {
      if (cf_kif)
        cf_error("Kernel device protocol already defined");
-     cf_kif = this_proto = proto_config_new(&proto_unix_iface, sizeof(struct kif_config));
-     this_proto->preference = DEF_PREF_DIRECT;
+     cf_kif = this_proto = proto_config_new(&proto_unix_iface, sizeof(struct kif_config), $1);
      THIS_KIF->scan_time = 60;
      init_list(&THIS_KIF->primary);
      krt_if_construct(THIS_KIF);
@@ -732,22 +940,49 @@ newtab: TABLE SYM {
    }
  ;
 
+
+roa_table_start: ROA TABLE SYM {
+  this_roa_table = roa_new_table_config($3);
+};
+
+roa_table_opts:
+   /* empty */
+ | roa_table_opts ROA prefix MAX NUM AS NUM ';' {
+     roa_add_item_config(this_roa_table, $3.addr, $3.len, $5, $7);
+   }
+ ;
+
+roa_table:
+   roa_table_start
+ | roa_table_start '{' roa_table_opts '}'
+ ;
+
 /* Definition of protocols */
 
 
-proto_start: PROTOCOL
+proto_start:
+   PROTOCOL { $$ = SYM_PROTO; }
+ | TEMPLATE { $$ = SYM_TEMPLATE; }
  ;
 
 proto_name:
    /* EMPTY */ {
      struct symbol *s = cf_default_name(this_proto->protocol->template, &this_proto->protocol->name_counter);
-     s->class = SYM_PROTO;
+     s->class = this_proto->class;
      s->def = this_proto;
      this_proto->name = s->name;
      }
  | SYM {
-     cf_define_symbol($1, SYM_PROTO, this_proto);
+     cf_define_symbol($1, this_proto->class, this_proto);
      this_proto->name = $1->name;
+   }
+ | SYM FROM SYM {
+     if (($3->class != SYM_TEMPLATE) && ($3->class != SYM_PROTO)) cf_error("Template or protocol name expected");
+
+     cf_define_symbol($1, this_proto->class, this_proto);
+     this_proto->name = $1->name;
+
+     proto_copy_config(this_proto, $3->def);
    }
  ;
 
@@ -825,10 +1060,8 @@ iface_patt_list:
 
 
 dev_proto_start: proto_start DIRECT {
-     struct rt_dev_config *p = proto_config_new(&proto_device, sizeof(struct rt_dev_config));
-     this_proto = &p->c;
-     p->c.preference = DEF_PREF_DIRECT;
-     init_list(&p->iface_list);
+     this_proto = proto_config_new(&proto_device, sizeof(struct rt_dev_config), $1);
+     init_list(&DIRECT_CFG->iface_list);
    }
  ;
 
@@ -840,9 +1073,8 @@ dev_proto:
 
 dev_iface_init:
    /* EMPTY */ {
-     struct rt_dev_config *p = (void *) this_proto;
      this_ipatt = cfg_allocz(sizeof(struct iface_patt));
-     add_tail(&p->iface_list, NODE this_ipatt);
+     add_tail(&DIRECT_CFG->iface_list, NODE this_ipatt);
      init_list(&this_ipatt->ipn_list);
    }
  ;
@@ -963,6 +1195,7 @@ cmd_SHOW_INTERFACES: SHOW INTERFACES  END
 cmd_SHOW_INTERFACES_SUMMARY: SHOW INTERFACES SUMMARY  END
 { if_show_summary(); } ;
 
+
 cmd_SHOW_ROUTE: SHOW ROUTE r_args END
 { rt_show($3); } ;
 
@@ -1042,8 +1275,96 @@ export_or_preexport:
  | EXPORT { $$ = 2; }
  ;
 
-cmd_SHOW_SYMBOLS: SHOW SYMBOLS optsym END
+
+
+cmd_SHOW_ROA: SHOW ROA roa_args END
+{ roa_show($3); } ;
+
+roa_args:
+   /* empty */ {
+     $$ = cfg_allocz(sizeof(struct roa_show_data));
+     $$->mode = ROA_SHOW_ALL;
+     $$->table = roa_table_default;
+     if (roa_table_default == NULL)
+       cf_error("No ROA table defined");
+   }
+ | roa_args roa_mode prefix {
+     $$ = $1;
+     if ($$->mode != ROA_SHOW_ALL) cf_error("Only one prefix expected");
+     $$->prefix = $3.addr;
+     $$->pxlen = $3.len;
+     $$->mode = $2;
+   }
+ | roa_args AS NUM {
+     $$ = $1;
+     $$->asn = $3;
+   }
+ | roa_args TABLE SYM {
+     $$ = $1;
+     if ($3->class != SYM_ROA) cf_error("%s is not a ROA table", $3->name);
+     $$->table = ((struct roa_table_config *)$3->def)->table;
+   }
+ ;
+
+roa_mode:
+       { $$ = ROA_SHOW_PX; }
+ | IN  { $$ = ROA_SHOW_IN; }
+ | FOR { $$ = ROA_SHOW_FOR; }
+ ;
+
+
+
+cmd_SHOW_SYMBOLS: SHOW SYMBOLS sym_args END
 { cmd_show_symbols($3); } ;
+
+sym_args:
+   /* empty */ {
+     $$ = cfg_allocz(sizeof(struct sym_show_data));
+   }
+ | sym_args TABLE { $$ = $1; $$->type = SYM_TABLE; }
+ | sym_args FUNCTION { $$ = $1; $$->type = SYM_FUNCTION; }
+ | sym_args FILTER { $$ = $1; $$->type = SYM_FILTER; }
+ | sym_args PROTOCOL { $$ = $1; $$->type = SYM_PROTO; }
+ | sym_args TEMPLATE { $$ = $1; $$->type = SYM_TEMPLATE; }
+ | sym_args ROA { $$ = $1; $$->type = SYM_ROA; }
+ | sym_args SYM { $$ = $1; $$->sym = $2; }
+ ;
+
+
+roa_table_arg:
+   /* empty */ { 
+     if (roa_table_default == NULL)
+       cf_error("No ROA table defined");
+     $$ = roa_table_default;
+   }
+ | TABLE SYM {
+     if ($2->class != SYM_ROA)
+       cf_error("%s is not a ROA table", $2->name);
+     $$ = ((struct roa_table_config *)$2->def)->table;
+   }
+ ;
+
+
+cmd_ADD_ROA: ADD ROA prefix MAX NUM AS NUM roa_table_arg END
+{
+  if (! cli_access_restricted())
+    { roa_add_item($8, $3.addr, $3.len, $5, $7, ROA_SRC_DYNAMIC); cli_msg(0, ""); }
+};
+
+
+cmd_DELETE_ROA: DELETE ROA prefix MAX NUM AS NUM roa_table_arg END
+{
+  if (! cli_access_restricted())
+    { roa_delete_item($8, $3.addr, $3.len, $5, $7, ROA_SRC_DYNAMIC); cli_msg(0, ""); }
+};
+
+
+cmd_FLUSH_ROA: FLUSH ROA roa_table_arg END
+{
+  if (! cli_access_restricted())
+    { roa_flush($3, ROA_SRC_DYNAMIC); cli_msg(0, ""); }
+};
+
 
 
 cmd_DUMP_RESOURCES: DUMP RESOURCES  END
@@ -1141,15 +1462,18 @@ type:
  | PREFIX { $$ = T_PREFIX; }
  | PAIR { $$ = T_PAIR; }
  | QUAD { $$ = T_QUAD; }
+ | EC { $$ = T_EC; }
  | STRING { $$ = T_STRING; }
  | BGPMASK { $$ = T_PATH_MASK; }
  | BGPPATH { $$ = T_PATH; }
  | CLIST { $$ = T_CLIST; }
+ | ECLIST { $$ = T_ECLIST; }
  | type SET { 
 	switch ($1) {
 	  case T_INT:
 	  case T_PAIR:
 	  case T_QUAD:
+	  case T_EC:
 	  case T_IP:
 	       $$ = T_SET;
 	       break;
@@ -1185,7 +1509,7 @@ decls: /* EMPTY */ { $$ = NULL; }
 
 /* Declarations that have no ';' at the end. */
 declsn: one_decl { $$ = $1; }
- | declsn ';' one_decl {
+ | one_decl ';' declsn {
      $$ = $1;
      $$->aux2 = $3;
    }
@@ -1332,18 +1656,36 @@ pair_item:
      /* Hack: $2 and $4 should be pair_expr, but that would cause shift/reduce conflict */
      if ((pair_a($2) != pair_b($2)) || (pair_a($4) != pair_b($4)))
        cf_error("syntax error");
-     $$ = f_new_pair_item(pair_b($2), pair_b($4), $8, $10); 
+     $$ = f_new_pair_item(pair_b($2), $8, pair_b($4), $10); 
    }
+ ;
+
+ec_expr:
+   term { $$ = f_eval_int($1); }
+
+ec_kind:
+   RT { $$ = EC_RT; }
+ | RO { $$ = EC_RO; }
+ | UNKNOWN NUM { $$ = $2; }
+ | GENERIC { $$ = EC_GENERIC; }
+ ;
+
+ec_item:
+   '(' ec_kind ',' ec_expr ',' ec_expr ')' { $$ = f_new_ec_item($2, 0, $4, $6, $6); }
+ | '(' ec_kind ',' ec_expr ',' ec_expr DDOT ec_expr ')' { $$ = f_new_ec_item($2, 0, $4, $6, $8); }
+ | '(' ec_kind ',' ec_expr ',' '*' ')' {  $$ = f_new_ec_item($2, 0, $4, 0, EC_ALL); }
  ;
 
 set_item:
    pair_item
+ | ec_item
  | set_atom { $$ = f_new_item($1, $1); }
  | set_atom DDOT set_atom { $$ = f_new_item($1, $3); }
  ;
 
 switch_item:
    pair_item
+ | ec_item
  | switch_atom { $$ = f_new_item($1, $1); }
  | switch_atom DDOT switch_atom { $$ = f_new_item($1, $3); }
  ;
@@ -1423,20 +1765,6 @@ bgp_path_tail2:
  | 		      { $$ = NULL; }
  ;
 
-dpair:
-   '(' term ',' term ')' {
-        if (($2->code == 'c') && ($4->code == 'c'))
-          { 
-            if (($2->aux != T_INT) || ($4->aux != T_INT))
-              cf_error( "Can't operate with value of non-integer type in pair constructor" );
-	    check_u16($2->a2.i); check_u16($4->a2.i);
-            $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_PAIR;  $$->a2.i = pair($2->a2.i, $4->a2.i);
-          }
-	else
-	  { $$ = f_new_inst(); $$->code = P('m', 'p'); $$->a1.p = $2; $$->a2.p = $4; }
-    }
- ;
-
 constant:
    NUM    { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_INT;  $$->a2.i = $1; }
  | TRUE   { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_BOOL; $$->a2.i = 1;  }
@@ -1449,6 +1777,11 @@ constant:
  | '[' fprefix_set ']' { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_PREFIX_SET;  $$->a2.p = $2; }
  | ENUM	  { $$ = f_new_inst(); $$->code = 'c'; $$->aux = $1 >> 16; $$->a2.i = $1 & 0xffff; }
  | bgp_path { NEW_F_VAL; $$ = f_new_inst(); $$->code = 'C'; val->type = T_PATH_MASK; val->val.path_mask = $1; $$->a1.p = val; }
+ ;
+
+constructor:
+   '(' term ',' term ')' { $$ = f_generate_dpair($2, $4); }
+ | '(' ec_kind ',' term ',' term ')' { $$ = f_generate_ec($2, $4, $6); }
  ;
 
 
@@ -1501,6 +1834,7 @@ symbol:
        case SYM_VARIABLE | T_INT:
        case SYM_VARIABLE | T_PAIR:
        case SYM_VARIABLE | T_QUAD:
+       case SYM_VARIABLE | T_EC:
        case SYM_VARIABLE | T_STRING:
        case SYM_VARIABLE | T_IP:
        case SYM_VARIABLE | T_PREFIX:
@@ -1509,6 +1843,7 @@ symbol:
        case SYM_VARIABLE | T_PATH:
        case SYM_VARIABLE | T_PATH_MASK:
        case SYM_VARIABLE | T_CLIST:
+       case SYM_VARIABLE | T_ECLIST:
 	 $$->code = 'V';
 	 $$->a1.p = $1->def;
 	 $$->a2.p = $1->name;
@@ -1550,7 +1885,7 @@ term:
 
  | symbol   { $$ = $1; }
  | constant { $$ = $1; }
- | dpair    { $$ = $1; }
+ | constructor { $$ = $1; }
 
  | PREFERENCE { $$ = f_new_inst(); $$->code = 'P'; }
 
@@ -1574,10 +1909,14 @@ term:
 
  | '+' EMPTY '+' { $$ = f_new_inst(); $$->code = 'E'; $$->aux = T_PATH; }
  | '-' EMPTY '-' { $$ = f_new_inst(); $$->code = 'E'; $$->aux = T_CLIST; }
+ | '-' '-' EMPTY '-' '-' { $$ = f_new_inst(); $$->code = 'E'; $$->aux = T_ECLIST; }
  | PREPEND '(' term ',' term ')' { $$ = f_new_inst(); $$->code = P('A','p'); $$->a1.p = $3; $$->a2.p = $5; } 
  | ADD '(' term ',' term ')' { $$ = f_new_inst(); $$->code = P('C','a'); $$->a1.p = $3; $$->a2.p = $5; $$->aux = 'a'; } 
  | DELETE '(' term ',' term ')' { $$ = f_new_inst(); $$->code = P('C','a'); $$->a1.p = $3; $$->a2.p = $5; $$->aux = 'd'; }
  | FILTER '(' term ',' term ')' { $$ = f_new_inst(); $$->code = P('C','a'); $$->a1.p = $3; $$->a2.p = $5; $$->aux = 'f'; }
+
+ | ROA_CHECK '(' SYM ')' { $$ = f_generate_roa_check($3, NULL, NULL); }
+ | ROA_CHECK '(' SYM ',' term ',' term ')' { $$ = f_generate_roa_check($3, $5, $7); }
 
 /* | term '.' LEN { $$->code = P('P','l'); } */
 
@@ -1625,7 +1964,6 @@ print_list: /* EMPTY */ { $$ = NULL; }
        $$ = $1;
      } else $$ = $3;
    }
- 
  ;
 
 var_listn: term { 
@@ -1713,20 +2051,18 @@ cmd:
    }
 
 
- | rtadot dynamic_attr '.' EMPTY ';' 
-  { struct f_inst *i = f_new_inst(); i->code = 'E'; i->aux = T_CLIST; $$ = $2; $$->code = P('e','S'); $$->a1.p = i; }
+ | rtadot dynamic_attr '.' EMPTY ';' { $$ = f_generate_empty($2); }
  | rtadot dynamic_attr '.' PREPEND '(' term ')' ';'   { $$ = f_generate_complex( P('A','p'), 'x', $2, $6 ); }
- | rtadot dynamic_attr '.' ADD '(' term ')' ';'       { $$ = f_generate_complex( P('C','a'), 'a', $2, $6 ); } 
- | rtadot dynamic_attr '.' DELETE '(' term ')' ';'    { $$ = f_generate_complex( P('C','a'), 'd', $2, $6 ); } 
- | rtadot dynamic_attr '.' FILTER '(' term ')' ';'    { $$ = f_generate_complex( P('C','a'), 'f', $2, $6 ); } 
+ | rtadot dynamic_attr '.' ADD '(' term ')' ';'       { $$ = f_generate_complex( P('C','a'), 'a', $2, $6 ); }
+ | rtadot dynamic_attr '.' DELETE '(' term ')' ';'    { $$ = f_generate_complex( P('C','a'), 'd', $2, $6 ); }
+ | rtadot dynamic_attr '.' FILTER '(' term ')' ';'    { $$ = f_generate_complex( P('C','a'), 'f', $2, $6 ); }
  ;
 
 /* Grammar from ../../proto/bgp/config.Y */
 
 
 bgp_proto_start: proto_start BGP {
-     this_proto = proto_config_new(&proto_bgp, sizeof(struct bgp_config));
-     this_proto->preference = DEF_PREF_BGP;
+     this_proto = proto_config_new(&proto_bgp, sizeof(struct bgp_config), $1);
      BGP_CFG->hold_time = 240;
      BGP_CFG->connect_retry_time = 120;
      BGP_CFG->initial_hold_time = 240;
@@ -1750,11 +2086,15 @@ bgp_proto:
  | bgp_proto proto_item ';'
  | bgp_proto LOCAL AS expr ';' { BGP_CFG->local_as = $4; }
  | bgp_proto LOCAL ipa AS expr ';' { BGP_CFG->source_addr = $3; BGP_CFG->local_as = $5; }
- | bgp_proto NEIGHBOR ipa AS expr ';' {
-     if (ipa_nonzero(BGP_CFG->remote_ip)) cf_error("Only one neighbor per BGP instance is allowed");
+ | bgp_proto NEIGHBOR ipa ipa_scope AS expr ';' {
+     if (ipa_nonzero(BGP_CFG->remote_ip))
+       cf_error("Only one neighbor per BGP instance is allowed");
+     if (!ipa_has_link_scope($3) != !$4)
+       cf_error("Link-local address and interface scope must be used together");
 
      BGP_CFG->remote_ip = $3;
-     BGP_CFG->remote_as = $5;
+     BGP_CFG->iface = $4;
+     BGP_CFG->remote_as = $6;
    }
  | bgp_proto RR CLUSTER ID idval ';' { BGP_CFG->rr_cluster_id = $5; }
  | bgp_proto RR CLIENT ';' { BGP_CFG->rr_client = 1; }
@@ -1764,7 +2104,7 @@ bgp_proto:
  | bgp_proto CONNECT RETRY TIME expr ';' { BGP_CFG->connect_retry_time = $5; }
  | bgp_proto KEEPALIVE TIME expr ';' { BGP_CFG->keepalive_time = $4; }
  | bgp_proto MULTIHOP ';' { BGP_CFG->multihop = 64; }
- | bgp_proto MULTIHOP expr ';' { BGP_CFG->multihop = $3; }
+ | bgp_proto MULTIHOP expr ';' { BGP_CFG->multihop = $3; if (($3<1) || ($3>255)) cf_error("Multihop must be in range 1-255"); }
  | bgp_proto NEXT HOP SELF ';' { BGP_CFG->next_hop_self = 1; }
  | bgp_proto MISSING LLADDR SELF ';' { BGP_CFG->missing_lladdr = MLL_SELF; }
  | bgp_proto MISSING LLADDR DROP ';' { BGP_CFG->missing_lladdr = MLL_DROP; }
@@ -1775,6 +2115,7 @@ bgp_proto:
  | bgp_proto MED METRIC bool ';' { BGP_CFG->med_metric = $4; }
  | bgp_proto IGP METRIC bool ';' { BGP_CFG->igp_metric = $4; }
  | bgp_proto PREFER OLDER bool ';' { BGP_CFG->prefer_older = $4; }
+ | bgp_proto DETERMINISTIC MED bool ';' { BGP_CFG->deterministic_med = $4; }
  | bgp_proto DEFAULT BGP_MED expr ';' { BGP_CFG->default_med = $4; }
  | bgp_proto DEFAULT BGP_LOCAL_PREF expr ';' { BGP_CFG->default_local_pref = $4; }
  | bgp_proto SOURCE ADDRESS ipa ';' { BGP_CFG->source_addr = $4; }
@@ -1791,7 +2132,9 @@ bgp_proto:
  | bgp_proto PASSIVE bool ';' { BGP_CFG->passive = $3; }
  | bgp_proto INTERPRET COMMUNITIES bool ';' { BGP_CFG->interpret_communities = $4; }
  | bgp_proto IGP TABLE rtable ';' { BGP_CFG->igp_table = $4; }
+ | bgp_proto TTL SECURITY bool ';' { BGP_CFG->ttl_security = $4; }
  ;
+
 
 
 
@@ -1801,8 +2144,7 @@ bgp_proto:
 
 
 ospf_proto_start: proto_start OSPF {
-     this_proto = proto_config_new(&proto_ospf, sizeof(struct ospf_config));
-     this_proto->preference = DEF_PREF_OSPF;
+     this_proto = proto_config_new(&proto_ospf, sizeof(struct ospf_config), $1);
      init_list(&OSPF_CFG->area_list);
      init_list(&OSPF_CFG->vlink_list);
      OSPF_CFG->rfc1583 = DEFAULT_RFC1583;
@@ -1828,9 +2170,13 @@ ospf_area_start: AREA idval {
   this_area = cfg_allocz(sizeof(struct ospf_area_config));
   add_tail(&OSPF_CFG->area_list, NODE this_area);
   this_area->areaid = $2;
-  this_area->stub = 0;
+  this_area->default_cost = DEFAULT_STUB_COST;
+  this_area->type = OPT_E;
+  this_area->transint = DEFAULT_TRANSINT;
+
   init_list(&this_area->patt_list);
   init_list(&this_area->net_list);
+  init_list(&this_area->enet_list);
   init_list(&this_area->stubnet_list);
  }
  ;
@@ -1844,9 +2190,17 @@ ospf_area_opts:
  ;
 
 ospf_area_item:
-   STUB COST expr { this_area->stub = $3 ; if($3<=0) cf_error("Stub cost must be greater than zero"); }
- | STUB bool {if($2) { if(!this_area->stub) this_area->stub=DEFAULT_STUB_COST;}else{ this_area->stub=0;}}
- | NETWORKS '{' pref_list '}'
+   STUB bool { this_area->type = $2 ? 0 : OPT_E; /* We should remove the option */ }
+ | NSSA { this_area->type = OPT_N; }
+ | SUMMARY bool { this_area->summary = $2; }
+ | DEFAULT NSSA bool { this_area->default_nssa = $3; }
+ | DEFAULT COST expr { this_area->default_cost = $3; check_defcost($3); }
+ | DEFAULT COST2 expr { this_area->default_cost = $3 | LSA_EXT_EBIT; check_defcost($3); }
+ | STUB COST expr { this_area->default_cost = $3;  check_defcost($3); }
+ | TRANSLATOR bool { this_area->translator = $2; }
+ | TRANSLATOR STABILITY expr { this_area->transint = $3; }
+ | NETWORKS { this_nets = &this_area->net_list; } '{' pref_list '}'
+ | EXTERNAL { this_nets = &this_area->enet_list; } '{' pref_list '}'
  | STUBNET ospf_stubnet
  | INTERFACE ospf_iface
  | ospf_vlink
@@ -1879,7 +2233,7 @@ ospf_stubnet_item:
 
 ospf_vlink:
    ospf_vlink_start '{' ospf_vlink_opts '}' { ospf_iface_finish(); }
- | ospf_vlink_start
+ | ospf_vlink_start { ospf_iface_finish(); }
  ;
 
 ospf_vlink_opts:
@@ -1958,28 +2312,22 @@ pref_list:
  | pref_list pref_item
  ;
 
-pref_item:
-   pref_el
- | pref_hid;
+pref_item: pref_base pref_opt ';' ;
 
-pref_el: prefix ';'
+pref_base: prefix
  {
    this_pref = cfg_allocz(sizeof(struct area_net_config));
-   add_tail(&this_area->net_list, NODE this_pref);
+   add_tail(this_nets, NODE this_pref);
    this_pref->px.addr = $1.addr;
    this_pref->px.len = $1.len;
  }
 ;
 
-pref_hid: prefix HIDDEN ';'
- {
-   this_pref = cfg_allocz(sizeof(struct area_net_config));
-   add_tail(&this_area->net_list, NODE this_pref);
-   this_pref->px.addr = $1.addr;
-   this_pref->px.len = $1.len;
-   this_pref->hidden = 1;
- }
-;
+pref_opt:
+ /* empty */
+ | HIDDEN { this_pref->hidden = 1; }
+ | TAG expr { this_pref->tag = $2; }
+ ;
 
 ipa_list:
  /* empty */
@@ -2050,6 +2398,7 @@ opttext:
  ;
 
 
+;
 cmd_SHOW_OSPF: SHOW OSPF optsym END
 { ospf_sh(proto_get_named($3, &proto_ospf)); };
 
@@ -2075,15 +2424,29 @@ cmd_SHOW_OSPF_STATE: SHOW OSPF STATE optsym opttext END
 cmd_SHOW_OSPF_STATE_ALL: SHOW OSPF STATE ALL optsym opttext END
 { ospf_sh_state(proto_get_named($5, &proto_ospf), 1, 0); };
 
-cmd_SHOW_OSPF_LSADB: SHOW OSPF LSADB optsym opttext END
-{ ospf_sh_lsadb(proto_get_named($4, &proto_ospf)); };
+;
+cmd_SHOW_OSPF_LSADB: SHOW OSPF LSADB lsadb_args END
+{ ospf_sh_lsadb($4); };
+
+lsadb_args:
+   /* empty */ {
+     $$ = cfg_allocz(sizeof(struct lsadb_show_data));
+   }
+ | lsadb_args GLOBAL { $$ = $1; $$->scope = LSA_SCOPE_AS; }
+ | lsadb_args AREA idval { $$ = $1; $$->scope = LSA_SCOPE_AREA; $$->area = $3 }
+ | lsadb_args LINK { $$ = $1; $$->scope = 1; /* hack, 0 is no filter */ }
+ | lsadb_args TYPE NUM { $$ = $1; $$->type = $3; }
+ | lsadb_args LSID idval { $$ = $1; $$->lsid = $3; }
+ | lsadb_args SELF { $$ = $1; $$->router = SH_ROUTER_SELF; }
+ | lsadb_args ROUTER idval { $$ = $1; $$->router = $3; }
+ | lsadb_args SYM { $$ = $1; $$->name = $2; }
+ ;
 
 /* Grammar from ../../proto/pipe/config.Y */
 
 
 pipe_proto_start: proto_start PIPE {
-     this_proto = proto_config_new(&proto_pipe, sizeof(struct pipe_config));
-     this_proto->preference = DEF_PREF_PIPE;
+     this_proto = proto_config_new(&proto_pipe, sizeof(struct pipe_config), $1);
      PIPE_CFG->mode = PIPE_TRANSPARENT;
   }
  ;
@@ -2104,7 +2467,7 @@ pipe_proto:
 
 
 rip_cfg_start: proto_start RIP {
-     this_proto = proto_config_new(&proto_rip, sizeof(struct rip_proto_config));
+     this_proto = proto_config_new(&proto_rip, sizeof(struct rip_proto_config), $1);
      rip_init_config(RIP_CFG);
    }
  ;
@@ -2173,7 +2536,7 @@ rip_iface:
 
 
 static_proto_start: proto_start STATIC {
-     this_proto = proto_config_new(&proto_static, sizeof(struct static_config));
+     this_proto = proto_config_new(&proto_static, sizeof(struct static_config), $1);
      static_init_config((struct static_config *) this_proto);
   }
  ;
@@ -2182,6 +2545,7 @@ static_proto:
    static_proto_start proto_name '{'
  | static_proto proto_item ';'
  | static_proto CHECK LINK bool ';' { STATIC_CFG->check_link = $4; }
+ | static_proto IGP TABLE rtable ';' { STATIC_CFG->igp_table = $4; }
  | static_proto stat_route ';'
  ;
 
@@ -2194,11 +2558,12 @@ stat_route0: ROUTE prefix {
  ;
 
 stat_multipath1:
-   VIA ipa {
+   VIA ipa ipa_scope {
      last_srt_nh = this_srt_nh;
      this_srt_nh = cfg_allocz(sizeof(struct static_route));
      this_srt_nh->dest = RTD_NONE;
      this_srt_nh->via = $2;
+     this_srt_nh->via_if = $3;
      this_srt_nh->if_name = (void *) this_srt; /* really */
    }
  | stat_multipath1 WEIGHT expr {
@@ -2213,9 +2578,10 @@ stat_multipath:
  ;
 
 stat_route:
-   stat_route0 VIA ipa {
+   stat_route0 VIA ipa ipa_scope {
       this_srt->dest = RTD_ROUTER;
       this_srt->via = $3;
+      this_srt->via_if = $4;
    }
  | stat_route0 VIA TEXT {
       this_srt->dest = RTD_DEVICE;
@@ -2225,6 +2591,10 @@ stat_route:
    }
  | stat_route0 MULTIPATH stat_multipath {
       this_srt->dest = RTD_MULTIPATH;
+   }
+ | stat_route0 RECURSIVE ipa {
+      this_srt->dest = RTDX_RECURSIVE;
+      this_srt->via = $3;
    }
  | stat_route0 DROP { this_srt->dest = RTD_BLACKHOLE; }
  | stat_route0 REJECT { this_srt->dest = RTD_UNREACHABLE; }
@@ -2238,9 +2608,9 @@ cmd_SHOW_STATIC: SHOW STATIC optsym END
 /* Dynamic rules */
 
 
-conf: ';' | definition | log_config | mrtdump_base | timeformat_base | rtrid | listen | newtab | proto | debug_default | filter_def | filter_eval | function_def ;
-cli_cmd: cmd_CONFIGURE | cmd_CONFIGURE_SOFT | cmd_DOWN | cmd_SHOW_STATUS | cmd_SHOW_MEMORY | cmd_SHOW_PROTOCOLS | cmd_SHOW_PROTOCOLS_ALL | cmd_SHOW_INTERFACES | cmd_SHOW_INTERFACES_SUMMARY | cmd_SHOW_ROUTE | cmd_SHOW_SYMBOLS | cmd_DUMP_RESOURCES | cmd_DUMP_SOCKETS | cmd_DUMP_INTERFACES | cmd_DUMP_NEIGHBORS | cmd_DUMP_ATTRIBUTES | cmd_DUMP_ROUTES | cmd_DUMP_PROTOCOLS | cmd_ECHO | cmd_DISABLE | cmd_ENABLE | cmd_RESTART | cmd_RELOAD | cmd_RELOAD_IN | cmd_RELOAD_OUT | cmd_DEBUG | cmd_MRTDUMP | cmd_RESTRICT | cmd_SHOW_OSPF | cmd_SHOW_OSPF_NEIGHBORS | cmd_SHOW_OSPF_INTERFACE | cmd_SHOW_OSPF_TOPOLOGY | cmd_SHOW_OSPF_TOPOLOGY_ALL | cmd_SHOW_OSPF_STATE | cmd_SHOW_OSPF_STATE_ALL | cmd_SHOW_OSPF_LSADB | cmd_SHOW_STATIC ;
-proto: kern_proto '}' | kif_proto '}' | dev_proto '}' | bgp_proto '}' { bgp_check(BGP_CFG); }  | ospf_proto '}' { ospf_proto_finish(); }  | pipe_proto '}' | rip_cfg '}' { RIP_CFG->passwords = get_passwords(); }  | static_proto '}' ;
+conf: ';' | definition | log_config | mrtdump_base | timeformat_base | rtrid | listen | newtab | roa_table | proto | debug_default | filter_def | filter_eval | function_def ;
+cli_cmd: cmd_CONFIGURE | cmd_CONFIGURE_SOFT | cmd_DOWN | cmd_SHOW_STATUS | cmd_SHOW_MEMORY | cmd_SHOW_PROTOCOLS | cmd_SHOW_PROTOCOLS_ALL | cmd_SHOW_INTERFACES | cmd_SHOW_INTERFACES_SUMMARY | cmd_SHOW_ROUTE | cmd_SHOW_ROA | cmd_SHOW_SYMBOLS | cmd_ADD_ROA | cmd_DELETE_ROA | cmd_FLUSH_ROA | cmd_DUMP_RESOURCES | cmd_DUMP_SOCKETS | cmd_DUMP_INTERFACES | cmd_DUMP_NEIGHBORS | cmd_DUMP_ATTRIBUTES | cmd_DUMP_ROUTES | cmd_DUMP_PROTOCOLS | cmd_ECHO | cmd_DISABLE | cmd_ENABLE | cmd_RESTART | cmd_RELOAD | cmd_RELOAD_IN | cmd_RELOAD_OUT | cmd_DEBUG | cmd_MRTDUMP | cmd_RESTRICT | cmd_SHOW_OSPF | cmd_SHOW_OSPF_NEIGHBORS | cmd_SHOW_OSPF_INTERFACE | cmd_SHOW_OSPF_TOPOLOGY | cmd_SHOW_OSPF_TOPOLOGY_ALL | cmd_SHOW_OSPF_STATE | cmd_SHOW_OSPF_STATE_ALL | cmd_SHOW_OSPF_LSADB | cmd_SHOW_STATIC ;
+proto: kern_proto '}' | kif_proto '}' | dev_proto '}' | bgp_proto '}' { bgp_check_config(BGP_CFG); }  | ospf_proto '}' { ospf_proto_finish(); }  | pipe_proto '}' | rip_cfg '}' { RIP_CFG->passwords = get_passwords(); }  | static_proto '}' ;
 kern_proto: kern_proto_start proto_name '{' | kern_proto proto_item ';' | kern_proto kern_item ';' | kern_proto nl_item ';' ;
 kif_proto: kif_proto_start proto_name '{' | kif_proto proto_item ';' | kif_proto kif_item ';' ;
 dynamic_attr: KRT_PREFSRC { $$ = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_KRT_PREFSRC); } | KRT_REALM { $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_KRT_REALM); } | IGP_METRIC
@@ -2254,7 +2624,8 @@ dynamic_attr: KRT_PREFSRC { $$ = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, E
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_AGGREGATOR)); } | BGP_COMMUNITY
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_COMMUNITY)); } | BGP_ORIGINATOR_ID
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_ROUTER_ID, T_QUAD, EA_CODE(EAP_BGP, BA_ORIGINATOR_ID)); } | BGP_CLUSTER_LIST
-	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_CLUSTER_LIST)); } | OSPF_METRIC1 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC1); } | OSPF_METRIC2 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC2); } | OSPF_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); } | OSPF_ROUTER_ID { $$ = f_new_dynamic_attr(EAF_TYPE_ROUTER_ID | EAF_TEMP, T_QUAD, EA_OSPF_ROUTER_ID); } | RIP_METRIC { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_METRIC); } | RIP_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_TAG); } ;
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_CLUSTER_LIST)); } | BGP_EXT_COMMUNITY
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_EC_SET, T_ECLIST, EA_CODE(EAP_BGP, BA_EXT_COMMUNITY)); } | OSPF_METRIC1 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC1); } | OSPF_METRIC2 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC2); } | OSPF_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); } | OSPF_ROUTER_ID { $$ = f_new_dynamic_attr(EAF_TYPE_ROUTER_ID | EAF_TEMP, T_QUAD, EA_OSPF_ROUTER_ID); } | RIP_METRIC { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_METRIC); } | RIP_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_TAG); } ;
 
 %%
 /* C Code from ../../conf/confbase.Y */
