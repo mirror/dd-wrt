@@ -1,6 +1,5 @@
-#ifdef CONFIG_LINUX_SCAN
-krt-scan.c
-krt-scan.h
-#endif
+krt-sys.h
+netlink.c
+netlink.Y
 sysio.h
 syspriv.h

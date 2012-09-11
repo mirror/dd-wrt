@@ -60,7 +60,7 @@ ipv4_class_mask(u32 a)
 
 	if (a < 0x80000000)
 		m = 0xff000000;
-	if (a < 0xc0000000)
+	else if (a < 0xc0000000)
 		m = 0xffff0000;
 	else
 		m = 0xffffff00;

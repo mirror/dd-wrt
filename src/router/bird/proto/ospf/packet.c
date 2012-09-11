@@ -273,7 +273,7 @@ ospf_rx_hook(sock *sk, int size)
   int src_local, dst_local UNUSED, dst_mcast; 
   src_local = ipa_in_net(sk->faddr, ifa->addr->prefix, ifa->addr->pxlen);
   dst_local = ipa_equal(sk->laddr, ifa->addr->ip);
-  dst_mcast = ipa_equal(sk->laddr, AllSPFRouters) || ipa_equal(sk->laddr, AllDRouters);
+  dst_mcast = ipa_equal(sk->laddr, ifa->all_routers) || ipa_equal(sk->laddr, AllDRouters);
 
 #ifdef OSPFv2
   /* First, we eliminate packets with strange address combinations.
@@ -287,6 +287,9 @@ ospf_rx_hook(sock *sk, int size)
   if (!dst_mcast && !dst_local)
     return 1;
 
+  /* Ignore my own broadcast packets */
+  if (ifa->cf->real_bcast && ipa_equal(sk->faddr, ifa->addr->ip))
+    return 1;
 #else /* OSPFv3 */
 
   /* In OSPFv3, src_local and dst_local mean link-local. 

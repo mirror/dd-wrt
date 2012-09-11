@@ -624,7 +624,6 @@ rip_dump(struct proto *p)
   int i;
   node *w;
   struct rip_interface *rif;
-  i = 0;
 
   CHK_MAGIC;
   WALK_LIST( w, P->connections ) {
@@ -995,8 +994,8 @@ static int
 rip_get_attr(eattr *a, byte *buf, int buflen UNUSED)
 {
   switch (a->id) {
-  case EA_RIP_METRIC: buf += bsprintf( buf, "metric: %d", a->u.data ); return GA_FULL;
-  case EA_RIP_TAG:    buf += bsprintf( buf, "tag: %d", a->u.data );    return GA_FULL;
+  case EA_RIP_METRIC: bsprintf( buf, "metric: %d", a->u.data ); return GA_FULL;
+  case EA_RIP_TAG:    bsprintf( buf, "tag: %d", a->u.data );    return GA_FULL;
   default: return GA_UNKNOWN;
   }
 }

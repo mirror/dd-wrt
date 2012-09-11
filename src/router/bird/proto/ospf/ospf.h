@@ -205,6 +205,7 @@ struct ospf_iface
   bird_clock_t csn_use;         /* Last time when packet with that CSN was sent */
 #endif
 
+  ip_addr all_routers;		/*  */
   ip_addr drip;			/* Designated router */
   ip_addr bdrip;		/* Backup DR */
   u32 drid;
@@ -790,22 +791,23 @@ struct ospf_iface_patt
   u32 deadc;
   u32 deadint;
   u32 inftransdelay;
-  u32 priority;
-  u32 strictnbma;
   list nbma_list;
+  u32 priority;
   u32 voa;
   u32 vid;
   u16 rxbuf;
-  u8 check_link;
-  u8 ecmp_weight;
 #define OSPF_RXBUF_NORMAL 0
 #define OSPF_RXBUF_LARGE 1
 #define OSPF_RXBUF_MINSIZE 256	/* Minimal allowed size */
-  u32 autype;			/* Not really used in OSPFv3 */
+  u16 autype;			/* Not really used in OSPFv3 */
 #define OSPF_AUTH_NONE 0
 #define OSPF_AUTH_SIMPLE 1
 #define OSPF_AUTH_CRYPT 2
 #define OSPF_AUTH_CRYPT_SIZE 16
+  u8 strictnbma;
+  u8 check_link;
+  u8 ecmp_weight;
+  u8 real_bcast;		/* Not really used in OSPFv3 */
 
 #ifdef OSPFv2
   list *passwords;

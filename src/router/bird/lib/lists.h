@@ -34,7 +34,8 @@ typedef struct list {			/* In fact two overlayed nodes */
 #define HEAD(list) ((void *)((list).head))
 #define TAIL(list) ((void *)((list).tail))
 #define NODE_NEXT(n) ((void *)((NODE (n))->next))
-#define WALK_LIST(n,list) for(n=HEAD(list);(NODE (n))->next; n=NODE_NEXT(n))
+#define NODE_VALID(n) ((NODE (n))->next)
+#define WALK_LIST(n,list) for(n=HEAD(list); NODE_VALID(n); n=NODE_NEXT(n))
 #define WALK_LIST_DELSAFE(n,nxt,list) \
      for(n=HEAD(list); nxt=NODE_NEXT(n); n=(void *) nxt)
 /* WALK_LIST_FIRST supposes that called code removes each processed node */

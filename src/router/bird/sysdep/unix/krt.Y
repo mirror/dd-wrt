@@ -17,7 +17,7 @@ CF_DEFINES
 
 CF_DECLS
 
-CF_KEYWORDS(KERNEL, PERSIST, SCAN, TIME, LEARN, DEVICE, ROUTES)
+CF_KEYWORDS(KERNEL, PERSIST, SCAN, TIME, LEARN, DEVICE, ROUTES, KRT_SOURCE, KRT_METRIC)
 
 CF_GRAMMAR
 
@@ -25,17 +25,7 @@ CF_GRAMMAR
 
 CF_ADDTO(proto, kern_proto '}')
 
-kern_proto_start: proto_start KERNEL {
-#ifndef CONFIG_MULTIPLE_TABLES
-     if (cf_krt)
-       cf_error("Kernel protocol already defined");
-#endif
-     cf_krt = this_proto = proto_config_new(&proto_unix_kernel, sizeof(struct krt_config), $1);
-     THIS_KRT->scan_time = 60;
-     THIS_KRT->learn = THIS_KRT->persist = 0;
-     krt_scan_construct(THIS_KRT);
-     krt_set_construct(THIS_KRT);
-   }
+kern_proto_start: proto_start KERNEL { this_proto = krt_init_config($1); }
  ;
 
 CF_ADDTO(kern_proto, kern_proto_start proto_name '{')
@@ -62,14 +52,7 @@ kern_item:
 
 CF_ADDTO(proto, kif_proto '}')
 
-kif_proto_start: proto_start DEVICE {
-     if (cf_kif)
-       cf_error("Kernel device protocol already defined");
-     cf_kif = this_proto = proto_config_new(&proto_unix_iface, sizeof(struct kif_config), $1);
-     THIS_KIF->scan_time = 60;
-     init_list(&THIS_KIF->primary);
-     krt_if_construct(THIS_KIF);
-   }
+kif_proto_start: proto_start DEVICE { this_proto = kif_init_config($1); }
  ;
 
 CF_ADDTO(kif_proto, kif_proto_start proto_name '{')
@@ -89,6 +72,9 @@ kif_item:
      add_tail(&THIS_KIF->primary, &kpi->n);
    }
  ;
+
+CF_ADDTO(dynamic_attr, KRT_SOURCE { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_KRT_SOURCE); })
+CF_ADDTO(dynamic_attr, KRT_METRIC { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_KRT_METRIC); })
 
 CF_CODE
 
