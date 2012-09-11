@@ -391,9 +391,12 @@ void start_openvpn(void)
 		}
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
-		fprintf(fp, "ip route flush table 10\n"
-			"ip route add default via $ifconfig_remote table 10\n"
-			"for IP in `cat /tmp/openvpncl/policy_ips` ; do\n"
+		fprintf(fp, "ip route flush table 10\n");
+		if (nvram_match("openvpncl_tuntap", "tap") 
+			fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
+		else 
+			fprintf(fp, "ip route add default via $ifconfig_remote table 10\n");
+		fprintf(fp, "for IP in `cat /tmp/openvpncl/policy_ips` ; do\n"
 			"\t ip rule add from $IP table 10\n" "done\n");
 	}
 	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
