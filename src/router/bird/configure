@@ -594,7 +594,6 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-SUFFIX6
 CLIENT_LIBS
 CLIENT
 EGREP
@@ -622,6 +621,10 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+CONTROL_SOCKET
+CONFIG_FILE
+SUFFIX
+runtimedir
 srcdir_rel_mf
 exedir
 objdir
@@ -673,9 +676,11 @@ enable_debug
 enable_memcheck
 enable_client
 enable_ipv6
+with_suffix
 with_sysconfig
 with_protocols
 with_sysinclude
+with_runtimedir
 with_iproutedir
 '
       ac_precious_vars='build_alias
@@ -1311,9 +1316,11 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-suffix=STRING    use specified suffix for BIRD files (default: 6 for IPv6 version)
   --with-sysconfig=FILE   use specified BIRD system configuration file
   --with-protocols=LIST   include specified routing protocols (default: all)
   --with-sysinclude=PATH  search for system includes on specified place
+  --with-runtimedir=PATH  path for runtime files (default: $(localstatedir)/run)
   --with-iproutedir=PATH  path to iproute2 config files (default: /etc/iproute2)
 
 Some influential environment variables:
@@ -2278,6 +2285,12 @@ else
 fi
 
 
+# Check whether --with-suffix was given.
+if test "${with_suffix+set}" = set; then :
+  withval=$with_suffix; given_suffix="yes"
+fi
+
+
 # Check whether --with-sysconfig was given.
 if test "${with_sysconfig+set}" = set; then :
   withval=$with_sysconfig;
@@ -2298,10 +2311,19 @@ if test "${with_sysinclude+set}" = set; then :
 fi
 
 
+# Check whether --with-runtimedir was given.
+if test "${with_runtimedir+set}" = set; then :
+  withval=$with_runtimedir; runtimedir="$with_runtimedir"
+else
+  runtimedir="\$(localstatedir)/run"
+fi
+
+
 # Check whether --with-iproutedir was given.
 if test "${with_iproutedir+set}" = set; then :
   withval=$with_iproutedir; given_iproutedir="yes"
 fi
+
 
 
 
@@ -2329,19 +2351,35 @@ esac
 
 
 
+
 if test "$enable_ipv6" = yes ; then
 	ip=ipv6
-	SUFFIX6=6
+	SUFFIX=6
 	all_protocols=bgp,ospf,pipe,radv,rip,static
 else
 	ip=ipv4
-	SUFFIX6=""
+	SUFFIX=""
 	all_protocols=bgp,ospf,pipe,rip,static
 fi
+
+if test "$given_suffix" = yes ; then
+   	SUFFIX="$with_suffix"
+fi
+
 
 if test "$with_protocols" = all ; then
 	with_protocols="$all_protocols"
 fi
+
+if test "$enable_debug" = yes ; then
+	CONFIG_FILE="bird$SUFFIX.conf"
+	CONTROL_SOCKET="bird$SUFFIX.ctl"
+else
+	CONFIG_FILE="\$(sysconfdir)/bird$SUFFIX.conf"
+	CONTROL_SOCKET="$runtimedir/bird$SUFFIX.ctl"
+fi
+
+
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -4306,64 +4344,11 @@ elif test -f sysconfig.h ; then
 	sysdesc=sysconfig
 else
 	case "$ip:$host_os" in
-		ipv4:linux*)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking Linux kernel version" >&5
-$as_echo_n "checking Linux kernel version... " >&6; }
-if test "${bird_cv_sys_linux_version+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-
-cat > conftest.$ac_ext <<EOF
-#line 4317 "configure"
-#include "confdefs.h"
-#include <linux/version.h>
-VERSION: UTS_RELEASE
-EOF
-bird_cv_sys_linux_version=`eval "$ac_cpp conftest.$ac_ext" 2>&5 | sed '/^VERSION/!d;s/^VERSION: "//;s/".*//'`
-rm -rf conftest*
-if test -z "$bird_cv_sys_linux_version" ; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
-$as_echo "unknown" >&6; }
-	as_fn_error $? "Cannot determine kernel version" "$LINENO" 5
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $bird_cv_sys_linux_version" >&5
-$as_echo "$bird_cv_sys_linux_version" >&6; }
+		ipv6:linux*)	sysdesc=linux-v6
 				default_iproutedir="/etc/iproute2"
-				case $bird_cv_sys_linux_version in
-					1.*|2.0.*)	sysdesc=linux-20 ;;
-					*)		sysdesc=linux-22 ;;
-					esac
 				;;
-		ipv6:linux*)	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking Linux kernel version" >&5
-$as_echo_n "checking Linux kernel version... " >&6; }
-if test "${bird_cv_sys_linux_version+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-
-cat > conftest.$ac_ext <<EOF
-#line 4346 "configure"
-#include "confdefs.h"
-#include <linux/version.h>
-VERSION: UTS_RELEASE
-EOF
-bird_cv_sys_linux_version=`eval "$ac_cpp conftest.$ac_ext" 2>&5 | sed '/^VERSION/!d;s/^VERSION: "//;s/".*//'`
-rm -rf conftest*
-if test -z "$bird_cv_sys_linux_version" ; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
-$as_echo "unknown" >&6; }
-	as_fn_error $? "Cannot determine kernel version" "$LINENO" 5
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $bird_cv_sys_linux_version" >&5
-$as_echo "$bird_cv_sys_linux_version" >&6; }
+		ipv4:linux*)	sysdesc=linux
 				default_iproutedir="/etc/iproute2"
-				case $bird_cv_sys_linux_version in
-					1.*|2.0.*)	as_fn_error $? "This version of Linux doesn't support IPv6." "$LINENO" 5  ;;
-					*)		sysdesc=linux-v6 ;;
-					esac
 				;;
 		ipv6:netbsd*)	sysdesc=bsd-v6
 				CPPFLAGS="$CPPFLAGS -I/usr/pkg/include"
@@ -4439,7 +4424,7 @@ $as_echo "ok" >&6; }
 
 
 case $sysdesc in
-	*/linux-22*|*/linux-v6*)
+	*/linux*|*/linux-v6*)
 		ac_fn_c_check_header_compile "$LINENO" "linux/rtnetlink.h" "ac_cv_header_linux_rtnetlink_h" "
 #include <asm/types.h>
 #include <sys/socket.h>
@@ -4454,6 +4439,7 @@ fi
 
 		;;
 esac
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
 $as_echo_n "checking for grep that handles long lines and -e... " >&6; }
@@ -5784,7 +5770,6 @@ if test "x$ac_cv_lib_readline_rl_ding" = x""yes; then :
 fi
 
 fi
-
 
 
 
