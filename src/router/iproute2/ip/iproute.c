@@ -42,7 +42,7 @@
 #ifndef NEED_PRINTF
 #define usage() exit(-1);
 #else
-/*static void usage(void) __attribute__((noreturn));
+static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
 {
@@ -72,7 +72,7 @@ static void usage(void)
 	fprintf(stderr, "RTPROTO := [ kernel | boot | static | NUMBER ]\n");
 	exit(-1);
 }
-*/
+
 #endif
 
 static struct
