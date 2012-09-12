@@ -42,7 +42,7 @@
 #ifndef NEED_PRINTF
 #define usage() exit(-1);
 #else
-static void usage(void) __attribute__((noreturn));
+/*static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
 {
@@ -72,6 +72,7 @@ static void usage(void)
 	fprintf(stderr, "RTPROTO := [ kernel | boot | static | NUMBER ]\n");
 	exit(-1);
 }
+*/
 #endif
 
 static struct
@@ -1458,7 +1459,7 @@ int do_iproute(int argc, char **argv)
 	if (matches(*argv, "help") == 0)
 		usage();
 #endif
-	fprintf(stderr, "Command \"%s\" is unknown, try \"ip route help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"ip route help\".\n", *argv);
 	exit(-1);
 }
 
