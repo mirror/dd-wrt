@@ -26,6 +26,7 @@ wpa_psk_error = 0;
 wep_error = 0;
 function check_form(F) {
 	var security_mode = 'disabled';
+	
 	// parse through security modes
 	for(i = 0; i < F.elements.length; i++) {
 		element = F.elements[i];
@@ -33,15 +34,15 @@ function check_form(F) {
 			if(element.name.substr(element.name.length - 14, 14) == "_security_mode") {
 				if(element.options[element.selectedIndex].value.substr(0,3) == "psk"
 				   || element.options[element.selectedIndex].value.substr(0,3) == "wpa") {
-					var iface = element.name.substr(0, element.name.length - 14);
+					var iface = element.name.substr(0, element.name.length - 14).replace("X",".");
 					var wpa_psk_input = document.getElementById(iface+"_wpa_psk");
 					if(wpa_psk_input) {
 						result = valid_wpa_psk(wpa_psk_input, false);
 						wpa_psk_error = 0;
-						return result;
+						if(result == false) return result;
 					}
 				} else if(element.options[element.selectedIndex].value.substr(0,3) == "wep") {
-					var iface = element.name.substr(0, element.name.length - 14);
+					var iface = element.name.substr(0, element.name.length - 14).replace("X",".");
 					for (var i=1; i <= 4; i++) {
 						if(F.elements[iface + '_key'][i-1].checked) {
 							aaa = eval(F.elements[iface+"_key"+i]).value;
@@ -51,7 +52,7 @@ function check_form(F) {
 							} else {
 								result = valid_wep(F.elements[iface+"_key"+i]);
 								wep_error = 0;
-								return result;
+								if(result == false) return result;
 							}
 							break;
 						}
