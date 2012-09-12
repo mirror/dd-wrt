@@ -93,8 +93,9 @@ void start_pptpd(void)
 		"proxyarp\n"
 		"ipcp-accept-local\n"
 		"ipcp-accept-remote\n"
-		"lcp-echo-failure 10\n"
-		"lcp-echo-interval 6\n"
+		"lcp-echo-failure 15\n"
+		"lcp-echo-interval 4\n"
+//		"lcp-echo-adaptive"	//disable interval
 		"mtu %s\n" "mru %s\n",
 		nvram_safe_get("pptpd_mtu"),
 		nvram_safe_get("pptpd_mru"));
