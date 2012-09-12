@@ -117,7 +117,15 @@ void start_cron(void)
 			fprintf(fp, "1 0,12 * * * root /bin/cp /tmp/pptp_peer.db /jffs/etc/freeradius/\n");
 		fclose(fp);
 	}
-
+	/*
+	 * pppoe-srv uptime calc
+	 */
+	unlink("/tmp/cron.d/pppoe-srv_uptime"); // 
+	if (nvram_match("pppoeserver_enabled", "1")) {
+		fp = fopen("/tmp/cron.d/pppoe-srv_uptime", "w");
+		fprintf(fp, "*/2 * * * * root /bin/sh /tmp/pppoeserver/calc-uptime.sh\n");
+		fclose(fp);
+	}
 	/*
 	 * Additional cron jobs 
 	 */
