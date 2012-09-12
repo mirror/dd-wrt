@@ -148,7 +148,7 @@ static void makeipup(void)
 	if (nvram_match("pppoeradius_enabled", "1")) {
 		fprintf(fp, "IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"
 			"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"
-			"if [ ! -z $IN ] &&  [ $IN -gt 0 ]\n"
+			"if [ ! -z $IN ] && [ $IN -gt 0 ]\n"
 			"then tc qdisc del dev $1 ingress\n"
 			"\t tc qdisc add dev $1 handle ffff: ingress\n"
 			"\t tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n"
