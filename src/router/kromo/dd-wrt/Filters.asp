@@ -74,11 +74,13 @@ function valid(F) {
 			return false;
 		}
 	}
-	if(F.f_status1[1].checked == true) {		// Disable
+	if(F.f_status1[1].checked == true) {		// Service Disabled
 		F.f_status.value = "0";
 	} else {									// Enable
 		if(F.f_status2[1].checked == true) {	// Allow
 			F.f_status.value = "2";
+		} else if(F.f_status2[2].checked == true) {	 // Whiteist
+			F.f_status.value = "3";
 		} else {								// deny
 			F.f_status.value = "1";
 		}
@@ -342,6 +344,11 @@ addEvent(window, "unload", function() {
 									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 730);\" />");
 									//]]>
 									</script>
+								</div>
+								<div class="setting">
+									<div class="label">
+										<input class="spaceradio" type="radio" name="f_status2" value="whitelist" onclick="Status(this.form,'whitelist')" <% filter_policy_get("f_status","whitelist"); %> /><% tran("share.allow"); %>
+									</div>
 								</div>
 								<div class="setting">
 									<div class="label">
