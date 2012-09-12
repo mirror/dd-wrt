@@ -2556,7 +2556,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpncl_config", "", 0},
 	{"openvpncl_tlsauth", "", 0},
 	{"openvpncl_cipher", "bf-cbc", 0},
-	{"openvpncl_auth", "sha256", 0},
+	{"openvpncl_auth", "md5", 0},
 	{"openvpncl_adv", "0", 0},
 	{"openvpncl_bridge", "0", 0},
 	{"openvpncl_tlscip", "0", 0},
@@ -2590,7 +2590,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_onwan", "0", 0},
 	{"openvpn_switch", "0", 0},	//switch between old/new style config
 	{"openvpn_cipher", "bf-cbc", 0},
-	{"openvpn_auth", "sha256", 0},
+	{"openvpn_auth", "md5", 0},
 	{"openvpn_redirgate", "0", 0},
 	{"openvpn_adv", "0", 0},
 	{"openvpn_tlscip", "0", 0},
