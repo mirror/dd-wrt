@@ -188,7 +188,7 @@ CONFIG_PRINTK=y
 # CONFIG_ELF_CORE is not set
 CONFIG_BASE_FULL=y
 # CONFIG_FUTEX is not set
-# CONFIG_EPOLL is not set
+CONFIG_EPOLL=y
 # CONFIG_SIGNALFD is not set
 # CONFIG_EVENTFD is not set
 # CONFIG_SHMEM is not set
