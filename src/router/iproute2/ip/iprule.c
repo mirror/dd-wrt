@@ -170,7 +170,7 @@ static int iprule_list(int argc, char **argv)
 		af = AF_INET;
 
 	if (argc > 0) {
-//		fprintf(stderr, "\"ip rule show\" does not take any arguments.\n");
+		fprintf(stderr, "\"ip rule show\" does not take any arguments.\n");
 		return -1;
 	}
 
@@ -178,12 +178,12 @@ static int iprule_list(int argc, char **argv)
 		return 1;
 
 	if (rtnl_wilddump_request(&rth, af, RTM_GETRULE) < 0) {
-//		perror("Cannot send dump request");
+		perror("Cannot send dump request");
 		return 1;
 	}
 
 	if (rtnl_dump_filter(&rth, print_rule, stdout, NULL, NULL) < 0) {
-//		fprintf(stderr, "Dump terminated\n");
+		fprintf(stderr, "Dump terminated\n");
 		return 1;
 	}
 
@@ -343,7 +343,7 @@ static int iprule_flush(int argc, char **argv)
 		af = AF_INET;
 
 	if (argc > 0) {
-//		fprintf(stderr, "\"ip rule flush\" need not any arguments.\n");
+		fprintf(stderr, "\"ip rule flush\" need not any arguments.\n");
 		return -1;
 	}
 
@@ -351,12 +351,12 @@ static int iprule_flush(int argc, char **argv)
 		return 1;
 
 	if (rtnl_wilddump_request(&rth, af, RTM_GETRULE) < 0) {
-//		perror("Cannot send dump request");
+		perror("Cannot send dump request");
 		return 1;
 	}
 
 	if (rtnl_dump_filter(&rth, flush_rule, NULL, NULL, NULL) < 0) {
-//		fprintf(stderr, "Flush terminated\n");
+		fprintf(stderr, "Flush terminated\n");
 		return 1;
 	}
 
