@@ -43,14 +43,14 @@ function check_form(F) {
 					}
 				} else if(element.options[element.selectedIndex].value.substr(0,3) == "wep") {
 					var iface = element.name.substr(0, element.name.length - 14).replace("X",".");
-					for (var i=1; i <= 4; i++) {
-						if(F.elements[iface + '_key'][i-1].checked) {
-							aaa = eval(F.elements[iface+"_key"+i]).value;
+					for (var j=1; j <= 4; j++) {
+						if(F.elements[iface + '_key'][j-1].checked) {
+							aaa = eval(F.elements[iface+"_key"+j]).value;
 							if(aaa == "") {
-								alert(errmsg.err40 + i);
+								alert(errmsg.err40 + j);
 								return false;
 							} else {
-								result = valid_wep(F.elements[iface+"_key"+i]);
+								result = valid_wep(F.elements[iface+"_key"+j]);
 								wep_error = 0;
 								if(result == false) return result;
 							}
