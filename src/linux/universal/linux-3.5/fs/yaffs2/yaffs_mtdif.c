@@ -1,7 +1,7 @@
 /*
  * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
  *
- * Copyright (C) 2002-2010 Aleph One Ltd.
+ * Copyright (C) 2002-2011 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
  *
  * Created by Charles Manning <charles@aleph1.co.uk>
@@ -13,7 +13,6 @@
 
 #include "yportenv.h"
 
-
 #include "yaffs_mtdif.h"
 
 #include "linux/mtd/mtd.h"
@@ -23,14 +22,13 @@
 
 #include "yaffs_linux.h"
 
-int nandmtd_EraseBlockInNAND(yaffs_dev_t *dev, int blockNumber)
+int nandmtd_erase_block(struct yaffs_dev *dev, int block_no)
 {
 	struct mtd_info *mtd = yaffs_dev_to_mtd(dev);
-	__u32 addr =
-	    ((loff_t) blockNumber) * dev->param.total_bytes_per_chunk
-		* dev->param.chunks_per_block;
+	u32 addr =
+	    ((loff_t) block_no) * dev->param.total_bytes_per_chunk *
+	    dev->param.chunks_per_block;
 	struct erase_info ei;
-	
 	int retval = 0;
 
 	ei.mtd = mtd;
@@ -45,12 +43,11 @@ int nandmtd_EraseBlockInNAND(yaffs_dev_t *dev, int blockNumber)
 
 	if (retval == 0)
 		return YAFFS_OK;
-	else
-		return YAFFS_FAIL;
+
+	return YAFFS_FAIL;
 }
 
-int nandmtd_InitialiseNAND(yaffs_dev_t *dev)
+int nandmtd_initialise(struct yaffs_dev *dev)
 {
 	return YAFFS_OK;
 }
-
