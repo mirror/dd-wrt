@@ -1,13 +1,7 @@
-/*
- * dirs.h - directory and file definitions used by IPTraf
- *
- * You may change these directories to suit your needs, BUT:
- *
- *   1. Some directories contain files that IPTraf may erase, see LOCKDIR
- *   2. The temporary file creation methods are NOT SAFE FOR USE ON WORLD
- *      WRITABLE DIRECTORIES.  Do not define any of these directories to
- *      be any world-writable directory, such as /tmp or /var/tmp.
- */
+#ifndef IPTRAF_NG_DIRS_H
+#define IPTRAF_NG_DIRS_H
+
+// TODO: full rewrite
 
 #include "getpath.h"
 
@@ -26,15 +20,11 @@
  */
 
 #ifndef WORKDIR
-#define WORKDIR		"/var/local/iptraf"
+#define WORKDIR		"/var/lib/iptraf-ng"
 #endif
 
 #ifndef LOGDIR
-#define LOGDIR		"/var/log/iptraf"
-#endif
-
-#ifndef EXECDIR
-#define EXECDIR		"/usr/sbin"
+#define LOGDIR		"/var/log/iptraf-ng"
 #endif
 
 /*
@@ -46,7 +36,7 @@
  */
 
 #ifndef LOCKDIR
-#define LOCKDIR		"/var/run/iptraf"
+#define LOCKDIR		"/var/lock/iptraf-ng"
 #endif
 
 /***
@@ -90,33 +80,13 @@
 #define DSTATIDFILE		get_path(T_LOCKDIR, "iptraf-detstat.tag")
 #define TCPUDPIDFILE		get_path(T_LOCKDIR, "iptraf-tcpudp.tag")
 #define LANMONIDFILE		get_path(T_LOCKDIR, "iptraf-lanmon.tag")
-#define IPHOSTSIDFILE		get_path(T_LOCKDIR, "iptraf-iphosts.tag")
 #define FLTIDFILE		get_path(T_LOCKDIR, "iptraf-filters.tag")
-#define TCPFLTIDFILE		get_path(T_LOCKDIR, "iptraf-tcpfltchg.tag")
-#define UDPFLTIDFILE		get_path(T_LOCKDIR, "iptraf-udpfltchg.tag")
-#define OTHFLTIDFILE		get_path(T_LOCKDIR, "iptraf-othfltchg.tag")
 #define OTHIPFLTIDFILE		get_path(T_LOCKDIR, "iptraf-othipfltchg.tag")
 #define PKTSIZEIDFILE		get_path(T_LOCKDIR, "iptraf-packetsize.tag")
 #define PROCCOUNTFILE		get_path(T_LOCKDIR, "iptraf-processcount.dat")
 #define ITRAFMONCOUNTFILE 	get_path(T_LOCKDIR, "iptraf-itrafmoncount.dat")
 #define LANMONCOUNTFILE		get_path(T_LOCKDIR, "iptraf-lanmoncount.dat")
 #define PROMISCLISTFILE 	get_path(T_WORKDIR, "iptraf-promisclist.tmp")
-
-/*
- * The TCP filter list file
- */
-
-#define TCPFLNAME	get_path(T_WORKDIR, "tcpfilters.dat")
-
-/*
- * The UDP filter list file
- */
-
-#define UDPFLNAME	get_path(T_WORKDIR, "udpfilters.dat")
-
-/*
- * Data file for other IP protocol filters
- */
 
 #define OTHIPFLNAME	get_path(T_WORKDIR, "othipfilters.dat")
 
@@ -158,24 +128,12 @@
 #define FDDIFILE	get_path(T_WORKDIR, "fddi.desc")
 
 /*
- * The rvnamed program file
- */
-
-#define RVNDFILE	get_path(T_EXECDIR, "rvnamed")
-
-/*
  * The rvnamed log file
  */
-
-#define RVNDLOGFILE	get_path(T_LOGDIR, "rvnamed.log")
-
-/*
- * File to contain the current TCP filter data file name.  UDP filter
- * data is saved with the other protocols.
- */
-
-#define TCPFILTERSAVE   get_path(T_WORKDIR, "tcpfilter.cur")
+#define RVNDLOGFILE	get_path(T_LOGDIR, "rvnamed-ng.log")
 
 #ifndef PATH_MAX
 #define PATH_MAX	4095
 #endif
+
+#endif	/* IPTRAF_NG_DIRS_H */

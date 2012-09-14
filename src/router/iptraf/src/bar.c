@@ -1,11 +1,7 @@
-/*
- * bar.c - sets the highlight and rate indicator bar for the IP traffic
- *         monitor and TCP/UDP statistics
- *
- * Copyright (c) Gerard Paul Java 2001
- *
- * 
- */
+/* For terms of usage/redistribution/modification see the LICENSE file */
+/* For authors and contributors see the AUTHORS file */
+
+// TODO: full rewrite
 
 /*
  * Set the highlight bar to point to the specified entry.
@@ -14,24 +10,23 @@
  * and accumulator are also reset.
  */
 
-#include <curses.h>
-#include <time.h>
-#include <string.h>
-#include <winops.h>
+#include "iptraf-ng-compat.h"
+
+#include "tui/winops.h"
+
 #include "attrs.h"
 
-void set_barptr(char **barptr, char *entry,
-                time_t * starttime, char *spanbr, size_t size,
-                WINDOW * win, int *cleared, int x)
+void set_barptr(void **barptr, void *entry, time_t * starttime, void *spanbr,
+		size_t size, WINDOW * win, int *cleared, int x)
 {
-    *barptr = entry;
-    *starttime = time(NULL);
-    bzero(spanbr, size);
+	*barptr = entry;
+	*starttime = time(NULL);
+	memset(spanbr, 0, size);
 
-    if (!(*cleared)) {
-        wattrset(win, IPSTATATTR);
-        mvwprintw(win, 0, x, "Computing");
-        tx_wcoloreol(win);
-        *cleared = 1;
-    }
+	if (!(*cleared)) {
+		wattrset(win, IPSTATATTR);
+		mvwprintw(win, 0, x, "Computing");
+		tx_wcoloreol(win);
+		*cleared = 1;
+	}
 }

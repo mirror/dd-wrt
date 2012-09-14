@@ -1,3 +1,5 @@
+/* For terms of usage/redistribution/modification see the LICENSE file */
+/* For authors and contributors see the AUTHORS file */
 
 /***
 
@@ -5,507 +7,362 @@ landesc.c	- LAN host description management module
 		  Currently includes support for Ethernet, PLIP,
 		  and FDDI
 
-Copyright (c) Gerard Paul Java 1998
-
-This software is open source; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed WITHOUT ANY WARRANTY; without even the
-implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the GNU General Public License in the included COPYING file for
-details.
-
 ***/
 
-#include <curses.h>
-#include <panel.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <net/if_arp.h>
-#include <ctype.h>
-#include <winops.h>
-#include <menurt.h>
-#include <input.h>
-#include <labels.h>
-#include <msgboxes.h>
-#include <listbox.h>
+#include "iptraf-ng-compat.h"
+
+#include "tui/input.h"
+#include "tui/listbox.h"
+#include "tui/msgboxes.h"
+#include "tui/menurt.h"
+
+#include "landesc.h"
 #include "deskman.h"
 #include "attrs.h"
 #include "dirs.h"
-#include "landesc.h"
-#include "links.h"
 
-void etherr(void)
+static int check_mac_addr(const char *mac)
 {
-    int resp;
+	if (strlen(mac) != 17)
+		return 0;
 
-    tx_errbox("Unable to open host description file", ANYKEY_MSG, &resp);
+	char a[3], b[3], c[3], d[3], e[3], f[3];
+
+	int success = sscanf(mac, "%02s:%02s:%02s:%02s:%02s:%02s",
+			     a, b, c, d, e, f);
+
+	if (success != 6)
+		return 0;
+
+	char mac_hex[13];
+
+	sprintf(mac_hex, "%s%s%s%s%s%s", a, b, c, d, e, f);
+
+	for (int ii = 0; ii < 12; ++ii)
+		if (!isxdigit(mac_hex[ii]))
+			return 0;
+
+	return 1;
 }
 
-void add_desclist_node(struct desclist *list, struct desclistent *ptmp)
-{
-    if (list->head == NULL) {
-        list->head = ptmp;
-        ptmp->prev_entry = NULL;
-    } else {
-        list->tail->next_entry = ptmp;
-        ptmp->prev_entry = list->tail;
-    }
-
-    ptmp->next_entry = NULL;
-    list->tail = ptmp;
-}
-
-/*
- * Loads descriptions from the IPTraf LAN host description files.
- * Now also loads /etc/ethers as well.
- *
- * In case of a duplicate in the IPTraf definition files and /etc/ethers,
- * the IPTraf definition files take precedence.
+/* parse and insert unique eth description.
+ * caller is responsible for freeing whole list
  */
-
-void loaddesclist(struct desclist *list, unsigned int linktype,
-                  int withethers)
+static void parse_eth_desc(FILE * fp, struct eth_desc *hd)
 {
-    struct desclistent *ptmp = NULL;
-    FILE *fd = NULL;
-    char descline[140];
-    char *desctoken;
-    char etherline[140];
-    int i, j;                   /* counters used when parsing /etc/ethers */
+	char *l = NULL;
+	size_t len = 0;
+	ssize_t read;
 
-    bzero(list, sizeof(struct desclist));
+	while ((read = getline(&l, &len, fp)) != -1) {
+		if (l[0] == '\n' || l[0] == '#')
+			continue;
 
-    if (linktype == LINK_ETHERNET)
-        fd = fopen(ETHFILE, "r");
-    else if (linktype == LINK_FDDI)
-        fd = fopen(FDDIFILE, "r");
+		char *line = l;
 
-    if (fd == NULL) {
-        return;
-    }
-    while (!feof(fd)) {
-        ptmp = malloc(sizeof(struct desclistent));
-        if (ptmp == NULL) {
-            printnomem();
-            return;
-        }
-        bzero(ptmp, sizeof(struct desclistent));
-        bzero(descline, 140);
-        fgets(descline, 140, fd);
+		if (strchr(line, '\n'))
+			strchr(line, '\n')[0] = '\0';
+		char mac[18] = { 0 };
+		strncpy(mac, line, 17);
 
-        if (strcmp(descline, "") == 0) {
-            free(ptmp);
-            continue;
-        }
-        strncpy(ptmp->rec.address, strtok(descline, ":"), 12);
-        desctoken = strtok(NULL, "\n");
+		if (!check_mac_addr(mac)) {
+			tui_error(ANYKEY_MSG, "Not a mac '%s' address, skipped",
+				  mac);
+			continue;
+		}
 
-        if (desctoken != NULL)
-            strncpy(ptmp->rec.desc, desctoken, 64);
-        else
-            strcpy(ptmp->rec.desc, "");
+		/* skip mac address */
+		line += 17;
 
-        add_desclist_node(list, ptmp);
-    }
+		/* mandatory space between mac and ip */
+		if (!isspace(*line)) {
+			tui_error(ANYKEY_MSG,
+				  "Missing mandatory space between"
+				  "mac and host/ip address, skipped");
+			continue;
+		}
 
-    fclose(fd);
+		line = skip_whitespace(line);
 
-    /* 
-     * Loads MAC addresses defined in /etc/ethers.  Contributed by
-     * Debian maintainter Frederic Peters <fpeters@debian.org>.  Thanks
-     * Frederic!
-     *
-     * Contributor's note:
-     *  loading other ethenet mac addresses from /etc/ethers (used by tcpdump)
-     *
-     * Author's note:
-     *  Moved significantly repeating code to a function.
-     */
+		if (!*line) {
+			tui_error(ANYKEY_MSG, "Missing description, skipped");
+			continue;
+		}
 
-    if (!withethers)
-        return;
+		struct eth_desc *new = xmalloc(sizeof(struct eth_desc));
 
-    if (linktype != LINK_ETHERNET)
-        return;
+		memcpy(new->hd_mac, mac, sizeof(mac));
+		new->hd_desc = xstrdup(line);
 
-    fd = fopen("/etc/ethers", "r");
+		struct eth_desc *desc = NULL;
 
-    if (fd == NULL)
-        return;
+		list_for_each_entry(desc, &hd->hd_list, hd_list)
+		    if ((strcmp(desc->hd_mac, mac) == 0)
+			|| (strcmp(desc->hd_desc, line) == 0))
+			goto dupe;
 
-    while (!feof(fd)) {
-        ptmp = malloc(sizeof(struct desclistent));
-        if (ptmp == NULL) {
-            printnomem();
-            return;
-        }
-        bzero(ptmp, sizeof(struct desclistent));
-        bzero(descline, 140);
-        bzero(etherline, 140);
-        fgets(etherline, 140, fd);
+		list_add_tail(&new->hd_list, &hd->hd_list);
+	      dupe:;
+	}
 
-        /* 
-         * Convert /etc/ethers line to a descline
-         */
-        if (etherline[0] == '#' || etherline[0] == '\n'
-            || etherline[0] == 0) {
-            free(ptmp);
-            continue;
-        }
-
-        if (strchr(etherline, '\n'))
-            strchr(etherline, '\n')[0] = 0;
-
-        j = 0;
-        for (i = 0; i < 20 && !isspace(etherline[i]); i++) {
-            if (etherline[i] == ':')
-                continue;
-            descline[j++] = tolower(etherline[i]);
-        }
-        descline[j] = ':';
-
-        /* 
-         * Skip over whitespace between MAC address and IP addr/host name
-         */
-
-        while (isspace(etherline[i++]));
-
-        strncat(descline, etherline + i - 1, 130);
-
-        if (strcmp(descline, "") == 0) {
-            free(ptmp);
-            continue;
-        }
-
-        strncpy(ptmp->rec.address, strtok(descline, ":"), 12);
-        desctoken = strtok(NULL, "\n");
-
-        if (desctoken != NULL)
-            strncpy(ptmp->rec.desc, desctoken, 64);
-        else
-            strcpy(ptmp->rec.desc, "");
-
-        add_desclist_node(list, ptmp);
-    }
-
-    fclose(fd);
+	free(l);
 }
 
-void savedesclist(struct desclist *list, unsigned int linktype)
+struct eth_desc *load_eth_desc(unsigned link_type)
 {
-    FILE *fd = NULL;
+/* why is usefull to have it two files with same content?
+ * There is two options how to merge it.
+ * 1) separate by comments
+ * $ cat ETHFILE
+ *   # ethernet host description
+ *   MAC ip/hostname
+ *
+ *   # fddi host description
+ *   MAC ip/hostname
+ * 2) put it into groups
+ * [ethernet]
+ *     MAC ip/hostname
+ *
+ * [fddi]
+ *     MAC ip/hostname
+ */
+	char *filename = NULL;
+	FILE *fp = NULL;
 
-    struct desclistent *ptmp = list->head;
+	if (link_type == ARPHRD_ETHER)
+		filename = ETHFILE;
+	else if (link_type == ARPHRD_FDDI)
+		filename = FDDIFILE;
 
-    if (linktype == LINK_ETHERNET)
-        fd = fopen(ETHFILE, "w");
-    else if (linktype == LINK_FDDI)
-        fd = fopen(FDDIFILE, "w");
+	struct eth_desc *hd = xmallocz(sizeof(struct eth_desc));
 
-    if (fd < 0) {
-        etherr();
-        return;
-    }
-    while (ptmp != NULL) {
-        fprintf(fd, "%s:%s\n", ptmp->rec.address, ptmp->rec.desc);
-        ptmp = ptmp->next_entry;
-    }
+	INIT_LIST_HEAD(&hd->hd_list);
 
-    fclose(fd);
+	fp = fopen(filename, "r");
+	if (fp) {
+		parse_eth_desc(fp, hd);
+		fclose(fp);
+	}
+
+	/* merge with /etc/ethers */
+	fp = fopen("/etc/ethers", "r");
+	if (fp) {
+		parse_eth_desc(fp, hd);
+		fclose(fp);
+	}
+
+	return hd;
 }
 
-void displayethdescs(struct desclist *list, WINDOW * win)
+static void save_eth_desc(struct eth_desc *hd, unsigned linktype)
 {
-    struct desclistent *ptmp = list->head;
-    short i = 0;
+	FILE *fd = NULL;
 
-    do {
-        wmove(win, i, 2);
-        wprintw(win, "%s    %s", ptmp->rec.address, ptmp->rec.desc);
-        i++;
-        ptmp = ptmp->next_entry;
-    } while ((i < 18) && (ptmp != NULL));
+	if (linktype == ARPHRD_ETHER)
+		fd = fopen(ETHFILE, "w");
+	else if (linktype == ARPHRD_FDDI)
+		fd = fopen(FDDIFILE, "w");
 
-    update_panels();
-    doupdate();
-}
+	if (!fd) {
+		tui_error(ANYKEY_MSG, "Unable to save host description file");
+		return;
+	}
 
-void destroydesclist(struct desclist *list)
-{
-    struct desclistent *ptmp = list->head;
-    struct desclistent *ctmp = NULL;
+	fprintf(fd, "# see man ethers for syntax\n\n");
+	struct eth_desc *desc = NULL;
 
-    if (list->head != NULL)
-        ctmp = ptmp->next_entry;
+	list_for_each_entry(desc, &hd->hd_list, hd_list)
+	    fprintf(fd, "%s %s\n", desc->hd_mac, desc->hd_desc);
 
-    while (ptmp != NULL) {
-        free(ptmp);
-        ptmp = ctmp;
-
-        if (ctmp != NULL)
-            ctmp = ctmp->next_entry;
-    }
-}
-
-void operate_descselect(struct desclist *list, struct desclistent **node,
-                        WINDOW * win, int *aborted)
-{
-    int ch = 0;
-    int i = 0;
-    char sp_buf[10];
-
-    int exitloop = 0;
-
-    *node = list->head;
-
-    sprintf(sp_buf, "%%%dc", COLS - 2);
-
-    do {
-        wattrset(win, PTRATTR);
-        wmove(win, i, 1);
-        waddch(win, ACS_RARROW);
-        ch = wgetch(win);
-        wmove(win, i, 1);
-        waddch(win, ' ');
-        wattrset(win, STDATTR);
-
-        switch (ch) {
-        case KEY_DOWN:
-            if ((*node)->next_entry != NULL) {
-                *node = (*node)->next_entry;
-
-                if (i < 17)
-                    i++;
-                else {
-                    wscrl(win, 1);
-                    scrollok(win, 0);
-                    wmove(win, 17, 0);
-                    wprintw(win, sp_buf, ' ');
-                    scrollok(win, 1);
-                    wmove(win, 17, 2);
-                    wprintw(win, "%s    %s", (*node)->rec.address,
-                            (*node)->rec.desc);
-                }
-            }
-            break;
-        case KEY_UP:
-            if ((*node)->prev_entry != NULL) {
-                *node = (*node)->prev_entry;
-
-                if (i > 0)
-                    i--;
-                else {
-                    wscrl(win, -1);
-                    wmove(win, 0, 0);
-                    wprintw(win, sp_buf, ' ');
-                    wmove(win, 0, 2);
-                    wprintw(win, "%s    %s", (*node)->rec.address,
-                            (*node)->rec.desc);
-                }
-            }
-            break;
-        case 13:
-            exitloop = 1;
-            *aborted = 0;
-            break;
-        case 27:
-        case 24:
-        case 'x':
-        case 'X':
-        case 'q':
-        case 'Q':
-            exitloop = 1;
-            *aborted = 1;
-            break;
-        }
-    } while (!exitloop);
-}
-
-void selectdesc(struct desclist *list, struct desclistent **node,
-                int *aborted)
-{
-    int resp;
-    struct scroll_list slist;
-    char descline[80];
-
-    if (list->head == NULL) {
-        tx_errbox("No descriptions", ANYKEY_MSG, &resp);
-        return;
-    }
-
-    *node = list->head;
-    tx_init_listbox(&slist, COLS, 20, 0, (LINES - 20) / 2,
-                    STDATTR, BOXATTR, BARSTDATTR, HIGHATTR);
-
-    tx_set_listbox_title(&slist, "Address", 1);
-    tx_set_listbox_title(&slist, "Description", 19);
-
-    while (*node != NULL) {
-        snprintf(descline, 80, "%-18s%s", (*node)->rec.address,
-                 (*node)->rec.desc);
-        tx_add_list_entry(&slist, (char *) (*node), descline);
-        (*node) = (*node)->next_entry;
-    }
-
-    tx_show_listbox(&slist);
-    tx_operate_listbox(&slist, &resp, aborted);
-
-    if (!(*aborted))
-        *node = (struct desclistent *) slist.textptr->nodeptr;
-
-    tx_close_listbox(&slist);
-    tx_destroy_list(&slist);
-
-    update_panels();
-    doupdate();
-}
-
-void descdlg(struct descrec *rec, char *initaddr, char *initdesc,
-             int *aborted)
-{
-    WINDOW *win;
-    PANEL *panel;
-    struct FIELDLIST fieldlist;
-
-    win = newwin(8, 70, 8, (COLS - 70) / 2);
-    panel = new_panel(win);
-
-    wattrset(win, DLGBOXATTR);
-    tx_colorwin(win);
-    tx_box(win, ACS_VLINE, ACS_HLINE);
-    wmove(win, 6, 2 * COLS / 80);
-    tabkeyhelp(win);
-    wmove(win, 6, 20 * COLS / 80);
-    stdkeyhelp(win);
-
-    wattrset(win, DLGTEXTATTR);
-    wmove(win, 2, 2 * COLS / 80);
-    wprintw(win, "MAC Address:");
-    wmove(win, 4, 2 * COLS / 80);
-    wprintw(win, "Description:");
-
-    tx_initfields(&fieldlist, 3, 52, 10, (COLS - 52) / 2 + 6 * COLS / 80,
-                  DLGTEXTATTR, FIELDATTR);
-    tx_addfield(&fieldlist, 12, 0, 0, initaddr);
-    tx_addfield(&fieldlist, 50, 2, 0, initdesc);
-
-    tx_fillfields(&fieldlist, aborted);
-
-    if (!(*aborted)) {
-        strcpy(rec->address, fieldlist.list->buf);
-        strcpy(rec->desc, fieldlist.list->nextfield->buf);
-    }
-    tx_destroyfields(&fieldlist);
-    del_panel(panel);
-    delwin(win);
-}
-
-void addethdesc(struct desclist *list)
-{
-    struct descrec rec;
-    int aborted;
-    struct desclistent *ptmp;
-
-    descdlg(&rec, "", "", &aborted);
-
-    if (!aborted) {
-        ptmp = malloc(sizeof(struct desclistent));
-        if (list->head == NULL) {
-            list->head = ptmp;
-            ptmp->prev_entry = NULL;
-        } else {
-            ptmp->prev_entry = list->tail;
-            list->tail->next_entry = ptmp;
-        }
-
-        list->tail = ptmp;
-        ptmp->next_entry = NULL;
-        memcpy(&(ptmp->rec), &rec, sizeof(struct descrec));
-    }
-    update_panels();
-    doupdate();
-}
-
-void editethdesc(struct desclist *list)
-{
-    struct desclistent *ptmp;
-    int aborted;
-
-    selectdesc(list, &ptmp, &aborted);
-
-    if (!aborted)
-        descdlg(&(ptmp->rec), ptmp->rec.address, ptmp->rec.desc, &aborted);
-}
-
-void delethdesc(struct desclist *list)
-{
-    struct desclistent *ptmp;
-    int aborted;
-
-    selectdesc(list, &ptmp, &aborted);
-
-    if (!aborted) {
-        if (ptmp->prev_entry != NULL)
-            ptmp->prev_entry->next_entry = ptmp->next_entry;
-        else
-            list->head = ptmp->next_entry;
-
-        if (ptmp->next_entry != NULL)
-            ptmp->next_entry->prev_entry = ptmp->prev_entry;
-        else
-            list->tail = ptmp->prev_entry;
-
-        free(ptmp);
-    }
+	fclose(fd);
 }
 
 
-void ethdescmgr(unsigned int linktype)
+void free_eth_desc(struct eth_desc *hd)
 {
-    struct MENU menu;
-    int row = 1;
-    int aborted;
-    struct desclist list;
+	struct eth_desc *entry = NULL;
+	struct list_head *l, *n;
 
-    loaddesclist(&list, linktype, WITHOUTETCETHERS);
+	list_for_each_safe(l, n, &hd->hd_list) {
+		entry = list_entry(l, struct eth_desc, hd_list);
 
-    tx_initmenu(&menu, 7, 31, (LINES - 6) / 2, (COLS - 31) / 2,
-                BOXATTR, STDATTR, HIGHATTR, BARSTDATTR, BARHIGHATTR,
-                DESCATTR);
-    tx_additem(&menu, " ^A^dd description...",
-               "Adds a description for a MAC address");
-    tx_additem(&menu, " ^E^dit description...",
-               "Modifies an existing MAC address description");
-    tx_additem(&menu, " ^D^elete description...",
-               "Deletes an existing MAC address description");
-    tx_additem(&menu, NULL, NULL);
-    tx_additem(&menu, " E^x^it menu", "Returns to the main menu");
+		free(entry->hd_desc);
+		list_del(l);
+		free(entry);
+	}
+}
 
-    do {
-        tx_showmenu(&menu);
-        tx_operatemenu(&menu, &row, &aborted);
+static struct eth_desc *select_eth_desc(const struct eth_desc *hd)
+{
 
-        switch (row) {
-        case 1:
-            addethdesc(&list);
-            break;
-        case 2:
-            editethdesc(&list);
-            break;
-        case 3:
-            delethdesc(&list);
-            break;
-        }
-    } while (row != 5);
+	int resp;
+	struct scroll_list slist;
+	char descline[80];
 
-    tx_destroymenu(&menu);
-    update_panels();
-    doupdate();
-    savedesclist(&list, linktype);
+	if (list_empty(&hd->hd_list)) {
+		tui_error(ANYKEY_MSG, "No descriptions");
+		return NULL;
+	}
+
+	tx_init_listbox(&slist, COLS, 20, 0, (LINES - 20) / 2, STDATTR, BOXATTR,
+			BARSTDATTR, HIGHATTR);
+
+	tx_set_listbox_title(&slist, "Address", 1);
+	tx_set_listbox_title(&slist, "Description", 19);
+
+	struct eth_desc *entry = NULL;
+
+	list_for_each_entry(entry, &hd->hd_list, hd_list) {
+		snprintf(descline, 80, "%-18s%s", entry->hd_mac,
+			 entry->hd_desc);
+		tx_add_list_entry(&slist, (char *) entry, descline);
+	}
+
+	tx_show_listbox(&slist);
+
+	int aborted = 0;
+
+	tx_operate_listbox(&slist, &resp, &aborted);
+
+	if (!aborted)
+		entry = (struct eth_desc *) slist.textptr->nodeptr;
+	else
+		entry = NULL;
+
+	tx_close_listbox(&slist);
+	tx_destroy_list(&slist);
+
+	update_panels();
+	doupdate();
+
+	return entry;
+}
+
+static int dialog_eth_desc(struct FIELDLIST *fields, const char *initaddr,
+			   const char *initdesc)
+{
+	/* TODO: move to tui */
+	WINDOW *win = newwin(8, 70, 8, (COLS - 70) / 2);
+	PANEL *panel = new_panel(win);
+
+	wattrset(win, DLGBOXATTR);
+	tx_colorwin(win);
+	tx_box(win, ACS_VLINE, ACS_HLINE);
+	wmove(win, 6, 2 * COLS / 80);
+	tabkeyhelp(win);
+	wmove(win, 6, 20 * COLS / 80);
+	stdkeyhelp(win);
+
+	wattrset(win, DLGTEXTATTR);
+	wmove(win, 2, 2 * COLS / 80);
+	wprintw(win, "MAC Address:");
+	wmove(win, 4, 2 * COLS / 80);
+	wprintw(win, "Description:");
+
+	tx_initfields(fields, 3, 52, 10, (COLS - 52) / 2 + 6 * COLS / 80,
+		      DLGTEXTATTR, FIELDATTR);
+	tx_addfield(fields, 17, 0, 0, initaddr);
+	tx_addfield(fields, 50, 2, 0, initdesc);
+
+	int aborted = 0;
+
+	tx_fillfields(fields, &aborted);
+
+	del_panel(panel);
+	delwin(win);
+
+	return aborted;
+}
+
+static void add_eth_desc(struct eth_desc *list)
+{
+	struct FIELDLIST fields;
+
+	int aborted = dialog_eth_desc(&fields, "", "");
+
+	if (!aborted) {
+		struct eth_desc *new = xmalloc(sizeof(struct eth_desc));
+
+		memcpy(new->hd_mac, fields.list->buf, sizeof(new->hd_mac));
+		new->hd_desc = xstrdup(fields.list->nextfield->buf);
+
+		list_add_tail(&new->hd_list, &list->hd_list);
+	}
+
+	tx_destroyfields(&fields);
+	update_panels();
+	doupdate();
+}
+
+static void edit_eth_desc(struct eth_desc *list)
+{
+	struct eth_desc *hd = select_eth_desc(list);
+
+	if (!hd)
+		return;
+
+	struct FIELDLIST fields;
+	int aborted = dialog_eth_desc(&fields, hd->hd_mac, hd->hd_desc);
+
+	if (!aborted) {
+		free(hd->hd_desc);
+		memcpy(hd->hd_mac, fields.list->buf, sizeof(hd->hd_mac));
+		hd->hd_desc = xstrdup(fields.list->nextfield->buf);
+	}
+
+	tx_destroyfields(&fields);
+}
+
+static void del_eth_desc(struct eth_desc *list)
+{
+	struct eth_desc *hd = select_eth_desc(list);
+
+	if (hd) {
+		free(hd->hd_desc);
+		list_del(&hd->hd_list);
+		free(hd);
+	}
+}
+
+void manage_eth_desc(unsigned linktype)
+{
+	struct MENU menu;
+	int row = 1;
+	int aborted = 0;
+
+	tx_initmenu(&menu, 7, 31, (LINES - 6) / 2, (COLS - 31) / 2, BOXATTR,
+		    STDATTR, HIGHATTR, BARSTDATTR, BARHIGHATTR, DESCATTR);
+	tx_additem(&menu, " ^A^dd description...",
+		   "Adds a description for a MAC address");
+	tx_additem(&menu, " ^E^dit description...",
+		   "Modifies an existing MAC address description");
+	tx_additem(&menu, " ^D^elete description...",
+		   "Deletes an existing MAC address description");
+	tx_additem(&menu, NULL, NULL);
+	tx_additem(&menu, " E^x^it menu", "Returns to the main menu");
+
+	struct eth_desc *list =
+	    load_eth_desc(linktype /*, WITHOUTETCETHERS */ );
+
+	do {
+		tx_showmenu(&menu);
+		tx_operatemenu(&menu, &row, &aborted);
+
+		switch (row) {
+		case 1:
+			add_eth_desc(list);
+			break;
+		case 2:
+			edit_eth_desc(list);
+			break;
+		case 3:
+			del_eth_desc(list);
+			break;
+		}
+	} while (row != 5);
+
+	tx_destroymenu(&menu);
+	update_panels();
+	doupdate();
+	save_eth_desc(list, linktype);
 }
