@@ -315,7 +315,7 @@ errmsg.err33="Endereço IP e Gateway não podem ser o mesmo.";
 errmsg.err34=" não é permitido conter espaços em branco.";
 errmsg.err110="O número final tem que ser maior que o número inicial";
 errmsg.err111="Endereço IP inválido";
-errmsg.err112='Inseridos caracteres inválidos "<invchars>" no campo "<fieldname>"';
+errmsg.err112="Inseridos caracteres inválidos \"<invchars>\" no campo \"<fieldname>\"";
 
 //Wol.asp error messages
 errmsg.err35="Você deve inserir um Endereço MAC para funcionar."
@@ -2139,20 +2139,20 @@ haoss.basic="O \"AirStation One-Touch Secure System\" (AOSS) permite a você cone
 haoss.securitymodes="Os modos de segurança AOSS definem quais modos de segurança do cliente são aceitos na negociação AOSS. Se um cliente somente suportar modos que não estão habilitados ele não pode se conectar.";
 haoss.wps="O WPS habilita o suporte para a Configuração Wi-Fi Protegida utilizando o botão em seu roteador ou o PIN que veio com seu dispositivo cliente.";
 
-ias.title = "Configuração"; 
-ias.card_info = "Cartão de Configuração"; 
-ias.edit_note = "Clique em qualquer informação no Cartão de Configuração para editá-la."; 
-ias.assistant = "Executar Assistente de Configuração"; 
-ias.print_setup_card = "Imprimir Cartão de Configuração"; 
-ias.print_guest_card = "Imprimir Cartão de Convidado"; 
-ias.apply_changes = "Aplicar Modificações"; 
-ias.wlnetwork = "Rede Wireless"; 
-ias.wlinfo_2_4_GHz = "(2.4 Ghz) - Compatível com 802.11n/g/b"; 
-ias.wlinfo_5_GHz = "(5 Ghz) - Compatível com 802.11n/a"; 
-ias.hl_setup_card = "Cartão de Configuração"; 
-ias.hl_client_access = "Para Acesso Cliente"; 
-ias.hl_for_conf = "Para Configuração"; 
-ias.hl_guest_card = "Cartão de Convidado"; 
+ias.title="Configuração"; 
+ias.card_info="Cartão de Configuração"; 
+ias.edit_note="Clique em qualquer informação no Cartão de Configuração para editá-la."; 
+ias.assistant="Executar Assistente de Configuração"; 
+ias.print_setup_card="Imprimir Cartão de Configuração"; 
+ias.print_guest_card="Imprimir Cartão de Convidado"; 
+ias.apply_changes="Aplicar Modificações"; 
+ias.wlnetwork="Rede Wireless"; 
+ias.wlinfo_2_4_GHz="(2.4 Ghz) - Compatível com 802.11n/g/b"; 
+ias.wlinfo_5_GHz="(5 Ghz) - Compatível com 802.11n/a"; 
+ias.hl_setup_card="Cartão de Configuração"; 
+ias.hl_client_access="Para Acesso Cliente"; 
+ias.hl_for_conf="Para Configuração"; 
+ias.hl_guest_card="Cartão de Convidado"; 
 
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
