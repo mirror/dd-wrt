@@ -1,0 +1,960 @@
+CHANGES File for IPTraf 3.0.0
+
+Changes to IPTraf 2.7.0 and new features in IPTraf 3.0.0
+
+	New filter behavior.  Except for TCP traffic in the IP traffic
+	monitor, filters now do not automatically match reverse packets
+	for TCP and UDP IPTraf-wide.  Rather, each filter entry has
+	a field which tells IPTraf whether to match packets flowing
+	in the direction opposite that specified.
+
+	The filters for non-TCP, non-UDP IP traffic (ICMP, IGRP, OSPF,
+	etc.) which never automatically matched packets flowing in the
+	opposite direction, now have that same option field.  This way
+	related packets (like ICMP echo request/echo reply) can be
+	matched with a single entry.
+
+	Because reverse-matching is no longer the default IPTraf-wide,
+	the labels are now changed to read Source and Destination.
+
+        Default value for blank address filter fields is now 0.0.0.0,
+	rather than 255.255.255.255. Fields are therefore no longer
+	pre-filled with 0.0.0.0.
+
+	Miscellaneous IP filter entries feature a field for other IP
+	protocols not specifically indicated in the dialog.  The user
+	must enter a comma-separated list of individual protocols or a 
+	range.  IP protocols are defined in the /etc/protocols file.
+
+	The IP traffic monitor consults the /etc/protocols file for 
+	miscellaneous IP packets for the protocol names.  Previously
+	recognized protocols (ICMP, UDP, OSPF, etc) are still looked up 
+	internally for performance reasons.
+
+        The filter rule selection now indicates the mask in CIDR format
+	(e.g. 10.1.0.0/16) for clarity and to save screen space.
+
+        Filter selection list box is now alphabetically sorted.
+
+	Likewise, the CIDR notation can be used when entering IP address
+	data.  However the CIDR notation is translated into a mask and
+	discarded.  Subsequent editing of the filter will show the 
+	corresponding mask.
+
+	Changed color coding for unknown IP packets (those looked up
+	from /etc/services to bright white on blue (instead of yellow on
+	red, which looked like "errors").
+
+	Added internal recognition for L2TP, IPSec AH, and IPSec ESP
+	packets.
+
+        Changed size of the IP traffic monitor's TCP hash table to 1033
+	buckets.  Prime number used to improve hash efficiency.  
+
+	A new function tx_box() has been added to the screen support
+	library as a solution to the ncurses box() function not accepting
+	the color set by wattrset(), at least on Red Hat 7.3.  All calls
+	to box() have been replaced with this tx_box() instead.  It takes
+	exactly the same parameters.
+
+	Added support for tun and brg (tunneling and bridging) interfaces.
+	Thanks to Marcio Gomes <tecnica_at_microlink.com.br>.
+
+	Modified logging options.  The -L parameter now works with any
+	command-line invocation of a facility, even in foreground mode.
+
+	Added -I command-line parameter to override logging interval
+	configuration option.
+
+	(Thanks to the contributors of the -I and -L patches. I lost your
+ 	emails when SEUL reinstalled. Please acknowledge. Thanks.
+	
+	Corrected promiscuous mode control code.  It ignored Token Ring 
+	interfaces.
+
+Changes to IPTraf 2.6.1 and new features in IPTraf 2.7.0
+
+	Corrected bug wherein the detailed interface statistics
+	did not filter out the packets based on the selected
+	interface.  Thanks to the members of the mailing list for
+	this.
+
+	Corrected minor interface name comparison bugs in the
+	general interface statistics and TCP/UDP service statistics.
+
+	Corrected stale locks when IPTraf did not start due to an
+	improper terminal size.
+
+	Added support for additional DVB interfaces sm2*, sm3*, penta*.
+
+	Added support for wireless LAN interfaces (wlan*, wvlan*).
+
+	Fixed segfault that occurs when /proc/net/dev is empty or
+	contains no active interfaces.  Thanks to Chris Armstrong 
+	<wolfwings_at_zana.changa.nu> for actually trying it out.
+
+	Added error box to handle the /proc/net/dev error condition
+	mentioned above.
+
+	Added error box when tx_operate_listbox is invoked on an empty
+	list.
+	
+Changes to IPTraf 2.6.0
+
+	Corrected a segfault in the IP traffic monitor and TCP/UDP service
+	breakdown when a sort is attempted on an empty screen.  Thanks
+	to <lord_at_elreyforce.org> for the report.
+
+	Corrected segfaults in the TCP/UDP service monitor when
+	scrolling using PgUp and PgDn (or space and '-').  Thanks
+	to Ross Gibson <windows_at_prefixservice.com>.
+
+	Corrected post-sorting PgUp problem in TCP/UDP monitor.
+
+	Corrected inaccuracies in the IP traffic monitor's TCP byte
+	counts and flow rates.  *** THE BUG ADDRESSED BY THIS CORRECTION
+	DEFERS IPTRAF 2.6.0. ***
+
+	Adjusted black-and-white color scheme.
+
+	Minor adjustments to the printlargenumber() function.
+
+	Minor cosmetic adjustments.
+
+New features in IPTraf 2.6.0 and changes to IPTraf 2.5.0
+
+	Added support for Token Ring interfaces.  Thanks to many people
+	for help with patches and testing, including J. Kahn Koontz
+	<csjmk_at_eiu.edu>, Dan Seto <mail_at_seto.org>, and Tomas Dvorak
+	<avatar_at_kanal.ucw.cz>.
+
+        Added support for sbni long-range modem interfaces (Dmitry
+        Sergienko <trooper_at_dolphin.unity.net>).
+
+	Added support for Free s/WAN IPSec logical interfaces (Doug Nazar
+        <nazard_at_dragoninc.on.ca>).
+
+	Code cleanup.  Got rid of an ugly goto in itrafmon.c.  I hate
+	goto no matter what.
+
+	Moved write_timeout_log.c to tcptable.c.
+
+	Recoded the PgUp/PgDn routines in the IP traffic monitor,
+	TCP/UDP service monitor, and LAN station monitor.  These
+	routines now directly manipulate the table pointers instead
+	of merely calling the single-line scrolling routines repeatedly.
+	Faster.  More efficient.
+
+	Added a highlight bar to the IP traffic monitor, allowing better
+	readability, especially on long-line screens (> 80 characters),
+        and individual flow rate computation.
+
+	Added flow rates for the highlighted TCP flows (IP traffic
+	monitor) and TCP/UDP ports (TCP/UDP statistical breakdown) I
+	believe this is the best way to allow viewing of data rates
+	without excessively sacrificing CPU time for packet capture.
+
+        Filters now apply to all facilities except the packet size
+	breakdown and LAN station monitor.  You can now view the loads
+	and protocol breakdowns on selected packets only using the
+	filters.
+
+	No more byte counters in the IP traffic monitor.  This line now
+	just contains a simple packet counter at one end, and the TCP
+	flow rate information at the other.
+
+	Moved menu, selection listbox, and dialog box functions to a
+	separate support/ directory.  These routines are first compiled
+	into a library and later on linked into iptraf.
+
+        Added a confirmation box to the main menu's Exit command.  This
+	is as much for me as it is for a lot of people.  I accidentaly
+	exit too.
+
+	Added broadcast packet and byte counts to the detailed interface
+	statistics log.
+
+	Some cosmetic adjustment.
+
+	Added 5-minute timeout for rvnamed child processes.
+
+New features in IPTraf 2.5.0 and changes to IPTraf 2.4.0
+
+	Now includes a more specific dialog for non-TCP and non-UDP
+	filters.  Allows specification of packets by source and
+	destination IP addresses.
+
+	Better organized the filter management and manipulation
+	functions in fltedit.c, fltselect.c, othipflt.c, and utfilter.c.
+	
+	othfilter.c renamed to fltselect.c, same thing with the .h.
+
+	All filters are now unified in a single data structure allowing
+	handling of TCP, UDP, misc IP, and non-IP toggles with one set
+	of functions.
+
+	Separate TCP and non-TCP filter menus abolished, everything
+	is now grouped under a Filters... submenu under the main menu.
+
+	Corrected wrong placement of timer in the packet size breakdown.
+
+	Corrected scanning code for timed out entries in the IP traffic
+	monitor sort function.  Wrong computation for elapsed time
+	resulted in active connections being placed in the list of
+	closed entries.  Thanks to Gal Laszlo <slowTCP_at_hotmail.com> for
+	pointing out the symptom.
+
+        Added support for Frame Relay FRAD/DLCI interfaces.  Thanks to
+        Raffaele Gariboldi <lele_at_italynetwork.it> for the information
+        and testing.
+
+	Sorting is now done with the Quicksort algorithm.
+
+	IP Traffic Monitor now adds connection entries to the TCP window
+	upon the receipt of header-only packets.  There are cases in which
+        we have to check for possible TCP scans which are implemented with
+        non-SYN packets.
+
+	The reverse DNS lookup function revname() now times out after
+        five seconds, and stops reverse lookups for that session in case
+        rvnamed dies.
+
+	Added some notes to the packet size breakdown window.
+
+	Moved rvnamed cache index update code such that updating of the
+	cache indexes will only be performed once fork() succeeds,
+	otherwise, the allocated slot will just be reallocated for
+	the next queries.  This is so that should the fork() fail,
+	future invocations for that IP address won't have the rvnamed
+	parent thinking its resolving when there actually wasn't a child
+	performing the resolution.  If the fork() problem condition was
+	temporary, the next invocation can still have rvnamed fork() off
+	to resolve the address.  This of course assumes the IP address
+	hasn't expired from the cache.
+
+	Some cosmetic updates (as always).
+
+	The manual features a new format for the sidebars.  Corrected
+	typos and spelling errors.
+
+	iptraf-x.y.z.tar.gz no longer comes with precompiled
+	binaries.  However a separate iptraf-x.y.z.i386.bin.tar.gz will
+	come only with the precompiled x86 executable programs
+	(i386/glibc-2.1/ncurses-5.0).
+
+New features in IPTraf 2.4.0 and changes to IPTraf 2.3.1
+
+	This version now allows multiple instances of the same facility
+	in different processes, but only one instance can monitor an
+	interface.  Please see the RELEASE-NOTES file.
+
+	As a consequence of the above changes, the default names of the
+	logfiles then reflect the instance or interface being
+	monitored.  See the RELEASE-NOTES file.
+	
+	Implemented a dialog box allowing the user to log to a custom
+	log file.
+
+	Implemented -L command-line parameter to allow specification of
+	the log file name when IPTraf is started with the -B parameter.
+
+	Removed hardcoded UNIX-domain socket name bound by IPTraf, instead
+	a socket name is generated from the current time and pid.  Also
+        removed hardcoded socket name in rvnamed, to which it directs
+        replies to IPTraf.  rvnamed still binds to hardcoded socket names
+	though.
+
+	IP Traffic Monitor can optionally display the source MAC addresses
+	for LAN-based packets.  Added appropriate configuration item.
+
+	IPTraf now reads /etc/ethers in addition to its own database of
+	MAC addresses.  Thanks to Frederic Peters <fpeters_at_debian.org> for
+	the patch.
+
+	Moved time-related configuration items to a Timers... submenu to
+	save on screen space.
+
+	The version.h file no longer exists, rather, a plain version file
+	is in place containing merely the version number.  The Makefile
+	reads this file, determines the target machine information
+	and passes this data to the compiler with -D parameters.
+
+	Imposed an upper limit of 200 on rvnamed child  processes.
+	rvnamed should really not go runaway with a normally-functioning
+	DNS server, but I had the good fortune of experiencing a dead DNS
+	server while monitoring.  Took my machine down real fast.
+
+	Precompiled executables now require glibc-2.1 dynamic libaries.
+
+	Included a Setup installation script to ease somewhat the
+	installation process (installation can still be done the old way
+	though).
+
+	Cosmetic/color changes.
+
+	Reflected changes to manual.
+
+Changes to IPTraf 2.3.0
+
+	Fixed segfault bug when sorting is attempted on an empty TCP
+	window.  Thanks to Ramon van Elten <mainwave_at_datura.cx> for the
+	report and for the assistance in diagnosis.
+
+	Fixed cosmetic error (sort progress window doesn't disappear)
+	when attempt is made to sort a TCP window with only 1 entry.
+	Thanks again to Ramon for the report.
+
+	Updated some comments.
+
+New features in IPTraf 2.3.0 and changes to IPTraf 2.2.2
+
+	Implemented sorting in the IP traffic monitor, TCP/UDP statistical
+	breakdown, and LAN station monitor.  Great thanks go to Gal Laszlo
+	<slowTCP_at_hotmail.com> for the patch.  (Note to Gal: I had to do a
+	heck of a lot of overhaul, and had to implement a clearer screen
+	design, but your patch provided the basis :) Thanks a lot.)
+
+	Implemented better bounds checking in the text input routine.
+
+	Added information boxes to TCP/UDP delete and detach filter
+	functions.
+
+	Added recognition of GRE packets.  Modified non-TCP display filters
+	accordingly.
+
+	Fixed bug in unrecognized IP display and filter code.
+
+	Added filter item for unrecognized IP packets.
+
+	Removed leftover code from the old warning on IP masquerading.
+
+	Reflected changes and corrected typos in manual.
+
+Changes to IPTraf 2.2.1
+
+	Fixed recognition problem with DVB interfaces.
+
+	Fixed small buffer overrun in TCP timeout log routine, which can
+	cause a segmentation fault under certain conditions.
+
+	Minor cosmetic adjustment in TCP connection window.
+
+Changes to IPTraf 2.2.0
+
+	Fixed segfault in IP Traffic Monitor due to packets from an
+	unsupported link type.
+
+	Fixed segfault in promiscuous mode management module in the (rare)
+	case of a failure to save or load the interface flags from the
+	temporary storage files. Normally due to a bad installation.
+	Thanks to Udo A. Steinberg <sorisor_at_Hell.WH8.TU-Dresden.De> for
+	the report.
+
+	Added support for Ethernet-emulated FDDI interfaces. Thanks to Udo
+	A. Steinberg <sorisor_at_Hell.WH8.TU-Dresden.De> for the report and
+	help with the testing.
+
+	Added support for DVB interfaces, thanks to Alex
+	<vasile_at_keeper.meganet.ro> for the notification and the help.
+
+	Replaced inet_addr() references on filter address entries with
+	inet_aton().  This fixes failure of filters on packets with
+	255.255.255.255 in their source or destination address fields.
+	Thanks for Peter Magnusson for the report and the test
+	environment.
+
+	Overhauled TCP/UDP editing facility.  Fixed bug wherein garbage
+	entries remain in the filter's parameter list even if an insert/
+	add dialog is aborted.
+
+        Fixed detailed interface statistics logging bug (activity and
+	packets-per-second figures were the same).
+
+	Apologies to Dustin Trammell for my failure to credit him for his
+	report on the behavior of IPTraf on bridges.
+
+Changes to IPTraf 2.1.1 and new features in IPTraf 2.2.0
+
+	Immediate flushing of disk buffers after a log file write to
+	better accomodate separate logfile parsing scripts.
+
+	Addition of a manual and automatic clearing of closed and idle
+	TCP entries in the IP Traffic Monitor
+
+	Added a TCP closed/idle persistence configuration option to
+	control the TCP closed/idle clearing interval.
+
+	Clarified TCP timeout logfile entries.
+
+	Saves the state of the interface flags at startup of a facility,
+        and restores them on exit, allowing interfaces previously set to
+        promiscuous mode to retain that state.  Important on bridges.
+	Thanks to Dustin D. Trammell <dtrammell_at_cautech.com> and Holger Friese
+	<evildead_at_bs-pc5.et-inf.fho-emden.de> for the patch.  However, I had
+	to modify it a little more than a bit and had to overhaul quite a
+	good deal of the rest of the software to better accomodate
+	multiple instances.
+
+	Promiscuous mode is set only when a facility is started, and
+	restored when it exits.  Promiscuous mode is no longer forced at
+	menus.  Restoration is not performed though if there is still
+	another facility running, but the interface state remains saved.
+
+	Fixed a minor bug in the LAN station monitor.  The raw socket is
+	now closed when the facility exits. duh.
+
+	Fixed rare bug in the packet size distribution.  The lock file didn't
+	get deleted if the raw socket open failed.
+
+	Changed the promiscuous mode option to "Force promiscuous".
+	Cosmetic.
+
+	Added PID's (a la syslog) to daemon log entries.
+ 
+	Minor cosmetic adjustments.
+
+Changes to IPTraf 2.1.0
+
+	Fixed bug in the packet size statistical breakdown.  The facility
+	didn't filter packets based on interface name, thus causing
+	inaccurate counts on systems with multiple network interfaces.
+
+	Fixed a few minor cosmetic errors.
+
+	Corrected some typographical errors in the manual.
+
+	Added a FAQ (or the beginnings thereof).
+
+	Added a spec file for RPM generation.  Thanks to Dag Wieers
+	<dag_at_life.be>.  I'm not a really good RPM'er beyond RPM
+	installation and removal.  :)
+ 
+Changes to IPTraf 2.0.2 and new features in IPTraf 2.1.0
+
+	Added non-IP to the display/logging filter selections
+
+	Added interface selection to the IP Traffic Monitor and LAN
+	Station Monitor (with an "All Interfaces" option).
+
+	Related to the above: now requires an interface name as an
+	argument to the -i and -l command-line parameters.  'all' may be
+	specified for monitoring all interfaces.
+
+	Added -B command-line parameter to fork program into the
+	background solely for logging purposes.  Several people had
+	requested this.
+
+	Corrected TCP/UDP filter file placement error.  Included cfconv
+	program to move files to the proper place.
+
+	Added program-wide Ctrl+L sequence to redraw the screen if
+	corrupted by outside factors (write, talk, syslog).
+
+	Added TCP/UDP filter editing facility.
+
+	Corrected several possible buffer overruns in TCP/UDP filter
+	module.
+
+	Corrected errors and reflected changes to manual and man pages.
+
+Changes to IPTraf 2.0.1
+
+	Fixed a rarely-occuring but nevertheless severe segmentation fault
+	bug when long hostnames are coupled with long service names.
+	Great thanks go to Ronald Wahl <rwahl_at_gmx.net> for the advice and
+	the help.  Ron, I'm really gonna find the time to do the code the
+	Right Way  :)
+
+Changes to IPTraf 2.0.0
+
+	Fixed minor non-IP byte count bug in detailed interface statistics.
+
+	Fixed minor cosmetic bug causing elapsed time indicator to appear
+	in the wrong line on screens not containing 25 lines.  Thanks to
+	Uwe Storbeck <uwe_at_datacomm.ch> for the patch.
+
+New features/changes in IPTraf 2.0 from 1.4.2
+
+	Now uses the new PF_PACKET socket family as its packet capture
+	mechanism.  Requires Linux 2.2.
+
+	Added target/source IP addresses in ARP packet
+	request/reply packet entries in the IP traffic monitor.  Also
+	added target/source MAC addresses to RARP request/reply entries.
+
+	Reorganized menu structure, see the README file for details.
+
+	Moved packet counts by size to a facility of its own.  Added
+	corresponding -z command-line option.
+
+	New incoming/outgoing packet and byte counts and activity rates in
+	the detailed interface statistics facility.
+
+	Corrected a bug in the FDDI packet parsing code (wrong link type).
+
+	Added a check for the IFF_UP flag when generating interface
+	lists, to omit inactive interfaces (but still in /proc/net/dev).
+	This covers the General Interface Statistics and all interface
+	selection lists.
+ 
+	Now uses the maximum number of columns on the screen.  High thanks
+	to Michael "M." Brown <m2brown_at_waterloo.ca> for the patch.  Saved
+        me a lot of tedious work. :)
+
+	Reformatted TCP screen to show only one hostname:port per line,
+	with connections indicated by the green "brackets".  I think
+	that's clear enough.
+
+	Added ARP/RARP opcode and target addresses in the ARP/RARP
+	indicator lines.
+
+	Added vertical scrolling to the lower (non-TCP) window in the
+	IP traffic monitor to allow for long lines (ICMP, OSPF, some UDP).
+
+	Allowed for slightly longer host names in the lower IP traffic
+	monitor window.
+
+	Still increased the rvnamed cache size to 2048 entries.
+
+	Miscellaneous cosmetic changes.
+
+	Manual now includes screen shots and comes in HTML format only.
+
+Changes to IPTraf 1.4.1
+
+	Fixed SEGV condition when attempts are made to load a filter list
+	application or deletion with a zero-length filter list file, which
+	could be caused by deleting the last filter.  Thanks to Daniel
+	Savard <daniel.savard_at_gespro.com> for the report.
+
+	Makefile comes with the -m486 option commented out
+
+Changes to IPTraf 1.4.0
+
+	Moved configuration status window to unobscure a long menu option.
+
+Changes to IPTraf 1.3.0 and new features in 1.4.0
+
+	Support for PLIP interfaces.
+
+	Support for other ISDN encapsulations (specifically raw IP and 
+	Cisco HDLC) high thanks to Gerald Richter <richter_at_ecos.de> for
+	the information and testing.
+
+	Added -q parameter to suppress the 1.3.0 masquerading warning for
+	users who wish to automate the various facilities from their
+	inittab and similar non-interactive fashions.  Incorporated into
+	the Debian version of 1.3.0 by Debian maintainer Frederic Peters
+	(<fpeters_at_debian.org>, carried over to general release 1.4.0.
+
+	Added an option to change activity indications between kbits/s and
+	kbytes/s.  On a suggestion by Paul G. Fitzgerald
+	<pgfitzgerald_at_buckman.com>.
+
+	Incorporated more flexible compile-time control of directories for
+	configuration, log, and other files.  Thanks to Stefan Luethje
+	<luethje_at_sl-gw.lake.de> for the patch.
+	
+	Corrected minor flaws in the default screen update delay code
+ 	(visually insignificant), that led to occasional skips of the
+	delays.  (Call it nitpicking if you will.  :))
+	
+	Moved signal() calls to after terminal checks in iptraf.c,
+	allowing standard behavior of signals when error/warning messages
+	may still be sent to stderr.  Allows the user to break out of it
+	with Ctrl+C at the terminal warning if so desired. 
+
+	Reformatted IP traffic monitor log entries on Gerald Richter's
+	<richter_at_ecos.de> suggestions for easier processing with Perl 
+	scripts.
+
+	Included logfile rotation with the USR1 signal.  Again on Gerald
+	Richter's <richter_at_ecos.de> suggestion.
+
+	Moved first-instance tag sequence to after the initscr() call.
+
+	Indicated IP fragments with no additional information in the lower
+	traffic monitor window.  Datagram size, addresses, and interface
+	are still indicated.
+
+	Changed Non-IP count in IP traffic monitor to byte count
+	(including data-link header lengths) from packet counts.
+	Consistency purposes.
+
+	Added some extra information for certain non-IP packets.  These
+	may eventually grow, but not in too much detail, since this is an
+	IP-oriented utility.  Thanks to David Harbaugh
+ 	<dlh_at_linux.cayuga-cc.edu> for the patch.
+
+	Removed bind() operation on raw socket to address a condition in
+	which the detailed interface statistics and TCP/UDP statistics
+	stop counting if an interface goes down then up again.  This will
+	be studied further.  Symptom report sent in by Roeland Jansen
+	<bengel_at_xs4all.nl>.
+
+	Changed Ethernet/FDDI/PLIP description file formats from binary to
+	plain text, allowing database appends.  Other files (configuration
+	and filters) are still binary.  On a suggestion by David Harbaugh
+	<dlh_at_linux.cayuga-cc.edu>.
+
+	Copied IP and upper-layer headers and some data from Ethernet, 
+	PLIP, FDDI, and loopback frames into an aligned buffer.  Avoids
+	SIGBUS on picky systems (like SPARCs) and general alignment
+	problems.  I don't know yet which is worse, the overhead of
+	a 96-byte transfer or the performance hit with misaligned reads.
+	Thanks to Jonas Majauskas <jmajau_at_soften.ktu.lt> for reports and
+	tests.
+
+	Replaced __-type references with u_int-type references.
+
+	Increased cache array size in rvnamed to 1024 entries from the
+	previous 512, to better handle combinations of busy networks and
+	slow DNS servers.
+	
+	Cleared up a few instructions in the Makefile, thanks to Arjan
+	Opmeer <a.d.opmeer_at_student.utwente.nl>
+
+New features in IPTraf 1.3.0 and changes to IPTraf 1.2.0
+
+	Experimental FDDI support.  High thanks to Paonia Ezrine 
+	<paonia_at_massart.edu> for the initial tests on the FDDI code.  More 
+	feedback is requested on the FDDI functionality.  Bugs may still
+	be present.
+
+	Reestablished ippp interfaces (synchronous PPP over ISDN) after
+	reports that the ISDN problem was fixed with Linux 2.0.34.
+
+	Fixed fragmentation oversight in TCP/UDP service monitor.
+
+	Applied the bind() system call to the raw socket to have the
+	kernel filter out packets from interfaces we're not interested in.
+	Makes for better capture times on multiple-interfaced machines.
+	However, a strncmp() is still performed on the returned interface
+	name to counter the race condition between the socket() and bind()
+	calls.
+	
+	Fixed interface statistics print routines to print unsigned
+	rather than signed numbers.
+
+	Added additional option to adjust screen updates.  Useful for
+	IPTraf sessions run on remote terminals (thanks to Lutz Vieweg
+	<lkv_at_isg.de> for the suggestion and Dean Gaudet
+	<dgaudet_at_arctic.org> for the base patch.  I modified it a bit,
+	Dean.)
+
+	Discovered terrible performance penalty due to screen refresh with
+	heavily loaded LAN segments.  Therefore, with the new screen
+	update interval option set to 0, all facilities have a 50 ms delay
+	between refreshes (exception: the LAN station monitor has a delay 
+	of 100 ms). This is still visually fast (although updates
+	look kinda slower), but this gives more time to packet capture,
+	therefore increasing accuracy and capture performance.  Thanks to
+	everyone who responded to my request for advice on this matter and
+	to Ronald Wahl <rwahl_at_gmx.net> for giving me the symptom report.
+
+	Modified IP traffic monitor to mark TCP connection entries for reuse
+	once one side is fully closed and acknowledged ("CLOSED" on the
+	screen) and the other closed but even if not acknowledged ("DONE" 
+	on the screen.  This is because many times, the last ACK gets lost.
+	
+	Included an additional parameter used together with the other
+	command-line arguments to specify an amount of time for which the
+	selected facility would run before automatically terminating (on a
+	suggestion by Linux HOWTO coordinator Tim Bynum
+	<tjbynum_at_wallybox.cei.net)>.
+
+	Supplemented the main data structure for the IP traffic monitor
+	with an open hash table for increased search efficiency,
+	especially after the facility has been running for quite some
+	time (the other facilities, which don't grow as much still use
+	linearly-searched linked lists.  I'll probably hash them depending
+	on feedback.)
+
+	Fixed rare bugs in various facilities that caused IPTraf to
+	attempt to proceed even in the event of a raw socket open failure.
+
+	Fixed SEGV condition when IPTraf is invoked with a command-line
+	parameter that cannot be parsed with getopt().
+
+	Added labels to LAN address description selection box.
+
+	Fixed unsightly LAN address description dialog scrolling.
+
+	Added a separator feature to the menurt.c module, allowing
+	separation lines within menus.
+
+	Added separator lines between related groups of menu items in both
+	main and configuration menus.
+
+	Changed the Options main menu item to Configure.
+
+	Added the space bar and the '-' key as "unofficial" alternates to
+	the PgUp and PgDn keys (it's not in the manual).
+
+	Transferred Ethernet description facility option to the Configure
+	submenu, and added a related facility for FDDI addresses.
+
+	Removed Ethernet-specific references where FDDI and (potentially)
+	other LAN technologies also fit.  We'll just use "LAN" as a
+	general term.
+
+	Adjusted detailed statistics screen to automatically generate the
+	appropriate packet size distribution brackets based on interface
+	MTU.  This means the brackets may no longer end on numbers
+	divisible by 10, but rather on boundaries based on the MTU divided
+	by 16 (the number of brackets).  But at least 1500 is not
+	hardcoded anymore as the maximum.
+
+	Related to the immediately preceeding change: packet size
+	distribution updates are done one at a time now, no longer as a
+	whole bunch.  In other words, as a frame arrives, only the
+	appropriate bracket is updated.
+
+	Also related to previous two: changed basis for packet size
+	distribution to the Ethernet frame length from the IP datagram
+	length (which really doesn't matter except for a few frames).
+
+	Fixed bug which causes the existing log interval to multiply by 60
+	when the dialog is aborted (instead of retaining the current
+	setting).  Thanks to Chris Higgins <chiggins_at_pobox.com> for the
+	bug report and the patch.  (I had to modify it a bit to fit in
+	with the screen update interval patch sent in by Dean Gaudet.)
+
+	Potentially large counts have been changed to type "unsigned long
+	long" to significantly increase running time on heavily loaded
+	networks, plus automatic switching of denominations (from exact
+	counts to K(ilo) to M(ega) to G(iga) to T(era)) to prevent screen
+	disruption (on a suggestion by Lutz Vieweg <lkv_at_isg.de>).
+	
+	Separated log file into different logs for each facility.
+
+	Moved log files to /var/log/iptraf to avoid mixing them with the
+	mess in the /var/local/iptraf directory.  At least that way,
+	we humans don't have to look in /var/local/iptraf anymore.
+
+	Relaxed multiple-instance restriction from a
+	no-multiple-instances-of-IPTraf requirement to a
+	no-multiple-instance-of-the-same-facility.  In other words,
+	several copies of IPTraf can run, but only one instance of each 
+	facility can run at any one time.  The -f parameter removes the
+	tags, overriding the restrictions on that IPTraf instance.  This 
+	modification was done to  address needs indicated by Chris Panayis
+	<chris_at_freedom2surf.net>).
+
+	Added a startup warning box if IPTraf detects IP Masquerading 
+	enabled on the computer.  IPTraf will continue to work, but its
+	results may be quite confusing.  The detection is done by
+	opening /proc/net/ip_masquerade.
+	
+	Modified additional port facility to accept ranges of ports rather
+	than several single port numbers (on a suggestion by Lutz Vieweg
+	<lkv_at_isg.de>)
+
+	Reduced minimum number of lines from 25 to 24 for better VT100
+	terminal compliance.
+
+	Miscellaneous cosmetic retouches.  (I consider user interface an
+	important factor too, ya know!  :)
+
+	Distribution binary now comes statically linked with ncurses 4.2.
+	You may recompile to suit your system.
+
+	Included manual pages derived from the Debian GNU/Linux 2.0
+	distribution.  Man pages written by Frederic Peters
+	<fpeters_at_debian.org> who is now maintaining the Debian IPTraf
+	package.
+
+	Reversed version order (newest first) in the CHANGES file.
+
+New features in IPTraf 1.2.0 and changes to IPTraf 1.1.0 
+
+	Increased buffer size in ifstats.c for /proc/net/dev lines to 161
+	to better accomodate the longer lines in the new 2.1.x kernels
+	(which will be carried over to the new stable kernel series).  
+	Based on bug reports by Dop Ganger <DopG_at_sprint.ca> and Christoph
+	Lameter <christoph_at_lameter.com> et al. 
+
+	Fixed rarely occuring high CPU utilization bug occuring whenever
+	a terminal connection is lost, resulting in a SIGHUP which is 
+	ignored.  (This is an example of a software author's temporary 
+	insanity.  I mean, what sane programmer would set SIGHUP to 
+	SIG_IGN for a terminal-based program huh?  Thought so :) Thanks
+	to Dop Ganger <DopG_at_sprint.ca> for the symptom report.
+
+	Refined Ethernet station monitor rate updates and scrolling code.
+
+	Fixed autosave bug for non-TCP filters (this was working before
+	1.1.0.  All of a sudden, the function call disappeared
+	mysteriously.  Must have been sleepy that time :)
+
+	Fixed bug in UDP filter default settings.
+
+	Added option to display TCP and UDP ports in either name form or
+	numeric form (on a suggestion by Felix von Leitner
+	<leitner_at_math.fu-berlin.de> and others).
+
+	Added facility to describe Ethernet addresses for the Ethernet
+	station monitor (to address needs as presented by Erlend Middtun
+	<erlendbm_at_funcom.com> via James Ullman <james_at_irc.ingok.hitos.no>)
+
+	Added an additional field to the TCP/UDP filter dialogs to allow
+	the user to "exclude" certain addresses from the display allowing
+	all others.  Details on the new behavior are in the manual (on a
+	suggestion by Sean Hough <seh_at_javanet.com>)
+
+	Relaxed screen management code to better adjust to the number of
+	lines on the screen.  As of this release, columns are still based
+	on a maximum number of 80 though.  Also under study is a
+	SIGWINCH handler, but this will have to come later (on comments and
+	suggestions by a *lot* of users...thanks guys :-) ).
+
+	Fixed a subtle bug in the rvnamed interface IPC code, resulting in 
+	an accurate transfer of data but causing recvfrom() to return an
+	EINVAL at unpredictable intervals.  Bug was an uninitialized address
+	structure length parameter.  Code in both iptraf and rvnamed was
+	fixed.
+
+	Eliminated unsupported interfaces from interface selection lists.
+
+	Included enforced restriction disallowng multiple instances of
+	IPTraf and an overriding command-line parameter.  (This may
+	just be temporary, in lieu of a more elegant solution).
+
+	Included autosave for TCP and UDP filters.  Filters now survive
+	IPTraf exits and restarts without requiring manual reapplication
+	(on a suggestion by Chad Clark <cclark_at_comstar.net>).
+
+	Included upgrade program and makefile rule to convert IPTraf 1.1.0 
+	configuration and filter files to 1.2.0 format.
+
+	Clarified TCP/UDP and non-TCP/UDP filter error messages.
+
+	Color-coded the TCP and UDP protocol/port indicators in the
+	TCP/UDP service monitor for better identification.
+
+	Revised IP traffic monitor to query rvnamed only once per
+	invocation of the facility.  Less overhead.
+
+	Revised IP traffic monitor to open and close the rvnamed 
+	communication socket only once per invocation of the facility.
+	Less overhead.
+
+	Added a 2-second delay after the rvnamed invocation to give
+	the daemon more than enough time to open its sockets.
+
+	Fixed SEGV condition which occurs when an attempt is made to
+	destroy an interface list never loaded (which could only occur
+	if the /proc system is unreadable, something which shouldn't
+	happen on any decent Linux system).
+
+	Moved filter list load routine to fltmgr.c, for better linking with
+	the cfconv module.
+
+	Makefile now installs rvnamed together with the iptraf executable
+	in /usr/local/bin by default.
+
+	Added table of contents (hyperlinked in the HTML version) to the
+	manual.
+
+	Cleaned up the Makefile.
+
+New features in IPTraf 1.1.0 and changes to IPTraf 1.0.3
+
+	Added command-line options for direct facility access from the
+	shell, and an appropriate help screen for IPTraf invocation (on a
+	suggestion by BJ Goodwin <latency_at_radiolink.net>).
+
+	Added separate DNS reverse name lookup program (rvnamed) for
+	quicker response time on reverse DNS lookups.  Subsequently
+        modified the revname function to use the new functionality.
+	This also required additions of address resolution state fields 
+	to struct tcptableent in tcptable.h.
+
+	Added checkrvnamed() and killrvnamed() to revname.c, used by
+	itrafmon.c to query and stop the rvnamed daemon.
+
+	Added scrolling capability to the general interface statistics.
+	Interface list will now grow as packets from newly created
+	interfaces are received (e.g. PPP interfaces).  This now makes
+	IPTraf better suited to monitor Linux machines configured as
+	access servers.
+	
+	Interface selection lists can now be scrolled.
+
+	Increased maximum number of entries in for the non-TCP window
+	in the IP traffic monitor from 256 to 512.
+
+	Fixed SEGV condition in itrafmon.c that happens whenever the
+	Down cursor key is pressed with the lower window active, but
+	not yet full.
+
+	Added elapsed time indicators to each facility, showing the
+	hours and minutes that have passed since the start of the
+        monitor (on a suggestion by James Ullman
+	<james_at_irc.Ingok.Hitos.No>)
+
+	Changed ncurses include file references from <ncurses.h>
+	to <curses.h>
+
+	Cleaned up preprocessor code for glibc2 support.  Thanks for
+	help and suggestions from John Labovitz <johnl_at_meer.net>.  Thanks 
+	also for a test account on debs.fuller.edu opened by Christoph 
+	Lameter <christoph_at_lameter.com>.
+
+	Fixed SEGV condition which may occur when trying to close the
+	log file which may never have opened (thanks to John Labovitz
+	<johnl_at_meer.net> for the patch).
+
+	Adjusted cosmetic code to better indicate the closed status in
+	the TCP monitor.
+
+	TCP and UDP filters now accept host names in in place of IP
+	addresses.  Host names will be resolved and can still be used
+	with wildcard masks (may be useful for names that resolve to
+  	several IP addresses)
+
+	Distribution now includes an HTML-formatted manual.
+
+Changes to IPTraf 1.0.2
+
+	Fixed SEGV condition when scrolling commands are applied to
+	an empty Ethernet station monitor
+
+	Distribution executable now comes compiled with -m486 by default.
+	Binary will still execute on a 386, but a 486 or higher is still
+	preferred.
+
+Changes to IPTraf 1.0.1
+
+	Fixed conflicting hotkey for non-TCP filter menu items RARP and
+	IGRP  (the "R" key).  Changed the shortcut key for RARP to "P".
+
+	Modified layer-2 header stripping code to cleanly ignore packets
+	from unrecognized interfaces (see README).
+
+	Fixed "duplicate port" misbehavior for the "Additional port"
+	dialog's Cancel command
+
+	Added error-checking for the port list file open sequence.
+ 
+	Added PgUp/PgDn capability to the facilities that can be scrolled
+	(IP traffic monitor, TCP/UDP services, and Ethernet station
+	monitor).
+
+	Cleaned up scrolling code a bit.
+
+	Fixed bug in the non-TCP logging facility that caused extraneous
+	log entries whenever the window is scrolled.
+
+	Sent non-fancy messages to standard error rather than standard
+	output.
+
+	Changed a few messages
+
+Changes to IPTraf 1.0.0
+
+	Fixed X/Ctrl-X keystroke bug in the General Interface Statistics
+	module (thanks to BJ Goodwin <latency_at_radiolink.net>).  This was
+	kinda an emergency, so I fixed this and released 1.0.1 
+	immediately.
+
