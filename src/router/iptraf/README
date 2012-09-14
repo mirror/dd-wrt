@@ -21,7 +21,7 @@ displays information about IP traffic.  It returns such information as:
 	Interface activity
 	Flag statuses on TCP packets
 	LAN station statistics
-	
+
 This program can be used to determine the type of traffic on your network,
 and what kind of service is the most heavily used on what machines, among
 others.
@@ -29,10 +29,8 @@ others.
 IPTraf works on Ethernet, FDDI, ISDN, PLIP, loopback, and SLIP/PPP
 interfaces.
 
-Updates and announcements are at the IPTraf Web page at
-http://iptraf.seul.org.  Please send e-mail to riker@seul.org or
-iptraf@seul.org.  Mailing lists iptraf-announce and iptraf-users are also
-available, see README.contact for more information.
+Updates and announcements are at the iptraf-ng@lists.fedorahosted.org,
+see README.contact for more information.
 
 IMPORTANT CHANGES
 -----------------

@@ -1,0 +1,105 @@
+.TH IPTRAF 8 "IPTraf Help Page"
+.SH NAME
+iptraf \- Interactive Colorful IP LAN Monitor
+.SH SYNOPSIS
+.BR iptraf " { [ " \-f " ] [ " \-q " ] [ " \-u " ] [ { " \-i 
+.IR iface " | " 
+.BR \-g " | " \-d
+.IR iface " | "
+.BR \-s
+.IR iface " | "
+.BR \-z
+.IR iface " | "
+.BR \-l 
+.IR iface " } [ " 
+.BR \-t
+.IR timeout " ] [ "
+.BR \-B " [ "
+.BR \-L
+.IR logfile " ] ] ] | [ "
+.BR \-h " ] }"
+.br
+.SH DESCRIPTION
+.B iptraf
+is an ncurses-based IP LAN monitor that generates various network statistics including TCP info, UDP counts, ICMP and OSPF information, Ethernet load info, node stats, IP checksum errors, and others.
+.PP
+If the 
+.B iptraf 
+command is issued without any command-line options, the program comes up in interactive mode, with the various facilities accessed through the main menu.
+
+.SH OPTIONS
+These options can also be supplied to the command:
+.TP
+.BI "\-i " iface
+immediately start the IP traffic monitor on the specified interface, or
+all interfaces if "\-i all" is specified
+.TP
+.B "\-g"
+immediately start the general interface statistics
+.TP
+.BI "\-d " iface
+allows you to immediately start the detailed on the indicated interface (iface)
+.TP
+.BI "\-s " iface
+allows you to immediately monitor TCP and UDP traffic on the specified interface (iface)
+.TP
+.BI "\-z " iface
+shows packet counts by size on the specified interface
+.TP
+.BI "\-l " iface
+start the LAN station monitor on the specified interface, or all LAN
+interfaces if "\-l all" is specified
+.TP
+.BI "\-t " timeout
+tells IPTraf to run the specified facility for only
+.I timeout
+minutes.  This option is used only with one of the above parameters.
+.TP
+.B "\-B"
+redirect standard output to /dev/null, closes standard input, and forks
+the program into the background.  Can be used only with one of the
+facility invocation parameters above.  Send the backgrounded process a
+USR2 signal to terminate.
+.TP
+.B "\-L logfile"
+allows you to specify an alternate log file name.  The default log file
+name is based on either the interface selected (detailed interface
+statistics, TCP/UDP service statistics, packet size breakdown), or the
+instance of the facility (IP traffic monitor, LAN station monitor).  If a
+path is not specified, the log file is placed in
+.B /var/log/iptraf
+.TP
+.B "\-f"
+clears all locks and counters, causing this instance of IPTraf to think
+it's the first one running.  This should only be used to recover from
+an abnormal termination or system crash.
+.TP
+.B "\-u"
+allow use of unsupported interfaces as ethernet devices.  This is needed if
+you changed the name of an interface (ex: ip link set eth0 name foo0)
+.TP
+.BI "\-q"
+no longer needed, maintained only for compatibility.
+.TP
+.B "\-h"
+shows a command summary
+.SH SIGNALS
+
+ SIGUSR1 - rotates log files while program is running
+ SIGUSR2 - terminates an IPTraf process running in the background.
+
+.SH FILES
+ /var/log/iptraf/*.log - log file
+ /var/lib/iptraf/* - important IPTraf data files
+
+.SH SEE ALSO
+ Documentation/* - complete documentation written by the author
+.br
+
+.SH AUTHOR
+Gerard Paul Java (riker@mozcom.com)
+
+.SH MANUAL AUTHOR
+Frederic Peters (fpeters@debian.org), using iptraf \-h
+General manual page modifications by Gerard Paul Java (riker@mozcom.com)
+

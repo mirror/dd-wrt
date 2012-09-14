@@ -1,0 +1,26 @@
+# git Makefile configuration, included in main Makefile
+# @configure_input@
+
+CC = @CC@
+CFLAGS = @CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+TAR = @TAR@
+#INSTALL = @INSTALL@		# needs install-sh or install.sh in sources
+
+prefix = @prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+datarootdir = @datarootdir@
+sysconfdir = @sysconfdir@
+
+mandir=@mandir@
+
+srcdir = @srcdir@
+VPATH = @srcdir@
+
+export mandir
+export srcdir VPATH
+
+ASCIIDOC7=@ASCIIDOC7@
+NO_NCURSES=@NO_NCURSES@
