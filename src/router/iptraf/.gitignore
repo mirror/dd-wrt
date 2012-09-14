@@ -1,0 +1,40 @@
+# NOTE! Please use 'git ls-files -i --exclude-standard'
+# command after changing this file, to see if there are
+# any tracked files which get ignored after the change.
+
+# normal rules
+.*
+*.o
+*.lo
+*.la
+
+# ignore binaries
+/iptraf-ng
+/rvnamed-ng
+
+# don't ignore git files
+!.gitignore
+
+# gnu global files
+GPATH
+GRTAGS
+GSYMS
+GTAGS
+
+# cscope files
+cscope.*
+ncscope.*
+
+# autotools
+/configure
+/autom4te.cache/
+/config.log
+/config.mak.append
+/config.mak.autogen
+/config.status
+
+# misc
+*~
+\#*#
+/iptraf-ng.spec
+VERSION-FILE

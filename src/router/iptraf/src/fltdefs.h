@@ -1,8 +1,9 @@
+#ifndef IPTRAF_NG_FLTDEFS_H
+#define IPTRAF_NG_FLTDEFS_H
+
 /***
 
 fltdefs.h - declarations for the TCP, UDP, and misc IP filters
-Written by Gerard Paul Java
-Copyright (c) Gerard Paul Java 1997-2002
 
 ***/
 
@@ -33,35 +34,37 @@ Copyright (c) Gerard Paul Java 1997-2002
  * IP filter parameter entry
  */
 struct hostparams {
-    char s_fqdn[45];
-    char d_fqdn[45];
-    char s_mask[20];
-    char d_mask[20];
-    unsigned int sport1;
-    unsigned int sport2;
-    unsigned int dport1;
-    unsigned int dport2;
-    int filters[256];
-    char protolist[70];
-    char reverse;
-    char match_opposite;
+	char s_fqdn[45];
+	char d_fqdn[45];
+	char s_mask[20];
+	char d_mask[20];
+	unsigned int sport1;
+	unsigned int sport2;
+	unsigned int dport1;
+	unsigned int dport2;
+	int filters[256];
+	char protolist[70];
+	char reverse;
+	char match_opposite;
 };
 
 
 struct filterent {
-    struct hostparams hp;
+	struct hostparams hp;
 
-    unsigned long saddr;
-    unsigned long daddr;
-    unsigned long smask;
-    unsigned long dmask;
-    unsigned int index;
-    struct filterent *next_entry;
-    struct filterent *prev_entry;
+	unsigned long saddr;
+	unsigned long daddr;
+	unsigned long smask;
+	unsigned long dmask;
+	unsigned int index;
+	struct filterent *next_entry;
+	struct filterent *prev_entry;
 };
 
 struct filterlist {
-    struct filterent *head;
-    struct filterent *tail;
-    unsigned int lastpos;
+	struct filterent *head;
+	struct filterent *tail;
+	unsigned int lastpos;
 };
+
+#endif	/* IPTRAF_NG_FLTDEFS_H */

@@ -1,3 +1,6 @@
+#ifndef IPTRAF_NG_RVNAMED_H
+#define IPTRAF_NG_RVNAMED_H
+
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -19,8 +22,11 @@
 #define MAX_RVNAMED_CHILDREN	200
 
 struct rvn {
-    int type;
-    int ready;
-    struct in_addr saddr;
-    char fqdn[45];
+	int type;
+	int ready;
+	struct in_addr saddr;
+	struct in6_addr s6addr;
+	char fqdn[45];
 };
+
+#endif	/* IPTRAF_NG_RVNAMED_H */
