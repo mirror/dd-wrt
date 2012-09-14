@@ -1198,7 +1198,9 @@ static void macgrp_chain(int seq, unsigned int mark, int urlenable)
 
 	insmod("ipt_mac");
 	insmod("xt_mac");
-
+	insmod("ipt_CONNMARK");
+	insmod("xt_CONNMARK");
+	
 	if (mark == MARK_DROP) {
 		foreach(var, wordlist, next) {
 			save2file("-A grp_%d -m mac --mac-source %s -j %s\n",
