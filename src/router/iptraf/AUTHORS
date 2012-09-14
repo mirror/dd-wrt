@@ -1,0 +1,21 @@
+Original author of iptraf:
+--------------------------
+
+	1997 - 2004	Gerard Paul Java
+
+Since no progress was made since 2004 and the author didn't answer
+any question if he will be working on iptraf anytime soon again,
+Nikola Pajkovsky from RedHat took over the project in 2010 and made
+a fork named iptraf-ng.
+
+iptraf-ng maintainer:
+---------------------
+	2010 -		Nikola Pajkovsky <npajkovs@redhat.com>
+
+Contributors:
+-------------
+	2010 - now	Nikola Pajkovsky <npajkovs@redhat.com>
+	2010		Jan Rafaj <jr-tools@cedric.unob.cz>
+	2010		Petr Uzel <petr.uzel@suse.cz>
+	2011		Jan Engelhardt <jengelh@medozas.de>
+	2012		Vitezslav Samel <vitezslav@samel.cz>
