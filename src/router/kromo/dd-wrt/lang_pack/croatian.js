@@ -1,6 +1,6 @@
-﻿///////////////////////////////////////////////////////////////////////////////////////////////
-// DD-WRT v24-sp2 / Croatian Translation / updated from r18300 / by Silvio Peša / 2012-01-26 // 
-///////////////////////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////////////
+// DD-WRT v24-sp2 / Croatian / updated from r18328 / by Silvio Peša / 2012-09-14 // 
+//////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
 
@@ -150,7 +150,7 @@ share.static_lease="Statički Zakup";
 share.srvip="IP Adresa Poslužitelja";
 share.srvipname="IP Adresa / Ime Poslužitelja";
 share.localdns="Lokalni DNS Poslužitelj";
-share.minutes="minuta";
+share.minutes="min";
 share.oui="OUI Upit";
 share.sttic="Statično";
 share.connecting="Povezivanje";
@@ -309,15 +309,16 @@ errmsg.err24=" nađena u MAC adresi ";
 errmsg.err25="Vrijednost Ključa nije ispravna.";
 errmsg.err26="Dužina Ključa nije ispravna.";
 errmsg.err27="Ilegalna maska podmreže.";
-errmsg.err28=" ima ilegalni karakter, mora biti [ 0 - 9 ].";
-errmsg.err29=" ima ilegalni ASCII kod.";
-errmsg.err30=" ima ilegalne HEX znamenke.";
+errmsg.err28=" sadrži ilegalni karakter, mora biti [ 0 - 9 ].";
+errmsg.err29=" sadrži ilegalni ASCII kod.";
+errmsg.err30=" sadrži ilegalne HEX znamenke.";
 errmsg.err31=" vrijednost je ilegalna.";
-errmsg.err32="IP adresa i poveznik nisu u istoj masci podmreže.";
+errmsg.err32="IP adresa i poveznik nisu u istoj podmreži.";
 errmsg.err33="IP adresa i poveznik ne mogu biti isti.";
 errmsg.err34=" nije dozvoljeno da sadrži razmak.";
 errmsg.err110="Završni broj mora biti veći od početnog";
 errmsg.err111="Neispravna IP adresa";
+errmsg.err112='Neispravan unos "<invchars>" u "<fieldname>"';
 
 //Wol.asp error messages
 errmsg.err35="Morate unijeti MAC adresu.";
@@ -457,7 +458,7 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="Milkfish SIP";
+bmenu.servicesMilkfish="SIP Proxy";
 //bmenu.servicesAnchorFree="Reklamna Mreža";
 
 bmenu.statu="Status";
@@ -480,14 +481,14 @@ bmenu.adminman="Management";
 
 alive.titl="Nadzor";
 alive.h2="Nadzor";
-alive.legend="Odgođeno Pokretanje";
-alive.sevr1="Odgođeno Pokretanje";
+alive.legend="Ponovno Pokretanje";
+alive.sevr1="Ponovno Pokretanje";
 alive.hour="U Zadano Vrijeme";
-alive.legend2="Watchdog WDS Veze";
-alive.sevr2="Watchdog WDS Veze";
+alive.legend2="Čuvar WDS Veze";
+alive.sevr2="Čuvar WDS Veze";
 alive.IP="IP Adrese";
-alive.legend3="Watchdog Proxy Veze";
-alive.sevr3="Watchdog Proxy Veze";
+alive.legend3="Čuvar Proxy Veze";
+alive.sevr3="Čuvar Proxy Veze";
 alive.IP2="Proxy IP Adresa";
 alive.port="Proxy Vrata";
 
@@ -511,8 +512,8 @@ config.mess4="Vraćati postavke iz datoteke koja je stvorena uporabom samo ovog 
 
 //help container
 
-hconfig.right2="Možete sačuvati vašu trenutnu konfiguraciju u slučaju da želite postaviti te postavke nazad na usmjerivač.<br /><br />Klikni na <em>Pričuvaj</em> dugme za skidanje trenutne konfiguracije.";
-hconfig.right4="Klikni na <em>Pretraži...</em> dugme za odabir prethodno sačuvane konfiguracijske datoteke s vašeg računala.<br /><br />Klikni na <em>" + sbutton.restore + "</em> dugme ako želite povratiti postavke iz pričuvne konfiguracijske datoteke.";
+hconfig.right2="U slučaju da želite postaviti tvornički zadane postavke na usmjerivač, vašu trenutnu konfiguraciju postavki možete sačuvati.<br /><br />Klikni na <em>Pričuvaj</em> dugme za skidanje datoteke trenutne konfiguracije.";
+hconfig.right4="Klikni na <em>Pretraži...</em> dugme za odabir prethodno sačuvane konfiguracijske datoteke s vašeg računala.<br /><br />Klikni na <em>" + sbutton.restore + "</em> dugme ako želite povratiti postavke s onima iz pričuvne konfiguracijske datoteke.";
 
 
 // ** DDNS.asp **//
@@ -530,7 +531,7 @@ ddns.statu="DDNS Status";
 ddns.system="DYNDNS Poslužitelj";
 ddns.options="Dodatne DDNS Opcije";
 ddns.forceupd="Interval Nasilne Obnove";
-ddns.wanip="Ne radi vanjsku provjeru IP adrese";
+ddns.wanip="Ne provjeravati vanjsku IP adresu";
 
 
 ddnsm.all_closed="DDNS poslužitelj je trenutno zatvoren";
@@ -543,8 +544,8 @@ ddnsm.all_noip="Nema WAN veze";
 
 //help container
 
-hddns.right2="DDNS omogućava udaljeni pristup vašem usmjerivaču i mreži rabeći imena računala i domena umjesto IP adresa. Usluga nadzire trenutnu IP adresu i dinamički ažurira vaše podatke o domeni. Morate se prijaviti za uslugu kod davatelja iste npr. DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ili posebnoj usluzi.";
-hddns.right4="Unesi cijeli broj u polje za postavljane nasilnog intervala obnove podataka (u danima). Ažuriranje vaših podataka trebalo bi se automatski desiti samo kad se promjeni vaša IP adresa. Pazite na policu zlouporabe vašeg DDNS davatelja usluge da bi spriječili blokiranje usmjerivača ili mreže.";
+hddns.right2="DDNS omogućava udaljeni pristup vašem usmjerivaču i mreži rabeći ime računala i domene umjesto IP adrese. Usluga nadzire trenutnu IP adresu i dinamički ažurira vaše podatke o domeni. Za ovu uslugu morate se prijaviti kod davatelja iste npr. DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ili nekom sličnom davatelju usluge.";
+hddns.right4="Unesi cijeli broj u polje za postavljane nasilnog intervala obnove podataka (u danima). Ažuriranje vaših podataka trebalo bi se automatski desiti samo kad se promjeni vaša IP adresa. Pazite na policu zlouporabe vašeg DDNS davatelja usluge da bi spriječili blokiranje vašeg usmjerivača ili mreže.";
 
 
 // ** Diagnostics.asp **//
@@ -657,7 +658,7 @@ firewall.muticast="Filter Multicast";
 firewall.ssh="Limit SSH Access";
 firewall.telnet="Limit Telnet Access";
 firewall.pptp="Limit PPTP Server Access";
-//firewall.http="Limit HTTP Access";
+firewall.ftp="Limit FTP Server Access";
 filter.nat="Filter WAN NAT Redirekciju";
 filter.port113="Filter IDENT (Vrata 113)";
 filter.snmp="Block WAN SNMP access";
@@ -676,7 +677,7 @@ prforward.app="Primjene";
 
 //help container
 
-hprforward.right2="Neke primjene (aplikacije) mogu tražiti otvaranje određenih vrata da bi mogle ispravno funkcionirati. Primjer takve aplikacije su npr. online igre. Kad dođe zahtjev s Interneta za određenim vratima, Usmjerivač će usmjeriti podatke računalu koje odredite. Obzirom na sigurnost možete omogućiti pristup samo onim vratima koja se rabe i zatvoriti <em>" + share.enable +"</em> ih kad završite.";
+hprforward.right2="Da bi mogle ispravno funkcionirati neke programske primjene (aplikacije) moraju imati određena otvorena vrata. Primjer takve aplikacije su npr. online igre. Kad dođe zahtjev s Interneta za određenim vratima, usmjerivač će usmjeriti podatke određenom računalu u vašoj mreži. Obzirom na sigurnost možete omogućiti pristup samo onim vratima koja se rabe i onemogućiti ih kad završite.";
 
 
 // ** P2P.asp **//
@@ -736,7 +737,7 @@ nas.proftpd_anon_subdir="Anonimni Kućni Podimenik";
 nas.samba3_legend="Dijeljenje Datoteka";
 
 
-hnas.right2="Lista Korisničkih Zaporki: Unesi jednu Zaporku po liniji. Zaporka može biti obični tekst ili MD5 enkripcija.";
+hnas.right2="Za listu korisničkih zaporki unijeti jednu zaporku po liniji. Zaporka može biti obični tekst ili MD5 kod.";
 
 // ** Hotspot.asp **//
 
@@ -859,8 +860,8 @@ hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
 //anchorfree.validcat="please select a advertising category for your hotspot";
 //anchorfree.validcountry="please select a country for your hotspot";
 //anchorfree.validterms="You must agree to the terms & conditions!";
-
-
+//
+//
 //hanchorfree.right1="Join AnchorFree's hotspot advertising network";
 //hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
 //hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
@@ -969,13 +970,13 @@ idx.ntp_client="NTP Klijent";
 hidx.right2="Davatelji usluge pristupa Internetu (ISP) najčešće rabe ovu postavku.";
 hidx.right4="Postaviti ako je predviđeno od vašeg davatelja usluge pristupa Internetu.";
 hidx.right6="Postaviti ako je predviđeno.";
-hidx.right8="Postaviti lokalnu IP adresu usmjerivača.";
+hidx.right8="Ovo je lokalna (LAN) IP adresa usmjerivača.";
 hidx.right10="Postaviti masku podmreže usmjerivača.";
 hidx.right12="Omogućava usmjerivaču da upravlja IP adresama vaše mreže.";
 hidx.right14="Ovo je početna adresa koja se daje u najam klijentima.";
 hidx.right16="Možete ograničiti broj IP adresa s kojima vaš usmjerivač upravlja. 0 označava upravljanje samo predefiniranim statičkim najmovima.";
-hidx.right18="Postaviti lokalnu vremensku zonu i uporabu ljetnog računanja vremena. Vremenska zona može biti lokalna ili po UTC standardu.";
-hidx.sas="Pomoćnik postavljanja vas vodi kroz osnovne korake podešavanja konfiguracije usmjerivača.";
+hidx.right18="Postaviti lokalnu vremensku zonu i ljetno računanje vremena. Vremenska zona može biti lokalna ili po UTC standardu.";
+hidx.sas="Pomoćnik za postavljanje vas vodi kroz osnovna podešavanja konfiguracije usmjerivača.";
 
 // ** DSL ** //
 
@@ -1025,7 +1026,7 @@ log.accept="Prihvaćeno";
 
 management.titl="Administracija";
 management.h2="Upravljanje Usmjerivačem";
-management.changepassword="Vaš usmjerivač trenutno nije zaštićen i rab nesigurnu zadanu kombinaciju korisničkog imena i zaporke, molimo promijenite ih u ovom dijalogu!";
+management.changepassword="Vaš usmjerivač trenutno nije zaštićen i rabi nesigurnu zadanu kombinaciju korisničkog imena i zaporke; molimo promijenite ih u ovom dijalogu!";
 management.psswd_legend="Zaporka Usmjerivača";
 management.psswd_user="Korisničko Ime Usmjerivača";
 management.psswd_pass="Zaporka Usmjerivača";
@@ -1041,7 +1042,7 @@ management.remote_telnetport="Telnet Udaljena Vrata";
 management.remote_allowanyip="Dozvoli svaku Udaljenu IP Adresu";
 management.remote_ip="Dozvoljeni Raspon IP Adresa";
 management.web_legend="Pristup Web Sučelju";
-management.web_refresh="Auto-Osvježavanje (u skundama)";
+management.web_refresh="Auto-Osvježavanje (s)";
 management.web_sysinfo="Prikaži Info Stranicu";
 management.web_sysinfopass="Zašita Info Stranice Zaporkom";
 management.web_sysinfomasq="Maskiranje MAC na Info Stranici";
@@ -1152,6 +1153,7 @@ qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
 qos.gaming="Optimize for Gaming";
 qos.legend2="Services Priority";
+qos.prio_m="Manual";
 qos.prio_x="Exempt";
 qos.prio_p="Premium";
 qos.prio_e="Express";
@@ -1174,10 +1176,10 @@ qos.bandwidth="Bandwidth in kbits";
 hqos.right1="";
 hqos.right2="Uplink:<br>Set this to 80%-95% (max) of your total upload limit.<br>Downlink:<br>Set this to 80%-100% (max) of your total download limit.";
 hqos.right3="";
-hqos.right4="Enable Per User Default Limits:<br>Enable the Default Level per user, else set the level for all users.";
+hqos.right4="Enable Per User Default Limits:<br>Enable the default level per user or else set the level for all users.";
 hqos.right6="You may control your data rate with respect to the application that is consuming bandwidth.";
-hqos.right8="You may specify priority for all traffic from a given IP address or IP Range.";
-hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a Device Name, specifying priority and entering its MAC address.";
+hqos.right8="You may specify priority for all traffic from a given IP address or IP range.";
+hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a device name, specifying priority and entering its MAC address.";
 hqos.right12="You may control your data rate according to which physical LAN port your device is plugged into. You may assign Priorities accordingly for devices connected on LAN ports 1 through 4.";
 
 
@@ -1235,7 +1237,7 @@ route.static_ip="Ciljna LAN Mreža";
 //help container
 
 hroute.right2="Ako ovaj usmjerivač podiže Internet vezu, izaberite mod <em>Poveznik</em>. Ako na vašoj mreži postoji drugi usmjerivač, izaberite <em>Usmjerivač</em> mod.";
-hroute.right4="Indentifikator Smjera, možete postaviti do 50 Smjerova.";
+hroute.right4="Jedinstveni broj smjera, možete postaviti do 50 smjerova.";
 hroute.right6="Dodijelite Ime Smjera.";
 hroute.right8="Ciljni stroj prema kojem definirate statični Smjer.";
 hroute.right10="Maska ciljne podmreže prema kojoj definirate statični Smjer.";
@@ -1339,7 +1341,8 @@ service.pppoesrv_chaps="Lokalno Upravljanje Korisnicima (CHAP Secrets)";
 
 //help container
 
-hpppoesrv.right2="IP: 0.0.0.0; you'll serve IP's from the pool";
+hpppoesrv.right2="IP: 0.0.0.0 -> You'll serve IP's from the pool";
+hpppoesrv.right3="You MUST set the correct amount of associated clients according your IP range";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
@@ -1373,6 +1376,8 @@ service.vpnd_dupcn="Dozvoli dvostruki CN";
 service.vpnd_proxy="DHCP-Proxy mode";
 service.vpnd_clcon="Client connect script";
 service.vpnd_ccddef="CCD-Dir DEFAULT file";
+service.vpnd_dhcpbl="Block DHCP accross the tunnel";
+service.vpnd_static="Statični Ključ";
 service.vpn_redirgate="Redirect default Gateway";
 service.vpn_legend="OpenVPN Klijent";
 service.vpn_srv="Pokreni OpenVPN Klijent";
@@ -1397,8 +1402,8 @@ service.vpn_route="Policy based Routing";
 
 //help container
 
-hstatus_vpn.right1="Policy based Routing:<br>Add IPs/NETs in the form 0.0.0.0/0 to force clients NOT to use the tunnel as default gateway. One line per IP/NET. Redirect Gateway MUST be on.";
-hstatus_vpn.right2="Additional Config:<br>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.";
+hstatus_vpn.right1="<i>Policy based Routing:</i><br>Add IPs/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br><i>IP Address/Netmask:</i><br>Must be set when using DHCP-Proxy mode and local TAP is NOT bridged";
+hstatus_vpn.right2="<i>Additional Config:</i><br>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1487,15 +1492,15 @@ service.milkfish_contact="Contact";
 service.milkfish_agent="User Agent";
 service.milkfish_registrations="Active Registrations";
 //service.milkfish_="";//
-service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
-service.hmilkfish_right4="Enables/Disables From:-Headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled, if you want to allow callees to call you back if your WAN IP has changed";
-service.hmilkfish_right6="Callee calls back this Domain (instead of your WAN IP) when you send it as your From:-Domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect";
-service.hmilkfish_right8="Here goes your Milkfish Community Forum Username - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
-service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
-service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="Enables/Disables Dynamic SIP (i.e. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right2="Enable or disable your Milkfish SIP router.";
+service.hmilkfish_right4="Enable or disable from:-headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled if you want to allow callees to call you back if your WAN IP has changed.";
+service.hmilkfish_right6="Callee calls back this domain (instead of your WAN IP) when you send it as your from:-domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect.";
+service.hmilkfish_right8="Put your Milkfish community forum username here.  Register at yourname.homesip.net.";
+service.hmilkfish_right10="Put your Milkfish community forum password here. Register at yourname.homesip.net.";
+service.hmilkfish_right12="Enable or disable basic SIP tracing on your router.";
+service.hmilkfish_right14="Local SIP subscribers are locally managed SIP accounts.";
+service.hmilkfish_right16="Local SIP aliases are SIP forwards similar to Email forwards. Can be used to forward alphanumeric-to-numeric phone user accounts or vice versa.";
+service.hmilkfish_right18="Enable or disables dynamic SIP (i.e. Homesip.net service). You will need to set your username and password.";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1555,20 +1560,20 @@ status_lan.h2="Lokalna Mreža";
 status_lan.legend="LAN Status";
 status_lan.h22="Dynamic Host Configuration Protocol";
 status_lan.legend2="DHCP Status";
-status_lan.legend3="DHCP Klijenti";
-status_lan.legend4="Aktivni Klijenti";
-status_lan.legend5="Povezani PPTP Klijenti";
-status_lan.legend6="Povezani PPPOE Klijenti";
-status_lan.concount="Broj Veza";
+status_lan.legend3="DHCP klijenti";
+status_lan.legend4="Aktivni klijenti";
+status_lan.legend5="Povezani PPTP klijenti";
+status_lan.legend6="Povezani PPPOE klijenti";
+status_lan.concount="Broj veza";
 status_lan.conratio="Omjer";
 
 //help container
 
-hstatus_lan.right2="Ovo je MAC Adresa Usmjerivača koja je vidljiva na Ethernet (žičnoj) Mreži.";
-hstatus_lan.right4="Ovo je IP Adresa Usmjerivača koja je vidljiva na Ethernet (žičnoj) Mreži.";
-hstatus_lan.right6="Ovdje je prikazana Maska Podmreže.";
-hstatus_lan.right8="Ovdje će biti prkazan staus Usmjerivača ako ga rabite kao DHCP poslužitelj.";
-hstatus_lan.right10="Klikom na neku MAC adresu, dobiti će te ´Organizationally Unique Identifier´ mrežnog sučelja (IEEE Standards OUI database search).";
+hstatus_lan.right2="MAC adresa usmjerivača vidljiva na žičnoj (Ethernet) mreži.";
+hstatus_lan.right4="IP adresa usmjerivača vidljiva na žičnoj (Ethernet) mreži.";
+hstatus_lan.right6="Ovo je maska podmreže.";
+hstatus_lan.right8="Ovdje će biti prikazan staus usmjerivača ako ga rabite kao DHCP poslužitelj.";
+hstatus_lan.right10="Klikom na jednu MAC adresu dobiti će te OUI (Organizationally Unique Identifier) identifikator mrežnog sučelja.";
 
 
 // ** Status_Bandwidth.asp **//
@@ -1579,14 +1584,14 @@ status_band.chg_unit="Switch to ";
 status_band.chg_scale="Autoscale";
 status_band.chg_error="Podaci o sučelju nedostupni";
 status_band.chg_collect_initial="Skupljanje inicijalnih podataka, molimo pričekajte...";
-status_band.strin="In";
-status_band.strout="Out";
+status_band.strin="Ulazna";
+status_band.strout="Izlazna";
 status_band.follow="follow";
 status_band.up="up";
 
 //help container
 
-hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
+hstatus_band.svg="Adobe's SVG plugin is required to display bandwidth graphs.";
 hstatus_band.right1="Click the label to switch unit (bytes/s or bits/s).";
 hstatus_band.right2="Click the label to choose graph scale type.";
 
@@ -1622,12 +1627,12 @@ status_router.cputemp="CPU Temperatura";
 
 //help container
 
-hstatus_router.right2="This is the specific name for the router, which you set on the <i>Setup</i> tab.";
-hstatus_router.right4="This is the router's MAC Address, as seen by your ISP.";
-hstatus_router.right6="This is the router's current firmware.";
-hstatus_router.right8="This is time received from the ntp server set on the <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> tab.";
-hstatus_router.right10="This is a measure of the time the router has been \"up\" and running.";
-hstatus_router.right12="This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.";
+hstatus_router.right2="Specifično ime usmjerivača koje postavljate na <i>Postavke</i> kartici.";
+hstatus_router.right4="Ovo je MAC Adress usmjerivača vidljiva vašem davatelju usluge (ISP).";
+hstatus_router.right6="Tip i verzija strojnog programa usmjerivača.";
+hstatus_router.right8="Vrijeme dobavljeno od NTP poslužitelja postavljenog na <em>" + Postavke + " | " + LAN / WAN + "</em> kartici.";
+hstatus_router.right10="Mjera vremena odkad je usmjerivač pokrenut.";
+hstatus_router.right12="Opterećenje sustava dano u tri broja koji predstavljaju opterećenje sustava kroz jednu zadnju(m), pet i petnaest 5system load during the last one, five, and fifteen minute periods.";
 
 // ** Status_Internet.asp **//
 
@@ -1703,8 +1708,8 @@ status_gpsi.sat="Visible Satelites";
 
 //help container
 
-hstatus_wireless.right2="This is the Router's MAC Address, as seen on your local, wireless network.";
-hstatus_wireless.right4="As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, B-Only or Disabled) used by the network.";
+hstatus_wireless.right2="This is the router's MAC address, as seen on your local, wireless network.";
+hstatus_wireless.right4="As selected from the wireless tab, this will display the wireless mode (Mixed, G-Only, B-Only or Disabled) used by the network.";
 
 
 // ** Status_OpenVPN.asp **//
@@ -1762,7 +1767,7 @@ upnp.msg2="Brisati sve unose?";
 //help container
 
 hupnp.right2="Click the trash can to delete an individual entry.";
-hupnp.right4="Allows applications to automatically setup port forwardings.";
+hupnp.right4="Allows applications to automatically configure port forwardings.";
 
 
 // ** VPN.asp **//
@@ -1818,7 +1823,7 @@ wol.pass="SecureOn Zaporka";
 //help container
 
 hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
-hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>";
+hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>.";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network.";
 
 
@@ -1878,9 +1883,9 @@ aoss.wpsactivate="Aktiviraj PIN";
 aoss.wpsregister="Registriraj PIN";
 aoss.wpsgenerate="Generiraj PIN";
 aoss.pinnotvalid="Nevaljali PIN, neispravna kontrolna suma!";
-aoss.wpsenable="WPS Push Button";
+aoss.wpsenable="WPS Button";
 aoss.wpsstatus="WPS Status";
-aoss.externalregistrar="Vanjski Registrar";
+aoss.externalregistrar="Metoda PIN-om";
 aoss.release="Otpusti";
 aoss.configure="Konfiguriraj";
 
@@ -1901,6 +1906,7 @@ nintendo.spotpass.servers="Allow Servers";
 
 
 sec80211x.xsuptype="XSupplicant Type";
+sec80211x.keyxchng="EAP Key-Management";
 sec80211x.servercertif="Public Server Certificate";
 sec80211x.clientcertif="Client Certificate";
 sec80211x.phase2="Phase2";
@@ -2007,8 +2013,8 @@ freeradius.users="Korisnici";
 freeradius.clients="Klijenti";
 freeradius.username="Korisničko Ime";
 freeradius.password="Zaporka";
-freeradius.downstream="Nizvodna Brzina";
-freeradius.upstream="Uzvodna Brzina";
+freeradius.downstream="Dolazna Brzina";
+freeradius.upstream="Izlazna Brzina";
 freeradius.sharedkey="Dijeljeni Ključ";
 
 
@@ -2128,7 +2134,7 @@ wl_basic.preamble="Short Preamble";
 wl_basic.clientRelaydDefaultGwMode="Default GW Mode";
 wl_basic.b="Samo B";
 wl_basic.a="Samo A";
-wl_basic.ac="Samo AC";
+wl_basic.ac="AC-Only";
 wl_basic.na="Miješano NA";
 wl_basic.ng="Miješano NG";
 wl_basic.n5="Samo N (5 GHz)";
@@ -2188,13 +2194,13 @@ wl_basic.if_label="Oznaka (opcija)";
 wl_basic.if_info="Info (opcija)";
 wl_basic.advanced_options="Napredne Opcije";
 wl_basic.rate_control="Upravljački Algoritam Omjera";
-wl_basic.ap83_vap_note="Dodavanje više od tri prividna sučelja dovest će do slabijeg učinka na istim s određenim klijentima.";
+wl_basic.ap83_vap_note="Dodavanje više od tri prividna sučelja dovest će do slabijeg učinka na sitim s nekim posebnim klijentskim uređajima.";
 
 //help container
 
 hwl_basic.right2="Ako želite isključiti 802.11g klijente izaberite <em>Samo B</em> način. Ako želite onemogućiti bežični pristup, izaberi <em>Onemogućeno</em>.<br/><b>Napomena :</b> Pri promjeni modusa bežične mreže, neki napredni parametri su osjetljivi na promjenu (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Raspon Osjetljivosti: ";
-hwl_basic.right4="Postavlja ACK Timingt. 0 onemogućuje ACK timing u potpunosti za Broadcom strojni program. Za Atheros zasnovanim strojnim programima ukljčuje automatski mod.";
+hwl_basic.right4="Postavlja ACK timing. Za Broadcom strojni program 0 onemogućuje ACK timing u potpunosti. Za Atheros strojne prograe ukljčuje automatski mod.";
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
@@ -2213,8 +2219,8 @@ success.success_reboot=success.success_noreboot + "<br />Stroj se ponovo pokreć
 
 success.alert_reset="Sve konfiguracijske postavke su vraćene na njihove zadane vrijednosti.<br /><br />";
 success.alert1="Molim provjerite sljedeće prije ponovnog spajanja:";
-success.alert2="Ako ste mijenjali IP adresu usmjerivača, morate otpustiti/obnoviti IP adresu vašeg klijenta na mreži.";
-success.alert3="Ako ste se spojili preko WLAN, molimo pridružite se mreži i kliknite <em>Nastavi</em>.";
+success.alert2="Ako ste mijenjali IP adresu usmjerivača, morate otpustiti i obnoviti IP adrese na vašim klijentskim strojevima na mreži.";
+success.alert3="Ako ste se spojili rabeći WiFi, ponovo se pridružite mreži i kliknite <em>Nastavi</em>.";
 
 // ** Logout.asp  **//
 
@@ -2246,10 +2252,27 @@ hsas.wireless="Wireless help text";
 hsas.other="Other Settings help text";
 
 // ** AOSS **//
+var haoss=new Object();
+haoss.basic="The \"AirStation One-Touch Secure System\" (AOSS) allows you to connect AOSS-capable clients to your access point without requiring manual configuration.";
+haoss.securitymodes="AOSS security modes define what client security modes are accepted for AOSS negotiation. If a client only supports security modes that are not enabled, it cannot connect.";
+haoss.wps="WPS enables support for Wi-Fi Protected Setup using the button on your router or the PIN that came with your client device.";
 
-haoss.basic="\"AirStation One-Touch Secure System\" (AOSS) vam omogućava da spojite drugi AOSS klijent na vašu pristupnu točku bez dodatne ručne konfiguracije.";
-haoss.securitymodes="The AOSS Security Modes define what client security modes are accepted for AOSS negotiation. If a Client only supports security modes that are not enabled it cannot connect.";
-haoss.wps="WPS enables support for the Wifi Protected Setup using the Push Button on your Router, or by using the PIN Method using the PIN printed on your client device or your client authentication application";
+
+ias.title="Setup";
+ias.card_info="Setup Card";
+ias.edit_note="Click on any information in the Setup Card to edit it.";
+ias.assistant="Run Setup Assistant";
+ias.print_setup_card="Print Setup Card";
+ias.print_guest_card="Print Guest Card";
+ias.apply_changes="Apply Changes";
+ias.wlnetwork="Wireless Network";
+ias.wlinfo_2_4_GHz="(2.4 Ghz) - Compatible with 802.11n/g/b";
+ias.wlinfo_5_GHz="(5 Ghz) - Compatible with 802.11n/a";
+ias.hl_setup_card="Setup Card";
+ias.hl_client_access="For Client Access";
+ias.hl_for_conf="For Configuration";
+ias.hl_guest_card="Guest Card";
+
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
 
