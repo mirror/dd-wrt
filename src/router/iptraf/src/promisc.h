@@ -1,3 +1,6 @@
+#ifndef IPTRAF_NG_PROMISC_H
+#define IPTRAF_NG_PROMISC_H
+
 /*
  * promisc.h - definitions for promiscuous state save/recovery
  *
@@ -9,14 +12,14 @@
  */
 
 struct promisc_params {
-    char ifname[8];
-    int saved_state;
-    int state_valid;
+	char ifname[IFNAMSIZ];
+	int saved_state;
+	int state_valid;
 };
 
 struct promisc_states {
-    struct promisc_params params;
-    struct promisc_states *next_entry;
+	struct promisc_params params;
+	struct promisc_states *next_entry;
 };
 
 void init_promisc_list(struct promisc_states **list);
@@ -24,3 +27,5 @@ void save_promisc_list(struct promisc_states *list);
 void load_promisc_list(struct promisc_states **list);
 void srpromisc(int mode, struct promisc_states *promisc_list);
 void destroy_promisc_list(struct promisc_states **list);
+
+#endif	/* IPTRAF_NG_PROMISC_H */

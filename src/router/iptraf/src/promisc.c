@@ -1,40 +1,15 @@
+/* For terms of usage/redistribution/modification see the LICENSE file */
+/* For authors and contributors see the AUTHORS file */
+
 /***
 
 promisc.c	- handles the promiscuous mode flag for the Ethernet/FDDI/
               Token Ring interfaces
-		  
-Written by Gerard Paul Java
-Copyright (c) Gerard Paul Java 1997, 2002
-
-This module contains functions that manage the promiscuous states of
-the interfaces.
-
-This software is open source; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed WITHOUT ANY WARRANTY; without even the
-implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the GNU General Public License in the included COPYING file for
-details.
 
 ***/
 
-#include <curses.h>
-#include <panel.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <linux/if_ether.h>
-#include "ifstats.h"
+#include "iptraf-ng-compat.h"
+
 #include "ifaces.h"
 #include "error.h"
 #include "promisc.h"
@@ -42,72 +17,59 @@ details.
 
 #define PROMISC_MSG_MAX 80
 
-extern int daemonized;
-extern int accept_unsupported_interfaces;
-
 void init_promisc_list(struct promisc_states **list)
 {
-    FILE *fd;
-    int ifd;
-    char buf[8];
-    struct promisc_states *ptmp;
-    struct promisc_states *tail = NULL;
-    struct ifreq ifr;
-    int istat;
-    char err_msg[80];
+	FILE *fd;
+	char buf[IFNAMSIZ];
+	struct promisc_states *ptmp;
+	struct promisc_states *tail = NULL;
 
-    ifd = socket(PF_INET, SOCK_DGRAM, 0);
+	*list = NULL;
+	fd = open_procnetdev();
 
-    *list = NULL;
-    fd = open_procnetdev();
+	while (get_next_iface(fd, buf, sizeof(buf))) {
+		if (strcmp(buf, "") != 0) {
+			ptmp = xmalloc(sizeof(struct promisc_states));
+			strcpy(ptmp->params.ifname, buf);
 
-    do {
-        get_next_iface(fd, buf);
+			if (*list == NULL) {
+				*list = ptmp;
+			} else
+				tail->next_entry = ptmp;
 
-        if (strcmp(buf, "") != 0) {
-            ptmp = malloc(sizeof(struct promisc_states));
-            strcpy(ptmp->params.ifname, buf);
+			tail = ptmp;
+			ptmp->next_entry = NULL;
 
-            if (*list == NULL) {
-                *list = ptmp;
-            } else
-                tail->next_entry = ptmp;
+			/*
+			 * Retrieve and save interface flags
+			 */
 
-            tail = ptmp;
-            ptmp->next_entry = NULL;
+			if ((strncmp(buf, "eth", 3) == 0)
+			    || (strncmp(buf, "ra", 2) == 0)
+			    || (strncmp(buf, "fddi", 4) == 0)
+			    || (strncmp(buf, "tr", 2) == 0)
+			    || (strncmp(buf, "ath", 3) == 0)
+			    || (strncmp(buf, "bnep", 4) == 0)
+			    || (strncmp(buf, "ni", 2) == 0)
+			    || (strncmp(buf, "tap", 3) == 0)
+			    || (strncmp(buf, "dummy", 5) == 0)
+			    || (strncmp(buf, "br", 2) == 0)
+			    || (strncmp(buf, "vmnet", 5) == 0)
+			    || (strncmp(ptmp->params.ifname, "wvlan", 4) == 0)
+			    || (strncmp(ptmp->params.ifname, "lec", 3) == 0)) {
+				int flags = dev_get_flags(buf);
 
-            /*
-             * Retrieve and save interface flags
-             */
-
-            if ((strncmp(buf, "eth", 3) == 0) || 
-        	(strncmp(buf, "ixp", 3) == 0) || 
-        	(strncmp(buf, "ath", 3) == 0) || 
-        	(strncmp(buf, "oet", 3) == 0) || 
-        	(strncmp(buf, "br", 2) == 0) ||
-        	(strncmp(buf, "wl", 2) == 0) ||
-                (strncmp(buf, "fddi", 4) == 0) ||
-                (strncmp(buf, "tr", 2) == 0) ||
-                (strncmp(ptmp->params.ifname, "wvlan", 4) == 0) ||
-                (strncmp(ptmp->params.ifname, "lec", 3) == 0) ||
-                (accept_unsupported_interfaces)) {
-                strcpy(ifr.ifr_name, buf);
-
-                istat = ioctl(ifd, SIOCGIFFLAGS, &ifr);
-
-                if (istat < 0) {
-                    sprintf(err_msg,
-                            "Unable to obtain interface parameters for %s",
-                            buf);
-                    write_error(err_msg, daemonized);
-                    ptmp->params.state_valid = 0;
-                } else {
-                    ptmp->params.saved_state = ifr.ifr_flags;
-                    ptmp->params.state_valid = 1;
-                }
-            }
-        }
-    } while (strcmp(buf, "") != 0);
+				if (flags < 0) {
+					write_error("Unable to obtain interface parameters for %s",
+						buf);
+					ptmp->params.state_valid = 0;
+				} else {
+					ptmp->params.saved_state = flags;
+					ptmp->params.state_valid = 1;
+				}
+			}
+		}
+	}
 }
 
 /*
@@ -120,22 +82,22 @@ void init_promisc_list(struct promisc_states **list)
 
 void save_promisc_list(struct promisc_states *list)
 {
-    int fd;
-    struct promisc_states *ptmp = list;
+	int fd;
+	struct promisc_states *ptmp = list;
 
-    fd = open(PROMISCLISTFILE, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+	fd = open(PROMISCLISTFILE, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 
-    if (fd < 0) {
-        write_error("Unable to save interface flags", daemonized);
-        return;
-    }
+	if (fd < 0) {
+		write_error("Unable to save interface flags");
+		return;
+	}
 
-    while (ptmp != NULL) {
-        write(fd, &(ptmp->params), sizeof(struct promisc_params));
-        ptmp = ptmp->next_entry;
-    }
+	while (ptmp != NULL) {
+		write(fd, &(ptmp->params), sizeof(struct promisc_params));
+		ptmp = ptmp->next_entry;
+	}
 
-    close(fd);
+	close(fd);
 }
 
 /*
@@ -144,37 +106,36 @@ void save_promisc_list(struct promisc_states *list)
 
 void load_promisc_list(struct promisc_states **list)
 {
-    int fd;
-    struct promisc_states *ptmp = NULL;
-    struct promisc_states *tail = NULL;
-    int br;
+	int fd;
+	struct promisc_states *ptmp = NULL;
+	struct promisc_states *tail = NULL;
+	int br;
 
-    fd = open(PROMISCLISTFILE, O_RDONLY);
+	fd = open(PROMISCLISTFILE, O_RDONLY);
 
-    if (fd < 0) {
-        write_error("Unable to retrieve saved interface flags",
-                    daemonized);
-        *list = NULL;
-        return;
-    }
+	if (fd < 0) {
+		write_error("Unable to retrieve saved interface flags");
+		*list = NULL;
+		return;
+	}
 
-    do {
-        ptmp = malloc(sizeof(struct promisc_states));
-        br = read(fd, &(ptmp->params), sizeof(struct promisc_params));
+	do {
+		ptmp = xmalloc(sizeof(struct promisc_states));
+		br = read(fd, &(ptmp->params), sizeof(struct promisc_params));
 
-        if (br > 0) {
-            if (tail != NULL)
-                tail->next_entry = ptmp;
-            else
-                *list = ptmp;
+		if (br > 0) {
+			if (tail != NULL)
+				tail->next_entry = ptmp;
+			else
+				*list = ptmp;
 
-            ptmp->next_entry = NULL;
-            tail = ptmp;
-        } else
-            free(ptmp);
-    } while (br > 0);
+			ptmp->next_entry = NULL;
+			tail = ptmp;
+		} else
+			free(ptmp);
+	} while (br > 0);
 
-    close(fd);
+	close(fd);
 }
 
 /*
@@ -183,67 +144,51 @@ void load_promisc_list(struct promisc_states **list)
 
 void srpromisc(int mode, struct promisc_states *list)
 {
-    int fd;
-    struct ifreq ifr;
-    struct promisc_states *ptmp;
-    int istat;
-    char fullmsg[PROMISC_MSG_MAX];
+	struct promisc_states *ptmp;
 
-    ptmp = list;
+	ptmp = list;
 
-    fd = socket(PF_INET, SOCK_DGRAM, 0);
-
-    if (fd < 0) {
-        write_error("Unable to open socket for flag change", daemonized);
-        return;
-    }
-
-    while (ptmp != NULL) {
-        if (((strncmp(ptmp->params.ifname, "eth", 3) == 0) || 
-    	     (strncmp(ptmp->params.ifname, "ixp", 3) == 0) || 
-    	     (strncmp(ptmp->params.ifname, "ath", 3) == 0) || 
-    	     (strncmp(ptmp->params.ifname, "oet", 3) == 0) || 
-    	     (strncmp(ptmp->params.ifname, "wl", 2) == 0) || 
-    	     (strncmp(ptmp->params.ifname, "br", 2) == 0) ||
-             (strncmp(ptmp->params.ifname, "fddi", 4) == 0) ||
-             (strncmp(ptmp->params.ifname, "tr", 2) == 0) ||
-             (strncmp(ptmp->params.ifname, "wvlan", 4) == 0) ||
-             (strncmp(ptmp->params.ifname, "lec", 3) == 0)) &&
-            (ptmp->params.state_valid)) {
-
-            strcpy(ifr.ifr_name, ptmp->params.ifname);
-
-            if (mode)
-                ifr.ifr_flags = ptmp->params.saved_state | IFF_PROMISC;
-            else
-                ifr.ifr_flags = ptmp->params.saved_state;
-
-            istat = ioctl(fd, SIOCSIFFLAGS, &ifr);
-
-            if (istat < 0) {
-                sprintf(fullmsg, "Promisc change failed for %s",
-                        ptmp->params.ifname);
-                write_error(fullmsg, daemonized);
-            }
-        }
-        ptmp = ptmp->next_entry;
-    }
-
-    close(fd);
+	while (ptmp != NULL) {
+		if (((strncmp(ptmp->params.ifname, "eth", 3) == 0)
+		     || (strncmp(ptmp->params.ifname, "fddi", 4) == 0)
+		     || (strncmp(ptmp->params.ifname, "tr", 2) == 0)
+		     || (strncmp(ptmp->params.ifname, "ra", 2) == 0)
+		     || (strncmp(ptmp->params.ifname, "ath", 3) == 0)
+		     || (strncmp(ptmp->params.ifname, "wvlan", 4) == 0)
+		     || (strncmp(ptmp->params.ifname, "lec", 3) == 0))
+		    && (ptmp->params.state_valid)) {
+			if (mode) {
+				/* set promiscuous */
+				int r = dev_set_promisc(ptmp->params.ifname);
+				if(r < 0)
+					write_error("Failed to set promiscuous mode on %s", ptmp->params.ifname);
+			} else {
+				/* restore saved state */
+				if (ptmp->params.saved_state & IFF_PROMISC)
+					/* was promisc, so leave it as is */
+					continue;
+				/* wasn't promisc, clear it */
+				int r = dev_clear_promisc(ptmp->params.ifname);
+				if(r < 0)
+					write_error("Failed to clear promiscuous mode on %s", ptmp->params.ifname);
+			}
+		}
+		ptmp = ptmp->next_entry;
+	}
 }
 
 void destroy_promisc_list(struct promisc_states **list)
 {
-    struct promisc_states *ptmp = *list;
-    struct promisc_states *ctmp;
+	struct promisc_states *ptmp = *list;
+	struct promisc_states *ctmp;
 
-    if (ptmp != NULL)
-        ctmp = ptmp->next_entry;
+	if (ptmp != NULL)
+		ctmp = ptmp->next_entry;
 
-    while (ptmp != NULL) {
-        free(ptmp);
-        ptmp = ctmp;
-        if (ctmp != NULL)
-            ctmp = ctmp->next_entry;
-    }
+	while (ptmp != NULL) {
+		free(ptmp);
+		ptmp = ctmp;
+		if (ctmp != NULL)
+			ctmp = ctmp->next_entry;
+	}
 }

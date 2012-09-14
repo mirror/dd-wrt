@@ -1,4 +1,5 @@
-#define __addproto_h__
+#ifndef IPTRAF_NG_ADDPROTO_H
+#define IPTRAF_NG_ADDPROTO_H
 
 #ifndef IPPROTO_IGP
 #define IPPROTO_IGP		9
@@ -23,3 +24,5 @@
 #ifndef IPPROTO_IPSEC_ESP
 #define IPPROTO_IPSEC_ESP	50
 #endif
+
+#endif	/* IPTRAF_NG_ADDPROTO_H */
