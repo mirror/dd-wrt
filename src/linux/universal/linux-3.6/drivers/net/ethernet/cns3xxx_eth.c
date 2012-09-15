@@ -623,14 +623,19 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		/* RX Hardware checksum offload */
 #ifdef HW_CHECKSUM
 		switch (desc->prot) {
-			case 1:
-			case 2:
-			case 5:
-			case 6:
-				if (desc->l4f && desc->ipf)
-					skb->ip_summed = CHECKSUM_NONE;
-				else
-					skb->ip_summed = CHECKSUM_UNNECESSARY;
+			case 0: // not udp/tcp/gre but ipv4 
+			case 3: // PPTP gre
+				skb->ip_summed = desc->ipf?CHECKSUM_NONE:CHECKSUM_UNNECESSARY;
+			break;
+			case 1: // IPV4 udp
+			case 2: // IPV4 tcp
+				skb->ip_summed = (desc->ipf && desc->l4f)?CHECKSUM_NONE:CHECKSUM_UNNECESSARY;
+			break;
+			case 5: // IPV6 udp 
+			case 6: // IPV6 tcp
+			case 13:
+			case 14:
+				skb->ip_summed = desc->l4f?CHECKSUM_NONE:CHECKSUM_UNNECESSARY;
 			break;
 			default:
 				skb->ip_summed = CHECKSUM_NONE;
