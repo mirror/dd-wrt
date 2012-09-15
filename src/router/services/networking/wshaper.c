@@ -1193,7 +1193,7 @@ void stop_wshaper(void)
 	rmmod("xt_IMQ");
 	rmmod("ipt_IMQ");
 	rmmod("imq");
-	rmmod("ebtables");
+//	rmmod("ebtables");
 
 	return;
 }
