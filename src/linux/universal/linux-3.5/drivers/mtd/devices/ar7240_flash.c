@@ -392,7 +392,7 @@ static int __init ar7240_flash_init(void)
 
 				dir_parts[5].offset = mtd->size - mtd->erasesize;	//fis config
 				dir_parts[5].size = mtd->erasesize;
-				#ifdef CONFIG_DIR825C1
+				#if defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300)
 				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize*2);	//nvram
 				dir_parts[4].size = mtd->erasesize;
 				#else
