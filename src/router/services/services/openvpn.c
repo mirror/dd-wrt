@@ -177,10 +177,8 @@ void start_openvpnserver(void)
 	}
 	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
 		&& nvram_match("openvpn_tuntap", "tap"))
-		fprintf(fp, "insmod ebtables\n"
-//			"insmod ebtable_filter\n"
-			"insmod ebtable_nat\n"
-			"insmod ebt_pkttype\n"
+		fprintf(fp, "insmod ebtables\n" "insmod ebtable_filter\n"
+			"insmod ebtable_nat\n" "insmod ebt_pkttype\n"
 /*			"ebtables -D FORWARD -o tap2 --pkttype-type multicast -j DROP\n"
 			"ebtables -D OUTPUT -o tap2 --pkttype-type multicast -j DROP\n"
 			"ebtables -A FORWARD -o tap2 --pkttype-type multicast -j DROP\n"
@@ -191,9 +189,8 @@ void start_openvpnserver(void)
 	if (nvram_match("openvpn_dhcpbl", "1") //block dhcp on bridged vpns
 		&& nvram_match("openvpn_tuntap", "tap")
 		&& nvram_match("openvpn_proxy", "0"))
-		fprintf(fp, "insmod ebtables\n"
-		 	"insmod ebt_ip\n" "insmod ebtable_nat\n"
-//			"insmod ebtable_filter\n"
+		fprintf(fp, "insmod ebtables\n" "insmod ebt_ip\n" 
+			"insmod ebtable_filter\n" "insmod ebtable_nat\n"
 /*			"ebtables -D INPUT -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
 			"ebtables -D FORWARD -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
 			"ebtables -D FORWARD -o tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
@@ -225,13 +222,15 @@ void start_openvpnserver(void)
 		fprintf(fp,
 			"ebtables -t nat -D PREROUTING -i tap2 -p IPv4 --ip-proto udp --ip-sport 68 --ip-dport 67 -j DROP\n"
 			"ebtables -t nat -D POSTROUTING -o tap2 -p IPv4 --ip-proto udp --ip-sport 67 --ip-dport 68 -j DROP\n");
-	if ((nvram_match("openvpn_dhcpbl", "1")
+/*	if ((nvram_match("openvpn_dhcpbl", "1")
 			&& nvram_match("openvpn_tuntap", "tap")
 			&& nvram_match("openvpn_proxy", "0"))
 		|| (nvram_match("block_multicast", "0")
 			&& nvram_match("openvpn_tuntap", "tap")))
-			fprintf(fp, "if [ `ebtables -t nat -L|grep -e '-j' -c` -ne 0 ]\n"
-				"then rmmod ebtable_nat\n" "\t rmmod ebt_ip\n" "\t rmmod ebtables\n");
+			fprintf(fp, "if [ `ebtables -t nat -L|grep -e '-j' -c` -eq 0 ]\n"
+				"then rmmod ebtable_nat\n" "\t rmmod ebt_ip\n" 
+				"elseif [ `ebtables -t nat -L|grep -e '-j' -c` -eq 0 ]\n"
+				"then rmmod ebtable_filter\n" "\t rmmod ebtables\n");	*/
 			
 	if (nvram_match("openvpn_tuntap", "tap")) 
 		fprintf(fp, "brctl delif br0 tap2\n" "ifconfig tap2 down\n");
@@ -434,7 +433,7 @@ void start_openvpn(void)
 		&& nvram_match("openvpncl_tuntap", "tap")
 		&& nvram_match("openvpncl_bridge", "1")) {
 		fprintf(fp, "insmod ebtables\n"
-//			"insmod ebtable_filter\n"
+			"insmod ebtable_filter\n"
 			"insmod ebtable_nat\n"
 			"insmod ebt_pkttype\n"
 //			"ebtables -I FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
@@ -474,13 +473,13 @@ void start_openvpn(void)
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		fprintf(fp, "ip route flush table 10\n");
 	}
-	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
+/*	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
 		&& nvram_match("openvpncl_tuntap", "tap")
 		&& nvram_match("openvpncl_bridge", "1")) {
 		fprintf(fp, "ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP\n"
 			"if [ `ebtables -t nat -L|grep -e '-j' -c` -ne 0 ]\n"
 			"then rmmod ebtable_nat\n" "\t rmmod ebtables\n");
-		}
+		} */
 	fclose(fp);
 
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
