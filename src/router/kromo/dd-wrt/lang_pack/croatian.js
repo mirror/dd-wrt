@@ -318,7 +318,7 @@ errmsg.err33="IP adresa i poveznik ne mogu biti isti.";
 errmsg.err34=" nije dozvoljeno da sadrži razmak.";
 errmsg.err110="Završni broj mora biti veći od početnog";
 errmsg.err111="Neispravna IP adresa";
-errmsg.err112='Neispravan unos "<invchars>" u "<fieldname>"';
+errmsg.err112="Neispravan unos \"<invchars>\" u \"<fieldname>\"";
 
 //Wol.asp error messages
 errmsg.err35="Morate unijeti MAC adresu.";
