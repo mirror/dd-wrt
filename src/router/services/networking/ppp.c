@@ -269,7 +269,8 @@ int ipdown_main(int argc, char **argv)
 
 	if (nvram_match("ppp_demand", "1")
 	    && (nvram_match("wan_proto", "pptp")
-		|| nvram_match("wan_proto", "l2tp"))) {
+		|| nvram_match("wan_proto", "l2tp")
+		|| nvram_match("wan_proto", "pppoe"))) {
 		stop_process("listen", "activity listener");
 		eval("listen", nvram_safe_get("lan_ifname"));
 	}
