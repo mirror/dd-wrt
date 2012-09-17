@@ -1233,8 +1233,13 @@ extern void build_options(bool screen);
 	}
 
 #ifdef PRINTER_SUPPORT
+	/*
+	 * The print backend init also migrates the printing tdb's,
+	 * this requires a winreg pipe.
+	 */
 	if (!print_backend_init(smbd_messaging_context()))
 		exit(1);
+
 #endif
 
 	if (!init_guest_info()) {

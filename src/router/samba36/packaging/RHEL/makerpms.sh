@@ -20,7 +20,7 @@ SRCDIR=`rpm --eval %_sourcedir`
 
 USERID=`id -u`
 GRPID=`id -g`
-VERSION='3.6.7'
+VERSION='3.6.8'
 REVISION=''
 SPECFILE="samba.spec"
 RPMVER=`rpm --version | awk '{print $3}'`
