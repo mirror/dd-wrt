@@ -1,4 +1,109 @@
                    =============================
+                   Release Notes for Samba 3.6.8
+                         September 17, 2012
+                   =============================
+
+
+This is is the latest stable release of Samba 3.6.
+
+Major enhancements in Samba 3.6.8 include:
+
+o  Fix crash bug in smbd caused by a blocking lock followed by
+   close (bug #9084).
+o  Fix Winbind panic if we couldn't find the domain (bug #9135).
+
+
+Changes since 3.6.7:
+--------------------
+
+o   Jeremy Allison <jra@samba.org>
+    * BUG 9058: Fix smbstatus code dump when a file entry has delete tokens.
+    * BUG 9098: Fix refreshing of Kerberos tickets in Winbind.
+    * BUG 9124: Fix setting of "inherited" bit on inherited ACE's.
+
+
+o   Christian Ambach <ambi@samba.org>
+    * BUG 9137: Make 'smbclient allinfo' show the snapshot list.
+
+
+o   Andrew Bartlett <abartlet@samba.org>
+    * BUG 9066: "Domain Users" incorrectly added as additional group on domain
+      members.
+    * BUG 9067: Use correct RID for "Domain Guests" primary group.
+
+
+o   David Binderman <dcb314@hotmail.com>
+    * BUG 9065: Fix bad call to memcpy source3/registry/regfio.c.
+
+
+o   David Disseldorp <ddiss@samba.org>
+    * BUG 9123: Fix lprng job tracking errors.
+
+
+o   Salvador I. Gonzalez <sgonzalez@codejunkie.net>
+    * BUG 9088: Fix smbclient/tarmode panic when connecting to Windows 2000
+      clients.
+
+
+o   Hargagan <shargagan@novell.com>
+    * BUG 9085: Fix NMB registration for a duplicate workstation.
+
+
+o   Björn Jacke <bj@sernet.de>
+    * BUG 9037: Open and netbsd have the md5 symbols in libc.
+    * BUG 9144: Fix nfs quota support with Linux nfs4 mounts.
+
+
+o   Volker Lendecke <vl@samba.org>
+    * BUG 9037: Fix name clash in MD5 causing the "net ads join" to fail on
+      T4 (sun4v) systems on Solaris 10.
+    * BUG 9058: Backport FSCTL codes from master.
+    * BUG 9084: Fix crash bug in smbd caused by a blocking lock followed by
+      close.
+    * BUG 9150: Valid open requests can cause smbd assert due to incorrect
+      oplock handling on delete requests.
+
+
+o   Herb Lewis <hlewis@panasas.com>
+    * BUG 9104: Fix identification of idle clients in Winbind to avoid crashes
+      and NDR parsing errors.
+
+
+o   Stefan Metzmacher <metze@samba.org>
+    * BUG 9058: Fix segfault in smbstatus.
+
+
+o   Andreas Schneider <asn@samba.org>
+    * BUG 9111: Fix compilation with newer MIT Kerberos which hides internal
+      symbols.
+    * BUG 9112: Fix flooding the logs with records we don't find in pcap.
+    * BUG 9122: Initialize the print backend after we setup winreg.
+    * BUG 9135: Fix Winbind panic if we couldn't find the domain.
+
+
+######################################################################
+Reporting bugs & Development Discussion
+#######################################
+
+Please discuss this release on the samba-technical mailing list or by
+joining the #samba-technical IRC channel on irc.freenode.net.
+
+If you do report problems then please try to send high quality
+feedback. If you don't provide vital information to help us track down
+the problem then you will probably be ignored.  All bug reports should
+be filed under the Samba 3.6 product in the project's Bugzilla
+database (https://bugzilla.samba.org/).
+
+
+======================================================================
+== Our Code, Our Bugs, Our Responsibility.
+== The Samba Team
+======================================================================
+
+Release notes for older releases follow:
+----------------------------------------
+
+                   =============================
                    Release Notes for Samba 3.6.7
                            August 6, 2012
                    =============================
@@ -17,8 +122,8 @@ Changes since 3.6.6:
 
 o   Jeremy Allison <jra@samba.org>
     * BUG 8974: Fix kernel oplocks when uid(file) != uid(process).
-    * BUG 8989: Send correct responses to NT Transact Secondary when no data and
-      no params for the Trans2 calls are set.
+    * BUG 8989: Send correct responses to NT Transact Secondary when no data
+      and no params for the Trans2 calls are set.
     * BUG 9034: Fix typo in set_re_uid() call when USE_SETRESUID selected in
       configure.
 
@@ -87,8 +192,9 @@ database (https://bugzilla.samba.org/).
 == The Samba Team
 ======================================================================
 
-Release notes for older releases follow:
-----------------------------------------
+
+----------------------------------------------------------------------
+
 
                    =============================
                    Release Notes for Samba 3.6.6
