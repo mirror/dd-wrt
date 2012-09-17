@@ -753,20 +753,36 @@ AC_CHECK_HEADERS(linux/falloc.h)
 
 dnl check for OS implementation of md5 conformant to rfc1321
 AC_CHECK_HEADERS(md5.h)
+
+samba_cv_md5lib=none
+
 if test x"$ac_cv_header_md5_h" = x"yes"; then
 	AC_DEFINE(HAVE_MD5_H, 1,
 		[Whether md5.h is available.])
-	AC_CHECK_LIB(md5, MD5Update,
-	    [
-		LIBS="${LIBS} -lmd5"
-		CRYPTO_MD5_OBJ=
-		AC_DEFINE(HAVE_LIBMD5, 1,
-		    [Whether libmd5 conformant to rfc1321 is available.])],
-	    [
-		CRYPTO_MD5_OBJ="../lib/crypto/md5.o"])
+	AC_CHECK_LIB(md5, MD5Update, [samba_cv_md5lib=md5])
+fi
+
+if test x"$ac_cv_header_md5_h" = x"yes" -a \
+        x"$samba_cv_md5lib" = x"none" ; then
+	AC_CHECK_LIB(md, MD5Update, [samba_cv_md5lib=md])
+fi
+
+if test x"$ac_cv_header_md5_h" = x"yes" -a \
+        x"$samba_cv_md5lib" = x"none" ; then
+	AC_CHECK_LIB(c, MD5Update, [samba_cv_md5lib=""])
+fi
+
+if test x"$samba_cv_md5lib" != x"none" ; then
+	if test x"$samba_cv_md5lib" != x ; then
+		LIBS="${LIBS} -l${samba_cv_md5lib}"
+	fi
+	CRYPTO_MD5_OBJ=
+	AC_DEFINE(HAVE_LIBMD5, 1,
+	    [Whether libmd5 conformant to rfc1321 is available.])
 else
 	CRYPTO_MD5_OBJ="../lib/crypto/md5.o"
 fi
+
 AC_SUBST(CRYPTO_MD5_OBJ)
 
 
@@ -3862,7 +3878,6 @@ if test x"$with_ads_support" != x"no"; then
   AC_CHECK_FUNC_EXT(krb5_string_to_key_salt, $KRB5_LIBS)
   AC_CHECK_FUNC_EXT(krb5_auth_con_setkey, $KRB5_LIBS)
   AC_CHECK_FUNC_EXT(krb5_auth_con_setuseruserkey, $KRB5_LIBS)
-  AC_CHECK_FUNC_EXT(krb5_locate_kdc, $KRB5_LIBS)
   AC_CHECK_FUNC_EXT(krb5_get_permitted_enctypes, $KRB5_LIBS)
   AC_CHECK_FUNC_EXT(krb5_get_default_in_tkt_etypes, $KRB5_LIBS)
   AC_CHECK_FUNC_EXT(krb5_free_data_contents, $KRB5_LIBS)
