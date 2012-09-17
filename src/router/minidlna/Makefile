@@ -21,7 +21,7 @@ SUBDIRS += libogg-1.3.0
 SUBDIRS += libexif-0.6.19
 SUBDIRS += flac-1.2.1
 SUBDIRS += libvorbis-1.3.3
-SUBDIRS += jpeg-7
+SUBDIRS += jpeg-8
 SUBDIRS += sqlite-3.6.22
 SUBDIRS += libid3tag-0.15.0b
 #/projects/hnd/tools/linux/hndtools-mipsel-linux-uclibc-4.2.3
@@ -123,8 +123,8 @@ libexif:
 	fi
 
 libjpeg:
-	if [ ! -f ./jpeg-7/Makefile ];then \
-	cd jpeg-7 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections"); \
+	if [ ! -f ./jpeg-8/Makefile ];then \
+	cd jpeg-8 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections"); \
 	fi
 
 sqlite3:
@@ -187,7 +187,7 @@ copy:
 	cp ./ffmpeg-0.11.1/libavformat/libavformat.a		./lib/libavformat.a && \
 	cp ./ffmpeg-0.11.1/libavcodec/libavcodec.a		./lib/libavcodec.a && \
 	cp ./sqlite-3.6.22/.libs/libsqlite3.a 		./lib/libsqlite3.a && \
-	cp ./jpeg-7/.libs/libjpeg.a			./lib/libjpeg.a && \
+	cp ./jpeg-8/.libs/libjpeg.a			./lib/libjpeg.a && \
 	cp ./libid3tag-0.15.0b/.libs/libid3tag.a 	./lib/libid3tag.a
 
 distclean:
@@ -199,7 +199,7 @@ distclean:
 	-cd ./flac-1.2.1/	&& make distclean
 	-cd ./zlib-1.2.3/	&& make clean
 	-cd ./ffmpeg-0.11.1/	&& make distclean
-	-cd ./jpeg-7/		&& make distclean
+	-cd ./jpeg-8/		&& make distclean
 	-cd ./minidlna/		&& make clean
 	-rm ./lib/*.so.*
 	-rm ./lib/minidlna
