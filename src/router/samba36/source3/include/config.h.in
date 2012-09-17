@@ -1113,9 +1113,6 @@
 /* Whether KRB5_KU_OTHER_CKSUM is available */
 #undef HAVE_KRB5_KU_OTHER_CKSUM
 
-/* Define to 1 if you have the `krb5_locate_kdc' function. */
-#undef HAVE_KRB5_LOCATE_KDC
-
 /* Define to 1 if you have the <krb5/locate_plugin.h> header file. */
 #undef HAVE_KRB5_LOCATE_PLUGIN_H
 
