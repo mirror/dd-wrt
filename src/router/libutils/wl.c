@@ -1569,7 +1569,7 @@ int getAssocMAC(char *ifname, char *mac)
 void radio_on_off_ath9k(int idx,int on) {
 	char debugstring[64];
 	int fp;
-	char authmode[16];
+	char secmode[16];
 	char tpt[8];
 
 	sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag",get_ath9k_phy_idx(idx));
@@ -1590,8 +1590,8 @@ void radio_on_off_ath9k(int idx,int on) {
 		if (on) {
 			sprintf(tpt, "phy%dtpt", get_ath9k_phy_idx(idx));
 			write(fp, tpt, strlen(tpt));
-			sprintf(authmode, "ath%d_auth_mode", idx);
-			if(nvram_get(authmode) && !nvram_match(authmode, "disabled")) {
+			sprintf(secmode, "ath%d_akm", idx);
+			if(nvram_get(secmode) && !nvram_match(secmode, "disabled")) {
 				// needs refinements
 				if(idx == 0)	
 					led_control(LED_SEC0, LED_ON);
