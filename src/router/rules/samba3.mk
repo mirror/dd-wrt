@@ -52,13 +52,21 @@ CONFIGURE_ARGS += \
 	--without-libsmbsharemodes \
 	--without-libaddns \
 	--with-shared-modules=pdb_tdbsam,pdb_wbc_sam,idmap_nss,nss_info_template,auth_winbind,auth_wbc,auth_domain
-	
 
-samba3-configure:
+samba3-preconfigure:
 	if ! test -e "samba36/source3/Makefile"; then	cd samba36/source3 && ./configure $(CONFIGURE_VARS) $(CONFIGURE_ARGS) CFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" LDFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)"; fi
 
-samba3: samba3-configure
+samba3-configure: samba3-delete samba3-preconfigure
+	
+
+samba3-delete:
+	rm -f samba36/source3/Makefile
+
+samba3: samba3-preconfigure
 	$(MAKE) -C samba36/source3 all WITH_LFS=yes DYNEXP= PICFLAG= MODULES= 
+
+
+
 
 samba3-install:
 	mkdir -p $(INSTALLDIR)/samba3
