@@ -242,13 +242,13 @@ void start_openvpnserver(void)
 
 	if (nvram_match("use_crypto", "1"))
 		eval("/tmp/openvpnserver", "--config",
-		     "/tmp/openvpn/openvpn.conf", "-up",
+		     "/tmp/openvpn/openvpn.conf", "--route-up",
 		     "/tmp/openvpn/route-up.sh", "--down-pre",
 		     "/tmp/openvpn/route-down.sh", "--daemon", "--engine",
 		     "cryptodev");
 	else
 		eval("/tmp/openvpnserver", "--config",
-		     "/tmp/openvpn/openvpn.conf", "-up",
+		     "/tmp/openvpn/openvpn.conf", "--route-up",
 		     "/tmp/openvpn/route-up.sh", "--down-pre",
 		     "/tmp/openvpn/route-down.sh", "--daemon");
 	
