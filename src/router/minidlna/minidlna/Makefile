@@ -14,7 +14,7 @@
 #CFLAGS = -Wall -g -Os -D_GNU_SOURCE
 
 LDFLAGS+= -Wl,--gc-sections
-CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__\
+CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__ \
          -I$(MINI_DLNA_PATH)/ffmpeg-0.11.1 \
          -I$(MINI_DLNA_PATH)/ffmpeg-0.11.1/libavutil \
          -I$(MINI_DLNA_PATH)/ffmpeg-0.11.1/libavcodec \
@@ -25,7 +25,7 @@ CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FI
 		 -I$(MINI_DLNA_PATH)/libid3tag-0.15.0b/ \
          -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/ \
          -I$(MINI_DLNA_PATH)/libvorbis-1.3.3/include/ \
-         -I$(MINI_DLNA_PATH)/jpeg-7 \
+         -I$(MINI_DLNA_PATH)/jpeg-8 \
          -I$(MINI_DLNA_PATH)/flac-1.2.1/include/ \
          -L$(MINI_DLNA_PATH)/lib
 
