@@ -716,9 +716,9 @@ int main(int argc, char **argv)
 	memset(notstarted, 0, 32 * 4);
 #endif
 	while (1) {
+		sleep(WLAND_INTERVAL);
 		do_wlan_check();
 
-		sleep(WLAND_INTERVAL);
 	}
 
 	return 0;
