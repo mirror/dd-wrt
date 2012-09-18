@@ -1198,8 +1198,6 @@ static void macgrp_chain(int seq, unsigned int mark, int urlenable)
 
 	insmod("ipt_mac");
 	insmod("xt_mac");
-	insmod("ipt_CONNMARK");
-	insmod("xt_CONNMARK");
 	
 	if (mark == MARK_DROP) {
 		foreach(var, wordlist, next) {
@@ -2516,6 +2514,8 @@ static void mangle_table(void)
 	{
 		insmod("ipt_mark");
 		insmod("xt_mark");
+		insmod("ipt_CONNMARK");
+		insmod("xt_CONNMARK");
 		
 		save2file("-A PREROUTING -i ! %s -d %s -j MARK --set-mark %s\n",
 				  get_wan_face(),
