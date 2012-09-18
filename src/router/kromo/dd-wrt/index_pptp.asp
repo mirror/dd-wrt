@@ -13,10 +13,10 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.srv"); %></div>
-	<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","1"); %> onclick="(show_layer_ext(this, 'idpptpUseDHCP', false)" /><% tran("share.yes"); %>&nbsp;
-	<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","0"); %> onclick="(show_layer_ext(this, 'idpptpUseDHCP', true)" /><% tran("share.no"); %>
+	<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","1"); %> onclick="(show_layer_ext(this, 'idpptpdhcp', false)" /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","0"); %> onclick="(show_layer_ext(this, 'idpptpdhcp', true)" /><% tran("share.no"); %>
 </div>
-<div id="idpptpUseDHCP">
+<div id="idpptpdhcp">
 	<div class="setting">
 		<div class="label"><% tran("idx_pptp.wan_ip"); %></div>
 		<input type="hidden" name="wan_ipaddr" value="4"/>
