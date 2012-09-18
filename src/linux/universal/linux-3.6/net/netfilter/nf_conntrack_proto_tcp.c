@@ -1560,8 +1560,9 @@ static int tcp_kmemdup_sysctl_table(struct nf_proto_net *pn,
 	pn->ctl_table[8].data = &tn->timeouts[TCP_CONNTRACK_RETRANS];
 	pn->ctl_table[9].data = &tn->timeouts[TCP_CONNTRACK_UNACK];
 	pn->ctl_table[10].data = &tn->tcp_loose;
-	pn->ctl_table[11].data = &tn->tcp_be_liberal;
-	pn->ctl_table[12].data = &tn->tcp_max_retrans;
+	pn->ctl_table[11].data = &nf_ct_tcp_no_window_check;
+	pn->ctl_table[12].data = &tn->tcp_be_liberal;
+	pn->ctl_table[13].data = &tn->tcp_max_retrans;
 #endif
 	return 0;
 }
