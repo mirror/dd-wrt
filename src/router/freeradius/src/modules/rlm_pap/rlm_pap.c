@@ -98,6 +98,7 @@ static const FR_NAME_NUMBER header_names[] = {
 	{ "{clear}",	PW_CLEARTEXT_PASSWORD },
 	{ "{cleartext}", PW_CLEARTEXT_PASSWORD },
 	{ "{md5}",	PW_MD5_PASSWORD },
+	{ "{BASE64_MD5}",	PW_MD5_PASSWORD },
 	{ "{smd5}",	PW_SMD5_PASSWORD },
 	{ "{crypt}",	PW_CRYPT_PASSWORD },
 	{ "{sha}",	PW_SHA_PASSWORD },
@@ -144,7 +145,7 @@ static int pap_instantiate(CONF_SECTION *conf, void **instance)
 		pap_detach(inst);
                 return -1;
         }
-	if (inst->scheme == NULL || strlen(inst->scheme) == 0){
+	if (!inst->scheme || !*inst->scheme) {
 		radlog(L_ERR, "rlm_pap: No scheme defined");
 		pap_detach(inst);
 		return -1;

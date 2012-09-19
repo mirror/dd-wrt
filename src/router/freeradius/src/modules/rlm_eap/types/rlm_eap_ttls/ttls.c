@@ -48,93 +48,43 @@ static int diameter_verify(REQUEST *request,
 {
 	uint32_t attr;
 	uint32_t length;
-	unsigned int offset;
-	unsigned int data_left = data_len;
+	unsigned int hdr_len;
+	unsigned int remaining = data_len;
 
-	while (data_left > 0) {
-		if (data_len < 12) {
-			RDEBUG2(" Diameter attribute is too small to contain a Diameter header");
+	while (remaining > 0) {
+		hdr_len = 12;
+
+		if (remaining < hdr_len) {
+		  RDEBUG2(" Diameter attribute is too small (%u) to contain a Diameter header", remaining);
 			return 0;
 		}
 
-		rad_assert(data_left <= data_len);
-		memcpy(&attr, data, sizeof(attr));
-		data += 4;
-		attr = ntohl(attr);
-		if (attr > 255) {
-			RDEBUG2(" Non-RADIUS attribute in tunneled authentication is not supported");
-			return 0;
-		}
-
-		memcpy(&length, data , sizeof(length));
-		data += 4;
+		memcpy(&attr, data, 4);
+		attr = htonl(attr);
+		memcpy(&length, data + 4, 4);
 		length = ntohl(length);
 
-		/*
-		 *	A "vendor" flag, with a vendor ID of zero,
-		 *	is equivalent to no vendor.  This is stupid.
-		 */
-		offset = 8;
-		if ((length & (1 << 31)) != 0) {
-			int attribute;
-			uint32_t vendor;
-			DICT_ATTR *da;
-
-			memcpy(&vendor, data, sizeof(vendor));
-			vendor = ntohl(vendor);
-
-			if (vendor > 65535) {
-				RDEBUG2("Vendor codes larger than 65535 are not supported");
+		if ((data[4] & 0x80) != 0) {
+			if (remaining < 16) {
+				RDEBUG2(" Diameter attribute is too small to contain a Diameter header with Vendor-Id");
 				return 0;
 			}
 
-			attribute = (vendor << 16) | attr;
-
-			da = dict_attrbyvalue(attribute);
-
-			/*
-			 *	SHOULD check ((length & (1 << 30)) != 0)
-			 *	for the mandatory bit.
-			 */
-			if (!da) {
-				RDEBUG2("Fatal! Vendor %u, Attribute %u was not found in our dictionary. ",
-				       vendor, attr);
-				return 0;
-			}
-
-			data += 4; /* skip the vendor field */
-			offset += 4; /* offset to value field */
+			hdr_len = 16;
 		}
 
-		/*
-		 *	Ignore the M bit.  We support all RADIUS attributes...
-		 */
-
-		/*
-		 *	Get the length.  If it's too big, die.
-		 */
 		length &= 0x00ffffff;
 
 		/*
 		 *	Too short or too long is bad.
 		 */
-		if (length < offset) {
-			RDEBUG2("Tunneled attribute %d is too short (%d)to contain anything useful.", attr, length);
+		if (length <= (hdr_len - 4)) {
+			RDEBUG2("Tunneled attribute %u is too short (%u < %u) to contain anything useful.", attr, length, hdr_len);
 			return 0;
 		}
 
-		/*
-		 *	EAP Messages cane be longer than MAX_STRING_LEN.
-		 *	Other attributes cannot be.
-		 */
-		if ((attr != PW_EAP_MESSAGE) &&
-		    (length > (MAX_STRING_LEN + 8))) {
-			RDEBUG2("Tunneled attribute %d is too long (%d) to pack into a RADIUS attribute.", attr, length);
-			return 0;
-		}
-
-		if (length > data_left) {
-			RDEBUG2("Tunneled attribute %d is longer than room left in the packet (%d > %d).", attr, length, data_left);
+		if (length > remaining) {
+			RDEBUG2("Tunneled attribute %u is longer than room remaining in the packet (%u > %u).", attr, length, remaining);
 			return 0;
 		}
 
@@ -142,7 +92,7 @@ static int diameter_verify(REQUEST *request,
 		 *	Check for broken implementations, which don't
 		 *	pad the AVP to a 4-octet boundary.
 		 */
-		if (data_left == length) break;
+		if (remaining == length) break;
 
 		/*
 		 *	The length does NOT include the padding, so
@@ -159,22 +109,16 @@ static int diameter_verify(REQUEST *request,
 		 *	Otherwise, if the attribute over-flows the end
 		 *	of the packet, die.
 		 */
-		if (data_left < length) {
+		if (remaining < length) {
 			RDEBUG2("ERROR! Diameter attribute overflows packet!");
 			return 0;
 		}
 
 		/*
-		 *	Check again for equality, now that we're padded
-		 *	length to a multiple of 4 octets.
+		 *	remaining > length, continue.
 		 */
-		if (data_left == length) break;
-
-		/*
-		 *	data_left > length, continue.
-		 */
-		data_left -= length;
-		data += length - offset;
+		remaining -= length;
+		data += length;
 	}
 
 	/*
@@ -220,33 +164,20 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, SSL *ssl,
 			memcpy(&vendor, data, sizeof(vendor));
 			vendor = ntohl(vendor);
 
-			if (attr > 65535) {
-				RDEBUG2("Cannot handle vendor attributes greater than 65535");
-				pairfree(&first);
-				return NULL;
-			}
-
-			if (vendor > 65535) {
-				RDEBUG2("Cannot handle vendor Id greater than 65535");
-				pairfree(&first);
-				return NULL;
-			}
-
-			attr |= (vendor << 16);
-
 			data += 4; /* skip the vendor field, it's zero */
 			offset += 4; /* offset to value field */
+			length &= 0x00ffffff;
+
+			if (attr > 65535) goto next_attr;
+			if (vendor > 65535) goto next_attr;
+
+			attr |= (vendor << 16);
 		}
 
 		/*
-		 *	Vendor attributes can be larger than 255.
-		 *	Normal attributes cannot be.
+		 *	Get the length.
 		 */
-		if ((attr > 255) && (VENDOR(attr) == 0)) {
-			RDEBUG2("Cannot handle Diameter attributes");
-			pairfree(&first);
-			return NULL;
-		}
+		length &= 0x00ffffff;
 
 		/*
 		 *	FIXME: Handle the M bit.  For now, we assume that
@@ -255,22 +186,32 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, SSL *ssl,
 		 */
 		
 		/*
-		 *	Get the length.
-		 */
-		length &= 0x00ffffff;
-
-		/*
 		 *	Get the size of the value portion of the
 		 *	attribute.
 		 */
 		size = length - offset;
 
 		/*
-		 *	Create it.
+		 *	Vendor attributes can be larger than 255.
+		 *	Normal attributes cannot be.
+		 */
+		if ((attr > 255) && (VENDOR(attr) == 0)) {
+			RDEBUG2("WARNING: Skipping Diameter attribute %u",
+				attr);
+			goto next_attr;
+		}
+
+		if (size > 253) {
+			RDEBUG2("WARNING: diameter2vp skipping long attribute %u, attr");
+			goto next_attr;
+		}
+
+		/*
+		 *	Create it.  If this fails, it's because we're OOM.
 		 */
 		vp = paircreate(attr, PW_TYPE_OCTETS);
 		if (!vp) {
-			RDEBUG2("Failure in creating VP");
+			RDEBUG2("diameter2vp: Failed creating attribute %u", attr);
 			pairfree(&first);
 			return NULL;
 		}
@@ -283,11 +224,16 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, SSL *ssl,
 		case PW_TYPE_INTEGER:
 		case PW_TYPE_DATE:
 			if (size != vp->length) {
-				RDEBUG2("Invalid length attribute %d",
-				       attr);
-				pairfree(&first);
-				pairfree(&vp);
-				return NULL;
+				/*
+				 *	Bad format.  Create a "raw"
+				 *	attribute.
+				 */
+		raw:
+				vp = paircreate_raw(vp->attribute,
+						    PW_TYPE_OCTETS, vp);
+				vp->length = size;
+				memcpy(vp->vp_octets, data, vp->length);
+				break;
 			}
 			memcpy(&vp->vp_integer, data, vp->length);
 
@@ -298,27 +244,47 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, SSL *ssl,
 			break;
 
 		case PW_TYPE_IPADDR:
-			if (size != vp->length) {
-				RDEBUG2("Invalid length attribute %d",
-				       attr);
-				pairfree(&first);
-				pairfree(&vp);
-				return NULL;
-			}
-		  memcpy(&vp->vp_ipaddr, data, vp->length);
+			if (size != vp->length) goto raw;
+			memcpy(&vp->vp_ipaddr, data, vp->length);
 
-		  /*
-		   *	Stored in network byte order: don't change it.
-		   */
-		  break;
+			/*
+			 *	Stored in network byte order: don't change it.
+			 */
+			break;
 
-		  /*
-		   *	String, octet, etc.  Copy the data from the
-		   *	value field over verbatim.
-		   *
-		   *	FIXME: Ipv6 attributes ?
-		   *
-		   */
+		case PW_TYPE_BYTE:
+			if (size != vp->length) goto raw;
+			vp->vp_integer = data[0];
+			break;
+
+		case PW_TYPE_SHORT:
+			if (size != vp->length) goto raw;
+			vp->vp_integer = (data[0] * 256) + data[1];
+			break;
+
+		case PW_TYPE_SIGNED:
+			if (size != vp->length) goto raw;
+			memcpy(&vp->vp_signed, data, vp->length);
+			vp->vp_signed = ntohl(vp->vp_signed);
+			break;
+
+		case PW_TYPE_IPV6ADDR:
+			if (size != vp->length) goto raw;
+			memcpy(&vp->vp_ipv6addr, data, vp->length);
+			break;
+
+		case PW_TYPE_IPV6PREFIX:
+			if (size != vp->length) goto raw;
+			memcpy(&vp->vp_ipv6prefix, data, vp->length);
+			break;
+
+			/*
+			 *	String, octet, etc.  Copy the data from the
+			 *	value field over verbatim.
+			 *
+			 *	FIXME: Ipv6 attributes ?
+			 *
+			 */
 		case PW_TYPE_OCTETS:
 			if (attr == PW_EAP_MESSAGE) {
 				const uint8_t *eap_message = data;
@@ -342,7 +308,7 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, SSL *ssl,
 
 					vp = paircreate(attr, PW_TYPE_OCTETS);
 					if (!vp) {
-						RDEBUG2("Failure in creating VP");
+						RDEBUG2("Failed creating EAP-Message");
 						pairfree(&first);
 						return NULL;
 					}
@@ -354,7 +320,7 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, SSL *ssl,
 
 		default:
 			vp->length = size;
-			memcpy(vp->vp_strvalue, data, vp->length);
+			memcpy(vp->vp_octets, data, vp->length);
 			break;
 		}
 
@@ -813,7 +779,9 @@ static int eapttls_postproxy(EAP_HANDLER *handler, void *data)
 	/*
 	 *	Do the callback, if it exists, and if it was a success.
 	 */
-	if (fake && (handler->request->proxy_reply->code == PW_AUTHENTICATION_ACK)) {
+	if (fake &&
+	    handler->request->proxy_reply &&
+	    (handler->request->proxy_reply->code == PW_AUTHENTICATION_ACK)) {
 		/*
 		 *	Terrible hacks.
 		 */

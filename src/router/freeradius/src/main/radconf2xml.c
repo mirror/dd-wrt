@@ -104,13 +104,14 @@ int main(int argc, char **argv)
 	snprintf(buffer, sizeof(buffer), "%s/%s.conf", radius_dir, name);
 	cs = cf_file_read(buffer);
 	if (!cs) {
-		fprintf(stderr, "%s: Errors reading %s\n",
+		fprintf(stderr, "%s: Errors reading or parsing %s\n",
 			progname, buffer);
 		exit(1);
 	}
 
 	if (!file || (strcmp(file, "-") == 0)) {
 		fp = stdout;
+		file = NULL;
 	} else {
 		fp = fopen(file, "w");
 		if (!fp) {
@@ -121,7 +122,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!cf_section2xml(fp, cs)) {
-		if (fp != stdout) unlink(file);
+		if (file) unlink(file);
 		return 1;
 	}
 

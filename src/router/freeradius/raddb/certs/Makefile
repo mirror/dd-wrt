@@ -51,7 +51,7 @@ dh:
 #  Create a new self-signed CA certificate
 #
 ######################################################################
-ca.key ca.pem: ca.cnf
+ca.key ca.pem: ca.cnf index.txt serial
 	openssl req -new -x509 -keyout ca.key -out ca.pem \
 		-days $(CA_DEFAULT_DAYS) -config ./ca.cnf
 
@@ -99,7 +99,7 @@ client.pem: client.p12
 	cp client.pem $(USER_NAME).pem
 
 .PHONY: client.vrfy
-client.vrfy: server.pem client.pem 
+client.vrfy: ca.pem client.pem 
 	c_rehash .
 	openssl verify -CApath . client.pem
 
