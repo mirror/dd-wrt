@@ -49,6 +49,7 @@ void (*reset_signal(int signo, void (*func)(int)))(int)
 #ifdef HAVE_SIGACTION
 	struct sigaction act, oact;
 
+	memset(&act, 0, sizeof(act));
 	act.sa_handler = func;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
@@ -428,7 +429,7 @@ REQUEST *request_alloc_fake(REQUEST *request)
    */
   fake->server = request->server;
 
-  fake->packet = rad_alloc(0);
+  fake->packet = rad_alloc(1);
   if (!fake->packet) {
 	  request_free(&fake);
 	  return NULL;

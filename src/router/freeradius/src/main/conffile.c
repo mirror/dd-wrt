@@ -489,6 +489,8 @@ int cf_pair_replace(CONF_SECTION *cs, CONF_PAIR *cp, const char *value)
  */
 static void cf_item_add(CONF_SECTION *cs, CONF_ITEM *ci)
 {
+	if (!cs || !ci) return;
+
 	if (!cs->children) {
 		rad_assert(cs->tail == NULL);
 		cs->children = ci;
@@ -687,6 +689,8 @@ no_such_item:
 
 CONF_SECTION *cf_top_section(CONF_SECTION *cs)
 {
+	if (!cs) return NULL;
+
 	while (cs->item.parent != NULL) {
 		cs = cs->item.parent;
 	}
@@ -700,7 +704,8 @@ CONF_SECTION *cf_top_section(CONF_SECTION *cs)
  */
 static const char *cf_expand_variables(const char *cf, int *lineno,
 				       CONF_SECTION *outercs,
-				       char *output, const char *input)
+				       char *output, size_t outsize,
+				       const char *input)
 {
 	char *p;
 	const char *end, *ptr;
@@ -773,6 +778,13 @@ static const char *cf_expand_variables(const char *cf, int *lineno,
 				       cf, *lineno, input);
 				return NULL;
 			}
+
+			if (p + strlen(cp->value) >= output + outsize) {
+				radlog(L_ERR, "%s[%d]: Reference \"%s\" is too long",
+				       cf, *lineno, input);
+				return NULL;
+			}
+
 			strcpy(p, cp->value);
 			p += strlen(p);
 			ptr = end + 1;
@@ -818,6 +830,12 @@ static const char *cf_expand_variables(const char *cf, int *lineno,
 				env = name;
 			}
 
+			if (p + strlen(env) >= output + outsize) {
+				radlog(L_ERR, "%s[%d]: Reference \"%s\" is too long",
+				       cf, *lineno, input);
+				return NULL;
+			}
+
 			strcpy(p, env);
 			p += strlen(p);
 			ptr = end + 1;
@@ -827,6 +845,12 @@ static const char *cf_expand_variables(const char *cf, int *lineno,
 			 *	Copy it over verbatim.
 			 */
 			*(p++) = *(ptr++);
+		}
+
+		if (p >= (output + outsize)) {
+			radlog(L_ERR, "%s[%d]: Reference \"%s\" is too long",
+			       cf, *lineno, input);
+			return NULL;
 		}
 	} /* loop over all of the input string. */
 
@@ -917,7 +941,8 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 			 */
 			value = cf_expand_variables("<internal>",
 						    &lineno,
-						    cs, buffer, value);
+						    cs, buffer, sizeof(buffer),
+						    value);
 			if (!value) {
 				cf_log_err(cf_sectiontoitem(cs),"Failed expanding variable %s", name);
 				return -1;
@@ -956,7 +981,8 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 			 */
 			value = cf_expand_variables("?",
 						    &lineno,
-						    cs, buffer, value);
+						    cs, buffer, sizeof(buffer),
+						    value);
 			if (!value) return -1;
 		}
 
@@ -1028,6 +1054,7 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 		CONF_PAIR *cpn;
 
 		cpn = cf_pair_alloc(name, value, T_OP_SET, T_BARE_WORD, cs);
+		if (!cpn) return -1;
 		cpn->item.filename = "<internal>";
 		cpn->item.lineno = 0;
 		cf_item_add(cs, cf_pairtoitem(cpn));
@@ -1037,6 +1064,46 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 }
 
 static const char *parse_spaces = "                                                                                                                                                                                                                                                                ";
+
+/*
+ *	A copy of cf_section_parse that initializes pointers before
+ *	parsing them.
+ */
+static void cf_section_parse_init(CONF_SECTION *cs, void *base,
+				  const CONF_PARSER *variables)
+{
+	int i;
+	void *data;
+
+	for (i = 0; variables[i].name != NULL; i++) {
+		if (variables[i].type == PW_TYPE_SUBSECTION) {
+			CONF_SECTION *subcs;
+			subcs = cf_section_sub_find(cs, variables[i].name);
+			if (!subcs) continue;
+
+			if (!variables[i].dflt) continue;
+
+			cf_section_parse_init(subcs, base,
+					      (const CONF_PARSER *) variables[i].dflt);
+			continue;
+		}
+
+		if ((variables[i].type != PW_TYPE_STRING_PTR) &&
+		    (variables[i].type != PW_TYPE_FILENAME)) {
+			continue;
+		}
+
+		if (variables[i].data) {
+			data = variables[i].data; /* prefer this. */
+		} else if (base) {
+			data = ((char *)base) + variables[i].offset;
+		} else {
+			continue;
+		}
+
+		*(char **) data = NULL;
+	} /* for all variables in the configuration section */
+}
 
 /*
  *	Parse a configuration section into user-supplied variables.
@@ -1056,6 +1123,8 @@ int cf_section_parse(CONF_SECTION *cs, void *base,
 		cf_log_info(cs, "%.*s%s %s {", cs->depth, parse_spaces,
 		       cs->name1, cs->name2);
 	}
+
+	cf_section_parse_init(cs, base, variables);
 
 	/*
 	 *	Handle the known configuration parameters.
@@ -1405,7 +1474,7 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 
 			if (buf2[0] == '$') relative = 0;
 
-			value = cf_expand_variables(filename, lineno, this, buf, buf2);
+			value = cf_expand_variables(filename, lineno, this, buf, sizeof(buf), buf2);
 			if (!value) return -1;
 
 			if (!FR_DIR_IS_RELATIVE(value)) relative = 0;
@@ -1561,6 +1630,7 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 				       filename, *lineno);
 				return -1;
 			}
+			/* FALL-THROUGH */
 
 		case T_OP_EQ:
 		case T_OP_SET:
@@ -1589,7 +1659,7 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 			if ((t3 == T_BARE_WORD) ||
 			    (t3 == T_DOUBLE_QUOTED_STRING)) {
 				value = cf_expand_variables(filename, lineno, this,
-							    buf, buf3);
+							    buf, sizeof(buf), buf3);
 				if (!value) return -1;
 			} else if ((t3 == T_EOL) ||
 				   (t3 == T_HASH)) {
@@ -1681,6 +1751,7 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 				       filename, *lineno, buf1, buf2);
 				return -1;
 			}
+			/* FALL-THROUGH */
 
 		case T_LCBRACE:
 		section_alloc:
@@ -1869,6 +1940,11 @@ const char *cf_pair_attr(CONF_PAIR *pair)
 const char *cf_pair_value(CONF_PAIR *pair)
 {
 	return (pair ? pair->value : NULL);
+}
+
+FR_TOKEN cf_pair_operator(CONF_PAIR *pair)
+{
+	return (pair ? pair->operator : T_OP_INVALID);
 }
 
 /*

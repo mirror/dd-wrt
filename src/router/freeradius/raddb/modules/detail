@@ -34,6 +34,12 @@ detail {
 	detailfile = ${radacctdir}/%{%{Packet-Src-IP-Address}:-%{Packet-Src-IPv6-Address}}/detail-%Y%m%d
 
 	#
+	#  If you are using radrelay, delete the above line for "detailfile",
+	#  and use this one instead:
+	#
+#	detailfile = ${radacctdir}/detail
+
+	#
 	#  The Unix-style permissions on the 'detail' file.
 	#
 	#  The detail file often contains secret or private
@@ -41,6 +47,13 @@ detail {
 	#  permissions restrictive, we can prevent unwanted
 	#  people from seeing that information.
 	detailperm = 0600
+
+	# The Unix group of the log file.
+	#
+	# The user that the server runs as must be in the specified
+	# system group otherwise this will fail to work.
+	#
+#	group = freerad
 
 	#
 	#  Every entry in the detail file has a header which

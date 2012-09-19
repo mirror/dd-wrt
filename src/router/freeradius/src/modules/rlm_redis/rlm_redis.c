@@ -37,6 +37,8 @@ static const CONF_PARSER module_config[] = {
 	  offsetof(REDIS_INST, hostname), NULL, "127.0.0.1"},
 	{ "port", PW_TYPE_INTEGER,
 	  offsetof(REDIS_INST, port), NULL, "6379"},
+	{ "database", PW_TYPE_INTEGER,
+	  offsetof(REDIS_INST, database), NULL, "0"},
 	{ "password", PW_TYPE_STRING_PTR,
 	  offsetof(REDIS_INST, password), NULL, NULL},
 	{"connect_failure_retry_delay", PW_TYPE_INTEGER,
@@ -68,24 +70,25 @@ static int redis_close_socket(REDIS_INST *inst, REDISSOCK *dissocket)
 
 static int connect_single_socket(REDIS_INST *inst, REDISSOCK *dissocket)
 {
+	char buffer[1024];
+
 	radlog(L_INFO, "rlm_redis (%s): Attempting to connect #%d",
 	       inst->xlat_name, dissocket->id);
 
 	dissocket->conn = redisConnect(inst->hostname, inst->port);
 
-	if (!dissocket->conn->err) {
-		radlog(L_INFO, "rlm_redis (%s): Connected new DB handle, #%d",
+	/*
+	 *  Error, or redis is DOWN.
+	 */
+	if (dissocket->conn->err) {
+		radlog(L_CONS | L_ERR, "rlm_redis (%s): Failed to connect DB handle #%d",
 		       inst->xlat_name, dissocket->id);
-
-		dissocket->state = sockconnected;
-
-		dissocket->queries = 0;
-		return 0;
+		inst->connect_after = time(NULL) + inst->connect_failure_retry_delay;
+		dissocket->state = sockunconnected;
+		return -1;
 	}
 
 	if (inst->password) {
-		char buffer[1024];
-
 		snprintf(buffer, sizeof(buffer), "AUTH %s", inst->password);
 
 		dissocket->reply = redisCommand(dissocket->conn, buffer);
@@ -115,14 +118,46 @@ static int connect_single_socket(REDIS_INST *inst, REDISSOCK *dissocket)
 		}
 	}
 
-	/*
-	 *  Error, or redis is DOWN.
-	 */
-	radlog(L_CONS | L_ERR, "rlm_redis (%s): Failed to connect DB handle #%d",
+	if (inst->database) {
+		snprintf(buffer, sizeof(buffer), "SELECT %d", inst->database);
+
+		dissocket->reply = redisCommand(dissocket->conn, buffer);
+		if (!dissocket->reply) {
+			radlog(L_ERR, "rlm_redis (%s): Failed select database",
+			       inst->xlat_name);
+			redis_close_socket(inst, dissocket);
+			return -1;
+		}
+
+		switch (dissocket->reply->type) {
+		case REDIS_REPLY_STATUS:
+			if (strcmp(dissocket->reply->str, "OK") != 0) {
+				radlog(L_ERR, "rlm_redis (%s): Failed SELECT %u : reply %s",
+				       inst->xlat_name, inst->database,
+				       dissocket->reply->str);
+				redis_close_socket(inst, dissocket);
+				return -1;
+			}
+			break;	/* else it's OK */
+
+		default:
+			radlog(L_ERR, "rlm_redis (%s): Unexpected reply to SELECT",
+			       inst->xlat_name);
+			redis_close_socket(inst, dissocket);
+			return -1;
+		}
+	}
+
+
+
+	radlog(L_INFO, "rlm_redis (%s): Connected new DB handle, #%d",
 	       inst->xlat_name, dissocket->id);
-	inst->connect_after = time(NULL) + inst->connect_failure_retry_delay;
-	dissocket->state = sockunconnected;
-	return -1;
+
+	dissocket->state = sockconnected;
+	if (inst->lifetime) time(&dissocket->connected);
+
+	dissocket->queries = 0;
+	return 0;
 }
 
 static void redis_poolfree(REDIS_INST * inst)
@@ -268,7 +303,7 @@ static int redis_detach(void *instance)
 	redis_poolfree(inst);
 
 	if (inst->xlat_name) {
-		xlat_unregister(inst->xlat_name, (RAD_XLAT_FUNC)redis_xlat);
+		xlat_unregister(inst->xlat_name, (RAD_XLAT_FUNC)redis_xlat, instance);
 		free(inst->xlat_name);
 	}
 	free(inst->xlat_name);
@@ -451,7 +486,7 @@ REDISSOCK *redis_get_socket(REDIS_INST *inst)
 		if (inst->lifetime && (cur->state == sockconnected) &&
 		    ((cur->connected + inst->lifetime) < now)) {
 			DEBUG2("Closing socket %d as its lifetime has been exceeded", cur->id);
-			redis_close_socket(inst, cur);
+			redisFree(cur->conn);
 			cur->state = sockunconnected;
 			goto reconnect;
 		}
@@ -463,7 +498,7 @@ REDISSOCK *redis_get_socket(REDIS_INST *inst)
 		if (inst->max_queries && (cur->state == sockconnected) &&
 		    (cur->queries >= inst->max_queries)) {
 			DEBUG2("Closing socket %d as its max_queries has been exceeded", cur->id);
-			redis_close_socket(inst, cur);
+			redisFree(cur->conn);
 			cur->state = sockunconnected;
 			goto reconnect;
 		}

@@ -794,6 +794,7 @@ static void ping_home_server(void *ctx)
 			"NAS-Identifier", "Status Check. Are you alive?",
 			T_OP_SET);
 
+	request->proxy->src_ipaddr = home->src_ipaddr;
 	request->proxy->dst_ipaddr = home->ipaddr;
 	request->proxy->dst_port = home->port;
 	request->home_server = home;
@@ -1284,6 +1285,7 @@ static void wait_a_bit(void *ctx)
 		request->child_pid = NO_SUCH_CHILD_PID;
 #endif
 		request_stats_final(request);
+		/* FALL-THROUGH */
 
 	case REQUEST_PROXIED:
 		rad_assert(request->next_callback != NULL);
@@ -2450,6 +2452,7 @@ static void request_post_handler(REQUEST *request)
 				return;
 			}
 		}
+		/* FALL-THROUGH */
 
 #ifdef WITH_COA
 	case PW_COA_REQUEST:
@@ -2767,7 +2770,6 @@ static void received_conflicting_request(REQUEST *request,
 		 */
 	case REQUEST_PROXIED:
 	default:
-		rad_assert(request->ev != NULL);
 		break;
 	}
 }
@@ -2899,6 +2901,8 @@ int received_request(rad_listen_t *listener,
 		case REQUEST_REJECT_DELAY:
 		case REQUEST_CLEANUP_DELAY:
 			request->child_state = REQUEST_DONE;
+			/* FALL-THROUGH  */
+
 		case REQUEST_DONE:
 			cleanup_delay(request);
 			request = NULL;
@@ -3265,7 +3269,7 @@ void event_new_fd(rad_listen_t *this)
 	}
 	
 	if (this->status == RAD_LISTEN_STATUS_CLOSED) {
-		radlog(L_INFO, " ... closing socket %s", buffer);
+		DEBUG(" ... closing socket %s", buffer);
 		
 		fr_event_fd_delete(el, 0, this->fd);
 		this->status = RAD_LISTEN_STATUS_FINISH;

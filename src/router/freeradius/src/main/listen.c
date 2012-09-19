@@ -510,6 +510,7 @@ static int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 	/*
 	 *	Try IPv4 first
 	 */
+	memset(&ipaddr, 0, sizeof(ipaddr));
 	ipaddr.ipaddr.ip4addr.s_addr = htonl(INADDR_NONE);
 	rcode = cf_item_parse(cs, "ipaddr", PW_TYPE_IPADDR,
 			      &ipaddr.ipaddr.ip4addr, NULL);
@@ -529,6 +530,7 @@ static int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 			return -1;
 		}
 		ipaddr.af = AF_INET6;
+		ipaddr.scope = 0;
 	}
 
 	rcode = cf_item_parse(cs, "port", PW_TYPE_INTEGER,
@@ -1522,6 +1524,21 @@ static int listen_bind(rad_listen_t *this)
 		radlog(L_ERR, "Failed opening %s: %s", buffer, strerror(errno));
 		return -1;
 	}
+
+#ifdef FD_CLOEXEC
+	/*
+	 *	We don't want child processes inheriting these
+	 *	file descriptors.
+	 */
+	rcode = fcntl(this->fd, F_GETFD);
+	if (rcode >= 0) {
+		if (fcntl(this->fd, F_SETFD, rcode | FD_CLOEXEC) < 0) {
+			close(this->fd);
+			radlog(L_ERR, "Failed setting close on exec: %s", strerror(errno));
+			return -1;
+		}
+	}
+#endif
 		
 	/*
 	 *	Bind to a device BEFORE touching IP addresses.
@@ -1529,7 +1546,8 @@ static int listen_bind(rad_listen_t *this)
 	if (sock->interface) {
 #ifdef SO_BINDTODEVICE
 		struct ifreq ifreq;
-		strcpy(ifreq.ifr_name, sock->interface);
+		memset(&ifreq, 0, sizeof (ifreq));
+		strlcpy(ifreq.ifr_name, sock->interface, sizeof(ifreq.ifr_name));
 
 		fr_suid_up();
 		rcode = setsockopt(this->fd, SOL_SOCKET, SO_BINDTODEVICE,
@@ -1848,7 +1866,7 @@ rad_listen_t *proxy_new_listener(fr_ipaddr_t *ipaddr, int exists)
 		char buffer[256];
 
 		this->print(this, buffer, sizeof(buffer));
-		radlog(L_INFO, " ... adding new socket %s", buffer);
+		DEBUG(" ... adding new socket %s", buffer);
 
 		/*
 		 *	Add the new listener to the list of
@@ -2013,6 +2031,8 @@ int listen_init(CONF_SECTION *config, rad_listen_t **head)
 
 	if (rcode == 0) { /* successfully parsed IPv4 */
 		listen_socket_t *sock;
+
+		memset(&server_ipaddr, 0, sizeof(server_ipaddr));
 		server_ipaddr.af = AF_INET;
 
 		radlog(L_INFO, "WARNING: The directive 'bind_address' is deprecated, and will be removed in future versions of FreeRADIUS. Please edit the configuration files to use the directive 'listen'.");
