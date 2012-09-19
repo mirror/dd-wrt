@@ -799,10 +799,10 @@ int control_finish (struct tunnel *t, struct call *c)
             return -EINVAL;
         }
         c->state = ICCN;
-        if (t->fc & SYNC_FRAMING)
-            c->frame = SYNC_FRAMING;
-        else
+        if (t->fc & ASYNC_FRAMING)
             c->frame = ASYNC_FRAMING;
+        else
+            c->frame = SYNC_FRAMING;
 
         buf = new_outgoing (t);
         add_message_type_avp (buf, ICCN);
