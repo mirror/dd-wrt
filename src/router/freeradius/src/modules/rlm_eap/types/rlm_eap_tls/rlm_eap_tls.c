@@ -36,6 +36,8 @@ RCSID("$Id$")
 #include <openssl/evp.h>
 #endif
 
+#include <openssl/x509.h>
+
 #include "rlm_eap_tls.h"
 #include "config.h"
 
@@ -75,6 +77,12 @@ static CONF_PARSER ocsp_config[] = {
 	  offsetof(EAP_TLS_CONF, ocsp_override_url), NULL, "no"},
 	{ "url", PW_TYPE_STRING_PTR,
 	  offsetof(EAP_TLS_CONF, ocsp_url), NULL, NULL },
+	{ "use_nonce", PW_TYPE_BOOLEAN,
+	  offsetof(EAP_TLS_CONF, ocsp_use_nonce), NULL, "yes"},
+	{ "timeout", PW_TYPE_INTEGER,
+	  offsetof(EAP_TLS_CONF, ocsp_timeout), NULL, "0" },
+	{ "softfail", PW_TYPE_BOOLEAN,
+	  offsetof(EAP_TLS_CONF, ocsp_softfail), NULL, "no"},
  	{ NULL, -1, 0, NULL, NULL }           /* end the list */
 };
 #endif
@@ -194,9 +202,6 @@ static int generate_eph_rsa_key(SSL_CTX *ctx)
 
 
 /*
- *	These functions don't do anything other than print debugging
- *	messages.
- *
  *	FIXME: Write sessions to some long-term storage, so that
  *	       session resumption can still occur after the server
  *	       restarts.
@@ -206,6 +211,7 @@ static int generate_eph_rsa_key(SSL_CTX *ctx)
 static void cbtls_remove_session(UNUSED SSL_CTX *ctx, SSL_SESSION *sess)
 {
 	size_t size;
+	VALUE_PAIR *vp;
 	char buffer[2 * MAX_SESSION_SIZE + 1];
 
 	size = sess->session_id_length;
@@ -293,7 +299,7 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 {
 	OCSP_CERTID *certid;
 	OCSP_REQUEST *req;
-	OCSP_RESPONSE *resp;
+	OCSP_RESPONSE *resp = NULL;
 	OCSP_BASICRESP *bresp = NULL;
 	char *host = NULL;
 	char *port = NULL;
@@ -305,6 +311,12 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 	int status ;
 	ASN1_GENERALIZEDTIME *rev, *thisupd, *nextupd;
 	int reason;
+#if OPENSSL_VERSION_NUMBER >= 0x1000003f
+	OCSP_REQ_CTX *ctx;
+	int rc;
+	struct timeval now;
+	struct timeval when;
+#endif
 
 	/* 
 	 * Create OCSP Request 
@@ -312,7 +324,9 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 	certid = OCSP_cert_to_id(NULL, client_cert, issuer_cert);
 	req = OCSP_REQUEST_new();
 	OCSP_request_add0_id(req, certid);
-	OCSP_request_add1_nonce(req, NULL, 8);
+	if(conf->ocsp_use_nonce){
+		OCSP_request_add1_nonce(req, NULL, 8);
+	}
 	
 	/* 
 	 * Send OCSP Request and get OCSP Response
@@ -334,14 +348,60 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 	bio_out = BIO_new_fp(stdout, BIO_NOCLOSE);
 
 	BIO_set_conn_port(cbio, port);
+#if OPENSSL_VERSION_NUMBER < 0x1000003f
 	BIO_do_connect(cbio);
-
+ 
 	/* Send OCSP request and wait for response */
 	resp = OCSP_sendreq_bio(cbio, path, req);
-	if(resp==0) {
+	if (!resp) {
 		radlog(L_ERR, "Error: Couldn't get OCSP response");
+		ocsp_ok = 2;
 		goto ocsp_end;
 	}
+#else
+	if (conf->ocsp_timeout)
+		BIO_set_nbio(cbio, 1);
+
+	rc = BIO_do_connect(cbio);
+	if ((rc <= 0) && ((!conf->ocsp_timeout) || !BIO_should_retry(cbio))) {
+		radlog(L_ERR, "Error: Couldn't connect to OCSP responder");
+		ocsp_ok = 2;
+		goto ocsp_end;
+	}
+
+	ctx = OCSP_sendreq_new(cbio, path, req, -1);
+	if (!ctx) {
+		radlog(L_ERR, "Error: Couldn't send OCSP request");
+		ocsp_ok = 2;
+		goto ocsp_end;
+	}
+
+	gettimeofday(&when, NULL);
+	when.tv_sec += conf->ocsp_timeout;
+
+	do {
+		rc = OCSP_sendreq_nbio(&resp, ctx);
+		if (conf->ocsp_timeout) {
+			gettimeofday(&now, NULL);
+			if (!timercmp(&now, &when, <))
+				break;
+		}
+	} while ((rc == -1) && BIO_should_retry(cbio));
+
+	if (conf->ocsp_timeout && (rc == -1) && BIO_should_retry(cbio)) {
+		radlog(L_ERR, "Error: OCSP response timed out");
+		ocsp_ok = 2;
+		goto ocsp_end;
+	}
+
+	OCSP_REQ_CTX_free(ctx);
+
+	if (rc == 0) {
+		radlog(L_ERR, "Error: Couldn't get OCSP response");
+		ocsp_ok = 2;
+		goto ocsp_end;
+	}
+#endif
 
 	/* Verify OCSP response status */
 	status = OCSP_response_status(resp);
@@ -351,7 +411,7 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 		goto ocsp_end;
 	}
 	bresp = OCSP_response_get1_basic(resp);
-	if(OCSP_check_nonce(req, bresp)!=1) {
+	if(conf->ocsp_use_nonce && OCSP_check_nonce(req, bresp)!=1) {
 		radlog(L_ERR, "Error: OCSP response has wrong nonce value");
 		goto ocsp_end;
 	}
@@ -374,9 +434,11 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 	BIO_puts(bio_out, "\tThis Update: ");
         ASN1_GENERALIZEDTIME_print(bio_out, thisupd);
         BIO_puts(bio_out, "\n");
-	BIO_puts(bio_out, "\tNext Update: ");
-        ASN1_GENERALIZEDTIME_print(bio_out, nextupd);
-        BIO_puts(bio_out, "\n");
+	if (nextupd) {
+		BIO_puts(bio_out, "\tNext Update: ");
+		ASN1_GENERALIZEDTIME_print(bio_out, nextupd);
+		BIO_puts(bio_out, "\n");
+	}
 
 	switch (status) {
 	case V_OCSP_CERTSTATUS_GOOD:
@@ -405,10 +467,23 @@ ocsp_end:
 	BIO_free_all(cbio);
 	OCSP_BASICRESP_free(bresp);
 
-	if (ocsp_ok) {
+	switch (ocsp_ok) {
+	case 1:
 		DEBUG2("[ocsp] --> Certificate is valid!");
-	} else {
+		break;
+	case 2:
+		if (conf->ocsp_softfail) {
+			DEBUG2("[ocsp] --> Unable to check certificate; assuming valid.");
+			DEBUG2("[ocsp] --> Warning! This may be insecure.");
+			ocsp_ok = 1;
+		} else {
+			DEBUG2("[ocsp] --> Unable to check certificate; failing!");
+			ocsp_ok = 0;
+		}
+		break;
+	default:
 		DEBUG2("[ocsp] --> Certificate has been expired/revoked!");
+		break;
 	}
 
 	return ocsp_ok;
@@ -418,12 +493,13 @@ ocsp_end:
 /*
  *	For creating certificate attributes.
  */
-static const char *cert_attr_names[5][2] = {
+static const char *cert_attr_names[6][2] = {
   { "TLS-Client-Cert-Serial",		"TLS-Cert-Serial" },
   { "TLS-Client-Cert-Expiration",	"TLS-Cert-Expiration" },
   { "TLS-Client-Cert-Subject",		"TLS-Cert-Subject" },
   { "TLS-Client-Cert-Issuer",		"TLS-Cert-Issuer" },
-  { "TLS-Client-Cert-Common-Name",	"TLS-Cert-Common-Name" }
+  { "TLS-Client-Cert-Common-Name",	"TLS-Cert-Common-Name" },
+  { "TLS-Client-Cert-Subject-Alt-Name-Email",	"TLS-Cert-Subject-Alt-Name-Email" }
 };
 
 #define EAPTLS_SERIAL		(0)
@@ -431,6 +507,7 @@ static const char *cert_attr_names[5][2] = {
 #define EAPTLS_SUBJECT		(2)
 #define EAPTLS_ISSUER		(3)
 #define EAPTLS_CN		(4)
+#define EAPTLS_SAN_EMAIL	(5)
 
 /*
  *	Before trusting a certificate, you must make sure that the
@@ -468,7 +545,7 @@ static int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	X509 *client_cert;
 	X509 *issuer_cert;
 	SSL *ssl;
-	int err, depth, lookup;
+	int err, depth, lookup, loc;
 	EAP_TLS_CONF *conf;
 	int my_ok = ok;
 	REQUEST *request;
@@ -531,7 +608,7 @@ static int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	 */
 	buf[0] = '\0';
 	asn_time = X509_get_notAfter(client_cert);
-	if ((lookup <= 1) && asn_time && (asn_time->length < MAX_STRING_LEN)) {
+	if ((lookup <= 1) && asn_time && (asn_time->length < sizeof(buf))) {
 		memcpy(buf, (char*) asn_time->data, asn_time->length);
 		buf[asn_time->length] = '\0';
 		pairadd(&handler->certs,
@@ -559,15 +636,50 @@ static int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	}
 
 	/*
-	 *	Get the Common Name
+	 *	Get the Common Name, if there is a subject.
 	 */
 	X509_NAME_get_text_by_NID(X509_get_subject_name(client_cert),
 				  NID_commonName, common_name, sizeof(common_name));
 	common_name[sizeof(common_name) - 1] = '\0';
-	if ((lookup <= 1) && common_name[0] && (strlen(common_name) < MAX_STRING_LEN)) {
+	if ((lookup <= 1) && common_name[0] && subject[0] && (strlen(common_name) < MAX_STRING_LEN)) {
 		pairadd(&handler->certs,
 			pairmake(cert_attr_names[EAPTLS_CN][lookup], common_name, T_OP_SET));
 	}
+
+#ifdef GEN_EMAIL
+	/*
+	 *	Get the RFC822 Subject Alternative Name
+	 */
+	loc = X509_get_ext_by_NID(client_cert, NID_subject_alt_name, 0);
+	if (lookup <= 1 && loc >= 0) {
+		X509_EXTENSION *ext = NULL;
+		GENERAL_NAMES *names = NULL;
+		int i;
+
+		if ((ext = X509_get_ext(client_cert, loc)) &&
+		    (names = X509V3_EXT_d2i(ext))) {
+			for (i = 0; i < sk_GENERAL_NAME_num(names); i++) {
+				GENERAL_NAME *name = sk_GENERAL_NAME_value(names, i);
+
+				switch (name->type) {
+				case GEN_EMAIL:
+					if (ASN1_STRING_length(name->d.rfc822Name) >= MAX_STRING_LEN)
+						break;
+
+					pairadd(&handler->certs,
+						pairmake(cert_attr_names[EAPTLS_SAN_EMAIL][lookup],
+							 ASN1_STRING_data(name->d.rfc822Name), T_OP_SET));
+					break;
+				default:
+					/* XXX TODO handle other SAN types */
+					break;
+				}
+			}
+		}
+		if (names != NULL)
+			sk_GENERAL_NAME_free(names);
+	}
+#endif	/* GEN_EMAIL */
 
 	/*
 	 *	If the CRL has expired, that might still be OK.
@@ -823,6 +935,12 @@ static SSL_CTX *init_tls_ctx(EAP_TLS_CONF *conf)
 	SSL_load_error_strings();
 
 	/*
+	 *	Bug fix
+	 *	http://old.nabble.com/Backward-compatibility-of-private-key-files--td27937046.html
+	 */
+	OpenSSL_add_all_algorithms();
+
+	/*
 	 *	SHA256 is in all versions of OpenSSL, but isn't
 	 *	initialized by default.  It's needed for WiMAX
 	 *	certificates.
@@ -1063,12 +1181,12 @@ static SSL_CTX *init_tls_ctx(EAP_TLS_CONF *conf)
 		if (conf->session_id_name) {
 			snprintf(conf->session_context_id,
 				 sizeof(conf->session_context_id),
-				 "FreeRADIUS EAP-TLS %s",
+				 "FR eap %s",
 				 conf->session_id_name);
 		} else {
 			snprintf(conf->session_context_id,
 				 sizeof(conf->session_context_id),
-				 "FreeRADIUS EAP-TLS %p", conf);
+				 "FR eap %p", conf);
 		}
 
 		/*
@@ -1117,7 +1235,7 @@ static SSL_CTX *init_tls_ctx(EAP_TLS_CONF *conf)
 	}
 
 	if (eaptls_session_idx < 0) {
-		eaptls_session_idx = SSL_get_ex_new_index(0, "eaptls_session_idx",
+		eaptls_session_idx = SSL_SESSION_get_ex_new_index(0, "eaptls_session_idx",
 							  NULL, NULL,
 							  eaptls_session_free);
 	}

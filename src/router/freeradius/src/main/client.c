@@ -63,6 +63,8 @@ static fr_fifo_t	*deleted_clients = NULL;
  */
 void client_free(RADCLIENT *client)
 {
+	if (!client) return;
+
 #ifdef WITH_DYNAMIC_CLIENTS
 	if (client->dynamic == 2) {
 		time_t now;
@@ -746,8 +748,8 @@ static RADCLIENT *client_parse(CONF_SECTION *cs, int in_server)
 							   HOME_TYPE_COA);
 		}
 		if (!c->coa_pool && !c->coa_server) {
-			client_free(c);
 			cf_log_err(cf_sectiontoitem(cs), "No such home_server or home_server_pool \"%s\"", c->coa_name);
+			client_free(c);
 			return NULL;
 		}
 	}
@@ -874,6 +876,7 @@ RADCLIENT_LIST *clients_parse_section(CONF_SECTION *section)
 					cf_log_err(cf_sectiontoitem(cs),
 						   "Failed reading client file \"%s\"", buf2);
 					client_free(c);
+					closedir(dir);
 					return NULL;
 				}
 
@@ -883,9 +886,11 @@ RADCLIENT_LIST *clients_parse_section(CONF_SECTION *section)
 				if (!client_validate(clients, c, dc)) {
 					
 					client_free(c);
+					closedir(dir);
 					return NULL;
 				}
 			} /* loop over the directory */
+			closedir(dir);
 		}
 #endif /* HAVE_DIRENT_H */
 #endif /* WITH_DYNAMIC_CLIENTS */
@@ -1089,6 +1094,13 @@ RADCLIENT *client_create(RADCLIENT_LIST *clients, REQUEST *request)
 		goto error;
 	}
 
+	if (!c->secret || !*c->secret) {
+		DEBUG("- Cannot add client %s: No secret was specified.",
+		      ip_ntoh(&request->packet->src_ipaddr,
+			      buffer, sizeof(buffer)));
+		goto error;
+	}
+
 	if (!client_validate(clients, request->client, c)) {
 		return NULL;
 	}
@@ -1110,8 +1122,15 @@ RADCLIENT *client_read(const char *filename, int in_server, int flag)
 
 	cs = cf_file_read(filename);
 	if (!cs) return NULL;
+	
+	cs = cf_section_sub_find(cs, "client");
+	if (!cs) {
+		radlog(L_ERR, "No \"client\" section found in client file");
+		return NULL;
+	}
 
-	c = client_parse(cf_section_sub_find(cs, "client"), in_server);
+	c = client_parse(cs, in_server);
+	if (!c) return NULL;
 
 	p = strrchr(filename, FR_DIR_SEP);
 	if (p) {
@@ -1131,8 +1150,6 @@ RADCLIENT *client_read(const char *filename, int in_server, int flag)
 		client_free(c);
 		return NULL;
 	}
-
-
 
 	return c;
 }

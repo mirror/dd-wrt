@@ -67,6 +67,7 @@ typedef struct radius_packet_t {
 static fr_randctx fr_rand_pool;	/* across multiple calls */
 static int fr_rand_initialized = 0;
 static unsigned int salt_offset = 0;
+static uint8_t nullvector[AUTH_VECTOR_LEN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; /* for CoA decode */
 
 const char *fr_packet_codes[FR_MAX_PACKET_CODE] = {
   "",
@@ -249,7 +250,9 @@ static int rad_sendto(int sockfd, void *data, size_t data_len, int flags,
 	 */
 	rcode = sendto(sockfd, data, data_len, flags,
 		       (struct sockaddr *) &dst, sizeof_dst);
+#ifdef WITH_UDPFROMTO
 done:
+#endif
 	if (rcode < 0) {
 		DEBUG("rad_send() failed: %s\n", strerror(errno));
 	}
@@ -511,7 +514,7 @@ static void make_passwd(uint8_t *output, size_t *outlen,
 	if (len > MAX_PASS_LEN) len = MAX_PASS_LEN;
 
 	memcpy(passwd, input, len);
-	memset(passwd + len, 0, sizeof(passwd) - len);
+	if (len < sizeof(passwd)) memset(passwd + len, 0, sizeof(passwd) - len);
 
 	if (len == 0) {
 		len = AUTH_PASS_LEN;
@@ -737,7 +740,7 @@ static uint8_t *vp2data(const RADIUS_PACKET *packet,
 	 *	Attributes with encrypted values MUST be less than
 	 *	128 bytes long.
 	 */
-	switch (vp->flags.encrypt) {
+	if (packet) switch (vp->flags.encrypt) {
 	case FLAG_ENCRYPT_USER_PASSWORD:
 		make_passwd(ptr, &len, data, len,
 			    secret, packet->vector);
@@ -779,6 +782,9 @@ static uint8_t *vp2data(const RADIUS_PACKET *packet,
 		 *	always fits.
 		 */
 	case FLAG_ENCRYPT_ASCEND_SECRET:
+#ifndef NDEBUG
+		if (data == array) return NULL;
+#endif
 		make_secret(ptr, packet->vector, secret, data);
 		len = AUTH_VECTOR_LEN;
 		break;
@@ -859,7 +865,10 @@ static VALUE_PAIR *rad_vp2tlv(VALUE_PAIR *vps)
 		}
 
 		length = (end - ptr);
-		if (length > 255) return NULL;
+		if (length > 255) {
+			pairfree(&tlv);
+			return NULL;
+		}
 
 		/*
 		 *	Pack the attribute.
@@ -963,7 +972,7 @@ int rad_vp2attr(const RADIUS_PACKET *packet, const RADIUS_PACKET *original,
 
 	ptr = start;
 	end = ptr + 255;
-	vendorcode = total_length = 0;
+	total_length = 0;
 	length_ptr = vsa_length_ptr = tlv_length_ptr = NULL;
 
 	/*
@@ -1123,7 +1132,6 @@ int rad_vp2attr(const RADIUS_PACKET *packet, const RADIUS_PACKET *original,
 	*length_ptr += len;
 	if (vsa_length_ptr) *vsa_length_ptr += len;
 	if (tlv_length_ptr) *tlv_length_ptr += len;
-	ptr += len;
 	total_length += len;
 
 	return total_length;	/* of attribute */
@@ -2088,11 +2096,7 @@ int rad_verify(RADIUS_PACKET *packet, RADIUS_PACKET *original,
 
 			case PW_ACCOUNTING_REQUEST:
 			case PW_DISCONNECT_REQUEST:
-			case PW_DISCONNECT_ACK:
-			case PW_DISCONNECT_NAK:
 			case PW_COA_REQUEST:
-			case PW_COA_ACK:
-			case PW_COA_NAK:
 			  	memset(packet->data + 4, 0, AUTH_VECTOR_LEN);
 				break;
 
@@ -2100,6 +2104,10 @@ int rad_verify(RADIUS_PACKET *packet, RADIUS_PACKET *original,
 			case PW_AUTHENTICATION_ACK:
 			case PW_AUTHENTICATION_REJECT:
 			case PW_ACCESS_CHALLENGE:
+			case PW_DISCONNECT_ACK:
+			case PW_DISCONNECT_NAK:
+			case PW_COA_ACK:
+			case PW_COA_NAK:
 				if (!original) {
 					fr_strerror_printf("ERROR: Cannot validate Message-Authenticator in response packet without a request packet.");
 					return -1;
@@ -2284,12 +2292,9 @@ static VALUE_PAIR *data2vp(const RADIUS_PACKET *packet,
 		 *	in response packets.
 		 */
 	case FLAG_ENCRYPT_TUNNEL_PASSWORD:
-		if (!original) goto raw;
-
-		if (rad_tunnel_pwdecode(vp->vp_octets, &vp->length,
-					secret, original->vector) < 0) {
+		if (rad_tunnel_pwdecode(vp->vp_octets, &vp->length, secret,
+					original ? original->vector : nullvector) < 0)
 			goto raw;
-		}
 		break;
 
 		/*
@@ -2653,7 +2658,10 @@ static VALUE_PAIR *rad_continuation2vp(const RADIUS_PACKET *packet,
 		}
 		
 		vp = paircreate(attribute, PW_TYPE_OCTETS);
-		if (!vp) return NULL;
+		if (!vp) {
+			free(tlv_data);
+			return NULL;
+		}
 			
 		vp->type = PW_TYPE_TLV;
 		vp->flags.encrypt = FLAG_ENCRYPT_NONE;
@@ -2711,7 +2719,7 @@ static VALUE_PAIR *rad_continuation2vp(const RADIUS_PACKET *packet,
 	 */
 	if (tlv_data != data) free(tlv_data);
 
-	if (head->next) rad_sortvp(&head);
+	if (head && head->next) rad_sortvp(&head);
 
 	return head;
 }

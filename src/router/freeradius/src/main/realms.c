@@ -539,9 +539,22 @@ static int home_server_add(realm_config_t *rc, CONF_SECTION *cs)
 	} else if (strcasecmp(hs_check, "request") == 0) {
 		home->ping_check = HOME_PING_CHECK_REQUEST;
 
+		if (!home->ping_user_name ||
+		    !*home->ping_user_name) {
+			cf_log_err(cf_sectiontoitem(cs), "You must supply a 'username' to enable status_check=request");
+			goto error;
+		}
+
+		if ((home->type == HOME_TYPE_AUTH) &&
+		    (!home->ping_user_password ||
+		     !*home->ping_user_password)) {
+			cf_log_err(cf_sectiontoitem(cs), "You must supply a password to enable status_check=request");
+			goto error;
+		}
+
 	} else {
 		cf_log_err(cf_sectiontoitem(cs),
-			   "Invalid ping_check \"%s\" for home server %s.",
+			   "Invalid status__check \"%s\" for home server %s.",
 			   hs_check, name2);
 		goto error;
 	}
@@ -551,13 +564,13 @@ static int home_server_add(realm_config_t *rc, CONF_SECTION *cs)
 	if ((home->ping_check != HOME_PING_CHECK_NONE) &&
 	    (home->ping_check != HOME_PING_CHECK_STATUS_SERVER)) {
 		if (!home->ping_user_name) {
-			cf_log_err(cf_sectiontoitem(cs), "You must supply a user name to enable ping checks");
+			cf_log_err(cf_sectiontoitem(cs), "You must supply a user name to enable status_check=request");
 			goto error;
 		}
 
 		if ((home->type == HOME_TYPE_AUTH) &&
 		    !home->ping_user_password) {
-			cf_log_err(cf_sectiontoitem(cs), "You must supply a password to enable ping checks");
+			cf_log_err(cf_sectiontoitem(cs), "You must supply a password to enable status_check=request");
 			goto error;
 		}
 	}
@@ -912,7 +925,7 @@ static int server_pool_add(realm_config_t *rc,
 
 		value = cf_pair_value(cp);
 
-		memset(&myhome, 0, sizeof(&myhome));
+		memset(&myhome, 0, sizeof(myhome));
 		myhome.name = value;
 		myhome.type = server_type;
 
@@ -1459,7 +1472,7 @@ static int realm_add(realm_config_t *rc, CONF_SECTION *cs)
 			return 0;
 		}
 
-		if (!auth_pool ||
+		if (!auth_pool || auth_pool_name &&
 		    (strcmp(auth_pool_name, acct_pool_name) != 0)) {
 			do_print = TRUE;
 		}
@@ -1753,9 +1766,15 @@ int realms_init(CONF_SECTION *config)
 		if (cf_data_find(cs, "home_server_pool")) continue;
 
 		type = pool_peek_type(config, cs);
-		if (type == HOME_TYPE_INVALID) return 0;
+		if (type == HOME_TYPE_INVALID) {
+			free(rc);
+			realms_free();
+			return 0;
+		}
 
 		if (!server_pool_add(rc, cs, type, TRUE)) {
+			free(rc);
+			realms_free();
 			return 0;
 		}
 	}

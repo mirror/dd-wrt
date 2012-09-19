@@ -323,6 +323,8 @@ VALUE_PAIR *paircopyvp(const VALUE_PAIR *vp)
 {
 	size_t name_len;
 	VALUE_PAIR *n;
+
+	if (!vp) return NULL;
 	
 	if (!vp->flags.unknown_attr) {
 		name_len = 0;
@@ -443,6 +445,8 @@ void pairmove(VALUE_PAIR **to, VALUE_PAIR **from)
 			case T_OP_CMP_TRUE:
 			case T_OP_CMP_FALSE:
 			case T_OP_CMP_EQ:
+			case T_OP_REG_EQ:
+			case T_OP_REG_NE:
 				tailfrom = i;
 				continue;
 
@@ -974,8 +978,8 @@ VALUE_PAIR *pairparsevalue(VALUE_PAIR *vp, const char *value)
 				fr_ipaddr_t ipaddr;
 
 				if (ip_hton(cs, AF_INET, &ipaddr) < 0) {
-					free(s);
 					fr_strerror_printf("Failed to find IP address for %s", cs);
+					free(s);
 					return NULL;
 				}
 
