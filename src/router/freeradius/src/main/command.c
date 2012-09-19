@@ -175,6 +175,7 @@ static int fr_server_domain_socket(const char *path)
 		if (errno != ENOENT) {
 			radlog(L_ERR, "Failed to stat %s: %s",
 			       path, strerror(errno));
+			close(sockfd);
 			return -1;
 		}
 
@@ -188,6 +189,7 @@ static int fr_server_domain_socket(const char *path)
 #endif
 			) {
 			radlog(L_ERR, "Cannot turn %s into socket", path);
+			close(sockfd);
 			return -1;		       
 		}
 
@@ -196,12 +198,14 @@ static int fr_server_domain_socket(const char *path)
 		 */
 		if (buf.st_uid != geteuid()) {
 			radlog(L_ERR, "We do not own %s", path);
+			close(sockfd);
 			return -1;
 		}
 
 		if (unlink(path) < 0) {
 			radlog(L_ERR, "Failed to delete %s: %s",
 			       path, strerror(errno));
+			close(sockfd);
 			return -1;
 		}
 	}
@@ -661,12 +665,14 @@ static int command_show_xml(rad_listen_t *listener, UNUSED int argc, UNUSED char
 
 	if (argc == 0) {
 		cprintf(listener, "ERROR: <reference> is required\n");
+		fclose(fp);
 		return 0;
 	}
 	
 	ci = cf_reference_item(mainconfig.config, mainconfig.config, argv[0]);
 	if (!ci) {
 		cprintf(listener, "ERROR: No such item <reference>\n");
+		fclose(fp);
 		return 0;
 	}
 
@@ -1451,7 +1457,7 @@ static int command_set_module_config(rad_listen_t *listener, int argc, char *arg
 	return 1;		/* success */
 }
 
-static int command_set_module_status(rad_listen_t *listener, int argc, char *argv[])
+static int command_set_module_state(rad_listen_t *listener, int argc, char *argv[])
 {
 	CONF_SECTION *cs;
 	module_instance_t *mi;
@@ -1544,6 +1550,11 @@ static int command_stats_detail(rad_listen_t *listener, int argc, char *argv[])
 		if (strcmp(argv[1], data->filename) != 0) continue;
 
 		break;
+	}
+
+	if (!data) {
+		cprintf(listener, "ERROR: No detail file listener\n");
+		return 0;
 	}
 
 	cprintf(listener, "\tstate\t%s\n",
@@ -1775,9 +1786,9 @@ static fr_command_table_t command_table_set_module[] = {
 	  "set module config <module> variable value - set configuration for <module>",
 	  command_set_module_config, NULL },
 
-	{ "status", FR_WRITE,
-	  "set module status [alive|dead] - set the module to be alive or dead (always return \"fail\")",
-	  command_set_module_status, NULL },
+	{ "state", FR_WRITE,
+	  "set module state NAME [alive|dead] - set the module NAME to be alive or dead (always return \"fail\")",
+	  command_set_module_state, NULL },
 
 	{ NULL, 0, NULL, NULL, NULL }
 };

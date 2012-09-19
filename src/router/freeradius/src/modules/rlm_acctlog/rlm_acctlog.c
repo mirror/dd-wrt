@@ -110,10 +110,12 @@ static int do_acctlog_acct(void *instance, REQUEST *request)
 			radius_xlat(logstr, sizeof(logstr), inst->acctoff, request, NULL);
 		break;
 
+	default:
+		*logstr = 0;
+
 	}
 
-	if (strlen(logstr))
-		radlog(L_ACCT,"%s", logstr);
+	if (*logstr) radlog(L_ACCT,"%s", logstr);
 
 	return RLM_MODULE_OK;
 }

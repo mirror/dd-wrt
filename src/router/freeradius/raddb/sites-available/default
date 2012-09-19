@@ -386,14 +386,14 @@ accounting {
 	#  Update the wtmp file
 	#
 	#  If you don't use "radlast", you can delete this line.
-	unix
+#	unix
 
 	#
 	#  For Simultaneous-Use tracking.
 	#
 	#  Due to packet losses in the network, the data here
 	#  may be incorrect.  There is little we can do about it.
-	radutmp
+#	radutmp
 #	sradutmp
 
 	#  Return an address to the IP Pool when we see a stop record.
@@ -532,12 +532,14 @@ session {
 #	       Reply-Message += "%{TLS-Cert-Subject}"
 #	       Reply-Message += "%{TLS-Cert-Issuer}"
 #	       Reply-Message += "%{TLS-Cert-Common-Name}"
+#	       Reply-Message += "%{TLS-Cert-Subject-Alt-Name-Email}"
 #
 #	       Reply-Message += "%{TLS-Client-Cert-Serial}"
 #	       Reply-Message += "%{TLS-Client-Cert-Expiration}"
 #	       Reply-Message += "%{TLS-Client-Cert-Subject}"
 #	       Reply-Message += "%{TLS-Client-Cert-Issuer}"
 #	       Reply-Message += "%{TLS-Client-Cert-Common-Name}"
+#	       Reply-Message += "%{TLS-Client-Cert-Subject-Alt-Name-Email}"
 #	}
 
 

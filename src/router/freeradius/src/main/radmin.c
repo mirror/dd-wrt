@@ -370,7 +370,7 @@ int main(int argc, char **argv)
 
 		cs = cf_file_read(buffer);
 		if (!cs) {
-			fprintf(stderr, "%s: Errors reading %s\n",
+			fprintf(stderr, "%s: Errors reading or parsing %s\n",
 				progname, buffer);
 			exit(1);
 		}
@@ -503,7 +503,7 @@ int main(int argc, char **argv)
 
 	if (!done_license && !quiet) {
 		printf("radmin " RADIUSD_VERSION " - FreeRADIUS Server administration tool.\n");
-		printf("Copyright (C) 2008-2011 The FreeRADIUS server project and contributors.\n");
+		printf("Copyright (C) 2008-2012 The FreeRADIUS server project and contributors.\n");
 		printf("There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A\n");
 		printf("PARTICULAR PURPOSE.\n");
 		printf("You may redistribute copies of FreeRADIUS under the terms of the\n");

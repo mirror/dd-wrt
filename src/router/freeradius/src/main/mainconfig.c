@@ -61,6 +61,7 @@ RCSID("$Id$")
 struct main_config_t mainconfig;
 char *request_log_file = NULL;
 char *debug_condition = NULL;
+extern int log_dates_utc;
 
 typedef struct cached_config_t {
 	struct cached_config_t *next;
@@ -96,7 +97,11 @@ static const char *my_name = NULL;
 static const char *sbindir = NULL;
 static const char *run_dir = NULL;
 static char *syslog_facility = NULL;
-static const FR_NAME_NUMBER str2fac[] = {
+
+/*
+ *	Syslog facility table.
+ */
+const FR_NAME_NUMBER syslog_str2fac[] = {
 #ifdef LOG_KERN
 	{ "kern", LOG_KERN },
 #endif
@@ -185,6 +190,7 @@ static const CONF_PARSER serverdest_config[] = {
 	{ "log", PW_TYPE_SUBSECTION, 0, NULL, (const void *) logdest_config },
 	{ "log_file", PW_TYPE_STRING_PTR, 0, &mainconfig.log_file, NULL },
 	{ "log_destination", PW_TYPE_STRING_PTR, 0, &radlog_dest, NULL },
+	{ "use_utc", PW_TYPE_BOOLEAN, 0, &log_dates_utc, NULL },
 	{ NULL, -1, 0, NULL, NULL }
 };
 
@@ -197,6 +203,8 @@ static const CONF_PARSER log_config_nodest[] = {
 	{ "auth_goodpass", PW_TYPE_BOOLEAN, 0, &mainconfig.log_auth_goodpass, "no" },
 	{ "msg_badpass", PW_TYPE_STRING_PTR, 0, &mainconfig.auth_badpass_msg, NULL},
 	{ "msg_goodpass", PW_TYPE_STRING_PTR, 0, &mainconfig.auth_goodpass_msg, NULL},
+
+	{ "use_utc", PW_TYPE_BOOLEAN, 0, &log_dates_utc, NULL },
 
 	{ NULL, -1, 0, NULL, NULL }
 };
@@ -772,7 +780,7 @@ int read_mainconfig(int reload)
 	snprintf(buffer, sizeof(buffer), "%.200s/%.50s.conf",
 		 radius_dir, mainconfig.name);
 	if ((cs = cf_file_read(buffer)) == NULL) {
-		radlog(L_ERR, "Errors reading %s", buffer);
+		radlog(L_ERR, "Errors reading or parsing %s", buffer);
 		return -1;
 	}
 
@@ -812,7 +820,7 @@ int read_mainconfig(int reload)
 				cf_section_free(&cs);
 				return -1;
 			}
-			mainconfig.syslog_facility = fr_str2int(str2fac, syslog_facility, -1);
+			mainconfig.syslog_facility = fr_str2int(syslog_str2fac, syslog_facility, -1);
 			if (mainconfig.syslog_facility < 0) {
 				fprintf(stderr, "radiusd: Error: Unknown syslog_facility %s\n",
 					syslog_facility);
@@ -991,7 +999,7 @@ void hup_mainconfig(void)
 	snprintf(buffer, sizeof(buffer), "%.200s/%.50s.conf",
 		 radius_dir, mainconfig.name);
 	if ((cs = cf_file_read(buffer)) == NULL) {
-		radlog(L_ERR, "Failed to re-read %s", buffer);
+		radlog(L_ERR, "Failed to re-read or parse %s", buffer);
 		return;
 	}
 

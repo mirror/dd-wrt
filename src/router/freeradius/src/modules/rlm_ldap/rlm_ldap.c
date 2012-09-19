@@ -116,6 +116,7 @@ typedef struct ldap_conn {
 	char		bound;
 	char		locked;
 	int		failed_conns;
+	int		uses;
 #ifdef HAVE_PTHREAD_H
 	pthread_mutex_t	mutex;
 #endif
@@ -125,6 +126,7 @@ typedef struct {
 	char           *server;
 	int             port;
 	int             timelimit;
+	int		max_uses;
 	int  		net_timeout;
 	int		timeout;
 	int             debug;
@@ -248,6 +250,9 @@ static const CONF_PARSER module_config[] = {
 	/* allow server unlimited time for search (server-side limit) */
 	{"timelimit", PW_TYPE_INTEGER,
 	 offsetof(ldap_instance,timelimit), NULL, "20"},
+	/* how many times the connection can be used before being re-established */	
+	{"max_uses", PW_TYPE_INTEGER,
+	 offsetof(ldap_instance,max_uses), NULL, "0"},
 
 	/*
 	 *	TLS configuration  The first few are here for backwards
@@ -382,6 +387,7 @@ static inline int ldap_get_conn(LDAP_CONN *conns,LDAP_CONN **ret,
 			}
 			/* found an unused connection */
 			*ret = &conns[i];
+			conns[i].uses++;
 			conns[i].locked = 1;
 			DEBUG("  [%s] ldap_get_conn: Got Id: %d",
 			      inst->xlat_name, i);
@@ -398,6 +404,16 @@ static inline void ldap_release_conn(int i, ldap_instance *inst)
 	LDAP_CONN *conns = inst->conns;
 
 	DEBUG("  [%s] ldap_release_conn: Release Id: %d", inst->xlat_name, i);
+	if ((inst->max_uses > 0) && (conns[i].uses >= inst->max_uses)) {
+		if (conns[i].ld){
+			DEBUG("  [%s] ldap_release_conn: Hit max usage limit, closing Id: %d", inst->xlat_name, i);
+			ldap_unbind_s(conns[i].ld);
+			
+			conns[i].ld = NULL;
+		}
+		conns[i].bound = 0;
+		conns[i].uses = 0;
+	}
 	conns[i].locked = 0;
 	pthread_mutex_unlock(&(conns[i].mutex));
 }
@@ -1223,7 +1239,7 @@ static size_t ldap_xlat(void *instance, REQUEST *request, char *fmt,
 	}
 	if (ldap_url->lud_attrs == NULL || ldap_url->lud_attrs[0] == NULL ||
 	    ( ldap_url->lud_attrs[1] != NULL ||
-	      ( ! strlen(ldap_url->lud_attrs[0]) ||
+	      ( !*ldap_url->lud_attrs[0] ||
 		! strcmp(ldap_url->lud_attrs[0],"*") ) ) ){
 		radlog (L_ERR, "  [%s] Invalid Attribute(s) request.\n", inst->xlat_name);
 		ldap_free_urldesc(ldap_url);
@@ -1296,6 +1312,7 @@ static const FR_NAME_NUMBER header_names[] = {
 	{ "{clear}",	PW_CLEARTEXT_PASSWORD },
 	{ "{cleartext}", PW_CLEARTEXT_PASSWORD },
 	{ "{md5}",	PW_MD5_PASSWORD },
+	{ "{BASE64_MD5}",	PW_MD5_PASSWORD },
 	{ "{smd5}",	PW_SMD5_PASSWORD },
 	{ "{crypt}",	PW_CRYPT_PASSWORD },
 	{ "{sha}",	PW_SHA_PASSWORD },
@@ -1453,7 +1470,7 @@ static int ldap_authorize(void *instance, REQUEST * request)
 		strlcpy(filter,inst->base_filter,sizeof(filter));
 		if (user_profile)
 			profile = user_profile->vp_strvalue;
-		if (profile && strlen(profile)){
+		if (profile && *profile){
 			if ((res = perform_search(instance, conn,
 				profile, LDAP_SCOPE_BASE,
 				filter, inst->atts, &def_result)) == RLM_MODULE_OK){
@@ -1492,7 +1509,7 @@ static int ldap_authorize(void *instance, REQUEST * request)
 		if ((vals = ldap_get_values(conn->ld, msg, inst->profile_attr)) != NULL) {
 			unsigned int i=0;
 			strlcpy(filter,inst->base_filter,sizeof(filter));
-			while(vals[i] != NULL && strlen(vals[i])){
+			while(vals[i] && *vals[i]){
 				if ((res = perform_search(instance, conn,
 					vals[i], LDAP_SCOPE_BASE,
 					filter, inst->atts, &def_attr_result)) == RLM_MODULE_OK){
@@ -1522,7 +1539,7 @@ static int ldap_authorize(void *instance, REQUEST * request)
 			ldap_value_free(vals);
 		}
 	}
-	if (inst->passwd_attr && strlen(inst->passwd_attr)) {
+	if (inst->passwd_attr && *inst->passwd_attr) {
 #ifdef NOVELL_UNIVERSAL_PASSWORD
 		if (strcasecmp(inst->passwd_attr,"nspmPassword") != 0) {
 #endif
@@ -1546,7 +1563,7 @@ static int ldap_authorize(void *instance, REQUEST * request)
 					      i++) {
 				int attr = PW_USER_PASSWORD;
 
-				if (strlen(passwd_vals[i]) == 0)
+				if (!*passwd_vals[i])
 					continue;
 
 				value = passwd_vals[i];
@@ -1569,7 +1586,7 @@ static int ldap_authorize(void *instance, REQUEST * request)
 					goto create_attr;
 
 				} else if (inst->passwd_hdr &&
-					   strlen(inst->passwd_hdr)) {
+					   *inst->passwd_hdr) {
 					if (strncasecmp(value,
 							inst->passwd_hdr,
 							strlen(inst->passwd_hdr)) == 0) {
@@ -1619,7 +1636,7 @@ static int ldap_authorize(void *instance, REQUEST * request)
 				if (res == 0){
 					passwd_val = universal_password;
 
-					if (inst->passwd_hdr && strlen(inst->passwd_hdr)){
+					if (inst->passwd_hdr && *inst->passwd_hdr){
 						passwd_val = strstr(passwd_val,inst->passwd_hdr);
 
 						if (passwd_val != NULL)
@@ -1768,6 +1785,7 @@ static int ldap_authorize(void *instance, REQUEST * request)
 	*/
        if (debug_flag > 1) {
 	       if (!pairfind(request->config_items, PW_CLEARTEXT_PASSWORD) &&
+		   !pairfind(request->config_items, PW_NT_PASSWORD) &&
 		   !pairfind(request->config_items, PW_USER_PASSWORD) &&
 		   !pairfind(request->config_items, PW_PASSWORD_WITH_HEADER) &&
 		   !pairfind(request->config_items, PW_CRYPT_PASSWORD)) {
@@ -2146,8 +2164,8 @@ static int ldap_postauth(void *instance, REQUEST * request)
 				if (request->reply->code == PW_AUTHENTICATION_REJECT) {
 				  /* Bind to eDirectory as the RADIUS user with a wrong password. */
 				  vp_pwd = pairfind(request->config_items, PW_CLEARTEXT_PASSWORD);
-				  strcpy(password, vp_pwd->vp_strvalue);
-				  if (strlen(password) > 0) {
+				  if (vp_pwd && *vp_pwd->vp_strvalue) {
+				  	  strcpy(password, vp_pwd->vp_strvalue);
 					  if (password[0] != 'a') {
 						  password[0] = 'a';
 					  } else {
@@ -2438,7 +2456,7 @@ static LDAP *ldap_connect(void *instance, const char *dn, const char *password,
 	}
 
 	if (inst->tls_randfile != NULL) {
-		DEBUG("  [%s] setting TLS Key File to %s", inst->xlat_name,
+		DEBUG("  [%s] setting TLS Rand File to %s", inst->xlat_name,
 		      inst->tls_randfile);
 
 		if (ldap_set_option(NULL, LDAP_OPT_X_TLS_RANDOM_FILE,
@@ -2584,6 +2602,8 @@ ldap_detach(void *instance)
 		int i;
 
 		for (i = 0;i < inst->num_conns; i++) {
+			if (inst->conns[i].locked) return -1;
+
 			if (inst->conns[i].ld){
 				ldap_unbind_s(inst->conns[i].ld);
 			}
@@ -2597,6 +2617,8 @@ ldap_detach(void *instance)
 		int i;
 
 		for (i = 0; i < inst->num_conns; i++) {
+			if (inst->apc_conns[i].locked) return -1;
+
 			if (inst->apc_conns[i].ld){
 				ldap_unbind_s(inst->apc_conns[i].ld);
 			}
@@ -2630,7 +2652,7 @@ ldap_detach(void *instance)
 		free(inst->atts);
 
 	paircompare_unregister(PW_LDAP_GROUP, ldap_groupcmp);
-	xlat_unregister(inst->xlat_name,ldap_xlat);
+	xlat_unregister(inst->xlat_name,ldap_xlat, instance);
 	free(inst->xlat_name);
 
 	free(inst);
