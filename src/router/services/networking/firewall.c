@@ -835,7 +835,7 @@ static void nat_postrouting(void)
 		}
 		if (nvram_match("wan_proto", "l2tp")) {
 			struct in_addr ifaddr;
-			osl_ifaddr(nvram_safe_get("wan_ifname"), &ifaddr);
+			osl_ifaddr(wan_ifname_tun, &ifaddr);
 			save2file
 			    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
 			     wan_ifname_tun, inet_ntoa(ifaddr));
