@@ -549,7 +549,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(stderr, "setup vap %d bss %s\n", vapid, ifname);
 		fprintf(fp, "bss=%s\n", ifname);
 	}
-
+	fprintf(fp,"disassoc_low_ack=1\n");
 	char *mode = nvram_nget("%s_mode", ifname);
 	if (!strcmp(mode, "wdsap"))
 		fprintf(fp, "wds_sta=1\n");
