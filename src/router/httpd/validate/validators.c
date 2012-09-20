@@ -3379,21 +3379,16 @@ write_nvram:
 		i++;
 	}
 
-	strcpy(backuproute, &old[atoi(page)]);
+	strcpy(backuproute, &old[atoi(page) * STATIC_ROUTE_PAGE]);
+	
 	if (!tmp) {
-		char met[16];
-		char ifn[16];
-
-		sscanf(&old[atoi(page)], "%s:%s:%s:%s:%s", ipaddr, netmask,
-		       gateway, met, ifn);
-		// fprintf (stderr, "deleting %s %s %s %s %s\n", ipaddr, netmask,
-		// gateway,
-		// met, ifn);
-		route_del(ifn, atoi(met) + 1, ipaddr, gateway, netmask);
-
+		if (strlen(backuproute) > 0) {
+			addDeletion(backuproute);
+			memset(backuproute, 0, strlen(backuproute));
+		}
+		
 		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s", "");
-		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s",
-			 "");
+		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s", "");
 	} else {
 		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60,
 			 "%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric,
@@ -3404,8 +3399,8 @@ write_nvram:
 	}
 	if (strcmp(backuproute, &old[atoi(page) * STATIC_ROUTE_PAGE])) {
 		if (strlen(backuproute) > 0) {
-			nvram_set("nowebaction","1");
-			addAction("static_route_del");
+			//nvram_set("nowebaction","1");
+			//addAction("static_route_del");
 			addDeletion(backuproute);
 		}
 	}
@@ -3425,6 +3420,9 @@ write_nvram:
 		}
 	}
 
+	if (!strcmp(websGetVar(wp, "action", ""), "ApplyTake"))
+		delete_old_routes();
+	
 	nvram_set(v->name, buf);
 	nvram_set("static_route_name", buf_name);
 	nvram_commit();
