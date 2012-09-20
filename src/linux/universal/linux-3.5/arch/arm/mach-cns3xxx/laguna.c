@@ -623,12 +623,21 @@ static struct resource laguna_watchdog_resource[] = {
 	}
 };
 
+
 static struct platform_device laguna_watchdog = {
 	.name = "mpcore_wdt",
 	.id = -1,
 	.num_resources = ARRAY_SIZE(laguna_watchdog_resource),
 	.resource = laguna_watchdog_resource,
 };
+
+static struct platform_device cns3xxx_watchdog_device = {
+	.name		= "cns3xxx-wdt",
+	.id		= -1,
+	.num_resources	= ARRAY_SIZE(laguna_watchdog_resource),
+	.resource	= laguna_watchdog_resource,
+};
+
 
 static struct platform_device laguna_gpio_dev = {
 	.name = "GPIODEV",
@@ -642,6 +651,7 @@ static struct platform_device laguna_gpio_dev = {
 static void __init laguna_init(void)
 {
 	platform_device_register(&laguna_watchdog);
+	platform_device_register(&cns3xxx_watchdog_device);
 
 	platform_device_register(&laguna_i2c_controller);
 
