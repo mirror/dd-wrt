@@ -491,6 +491,9 @@ void summary_delete_policy(webs_t wp)
 
 void addDeletion(char *word)
 {
+	if (!strlen(word) > 0)
+		return;
+
 	char *oldarg = nvram_get("action_service_arg1");
 
 	if (oldarg && strlen(oldarg) > 0) {
@@ -501,6 +504,23 @@ void addDeletion(char *word)
 		free(newarg);
 	} else
 		nvram_set("action_service_arg1", word);
+}
+
+void delete_old_routes(void) 
+{
+	char word[256], *next;
+	char ipaddr[20], netmask[20], gateway[20], met[20], ifn[20];
+
+	sleep(1);
+	foreach(word, nvram_safe_get("action_service_arg1"), next) {
+		strcpy(ipaddr, strtok(word, ":"));
+		strcpy(netmask, strtok(NULL, ":"));
+		strcpy(gateway, strtok(NULL, ":"));
+		strcpy(met, strtok(NULL, ":"));
+		strcpy(ifn, strtok(NULL, ":"));
+
+		route_del(ifn, atoi(met) + 1, ipaddr, gateway, netmask);
+	}
 }
 
 void delete_static_route(webs_t wp)
