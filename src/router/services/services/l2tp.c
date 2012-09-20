@@ -78,6 +78,7 @@ void start_l2tp(int status)
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 	if (status != REDIAL) {
+		insmod("ipv6");
 		insmod("l2tp_core");
 		insmod("l2tp_netlink");
 		insmod("l2tp_ppp");

@@ -56,7 +56,7 @@
 
 void start_vpn_modules(void)
 {
-#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_RB600) || defined(HAVE_LAGUNA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_RT2880) || defined(HAVE_BCMMODERN) || defined(HAVE_LSX) || defined(HAVE_AP83) || defined(HAVE_AP96)
+#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_RB600) || defined(HAVE_LAGUNA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_RT2880) || defined(HAVE_BCMMODERN) || defined(HAVE_LSX) || defined(HAVE_AP83) || defined(HAVE_AP96) || defined(HAVE_NORTHSTAR)
 
 	if ((nvram_match("pptp_pass", "1") || nvram_match("l2tp_pass", "1")
 	     || nvram_match("ipsec_pass", "1"))) {
@@ -98,7 +98,7 @@ void start_vpn_modules(void)
 
 void stop_vpn_modules(void)
 {
-#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_RB600) || defined(HAVE_LAGUNA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_RT2880) || defined(HAVE_BCMMODERN) || defined(HAVE_LSX) || defined(HAVE_AP83) || defined(HAVE_AP96)
+#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_RB600) || defined(HAVE_LAGUNA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_RT2880) || defined(HAVE_BCMMODERN) || defined(HAVE_LSX) || defined(HAVE_AP83) || defined(HAVE_AP96) || defined(HAVE_NORTHSTAR)
 	rmmod("nf_nat_pptp");
 	rmmod("nf_conntrack_pptp");
 	rmmod("nf_nat_proto_gre");
