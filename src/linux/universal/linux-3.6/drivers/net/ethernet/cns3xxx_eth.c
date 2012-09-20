@@ -627,7 +627,8 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		else {
 			if (sw->frag_first == sw->frag_last)
 				skb_frag_add_head(sw->frag_first, skb);
-			sw->frag_last->next = skb;
+			else
+				sw->frag_last->next = skb;
 			sw->frag_first->len += skb->len;
 			sw->frag_first->data_len += skb->len;
 			sw->frag_first->truesize += skb->truesize;
