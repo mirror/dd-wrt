@@ -103,7 +103,7 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	page = websGetVar(wp, "route_page", NULL);
 	if (!page)
 		page = "0";
-
+	
 	which = atoi(page);
 
 	temp = which;
@@ -187,7 +187,7 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 
 void ej_static_route_table(webs_t wp, int argc, char_t ** argv)
 {
-	int i, page;
+	int i, page, tmp=0;
 	int which;
 	char *type;
 	char word[256], *next;
@@ -223,10 +223,13 @@ void ej_static_route_table(webs_t wp, int argc, char_t ** argv)
 				}
 			}
 			snprintf(buf, sizeof(buf), "(%s)", new_name);
+			
 			websWrite(wp,
-				  "\t\t<option value=\"%d\" %s> %d %s</option>\n",
-				  i, (i == page) ? "selected=\"selected\"" : "",
-				  i + 1, buf);
+			  	"\t\t<option value=\"%d\" %s> %d %s</option>\n",
+			  	i, ((i == page) && !tmp) ? "selected=\"selected\"" : "",
+			  	i + 1, buf);
+
+			if (i == page) tmp = 1;
 		}
 	}
 
