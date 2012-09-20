@@ -236,7 +236,7 @@ void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 	 * secondary CPU branches to this address.
 	 */
 	__raw_writel(virt_to_phys(cns3xxx_secondary_startup),
-			(void __iomem *)(0xFFF07000 + 0x0600));
+			(void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0600));
 
 	/*
 	 * Setup FIQ's for main cpu
