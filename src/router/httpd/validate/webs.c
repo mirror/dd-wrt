@@ -2008,6 +2008,8 @@ void add_vifs_single(char *prefix, int device)
 		nvram_set(v2, getUEnv(v3));
 		
 		add_mdhcpd(v, 20, 200, 3600);
+		//required to use mdhcpd
+		nvram_set("dhcp_dnsmasq", "1");
 
 		rep(v, '.', 'X');
 		
