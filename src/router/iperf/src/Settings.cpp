@@ -202,7 +202,7 @@ void Settings_Initialize( thread_Settings *main ) {
     main->mFormat       = 'a';           // -f,  adaptive bits
     // skip help                         // -h,
     //main->mBufLenSet  = false;         // -l,	
-    main->mBufLen       = 8 * 1024;      // -l,  8 Kbyte
+    main->mBufLen       = 128 * 1024;      // -l,  8 Kbyte
     //main->mInterval     = 0;           // -i,  ie. no periodic bw reports
     //main->mPrintMSS   = false;         // -m,  don't print MSS
     // mAmount is time also              // -n,  N/A
