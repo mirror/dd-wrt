@@ -1075,12 +1075,13 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 				char *athkey =
 				    nvram_nget("%s_key%d", prefix, i);
 				if (athkey != NULL && strlen(athkey) > 0) {
-					fprintf(fp, "wep_key%d=%s\n", cnt++, athkey);	// setup wep
+					fprintf(fp, "wep_key%d=%s\n", i - 1, athkey);	// setup wep
 				}
 			}
-
-			fprintf(fp, "wep_tx_keyidx=%s\n",
-				nvram_nget("%s_key", prefix));
+			
+			sprintf(psk ,"%s", nvram_nget("%s_key", prefix));
+			fprintf(fp, "wep_tx_keyidx=%d\n",
+				atoi(psk) - 1);
 		}
 		fprintf(fp, "}\n");
 		char extra[32];
