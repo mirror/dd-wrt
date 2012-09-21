@@ -895,6 +895,7 @@ static void nat_postrouting(void)
 #ifndef HAVE_WHRAG108
 #ifndef HAVE_XSCALE
 #ifndef HAVE_LAGUNA
+#ifndef HAVE_NORTHSTAR
 #ifndef HAVE_X86
 #ifndef HAVE_CA8
 #ifndef HAVE_RB500
@@ -902,6 +903,7 @@ static void nat_postrouting(void)
 #ifndef HAVE_BCMMODERN
 		if (nvram_match("block_loopback", "0"))
 			writeproc("/proc/sys/net/ipv4/conf/br0/loop", "1");
+#endif
 #endif
 #endif
 #endif
