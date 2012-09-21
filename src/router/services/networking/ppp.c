@@ -182,6 +182,18 @@ int ipdown_main(int argc, char **argv)
 {
 	if (check_action() != ACT_IDLE)
 		return -1;
+	runStartup("/etc/config", ".ipdown");
+#ifdef HAVE_REGISTER
+	if (isregistered_real())
+#endif
+	{
+#ifdef HAVE_RB500
+		runStartup("/usr/local/etc/config", ".ipdown");
+#else
+		runStartup("/jffs/etc/config", ".ipdown");
+		runStartup("/mmc/etc/config", ".ipdown");
+#endif
+	}
 	stop_ddns();
 	stop_ntpc();
 
