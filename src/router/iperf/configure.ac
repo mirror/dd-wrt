@@ -5,9 +5,13 @@ dnl ===================================================================
 
 
 AC_PREREQ(2.59)
-AC_INIT(Iperf,2.0.4)
+AC_INIT(Iperf,2.0.5)
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE()
+
+m4_include([m4/ax_create_stdint_h.m4])
+m4_include([m4/dast.m4])
+m4_include([m4/acx_pthread.m4])
 
 
 AC_ARG_ENABLE(ipv6, AC_HELP_STRING([--disable-ipv6],
