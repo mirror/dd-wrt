@@ -413,7 +413,7 @@ void Client::Connect( ) {
     // connect socket
     rc = connect( mSettings->mSock, (sockaddr*) &mSettings->peer, 
                   SockAddr_get_sizeof_sockaddr( &mSettings->peer ));
-    WARN_errno( rc == SOCKET_ERROR, "connect" );
+    FAIL_errno( rc == SOCKET_ERROR, "connect", mSettings );
 
     getsockname( mSettings->mSock, (sockaddr*) &mSettings->local, 
                  &mSettings->size_local );
