@@ -585,7 +585,6 @@ static void clear_tx_desc(struct sw *sw)
 static int eth_poll(struct napi_struct *napi, int budget)
 {
 	struct sw *sw = container_of(napi, struct sw, napi);
-	struct net_device *dev;
 	struct _rx_ring *rx_ring = sw->rx_ring;
 	int received = 0;
 	unsigned int length;
@@ -600,14 +599,14 @@ static int eth_poll(struct napi_struct *napi, int budget)
 			break;
 
 		/* process received frame */
-		dma_unmap_single(&dev->dev, rx_ring->phys_tab[i],
+		dma_unmap_single(NULL, rx_ring->phys_tab[i],
 				 RX_SEGMENT_MRU, DMA_FROM_DEVICE);
 
 		skb = build_skb(rx_ring->buff_tab[i], 0);
 		if (!skb)
 			break;
 
-		dev = switch_port_tab[desc->sp]->netdev;
+		skb->dev = switch_port_tab[desc->sp]->netdev;
 
 		length = desc->sdl;
 		if (desc->fsd && !desc->lsd)
@@ -636,7 +635,10 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		sw->frag_last = skb;
 
 		if (desc->lsd) {
+			struct net_device *dev;
+
 			skb = sw->frag_first;
+			dev = skb->dev;
 			skb->protocol = eth_type_trans(skb, dev);
 
 			dev->stats.rx_packets++;
