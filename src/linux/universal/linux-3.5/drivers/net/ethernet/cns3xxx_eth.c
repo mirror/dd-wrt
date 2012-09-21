@@ -653,16 +653,16 @@ static int eth_poll(struct napi_struct *napi, int budget)
 				case 6:
 				case 13:
 				case 14:
-					if (desc->l4f)
+					if (!desc->l4f) {
+						skb->ip_summed = CHECKSUM_UNNECESSARY;
+						napi_gro_receive(napi, skb);
 						break;
-
-					skb->ip_summed = CHECKSUM_UNNECESSARY;
-					break;
+					}
+					/* fall through */
 				default:
-				break;
+					netif_receive_skb(skb);
+					break;
 			}
-
-			napi_gro_receive(napi, skb);
 
 			sw->frag_first = NULL;
 			sw->frag_last = NULL;
@@ -691,36 +691,60 @@ static int eth_poll(struct napi_struct *napi, int budget)
 	return received;
 }
 
+static void eth_set_desc(struct _tx_ring *tx_ring, int index, int index_last,
+			 void *data, int len, u32 config0, u32 pmap)
+{
+	struct tx_desc *tx_desc = &(tx_ring)->desc[index];
+	unsigned int phys;
+
+	phys = dma_map_single(NULL, data, len, DMA_TO_DEVICE);
+	tx_desc->sdp = phys;
+	tx_desc->pmap = pmap;
+	tx_ring->phys_tab[index] = phys;
+
+	config0 |= len;
+	if (index == TX_DESCS - 1)
+		config0 |= END_OF_RING;
+	if (index == index_last)
+		config0 |= LAST_SEGMENT;
+
+	mb();
+	tx_desc->config0 = config0;
+}
+
 static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct port *port = netdev_priv(dev);
 	struct sw *sw = port->sw;
 	struct _tx_ring *tx_ring = sw->tx_ring;
-	struct tx_desc *tx_desc;
-	int index;
-	int len;
+	struct sk_buff *skb1;
 	char pmap = (1 << port->id);
-	unsigned int phys;
 	int nr_frags = skb_shinfo(skb)->nr_frags;
-	struct skb_frag_struct *frag;
+	int nr_desc = nr_frags;
+	int index0, index, index_last;
+	int len0;
 	unsigned int i;
-	u32 config0 = 0;
+	u32 config0;
 
 	if (pmap == 8)
 		pmap = (1 << 4);
 
+	skb_walk_frags(skb, skb1)
+		nr_desc++;
+
 	spin_lock(&tx_lock);
 
-	if ((tx_ring->num_used + nr_frags) >= TX_DESCS) {
+	if ((tx_ring->num_used + nr_desc) >= TX_DESCS) {
 		clear_tx_desc(sw);
-		if ((tx_ring->num_used + nr_frags) >= TX_DESCS) {
+		if ((tx_ring->num_used + nr_desc) >= TX_DESCS) {
 			spin_unlock(&tx_lock);
 			return NETDEV_TX_BUSY;
 		}
 	}
 
-	index = tx_ring->cur_index;
-	tx_ring->cur_index = ((tx_ring->cur_index + nr_frags + 1) % TX_DESCS);
+	index = index0 = tx_ring->cur_index;
+	index_last = (index0 + nr_desc) % TX_DESCS;
+	tx_ring->cur_index = (index_last + 1) % TX_DESCS;
 
 	spin_unlock(&tx_lock);
 
@@ -728,78 +752,41 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 	if (skb->ip_summed == CHECKSUM_PARTIAL)
 		config0 |= UDP_CHECKSUM | TCP_CHECKSUM;
 
-	if (!nr_frags) {
-		tx_desc = &(tx_ring)->desc[index];
+	len0 = skb->len;
 
-		len = skb->len;
+	/* fragments */
+	for (i = 0; i < nr_frags; i++) {
+		struct skb_frag_struct *frag;
+		void *addr;
 
-		phys = dma_map_single(NULL, skb->data, len, DMA_TO_DEVICE);
+		index = (index + 1) % TX_DESCS;
 
-		tx_desc->sdp = phys;
-		tx_desc->pmap = pmap;
-		tx_ring->phys_tab[index] = phys;
+		frag = &skb_shinfo(skb)->frags[i];
+		addr = page_address(skb_frag_page(frag)) + frag->page_offset;
 
-		tx_ring->buff_tab[index] = skb;
-		config0 |= FIRST_SEGMENT | LAST_SEGMENT;
-	} else {
-		index = ((index + nr_frags) % TX_DESCS);
-		tx_desc = &(tx_ring)->desc[index];
-
-		/* fragments */
-		for (i = nr_frags; i > 0; i--) {
-			u32 config;
-			void *addr;
-
-			frag = &skb_shinfo(skb)->frags[i-1];
-			len = frag->size;
-
-			addr = page_address(skb_frag_page(frag)) +
-			       frag->page_offset;
-			phys = dma_map_single(NULL, addr, len, DMA_TO_DEVICE);
-
-			tx_desc->sdp = phys;
-
-			tx_desc->pmap = pmap;
-			tx_ring->phys_tab[index] = phys;
-
-			config = config0 | len;
-			if (i == nr_frags) {
-				config |= LAST_SEGMENT;
-				tx_ring->buff_tab[index] = skb;
-			}
-			if (index == TX_DESCS - 1)
-				config |= END_OF_RING;
-			tx_desc->config0 = config;
-
-			if (index == 0) {
-				index = TX_DESCS - 1;
-				tx_desc = &(tx_ring)->desc[index];
-			} else {
-				index--;
-				tx_desc--;
-			}
-		}
-
-		/* header */
-		len = skb->len - skb->data_len;
-
-		phys = dma_map_single(NULL, skb->data, len, DMA_TO_DEVICE);
-
-		tx_desc->sdp = phys;
-		tx_desc->pmap = pmap;
-		tx_ring->phys_tab[index] = phys;
-		config0 |= FIRST_SEGMENT;
+		eth_set_desc(tx_ring, index, index_last, addr, frag->size,
+			     config0, pmap);
 	}
 
-	if (index == TX_DESCS - 1)
-		config0 |= END_OF_RING;
+	if (nr_frags)
+		len0 = skb->len - skb->data_len;
 
-	tx_desc->config0 = config0 | len;
+	skb_walk_frags(skb, skb1) {
+		index = (index + 1) % TX_DESCS;
+		len0 -= skb1->len;
+
+		eth_set_desc(tx_ring, index, index_last, skb1->data, skb1->len,
+			     config0, pmap);
+	}
+
+	tx_ring->buff_tab[index0] = skb;
+	eth_set_desc(tx_ring, index0, index_last, skb->data, len0,
+		     config0 | FIRST_SEGMENT, pmap);
 
 	mb();
 
 	spin_lock(&tx_lock);
-	tx_ring->num_used += nr_frags + 1;
+	tx_ring->num_used += nr_desc + 1;
 	spin_unlock(&tx_lock);
 
 	dev->stats.tx_packets++;
@@ -1152,7 +1139,7 @@ static int __devinit eth_init_one(struct platform_device *pdev)
 	if (!(napi_dev = alloc_etherdev(sizeof(struct sw))))
 		return -ENOMEM;
 	strcpy(napi_dev->name, "switch%d");
-	napi_dev->features = NETIF_F_IP_CSUM | NETIF_F_SG;
+	napi_dev->features = NETIF_F_IP_CSUM | NETIF_F_SG | NETIF_F_FRAGLIST;
 
 	SET_NETDEV_DEV(napi_dev, &pdev->dev);
 	sw = netdev_priv(napi_dev);
