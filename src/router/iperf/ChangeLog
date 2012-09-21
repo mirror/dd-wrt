@@ -1,3 +1,22 @@
+2010-07-08 Jon Dugan <jdugan@x1024.net>
+
+* bumped default TCP send/recv buffer to 128K (this is not the kernel buffer
+that controls the window, but rather the Iperf internal buffer)
+
+2010-04-10 Jon Dugan <jdugan@x1024.net>
+
+* update autoconf goo using Autoconf 2.65, this should help portability a bit
+
+2010-04-02 Ralf Lübben
+
+* honor -i flag when for a server (-s) when using TCP
+* tracker issue 2836973
+
+2010-04-01 Deny IP Any Any <denyipanyany@gmail.com>
+
+* Exit rather than warn on connection failure
+* http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=518033
+
 2010-03-31 Gerrit Renker <grenker@users.sourceforge.net>
 
 * Gerrit Renker's version of Ingo's Molnar's patch to further reduce CPU usage
