@@ -28,7 +28,6 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#include <math.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -1480,6 +1479,23 @@ void start_lan(void)
 			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
+#ifdef HAVE_NORTHSTAR
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		nvram_setz(lan_ifnames,
+			   "vlan1 vlan2 eth1 eth2");
+		PORTSETUPWAN("");
+	} else {
+		nvram_setz(lan_ifnames,
+			   "vlan1 vlan2 eth1 eth2");
+		PORTSETUPWAN("vlan2");
+	}
+	strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr",
+			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
+#endif
 #ifdef HAVE_LAGUNA
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		nvram_setz(lan_ifnames,
@@ -2771,6 +2787,10 @@ void start_wan(int status)
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
 	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+#elif HAVE_NORTHSTAR
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ?
+	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_LAGUNA
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
