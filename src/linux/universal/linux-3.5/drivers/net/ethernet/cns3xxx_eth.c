@@ -28,6 +28,7 @@
 
 #define RX_DESCS 128
 #define TX_DESCS 128
+#define TX_DESC_RESERVE	20
 
 #define RX_POOL_ALLOC_SIZE (sizeof(struct rx_desc) * RX_DESCS)
 #define TX_POOL_ALLOC_SIZE (sizeof(struct tx_desc) * TX_DESCS)
@@ -266,6 +267,7 @@ struct _tx_ring {
 	u32 cur_index;
 	int num_used;
 	int num_count;
+	bool stopped;
 };
 
 struct _rx_ring {
@@ -546,7 +548,34 @@ out:
 	rx_ring->alloc_index = i;
 }
 
-static void clear_tx_desc(struct sw *sw)
+static void eth_check_num_used(struct _tx_ring *tx_ring)
+{
+	bool stop = false;
+	int i;
+
+	if (tx_ring->num_used >= TX_DESCS - TX_DESC_RESERVE)
+		stop = true;
+
+	if (tx_ring->stopped == stop)
+		return;
+
+	tx_ring->stopped = stop;
+	for (i = 0; i < 4; i++) {
+		struct port *port = switch_port_tab[i];
+		struct net_device *dev;
+
+		if (!port)
+			continue;
+
+		dev = port->netdev;
+		if (stop)
+			netif_stop_queue(dev);
+		else
+			netif_wake_queue(dev);
+	}
+}
+
+static void eth_complete_tx(struct sw *sw)
 {
 	struct _tx_ring *tx_ring = sw->tx_ring;
 	struct tx_desc *desc;
@@ -554,9 +583,6 @@ static void clear_tx_desc(struct sw *sw)
 	int index;
 	int num_used = tx_ring->num_used;
 	struct sk_buff *skb;
-
-	if (num_used < (TX_DESCS >> 1))
-		return;
 
 	index = tx_ring->free_index;
 	desc = &(tx_ring)->desc[index];
@@ -580,6 +606,7 @@ static void clear_tx_desc(struct sw *sw)
 	}
 	tx_ring->free_index = index;
 	tx_ring->num_used -= i;
+	eth_check_num_used(tx_ring);
 }
 
 static int eth_poll(struct napi_struct *napi, int budget)
@@ -688,6 +715,10 @@ static int eth_poll(struct napi_struct *napi, int budget)
 
 	enable_rx_dma(sw);
 
+	spin_lock_bh(&tx_lock);
+	eth_complete_tx(sw);
+	spin_unlock_bh(&tx_lock);
+
 	return received;
 }
 
@@ -732,21 +763,19 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 	skb_walk_frags(skb, skb1)
 		nr_desc++;
 
-	spin_lock(&tx_lock);
+	spin_lock_bh(&tx_lock);
 
-	if ((tx_ring->num_used + nr_desc) >= TX_DESCS) {
-		clear_tx_desc(sw);
-		if ((tx_ring->num_used + nr_desc) >= TX_DESCS) {
-			spin_unlock(&tx_lock);
-			return NETDEV_TX_BUSY;
-		}
+	eth_complete_tx(sw);
+	if ((tx_ring->num_used + nr_desc + 1) >= TX_DESCS) {
+		spin_unlock_bh(&tx_lock);
+		return NETDEV_TX_BUSY;
 	}
 
 	index = index0 = tx_ring->cur_index;
 	index_last = (index0 + nr_desc) % TX_DESCS;
 	tx_ring->cur_index = (index_last + 1) % TX_DESCS;
 
-	spin_unlock(&tx_lock);
+	spin_unlock_bh(&tx_lock);
 
 	config0 = FORCE_ROUTE;
 	if (skb->ip_summed == CHECKSUM_PARTIAL)
@@ -1217,7 +1246,7 @@ static int __devinit eth_init_one(struct platform_device *pdev)
 		dev->netdev_ops = &cns3xxx_netdev_ops;
 		dev->ethtool_ops = &cns3xxx_ethtool_ops;
 		dev->tx_queue_len = 1000;
-		dev->features = NETIF_F_IP_CSUM | NETIF_F_SG;
+		dev->features = NETIF_F_IP_CSUM | NETIF_F_SG | NETIF_F_FRAGLIST;
 
 		switch_port_tab[port->id] = port;
 		memcpy(dev->dev_addr, &plat->hwaddr[i], ETH_ALEN);
