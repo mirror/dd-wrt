@@ -87,6 +87,8 @@ void start_openvpnserver(void)
 			nvram_safe_get("openvpn_proto"),
 			nvram_safe_get("openvpn_cipher"),
 			nvram_safe_get("openvpn_auth"));
+		fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive
+			nvram_safe_get("openvpn_lzo"));
 		if (strlen(nvram_safe_get("openvpn_clcon")) > 0) {
 			write_nvram("/tmp/openvpn/clientconnect", "openvpn_clcon");
 			fprintf(fp, "client-connect /tmp/openvpn/clientconnect\n");
@@ -102,9 +104,6 @@ void start_openvpnserver(void)
 				"ifconfig-pool-persist /tmp/openvpn/ip-pool 86400\n");
 //		if (nvram_match("openvpn_certtype", "1"))	//server doenst need this
 //			fprintf(fp, "ns-cert-type server\n");
-		if (nvram_invmatch("openvpn_lzo", "0"))
-			fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
-				nvram_safe_get("openvpn_lzo"));
 		if (nvram_match("openvpn_cl2cl", "1"))
 			fprintf(fp, "client-to-client\n");
 		if (nvram_match("openvpn_redirgate", "1"))
@@ -347,6 +346,8 @@ void start_openvpn(void)
 	fprintf(fp, "remote %s %s\n",
 		nvram_safe_get("openvpncl_remoteip"),
 		nvram_safe_get("openvpncl_remoteport"));
+	fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
+		nvram_safe_get("openvpncl_lzo"));
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy routing: we need redirect-gw so we get gw info
 		fprintf(fp, "redirect-private def1\n");
 		if (nvram_invmatch("openvpncl_tuntap", "tun"))
@@ -364,9 +365,6 @@ void start_openvpn(void)
 		fprintf(fp, "fragment %s\n",
 			nvram_safe_get("openvpncl_mssfix"));
 	}
-	if (nvram_invmatch("openvpncl_lzo", "0"))
-		fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
-			nvram_safe_get("openvpncl_lzo"));
 	if (nvram_match("openvpncl_certtype", "1"))
 		fprintf(fp, "ns-cert-type server\n");
 	if (nvram_match("openvpncl_proto", "udp"))
