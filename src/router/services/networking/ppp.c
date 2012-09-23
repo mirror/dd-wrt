@@ -192,6 +192,7 @@ int ipdown_main(int argc, char **argv)
 #else
 		runStartup("/jffs/etc/config", ".ipdown");
 		runStartup("/mmc/etc/config", ".ipdown");
+		runStartup("/tmp/etc/config", ".ipdown");
 #endif
 	}
 	stop_ddns();

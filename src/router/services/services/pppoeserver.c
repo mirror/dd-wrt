@@ -135,8 +135,8 @@ static void makeipup(void)
 		fprintf(fp, 
  		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
-		"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
-		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
+//		"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
+//		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
 		"startservice set_routes\n"	// reinitialize 
 		"addpppoeconnected $PPPD_PID $1 $5 $PEERNAME\n"
 		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
@@ -236,7 +236,8 @@ static void do_pppoeconfig(FILE * fp)
 		"noipdefault\n"
 		"defaultroute\n"
 		"proxyarp\n"	//
-		"noktune\n"	//
+//		"noktune\n"	//
+		"ktune\n"
 		"netmask 255.255.255.255\n"	//
 		"ip-up-script /tmp/pppoeserver/ip-up\n"	//
 		"ip-down-script /tmp/pppoeserver/ip-down\n"
