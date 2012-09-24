@@ -278,7 +278,7 @@ static FILE *web = NULL;
 			cprintf("found %s\n", path);
 			return web;
 		}
-		curoffset+=websRomPageIndex[i].size;
+		curoffset+=(websRomPageIndex[i].size-WEBSOFFSET);
 		i++;
 	}
 	cprintf("not found %s\n", path);
@@ -292,7 +292,7 @@ int getWebsFileLen(char *path)
 	int i = 0;
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
-			len = websRomPageIndex[i].size;
+			len = websRomPageIndex[i].size-WEBSOFFSET;
 			break;
 		}
 		i++;
@@ -316,10 +316,10 @@ void do_ej(struct mime_handler *handler, char *path, webs_t stream, char *query)
 			if (fp == NULL)
 			    return;
 			fseek(fp, curoffset, SEEK_SET);
-			len = websRomPageIndex[i].size;
+			len = websRomPageIndex[i].size-WEBSOFFSET;
 			break;
 		}
-		curoffset+=websRomPageIndex[i].size;
+		curoffset+=websRomPageIndex[i].size-WEBSOFFSET;
 		i++;
 	}
 	if (fp == NULL) {
