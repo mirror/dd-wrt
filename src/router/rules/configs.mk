@@ -154,7 +154,7 @@ obj-$(CONFIG_MOXA) += moxa
 obj-$(CONFIG_BONDING) += ifenslave
 obj-$(CONFIG_NSTX) += nstx
 obj-$(CONFIG_SQUID) += squid
-obj-$(CONFIG_IPERF) += iperf
+obj-$(CONFIG_IPERF) += iperf speedtest
 obj-$(CONFIG_NTPD) += ntpd
 obj-$(CONFIG_GPSD) += gpsd
 obj-$(CONFIG_PHP5) += php5
@@ -249,6 +249,7 @@ configs-update:
 	svn update $(LINUXDIR)/../linux-3.3
 	svn update $(LINUXDIR)/../linux-3.4
 	svn update $(LINUXDIR)/../linux-3.5
+	svn update $(LINUXDIR)/../linux-3.6
 	svn update $(LINUXDIR)/../linux-3.2
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP)
