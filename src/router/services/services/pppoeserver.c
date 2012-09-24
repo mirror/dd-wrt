@@ -132,14 +132,15 @@ static void makeipup(void)
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
 		fprintf(fp, "iptables -I INPUT -i $1 -j ACCEPT\n");
 	if (nvram_match("pppoeserver_clip", "local"))
+		if (nvram_match("pppoeserver_interface", "br0"))
+			fprintf(fp,"arp -s $5 `nvram get lan_hwaddr` pub\n"	//prevent missing arp entries
+//				"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
+//				"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
+			);
 		fprintf(fp, 
  		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
-			"startservice set_routes\n"	// reinitialize
-//		"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
-//		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
-		"\n"
-		"arp -s $5 `nvram get lan_hwaddr` pub\n"	//prevent missing arp entries
+		"startservice set_routes\n"	// reinitialize
 		"addpppoeconnected $PPPD_PID $1 $5 $PEERNAME\n"
 		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
 		//	just an uptime test
@@ -164,7 +165,10 @@ static void makeipup(void)
 //eg: tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 10Mbit
 //burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
 	fclose(fp);
-	fp = fopen("/tmp/pppoeserver/ip-down", "w");
+	fp = fopen("/tmp/pppoeserver/ip-down", "w");	
+// must be finished
+//	if (nvram_match("pppoeserver_interface", "br0"))
+//		fprintf(fp,"arp -s $5 `nvram get lan_hwaddr` pub\n");
 	fprintf(fp, "#!/bin/sh\n"
 		"delpppoeconnected $PPPD_PID $PEERNAME\n"
 		//	calc connected time and volume per peer
@@ -175,7 +179,6 @@ static void makeipup(void)
 		"SENT=$(($SENT+$BYTES_SENT))\n"
 		"RCVD=$(($RCVD+$BYTES_RCVD))\n"
 		"addpppoetime $PEERNAME $CONTIME $SENT $RCVD\n"
-		//
 		"iptables -D FORWARD -i $1 -j ACCEPT\n"
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");	
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
@@ -239,9 +242,6 @@ static void do_pppoeconfig(FILE * fp)
 		"default-asyncmap\n"
 		"noipdefault\n"
 		"defaultroute\n"
-		"proxyarp\n"	//
-//		"noktune\n"	//
-		"ktune\n"
 		"netmask 255.255.255.255\n"	//
 		"ip-up-script /tmp/pppoeserver/ip-up\n"	//
 		"ip-down-script /tmp/pppoeserver/ip-down\n"
@@ -254,6 +254,10 @@ static void do_pppoeconfig(FILE * fp)
 		nvram_safe_get("pppoeserver_lcpechoint"),
 		nvram_safe_get("pppoeserver_lcpechofail"),
 		nvram_safe_get("pppoeserver_idle"));
+	if (nvram_match("pppoeserver_interface", "br0"))
+		fprintf(fp, "proxyarp\n" "ktune\n");
+	else
+		fprintf(fp, "noktune\n");
 	if (!nowins) {
 		fprintf(fp, "ms-wins %s\n", nvram_safe_get("wan_wins"));
 	}
