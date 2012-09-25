@@ -2033,6 +2033,9 @@ int internal_getRouterBrand()
 #elif HAVE_WR841v3
 	setRouter("TP-Link TL-WR841ND v3");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WA901
+	setRouter("TP-Link TL-WR901ND v2");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR941
 	setRouter("TP-Link TL-WR941ND v2/v3");
 	return ROUTER_BOARD_PB42;
