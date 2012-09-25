@@ -901,6 +901,11 @@ config WR941
     depends on AR9100
     default n
 
+config WA901
+    bool "WA901 wireless mac?"
+    depends on AR9100
+    default n
+
 config WRT160NL
     bool "wrt160nl wireless mac?"
     depends on AR9100

@@ -1071,6 +1071,12 @@ static inline void phy_dev_init(void)
 #ifdef CONFIG_ATHRS26_PHY
 	ar71xx_eth1_data.phy_mask = BIT(4);
 	ar71xx_add_device_mdio(0, 0x0);
+#elif CONFIG_WA901
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = 0x00001000;
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_eth0_data.reset_bit = RESET_MODULE_GE0_MAC |
+				     RESET_MODULE_GE0_PHY;
 #elif CONFIG_WZRG450
 	ar71xx_add_device_mdio(0, ~BIT(0));
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
