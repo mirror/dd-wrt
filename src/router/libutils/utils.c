@@ -2034,7 +2034,7 @@ int internal_getRouterBrand()
 	setRouter("TP-Link TL-WR841ND v3");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WA901
-	setRouter("TP-Link TL-WR901ND v2");
+	setRouter("TP-Link TL-WA901ND v2");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR941
 	setRouter("TP-Link TL-WR941ND v2/v3");
@@ -4186,7 +4186,7 @@ int led_control(int type, int act)
 #endif
 		break;
 	case ROUTER_BOARD_PB42:
-#ifdef HAVE_WR901
+#ifdef HAVE_WA901
 		diag_gpio = 0x102;
 		ses_gpio = 0x004;
 //              usb_gpio = 0x101;
