@@ -4186,7 +4186,11 @@ int led_control(int type, int act)
 #endif
 		break;
 	case ROUTER_BOARD_PB42:
-#ifdef HAVE_WR941
+#ifdef HAVE_WR901
+		diag_gpio = 0x102;
+		ses_gpio = 0x004;
+//              usb_gpio = 0x101;
+#elif  HAVE_WR941
 		diag_gpio = 0x102;
 		ses_gpio = 0x005;
 //              usb_gpio = 0x101;
