@@ -136,7 +136,25 @@ void start_sysinit(void)
 		MAC_SUB(mac);
 	}
 #endif
-#ifdef HAVE_WR941
+#ifdef HAVE_WA901
+	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	char mac[32];
+	if (fp) {
+		unsigned char buf2[256];
+		fseek(fp, 0x1fc00, SEEK_SET);
+		fread(buf2, 256, 1, fp);
+		fclose(fp);
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fprintf(stderr, "configure eth0 to %s\n", mac);
+		eval("ifconfig", "eth0", "hw", "ether", mac);
+		eval("ifconfig", "eth0", "up");
+	}
+#elif HAVE_WR941
 
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
