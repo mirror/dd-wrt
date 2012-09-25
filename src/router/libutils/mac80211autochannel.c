@@ -116,7 +116,7 @@ static int freq_list(struct unl *unl, int phy)
 	struct nl_msg *msg;
 	struct nlattr *band, *bands, *freqlist, *freq;
 	int rem, rem2, freq_mhz, chan;
-
+	
 	msg = unl_genl_msg(unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(unl, msg, &msg) < 0)
@@ -147,7 +147,7 @@ static int freq_list(struct unl *unl, int phy)
 #if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
 			if( (!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US")) 
 			     && ieee80211_mhz2ieee(freq_mhz) > 11 && ieee80211_mhz2ieee(freq_mhz) < 14
-			     && !nvram_default_match("region", "SA", ""))
+			     && nvram_default_match("region", "SA", ""))
 				continue;
 #endif 
 #if defined(HAVE_BUFFALO) && defined(HAVE_WZRHPAG300NH)
