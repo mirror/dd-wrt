@@ -266,7 +266,7 @@ FILE *getWebsFile(char *path)
 static FILE *web = NULL;
 	cprintf("opening %s\n", path);
 	int i = 0;
-	int curoffset=0;
+	unsigned int curoffset=0;
 	while (websRomPageIndex[i].path != NULL) {
 		
 		if (!strcmp(websRomPageIndex[i].path, path)) {
@@ -288,7 +288,7 @@ static FILE *web = NULL;
 
 int getWebsFileLen(char *path)
 {
-	int len = 0;
+	unsigned int len = 0;
 	int i = 0;
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
@@ -303,13 +303,13 @@ int getWebsFileLen(char *path)
 void do_ej(struct mime_handler *handler, char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
 {
 	FILE *fp = NULL;
-	int len;
+	unsigned int len;
 	int i;
 	memdebug_enter();
 
 	i = 0;
 	len = 0;
-	int curoffset=0;
+	unsigned int curoffset=0;
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			fp = fopen("/etc/www", "rb");
