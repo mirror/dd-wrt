@@ -1056,6 +1056,9 @@ ifeq ($(CONFIG_WR941),y)
 	-./tools/tplink/mktplinkfw -B TL-WR841NDv3 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv3-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv3-firmware.bin mips-uclibc/tplink-WR841NDv3-firmware.bin
 
+	-./tools/tplink/mktplinkfw -B TL-WA901NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv2-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA901NDv2-firmware.bin mips-uclibc/tplink-WA901NDv2-firmware.bin
+
 endif
 ifeq ($(CONFIG_WR741),y)
 	make -C lzma-loader/pb42 clean
