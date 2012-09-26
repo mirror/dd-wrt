@@ -36,11 +36,12 @@
 
 #include <arpa/inet.h>
 
+#include <linux/types.h>
+#include <linux/netdevice.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <linux/if_fddi.h>
 #include <linux/if_tr.h>
-#include <linux/types.h>
 #include <linux/isdn.h>
 
 #include <linux/if.h>
