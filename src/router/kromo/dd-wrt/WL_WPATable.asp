@@ -26,9 +26,10 @@ wpa_psk_error = 0;
 wep_error = 0;
 function check_form(F) {
 	var security_mode = 'disabled';
+	var element = null;
 	
 	// parse through security modes
-	for(i = 0; i < F.elements.length; i++) {
+	for(var i = 0; i < F.elements.length; i++) {
 		element = F.elements[i];
 		if(element.name) {
 			if(element.name.substr(element.name.length - 14, 14) == "_security_mode") {
@@ -150,7 +151,7 @@ function valid_wpa_psk(F, blur) {
 
 function valid_wep(F, blur) {
 	if(F.nodeName == 'INPUT') {
-		var iface = F.name.substr(0, F.name.length - 5);
+		var iface = F.name.substr(0, F.name.length - 5).replace(".","X");
 		if(document.forms[0].elements[iface + '_security_mode'].value != "wep")
 			return true;
 		
@@ -160,7 +161,7 @@ function valid_wep(F, blur) {
 		}
 			
 		var value = F.value;
-		var bitselect = document.forms[0].elements[iface + '_wep_bit'];
+		var bitselect = document.forms[0].elements[iface.replace("X",".") + '_wep_bit'];
 		if (ValidateKey(F, bitselect.options[bitselect.selectedIndex].value,1) == false) {
 			wep_error = 1;
 			settimeout("wep_error=0", 1000);
