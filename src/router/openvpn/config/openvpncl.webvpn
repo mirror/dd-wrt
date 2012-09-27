@@ -183,6 +183,16 @@
 			</script>
 		</div>
 		<div class="setting">		
+			<div class="label"><% tran("service.vpnd_pkcs"); %></div>
+			<textarea cols="60" rows="2" id="openvpncl_pkcs12" name="openvpncl_pkcs12"></textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+				var openvpncl_pkcs12 = fix_cr( '<% nvram_get("openvpncl_pkcs12"); %>' );
+				document.getElementById("openvpncl_pkcs12").value = openvpncl_pkcs12;
+			//]]>
+			</script>
+		</div>
+		<div class="setting">		
 			<div class="label"><% tran("service.vpnd_static"); %></div>
 			<textarea cols="60" rows="2" id="openvpncl_static" name="openvpncl_static"></textarea>
 			<script type="text/javascript">
