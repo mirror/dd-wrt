@@ -1365,6 +1365,7 @@ service.vpnd_dhpem="DH PEM";
 service.vpnd_tlsauth="TLS Auth Key";
 service.vpnd_cert="Public Server Cert";
 service.vpnd_key="Private Server Key";
+service.vpnd_pkcs="PKCS12 Key";
 service.vpnd_mode="Server mode";
 service.vpnd_net="Network";
 service.vpnd_mask="Netmask";
@@ -1402,8 +1403,9 @@ service.vpn_route="Policy based Routing";
 
 //help container
 var hstatus_vpn=new Object();
-hstatus_vpn.right1="<i>Policy based Routing:</i><br>Add IPs/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br><i>IP Address/Netmask:</i><br>Must be set when using DHCP-Proxy mode and local TAP is NOT bridged";
-hstatus_vpn.right2="<i>Additional Config:</i><br>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.";
+hstatus_vpn.right1="Policy based Routing:<br><i>Add IPs/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br><i>IP Address/Netmask:</i><br>Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
+hstatus_vpn.right2="Additional Config:<br><i>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.</i>";
+hstatus_vpn.right3="General:<br><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs</i>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
