@@ -1,0 +1,39 @@
+Synopsis:
+
+This directory contains example implementation of driver_deps.c for the 
+Broadcom Xstrata as well as some configuration tools.
+
+Author: Vladimir Cotfas <unix_router@yahoo.com>
+
+Description:
+
+Broadcom on Xstrata has a Control Plane MIPS CPU that can configure/control 
+the switch. They have a few kernel modules for passing commands to the 
+hardware and a "knet" multiplex pseudo-Ethernet module. The bulk of their 
+logic is in a user-mode application named "bcm.user". There is a CLI for it 
+called "bcm" but it's rather stupid and needs to run on a pty. I wrote 
+bcmexp.c as a means of feeding CLI commands to bcm/bcm.user.
+
+Typically one sets up one pseudo-Ethernet interface per physical port via 
+knet. The file knet.soc shows our arrangement for the two upstream ports 
+(known to Linux as GbE1 and GbE1 and to BCM as ge3 and ge4 respectively). 
+This .soc file is injected into BCM at startup via some Broadcom scripts. The 
+thing to notice is the priority and the "destid" which is the numeric ID of 
+the interface as used by knet. This will be used later.
+
+We also have "eth0" which is a sink for both gig ports. As gathered from the 
+soc file no packets actually reach GbE1/GbE2 from the switch fabric in normal 
+operation.
+
+Then stp.soc comes into play: it configures the switch fabric to except STP 
+BPDUs to the control plane as "fp" rule "31". Then comes two lines of knet 
+configuration that direct the excepted packets into GbE1 and GbE2 based on 
+ingress ports. Note the destid. This soc file is loaded into BCM when mstpd 
+starts in the startup script stp.sh. Both gig ports are switched to Blocking 
+state.
+
+The startup script puts both gig ports into a bridge and goes through the 
+motions of starting mstpd.
+
+The last bit released as per GPL is driver_deps.c which sends commands to BCM 
+to switch port states.

@@ -2425,7 +2425,7 @@ static void updtRolesTree(tree_t *tree)
                                           &ptp->designatedPriority,
                                           &ptp->portTimes,
                                           timesOfRootPort,
-                                          /*cist*/ false))
+                                          cist))
                     ptp->updtInfo = true;
                 continue;
             }
