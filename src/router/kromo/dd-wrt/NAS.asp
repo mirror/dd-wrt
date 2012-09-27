@@ -400,6 +400,8 @@ addEvent(window, "load", function() {
 	//show_layer_ext(document.setup.samba3_pub, 'samba3pub', <% nvram_else_match("samba3_pub", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.samba3_advanced, 'samba3advanced', <% nvram_else_match("samba3_advanced", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.samba3_advanced, 'samba3basic', <% nvram_else_match("samba3_advanced", "1", "1", "0"); %> != 1);
+	
+	show_layer_ext(document.setup.dlna_enable, 'dlnaen', <% nvram_else_match("dlna_enable", "1", "1", "0"); %> == 1);
 
 	update = new StatusbarUpdate();
 	update.start();

@@ -1,0 +1,2 @@
+ "dlna_enable" "ProFtpd support" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "dlna_dir"  "Files dir" "CHOICE" "3" "mnt" "mmc" "jffs" "FALSE" "0"
