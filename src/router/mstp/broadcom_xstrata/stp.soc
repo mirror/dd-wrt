@@ -1,0 +1,23 @@
+# Copyright (C) 2012 by Phybridge Inc
+# Released under GPLv2
+
+port ge3 stp=block
+port ge4 stp=block
+
+fp qset clear
+fp qset add dstmac
+fp qset add ethertype
+fp qset add inports
+#fp qset add outports
+fp qset add drop
+
+fp group create 4 777 1
+
+# This is STP and LLDP as LLDP uses the same mcast MAC as STP
+fp entry create 777 512
+fp qual 512 dstmac data=01:80:c2:00:00:00 mask=ff:ff:ff:00:00:00
+fp action add 512 copytocpu 1 31
+fp entry install 512
+
+knetctrl filter create DestType=NetIF DestID=4 StripTag=yes IngPort=ge3 FPRule=31 DESCription="ge3-fp"
+knetctrl filter create DestType=NetIF DestID=5 StripTag=yes IngPort=ge4 FPRule=31 DESCription="ge4-fp"
