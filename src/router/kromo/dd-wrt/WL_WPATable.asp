@@ -22,8 +22,8 @@ function generateKey(F,PREFIX) {
 	F.submit();
 }
 
-wpa_psk_error = 0;
-wep_error = 0;
+var wpa_psk_error = 0;
+var wep_error = 0;
 function check_form(F) {
 	var security_mode = 'disabled';
 	var element = null;
@@ -55,7 +55,11 @@ function check_form(F) {
 								wep_error = 0;
 								if(result == false) return result;
 							}
-							break;
+							//break;
+						} else {
+							result = valid_wep(F.elements[iface+"_key"+j]);
+							wep_error = 0;
+							if(result == false) return result;
 						}
 					}
 				}
@@ -99,7 +103,7 @@ function valid_wpa_psk(F, blur) {
 		if(F.value.length == 64){
 			if(!isxdigit(F, F.value)) {
 				wpa_psk_error = 1;
-				settimeout("wpa_psk_error=0", 1000);
+				setTimeout("wpa_psk_error=0", 1000);
 				return false;
 			}
 		} else 
@@ -107,7 +111,7 @@ function valid_wpa_psk(F, blur) {
 			if(!isascii(F,F.value)) {
 				F.value = value;
 				wpa_psk_error = 1;
-				settimeout("wpa_psk_error=0", 1000);
+				setTimeout("wpa_psk_error=0", 1000);
 				return false;
 			}
 		} else {
@@ -115,14 +119,14 @@ function valid_wpa_psk(F, blur) {
 				if(!isascii(F,F.value)) {
 					F.value = value;
 					wpa_psk_error = 1;
-					settimeout("wpa_psk_error=0", 1000);
+					setTimeout("wpa_psk_error=0", 1000);
 					return false;
 				}	
 			} else {
 				if(!wpa_psk_error) {
 					alert(errmsg.err39);
 					wpa_psk_error = 1;
-					settimeout("wpa_psk_error=0", 1000);
+					setTimeout("wpa_psk_error=0", 1000);
 				}
 				return false;
 			}
@@ -164,7 +168,7 @@ function valid_wep(F, blur) {
 		var bitselect = document.forms[0].elements[iface.replace("X",".") + '_wep_bit'];
 		if (ValidateKey(F, bitselect.options[bitselect.selectedIndex].value,1) == false) {
 			wep_error = 1;
-			settimeout("wep_error=0", 1000);
+			setTimeout("wep_error=0", 1000);
 			return false;
 		}
 	} else {
