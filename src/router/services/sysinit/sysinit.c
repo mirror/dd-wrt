@@ -431,6 +431,7 @@ static void buffalo_defaults(int force)
 		nvram_set("pincode", pincode);
 	}
 	if (nvram_get("ath0_akm") == NULL || force) {
+		nvram_set("ath0_akm", "disabled");
 		char *region = getUEnv("region");
 		if (!region || (strcmp(region, "AP") && strcmp(region, "TW")
 				&& strcmp(region, "RU")
