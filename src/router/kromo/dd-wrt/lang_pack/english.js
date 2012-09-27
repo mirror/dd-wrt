@@ -739,6 +739,11 @@ nas.samba3_legend="File Sharing";
 var hnas=new Object();
 hnas.right2="For the user password list, enter one password per line. Passwords can be plain text or MD5 crypt.";
 
+// ** DLNA **
+nas.dlna_legend="DLNA Server";
+nas.dlna_srv="MiniDLNA";
+nas.dlna_dir="Files Directory";
+
 // ** Hotspot.asp **//
 var hotspot=new Object();
 hotspot.titl="Hotspot";
