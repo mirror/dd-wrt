@@ -50,6 +50,7 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
+	write_nvram("/tmp/openvpn/cert.p12", "openvpn_pkcs12");
 	write_nvram("/tmp/openvpn/static.key", "openvpn_static");
 
 	FILE *fp = fopen("/tmp/openvpn/openvpn.conf", "wb");
@@ -57,6 +58,10 @@ void start_openvpnserver(void)
 		return;
 	if (nvram_invmatch("openvpn_static", ""))
 		fprintf(fp, "secret /tmp/openvpn/static.key\n");
+	else if(nvram_invmatch("openvpn_pkcs12", "")) {
+				fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
+				fprintf(fp, "pkcs12 /tmp/openvpn/cert.p12\n");
+		}
 	else {	
 		if (nvram_invmatch("openvpn_dh", ""))
 			fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
@@ -313,6 +318,7 @@ void start_openvpn(void)
 	write_nvram("/tmp/openvpncl/client.crt", "openvpncl_client");
 	write_nvram("/tmp/openvpncl/client.key", "openvpncl_key");
 	write_nvram("/tmp/openvpncl/ta.key", "openvpncl_tlsauth");
+	write_nvram("/tmp/openvpncl/cert.p12", "openvpncl_pkcs12");
 	write_nvram("/tmp/openvpncl/static.key", "openvpncl_static");
 	chmod("/tmp/openvpn/client.key", 0600);
 
@@ -321,6 +327,9 @@ void start_openvpn(void)
 		return;
 	if (nvram_invmatch("openvpncl_static", ""))
 		fprintf(fp, "secret /tmp/openvpncl/static.key\n");
+	else if(nvram_invmatch("openvpncl_pkcs12", "")) {;
+				fprintf(fp, "pkcs12 /tmp/openvpncl/cert.p12\n");
+		}
 	else {
 		if (nvram_invmatch("openvpncl_ca", ""))
 			fprintf(fp, "ca /tmp/openvpncl/ca.crt\n");
