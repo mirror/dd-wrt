@@ -1,0 +1,20 @@
+# Copyright (C) 2012 by Phybridge Inc
+# Released under GPLv2
+
+# ...
+
+knet netif create RCPU=no ifname=GbE1 p=4
+knet filter create  desttype=netif destid=4 striptag=1 ingport=4 description=GbE1 priority=10
+knet netif create RCPU=no ifname=GbE2 p=5
+knet filter create  desttype=netif destid=5 striptag=1 ingport=5 description=GbE2 priority=10
+
+# ...
+
+knet filter create desttype=netif destid=54 striptag=1 ingport=4 description=ge4e0 priority=5
+knet filter create desttype=netif destid=54 striptag=1 ingport=5 description=ge5e0 priority=5
+knet filter create desttype=netif destid=54 striptag=1 reason=protocol description=protocola priority=5
+
+# ...
+
+pw report -raw
+pw start
