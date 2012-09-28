@@ -83,14 +83,18 @@ I.value=I.defaultChecked;
 };
 function valid_range(I,_3,_4,M){
 M1=unescape(M);
-isdigit(I,M1);
+if(!isdigit(I,M1)){
+return false;
+}
 d=parseInt(I.value,10);
 if(!(d<=_4&&d>=_3)){
 alert(M1+errmsg.err14+_3+" - "+_4+"].");
 I.value=I.defaultValue;
 }else{
 I.value=d;
+return true;
 }
+return false;
 };
 function valid_psk_length(I){
 if(I.value==""){
@@ -357,13 +361,14 @@ I.value=I.defaultValue;
 }
 };
 function valid_name(I,M,_13){
-isascii(I,M);
+result=isascii(I,M);
 var bbb=I.value.replace(/^\s*/,"");
 var ccc=bbb.replace(/\s*$/,"");
 I.value=ccc;
 if(_13&SPACE_NO){
-check_space(I,M);
+result=check_space(I,M);
 }
+return result;
 };
 function valid_mask(F,N,_14){
 var _15=-1;
@@ -430,7 +435,7 @@ function isascii(I,M){
 for(i=0;i<I.value.length;i++){
 ch=I.value.charAt(i);
 if(ch<" "||ch>"~"){
-alert('"'+M+'"'+errmsg.err29);
+alert("\""+M+"\""+errmsg.err29);
 I.value=I.defaultValue;
 return false;
 }
@@ -900,7 +905,7 @@ if(_5a.elements[i].className=="no-check"){
 }else{
 if(_5a.elements[i].type=="text"){
 if(chars=invalidTextValue(_5a.elements[i].value)){
-alert("Invalid input characters \""+chars+"\" in field \""+getInputLabel("input",_5a.elements[i].name)+"\"");
+alert(errmsg.err112.replace("<invchars>",chars).replace("<fieldname>",getInputLabel("input",elements[i].name)));
 _5a.elements[i].style.border="solid 2px #f00";
 _5a.elements[i].focus();
 return false;
@@ -996,6 +1001,9 @@ _6a=_6a*3;
 if(_67==2){
 _6a=_6a*1.8;
 }
+if(_67==3){
+_6a=_6a*1.3;
+}
 this.wait_time=_6a*_68;
 this.scroll_count=this.wait_time/5-3;
 };
@@ -1018,6 +1026,7 @@ _73.setAttribute("id",id);
 _73.setAttribute("maxlength",_6d);
 _73.setAttribute("size",_6e);
 _73.className=_72;
+_73.setAttribute("rel",_6c.getAttribute("rel"));
 _73.onblur=_6f;
 if(_6b==true){
 _73.setAttribute("type","text");
