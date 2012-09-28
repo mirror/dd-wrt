@@ -76,18 +76,19 @@ function check_action1(I,T,N) {
 	}
 }
 function valid_range(I,start,end,M) {
-
 	M1 = unescape(M);
-	isdigit(I,M1);
+	if(!isdigit(I,M1))
+		return false;
 
-	d = parseInt(I.value, 10);	
-	if ( !(d<=end && d>=start) ) {		
-
+	d = parseInt(I.value, 10);
+	if ( !(d<=end && d>=start) ) {
 		alert(M1 + errmsg.err14 + start + " - " + end +"].");
-		I.value = I.defaultValue;		
-	} else 
-		I.value = d;
-
+		I.value = I.defaultValue;
+	} else {
+		I.value = d;	// strip 0
+		return true;
+	}
+	return false;
 }
 
 function valid_psk_length(I) {
@@ -359,7 +360,7 @@ function valid_key(I,l){
 }
 
 function valid_name(I,M,flag) {
-	isascii(I,M);
+	result = isascii(I,M);
 
 	var bbb = I.value.replace(/^\s*/,"");
         var ccc = bbb.replace(/\s*$/,"");
@@ -367,9 +368,9 @@ function valid_name(I,M,flag) {
         I.value = ccc;
 
 	if(flag & SPACE_NO){
-		check_space(I,M);
+		result = check_space(I,M);
 	}
-
+	return result;
 }
 
 function valid_mask(F,N,flag){
@@ -923,7 +924,8 @@ function checkformelements( form ) {
 		if( form.elements[i].className == "no-check" ) {
 		} else if( form.elements[i].type == 'text' ) {
 			if( chars = invalidTextValue(form.elements[i].value ) ) {
-				alert('Invalid input characters "' + chars + '" in field "' + getInputLabel( 'input', form.elements[i].name ) + '"');
+				//alert('Invalid input characters "' + chars + '" in field "' + getInputLabel( 'input', form.elements[i].name ) + '"');
+				alert(errmsg.err112.replace('<invchars>', chars).replace('<fieldname>', getInputLabel( 'input', elements[i].name )));
 				form.elements[i].style.border = "solid 2px #f00";
 				form.elements[i].focus();
 				return false;
@@ -999,11 +1001,11 @@ function getTimeOut(clk, rest_default, flags) {
 
 	var wait_time = 60;
 	var scroll_count = (wait_time / 5) - 3;
-	var coef = 1.0;
+	var coef = 1;
 
     if (clk < 200 || clk == 240) {
 		coef = 2.0;
-	}	
+	}
 	
 	if (rest_default == 1) {
 		coef = coef * 2;
@@ -1014,7 +1016,10 @@ function getTimeOut(clk, rest_default, flags) {
 	if (flags == 2) {
 		coef = coef * 1.8;
 	}
-	
+	if (flags == 3) {
+		coef = coef * 1.3;
+	}
+
 	this.wait_time = coef * wait_time;
 	this.scroll_count = this.wait_time / 5 - 3;
 
@@ -1040,6 +1045,7 @@ function setElementMask(id, state) {
 	newInput.setAttribute('maxlength', val_maxlength);
 	newInput.setAttribute('size', val_size);
 	newInput.className = className;
+	newInput.setAttribute('rel', OldInput.getAttribute('rel'));
 	//newInput.setAttribute('onblur', val_onblur);
 	newInput.onblur = val_onblur;
 
