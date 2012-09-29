@@ -505,21 +505,20 @@ static int ohci_omap_suspend(struct platform_device *dev, pm_message_t message)
 
 	omap_ohci_clock_power(0);
 	ohci_to_hcd(ohci)->state = HC_STATE_SUSPENDED;
-	dev->dev.power.power_state = PMSG_SUSPEND;
 	return 0;
 }
 
 static int ohci_omap_resume(struct platform_device *dev)
 {
-	struct ohci_hcd	*ohci = hcd_to_ohci(platform_get_drvdata(dev));
+	struct usb_hcd	*hcd = platform_get_drvdata(dev);
+	struct ohci_hcd	*ohci = hcd_to_ohci(hcd);
 
 	if (time_before(jiffies, ohci->next_statechange))
 		msleep(5);
 	ohci->next_statechange = jiffies;
 
 	omap_ohci_clock_power(1);
-	dev->dev.power.power_state = PMSG_ON;
-	usb_hcd_resume_root_hub(platform_get_drvdata(dev));
+	ohci_finish_controller_resume(hcd);
 	return 0;
 }
 

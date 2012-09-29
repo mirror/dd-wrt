@@ -480,13 +480,13 @@ static int fs_create_by_name (const char *name, mode_t mode,
 	*dentry = NULL;
 	mutex_lock(&parent->d_inode->i_mutex);
 	*dentry = lookup_one_len(name, parent, strlen(name));
-	if (!IS_ERR(dentry)) {
+	if (!IS_ERR(*dentry)) {
 		if ((mode & S_IFMT) == S_IFDIR)
 			error = usbfs_mkdir (parent->d_inode, *dentry, mode);
 		else 
 			error = usbfs_create (parent->d_inode, *dentry, mode);
 	} else
-		error = PTR_ERR(dentry);
+		error = PTR_ERR(*dentry);
 	mutex_unlock(&parent->d_inode->i_mutex);
 
 	return error;
@@ -682,24 +682,9 @@ static void usbfs_add_device(struct usb_device *dev)
 
 static void usbfs_remove_device(struct usb_device *dev)
 {
-	struct dev_state *ds;
-	struct siginfo sinfo;
-
 	if (dev->usbfs_dentry) {
 		fs_remove_file (dev->usbfs_dentry);
 		dev->usbfs_dentry = NULL;
-	}
-	while (!list_empty(&dev->filelist)) {
-		ds = list_entry(dev->filelist.next, struct dev_state, list);
-		wake_up_all(&ds->wait);
-		list_del_init(&ds->list);
-		if (ds->discsignr) {
-			sinfo.si_signo = ds->discsignr;
-			sinfo.si_errno = EPIPE;
-			sinfo.si_code = SI_ASYNCIO;
-			sinfo.si_addr = ds->disccontext;
-			kill_pid_info_as_uid(ds->discsignr, &sinfo, ds->disc_pid, ds->disc_uid, ds->disc_euid, ds->secid);
-		}
 	}
 }
 

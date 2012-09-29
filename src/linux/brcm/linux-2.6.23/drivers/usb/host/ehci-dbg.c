@@ -27,7 +27,7 @@
 #define ehci_warn(ehci, fmt, args...) \
 	dev_warn (ehci_to_hcd(ehci)->self.controller , fmt , ## args )
 
-#ifdef EHCI_VERBOSE_DEBUG
+#ifdef VERBOSE_DEBUG
 #	define vdbg dbg
 #	define ehci_vdbg ehci_dbg
 #else
@@ -134,10 +134,11 @@ dbg_qtd (const char *label, struct ehci_hcd *ehci, struct ehci_qtd *qtd)
 static void __maybe_unused
 dbg_qh (const char *label, struct ehci_hcd *ehci, struct ehci_qh *qh)
 {
+	struct ehci_qh_hw *hw = qh->hw;
+
 	ehci_dbg (ehci, "%s qh %p n%08x info %x %x qtd %x\n", label,
-		qh, qh->hw_next, qh->hw_info1, qh->hw_info2,
-		qh->hw_current);
-	dbg_qtd ("overlay", ehci, (struct ehci_qtd *) &qh->hw_qtd_next);
+		qh, hw->hw_next, hw->hw_info1, hw->hw_info2, hw->hw_current);
+	dbg_qtd("overlay", ehci, (struct ehci_qtd *) &hw->hw_qtd_next);
 }
 
 static void __maybe_unused
@@ -323,7 +324,44 @@ static inline void remove_debug_files (struct ehci_hcd *bus) { }
 
 #else
 
-/* troubleshooting help: expose state in sysfs */
+/* troubleshooting help: expose state in debugfs */
+
+static int debug_async_open(struct inode *, struct file *);
+static int debug_periodic_open(struct inode *, struct file *);
+static int debug_registers_open(struct inode *, struct file *);
+static int debug_async_open(struct inode *, struct file *);
+static ssize_t debug_output(struct file*, char __user*, size_t, loff_t*);
+static int debug_close(struct inode *, struct file *);
+
+static const struct file_operations debug_async_fops = {
+	.owner		= THIS_MODULE,
+	.open		= debug_async_open,
+	.read		= debug_output,
+	.release	= debug_close,
+};
+static const struct file_operations debug_periodic_fops = {
+	.owner		= THIS_MODULE,
+	.open		= debug_periodic_open,
+	.read		= debug_output,
+	.release	= debug_close,
+};
+static const struct file_operations debug_registers_fops = {
+	.owner		= THIS_MODULE,
+	.open		= debug_registers_open,
+	.read		= debug_output,
+	.release	= debug_close,
+};
+
+static struct dentry *ehci_debug_root;
+
+struct debug_buffer {
+	ssize_t (*fill_func)(struct debug_buffer *);	/* fill method */
+	struct usb_bus *bus;
+	struct mutex mutex;	/* protect filling of buffer */
+	size_t count;		/* number of characters filled into buffer */
+	char *output_buf;
+	size_t alloc_size;
+};
 
 #define speed_char(info1) ({ char tmp; \
 		switch (info1 & (3 << 12)) { \
@@ -362,32 +400,33 @@ static void qh_lines (
 	unsigned		size = *sizep;
 	char			*next = *nextp;
 	char			mark;
-	u32			list_end = EHCI_LIST_END(ehci);
+	__le32			list_end = EHCI_LIST_END(ehci);
+	struct ehci_qh_hw	*hw = qh->hw;
 
-	if (qh->hw_qtd_next == list_end)	/* NEC does this */
+	if (hw->hw_qtd_next == list_end)	/* NEC does this */
 		mark = '@';
 	else
-		mark = token_mark(ehci, qh->hw_token);
+		mark = token_mark(ehci, hw->hw_token);
 	if (mark == '/') {	/* qh_alt_next controls qh advance? */
-		if ((qh->hw_alt_next & QTD_MASK(ehci))
-				== ehci->async->hw_alt_next)
+		if ((hw->hw_alt_next & QTD_MASK(ehci))
+				== ehci->async->hw->hw_alt_next)
 			mark = '#';	/* blocked */
-		else if (qh->hw_alt_next == list_end)
+		else if (hw->hw_alt_next == list_end)
 			mark = '.';	/* use hw_qtd_next */
 		/* else alt_next points to some other qtd */
 	}
-	scratch = hc32_to_cpup(ehci, &qh->hw_info1);
-	hw_curr = (mark == '*') ? hc32_to_cpup(ehci, &qh->hw_current) : 0;
+	scratch = hc32_to_cpup(ehci, &hw->hw_info1);
+	hw_curr = (mark == '*') ? hc32_to_cpup(ehci, &hw->hw_current) : 0;
 	temp = scnprintf (next, size,
 			"qh/%p dev%d %cs ep%d %08x %08x (%08x%c %s nak%d)",
 			qh, scratch & 0x007f,
 			speed_char (scratch),
 			(scratch >> 8) & 0x000f,
-			scratch, hc32_to_cpup(ehci, &qh->hw_info2),
-			hc32_to_cpup(ehci, &qh->hw_token), mark,
-			(cpu_to_hc32(ehci, QTD_TOGGLE) & qh->hw_token)
+			scratch, hc32_to_cpup(ehci, &hw->hw_info2),
+			hc32_to_cpup(ehci, &hw->hw_token), mark,
+			(cpu_to_hc32(ehci, QTD_TOGGLE) & hw->hw_token)
 				? "data1" : "data0",
-			(hc32_to_cpup(ehci, &qh->hw_alt_next) >> 1) & 0x0f);
+			(hc32_to_cpup(ehci, &hw->hw_alt_next) >> 1) & 0x0f);
 	size -= temp;
 	next += temp;
 
@@ -398,10 +437,10 @@ static void qh_lines (
 		mark = ' ';
 		if (hw_curr == td->qtd_dma)
 			mark = '*';
-		else if (qh->hw_qtd_next == cpu_to_hc32(ehci, td->qtd_dma))
+		else if (hw->hw_qtd_next == cpu_to_hc32(ehci, td->qtd_dma))
 			mark = '+';
 		else if (QTD_LENGTH (scratch)) {
-			if (td->hw_alt_next == ehci->async->hw_alt_next)
+			if (td->hw_alt_next == ehci->async->hw->hw_alt_next)
 				mark = '#';
 			else if (td->hw_alt_next != list_end)
 				mark = '/';
@@ -418,9 +457,7 @@ static void qh_lines (
 				(scratch >> 16) & 0x7fff,
 				scratch,
 				td->urb);
-		if (temp < 0)
-			temp = 0;
-		else if (size < temp)
+		if (size < temp)
 			temp = size;
 		size -= temp;
 		next += temp;
@@ -429,9 +466,7 @@ static void qh_lines (
 	}
 
 	temp = snprintf (next, size, "\n");
-	if (temp < 0)
-		temp = 0;
-	else if (size < temp)
+	if (size < temp)
 		temp = size;
 	size -= temp;
 	next += temp;
@@ -441,10 +476,8 @@ done:
 	*nextp = next;
 }
 
-static ssize_t
-show_async (struct class_device *class_dev, char *buf)
+static ssize_t fill_async_buffer(struct debug_buffer *buf)
 {
-	struct usb_bus		*bus;
 	struct usb_hcd		*hcd;
 	struct ehci_hcd		*ehci;
 	unsigned long		flags;
@@ -452,13 +485,12 @@ show_async (struct class_device *class_dev, char *buf)
 	char			*next;
 	struct ehci_qh		*qh;
 
-	*buf = 0;
-
-	bus = class_get_devdata(class_dev);
-	hcd = bus_to_hcd(bus);
+	hcd = bus_to_hcd(buf->bus);
 	ehci = hcd_to_ehci (hcd);
-	next = buf;
-	size = PAGE_SIZE;
+	next = buf->output_buf;
+	size = buf->alloc_size;
+
+	*next = 0;
 
 	/* dumps a snapshot of the async schedule.
 	 * usually empty except for long-term bulk reads, or head.
@@ -477,16 +509,12 @@ show_async (struct class_device *class_dev, char *buf)
 	}
 	spin_unlock_irqrestore (&ehci->lock, flags);
 
-	return strlen (buf);
+	return strlen(buf->output_buf);
 }
-static CLASS_DEVICE_ATTR (async, S_IRUGO, show_async, NULL);
 
 #define DBG_SCHED_LIMIT 64
-
-static ssize_t
-show_periodic (struct class_device *class_dev, char *buf)
+static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 {
-	struct usb_bus		*bus;
 	struct usb_hcd		*hcd;
 	struct ehci_hcd		*ehci;
 	unsigned long		flags;
@@ -500,11 +528,10 @@ show_periodic (struct class_device *class_dev, char *buf)
 		return 0;
 	seen_count = 0;
 
-	bus = class_get_devdata(class_dev);
-	hcd = bus_to_hcd(bus);
+	hcd = bus_to_hcd(buf->bus);
 	ehci = hcd_to_ehci (hcd);
-	next = buf;
-	size = PAGE_SIZE;
+	next = buf->output_buf;
+	size = buf->alloc_size;
 
 	temp = scnprintf (next, size, "size = %d\n", ehci->periodic_size);
 	size -= temp;
@@ -525,12 +552,15 @@ show_periodic (struct class_device *class_dev, char *buf)
 		next += temp;
 
 		do {
+			struct ehci_qh_hw *hw;
+
 			switch (hc32_to_cpu(ehci, tag)) {
 			case Q_TYPE_QH:
+				hw = p.qh->hw;
 				temp = scnprintf (next, size, " qh%d-%04x/%p",
 						p.qh->period,
 						hc32_to_cpup(ehci,
-								&p.qh->hw_info2)
+							&hw->hw_info2)
 							/* uframe masks */
 							& (QH_CMASK | QH_SMASK),
 						p.qh);
@@ -540,16 +570,18 @@ show_periodic (struct class_device *class_dev, char *buf)
 				for (temp = 0; temp < seen_count; temp++) {
 					if (seen [temp].ptr != p.ptr)
 						continue;
-					if (p.qh->qh_next.ptr)
+					if (p.qh->qh_next.ptr) {
 						temp = scnprintf (next, size,
 							" ...");
-					p.ptr = NULL;
+						size -= temp;
+						next += temp;
+					}
 					break;
 				}
 				/* show more info the first time around */
-				if (temp == seen_count && p.ptr) {
+				if (temp == seen_count) {
 					u32	scratch = hc32_to_cpup(ehci,
-							&p.qh->hw_info1);
+							&hw->hw_info1);
 					struct ehci_qtd	*qtd;
 					char		*type = "";
 
@@ -582,7 +614,7 @@ show_periodic (struct class_device *class_dev, char *buf)
 				} else
 					temp = 0;
 				if (p.qh) {
-					tag = Q_NEXT_TYPE(ehci, p.qh->hw_next);
+					tag = Q_NEXT_TYPE(ehci, hw->hw_next);
 					p = p.qh->qh_next;
 				}
 				break;
@@ -621,16 +653,12 @@ show_periodic (struct class_device *class_dev, char *buf)
 	spin_unlock_irqrestore (&ehci->lock, flags);
 	kfree (seen);
 
-	return PAGE_SIZE - size;
+	return buf->alloc_size - size;
 }
-static CLASS_DEVICE_ATTR (periodic, S_IRUGO, show_periodic, NULL);
-
 #undef DBG_SCHED_LIMIT
 
-static ssize_t
-show_registers (struct class_device *class_dev, char *buf)
+static ssize_t fill_registers_buffer(struct debug_buffer *buf)
 {
-	struct usb_bus		*bus;
 	struct usb_hcd		*hcd;
 	struct ehci_hcd		*ehci;
 	unsigned long		flags;
@@ -639,17 +667,16 @@ show_registers (struct class_device *class_dev, char *buf)
 	static char		fmt [] = "%*s\n";
 	static char		label [] = "";
 
-	bus = class_get_devdata(class_dev);
-	hcd = bus_to_hcd(bus);
+	hcd = bus_to_hcd(buf->bus);
 	ehci = hcd_to_ehci (hcd);
-	next = buf;
-	size = PAGE_SIZE;
+	next = buf->output_buf;
+	size = buf->alloc_size;
 
 	spin_lock_irqsave (&ehci->lock, flags);
 
-	if (bus->controller->power.power_state.event) {
+	if (!test_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags)) {
 		size = scnprintf (next, size,
-			"bus %s, device %s (driver " DRIVER_VERSION ")\n"
+			"bus %s, device %s\n"
 			"%s\n"
 			"SUSPENDED (no register access)\n",
 			hcd->self.controller->bus->name,
@@ -661,7 +688,7 @@ show_registers (struct class_device *class_dev, char *buf)
 	/* Capability Registers */
 	i = HC_VERSION(ehci_readl(ehci, &ehci->caps->hc_capbase));
 	temp = scnprintf (next, size,
-		"bus %s, device %s (driver " DRIVER_VERSION ")\n"
+		"bus %s, device %s\n"
 		"%s\n"
 		"EHCI %x.%02x, hcd state %d\n",
 		hcd->self.controller->bus->name,
@@ -763,9 +790,7 @@ show_registers (struct class_device *class_dev, char *buf)
 	}
 
 	if (ehci->reclaim) {
-		temp = scnprintf (next, size, "reclaim qh %p%s\n",
-				ehci->reclaim,
-				ehci->reclaim_ready ? " ready" : "");
+		temp = scnprintf(next, size, "reclaim qh %p\n", ehci->reclaim);
 		size -= temp;
 		next += temp;
 	}
@@ -787,28 +812,145 @@ show_registers (struct class_device *class_dev, char *buf)
 done:
 	spin_unlock_irqrestore (&ehci->lock, flags);
 
-	return PAGE_SIZE - size;
+	return buf->alloc_size - size;
 }
-static CLASS_DEVICE_ATTR (registers, S_IRUGO, show_registers, NULL);
+
+static struct debug_buffer *alloc_buffer(struct usb_bus *bus,
+				ssize_t (*fill_func)(struct debug_buffer *))
+{
+	struct debug_buffer *buf;
+
+	buf = kzalloc(sizeof(struct debug_buffer), GFP_KERNEL);
+
+	if (buf) {
+		buf->bus = bus;
+		buf->fill_func = fill_func;
+		mutex_init(&buf->mutex);
+		buf->alloc_size = PAGE_SIZE;
+	}
+
+	return buf;
+}
+
+static int fill_buffer(struct debug_buffer *buf)
+{
+	int ret = 0;
+
+	if (!buf->output_buf)
+		buf->output_buf = (char *)vmalloc(buf->alloc_size);
+
+	if (!buf->output_buf) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	ret = buf->fill_func(buf);
+
+	if (ret >= 0) {
+		buf->count = ret;
+		ret = 0;
+	}
+
+out:
+	return ret;
+}
+
+static ssize_t debug_output(struct file *file, char __user *user_buf,
+			    size_t len, loff_t *offset)
+{
+	struct debug_buffer *buf = file->private_data;
+	int ret = 0;
+
+	mutex_lock(&buf->mutex);
+	if (buf->count == 0) {
+		ret = fill_buffer(buf);
+		if (ret != 0) {
+			mutex_unlock(&buf->mutex);
+			goto out;
+		}
+	}
+	mutex_unlock(&buf->mutex);
+
+	ret = simple_read_from_buffer(user_buf, len, offset,
+				      buf->output_buf, buf->count);
+
+out:
+	return ret;
+
+}
+
+static int debug_close(struct inode *inode, struct file *file)
+{
+	struct debug_buffer *buf = file->private_data;
+
+	if (buf) {
+		if (buf->output_buf)
+			vfree(buf->output_buf);
+		kfree(buf);
+	}
+
+	return 0;
+}
+static int debug_async_open(struct inode *inode, struct file *file)
+{
+	file->private_data = alloc_buffer(inode->i_private, fill_async_buffer);
+
+	return file->private_data ? 0 : -ENOMEM;
+}
+
+static int debug_periodic_open(struct inode *inode, struct file *file)
+{
+	struct debug_buffer *buf;
+	buf = alloc_buffer(inode->i_private, fill_periodic_buffer);
+	if (!buf)
+		return -ENOMEM;
+
+	buf->alloc_size = (sizeof(void *) == 4 ? 6 : 8)*PAGE_SIZE;
+	file->private_data = buf;
+	return 0;
+}
+
+static int debug_registers_open(struct inode *inode, struct file *file)
+{
+	file->private_data = alloc_buffer(inode->i_private,
+					  fill_registers_buffer);
+
+	return file->private_data ? 0 : -ENOMEM;
+}
 
 static inline void create_debug_files (struct ehci_hcd *ehci)
 {
-	struct class_device *cldev = ehci_to_hcd(ehci)->self.class_dev;
-	int retval;
+	struct usb_bus *bus = &ehci_to_hcd(ehci)->self;
 
-	retval = class_device_create_file(cldev, &class_device_attr_async);
-	retval = class_device_create_file(cldev, &class_device_attr_periodic);
-	retval = class_device_create_file(cldev, &class_device_attr_registers);
+	ehci->debug_dir = debugfs_create_dir(bus->bus_name, ehci_debug_root);
+	if (!ehci->debug_dir)
+		return;
+
+	if (!debugfs_create_file("async", S_IRUGO, ehci->debug_dir, bus,
+						&debug_async_fops))
+		goto file_error;
+
+	if (!debugfs_create_file("periodic", S_IRUGO, ehci->debug_dir, bus,
+						&debug_periodic_fops))
+		goto file_error;
+
+	if (!debugfs_create_file("registers", S_IRUGO, ehci->debug_dir, bus,
+						    &debug_registers_fops))
+		goto file_error;
+
+	if (!debugfs_create_file("lpm", S_IRUGO|S_IWUSR, ehci->debug_dir, bus,
+						    &debug_lpm_fops))
+		goto file_error;
+
+	return;
+
+file_error:
+	debugfs_remove_recursive(ehci->debug_dir);
 }
 
 static inline void remove_debug_files (struct ehci_hcd *ehci)
 {
-	struct class_device *cldev = ehci_to_hcd(ehci)->self.class_dev;
-
-	class_device_remove_file(cldev, &class_device_attr_async);
-	class_device_remove_file(cldev, &class_device_attr_periodic);
-	class_device_remove_file(cldev, &class_device_attr_registers);
+	debugfs_remove_recursive(ehci->debug_dir);
 }
 
 #endif /* STUB_DEBUG_FILES */
-

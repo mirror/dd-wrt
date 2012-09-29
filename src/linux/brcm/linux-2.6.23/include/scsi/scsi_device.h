@@ -75,7 +75,7 @@ struct scsi_device {
 	unsigned sector_size;	/* size in bytes */
 
 	void *hostdata;		/* available to low-level driver */
-	char devfs_name[256];	/* devfs junk */
+	char devfs_name[256];
 	char type;
 	char scsi_level;
 	char inq_periph_qual;	/* PQ from INQUIRY data */	
@@ -127,6 +127,8 @@ struct scsi_device {
 	unsigned fix_capacity:1;	/* READ_CAPACITY is too high by 1 */
 	unsigned guess_capacity:1;	/* READ_CAPACITY might be too high by 1 */
 	unsigned retry_hwerror:1;	/* Retry HARDWARE_ERROR */
+	unsigned last_sector_bug:1;	/* do not use multisector accesses on
+					   SD_LAST_BUGGY_SECTORS */
 
 	unsigned int device_blocked;	/* Device returned QUEUE_FULL. */
 
@@ -210,6 +212,7 @@ extern struct scsi_device *__scsi_add_device(struct Scsi_Host *,
 extern int scsi_add_device(struct Scsi_Host *host, uint channel,
 			   uint target, uint lun);
 extern void scsi_remove_device(struct scsi_device *);
+extern int scsi_device_cancel(struct scsi_device *, int);
 
 extern int scsi_device_get(struct scsi_device *);
 extern void scsi_device_put(struct scsi_device *);
@@ -223,9 +226,6 @@ extern struct scsi_device *__scsi_device_lookup_by_target(struct scsi_target *,
 							  uint);
 extern void starget_for_each_device(struct scsi_target *, void *,
 		     void (*fn)(struct scsi_device *, void *));
-extern void __starget_for_each_device(struct scsi_target *, void *,
-				      void (*fn)(struct scsi_device *,
-						 void *));
 
 /* only exposed to implement shost_for_each_device */
 extern struct scsi_device *__scsi_iterate_devices(struct Scsi_Host *,
@@ -290,7 +290,6 @@ extern void scsi_target_block(struct device *);
 extern void scsi_target_unblock(struct device *);
 extern void scsi_remove_target(struct device *);
 extern void int_to_scsilun(unsigned int, struct scsi_lun *);
-extern int scsilun_to_int(struct scsi_lun *);
 extern const char *scsi_device_state_name(enum scsi_device_state);
 extern int scsi_is_sdev_device(const struct device *);
 extern int scsi_is_target_device(const struct device *);

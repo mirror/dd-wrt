@@ -17,6 +17,7 @@
 #include <linux/pci.h>
 #include <linux/delay.h>
 #include <linux/hardirq.h>
+#include <linux/scatterlist.h>
 
 #include <scsi/scsi.h>
 #include <scsi/scsi_cmnd.h>
@@ -204,6 +205,15 @@ int scsi_execute(struct scsi_device *sdev, const unsigned char *cmd,
 	 */
 	blk_execute_rq(req->q, NULL, req, 1);
 
+	/*
+	 * Some devices (USB mass-storage in particular) may transfer
+	 * garbage data together with a residue indicating that the data
+	 * is invalid.  Prevent the garbage from being misinterpreted
+	 * and prevent security leaks by zeroing out the excess data.
+	 */
+	if (unlikely(req->data_len > 0 && req->data_len <= bufflen))
+		memset(buffer + (bufflen - req->data_len), 0, req->data_len);
+
 	ret = req->errors;
  out:
 	blk_put_request(req);
@@ -302,14 +312,15 @@ static int scsi_req_map_sg(struct request *rq, struct scatterlist *sgl,
 	struct request_queue *q = rq->q;
 	int nr_pages = (bufflen + sgl[0].offset + PAGE_SIZE - 1) >> PAGE_SHIFT;
 	unsigned int data_len = 0, len, bytes, off;
+	struct scatterlist *sg;
 	struct page *page;
 	struct bio *bio = NULL;
 	int i, err, nr_vecs = 0;
 
-	for (i = 0; i < nsegs; i++) {
-		page = sgl[i].page;
-		off = sgl[i].offset;
-		len = sgl[i].length;
+	for_each_sg(sgl, sg, nsegs, i) {
+		page = sg->page;
+		off = sg->offset;
+		len = sg->length;
 		data_len += len;
 
 		while (len > 0) {
@@ -744,13 +755,14 @@ struct scatterlist *scsi_alloc_sgtable(struct scsi_cmnd *cmd, gfp_t gfp_mask)
 
 EXPORT_SYMBOL(scsi_alloc_sgtable);
 
-void scsi_free_sgtable(struct scatterlist *sgl, int index)
+void scsi_free_sgtable(struct scsi_cmnd *cmd)
 {
+	struct scatterlist *sgl = cmd->request_buffer;
 	struct scsi_host_sg_pool *sgp;
 
-	BUG_ON(index >= SG_MEMPOOL_NR);
+	BUG_ON(cmd->sglist_len >= SG_MEMPOOL_NR);
 
-	sgp = scsi_sg_pools + index;
+	sgp = scsi_sg_pools + cmd->sglist_len;
 	mempool_free(sgl, sgp->pool);
 }
 
@@ -776,7 +788,7 @@ EXPORT_SYMBOL(scsi_free_sgtable);
 static void scsi_release_buffers(struct scsi_cmnd *cmd)
 {
 	if (cmd->use_sg)
-		scsi_free_sgtable(cmd->request_buffer, cmd->sglist_len);
+		scsi_free_sgtable(cmd);
 
 	/*
 	 * Zero these out.  They now point to freed memory, and it is
@@ -1567,6 +1579,14 @@ struct request_queue *__scsi_alloc_queue(struct Scsi_Host *shost,
 
 	if (!shost->use_clustering)
 		clear_bit(QUEUE_FLAG_CLUSTER, &q->queue_flags);
+
+	/*
+	 * set a reasonable default alignment on word boundaries: the
+	 * host and device may alter it using
+	 * blk_queue_update_dma_alignment() later.
+	 */
+	blk_queue_dma_alignment(q, 0x03);
+
 	return q;
 }
 EXPORT_SYMBOL(__scsi_alloc_queue);
@@ -2223,18 +2243,19 @@ EXPORT_SYMBOL_GPL(scsi_target_unblock);
  *
  * Returns virtual address of the start of the mapped page
  */
-void *scsi_kmap_atomic_sg(struct scatterlist *sg, int sg_count,
+void *scsi_kmap_atomic_sg(struct scatterlist *sgl, int sg_count,
 			  size_t *offset, size_t *len)
 {
 	int i;
 	size_t sg_len = 0, len_complete = 0;
+	struct scatterlist *sg;
 	struct page *page;
 
 	WARN_ON(!irqs_disabled());
 
-	for (i = 0; i < sg_count; i++) {
+	for_each_sg(sgl, sg, sg_count, i) {
 		len_complete = sg_len; /* Complete sg-entries */
-		sg_len += sg[i].length;
+		sg_len += sg->length;
 		if (sg_len > *offset)
 			break;
 	}
@@ -2248,10 +2269,10 @@ void *scsi_kmap_atomic_sg(struct scatterlist *sg, int sg_count,
 	}
 
 	/* Offset starting from the beginning of first page in this sg-entry */
-	*offset = *offset - len_complete + sg[i].offset;
+	*offset = *offset - len_complete + sg->offset;
 
 	/* Assumption: contiguous pages can be accessed as "page + i" */
-	page = nth_page(sg[i].page, (*offset >> PAGE_SHIFT));
+	page = nth_page(sg->page, (*offset >> PAGE_SHIFT));
 	*offset &= ~PAGE_MASK;
 
 	/* Bytes in this sg-entry from *offset to the end of the page */

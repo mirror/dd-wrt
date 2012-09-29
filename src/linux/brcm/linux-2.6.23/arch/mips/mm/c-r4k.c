@@ -1283,6 +1283,8 @@ void __init r4k_cache_init(void)
 	/* Default cache error handler for R4000 and R5000 family */
 	set_uncached_handler (0x100, &except_vec2_generic, 0x80);
 
+	/* Check if special workarounds are required */
+
 	probe_pcache();
 	setup_scache();
 

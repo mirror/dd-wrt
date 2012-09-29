@@ -996,7 +996,8 @@ static int usbat_flash_read_data(struct us_data *us,
 	unsigned char  thistime;
 	unsigned int totallen, alloclen;
 	int len, result;
-	unsigned int sg_idx = 0, sg_offset = 0;
+	unsigned int sg_offset = 0;
+	struct scatterlist *sg = NULL;
 
 	result = usbat_flash_check_media(us, info);
 	if (result != USB_STOR_TRANSPORT_GOOD)
@@ -1050,7 +1051,7 @@ static int usbat_flash_read_data(struct us_data *us,
 	
 		/* Store the data in the transfer buffer */
 		usb_stor_access_xfer_buf(buffer, len, us->srb,
-					 &sg_idx, &sg_offset, TO_XFER_BUF);
+					 &sg, &sg_offset, TO_XFER_BUF);
 
 		sector += thistime;
 		totallen -= len;
@@ -1086,7 +1087,8 @@ static int usbat_flash_write_data(struct us_data *us,
 	unsigned char  thistime;
 	unsigned int totallen, alloclen;
 	int len, result;
-	unsigned int sg_idx = 0, sg_offset = 0;
+	unsigned int sg_offset = 0;
+	struct scatterlist *sg = NULL;
 
 	result = usbat_flash_check_media(us, info);
 	if (result != USB_STOR_TRANSPORT_GOOD)
@@ -1125,7 +1127,7 @@ static int usbat_flash_write_data(struct us_data *us,
 
 		/* Get the data from the transfer buffer */
 		usb_stor_access_xfer_buf(buffer, len, us->srb,
-					 &sg_idx, &sg_offset, FROM_XFER_BUF);
+					 &sg, &sg_offset, FROM_XFER_BUF);
 
 		/* ATA command 0x30 (WRITE SECTORS) */
 		usbat_pack_ata_sector_cmd(command, thistime, sector, 0x30);
@@ -1165,8 +1167,8 @@ static int usbat_hp8200e_handle_read10(struct us_data *us,
 	unsigned char *buffer;
 	unsigned int len;
 	unsigned int sector;
-	unsigned int sg_segment = 0;
 	unsigned int sg_offset = 0;
+	struct scatterlist *sg = NULL;
 
 	US_DEBUGP("handle_read10: transfersize %d\n",
 		srb->transfersize);
@@ -1223,9 +1225,6 @@ static int usbat_hp8200e_handle_read10(struct us_data *us,
 	sector |= short_pack(data[7+5], data[7+4]);
 	transferred = 0;
 
-	sg_segment = 0; /* for keeping track of where we are in */
-	sg_offset = 0;  /* the scatter/gather list */
-
 	while (transferred != srb->request_bufflen) {
 
 		if (len > srb->request_bufflen - transferred)
@@ -1258,7 +1257,7 @@ static int usbat_hp8200e_handle_read10(struct us_data *us,
 
 		/* Store the data in the transfer buffer */
 		usb_stor_access_xfer_buf(buffer, len, srb,
-				 &sg_segment, &sg_offset, TO_XFER_BUF);
+				 &sg, &sg_offset, TO_XFER_BUF);
 
 		/* Update the amount transferred and the sector number */
 

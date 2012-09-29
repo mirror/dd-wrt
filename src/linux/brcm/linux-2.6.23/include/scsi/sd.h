@@ -31,6 +31,12 @@
  */
 #define SD_BUF_SIZE		512
 
+/*
+ * Number of sectors at the end of the device to avoid multi-sector
+ * accesses to in the case of last_sector_bug
+ */
+#define SD_LAST_BUGGY_SECTORS	8
+
 struct scsi_disk {
 	struct scsi_driver *driver;	/* always &sd_template */
 	struct scsi_device *device;
@@ -44,8 +50,14 @@ struct scsi_disk {
 	unsigned	WCE : 1;	/* state of disk WCE bit */
 	unsigned	RCD : 1;	/* state of disk RCD bit, unused */
 	unsigned	DPOFUA : 1;	/* state of disk DPOFUA bit */
+	unsigned	first_scan : 1;
 };
 #define to_scsi_disk(obj) container_of(obj,struct scsi_disk,cdev)
+
+static inline struct scsi_disk *scsi_disk(struct gendisk *disk)
+{
+	return container_of(disk->private_data, struct scsi_disk, driver);
+}
 
 static int  sd_revalidate_disk(struct gendisk *disk);
 static void sd_rw_intr(struct scsi_cmnd * SCpnt);
@@ -56,6 +68,9 @@ static int sd_suspend(struct device *dev, pm_message_t state);
 static int sd_resume(struct device *dev);
 static void sd_rescan(struct device *);
 static int  sd_init_command(struct scsi_cmnd *);
+static int sd_issue_flush(struct request_queue *q, struct gendisk *disk,
+			  sector_t *error_sector);
+static void sd_prepare_flush(struct request_queue *, struct request *);
 static void sd_read_capacity(struct scsi_disk *sdkp, unsigned char *buffer);
 static void scsi_disk_release(struct class_device *cdev);
 static void sd_print_sense_hdr(struct scsi_disk *, struct scsi_sense_hdr *);

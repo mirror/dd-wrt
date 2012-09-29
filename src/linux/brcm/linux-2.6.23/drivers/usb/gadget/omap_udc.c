@@ -1238,8 +1238,6 @@ static int can_pullup(struct omap_udc *udc)
 
 static void pullup_enable(struct omap_udc *udc)
 {
-	udc->gadget.dev.parent->power.power_state = PMSG_ON;
-	udc->gadget.dev.power.power_state = PMSG_ON;
 	UDC_SYSCON1_REG |= UDC_PULLUP_EN;
 #ifndef CONFIG_USB_OTG
 	if (!cpu_is_omap15xx())
@@ -3038,8 +3036,6 @@ static int omap_udc_suspend(struct platform_device *dev, pm_message_t message)
 		omap_pullup(&udc->gadget, 0);
 	}
 
-	udc->gadget.dev.power.power_state = PMSG_SUSPEND;
-	udc->gadget.dev.parent->power.power_state = PMSG_SUSPEND;
 	return 0;
 }
 

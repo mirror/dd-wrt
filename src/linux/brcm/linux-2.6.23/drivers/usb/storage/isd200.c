@@ -555,7 +555,7 @@ static void isd200_invoke_transport( struct us_data *us,
 	/* if the command gets aborted by the higher layers, we need to
 	 * short-circuit all other processing
 	 */
-	if (test_bit(US_FLIDX_TIMED_OUT, &us->flags)) {
+	if (test_bit(US_FLIDX_TIMED_OUT, &us->dflags)) {
 		US_DEBUGP("-- command was aborted\n");
 		goto Handle_Abort;
 	}
@@ -602,7 +602,7 @@ static void isd200_invoke_transport( struct us_data *us,
 
 	if (need_auto_sense) {
 		result = isd200_read_regs(us);
-		if (test_bit(US_FLIDX_TIMED_OUT, &us->flags)) {
+		if (test_bit(US_FLIDX_TIMED_OUT, &us->dflags)) {
 			US_DEBUGP("-- auto-sense aborted\n");
 			goto Handle_Abort;
 		}
@@ -632,7 +632,7 @@ static void isd200_invoke_transport( struct us_data *us,
 	srb->result = DID_ABORT << 16;
 
 	/* permit the reset transfer to take place */
-	clear_bit(US_FLIDX_ABORTING, &us->flags);
+	clear_bit(US_FLIDX_ABORTING, &us->dflags);
 	/* Need reset here */
 }
 

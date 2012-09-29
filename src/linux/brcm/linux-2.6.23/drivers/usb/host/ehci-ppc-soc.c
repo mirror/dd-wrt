@@ -164,6 +164,8 @@ static const struct hc_driver ehci_ppc_soc_hc_driver = {
 	.hub_suspend = ehci_hub_suspend,
 	.hub_resume = ehci_hub_resume,
 #endif
+	.relinquish_port = ehci_relinquish_port,
+	.port_handed_over = ehci_port_handed_over,
 };
 
 static int ehci_hcd_ppc_soc_drv_probe(struct platform_device *pdev)

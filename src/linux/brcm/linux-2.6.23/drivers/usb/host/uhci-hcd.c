@@ -53,7 +53,6 @@
 /*
  * Version Information
  */
-#define DRIVER_VERSION "v3.0"
 #define DRIVER_AUTHOR "Linus 'Frodo Rabbit' Torvalds, Johannes Erdfelt, \
 Randy Dunlap, Georg Acher, Deti Fliegl, Thomas Sailer, Roman Weissgaerber, \
 Alan Stern"
@@ -234,7 +233,7 @@ static int resume_detect_interrupts_are_broken(struct uhci_hcd *uhci)
 	return 0;
 }
 
-static int remote_wakeup_is_broken(struct uhci_hcd *uhci)
+static int global_suspend_mode_is_broken(struct uhci_hcd *uhci)
 {
 	int port;
 	char *sys_info;
@@ -261,33 +260,60 @@ __releases(uhci->lock)
 __acquires(uhci->lock)
 {
 	int auto_stop;
-	int int_enable, egsm_enable;
+	int int_enable, egsm_enable, wakeup_enable;
+	struct usb_device *rhdev = uhci_to_hcd(uhci)->self.root_hub;
 
 	auto_stop = (new_state == UHCI_RH_AUTO_STOPPED);
-	dev_dbg(&uhci_to_hcd(uhci)->self.root_hub->dev,
-			"%s%s\n", __FUNCTION__,
+	dev_dbg(&rhdev->dev, "%s%s\n", __func__,
 			(auto_stop ? " (auto-stop)" : ""));
 
-	/* If we get a suspend request when we're already auto-stopped
-	 * then there's nothing to do.
-	 */
-	if (uhci->rh_state == UHCI_RH_AUTO_STOPPED) {
-		uhci->rh_state = new_state;
-		return;
-	}
-
-	/* Enable resume-detect interrupts if they work.
-	 * Then enter Global Suspend mode if _it_ works, still configured.
+	/* Start off by assuming Resume-Detect interrupts and EGSM work
+	 * and that remote wakeups should be enabled.
 	 */
 	egsm_enable = USBCMD_EGSM;
-	uhci->working_RD = 1;
+	uhci->RD_enable = 1;
 	int_enable = USBINTR_RESUME;
-	if (remote_wakeup_is_broken(uhci))
+	wakeup_enable = 1;
+
+	/* In auto-stop mode wakeups must always be detected, but
+	 * Resume-Detect interrupts may be prohibited.  (In the absence
+	 * of CONFIG_PM, they are always disallowed.)
+	 */
+	if (auto_stop) {
+		if (!device_may_wakeup(&rhdev->dev))
+			int_enable = 0;
+
+	/* In bus-suspend mode wakeups may be disabled, but if they are
+	 * allowed then so are Resume-Detect interrupts.
+	 */
+	} else {
+#ifdef CONFIG_PM
+		if (!rhdev->do_remote_wakeup)
+			wakeup_enable = 0;
+#endif
+	}
+
+	/* EGSM causes the root hub to echo a 'K' signal (resume) out any
+	 * port which requests a remote wakeup.  According to the USB spec,
+	 * every hub is supposed to do this.  But if we are ignoring
+	 * remote-wakeup requests anyway then there's no point to it.
+	 * We also shouldn't enable EGSM if it's broken.
+	 */
+	if (!wakeup_enable || global_suspend_mode_is_broken(uhci))
 		egsm_enable = 0;
-	if (resume_detect_interrupts_are_broken(uhci) || !egsm_enable ||
-			!device_may_wakeup(
-				&uhci_to_hcd(uhci)->self.root_hub->dev))
-		uhci->working_RD = int_enable = 0;
+
+	/* If we're ignoring wakeup events then there's no reason to
+	 * enable Resume-Detect interrupts.  We also shouldn't enable
+	 * them if they are broken or disallowed.
+	 *
+	 * This logic may lead us to enabling RD but not EGSM.  The UHCI
+	 * spec foolishly says that RD works only when EGSM is on, but
+	 * there's no harm in enabling it anyway -- perhaps some chips
+	 * will implement it!
+	 */
+	if (!wakeup_enable || resume_detect_interrupts_are_broken(uhci) ||
+			!int_enable)
+		uhci->RD_enable = int_enable = 0;
 
 	outw(int_enable, uhci->io_addr + USBINTR);
 	outw(egsm_enable | USBCMD_CF, uhci->io_addr + USBCMD);
@@ -308,14 +334,17 @@ __acquires(uhci->lock)
 			return;
 	}
 	if (!(inw(uhci->io_addr + USBSTS) & USBSTS_HCH))
-		dev_warn(&uhci_to_hcd(uhci)->self.root_hub->dev,
-			"Controller not stopped yet!\n");
+		dev_warn(uhci_dev(uhci), "Controller not stopped yet!\n");
 
 	uhci_get_current_frame_number(uhci);
 
 	uhci->rh_state = new_state;
 	uhci->is_stopped = UHCI_IS_STOPPED;
-	uhci_to_hcd(uhci)->poll_rh = !int_enable;
+
+	/* If interrupts don't work and remote wakeup is enabled then
+	 * the suspended root hub needs to be polled.
+	 */
+	uhci_to_hcd(uhci)->poll_rh = (!int_enable && wakeup_enable);
 
 	uhci_scan_schedule(uhci);
 	uhci_fsbr_off(uhci);
@@ -351,9 +380,12 @@ __acquires(uhci->lock)
 	 * for 20 ms.
 	 */
 	if (uhci->rh_state == UHCI_RH_SUSPENDED) {
+		unsigned egsm;
+
+		/* Keep EGSM on if it was set before */
+		egsm = inw(uhci->io_addr + USBCMD) & USBCMD_EGSM;
 		uhci->rh_state = UHCI_RH_RESUMING;
-		outw(USBCMD_FGR | USBCMD_EGSM | USBCMD_CF,
-				uhci->io_addr + USBCMD);
+		outw(USBCMD_FGR | USBCMD_CF | egsm, uhci->io_addr + USBCMD);
 		spin_unlock_irq(&uhci->lock);
 		msleep(20);
 		spin_lock_irq(&uhci->lock);
@@ -378,7 +410,6 @@ static irqreturn_t uhci_irq(struct usb_hcd *hcd)
 {
 	struct uhci_hcd *uhci = hcd_to_uhci(hcd);
 	unsigned short status;
-	unsigned long flags;
 
 	/*
 	 * Read the interrupt status, and write it back to clear the
@@ -398,7 +429,7 @@ static irqreturn_t uhci_irq(struct usb_hcd *hcd)
 			dev_err(uhci_dev(uhci), "host controller process "
 					"error, something bad happened!\n");
 		if (status & USBSTS_HCH) {
-			spin_lock_irqsave(&uhci->lock, flags);
+			spin_lock(&uhci->lock);
 			if (uhci->rh_state >= UHCI_RH_RUNNING) {
 				dev_err(uhci_dev(uhci),
 					"host controller halted, "
@@ -415,16 +446,16 @@ static irqreturn_t uhci_irq(struct usb_hcd *hcd)
 				 * pending unlinks */
 				mod_timer(&hcd->rh_timer, jiffies);
 			}
-			spin_unlock_irqrestore(&uhci->lock, flags);
+			spin_unlock(&uhci->lock);
 		}
 	}
 
 	if (status & USBSTS_RD)
 		usb_hcd_poll_rh_status(hcd);
 	else {
-		spin_lock_irqsave(&uhci->lock, flags);
+		spin_lock(&uhci->lock);
 		uhci_scan_schedule(uhci);
-		spin_unlock_irqrestore(&uhci->lock, flags);
+		spin_unlock(&uhci->lock);
 	}
 
 	return IRQ_HANDLED;
@@ -558,7 +589,7 @@ static int uhci_start(struct usb_hcd *hcd)
 	struct uhci_hcd *uhci = hcd_to_uhci(hcd);
 	int retval = -EBUSY;
 	int i;
-	struct dentry *dentry;
+	struct dentry __maybe_unused *dentry;
 
 	hcd->uses_new_polling = 1;
 
@@ -568,18 +599,16 @@ static int uhci_start(struct usb_hcd *hcd)
 	INIT_LIST_HEAD(&uhci->idle_qh_list);
 	init_waitqueue_head(&uhci->waitqh);
 
-	if (DEBUG_CONFIGURED) {
-		dentry = debugfs_create_file(hcd->self.bus_name,
-				S_IFREG|S_IRUGO|S_IWUSR, uhci_debugfs_root,
-				uhci, &uhci_debug_operations);
-		if (!dentry) {
-			dev_err(uhci_dev(uhci), "couldn't create uhci "
-					"debugfs entry\n");
-			retval = -ENOMEM;
-			goto err_create_debug_entry;
-		}
-		uhci->dentry = dentry;
+#ifdef UHCI_DEBUG_OPS
+	dentry = debugfs_create_file(hcd->self.bus_name,
+			S_IFREG|S_IRUGO|S_IWUSR, uhci_debugfs_root,
+			uhci, &uhci_debug_operations);
+	if (!dentry) {
+		dev_err(uhci_dev(uhci), "couldn't create uhci debugfs entry\n");
+		return -ENOMEM;
 	}
+	uhci->dentry = dentry;
+#endif
 
 	uhci->frame = dma_alloc_coherent(uhci_dev(uhci),
 			UHCI_NUMFRAMES * sizeof(*uhci->frame),
@@ -660,7 +689,9 @@ static int uhci_start(struct usb_hcd *hcd)
 
 	configure_hc(uhci);
 	uhci->is_initialized = 1;
+	spin_lock_irq(&uhci->lock);
 	start_rh(uhci);
+	spin_unlock_irq(&uhci->lock);
 	return 0;
 
 /*
@@ -691,7 +722,6 @@ err_alloc_frame_cpu:
 err_alloc_frame:
 	debugfs_remove(uhci->dentry);
 
-err_create_debug_entry:
 	return retval;
 }
 
@@ -704,6 +734,7 @@ static void uhci_stop(struct usb_hcd *hcd)
 		uhci_hc_died(uhci);
 	uhci_scan_schedule(uhci);
 	spin_unlock_irq(&uhci->lock);
+	synchronize_irq(hcd->irq);
 
 	del_timer_sync(&uhci->fsbr_timer);
 	release_uhci(uhci);
@@ -718,7 +749,20 @@ static int uhci_rh_suspend(struct usb_hcd *hcd)
 	spin_lock_irq(&uhci->lock);
 	if (!test_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags))
 		rc = -ESHUTDOWN;
-	else if (!uhci->dead)
+	else if (uhci->dead)
+		;		/* Dead controllers tell no tales */
+
+	/* Once the controller is stopped, port resumes that are already
+	 * in progress won't complete.  Hence if remote wakeup is enabled
+	 * for the root hub and any ports are in the middle of a resume or
+	 * remote wakeup, we must fail the suspend.
+	 */
+	else if (hcd->self.root_hub->do_remote_wakeup &&
+			uhci->resuming_ports) {
+		dev_dbg(uhci_dev(uhci), "suspend failed because a port "
+				"is resuming\n");
+		rc = -EBUSY;
+	} else
 		suspend_rh(uhci, UHCI_RH_SUSPENDED);
 	spin_unlock_irq(&uhci->lock);
 	return rc;
@@ -738,7 +782,7 @@ static int uhci_rh_resume(struct usb_hcd *hcd)
 	return rc;
 }
 
-static int uhci_suspend(struct usb_hcd *hcd, pm_message_t message)
+static int uhci_pci_suspend(struct usb_hcd *hcd, pm_message_t message)
 {
 	struct uhci_hcd *uhci = hcd_to_uhci(hcd);
 	int rc = 0;
@@ -775,7 +819,7 @@ done:
 	return rc;
 }
 
-static int uhci_resume(struct usb_hcd *hcd)
+static int uhci_pci_resume(struct usb_hcd *hcd)
 {
 	struct uhci_hcd *uhci = hcd_to_uhci(hcd);
 
@@ -809,8 +853,10 @@ static int uhci_resume(struct usb_hcd *hcd)
 
 	spin_unlock_irq(&uhci->lock);
 
-	if (!uhci->working_RD) {
-		/* Suspended root hub needs to be polled */
+	/* If interrupts don't work and remote wakeup is enabled then
+	 * the suspended root hub needs to be polled.
+	 */
+	if (!uhci->RD_enable && hcd->self.root_hub->do_remote_wakeup) {
 		hcd->poll_rh = 1;
 		usb_hcd_poll_rh_status(hcd);
 	}
@@ -873,8 +919,8 @@ static const struct hc_driver uhci_driver = {
 	.reset =		uhci_init,
 	.start =		uhci_start,
 #ifdef CONFIG_PM
-	.suspend =		uhci_suspend,
-	.resume =		uhci_resume,
+	.pci_suspend =		uhci_pci_suspend,
+	.pci_resume =		uhci_pci_resume,
 	.bus_suspend =		uhci_rh_suspend,
 	.bus_resume =		uhci_rh_resume,
 #endif
@@ -917,11 +963,12 @@ static int __init uhci_hcd_init(void)
 {
 	int retval = -ENOMEM;
 
-	printk(KERN_INFO DRIVER_DESC " " DRIVER_VERSION "%s\n",
-			ignore_oc ? ", overcurrent ignored" : "");
-
 	if (usb_disabled())
 		return -ENODEV;
+
+	printk(KERN_INFO "uhci_hcd: " DRIVER_DESC "%s\n",
+			ignore_oc ? ", overcurrent ignored" : "");
+	set_bit(USB_UHCI_LOADED, &usb_hcds_loaded);
 
 	if (DEBUG_CONFIGURED) {
 		errbuf = kmalloc(ERRBUF_LEN, GFP_KERNEL);
@@ -954,6 +1001,7 @@ debug_failed:
 
 errbuf_failed:
 
+	clear_bit(USB_UHCI_LOADED, &usb_hcds_loaded);
 	return retval;
 }
 
@@ -963,6 +1011,7 @@ static void __exit uhci_hcd_cleanup(void)
 	kmem_cache_destroy(uhci_up_cachep);
 	debugfs_remove(uhci_debugfs_root);
 	kfree(errbuf);
+	clear_bit(USB_UHCI_LOADED, &usb_hcds_loaded);
 }
 
 module_init(uhci_hcd_init);
