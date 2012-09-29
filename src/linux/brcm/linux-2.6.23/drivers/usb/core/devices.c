@@ -63,8 +63,6 @@
 #include "usb.h"
 #include "hcd.h"
 
-#define MAX_TOPO_LEVEL		6
-
 /* Define ALLOW_SERIAL_NUMBER if you want to see the serial number of devices */
 #define ALLOW_SERIAL_NUMBER
 
@@ -140,17 +138,19 @@ static const struct class_info clas_info[] =
 	{USB_CLASS_AUDIO,		"audio"},
 	{USB_CLASS_COMM,		"comm."},
 	{USB_CLASS_HID,			"HID"},
-	{USB_CLASS_HUB,			"hub"},
 	{USB_CLASS_PHYSICAL,		"PID"},
+	{USB_CLASS_STILL_IMAGE,		"still"},
 	{USB_CLASS_PRINTER,		"print"},
 	{USB_CLASS_MASS_STORAGE,	"stor."},
+	{USB_CLASS_HUB,			"hub"},
 	{USB_CLASS_CDC_DATA,		"data"},
-	{USB_CLASS_APP_SPEC,		"app."},
-	{USB_CLASS_VENDOR_SPEC,		"vend."},
-	{USB_CLASS_STILL_IMAGE,		"still"},
 	{USB_CLASS_CSCID,		"scard"},
 	{USB_CLASS_CONTENT_SEC,		"c-sec"},
 	{USB_CLASS_VIDEO,		"video"},
+	{USB_CLASS_WIRELESS_CONTROLLER,	"wlcon"},
+	{USB_CLASS_MISC,		"misc"},
+	{USB_CLASS_APP_SPEC,		"app."},
+	{USB_CLASS_VENDOR_SPEC,		"vend."},
 	{-1,				"unk."}		/* leave as last */
 };
 
@@ -493,7 +493,7 @@ static ssize_t usb_device_dump(char __user **buffer, size_t *nbytes, loff_t *ski
 	if (level > MAX_TOPO_LEVEL)
 		return 0;
 	/* allocate 2^1 pages = 8K (on i386); should be more than enough for one device */
-        if (!(pages_start = (char*) __get_free_pages(GFP_KERNEL,1)))
+        if (!(pages_start = (char*) __get_free_pages(GFP_NOIO, 1)))
                 return -ENOMEM;
 		
 	if (usbdev->parent && usbdev->parent->devnum != -1)

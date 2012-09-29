@@ -16,7 +16,6 @@
 
 #include "uhci-hcd.h"
 
-#define uhci_debug_operations (* (const struct file_operations *) NULL)
 static struct dentry *uhci_debugfs_root;
 
 #ifdef DEBUG
@@ -118,10 +117,12 @@ static int uhci_show_urbp(struct urb_priv *urbp, char *buf, int len, int space)
 	}
 
 	out += sprintf(out, "%s%s", ptype, (urbp->fsbr ? " FSBR" : ""));
-	out += sprintf(out, " Actlen=%d", urbp->urb->actual_length);
+	out += sprintf(out, " Actlen=%d%s", urbp->urb->actual_length,
+			(urbp->qh->type == USB_ENDPOINT_XFER_CONTROL ?
+				"-8" : ""));
 
-	if (urbp->urb->status != -EINPROGRESS)
-		out += sprintf(out, " Status=%d", urbp->urb->status);
+	if (urbp->urb->unlinked)
+		out += sprintf(out, " Unlinked=%d", urbp->urb->unlinked);
 	out += sprintf(out, "\n");
 
 	i = nactive = ninactive = 0;
@@ -561,7 +562,6 @@ static int uhci_debug_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-#undef uhci_debug_operations
 static const struct file_operations uhci_debug_operations = {
 	.owner =	THIS_MODULE,
 	.open =		uhci_debug_open,
@@ -569,6 +569,7 @@ static const struct file_operations uhci_debug_operations = {
 	.read =		uhci_debug_read,
 	.release =	uhci_debug_release,
 };
+#define UHCI_DEBUG_OPS
 
 #endif	/* CONFIG_DEBUG_FS */
 

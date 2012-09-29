@@ -29,15 +29,6 @@ config USB_EHCI_HCD
 	  To compile this driver as a module, choose M here: the
 	  module will be called ehci-hcd.
 
-config USB_EHCI_SPLIT_ISO
-	bool "Full speed ISO transactions (EXPERIMENTAL)"
-	depends on USB_EHCI_HCD && EXPERIMENTAL
-	default n
-	---help---
-	  This code is new and hasn't been used with many different
-	  EHCI or USB 2.0 transaction translator implementations.
-	  It should work for ISO-OUT transfers, like audio.
-
 config USB_EHCI_ROOT_HUB_TT
 	bool "Root Hub Transaction Translators (EXPERIMENTAL)"
 	depends on USB_EHCI_HCD && EXPERIMENTAL
@@ -51,8 +42,9 @@ config USB_EHCI_ROOT_HUB_TT
 	  from ARC, and has since changed hands a few times.
 
 config USB_EHCI_TT_NEWSCHED
-	bool "Improved Transaction Translator scheduling (EXPERIMENTAL)"
-	depends on USB_EHCI_HCD && EXPERIMENTAL
+	bool "Improved Transaction Translator scheduling"
+	depends on USB_EHCI_HCD
+	default y
 	---help---
 	  This changes the periodic scheduling code to fill more of the low
 	  and full speed bandwidth available from the Transaction Translator
@@ -63,9 +55,11 @@ config USB_EHCI_TT_NEWSCHED
 	  If you have multiple periodic low/fullspeed devices connected to a
 	  highspeed USB hub which is connected to a highspeed USB Host
 	  Controller, and some of those devices will not work correctly
-	  (possibly due to "ENOSPC" or "-28" errors), say Y.
+	  (possibly due to "ENOSPC" or "-28" errors), say Y.  Conversely, if
+	  you have only one such device and it doesn't work, you could try
+	  saying N.
 
-	  If unsure, say N.
+	  If unsure, say Y.
 
 config USB_EHCI_BIG_ENDIAN_MMIO
 	bool
