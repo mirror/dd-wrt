@@ -144,9 +144,9 @@ void usb_major_cleanup(void)
 int usb_register_dev(struct usb_interface *intf,
 		     struct usb_class_driver *class_driver)
 {
-	int retval = -EINVAL;
+	int retval;
 	int minor_base = class_driver->minor_base;
-	int minor = 0;
+	int minor;
 	char name[BUS_ID_SIZE];
 	char *temp;
 
@@ -158,12 +158,17 @@ int usb_register_dev(struct usb_interface *intf,
 	 */
 	minor_base = 0;
 #endif
-	intf->minor = -1;
-
-	dbg ("looking for a minor, starting at %d", minor_base);
 
 	if (class_driver->fops == NULL)
-		goto exit;
+		return -EINVAL;
+	if (intf->minor >= 0)
+		return -EADDRINUSE;
+
+	retval = init_usb_class();
+	if (retval)
+		return retval;
+
+	dev_dbg(&intf->dev, "looking for a minor, starting at %d", minor_base);
 
 	down_write(&minor_rwsem);
 	for (minor = minor_base; minor < MAX_USB_MINORS; ++minor) {
@@ -171,20 +176,12 @@ int usb_register_dev(struct usb_interface *intf,
 			continue;
 
 		usb_minors[minor] = class_driver->fops;
-
-		retval = 0;
+		intf->minor = minor;
 		break;
 	}
 	up_write(&minor_rwsem);
-
-	if (retval)
-		goto exit;
-
-	retval = init_usb_class();
-	if (retval)
-		goto exit;
-
-	intf->minor = minor;
+	if (intf->minor < 0)
+		return -EXFULL;
 
 	/* create a usb class device for this usb interface */
 	snprintf(name, BUS_ID_SIZE, class_driver->name, minor - minor_base);
@@ -197,11 +194,11 @@ int usb_register_dev(struct usb_interface *intf,
 				      MKDEV(USB_MAJOR, minor), "%s", temp);
 	if (IS_ERR(intf->usb_dev)) {
 		down_write(&minor_rwsem);
-		usb_minors[intf->minor] = NULL;
+		usb_minors[minor] = NULL;
+		intf->minor = -1;
 		up_write(&minor_rwsem);
 		retval = PTR_ERR(intf->usb_dev);
 	}
-exit:
 	return retval;
 }
 EXPORT_SYMBOL(usb_register_dev);

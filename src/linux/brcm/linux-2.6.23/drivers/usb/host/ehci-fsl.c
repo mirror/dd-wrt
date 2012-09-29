@@ -122,7 +122,7 @@ int usb_hcd_fsl_probe(const struct hc_driver *driver,
 	temp = in_le32(hcd->regs + 0x1a8);
 	out_le32(hcd->regs + 0x1a8, temp | 0x3);
 
-	retval = usb_add_hcd(hcd, irq, IRQF_SHARED);
+	retval = usb_add_hcd(hcd, irq, IRQF_DISABLED | IRQF_SHARED);
 	if (retval != 0)
 		goto err4;
 	return retval;
@@ -271,7 +271,7 @@ static int ehci_fsl_setup(struct usb_hcd *hcd)
 	if (retval)
 		return retval;
 
-	ehci->is_tdi_rh_tt = 1;
+	hcd->has_tt = 1;
 
 	ehci->sbrn = 0x20;
 
@@ -297,10 +297,6 @@ static const struct hc_driver ehci_fsl_hc_driver = {
 	 */
 	.reset = ehci_fsl_setup,
 	.start = ehci_run,
-#ifdef	CONFIG_PM
-	.suspend = ehci_bus_suspend,
-	.resume = ehci_bus_resume,
-#endif
 	.stop = ehci_stop,
 	.shutdown = ehci_shutdown,
 
@@ -323,6 +319,8 @@ static const struct hc_driver ehci_fsl_hc_driver = {
 	.hub_control = ehci_hub_control,
 	.bus_suspend = ehci_bus_suspend,
 	.bus_resume = ehci_bus_resume,
+	.relinquish_port = ehci_relinquish_port,
+	.port_handed_over = ehci_port_handed_over,
 };
 
 static int ehci_fsl_drv_probe(struct platform_device *pdev)

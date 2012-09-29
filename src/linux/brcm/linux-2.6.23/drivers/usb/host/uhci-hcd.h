@@ -146,7 +146,6 @@ struct uhci_qh {
 	short phase;			/* Between 0 and period-1 */
 	short load;			/* Periodic time requirement, in us */
 	unsigned int iso_frame;		/* Frame # for iso_packet_desc */
-	int iso_status;			/* Status for Isochronous URBs */
 
 	int state;			/* QH_STATE_xxx; see above */
 	int type;			/* Queue type (control, bulk, etc) */
@@ -401,8 +400,9 @@ struct uhci_hcd {
 	unsigned int scan_in_progress:1;	/* Schedule scan is running */
 	unsigned int need_rescan:1;		/* Redo the schedule scan */
 	unsigned int dead:1;			/* Controller has died */
-	unsigned int working_RD:1;		/* Suspended root hub doesn't
-						   need to be polled */
+	unsigned int RD_enable:1;		/* Suspended root hub with
+						   Resume-Detect interrupts
+						   enabled */
 	unsigned int is_initialized:1;		/* Data structure is usable */
 	unsigned int fsbr_is_on:1;		/* FSBR is turned on */
 	unsigned int fsbr_is_wanted:1;		/* Does any URB want FSBR? */
@@ -455,21 +455,6 @@ struct urb_priv {
 
 	unsigned fsbr:1;		/* URB wants FSBR */
 };
-
-
-/*
- * Locking in uhci.c
- *
- * Almost everything relating to the hardware schedule and processing
- * of URBs is protected by uhci->lock.  urb->status is protected by
- * urb->lock; that's the one exception.
- *
- * To prevent deadlocks, never lock uhci->lock while holding urb->lock.
- * The safe order of locking is:
- *
- * #1 uhci->lock
- * #2 urb->lock
- */
 
 
 /* Some special IDs */

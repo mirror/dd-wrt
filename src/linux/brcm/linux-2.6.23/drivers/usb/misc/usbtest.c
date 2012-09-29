@@ -211,8 +211,6 @@ static struct urb *simple_alloc_urb (
 {
 	struct urb		*urb;
 
-	if (bytes < 0)
-		return NULL;
 	urb = usb_alloc_urb (0, GFP_KERNEL);
 	if (!urb)
 		return urb;
@@ -360,9 +358,9 @@ static void free_sglist (struct scatterlist *sg, int nents)
 	if (!sg)
 		return;
 	for (i = 0; i < nents; i++) {
-		if (!sg [i].page)
+		if (!sg_page(&sg[i]))
 			continue;
-		kfree (page_address (sg [i].page) + sg [i].offset);
+		kfree (page_address(sg[i].page) + sg[i].offset);
 	}
 	kfree (sg);
 }
@@ -1401,7 +1399,7 @@ static struct urb *iso_alloc_urb (
 		return NULL;
 	maxp = 0x7ff & le16_to_cpu(desc->wMaxPacketSize);
 	maxp *= 1 + (0x3 & (le16_to_cpu(desc->wMaxPacketSize) >> 11));
-	packets = (bytes + maxp - 1) / maxp;
+	packets = DIV_ROUND_UP(bytes, maxp);
 
 	urb = usb_alloc_urb (packets, GFP_KERNEL);
 	if (!urb)
@@ -1561,7 +1559,8 @@ usbtest_ioctl (struct usb_interface *intf, unsigned int code, void *buf)
 	if (down_interruptible (&dev->sem))
 		return -ERESTARTSYS;
 
-	if (intf->dev.power.power_state.event != PM_EVENT_ON) {
+	/* FIXME: What if a system sleep starts while a test is running? */
+	if (!intf->is_active) {
 		up (&dev->sem);
 		return -EHOSTUNREACH;
 	}

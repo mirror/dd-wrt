@@ -354,7 +354,7 @@ static inline char mon_bin_get_setup(unsigned char *setupb,
     const struct urb *urb, char ev_type)
 {
 
-	if (!usb_pipecontrol(urb->pipe) || ev_type != 'S')
+	if (!usb_endpoint_xfer_control(&urb->ep->desc) || ev_type != 'S')
 		return '-';
 
 	if (urb->dev->bus->uses_dma &&
@@ -386,7 +386,7 @@ static char mon_bin_get_data(const struct mon_reader_bin *rp,
 }
 
 static void mon_bin_event(struct mon_reader_bin *rp, struct urb *urb,
-    char ev_type)
+    char ev_type, int status)
 {
 	unsigned long flags;
 	struct timeval ts;
@@ -410,7 +410,7 @@ static void mon_bin_event(struct mon_reader_bin *rp, struct urb *urb,
 	if (length >= rp->b_size/5)
 		length = rp->b_size/5;
 
-	if (usb_pipein(urb->pipe)) {
+	if (usb_urb_dir_in(urb)) {
 		if (ev_type == 'S') {
 			length = 0;
 			data_tag = '<';
@@ -440,15 +440,27 @@ static void mon_bin_event(struct mon_reader_bin *rp, struct urb *urb,
 	 */
 	memset(ep, 0, PKT_SIZE);
 	ep->type = ev_type;
-	ep->xfer_type = usb_pipetype(urb->pipe);
-	/* We use the fact that usb_pipein() returns 0x80 */
-	ep->epnum = usb_pipeendpoint(urb->pipe) | usb_pipein(urb->pipe);
-	ep->devnum = usb_pipedevice(urb->pipe);
+	switch (usb_endpoint_type(&urb->ep->desc)) {
+	case USB_ENDPOINT_XFER_CONTROL:
+		ep->xfer_type = PIPE_CONTROL;
+		break;
+	case USB_ENDPOINT_XFER_BULK:
+		ep->xfer_type = PIPE_BULK;
+		break;
+	case USB_ENDPOINT_XFER_INT:
+		ep->xfer_type = PIPE_INTERRUPT;
+		break;
+	default:
+		ep->xfer_type = PIPE_ISOCHRONOUS;
+		break;
+	}
+	ep->epnum = urb->ep->desc.bEndpointAddress;
+	ep->devnum = urb->dev->devnum;
 	ep->busnum = urb->dev->bus->busnum;
 	ep->id = (unsigned long) urb;
 	ep->ts_sec = ts.tv_sec;
 	ep->ts_usec = ts.tv_usec;
-	ep->status = urb->status;
+	ep->status = status;
 	ep->len_urb = urb_length;
 	ep->len_cap = length;
 
@@ -471,13 +483,13 @@ static void mon_bin_event(struct mon_reader_bin *rp, struct urb *urb,
 static void mon_bin_submit(void *data, struct urb *urb)
 {
 	struct mon_reader_bin *rp = data;
-	mon_bin_event(rp, urb, 'S');
+	mon_bin_event(rp, urb, 'S', -EINPROGRESS);
 }
 
-static void mon_bin_complete(void *data, struct urb *urb)
+static void mon_bin_complete(void *data, struct urb *urb, int status)
 {
 	struct mon_reader_bin *rp = data;
-	mon_bin_event(rp, urb, 'C');
+	mon_bin_event(rp, urb, 'C', status);
 }
 
 static void mon_bin_error(void *data, struct urb *urb, int error)
@@ -500,10 +512,22 @@ static void mon_bin_error(void *data, struct urb *urb, int error)
 
 	memset(ep, 0, PKT_SIZE);
 	ep->type = 'E';
-	ep->xfer_type = usb_pipetype(urb->pipe);
-	/* We use the fact that usb_pipein() returns 0x80 */
-	ep->epnum = usb_pipeendpoint(urb->pipe) | usb_pipein(urb->pipe);
-	ep->devnum = usb_pipedevice(urb->pipe);
+	switch (usb_endpoint_type(&urb->ep->desc)) {
+	case USB_ENDPOINT_XFER_CONTROL:
+		ep->xfer_type = PIPE_CONTROL;
+		break;
+	case USB_ENDPOINT_XFER_BULK:
+		ep->xfer_type = PIPE_BULK;
+		break;
+	case USB_ENDPOINT_XFER_INT:
+		ep->xfer_type = PIPE_INTERRUPT;
+		break;
+	default:
+		ep->xfer_type = PIPE_ISOCHRONOUS;
+		break;
+	}
+	ep->epnum = urb->ep->desc.bEndpointAddress;
+	ep->devnum = urb->dev->devnum;
 	ep->busnum = urb->dev->bus->busnum;
 	ep->id = (unsigned long) urb;
 	ep->status = error;

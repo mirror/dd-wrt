@@ -33,6 +33,7 @@ struct attribute {
 
 struct attribute_group {
 	const char		* name;
+	int			(*is_visible)(struct kobject *, struct attribute *, int);
 	struct attribute	** attrs;
 };
 

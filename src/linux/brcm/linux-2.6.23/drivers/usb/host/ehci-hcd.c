@@ -24,15 +24,18 @@
 #include <linux/ioport.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
+#include <linux/vmalloc.h>
 #include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/timer.h>
+#include <linux/ktime.h>
 #include <linux/list.h>
 #include <linux/interrupt.h>
 #include <linux/reboot.h>
 #include <linux/usb.h>
 #include <linux/moduleparam.h>
 #include <linux/dma-mapping.h>
+#include <linux/debugfs.h>
 
 #include "../core/hcd.h"
 
@@ -56,45 +59,15 @@
  * Special thanks to Intel and VIA for providing host controllers to
  * test this driver on, and Cypress (including In-System Design) for
  * providing early devices for those host controllers to talk to!
- *
- * HISTORY:
- *
- * 2004-05-10 Root hub and PCI suspend/resume support; remote wakeup. (db)
- * 2004-02-24 Replace pci_* with generic dma_* API calls (dsaxena@plexity.net)
- * 2003-12-29 Rewritten high speed iso transfer support (by Michal Sojka,
- *	<sojkam@centrum.cz>, updates by DB).
- *
- * 2002-11-29	Correct handling for hw async_next register.
- * 2002-08-06	Handling for bulk and interrupt transfers is mostly shared;
- *	only scheduling is different, no arbitrary limitations.
- * 2002-07-25	Sanity check PCI reads, mostly for better cardbus support,
- *	clean up HC run state handshaking.
- * 2002-05-24	Preliminary FS/LS interrupts, using scheduling shortcuts
- * 2002-05-11	Clear TT errors for FS/LS ctrl/bulk.  Fill in some other
- *	missing pieces:  enabling 64bit dma, handoff from BIOS/SMM.
- * 2002-05-07	Some error path cleanups to report better errors; wmb();
- *	use non-CVS version id; better iso bandwidth claim.
- * 2002-04-19	Control/bulk/interrupt submit no longer uses giveback() on
- *	errors in submit path.  Bugfixes to interrupt scheduling/processing.
- * 2002-03-05	Initial high-speed ISO support; reduce ITD memory; shift
- *	more checking to generic hcd framework (db).  Make it work with
- *	Philips EHCI; reduce PCI traffic; shorten IRQ path (Rory Bolt).
- * 2002-01-14	Minor cleanup; version synch.
- * 2002-01-08	Fix roothub handoff of FS/LS to companion controllers.
- * 2002-01-04	Control/Bulk queuing behaves.
- *
- * 2001-12-12	Initial patch version for Linux 2.5.1 kernel.
- * 2001-June	Works with usb-storage and NEC EHCI on 2.4
  */
 
-#define DRIVER_VERSION "10 Dec 2004"
 #define DRIVER_AUTHOR "David Brownell"
 #define DRIVER_DESC "USB 2.0 'Enhanced' Host Controller (EHCI) Driver"
 
 static const char	hcd_name [] = "ehci_hcd";
 
 
-#undef EHCI_VERBOSE_DEBUG
+#undef VERBOSE_DEBUG
 #undef EHCI_URB_TRACE
 
 #ifdef DEBUG
@@ -107,12 +80,18 @@ static const char	hcd_name [] = "ehci_hcd";
 #define	EHCI_TUNE_RL_TT		0
 #define	EHCI_TUNE_MULT_HS	1	/* 1-3 transactions/uframe; 4.10.3 */
 #define	EHCI_TUNE_MULT_TT	1
-#define	EHCI_TUNE_FLS		2	/* (small) 256 frame schedule */
+/*
+ * Some drivers think it's safe to schedule isochronous transfers more than
+ * 256 ms into the future (partly as a result of an old bug in the scheduling
+ * code).  In an attempt to avoid trouble, we will use a minimum scheduling
+ * length of 512 frames instead of 256.
+ */
+#define	EHCI_TUNE_FLS		1	/* (medium) 512-frame schedule */
 
-#define EHCI_IAA_JIFFIES	(HZ/100)	/* arbitrary; ~10 msec */
+#define EHCI_IAA_MSECS		10		/* arbitrary */
 #define EHCI_IO_JIFFIES		(HZ/10)		/* io watchdog > irq_thresh */
 #define EHCI_ASYNC_JIFFIES	(HZ/20)		/* async idle timeout */
-#define EHCI_SHRINK_JIFFIES	(HZ/200)	/* async qh unlink delay */
+#define EHCI_SHRINK_FRAMES	5		/* async qh unlink delay */
 
 /* Initial IRQ latency:  faster than hw default */
 static int log2_irq_thresh = 0;		// 0 to 6
@@ -135,6 +114,44 @@ MODULE_PARM_DESC (ignore_oc, "ignore bogus hardware overcurrent indications");
 
 #include "ehci.h"
 #include "ehci-dbg.c"
+
+/*-------------------------------------------------------------------------*/
+
+static void
+timer_action(struct ehci_hcd *ehci, enum ehci_timer_action action)
+{
+	/* Don't override timeouts which shrink or (later) disable
+	 * the async ring; just the I/O watchdog.  Note that if a
+	 * SHRINK were pending, OFF would never be requested.
+	 */
+	if (timer_pending(&ehci->watchdog)
+			&& ((BIT(TIMER_ASYNC_SHRINK) | BIT(TIMER_ASYNC_OFF))
+				& ehci->actions))
+		return;
+
+	if (!test_and_set_bit(action, &ehci->actions)) {
+		unsigned long t;
+
+		switch (action) {
+		case TIMER_IO_WATCHDOG:
+			if (!ehci->need_io_watchdog)
+				return;
+			t = EHCI_IO_JIFFIES;
+			break;
+		case TIMER_ASYNC_OFF:
+			t = EHCI_ASYNC_JIFFIES;
+			break;
+		/* case TIMER_ASYNC_SHRINK: */
+		default:
+			/* add a jiffie since we synch against the
+			 * 8 KHz uframe counter.
+			 */
+			t = DIV_ROUND_UP(EHCI_SHRINK_FRAMES * HZ, 1000) + 1;
+			break;
+		}
+		mod_timer(&ehci->watchdog, t + jiffies);
+	}
+}
 
 /*-------------------------------------------------------------------------*/
 
@@ -191,6 +208,22 @@ static int ehci_halt (struct ehci_hcd *ehci)
 			  STS_HALT, STS_HALT, 16 * 125);
 }
 
+static int handshake_on_error_set_halt(struct ehci_hcd *ehci, void __iomem *ptr,
+				       u32 mask, u32 done, int usec)
+{
+	int error;
+
+	error = handshake(ehci, ptr, mask, done, usec);
+	if (error) {
+		ehci_halt(ehci);
+		ehci_to_hcd(ehci)->state = HC_STATE_HALT;
+		ehci_err(ehci, "force halt; handshake %p %08x %08x -> %d\n",
+			ptr, mask, done, error);
+	}
+
+	return error;
+}
+
 /* put TDI/ARC silicon into EHCI mode */
 static void tdi_reset (struct ehci_hcd *ehci)
 {
@@ -232,6 +265,15 @@ static int ehci_reset (struct ehci_hcd *ehci)
 	return retval;
 }
 
+static int ehci_optimized(struct ehci_hcd *ehci, struct ehci_qh *qh)
+{
+	int p;
+	for (p = 0; p < 3; ++p)
+		if (ehci->ehci_pipes[p] == qh)
+			return p;
+	return -1;
+}
+
 /* idle the controller (from running) */
 static void ehci_quiesce (struct ehci_hcd *ehci)
 {
@@ -245,11 +287,9 @@ static void ehci_quiesce (struct ehci_hcd *ehci)
 	/* wait for any schedule enables/disables to take effect */
 	temp = ehci_readl(ehci, &ehci->regs->command) << 10;
 	temp &= STS_ASS | STS_PSS;
-	if (handshake (ehci, &ehci->regs->status, STS_ASS | STS_PSS,
-				temp, 16 * 125) != 0) {
-		ehci_to_hcd(ehci)->state = HC_STATE_HALT;
+	if (handshake_on_error_set_halt(ehci, &ehci->regs->status,
+					STS_ASS | STS_PSS, temp, 16 * 125))
 		return;
-	}
 
 	/* then disable anything that's still active */
 	temp = ehci_readl(ehci, &ehci->regs->command);
@@ -257,15 +297,13 @@ static void ehci_quiesce (struct ehci_hcd *ehci)
 	ehci_writel(ehci, temp, &ehci->regs->command);
 
 	/* hardware can take 16 microframes to turn off ... */
-	if (handshake (ehci, &ehci->regs->status, STS_ASS | STS_PSS,
-				0, 16 * 125) != 0) {
-		ehci_to_hcd(ehci)->state = HC_STATE_HALT;
-		return;
-	}
+	handshake_on_error_set_halt(ehci, &ehci->regs->status,
+				    STS_ASS | STS_PSS, 0, 16 * 125);
 }
 
 /*-------------------------------------------------------------------------*/
 
+static void end_unlink_async(struct ehci_hcd *ehci);
 static void ehci_work(struct ehci_hcd *ehci);
 
 #include "ehci-hub.c"
@@ -275,25 +313,252 @@ static void ehci_work(struct ehci_hcd *ehci);
 
 /*-------------------------------------------------------------------------*/
 
-static void ehci_watchdog (unsigned long param)
+static int qtdc_pid = 0;
+module_param (qtdc_pid, int, S_IRUGO);
+MODULE_PARM_DESC (qtdc_pid, "qtd cache device pid");
+
+static int qtdc_vid = 0;
+module_param (qtdc_vid, int, S_IRUGO);
+MODULE_PARM_DESC (qtdc_vid, "qtd cache device vid");
+
+static int qtdc0_ep = -1;	/* turn off qtd cache by default */
+module_param (qtdc0_ep, int, S_IRUGO);
+MODULE_PARM_DESC (qtdc0_ep, "qtd cache 0 endpoint");
+
+static int qtdc0_sz = 0;	/* turn off qtd cache by default */
+module_param (qtdc0_sz, int, S_IRUGO);
+MODULE_PARM_DESC (qtdc0_sz, "qtd cache 0 size (# of qtd's)");
+
+static int qtdc0_to = 1;
+module_param (qtdc0_to, int, S_IRUGO);
+MODULE_PARM_DESC (qtdc0_to, "qtd cache 0 timeout (ms)");
+
+static int qtdc1_ep = -1;	/* turn off qtd cache by default */
+module_param (qtdc1_ep, int, S_IRUGO);
+MODULE_PARM_DESC (qtdc1_ep, "qtd cache 1 endpoint");
+
+static int qtdc1_sz = 0;	/* turn off qtd cache by default */
+module_param (qtdc1_sz, int, S_IRUGO);
+MODULE_PARM_DESC (qtdc1_sz, "qtd cache 1 size (# of qtd's)");
+
+static int qtdc1_to = 1;
+module_param (qtdc1_to, int, S_IRUGO);
+MODULE_PARM_DESC (qtdc1_to, "qtd cache 1 timeout (ms)");
+
+static int qtdc0_ml = QTDC_MSG_ERR;
+module_param (qtdc0_ml, int, S_IRUGO);
+MODULE_PARM_DESC (qtdc0_ml, "qtd cache 0 msglevel");
+
+static int qtdc1_ml = QTDC_MSG_ERR;
+module_param (qtdc1_ml, int, S_IRUGO);
+MODULE_PARM_DESC (qtdc1_ml, "qtd cache 1 msglevel");
+
+#ifdef EHCI_QTD_CACHE
+static void ehci_qtdc_watchdog (unsigned long param)
+{
+	ehci_qtdc_t 		*qtdc = (ehci_qtdc_t*) param;
+	struct ehci_hcd		*ehci = (struct ehci_hcd *)(qtdc->ehci);
+	unsigned long		flags, flags2;
+	struct ehci_qtd		*qtd;
+	struct urb		*urb = NULL;
+	//struct hcd_dev		*dev;
+	int			epnum;
+	struct usb_host_endpoint	*ep;
+	struct list_head	*entry;
+	struct ehci_qh		*qh = 0;
+
+	spin_lock_irqsave (&ehci->lock, flags);
+
+	if (unlikely (qtdc->cnt <= 0))
+		goto done;
+
+#ifdef EHCI_QTDC_DEBUG
+	if (unlikely (list_empty(&qtdc->cache)))
+		QTDC_ERR(qtdc, ("cnt %d but cache empty\n", qtdc->cnt));
+#endif	/* EHCI_QTDC_DEBUG */
+
+	QTDC_TRACE(qtdc, ("watchdog release! cnt %d\n", qtdc->cnt));
+	list_for_each (entry, &qtdc->cache) {
+		qtd = list_entry (entry, struct ehci_qtd, qtd_list);
+		urb = qtd->urb;
+		spin_lock_irqsave (&urb->lock, flags2);
+		urb->transfer_flags &= ~URB_QTD_CACHED;
+		spin_unlock_irqrestore (&urb->lock, flags2);
+	}
+//	dev = (struct hcd_dev *)urb->dev->hcpriv;
+	epnum = usb_pipeendpoint (urb->pipe);
+	if (usb_pipeout(urb->pipe)) {
+		WARN_ON(usb_pipein(urb->pipe));
+		ep = urb->dev->ep_out[epnum];
+	} else {
+		WARN_ON(usb_pipeout(urb->pipe));
+		ep = urb->dev->ep_in[epnum];
+	}
+	if (usb_pipein (urb->pipe) && !usb_pipecontrol (urb->pipe))
+		epnum |= 0x10;
+
+#ifdef EHCI_QTDC_DEBUG
+	qtdc->timeout_qtd += qtdc->cnt;
+	if (qtdc->cnt > qtdc->timeout_qtd_max)
+		qtdc->timeout_qtd_max = qtdc->cnt;
+	qtdc->timeout_cnt++;
+	if ((jiffies - qtdc->last_printed) > (10 * HZ)) {
+		QTDC_STATS(qtdc, ("cached_qtd %lu\nrelease_qtd %lu release_cnt %lu\n"
+				"timeout_qtd %lu  timeout_qtd_max %lu timeout_cnt %lu avg_timeout_qtd %lu\n",
+				qtdc->cached_qtd, qtdc->release_qtd, qtdc->release_cnt,
+				qtdc->timeout_qtd, qtdc->timeout_qtd_max, qtdc->timeout_cnt,
+				(qtdc->timeout_qtd / qtdc->timeout_cnt)));
+		qtdc->last_printed = jiffies;
+	}
+#endif	/* EHCI_QTDC_DEBUG */
+	qtdc->cnt = 0;
+
+	qh = qh_append_tds (ehci, urb, &qtdc->cache, epnum, &ep->hcpriv);
+	/* Control/bulk operations through TTs don't need scheduling,
+	 * the HC and TT handle it when the TT has a buffer ready.
+	 */
+	if (likely (qh != 0)) {
+		if (likely (qh->qh_state == QH_STATE_IDLE))
+			qh_link_async (ehci, qh_get (qh));
+	}
+
+	/* clean up qtd cache */
+	INIT_LIST_HEAD(&qtdc->cache);
+
+done:
+	spin_unlock_irqrestore (&ehci->lock, flags);
+	return;
+}
+
+ehci_qtdc_t *ehci_qtdc_init(struct ehci_hcd *ehci, int vid, int pid, int num, int ep, int size, int timeout, unsigned int msglevel)
+{
+	ehci_qtdc_t	*qtdc;
+	
+	if (pid == 0 || vid == 0) {
+		ehci_err (ehci, "pid %x vid %x not valid\n", pid, vid);
+		return NULL;
+	}
+
+	if (num >= NUM_QTD_CACHE) {
+		ehci_err (ehci, "qtdc %d exceeding limit %d\n", num, NUM_QTD_CACHE);
+		return NULL;
+	}
+
+	if ((ep < 0) || (ep > 0x1f)) {
+		ehci_err (ehci, "qtdc %d disabled: invalid ep 0x%x\n", num, ep);
+		return NULL;
+	}
+
+	if (size <= 0) {
+		ehci_err (ehci, "qtdc %d disabled: invalid size %d\n", num, size);
+		return NULL;
+	}
+
+	if (timeout <= 0) {
+		ehci_err (ehci, "qtdc %d disabled: invalid timeout %d\n", num, timeout);
+		return NULL;
+	}
+
+	qtdc = kmalloc(sizeof(ehci_qtdc_t), GFP_KERNEL);
+	if (!qtdc) {
+		ehci_err (ehci, "qtdc %d disabled: alloc failed\n", num);
+		return NULL;
+	}
+
+	memset(qtdc, 0, sizeof(ehci_qtdc_t));
+
+	ehci->qtdc_vid = vid;
+	ehci->qtdc_pid = pid;
+	qtdc->ehci = (void*)ehci;
+	qtdc->num = num;
+	qtdc->ep = ep;
+	qtdc->size = size;
+	qtdc->timeout = (timeout * HZ) / 1000;	/* in ms */
+#ifdef EHCI_QTDC_DEBUG
+	qtdc->msglevel = msglevel;
+#endif	/* EHCI_QTDC_DEBUG */
+
+	INIT_LIST_HEAD(&qtdc->cache); 
+
+	init_timer (&qtdc->watchdog);
+	qtdc->watchdog.function = ehci_qtdc_watchdog;
+	qtdc->watchdog.data = (unsigned long) qtdc;
+
+	ehci_info (ehci, "qtdc %d enabled: vid %x pid %x ep 0x%x size %d timeout %d\n",
+		num, vid, pid, ep, size, timeout);
+
+	return qtdc;
+}
+
+void ehci_qtdc_deinit(ehci_qtdc_t* qtdc)
+{
+	if (list_empty(&qtdc->cache))
+		BUG();
+	kfree(qtdc);
+}
+#endif	/* EHCI_QTD_CACHE */
+
+
+
+
+/*-------------------------------------------------------------------------*/
+
+static void ehci_iaa_watchdog(unsigned long param)
 {
 	struct ehci_hcd		*ehci = (struct ehci_hcd *) param;
 	unsigned long		flags;
 
 	spin_lock_irqsave (&ehci->lock, flags);
 
-	/* lost IAA irqs wedge things badly; seen with a vt8235 */
-	if (ehci->reclaim) {
-		u32		status = ehci_readl(ehci, &ehci->regs->status);
-		if (status & STS_IAA) {
-			ehci_vdbg (ehci, "lost IAA\n");
+	/* Lost IAA irqs wedge things badly; seen first with a vt8235.
+	 * So we need this watchdog, but must protect it against both
+	 * (a) SMP races against real IAA firing and retriggering, and
+	 * (b) clean HC shutdown, when IAA watchdog was pending.
+	 */
+	if (ehci->reclaim
+			&& !timer_pending(&ehci->iaa_watchdog)
+			&& HC_IS_RUNNING(ehci_to_hcd(ehci)->state)) {
+		u32 cmd, status;
+
+		/* If we get here, IAA is *REALLY* late.  It's barely
+		 * conceivable that the system is so busy that CMD_IAAD
+		 * is still legitimately set, so let's be sure it's
+		 * clear before we read STS_IAA.  (The HC should clear
+		 * CMD_IAAD when it sets STS_IAA.)
+		 */
+		cmd = ehci_readl(ehci, &ehci->regs->command);
+		if (cmd & CMD_IAAD)
+			ehci_writel(ehci, cmd & ~CMD_IAAD,
+					&ehci->regs->command);
+
+		/* If IAA is set here it either legitimately triggered
+		 * before we cleared IAAD above (but _way_ late, so we'll
+		 * still count it as lost) ... or a silicon erratum:
+		 * - VIA seems to set IAA without triggering the IRQ;
+		 * - IAAD potentially cleared without setting IAA.
+		 */
+		status = ehci_readl(ehci, &ehci->regs->status);
+		if ((status & STS_IAA) || !(cmd & CMD_IAAD)) {
 			COUNT (ehci->stats.lost_iaa);
 			ehci_writel(ehci, STS_IAA, &ehci->regs->status);
-			ehci->reclaim_ready = 1;
 		}
+
+		ehci_vdbg(ehci, "IAA watchdog: status %x cmd %x\n",
+				status, cmd);
+		end_unlink_async(ehci);
 	}
 
- 	/* stop async processing after it's idled a bit */
+	spin_unlock_irqrestore(&ehci->lock, flags);
+}
+
+static void ehci_watchdog(unsigned long param)
+{
+	struct ehci_hcd		*ehci = (struct ehci_hcd *) param;
+	unsigned long		flags;
+
+	spin_lock_irqsave(&ehci->lock, flags);
+
+	/* stop async processing after it's idled a bit */
 	if (test_bit (TIMER_ASYNC_OFF, &ehci->actions))
 		start_unlink_async (ehci, ehci->async);
 
@@ -316,17 +581,13 @@ static void ehci_turn_off_all_ports(struct ehci_hcd *ehci)
 				&ehci->regs->port_status[port]);
 }
 
-/* ehci_shutdown kick in for silicon on any bus (not just pci, etc).
- * This forcibly disables dma and IRQs, helping kexec and other cases
- * where the next system software may expect clean state.
+/*
+ * Halt HC, turn off all ports, and let the BIOS use the companion controllers.
+ * Should be called with ehci->lock held.
  */
-static void
-ehci_shutdown (struct usb_hcd *hcd)
+static void ehci_silence_controller(struct ehci_hcd *ehci)
 {
-	struct ehci_hcd	*ehci;
-
-	ehci = hcd_to_ehci (hcd);
-	(void) ehci_halt (ehci);
+	ehci_halt(ehci);
 	ehci_turn_off_all_ports(ehci);
 
 	/* make BIOS/etc use companion controller during reboot */
@@ -334,6 +595,22 @@ ehci_shutdown (struct usb_hcd *hcd)
 
 	/* unblock posted writes */
 	ehci_readl(ehci, &ehci->regs->configured_flag);
+}
+
+/* ehci_shutdown kick in for silicon on any bus (not just pci, etc).
+ * This forcibly disables dma and IRQs, helping kexec and other cases
+ * where the next system software may expect clean state.
+ */
+static void ehci_shutdown(struct usb_hcd *hcd)
+{
+	struct ehci_hcd	*ehci = hcd_to_ehci(hcd);
+
+	del_timer_sync(&ehci->watchdog);
+	del_timer_sync(&ehci->iaa_watchdog);
+
+	spin_lock_irq(&ehci->lock);
+	ehci_silence_controller(ehci);
+	spin_unlock_irq(&ehci->lock);
 }
 
 static void ehci_port_power (struct ehci_hcd *ehci, int is_on)
@@ -363,8 +640,6 @@ static void ehci_port_power (struct ehci_hcd *ehci, int is_on)
 static void ehci_work (struct ehci_hcd *ehci)
 {
 	timer_action_done (ehci, TIMER_IO_WATCHDOG);
-	if (ehci->reclaim_ready)
-		end_unlink_async (ehci);
 
 	/* another CPU may drop ehci->lock during a schedule scan while
 	 * it reports urb completions.  this flag guards against bogus
@@ -388,28 +663,30 @@ static void ehci_work (struct ehci_hcd *ehci)
 		timer_action (ehci, TIMER_IO_WATCHDOG);
 }
 
+/*
+ * Called when the ehci_hcd module is removed.
+ */
 static void ehci_stop (struct usb_hcd *hcd)
 {
 	struct ehci_hcd		*ehci = hcd_to_ehci (hcd);
 
 	ehci_dbg (ehci, "stop\n");
 
-	/* Turn off port power on all root hub ports. */
-	ehci_port_power (ehci, 0);
-
 	/* no more interrupts ... */
 	del_timer_sync (&ehci->watchdog);
-
+	del_timer_sync(&ehci->iaa_watchdog);
+#ifdef EHCI_QTD_CACHE
+	del_timer_sync (&ehci->qtdc_watchdog);
+	ehci_qtdc_deinit (ehci->qtdc[0]);
+	ehci_qtdc_deinit (ehci->qtdc[1]);
+#endif /* EHCI_QTD_CACHE */
 	spin_lock_irq(&ehci->lock);
 	if (HC_IS_RUNNING (hcd->state))
 		ehci_quiesce (ehci);
 
+	ehci_silence_controller(ehci);
 	ehci_reset (ehci);
-	ehci_writel(ehci, 0, &ehci->regs->intr_enable);
 	spin_unlock_irq(&ehci->lock);
-
-	/* let companion controllers work when we aren't */
-	ehci_writel(ehci, 0, &ehci->regs->configured_flag);
 
 	remove_companion_file(ehci);
 	remove_debug_files (ehci);
@@ -440,31 +717,51 @@ static int ehci_init(struct usb_hcd *hcd)
 	u32			temp;
 	int			retval;
 	u32			hcc_params;
+	struct ehci_qh_hw	*hw;
+
+	ehci_info(ehci, "EHCI Fastpath: New EHCI driver starting\n");
 
 	spin_lock_init(&ehci->lock);
 
+	/*
+	 * keep io watchdog by default, those good HCDs could turn off it later
+	 */
+	ehci->need_io_watchdog = 1;
 	init_timer(&ehci->watchdog);
 	ehci->watchdog.function = ehci_watchdog;
 	ehci->watchdog.data = (unsigned long) ehci;
+
+#ifdef EHCI_QTD_CACHE
+	ehci->qtdc[0] = ehci_qtdc_init(ehci, qtdc_vid, qtdc_pid, 0, qtdc0_ep, qtdc0_sz, qtdc0_to, qtdc0_ml);
+	ehci->qtdc[1] = ehci_qtdc_init(ehci, qtdc_vid, qtdc_pid, 1, qtdc1_ep, qtdc1_sz, qtdc1_to, qtdc1_ml);
+#endif	/* EHCI_QTD_CACHE */
+
+
+
+	init_timer(&ehci->iaa_watchdog);
+	ehci->iaa_watchdog.function = ehci_iaa_watchdog;
+	ehci->iaa_watchdog.data = (unsigned long) ehci;
 
 	/*
 	 * hw default: 1K periodic list heads, one per frame.
 	 * periodic_size can shrink by USBCMD update if hcc_params allows.
 	 */
 	ehci->periodic_size = DEFAULT_I_TDPS;
+	INIT_LIST_HEAD(&ehci->cached_itd_list);
+	INIT_LIST_HEAD(&ehci->cached_sitd_list);
 	if ((retval = ehci_mem_init(ehci, GFP_KERNEL)) < 0)
 		return retval;
 
 	/* controllers may cache some of the periodic schedule ... */
 	hcc_params = ehci_readl(ehci, &ehci->caps->hcc_params);
 	if (HCC_ISOC_CACHE(hcc_params))		// full frame cache
-		ehci->i_thresh = 8;
+		ehci->i_thresh = 2 + 8;
 	else					// N microframes cached
 		ehci->i_thresh = 2 + HCC_ISOC_THRES(hcc_params);
 
 	ehci->reclaim = NULL;
-	ehci->reclaim_ready = 0;
 	ehci->next_uframe = -1;
+	ehci->clock_frame = -1;
 
 	/*
 	 * dedicate a qh for the async ring head, since we couldn't unlink
@@ -474,12 +771,13 @@ static int ehci_init(struct usb_hcd *hcd)
 	 * from automatically advancing to the next td after short reads.
 	 */
 	ehci->async->qh_next.qh = NULL;
-	ehci->async->hw_next = QH_NEXT(ehci, ehci->async->qh_dma);
-	ehci->async->hw_info1 = cpu_to_hc32(ehci, QH_HEAD);
-	ehci->async->hw_token = cpu_to_hc32(ehci, QTD_STS_HALT);
-	ehci->async->hw_qtd_next = EHCI_LIST_END(ehci);
+	hw = ehci->async->hw;
+	hw->hw_next = QH_NEXT(ehci, ehci->async->qh_dma);
+	hw->hw_info1 = cpu_to_hc32(ehci, QH_HEAD);
+	hw->hw_token = cpu_to_hc32(ehci, QTD_STS_HALT);
+	hw->hw_qtd_next = EHCI_LIST_END(ehci);
 	ehci->async->qh_state = QH_STATE_LINKED;
-	ehci->async->hw_alt_next = QTD_NEXT(ehci, ehci->async->dummy->qtd_dma);
+	hw->hw_alt_next = QTD_NEXT(ehci, ehci->async->dummy->qtd_dma);
 
 	/* clear interrupt enables, set irq latency */
 	if (log2_irq_thresh < 0 || log2_irq_thresh > 6)
@@ -585,12 +883,13 @@ static int ehci_run (struct usb_hcd *hcd)
 	ehci_readl(ehci, &ehci->regs->command);	/* unblock posted writes */
 	msleep(5);
 	up_write(&ehci_cf_port_reset_rwsem);
+	ehci->last_periodic_enable = ktime_get_real();
 
 	temp = HC_VERSION(ehci_readl(ehci, &ehci->caps->hc_capbase));
 	ehci_info (ehci,
-		"USB %x.%x started, EHCI %x.%02x, driver %s%s\n",
+		"USB %x.%x started, EHCI %x.%02x%s\n",
 		((ehci->sbrn & 0xf0)>>4), (ehci->sbrn & 0x0f),
-		temp >> 8, temp & 0xff, DRIVER_VERSION,
+		temp >> 8, temp & 0xff,
 		ignore_oc ? ", overcurrent ignored" : "");
 
 	ehci_writel(ehci, INTR_MASK,
@@ -611,7 +910,7 @@ static int ehci_run (struct usb_hcd *hcd)
 static irqreturn_t ehci_irq (struct usb_hcd *hcd)
 {
 	struct ehci_hcd		*ehci = hcd_to_ehci (hcd);
-	u32			status, pcd_status = 0;
+	u32			status, masked_status, pcd_status = 0, cmd;
 	int			bh;
 
 	spin_lock (&ehci->lock);
@@ -624,18 +923,18 @@ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
 		goto dead;
 	}
 
-	status &= INTR_MASK;
-	if (!status) {			/* irq sharing? */
+	masked_status = status & INTR_MASK;
+	if (!masked_status) {		/* irq sharing? */
 		spin_unlock(&ehci->lock);
 		return IRQ_NONE;
 	}
 
 	/* clear (just) interrupts */
-	ehci_writel(ehci, status, &ehci->regs->status);
-	ehci_readl(ehci, &ehci->regs->command);	/* unblock posted write */
+	ehci_writel(ehci, masked_status, &ehci->regs->status);
+	cmd = ehci_readl(ehci, &ehci->regs->command);
 	bh = 0;
 
-#ifdef	EHCI_VERBOSE_DEBUG
+#ifdef	VERBOSE_DEBUG
 	/* unrequested/ignored: Frame List Rollover */
 	dbg_status (ehci, "irq", status);
 #endif
@@ -653,18 +952,28 @@ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
 
 	/* complete the unlinking of some qh [4.15.2.3] */
 	if (status & STS_IAA) {
-		COUNT (ehci->stats.reclaim);
-		ehci->reclaim_ready = 1;
-		bh = 1;
+		/* guard against (alleged) silicon errata */
+		if (cmd & CMD_IAAD) {
+			ehci_writel(ehci, cmd & ~CMD_IAAD,
+					&ehci->regs->command);
+			ehci_dbg(ehci, "IAA with IAAD still set?\n");
+		}
+		if (ehci->reclaim) {
+			COUNT(ehci->stats.reclaim);
+			end_unlink_async(ehci);
+		} else
+			ehci_dbg(ehci, "IAA with nothing to reclaim?\n");
 	}
 
 	/* remote wakeup [4.3.1] */
 	if (status & STS_PCD) {
 		unsigned	i = HCS_N_PORTS (ehci->hcs_params);
+
+		/* kick root hub later */
 		pcd_status = status;
 
 		/* resume root hub? */
-		if (!(ehci_readl(ehci, &ehci->regs->command) & CMD_RUN))
+		if (!(cmd & CMD_RUN))
 			usb_hcd_resume_root_hub(hcd);
 
 		while (i--) {
@@ -673,15 +982,19 @@ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
 
 			if (pstatus & PORT_OWNER)
 				continue;
-			if (!(pstatus & PORT_RESUME)
-					|| ehci->reset_done [i] != 0)
+			if (!(test_bit(i, &ehci->suspended_ports) &&
+					((pstatus & PORT_RESUME) ||
+						!(pstatus & PORT_SUSPEND)) &&
+					(pstatus & PORT_PE) &&
+					ehci->reset_done[i] == 0))
 				continue;
 
 			/* start 20 msec resume signaling from this port,
 			 * and make khubd collect PORT_STAT_C_SUSPEND to
-			 * stop that signaling.
+			 * stop that signaling.  Use 5 ms extra for safety,
+			 * like usb_port_resume() does.
 			 */
-			ehci->reset_done [i] = jiffies + msecs_to_jiffies (20);
+			ehci->reset_done[i] = jiffies + msecs_to_jiffies(25);
 			ehci_dbg (ehci, "port %d remote wakeup\n", i + 1);
 			mod_timer(&hcd->rh_timer, ehci->reset_done[i]);
 		}
@@ -689,27 +1002,23 @@ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
 
 	/* PCI errors [4.15.2.4] */
 	if (unlikely ((status & STS_FATAL) != 0)) {
-		/* bogus "fatal" IRQs appear on some chips... why?  */
-		status = ehci_readl(ehci, &ehci->regs->status);
-		dbg_cmd (ehci, "fatal", ehci_readl(ehci,
-						   &ehci->regs->command));
-		dbg_status (ehci, "fatal", status);
-		if (status & STS_HALT) {
-			ehci_err (ehci, "fatal error\n");
+		ehci_err(ehci, "fatal error\n");
+		dbg_cmd(ehci, "fatal", cmd);
+		dbg_status(ehci, "fatal", status);
+		ehci_halt(ehci);
 dead:
-			ehci_reset (ehci);
-			ehci_writel(ehci, 0, &ehci->regs->configured_flag);
-			/* generic layer kills/unlinks all urbs, then
-			 * uses ehci_stop to clean up the rest
-			 */
-			bh = 1;
-		}
+		ehci_reset(ehci);
+		ehci_writel(ehci, 0, &ehci->regs->configured_flag);
+		/* generic layer kills/unlinks all urbs, then
+		 * uses ehci_stop to clean up the rest
+		 */
+		bh = 1;
 	}
 
 	if (bh)
 		ehci_work (ehci);
 	spin_unlock (&ehci->lock);
-	if (pcd_status & STS_PCD)
+	if (pcd_status)
 		usb_hcd_poll_rh_status(hcd);
 	return IRQ_HANDLED;
 }
@@ -730,7 +1039,6 @@ dead:
  */
 static int ehci_urb_enqueue (
 	struct usb_hcd	*hcd,
-	struct usb_host_endpoint *ep,
 	struct urb	*urb,
 	gfp_t		mem_flags
 ) {
@@ -740,17 +1048,23 @@ static int ehci_urb_enqueue (
 	INIT_LIST_HEAD (&qtd_list);
 
 	switch (usb_pipetype (urb->pipe)) {
-	// case PIPE_CONTROL:
-	// case PIPE_BULK:
+	case PIPE_CONTROL:
+		/* qh_completions() code doesn't handle all the fault cases
+		 * in multi-TD control transfers.  Even 1KB is rare anyway.
+		 */
+		if (urb->transfer_buffer_length > (16 * 1024))
+			return -EMSGSIZE;
+		/* FALLTHROUGH */
+	/* case PIPE_BULK: */
 	default:
 		if (!qh_urb_transaction (ehci, urb, &qtd_list, mem_flags))
 			return -ENOMEM;
-		return submit_async (ehci, ep, urb, &qtd_list, mem_flags);
+		return submit_async(ehci, urb, &qtd_list, mem_flags);
 
 	case PIPE_INTERRUPT:
 		if (!qh_urb_transaction (ehci, urb, &qtd_list, mem_flags))
 			return -ENOMEM;
-		return intr_submit (ehci, ep, urb, &qtd_list, mem_flags);
+		return intr_submit(ehci, urb, &qtd_list, mem_flags);
 
 	case PIPE_ISOCHRONOUS:
 		if (urb->dev->speed == USB_SPEED_HIGH)
@@ -762,10 +1076,22 @@ static int ehci_urb_enqueue (
 
 static void unlink_async (struct ehci_hcd *ehci, struct ehci_qh *qh)
 {
-	/* if we need to use IAA and it's busy, defer */
-	if (qh->qh_state == QH_STATE_LINKED
-			&& ehci->reclaim
-			&& HC_IS_RUNNING (ehci_to_hcd(ehci)->state)) {
+	/* failfast */
+	if (!HC_IS_RUNNING(ehci_to_hcd(ehci)->state) && ehci->reclaim)
+		end_unlink_async(ehci);
+
+	/* If the QH isn't linked then there's nothing we can do
+	 * unless we were called during a giveback, in which case
+	 * qh_completions() has to deal with it.
+	 */
+	if (qh->qh_state != QH_STATE_LINKED) {
+		if (qh->qh_state == QH_STATE_COMPLETING)
+			qh->needs_rescan = 1;
+		return;
+	}
+
+	/* defer till later if busy */
+	if (ehci->reclaim) {
 		struct ehci_qh		*last;
 
 		for (last = ehci->reclaim;
@@ -775,12 +1101,8 @@ static void unlink_async (struct ehci_hcd *ehci, struct ehci_qh *qh)
 		qh->qh_state = QH_STATE_UNLINK_WAIT;
 		last->reclaim = qh;
 
-	/* bypass IAA if the hc can't care */
-	} else if (!HC_IS_RUNNING (ehci_to_hcd(ehci)->state) && ehci->reclaim)
-		end_unlink_async (ehci);
-
-	/* something else might have unlinked the qh by now */
-	if (qh->qh_state == QH_STATE_LINKED)
+	/* start IAA cycle */
+	} else
 		start_unlink_async (ehci, qh);
 }
 
@@ -788,21 +1110,46 @@ static void unlink_async (struct ehci_hcd *ehci, struct ehci_qh *qh)
  * completions normally happen asynchronously
  */
 
-static int ehci_urb_dequeue (struct usb_hcd *hcd, struct urb *urb)
+static int ehci_urb_dequeue(struct usb_hcd *hcd, struct urb *urb, int status)
 {
 	struct ehci_hcd		*ehci = hcd_to_ehci (hcd);
 	struct ehci_qh		*qh;
 	unsigned long		flags;
+	int			rc;
 
 	spin_lock_irqsave (&ehci->lock, flags);
+	rc = usb_hcd_check_unlink_urb(hcd, urb, status);
+	if (rc)
+		goto done;
+
 	switch (usb_pipetype (urb->pipe)) {
 	// case PIPE_CONTROL:
 	// case PIPE_BULK:
 	default:
+#ifdef EHCI_QTD_CACHE
+		if (urb->transfer_flags & URB_QTD_CACHED) {
+			if (ehci_qtdc_unlink(ehci, urb, NULL))
+				err ("%s: can't dequeue urb %p from qtdc", __FUNCTION__, urb);
+			break;
+		}
+#endif /* EHCI_QTD_CACHE */
+
 		qh = (struct ehci_qh *) urb->hcpriv;
 		if (!qh)
 			break;
-		unlink_async (ehci, qh);
+		switch (qh->qh_state) {
+		case QH_STATE_LINKED:
+		case QH_STATE_COMPLETING:
+			unlink_async(ehci, qh);
+			break;
+		case QH_STATE_UNLINK:
+		case QH_STATE_UNLINK_WAIT:
+			/* already started */
+			break;
+		case QH_STATE_IDLE:
+			WARN_ON(1);
+			break;
+		}
 		break;
 
 	case PIPE_INTERRUPT:
@@ -811,8 +1158,9 @@ static int ehci_urb_dequeue (struct usb_hcd *hcd, struct urb *urb)
 			break;
 		switch (qh->qh_state) {
 		case QH_STATE_LINKED:
+		case QH_STATE_COMPLETING:
 			intr_deschedule (ehci, qh);
-			/* FALL THROUGH */
+			break;
 		case QH_STATE_IDLE:
 			qh_completions (ehci, qh);
 			break;
@@ -820,23 +1168,6 @@ static int ehci_urb_dequeue (struct usb_hcd *hcd, struct urb *urb)
 			ehci_dbg (ehci, "bogus qh %p state %d\n",
 					qh, qh->qh_state);
 			goto done;
-		}
-
-		/* reschedule QH iff another request is queued */
-		if (!list_empty (&qh->qtd_list)
-				&& HC_IS_RUNNING (hcd->state)) {
-			int status;
-
-			status = qh_schedule (ehci, qh);
-			spin_unlock_irqrestore (&ehci->lock, flags);
-
-			if (status != 0) {
-				// shouldn't happen often, but ...
-				// FIXME kill those tds' urbs
-				err ("can't reschedule qh %p, err %d",
-					qh, status);
-			}
-			return status;
 		}
 		break;
 
@@ -849,7 +1180,7 @@ static int ehci_urb_dequeue (struct usb_hcd *hcd, struct urb *urb)
 	}
 done:
 	spin_unlock_irqrestore (&ehci->lock, flags);
-	return 0;
+	return rc;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -875,7 +1206,7 @@ rescan:
 	/* endpoints can be iso streams.  for now, we don't
 	 * accelerate iso completions ... so spin a while.
 	 */
-	if (qh->hw_info1 == 0) {
+	if (qh->hw == NULL) {
 		ehci_vdbg (ehci, "iso delay\n");
 		goto idle_timeout;
 	}
@@ -884,16 +1215,19 @@ rescan:
 		qh->qh_state = QH_STATE_IDLE;
 	switch (qh->qh_state) {
 	case QH_STATE_LINKED:
+	case QH_STATE_COMPLETING:
 		for (tmp = ehci->async->qh_next.qh;
 				tmp && tmp != qh;
 				tmp = tmp->qh_next.qh)
 			continue;
-		/* periodic qh self-unlinks on empty */
-		if (!tmp)
-			goto nogood;
-		unlink_async (ehci, qh);
+		/* periodic qh self-unlinks on empty, and a COMPLETING qh
+		 * may already be unlinked.
+		 */
+		if (tmp)
+			unlink_async(ehci, qh);
 		/* FALL THROUGH */
 	case QH_STATE_UNLINK:		/* wait for hw to finish? */
+	case QH_STATE_UNLINK_WAIT:
 idle_timeout:
 		spin_unlock_irqrestore (&ehci->lock, flags);
 		schedule_timeout_uninterruptible(1);
@@ -905,7 +1239,6 @@ idle_timeout:
 		}
 		/* else FALL THROUGH */
 	default:
-nogood:
 		/* caller was supposed to have unlinked any requests;
 		 * that's not our job.  just leak this memory.
 		 */
@@ -929,9 +1262,7 @@ static int ehci_get_frame (struct usb_hcd *hcd)
 
 /*-------------------------------------------------------------------------*/
 
-#define DRIVER_INFO DRIVER_VERSION " " DRIVER_DESC
-
-MODULE_DESCRIPTION (DRIVER_INFO);
+MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_AUTHOR (DRIVER_AUTHOR);
 MODULE_LICENSE ("GPL");
 
@@ -969,20 +1300,47 @@ static int __init ehci_hcd_init(void)
 {
 	int retval = 0;
 
+	if (usb_disabled())
+		return -ENODEV;
+
+	printk(KERN_INFO "%s: " DRIVER_DESC "\n", hcd_name);
+	set_bit(USB_EHCI_LOADED, &usb_hcds_loaded);
+	if (test_bit(USB_UHCI_LOADED, &usb_hcds_loaded) ||
+			test_bit(USB_OHCI_LOADED, &usb_hcds_loaded))
+		printk(KERN_WARNING "Warning! ehci_hcd should always be loaded"
+				" before uhci_hcd and ohci_hcd, not after\n");
+
 	pr_debug("%s: block sizes: qh %Zd qtd %Zd itd %Zd sitd %Zd\n",
 		 hcd_name,
 		 sizeof(struct ehci_qh), sizeof(struct ehci_qtd),
 		 sizeof(struct ehci_itd), sizeof(struct ehci_sitd));
 
+#ifdef DEBUG
+	ehci_debug_root = debugfs_create_dir("ehci", NULL);
+	if (!ehci_debug_root) {
+		retval = -ENOENT;
+		goto err_debug;
+	}
+#endif
+
 #ifdef PLATFORM_DRIVER
 	retval = platform_driver_register(&PLATFORM_DRIVER);
-	if (retval < 0)
+	if (retval < 0) {
+#ifdef DEBUG
+		debugfs_remove(ehci_debug_root);
+		ehci_debug_root = NULL;
+#endif
 		return retval;
+	}
 #endif
 
 #ifdef PCI_DRIVER
 	retval = pci_register_driver(&PCI_DRIVER);
 	if (retval < 0) {
+#ifdef DEBUG
+		debugfs_remove(ehci_debug_root);
+		ehci_debug_root = NULL;
+#endif
 #ifdef PLATFORM_DRIVER
 		platform_driver_unregister(&PLATFORM_DRIVER);
 #endif
@@ -993,12 +1351,18 @@ static int __init ehci_hcd_init(void)
 #ifdef PS3_SYSTEM_BUS_DRIVER
 	retval = ps3_ehci_driver_register(&PS3_SYSTEM_BUS_DRIVER);
 	if (retval < 0) {
+#ifdef DEBUG
+		debugfs_remove(ehci_debug_root);
+		ehci_debug_root = NULL;
+#endif
 #ifdef PLATFORM_DRIVER
 		platform_driver_unregister(&PLATFORM_DRIVER);
 #endif
 #ifdef PCI_DRIVER
 		pci_unregister_driver(&PCI_DRIVER);
 #endif
+err_debug:
+	clear_bit(USB_EHCI_LOADED, &usb_hcds_loaded);
 		return retval;
 	}
 #endif
@@ -1018,6 +1382,13 @@ static void __exit ehci_hcd_cleanup(void)
 #ifdef PS3_SYSTEM_BUS_DRIVER
 	ps3_ehci_driver_unregister(&PS3_SYSTEM_BUS_DRIVER);
 #endif
+#ifdef DEBUG
+	debugfs_remove(ehci_debug_root);
+#endif
+	clear_bit(USB_EHCI_LOADED, &usb_hcds_loaded);
 }
 module_exit(ehci_hcd_cleanup);
+
+
+
 

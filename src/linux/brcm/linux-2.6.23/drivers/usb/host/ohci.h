@@ -401,7 +401,40 @@ struct ohci_hcd {
 	// there are also chip quirks/bugs in init logic
 
 	struct work_struct	nec_work;	/* Worker for NEC quirk */
+
+	/* Needed for ZF Micro quirk */
+	struct timer_list	unlink_watchdog;
+	unsigned		eds_scheduled;
+	struct ed		*ed_to_check;
+	unsigned		zf_delay;
+
+#ifdef DEBUG
+	struct dentry		*debug_dir;
+	struct dentry		*debug_async;
+	struct dentry		*debug_periodic;
+	struct dentry		*debug_registers;
+#endif
 };
+
+#ifdef CONFIG_PCI
+static inline int quirk_nec(struct ohci_hcd *ohci)
+{
+	return ohci->flags & OHCI_QUIRK_NEC;
+}
+static inline int quirk_zfmicro(struct ohci_hcd *ohci)
+{
+	return ohci->flags & OHCI_QUIRK_ZFMICRO;
+}
+#else
+static inline int quirk_nec(struct ohci_hcd *ohci)
+{
+	return 0;
+}
+static inline int quirk_zfmicro(struct ohci_hcd *ohci)
+{
+	return 0;
+}
+#endif
 
 /* convert between an hcd pointer and the corresponding ohci_hcd */
 static inline struct ohci_hcd *hcd_to_ohci (struct usb_hcd *hcd)

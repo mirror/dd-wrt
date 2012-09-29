@@ -125,6 +125,7 @@ static int skel_open(struct inode *inode, struct file *file)
 
 	/* save our object in the file's private structure */
 	file->private_data = dev;
+	mutex_unlock(&dev->io_mutex);
 
 exit:
 	return retval;
@@ -211,7 +212,7 @@ static void skel_write_bulk_callback(struct urb *urb)
 {
 	struct usb_skel *dev;
 
-	dev = (struct usb_skel *)urb->context;
+	dev = urb->context;
 
 	/* sync/async unlink faults aren't errors */
 	if (urb->status) {
