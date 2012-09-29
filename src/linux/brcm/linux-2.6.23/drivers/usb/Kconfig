@@ -94,7 +94,6 @@ source "drivers/usb/host/Kconfig"
 
 source "drivers/usb/class/Kconfig"
 
-source "drivers/usb/Beceem_driver/Kconfig"
 
 source "drivers/usb/storage/Kconfig"
 
