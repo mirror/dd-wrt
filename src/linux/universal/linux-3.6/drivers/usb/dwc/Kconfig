@@ -8,7 +8,7 @@ depends on !USB && USB_GADGET=n
 
 config USB_DWC_OTG
 	tristate "Synopsys DWC OTG Controller"
-	depends on USB && ARCH_CNS3XXX
+	depends on USB
 	help
 	   This driver provides USB Device Controller support for the
 	   Synopsys DesignWare USB OTG Core used on the Cavium CNS34xx SOC.

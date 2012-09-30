@@ -568,7 +568,7 @@ static irqreturn_t dwc_otg_common_irq(int irq, void *dev)
  *
  * @param[in] lmdev
  */
-static int __devexit dwc_otg_driver_remove(struct platform_device *pdev)
+static int dwc_otg_driver_cleanup(struct platform_device *pdev)
 {
 	dwc_otg_device_t *otg_dev = platform_get_drvdata(pdev);
 	DWC_DEBUGPL(DBG_ANY, "%s(%p)\n", __func__, pdev);
@@ -791,14 +791,19 @@ static int __devinit dwc_otg_driver_probe(struct platform_device *pdev)
 	return 0;
 
  fail:
-	dwc_otg_driver_remove(pdev);
+	dwc_otg_driver_cleanup(pdev);
 	return retval;
+}
+
+static int __devexit dwc_otg_driver_remove(struct platform_device *pdev)
+{
+	return dwc_otg_driver_cleanup(pdev);
 }
 
 static struct platform_driver dwc_otg_platform_driver = {
 	.driver.name = "dwc_otg",
 	.probe = dwc_otg_driver_probe,
-	.remove = dwc_otg_driver_remove,
+	.remove = __devexit_p(dwc_otg_driver_remove),
 };
 
 static int __init dwc_otg_init_module(void)
