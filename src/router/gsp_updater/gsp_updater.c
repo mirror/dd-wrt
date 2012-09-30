@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 
 	ret = i2c_smbus_read_byte_data(file, 14);
 	printf("Current GSP Firmware Rev: %i\n", ret & 0xff);
-	if ((ret & 0xff) == 27)
+	if ((ret & 0xff) == 32)
 	    {
 	    printf("no update required\n");
 	    exit(0);
