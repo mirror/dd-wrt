@@ -1861,3 +1861,4 @@ CONFIG_AVERAGE=y
 # CONFIG_DDR is not set
 # CONFIG_CRASHLOG is not set
 # CONFIG_ARCH_BRCM is not set
+# CONFIG_CGROUPS is not set
