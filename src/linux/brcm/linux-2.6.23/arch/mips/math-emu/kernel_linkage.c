@@ -28,6 +28,8 @@
 
 #define SIGNALLING_NAN 0x7ff800007ff80000LL
 
+#ifdef CONFIG_MIPS_FPU_EMU
+
 void fpu_emulator_init_fpu(void)
 {
 	static int first = 1;
@@ -112,3 +114,35 @@ int fpu_emulator_restore_context32(struct sigcontext32 __user *sc)
 	return err;
 }
 #endif
+#else
+
+void fpu_emulator_init_fpu(void)
+{
+	printk(KERN_INFO "FPU emulator disabled, make sure your toolchain"
+		"was compiled with software floating point support (soft-float)\n");
+	return;
+}
+
+int fpu_emulator_save_context(struct sigcontext __user *sc)
+{
+	return 0;
+}
+
+int fpu_emulator_restore_context(struct sigcontext __user *sc)
+{
+	return 0;
+}
+
+int fpu_emulator_save_context32(struct sigcontext32 __user *sc)
+{
+	return 0;
+}
+
+int fpu_emulator_restore_context32(struct sigcontext32 __user *sc)
+{
+	return 0;
+}
+
+#ifdef CONFIG_64BIT
+#endif	/* CONFIG_64BIT */
+#endif /* CONFIG_MIPS_FPU_EMU */
