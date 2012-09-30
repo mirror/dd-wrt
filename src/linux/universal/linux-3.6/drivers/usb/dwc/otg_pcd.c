@@ -830,7 +830,7 @@ void free_list_agent_fn(struct work_struct *work){
 	spin_unlock(&tofree_list_lock);
 
 	list_for_each_entry_safe(cur,next,&free_list,list){
-		if(cur==&free_list) break;
+		if(cur==(struct free_param *)&free_list) break;
 		dma_free_coherent(NULL,cur->size,cur->addr,cur->dma_addr);
 		list_del(&cur->list);
 		kfree(cur);
@@ -2230,12 +2230,11 @@ int dwc_otg_pcd_init(struct platform_device *pdev)
 	 * with the block of code below it once the software is debugged for
 	 * this.  If is_dualspeed = 0 then the gadget driver should not report
 	 * a device qualifier descriptor when queried. */
-
 	if ((GET_CORE_IF(pcd)->core_params->speed == DWC_SPEED_PARAM_FULL) ||
 		((GET_CORE_IF(pcd)->hwcfg2.b.hs_phy_type == 2) &&
 		 (GET_CORE_IF(pcd)->hwcfg2.b.fs_phy_type == 1) &&
 		 (GET_CORE_IF(pcd)->core_params->ulpi_fs_ls))) {
-		pcd->gadget.max_speed = USB_SPEED_LOW;
+		pcd->gadget.max_speed = USB_SPEED_FULL;
 	}
 	else {
 		pcd->gadget.max_speed = USB_SPEED_HIGH;

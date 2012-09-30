@@ -958,10 +958,10 @@ int dwc_otg_hcd_urb_dequeue(struct usb_hcd *hcd,
 	urb_qtd = (dwc_otg_qtd_t *)urb->hcpriv;
 	qh = (dwc_otg_qh_t *)ep->hcpriv;
 
-        if (urb_qtd == NULL) {
-            SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
-            return 0;
-        }
+	if (urb_qtd == NULL) {
+		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
+		return 0;
+	}
 #ifdef DEBUG
 	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
 		dump_urb_info(urb, "dwc_otg_hcd_urb_dequeue");
@@ -993,15 +993,15 @@ int dwc_otg_hcd_urb_dequeue(struct usb_hcd *hcd,
 	 */
 	dwc_otg_hcd_qtd_remove_and_free(dwc_otg_hcd, urb_qtd);
 	if (urb_qtd == qh->qtd_in_process) {
-                /* Note that dwc_otg_hcd_qh_deactivate() locks the spin_lock again */
-                SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
+		/* Note that dwc_otg_hcd_qh_deactivate() locks the spin_lock again */
+		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
 		dwc_otg_hcd_qh_deactivate(dwc_otg_hcd, qh, 0);
 		qh->channel = NULL;
 		qh->qtd_in_process = NULL;
 	} else {
-            if (list_empty(&qh->qtd_list))
-		dwc_otg_hcd_qh_remove(dwc_otg_hcd, qh);
-            SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
+		if (list_empty(&qh->qtd_list))
+			dwc_otg_hcd_qh_remove(dwc_otg_hcd, qh);
+		SPIN_UNLOCK_IRQRESTORE(&dwc_otg_hcd->lock, flags);
 	}
 
 	urb->hcpriv = NULL;
