@@ -99,7 +99,9 @@ int mips_dsemul(struct pt_regs *regs, mips_instruction ir, unsigned long cpc)
 	err |= __put_user(cpc, &fr->epc);
 
 	if (unlikely(err)) {
+#ifdef CONFIG_MIPS_FPU_EMU
 		fpuemustats.errors++;
+#endif
 		return SIGBUS;
 	}
 
