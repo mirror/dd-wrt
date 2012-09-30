@@ -132,6 +132,7 @@ int fpu_emulator_restore_context(struct sigcontext __user *sc)
 {
 	return 0;
 }
+#ifdef CONFIG_64BIT
 
 int fpu_emulator_save_context32(struct sigcontext32 __user *sc)
 {
@@ -142,7 +143,5 @@ int fpu_emulator_restore_context32(struct sigcontext32 __user *sc)
 {
 	return 0;
 }
-
-#ifdef CONFIG_64BIT
 #endif	/* CONFIG_64BIT */
 #endif /* CONFIG_MIPS_FPU_EMU */
