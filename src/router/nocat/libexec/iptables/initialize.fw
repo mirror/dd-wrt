@@ -214,7 +214,6 @@ for iface in $InternalDevice; do
     	        $redirect -s $net -m mac --mac-source $mac -j RETURN
 	        $fwd -s $net -m mac --mac-source $mac -j ACCEPT
 	        $fwd -d $net -m mac --mac-source $mac -j ACCEPT
-	        $nat      -s $net -m mac --mac-source $mac -j MASQUERADE
 	    done
         fi
 	   
