@@ -59,6 +59,7 @@
 
 /* Function which emulates a floating point instruction. */
 
+#ifdef CONFIG_MIPS_FPU_EMU
 static int fpu_emu(struct pt_regs *, struct mips_fpu_struct *,
 	mips_instruction);
 
@@ -1310,3 +1311,10 @@ static int __init debugfs_fpuemu(void)
 }
 __initcall(debugfs_fpuemu);
 #endif
+#else
+int fpu_emulator_cop1Handler(struct pt_regs *xcp, struct mips_fpu_struct *ctx,
+        int has_fpu)
+{
+	return 0;
+}
+#endif /* CONFIG_MIPS_FPU_EMU */

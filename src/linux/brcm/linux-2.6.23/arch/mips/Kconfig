@@ -758,6 +758,18 @@ config I8259
 config MIPS_BONITO64
 	bool
 
+config MIPS_FPU_EMU
+	bool "Enable FPU emulation"
+	default y
+	help
+	   This option allows building a kernel with or without the Algorithmics
+	   FPU emulator enabled. Turning off this option results in a kernel which
+	   does not catch floating operations exceptions. Make sure that your toolchain
+	   is configured to enable software floating point emulation in that case.
+		
+	   If unsure say Y here.
+
+
 config MIPS_MSC
 	bool
 
