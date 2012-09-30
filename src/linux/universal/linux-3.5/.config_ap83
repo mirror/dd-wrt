@@ -2037,3 +2037,4 @@ CONFIG_IXGBE_PTP=y
 # CONFIG_CRASHLOG is not set
 # CONFIG_ARCH_BRCM is not set
 # CONFIG_CGROUPS is not set
+ # CONFIG_SCSI_UFSHCD is not set

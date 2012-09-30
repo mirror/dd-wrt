@@ -2617,3 +2617,4 @@ CONFIG_AVERAGE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
 # CONFIG_CGROUPS is not set
+ # CONFIG_SCSI_UFSHCD is not set
