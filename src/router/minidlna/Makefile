@@ -71,7 +71,6 @@ ffmpeg:
 	--disable-doc \
 	--disable-dxva2 \
 	--enable-pthreads \
-	--disable-optimizations \
 	--enable-small \
 	--disable-stripping \
 	--enable-zlib \
@@ -139,14 +138,14 @@ libvorbis:
 				HOST_COMPILE=$(HOST_COMPILE) \
 				MINI_DLNA_PATH=$(MINI_DLNA_PATH)				
 	if [ ! -f ./libvorbis-1.3.3/Makefile ];then \
-	cd libvorbis-1.3.3 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
+	cd libvorbis-1.3.3 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
 					CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 					LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.3.0/src/.libs/ \
 					); \
 	fi
 flac:
 	if [ ! -f ./flac-1.2.1/Makefile ];then \
-	cd flac-1.2.1 && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
+	cd flac-1.2.1 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
 				CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 				LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.3.0/src/.libs/ \
 				); \
@@ -154,7 +153,7 @@ flac:
 
 libid3tag:
 	if [ ! -f ./libid3tag-0.15.0b/Makefile ];then \
-	cd libid3tag-0.15.0b && (./configure --host=$(HOST)  CC=$(CROSS_COMPILE)gcc \
+	cd libid3tag-0.15.0b && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
 				CPPFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/zlib-1.2.3/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 				LDFLAGS=-L$(MINI_DLNA_PATH)/zlib-1.2.3/ \
 				); \
@@ -163,6 +162,10 @@ clean:
 	-for i in ${SUBDIRS}; do \
 		(cd $$i; make clean); \
 	done
+	(cd minidlna && make clean MINI_DLNA_PATH=$(MINI_DLNA_PATH) \
+			     CROSS_COMPILE=$(CROSS_COMPILE) \
+			     HOST_COMPILE=$(HOST_COMPILE) \
+			     MINI_DLNA_PATH=$(MINI_DLNA_PATH))
 	-rm ./lib/libz.a
 	-rm ./lib/libvorbis.a
 	-rm ./lib/libFLAC.a
