@@ -534,7 +534,7 @@ static bool compliance_mode_recovery_timer_quirk_check(void)
 	dmi_sys_vendor = dmi_get_system_info(DMI_SYS_VENDOR);
 	
 	if (!dmi_product_name || !dmi_sys_vendor)
-		return;
+		return false;
 		
 	if (!(strstr(dmi_sys_vendor, "Hewlett-Packard")))
 		return false;
