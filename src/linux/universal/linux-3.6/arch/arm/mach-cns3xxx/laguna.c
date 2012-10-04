@@ -719,7 +719,7 @@ static int __init laguna_model_setup(void)
 		printk("CONFIG BITMAP = 0x%08X\n",laguna_info.config_bitmap);
 		if (laguna_info.config_bitmap & ETH0_LOAD)
 			laguna_net_data.ports |= BIT(0);
-		if (strncmp(laguna_info.model, "GW2388", 6) == 0)
+		if (strncmp(laguna_info.model, "GW2388", 6) == 0 || strncmp(laguna_info.model, "GW2389", 6) == 0)
 		{
 		if (laguna_info.config_bitmap & ETH1_LOAD)
 			laguna_net_data.ports |= BIT(1);
@@ -804,7 +804,7 @@ static int __init laguna_model_setup(void)
 		platform_device_register(&laguna_uart);
 
 		printk(KERN_EMERG "notflash size %d\n",laguna_info.nor_flash_size);
-		if ((laguna_info.config2_bitmap & (NOR_FLASH_LOAD)) && (strncmp(laguna_info.model, "GW2388", 6) == 0 || strncmp(laguna_info.model, "GW2387", 6) == 0 || strncmp(laguna_info.model, "GW2391", 6) == 0)) {
+		if ((laguna_info.config2_bitmap & (NOR_FLASH_LOAD)) && (strncmp(laguna_info.model, "GW2388", 6) == 0 || strncmp(laguna_info.model, "GW2387", 6) == 0 || strncmp(laguna_info.model, "GW2389", 6) == 0 || strncmp(laguna_info.model, "GW2391", 6) == 0)) {
 			printk(KERN_EMERG "detecting NOR FLASH\n");
 //			if (laguna_info.nor_flash_size < 1 || laguna_info.nor_flash_size > 5)
 //			    laguna_info.nor_flash_size = 2; //guess default for wrong config 
@@ -864,7 +864,7 @@ static int __init laguna_model_setup(void)
 			platform_device_register(&laguna_norflash_device);
 		}
 
-		if ((laguna_info.config2_bitmap & (SPI_FLASH_LOAD)) && strncmp(laguna_info.model, "GW2380", 6) == 0) {
+		if ((laguna_info.config2_bitmap & (SPI_FLASH_LOAD)) && (strncmp(laguna_info.model, "GW2380", 6) == 0 || strncmp(laguna_info.model, "GW2382", 6) == 0 || strncmp(laguna_info.model, "GW2384", 6) == 0)) {
 		//	printk(KERN_EMERG "detecting SPI FLASH\n");
 			SPI_CONFIGURATION_REG = 0x40000000;
 			HAL_MISC_ENABLE_SPI_SERIAL_FLASH_BANK_ACCESS();
@@ -942,6 +942,14 @@ static int __init laguna_model_setup(void)
 		{
 			laguna_gpio_leds_data.num_leds = 2;
 		}
+		else if (strncmp(laguna_info.model, "GW2389", 6) == 0)
+		{
+			laguna_gpio_leds_data.num_leds = 2;
+		}
+		else if (strncmp(laguna_info.model, "GW2387", 6) == 0)
+		{
+			laguna_gpio_leds_data.num_leds = 2;
+		}
 		else if (strncmp(laguna_info.model, "GW2391", 6) == 0)
 		{
 			laguna_gpio_leds_data.num_leds = 2;
@@ -950,6 +958,13 @@ static int __init laguna_model_setup(void)
 			laguna_gpio_leds[0].gpio = 107;
 			laguna_gpio_leds[1].gpio = 106;
 			laguna_gpio_leds_data.num_leds = 2;
+		}
+		else if (strncmp(laguna_info.model, "GW2382", 6) == 0) {
+			laguna_gpio_leds[0].gpio = 107;
+			laguna_gpio_leds_data.num_leds = 1;
+		}
+		else if (strncmp(laguna_info.model, "GW2384", 6) == 0) {
+			laguna_gpio_leds_data.num_leds = 1;
 		}
 			platform_device_register(&laguna_gpio_leds_device);
 			platform_device_register(&laguna_gpio_dev);
