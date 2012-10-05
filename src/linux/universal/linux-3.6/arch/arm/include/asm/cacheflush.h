@@ -132,15 +132,6 @@ extern struct cpu_cache_fns cpu_cache;
 #define __cpuc_coherent_user_range	cpu_cache.coherent_user_range
 #define __cpuc_flush_dcache_area	cpu_cache.flush_kern_dcache_area
 
-
-#if defined(CONFIG_SMP) && defined(CONFIG_ARCH_CNS3XXX)
-
-#define dmac_map_area smp_dma_map_area
-#define dmac_unmap_area smp_dma_unmap_area
-#define dmac_flush_range smp_dma_flush_range
-
-#else
-
 /*
  * These are private to the dma-mapping API.  Do not use directly.
  * Their sole purpose is to ensure that data held in the cache
@@ -152,7 +143,6 @@ extern struct cpu_cache_fns cpu_cache;
 #define dmac_flush_range		cpu_cache.dma_flush_range
 #ifdef CONFIG_PLAT_BCM5301X
 #define dma_inv_range			cpu_cache.dma_inv_range
-#endif
 #endif
 
 #else
