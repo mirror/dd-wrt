@@ -164,7 +164,7 @@ extern void writenvram(char *var,char *file);
 #define NVRAM_HEADER_SIZE	20
 #if defined(HAVE_WZRG300NH)
 #define NVRAM_SPACE		0x20000
-#elif defined(HAVE_X86) || defined(HAVE_WHRAG108) || defined(HAVE_FONERA) || defined(HAVE_RT2880) || defined(HAVE_RT3052) || defined(HAVE_XSCALE) || defined(HAVE_STORM) || defined(HAVE_LSX)
+#elif defined(HAVE_X86) || defined(HAVE_WHRAG108) || defined(HAVE_FONERA) || defined(HAVE_RT2880) || defined(HAVE_RT3052) || defined(HAVE_XSCALE) || defined(HAVE_STORM) || defined(HAVE_LSX) || defined(HAVE_STORM)
 #define NVRAM_SPACE		0x10000
 #elif defined(HAVE_NVRAM_64K)  //some new Netgear models
 #define NVRAM_SPACE		0x10000
