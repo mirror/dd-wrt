@@ -1406,9 +1406,8 @@ static int __xipram do_write_buffer(struct map_info *map, struct flchip *chip,
 				    int len)
 {
 	struct cfi_private *cfi = map->fldrv_priv;
-	unsigned long timeo = jiffies + HZ;
+	unsigned int timeo = 0;
 	/* see comments in do_write_oneword() regarding uWriteTimeo. */
-	unsigned long uWriteTimeout = ( HZ / 1000 ) + 1;
 	int ret = -EIO;
 	unsigned long cmd_adr;
 	int z, words;
@@ -1466,9 +1465,9 @@ static int __xipram do_write_buffer(struct map_info *map, struct flchip *chip,
 				adr, map_bankwidth(map),
 				chip->word_write_time);
 
-	timeo = jiffies + uWriteTimeout;
+	timeo = 1000;
 
-	for (;;) {
+	while (timeo--) {
 		if (chip->state != FL_WRITING) {
 			/* Someone's suspended the write. Sleep */
 			DECLARE_WAITQUEUE(wait, current);
@@ -1478,13 +1477,9 @@ static int __xipram do_write_buffer(struct map_info *map, struct flchip *chip,
 			mutex_unlock(&chip->mutex);
 			schedule();
 			remove_wait_queue(&chip->wq, &wait);
-			timeo = jiffies + (HZ / 2); /* FIXME */
 			mutex_lock(&chip->mutex);
 			continue;
 		}
-
-		if (time_after(jiffies, timeo) && !chip_ready(map, adr))
-			break;
 
 		if (chip_ready(map, adr)) {
 			xip_enable(map, chip, adr);
