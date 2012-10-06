@@ -7,20 +7,20 @@
 
 Name:		ntfs-3g
 Summary:	Linux NTFS userspace driver
-Version:	2012.1.15AR.1
-Release:	1.fc15
+Version:	2012.1.15AR.7
+Release:	1.fc17
 License:	GPLv2+
 Group:		System Environment/Base
-Source0:	http://b.andre.pagesperso-orange.fr/%{name}_ntfsprogs-%{version}%{?subver}.tgz
+Source0:	http://jp-andre.pagesperso-orange.fr/%{name}_ntfsprogs-%{version}%{?subver}.tgz
 Source1:	20-ntfs-config-write-policy.fdi
-URL:		http://b.andre.pagesperso-orange.fr
+URL:		http://jp-andre.pagesperso-orange.fr
 %if %{with_externalfuse}
 BuildRequires:	fuse-devel
 Requires:	fuse
 %endif
 BuildRequires:	libtool, libattr-devel
 # ntfsprogs BuildRequires
-BuildRequires:  libconfig-devel, libgcrypt-devel, gnutls-devel, libuuid-devel
+BuildRequires:  libconfig-devel, libuuid-devel
 Epoch:		2
 Provides:	ntfsprogs-fuse = %{epoch}:%{version}-%{release}
 Obsoletes:	ntfsprogs-fuse
@@ -75,43 +75,30 @@ CFLAGS="$RPM_OPT_FLAGS -D_FILE_OFFSET_BITS=64"
 	--with-fuse=external \
 %endif
 	--exec-prefix=/ \
-	--bindir=/bin \
-	--sbindir=/sbin \
-	--enable-crypto \
-	--libdir=/%{_lib}
+	--enable-crypto
 make %{?_smp_mflags} LIBTOOL=%{_bindir}/libtool
 
 %install
 make LIBTOOL=%{_bindir}/libtool DESTDIR=%{buildroot} install
-rm -rf %{buildroot}/%{_lib}/*.la
-rm -rf %{buildroot}/%{_lib}/*.a
+rm -rf %{buildroot}%{_libdir}/*.la
+rm -rf %{buildroot}%{_libdir}/*.a
 
-# make the symlink an actual copy to avoid confusion
-rm -rf %{buildroot}/sbin/mount.ntfs-3g
-cp -a %{buildroot}/bin/ntfs-3g %{buildroot}/sbin/mount.ntfs-3g
+rm -rf %{buildroot}/%{_sbindir}/mount.ntfs-3g
+cp -a %{buildroot}/%{_bindir}/ntfs-3g %{buildroot}/%{_sbindir}/mount.ntfs-3g
 
 # Actually make some symlinks for simplicity...
 # ... since we're obsoleting ntfsprogs-fuse
-pushd %{buildroot}/bin
+pushd %{buildroot}/%{_bindir}
 ln -s ntfs-3g ntfsmount
 popd
-pushd %{buildroot}/sbin
+pushd %{buildroot}/%{_sbindir}
 ln -s mount.ntfs-3g mount.ntfs-fuse
 # And since there is no other package in Fedora that provides an ntfs 
 # mount...
 ln -s mount.ntfs-3g mount.ntfs
 popd
-
-# Compat symlinks
-mkdir -p %{buildroot}%{_bindir}
-pushd %{buildroot}%{_bindir}
-ln -s /bin/ntfs-3g ntfs-3g
-ln -s /bin/ntfsmount ntfsmount
-popd
-
-# Put the .pc file in the right place.
-mkdir -p %{buildroot}%{_libdir}/pkgconfig/
-mv %{buildroot}/%{_lib}/pkgconfig/libntfs-3g.pc %{buildroot}%{_libdir}/pkgconfig/
+mv %{buildroot}/sbin/* %{buildroot}/%{_sbindir}
+rmdir %{buildroot}/sbin
 
 # We get this on our own, thanks.
 rm -rf %{buildroot}%{_defaultdocdir}/%{name}/README
@@ -124,19 +111,17 @@ cp -a %{SOURCE1} %{buildroot}%{_datadir}/hal/fdi/policy/10osvendor/
 
 %files
 %doc AUTHORS ChangeLog COPYING COPYING.LIB CREDITS NEWS README
-/sbin/mount.ntfs
-%attr(754,root,root) /sbin/mount.ntfs-3g
-/sbin/mount.ntfs-fuse
-/sbin/mount.lowntfs-3g
-/bin/ntfs-3g
-/bin/ntfsmount
-/bin/ntfs-3g.probe
-/bin/ntfs-3g.secaudit
-/bin/ntfs-3g.usermap
-/bin/lowntfs-3g
+%{_sbindir}/mount.ntfs
+%attr(754,root,root) %{_sbindir}/mount.ntfs-3g
+%{_sbindir}/mount.ntfs-fuse
+%{_sbindir}/mount.lowntfs-3g
+%{_bindir}/ntfs-3g.probe
+%{_bindir}/ntfs-3g.secaudit
+%{_bindir}/ntfs-3g.usermap
+%{_bindir}/lowntfs-3g
 %{_bindir}/ntfs-3g
 %{_bindir}/ntfsmount
-/%{_lib}/libntfs-3g.so.*
+%{_libdir}/libntfs-3g.so.*
 %{_mandir}/man8/mount.lowntfs-3g.*
 %{_mandir}/man8/mount.ntfs-3g.*
 %{_mandir}/man8/ntfs-3g*
@@ -144,37 +129,62 @@ cp -a %{SOURCE1} %{buildroot}%{_datadir}/hal/fdi/policy/10osvendor/
 
 %files devel
 %{_includedir}/ntfs-3g/
-/%{_lib}/libntfs-3g.so
+%{_libdir}/libntfs-3g.so
 %{_libdir}/pkgconfig/libntfs-3g.pc
 
 %files -n ntfsprogs
 %doc AUTHORS COPYING COPYING.LIB CREDITS ChangeLog NEWS README
-/bin/ntfscat
-/bin/ntfscluster
-/bin/ntfscmp
-/bin/ntfsfix
-/bin/ntfsinfo
-/bin/ntfsls
-/sbin/mkfs.ntfs
-/sbin/mkntfs
-/sbin/ntfsclone
-/sbin/ntfscp
-/sbin/ntfslabel
-/sbin/ntfsresize
-/sbin/ntfsundelete
+%{_bindir}/ntfscat
+%{_bindir}/ntfscluster
+%{_bindir}/ntfscmp
+%{_bindir}/ntfsfix
+%{_bindir}/ntfsinfo
+%{_bindir}/ntfsls
+%{_sbindir}/mkfs.ntfs
+%{_sbindir}/mkntfs
+%{_sbindir}/ntfsclone
+%{_sbindir}/ntfscp
+%{_sbindir}/ntfslabel
+%{_sbindir}/ntfsresize
+%{_sbindir}/ntfsundelete
 %{_mandir}/man8/mkntfs.8*
 %{_mandir}/man8/mkfs.ntfs.8*
 %{_mandir}/man8/ntfs[^m][^o]*.8*
 
 %changelog
-* Wed Feb  1 2012 Jean-Pierre Andre 2012.1.15AR.1
+* Wed Sep 12 2012 Jean-Pierre Andre 2012.1.15AR.7
 - adapted to advanced ntfs-3g and basic ntfsprogs
+
+* Fri Jul 20 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2:2012.1.15-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Fri Feb 10 2012 Tom Callaway <spot@fedoraproject.org> 2:2012.1.15-1
+- update to 2012.1.15
+
+* Wed Feb  1 2012 Kay Sievers <kay@redhat.com> 2:2011.10.9-3
+- install everything in /usr
+  https://fedoraproject.org/wiki/Features/UsrMove
+
+* Fri Jan 13 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2:2011.10.9-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
+* Tue Oct 11 2011 Tom Callaway <spot@fedoraproject.org> - 2:2011.10.9-1
+- 2011.10.9-RC
+- patch ntfsck to return 0 instead of 1 on unsupported filesystem cases
+
+* Mon Sep 12 2011 Tom Callaway <spot@fedoraproject.org> - 2:2011.4.12-5
+- fix ntfsck symlink (thanks to Chris Smart for catching it)
+
+* Wed Sep  7 2011 Tom Callaway <spot@fedoraproject.org> - 2:2011.4.12-4
+- fix issue preventing some volume types from not working properly (bz735862)
+- create fsck.ntfs symlink to ntfsck (bz735612).
+- apply cleanups from git trunk for ntfsck (bz 706638)
+- apply cleanups from git trunk for ntfsfix (bz 711662, 723562)
 
 * Mon May  9 2011 Tom Callaway <spot@fedoraproject.org> - 2:2011.4.12-3
 - add Obsoletes to resolve multi-lib upgrade issue (bz702671)
 
 * Mon Apr 25 2011 Tom Callaway <spot@fedoraproject.org> - 2:2011.4.12-2
-- add --enable-extras flag (and use it) to ensure proper binary installation
 
 * Thu Apr 14 2011 Tom Callaway <spot@fedoraproject.org> - 2:2011.4.12-1
 - update to 2011.4.12

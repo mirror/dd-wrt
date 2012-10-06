@@ -110,11 +110,17 @@
 /* Define to 1 if you have the <machine/endian.h> header file. */
 #undef HAVE_MACHINE_ENDIAN_H
 
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
 /* Define to 1 if mbrtowc and mbstate_t are properly declared. */
 #undef HAVE_MBRTOWC
 
 /* Define to 1 if you have the `mbsinit' function. */
 #undef HAVE_MBSINIT
+
+/* Define to 1 if you have the `memcpy' function. */
+#undef HAVE_MEMCPY
 
 /* Define to 1 if you have the `memmove' function. */
 #undef HAVE_MEMMOVE
@@ -131,6 +137,9 @@
 /* Define to 1 if you have the <pwd.h> header file. */
 #undef HAVE_PWD_H
 
+/* Define to 1 if you have the `random' function. */
+#undef HAVE_RANDOM
+
 /* Define to 1 if you have the `realpath' function. */
 #undef HAVE_REALPATH
 
@@ -142,6 +151,9 @@
 
 /* Define to 1 if you have the `setxattr' function. */
 #undef HAVE_SETXATTR
+
+/* Define to 1 if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
 
 /* Define to 1 if `stat' has the bug that it succeeds when given the
    zero-length file name argument. */
