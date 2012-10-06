@@ -24,8 +24,8 @@
 
 # Autoconf
 AC_PREREQ(2.59)
-AC_INIT([ntfs-3g],[2012.1.15AR.1],[ntfs-3g-devel@lists.sf.net])
-LIBNTFS_3G_VERSION="831"
+AC_INIT([ntfs-3g],[2012.1.15AR.7],[ntfs-3g-devel@lists.sf.net])
+LIBNTFS_3G_VERSION="837"
 AC_CONFIG_SRCDIR([src/ntfs-3g.c])
 
 # Environment
@@ -212,7 +212,7 @@ esac
 
 AC_MSG_CHECKING([fuse compatibility])
 case "${target_os}" in
-linux*)
+linux*|solaris*)
 	AC_ARG_WITH(
 		[fuse],
 		[AS_HELP_STRING([--with-fuse=<internal|external>],[Select FUSE library: internal or external @<:@default=internal@:>@])],
@@ -220,7 +220,7 @@ linux*)
 		[with_fuse="internal"]
 	)
 	;;
-darwin*|netbsd*|solaris*|kfreebsd*-gnu)
+darwin*|netbsd*|kfreebsd*-gnu)
 	with_fuse="external"
 	;;
 freebsd*)
@@ -370,7 +370,7 @@ AC_CHECK_HEADERS([ctype.h fcntl.h libgen.h libintl.h limits.h locale.h \
 	endian.h byteswap.h sys/byteorder.h sys/disk.h sys/endian.h \
 	sys/param.h sys/ioctl.h sys/mkdev.h sys/mount.h sys/stat.h sys/types.h \
 	sys/vfs.h sys/statvfs.h sys/sysmacros.h linux/major.h linux/fd.h \
-	linux/hdreg.h machine/endian.h windows.h syslog.h pwd.h])
+	linux/hdreg.h machine/endian.h windows.h syslog.h pwd.h malloc.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -428,7 +428,7 @@ AC_CHECK_FUNCS([ \
 	atexit basename daemon dup2 fdatasync ffs getopt_long hasmntopt \
 	mbsinit memmove memset realpath regcomp setlocale setxattr \
 	strcasecmp strchr strdup strerror strnlen strsep strtol strtoul \
-	sysconf utime utimensat gettimeofday clock_gettime fork \
+	sysconf utime utimensat gettimeofday clock_gettime fork memcpy random snprintf \
 ])
 AC_SYS_LARGEFILE
 

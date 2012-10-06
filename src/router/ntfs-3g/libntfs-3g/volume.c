@@ -54,6 +54,10 @@
 #include <locale.h>
 #endif
 
+#if defined(__sun) && defined (__SVR4)
+#include <sys/mnttab.h>
+#endif
+
 #include "param.h"
 #include "compat.h"
 #include "volume.h"
@@ -90,12 +94,7 @@ static const char *corrupt_volume_msg =
 
 static const char *hibernated_volume_msg =
 "The NTFS partition is hibernated. Please resume and shutdown Windows\n"
-"properly, or mount the volume read-only with the 'ro' mount option, or\n"
-"mount the volume read-write with the 'remove_hiberfile' mount option.\n"
-"For example type on the command line:\n"
-"\n"
-"            mount -t ntfs-3g -o remove_hiberfile %s %s\n"
-"\n";
+"properly, or mount the volume read-only with the 'ro' mount option.\n";
 
 static const char *unclean_journal_msg =
 "Write access is denied because the disk wasn't safely powered\n"
@@ -513,8 +512,20 @@ ntfs_volume *ntfs_volume_startup(struct ntfs_device *dev, unsigned long flags)
 	
 	/* ...->open needs bracketing to compile with glibc 2.7 */
 	if ((dev->d_ops->open)(dev, NVolReadOnly(vol) ? O_RDONLY: O_RDWR)) {
-		ntfs_log_perror("Error opening '%s'", dev->d_name);
-		goto error_exit;
+		if (!NVolReadOnly(vol) && (errno == EROFS)) {
+			if ((dev->d_ops->open)(dev, O_RDONLY)) {
+				ntfs_log_perror("Error opening read-only '%s'",
+						dev->d_name);
+				goto error_exit;
+			} else {
+				ntfs_log_info("Can only open '%s' as read-only\n",
+						dev->d_name);
+				NVolSetReadOnly(vol);
+			}
+		} else {
+			ntfs_log_perror("Error opening '%s'", dev->d_name);
+			goto error_exit;
+		}
 	}
 	/* Attach the device to the volume. */
 	vol->dev = dev;
@@ -1430,6 +1441,60 @@ exit:
 	}
 	return 0;
 }
+
+#else /* HAVE_MNTENT_H */
+
+#if defined(__sun) && defined (__SVR4)
+
+static int ntfs_mntent_check(const char *file, unsigned long *mnt_flags)
+{
+	struct mnttab *mnt = NULL;
+	char *real_file = NULL, *real_fsname = NULL;
+	FILE *f;
+	int err = 0;
+
+	real_file = (char*)ntfs_malloc(PATH_MAX + 1);
+	if (!real_file)
+		return -1;
+	real_fsname = (char*)ntfs_malloc(PATH_MAX + 1);
+	mnt = (struct mnttab*)ntfs_malloc(MNT_LINE_MAX + 1);
+	if (!real_fsname || !mnt) {
+		err = errno;
+		goto exit;
+	}
+	if (!ntfs_realpath_canonicalize(file, real_file)) {
+		err = errno;
+		goto exit;
+	}
+	if (!(f = fopen(MNTTAB, "r"))) {
+		err = errno;
+		goto exit;
+	}
+	while (!getmntent(f, mnt)) {
+		if (!ntfs_realpath_canonicalize(mnt->mnt_special, real_fsname))
+			continue;
+		if (!strcmp(real_file, real_fsname)) {
+			*mnt_flags = NTFS_MF_MOUNTED;
+			if (!strcmp(mnt->mnt_mountp, "/"))
+				*mnt_flags |= NTFS_MF_ISROOT;
+			if (hasmntopt(mnt, "ro") && !hasmntopt(mnt, "rw"))
+				*mnt_flags |= NTFS_MF_READONLY;
+			break;
+		}
+	}
+	fclose(f);
+exit:
+	free(mnt);
+	free(real_file);
+	free(real_fsname);
+	if (err) {
+		errno = err;
+		return -1;
+	}
+	return 0;
+}
+
+#endif /* defined(__sun) && defined (__SVR4) */
 #endif /* HAVE_MNTENT_H */
 
 /**
@@ -1461,7 +1526,7 @@ int ntfs_check_if_mounted(const char *file __attribute__((unused)),
 		unsigned long *mnt_flags)
 {
 	*mnt_flags = 0;
-#ifdef HAVE_MNTENT_H
+#if defined(HAVE_MNTENT_H) || (defined(__sun) && defined (__SVR4))
 	return ntfs_mntent_check(file, mnt_flags);
 #else
 	return 0;
