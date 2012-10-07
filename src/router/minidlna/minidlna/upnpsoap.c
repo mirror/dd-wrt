@@ -1092,7 +1092,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 		}
 		if( album_art && atoi(album_art) && (passed_args->filter & FILTER_UPNP_ALBUMARTURI) ) {
 			ret = strcatf(str, "&lt;upnp:albumArtURI ");
-			if( passed_args->filter & FILTER_UPNP_ALBUMARTURI_DLNA_PROFILEID ) {
+			if( ( passed_args->filter & FILTER_UPNP_ALBUMARTURI_DLNA_PROFILEID )  || ( passed_args->client == ESamsungSeriesC )) {
 				ret = strcatf(str, "dlna:profileID=\"JPEG_TN\" xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"");
 			}
 			ret = strcatf(str, "&gt;http://%s:%d/AlbumArt/%s-%s.jpg&lt;/upnp:albumArtURI&gt;",
