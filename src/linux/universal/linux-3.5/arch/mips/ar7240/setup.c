@@ -606,16 +606,16 @@ u32 rev=0;
     ar71xx_ahb_freq = ar7240_ahb_freq;
 
 #ifdef CONFIG_MACH_HORNET
-    serial_print("Booting %s(Hornet)...\n",get_system_type());
+//    serial_print("Booting (Hornet)...\n");
     /* clear wmac reset */
     ar7240_reg_wr(AR7240_RESET, (ar7240_reg_rd(AR7240_RESET) & (~AR7240_RESET_WMAC)));
 #elif CONFIG_WASP_SUPPORT
-    serial_print("Booting WASP !!! -:) ...\n");
+//    serial_print("Booting WASP !!! -:) ...\n");
 #else
-    serial_print("Booting AR7240(Python)...\n");
+//    serial_print("Booting AR7240(Python)...\n");
 #endif
     is_ar9000=1;
-    printk(KERN_INFO "sys id = %X %s\n",id,get_system_type());
+//    printk(KERN_INFO "sys id = %X %s\n",id,get_system_type());
 //#if 0
 //    serial_setup();
 //#endif
