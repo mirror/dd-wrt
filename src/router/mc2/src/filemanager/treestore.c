@@ -458,7 +458,7 @@ tree_store_add_entry (const vfs_path_t * name)
 
     /* Calculate attributes */
     new->name = vfs_path_clone (name);
-    new->sublevel = vfs_path_tokens_count (new->name) + 1;
+    new->sublevel = vfs_path_tokens_count (new->name);
     {
         const char *new_name;
 
@@ -466,6 +466,8 @@ tree_store_add_entry (const vfs_path_t * name)
         new->subname = strrchr (new_name, '/');
         if (new->subname == NULL)
             new->subname = new_name;
+        else
+            new->subname++;
     }
     if (new->next)
         submask = new->next->submask;
@@ -482,18 +484,6 @@ tree_store_add_entry (const vfs_path_t * name)
     {
         current->submask |= 1 << new->sublevel;
         current = current->prev;
-    }
-
-    /* The entry has now been added */
-
-    if (new->sublevel > 1)
-    {
-        /* Let's check if the parent directory is in the tree */
-        vfs_path_t *tmp_vpath;
-
-        tmp_vpath = vfs_path_vtokens_get (new->name, 0, new->sublevel - 1);
-        tree_store_add_entry (tmp_vpath);
-        vfs_path_free (tmp_vpath);
     }
 
     tree_store_dirty (TRUE);
@@ -565,7 +555,7 @@ process_special_dirs (GList ** special_dirs, char *file)
     mc_config_t *cfg;
     gsize buffers_len;
 
-    cfg = mc_config_init (file);
+    cfg = mc_config_init (file, TRUE);
     if (cfg == NULL)
         return;
 
@@ -861,13 +851,13 @@ tree_store_start_check (const vfs_path_t * vpath)
     len = vfs_path_len (ts.check_name);
 
     current = ts.check_start;
-    while (current != NULL && vfs_path_cmp (current->name, ts.check_name) == 0)
+    while (current != NULL && vfs_path_ncmp (current->name, ts.check_name, len) == 0)
     {
         char *current_name;
         gboolean ok;
 
         current_name = vfs_path_to_str (current->name);
-        ok = (current_name[len] == '\0' || (current_name[len] == PATH_SEP || len == 1));
+        ok = (current_name[len] == '\0' || current_name[len] == PATH_SEP || len == 1);
         g_free (current_name);
         if (!ok)
             break;
@@ -918,7 +908,7 @@ tree_store_end_check (void)
     ts.add_queue_vpath = g_list_reverse (ts.add_queue_vpath);
     the_queue = ts.add_queue_vpath;
     ts.add_queue_vpath = NULL;
-    g_free (ts.check_name);
+    vfs_path_free (ts.check_name);
     ts.check_name = NULL;
 
     g_list_foreach (the_queue, (GFunc) vfs_path_free, NULL);

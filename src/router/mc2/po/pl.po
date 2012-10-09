@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Piotr Drąg <piotrdrag@gmail.com>, 2011, 2012.
+# Piotr Drąg <piotrdrag@gmail.com>, 2011-2012.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-07-18 13:34+0300\n"
-"PO-Revision-Date: 2012-07-13 08:36+0000\n"
+"POT-Creation-Date: 2012-09-14 14:23+0300\n"
+"PO-Revision-Date: 2012-09-03 13:45+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish (http://www.transifex.com/projects/p/mc/language/pl/)\n"
 "Language: pl\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
-"|| n%100>=20) ? 1 : 2)\n"
+"|| n%100>=20) ? 1 : 2);\n"
 
 msgid "Warning: cannot load codepages list"
 msgstr "Ostrzeżenie: nie można wczytać listy stron kodowych"
@@ -118,7 +118,7 @@ msgid "Regular expression error"
 msgstr "Błąd wyrażenia regularnego"
 
 msgid "No&rmal"
-msgstr ""
+msgstr "&Zwykły"
 
 msgid "Re&gular expression"
 msgstr "Wyrażenie re&gularne"
@@ -576,7 +576,7 @@ msgid "Launches the file viewer on a file"
 msgstr "Uruchamia podgląd pliku"
 
 msgid "Edit files"
-msgstr ""
+msgstr "Modyfikuje pliki"
 
 msgid "Forces xterm features"
 msgstr "Wymusza funkcje programu xterm"
@@ -643,6 +643,24 @@ msgid ""
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
+"--colors KEYWORD={TEKST},{TŁO},{ATR}:SŁOWO_KLUCZOWE2=...\n"
+"\n"
+"{TEKST}, {TŁO} i {ATR} można pominąć, zostaną użyte wartości domyślne\n"
+"\n"
+" Słowa kluczowe:\n"
+"   Globalne:     errors, disabled, reverse, gauge, header\n"
+"                 input, inputmark, inputunchanged, commandlinemark\n"
+"                 bbarhotkey, bbarbutton, statusbar\n"
+"   Wyświetlanie plików: normal, selected, marked, markselect\n"
+"   Okna dialogowe: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
+"                 errdhotfocus\n"
+"   Menu:         menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
+"   Menu wyskakujące: pmenunormal, pmenusel, pmenutitle\n"
+"   Edytor:       editnormal, editbold, editmarked, editwhitespace,\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
+"   Przeglądarka:       viewbold, viewunderline, viewselected\n"
+"   Pomoc:        helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -850,22 +868,22 @@ msgstr "Kończ"
 msgid "Quit"
 msgstr "Zakończ"
 
-msgid "File was modified. Save with exit?"
-msgstr "Plik został zmodyfikowany. Zapisać przed zakończeniem?"
+msgid "File(s) was modified. Save with exit?"
+msgstr "Plik został zmodyfikowany. Zapisać przez zakończeniem?"
 
 msgid ""
 "Midnight Commander is being shut down.\n"
-"Save modified file?"
+"Save modified file(s)?"
 msgstr ""
-"Program Midnight Commander kończy działanie.\n"
-"Zapisać zmodyfikowany plik?"
+"Program Midnight Commander jest wyłączany.\n"
+"Zapisać zmodyfikowane pliki?"
 
 msgid "Diff:"
 msgstr "Różnica:"
 
 #, c-format
 msgid "\"%s\" is a directory"
-msgstr ""
+msgstr "\"%s\" jest katalogiem"
 
 #, c-format
 msgid ""
@@ -876,7 +894,7 @@ msgstr ""
 "%s"
 
 msgid "Diff viewer: invalid mode"
-msgstr ""
+msgstr "Przeglądarka różnic: nieprawidłowy tryb"
 
 msgid "Two files are needed to compare"
 msgstr "Wymagane są dwa pliki do porównania"
@@ -985,7 +1003,7 @@ msgid "Save as"
 msgstr "Zapisz jako"
 
 msgid "Cannot save: destination is not a regular file"
-msgstr ""
+msgstr "Nie można zapisać: cel nie jest zwykłym plikiem"
 
 msgid "A file already exists with this name"
 msgstr "Plik o tej nazwie już istnieje."
@@ -1040,7 +1058,7 @@ msgid "&User"
 msgstr "&Użytkownik"
 
 msgid "&System wide"
-msgstr ""
+msgstr "&Systemowe"
 
 msgid "Menu edit"
 msgstr "Modyfikacja menu"
@@ -1059,22 +1077,26 @@ msgid "%ld replacements made"
 msgstr "Wykonano %ld zastąpień"
 
 msgid "[NoName]"
-msgstr ""
+msgstr "[BezNazwy]"
 
 #, c-format
 msgid ""
 "File %s was modified.\n"
 "Save before close?"
 msgstr ""
+"Plik %s został zmodyfikowany.\n"
+"Zapisać przed zamknięciem?"
 
 msgid "Close file"
-msgstr ""
+msgstr "Zamknięcie pliku"
 
 #, c-format
 msgid ""
 "Midnight Commander is being shut down.\n"
 "Save modified file %s?"
 msgstr ""
+"Program Midnight Commander jest zamykany.\n"
+"Zapisać zmodyfikowany plik %s?"
 
 msgid "This function is not implemented"
 msgstr "Ta funkcja nie jest zaimplementowana."
@@ -1199,7 +1221,7 @@ msgid "Confirm replace"
 msgstr "Potwierdź zastąpienie"
 
 msgid "NoName"
-msgstr ""
+msgstr "BezNazwy"
 
 msgid "&Open file..."
 msgstr "&Otwórz plik..."
@@ -1208,7 +1230,7 @@ msgid "&New"
 msgstr "&Nowy"
 
 msgid "&Close"
-msgstr ""
+msgstr "_Zamknij"
 
 msgid "Save &as..."
 msgstr "Z&apisz jako..."
@@ -1331,13 +1353,13 @@ msgid "Record/Repeat &actions"
 msgstr "N&agraj/powtórz działania"
 
 msgid "S&pell check"
-msgstr ""
+msgstr "Spr&awdzanie pisowni"
 
 msgid "C&heck word"
-msgstr ""
+msgstr "&Sprawdź słowo"
 
-msgid "Change spelling &language"
-msgstr ""
+msgid "Change spelling &language..."
+msgstr "Zmień &język pisowni..."
 
 msgid "&Mail..."
 msgstr "Po&czta..."
@@ -1364,19 +1386,19 @@ msgid "&Move"
 msgstr "Prze&nieś"
 
 msgid "&Resize"
-msgstr ""
+msgstr "Zmień &rozmiar"
 
 msgid "&Toggle fullscreen"
-msgstr ""
+msgstr "&Przełącz pełny ekran"
 
 msgid "&Next"
-msgstr ""
+msgstr "&Następny"
 
 msgid "&Previous"
-msgstr ""
+msgstr "&Poprzedni"
 
 msgid "&List..."
-msgstr ""
+msgstr "&Lista..."
 
 msgid "&General..."
 msgstr "&Ogólne..."
@@ -1415,7 +1437,7 @@ msgid "For&mat"
 msgstr "For&mat"
 
 msgid "&Window"
-msgstr ""
+msgstr "&Okno"
 
 msgid "&Options"
 msgstr "&Opcje"
@@ -1486,9 +1508,13 @@ msgid ""
 "            A user friendly text editor\n"
 "         written for the Midnight Commander"
 msgstr ""
+" Copyright (C) 1996-2012 Free Software Foundation\n"
+"\n"
+"    Przyjazny dla użytkownika edytor tekstu, napisany\n"
+"         dla programu Midnight Commander"
 
 msgid "Open files"
-msgstr ""
+msgstr "Otwarcie plików"
 
 msgid "Edit: "
 msgstr "Edycja: "
@@ -1511,26 +1537,23 @@ msgstr "Usuń"
 msgid "ButtonBar|PullDn"
 msgstr "WDół"
 
-#, fuzzy
 msgid "&Add word"
-msgstr "Dod&aj nowy"
+msgstr "&Dodaj słowo"
 
 msgid "Language"
-msgstr ""
+msgstr "Język"
 
 msgid "Misspelled"
-msgstr ""
+msgstr "Błędna pisownia"
 
-#, fuzzy
 msgid "Check word"
-msgstr "&Całe słowa"
+msgstr "Sprawdź słowo"
 
 msgid "Suggest"
-msgstr ""
+msgstr "Sugestia"
 
-#, fuzzy
 msgid "Select language"
-msgstr "&Zaznacz grupę"
+msgstr "Wybierz język"
 
 msgid "Load syntax file"
 msgstr "Wczytaj plik składni"
@@ -2001,7 +2024,7 @@ msgid "FTP to machine"
 msgstr "Połączenie FTP z komputerem"
 
 msgid "SFTP to machine"
-msgstr ""
+msgstr "Połączenie SFTP z komputerem"
 
 msgid "Shell link to machine"
 msgstr "Połączenie po powłoce z komputerem"
@@ -2910,7 +2933,7 @@ msgid "S&hell link..."
 msgstr "Połączenie po po&włoce..."
 
 msgid "S&FTP link..."
-msgstr ""
+msgstr "Połączenie S&FTP..."
 
 msgid "SM&B link..."
 msgstr "Połączenie SM&B..."
@@ -3710,7 +3733,7 @@ msgid "Data types:"
 msgstr "Typy danych:"
 
 msgid "Root directory:"
-msgstr ""
+msgstr "Katalog główny:"
 
 msgid "System data"
 msgstr "Dane systemu"
@@ -3978,65 +4001,61 @@ msgstr ""
 "Ostrzeżenie: nieprawidłowa flaga %c w %s:\n"
 "%s\n"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: an error occured while reading %s: %s"
-msgstr "Wystąpił błąd podczas migrowania ustawień użytkownika: %s"
+msgstr "sftp: wystąpił błąd podczas odczytywania %s: %s"
 
 msgid "sftp: Unable to get current user name."
-msgstr ""
+msgstr "sftp: nie można uzyskać bieżącej nazwy użytkownika."
 
-#, fuzzy
 msgid "sftp: Invalid host name."
-msgstr "ftpfs: nieprawidłowa nazwa komputera."
+msgstr "sftp: nieprawidłowa nazwa komputera."
 
-#, fuzzy
 msgid "sftp: Invalid port value."
-msgstr "ftpfs: nieprawidłowa nazwa komputera."
+msgstr "sftp: nieprawidłowa wartość portu."
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: %s"
-msgstr "ftpfs: %s"
+msgstr "sftp: %s"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: making connection to %s"
-msgstr "ftpfs: nawiązywanie połączenia z %s"
+msgstr "sftp: tworzenie połączenia z %s"
 
-#, fuzzy
 msgid "sftp: connection interrupted by user"
-msgstr "ftpfs: połączenie przerwane przez użytkownika"
+msgstr "sftp: połączenie zostało przerwane przez użytkownika"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: connection to server failed: %s"
-msgstr "ftpfs: połączenie z serwerem się nie powiodło: %s"
+msgstr "sftp: połączenie z serwerem się nie powiodło: %s"
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
-msgstr ""
+msgstr "sftp: proszę podać hasło dla %s "
 
 msgid "sftp: Passphrase is empty."
-msgstr ""
+msgstr "sftp: hasło jest puste."
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: Enter password for %s "
-msgstr "ftpfs: wysyłanie hasła użytkownika"
+msgstr "sftp: proszę podać hasło dla %s "
 
 msgid "sftp: Password is empty."
-msgstr ""
+msgstr "sftp: hasło jest puste."
 
 #, c-format
 msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr ""
+msgstr "sftp: niepowodzenie podczas nawiązywania sesji SSH: (%d)"
 
 msgid "sftp: No file handler data present for reading file"
-msgstr ""
+msgstr "sftp: brak danych obsługi pliku do odczytania pliku"
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"
-msgstr ""
+msgstr "sftp: (Ctrl-G przerywa) wyświetlanie listy... %s"
 
-#, fuzzy
 msgid "sftp: Listing done."
-msgstr "Tryb wyświetlania"
+msgstr "sftp: ukończono wyświetlanie listy."
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4233,8 +4252,18 @@ msgstr ""
 "Nie można zapisać pliku:\n"
 "%s"
 
+msgid "File was modified. Save with exit?"
+msgstr "Plik został zmodyfikowany. Zapisać przed zakończeniem?"
+
 msgid "&Cancel quit"
 msgstr "N&ie zamykaj"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Program Midnight Commander kończy działanie.\n"
+"Zapisać zmodyfikowany plik?"
 
 msgid "View: "
 msgstr "Podgląd: "

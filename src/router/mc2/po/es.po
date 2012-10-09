@@ -12,16 +12,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-07-18 13:34+0300\n"
-"PO-Revision-Date: 2012-07-13 08:36+0000\n"
+"POT-Creation-Date: 2012-09-14 14:23+0300\n"
+"PO-Revision-Date: 2012-09-03 08:41+0000\n"
 "Last-Translator: David Martin <david.martin@telefonica.net>\n"
-"Language-Team: Spanish (Castilian) (http://www.transifex.com/projects/p/mc/"
-"language/es/)\n"
+"Language-Team: Spanish (http://www.transifex.com/projects/p/mc/language/"
+"es/)\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgid "Warning: cannot load codepages list"
 msgstr "Atención: imposible cargar lista de codificaciones"
@@ -120,7 +120,7 @@ msgid "Regular expression error"
 msgstr "Error en expresión regular"
 
 msgid "No&rmal"
-msgstr ""
+msgstr "&Normal"
 
 msgid "Re&gular expression"
 msgstr "e&Xpresión regular"
@@ -578,7 +578,7 @@ msgid "Launches the file viewer on a file"
 msgstr "Abrir un archivo con el visor"
 
 msgid "Edit files"
-msgstr ""
+msgstr "Editar archivos"
 
 msgid "Forces xterm features"
 msgstr "Utilizar las posibilidades de xterm"
@@ -643,6 +643,27 @@ msgid ""
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
+"--colors CONTEXTO={FRENTE},{FONDO},{ATRIBUTOS}:CONTEXTO2=...\n"
+"\n"
+"{FRENTE}, {FONDO} y {ATRIBUTOS} se pueden omitir y se utilizará el valor "
+"estándar\n"
+"\n"
+" Contextos:\n"
+"   Global:            errors, disabled, reverse, gauge, header\n"
+"                      input, inputmark, inputunchanged, commandlinemark\n"
+"                      bbarhotkey, bbarbutton, statusbar\n"
+"   Visor de archivos: normal, selected, marked, markselect\n"
+"   Diálogos:          dnormal, dfocus, dhotnormal, dhotfocus, "
+"errdhotnormal,\n"
+"                      errdhotfocus\n"
+"   Menús:             menunormal, menuhot, menusel, menuhotsel, "
+"menuinactive\n"
+"   Menús emergentes:  pmenunormal, pmenusel, pmenutitle\n"
+"   Editor:            editnormal, editbold, editmarked, editwhitespace,\n"
+"                      editlinestate, editbg, editframe, editframeactive\n"
+"                      editframedrag\n"
+"   Visor:             viewbold, viewunderline, viewselected\n"
+"   Ayuda:             helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -849,22 +870,20 @@ msgstr "Salir"
 msgid "Quit"
 msgstr "Salir"
 
-msgid "File was modified. Save with exit?"
-msgstr "El archivo fue modificado. ¿Desea guardarlo al salir?"
+msgid "File(s) was modified. Save with exit?"
+msgstr ""
 
 msgid ""
 "Midnight Commander is being shut down.\n"
-"Save modified file?"
+"Save modified file(s)?"
 msgstr ""
-"Saliendo de Midnight Commander.\n"
-"¿Desea guardar el archivo modificado?"
 
 msgid "Diff:"
 msgstr "Diff:"
 
 #, c-format
 msgid "\"%s\" is a directory"
-msgstr ""
+msgstr "«%s» no es un directorio"
 
 #, c-format
 msgid ""
@@ -875,7 +894,7 @@ msgstr ""
 "%s"
 
 msgid "Diff viewer: invalid mode"
-msgstr ""
+msgstr "Visor Diff: modo inválido"
 
 msgid "Two files are needed to compare"
 msgstr ""
@@ -986,7 +1005,7 @@ msgid "Save as"
 msgstr "Guardar como"
 
 msgid "Cannot save: destination is not a regular file"
-msgstr ""
+msgstr "Imposible guardar: el destino no es un archivo ordinario"
 
 msgid "A file already exists with this name"
 msgstr "Ya existe un archivo con ese nombre."
@@ -1041,7 +1060,7 @@ msgid "&User"
 msgstr "&Usuario"
 
 msgid "&System wide"
-msgstr ""
+msgstr "&Sistema"
 
 msgid "Menu edit"
 msgstr "Editar archivo de menú"
@@ -1060,22 +1079,26 @@ msgid "%ld replacements made"
 msgstr "%ld reemplazos hechos."
 
 msgid "[NoName]"
-msgstr ""
+msgstr "[SinNombre]"
 
 #, c-format
 msgid ""
 "File %s was modified.\n"
 "Save before close?"
 msgstr ""
+"El archivo «%s» fue modificado.\n"
+"¿Desea guardarlo al salir?"
 
 msgid "Close file"
-msgstr ""
+msgstr "Cerrar archivo"
 
 #, c-format
 msgid ""
 "Midnight Commander is being shut down.\n"
 "Save modified file %s?"
 msgstr ""
+"Saliendo de Midnight Commander.\n"
+"¿Desea guardar el archivo «%s»?"
 
 msgid "This function is not implemented"
 msgstr "Esa función no está implementada."
@@ -1198,7 +1221,7 @@ msgid "Confirm replace"
 msgstr "Confirmar cambios"
 
 msgid "NoName"
-msgstr ""
+msgstr "SinNombre"
 
 msgid "&Open file..."
 msgstr "abrir archiv&O..."
@@ -1207,7 +1230,7 @@ msgid "&New"
 msgstr "&Nuevo"
 
 msgid "&Close"
-msgstr ""
+msgstr "&Cerrar"
 
 msgid "Save &as..."
 msgstr "guar&Dar como..."
@@ -1330,12 +1353,12 @@ msgid "Record/Repeat &actions"
 msgstr "grabar/repetir &Acciones"
 
 msgid "S&pell check"
-msgstr ""
+msgstr "revisar orto&Grafía"
 
 msgid "C&heck word"
-msgstr ""
+msgstr "revisar &Palabra"
 
-msgid "Change spelling &language"
+msgid "Change spelling &language..."
 msgstr ""
 
 msgid "&Mail..."
@@ -1363,19 +1386,19 @@ msgid "&Move"
 msgstr "&Mover"
 
 msgid "&Resize"
-msgstr ""
+msgstr "cambia&R tamaño"
 
 msgid "&Toggle fullscreen"
-msgstr ""
+msgstr "&Pantalla completa"
 
 msgid "&Next"
-msgstr ""
+msgstr "&Siguiente"
 
 msgid "&Previous"
-msgstr ""
+msgstr "&Anterior"
 
 msgid "&List..."
-msgstr ""
+msgstr "&Listado..."
 
 msgid "&General..."
 msgstr "&General..."
@@ -1414,7 +1437,7 @@ msgid "For&mat"
 msgstr "for&Mato"
 
 msgid "&Window"
-msgstr ""
+msgstr "&Ventana"
 
 msgid "&Options"
 msgstr "&Opciones"
@@ -1485,9 +1508,13 @@ msgid ""
 "            A user friendly text editor\n"
 "         written for the Midnight Commander"
 msgstr ""
+"Copyright (C) 1996-2012 the Free Software Foundation\n"
+"\n"
+"            Un editor de texto amigable\n"
+"              para Midnight Commander"
 
 msgid "Open files"
-msgstr ""
+msgstr "Abrir archivos"
 
 msgid "Edit: "
 msgstr "Edición:"
@@ -1510,9 +1537,8 @@ msgstr "Borrar"
 msgid "ButtonBar|PullDn"
 msgstr "Menú"
 
-#, fuzzy
 msgid "&Add word"
-msgstr "&Añadir nuevo..."
+msgstr ""
 
 msgid "Language"
 msgstr ""
@@ -1520,16 +1546,14 @@ msgstr ""
 msgid "Misspelled"
 msgstr ""
 
-#, fuzzy
 msgid "Check word"
-msgstr "&Palabras completas"
+msgstr ""
 
 msgid "Suggest"
 msgstr ""
 
-#, fuzzy
 msgid "Select language"
-msgstr "seleccionar &Grupo..."
+msgstr ""
 
 msgid "Load syntax file"
 msgstr "Cargar archivo de sintaxis"
@@ -2001,7 +2025,7 @@ msgid "FTP to machine"
 msgstr "Conexión por FTP"
 
 msgid "SFTP to machine"
-msgstr ""
+msgstr "Conexión por SFTP"
 
 msgid "Shell link to machine"
 msgstr "Conexión por SSH"
@@ -2783,39 +2807,39 @@ msgstr "Espacio libre: %s/%s (%d%%)"
 
 #, c-format
 msgid "Type:      %s"
-msgstr "  Tipo:     %s"
+msgstr "  Tipo:        %s"
 
 msgid "non-local vfs"
 msgstr "VFS no-local"
 
 #, c-format
 msgid "Device:    %s"
-msgstr "  Origen:   %s"
+msgstr "  Origen:      %s"
 
 #, c-format
 msgid "Filesystem: %s"
-msgstr "Sistema en  %s"
+msgstr "Sistema en     %s"
 
 #, c-format
 msgid "Accessed:  %s"
-msgstr "Accedido:   %s"
+msgstr "Accedido:      %s"
 
 #, c-format
 msgid "Modified:  %s"
-msgstr "Modificado: %s"
+msgstr "Modificado:    %s"
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
 msgid "Changed:   %s"
-msgstr "Cambiado:   %s"
+msgstr "Cambiado:      %s"
 
 #, c-format
 msgid "Dev. type: major %lu, minor %lu"
-msgstr "Dispositivo major: %lu, minor: %lu"
+msgstr "Dispositivo    major: %lu, minor: %lu"
 
 #, c-format
 msgid "Size:      %s"
-msgstr "Tamaño:     %s"
+msgstr "Tamaño:        %s"
 
 #, c-format
 msgid " (%ld block)"
@@ -2825,19 +2849,19 @@ msgstr[1] " (%ld bloques)"
 
 #, c-format
 msgid "Owner:     %s/%s"
-msgstr "Dueño:      %s/%s"
+msgstr "Dueño:         %s/%s"
 
 #, c-format
 msgid "Links:     %d"
-msgstr "Nº enlaces: %d"
+msgstr "Nº enlaces:    %d"
 
 #, c-format
 msgid "Mode:      %s (%04o)"
-msgstr "Modo:       %s (%04o)"
+msgstr "Modo:          %s (%04o)"
 
 #, c-format
 msgid "Location:  %Xh:%Xh"
-msgstr "Ubicado:    %Xh:%Xh"
+msgstr "Ubicado:       %Xh:%Xh"
 
 msgid "Show free sp&ace"
 msgstr "mostrar &Espacio libre"
@@ -2909,7 +2933,7 @@ msgid "S&hell link..."
 msgstr "conexión por SS&H..."
 
 msgid "S&FTP link..."
-msgstr ""
+msgstr "conexión por SF&TP..."
 
 msgid "SM&B link..."
 msgstr "conexión por &SMB..."
@@ -3706,7 +3730,7 @@ msgid "Data types:"
 msgstr "Tipos de datos:"
 
 msgid "Root directory:"
-msgstr ""
+msgstr "Directorio de inicio:"
 
 msgid "System data"
 msgstr "Datos de sistema"
@@ -3974,36 +3998,33 @@ msgstr ""
 "Atención: Bandera %c no válida en %s:\n"
 "%s\n"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: an error occured while reading %s: %s"
-msgstr "Error en la migración de la configuración personal: %s"
+msgstr ""
 
 msgid "sftp: Unable to get current user name."
 msgstr ""
 
-#, fuzzy
 msgid "sftp: Invalid host name."
-msgstr "ftpfs: Nombre de máquina incorrecto"
+msgstr ""
 
-#, fuzzy
 msgid "sftp: Invalid port value."
-msgstr "ftpfs: Nombre de máquina incorrecto"
+msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: %s"
-msgstr "ftpfs: %s"
+msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: making connection to %s"
-msgstr "ftpfs: Estableciendo conexión con %s"
+msgstr ""
 
-#, fuzzy
 msgid "sftp: connection interrupted by user"
-msgstr "ftpfs: Conexión abortada por el usuario"
+msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: connection to server failed: %s"
-msgstr "ftpfs: Conexión al servidor fracasó: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
@@ -4012,9 +4033,9 @@ msgstr ""
 msgid "sftp: Passphrase is empty."
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: Enter password for %s "
-msgstr "ftpfs: Enviando contraseña de usuario"
+msgstr ""
 
 msgid "sftp: Password is empty."
 msgstr ""
@@ -4030,9 +4051,8 @@ msgstr ""
 msgid "sftp: (Ctrl-G break) Listing... %s"
 msgstr ""
 
-#, fuzzy
 msgid "sftp: Listing done."
-msgstr "Listado"
+msgstr ""
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4229,8 +4249,18 @@ msgstr ""
 "Imposible guardar el archivo:\n"
 "%s"
 
+msgid "File was modified. Save with exit?"
+msgstr "El archivo fue modificado. ¿Desea guardarlo al salir?"
+
 msgid "&Cancel quit"
 msgstr "&Cancelar salida"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Saliendo de Midnight Commander.\n"
+"¿Desea guardar el archivo modificado?"
 
 msgid "View: "
 msgstr "Ver:"

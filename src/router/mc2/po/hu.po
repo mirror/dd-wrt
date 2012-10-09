@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-07-18 13:34+0300\n"
-"PO-Revision-Date: 2012-07-13 08:36+0000\n"
+"POT-Creation-Date: 2012-09-14 14:23+0300\n"
+"PO-Revision-Date: 2012-09-03 13:14+0000\n"
 "Last-Translator: Rezső Páder <rezso@rezso.net>\n"
 "Language-Team: Hungarian (http://www.transifex.com/projects/p/mc/language/"
 "hu/)\n"
@@ -18,7 +18,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgid "Warning: cannot load codepages list"
 msgstr "Figyelem: A kódlapok listája nem tölthető be"
@@ -117,7 +117,7 @@ msgid "Regular expression error"
 msgstr "reguláris kifejezés hiba"
 
 msgid "No&rmal"
-msgstr ""
+msgstr "No&rmál"
 
 msgid "Re&gular expression"
 msgstr "&Reguláris kifejezés"
@@ -575,7 +575,7 @@ msgid "Launches the file viewer on a file"
 msgstr "Fájlmegjelenítés indítása a megadott fájlon"
 
 msgid "Edit files"
-msgstr ""
+msgstr "Fájlok szerkesztése"
 
 msgid "Forces xterm features"
 msgstr "Xterm-funkciók kikényszerítése"
@@ -850,22 +850,20 @@ msgstr "Kilép"
 msgid "Quit"
 msgstr "Kilép"
 
-msgid "File was modified. Save with exit?"
-msgstr "A fájl módosult. Menti kilépéskor?"
+msgid "File(s) was modified. Save with exit?"
+msgstr "Egy vagy több fájl megváltozott. Menti kilépéskor?"
 
 msgid ""
 "Midnight Commander is being shut down.\n"
-"Save modified file?"
+"Save modified file(s)?"
 msgstr ""
-"A Midnight Commander kilép.\n"
-"Módosított fájl mentése?"
 
 msgid "Diff:"
 msgstr "Diff:"
 
 #, c-format
 msgid "\"%s\" is a directory"
-msgstr ""
+msgstr "\"%s\" egy könyvtár"
 
 #, c-format
 msgid ""
@@ -876,7 +874,7 @@ msgstr ""
 "%s"
 
 msgid "Diff viewer: invalid mode"
-msgstr ""
+msgstr "Különbség megjelenítő: érvénytelen mód"
 
 msgid "Two files are needed to compare"
 msgstr "Két fájl kell az összehasonlításhoz"
@@ -985,7 +983,7 @@ msgid "Save as"
 msgstr "Mentés másként"
 
 msgid "Cannot save: destination is not a regular file"
-msgstr ""
+msgstr "Nem lehet elmenteni - a cél egy speciális fájl"
 
 msgid "A file already exists with this name"
 msgstr "Már létezik ilyen nevű fájl."
@@ -1040,7 +1038,7 @@ msgid "&User"
 msgstr "&Sajátomat"
 
 msgid "&System wide"
-msgstr ""
+msgstr "Rend&szerszintű"
 
 msgid "Menu edit"
 msgstr "Menüszerkesztés"
@@ -1059,22 +1057,26 @@ msgid "%ld replacements made"
 msgstr "%ld csere történt."
 
 msgid "[NoName]"
-msgstr ""
+msgstr "[Névtelen]"
 
 #, c-format
 msgid ""
 "File %s was modified.\n"
 "Save before close?"
 msgstr ""
+"%s fájl megváltozott.\n"
+"Menti a bezárás előtt?"
 
 msgid "Close file"
-msgstr ""
+msgstr "Fájl bezárása"
 
 #, c-format
 msgid ""
 "Midnight Commander is being shut down.\n"
 "Save modified file %s?"
 msgstr ""
+"A Midnight Commander kilép.\n"
+"Menti a módosított %s fájlt?"
 
 msgid "This function is not implemented"
 msgstr "Ez a funkció nincs megvalósítva."
@@ -1197,7 +1199,7 @@ msgid "Confirm replace"
 msgstr "Csere megerősítése"
 
 msgid "NoName"
-msgstr ""
+msgstr "Névtelen"
 
 msgid "&Open file..."
 msgstr "&Megnyitás..."
@@ -1206,7 +1208,7 @@ msgid "&New"
 msgstr "&Új"
 
 msgid "&Close"
-msgstr ""
+msgstr "&Bezárás"
 
 msgid "Save &as..."
 msgstr "Mentés m&ásként"
@@ -1329,12 +1331,12 @@ msgid "Record/Repeat &actions"
 msgstr "&Akciók felvétele/ismétlése"
 
 msgid "S&pell check"
-msgstr ""
+msgstr "He&lyesírás-ellenőrzés"
 
 msgid "C&heck word"
-msgstr ""
+msgstr "S&zó ellenőrzése"
 
-msgid "Change spelling &language"
+msgid "Change spelling &language..."
 msgstr ""
 
 msgid "&Mail..."
@@ -1362,19 +1364,19 @@ msgid "&Move"
 msgstr "Át&helyezés"
 
 msgid "&Resize"
-msgstr ""
+msgstr "Átmé&retezés"
 
 msgid "&Toggle fullscreen"
-msgstr ""
+msgstr "&Teljes képernyő váltás"
 
 msgid "&Next"
-msgstr ""
+msgstr "&Következő"
 
 msgid "&Previous"
-msgstr ""
+msgstr "&Előző"
 
 msgid "&List..."
-msgstr ""
+msgstr "&Lista"
 
 msgid "&General..."
 msgstr "Á&ltalános..."
@@ -1413,7 +1415,7 @@ msgid "For&mat"
 msgstr "For&mátum"
 
 msgid "&Window"
-msgstr ""
+msgstr "&Ablak"
 
 msgid "&Options"
 msgstr "Beállítás&ok"
@@ -1484,9 +1486,13 @@ msgid ""
 "            A user friendly text editor\n"
 "         written for the Midnight Commander"
 msgstr ""
+"Copyright (C) 1996-2012 the Free Software Foundation\n"
+"\n"
+"            Felhasználóbarát szövegszerkesztő\n"
+"           a Midnight Commander-hez készítve"
 
 msgid "Open files"
-msgstr ""
+msgstr "Nyitott fájlok"
 
 msgid "Edit: "
 msgstr "Szerkeszt:"
@@ -1509,26 +1515,23 @@ msgstr "Töröl"
 msgid "ButtonBar|PullDn"
 msgstr "Főmenü"
 
-#, fuzzy
 msgid "&Add word"
-msgstr "Ú&j"
+msgstr "Szó hozzá&adása"
 
 msgid "Language"
-msgstr ""
+msgstr "Nyelv"
 
 msgid "Misspelled"
-msgstr ""
+msgstr "Hibás"
 
-#, fuzzy
 msgid "Check word"
-msgstr "Csak &teljes szót"
+msgstr "Szó ellenőrzése"
 
 msgid "Suggest"
-msgstr ""
+msgstr "Ajánlat"
 
-#, fuzzy
 msgid "Select language"
-msgstr "&Csoport kijelölése"
+msgstr "Nyelv kiválasztása"
 
 msgid "Load syntax file"
 msgstr "Szintaxisfájl betöltése"
@@ -2000,7 +2003,7 @@ msgid "FTP to machine"
 msgstr "FTP-kapcsolat"
 
 msgid "SFTP to machine"
-msgstr ""
+msgstr "SFTP célgép"
 
 msgid "Shell link to machine"
 msgstr "Shell-kapcsolat egy másik géppel"
@@ -2909,7 +2912,7 @@ msgid "S&hell link..."
 msgstr "Sh&ell-kapcsolat..."
 
 msgid "S&FTP link..."
-msgstr ""
+msgstr "S&FTP link..."
 
 msgid "SM&B link..."
 msgstr "SM&B-kapcsolat..."
@@ -3705,7 +3708,7 @@ msgid "Data types:"
 msgstr "Adattípusok:"
 
 msgid "Root directory:"
-msgstr ""
+msgstr "Gyökérkönyvtár: "
 
 msgid "System data"
 msgstr "Rendszer adatok"
@@ -3973,50 +3976,47 @@ msgstr ""
 "Figyelem: hibás jel (%c) ebben: %s:\n"
 "%s\n"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: an error occured while reading %s: %s"
-msgstr "Hiba történt a felhasználói adatok migrálásakor: %s"
+msgstr "sftp: hiba %s olvasásakor: %s"
 
 msgid "sftp: Unable to get current user name."
 msgstr ""
 
-#, fuzzy
 msgid "sftp: Invalid host name."
-msgstr "Ftpfs: hibás gépnév"
+msgstr "sftp: Érvénytelen kiszolgálónév."
 
-#, fuzzy
 msgid "sftp: Invalid port value."
-msgstr "Ftpfs: hibás gépnév"
+msgstr "sftp: Érvénytelen portszám."
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: %s"
-msgstr "Ftpfs: %s"
+msgstr "sftp: %s"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: making connection to %s"
-msgstr "Ftpfs: kapcsolódás a kiszolgálóhoz: %s"
+msgstr ""
 
-#, fuzzy
 msgid "sftp: connection interrupted by user"
-msgstr "Ftpfs: a kapcsolat a felhasználó kérésére megszakítva"
+msgstr "sftp: a kapcsolatot a felhasználó megszakította"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: connection to server failed: %s"
-msgstr "Ftpfs: nem sikerült kapcsolódni a kiszolgálóhoz: %s"
+msgstr "sftp: a kapcsolódás nem sikerült a szerverhez: %s"
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
-msgstr ""
+msgstr "sftp: Adja meg %s jelmondatát"
 
 msgid "sftp: Passphrase is empty."
-msgstr ""
+msgstr "sftp: A jelmondat üres."
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: Enter password for %s "
-msgstr "Ftpfs: jelszó küldése..."
+msgstr "sftp: Adja meg %s jelszavát"
 
 msgid "sftp: Password is empty."
-msgstr ""
+msgstr "sftp: a jelszó üres."
 
 #, c-format
 msgid "sftp: Failure establishing SSH session: (%d)"
@@ -4027,11 +4027,10 @@ msgstr ""
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"
-msgstr ""
+msgstr "sftp: %s listázása... (megszakítás: Ctrl-G)"
 
-#, fuzzy
 msgid "sftp: Listing done."
-msgstr "Listázási mód"
+msgstr "sftp: A listázás kész."
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4228,8 +4227,18 @@ msgstr ""
 "Az fájl nem menthető:\n"
 "%s"
 
+msgid "File was modified. Save with exit?"
+msgstr "A fájl módosult. Menti kilépéskor?"
+
 msgid "&Cancel quit"
 msgstr "&Mégsem lép ki"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"A Midnight Commander kilép.\n"
+"Módosított fájl mentése?"
 
 msgid "View: "
 msgstr "Megnéz: "

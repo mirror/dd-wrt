@@ -1426,7 +1426,8 @@ hot_load_group (struct hotlist *grp)
         case TKN_GROUP:
             CHECK_TOKEN (TKN_STRING);
             new_grp =
-                add2hotlist (g_strdup (tkn_buf->str), 0, HL_TYPE_GROUP, LISTBOX_APPEND_AT_END);
+                add2hotlist (g_strndup (tkn_buf->str, tkn_buf->len), 0, HL_TYPE_GROUP,
+                             LISTBOX_APPEND_AT_END);
             SKIP_TO_EOL;
             hot_load_group (new_grp);
             current_group = grp;
@@ -1434,16 +1435,16 @@ hot_load_group (struct hotlist *grp)
         case TKN_ENTRY:
             {
                 CHECK_TOKEN (TKN_STRING);
-                label = g_strdup (tkn_buf->str);
+                label = g_strndup (tkn_buf->str, tkn_buf->len);
                 CHECK_TOKEN (TKN_URL);
                 CHECK_TOKEN (TKN_STRING);
-                url = g_strdup (tkn_buf->str);
+                url = tilde_expand (tkn_buf->str);
                 add2hotlist (label, url, HL_TYPE_ENTRY, LISTBOX_APPEND_AT_END);
                 SKIP_TO_EOL;
             }
             break;
         case TKN_COMMENT:
-            label = g_strdup (tkn_buf->str);
+            label = g_strndup (tkn_buf->str, tkn_buf->len);
             add2hotlist (label, 0, HL_TYPE_COMMENT, LISTBOX_APPEND_AT_END);
             break;
         case TKN_EOF:
@@ -1480,7 +1481,8 @@ hot_load_file (struct hotlist *grp)
         case TKN_GROUP:
             CHECK_TOKEN (TKN_STRING);
             new_grp =
-                add2hotlist (g_strdup (tkn_buf->str), 0, HL_TYPE_GROUP, LISTBOX_APPEND_AT_END);
+                add2hotlist (g_strndup (tkn_buf->str, tkn_buf->len), 0, HL_TYPE_GROUP,
+                             LISTBOX_APPEND_AT_END);
             SKIP_TO_EOL;
             hot_load_group (new_grp);
             current_group = grp;
@@ -1488,16 +1490,16 @@ hot_load_file (struct hotlist *grp)
         case TKN_ENTRY:
             {
                 CHECK_TOKEN (TKN_STRING);
-                label = g_strdup (tkn_buf->str);
+                label = g_strndup (tkn_buf->str, tkn_buf->len);
                 CHECK_TOKEN (TKN_URL);
                 CHECK_TOKEN (TKN_STRING);
-                url = g_strdup (tkn_buf->str);
+                url = tilde_expand (tkn_buf->str);
                 add2hotlist (label, url, HL_TYPE_ENTRY, LISTBOX_APPEND_AT_END);
                 SKIP_TO_EOL;
             }
             break;
         case TKN_COMMENT:
-            label = g_strdup (tkn_buf->str);
+            label = g_strndup (tkn_buf->str, tkn_buf->len);
             add2hotlist (label, 0, HL_TYPE_COMMENT, LISTBOX_APPEND_AT_END);
             break;
         case TKN_EOL:
