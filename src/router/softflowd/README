@@ -1,0 +1,68 @@
+Welcome to softflowd, a flow-based network monitor.
+
+Introduction
+------------
+
+softflowd listens promiscuously on a network interface and semi-statefully
+tracks network flows. These flows can be reported using NetFlow version 1, 5 
+or 9 datagrams. softflowd is fully IPv6 capable: it can track IPv6 flows and 
+export to IPv6 hosts.
+
+More details about softflowd's function and usage may be found in the
+supplied manpages, which you can view prior to installation using
+
+/usr/bin/nroff -c -mandoc softflowd.8 | less
+/usr/bin/nroff -c -mandoc softflowctl.8 | less
+
+If you are in need of a NetFlow collector, you may be interested in 
+softflowd's companion project "flowd" (http://www.mindrot.org/flowd.html). 
+flowd is a NetFlow collector that is maintained in parallel with
+softflowd and includes a few handy features, such as the ability
+to filter flows it receives as well as Perl and Python APIs to its
+storage format. NB. You don't have to use flowd: any NetFlow compatible 
+collector should work with softflowd. An example Perl collector is included 
+for testing purposes as collector.pl, but it doesn't yet support NetFlow v.9
+
+Installing
+----------
+
+Building softflowd should be as simple as typing:
+
+./configure
+make
+make install
+
+Unfortunately some systems like to make life complicated. Things work
+fine on the systems that I develop and test on (OpenBSD and Linux).
+There is peliminary support for Solaris 9 (i.e. it compiled), but no
+testing on this platform has been performed.
+
+Licensing
+---------
+
+Softflowd is licensed under a two-term BSD license (see the source
+files for details). The code in sys-tree.h is Copyright Niels Provos
+<provos@citi.umich.edu> and comes straight from OpenBSD CVS, convtime.c
+comes is Copyright Kevin Steves and comes from OpenSSH (misc.c). Both
+of these files are licensed under two-term BSD licenses too. strlcpy.c,
+strlcat.c and closefrom.c also come from OpenBSD CVS and are Copyright
+Todd C. Miller. Please refer to the LICENSE file for full details.
+
+Reporting Bugs
+--------------
+
+Please report bugs in softflowd to http://bugzilla.mindrot.org/ If you
+find a security bug, please report it directly by email. If you have any
+feedback or questions, please email me:
+
+Contributing
+------------
+
+Softflowd has an extensive TODO list of interesting features, large and
+small, that are waiting to be implemented. If you are interested in
+helping, please contact me.
+
+The latest source code may be obtained from Google Code:
+http://code.google.com/p/softflowd/
+
+Damien Miller <djm@mindrot.org>
