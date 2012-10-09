@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-07-18 13:34+0300\n"
-"PO-Revision-Date: 2012-07-13 08:36+0000\n"
+"POT-Creation-Date: 2012-09-14 14:23+0300\n"
+"PO-Revision-Date: 2012-09-03 08:41+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: lv\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : "
-"2)\n"
+"2);\n"
 
 msgid "Warning: cannot load codepages list"
 msgstr ""
@@ -807,12 +807,12 @@ msgstr ""
 msgid "Quit"
 msgstr "Iziet"
 
-msgid "File was modified. Save with exit?"
+msgid "File(s) was modified. Save with exit?"
 msgstr ""
 
 msgid ""
 "Midnight Commander is being shut down.\n"
-"Save modified file?"
+"Save modified file(s)?"
 msgstr ""
 
 msgid "Diff:"
@@ -1283,7 +1283,7 @@ msgstr ""
 msgid "C&heck word"
 msgstr ""
 
-msgid "Change spelling &language"
+msgid "Change spelling &language..."
 msgstr ""
 
 msgid "&Mail..."
@@ -1458,9 +1458,8 @@ msgstr ""
 msgid "ButtonBar|PullDn"
 msgstr ""
 
-#, fuzzy
 msgid "&Add word"
-msgstr "&Pievienot jaunu"
+msgstr ""
 
 msgid "Language"
 msgstr ""
@@ -3812,29 +3811,26 @@ msgstr ""
 msgid "sftp: Unable to get current user name."
 msgstr ""
 
-#, fuzzy
 msgid "sftp: Invalid host name."
-msgstr "ftpfs: Nepareizs resursdatora nosaukums."
+msgstr ""
 
-#, fuzzy
 msgid "sftp: Invalid port value."
-msgstr "ftpfs: Nepareizs resursdatora nosaukums."
+msgstr ""
 
 #, c-format
 msgid "sftp: %s"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: making connection to %s"
-msgstr "ftpfs: veidojam savienojumu ar %s"
+msgstr ""
 
-#, fuzzy
 msgid "sftp: connection interrupted by user"
-msgstr "ftpfs: savienojumu pātrauca lietotājs"
+msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: connection to server failed: %s"
-msgstr "ftpfs: savienojums ar serveri neizdevās: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
@@ -3843,9 +3839,9 @@ msgstr ""
 msgid "sftp: Passphrase is empty."
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: Enter password for %s "
-msgstr "ftpfs: sūtam lietotāja paroli"
+msgstr ""
 
 msgid "sftp: Password is empty."
 msgstr ""
@@ -3861,9 +3857,8 @@ msgstr ""
 msgid "sftp: (Ctrl-G break) Listing... %s"
 msgstr ""
 
-#, fuzzy
 msgid "sftp: Listing done."
-msgstr "Saraksta režīms"
+msgstr ""
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4049,7 +4044,15 @@ msgid ""
 "%s"
 msgstr ""
 
+msgid "File was modified. Save with exit?"
+msgstr ""
+
 msgid "&Cancel quit"
+msgstr ""
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
 msgstr ""
 
 msgid "View: "

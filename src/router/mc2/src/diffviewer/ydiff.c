@@ -43,6 +43,7 @@
 #include "lib/util.h"
 #include "lib/widget.h"
 #include "lib/strutil.h"
+#include "lib/strescape.h"      /* strutils_glob_escape() */
 #ifdef HAVE_CHARSET
 #include "lib/charsets.h"
 #endif
@@ -68,10 +69,10 @@
 #define g_array_foreach(a, TP, cbf) \
 do { \
     size_t g_array_foreach_i;\
-    TP *g_array_foreach_var=NULL; \
-    for (g_array_foreach_i=0;g_array_foreach_i < a->len; g_array_foreach_i++) \
+    TP *g_array_foreach_var = NULL; \
+    for (g_array_foreach_i = 0; g_array_foreach_i < a->len; g_array_foreach_i++) \
     { \
-        g_array_foreach_var = &g_array_index(a,TP,g_array_foreach_i); \
+        g_array_foreach_var = &g_array_index (a, TP, g_array_foreach_i); \
         (*cbf) (g_array_foreach_var); \
     } \
 } while (0)
@@ -100,6 +101,12 @@ do \
 while (0)
 
 /*** file scope type declarations ****************************************************************/
+
+typedef enum
+{
+    FROM_LEFT_TO_RIGHT,
+    FROM_RIGHT_TO_LEFT
+} action_direction_t;
 
 /*** file scope variables ************************************************************************/
 
@@ -148,12 +155,10 @@ rewrite_backup_content (const vfs_path_t * from_file_name_vpath, const char *to_
 
 /**
  * Try to open a temporary file.
+ * @note the name is not altered if this function fails
  *
- * \param[out] name address of a pointer to store the temporary name
- *
- * \return file descriptor on success, negative on error
- *
- * \note the name is not altered if this function fails
+ * @param[out] name address of a pointer to store the temporary name
+ * @returns file descriptor on success, negative on error
  */
 
 static int
@@ -179,10 +184,10 @@ open_temp (void **name)
 /**
  * Alocate file structure and associate file descriptor to it.
  *
- * \param fd file descriptor
- *
- * \return file structure
+ * @param fd file descriptor
+ * @returns file structure
  */
+
 static FBUF *
 f_dopen (int fd)
 {
@@ -215,14 +220,15 @@ f_dopen (int fd)
 /**
  * Free file structure without closing the file.
  *
- * \param fs file structure
- *
- * \return 0 on success, non-zero on error
+ * @param fs file structure
+ * @returns 0 on success, non-zero on error
  */
+
 static int
 f_free (FBUF * fs)
 {
     int rv = 0;
+
     if (fs->flags & FILE_FLAG_TEMP)
     {
         rv = unlink (fs->data);
@@ -233,15 +239,14 @@ f_free (FBUF * fs)
     return rv;
 }
 
-
 /* --------------------------------------------------------------------------------------------- */
 
 /**
  * Open a binary temporary file in R/W mode.
+ * @note the file will be deleted when closed
  *
- * \return file structure
+ * @returns file structure
  *
- * \note the file will be deleted when closed
  */
 static FBUF *
 f_temp (void)
@@ -251,9 +256,7 @@ f_temp (void)
 
     fs = f_dopen (0);
     if (fs == NULL)
-    {
         return NULL;
-    }
 
     fd = open_temp (&fs->data);
     if (fd < 0)
@@ -272,11 +275,12 @@ f_temp (void)
 /**
  * Open a binary file in specified mode.
  *
- * \param filename file name
- * \param flags open mode, a combination of O_RDONLY, O_WRONLY, O_RDWR
+ * @param filename file name
+ * @param flags open mode, a combination of O_RDONLY, O_WRONLY, O_RDWR
  *
- * \return file structure
+ * @returns file structure
  */
+
 static FBUF *
 f_open (const char *filename, int flags)
 {
@@ -285,9 +289,7 @@ f_open (const char *filename, int flags)
 
     fs = f_dopen (0);
     if (fs == NULL)
-    {
         return NULL;
-    }
 
     fd = open (filename, flags);
     if (fd < 0)
@@ -304,16 +306,17 @@ f_open (const char *filename, int flags)
 
 /**
  * Read a line of bytes from file until newline or EOF.
+ * @note does not stop on null-byte
+ * @note buf will not be null-terminated
  *
- * \param buf destination buffer
- * \param size size of buffer
- * \param fs file structure
+ * @param buf destination buffer
+ * @param size size of buffer
+ * @param fs file structure
  *
- * \return number of bytes read
+ * @returns number of bytes read
  *
- * \note does not stop on null-byte
- * \note buf will not be null-terminated
  */
+
 static size_t
 f_gets (char *buf, size_t size, FBUF * fs)
 {
@@ -328,16 +331,12 @@ f_gets (char *buf, size_t size, FBUF * fs)
         {
             buf[j] = fs->buf[i];
             if (buf[j] == '\n')
-            {
                 stop = 1;
-            }
         }
         fs->pos = i;
 
         if (j == size || stop)
-        {
             break;
-        }
 
         fs->pos = 0;
         fs->len = read (fs->fd, fs->buf, FILE_READ_BUF);
@@ -351,15 +350,16 @@ f_gets (char *buf, size_t size, FBUF * fs)
 
 /**
  * Seek into file.
+ * @note avoids thrashing read cache when possible
  *
- * \param fs file structure
- * \param off offset
- * \param whence seek directive: SEEK_SET, SEEK_CUR or SEEK_END
+ * @param fs file structure
+ * @param off offset
+ * @param whence seek directive: SEEK_SET, SEEK_CUR or SEEK_END
  *
- * \return position in file, starting from begginning
+ * @returns position in file, starting from begginning
  *
- * \note avoids thrashing read cache when possible
  */
+
 static off_t
 f_seek (FBUF * fs, off_t off, int whence)
 {
@@ -385,9 +385,7 @@ f_seek (FBUF * fs, off_t off, int whence)
 
     rv = lseek (fs->fd, off, whence);
     if (rv != -1)
-    {
         FILE_DIRTY (fs);
-    }
     return rv;
 }
 
@@ -396,18 +394,19 @@ f_seek (FBUF * fs, off_t off, int whence)
 /**
  * Seek to the beginning of file, thrashing read cache.
  *
- * \param fs file structure
+ * @param fs file structure
  *
- * \return 0 if success, non-zero on error
+ * @returns 0 if success, non-zero on error
  */
+
 static off_t
 f_reset (FBUF * fs)
 {
-    off_t rv = lseek (fs->fd, 0, SEEK_SET);
+    off_t rv;
+
+    rv = lseek (fs->fd, 0, SEEK_SET);
     if (rv != -1)
-    {
         FILE_DIRTY (fs);
-    }
     return rv;
 }
 
@@ -415,23 +414,24 @@ f_reset (FBUF * fs)
 
 /**
  * Write bytes to file.
+ * @note thrashes read cache
  *
- * \param fs file structure
- * \param buf source buffer
- * \param size size of buffer
+ * @param fs file structure
+ * @param buf source buffer
+ * @param size size of buffer
  *
- * \return number of written bytes, -1 on error
+ * @returns number of written bytes, -1 on error
  *
- * \note thrashes read cache
  */
+
 static ssize_t
 f_write (FBUF * fs, const char *buf, size_t size)
 {
-    ssize_t rv = write (fs->fd, buf, size);
+    ssize_t rv;
+
+    rv = write (fs->fd, buf, size);
     if (rv >= 0)
-    {
         FILE_DIRTY (fs);
-    }
     return rv;
 }
 
@@ -439,28 +439,29 @@ f_write (FBUF * fs, const char *buf, size_t size)
 
 /**
  * Truncate file to the current position.
+ * @note thrashes read cache
  *
- * \param fs file structure
+ * @param fs file structure
  *
- * \return current file size on success, negative on error
+ * @returns current file size on success, negative on error
  *
- * \note thrashes read cache
  */
+
 static off_t
 f_trunc (FBUF * fs)
 {
-    off_t off = lseek (fs->fd, 0, SEEK_CUR);
+    off_t off;
+
+    off = lseek (fs->fd, 0, SEEK_CUR);
     if (off != -1)
     {
-        int rv = ftruncate (fs->fd, off);
+        int rv;
+
+        rv = ftruncate (fs->fd, off);
         if (rv != 0)
-        {
             off = -1;
-        }
         else
-        {
             FILE_DIRTY (fs);
-        }
     }
     return off;
 }
@@ -469,18 +470,24 @@ f_trunc (FBUF * fs)
 
 /**
  * Close file.
+ * @note if this is temporary file, it is deleted
  *
- * \param fs file structure
+ * @param fs file structure
+ * @returns 0 on success, non-zero on error
  *
- * \return 0 on success, non-zero on error
- *
- * \note if this is temporary file, it is deleted
  */
+
 static int
 f_close (FBUF * fs)
 {
-    int rv = close (fs->fd);
-    f_free (fs);
+    int rv = -1;
+
+    if (fs != NULL)
+    {
+        rv = close (fs->fd);
+        f_free (fs);
+    }
+
     return rv;
 }
 
@@ -489,11 +496,12 @@ f_close (FBUF * fs)
 /**
  * Create pipe stream to process.
  *
- * \param cmd shell command line
- * \param flags open mode, either O_RDONLY or O_WRONLY
+ * @param cmd shell command line
+ * @param flags open mode, either O_RDONLY or O_WRONLY
  *
- * \return file structure
+ * @returns file structure
  */
+
 static FBUF *
 p_open (const char *cmd, int flags)
 {
@@ -502,24 +510,16 @@ p_open (const char *cmd, int flags)
     const char *type = NULL;
 
     if (flags == O_RDONLY)
-    {
         type = "r";
-    }
-    if (flags == O_WRONLY)
-    {
+    else if (flags == O_WRONLY)
         type = "w";
-    }
 
     if (type == NULL)
-    {
         return NULL;
-    }
 
     fs = f_dopen (0);
     if (fs == NULL)
-    {
         return NULL;
-    }
 
     f = popen (cmd, type);
     if (f == NULL)
@@ -538,24 +538,31 @@ p_open (const char *cmd, int flags)
 /**
  * Close pipe stream.
  *
- * \param fs structure
- *
- * \return 0 on success, non-zero on error
+ * @param fs structure
+ * @returns 0 on success, non-zero on error
  */
+
 static int
 p_close (FBUF * fs)
 {
-    int rv = pclose (fs->data);
-    f_free (fs);
+    int rv = -1;
+
+    if (fs != NULL)
+    {
+        rv = pclose (fs->data);
+        f_free (fs);
+    }
+
     return rv;
 }
+
+/* --------------------------------------------------------------------------------------------- */
 
 /**
  * Get one char (byte) from string
  *
- * \param char * str, gboolean * result
- *
- * \return int as character or 0 and result == FALSE if fail
+ * @param char * str, gboolean * result
+ * @returns int as character or 0 and result == FALSE if fail
  */
 
 static int
@@ -570,13 +577,14 @@ dview_get_byte (char *str, gboolean * result)
     return (unsigned char) *str;
 }
 
+/* --------------------------------------------------------------------------------------------- */
 
 /**
  * Get utf multibyte char from string
  *
- * \param char * str, int * char_width, gboolean * result
+ * @param char * str, int * char_width, gboolean * result
+ * @returns int as utf character or 0 and result == FALSE if fail
  *
- * \return int as utf character or 0 and result == FALSE if fail
  */
 
 static int
@@ -613,34 +621,34 @@ dview_get_utf (char *str, int *char_width, gboolean * result)
     return ch;
 }
 
+/* --------------------------------------------------------------------------------------------- */
+
 static int
 dview_str_utf8_offset_to_pos (const char *text, size_t length)
 {
     ptrdiff_t result;
+
     if (text == NULL || text[0] == '\0')
         return length;
+
     if (g_utf8_validate (text, -1, NULL))
-    {
         result = g_utf8_offset_to_pointer (text, length) - text;
-    }
     else
     {
         gunichar uni;
         char *tmpbuf, *buffer;
+
         buffer = tmpbuf = g_strdup (text);
         while (tmpbuf[0] != '\0')
         {
             uni = g_utf8_get_char_validated (tmpbuf, -1);
             if ((uni != (gunichar) (-1)) && (uni != (gunichar) (-2)))
-            {
                 tmpbuf = g_utf8_next_char (tmpbuf);
-            }
             else
             {
                 tmpbuf[0] = '.';
                 tmpbuf++;
             }
-
         }
         result = g_utf8_offset_to_pointer (tmpbuf, length) - tmpbuf;
         g_free (buffer);
@@ -648,29 +656,28 @@ dview_str_utf8_offset_to_pos (const char *text, size_t length)
     return max (length, (size_t) result);
 }
 
-
 /* --------------------------------------------------------------------------------------------- */
+
 /* diff parse *************************************************************** */
 
 /**
  * Read decimal number from string.
  *
- * \param[in,out] str string to parse
- * \param[out] n extracted number
- *
- * \return 0 if success, otherwise non-zero
+ * @param[in,out] str string to parse
+ * @param[out] n extracted number
+ * @returns 0 if success, otherwise non-zero
  */
+
 static int
 scan_deci (const char **str, int *n)
 {
     const char *p = *str;
     char *q;
+
     errno = 0;
     *n = strtol (p, &q, 10);
-    if (errno || p == q)
-    {
+    if (errno != 0 || p == q)
         return -1;
-    }
     *str = q;
     return 0;
 }
@@ -680,11 +687,11 @@ scan_deci (const char **str, int *n)
 /**
  * Parse line for diff statement.
  *
- * \param p string to parse
- * \param ops list of diff statements
- *
- * \return 0 if success, otherwise non-zero
+ * @param p string to parse
+ * @param ops list of diff statements
+ * @returns 0 if success, otherwise non-zero
  */
+
 static int
 scan_line (const char *p, GArray * ops)
 {
@@ -693,7 +700,6 @@ scan_line (const char *p, GArray * ops)
     int f1, f2;
     int t1, t2;
     int cmd;
-
     int range;
 
     /* handle the following cases:
@@ -704,57 +710,44 @@ scan_line (const char *p, GArray * ops)
      */
 
     if (scan_deci (&p, &f1) != 0 || f1 < 0)
-    {
         return -1;
-    }
+
     f2 = f1;
     range = 0;
     if (*p == ',')
     {
         p++;
         if (scan_deci (&p, &f2) != 0 || f2 < f1)
-        {
             return -1;
-        }
+
         range = 1;
     }
 
     cmd = *p++;
     if (cmd == 'a')
     {
-        if (range)
-        {
+        if (range != 0)
             return -1;
-        }
     }
     else if (cmd != 'c' && cmd != 'd')
-    {
         return -1;
-    }
 
     if (scan_deci (&p, &t1) != 0 || t1 < 0)
-    {
         return -1;
-    }
+
     t2 = t1;
     range = 0;
     if (*p == ',')
     {
         p++;
         if (scan_deci (&p, &t2) != 0 || t2 < t1)
-        {
             return -1;
-        }
+
         range = 1;
     }
 
-    if (cmd == 'd')
-    {
-        if (range)
-        {
-            return -1;
-        }
-    }
+    if (cmd == 'd' && range != 0)
+        return -1;
 
     op.a[0][0] = f1;
     op.a[0][1] = f2;
@@ -770,35 +763,33 @@ scan_line (const char *p, GArray * ops)
 /**
  * Parse diff output and extract diff statements.
  *
- * \param f stream to read from
- * \param ops list of diff statements to fill
- *
- * \return positive number indicating number of hunks, otherwise negative
+ * @param f stream to read from
+ * @param ops list of diff statements to fill
+ * @returns positive number indicating number of hunks, otherwise negative
  */
+
 static int
 scan_diff (FBUF * f, GArray * ops)
 {
     int sz;
     char buf[BUFSIZ];
 
-    while ((sz = f_gets (buf, sizeof (buf) - 1, f)))
+    while ((sz = f_gets (buf, sizeof (buf) - 1, f)) != 0)
     {
         if (isdigit (buf[0]))
         {
             if (buf[sz - 1] != '\n')
-            {
                 return -1;
-            }
+
             buf[sz] = '\0';
             if (scan_line (buf, ops) != 0)
-            {
                 return -1;
-            }
+
             continue;
         }
+
         while (buf[sz - 1] != '\n' && (sz = f_gets (buf, sizeof (buf), f)) != 0)
-        {
-        }
+            ;
     }
 
     return ops->len;
@@ -809,14 +800,15 @@ scan_diff (FBUF * f, GArray * ops)
 /**
  * Invoke diff and extract diff statements.
  *
- * \param args extra arguments to be passed to diff
- * \param extra more arguments to be passed to diff
- * \param file1 first file to compare
- * \param file2 second file to compare
- * \param ops list of diff statements to fill
+ * @param args extra arguments to be passed to diff
+ * @param extra more arguments to be passed to diff
+ * @param file1 first file to compare
+ * @param file2 second file to compare
+ * @param ops list of diff statements to fill
  *
- * \return positive number indicating number of hunks, otherwise negative
+ * @returns positive number indicating number of hunks, otherwise negative
  */
+
 static int
 dff_execute (const char *args, const char *extra, const char *file1, const char *file2,
              GArray * ops)
@@ -831,8 +823,15 @@ dff_execute (const char *args, const char *extra, const char *file1, const char 
     FBUF *f;
     char *cmd;
     int code;
+    char *file1_esc, *file2_esc;
 
-    cmd = g_strdup_printf ("diff %s %s %s \"%s\" \"%s\"", args, extra, opt, file1, file2);
+    /* escape potential $ to avoid shell variable substitutions in popen() */
+    file1_esc = strutils_shell_escape (file1);
+    file2_esc = strutils_shell_escape (file2);
+    cmd = g_strdup_printf ("diff %s %s %s %s %s", args, extra, opt, file1_esc, file2_esc);
+    g_free (file1_esc);
+    g_free (file2_esc);
+
     if (cmd == NULL)
         return -1;
 
@@ -846,7 +845,7 @@ dff_execute (const char *args, const char *extra, const char *file1, const char 
     code = p_close (f);
 
     if (rv < 0 || code == -1 || !WIFEXITED (code) || WEXITSTATUS (code) == 2)
-        return -1;
+        rv = -1;
 
     return rv;
 }
@@ -856,16 +855,17 @@ dff_execute (const char *args, const char *extra, const char *file1, const char 
 /**
  * Reparse and display file according to diff statements.
  *
- * \param ord 0 if displaying first file, 1 if displaying 2nd file
- * \param filename file name to display
- * \param ops list of diff statements
- * \param printer printf-like function to be used for displaying
- * \param ctx printer context
+ * @param ord DIFF_LEFT if 1nd file is displayed , DIFF_RIGHT if 2nd file is displayed.
+ * @param filename file name to display
+ * @param ops list of diff statements
+ * @param printer printf-like function to be used for displaying
+ * @param ctx printer context
  *
- * \return 0 if success, otherwise non-zero
+ * @returns 0 if success, otherwise non-zero
  */
+
 static int
-dff_reparse (int ord, const char *filename, const GArray * ops, DFUNC printer, void *ctx)
+dff_reparse (diff_place_t ord, const char *filename, const GArray * ops, DFUNC printer, void *ctx)
 {
     size_t i;
     FBUF *f;
@@ -874,22 +874,20 @@ dff_reparse (int ord, const char *filename, const GArray * ops, DFUNC printer, v
     int line = 0;
     off_t off = 0;
     const DIFFCMD *op;
-    int eff;
+    diff_place_t eff;
     int add_cmd;
     int del_cmd;
 
     f = f_open (filename, O_RDONLY);
     if (f == NULL)
-    {
         return -1;
-    }
 
     ord &= 1;
     eff = ord;
 
     add_cmd = 'a';
     del_cmd = 'd';
-    if (ord)
+    if (ord != 0)
     {
         add_cmd = 'd';
         del_cmd = 'a';
@@ -901,8 +899,10 @@ dff_reparse (int ord, const char *filename, const GArray * ops, DFUNC printer, v
     for (i = 0; i < ops->len; i++)
     {
         int n;
+
         op = &g_array_index (ops, DIFFCMD, i);
         n = op->F1 - (op->cmd != add_cmd);
+
         while (line < n && (sz = f_gets (buf, sizeof (buf), f)) != 0)
         {
             line++;
@@ -920,20 +920,20 @@ dff_reparse (int ord, const char *filename, const GArray * ops, DFUNC printer, v
                 off += sz;
             }
         }
+
         if (line != n)
-        {
             goto err;
-        }
 
         if (op->cmd == add_cmd)
         {
             n = op->T2 - op->T1 + 1;
-            while (n)
+            while (n != 0)
             {
                 printer (ctx, DEL_CH, 0, 0, 1, "\n");
                 n--;
             }
         }
+
         if (op->cmd == del_cmd)
         {
             n = op->F2 - op->F1 + 1;
@@ -955,11 +955,11 @@ dff_reparse (int ord, const char *filename, const GArray * ops, DFUNC printer, v
                 }
                 n--;
             }
-            if (n)
-            {
+
+            if (n != 0)
                 goto err;
-            }
         }
+
         if (op->cmd == 'c')
         {
             n = op->F2 - op->F1 + 1;
@@ -981,10 +981,10 @@ dff_reparse (int ord, const char *filename, const GArray * ops, DFUNC printer, v
                 }
                 n--;
             }
-            if (n)
-            {
+
+            if (n != 0)
                 goto err;
-            }
+
             n = op->T2 - op->T1 - (op->F2 - op->F1);
             while (n > 0)
             {
@@ -1025,27 +1025,27 @@ dff_reparse (int ord, const char *filename, const GArray * ops, DFUNC printer, v
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
 /* horizontal diff ********************************************************** */
 
 /**
  * Longest common substring.
  *
- * \param s first string
- * \param m length of first string
- * \param t second string
- * \param n length of second string
- * \param ret list of offsets for longest common substrings inside each string
- * \param min minimum length of common substrings
+ * @param s first string
+ * @param m length of first string
+ * @param t second string
+ * @param n length of second string
+ * @param ret list of offsets for longest common substrings inside each string
+ * @param min minimum length of common substrings
  *
- * \return 0 if success, nonzero otherwise
+ * @returns 0 if success, nonzero otherwise
  */
+
 static int
 lcsubstr (const char *s, int m, const char *t, int n, GArray * ret, int min)
 {
     int i, j;
-
     int *Lprev, *Lcurr;
-
     int z = 0;
 
     if (m < min || n < min)
@@ -1054,19 +1054,22 @@ lcsubstr (const char *s, int m, const char *t, int n, GArray * ret, int min)
         return 0;
     }
 
-    Lprev = g_new0 (int, n + 1);
-    Lcurr = g_new0 (int, n + 1);
+    Lprev = g_try_new0 (int, n + 1);
+    if (Lprev == NULL)
+        return -1;
 
-    if (Lprev == NULL || Lcurr == NULL)
+    Lcurr = g_try_new0 (int, n + 1);
+    if (Lcurr == NULL)
     {
         g_free (Lprev);
-        g_free (Lcurr);
         return -1;
     }
 
     for (i = 0; i < m; i++)
     {
-        int *L = Lprev;
+        int *L;
+
+        L = Lprev;
         Lprev = Lcurr;
         Lcurr = L;
 #ifdef USE_MEMSET_IN_LCS
@@ -1079,7 +1082,9 @@ lcsubstr (const char *s, int m, const char *t, int n, GArray * ret, int min)
 #endif
             if (s[i] == t[j])
             {
-                int v = Lprev[j] + 1;
+                int v;
+
+                v = Lprev[j] + 1;
                 Lcurr[j + 1] = v;
                 if (z < v)
                 {
@@ -1088,24 +1093,22 @@ lcsubstr (const char *s, int m, const char *t, int n, GArray * ret, int min)
                 }
                 if (z == v && z >= min)
                 {
-                    int off0 = i - z + 1;
-                    int off1 = j - z + 1;
+                    int off0, off1;
                     size_t k;
+
+                    off0 = i - z + 1;
+                    off1 = j - z + 1;
+
                     for (k = 0; k < ret->len; k++)
                     {
                         PAIR *p = (PAIR *) g_array_index (ret, PAIR, k);
-                        if ((*p)[0] == off0)
-                        {
+                        if ((*p)[0] == off0 || (*p)[1] >= off1)
                             break;
-                        }
-                        if ((*p)[1] >= off1)
-                        {
-                            break;
-                        }
                     }
                     if (k == ret->len)
                     {
                         PAIR p2;
+
                         p2[0] = off0;
                         p2[1] = off1;
                         g_array_append_val (ret, p2);
@@ -1118,10 +1121,6 @@ lcsubstr (const char *s, int m, const char *t, int n, GArray * ret, int min)
     free (Lcurr);
     free (Lprev);
     return z;
-
-    free (Lcurr);
-    free (Lprev);
-    return -1;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1129,42 +1128,44 @@ lcsubstr (const char *s, int m, const char *t, int n, GArray * ret, int min)
 /**
  * Scan recursively for common substrings and build ranges.
  *
- * \param s first string
- * \param t second string
- * \param bracket current limits for both of the strings
- * \param min minimum length of common substrings
- * \param hdiff list of horizontal diff ranges to fill
- * \param depth recursion depth
+ * @param s first string
+ * @param t second string
+ * @param bracket current limits for both of the strings
+ * @param min minimum length of common substrings
+ * @param hdiff list of horizontal diff ranges to fill
+ * @param depth recursion depth
  *
- * \return 0 if success, nonzero otherwise
+ * @returns 0 if success, nonzero otherwise
  */
+
 static gboolean
 hdiff_multi (const char *s, const char *t, const BRACKET bracket, int min, GArray * hdiff,
              unsigned int depth)
 {
     BRACKET p;
 
-    if (depth--)
+    if (depth-- != 0)
     {
         GArray *ret;
         BRACKET b;
         int len;
+
         ret = g_array_new (FALSE, TRUE, sizeof (PAIR));
         if (ret == NULL)
             return FALSE;
 
-        len = lcsubstr (s + bracket[0].off, bracket[0].len,
-                        t + bracket[1].off, bracket[1].len, ret, min);
+        len = lcsubstr (s + bracket[DIFF_LEFT].off, bracket[DIFF_LEFT].len,
+                        t + bracket[DIFF_RIGHT].off, bracket[DIFF_RIGHT].len, ret, min);
         if (ret->len != 0)
         {
             size_t k = 0;
             const PAIR *data = (const PAIR *) &g_array_index (ret, PAIR, 0);
             const PAIR *data2;
 
-            b[0].off = bracket[0].off;
-            b[0].len = (*data)[0];
-            b[1].off = bracket[1].off;
-            b[1].len = (*data)[1];
+            b[DIFF_LEFT].off = bracket[DIFF_LEFT].off;
+            b[DIFF_LEFT].len = (*data)[0];
+            b[DIFF_RIGHT].off = bracket[DIFF_RIGHT].off;
+            b[DIFF_RIGHT].len = (*data)[1];
             if (!hdiff_multi (s, t, b, min, hdiff, depth))
                 return FALSE;
 
@@ -1172,18 +1173,18 @@ hdiff_multi (const char *s, const char *t, const BRACKET bracket, int min, GArra
             {
                 data = (const PAIR *) &g_array_index (ret, PAIR, k);
                 data2 = (const PAIR *) &g_array_index (ret, PAIR, k + 1);
-                b[0].off = bracket[0].off + (*data)[0] + len;
-                b[0].len = (*data2)[0] - (*data)[0] - len;
-                b[1].off = bracket[1].off + (*data)[1] + len;
-                b[1].len = (*data2)[1] - (*data)[1] - len;
+                b[DIFF_LEFT].off = bracket[DIFF_LEFT].off + (*data)[0] + len;
+                b[DIFF_LEFT].len = (*data2)[0] - (*data)[0] - len;
+                b[DIFF_RIGHT].off = bracket[DIFF_RIGHT].off + (*data)[1] + len;
+                b[DIFF_RIGHT].len = (*data2)[1] - (*data)[1] - len;
                 if (!hdiff_multi (s, t, b, min, hdiff, depth))
                     return FALSE;
             }
             data = (const PAIR *) &g_array_index (ret, PAIR, k);
-            b[0].off = bracket[0].off + (*data)[0] + len;
-            b[0].len = bracket[0].len - (*data)[0] - len;
-            b[1].off = bracket[1].off + (*data)[1] + len;
-            b[1].len = bracket[1].len - (*data)[1] - len;
+            b[DIFF_LEFT].off = bracket[DIFF_LEFT].off + (*data)[0] + len;
+            b[DIFF_LEFT].len = bracket[DIFF_LEFT].len - (*data)[0] - len;
+            b[DIFF_RIGHT].off = bracket[DIFF_RIGHT].off + (*data)[1] + len;
+            b[DIFF_RIGHT].len = bracket[DIFF_RIGHT].len - (*data)[1] - len;
             if (!hdiff_multi (s, t, b, min, hdiff, depth))
                 return FALSE;
 
@@ -1192,10 +1193,10 @@ hdiff_multi (const char *s, const char *t, const BRACKET bracket, int min, GArra
         }
     }
 
-    p[0].off = bracket[0].off;
-    p[0].len = bracket[0].len;
-    p[1].off = bracket[1].off;
-    p[1].len = bracket[1].len;
+    p[DIFF_LEFT].off = bracket[DIFF_LEFT].off;
+    p[DIFF_LEFT].len = bracket[DIFF_LEFT].len;
+    p[DIFF_RIGHT].off = bracket[DIFF_RIGHT].off;
+    p[DIFF_RIGHT].len = bracket[DIFF_RIGHT].len;
     g_array_append_val (hdiff, p);
 
     return TRUE;
@@ -1206,16 +1207,17 @@ hdiff_multi (const char *s, const char *t, const BRACKET bracket, int min, GArra
 /**
  * Build list of horizontal diff ranges.
  *
- * \param s first string
- * \param m length of first string
- * \param t second string
- * \param n length of second string
- * \param min minimum length of common substrings
- * \param hdiff list of horizontal diff ranges to fill
- * \param depth recursion depth
+ * @param s first string
+ * @param m length of first string
+ * @param t second string
+ * @param n length of second string
+ * @param min minimum length of common substrings
+ * @param hdiff list of horizontal diff ranges to fill
+ * @param depth recursion depth
  *
- * \return 0 if success, nonzero otherwise
+ * @returns 0 if success, nonzero otherwise
  */
+
 static gboolean
 hdiff_scan (const char *s, int m, const char *t, int n, int min, GArray * hdiff, unsigned int depth)
 {
@@ -1228,77 +1230,79 @@ hdiff_scan (const char *s, int m, const char *t, int n, int min, GArray * hdiff,
     for (; m > i && n > i && s[m - 1] == t[n - 1]; m--, n--)
         ;
 
-    b[0].off = i;
-    b[0].len = m - i;
-    b[1].off = i;
-    b[1].len = n - i;
+    b[DIFF_LEFT].off = i;
+    b[DIFF_LEFT].len = m - i;
+    b[DIFF_RIGHT].off = i;
+    b[DIFF_RIGHT].len = n - i;
 
     /* smartscan (multiple horizontal diff) */
     return hdiff_multi (s, t, b, min, hdiff, depth);
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
 /* read line **************************************************************** */
 
 /**
  * Check if character is inside horizontal diff limits.
  *
- * \param k rank of character inside line
- * \param hdiff horizontal diff structure
- * \param ord 0 if reading from first file, 1 if reading from 2nd file
+ * @param k rank of character inside line
+ * @param hdiff horizontal diff structure
+ * @param ord DIFF_LEFT if reading from first file, DIFF_RIGHT if reading from 2nd file
  *
- * \return TRUE if inside hdiff limits, FALSE otherwise
+ * @returns TRUE if inside hdiff limits, FALSE otherwise
  */
-static int
-is_inside (int k, GArray * hdiff, int ord)
+
+static gboolean
+is_inside (int k, GArray * hdiff, diff_place_t ord)
 {
     size_t i;
     BRACKET *b;
+
     for (i = 0; i < hdiff->len; i++)
     {
         int start, end;
-        b = &g_array_index (hdiff, BRACKET, i);
 
+        b = &g_array_index (hdiff, BRACKET, i);
         start = (*b)[ord].off;
         end = start + (*b)[ord].len;
         if (k >= start && k < end)
-        {
-            return 1;
-        }
+            return TRUE;
     }
-    return 0;
+    return FALSE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 /**
- * Copy `src' to `dst' expanding tabs.
+ * Copy 'src' to 'dst' expanding tabs.
+ * @note The procedure returns when all bytes are consumed from 'src'
  *
- * \param dst destination buffer
- * \param src source buffer
- * \param srcsize size of src buffer
- * \param base virtual base of this string, needed to calculate tabs
- * \param ts tab size
+ * @param dst destination buffer
+ * @param src source buffer
+ * @param srcsize size of src buffer
+ * @param base virtual base of this string, needed to calculate tabs
+ * @param ts tab size
  *
- * \return new virtual base
- *
- * \note The procedure returns when all bytes are consumed from `src'
+ * @returns new virtual base
  */
+
 static int
 cvt_cpy (char *dst, const char *src, size_t srcsize, int base, int ts)
 {
     int i;
+
     for (i = 0; srcsize != 0; i++, src++, dst++, srcsize--)
     {
         *dst = *src;
         if (*src == '\t')
         {
-            int j = TAB_SKIP (ts, i + base);
+            int j;
+
+            j = TAB_SKIP (ts, i + base);
             i += j - 1;
             while (j-- > 0)
-            {
                 *dst++ = ' ';
-            }
             dst--;
         }
     }
@@ -1308,41 +1312,41 @@ cvt_cpy (char *dst, const char *src, size_t srcsize, int base, int ts)
 /* --------------------------------------------------------------------------------------------- */
 
 /**
- * Copy `src' to `dst' expanding tabs.
+ * Copy 'src' to 'dst' expanding tabs.
  *
- * \param dst destination buffer
- * \param dstsize size of dst buffer
- * \param[in,out] _src source buffer
- * \param srcsize size of src buffer
- * \param base virtual base of this string, needed to calculate tabs
- * \param ts tab size
+ * @param dst destination buffer
+ * @param dstsize size of dst buffer
+ * @param[in,out] _src source buffer
+ * @param srcsize size of src buffer
+ * @param base virtual base of this string, needed to calculate tabs
+ * @param ts tab size
  *
- * \return new virtual base
+ * @returns new virtual base
  *
- * \note The procedure returns when all bytes are consumed from `src'
- *       or `dstsize' bytes are written to `dst'
- * \note Upon return, `src' points to the first unwritten character in source
+ * @note The procedure returns when all bytes are consumed from 'src'
+ *       or 'dstsize' bytes are written to 'dst'
+ * @note Upon return, 'src' points to the first unwritten character in source
  */
+
 static int
 cvt_ncpy (char *dst, int dstsize, const char **_src, size_t srcsize, int base, int ts)
 {
     int i;
     const char *src = *_src;
+
     for (i = 0; i < dstsize && srcsize != 0; i++, src++, dst++, srcsize--)
     {
         *dst = *src;
         if (*src == '\t')
         {
-            int j = TAB_SKIP (ts, i + base);
+            int j;
+
+            j = TAB_SKIP (ts, i + base);
             if (j > dstsize - i)
-            {
                 j = dstsize - i;
-            }
             i += j - 1;
             while (j-- > 0)
-            {
                 *dst++ = ' ';
-            }
             dst--;
         }
     }
@@ -1355,37 +1359,40 @@ cvt_ncpy (char *dst, int dstsize, const char **_src, size_t srcsize, int base, i
 /**
  * Read line from memory, converting tabs to spaces and padding with spaces.
  *
- * \param src buffer to read from
- * \param srcsize size of src buffer
- * \param dst buffer to read to
- * \param dstsize size of dst buffer, excluding trailing null
- * \param skip number of characters to skip
- * \param ts tab size
- * \param show_cr show trailing carriage return as ^M
+ * @param src buffer to read from
+ * @param srcsize size of src buffer
+ * @param dst buffer to read to
+ * @param dstsize size of dst buffer, excluding trailing null
+ * @param skip number of characters to skip
+ * @param ts tab size
+ * @param show_cr show trailing carriage return as ^M
  *
- * \return negative on error, otherwise number of bytes except padding
+ * @returns negative on error, otherwise number of bytes except padding
  */
+
 static int
 cvt_mget (const char *src, size_t srcsize, char *dst, int dstsize, int skip, int ts, int show_cr)
 {
     int sz = 0;
+
     if (src != NULL)
     {
         int i;
         char *tmp = dst;
         const int base = 0;
+
         for (i = 0; dstsize != 0 && srcsize != 0 && *src != '\n'; i++, src++, srcsize--)
         {
             if (*src == '\t')
             {
-                int j = TAB_SKIP (ts, i + base);
+                int j;
+
+                j = TAB_SKIP (ts, i + base);
                 i += j - 1;
                 while (j-- > 0)
                 {
                     if (skip > 0)
-                    {
                         skip--;
-                    }
                     else if (dstsize != 0)
                     {
                         dstsize--;
@@ -1411,26 +1418,23 @@ cvt_mget (const char *src, size_t srcsize, char *dst, int dstsize, int skip, int
                 }
                 break;
             }
+            else if (skip > 0)
+            {
+                int utf_ch = 0;
+                gboolean res;
+                int w;
+
+                skip--;
+                utf_ch = dview_get_utf ((char *) src, &w, &res);
+                if (w > 1)
+                    skip += w - 1;
+                if (!g_unichar_isprint (utf_ch))
+                    utf_ch = '.';
+            }
             else
             {
-                if (skip > 0)
-                {
-                    int utf_ch = 0;
-                    gboolean res;
-                    int w;
-
-                    skip--;
-                    utf_ch = dview_get_utf ((char *) src, &w, &res);
-                    if (w > 1)
-                        skip += w - 1;
-                    if (!g_unichar_isprint (utf_ch))
-                        utf_ch = '.';
-                }
-                else
-                {
-                    dstsize--;
-                    *dst++ = *src;
-                }
+                dstsize--;
+                *dst++ = *src;
             }
         }
         sz = dst - tmp;
@@ -1449,41 +1453,44 @@ cvt_mget (const char *src, size_t srcsize, char *dst, int dstsize, int skip, int
 /**
  * Read line from memory and build attribute array.
  *
- * \param src buffer to read from
- * \param srcsize size of src buffer
- * \param dst buffer to read to
- * \param dstsize size of dst buffer, excluding trailing null
- * \param skip number of characters to skip
- * \param ts tab size
- * \param show_cr show trailing carriage return as ^M
- * \param hdiff horizontal diff structure
- * \param ord 0 if reading from first file, 1 if reading from 2nd file
- * \param att buffer of attributes
+ * @param src buffer to read from
+ * @param srcsize size of src buffer
+ * @param dst buffer to read to
+ * @param dstsize size of dst buffer, excluding trailing null
+ * @param skip number of characters to skip
+ * @param ts tab size
+ * @param show_cr show trailing carriage return as ^M
+ * @param hdiff horizontal diff structure
+ * @param ord DIFF_LEFT if reading from first file, DIFF_RIGHT if reading from 2nd file
+ * @param att buffer of attributes
  *
- * \return negative on error, otherwise number of bytes except padding
+ * @returns negative on error, otherwise number of bytes except padding
  */
+
 static int
 cvt_mgeta (const char *src, size_t srcsize, char *dst, int dstsize, int skip, int ts, int show_cr,
-           GArray * hdiff, int ord, char *att)
+           GArray * hdiff, diff_place_t ord, char *att)
 {
     int sz = 0;
+
     if (src != NULL)
     {
         int i, k;
         char *tmp = dst;
         const int base = 0;
+
         for (i = 0, k = 0; dstsize != 0 && srcsize != 0 && *src != '\n'; i++, k++, src++, srcsize--)
         {
             if (*src == '\t')
             {
-                int j = TAB_SKIP (ts, i + base);
+                int j;
+
+                j = TAB_SKIP (ts, i + base);
                 i += j - 1;
                 while (j-- > 0)
                 {
                     if (skip != 0)
-                    {
                         skip--;
-                    }
                     else if (dstsize != 0)
                     {
                         dstsize--;
@@ -1513,27 +1520,24 @@ cvt_mgeta (const char *src, size_t srcsize, char *dst, int dstsize, int skip, in
                 }
                 break;
             }
+            else if (skip != 0)
+            {
+                int utf_ch = 0;
+                gboolean res;
+                int w;
+
+                skip--;
+                utf_ch = dview_get_utf ((char *) src, &w, &res);
+                if (w > 1)
+                    skip += w - 1;
+                if (!g_unichar_isprint (utf_ch))
+                    utf_ch = '.';
+            }
             else
             {
-                if (skip != 0)
-                {
-                    int utf_ch = 0;
-                    gboolean res;
-                    int w;
-
-                    skip--;
-                    utf_ch = dview_get_utf ((char *) src, &w, &res);
-                    if (w > 1)
-                        skip += w - 1;
-                    if (!g_unichar_isprint (utf_ch))
-                        utf_ch = '.';
-                }
-                else
-                {
-                    dstsize--;
-                    *att++ = is_inside (k, hdiff, ord);
-                    *dst++ = *src;
-                }
+                dstsize--;
+                *att++ = is_inside (k, hdiff, ord);
+                *dst++ = *src;
             }
         }
         sz = dst - tmp;
@@ -1541,7 +1545,7 @@ cvt_mgeta (const char *src, size_t srcsize, char *dst, int dstsize, int skip, in
     while (dstsize != 0)
     {
         dstsize--;
-        *att++ = 0;
+        *att++ = '\0';
         *dst++ = ' ';
     }
     *dst = '\0';
@@ -1553,36 +1557,32 @@ cvt_mgeta (const char *src, size_t srcsize, char *dst, int dstsize, int skip, in
 /**
  * Read line from file, converting tabs to spaces and padding with spaces.
  *
- * \param f file stream to read from
- * \param off offset of line inside file
- * \param dst buffer to read to
- * \param dstsize size of dst buffer, excluding trailing null
- * \param skip number of characters to skip
- * \param ts tab size
- * \param show_cr show trailing carriage return as ^M
+ * @param f file stream to read from
+ * @param off offset of line inside file
+ * @param dst buffer to read to
+ * @param dstsize size of dst buffer, excluding trailing null
+ * @param skip number of characters to skip
+ * @param ts tab size
+ * @param show_cr show trailing carriage return as ^M
  *
- * \return negative on error, otherwise number of bytes except padding
+ * @returns negative on error, otherwise number of bytes except padding
  */
+
 static int
 cvt_fget (FBUF * f, off_t off, char *dst, size_t dstsize, int skip, int ts, int show_cr)
 {
     int base = 0;
     int old_base = base;
-    const int amount = dstsize;
-
+    size_t amount = dstsize;
     size_t useful, offset;
-
     size_t i;
     size_t sz;
-
     int lastch = '\0';
-
     const char *q = NULL;
     char tmp[BUFSIZ];           /* XXX capacity must be >= max{dstsize + 1, amount} */
     char cvt[BUFSIZ];           /* XXX capacity must be >= MAX_TAB_WIDTH * amount */
 
-    if ((int) sizeof (tmp) < amount || (int) sizeof (tmp) <= dstsize
-        || (int) sizeof (cvt) < 8 * amount)
+    if (sizeof (tmp) < amount || sizeof (tmp) <= dstsize || sizeof (cvt) < 8 * amount)
     {
         /* abnormal, but avoid buffer overflow */
         memset (dst, ' ', dstsize);
@@ -1629,6 +1629,7 @@ cvt_fget (FBUF * f, off_t off, char *dst, size_t dstsize, int skip, int ts, int 
             if (sz != 0)
             {
                 const char *ptr = tmp;
+
                 useful += cvt_ncpy (dst + useful, dstsize - useful, &ptr, sz, base, ts) - base;
                 if (ptr < tmp + sz)
                     lastch = *ptr;
@@ -1663,10 +1664,9 @@ cvt_fget (FBUF * f, off_t off, char *dst, size_t dstsize, int skip, int ts, int 
             break;
         }
     }
+
     for (; i < dstsize; i++)
-    {
         dst[i] = ' ';
-    }
     dst[i] = '\0';
     return sz;
 }
@@ -1678,10 +1678,9 @@ static void
 cc_free_elt (void *elt)
 {
     DIFFLN *p = elt;
+
     if (p != NULL)
-    {
         g_free (p->p);
-    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1691,9 +1690,11 @@ printer (void *ctx, int ch, int line, off_t off, size_t sz, const char *str)
 {
     GArray *a = ((PRINTER_CTX *) ctx)->a;
     DSRC dsrc = ((PRINTER_CTX *) ctx)->dsrc;
-    if (ch)
+
+    if (ch != 0)
     {
         DIFFLN p;
+
         p.p = NULL;
         p.ch = ch;
         p.line = line;
@@ -1701,9 +1702,7 @@ printer (void *ctx, int ch, int line, off_t off, size_t sz, const char *str)
         if (dsrc == DATA_SRC_MEM && line != 0)
         {
             if (sz != 0 && str[sz - 1] == '\n')
-            {
                 sz--;
-            }
             if (sz > 0)
                 p.p = g_strndup (str, sz);
             p.u.len = sz;
@@ -1713,15 +1712,17 @@ printer (void *ctx, int ch, int line, off_t off, size_t sz, const char *str)
     else if (dsrc == DATA_SRC_MEM)
     {
         DIFFLN *p;
+
         p = &g_array_index (a, DIFFLN, a->len - 1);
         if (sz != 0 && str[sz - 1] == '\n')
-        {
             sz--;
-        }
         if (sz != 0)
         {
-            size_t new_size = p->u.len + sz;
-            char *q = g_realloc (p->p, new_size);
+            size_t new_size;
+            char *q;
+
+            new_size = p->u.len + sz;
+            q = g_realloc (p->p, new_size);
             memcpy (q + p->u.len, str, sz);
             p->p = q;
         }
@@ -1741,52 +1742,36 @@ static int
 redo_diff (WDiff * dview)
 {
     FBUF *const *f = dview->f;
-
     PRINTER_CTX ctx;
     GArray *ops;
     int ndiff;
     int rv;
-
     char extra[256];
 
     extra[0] = '\0';
     if (dview->opt.quality == 2)
-    {
         strcat (extra, " -d");
-    }
     if (dview->opt.quality == 1)
-    {
         strcat (extra, " --speed-large-files");
-    }
     if (dview->opt.strip_trailing_cr)
-    {
         strcat (extra, " --strip-trailing-cr");
-    }
     if (dview->opt.ignore_tab_expansion)
-    {
         strcat (extra, " -E");
-    }
     if (dview->opt.ignore_space_change)
-    {
         strcat (extra, " -b");
-    }
     if (dview->opt.ignore_all_space)
-    {
         strcat (extra, " -w");
-    }
     if (dview->opt.ignore_case)
-    {
         strcat (extra, " -i");
-    }
 
     if (dview->dsrc != DATA_SRC_MEM)
     {
-        f_reset (f[0]);
-        f_reset (f[1]);
+        f_reset (f[DIFF_LEFT]);
+        f_reset (f[DIFF_RIGHT]);
     }
 
     ops = g_array_new (FALSE, FALSE, sizeof (DIFFCMD));
-    ndiff = dff_execute (dview->args, extra, dview->file[0], dview->file[1], ops);
+    ndiff = dff_execute (dview->args, extra, dview->file[DIFF_LEFT], dview->file[DIFF_RIGHT], ops);
     if (ndiff < 0)
     {
         if (ops != NULL)
@@ -1797,24 +1782,24 @@ redo_diff (WDiff * dview)
     ctx.dsrc = dview->dsrc;
 
     rv = 0;
-    ctx.a = dview->a[0];
-    ctx.f = f[0];
-    rv |= dff_reparse (0, dview->file[0], ops, printer, &ctx);
+    ctx.a = dview->a[DIFF_LEFT];
+    ctx.f = f[DIFF_LEFT];
+    rv |= dff_reparse (DIFF_LEFT, dview->file[DIFF_LEFT], ops, printer, &ctx);
 
-    ctx.a = dview->a[1];
-    ctx.f = f[1];
-    rv |= dff_reparse (1, dview->file[1], ops, printer, &ctx);
+    ctx.a = dview->a[DIFF_RIGHT];
+    ctx.f = f[DIFF_RIGHT];
+    rv |= dff_reparse (DIFF_RIGHT, dview->file[DIFF_RIGHT], ops, printer, &ctx);
 
     if (ops != NULL)
         g_array_free (ops, TRUE);
 
-    if (rv != 0 || dview->a[0]->len != dview->a[1]->len)
+    if (rv != 0 || dview->a[DIFF_LEFT]->len != dview->a[DIFF_RIGHT]->len)
         return -1;
 
     if (dview->dsrc == DATA_SRC_TMP)
     {
-        f_trunc (f[0]);
-        f_trunc (f[1]);
+        f_trunc (f[DIFF_LEFT]);
+        f_trunc (f[DIFF_RIGHT]);
     }
 
     if (dview->dsrc == DATA_SRC_MEM && HDIFF_ENABLE)
@@ -1825,17 +1810,21 @@ redo_diff (WDiff * dview)
             size_t i;
             const DIFFLN *p;
             const DIFFLN *q;
-            for (i = 0; i < dview->a[0]->len; i++)
+
+            for (i = 0; i < dview->a[DIFF_LEFT]->len; i++)
             {
                 GArray *h = NULL;
-                p = &g_array_index (dview->a[0], DIFFLN, i);
-                q = &g_array_index (dview->a[1], DIFFLN, i);
+
+                p = &g_array_index (dview->a[DIFF_LEFT], DIFFLN, i);
+                q = &g_array_index (dview->a[DIFF_RIGHT], DIFFLN, i);
                 if (p->line && q->line && p->ch == CHG_CH)
                 {
                     h = g_array_new (FALSE, FALSE, sizeof (BRACKET));
                     if (h != NULL)
                     {
-                        gboolean runresult =
+                        gboolean runresult;
+
+                        runresult =
                             hdiff_scan (p->p, p->u.len, q->p, q->u.len, HDIFF_MINCTX, h,
                                         HDIFF_DEPTH);
                         if (!runresult)
@@ -1860,10 +1849,15 @@ destroy_hdiff (WDiff * dview)
     if (dview->hdiff != NULL)
     {
         int i;
-        int len = dview->a[0]->len;
+        int len;
+
+        len = dview->a[DIFF_LEFT]->len;
+
         for (i = 0; i < len; i++)
         {
-            GArray *h = (GArray *) g_ptr_array_index (dview->hdiff, i);
+            GArray *h;
+
+            h = (GArray *) g_ptr_array_index (dview->hdiff, i);
             if (h != NULL)
                 g_array_free (h, TRUE);
         }
@@ -1884,10 +1878,9 @@ static int
 get_digits (unsigned int n)
 {
     int d = 1;
+
     while (n /= 10)
-    {
         d++;
-    }
     return d;
 }
 
@@ -1904,22 +1897,19 @@ get_line_numbers (const GArray * a, size_t pos, int *linenum, int *lineofs)
     if (a->len != 0)
     {
         if (pos >= a->len)
-        {
             pos = a->len - 1;
-        }
 
         p = &g_array_index (a, DIFFLN, pos);
 
         if (p->line == 0)
         {
             int n;
+
             for (n = pos; n > 0; n--)
             {
                 p--;
                 if (p->line != 0)
-                {
                     break;
-                }
             }
             *lineofs = pos - n + 1;
         }
@@ -1936,12 +1926,11 @@ calc_nwidth (const GArray ** const a)
 {
     int l1, o1;
     int l2, o2;
-    get_line_numbers (a[0], a[0]->len - 1, &l1, &o1);
-    get_line_numbers (a[1], a[1]->len - 1, &l2, &o2);
+
+    get_line_numbers (a[DIFF_LEFT], a[DIFF_LEFT]->len - 1, &l1, &o1);
+    get_line_numbers (a[DIFF_RIGHT], a[DIFF_RIGHT]->len - 1, &l2, &o2);
     if (l1 < l2)
-    {
         l1 = l2;
-    }
     return get_digits (l1);
 }
 
@@ -1952,28 +1941,18 @@ find_prev_hunk (const GArray * a, int pos)
 {
 #if 1
     while (pos > 0 && ((DIFFLN *) & g_array_index (a, DIFFLN, pos))->ch != EQU_CH)
-    {
         pos--;
-    }
     while (pos > 0 && ((DIFFLN *) & g_array_index (a, DIFFLN, pos))->ch == EQU_CH)
-    {
         pos--;
-    }
     while (pos > 0 && ((DIFFLN *) & g_array_index (a, DIFFLN, pos))->ch != EQU_CH)
-    {
         pos--;
-    }
     if (pos > 0 && (size_t) pos < a->len)
         pos++;
 #else
     while (pos > 0 && ((DIFFLN *) & g_array_index (a, DIFFLN, pos - 1))->ch == EQU_CH)
-    {
         pos--;
-    }
     while (pos > 0 && ((DIFFLN *) & g_array_index (a, DIFFLN, pos - 1))->ch != EQU_CH)
-    {
         pos--;
-    }
 #endif
 
     return pos;
@@ -1985,31 +1964,29 @@ static size_t
 find_next_hunk (const GArray * a, size_t pos)
 {
     while (pos < a->len && ((DIFFLN *) & g_array_index (a, DIFFLN, pos))->ch != EQU_CH)
-    {
         pos++;
-    }
     while (pos < a->len && ((DIFFLN *) & g_array_index (a, DIFFLN, pos))->ch == EQU_CH)
-    {
         pos++;
-    }
     return pos;
 }
 
+/* --------------------------------------------------------------------------------------------- */
 /**
  * Find start and end lines of the current hunk.
  *
- * \param dview - widget WDiff
- * \return boolean and
+ * @param dview WDiff widget
+ * @returns boolean and
  * start_line1 first line of current hunk (file[0])
  * end_line1 last line of current hunk (file[0])
  * start_line1 first line of current hunk (file[0])
  * end_line1 last line of current hunk (file[0])
  */
+
 static int
 get_current_hunk (WDiff * dview, int *start_line1, int *end_line1, int *start_line2, int *end_line2)
 {
-    const GArray *a0 = dview->a[0];
-    const GArray *a1 = dview->a[1];
+    const GArray *a0 = dview->a[DIFF_LEFT];
+    const GArray *a1 = dview->a[DIFF_RIGHT];
     size_t pos;
     int ch;
     int res = 0;
@@ -2036,9 +2013,7 @@ get_current_hunk (WDiff * dview, int *start_line1, int *end_line1, int *start_li
             break;
         }
         while (pos > 0 && ((DIFFLN *) & g_array_index (a0, DIFFLN, pos))->ch != EQU_CH)
-        {
             pos--;
-        }
         if (pos > 0)
         {
             *start_line1 = ((DIFFLN *) & g_array_index (a0, DIFFLN, pos))->line + 1;
@@ -2048,6 +2023,7 @@ get_current_hunk (WDiff * dview, int *start_line1, int *end_line1, int *start_li
         while (pos < a0->len && ((DIFFLN *) & g_array_index (a0, DIFFLN, pos))->ch != EQU_CH)
         {
             int l0, l1;
+
             l0 = ((DIFFLN *) & g_array_index (a0, DIFFLN, pos))->line;
             l1 = ((DIFFLN *) & g_array_index (a1, DIFFLN, pos))->line;
             if (l0 > 0)
@@ -2060,13 +2036,30 @@ get_current_hunk (WDiff * dview, int *start_line1, int *end_line1, int *start_li
     return res;
 }
 
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Remove hunk from file.
+ *
+ * @param dview           WDiff widget
+ * @param merge_file      file stream for writing data
+ * @param from1           first line of hunk
+ * @param to1             last line of hunk
+ * @param merge_direction in what direction files should be merged
+ */
+
 static void
-dview_remove_hunk (WDiff * dview, FILE * merge_file, int from1, int to1)
+dview_remove_hunk (WDiff * dview, FILE * merge_file, int from1, int to1,
+                   action_direction_t merge_direction)
 {
     int line;
     char buf[BUF_10K];
     FILE *f0;
-    f0 = fopen (dview->file[0], "r");
+
+    if (merge_direction == FROM_RIGHT_TO_LEFT)
+        f0 = fopen (dview->file[DIFF_RIGHT], "r");
+    else
+        f0 = fopen (dview->file[DIFF_LEFT], "r");
+
     line = 0;
     while (fgets (buf, sizeof (buf), f0) != NULL && line < from1 - 1)
     {
@@ -2082,15 +2075,38 @@ dview_remove_hunk (WDiff * dview, FILE * merge_file, int from1, int to1)
     fclose (f0);
 }
 
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Add hunk to file.
+ *
+ * @param dview           WDiff widget
+ * @param merge_file      file stream for writing data
+ * @param from1           first line of source hunk
+ * @param from2           first line of destination hunk
+ * @param to1             last line of source hunk
+ * @param merge_direction in what direction files should be merged
+ */
+
 static void
-dview_add_hunk (WDiff * dview, FILE * merge_file, int from1, int from2, int to2)
+dview_add_hunk (WDiff * dview, FILE * merge_file, int from1, int from2, int to2,
+                action_direction_t merge_direction)
 {
     int line;
     char buf[BUF_10K];
     FILE *f0;
     FILE *f1;
-    f0 = fopen (dview->file[0], "r");
-    f1 = fopen (dview->file[1], "r");
+
+    if (merge_direction == FROM_RIGHT_TO_LEFT)
+    {
+        f0 = fopen (dview->file[DIFF_RIGHT], "r");
+        f1 = fopen (dview->file[DIFF_LEFT], "r");
+    }
+    else
+    {
+        f0 = fopen (dview->file[DIFF_LEFT], "r");
+        f1 = fopen (dview->file[DIFF_RIGHT], "r");
+    }
+
     line = 0;
     while (fgets (buf, sizeof (buf), f0) != NULL && line < from1 - 1)
     {
@@ -2105,29 +2121,50 @@ dview_add_hunk (WDiff * dview, FILE * merge_file, int from1, int from2, int to2)
             fputs (buf, merge_file);
     }
     while (fgets (buf, sizeof (buf), f0) != NULL)
-    {
         fputs (buf, merge_file);
-    }
+
     fclose (f0);
     fclose (f1);
 }
 
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Replace hunk in file.
+ *
+ * @param dview           WDiff widget
+ * @param merge_file      file stream for writing data
+ * @param from1           first line of source hunk
+ * @param to1             last line of source hunk
+ * @param from2           first line of destination hunk
+ * @param to2             last line of destination hunk
+ * @param merge_direction in what direction files should be merged
+ */
+
 static void
-dview_replace_hunk (WDiff * dview, FILE * merge_file, int from1, int to1, int from2, int to2)
+dview_replace_hunk (WDiff * dview, FILE * merge_file, int from1, int to1, int from2, int to2,
+                    action_direction_t merge_direction)
 {
-    int line1, line2;
+    int line1 = 0, line2 = 0;
     char buf[BUF_10K];
     FILE *f0;
     FILE *f1;
-    f0 = fopen (dview->file[0], "r");
-    f1 = fopen (dview->file[1], "r");
-    line1 = 0;
+
+    if (merge_direction == FROM_RIGHT_TO_LEFT)
+    {
+        f0 = fopen (dview->file[DIFF_RIGHT], "r");
+        f1 = fopen (dview->file[DIFF_LEFT], "r");
+    }
+    else
+    {
+        f0 = fopen (dview->file[DIFF_LEFT], "r");
+        f1 = fopen (dview->file[DIFF_RIGHT], "r");
+    }
+
     while (fgets (buf, sizeof (buf), f0) != NULL && line1 < from1 - 1)
     {
         line1++;
         fputs (buf, merge_file);
     }
-    line2 = 0;
     while (fgets (buf, sizeof (buf), f1) != NULL && line2 <= to2)
     {
         line2++;
@@ -2144,31 +2181,43 @@ dview_replace_hunk (WDiff * dview, FILE * merge_file, int from1, int to1, int fr
     fclose (f1);
 }
 
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Merge hunk.
+ *
+ * @param dview           WDiff widget
+ * @param merge_direction in what direction files should be merged
+ */
+
 static void
-do_merge_hunk (WDiff * dview)
+do_merge_hunk (WDiff * dview, action_direction_t merge_direction)
 {
     int from1, to1, from2, to2;
     int res;
     int hunk;
+    diff_place_t n_merge = (merge_direction == FROM_RIGHT_TO_LEFT) ? DIFF_RIGHT : DIFF_LEFT;
 
-    hunk = get_current_hunk (dview, &from1, &to1, &from2, &to2);
+    if (merge_direction == FROM_RIGHT_TO_LEFT)
+        hunk = get_current_hunk (dview, &from2, &to2, &from1, &to1);
+    else
+        hunk = get_current_hunk (dview, &from1, &to1, &from2, &to2);
+
     if (hunk > 0)
     {
         int merge_file_fd;
         FILE *merge_file;
         vfs_path_t *merge_file_name_vpath = NULL;
 
-        if (!dview->merged)
+        if (!dview->merged[n_merge])
         {
-            dview->merged = mc_util_make_backup_if_possible (dview->file[0], "~~~");
-            if (!dview->merged)
+            dview->merged[n_merge] = mc_util_make_backup_if_possible (dview->file[n_merge], "~~~");
+            if (!dview->merged[n_merge])
             {
                 message (D_ERROR, MSG_ERROR,
                          _("Cannot create backup file\n%s%s\n%s"),
-                         dview->file[0], "~~~", unix_error_string (errno));
+                         dview->file[n_merge], "~~~", unix_error_string (errno));
                 return;
             }
-
         }
 
         merge_file_fd = mc_mkstemps (&merge_file_name_vpath, "mcmerge", NULL);
@@ -2184,18 +2233,24 @@ do_merge_hunk (WDiff * dview)
         switch (hunk)
         {
         case DIFF_DEL:
-            dview_remove_hunk (dview, merge_file, from1, to1);
+            if (merge_direction == FROM_RIGHT_TO_LEFT)
+                dview_add_hunk (dview, merge_file, from1, from2, to2, FROM_RIGHT_TO_LEFT);
+            else
+                dview_remove_hunk (dview, merge_file, from1, to1, FROM_LEFT_TO_RIGHT);
             break;
         case DIFF_ADD:
-            dview_add_hunk (dview, merge_file, from1, from2, to2);
+            if (merge_direction == FROM_RIGHT_TO_LEFT)
+                dview_remove_hunk (dview, merge_file, from1, to1, FROM_RIGHT_TO_LEFT);
+            else
+                dview_add_hunk (dview, merge_file, from1, from2, to2, FROM_LEFT_TO_RIGHT);
             break;
         case DIFF_CHG:
-            dview_replace_hunk (dview, merge_file, from1, to1, from2, to2);
+            dview_replace_hunk (dview, merge_file, from1, to1, from2, to2, merge_direction);
             break;
         }
         fflush (merge_file);
         fclose (merge_file);
-        res = rewrite_backup_content (merge_file_name_vpath, dview->file[0]);
+        res = rewrite_backup_content (merge_file_name_vpath, dview->file[n_merge]);
         mc_unlink (merge_file_name_vpath);
         vfs_path_free (merge_file_name_vpath);
     }
@@ -2209,13 +2264,9 @@ dview_compute_split (WDiff * dview, int i)
 {
     dview->bias += i;
     if (dview->bias < 2 - dview->half1)
-    {
         dview->bias = 2 - dview->half1;
-    }
     if (dview->bias > dview->half2 - 2)
-    {
         dview->bias = dview->half2 - 2;
-    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2238,19 +2289,19 @@ dview_reread (WDiff * dview)
     int ndiff;
 
     destroy_hdiff (dview);
-    if (dview->a[0] != NULL)
+    if (dview->a[DIFF_LEFT] != NULL)
     {
-        g_array_foreach (dview->a[0], DIFFLN, cc_free_elt);
-        g_array_free (dview->a[0], TRUE);
+        g_array_foreach (dview->a[DIFF_LEFT], DIFFLN, cc_free_elt);
+        g_array_free (dview->a[DIFF_LEFT], TRUE);
     }
-    if (dview->a[1] != NULL)
+    if (dview->a[DIFF_RIGHT] != NULL)
     {
-        g_array_foreach (dview->a[1], DIFFLN, cc_free_elt);
-        g_array_free (dview->a[1], TRUE);
+        g_array_foreach (dview->a[DIFF_RIGHT], DIFFLN, cc_free_elt);
+        g_array_free (dview->a[DIFF_RIGHT], TRUE);
     }
 
-    dview->a[0] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
-    dview->a[1] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
+    dview->a[DIFF_LEFT] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
+    dview->a[DIFF_RIGHT] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
 
     ndiff = redo_diff (dview);
     if (ndiff >= 0)
@@ -2272,6 +2323,7 @@ dview_set_codeset (WDiff * dview)
     if (encoding_id != NULL)
     {
         GIConv conv;
+
         conv = str_crt_conv_from (encoding_id);
         if (conv != INVALID_CONV)
         {
@@ -2290,7 +2342,6 @@ dview_select_encoding (WDiff * dview)
 {
     if (do_select_codepage ())
         dview_set_codeset (dview);
-
     dview_reread (dview);
     tty_touch_screen ();
     repaint_screen ();
@@ -2337,9 +2388,7 @@ dview_diff_options (WDiff * dview)
     };
 
     if (quick_dialog (&diffopt) != B_CANCEL)
-    {
         dview_reread (dview);
-    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2349,58 +2398,62 @@ dview_init (WDiff * dview, const char *args, const char *file1, const char *file
             const char *label1, const char *label2, DSRC dsrc)
 {
     int ndiff;
-    FBUF *f[2];
+    FBUF *f[DIFF_COUNT];
 
-    f[0] = NULL;
-    f[1] = NULL;
+    f[DIFF_LEFT] = NULL;
+    f[DIFF_RIGHT] = NULL;
 
     if (dsrc == DATA_SRC_TMP)
     {
-        f[0] = f_temp ();
-        if (f[0] == NULL)
+        f[DIFF_LEFT] = f_temp ();
+        if (f[DIFF_LEFT] == NULL)
             return -1;
 
-        f[1] = f_temp ();
-        if (f[1] == NULL)
+        f[DIFF_RIGHT] = f_temp ();
+        if (f[DIFF_RIGHT] == NULL)
         {
-            f_close (f[0]);
+            f_close (f[DIFF_LEFT]);
             return -1;
         }
     }
     else if (dsrc == DATA_SRC_ORG)
     {
-        f[0] = f_open (file1, O_RDONLY);
-        if (f[0] == NULL)
+        f[DIFF_LEFT] = f_open (file1, O_RDONLY);
+        if (f[DIFF_LEFT] == NULL)
             return -1;
 
-        f[1] = f_open (file2, O_RDONLY);
-        if (f[1] == NULL)
+        f[DIFF_RIGHT] = f_open (file2, O_RDONLY);
+        if (f[DIFF_RIGHT] == NULL)
         {
-            f_close (f[0]);
+            f_close (f[DIFF_LEFT]);
             return -1;
         }
     }
 
     dview->args = args;
-    dview->file[0] = file1;
-    dview->file[1] = file2;
-    dview->label[0] = g_strdup (label1);
-    dview->label[1] = g_strdup (label2);
-    dview->f[0] = f[0];
-    dview->f[1] = f[1];
+    dview->file[DIFF_LEFT] = file1;
+    dview->file[DIFF_RIGHT] = file2;
+    dview->label[DIFF_LEFT] = g_strdup (label1);
+    dview->label[DIFF_RIGHT] = g_strdup (label2);
+    dview->f[DIFF_LEFT] = f[0];
+    dview->f[DIFF_RIGHT] = f[1];
+    dview->merged[DIFF_LEFT] = FALSE;
+    dview->merged[DIFF_RIGHT] = FALSE;
     dview->hdiff = NULL;
     dview->dsrc = dsrc;
     dview->converter = str_cnv_from_term;
 #ifdef HAVE_CHARSET
     dview_set_codeset (dview);
 #endif
-    dview->a[0] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
-    dview->a[1] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
+    dview->a[DIFF_LEFT] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
+    dview->a[DIFF_RIGHT] = g_array_new (FALSE, FALSE, sizeof (DIFFLN));
 
     ndiff = redo_diff (dview);
     if (ndiff < 0)
     {
         /* goto WIDGET_DESTROY stage: dview_fini() */
+        f_close (f[DIFF_LEFT]);
+        f_close (f[DIFF_RIGHT]);
         return -1;
     }
 
@@ -2416,7 +2469,7 @@ dview_init (WDiff * dview, const char *args, const char *file1, const char *file
     dview->display_numbers = 0;
     dview->show_cr = 1;
     dview->tab_size = 8;
-    dview->ord = 0;
+    dview->ord = DIFF_LEFT;
     dview->full = 0;
 
     dview->search.handle = NULL;
@@ -2443,36 +2496,35 @@ dview_fini (WDiff * dview)
 {
     if (dview->dsrc != DATA_SRC_MEM)
     {
-        f_close (dview->f[1]);
-        f_close (dview->f[0]);
+        f_close (dview->f[DIFF_RIGHT]);
+        f_close (dview->f[DIFF_LEFT]);
     }
 
     if (dview->converter != str_cnv_from_term)
         str_close_conv (dview->converter);
 
     destroy_hdiff (dview);
-    if (dview->a[0] != NULL)
+    if (dview->a[DIFF_LEFT] != NULL)
     {
-        g_array_foreach (dview->a[0], DIFFLN, cc_free_elt);
-        g_array_free (dview->a[0], TRUE);
-        dview->a[0] = NULL;
+        g_array_foreach (dview->a[DIFF_LEFT], DIFFLN, cc_free_elt);
+        g_array_free (dview->a[DIFF_LEFT], TRUE);
+        dview->a[DIFF_LEFT] = NULL;
     }
-    if (dview->a[1] != NULL)
+    if (dview->a[DIFF_RIGHT] != NULL)
     {
-        g_array_foreach (dview->a[1], DIFFLN, cc_free_elt);
-        g_array_free (dview->a[1], TRUE);
-        dview->a[1] = NULL;
+        g_array_foreach (dview->a[DIFF_RIGHT], DIFFLN, cc_free_elt);
+        g_array_free (dview->a[DIFF_RIGHT], TRUE);
+        dview->a[DIFF_RIGHT] = NULL;
     }
 
-    g_free (dview->label[0]);
-    g_free (dview->label[1]);
-
+    g_free (dview->label[DIFF_LEFT]);
+    g_free (dview->label[DIFF_RIGHT]);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int width)
+dview_display_file (const WDiff * dview, diff_place_t ord, int r, int c, int height, int width)
 {
     size_t i, k;
     int j;
@@ -2485,11 +2537,13 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
     int tab_size = 8;
     const DIFFLN *p;
     int nwidth = display_numbers;
-    int xwidth = display_symbols + display_numbers;
+    int xwidth;
+
+    xwidth = display_symbols + display_numbers;
     if (dview->tab_size > 0 && dview->tab_size < 9)
         tab_size = dview->tab_size;
 
-    if (xwidth)
+    if (xwidth != 0)
     {
         if (xwidth > width && display_symbols)
         {
@@ -2503,14 +2557,10 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
         }
 
         xwidth++;
-
         c += xwidth;
         width -= xwidth;
-
         if (width < 0)
-        {
             width = 0;
-        }
     }
 
     if ((int) sizeof (buf) <= width || (int) sizeof (buf) <= nwidth)
@@ -2523,6 +2573,7 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
     {
         int ch, next_ch, col;
         size_t cnt;
+
         p = (DIFFLN *) & g_array_index (dview->a[ord], DIFFLN, i);
         ch = p->ch;
         tty_setcolor (NORMAL_COLOR);
@@ -2540,77 +2591,71 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
                 tty_print_string (str_fit_to_term (buf, nwidth, J_LEFT_FIT));
             }
             if (ch == ADD_CH)
-            {
                 tty_setcolor (DFF_ADD_COLOR);
-            }
             if (ch == CHG_CH)
-            {
                 tty_setcolor (DFF_CHG_COLOR);
-            }
             if (f == NULL)
             {
                 if (i == (size_t) dview->search.last_found_line)
-                {
                     tty_setcolor (MARKED_SELECTED_COLOR);
-                }
-                else
+                else if (dview->hdiff != NULL && g_ptr_array_index (dview->hdiff, i) != NULL)
                 {
-                    if (dview->hdiff != NULL && g_ptr_array_index (dview->hdiff, i) != NULL)
-                    {
-                        char att[BUFSIZ];
-                        if (dview->utf8)
-                            k = dview_str_utf8_offset_to_pos (p->p, width);
-                        else
-                            k = width;
-                        cvt_mgeta (p->p, p->u.len, buf, k, skip, tab_size, show_cr,
-                                   g_ptr_array_index (dview->hdiff, i), ord, att);
-                        tty_gotoyx (r + j, c);
-                        col = 0;
-                        for (cnt = 0; cnt < strlen (buf) && col < width; cnt++)
-                        {
-                            int w;
-                            gboolean ch_res;
-                            if (dview->utf8)
-                            {
-                                next_ch = dview_get_utf (buf + cnt, &w, &ch_res);
-                                if (w > 1)
-                                    cnt += w - 1;
-                                if (!g_unichar_isprint (next_ch))
-                                    next_ch = '.';
-                            }
-                            else
-                                next_ch = dview_get_byte (buf + cnt, &ch_res);
-                            if (ch_res)
-                            {
-                                tty_setcolor (att[cnt] ? DFF_CHH_COLOR : DFF_CHG_COLOR);
-#ifdef HAVE_CHARSET
-                                if (mc_global.utf8_display)
-                                {
-                                    if (!dview->utf8)
-                                    {
-                                        next_ch =
-                                            convert_from_8bit_to_utf_c ((unsigned char) next_ch,
-                                                                        dview->converter);
-                                    }
-                                }
-                                else if (dview->utf8)
-                                    next_ch =
-                                        convert_from_utf_to_current_c (next_ch, dview->converter);
-                                else
-                                    next_ch = convert_to_display_c (next_ch);
-#endif
+                    char att[BUFSIZ];
 
-                                tty_print_anychar (next_ch);
-                                col++;
-                            }
-                        }
-                        continue;
-                    }
-                    else if (ch == CHG_CH)
+                    if (dview->utf8)
+                        k = dview_str_utf8_offset_to_pos (p->p, width);
+                    else
+                        k = width;
+
+                    cvt_mgeta (p->p, p->u.len, buf, k, skip, tab_size, show_cr,
+                               g_ptr_array_index (dview->hdiff, i), ord, att);
+                    tty_gotoyx (r + j, c);
+                    col = 0;
+
+                    for (cnt = 0; cnt < strlen (buf) && col < width; cnt++)
                     {
-                        tty_setcolor (DFF_CHH_COLOR);
+                        int w;
+                        gboolean ch_res;
+
+                        if (dview->utf8)
+                        {
+                            next_ch = dview_get_utf (buf + cnt, &w, &ch_res);
+                            if (w > 1)
+                                cnt += w - 1;
+                            if (!g_unichar_isprint (next_ch))
+                                next_ch = '.';
+                        }
+                        else
+                            next_ch = dview_get_byte (buf + cnt, &ch_res);
+
+                        if (ch_res)
+                        {
+                            tty_setcolor (att[cnt] ? DFF_CHH_COLOR : DFF_CHG_COLOR);
+#ifdef HAVE_CHARSET
+                            if (mc_global.utf8_display)
+                            {
+                                if (!dview->utf8)
+                                {
+                                    next_ch =
+                                        convert_from_8bit_to_utf_c ((unsigned char) next_ch,
+                                                                    dview->converter);
+                                }
+                            }
+                            else if (dview->utf8)
+                                next_ch = convert_from_utf_to_current_c (next_ch, dview->converter);
+                            else
+                                next_ch = convert_to_display_c (next_ch);
+#endif
+                            tty_print_anychar (next_ch);
+                            col++;
+                        }
                     }
+                    continue;
                 }
+
+                if (ch == CHG_CH)
+                    tty_setcolor (DFF_CHH_COLOR);
+
                 if (dview->utf8)
                     k = dview_str_utf8_offset_to_pos (p->p, width);
                 else
@@ -2618,9 +2663,7 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
                 cvt_mget (p->p, p->u.len, buf, k, skip, tab_size, show_cr);
             }
             else
-            {
                 cvt_fget (f, p->u.off, buf, width, skip, tab_size, show_cr);
-            }
         }
         else
         {
@@ -2632,13 +2675,9 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
                 tty_print_string (buf);
             }
             if (ch == DEL_CH)
-            {
                 tty_setcolor (DFF_DEL_COLOR);
-            }
             if (ch == CHG_CH)
-            {
                 tty_setcolor (DFF_CHD_COLOR);
-            }
             memset (buf, ' ', width);
             buf[width] = '\0';
         }
@@ -2649,6 +2688,7 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
         {
             int w;
             gboolean ch_res;
+
             if (dview->utf8)
             {
                 next_ch = dview_get_utf (buf + cnt, &w, &ch_res);
@@ -2680,19 +2720,16 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
                 col++;
             }
         }
-        continue;
     }
     tty_setcolor (NORMAL_COLOR);
     k = width;
     if (width < xwidth - 1)
-    {
         k = xwidth - 1;
-    }
     memset (buf, ' ', k);
     buf[k] = '\0';
     for (; j < height; j++)
     {
-        if (xwidth)
+        if (xwidth != 0)
         {
             tty_gotoyx (r + j, c - xwidth);
             /* tty_print_nstring (buf, xwidth - 1); */
@@ -2709,7 +2746,7 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-dview_status (const WDiff * dview, int ord, int width, int c)
+dview_status (const WDiff * dview, diff_place_t ord, int width, int c)
 {
     const char *buf;
     int filename_width;
@@ -2722,7 +2759,7 @@ dview_status (const WDiff * dview, int ord, int width, int c)
     tty_gotoyx (0, c);
     get_line_numbers (dview->a[ord], dview->skip_rows, &linenum, &lineofs);
 
-    filename_width = width - 22;
+    filename_width = width - 24;
     if (filename_width < 8)
         filename_width = 8;
 
@@ -2730,11 +2767,12 @@ dview_status (const WDiff * dview, int ord, int width, int c)
     path = vfs_path_to_str_flags (vpath, 0, VPF_STRIP_HOME | VPF_STRIP_PASSWORD);
     vfs_path_free (vpath);
     buf = str_term_trim (path, filename_width);
-    if (ord == 0)
-        tty_printf ("%-*s %6d+%-4d Col %-4d ", filename_width, buf, linenum, lineofs,
-                    dview->skip_cols);
+    if (ord == DIFF_LEFT)
+        tty_printf ("%s%-*s %6d+%-4d Col %-4d ", dview->merged[ord] ? "* " : "  ", filename_width,
+                    buf, linenum, lineofs, dview->skip_cols);
     else
-        tty_printf ("%-*s %6d+%-4d Dif %-4d ", filename_width, buf, linenum, lineofs, dview->ndiff);
+        tty_printf ("%s%-*s %6d+%-4d Dif %-4d ", dview->merged[ord] ? "* " : "  ", filename_width,
+                    buf, linenum, lineofs, dview->ndiff);
     g_free (path);
 }
 
@@ -2745,7 +2783,9 @@ dview_redo (WDiff * dview)
 {
     if (dview->display_numbers)
     {
-        int old = dview->display_numbers;
+        int old;
+
+        old = dview->display_numbers;
         dview->display_numbers = calc_nwidth ((const GArray **) dview->a);
         dview->new_frame = (old != dview->display_numbers);
     }
@@ -2755,7 +2795,83 @@ dview_redo (WDiff * dview)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-dview_edit (WDiff * dview, int ord)
+dview_update (WDiff * dview)
+{
+    int height = dview->height;
+    int width1;
+    int width2;
+    int last;
+
+    last = dview->a[DIFF_LEFT]->len - 1;
+
+    if (dview->skip_rows > last)
+        dview->skip_rows = dview->search.last_accessed_num_line = last;
+    if (dview->skip_rows < 0)
+        dview->skip_rows = dview->search.last_accessed_num_line = 0;
+    if (dview->skip_cols < 0)
+        dview->skip_cols = 0;
+
+    if (height < 2)
+        return;
+
+    width1 = dview->half1 + dview->bias;
+    width2 = dview->half2 - dview->bias;
+    if (dview->full)
+    {
+        width1 = COLS;
+        width2 = 0;
+    }
+
+    if (dview->new_frame)
+    {
+        int xwidth;
+
+        tty_setcolor (NORMAL_COLOR);
+        xwidth = dview->display_symbols + dview->display_numbers;
+        if (width1 > 1)
+            tty_draw_box (1, 0, height, width1, FALSE);
+        if (width2 > 1)
+            tty_draw_box (1, width1, height, width2, FALSE);
+
+        if (xwidth != 0)
+        {
+            xwidth++;
+            if (xwidth < width1 - 1)
+            {
+                tty_gotoyx (1, xwidth);
+                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DTOPMIDDLE], FALSE);
+                tty_gotoyx (height, xwidth);
+                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DBOTTOMMIDDLE], FALSE);
+                tty_draw_vline (2, xwidth, mc_tty_frm[MC_TTY_FRM_VERT], height - 2);
+            }
+            if (xwidth < width2 - 1)
+            {
+                tty_gotoyx (1, width1 + xwidth);
+                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DTOPMIDDLE], FALSE);
+                tty_gotoyx (height, width1 + xwidth);
+                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DBOTTOMMIDDLE], FALSE);
+                tty_draw_vline (2, width1 + xwidth, mc_tty_frm[MC_TTY_FRM_VERT], height - 2);
+            }
+        }
+        dview->new_frame = 0;
+    }
+
+    if (width1 > 2)
+    {
+        dview_status (dview, dview->ord, width1, 0);
+        dview_display_file (dview, dview->ord, 2, 1, height - 2, width1 - 2);
+    }
+    if (width2 > 2)
+    {
+        dview_status (dview, dview->ord ^ 1, width2, width1);
+        dview_display_file (dview, dview->ord ^ 1, 2, width1 + 1, height - 2, width2 - 2);
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+dview_edit (WDiff * dview, diff_place_t ord)
 {
     Dlg_head *h;
     gboolean h_modal;
@@ -2787,9 +2903,14 @@ dview_edit (WDiff * dview, int ord)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-dview_goto_cmd (WDiff * dview, int ord)
+dview_goto_cmd (WDiff * dview, diff_place_t ord)
 {
-    static const char *title[2] = { N_("Goto line (left)"), N_("Goto line (right)") };
+    /* *INDENT-OFF* */
+    static const char *title[2] = {
+        N_("Goto line (left)"),
+        N_("Goto line (right)")
+    };
+    /* *INDENT-ON* */
     static char prev[256];
     /* XXX some statics here, to be remembered between runs */
 
@@ -2800,19 +2921,20 @@ dview_goto_cmd (WDiff * dview, int ord)
     if (input != NULL)
     {
         const char *s = input;
+
         if (scan_deci (&s, &newline) == 0 && *s == '\0')
         {
             size_t i = 0;
+
             if (newline > 0)
             {
                 const DIFFLN *p;
+
                 for (; i < dview->a[ord]->len; i++)
                 {
                     p = &g_array_index (dview->a[ord], DIFFLN, i);
                     if (p->line == newline)
-                    {
                         break;
-                    }
                 }
             }
             dview->skip_rows = dview->search.last_accessed_num_line = (ssize_t) i;
@@ -2827,8 +2949,11 @@ dview_goto_cmd (WDiff * dview, int ord)
 static void
 dview_labels (WDiff * dview)
 {
-    Dlg_head *h = dview->widget.owner;
-    WButtonBar *b = find_buttonbar (h);
+    Dlg_head *h;
+    WButtonBar *b;
+
+    h = dview->widget.owner;
+    b = find_buttonbar (h);
 
     buttonbar_set_label (b, 1, Q_ ("ButtonBar|Help"), diff_map, (Widget *) dview);
     buttonbar_set_label (b, 2, Q_ ("ButtonBar|Save"), diff_map, (Widget *) dview);
@@ -2838,7 +2963,6 @@ dview_labels (WDiff * dview)
     buttonbar_set_label (b, 9, Q_ ("ButtonBar|Options"), diff_map, (Widget *) dview);
     buttonbar_set_label (b, 10, Q_ ("ButtonBar|Quit"), diff_map, (Widget *) dview);
 }
-
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -2871,22 +2995,35 @@ dview_event (Gpm_Event * event, void *data)
     return MOU_NORMAL;
 }
 
+/* --------------------------------------------------------------------------------------------- */
+
 static gboolean
 dview_save (WDiff * dview)
 {
     gboolean res = TRUE;
-    if (!dview->merged)
-        return res;
-    res = mc_util_unlink_backup_if_possible (dview->file[0], "~~~");
-    dview->merged = !res;
+
+    if (dview->merged[DIFF_LEFT])
+    {
+        res = mc_util_unlink_backup_if_possible (dview->file[DIFF_LEFT], "~~~");
+        dview->merged[DIFF_LEFT] = !res;
+    }
+    if (dview->merged[DIFF_RIGHT])
+    {
+        res = mc_util_unlink_backup_if_possible (dview->file[DIFF_RIGHT], "~~~");
+        dview->merged[DIFF_RIGHT] = !res;
+    }
     return res;
 }
+
+/* --------------------------------------------------------------------------------------------- */
 
 static void
 dview_do_save (WDiff * dview)
 {
     (void) dview_save (dview);
 }
+
+/* --------------------------------------------------------------------------------------------- */
 
 static void
 dview_save_options (WDiff * dview)
@@ -2909,6 +3046,8 @@ dview_save_options (WDiff * dview)
                         dview->opt.ignore_tab_expansion);
     mc_config_set_bool (mc_main_config, "DiffView", "diff_ignore_case", dview->opt.ignore_case);
 }
+
+/* --------------------------------------------------------------------------------------------- */
 
 static void
 dview_load_options (WDiff * dview)
@@ -2944,6 +3083,8 @@ dview_load_options (WDiff * dview)
     dview->new_frame = 1;
 }
 
+/* --------------------------------------------------------------------------------------------- */
+
 /*
  * Check if it's OK to close the diff viewer.  If there are unsaved changes,
  * ask user.
@@ -2954,12 +3095,12 @@ dview_ok_to_exit (WDiff * dview)
     gboolean res = TRUE;
     int act;
 
-    if (!dview->merged)
+    if (!dview->merged[DIFF_LEFT] && !dview->merged[DIFF_RIGHT])
         return res;
 
     act = query_dialog (_("Quit"), !mc_global.midnight_shutdown ?
-                        _("File was modified. Save with exit?") :
-                        _("Midnight Commander is being shut down.\nSave modified file?"),
+                        _("File(s) was modified. Save with exit?") :
+                        _("Midnight Commander is being shut down.\nSave modified file(s)?"),
                         D_NORMAL, 2, _("&Yes"), _("&No"));
 
     /* Esc is No */
@@ -2976,8 +3117,10 @@ dview_ok_to_exit (WDiff * dview)
         res = TRUE;
         break;
     case 1:                    /* No */
-        if (mc_util_restore_from_backup_if_possible (dview->file[0], "~~~"))
-            res = mc_util_unlink_backup_if_possible (dview->file[0], "~~~");
+        if (mc_util_restore_from_backup_if_possible (dview->file[DIFF_LEFT], "~~~"))
+            res = mc_util_unlink_backup_if_possible (dview->file[DIFF_LEFT], "~~~");
+        if (mc_util_restore_from_backup_if_possible (dview->file[DIFF_RIGHT], "~~~"))
+            res = mc_util_unlink_backup_if_possible (dview->file[DIFF_RIGHT], "~~~");
         /* fall through */
     default:
         res = TRUE;
@@ -2992,6 +3135,7 @@ static cb_ret_t
 dview_execute_cmd (WDiff * dview, unsigned long command)
 {
     cb_ret_t res = MSG_HANDLED;
+
     switch (command)
     {
     case CK_ShowSymbols:
@@ -3048,11 +3192,11 @@ dview_execute_cmd (WDiff * dview, unsigned long command)
         break;
     case CK_HunkNext:
         dview->skip_rows = dview->search.last_accessed_num_line =
-            find_next_hunk (dview->a[0], dview->skip_rows);
+            find_next_hunk (dview->a[DIFF_LEFT], dview->skip_rows);
         break;
     case CK_HunkPrev:
         dview->skip_rows = dview->search.last_accessed_num_line =
-            find_prev_hunk (dview->a[0], dview->skip_rows);
+            find_prev_hunk (dview->a[DIFF_LEFT], dview->skip_rows);
         break;
     case CK_Goto:
         dview_goto_cmd (dview, TRUE);
@@ -3061,7 +3205,11 @@ dview_execute_cmd (WDiff * dview, unsigned long command)
         dview_edit (dview, dview->ord);
         break;
     case CK_Merge:
-        do_merge_hunk (dview);
+        do_merge_hunk (dview, FROM_LEFT_TO_RIGHT);
+        dview_redo (dview);
+        break;
+    case CK_MergeOther:
+        do_merge_hunk (dview, FROM_RIGHT_TO_LEFT);
         dview_redo (dview);
         break;
     case CK_EditOther:
@@ -3077,7 +3225,7 @@ dview_execute_cmd (WDiff * dview, unsigned long command)
         dview->skip_rows = dview->search.last_accessed_num_line = 0;
         break;
     case CK_Bottom:
-        dview->skip_rows = dview->search.last_accessed_num_line = dview->a[0]->len - 1;
+        dview->skip_rows = dview->search.last_accessed_num_line = dview->a[DIFF_LEFT]->len - 1;
         break;
     case CK_Up:
         if (dview->skip_rows > 0)
@@ -3274,19 +3422,22 @@ dview_dialog_callback (Dlg_head * h, Widget * sender, dlg_msg_t msg, int parm, v
 static char *
 dview_get_title (const Dlg_head * h, size_t len)
 {
-    const WDiff *dview = (const WDiff *) find_widget_type (h, dview_callback);
-    const char *modified = dview->merged ? " (*) " : "     ";
+    const WDiff *dview;
+    const char *modified = " (*) ";
+    const char *notmodified = "     ";
     size_t len1;
     GString *title;
 
+    dview = (const WDiff *) find_widget_type (h, dview_callback);
     len1 = (len - str_term_width1 (_("Diff:")) - strlen (modified) - 3) / 2;
 
     title = g_string_sized_new (len);
     g_string_append (title, _("Diff:"));
-    g_string_append (title, modified);
-    g_string_append (title, str_term_trim (dview->label[0], len1));
+    g_string_append (title, dview->merged[DIFF_LEFT] ? modified : notmodified);
+    g_string_append (title, str_term_trim (dview->label[DIFF_LEFT], len1));
     g_string_append (title, " | ");
-    g_string_append (title, str_term_trim (dview->label[1], len1));
+    g_string_append (title, dview->merged[DIFF_RIGHT] ? modified : notmodified);
+    g_string_append (title, str_term_trim (dview->label[DIFF_RIGHT], len1));
 
     return g_string_free (title, FALSE);
 }
@@ -3372,7 +3523,7 @@ do \
 } \
 while (0)
 
-int
+gboolean
 dview_diff_cmd (const void *f0, const void *f1)
 {
     int rv = 0;
@@ -3455,7 +3606,7 @@ dview_diff_cmd (const void *f0, const void *f1)
     default:
         /* this should not happaned */
         message (D_ERROR, MSG_ERROR, _("Diff viewer: invalid mode"));
-        return 0;
+        return FALSE;
     }
 
     if (rv == 0)
@@ -3499,93 +3650,10 @@ dview_diff_cmd (const void *f0, const void *f1)
     vfs_path_free (file1);
     vfs_path_free (file0);
 
-    return (rv != 0) ? 1 : 0;
+    return (rv != 0);
 }
 
-/* --------------------------------------------------------------------------------------------- */
-
-void
-dview_update (WDiff * dview)
-{
-    int height = dview->height;
-    int width1;
-    int width2;
-
-    int last = dview->a[0]->len - 1;
-
-    if (dview->skip_rows > last)
-    {
-        dview->skip_rows = dview->search.last_accessed_num_line = last;
-    }
-    if (dview->skip_rows < 0)
-    {
-        dview->skip_rows = dview->search.last_accessed_num_line = 0;
-    }
-    if (dview->skip_cols < 0)
-    {
-        dview->skip_cols = 0;
-    }
-
-    if (height < 2)
-    {
-        return;
-    }
-
-    width1 = dview->half1 + dview->bias;
-    width2 = dview->half2 - dview->bias;
-    if (dview->full)
-    {
-        width1 = COLS;
-        width2 = 0;
-    }
-
-    if (dview->new_frame)
-    {
-        int xwidth = dview->display_symbols + dview->display_numbers;
-
-        tty_setcolor (NORMAL_COLOR);
-        if (width1 > 1)
-        {
-            tty_draw_box (1, 0, height, width1, FALSE);
-        }
-        if (width2 > 1)
-        {
-            tty_draw_box (1, width1, height, width2, FALSE);
-        }
-
-        if (xwidth)
-        {
-            xwidth++;
-            if (xwidth < width1 - 1)
-            {
-                tty_gotoyx (1, xwidth);
-                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DTOPMIDDLE], FALSE);
-                tty_gotoyx (height, xwidth);
-                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DBOTTOMMIDDLE], FALSE);
-                tty_draw_vline (2, xwidth, mc_tty_frm[MC_TTY_FRM_VERT], height - 2);
-            }
-            if (xwidth < width2 - 1)
-            {
-                tty_gotoyx (1, width1 + xwidth);
-                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DTOPMIDDLE], FALSE);
-                tty_gotoyx (height, width1 + xwidth);
-                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DBOTTOMMIDDLE], FALSE);
-                tty_draw_vline (2, width1 + xwidth, mc_tty_frm[MC_TTY_FRM_VERT], height - 2);
-            }
-        }
-        dview->new_frame = 0;
-    }
-
-    if (width1 > 2)
-    {
-        dview_status (dview, dview->ord, width1, 0);
-        dview_display_file (dview, dview->ord, 2, 1, height - 2, width1 - 2);
-    }
-    if (width2 > 2)
-    {
-        dview_status (dview, dview->ord ^ 1, width2, width1);
-        dview_display_file (dview, dview->ord ^ 1, 2, width1 + 1, height - 2, width2 - 2);
-    }
-}
+#undef GET_FILE_AND_STAMP
+#undef UNGET_FILE
 
 /* --------------------------------------------------------------------------------------------- */

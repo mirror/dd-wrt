@@ -142,17 +142,22 @@ vfs_canon (const char *path)
     {
         char *result, *local;
 
-        local = tilde_expand (path);
-        if (*local != PATH_SEP)
+        if (g_str_has_prefix (path, VFS_ENCODING_PREFIX))
+        {
+            /*
+               encoding prefix placed at start of string without the leading slash
+               should be autofixed by adding the leading slash
+             */
+            local = mc_build_filename (PATH_SEP_STR, path, NULL);
+        }
+        else
         {
             char *curr_dir;
 
-            g_free (local);
             curr_dir = vfs_get_current_dir ();
             local = mc_build_filename (curr_dir, path, NULL);
             g_free (curr_dir);
         }
-
         result = vfs_canon (local);
         g_free (local);
         return result;
@@ -423,6 +428,7 @@ vfs_path_from_str_deprecated_parser (char *path, vfs_path_flag_t flags)
 /** Split path string to path elements by URL algorithm.
  *
  * @param path_str VFS-path
+ * @param flags    flags for converter
  *
  * @return pointer to newly created vfs_path_t object with filled path elements array.
 */
@@ -591,15 +597,6 @@ vfs_path_strip_home (const char *dir)
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
-/**
- * Convert first elements_count elements from vfs_path_t to string representation with flags.
- *
- * @param vpath pointer to vfs_path_t object
- * @param elements_count count of first elements for convert
- * @param flags flags for converter
- *
- * @return pointer to newly created string.
- */
 
 #define vfs_append_from_path(appendfrom, is_relative) \
 { \
@@ -618,6 +615,16 @@ vfs_path_strip_home (const char *dir)
         g_string_append (buffer, appendfrom); \
     } \
 }
+
+/**
+ * Convert first elements_count elements from vfs_path_t to string representation with flags.
+ *
+ * @param vpath pointer to vfs_path_t object
+ * @param elements_count count of first elements for convert
+ * @param flags for converter
+ *
+ * @return pointer to newly created string.
+ */
 
 char *
 vfs_path_to_str_flags (const vfs_path_t * vpath, int elements_count, vfs_path_flag_t flags)
@@ -1025,6 +1032,9 @@ vfs_prefix_to_class (const char *prefix)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+#ifdef HAVE_CHARSET
+
 /**
  * Check if need cleanup charset converter for vfs_path_element_t
  *
@@ -1032,7 +1042,7 @@ vfs_prefix_to_class (const char *prefix)
  *
  * @return TRUE if need cleanup converter or FALSE otherwise
  */
-#ifdef HAVE_CHARSET
+
 gboolean
 vfs_path_element_need_cleanup_converter (const vfs_path_element_t * element)
 {
@@ -1041,19 +1051,20 @@ vfs_path_element_need_cleanup_converter (const vfs_path_element_t * element)
 #endif
 
 /* --------------------------------------------------------------------------------------------- */
+
 /**
  * Serialize vfs_path_t object to string
  *
  * @param vpath data for serialization
  * @param error contain pointer to object for handle error code and message
  *
- * @return serialized vpath as newly allocated string
+ * @returns serialized vpath as newly allocated string
  */
 
 char *
 vfs_path_serialize (const vfs_path_t * vpath, GError ** error)
 {
-    mc_config_t *cpath = mc_config_init (NULL);
+    mc_config_t *cpath;
     ssize_t element_index;
     char *ret_value;
 
@@ -1063,6 +1074,9 @@ vfs_path_serialize (const vfs_path_t * vpath, GError ** error)
         return NULL;
 
     }
+
+    cpath = mc_config_init (NULL, FALSE);
+
     for (element_index = 0; element_index < vfs_path_elements_count (vpath); element_index++)
     {
         char *groupname;
@@ -1106,10 +1120,11 @@ vfs_path_serialize (const vfs_path_t * vpath, GError ** error)
 vfs_path_t *
 vfs_path_deserialize (const char *data, GError ** error)
 {
-    mc_config_t *cpath = mc_deserialize_config (data, error);
+    mc_config_t *cpath;
     size_t element_index = 0;
     vfs_path_t *vpath;
 
+    cpath = mc_deserialize_config (data, error);
     if (cpath == NULL)
         return NULL;
 
@@ -1179,6 +1194,7 @@ vfs_path_deserialize (const char *data, GError ** error)
 /**
  * Build vfs_path_t object from arguments.
  *
+ * @param first_element of path
  * @param ... path tokens, terminated by NULL
  *
  * @return newly allocated vfs_path_t object
@@ -1207,6 +1223,7 @@ vfs_path_build_filename (const char *first_element, ...)
  * Append tokens to path object
  *
  * @param vpath path object
+ * @param first_element of path
  * @param ... NULL-terminated strings
  *
  * @return newly allocated path object
@@ -1240,6 +1257,7 @@ vfs_path_append_new (const vfs_path_t * vpath, const char *first_element, ...)
 /**
  * Append vpath_t tokens to path object
  *
+ * @param first_vpath vpath objects
  * @param ... NULL-terminated vpath objects
  *
  * @return newly allocated path object
@@ -1278,6 +1296,7 @@ vfs_path_append_vpath_new (const vfs_path_t * first_vpath, ...)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
 /**
  * get tockens count in path.
  *
@@ -1315,6 +1334,7 @@ vfs_path_tokens_count (const vfs_path_t * vpath)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
 /**
  * Get subpath by tokens
  *
@@ -1425,12 +1445,14 @@ vfs_path_vtokens_get (const vfs_path_t * vpath, ssize_t start_position, ssize_t 
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
 /**
- * Build URL parameters (such as user:pass@host:port) from one path element object
+ * Build URL parameters (such as user:pass @ host:port) from one path element object
  *
  * @param element path element
+ * @param keep_password TRUE or FALSE
  *
- * @return newly allocated string
+ * @returns newly allocated string
  */
 
 char *

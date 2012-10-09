@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-07-18 13:34+0300\n"
-"PO-Revision-Date: 2012-07-13 08:36+0000\n"
+"POT-Creation-Date: 2012-09-14 14:23+0300\n"
+"PO-Revision-Date: 2012-09-04 05:53+0000\n"
 "Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/projects/p/mc/language/"
 "eo/)\n"
@@ -17,7 +17,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgid "Warning: cannot load codepages list"
 msgstr "Averto: ne eblas ŝargi liston da kodpaĝoj"
@@ -116,7 +116,7 @@ msgid "Regular expression error"
 msgstr "Regulesprima eraro"
 
 msgid "No&rmal"
-msgstr ""
+msgstr "&Normala"
 
 msgid "Re&gular expression"
 msgstr "Re&gulesprimo"
@@ -574,7 +574,7 @@ msgid "Launches the file viewer on a file"
 msgstr "Plenumigi la dosiero-legilon je la dosiero"
 
 msgid "Edit files"
-msgstr ""
+msgstr "Redakti dosierojn"
 
 msgid "Forces xterm features"
 msgstr "Devigi xterm-trajtojn"
@@ -639,6 +639,23 @@ msgid ""
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
+"--colors Ŝlosilvorto={teksto},{fono},{atributo}:Ŝlosilvorto2=...\n"
+"Se {teksto}, {fono} aŭ {attr} estas ellasitaj, la aprioraj estas uzotaj\n"
+"\n"
+" Ŝlosilvortoj:\n"
+"   Tutprograma:        errors, disabled, reverse, gauge, header\n"
+"                       input, inputmark, inputunchanged, commandlinemark\n"
+"                       bbarhotkey, bbarhotbutton, statusbar\n"
+"   Dosieradministrado: normal, selected, marked, markselect\n"
+"   Menuoj:             menunormal, menuhot, menusel, menuhotsel, "
+"menuinactive\n"
+"   Ŝprucmenuoj:        pmenunormal, pmenusel, pmenutitle\n"
+"   Tekstoredaktilo:    editnormal, editbold, editmarked, editwhitespace\n"
+"                       editlinestate, editbg, editframe, editframeactive\n"
+"                       editframedrag\n"
+"   Tekstolegilo:       viewbold, viewunderline, viewselected\n"
+"   Helpilo:            helpnormal, helpitalic, helpbold, helplink, "
+"helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -845,22 +862,22 @@ msgstr "ButtonBar|Eliri"
 msgid "Quit"
 msgstr "Eliri"
 
-msgid "File was modified. Save with exit?"
-msgstr "Dosiero estis modifita. Ĉu konservi kun eliro?"
+msgid "File(s) was modified. Save with exit?"
+msgstr "Dosiero(j) estis modifita(j). Ĉu konservi kun eliro?"
 
 msgid ""
 "Midnight Commander is being shut down.\n"
-"Save modified file?"
+"Save modified file(s)?"
 msgstr ""
 "Midnight Commander estas elirinta.\n"
-"Ĉu konservi modifitan dosieron?"
+"Ĉu konservi modifita(j)n dosiero(j)n?"
 
 msgid "Diff:"
 msgstr "Diff:"
 
 #, c-format
 msgid "\"%s\" is a directory"
-msgstr ""
+msgstr "\"%s\" estas dosierujo"
 
 #, c-format
 msgid ""
@@ -871,7 +888,7 @@ msgstr ""
 "%s"
 
 msgid "Diff viewer: invalid mode"
-msgstr ""
+msgstr "Diff-legilo: neprava reĝimo"
 
 msgid "Two files are needed to compare"
 msgstr "Du dosieroj estas bezonataj por kompari"
@@ -899,7 +916,7 @@ msgstr "Ne eblas akiri grandon/permesojn por %s"
 
 #, c-format
 msgid "\"%s\" is not a regular file"
-msgstr "\"%s\" estas ne regula dosiero"
+msgstr "\"%s\" estas ne normala dosiero"
 
 #, c-format
 msgid "File \"%s\" is too large"
@@ -980,7 +997,7 @@ msgid "Save as"
 msgstr "Konservi kiel"
 
 msgid "Cannot save: destination is not a regular file"
-msgstr ""
+msgstr "Ne eblas konservi: celo ne estas normala dosiero"
 
 msgid "A file already exists with this name"
 msgstr "Dosiero kun tiu nomo jam ekzistas"
@@ -1035,7 +1052,7 @@ msgid "&User"
 msgstr "&Uzanto"
 
 msgid "&System wide"
-msgstr ""
+msgstr "&Tutsistema"
 
 msgid "Menu edit"
 msgstr "Menua redaktilo"
@@ -1054,22 +1071,26 @@ msgid "%ld replacements made"
 msgstr "%ld anstataŭigoj faritaj"
 
 msgid "[NoName]"
-msgstr ""
+msgstr "[Sennoma]"
 
 #, c-format
 msgid ""
 "File %s was modified.\n"
 "Save before close?"
 msgstr ""
+"Dosiero %s estis modifita.\n"
+"Ĉu konservi antaŭ ol fermi?"
 
 msgid "Close file"
-msgstr ""
+msgstr "Fermi dosieron"
 
 #, c-format
 msgid ""
 "Midnight Commander is being shut down.\n"
 "Save modified file %s?"
 msgstr ""
+"Midnight Commander estas haltigita.\n"
+"Ĉu konservi modifitan dosieron %s?"
 
 msgid "This function is not implemented"
 msgstr "Tiu funkcio ne estas realigita"
@@ -1193,7 +1214,7 @@ msgid "Confirm replace"
 msgstr "Konfirmi anstataŭigon"
 
 msgid "NoName"
-msgstr ""
+msgstr "Sennoma"
 
 msgid "&Open file..."
 msgstr "&Malfermi dosieron..."
@@ -1202,7 +1223,7 @@ msgid "&New"
 msgstr "&Nova"
 
 msgid "&Close"
-msgstr ""
+msgstr "&Fermi"
 
 msgid "Save &as..."
 msgstr "K&onservi kiel..."
@@ -1325,13 +1346,13 @@ msgid "Record/Repeat &actions"
 msgstr "Registri/refari &agojn"
 
 msgid "S&pell check"
-msgstr ""
+msgstr "&Literumilo"
 
 msgid "C&heck word"
-msgstr ""
+msgstr "&Kontroli vorton"
 
-msgid "Change spelling &language"
-msgstr ""
+msgid "Change spelling &language..."
+msgstr "Ŝanĝi literumilan l&ingvon..."
 
 msgid "&Mail..."
 msgstr "&Retpoŝtilo..."
@@ -1358,19 +1379,19 @@ msgid "&Move"
 msgstr "&Movi"
 
 msgid "&Resize"
-msgstr ""
+msgstr "&Regrandigi"
 
 msgid "&Toggle fullscreen"
-msgstr ""
+msgstr "&Inversigi tutekranecon"
 
 msgid "&Next"
-msgstr ""
+msgstr "&Sekva"
 
 msgid "&Previous"
-msgstr ""
+msgstr "&Antaŭa"
 
 msgid "&List..."
-msgstr ""
+msgstr "&Listo..."
 
 msgid "&General..."
 msgstr "Ĝ&enerala..."
@@ -1409,7 +1430,7 @@ msgid "For&mat"
 msgstr "&Formati"
 
 msgid "&Window"
-msgstr ""
+msgstr "Fe&nestro"
 
 msgid "&Options"
 msgstr "&Agordo"
@@ -1480,9 +1501,13 @@ msgid ""
 "            A user friendly text editor\n"
 "         written for the Midnight Commander"
 msgstr ""
+"Kopirajto (C) 1996–2012 la Free Software Foundation\n"
+"\n"
+"         Agrabla tekstoredaktilo\n"
+"     verkita por la Midnight Commander"
 
 msgid "Open files"
-msgstr ""
+msgstr "Malfermi dosierojn"
 
 msgid "Edit: "
 msgstr "Redakti: "
@@ -1505,26 +1530,23 @@ msgstr "ButtonBar|Forigi"
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|Menuzono"
 
-#, fuzzy
 msgid "&Add word"
-msgstr "&Aldoni novan"
+msgstr "&Aldoni vorton"
 
 msgid "Language"
-msgstr ""
+msgstr "Lingvo"
 
 msgid "Misspelled"
-msgstr ""
+msgstr "Misliterumita"
 
-#, fuzzy
 msgid "Check word"
-msgstr "Tutaj &vortoj"
+msgstr "Kontroli vorton"
 
 msgid "Suggest"
-msgstr ""
+msgstr "Proponi"
 
-#, fuzzy
 msgid "Select language"
-msgstr "Elekti &grupon"
+msgstr "Elekti lingvon"
 
 msgid "Load syntax file"
 msgstr "Ŝargi sintakso-dosieron"
@@ -1996,7 +2018,7 @@ msgid "FTP to machine"
 msgstr "FTP al servilo"
 
 msgid "SFTP to machine"
-msgstr ""
+msgstr "SFTP al servilo"
 
 msgid "Shell link to machine"
 msgstr "Ŝela ligilo al servilo"
@@ -2896,13 +2918,13 @@ msgid "&Encoding..."
 msgstr "&Kodoprezento..."
 
 msgid "FT&P link..."
-msgstr "FT&P-a ligilo..."
+msgstr "FT&P-ligilo..."
 
 msgid "S&hell link..."
 msgstr "Ŝ&ela ligilo..."
 
 msgid "S&FTP link..."
-msgstr ""
+msgstr "S&FTP-ligilo"
 
 msgid "SM&B link..."
 msgstr "SM&B-a ligilo..."
@@ -3701,7 +3723,7 @@ msgid "Data types:"
 msgstr "Datumtipoj:"
 
 msgid "Root directory:"
-msgstr ""
+msgstr "Radika dosierujo:"
 
 msgid "System data"
 msgstr "Sistemaj datumoj"
@@ -3876,7 +3898,7 @@ msgid "ftpfs: Login incorrect for user %s "
 msgstr "ftpfs: Ensaluto malĝusta por uzanto %s "
 
 msgid "ftpfs: Invalid host name."
-msgstr "ftpfs: Nevalida gastiganto-nomo."
+msgstr "ftpfs: Nevalida retnodnomo."
 
 #, c-format
 msgid "ftpfs: %s"
@@ -3969,65 +3991,61 @@ msgstr ""
 "Averto: Nevalida marko %c in %s:\n"
 "%s\n"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: an error occured while reading %s: %s"
-msgstr "Eraro okazis dum migri uzanto-agordon: %s"
+msgstr "sftp: Eraro okazis dum lego de %s: %s"
 
 msgid "sftp: Unable to get current user name."
-msgstr ""
+msgstr "sftp: Ne eblas atingi la aktualan salutnomon."
 
-#, fuzzy
 msgid "sftp: Invalid host name."
-msgstr "ftpfs: Nevalida gastiganto-nomo."
+msgstr "sftp: Nevalida retnodnomo."
 
-#, fuzzy
 msgid "sftp: Invalid port value."
-msgstr "ftpfs: Nevalida gastiganto-nomo."
+msgstr "sftp: Nevalida pordnumero."
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: %s"
-msgstr "ftpfs: %s"
+msgstr "sftp: %s"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: making connection to %s"
-msgstr "ftpfs: konektiĝanta al %s"
+msgstr "sftp: konektiĝanta al %s"
 
-#, fuzzy
 msgid "sftp: connection interrupted by user"
-msgstr "ftpfs: konekto interrompita de uzanto"
+msgstr "sftp: konekto interrompita de uzanto"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: connection to server failed: %s"
-msgstr "ftpfs: konekto al servilo fiaskis: %s"
+msgstr "sftp: konekto al servilo fiaskis: %s"
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
-msgstr ""
+msgstr "sftp: Enmetu pasfrazon por %s "
 
 msgid "sftp: Passphrase is empty."
-msgstr ""
+msgstr "sftp: Pasfrazo estas vaka."
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: Enter password for %s "
-msgstr "ftpfs: sendi pasvorton"
+msgstr "sftp: Enmetu pasvorton por %s"
 
 msgid "sftp: Password is empty."
-msgstr ""
+msgstr "sftp: Pasvorto estas vaka."
 
 #, c-format
 msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr ""
+msgstr "sftp: Malsukcesis starigi SSH-seancon: (%d)"
 
 msgid "sftp: No file handler data present for reading file"
-msgstr ""
+msgstr "sftp: Neniu dosiertraktila datumo ĉeestas por legi dosieron"
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"
-msgstr ""
+msgstr "sftp: (Stir-G rompi) Listo... %s"
 
-#, fuzzy
 msgid "sftp: Listing done."
-msgstr "Lista reĝimo"
+msgstr "sftp: Listado finita."
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4224,8 +4242,18 @@ msgstr ""
 "Ne eblas konservi dosieron:\n"
 "%s"
 
+msgid "File was modified. Save with exit?"
+msgstr "Dosiero estis modifita. Ĉu konservi kun eliro?"
+
 msgid "&Cancel quit"
 msgstr "Ne &eliri"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander estas elirinta.\n"
+"Ĉu konservi modifitan dosieron?"
 
 msgid "View: "
 msgstr "Vidi: "
@@ -4239,7 +4267,7 @@ msgstr ""
 "%s"
 
 msgid "Cannot view: not a regular file"
-msgstr "Ne eblas vidi: ne regula dosiero"
+msgstr "Ne eblas vidi: ne normala dosiero"
 
 msgid "Seeking to search result"
 msgstr "Trovanta en serĉa rezulto"
