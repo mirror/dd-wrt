@@ -30,9 +30,9 @@
 #include "image_utils.h"
 #include <jpeglib.h>
 #include <setjmp.h>
-#include <avutil.h>
-#include <avcodec.h>
-#include <avformat.h>
+#include <libavutil/avutil.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 #include "tagutils/tagutils.h"
 
 #include "upnpglobalvars.h"

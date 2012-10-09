@@ -16,7 +16,6 @@
 LDFLAGS+= -Wl,--gc-sections
 CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__ \
          -I$(MINI_DLNA_PATH)/ffmpeg-1.0 \
-         -I$(MINI_DLNA_PATH)/ffmpeg-1.0/libavutil \
          -I$(MINI_DLNA_PATH)/ffmpeg-1.0/libavcodec \
          -I$(MINI_DLNA_PATH)/ffmpeg-1.0/libavformat \
          -I$(MINI_DLNA_PATH)/sqlite-3.6.22 \
