@@ -527,7 +527,7 @@
 /* Define to 1 if you have the `tsearch' function. */
 #undef HAVE_TSEARCH
 
-/* Define to 1 if the system has the type `uintmax_t'. */
+/* Define if you have the 'uintmax_t' type in <stdint.h> or <inttypes.h>. */
 #undef HAVE_UINTMAX_T
 
 /* Define to 1 if you have the <unistd.h> header file. */
@@ -755,9 +755,6 @@
 /* Define to enable diff viewer */
 #undef USE_DIFF_VIEW
 
-/* Use the regex included here */
-#undef USE_INCLUDED_REGEX
-
 /* Define to enable internal editor */
 #undef USE_INTERNAL_EDIT
 
@@ -857,6 +854,6 @@
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
 
-/* Define to the widest unsigned integer type if <stdint.h> and <inttypes.h>
-   do not define. */
+/* Define to unsigned long or unsigned long long if <stdint.h> and
+   <inttypes.h> don't define. */
 #undef uintmax_t

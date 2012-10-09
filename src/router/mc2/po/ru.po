@@ -6,21 +6,21 @@
 #   <aborodin@vmail.ru>, 2011.
 # Alex Tkachenko <alex@bcs.zp.ua>, 1998.
 # and Alex Tkachenko <alex@bcs.zp.ua>, 1998.
-# Andrew Borodin <aborodin@vmail.ru>, 2009, 2010, 2011, 2012.
+# Andrew Borodin <aborodin@vmail.ru>, 2009-2012.
 # Andrew V. Samoilov <sav@bcs.zp.ua>, 1999.
 # Anton Sergeevich Chumak <nightfast@yahoo.co.uk>, 2005.
 # Evgeny Bulgakov <bgav@netvision.net.il>, 1999.
 # Ilia Maslakov <il.smind@gmail.com>, 2009.
 # NaiLi (aka jamesjames) Rootaerc <theism@mail.ru>, 2012.
 # Sergey Panov <sipan@mit.edu>, 1999.
-# Slava Zanko <slavazanko@gmail.com>, 2009, 2011.
+# Slava Zanko <slavazanko@gmail.com>, 2009,2011.
 # Valek Filippov <frob@df.ru>, 2000.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-07-18 13:34+0300\n"
-"PO-Revision-Date: 2012-07-14 09:42+0000\n"
+"POT-Creation-Date: 2012-09-14 14:23+0300\n"
+"PO-Revision-Date: 2012-09-07 06:16+0000\n"
 "Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Russian (http://www.transifex.com/projects/p/mc/language/"
 "ru/)\n"
@@ -29,7 +29,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 msgid "Warning: cannot load codepages list"
 msgstr "Внимание: невозможно загрузить список кодировок"
@@ -883,15 +883,15 @@ msgstr "Выход"
 msgid "Quit"
 msgstr "Выход"
 
-msgid "File was modified. Save with exit?"
-msgstr "Файл был изменен. Сохранить при выходе?"
+msgid "File(s) was modified. Save with exit?"
+msgstr "Файл(ы) был(и) изменен(ы). Сохранить при выходе?"
 
 msgid ""
 "Midnight Commander is being shut down.\n"
-"Save modified file?"
+"Save modified file(s)?"
 msgstr ""
 "Midnight Commander завершается.\n"
-"Сохранить изменённый файл?"
+"Сохранить изменённый(е) файл(ы)?"
 
 msgid "Diff:"
 msgstr "Различия:"
@@ -1371,8 +1371,8 @@ msgstr "Проверка ор&фографии"
 msgid "C&heck word"
 msgstr "Про&верить слово"
 
-msgid "Change spelling &language"
-msgstr "Изменить &язык проверки орфографии"
+msgid "Change spelling &language..."
+msgstr "Изменить &язык проверки орфографии..."
 
 msgid "&Mail..."
 msgstr "&Электронная почта..."
@@ -1550,26 +1550,23 @@ msgstr "Удалить"
 msgid "ButtonBar|PullDn"
 msgstr "МенюMC"
 
-#, fuzzy
 msgid "&Add word"
 msgstr "&Добавить"
 
 msgid "Language"
-msgstr ""
+msgstr "Язык"
 
 msgid "Misspelled"
-msgstr ""
+msgstr "Ошибочное слово"
 
-#, fuzzy
 msgid "Check word"
-msgstr "Про&верить слово"
+msgstr "Проверка слова"
 
 msgid "Suggest"
-msgstr ""
+msgstr "Варианты"
 
-#, fuzzy
 msgid "Select language"
-msgstr "Отметить &группу"
+msgstr "Выбор языка"
 
 msgid "Load syntax file"
 msgstr "Загрузить файл синтаксиса"
@@ -2097,7 +2094,7 @@ msgstr ""
 
 #, c-format
 msgid " %s%s file error"
-msgstr "%s%s ошибка файла"
+msgstr "ошибка файла %s%s"
 
 #, c-format
 msgid ""
@@ -2105,12 +2102,12 @@ msgid ""
 "the installation failed. Please fetch a fresh copy from the Midnight "
 "Commander package."
 msgstr ""
-"Формат %smc.ext изменён с версии 3.0. Возможно, произошёл сбой при установке."
-"Пожалуйста, возьмите свежую копию из пакета Midnight Commander."
+"Формат %smc.ext изменён с версии 3.0. Возможно, произошёл сбой при "
+"установке. Пожалуйста, возьмите свежую копию из пакета Midnight Commander."
 
 #, c-format
 msgid "%s file error"
-msgstr "%s ошибка файла"
+msgstr "ошибка файла %s"
 
 #, c-format
 msgid ""
@@ -3764,7 +3761,7 @@ msgid "VFS plugins and scripts:"
 msgstr "Модули и скрипты VFS:"
 
 msgid "User data"
-msgstr "Пльзовательские данные"
+msgstr "Пользовательские данные"
 
 msgid "Cache directory:"
 msgstr "Каталог с кэшируемыми данными:"
@@ -4017,65 +4014,61 @@ msgstr ""
 "Предупреждение: неправильный флаг %c в %s:\n"
 "%s\n"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: an error occured while reading %s: %s"
-msgstr "Произошла ошибка при переносе пользовательских настроек: %s"
+msgstr "sftp: произошла ошибка при чтении %s: %s"
 
 msgid "sftp: Unable to get current user name."
-msgstr ""
+msgstr "sftp: невозможно получить имя пользователя."
 
-#, fuzzy
 msgid "sftp: Invalid host name."
-msgstr "ftpfs: неверное имя системы."
+msgstr "sftp: неверное имя системы."
 
-#, fuzzy
 msgid "sftp: Invalid port value."
-msgstr "ftpfs: неверное имя системы."
+msgstr "sftp: неверный порт."
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: %s"
-msgstr "ftpfs: %s"
+msgstr "sftp: %s"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: making connection to %s"
-msgstr "ftpfs: осуществляется соединение с %s"
+msgstr "sftp: осуществляется соединение с %s"
 
-#, fuzzy
 msgid "sftp: connection interrupted by user"
-msgstr "ftpfs: соединение прервано пользователем"
+msgstr "sftp: соединение прервано пользователем"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: connection to server failed: %s"
-msgstr "ftpfs: сбой соединения с сервером: %s"
+msgstr "sftp: сбой соединения с сервером: %s"
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
-msgstr ""
+msgstr "sftp: введите парольную фразу для %s "
 
 msgid "sftp: Passphrase is empty."
-msgstr ""
+msgstr "sftp: парольная фраза пуста."
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: Enter password for %s "
-msgstr "ftpfs: посылается пароль пользователя"
+msgstr "sftp: введите пароль для %s "
 
 msgid "sftp: Password is empty."
-msgstr ""
+msgstr "sftp: пароль пуст."
 
 #, c-format
 msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr ""
+msgstr "sftp: сбой установки SSH-сессии: (%d)"
 
 msgid "sftp: No file handler data present for reading file"
-msgstr ""
+msgstr "sftp: нет обработчика считываемого файла"
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"
-msgstr ""
+msgstr "sftp: чтение списка файлов (прерывание по Ctrl-G)... %s"
 
-#, fuzzy
 msgid "sftp: Listing done."
-msgstr "Формат списка файлов"
+msgstr "sftp: Чтение списка файлов завершено."
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4272,8 +4265,18 @@ msgstr ""
 "Невозможно сохранить файл:\n"
 "%s"
 
+msgid "File was modified. Save with exit?"
+msgstr "Файл был изменен. Сохранить при выходе?"
+
 msgid "&Cancel quit"
 msgstr "&Прервать выход"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander завершается.\n"
+"Сохранить изменённый файл?"
 
 msgid "View: "
 msgstr "Просмотр: "

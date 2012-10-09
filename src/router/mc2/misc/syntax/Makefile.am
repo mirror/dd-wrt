@@ -9,10 +9,12 @@ SYNTAXFILES =			\
 	c.syntax		\
 	cabal.syntax		\
 	changelog.syntax	\
+	cmake.syntax		\
 	cs.syntax		\
 	css.syntax		\
 	cxx.syntax		\
 	d.syntax		\
+	dlink.syntax		\
 	debian-changelog.syntax	\
 	debian-control.syntax	\
 	debian-description.syntax	\

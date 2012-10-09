@@ -30,7 +30,7 @@ typedef enum
 
 struct _book_mark
 {
-    int line;                   /* line number */
+    long line;                  /* line number */
     int c;                      /* color */
     struct _book_mark *next;
     struct _book_mark *prev;
@@ -72,14 +72,18 @@ struct WEdit
     vfs_path_t *dir_vpath;      /* NULL if filename is absolute */
 
     /* dynamic buffers and cursor position for editor: */
-    long curs1;                 /* position of the cursor from the beginning of the file. */
-    long curs2;                 /* position from the end of the file */
+    off_t curs1;                /* position of the cursor from the beginning of the file. */
+    off_t curs2;                /* position from the end of the file */
     unsigned char *buffers1[MAXBUFF + 1];       /* all data up to curs1 */
     unsigned char *buffers2[MAXBUFF + 1];       /* all data from end of file down to curs2 */
 
-    /* UTF8 */
+#ifdef HAVE_CHARSET
+    /* multibyte support */
+    gboolean utf8;              /* It's multibyte file codeset */
+    GIConv converter;
     char charbuf[4 + 1];
     int charpoint;
+#endif
 
     /* search handler */
     mc_search_t *search;
@@ -88,12 +92,12 @@ struct WEdit
     edit_search_line_t search_line_type;
 
     char *last_search_string;   /* String that have been searched */
-    long search_start;          /* First character to start searching from */
-    int found_len;              /* Length of found string or 0 if none was found */
-    long found_start;           /* the found word from a search - start position */
+    off_t search_start;         /* First character to start searching from */
+    unsigned long found_len;    /* Length of found string or 0 if none was found */
+    off_t found_start;          /* the found word from a search - start position */
 
     /* display information */
-    long last_byte;             /* Last byte of file */
+    off_t last_byte;            /* Last byte of file */
     long start_display;         /* First char displayed */
     long start_col;             /* First displayed column, negative */
     long max_column;            /* The maximum cursor position ever reached used to calc hori scroll bar */
@@ -108,7 +112,6 @@ struct WEdit
     unsigned int delete_file:1; /* New file, needs to be deleted unless modified */
     unsigned int highlight:1;   /* There is a selected block */
     unsigned int column_highlight:1;
-    unsigned int utf8:1;        /* It's multibyte file codeset */
     unsigned int fullscreen:1;  /* Is window fullscreen or not */
     long prev_col;              /* recent column position of the cursor - used when moving
                                    up or down past lines that are shorter than the current line */
@@ -117,17 +120,17 @@ struct WEdit
 
     /* file info */
     long total_lines;           /* total lines in the file */
-    long mark1;                 /* position of highlight start */
-    long mark2;                 /* position of highlight end */
-    long end_mark_curs;         /* position of cursor after end of highlighting */
-    int column1;                /* position of column highlight start */
-    int column2;                /* position of column highlight end */
-    long bracket;               /* position of a matching bracket */
+    off_t mark1;                /* position of highlight start */
+    off_t mark2;                /* position of highlight end */
+    off_t end_mark_curs;        /* position of cursor after end of highlighting */
+    long column1;               /* position of column highlight start */
+    long column2;               /* position of column highlight end */
+    off_t bracket;              /* position of a matching bracket */
 
     /* cache speedup for line lookups */
-    int caches_valid;
-    int line_numbers[N_LINE_CACHES];
-    long line_offsets[N_LINE_CACHES];
+    gboolean caches_valid;
+    long line_numbers[N_LINE_CACHES];
+    off_t line_offsets[N_LINE_CACHES];
 
     struct _book_mark *book_mark;
     GArray *serialized_bookmarks;
@@ -159,15 +162,11 @@ struct WEdit
     GTree *defines;             /* List of defines */
     gboolean is_case_insensitive;       /* selects language case sensitivity */
 
-    /* user map stuff */
-    GIConv converter;
-
     /* line break */
     LineBreaks lb;
     gboolean extmod;
 
     char *labels[10];
-
 };
 
 /*** global variables defined in .c file *********************************************************/

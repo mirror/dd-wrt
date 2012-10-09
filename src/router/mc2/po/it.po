@@ -1,24 +1,25 @@
-# The Midnight Commander italian translation 
-# Copyright (C) 1998-2012 Free Software Foundation, Inc.
-# This file is distributed under the same license as the Midnight Commander package.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+#
 # Translators:
+# Andreas Troschka <signupbox001@om.it.eu.org>, 2012.
 # Giuliano Natali <diaolin@diaolin.com>, 1998.
-# Marco Ciampa <ciampix@libero.it>, 1999-2010,2012.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-07-18 13:34+0300\n"
-"PO-Revision-Date: 2012-06-23 14:11+0200\n"
-"Last-Translator: Marco Ciampa <ciampix@libero.it>\n"
-"Language-Team: Italian (http://www.transifex.net/projects/p/mc/language/"
-"it/), tp@linux.it\n"
+"POT-Creation-Date: 2012-09-14 14:23+0300\n"
+"PO-Revision-Date: 2012-09-03 08:41+0000\n"
+"Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
+"Language-Team: Italian (http://www.transifex.com/projects/p/mc/language/"
+"it/)\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgid "Warning: cannot load codepages list"
 msgstr "Attenzione: impossibile caricare l'elenco delle codepage"
@@ -118,9 +119,8 @@ msgstr " Numero token non valido %d "
 msgid "Regular expression error"
 msgstr "Errore espressione regolare"
 
-#, fuzzy
 msgid "No&rmal"
-msgstr "&Normale"
+msgstr ""
 
 msgid "Re&gular expression"
 msgstr "Espressione re&golare"
@@ -869,15 +869,13 @@ msgstr "Esci"
 msgid "Quit"
 msgstr "Esci"
 
-msgid "File was modified. Save with exit?"
-msgstr "Il file è stato modificato. Lo salvo uscendo?"
+msgid "File(s) was modified. Save with exit?"
+msgstr ""
 
 msgid ""
 "Midnight Commander is being shut down.\n"
-"Save modified file?"
+"Save modified file(s)?"
 msgstr ""
-"Midnight Commander si sta chiudendo.\n"
-"Salvare il file modificato?"
 
 msgid "Diff:"
 msgstr "Diff:"
@@ -1351,15 +1349,13 @@ msgstr "Elimina macr&o..."
 msgid "Record/Repeat &actions"
 msgstr "Registra/ripeti le &azioni"
 
-#, fuzzy
 msgid "S&pell check"
-msgstr "Controllo ortogra&fia"
+msgstr ""
 
-#, fuzzy
 msgid "C&heck word"
-msgstr "&Parole intere"
+msgstr ""
 
-msgid "Change spelling &language"
+msgid "Change spelling &language..."
 msgstr ""
 
 msgid "&Mail..."
@@ -1538,9 +1534,8 @@ msgstr "Elimin"
 msgid "ButtonBar|PullDn"
 msgstr "AprMen"
 
-#, fuzzy
 msgid "&Add word"
-msgstr "Aggiungi &nuovo"
+msgstr ""
 
 msgid "Language"
 msgstr ""
@@ -1548,16 +1543,14 @@ msgstr ""
 msgid "Misspelled"
 msgstr ""
 
-#, fuzzy
 msgid "Check word"
-msgstr "&Parole intere"
+msgstr ""
 
 msgid "Suggest"
 msgstr ""
 
-#, fuzzy
 msgid "Select language"
-msgstr "Seleziona &gruppo"
+msgstr ""
 
 msgid "Load syntax file"
 msgstr "Carica file sintassi"
@@ -4003,59 +3996,59 @@ msgstr ""
 
 #, c-format
 msgid "sftp: an error occured while reading %s: %s"
-msgstr "sftp: si è verificato un errore durante la lettura %s: %s"
+msgstr ""
 
 msgid "sftp: Unable to get current user name."
-msgstr "sftp: impossibile ottenere il nome utente corrente."
+msgstr ""
 
 msgid "sftp: Invalid host name."
-msgstr "sftp: nome host non valido."
+msgstr ""
 
 msgid "sftp: Invalid port value."
-msgstr "sftp: porta host non valida."
+msgstr ""
 
 #, c-format
 msgid "sftp: %s"
-msgstr "sftp: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: making connection to %s"
-msgstr "sftp: connessione in corso a %s"
+msgstr ""
 
 msgid "sftp: connection interrupted by user"
-msgstr "sftp: connessione interrotta dall'utente"
+msgstr ""
 
 #, c-format
 msgid "sftp: connection to server failed: %s"
-msgstr "sftp: connessione al server fallita: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
-msgstr "sftp: inserire la password per %s "
+msgstr ""
 
 msgid "sftp: Passphrase is empty."
-msgstr "sftp: la password è vuota."
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter password for %s "
-msgstr "sftp: inserire la password per %s "
+msgstr ""
 
 msgid "sftp: Password is empty."
-msgstr "sftp: la password è vuota."
+msgstr ""
 
 #, c-format
 msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "sftp: fallito il tentativo di connessione SSH: (%d)"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
-msgstr "sftp: nessun dato presente nel file handler per la lettura del file"
+msgstr ""
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"
-msgstr "sftp: (Ctrl-G blocca) elencazione... %s"
+msgstr ""
 
 msgid "sftp: Listing done."
-msgstr "sftp: elencazione effettuata."
+msgstr ""
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4252,8 +4245,18 @@ msgstr ""
 "Impossibile salvare il file:\n"
 "%s"
 
+msgid "File was modified. Save with exit?"
+msgstr "Il file è stato modificato. Lo salvo uscendo?"
+
 msgid "&Cancel quit"
 msgstr "Annulla l'us&cita"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander si sta chiudendo.\n"
+"Salvare il file modificato?"
 
 msgid "View: "
 msgstr "Mostra: "

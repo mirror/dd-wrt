@@ -151,7 +151,7 @@ history_get (const char *input_name)
         return NULL;
 
     profile = mc_config_get_full_path (MC_HISTORY_FILE);
-    cfg = mc_config_init (profile);
+    cfg = mc_config_init (profile, TRUE);
 
     hist = history_load (cfg, input_name);
 
@@ -210,7 +210,7 @@ history_load (struct mc_config_t * cfg, const char *name)
                 hist = list_append_unique (hist, this_entry);
             else
             {
-                hist = list_append_unique (hist, g_strdup (buffer->str));
+                hist = list_append_unique (hist, g_strndup (buffer->str, buffer->len));
                 g_free (this_entry);
             }
         }

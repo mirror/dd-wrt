@@ -43,9 +43,9 @@ DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/lslR.in $(srcdir)/mailfs.in $(srcdir)/patchfs.in \
 	$(srcdir)/rpms+.in $(srcdir)/s3+.in $(srcdir)/uace.in \
 	$(srcdir)/ualz.in $(srcdir)/uar.in $(srcdir)/uarc.in \
-	$(srcdir)/uarj.in $(srcdir)/uc1541.in $(srcdir)/ucab.in \
-	$(srcdir)/uha.in $(srcdir)/ulha.in $(srcdir)/ulib.in \
-	$(srcdir)/urar.in $(srcdir)/uzip.in $(srcdir)/uzoo.in
+	$(srcdir)/uarj.in $(srcdir)/ucab.in $(srcdir)/uha.in \
+	$(srcdir)/ulha.in $(srcdir)/ulib.in $(srcdir)/urar.in \
+	$(srcdir)/uzip.in $(srcdir)/uzoo.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/glibc2.m4 \
@@ -103,8 +103,8 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES = a+ apt+ audio deb deba debd dpkg+ iso9660 hp48+ \
-	lslR mailfs patchfs rpms+ s3+ uace ualz uar uarc uarj uc1541 \
-	ucab uha ulha ulib urar uzip uzoo
+	lslR mailfs patchfs rpms+ s3+ uace ualz uar uarc uarj ucab uha \
+	ulha ulib urar uzip uzoo
 CONFIG_CLEAN_VPATH_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -360,7 +360,7 @@ EXTFSCONFFILES = sfs.ini
 EXTFS_MISC = README README.extfs
 
 # Scripts hat don't need adaptation to the local system
-EXTFS_CONST = bpp changesetfs gitfs+ patchsetfs rpm trpm u7z
+EXTFS_CONST = bpp changesetfs gitfs+ patchsetfs rpm trpm uc1541 u7z
 
 # Scripts that need adaptation to the local system - source files
 EXTFS_IN = \
@@ -383,7 +383,6 @@ EXTFS_IN = \
 	uar.in			\
 	uarc.in			\
 	uarj.in			\
-	uc1541.in		\
 	ucab.in			\
 	uha.in			\
 	ulha.in			\
@@ -414,7 +413,6 @@ EXTFS_OUT = \
 	uar			\
 	uarc			\
 	uarj			\
-	uc1541			\
 	ucab			\
 	uha			\
 	ulha			\
@@ -498,8 +496,6 @@ uar: $(top_builddir)/config.status $(srcdir)/uar.in
 uarc: $(top_builddir)/config.status $(srcdir)/uarc.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uarj: $(top_builddir)/config.status $(srcdir)/uarj.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-uc1541: $(top_builddir)/config.status $(srcdir)/uc1541.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 ucab: $(top_builddir)/config.status $(srcdir)/ucab.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@

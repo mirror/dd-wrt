@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-07-18 13:34+0300\n"
-"PO-Revision-Date: 2012-07-13 08:36+0000\n"
+"POT-Creation-Date: 2012-09-14 14:23+0300\n"
+"PO-Revision-Date: 2012-09-03 08:41+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: Belarusian (http://www.transifex.com/projects/p/mc/language/"
 "be/)\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 msgid "Warning: cannot load codepages list"
 msgstr "Увага: не ўдаецца загрузіць спіс кадовак"
@@ -848,15 +848,13 @@ msgstr "Выхад"
 msgid "Quit"
 msgstr "Выхад"
 
-msgid "File was modified. Save with exit?"
-msgstr "Файл быў зменены. Захаваць пры выхадзе?"
+msgid "File(s) was modified. Save with exit?"
+msgstr ""
 
 msgid ""
 "Midnight Commander is being shut down.\n"
-"Save modified file?"
+"Save modified file(s)?"
 msgstr ""
-"Midnight Commander ў цяперашні час закрываецца.\n"
-"Захаваць змянены файл?"
 
 msgid "Diff:"
 msgstr "Diff:"
@@ -1332,7 +1330,7 @@ msgstr ""
 msgid "C&heck word"
 msgstr ""
 
-msgid "Change spelling &language"
+msgid "Change spelling &language..."
 msgstr ""
 
 msgid "&Mail..."
@@ -1507,9 +1505,8 @@ msgstr "Выдаліць"
 msgid "ButtonBar|PullDn"
 msgstr "МенюМС"
 
-#, fuzzy
 msgid "&Add word"
-msgstr "&Дадаць"
+msgstr ""
 
 msgid "Language"
 msgstr ""
@@ -1517,16 +1514,14 @@ msgstr ""
 msgid "Misspelled"
 msgstr ""
 
-#, fuzzy
 msgid "Check word"
-msgstr "Толькі поўныя &словы"
+msgstr ""
 
 msgid "Suggest"
 msgstr ""
 
-#, fuzzy
 msgid "Select language"
-msgstr "Адзначыць &групу"
+msgstr ""
 
 msgid "Load syntax file"
 msgstr "Загрузіць файл сінтаксісу"
@@ -3971,36 +3966,33 @@ msgstr ""
 "Увага: Памылковы сцяг %c у %s:\n"
 "%s\n"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: an error occured while reading %s: %s"
-msgstr "Адбылася памылка пры пераносе настроек карыстальніка: %s"
+msgstr ""
 
 msgid "sftp: Unable to get current user name."
 msgstr ""
 
-#, fuzzy
 msgid "sftp: Invalid host name."
-msgstr "ftpfs: Памылковае імя сістэмы."
+msgstr ""
 
-#, fuzzy
 msgid "sftp: Invalid port value."
-msgstr "ftpfs: Памылковае імя сістэмы."
+msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: %s"
-msgstr "ftpfs: %s"
+msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: making connection to %s"
-msgstr "ftpfs: здзяйсняецца далучэнне да %s"
+msgstr ""
 
-#, fuzzy
 msgid "sftp: connection interrupted by user"
-msgstr "ftpfs: злучэнне перарванае карыстальнікам"
+msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: connection to server failed: %s"
-msgstr "ftpfs: збой далучэння да сервера: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
@@ -4009,9 +4001,9 @@ msgstr ""
 msgid "sftp: Passphrase is empty."
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: Enter password for %s "
-msgstr "ftpfs: Дасылаецца пароль карыстальніка"
+msgstr ""
 
 msgid "sftp: Password is empty."
 msgstr ""
@@ -4027,9 +4019,8 @@ msgstr ""
 msgid "sftp: (Ctrl-G break) Listing... %s"
 msgstr ""
 
-#, fuzzy
 msgid "sftp: Listing done."
-msgstr "Фармат спісу файлаў"
+msgstr ""
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4226,8 +4217,18 @@ msgstr ""
 "Немагчыма захаваць файл:\n"
 "%s"
 
+msgid "File was modified. Save with exit?"
+msgstr "Файл быў зменены. Захаваць пры выхадзе?"
+
 msgid "&Cancel quit"
 msgstr "Пера&рваць выхад"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander ў цяперашні час закрываецца.\n"
+"Захаваць змянены файл?"
 
 msgid "View: "
 msgstr "Прагляд: "
