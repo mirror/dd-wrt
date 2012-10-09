@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+# softflowd	Starts softflowd NetFlow probe
+#
+# chkconfig: 2345 95 02
+# description: Starts and stops the softflowd Netflow probe
+
+# Source function library.
+. /etc/init.d/functions
+
+SOFTFLOW_CONF=/etc/sysconfig/softflowd
+SOFTFLOW_LOCK=/var/lock/subsys/softflowd
+SOFTFLOW_PROG=/usr/sbin/softflowd
+SOFTFLOW_OPTS="-i eth0"
+
+# Source config
+if [ -f $SOFTFLOW_CONF ]; then
+    . $SOFTFLOW_CONF
+fi
+
+[ -x $SOFTFLOW_PROG ] || exit 0
+
+RETVAL=0
+
+start() {
+    echo -n $"Starting softflowd: "
+    daemon $SOFTFLOW_PROG $SOFTFLOW_OPTS
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch $SOFTFLOW_LOCK
+    return $RETVAL
+}
+stop() {
+    echo -n $"Shutting down softflowd: "
+    killproc $SOFTFLOW_PROG
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $SOFTFLOW_LOCK
+    return $RETVAL
+}
+restart() {
+    stop
+    start
+}
+
+case "$1" in
+    start)
+	start
+	;;
+    stop)
+	stop
+	;;
+    status)
+	status $SOFTFLOW_PROG
+	;;
+    restart|reload)
+	restart
+	;;
+    condrestart)
+	[ -f $SOFTFLOW_LOCK ] && restart || :
+	;;
+    *)
+	echo $"Usage: $0 {start|stop|status|restart|condrestart}"
+	exit 1
+esac
+
+exit $?

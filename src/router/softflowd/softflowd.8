@@ -1,0 +1,422 @@
+.\" Copyright (c) 2002 Damien Miller.  All rights reserved.
+.\" Portions Copyright (c) 2001 Kevin Steves.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+.\" IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+.\" NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+.\" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+.\" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+.\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+.\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\"
+.Dd October 14, 2002
+.Dt SOFTFLOWD 8
+.Os
+.Sh NAME
+.Nm softflowd
+.Nd Traffic flow monitoring
+.Sh SYNOPSIS
+.Nm softflowd
+.Op Fl 6dDh
+.Op Fl L Ar hoplimit
+.Op Fl T Ar track_level
+.Op Fl c Ar ctl_sock
+.Bk -words
+.Oo Fl i\ \&
+.Sm off
+.Oo Ar if_ndx : Oc
+.Ar interface
+.Sm on
+.Oc
+.Ek
+.Op Fl m Ar max_flows
+.Op Fl n Ar host:port
+.Op Fl p Ar pidfile
+.Op Fl r Ar pcap_file
+.Op Fl t Ar timeout_name=seconds
+.Op Fl v Ar netflow_version
+.Op Fl s Ar sampling_rate
+.Op bpf_expression
+.Sh DESCRIPTION
+.Nm
+is a software implementation of a flow-based network traffic monitor.
+.Nm
+reads network traffic and gathers information about active traffic flows.
+A "traffic flow" is communication between two IP addresses or (if the
+overlying protocol is TCP or UDP) address/port tuples.
+.Pp
+The intended use of
+.Nm
+is as a software implementation of Cisco's NetFlow(tm) traffic account
+system.
+.Nm
+supports data export using versions 1, 5 or 9 of the NetFlow protocol.
+.Nm
+can also run in statistics-only mode, where it just collects summary
+information.
+However, too few statistics are collected to make this
+mode really useful for anything other than debugging.
+.Pp
+Network traffic may be obtained by listening on a promiscuous network
+interface or by reading stored
+.Xr pcap 3
+files, such as those written by
+.Xr tcpdump 8 .
+Traffic may be filtered with an optional
+.Xr bpf 4
+program, specified on the command-line as
+.Ar bpf_expression .
+.Nm
+is IPv6 capable and will track IPv6 flows if the NetFlow export protocol
+supports it (currently only NetFlow v.9 possesses an IPv6 export capability).
+.Pp
+.Nm
+tries to track only active traffic flows.
+When the
+flow has been quiescent for a period of time it is expired automatically.
+Flows may also be expired early if they approach their traffic counts
+exceed 2 Gib or if the number of flows being tracked exceeds
+.Ar max_flows
+(default: 8192).
+In this last case, flows are expired oldest-first.
+.Pp
+Upon expiry, the flow information is accumulated into statistics which may
+be viewed using
+.Xr softflowctl 8 .
+If the
+.Fl n
+option has been specified the flow information is formatted in a UDP datagram
+which is compatible with versions 1, 5 or 9 of Cisco's NetFlow(tm) accounting
+export format.
+These records are sent to the specified
+.Ar host
+and
+.Ar port .
+The host may represent a unicast host or a multicast group.
+.Pp
+The command-line options are as follows:
+.Bl -tag -width Ds
+.It Fl n Ar host:port
+Specify the
+.Ar host
+and
+.Ar port
+that the accounting datagrams are to be sent to.
+The host may be specified using a hostname or using a numeric IPv4 or
+IPv6 address.
+Numeric IPv6 addresses should be encosed in square brackets to avoid ambiguity
+between the address and the port.
+The destination port may be a portname listed in
+.Xr services 5
+or a numeric port.
+.It Fl i Xo
+.Sm off
+.Oo Ar if_ndx : Oc
+.Ar interface
+.Sm on
+.Xc
+Specify a network interface on which to listen for traffic.
+Either the
+.Fl i
+or the
+.Fl r
+options must be specified.
+.It Fl r Ar pcap_file
+Specify that
+.Nm
+should read from a
+.Xr pcap 3
+packet capture file (such as one created with the
+.Fl w
+option of
+.Xr tcpdump 8 )
+file rather than a network interface.
+.Nm
+processes the whole capture file and only expires flows when
+.Ar max_flows
+is exceeded.
+In this mode,
+.Nm
+will not fork and will automatically print summary statistics before
+exiting.
+.It Fl p Ar pidfile
+Specify an alternate location to store the process ID when in daemon mode.
+Default is
+.Pa /var/run/softflowd.pid
+.It Fl c Ar ctlsock
+Specify an alternate location for the remote control socket in daemon mode.
+Default is
+.Pa /var/run/softflowd.ctl
+.It Fl m Ar max_flows
+Specify the maximum number of flows to concurrently track.
+If this limit is exceeded, the flows which have least recently seen traffic
+are forcibly expired.
+In practice, the actual maximum may briefly exceed this limit by a
+small amount as  expiry processing happens less frequently than traffic
+collection.
+The default is 8192 flows, which corresponds to slightly less
+than 800k of working data.
+.It Fl t Ar timeout_name=time
+Set the timeout names
+.Ar timeout_name
+to
+.Ar time .
+Refer to the
+.Sx Timeouts
+section for the valid timeout names and their meanings.
+The
+.Ar time
+parameter may be specified using one of the formats explained in the
+.Sx Time Formats
+section below.
+.It Fl d
+Specify that
+.Nm
+should not fork and daemonise itself.
+.It Fl 6
+Force
+.Nm
+to track IPv6 flows even if the NetFlow export protocol does not support
+reporting them.
+This is useful for debugging and statistics gathering only.
+.It Fl D
+Places
+.Nm
+in a debugging mode.
+This implies the
+.Fl d
+and
+.Fl 6
+flags and turns on additional debugging output.
+.It Fl h
+Display command-line usage information.
+.It Fl L Ar hoplimit
+Set the IPv4 TTL or the IPv6 hop limit to
+.Ar hoplimit .
+.Nm
+will use the default system TTL when exporting flows to a unicast host.
+When exporting to a multicast group, the default TTL will be 1
+(i.e. link-local).
+.It Fl T Ar track_level
+Specify which flow elements
+.Nm
+should be used to define a flow.
+.Ar track_level
+may be one of:
+.Dq full
+(track everything in the flow, the default),
+.Dq proto
+(track source and destination addresses and protocol), or
+.Dq ip
+(only track source and destination addresses).
+Selecting either of the latter options will produce flows with less information
+in them (e.g. TCP/UDP ports will not be recorded).
+This will cause flows to be consolidated, reducing the quantity of output
+and CPU load that
+.Nm
+will place on the system at the cost of some detail being lost.
+.It Fl v Ar netflow_version
+Specify which version of the NetFlow(tm) protocol
+.Nm
+should use for export of the flow data.
+Supported versions are 1, 5 and 9.
+Default is version 5.
+.It Fl s Ar sampling_rate
+Specify periodical sampling rate (denominator).
+.El
+.Pp
+Any further command-line arguments will be concatenated together and
+applied as a
+.Xr bpf 4
+packet filter.
+This filter will cause
+.Nm
+to ignore the specified traffic.
+.Ss Timeouts
+.Pp
+.Nm
+will expire quiescent flows after user-configurable periods.
+The exact timeout used depends on the nature of the flow.
+The various timeouts that may be set from the command-line (using the
+.Fl t
+option) and their meanings are:
+.Bl -tag -width Ds
+.It Ar general
+This is the general timeout applied to all traffic unless overridden by
+one of the other timeouts.
+.It Ar tcp
+This is the general TCP timeout, applied to open TCP connections.
+.It Ar tcp.rst
+This timeout is applied to a TCP connection when a RST packet has been
+sent by one or both endpoints.
+.It Ar tcp.fin
+This timeout is applied to a TCP connection when a FIN packet has been
+sent by both endpoints.
+.It Ar udp
+This is the general UDP timeout, applied to all UDP connections.
+.It Ar maxlife
+This is the maximum lifetime that a flow may exist for.
+All flows are forcibly expired when they pass
+.Ar maxlife
+seconds.
+To disable this feature, specify a
+.Ar maxlife
+of 0.
+.It Ar expint
+Specify the interval between expiry checks.
+Increase this to group more flows into a NetFlow packet.
+To disable this feature, specify a
+.Ar expint
+of 0.
+.El
+.Pp
+Flows may also be expired if there are not enough flow entries to hold them
+or if their traffic exceeds 2 Gib in either direction.
+.Xr softflowctl 8
+may be used to print information on the average lifetimes of flows and
+the reasons for their expiry.
+.Ss Time Formats
+.Pp
+.Nm
+command-line arguments that specify time may be expressed using a sequence
+of the form:
+.Sm off
+.Ar time Op Ar qualifier ,
+.Sm on
+where
+.Ar time
+is a positive integer value and
+.Ar qualifier
+is one of the following:
+.Pp
+.Bl -tag -width Ds -compact -offset indent
+.It Cm <none>
+seconds
+.It Cm s | Cm S
+seconds
+.It Cm m | Cm M
+minutes
+.It Cm h | Cm H
+hours
+.It Cm d | Cm D
+days
+.It Cm w | Cm W
+weeks
+.El
+.Pp
+Each member of the sequence is added together to calculate the total time value.
+.Pp
+Time format examples:
+.Pp
+.Bl -tag -width Ds -compact -offset indent
+.It 600
+600 seconds (10 minutes)
+.It 10m
+10 minutes
+.It 1h30m
+1 hour 30 minutes (90 minutes)
+.El
+.Ss Run-time Control
+.Pp
+A daemonised
+.Nm
+instance may be controlled using the
+.Xr softflowctl 8
+command.
+This interface allows one to shut down the daemon, force expiry of
+all tracked flows and extract debugging and summary data.
+Also, receipt of a
+.Dv SIGTERM
+or
+.Dv SIGINT
+will cause
+.Nm
+to exit, after expiring all flows (and thus sending flow export packets
+if
+.Fl n
+was specified on the command-line).
+If you do not want to export flows upon shutdown, clear them first with
+.Xr softflowctl 8
+or use
+.Xr softflowctl 8 's
+.Dq exit
+command.
+.Sh EXAMPLES
+.Bl -tag -width Ds
+.It softflowd -i fxp0
+This command-line will cause
+.Nm
+to listen on interface fxp0 and to run in statistics gathering mode
+only (i.e. no NetFlow data export).
+.It softflowd -i fxp0 -n 10.1.0.2:4432
+This command-line will cause
+.Nm
+to listen on interface fxp0 and to export NetFlow v.5 datagrams on flow
+expiry to a flow collector running on 10.1.0.2 port 4432.
+.It softflowd -v 5 -i fxp0 -n 10.1.0.2:4432 -m 65536 -t udp=1m30s
+This command-line increases the number of concurrent flows that
+.Nm
+will track to 65536 and increases the timeout for UDP flows to 90 seconds.
+.It softflowd -v 9 -i fxp0 -n 224.0.1.20:4432 -L 64
+This command-line will export NetFlow v.9 flows to the multicast group
+224.0.1.20.
+The export datagrams will have their TTL set to 64, so multicast receivers
+can be many hops away.
+.It softflowd -i fxp0 -p /var/run/sfd.pid.fxp0 -c /var/run/sfd.ctl.fxp0
+This command-line specifies alternate locations for the control socket
+and pid file.
+Similar command-lines are useful when running multiple
+instances of
+.Nm
+on a single machine.
+.El
+.Sh FILES
+.Bl -tag -width Ds
+.It Pa /var/run/softflowd.pid
+This file stores the process ID when
+.Nm
+is in daemon mode.
+This location may be overridden using the
+.Fl p
+command-line option.
+.It Pa /var/run/softflowd.ctl
+This is the remote control socket.
+.Nm
+listens on this socket for commands from
+.Xr softflowctl 8 .
+This location may be overridden using the
+.Fl c
+command-line option.
+.El
+.Sh BUGS
+Currently
+.Nm
+does not handle maliciously fragmented packets properly, i.e. packets
+fragemented such that the UDP or TCP header does not fit into the first
+fragment.
+It will product correct traffic counts when presented with maliciously
+fragmented packets, but will not record TCP or UDP port information.
+.Sh AUTHORS
+.An Damien Miller Aq djm@mindrot.org
+.Sh SEE ALSO
+.Xr softflowctl 8 ,
+.Xr tcpdump 8 ,
+.Xr pcap 3 ,
+.Xr bpf 4
+.Bd -literal
+http://www.ietf.org/rfc/rfc3954.txt
+.br
+http://www.cisco.com/en/US/products/sw/netmgtsw/ps1964/products_implementation_design_guide09186a00800d6a11.html
+.Ed

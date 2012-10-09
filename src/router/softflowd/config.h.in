@@ -1,0 +1,169 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 1 if you have the `closefrom' function. */
+#undef HAVE_CLOSEFROM
+
+/* Define to 1 if you have the `daemon' function. */
+#undef HAVE_DAEMON
+
+/* Define to 1 if the system has the type `int16_t'. */
+#undef HAVE_INT16_T
+
+/* Define to 1 if the system has the type `int32_t'. */
+#undef HAVE_INT32_T
+
+/* Define to 1 if the system has the type `int64_t'. */
+#undef HAVE_INT64_T
+
+/* Define to 1 if the system has the type `int8_t'. */
+#undef HAVE_INT8_T
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `pcap' library (-lpcap). */
+#undef HAVE_LIBPCAP
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <net/bpf.h> header file. */
+#undef HAVE_NET_BPF_H
+
+/* Define to 1 if you have the <pcap-bpf.h> header file. */
+#undef HAVE_PCAP_BPF_H
+
+/* Define to 1 if you have the <pcap.h> header file. */
+#undef HAVE_PCAP_H
+
+/* Define to 1 if you have the `setgid' function. */
+#undef HAVE_SETGID
+
+/* Define to 1 if you have the `setresgid' function. */
+#undef HAVE_SETRESGID
+
+/* Define to 1 if you have the `setresuid' function. */
+#undef HAVE_SETRESUID
+
+/* Define to 1 if you have the `setreuid' function. */
+#undef HAVE_SETREUID
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strlcat' function. */
+#undef HAVE_STRLCAT
+
+/* Define to 1 if you have the `strlcpy' function. */
+#undef HAVE_STRLCPY
+
+/* struct ip6_ext.ip6e_nxt exists */
+#undef HAVE_STRUCT_IP6_EXT
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if the system has the type `uint16_t'. */
+#undef HAVE_UINT16_T
+
+/* Define to 1 if the system has the type `uint32_t'. */
+#undef HAVE_UINT32_T
+
+/* Define to 1 if the system has the type `uint64_t'. */
+#undef HAVE_UINT64_T
+
+/* Define to 1 if the system has the type `uint8_t'. */
+#undef HAVE_UINT8_T
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if the system has the type `u_int16_t'. */
+#undef HAVE_U_INT16_T
+
+/* Define to 1 if the system has the type `u_int32_t'. */
+#undef HAVE_U_INT32_T
+
+/* Define to 1 if the system has the type `u_int64_t'. */
+#undef HAVE_U_INT64_T
+
+/* Define to 1 if the system has the type `u_int8_t'. */
+#undef HAVE_U_INT8_T
+
+/* 16-bit signed int */
+#undef OUR_CFG_INT16_T
+
+/* 32-bit signed int */
+#undef OUR_CFG_INT32_T
+
+/* 64-bit signed int */
+#undef OUR_CFG_INT64_T
+
+/* 8-bit signed int */
+#undef OUR_CFG_INT8_T
+
+/* 16-bit unsigned int */
+#undef OUR_CFG_U_INT16_T
+
+/* 32-bit unsigned int */
+#undef OUR_CFG_U_INT32_T
+
+/* 64-bit unsigned int */
+#undef OUR_CFG_U_INT64_T
+
+/* 8-bit unsigned int */
+#undef OUR_CFG_U_INT8_T
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* privdrop chroot directory */
+#undef PRIVDROP_CHROOT_DIR
+
+/* The size of `char', as computed by sizeof. */
+#undef SIZEOF_CHAR
+
+/* The size of `int', as computed by sizeof. */
+#undef SIZEOF_INT
+
+/* The size of `long int', as computed by sizeof. */
+#undef SIZEOF_LONG_INT
+
+/* The size of `long long int', as computed by sizeof. */
+#undef SIZEOF_LONG_LONG_INT
+
+/* The size of `short int', as computed by sizeof. */
+#undef SIZEOF_SHORT_INT
+
+/* struct sockaddr contains length */
+#undef SOCK_HAS_LEN
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
