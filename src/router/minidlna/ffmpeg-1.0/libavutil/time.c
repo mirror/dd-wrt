@@ -22,7 +22,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <time.h>
+#include "avtime.h"
 #if HAVE_GETTIMEOFDAY
 #include <sys/time.h>
 #endif
