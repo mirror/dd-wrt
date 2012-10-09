@@ -76,7 +76,7 @@ void start_openvpnserver(void)
 	if (nvram_match("openvpn_switch", "1")) {
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
 		fprintf(fp, "keepalive 10 120\n"
-			"verb 4\n" "mute 5\n"
+			"verb 4\n" "mute 3\n"
 			"log-append /var/log/openvpn\n"
 			"writepid /var/run/openvpnd.pid\n"
 			"management 127.0.0.1 5002\n"
@@ -341,7 +341,7 @@ void start_openvpn(void)
 	fprintf(fp,
 		"management 127.0.0.1 5001\n"
 		"management-log-cache 50\n"
-		"verb 4\n" "mute 5\n"
+		"verb 4\n" "mute 3\n"
 		"log-append /var/log/openvpncl\n"
 		"writepid /var/run/openvpncl.pid\n"
 		"client\n"
