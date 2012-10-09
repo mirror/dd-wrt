@@ -1,0 +1,58 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+sbindir=@sbindir@
+libexecdir=@libexecdir@
+datadir=@datadir@
+mandir=@mandir@
+sysconfdir=@sysconfdir@
+srcdir=@srcdir@
+top_srcdir=@top_srcdir@
+VPATH=@srcdir@
+CC=@CC@
+LDFLAGS=@LDFLAGS@
+CFLAGS=@CFLAGS@
+CPPFLAGS=-I$(srcdir) @CPPFLAGS@
+LIBS=@LIBS@
+EXEEXT=@EXEEXT@
+INSTALL=@INSTALL@
+
+#CFLAGS+=-DFLOW_RB		# Use red-black tree for flows
+CFLAGS+=-DFLOW_SPLAY		# Use splay tree for flows
+CFLAGS+=-DEXPIRY_RB		# Use red-black tree for expiry events
+#CFLAGS+=-DEXPIRY_SPLAY		# Use splay tree for expiry events
+
+TARGETS=softflowd${EXEEXT} softflowctl${EXEEXT}
+
+COMMON=convtime.o strlcpy.o strlcat.o closefrom.o daemon.o
+SOFTFLOWD=softflowd.o log.o netflow1.o netflow5.o netflow9.o freelist.o
+
+all: $(TARGETS)
+
+softflowd${EXEEXT}: ${SOFTFLOWD} $(COMMON)
+	$(CC) $(LDFLAGS) -o $@ ${SOFTFLOWD} $(COMMON) $(LIBS)
+
+softflowctl${EXEEXT}: softflowctl.o $(COMMON)
+	$(CC) $(LDFLAGS) -o $@ softflowctl.o $(COMMON) $(LIBS)
+
+clean:
+	rm -f $(TARGETS) *.o core *.core
+
+realclean: clean
+	rm -rf autom4te.cache Makefile config.log config.status
+
+distclean: realclean
+	rm -f config.h* configure
+
+strip:
+	strip $(TARGETS)
+
+install:
+	[ -d $(DESTDIR)$(sbindir) ] || \
+	    $(srcdir)/mkinstalldirs $(DESTDIR)$(sbindir)
+	[ -d $(DESTDIR)$(mandir)/man8 ] || \
+	    $(srcdir)/mkinstalldirs $(DESTDIR)$(mandir)/man8
+	$(INSTALL) -m 0755 -s softflowd $(DESTDIR)$(sbindir)/softflowd
+	$(INSTALL) -m 0755 -s softflowctl $(DESTDIR)$(sbindir)/softflowctl
+	$(INSTALL) -m 0644 softflowd.8 $(DESTDIR)$(mandir)/man8/softflowd.8
+	$(INSTALL) -m 0644 softflowctl.8 $(DESTDIR)$(mandir)/man8/softflowctl.8

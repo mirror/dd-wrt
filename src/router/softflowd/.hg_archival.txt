@@ -1,0 +1,4 @@
+repo: a471267f42340e3926cc0d68c98ec64789cffcca
+node: c496d4d4934828f6b62ff38e1702891f75710b0a
+branch: default
+tag: softflowd-0.9.9

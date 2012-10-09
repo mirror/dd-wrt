@@ -224,6 +224,7 @@ obj-$(CONFIG_IPETH) += ipeth
 obj-$(CONFIG_MINIDLNA) += minidlna
 obj-$(CONFIG_NRPE) += nrpe
 obj-$(CONFIG_LINKS) += links
+obj-$(CONFIG_SOFTFLOWD) += softflowd
 
 #obj-y+=anchorfree
 obj-y+=ttraff
