@@ -8,15 +8,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-07-18 13:34+0300\n"
-"PO-Revision-Date: 2012-07-13 08:36+0000\n"
+"POT-Creation-Date: 2012-09-14 14:23+0300\n"
+"PO-Revision-Date: 2012-09-03 08:41+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: Czech (http://www.transifex.com/projects/p/mc/language/cs/)\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
 msgid "Warning: cannot load codepages list"
 msgstr "Varování: není možné nahrát seznam znakových sad"
@@ -825,15 +825,13 @@ msgstr "TlačítkováLišta|Konec"
 msgid "Quit"
 msgstr "Konec"
 
-msgid "File was modified. Save with exit?"
-msgstr "Soubor byl změněn, uložit při odchodu?"
+msgid "File(s) was modified. Save with exit?"
+msgstr ""
 
 msgid ""
 "Midnight Commander is being shut down.\n"
-"Save modified file?"
+"Save modified file(s)?"
 msgstr ""
-"Midnight Commander se ukončuje.\n"
-"Uložit upravený soubor?"
 
 msgid "Diff:"
 msgstr "Diff:"
@@ -1309,7 +1307,7 @@ msgstr ""
 msgid "C&heck word"
 msgstr ""
 
-msgid "Change spelling &language"
+msgid "Change spelling &language..."
 msgstr ""
 
 msgid "&Mail..."
@@ -1484,9 +1482,8 @@ msgstr "TlačítkováLišta|Smazat"
 msgid "ButtonBar|PullDn"
 msgstr "TlačítkováLišta|H.Menu"
 
-#, fuzzy
 msgid "&Add word"
-msgstr "&Přidat nový"
+msgstr ""
 
 msgid "Language"
 msgstr ""
@@ -1494,16 +1491,14 @@ msgstr ""
 msgid "Misspelled"
 msgstr ""
 
-#, fuzzy
 msgid "Check word"
-msgstr "Pouze &celá slova"
+msgstr ""
 
 msgid "Suggest"
 msgstr ""
 
-#, fuzzy
 msgid "Select language"
-msgstr "Vy&brat skupinu"
+msgstr ""
 
 msgid "Load syntax file"
 msgstr "Načíst soubor se syntaxí"
@@ -3945,29 +3940,26 @@ msgstr ""
 msgid "sftp: Unable to get current user name."
 msgstr ""
 
-#, fuzzy
 msgid "sftp: Invalid host name."
-msgstr "ftpfs: Chybné jméno počítače."
+msgstr ""
 
-#, fuzzy
 msgid "sftp: Invalid port value."
-msgstr "ftpfs: Chybné jméno počítače."
+msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: %s"
-msgstr "ftpfs: %s"
+msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: making connection to %s"
-msgstr "ftpfs: probíhá připojování k %s"
+msgstr ""
 
-#, fuzzy
 msgid "sftp: connection interrupted by user"
-msgstr "ftpfs: připojování přerušeno uživatelem"
+msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: connection to server failed: %s"
-msgstr "ftpfs: připojování k serveru selhalo: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
@@ -3976,9 +3968,9 @@ msgstr ""
 msgid "sftp: Passphrase is empty."
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: Enter password for %s "
-msgstr "ftpfs: heslo pro anonymní ftp odesláno"
+msgstr ""
 
 msgid "sftp: Password is empty."
 msgstr ""
@@ -3994,9 +3986,8 @@ msgstr ""
 msgid "sftp: (Ctrl-G break) Listing... %s"
 msgstr ""
 
-#, fuzzy
 msgid "sftp: Listing done."
-msgstr "Typ seznamu"
+msgstr ""
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4193,8 +4184,18 @@ msgstr ""
 "Nemohu uložit soubor:\n"
 "%s"
 
+msgid "File was modified. Save with exit?"
+msgstr "Soubor byl změněn, uložit při odchodu?"
+
 msgid "&Cancel quit"
 msgstr "&Zrušit odchod"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander se ukončuje.\n"
+"Uložit upravený soubor?"
 
 msgid "View: "
 msgstr "Prohlížet: "

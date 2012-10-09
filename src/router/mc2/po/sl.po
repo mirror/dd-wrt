@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-07-18 13:34+0300\n"
-"PO-Revision-Date: 2012-07-13 08:36+0000\n"
+"POT-Creation-Date: 2012-09-14 14:23+0300\n"
+"PO-Revision-Date: 2012-09-03 08:41+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: Slovenian (http://www.transifex.com/projects/p/mc/language/"
 "sl/)\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n"
-"%100==4 ? 2 : 3)\n"
+"%100==4 ? 2 : 3);\n"
 
 msgid "Warning: cannot load codepages list"
 msgstr "Opozorilo: ni mogoče naložiti seznama nabora znakov"
@@ -817,12 +817,12 @@ msgstr ""
 msgid "Quit"
 msgstr "Končaj"
 
-msgid "File was modified. Save with exit?"
+msgid "File(s) was modified. Save with exit?"
 msgstr ""
 
 msgid ""
 "Midnight Commander is being shut down.\n"
-"Save modified file?"
+"Save modified file(s)?"
 msgstr ""
 
 msgid "Diff:"
@@ -1293,7 +1293,7 @@ msgstr ""
 msgid "C&heck word"
 msgstr ""
 
-msgid "Change spelling &language"
+msgid "Change spelling &language..."
 msgstr ""
 
 msgid "&Mail..."
@@ -1468,9 +1468,8 @@ msgstr ""
 msgid "ButtonBar|PullDn"
 msgstr ""
 
-#, fuzzy
 msgid "&Add word"
-msgstr "&Dodaj novo"
+msgstr ""
 
 msgid "Language"
 msgstr ""
@@ -3825,29 +3824,26 @@ msgstr ""
 msgid "sftp: Unable to get current user name."
 msgstr ""
 
-#, fuzzy
 msgid "sftp: Invalid host name."
-msgstr "ftpfs: Neveljavno ime gostitelja."
+msgstr ""
 
-#, fuzzy
 msgid "sftp: Invalid port value."
-msgstr "ftpfs: Neveljavno ime gostitelja."
+msgstr ""
 
 #, c-format
 msgid "sftp: %s"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: making connection to %s"
-msgstr "ftpfs: ustvarjam povezavo z %s"
+msgstr ""
 
-#, fuzzy
 msgid "sftp: connection interrupted by user"
-msgstr "ftpfs: uporabnik je prekinil povezavo"
+msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: connection to server failed: %s"
-msgstr "ftpfs: povezava do strežnika ni bila uspešna: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
@@ -3856,9 +3852,9 @@ msgstr ""
 msgid "sftp: Passphrase is empty."
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: Enter password for %s "
-msgstr "ftpfs: pošiljam uporabnikovo geslo"
+msgstr ""
 
 msgid "sftp: Password is empty."
 msgstr ""
@@ -3874,9 +3870,8 @@ msgstr ""
 msgid "sftp: (Ctrl-G break) Listing... %s"
 msgstr ""
 
-#, fuzzy
 msgid "sftp: Listing done."
-msgstr "Seznamski način"
+msgstr ""
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4062,7 +4057,15 @@ msgid ""
 "%s"
 msgstr ""
 
+msgid "File was modified. Save with exit?"
+msgstr ""
+
 msgid "&Cancel quit"
+msgstr ""
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
 msgstr ""
 
 msgid "View: "

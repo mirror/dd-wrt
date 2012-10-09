@@ -108,9 +108,6 @@ static inline void
 status_string (WEdit * edit, char *s, int w)
 {
     char byte_str[16];
-    unsigned char cur_byte = 0;
-    unsigned int cur_utf = 0;
-    int cw = 1;
 
     /*
      * If we are at the end of file, print <EOF>,
@@ -119,15 +116,12 @@ status_string (WEdit * edit, char *s, int w)
      */
     if (edit->curs1 < edit->last_byte)
     {
-        if (!edit->utf8)
+#ifdef HAVE_CHARSET
+        if (edit->utf8)
         {
-            cur_byte = edit_get_byte (edit, edit->curs1);
+            unsigned int cur_utf = 0;
+            int cw = 1;
 
-            g_snprintf (byte_str, sizeof (byte_str), "%4d 0x%03X",
-                        (int) cur_byte, (unsigned) cur_byte);
-        }
-        else
-        {
             cur_utf = edit_get_utf (edit, edit->curs1, &cw);
             if (cw > 0)
             {
@@ -140,7 +134,15 @@ status_string (WEdit * edit, char *s, int w)
                 g_snprintf (byte_str, sizeof (byte_str), "%04d 0x%03X",
                             (int) cur_utf, (unsigned) cur_utf);
             }
+        }
+        else
+#endif
+        {
+            unsigned char cur_byte = 0;
 
+            cur_byte = edit_get_byte (edit, edit->curs1);
+            g_snprintf (byte_str, sizeof (byte_str), "%4d 0x%03X",
+                        (int) cur_byte, (unsigned) cur_byte);
         }
     }
     else
@@ -158,14 +160,11 @@ status_string (WEdit * edit, char *s, int w)
                     edit->overwrite == 0 ? '-' : 'O',
                     edit->curs_col + edit->over_col,
                     edit->curs_line + 1,
-                    edit->total_lines + 1, edit->curs1, edit->last_byte, byte_str,
+                    edit->total_lines + 1, (long) edit->curs1, (long) edit->last_byte, byte_str,
 #ifdef HAVE_CHARSET
-                    mc_global.source_codepage >=
-                    0 ? get_codepage_id (mc_global.source_codepage) : ""
-#else
-                    ""
+                    mc_global.source_codepage >= 0 ? get_codepage_id (mc_global.source_codepage) :
 #endif
-            );
+                    "");
     else
         g_snprintf (s, w,
                     "[%c%c%c%c] %2ld L:[%3ld+%2ld %3ld/%3ld] *(%-4ld/%4ldb) %s  %s",
@@ -177,14 +176,11 @@ status_string (WEdit * edit, char *s, int w)
                     edit->start_line + 1,
                     edit->curs_row,
                     edit->curs_line + 1,
-                    edit->total_lines + 1, edit->curs1, edit->last_byte, byte_str,
+                    edit->total_lines + 1, (long) edit->curs1, (long) edit->last_byte, byte_str,
 #ifdef HAVE_CHARSET
-                    mc_global.source_codepage >=
-                    0 ? get_codepage_id (mc_global.source_codepage) : ""
-#else
-                    ""
+                    mc_global.source_codepage >= 0 ? get_codepage_id (mc_global.source_codepage) :
 #endif
-            );
+                    "");
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -502,18 +498,18 @@ print_to_widget (WEdit * edit, long row, int start_col, int start_col_real,
 /** b is a pointer to the beginning of the line */
 
 static void
-edit_draw_this_line (WEdit * edit, long b, long row, long start_col, long end_col)
+edit_draw_this_line (WEdit * edit, off_t b, long row, long start_col, long end_col)
 {
     struct line_s line[MAX_LINE_LEN];
     struct line_s *p = line;
 
-    long m1 = 0, m2 = 0, q, c1, c2;
+    off_t m1 = 0, m2 = 0, q;
+    long c1, c2;
     int col, start_col_real;
     unsigned int c;
     int color;
     int abn_style;
     int i;
-    int utf8lag = 0;
     unsigned int cur_line = 0;
     int book_mark = 0;
     char line_stat[LINE_STATE_WIDTH + 1] = "\0";
@@ -569,7 +565,7 @@ edit_draw_this_line (WEdit * edit, long b, long row, long start_col, long end_co
 
         if (row <= edit->total_lines - edit->start_line)
         {
-            long tws = 0;
+            off_t tws = 0;
             if (tty_use_colors () && visible_tws)
             {
                 tws = edit_eol (edit, b);
@@ -592,8 +588,9 @@ edit_draw_this_line (WEdit * edit, long b, long row, long start_col, long end_co
                 {
                     if (edit->column_highlight)
                     {
-                        int x;
-                        x = edit_move_forward3 (edit, b, 0, q);
+                        long x;
+
+                        x = (long) edit_move_forward3 (edit, b, 0, q);
                         c1 = min (edit->column1, edit->column2);
                         c2 = max (edit->column1, edit->column2);
                         if (x >= c1 && x < c2)
@@ -604,16 +601,18 @@ edit_draw_this_line (WEdit * edit, long b, long row, long start_col, long end_co
                 }
                 if (q == edit->bracket)
                     p->style |= MOD_BOLD;
-                if (q >= edit->found_start && q < edit->found_start + edit->found_len)
+                if (q >= edit->found_start && q < (off_t) (edit->found_start + edit->found_len))
                     p->style |= MOD_BOLD;
 
-                if (!edit->utf8)
-                {
-                    c = edit_get_byte (edit, q);
-                }
-                else
+#ifdef HAVE_CHARSET
+                if (edit->utf8)
                 {
                     c = edit_get_utf (edit, q, &cw);
+                }
+                else
+#endif
+                {
+                    c = edit_get_byte (edit, q);
                 }
                 /* we don't use bg for mc - fg contains both */
                 if (book_mark)
@@ -628,7 +627,7 @@ edit_draw_this_line (WEdit * edit, long b, long row, long start_col, long end_co
                 switch (c)
                 {
                 case '\n':
-                    col = (end_col + utf8lag) - edit->start_col + 1;    /* quit */
+                    col = end_col - edit->start_col + 1;        /* quit */
                     break;
                 case '\t':
                     i = TAB_SIZE - ((int) col % TAB_SIZE);
@@ -760,24 +759,23 @@ edit_draw_this_line (WEdit * edit, long b, long row, long start_col, long end_co
                         control_char = TRUE;
                         break;
                     }
-                    if (!edit->utf8)
+#ifdef HAVE_CHARSET
+                    if (edit->utf8)
                     {
-                        if ((mc_global.utf8_display && g_unichar_isprint (c)) ||
-                            (!mc_global.utf8_display && is_printable (c)))
-                        {
+                        if (g_unichar_isprint (c))
                             p->ch = c;
-                            p++;
-                        }
                         else
                         {
                             p->ch = '.';
                             p->style = abn_style;
-                            p++;
                         }
+                        p++;
                     }
                     else
+#endif
                     {
-                        if (g_unichar_isprint (c))
+                        if ((mc_global.utf8_display && g_unichar_isprint (c)) ||
+                            (!mc_global.utf8_display && is_printable (c)))
                         {
                             p->ch = c;
                             p++;
@@ -828,9 +826,10 @@ edit_draw_this_line (WEdit * edit, long b, long row, long start_col, long end_co
 /* --------------------------------------------------------------------------------------------- */
 
 static inline void
-edit_draw_this_char (WEdit * edit, long curs, long row, long start_column, long end_column)
+edit_draw_this_char (WEdit * edit, off_t curs, long row, long start_column, long end_column)
 {
-    int b = edit_bol (edit, curs);
+    off_t b = edit_bol (edit, curs);
+
     edit_draw_this_line (edit, b, row, start_column, end_column);
 }
 
@@ -841,7 +840,7 @@ static inline void
 render_edit_text (WEdit * edit, long start_row, long start_column, long end_row, long end_column)
 {
     static long prev_curs_row = 0;
-    static long prev_curs = 0;
+    static off_t prev_curs = 0;
 
     Widget *w = (Widget *) edit;
     Dlg_head *h = w->owner;
@@ -1051,8 +1050,8 @@ edit_status (WEdit * edit, gboolean active)
 void
 edit_scroll_screen_over_cursor (WEdit * edit)
 {
-    int p;
-    int outby;
+    long p;
+    long outby;
     int b_extreme, t_extreme, l_extreme, r_extreme;
 
     if (edit->widget.lines <= 0 || edit->widget.cols <= 0)
@@ -1073,7 +1072,7 @@ edit_scroll_screen_over_cursor (WEdit * edit)
     l_extreme = EDIT_LEFT_EXTREME;
     b_extreme = EDIT_BOTTOM_EXTREME;
     t_extreme = EDIT_TOP_EXTREME;
-    if (edit->found_len)
+    if (edit->found_len != 0)
     {
         b_extreme = max (edit->widget.lines / 4, b_extreme);
         t_extreme = max (edit->widget.lines / 4, t_extreme);
