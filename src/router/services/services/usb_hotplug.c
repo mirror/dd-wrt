@@ -285,7 +285,7 @@ static void usb_unmount(char *path)
 	eval("stopservice", "dlna");
 	eval("stopservice", "samba3");
 	eval("stopservice", "ftpsrv");
-	writeproc("/proc/sys/vm/drop_caches","1");	// flush fs cache
+	writeproc("/proc/sys/vm/drop_caches","3");	// flush fs cache
 /* todo: how to unmount correct drive */
 	if (!path)
 		sprintf(mount_point, "/%s",
