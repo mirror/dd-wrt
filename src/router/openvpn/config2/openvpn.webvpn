@@ -77,7 +77,12 @@
 			<select name="openvpn_proto">
 			<option value="udp" <% nvram_selected("openvpn_proto","udp"); %>>UDP</option>
 			<option value="tcp-server" <% nvram_selected("openvpn_proto","tcp-server"); %>>TCP</option>
-		</select>
+			</select>
+			<span class="default"><script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": UDP)");
+			//]]>
+			</script
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_cipher"); %></div>
