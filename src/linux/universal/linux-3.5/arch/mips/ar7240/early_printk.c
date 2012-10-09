@@ -101,6 +101,9 @@ static void prom_putchar_init(void)
 #ifdef CONFIG_MACH_HORNET
 	_prom_putchar = prom_putchar_ar933x;
 	id = REV_ID_MAJOR_AR9331;
+#elif CONFIG_WASP_SUPPORT
+	_prom_putchar = prom_putchar_ar71xx;
+	id = REV_ID_MAJOR_AR9341;
 #else
 
 	void __iomem *base;
