@@ -66,6 +66,7 @@ ffmpeg:
 	if [ ! -f ./ffmpeg-1.0/config.mak ];then \
 	cd ffmpeg-1.0 && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections " --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter --disable-filters --enable-small --disable-postproc --disable-network \
 	--enable-shared \
+	--disable-mipsfpu \
 	--enable-static \
 	--disable-debug \
 	--disable-doc \
