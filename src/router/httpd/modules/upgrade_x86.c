@@ -253,7 +253,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	fprintf(stderr, "sync system\n");
 	sysprintf("sync");
 	sysprintf("sync");
-	writeproc("/proc/sys/vm/drop_caches","1");
+	writeproc("/proc/sys/vm/drop_caches","3");
 	//reread for validation
 	fprintf(stderr, "check system for validation\n");
 	in = fopen(drive, "rb");
