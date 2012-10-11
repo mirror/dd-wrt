@@ -1630,6 +1630,13 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_rxantenna", "3");
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WDR3600
+	setRouter("TPLINK TL-WDR3600 v1");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR4300
 	setRouter("TPLINK TL-WDR4300 v1");
 	nvram_default_get("ath0_rxantenna", "3");
