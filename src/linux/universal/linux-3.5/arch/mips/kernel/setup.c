@@ -600,7 +600,7 @@ void __init setup_arch(char **cmdline_p)
 	conswitchp = &dummy_con;
 #endif
 #endif
-
+	printk(KERN_INFO "arch_mem_init\n");
 	arch_mem_init(cmdline_p);
 
 	resource_init();
