@@ -1,4 +1,8 @@
 <div class="setting">
+	<div class="label"><% tran("idx_l.srv"); %></div>
+	<input name="l2tp_server_name" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_get("l2tp_server_name"); %>" />
+</div>
+<div class="setting">
 	<div class="label"><% tran("share.usrname"); %></div>
 	<input name="ppp_username" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ppp_username"); %>" />
 </div>
@@ -6,10 +10,6 @@
 	<div class="label"><% tran("share.passwd"); %></div>
 	<input id="ppp_passwd" name="ppp_passwd" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" value="<% nvram_get("ppp_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
-</div>
-<div class="setting">
-	<div class="label"><% tran("idx_l.srv"); %></div>
-	<input name="l2tp_server_name" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_get("l2tp_server_name"); %>" />
 </div>
 <div class="setting">
 		<div class="label"><% tran("idx_l.req_chap"); %></div>
