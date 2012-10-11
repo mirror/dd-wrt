@@ -533,35 +533,47 @@ void __init plat_mem_setup(void)
 u32 id;
 u32 t;
 u32 rev=0;
+id = ar7240_reg_rd(AR7240_REV_ID);
 
-
-	id = ar7240_reg_rd(AR7240_REV_ID);
+    Uart16550Init();
 	
         if (is_ar7240()) {
+    		serial_print("AR7240\n");
 		ar71xx_soc = AR71XX_SOC_AR7240;
 		ar71xx_soc_rev = id & AR724X_REV_ID_REVISION_MASK;
         }else if (is_ar7241()) {
+    		serial_print("AR7241\n");
 		ar71xx_soc = AR71XX_SOC_AR7241;
 		ar71xx_soc_rev = id & AR724X_REV_ID_REVISION_MASK;
         }else if (is_ar7242()) {
+    		serial_print("AR7242\n");
 		ar71xx_soc = AR71XX_SOC_AR7242;
 		ar71xx_soc_rev = id & AR724X_REV_ID_REVISION_MASK;
         }else if (is_ar9330()) {
+    		serial_print("AR9330\n");
 		ar71xx_soc = AR71XX_SOC_AR9330;
 		ar71xx_soc_rev = id & AR933X_REV_ID_REVISION_MASK;
         }else if (is_ar9331()) {
+    		serial_print("AR9331\n");
 		ar71xx_soc = AR71XX_SOC_AR9331;
 		ar71xx_soc_rev = id & AR933X_REV_ID_REVISION_MASK;
         }else if (is_ar9341()) {
+    		serial_print("AR9341\n");
 		ar71xx_soc = AR71XX_SOC_AR9341;
 		ar71xx_soc_rev = id & AR934X_REV_ID_REVISION_MASK;
         }else if (is_ar9342()) {
+    		serial_print("AR9342\n");
 		ar71xx_soc = AR71XX_SOC_AR9342;
 		ar71xx_soc_rev = id & AR934X_REV_ID_REVISION_MASK;
         }else if (is_ar9344()) {
+    		serial_print("AR9344\n");
 		ar71xx_soc = AR71XX_SOC_AR9344;
 		ar71xx_soc_rev = id & AR934X_REV_ID_REVISION_MASK;
-        } 
+        }else
+        {
+            		serial_print("ARFOOO\n");
+
+        }
 
         
 	ar71xx_ddr_base = ioremap_nocache(AR71XX_DDR_CTRL_BASE,
@@ -600,22 +612,23 @@ u32 rev=0;
     ** any msgs on the console.  System being stable now this should be
     ** a special case anyways. Just initialize Uart here.
     */ 
+    serial_print("detect mem size\n");
     ar71xx_detect_mem_size();
+    serial_print("Uart Init\n");
 
-    Uart16550Init();
     ar71xx_ahb_freq = ar7240_ahb_freq;
 
 #ifdef CONFIG_MACH_HORNET
-//    serial_print("Booting (Hornet)...\n");
+    serial_print("Booting (Hornet)...\n");
     /* clear wmac reset */
     ar7240_reg_wr(AR7240_RESET, (ar7240_reg_rd(AR7240_RESET) & (~AR7240_RESET_WMAC)));
 #elif CONFIG_WASP_SUPPORT
-//    serial_print("Booting WASP !!! -:) ...\n");
+    serial_print("Booting WASP !!! -:) ...\n");
 #else
-//    serial_print("Booting AR7240(Python)...\n");
+    serial_print("Booting AR7240(Python)...\n");
 #endif
     is_ar9000=1;
-//    printk(KERN_INFO "sys id = %X %s\n",id,get_system_type());
+    printk(KERN_INFO "sys id = %X %s\n",id,get_system_type());
 //#if 0
 //    serial_setup();
 //#endif
