@@ -353,7 +353,7 @@ int __init ar7240_platform_init(void)
 {
 	int ret;
 	void *ee;
-#if defined(CONFIG_WR741) || defined(CONFIG_WDR4300)
+#if defined(CONFIG_WR741) || defined(CONFIG_WDR4300) || defined(CONFIG_WDR2543)
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 #else
 	u8 *mac = NULL;//(u8 *) KSEG1ADDR(0x1fff0000);
