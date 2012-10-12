@@ -1016,9 +1016,21 @@ static struct rtl8366_initval dir825b1_rtl8366s_initvals[] = {
 };
 #endif
 
+static void tl_wr1043nd_rtl8366rb_hw_reset(bool active)
+{
+	if (active)
+		ar71xx_device_stop(AR71XX_RESET_GE0_PHY);
+	else
+		ar71xx_device_start(AR71XX_RESET_GE0_PHY);
+}
+
+
 static struct rtl8366_platform_data rtl8366_dev_data = {
 	.gpio_sda        = GPIO_RTL8366_SDA,
 	.gpio_sck        = GPIO_RTL8366_SCK,
+#ifdef CONFIG_TPLINK
+	.hw_reset	= tl_wr1043nd_rtl8366rb_hw_reset,
+#endif
 #ifdef CONFIG_DIR825
 	.num_initvals	= ARRAY_SIZE(dir825b1_rtl8366s_initvals),
 	.initvals	= dir825b1_rtl8366s_initvals,
