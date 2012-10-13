@@ -45,9 +45,10 @@
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
-#ifdef	CONFIG_MTD_PARTITIONS
+#ifdef	CONFIG_MTD
 #include <linux/mtd/partitions.h>
 #endif
+#include "../../mtdcore.h"
 
 #include <typedefs.h>
 #include <osl.h>
@@ -80,7 +81,7 @@ struct brcmnand_mtd {
 	si_t			*sih;
 	struct mtd_info		mtd;
 	struct nand_chip	chip;
-#ifdef	CONFIG_MTD_PARTITIONS
+#ifdef	CONFIG_MTD
 	struct mtd_partition	*parts;
 #endif
 	hndnand_t		*nfl;
@@ -174,7 +175,7 @@ brcmnand_hw_ecc_layout(struct brcmnand_mtd *brcmnand)
 	unsigned ecc_per_sec, oob_per_sec;
 	unsigned bbm_pos = brcmnand->chip.badblockpos;
 
-	DEBUG(MTD_DEBUG_LEVEL1, "%s: ecc_level %d\n",
+	pr_debug("%s: ecc_level %d\n",
 		__func__, brcmnand->ecc_level);
 
 	/* Caclculate spare area per sector size */
@@ -188,13 +189,13 @@ brcmnand_hw_ecc_layout(struct brcmnand_mtd *brcmnand)
 	else
 		ecc_per_sec = oob_per_sec + 1;	/* cause an error if not in table */
 
-	DEBUG(MTD_DEBUG_LEVEL1, "%s: calc eccbytes %d\n", __func__, ecc_per_sec);
+	pr_debug("%s: calc eccbytes %d\n", __func__, ecc_per_sec);
 
 	/* Now find out the answer according to the table */
 	for (i = 0; i < ARRAY_SIZE(brcmnand_ecc_sizes); i++) {
 		if (brcmnand_ecc_sizes[i].ecc_level == brcmnand->ecc_level &&
 		    brcmnand_ecc_sizes[i].sector_size_shift == brcmnand->sector_size_shift) {
-			DEBUG(MTD_DEBUG_LEVEL1, "%s: table eccbytes %d\n", __func__,
+			pr_debug("%s: table eccbytes %d\n", __func__,
 				brcmnand_ecc_sizes[i].ecc_bytes_per_sec);
 			break;
 		}
@@ -322,8 +323,8 @@ brcmnand_options_print(unsigned opts)
 				printk("OPT_%x", 1 << bit);
 				n = NULL;
 				break;
-			case NAND_NO_AUTOINCR:
-				n = "NO_AUTOINCR"; break;
+//			case NAND_NO_AUTOINCR:
+//				n = "NO_AUTOINCR"; break;
 			case NAND_BUSWIDTH_16:
 				n = "BUSWIDTH_16"; break;
 			case NAND_NO_PADDING:
@@ -346,8 +347,8 @@ brcmnand_options_print(unsigned opts)
 				n = "BROKEN_XD"; break;
 			case NAND_ROM:
 				n = "ROM"; break;
-			case NAND_USE_FLASH_BBT:
-				n = "USE_FLASH_BBT"; break;
+//			case NAND_BBT_USE_FLASH:
+//				n = "USE_FLASH_BBT"; break;
 			case NAND_SKIP_BBTSCAN:
 				n = "SKIP_BBTSCAN"; break;
 			case NAND_OWN_BUFFERS:
@@ -358,10 +359,10 @@ brcmnand_options_print(unsigned opts)
 				n = "SCAN_SILENT_NODEV"; break;
 			case NAND_BBT_SCAN2NDPAGE:
 				n = "BBT_SCAN2NDPAGE"; break;
-			case NAND_BBT_SCANBYTE1AND6:
-				n = "BBT_SCANBYTE1AND6"; break;
-			case NAND_BBT_SCANLASTPAGE:
-				n = "BBT_SCANLASTPAGE"; break;
+//			case NAND_BBT_SCANBYTE1AND6:
+//				n = "BBT_SCANBYTE1AND6"; break;
+//			case NAND_BBT_SCANLASTPAGE:
+//				n = "BBT_SCANLASTPAGE"; break;
 		}
 		printk("%s,", n);
 	}
@@ -401,11 +402,11 @@ brcmnand_waitfunc(struct mtd_info *mtd, struct nand_chip *chip)
 
 	/* Timeout */
 	if (ret < 0) {
-		DEBUG(MTD_DEBUG_LEVEL0, "%s: timeout\n", __func__);
+		pr_debug("%s: timeout\n", __func__);
 		return NAND_STATUS_FAIL;
 	}
 
-	DEBUG(MTD_DEBUG_LEVEL3, "%s: status=%#x\n", __func__, ret);
+	pr_debug("%s: status=%#x\n", __func__, ret);
 
 	return ret;
 }
@@ -414,7 +415,7 @@ brcmnand_waitfunc(struct mtd_info *mtd, struct nand_chip *chip)
  * NAND Interface - read_oob
  */
 static int
-brcmnand_read_oob(struct mtd_info *mtd, struct nand_chip *chip, int page, int sndcmd)
+brcmnand_read_oob(struct mtd_info *mtd, struct nand_chip *chip, int page)
 {
 	struct brcmnand_mtd *brcmnand = chip->priv;
 	uint64 nand_addr;
@@ -463,7 +464,7 @@ _brcmnand_read_page_do(struct mtd_info *mtd, struct nand_chip *chip,
 		/* Get ECC soft error stats */
 		mtd->ecc_stats.corrected += serr;
 
-		DEBUG(MTD_DEBUG_LEVEL3, "%s: page=%#x err hard %d soft %d\n", __func__, page,
+		pr_debug("%s: page=%#x err hard %d soft %d\n", __func__, page,
 			mtd->ecc_stats.failed, mtd->ecc_stats.corrected);
 	}
 
@@ -475,7 +476,7 @@ _brcmnand_read_page_do(struct mtd_info *mtd, struct nand_chip *chip,
  */
 static int
 brcmnand_read_page_ecc(struct mtd_info *mtd, struct nand_chip *chip,
-                uint8_t *buf, int page)
+                uint8_t *buf, int oob_required, int page)
 {
 	return _brcmnand_read_page_do(mtd, chip, buf, page, TRUE);
 }
@@ -485,7 +486,7 @@ brcmnand_read_page_ecc(struct mtd_info *mtd, struct nand_chip *chip,
  */
 static int
 brcmnand_read_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
-                uint8_t *buf, int page)
+                uint8_t *buf, int oob_required, int page)
 {
 	return _brcmnand_read_page_do(mtd, chip, buf, page, TRUE);
 }
@@ -506,7 +507,7 @@ _brcmnand_write_page_do(struct mtd_info *mtd, struct nand_chip *chip, const uint
 
 	/* Retreive pre-existing OOB values */
 	memcpy(tmp_poi, chip->oob_poi, mtd->oobsize);
-	brcmnand->cmd_ret = brcmnand_read_oob(mtd, chip, brcmnand->page_addr, 1);
+	brcmnand->cmd_ret = brcmnand_read_oob(mtd, chip, brcmnand->page_addr);
 	if (brcmnand->cmd_ret < 0)
 		return;
 
@@ -526,7 +527,7 @@ _brcmnand_write_page_do(struct mtd_info *mtd, struct nand_chip *chip, const uint
  */
 static void
 brcmnand_write_page_ecc(struct mtd_info *mtd, struct nand_chip *chip,
-                const uint8_t *buf)
+                const uint8_t *buf, int oob_required)
 {
 	_brcmnand_write_page_do(mtd, chip, buf, TRUE);
 }
@@ -536,7 +537,7 @@ brcmnand_write_page_ecc(struct mtd_info *mtd, struct nand_chip *chip,
  */
 static void
 brcmnand_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
-                const uint8_t *buf)
+                const uint8_t *buf, int oob_required)
 {
 	printk(KERN_INFO "%s: Enter!\n", __FUNCTION__);
 
@@ -580,7 +581,7 @@ brcmnand_read_byte(struct mtd_info *mtd)
 			BUG_ON(1);
 	}
 
-	DEBUG(MTD_DEBUG_LEVEL3, "%s: %#x\n", __func__, b);
+	pr_debug( "%s: %#x\n", __func__, b);
 
 	return b;
 }
@@ -599,7 +600,7 @@ brcmnand_read_word(struct mtd_info *mtd)
 	barrier();
 	w |= brcmnand_read_byte(mtd) << 8;
 
-	DEBUG(MTD_DEBUG_LEVEL0, "%s: %#x\n", __func__, w);
+	pr_debug( "%s: %#x\n", __func__, w);
 
 	return w;
 }
@@ -630,7 +631,7 @@ brcmnand_cmdfunc(struct mtd_info *mtd, unsigned command, int column, int page_ad
 	struct brcmnand_mtd *brcmnand = chip->priv;
 	uint64 nand_addr;
 
-	DEBUG(MTD_DEBUG_LEVEL3, "%s: cmd=%#x col=%#x pg=%#x\n", __func__,
+	pr_debug("%s: cmd=%#x col=%#x pg=%#x\n", __func__,
 		command, column, page_addr);
 
 	brcmnand->last_cmd = command;
@@ -680,7 +681,7 @@ brcmnand_cmdfunc(struct mtd_info *mtd, unsigned command, int column, int page_ad
 
 		case NAND_CMD_READOOB:
 			/* Emulate simple interface */
-			brcmnand_read_oob(mtd, chip, page_addr, 1);
+			brcmnand_read_oob(mtd, chip, page_addr);
 			brcmnand->oob_index = 0;
 			break;
 
@@ -707,7 +708,7 @@ brcmnand_scan(struct mtd_info *mtd)
 	if (ret)
 		return ret;
 
-	DEBUG(MTD_DEBUG_LEVEL0, "%s: scan_ident ret=%d num_chips=%d\n", __func__,
+	pr_debug( "%s: scan_ident ret=%d num_chips=%d\n", __func__,
 		ret, chip->numchips);
 
 	/* Get configuration from first chip */
@@ -720,19 +721,19 @@ brcmnand_scan(struct mtd_info *mtd)
 	if ((ret = brcmnand_hw_ecc_layout(brcmnand)) != 0)
 		return ret;
 
-	DEBUG(MTD_DEBUG_LEVEL0, "%s: layout.oobavail=%d\n", __func__,
+	pr_debug( "%s: layout.oobavail=%d\n", __func__,
 		chip->ecc.layout->oobavail);
 
 	ret = nand_scan_tail(mtd);
 
-	DEBUG(MTD_DEBUG_LEVEL0, "%s: scan_tail ret=%d\n", __func__, ret);
+	pr_debug( "%s: scan_tail ret=%d\n", __func__, ret);
 
 	if (chip->badblockbits == 0)
 		chip->badblockbits = 8;
 	BUG_ON((1<<chip->page_shift) != mtd->writesize);
 
 	/* Spit out some key chip parameters as detected by nand_base */
-	DEBUG(MTD_DEBUG_LEVEL0, "%s: erasesize=%d writesize=%d oobsize=%d "
+	pr_debug( "%s: erasesize=%d writesize=%d oobsize=%d "
 		" page_shift=%d badblockpos=%d badblockbits=%d\n", __func__,
 		mtd->erasesize, mtd->writesize, mtd->oobsize,
 		chip->page_shift, chip->badblockpos, chip->badblockbits);
@@ -751,7 +752,7 @@ brcmnand_dummy_func(struct mtd_info * mtd)
 	BUG_ON(1);
 }
 
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 struct mtd_partition brcmnand_parts[] = {
 	{
 		.name = "brcmnand",
@@ -794,7 +795,7 @@ brcmnand_mtd_init(void)
 	hndnand_t *nfl;
 	struct nand_chip *chip;
 	struct mtd_info *mtd;
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 	struct mtd_partition *parts;
 	int i;
 #endif
@@ -869,7 +870,7 @@ brcmnand_mtd_init(void)
 		goto fail;
 	}
 
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 	parts = init_brcmnand_mtd_partitions(&brcmnand.mtd, brcmnand.mtd.size);
 	if (!parts)
 		goto fail;
@@ -878,7 +879,7 @@ brcmnand_mtd_init(void)
 
 	ret = add_mtd_partitions(&brcmnand.mtd, parts, i);
 	if (ret < 0) {
-		DEBUG(MTD_DEBUG_LEVEL0, "%s: failed to add mtd partitions\n", __func__);
+		pr_debug( "%s: failed to add mtd partitions\n", __func__);
 		goto fail;
 	}
 
@@ -894,7 +895,7 @@ fail:
 static void __exit
 brcmnand_mtd_exit(void)
 {
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 	del_mtd_partitions(&brcmnand.mtd);
 #else
 	del_mtd_device(&brcmnand.mtd);
