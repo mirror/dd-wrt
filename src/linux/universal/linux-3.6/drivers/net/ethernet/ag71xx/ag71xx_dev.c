@@ -991,7 +991,7 @@ static enum ar71xx_soc_type ar71xx_get_soc_type(void)
 }
 
 
-#ifdef CONFIG_WR2543
+#ifdef CONFIG_WDR2543
 #include <linux/rtl8367.h>
 
 #define TL_WR2543N_GPIO_RTL8367_SDA	1
@@ -1029,7 +1029,7 @@ static struct platform_device tl_wr2543n_rtl8367_device = {
 #endif
 
 
-#if defined(CONFIG_RTL8366_SMI) || defined(CONFIG_RTL8366_SMI_MODULE)
+#if (defined(CONFIG_RTL8366_SMI) || defined(CONFIG_RTL8366_SMI_MODULE)) && !defined(CONFIG_WDR2543)
 
 #ifdef CONFIG_TPLINK
 /* TL-WR1043ND */
@@ -1115,7 +1115,7 @@ extern unsigned int compex;
 #endif
 static inline void phy_dev_init(void)
 {
-#if defined(CONFIG_WR2543)
+#if defined(CONFIG_WDR2543)
 	ar71xx_eth0_data.mii_bus_dev = &tl_wr2543n_rtl8367_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.speed = SPEED_1000;

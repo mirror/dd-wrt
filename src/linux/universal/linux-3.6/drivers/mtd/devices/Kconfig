@@ -383,6 +383,9 @@ config DIR825C1
 config WDR4300
 	bool "support for WDR4300"
 	depends on DIR825C1
+config WDR2543
+	bool "support for WDR2543"
+	depends on MACH_AR7240
 config WZRG450NH 
 	bool "support for buffalo WZR HP G450NH"
 	depends on MACH_AR7240 
