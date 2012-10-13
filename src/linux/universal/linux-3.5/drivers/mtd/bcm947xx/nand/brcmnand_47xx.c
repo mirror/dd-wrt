@@ -366,7 +366,7 @@ int brcmnand_spare_is_valid(struct mtd_info *mtd, struct nand_chip *chip, int st
  *
  * Deselect, release chip lock and wake up anyone waiting on the device
  */
-static spinlock_t brcmmtd_lock;
+static spinlock_t mtd_lock;
 static void brcmnand_release_device(struct mtd_info *mtd)
 {
 	if (nflash_lock == 1) {
@@ -374,7 +374,7 @@ static void brcmnand_release_device(struct mtd_info *mtd)
 		NFLASH_LOCK(mtd->mlock);
 	}
 	nflash_lock --;
-	spin_unlock(&brcmmtd_lock);
+	spin_unlock(&mtd_lock);
 }
 
 /**
@@ -387,7 +387,7 @@ static void brcmnand_release_device(struct mtd_info *mtd)
  */
 static int brcmnand_get_device( struct mtd_info *mtd)
 {
-	spin_lock(&brcmmtd_lock);
+	spin_lock(&mtd_lock);
 	if (nflash_lock == 0) {
 		NFLASH_UNLOCK(mtd->mlock);
 		brcmnand_info.nflash->enable( brcmnand_info.nflash, 1);
@@ -2362,7 +2362,7 @@ brcmnand_mtd_init(void)
 	mtd->priv = &brcmnand_info.chip;
 	mtd->owner = THIS_MODULE;
 	mtd->mlock = partitions_lock_init();
-	spin_lock_init(&brcmmtd_lock);
+	spin_lock_init(&mtd_lock);
 	if (!mtd->mlock) {
 		ret = -ENOMEM;
 		goto fail;

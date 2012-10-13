@@ -1562,6 +1562,11 @@ unsigned int __devinit pci_scan_child_bus(struct pci_bus *bus)
 	/* Reserve buses for SR-IOV capability. */
 	max += pci_iov_bus_range(bus);
 
+#ifdef CONFIG_BCM47XX
+	if (pci_domain_nr(bus))
+		max += pci_domain_nr(bus) - 1;
+#endif
+
 	/*
 	 * After performing arch-dependent fixup of the bus, look behind
 	 * all PCI-to-PCI bridges on this bus.

@@ -1,5 +1,5 @@
 #
-# linux/drivers/mtd/47xxnand/Kconfig
+# linux/drivers/mtd/bcm947xx/nand/Kconfig
 #
 
 config MTD_BRCMNAND
@@ -7,14 +7,11 @@ config MTD_BRCMNAND
 	default n
 	depends on MTD
 	depends on MTD_NAND
-	depends on BCM47XX
 	help
 	  This enables support for accessing selected types of NAND flash
 	  devices through the Broadcom NAND controller.
 
 config MTD_NFLASH
 	bool "Broadcom Flash support for legacy MTD partition"
-	depends on BCM47XX
 	help
 	  This enables support for Broadcom legacy MTD partition.
-

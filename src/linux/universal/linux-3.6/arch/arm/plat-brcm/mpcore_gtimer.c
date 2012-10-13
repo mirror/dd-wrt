@@ -61,6 +61,8 @@
 static void __iomem *gtimer_base;
 static u32 ticks_per_jiffy;
 
+extern void soc_watchdog(void);
+
 cycle_t gptimer_count_read(struct clocksource *cs)
 {
 	u32 count_hi, count_ho, count_lo;
@@ -189,6 +191,8 @@ irqreturn_t gtimer_interrupt(int irq, void *dev_id)
 	if (!evt->event_handler)
 	    printk(KERN_EMERG "error\n");
 	evt->event_handler(evt);
+
+	soc_watchdog();
 
 	return IRQ_HANDLED;
 }
