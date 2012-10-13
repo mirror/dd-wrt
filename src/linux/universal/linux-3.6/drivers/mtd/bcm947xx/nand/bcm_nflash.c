@@ -558,6 +558,13 @@ nflash_mtd_init(void)
 
 	for (i = 0; parts[i].name; i++)
 		;
+		
+	if (!i){
+		parts[i].name = "nand";
+		parts[i].offset = 0;
+		parts[i].size = nflash.mtd.size;
+		i++;
+	}
 
 	ret = add_mtd_partitions(&nflash.mtd, parts, i);
 	if (ret) {
