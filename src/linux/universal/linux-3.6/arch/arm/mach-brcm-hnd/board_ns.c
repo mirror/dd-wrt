@@ -22,6 +22,7 @@
 #ifdef CONFIG_MTD
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/mtd/nand.h>
 #include <linux/romfs_fs.h>
 #include <linux/cramfs_fs.h>
 #include <linux/squashfs_fs.h>
@@ -170,6 +171,11 @@ static int __init rootfs_mtdblock(void)
 	return block+3;
 }
 
+#define WATCHDOG_MIN    3000    /* milliseconds */
+extern int panic_timeout;
+extern int panic_on_oops;
+static int watchdog = 0;
+
 static void __init brcm_setup(void)
 {
 	/* Get global SB handle */
@@ -177,7 +183,20 @@ static void __init brcm_setup(void)
 
 //	if (strncmp(boot_command_line, "root=/dev/mtdblock", strlen("root=/dev/mtdblock")) == 0)
 //		sprintf(saved_root_name, "/dev/mtdblock%d", rootfs_mtdblock());
+	/* Set watchdog interval in ms */
+        watchdog = simple_strtoul(nvram_safe_get("watchdog"), NULL, 0);
+
+	/* Ensure at least WATCHDOG_MIN */
+	if ((watchdog > 0) && (watchdog < WATCHDOG_MIN))
+		watchdog = WATCHDOG_MIN;
+
 }
+
+void soc_watchdog(void)
+{
+	if (watchdog > 0)
+		si_watchdog_ms(sih, watchdog);
+ }
 
 void __init board_init(void)
 {
@@ -289,6 +308,22 @@ spinlock_t *partitions_lock_init(void)
 	return bcm_mtd_lock;
 }
 EXPORT_SYMBOL(partitions_lock_init);
+
+static struct nand_hw_control *nand_hwcontrol = NULL;
+struct nand_hw_control *nand_hwcontrol_lock_init(void)
+{
+	if (!nand_hwcontrol) {
+		nand_hwcontrol = (struct nand_hw_control *)kzalloc(sizeof(struct nand_hw_control), GFP_KERNEL);
+		if (!nand_hwcontrol)
+			return NULL;
+
+		spin_lock_init(&nand_hwcontrol->lock);
+		init_waitqueue_head(&nand_hwcontrol->wq);
+	}
+	return nand_hwcontrol;
+}
+EXPORT_SYMBOL(nand_hwcontrol_lock_init);
+
 
 /* Find out prom size */
 static uint32 boot_partition_size(uint32 flash_phys) {

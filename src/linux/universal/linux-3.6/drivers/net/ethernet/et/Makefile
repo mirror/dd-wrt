@@ -43,7 +43,7 @@ endif	# /* CONFIG_ET_ALL_PASSIVE_ON */
 
 # Search for sources under src/et/sys or objects under src/et/linux
 ifneq ($(wildcard $(src)/$(ETSRCDIR)/sys),)
-EXTRA_CFLAGS	+= -I$(src)/$(ETSRCDIR)/sys
+EXTRA_CFLAGS	+= -I$(src)/$(ETSRCDIR)/sys -I$(src)/$(ETSRCDIR)/include
 else
 et-objs := $(ETSRCDIR)/linux/et.o
 endif

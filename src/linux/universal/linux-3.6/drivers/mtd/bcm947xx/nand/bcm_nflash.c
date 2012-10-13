@@ -29,8 +29,9 @@
 #include <linux/slab.h>
 #include <linux/ioport.h>
 #include <linux/mtd/mtd.h>
+#include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
-#include "../mtdcore.h"
+#include "../../mtdcore.h"
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 #include <linux/mtd/compatmac.h>
@@ -63,20 +64,55 @@ struct mtd_partition *nflash_parts;
 #endif
 
 /* Mutexing is version-dependent */
-extern void *partitions_lock_init(void);
-#define	NFLASH_LOCK(lock)	if (lock) spin_lock(lock)
-#define	NFLASH_UNLOCK(lock)	if (lock) spin_unlock(lock)
+extern struct nand_hw_control *nand_hwcontrol_lock_init(void);
 
 struct nflash_mtd {
 	si_t *sih;
 	hndnand_t *nfl;
 	struct mtd_info mtd;
+	struct nand_hw_control *controller;
 	struct mtd_erase_region_info region;
 	unsigned char *map;
 };
 
 /* Private global state */
 static struct nflash_mtd nflash;
+
+static int _nflash_get_device(struct nflash_mtd *nflash);
+static void _nflash_release_device(struct nflash_mtd *nflash);
+
+#define	NFLASH_LOCK(nflash)	_nflash_get_device(nflash)
+#define	NFLASH_UNLOCK(nflash)	_nflash_release_device(nflash)
+
+static int
+_nflash_get_device(struct nflash_mtd *nflash)
+{
+	spinlock_t *lock = &nflash->controller->lock;
+	wait_queue_head_t *wq = &nflash->controller->wq;
+	struct nand_chip *chip;
+	DECLARE_WAITQUEUE(wait, current);
+
+retry:
+	spin_lock(lock);
+
+	chip = nflash->controller->active;
+	if (!chip || chip->state == FL_READY)
+		return 0;
+
+	set_current_state(TASK_UNINTERRUPTIBLE);
+	add_wait_queue(wq, &wait);
+	spin_unlock(lock);
+	schedule();
+	remove_wait_queue(wq, &wait);
+	goto retry;
+}
+
+static void
+_nflash_release_device(struct nflash_mtd *nflash)
+{
+	wake_up(&nflash->controller->wq);
+	spin_unlock(&nflash->controller->lock);
+}
 
 static int
 _nflash_mtd_read(struct mtd_info *mtd, struct mtd_partition *part,
@@ -88,7 +124,7 @@ _nflash_mtd_read(struct mtd_info *mtd, struct mtd_partition *part,
 	uchar *tmpbuf = NULL;
 	int size;
 	uint offset, blocksize, mask, blk_offset, off;
-	uint skip_bytes = 0, good_bytes = 0;
+	uint skip_bytes = 0, good_bytes = 0, page_size;
 	int blk_idx, i;
 	int need_copy = 0;
 	uchar *ptr = NULL;
@@ -111,13 +147,14 @@ _nflash_mtd_read(struct mtd_info *mtd, struct mtd_partition *part,
 	if ((from + len) > mtd->size)
 		return -EINVAL;
 	offset = from;
-	if ((offset & (NFL_SECTOR_SIZE - 1)) != 0) {
-		extra = offset & (NFL_SECTOR_SIZE - 1);
+	page_size = nflash->nfl->pagesize;
+	if ((offset & (page_size - 1)) != 0) {
+		extra = offset & (page_size - 1);
 		offset -= extra;
 		len += extra;
 		need_copy = 1;
 	}
-	size = (len + (NFL_SECTOR_SIZE - 1)) & ~(NFL_SECTOR_SIZE - 1);
+	size = (len + (page_size - 1)) & ~(page_size - 1);
 	if (size != len)
 		need_copy = 1;
 	if (!need_copy) {
@@ -168,7 +205,7 @@ _nflash_mtd_read(struct mtd_info *mtd, struct mtd_partition *part,
 		}
 
 		if ((bytes = hndnand_read(nflash->nfl,
-			off, NFL_SECTOR_SIZE, ptr)) < 0) {
+			off, page_size, ptr)) < 0) {
 			ret = bytes;
 			goto done;
 		}
@@ -193,10 +230,11 @@ static int
 nflash_mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf)
 {
 	int ret;
+	struct nflash_mtd *nflash = (struct nflash_mtd *) mtd->priv;
 
-	NFLASH_LOCK(mtd->mlock);
+	NFLASH_LOCK(nflash);
 	ret = _nflash_mtd_read(mtd, NULL, from, len, retlen, buf);
-	NFLASH_UNLOCK(mtd->mlock);
+	NFLASH_UNLOCK(nflash);
 
 	return ret;
 }
@@ -241,7 +279,7 @@ nflash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, co
 	if (!(block = kmalloc(blocksize, GFP_KERNEL)))
 		return -ENOMEM;
 
-	NFLASH_LOCK(mtd->mlock);
+	NFLASH_LOCK(nflash);
 
 	mask = blocksize - 1;
 	/* Check and skip bad blocks */
@@ -299,7 +337,7 @@ nflash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, co
 			write_len = blocksize;
 			while (write_len) {
 				if ((bytes = hndnand_write(nflash->nfl,
-				(uint) from + skip_bytes, (uint) write_len,
+				from + skip_bytes, (uint) write_len,
 				(uchar *) write_ptr)) < 0) {
 					hndnand_mark_badb(nflash->nfl, off);
 					nflash->map[blk_idx] = 1;
@@ -336,7 +374,7 @@ nflash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, co
 		}
 	}
 done:
-	NFLASH_UNLOCK(mtd->mlock);
+	NFLASH_UNLOCK(nflash);
 
 	if (block)
 		kfree(block);
@@ -382,7 +420,7 @@ nflash_mtd_erase(struct mtd_info *mtd, struct erase_info *erase)
 	if (!part)
 		return -EINVAL;
 
-	NFLASH_LOCK(mtd->mlock);
+	NFLASH_LOCK(nflash);
 
 	/* Find the effective start block address to erase */
 	part_start_blk = reciprocal_divide(part->offset & ~(blocksize-1),
@@ -435,17 +473,14 @@ done:
 	else
 		erase->state = MTD_ERASE_DONE;
 
-	NFLASH_UNLOCK(mtd->mlock);
+	NFLASH_UNLOCK(nflash);
 
 	/* Call erase callback */
 	if (erase->callback)
 		erase->callback(erase);
 
-	ret = erase->state == MTD_ERASE_DONE ? 0 : -EIO;
-
 	return ret;
 }
-
 
 #if LINUX_VERSION_CODE < 0x20212 && defined(MODULE)
 #define nflash_mtd_init init_module
@@ -500,25 +535,21 @@ nflash_mtd_init(void)
 	nflash.mtd._erase = nflash_mtd_erase;
 	nflash.mtd._read = nflash_mtd_read;
 	nflash.mtd._write = nflash_mtd_write;
-	nflash.mtd.writesize = NFL_SECTOR_SIZE;
+	nflash.mtd.writesize = info->pagesize;
 	nflash.mtd.priv = &nflash;
 	nflash.mtd.owner = THIS_MODULE;
-	nflash.mtd.mlock = partitions_lock_init();
-	nflash.mtd.writebufsize = info->pagesize;
-	if (!nflash.mtd.mlock)
+	nflash.controller = nand_hwcontrol_lock_init();
+	if (!nflash.controller)
 		return -ENOMEM;
 
 	/* Scan bad block */
-	NFLASH_LOCK(nflash.mtd.mlock);
-	int bad=0;
+	NFLASH_LOCK(&nflash);
 	for (i = 0; i < info->numblocks; i++) {
 		if (hndnand_checkbadb(nflash.nfl, (i * info->blocksize)) != 0) {
 			nflash.map[i] = 1;
-			bad++;
 		}
 	}
-	printk(KERN_INFO "total bad blocks %d\n",bad);
-	NFLASH_UNLOCK(nflash.mtd.mlock);
+	NFLASH_UNLOCK(&nflash);
 
 #ifdef CONFIG_MTD
 	parts = init_nflash_mtd_partitions(info, &nflash.mtd, nflash.mtd.size);
@@ -527,12 +558,7 @@ nflash_mtd_init(void)
 
 	for (i = 0; parts[i].name; i++)
 		;
-	if (!i){
-		parts[i].name = "nand";
-		parts[i].offset = 0;
-		parts[i].size = nflash.mtd.size - ((bad*2) * info->blocksize);
-		i++;
-	}
+
 	ret = add_mtd_partitions(&nflash.mtd, parts, i);
 	if (ret) {
 		printk(KERN_ERR "nflash: add_mtd failed\n");

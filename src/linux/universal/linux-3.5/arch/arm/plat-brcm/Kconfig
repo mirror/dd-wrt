@@ -51,3 +51,15 @@ config ARCH_HAS_HEAD_FIXUP
 	boot monitor or certain hardware issues that are not taken
 	care of by the boot monitor.
 
+config PLAT_NAND_JFFS2
+	bool "BCM5301X NAND Flash driver for JFFS file system"
+	depends on PLAT_BCM5301X
+	depends on JFFS2_FS
+	depends on MTD_NAND
+	depends on MTD
+	depends on !MTD_BRCMNAND
+        depends on !MTD_NFLASH
+	help
+	Support for JFFS2 on NAND Flash memory connected to the SoC
+	NAND controller.
+

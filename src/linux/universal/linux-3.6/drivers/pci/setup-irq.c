@@ -26,7 +26,7 @@ pdev_fixup_irq(struct pci_dev *dev,
 	u8 pin, slot;
 	int irq = 0;
 
-#if defined(CONFIG_PLAT_BCM5301X)
+#ifdef CONFIG_BCM47XX
 	if (pci_domain_nr(dev->bus) == 0)
 		return;
 #endif
