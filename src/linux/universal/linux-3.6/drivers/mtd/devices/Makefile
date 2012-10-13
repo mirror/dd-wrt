@@ -31,6 +31,5 @@ obj-$(CONFIG_WZRAG300NH)	+= wzrag300nh_flash.o
 obj-$(CONFIG_WZRG450NH)		+= wzrg450nh_flash.o
 obj-$(CONFIG_MTD_SPIFLASH)	+= spiflash.o
 obj-$(CONFIG_MTD_SPIFLASH_SELFMAP)	+= spiflash_selfmap.o
-obj-$(CONFIG_MTD_BCMSFLASH)	+= bcmsflash.o
 
 CFLAGS_docg3.o			+= -I$(src)

@@ -299,8 +299,9 @@ typedef struct si_bus_irq_map {
 
 si_bus_irq_map_t si_bus_irq_map[] = {
 	{BCM47XX_GMAC_ID, 0, 4, 179}	/* 179, 180, 181, 182 */,
-	{BCM47XX_USB20H_ID, 0, 1, 111}	/* 111 */,
-	{BCM47XX_USB30H_ID, 0, 5, 112}	/* 112, 113, 114, 115, 116 */
+	{BCM47XX_USB20H_ID, 0, 1, 111}	/* 111 EHCI. */,
+	{BCM47XX_USB20H_ID, 0, 1, 111}	/* 111 OHCI. */,
+	{BCM47XX_USB30H_ID, 0, 5, 112}	/* 112, 113, 114, 115, 116. XHCI */
 };
 #define SI_BUS_IRQ_MAP_SIZE (sizeof(si_bus_irq_map) / sizeof(si_bus_irq_map_t))
 
@@ -463,7 +464,7 @@ static int soc_pci_write_config(struct pci_bus *bus, unsigned int devfn,
 		u32 mask = (1 << (size * 8)) - 1;
 		int shift = (where % 4) * 8;
 		data_reg = __raw_readl( base );
-		data_reg &= ~(mask & shift);
+		data_reg &= ~(mask << shift);
 		data_reg |=  (val & mask) << shift;
 		}
 	else
@@ -505,12 +506,22 @@ static int __init noinline soc_pcie_check_link(struct soc_pcie_port * port)
                 .sysdata = &sd,
         };
 
-	if( ! port->enable )
+	if (!port->enable)
 		return -EINVAL;
+
+	if (1) {
+		u32 tmp32;
+
+		/* force PCIE GEN1 */
+		pci_bus_read_config_dword(&bus, devfn, 0xdc, &tmp32);
+		tmp32 &= ~0xf;
+		tmp32 |= 1;
+		pci_bus_write_config_dword(&bus, devfn, 0xdc, tmp32);
+	}
 
 	/* See if the port is in EP mode, indicated by header type 00 */
         pci_bus_read_config_byte(&bus, devfn, PCI_HEADER_TYPE, &tmp8);
-	if( tmp8 != PCI_HEADER_TYPE_BRIDGE ) {
+	if (tmp8 != PCI_HEADER_TYPE_BRIDGE) {
 		pr_info("PCIe port %d in End-Point mode - ignored\n",
 			port->hw_pci.domain );
 		return -ENODEV;
@@ -522,24 +533,25 @@ static int __init noinline soc_pcie_check_link(struct soc_pcie_port * port)
 
 #ifdef	DEBUG
 	pr_debug("PCIE%d: LINKSTA reg %#x val %#x\n", port->hw_pci.domain,
-		pos+PCI_EXP_LNKSTA, tmp16 );
+		pos+PCI_EXP_LNKSTA, tmp16);
 #endif
 
 	nlw = (tmp16 & PCI_EXP_LNKSTA_NLW) >> PCI_EXP_LNKSTA_NLW_SHIFT ;
 	port->link = tmp16 & PCI_EXP_LNKSTA_DLLLA ;
 
-	if( nlw != 0 ) port->link = 1;
+	if (nlw != 0)
+		port->link = 1;
 
 #ifdef	DEBUG
-	for( ; pos < 0x100; pos += 2 )
-		{
-        	pci_bus_read_config_word(&bus, devfn, pos , &tmp16);
-		if( tmp16 ) pr_debug("reg[%#x]=%#x, ", pos , tmp16 );
-		}
+	for (; pos < 0x100; pos += 2) {
+		pci_bus_read_config_word(&bus, devfn, pos , &tmp16);
+		if (tmp16)
+			pr_debug("reg[%#x]=%#x, ", pos , tmp16);
+	}
 #endif
-	printk(KERN_INFO "PCIE%d link=%d\n", port->hw_pci.domain,  port->link );
+	pr_info("PCIE%d link=%d\n", port->hw_pci.domain,  port->link);
 
-	return( (port->link)? 0: -ENOSYS );
+	return ((port->link)? 0: -ENOSYS);
 }
 
 /*
@@ -612,9 +624,9 @@ static void __init soc_pcie_map_init(struct soc_pcie_port * port)
 
 	WARN_ON( size == 0 );
 	/* 64-bit LE regs, write low word, high is 0 at reset */
-	__raw_writel(addr | size,
-		port->reg_base + SOC_PCIE_SYS_IMAP1(0));
 	__raw_writel(addr | 0x1,
+		port->reg_base + SOC_PCIE_SYS_IMAP1(0));
+	__raw_writel(addr | size,
 		port->reg_base + SOC_PCIE_SYS_IARR(1));
 
 }
@@ -852,6 +864,12 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 
 	if (!regs) {
 		printk(KERN_ERR "WARNING! PCIBIOS_DEVICE_NOT_FOUND\n");
+		goto out;
+	}
+	
+	/* OHCI/EHCI only initialize one time */
+	if (coreid == NS_USB20_CORE_ID && si_iscoreup(sih)) {
+		rc = 0;
 		goto out;
 	}
 

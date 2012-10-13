@@ -17,6 +17,7 @@ obj-$(CONFIG_PLAT_MPCORE) += platsmp.o
 obj-$(CONFIG_PLAT_IPROC) += iproc_cru.o
 obj-$(CONFIG_PLAT_BCM5301X) += bcm5301x.o bcm5301x_dmu.o
 obj-$(CONFIG_PLAT_BCM5301X) += bcm5301x_pcie.o
+obj-$(CONFIG_PLAT_NAND_JFFS2) += bcm5301x_nandc.o
 obj-$(CONFIG_PLAT_BCM5301X) += nvram_linux.o
 obj-$(CONFIG_PLAT_BCM5301X) += $(addprefix $(SHARED)/, hndarm_ca9.o)
 obj-$(CONFIG_PLAT_BCM5301X) += $(addprefix $(SHARED)/, hndsoc.o)

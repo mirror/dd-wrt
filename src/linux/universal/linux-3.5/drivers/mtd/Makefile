@@ -36,6 +36,6 @@ nftl-objs		:= nftlcore.o nftlmount.o
 inftl-objs		:= inftlcore.o inftlmount.o
 
 obj-y		+= chips/ lpddr/ maps/ devices/ nand/ onenand/ tests/ ralink/ 
-obj-y           += 47xxnand/
+obj-y           += bcm947xx/
 
 obj-$(CONFIG_MTD_UBI)		+= ubi/

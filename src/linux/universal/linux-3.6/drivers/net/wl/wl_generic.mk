@@ -61,7 +61,7 @@ endif
     endif
     endif
     EXTRA_CFLAGS += -DDMA $(WLFLAGS) -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
-		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/shared/bcmwifi/include -I$(srctree)/brcm/wl/clm/include -I$(srctree)/brcm/wl/lwip/include -I$(srctree)/brcm/dpsta  -I$(srctree)/brcm/wl/sys  -I$(srctree)/brcm/wl/phy
+		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/shared/bcmwifi/include -I$(srctree)/brcm/wl/clm/include -I$(srctree)/brcm/wl/lwip/include -I$(srctree)/brcm/dpsta  -I$(srctree)/brcm/wl/sys  -I$(srctree)/brcm/wl/phy -I$(srctree)/brcm/wl/ppr/include
 
 
     ifneq ("$(CONFIG_CC_OPTIMIZE_FOR_SIZE)","y")

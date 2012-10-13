@@ -43,6 +43,10 @@
 #include <asm/localtimer.h>
 #include <asm/smp_plat.h>
 
+#ifdef CONFIG_BCM47XX
+extern void soc_watchdog(void);
+#endif
+
 /*
  * as from 2.5, kernels no longer have an init_tasks structure
  * so we need some other way of telling a new secondary core
@@ -389,7 +393,14 @@ static DEFINE_PER_CPU(struct clock_event_device, percpu_clockevent);
 static void ipi_timer(void)
 {
 	struct clock_event_device *evt = &__get_cpu_var(percpu_clockevent);
+#ifdef CONFIG_BCM47XX
+	int cpu = smp_processor_id();
+#endif
 	evt->event_handler(evt);
+#ifdef CONFIG_BCM47XX
+	if (cpu == 0)
+		soc_watchdog();
+#endif
 }
 
 #ifdef CONFIG_GENERIC_CLOCKEVENTS_BROADCAST

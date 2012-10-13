@@ -112,9 +112,6 @@ struct cpu_cache_fns {
 	void (*dma_unmap_area)(const void *, size_t, int);
 
 	void (*dma_flush_range)(const void *, const void *);
-#ifdef CONFIG_PLAT_BCM5301X
-	void (*dma_inv_range)(const void *, const void *);
-#endif
 };
 
 /*
@@ -141,9 +138,6 @@ extern struct cpu_cache_fns cpu_cache;
 #define dmac_map_area			cpu_cache.dma_map_area
 #define dmac_unmap_area			cpu_cache.dma_unmap_area
 #define dmac_flush_range		cpu_cache.dma_flush_range
-#ifdef CONFIG_PLAT_BCM5301X
-#define dma_inv_range			cpu_cache.dma_inv_range
-#endif
 
 #else
 
@@ -164,9 +158,6 @@ extern void __cpuc_flush_dcache_area(void *, size_t);
 extern void dmac_map_area(const void *, size_t, int);
 extern void dmac_unmap_area(const void *, size_t, int);
 extern void dmac_flush_range(const void *, const void *);
-#ifdef CONFIG_PLAT_BCM5301X
-extern void dma_inv_range(const void *, const void *);
-#endif
 #endif
 
 /*
