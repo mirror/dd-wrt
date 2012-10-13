@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.5.3 Kernel Configuration
+# Linux/arm 3.5.7 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -957,7 +957,6 @@ CONFIG_MTD_PHYSMAP=y
 #
 # Self-contained MTD device drivers
 #
-CONFIG_MTD_BCMSFLASH=y
 # CONFIG_MTD_PMC551 is not set
 # CONFIG_MTD_SLRAM is not set
 # CONFIG_MTD_PHRAM is not set
@@ -967,8 +966,26 @@ CONFIG_MTD_BCMSFLASH=y
 #
 # Disk-On-Chip Device Drivers
 #
+# CONFIG_MTD_DOC2000 is not set
+# CONFIG_MTD_DOC2001 is not set
+# CONFIG_MTD_DOC2001PLUS is not set
 # CONFIG_MTD_DOCG3 is not set
-# CONFIG_MTD_NAND is not set
+CONFIG_MTD_NAND_ECC=y
+# CONFIG_MTD_NAND_ECC_SMC is not set
+CONFIG_MTD_NAND=y
+# CONFIG_MTD_NAND_VERIFY_WRITE is not set
+# CONFIG_MTD_NAND_ECC_BCH is not set
+# CONFIG_MTD_SM_COMMON is not set
+# CONFIG_MTD_NAND_MUSEUM_IDS is not set
+# CONFIG_MTD_NAND_DENALI is not set
+CONFIG_MTD_NAND_IDS=y
+# CONFIG_MTD_NAND_RICOH is not set
+# CONFIG_MTD_NAND_DISKONCHIP is not set
+# CONFIG_MTD_NAND_DOCG4 is not set
+# CONFIG_MTD_NAND_CAFE is not set
+# CONFIG_MTD_NAND_NANDSIM is not set
+# CONFIG_MTD_NAND_PLATFORM is not set
+# CONFIG_MTD_ALAUDA is not set
 # CONFIG_MTD_ONENAND is not set
 
 #
@@ -980,6 +997,12 @@ CONFIG_MTD_BCMSFLASH=y
 #
 # Ralink Non-volatile Device Drivers
 #
+
+#
+# Broadcom Flash Devices Support
+#
+CONFIG_MTD_BCMSFLASH=y
+CONFIG_MTD_BRCMNAND=y
 CONFIG_MTD_NFLASH=y
 # CONFIG_PARPORT is not set
 CONFIG_BLK_DEV=y
@@ -1467,6 +1490,8 @@ CONFIG_USB=m
 #
 # Miscellaneous USB options
 #
+CONFIG_USB_DEVICEFS=y
+CONFIG_USB_DEVICE_CLASS=y
 # CONFIG_USB_DYNAMIC_MINORS is not set
 # CONFIG_USB_OTG_WHITELIST is not set
 # CONFIG_USB_OTG_BLACKLIST_HUB is not set
@@ -2098,8 +2123,3 @@ CONFIG_NLATTR=y
 CONFIG_AVERAGE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
-# CONFIG_CGROUPS is not set
- # CONFIG_SCSI_UFSHCD is not set
-# CONFIG_XFRM_USER is not set
-CONFIG_USB_DEVICEFS=y
-CONFIG_USB_DEVICE_CLASS=y
