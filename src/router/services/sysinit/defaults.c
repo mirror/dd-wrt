@@ -731,6 +731,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{ "wl1_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0 },
 	{ "wl1_amsdu", "auto", 0 },		/* Default AMSDU setting */
 	{ "wl1_obss_coex", "1", 0 },		/* Default OBSS Coexistence setting - OFF */
+	/* Tx Beamforming */
+	{ "wl0_txbf_bfr_cap", "0", 0 },
+	{ "wl0_txbf_bfe_cap", "0", 0 },
+	{ "wl1_txbf_bfr_cap", "0", 0 },
+	{ "wl1_txbf_bfe_cap", "0", 0 },
 #endif
 
 	{"wl0_sta_retry_time", "5", 0},	/* 100% duty cycle for LED on router */
