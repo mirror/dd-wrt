@@ -352,7 +352,7 @@ static int op_init(struct libusb_context *ctx)
 
 	if (supports_flag_zero_packet)
 		usbi_dbg("zero length packet flag supported");
-
+#if 0
 	r = stat(SYSFS_DEVICE_PATH, &statbuf);
 	if (r == 0 && S_ISDIR(statbuf.st_mode)) {
 		DIR *devices = opendir(SYSFS_DEVICE_PATH);
@@ -409,7 +409,10 @@ static int op_init(struct libusb_context *ctx)
 		   sysfs will work for libusb. */
 		if (!sysfs_can_relate_devices)
 			sysfs_has_descriptors = 0;
-	} else {
+	}
+ else
+#endif 
+ {
 		usbi_dbg("sysfs usb info not available");
 		sysfs_has_descriptors = 0;
 		sysfs_can_relate_devices = 0;
