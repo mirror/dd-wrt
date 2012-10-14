@@ -180,11 +180,13 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 0,
 		.active_low	= 0,
 	}, 
+#ifndef CONFIG_WDR2543
 	{
 		.name		= "generic_1",
 		.gpio		= 1,
 		.active_low	= 0,
 	}, 
+#endif
 	{
 		.name		= "generic_2",
 		.gpio		= 2,
@@ -205,11 +207,13 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 5,
 		.active_low	= 0,
 	}, 
+#ifndef CONFIG_WDR2543
 	{
 		.name		= "generic_6",
 		.gpio		= 6,
 		.active_low	= 0,
 	}, 
+#endif
 	{
 		.name		= "generic_7",
 		.gpio		= 7,

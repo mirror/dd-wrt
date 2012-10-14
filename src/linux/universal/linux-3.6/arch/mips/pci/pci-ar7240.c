@@ -205,6 +205,11 @@ DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ar724x_pci_fixup);
 
 static void *getCalData(int slot)
 {
+#ifdef CONFIG_WDR2543
+u8 *base = KSEG1ADDR(0x1fff1000);
+		printk(KERN_INFO "found calibration data for slot %d on 0x%08X\n",slot,base);
+return base;
+#else
 u8 *base;
 for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000) {
 	u32 *cal = (u32 *)base;
@@ -217,6 +222,7 @@ for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000)
 	}
     }
 return NULL;
+#endif
 }
 
 
@@ -285,6 +291,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	dev->vendor = val & 0xffff;
 	dev->device = (val >> 16) & 0xffff;
 	printk(KERN_EMERG "bootstrap returns device %X:%X\n",dev->vendor,dev->device);
+	#ifndef CONFIG_WDR2543
 	if (dev->device==0x0030) //AR9300 Hack
  	    {
  		calcopy+=0x1000;
@@ -293,7 +300,9 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 		is_ar9300=1;
 		dev->dev.platform_data = &wmac_data[0];	    
 	    }
-
+	#else
+		is_ar9300=1;	
+	#endif
 	pci_read_config_dword(dev, PCI_CLASS_REVISION, &val);
 	dev->revision = val & 0xff;
 	dev->class = val >> 8; /* upper 3 bytes */

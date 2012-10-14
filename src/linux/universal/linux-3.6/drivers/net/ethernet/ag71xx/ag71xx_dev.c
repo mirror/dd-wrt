@@ -1121,6 +1121,7 @@ static inline void phy_dev_init(void)
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_pll_data.pll_1000 = 0x1a000000;
+	platform_device_register(&tl_wr2543n_rtl8367_device);
 #elif CONFIG_ATHRS26_PHY
 	ar71xx_eth1_data.phy_mask = BIT(4);
 	ar71xx_add_device_mdio(0, 0x0);
