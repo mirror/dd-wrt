@@ -284,6 +284,11 @@ void ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
 
 static void *getCalData(int slot)
 {
+#ifdef CONFIG_WDR2543
+u8 *base = KSEG1ADDR(0x1fff1000);
+		printk(KERN_INFO "found calibration data for slot %d on 0x%08X\n",slot,base);
+return base;
+#else
 u8 *base;
 for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1ffff000);base+=0x1000) {
 	u32 *cal = (u32 *)base;
@@ -296,6 +301,7 @@ for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1ffff000);base+=0x1000)
 	}
     }
 return NULL;
+#endif
 }
 
 enum ar71xx_soc_type ar71xx_soc;
