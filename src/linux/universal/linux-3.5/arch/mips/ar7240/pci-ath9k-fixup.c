@@ -28,14 +28,14 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 {
 	void __iomem *mem;
 	u16 *cal_data = NULL;
-#ifndef CONFIG_DIR825C1
+#if !defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR2543)
 	u8 *calcopy;
 #endif
 	u16 cmd;
 	u32 bar0;
 	u32 val;
 	unsigned i;
-#ifndef CONFIG_DIR825C1
+#if !defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR2543)
 	u8 swap = 0;
 #endif
 	for (i = 0; i < ath9k_num_fixups; i++) {
@@ -51,7 +51,7 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	if (cal_data == NULL)
 		return;
 
-#ifndef CONFIG_DIR825C1
+#if !defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR2543)
 	calcopy = (u8 *)cal_data;
 
 	if (*cal_data != 0xa55a && *cal_data != 0x5aa5) {
@@ -99,7 +99,7 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	pci_write_config_word(dev, PCI_COMMAND, cmd);
 
 	/* set pointer to first reg address */
-#ifndef CONFIG_DIR825C1
+#if !defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR2543)
 	cal_data += 3;
 	if (swap) {
 		while (*cal_data != 0xffff) {
@@ -129,7 +129,7 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 
 	printk(KERN_EMERG "bootstrap returns device %X:%X\n", dev->vendor,
 	       dev->device);
-#ifndef CONFIG_DIR825C1
+#if !defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR2543)
 	if (dev->device == 0x0030)	//AR9300 Hack
 	{
 	is_ar9300=1;
