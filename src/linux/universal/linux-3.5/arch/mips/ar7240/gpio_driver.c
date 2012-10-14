@@ -125,7 +125,7 @@ static struct gpio_chip ar71xx_gpio_chip = {
 	.direction_input	= ar71xx_gpio_direction_input,
 	.direction_output	= ar71xx_gpio_direction_output,
 	.base			= 0,
-	.ngpio			= AR71XX_GPIO_COUNT,
+	.ngpio			= 48,
 };
 
 void ar71xx_gpio_function_enable(u32 mask)
@@ -445,7 +445,6 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 45,
 		.active_low	= 1,
 	}
-#if 0
 	, 
 	{
 		.name		= "wireless_generic_14",
@@ -457,7 +456,6 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 47,
 		.active_low	= 1,
 	}, 
-#endif
 #endif
 };
 
@@ -472,7 +470,11 @@ void __init ar71xx_gpio_init(void)
 				"AR71xx GPIO controller"))
 		panic("cannot allocate AR71xx GPIO registers page");
 
-	ar71xx_gpio_chip.ngpio = sizeof(generic_leds_gpio)/sizeof(struct gpio_led);
+#ifdef CONFIG_MACH_HORNET
+	ar71xx_gpio_chip.ngpio = 32;
+#else
+	ar71xx_gpio_chip.ngpio = 48;
+#endif
 
 	err = gpiochip_add(&ar71xx_gpio_chip);
 	if (err)
