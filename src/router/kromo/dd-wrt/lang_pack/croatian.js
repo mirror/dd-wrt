@@ -1,5 +1,5 @@
 ﻿////////////////////////////////////////////////////////////////////////////////////
-// DD-WRT v24-sp2 / Croatian / updated from r18328 / by Silvio Peša / 2012-09-14 // 
+// DD-WRT v24-sp2 / Croatian / updated from r19947 / by Silvio Peša / 2012-10-15 // 
 //////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -51,8 +51,8 @@ share.ip="IP Adresa";
 share.localip="Lokalna IP Adresa";
 share.remoteip="Udaljena IP Adresa";
 share.mac="MAC Adresa";
-share.none="Nijedno";
-share.none2="nijedno";
+share.none="Nijedna";
+share.none2="nijedna";
 share.both="Oboje";
 share.add="Dodaj";
 share.del="Briši";
@@ -102,8 +102,8 @@ share.filter="Filter";
 share.deny="Uskraćeno";
 share.range="Raspon";
 share.use="Koristi";
-share.mins="Min.";
-share.secs="Sec.";
+share.mins="min.";
+share.secs="sec.";
 share.routername="Ime Usmjerivača";
 share.manual="Ručno";
 share.port="Vrata";
@@ -114,7 +114,7 @@ share.rssi="Rssi";
 share.signal="Signal";
 share.noise="Šum";
 share.beacon="Sinh. Okvir";
-share.openn="Otvoreno";
+share.openn="Otvorena";
 share.dtim="dtim";
 share.rates="Omjeri";
 share.rate="Omjer";
@@ -122,14 +122,14 @@ share.txrate="TX Omjer";
 share.rxrate="RX Omjer";
 share.low="Nisko";
 share.medium="Srednje";
-share.high="Visoko";
+share.high="Visok";
 share.option="Opcije";
 share.rule="Pravilo";
 share.lan="LAN";
 share.point2point="Točka u Točku";
 share.nat="NAT";
 share.subnet="Maska Podmreže";
-share.unmask="Prikaži";
+share.unmask="Pokaži";
 share.deflt="Zadano";  //don't use share.default !!!
 share.all="Sve";
 share.auto="Auto";
@@ -203,7 +203,7 @@ share._168h="Svaki tjedan";
 share.days="Dan";
 share.from2=share.from;
 share.to2=share.to;
-share.days_genetive="Dana";
+share.days_genetive="dana";
 share.standard="Standard";
 share.execscript="Izvrši skriptu";
 share.user="Korisnik";
@@ -214,7 +214,7 @@ share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
 share.acktiming="ACK Takt";
-share.broadcast="Podrška Objave";
+share.broadcast="Objava";
 share.secondcharacter="s";
 share.change="Izmjena Zaporke";
 
@@ -257,8 +257,8 @@ sbutton.help="   Pomoć  ";
 sbutton.wl_client_mac="Lista MAC Bežičnih Klijenata";
 sbutton.update_filter="Osvježi Listu Filtera";
 sbutton.join="Pridruži";
-sbutton.log_in="Zapis Dolaznog";
-sbutton.log_out="Zapis Odlaznog";
+sbutton.log_in="Zapis ulaznog";
+sbutton.log_out="Zapis izlaznog";
 sbutton.edit_srv="Dodaj / Uredi Uslugu";
 sbutton.routingtab="Pokaži Tablicu Smjerova";
 sbutton.wanmac="Dobavi MAC Adresu PC-ja";
@@ -739,6 +739,11 @@ nas.samba3_legend="Dijeljenje Datoteka";
 
 hnas.right2="Za listu korisničkih zaporki unijeti jednu zaporku po liniji. Zaporka može biti obični tekst ili MD5 kod.";
 
+// ** DLNA **
+nas.dlna_legend="DLNA Poslužitelj";
+nas.dlna_srv="MiniDLNA";
+nas.dlna_dir="Datotečni imenik";
+
 // ** Hotspot.asp **//
 
 hotspot.titl="Hotspot";
@@ -1026,7 +1031,7 @@ log.accept="Prihvaćeno";
 
 management.titl="Administracija";
 management.h2="Upravljanje Usmjerivačem";
-management.changepassword="Vaš usmjerivač trenutno nije zaštićen i rabi nesigurnu zadanu kombinaciju korisničkog imena i zaporke; molimo promijenite ih u ovom dijalogu!";
+management.changepassword="Vaš usmjerivač trenutno nije zaštićen i rabi nesigurnu zadanu kombinaciju korisničkog imena i zaporke - molimo promijenite ih u ovom dijalogu!";
 management.psswd_legend="Zaporka Usmjerivača";
 management.psswd_user="Korisničko Ime Usmjerivača";
 management.psswd_pass="Zaporka Usmjerivača";
@@ -1255,8 +1260,8 @@ survey.thjoin="Pridruži";
 service.titl="Usluge";
 service.h2="Upravljanje Uslugama";
 
-service.apserv_legend="APServ Remote Configuration"; 
-service.apserv="APServ"; 
+service.apserv_legend="APServ Remote Configuration";
+service.apserv="APServ";
 
 //kaid
 service.kaid_legend="XBOX Kaid";
@@ -1365,7 +1370,8 @@ service.vpnd_dhpem="DH PEM";
 service.vpnd_tlsauth="TLS Ključ Autentikacije";
 service.vpnd_cert="Javni Certifikat Poslužitelja";
 service.vpnd_key="Privatni Ključ Poslužitelja";
-service.vpnd_mode="Mod Poslužitelja";
+service.vpnd_pkcs="PKCS12 Ključ";
+service.vpnd_mode="Modus Poslužitelja";
 service.vpnd_net="Mreža";
 service.vpnd_mask="Maska Mreže";
 service.vpnd_startip="Pool start IP";
@@ -1402,8 +1408,9 @@ service.vpn_route="Policy based Routing";
 
 //help container
 
-hstatus_vpn.right1="<i>Policy based Routing:</i><br>Add IPs/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br><i>IP Address/Netmask:</i><br>Must be set when using DHCP-Proxy mode and local TAP is NOT bridged";
-hstatus_vpn.right2="<i>Additional Config:</i><br>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.";
+hstatus_vpn.right1="Policy based Routing:<br><i>Add IPs/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br><i>IP Address/Netmask:</i><br>Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
+hstatus_vpn.right2="Additional Config:<br><i>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.</i>";
+hstatus_vpn.right3="General:<br><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs</i>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1518,7 +1525,7 @@ service.samba3_pass1=" Zaporka1";
 service.samba3_usr2="Korisnik2";
 service.samba3_pass2=" Zaporka2";
 service.samba3_pubacl="Samo Čitaj";
-service.samba3_advanced="Napredno"
+service.samba3_advanced="Napredno";
 service.samba3_custom="Rabiti Posebnu Konfiguraciju";
 service.samba3_shares="Shares";
 service.samba3_share_path="Path";
@@ -2014,7 +2021,7 @@ freeradius.clients="Klijenti";
 freeradius.username="Korisničko Ime";
 freeradius.password="Zaporka";
 freeradius.downstream="Dolazna Brzina";
-freeradius.upstream="Izlazna Brzina";
+freeradius.upstream="Odlazna Brzina";
 freeradius.sharedkey="Dijeljeni Ključ";
 
 
@@ -2194,13 +2201,13 @@ wl_basic.if_label="Oznaka (opcija)";
 wl_basic.if_info="Info (opcija)";
 wl_basic.advanced_options="Napredne Opcije";
 wl_basic.rate_control="Upravljački Algoritam Omjera";
-wl_basic.ap83_vap_note="Dodavanje više od tri prividna sučelja dovest će do slabijeg učinka na sitim s nekim posebnim klijentskim uređajima.";
+wl_basic.ap83_vap_note="Dodavanje više od tri prividna sučelja dovest će do slabijeg učinka na istim s nekim posebnim klijentskim uređajima.";
 
 //help container
 
 hwl_basic.right2="Ako želite isključiti 802.11g klijente izaberite <em>Samo B</em> način. Ako želite onemogućiti bežični pristup, izaberi <em>Onemogućeno</em>.<br/><b>Napomena :</b> Pri promjeni modusa bežične mreže, neki napredni parametri su osjetljivi na promjenu (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Raspon Osjetljivosti: ";
-hwl_basic.right4="Postavlja ACK timing. Za Broadcom strojni program 0 onemogućuje ACK timing u potpunosti. Za Atheros strojne prograe ukljčuje automatski mod.";
+hwl_basic.right4="Postavlja ACK timing. Za Broadcom strojni program 0 onemogućuje ACK timing u potpunosti. Za Atheros strojne programe uključuje automatski mod.";
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
@@ -2252,7 +2259,7 @@ hsas.wireless="Wireless help text";
 hsas.other="Other Settings help text";
 
 // ** AOSS **//
-var haoss=new Object();
+
 haoss.basic="The \"AirStation One-Touch Secure System\" (AOSS) allows you to connect AOSS-capable clients to your access point without requiring manual configuration.";
 haoss.securitymodes="AOSS security modes define what client security modes are accepted for AOSS negotiation. If a client only supports security modes that are not enabled, it cannot connect.";
 haoss.wps="WPS enables support for Wi-Fi Protected Setup using the button on your router or the PIN that came with your client device.";
