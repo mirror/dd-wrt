@@ -401,9 +401,10 @@ void start_openvpn(void)
 	    && nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_nat", "0")) {
 		fprintf(fp, "brctl addif br0 tap1\n"
-			"ifconfig tap1 0.0.0.0 promisc up\n"
-			"stopservice wshaper\n"
-			"startservice wshaper\n");
+			"ifconfig tap1 0.0.0.0 promisc up\n")
+		if (nvram_match("wshaper_enable", "1"))		
+			fprintf(fp, "stopservice wshaper\n"
+				"startservice wshaper\n");
 	} else {
 		if (nvram_match("openvpncl_tuntap", "tap")
 		    && strlen(nvram_safe_get("openvpncl_ip")) > 0)
@@ -504,8 +505,10 @@ void start_openvpn(void)
 		     "/tmp/openvpncl/route-up.sh", "--down-pre",
 		     "/tmp/openvpncl/route-down.sh", "--daemon");
 
-	eval("stopservice", "wshaper");
-	eval("startservice", "wshaper");
+	if (nvram_match("wshaper_enable", "1")) {
+		eval("stopservice", "wshaper");
+		eval("startservice", "wshaper");
+	}
 
 	return;
 }
@@ -513,8 +516,10 @@ void start_openvpn(void)
 void stop_openvpn(void)
 {
 	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {
-	   stop_wshaper();
-	   start_wshaper();
+		if (nvram_match("wshaper_enable", "1")) {
+	   		stop_wshaper();
+	   		start_wshaper();
+	   }
 	   //remove ebtables rules on shutdown	
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP");
 	}
@@ -525,9 +530,13 @@ void stop_openvpn_wandone(void)
 	if (nvram_invmatch("openvpncl_enable", "1"))
 		return;
 
-	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {
-		stop_wshaper();
-		start_wshaper();
+	if (stop_process("openvpn", "OpenVPN daemon (Client)") {
+		if (nvram_match("wshaper_enable", "1")) {
+			stop_wshaper();
+			start_wshaper();
+			}
+		//remove ebtables rules on shutdown	
+		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP");
 	}
 }
 
