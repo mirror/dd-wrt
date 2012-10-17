@@ -1168,6 +1168,16 @@ void start_restore_defaults(void)
 		{"wan_default", "eth1", 0},
 		{0, 0, 0}
 	};
+#elif HAVE_WDR2543
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "vlan1 vlan2 ath0", 0},
+		{"wan_ifname", "vlan2", 0},
+		{"wan_ifname2", "vlan2", 0},
+		{"wan_ifnames", "vlan2", 0},
+		{"wan_default", "vlan2", 0},
+		{0, 0, 0}
+	};
 #elif HAVE_WR741
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
@@ -1686,207 +1696,10 @@ void start_restore_defaults(void)
 #ifdef HAVE_RB500
 	linux_overrides = generic;
 	int brand = getRouterBrand();
-#elif HAVE_XSCALE
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_X86
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_MAGICBOX
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_LAGUNA
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_NORTHSTAR
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_RB600
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_GATEWORX
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_FONERA
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_SOLO51
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_RT2880
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_LS2
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_LS5
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_WHRAG108
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_TW6600
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_PB42
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_LSX
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_DANUBE
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_OPENRISC
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_STORM
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_ADM5120
-	linux_overrides = generic;
-	int brand = getRouterBrand();
-
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
-		// nvram_invmatch("os_name", 
-		// "linux"))
-	{
-		restore_defaults = 1;
-	}
-#elif HAVE_CA8
+#elif defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) \
+    || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) \
+    || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) \
+    || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8)    
 	linux_overrides = generic;
 	int brand = getRouterBrand();
 
@@ -2079,40 +1892,14 @@ void start_restore_defaults(void)
 		break;
 	}
 #endif
-	/*
-	 * int i; for (i=0;i<4;i++)
-	 * nvram_set(linux_overrides[i].name,linux_overrides[i].value); 
-	 */
 
 	/*
 	 * Restore defaults 
 	 */
-#ifdef HAVE_FON
-	int reset = 0;
-	char *rev = nvram_safe_get("fon_revision");
-
-	if (rev == NULL || strlen(rev) == 0)
-		reset = 1;
-	if (strlen(rev) > 0) {
-		int n = atoi(rev);
-
-		if (atoi(srouter_defaults[0].value) != n)
-			reset = 1;
-	}
-	if (reset) {
-		for (t = srouter_defaults; t->name; t++) {
-			for (u = linux_overrides; u && u->name; u++) {
-				if (!strcmp(t->name, u->name)) {
-					nvram_set(u->name, u->value);
-					break;
-				}
-			}
-			if (!u || !u->name)
-				nvram_set(t->name, t->value);
-		}
-	}
-#endif
-#if defined(HAVE_GATEWORX) || defined(XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_RT2880) || defined(HAVE_LAGUNA) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600)
+#elif defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) \
+    || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) \
+    || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) \
+    || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8)    
 	if (restore_defaults) {
 		nvram_clear();
 	}
@@ -2127,31 +1914,7 @@ void start_restore_defaults(void)
 	if (brand == ROUTER_LINKSYS_E2500 || brand == ROUTER_LINKSYS_E3200)	//dual radio, 2nd on usb-bus
 		icnt = 2;
 #endif
-#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
-#ifndef HAVE_80211AC
-	if(restore_defaults) { // ganz schlechte idee
-		// testing - clear nvram values
-		system("nvram show > /tmp/.nvram_current");
-		FILE *dfp;
-		char line[80];
-		char nvram_var[32];
-		int eqpos = 0;
-		if(dfp = fopen("/tmp/.nvram_current", "r")) {
-			while (fgets(line, sizeof(line), dfp)) {
-				eqpos = strcspn(line, "=");
-				if(eqpos) {
-					line[eqpos] = '\0';
-					if(strcmp("region", line) && nvram_get(line)) {
-						nvram_unset(line);
-					}
-				}
-        	        }
-        	        fclose(dfp);
-        	        unlink("/tmp/.nvram_current");	
-		}
-	}
-#endif
-	
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)	
 	buffalo_defaults(restore_defaults);
 #endif
 	// if (!nvram_match("default_init","1"))
@@ -2179,7 +1942,6 @@ void start_restore_defaults(void)
 		nvram_set("http_username", zencrypt("root"));
 		nvram_set("http_passwd", zencrypt("admin"));
 	}
-#ifndef HAVE_FON
 	if (restore_defaults) {
 		switch (brand) {
 		case ROUTER_ASUS_WL520G:
@@ -2232,11 +1994,6 @@ void start_restore_defaults(void)
 		nvram_set("lan_ipaddr", "192.168.1.1");
 #endif
 	}
-#else
-	if (restore_defaults) {
-		nvram_set("lan_ipaddr", "192.168.10.1");
-	}
-#endif
 #ifdef HAVE_SKYTRON
 	if (restore_defaults) {
 		nvram_set("lan_ipaddr", "192.168.0.1");
