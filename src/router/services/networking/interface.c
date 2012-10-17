@@ -582,6 +582,9 @@ int flush_interfaces(void)
 #elif HAVE_WASP
 	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+#elif HAVE_WDR2543
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
+		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WHRHPGN
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
@@ -593,9 +596,6 @@ int flush_interfaces(void)
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WR703
 	snprintf(all_ifnames, 255, "%s %s %s", "eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
-#elif HAVE_WDR2543
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WR741
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
