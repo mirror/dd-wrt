@@ -4593,6 +4593,11 @@ int led_control(int type, int act)
 		usb_gpio = 0x10b;
 //              ses_gpio = 0x11b;
 		break;
+#elif HAVE_WDR2543
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x100;
+		usb_gpio = 0x108;
+		break;
 #elif HAVE_WASP
 	case ROUTER_BOARD_WHRHPGN:
 //              usb_power = 0x01a;
