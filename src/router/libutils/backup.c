@@ -102,6 +102,8 @@ static char *filter[] = { "lan_ifnames",
 	"DEF-p_wireless_eth2_11bg-wpapsk",
 	"region",
 	"pincode",
+	"nvram_version",
+	"watchdog",
 	NULL
 };
 
