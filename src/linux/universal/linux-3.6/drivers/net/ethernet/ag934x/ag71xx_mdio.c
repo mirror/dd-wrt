@@ -47,68 +47,133 @@ static void ag71xx_mdio_dump_regs(struct ag71xx_mdio *am)
 		ag71xx_mdio_rr(am, AG71XX_REG_MII_IND));
 }
 
+static int ag71xx_mdio_wait_busy(struct ag71xx_mdio *am)
+{
+	int i;
+
+	for (i = 0; i < AG71XX_MDIO_RETRY; i++) {
+		u32 busy;
+
+		udelay(AG71XX_MDIO_DELAY);
+
+		busy = ag71xx_mdio_rr(am, AG71XX_REG_MII_IND);
+		if (!busy)
+			return 0;
+
+		udelay(AG71XX_MDIO_DELAY);
+	}
+
+	pr_err("%s: MDIO operation timed out\n", am->mii_bus->name);
+
+	return -ETIMEDOUT;
+}
+
 int ag71xx_mdio_mii_read(struct ag71xx_mdio *am, int addr, int reg)
 {
+	int err;
 	int ret;
-	int i;
+
+	err = ag71xx_mdio_wait_busy(am);
+	if (err)
+		return 0xffff;
 
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_ADDR,
 			((addr & 0xff) << MII_ADDR_SHIFT) | (reg & 0xff));
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CMD, MII_CMD_READ);
 
-	i = AG71XX_MDIO_RETRY;
-	while (ag71xx_mdio_rr(am, AG71XX_REG_MII_IND) & MII_IND_BUSY) {
-		if (i-- == 0) {
-			pr_err("%s: mii_read timed out\n", am->mii_bus->name);
-			ret = 0xffff;
-			goto out;
-		}
-		udelay(AG71XX_MDIO_DELAY);
-	}
+	err = ag71xx_mdio_wait_busy(am);
+	if (err)
+		return 0xffff;
 
 	ret = ag71xx_mdio_rr(am, AG71XX_REG_MII_STATUS) & 0xffff;
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CMD, MII_CMD_WRITE);
 
 	DBG("mii_read: addr=%04x, reg=%04x, value=%04x\n", addr, reg, ret);
 
-out:
 	return ret;
 }
 
 void ag71xx_mdio_mii_write(struct ag71xx_mdio *am, int addr, int reg, u16 val)
 {
-	int i;
-
 	DBG("mii_write: addr=%04x, reg=%04x, value=%04x\n", addr, reg, val);
 
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_ADDR,
 			((addr & 0xff) << MII_ADDR_SHIFT) | (reg & 0xff));
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CTRL, val);
 
-	i = AG71XX_MDIO_RETRY;
-	while (ag71xx_mdio_rr(am, AG71XX_REG_MII_IND) & MII_IND_BUSY) {
-		if (i-- == 0) {
-			pr_err("%s: mii_write timed out\n", am->mii_bus->name);
-			break;
-		}
-		udelay(AG71XX_MDIO_DELAY);
+	ag71xx_mdio_wait_busy(am);
+}
+
+static const u32 ar71xx_mdio_div_table[] = {
+	4, 4, 6, 8, 10, 14, 20, 28,
+};
+
+static const u32 ar7240_mdio_div_table[] = {
+	2, 2, 4, 6, 8, 12, 18, 26, 32, 40, 48, 56, 62, 70, 78, 96,
+};
+
+static const u32 ar933x_mdio_div_table[] = {
+	4, 4, 6, 8, 10, 14, 20, 28, 34, 42, 50, 58, 66, 74, 82, 98,
+};
+
+static int ag71xx_mdio_get_divider(struct ag71xx_mdio *am, u32 *div)
+{
+	unsigned long ref_clock, mdio_clock;
+	const u32 *table;
+	int ndivs;
+	int i;
+
+	ref_clock = am->pdata->ref_clock;
+	mdio_clock = am->pdata->mdio_clock;
+
+	if (!ref_clock || !mdio_clock)
+		return -EINVAL;
+
+	if (am->pdata->is_ar9330 || am->pdata->is_ar934x) {
+		table = ar933x_mdio_div_table;
+		ndivs = ARRAY_SIZE(ar933x_mdio_div_table);
+	} else if (am->pdata->is_ar7240) {
+		table = ar7240_mdio_div_table;
+		ndivs = ARRAY_SIZE(ar7240_mdio_div_table);
+	} else {
+		table = ar71xx_mdio_div_table;
+		ndivs = ARRAY_SIZE(ar71xx_mdio_div_table);
 	}
+
+	for (i = 0; i < ndivs; i++) {
+		unsigned long t;
+
+		t = ref_clock / table[i];
+		if (t <= mdio_clock) {
+			*div = i;
+			return 0;
+		}
+	}
+
+	dev_err(&am->mii_bus->dev, "no divider found for %lu/%lu\n",
+		ref_clock, mdio_clock);
+	return -ENOENT;
 }
 
 static int ag71xx_mdio_reset(struct mii_bus *bus)
 {
 	struct ag71xx_mdio *am = bus->priv;
 	u32 t;
+	int err;
 
-	if (am->pdata->is_ar7240)
-		t = MII_CFG_CLK_DIV_6;
-	else if (am->pdata->builtin_switch && !am->pdata->is_ar934x)
-		t = MII_CFG_CLK_DIV_10;
-	else if (!am->pdata->builtin_switch && am->pdata->is_ar934x)
-		t = MII_CFG_CLK_DIV_58;
-	else
-		t = MII_CFG_CLK_DIV_28;
+	err = ag71xx_mdio_get_divider(am, &t);
+	if (err) {
+		/* fallback */
+		if (am->pdata->is_ar7240)
+			t = MII_CFG_CLK_DIV_6;
+		else if (am->pdata->builtin_switch && !am->pdata->is_ar934x)
+			t = MII_CFG_CLK_DIV_10;
+		else if (!am->pdata->builtin_switch && am->pdata->is_ar934x)
+			t = MII_CFG_CLK_DIV_58;
+		else
+			t = MII_CFG_CLK_DIV_28;
+	}
 
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CFG, t | MII_CFG_RESET);
 	udelay(100);
