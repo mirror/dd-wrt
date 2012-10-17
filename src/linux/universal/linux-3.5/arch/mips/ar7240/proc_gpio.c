@@ -247,11 +247,12 @@ int get_wl0_gpio(int gpio)
 
 void ap_usb_led_on(void)
 {
-	printk(KERN_EMERG "switch USB LED On\n");
 #ifdef CONFIG_WZRG300NH2
+	printk(KERN_EMERG "switch USB LED On\n");
 	set_wl0_gpio(4, 0);
 #else
 #ifdef AP_USB_LED_GPIO
+	printk(KERN_EMERG "switch USB LED On\n");
 	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_ON);
 #endif
 #endif
@@ -261,11 +262,12 @@ EXPORT_SYMBOL(ap_usb_led_on);
 
 void ap_usb_led_off(void)
 {
-	printk(KERN_EMERG "switch USB LED Off\n");
 #ifdef CONFIG_WZRG300NH2
+	printk(KERN_EMERG "switch USB LED Off\n");
 	set_wl0_gpio(4, 1);
 #else
 #ifdef AP_USB_LED_GPIO
+	printk(KERN_EMERG "switch USB LED Off\n");
 	ar7100_set_gpio(AP_USB_LED_GPIO, USB_LED_OFF);
 #endif
 #endif
