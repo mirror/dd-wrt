@@ -19,6 +19,7 @@
 #include <linux/etherdevice.h>
 #include <linux/platform_device.h>
 #include <linux/serial_8250.h>
+#include <linux/clk.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/ar933x_uart_platform.h>
@@ -237,6 +238,28 @@ static void ar71xx_mii_ctrl_set_speed(unsigned int reg, unsigned int speed)
 	iounmap(base);
 }
 
+static unsigned long ar934x_get_mdio_ref_clock(void)
+{
+	void __iomem *base;
+	unsigned long ret;
+	u32 t;
+
+	base = ioremap(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
+
+	ret = 0;
+	t = __raw_readl(base + AR934X_PLL_SWITCH_CLOCK_CONTROL_REG);
+	if (t & AR934X_PLL_SWITCH_CLOCK_CONTROL_MDIO_CLK_SEL) {
+		ret = 100 * 1000 * 1000;
+	} else {
+		ret = ar71xx_ref_freq;
+	}
+
+	iounmap(base);
+
+	return ret;
+}
+
+
 void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 {
 	struct platform_device *mdio_dev;
@@ -305,8 +328,11 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
-		if (id == 1)
+		if (id == 1) {
 			mdio_data->builtin_switch = 1;
+			mdio_data->ref_clock = ar934x_get_mdio_ref_clock();
+			mdio_data->mdio_clock = 6250000;
+		}
 		mdio_data->is_ar934x = 1;
 		break;
 
