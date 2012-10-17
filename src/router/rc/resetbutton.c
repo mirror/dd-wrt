@@ -194,6 +194,14 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_WDR2543)
+int getbuttonstate()
+{
+	int ret = get_gpio(11);
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_WHRHPGN)
 int getbuttonstate()
 {
@@ -278,14 +286,6 @@ int getbuttonstate()
 {
 	int ret = get_gpio(3);
 
-	if (ret == 0)
-		return 1;
-	return 0;
-}
-#elif defined(HAVE_WDR2543)
-int getbuttonstate()
-{
-	int ret = get_gpio(11);
 	if (ret == 0)
 		return 1;
 	return 0;
@@ -810,6 +810,9 @@ void period_check(int sig)
 #elif defined(HAVE_WNR2000)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton
+#elif defined(HAVE_WDR2543)
+	sesgpio = 0x10c;
+	val |= get_gpio(12) << 12;	//aoss pushbutton
 #elif defined(HAVE_WHRHPGN)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
@@ -845,9 +848,6 @@ void period_check(int sig)
 #elif defined(HAVE_WR741V4)
 	sesgpio = 0x01a;
 	val |= get_gpio(26) << 26;	//aoss pushbutton
-#elif defined(HAVE_WDR2543)
-	sesgpio = 0x10c;
-	val |= get_gpio(12) << 12;	//aoss pushbutton
 #elif defined(HAVE_WR741)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
