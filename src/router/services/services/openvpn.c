@@ -401,7 +401,7 @@ void start_openvpn(void)
 	    && nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_nat", "0")) {
 		fprintf(fp, "brctl addif br0 tap1\n"
-			"ifconfig tap1 0.0.0.0 promisc up\n")
+			"ifconfig tap1 0.0.0.0 promisc up\n");
 		if (nvram_match("wshaper_enable", "1"))		
 			fprintf(fp, "stopservice wshaper\n"
 				"startservice wshaper\n");
@@ -530,7 +530,7 @@ void stop_openvpn_wandone(void)
 	if (nvram_invmatch("openvpncl_enable", "1"))
 		return;
 
-	if (stop_process("openvpn", "OpenVPN daemon (Client)") {
+	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {
 		if (nvram_match("wshaper_enable", "1")) {
 			stop_wshaper();
 			start_wshaper();
