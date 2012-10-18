@@ -33,10 +33,8 @@
  * Driver for various Hifn encryption processors.
  */
 #include <linux/version.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-#include <generated/autoconf.h>
-#else
-#include <linux/autoconf.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38) && !defined(AUTOCONF_INCLUDED)
+#include <linux/config.h>
 #endif
 #include <linux/module.h>
 #include <linux/init.h>
@@ -49,7 +47,6 @@
 #include <linux/interrupt.h>
 #include <linux/spinlock.h>
 #include <linux/random.h>
-#include <linux/version.h>
 #include <linux/skbuff.h>
 #include <linux/uio.h>
 #include <linux/sysfs.h>
@@ -211,10 +208,8 @@ hipp_probe(struct pci_dev *dev, const struct pci_device_id *ent)
 	if (pci_enable_device(dev) < 0)
 		return(-ENODEV);
 
-#ifdef CONFIG_HAVE_PCI_SET_MWI
 	if (pci_set_mwi(dev))
 		return(-ENODEV);
-#endif
 
 	if (!dev->irq) {
 		printk("hifn: found device with no IRQ assigned. check BIOS settings!");
@@ -388,7 +383,7 @@ static struct pci_device_id hipp_pci_tbl[] = {
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, },
 	{ PCI_VENDOR_HIFN, PCI_PRODUCT_HIFN_8155,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, },
-	{ 0 }
+	{ 0 }, /* terminating entry */
 };
 MODULE_DEVICE_TABLE(pci, hipp_pci_tbl);
 
