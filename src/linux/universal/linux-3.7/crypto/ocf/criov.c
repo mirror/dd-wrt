@@ -35,10 +35,8 @@ __FBSDID("$FreeBSD: src/sys/opencrypto/criov.c,v 1.5 2006/06/04 22:15:13 pjd Exp
  */
 
 #include <linux/version.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-#include <generated/autoconf.h>
-#else
-#include <linux/autoconf.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38) && !defined(AUTOCONF_INCLUDED)
+#include <linux/config.h>
 #endif
 #include <linux/module.h>
 #include <linux/init.h>
@@ -144,7 +142,6 @@ cuio_getptr(struct uio *uio, int loc, int *off)
 EXPORT_SYMBOL(cuio_copyback);
 EXPORT_SYMBOL(cuio_copydata);
 EXPORT_SYMBOL(cuio_getptr);
-
 
 static void
 skb_copy_bits_back(struct sk_buff *skb, int offset, caddr_t cp, int len)

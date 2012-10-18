@@ -27,10 +27,8 @@ disclaimer.
 *******************************************************************************/
 
 #include <linux/version.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-#include <generated/autoconf.h>
-#else
-#include <linux/autoconf.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38) && !defined(AUTOCONF_INCLUDED)
+#include <linux/config.h>
 #endif
 #include <linux/module.h>
 #include <linux/init.h>
@@ -94,6 +92,11 @@ extern int cesaReqResources;
 #define CESA_OCF_MAX_SES 128
 #define CESA_Q_SIZE	 64
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#define FRAG_PAGE(f)    (f).p
+#else
+#define FRAG_PAGE(f)    (f)
+#endif
 
 /* data structures */
 struct cesa_ocf_data {
@@ -417,7 +420,7 @@ cesa_ocf_process(device_t dev, struct cryptop *crp, int hint)
         	for ( i = 0; i < skb_shinfo(skb)->nr_frags; i++ ) {
             		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
             		p_buf_info->bufSize = frag->size;
-            		p_buf_info->bufVirtPtr = page_address(frag->page) + frag->page_offset;
+            		p_buf_info->bufVirtPtr = page_address(FRAG_PAGE(frag->page)) + frag->page_offset;
             		p_buf_info++;
         	}
         	p_mbuf_info->numFrags = skb_shinfo(skb)->nr_frags + 1;
@@ -501,7 +504,7 @@ cesa_ocf_process(device_t dev, struct cryptop *crp, int hint)
                                 	if ((crd->crd_flags & CRD_F_IV_PRESENT) == 0) {
 						dprintk("%s,%d: copy the IV back to the buffer\n", __FILE__, __LINE__);
 						cesa_cmd->ivOffset = crd->crd_inject;
-						crypto_copy_bits_back(crp->crp_buf, crd->crd_inject, ivp, cesa_ocf_cur_ses->ivlen);
+						crypto_copyback(crp->crp_flags, crp->crp_buf, crd->crd_inject, cesa_ocf_cur_ses->ivlen, ivp);
                                 	}
 					else {
 						dprintk("%s,%d: don't copy the IV back to the buffer \n", __FILE__, __LINE__);
