@@ -26,7 +26,6 @@ config OCF_CRYPTODEV
 
 config OCF_CRYPTOSOFT
 	tristate "cryptosoft (software crypto engine)"
-	select CRYPTO_MANAGER
 	depends on OCF_OCF
 	help
 	  A software driver for the OCF framework that uses
@@ -102,6 +101,12 @@ config OCF_C7108
 	depends on OCF_OCF
 	help
 	  OCF driver for the Microna 7108 Cipher processors.
+
+config OCF_UBSEC_SSB
+	tristate "uBsec BCM5365 (HW crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for uBsec BCM5365 hardware crypto accelerator.
 
 config OCF_OCFNULL
 	tristate "ocfnull (fake crypto engine)"
