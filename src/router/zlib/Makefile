@@ -18,7 +18,7 @@
 
 CC=ccache $(ARCH)-linux-uclibc-gcc
 
-CFLAGS=$(COPTS)  -D_LARGEFILE64_SOURCE=1
+CFLAGS=$(COPTS) -fPIC  -D_LARGEFILE64_SOURCE=1
 #CFLAGS=-O -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7
 #CFLAGS=-g -DDEBUG
 #CFLAGS=-O3 -Wall -Wwrite-strings -Wpointer-arith -Wconversion \
