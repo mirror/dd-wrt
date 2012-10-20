@@ -15,7 +15,7 @@
 #		   them.   
 #
 #############################################################################################
-SUBDIRS += zlib-1.2.3
+SUBDIRS += zlib-1.2.7
 SUBDIRS += ffmpeg-1.0
 SUBDIRS += libogg-1.3.0
 SUBDIRS += libexif-0.6.19
@@ -57,7 +57,7 @@ all: zlib ffmpeg libogg libexif sqlite3 libvorbis flac libid3tag libjpeg
 
 zlib:
 	# compile zlib first, bcz. libid3tag needs it for configuration.
-	(cd zlib-1.2.3 && make TOOL_CHAIN_PATH=$(TOOL_CHAIN_PATH) \
+	(cd zlib-1.2.7 && make TOOL_CHAIN_PATH=$(TOOL_CHAIN_PATH) \
 	CROSS_COMPILE=$(CROSS_COMPILE) \
 	HOST_COMPILE=$(HOST_COMPILE) \
 	MINI_DLNA_PATH=$(MINI_DLNA_PATH))
@@ -155,8 +155,8 @@ flac:
 libid3tag:
 	if [ ! -f ./libid3tag-0.15.0b/Makefile ];then \
 	cd libid3tag-0.15.0b && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
-				CPPFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/zlib-1.2.3/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-				LDFLAGS=-L$(MINI_DLNA_PATH)/zlib-1.2.3/ \
+				CPPFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/zlib-1.2.7/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+				LDFLAGS=-L$(MINI_DLNA_PATH)/zlib-1.2.7/ \
 				); \
 	fi
 clean:
@@ -181,7 +181,7 @@ clean:
 	-rm ./lib/libid3tag.a
 	-rm ./lib/minidlna
 copy: 
-	cp ./zlib-1.2.3/libz.a				./lib/libz.a && \
+	cp ./zlib-1.2.7/libz.a				./lib/libz.a && \
 	cp ./libvorbis-1.3.3/lib/.libs/libvorbis.a	./lib/libvorbis.a && \
 	cp ./flac-1.2.1/src/libFLAC/.libs/libFLAC.a		./lib/libFLAC.a && \
 	cp ./libexif-0.6.19/libexif/.libs/libexif.a 		./lib/libexif.a  && \
@@ -201,7 +201,7 @@ distclean:
 	-cd ./libvorbis-1.3.3/	&& make distclean
 	-cd ./libid3tag-0.15.0b/	&& make distclean
 	-cd ./flac-1.2.1/	&& make distclean
-	-cd ./zlib-1.2.3/	&& make clean
+	-cd ./zlib-1.2.7/	&& make clean
 	-cd ./ffmpeg-1.0/	&& make distclean
 	-cd ./jpeg-8/		&& make distclean
 	-cd ./minidlna/		&& make clean
