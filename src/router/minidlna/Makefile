@@ -200,6 +200,7 @@ distclean:
 	-cd ./sqlite-3.6.22/	&& make distclean
 	-cd ./libvorbis-1.3.3/	&& make distclean
 	-cd ./libid3tag-0.15.0b/	&& make distclean
+	-rm -f ./libid3tag-0.15.0b/Makefile
 	-cd ./flac-1.2.1/	&& make distclean
 	-cd ./zlib-1.2.7/	&& make clean
 	-cd ./ffmpeg-1.0/	&& make distclean
