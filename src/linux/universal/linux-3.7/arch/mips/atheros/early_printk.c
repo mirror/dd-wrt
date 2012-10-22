@@ -36,9 +36,18 @@ void prom_putchar(unsigned char ch)
 		else
 			base = (void __iomem *)(KSEG1ADDR(AR531X_UART0));
 	}
-
-	while ((prom_uart_rr(base, UART_LSR) & UART_LSR_THRE) == 0);
+	int cnt = 1000;
+	while(cnt--) {
+	if ((prom_uart_rr(base, UART_LSR) & UART_LSR_THRE))
+	    break;
+	udelay(1);
+	}
 	prom_uart_wr(base, UART_TX, ch);
-	while ((prom_uart_rr(base, UART_LSR) & UART_LSR_THRE) == 0);
+	int cnt = 1000;
+	while(cnt--) {
+	if ((prom_uart_rr(base, UART_LSR) & UART_LSR_THRE))
+	    break;
+	udelay(1);
+	}
 }
 

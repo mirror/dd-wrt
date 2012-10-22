@@ -22,12 +22,13 @@ static void (*_prom_putchar) (unsigned char);
 static inline void prom_putchar_wait(void __iomem *reg, u32 mask, u32 val)
 {
 	u32 t;
-
+	int cnt=1000;
 	do {
 		t = __raw_readl(reg);
 		if ((t & mask) == val)
 			break;
-	} while (1);
+		udelay(1);
+	} while (cnt--);
 }
 
 static void prom_putchar_ar71xx(unsigned char ch)
