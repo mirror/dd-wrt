@@ -196,22 +196,24 @@ static void
 bios_shadow_acpi(struct nvbios *bios)
 {
 	struct pci_dev *pdev = bios->dev->pdev;
-	int ret, cnt, i;
-	u8  data[3];
+	int cnt = 65536 / ROM_BIOS_PAGE;
+	int ret;
 
 	if (!nouveau_acpi_rom_supported(pdev))
 		return;
 
-	bios->length = 0;
-	if (nouveau_acpi_get_bios_chunk(data, 0, 3) == 3)
-		bios->length = data[2] * 512;
+	bios->data = kmalloc(cnt * ROM_BIOS_PAGE, GFP_KERNEL);
+	if (!bios->data)
+		return;
 
-	bios->data = kmalloc(bios->length, GFP_KERNEL);
-	for (i = 0; bios->data && i < bios->length; i += cnt) {
-		cnt = min((bios->length - i), (u32)4096);
-		ret = nouveau_acpi_get_bios_chunk(bios->data, i, cnt);
-		if (ret != cnt)
-			break;
+	bios->length = 0;
+	while (cnt--) {
+		ret = nouveau_acpi_get_bios_chunk(bios->data, bios->length,
+						  ROM_BIOS_PAGE);
+		if (ret != ROM_BIOS_PAGE)
+			return;
+
+		bios->length += ROM_BIOS_PAGE;
 	}
 }
 
