@@ -12,6 +12,7 @@
 #include <linux/errno.h>
 #include <linux/io.h>
 #include <linux/serial_reg.h>
+#include <linux/delay.h>
 #include <asm/addrspace.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
