@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: wltunable_lx_router.h 348245 2012-08-01 01:51:24Z $
+ * $Id: wltunable_lx_router.h 352715 2012-08-23 19:50:14Z $
  *
  * wl driver tunables
  */
@@ -31,7 +31,7 @@
 #define NRXBUFPOST	56	/* # rx buffers posted */
 #define RXBND		24	/* max # rx frames to process */
 #define PKTCBND		36	/* max # rx frames to chain */
-#define CTFPOOLSZ       64	/* max buffers in ctfpool */
+#define CTFPOOLSZ       192	/* max buffers in ctfpool */
 
 #define WME_PER_AC_TX_PARAMS 1
 #define WME_PER_AC_TUNING 1
@@ -56,4 +56,5 @@
 
 #define MRRS			512	/* Max read request size */
 
+#define AMPDU_PKTQ_LEN          1536
 #define AMPDU_PKTQ_FAVORED_LEN  4096
