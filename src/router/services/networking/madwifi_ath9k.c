@@ -266,7 +266,6 @@ void configure_single_ath9k(int count)
 		isfirst = 0;
 		counter++;
 		}
-	sleep(1);
 }
 
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp,
