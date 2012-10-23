@@ -151,18 +151,18 @@ addEvent(window, "unload", function() {
 		</div>
 		<div id="idlocal">
 <% ifndef("RADIUSPLUGIN", "-->"); %>
-			<fieldset>
-				<div class="setting">
-				<div class="label"><% tran("service.pptp_chap"); %></div>
-				<textarea id="pptpd_auth" name="pptpd_auth" cols="60" rows="4"></textarea>
-				<script type="text/javascript">
-				//<![CDATA[
-					var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
-					document.getElementById("pptpd_auth").value = var_pptpd_auth;
-				//]]>
-				</script>
-				</div>
-			</fieldset>
+		<fieldset>
+			<legend><% tran("service.pptp_chap"); %></legend>
+			<div class="setting">
+			<textarea id="pptpd_auth" name="pptpd_auth" cols="60" rows="4"></textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+				var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
+				document.getElementById("pptpd_auth").value = var_pptpd_auth;
+			//]]>
+			</script>
+			</div>
+		</fieldset>
 <% ifndef("RADIUSPLUGIN", "<!--"); %>
 		</div>
 <% ifndef("RADIUSPLUGIN", "-->"); %>
