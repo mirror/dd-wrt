@@ -1584,7 +1584,14 @@ void radio_on_off_ath9k(int idx,int on) {
 	}
 	
 	// LED
+#ifdef HAVE_WZRHPAG300NH
+	if(idx == 0)
+		sprintf(debugstring, "/sys/class/leds/wireless_generic_1/trigger");
+	else
+		sprintf(debugstring, "/sys/class/leds/wireless_generic_21/trigger");
+#else
 	sprintf(debugstring, "/sys/class/leds/ath9k-phy%d/trigger", get_ath9k_phy_idx(idx));
+#endif
 	fp = open(debugstring, O_WRONLY);
 	if (fp) {
 		if (on) {
@@ -1600,6 +1607,13 @@ void radio_on_off_ath9k(int idx,int on) {
 			}
 		} else {
 			write(fp, "none", strlen("none"));
+#ifdef HAVE_WZRHPAG300NH
+			if(idx == 0) {	
+				led_control(LED_SEC0, LED_OFF);
+			} else if(idx == 1) {	
+				led_control(LED_SEC1, LED_OFF);
+			}
+#endif
 		}
 		close(fp);
 	}
