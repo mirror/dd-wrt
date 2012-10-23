@@ -82,7 +82,7 @@
 			//<![CDATA[
 			document.write("(" + share.deflt + ": UDP)");
 			//]]>
-			</script
+			</script></span>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_cipher"); %></div>
