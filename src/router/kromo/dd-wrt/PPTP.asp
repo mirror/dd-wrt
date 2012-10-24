@@ -149,59 +149,62 @@ addEvent(window, "unload", function() {
 			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvram_checked("pptpd_radius", "1"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', true)" /><% tran("radius.legend"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="pptpd_radius" value="0" <% nvram_checked("pptpd_radius", "0"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', false)" /><% tran("service.pppoesrv_chaps"); %>
 		</div>
-		<div id="idlocal">
-<% ifndef("RADIUSPLUGIN", "-->"); %>
-		<fieldset>
-			<legend><% tran("service.pptp_chap"); %></legend>
-			<div class="setting">
-			<textarea id="pptpd_auth" name="pptpd_auth" cols="60" rows="4"></textarea>
-			<script type="text/javascript">
-			//<![CDATA[
-				var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
-				document.getElementById("pptpd_auth").value = var_pptpd_auth;
-			//]]>
-			</script>
-			</div>
-		</fieldset>
+<% ifndef("RADIUSPLUGIN", "-->"); %>	
+	</div>
+</fieldset>
+
 <% ifndef("RADIUSPLUGIN", "<!--"); %>
-		</div>
+<div id="idlocal">
 <% ifndef("RADIUSPLUGIN", "-->"); %>
-		<div id="idradius">
-		<fieldset>
+	<fieldset>
+		<legend><% tran("service.pptp_chap"); %></legend>
+		<div class="setting">
+		<textarea id="pptpd_auth" name="pptpd_auth" cols="60" rows="4"></textarea>
+		<script type="text/javascript">
+		//<![CDATA[
+			var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
+			document.getElementById("pptpd_auth").value = var_pptpd_auth;
+		//]]>
+		</script>
+		</div>
+	</fieldset>
+<% ifndef("RADIUSPLUGIN", "<!--"); %>
+</div>
+<% ifndef("RADIUSPLUGIN", "-->"); %>
+<div id="idradius">
+	<fieldset>
 <% ifndef("RADIUSPLUGIN", "<!--"); %>
 		<legend>Radius <% tran("service.pppoesrv_auth"); %></legend>
-			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_radip"); %></div>
-				<input maxlength="15" size="24" name="pptpd_radserver" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pptpd_radserver"); %>" />
-			</div>
-			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_radauthport"); %></div>
-				<input size="5" maxlength="5" class="num" name="pptpd_radport" value="<% nvram_get("pptpd_radport"); %>" />
-				<span class="default"><script type="text/javascript">
-				//<![CDATA[
-				document.write("(" + share.deflt + ": 1812)");
-				//]]>
-				</script></span>
-			</div>			
-			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_radaccport"); %></div>
-				<input size="5" maxlength="5" class="num" name="pptpd_acctport" value="<% nvram_get("pptpd_acctport"); %>" />
-				<span class="default"><script type="text/javascript">
-				//<![CDATA[
-				document.write("(" + share.deflt + ": 1813)");
-				//]]>
-				</script></span>
-			</div>
-			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
-				<input size="20" maxlength="63" type="password" name="pptpd_radpass" value="d6nw5v1x2pc7st9m" />
-			</div>
-<% ifndef("RADIUSPLUGIN", "-->"); %>
-		</fieldset>
+		<div class="setting">
+			<div class="label"><% tran("service.pppoesrv_radip"); %></div>
+			<input maxlength="15" size="24" name="pptpd_radserver" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pptpd_radserver"); %>" />
 		</div>
-	</div>
-
-</fieldset><br/>
+		<div class="setting">
+			<div class="label"><% tran("service.pppoesrv_radauthport"); %></div>
+			<input size="5" maxlength="5" class="num" name="pptpd_radport" value="<% nvram_get("pptpd_radport"); %>" />
+			<span class="default"><script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 1812)");
+			//]]>
+			</script></span>
+		</div>			
+		<div class="setting">
+			<div class="label"><% tran("service.pppoesrv_radaccport"); %></div>
+			<input size="5" maxlength="5" class="num" name="pptpd_acctport" value="<% nvram_get("pptpd_acctport"); %>" />
+			<span class="default"><script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 1813)");
+			//]]>
+			</script></span>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
+			<input size="20" maxlength="63" type="password" name="pptpd_radpass" value="d6nw5v1x2pc7st9m" />
+		</div>
+<% ifndef("RADIUSPLUGIN", "-->"); %>
+	</fieldset>
+</div>
+<br/>
 
 
 <h2><% tran("service.pptpd_legend"); %></h2>
