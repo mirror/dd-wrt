@@ -26,6 +26,7 @@ var update;
 addEvent(window, "load", function() {
 
 		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_enable, 'idpptpcred', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_radius, 'idradius', <% nvram_else_match("pptpd_radius", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
@@ -77,8 +78,8 @@ addEvent(window, "unload", function() {
 	<legend><% tran("service.pptp_srv"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.pptp_srv"); %></div>
-		<input class="spaceradio" type="radio" name="pptpd_enable" value="1" <% nvram_checked("pptpd_enable", "1"); %> onclick="show_layer_ext(this, 'idpptp', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="pptpd_enable" value="0" <% nvram_checked("pptpd_enable", "0"); %> onclick="show_layer_ext(this, 'idpptp', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="pptpd_enable" value="1" <% nvram_checked("pptpd_enable", "1"); %> onclick="show_layer_ext(this, 'idpptp', true);show_layer_ext(this, 'idpptpcred', true);" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="pptpd_enable" value="0" <% nvram_checked("pptpd_enable", "0"); %> onclick="show_layer_ext(this, 'idpptp', false);show_layer_ext(this, 'idpptpcred', false);" /><% tran("share.disable"); %>
 	</div>
 	<div id="idpptp">
 		<div class="setting">
@@ -152,7 +153,8 @@ addEvent(window, "unload", function() {
 <% ifndef("RADIUSPLUGIN", "-->"); %>	
 	</div>
 </fieldset>
-
+<div id="idpptpcred">
+<br />
 <% ifndef("RADIUSPLUGIN", "<!--"); %>
 <div id="idlocal">
 <% ifndef("RADIUSPLUGIN", "-->"); %>
@@ -203,6 +205,7 @@ addEvent(window, "unload", function() {
 		</div>
 <% ifndef("RADIUSPLUGIN", "-->"); %>
 	</fieldset>
+</div>
 </div>
 <br/>
 
