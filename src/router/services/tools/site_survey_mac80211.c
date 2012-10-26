@@ -1417,7 +1417,7 @@ nla_put_failure:
 static int write_site_survey(void);
 static int open_site_survey(void);
 
-void mac80211_site_survey(char *interface, int isap)
+void mac80211_site_survey(char *interface)
 {
 	int i;
 	int phy, wdev;
@@ -1425,27 +1425,8 @@ void mac80211_site_survey(char *interface, int isap)
 	char macaddr[32];
 	unsigned char hwbuff[16];
 	bzero(site_survey_lists, sizeof(site_survey_lists));
-	if (isap) {
-		wdev = if_nametoindex(interface);
-		phy = unl_nl80211_wdev_to_phy(&unl, wdev);
-		sprintf(scaninterface, "s%s", interface);
-		sysprintf("iw phy%d interface add %s type managed", phy,
-			  scaninterface);
-		i = wl_hwaddr(interface, hwbuff);
-		hwbuff[0] |= 2;
-		hwbuff[0] ^= (10 - 1) << 2;
-		sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0],
-			hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
-		sysprintf("ifconfig %s hw ether %s", scaninterface, macaddr);
-		sysprintf("ifconfig %s 0.0.0.0 up", scaninterface);
-		sysprintf("iw dev %s scan", scaninterface);
-		mac80211_scan(scaninterface);
-		sysprintf("ifconfig %s down", scaninterface);
-		sysprintf("iw dev %s del", scaninterface);
-	} else {
-		sysprintf("iw dev %s scan", interface);
-		mac80211_scan(interface);
-	}
+	sysprintf("iw dev %s scan", interface);
+	mac80211_scan(interface);
 	write_site_survey();
 	open_site_survey();
 	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0];
@@ -1499,12 +1480,6 @@ int site_survey_main_mac802211(int argc, char *argv[])
 {
 	unlink(SITE_SURVEY_DB);
 	char *sta = nvram_safe_get("wifi_display");
-	if (!nvram_nmatch("disabled", "%s_net_mode", sta)
-	    && (nvram_nmatch("ap", "%s_mode", sta)
-		|| nvram_nmatch("wdsap", "%s_mode", sta))) {
-		mac80211_site_survey(sta, 1);
-	} else {
-		mac80211_site_survey(sta, 0);
-	}
+	mac80211_site_survey(sta);
 	return 0;
 }
