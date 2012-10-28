@@ -67,7 +67,9 @@ nrpe_group=@nrpe_group@
 
 # ALLOWED HOST ADDRESSES
 # This is an optional comma-delimited list of IP address or hostnames 
-# that are allowed to talk to the NRPE daemon.
+# that are allowed to talk to the NRPE daemon. Network addresses with a bit mask
+# (i.e. 192.168.1.0/24) are also supported. Hostname wildcards are not currently 
+# supported.
 #
 # Note: The daemon only does rudimentary checking of the client's IP
 # address.  I would highly recommend adding entries in your /etc/hosts.allow

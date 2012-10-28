@@ -2,7 +2,7 @@
  *
  * NRPE.H - NRPE Include File
  * Copyright (c) 1999-2007 Ethan Galstad (nagios@nagios.org)
- * Last Modified: 11-23-2007
+ * Last Modified: 08-10-2011 by Konstantin Malov
  *
  * License:
  *
@@ -22,6 +22,11 @@
  *
  ************************************************************************/
 
+ /*
+  * 08-10-2011 IPv4 subnetworks support added.
+  * Main change in nrpe.c is that is_an_allowed_host() moved to acl.c
+  *
+  */
 
 /**************** COMMAND STRUCTURE DEFINITION **********/
 
@@ -47,7 +52,6 @@ int write_pid_file(void);
 int remove_pid_file(void);
 
 void free_memory(void);
-int is_an_allowed_host(char *);
 int validate_request(packet *);
 int contains_nasty_metachars(char *);
 int process_macros(char *,char *,int);
