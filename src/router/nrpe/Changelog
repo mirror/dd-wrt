@@ -3,6 +3,13 @@ NRPE Changelog
 **************
 
 
+2.13 - 11/11/2011
+-----------------
+- Applied Kaspersky Labs supplied patch for extending allowed_hosts (Konstantin Malov)
+- Fixed bug in allowed_hosts parsing (Eric Stanley)
+- Updated to support compiling on Solaris 10 (thanks to Kevin Pendleton)
+
+
 2.12 - 03/10/2008
 -----------------
 - Fix for unterminated multiline plugin (garbage) output (Krzysztof Oledzki)

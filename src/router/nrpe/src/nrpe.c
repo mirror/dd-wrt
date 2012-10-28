@@ -4,7 +4,7 @@
  * Copyright (c) 1999-2008 Ethan Galstad (nagios@nagios.org)
  * License: GPL
  *
- * Last Modified: 03-10-2008
+ * Last Modified: 11-11-2011
  *
  * Command line: nrpe -c <config_file> [--inetd | --daemon]
  *
@@ -18,10 +18,17 @@
  * 
  ******************************************************************************/
 
+/*
+ * 08-10-2011 IPv4 subnetworks support added.
+ * Main change in nrpe.c is that is_an_allowed_host() moved to acl.c.
+ * now allowed_hosts is parsed by parse_allowed_hosts() from acl.c.
+ */ 
+
 #include "../include/common.h"
 #include "../include/config.h"
 #include "../include/nrpe.h"
 #include "../include/utils.h"
+#include "../include/acl.h"
 
 #ifdef HAVE_SSL
 #include "../include/dh.h"
@@ -449,10 +456,10 @@ int read_config_file(char *filename){
                         strncpy(server_address,varvalue,sizeof(server_address) - 1);
                         server_address[sizeof(server_address)-1]='\0';
                         }
-
-                else if(!strcmp(varname,"allowed_hosts"))
-			allowed_hosts=strdup(varvalue);
-
+		else if(!strcmp(varname,"allowed_hosts")) {
+				allowed_hosts=strdup(varvalue);
+				parse_allowed_hosts(allowed_hosts);
+		}
 		else if(strstr(input_line,"command[")){
 			temp_buffer=strtok(varname,"[");
 			temp_buffer=strtok(NULL,"]");
@@ -868,30 +875,34 @@ void wait_for_connections(void){
 				if(debug==TRUE)
 					syslog(LOG_DEBUG,"Connection from %s port %d",inet_ntoa(nptr->sin_addr),nptr->sin_port);
 
-                                /* is this is a blessed machine? */
+				/* is this is a blessed machine? */
 				if(allowed_hosts){
+                	switch(nptr->sin_family) {
+                    	case AF_INET:
+                        	if(!is_an_allowed_host(nptr->sin_addr)) {
+                            	/* log error to syslog facility */
+                            	syslog(LOG_ERR,"Host %s is not allowed to talk to us!",inet_ntoa(nptr->sin_addr));
 
-					if(!is_an_allowed_host(inet_ntoa(nptr->sin_addr))){
+								/* log info to syslog facility */
+								if ( debug==TRUE )
+                                	syslog(LOG_DEBUG,"Connection from %s closed.",inet_ntoa(nptr->sin_addr));
 
-                                               /* log error to syslog facility */
-                                               syslog(LOG_ERR,"Host %s is not allowed to talk to us!",inet_ntoa(nptr->sin_addr));
+								/* close socket prior to exiting */
+								close(new_sd);
+								exit(STATE_OK);
+								} else {
+									/* log info to syslog facility */
+									if(debug==TRUE)
+										syslog(LOG_DEBUG,"Host address is in allowed_hosts");
 
-                                               /* log info to syslog facility */
-					       if(debug==TRUE)
-						       syslog(LOG_DEBUG,"Connection from %s closed.",inet_ntoa(nptr->sin_addr));
-
-					       /* close socket prior to exiting */
-                                               close(new_sd);
-
-					       exit(STATE_OK);
-				               }
-                                       else{
-
-                                               /* log info to syslog facility */
-                                               if(debug==TRUE)
-                                                       syslog(LOG_DEBUG,"Host address is in allowed_hosts");
-				               }
-				        }
+								}
+							break;
+                           
+						case AF_INET6:
+							syslog(LOG_DEBUG,"Connection from %s closed. We don't support AF_INET6 addreess family in ACL\n", inet_ntoa(nptr->sin_addr));
+							break;
+					}
+				}
 
 #ifdef HAVE_LIBWRAP
 
@@ -946,73 +957,6 @@ void wait_for_connections(void){
 
 	return;
 	}
-
-
-
-/* checks to see if a given host is allowed to talk to us */
-int is_an_allowed_host(char *connecting_host){
-	char *temp_buffer=NULL;
-	char *temp_ptr=NULL;
-	int result=0;
-        struct hostent *myhost;
-	char **pptr=NULL;
-	char *save_connecting_host=NULL;
-	struct in_addr addr;
-	
-	/* make sure we have something */
-	if(connecting_host==NULL)
-		return 0;
-	if(allowed_hosts==NULL)
-		return 1;
-
-	if((temp_buffer=strdup(allowed_hosts))==NULL)
-		return 0;
-	
-	/* try and match IP addresses first */
-	for(temp_ptr=strtok(temp_buffer,",");temp_ptr!=NULL;temp_ptr=strtok(NULL,",")){
-
-		if(!strcmp(connecting_host,temp_ptr)){
-			result=1;
-			break;
-		        }
-	        }
-
-	/* try DNS lookups if needed */
-	if(result==0){
-
-		free(temp_buffer);
-		if((temp_buffer=strdup(allowed_hosts))==NULL)
-			return 0;
-
-		save_connecting_host=strdup(connecting_host);
-		for(temp_ptr=strtok(temp_buffer,",");temp_ptr!=NULL;temp_ptr=strtok(NULL,",")){
-
-			myhost=gethostbyname(temp_ptr);
-			if(myhost!=NULL){
-
-				/* check all addresses for the host... */
-				for(pptr=myhost->h_addr_list;*pptr!=NULL;pptr++){
-					memcpy(&addr, *pptr, sizeof(addr));
-					if(!strcmp(save_connecting_host, inet_ntoa(addr))){
-						result=1;
-						break;
-					        }
-				        }
-			        }
-
-			if(result==1)
-				break;
-		        }
-
-		strcpy(connecting_host, save_connecting_host);
-		free(save_connecting_host);
-	        }
-
-	free(temp_buffer);
-
-	return result;
-        }
-
 
 
 /* handles a client connection */
