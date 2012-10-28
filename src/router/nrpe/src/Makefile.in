@@ -33,7 +33,7 @@ SNPRINTF_O=@SNPRINTF_O@
 
 all: nrpe check_nrpe
 
-nrpe: nrpe.c utils.c acl.c $(SRC_INCLUDE)/nrpe.h $(SRC_INCLUDE)/utils.h $(SRC_INCLUDE)/common.h $(SRC_INCLUDE)/config.h $(SRC_INCLUDE)/acl.h $(SNPRINTF_O)
+nrpe: nrpe.c utils.c acl.c $(SRC_INCLUDE)/nrpe.h $(SRC_INCLUDE)/utils.h $(SRC_INCLUDE)/common.h $(SRC_INCLUDE)/config.h $(SRC_INCLUDE)/acl.h $(SRC_INCLUDE)/dh.h $(SNPRINTF_O)
 	$(CC) $(CFLAGS) -o $@ nrpe.c utils.c acl.c $(LDFLAGS) $(SOCKETLIBS) $(LIBWRAPLIBS) $(SNPRINTF_O) $(OTHERLIBS)
 
 check_nrpe: check_nrpe.c utils.c $(SRC_INCLUDE)/utils.h $(SRC_INCLUDE)/common.h $(SRC_INCLUDE)/config.h
