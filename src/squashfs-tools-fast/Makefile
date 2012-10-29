@@ -2,7 +2,7 @@ CC = gcc
 CXX = g++
 #OPT = -fast
 
-OPT = -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -funroll-loops -mtune=opteron -march=opteron -mfpmath=sse -m3dnow -msse2 -O3 -D_LZMA_PARAMS -D_7ZIP_ST
+OPT = -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -funroll-loops -mtune=opteron -march=opteron -mfpmath=sse -m3dnow -msse2 -Ofast -D_LZMA_PARAMS -D_7ZIP_ST
 #OPT += -O3 -no-prec-div -ipo -msse2 -xSSE2 -finline-functions
 INCLUDEDIR = .
 
@@ -16,8 +16,6 @@ OBJS = \
   lzmalib/LzmaDec.o \
   lzmalib/LzmaEnc.o \
   lzmalib/LzmaLib.o \
-  lzmalib/7zFile.o \
-  lzmalib/7zStream.o \
   ZLib.o 
 
 all: mksquashfs-lzma unsquashfs-lzma
@@ -46,4 +44,4 @@ clean:
 	rm -f *.o 
 	rm -f lzmalib/*.o 
 	rm -f mksquashfs-lzma
-	rm -f unsquashfs
+	rm -f unsquashfs-lzma

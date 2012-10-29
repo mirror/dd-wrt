@@ -254,7 +254,8 @@ size_t os = LZMA_PROPS_SIZE;
     props[1 + i] = (unsigned char)(dictSize >> (8 * i));
 
   size_t slen = sourceLen-4;
-   LzmaUncompress(dest, destLen, &source[4], &slen,&props[0], LZMA_PROPS_SIZE);
+  size_t dlen = *destLen;
+  LzmaUncompress(dest, &dlen, &source[4], &slen,&props[0], LZMA_PROPS_SIZE);
 	
 	return Z_OK;
 }
