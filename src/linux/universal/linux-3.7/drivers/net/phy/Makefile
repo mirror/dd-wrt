@@ -37,6 +37,7 @@ obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
 obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
 #obj-$(CONFIG_IP17XX_PHY)	+= ip17xx.o
 obj-$(CONFIG_MICREL_KS8995MA)	+= spi_ks8995.o
+obj-$(CONFIG_AT803X_PHY)	+= at803x.o
 obj-$(CONFIG_AMD_PHY)		+= amd.o
 obj-$(CONFIG_MDIO_BUS_MUX)	+= mdio-mux.o
 obj-$(CONFIG_MDIO_BUS_MUX_GPIO)	+= mdio-mux-gpio.o
