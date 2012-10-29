@@ -25,6 +25,11 @@ config SWCONFIG
 
 comment "MII PHY device drivers"
 
+config AT803X_PHY
+	tristate "Drivers for Atheros AT803X PHYs"
+	---help---
+	  Currently supports the AT8030 and AT8035 model
+
 config AMD_PHY
 	tristate "Drivers for the AMD PHYs"
 	---help---

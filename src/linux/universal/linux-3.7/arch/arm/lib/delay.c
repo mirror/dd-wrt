@@ -54,6 +54,7 @@ static void __timer_delay(unsigned long cycles)
 	while ((get_cycles() - start) < cycles)
 		cpu_relax();
 }
+EXPORT_SYMBOL_GPL(read_current_timer);
 
 static void __timer_const_udelay(unsigned long xloops)
 {
