@@ -56,9 +56,6 @@
 #define LZMA_LP 3
 #define LZMA_PB 2
 
-#define LZMA_WORKSPACE_SIZE ((LZMA_BASE_SIZE + \
-      (LZMA_LIT_SIZE << (LZMA_LC + LZMA_LP))) * sizeof(CProb))
-
 #endif
 
 static void squashfs_put_super(struct super_block *);
@@ -82,7 +79,6 @@ static struct dentry *squashfs_get_sb(struct file_system_type *, int,
 
 
 #ifdef SQUASHFS_LZMA
-static unsigned char lzma_workspace[LZMA_WORKSPACE_SIZE];
 #else
 static z_stream stream;
 #endif
@@ -278,9 +274,8 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 		int zlib_err;
 
 #ifdef SQUASHFS_LZMA
-		if ((zlib_err = LzmaDecode2(lzma_workspace, 
-			LZMA_WORKSPACE_SIZE, c_buffer[1],c_buffer[2],c_buffer[0],//LZMA_LC, LZMA_LP, LZMA_PB, 
-			c_buffer+4, c_byte-4, buffer, msblk->read_size, &bytes)) != LZMA_RESULT_OK)
+		if ((zlib_err = LzmaDecode2(c_buffer[1],c_buffer[2],c_buffer[0],//LZMA_LC, LZMA_LP, LZMA_PB, 
+			c_buffer+4, c_byte-4, buffer, msblk->read_size, &bytes)) != SZ_OK)
 		{
 			ERROR("lzma returned unexpected result 0x%x\n", zlib_err);
 			bytes = 0;
