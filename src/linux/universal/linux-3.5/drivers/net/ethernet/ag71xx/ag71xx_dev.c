@@ -1137,6 +1137,7 @@ static inline void phy_dev_init(void)
 	ar71xx_eth0_data.phy_mask = BIT(0);
 #elif CONFIG_WP543
 	ar71xx_eth0_data.phy_mask = 0xf;
+	ar71xx_eth0_data.reset_bit = RESET_MODULE_GE0_MAC | RESET_MODULE_GE0_PHY;
 	ar71xx_add_device_mdio(0, ~ar71xx_eth0_data.phy_mask);
 #else
 #ifdef CONFIG_MTD_AR7100_SPI_FLASH
