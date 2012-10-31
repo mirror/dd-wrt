@@ -3,6 +3,6 @@
 #
 
 obj-$(CONFIG_SQUASHFS) += squashfs.o
-squashfs-y += inode.o
-squashfs-y += LzmaDecode.o
-CFLAGS_inode.o		:= -O2
+squashfs-$(CONFIG_SQUASHFS) += inode.o
+squashfs-$(CONFIG_SQUASHFS) += LzmaDecode.o
+EXTRA_CFLAGS += -Iinclude/linux -Iinclude/linux/lzma -include types.h
