@@ -1,5 +1,5 @@
 /* Xz.h - Xz interface
-2011-01-09 : Igor Pavlov : Public domain */
+2010-09-17 : Igor Pavlov : Public domain */
 
 #ifndef __XZ_H
 #define __XZ_H
@@ -220,8 +220,7 @@ typedef struct
   Byte buf[XZ_BLOCK_HEADER_SIZE_MAX];
 } CXzUnpacker;
 
-void XzUnpacker_Construct(CXzUnpacker *p, ISzAlloc *alloc);
-void XzUnpacker_Init(CXzUnpacker *p);
+SRes XzUnpacker_Create(CXzUnpacker *p, ISzAlloc *alloc);
 void XzUnpacker_Free(CXzUnpacker *p);
 
 /*
@@ -233,9 +232,8 @@ finishMode:
 Returns:
   SZ_OK
     status:
-      CODER_STATUS_NOT_FINISHED,
-      CODER_STATUS_NEEDS_MORE_INPUT - maybe there are more xz streams,
-                                      call XzUnpacker_IsStreamWasFinished to check that current stream was finished
+      LZMA_STATUS_FINISHED_WITH_MARK
+      LZMA_STATUS_NOT_FINISHED
   SZ_ERROR_DATA - Data error
   SZ_ERROR_MEM  - Memory allocation error
   SZ_ERROR_UNSUPPORTED - Unsupported properties

@@ -1,5 +1,5 @@
 /* Lzma2Dec.c -- LZMA2 Decoder
-2010-12-15 : Igor Pavlov : Public domain */
+2009-05-03 : Igor Pavlov : Public domain */
 
 /* #define SHOW_DEBUG_INFO */
 
@@ -330,21 +330,27 @@ SRes Lzma2Dec_DecodeToBuf(CLzma2Dec *p, Byte *dest, SizeT *destLen, const Byte *
 SRes Lzma2Decode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
     Byte prop, ELzmaFinishMode finishMode, ELzmaStatus *status, ISzAlloc *alloc)
 {
-  CLzma2Dec p;
+  CLzma2Dec decoder;
   SRes res;
   SizeT outSize = *destLen, inSize = *srcLen;
+  Byte props[LZMA_PROPS_SIZE];
+
+  Lzma2Dec_Construct(&decoder);
+
   *destLen = *srcLen = 0;
   *status = LZMA_STATUS_NOT_SPECIFIED;
-  Lzma2Dec_Construct(&p);
-  RINOK(Lzma2Dec_AllocateProbs(&p, prop, alloc));
-  p.decoder.dic = dest;
-  p.decoder.dicBufSize = outSize;
-  Lzma2Dec_Init(&p);
+  decoder.decoder.dic = dest;
+  decoder.decoder.dicBufSize = outSize;
+
+  RINOK(Lzma2Dec_GetOldProps(prop, props));
+  RINOK(LzmaDec_AllocateProbs(&decoder.decoder, props, LZMA_PROPS_SIZE, alloc));
+  
   *srcLen = inSize;
-  res = Lzma2Dec_DecodeToDic(&p, outSize, src, srcLen, finishMode, status);
-  *destLen = p.decoder.dicPos;
+  res = Lzma2Dec_DecodeToDic(&decoder, outSize, src, srcLen, finishMode, status);
+  *destLen = decoder.decoder.dicPos;
   if (res == SZ_OK && *status == LZMA_STATUS_NEEDS_MORE_INPUT)
     res = SZ_ERROR_INPUT_EOF;
-  Lzma2Dec_FreeProbs(&p, alloc);
+
+  LzmaDec_FreeProbs(&decoder.decoder, alloc);
   return res;
 }
