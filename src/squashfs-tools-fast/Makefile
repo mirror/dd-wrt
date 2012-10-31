@@ -24,7 +24,7 @@ mksquashfs: mksquashfs.o read_fs.o sort.o
 	$(CC) $(OPT)  mksquashfs.o read_fs.o sort.o -lz -o $@
 
 mksquashfs-lzma: mksquashfs.o read_fs.o sort.o $(OBJS)
-	$(CXX) $(OPT) mksquashfs.o read_fs.o sort.o $(OBJS) -lpthread -o $@
+	$(CC) $(OPT) mksquashfs.o read_fs.o sort.o $(OBJS) -lpthread -o $@
 
 mksquashfs.o: mksquashfs.c squashfs_fs.h mksquashfs.h global.h sort.h
 

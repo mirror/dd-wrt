@@ -12,6 +12,39 @@ static void *SzAlloc(void *p, size_t size) { p = p; return MyAlloc(size); }
 static void SzFree(void *p, void *address) { p = p; MyFree(address); }
 static ISzAlloc g_Alloc = { SzAlloc, SzFree };
 
+static void lzma_free_workspace(CLzmaEncHandle *p)
+{
+	LzmaEnc_Destroy(p, &g_Alloc, &g_Alloc);
+}
+
+static int lzma_alloc_workspace(CLzmaEncProps *props,CLzmaEncHandle **p)
+{
+	Byte propsEncoded[LZMA_PROPS_SIZE];
+	SizeT propsSize = sizeof(propsEncoded);
+	if ((*p = (CLzmaEncHandle *)LzmaEnc_Create(&g_Alloc)) == NULL)
+	{
+		printf("Failed to allocate lzma deflate workspace\n");
+		return -1;
+	}
+
+	if (LzmaEnc_SetProps(*p, props) != SZ_OK)
+	{
+		printf("setprops failed\n");
+		lzma_free_workspace(*p);
+		return -1;
+	}
+	
+	if (LzmaEnc_WriteProperties(*p, propsEncoded, &propsSize) != SZ_OK)
+	{
+		printf("writeproperties failed\n");
+		lzma_free_workspace(*p);
+		return -1;
+	}
+	
+        return 0;
+}
+
+
 MY_STDAPI LzmaCompress(unsigned char *dest, size_t  *destLen, const unsigned char *src, size_t  srcLen,
   unsigned char *outProps, size_t *outPropsSize,
   int level, /* 0 <= level <= 9, default = 5 */
@@ -23,23 +56,22 @@ MY_STDAPI LzmaCompress(unsigned char *dest, size_t  *destLen, const unsigned cha
   int numThreads /* 1 or 2, default = 2 */
 )
 {
-  CLzmaEncProps props;
-  LzmaEncProps_Init(&props);
-  props.level = level;
-  props.algo = 1;
-  props.btMode = 1;
-  props.numHashBytes = 4;
-  props.dictSize = dictSize;
-  props.lc = lc;
-  props.lp = lp;
-  props.pb = pb;
-  props.fb = fb;
-  props.reduceSize = srcLen;
-  props.numThreads = numThreads;
-  LzmaEncProps_Normalize(&props);
+	CLzmaEncHandle *p;
+	CLzmaEncProps props;
+	LzmaEncProps_Init(&props);
 
-  return LzmaEncode(dest, destLen, src, srcLen, &props, outProps, outPropsSize, 0,
-      NULL, &g_Alloc, &g_Alloc);
+        props.dictSize = dictSize;
+        props.level = 9;
+        props.lc = lc;
+        props.lp = lp;
+        props.pb = pb;
+        props.fb = fb;
+	int r = lzma_alloc_workspace(&props,&p);
+        if (r < 0)
+                return;
+	int ret = LzmaEnc_MemEncode(p, dest, destLen, src, srcLen,
+		1, NULL, &g_Alloc, &g_Alloc);
+	lzma_free_workspace(p);
 }
 
 
