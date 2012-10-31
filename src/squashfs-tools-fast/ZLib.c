@@ -32,6 +32,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <pthread.h>
+#include <memory.h>
 /* jc: undef to kill compress2_lzma */
 #define _LZMA_PARAMS 
 
@@ -46,9 +47,8 @@
 #define INITGUID
 #endif
 
-#include "MyWindows.h"
 #include "lzmalib/LzmaLib.h"
-
+#include <stdio.h>
 #define STG_E_SEEKERROR                  ((HRESULT)0x80030019L)
 #define STG_E_MEDIUMFULL                 ((HRESULT)0x80030070L)
 
@@ -59,12 +59,13 @@
 
 
 /* jc: new compress2 proxy that allows lzma param specification */
-extern "C" int compress2_lzma_test (Bytef *dest,   size_t *destLen,
+int compress2_lzma_test (Bytef *dest,   uLong *destLen,
                                   	const Bytef *source, uLong sourceLen,
                                   	int level, int fb, int lc, int lp, int pb)
 {	
 	size_t os = LZMA_PROPS_SIZE;
 	unsigned char outprops[LZMA_PROPS_SIZE];
+	level = 9;
     	if(pb<0) pb=ZLIB_PB;
 	if(lc<0) lc=ZLIB_LC;
 	if(lp<0) lp=ZLIB_LP;
@@ -86,10 +87,11 @@ extern "C" int compress2_lzma_test (Bytef *dest,   size_t *destLen,
 			}
 		}
 	}
-
-
-	LzmaCompress(dest,destLen,source,sourceLen,outprops,&os,level,dictSize,lc,lp,pb,fb,2);
-	
+	size_t destlen = *destLen;
+	size_t sourcelen = sourceLen;
+	int ret = LzmaCompress(dest,&destlen,source,sourcelen,outprops,&os,level,dictSize,lc,lp,pb,fb,2);
+	*destLen = destlen;
+	sourceLen = sourcelen;
 	return Z_OK;
 }
 
@@ -141,25 +143,26 @@ pthread_spinlock_t	pos_mutex;
 Bytef *test1;
 const Bytef *testsource;
 
-size_t test2len;
-size_t test1len;
-size_t testsourcelen;
-extern "C" void *brute(void *arg)
+uLong test2len;
+uLong test1len;
+uLong testsourcelen;
+void *brute(void *arg)
 {
 //	int oldstate;
-	size_t test3len = test2len;
+	uLong test3len = (uLong)test2len;
 //	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate);
 //	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldstate);
 	int *count = (int*)arg;
 	int testcount=count[0];
+
 int takelcvalue = matrix[testcount].lc;
 int takepbvalue = matrix[testcount].pb;
 int takelpvalue = matrix[testcount].lp;
 Bytef *test2 = (Bytef*)malloc(test2len);
 //fprintf(stderr,"try method [pb:%d lc:%d lp:%d fb:%d]\n",takepbvalue,takelcvalue,takelpvalue,testfb);
 int ret =  compress2_lzma_test(test2,&test3len,testsource,testsourcelen,testlevel,testfb,takelcvalue,takelpvalue,takepbvalue);
-//fprintf(stderr,"test return %d\n",ret);
 pthread_spin_lock(&pos_mutex);
+//fprintf(stderr,"test return %d\n",ret);
 if (test3len<test1len)
     {
     test1len = test3len;
@@ -175,7 +178,7 @@ return NULL;
 
 
 
-extern "C" int compress2_lzma (Bytef *dest,   uLongf *destLen,
+int compress2_lzma (Bytef *dest,   uLongf *destLen,
                                   	const Bytef *source, uLong sourceLen,
                                   	int level, int fb, int lc, int lp, int pb)
 {
@@ -229,7 +232,7 @@ for (a=0;a<15/MAX_THREADS;a++)
 	    }
 	free(argument);
 pthread_attr_destroy(&attr);
-    fprintf(stderr,"use method [pb:%d lc:%d lp:%d fb:%d] (len %d)\n",pbsave,lcsave,lpsave,fb,test1len);
+    fprintf(stderr,"use method [pb:%d lc:%d lp:%d fb:%d] (slen %d len %d)\n",pbsave,lcsave,lpsave,fb,sourceLen,test1len);
     memcpy(dest+4,test1,test1len);
     dest[0]=pbsave;
     dest[1]=lcsave;
@@ -241,9 +244,8 @@ free(thread);
     free(test1);
     return Z_OK;
 }
-
-ZEXTERN int ZEXPORT uncompress OF((Bytef *dest,   uLongf *destLen,
-                                   const Bytef *source, uLong sourceLen))
+int maxc=0;
+int uncompress(Bytef *dest,   uLongf *destLen,const Bytef *source, uLong sourceLen)
 {
 size_t os = LZMA_PROPS_SIZE;
   unsigned char props[LZMA_PROPS_SIZE];
@@ -255,9 +257,10 @@ size_t os = LZMA_PROPS_SIZE;
 
   size_t slen = sourceLen-4;
   size_t dlen = *destLen;
-  LzmaUncompress(dest, &dlen, &source[4], &slen,&props[0], LZMA_PROPS_SIZE);
-	
-	return Z_OK;
+  if ((source[1]+source[2])>maxc) maxc=source[1]+source[2];
+  int ret = LzmaUncompress(dest, &dlen, &source[4], &slen,&props[0], LZMA_PROPS_SIZE);
+  *destLen = dlen;
+  return Z_OK;
 }
 
 
