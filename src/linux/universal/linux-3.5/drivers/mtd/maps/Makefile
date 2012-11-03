@@ -1,6 +1,10 @@
 #
 # linux/drivers/maps/Makefile
 #
+ifeq ($(CONFIG_BCM47XX),y)
+EXTRA_CFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+endif
 
 ifeq ($(CONFIG_MTD_COMPLEX_MAPPINGS),y)
 obj-$(CONFIG_MTD)		+= map_funcs.o
@@ -59,6 +63,7 @@ obj-$(CONFIG_MTD_LATCH_ADDR)	+= latch-addr-flash.o
 obj-$(CONFIG_MTD_LANTIQ)	+= lantiq-flash.o
 obj-$(CONFIG_MTD_AR531X)	+= ar531x_flash.o
 obj-$(CONFIG_MTD_EOC5610)	+= eoc5610_flash.o
+obj-$(CONFIG_MTD_BCM947XX)	+= bcm947xx-flash.o
 ifneq ($(CONFIG_BCM47XX),y)
 obj-y				+= nvram.o 
 obj-$(CONFIG_MACH_AR7100)	+= nvram_kernel.o

@@ -8,7 +8,7 @@ cflags-$(CONFIG_BCM947XX)	+=					\
 load-$(CONFIG_BCM947XX)		:= 0xffffffff80001000
 
 
-core-$(CONFIG_BCM947XX) += arch/mips/brcm-boards/bcm947xx/
+core-$(CONFIG_BCM947XX) += arch/mips/brcm-boards/bcm947xx/ arch/mips/brcm-boards/generic/
 
 zImage: vmlinux
 
