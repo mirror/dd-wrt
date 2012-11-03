@@ -556,6 +556,9 @@ config MTD_AR531X_SIZE
         help
           Physical size flash
 
+config MTD_BCM947XX
+	tristate "CFI Flash device mapped on Broadcom BCM947XX boards"
+	depends on MTD_CFI && BCM47XX && MIPS_BRCM
 
 
 endmenu
