@@ -7,7 +7,7 @@
 #
 
 menu "Broadcom HND network devices"
-	depends on PCI && PLAT_BCM5301X
+	depends on PCI && BCM47XX
 config HND
 	bool "Broadcom HND network device support"
 config ET

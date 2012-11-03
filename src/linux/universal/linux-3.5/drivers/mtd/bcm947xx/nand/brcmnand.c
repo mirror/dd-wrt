@@ -774,9 +774,9 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 	struct nand_chip *chip = mtd->priv;
 	struct brcmnand_mtd *brcmnand = chip->priv;
 
-	knldev = soc_knl_dev((void *)brcmnand->sih);
-	if (knldev == SOC_KNLDEV_NANDFLASH)
-		offset = NFL_BOOT_OS_SIZE;
+//	knldev = soc_knl_dev((void *)brcmnand->sih);
+//	if (knldev == SOC_KNLDEV_NANDFLASH)
+//		offset = NFL_BOOT_OS_SIZE;
 
 	ASSERT(size > offset);
 
