@@ -392,6 +392,9 @@ struct sk_buff {
 	/* These two members must be first. */
 	struct sk_buff		*next;
 	struct sk_buff		*prev;
+#ifdef PKTC
+	unsigned char           pktc_cb[8];
+#endif
 
 	ktime_t			tstamp;
 
@@ -412,6 +415,12 @@ struct sk_buff {
 	unsigned long		_skb_refdst;
 #ifdef CONFIG_XFRM
 	struct	sec_path	*sp;
+#endif
+#ifdef CTFPOOL
+	void			*ctfpool;
+#endif
+#if defined(HNDCTF) || defined(CTFPOOL)
+	__u32			pktc_flags;
 #endif
 	unsigned int		len,
 				data_len;
