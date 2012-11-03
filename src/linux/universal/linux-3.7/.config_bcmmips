@@ -868,6 +868,7 @@ CONFIG_MTD_PHYSMAP=y
 # CONFIG_MTD_INTEL_VR_NOR is not set
 # CONFIG_MTD_PLATRAM is not set
 # CONFIG_MTD_LATCH_ADDR is not set
+CONFIG_MTD_BCM947XX=y
 
 #
 # Self-contained MTD device drivers
