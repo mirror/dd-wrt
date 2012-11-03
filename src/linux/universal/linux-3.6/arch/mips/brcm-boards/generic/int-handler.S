@@ -17,9 +17,6 @@
  *
  * $Id: int-handler.S,v 1.2 2011-01-05 20:10:37 $
  */
-
-#include <linux/config.h>
-
 #include <asm/asm.h>
 #include <asm/mipsregs.h>
 #include <asm/regdef.h>

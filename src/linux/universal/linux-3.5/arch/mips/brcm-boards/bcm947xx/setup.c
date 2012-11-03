@@ -407,197 +407,33 @@ static uint32 boot_partition_size(uint32 flash_phys) {
 #define FLASH_PARTS_NUM	5 /* boot;nvram;kernel;rootfs;empty */
 #endif
 
-static struct mtd_partition bcm947xx_flash_parts[FLASH_PARTS_NUM] = {{0}};
-
-static uint lookup_flash_rootfs_offset(struct mtd_info *mtd, int *trx_off, size_t size)
-{
-	struct romfs_super_block *romfsb;
-	struct cramfs_super *cramfsb;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
-	struct squashfs_super_block *squashfsb;
-#else
-	struct dummy_super_block *squashfsb;
-#endif
-	struct trx_header *trx;
-	unsigned char buf[512];
-	int off;
-	size_t len;
-
-	romfsb = (struct romfs_super_block *) buf;
-	cramfsb = (struct cramfs_super *) buf;
-	squashfsb = (void *) buf;
-	trx = (struct trx_header *) buf;
-
-	/* Look at every 64 KB boundary */
-	for (off = 0; off < size; off += (64 * 1024)) {
-		memset(buf, 0xe5, sizeof(buf));
-
-		/*
-		 * Read block 0 to test for romfs and cramfs superblock
-		 */
-		if (mtd_read(mtd, off, sizeof(buf), &len, buf) ||
-		    len != sizeof(buf))
-			continue;
-
-		/* Try looking at TRX header for rootfs offset */
-		if (le32_to_cpu(trx->magic) == TRX_MAGIC) {
-			*trx_off = off;
-			if (trx->offsets[1] == 0)
-				continue;
-			/*
-			 * Read to test for romfs and cramfs superblock
-			 */
-			off += le32_to_cpu(trx->offsets[1]);
-			memset(buf, 0xe5, sizeof(buf));
-			if (mtd_read(mtd, off, sizeof(buf), &len, buf) || len != sizeof(buf))
-				continue;
-		}
-
-		/* romfs is at block zero too */
-		if (romfsb->word0 == ROMSB_WORD0 &&
-		    romfsb->word1 == ROMSB_WORD1) {
-			printk(KERN_NOTICE
-			       "%s: romfs filesystem found at block %d\n",
-			       mtd->name, off / mtd->erasesize);
-			break;
-		}
-
-		/* so is cramfs */
-		if (cramfsb->magic == CRAMFS_MAGIC) {
-			printk(KERN_NOTICE
-			       "%s: cramfs filesystem found at block %d\n",
-			       mtd->name, off / mtd->erasesize);
-			break;
-		}
-		if (squashfsb->s_magic == SQUASHFS_MAGIC) {
-			printk(KERN_NOTICE
-			       "%s: squash filesystem found at block %d\n",
-			       mtd->name, off / mtd->erasesize);
-			break;
-		}
-	}
-
-	return off;
-}
-struct mtd_partition *
-init_mtd_partitions(struct mtd_info *mtd, size_t size)
-{
-	int bootflags;
-	int nparts = 0;
-	uint32 offset = 0;
-	uint rfs_off = 0;
-	uint vmlz_off, knl_size;
-	uint32 top = 0;
-	uint32 bootsz;
-
-	bootflags = boot_flags();
-
-	if ((bootflags & FLASH_KERNEL_NFLASH) != FLASH_KERNEL_NFLASH) {
-		rfs_off = lookup_flash_rootfs_offset(mtd, &vmlz_off, size);
-
-		/* Size pmon */
-		bcm947xx_flash_parts[nparts].name = "boot";
-		bcm947xx_flash_parts[nparts].size = vmlz_off;
-		bcm947xx_flash_parts[nparts].offset = top;
-		bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
-		nparts++;
-
-		/* Setup kernel MTD partition */
-		bcm947xx_flash_parts[nparts].name = "linux";
-		bcm947xx_flash_parts[nparts].size = mtd->size - vmlz_off;
-		
-#ifdef PLC
-		/* Reserve for PLC */
-		bcm947xx_flash_parts[nparts].size -= ROUNDUP(0x1000, mtd->erasesize);
-#endif
-		/* Reserve for NVRAM */
-		bcm947xx_flash_parts[nparts].size -= ROUNDUP(NVRAM_SPACE, mtd->erasesize);
-
-#ifdef BCMCONFMTD
-		bcm947xx_flash_parts[nparts].size -= (mtd->erasesize *4);
-#endif
-		bcm947xx_flash_parts[nparts].offset = vmlz_off;
-		knl_size = bcm947xx_flash_parts[nparts].size;
-		offset = bcm947xx_flash_parts[nparts].offset + knl_size;
-		nparts++; 
-		
-		/* Setup rootfs MTD partition */
-		bcm947xx_flash_parts[nparts].name = "rootfs";
-		bcm947xx_flash_parts[nparts].size = knl_size - (rfs_off - vmlz_off);
-		bcm947xx_flash_parts[nparts].offset = rfs_off;
-		bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
-		nparts++;
-	} else {
-		bootsz = boot_partition_size(SI_FLASH2);
-		printk("Boot partition size = %d(0x%x)\n", bootsz, bootsz);
-		/* Size pmon */
-		bcm947xx_flash_parts[nparts].name = "boot";
-		bcm947xx_flash_parts[nparts].size = bootsz;
-		bcm947xx_flash_parts[nparts].offset = top;
-		bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
-		offset = bcm947xx_flash_parts[nparts].size;
-		nparts++;
-	}
-
-#ifdef BCMCONFMTD
-	/* Setup CONF MTD partition */
-	bcm947xx_flash_parts[nparts].name = "confmtd";
-	bcm947xx_flash_parts[nparts].size = mtd->erasesize * 4;
-	bcm947xx_flash_parts[nparts].offset = offset;
-	offset = bcm947xx_flash_parts[nparts].offset + bcm947xx_flash_parts[nparts].size;
-	nparts++;
-#endif	/* BCMCONFMTD */
-
-#ifdef PLC
-	/* Setup plc MTD partition */
-	bcm947xx_flash_parts[nparts].name = "plc";
-	bcm947xx_flash_parts[nparts].size = ROUNDUP(0x1000, mtd->erasesize);
-	bcm947xx_flash_parts[nparts].offset = size - (ROUNDUP(NVRAM_SPACE, mtd->erasesize) + ROUNDUP(0x1000, mtd->erasesize));
-	nparts++;
-#endif
-
-	/* Setup nvram MTD partition */
-	bcm947xx_flash_parts[nparts].name = "nvram";
-	bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
-	bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
-	nparts++;
-
-	return bcm947xx_flash_parts;
-}
-
-EXPORT_SYMBOL(init_mtd_partitions);
 
 #ifdef CONFIG_MTD_NFLASH
-#define NFLASH_PARTS_NUM	6
+#define NFLASH_PARTS_NUM	7
 static struct mtd_partition bcm947xx_nflash_parts[NFLASH_PARTS_NUM] = {{0}};
+int ddwrtoffset;
+int ddwrtsize;
 
 static uint lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, size_t size)
 {
 	struct romfs_super_block *romfsb;
 	struct cramfs_super *cramfsb;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
 	struct squashfs_super_block *squashfsb;
-#else
-	struct dummy_super_block *squashfsb;
-#endif
 	struct trx_header *trx;
 	unsigned char buf[NFL_SECTOR_SIZE];
 	uint blocksize, mask, blk_offset, off, shift = 0;
-	chipcregs_t *cc;
 	int ret;
 	
 	romfsb = (struct romfs_super_block *) buf;
 	cramfsb = (struct cramfs_super *) buf;
-	squashfsb = (void *) buf;
+	squashfsb = (struct squashfs_super_block *) buf;
 	trx = (struct trx_header *) buf;
 
-	if ((cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX)) == NULL)
-		return 0;
 
 	/* Look at every block boundary till 16MB; higher space is reserved for application data. */
 	blocksize = mtd->erasesize;
 	printk("lookup_nflash_rootfs_offset: offset = 0x%x\n", offset);
-	for (off = offset; off < NFL_BOOT_OS_SIZE; off += blocksize) {
+	for (off = offset; off < NFL_BOOT_OS_SIZE; off += 4096) {
 		mask = blocksize - 1;
 		blk_offset = off & ~mask;
 		if (hndnand_checkbadb(nfl, blk_offset) != 0)
@@ -608,41 +444,36 @@ static uint lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, in
 			       "%s: nflash_read return %d\n", mtd->name, ret);
 			continue;
 		}
+			
+		if (le32_to_cpu(trx->magic) == TRX_MAGIC)
+		{
 		
-		/* Try looking at TRX header for rootfs offset */
-		if (le32_to_cpu(trx->magic) == TRX_MAGIC) {
-			mask = NFL_SECTOR_SIZE - 1;
-			off = offset + (le32_to_cpu(trx->offsets[1]) & ~mask) - blocksize;
-			shift = (le32_to_cpu(trx->offsets[1]) & mask);
-			romfsb = (struct romfs_super_block *)((unsigned char *)romfsb + shift);
-			cramfsb = (struct cramfs_super *)((unsigned char *)cramfsb + shift);
-			squashfsb = (void *)((unsigned char *)squashfsb + shift);
+		printk(KERN_NOTICE "found trx at %X, len =%d\n",off,trx->len);
+		int offset = le32_to_cpu(trx->offsets[2]) ? : le32_to_cpu(trx->offsets[1]);
+		offset+=off;
+		printk(KERN_NOTICE "scan filesys at %X\n",offset);
+
+		if ((ret = hndnand_read(nfl, offset, sizeof(buf), buf)) != sizeof(buf)) {
+			printk(KERN_NOTICE
+			       "%s: nflash_read return %d\n", mtd->name, ret);
 			continue;
 		}
-
-		/* romfs is at block zero too */
-		if (romfsb->word0 == ROMSB_WORD0 &&
-		    romfsb->word1 == ROMSB_WORD1) {
+		
+		if (*((__u32 *) buf) == SQUASHFS_MAGIC) {
 			printk(KERN_NOTICE
-			       "%s: romfs filesystem found at block %d\n",
-			       mtd->name, off / blocksize);
-			break;
+			       "%s: squash filesystem with lzma found at offset %d\n",
+			       mtd->name, off );
+		int size = squashfsb->bytes_used;
+		//part->size = part->size + 1024; /* uncomment for belkin v2000 ! */
+		int len = offset + size;
+		len +=  (mtd->erasesize - 1);
+		len &= ~(mtd->erasesize - 1);
+		ddwrtoffset = len;
+		ddwrtsize = mtd->size - ddwrtoffset;
+		return offset;
+		}
 		}
 
-		/* so is cramfs */
-		if (cramfsb->magic == CRAMFS_MAGIC) {
-			printk(KERN_NOTICE
-			       "%s: cramfs filesystem found at block %d\n",
-			       mtd->name, off / blocksize);
-			break;
-		}
-
-		if (squashfsb->s_magic == SQUASHFS_MAGIC) {
-			printk(KERN_NOTICE
-			       "%s: squash filesystem found at block %d\n",
-			       mtd->name, off / blocksize);
-			break;
-		}
 	} 
 	return shift + off;
 }
@@ -656,6 +487,27 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 	uint shift = 0;
 	uint32 top = 0;
 	uint32 bootsz;
+#ifdef CONFIG_FAILSAFE_UPGRADE
+	char *img_boot = nvram_get(BOOTPARTITION);
+	char *imag_1st_offset = nvram_get(IMAGE_FIRST_OFFSET);
+	char *imag_2nd_offset = nvram_get(IMAGE_SECOND_OFFSET);
+	unsigned int image_first_offset=0;
+	unsigned int image_second_offset=0;
+	char dual_image_on = 0;
+
+	/* The image_1st_size and image_2nd_size are necessary if the Flash does not have any
+	 * image
+	 */
+	dual_image_on = (img_boot != NULL && imag_1st_offset != NULL && imag_2nd_offset != NULL);
+
+	if (dual_image_on) {
+		image_first_offset = simple_strtol(imag_1st_offset, NULL, 10);
+		image_second_offset = simple_strtol(imag_2nd_offset, NULL, 10);
+		printk("The first offset=%x, 2nd offset=%x\n", image_first_offset,
+			image_second_offset);
+
+	}
+#endif
 	
 	bootflags = boot_flags();
 	if ((bootflags & FLASH_BOOT_NFLASH) == FLASH_BOOT_NFLASH) {
@@ -685,25 +537,66 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 		offset = NFL_BOOT_SIZE;
 		nparts++;
 	}
-		
+
 	if ((bootflags & FLASH_KERNEL_NFLASH) == FLASH_KERNEL_NFLASH) {
 		/* Setup kernel MTD partition */
-		bcm947xx_nflash_parts[nparts].name = "linux";
+		bcm947xx_nflash_parts[nparts].name = "nandimage";
+#ifdef CONFIG_FAILSAFE_UPGRADE
+		if (dual_image_on)
+			bcm947xx_nflash_parts[nparts].size = image_second_offset - image_first_offset;
+		else
+#endif
 		bcm947xx_nflash_parts[nparts].size = nparts ? (NFL_BOOT_OS_SIZE - NFL_BOOT_SIZE) : NFL_BOOT_OS_SIZE;
 		bcm947xx_nflash_parts[nparts].offset = offset;
 			
-		shift = lookup_nflash_rootfs_offset(nfl,mtd, offset, size);
-		
+		shift = lookup_nflash_rootfs_offset(nfl, mtd, offset, bcm947xx_nflash_parts[nparts].size);
+
+#ifdef CONFIG_FAILSAFE_UPGRADE
+		if (dual_image_on)
+			offset = image_second_offset;
+		else
+#endif
 		offset = NFL_BOOT_OS_SIZE;
 		nparts++;
 		
 		/* Setup rootfs MTD partition */
 		bcm947xx_nflash_parts[nparts].name = "rootfs";
+#ifdef CONFIG_FAILSAFE_UPGRADE
+		if (dual_image_on)
+			bcm947xx_nflash_parts[nparts].size = image_second_offset - shift;
+		else
+#endif
 		bcm947xx_nflash_parts[nparts].size = NFL_BOOT_OS_SIZE - shift;
 		bcm947xx_nflash_parts[nparts].offset = shift;
 		bcm947xx_nflash_parts[nparts].mask_flags = MTD_WRITEABLE;
-		
 		nparts++;
+
+//		bcm947xx_nflash_parts[nparts].name = "ddwrt";
+
+//		bcm947xx_nflash_parts[nparts].size = ddwrtsize-0x100000;
+//		bcm947xx_nflash_parts[nparts].offset = ddwrtoffset;
+		
+//		nparts++;
+
+#ifdef CONFIG_FAILSAFE_UPGRADE
+		/* Setup 2nd kernel MTD partition */
+		if (dual_image_on) {
+			printf ("2nd offset %x \n",image_second_offset);
+			bcm947xx_nflash_parts[nparts].name = "linux2";
+			bcm947xx_nflash_parts[nparts].size = NFL_BOOT_OS_SIZE - image_second_offset;
+			bcm947xx_nflash_parts[nparts].offset = image_second_offset;
+			shift = lookup_nflash_rootfs_offset(nfl, mtd, image_second_offset,
+			                                    bcm947xx_nflash_parts[nparts].size);
+			nparts++;
+			/* Setup rootfs MTD partition */
+			bcm947xx_nflash_parts[nparts].name = "rootfs2";
+			bcm947xx_nflash_parts[nparts].size = NFL_BOOT_OS_SIZE - shift;
+			bcm947xx_nflash_parts[nparts].offset = shift;
+			bcm947xx_nflash_parts[nparts].mask_flags = MTD_WRITEABLE;
+			nparts++;
+		}
+#endif
+
 	}
 
 	return bcm947xx_nflash_parts;
@@ -712,91 +605,4 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 EXPORT_SYMBOL(init_nflash_mtd_partitions);
 #endif /* CONFIG_MTD_NFLASH */
 
-#ifdef CONFIG_BLK_DEV_INITRD
-extern char _end;
-
-/* The check_ramdisk_trx has more exact qualification to look at TRX header from end of linux */
-static __init int
-check_ramdisk_trx(unsigned long offset, unsigned long ram_size)
-{
-	struct trx_header *trx;
-	uint32 crc;
-	unsigned int len;
-	uint8 *ptr = (uint8 *)offset;
-
-	trx = (struct trx_header *)ptr;
-
-	/* Not a TRX_MAGIC */
-	if (le32_to_cpu(trx->magic) != TRX_MAGIC) {
-		printk("check_ramdisk_trx: not a valid TRX magic\n");
-		return -1;
-	}
-
-	/* TRX len invalid */
-	len = le32_to_cpu(trx->len);
-	if (offset + len > ram_size) {
-		printk("check_ramdisk_trx: not a valid TRX length\n");
-		return -1;
-	}
-
-	/* Checksum over header */
-	crc = hndcrc32((uint8 *) &trx->flag_version,
-		    sizeof(struct trx_header) - OFFSETOF(struct trx_header, flag_version),
-		    CRC32_INIT_VALUE);
-
-	/* Move ptr to data */
-	ptr += sizeof(struct trx_header);
-	len -= sizeof(struct trx_header);
-
-	/* Checksum over data */
-	crc = hndcrc32(ptr, len, crc);
-
-	/* Verify checksum */
-	if (le32_to_cpu(trx->crc32) != crc) {
-		printk("check_ramdisk_trx: checksum invalid\n");
-		return -1;
-	}
-
-	return 0;
-}
-
-void __init init_ramdisk(unsigned long mem_end)
-{
-	struct trx_header *trx = NULL;
-	char *from_rootfs, *to_rootfs;
-	unsigned long rootfs_size = 0;
-	unsigned long ram_size = mem_end + 0x80000000;
-	unsigned long offset;
-	char *root_cmd = "root=/dev/ram0 console=ttyS0,115200 rdinit=/sbin/preinit";
-
-	to_rootfs = (char *)(((unsigned long)&_end + PAGE_SIZE-1) & PAGE_MASK);
-	offset = ((unsigned long)&_end +0xffff) & ~0xffff;
-
-	/* Look at TRX header from end of linux */
-	for (; offset < ram_size; offset += 0x10000) {
-		trx = (struct trx_header *)offset;
-		if (le32_to_cpu(trx->magic) == TRX_MAGIC &&
-			check_ramdisk_trx(offset, ram_size) == 0) {
-			printk(KERN_NOTICE
-				   "Found TRX image  at %08lx\n", offset);
-			from_rootfs = (char *)((unsigned long)trx + le32_to_cpu(trx->offsets[1]));
-			rootfs_size = le32_to_cpu(trx->len) - le32_to_cpu(trx->offsets[1]);
-			rootfs_size = (rootfs_size + 0xffff) & ~0xffff;
-			printk("rootfs size is %ld bytes at 0x%p, copying to 0x%p\n", rootfs_size, from_rootfs, to_rootfs);
-			memmove(to_rootfs, from_rootfs, rootfs_size);
-
-			initrd_start = (int)to_rootfs;
-			initrd_end = initrd_start + rootfs_size;
-			strncpy(arcs_cmdline, root_cmd, sizeof(arcs_cmdline));
-			/* 
-			 * In case the system warm boot, the memory won't be zeroed.
-			 * So we have to erase trx magic.
-			 */
-			if (initrd_end < (unsigned long)trx)
-				trx->magic = 0;
-			break;
-		}
-	}
-}
-#endif
 #endif
