@@ -292,7 +292,7 @@ unsigned int pcibios_assign_all_busses(void)
 {
 	return 1;
 }
-
+#ifndef CONFIG_BCM47XX
 int pcibios_enable_device(struct pci_dev *dev, int mask)
 {
 	int err;
@@ -302,7 +302,6 @@ int pcibios_enable_device(struct pci_dev *dev, int mask)
 
 	return pcibios_plat_dev_init(dev);
 }
-
 void __devinit pcibios_fixup_bus(struct pci_bus *bus)
 {
 	struct pci_dev *dev = bus->self;
@@ -312,6 +311,7 @@ void __devinit pcibios_fixup_bus(struct pci_bus *bus)
 		pci_read_bridge_bases(bus);
 	}
 }
+#endif
 
 void __init
 pcibios_update_irq(struct pci_dev *dev, int irq)
@@ -350,9 +350,11 @@ int pci_mmap_page_range(struct pci_dev *dev, struct vm_area_struct *vma,
 
 char * (*pcibios_plat_setup)(char *str) __devinitdata;
 
+#ifndef CONFIG_BCM47XX
 char *__devinit pcibios_setup(char *str)
 {
 	if (pcibios_plat_setup)
 		return pcibios_plat_setup(str);
 	return str;
 }
+#endif

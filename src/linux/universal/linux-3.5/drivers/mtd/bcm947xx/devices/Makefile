@@ -1,4 +1,4 @@
-ifeq ($(CONFIG_PLAT_BCM5301X),y)
+ifeq ($(CONFIG_BCM47XX),y)
 EXTRA_CFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 EXTRA_AFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 endif
