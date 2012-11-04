@@ -85,7 +85,8 @@ void start_pptpd(void)
 		fprintf(fp, "mppe required,stateless,no40,no56\n");
 	else
 		fprintf(fp, "mppe stateless\n");
-	fprintf(fp, "mppc\n" "debug\n" "logfd 2\n"
+	fprintf(fp, "mppc\n" 	//enable compression
+		"debug\n" "logfd 2\n"
 		"ms-ignore-domain\n"
 		"chap-secrets /tmp/pptpd/chap-secrets\n"
 		"ip-up-script /tmp/pptpd/ip-up\n"

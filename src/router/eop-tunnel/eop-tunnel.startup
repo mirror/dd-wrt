@@ -10,6 +10,8 @@ fi
 cd /tmp/oet/pid
 for i in 1 2 3 4 5 6 7 8 9 10
 do
+	peeraddr=$(ping `$nv get oet${i}_rem` -c 1 | grep PING | cut -f 2 -d '(' | cut -f 1 -d ')')
+
 	if test -e "${i}.pid" 
 	then 
 	    brctl delif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
@@ -20,14 +22,14 @@ do
 	then
 		if [ `$nv get oet${i}_bridged` -eq 1 ]
 		then
-			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
+			ip tunnel add oet${i} mode etherip remote $peeraddr local any
 			ip link set dev oet${i} up
 			ifconfig oet${i} up 2>&1 > /dev/null
 			ifconfig oet${i} promisc 2>&1 > /dev/null
 			brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
 			brctl setportprio $(getbridge oet${i}) oet${i} $(getbridgeprio oet${i})
 		else
-			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
+			ip tunnel add oet${i} mode etherip remote $peeraddr local any
 			ip link set dev oet${i} up
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
     		fi
