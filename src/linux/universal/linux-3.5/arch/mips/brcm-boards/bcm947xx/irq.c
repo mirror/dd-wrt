@@ -345,6 +345,7 @@ arch_init_irq(void)
 
 		/* Save the pointer to mips core registers */
 		mips_corereg = regs;
+		cp0_compare_irq = 7;
 	}
 
 	/* Install interrupt controllers */
