@@ -69,6 +69,7 @@
 #include <linux/kernel_stat.h>
 
 #include <asm/mipsregs.h>
+#include <asm/irq_cpu.h>
 
 #include <typedefs.h>
 #include <osl.h>
@@ -347,12 +348,12 @@ arch_init_irq(void)
 		mips_corereg = regs;
 		cp0_compare_irq = 7;
 	}
+	mips_cpu_irq_init();
 
 	/* Install interrupt controllers */
-	for (i = 0; i < NR_IRQS; i++) {
+	for (i = SBMIPS_NUMIRQS; i < NR_IRQS; i++) {
 //		irq_set_chip_and_handler(i, &ar71xx_gpio_irq_chip,
 //					 handle_level_irq);
-
-		irq_set_chip(i, (i < SBMIPS_NUMIRQS ? &brcm_irq_type : &brcm_irq2_type));
+		irq_set_chip_and_handler(i, &brcm_irq2_type,handle_level_irq);
 	}
 }
