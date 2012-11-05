@@ -613,7 +613,6 @@ brcmnand_select_chip(struct mtd_info *mtd, int chip_num)
 {
 	struct nand_chip *chip = mtd->priv;
 	struct brcmnand_mtd *brcmnand = chip->priv;
-
 	/* chip_num == -1 means de-select the device */
 	hndnand_select_chip(brcmnand->nfl, 0);
 }
@@ -752,6 +751,247 @@ brcmnand_dummy_func(struct mtd_info * mtd)
 	BUG_ON(1);
 }
 
+
+#ifdef CONFIG_MIPS_BRCM
+
+/**
+ * brcmnand_command_lp - [DEFAULT] Send command to NAND large page device
+ * @mtd:	MTD device structure
+ * @command:	the command to be sent
+ * @column:	the column address for this command, -1 if none
+ * @page_addr:	the page address for this command, -1 if none
+ *
+ * Send command to NAND device. This is the version for the new large page
+ * devices We dont have the separate regions as we have in the small page
+ * devices.  We must emulate NAND_CMD_READOOB to keep the code compatible.
+ */
+static void
+brcmnand_command_lp(struct mtd_info *mtd, unsigned int command, int column, int page_addr)
+{
+	register struct nand_chip *chip = mtd->priv;
+
+	/* Emulate NAND_CMD_READOOB */
+	if (command == NAND_CMD_READOOB) {
+		column += mtd->writesize;
+		command = NAND_CMD_READ0;
+	}
+
+	/* Command latch cycle */
+	chip->cmd_ctrl(mtd, command & 0xff, NAND_NCE | NAND_CLE);
+
+	if (column != -1 || page_addr != -1) {
+		int ctrl = NAND_NCE | NAND_ALE;
+
+		/* Serially input address */
+		if (column != -1) {
+			ctrl |= NAND_ALE_COL;
+
+			/* Adjust columns for 16 bit buswidth */
+			if (chip->options & NAND_BUSWIDTH_16)
+				column >>= 1;
+
+			chip->cmd_ctrl(mtd, column, ctrl);
+		}
+
+		if (page_addr != -1) {
+			ctrl &= ~NAND_ALE_COL;
+			ctrl |= NAND_ALE_ROW;
+
+			chip->cmd_ctrl(mtd, page_addr, ctrl);
+		}
+	}
+
+	chip->cmd_ctrl(mtd, NAND_CMD_NONE, NAND_NCE);
+
+	/*
+	 * program and erase have their own busy handlers
+	 * status, sequential in, and deplete1 need no delay
+	 */
+	switch (command) {
+
+	case NAND_CMD_CACHEDPROG:
+	case NAND_CMD_PAGEPROG:
+	case NAND_CMD_ERASE1:
+	case NAND_CMD_ERASE2:
+	case NAND_CMD_SEQIN:
+	case NAND_CMD_RNDIN:
+	case NAND_CMD_STATUS:
+	case NAND_CMD_DEPLETE1:
+		return;
+
+	/*
+	 * read error status commands require only a short delay
+	 */
+	case NAND_CMD_STATUS_ERROR:
+	case NAND_CMD_STATUS_ERROR0:
+	case NAND_CMD_STATUS_ERROR1:
+	case NAND_CMD_STATUS_ERROR2:
+	case NAND_CMD_STATUS_ERROR3:
+		udelay(chip->chip_delay);
+		return;
+
+	case NAND_CMD_RESET:
+		if (chip->dev_ready)
+			break;
+
+		udelay(chip->chip_delay);
+
+		chip->cmd_ctrl(mtd, NAND_CMD_STATUS, NAND_NCE | NAND_CLE);
+		chip->cmd_ctrl(mtd, NAND_CMD_NONE, NAND_NCE);
+
+		while (!(chip->read_byte(mtd) & NAND_STATUS_READY));
+		return;
+
+	case NAND_CMD_RNDOUT:
+		/* No ready / busy check necessary */
+		chip->cmd_ctrl(mtd, NAND_CMD_RNDOUTSTART, NAND_NCE | NAND_CLE);
+		chip->cmd_ctrl(mtd, NAND_CMD_NONE, NAND_NCE);
+		return;
+
+	case NAND_CMD_READ0:
+		chip->cmd_ctrl(mtd, NAND_CMD_READSTART, NAND_NCE | NAND_CLE);
+		chip->cmd_ctrl(mtd, NAND_CMD_NONE, NAND_NCE);
+
+	/* This applies to read commands */
+	default:
+		/*
+		 * If we don't have access to the busy pin, we apply the given
+		 * command delay
+		 */
+		if (!chip->dev_ready) {
+			udelay(chip->chip_delay);
+			return;
+		}
+	}
+
+	/* Apply this short delay always to ensure that we do wait tWB in
+	 * any case on any machine.
+	 */
+	ndelay(100);
+
+	nand_wait_ready(mtd);
+}
+
+/**
+ * brcmnand_command - [DEFAULT] Send command to NAND device
+ * @mtd:	MTD device structure
+ * @command:	the command to be sent
+ * @column:	the column address for this command, -1 if none
+ * @page_addr:	the page address for this command, -1 if none
+ *
+ * Send command to NAND device. This function is used for small page
+ * devices (256/512 Bytes per page)
+ */
+static void
+brcmnand_command(struct mtd_info *mtd, unsigned int command, int column, int page_addr)
+{
+	register struct nand_chip *chip = mtd->priv;
+	int ctrl = NAND_CTRL_CLE;
+
+	/* Invoke large page command function */
+	if (mtd->writesize > 512) {
+		brcmnand_command_lp(mtd, command, column, page_addr);
+		return;
+	}
+
+	/*
+	 * Write out the command to the device.
+	 */
+	if (command == NAND_CMD_SEQIN) {
+		int readcmd;
+
+		if (column >= mtd->writesize) {
+			/* OOB area */
+			column -= mtd->writesize;
+			readcmd = NAND_CMD_READOOB;
+		} else if (column < 256) {
+			/* First 256 bytes --> READ0 */
+			readcmd = NAND_CMD_READ0;
+		} else {
+			column -= 256;
+			readcmd = NAND_CMD_READ1;
+		}
+
+		chip->cmd_ctrl(mtd, readcmd, ctrl);
+	}
+
+	chip->cmd_ctrl(mtd, command, ctrl);
+
+	/*
+	 * Address cycle, when necessary
+	 */
+	ctrl = NAND_CTRL_ALE;
+
+	/* Serially input address */
+	if (column != -1) {
+		ctrl |= NAND_ALE_COL;
+
+		/* Adjust columns for 16 bit buswidth */
+		if (chip->options & NAND_BUSWIDTH_16)
+			column >>= 1;
+
+		chip->cmd_ctrl(mtd, column, ctrl);
+	}
+
+	if (page_addr != -1) {
+		ctrl &= ~NAND_ALE_COL;
+		ctrl |= NAND_ALE_ROW;
+
+		chip->cmd_ctrl(mtd, page_addr, ctrl);
+	}
+
+	chip->cmd_ctrl(mtd, NAND_CMD_NONE, NAND_NCE);
+
+	/*
+	 * program and erase have their own busy handlers
+	 * status and sequential in needs no delay
+	 */
+	switch (command) {
+
+	case NAND_CMD_PAGEPROG:
+	case NAND_CMD_ERASE1:
+	case NAND_CMD_ERASE2:
+	case NAND_CMD_SEQIN:
+	case NAND_CMD_STATUS:
+		return;
+
+	case NAND_CMD_RESET:
+		if (chip->dev_ready)
+			break;
+
+		udelay(chip->chip_delay);
+
+		chip->cmd_ctrl(mtd, NAND_CMD_STATUS, NAND_CTRL_CLE);
+
+		chip->cmd_ctrl(mtd, NAND_CMD_NONE, NAND_NCE);
+
+		while (!(chip->read_byte(mtd) & NAND_STATUS_READY));
+
+		return;
+
+		/* This applies to read commands */
+	default:
+		/*
+		 * If we don't have access to the busy pin, we apply the given
+		 * command delay
+		 */
+		if (!chip->dev_ready) {
+			udelay(chip->chip_delay);
+			return;
+		}
+	}
+
+	/* Apply this short delay always to ensure that we do wait tWB in
+	 * any case on any machine.
+	 */
+	ndelay(100);
+
+	nand_wait_ready(mtd);
+}
+
+#endif
+
+
 #ifdef CONFIG_MTD
 struct mtd_partition brcmnand_parts[] = {
 	{
@@ -859,7 +1099,11 @@ brcmnand_mtd_init(void)
 	chip->ecc.read_oob = brcmnand_read_oob;
 	chip->ecc.write_oob = brcmnand_write_oob;
 	chip->select_chip = brcmnand_select_chip;
+#ifdef CONFIG_MIPS_BRCM
+	chip->cmdfunc = brcmnand_command;
+#else
 	chip->cmdfunc = brcmnand_cmdfunc;
+#endif
 	chip->waitfunc = brcmnand_waitfunc;
 	chip->read_buf = (void *)brcmnand_dummy_func;
 	chip->write_buf = (void *)brcmnand_dummy_func;
