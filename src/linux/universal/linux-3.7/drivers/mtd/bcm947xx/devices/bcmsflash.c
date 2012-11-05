@@ -50,7 +50,7 @@
 
 
 extern struct mtd_partition *
-init_mtd_partitions(hndsflash_t *sfl, struct mtd_info *mtd, size_t size);
+init_mtd_partitions(struct mtd_info *mtd, size_t size);
 
 extern void *partitions_lock_init(void);
 #define	BCMSFLASH_LOCK(lock)		if (lock) spin_lock(lock)
@@ -95,13 +95,11 @@ bcmsflash_mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen
 {
 	hndsflash_t *sfl = ((struct bcmsflash_mtd *)mtd->priv)->sfl;
 	int bytes, ret = 0;
-
 	/* Check address range */
 	if (!len)
 		return 0;
 	if ((from + len) > mtd->size)
 		return -EINVAL;
-
 	BCMSFLASH_LOCK(mtd->mlock);
 
 	*retlen = 0;
@@ -254,7 +252,7 @@ bcmsflash_mtd_init(void)
 	if (!bcmsflash.mtd.mlock)
 		return -ENOMEM;
 
-	parts = init_mtd_partitions(info, &bcmsflash.mtd, bcmsflash.mtd.size);
+	parts = init_mtd_partitions(&bcmsflash.mtd, bcmsflash.mtd.size);
 	if (parts) {
 		for (i = 0; parts[i].name; i++);
 		ret = add_mtd_partitions(&bcmsflash.mtd, parts, i);

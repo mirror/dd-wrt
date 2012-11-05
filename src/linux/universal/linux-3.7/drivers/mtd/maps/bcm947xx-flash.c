@@ -201,13 +201,18 @@ static int __init
 find_cfe_size(struct mtd_info *mtd, size_t size)
 {
 	struct trx_header *trx;
-	unsigned char buf[512];
+	static unsigned char buf[513];
 	int off;
 	size_t len;
 	int blocksize;
 
 	trx = (struct trx_header *) buf;
-
+	printk(KERN_INFO "try to find cfe size up to %d\n",size);
+	if (mtd==NULL)
+	    {
+	    printk(KERN_INFO "mtd is NULL\n");
+	    return -1;
+	    }
 	blocksize = mtd->erasesize;
 	if (blocksize < 0x10000)
 		blocksize = 0x10000;

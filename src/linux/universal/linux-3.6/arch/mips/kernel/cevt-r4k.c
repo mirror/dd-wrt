@@ -196,6 +196,9 @@ int __cpuinit r4k_clockevent_init(void)
 	if (!c0_compare_int_usable())
 		return -ENXIO;
 #endif
+#ifdef CONFIG_MIPS_BRCM
+	return 0;
+#endif
 
 	cd = &per_cpu(mips_clockevent_device, cpu);
 

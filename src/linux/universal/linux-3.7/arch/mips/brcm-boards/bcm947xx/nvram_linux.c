@@ -52,7 +52,9 @@ char __initdata ram_nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
 static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
+static char nvram_buf_cfe[NVRAM_SPACE/2] __attribute__((aligned(PAGE_SIZE)));
 static bool nvram_inram = FALSE;
+static int cfenvram=0;
 
 #ifdef MODULE
 
@@ -111,6 +113,7 @@ static int
 early_nvram_init(void)
 {
 	struct nvram_header *header;
+	struct nvram_header *header_cfe = NULL;
 	chipcregs_t *cc;
 	int i;
 	uint32 base, off, lim;
@@ -190,15 +193,30 @@ early_nvram_init(void)
 	{
 		off = FLASH_MIN;
 		while (off <= lim) {
+			printk(KERN_NOTICE "scan for nvram at %X\n",off);
 			/* Windowed flash access */
 			header = (struct nvram_header *) KSEG1ADDR(base + off - NVRAM_SPACE);
 			if (header->magic == NVRAM_MAGIC)
 				if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
+					printk(KERN_NOTICE "found nvram at %X\n",off-NVRAM_SPACE);
+					header_cfe = KSEG1ADDR(base + off + 0x20000 - (NVRAM_SPACE/2));
+					if (header_cfe->magic != NVRAM_MAGIC)
+					{
+					    printk(KERN_INFO "something wrong here\n");
+					}
+					cfenvram=1;
+					printk(KERN_NOTICE "map cfe nvram at %X\n",off + 0x20000 - (NVRAM_SPACE/2));
 					goto found;
 				}
-			off <<= 1;
+			header = (struct nvram_header *) KSEG1ADDR(base + off - (NVRAM_SPACE/2));
+			if (header->magic == NVRAM_MAGIC)
+				if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
+					printk(KERN_NOTICE "found small nvram at %X\n",off-NVRAM_SPACE);
+					goto found;
+				}
+			off += 65536;
 		}
-	}
+ 	}
 
 	/* Try embedded NVRAM at 4 KB and 1 KB as last resorts */
 	header = (struct nvram_header *) KSEG1ADDR(base + 4 KB);
@@ -223,7 +241,53 @@ found:
 	for (; i < header->len && i < NVRAM_SPACE; i += 4)
 		*dst++ = ltoh32(*src++);
 
+
+	src = (u32 *) header_cfe;
+	if (src)
+	{
+	dst = (u32 *) nvram_buf_cfe;
+	for (i = 0; i < sizeof(struct nvram_header); i += 4)
+		*dst++ = *src++;
+	for (; i < header->len && i < NVRAM_SPACE/2; i += 4)
+		*dst++ = ltoh32(*src++);
+	}
+
 	return 0;
+}
+
+static char *
+early_cfe_nvram_get(const char *name)
+{
+	char *var, *value, *end, *eq;
+
+	if (!cfenvram)
+		return NULL;
+	if (!name)
+		return NULL;
+
+	/* Too early? */
+	if (sih == NULL)
+		return NULL;
+
+	if (!nvram_buf_cfe[0])
+		if (early_nvram_init() != 0) {
+			printk("early_cfe_nvram_get: Failed reading nvram var %s\n", name);
+			return NULL;
+		}
+	/* Look for name=value and return value */
+	var = &nvram_buf_cfe[sizeof(struct nvram_header)];
+	end = nvram_buf_cfe + sizeof(nvram_buf_cfe) - 2;
+	end[0] = end[1] = '\0';
+	for (; *var; var = value + strlen(value) + 1) {
+		if (!(eq = strchr(var, '=')))
+			break;
+		value = eq + 1;
+		if ((eq - var) == strlen(name) && strncmp(var, name, (eq - var)) == 0)
+		{
+			return value;
+		}
+	}
+	return NULL;
 }
 
 /* Early (before mm or mtd) read-only access to NVRAM */
@@ -257,7 +321,7 @@ early_nvram_get(const char *name)
 			return value;
 	}
 
-	return NULL;
+	return early_cfe_nvram_get(name);
 }
 
 static int
@@ -805,15 +869,15 @@ dev_nvram_exit(void)
 
 	if (nvram_class) {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
-		class_device_destroy(nvram_class, MKDEV(nvram_major, 0));
+		class_device_destroy(nvram_class, MKDEV(229, 0));
 #else /* 2.6.36 and up */
-		device_destroy(nvram_class, MKDEV(nvram_major, 0));
+		device_destroy(nvram_class, MKDEV(229, 0));
 #endif
 		class_destroy(nvram_class);
 	}
 
 	if (nvram_major >= 0)
-		unregister_chrdev(nvram_major, "nvram");
+		unregister_chrdev(229, "nvram");
 
 	if (nvram_mtd)
 		put_mtd_device(nvram_mtd);
@@ -834,7 +898,12 @@ dev_nvram_init(void)
 	struct page *page, *end;
 	unsigned int i;
 	osl_t *osh;
-
+	struct mtd_info *nvram_mtd_cfe = NULL;
+	struct mtd_info *nvram_mtd_temp = NULL;
+	DECLARE_WAITQUEUE(wait, current);
+	wait_queue_head_t wait_q;
+	struct erase_info erase;
+	printk(KERN_INFO "startup nvram driver\n");
 	/* Allocate and reserve memory to mmap() */
 	while ((PAGE_SIZE << order) < NVRAM_SPACE)
 		order++;
@@ -846,17 +915,68 @@ dev_nvram_init(void)
 #if defined(CONFIG_MTD) || defined(CONFIG_MTD_MODULE)
 	/* Find associated MTD device */
 	for (i = 0; i < MAX_MTD_DEVICES; i++) {
-		nvram_mtd = get_mtd_device(NULL, i);
-		if (!IS_ERR(nvram_mtd)) {
-			if (!strcmp(nvram_mtd->name, "nvram") &&
-			    nvram_mtd->size >= NVRAM_SPACE) {
-				break;
+		nvram_mtd_temp = get_mtd_device(NULL, i);
+		if (!IS_ERR(nvram_mtd_temp)) {
+			if (!strcmp(nvram_mtd_temp->name, "nvram_cfe"))
+			{
+				nvram_mtd_cfe = nvram_mtd_temp;
+				printk(KERN_EMERG "found cfe nvram\n");
+				continue;
+ 			}
+			if (!strcmp(nvram_mtd_temp->name, "nvram") &&
+				nvram_mtd_temp->size >= NVRAM_SPACE) {
+				nvram_mtd = nvram_mtd_temp;
+				printk(KERN_EMERG "found nvram\n");
+				continue;
 			}
-			put_mtd_device(nvram_mtd);
+			put_mtd_device(nvram_mtd_temp);
 		}
 	}
-	if (i >= MAX_MTD_DEVICES)
-		nvram_mtd = NULL;
+//	if (i >= MAX_MTD_DEVICES)
+//		nvram_mtd = NULL;
+	if (nvram_mtd_cfe != NULL)
+	{
+	int len;
+	char *buf=kmalloc(65536,GFP_ATOMIC);
+	if (buf==NULL)
+	    {
+	    printk(KERN_ERR "mem allocation error");
+	    goto done_nofree;
+	    }
+	mtd_read(nvram_mtd, 0, nvram_mtd->erasesize, &len, buf);
+	struct nvram_header *header = (struct nvram_header *)buf;
+	len=0;	
+	if (header->magic!=NVRAM_MAGIC)
+	{
+	printk(KERN_EMERG "copy cfe nvram to base nvram\n");
+	len=0;	
+	mtd_read(nvram_mtd_cfe, 0x8000, 0x8000, &len, buf);
+	put_mtd_device(nvram_mtd_cfe);
+	mtd_unlock(nvram_mtd, 0, nvram_mtd->erasesize);
+	init_waitqueue_head(&wait_q);
+	erase.mtd = nvram_mtd;
+	erase.addr = 0;
+	erase.len = nvram_mtd->erasesize;
+	erase.callback = erase_callback;
+	erase.priv = (u_long) &wait_q;
+	set_current_state(TASK_INTERRUPTIBLE);
+	add_wait_queue(&wait_q, &wait);
+	if ((ret = mtd_erase(nvram_mtd, &erase))) {
+			set_current_state(TASK_RUNNING);
+			remove_wait_queue(&wait_q, &wait);
+			printk("nvram_commit: erase error\n");
+			goto done;
+	}
+	/* Wait for erase to finish */
+	schedule();
+	remove_wait_queue(&wait_q, &wait);
+	len=0;	
+	mtd_write(nvram_mtd, 0, nvram_mtd->erasesize,&len, buf);
+	done:;
+	kfree(buf);
+	done_nofree:;
+	}
+	}
 #endif
 
 	/* Initialize hash table lock */
@@ -866,7 +986,7 @@ dev_nvram_init(void)
 	mutex_init(&nvram_sem);
 
 	/* Register char device */
-	if ((nvram_major = register_chrdev(0, "nvram", &dev_nvram_fops)) < 0) {
+	if ((nvram_major = register_chrdev(229, "nvram", &dev_nvram_fops)) < 0) {
 		ret = nvram_major;
 		goto err;
 	}
@@ -875,7 +995,7 @@ dev_nvram_init(void)
 		osh = osl_attach(NULL, SI_BUS, FALSE);
 		if (osh == NULL) {
 			printk("Error allocating osh\n");
-			unregister_chrdev(nvram_major, "nvram");
+			unregister_chrdev(229, "nvram");
 			goto err;
 		}
 		si_setosh(sih, osh);
@@ -893,9 +1013,9 @@ dev_nvram_init(void)
 
 	/* Add the device nvram0 */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
-	class_device_create(nvram_class, NULL, MKDEV(nvram_major, 0), NULL, "nvram");
+	class_device_create(nvram_class, NULL, MKDEV(229, 0), NULL, "nvram");
 #else /* Linux 2.6.36 and above */
-	device_create(nvram_class, NULL, MKDEV(nvram_major, 0), NULL, "nvram");
+	device_create(nvram_class, NULL, MKDEV(229, 0), NULL, "nvram");
 #endif	/* Linux 2.6.36 */
 
 	/* Set the SDRAM NCDL value into NVRAM if not already done */
@@ -917,5 +1037,4 @@ err:
 	return ret;
 }
 
-module_init(dev_nvram_init);
-module_exit(dev_nvram_exit);
+late_initcall(dev_nvram_init);
