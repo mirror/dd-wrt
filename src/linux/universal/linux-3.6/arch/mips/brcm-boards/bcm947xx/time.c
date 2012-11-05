@@ -196,7 +196,7 @@ struct clock_event_device bcm947xx_clockevent = {
 /* named initialization should work on earlier 2.6 too */
 static struct irqaction bcm947xx_timer_irqaction = {
 	.handler	= bcm947xx_timer_interrupt,
-	.flags		= IRQF_DISABLED | IRQF_TIMER,
+	.flags		= IRQF_PERCPU | IRQF_TIMER,
 	.name		= "bcm947xx timer",
 	.dev_id		= &bcm947xx_clockevent,
 };
