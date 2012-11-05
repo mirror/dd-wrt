@@ -1,26 +1,23 @@
 #!/bin/sh
 nv=/usr/sbin/nvram
-ipt=/usr/sbin/iptables
-
 for i in 1 2 3 4 5 6 7 8 9 10
 do
 	if test -e "/tmp/oet/pid/${i}.pid"
 	then 
-		$ipt -D FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
-		$ipt -D FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
-		$ipt -D INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
-		$ipt -D INPUT -p etherip -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
+		/usr/sbin/iptables -D FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
+		/usr/sbin/iptables -D FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
+		/usr/sbin/iptables -D INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
+		/usr/sbin/iptables -D INPUT -p etherip -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
-		peeraddr=$(/bin/ping `$nv get oet${i}_rem` -c 1 | grep PING | cut -f 2 -d '(' | cut -f 1 -d ')')
-		$ipt -D INPUT -p etherip -s $peeraddr -j ACCEPT 2>&1 > /dev/null
-		$ipt -I INPUT -p etherip -s $peeraddr -j ACCEPT 2>&1 > /dev/null
+		/usr/sbin/iptables -D INPUT -p etherip -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
+		/usr/sbin/iptables -I INPUT -p etherip -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
 		if [ `$nv get oet${i}_bridged` -ne 1 ]
 		then
-			$ipt -I FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
-			$ipt -I FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
-			$ipt -I INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
+			/usr/sbin/iptables -I FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
+			/usr/sbin/iptables -I FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
+			/usr/sbin/iptables -I INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
 		fi
 	fi
 done
