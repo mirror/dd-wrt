@@ -215,7 +215,9 @@ serial_setup(si_t *sih)
 
 #endif /* CONFIG_SERIAL_CORE */
 
-static int boot_flags(void)
+
+
+int boot_flags(void)
 {
 	int bootflags = 0;
 	char *val;

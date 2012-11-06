@@ -222,7 +222,7 @@ static int brcmnand_read_bbt(struct mtd_info *mtd, uint8_t *buf, int page, int n
 
 	while (totlen) {
 		len = min(totlen, (size_t) (1 << this->bbt_erase_shift));
-		res = mtd->read(mtd, from, len, &retlen, buf);
+		res = mtd_read(mtd, from, len, &retlen, buf);
 		if (res < 0) {
 			if (retlen != len) {
 				printk(KERN_INFO "nand_bbt: Error reading bad block table\n");
@@ -315,14 +315,14 @@ static int brcmnand_scan_read_raw(struct mtd_info *mtd, uint8_t *buf, loff_t off
 {
 	struct mtd_oob_ops ops;
 
-	ops.mode = MTD_OOB_RAW;
+	ops.mode = MTD_OPS_RAW;
 	ops.ooboffs = 0;
 	ops.ooblen = mtd->oobsize;
 	ops.oobbuf = buf;
 	ops.datbuf = buf;
 	ops.len = len;
 
-	return mtd->read_oob(mtd, offs, &ops);
+	return mtd_read_oob(mtd, offs, &ops);
 }
 
 /*
@@ -333,14 +333,14 @@ static int brcmnand_scan_write_bbt(struct mtd_info *mtd, loff_t offs, size_t len
 {
 	struct mtd_oob_ops ops;
 
-	ops.mode = MTD_OOB_PLACE;
+	ops.mode = MTD_OPS_PLACE_OOB;
 	ops.ooboffs = 0;
 	ops.ooblen = mtd->oobsize;
 	ops.datbuf = buf;
 	ops.oobbuf = oob;
 	ops.len = len;
 
-	return mtd->write_oob(mtd, offs, &ops);
+	return mtd_write_oob(mtd, offs, &ops);
 }
 
 /**
@@ -415,7 +415,7 @@ static int brcmnand_scan_block_fast(struct mtd_info *mtd, struct nand_bbt_descr 
 	ops.oobbuf = buf;
 	ops.ooboffs = 0;
 	ops.datbuf = NULL;
-	ops.mode = MTD_OOB_PLACE;
+	ops.mode = MTD_OPS_PLACE_OOB;
 
 	for (j = 0; j < len; j++) {
 		/*
@@ -423,7 +423,7 @@ static int brcmnand_scan_block_fast(struct mtd_info *mtd, struct nand_bbt_descr 
 		 * handle single byte reads for 16 bit
 		 * buswidth
 		 */
-		ret = mtd->read_oob(mtd, offs, &ops);
+		ret = mtd_read_oob(mtd, offs, &ops);
 		if (ret)
 			return ret;
 
@@ -653,7 +653,7 @@ static int brcmnand_write_bbt(struct mtd_info *mtd, uint8_t *buf,
 	ops.ooblen = mtd->oobsize;
 	ops.ooboffs = 0;
 	ops.datbuf = NULL;
-	ops.mode = MTD_OOB_PLACE;
+	ops.mode = MTD_OPS_PLACE_OOB;
 
 	if (!rcode)
 		rcode = 0xff;
@@ -741,7 +741,7 @@ static int brcmnand_write_bbt(struct mtd_info *mtd, uint8_t *buf,
 			/* Make it block aligned */
 			to &= ~((loff_t) ((1 << this->bbt_erase_shift) - 1));
 			len = 1 << this->bbt_erase_shift;
-			res = mtd->read(mtd, to, len, &retlen, buf);
+			res = mtd_read(mtd, to, len, &retlen, buf);
 			if (res < 0) {
 				if (retlen != len) {
 					printk(KERN_INFO "nand_bbt: Error "
@@ -756,7 +756,7 @@ static int brcmnand_write_bbt(struct mtd_info *mtd, uint8_t *buf,
 			/* Read oob data */
 			ops.ooblen = (len >> this->page_shift) * mtd->oobsize;
 			ops.oobbuf = &buf[len];
-			res = mtd->read_oob(mtd, to + mtd->writesize, &ops);
+			res = mtd_read_oob(mtd, to + mtd->writesize, &ops);
 			if (res < 0 || ops.oobretlen != ops.ooblen)
 				goto outerr;
 
@@ -802,7 +802,7 @@ static int brcmnand_write_bbt(struct mtd_info *mtd, uint8_t *buf,
 		einfo.mtd = mtd;
 		einfo.addr = (unsigned long)to;
 		einfo.len = 1 << this->bbt_erase_shift;
-		res = mtd->erase(mtd, &einfo );
+		res = mtd_erase(mtd, &einfo );
 		if (res < 0)
 			goto outerr;
 
@@ -1292,8 +1292,8 @@ int brcmnand_isbad_bbt(struct mtd_info *mtd, loff_t offs, int allowbbt)
 	 */
 	block = (uint32_t) (offs >>  (this->bbt_erase_shift - 1));
 	res = (this->bbt[block >> 3] >> (block & 0x06)) & 0x03;
-	DEBUG(MTD_DEBUG_LEVEL3, "brcmnand_isbad_bbt(): bbt info for offs "
-		"0x%08x: (block %d) 0x%02x\n", (unsigned int)offs, block >> 1, res);
+//	DEBUG(MTD_DEBUG_LEVEL3, "brcmnand_isbad_bbt(): bbt info for offs "
+//		"0x%08x: (block %d) 0x%02x\n", (unsigned int)offs, block >> 1, res);
 	if (res)
 		printk("brcmnand_isbad_bbt(): bbt info for offs "
 			"0x%08x: (block %d) 0x%02x\n", (unsigned int)offs, block >> 1, res);
@@ -1325,7 +1325,7 @@ int brcmnand_default_bbt(struct mtd_info *mtd)
 	struct nand_chip *this = mtd->priv;
 	int ret;
 
-	mtd->get_device( mtd );
+	__get_mtd_device( mtd );
 	/* Default for AG-AND. We must use a flash based
 	 * bad block table as the devices have factory marked
 	 * _good_ blocks. Erasing those blocks leads to loss
@@ -1339,14 +1339,14 @@ int brcmnand_default_bbt(struct mtd_info *mtd)
 			this->bbt_td = &bbt_main_descr;
 			this->bbt_md = &bbt_mirror_descr;
 		}
-		this->options |= NAND_USE_FLASH_BBT;
+		this->bbt_options |= NAND_BBT_NO_OOB_BBM | NAND_BBT_USE_FLASH;
 		ret = brcmnand_scan_bbt(mtd, &agand_flashbased);
-		mtd->put_device(mtd);
+		put_mtd_device(mtd);
 		return ret;
 	}
 
 	/* Is a flash based bad block table requested ? */
-	if (this->options & NAND_USE_FLASH_BBT) {
+	if (this->bbt_options & NAND_BBT_USE_FLASH) {
 		if (this->ecc.bytes == 3) {
 			/* Use the default pattern descriptors */
 			if (!this->bbt_td) {
@@ -1399,7 +1399,7 @@ int brcmnand_default_bbt(struct mtd_info *mtd)
 			(1 << (20 - this->bbt_erase_shift));
 	}
 	ret = brcmnand_scan_bbt(mtd, this->badblock_pattern);
-	mtd->put_device(mtd);
+	put_mtd_device(mtd);
 	return ret;
 }
 
