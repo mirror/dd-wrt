@@ -449,6 +449,10 @@
 		.macro	RESTORE_SP_AND_RET
 		LONG_L	sp, PT_R29(sp)
 		.set	mips3
+#ifdef CONFIG_BCM47XX
+		nop
+		nop
+#endif
 		eret
 		.set	mips0
 		.endm

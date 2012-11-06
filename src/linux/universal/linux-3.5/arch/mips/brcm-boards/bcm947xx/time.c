@@ -111,6 +111,7 @@ extern void sbprof_cpu_intr(sbprof_pc restartpc);
 static irqreturn_t
 bcm947xx_timer_interrupt(int irq, void *dev_id)
 {
+	static int t=0;
 #ifdef CONFIG_HND_BMIPS3300_PROF
 	/*
 	 * Are there any ExcCode or other mean(s) to determine what has caused
@@ -124,7 +125,6 @@ bcm947xx_timer_interrupt(int irq, void *dev_id)
 			return (IRQ_HANDLED);
 	}
 #endif	/* CONFIG_HND_BMIPS3300_PROF */
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
 	/* Generic MIPS timer code */
 	timer_interrupt(irq, dev_id);
@@ -141,7 +141,10 @@ bcm947xx_timer_interrupt(int irq, void *dev_id)
 
 	/* Set the watchdog timer to reset after the specified number of ms */
 	if (watchdog > 0)
+		{
+//		printk(KERN_INFO "call watchdog %d\n",watchdog);
 		si_watchdog_ms(sih, watchdog);
+		}
 
 #ifdef	CONFIG_HWSIM
 	(*((int *)0xa0000f1c))++;
@@ -163,7 +166,6 @@ static void bcm947xx_clockevent_set_mode(enum clock_event_mode mode,
 	/* Need to add mode switch to support both
 	periodic and one-shot operation here */
 }
-#ifdef BRCM_TIMER_ONESHOT
 /* This is used in one-shot operation mode */
 static int bcm947xx_clockevent_set_next(unsigned long delta,
 	struct clock_event_device *cd)
@@ -171,7 +173,7 @@ static int bcm947xx_clockevent_set_next(unsigned long delta,
         unsigned int cnt;
         int res;
 
-	printk( KERN_CRIT "bcm947xx_clockevent_set_next: %#lx\n", delta );
+//	printk( KERN_CRIT "bcm947xx_clockevent_set_next: %#lx\n", delta );
 
         cnt = read_c0_count();
         cnt += delta;
@@ -179,24 +181,21 @@ static int bcm947xx_clockevent_set_next(unsigned long delta,
         res = ((int)(read_c0_count() - cnt) >= 0) ? -ETIME : 0;
         return res;
 }
-#endif
 
 struct clock_event_device bcm947xx_clockevent = {
 	.name		= "bcm947xx",
-	.features	= CLOCK_EVT_FEAT_PERIODIC,
+	.features	= CLOCK_EVT_FEAT_ONESHOT,
 	.rating		= 300,
 	.irq		= 7,
 	.set_mode 	= bcm947xx_clockevent_set_mode,
-#ifdef BRCM_TIMER_ONESHOT
 	.set_next_event = bcm947xx_clockevent_set_next, 
-#endif
 };
 #endif
 
 /* named initialization should work on earlier 2.6 too */
 static struct irqaction bcm947xx_timer_irqaction = {
 	.handler	= bcm947xx_timer_interrupt,
-	.flags		= IRQF_PERCPU | IRQF_TIMER,
+	.flags		= IRQF_DISABLED | IRQF_TIMER,
 	.name		= "bcm947xx timer",
 	.dev_id		= &bcm947xx_clockevent,
 };
@@ -215,15 +214,12 @@ void __init plat_time_init(void)
 
 	/* Initialize the timer */
 	bcm947xx_time_init();
-
 	cd->cpumask = cpumask_of(smp_processor_id());
 
         clockevent_set_clock(cd, mips_hpt_frequency);
-#ifdef BRCM_TIMER_ONESHOT
         /* Calculate the min / max delta */
         cd->max_delta_ns        = clockevent_delta2ns(0x7fffffff, cd);
         cd->min_delta_ns        = clockevent_delta2ns(0x300, cd);
-#endif
 	clockevents_register_device(cd);
 
 	/* Enable the timer interrupt */
