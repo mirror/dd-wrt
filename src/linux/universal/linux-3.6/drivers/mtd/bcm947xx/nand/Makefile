@@ -10,5 +10,7 @@ endif
 #obj-$(CONFIG_MTD_BRCMNAND_CORRECTABLE_ERR_HANDLING) += brcmnand_cet.o
 ifneq ($(CONFIG_MIPS_BRCM),y)
 obj-$(CONFIG_MTD_BRCMNAND) += brcmnand.o
+else
+obj-$(CONFIG_MTD_BRCMNAND) += brcmnand_47xx.o brcmnand_bbt.o
 endif
 obj-$(CONFIG_MTD_NFLASH) += bcm_nflash.o

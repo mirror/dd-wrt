@@ -215,6 +215,7 @@ typedef enum {
 /* Mask to zero out the chip options, which come from the id table */
 #define NAND_CHIPOPTIONS_MSK	0x0000ffff
 
+
 /* Non chip related options */
 /* This option skips the bbt scan during initialization. */
 #define NAND_SKIP_BBTSCAN	0x00010000
@@ -539,6 +540,8 @@ struct nand_chip {
 	struct nand_ecc_ctrl ecc;
 	struct nand_buffers *buffers;
 	struct nand_hw_control hwcontrol;
+
+	struct mtd_oob_ops ops;
 
 	uint8_t *bbt;
 	struct nand_bbt_descr *bbt_td;

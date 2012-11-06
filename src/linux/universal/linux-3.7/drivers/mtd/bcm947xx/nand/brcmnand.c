@@ -753,6 +753,8 @@ brcmnand_dummy_func(struct mtd_info * mtd)
 	BUG_ON(1);
 }
 
+# define NAND_ALE_COL	0x08
+# define NAND_ALE_ROW	0x10
 
 #ifdef CONFIG_MIPS_BRCM
 

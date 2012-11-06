@@ -1,4 +1,4 @@
-/*
+/*n
  * Broadcom NAND flash controller interface
  *
  * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
@@ -26,6 +26,8 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/nand_ecc.h>
+#include <linux/mtd/partitions.h>
+#include "../../mtdcore.h"
 #include <linux/errno.h>
 #include <linux/pci.h>
 #include <linux/delay.h>
@@ -50,9 +52,9 @@ spinlock_t *partitions_lock_init(void);
 #define NFLASH_LOCK(lock)       if (lock) spin_lock(lock)
 #define NFLASH_UNLOCK(lock)     if (lock) spin_unlock(lock)
 
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 #include <linux/mtd/partitions.h>
-
+extern int boot_flags(void);
 extern struct mtd_partition * init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size);
 #endif
 
@@ -366,7 +368,7 @@ int brcmnand_spare_is_valid(struct mtd_info *mtd, struct nand_chip *chip, int st
  *
  * Deselect, release chip lock and wake up anyone waiting on the device
  */
-static spinlock_t mtd_lock;
+static spinlock_t brcm_mtd_lock;
 static void brcmnand_release_device(struct mtd_info *mtd)
 {
 	if (nflash_lock == 1) {
@@ -374,7 +376,7 @@ static void brcmnand_release_device(struct mtd_info *mtd)
 		NFLASH_LOCK(mtd->mlock);
 	}
 	nflash_lock --;
-	spin_unlock(&mtd_lock);
+	spin_unlock(&brcm_mtd_lock);
 }
 
 /**
@@ -387,7 +389,7 @@ static void brcmnand_release_device(struct mtd_info *mtd)
  */
 static int brcmnand_get_device( struct mtd_info *mtd)
 {
-	spin_lock(&mtd_lock);
+	spin_lock(&brcm_mtd_lock);
 	if (nflash_lock == 0) {
 		NFLASH_UNLOCK(mtd->mlock);
 		brcmnand_info.nflash->enable( brcmnand_info.nflash, 1);
@@ -578,7 +580,7 @@ static int brcmnand_posted_read_cache(struct mtd_info *mtd, struct nand_chip *ch
  * Not for syndrome calculating ecc controllers which need a special oob layout
  */
 static int brcmnand_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
-	uint8_t *buf, int page)
+	uint8_t *buf, int oob_required, int page)
 {
 	int eccsteps;
 	int data_read = 0;
@@ -619,12 +621,12 @@ static uint8_t *brcmnand_transfer_oob(struct nand_chip *chip, uint8_t *oob,
 {
 	switch (ops->mode) {
 
-	case MTD_OOB_PLACE:
-	case MTD_OOB_RAW:
+	case MTD_OPS_PLACE_OOB:
+	case MTD_OPS_RAW:
 		memcpy(oob, chip->oob_poi + ops->ooboffs, len);
 		return oob + len;
 
-	case MTD_OOB_AUTO: {
+	case MTD_OPS_AUTO_OOB: {
 		struct nand_oobfree *free = chip->ecc.layout->oobfree;
 		uint32_t boffs = 0, roffs = ops->ooboffs;
 		size_t bytes = 0;
@@ -694,7 +696,7 @@ static int brcmnand_do_read_ops(struct mtd_info *mtd, loff_t from,
 			bufpoi = aligned ? buf : chip->buffers->databuf;
 			chip->pagebuf = page;
 			/* Now read the page into the buffer */
-			ret = chip->ecc.read_page(mtd, chip, bufpoi, page);
+			ret = chip->ecc.read_page(mtd, chip, bufpoi, 0, page);
 			if (ret < 0)
 				break;
 
@@ -707,7 +709,7 @@ static int brcmnand_do_read_ops(struct mtd_info *mtd, loff_t from,
 			buf += bytes;
 
 			if (unlikely(oob)) {
-				if (ops->mode != MTD_OOB_RAW) {
+				if (ops->mode != MTD_OPS_RAW) {
 					int toread = min(oobreadlen,
 						chip->ecc.layout->oobavail);
 					if (toread) {
@@ -765,6 +767,7 @@ brcmnand_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_c
 {
 	struct nand_chip *chip = mtd->priv;
 	int ret;
+	struct mtd_oob_ops ops;
 
 	if ((from + len) > mtd->size)
 		return -EINVAL;
@@ -778,7 +781,7 @@ brcmnand_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_c
 
 	ret = brcmnand_do_read_ops(mtd, from, &chip->ops);
 
-	*retlen = chip->ops.retlen;
+	*retlen = ops.retlen;
 
 	brcmnand_release_device(mtd);
 
@@ -832,7 +835,7 @@ static int brcmnand_posted_read_oob(struct mtd_info *mtd, struct nand_chip *chip
  * @sndcmd:	flag whether to issue read command or not
  */
 static int brcmnand_read_oob_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
-	int page, int sndcmd)
+	int page)
 {
 	int eccsteps;
 	int data_read = 0;
@@ -878,17 +881,17 @@ static int brcmnand_do_read_oob(struct mtd_info *mtd, loff_t from,
 	uint8_t *buf = ops->oobbuf;
 	int ret;
 
-	DEBUG(MTD_DEBUG_LEVEL3, "nand_read_oob: from = 0x%08Lx, len = %i\n",
-	      (unsigned long long)from, readlen);
+//	DEBUG(MTD_DEBUG_LEVEL3, "nand_read_oob: from = 0x%08Lx, len = %i\n",
+//	      (unsigned long long)from, readlen);
 
-	if (ops->mode == MTD_OOB_AUTO)
+	if (ops->mode == MTD_OPS_AUTO_OOB)
 		len = chip->ecc.layout->oobavail;
 	else
 		len = mtd->oobsize;
 
 	if (unlikely(ops->ooboffs >= len)) {
-		DEBUG(MTD_DEBUG_LEVEL0, "nand_read_oob: "
-			"Attempt to start read outside oob\n");
+//		DEBUG(MTD_DEBUG_LEVEL0, "nand_read_oob: "
+//			"Attempt to start read outside oob\n");
 		return -EINVAL;
 	}
 
@@ -896,8 +899,8 @@ static int brcmnand_do_read_oob(struct mtd_info *mtd, loff_t from,
 	if (unlikely(from >= mtd->size ||
 		ops->ooboffs + readlen > ((mtd->size >> chip->page_shift) -
 		(from >> chip->page_shift)) * len)) {
-		DEBUG(MTD_DEBUG_LEVEL0, "nand_read_oob: "
-			"Attempt read beyond end of device\n");
+//		DEBUG(MTD_DEBUG_LEVEL0, "nand_read_oob: "
+//			"Attempt read beyond end of device\n");
 		return -EINVAL;
 	}
 	/* Shift to get page */
@@ -905,7 +908,7 @@ static int brcmnand_do_read_oob(struct mtd_info *mtd, loff_t from,
 	page = realpage & chip->pagemask;
 
 	while (1) {
-		ret = chip->ecc.read_oob(mtd, chip, page, 0);
+		ret = chip->ecc.read_oob(mtd, chip, page);
 		if (ret)
 			break;
 		len = min(len, readlen);
@@ -942,17 +945,17 @@ static int brcmnand_read_oob(struct mtd_info *mtd, loff_t from,
 
 	/* Do not allow reads past end of device */
 	if (ops->datbuf && (from + ops->len) > mtd->size) {
-		DEBUG(MTD_DEBUG_LEVEL0, "brcmnand_read_oob: "
-		      "Attempt read beyond end of device\n");
+//		DEBUG(MTD_DEBUG_LEVEL0, "brcmnand_read_oob: "
+//		      "Attempt read beyond end of device\n");
 		return -EINVAL;
 	}
 
 	brcmnand_get_device( mtd );
 
 	switch (ops->mode) {
-	case MTD_OOB_PLACE:
-	case MTD_OOB_AUTO:
-	case MTD_OOB_RAW:
+	case MTD_OPS_PLACE_OOB:
+	case MTD_OPS_AUTO_OOB:
+	case MTD_OPS_RAW:
 		break;
 
 	default:
@@ -1044,7 +1047,7 @@ out:
  * @buf:	data buffer
  */
 static void brcmnand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
-	const uint8_t *buf)
+	const uint8_t *buf, int oob_required)
 {
 	int eccsize = chip->ecc.size;
 	int eccsteps;
@@ -1097,7 +1100,7 @@ static void brcmnand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *ch
 
 				memcpy(oob_buf, oob, NAND_MAX_OOBSIZE);
 				/* read from the spare area first */
-				ret = chip->ecc.read_oob(mtd, chip, chip->pagebuf, 0);
+				ret = chip->ecc.read_oob(mtd, chip, chip->pagebuf);
 				if (ret != 0)
 					goto out;
 				/* merge the oob */
@@ -1193,10 +1196,10 @@ out:
  * @raw:	use _raw version of write_page
  */
 static int brcmnand_write_page(struct mtd_info *mtd, struct nand_chip *chip,
-	const uint8_t *buf, int page, int cached, int raw)
+	const uint8_t *buf,int oob_required, int page, int cached, int raw)
 {
 	chip->pagebuf = page;
-	chip->ecc.write_page(mtd, chip, buf);
+	chip->ecc.write_page(mtd, chip, buf,oob_required);
 
 	return 0;
 }
@@ -1214,12 +1217,12 @@ static uint8_t *brcmnand_fill_oob(struct nand_chip *chip, uint8_t *oob,
 
 	switch (ops->mode) {
 
-	case MTD_OOB_PLACE:
-	case MTD_OOB_RAW:
+	case MTD_OPS_PLACE_OOB:
+	case MTD_OPS_RAW:
 		memcpy(chip->oob_poi + ops->ooboffs, oob, len);
 		return oob + len;
 
-	case MTD_OOB_AUTO: {
+	case MTD_OPS_AUTO_OOB: {
 		struct nand_oobfree *free = chip->ecc.layout->oobfree;
 		uint32_t boffs = 0, woffs = ops->ooboffs;
 		size_t bytes = 0;
@@ -1302,9 +1305,9 @@ static int brcmnand_do_write_ops(struct mtd_info *mtd, loff_t to,
 
 		if (unlikely(oob))
 			oob = brcmnand_fill_oob(chip, oob, ops);
-
-		ret = chip->write_page(mtd, chip, wbuf, page, cached,
-		                       (ops->mode == MTD_OOB_RAW));
+			
+		ret = chip->write_page(mtd, chip, wbuf, 0,page, cached,
+		                       (ops->mode == MTD_OPS_RAW));
 		if (ret)
 			break;
 
@@ -1400,24 +1403,24 @@ static int brcmnand_do_write_oob(struct mtd_info *mtd, loff_t to,
 	int page, status, len;
 	struct nand_chip *chip = mtd->priv;
 
-	DEBUG(MTD_DEBUG_LEVEL3, "nand_write_oob: to = 0x%08x, len = %i\n",
-	      (unsigned int)to, (int)ops->ooblen);
+//	DEBUG(MTD_DEBUG_LEVEL3, "nand_write_oob: to = 0x%08x, len = %i\n",
+//	      (unsigned int)to, (int)ops->ooblen);
 
-	if (ops->mode == MTD_OOB_AUTO)
+	if (ops->mode == MTD_OPS_AUTO_OOB)
 		len = chip->ecc.layout->oobavail;
 	else
 		len = mtd->oobsize;
 
 	/* Do not allow write past end of page */
 	if ((ops->ooboffs + ops->ooblen) > len) {
-		DEBUG(MTD_DEBUG_LEVEL0, "nand_write_oob: "
-		      "Attempt to write past end of page\n");
+//		DEBUG(MTD_DEBUG_LEVEL0, "nand_write_oob: "
+//		      "Attempt to write past end of page\n");
 		return -EINVAL;
 	}
 
 	if (unlikely(ops->ooboffs >= len)) {
-		DEBUG(MTD_DEBUG_LEVEL0, "nand_write_oob: "
-			"Attempt to start write outside oob\n");
+//		DEBUG(MTD_DEBUG_LEVEL0, "nand_write_oob: "
+//			"Attempt to start write outside oob\n");
 		return -EINVAL;
 	}
 
@@ -1426,8 +1429,8 @@ static int brcmnand_do_write_oob(struct mtd_info *mtd, loff_t to,
 	             ops->ooboffs + ops->ooblen >
 			((mtd->size >> chip->page_shift) -
 			 (to >> chip->page_shift)) * len)) {
-		DEBUG(MTD_DEBUG_LEVEL0, "nand_read_oob: "
-			"Attempt write beyond end of device\n");
+//		DEBUG(MTD_DEBUG_LEVEL0, "nand_read_oob: "
+//			"Attempt write beyond end of device\n");
 		return -EINVAL;
 	}
 
@@ -1467,17 +1470,17 @@ static int brcmnand_write_oob(struct mtd_info *mtd, loff_t to,
 
 	/* Do not allow writes past end of device */
 	if (ops->datbuf && (to + ops->len) > mtd->size) {
-		DEBUG(MTD_DEBUG_LEVEL0, "brcmnand_write_oob: "
-		      "Attempt write beyond end of device\n");
+//		DEBUG(MTD_DEBUG_LEVEL0, "brcmnand_write_oob: "
+//		      "Attempt write beyond end of device\n");
 		return -EINVAL;
 	}
 
 	brcmnand_get_device( mtd );
 
 	switch (ops->mode) {
-	case MTD_OOB_PLACE:
-	case MTD_OOB_AUTO:
-	case MTD_OOB_RAW:
+	case MTD_OPS_PLACE_OOB:
+	case MTD_OPS_AUTO_OOB:
+	case MTD_OPS_RAW:
 		break;
 
 	default:
@@ -1505,28 +1508,28 @@ static int brcmnand_erase_bbt(struct mtd_info *mtd, struct erase_info *instr, in
 	chipcregs_t *cc = brcmnand_info.cc;
 	osl_t *osh;
 
-	DEBUG(MTD_DEBUG_LEVEL3, "nand_erase: start = 0x%08x, len = %i\n",
-	      (unsigned int)instr->addr, (unsigned int)instr->len);
+//	DEBUG(MTD_DEBUG_LEVEL3, "nand_erase: start = 0x%08x, len = %i\n",
+//	      (unsigned int)instr->addr, (unsigned int)instr->len);
 
 	block_size = 1 << chip->phys_erase_shift;
 
 	/* Start address must align on block boundary */
 	if (instr->addr & (block_size - 1)) {
-		DEBUG(MTD_DEBUG_LEVEL0, "nand_erase: Unaligned address\n");
+//		DEBUG(MTD_DEBUG_LEVEL0, "nand_erase: Unaligned address\n");
 		return -EINVAL;
 	}
 
 	/* Length must align on block boundary */
 	if (instr->len & (block_size - 1)) {
-		DEBUG(MTD_DEBUG_LEVEL0, "nand_erase: "
-		      "Length not block aligned\n");
+//		DEBUG(MTD_DEBUG_LEVEL0, "nand_erase: "
+//		      "Length not block aligned\n");
 		return -EINVAL;
 	}
 
 	/* Do not allow erase past end of device */
 	if ((instr->len + instr->addr) > mtd->size) {
-		DEBUG(MTD_DEBUG_LEVEL0, "nand_erase: "
-		      "Erase past end of device\n");
+//		DEBUG(MTD_DEBUG_LEVEL0, "nand_erase: "
+//		      "Erase past end of device\n");
 		return -EINVAL;
 	}
 
@@ -1581,8 +1584,8 @@ static int brcmnand_erase_bbt(struct mtd_info *mtd, struct erase_info *instr, in
 
 		if (need_bbt) {
 			if (!allowbbt) {
-				DEBUG(MTD_DEBUG_LEVEL0, "nand_erase: "
-				      "Failed erase, page 0x%08x\n", page);
+//				DEBUG(MTD_DEBUG_LEVEL0, "nand_erase: "
+//				      "Failed erase, page 0x%08x\n", page);
 				instr->state = MTD_ERASE_FAILED;
 				instr->fail_addr = (page << chip->page_shift);
 				chip->block_markbad(mtd, addr);
@@ -1630,7 +1633,7 @@ brcmnand_erase(struct mtd_info *mtd, struct erase_info *instr)
 static void brcmnand_sync(struct mtd_info *mtd)
 {
 
-	DEBUG(MTD_DEBUG_LEVEL3, "nand_sync: called\n");
+//	DEBUG(MTD_DEBUG_LEVEL3, "nand_sync: called\n");
 
 	/* Grab the lock and see if the device is available */
 	brcmnand_get_device( mtd );
@@ -1740,23 +1743,31 @@ static void brcmnand_resume(struct mtd_info *mtd)
 		       "in suspended state\n");
 }
 
-struct mtd_partition brcmnand_parts[] = {
-	{
-		.name = "brcmnand",
-		.size = 0,
-		.offset = 0
-	},
-	{
-		.name = 0,
-		.size = 0,
-		.offset = 0
-	}
-};
+struct mtd_partition brcmnand_parts[3] = {{0}};
 
 struct mtd_partition *init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 {
-	brcmnand_parts[0].offset = NFL_BOOT_OS_SIZE;
-	brcmnand_parts[0].size = size - NFL_BOOT_OS_SIZE - NFL_BBT_SIZE;
+	int bootflags = boot_flags();
+	int j = 0;
+	int offset = 0;
+
+	if ((bootflags & FLASH_KERNEL_NFLASH) == FLASH_KERNEL_NFLASH) {
+		brcmnand_parts[j].name = "linux";
+		brcmnand_parts[j].offset = 0;
+		brcmnand_parts[j++].size = NFL_BOOT_OS_SIZE;
+		offset += NFL_BOOT_OS_SIZE;
+		size -= NFL_BOOT_OS_SIZE;
+	}
+
+	size -= NFL_BBT_SIZE;
+	if (size <= 0) {
+		printk(KERN_ERR "%s: nand flash size is too small\n", __func__);
+		return NULL;
+	}
+
+	brcmnand_parts[j].name = "ddwrt";
+	brcmnand_parts[j].offset = offset;
+	brcmnand_parts[j++].size = size;
 
 	return brcmnand_parts;
 }
@@ -2239,14 +2250,14 @@ brcmnand_init_nandchip(struct mtd_info *mtd, struct nand_chip *chip)
 	chip->select_chip = brcmnand_select_chip;
 	chip->cmd_ctrl = brcmnand_hwcontrol;
 	chip->dev_ready = brcmnand_devready;
-	mtd->get_device = brcmnand_get_device_bcm4706;
-	mtd->put_device = brcmnand_release_device_bcm4706;
+	mtd->_get_device = brcmnand_get_device_bcm4706;
+	mtd->_put_device = brcmnand_release_device_bcm4706;
 
 	chip->numchips = 1;
 	chip->chip_shift = 0;
 	chip->chip_delay = 50;
 	chip->priv = mtd;
-	chip->options = NAND_USE_FLASH_BBT;
+	chip->bbt_options = NAND_BBT_NO_OOB_BBM | NAND_BBT_USE_FLASH;
 
 	chip->controller = &chip->hwcontrol;
 	spin_lock_init(&chip->controller->lock);
@@ -2278,7 +2289,7 @@ brcmnand_mtd_init(void)
 	struct pci_dev *dev = NULL;
 	struct nand_chip *chip;
 	struct mtd_info *mtd;
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 	struct mtd_partition *parts;
 	int i;
 #endif
@@ -2352,7 +2363,7 @@ brcmnand_mtd_init(void)
 	chip->numchips = 1;
 	chip->chip_shift = 0;
 	chip->priv = mtd;
-	chip->options |= NAND_USE_FLASH_BBT;
+	chip->bbt_options |= NAND_BBT_NO_OOB_BBM | NAND_BBT_USE_FLASH;
 	/* At most 2GB is supported */
 	chip->chipsize = (info->size >= (1 << 11)) ? (1 << 31) : (info->size << 20);
 	brcmnand_info.level = info->ecclevel;
@@ -2362,7 +2373,7 @@ brcmnand_mtd_init(void)
 	mtd->priv = &brcmnand_info.chip;
 	mtd->owner = THIS_MODULE;
 	mtd->mlock = partitions_lock_init();
-	spin_lock_init(&mtd_lock);
+	spin_lock_init(&brcm_mtd_lock);
 	if (!mtd->mlock) {
 		ret = -ENOMEM;
 		goto fail;
@@ -2517,27 +2528,27 @@ brcmnand_mtd_init(void)
 		chip->block_markbad = brcmnand_default_block_markbad;
 	if (!chip->scan_bbt)
 		chip->scan_bbt = brcmnand_default_bbt;
-	if (!mtd->get_device)
-		mtd->get_device = brcmnand_get_device;
-	if (!mtd->put_device)
-		mtd->put_device = brcmnand_release_device;
+	if (!mtd->_get_device)
+		mtd->_get_device = brcmnand_get_device;
+	if (!mtd->_put_device)
+		mtd->_put_device = brcmnand_release_device;
 
 	mtd->type = MTD_NANDFLASH;
 	mtd->flags = MTD_CAP_NANDFLASH;
-	mtd->erase = brcmnand_erase;
-	mtd->point = NULL;
-	mtd->unpoint = NULL;
-	mtd->read = brcmnand_read;
-	mtd->write = brcmnand_write;
-	mtd->read_oob = brcmnand_read_oob;
-	mtd->write_oob = brcmnand_write_oob;
-	mtd->sync = brcmnand_sync;
-	mtd->lock = NULL;
-	mtd->unlock = NULL;
-	mtd->suspend = brcmnand_suspend;
-	mtd->resume = brcmnand_resume;
-	mtd->block_isbad = brcmnand_block_isbad;
-	mtd->block_markbad = brcmnand_block_markbad;
+	mtd->_erase = brcmnand_erase;
+	mtd->_point = NULL;
+	mtd->_unpoint = NULL;
+	mtd->_read = brcmnand_read;
+	mtd->_write = brcmnand_write;
+	mtd->_read_oob = brcmnand_read_oob;
+	mtd->_write_oob = brcmnand_write_oob;
+	mtd->_sync = brcmnand_sync;
+	mtd->_lock = NULL;
+	mtd->_unlock = NULL;
+	mtd->_suspend = brcmnand_suspend;
+	mtd->_resume = brcmnand_resume;
+	mtd->_block_isbad = brcmnand_block_isbad;
+	mtd->_block_markbad = brcmnand_block_markbad;
 
 	/* propagate ecc.layout to mtd_info */
 	mtd->ecclayout = chip->ecc.layout;
@@ -2549,7 +2560,7 @@ brcmnand_mtd_init(void)
 	}
 
 init_partitions:
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 	parts = init_brcmnand_mtd_partitions(mtd, mtd->size);
 	if (!parts)
 		goto fail;
@@ -2576,7 +2587,7 @@ fail:
 static void __exit
 brcmnand_mtd_exit(void)
 {
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 	del_mtd_partitions(&brcmnand_info.mtd);
 #else
 	del_mtd_device(&brcmnand_info.mtd);
