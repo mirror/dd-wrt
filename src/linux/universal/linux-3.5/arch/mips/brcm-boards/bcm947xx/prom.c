@@ -58,9 +58,6 @@ extern si_t *bcm947xx_sih;
 #define UNIQUE_ENTRYHI(idx) (CKSEG0 + ((idx) << (PAGE_SHIFT + 1)))
 
 static unsigned long tmp_tlb_ent __initdata;
-#ifdef	CONFIG_CFE
-static int cfe_cons_handle;
-#endif
 
 #if defined(CONFIG_CFE) && defined(CONFIG_EARLY_PRINTK)
 void prom_putchar(char c)
@@ -69,88 +66,6 @@ void prom_putchar(char c)
 		;
 }
 #endif
-
-#ifdef	CONFIG_CFE
-
-static __init void prom_init_cfe(void)
-{
-	uint32_t cfe_ept;
-	uint32_t cfe_handle;
-	uint32_t cfe_eptseal;
-	int argc = fw_arg0;
-	char **envp = (char **) fw_arg2;
-	int *prom_vec = (int *) fw_arg3;
-
-	/*
-	 * Check if a loader was used; if NOT, the 4 arguments are
-	 * what CFE gives us (handle, 0, EPT and EPTSEAL)
-	 */
-	if (argc < 0) {
-		cfe_handle = (uint32_t)argc;
-		cfe_ept = (uint32_t)envp;
-		cfe_eptseal = (uint32_t)prom_vec;
-	} else {
-		if ((int)prom_vec < 0) {
-			/*
-			 * Old loader; all it gives us is the handle,
-			 * so use the "known" entrypoint and assume
-			 * the seal.
-			 */
-			cfe_handle = (uint32_t)prom_vec;
-			cfe_ept = 0xBFC00500;
-			cfe_eptseal = CFE_EPTSEAL;
-		} else {
-			/*
-			 * Newer loaders bundle the handle/ept/eptseal
-			 * Note: prom_vec is in the loader's useg
-			 * which is still alive in the TLB.
-			 */
-			cfe_handle = prom_vec[0];
-			cfe_ept = prom_vec[2];
-			cfe_eptseal = prom_vec[3];
-		}
-	}
-
-	if (cfe_eptseal != CFE_EPTSEAL) {
-		/* too early for panic to do any good */
-		printk(KERN_ERR "CFE's entrypoint seal doesn't match.");
-		while (1) ;
-	}
-
-	cfe_init(cfe_handle, cfe_ept);
-}
-
-static __init void prom_init_console(void)
-{
-	/* Initialize CFE console */
-	cfe_cons_handle = cfe_getstdhandle(CFE_STDHANDLE_CONSOLE);
-}
-
-static __init void prom_init_cmdline(void)
-{
-	static char buf[COMMAND_LINE_SIZE] __initdata;
-
-	/* Get the kernel command line from CFE */
-	if (cfe_getenv("LINUX_CMDLINE", buf, COMMAND_LINE_SIZE) >= 0) {
-		buf[COMMAND_LINE_SIZE - 1] = 0;
-		strcpy(arcs_cmdline, buf);
-	}
-
-	/* Force a console handover by adding a console= argument if needed,
-	 * as CFE is not available anymore later in the boot process. */
-	if ((strstr(arcs_cmdline, "console=")) == NULL) {
-		/* Try to read the default serial port used by CFE */
-		if ((cfe_getenv("BOOT_CONSOLE", buf, COMMAND_LINE_SIZE) < 0)
-		    || (strncmp("uart", buf, 4)))
-			/* Default to uart0 */
-			strcpy(buf, "uart0");
-
-		/* Compute the new command line */
-		snprintf(arcs_cmdline, COMMAND_LINE_SIZE, "%s console=ttyS%c,115200",
-			 arcs_cmdline, buf[4]);
-	}
-}
-#endif	/* CONFIG_CFE */
 
 /* Initialize the wired register and all tlb entries to 
  * known good state.
@@ -219,12 +134,6 @@ prom_init(void)
 	mips_machtype = MACH_BCM947XX;
 #endif
 
-#ifdef	CONFIG_CFE
-	prom_init_cfe();
-	prom_init_console();
-	prom_init_cmdline();
-#endif
-
 	off = (unsigned long)prom_init;
 	data = *(unsigned long *)prom_init;
 	off1 = off + 4;
@@ -237,14 +146,6 @@ prom_init(void)
 			break;
 	}
 
-#if CONFIG_RAM_SIZE
-	{
-		unsigned long config_mem;
-		config_mem = CONFIG_RAM_SIZE * 0x100000;
-		if (config_mem < mem)
-			mem = config_mem;
-	}
-#endif
 #ifdef  CONFIG_HIGHMEM
 	if (mem == 128 MB) {
 		bool highmem_region = FALSE;
@@ -320,9 +221,6 @@ prom_init(void)
 			*dst++ = ltoh32(*src++);
 	}
 
-#ifdef CONFIG_BLK_DEV_RAM
-//	init_ramdisk(mem);
-#endif
 	add_memory_region(SI_SDRAM_BASE, mem, BOOT_MEM_RAM);
 
 #ifdef  CONFIG_HIGHMEM
