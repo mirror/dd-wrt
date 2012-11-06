@@ -166,7 +166,7 @@ gpio_init(void)
 //	devfs_mk_cdev(MKDEV(gpio_major, 0), S_IFCHR | S_IRUGO | S_IWUGO, "gpio");
 
 //	devfs_mk_dir("gpio");
-	gpio_class = class_create(THIS_MODULE, "brcmgpio");
+	gpio_class = class_create(THIS_MODULE, "gpio");
 
 	for (i = 0; i < ARRAYSIZE(gpio_file); i++) {
 		device_create(gpio_class, NULL, MKDEV(127, i), NULL, gpio_file[i].name);		

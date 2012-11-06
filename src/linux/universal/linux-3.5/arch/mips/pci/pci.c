@@ -177,10 +177,10 @@ static DEFINE_MUTEX(pci_scan_mutex);
 void __devinit register_pci_controller(struct pci_controller *hose)
 {
 	if (request_resource(&iomem_resource, hose->mem_resource) < 0)
-		goto out;
+		goto out1;
 	if (request_resource(&ioport_resource, hose->io_resource) < 0) {
 		release_resource(hose->mem_resource);
-		goto out;
+		goto out2;
 	}
 
 	*hose_tail = hose;
@@ -206,9 +206,13 @@ void __devinit register_pci_controller(struct pci_controller *hose)
 
 	return;
 
-out:
+out1:
 	printk(KERN_WARNING
-	       "Skipping PCI bus scan due to resource conflict\n");
+	       "Skipping PCI bus scan due to resource conflict with iomem\n");
+	return;
+out2:
+	printk(KERN_WARNING
+	       "Skipping PCI bus scan due to resource conflict with ioport\n");
 }
 
 static void __init pcibios_set_cache_line_size(void)
@@ -230,7 +234,9 @@ static void __init pcibios_set_cache_line_size(void)
 
 	pr_debug("PCI: pci_cache_line_size set to %d bytes\n", lsize);
 }
-
+#ifdef CONFIG_BCM47XX
+extern int __init pcibios_init(void);
+#else
 static int __init pcibios_init(void)
 {
 	struct pci_controller *hose;
@@ -247,7 +253,7 @@ static int __init pcibios_init(void)
 
 	return 0;
 }
-
+#endif
 subsys_initcall(pcibios_init);
 
 static int pcibios_enable_resources(struct pci_dev *dev, int mask)
