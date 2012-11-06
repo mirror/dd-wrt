@@ -27,7 +27,7 @@ et-objs := $(ETSRCDIR)/sys/et_linux.o $(ETSRCDIR)/sys/etc.o
 ifeq ($(CONFIG_ET_47XX),y)
 et-objs		+= $(ETSRCDIR)/sys/etc47xx.o $(ETSRCDIR)/sys/etc_adm.o
 et-objs		+= $(ETSRCDIR)/sys/etcgmac.o
-EXTRA_CFLAGS	+= -DCFG_GMAC -DBCM47XX_CHOPS -DETROBO -DETADM -DBCMDMA64 -DBCMDMA32 -DNAPI2_POLL
+EXTRA_CFLAGS	+= -DCFG_GMAC -DBCM47XX_CHOPS -DETROBO -DETADM -DBCMDMA64 -DBCMDMA32
 endif
 
 obj-$(CONFIG_ET) := et.o
