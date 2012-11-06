@@ -917,6 +917,9 @@ build_get_pgde32(u32 **p, unsigned int tmp, unsigned int ptr)
 #endif
 	uasm_i_addu(p, ptr, tmp, ptr);
 #else
+#ifdef CONFIG_BCM47XX
+	uasm_i_nop(p);
+#endif
 	UASM_i_LA_mostly(p, ptr, pgdc);
 #endif
 	uasm_i_mfc0(p, tmp, C0_BADVADDR); /* get faulting address */
@@ -1270,6 +1273,9 @@ static void __cpuinit build_r4000_tlb_refill_handler(void)
 #ifdef CONFIG_64BIT
 		build_get_pmde64(&p, &l, &r, K0, K1); /* get pmd in K1 */
 #else
+# ifdef CONFIG_BCM47XX
+		uasm_i_nop(&p);
+# endif
 		build_get_pgde32(&p, K0, K1); /* get pgd in K1 */
 #endif
 
@@ -1281,6 +1287,9 @@ static void __cpuinit build_r4000_tlb_refill_handler(void)
 		build_update_entries(&p, K0, K1);
 		build_tlb_write_entry(&p, &l, &r, tlb_random);
 		uasm_l_leave(&l, p);
+#ifdef CONFIG_BCM47XX
+		uasm_i_nop(&p);
+#endif
 		uasm_i_eret(&p); /* return from trap */
 	}
 #ifdef CONFIG_HUGETLB_PAGE
@@ -1800,6 +1809,9 @@ build_r4000_tlbchange_handler_head(u32 **p, struct uasm_label **l,
 #ifdef CONFIG_64BIT
 	build_get_pmde64(p, l, r, wr.r1, wr.r2); /* get pmd in ptr */
 #else
+# ifdef CONFIG_BCM47XX
+	uasm_i_nop(p);
+# endif
 	build_get_pgde32(p, wr.r1, wr.r2); /* get pgd in ptr */
 #endif
 
@@ -1838,6 +1850,9 @@ build_r4000_tlbchange_handler_tail(u32 **p, struct uasm_label **l,
 	build_tlb_write_entry(p, l, r, tlb_indexed);
 	uasm_l_leave(l, *p);
 	build_restore_work_registers(p);
+#ifdef CONFIG_BCM47XX
+	uasm_i_nop(p);
+#endif
 	uasm_i_eret(p); /* return from trap */
 
 #ifdef CONFIG_64BIT

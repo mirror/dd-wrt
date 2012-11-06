@@ -208,7 +208,7 @@ void copy_user_highpage(struct page *to, struct page *from,
 	void *vfrom, *vto;
 
 	vto = kmap_atomic(to);
-	if (cpu_has_dc_aliases &&
+	if (cpu_has_dc_aliases && cpu_use_kmap_coherent &&
 	    page_mapped(from) && !Page_dcache_dirty(from)) {
 		vfrom = kmap_coherent(from, vaddr);
 		copy_page(vto, vfrom);
@@ -230,7 +230,7 @@ void copy_to_user_page(struct vm_area_struct *vma,
 	struct page *page, unsigned long vaddr, void *dst, const void *src,
 	unsigned long len)
 {
-	if (cpu_has_dc_aliases &&
+	if (cpu_has_dc_aliases && cpu_use_kmap_coherent &&
 	    page_mapped(page) && !Page_dcache_dirty(page)) {
 		void *vto = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
 		memcpy(vto, src, len);
@@ -248,7 +248,7 @@ void copy_from_user_page(struct vm_area_struct *vma,
 	struct page *page, unsigned long vaddr, void *dst, const void *src,
 	unsigned long len)
 {
-	if (cpu_has_dc_aliases &&
+	if (cpu_has_dc_aliases && cpu_use_kmap_coherent &&
 	    page_mapped(page) && !Page_dcache_dirty(page)) {
 		void *vfrom = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
 		memcpy(dst, vfrom, len);

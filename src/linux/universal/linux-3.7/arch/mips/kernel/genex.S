@@ -22,6 +22,19 @@
 #include <asm/page.h>
 #include <asm/thread_info.h>
 
+#ifdef CONFIG_BCM47XX
+# ifdef eret
+#  undef eret
+# endif
+# define eret 					\
+	.set push;				\
+	.set noreorder;				\
+	 nop; 					\
+	 nop;					\
+	 eret;					\
+	.set pop;
+#endif
+
 #define PANIC_PIC(msg)					\
 		.set push;				\
 		.set	reorder;			\
@@ -52,6 +65,9 @@ NESTED(except_vec1_generic, 0, sp)
 NESTED(except_vec3_generic, 0, sp)
 	.set	push
 	.set	noat
+#ifdef CONFIG_BCM47XX
+	nop
+#endif
 #if R5432_CP0_INTERRUPT_WAR
 	mfc0	k0, CP0_INDEX
 #endif
@@ -75,6 +91,9 @@ NESTED(except_vec3_r4000, 0, sp)
 	.set	push
 	.set	mips3
 	.set	noat
+#ifdef CONFIG_BCM47XX
+	nop
+#endif
 	mfc0	k1, CP0_CAUSE
 	li	k0, 31<<2
 	andi	k1, k1, 0x7c
