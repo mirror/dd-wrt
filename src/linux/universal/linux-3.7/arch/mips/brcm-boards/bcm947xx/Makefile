@@ -51,7 +51,7 @@ BCM947XX_OBJS += $(addprefix $(SHARED)/, linux_gpio.o)
 endif
 
 
-BCM947XX_OBJS += setup.o prom.o time.o irq.o perfcntr.o nvram_linux.o
+BCM947XX_OBJS += setup.o prom.o time.o irq.o perfcntr.o nvram_linux.o gpio.o
 
 # bcm947xx-objs += $(BCM947XX_OBJS)
 # obj-y += bcm947xx.o

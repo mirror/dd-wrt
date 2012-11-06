@@ -34,6 +34,9 @@
 #include <asm/cacheflush.h> /* for run_uncached() */
 #include <asm/traps.h>
 
+/* For enabling BCM4710 cache workarounds */
+int bcm4710 = 0;
+
 /*
  * Special Variant of smp_call_function for use by cache functions:
  *
@@ -110,6 +113,9 @@ static void __cpuinit r4k_blast_dcache_page_setup(void)
 {
 	unsigned long  dc_lsize = cpu_dcache_line_size();
 
+	if (bcm4710)
+		r4k_blast_dcache_page = blast_dcache_page;
+	else
 	if (dc_lsize == 0)
 		r4k_blast_dcache_page = (void *)cache_noop;
 	else if (dc_lsize == 16)
@@ -126,6 +132,9 @@ static void __cpuinit r4k_blast_dcache_page_indexed_setup(void)
 {
 	unsigned long dc_lsize = cpu_dcache_line_size();
 
+	if (bcm4710)
+		r4k_blast_dcache_page_indexed = blast_dcache_page_indexed;
+	else
 	if (dc_lsize == 0)
 		r4k_blast_dcache_page_indexed = (void *)cache_noop;
 	else if (dc_lsize == 16)
@@ -142,6 +151,9 @@ static void __cpuinit r4k_blast_dcache_setup(void)
 {
 	unsigned long dc_lsize = cpu_dcache_line_size();
 
+	if (bcm4710)
+		r4k_blast_dcache = blast_dcache;
+	else
 	if (dc_lsize == 0)
 		r4k_blast_dcache = (void *)cache_noop;
 	else if (dc_lsize == 16)
@@ -494,7 +506,7 @@ static inline void local_r4k_flush_cache_page(void *args)
 		 */
 		map_coherent = (cpu_has_dc_aliases &&
 				page_mapped(page) && !Page_dcache_dirty(page));
-		if (map_coherent)
+		if (map_coherent && cpu_use_kmap_coherent)
 			vaddr = kmap_coherent(page, addr);
 		else
 			vaddr = kmap_atomic(page);
@@ -517,7 +529,7 @@ static inline void local_r4k_flush_cache_page(void *args)
 	}
 
 	if (vaddr) {
-		if (map_coherent)
+		if (map_coherent && cpu_use_kmap_coherent)
 			kunmap_coherent();
 		else
 			kunmap_atomic(vaddr);
@@ -682,6 +694,8 @@ static void local_r4k_flush_cache_sigtramp(void * arg)
 	unsigned long addr = (unsigned long) arg;
 
 	R4600_HIT_CACHEOP_WAR_IMPL;
+	BCM4710_PROTECTED_FILL_TLB(addr);
+	BCM4710_PROTECTED_FILL_TLB(addr + 4);
 	if (dc_lsize)
 		protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
 	if (!cpu_icache_snoops_remote_store && scache_size)
@@ -1349,6 +1363,17 @@ static void __cpuinit coherency_setup(void)
 	 * silly idea of putting something else there ...
 	 */
 	switch (current_cpu_type()) {
+	case CPU_BMIPS3300:
+		{
+			u32 cm;
+			cm = read_c0_diag();
+			/* Enable icache */
+			cm |= (1 << 31);
+			/* Enable dcache */
+			cm |= (1 << 30);
+			write_c0_diag(cm);
+		}
+		break;
 	case CPU_R4000PC:
 	case CPU_R4000SC:
 	case CPU_R4000MC:
@@ -1582,6 +1607,15 @@ void __cpuinit r4k_cache_init(void)
 
 #endif /* endif CONFIG_IFX_VPE_CACHE_SPLIT */
 
+	/* Check if special workarounds are required */
+#ifdef CONFIG_BCM47XX
+	if (current_cpu_data.cputype == CPU_BMIPS32 && (current_cpu_data.processor_id & 0xff) == 0) {
+		printk("Enabling BCM4710A0 cache workarounds.\n");
+		bcm4710 = 1;
+	} else
+#endif
+		bcm4710 = 0;
+
 	probe_pcache();
 	setup_scache();
 
@@ -1642,6 +1676,14 @@ void __cpuinit r4k_cache_init(void)
 #if !defined(CONFIG_MIPS_CMP)
 	local_r4k___flush_cache_all(NULL);
 #endif
-	coherency_setup();
+#ifdef CONFIG_BCM47XX
+	{
+		static void (*_coherency_setup)(void);
+		_coherency_setup = (void (*)(void)) KSEG1ADDR(coherency_setup);
+		_coherency_setup();
+	}
+#else
+ 	coherency_setup();
+#endif
 	board_cache_error_setup = r4k_cache_error_setup;
 }

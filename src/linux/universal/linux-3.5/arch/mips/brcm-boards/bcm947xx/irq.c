@@ -170,13 +170,12 @@ end_brcm_irq2(struct irq_data *d)
  * re-entered as soon as the IE is re-enabled in function
  * handle_IRQ_envet().
  */
-void BCMFASTPATH
-plat_irq_dispatch(struct pt_regs *regs)
+asmlinkage void plat_irq_dispatch(struct pt_regs *regs)
 {
 	u32 pending, ipvec;
 	unsigned long flags = 0;
 	int irq;
-
+	
 	/* Disable MIPS IRQs with pending interrupts */
 	pending = read_c0_cause() & CAUSEF_IP;
 	pending &= read_c0_status();
@@ -280,7 +279,7 @@ static struct irq_chip brcm_irq_type = {
 	.irq_mask = disable_brcm_irq,
 	.irq_mask_ack = disable_brcm_irq,
 	.irq_unmask = enable_brcm_irq,
-//	.irq_end = end_brcm_irq
+	.irq_eoi = end_brcm_irq
 };
 
 /* linux IRQ8 and above interrupt controller */
@@ -290,7 +289,7 @@ static struct irq_chip brcm_irq2_type = {
 	.irq_mask = disable_brcm_irq2,
 	.irq_mask_ack = disable_brcm_irq2,
 	.irq_unmask = enable_brcm_irq2,
-//	.irq_end = end_brcm_irq2
+	.irq_eoi = end_brcm_irq2
 };
 
 /*
@@ -348,12 +347,12 @@ arch_init_irq(void)
 		mips_corereg = regs;
 		cp0_compare_irq = 7;
 	}
-	mips_cpu_irq_init();
+//	mips_cpu_irq_init();
 
 	/* Install interrupt controllers */
-	for (i = SBMIPS_NUMIRQS; i < NR_IRQS; i++) {
+	for (i = 0; i < NR_IRQS; i++) {
 //		irq_set_chip_and_handler(i, &ar71xx_gpio_irq_chip,
 //					 handle_level_irq);
-		irq_set_chip_and_handler(i, &brcm_irq2_type,handle_level_irq);
+		irq_set_chip_and_handler(i, (i < SBMIPS_NUMIRQS ? &brcm_irq_type : &brcm_irq2_type),handle_level_irq);
 	}
 }
