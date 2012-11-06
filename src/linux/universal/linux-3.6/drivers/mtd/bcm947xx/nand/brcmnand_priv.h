@@ -62,7 +62,7 @@ struct brcmnand_mtd {
 	struct nand_chip chip;
 	brcmnand_ecc_level_t level;
 	hndnand_t * nflash;
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 	struct mtd_partition *parts;
 #endif
 };
