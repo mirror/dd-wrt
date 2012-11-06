@@ -95,16 +95,16 @@ static u32 pci_membase = SI_PCI_DMA;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
 static struct resource bcm_pci_mem_resource = {
         .name   = "bcm947xx PCI memory space",
-        .start  = SI_PCI_MEM  /* BCM_PCI_MEM_BASE_PA */,
-        .end    = SI_PCI_MEM + SI_PCI_MEM_SZ /* BCM_PCI_MEM_END_PA */,
-        .flags  = IORESOURCE_MEM
+        .start  = SI_PCI_DMA  /* BCM_PCI_MEM_BASE_PA */,
+        .end    = SI_PCI_DMA + SI_PCI_DMA_SZ - 1 /* BCM_PCI_MEM_END_PA */,
+        .flags  = IORESOURCE_MEM | IORESOURCE_PCI_FIXED
 };
 
 static struct resource bcm_pci_io_resource = {
         .name   = "bcm947xx PCI IO space",
-        .start  = 0xc0000000 /* BCM_PCI_IO_BASE_PA */,
-        .end    = 0xc0001000 /* BCM_PCI_IO_END_PA */,
-        .flags  = IORESOURCE_IO
+	.start	= 0x100,
+	.end	= 0x7FF,
+        .flags  = IORESOURCE_IO | IORESOURCE_PCI_FIXED
 };
 
 struct pci_controller bcm947xxcontroller = {
@@ -114,10 +114,10 @@ struct pci_controller bcm947xxcontroller = {
 };
 #endif
 
-void __init
-pcibios_init(void)
+int __init pcibios_init(void)
 {
 	ulong flags;
+	struct pci_bus *root_bus;
 
 	/* For 4716, use sbtopcie0 to access the device. We
 	 * can't use address match 2 (1 GB window) region as MIPS
@@ -136,11 +136,18 @@ pcibios_init(void)
 	hndpci_init(sih);
 	spin_unlock_irqrestore(&sih_lock, flags);
 
-	set_io_port_base((unsigned long) ioremap_nocache(SI_PCI_MEM, 0x04000000));
+	bcm947xxcontroller.io_map_base = (unsigned long)ioremap_nocache(SI_PCI_MEM, 0x04000000);
+	set_io_port_base(bcm947xxcontroller.io_map_base);
+	mdelay(10);
 
 	/* Scan the SB bus */
 	printk(KERN_INFO "PCI: scanning bus %x\n", 0);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+	register_pci_controller( &bcm947xxcontroller );
+	root_bus = pci_scan_bus_parented(NULL, 0, &pcibios_ops, &bcm947xxcontroller);
+	if (root_bus)
+		pci_bus_add_devices(root_bus);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
 	register_pci_controller( &bcm947xxcontroller );
 	pci_scan_bus(0, &pcibios_ops, &bcm947xxcontroller);
 #else
@@ -148,7 +155,11 @@ pcibios_init(void)
 #endif
 }
 
-char *__devinit pcibios_setup(char *str)
+
+//arch_initcall(pci_init);
+
+
+char * __init pcibios_setup(char *str)
 {
 	if (!strncmp(str, "ban=", 4)) {
 		hndpci_ban(simple_strtoul(str + 4, NULL, 0));
@@ -262,7 +273,7 @@ pcibios_enable_resources(struct pci_dev *dev)
 	return 0;
 }
 
-int pcibios_enable_device(struct pci_dev *dev, int mask)
+int pcibios_enable_device(struct pci_dev *dev,int mask)
 {
 	ulong flags;
 	uint coreidx, coreid;

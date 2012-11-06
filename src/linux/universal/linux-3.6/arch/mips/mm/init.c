@@ -202,6 +202,7 @@ void kunmap_coherent(void)
 	preempt_check_resched();
 }
 
+#ifndef CONFIG_BCM47XX
 void copy_user_highpage(struct page *to, struct page *from,
 	unsigned long vaddr, struct vm_area_struct *vma)
 {
@@ -225,6 +226,7 @@ void copy_user_highpage(struct page *to, struct page *from,
 	/* Make sure this page is cleared on other CPU's too before using it */
 	smp_wmb();
 }
+#endif
 
 void copy_to_user_page(struct vm_area_struct *vma,
 	struct page *page, unsigned long vaddr, void *dst, const void *src,

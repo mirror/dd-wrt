@@ -47,7 +47,7 @@ endif
 ifeq ($(CONFIG_GENERIC_GPIO),y)
 BCM947XX_OBJS += gen_gpio.o
 else
-BCM947XX_OBJS += $(addprefix $(SHARED)/, linux_gpio.o)
+#BCM947XX_OBJS += $(addprefix $(SHARED)/, linux_gpio.o)
 endif
 
 

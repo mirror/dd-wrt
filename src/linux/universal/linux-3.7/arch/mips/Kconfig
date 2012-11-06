@@ -86,7 +86,6 @@ config MIPS_BRCM
         select ARCH_SPARSEMEM_ENABLE
         select CPU_SUPPORTS_HIGHMEM
         select SYS_SUPPORTS_HIGHMEM
-	select SYS_HAS_EARLY_PRINTK
         select EMBEDDED
 	select BOOT_RAW
 	select NO_EXCEPT_FILL

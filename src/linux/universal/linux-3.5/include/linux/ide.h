@@ -195,7 +195,11 @@ static inline void ide_std_init_ports(struct ide_hw *hw,
 	hw->io_ports.ctl_addr = ctl_addr;
 }
 
+#if defined CONFIG_BCM47XX
+# define MAX_HWIFS	2
+#else
 #define MAX_HWIFS	10
+#endif
 
 /*
  * Now for the data we need to maintain per-drive:  ide_drive_t
