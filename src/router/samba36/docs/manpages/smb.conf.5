@@ -2,12 +2,12 @@
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 09/14/2012
+.\"      Date: 10/29/2012
 .\"    Manual: File Formats and Conventions
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "09/14/2012" "Samba 3\&.6" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "10/29/2012" "Samba 3\&.6" "File Formats and Conventions"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -8876,13 +8876,19 @@ server signing (G)
 .\" server signing
 .PP
 .RS 4
-This controls whether the client is allowed or required to use SMB signing\&. Possible values are
+This controls whether the client is allowed or required to use SMB1 and SMB2 signing\&. Possible values are
 \fIauto\fR,
 \fImandatory\fR
 and
 \fIdisabled\fR\&.
 .sp
-When set to auto, SMB signing is offered, but not enforced\&. When set to mandatory, SMB signing is required and if set to disabled, SMB signing is not offered either\&.
+When set to auto, SMB1 signing is offered, but not enforced\&. When set to mandatory, SMB1 signing is required and if set to disabled, SMB signing is not offered either\&.
+.sp
+For the SMB2 protocol, by design, signing cannot be disabled\&. In the case where SMB2 is negotiated, if this parameter is set to
+\fIdisabled\fR, it will be treated as
+\fIauto\fR\&. Setting it to
+\fImandatory\fR
+will still require SMB2 clients to use signing\&.
 .sp
 Default:
 \fI\fIserver signing\fR\fR\fI = \fR\fIDisabled\fR\fI \fR

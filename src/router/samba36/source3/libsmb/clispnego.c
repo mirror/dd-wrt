@@ -103,6 +103,10 @@ bool spnego_parse_negTokenInit(TALLOC_CTX *ctx,
 	bool ret;
 	ASN1_DATA *data;
 
+	for (i = 0; i < ASN1_MAX_OIDS; i++) {
+		OIDs[i] = NULL;
+	}
+
 	data = asn1_init(talloc_tos());
 	if (data == NULL) {
 		return false;
@@ -253,6 +257,7 @@ bool spnego_parse_krb5_wrap(TALLOC_CTX *ctx, DATA_BLOB blob, DATA_BLOB *ticket, 
 	bool ret;
 	ASN1_DATA *data;
 	int data_remaining;
+	*ticket = data_blob_null;
 
 	data = asn1_init(talloc_tos());
 	if (data == NULL) {
