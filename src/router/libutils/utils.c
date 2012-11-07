@@ -3961,6 +3961,7 @@ static int gstrcmp(char *str1, char *str2)
 		if (str1[i] < str2[i])
 			return -1;
 	}
+	return 0;
 }
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
@@ -3980,10 +3981,8 @@ int getIfList(char *buffer, const char *ifprefix)
 		int c = getc(in);
 
 		if (c == 0 || c == EOF) {
-			if (count)
-				buffer[strlen(buffer) - 1] = 0;	// fixup last space
 			fclose(in);
-			return count;
+			goto sort;
 		}
 		if (c == 0x20)
 			continue;
@@ -4039,6 +4038,7 @@ int getIfList(char *buffer, const char *ifprefix)
 		if (ifcount < 30)
 			ifname[ifcount++] = c;
 	}
+	sort:;
 	int i;
 	int a;
 	for (a = 0; a < count; a++) {
@@ -4056,7 +4056,12 @@ int getIfList(char *buffer, const char *ifprefix)
 		strcat(buffer, " ");
 		free(sort[i]);
 	}
-	free(sort);
+	if (sort)
+	    free(sort);
+	if (count)
+		buffer[strlen(buffer) - 1] = 0;	// fixup last space
+	fprintf(stderr,"final %s\n",buffer);
+	return count;
 }
 
 /*
