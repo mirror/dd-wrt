@@ -237,7 +237,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	}
 
 	char driver[32];
-	sprintf(driver, "-Dmadwifi");
+	sprintf(driver, "-Dwext");
 
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(wmode, "%s_mode", prefix);
