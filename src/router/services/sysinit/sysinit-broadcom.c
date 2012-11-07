@@ -438,14 +438,14 @@ void start_sysinit(void)
 		eval("watchdog");	// system watchdog
 #endif
 #ifdef HAVE_80211AC
-	printf(stderr,"boardnum %s\n",nvram_safe_get("boardnum"));
-	printf(stderr,"boardtype %s\n",nvram_safe_get("boardtype"));
-	printf(stderr,"boardrev %s\n",nvram_safe_get("boardrev"));
+	fprintf(stderr,"boardnum %s\n",nvram_safe_get("boardnum"));
+	fprintf(stderr,"boardtype %s\n",nvram_safe_get("boardtype"));
+	fprintf(stderr,"boardrev %s\n",nvram_safe_get("boardrev"));
 	if (nvram_get("bootflags")==NULL)
 	    {
 	    fprintf(stderr,"nvram invalid, erase\n");
-	    eval("erase","nvram");
-	    sys_reboot();
+//	    eval("erase","nvram"); // ignore it for testbed
+//	    sys_reboot();
 	    }
 #endif
 	/*
