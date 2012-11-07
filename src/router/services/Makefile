@@ -13,7 +13,7 @@ LDFLAGS += -lm
 endif
 endif
 
-BCFLAGS	= $(COPTS) -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd 
+BCFLAGS	= $(COPTS) -I. -I$(TOP)/shared  -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd 
 BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/shared/bcmwifi/include
 BCFLAGS  += -fpic -I$(TOP)/services/include
 
@@ -1263,6 +1263,7 @@ ifeq ($(CONFIG_RT2880),y)
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o mii_mgr tools/mii_mgr.c
 endif
+	$(CC) $(CFLAGS) $(LDFLAGS) -DNEED_PRINTF -DTEST -o tools/site_survey_test tools/site_survey_broadcom.c -lnvram
 	gcc -o bin/defaults $(HCFLAGS) bin/defaults.c
 	cd bin && ./defaults
     
