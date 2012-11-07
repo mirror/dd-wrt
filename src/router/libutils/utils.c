@@ -3949,7 +3949,7 @@ void strtrim_right(char *p, int c)
 	return;
 }
 
-static int gstrcmp(char *str1, char *str2);
+static int gstrcmp(char *str1, char *str2)
 {
 	int l1 = strlen(str1);
 	int l2 = strlen(str2);
@@ -4022,7 +4022,7 @@ int getIfList(char *buffer, const char *ifprefix)
 					sort = malloc(sizeof(char *));
 				} else {
 					sort =
-					    remalloc(sort,
+					    realloc(sort,
 						     sizeof(char *) * (count +
 								       1));
 				}
