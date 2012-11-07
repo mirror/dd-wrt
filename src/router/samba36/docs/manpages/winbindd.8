@@ -2,12 +2,12 @@
 .\"     Title: winbindd
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 09/14/2012
+.\"      Date: 10/29/2012
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "WINBINDD" "8" "09/14/2012" "Samba 3\&.6" "System Administration tools"
+.TH "WINBINDD" "8" "10/29/2012" "Samba 3\&.6" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -22,7 +22,7 @@
 winbindd \- Name Service Switch daemon for resolving names from NT servers
 .SH "SYNOPSIS"
 .HP \w'\ 'u
-winbindd [\-D] [\-F] [\-S] [\-i] [\-Y] [\-d\ <debug\ level>] [\-s\ <smb\ config\ file>] [\-n]
+winbindd [\-D] [\-F] [\-S] [\-i] [\-d\ <debug\ level>] [\-s\ <smb\ config\ file>] [\-n]
 .SH "DESCRIPTION"
 .PP
 This program is part of the
@@ -219,11 +219,6 @@ parameter had been given\&.
 \-n
 .RS 4
 Disable caching\&. This means winbindd will always have to wait for a response from the domain controller before it can respond to a client and this thus makes things slower\&. The results will however be more accurate, since results from the cache might not be up\-to\-date\&. This might also temporarily hang winbindd if the DC doesn\'t respond\&.
-.RE
-.PP
-\-Y
-.RS 4
-Single daemon mode\&. This means winbindd will run as a single process (the mode of operation in Samba 2\&.2)\&. Winbindd\'s default behavior is to launch a child process that is responsible for updating expired cache entries\&.
 .RE
 .SH "NAME AND ID RESOLUTION"
 .PP

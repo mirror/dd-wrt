@@ -1770,7 +1770,8 @@ Optional Packages:
   --with-ctdb=DIR         Where to find ctdb sources
   --with-acl-support      Include ACL support (default=auto)
   --with-aio-support      Include asynchronous io support (default=no)
-  --with-sendfile-support Check for sendfile support (default=yes)
+  --with-sendfile-support Whether sendfile support should be built in
+                          (default=auto)
   --with-wbclient         Use external wbclient (optional)
   --with-winbind          Build winbind (default, if supported by OS)
   --with-included-popt    use bundled popt library, not from system
@@ -20241,7 +20242,7 @@ if test x"$VERSIONSCRIPT" != "x"; then
 
 fi
 
-	if test x"$USESHARED" == x"no" ; then
+	if test x"$USESHARED" = x"no" ; then
 		LINK_LIBTALLOC=STATIC
 	fi
 	LIBTALLOCVERSION=`grep ^VERSION ${tallocdir}/wscript | sed -e "s/'//g" -e 's/.* //'`
@@ -20582,7 +20583,7 @@ if test x"$VERSIONSCRIPT" != "x"; then
 
 fi
 
-	if test x"$USESHARED" == x"no" ; then
+	if test x"$USESHARED" = x"no" ; then
 		LINK_LIBTDB=STATIC
 	fi
 	LIBTDBVERSION=`grep ^VERSION ${tdbdir}/wscript | sed -e "s/'//g" -e 's/.* //'`
@@ -34819,19 +34820,28 @@ fi
 #################################################
 # check for sendfile support
 
-with_sendfile_support=yes
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to check to support sendfile" >&5
-$as_echo_n "checking whether to check to support sendfile... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether sendfile support should be built in" >&5
+$as_echo_n "checking whether sendfile support should be built in... " >&6; }
 
 # Check whether --with-sendfile-support was given.
 if test "${with_sendfile_support+set}" = set; then :
   withval=$with_sendfile_support;  case "$withval" in
-  yes)
-
+  yes|no)
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; };
+	with_sendfile_support=$withval
+	;;
+  *)
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; };
+$as_echo "yes" >&6; }
+	with_sendfile_support=auto
+	;;
+  esac
+fi
 
-	case "$host_os" in
+
+if test x$with_sendfile_support != xno ; then
+    case "$host_os" in
 	*linux* | gnu* | k*bsd*-gnu | kopensolaris*-gnu)
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for linux sendfile64 support" >&5
 $as_echo_n "checking for linux sendfile64 support... " >&6; }
@@ -35377,19 +35387,12 @@ $as_echo "no" >&6; };
 	;;
 	*)
 	;;
-        esac
-        ;;
-  *)
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    ;;
-  esac
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
+    esac
 fi
 
+if test x$with_sendfile_support = xyes -a x"$samba_cv_HAVE_SENDFILE" != xyes ; then
+	as_fn_error $? "sendfile support requested but sendfile not available " "$LINENO" 5
+fi
 
 ############################################
 # See if we have the Linux readahead syscall.

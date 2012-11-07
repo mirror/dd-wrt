@@ -33,9 +33,6 @@
 		goto done; \
 	}} while (0)
 
-#define TARGET_IS_W2K8(_tctx) (torture_setting_bool(_tctx, "w2k8", false))
-#define TARGET_IS_WIN7(_tctx) (torture_setting_bool(_tctx, "win7", false))
-
 static bool test_compound_related1(struct torture_context *tctx,
 				   struct smb2_tree *tree)
 {
@@ -166,9 +163,9 @@ static bool test_compound_related2(struct torture_context *tctx,
 	status = smb2_close_recv(req[2], &cl);
 	CHECK_STATUS(status, NT_STATUS_FILE_CLOSED);
 	status = smb2_close_recv(req[3], &cl);
-	CHECK_STATUS(status, NT_STATUS_INVALID_PARAMETER);
+	CHECK_STATUS(status, NT_STATUS_FILE_CLOSED);
 	status = smb2_close_recv(req[4], &cl);
-	CHECK_STATUS(status, NT_STATUS_INVALID_PARAMETER);
+	CHECK_STATUS(status, NT_STATUS_FILE_CLOSED);
 
 	tree->tid = saved_tid;
 	tree->session->uid = saved_uid;
@@ -252,9 +249,9 @@ static bool test_compound_invalid1(struct torture_context *tctx,
 	const char *fname = "compound_invalid1.dat";
 	struct smb2_close cl;
 	bool ret = true;
-	struct smb2_request *req[2];
+	struct smb2_request *req[3];
 
-	smb2_transport_credits_ask_num(tree->session->transport, 2);
+	smb2_transport_credits_ask_num(tree->session->transport, 3);
 
 	smb2_util_unlink(tree, fname);
 
@@ -278,7 +275,7 @@ static bool test_compound_invalid1(struct torture_context *tctx,
 					  0x00200000;
 	cr.in.fname			= fname;
 
-	smb2_transport_compound_start(tree->session->transport, 2);
+	smb2_transport_compound_start(tree->session->transport, 3);
 
 	/* passing the first request with the related flag is invalid */
 	smb2_transport_compound_set_related(tree->session->transport, true);
@@ -292,11 +289,16 @@ static bool test_compound_invalid1(struct torture_context *tctx,
 	cl.in.file.handle = hd;
 	req[1] = smb2_close_send(tree, &cl);
 
+	smb2_transport_compound_set_related(tree->session->transport, false);
+	req[2] = smb2_close_send(tree, &cl);
+
 	status = smb2_create_recv(req[0], tree, &cr);
 	/* TODO: check why this fails with --signing=required */
 	CHECK_STATUS(status, NT_STATUS_INVALID_PARAMETER);
 	status = smb2_close_recv(req[1], &cl);
 	CHECK_STATUS(status, NT_STATUS_INVALID_PARAMETER);
+	status = smb2_close_recv(req[2], &cl);
+	CHECK_STATUS(status, NT_STATUS_FILE_CLOSED);
 
 	smb2_util_unlink(tree, fname);
 done:
@@ -367,9 +369,9 @@ static bool test_compound_invalid2(struct torture_context *tctx,
 	status = smb2_close_recv(req[1], &cl);
 	CHECK_STATUS(status, NT_STATUS_OK);
 	status = smb2_close_recv(req[2], &cl);
-	CHECK_STATUS(status, NT_STATUS_FILE_CLOSED);
+	CHECK_STATUS(status, NT_STATUS_USER_SESSION_DELETED);
 	status = smb2_close_recv(req[3], &cl);
-	CHECK_STATUS(status, NT_STATUS_FILE_CLOSED);
+	CHECK_STATUS(status, NT_STATUS_USER_SESSION_DELETED);
 	status = smb2_close_recv(req[4], &cl);
 	CHECK_STATUS(status, NT_STATUS_INVALID_PARAMETER);
 
@@ -439,9 +441,9 @@ static bool test_compound_invalid3(struct torture_context *tctx,
 	status = smb2_close_recv(req[2], &cl);
 	CHECK_STATUS(status, NT_STATUS_FILE_CLOSED);
 	status = smb2_close_recv(req[3], &cl);
-	CHECK_STATUS(status, NT_STATUS_INVALID_PARAMETER);
+	CHECK_STATUS(status, NT_STATUS_FILE_CLOSED);
 	status = smb2_close_recv(req[4], &cl);
-	CHECK_STATUS(status, NT_STATUS_INVALID_PARAMETER);
+	CHECK_STATUS(status, NT_STATUS_FILE_CLOSED);
 
 	smb2_util_unlink(tree, fname);
 done:
@@ -465,10 +467,6 @@ static bool test_compound_interim1(struct torture_context *tctx,
     /* Win7 compound request implementation deviates substantially from the
      * SMB2 spec as noted in MS-SMB2 <159>, <162>.  This, test currently
      * verifies the Windows behavior, not the general spec behavior. */
-    if (!TARGET_IS_WIN7(tctx) && !TARGET_IS_W2K8(tctx)) {
-	    torture_skip(tctx, "Interim test is specific to Windows server "
-			       "behavior.\n");
-    }
 
     smb2_transport_credits_ask_num(tree->session->transport, 5);
 
@@ -536,10 +534,6 @@ static bool test_compound_interim2(struct torture_context *tctx,
     /* Win7 compound request implementation deviates substantially from the
      * SMB2 spec as noted in MS-SMB2 <159>, <162>.  This, test currently
      * verifies the Windows behavior, not the general spec behavior. */
-    if (!TARGET_IS_WIN7(tctx) && !TARGET_IS_W2K8(tctx)) {
-	    torture_skip(tctx, "Interim test is specific to Windows server "
-			       "behavior.\n");
-    }
 
     smb2_transport_credits_ask_num(tree->session->transport, 5);
 
