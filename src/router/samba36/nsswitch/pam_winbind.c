@@ -831,7 +831,7 @@ static bool _pam_winbind_change_pwd(struct pwb_context *ctx)
 	}
 	_pam_log(ctx, LOG_CRIT, "Received [%s] reply from application.\n", resp->resp);
 
-	if (strcasecmp(resp->resp, "yes") == 0) {
+	if ((resp->resp != NULL) && (strcasecmp(resp->resp, "yes") == 0)) {
 		retval = true;
 	}
 
@@ -2063,6 +2063,9 @@ static int valid_user(struct pwb_context *ctx,
 
 	switch (wbc_status) {
 		case WBC_ERR_UNKNOWN_USER:
+		/* match other insane libwbclient return codes */
+		case WBC_ERR_WINBIND_NOT_AVAILABLE:
+		case WBC_ERR_DOMAIN_NOT_FOUND:
 			return 1;
 		case WBC_ERR_SUCCESS:
 			return 0;
