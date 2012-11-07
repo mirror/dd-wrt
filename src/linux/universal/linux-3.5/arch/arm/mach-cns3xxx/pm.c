@@ -120,7 +120,8 @@ void cns3xxx_restart(char mode, const char *cmd)
 	 * To reset, we hit the on-board reset register
 	 * in the system FPGA.
 	 */
-	cns3xxx_pwr_soft_rst_force(CNS3XXX_PWR_SOFTWARE_RST(GLOBAL));
+	while(1)
+	    cns3xxx_pwr_soft_rst_force(CNS3XXX_PWR_SOFTWARE_RST(GLOBAL));
 }
 
 /*
