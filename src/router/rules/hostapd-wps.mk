@@ -5,7 +5,9 @@ ATH9K_CFLAGS=-I$(TOP)/libnl-tiny/include\
 ATH9K_LDFLAGS=-L$(TOP)/libnl-tiny/ -lm -lnl-tiny
 endif
 
-HOSTAPDVERSION=wps
+ifndef $(HOSTAPDVERSION)
+HOSTAPDVERSION=20120910
+endif
 
 hostapd2: libnltiny
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd clean
