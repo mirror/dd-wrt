@@ -37,6 +37,10 @@ static inline int wpa_debug_reopen_file(void)
 	return 0;
 }
 
+#ifndef CONFIG_MSG_MIN_PRIORITY
+#define CONFIG_MSG_MIN_PRIORITY 0
+#endif
+
 #else /* CONFIG_NO_STDOUT_DEBUG */
 
 int wpa_debug_open_file(const char *path);
