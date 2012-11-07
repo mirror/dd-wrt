@@ -48,10 +48,13 @@
 #include <hndsoc.h>
 #include <hndsflash.h>
 
-
+#ifdef CONFIG_MIPS_BRCM
 extern struct mtd_partition *
 init_mtd_partitions(struct mtd_info *mtd, size_t size);
-
+#else
+extern struct mtd_partition *
+init_mtd_partitions(hndsflash_t *sfl_info,struct mtd_info *mtd, size_t size);
+#endif
 extern void *partitions_lock_init(void);
 #define	BCMSFLASH_LOCK(lock)		if (lock) spin_lock(lock)
 #define	BCMSFLASH_UNLOCK(lock)	if (lock) spin_unlock(lock)
@@ -252,7 +255,12 @@ bcmsflash_mtd_init(void)
 	if (!bcmsflash.mtd.mlock)
 		return -ENOMEM;
 
+#ifdef CONFIG_MIPS_BRCM
 	parts = init_mtd_partitions(&bcmsflash.mtd, bcmsflash.mtd.size);
+#else
+	parts = init_mtd_partitions(info, &bcmsflash.mtd, bcmsflash.mtd.size);
+#endif
+
 	if (parts) {
 		for (i = 0; parts[i].name; i++);
 		ret = add_mtd_partitions(&bcmsflash.mtd, parts, i);
