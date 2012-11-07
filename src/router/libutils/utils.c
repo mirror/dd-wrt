@@ -3949,6 +3949,20 @@ void strtrim_right(char *p, int c)
 	return;
 }
 
+static int gstrcmp(char *str1, char *str2);
+{
+	int l1 = strlen(str1);
+	int l2 = strlen(str2);
+	int maxlen = l1 > l2 ? l2 : l1;
+	int i;
+	for (i = 0; i < maxlen; i++) {
+		if (str1[i] > str2[i])
+			return 1;
+		if (str1[i] < str2[i])
+			return -1;
+	}
+}
+
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
 int getIfList(char *buffer, const char *ifprefix)
@@ -3961,7 +3975,7 @@ int getIfList(char *buffer, const char *ifprefix)
 	skipline(in);
 	int ifcount = 0;
 	int count = 0;
-
+	char **sort = NULL;
 	while (1) {
 		int c = getc(in);
 
@@ -4004,8 +4018,16 @@ int getIfList(char *buffer, const char *ifprefix)
 					skip = 1;
 			}
 			if (!skip) {
-				strcat(buffer, ifname);
-				strcat(buffer, " ");
+				if (!sort) {
+					sort = malloc(sizeof(char *));
+				} else {
+					sort =
+					    remalloc(sort,
+						     sizeof(char *) * (count +
+								       1));
+				}
+				sort[count] = malloc(strlen(ifname) + 1);
+				strcpy(sort[count], ifname);
 				count++;
 			}
 			skip = 0;
@@ -4017,6 +4039,24 @@ int getIfList(char *buffer, const char *ifprefix)
 		if (ifcount < 30)
 			ifname[ifcount++] = c;
 	}
+	int i;
+	int a;
+	for (a = 0; a < count; a++) {
+		for (i = 0; i < count - 1; i++) {
+			if (gstrcmp(sort[i], sort[i + 1] > 0)) {
+				char *temp = sort[i + 1];
+				sort[i + 1] = sort[i];
+				sort[i] = temp;
+			}
+		}
+	}
+
+	for (i = 0; i < count; i++) {
+		strcat(buffer, sort[i]);
+		strcat(buffer, " ");
+		free(sort[i]);
+	}
+	free(sort);
 }
 
 /*
