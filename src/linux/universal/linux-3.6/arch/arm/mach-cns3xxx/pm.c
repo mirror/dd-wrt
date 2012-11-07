@@ -100,9 +100,10 @@ static void cns3xxx_pwr_soft_rst_force(unsigned int block)
 }
 EXPORT_SYMBOL(cns3xxx_pwr_soft_rst_force);
 
+
 void cns3xxx_pwr_soft_rst(unsigned int block)
 {
-	static unsigned int soft_reset;
+static unsigned int soft_reset;
 
 	if (soft_reset & block) {
 		/* SPI/I2C/GPIO use the same block, reset once. */
@@ -116,11 +117,12 @@ EXPORT_SYMBOL(cns3xxx_pwr_soft_rst);
 
 void cns3xxx_restart(char mode, const char *cmd)
 {
+	soft_reset = 0;
 	/*
 	 * To reset, we hit the on-board reset register
 	 * in the system FPGA.
 	 */
-	cns3xxx_pwr_soft_rst(CNS3XXX_PWR_SOFTWARE_RST(GLOBAL));
+	cns3xxx_pwr_soft_rst_force(CNS3XXX_PWR_SOFTWARE_RST(GLOBAL));
 }
 
 /*
