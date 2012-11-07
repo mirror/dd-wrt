@@ -4041,16 +4041,17 @@ int getIfList(char *buffer, const char *ifprefix)
 	sort:;
 	int i;
 	int a;
+	for (a = 0; a < count; a++)
 	for (a = 0; a < count; a++) {
 		for (i = 0; i < count - 1; i++) {
-			if (gstrcmp(sort[i], sort[i + 1] > 0)) {
+			if (gstrcmp(sort[i], sort[i + 1]) > 0) {
 				char *temp = sort[i + 1];
 				sort[i + 1] = sort[i];
 				sort[i] = temp;
 			}
 		}
 	}
-
+	
 	for (i = 0; i < count; i++) {
 		strcat(buffer, sort[i]);
 		strcat(buffer, " ");
@@ -4060,7 +4061,6 @@ int getIfList(char *buffer, const char *ifprefix)
 	    free(sort);
 	if (count)
 		buffer[strlen(buffer) - 1] = 0;	// fixup last space
-	fprintf(stderr,"final %s\n",buffer);
 	return count;
 }
 
