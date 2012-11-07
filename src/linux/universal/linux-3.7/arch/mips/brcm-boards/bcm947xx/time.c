@@ -51,7 +51,8 @@ extern spinlock_t bcm947xx_sih_lock;
 #define WATCHDOG_MIN	3000	/* milliseconds */
 extern int panic_timeout;
 extern int panic_on_oops;
-static int watchdog = 0;
+
+int watchdog_timer = 0;
 
 #ifndef	CONFIG_HWSIM
 static u8 *mcr = NULL;
@@ -87,15 +88,15 @@ bcm947xx_time_init(void)
 	mips_hpt_frequency = hz / 2;
 
 	/* Set watchdog interval in ms */
-	watchdog = simple_strtoul(nvram_safe_get("watchdog"), NULL, 0);
+	watchdog_timer = -1;//simple_strtoul(nvram_safe_get("watchdog"), NULL, 0);
 
 	/* Ensure at least WATCHDOG_MIN */
-	if ((watchdog > 0) && (watchdog < WATCHDOG_MIN))
-		watchdog = WATCHDOG_MIN;
+//	if ((watchdog > 0) && (watchdog < WATCHDOG_MIN))
+//		watchdog = WATCHDOG_MIN;
 
 	/* Set panic timeout in seconds */
-	panic_timeout = watchdog / 1000;
-	panic_on_oops = watchdog / 1000;
+	panic_timeout = 3;
+	panic_on_oops = 3;
 }
 
 #ifdef CONFIG_HND_BMIPS3300_PROF
@@ -140,11 +141,10 @@ bcm947xx_timer_interrupt(int irq, void *dev_id)
 #endif
 
 	/* Set the watchdog timer to reset after the specified number of ms */
-	if (watchdog > 0)
-		{
-//		printk(KERN_INFO "call watchdog %d\n",watchdog);
-		si_watchdog_ms(sih, watchdog);
-		}
+	if (watchdog_timer > 0) {
+		watchdog_timer--;
+		si_watchdog_ms(sih, 5000);
+	}
 
 #ifdef	CONFIG_HWSIM
 	(*((int *)0xa0000f1c))++;
