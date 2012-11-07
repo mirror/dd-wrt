@@ -253,7 +253,7 @@ configs-update:
 	svn update $(LINUXDIR)/../linux-3.6
 	svn update $(LINUXDIR)/../linux-3.2
 	svn update $(TOP)/private
-	$(TOP)/private/symlinks.sh $(TOP)
+	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR)
 
 configs-clean:
 	@true
