@@ -117,7 +117,6 @@ EXPORT_SYMBOL(cns3xxx_pwr_soft_rst);
 
 void cns3xxx_restart(char mode, const char *cmd)
 {
-	soft_reset = 0;
 	/*
 	 * To reset, we hit the on-board reset register
 	 * in the system FPGA.
