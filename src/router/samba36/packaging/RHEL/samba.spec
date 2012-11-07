@@ -2,7 +2,7 @@
 %define auth %(test -f /etc/pam.d/system-auth && echo /etc/pam.d/system-auth || echo)
 %define this_is_redhat  %(test -e /etc/redhat-release && echo 1 || echo 0)
 %if %{this_is_redhat} > 0
-%define rhel_ver %(lsb_release -sr)
+%define rhel_ver %(grep "release" /etc/redhat-release | sed %"s/^[^0-9]*\\([0-9]*\\).*/\\1/g")
 %else
 %define rhel_ver 0
 %endif
@@ -11,7 +11,7 @@ Summary: Samba SMB client and server
 Vendor: Samba Team
 Packager: Samba Team <samba@samba.org>
 Name:         samba
-Version:      3.6.8
+Version:      3.6.9
 Release:      1
 Epoch:        0
 License: GNU GPL version 3

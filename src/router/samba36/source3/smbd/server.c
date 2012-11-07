@@ -621,26 +621,6 @@ static bool smbd_open_one_socket(struct smbd_parent_context *parent,
 	return true;
 }
 
-static bool smbd_parent_housekeeping(const struct timeval *now, void *private_data)
-{
-	time_t printcap_cache_time = (time_t)lp_printcap_cache_time();
-	time_t t = time_mono(NULL);
-
-	DEBUG(5, ("parent housekeeping\n"));
-
-	/* if periodic printcap rescan is enabled, see if it's time to reload */
-	if ((printcap_cache_time != 0)
-	 && (t >= (last_printer_reload_time + printcap_cache_time))) {
-		DEBUG( 3,( "Printcap cache time expired.\n"));
-		pcap_cache_reload(server_event_context(),
-				  smbd_messaging_context(),
-				  &reload_pcap_change_notify);
-		last_printer_reload_time = t;
-	}
-
-	return true;
-}
-
 /****************************************************************************
  Open the socket communication.
 ****************************************************************************/
@@ -652,6 +632,8 @@ static bool open_sockets_smbd(struct smbd_parent_context *parent,
 	int num_interfaces = iface_count();
 	int i;
 	char *ports;
+	char *tok;
+	const char *ptr;
 	unsigned dns_port = 0;
 
 #ifdef HAVE_ATEXIT
@@ -673,6 +655,16 @@ static bool open_sockets_smbd(struct smbd_parent_context *parent,
 		ports = talloc_strdup(talloc_tos(), smb_ports);
 	}
 
+	for (ptr = ports;
+	     next_token_talloc(talloc_tos(),&ptr, &tok, " \t,");) {
+		unsigned port = atoi(tok);
+
+		if (port == 0 || port > 0xffff) {
+			exit_server_cleanly("Invalid port in the config or on "
+					    "the commandline specified!");
+		}
+	}
+
 	if (lp_interfaces() && lp_bind_interfaces_only()) {
 		/* We have been given an interfaces line, and been
 		   told to only bind to those interfaces. Create a
@@ -684,8 +676,6 @@ static bool open_sockets_smbd(struct smbd_parent_context *parent,
 		for(i = 0; i < num_interfaces; i++) {
 			const struct sockaddr_storage *ifss =
 					iface_n_sockaddr_storage(i);
-			char *tok;
-			const char *ptr;
 
 			if (ifss == NULL) {
 				DEBUG(0,("open_sockets_smbd: "
@@ -697,9 +687,6 @@ static bool open_sockets_smbd(struct smbd_parent_context *parent,
 			for (ptr=ports;
 			     next_token_talloc(talloc_tos(),&ptr, &tok, " \t,");) {
 				unsigned port = atoi(tok);
-				if (port == 0 || port > 0xffff) {
-					continue;
-				}
 
 				/* Keep the first port for mDNS service
 				 * registration.
@@ -717,8 +704,6 @@ static bool open_sockets_smbd(struct smbd_parent_context *parent,
 		/* Just bind to 0.0.0.0 - accept connections
 		   from anywhere. */
 
-		char *tok;
-		const char *ptr;
 		const char *sock_addr = lp_socket_address();
 		char *sock_tok;
 		const char *sock_ptr;
@@ -736,11 +721,7 @@ static bool open_sockets_smbd(struct smbd_parent_context *parent,
 		     next_token_talloc(talloc_tos(), &sock_ptr, &sock_tok, " \t,"); ) {
 			for (ptr=ports; next_token_talloc(talloc_tos(), &ptr, &tok, " \t,"); ) {
 				struct sockaddr_storage ss;
-
 				unsigned port = atoi(tok);
-				if (port == 0 || port > 0xffff) {
-					continue;
-				}
 
 				/* Keep the first port for mDNS service
 				 * registration.
@@ -779,14 +760,6 @@ static bool open_sockets_smbd(struct smbd_parent_context *parent,
 			       |FLAG_MSG_DBWRAP)) {
 		DEBUG(0, ("open_sockets_smbd: Failed to register "
 			  "myself in serverid.tdb\n"));
-		return false;
-	}
-
-	if (!(event_add_idle(smbd_event_context(), NULL,
-			     timeval_set(SMBD_HOUSEKEEPING_INTERVAL, 0),
-			     "parent_housekeeping", smbd_parent_housekeeping,
-			     NULL))) {
-		DEBUG(0, ("Could not add parent_housekeeping event\n"));
 		return false;
 	}
 
