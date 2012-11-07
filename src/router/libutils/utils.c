@@ -4041,7 +4041,6 @@ int getIfList(char *buffer, const char *ifprefix)
 	sort:;
 	int i;
 	int a;
-	for (a = 0; a < count; a++)
 	for (a = 0; a < count; a++) {
 		for (i = 0; i < count - 1; i++) {
 			if (gstrcmp(sort[i], sort[i + 1]) > 0) {
