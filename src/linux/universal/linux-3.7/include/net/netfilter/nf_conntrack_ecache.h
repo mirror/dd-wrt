@@ -79,7 +79,7 @@ nf_conntrack_event_cache(enum ip_conntrack_events event, struct nf_conn *ct)
 	struct net *net = nf_ct_net(ct);
 	struct nf_conntrack_ecache *e;
 
-	if (!rcu_access_pointer(net->ct.nf_conntrack_event_cb))
+	if (!rcu_access_pointer(net->ct.nf_conntrack_event_cb) && !rcu_access_pointer(net->ct.nf_conntrack_event_cb_2)) 
 		return;
 
 	e = nf_ct_ecache_find(ct);
@@ -98,11 +98,14 @@ nf_conntrack_eventmask_report(unsigned int eventmask,
 	int ret = 0;
 	struct net *net = nf_ct_net(ct);
 	struct nf_ct_event_notifier *notify;
+	struct nf_ct_event_notifier *notify_2;
 	struct nf_conntrack_ecache *e;
 
 	rcu_read_lock();
+        /* Incredibly nasty duplication in order to hack second event */
 	notify = rcu_dereference(net->ct.nf_conntrack_event_cb);
-	if (notify == NULL)
+	notify_2 = rcu_dereference(net->ct.nf_conntrack_event_cb_2);
+	if ((notify == NULL) && (notify_2 == NULL))
 		goto out_unlock;
 
 	e = nf_ct_ecache_find(ct);
@@ -121,7 +124,8 @@ nf_conntrack_eventmask_report(unsigned int eventmask,
 		if (!((eventmask | missed) & e->ctmask))
 			goto out_unlock;
 
-		ret = notify->fcn(eventmask | missed, &item);
+		ret = min( notify ? notify->fcn(eventmask | missed, &item) : 0,
+                           notify_2 ? notify_2->fcn(eventmask | missed, &item) : 0 );
 		if (unlikely(ret < 0 || missed)) {
 			spin_lock_bh(&ct->lock);
 			if (ret < 0) {
