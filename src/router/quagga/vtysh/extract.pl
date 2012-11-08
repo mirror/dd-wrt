@@ -37,6 +37,7 @@ $ignore{'"router ripng"'} = "ignore";
 $ignore{'"router ospf"'} = "ignore";
 $ignore{'"router ospf <0-65535>"'} = "ignore";
 $ignore{'"router ospf6"'} = "ignore";
+$ignore{'"router babel"'} = "ignore";
 $ignore{'"router bgp " "<1-4294967295>"'} = "ignore";
 $ignore{'"router bgp " "<1-4294967295>" " view WORD"'} = "ignore";
 $ignore{'"router isis WORD"'} = "ignore";
@@ -62,13 +63,13 @@ $ignore{'"show history"'} = "ignore";
 foreach (@ARGV) {
     $file = $_;
 
-    open (FH, "cpp -DHAVE_CONFIG_H -DVTYSH_EXTRACT_PL -DHAVE_IPV6 -I.. -I./ -I./.. -I../lib -I../isisd/topology  $file |");
+    open (FH, "cpp -DHAVE_CONFIG_H -DVTYSH_EXTRACT_PL -DHAVE_IPV6 -I.. -I./ -I./.. -I../lib -I../isisd/topology   $file |");
     local $/; undef $/;
     $line = <FH>;
     close (FH);
 
     @defun = ($line =~ /(?:DEFUN|ALIAS)\s*\((.+?)\);?\s?\s?\n/sg);
-    @install = ($line =~ /install_element \(\s*[0-9A-Z_]+,\s*&[^;]*;\s*\n/sg);
+    @install = ($line =~ /install_element\s*\(\s*[0-9A-Z_]+,\s*&[^;]*;\s*\n/sg);
 
     # DEFUN process
     foreach (@defun) {
