@@ -17,23 +17,26 @@
 #define ZEBRA_ROUTE_BGP                  9
 #define ZEBRA_ROUTE_HSLS                 10
 #define ZEBRA_ROUTE_OLSR                 11
-#define ZEBRA_ROUTE_BABEL                12
-#define ZEBRA_ROUTE_MAX                  13
+#define ZEBRA_ROUTE_BATMAN               12
+#define ZEBRA_ROUTE_BABEL                13
+#define ZEBRA_ROUTE_MAX                  14
 
 #define SHOW_ROUTE_V4_HEADER \
   "Codes: K - kernel route, C - connected, S - static, R - RIP,%s" \
-  "       O - OSPF, I - IS-IS, B - BGP, A - Babel,%s" \
+  "       O - OSPF, I - IS-IS, B - BGP, H - HSLS, o - OLSR,%s" \
+  "       b - BATMAN, A - Babel,%s" \
   "       > - selected route, * - FIB route%s%s", \
-  VTY_NEWLINE, VTY_NEWLINE, VTY_NEWLINE, VTY_NEWLINE
+  VTY_NEWLINE, VTY_NEWLINE, VTY_NEWLINE, VTY_NEWLINE, VTY_NEWLINE
 #define SHOW_ROUTE_V6_HEADER \
   "Codes: K - kernel route, C - connected, S - static, R - RIPng,%s" \
-  "       O - OSPFv6, I - IS-IS, B - BGP, A - Babel,%s" \
+  "       O - OSPFv6, I - IS-IS, B - BGP, H - HSLS, o - OLSR,%s" \
+  "       b - BATMAN, A - Babel,%s" \
   "       > - selected route, * - FIB route%s%s", \
-  VTY_NEWLINE, VTY_NEWLINE, VTY_NEWLINE, VTY_NEWLINE
+  VTY_NEWLINE, VTY_NEWLINE, VTY_NEWLINE, VTY_NEWLINE, VTY_NEWLINE
 
 /* babeld */
 #define QUAGGA_REDIST_STR_BABELD \
-  "(kernel|connected|static|rip|ripng|ospf|ospf6|isis|bgp)"
+  "(kernel|connected|static|rip|ripng|ospf|ospf6|isis|bgp|hsls|olsr|batman)"
 #define QUAGGA_REDIST_HELP_STR_BABELD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -43,9 +46,12 @@
   "Open Shortest Path First (OSPFv2)\n" \
   "Open Shortest Path First (IPv6) (OSPFv3)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
-  "Border Gateway Protocol (BGP)\n"
+  "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
 #define QUAGGA_IP_REDIST_STR_BABELD \
-  "(kernel|connected|static|rip|ospf|isis|bgp)"
+  "(kernel|connected|static|rip|ospf|isis|bgp|hsls|olsr|batman)"
 #define QUAGGA_IP_REDIST_HELP_STR_BABELD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -53,9 +59,12 @@
   "Routing Information Protocol (RIP)\n" \
   "Open Shortest Path First (OSPFv2)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
-  "Border Gateway Protocol (BGP)\n"
+  "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
 #define QUAGGA_IP6_REDIST_STR_BABELD \
-  "(kernel|connected|static|ripng|ospf6|isis|bgp)"
+  "(kernel|connected|static|ripng|ospf6|isis|bgp|hsls|olsr|batman)"
 #define QUAGGA_IP6_REDIST_HELP_STR_BABELD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -63,11 +72,57 @@
   "Routing Information Protocol next-generation (IPv6) (RIPng)\n" \
   "Open Shortest Path First (IPv6) (OSPFv3)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
-  "Border Gateway Protocol (BGP)\n"
+  "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n"
+
+/* batmand */
+#define QUAGGA_REDIST_STR_BATMAND \
+  "(kernel|connected|static|rip|ripng|ospf|ospf6|isis|bgp|hsls|olsr|babel)"
+#define QUAGGA_REDIST_HELP_STR_BATMAND \
+  "Kernel routes (not installed via the zebra RIB)\n" \
+  "Connected routes (directly attached subnet or host)\n" \
+  "Statically configured routes\n" \
+  "Routing Information Protocol (RIP)\n" \
+  "Routing Information Protocol next-generation (IPv6) (RIPng)\n" \
+  "Open Shortest Path First (OSPFv2)\n" \
+  "Open Shortest Path First (IPv6) (OSPFv3)\n" \
+  "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Babel routing protocol (Babel)\n"
+#define QUAGGA_IP_REDIST_STR_BATMAND \
+  "(kernel|connected|static|rip|ospf|isis|bgp|hsls|olsr|babel)"
+#define QUAGGA_IP_REDIST_HELP_STR_BATMAND \
+  "Kernel routes (not installed via the zebra RIB)\n" \
+  "Connected routes (directly attached subnet or host)\n" \
+  "Statically configured routes\n" \
+  "Routing Information Protocol (RIP)\n" \
+  "Open Shortest Path First (OSPFv2)\n" \
+  "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Babel routing protocol (Babel)\n"
+#define QUAGGA_IP6_REDIST_STR_BATMAND \
+  "(kernel|connected|static|ripng|ospf6|isis|bgp|hsls|olsr|babel)"
+#define QUAGGA_IP6_REDIST_HELP_STR_BATMAND \
+  "Kernel routes (not installed via the zebra RIB)\n" \
+  "Connected routes (directly attached subnet or host)\n" \
+  "Statically configured routes\n" \
+  "Routing Information Protocol next-generation (IPv6) (RIPng)\n" \
+  "Open Shortest Path First (IPv6) (OSPFv3)\n" \
+  "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Babel routing protocol (Babel)\n"
 
 /* bgpd */
 #define QUAGGA_REDIST_STR_BGPD \
-  "(kernel|connected|static|rip|ripng|ospf|ospf6|isis|babel)"
+  "(kernel|connected|static|rip|ripng|ospf|ospf6|isis|hsls|olsr|batman|babel)"
 #define QUAGGA_REDIST_HELP_STR_BGPD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -77,9 +132,12 @@
   "Open Shortest Path First (OSPFv2)\n" \
   "Open Shortest Path First (IPv6) (OSPFv3)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 #define QUAGGA_IP_REDIST_STR_BGPD \
-  "(kernel|connected|static|rip|ospf|isis|babel)"
+  "(kernel|connected|static|rip|ospf|isis|hsls|olsr|batman|babel)"
 #define QUAGGA_IP_REDIST_HELP_STR_BGPD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -87,9 +145,12 @@
   "Routing Information Protocol (RIP)\n" \
   "Open Shortest Path First (OSPFv2)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 #define QUAGGA_IP6_REDIST_STR_BGPD \
-  "(kernel|connected|static|ripng|ospf6|isis|babel)"
+  "(kernel|connected|static|ripng|ospf6|isis|hsls|olsr|batman|babel)"
 #define QUAGGA_IP6_REDIST_HELP_STR_BGPD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -97,11 +158,57 @@
   "Routing Information Protocol next-generation (IPv6) (RIPng)\n" \
   "Open Shortest Path First (IPv6) (OSPFv3)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
+  "Babel routing protocol (Babel)\n"
+
+/* hslsd */
+#define QUAGGA_REDIST_STR_HSLSD \
+  "(kernel|connected|static|rip|ripng|ospf|ospf6|isis|bgp|olsr|batman|babel)"
+#define QUAGGA_REDIST_HELP_STR_HSLSD \
+  "Kernel routes (not installed via the zebra RIB)\n" \
+  "Connected routes (directly attached subnet or host)\n" \
+  "Statically configured routes\n" \
+  "Routing Information Protocol (RIP)\n" \
+  "Routing Information Protocol next-generation (IPv6) (RIPng)\n" \
+  "Open Shortest Path First (OSPFv2)\n" \
+  "Open Shortest Path First (IPv6) (OSPFv3)\n" \
+  "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Border Gateway Protocol (BGP)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
+  "Babel routing protocol (Babel)\n"
+#define QUAGGA_IP_REDIST_STR_HSLSD \
+  "(kernel|connected|static|rip|ospf|isis|bgp|olsr|batman|babel)"
+#define QUAGGA_IP_REDIST_HELP_STR_HSLSD \
+  "Kernel routes (not installed via the zebra RIB)\n" \
+  "Connected routes (directly attached subnet or host)\n" \
+  "Statically configured routes\n" \
+  "Routing Information Protocol (RIP)\n" \
+  "Open Shortest Path First (OSPFv2)\n" \
+  "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Border Gateway Protocol (BGP)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
+  "Babel routing protocol (Babel)\n"
+#define QUAGGA_IP6_REDIST_STR_HSLSD \
+  "(kernel|connected|static|ripng|ospf6|isis|bgp|olsr|batman|babel)"
+#define QUAGGA_IP6_REDIST_HELP_STR_HSLSD \
+  "Kernel routes (not installed via the zebra RIB)\n" \
+  "Connected routes (directly attached subnet or host)\n" \
+  "Statically configured routes\n" \
+  "Routing Information Protocol next-generation (IPv6) (RIPng)\n" \
+  "Open Shortest Path First (IPv6) (OSPFv3)\n" \
+  "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Border Gateway Protocol (BGP)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 
 /* isisd */
 #define QUAGGA_REDIST_STR_ISISD \
-  "(kernel|connected|static|rip|ripng|ospf|ospf6|bgp|babel)"
+  "(kernel|connected|static|rip|ripng|ospf|ospf6|bgp|hsls|olsr|batman|babel)"
 #define QUAGGA_REDIST_HELP_STR_ISISD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -111,9 +218,12 @@
   "Open Shortest Path First (OSPFv2)\n" \
   "Open Shortest Path First (IPv6) (OSPFv3)\n" \
   "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 #define QUAGGA_IP_REDIST_STR_ISISD \
-  "(kernel|connected|static|rip|ospf|bgp|babel)"
+  "(kernel|connected|static|rip|ospf|bgp|hsls|olsr|batman|babel)"
 #define QUAGGA_IP_REDIST_HELP_STR_ISISD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -121,9 +231,12 @@
   "Routing Information Protocol (RIP)\n" \
   "Open Shortest Path First (OSPFv2)\n" \
   "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 #define QUAGGA_IP6_REDIST_STR_ISISD \
-  "(kernel|connected|static|ripng|ospf6|bgp|babel)"
+  "(kernel|connected|static|ripng|ospf6|bgp|hsls|olsr|batman|babel)"
 #define QUAGGA_IP6_REDIST_HELP_STR_ISISD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -131,11 +244,57 @@
   "Routing Information Protocol next-generation (IPv6) (RIPng)\n" \
   "Open Shortest Path First (IPv6) (OSPFv3)\n" \
   "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
+  "Babel routing protocol (Babel)\n"
+
+/* olsrd */
+#define QUAGGA_REDIST_STR_OLSRD \
+  "(kernel|connected|static|rip|ripng|ospf|ospf6|isis|bgp|hsls|batman|babel)"
+#define QUAGGA_REDIST_HELP_STR_OLSRD \
+  "Kernel routes (not installed via the zebra RIB)\n" \
+  "Connected routes (directly attached subnet or host)\n" \
+  "Statically configured routes\n" \
+  "Routing Information Protocol (RIP)\n" \
+  "Routing Information Protocol next-generation (IPv6) (RIPng)\n" \
+  "Open Shortest Path First (OSPFv2)\n" \
+  "Open Shortest Path First (IPv6) (OSPFv3)\n" \
+  "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
+  "Babel routing protocol (Babel)\n"
+#define QUAGGA_IP_REDIST_STR_OLSRD \
+  "(kernel|connected|static|rip|ospf|isis|bgp|hsls|batman|babel)"
+#define QUAGGA_IP_REDIST_HELP_STR_OLSRD \
+  "Kernel routes (not installed via the zebra RIB)\n" \
+  "Connected routes (directly attached subnet or host)\n" \
+  "Statically configured routes\n" \
+  "Routing Information Protocol (RIP)\n" \
+  "Open Shortest Path First (OSPFv2)\n" \
+  "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
+  "Babel routing protocol (Babel)\n"
+#define QUAGGA_IP6_REDIST_STR_OLSRD \
+  "(kernel|connected|static|ripng|ospf6|isis|bgp|hsls|batman|babel)"
+#define QUAGGA_IP6_REDIST_HELP_STR_OLSRD \
+  "Kernel routes (not installed via the zebra RIB)\n" \
+  "Connected routes (directly attached subnet or host)\n" \
+  "Statically configured routes\n" \
+  "Routing Information Protocol next-generation (IPv6) (RIPng)\n" \
+  "Open Shortest Path First (IPv6) (OSPFv3)\n" \
+  "Intermediate System to Intermediate System (IS-IS)\n" \
+  "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 
 /* ospf6d */
 #define QUAGGA_REDIST_STR_OSPF6D \
-  "(kernel|connected|static|ripng|isis|bgp|babel)"
+  "(kernel|connected|static|ripng|isis|bgp|hsls|olsr|batman|babel)"
 #define QUAGGA_REDIST_HELP_STR_OSPF6D \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -143,11 +302,14 @@
   "Routing Information Protocol next-generation (IPv6) (RIPng)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
   "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 
 /* ospfd */
 #define QUAGGA_REDIST_STR_OSPFD \
-  "(kernel|connected|static|rip|isis|bgp|babel)"
+  "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)"
 #define QUAGGA_REDIST_HELP_STR_OSPFD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -155,11 +317,14 @@
   "Routing Information Protocol (RIP)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
   "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 
 /* ripd */
 #define QUAGGA_REDIST_STR_RIPD \
-  "(kernel|connected|static|ospf|isis|bgp|babel)"
+  "(kernel|connected|static|ospf|isis|bgp|hsls|olsr|batman|babel)"
 #define QUAGGA_REDIST_HELP_STR_RIPD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -167,11 +332,14 @@
   "Open Shortest Path First (OSPFv2)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
   "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 
 /* ripngd */
 #define QUAGGA_REDIST_STR_RIPNGD \
-  "(kernel|connected|static|ospf6|isis|bgp|babel)"
+  "(kernel|connected|static|ospf6|isis|bgp|hsls|olsr|batman|babel)"
 #define QUAGGA_REDIST_HELP_STR_RIPNGD \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -179,11 +347,14 @@
   "Open Shortest Path First (IPv6) (OSPFv3)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
   "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 
 /* zebra */
 #define QUAGGA_REDIST_STR_ZEBRA \
-  "(kernel|connected|static|rip|ripng|ospf|ospf6|isis|bgp|babel)"
+  "(kernel|connected|static|rip|ripng|ospf|ospf6|isis|bgp|hsls|olsr|batman|babel)"
 #define QUAGGA_REDIST_HELP_STR_ZEBRA \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -194,9 +365,12 @@
   "Open Shortest Path First (IPv6) (OSPFv3)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
   "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 #define QUAGGA_IP_REDIST_STR_ZEBRA \
-  "(kernel|connected|static|rip|ospf|isis|bgp|babel)"
+  "(kernel|connected|static|rip|ospf|isis|bgp|hsls|olsr|batman|babel)"
 #define QUAGGA_IP_REDIST_HELP_STR_ZEBRA \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -205,9 +379,12 @@
   "Open Shortest Path First (OSPFv2)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
   "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 #define QUAGGA_IP6_REDIST_STR_ZEBRA \
-  "(kernel|connected|static|ripng|ospf6|isis|bgp|babel)"
+  "(kernel|connected|static|ripng|ospf6|isis|bgp|hsls|olsr|batman|babel)"
 #define QUAGGA_IP6_REDIST_HELP_STR_ZEBRA \
   "Kernel routes (not installed via the zebra RIB)\n" \
   "Connected routes (directly attached subnet or host)\n" \
@@ -216,6 +393,9 @@
   "Open Shortest Path First (IPv6) (OSPFv3)\n" \
   "Intermediate System to Intermediate System (IS-IS)\n" \
   "Border Gateway Protocol (BGP)\n" \
+  "Hazy-Sighted Link State Protocol (HSLS)\n" \
+  "Optimized Link State Routing (OLSR)\n" \
+  "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" \
   "Babel routing protocol (Babel)\n"
 
 
@@ -242,6 +422,7 @@ static const struct zebra_desc_table route_types[] = {
   DESC_ENTRY	(ZEBRA_ROUTE_BGP,	 "bgp",	'B' ),
   DESC_ENTRY	(ZEBRA_ROUTE_HSLS,	 "hsls",	'H' ),
   DESC_ENTRY	(ZEBRA_ROUTE_OLSR,	 "olsr",	'o' ),
+  DESC_ENTRY	(ZEBRA_ROUTE_BATMAN,	 "batman",	'b' ),
   DESC_ENTRY	(ZEBRA_ROUTE_BABEL,	 "babel",	'A' ),
 };
 #undef DESC_ENTRY
