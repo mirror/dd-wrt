@@ -245,7 +245,7 @@ add_client_mac_srvfilter(char *name, char *type, char *data, char *level,
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -m mac --mac-source %s -m opendpi --%s -j MARK --set-mark %s",
+		    ("iptables -t mangle -I FILTER_IN 4 -m mac --mac-source %s -m ndpi --%s -j MARK --set-mark %s",
 		     client, name, qos_nfmark(base+idx));
 	}
 #endif
@@ -389,16 +389,16 @@ add_client_ip_srvfilter(char *name, char *type, char *data, char *level,
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -s %s -m opendpi --%s -j MARK --set-mark %s",
+		    ("iptables -t mangle -I FILTER_OUT 3 -s %s -m ndpi --%s -j MARK --set-mark %s",
 		     client, name, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -d %s -m opendpi --%s -j MARK --set-mark %s",
+		    ("iptables -t mangle -I FILTER_OUT 3 -d %s -m ndpi --%s -j MARK --set-mark %s",
 		     client, name, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -s %s -m opendpi --%s -j MARK --set-mark %s",
+		    ("iptables -t mangle -I FILTER_IN 4 -s %s -m ndpi --%s -j MARK --set-mark %s",
 		     client, name, qos_nfmark(base+idx));
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 4 -d %s -m opendpi --%s -j MARK --set-mark %s",
+		    ("iptables -t mangle -I FILTER_IN 4 -d %s -m ndpi --%s -j MARK --set-mark %s",
 		     client, name, qos_nfmark(base+idx));
 	}
 #endif
