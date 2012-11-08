@@ -373,13 +373,6 @@ DEFSH (VTYSH_BGPD, no_neighbor_default_originate_rmap_cmd_vtysh,
        "Route-map to specify criteria to originate default\n"
        "route-map name\n")
 
-DEFSH (VTYSH_ZEBRA, ipv6_nd_ra_interval_cmd_vtysh, 
-       "ipv6 nd ra-interval SECONDS", 
-       "Interface IPv6 config commands\n"
-       "Neighbor discovery\n"
-       "Router Advertisement interval\n"
-       "Router Advertisement interval in seconds\n")
-
 DEFSH (VTYSH_OSPFD, ospf_transmit_delay_cmd_vtysh, 
        "ospf transmit-delay <1-65535>", 
        "OSPF interface commands\n"
@@ -395,6 +388,13 @@ DEFSH (VTYSH_BGPD, show_ip_bgp_ipv4_summary_cmd_vtysh,
        "Address Family modifier\n"
        "Address Family modifier\n"
        "Summary of BGP neighbor status\n")
+
+DEFSH (VTYSH_ZEBRA, ipv6_nd_ra_interval_cmd_vtysh, 
+       "ipv6 nd ra-interval <1-1800>", 
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Router Advertisement interval\n"
+       "Router Advertisement interval in seconds\n")
 
 DEFSH (VTYSH_RIPNGD, no_ripng_default_metric_cmd_vtysh, 
        "no default-metric", 
@@ -517,6 +517,12 @@ DEFSH (VTYSH_BGPD, no_neighbor_timers_connect_val_cmd_vtysh,
        "BGP per neighbor timers\n"
        "BGP connect timer\n"
        "Connect timer\n")
+
+DEFSH (VTYSH_BABELD, babel_set_resend_delay_cmd_vtysh, 
+       "babel resend-delay <20-655340>", 
+       "Babel commands\n"
+       "Time before resending a message\n"
+       "Milliseconds\n")
 
 DEFSH (VTYSH_ALL, no_access_list_extended_any_mask_cmd_vtysh, 
        "no access-list (<100-199>|<2000-2699>) (deny|permit) ip any A.B.C.D A.B.C.D", 
@@ -863,10 +869,10 @@ DEFSH (VTYSH_ISISD, no_debug_isis_upd_cmd_vtysh,
        "IS-IS Update related packets\n")
 
 DEFSH (VTYSH_OSPFD, ospf_redistribute_source_type_routemap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|isis|bgp|babel)"
+       "redistribute " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)"
          " metric-type (1|2) route-map WORD", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "OSPF exterior metric type for redistributed routes\n"
        "Set OSPF External Type 1 metrics\n"
        "Set OSPF External Type 2 metrics\n"
@@ -973,11 +979,11 @@ DEFSH (VTYSH_RIPD|VTYSH_OSPFD|VTYSH_BGPD|VTYSH_ZEBRA, show_ip_prefix_list_prefix
        "First matched prefix\n")
 
 DEFSH (VTYSH_ZEBRA, ipv6_nd_homeagent_lifetime_cmd_vtysh, 
-       "ipv6 nd home-agent-lifetime SECONDS", 
+       "ipv6 nd home-agent-lifetime <0-65520>", 
        "Interface IPv6 config commands\n"
        "Neighbor discovery\n"
        "Home Agent lifetime\n"
-       "Home Agent lifetime in seconds\n")
+       "Home Agent lifetime in seconds (0 to track ra-lifetime)\n")
 
 DEFSH (VTYSH_BGPD, show_bgp_neighbors_peer_cmd_vtysh, 
        "show bgp neighbors (A.B.C.D|X:X::X:X)", 
@@ -1335,10 +1341,10 @@ DEFSH (VTYSH_BGPD, show_bgp_ipv4_safi_rsclient_prefix_cmd_vtysh,
        "IP prefix <network>/<length>,  e.g.,  35.0.0.0/8\n")
 
 DEFSH (VTYSH_OSPFD, ospf_redistribute_source_metric_routemap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|isis|bgp|babel)"
+       "redistribute " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)"
          " metric <0-16777214> route-map WORD", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric for redistributed routes\n"
        "OSPF default metric\n"
        "Route map reference\n"
@@ -1421,6 +1427,12 @@ DEFSH (VTYSH_BGPD, clear_bgp_as_soft_cmd_vtysh,
        "Clear peers with the AS number\n"
        "Soft reconfig\n")
 
+DEFSH (VTYSH_ZEBRA, show_ip_mroute_cmd_vtysh, 
+       "show ip mroute", 
+       "Show running system information\n"
+       "IP information\n"
+       "IP Multicast routing table\n")
+
 DEFSH (VTYSH_ALL, access_list_extended_host_any_cmd_vtysh, 
        "access-list (<100-199>|<2000-2699>) (deny|permit) ip host A.B.C.D any", 
        "Add an access list entry\n"
@@ -1502,10 +1514,10 @@ DEFSH (VTYSH_ISISD, debug_isis_err_cmd_vtysh,
        "IS-IS LSP protocol errors\n")
 
 DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv6_metric_rmap_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ripng|ospf6|isis|babel)" " metric <0-4294967295> route-map WORD", 
+       "no redistribute " "(kernel|connected|static|ripng|ospf6|isis|hsls|olsr|batman|babel)" " metric <0-4294967295> route-map WORD", 
        "Negate a command or set its defaults\n"
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric for redistributed routes\n"
        "Default metric\n"
        "Route map reference\n"
@@ -1563,6 +1575,11 @@ DEFSH (VTYSH_OSPFD, no_ospf_max_metric_router_lsa_startup_cmd_vtysh,
        "OSPF maximum / infinite-distance metric\n"
        "Advertise own Router-LSA with infinite distance (stub router)\n"
        "Automatically advertise stub Router-LSA on startup of OSPF\n")
+
+DEFSH (VTYSH_BABELD, babel_redistribute_type_cmd_vtysh, 
+       "redistribute " "(kernel|connected|static|rip|ripng|ospf|ospf6|isis|bgp|hsls|olsr|batman)", 
+       "Redistribute\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (OSPFv2)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n")
 
 DEFSH (VTYSH_BGPD, clear_ip_bgp_all_vpnv4_soft_cmd_vtysh, 
        "clear ip bgp * vpnv4 unicast soft", 
@@ -1745,7 +1762,7 @@ DEFSH (VTYSH_RIPD, ip_rip_receive_version_cmd_vtysh,
        "RIP version 2\n")
 
 DEFSH (VTYSH_ZEBRA, ipv6_nd_ra_interval_msec_cmd_vtysh, 
-       "ipv6 nd ra-interval msec MILLISECONDS", 
+       "ipv6 nd ra-interval msec <70-1800000>", 
        "Interface IPv6 config commands\n"
        "Neighbor discovery\n"
        "Router Advertisement interval\n"
@@ -1984,13 +2001,6 @@ DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_database_adv_router_linkstate_id_cmd_vtysh,
        "Specify Link state ID as IPv4 address notation\n"
       )
 
-DEFSH (VTYSH_ZEBRA, ipv6_nd_reachable_time_cmd_vtysh, 
-       "ipv6 nd reachable-time MILLISECONDS", 
-       "Interface IPv6 config commands\n"
-       "Neighbor discovery\n"
-       "Reachable time\n"
-       "Reachable time in milliseconds\n")
-
 DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_database_type_cmd_vtysh, 
        "show ipv6 ospf6 database "
        "(router|network|inter-prefix|inter-router|as-external|"
@@ -2014,6 +2024,21 @@ DEFSH (VTYSH_RIPNGD, ripng_default_metric_cmd_vtysh,
        "default-metric <1-16>", 
        "Set a metric of redistribute routes\n"
        "Default metric\n")
+
+DEFSH (VTYSH_ZEBRA, ipv6_nd_reachable_time_cmd_vtysh, 
+       "ipv6 nd reachable-time <1-3600000>", 
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Reachable time\n"
+       "Reachable time in milliseconds\n")
+
+DEFSH (VTYSH_ZEBRA, no_ipv6_nd_ra_interval_msec_val_cmd_vtysh, 
+       "no ipv6 nd ra-interval msec <1-1800000>", 
+       "Negate a command or set its defaults\n"
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Router Advertisement interval\n"
+       "Router Advertisement interval in milliseconds\n")
 
 DEFSH (VTYSH_BGPD, no_aggregate_address_cmd_vtysh, 
        "no aggregate-address A.B.C.D/M", 
@@ -2052,9 +2077,9 @@ DEFSH (VTYSH_BGPD, clear_ip_bgp_all_vpnv4_soft_in_cmd_vtysh,
        "Soft reconfig inbound update\n")
 
 DEFSH (VTYSH_RIPD, rip_redistribute_type_routemap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ospf|isis|bgp|babel)" " route-map WORD", 
+       "redistribute " "(kernel|connected|static|ospf|isis|bgp|hsls|olsr|batman|babel)" " route-map WORD", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Pointer to route-map entries\n")
 
@@ -2491,9 +2516,9 @@ DEFSH (VTYSH_BGPD|VTYSH_OSPFD|VTYSH_RIPD|VTYSH_ZEBRA, no_match_ip_address_cmd_vt
        "Match address of route\n")
 
 DEFSH (VTYSH_RIPNGD, ripng_redistribute_type_metric_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ospf6|isis|bgp|babel)" " metric <0-16>", 
+       "redistribute " "(kernel|connected|static|ospf6|isis|bgp|hsls|olsr|batman|babel)" " metric <0-16>", 
        "Redistribute\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric\n"
        "Metric value\n")
 
@@ -2509,6 +2534,17 @@ DEFSH (VTYSH_OSPFD, no_ip_ospf_dead_interval_cmd_vtysh,
        "OSPF interface commands\n"
        "Interval after which a neighbor is declared dead\n")
 
+DEFSH (VTYSH_RIPD, no_rip_redistribute_type_metric_routemap_cmd_vtysh, 
+       "no redistribute " "(kernel|connected|static|ospf|isis|bgp|hsls|olsr|batman|babel)"
+       " metric <0-16> route-map WORD", 
+       "Negate a command or set its defaults\n"
+       "Redistribute information from another routing protocol\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+       "Metric\n"
+       "Metric value\n"
+       "Route map reference\n"
+       "Pointer to route-map entries\n")
+
 DEFSH (VTYSH_OSPFD, show_ip_ospf_neighbor_all_cmd_vtysh, 
        "show ip ospf neighbor all", 
        "Show running system information\n"
@@ -2523,17 +2559,6 @@ DEFSH (VTYSH_ZEBRA, no_ipv6_nd_ra_lifetime_cmd_vtysh,
        "Interface IPv6 config commands\n"
        "Neighbor discovery\n"
        "Router lifetime\n")
-
-DEFSH (VTYSH_RIPD, no_rip_redistribute_type_metric_routemap_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ospf|isis|bgp|babel)"
-       " metric <0-16> route-map WORD", 
-       "Negate a command or set its defaults\n"
-       "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
-       "Metric\n"
-       "Metric value\n"
-       "Route map reference\n"
-       "Pointer to route-map entries\n")
 
 DEFSH (VTYSH_RIPNGD|VTYSH_OSPF6D|VTYSH_BGPD|VTYSH_ZEBRA, no_ipv6_prefix_list_seq_le_cmd_vtysh, 
        "no ipv6 prefix-list WORD seq <1-4294967295> (deny|permit) X:X::X:X/M le <0-128>", 
@@ -3016,6 +3041,14 @@ DEFSH (VTYSH_ISISD, no_lsp_gen_interval_l1_arg_cmd_vtysh,
        "Set interval for level 1 only\n"
        "Minimum interval in seconds\n")
 
+DEFSH (VTYSH_BGPD, show_ip_bgp_pgbgp_neighbors_all_cmd_vtysh, 
+       "show ip bgp pgbgp neighbors", 
+       "Show running system information\n"
+       "IP information\n"
+       "BGP information\n"
+       "Pretty-Good BGP statistics\n"
+       "PG-BGP neighbors information\n")
+
 DEFSH (VTYSH_BGPD, neighbor_attr_unchanged4_cmd_vtysh, 
        "neighbor (A.B.C.D|X:X::X:X|WORD) " "attribute-unchanged med (as-path|next-hop)", 
        "Specify neighbor router\n"
@@ -3187,10 +3220,10 @@ DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_database_type_adv_router_cmd_vtysh,
       )
 
 DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv4_rmap_metric_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|rip|ospf|isis|babel)" " route-map WORD metric <0-4294967295>", 
+       "no redistribute " "(kernel|connected|static|rip|ospf|isis|hsls|olsr|batman|babel)" " route-map WORD metric <0-4294967295>", 
        "Negate a command or set its defaults\n"
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Pointer to route-map entries\n"
        "Metric for redistributed routes\n"
@@ -3283,6 +3316,10 @@ DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_database_type_id_cmd_vtysh,
        "Specify Link state ID as IPv4 address notation\n"
       )
 
+DEFSH (VTYSH_BGPD, show_ip_bgp_pgbgp_cmd_vtysh, 
+       "show ip bgp pgbgp", 
+       "Show running system information\n" "IP information\n" "BGP information\n" "Pretty-Good BGP statistics\n")
+
 DEFSH (VTYSH_OSPFD, debug_ospf_zebra_sub_cmd_vtysh, 
        "debug ospf zebra (interface|redistribute)", 
        "Debugging functions (see also 'undebug')\n"
@@ -3314,15 +3351,6 @@ DEFSH (VTYSH_BGPD, show_bgp_ipv4_safi_prefix_cmd_vtysh,
        "Address Family modifier\n"
        "IP prefix <network>/<length>,  e.g.,  35.0.0.0/8\n")
 
-DEFSH (VTYSH_BGPD, bgp_redistribute_ipv6_metric_rmap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ripng|ospf6|isis|babel)" " metric <0-4294967295> route-map WORD", 
-       "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
-       "Metric for redistributed routes\n"
-       "Default metric\n"
-       "Route map reference\n"
-       "Pointer to route-map entries\n")
-
 DEFSH (VTYSH_BGPD, show_ip_bgp_vpnv4_rd_tags_cmd_vtysh, 
        "show ip bgp vpnv4 rd ASN:nn_or_IP-address:nn tags", 
        "Show running system information\n"
@@ -3332,6 +3360,15 @@ DEFSH (VTYSH_BGPD, show_ip_bgp_vpnv4_rd_tags_cmd_vtysh,
        "Display information for a route distinguisher\n"
        "VPN Route Distinguisher\n"
        "Display BGP tags for prefixes\n")
+
+DEFSH (VTYSH_BGPD, bgp_redistribute_ipv6_metric_rmap_cmd_vtysh, 
+       "redistribute " "(kernel|connected|static|ripng|ospf6|isis|hsls|olsr|batman|babel)" " metric <0-4294967295> route-map WORD", 
+       "Redistribute information from another routing protocol\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+       "Metric for redistributed routes\n"
+       "Default metric\n"
+       "Route map reference\n"
+       "Pointer to route-map entries\n")
 
 DEFSH (VTYSH_BGPD, no_neighbor_maximum_prefix_restart_cmd_vtysh, 
        "no neighbor (A.B.C.D|X:X::X:X|WORD) " "maximum-prefix <1-4294967295> restart <1-65535>", 
@@ -3506,6 +3543,14 @@ DEFSH (VTYSH_OSPF6D, no_debug_ospf6_lsa_hex_cmd_vtysh,
        "Specify LS type as Hexadecimal\n"
       )
 
+DEFSH (VTYSH_BABELD, show_babel_interface_cmd_vtysh, 
+       "show babel interface [INTERFACE]", 
+       "Show running system information\n"
+       "IP information\n"
+       "Babel information\n"
+       "Interface information\n"
+       "Interface name\n")
+
 DEFSH (VTYSH_BGPD, no_neighbor_send_community_type_cmd_vtysh, 
        "no neighbor (A.B.C.D|X:X::X:X|WORD) " "send-community (both|extended|standard)", 
        "Negate a command or set its defaults\n"
@@ -3616,10 +3661,10 @@ DEFSH (VTYSH_OSPFD, ip_ospf_transmit_delay_addr_cmd_vtysh,
        "Address of interface")
 
 DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv4_rmap_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|rip|ospf|isis|babel)" " route-map WORD", 
+       "no redistribute " "(kernel|connected|static|rip|ospf|isis|hsls|olsr|batman|babel)" " route-map WORD", 
        "Negate a command or set its defaults\n"
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Pointer to route-map entries\n")
 
@@ -3835,6 +3880,13 @@ DEFSH (VTYSH_BGPD, neighbor_dont_capability_negotiate_cmd_vtysh,
        "Specify neighbor router\n"
        "Neighbor address\nNeighbor IPv6 address\nNeighbor tag\n"
        "Do not perform capability negotiation\n")
+
+DEFSH (VTYSH_ZEBRA, ipv6_nd_mtu_cmd_vtysh, 
+       "ipv6 nd mtu <1-65535>", 
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Advertised MTU\n"
+       "MTU in bytes\n")
 
 DEFSH (VTYSH_RIPD|VTYSH_OSPFD|VTYSH_BGPD|VTYSH_ZEBRA, no_ip_prefix_list_cmd_vtysh, 
        "no ip prefix-list WORD", 
@@ -4123,10 +4175,10 @@ DEFSH (VTYSH_OSPFD, no_set_metric_type_cmd_vtysh,
        "Type of metric for destination routing protocol\n")
 
 DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv4_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|rip|ospf|isis|babel)", 
+       "no redistribute " "(kernel|connected|static|rip|ospf|isis|hsls|olsr|batman|babel)", 
        "Negate a command or set its defaults\n"
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n")
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_ISISD, no_psnp_interval_l1_arg_cmd_vtysh, 
        "no isis psnp-interval <1-120> level-1", 
@@ -4286,11 +4338,11 @@ DEFSH (VTYSH_RIPD|VTYSH_OSPFD|VTYSH_BGPD|VTYSH_ZEBRA, show_ip_prefix_list_detail
        "Name of a prefix list\n")
 
 DEFSH (VTYSH_ZEBRA, ipv6_nd_ra_lifetime_cmd_vtysh, 
-       "ipv6 nd ra-lifetime SECONDS", 
+       "ipv6 nd ra-lifetime <0-9000>", 
        "Interface IPv6 config commands\n"
        "Neighbor discovery\n"
        "Router lifetime\n"
-       "Router lifetime in seconds\n")
+       "Router lifetime in seconds (0 stands for a non-default gw)\n")
 
 DEFSH (VTYSH_RIPD, ip_rip_split_horizon_cmd_vtysh, 
        "ip rip split-horizon", 
@@ -4363,10 +4415,10 @@ DEFSH (VTYSH_BGPD, bgp_network_backdoor_cmd_vtysh,
        "Specify a BGP backdoor route\n")
 
 DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv6_metric_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ripng|ospf6|isis|babel)" " metric <0-4294967295>", 
+       "no redistribute " "(kernel|connected|static|ripng|ospf6|isis|hsls|olsr|batman|babel)" " metric <0-4294967295>", 
        "Negate a command or set its defaults\n"
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric for redistributed routes\n"
        "Default metric\n")
 
@@ -4435,10 +4487,18 @@ DEFSH (VTYSH_BGPD, no_match_community_cmd_vtysh,
        "Match values from routing table\n"
        "Match BGP community list\n")
 
+DEFSH (VTYSH_BABELD, show_babel_database_cmd_vtysh, 
+       "show babel database", 
+       "Show running system information\n"
+       "IP information\n"
+       "Babel information\n"
+       "Database information\n"
+       "No attributes\n")
+
 DEFSH (VTYSH_RIPNGD, ripng_redistribute_type_routemap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ospf6|isis|bgp|babel)" " route-map WORD", 
+       "redistribute " "(kernel|connected|static|ospf6|isis|bgp|hsls|olsr|batman|babel)" " route-map WORD", 
        "Redistribute\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Pointer to route-map entries\n")
 
@@ -4840,9 +4900,9 @@ DEFSH (VTYSH_BGPD, no_ip_as_path_all_cmd_vtysh,
        "Regular expression access list name\n")
 
 DEFSH (VTYSH_RIPD, rip_redistribute_type_metric_routemap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ospf|isis|bgp|babel)" " metric <0-16> route-map WORD", 
+       "redistribute " "(kernel|connected|static|ospf|isis|bgp|hsls|olsr|batman|babel)" " metric <0-16> route-map WORD", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric\n"
        "Metric value\n"
        "Route map reference\n"
@@ -4963,9 +5023,9 @@ DEFSH (VTYSH_OSPF6D, debug_ospf6_spf_database_cmd_vtysh,
       )
 
 DEFSH (VTYSH_BGPD, bgp_redistribute_ipv4_rmap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|ospf|isis|babel)" " route-map WORD", 
+       "redistribute " "(kernel|connected|static|rip|ospf|isis|hsls|olsr|batman|babel)" " route-map WORD", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Pointer to route-map entries\n")
 
@@ -5140,12 +5200,6 @@ DEFSH (VTYSH_BGPD, clear_bgp_ipv6_peer_group_out_cmd_vtysh,
        "BGP peer-group name\n"
        "Soft reconfig outbound update\n")
 
-DEFSH (VTYSH_OSPFD, no_ospf_redistribute_source_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|rip|isis|bgp|babel)", 
-       "Negate a command or set its defaults\n"
-       "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n")
-
 DEFSH (VTYSH_BGPD, show_ip_bgp_vpnv4_all_tags_cmd_vtysh, 
        "show ip bgp vpnv4 all tags", 
        "Show running system information\n"
@@ -5154,6 +5208,12 @@ DEFSH (VTYSH_BGPD, show_ip_bgp_vpnv4_all_tags_cmd_vtysh,
        "Display VPNv4 NLRI specific information\n"
        "Display information about all VPNv4 NLRIs\n"
        "Display BGP tags for prefixes\n")
+
+DEFSH (VTYSH_OSPFD, no_ospf_redistribute_source_cmd_vtysh, 
+       "no redistribute " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)", 
+       "Negate a command or set its defaults\n"
+       "Redistribute information from another routing protocol\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_BGPD, show_bgp_view_ipv4_safi_rsclient_prefix_cmd_vtysh, 
        "show bgp view WORD ipv4 (unicast|multicast) rsclient (A.B.C.D|X:X::X:X) A.B.C.D/M", 
@@ -5846,10 +5906,10 @@ DEFSH (VTYSH_BGPD, neighbor_port_cmd_vtysh,
        "TCP port number\n")
 
 DEFSH (VTYSH_OSPFD, ospf_redistribute_source_type_metric_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|isis|bgp|babel)"
+       "redistribute " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)"
          " metric-type (1|2) metric <0-16777214>", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "OSPF exterior metric type for redistributed routes\n"
        "Set OSPF External Type 1 metrics\n"
        "Set OSPF External Type 2 metrics\n"
@@ -5884,9 +5944,9 @@ DEFSH (VTYSH_BGPD, show_ip_bgp_community_list_cmd_vtysh,
        "community-list name\n")
 
 DEFSH (VTYSH_OSPFD, ospf_redistribute_source_metric_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|isis|bgp|babel)" " metric <0-16777214>", 
+       "redistribute " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)" " metric <0-16777214>", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric for redistributed routes\n"
        "OSPF default metric\n")
 
@@ -5918,6 +5978,15 @@ DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_interface_prefix_detail_cmd_vtysh,
        "Display the route\n"
        "Display details of the prefixes\n"
        )
+
+DEFSH (VTYSH_BGPD, show_ip_bgp_pgbgp_origins_cmd_vtysh, 
+       "show ip bgp pgbgp origins A.B.C.D/M", 
+       "Show running system information\n"
+       "IP information\n"
+       "BGP information\n"
+       "Pretty-Good BGP statistics\n"
+       "PG-BGP prefix origin information\n"
+       "Prefix to look up origin ASes of\n")
 
 DEFSH (VTYSH_OSPFD, no_ospf_log_adjacency_changes_cmd_vtysh, 
        "no log-adjacency-changes", 
@@ -5970,6 +6039,13 @@ DEFSH (VTYSH_BGPD, undebug_bgp_all_cmd_vtysh,
        "Disable debugging functions (see also 'debug')\n"
        "Enable all debugging\n"
        "BGP information\n")
+
+DEFSH (VTYSH_BABELD, no_router_babel_cmd_vtysh, 
+       "no router babel", 
+       "Negate a command or set its defaults\n"
+       "Disable a routing process\n"
+       "Remove Babel instance command\n"
+       "No attributes\n")
 
 DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_database_self_originated_detail_cmd_vtysh, 
        "show ipv6 ospf6 database self-originated "
@@ -6043,6 +6119,19 @@ DEFSH (VTYSH_BGPD, ip_extcommunity_list_standard2_cmd_vtysh,
        "Extended Community list number (standard)\n"
        "Specify community to reject\n"
        "Specify community to accept\n")
+
+DEFSH (VTYSH_ZEBRA, no_ipv6_nd_ra_interval_val_cmd_vtysh, 
+       "no ipv6 nd ra-interval <1-1800>", 
+       "Negate a command or set its defaults\n"
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Router Advertisement interval\n")
+
+DEFSH (VTYSH_BABELD, babel_set_hello_interval_cmd_vtysh, 
+       "babel hello-interval <20-655340>", 
+       "Babel interface commands\n"
+       "Time between scheduled hellos\n"
+       "Milliseconds\n")
 
 DEFSH (VTYSH_ISISD, no_lsp_refresh_interval_cmd_vtysh, 
        "no lsp-refresh-interval", 
@@ -6521,6 +6610,16 @@ DEFSH (VTYSH_BGPD|VTYSH_OSPFD|VTYSH_RIPD|VTYSH_ZEBRA, match_ip_address_cmd_vtysh
        "IP access-list number (expanded range)\n"
        "IP Access-list name\n")
 
+DEFSH (VTYSH_ZEBRA, no_ipv6_nd_router_preference_val_cmd_vtysh, 
+       "no ipv6 nd router-preference (high|medium|low", 
+       "Negate a command or set its defaults\n"
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Default router preference\n"
+       "High default router preference\n"
+       "Low default router preference\n"
+       "Medium default router preference (default)\n")
+
 DEFSH (VTYSH_BGPD, no_aggregate_address_summary_as_set_cmd_vtysh, 
        "no aggregate-address A.B.C.D/M summary-only as-set", 
        "Negate a command or set its defaults\n"
@@ -6554,6 +6653,11 @@ DEFSH (VTYSH_RIPD, no_rip_network_cmd_vtysh,
        "Enable routing on an IP network\n"
        "IP prefix <network>/<length>,  e.g.,  35.0.0.0/8\n"
        "Interface name\n")
+
+DEFSH (VTYSH_BABELD, babel_network_cmd_vtysh, 
+       "network IF_OR_ADDR", 
+       "Enable Babel protocol on specified interface or network.\n"
+       "Interface or address")
 
 DEFSH (VTYSH_RIPNGD|VTYSH_OSPF6D|VTYSH_BGPD|VTYSH_ZEBRA, show_ipv6_prefix_list_prefix_cmd_vtysh, 
        "show ipv6 prefix-list WORD X:X::X:X/M", 
@@ -6661,20 +6765,28 @@ DEFSH (VTYSH_ZEBRA, no_ip_route_mask_flags_distance2_cmd_vtysh,
        "Silently discard pkts when matched\n"
        "Distance value for this route\n")
 
+DEFSH (VTYSH_RIPNGD, no_ripng_redistribute_type_metric_cmd_vtysh, 
+       "no redistribute " "(kernel|connected|static|ospf6|isis|bgp|hsls|olsr|batman|babel)" " metric <0-16>", 
+       "Negate a command or set its defaults\n"
+       "Redistribute\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+       "Metric\n"
+       "Metric value\n")
+
+DEFSH (VTYSH_ZEBRA, no_ipv6_nd_homeagent_preference_val_cmd_vtysh, 
+       "no ipv6 nd home-agent-preference <0-65535>", 
+       "Negate a command or set its defaults\n"
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Home Agent preference\n"
+       "preference value (default is 0,  least preferred)\n")
+
 DEFSH (VTYSH_BGPD, show_bgp_ipv6_prefix_cmd_vtysh, 
        "show bgp ipv6 X:X::X:X/M", 
        "Show running system information\n"
        "BGP information\n"
        "Address family\n"
        "IPv6 prefix <network>/<length>\n")
-
-DEFSH (VTYSH_RIPNGD, no_ripng_redistribute_type_metric_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ospf6|isis|bgp|babel)" " metric <0-16>", 
-       "Negate a command or set its defaults\n"
-       "Redistribute\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
-       "Metric\n"
-       "Metric value\n")
 
 DEFSH (VTYSH_OSPFD, ospf_area_range_not_advertise_cmd_vtysh, 
        "area (A.B.C.D|<0-4294967295>) range A.B.C.D/M not-advertise", 
@@ -6762,10 +6874,10 @@ DEFSH (VTYSH_ISISD, no_ip_router_isis_cmd_vtysh,
        "Routing process tag\n")
 
 DEFSH (VTYSH_OSPFD, ospf_redistribute_source_metric_type_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|isis|bgp|babel)"
+       "redistribute " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)"
        " metric <0-16777214> metric-type (1|2)", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric for redistributed routes\n"
        "OSPF default metric\n"
        "OSPF exterior metric type for redistributed routes\n"
@@ -6918,6 +7030,19 @@ DEFSH (VTYSH_OSPF6D, ipv6_ospf6_advertise_prefix_list_cmd_vtysh,
        "Prefix list name\n"
        )
 
+DEFSH (VTYSH_BGPD, bgp_pgbgp_arg_cmd_vtysh, 
+       "bgp pgbgp <1-100> <1-100> <1-100> <1-365> <1-365> <1-365> WORD WORD", 
+       "BGP Specific commands\n"
+       "Enable Pretty Good BGP\n"
+       "New origin depref time (in hours)\n"
+       "New edge depref time (in hours)\n"
+       "New sub-prefix depref time (in hours)\n"
+       "Origin history time (in days)\n"
+       "Prefix history time (in days)\n"
+       "Edge history time (in days)\n"
+       "Log file for history data\n"
+       "Log file of anomalies\n")
+
 DEFSH (VTYSH_ISISD, max_lsp_lifetime_l1_cmd_vtysh, 
        "max-lsp-lifetime level-1 <350-65535>", 
        "Maximum LSP lifetime for Level 1 only\n"
@@ -6986,9 +7111,9 @@ DEFSH (VTYSH_BGPD, clear_bgp_peer_soft_cmd_vtysh,
        "Soft reconfig\n")
 
 DEFSH (VTYSH_RIPD, rip_redistribute_type_metric_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ospf|isis|bgp|babel)" " metric <0-16>", 
+       "redistribute " "(kernel|connected|static|ospf|isis|bgp|hsls|olsr|batman|babel)" " metric <0-16>", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric\n"
        "Metric value\n")
 
@@ -7017,6 +7142,19 @@ DEFSH (VTYSH_RIPNGD|VTYSH_OSPF6D|VTYSH_BGPD|VTYSH_ZEBRA, ipv6_prefix_list_descri
        "Prefix-list specific description\n"
        "Up to 80 characters describing this prefix-list\n")
 
+DEFSH (VTYSH_OSPFD, ospf_redistribute_source_metric_type_routemap_cmd_vtysh, 
+       "redistribute " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)"
+         " metric <0-16777214> metric-type (1|2) route-map WORD", 
+       "Redistribute information from another routing protocol\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+       "Metric for redistributed routes\n"
+       "OSPF default metric\n"
+       "OSPF exterior metric type for redistributed routes\n"
+       "Set OSPF External Type 1 metrics\n"
+       "Set OSPF External Type 2 metrics\n"
+       "Route map reference\n"
+       "Pointer to route-map entries\n")
+
 DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_database_adv_router_detail_cmd_vtysh, 
        "show ipv6 ospf6 database adv-router A.B.C.D "
        "(detail|dump|internal)", 
@@ -7030,19 +7168,6 @@ DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_database_adv_router_detail_cmd_vtysh,
        "Dump LSAs\n"
        "Display LSA's internal information\n"
       )
-
-DEFSH (VTYSH_OSPFD, ospf_redistribute_source_metric_type_routemap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|isis|bgp|babel)"
-         " metric <0-16777214> metric-type (1|2) route-map WORD", 
-       "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
-       "Metric for redistributed routes\n"
-       "OSPF default metric\n"
-       "OSPF exterior metric type for redistributed routes\n"
-       "Set OSPF External Type 1 metrics\n"
-       "Set OSPF External Type 2 metrics\n"
-       "Route map reference\n"
-       "Pointer to route-map entries\n")
 
 DEFSH (VTYSH_BGPD, no_match_peer_val_cmd_vtysh, 
        "no match peer (A.B.C.D|X:X::X:X)", 
@@ -7110,9 +7235,9 @@ DEFSH (VTYSH_OSPFD, no_debug_ospf_nsm_cmd_vtysh,
        "OSPF Neighbor State Machine")
 
 DEFSH (VTYSH_OSPFD, ospf_redistribute_source_type_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|isis|bgp|babel)" " metric-type (1|2)", 
+       "redistribute " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)" " metric-type (1|2)", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "OSPF exterior metric type for redistributed routes\n"
        "Set OSPF External Type 1 metrics\n"
        "Set OSPF External Type 2 metrics\n")
@@ -7365,9 +7490,9 @@ DEFSH (VTYSH_RIPD|VTYSH_RIPNGD, no_set_tag_val_cmd_vtysh,
        "Tag value\n")
 
 DEFSH (VTYSH_OSPF6D, ospf6_redistribute_routemap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ripng|isis|bgp|babel)" " route-map WORD", 
+       "redistribute " "(kernel|connected|static|ripng|isis|bgp|hsls|olsr|batman|babel)" " route-map WORD", 
        "Redistribute\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Route map name\n"
       )
@@ -7559,6 +7684,18 @@ DEFSH (VTYSH_BGPD, no_bgp_network_mask_cmd_vtysh,
        "Network mask\n"
        "Network mask\n")
 
+DEFSH (VTYSH_BABELD, debug_babel_cmd_vtysh, 
+       "debug babel (common|kernel|filter|timeout|interface|route|all)", 
+       "Enable debug messages for specific or all part.\n"
+       "Babel information\n"
+       "Common messages (default)\n"
+       "Kernel messages\n"
+       "Filter messages\n"
+       "Timeout messages\n"
+       "Interface messages\n"
+       "Route messages\n"
+       "All messages\n")
+
 DEFSH (VTYSH_ISISD, isis_passwd_clear_cmd_vtysh, 
        "isis password clear WORD", 
        "IS-IS commands\n"
@@ -7572,11 +7709,6 @@ DEFSH (VTYSH_BGPD, no_aggregate_address_summary_only_cmd_vtysh,
        "Configure BGP aggregate entries\n"
        "Aggregate prefix\n"
        "Filter more specific routes from updates\n")
-
-DEFSH (VTYSH_RIPD, rip_redistribute_type_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ospf|isis|bgp|babel)", 
-       "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_RIPNGD|VTYSH_OSPF6D|VTYSH_BGPD|VTYSH_ZEBRA, show_ipv6_prefix_list_prefix_first_match_cmd_vtysh, 
        "show ipv6 prefix-list WORD X:X::X:X/M first-match", 
@@ -7604,6 +7736,17 @@ DEFSH (VTYSH_RIPD, no_ip_rip_split_horizon_cmd_vtysh,
        "IP information\n"
        "Routing Information Protocol\n"
        "Perform split horizon\n")
+
+DEFSH (VTYSH_RIPD, rip_redistribute_type_cmd_vtysh, 
+       "redistribute " "(kernel|connected|static|ospf|isis|bgp|hsls|olsr|batman|babel)", 
+       "Redistribute information from another routing protocol\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
+
+DEFSH (VTYSH_BABELD, no_babel_network_cmd_vtysh, 
+       "no network IF_OR_ADDR", 
+       "Negate a command or set its defaults\n"
+       "Disable Babel protocol on specified interface or network.\n"
+       "Interface or address")
 
 DEFSH (VTYSH_BGPD, clear_ip_bgp_external_ipv4_soft_cmd_vtysh, 
        "clear ip bgp external ipv4 (unicast|multicast) soft", 
@@ -7860,6 +8003,11 @@ DEFSH (VTYSH_OSPFD, show_ip_ospf_database_type_id_adv_router_cmd_vtysh,
        "Advertising Router link states\n"
        "Advertising Router (as an IP address)\n")
 
+DEFSH (VTYSH_BABELD, babel_set_wireless_cmd_vtysh, 
+       "babel wireless", 
+       "Babel interface commands\n"
+       "Disable wired optimiations (assume wireless)")
+
 DEFSH (VTYSH_ISISD, show_database_arg_cmd_vtysh, 
        "show isis database WORD", 
        "Show running system information\n"
@@ -7883,6 +8031,13 @@ DEFSH (VTYSH_OSPFD|VTYSH_OSPF6D|VTYSH_RIPD|VTYSH_RIPNGD|VTYSH_ZEBRA, match_inter
        "Match values from routing table\n"
        "match first hop interface of route\n"
        "Interface name\n")
+
+DEFSH (VTYSH_BGPD, show_ip_bgp_pgbgp_neighbors_cmd_vtysh, 
+       "show ip bgp pgbgp neighbors WORD", 
+       "Show running system information\n" "IP information\n" "BGP information\n"
+       "Pretty-Good BGP statistics\n"
+       "PG-BGP neighbor information\n"
+       "AS to show neighbors of\n")
 
 DEFSH (VTYSH_OSPFD, no_ip_ospf_authentication_cmd_vtysh, 
        "no ip ospf authentication", 
@@ -8070,11 +8225,11 @@ DEFSH (VTYSH_ALL, no_vty_access_class_cmd_vtysh,
        "IP access list\n")
 
 DEFSH (VTYSH_OSPFD, ospf_distribute_list_out_cmd_vtysh, 
-       "distribute-list WORD out " "(kernel|connected|static|rip|isis|bgp|babel)", 
+       "distribute-list WORD out " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)", 
        "Filter networks in routing updates\n"
        "Access-list name\n"
        "Filter outgoing routing updates\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n")
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_BGPD, show_ip_bgp_ipv4_community3_cmd_vtysh, 
        "show ip bgp ipv4 (unicast|multicast) community (AA:NN|local-AS|no-advertise|no-export) (AA:NN|local-AS|no-advertise|no-export) (AA:NN|local-AS|no-advertise|no-export)", 
@@ -8531,6 +8686,14 @@ DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_interface_ifname_prefix_match_cmd_vtysh,
        "Display details of the prefixes\n"
        )
 
+DEFSH (VTYSH_ZEBRA, no_ipv6_nd_reachable_time_val_cmd_vtysh, 
+       "no ipv6 nd reachable-time <1-3600000>", 
+       "Negate a command or set its defaults\n"
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Reachable time\n"
+       "Reachable time in milliseconds\n")
+
 DEFSH (VTYSH_BGPD, show_bgp_view_prefix_cmd_vtysh, 
        "show bgp view WORD X:X::X:X/M", 
        "Show running system information\n"
@@ -8571,6 +8734,14 @@ DEFSH (VTYSH_OSPFD, no_ip_ospf_transmit_delay_addr_cmd_vtysh,
        "OSPF interface commands\n"
        "Link state transmit delay\n"
        "Address of interface")
+
+DEFSH (VTYSH_ZEBRA, no_ipv6_nd_mtu_val_cmd_vtysh, 
+       "no ipv6 nd mtu <1-65535>", 
+       "Negate a command or set its defaults\n"
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Advertised MTU\n"
+       "MTU in bytes\n")
 
 DEFSH (VTYSH_BGPD, no_neighbor_attr_unchanged1_cmd_vtysh, 
        "no neighbor (A.B.C.D|X:X::X:X|WORD) " "attribute-unchanged (as-path|next-hop|med)", 
@@ -8999,6 +9170,14 @@ DEFSH (VTYSH_BGPD, clear_ip_bgp_peer_in_cmd_vtysh,
        "BGP neighbor address to clear\n"
        "Soft reconfig inbound update\n")
 
+DEFSH (VTYSH_RIPNGD, no_ripng_redistribute_type_routemap_cmd_vtysh, 
+       "no redistribute " "(kernel|connected|static|ospf6|isis|bgp|hsls|olsr|batman|babel)" " route-map WORD", 
+       "Negate a command or set its defaults\n"
+       "Redistribute\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+       "Route map reference\n"
+       "Pointer to route-map entries\n")
+
 DEFSH (VTYSH_OSPFD, ip_ospf_dead_interval_addr_cmd_vtysh, 
        "ip ospf dead-interval <1-65535> A.B.C.D", 
        "IP Information\n"
@@ -9006,14 +9185,6 @@ DEFSH (VTYSH_OSPFD, ip_ospf_dead_interval_addr_cmd_vtysh,
        "Interval after which a neighbor is declared dead\n"
        "Seconds\n"
        "Address of interface\n")
-
-DEFSH (VTYSH_RIPNGD, no_ripng_redistribute_type_routemap_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ospf6|isis|bgp|babel)" " route-map WORD", 
-       "Negate a command or set its defaults\n"
-       "Redistribute\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
-       "Route map reference\n"
-       "Pointer to route-map entries\n")
 
 DEFSH (VTYSH_OSPFD, ospf_default_information_originate_type_routemap_cmd_vtysh, 
        "default-information originate metric-type (1|2) route-map WORD", 
@@ -9368,6 +9539,13 @@ DEFSH (VTYSH_ZEBRA, ipv6_route_ifname_pref_cmd_vtysh,
        "IPv6 gateway interface name\n"
        "Distance value for this prefix\n")
 
+DEFSH (VTYSH_BGPD, bgp_redistribute_ipv6_metric_cmd_vtysh, 
+       "redistribute " "(kernel|connected|static|ripng|ospf6|isis|hsls|olsr|batman|babel)" " metric <0-4294967295>", 
+       "Redistribute information from another routing protocol\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+       "Metric for redistributed routes\n"
+       "Default metric\n")
+
 DEFSH (VTYSH_BGPD, show_ip_bgp_rsclient_summary_cmd_vtysh, 
        "show ip bgp rsclient summary", 
        "Show running system information\n"
@@ -9375,13 +9553,6 @@ DEFSH (VTYSH_BGPD, show_ip_bgp_rsclient_summary_cmd_vtysh,
        "BGP information\n"
        "Information about Route Server Clients\n"
        "Summary of all Route Server Clients\n")
-
-DEFSH (VTYSH_BGPD, bgp_redistribute_ipv6_metric_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ripng|ospf6|isis|babel)" " metric <0-4294967295>", 
-       "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
-       "Metric for redistributed routes\n"
-       "Default metric\n")
 
 DEFSH (VTYSH_RIPD, rip_neighbor_cmd_vtysh, 
        "neighbor A.B.C.D", 
@@ -9401,9 +9572,9 @@ DEFSH (VTYSH_BGPD, show_ipv6_bgp_cmd_vtysh,
        "BGP information\n")
 
 DEFSH (VTYSH_RIPNGD, ripng_redistribute_type_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ospf6|isis|bgp|babel)", 
+       "redistribute " "(kernel|connected|static|ospf6|isis|bgp|hsls|olsr|batman|babel)", 
        "Redistribute\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n")
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_BGPD, show_bgp_ipv4_safi_route_cmd_vtysh, 
        "show bgp ipv4 (unicast|multicast) A.B.C.D", 
@@ -9963,9 +10134,9 @@ DEFSH (VTYSH_ZEBRA, ipv6_route_ifname_flags_pref_cmd_vtysh,
        "Distance value for this prefix\n")
 
 DEFSH (VTYSH_BGPD, bgp_redistribute_ipv4_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|ospf|isis|babel)", 
+       "redistribute " "(kernel|connected|static|rip|ospf|isis|hsls|olsr|batman|babel)", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n")
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_ISISD, no_isis_passwd_cmd_vtysh, 
        "no isis password", 
@@ -10589,10 +10760,10 @@ DEFSH (VTYSH_BGPD, neighbor_default_originate_cmd_vtysh,
        "Originate default route to this neighbor\n")
 
 DEFSH (VTYSH_RIPD, no_rip_redistribute_type_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ospf|isis|bgp|babel)", 
+       "no redistribute " "(kernel|connected|static|ospf|isis|bgp|hsls|olsr|batman|babel)", 
        "Negate a command or set its defaults\n"
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n")
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_OSPFD, ospf_network_area_cmd_vtysh, 
        "network A.B.C.D/M area (A.B.C.D|<0-4294967295>)", 
@@ -10658,9 +10829,9 @@ DEFSH (VTYSH_OSPFD, no_debug_ospf_lsa_sub_cmd_vtysh,
        "LSA Refres\n")
 
 DEFSH (VTYSH_RIPNGD, ripng_redistribute_type_metric_routemap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ospf6|isis|bgp|babel)" " metric <0-16> route-map WORD", 
+       "redistribute " "(kernel|connected|static|ospf6|isis|bgp|hsls|olsr|batman|babel)" " metric <0-16> route-map WORD", 
        "Redistribute\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric\n"
        "Metric value\n"
        "Route map reference\n"
@@ -10980,6 +11151,11 @@ DEFSH (VTYSH_OSPFD, ospf_area_vlink_cmd_vtysh,
        "area (A.B.C.D|<0-4294967295>) virtual-link A.B.C.D", 
        "OSPF area parameters\n" "OSPF area ID in IP address format\n" "OSPF area ID as a decimal value\n" "Configure a virtual link\n" "Router ID of the remote ABR\n")
 
+DEFSH (VTYSH_BABELD, babel_set_wired_cmd_vtysh, 
+       "babel wired", 
+       "Babel interface commands\n"
+       "Enable wired optimisations")
+
 DEFSH (VTYSH_BGPD, no_match_pathlimit_as_val_cmd_vtysh, 
        "no match pathlimit as <1-65535>", 
        "Negate a command or set its defaults\n"
@@ -11177,13 +11353,6 @@ DEFSH (VTYSH_ZEBRA, no_debug_zebra_kernel_cmd_vtysh,
        "Zebra configuration\n"
        "Debug option set for zebra between kernel interface\n")
 
-DEFSH (VTYSH_BGPD, show_bgp_ipv6_neighbors_cmd_vtysh, 
-       "show bgp ipv6 neighbors", 
-       "Show running system information\n"
-       "BGP information\n"
-       "Address family\n"
-       "Detailed information on TCP and BGP neighbor connections\n")
-
 DEFSH (VTYSH_BGPD, show_bgp_view_ipv6_neighbor_damp_cmd_vtysh, 
        "show bgp view WORD ipv6 neighbors (A.B.C.D|X:X::X:X) dampened-routes", 
        "Show running system information\n"
@@ -11195,6 +11364,13 @@ DEFSH (VTYSH_BGPD, show_bgp_view_ipv6_neighbor_damp_cmd_vtysh,
        "Neighbor to display information about\n"
        "Neighbor to display information about\n"
        "Display the dampened routes received from neighbor\n")
+
+DEFSH (VTYSH_BGPD, show_bgp_ipv6_neighbors_cmd_vtysh, 
+       "show bgp ipv6 neighbors", 
+       "Show running system information\n"
+       "BGP information\n"
+       "Address family\n"
+       "Detailed information on TCP and BGP neighbor connections\n")
 
 DEFSH (VTYSH_ZEBRA, ip_irdp_preference_cmd_vtysh, 
        "ip irdp preference <0-2147483647>", 
@@ -11312,10 +11488,10 @@ DEFSH (VTYSH_ISISD, no_csnp_interval_l1_arg_cmd_vtysh,
        "Specify interval for level-1 CSNPs\n")
 
 DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv4_metric_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|rip|ospf|isis|babel)" " metric <0-4294967295>", 
+       "no redistribute " "(kernel|connected|static|rip|ospf|isis|hsls|olsr|batman|babel)" " metric <0-4294967295>", 
        "Negate a command or set its defaults\n"
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric for redistributed routes\n"
        "Default metric\n")
 
@@ -11682,17 +11858,19 @@ DEFSH (VTYSH_ZEBRA, ip_route_mask_distance_cmd_vtysh,
        "Distance value for this route\n")
 
 DEFSH (VTYSH_ZEBRA, show_ipv6_route_protocol_cmd_vtysh, 
-       "show ipv6 route (bgp|connected|isis|kernel|ospf6|ripng|static)", 
+       "show ipv6 route " "(kernel|connected|static|ripng|ospf6|isis|bgp|hsls|olsr|batman|babel)", 
        "Show running system information\n"
        "IP information\n"
        "IP routing table\n"
-       "Border Gateway Protocol (BGP)\n"
-       "Connected\n"
-       "ISO IS-IS (ISIS)\n"
-       "Kernel\n"
-       "Open Shortest Path First (OSPFv3)\n"
-       "Routing Information Protocol (RIPng)\n"
-       "Static routes\n")
+ "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
+
+DEFSH (VTYSH_ZEBRA, no_ipv6_nd_homeagent_lifetime_val_cmd_vtysh, 
+       "no ipv6 nd home-agent-lifetime <0-65520>", 
+       "Negate a command or set its defaults\n"
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Home Agent lifetime\n"
+       "Home Agent lifetime in seconds (0 to track ra-lifetime)\n")
 
 DEFSH (VTYSH_BGPD, bgp_client_to_client_reflection_cmd_vtysh, 
        "bgp client-to-client reflection", 
@@ -11877,12 +12055,12 @@ DEFSH (VTYSH_BGPD, show_ip_bgp_vpnv4_all_prefix_cmd_vtysh,
        "IP prefix <network>/<length>,  e.g.,  35.0.0.0/8\n")
 
 DEFSH (VTYSH_OSPFD, no_ospf_distribute_list_out_cmd_vtysh, 
-       "no distribute-list WORD out " "(kernel|connected|static|rip|isis|bgp|babel)", 
+       "no distribute-list WORD out " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)", 
        "Negate a command or set its defaults\n"
        "Filter networks in routing updates\n"
        "Access-list name\n"
        "Filter outgoing routing updates\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n")
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_BGPD, show_ip_bgp_rsclient_prefix_cmd_vtysh, 
        "show ip bgp rsclient (A.B.C.D|X:X::X:X) A.B.C.D/M", 
@@ -11892,13 +12070,6 @@ DEFSH (VTYSH_BGPD, show_ip_bgp_rsclient_prefix_cmd_vtysh,
        "Information about Route Server Client\n"
        "Neighbor address\nIPv6 address\n"
        "IP prefix <network>/<length>,  e.g.,  35.0.0.0/8\n")
-
-DEFSH (VTYSH_ZEBRA, ipv6_nd_homeagent_preference_cmd_vtysh, 
-       "ipv6 nd home-agent-preference PREFERENCE", 
-       "Interface IPv6 config commands\n"
-       "Neighbor discovery\n"
-       "Home Agent preference\n"
-       "Home Agent preference value 0..65535\n")
 
 DEFSH (VTYSH_ALL, access_list_extended_host_host_cmd_vtysh, 
        "access-list (<100-199>|<2000-2699>) (deny|permit) ip host A.B.C.D host A.B.C.D", 
@@ -11919,6 +12090,13 @@ DEFSH (VTYSH_OSPFD, no_ip_ospf_retransmit_interval_cmd_vtysh,
        "IP Information\n"
        "OSPF interface commands\n"
        "Time between retransmitting lost link state advertisements\n")
+
+DEFSH (VTYSH_ZEBRA, ipv6_nd_homeagent_preference_cmd_vtysh, 
+       "ipv6 nd home-agent-preference <0-65535>", 
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Home Agent preference\n"
+       "preference value (default is 0,  least preferred)\n")
 
 DEFSH (VTYSH_BGPD, clear_ip_bgp_peer_cmd_vtysh, 
        "clear ip bgp (A.B.C.D|X:X::X:X)", 
@@ -12019,9 +12197,9 @@ DEFSH (VTYSH_ZEBRA, show_ip_route_supernets_cmd_vtysh,
        "Show supernet entries only\n")
 
 DEFSH (VTYSH_BGPD, bgp_redistribute_ipv6_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ripng|ospf6|isis|babel)", 
+       "redistribute " "(kernel|connected|static|ripng|ospf6|isis|hsls|olsr|batman|babel)", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n")
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_RIPD, no_ip_rip_authentication_string2_cmd_vtysh, 
        "no ip rip authentication string LINE", 
@@ -12485,9 +12663,9 @@ DEFSH (VTYSH_BGPD, no_set_local_pref_val_cmd_vtysh,
        "Preference value\n")
 
 DEFSH (VTYSH_OSPFD, ospf_redistribute_source_routemap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|isis|bgp|babel)" " route-map WORD", 
+       "redistribute " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)" " route-map WORD", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Pointer to route-map entries\n")
 
@@ -12502,10 +12680,10 @@ DEFSH (VTYSH_ALL, access_list_standard_cmd_vtysh,
        "Wildcard bits\n")
 
 DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv6_rmap_metric_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ripng|ospf6|isis|babel)" " route-map WORD metric <0-4294967295>", 
+       "no redistribute " "(kernel|connected|static|ripng|ospf6|isis|hsls|olsr|batman|babel)" " route-map WORD metric <0-4294967295>", 
        "Negate a command or set its defaults\n"
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Pointer to route-map entries\n"
        "Metric for redistributed routes\n"
@@ -12546,6 +12724,14 @@ DEFSH (VTYSH_ALL, access_list_extended_mask_host_cmd_vtysh,
        "Source wildcard bits\n"
        "A single destination host\n"
        "Destination address\n")
+
+DEFSH (VTYSH_BGPD, show_ip_bgp_pgbgp_origins_all_cmd_vtysh, 
+       "show ip bgp pgbgp origins", 
+       "Show running system information\n"
+       "IP information\n"
+       "BGP information\n"
+       "Pretty-Good BGP statistics\n"
+       "PG-BGP prefixes origin information")
 
 DEFSH (VTYSH_BGPD, show_ip_bgp_view_rsclient_cmd_vtysh, 
        "show ip bgp view WORD rsclient (A.B.C.D|X:X::X:X)", 
@@ -12646,13 +12832,6 @@ DEFSH (VTYSH_BGPD, dump_bgp_all_interval_cmd_vtysh,
        "Output filename\n"
        "Interval of output\n")
 
-DEFSH (VTYSH_ISISD, isis_hello_multiplier_l2_cmd_vtysh, 
-       "isis hello-multiplier <2-100> level-2", 
-       "IS-IS commands\n"
-       "Set multiplier for Hello holding time\n"
-       "Hello multiplier value\n"
-       "Specify hello multiplier for level-2 IIHs\n")
-
 DEFSH (VTYSH_BGPD, clear_bgp_ipv6_peer_group_soft_cmd_vtysh, 
        "clear bgp ipv6 peer-group WORD soft", 
        "Reset functions\n"
@@ -12662,6 +12841,13 @@ DEFSH (VTYSH_BGPD, clear_bgp_ipv6_peer_group_soft_cmd_vtysh,
        "BGP peer-group name\n"
        "Soft reconfig\n")
 
+DEFSH (VTYSH_ISISD, isis_hello_multiplier_l2_cmd_vtysh, 
+       "isis hello-multiplier <2-100> level-2", 
+       "IS-IS commands\n"
+       "Set multiplier for Hello holding time\n"
+       "Hello multiplier value\n"
+       "Specify hello multiplier for level-2 IIHs\n")
+
 DEFSH (VTYSH_BGPD, clear_bgp_peer_group_in_cmd_vtysh, 
        "clear bgp peer-group WORD in", 
        "Reset functions\n"
@@ -12669,19 +12855,6 @@ DEFSH (VTYSH_BGPD, clear_bgp_peer_group_in_cmd_vtysh,
        "Clear all members of peer-group\n"
        "BGP peer-group name\n"
        "Soft reconfig inbound update\n")
-
-DEFSH (VTYSH_OSPFD, ospf_redistribute_source_type_metric_routemap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|isis|bgp|babel)"
-         " metric-type (1|2) metric <0-16777214> route-map WORD", 
-       "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
-       "OSPF exterior metric type for redistributed routes\n"
-       "Set OSPF External Type 1 metrics\n"
-       "Set OSPF External Type 2 metrics\n"
-       "Metric for redistributed routes\n"
-       "OSPF default metric\n"
-       "Route map reference\n"
-       "Pointer to route-map entries\n")
 
 DEFSH (VTYSH_OSPFD, ip_ospf_authentication_args_addr_cmd_vtysh, 
        "ip ospf authentication (null|message-digest) A.B.C.D", 
@@ -12691,6 +12864,19 @@ DEFSH (VTYSH_OSPFD, ip_ospf_authentication_args_addr_cmd_vtysh,
        "Use null authentication\n"
        "Use message-digest authentication\n"
        "Address of interface")
+
+DEFSH (VTYSH_OSPFD, ospf_redistribute_source_type_metric_routemap_cmd_vtysh, 
+       "redistribute " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)"
+         " metric-type (1|2) metric <0-16777214> route-map WORD", 
+       "Redistribute information from another routing protocol\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+       "OSPF exterior metric type for redistributed routes\n"
+       "Set OSPF External Type 1 metrics\n"
+       "Set OSPF External Type 2 metrics\n"
+       "Metric for redistributed routes\n"
+       "OSPF default metric\n"
+       "Route map reference\n"
+       "Pointer to route-map entries\n")
 
 DEFSH (VTYSH_RIPNGD, no_ripng_offset_list_cmd_vtysh, 
        "no offset-list WORD (in|out) <0-16>", 
@@ -12840,6 +13026,12 @@ DEFSH (VTYSH_OSPF6D, show_ipv6_ospf6_linkstate_detail_cmd_vtysh,
        "Display linkstate routing table\n"
       )
 
+DEFSH (VTYSH_BABELD, no_babel_split_horizon_cmd_vtysh, 
+       "no babel split-horizon", 
+       "Negate a command or set its defaults\n"
+       "Babel interface commands\n"
+       "Disable split horizon processing")
+
 DEFSH (VTYSH_BGPD, clear_bgp_ipv6_as_soft_in_cmd_vtysh, 
        "clear bgp ipv6 " "<1-4294967295>" " soft in", 
        "Reset functions\n"
@@ -12914,14 +13106,6 @@ DEFSH (VTYSH_BGPD, clear_bgp_ipv6_peer_rsclient_cmd_vtysh,
        "BGP IPv6 neighbor to clear\n"
        "Soft reconfig for rsclient RIB\n")
 
-DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv6_rmap_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ripng|ospf6|isis|babel)" " route-map WORD", 
-       "Negate a command or set its defaults\n"
-       "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
-       "Route map reference\n"
-       "Pointer to route-map entries\n")
-
 DEFSH (VTYSH_BGPD, show_ip_bgp_community4_cmd_vtysh, 
        "show ip bgp community (AA:NN|local-AS|no-advertise|no-export) (AA:NN|local-AS|no-advertise|no-export) (AA:NN|local-AS|no-advertise|no-export) (AA:NN|local-AS|no-advertise|no-export)", 
        "Show running system information\n"
@@ -12944,6 +13128,14 @@ DEFSH (VTYSH_BGPD, show_ip_bgp_community4_cmd_vtysh,
        "Do not send outside local AS (well-known community)\n"
        "Do not advertise to any peer (well-known community)\n"
        "Do not export to next AS (well-known community)\n")
+
+DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv6_rmap_cmd_vtysh, 
+       "no redistribute " "(kernel|connected|static|ripng|ospf6|isis|hsls|olsr|batman|babel)" " route-map WORD", 
+       "Negate a command or set its defaults\n"
+       "Redistribute information from another routing protocol\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+       "Route map reference\n"
+       "Pointer to route-map entries\n")
 
 DEFSH (VTYSH_BGPD, show_ipv6_bgp_prefix_cmd_vtysh, 
        "show ipv6 bgp X:X::X:X/M", 
@@ -13148,6 +13340,12 @@ DEFSH (VTYSH_BGPD, debug_bgp_normal_cmd_vtysh,
        "debug bgp", 
        "Debugging functions (see also 'undebug')\n"
        "BGP information\n")
+
+DEFSH (VTYSH_ZEBRA, show_ipv6_mroute_cmd_vtysh, 
+       "show ipv6 mroute", 
+       "Show running system information\n"
+       "IP information\n"
+       "IPv6 Multicast routing table\n")
 
 DEFSH (VTYSH_ISISD, no_isis_hello_interval_cmd_vtysh, 
        "no isis hello-interval", 
@@ -13623,10 +13821,10 @@ DEFSH (VTYSH_BGPD, show_ipv6_mbgp_summary_cmd_vtysh,
        "Summary of BGP neighbor status\n")
 
 DEFSH (VTYSH_OSPF6D, no_ospf6_redistribute_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ripng|isis|bgp|babel)", 
+       "no redistribute " "(kernel|connected|static|ripng|isis|bgp|hsls|olsr|batman|babel)", 
        "Negate a command or set its defaults\n"
        "Redistribute\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
       )
 
 DEFSH (VTYSH_OSPFD, no_ospf_area_vlink_cmd_vtysh, 
@@ -13705,6 +13903,12 @@ DEFSH (VTYSH_OSPFD, no_ospf_area_range_advertise_cost_cmd_vtysh,
        "User specified metric for this range\n"
        "Advertised metric for this range\n")
 
+DEFSH (VTYSH_BABELD, no_babel_redistribute_type_cmd_vtysh, 
+       "no redistribute " "(kernel|connected|static|rip|ripng|ospf|ospf6|isis|bgp|hsls|olsr|batman)", 
+       "Negate a command or set its defaults\n"
+       "Redistribute\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (OSPFv2)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n")
+
 DEFSH (VTYSH_BGPD, show_ipv6_mbgp_community4_cmd_vtysh, 
        "show ipv6 mbgp community (AA:NN|local-AS|no-advertise|no-export) (AA:NN|local-AS|no-advertise|no-export) (AA:NN|local-AS|no-advertise|no-export) (AA:NN|local-AS|no-advertise|no-export)", 
        "Show running system information\n"
@@ -13727,6 +13931,11 @@ DEFSH (VTYSH_BGPD, show_ipv6_mbgp_community4_cmd_vtysh,
        "Do not send outside local AS (well-known community)\n"
        "Do not advertise to any peer (well-known community)\n"
        "Do not export to next AS (well-known community)\n")
+
+DEFSH (VTYSH_BGPD, bgp_pgbgp_cmd_vtysh, 
+       "bgp pgbgp", 
+       "BGP specific commands\n"
+       "Enable Pretty Good BGP\n")
 
 DEFSH (VTYSH_ZEBRA, no_router_id_cmd_vtysh, 
        "no router-id", 
@@ -13866,6 +14075,14 @@ DEFSH (VTYSH_RIPD, send_lifetime_infinite_day_month_cmd_vtysh,
        "Year to start\n"
        "Never expires")
 
+DEFSH (VTYSH_ZEBRA, no_ipv6_nd_ra_lifetime_val_cmd_vtysh, 
+       "no ipv6 nd ra-lifetime <0-9000>", 
+       "Negate a command or set its defaults\n"
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Router lifetime\n"
+       "Router lifetime in seconds (0 stands for a non-default gw)\n")
+
 DEFSH (VTYSH_ALL, access_list_extended_cmd_vtysh, 
        "access-list (<100-199>|<2000-2699>) (deny|permit) ip A.B.C.D A.B.C.D A.B.C.D A.B.C.D", 
        "Add an access list entry\n"
@@ -13938,9 +14155,9 @@ DEFSH (VTYSH_OSPFD, no_ospf_area_vlink_authtype_md5_cmd_vtysh,
        "Message digest authentication password (key)\n" "dummy string \n" "Key ID\n" "Use MD5 algorithm\n" "The OSPF password (key)")
 
 DEFSH (VTYSH_BGPD, bgp_redistribute_ipv6_rmap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ripng|ospf6|isis|babel)" " route-map WORD", 
+       "redistribute " "(kernel|connected|static|ripng|ospf6|isis|hsls|olsr|batman|babel)" " route-map WORD", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Pointer to route-map entries\n")
 
@@ -14068,6 +14285,19 @@ DEFSH (VTYSH_BGPD, old_ipv6_aggregate_address_cmd_vtysh,
        "Configure BGP aggregate entries\n"
        "Aggregate prefix\n")
 
+DEFSH (VTYSH_BABELD, no_debug_babel_cmd_vtysh, 
+       "no debug babel (common|kernel|filter|timeout|interface|route|all)", 
+       "Negate a command or set its defaults\n"
+       "Disable debug messages for specific or all part.\n"
+       "Babel information\n"
+       "Common messages (default)\n"
+       "Kernel messages\n"
+       "Filter messages\n"
+       "Timeout messages\n"
+       "Interface messages\n"
+       "Route messages\n"
+       "All messages\n")
+
 DEFSH (VTYSH_BGPD, show_ipv6_bgp_community_all_cmd_vtysh, 
        "show ipv6 bgp community", 
        "Show running system information\n"
@@ -14183,18 +14413,18 @@ DEFSH (VTYSH_RIPD, no_rip_version_cmd_vtysh,
        "Negate a command or set its defaults\n"
        "Set routing protocol version\n")
 
+DEFSH (VTYSH_RIPNGD, no_ripng_redistribute_type_cmd_vtysh, 
+       "no redistribute " "(kernel|connected|static|ospf6|isis|bgp|hsls|olsr|batman|babel)", 
+       "Negate a command or set its defaults\n"
+       "Redistribute\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
+
 DEFSH (VTYSH_BGPD, match_ipv6_next_hop_cmd_vtysh, 
        "match ipv6 next-hop X:X::X:X", 
        "Match values from routing table\n"
        "IPv6 information\n"
        "Match IPv6 next-hop address of route\n"
        "IPv6 address of next hop\n")
-
-DEFSH (VTYSH_RIPNGD, no_ripng_redistribute_type_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ospf6|isis|bgp|babel)", 
-       "Negate a command or set its defaults\n"
-       "Redistribute\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_BGPD, bgp_confederation_peers_cmd_vtysh, 
        "bgp confederation peers ." "<1-4294967295>", 
@@ -14370,6 +14600,13 @@ DEFSH (VTYSH_OSPFD, mpls_te_link_unrsv_bw_cmd_vtysh,
        "Priority\n"
        "Bytes/second (IEEE floating point format)\n")
 
+DEFSH (VTYSH_BGPD, show_ip_bgp_anomalous_paths_cmd_vtysh, 
+       "show ip bgp anomalous-paths", 
+       "Show running system information\n"
+       "IP information\n"
+       "BGP information\n"
+       "Display anomalous paths (less likely to be used)\n")
+
 DEFSH (VTYSH_ZEBRA, no_ipv6_route_ifname_flags_cmd_vtysh, 
        "no ipv6 route X:X::X:X/M X:X::X:X INTERFACE (reject|blackhole)", 
        "Negate a command or set its defaults\n"
@@ -14397,6 +14634,14 @@ DEFSH (VTYSH_BGPD, no_debug_bgp_normal_cmd_vtysh,
        "Negate a command or set its defaults\n"
        "Debugging functions (see also 'undebug')\n"
        "BGP information\n")
+
+DEFSH (VTYSH_BABELD, show_babel_parameters_cmd_vtysh, 
+       "show babel parameters", 
+       "Show running system information\n"
+       "IP information\n"
+       "Babel information\n"
+       "Configuration information\n"
+       "No attributes\n")
 
 DEFSH (VTYSH_BGPD, no_neighbor_override_capability_cmd_vtysh, 
        "no neighbor (A.B.C.D|X:X::X:X|WORD) " "override-capability", 
@@ -14559,6 +14804,11 @@ DEFSH (VTYSH_BGPD, no_set_atomic_aggregate_cmd_vtysh,
        "Negate a command or set its defaults\n"
        "Set values in destination routing protocol\n"
        "BGP atomic aggregate attribute\n" )
+
+DEFSH (VTYSH_BABELD, babel_split_horizon_cmd_vtysh, 
+       "babel split-horizon", 
+       "Babel interface commands\n"
+       "Enable split horizon processing")
 
 DEFSH (VTYSH_BGPD, no_set_aspath_exclude_cmd_vtysh, 
        "no set as-path exclude", 
@@ -14779,9 +15029,9 @@ DEFSH (VTYSH_RIPNGD|VTYSH_OSPF6D|VTYSH_BGPD|VTYSH_ZEBRA, ipv6_prefix_list_seq_cm
        "Any prefix match.  Same as \"::0/0 le 128\"\n")
 
 DEFSH (VTYSH_BGPD, bgp_redistribute_ipv6_rmap_metric_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ripng|ospf6|isis|babel)" " route-map WORD metric <0-4294967295>", 
+       "redistribute " "(kernel|connected|static|ripng|ospf6|isis|hsls|olsr|batman|babel)" " route-map WORD metric <0-4294967295>", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Pointer to route-map entries\n"
        "Metric for redistributed routes\n"
@@ -14940,12 +15190,6 @@ DEFSH (VTYSH_OSPFD, no_ospf_compatible_rfc1583_cmd_vtysh,
        "OSPF compatibility list\n"
        "compatible with RFC 1583\n")
 
-DEFSH (VTYSH_BGPD, no_match_ecommunity_cmd_vtysh, 
-       "no match extcommunity", 
-       "Negate a command or set its defaults\n"
-       "Match values from routing table\n"
-       "Match BGP/VPN extended community list\n")
-
 DEFSH (VTYSH_BGPD|VTYSH_RIPNGD, set_ipv6_nexthop_local_cmd_vtysh, 
        "set ipv6 next-hop local X:X::X:X", 
        "Set values in destination routing protocol\n"
@@ -14953,6 +15197,12 @@ DEFSH (VTYSH_BGPD|VTYSH_RIPNGD, set_ipv6_nexthop_local_cmd_vtysh,
        "IPv6 next-hop address\n"
        "IPv6 local address\n"
        "IPv6 address of next hop\n")
+
+DEFSH (VTYSH_BGPD, no_match_ecommunity_cmd_vtysh, 
+       "no match extcommunity", 
+       "Negate a command or set its defaults\n"
+       "Match values from routing table\n"
+       "Match BGP/VPN extended community list\n")
 
 DEFSH (VTYSH_OSPF6D, area_import_list_cmd_vtysh, 
        "area A.B.C.D import-list NAME", 
@@ -15083,10 +15333,10 @@ DEFSH (VTYSH_BGPD, no_aggregate_address_mask_summary_as_set_cmd_vtysh,
        "Generate AS set path information\n")
 
 DEFSH (VTYSH_RIPD, no_rip_redistribute_type_routemap_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ospf|isis|bgp|babel)" " route-map WORD", 
+       "no redistribute " "(kernel|connected|static|ospf|isis|bgp|hsls|olsr|batman|babel)" " route-map WORD", 
        "Negate a command or set its defaults\n"
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Pointer to route-map entries\n")
 
@@ -15708,9 +15958,9 @@ DEFSH (VTYSH_OSPF6D, no_debug_ospf6_brouter_area_cmd_vtysh,
       )
 
 DEFSH (VTYSH_BGPD, bgp_redistribute_ipv4_rmap_metric_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|ospf|isis|babel)" " route-map WORD metric <0-4294967295>", 
+       "redistribute " "(kernel|connected|static|rip|ospf|isis|hsls|olsr|batman|babel)" " route-map WORD metric <0-4294967295>", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Route map reference\n"
        "Pointer to route-map entries\n"
        "Metric for redistributed routes\n"
@@ -15790,9 +16040,9 @@ DEFSH (VTYSH_BGPD, neighbor_disable_connected_check_cmd_vtysh,
        "one-hop away EBGP peer using loopback address\n")
 
 DEFSH (VTYSH_OSPFD, ospf_redistribute_source_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|isis|bgp|babel)", 
+       "redistribute " "(kernel|connected|static|rip|isis|bgp|hsls|olsr|batman|babel)", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n")
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_RIPD, debug_rip_events_cmd_vtysh, 
        "debug rip events", 
@@ -15824,6 +16074,13 @@ DEFSH (VTYSH_OSPFD, show_mpls_te_link_cmd_vtysh,
        "MPLS-TE information\n"
        "Interface information\n"
        "Interface name\n")
+
+DEFSH (VTYSH_ZEBRA, no_ipv6_nd_mtu_cmd_vtysh, 
+       "no ipv6 nd mtu", 
+       "Negate a command or set its defaults\n"
+       "Interface IPv6 config commands\n"
+       "Neighbor discovery\n"
+       "Advertised MTU\n")
 
 DEFSH (VTYSH_OSPFD, ip_ospf_priority_addr_cmd_vtysh, 
        "ip ospf priority <0-255> A.B.C.D", 
@@ -15993,6 +16250,14 @@ DEFSH (VTYSH_ZEBRA, ip_address_label_cmd_vtysh,
        "Label of this address\n"
        "Label\n")
 
+DEFSH (VTYSH_BABELD, show_babel_neighbour_cmd_vtysh, 
+       "show babel neighbour [INTERFACE]", 
+       "Show running system information\n"
+       "IP information\n"
+       "Babel information\n"
+       "Print neighbours\n"
+       "Interface name\n")
+
 DEFSH (VTYSH_BGPD, bgp_damp_unset_cmd_vtysh, 
        "no bgp dampening", 
        "Negate a command or set its defaults\n"
@@ -16047,6 +16312,10 @@ DEFSH (VTYSH_BGPD, clear_bgp_ipv6_peer_group_in_cmd_vtysh,
        "Clear all members of peer-group\n"
        "BGP peer-group name\n"
        "Soft reconfig inbound update\n")
+
+DEFSH (VTYSH_BGPD, bgp_pgbgp_unset_cmd_vtysh, 
+       "no bgp pgbgp\n", 
+       "BGP specific commands\n")
 
 DEFSH (VTYSH_BGPD, clear_bgp_all_in_cmd_vtysh, 
        "clear bgp * in", 
@@ -16350,12 +16619,6 @@ DEFSH (VTYSH_OSPFD, no_ip_ospf_authentication_key_cmd_vtysh,
        "OSPF interface commands\n"
        "Authentication password (key)\n")
 
-DEFSH (VTYSH_OSPF6D, ospf6_redistribute_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|ripng|isis|bgp|babel)", 
-       "Redistribute\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
-      )
-
 DEFSH (VTYSH_RIPNGD|VTYSH_OSPF6D|VTYSH_BGPD|VTYSH_ZEBRA, ipv6_prefix_list_le_ge_cmd_vtysh, 
        "ipv6 prefix-list WORD (deny|permit) X:X::X:X/M le <0-128> ge <0-128>", 
        "IPv6 information\n"
@@ -16374,6 +16637,12 @@ DEFSH (VTYSH_BGPD, bgp_cluster_id_cmd_vtysh,
        "BGP information\n"
        "Configure Route-Reflector Cluster-id\n"
        "Route-Reflector Cluster-id in IP address format\n")
+
+DEFSH (VTYSH_OSPF6D, ospf6_redistribute_cmd_vtysh, 
+       "redistribute " "(kernel|connected|static|ripng|isis|bgp|hsls|olsr|batman|babel)", 
+       "Redistribute\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+      )
 
 DEFSH (VTYSH_BGPD, clear_ip_bgp_all_ipv4_soft_out_cmd_vtysh, 
        "clear ip bgp * ipv4 (unicast|multicast) soft out", 
@@ -16404,18 +16673,18 @@ DEFSH (VTYSH_BGPD, set_ecommunity_soo_cmd_vtysh,
        "Site-of-Origin extended community\n"
        "VPN extended community\n")
 
-DEFSH (VTYSH_BGPD, bgp_redistribute_ipv4_metric_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|ospf|isis|babel)" " metric <0-4294967295>", 
-       "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
-       "Metric for redistributed routes\n"
-       "Default metric\n")
-
 DEFSH (VTYSH_ISISD, area_passwd_clear_cmd_vtysh, 
        "area-password clear WORD", 
        "Configure the authentication password for an area\n"
        "Authentication type\n"
        "Area password\n")
+
+DEFSH (VTYSH_BGPD, bgp_redistribute_ipv4_metric_cmd_vtysh, 
+       "redistribute " "(kernel|connected|static|rip|ospf|isis|hsls|olsr|batman|babel)" " metric <0-4294967295>", 
+       "Redistribute information from another routing protocol\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+       "Metric for redistributed routes\n"
+       "Default metric\n")
 
 DEFSH (VTYSH_BGPD, clear_bgp_instance_all_cmd_vtysh, 
        "clear bgp view WORD *", 
@@ -16543,10 +16812,10 @@ DEFSH (VTYSH_BGPD, aggregate_address_mask_summary_as_set_cmd_vtysh,
        "Generate AS set path information\n")
 
 DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv6_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ripng|ospf6|isis|babel)", 
+       "no redistribute " "(kernel|connected|static|ripng|ospf6|isis|hsls|olsr|batman|babel)", 
        "Negate a command or set its defaults\n"
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n")
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol next-generation (IPv6) (RIPng)\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_OSPFD, ip_ospf_cost_u32_cmd_vtysh, 
        "ip ospf cost <1-65535>", 
@@ -16668,20 +16937,26 @@ DEFSH (VTYSH_ALL, ipv6_access_list_remark_cmd_vtysh,
        "Access list entry comment\n"
        "Comment up to 100 characters\n")
 
-DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv4_metric_rmap_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|rip|ospf|isis|babel)" " metric <0-4294967295> route-map WORD", 
-       "Negate a command or set its defaults\n"
-       "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
-       "Metric for redistributed routes\n"
-       "Default metric\n"
-       "Route map reference\n"
-       "Pointer to route-map entries\n")
+DEFSH (VTYSH_BABELD, babel_set_update_interval_cmd_vtysh, 
+       "babel update-interval <20-655340>", 
+       "Babel interface commands\n"
+       "Time between scheduled updates\n"
+       "Milliseconds\n")
 
 DEFSH (VTYSH_ZEBRA, show_table_cmd_vtysh, 
        "show table", 
        "Show running system information\n"
        "default routing table to use for all clients\n")
+
+DEFSH (VTYSH_BGPD, no_bgp_redistribute_ipv4_metric_rmap_cmd_vtysh, 
+       "no redistribute " "(kernel|connected|static|rip|ospf|isis|hsls|olsr|batman|babel)" " metric <0-4294967295> route-map WORD", 
+       "Negate a command or set its defaults\n"
+       "Redistribute information from another routing protocol\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+       "Metric for redistributed routes\n"
+       "Default metric\n"
+       "Route map reference\n"
+       "Pointer to route-map entries\n")
 
 DEFSH (VTYSH_ISISD, no_isis_metric_arg_cmd_vtysh, 
        "no isis metric <0-16777215>", 
@@ -16714,26 +16989,20 @@ DEFSH (VTYSH_ZEBRA, show_ip_forwarding_cmd_vtysh,
        "IP information\n"
        "IP forwarding status\n")
 
+DEFSH (VTYSH_RIPNGD, no_ripng_redistribute_type_metric_routemap_cmd_vtysh, 
+       "no redistribute " "(kernel|connected|static|ospf6|isis|bgp|hsls|olsr|batman|babel)" " metric <0-16> route-map WORD", 
+       "Negate a command or set its defaults\n"
+       "Redistribute\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
+       "Route map reference\n"
+       "Pointer to route-map entries\n")
+
 DEFSH (VTYSH_ZEBRA, show_ip_route_protocol_cmd_vtysh, 
-       "show ip route (bgp|connected|isis|kernel|ospf|rip|static)", 
+       "show ip route " "(kernel|connected|static|rip|ospf|isis|bgp|hsls|olsr|batman|babel)", 
        "Show running system information\n"
        "IP information\n"
        "IP routing table\n"
-       "Border Gateway Protocol (BGP)\n"
-       "Connected\n"
-       "ISO IS-IS (ISIS)\n"
-       "Kernel\n"
-       "Open Shortest Path First (OSPF)\n"
-       "Routing Information Protocol (RIP)\n"
-       "Static routes\n")
-
-DEFSH (VTYSH_RIPNGD, no_ripng_redistribute_type_metric_routemap_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ospf6|isis|bgp|babel)" " metric <0-16> route-map WORD", 
-       "Negate a command or set its defaults\n"
-       "Redistribute\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (IPv6) (OSPFv3)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
-       "Route map reference\n"
-       "Pointer to route-map entries\n")
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n")
 
 DEFSH (VTYSH_BGPD, show_bgp_rsclient_cmd_vtysh, 
        "show bgp rsclient (A.B.C.D|X:X::X:X)", 
@@ -16924,10 +17193,10 @@ DEFSH (VTYSH_BGPD, show_ip_bgp_instance_rsclient_summary_cmd_vtysh,
        "Summary of all Route Server Clients\n")
 
 DEFSH (VTYSH_RIPD, no_rip_redistribute_type_metric_cmd_vtysh, 
-       "no redistribute " "(kernel|connected|static|ospf|isis|bgp|babel)" " metric <0-16>", 
+       "no redistribute " "(kernel|connected|static|ospf|isis|bgp|hsls|olsr|batman|babel)" " metric <0-16>", 
        "Negate a command or set its defaults\n"
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Border Gateway Protocol (BGP)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric\n"
        "Metric value\n")
 
@@ -17043,9 +17312,9 @@ DEFSH (VTYSH_BGPD, no_bgp_timers_cmd_vtysh,
        "BGP timers\n")
 
 DEFSH (VTYSH_BGPD, bgp_redistribute_ipv4_metric_rmap_cmd_vtysh, 
-       "redistribute " "(kernel|connected|static|rip|ospf|isis|babel)" " metric <0-4294967295> route-map WORD", 
+       "redistribute " "(kernel|connected|static|rip|ospf|isis|hsls|olsr|batman|babel)" " metric <0-4294967295> route-map WORD", 
        "Redistribute information from another routing protocol\n"
-       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Babel routing protocol (Babel)\n"
+       "Kernel routes (not installed via the zebra RIB)\n" "Connected routes (directly attached subnet or host)\n" "Statically configured routes\n" "Routing Information Protocol (RIP)\n" "Open Shortest Path First (OSPFv2)\n" "Intermediate System to Intermediate System (IS-IS)\n" "Hazy-Sighted Link State Protocol (HSLS)\n" "Optimized Link State Routing (OLSR)\n" "Better Approach to Mobile Ad-Hoc Networking (BATMAN)\n" "Babel routing protocol (Babel)\n"
        "Metric for redistributed routes\n"
        "Default metric\n"
        "Route map reference\n"
@@ -17090,6 +17359,7 @@ vtysh_init_cmd ()
 {
   install_element (CONFIG_NODE, &no_debug_zebra_rib_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_activate_cmd_vtysh);
+  install_element (ENABLE_NODE, &debug_babel_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_rip_authentication_string_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_attr_unchanged4_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_attr_unchanged4_cmd_vtysh);
@@ -17102,7 +17372,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_bgp_ipv6_safi_rsclient_prefix_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_prefix_list_sequence_number_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_ripng_split_horizon_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &bgp_redistribute_ipv6_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &ipv6_aggregate_address_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_instance_neighbors_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_isis_spftrigg_cmd_vtysh);
@@ -17110,6 +17379,7 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_type_id_router_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ipv6_access_list_all_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_max_metric_router_lsa_startup_cmd_vtysh);
+  install_element (INTERFACE_NODE, &ipv6_nd_reachable_time_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_view_ipv6_prefix_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_prefix_list_prefix_longer_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_cmd_vtysh);
@@ -17165,7 +17435,6 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &no_neighbor_override_capability_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_network_mask_natural_route_map_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_hello_interval_cmd_vtysh);
-  install_element (RIP_NODE, &rip_redistribute_type_metric_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_group_in_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_bgp_route_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_ip_bgp_instance_ipv4_summary_cmd_vtysh);
@@ -17184,6 +17453,7 @@ vtysh_init_cmd ()
   install_element (OSPF_NODE, &no_ospf_timers_throttle_spf_cmd_vtysh);
   install_element (ISIS_NODE, &no_set_overload_bit_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_ospf_database_type_id_self_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_ip_bgp_anomalous_paths_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_vpnv4_soft_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_maximum_prefix_val_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_send_community_type_cmd_vtysh);
@@ -17198,6 +17468,8 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &bgp_cluster_id_cmd_vtysh);
   install_element (ISIS_NODE, &max_lsp_lifetime_l1_cmd_vtysh);
   install_element (CONFIG_NODE, &ipv6_route_ifname_flags_pref_cmd_vtysh);
+  install_element (INTERFACE_NODE, &ipv6_nd_ra_interval_cmd_vtysh);
+  install_element (INTERFACE_NODE, &babel_set_hello_interval_cmd_vtysh);
   install_element (KEYCHAIN_KEY_NODE, &no_key_cmd_vtysh);
   install_element (RIP_NODE, &no_rip_distance_source_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_prefix_list_cmd_vtysh);
@@ -17210,6 +17482,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_bgp_view_ipv6_cmd_vtysh);
   install_element (OSPF_NODE, &capability_opaque_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_forwarding_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_babel_parameters_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_neighbor_attr_unchanged6_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_origin_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_maximum_prefix_threshold_warning_cmd_vtysh);
@@ -17223,9 +17496,11 @@ vtysh_init_cmd ()
   install_element (RESTRICTED_NODE, &show_ip_bgp_summary_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_mbgp_community2_exact_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_shutdown_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_babel_neighbour_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_memory_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_view_afi_safi_community_all_cmd_vtysh);
   install_element (RMAP_NODE, &match_tag_cmd_vtysh);
+  install_element (INTERFACE_NODE, &ipv6_nd_ra_interval_msec_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_area_filter_list_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_view_neighbor_received_routes_cmd_vtysh);
@@ -17252,12 +17527,14 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ip_bgp_view_cmd_vtysh);
   install_element (CONFIG_NODE, &access_list_extended_host_mask_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_zebra_packet_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_distribute_list_out_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_bestpath_aspath_confed_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_rip_split_horizon_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_prefix_list_ge_le_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_id_cmd_vtysh);
   install_element (CONFIG_NODE, &access_list_extended_host_any_cmd_vtysh);
   install_element (BGP_NODE, &no_aggregate_address_mask_as_set_cmd_vtysh);
+  install_element (CONFIG_NODE, &no_debug_babel_cmd_vtysh);
   install_element (BGP_NODE, &bgp_deterministic_med_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_route_map_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_id_detail_cmd_vtysh);
@@ -17306,6 +17583,7 @@ vtysh_init_cmd ()
   install_element (ISIS_NODE, &set_overload_bit_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_ecommunity_soo_val_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_ipv4_community_all_cmd_vtysh);
+  install_element (RIP_NODE, &rip_redistribute_type_cmd_vtysh);
   install_element (ISIS_NODE, &no_lsp_gen_interval_l1_cmd_vtysh);
   install_element (BGP_NODE, &bgp_network_mask_backdoor_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_multicast_cmd_vtysh);
@@ -17376,29 +17654,31 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_bgp_route_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_linkstate_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_community_list_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ip_bgp_pgbgp_neighbors_all_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_hello_padding_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_hello_interval_l1_arg_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_community_list_standard_all_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_distance_ospf_intra_inter_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_summary_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_view_rsclient_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_redistribute_source_type_routemap_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_prefix_list_seq_le_ge_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_distance2_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_summary_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_view_ipv6_neighbor_received_routes_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ip_bgp_pgbgp_cmd_vtysh);
   install_element (INTERFACE_NODE, &linkdetect_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_neighbor_distribute_list_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_rsclient_summary_cmd_vtysh);
   install_element (RIPNG_NODE, &no_ripng_offset_list_ifname_cmd_vtysh);
-  install_element (RIP_NODE, &no_rip_redistribute_type_metric_routemap_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &neighbor_attr_unchanged5_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_aggregate_address_summary_as_set_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_soft_reconfiguration_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ipv6_mroute_cmd_vtysh);
   install_element (ISIS_NODE, &no_spf_interval_l2_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &neighbor_filter_list_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_bgp_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_ipv6_safi_rsclient_route_cmd_vtysh);
+  install_element (INTERFACE_NODE, &babel_set_wireless_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_vpnv4_all_summary_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_as_in_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_prefix_list_seq_ge_cmd_vtysh);
@@ -17418,6 +17698,7 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4M_NODE, &aggregate_address_mask_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_vpnv4_rd_neighbors_cmd_vtysh);
   install_element (RMAP_NODE, &match_aspath_cmd_vtysh);
+  install_element (RESTRICTED_NODE, &show_ip_bgp_pgbgp_origins_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_isis_neighbor_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf6_asbr_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_all_vpnv4_soft_in_cmd_vtysh);
@@ -17453,7 +17734,6 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &no_ipv6_prefix_list_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &neighbor_nexthop_self_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_natural_cmd_vtysh);
-  install_element (INTERFACE_NODE, &ipv6_nd_ra_interval_msec_cmd_vtysh);
   install_element (CONFIG_NODE, &ipv6_route_ifname_flags_cmd_vtysh);
   install_element (BGP_NODE, &aggregate_address_mask_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_prefix_list_summary_name_cmd_vtysh);
@@ -17514,7 +17794,6 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &bgp_network_backdoor_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_route_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_ebgp_multihop_cmd_vtysh);
-  install_element (RIPNG_NODE, &no_ripng_redistribute_type_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_area_nssa_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_community2_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_instance_ipv6_neighbors_peer_cmd_vtysh);
@@ -17530,6 +17809,7 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_community_list_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_isis_adj_cmd_vtysh);
   install_element (RMAP_NODE, &set_src_cmd_vtysh);
+  install_element (CONFIG_NODE, &debug_babel_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_remove_private_as_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_area_range_cost_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_update_source_cmd_vtysh);
@@ -17547,7 +17827,6 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &ip_ospf_network_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_view_ipv6_neighbor_received_routes_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf6_spf_process_cmd_vtysh);
-  install_element (OSPF_NODE, &no_ospf_distribute_list_out_cmd_vtysh);
   install_element (ISIS_NODE, &lsp_refresh_interval_cmd_vtysh);
   install_element (ENABLE_NODE, &ipv6_bgp_neighbor_routes_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ospf_cost_u32_cmd_vtysh);
@@ -17560,7 +17839,6 @@ vtysh_init_cmd ()
   install_element (OSPF_NODE, &ospf_area_stub_no_summary_cmd_vtysh);
   install_element (RMAP_NODE, &rmap_onmatch_next_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_port_val_cmd_vtysh);
-  install_element (RIP_NODE, &no_rip_redistribute_type_routemap_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_attr_unchanged10_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ipv6_nd_managed_config_flag_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_redistribute_cmd_vtysh);
@@ -17575,6 +17853,7 @@ vtysh_init_cmd ()
   install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_route_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_address_label_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_view_neighbor_advertised_route_cmd_vtysh);
+  install_element (VIEW_NODE, &show_babel_database_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ripng_events_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_route_type_detail_cmd_vtysh);
   install_element (CONFIG_NODE, &no_router_ospf_cmd_vtysh);
@@ -17593,7 +17872,6 @@ vtysh_init_cmd ()
   install_element (BGP_IPV6_NODE, &neighbor_filter_list_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_zebra_events_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_id_router_detail_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_redistribute_source_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_neighbor_routes_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_irdp_address_preference_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_distance_cmd_vtysh);
@@ -17614,6 +17892,7 @@ vtysh_init_cmd ()
   install_element (OSPF_NODE, &ospf_area_vlink_authtype_args_authkey_cmd_vtysh);
   install_element (RMAP_NODE, &no_match_peer_val_cmd_vtysh);
   install_element (ISIS_NODE, &no_metric_style_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_babel_database_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_csnp_interval_l1_arg_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_route_prefix_longer_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_description_cmd_vtysh);
@@ -17662,11 +17941,13 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_summary_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_community_all_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_isis_lupd_cmd_vtysh);
+  install_element (OSPF_NODE, &no_ospf_redistribute_source_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_area_range_cost_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_community4_cmd_vtysh);
   install_element (KEYCHAIN_KEY_NODE, &send_lifetime_month_day_day_month_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_ospf6_brouter_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_dampened_paths_cmd_vtysh);
+  install_element (ENABLE_NODE, &no_debug_babel_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf_nssa_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_in_prefix_filter_cmd_vtysh);
   install_element (CONFIG_NODE, &router_id_cmd_vtysh);
@@ -17692,6 +17973,7 @@ vtysh_init_cmd ()
   install_element (BGP_VPNV4_NODE, &no_neighbor_remove_private_as_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_ipv6_route_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_distance_ospf_inter_intra_external_cmd_vtysh);
+  install_element (BGP_NODE, &bgp_redistribute_ipv4_metric_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_rsclient_summary_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_peer_group_in_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_default_originate_cmd_vtysh);
@@ -17721,6 +18003,7 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_adv_router_linkstate_id_detail_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_route_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_as_path_all_cmd_vtysh);
+  install_element (BGP_IPV6_NODE, &bgp_redistribute_ipv6_metric_rmap_cmd_vtysh);
   install_element (VIEW_NODE, &show_hostname_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_ospf_database_type_id_adv_router_cmd_vtysh);
   install_element (CONFIG_NODE, &access_list_remark_cmd_vtysh);
@@ -17730,7 +18013,9 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &no_bgp_network_mask_backdoor_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_zebra_rib_q_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ipv6_prefix_list_ge_cmd_vtysh);
+  install_element (INTERFACE_NODE, &no_ipv6_nd_ra_interval_msec_val_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_prefix_list_le_cmd_vtysh);
+  install_element (VIEW_NODE, &show_babel_interface_cmd_vtysh);
   install_element (BGP_NODE, &bgp_distance_cmd_vtysh);
   install_element (BGP_NODE, &aggregate_address_summary_as_set_cmd_vtysh);
   install_element (OSPF6_NODE, &no_area_filter_list_cmd_vtysh);
@@ -17773,8 +18058,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ip_bgp_community3_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_all_in_prefix_filter_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_bgp_keepalive_cmd_vtysh);
-  install_element (INTERFACE_NODE, &ipv6_nd_ra_lifetime_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_redistribute_source_type_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_ospf_cost_u32_inet4_cmd_vtysh);
   install_element (INTERFACE_NODE, &psnp_interval_l1_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_neighbor_allowas_in_cmd_vtysh);
@@ -17783,6 +18066,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ip_route_prefix_longer_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_maxpaths_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_distance_source_access_list_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_redistribute_source_metric_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_distance_ospf_intra_external_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_bgp_as4_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_type_adv_router_cmd_vtysh);
@@ -17847,6 +18131,7 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &aggregate_address_as_set_summary_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &no_neighbor_attr_unchanged10_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_route_cmd_vtysh);
+  install_element (INTERFACE_NODE, &ipv6_nd_homeagent_preference_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_timers_connect_val_cmd_vtysh);
   install_element (BGP_NODE, &bgp_default_ipv4_unicast_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_scan_time_val_cmd_vtysh);
@@ -17899,6 +18184,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_soft_out_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_zebra_packet_direct_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_distance_ospf_external_cmd_vtysh);
+  install_element (BGP_NODE, &bgp_redistribute_ipv4_rmap_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_view_rsclient_prefix_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &neighbor_maximum_prefix_warning_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_log_adjacency_changes_detail_cmd_vtysh);
@@ -17941,7 +18227,9 @@ vtysh_init_cmd ()
   install_element (OSPF_NODE, &ospf_default_information_originate_always_type_metric_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_bgp_community4_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_community2_cmd_vtysh);
+  install_element (RIP_NODE, &rip_redistribute_type_metric_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_peer_group_in_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_ip_bgp_pgbgp_neighbors_all_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_area_range_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_external_cmd_vtysh);
   install_element (CONFIG_NODE, &dump_bgp_routes_cmd_vtysh);
@@ -17959,7 +18247,6 @@ vtysh_init_cmd ()
   install_element (BGP_VPNV4_NODE, &no_neighbor_maximum_prefix_warning_cmd_vtysh);
   install_element (ISIS_NODE, &no_spf_interval_arg_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_community2_cmd_vtysh);
-  install_element (RIPNG_NODE, &no_ripng_redistribute_type_metric_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_attr_unchanged2_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_ospf_hello_interval_cmd_vtysh);
   install_element (VIEW_NODE, &show_zebra_cmd_vtysh);
@@ -17979,9 +18266,11 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &no_bgp_timers_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_community3_exact_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_zebra_events_cmd_vtysh);
+  install_element (BABEL_NODE, &no_babel_redistribute_type_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_distance_ospf_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_route_map_cmd_vtysh);
   install_element (KEYCHAIN_KEY_NODE, &accept_lifetime_duration_day_month_cmd_vtysh);
+  install_element (INTERFACE_NODE, &no_ipv6_nd_router_preference_val_cmd_vtysh);
   install_element (RIP_NODE, &rip_network_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_ipv6_prefix_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_community2_exact_cmd_vtysh);
@@ -18008,8 +18297,9 @@ vtysh_init_cmd ()
   install_element (RMAP_NODE, &no_set_ip_nexthop_val_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_ipv6_cmd_vtysh);
   install_element (ISIS_NODE, &no_max_lsp_lifetime_l1_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &no_bgp_redistribute_ipv6_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_neighbor_attr_unchanged5_cmd_vtysh);
+  install_element (OSPF6_NODE, &ospf6_redistribute_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ip_bgp_anomalous_paths_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_bgp_filter_cmd_vtysh);
   install_element (RIP_NODE, &rip_timers_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_rip_authentication_key_chain_cmd_vtysh);
@@ -18023,6 +18313,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ipv6_mbgp_community_exact_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_remove_private_as_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_maximum_prefix_threshold_restart_cmd_vtysh);
+  install_element (INTERFACE_NODE, &ipv6_nd_homeagent_lifetime_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_nd_prefix_noval_noauto_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_bgp_update_direct_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_type_id_detail_cmd_vtysh);
@@ -18041,7 +18332,7 @@ vtysh_init_cmd ()
   install_element (RMAP_NODE, &match_ip_address_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_ospf6_interface_cmd_vtysh);
-  install_element (RIPNG_NODE, &ripng_redistribute_type_routemap_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_ipv6_mroute_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_type_id_self_originated_detail_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_external_soft_cmd_vtysh);
   install_element (ISIS_NODE, &no_spf_interval_l1_arg_cmd_vtysh);
@@ -18059,7 +18350,6 @@ vtysh_init_cmd ()
   install_element (BGP_IPV6M_NODE, &no_neighbor_default_originate_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_view_afi_safi_neighbor_adv_recd_routes_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_default_metric_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_redistribute_source_routemap_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_community_none_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_aggregate_address_mask_summary_as_set_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_bgp_community4_cmd_vtysh);
@@ -18089,9 +18379,11 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &bgp_damp_set3_cmd_vtysh);
   install_element (RMAP_NODE, &no_match_pathlimit_as_val_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_route_reflector_client_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_ip_bgp_pgbgp_origins_all_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_rsclient_prefix_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_vpnv4_nexthop_val_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_attr_unchanged2_cmd_vtysh);
+  install_element (BGP_IPV6_NODE, &bgp_redistribute_ipv6_rmap_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_address_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_rip_events_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_group_ipv4_in_cmd_vtysh);
@@ -18111,6 +18403,7 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &debug_isis_rtevents_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_attr_unchanged6_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_attr_unchanged5_cmd_vtysh);
+  install_element (INTERFACE_NODE, &no_ipv6_nd_mtu_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_aggregate_address_as_set_summary_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_ospf_nsm_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf_packet_send_recv_cmd_vtysh);
@@ -18150,6 +18443,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &undebug_bgp_filter_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_prefix_list_detail_name_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_vpnv4_rd_cmd_vtysh);
+  install_element (INTERFACE_NODE, &no_ipv6_nd_homeagent_preference_val_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_irdp_minadvertinterval_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_border_routers_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_prefix_list_cmd_vtysh);
@@ -18172,12 +18466,12 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &no_debug_ospf_zebra_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_as_in_prefix_filter_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_bgp_network_route_map_cmd_vtysh);
-  install_element (OSPF_NODE, &no_ospf_redistribute_source_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_ipv4_safi_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_attr_info_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_instance_ipv4_summary_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_neighbor_soft_reconfiguration_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_bgp_filter_cmd_vtysh);
+  install_element (RIPNG_NODE, &ripng_redistribute_type_metric_routemap_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_all_vpnv4_out_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf_ism_sub_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_ospf_transmit_delay_addr_cmd_vtysh);
@@ -18195,13 +18489,14 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &ip_ospf_transmit_delay_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_allowas_in_arg_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_zebra_kernel_cmd_vtysh);
+  install_element (BGP_NODE, &bgp_redistribute_ipv4_rmap_metric_cmd_vtysh);
+  install_element (INTERFACE_NODE, &babel_set_wired_cmd_vtysh);
   install_element (VIEW_NODE, &clear_isis_neighbor_arg_cmd_vtysh);
   install_element (BGP_NODE, &bgp_network_mask_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_out_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_instance_all_rsclient_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_route_server_client_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_router_detail_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_redistribute_source_metric_type_routemap_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_rip_send_version_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_router_id_val_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_zebra_packet_cmd_vtysh);
@@ -18222,6 +18517,7 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4M_NODE, &neighbor_allowas_in_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_prefix_list_detail_name_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_network_import_check_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_redistribute_source_type_metric_routemap_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_prefix_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_forwarding_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_instance_neighbors_peer_cmd_vtysh);
@@ -18236,7 +18532,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &clear_ip_bgp_external_ipv4_soft_in_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &no_neighbor_attr_unchanged6_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_ipv4_community4_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &no_bgp_redistribute_ipv6_metric_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_vpnv4_rd_prefix_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_instance_neighbors_peer_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_interface_ifname_prefix_detail_cmd_vtysh);
@@ -18246,24 +18541,26 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ip_bgp_ipv4_neighbor_prefix_counts_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_mbgp_community4_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_ospf_retransmit_interval_addr_cmd_vtysh);
+  install_element (BGP_NODE, &no_bgp_redistribute_ipv4_metric_rmap_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &no_neighbor_nexthop_self_cmd_vtysh);
   install_element (RMAP_NODE, &no_match_tag_val_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &bgp_redistribute_ipv6_metric_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_statistics_view_vpnv4_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_dampening_address_mask_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_ospf6_neighbor_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &no_neighbor_send_community_cmd_vtysh);
+  install_element (INTERFACE_NODE, &babel_split_horizon_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_ospf6_spf_database_cmd_vtysh);
   install_element (ENABLE_NODE, &show_database_detail_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_mbgp_prefix_list_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_type_self_originated_cmd_vtysh);
-  install_element (RIPNG_NODE, &no_ripng_redistribute_type_metric_routemap_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_attr_unchanged3_cmd_vtysh);
   install_element (ENABLE_NODE, &undebug_bgp_update_cmd_vtysh);
   install_element (RMAP_NODE, &match_probability_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_network_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &no_neighbor_send_community_type_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_ipv4_filter_list_cmd_vtysh);
+  install_element (VIEW_NODE, &show_babel_parameters_cmd_vtysh);
+  install_element (INTERFACE_NODE, &no_ipv6_nd_homeagent_lifetime_val_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_nd_homeagent_config_flag_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_isis_adj_cmd_vtysh);
   install_element (BGP_NODE, &bgp_distance_source_access_list_cmd_vtysh);
@@ -18278,7 +18575,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &clear_bgp_ipv6_peer_group_soft_in_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_default_information_originate_always_type_metric_routemap_cmd_vtysh);
   install_element (INTERFACE_NODE, &ospf_hello_interval_cmd_vtysh);
-  install_element (BGP_NODE, &bgp_redistribute_ipv4_rmap_metric_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf6_message_cmd_vtysh);
   install_element (VIEW_NODE, &ipv6_mbgp_neighbor_received_routes_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_bgp_maxpaths_arg_cmd_vtysh);
@@ -18296,12 +18592,12 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &ip_irdp_holdtime_cmd_vtysh);
   install_element (ISIS_NODE, &no_lsp_gen_interval_l2_cmd_vtysh);
   install_element (ISIS_NODE, &no_domain_passwd_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &no_bgp_redistribute_ipv6_metric_rmap_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_rsclient_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_community_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_ospf_ism_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_unsuppress_map_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_nd_prefix_val_rev_cmd_vtysh);
+  install_element (RIP_NODE, &no_rip_redistribute_type_routemap_cmd_vtysh);
   install_element (ENABLE_NODE, &show_zebra_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &no_neighbor_unsuppress_map_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &bgp_network_mask_cmd_vtysh);
@@ -18311,13 +18607,16 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &no_ip_prefix_list_description_arg_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_route_map_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_rsclient_route_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_redistribute_source_routemap_cmd_vtysh);
   install_element (ZEBRA_NODE, &redistribute_ospf6_cmd_vtysh);
+  install_element (INTERFACE_NODE, &no_ipv6_nd_ra_lifetime_val_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf_nssa_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_instance_rsclient_summary_cmd_vtysh);
   install_element (RMAP_NODE, &set_ipv6_nexthop_local_cmd_vtysh);
   install_element (RIP_NODE, &no_rip_default_metric_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_attr_unchanged6_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_attr_unchanged1_cmd_vtysh);
+  install_element (RIPNG_NODE, &ripng_redistribute_type_cmd_vtysh);
   install_element (CONFIG_NODE, &ipv6_prefix_list_le_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_view_ipv4_safi_rsclient_prefix_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_ospf6_mtu_ignore_cmd_vtysh);
@@ -18345,6 +18644,7 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &debug_ospf_packet_send_recv_detail_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_instance_all_soft_in_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_view_ipv6_neighbor_damp_cmd_vtysh);
+  install_element (RIPNG_NODE, &no_ripng_redistribute_type_metric_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_community_list_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_bgp_maxpaths_ibgp_arg_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_remove_private_as_cmd_vtysh);
@@ -18352,23 +18652,24 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_isis_interface_detail_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_maximum_prefix_threshold_restart_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_community3_cmd_vtysh);
-  install_element (INTERFACE_NODE, &ipv6_nd_homeagent_lifetime_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_peer_group_soft_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_default_local_preference_cmd_vtysh);
-  install_element (RIPNG_NODE, &ripng_redistribute_type_metric_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_ip_route_protocol_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ripng_packet_direct_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_instance_ipv6_neighbors_peer_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_view_afi_safi_community4_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_as_soft_in_cmd_vtysh);
   install_element (CONFIG_NODE, &access_list_extended_any_mask_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_rip_zebra_cmd_vtysh);
+  install_element (BGP_NODE, &no_bgp_redistribute_ipv4_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_capability_orf_prefix_cmd_vtysh);
   install_element (BGP_NODE, &bgp_network_route_map_cmd_vtysh);
+  install_element (BGP_NODE, &bgp_redistribute_ipv4_metric_rmap_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_isis_spfevents_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &neighbor_attr_unchanged1_cmd_vtysh);
+  install_element (BGP_IPV6_NODE, &no_bgp_redistribute_ipv6_rmap_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_peer_group_out_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_maxpaths_ibgp_cmd_vtysh);
-  install_element (INTERFACE_NODE, &ipv6_nd_ra_interval_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_all_out_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_circuit_type_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_statistics_cmd_vtysh);
@@ -18378,7 +18679,6 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &ospf_authentication_key_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_log_neighbor_changes_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_csnp_interval_cmd_vtysh);
-  install_element (BGP_NODE, &bgp_redistribute_ipv4_rmap_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community3_cmd_vtysh);
   install_element (VIEW_NODE, &show_debugging_zebra_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ipv6_ospf6_advertise_prefix_list_cmd_vtysh);
@@ -18404,7 +18704,9 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &ipv6_nd_prefix_val_offlink_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_view_ipv6_neighbor_received_prefix_filter_cmd_vtysh);
   install_element (RMAP_NODE, &no_match_ip_address_prefix_list_val_cmd_vtysh);
+  install_element (RIP_NODE, &rip_redistribute_type_metric_routemap_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_ip_bgp_view_rsclient_route_cmd_vtysh);
+  install_element (INTERFACE_NODE, &no_ipv6_nd_ra_interval_val_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_area_authentication_message_digest_cmd_vtysh);
   install_element (INTERFACE_NODE, &isis_hello_interval_l2_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_view_route_cmd_vtysh);
@@ -18450,15 +18752,18 @@ vtysh_init_cmd ()
   install_element (OSPF_NODE, &no_ospf_area_authentication_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_ospf_lsa_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_all_vpnv4_soft_cmd_vtysh);
+  install_element (BGP_IPV6_NODE, &no_bgp_redistribute_ipv6_metric_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_external_in_prefix_filter_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &neighbor_route_map_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_rip_packet_direct_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_maximum_prefix_restart_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_attr_unchanged3_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_community_list_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ip_bgp_pgbgp_origins_all_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_instance_ipv4_safi_summary_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_mbgp_community_all_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_prefix_list_detail_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_redistribute_source_type_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_nd_prefix_val_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_remove_private_as_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_ipv4_community_list_cmd_vtysh);
@@ -18477,6 +18782,7 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &bgp_damp_set_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_community_list_standard_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_rsclient_prefix_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_redistribute_source_metric_routemap_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf6_flooding_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_attr_unchanged_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_forwarding_cmd_vtysh);
@@ -18502,6 +18808,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &clear_ip_bgp_as_ipv4_soft_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &aggregate_address_mask_summary_only_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_mbgp_community_list_cmd_vtysh);
+  install_element (BABEL_NODE, &babel_redistribute_type_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_router_id_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_ospf_neighbor_all_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_ecommunity_rt_cmd_vtysh);
@@ -18525,8 +18832,8 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ipv6_bgp_community2_cmd_vtysh);
   install_element (BGP_NODE, &bgp_scan_time_cmd_vtysh);
   install_element (BGP_NODE, &bgp_client_to_client_reflection_cmd_vtysh);
+  install_element (RIP_NODE, &no_rip_redistribute_type_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_cidr_only_cmd_vtysh);
-  install_element (RIPNG_NODE, &no_ripng_redistribute_type_routemap_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_neighbor_attr_unchanged8_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_ospf6_lsa_hex_cmd_vtysh);
   install_element (RMAP_NODE, &set_aggregator_as_cmd_vtysh);
@@ -18549,6 +18856,7 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &no_bgp_config_type_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_passive_interface_addr_cmd_vtysh);
   install_element (ISIS_NODE, &area_passwd_clear_snpauth_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ip_bgp_pgbgp_neighbors_cmd_vtysh);
   install_element (BGP_NODE, &old_ipv6_aggregate_address_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_forwarding_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_view_prefix_cmd_vtysh);
@@ -18593,6 +18901,7 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4_NODE, &no_neighbor_attr_unchanged4_cmd_vtysh);
   install_element (KEYCHAIN_KEY_NODE, &accept_lifetime_duration_month_day_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_deterministic_med_cmd_vtysh);
+  install_element (RIPNG_NODE, &ripng_redistribute_type_metric_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_route_map_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_port_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_all_in_prefix_filter_cmd_vtysh);
@@ -18655,7 +18964,6 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4_NODE, &no_aggregate_address_mask_summary_as_set_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_prefix_list_prefix_first_match_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_view_neighbor_advertised_route_cmd_vtysh);
-  install_element (ENABLE_NODE, &show_ip_route_protocol_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_view_rsclient_route_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_neighbor_maximum_prefix_val_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_password_cmd_vtysh);
@@ -18688,7 +18996,6 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ip_bgp_vpnv4_rd_route_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_rip_status_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &aggregate_address_as_set_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_redistribute_source_metric_routemap_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_view_ipv6_prefix_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_mbgp_community_list_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_external_soft_in_cmd_vtysh);
@@ -18700,6 +19007,7 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4_NODE, &neighbor_remove_private_as_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_area_spf_tree_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_nd_prefix_noval_rtaddr_cmd_vtysh);
+  install_element (INTERFACE_NODE, &no_ipv6_nd_mtu_val_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_maximum_prefix_threshold_warning_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &no_neighbor_maximum_prefix_threshold_restart_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ipv6_route_flags_cmd_vtysh);
@@ -18716,7 +19024,6 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4_NODE, &no_neighbor_soft_reconfiguration_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_priority_l1_arg_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_shutdown_if_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_redistribute_source_metric_type_cmd_vtysh);
   install_element (BGP_NODE, &address_family_ipv6_safi_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community3_exact_cmd_vtysh);
   install_element (ENABLE_NODE, &undebug_bgp_fsm_cmd_vtysh);
@@ -18755,6 +19062,7 @@ vtysh_init_cmd ()
   install_element (RMAP_NODE, &no_set_community_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_isis_events_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_rip_authentication_mode_authlen_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_ip_bgp_pgbgp_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &aggregate_address_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf6_asbr_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &neighbor_distribute_list_cmd_vtysh);
@@ -18802,12 +19110,12 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_bgp_view_ipv4_safi_rsclient_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_password_cmd_vtysh);
   install_element (CONFIG_NODE, &dump_bgp_all_interval_cmd_vtysh);
+  install_element (RIPNG_NODE, &no_ripng_redistribute_type_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_neighbor_attr_unchanged5_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_nexthop_local_unchanged_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_ipv4_safi_rsclient_summary_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_capability_orf_prefix_cmd_vtysh);
   install_element (INTERFACE_NODE, &ospf_dead_interval_cmd_vtysh);
-  install_element (VIEW_NODE, &show_ip_route_protocol_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_default_information_originate_always_metric_type_routemap_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_external_soft_out_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_ospf_authentication_key_addr_cmd_vtysh);
@@ -18854,7 +19162,6 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &no_ip_prefix_list_description_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_peer_soft_in_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ospf_hello_interval_cmd_vtysh);
-  install_element (BGP_NODE, &no_bgp_redistribute_ipv4_metric_rmap_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_rip_packet_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf6_zebra_sendrecv_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_attr_unchanged7_cmd_vtysh);
@@ -18873,7 +19180,6 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ipv6_bgp_prefix_longer_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_redistribute_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_view_ipv4_safi_rsclient_prefix_cmd_vtysh);
-  install_element (BGP_NODE, &no_bgp_redistribute_ipv4_metric_cmd_vtysh);
   install_element (CONFIG_NODE, &no_access_list_any_cmd_vtysh);
   install_element (CONFIG_NODE, &access_list_exact_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf6_brouter_router_cmd_vtysh);
@@ -18901,7 +19207,6 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &no_ipv6_route_flags_pref_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_adv_router_cmd_vtysh);
   install_element (ENABLE_NODE, &show_debugging_cmd_vtysh);
-  install_element (RIPNG_NODE, &ripng_redistribute_type_cmd_vtysh);
   install_element (ENABLE_NODE, &show_version_ospf6_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &no_neighbor_attr_unchanged1_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_protocol_cmd_vtysh);
@@ -18918,12 +19223,10 @@ vtysh_init_cmd ()
   install_element (BGP_VPNV4_NODE, &no_neighbor_attr_unchanged2_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_ipv6_bgp_network_route_map_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_cmd_vtysh);
-  install_element (BGP_NODE, &bgp_redistribute_ipv4_metric_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_self_originated_cmd_vtysh);
   install_element (CONFIG_NODE, &no_router_isis_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_ipv6_safi_route_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_ipv6_neighbor_routes_cmd_vtysh);
-  install_element (RIP_NODE, &rip_redistribute_type_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_area_vlink_authkey_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_ospf_dead_interval_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_atomic_aggregate_cmd_vtysh);
@@ -18937,6 +19240,7 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ip_bgp_neighbor_received_routes_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf_ism_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_max_metric_router_lsa_startup_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_redistribute_source_type_routemap_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_ipv6_community4_cmd_vtysh);
   install_element (INTERFACE_NODE, &csnp_interval_l2_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_neighbor_attr_unchanged8_cmd_vtysh);
@@ -18964,6 +19268,7 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &no_csnp_interval_l1_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_network_area_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_external_in_cmd_vtysh);
+  install_element (INTERFACE_NODE, &ipv6_nd_ra_lifetime_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_area_range_advertise_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_ipv6_safi_rsclient_prefix_cmd_vtysh);
   install_element (CONFIG_NODE, &dump_bgp_all_cmd_vtysh);
@@ -18973,20 +19278,17 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &debug_ospf6_lsa_hex_cmd_vtysh);
   install_element (ENABLE_NODE, &show_isis_neighbor_arg_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_ipv6_summary_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &bgp_redistribute_ipv6_rmap_metric_cmd_vtysh);
   install_element (ISIS_NODE, &no_spf_interval_l1_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_route_prefix_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_ospf6_neighbor_detail_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_mbgp_prefix_list_cmd_vtysh);
   install_element (RMAP_NODE, &set_tag_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_neighbor_flap_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &bgp_redistribute_ipv6_rmap_cmd_vtysh);
   install_element (ISIS_NODE, &metric_style_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_log_adjacency_changes_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_type_adv_router_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_attr_unchanged1_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_instance_all_soft_in_cmd_vtysh);
-  install_element (RIP_NODE, &no_rip_redistribute_type_metric_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_extcommunity_list_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &no_neighbor_distribute_list_cmd_vtysh);
   install_element (RMAP_NODE, &no_match_interface_val_cmd_vtysh);
@@ -19005,6 +19307,7 @@ vtysh_init_cmd ()
   install_element (OSPF_NODE, &ospf_area_nssa_translate_no_summary_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &aggregate_address_mask_summary_as_set_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_ipv6_community2_exact_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_ipv6_route_protocol_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_dampening_prefix_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_view_prefix_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_area_vlink_cmd_vtysh);
@@ -19024,6 +19327,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ipv6_mbgp_community3_exact_cmd_vtysh);
   install_element (ENABLE_NODE, &show_interface_desc_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_ospf_route_cmd_vtysh);
+  install_element (BGP_IPV6_NODE, &bgp_redistribute_ipv6_metric_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_ip_bgp_rsclient_prefix_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_mbgp_prefix_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_ipv6_neighbor_routes_cmd_vtysh);
@@ -19035,13 +19339,14 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &ip_ospf_transmit_delay_addr_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_ospf_cost_u32_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_area_vlink_cmd_vtysh);
+  install_element (BGP_NODE, &bgp_pgbgp_arg_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_peer_group_remote_as_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_as_soft_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_ospf_database_type_id_adv_router_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_view_neighbor_received_prefix_filter_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_community_val_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_as_ipv4_in_cmd_vtysh);
-  install_element (VIEW_NODE, &show_ipv6_route_protocol_cmd_vtysh);
+  install_element (OSPF6_NODE, &no_ospf6_redistribute_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_max_metric_router_lsa_admin_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_unsuppress_map_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_type_id_router_detail_cmd_vtysh);
@@ -19049,10 +19354,11 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &no_ip_rip_receive_version_cmd_vtysh);
   install_element (RMAP_NODE, &set_aspath_prepend_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_aggregate_address_mask_summary_only_cmd_vtysh);
-  install_element (BGP_NODE, &no_bgp_redistribute_ipv4_cmd_vtysh);
+  install_element (CONFIG_NODE, &no_router_babel_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_weight_val_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_hello_multiplier_l2_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_zebra_packet_cmd_vtysh);
+  install_element (RIP_NODE, &no_rip_redistribute_type_metric_routemap_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &neighbor_soft_reconfiguration_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_maximum_prefix_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_route_mask_distance_cmd_vtysh);
@@ -19063,6 +19369,7 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &no_ip_extcommunity_list_expanded_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &no_neighbor_maximum_prefix_threshold_warning_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_isis_csum_cmd_vtysh);
+  install_element (BGP_IPV6_NODE, &bgp_redistribute_ipv6_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_ip_bgp_vpnv4_all_summary_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_bgp_filter_list_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_linkstate_id_cmd_vtysh);
@@ -19079,6 +19386,7 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &no_ipv6_access_list_any_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_ipv4_prefix_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_remove_private_as_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_redistribute_source_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_route_mask_flags_distance2_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_as_out_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_peer_soft_out_cmd_vtysh);
@@ -19099,6 +19407,7 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_isis_neighbor_arg_cmd_vtysh);
   install_element (CONFIG_NODE, &ipv6_prefix_list_ge_le_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_id_cmd_vtysh);
+  install_element (RESTRICTED_NODE, &show_ip_bgp_pgbgp_neighbors_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_send_community_type_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_type_self_originated_linkstate_id_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_route_match_cmd_vtysh);
@@ -19116,7 +19425,6 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &neighbor_description_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &aggregate_address_summary_only_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &no_neighbor_attr_unchanged4_cmd_vtysh);
-  install_element (RIP_NODE, &no_rip_redistribute_type_cmd_vtysh);
   install_element (ISIS_NODE, &log_adj_changes_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_isis_spfstats_cmd_vtysh);
   install_element (OSPF6_NODE, &area_export_list_cmd_vtysh);
@@ -19153,6 +19461,7 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ipv6_ospf6_linkstate_router_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_ipv6_prefix_list_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_distance_ospf_intra_inter_external_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_redistribute_source_metric_type_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_as_out_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf6_neighbor_detail_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_peer_group_soft_cmd_vtysh);
@@ -19171,6 +19480,7 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &no_psnp_interval_l2_arg_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_ospf_neighbor_detail_all_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_ospf_database_type_self_cmd_vtysh);
+  install_element (RESTRICTED_NODE, &show_ip_bgp_pgbgp_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_extcommunity_list_name_expanded_all_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_peer_soft_cmd_vtysh);
   install_element (RMAP_NODE, &match_community_exact_cmd_vtysh);
@@ -19210,9 +19520,8 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ipv6_prefix_list_prefix_first_match_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_default_information_originate_metric_type_cmd_vtysh);
   install_element (BGP_NODE, &bgp_distance_source_cmd_vtysh);
-  install_element (BGP_NODE, &bgp_redistribute_ipv4_cmd_vtysh);
-  install_element (ENABLE_NODE, &show_bgp_ipv6_community_list_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf_lsa_sub_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_bgp_ipv6_community_list_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &bgp_network_cmd_vtysh);
   install_element (OSPF_NODE, &mpls_te_router_addr_cmd_vtysh);
   install_element (RMAP_NODE, &match_ip_next_hop_prefix_list_cmd_vtysh);
@@ -19228,15 +19537,14 @@ vtysh_init_cmd ()
   install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_rsclient_summary_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_hello_multiplier_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &neighbor_allowas_in_cmd_vtysh);
-  install_element (BGP_NODE, &no_bgp_redistribute_ipv4_rmap_metric_cmd_vtysh);
   install_element (VTY_NODE, &exec_timeout_sec_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_attr_unchanged8_cmd_vtysh);
   install_element (CONFIG_NODE, &no_access_list_extended_host_host_cmd_vtysh);
   install_element (VIEW_NODE, &show_database_detail_arg_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_soft_reconfiguration_cmd_vtysh);
   install_element (OSPF_NODE, &no_ospf_area_range_advertise_cost_cmd_vtysh);
-  install_element (ENABLE_NODE, &debug_ospf_ism_sub_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf_zebra_sub_cmd_vtysh);
+  install_element (ENABLE_NODE, &debug_ospf_ism_sub_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_maximum_prefix_val_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_prefix_list_summary_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_ospf_retransmit_interval_cmd_vtysh);
@@ -19270,7 +19578,6 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &no_debug_bgp_fsm_cmd_vtysh);
   install_element (CONFIG_NODE, &bgp_multiple_instance_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_prefix_list_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &no_bgp_redistribute_ipv6_rmap_metric_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_prefix_list_seq_le_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_route_match_detail_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_type_linkstate_id_detail_cmd_vtysh);
@@ -19303,6 +19610,7 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &no_bgp_confederation_identifier_arg_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_attr_unchanged4_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_community3_exact_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_ip_bgp_pgbgp_neighbors_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_scan_time_cmd_vtysh);
   install_element (OSPF6_NODE, &area_filter_list_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_rip_authentication_string2_cmd_vtysh);
@@ -19339,10 +19647,9 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ip_bgp_summary_cmd_vtysh);
   install_element (VIEW_NODE, &show_isis_neighbor_cmd_vtysh);
   install_element (VTY_NODE, &vty_ipv6_access_class_cmd_vtysh);
-  install_element (RIP_NODE, &rip_redistribute_type_routemap_cmd_vtysh);
   install_element (BGP_NODE, &bgp_bestpath_med3_cmd_vtysh);
-  install_element (OSPF6_NODE, &ospf6_redistribute_routemap_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_flap_route_map_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ip_bgp_pgbgp_origins_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_simulate_spf_tree_root_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_vpnv4_rd_route_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_instance_neighbors_peer_cmd_vtysh);
@@ -19361,9 +19668,9 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &clear_bgp_as_out_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_ip_bgp_vpnv4_rd_route_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_ospf_packet_send_recv_detail_cmd_vtysh);
+  install_element (RMAP_NODE, &no_set_metric_type_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_pathlimit_ttl_val_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_extcommunity_list_arg_cmd_vtysh);
-  install_element (RMAP_NODE, &no_set_metric_type_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_isis_err_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_ospf6_asbr_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_ospf_message_digest_key_addr_cmd_vtysh);
@@ -19447,6 +19754,7 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &no_isis_metric_l1_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_distance_ospf_external_intra_cmd_vtysh);
   install_element (INTERFACE_NODE, &isis_priority_cmd_vtysh);
+  install_element (INTERFACE_NODE, &no_ipv6_nd_reachable_time_val_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_type_self_originated_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_flap_statistics_cmd_vtysh);
   install_element (RMAP_NODE, &set_ipv6_nexthop_global_cmd_vtysh);
@@ -19468,6 +19776,7 @@ vtysh_init_cmd ()
   install_element (CONFIG_NODE, &ipv6_route_flags_pref_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &aggregate_address_as_set_summary_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_instance_ipv4_summary_cmd_vtysh);
+  install_element (BGP_IPV6_NODE, &no_bgp_redistribute_ipv6_rmap_metric_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_group_soft_in_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ripng_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_maximum_prefix_threshold_cmd_vtysh);
@@ -19487,6 +19796,7 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4_NODE, &neighbor_attr_unchanged7_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_ipv4_route_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf_lsa_sub_cmd_vtysh);
+  install_element (BGP_IPV6_NODE, &bgp_redistribute_ipv6_rmap_metric_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &neighbor_set_peer_group_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ipv6_prefix_list_name_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_external_ipv4_soft_cmd_vtysh);
@@ -19505,6 +19815,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &clear_bgp_ipv6_all_soft_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_instance_neighbors_peer_cmd_vtysh);
   install_element (KEYCHAIN_NODE, &no_key_chain_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_redistribute_source_type_metric_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_route_mask_flags_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_ospf6_retransmitinterval_cmd_vtysh);
   install_element (ENABLE_NODE, &show_isis_summary_cmd_vtysh);
@@ -19542,7 +19853,9 @@ vtysh_init_cmd ()
   install_element (RESTRICTED_NODE, &show_bgp_view_prefix_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_view_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &neighbor_attr_unchanged3_cmd_vtysh);
+  install_element (BABEL_NODE, &babel_network_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_enforce_first_as_cmd_vtysh);
+  install_element (BGP_NODE, &bgp_pgbgp_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &no_neighbor_send_community_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_prefix_list_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_prefix_list_summary_cmd_vtysh);
@@ -19568,13 +19881,13 @@ vtysh_init_cmd ()
   install_element (BGP_NODE, &no_bgp_bestpath_aspath_ignore_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_external_in_prefix_filter_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_community2_cmd_vtysh);
-  install_element (RIPNG_NODE, &ripng_redistribute_type_metric_routemap_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_rip_authentication_string_cmd_vtysh);
   install_element (RMAP_NODE, &set_ip_nexthop_peer_cmd_vtysh);
   install_element (VIEW_NODE, &show_debugging_ripng_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_vpnv4_all_neighbor_advertised_routes_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_ospf_database_type_id_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_network_mask_natural_backdoor_cmd_vtysh);
+  install_element (BGP_IPV6_NODE, &no_bgp_redistribute_ipv6_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_prefix_list_seq_ge_le_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &neighbor_attr_unchanged2_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_ipv6_community_exact_cmd_vtysh);
@@ -19591,25 +19904,23 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4_NODE, &no_aggregate_address_mask_as_set_summary_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_distance_ospf_inter_external_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_statistics_view_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_redistribute_source_metric_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ipv6_access_list_remark_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &aggregate_address_mask_as_set_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_router_isis_cmd_vtysh);
+  install_element (RIP_NODE, &rip_redistribute_type_routemap_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_ipv6_nexthop_global_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf6_abr_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_instance_rsclient_summary_cmd_vtysh);
   install_element (RIP_NODE, &no_rip_passive_interface_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_type_adv_router_linkstate_id_cmd_vtysh);
   install_element (CONFIG_NODE, &access_list_standard_nomask_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_distribute_list_out_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_redistribute_source_type_metric_cmd_vtysh);
   install_element (RIPNG_NODE, &ripng_passive_interface_cmd_vtysh);
   install_element (ENABLE_NODE, &ipv6_bgp_neighbor_advertised_route_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_hello_multiplier_l1_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_isis_events_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_maximum_prefix_restart_cmd_vtysh);
-  install_element (RMAP_NODE, &no_match_metric_val_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf_zebra_cmd_vtysh);
+  install_element (RMAP_NODE, &no_match_metric_val_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_ipv6_community4_exact_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &bgp_network_mask_route_map_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_interface_ifname_cmd_vtysh);
@@ -19623,7 +19934,6 @@ vtysh_init_cmd ()
   install_element (BGP_IPV6_NODE, &neighbor_attr_unchanged8_cmd_vtysh);
   install_element (RIP_NODE, &rip_offset_list_ifname_cmd_vtysh);
   install_element (OSPF_NODE, &mpls_te_on_cmd_vtysh);
-  install_element (OSPF6_NODE, &no_ospf6_redistribute_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &aggregate_address_mask_as_set_cmd_vtysh);
   install_element (CONFIG_NODE, &no_router_bgp_view_cmd_vtysh);
   install_element (BGP_NODE, &no_bgp_default_ipv4_unicast_cmd_vtysh);
@@ -19659,6 +19969,7 @@ vtysh_init_cmd ()
   install_element (OSPF_NODE, &ospf_distance_ospf_inter_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ripng_zebra_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_timers_connect_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ipv6_route_protocol_cmd_vtysh);
   install_element (ENABLE_NODE, &show_database_detail_arg_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_ospf_priority_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf_nsm_sub_cmd_vtysh);
@@ -19670,10 +19981,10 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &ospf_priority_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_priority_l1_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_bandwidth_if_val_cmd_vtysh);
+  install_element (BGP_NODE, &bgp_redistribute_ipv4_cmd_vtysh);
   install_element (RIPNG_NODE, &ripng_offset_list_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_ospf_authentication_key_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &aggregate_address_as_set_cmd_vtysh);
-  install_element (RIP_NODE, &rip_redistribute_type_metric_routemap_cmd_vtysh);
   install_element (CONFIG_NODE, &no_bgp_multiple_instance_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_send_community_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_type_cmd_vtysh);
@@ -19706,6 +20017,7 @@ vtysh_init_cmd ()
   install_element (RMAP_NODE, &no_match_ip_next_hop_cmd_vtysh);
   install_element (ENABLE_NODE, &show_database_arg_detail_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_external_out_cmd_vtysh);
+  install_element (VIEW_NODE, &show_babel_neighbour_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_ospf6_zebra_sendrecv_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_default_information_originate_routemap_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ospf_authentication_key_cmd_vtysh);
@@ -19721,6 +20033,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ipv6_access_list_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_route_detail_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ipv6_prefix_list_ge_le_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_ip_bgp_pgbgp_origins_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf_ism_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ipv6_nd_homeagent_lifetime_cmd_vtysh);
   install_element (ISIS_NODE, &no_lsp_refresh_interval_l1_arg_cmd_vtysh);
@@ -19767,6 +20080,7 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_bgp_ipv6_neighbor_received_routes_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_rsclient_summary_cmd_vtysh);
   install_element (BGP_NODE, &bgp_confederation_identifier_cmd_vtysh);
+  install_element (OSPF6_NODE, &ospf6_redistribute_routemap_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_weight_val_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_ipv6_neighbors_peer_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ip_ospf_authentication_addr_cmd_vtysh);
@@ -19787,7 +20101,6 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &clear_ip_bgp_instance_all_soft_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_external_in_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf6_zebra_cmd_vtysh);
-  install_element (INTERFACE_NODE, &ipv6_nd_reachable_time_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_neighbor_flap_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_isis_spfstats_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_route_server_client_cmd_vtysh);
@@ -19824,12 +20137,14 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ip_bgp_neighbors_peer_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_max_metric_router_lsa_admin_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_all_rsclient_cmd_vtysh);
+  install_element (OSPF_NODE, &no_ospf_distribute_list_out_cmd_vtysh);
   install_element (VIEW_NODE, &show_database_detail_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_ospf6_brouter_area_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_bgp_prefix_list_cmd_vtysh);
   install_element (RIP_NODE, &rip_neighbor_cmd_vtysh);
   install_element (RMAP_NODE, &no_rmap_call_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_cmd_vtysh);
+  install_element (BABEL_NODE, &babel_set_resend_delay_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_type_id_self_originated_detail_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_vpnv4_rd_neighbor_routes_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_isis_csum_cmd_vtysh);
@@ -19860,16 +20175,21 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4M_NODE, &neighbor_filter_list_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_ipv4_safi_rsclient_route_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_neighbor_attr_unchanged7_cmd_vtysh);
+  install_element (BGP_NODE, &no_bgp_redistribute_ipv4_metric_cmd_vtysh);
   install_element (CONFIG_NODE, &ipv6_route_ifname_pref_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_bgp_community4_exact_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_all_soft_in_cmd_vtysh);
   install_element (RMAP_NODE, &match_community_cmd_vtysh);
+  install_element (BGP_NODE, &no_bgp_redistribute_ipv4_rmap_metric_cmd_vtysh);
+  install_element (RIPNG_NODE, &ripng_redistribute_type_routemap_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_ospf_neighbor_detail_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_router_detail_cmd_vtysh);
+  install_element (BABEL_NODE, &no_babel_network_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ripng_packet_direct_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_flap_prefix_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_peer_out_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ipv6_nd_adv_interval_config_option_cmd_vtysh);
+  install_element (BGP_NODE, &bgp_pgbgp_unset_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_ipv6_external_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_ipv6_nd_other_config_flag_cmd_vtysh);
   install_element (RMAP_NODE, &no_rmap_continue_cmd_vtysh);
@@ -19878,16 +20198,19 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ip_prefix_list_name_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_community_all_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_spf_tree_cmd_vtysh);
+  install_element (OSPF_NODE, &ospf_redistribute_source_metric_type_routemap_cmd_vtysh);
   install_element (CONFIG_NODE, &ipv6_route_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_ipv4_in_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_peer_group_ipv4_out_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_weight_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_isis_err_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_view_ipv6_neighbor_flap_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ip_route_protocol_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_neighbor_filter_list_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &no_neighbor_attr_unchanged3_cmd_vtysh);
   install_element (VIEW_NODE, &show_bgp_ipv6_prefix_longer_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_route_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_babel_interface_cmd_vtysh);
   install_element (ENABLE_NODE, &show_bgp_route_map_cmd_vtysh);
   install_element (BGP_IPV6_NODE, &no_neighbor_route_reflector_client_cmd_vtysh);
   install_element (CONFIG_NODE, &no_debug_ospf_packet_send_recv_detail_cmd_vtysh);
@@ -19922,11 +20245,11 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ip_bgp_vpnv4_rd_neighbor_advertised_routes_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_prefix_list_prefix_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_interface_prefix_detail_cmd_vtysh);
+  install_element (RIPNG_NODE, &no_ripng_redistribute_type_routemap_cmd_vtysh);
   install_element (OSPF6_NODE, &ospf6_router_id_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_default_information_originate_always_type_routemap_cmd_vtysh);
   install_element (BGP_NODE, &bgp_router_id_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_mbgp_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &bgp_redistribute_ipv6_metric_rmap_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &no_neighbor_route_server_client_cmd_vtysh);
   install_element (CONFIG_NODE, &no_ip_extcommunity_list_name_expanded_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_neighbor_activate_cmd_vtysh);
@@ -19962,10 +20285,12 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &no_debug_isis_err_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_route_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_nd_other_config_flag_cmd_vtysh);
+  install_element (INTERFACE_NODE, &ipv6_nd_mtu_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_ospf_packet_send_recv_cmd_vtysh);
   install_element (RIP_NODE, &no_rip_distance_source_access_list_cmd_vtysh);
+  install_element (ENABLE_NODE, &show_ip_mroute_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &neighbor_attr_unchanged_cmd_vtysh);
-  install_element (BGP_IPV6_NODE, &no_bgp_redistribute_ipv6_rmap_cmd_vtysh);
+  install_element (BGP_IPV6_NODE, &no_bgp_redistribute_ipv6_metric_rmap_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_passive_interface_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &neighbor_attr_unchanged7_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_ospf_neighbor_int_cmd_vtysh);
@@ -19974,7 +20299,6 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_ipv6_mbgp_community4_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_bgp_peer_soft_in_cmd_vtysh);
   install_element (INTERFACE_NODE, &psnp_interval_cmd_vtysh);
-  install_element (INTERFACE_NODE, &ipv6_nd_homeagent_preference_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_community_delete_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_type_self_originated_linkstate_id_cmd_vtysh);
   install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community2_exact_cmd_vtysh);
@@ -19984,7 +20308,6 @@ vtysh_init_cmd ()
   install_element (RMAP_NODE, &no_set_tag_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_ospf6_database_type_detail_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_mbgp_filter_list_cmd_vtysh);
-  install_element (ENABLE_NODE, &show_ipv6_route_protocol_cmd_vtysh);
   install_element (CONFIG_NODE, &service_advanced_vty_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_area_vlink_authtype_md5_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_access_list_cmd_vtysh);
@@ -19994,11 +20317,13 @@ vtysh_init_cmd ()
   install_element (RMAP_NODE, &no_set_src_cmd_vtysh);
   install_element (ENABLE_NODE, &no_debug_ospf6_message_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &neighbor_maximum_prefix_threshold_cmd_vtysh);
+  install_element (INTERFACE_NODE, &babel_set_update_interval_cmd_vtysh);
   install_element (BGP_NODE, &no_aggregate_address_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_prefix_longer_cmd_vtysh);
   install_element (ENABLE_NODE, &debug_ospf6_message_sendrecv_cmd_vtysh);
   install_element (RIP_NODE, &no_if_rmap_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_default_originate_cmd_vtysh);
+  install_element (INTERFACE_NODE, &no_babel_split_horizon_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_ospf_dead_interval_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_bgp_community2_cmd_vtysh);
   install_element (ENABLE_NODE, &undebug_bgp_zebra_cmd_vtysh);
@@ -20013,6 +20338,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &debug_ospf6_flooding_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_local_pref_cmd_vtysh);
   install_element (ISIS_NODE, &no_spf_interval_l2_arg_cmd_vtysh);
+  install_element (VIEW_NODE, &show_ip_mroute_cmd_vtysh);
   install_element (VIEW_NODE, &show_ipv6_ospf6_database_type_linkstate_id_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_bgp_community2_exact_cmd_vtysh);
   install_element (CONFIG_NODE, &ip_prefix_list_seq_ge_cmd_vtysh);
@@ -20030,7 +20356,6 @@ vtysh_init_cmd ()
   install_element (INTERFACE_NODE, &no_ip_rip_authentication_mode_cmd_vtysh);
   install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_route_map_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &no_neighbor_distribute_list_cmd_vtysh);
-  install_element (BGP_NODE, &no_bgp_redistribute_ipv4_rmap_cmd_vtysh);
   install_element (BGP_IPV6M_NODE, &neighbor_allowas_in_arg_cmd_vtysh);
   install_element (CONFIG_NODE, &debug_ospf_nsm_cmd_vtysh);
   install_element (INTERFACE_NODE, &ip_irdp_preference_cmd_vtysh);
@@ -20055,7 +20380,6 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_bgp_prefix_longer_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_hello_multiplier_l1_arg_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_mbgp_community3_cmd_vtysh);
-  install_element (OSPF6_NODE, &ospf6_redistribute_cmd_vtysh);
   install_element (BGP_VPNV4_NODE, &neighbor_soft_reconfiguration_cmd_vtysh);
   install_element (ISIS_NODE, &domain_passwd_md5_cmd_vtysh);
   install_element (BGP_NODE, &no_neighbor_timers_cmd_vtysh);
@@ -20079,6 +20403,7 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4_NODE, &no_neighbor_send_community_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ipv6_bgp_prefix_longer_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_external_ipv4_in_cmd_vtysh);
+  install_element (RIPNG_NODE, &no_ripng_redistribute_type_metric_routemap_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_network_area_cmd_vtysh);
   install_element (ENABLE_NODE, &ipv6_mbgp_neighbor_received_routes_cmd_vtysh);
   install_element (KEYCHAIN_KEY_NODE, &no_key_chain_cmd_vtysh);
@@ -20089,6 +20414,7 @@ vtysh_init_cmd ()
   install_element (BGP_IPV4_NODE, &no_neighbor_unsuppress_map_cmd_vtysh);
   install_element (BGP_IPV4_NODE, &no_bgp_network_mask_route_map_cmd_vtysh);
   install_element (INTERFACE_NODE, &no_isis_metric_arg_cmd_vtysh);
+  install_element (BGP_NODE, &no_bgp_redistribute_ipv4_rmap_cmd_vtysh);
   install_element (ISIS_NODE, &no_lsp_refresh_interval_l1_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_protocol_cmd_vtysh);
   install_element (RMAP_NODE, &no_set_vpnv4_nexthop_cmd_vtysh);
@@ -20143,10 +20469,8 @@ vtysh_init_cmd ()
   install_element (VIEW_NODE, &show_bgp_ipv6_community_all_cmd_vtysh);
   install_element (ENABLE_NODE, &clear_ip_bgp_all_ipv4_soft_in_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_nd_managed_config_flag_cmd_vtysh);
-  install_element (OSPF_NODE, &ospf_redistribute_source_type_metric_routemap_cmd_vtysh);
   install_element (INTERFACE_NODE, &ipv6_ospf6_advertise_prefix_list_cmd_vtysh);
   install_element (RMAP_NODE, &no_match_metric_cmd_vtysh);
-  install_element (BGP_NODE, &bgp_redistribute_ipv4_metric_rmap_cmd_vtysh);
   install_element (CONFIG_NODE, &no_key_chain_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_flap_route_map_cmd_vtysh);
   install_element (BGP_NODE, &neighbor_remote_as_cmd_vtysh);
@@ -20173,6 +20497,7 @@ vtysh_init_cmd ()
   install_element (ENABLE_NODE, &show_ip_as_path_access_list_all_cmd_vtysh);
   install_element (OSPF_NODE, &ospf_neighbor_poll_interval_priority_cmd_vtysh);
   install_element (OSPF_NODE, &no_mpls_te_cmd_vtysh);
+  install_element (RIP_NODE, &no_rip_redistribute_type_metric_cmd_vtysh);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_cidr_only_cmd_vtysh);
   install_element (ENABLE_NODE, &show_ip_bgp_instance_ipv4_rsclient_summary_cmd_vtysh);
   install_element (RMAP_NODE, &no_rmap_description_cmd_vtysh);
