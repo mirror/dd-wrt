@@ -21,39 +21,39 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_MYSQL
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_MYSQL
 
-static void ipoque_int_mysql_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct)
+static void ndpi_int_mysql_add_connection(struct ndpi_detection_module_struct
+											*ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_MYSQL, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_MYSQL, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_mysql_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_mysql_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (packet->payload_packet_len > 37	//min length
-		&& get_u16(packet->payload, 0) == packet->payload_packet_len - 4	//first 3 bytes are length
-		&& get_u8(packet->payload, 2) == 0x00	//3rd byte of packet length
-		&& get_u8(packet->payload, 3) == 0x00	//packet sequence number is 0 for startup packet
-		&& get_u8(packet->payload, 5) > 0x30	//server version > 0
-		&& get_u8(packet->payload, 5) < 0x37	//server version < 7
-		&& get_u8(packet->payload, 6) == 0x2e	//dot
+		&& get_u_int16_t(packet->payload, 0) == packet->payload_packet_len - 4	//first 3 bytes are length
+		&& get_u_int8_t(packet->payload, 2) == 0x00	//3rd byte of packet length
+		&& get_u_int8_t(packet->payload, 3) == 0x00	//packet sequence number is 0 for startup packet
+		&& get_u_int8_t(packet->payload, 5) > 0x30	//server version > 0
+		&& get_u_int8_t(packet->payload, 5) < 0x37	//server version < 7
+		&& get_u_int8_t(packet->payload, 6) == 0x2e	//dot
 		) {
-		u32 a;
+		u_int32_t a;
 		for (a = 7; a + 31 < packet->payload_packet_len; a++) {
 			if (packet->payload[a] == 0x00) {
-				if (get_u8(packet->payload, a + 13) == 0x00	//filler byte
-					&& get_u64(packet->payload, a + 19) == 0x0ULL	//13 more
-					&& get_u32(packet->payload, a + 27) == 0x0	//filler bytes
-					&& get_u8(packet->payload, a + 31) == 0x0) {
-					IPQ_LOG(IPOQUE_PROTOCOL_MYSQL, ipoque_struct, IPQ_LOG_DEBUG, "MySQL detected.\n");
-					ipoque_int_mysql_add_connection(ipoque_struct);
+				if (get_u_int8_t(packet->payload, a + 13) == 0x00	//filler byte
+					&& get_u_int64_t(packet->payload, a + 19) == 0x0ULL	//13 more
+					&& get_u_int32_t(packet->payload, a + 27) == 0x0	//filler bytes
+					&& get_u_int8_t(packet->payload, a + 31) == 0x0) {
+					NDPI_LOG(NDPI_PROTOCOL_MYSQL, ndpi_struct, NDPI_LOG_DEBUG, "MySQL detected.\n");
+					ndpi_int_mysql_add_connection(ndpi_struct, flow);
 					return;
 				}
 				break;
@@ -61,7 +61,7 @@ static void ipoque_search_mysql_tcp(struct ipoque_detection_module_struct *ipoqu
 		}
 	}
 
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_MYSQL);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_MYSQL);
 
 }
 

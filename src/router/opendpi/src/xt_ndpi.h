@@ -1,8 +1,9 @@
 /* 
- * xt_opendpi.h
- * Copyright (C) 2010 Gerardo E. Gidoni <gerel@gnu.org>
+ * xt_ndpi.h
+ * Copyright (C) 2010-2012 G. Elian Gidoni <geg@gnu.org>
+ *               2012 Ed Wildgoose <lists@wildgooses.com>
  * 
- * This file is part of OpenDPI, an open source deep packet inspection
+ * This file is part of nDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
  * 
  * This program is free software; you can redistribute it and/or
@@ -19,14 +20,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#ifndef _LINUX_NETFILTER_XT_OPENDPI_H
-#define _LINUX_NETFILTER_XT_OPENDPI_H 1
+#ifndef _LINUX_NETFILTER_XT_NDPI_H
+#define _LINUX_NETFILTER_XT_NDPI_H 1
 
 #include <linux/netfilter.h>
-#include "ipq_api.h"
+#include "ndpi_main.h"
 
-struct xt_opendpi_mtinfo {
-        IPOQUE_PROTOCOL_BITMASK flags;
+struct xt_ndpi_mtinfo {
+        NDPI_PROTOCOL_BITMASK flags;
 };
 
-#endif /* _LINUX_NETFILTER_XT_OPENDPI_H */
+#endif /* _LINUX_NETFILTER_XT_NDPI_H */

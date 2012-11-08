@@ -21,34 +21,34 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_OPENFT
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_OPENFT
 
-static void ipoque_int_openft_add_connection(struct ipoque_detection_module_struct
-											 *ipoque_struct)
+static void ndpi_int_openft_add_connection(struct ndpi_detection_module_struct
+											 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_OPENFT, IPOQUE_CORRELATED_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_OPENFT, NDPI_CORRELATED_PROTOCOL);
 }
 
-static void ipoque_search_openft_tcp(struct ipoque_detection_module_struct
-							  *ipoque_struct)
+static void ndpi_search_openft_tcp(struct ndpi_detection_module_struct
+							  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (packet->payload_packet_len > 5 && memcmp(packet->payload, "GET /", 5) == 0) {
-		IPQ_LOG(IPOQUE_PROTOCOL_OPENFT, ipoque_struct, IPQ_LOG_DEBUG, "HTTP packet detected.\n");
-		ipq_parse_packet_line_info(ipoque_struct);
+		NDPI_LOG(NDPI_PROTOCOL_OPENFT, ndpi_struct, NDPI_LOG_DEBUG, "HTTP packet detected.\n");
+		ndpi_parse_packet_line_info(ndpi_struct, flow);
 		if (packet->parsed_lines >= 2
-			&& packet->line[1].len > 13 && ipq_mem_cmp(packet->line[1].ptr, "X-OpenftAlias:", 14) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_OPENFT, ipoque_struct, IPQ_LOG_DEBUG, "OpenFT detected.\n");
-			ipoque_int_openft_add_connection(ipoque_struct);
+			&& packet->line[1].len > 13 && ndpi_mem_cmp(packet->line[1].ptr, "X-OpenftAlias:", 14) == 0) {
+			NDPI_LOG(NDPI_PROTOCOL_OPENFT, ndpi_struct, NDPI_LOG_DEBUG, "OpenFT detected.\n");
+			ndpi_int_openft_add_connection(ndpi_struct, flow);
 			return;
 		}
 	}
 
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_OPENFT);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_OPENFT);
 }
 #endif

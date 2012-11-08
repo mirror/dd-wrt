@@ -18,20 +18,20 @@
  */
 
 
-#include "ipq_utils.h"
+#include "ndpi_utils.h"
 
-#ifdef NTOP_PROTOCOL_DCERPC
+#ifdef NDPI_PROTOCOL_DCERPC
 
-static void ntop_int_dcerpc_add_connection(struct ipoque_detection_module_struct
-					     *ipoque_struct)
+static void ndpi_int_dcerpc_add_connection(struct ndpi_detection_module_struct
+					     *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ipoque_int_add_connection(ipoque_struct, NTOP_PROTOCOL_DCERPC, IPOQUE_REAL_PROTOCOL);
+  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_DCERPC, NDPI_REAL_PROTOCOL);
 }
 
-static void ntop_search_dcerpc(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_dcerpc(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-  struct ipoque_flow_struct *flow = ipoque_struct->flow;
+  struct ndpi_packet_struct *packet = &flow->packet;
+  
 
   if((packet->tcp != NULL) 
      && (packet->payload_packet_len > 64) 
@@ -39,12 +39,12 @@ static void ntop_search_dcerpc(struct ipoque_detection_module_struct *ipoque_str
      && (packet->payload[0] == 0x05) /* version 5 */
      && (packet->payload[2] < 16) /* Packet type */
      ) {	 
-    IPQ_LOG(IPOQUE_PROTOCOL_DCERPC, ipoque_struct, IPQ_LOG_DEBUG, "DCERPC match\n");	  
-    ntop_int_dcerpc_add_connection(ipoque_struct);
+    NDPI_LOG(NDPI_PROTOCOL_DCERPC, ndpi_struct, NDPI_LOG_DEBUG, "DCERPC match\n");	  
+    ndpi_int_dcerpc_add_connection(ndpi_struct, flow);
     return;
   }
 
-  IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NTOP_PROTOCOL_DCERPC);
+  NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_DCERPC);
 }
 
 #endif

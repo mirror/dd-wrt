@@ -21,36 +21,35 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_APPLEJUICE
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_APPLEJUICE
 
 
-static void ipoque_int_applejuice_add_connection(struct ipoque_detection_module_struct
-												 *ipoque_struct)
+static void ndpi_int_applejuice_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
+					       struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_APPLEJUICE, IPOQUE_REAL_PROTOCOL);
+  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_APPLEJUICE, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_applejuice_tcp(struct ipoque_detection_module_struct
-								  *ipoque_struct)
+static void ndpi_search_applejuice_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+				struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_APPLEJUICE, ipoque_struct, IPQ_LOG_DEBUG, "search applejuice.\n");
+	NDPI_LOG(NDPI_PROTOCOL_APPLEJUICE, ndpi_struct, NDPI_LOG_DEBUG, "search applejuice.\n");
 
 	if ((packet->payload_packet_len > 7) && (packet->payload[6] == 0x0d)
 		&& (packet->payload[7] == 0x0a)
-		&& (ipq_mem_cmp(packet->payload, "ajprot", 6) == 0)) {
-		IPQ_LOG(IPOQUE_PROTOCOL_APPLEJUICE, ipoque_struct, IPQ_LOG_DEBUG, "detected applejuice.\n");
-		ipoque_int_applejuice_add_connection(ipoque_struct);
+		&& (ndpi_mem_cmp(packet->payload, "ajprot", 6) == 0)) {
+		NDPI_LOG(NDPI_PROTOCOL_APPLEJUICE, ndpi_struct, NDPI_LOG_DEBUG, "detected applejuice.\n");
+		ndpi_int_applejuice_add_connection(ndpi_struct, flow);
 		return;
 	}
 
-	IPQ_LOG(IPOQUE_PROTOCOL_APPLEJUICE, ipoque_struct, IPQ_LOG_DEBUG, "exclude applejuice.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_APPLEJUICE);
+	NDPI_LOG(NDPI_PROTOCOL_APPLEJUICE, ndpi_struct, NDPI_LOG_DEBUG, "exclude applejuice.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_APPLEJUICE);
 }
 
 #endif

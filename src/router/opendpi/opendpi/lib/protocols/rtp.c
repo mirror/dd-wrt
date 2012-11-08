@@ -21,15 +21,15 @@
  */
 
 
-#include "ipq_utils.h"
-#ifdef IPOQUE_PROTOCOL_RTP
+#include "ndpi_utils.h"
+#ifdef NDPI_PROTOCOL_RTP
 
 #define RTP_MAX_OUT_OF_ORDER 11
 
-static void ipoque_int_rtp_add_connection(struct ipoque_detection_module_struct
-										  *ipoque_struct)
+static void ndpi_int_rtp_add_connection(struct ndpi_detection_module_struct
+										  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_RTP, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_RTP, NDPI_REAL_PROTOCOL);
 }
 
 /*
@@ -48,101 +48,102 @@ static void ipoque_int_rtp_add_connection(struct ipoque_detection_module_struct
  *   0, if it it regarded as belonging to the previous reporting interval
  */
 	
-#if !(defined(HAVE_NTOP) && defined(WIN32))
+#if !defined(WIN32)
  static inline
 #else
 __forceinline static
 #endif
-	 void init_seq(struct ipoque_detection_module_struct *ipoque_struct, struct ipoque_flow_struct *flow,
-							u8 direction, u16 seq, u8 include_current_packet)
+	 void init_seq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow,
+							u_int8_t direction, u_int16_t seq, u_int8_t include_current_packet)
 {
 	flow->rtp_seqnum[direction] = seq;
-	IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "rtp_seqnum[%u] = %u\n", direction, seq);
+	NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "rtp_seqnum[%u] = %u\n", direction, seq);
 }
 
 /* returns difference between old and new highest sequence number */
 	
-#if !(defined(HAVE_NTOP) && defined(WIN32))
+#if !defined(WIN32)
  static inline
 #else
 __forceinline static
 #endif
-	 u16 update_seq(struct ipoque_detection_module_struct *ipoque_struct, struct ipoque_flow_struct *flow,
-							 u8 direction, u16 seq)
+	 u_int16_t update_seq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow,
+							 u_int8_t direction, u_int16_t seq)
 {
-	u16 delta = seq - flow->rtp_seqnum[direction];
+	u_int16_t delta = seq - flow->rtp_seqnum[direction];
 
 
 	if (delta < RTP_MAX_OUT_OF_ORDER) {	/* in order, with permissible gap */
 		flow->rtp_seqnum[direction] = seq;
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "rtp_seqnum[%u] = %u (increased by %u)\n",
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "rtp_seqnum[%u] = %u (increased by %u)\n",
 				direction, seq, delta);
 		return delta;
 	} else {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "retransmission (dir %u, seqnum %u)\n",
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "retransmission (dir %u, seqnum %u)\n",
 				direction, seq);
 		return 0;
 	}
 }
 
 
-static void ipoque_rtp_search(struct ipoque_detection_module_struct *ipoque_struct,
-							  const u8 * payload, const u16 payload_len)
+static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
+			    struct ndpi_flow_struct *flow,
+			    const u_int8_t * payload, const u_int16_t payload_len)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	u8 stage;
-	u16 seqnum = ntohs(get_u16(payload, 2));
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+	u_int8_t stage;
+	u_int16_t seqnum = ntohs(get_u_int16_t(payload, 2));
 
-	IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "search rtp.\n");
+	NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "search rtp.\n");
 
-	if (payload_len == 4 && get_u32(packet->payload, 0) == 0 && flow->packet_counter < 8) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "need next packet, maybe ClearSea out calls.\n");
+	if (payload_len == 4 && get_u_int32_t(packet->payload, 0) == 0 && flow->packet_counter < 8) {
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "need next packet, maybe ClearSea out calls.\n");
 		return;
 	}
 
 	if (payload_len == 5 && memcmp(payload, "hello", 5) == 0) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG,
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
 				"need next packet, initial hello packet of SIP out calls.\n");
 		return;
 	}
 
 	if (payload_len == 1 && payload[0] == 0) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG,
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
 				"need next packet, payload_packet_len == 1 && payload[0] == 0.\n");
 		return;
 	}
 
 	if (payload_len == 3 && memcmp(payload, "png", 3) == 0) {
 		/* weird packet found in Ninja GlobalIP trace */
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "skipping packet with len = 3 and png payload.\n");
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "skipping packet with len = 3 and png payload.\n");
 		return;
 	}
 
 	if (payload_len < 12) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "minimal packet size for rtp packets: 12.\n");
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "minimal packet size for rtp packets: 12.\n");
 		goto exclude_rtp;
 	}
 
-	if (payload_len == 12 && get_u32(payload, 0) == 0 && get_u32(payload, 4) == 0 && get_u32(payload, 8) == 0) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "skipping packet with len = 12 and only 0-bytes.\n");
+	if (payload_len == 12 && get_u_int32_t(payload, 0) == 0 && get_u_int32_t(payload, 4) == 0 && get_u_int32_t(payload, 8) == 0) {
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "skipping packet with len = 12 and only 0-bytes.\n");
 		return;
 	}
 
 	if ((payload[0] & 0xc0) == 0xc0 || (payload[0] & 0xc0) == 0x40 || (payload[0] & 0xc0) == 0x00) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "version = 3 || 1 || 0, maybe first rtp packet.\n");
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "version = 3 || 1 || 0, maybe first rtp packet.\n");
 		return;
 	}
 
 	if ((payload[0] & 0xc0) != 0x80) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct,
-				IPQ_LOG_DEBUG, "rtp version must be 2, first two bits of a packets must be 10.\n");
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct,
+				NDPI_LOG_DEBUG, "rtp version must be 2, first two bits of a packets must be 10.\n");
 		goto exclude_rtp;
 	}
 
 	/* rtp_payload_type are the last seven bits of the second byte */
 	if (flow->rtp_payload_type[packet->packet_direction] != (payload[1] & 0x7F)) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "payload_type has changed, reset stages.\n");
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "payload_type has changed, reset stages.\n");
 		packet->packet_direction == 0 ? (flow->rtp_stage1 = 0) : (flow->rtp_stage2 = 0);
 	}
 	/* first bit of first byte is not part of payload_type */
@@ -151,87 +152,87 @@ static void ipoque_rtp_search(struct ipoque_detection_module_struct *ipoque_stru
 	stage = (packet->packet_direction == 0 ? flow->rtp_stage1 : flow->rtp_stage2);
 
 	if (stage > 0) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct,
-				IPQ_LOG_DEBUG, "stage = %u.\n", packet->packet_direction == 0 ? flow->rtp_stage1 : flow->rtp_stage2);
-		if (flow->rtp_ssid[packet->packet_direction] != get_u32(payload, 8)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "ssid has changed, goto exclude rtp.\n");
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct,
+				NDPI_LOG_DEBUG, "stage = %u.\n", packet->packet_direction == 0 ? flow->rtp_stage1 : flow->rtp_stage2);
+		if (flow->rtp_ssid[packet->packet_direction] != get_u_int32_t(payload, 8)) {
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "ssid has changed, goto exclude rtp.\n");
 			goto exclude_rtp;
 		}
 
 		if (seqnum == flow->rtp_seqnum[packet->packet_direction]) {
-			IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "maybe \"retransmission\", need next packet.\n");
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "maybe \"retransmission\", need next packet.\n");
 			return;
-		} else if ((u16) (seqnum - flow->rtp_seqnum[packet->packet_direction]) < RTP_MAX_OUT_OF_ORDER) {
-			IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG,
+		} else if ((u_int16_t) (seqnum - flow->rtp_seqnum[packet->packet_direction]) < RTP_MAX_OUT_OF_ORDER) {
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
 					"new packet has larger sequence number (within valid range)\n");
-			update_seq(ipoque_struct, flow, packet->packet_direction, seqnum);
-		} else if ((u16) (flow->rtp_seqnum[packet->packet_direction] - seqnum) < RTP_MAX_OUT_OF_ORDER) {
-			IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG,
+			update_seq(ndpi_struct, flow, packet->packet_direction, seqnum);
+		} else if ((u_int16_t) (flow->rtp_seqnum[packet->packet_direction] - seqnum) < RTP_MAX_OUT_OF_ORDER) {
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
 					"new packet has smaller sequence number (within valid range)\n");
-			init_seq(ipoque_struct, flow, packet->packet_direction, seqnum, 1);
+			init_seq(ndpi_struct, flow, packet->packet_direction, seqnum, 1);
 		} else {
-			IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
 					"sequence number diff is too big, goto exclude rtp.\n");
 			goto exclude_rtp;
 		}
 	} else {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct,
-				IPQ_LOG_DEBUG, "rtp_ssid[%u] = %u.\n", packet->packet_direction,
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct,
+				NDPI_LOG_DEBUG, "rtp_ssid[%u] = %u.\n", packet->packet_direction,
 				flow->rtp_ssid[packet->packet_direction]);
-		flow->rtp_ssid[packet->packet_direction] = get_u32(payload, 8);
+		flow->rtp_ssid[packet->packet_direction] = get_u_int32_t(payload, 8);
 		if (flow->packet_counter < 3) {
-			IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "packet_counter < 3, need next packet.\n");
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "packet_counter < 3, need next packet.\n");
 		}
-		init_seq(ipoque_struct, flow, packet->packet_direction, seqnum, 1);
+		init_seq(ndpi_struct, flow, packet->packet_direction, seqnum, 1);
 	}
 	if (seqnum <= 3) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct,
-				IPQ_LOG_DEBUG, "sequence_number = %u, too small, need next packet, return.\n", seqnum);
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct,
+				NDPI_LOG_DEBUG, "sequence_number = %u, too small, need next packet, return.\n", seqnum);
 		return;
 	}
 
 	if (stage == 3) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "add connection I.\n");
-		ipoque_int_rtp_add_connection(ipoque_struct);
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "add connection I.\n");
+		ndpi_int_rtp_add_connection(ndpi_struct, flow);
 	} else {
 		packet->packet_direction == 0 ? flow->rtp_stage1++ : flow->rtp_stage2++;
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "stage[%u]++; need next packet.\n",
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "stage[%u]++; need next packet.\n",
 				packet->packet_direction);
 	}
 	return;
 
   exclude_rtp:
-#ifdef IPOQUE_PROTOCOL_STUN
-	if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_STUN
-		|| packet->real_protocol_read_only == IPOQUE_PROTOCOL_STUN) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "STUN: is detected, need next packet.\n");
+#ifdef NDPI_PROTOCOL_STUN
+	if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STUN
+		|| packet->real_protocol_read_only == NDPI_PROTOCOL_STUN) {
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "STUN: is detected, need next packet.\n");
 		return;
 	}
-#endif							/*  IPOQUE_PROTOCOL_STUN */
-	IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "exclude rtp.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_RTP);
+#endif							/*  NDPI_PROTOCOL_STUN */
+	NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "exclude rtp.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_RTP);
 }
 
 
-static void ipoque_search_rtp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
 
 	if (packet->udp) {
-		ipoque_rtp_search(ipoque_struct, packet->payload, packet->payload_packet_len);
+		ndpi_rtp_search(ndpi_struct, flow, packet->payload, packet->payload_packet_len);
 	} else if (packet->tcp) {
 
 		/* skip special packets seen at yahoo traces */
-		if (packet->payload_packet_len >= 20 && ntohs(get_u16(packet->payload, 2)) + 20 == packet->payload_packet_len &&
+		if (packet->payload_packet_len >= 20 && ntohs(get_u_int16_t(packet->payload, 2)) + 20 == packet->payload_packet_len &&
 			packet->payload[0] == 0x90 && packet->payload[1] >= 0x01 && packet->payload[1] <= 0x07) {
 			if (flow->packet_counter == 2)
 				flow->l4.tcp.rtp_special_packets_seen = 1;
-			IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
 					"skipping STUN-like, special yahoo packets with payload[0] == 0x90.\n");
 			return;
 		}
-#ifdef IPOQUE_PROTOCOL_STUN
+#ifdef NDPI_PROTOCOL_STUN
 		/* TODO the rtp detection sometimes doesn't exclude rtp
 		 * so for TCP flows only run the detection if STUN has been
 		 * detected (or RTP is already detected)
@@ -239,45 +240,45 @@ static void ipoque_search_rtp(struct ipoque_detection_module_struct *ipoque_stru
 		 * we can remove this restriction
 		 */
 
-		if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_STUN
-			|| packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_RTP) {
+		if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STUN
+			|| packet->detected_protocol_stack[0] == NDPI_PROTOCOL_RTP) {
 
 			/* RTP may be encapsulated in TCP packets */
 
-			if (packet->payload_packet_len >= 2 && ntohs(get_u16(packet->payload, 0)) + 2 == packet->payload_packet_len) {
+			if (packet->payload_packet_len >= 2 && ntohs(get_u_int16_t(packet->payload, 0)) + 2 == packet->payload_packet_len) {
 
 				/* TODO there could be several RTP packets in a single TCP packet so maybe the detection could be
 				 * improved by checking only the RTP packet of given length */
 
-				ipoque_rtp_search(ipoque_struct, packet->payload + 2, packet->payload_packet_len - 2);
+				ndpi_rtp_search(ndpi_struct, flow, packet->payload + 2, packet->payload_packet_len - 2);
 
 				return;
 			}
 		}
-		if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_UNKNOWN && flow->l4.tcp.rtp_special_packets_seen == 1) {
+		if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN && flow->l4.tcp.rtp_special_packets_seen == 1) {
 
-			if (packet->payload_packet_len >= 4 && ntohl(get_u32(packet->payload, 0)) + 4 == packet->payload_packet_len) {
+			if (packet->payload_packet_len >= 4 && ntohl(get_u_int32_t(packet->payload, 0)) + 4 == packet->payload_packet_len) {
 
 				/* TODO there could be several RTP packets in a single TCP packet so maybe the detection could be
 				 * improved by checking only the RTP packet of given length */
 
-				ipoque_rtp_search(ipoque_struct, packet->payload + 4, packet->payload_packet_len - 4);
+				ndpi_rtp_search(ndpi_struct, flow, packet->payload + 4, packet->payload_packet_len - 4);
 
 				return;
 			}
 		}
 
-		if (IPQ_FLOW_PROTOCOL_EXCLUDED(ipoque_struct, flow, IPOQUE_PROTOCOL_STUN)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "exclude rtp.\n");
-			IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_RTP);
+		if (NDPI_FLOW_PROTOCOL_EXCLUDED(ndpi_struct, flow, NDPI_PROTOCOL_STUN)) {
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "exclude rtp.\n");
+			NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_RTP);
 		} else {
-			IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "STUN not yet excluded, need next packet.\n");
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "STUN not yet excluded, need next packet.\n");
 		}
 #else
-		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "exclude rtp.\n");
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_RTP);
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "exclude rtp.\n");
+		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_RTP);
 #endif
 	}
 }
 
-#endif							/* IPOQUE_PROTOCOL_RTP */
+#endif							/* NDPI_PROTOCOL_RTP */

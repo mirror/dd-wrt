@@ -21,35 +21,35 @@
  */
 
 
-#include "ipq_protocols.h"
+#include "ndpi_protocols.h"
 
-#ifdef IPOQUE_PROTOCOL_MGCP
+#ifdef NDPI_PROTOCOL_MGCP
 
-static void ipoque_int_mgcp_add_connection(struct ipoque_detection_module_struct
-										   *ipoque_struct)
+static void ndpi_int_mgcp_add_connection(struct ndpi_detection_module_struct
+										   *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_MGCP, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_MGCP, NDPI_REAL_PROTOCOL);
 }
 
 
 	
-#if !(defined(HAVE_NTOP) && defined(WIN32))
+#if !defined(WIN32)
  static inline
 #else
 __forceinline static
 #endif
-	 void ipoque_search_mgcp_connection(struct ipoque_detection_module_struct
-												 *ipoque_struct)
+	 void ndpi_search_mgcp_connection(struct ndpi_detection_module_struct
+												 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	/* information about MGCP taken from http://en.wikipedia.org/wiki/MGCP */
 
-	u16 pos = 4;
+	u_int16_t pos = 4;
 
 	if (packet->payload_packet_len < 8) {
 		goto mgcp_excluded;
@@ -57,7 +57,7 @@ __forceinline static
 
 	/* packet must end with 0x0d0a or with 0x0a */
 	if (packet->payload[packet->payload_packet_len - 1] != 0x0a
-		&& get_u16(packet->payload, packet->payload_packet_len - 2) != htons(0x0d0a)) {
+		&& get_u_int16_t(packet->payload, packet->payload_packet_len - 2) != htons(0x0d0a)) {
 		goto mgcp_excluded;
 	}
 
@@ -78,23 +78,23 @@ __forceinline static
 	// now search for string "MGCP " in the rest of the message
 	while ((pos + 5) < packet->payload_packet_len) {
 		if (memcmp(&packet->payload[pos], "MGCP ", 5) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_MGCP, ipoque_struct, IPQ_LOG_DEBUG, "MGCP match.\n");
-			ipoque_int_mgcp_add_connection(ipoque_struct);
+			NDPI_LOG(NDPI_PROTOCOL_MGCP, ndpi_struct, NDPI_LOG_DEBUG, "MGCP match.\n");
+			ndpi_int_mgcp_add_connection(ndpi_struct, flow);
 			return;
 		}
 		pos++;
 	}
 
   mgcp_excluded:
-	IPQ_LOG(IPOQUE_PROTOCOL_MGCP, ipoque_struct, IPQ_LOG_DEBUG, "exclude MGCP.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_MGCP);
+	NDPI_LOG(NDPI_PROTOCOL_MGCP, ndpi_struct, NDPI_LOG_DEBUG, "exclude MGCP.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_MGCP);
 }
 
 
-static void ipoque_search_mgcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_mgcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 
-	ipoque_search_mgcp_connection(ipoque_struct);
+	ndpi_search_mgcp_connection(ndpi_struct, flow);
 
 }
 #endif

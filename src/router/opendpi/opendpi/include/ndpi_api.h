@@ -1,5 +1,5 @@
 /*
- * ipq_basic_def.h
+ * ndpi_api.h
  * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
@@ -21,39 +21,31 @@
  */
 
 
-#ifndef __IPOQUE_API_INCLUDE_FILE__
-#error CANNOT INCLUDE THIS .H FILE, INCLUDE IPQ_API.H
-#endif
+#ifndef __NDPI_API_INCLUDE_FILE__
+#define __NDPI_API_INCLUDE_FILE__
 
-#ifndef __IPQ_BASIC_DEF_H__
-#define __IPQ_BASIC_DEF_H__
+
+#if defined(WIN32)
+#include <winsock2.h>
+/* Windows is little endian */ 
+#define __LITTLE_ENDIAN 1234
+#define __BIG_ENDIAN    4321
+#define __BYTE_ORDER __LITTLE_ENDIAN
+#define __FLOAT_WORD_ORDER __BYTE_ORDER
+#endif /*  defined(WIN32) */
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* define u64, u32, here
- * this is used for compatibility restrictions on different platforms
- *
- */
-
-#ifndef u64
-#define u64 	unsigned long long
-#endif
-#ifndef u32
-#define u32 	unsigned int
-#endif
-#ifndef u16
-#define u16 	unsigned short
-#endif
-#ifndef u8
-#define u8 	unsigned char
-#endif
-
-
-/* generic timestamp counter size */
-#define IPOQUE_TIMESTAMP_COUNTER_SIZE		u32
+/* basic definitions (u_int64_t, u_int32_t, timestamp size,...) */
+#include "ndpi_protocols_osdpi.h"
+/* macros for protocol / bitmask conversation if needed */
+#include "ndpi_macros.h"
+#include "ndpi_public_functions.h"
+#include "ndpi_debug_functions.h"
 #ifdef __cplusplus
 }
 #endif
-#endif
+#endif							/* __NDPI_API_INCLUDE_FILE__ */

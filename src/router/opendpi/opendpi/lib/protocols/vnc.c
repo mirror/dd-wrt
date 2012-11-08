@@ -21,14 +21,14 @@
  */
 
 
-#include "ipq_protocols.h"
+#include "ndpi_protocols.h"
 
-#ifdef IPOQUE_PROTOCOL_VNC
+#ifdef NDPI_PROTOCOL_VNC
 
-static void ipoque_int_vnc_add_connection(struct ipoque_detection_module_struct
-										  *ipoque_struct)
+static void ndpi_int_vnc_add_connection(struct ndpi_detection_module_struct
+										  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_VNC, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_VNC, NDPI_REAL_PROTOCOL);
 }
 
 /*
@@ -36,30 +36,30 @@ static void ipoque_int_vnc_add_connection(struct ipoque_detection_module_struct
   return 1 if it is a http packet
 */
 
-static void ipoque_search_vnc_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_vnc_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 
 	if (flow->l4.tcp.vnc_stage == 0) {
 		if (packet->payload_packet_len == 12
 			&& memcmp(packet->payload, "RFB 003.00", 10) == 0 && packet->payload[11] == 0x0a) {
-			IPQ_LOG(IPOQUE_PROTOCOL_POPO, ipoque_struct, IPQ_LOG_DEBUG, "reached vnc stage one\n");
+			NDPI_LOG(NDPI_PROTOCOL_POPO, ndpi_struct, NDPI_LOG_DEBUG, "reached vnc stage one\n");
 			flow->l4.tcp.vnc_stage = 1 + packet->packet_direction;
 			return;
 		}
 	} else if (flow->l4.tcp.vnc_stage == 2 - packet->packet_direction) {
 		if (packet->payload_packet_len == 12
 			&& memcmp(packet->payload, "RFB 003.00", 10) == 0 && packet->payload[11] == 0x0a) {
-			IPQ_LOG(IPOQUE_PROTOCOL_VNC, ipoque_struct, IPQ_LOG_DEBUG, "found vnc\n");
-			ipoque_int_vnc_add_connection(ipoque_struct);
+			NDPI_LOG(NDPI_PROTOCOL_VNC, ndpi_struct, NDPI_LOG_DEBUG, "found vnc\n");
+			ndpi_int_vnc_add_connection(ndpi_struct, flow);
 			return;
 		}
 	}
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_VNC);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_VNC);
 
 }
 #endif

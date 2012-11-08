@@ -21,43 +21,43 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_KONTIKI
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_KONTIKI
 
-static void ipoque_int_kontiki_add_connection(struct ipoque_detection_module_struct
-											  *ipoque_struct)
+static void ndpi_int_kontiki_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
+					    struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_KONTIKI, IPOQUE_REAL_PROTOCOL);
+  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_KONTIKI, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_kontiki(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_kontiki(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 
-	if (packet->payload_packet_len == 4 && (get_u32(packet->payload, 0) == htonl(0x02010100))) {
-		IPQ_LOG(IPOQUE_PROTOCOL_KONTIKI, ipoque_struct, IPQ_LOG_DEBUG, "Kontiki UDP detected.\n");
-		ipoque_int_kontiki_add_connection(ipoque_struct);
+	if (packet->payload_packet_len == 4 && (get_u_int32_t(packet->payload, 0) == htonl(0x02010100))) {
+		NDPI_LOG(NDPI_PROTOCOL_KONTIKI, ndpi_struct, NDPI_LOG_DEBUG, "Kontiki UDP detected.\n");
+		ndpi_int_kontiki_add_connection(ndpi_struct, flow);
 		return;
 	}
 	if (packet->payload_packet_len > 0 && packet->payload[0] == 0x02) {
 
-		if (packet->payload_packet_len == 20 && (get_u32(packet->payload, 16) == htonl(0x02040100))) {
-			IPQ_LOG(IPOQUE_PROTOCOL_KONTIKI, ipoque_struct, IPQ_LOG_DEBUG, "Kontiki UDP detected.\n");
-			ipoque_int_kontiki_add_connection(ipoque_struct);
+		if (packet->payload_packet_len == 20 && (get_u_int32_t(packet->payload, 16) == htonl(0x02040100))) {
+			NDPI_LOG(NDPI_PROTOCOL_KONTIKI, ndpi_struct, NDPI_LOG_DEBUG, "Kontiki UDP detected.\n");
+			ndpi_int_kontiki_add_connection(ndpi_struct, flow);
 			return;
 		}
-		if (packet->payload_packet_len == 16 && (get_u32(packet->payload, 12) == htonl(0x000004e4))) {
-			IPQ_LOG(IPOQUE_PROTOCOL_KONTIKI, ipoque_struct, IPQ_LOG_DEBUG, "Kontiki UDP detected.\n");
-			ipoque_int_kontiki_add_connection(ipoque_struct);
+		if (packet->payload_packet_len == 16 && (get_u_int32_t(packet->payload, 12) == htonl(0x000004e4))) {
+			NDPI_LOG(NDPI_PROTOCOL_KONTIKI, ndpi_struct, NDPI_LOG_DEBUG, "Kontiki UDP detected.\n");
+			ndpi_int_kontiki_add_connection(ndpi_struct, flow);
 			return;
 		}
 	}
 
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_KONTIKI);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_KONTIKI);
 }
 
 #endif

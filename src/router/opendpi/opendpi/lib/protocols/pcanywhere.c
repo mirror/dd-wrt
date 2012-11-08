@@ -21,33 +21,33 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_PCANYWHERE
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_PCANYWHERE
 
-static void ipoque_int_pcanywhere_add_connection(struct ipoque_detection_module_struct
-												 *ipoque_struct)
+static void ndpi_int_pcanywhere_add_connection(struct ndpi_detection_module_struct
+												 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_PCANYWHERE, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_PCANYWHERE, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_pcanywhere(struct ipoque_detection_module_struct
-							  *ipoque_struct)
+static void ndpi_search_pcanywhere(struct ndpi_detection_module_struct
+							  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (packet->udp != NULL && packet->udp->dest == htons(5632)
 		&& packet->payload_packet_len == 2
-		&& (ipq_mem_cmp(packet->payload, "NQ", 2) == 0 || ipq_mem_cmp(packet->payload, "ST", 2) == 0)) {
-		IPQ_LOG(IPOQUE_PROTOCOL_PCANYWHERE, ipoque_struct, IPQ_LOG_DEBUG,
+		&& (ndpi_mem_cmp(packet->payload, "NQ", 2) == 0 || ndpi_mem_cmp(packet->payload, "ST", 2) == 0)) {
+		NDPI_LOG(NDPI_PROTOCOL_PCANYWHERE, ndpi_struct, NDPI_LOG_DEBUG,
 				"PC Anywhere name or status query detected.\n");
-		ipoque_int_pcanywhere_add_connection(ipoque_struct);
+		ndpi_int_pcanywhere_add_connection(ndpi_struct, flow);
 		return;
 	}
 
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_PCANYWHERE);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_PCANYWHERE);
 }
 
 #endif

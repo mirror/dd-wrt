@@ -12,7 +12,7 @@ MODULES_DIR := $(INSTALLDIR)/opendpi/lib/opendpi
 KERNEL_DIR := ${LINUXDIR}
 
 obj-m := xt_opendpi.o
-xt_opendpi-y := main.o ${OPENDPI_SRC}/lib/ipq_main.o 
+xt_opendpi-y := main.o ${OPENDPI_SRC}/lib/ndpi_main.o 
 
 #\
 #                ${OPENDPI_PRO}/afp.o ${OPENDPI_PRO}/dns.o ${OPENDPI_PRO}/halflife2_and_mods.o \
