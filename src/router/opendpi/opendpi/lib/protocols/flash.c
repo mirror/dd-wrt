@@ -21,72 +21,71 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_FLASH
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_FLASH
 
-static void ipoque_int_flash_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct)
+static void ndpi_int_flash_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_FLASH, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_FLASH, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_flash(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_flash(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (flow->l4.tcp.flash_stage == 0 && packet->payload_packet_len > 0
 		&& (packet->payload[0] == 0x03 || packet->payload[0] == 0x06)) {
 		flow->l4.tcp.flash_bytes = packet->payload_packet_len;
 		if (packet->tcp->psh == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_FLASH, ipoque_struct, IPQ_LOG_DEBUG, "FLASH pass 1: \n");
+			NDPI_LOG(NDPI_PROTOCOL_FLASH, ndpi_struct, NDPI_LOG_DEBUG, "FLASH pass 1: \n");
 			flow->l4.tcp.flash_stage = packet->packet_direction + 1;
 
-			IPQ_LOG(IPOQUE_PROTOCOL_FLASH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_FLASH, ndpi_struct, NDPI_LOG_DEBUG,
 					"FLASH pass 1: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
 					flow->l4.tcp.flash_bytes);
 			return;
 		} else if (packet->tcp->psh != 0 && flow->l4.tcp.flash_bytes == 1537) {
-			IPQ_LOG(IPOQUE_PROTOCOL_FLASH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_FLASH, ndpi_struct, NDPI_LOG_DEBUG,
 					"FLASH hit: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
 					flow->l4.tcp.flash_bytes);
 			flow->l4.tcp.flash_stage = 3;
-			ipoque_int_flash_add_connection(ipoque_struct);
+			ndpi_int_flash_add_connection(ndpi_struct, flow);
 			return;
 		}
 	} else if (flow->l4.tcp.flash_stage == 1 + packet->packet_direction) {
 		flow->l4.tcp.flash_bytes += packet->payload_packet_len;
 		if (packet->tcp->psh != 0 && flow->l4.tcp.flash_bytes == 1537) {
-			IPQ_LOG(IPOQUE_PROTOCOL_FLASH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_FLASH, ndpi_struct, NDPI_LOG_DEBUG,
 					"FLASH hit: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
 					flow->l4.tcp.flash_bytes);
 			flow->l4.tcp.flash_stage = 3;
-			ipoque_int_flash_add_connection(ipoque_struct);
+			ndpi_int_flash_add_connection(ndpi_struct, flow);
 			return;
 		} else if (packet->tcp->psh == 0 && flow->l4.tcp.flash_bytes < 1537) {
-			IPQ_LOG(IPOQUE_PROTOCOL_FLASH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_FLASH, ndpi_struct, NDPI_LOG_DEBUG,
 					"FLASH pass 2: flash_stage: %u, flash_bytes: %u\n", flow->l4.tcp.flash_stage,
 					flow->l4.tcp.flash_bytes);
 			return;
 		}
 	}
 
-	IPQ_LOG(IPOQUE_PROTOCOL_FLASH, ipoque_struct, IPQ_LOG_DEBUG,
+	NDPI_LOG(NDPI_PROTOCOL_FLASH, ndpi_struct, NDPI_LOG_DEBUG,
 			"FLASH might be excluded: flash_stage: %u, flash_bytes: %u, packet_direction: %u\n",
 			flow->l4.tcp.flash_stage, flow->l4.tcp.flash_bytes, packet->packet_direction);
 
-#ifdef IPOQUE_PROTOCOL_HTTP
-	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_HTTP) != 0) {
-#endif							/* IPOQUE_PROTOCOL_HTTP */
-		IPQ_LOG(IPOQUE_PROTOCOL_FLASH, ipoque_struct, IPQ_LOG_DEBUG, "FLASH: exclude\n");
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_FLASH);
-#ifdef IPOQUE_PROTOCOL_HTTP
+#ifdef NDPI_PROTOCOL_HTTP
+	if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_HTTP) != 0) {
+#endif							/* NDPI_PROTOCOL_HTTP */
+		NDPI_LOG(NDPI_PROTOCOL_FLASH, ndpi_struct, NDPI_LOG_DEBUG, "FLASH: exclude\n");
+		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_FLASH);
+#ifdef NDPI_PROTOCOL_HTTP
 	} else {
-		IPQ_LOG(IPOQUE_PROTOCOL_FLASH, ipoque_struct, IPQ_LOG_DEBUG, "FLASH avoid early exclude from http\n");
+		NDPI_LOG(NDPI_PROTOCOL_FLASH, ndpi_struct, NDPI_LOG_DEBUG, "FLASH avoid early exclude from http\n");
 	}
-#endif							/* IPOQUE_PROTOCOL_HTTP */
+#endif							/* NDPI_PROTOCOL_HTTP */
 
 }
 #endif

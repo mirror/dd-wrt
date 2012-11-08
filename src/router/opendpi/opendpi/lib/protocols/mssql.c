@@ -24,36 +24,36 @@
 
 /* include files */
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_MSSQL
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_MSSQL
 
-static void ipoque_int_mssql_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct)
+static void ndpi_int_mssql_add_connection(struct ndpi_detection_module_struct
+											*ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_MSSQL, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_MSSQL, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_mssql(struct ipoque_detection_module_struct
-						 *ipoque_struct)
+static void ndpi_search_mssql(struct ndpi_detection_module_struct
+						 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
 
 
 
-	IPQ_LOG(IPOQUE_PROTOCOL_MSSQL, ipoque_struct, IPQ_LOG_DEBUG, "search mssql.\n");
+	NDPI_LOG(NDPI_PROTOCOL_MSSQL, ndpi_struct, NDPI_LOG_DEBUG, "search mssql.\n");
 
 
-	if (packet->payload_packet_len > 51 && ntohs(get_u32(packet->payload, 0)) == 0x1201
-		&& ntohs(get_u16(packet->payload, 2)) == packet->payload_packet_len
-		&& ntohl(get_u32(packet->payload, 4)) == 0x00000100 && memcmp(&packet->payload[41], "sqlexpress", 10) == 0) {
-		IPQ_LOG(IPOQUE_PROTOCOL_MSSQL, ipoque_struct, IPQ_LOG_DEBUG, "found mssql.\n");
-		ipoque_int_mssql_add_connection(ipoque_struct);
+	if (packet->payload_packet_len > 51 && ntohs(get_u_int32_t(packet->payload, 0)) == 0x1201
+		&& ntohs(get_u_int16_t(packet->payload, 2)) == packet->payload_packet_len
+		&& ntohl(get_u_int32_t(packet->payload, 4)) == 0x00000100 && memcmp(&packet->payload[41], "sqlexpress", 10) == 0) {
+		NDPI_LOG(NDPI_PROTOCOL_MSSQL, ndpi_struct, NDPI_LOG_DEBUG, "found mssql.\n");
+		ndpi_int_mssql_add_connection(ndpi_struct, flow);
 		return;
 	}
 
 
-	IPQ_LOG(IPOQUE_PROTOCOL_MSSQL, ipoque_struct, IPQ_LOG_DEBUG, "exclude mssql.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_MSSQL);
+	NDPI_LOG(NDPI_PROTOCOL_MSSQL, ndpi_struct, NDPI_LOG_DEBUG, "exclude mssql.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_MSSQL);
 }
 #endif

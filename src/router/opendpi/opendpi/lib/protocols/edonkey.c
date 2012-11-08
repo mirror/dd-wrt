@@ -20,30 +20,29 @@
  * 
  */
 
-
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_EDONKEY
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_EDONKEY
 /* debug defines */
-#define IPOQUE_PROTOCOL_SAFE_DETECTION 		1
+#define NDPI_PROTOCOL_SAFE_DETECTION 		1
 
-#define IPOQUE_PROTOCOL_PLAIN_DETECTION 	0
-static void ipoque_add_connection_as_edonkey(struct ipoque_detection_module_struct
-											 *ipoque_struct, const u8 save_detection, const u8 encrypted_connection)
+#define NDPI_PROTOCOL_PLAIN_DETECTION 	0
+static void ndpi_add_connection_as_edonkey(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow,
+					   const u_int8_t save_detection, const u_int8_t encrypted_connection)
 {
-	ipoque_int_change_protocol(ipoque_struct, IPOQUE_PROTOCOL_EDONKEY, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_change_protocol(ndpi_struct, flow, NDPI_PROTOCOL_EDONKEY, NDPI_REAL_PROTOCOL);
 }
 
-#if !(defined(HAVE_NTOP) && defined(WIN32))
+#if !defined(WIN32)
  static inline
 #else
 __forceinline static
 #endif
-	 u8 check_edk_len(const u8 * payload, u16 payload_packet_len)
+	 u_int8_t check_edk_len(const u_int8_t * payload, u_int16_t payload_packet_len)
 {
-	u32 edk_len_parsed = 0;
+	u_int32_t edk_len_parsed = 0;
 	// we use a do / while loop here, because we have checked the byte 0 for 0xe3 or 0xc5 already before this call
 	do {
-		u32 edk_len;
+		u_int32_t edk_len;
 		edk_len = get_l32(payload, 1 + edk_len_parsed);
 
 		/* if bigger, return here directly with an error... */
@@ -51,7 +50,7 @@ __forceinline static
 			return 0;
 		/* this is critical here:
 		 * if (edk_len + 5) provokes an overflow to zero, we will have an infinite loop...
-		 * the check above does prevent this, bcause the edk_len must be ((u32)-5), which is always bigger than the packet size
+		 * the check above does prevent this, bcause the edk_len must be ((u_int32_t)-5), which is always bigger than the packet size
 		 */
 		edk_len_parsed += 5 + edk_len;
 
@@ -64,14 +63,14 @@ __forceinline static
 	return 0;
 }
 
-static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_int_edonkey_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
 	int edk_stage2_len;
 
 	/*len range increase if safe mode and also only once */
-	if (ipoque_struct->edonkey_safe_mode == 0)
+	if (ndpi_struct->edonkey_safe_mode == 0)
 		edk_stage2_len = 140;
 	else if (!flow->l4.tcp.edk_ext || packet->payload_packet_len == 212) {
 		edk_stage2_len = 300;
@@ -81,12 +80,12 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 
 
 	/* skip excluded connections */
-	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_EDONKEY) != 0)
+	if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_EDONKEY) != 0)
 		return;
 
 	/* source and dst port must be 80 443 or > 1024 */
-	if (ipoque_struct->edonkey_upper_ports_only != 0) {
-		u16 port;
+	if (ndpi_struct->edonkey_upper_ports_only != 0) {
+		u_int16_t port;
 		port = ntohs(packet->tcp->source);
 		/* source and dst port must be 80 443 or > 1024 */
 		if (port < 1024 && port != 80 && port != 443)
@@ -102,7 +101,7 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 		return;
 
 	/* skip marked packets */
-	if (flow->edk_stage == 0 && packet->detected_protocol_stack[0] != IPOQUE_PROTOCOL_UNKNOWN)
+	if (flow->edk_stage == 0 && packet->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN)
 		return;
 
 	/* first: check for unencrypted traffic */
@@ -114,7 +113,7 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 			if (packet->payload[5] == 0x01 && ((packet->payload[6] == 0x10 && get_l32(packet->payload, 29) < 0x0F)
 											   || (get_l32(packet->payload, 28) > 0x00
 												   && get_l32(packet->payload, 28) < 0x0F))) {
-				IPQ_LOG_EDONKEY(IPOQUE_PROTOCOL_EDONKEY, ipoque_struct, IPQ_LOG_DEBUG,
+				NDPI_LOG_EDONKEY(NDPI_PROTOCOL_EDONKEY, ndpi_struct, NDPI_LOG_DEBUG,
 								"edk hello meta tag recognized\n");
 				flow->edk_stage = 16 + packet->packet_direction;
 				return;
@@ -138,32 +137,32 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 			|| (packet->payload_packet_len >= 20 && get_l32(packet->payload, 1) <= (packet->payload_packet_len - 5)
 				&& (packet->payload[0] == 0xe3 || packet->payload[0] == 0xc5)
 				&& packet->payload[5] == 0x01)) {
-			IPQ_LOG_EDONKEY(IPOQUE_PROTOCOL_EDONKEY, ipoque_struct,
-							IPQ_LOG_DEBUG, "edk 17: detected plain detection\n");
-			ipoque_add_connection_as_edonkey(ipoque_struct,
-											 IPOQUE_PROTOCOL_SAFE_DETECTION, IPOQUE_PROTOCOL_PLAIN_DETECTION);
+			NDPI_LOG_EDONKEY(NDPI_PROTOCOL_EDONKEY, ndpi_struct,
+							NDPI_LOG_DEBUG, "edk 17: detected plain detection\n");
+			ndpi_add_connection_as_edonkey(ndpi_struct, flow,
+						       NDPI_PROTOCOL_SAFE_DETECTION, NDPI_PROTOCOL_PLAIN_DETECTION);
 			return;
 		}
 
-		IPQ_LOG_EDONKEY(IPOQUE_PROTOCOL_EDONKEY, ipoque_struct, IPQ_LOG_DEBUG,
+		NDPI_LOG_EDONKEY(NDPI_PROTOCOL_EDONKEY, ndpi_struct, NDPI_LOG_DEBUG,
 						"edk 17: id: %u, %u, %u not detected\n",
 						packet->payload[0], get_l32(packet->payload, 1), packet->payload[5]);
 	}
   exclude_edk_tcp:
 
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_EDONKEY);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_EDONKEY);
 
 	return;
 }
 
 
-static void ipoque_search_edonkey(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_edonkey(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	if (packet->detected_protocol_stack[0] != IPOQUE_PROTOCOL_EDONKEY) {
+	struct ndpi_packet_struct *packet = &flow->packet;
+	if (packet->detected_protocol_stack[0] != NDPI_PROTOCOL_EDONKEY) {
 		/* check for retransmission here */
 		if (packet->tcp != NULL && packet->tcp_retransmission == 0)
-			ipoque_int_edonkey_tcp(ipoque_struct);
+		  ndpi_int_edonkey_tcp(ndpi_struct, flow);
 	}
 }
 #endif

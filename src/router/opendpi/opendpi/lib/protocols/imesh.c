@@ -21,137 +21,135 @@
  */
 
 
-#include "ipq_utils.h"
+#include "ndpi_utils.h"
 
-#ifdef IPOQUE_PROTOCOL_IMESH
+#ifdef NDPI_PROTOCOL_IMESH
 
 
-static void ipoque_int_imesh_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct, ipoque_protocol_type_t protocol_type)
+static void ndpi_int_imesh_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
+					  struct ndpi_flow_struct *flow, ndpi_protocol_type_t protocol_type)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_IMESH, protocol_type);
+  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_IMESH, protocol_type);
 }
 
 
-static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
-								 *ipoque_struct)
+static void ndpi_search_imesh_tcp_udp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+	struct ndpi_packet_struct *packet = &flow->packet;	
 
 	if (packet->udp != NULL) {
 
-		IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "UDP FOUND\n");
+		NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "UDP FOUND\n");
 
 		// this is the login packet
-		if (packet->payload_packet_len == 28 && (get_u32(packet->payload, 0)) == htonl(0x02000000) &&
-			get_u32(packet->payload, 24) == 0 &&
+		if (packet->payload_packet_len == 28 && (get_u_int32_t(packet->payload, 0)) == htonl(0x02000000) &&
+			get_u_int32_t(packet->payload, 24) == 0 &&
 			(packet->udp->dest == htons(1864) || packet->udp->source == htons(1864))) {
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "iMesh Login detected\n");
-			ipoque_int_imesh_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "iMesh Login detected\n");
+			ndpi_int_imesh_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 			return;
 		}
 		if (packet->payload_packet_len == 36) {
-			if (get_u32(packet->payload, 0) == htonl(0x02000000) && packet->payload[4] != 0 &&
-				packet->payload[5] == 0 && get_u16(packet->payload, 6) == htons(0x0083) &&
-				get_u32(packet->payload, 24) == htonl(0x40000000) &&
+			if (get_u_int32_t(packet->payload, 0) == htonl(0x02000000) && packet->payload[4] != 0 &&
+				packet->payload[5] == 0 && get_u_int16_t(packet->payload, 6) == htons(0x0083) &&
+				get_u_int32_t(packet->payload, 24) == htonl(0x40000000) &&
 				(packet->payload[packet->payload_packet_len - 1] == packet->payload[packet->payload_packet_len - 5] ||
 				 packet->payload[packet->payload_packet_len - 1] - 1 == packet->payload[packet->payload_packet_len - 5]
 				 || packet->payload[packet->payload_packet_len - 1] ==
 				 packet->payload[packet->payload_packet_len - 5] - 1)) {
-				IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "iMesh detected\n");
-				ipoque_int_imesh_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+				NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "iMesh detected\n");
+				ndpi_int_imesh_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 				return;
 			}
-			if (get_u16(packet->payload, 0) == htons(0x0200) && get_u16(packet->payload, 2) != 0 &&
-				get_u32(packet->payload, 4) == htonl(0x02000083) && get_u32(packet->payload, 24) == htonl(0x40000000) &&
+			if (get_u_int16_t(packet->payload, 0) == htons(0x0200) && get_u_int16_t(packet->payload, 2) != 0 &&
+				get_u_int32_t(packet->payload, 4) == htonl(0x02000083) && get_u_int32_t(packet->payload, 24) == htonl(0x40000000) &&
 				(packet->payload[packet->payload_packet_len - 1] == packet->payload[packet->payload_packet_len - 5] ||
 				 packet->payload[packet->payload_packet_len - 1] - 1 == packet->payload[packet->payload_packet_len - 5]
 				 || packet->payload[packet->payload_packet_len - 1] ==
 				 packet->payload[packet->payload_packet_len - 5] - 1)) {
-				IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "iMesh detected\n");
-				ipoque_int_imesh_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+				NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "iMesh detected\n");
+				ndpi_int_imesh_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 				return;
 			}
 		}
-		if (packet->payload_packet_len == 24 && get_u16(packet->payload, 0) == htons(0x0200)
-			&& get_u16(packet->payload, 2) != 0 && get_u32(packet->payload, 4) == htonl(0x03000084) &&
+		if (packet->payload_packet_len == 24 && get_u_int16_t(packet->payload, 0) == htons(0x0200)
+			&& get_u_int16_t(packet->payload, 2) != 0 && get_u_int32_t(packet->payload, 4) == htonl(0x03000084) &&
 			(packet->payload[packet->payload_packet_len - 1] == packet->payload[packet->payload_packet_len - 5] ||
 			 packet->payload[packet->payload_packet_len - 1] - 1 == packet->payload[packet->payload_packet_len - 5] ||
 			 packet->payload[packet->payload_packet_len - 1] == packet->payload[packet->payload_packet_len - 5] - 1)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "iMesh detected\n");
-			ipoque_int_imesh_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "iMesh detected\n");
+			ndpi_int_imesh_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 			return;
 		}
-		if (packet->payload_packet_len == 32 && get_u32(packet->payload, 0) == htonl(0x02000000) &&
-			get_u16(packet->payload, 21) == 0 && get_u16(packet->payload, 26) == htons(0x0100)) {
-			if (get_u32(packet->payload, 4) == htonl(0x00000081) && packet->payload[11] == packet->payload[15] &&
+		if (packet->payload_packet_len == 32 && get_u_int32_t(packet->payload, 0) == htonl(0x02000000) &&
+			get_u_int16_t(packet->payload, 21) == 0 && get_u_int16_t(packet->payload, 26) == htons(0x0100)) {
+			if (get_u_int32_t(packet->payload, 4) == htonl(0x00000081) && packet->payload[11] == packet->payload[15] &&
 				get_l16(packet->payload, 24) == htons(packet->udp->source)) {
 				/* packet->payload[28] = source address */
-				IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "iMesh detected\n");
-				ipoque_int_imesh_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+				NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "iMesh detected\n");
+				ndpi_int_imesh_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 				return;
 			}
-			if (get_u32(packet->payload, 4) == htonl(0x01000082)) {
-				IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "iMesh detected\n");
-				ipoque_int_imesh_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+			if (get_u_int32_t(packet->payload, 4) == htonl(0x01000082)) {
+				NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "iMesh detected\n");
+				ndpi_int_imesh_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 				return;
 			}
 		}
-		IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "iMesh UDP packetlen: %d\n",
+		NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "iMesh UDP packetlen: %d\n",
 				packet->payload_packet_len);
 
 	}
 
 	if (packet->tcp != NULL) {
 
-		if (packet->payload_packet_len == 64 && get_u32(packet->payload, 0) == htonl(0x40000000) &&
-			get_u32(packet->payload, 4) == 0 && get_u32(packet->payload, 8) == htonl(0x0000fcff) &&
-			get_u32(packet->payload, 12) == htonl(0x04800100) && get_u32(packet->payload, 45) == htonl(0xff020000) &&
-			get_u16(packet->payload, 49) == htons(0x001a)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "found imesh.\n");
-			ipoque_int_imesh_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+		if (packet->payload_packet_len == 64 && get_u_int32_t(packet->payload, 0) == htonl(0x40000000) &&
+			get_u_int32_t(packet->payload, 4) == 0 && get_u_int32_t(packet->payload, 8) == htonl(0x0000fcff) &&
+			get_u_int32_t(packet->payload, 12) == htonl(0x04800100) && get_u_int32_t(packet->payload, 45) == htonl(0xff020000) &&
+			get_u_int16_t(packet->payload, 49) == htons(0x001a)) {
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "found imesh.\n");
+			ndpi_int_imesh_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 			return;
 		}
-		if (packet->payload_packet_len == 95 && get_u32(packet->payload, 0) == htonl(0x5f000000) &&
-			get_u16(packet->payload, 4) == 0 && get_u16(packet->payload, 7) == htons(0x0004) &&
-			get_u32(packet->payload, 20) == 0 && get_u32(packet->payload, 28) == htonl(0xc8000400) &&
-			packet->payload[9] == 0x80 && get_u32(packet->payload, 10) == get_u32(packet->payload, 24)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "found imesh.\n");
-			ipoque_int_imesh_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+		if (packet->payload_packet_len == 95 && get_u_int32_t(packet->payload, 0) == htonl(0x5f000000) &&
+			get_u_int16_t(packet->payload, 4) == 0 && get_u_int16_t(packet->payload, 7) == htons(0x0004) &&
+			get_u_int32_t(packet->payload, 20) == 0 && get_u_int32_t(packet->payload, 28) == htonl(0xc8000400) &&
+			packet->payload[9] == 0x80 && get_u_int32_t(packet->payload, 10) == get_u_int32_t(packet->payload, 24)) {
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "found imesh.\n");
+			ndpi_int_imesh_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 			return;
 		}
-		if (packet->payload_packet_len == 28 && get_u32(packet->payload, 0) == htonl(0x1c000000) &&
-			get_u16(packet->payload, 10) == htons(0xfcff) && get_u32(packet->payload, 12) == htonl(0x07801800) &&
-			(get_u16(packet->payload, packet->payload_packet_len - 2) == htons(0x1900) ||
-			 get_u16(packet->payload, packet->payload_packet_len - 2) == htons(0x1a00))) {
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "found imesh.\n");
-			ipoque_int_imesh_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+		if (packet->payload_packet_len == 28 && get_u_int32_t(packet->payload, 0) == htonl(0x1c000000) &&
+			get_u_int16_t(packet->payload, 10) == htons(0xfcff) && get_u_int32_t(packet->payload, 12) == htonl(0x07801800) &&
+			(get_u_int16_t(packet->payload, packet->payload_packet_len - 2) == htons(0x1900) ||
+			 get_u_int16_t(packet->payload, packet->payload_packet_len - 2) == htons(0x1a00))) {
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "found imesh.\n");
+			ndpi_int_imesh_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 			return;
 		}
 
-		IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "TCP FOUND :: Payload %u\n",
+		NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "TCP FOUND :: Payload %u\n",
 				packet->payload_packet_len);
 
 		if (packet->actual_payload_len == 0) {
 			return;
 		}
 		if ((packet->actual_payload_len == 8 || packet->payload_packet_len == 10)	/* PATTERN:: 04 00 00 00 00 00 00 00 [00 00] */
-			&&get_u32(packet->payload, 0) == htonl(0x04000000)
-			&& get_u32(packet->payload, 4) == 0) {
+			&&get_u_int32_t(packet->payload, 0) == htonl(0x04000000)
+			&& get_u_int32_t(packet->payload, 4) == 0) {
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if (packet->actual_payload_len == 10	/* PATTERN:: ?? ?? 04|00 00 64|00 00 */
 				   && (packet->payload[2] == 0x04 || packet->payload[2] == 0x00)
 				   && packet->payload[3] == 0x00 && (packet->payload[4] == 0x00 || packet->payload[4] == 0x64)
 				   && packet->payload[5] == 0x00) {
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if (packet->actual_payload_len == 2 && packet->payload[0] == 0x06 && packet->payload[1] == 0x00) {
 			flow->l4.tcp.imesh_stage++;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if (packet->actual_payload_len == 10	/* PATTERN:: 06 00 04|00 00 01|00 00 01|00 00 ?? 00 */
 				   && packet->payload[0] == 0x06
@@ -160,7 +158,7 @@ static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 				   && packet->payload[5] == 0x00 && (packet->payload[6] == 0x01 || packet->payload[6] == 0x00)
 				   && packet->payload[7] == 0x00 && packet->payload[9] == 0x00) {
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if (packet->actual_payload_len == 24 && packet->payload[0] == 0x06	// PATTERN :: 06 00 12 00 00 00 34 00 00
 				   && packet->payload[1] == 0x00
@@ -170,7 +168,7 @@ static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 				   && packet->payload[5] == 0x00
 				   && packet->payload[6] == 0x34 && packet->payload[7] == 0x00 && packet->payload[8] == 0x00) {
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if (packet->actual_payload_len == 8	/* PATTERN:: 06|00 00 02 00 00 00 33 00 */
 				   && (packet->payload[0] == 0x06 || packet->payload[0] == 0x00)
@@ -180,7 +178,7 @@ static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 				   && packet->payload[4] == 0x00
 				   && packet->payload[5] == 0x00 && packet->payload[6] == 0x33 && packet->payload[7] == 0x00) {
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if (packet->payload_packet_len == 6	/* PATTERN:: 02 00 00 00 33 00 */
 				   && packet->payload[0] == 0x02
@@ -188,7 +186,7 @@ static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 				   && packet->payload[2] == 0x00
 				   && packet->payload[3] == 0x00 && packet->payload[4] == 0x33 && packet->payload[5] == 0x00) {
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if (packet->actual_payload_len == 12 && packet->payload[0] == 0x06	// PATTERN : 06 00 06 00 00 00 64 00
 				   && packet->payload[1] == 0x00
@@ -197,7 +195,7 @@ static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 				   && packet->payload[4] == 0x00
 				   && packet->payload[5] == 0x00 && packet->payload[6] == 0x64 && packet->payload[7] == 0x00) {
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if (packet->actual_payload_len == 10	/* PATTERN:: 06 00 04|01 00 00 00 01|00 00 ?? 00 */
 				   && packet->payload[0] == 0x06
@@ -209,15 +207,15 @@ static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 				   /* && packet->payload[8]==0x00 */
 				   && packet->payload[9] == 0x00) {
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if ((packet->actual_payload_len == 64 || packet->actual_payload_len == 52	/* PATTERN:: [len] 00 00 00 00 */
 					|| packet->actual_payload_len == 95)
-				   && get_u16(packet->payload, 0) == (packet->actual_payload_len)
+				   && get_u_int16_t(packet->payload, 0) == (packet->actual_payload_len)
 				   && packet->payload[1] == 0x00 && packet->payload[2] == 0x00
 				   && packet->payload[3] == 0x00 && packet->payload[4] == 0x00) {
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if (packet->actual_payload_len == 6 && packet->payload[0] == 0x06	// PATTERN : 06 00 04|6c 00|01 00 00
 				   && packet->payload[1] == 0x00 && (packet->payload[2] == 0x04 || packet->payload[2] == 0x6c)
@@ -225,14 +223,14 @@ static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 				   && packet->payload[4] == 0x00 && packet->payload[5] == 0x00) {
 
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if (packet->actual_payload_len == 6	/* PATTERN:: [len] ?? ee 00 00 00 */
-				   && get_u16(packet->payload, 0) == (packet->actual_payload_len)
+				   && get_u_int16_t(packet->payload, 0) == (packet->actual_payload_len)
 				   && packet->payload[2] == 0xee
 				   && packet->payload[3] == 0x00 && packet->payload[4] == 0x00 && packet->payload[5] == 0x00) {
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		} else if (packet->actual_payload_len == 10	/* PATTERN:: 06 00 00 00 00 00 00 00 */
 				   && packet->payload[0] == 0x06
@@ -242,37 +240,37 @@ static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 				   && packet->payload[4] == 0x00
 				   && packet->payload[5] == 0x00 && packet->payload[6] == 0x00 && packet->payload[7] == 0x00) {
 			flow->l4.tcp.imesh_stage += 2;
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG,
 					"IMESH FOUND :: Payload %u\n", packet->actual_payload_len);
 		}
 
 
 		/* http login */
-		if (packet->payload_packet_len > IPQ_STATICSTRING_LEN("POST /registration") &&
-			memcmp(packet->payload, "POST /registration", IPQ_STATICSTRING_LEN("POST /registration")) == 0) {
-			ipq_parse_packet_line_info(ipoque_struct);
+		if (packet->payload_packet_len > NDPI_STATICSTRING_LEN("POST /registration") &&
+			memcmp(packet->payload, "POST /registration", NDPI_STATICSTRING_LEN("POST /registration")) == 0) {
+			ndpi_parse_packet_line_info(ndpi_struct, flow);
 			if (packet->parsed_lines > 6 &&
 				packet->host_line.ptr != NULL &&
-				packet->host_line.len == IPQ_STATICSTRING_LEN("login.bearshare.com") &&
+				packet->host_line.len == NDPI_STATICSTRING_LEN("login.bearshare.com") &&
 				packet->line[1].ptr != NULL &&
-				packet->line[1].len == IPQ_STATICSTRING_LEN("Authorization: Basic Og==") &&
+				packet->line[1].len == NDPI_STATICSTRING_LEN("Authorization: Basic Og==") &&
 				packet->line[4].ptr != NULL &&
-				packet->line[4].len == IPQ_STATICSTRING_LEN("Accept-Encoding: identity") &&
+				packet->line[4].len == NDPI_STATICSTRING_LEN("Accept-Encoding: identity") &&
 				memcmp(packet->line[1].ptr, "Authorization: Basic Og==",
-					   IPQ_STATICSTRING_LEN("Authorization: Basic Og==")) == 0 &&
+					   NDPI_STATICSTRING_LEN("Authorization: Basic Og==")) == 0 &&
 				memcmp(packet->host_line.ptr, "login.bearshare.com",
-					   IPQ_STATICSTRING_LEN("login.bearshare.com")) == 0 &&
+					   NDPI_STATICSTRING_LEN("login.bearshare.com")) == 0 &&
 				memcmp(packet->line[4].ptr, "Accept-Encoding: identity",
-					   IPQ_STATICSTRING_LEN("Accept-Encoding: identity") == 0)) {
-				IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "iMesh Login detected\n");
-				ipoque_int_imesh_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+					   NDPI_STATICSTRING_LEN("Accept-Encoding: identity") == 0)) {
+				NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "iMesh Login detected\n");
+				ndpi_int_imesh_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 				return;
 			}
 		}
 		/*give one packet tolerance for detection */
 		if (flow->l4.tcp.imesh_stage >= 4) {
-			IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "found imesh.\n");
-			ipoque_int_imesh_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+			NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "found imesh.\n");
+			ndpi_int_imesh_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 			return;
 		}
 	}
@@ -281,8 +279,8 @@ static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 		return;
 	}
 	//imesh_not_found_end:
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_IMESH);
-	IPQ_LOG(IPOQUE_PROTOCOL_IMESH, ipoque_struct, IPQ_LOG_DEBUG, "iMesh excluded at stage %d\n",
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_IMESH);
+	NDPI_LOG(NDPI_PROTOCOL_IMESH, ndpi_struct, NDPI_LOG_DEBUG, "iMesh excluded at stage %d\n",
 			packet->tcp != NULL ? flow->l4.tcp.imesh_stage : 0);
 
 }

@@ -21,52 +21,52 @@
  */
 
 
-#include "ipq_utils.h"
-#ifdef IPOQUE_PROTOCOL_QUAKE
+#include "ndpi_utils.h"
+#ifdef NDPI_PROTOCOL_QUAKE
 
-static void ipoque_int_quake_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct)
+static void ndpi_int_quake_add_connection(struct ndpi_detection_module_struct
+											*ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_QUAKE, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_QUAKE, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_quake(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_quake(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if ((packet->payload_packet_len == 14
-		 && get_u16(packet->payload, 0) == 0xffff && ipq_mem_cmp(&packet->payload[2], "getInfo", 7) == 0)
+		 && get_u_int16_t(packet->payload, 0) == 0xffff && ndpi_mem_cmp(&packet->payload[2], "getInfo", 7) == 0)
 		|| (packet->payload_packet_len == 17
-			&& get_u16(packet->payload, 0) == 0xffff && ipq_mem_cmp(&packet->payload[2], "challenge", 9) == 0)
+			&& get_u_int16_t(packet->payload, 0) == 0xffff && ndpi_mem_cmp(&packet->payload[2], "challenge", 9) == 0)
 		|| (packet->payload_packet_len > 20
 			&& packet->payload_packet_len < 30
-			&& get_u16(packet->payload, 0) == 0xffff && ipq_mem_cmp(&packet->payload[2], "getServers", 10) == 0)) {
-		IPQ_LOG(IPOQUE_PROTOCOL_QUAKE, ipoque_struct, IPQ_LOG_DEBUG, "Quake IV detected.\n");
-		ipoque_int_quake_add_connection(ipoque_struct);
+			&& get_u_int16_t(packet->payload, 0) == 0xffff && ndpi_mem_cmp(&packet->payload[2], "getServers", 10) == 0)) {
+		NDPI_LOG(NDPI_PROTOCOL_QUAKE, ndpi_struct, NDPI_LOG_DEBUG, "Quake IV detected.\n");
+		ndpi_int_quake_add_connection(ndpi_struct, flow);
 		return;
 	}
 
 	/* Quake III/Quake Live */
-	if (packet->payload_packet_len == 15 && get_u32(packet->payload, 0) == 0xffffffff
-		&& memcmp(&packet->payload[4], "getinfo", IPQ_STATICSTRING_LEN("getinfo")) == 0) {
-		IPQ_LOG(IPOQUE_PROTOCOL_QUAKE, ipoque_struct, IPQ_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
-		ipoque_int_quake_add_connection(ipoque_struct);
+	if (packet->payload_packet_len == 15 && get_u_int32_t(packet->payload, 0) == 0xffffffff
+		&& memcmp(&packet->payload[4], "getinfo", NDPI_STATICSTRING_LEN("getinfo")) == 0) {
+		NDPI_LOG(NDPI_PROTOCOL_QUAKE, ndpi_struct, NDPI_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
+		ndpi_int_quake_add_connection(ndpi_struct, flow);
 		return;
 	}
-	if (packet->payload_packet_len == 16 && get_u32(packet->payload, 0) == 0xffffffff
-		&& memcmp(&packet->payload[4], "getchallenge", IPQ_STATICSTRING_LEN("getchallenge")) == 0) {
-		IPQ_LOG(IPOQUE_PROTOCOL_QUAKE, ipoque_struct, IPQ_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
-		ipoque_int_quake_add_connection(ipoque_struct);
+	if (packet->payload_packet_len == 16 && get_u_int32_t(packet->payload, 0) == 0xffffffff
+		&& memcmp(&packet->payload[4], "getchallenge", NDPI_STATICSTRING_LEN("getchallenge")) == 0) {
+		NDPI_LOG(NDPI_PROTOCOL_QUAKE, ndpi_struct, NDPI_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
+		ndpi_int_quake_add_connection(ndpi_struct, flow);
 		return;
 	}
 	if (packet->payload_packet_len > 20 && packet->payload_packet_len < 30
-		&& get_u32(packet->payload, 0) == 0xffffffff
-		&& memcmp(&packet->payload[4], "getservers", IPQ_STATICSTRING_LEN("getservers")) == 0) {
-		IPQ_LOG(IPOQUE_PROTOCOL_QUAKE, ipoque_struct, IPQ_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
-		ipoque_int_quake_add_connection(ipoque_struct);
+		&& get_u_int32_t(packet->payload, 0) == 0xffffffff
+		&& memcmp(&packet->payload[4], "getservers", NDPI_STATICSTRING_LEN("getservers")) == 0) {
+		NDPI_LOG(NDPI_PROTOCOL_QUAKE, ndpi_struct, NDPI_LOG_DEBUG, "Quake III Arena/Quake Live detected.\n");
+		ndpi_int_quake_add_connection(ndpi_struct, flow);
 		return;
 	}
 
@@ -81,8 +81,8 @@ static void ipoque_search_quake(struct ipoque_detection_module_struct *ipoque_st
 	   Quake Wars     ?????
 	 */
 
-	IPQ_LOG(IPOQUE_PROTOCOL_QUAKE, ipoque_struct, IPQ_LOG_DEBUG, "Quake excluded.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_QUAKE);
+	NDPI_LOG(NDPI_PROTOCOL_QUAKE, ndpi_struct, NDPI_LOG_DEBUG, "Quake excluded.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_QUAKE);
 }
 
 #endif

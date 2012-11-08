@@ -21,48 +21,48 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_SOCRATES
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_SOCRATES
 
 
-static void ipoque_socrates_add_connection(struct ipoque_detection_module_struct
-										   *ipoque_struct)
+static void ndpi_socrates_add_connection(struct ndpi_detection_module_struct
+										   *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_SOCRATES, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_SOCRATES, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_socrates(struct ipoque_detection_module_struct
-							*ipoque_struct)
+static void ndpi_search_socrates(struct ndpi_detection_module_struct
+							*ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 
 
-	IPQ_LOG(IPOQUE_PROTOCOL_SOCRATES, ipoque_struct, IPQ_LOG_DEBUG, "search socrates.\n");
+	NDPI_LOG(NDPI_PROTOCOL_SOCRATES, ndpi_struct, NDPI_LOG_DEBUG, "search socrates.\n");
 	if (packet->udp != NULL) {
 		if (packet->payload_packet_len > 9 && packet->payload[0] == 0xfe
 			&& packet->payload[packet->payload_packet_len - 1] == 0x05) {
-			IPQ_LOG(IPOQUE_PROTOCOL_SOCRATES, ipoque_struct, IPQ_LOG_DEBUG, "found fe.\n");
+			NDPI_LOG(NDPI_PROTOCOL_SOCRATES, ndpi_struct, NDPI_LOG_DEBUG, "found fe.\n");
 
-			IPQ_LOG(IPOQUE_PROTOCOL_SOCRATES, ipoque_struct, IPQ_LOG_DEBUG, "len match.\n");
+			NDPI_LOG(NDPI_PROTOCOL_SOCRATES, ndpi_struct, NDPI_LOG_DEBUG, "len match.\n");
 			if (memcmp(&packet->payload[2], "socrates", 8) == 0) {
-				IPQ_LOG(IPOQUE_PROTOCOL_SOCRATES, ipoque_struct, IPQ_LOG_DEBUG, "found socrates udp.\n");
-				ipoque_socrates_add_connection(ipoque_struct);
+				NDPI_LOG(NDPI_PROTOCOL_SOCRATES, ndpi_struct, NDPI_LOG_DEBUG, "found socrates udp.\n");
+				ndpi_socrates_add_connection(ndpi_struct, flow);
 			}
 
 		}
 	} else if (packet->tcp != NULL) {
 		if (packet->payload_packet_len > 13 && packet->payload[0] == 0xfe
 			&& packet->payload[packet->payload_packet_len - 1] == 0x05) {
-			IPQ_LOG(IPOQUE_PROTOCOL_SOCRATES, ipoque_struct, IPQ_LOG_DEBUG, "found fe.\n");
-			if (packet->payload_packet_len == ntohl(get_u32(packet->payload, 2))) {
-				IPQ_LOG(IPOQUE_PROTOCOL_SOCRATES, ipoque_struct, IPQ_LOG_DEBUG, "len match.\n");
+			NDPI_LOG(NDPI_PROTOCOL_SOCRATES, ndpi_struct, NDPI_LOG_DEBUG, "found fe.\n");
+			if (packet->payload_packet_len == ntohl(get_u_int32_t(packet->payload, 2))) {
+				NDPI_LOG(NDPI_PROTOCOL_SOCRATES, ndpi_struct, NDPI_LOG_DEBUG, "len match.\n");
 				if (memcmp(&packet->payload[6], "socrates", 8) == 0) {
-					IPQ_LOG(IPOQUE_PROTOCOL_SOCRATES, ipoque_struct, IPQ_LOG_DEBUG, "found socrates tcp.\n");
-					ipoque_socrates_add_connection(ipoque_struct);
+					NDPI_LOG(NDPI_PROTOCOL_SOCRATES, ndpi_struct, NDPI_LOG_DEBUG, "found socrates tcp.\n");
+					ndpi_socrates_add_connection(ndpi_struct, flow);
 				}
 			}
 		}
@@ -71,8 +71,8 @@ static void ipoque_search_socrates(struct ipoque_detection_module_struct
 
 
 
-	IPQ_LOG(IPOQUE_PROTOCOL_SOCRATES, ipoque_struct, IPQ_LOG_DEBUG, "exclude socrates.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_SOCRATES);
+	NDPI_LOG(NDPI_PROTOCOL_SOCRATES, ndpi_struct, NDPI_LOG_DEBUG, "exclude socrates.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SOCRATES);
 }
 
 #endif

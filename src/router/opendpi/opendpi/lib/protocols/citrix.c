@@ -18,18 +18,18 @@
  */
 
 
-#include "ipq_utils.h"
+#include "ndpi_utils.h"
 
-#ifdef NTOP_PROTOCOL_CITRIX
+#ifdef NDPI_PROTOCOL_CITRIX
 
 /* ************************************ */
 
-static void ntop_check_citrix(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_check_citrix(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-  struct ipoque_flow_struct *flow = ipoque_struct->flow;
-  const u8 *packet_payload = packet->payload;
-  u32 payload_len = packet->payload_packet_len;
+  struct ndpi_packet_struct *packet = &flow->packet;
+  
+  const u_int8_t *packet_payload = packet->payload;
+  u_int32_t payload_len = packet->payload_packet_len;
 
 #if 0
   printf("[len=%u][%02X %02X %02X %02X]\n", payload_len,
@@ -39,7 +39,7 @@ static void ntop_check_citrix(struct ipoque_detection_module_struct *ipoque_stru
 	 packet->payload[3] & 0xFF);
 #endif
 
-  if(ipoque_struct->packet.tcp != NULL) {
+  if(packet->tcp != NULL) {
     flow->l4.tcp.citrix_packet_id++;
     
     if((flow->l4.tcp.citrix_packet_id == 3)
@@ -50,42 +50,42 @@ static void ntop_check_citrix(struct ipoque_detection_module_struct *ipoque_stru
       if(payload_len == 6) {
 	char citrix_header[] = { 0x07, 0x07, 0x49, 0x43, 0x41, 0x00 };
 	
-	if(memcmp(packet->payload, citrix_header, sizeof(citrix_header)) == 0) {
-	  IPQ_LOG(NTOP_PROTOCOL_CITRIX, ipoque_struct, IPQ_LOG_DEBUG, "Found citrix.\n");
-	  ipoque_int_add_connection(ipoque_struct, NTOP_PROTOCOL_CITRIX, IPOQUE_REAL_PROTOCOL);
+	if(memcmp(packet_payload, citrix_header, sizeof(citrix_header)) == 0) {
+	  NDPI_LOG(NDPI_PROTOCOL_CITRIX, ndpi_struct, NDPI_LOG_DEBUG, "Found citrix.\n");
+	  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_CITRIX, NDPI_REAL_PROTOCOL);
 	}
 
 	return;
       } else if(payload_len > 4) {
 	char citrix_header[] = { 0x1a, 0x43, 0x47, 0x50, 0x2f, 0x30, 0x31 };
 	
-	if((memcmp(packet->payload, citrix_header, sizeof(citrix_header)) == 0)
-	   || (ntop_strnstr(packet->payload, "Citrix.TcpProxyService", payload_len) != NULL)) {
-	  IPQ_LOG(NTOP_PROTOCOL_CITRIX, ipoque_struct, IPQ_LOG_DEBUG, "Found citrix.\n");
-	  ipoque_int_add_connection(ipoque_struct, NTOP_PROTOCOL_CITRIX, IPOQUE_REAL_PROTOCOL);
+	if((memcmp(packet_payload, citrix_header, sizeof(citrix_header)) == 0)
+	   || (ndpi_strnstr(packet_payload, "Citrix.TcpProxyService", payload_len) != NULL)) {
+	  NDPI_LOG(NDPI_PROTOCOL_CITRIX, ndpi_struct, NDPI_LOG_DEBUG, "Found citrix.\n");
+	  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_CITRIX, NDPI_REAL_PROTOCOL);
 	}
 
 	return;	
       }
       
       
-      IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NTOP_PROTOCOL_CITRIX);
+      NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_CITRIX);
     } else if(flow->l4.tcp.citrix_packet_id > 3)
-      IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NTOP_PROTOCOL_CITRIX);
+      NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_CITRIX);
     
     return;
   }
 }
 
-static void ntop_search_citrix(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_citrix(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+  struct ndpi_packet_struct *packet = &flow->packet;
 
-  IPQ_LOG(NTOP_PROTOCOL_CITRIX, ipoque_struct, IPQ_LOG_DEBUG, "citrix detection...\n");
+  NDPI_LOG(NDPI_PROTOCOL_CITRIX, ndpi_struct, NDPI_LOG_DEBUG, "citrix detection...\n");
 
   /* skip marked packets */
-  if(packet->detected_protocol_stack[0] != NTOP_PROTOCOL_CITRIX)
-    ntop_check_citrix(ipoque_struct);
+  if(packet->detected_protocol_stack[0] != NDPI_PROTOCOL_CITRIX)
+    ndpi_check_citrix(ndpi_struct, flow);
 }
 
 #endif

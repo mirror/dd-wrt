@@ -21,99 +21,99 @@
  */
 
 
-#include "ipq_protocols.h"
+#include "ndpi_protocols.h"
 
-#if defined(IPOQUE_PROTOCOL_IPSEC) || defined(IPOQUE_PROTOCOL_GRE) || defined(IPOQUE_PROTOCOL_ICMP)  || defined(IPOQUE_PROTOCOL_IGMP) || defined(IPOQUE_PROTOCOL_EGP) || defined(IPOQUE_PROTOCOL_SCTP) || defined(IPOQUE_PROTOCOL_OSPF) || defined(IPOQUE_PROTOCOL_IP_IN_IP)
+#if defined(NDPI_PROTOCOL_IPSEC) || defined(NDPI_PROTOCOL_GRE) || defined(NDPI_PROTOCOL_ICMP)  || defined(NDPI_PROTOCOL_IGMP) || defined(NDPI_PROTOCOL_EGP) || defined(NDPI_PROTOCOL_SCTP) || defined(NDPI_PROTOCOL_OSPF) || defined(NDPI_PROTOCOL_IP_IN_IP)
 
 
-#define IPQ_IPSEC_PROTOCOL_ESP	50
-#define IPQ_IPSEC_PROTOCOL_AH	51
+#define NDPI_IPSEC_PROTOCOL_ESP	50
+#define NDPI_IPSEC_PROTOCOL_AH	51
 
-#define IPQ_GRE_PROTOCOL_TYPE	0x2F
+#define NDPI_GRE_PROTOCOL_TYPE	0x2F
 
-#define IPQ_ICMP_PROTOCOL_TYPE	0x01
-#define IPQ_IGMP_PROTOCOL_TYPE	0x02
+#define NDPI_ICMP_PROTOCOL_TYPE	0x01
+#define NDPI_IGMP_PROTOCOL_TYPE	0x02
 
-#define IPQ_EGP_PROTOCOL_TYPE	0x08
+#define NDPI_EGP_PROTOCOL_TYPE	0x08
 
-#define IPQ_OSPF_PROTOCOL_TYPE	0x59
+#define NDPI_OSPF_PROTOCOL_TYPE	0x59
 
-#define IPQ_SCTP_PROTOCOL_TYPE	132
+#define NDPI_SCTP_PROTOCOL_TYPE	132
 
-#define IPQ_IPIP_PROTOCOL_TYPE  0x04
+#define NDPI_IPIP_PROTOCOL_TYPE  0x04
 
-#define IPQ_ICMPV6_PROTOCOL_TYPE  0x3a
+#define NDPI_ICMPV6_PROTOCOL_TYPE  0x3a
 
 
 #define set_protocol_and_bmask(nprot)	\
 {													\
-	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask,nprot) != 0)		\
+	if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(ndpi_struct->detection_bitmask,nprot) != 0)		\
 	{												\
-	    ipoque_int_add_connection(ipoque_struct,    \
+	    ndpi_int_add_connection(ndpi_struct, flow,    \
                                   nprot,                \
-							      IPOQUE_REAL_PROTOCOL); \
+							      NDPI_REAL_PROTOCOL); \
 	}												\
 }
 
 
-static void ipoque_search_in_non_tcp_udp(struct ipoque_detection_module_struct
-								  *ipoque_struct)
+static void ndpi_search_in_non_tcp_udp(struct ndpi_detection_module_struct
+								  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+	struct ndpi_packet_struct *packet = &flow->packet;
 
 	if (packet->iph == NULL) {
-#ifdef IPOQUE_DETECTION_SUPPORT_IPV6
+#ifdef NDPI_DETECTION_SUPPORT_IPV6
 		if (packet->iphv6 == NULL)
 #endif
 			return;
 	}
 	switch (packet->l4_protocol) {
-#ifdef IPOQUE_PROTOCOL_IPSEC
-	case IPQ_IPSEC_PROTOCOL_ESP:
-	case IPQ_IPSEC_PROTOCOL_AH:
-		set_protocol_and_bmask(IPOQUE_PROTOCOL_IPSEC);
+#ifdef NDPI_PROTOCOL_IPSEC
+	case NDPI_IPSEC_PROTOCOL_ESP:
+	case NDPI_IPSEC_PROTOCOL_AH:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IPSEC);
 		break;
-#endif							/* IPOQUE_PROTOCOL_IPSEC */
-#ifdef IPOQUE_PROTOCOL_GRE
-	case IPQ_GRE_PROTOCOL_TYPE:
-		set_protocol_and_bmask(IPOQUE_PROTOCOL_GRE);
+#endif							/* NDPI_PROTOCOL_IPSEC */
+#ifdef NDPI_PROTOCOL_GRE
+	case NDPI_GRE_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_GRE);
 		break;
-#endif							/* IPOQUE_PROTOCOL_GRE */
-#ifdef IPOQUE_PROTOCOL_ICMP
-	case IPQ_ICMP_PROTOCOL_TYPE:
-		set_protocol_and_bmask(IPOQUE_PROTOCOL_ICMP);
+#endif							/* NDPI_PROTOCOL_GRE */
+#ifdef NDPI_PROTOCOL_ICMP
+	case NDPI_ICMP_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_ICMP);
 		break;
-#endif							/* IPOQUE_PROTOCOL_ICMP */
-#ifdef IPOQUE_PROTOCOL_IGMP
-	case IPQ_IGMP_PROTOCOL_TYPE:
-		set_protocol_and_bmask(IPOQUE_PROTOCOL_IGMP);
+#endif							/* NDPI_PROTOCOL_ICMP */
+#ifdef NDPI_PROTOCOL_IGMP
+	case NDPI_IGMP_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IGMP);
 		break;
-#endif							/* IPOQUE_PROTOCOL_IGMP */
-#ifdef IPOQUE_PROTOCOL_EGP
-	case IPQ_EGP_PROTOCOL_TYPE:
-		set_protocol_and_bmask(IPOQUE_PROTOCOL_EGP);
+#endif							/* NDPI_PROTOCOL_IGMP */
+#ifdef NDPI_PROTOCOL_EGP
+	case NDPI_EGP_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_EGP);
 		break;
-#endif							/* IPOQUE_PROTOCOL_EGP */
-#ifdef IPOQUE_PROTOCOL_SCTP
-	case IPQ_SCTP_PROTOCOL_TYPE:
-		set_protocol_and_bmask(IPOQUE_PROTOCOL_SCTP);
+#endif							/* NDPI_PROTOCOL_EGP */
+#ifdef NDPI_PROTOCOL_SCTP
+	case NDPI_SCTP_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_SCTP);
 		break;
-#endif							/* IPOQUE_PROTOCOL_SCTP */
-#ifdef IPOQUE_PROTOCOL_OSPF
-	case IPQ_OSPF_PROTOCOL_TYPE:
-		set_protocol_and_bmask(IPOQUE_PROTOCOL_OSPF);
+#endif							/* NDPI_PROTOCOL_SCTP */
+#ifdef NDPI_PROTOCOL_OSPF
+	case NDPI_OSPF_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_OSPF);
 		break;
-#endif							/* IPOQUE_PROTOCOL_OSPF */
-#ifdef IPOQUE_PROTOCOL_IP_IN_IP
-	case IPQ_IPIP_PROTOCOL_TYPE:
-		set_protocol_and_bmask(IPOQUE_PROTOCOL_IP_IN_IP);
+#endif							/* NDPI_PROTOCOL_OSPF */
+#ifdef NDPI_PROTOCOL_IP_IN_IP
+	case NDPI_IPIP_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_IP_IN_IP);
 		break;
-#endif							/* IPOQUE_PROTOCOL_IP_IN_IP */
-#ifdef IPOQUE_PROTOCOL_ICMPV6
-	case IPQ_ICMPV6_PROTOCOL_TYPE:
-		set_protocol_and_bmask(IPOQUE_PROTOCOL_ICMPV6);
+#endif							/* NDPI_PROTOCOL_IP_IN_IP */
+#ifdef NDPI_PROTOCOL_ICMPV6
+	case NDPI_ICMPV6_PROTOCOL_TYPE:
+		set_protocol_and_bmask(NDPI_PROTOCOL_ICMPV6);
 		break;
-#endif							/* IPOQUE_PROTOCOL_ICMPV6 */
+#endif							/* NDPI_PROTOCOL_ICMPV6 */
 	}
 }
 
