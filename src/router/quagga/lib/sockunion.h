@@ -78,13 +78,9 @@ enum connect_result
 #define SET_IN6_LINKLOCAL_IFINDEX(a, i)
 #endif /* KAME */
 
-/* shortcut macro to specify address field of struct sockaddr */
-#define sock2ip(X)   (((struct sockaddr_in *)(X))->sin_addr.s_addr)
-#ifdef HAVE_IPV6
-#define sock2ip6(X)  (((struct sockaddr_in6 *)(X))->sin6_addr.s6_addr)
-#endif /* HAVE_IPV6 */
-
 #define sockunion_family(X)  (X)->sa.sa_family
+
+#define sockunion2ip(X)      (X)->sin.sin_addr.s_addr
 
 /* Prototypes. */
 extern int str2sockunion (const char *, union sockunion *);
@@ -92,9 +88,7 @@ extern const char *sockunion2str (union sockunion *, char *, size_t);
 extern int sockunion_cmp (union sockunion *, union sockunion *);
 extern int sockunion_same (union sockunion *, union sockunion *);
 
-extern char *sockunion_su2str (union sockunion *su);
 extern union sockunion *sockunion_str2su (const char *str);
-extern struct in_addr sockunion_get_in_addr (union sockunion *su);
 extern int sockunion_accept (int sock, union sockunion *);
 extern int sockunion_stream_socket (union sockunion *);
 extern int sockopt_reuseaddr (int);
