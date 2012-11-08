@@ -177,53 +177,13 @@ sockunion2str (union sockunion *su, char *buf, size_t len)
 union sockunion *
 sockunion_str2su (const char *str)
 {
-  int ret;
-  union sockunion *su;
-
-  su = XCALLOC (MTYPE_SOCKUNION, sizeof (union sockunion));
-
-  ret = inet_pton (AF_INET, str, &su->sin.sin_addr);
-  if (ret > 0)			/* Valid IPv4 address format. */
-    {
-      su->sin.sin_family = AF_INET;
-#ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
-      su->sin.sin_len = sizeof(struct sockaddr_in);
-#endif /* HAVE_STRUCT_SOCKADDR_IN_SIN_LEN */
-      return su;
-    }
-#ifdef HAVE_IPV6
-  ret = inet_pton (AF_INET6, str, &su->sin6.sin6_addr);
-  if (ret > 0)			/* Valid IPv6 address format. */
-    {
-      su->sin6.sin6_family = AF_INET6;
-#ifdef SIN6_LEN
-      su->sin6.sin6_len = sizeof(struct sockaddr_in6);
-#endif /* SIN6_LEN */
-      return su;
-    }
-#endif /* HAVE_IPV6 */
-
+  union sockunion *su = XCALLOC (MTYPE_SOCKUNION, sizeof (union sockunion));
+  
+  if (!str2sockunion (str, su))
+    return su;
+  
   XFREE (MTYPE_SOCKUNION, su);
   return NULL;
-}
-
-char *
-sockunion_su2str (union sockunion *su)
-{
-  char str[SU_ADDRSTRLEN];
-
-  switch (su->sa.sa_family)
-    {
-    case AF_INET:
-      inet_ntop (AF_INET, &su->sin.sin_addr, str, sizeof (str));
-      break;
-#ifdef HAVE_IPV6
-    case AF_INET6:
-      inet_ntop (AF_INET6, &su->sin6.sin6_addr, str, sizeof (str));
-      break;
-#endif /* HAVE_IPV6 */
-    }
-  return XSTRDUP (MTYPE_TMP, str);
 }
 
 /* Convert IPv4 compatible IPv6 address to IPv4 address. */
@@ -422,7 +382,7 @@ sockunion_bind (int sock, union sockunion *su, unsigned short port,
       su->sin.sin_len = size;
 #endif /* HAVE_STRUCT_SOCKADDR_IN_SIN_LEN */
       if (su_addr == NULL)
-	su->sin.sin_addr.s_addr = htonl (INADDR_ANY);
+	sockunion2ip (su) = htonl (INADDR_ANY);
     }
 #ifdef HAVE_IPV6
   else if (su->sa.sa_family == AF_INET6)
@@ -779,9 +739,9 @@ sockunion_cmp (union sockunion *su1, union sockunion *su2)
 
   if (su1->sa.sa_family == AF_INET)
     {
-      if (ntohl (su1->sin.sin_addr.s_addr) == ntohl (su2->sin.sin_addr.s_addr))
+      if (ntohl (sockunion2ip (su1)) == ntohl (sockunion2ip (su2)))
 	return 0;
-      if (ntohl (su1->sin.sin_addr.s_addr) > ntohl (su2->sin.sin_addr.s_addr))
+      if (ntohl (sockunion2ip (su1)) > ntohl (sockunion2ip (su2)))
 	return 1;
       else
 	return -1;
