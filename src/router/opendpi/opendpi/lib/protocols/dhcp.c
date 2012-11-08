@@ -21,24 +21,22 @@
  */
 
 
-#include "ipq_protocols.h"
+#include "ndpi_protocols.h"
 
-#ifdef IPOQUE_PROTOCOL_DHCP
+#ifdef NDPI_PROTOCOL_DHCP
 
-static void ipoque_int_dhcp_add_connection(struct ipoque_detection_module_struct
-										   *ipoque_struct)
+static void ndpi_int_dhcp_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_DHCP, IPOQUE_REAL_PROTOCOL);
+  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_DHCP, NDPI_REAL_PROTOCOL);
 }
 
 
-static void ipoque_search_dhcp_udp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_dhcp_udp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	/* this detection also works for asymmetric dhcp traffic */
 
@@ -46,15 +44,15 @@ static void ipoque_search_dhcp_udp(struct ipoque_detection_module_struct *ipoque
 	if (packet->payload_packet_len >= 244 && (packet->udp->source == htons(67)
 											  || packet->udp->source == htons(68))
 		&& (packet->udp->dest == htons(67) || packet->udp->dest == htons(68))
-		&& get_u32(packet->payload, 236) == htonl(0x63825363)
-		&& get_u16(packet->payload, 240) == htons(0x3501)) {
+		&& get_u_int32_t(packet->payload, 236) == htonl(0x63825363)
+		&& get_u_int16_t(packet->payload, 240) == htons(0x3501)) {
 
-		IPQ_LOG(IPOQUE_PROTOCOL_DHCP, ipoque_struct, IPQ_LOG_DEBUG, "DHCP request\n");
+		NDPI_LOG(NDPI_PROTOCOL_DHCP, ndpi_struct, NDPI_LOG_DEBUG, "DHCP request\n");
 
-		ipoque_int_dhcp_add_connection(ipoque_struct);
+		ndpi_int_dhcp_add_connection(ndpi_struct, flow);
 		return;
 	}
 
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_DHCP);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_DHCP);
 }
 #endif

@@ -21,33 +21,31 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_MAIL_IMAP
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_MAIL_IMAP
 
-static void ipoque_int_mail_imap_add_connection(struct ipoque_detection_module_struct
-												*ipoque_struct)
+static void ndpi_int_mail_imap_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_MAIL_IMAP, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_MAIL_IMAP, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_mail_imap_tcp(struct ipoque_detection_module_struct
-								 *ipoque_struct)
+static void ndpi_search_mail_imap_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
 
-	u16 i = 0;
-	u16 space_pos = 0;
-	u16 command_start = 0;
-	u8 saw_command = 0;
-	const u8 *command = 0;
-
-
-	IPQ_LOG(IPOQUE_PROTOCOL_MAIL_IMAP, ipoque_struct, IPQ_LOG_DEBUG, "search IMAP.\n");
+	u_int16_t i = 0;
+	u_int16_t space_pos = 0;
+	u_int16_t command_start = 0;
+	u_int8_t saw_command = 0;
+	const u_int8_t *command = 0;
 
 
+	NDPI_LOG(NDPI_PROTOCOL_MAIL_IMAP, ndpi_struct, NDPI_LOG_DEBUG, "search IMAP.\n");
 
-	if (packet->payload_packet_len >= 4 && ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a) {
+
+
+	if (packet->payload_packet_len >= 4 && ntohs(get_u_int16_t(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a) {
 		// the DONE command appears without a tag
 		if (packet->payload_packet_len == 6 && ((packet->payload[0] == 'D' || packet->payload[0] == 'd')
 												&& (packet->payload[1] == 'O' || packet->payload[1] == 'o')
@@ -267,15 +265,15 @@ static void ipoque_search_mail_imap_tcp(struct ipoque_detection_module_struct
 
 		if (saw_command == 1) {
 			if (flow->l4.tcp.mail_imap_stage == 3 || flow->l4.tcp.mail_imap_stage == 5) {
-				IPQ_LOG(IPOQUE_PROTOCOL_MAIL_IMAP, ipoque_struct, IPQ_LOG_DEBUG, "mail imap identified\n");
-				ipoque_int_mail_imap_add_connection(ipoque_struct);
+				NDPI_LOG(NDPI_PROTOCOL_MAIL_IMAP, ndpi_struct, NDPI_LOG_DEBUG, "mail imap identified\n");
+				ndpi_int_mail_imap_add_connection(ndpi_struct, flow);
 				return;
 			}
 		}
 	}
 
 	if (packet->payload_packet_len > 1 && packet->payload[packet->payload_packet_len - 1] == ' ') {
-		IPQ_LOG(IPOQUE_PROTOCOL_MAIL_IMAP, ipoque_struct, IPQ_LOG_DEBUG,
+		NDPI_LOG(NDPI_PROTOCOL_MAIL_IMAP, ndpi_struct, NDPI_LOG_DEBUG,
 				"maybe a split imap command -> need next packet and imap_stage is set to 4.\n");
 		flow->l4.tcp.mail_imap_stage = 4;
 		return;
@@ -285,14 +283,14 @@ static void ipoque_search_mail_imap_tcp(struct ipoque_detection_module_struct
 
 	// skip over possible authentication hashes etc. that cannot be identified as imap commands or responses
 	// if the packet count is low enough and at least one command or response was seen before
-	if ((packet->payload_packet_len >= 2 && ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a)
+	if ((packet->payload_packet_len >= 2 && ntohs(get_u_int16_t(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a)
 		&& flow->packet_counter < 6 && flow->l4.tcp.mail_imap_stage >= 1) {
-		IPQ_LOG(IPOQUE_PROTOCOL_MAIL_IMAP, ipoque_struct, IPQ_LOG_DEBUG,
+		NDPI_LOG(NDPI_PROTOCOL_MAIL_IMAP, ndpi_struct, NDPI_LOG_DEBUG,
 				"no imap command or response but packet count < 6 and imap stage >= 1 -> skip\n");
 		return;
 	}
 
-	IPQ_LOG(IPOQUE_PROTOCOL_MAIL_IMAP, ipoque_struct, IPQ_LOG_DEBUG, "exclude IMAP.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_MAIL_IMAP);
+	NDPI_LOG(NDPI_PROTOCOL_MAIL_IMAP, ndpi_struct, NDPI_LOG_DEBUG, "exclude IMAP.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_MAIL_IMAP);
 }
 #endif

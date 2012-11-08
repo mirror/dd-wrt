@@ -21,47 +21,47 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_XDMCP
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_XDMCP
 
 
-static void ipoque_int_xdmcp_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct)
+static void ndpi_int_xdmcp_add_connection(struct ndpi_detection_module_struct
+											*ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_XDMCP, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_XDMCP, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_xdmcp(struct ipoque_detection_module_struct
-						 *ipoque_struct)
+static void ndpi_search_xdmcp(struct ndpi_detection_module_struct
+						 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_XDMCP, ipoque_struct, IPQ_LOG_DEBUG, "search xdmcp.\n");
+	NDPI_LOG(NDPI_PROTOCOL_XDMCP, ndpi_struct, NDPI_LOG_DEBUG, "search xdmcp.\n");
 
 	if (packet->tcp != NULL && (ntohs(packet->tcp->dest) >= 6000 && ntohs(packet->tcp->dest) <= 6005)
 		&& packet->payload_packet_len == 48
 		&& packet->payload[0] == 0x6c && packet->payload[1] == 0x00
-		&& ntohs(get_u16(packet->payload, 6)) == 0x1200 && ntohs(get_u16(packet->payload, 8)) == 0x1000) {
+		&& ntohs(get_u_int16_t(packet->payload, 6)) == 0x1200 && ntohs(get_u_int16_t(packet->payload, 8)) == 0x1000) {
 
-		IPQ_LOG(IPOQUE_PROTOCOL_XDMCP, ipoque_struct, IPQ_LOG_DEBUG, "found xdmcp over tcp.\n");
-		ipoque_int_xdmcp_add_connection(ipoque_struct);
+		NDPI_LOG(NDPI_PROTOCOL_XDMCP, ndpi_struct, NDPI_LOG_DEBUG, "found xdmcp over tcp.\n");
+		ndpi_int_xdmcp_add_connection(ndpi_struct, flow);
 		return;
 	}
 	if (packet->udp != NULL && ntohs(packet->udp->dest) == 177
-		&& packet->payload_packet_len >= 6 && packet->payload_packet_len == 6 + ntohs(get_u16(packet->payload, 4))
-		&& ntohs(get_u16(packet->payload, 0)) == 0x0001 && ntohs(get_u16(packet->payload, 2)) == 0x0002) {
+		&& packet->payload_packet_len >= 6 && packet->payload_packet_len == 6 + ntohs(get_u_int16_t(packet->payload, 4))
+		&& ntohs(get_u_int16_t(packet->payload, 0)) == 0x0001 && ntohs(get_u_int16_t(packet->payload, 2)) == 0x0002) {
 
-		IPQ_LOG(IPOQUE_PROTOCOL_XDMCP, ipoque_struct, IPQ_LOG_DEBUG, "found xdmcp over udp.\n");
-		ipoque_int_xdmcp_add_connection(ipoque_struct);
+		NDPI_LOG(NDPI_PROTOCOL_XDMCP, ndpi_struct, NDPI_LOG_DEBUG, "found xdmcp over udp.\n");
+		ndpi_int_xdmcp_add_connection(ndpi_struct, flow);
 		return;
 	}
 
 
-	IPQ_LOG(IPOQUE_PROTOCOL_XDMCP, ipoque_struct, IPQ_LOG_DEBUG, "exclude xdmcp.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_XDMCP);
+	NDPI_LOG(NDPI_PROTOCOL_XDMCP, ndpi_struct, NDPI_LOG_DEBUG, "exclude xdmcp.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_XDMCP);
 }
 
 #endif

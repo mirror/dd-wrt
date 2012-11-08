@@ -18,42 +18,51 @@
  */
 
 
-#include "ipq_utils.h"
+#include "ndpi_utils.h"
 
-#ifdef NTOP_PROTOCOL_NETFLOW
+#ifdef NDPI_PROTOCOL_NETFLOW
 
-static void ntop_check_netflow(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_check_netflow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-  struct ipoque_flow_struct *flow = ipoque_struct->flow;
-  const u8 *packet_payload = packet->payload;
-  u32 payload_len = packet->payload_packet_len;
+  struct ndpi_packet_struct *packet = &flow->packet;
   
-  if((ipoque_struct->packet.udp != NULL)
+  const u_int8_t *packet_payload = packet->payload;
+  u_int32_t payload_len = packet->payload_packet_len;
+  time_t now;
+
+  if((packet->udp != NULL)
      && (payload_len >= 24)      
-     && (packet->payload[0] == 0)
-     && ((packet->payload[1] == 5)
-	 || (packet->payload[1] == 9)
-	 || (packet->payload[1] == 10 /* IPFIX */))
-     && (packet->payload[3] <= 48 /* Flow count */)) {    
+     && (packet_payload[0] == 0)
+     && ((packet_payload[1] == 5)
+	 || (packet_payload[1] == 9)
+	 || (packet_payload[1] == 10 /* IPFIX */))
+     && (packet_payload[3] <= 48 /* Flow count */)) {    
     u_int32_t when, *_when;
 
-    _when = (u_int32_t*)&packet->payload[8]; /* Sysuptime */
+    _when = (u_int32_t*)&packet_payload[8]; /* Sysuptime */
 
     when = ntohl(*_when);
 
-    if((when >= 946684800 /* 1/1/2000 */) && (when <= get_seconds())) {
-      IPQ_LOG(NTOP_PROTOCOL_NETFLOW, ipoque_struct, IPQ_LOG_DEBUG, "Found netflow.\n");
-      ipoque_int_add_connection(ipoque_struct, NTOP_PROTOCOL_NETFLOW, IPOQUE_REAL_PROTOCOL);
+#ifndef OPENDPI_NETFILTER_MODULE
+    now = time(NULL);
+#else
+    struct timeval now_tv;
+    do_gettimeofday(&now_tv);
+    now = now_tv.tv_sec;
+#endif
+
+    if((when >= 946684800 /* 1/1/2000 */) && (when <= now)) {
+      NDPI_LOG(NDPI_PROTOCOL_NETFLOW, ndpi_struct, NDPI_LOG_DEBUG, "Found netflow.\n");
+      ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_NETFLOW, NDPI_REAL_PROTOCOL);
       return;
     }
   }
 }
 
-static void ntop_search_netflow(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_netflow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  IPQ_LOG(NTOP_PROTOCOL_NETFLOW, ipoque_struct, IPQ_LOG_DEBUG, "netflow detection...\n");
-  ntop_check_netflow(ipoque_struct);
+  NDPI_LOG(NDPI_PROTOCOL_NETFLOW, ndpi_struct, NDPI_LOG_DEBUG, "netflow detection...\n");
+  ndpi_check_netflow(ndpi_struct, flow);
 }
 
 #endif

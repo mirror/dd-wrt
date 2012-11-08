@@ -21,48 +21,48 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_TFTP
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_TFTP
 
-static void ipoque_int_tftp_add_connection(struct ipoque_detection_module_struct
-										   *ipoque_struct)
+static void ndpi_int_tftp_add_connection(struct ndpi_detection_module_struct
+										   *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_TFTP, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_TFTP, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_tftp(struct ipoque_detection_module_struct
-						*ipoque_struct)
+static void ndpi_search_tftp(struct ndpi_detection_module_struct
+						*ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
 
 
 
-	IPQ_LOG(IPOQUE_PROTOCOL_TFTP, ipoque_struct, IPQ_LOG_DEBUG, "search TFTP.\n");
+	NDPI_LOG(NDPI_PROTOCOL_TFTP, ndpi_struct, NDPI_LOG_DEBUG, "search TFTP.\n");
 
 
 
 	if (packet->payload_packet_len > 3 && flow->l4.udp.tftp_stage == 0
-		&& ntohl(get_u32(packet->payload, 0)) == 0x00030001) {
-		IPQ_LOG(IPOQUE_PROTOCOL_TFTP, ipoque_struct, IPQ_LOG_DEBUG, "maybe tftp. need next packet.\n");
+		&& ntohl(get_u_int32_t(packet->payload, 0)) == 0x00030001) {
+		NDPI_LOG(NDPI_PROTOCOL_TFTP, ndpi_struct, NDPI_LOG_DEBUG, "maybe tftp. need next packet.\n");
 		flow->l4.udp.tftp_stage = 1;
 		return;
 	}
 	if (packet->payload_packet_len > 3 && (flow->l4.udp.tftp_stage == 1)
-		&& ntohl(get_u32(packet->payload, 0)) == 0x00040001) {
+		&& ntohl(get_u_int32_t(packet->payload, 0)) == 0x00040001) {
 
-		IPQ_LOG(IPOQUE_PROTOCOL_TFTP, ipoque_struct, IPQ_LOG_DEBUG, "found tftp.\n");
-		ipoque_int_tftp_add_connection(ipoque_struct);
+		NDPI_LOG(NDPI_PROTOCOL_TFTP, ndpi_struct, NDPI_LOG_DEBUG, "found tftp.\n");
+		ndpi_int_tftp_add_connection(ndpi_struct, flow);
 		return;
 	}
 	if (packet->payload_packet_len > 1
 		&& ((packet->payload[0] == 0 && packet->payload[packet->payload_packet_len - 1] == 0)
-			|| (packet->payload_packet_len == 4 && ntohl(get_u32(packet->payload, 0)) == 0x00040000))) {
-		IPQ_LOG(IPOQUE_PROTOCOL_TFTP, ipoque_struct, IPQ_LOG_DEBUG, "skip initial packet.\n");
+			|| (packet->payload_packet_len == 4 && ntohl(get_u_int32_t(packet->payload, 0)) == 0x00040000))) {
+		NDPI_LOG(NDPI_PROTOCOL_TFTP, ndpi_struct, NDPI_LOG_DEBUG, "skip initial packet.\n");
 		return;
 	}
 
-	IPQ_LOG(IPOQUE_PROTOCOL_TFTP, ipoque_struct, IPQ_LOG_DEBUG, "exclude TFTP.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_TFTP);
+	NDPI_LOG(NDPI_PROTOCOL_TFTP, ndpi_struct, NDPI_LOG_DEBUG, "exclude TFTP.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_TFTP);
 }
 #endif

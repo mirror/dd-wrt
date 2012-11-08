@@ -1,5 +1,5 @@
 /*
- * ipq_utils.h
+ * ndpi_utils.h
  * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
@@ -22,31 +22,12 @@
 
 
 
-#ifndef _IPQ_UTILS_H_
-#define _IPQ_UTILS_H_
+#ifndef _NDPI_UTILS_H_
+#define _NDPI_UTILS_H_
 
-#include "ipq_protocols.h"
+#include "ndpi_protocols.h"
 
+extern char* ndpi_strnstr(const char *s, const char *find, size_t slen);
 
-/**
- * macro for getting the string len of a static string
- *
- * use it instead of strlen to avoid runtime calculations
- */
-#define IPQ_STATICSTRING_LEN( s ) ( sizeof( s ) - 1 )
-
-
-
-/** macro to compare 2 IPv6 addresses with each other to identify the "smaller" IPv6 address  */
-#define IPOQUE_COMPARE_IPV6_ADDRESS_STRUCTS(x,y)  \
-  ((((u64 *)(x))[0]) < (((u64 *)(y))[0]) || ( (((u64 *)(x))[0]) == (((u64 *)(y))[0]) && (((u64 *)(x))[1]) < (((u64 *)(y))[1])) )
-
-
-
-#ifdef HAVE_NTOP
-/* http.c */
-extern char* ntop_strnstr(const char *s, const char *find, size_t slen);
-#endif
-
-#endif							/* _IPQ_UTILS_H_ */
+#endif							/* _NDPI_UTILS_H_ */
 

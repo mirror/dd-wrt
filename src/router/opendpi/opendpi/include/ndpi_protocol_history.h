@@ -1,5 +1,5 @@
 /*
- * ipq_api.h
+ * ndpi_protocol_history.h
  * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
@@ -21,21 +21,17 @@
  */
 
 
-#ifndef __IPOQUE_API_INCLUDE_FILE__
-#define __IPOQUE_API_INCLUDE_FILE__
-#ifdef __cplusplus
-extern "C" {
-#endif
-/* basic definitions (u64, u32, timestamp size,...) */
-#include "ipq_basic_def.h"
-#include "ipq_protocols_osdpi.h"
-/* macros for protocol / bitmask conversation if needed */
-#include "ipq_macros.h"
 
-#include "ipq_public_functions.h"
+#ifndef NDPI_PROTOCOL_HISTORY_H
+#define NDPI_PROTOCOL_HISTORY_H
 
-#include "ipq_debug_functions.h"
-#ifdef __cplusplus
-}
+typedef enum {
+  NDPI_REAL_PROTOCOL = 0,
+  NDPI_CORRELATED_PROTOCOL = 1
+} ndpi_protocol_type_t;
+
+static void ndpi_int_add_connection(struct ndpi_detection_module_struct *ndpi_struct,                             
+                             struct ndpi_flow_struct *flow,
+                             u_int16_t detected_protocol, ndpi_protocol_type_t protocol_type);
+
 #endif
-#endif							/* __IPOQUE_API_INCLUDE_FILE__ */

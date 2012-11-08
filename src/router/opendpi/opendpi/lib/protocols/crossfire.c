@@ -23,42 +23,41 @@
 
 
 /* include files */
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_CROSSFIRE
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_CROSSFIRE
 
 
-static void ipoque_int_crossfire_add_connection(struct ipoque_detection_module_struct
-												*ipoque_struct, ipoque_protocol_type_t protocol_type)
+static void ndpi_int_crossfire_add_connection(struct ndpi_detection_module_struct *ndpi_struct, 
+					      struct ndpi_flow_struct *flow, ndpi_protocol_type_t protocol_type)
 {
 
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_CROSSFIRE, protocol_type);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_CROSSFIRE, protocol_type);
 }
 
-static void ipoque_search_crossfire_tcp_udp(struct ipoque_detection_module_struct
-									 *ipoque_struct)
+static void ndpi_search_crossfire_tcp_udp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_CROSSFIRE, ipoque_struct, IPQ_LOG_DEBUG, "search crossfire.\n");
+	NDPI_LOG(NDPI_PROTOCOL_CROSSFIRE, ndpi_struct, NDPI_LOG_DEBUG, "search crossfire.\n");
 
 
 	if (packet->udp != 0) {
-		if (packet->payload_packet_len == 25 && get_u32(packet->payload, 0) == ntohl(0xc7d91999)
-			&& get_u16(packet->payload, 4) == ntohs(0x0200)
-			&& get_u16(packet->payload, 22) == ntohs(0x7d00)
+		if (packet->payload_packet_len == 25 && get_u_int32_t(packet->payload, 0) == ntohl(0xc7d91999)
+			&& get_u_int16_t(packet->payload, 4) == ntohs(0x0200)
+			&& get_u_int16_t(packet->payload, 22) == ntohs(0x7d00)
 			) {
-			IPQ_LOG(IPOQUE_PROTOCOL_CROSSFIRE, ipoque_struct, IPQ_LOG_DEBUG, "Crossfire: found udp packet.\n");
-			ipoque_int_crossfire_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+			NDPI_LOG(NDPI_PROTOCOL_CROSSFIRE, ndpi_struct, NDPI_LOG_DEBUG, "Crossfire: found udp packet.\n");
+			ndpi_int_crossfire_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 			return;
 		}
 
 	} else if (packet->tcp != 0) {
 
 		if (packet->payload_packet_len > 4 && memcmp(packet->payload, "GET /", 5) == 0) {
-			ipq_parse_packet_line_info(ipoque_struct);
+			ndpi_parse_packet_line_info(ndpi_struct, flow);
 			if (packet->parsed_lines == 8
 				&& (packet->line[0].ptr != NULL && packet->line[0].len >= 30
 					&& (memcmp(&packet->payload[5], "notice/login_big", 16) == 0
@@ -68,16 +67,16 @@ static void ipoque_search_crossfire_tcp_udp(struct ipoque_detection_module_struc
 					&& (memcmp(packet->host_line.ptr, "crossfire", 9) == 0
 						|| memcmp(packet->host_line.ptr, "www.crossfire", 13) == 0))
 				) {
-				IPQ_LOG(IPOQUE_PROTOCOL_CROSSFIRE, ipoque_struct, IPQ_LOG_DEBUG, "Crossfire: found HTTP request.\n");
-				ipoque_int_crossfire_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+				NDPI_LOG(NDPI_PROTOCOL_CROSSFIRE, ndpi_struct, NDPI_LOG_DEBUG, "Crossfire: found HTTP request.\n");
+				ndpi_int_crossfire_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 				return;
 			}
 		}
 
 	}
 
-	IPQ_LOG(IPOQUE_PROTOCOL_CROSSFIRE, ipoque_struct, IPQ_LOG_DEBUG, "exclude crossfire.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_CROSSFIRE);
+	NDPI_LOG(NDPI_PROTOCOL_CROSSFIRE, ndpi_struct, NDPI_LOG_DEBUG, "exclude crossfire.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_CROSSFIRE);
 }
 
 
