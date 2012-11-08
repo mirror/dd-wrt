@@ -2943,7 +2943,6 @@ peer_update_source_vty (struct vty *vty, const char *peer_str,
                         const char *source_str)
 {
   struct peer *peer;
-  union sockunion *su;
 
   peer = peer_and_group_lookup_vty (vty, peer_str);
   if (! peer)
@@ -2951,12 +2950,11 @@ peer_update_source_vty (struct vty *vty, const char *peer_str,
 
   if (source_str)
     {
-      su = sockunion_str2su (source_str);
-      if (su)
-	{
-	  peer_update_source_addr_set (peer, su);
-	  sockunion_free (su);
-	}
+      union sockunion su;
+      int ret = str2sockunion (source_str, &su);
+
+      if (ret == 0)
+	peer_update_source_addr_set (peer, &su);
       else
 	peer_update_source_if_set (peer, source_str);
     }
@@ -8966,7 +8964,7 @@ bgp_config_write_redistribute (struct vty *vty, struct bgp *bgp, afi_t afi,
 	  vty_out (vty, " redistribute %s", zebra_route_string(i));
 
 	  if (bgp->redist_metric_flag[afi][i])
-	    vty_out (vty, " metric %d", bgp->redist_metric[afi][i]);
+	    vty_out (vty, " metric %u", bgp->redist_metric[afi][i]);
 
 	  if (bgp->rmap[afi][i].name)
 	    vty_out (vty, " route-map %s", bgp->rmap[afi][i].name);

@@ -111,7 +111,8 @@ route_match_peer (void *rule, struct prefix *prefix, route_map_object_t type,
       void *object)
 {
   union sockunion *su;
-  union sockunion *su2;
+  union sockunion su_def = { .sa.sa_family = AF_INET,
+			     .sin.sin_addr.s_addr = INADDR_ANY };
   struct peer_group *group;
   struct peer *peer;
   struct listnode *node, *nnode;
@@ -127,8 +128,7 @@ route_match_peer (void *rule, struct prefix *prefix, route_map_object_t type,
 
       /* If su='0.0.0.0' (command 'match peer local'), and it's a NETWORK,
           REDISTRIBUTE or DEFAULT_GENERATED route => return RMAP_MATCH */
-      su2 = sockunion_str2su ("0.0.0.0");
-      if ( sockunion_same (su, su2) )
+      if (sockunion_same (su, &su_def))
         {
           int ret;
           if ( CHECK_FLAG (peer->rmap_type, PEER_RMAP_TYPE_NETWORK) ||
@@ -137,12 +137,9 @@ route_match_peer (void *rule, struct prefix *prefix, route_map_object_t type,
             ret = RMAP_MATCH;
           else
             ret = RMAP_NOMATCH;
-          
-          sockunion_free (su2);
           return ret;
         }
-      sockunion_free (su2);
-      
+
       if (! CHECK_FLAG (peer->sflags, PEER_STATUS_GROUP))
         {
           if (sockunion_same (su, &peer->su))
@@ -172,7 +169,7 @@ route_match_peer_compile (const char *arg)
 
   su = XMALLOC (MTYPE_ROUTE_MAP_COMPILED, sizeof (union sockunion));
 
-  ret = str2sockunion ( (arg)? arg : "0.0.0.0", su);
+  ret = str2sockunion (strcmp(arg, "local") ? arg : "0.0.0.0", su);
   if (ret < 0) {
     XFREE (MTYPE_ROUTE_MAP_COMPILED, su);
     return NULL;
@@ -878,7 +875,6 @@ route_set_ip_nexthop (void *rule, struct prefix *prefix,
 		      route_map_object_t type, void *object)
 {
   struct rmap_ip_nexthop_set *rins = rule;
-  struct in_addr peer_address;
   struct bgp_info *bgp_info;
   struct peer *peer;
 
@@ -894,16 +890,14 @@ route_set_ip_nexthop (void *rule, struct prefix *prefix,
 	      && peer->su_remote 
 	      && sockunion_family (peer->su_remote) == AF_INET)
 	    {
-              inet_aton (sockunion_su2str (peer->su_remote), &peer_address);
-              bgp_info->attr->nexthop = peer_address;
+	      bgp_info->attr->nexthop.s_addr = sockunion2ip (peer->su_remote);
 	      bgp_info->attr->flag |= ATTR_FLAG_BIT (BGP_ATTR_NEXT_HOP);
 	    }
 	  else if (CHECK_FLAG (peer->rmap_type, PEER_RMAP_TYPE_OUT)
 		   && peer->su_local
 		   && sockunion_family (peer->su_local) == AF_INET)
 	    {
-              inet_aton (sockunion_su2str (peer->su_local), &peer_address);
-              bgp_info->attr->nexthop = peer_address;
+	      bgp_info->attr->nexthop.s_addr = sockunion2ip (peer->su_local);
 	      bgp_info->attr->flag |= ATTR_FLAG_BIT (BGP_ATTR_NEXT_HOP);
 	    }
 	}
@@ -2430,7 +2424,7 @@ DEFUN (match_peer_local,
         "Match peer address\n"
         "Static or Redistributed routes\n")
 {
-  return bgp_route_match_add (vty, vty->index, "peer", NULL);
+  return bgp_route_match_add (vty, vty->index, "peer", "local");
 }
 
 DEFUN (no_match_peer,

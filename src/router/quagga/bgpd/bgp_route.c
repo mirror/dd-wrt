@@ -2616,7 +2616,7 @@ bgp_announce_route_all (struct peer *peer)
 
 static void
 bgp_soft_reconfig_table_rsclient (struct peer *rsclient, afi_t afi,
-        safi_t safi, struct bgp_table *table)
+        safi_t safi, struct bgp_table *table, struct prefix_rd *prd)
 {
   struct bgp_node *rn;
   struct bgp_adj_in *ain;
@@ -2627,8 +2627,11 @@ bgp_soft_reconfig_table_rsclient (struct peer *rsclient, afi_t afi,
   for (rn = bgp_table_top (table); rn; rn = bgp_route_next (rn))
     for (ain = rn->adj_in; ain; ain = ain->next)
       {
+        struct bgp_info *ri = rn->info;
+
         bgp_update_rsclient (rsclient, afi, safi, ain->attr, ain->peer,
-                &rn->p, ZEBRA_ROUTE_BGP, BGP_ROUTE_NORMAL, NULL, NULL);
+                &rn->p, ZEBRA_ROUTE_BGP, BGP_ROUTE_NORMAL, prd,
+                (bgp_info_extra_get (ri))->tag);
       }
 }
 
@@ -2639,18 +2642,25 @@ bgp_soft_reconfig_rsclient (struct peer *rsclient, afi_t afi, safi_t safi)
   struct bgp_node *rn;
   
   if (safi != SAFI_MPLS_VPN)
-    bgp_soft_reconfig_table_rsclient (rsclient, afi, safi, NULL);
+    bgp_soft_reconfig_table_rsclient (rsclient, afi, safi, NULL, NULL);
 
   else
     for (rn = bgp_table_top (rsclient->bgp->rib[afi][safi]); rn;
             rn = bgp_route_next (rn))
       if ((table = rn->info) != NULL)
-        bgp_soft_reconfig_table_rsclient (rsclient, afi, safi, table);
+        {
+          struct prefix_rd prd;
+          prd.family = AF_UNSPEC;
+          prd.prefixlen = 64;
+          memcpy(&prd.val, rn->p.u.val, 8);
+
+          bgp_soft_reconfig_table_rsclient (rsclient, afi, safi, table, &prd);
+        }
 }
 
 static void
 bgp_soft_reconfig_table (struct peer *peer, afi_t afi, safi_t safi,
-			 struct bgp_table *table)
+			 struct bgp_table *table, struct prefix_rd *prd)
 {
   int ret;
   struct bgp_node *rn;
@@ -2664,9 +2674,12 @@ bgp_soft_reconfig_table (struct peer *peer, afi_t afi, safi_t safi,
       {
 	if (ain->peer == peer)
 	  {
+	    struct bgp_info *ri = rn->info;
+
 	    ret = bgp_update (peer, &rn->p, ain->attr, afi, safi,
 			      ZEBRA_ROUTE_BGP, BGP_ROUTE_NORMAL,
-			      NULL, NULL, 1);
+			      prd, (bgp_info_extra_get (ri))->tag, 1);
+
 	    if (ret < 0)
 	      {
 		bgp_unlock_node (rn);
@@ -2687,12 +2700,19 @@ bgp_soft_reconfig_in (struct peer *peer, afi_t afi, safi_t safi)
     return;
 
   if (safi != SAFI_MPLS_VPN)
-    bgp_soft_reconfig_table (peer, afi, safi, NULL);
+    bgp_soft_reconfig_table (peer, afi, safi, NULL, NULL);
   else
     for (rn = bgp_table_top (peer->bgp->rib[afi][safi]); rn;
 	 rn = bgp_route_next (rn))
       if ((table = rn->info) != NULL)
-	bgp_soft_reconfig_table (peer, afi, safi, table);
+        {
+          struct prefix_rd prd;
+          prd.family = AF_UNSPEC;
+          prd.prefixlen = 64;
+          memcpy(&prd.val, rn->p.u.val, 8);
+
+          bgp_soft_reconfig_table (peer, afi, safi, table, &prd);
+        }
 }
 
 
@@ -5954,7 +5974,7 @@ route_vty_out_detail (struct vty *vty, struct bgp *bgp, struct prefix *p,
 	  if (! CHECK_FLAG (binfo->flags, BGP_INFO_VALID))
 	    vty_out (vty, " (inaccessible)"); 
 	  else if (binfo->extra && binfo->extra->igpmetric)
-	    vty_out (vty, " (metric %d)", binfo->extra->igpmetric);
+	    vty_out (vty, " (metric %u)", binfo->extra->igpmetric);
 	  vty_out (vty, " from %s", sockunion2str (&binfo->peer->su, buf, SU_ADDRSTRLEN));
 	  if (attr->flag & ATTR_FLAG_BIT(BGP_ATTR_ORIGINATOR_ID))
 	    vty_out (vty, " (%s)", inet_ntoa (attr->extra->originator_id));
@@ -10202,15 +10222,18 @@ DEFUN (show_ip_bgp_neighbor_received_prefix_filter,
        "Display the prefixlist filter\n")
 {
   char name[BUFSIZ];
-  union sockunion *su;
+  union sockunion su;
   struct peer *peer;
-  int count;
+  int count, ret;
 
-  su = sockunion_str2su (argv[0]);
-  if (su == NULL)
-    return CMD_WARNING;
+  ret = str2sockunion (argv[0], &su);
+  if (ret < 0)
+    {
+      vty_out (vty, "Malformed address: %s%s", argv[0], VTY_NEWLINE);
+      return CMD_WARNING;
+    }
 
-  peer = peer_lookup (NULL, su);
+  peer = peer_lookup (NULL, &su);
   if (! peer)
     return CMD_WARNING;
 
@@ -10241,15 +10264,18 @@ DEFUN (show_ip_bgp_ipv4_neighbor_received_prefix_filter,
        "Display the prefixlist filter\n")
 {
   char name[BUFSIZ];
-  union sockunion *su;
+  union sockunion su;
   struct peer *peer;
-  int count;
+  int count, ret;
 
-  su = sockunion_str2su (argv[1]);
-  if (su == NULL)
-    return CMD_WARNING;
+  ret = str2sockunion (argv[1], &su);
+  if (ret < 0)
+    {
+      vty_out (vty, "Malformed address: %s%s", argv[1], VTY_NEWLINE);
+      return CMD_WARNING;
+    }
 
-  peer = peer_lookup (NULL, su);
+  peer = peer_lookup (NULL, &su);
   if (! peer)
     return CMD_WARNING;
 
@@ -10312,15 +10338,18 @@ DEFUN (show_bgp_neighbor_received_prefix_filter,
        "Display the prefixlist filter\n")
 {
   char name[BUFSIZ];
-  union sockunion *su;
+  union sockunion su;
   struct peer *peer;
-  int count;
+  int count, ret;
 
-  su = sockunion_str2su (argv[0]);
-  if (su == NULL)
-    return CMD_WARNING;
+  ret = str2sockunion (argv[0], &su);
+  if (ret < 0)
+    {
+      vty_out (vty, "Malformed address: %s%s", argv[0], VTY_NEWLINE);
+      return CMD_WARNING;
+    }
 
-  peer = peer_lookup (NULL, su);
+  peer = peer_lookup (NULL, &su);
   if (! peer)
     return CMD_WARNING;
 
@@ -10394,10 +10423,10 @@ DEFUN (show_bgp_view_neighbor_received_prefix_filter,
        "Display the prefixlist filter\n")
 {
   char name[BUFSIZ];
-  union sockunion *su;
+  union sockunion su;
   struct peer *peer;
   struct bgp *bgp;
-  int count;
+  int count, ret;
 
   /* BGP structure lookup. */
   bgp = bgp_lookup_by_name (argv[0]);
@@ -10407,11 +10436,14 @@ DEFUN (show_bgp_view_neighbor_received_prefix_filter,
 	  return CMD_WARNING;
 	}
   
-  su = sockunion_str2su (argv[1]);
-  if (su == NULL)
-    return CMD_WARNING;
+  ret = str2sockunion (argv[1], &su);
+  if (ret < 0)
+    {
+      vty_out (vty, "Malformed address: %s%s", argv[1], VTY_NEWLINE);
+      return CMD_WARNING;
+    }
 
-  peer = peer_lookup (bgp, su);
+  peer = peer_lookup (bgp, &su);
   if (! peer)
     return CMD_WARNING;
 
