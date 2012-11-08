@@ -31,6 +31,15 @@
 
 #define MIB_SIZ 4
 
+/* Fix for recent (2.6.14) kernel headers */
+#ifndef IPCTL_FORWARDING
+#define IPCTL_FORWARDING NET_IPV4_FORWARD
+#endif
+
+#ifndef IP6CTL_FORWARDING
+#define IP6CTL_FORWARDING NET_IPV6_FORWARDING
+#endif
+
 extern struct zebra_privs_t zserv_privs;
 
 /* IPv4 forwarding control MIB. */

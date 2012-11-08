@@ -1574,22 +1574,8 @@ ospf_ls_upd_list_lsa (struct ospf_neighbor *nbr, struct stream *s,
   lsas = list_new ();
 
   count = stream_getl (s);
-//  size -= OSPF_LS_UPD_MIN_SIZE; /* # LSAs */
+  size -= OSPF_LS_UPD_MIN_SIZE; /* # LSAs */
 
-if (size < OSPF_LS_UPD_MIN_SIZE)
-    {
-      zlog_warn ("Link State Update: LSA length (%d) shorter than min update"
-           " size (%d) from nbr %s",
-           size, OSPF_LS_UPD_MIN_SIZE, inet_ntoa (nbr->src));
-      count = 0;
-      size = 0;
-    }
-  else
-    {
-      count = stream_getl (s);
-      size -= OSPF_LS_UPD_MIN_SIZE; /* # LSAs */
-    }
-    
   for (; size >= OSPF_LSA_HEADER_SIZE && count > 0;
        size -= length, stream_forward_getp (s, length), count--)
     {
