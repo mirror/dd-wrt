@@ -33,14 +33,17 @@ void nf_ct_deliver_cached_events(struct nf_conn *ct)
 {
 	struct net *net = nf_ct_net(ct);
 	unsigned long events, missed;
+        /* Incredibly nasty duplication in order to hack second event */
 	struct nf_ct_event_notifier *notify;
+	struct nf_ct_event_notifier *notify_2;
 	struct nf_conntrack_ecache *e;
 	struct nf_ct_event item;
 	int ret;
 
 	rcu_read_lock();
 	notify = rcu_dereference(net->ct.nf_conntrack_event_cb);
-	if (notify == NULL)
+	notify_2 = rcu_dereference(net->ct.nf_conntrack_event_cb_2);
+	if ( (notify == NULL) && (notify_2 == NULL) )
 		goto out_unlock;
 
 	e = nf_ct_ecache_find(ct);
@@ -64,7 +67,8 @@ void nf_ct_deliver_cached_events(struct nf_conn *ct)
 	item.portid = 0;
 	item.report = 0;
 
-	ret = notify->fcn(events | missed, &item);
+	ret = min( notify ? notify->fcn(events | missed, &item) : 0,
+                           notify_2 ? notify_2->fcn(events | missed, &item) : 0);
 
 	if (likely(ret >= 0 && !missed))
 		goto out_unlock;
@@ -86,15 +90,21 @@ int nf_conntrack_register_notifier(struct net *net,
 {
 	int ret;
 	struct nf_ct_event_notifier *notify;
+	struct nf_ct_event_notifier *notify_2;
 
 	mutex_lock(&nf_ct_ecache_mutex);
 	notify = rcu_dereference_protected(net->ct.nf_conntrack_event_cb,
 					   lockdep_is_held(&nf_ct_ecache_mutex));
-	if (notify != NULL) {
+	notify_2 = rcu_dereference_protected(net->ct.nf_conntrack_event_cb_2,
+					   lockdep_is_held(&nf_ct_ecache_mutex));
+	if ( (notify != NULL) && (notify_2 != NULL) ) {
 		ret = -EBUSY;
 		goto out_unlock;
 	}
-	rcu_assign_pointer(net->ct.nf_conntrack_event_cb, new);
+        if (notify == NULL)
+	    rcu_assign_pointer(net->ct.nf_conntrack_event_cb, new);
+        else
+	    rcu_assign_pointer(net->ct.nf_conntrack_event_cb_2, new);
 	ret = 0;
 
 out_unlock:
@@ -107,12 +117,18 @@ void nf_conntrack_unregister_notifier(struct net *net,
 				      struct nf_ct_event_notifier *new)
 {
 	struct nf_ct_event_notifier *notify;
+	struct nf_ct_event_notifier *notify_2;
 
 	mutex_lock(&nf_ct_ecache_mutex);
 	notify = rcu_dereference_protected(net->ct.nf_conntrack_event_cb,
 					   lockdep_is_held(&nf_ct_ecache_mutex));
-	BUG_ON(notify != new);
-	RCU_INIT_POINTER(net->ct.nf_conntrack_event_cb, NULL);
+	notify_2 = rcu_dereference_protected(net->ct.nf_conntrack_event_cb_2,
+					   lockdep_is_held(&nf_ct_ecache_mutex));
+	BUG_ON((notify != new) || (notify_2 != new));
+        if (notify == new)
+	    RCU_INIT_POINTER(net->ct.nf_conntrack_event_cb, NULL);
+        else
+	    RCU_INIT_POINTER(net->ct.nf_conntrack_event_cb_2, NULL);
 	mutex_unlock(&nf_ct_ecache_mutex);
 }
 EXPORT_SYMBOL_GPL(nf_conntrack_unregister_notifier);
