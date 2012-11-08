@@ -63,7 +63,7 @@ $ignore{'"show history"'} = "ignore";
 foreach (@ARGV) {
     $file = $_;
 
-    open (FH, "cpp -DHAVE_CONFIG_H -DVTYSH_EXTRACT_PL -DHAVE_IPV6 -I.. -I./ -I./.. -I../lib -I../isisd/topology   $file |");
+    open (FH, "ccache mips-linux-uclibc-gcc -E -DHAVE_CONFIG_H -DVTYSH_EXTRACT_PL -DHAVE_IPV6 -I.. -I./ -I./.. -I../lib -I../isisd/topology   $file |");
     local $/; undef $/;
     $line = <FH>;
     close (FH);
