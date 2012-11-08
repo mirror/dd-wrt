@@ -216,9 +216,11 @@ typedef struct {
     "HTTP Connect","HTTP Proxy","Citrix","Netflix","Last.fm","Grooveshark", \
     "Skyfile_prepaid","Skyfile_rudics","Skyfile_postpaid","CitrixOnline_GotoMeeting","Apple","Webex",\
     "WhatsApp","Apple_iCloud","Viber","Apple_iTunes","Radius","WindowsUpdate","TeamViewer","Tuenti"
+
+
 #define NDPI_PROTOCOL_SHORT_STRING "ukn","ftp","pop","smtp","imap","dns","ipp","http","mdns","ntp","netbios","nfs","ssdp", \
     "bgp","snmp","xdmcp","smb","syslog","dhcp","postgres","mysql","tds","ddl","i23v5","apple","directconnect","socrates","winmx", \
-    "manolito","pando","filetopia","iMESH","kontiki","openft","fasttrack","gnutella","edonkey","bittorrent","off","avi", \
+    "manolito","pando","filetopia","imesh","kontiki","openft","fasttrack","gnutella","edonkey","bittorrent","off","avi", \
     "flash","ogg","mpeg","quicktime","realmedia","windowsmedia","mms","xbox","qq","move","rtsp","feidian","icecast","pplive", \
     "ppstream","zattoo","shoutcast","sopcast","tvants","tvuplayer","veohtv","qqlive","thunder","soulseek","gadugadu","irc", \
     "popo","jabber","msn","oscar","yahoo","battlefield","quake","secondlife","steam","hl2","worldofwarcraft","telnet","stun", \
@@ -226,9 +228,10 @@ typedef struct {
     "tftp","afp","stealthnet","aimini","sip","truphone","icmpv6","dhcpv6","armagetron","crossfire","dofus","fiesta","florensia", \
     "guildwars","httpactivesync","kerberos","ldap","maplestory","mssql","pptp","warcraft3","wokf","meebo",\
     "facebook","twitter","dropbox","gmail","gmaps","youtube","skype","google","dcerpc","netflow","sflow", \
-    "http_connect","http_proxy","Citrix","Netflix","Last.fm","Grooveshark",\
-    "Skyfile_pre", "Skyfile_ru","Skyfile_post","CitrixOnline","iMessage_Facetime","Webex","WhatsApp","iCloud","Viber","iTunes", \
-    "Radius","WinUpdate","TeamViewer","tuenti"
+    "http_connect","http_proxy","citrix","netflix","last.fm","grooveshark",\
+    "skyfile_pre", "Skyfile_ru","skyfile_post","citrixonline","imessage_facetime","webex","whatsapp","icloud","viber","itunes", \
+    "radius","winupdate","teamviewer","tuenti"
+
 
 #ifdef __cplusplus
 }
