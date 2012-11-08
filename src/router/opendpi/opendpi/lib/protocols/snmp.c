@@ -21,21 +21,21 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_SNMP
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_SNMP
 
-static void ipoque_int_snmp_add_connection(struct ipoque_detection_module_struct
-										   *ipoque_struct)
+static void ndpi_int_snmp_add_connection(struct ndpi_detection_module_struct
+										   *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_SNMP, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_SNMP, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_snmp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_snmp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (packet->payload_packet_len > 32 && packet->payload[0] == 0x30) {
 		int offset;
@@ -48,76 +48,76 @@ static void ipoque_search_snmp(struct ipoque_detection_module_struct *ipoque_str
 			break;
 		default:
 			if (packet->payload[1] > 0x82) {
-				IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG, "SNMP excluded, second byte is > 0x82\n");
+				NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP excluded, second byte is > 0x82\n");
 				goto excl;
 			}
 			offset = 2;
 		}
 
-		if (get_u16(packet->payload, offset) != htons(0x0201)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG, "SNMP excluded, 0x0201 pattern not found\n");
+		if (get_u_int16_t(packet->payload, offset) != htons(0x0201)) {
+			NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP excluded, 0x0201 pattern not found\n");
 			goto excl;
 		}
 
 		if (packet->payload[offset + 2] >= 0x04) {
-			IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG, "SNMP excluded, version > 3\n");
+			NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP excluded, version > 3\n");
 			goto excl;
 		}
 
 		if (flow->l4.udp.snmp_stage == 0) {
 			if (packet->udp->dest == htons(161) || packet->udp->dest == htons(162)) {
-				IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG, "SNMP detected due to port.\n");
-				ipoque_int_snmp_add_connection(ipoque_struct);
+				NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP detected due to port.\n");
+				ndpi_int_snmp_add_connection(ndpi_struct, flow);
 				return;
 			}
-			IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG, "SNMP stage 0.\n");
+			NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP stage 0.\n");
 			if (packet->payload[offset + 2] == 3) {
-				flow->l4.udp.snmp_msg_id = ntohs(get_u32(packet->payload, offset + 8));
+				flow->l4.udp.snmp_msg_id = ntohs(get_u_int32_t(packet->payload, offset + 8));
 			} else if (packet->payload[offset + 2] == 0) {
-				flow->l4.udp.snmp_msg_id = get_u8(packet->payload, offset + 15);
+				flow->l4.udp.snmp_msg_id = get_u_int8_t(packet->payload, offset + 15);
 			} else {
-				flow->l4.udp.snmp_msg_id = ntohs(get_u16(packet->payload, offset + 15));
+				flow->l4.udp.snmp_msg_id = ntohs(get_u_int16_t(packet->payload, offset + 15));
 			}
 			flow->l4.udp.snmp_stage = 1 + packet->packet_direction;
 			return;
 		} else if (flow->l4.udp.snmp_stage == 1 + packet->packet_direction) {
 			if (packet->payload[offset + 2] == 0) {
-				if (flow->l4.udp.snmp_msg_id != get_u8(packet->payload, offset + 15) - 1) {
-					IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG,
+				if (flow->l4.udp.snmp_msg_id != get_u_int8_t(packet->payload, offset + 15) - 1) {
+					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG,
 							"SNMP v1 excluded, message ID doesn't match\n");
 					goto excl;
 				}
 			}
 		} else if (flow->l4.udp.snmp_stage == 2 - packet->packet_direction) {
-			IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG, "SNMP stage 1-2.\n");
+			NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP stage 1-2.\n");
 			if (packet->payload[offset + 2] == 3) {
-				if (flow->l4.udp.snmp_msg_id != ntohs(get_u32(packet->payload, offset + 8))) {
-					IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG,
+				if (flow->l4.udp.snmp_msg_id != ntohs(get_u_int32_t(packet->payload, offset + 8))) {
+					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG,
 							"SNMP v3 excluded, message ID doesn't match\n");
 					goto excl;
 				}
 			} else if (packet->payload[offset + 2] == 0) {
-				if (flow->l4.udp.snmp_msg_id != get_u8(packet->payload, offset + 15)) {
-					IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG,
+				if (flow->l4.udp.snmp_msg_id != get_u_int8_t(packet->payload, offset + 15)) {
+					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG,
 							"SNMP v1 excluded, message ID doesn't match\n");
 					goto excl;
 				}
 			} else {
-				if (flow->l4.udp.snmp_msg_id != ntohs(get_u16(packet->payload, offset + 15))) {
-					IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG,
+				if (flow->l4.udp.snmp_msg_id != ntohs(get_u_int16_t(packet->payload, offset + 15))) {
+					NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG,
 							"SNMP v2 excluded, message ID doesn't match\n");
 					goto excl;
 				}
 			}
-			IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG, "SNMP detected.\n");
-			ipoque_int_snmp_add_connection(ipoque_struct);
+			NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP detected.\n");
+			ndpi_int_snmp_add_connection(ndpi_struct, flow);
 			return;
 		}
 	} else {
-		IPQ_LOG(IPOQUE_PROTOCOL_SNMP, ipoque_struct, IPQ_LOG_DEBUG, "SNMP excluded.\n");
+		NDPI_LOG(NDPI_PROTOCOL_SNMP, ndpi_struct, NDPI_LOG_DEBUG, "SNMP excluded.\n");
 	}
   excl:
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_SNMP);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SNMP);
 
 }
 

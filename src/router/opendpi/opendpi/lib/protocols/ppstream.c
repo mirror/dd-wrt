@@ -21,32 +21,32 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_PPSTREAM
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_PPSTREAM
 
-static void ipoque_int_ppstream_add_connection(struct ipoque_detection_module_struct
-											   *ipoque_struct)
+static void ndpi_int_ppstream_add_connection(struct ndpi_detection_module_struct
+											   *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_PPSTREAM, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_PPSTREAM, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_ppstream(struct ipoque_detection_module_struct
-							*ipoque_struct)
+static void ndpi_search_ppstream(struct ndpi_detection_module_struct
+							*ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
 
-	// struct ipoque_id_struct *src=ipoque_struct->src;
-	// struct ipoque_id_struct *dst=ipoque_struct->dst;
+	// struct ndpi_id_struct *src=ndpi_struct->src;
+	// struct ndpi_id_struct *dst=ndpi_struct->dst;
 
 
 
 	/* check TCP Connections -> Videodata */
 	if (packet->tcp != NULL) {
-		if (packet->payload_packet_len >= 60 && get_u32(packet->payload, 52) == 0
+		if (packet->payload_packet_len >= 60 && get_u_int32_t(packet->payload, 52) == 0
 			&& memcmp(packet->payload, "PSProtocol\x0", 11) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG, "found ppstream over tcp.\n");
-			ipoque_int_ppstream_add_connection(ipoque_struct);
+			NDPI_LOG(NDPI_PROTOCOL_PPSTREAM, ndpi_struct, NDPI_LOG_DEBUG, "found ppstream over tcp.\n");
+			ndpi_int_ppstream_add_connection(ndpi_struct, flow);
 			return;
 		}
 	}
@@ -58,9 +58,9 @@ static void ipoque_search_ppstream(struct ipoque_detection_module_struct
 				|| (packet->payload_packet_len >= 6 && packet->payload_packet_len - 6 == get_l16(packet->payload, 0)))) {
 			flow->l4.udp.ppstream_stage++;
 			if (flow->l4.udp.ppstream_stage == 5) {
-				IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG,
+				NDPI_LOG(NDPI_PROTOCOL_PPSTREAM, ndpi_struct, NDPI_LOG_DEBUG,
 						"found ppstream over udp pattern len, 43.\n");
-				ipoque_int_ppstream_add_connection(ipoque_struct);
+				ndpi_int_ppstream_add_connection(ndpi_struct, flow);
 				return;
 			}
 			return;
@@ -75,7 +75,7 @@ static void ipoque_search_ppstream(struct ipoque_detection_module_struct
 
 			if (packet->payload[2] == 0x00 && packet->payload[3] == 0x00 && packet->payload[4] == 0x03) {
 				flow->l4.udp.ppstream_stage = 7;
-				IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG, "need next packet I.\n");
+				NDPI_LOG(NDPI_PROTOCOL_PPSTREAM, ndpi_struct, NDPI_LOG_DEBUG, "need next packet I.\n");
 				return;
 			}
 		}
@@ -86,9 +86,9 @@ static void ipoque_search_ppstream(struct ipoque_detection_module_struct
 				|| (packet->payload_packet_len == get_l16(packet->payload, 0))
 				|| (packet->payload_packet_len >= 6 && packet->payload_packet_len - 6 == get_l16(packet->payload, 0)))
 			&& (packet->payload[2] == 0x00 && packet->payload[4] == 0x03)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_PPSTREAM, ndpi_struct, NDPI_LOG_DEBUG,
 					"found ppstream over udp with pattern Vb.\n");
-			ipoque_int_ppstream_add_connection(ipoque_struct);
+			ndpi_int_ppstream_add_connection(ndpi_struct, flow);
 			return;
 		}
 
@@ -97,7 +97,7 @@ static void ipoque_search_ppstream(struct ipoque_detection_module_struct
 
 	}
 
-	IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG, "exclude ppstream.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_PPSTREAM);
+	NDPI_LOG(NDPI_PROTOCOL_PPSTREAM, ndpi_struct, NDPI_LOG_DEBUG, "exclude ppstream.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_PPSTREAM);
 }
 #endif

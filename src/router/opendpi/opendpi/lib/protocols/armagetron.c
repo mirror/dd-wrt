@@ -23,80 +23,78 @@
 
 
 /* include files */
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_ARMAGETRON
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_ARMAGETRON
 
 
-static void ipoque_int_armagetron_add_connection(struct ipoque_detection_module_struct
-												 *ipoque_struct)
+static void ndpi_int_armagetron_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
+					       struct ndpi_flow_struct *flow)
 {
 
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_ARMAGETRON, IPOQUE_REAL_PROTOCOL);
+  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_ARMAGETRON, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_armagetron_udp(struct ipoque_detection_module_struct
-								  *ipoque_struct)
+static void ndpi_search_armagetron_udp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+  struct ndpi_packet_struct *packet = &flow->packet;
+  //      struct ndpi_id_struct         *src=ndpi_struct->src;
+  //      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_ARMAGETRON, ipoque_struct, IPQ_LOG_DEBUG, "search armagetron.\n");
+  NDPI_LOG(NDPI_PROTOCOL_ARMAGETRON, ndpi_struct, NDPI_LOG_DEBUG, "search armagetron.\n");
 
 
-	if (packet->payload_packet_len > 10) {
-		/* login request */
-		if (get_u32(packet->payload, 0) == htonl(0x000b0000)) {
-			const u16 dataLength = ntohs(get_u16(packet->payload, 4));
-			if (dataLength == 0 || dataLength * 2 + 8 != packet->payload_packet_len)
-				goto exclude;
-			if (get_u16(packet->payload, 6) == htons(0x0008)
-				&& get_u16(packet->payload, packet->payload_packet_len - 2) == 0) {
-				IPQ_LOG(IPOQUE_PROTOCOL_ARMAGETRON, ipoque_struct, IPQ_LOG_DEBUG, "detected armagetron.\n");
-				ipoque_int_armagetron_add_connection(ipoque_struct);
-				return;
-			}
-		}
-		/* sync_msg */
-		if (packet->payload_packet_len == 16 && get_u16(packet->payload, 0) == htons(0x001c)
-			&& get_u16(packet->payload, 2) != 0) {
-			const u16 dataLength = ntohs(get_u16(packet->payload, 4));
-			if (dataLength != 4)
-				goto exclude;
-			if (get_u32(packet->payload, 6) == htonl(0x00000500) && get_u32(packet->payload, 6 + 4) == htonl(0x00010000)
-				&& get_u16(packet->payload, packet->payload_packet_len - 2) == 0) {
-				IPQ_LOG(IPOQUE_PROTOCOL_ARMAGETRON, ipoque_struct, IPQ_LOG_DEBUG, "detected armagetron.\n");
-				ipoque_int_armagetron_add_connection(ipoque_struct);
-				return;
-			}
-		}
+  if (packet->payload_packet_len > 10) {
+    /* login request */
+    if (get_u_int32_t(packet->payload, 0) == htonl(0x000b0000)) {
+      const u_int16_t dataLength = ntohs(get_u_int16_t(packet->payload, 4));
+      if (dataLength == 0 || dataLength * 2 + 8 != packet->payload_packet_len)
+	goto exclude;
+      if (get_u_int16_t(packet->payload, 6) == htons(0x0008)
+	  && get_u_int16_t(packet->payload, packet->payload_packet_len - 2) == 0) {
+	NDPI_LOG(NDPI_PROTOCOL_ARMAGETRON, ndpi_struct, NDPI_LOG_DEBUG, "detected armagetron.\n");
+	ndpi_int_armagetron_add_connection(ndpi_struct, flow);
+	return;
+      }
+    }
+    /* sync_msg */
+    if (packet->payload_packet_len == 16 && get_u_int16_t(packet->payload, 0) == htons(0x001c)
+	&& get_u_int16_t(packet->payload, 2) != 0) {
+      const u_int16_t dataLength = ntohs(get_u_int16_t(packet->payload, 4));
+      if (dataLength != 4)
+	goto exclude;
+      if (get_u_int32_t(packet->payload, 6) == htonl(0x00000500) && get_u_int32_t(packet->payload, 6 + 4) == htonl(0x00010000)
+	  && get_u_int16_t(packet->payload, packet->payload_packet_len - 2) == 0) {
+	NDPI_LOG(NDPI_PROTOCOL_ARMAGETRON, ndpi_struct, NDPI_LOG_DEBUG, "detected armagetron.\n");
+	ndpi_int_armagetron_add_connection(ndpi_struct, flow);
+	return;
+      }
+    }
 
-		/* net_sync combination */
-		if (packet->payload_packet_len > 50 && get_u16(packet->payload, 0) == htons(0x0018)
-			&& get_u16(packet->payload, 2) != 0) {
-			u16 val;
-			const u16 dataLength = ntohs(get_u16(packet->payload, 4));
-			if (dataLength == 0 || dataLength * 2 + 8 > packet->payload_packet_len)
-				goto exclude;
-			val = get_u16(packet->payload, 6 + 2);
-			if (val == get_u16(packet->payload, 6 + 6)) {
-				val = ntohs(get_u16(packet->payload, 6 + 8));
-				if ((6 + 10 + val + 4) < packet->payload_packet_len
-					&& (get_u32(packet->payload, 6 + 10 + val) == htonl(0x00010000)
-						|| get_u32(packet->payload, 6 + 10 + val) == htonl(0x00000001))
-					&& get_u16(packet->payload, packet->payload_packet_len - 2) == 0) {
-					IPQ_LOG(IPOQUE_PROTOCOL_ARMAGETRON, ipoque_struct, IPQ_LOG_DEBUG, "detected armagetron.\n");
-					ipoque_int_armagetron_add_connection(ipoque_struct);
-					return;
-				}
-			}
-		}
+    /* net_sync combination */
+    if (packet->payload_packet_len > 50 && get_u_int16_t(packet->payload, 0) == htons(0x0018)
+	&& get_u_int16_t(packet->payload, 2) != 0) {
+      u_int16_t val;
+      const u_int16_t dataLength = ntohs(get_u_int16_t(packet->payload, 4));
+      if (dataLength == 0 || dataLength * 2 + 8 > packet->payload_packet_len)
+	goto exclude;
+      val = get_u_int16_t(packet->payload, 6 + 2);
+      if (val == get_u_int16_t(packet->payload, 6 + 6)) {
+	val = ntohs(get_u_int16_t(packet->payload, 6 + 8));
+	if ((6 + 10 + val + 4) < packet->payload_packet_len
+	    && (get_u_int32_t(packet->payload, 6 + 10 + val) == htonl(0x00010000)
+		|| get_u_int32_t(packet->payload, 6 + 10 + val) == htonl(0x00000001))
+	    && get_u_int16_t(packet->payload, packet->payload_packet_len - 2) == 0) {
+	  NDPI_LOG(NDPI_PROTOCOL_ARMAGETRON, ndpi_struct, NDPI_LOG_DEBUG, "detected armagetron.\n");
+	  ndpi_int_armagetron_add_connection(ndpi_struct, flow);
+	  return;
 	}
+      }
+    }
+  }
 
-  exclude:
-	IPQ_LOG(IPOQUE_PROTOCOL_ARMAGETRON, ipoque_struct, IPQ_LOG_DEBUG, "exclude armagetron.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_ARMAGETRON);
+ exclude:
+  NDPI_LOG(NDPI_PROTOCOL_ARMAGETRON, ndpi_struct, NDPI_LOG_DEBUG, "exclude armagetron.\n");
+  NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_ARMAGETRON);
 }
 
 #endif

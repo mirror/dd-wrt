@@ -21,64 +21,64 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_NFS
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_NFS
 
-static void ipoque_int_nfs_add_connection(struct ipoque_detection_module_struct
-										  *ipoque_struct)
+static void ndpi_int_nfs_add_connection(struct ndpi_detection_module_struct
+										  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_NFS, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_NFS, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_nfs(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_nfs(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
-	u8 offset = 0;
+	u_int8_t offset = 0;
 	if (packet->tcp != NULL)
 		offset = 4;
 
 	if (packet->payload_packet_len < (40 + offset))
 		goto exclude_nfs;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_NFS, ipoque_struct, IPQ_LOG_DEBUG, "NFS user match stage 1\n");
+	NDPI_LOG(NDPI_PROTOCOL_NFS, ndpi_struct, NDPI_LOG_DEBUG, "NFS user match stage 1\n");
 
 
-	if (offset != 0 && get_u32(packet->payload, 0) != htonl(0x80000000 + packet->payload_packet_len - 4))
+	if (offset != 0 && get_u_int32_t(packet->payload, 0) != htonl(0x80000000 + packet->payload_packet_len - 4))
 		goto exclude_nfs;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_NFS, ipoque_struct, IPQ_LOG_DEBUG, "NFS user match stage 2\n");
+	NDPI_LOG(NDPI_PROTOCOL_NFS, ndpi_struct, NDPI_LOG_DEBUG, "NFS user match stage 2\n");
 
-	if (get_u32(packet->payload, 4 + offset) != 0)
+	if (get_u_int32_t(packet->payload, 4 + offset) != 0)
 		goto exclude_nfs;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_NFS, ipoque_struct, IPQ_LOG_DEBUG, "NFS user match stage 3\n");
+	NDPI_LOG(NDPI_PROTOCOL_NFS, ndpi_struct, NDPI_LOG_DEBUG, "NFS user match stage 3\n");
 
-	if (get_u32(packet->payload, 8 + offset) != htonl(0x02))
+	if (get_u_int32_t(packet->payload, 8 + offset) != htonl(0x02))
 		goto exclude_nfs;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_NFS, ipoque_struct, IPQ_LOG_DEBUG, "NFS match stage 3\n");
+	NDPI_LOG(NDPI_PROTOCOL_NFS, ndpi_struct, NDPI_LOG_DEBUG, "NFS match stage 3\n");
 
-	if (get_u32(packet->payload, 12 + offset) != htonl(0x000186a5)
-		&& get_u32(packet->payload, 12 + offset) != htonl(0x000186a3)
-		&& get_u32(packet->payload, 12 + offset) != htonl(0x000186a0))
+	if (get_u_int32_t(packet->payload, 12 + offset) != htonl(0x000186a5)
+		&& get_u_int32_t(packet->payload, 12 + offset) != htonl(0x000186a3)
+		&& get_u_int32_t(packet->payload, 12 + offset) != htonl(0x000186a0))
 		goto exclude_nfs;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_NFS, ipoque_struct, IPQ_LOG_DEBUG, "NFS match stage 4\n");
+	NDPI_LOG(NDPI_PROTOCOL_NFS, ndpi_struct, NDPI_LOG_DEBUG, "NFS match stage 4\n");
 
-	if (ntohl(get_u32(packet->payload, 16 + offset)) > 4)
+	if (ntohl(get_u_int32_t(packet->payload, 16 + offset)) > 4)
 		goto exclude_nfs;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_NFS, ipoque_struct, IPQ_LOG_DEBUG, "NFS match\n");
+	NDPI_LOG(NDPI_PROTOCOL_NFS, ndpi_struct, NDPI_LOG_DEBUG, "NFS match\n");
 
-	ipoque_int_nfs_add_connection(ipoque_struct);
+	ndpi_int_nfs_add_connection(ndpi_struct, flow);
 	return;
 
   exclude_nfs:
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_NFS);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_NFS);
 }
 
 #endif

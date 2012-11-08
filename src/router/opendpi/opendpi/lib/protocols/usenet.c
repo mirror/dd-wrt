@@ -21,34 +21,34 @@
  */
 
 
-#include "ipq_protocols.h"
+#include "ndpi_protocols.h"
 
-#ifdef IPOQUE_PROTOCOL_USENET
+#ifdef NDPI_PROTOCOL_USENET
 
 
-static void ipoque_int_usenet_add_connection(struct ipoque_detection_module_struct
-											 *ipoque_struct)
+static void ndpi_int_usenet_add_connection(struct ndpi_detection_module_struct
+											 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_USENET, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_USENET, NDPI_REAL_PROTOCOL);
 }
 
 
 
-static void ipoque_search_usenet_tcp(struct ipoque_detection_module_struct
-							  *ipoque_struct)
+static void ndpi_search_usenet_tcp(struct ndpi_detection_module_struct
+							  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG, "USENET: search usenet.\n");
-
-
+	NDPI_LOG(NDPI_PROTOCOL_USENET, ndpi_struct, NDPI_LOG_DEBUG, "USENET: search usenet.\n");
 
 
 
-	IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG, "USENET: STAGE IS %u.\n", flow->l4.tcp.usenet_stage);
+
+
+	NDPI_LOG(NDPI_PROTOCOL_USENET, ndpi_struct, NDPI_LOG_DEBUG, "USENET: STAGE IS %u.\n", flow->l4.tcp.usenet_stage);
 
 
 	// check for the first server replay
@@ -57,13 +57,13 @@ static void ipoque_search_usenet_tcp(struct ipoque_detection_module_struct
 	   201    Service available, posting prohibited
 	 */
 	if (flow->l4.tcp.usenet_stage == 0 && packet->payload_packet_len > 10
-		&& ((ipq_mem_cmp(packet->payload, "200 ", 4) == 0)
-			|| (ipq_mem_cmp(packet->payload, "201 ", 4) == 0))) {
+		&& ((ndpi_mem_cmp(packet->payload, "200 ", 4) == 0)
+			|| (ndpi_mem_cmp(packet->payload, "201 ", 4) == 0))) {
 
-		IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG, "USENET: found 200 or 201.\n");
+		NDPI_LOG(NDPI_PROTOCOL_USENET, ndpi_struct, NDPI_LOG_DEBUG, "USENET: found 200 or 201.\n");
 		flow->l4.tcp.usenet_stage = 1 + packet->packet_direction;
 
-		IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG, "USENET: maybe hit.\n");
+		NDPI_LOG(NDPI_PROTOCOL_USENET, ndpi_struct, NDPI_LOG_DEBUG, "USENET: maybe hit.\n");
 		return;
 	}
 
@@ -75,28 +75,28 @@ static void ipoque_search_usenet_tcp(struct ipoque_detection_module_struct
 	 */
 	// check for client username
 	if (flow->l4.tcp.usenet_stage == 2 - packet->packet_direction) {
-		if (packet->payload_packet_len > 20 && (ipq_mem_cmp(packet->payload, "AUTHINFO USER ", 14) == 0)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG, "USENET: username found\n");
+		if (packet->payload_packet_len > 20 && (ndpi_mem_cmp(packet->payload, "AUTHINFO USER ", 14) == 0)) {
+			NDPI_LOG(NDPI_PROTOCOL_USENET, ndpi_struct, NDPI_LOG_DEBUG, "USENET: username found\n");
 			flow->l4.tcp.usenet_stage = 3 + packet->packet_direction;
 
-			IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG, "USENET: found usenet.\n");
-			ipoque_int_usenet_add_connection(ipoque_struct);
+			NDPI_LOG(NDPI_PROTOCOL_USENET, ndpi_struct, NDPI_LOG_DEBUG, "USENET: found usenet.\n");
+			ndpi_int_usenet_add_connection(ndpi_struct, flow);
 			return;
-		} else if (packet->payload_packet_len == 13 && (ipq_mem_cmp(packet->payload, "MODE READER\r\n", 13) == 0)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG,
+		} else if (packet->payload_packet_len == 13 && (ndpi_mem_cmp(packet->payload, "MODE READER\r\n", 13) == 0)) {
+			NDPI_LOG(NDPI_PROTOCOL_USENET, ndpi_struct, NDPI_LOG_DEBUG,
 					"USENET: no login necessary but we are a client.\n");
 
-			IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG, "USENET: found usenet.\n");
-			ipoque_int_usenet_add_connection(ipoque_struct);
+			NDPI_LOG(NDPI_PROTOCOL_USENET, ndpi_struct, NDPI_LOG_DEBUG, "USENET: found usenet.\n");
+			ndpi_int_usenet_add_connection(ndpi_struct, flow);
 			return;
 		}
 	}
 
 
 
-	IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG, "USENET: exclude usenet.\n");
+	NDPI_LOG(NDPI_PROTOCOL_USENET, ndpi_struct, NDPI_LOG_DEBUG, "USENET: exclude usenet.\n");
 
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_USENET);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_USENET);
 
 }
 

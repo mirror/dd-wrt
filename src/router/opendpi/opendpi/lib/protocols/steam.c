@@ -21,43 +21,43 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_STEAM
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_STEAM
 
 
-static void ipoque_int_steam_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct)
+static void ndpi_int_steam_add_connection(struct ndpi_detection_module_struct
+											*ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_STEAM, IPOQUE_REAL_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_STEAM, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_steam(struct ipoque_detection_module_struct *ipoque_struct)
+static void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (flow->l4.tcp.steam_stage == 0) {
 		if (packet->payload_packet_len == 4
-			&& ntohl(get_u32(packet->payload, 0)) <= 0x07
+			&& ntohl(get_u_int32_t(packet->payload, 0)) <= 0x07
 			&& ntohs(packet->tcp->dest) >= 27030 && ntohs(packet->tcp->dest) <= 27040) {
 			flow->l4.tcp.steam_stage = 1 + packet->packet_direction;
-			IPQ_LOG(IPOQUE_PROTOCOL_STEAM, ipoque_struct, IPQ_LOG_DEBUG, "steam stage 1\n");
+			NDPI_LOG(NDPI_PROTOCOL_STEAM, ndpi_struct, NDPI_LOG_DEBUG, "steam stage 1\n");
 			return;
 		}
 
 	} else if (flow->l4.tcp.steam_stage == 2 - packet->packet_direction) {
 		if ((packet->payload_packet_len == 1 || packet->payload_packet_len == 5)
 			&& packet->payload[0] == 0x01) {
-			ipoque_int_steam_add_connection(ipoque_struct);
-			IPQ_LOG(IPOQUE_PROTOCOL_STEAM, ipoque_struct, IPQ_LOG_DEBUG, "steam detected\n");
+			ndpi_int_steam_add_connection(ndpi_struct, flow);
+			NDPI_LOG(NDPI_PROTOCOL_STEAM, ndpi_struct, NDPI_LOG_DEBUG, "steam detected\n");
 			return;
 		}
 	}
 
-	IPQ_LOG(IPOQUE_PROTOCOL_STEAM, ipoque_struct, IPQ_LOG_DEBUG, "steam excluded.\n");
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_STEAM);
+	NDPI_LOG(NDPI_PROTOCOL_STEAM, ndpi_struct, NDPI_LOG_DEBUG, "steam excluded.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_STEAM);
 }
 
 #endif

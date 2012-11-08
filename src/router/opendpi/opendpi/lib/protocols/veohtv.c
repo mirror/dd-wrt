@@ -21,72 +21,71 @@
  */
 
 
-#include "ipq_protocols.h"
-#include "ipq_utils.h"
-#ifdef IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV
+#include "ndpi_protocols.h"
+#include "ndpi_utils.h"
+#ifdef NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV
 
-static void ipoque_int_veohtv_add_connection(struct ipoque_detection_module_struct
-											 *ipoque_struct, ipoque_protocol_type_t protocol_type)
+static void ndpi_int_veohtv_add_connection(struct ndpi_detection_module_struct *ndpi_struct, 
+					   struct ndpi_flow_struct *flow, ndpi_protocol_type_t protocol_type)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV, protocol_type);
+  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV, protocol_type);
 }
 
-static void ipoque_search_veohtv_tcp(struct ipoque_detection_module_struct
-							  *ipoque_struct)
+static void ndpi_search_veohtv_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
-	if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV)
+	if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV)
 		return;
 
 	if (flow->l4.tcp.veoh_tv_stage == 1 || flow->l4.tcp.veoh_tv_stage == 2) {
 		if (packet->packet_direction != flow->setup_packet_direction &&
-			packet->payload_packet_len > IPQ_STATICSTRING_LEN("HTTP/1.1 20")
-			&& memcmp(packet->payload, "HTTP/1.1 ", IPQ_STATICSTRING_LEN("HTTP/1.1 ")) == 0 &&
-			(packet->payload[IPQ_STATICSTRING_LEN("HTTP/1.1 ")] == '2' ||
-			 packet->payload[IPQ_STATICSTRING_LEN("HTTP/1.1 ")] == '3' ||
-			 packet->payload[IPQ_STATICSTRING_LEN("HTTP/1.1 ")] == '4' ||
-			 packet->payload[IPQ_STATICSTRING_LEN("HTTP/1.1 ")] == '5')) {
-#ifdef IPOQUE_PROTOCOL_FLASH
-			ipq_parse_packet_line_info(ipoque_struct);
-			if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_FLASH &&
+			packet->payload_packet_len > NDPI_STATICSTRING_LEN("HTTP/1.1 20")
+			&& memcmp(packet->payload, "HTTP/1.1 ", NDPI_STATICSTRING_LEN("HTTP/1.1 ")) == 0 &&
+			(packet->payload[NDPI_STATICSTRING_LEN("HTTP/1.1 ")] == '2' ||
+			 packet->payload[NDPI_STATICSTRING_LEN("HTTP/1.1 ")] == '3' ||
+			 packet->payload[NDPI_STATICSTRING_LEN("HTTP/1.1 ")] == '4' ||
+			 packet->payload[NDPI_STATICSTRING_LEN("HTTP/1.1 ")] == '5')) {
+#ifdef NDPI_PROTOCOL_FLASH
+			ndpi_parse_packet_line_info(ndpi_struct, flow);
+			if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_FLASH &&
 				packet->server_line.ptr != NULL &&
-				packet->server_line.len > IPQ_STATICSTRING_LEN("Veoh-") &&
-				memcmp(packet->server_line.ptr, "Veoh-", IPQ_STATICSTRING_LEN("Veoh-")) == 0) {
-				IPQ_LOG(IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV, ipoque_struct, IPQ_LOG_DEBUG, "VeohTV detected.\n");
-				ipoque_int_veohtv_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+				packet->server_line.len > NDPI_STATICSTRING_LEN("Veoh-") &&
+				memcmp(packet->server_line.ptr, "Veoh-", NDPI_STATICSTRING_LEN("Veoh-")) == 0) {
+				NDPI_LOG(NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV, ndpi_struct, NDPI_LOG_DEBUG, "VeohTV detected.\n");
+				ndpi_int_veohtv_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 				return;
 			}
 #endif
 			if (flow->l4.tcp.veoh_tv_stage == 2) {
-				IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
-											   IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV);
+				NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
+											   NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV);
 				return;
 			}
-			IPQ_LOG(IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV, ipoque_struct, IPQ_LOG_DEBUG, "VeohTV detected.\n");
-			ipoque_int_veohtv_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+			NDPI_LOG(NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV, ndpi_struct, NDPI_LOG_DEBUG, "VeohTV detected.\n");
+			ndpi_int_veohtv_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 			return;
 		} else if (flow->packet_direction_counter[(flow->setup_packet_direction == 1) ? 0 : 1] > 3) {
 			if (flow->l4.tcp.veoh_tv_stage == 2) {
-				IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
-											   IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV);
+				NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
+											   NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV);
 				return;
 			}
-			IPQ_LOG(IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV, ipoque_struct, IPQ_LOG_DEBUG, "VeohTV detected.\n");
-			ipoque_int_veohtv_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+			NDPI_LOG(NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV, ndpi_struct, NDPI_LOG_DEBUG, "VeohTV detected.\n");
+			ndpi_int_veohtv_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 			return;
 		} else {
 			if (flow->packet_counter > 10) {
 				if (flow->l4.tcp.veoh_tv_stage == 2) {
-					IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
-												   IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV);
+					NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
+												   NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV);
 					return;
 				}
-				IPQ_LOG(IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV, ipoque_struct, IPQ_LOG_DEBUG, "VeohTV detected.\n");
-				ipoque_int_veohtv_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+				NDPI_LOG(NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV, ndpi_struct, NDPI_LOG_DEBUG, "VeohTV detected.\n");
+				ndpi_int_veohtv_add_connection(ndpi_struct, flow, NDPI_CORRELATED_PROTOCOL);
 				return;
 			}
 			return;
@@ -100,15 +99,15 @@ static void ipoque_search_veohtv_tcp(struct ipoque_detection_module_struct
 		 * then a 4 byte counter */
 
 		if (packet->payload_packet_len == 28 &&
-			get_u32(packet->payload, 16) == htonl(0x00000021) &&
-			get_u32(packet->payload, 20) == htonl(0x00000000) && get_u32(packet->payload, 24) == htonl(0x01040000)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV, ipoque_struct, IPQ_LOG_DEBUG, "UDP VeohTV found.\n");
-			ipoque_int_veohtv_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+			get_u_int32_t(packet->payload, 16) == htonl(0x00000021) &&
+			get_u_int32_t(packet->payload, 20) == htonl(0x00000000) && get_u_int32_t(packet->payload, 24) == htonl(0x01040000)) {
+			NDPI_LOG(NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV, ndpi_struct, NDPI_LOG_DEBUG, "UDP VeohTV found.\n");
+			ndpi_int_veohtv_add_connection(ndpi_struct, flow, NDPI_REAL_PROTOCOL);
 			return;
 		}
 	}
 
 
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV);
 }
 #endif

@@ -21,41 +21,41 @@
  */
 
 
-#include "ipq_protocols.h"
+#include "ndpi_protocols.h"
 
-#ifdef IPOQUE_PROTOCOL_SHOUTCAST
+#ifdef NDPI_PROTOCOL_SHOUTCAST
 
-static void ipoque_int_shoutcast_add_connection(struct ipoque_detection_module_struct
-												*ipoque_struct)
+static void ndpi_int_shoutcast_add_connection(struct ndpi_detection_module_struct
+												*ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_SHOUTCAST, IPOQUE_CORRELATED_PROTOCOL);
+	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_SHOUTCAST, NDPI_CORRELATED_PROTOCOL);
 }
 
-static void ipoque_search_shoutcast_tcp(struct ipoque_detection_module_struct
-								 *ipoque_struct)
+static void ndpi_search_shoutcast_tcp(struct ndpi_detection_module_struct
+								 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
 
-	IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG, "search shoutcast.\n");
+	NDPI_LOG(NDPI_PROTOCOL_SHOUTCAST, ndpi_struct, NDPI_LOG_DEBUG, "search shoutcast.\n");
 
 	if (flow->packet_counter == 1) {
 /* this case in paul_upload_oddcast_002.pcap */
 		if (packet->payload_packet_len >= 6
 			&& packet->payload_packet_len < 80 && memcmp(packet->payload, "123456", 6) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG, "Shoutcast stage 1, \"123456\".\n");
+			NDPI_LOG(NDPI_PROTOCOL_SHOUTCAST, ndpi_struct, NDPI_LOG_DEBUG, "Shoutcast stage 1, \"123456\".\n");
 			return;
 		}
 		if (flow->packet_counter < 3
-#ifdef IPOQUE_PROTOCOL_HTTP
-			&& packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_HTTP
+#ifdef NDPI_PROTOCOL_HTTP
+			&& packet->detected_protocol_stack[0] == NDPI_PROTOCOL_HTTP
 #endif
 			) {
-			IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG,
+			NDPI_LOG(NDPI_PROTOCOL_SHOUTCAST, ndpi_struct, NDPI_LOG_DEBUG,
 					"http detected, need next packet for shoutcast detection.\n");
 			if (packet->payload_packet_len > 4
-				&& get_u32(packet->payload, packet->payload_packet_len - 4) != htonl(0x0d0a0d0a)) {
-				IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG, "segmented packet found.\n");
+				&& get_u_int32_t(packet->payload, packet->payload_packet_len - 4) != htonl(0x0d0a0d0a)) {
+				NDPI_LOG(NDPI_PROTOCOL_SHOUTCAST, ndpi_struct, NDPI_LOG_DEBUG, "segmented packet found.\n");
 				flow->l4.tcp.shoutcast_stage = 1 + packet->packet_direction;
 			}
 			return;
@@ -68,8 +68,8 @@ static void ipoque_search_shoutcast_tcp(struct ipoque_detection_module_struct
 	}
 	/* evtl. für asym detection noch User-Agent:Winamp dazunehmen. */
 	if (packet->payload_packet_len > 11 && memcmp(packet->payload, "ICY 200 OK\x0d\x0a", 12) == 0) {
-		IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG, "found shoutcast by ICY 200 OK.\n");
-		ipoque_int_shoutcast_add_connection(ipoque_struct);
+		NDPI_LOG(NDPI_PROTOCOL_SHOUTCAST, ndpi_struct, NDPI_LOG_DEBUG, "found shoutcast by ICY 200 OK.\n");
+		ndpi_int_shoutcast_add_connection(ndpi_struct, flow);
 		return;
 	}
 	if (flow->l4.tcp.shoutcast_stage == 1 + packet->packet_direction
@@ -79,27 +79,27 @@ static void ipoque_search_shoutcast_tcp(struct ipoque_detection_module_struct
 
 	if (flow->packet_counter == 2) {
 		if (packet->payload_packet_len == 2 && memcmp(packet->payload, "\x0d\x0a", 2) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG, "Shoutcast stage 1 continuation.\n");
+			NDPI_LOG(NDPI_PROTOCOL_SHOUTCAST, ndpi_struct, NDPI_LOG_DEBUG, "Shoutcast stage 1 continuation.\n");
 			return;
-		} else if (packet->payload_packet_len > 3 && ipq_mem_cmp(&packet->payload[0], "OK2", 3) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG, "Shoutcast stage 2, OK2 found.\n");
+		} else if (packet->payload_packet_len > 3 && ndpi_mem_cmp(&packet->payload[0], "OK2", 3) == 0) {
+			NDPI_LOG(NDPI_PROTOCOL_SHOUTCAST, ndpi_struct, NDPI_LOG_DEBUG, "Shoutcast stage 2, OK2 found.\n");
 			return;
 		} else
 			goto exclude_shoutcast;
 	} else if (flow->packet_counter == 3 || flow->packet_counter == 4) {
-		if (packet->payload_packet_len > 3 && ipq_mem_cmp(&packet->payload[0], "OK2", 3) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG, "Shoutcast stage 2, OK2 found.\n");
+		if (packet->payload_packet_len > 3 && ndpi_mem_cmp(&packet->payload[0], "OK2", 3) == 0) {
+			NDPI_LOG(NDPI_PROTOCOL_SHOUTCAST, ndpi_struct, NDPI_LOG_DEBUG, "Shoutcast stage 2, OK2 found.\n");
 			return;
-		} else if (packet->payload_packet_len > 4 && ipq_mem_cmp(&packet->payload[0], "icy-", 4) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG, "Shoutcast detected.\n");
-			ipoque_int_shoutcast_add_connection(ipoque_struct);
+		} else if (packet->payload_packet_len > 4 && ndpi_mem_cmp(&packet->payload[0], "icy-", 4) == 0) {
+			NDPI_LOG(NDPI_PROTOCOL_SHOUTCAST, ndpi_struct, NDPI_LOG_DEBUG, "Shoutcast detected.\n");
+			ndpi_int_shoutcast_add_connection(ndpi_struct, flow);
 			return;
 		} else
 			goto exclude_shoutcast;
 	}
 
   exclude_shoutcast:
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_SHOUTCAST);
-	IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG, "Shoutcast excluded.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SHOUTCAST);
+	NDPI_LOG(NDPI_PROTOCOL_SHOUTCAST, ndpi_struct, NDPI_LOG_DEBUG, "Shoutcast excluded.\n");
 }
 #endif

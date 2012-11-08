@@ -21,29 +21,27 @@
  */
 
 
-#include "ipq_protocols.h"
-#ifdef IPOQUE_PROTOCOL_FILETOPIA
+#include "ndpi_protocols.h"
+#ifdef NDPI_PROTOCOL_FILETOPIA
 
 
-static void ipoque_int_filetopia_add_connection(struct ipoque_detection_module_struct
-												*ipoque_struct)
+static void ndpi_int_filetopia_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_FILETOPIA, IPOQUE_REAL_PROTOCOL);
+  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_FILETOPIA, NDPI_REAL_PROTOCOL);
 }
 
-static void ipoque_search_filetopia_tcp(struct ipoque_detection_module_struct
-								 *ipoque_struct)
+static void ndpi_search_filetopia_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ndpi_packet_struct *packet = &flow->packet;
+	
+//      struct ndpi_id_struct         *src=ndpi_struct->src;
+//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (flow->l4.tcp.filetopia_stage == 0) {
 		if (packet->payload_packet_len >= 50 && packet->payload_packet_len <= 70
 			&& packet->payload[0] == 0x03 && packet->payload[1] == 0x9a
 			&& packet->payload[3] == 0x22 && packet->payload[packet->payload_packet_len - 1] == 0x2b) {
-			IPQ_LOG(IPOQUE_PROTOCOL_FILETOPIA, ipoque_struct, IPQ_LOG_DEBUG, "Filetopia stage 1 detected\n");
+			NDPI_LOG(NDPI_PROTOCOL_FILETOPIA, ndpi_struct, NDPI_LOG_DEBUG, "Filetopia stage 1 detected\n");
 			flow->l4.tcp.filetopia_stage = 1;
 			return;
 		}
@@ -59,7 +57,7 @@ static void ipoque_search_filetopia_tcp(struct ipoque_detection_module_struct
 				}
 			}
 
-			IPQ_LOG(IPOQUE_PROTOCOL_FILETOPIA, ipoque_struct, IPQ_LOG_DEBUG, "Filetopia stage 2 detected\n");
+			NDPI_LOG(NDPI_PROTOCOL_FILETOPIA, ndpi_struct, NDPI_LOG_DEBUG, "Filetopia stage 2 detected\n");
 			flow->l4.tcp.filetopia_stage = 2;
 			return;
 		}
@@ -69,15 +67,15 @@ static void ipoque_search_filetopia_tcp(struct ipoque_detection_module_struct
 		if (packet->payload_packet_len >= 4 && packet->payload_packet_len <= 100
 			&& packet->payload[0] == 0x03 && packet->payload[1] == 0x9a
 			&& (packet->payload[3] == 0x22 || packet->payload[3] == 0x23)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_FILETOPIA, ipoque_struct, IPQ_LOG_DEBUG, "Filetopia detected\n");
-			ipoque_int_filetopia_add_connection(ipoque_struct);
+			NDPI_LOG(NDPI_PROTOCOL_FILETOPIA, ndpi_struct, NDPI_LOG_DEBUG, "Filetopia detected\n");
+			ndpi_int_filetopia_add_connection(ndpi_struct, flow);
 			return;
 		}
 
 	}
 
   end_filetopia_nothing_found:
-	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_FILETOPIA);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_FILETOPIA);
 }
 
 #endif
