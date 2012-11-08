@@ -1501,7 +1501,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 			if (!strcmp(protocol, "dpi")) {
 				insmod("/lib/opendpi/xt_opendpi.ko");
 				save2file
-				    ("-A advgrp_%d -m opendpi --%s -j %s\n",
+				    ("-A advgrp_%d -m ndpi --%s -j %s\n",
 				     seq, realname, log_drop);
 			}
 #endif
@@ -1547,7 +1547,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 						insmod
 						    ("/lib/opendpi/xt_opendpi.ko");
 						save2file
-						    ("-A advgrp_%d -m opendpi --bittorrent -j %s\n",
+						    ("-A advgrp_%d -m ndpi --bittorrent -j %s\n",
 						     seq, log_drop);
 #else
 						insmod("ipt_layer7");
@@ -1585,7 +1585,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 #ifdef HAVE_OPENDPI
 		insmod("/lib/opendpi/xt_opendpi.ko");
 		save2file
-		    ("-A advgrp_%d -m opendpi --bittorrent -j %s\n",
+		    ("-A advgrp_%d -m ndpi --bittorrent -j %s\n",
 		     seq, log_drop);
 
 #else

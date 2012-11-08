@@ -817,12 +817,12 @@ int svqos_iptables(void)
 #ifdef HAVE_OPENDPI
 		if (strstr(type, "dpi")) {
 			sysprintf
-			    ("iptables -t mangle -A SVQOS_SVCS -m opendpi --%s -j MARK --set-mark %s",
+			    ("iptables -t mangle -A SVQOS_SVCS -m ndpi --%s -j MARK --set-mark %s",
 			     name, qos_nfmark(atol(level)));
 
 			// workaround for non functional iptables matches
 			sysprintf
-			    ("iptables -t mangle -I FOO -m opendpi --%s -j MARK --set-mark %s",
+			    ("iptables -t mangle -I FOO -m ndpi --%s -j MARK --set-mark %s",
 			     name, "0xFFFFFFFF/0xFFFFFFFF");
 		}
 #endif
