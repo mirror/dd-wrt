@@ -1,3 +1,4 @@
+
 /* BGP routing information base
    Copyright (C) 1996, 97, 98, 2000 Kunihiro Ishiguro
 
@@ -68,7 +69,7 @@ struct bgp_info
   int lock;
   
   /* BGP information status.  */
-  u_int16_t flags;
+  u_int32_t flags;
 #define BGP_INFO_IGP_CHANGED    (1 << 0)
 #define BGP_INFO_DAMPED         (1 << 1)
 #define BGP_INFO_HISTORY        (1 << 2)
@@ -82,6 +83,10 @@ struct bgp_info
 #define BGP_INFO_COUNTED	(1 << 10)
 #define BGP_INFO_MULTIPATH      (1 << 11)
 #define BGP_INFO_MULTIPATH_CHG  (1 << 12)
+#define BGP_INFO_SUSPICIOUS_O   (1 << 13)
+#define BGP_INFO_SUSPICIOUS_P   (1 << 14)
+#define BGP_INFO_IGNORED_P      (1 << 15)
+#define BGP_INFO_SUSPICIOUS_E   (1 << 16)
 
   /* BGP route type.  This can be static, RIP, OSPF, BGP etc.  */
   u_char type;
@@ -126,7 +131,7 @@ struct bgp_static
 
 /* Flags which indicate a route is unuseable in some form */
 #define BGP_INFO_UNUSEABLE \
-  (BGP_INFO_HISTORY|BGP_INFO_DAMPED|BGP_INFO_REMOVED)
+  (BGP_INFO_HISTORY|BGP_INFO_DAMPED|BGP_INFO_REMOVED|BGP_INFO_IGNORED_P)
 /* Macro to check BGP information is alive or not.  Sadly,
  * not equivalent to just checking previous, because of the
  * sense of the additional VALID flag.

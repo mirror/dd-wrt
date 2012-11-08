@@ -2522,6 +2522,13 @@ DEFUN (config_write_file,
 		 VTY_NEWLINE);
         goto finished;
       }
+
+#if 0
+  /* This code fails on UNION MOUNTs and similar filesystems if the
+   * config file is still on the RO layer. Hardlinks across layers
+   * will not work and cause quagga to fail saving the configuration...
+   * should use rename() to move files around...
+   */
   if (link (config_file, config_file_sav) != 0)
     {
       vty_out (vty, "Can't backup old configuration file %s.%s", config_file_sav,
@@ -2535,7 +2542,23 @@ DEFUN (config_write_file,
 	        VTY_NEWLINE);
       goto finished;
     }
+#else
+  /* And this is the code that hopefully does work */
+  if (rename (config_file, config_file_sav) != 0)
+    {
+      vty_out (vty, "Can't backup old configuration file %s.%s", config_file_sav,
+	        VTY_NEWLINE);
+      goto finished;
+    }
+  sync ();
+#endif
+
+#if 0
+  /* same here. Please no cross-filesystem hardlinks... */
   if (link (config_file_tmp, config_file) != 0)
+#else
+  if (rename (config_file_tmp, config_file) != 0)
+#endif
     {
       vty_out (vty, "Can't save configuration file %s.%s", config_file,
 	       VTY_NEWLINE);
