@@ -41,6 +41,8 @@ int zebra_init(void)
 {
 	char *sub;
 	char var[32], *next;
+	char daemons[64];
+	sprintf(daemons, "watchquagga -dz -r '%%s -d' zebra");
 
 	sub = nvram_safe_get("wk_mode");
 	foreach(var, sub, next) {
@@ -49,22 +51,20 @@ int zebra_init(void)
 			return 0;
 		} else if (!strcmp(var, "ospf")) {
 			zebra_ospf_init();
-			dd_syslog(LOG_INFO,
-				  "zebra : zebra (ospf) successfully initiated\n");
+			strcat(daemons, " ospfd");
 		} else if (!strcmp(var, "ospf6")) {
 			zebra_ospf6_init();
-			dd_syslog(LOG_INFO,
-				  "zebra : zebra (ospf6) successfully initiated\n");
+			strcat(daemons, " ospf6d");
 		} else if (!strcmp(var, "bgp")) {
 			zebra_bgp_init();
-			dd_syslog(LOG_INFO,
-				  "zebra : zebra (ospf) successfully initiated\n");
+			strcat(daemons, " bgpd");
 		} else if (!strcmp(var, "router")) {
 			zebra_ripd_init();
-			dd_syslog(LOG_INFO,
-				  "zebra : zebra (router) successfully initiated\n");
+			strcat(daemons, " ripd");
 		}
 	}
+	dd_syslog(LOG_INFO, "zebra : zebra (%s) successfully initiated\n",daemons);
+	system(daemons);
 	return 0;
 }
 
@@ -289,10 +289,10 @@ int zebra_ospf_init(void)
 	if (nvram_match("dyn_default", "1"))
 		while (!eval("ip", "route", "del", "default")) ;
 
-	ret1 = eval("zebra", "-d", "-r", "-f", "/tmp/zebra.conf");
-	ret2 = eval("ospfd", "-d", "-f", "/tmp/ospfd.conf");
-
-	return ret1 + ret2;
+	// ret1 = eval("zebra", "-d", "-r", "-f", "/tmp/zebra.conf");
+	// ret2 = eval("ospfd", "-d", "-f", "/tmp/ospfd.conf");
+	// return ret1 + ret2;
+	return 1;
 }
 
 int zebra_ospf6_init(void)
@@ -412,10 +412,11 @@ int zebra_ospf6_init(void)
 	// if (nvram_match("dyn_default", "1"))
 		// while (!eval("ip", "route", "del", "default")) ;
 
-	ret1 = eval("zebra", "-d", "-r", "-f", "/tmp/zebra.conf");
-	ret2 = eval("ospf6d", "-d", "-f", "/tmp/ospf6d.conf");
+	// ret1 = eval("zebra", "-d", "-r", "-f", "/tmp/zebra.conf");
+	// ret2 = eval("ospf6d", "-d", "-f", "/tmp/ospf6d.conf");
 
-	return ret1 + ret2;
+	// return ret1 + ret2;
+	return 1;
 }
 
 int zebra_ripd_init(void)
@@ -512,10 +513,10 @@ int zebra_ripd_init(void)
 	}
 	fclose(fp);
 
-	ret1 = eval("zebra", "-d", "-f", "/tmp/zebra.conf");
-	ret2 = eval("ripd", "-d", "-f", "/tmp/ripd.conf");
-
-	return ret1 + ret2;
+	// ret1 = eval("zebra", "-d", "-f", "/tmp/zebra.conf");
+	// ret2 = eval("ripd", "-d", "-f", "/tmp/ripd.conf");
+	// return ret1 + ret2;
+	return 1;
 }
 
 int zebra_bgp_init(void)
@@ -586,10 +587,10 @@ int zebra_bgp_init(void)
 	}
 	fclose(fp);
 
-	ret1 = eval("zebra", "-d", "-f", "/tmp/zebra.conf");
-	ret2 = eval("bgpd", "-d", "-f", "/tmp/bgpd.conf");
-
-	return ret1 + ret2;
+//	ret1 = eval("zebra", "-d", "-f", "/tmp/zebra.conf");
+//	ret2 = eval("bgpd", "-d", "-f", "/tmp/bgpd.conf");
+//	return ret1 + ret2;
+	return 1;
 }
 
 #endif
@@ -741,6 +742,7 @@ void stop_zebra(void)
 {
 
 #ifdef HAVE_QUAGGA
+	stop_process("watchquagga", "watchquagga daemon");
 	stop_process("zebra", "zebra daemon");
 	stop_process("ripd", "rip daemon");
 	stop_process("ospfd", "ospf daemon");
