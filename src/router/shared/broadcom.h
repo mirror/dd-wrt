@@ -18,10 +18,10 @@
 
 #ifdef HAVE_WRK54G
 #define sys_restart() kill(1,1)
-#define sys_reboot() sysprintf("startservice run_rc_shutdown"); kill(1,15)
+#define sys_reboot() kill(1,15)
 #else
 #define sys_restart() eval("event","3","1","1")
-#define sys_reboot() sysprintf("startservice run_rc_shutdown"); eval("sync"); eval("event","3","1","15")
+#define sys_reboot() eval("sync"); eval("event","3","1","15")
 #endif
 
 #define sys_stats(url) eval("stats", (url))
