@@ -777,10 +777,6 @@ void start_run_rc_shutdown(void)
 	create_rc_file(RC_SHUTDOWN);
 	if (f_exists("/tmp/.rc_shutdown"))
 		system("/tmp/.rc_shutdown");
-#ifdef HAVE_LAGUNA
-	start_deconfigurewifi();
-#endif
-
 	return;
 }
 
