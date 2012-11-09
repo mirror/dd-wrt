@@ -640,6 +640,19 @@ int main(int argc, char **argv)
 #endif
 				break; //force reboot on upgrade
 			}
+#ifdef HAVE_REGISTER
+			if (isregistered_real())
+#endif
+			{
+				start_service("run_rc_shutdown");
+			}
+			if (state == STOP) {
+#ifdef HAVE_LAGUNA
+				start_service("deconfigurewifi");
+#endif
+				state = IDLE;
+				break;
+			}
 
 			lcdmessage("STOPPING SERVICES");
 			cprintf("STOP\n");
@@ -684,18 +697,11 @@ int main(int argc, char **argv)
 #ifndef HAVE_RB500
 			stop_service("resetbutton");
 #endif
-#ifdef HAVE_LAGUNA
-			start_service("deconfigurewifi");
-#endif
 #ifdef HAVE_REGISTER
 			if (isregistered_real())
 #endif
 			{
 				start_service("run_rc_shutdown");
-			}
-			if (state == STOP) {
-				state = IDLE;
-				break;
 			}
 			/* 
 			 * Fall through 
