@@ -635,9 +635,6 @@ int main(int argc, char **argv)
 		case STOP:
 			if (state == STOP && check_action() != ACT_IDLE) {
 				state = IDLE;
-#ifdef HAVE_LAGUNA
-				start_service("deconfigurewifi");
-#endif
 				break; //force reboot on upgrade
 			}
 #ifdef HAVE_REGISTER
@@ -646,10 +643,8 @@ int main(int argc, char **argv)
 			{
 				start_service("run_rc_shutdown");
 			}
+
 			if (state == STOP) {
-#ifdef HAVE_LAGUNA
-				start_service("deconfigurewifi");
-#endif
 				state = IDLE;
 				break;
 			}
