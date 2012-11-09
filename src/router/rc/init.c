@@ -222,6 +222,9 @@ void shutdown_system(void)
 	diag_led(DIAG, START_LED);
 	led_control(LED_DIAG, LED_ON);
 	start_service("run_rc_shutdown"); 
+#ifdef HAVE_LAGUNA
+	start_service("deconfigurewifi");
+#endif
 	fprintf(stderr,"Sending SIGTERM to all processes\n");
 	kill(-1, SIGTERM);
 	sync();
