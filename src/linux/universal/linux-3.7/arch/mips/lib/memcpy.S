@@ -175,6 +175,9 @@
 #define ADDRMASK (NBYTES-1)
 
 	.text
+#ifdef CONFIG_BCM47XX
+	.section .text.fastpath, "a"
+#endif
 	.set	noreorder
 #ifndef CONFIG_CPU_DADDI_WORKAROUNDS
 	.set	noat

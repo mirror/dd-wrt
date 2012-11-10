@@ -52,6 +52,14 @@ SECTIONS
 		*(.fixup)
 		*(.gnu.warning)
 	} :text = 0
+
+#ifdef CONFIG_BCM47XX
+  . = ALIGN(32);
+  __fastpath_begin = .;
+  .text.fastpath : { *(.text.fastpath) }
+  __fastpath_end = .;
+#endif
+
 	_etext = .;	/* End of text section */
 
 	EXCEPTION_TABLE(16)
