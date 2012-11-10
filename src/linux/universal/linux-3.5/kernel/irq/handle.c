@@ -20,6 +20,13 @@
 
 #include "internals.h"
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH
+#endif
+
 /**
  * handle_bad_irq - handle spurious and unhandled irqs
  * @irq:       the interrupt number
@@ -129,7 +136,7 @@ static void irq_wake_thread(struct irq_desc *desc, struct irqaction *action)
 	wake_up_process(action->thread);
 }
 
-irqreturn_t
+irqreturn_t BCMFASTPATH
 handle_irq_event_percpu(struct irq_desc *desc, struct irqaction *action)
 {
 	irqreturn_t retval = IRQ_NONE;
@@ -179,7 +186,7 @@ handle_irq_event_percpu(struct irq_desc *desc, struct irqaction *action)
 	return retval;
 }
 
-irqreturn_t handle_irq_event(struct irq_desc *desc)
+irqreturn_t BCMFASTPATH handle_irq_event(struct irq_desc *desc)
 {
 	struct irqaction *action = desc->action;
 	irqreturn_t ret;

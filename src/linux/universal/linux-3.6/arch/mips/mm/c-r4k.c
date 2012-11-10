@@ -34,6 +34,14 @@
 #include <asm/cacheflush.h> /* for run_uncached() */
 #include <asm/traps.h>
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH
+#define BCMFASTPATH_HOST
+#endif
+
 /* For enabling BCM4710 cache workarounds */
 int bcm4710 = 0;
 
@@ -605,7 +613,7 @@ static void r4k_flush_icache_range(unsigned long start, unsigned long end)
 
 #ifdef CONFIG_DMA_NONCOHERENT
 
-static void r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
+static void BCMFASTPATH r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
 {
 	/* Catch bad driver code */
 	BUG_ON(size == 0);
@@ -635,7 +643,7 @@ static void r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
 	__sync();
 }
 
-static void r4k_dma_cache_inv(unsigned long addr, unsigned long size)
+static void BCMFASTPATH r4k_dma_cache_inv(unsigned long addr, unsigned long size)
 {
 	/* Catch bad driver code */
 	BUG_ON(size == 0);

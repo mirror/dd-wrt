@@ -29,6 +29,13 @@
 #include <trace/events/irq.h>
 
 #include <asm/irq.h>
+
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH
+#endif
 /*
    - No shared variables, all the data are CPU local.
    - If a softirq needs serialization, let it serialize itself
@@ -124,7 +131,7 @@ static inline void __local_bh_disable(unsigned long ip, unsigned int cnt)
 }
 #endif /* CONFIG_TRACE_IRQFLAGS */
 
-void local_bh_disable(void)
+void BCMFASTPATH local_bh_disable(void)
 {
 	__local_bh_disable((unsigned long)__builtin_return_address(0),
 				SOFTIRQ_DISABLE_OFFSET);
@@ -181,7 +188,7 @@ static inline void _local_bh_enable_ip(unsigned long ip)
 	preempt_check_resched();
 }
 
-void local_bh_enable(void)
+void BCMFASTPATH local_bh_enable(void)
 {
 	_local_bh_enable_ip((unsigned long)__builtin_return_address(0));
 }

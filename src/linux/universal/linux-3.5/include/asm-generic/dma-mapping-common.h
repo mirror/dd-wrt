@@ -7,7 +7,15 @@
 #include <linux/dma-debug.h>
 #include <linux/dma-attrs.h>
 
-static inline dma_addr_t dma_map_single_attrs(struct device *dev, void *ptr,
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH
+#define BCMFASTPATH_HOST
+#endif
+
+static inline dma_addr_t BCMFASTPATH dma_map_single_attrs(struct device *dev, void *ptr,
 					      size_t size,
 					      enum dma_data_direction dir,
 					      struct dma_attrs *attrs)
@@ -26,7 +34,7 @@ static inline dma_addr_t dma_map_single_attrs(struct device *dev, void *ptr,
 	return addr;
 }
 
-static inline void dma_unmap_single_attrs(struct device *dev, dma_addr_t addr,
+static inline void BCMFASTPATH dma_unmap_single_attrs(struct device *dev, dma_addr_t addr,
 					  size_t size,
 					  enum dma_data_direction dir,
 					  struct dma_attrs *attrs)

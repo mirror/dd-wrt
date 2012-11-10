@@ -40,6 +40,14 @@
 #include <asm/mach/irq.h>
 #include <asm/mach/time.h>
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH
+#define BCMFASTPATH_HOST
+#endif
+
 unsigned long irq_err_count;
 
 int arch_show_interrupts(struct seq_file *p, int prec)
@@ -85,7 +93,7 @@ void handle_IRQ(unsigned int irq, struct pt_regs *regs)
 /*
  * asm_do_IRQ is the interface to be used from assembly code.
  */
-asmlinkage void __exception_irq_entry
+asmlinkage void __exception_irq_entry BCMFASTPATH
 asm_do_IRQ(unsigned int irq, struct pt_regs *regs)
 {
 	handle_IRQ(irq, regs);
