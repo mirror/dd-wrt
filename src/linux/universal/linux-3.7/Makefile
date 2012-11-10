@@ -384,6 +384,7 @@ KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds -s
 KBUILD_LDFLAGS_MODULE_PREREQ	:= 
 
+
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
 KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
 KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
@@ -577,6 +578,12 @@ KBUILD_CFLAGS	+= -Os -fno-caller-saves
 else
 KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
 endif
+
+ifdef CONFIG_BCM47XX
+KBUILD_CFLAGS += -I$(srctree)/brcm/include -DBCMDRIVER -Dlinux
+KBUILD_AFLAGS += -I$(srctree)/brcm/include -DBCMDRIVER -Dlinux
+endif
+
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 

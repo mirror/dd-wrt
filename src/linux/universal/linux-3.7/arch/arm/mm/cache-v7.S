@@ -18,6 +18,10 @@
 
 #include "proc-macros.S"
 
+#ifdef CONFIG_BCM47XX
+	.section .text.fastpath, "a"
+#endif
+
 /*
  *	v7_flush_icache_all()
  *

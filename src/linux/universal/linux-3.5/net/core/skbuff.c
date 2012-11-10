@@ -72,6 +72,14 @@
 #include <trace/events/skb.h>
 #include <linux/highmem.h>
 
+
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH_HOST
+#endif
+
 struct kmem_cache *skbuff_head_cache __read_mostly;
 static struct kmem_cache *skbuff_fclone_cache __read_mostly;
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
@@ -739,7 +747,7 @@ bool skb_recycle_check(struct sk_buff *skb, int skb_size)
 }
 EXPORT_SYMBOL(skb_recycle_check);
 
-static void __copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
+static void BCMFASTPATH_HOST __copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
 {
 	new->tstamp		= old->tstamp;
 	new->dev		= old->dev;
@@ -2999,7 +3007,7 @@ err:
 }
 EXPORT_SYMBOL_GPL(skb_segment);
 
-int skb_gro_receive(struct sk_buff **head, struct sk_buff *skb)
+int BCMFASTPATH_HOST skb_gro_receive(struct sk_buff **head, struct sk_buff *skb)
 {
 	struct sk_buff *p = *head;
 	struct sk_buff *nskb;

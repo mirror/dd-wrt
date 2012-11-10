@@ -56,6 +56,9 @@
  * a2: size of area to clear
  */
 	.set	noreorder
+#ifdef CONFIG_BCM47XX
+	.section .text.fastpath, "a"
+#endif
 	.align	5
 LEAF(memset)
 	beqz		a1, 1f

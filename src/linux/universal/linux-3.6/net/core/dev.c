@@ -141,6 +141,15 @@
 
 #include "net-sysfs.h"
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH
+#define BCMFASTPATH_HOST
+#endif
+
+
 /* Instead of increasing this, you should create a hash table. */
 #define MAX_GRO_SKBS 8
 
@@ -2563,7 +2572,7 @@ EXPORT_SYMBOL(dev_loopback_xmit);
  *      the BH enable code must have IRQs enabled so that it will not deadlock.
  *          --BLG
  */
-int dev_queue_xmit(struct sk_buff *skb)
+int BCMFASTPATH_HOST dev_queue_xmit(struct sk_buff *skb)
 {
 	struct net_device *dev = skb->dev;
 	struct netdev_queue *txq;
@@ -3445,7 +3454,7 @@ static void flush_backlog(void *arg)
 	}
 }
 
-static int napi_gro_complete(struct sk_buff *skb)
+static int BCMFASTPATH_HOST napi_gro_complete(struct sk_buff *skb)
 {
 	struct packet_type *ptype;
 	__be16 type = skb->protocol;
@@ -3477,7 +3486,7 @@ out:
 	return netif_receive_skb(skb);
 }
 
-inline void napi_gro_flush(struct napi_struct *napi)
+inline void BCMFASTPATH_HOST napi_gro_flush(struct napi_struct *napi)
 {
 	struct sk_buff *skb, *next;
 
@@ -3492,7 +3501,7 @@ inline void napi_gro_flush(struct napi_struct *napi)
 }
 EXPORT_SYMBOL(napi_gro_flush);
 
-enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
+enum gro_result BCMFASTPATH_HOST dev_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {
 	struct sk_buff **pp = NULL;
 	struct packet_type *ptype;
@@ -3584,7 +3593,7 @@ normal:
 }
 EXPORT_SYMBOL(dev_gro_receive);
 
-static inline gro_result_t
+static inline gro_result_t BCMFASTPATH_HOST
 __napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {
 	struct sk_buff *p;
@@ -3609,7 +3618,7 @@ __napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 	return dev_gro_receive(napi, skb);
 }
 
-gro_result_t napi_skb_finish(gro_result_t ret, struct sk_buff *skb)
+gro_result_t BCMFASTPATH_HOST napi_skb_finish(gro_result_t ret, struct sk_buff *skb)
 {
 	switch (ret) {
 	case GRO_NORMAL:
@@ -3652,7 +3661,7 @@ void skb_gro_reset_offset(struct sk_buff *skb)
 }
 EXPORT_SYMBOL(skb_gro_reset_offset);
 
-gro_result_t napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
+gro_result_t BCMFASTPATH_HOST napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {
 	skb_gro_reset_offset(skb);
 
