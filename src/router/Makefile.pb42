@@ -118,7 +118,6 @@ export RANLIB := $(CROSS_COMPILE)ranlib
 export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
 export LTO :=
-
 export CFLAGS := $(COPTS)
 
 #
@@ -287,6 +286,9 @@ endif
 ifeq ($(CONFIG_RB2011),y)
 	cp $(LINUXDIR)/.config_rb2011 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WDR2543),y)
+	cp $(LINUXDIR)/.config_wdr2543 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_KERNEL_ELF_CORE),y)
 	sed -i 's/\# CONFIG_ELF_CORE is not set/CONFIG_ELF_CORE=y/g' $(LINUXDIR)/.config
 endif
@@ -319,6 +321,11 @@ ifeq ($(CONFIG_WDR4300),y)
 	echo CONFIG_WDR4300=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_WDR4300 is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_WDR2543),y)
+	echo CONFIG_WDR2543=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_WDR2543 is not set" >> $(LINUXDIR)/.config
 endif
 
 	$(MAKE) -C $(LINUXDIR) oldconfig	
@@ -609,7 +616,11 @@ ifeq ($(CONFIG_AP83),y)
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ap83-firmware.bin $(ARCH)-uclibc/aligned.uimage
 endif
 ifeq ($(CONFIG_AP96),y)
+ifeq ($(CONFIG_DIR825C1),y)
+	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=65536 conv=sync
+else
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
+endif
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ap96-firmware.bin $(ARCH)-uclibc/aligned.uimage
 endif
@@ -752,8 +763,8 @@ ifeq ($(CONFIG_LSX),y)
 endif
 ifeq ($(CONFIG_WP543),y)
 	-./tools/compex/mkmylofw -B WP543 \
-		-p0x30000:0x3d0000:alp:0x80060000 \
-		-b0x30000:0x3d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
+		-p0x30000:0x7d0000:alp:0x80060000 \
+		-b0x30000:0x7d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
 		mips-uclibc/wp543.img
 endif
 ifeq ($(CONFIG_WP546),y)
@@ -768,8 +779,8 @@ ifeq ($(CONFIG_UBNTM),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ar7420-firmware.bin $(ARCH)-uclibc/aligned.uimage
-	tools/ubnt/src/mkfwimage -v XM.ar7240.v5.5.60000.133900.2000 -o $(ARCH)-uclibc/ubntm-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
-	tools/ubnt/src/mkfwimage -v BZ.ar7240.v5.5.60000.133900.2000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+	tools/ubnt/src/mkfwimage -v XM.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntm-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+	tools/ubnt/src/mkfwimage -v BZ.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 endif
 ifeq ($(CONFIG_WHRHPGN),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
@@ -1131,6 +1142,10 @@ ifeq ($(CONFIG_WR741),y)
 
 	-./tools/tplink/mktplinkfw -B TL-WA801NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA801NDv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA801NDv1-firmware.bin mips-uclibc/tplink-WA801NDv1-firmware.bin
+endif
+ifeq ($(CONFIG_WDR2543),y)
+	-./tools/tplink/mktplinkfw -B TL-WDR2543 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR2543-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR2543-firmware.bin mips-uclibc/tplink-TL-WDR2543-firmware.bin
 endif
 ifeq ($(CONFIG_WDR4300),y)
 	-./tools/tplink/mktplinkfw -B TL-WDR4300 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4300-firmware.bin
