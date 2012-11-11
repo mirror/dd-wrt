@@ -1847,7 +1847,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 
 		if (chain_trusted)
 			continue;
-
+/*
 #ifdef NO_TIMESTAMP_CHECK
 		disable_time_checks = 1;
 #endif
@@ -1862,7 +1862,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 			*reason = X509_VALIDATE_CERTIFICATE_EXPIRED;
 			return -1;
 		}
-
+*/
 		if (cert->next) {
 			if (x509_name_compare(&cert->issuer,
 					      &cert->next->subject) != 0) {
