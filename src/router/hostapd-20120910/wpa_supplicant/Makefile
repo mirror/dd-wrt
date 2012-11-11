@@ -1,10 +1,6 @@
-ifndef CC
-CC=gcc
-endif
-
-ifndef CFLAGS
-CFLAGS = -MMD -O2 -Wall -g
-endif
+CFLAGS+ = -MMD $(COPTS) -Wall 
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 export LIBDIR ?= /usr/local/lib/
 export BINDIR ?= /usr/local/sbin/
