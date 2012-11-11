@@ -67,6 +67,7 @@ static const char *commands_help =
 #ifdef CONFIG_IEEE80211W
 "   sa_query <addr>      send SA Query to a station\n"
 #endif /* CONFIG_IEEE80211W */
+#ifdef CONFIG_WPS
 "   wps_pin <uuid> <pin> [timeout] [addr]  add WPS Enrollee PIN\n"
 "   wps_check_pin <PIN>  verify PIN checksum\n"
 "   wps_pbc              indicate button pushed to initiate PBC\n"
@@ -81,6 +82,7 @@ static const char *commands_help =
 #endif /* CONFIG_WPS_NFC */
 "   wps_ap_pin <cmd> [params..]  enable/disable AP PIN\n"
 "   wps_config <SSID> <auth> <encr> <key>  configure AP\n"
+#endif
 "   get_config           show current configuration\n"
 "   help                 show this usage help\n"
 "   interface [ifname]   show interfaces/select interface\n"
@@ -340,7 +342,7 @@ static int hostapd_cli_cmd_sa_query(struct wpa_ctrl *ctrl, int argc,
 }
 #endif /* CONFIG_IEEE80211W */
 
-
+#ifdef CONFIG_WPS
 static int hostapd_cli_cmd_wps_pin(struct wpa_ctrl *ctrl, int argc,
 				   char *argv[])
 {
@@ -570,7 +572,7 @@ static int hostapd_cli_cmd_wps_config(struct wpa_ctrl *ctrl, int argc,
 			 ssid_hex, argv[1]);
 	return wpa_ctrl_command(ctrl, buf);
 }
-
+#endif
 
 static int hostapd_cli_cmd_ess_disassoc(struct wpa_ctrl *ctrl, int argc,
 					char *argv[])
@@ -795,6 +797,7 @@ static struct hostapd_cli_cmd hostapd_cli_commands[] = {
 #ifdef CONFIG_IEEE80211W
 	{ "sa_query", hostapd_cli_cmd_sa_query },
 #endif /* CONFIG_IEEE80211W */
+#ifdef CONFIG_WPS
 	{ "wps_pin", hostapd_cli_cmd_wps_pin },
 	{ "wps_check_pin", hostapd_cli_cmd_wps_check_pin },
 	{ "wps_pbc", hostapd_cli_cmd_wps_pbc },
@@ -809,6 +812,7 @@ static struct hostapd_cli_cmd hostapd_cli_commands[] = {
 #endif /* CONFIG_WPS_NFC */
 	{ "wps_ap_pin", hostapd_cli_cmd_wps_ap_pin },
 	{ "wps_config", hostapd_cli_cmd_wps_config },
+#endif
 	{ "ess_disassoc", hostapd_cli_cmd_ess_disassoc },
 	{ "get_config", hostapd_cli_cmd_get_config },
 	{ "help", hostapd_cli_cmd_help },
