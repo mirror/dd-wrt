@@ -133,9 +133,9 @@ static void makeipup(void)
 		fprintf(fp, "iptables -I INPUT -i $1 -j ACCEPT\n");
 	if (nvram_match("pppoeserver_clip", "local"))
 		if (nvram_match("pppoeserver_interface", "br0"))
-			fprintf(fp,"arp -s $5 `nvram get lan_hwaddr` pub\n"	//prevent missing arp entries
-//				"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
-//				"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
+			fprintf(fp, //"arp -s $5 `nvram get lan_hwaddr` pub\n"	//prevent missing arp entries
+				"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
+				"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
 			);
 		fprintf(fp, 
  		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
@@ -148,7 +148,7 @@ static void makeipup(void)
 		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
 		);
 		//	per peer shaping
-/*	if (nvram_match("pppoeradius_enabled", "1")) {
+	if (nvram_match("pppoeradius_enabled", "1")) {
 		fprintf(fp, "IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"
 			"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"
 			"if [ ! -z $IN ] && [ $IN -gt 0 ]\n"
@@ -160,7 +160,7 @@ static void makeipup(void)
 			"then	tc qdisc del root dev $1\n"
 			"\t tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"
 			"fi\n");
-		}	*/
+		}
 //tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 100Mbit
 //eg: tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 10Mbit
 //burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
