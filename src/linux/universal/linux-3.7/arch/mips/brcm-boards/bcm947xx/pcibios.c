@@ -96,7 +96,7 @@ static u32 pci_membase = SI_PCI_DMA;
 static struct resource bcm_pci_mem_resource = {
         .name   = "bcm947xx PCI memory space",
         .start  = SI_PCI_DMA  /* BCM_PCI_MEM_BASE_PA */,
-        .end    = SI_PCI_DMA + SI_PCI_DMA_SZ - 1 /* BCM_PCI_MEM_END_PA */,
+        .end    = SI_PCI_DMA + (SI_PCI_DMA_SZ - 1) /* BCM_PCI_MEM_END_PA */,
         .flags  = IORESOURCE_MEM | IORESOURCE_PCI_FIXED
 };
 
@@ -153,6 +153,7 @@ int __init pcibios_init(void)
 #else
 	pci_scan_bus(0, &pcibios_ops, NULL);
 #endif
+	return 0;
 }
 
 
@@ -172,7 +173,6 @@ char * __init pcibios_setup(char *str)
 void __devinit
 pcibios_fixup_bus(struct pci_bus *b)
 {
-	struct list_head *ln;
 	struct pci_dev *d, *dev;
 	struct resource *res;
 	int pos, size;
@@ -183,8 +183,7 @@ pcibios_fixup_bus(struct pci_bus *b)
 
 	/* Fix up SB */
 	if (b->number == 0) {
-		for (ln = b->devices.next; ln != &b->devices; ln = ln->next) {
-			d = pci_dev_b(ln);
+		list_for_each_entry(d, &b->devices, bus_list) {
 			/* Fix up interrupt lines */
 			pci_read_config_byte(d, PCI_INTERRUPT_LINE, &irq);
 			d->irq = irq + 2;
@@ -207,10 +206,9 @@ pcibios_fixup_bus(struct pci_bus *b)
 
 		pci_membase = hndpci_get_membase(b->number);
 		/* Fix up external PCI */
-		for (ln = b->devices.next; ln != &b->devices; ln = ln->next) {
+		list_for_each_entry(d, &b->devices, bus_list) {
 			bool is_hostbridge;
 
-			d = pci_dev_b(ln);
 			is_hostbridge = hndpci_is_hostbridge(b->number, PCI_SLOT(d->devfn));
 			/* Fix up resource bases */
 			for (pos = 0; pos < 6; pos++) {

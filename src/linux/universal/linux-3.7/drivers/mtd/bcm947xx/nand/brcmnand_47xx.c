@@ -1046,7 +1046,7 @@ out:
  * @chip:	nand chip info structure
  * @buf:	data buffer
  */
-static void brcmnand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
+static int brcmnand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
 	const uint8_t *buf, int oob_required)
 {
 	int eccsize = chip->ecc.size;
@@ -1123,7 +1123,7 @@ out:
 	if (ret != 0)
 		printk(KERN_ERR "brcmnand_write_page_hwecc failed\n");
 	brcmnand_release_device(mtd);
-	return;
+	return ret;
 }
 
 /* 
@@ -2171,30 +2171,6 @@ brcmnand_write_buf(struct mtd_info *mtd, const u_char *buf, int len)
 	}
 }
 
-/**
- * nand_verify_buf - [DEFAULT] Verify chip data against buffer
- * @mtd:	MTD device structure
- * @buf:	buffer containing the data to compare
- * @len:	number of bytes to compare
- *
- * Default verify function for 8bit buswith
- */
-static int
-brcmnand_verify_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
-{
-	int i;
-	struct nand_chip *chip = mtd->priv;
-	uint8_t chbuf;
-
-	for (i = 0; i < len; i++) {
-		chbuf = chip->read_byte(mtd);
-		if (buf[i] != chbuf) {
-			return -EFAULT;
-		}
-	}
-
-	return 0;
-}
 
 /**
  * brcmnand_devready - [DEFAULT] Check if nand flash device is ready
@@ -2246,7 +2222,6 @@ brcmnand_init_nandchip(struct mtd_info *mtd, struct nand_chip *chip)
 	chip->read_byte = brcmnand_read_byte;
 	chip->write_buf = brcmnand_write_buf;
 	chip->read_buf = brcmnand_read_buf;
-	chip->verify_buf = brcmnand_verify_buf;
 	chip->select_chip = brcmnand_select_chip;
 	chip->cmd_ctrl = brcmnand_hwcontrol;
 	chip->dev_ready = brcmnand_devready;
