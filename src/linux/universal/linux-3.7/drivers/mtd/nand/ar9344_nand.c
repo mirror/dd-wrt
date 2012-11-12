@@ -71,16 +71,6 @@ static void ar9344_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
 	}
 }
 
-static int ar9344_verify_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
-{
-	uint8_t rbuf[len];
-	ar9344_read_buf(mtd, rbuf, len);
-
-	if (memcmp(buf, rbuf, len) != 0)
-		return -EFAULT;
-	return 0;
-}
-
 static void ar9344_write_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
 {
 	for (; len > 0; --len, ++buf) {
@@ -345,7 +335,6 @@ static int ar9344_nand_probe(struct platform_device *pdev)
 
 	rnand.read_byte = ar9344_read_byte;
 	rnand.read_buf = ar9344_read_buf;
-	rnand.verify_buf = ar9344_verify_buf;
 	rnand.write_buf = ar9344_write_buf;
 
 	rnand.select_chip = ar9344_select_chip;

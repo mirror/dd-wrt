@@ -119,10 +119,6 @@ static void ar9330_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
 	ar9330_read_bytes_gpio(buf, len, NULL);
 }
 
-static int ar9330_verify_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
-{
-	return ar9330_read_bytes_gpio(NULL, len, buf);
-}
 
 #ifdef DEBUG_SPEED
 static void ar9330_test_speed(void) {
@@ -174,7 +170,6 @@ static int ar9330_nand_probe(struct platform_device *pdev)
 	rnand.read_byte = ar9330_read_byte;
 	rnand.write_buf = ar9330_write_buf;
 	rnand.read_buf = ar9330_read_buf;
-	rnand.verify_buf = ar9330_verify_buf;
 
 	return rb_nand_probe(&rnand, 1);
 }

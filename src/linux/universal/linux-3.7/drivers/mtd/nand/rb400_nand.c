@@ -147,14 +147,6 @@ static void rb400_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
 	rb400_nandio_read_verify(buf, NULL, len);
 }
 
-static int rb400_verify_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
-{
-	if (rb400_nandio_read_verify(NULL, buf, len))
-		return -EFAULT;
-
-	return 0;
-}
-
 static int rb400_spi_nand_probe(struct spi_device *_spi)
 {
 	printk("RB400 spi nand\n");
@@ -175,7 +167,6 @@ static int rb400_spi_nand_probe(struct spi_device *_spi)
 	rnand.read_byte = rb400_read_byte;
 	rnand.write_buf = rb400_write_buf;
 	rnand.read_buf = rb400_read_buf;
-	rnand.verify_buf = rb400_verify_buf;
 
 	return rb_nand_probe(&rnand, 1);
 }

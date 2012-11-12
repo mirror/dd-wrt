@@ -105,17 +105,6 @@ static void ndfc_write_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
 		out_be32(ndfc->ndfcbase + NDFC_DATA, *p++);
 }
 
-static int ndfc_verify_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
-{
-	struct ndfc_controller *ndfc = &ndfc_ctrl;
-	uint32_t *p = (uint32_t *) buf;
-
-	for(;len > 0; len -= 4)
-		if (*p++ != in_be32(ndfc->ndfcbase + NDFC_DATA))
-			return -EFAULT;
-	return 0;
-}
-
 /*
  * Initialize chip structure
  */
@@ -132,7 +121,6 @@ static int ndfc_chip_init(struct ndfc_controller *ndfc,
 	chip->controller = &ndfc->ndfc_control;
 	chip->read_buf = ndfc_read_buf;
 	chip->write_buf = ndfc_write_buf;
-	chip->verify_buf = ndfc_verify_buf;
 
 	return rb_nand_probe(chip, 0);
 }

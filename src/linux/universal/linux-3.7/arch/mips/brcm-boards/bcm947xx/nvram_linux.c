@@ -199,7 +199,7 @@ early_nvram_init(void)
 			if (header->magic == NVRAM_MAGIC)
 				if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
 					printk(KERN_NOTICE "found nvram at %X\n",off-NVRAM_SPACE);
-					header_cfe = KSEG1ADDR(base + off + 0x20000 - (NVRAM_SPACE/2));
+					header_cfe = (struct nvram_header *)KSEG1ADDR(base + off + 0x20000 - (NVRAM_SPACE/2));
 					if (header_cfe->magic != NVRAM_MAGIC)
 					{
 					    printk(KERN_INFO "something wrong here\n");
@@ -900,6 +900,7 @@ dev_nvram_init(void)
 	osl_t *osh;
 	struct mtd_info *nvram_mtd_cfe = NULL;
 	struct mtd_info *nvram_mtd_temp = NULL;
+	struct nvram_header *header;
 	DECLARE_WAITQUEUE(wait, current);
 	wait_queue_head_t wait_q;
 	struct erase_info erase;
@@ -944,7 +945,7 @@ dev_nvram_init(void)
 	    goto done_nofree;
 	    }
 	mtd_read(nvram_mtd, 0, nvram_mtd->erasesize, &len, buf);
-	struct nvram_header *header = (struct nvram_header *)buf;
+	header = (struct nvram_header *)buf;
 	len=0;	
 	if (header->magic!=NVRAM_MAGIC)
 	{

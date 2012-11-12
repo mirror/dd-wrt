@@ -891,7 +891,6 @@ out:
 	return rc;
 }
 
-#define pci_dev_b(n) list_entry(n, struct pci_dev, bus_list)
 
 bool __devinit
 plat_fixup_bus(struct pci_bus *b)
@@ -905,8 +904,7 @@ plat_fixup_bus(struct pci_bus *b)
 	/* Fix up SB */
 	//if (b->number == 0) {
 	if (((struct pci_sys_data *)b->sysdata)->domain == 0) {
-		for (ln = b->devices.next; ln != &b->devices; ln = ln->next) {
-			d = pci_dev_b(ln);
+			list_for_each_entry(d, &b->devices, bus_list)	{
 			/* Fix up interrupt lines */
 			pci_read_config_byte(d, PCI_INTERRUPT_LINE, &irq);
 			d->irq = si_bus_map_irq(d);

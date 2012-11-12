@@ -273,11 +273,6 @@ static void rb700_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
 	rb700_read_bytes_gpio(buf, len, NULL);
 }
 
-static int rb700_verify_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
-{
-	return rb700_read_bytes_gpio(NULL, len, buf);
-}
-
 #ifdef DEBUG_SPEED
 static void rb700_test_speed(void) {
 	char buf[1024];
@@ -341,7 +336,6 @@ static int rb700_nand_probe(struct platform_device *pdev)
 	rnand.read_byte = rb700_read_byte;
 	rnand.write_buf = rb700_write_buf;
 	rnand.read_buf = rb700_read_buf;
-	rnand.verify_buf = rb700_verify_buf;
 
 	return rb_nand_probe(&rnand, 1);
 }

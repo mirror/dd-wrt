@@ -173,11 +173,6 @@ static void rb750g_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
 	rb750g_read_bytes_gpio(buf, len, NULL);
 }
 
-static int rb750g_verify_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
-{
-	return rb750g_read_bytes_gpio(NULL, len, buf);
-}
-
 static int rb750g_nand_probe(struct platform_device *pdev)
 {
 	printk("RB750G nand\n");
@@ -189,7 +184,6 @@ static int rb750g_nand_probe(struct platform_device *pdev)
 	rnand.read_byte = rb750g_read_byte;
 	rnand.write_buf = rb750g_write_buf;
 	rnand.read_buf = rb750g_read_buf;
-	rnand.verify_buf = rb750g_verify_buf;
 
 	return rb_nand_probe(&rnand, 1);
 }
