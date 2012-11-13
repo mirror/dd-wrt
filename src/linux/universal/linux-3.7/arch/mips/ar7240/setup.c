@@ -470,34 +470,23 @@ void disable_early_printk(void)
 {
 }
 
-#define AR71XX_MEM_SIZE_MIN	0x0200000
-#define AR71XX_MEM_SIZE_MAX	0x8000000
 static int ramsize;
+
+#define AR71XX_MEM_SIZE_MIN	(2 * 1024 * 1024)
+#define AR71XX_MEM_SIZE_MAX	(128 * 1024 * 1024)
+
 static void __init ar71xx_detect_mem_size(void)
 {
-	volatile u8 *p;
-	u8 memsave;
-	u32 size;
+	unsigned long size;
 
-	p = (volatile u8 *) KSEG1ADDR(0);
-	memsave = *p;
-	for (size = AR71XX_MEM_SIZE_MIN;
-	     size <= (AR71XX_MEM_SIZE_MAX >> 1); size <<= 1) {
-		volatile u8 *r;
-
-		r = (p + size);
-		*p = 0x55;
-		if (*r == 0x55) {
-			/* Mirrored data found, try another pattern */
-			*p = 0xAA;
-			if (*r == 0xAA) {
-				/* Mirrored data found again, stop detection */
-				break;
-			}
-		}
+	for (size = AR71XX_MEM_SIZE_MIN; size < AR71XX_MEM_SIZE_MAX;
+	     size <<= 1) {
+		if (!memcmp(ar71xx_detect_mem_size,
+			    ar71xx_detect_mem_size + size, 1024))
+			break;
 	}
-	*p = memsave;
 	ramsize = size;
+
 	add_memory_region(0, size, BOOT_MEM_RAM);
 }
 
