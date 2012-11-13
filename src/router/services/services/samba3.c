@@ -71,6 +71,7 @@ void start_samba3(void)
 		fp = fopen("/tmp/smb.conf", "wb");
 		fprintf(fp,
 			"[global]\n"
+			"log level = 1\n"
 			"netbios name = %s\n"
 			"server string = %s\n"
 			"syslog = 10\n"
@@ -90,7 +91,14 @@ void start_samba3(void)
 			"passdb backend = smbpasswd\n"
 			"log file = /var/smbd.log\n"
 			"max log size = 1000\n"
-			"socket options = TCP_NODELAY\n"
+			"socket options = TCP_NODELAY IPTOS_LOWDELAY SO_RCVBUF=65536 SO_SNDBUF=65536\n"
+			"read raw = yes\n"
+			"write raw = yes\n"
+			"oplocks = yes\n"
+			"max xmit = 65536\n"
+			"dead time = 15\n"
+			"getwd cache = yes\n"
+			"lpq cache = 30\n"
 			"printing = none\n"
 			"load printers = No\n"
 			"usershare allow guests = Yes\n",
