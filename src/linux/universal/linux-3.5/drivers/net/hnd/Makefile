@@ -38,7 +38,9 @@ HND_OBJS := $(addprefix $(src)/$(SHARED)/, $(sort $(WLFILES:.c=.o)))
 EXTRA_CFLAGS += $(WLFLAGS) -DBCM5354 -DLINUX_HYBRID_POSTPROCESSING_REMOVAL
 
 # For the ARM platform...
-EXTRA_CFLAGS    += -DROBO_SRAB
+ifneq ($(CONFIG_MACH_BRCM_NS),)
+EXTRA_CFLAGS    += -DROBO_SRAB -DBCMDMASGLISTOSL
+endif
 
 ifneq ($(CONFIG_BCM947XX),y)
 HND_OBJS += $(src)/$(SHARED)/nvramstubs.o
