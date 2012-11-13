@@ -98,7 +98,7 @@ void start_samba3(void)
 			"max xmit = 65536\n"
 			"dead time = 15\n"
 			"getwd cache = yes\n"
-			"lpq cache = 30\n"
+			"lpq cache time = 30\n"
 			"printing = none\n"
 			"load printers = No\n"
 			"usershare allow guests = Yes\n",
