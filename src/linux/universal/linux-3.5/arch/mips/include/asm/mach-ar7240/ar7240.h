@@ -857,18 +857,26 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define is_ar9342_12()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9342_REV_1_2)
 #define is_ar9341_12()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9341_REV_1_2)
 
-#define is_ar9330() 	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK_MAJ) == AR9330_REV_1_0)
-#define is_ar9331() 	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK_MAJ) == AR9331_REV_1_0)
+#define is_ar9330() (((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_0) || \
+                        ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_1) || \
+                        ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_2))
+
+
+#define is_ar9331() (((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9331_REV_1_0) || \
+                        ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9331_REV_1_1) || \
+                        ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9331_REV_1_2))
 
 #define is_ar934x_10()	(is_ar9344_10() || is_ar9342_10() || is_ar9341_10())
 #define is_ar934x_11()	(is_ar9344_11() || is_ar9342_11() || is_ar9341_11())
 #define is_ar934x_12()	(is_ar9344_12() || is_ar9342_12() || is_ar9341_12())
 
-#define is_ar9344()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK_MAJ) == AR9344_REV_1_0)
-#define is_ar9342()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK_MAJ) == AR9342_REV_1_0)
-#define is_ar9341()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK_MAJ) == AR9341_REV_1_0)
 
-#define is_ar934x() (is_ar9344() || is_ar9342() || is_ar9341())
+#define is_ar9341()	(is_ar9341_10() || is_ar9341_11() || is_ar9341_12())
+#define is_ar9342()	(is_ar9342_10() || is_ar9342_11() || is_ar9342_12())
+#define is_ar9344()	(is_ar9344_10() || is_ar9344_11() || is_ar9344_12())
+
+#define is_ar934x() (is_ar934x_10() || is_ar934x_11() || is_ar934x_12())
+
 #define is_ar933x() (is_ar9330() || is_ar9331())
 
 
