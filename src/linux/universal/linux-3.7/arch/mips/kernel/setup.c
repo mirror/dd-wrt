@@ -590,7 +590,7 @@ void __init setup_arch(char **cmdline_p)
 #ifdef CONFIG_EARLY_PRINTK
 	setup_early_printk();
 #endif
-	cpu_report();
+//	cpu_report();
 	check_bugs_early();
 
 #if defined(CONFIG_VT)
@@ -600,7 +600,6 @@ void __init setup_arch(char **cmdline_p)
 	conswitchp = &dummy_con;
 #endif
 #endif
-	printk(KERN_INFO "arch_mem_init\n");
 	arch_mem_init(cmdline_p);
 
 	resource_init();
