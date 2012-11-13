@@ -322,6 +322,7 @@ open_db(void)
 	sql_exec(db, "pragma journal_mode = OFF");
 	sql_exec(db, "pragma synchronous = OFF;");
 	sql_exec(db, "pragma default_cache_size = 256;");
+	sql_exec(db, "pragma cache_size = 256;");
 	return new_db;
 }
 
