@@ -617,7 +617,7 @@ id = ar7240_reg_rd(AR7240_REV_ID);
     serial_print("Booting AR7240(Python)...\n");
 #endif
     is_ar9000=1;
-    printk(KERN_INFO "sys id = %X %s\n",id,get_system_type());
+//    printk(KERN_INFO "sys id = %X %s\n",id,get_system_type());
 //#if 0
 //    serial_setup();
 //#endif
