@@ -27,6 +27,7 @@
 #define cpu_has_counter		1
 #define cpu_has_watch		1
 #define cpu_has_divec		1
+#define cpu_has_dsp		0
 
 #define cpu_has_prefetch	1
 #define cpu_has_ejtag		1
