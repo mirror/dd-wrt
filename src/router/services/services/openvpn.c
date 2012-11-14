@@ -414,9 +414,7 @@ void start_openvpn(void)
 	 }
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
-			"iptables -I INPUT -i %s1 -j logaccept\n"
 			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
-			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
 		fprintf(fp,
@@ -427,13 +425,18 @@ void start_openvpn(void)
 			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"));
 		}
+	if (nvram_match("openvpncl_sec", "0"))
+			&& (nvram_match("openvpncl_nat", "1"))
+		fprintf(fp, "iptables -I INPUT -i %s1 -j logaccept\n",
+			nvram_safe_get("openvpncl_tuntap"));
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 //		fprintf(fp, "ip route flush table 10\n");
 		if (nvram_match("openvpncl_tuntap", "tap"))
 			fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
-		else 
+		else {
 			fprintf(fp, "ip route add default via $ifconfig_remote table 10\n");
+			}
 		fprintf(fp, "for IP in `cat /tmp/openvpncl/policy_ips` ; do\n"
 			"\t ip rule add from $IP table 10\n" "done\n");
 	}
