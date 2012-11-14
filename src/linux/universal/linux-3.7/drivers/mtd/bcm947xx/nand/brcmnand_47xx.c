@@ -1,4 +1,4 @@
-/*n
+/*
  * Broadcom NAND flash controller interface
  *
  * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
@@ -59,6 +59,8 @@ extern struct mtd_partition * init_brcmnand_mtd_partitions(struct mtd_info *mtd,
 #endif
 
 static int nflash_lock = 0;
+extern struct nand_hw_control *nand_hwcontrol_lock_init();
+
 
 #ifdef	__mips__
 #define PLATFORM_IOFLUSH_WAR()  __sync()
@@ -2249,13 +2251,12 @@ brcmnand_init_nandchip(struct mtd_info *mtd, struct nand_chip *chip)
 	mtd->priv = chip;
 	mtd->owner = THIS_MODULE;
 
-	mtd->mlock = partitions_lock_init();
+	mtd->mlock = &nand_hwcontrol_lock_init()->lock;
 	if (!mtd->mlock)
 		ret = -ENOMEM;
 
 	return ret;
 }
-
 static int __init
 brcmnand_mtd_init(void)
 {
@@ -2268,7 +2269,6 @@ brcmnand_mtd_init(void)
 	struct mtd_partition *parts;
 	int i;
 #endif
-
 	list_for_each_entry(dev, &((pci_find_bus(0, 0))->devices), bus_list) {
 		if ((dev != NULL) && (dev->device == CC_CORE_ID))
 			break;
@@ -2347,7 +2347,7 @@ brcmnand_mtd_init(void)
 	mtd->name = "brcmnand";
 	mtd->priv = &brcmnand_info.chip;
 	mtd->owner = THIS_MODULE;
-	mtd->mlock = partitions_lock_init();
+	mtd->mlock = &nand_hwcontrol_lock_init()->lock;
 	spin_lock_init(&brcm_mtd_lock);
 	if (!mtd->mlock) {
 		ret = -ENOMEM;
