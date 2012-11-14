@@ -22,4 +22,5 @@
  "openvpncl_tlscip"   "TLS Cipher" "CHOICE" "3"  "0" "AES128-SHA" "AES256-SHA" "FALSE" "0"
  "openvpncl_route"  "Policy based routing"  "NULL"   "FALSE" "0"
  "openvpncl_ip"  "TAP IP on Proxy Server mode"  "NULL"   "FALSE" "0"
- "openvpncl_mask"  "TAP Mask on Proxy Server mode"  "NULL"   "FALSE" "0"
+ "openvpncl_mask"  "TAP Netmask on Proxy Server mode"  "NULL"   "FALSE" "0"
+ "openvpncl_sec"   "Client Firewall"   "CHOICE" "2" "0" "1"  "FALSE" "0"
