@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2012 Sebastian Gottschall <gottschall@dd-wrt.com>
  * Copyright (C) 2007 Atheros
- * mainly based on Atheros LSDK Code, some code taken from OpenWRT and ATH79 tree
+ * mainly based on Atheros LSDK Code, some code taken from OpenWrt and ATH79 tree
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
