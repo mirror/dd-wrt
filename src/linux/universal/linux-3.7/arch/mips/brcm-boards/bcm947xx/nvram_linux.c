@@ -56,6 +56,10 @@ static char nvram_buf_cfe[NVRAM_SPACE/2] __attribute__((aligned(PAGE_SIZE)));
 static bool nvram_inram = FALSE;
 static int cfenvram=0;
 
+static int cfe_env;
+extern char *cfe_env_get(char *nv_buf, const char *name);
+
+
 #ifdef MODULE
 
 #define early_nvram_get(name) nvram_get(name)
@@ -191,6 +195,20 @@ early_nvram_init(void)
 	} else
 #endif /* NFLASH_SUPPORT */
 	{
+	src = (u32 *) KSEG1ADDR(base + 8 * 1024 * 1024 - 0x2000);
+	dst = (u32 *) nvram_buf;
+	if ((lim == 0x02000000) && ((*src & 0xff00ff) == 0x000001)) {
+		printk("early_nvram_init: WGT634U NVRAM found.\n");
+
+		for (i = 0; i < 0x1ff0; i++) {
+			if (*src == 0xFFFFFFFF)
+				break;
+			*dst++ = *src++;
+		}
+		cfe_env = 1;
+		return 0;
+	}
+
 		off = FLASH_MIN;
 		while (off <= lim) {
 			printk(KERN_NOTICE "scan for nvram at %X\n",off);
@@ -203,6 +221,7 @@ early_nvram_init(void)
 					if (header_cfe->magic != NVRAM_MAGIC)
 					{
 					    printk(KERN_INFO "something wrong here\n");
+					    header_cfe = NULL;
 					}
 					cfenvram=1;
 					printk(KERN_NOTICE "map cfe nvram at %X\n",off + 0x20000 - (NVRAM_SPACE/2));
@@ -274,6 +293,8 @@ early_cfe_nvram_get(const char *name)
 			printk("early_cfe_nvram_get: Failed reading nvram var %s\n", name);
 			return NULL;
 		}
+
+
 	/* Look for name=value and return value */
 	var = &nvram_buf_cfe[sizeof(struct nvram_header)];
 	end = nvram_buf_cfe + sizeof(nvram_buf_cfe) - 2;
@@ -309,6 +330,8 @@ early_nvram_get(const char *name)
 			return NULL;
 		}
 
+	if (cfe_env)
+		return cfe_env_get(nvram_buf, name);
 	/* Look for name=value and return value */
 	var = &nvram_buf[sizeof(struct nvram_header)];
 	end = nvram_buf + sizeof(nvram_buf) - 2;
@@ -904,6 +927,7 @@ dev_nvram_init(void)
 	DECLARE_WAITQUEUE(wait, current);
 	wait_queue_head_t wait_q;
 	struct erase_info erase;
+	struct nvram_header *header;	
 	printk(KERN_INFO "startup nvram driver\n");
 	/* Allocate and reserve memory to mmap() */
 	while ((PAGE_SIZE << order) < NVRAM_SPACE)
