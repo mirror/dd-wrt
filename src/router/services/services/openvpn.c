@@ -425,8 +425,8 @@ void start_openvpn(void)
 			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"));
 		}
-	if (nvram_match("openvpncl_sec", "0"))
-			&& (nvram_match("openvpncl_nat", "1"))
+	if (nvram_match("openvpncl_sec", "0")
+			&& nvram_match("openvpncl_nat", "1"))
 		fprintf(fp, "iptables -I INPUT -i %s1 -j logaccept\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
