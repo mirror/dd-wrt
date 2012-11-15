@@ -64,6 +64,33 @@ unsigned int getCPUClock(void)
     return si_cpu_clock(sih)/1000000;
 }
 
+/* Netgear WNDR3300 wps led control, Eko 26. Nov. 2008 */
+#define WNDR3300_REG_EXT_IF_ADDR     0xBB000000
+#define WNDR3300_REG_EXT_IF_CONFIG   0x00000011
+#define WNDR3300_REG_EXT_IF_WAIT     0x0404142A
+
+static void *led_sih = NULL;
+
+static int wndr3300_wpsled_control( int pattern )
+{
+    chipcregs_t *regs;
+
+    if (!(led_sih = si_kattach(NULL)))
+        return -ENODEV;
+
+    regs = (chipcregs_t *) si_setcore(led_sih, CC_CORE_ID, 0);
+
+    W_REG(CC_CORE_ID, &regs->prog_config, WNDR3300_REG_EXT_IF_CONFIG);
+    W_REG(CC_CORE_ID, &regs->prog_waitcount, WNDR3300_REG_EXT_IF_WAIT);
+
+    uint16 *extIf = (uint16 *)WNDR3300_REG_EXT_IF_ADDR; 
+    *extIf = (uint16) ~ pattern;
+
+    return 0;
+}
+/* end: Netgear WNDR3300 wps led control */
+
+
 static void __init
 bcm947xx_time_init(void)
 {
@@ -97,6 +124,14 @@ bcm947xx_time_init(void)
 	/* Set panic timeout in seconds */
 	panic_timeout = 3;
 	panic_on_oops = 3;
+
+	if ( nvram_match ("boardnum", "01") 
+	&& nvram_match ("boardtype", "0x0472") 
+	&& nvram_match ("boardrev", "0x23") )
+	{
+		wndr3300_wpsled_control( 0 );
+	}
+
 }
 
 #ifdef CONFIG_HND_BMIPS3300_PROF
