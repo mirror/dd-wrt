@@ -39,6 +39,7 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvram_else_match("openvpncl_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_adv, 'idmtucl', <% nvram_else_match("openvpncl_adv", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_nat, 'idnat', <% nvram_else_match("openvpncl_nat", "0", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_sec, 'idsec', <% nvram_else_match("openvpncl_sec", "0", "1", "0"); %> == 1);
 		
 		update = new StatusbarUpdate();
 		update.start();
