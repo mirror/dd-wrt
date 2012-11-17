@@ -206,6 +206,10 @@ config RTL8367_PHY
 	tristate "Driver for the Realtek RTL8367R/M switches"
 	select SWCONFIG
 
+config RTL8367B_PHY
+	tristate "Driver fot the Realtek RTL8367R-VB switch"
+	select SWCONFIG
+
 endif # RTL8366_SMI
 
 config MDIO_BUS_MUX
