@@ -1,0 +1,17 @@
+opengt
+set com 115200n81
+set senddelay 0.05
+send "ATI^m"
+waitfor 2 "Manufacturer" "APP"
+if % = -1 goto nothing
+if % = 0 goto controlport
+if % = 1 goto dataport
+:nothing
+        print ""
+        exit 0
+:controlport
+        print "control"
+        exit 1
+:dataport
+        print "data"
+        exit 2
