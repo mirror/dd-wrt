@@ -8,7 +8,7 @@
 #
 #   The license which is distributed with this software in the file COPYRIGHT
 #   applies to this software. If your distribution is missing this file, you
-#   may request it from <pekkas@netcore.fi>.
+#   may request it from <reubenhwk@gmail.com>.
 #
 
 AUTOMAKE_OPTIONS = 1.2 foreign
@@ -59,8 +59,12 @@ EXTRA_radvd_SOURCES = \
 	netlink.h \
 	privsep-linux.c
 
+radvd_CPPFLAGS = \
+	@DAEMON_CFLAGS@
+
 radvd_LDADD = \
-	@CONDITIONAL_SOURCES@
+	@CONDITIONAL_SOURCES@ \
+	@DAEMON_LIBS@
 
 radvd_DEPENDENCIES = \
 	@CONDITIONAL_SOURCES@
@@ -127,5 +131,5 @@ dist-hook:
 	rm -f $(distdir)/gram.h
 	rm -f $(distdir)/scanner.c
 
-scanner.o: gram.h
+scanner.c: gram.h
 
