@@ -541,6 +541,7 @@ static int wlconf_up(char *name)
 
 	// Set ACK Timing. Thx to Nbd
 	char *v;
+#if defined(HAVE_ACK)
 
 	if ((v = nvram_nget("wl%d_distance", instance))) {
 		rw_reg_t reg;
@@ -548,26 +549,23 @@ static int wlconf_up(char *name)
 
 		val = atoi(v);
 		if (val == 0) {
-#ifdef HAVE_ACK
 			eval("wl", "-i", name, "noack", "1");
-#endif
 			// wlc_noack (0);
-			return 0;
 		} else {
-#ifdef HAVE_ACK
 			eval("wl", "-i", name, "noack", "0");
-#endif
 			// wlc_noack (1);
 		}
+		
 
-		val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
-#ifdef HAVE_ACK
-		char strv[32];
+		if (val) {
+			val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
+			char strv[32];
 
-		sprintf(strv, "%d", val);
-		eval("wl", "-i", name, "acktiming", strv);
-#endif
+			sprintf(strv, "%d", val);
+			eval("wl", "-i", name, "acktiming", strv);
+		}
 	}
+#endif
 
 	/*
 	 * if (nvram_match("wl0_mode","sta") || nvram_match("wl0_mode","infra"))
