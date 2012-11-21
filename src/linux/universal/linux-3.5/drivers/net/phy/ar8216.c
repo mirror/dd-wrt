@@ -115,7 +115,7 @@ struct ar8216_priv {
 		.name = (_n),	\
 	}
 
-static const struct ar8xxx_mib_desc ar8236_mibs[] = {
+static const struct ar8xxx_mib_desc ar8216_mibs[] = {
 	MIB_DESC(1, AR8216_STATS_RXBROAD, "RxBroad"),
 	MIB_DESC(1, AR8216_STATS_RXPAUSE, "RxPause"),
 	MIB_DESC(1, AR8216_STATS_RXMULTI, "RxMulti"),
@@ -128,7 +128,6 @@ static const struct ar8xxx_mib_desc ar8236_mibs[] = {
 	MIB_DESC(1, AR8216_STATS_RX256BYTE, "Rx256Byte"),
 	MIB_DESC(1, AR8216_STATS_RX512BYTE, "Rx512Byte"),
 	MIB_DESC(1, AR8216_STATS_RX1024BYTE, "Rx1024Byte"),
-	MIB_DESC(1, AR8216_STATS_RX1518BYTE, "Rx1518Byte"),
 	MIB_DESC(1, AR8216_STATS_RXMAXBYTE, "RxMaxByte"),
 	MIB_DESC(1, AR8216_STATS_RXTOOLONG, "RxTooLong"),
 	MIB_DESC(2, AR8216_STATS_RXGOODBYTE, "RxGoodByte"),
@@ -144,7 +143,6 @@ static const struct ar8xxx_mib_desc ar8236_mibs[] = {
 	MIB_DESC(1, AR8216_STATS_TX256BYTE, "Tx256Byte"),
 	MIB_DESC(1, AR8216_STATS_TX512BYTE, "Tx512Byte"),
 	MIB_DESC(1, AR8216_STATS_TX1024BYTE, "Tx1024Byte"),
-	MIB_DESC(1, AR8216_STATS_TX1518BYTE, "Tx1518Byte"),
 	MIB_DESC(1, AR8216_STATS_TXMAXBYTE, "TxMaxByte"),
 	MIB_DESC(1, AR8216_STATS_TXOVERSIZE, "TxOverSize"),
 	MIB_DESC(2, AR8216_STATS_TXBYTE, "TxByte"),
@@ -155,6 +153,48 @@ static const struct ar8xxx_mib_desc ar8236_mibs[] = {
 	MIB_DESC(1, AR8216_STATS_TXEXCDEFER, "TxExcDefer"),
 	MIB_DESC(1, AR8216_STATS_TXDEFER, "TxDefer"),
 	MIB_DESC(1, AR8216_STATS_TXLATECOL, "TxLateCol"),
+};
+
+static const struct ar8xxx_mib_desc ar8236_mibs[] = {
+	MIB_DESC(1, AR8236_STATS_RXBROAD, "RxBroad"),
+	MIB_DESC(1, AR8236_STATS_RXPAUSE, "RxPause"),
+	MIB_DESC(1, AR8236_STATS_RXMULTI, "RxMulti"),
+	MIB_DESC(1, AR8236_STATS_RXFCSERR, "RxFcsErr"),
+	MIB_DESC(1, AR8236_STATS_RXALIGNERR, "RxAlignErr"),
+	MIB_DESC(1, AR8236_STATS_RXRUNT, "RxRunt"),
+	MIB_DESC(1, AR8236_STATS_RXFRAGMENT, "RxFragment"),
+	MIB_DESC(1, AR8236_STATS_RX64BYTE, "Rx64Byte"),
+	MIB_DESC(1, AR8236_STATS_RX128BYTE, "Rx128Byte"),
+	MIB_DESC(1, AR8236_STATS_RX256BYTE, "Rx256Byte"),
+	MIB_DESC(1, AR8236_STATS_RX512BYTE, "Rx512Byte"),
+	MIB_DESC(1, AR8236_STATS_RX1024BYTE, "Rx1024Byte"),
+	MIB_DESC(1, AR8236_STATS_RX1518BYTE, "Rx1518Byte"),
+	MIB_DESC(1, AR8236_STATS_RXMAXBYTE, "RxMaxByte"),
+	MIB_DESC(1, AR8236_STATS_RXTOOLONG, "RxTooLong"),
+	MIB_DESC(2, AR8236_STATS_RXGOODBYTE, "RxGoodByte"),
+	MIB_DESC(2, AR8236_STATS_RXBADBYTE, "RxBadByte"),
+	MIB_DESC(1, AR8236_STATS_RXOVERFLOW, "RxOverFlow"),
+	MIB_DESC(1, AR8236_STATS_FILTERED, "Filtered"),
+	MIB_DESC(1, AR8236_STATS_TXBROAD, "TxBroad"),
+	MIB_DESC(1, AR8236_STATS_TXPAUSE, "TxPause"),
+	MIB_DESC(1, AR8236_STATS_TXMULTI, "TxMulti"),
+	MIB_DESC(1, AR8236_STATS_TXUNDERRUN, "TxUnderRun"),
+	MIB_DESC(1, AR8236_STATS_TX64BYTE, "Tx64Byte"),
+	MIB_DESC(1, AR8236_STATS_TX128BYTE, "Tx128Byte"),
+	MIB_DESC(1, AR8236_STATS_TX256BYTE, "Tx256Byte"),
+	MIB_DESC(1, AR8236_STATS_TX512BYTE, "Tx512Byte"),
+	MIB_DESC(1, AR8236_STATS_TX1024BYTE, "Tx1024Byte"),
+	MIB_DESC(1, AR8236_STATS_TX1518BYTE, "Tx1518Byte"),
+	MIB_DESC(1, AR8236_STATS_TXMAXBYTE, "TxMaxByte"),
+	MIB_DESC(1, AR8236_STATS_TXOVERSIZE, "TxOverSize"),
+	MIB_DESC(2, AR8236_STATS_TXBYTE, "TxByte"),
+	MIB_DESC(1, AR8236_STATS_TXCOLLISION, "TxCollision"),
+	MIB_DESC(1, AR8236_STATS_TXABORTCOL, "TxAbortCol"),
+	MIB_DESC(1, AR8236_STATS_TXMULTICOL, "TxMultiCol"),
+	MIB_DESC(1, AR8236_STATS_TXSINGLECOL, "TxSingleCol"),
+	MIB_DESC(1, AR8236_STATS_TXEXCDEFER, "TxExcDefer"),
+	MIB_DESC(1, AR8236_STATS_TXDEFER, "TxDefer"),
+	MIB_DESC(1, AR8236_STATS_TXLATECOL, "TxLateCol"),
 };
 
 #define to_ar8216(_dev) container_of(_dev, struct ar8216_priv, dev)
@@ -333,9 +373,11 @@ ar8216_mib_capture(struct ar8216_priv *priv)
 	else
 		mib_func = AR8216_REG_MIB_FUNC;
 
+	mutex_lock(&priv->reg_mutex);
 	/* Capture the hardware statistics for all ports */
 	ar8216_rmw(priv, mib_func, AR8216_MIB_FUNC,
 		   (AR8216_MIB_FUNC_CAPTURE << AR8216_MIB_FUNC_S));
+	mutex_unlock(&priv->reg_mutex);
 
 	/* Wait for the capturing to complete. */
 	ret = ar8216_reg_wait(priv, mib_func, AR8216_MIB_BUSY, 0, 10);
@@ -383,10 +425,15 @@ ar8216_mib_fetch_port_stat(struct ar8216_priv *priv, int port, bool flush)
 	u64 *mib_stats;
 	int i;
 
+	WARN_ON(port >= priv->dev.ports);
+
 	lockdep_assert_held(&priv->mib_lock);
 
 	if (chip_is_ar8327(priv))
 		base = AR8327_REG_PORT_STATS_BASE(port);
+	else if (chip_is_ar8236(priv) ||
+		 chip_is_ar8316(priv))
+		base = AR8236_REG_PORT_STATS_BASE(port);
 	else
 		base = AR8216_REG_PORT_STATS_BASE(port);
 
@@ -659,6 +706,8 @@ ar8216_init_port(struct ar8216_priv *priv, int port)
 }
 
 static const struct ar8xxx_chip ar8216_chip = {
+	.caps = AR8XXX_CAP_MIB_COUNTERS,
+
 	.hw_init = ar8216_hw_init,
 	.init_globals = ar8216_init_globals,
 	.init_port = ar8216_init_port,
@@ -667,6 +716,9 @@ static const struct ar8xxx_chip ar8216_chip = {
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
+
+	.num_mibs = ARRAY_SIZE(ar8216_mibs),
+	.mib_decs = ar8216_mibs,
 };
 
 static void
@@ -1499,7 +1551,6 @@ ar8216_sw_get_port_mib(struct switch_dev *dev,
 		goto unlock;
 
 	ar8216_mib_fetch_port_stat(priv, port, false);
-	mutex_unlock(&priv->mib_lock);
 
 	len += snprintf(buf + len, sizeof(priv->buf) - len,
 			"Port %d MIB counters\n",
@@ -1661,7 +1712,7 @@ ar8xxx_mib_work_func(struct work_struct *work)
 
 next_port:
 	priv->mib_next_port++;
-	if (priv->mib_next_port > priv->dev.ports)
+	if (priv->mib_next_port >= priv->dev.ports)
 		priv->mib_next_port = 0;
 
 	mutex_unlock(&priv->mib_lock);
