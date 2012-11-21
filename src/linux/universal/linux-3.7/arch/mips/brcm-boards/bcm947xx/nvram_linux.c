@@ -923,7 +923,6 @@ dev_nvram_init(void)
 	osl_t *osh;
 	struct mtd_info *nvram_mtd_cfe = NULL;
 	struct mtd_info *nvram_mtd_temp = NULL;
-	struct nvram_header *header;
 	DECLARE_WAITQUEUE(wait, current);
 	wait_queue_head_t wait_q;
 	struct erase_info erase;
