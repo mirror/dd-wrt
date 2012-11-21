@@ -24,64 +24,6 @@
 #include <linux/skbuff.h>
 #include <linux/switch.h>
 
-
-
-#define NLA_PUT(skb, attrtype, attrlen, data) \
-	do { \
-		if (unlikely(nla_put(skb, attrtype, attrlen, data) < 0)) \
-			goto nla_put_failure; \
-	} while(0)
-
-#define NLA_PUT_TYPE(skb, type, attrtype, value) \
-	do { \
-		type __tmp = value; \
-		NLA_PUT(skb, attrtype, sizeof(type), &__tmp); \
-	} while(0)
-
-#define NLA_PUT_U8(skb, attrtype, value) \
-	NLA_PUT_TYPE(skb, u8, attrtype, value)
-
-#define NLA_PUT_U16(skb, attrtype, value) \
-	NLA_PUT_TYPE(skb, u16, attrtype, value)
-
-#define NLA_PUT_LE16(skb, attrtype, value) \
-	NLA_PUT_TYPE(skb, __le16, attrtype, value)
-
-#define NLA_PUT_BE16(skb, attrtype, value) \
-	NLA_PUT_TYPE(skb, __be16, attrtype, value)
-
-#define NLA_PUT_NET16(skb, attrtype, value) \
-	NLA_PUT_BE16(skb, attrtype | NLA_F_NET_BYTEORDER, value)
-
-#define NLA_PUT_U32(skb, attrtype, value) \
-	NLA_PUT_TYPE(skb, u32, attrtype, value)
-
-#define NLA_PUT_BE32(skb, attrtype, value) \
-	NLA_PUT_TYPE(skb, __be32, attrtype, value)
-
-#define NLA_PUT_NET32(skb, attrtype, value) \
-	NLA_PUT_BE32(skb, attrtype | NLA_F_NET_BYTEORDER, value)
-
-#define NLA_PUT_U64(skb, attrtype, value) \
-	NLA_PUT_TYPE(skb, u64, attrtype, value)
-
-#define NLA_PUT_BE64(skb, attrtype, value) \
-	NLA_PUT_TYPE(skb, __be64, attrtype, value)
-
-#define NLA_PUT_NET64(skb, attrtype, value) \
-	NLA_PUT_BE64(skb, attrtype | NLA_F_NET_BYTEORDER, value)
-
-#define NLA_PUT_STRING(skb, attrtype, value) \
-	NLA_PUT(skb, attrtype, strlen(value) + 1, value)
-
-#define NLA_PUT_FLAG(skb, attrtype) \
-	NLA_PUT(skb, attrtype, 0, NULL)
-
-#define NLA_PUT_MSECS(skb, attrtype, jiffies) \
-	NLA_PUT_U64(skb, attrtype, jiffies_to_msecs(jiffies))
-
-
-
 //#define DEBUG 1
 #ifdef DEBUG
 #define DPRINTF(format, ...) printk("%s: " format, __func__, ##__VA_ARGS__)
@@ -98,7 +40,7 @@ MODULE_LICENSE("GPL");
 
 static int swdev_id = 0;
 static struct list_head swdevs;
-static struct mutex swdevs_mutex;
+static DEFINE_SPINLOCK(swdevs_lock);
 struct swconfig_callback;
 
 struct swconfig_callback
@@ -382,13 +324,13 @@ static const struct nla_policy port_policy[SWITCH_PORT_ATTR_MAX+1] = {
 static inline void
 swconfig_lock(void)
 {
-	mutex_lock(&swdevs_mutex);
+	spin_lock(&swdevs_lock);
 }
 
 static inline void
 swconfig_unlock(void)
 {
-	mutex_unlock(&swdevs_mutex);
+	spin_unlock(&swdevs_lock);
 }
 
 static struct switch_dev *
@@ -411,7 +353,7 @@ swconfig_get_dev(struct genl_info *info)
 		break;
 	}
 	if (dev)
-		mutex_lock(&dev->lock);
+		mutex_lock(&dev->sw_mutex);
 	else
 		DPRINTF("device %d not found\n", id);
 	swconfig_unlock();
@@ -422,7 +364,7 @@ done:
 static inline void
 swconfig_put_dev(struct switch_dev *dev)
 {
-	mutex_unlock(&dev->lock);
+	mutex_unlock(&dev->sw_mutex);
 }
 
 static int
@@ -434,17 +376,21 @@ swconfig_dump_attr(struct swconfig_callback *cb, void *arg)
 	int id = cb->args[0];
 	void *hdr;
 
-	hdr = genlmsg_put(msg, info->snd_pid, info->snd_seq, &switch_fam,
+	hdr = genlmsg_put(msg, info->snd_portid, info->snd_seq, &switch_fam,
 			NLM_F_MULTI, SWITCH_CMD_NEW_ATTR);
 	if (IS_ERR(hdr))
 		return -1;
 
-	NLA_PUT_U32(msg, SWITCH_ATTR_OP_ID, id);
-	NLA_PUT_U32(msg, SWITCH_ATTR_OP_TYPE, op->type);
-	NLA_PUT_STRING(msg, SWITCH_ATTR_OP_NAME, op->name);
+	if (nla_put_u32(msg, SWITCH_ATTR_OP_ID, id))
+		goto nla_put_failure;
+	if (nla_put_u32(msg, SWITCH_ATTR_OP_TYPE, op->type))
+		goto nla_put_failure;
+	if (nla_put_string(msg, SWITCH_ATTR_OP_NAME, op->name))
+		goto nla_put_failure;
 	if (op->description)
-		NLA_PUT_STRING(msg, SWITCH_ATTR_OP_DESCRIPTION,
-			op->description);
+		if (nla_put_string(msg, SWITCH_ATTR_OP_DESCRIPTION,
+			op->description))
+			goto nla_put_failure;
 
 	return genlmsg_end(msg, hdr);
 nla_put_failure:
@@ -769,9 +715,12 @@ swconfig_send_port(struct swconfig_callback *cb, void *arg)
 	if (!p)
 		goto error;
 
-	NLA_PUT_U32(cb->msg, SWITCH_PORT_ID, port->id);
-	if (port->flags & (1 << SWITCH_PORT_FLAG_TAGGED))
-		NLA_PUT_FLAG(cb->msg, SWITCH_PORT_FLAG_TAGGED);
+	if (nla_put_u32(cb->msg, SWITCH_PORT_ID, port->id))
+		goto nla_put_failure;
+	if (port->flags & (1 << SWITCH_PORT_FLAG_TAGGED)) {
+		if (nla_put_flag(cb->msg, SWITCH_PORT_FLAG_TAGGED))
+			goto nla_put_failure;
+	}
 
 	nla_nest_end(cb->msg, p);
 	return 0;
@@ -849,17 +798,19 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 	if (!msg)
 		goto error;
 
-	hdr = genlmsg_put(msg, info->snd_pid, info->snd_seq, &switch_fam,
+	hdr = genlmsg_put(msg, info->snd_portid, info->snd_seq, &switch_fam,
 			0, cmd);
 	if (IS_ERR(hdr))
 		goto nla_put_failure;
 
 	switch(attr->type) {
 	case SWITCH_TYPE_INT:
-		NLA_PUT_U32(msg, SWITCH_ATTR_OP_VALUE_INT, val.value.i);
+		if (nla_put_u32(msg, SWITCH_ATTR_OP_VALUE_INT, val.value.i))
+			goto nla_put_failure;
 		break;
 	case SWITCH_TYPE_STRING:
-		NLA_PUT_STRING(msg, SWITCH_ATTR_OP_VALUE_STR, val.value.s);
+		if (nla_put_string(msg, SWITCH_ATTR_OP_VALUE_STR, val.value.s))
+			goto nla_put_failure;
 		break;
 	case SWITCH_TYPE_PORTS:
 		err = swconfig_send_ports(&msg, info,
@@ -900,13 +851,20 @@ swconfig_send_switch(struct sk_buff *msg, u32 pid, u32 seq, int flags,
 	if (IS_ERR(hdr))
 		return -1;
 
-	NLA_PUT_U32(msg, SWITCH_ATTR_ID, dev->id);
-	NLA_PUT_STRING(msg, SWITCH_ATTR_DEV_NAME, dev->devname);
-	NLA_PUT_STRING(msg, SWITCH_ATTR_ALIAS, dev->alias);
-	NLA_PUT_STRING(msg, SWITCH_ATTR_NAME, dev->name);
-	NLA_PUT_U32(msg, SWITCH_ATTR_VLANS, dev->vlans);
-	NLA_PUT_U32(msg, SWITCH_ATTR_PORTS, dev->ports);
-	NLA_PUT_U32(msg, SWITCH_ATTR_CPU_PORT, dev->cpu_port);
+	if (nla_put_u32(msg, SWITCH_ATTR_ID, dev->id))
+		goto nla_put_failure;
+	if (nla_put_string(msg, SWITCH_ATTR_DEV_NAME, dev->devname))
+		goto nla_put_failure;
+	if (nla_put_string(msg, SWITCH_ATTR_ALIAS, dev->alias))
+		goto nla_put_failure;
+	if (nla_put_string(msg, SWITCH_ATTR_NAME, dev->name))
+		goto nla_put_failure;
+	if (nla_put_u32(msg, SWITCH_ATTR_VLANS, dev->vlans))
+		goto nla_put_failure;
+	if (nla_put_u32(msg, SWITCH_ATTR_PORTS, dev->ports))
+		goto nla_put_failure;
+	if (nla_put_u32(msg, SWITCH_ATTR_CPU_PORT, dev->cpu_port))
+		goto nla_put_failure;
 
 	return genlmsg_end(msg, hdr);
 nla_put_failure:
@@ -925,7 +883,7 @@ static int swconfig_dump_switches(struct sk_buff *skb,
 	list_for_each_entry(dev, &swdevs, dev_list) {
 		if (++idx <= start)
 			continue;
-		if (swconfig_send_switch(skb, NETLINK_CB(cb->skb).pid,
+		if (swconfig_send_switch(skb, NETLINK_CB(cb->skb).portid,
 				cb->nlh->nlmsg_seq, NLM_F_MULTI,
 				dev) < 0)
 			break;
@@ -1020,7 +978,7 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 			return -ENOMEM;
 	}
 	swconfig_defaults_init(dev);
-	mutex_init(&dev->lock);
+	mutex_init(&dev->sw_mutex);
 	swconfig_lock();
 	dev->id = ++swdev_id;
 
@@ -1058,11 +1016,11 @@ unregister_switch(struct switch_dev *dev)
 {
 	swconfig_destroy_led_trigger(dev);
 	kfree(dev->portbuf);
-	mutex_lock(&dev->lock);
+	mutex_lock(&dev->sw_mutex);
 	swconfig_lock();
 	list_del(&dev->dev_list);
 	swconfig_unlock();
-	mutex_unlock(&dev->lock);
+	mutex_unlock(&dev->sw_mutex);
 }
 EXPORT_SYMBOL_GPL(unregister_switch);
 
@@ -1072,7 +1030,6 @@ swconfig_init(void)
 {
 	int i, err;
 
-	mutex_init(&swdevs_mutex);
 	INIT_LIST_HEAD(&swdevs);
 	err = genl_register_family(&switch_fam);
 	if (err)
