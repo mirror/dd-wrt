@@ -40,6 +40,24 @@ COPT_FLAGS += -DNEED_PRINTF
 #endif
 #endif
 
+ifeq ($(ARCH),mips)
+COPT_FLAGS+= -I$(LINUXDIR)/arch/mips/include
+endif
+ifeq ($(ARCH),mipsel)
+COPT_FLAGS+= -I$(LINUXDIR)/arch/mips/include
+endif
+ifeq ($(ARCH),powerpc)
+COPT_FLAGS+= -I$(LINUXDIR)/arch/powerpc/include
+endif
+ifeq ($(ARCH),arm)
+COPT_FLAGS+= -I$(LINUXDIR)/arch/arm/include
+endif
+ifeq ($(ARCH),armbe)
+COPT_FLAGS+= -I$(LINUXDIR)/arch/arm/include
+endif
+ifeq ($(ARCH),i386)
+COPT_FLAGS+= -I$(LINUXDIR)/arch/x86/include
+endif
 
 
 CFLAGS:=$(COPT_FLAGS) -Wall -Wunused -I$(KERNEL_DIR)/include -Iinclude/ -DIPTABLES_VERSION=\"$(IPTABLES_VERSION)\" #-g -DDEBUG #-pg # -DIPTC_DEBUG
