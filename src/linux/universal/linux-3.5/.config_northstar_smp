@@ -2132,3 +2132,4 @@ CONFIG_AVERAGE=y
 # CONFIG_DDR is not set
 # CONFIG_MIPS_BRCM is not set
 # CONFIG_PHY_RTL8367B is not set
+# CONFIG_RTL8367B_PHY is not set
