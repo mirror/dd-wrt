@@ -2156,3 +2156,4 @@ CONFIG_AVERAGE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
 # CONFIG_PHY_RTL8367B is not set
+# CONFIG_RTL8367B_PHY is not set
