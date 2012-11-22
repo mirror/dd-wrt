@@ -215,8 +215,10 @@ static void read_ascii_mac(u8 *dest, unsigned int src_addr)
 {
 	int ret;
 	u8 *src = (u8 *)KSEG1ADDR(src_addr);
-
-	ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+	if (src[0]==0xff)
+	    ret =0;
+	else
+	    ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
 		     &dest[0], &dest[1], &dest[2],
 		     &dest[3], &dest[4], &dest[5]);
 
@@ -240,13 +242,26 @@ int __init ar7100_platform_init(void)
 	memcpy(wmac_mac, mac, sizeof(wmac_mac));
 	ath9k_pdata.macaddr = wmac_mac;
 #endif
-#ifdef CONFIG_WRT160NL
-	read_ascii_mac(wmac_mac, 0x1f03f288);
-	ath9k_pdata.macaddr = wmac_mac;
+#ifdef HAVE_E2100
+		unsigned int firstoffset = 0x1f03f29a;
+		unsigned int secondoffset = 0x1f03f288;
+#else
+		unsigned int firstoffset = 0x1f03f288;
+		unsigned int secondoffset = 0x1f03f29a;
+#endif
 
+
+#ifdef CONFIG_WRT160NL
+	read_ascii_mac(wmac_mac, firstoffset);
+	if (wmac_mac[0]==0xff)
+	    read_ascii_mac(wmac_mac, secondoffset);
+	
+	ath9k_pdata.macaddr = wmac_mac;
 #endif
 #ifdef CONFIG_E2100L
-	read_ascii_mac(wmac_mac, 0x1f03f29a);
+	read_ascii_mac(wmac_mac, firstoffset);
+	if (wmac_mac[0]==0xff)
+	    read_ascii_mac(wmac_mac, secondoffset);
 	ath9k_pdata.macaddr = wmac_mac;
 #endif
 
