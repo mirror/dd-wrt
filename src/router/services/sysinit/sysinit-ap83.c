@@ -192,11 +192,18 @@ void start_sysinit(void)
 	unsigned char buf2[256];
 	if (fp) {
 #ifdef HAVE_E2100
-		fseek(fp, 0x3f29a, SEEK_SET);
+		unsigned int firstoffset = 0x3f29a;
+		unsigned int secondoffset = 0x3f288;
 #else
-		fseek(fp, 0x3f288, SEEK_SET);
+		unsigned int firstoffset = 0x3f288;
+		unsigned int secondoffset = 0x3f29a;
 #endif
+		fseek(fp, firstoffset, SEEK_SET);
 		fread(buf2, 19, 1, fp);
+		if (buf2[0]==0xff)
+		    fseek(fp, secondoffset, SEEK_SET);
+		    fread(buf2, 19, 1, fp);
+		    
 		fclose(fp);
 		fprintf(stderr, "configure eth0 to %s\n", buf2);
 		eval("ifconfig", "eth0", "hw", "ether", buf2);
