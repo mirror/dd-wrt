@@ -361,7 +361,7 @@ ar8216_reg_wait(struct ar8216_priv *priv, u32 reg, u32 mask, u32 val,
 }
 
 static int
-ar8216_mib_capture(struct ar8216_priv *priv)
+ar8216_mib_op(struct ar8216_priv *priv, u32 op)
 {
 	unsigned mib_func;
 	int ret;
@@ -375,8 +375,7 @@ ar8216_mib_capture(struct ar8216_priv *priv)
 
 	mutex_lock(&priv->reg_mutex);
 	/* Capture the hardware statistics for all ports */
-	ar8216_rmw(priv, mib_func, AR8216_MIB_FUNC,
-		   (AR8216_MIB_FUNC_CAPTURE << AR8216_MIB_FUNC_S));
+	ar8216_rmw(priv, mib_func, AR8216_MIB_FUNC, (op << AR8216_MIB_FUNC_S));
 	mutex_unlock(&priv->reg_mutex);
 
 	/* Wait for the capturing to complete. */
@@ -391,31 +390,15 @@ out:
 }
 
 static int
+ar8216_mib_capture(struct ar8216_priv *priv)
+{
+	return ar8216_mib_op(priv, AR8216_MIB_FUNC_CAPTURE);
+}
+
+static int
 ar8216_mib_flush(struct ar8216_priv *priv)
 {
-	unsigned mib_func;
-	int ret;
-
-	lockdep_assert_held(&priv->mib_lock);
-
-	if (chip_is_ar8327(priv))
-		mib_func = AR8327_REG_MIB_FUNC;
-	else
-		mib_func = AR8216_REG_MIB_FUNC;
-
-	/* Flush hardware statistics for all ports */
-	ar8216_rmw(priv, mib_func, AR8216_MIB_FUNC,
-		   (AR8216_MIB_FUNC_FLUSH << AR8216_MIB_FUNC_S));
-
-	/* Wait for the capturing to complete. */
-	ret = ar8216_reg_wait(priv, mib_func, AR8216_MIB_BUSY, 0, 10);
-	if (ret)
-		goto out;
-
-	ret = 0;
-
-out:
-	return ret;
+	return ar8216_mib_op(priv, AR8216_MIB_FUNC_FLUSH);
 }
 
 static void
@@ -920,6 +903,20 @@ ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 
 	case AR8327_PAD_MAC_SGMII:
 		t = AR8327_PAD_SGMII_EN;
+
+		/*
+		 * WAR for the QUalcomm Atheros AP136 board.
+		 * It seems that RGMII TX/RX delay settings needs to be
+		 * applied for SGMII mode as well, The ethernet is not
+		 * reliable without this.
+		 */
+		t |= cfg->txclk_delay_sel << AR8327_PAD_RGMII_TXCLK_DELAY_SEL_S;
+		t |= cfg->rxclk_delay_sel << AR8327_PAD_RGMII_RXCLK_DELAY_SEL_S;
+		if (cfg->rxclk_delay_en)
+			t |= AR8327_PAD_RGMII_RXCLK_DELAY_EN;
+		if (cfg->txclk_delay_en)
+			t |= AR8327_PAD_RGMII_TXCLK_DELAY_EN;
+
 		break;
 
 	case AR8327_PAD_MAC2PHY_MII:
