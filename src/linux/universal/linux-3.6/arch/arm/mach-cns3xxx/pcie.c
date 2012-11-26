@@ -247,7 +247,7 @@ static int cns3xxx_pci_setup(int nr, struct pci_sys_data *sys)
 	return 1;
 }
 
-static struct pci_ops cns3xxx_pcie_ops = {
+struct pci_ops cns3xxx_pcie_ops = {
 	.read = cns3xxx_pci_read_config,
 	.write = cns3xxx_pci_write_config,
 };
