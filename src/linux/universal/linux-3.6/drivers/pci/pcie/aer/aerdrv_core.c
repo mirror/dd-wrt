@@ -244,7 +244,6 @@ static int report_error_detected(struct pci_dev *dev, void *data)
 	struct aer_broadcast_data *result_data;
 	result_data = (struct aer_broadcast_data *) data;
 
-	device_lock(&dev->dev);
 	dev->error_state = result_data->state;
 
 	if (!dev->driver ||
@@ -263,14 +262,12 @@ static int report_error_detected(struct pci_dev *dev, void *data)
 				   dev->driver ?
 				   "no AER-aware driver" : "no driver");
 		}
-		goto out;
+		return 0;
 	}
 
 	err_handler = dev->driver->err_handler;
 	vote = err_handler->error_detected(dev, result_data->state);
 	result_data->result = merge_result(result_data->result, vote);
-out:
-	device_unlock(&dev->dev);
 	return 0;
 }
 
@@ -281,17 +278,14 @@ static int report_mmio_enabled(struct pci_dev *dev, void *data)
 	struct aer_broadcast_data *result_data;
 	result_data = (struct aer_broadcast_data *) data;
 
-	device_lock(&dev->dev);
 	if (!dev->driver ||
 		!dev->driver->err_handler ||
 		!dev->driver->err_handler->mmio_enabled)
-		goto out;
+		return 0;
 
 	err_handler = dev->driver->err_handler;
 	vote = err_handler->mmio_enabled(dev);
 	result_data->result = merge_result(result_data->result, vote);
-out:
-	device_unlock(&dev->dev);
 	return 0;
 }
 
@@ -302,17 +296,14 @@ static int report_slot_reset(struct pci_dev *dev, void *data)
 	struct aer_broadcast_data *result_data;
 	result_data = (struct aer_broadcast_data *) data;
 
-	device_lock(&dev->dev);
 	if (!dev->driver ||
 		!dev->driver->err_handler ||
 		!dev->driver->err_handler->slot_reset)
-		goto out;
+		return 0;
 
 	err_handler = dev->driver->err_handler;
 	vote = err_handler->slot_reset(dev);
 	result_data->result = merge_result(result_data->result, vote);
-out:
-	device_unlock(&dev->dev);
 	return 0;
 }
 
@@ -320,18 +311,15 @@ static int report_resume(struct pci_dev *dev, void *data)
 {
 	struct pci_error_handlers *err_handler;
 
-	device_lock(&dev->dev);
 	dev->error_state = pci_channel_io_normal;
 
 	if (!dev->driver ||
 		!dev->driver->err_handler ||
 		!dev->driver->err_handler->resume)
-		goto out;
+		return 0;
 
 	err_handler = dev->driver->err_handler;
 	err_handler->resume(dev);
-out:
-	device_unlock(&dev->dev);
 	return 0;
 }
 
