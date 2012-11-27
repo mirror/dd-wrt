@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.6.6 Kernel Configuration
+# Linux/arm 3.6.8 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -2155,5 +2155,3 @@ CONFIG_ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE=y
 CONFIG_AVERAGE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
-# CONFIG_PHY_RTL8367B is not set
-# CONFIG_RTL8367B_PHY is not set
