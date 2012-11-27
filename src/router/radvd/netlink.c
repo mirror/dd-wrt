@@ -71,6 +71,10 @@ void process_netlink_msg(int sock)
 	}
 }
 
+#ifndef NETLINK_NO_ENOBUFS
+#define NETLINK_NO_ENOBUFS	5
+#endif
+
 int netlink_socket(void)
 {
 	int rc, sock;
