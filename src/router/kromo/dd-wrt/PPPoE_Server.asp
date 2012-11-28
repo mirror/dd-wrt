@@ -164,7 +164,7 @@ addEvent(window, "unload", function() {
 				<input size="5" maxlength="5" class="num" name="pppoeserver_sessionlimit" value="<% nvram_get("pppoeserver_sessionlimit"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 10)");
+				document.write("(" + share.deflt + ": 0)");
 				//]]>
 				</script></span>
 			</div>	
@@ -182,7 +182,7 @@ addEvent(window, "unload", function() {
 				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechofail" value="<% nvram_get("pppoeserver_lcpechofail"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 20)");
+				document.write("(" + share.deflt + ": 12)");
 				//]]>
 				</script></span>
 			</div>
