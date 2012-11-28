@@ -241,7 +241,7 @@ include rules/polarssl.mk
 #include rules/libubox.mk
 #include rules/json-c.mk
 #include rules/ubus.mk
-#include rules/ipeth.mk
+include rules/ipeth.mk
 include rules/dns_responder.mk
 include rules/minidlna.mk
 include rules/nrpe.mk
@@ -253,7 +253,7 @@ include rules/softflowd.mk
 #
 
 %:
-	[ ! -d $* ] || $(MAKE) -C $*  
+	[ ! -d $* ] || $(MAKE) -C $*
 
 %-distclean:
 	[ ! -d $* ] || $(MAKE) -C $* clean
