@@ -126,7 +126,6 @@ ifeq ($(CONFIG_IAS),y)
 endif
 endif
 endif
-
 ifeq ($(CONFIG_SPOTPASS),y)
 	mkdir $(INSTALLDIR)/www/style/nintendo
 	cp nintendo/style.css $(INSTALLDIR)/www/style/nintendo
@@ -665,6 +664,9 @@ ifneq ($(CONFIG_UPNP),y)
 	rm -f $(INSTALLDIR)/www/UPnP.asp
 	rm -f $(INSTALLDIR)/www/UPnP.live.asp
 	rm -f $(INSTALLDIR)/www/help/HUPnP.asp
+endif
+ifneq ($(CONFIG_IAS),y)
+	rm -f $(INSTALLDIR)/www/detect.asp
 endif
 ifneq ($(CONFIG_SUPERCHANNEL),y)
 	rm -f $(INSTALLDIR)/www/SuperChannel.asp
