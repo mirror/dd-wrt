@@ -305,6 +305,8 @@ endif
 
 busybox-install:
 	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox install
+	rm -f $(INSTALLDIR)/busybox/usr/sbin/httpd-busybox
+	[ -e $(INSTALLDIR)/busybox/usr/sbin/httpd ] && mv $(INSTALLDIR)/busybox/usr/sbin/httpd $(INSTALLDIR)/busybox/usr/sbin/httpd-busybox || true
 
 busybox-clean: busybox-config
 	$(MAKE) -j 4  -C busybox clean PREFIX=$(INSTALLDIR)/busybox 
