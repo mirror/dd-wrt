@@ -85,6 +85,7 @@ INSTALL_DIR:=install -d -m0755
 INSTALL_DATA:=install -m0644
 INSTALL_CONF:=install -m0600
 
+include rules/_cmake.mk
 include rules/matrixssl.mk
 include rules/ntpd.mk
 include rules/gpsd.mk
@@ -237,7 +238,11 @@ include rules/snort.mk
 include rules/swconfig.mk
 include rules/dlna.mk
 include rules/polarssl.mk
-include rules/ipeth.mk
+#include rules/libubox.mk
+#include rules/json-c.mk
+#include rules/ubus.mk
+#include rules/ipeth.mk
+include rules/dns_responder.mk
 include rules/minidlna.mk
 include rules/nrpe.mk
 include rules/links.mk
