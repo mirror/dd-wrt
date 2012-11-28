@@ -71,7 +71,7 @@ ifeq ($(CONFIG_PPPOESERVER),y)
 CFLAGS += -DHAVE_PPPOESERVER
 endif
 
-TARGETS=pppoe-multi 
+TARGETS=pppoe-multi pppoe
 PPPOE_SERVER_LIBS=$(LIC_LIBDIR) $(LIC_LIB)
 
 all: $(TARGETS)
