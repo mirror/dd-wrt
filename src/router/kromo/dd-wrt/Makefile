@@ -144,6 +144,15 @@ ifeq ($(CONFIG_IPR),y)
 	cp ipr/About.htm $(INSTALLDIR)/www
 endif
 
+ifeq ($(CONFIG_ENEO),y)
+	mkdir $(INSTALLDIR)/www/style/eneo
+	cp eneo/style.css $(INSTALLDIR)/www/style/eneo
+	#cp eneo/favicon.ico $(INSTALLDIR)/www/images
+	cp eneo/images/* $(INSTALLDIR)/www/images
+	cp eneo/help/* $(INSTALLDIR)/www/help
+	cp eneo/About.htm $(INSTALLDIR)/www
+endif
+
 ifeq ($(CONFIG_CORENET),y)
 	mkdir $(INSTALLDIR)/www/style/corenet
 	cp -a corenet/help $(INSTALLDIR)/www
