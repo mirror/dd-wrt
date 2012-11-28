@@ -23,6 +23,8 @@ asterisk-configure:
 	--without-osptk \
 	--without-pri \
 	--without-qt \
+	--without-sqlite3 \
+	--without-sqlite \
 	--without-radius \
 	--without-sdl \
 	--without-spandsp \
