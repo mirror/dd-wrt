@@ -9,6 +9,7 @@ ipeth-configure:
 	--without-docbook \
 	--with-html \
 	--without-ftp \
+	--with-minimum \
 	--without-http \
 	--without-iconv \
 	--without-iso8859x \
