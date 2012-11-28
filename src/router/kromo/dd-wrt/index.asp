@@ -51,10 +51,10 @@ function valid_value(F) {
 						pptp_dhcp = "skip";
 			
 			if (!F.pptp_use_dhcp || F.pptp_use_dhcp.value == "0") {
-				if(pptp_dhcp != "skip" && !valid_ip(F,"F.wan_ipaddr","IP",ZERO_NO|MASK_NO))
+				if(pptp_dhcp != "skip" && F.wan_ipaddr && !valid_ip(F,"F.wan_ipaddr","IP",ZERO_NO|MASK_NO))
 					return false;
 	
-				if(pptp_dhcp != "skip" && !valid_mask(F,"F.wan_netmask",ZERO_NO|BCST_NO))
+				if(pptp_dhcp != "skip" && F.wan_netmask && !valid_mask(F,"F.wan_netmask",ZERO_NO|BCST_NO))
 					return false;
 			}
 	
