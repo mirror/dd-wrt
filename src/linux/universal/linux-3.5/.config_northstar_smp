@@ -339,7 +339,6 @@ CONFIG_MULTI_IRQ_HANDLER=y
 # CONFIG_ARM_ERRATA_754322 is not set
 # CONFIG_ARM_ERRATA_754327 is not set
 # CONFIG_ARM_ERRATA_764369 is not set
-# CONFIG_ARM_ERRATA_775420 is not set
 CONFIG_ARM_GIC=y
 
 #
@@ -997,10 +996,6 @@ CONFIG_MTD_NAND_IDS=y
 
 #
 # Ralink Non-volatile Device Drivers
-#
-
-#
-# Broadcom Flash Devices Support
 #
 
 #
@@ -2130,6 +2125,3 @@ CONFIG_NLATTR=y
 CONFIG_AVERAGE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
-# CONFIG_MIPS_BRCM is not set
-# CONFIG_PHY_RTL8367B is not set
-# CONFIG_RTL8367B_PHY is not set
