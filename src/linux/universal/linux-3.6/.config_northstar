@@ -71,7 +71,6 @@ CONFIG_HIGH_RES_TIMERS=y
 #
 # RCU Subsystem
 #
-# CONFIG_TREE_RCU is not set
 CONFIG_TINY_RCU=y
 # CONFIG_PREEMPT_RCU is not set
 # CONFIG_TREE_RCU_TRACE is not set
