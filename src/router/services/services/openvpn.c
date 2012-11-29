@@ -463,7 +463,7 @@ void start_openvpn(void)
 	    && nvram_match("openvpncl_nat", "0"))
 		fprintf(fp, "brctl delif br0 tap1\n" "ifconfig tap1 down\n");
 	else if (nvram_match("openvpncl_tuntap", "tap")
-		 && strlen(nvram_safe_get("openvpn_ip")) > 0)
+		 && strlen(nvram_safe_get("openvpncl_ip")) > 0)
 		fprintf(fp, "ifconfig tap1 down\n");
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
@@ -499,8 +499,8 @@ void start_openvpn(void)
 	if (nvram_match("use_crypto", "1"))
 		eval("openvpn", "--config",
 		     "/tmp/openvpncl/openvpn.conf", "--route-up",
-		     "/tmp/openvpn/route-up.sh", "--down-pre",
-		     "/tmp/openvpn/route-down.sh", "--daemon",
+		     "/tmp/openvpncl/route-up.sh", "--down-pre",
+		     "/tmp/openvpncl/route-down.sh", "--daemon",
 		     "--engine", "cryptodev");
 	else
 		eval("openvpn", "--config",
