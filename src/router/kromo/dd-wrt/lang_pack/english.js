@@ -1388,8 +1388,9 @@ service.vpn_redirgate="Redirect default Gateway";
 service.vpn_legend="OpenVPN Client";
 service.vpn_srv="Start OpenVPN Client";
 service.vpn_ipname="Server IP/Name";
-service.vpn_mtu="UDP tunnel MTU setting";
-service.vpn_mss="UDP MSS-Fix/Fragment on the tunnel";
+service.vpn_mtu="Tunnel MTU setting";
+service.vpn_mss="Tunnel UDP MSS-Fix";
+service.vpn_fragment="Tunnel UDP Fragment";
 service.vpn_compress="LZO Compression";
 service.vpn_cl2cl="Allow Client to Client";
 service.vpn_tunnel="Tunnel Protocol";
@@ -1410,7 +1411,7 @@ service.vpn_route="Policy based Routing";
 var hstatus_vpn=new Object();
 hstatus_vpn.right1="Policy based Routing:<br><i>Add IPs/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br><i>IP Address/Netmask:</i><br>Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
 hstatus_vpn.right2="Additional Config:<br><i>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.</i>";
-hstatus_vpn.right3="General:<br><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs</i>";
+hstatus_vpn.right3="General:<br><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs. Enable MSS only on one side of the link, fragment on both.</i>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
