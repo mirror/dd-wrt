@@ -119,13 +119,18 @@
 				</script></span>
 			</div>
 			<div class="setting">
-				<div class="label"><% tran("service.vpn_mss"); %></div>
-				<input size="5" maxlength="5" class="num" name="openvpncl_mssfix" value="<% nvram_get("openvpncl_mssfix"); %>" />
+				<div class="label"><% tran("service.vpn_fragment"); %></div>
+				<input size="5" maxlength="5" class="num" name="openvpncl_fragment" value="<% nvram_get("openvpncl_fragment"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": Disable)");
 				//]]>
 				</script></span>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_mss"); %></div>
+				<input class="spaceradio" type="radio" name="openvpncl_mssfix" value="1" <% nvram_checked("openvpncl_mssfix", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="openvpncl_mssfix" value="0" <% nvram_checked("openvpncl_mssfix", "0"); %> /><% tran("share.disable"); %>
 			</div>
 			<div class="setting">		
 				<div class="label"><% tran("service.vpnd_tlsauth"); %></div>

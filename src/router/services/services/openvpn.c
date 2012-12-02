@@ -123,12 +123,13 @@ void start_openvpnserver(void)
 		if (nvram_invmatch("openvpn_mtu", ""))
 			fprintf(fp, "tun-mtu %s\n",
 				nvram_safe_get("openvpn_mtu"));
-		if (nvram_invmatch("openvpn_mssfix", "")
-		    && nvram_match("openvpn_proto", "udp")) {
-			fprintf(fp, "mssfix\n");	//fragment==mssfix
+		if (nvram_invmatch("openvpn_fragment", "")
+		    && nvram_match("openvpn_proto", "udp"))
 			fprintf(fp, "fragment %s\n",
-				nvram_safe_get("openvpn_mssfix"));
-		}
+				nvram_safe_get("openvpn_fragment"));
+		if (nvram_match("openvpn_mssfix", "1")
+		    && nvram_match("openvpn_proto", "udp"))
+			fprintf(fp, "mssfix\n");	//mssfix=1450 (default), should be set on one side only. when fragment->=mss	
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
 				nvram_safe_get("openvpn_net"),
@@ -368,12 +369,13 @@ void start_openvpn(void)
 		fprintf(fp, "tls-client\n");
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
-	if (nvram_invmatch("openvpncl_mssfix", "")
-	    && nvram_match("openvpncl_proto", "udp")) {
-		fprintf(fp, "mssfix\n");	//fragment=mssfix
+	if (nvram_invmatch("openvpncl_fragment", "")
+	    && nvram_match("openvpncl_proto", "udp")) 
 		fprintf(fp, "fragment %s\n",
-			nvram_safe_get("openvpncl_mssfix"));
-	}
+			nvram_safe_get("openvpncl_fragment"));
+	if (nvram_match("openvpncl_mssfix", "1")
+		 		&& nvram_match("openvpncl_proto", "udp"))
+		fprintf(fp, "mssfix\n");	//mssfix=1450 (default), should be set on one side only. when fragment->=mss	
 	if (nvram_match("openvpncl_certtype", "1"))
 		fprintf(fp, "ns-cert-type server\n");
 	if (nvram_match("openvpncl_proto", "udp"))
