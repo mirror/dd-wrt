@@ -14,7 +14,7 @@
 #include <linux/module.h>
 #include <mach/qmgr.h>
 
-struct qmgr_regs __iomem *qmgr_regs;
+static struct qmgr_regs __iomem *qmgr_regs = IXP4XX_QMGR_BASE_VIRT;
 static struct resource *mem_res;
 static spinlock_t qmgr_lock;
 static u32 used_sram_bitmap[4]; /* 128 16-dword pages */
@@ -292,12 +292,6 @@ static int qmgr_init(void)
 	if (mem_res == NULL)
 		return -EBUSY;
 
-	qmgr_regs = ioremap(IXP4XX_QMGR_BASE_PHYS, IXP4XX_QMGR_REGION_SIZE);
-	if (qmgr_regs == NULL) {
-		err = -ENOMEM;
-		goto error_map;
-	}
-
 	/* reset qmgr registers */
 	for (i = 0; i < 4; i++) {
 		__raw_writel(0x33333333, &qmgr_regs->stat1[i]);
@@ -346,8 +340,6 @@ static int qmgr_init(void)
 error_irq2:
 	free_irq(IRQ_IXP4XX_QM1, NULL);
 error_irq:
-	iounmap(qmgr_regs);
-error_map:
 	release_mem_region(IXP4XX_QMGR_BASE_PHYS, IXP4XX_QMGR_REGION_SIZE);
 	return err;
 }
@@ -358,7 +350,6 @@ static void qmgr_remove(void)
 	free_irq(IRQ_IXP4XX_QM2, NULL);
 	synchronize_irq(IRQ_IXP4XX_QM1);
 	synchronize_irq(IRQ_IXP4XX_QM2);
-	iounmap(qmgr_regs);
 	release_mem_region(IXP4XX_QMGR_BASE_PHYS, IXP4XX_QMGR_REGION_SIZE);
 }
 
@@ -368,7 +359,6 @@ module_exit(qmgr_remove);
 MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("Krzysztof Halasa");
 
-EXPORT_SYMBOL(qmgr_regs);
 EXPORT_SYMBOL(qmgr_set_irq);
 EXPORT_SYMBOL(qmgr_enable_irq);
 EXPORT_SYMBOL(qmgr_disable_irq);
