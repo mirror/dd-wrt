@@ -2243,7 +2243,6 @@ static void updtRolesTree(tree_t *tree)
     bridge_identifier_t prevRRootID = tree->rootPriority.RRootID;
     __be32 prevExtRootPathCost = tree->rootPriority.ExtRootPathCost;
     bool cist = (0 == tree->MSTID);
-    times_t *timesOfRootPort;
 
     /* a), b) Select new root priority vector = {rootPriority, rootPortId} */
       /* Initial value = bridge priority vector = {BridgePriority, 0} */
@@ -2295,15 +2294,13 @@ static void updtRolesTree(tree_t *tree)
     /* 802.1q-2005 says, that at some point we need compare portTimes with
      * "... one for the Root Port ...". Bad IEEE! Why not mention explicit
      * var names??? (see 13.26.23.g) for instance)
-     * So, now I should guess what will work for the timesOfRootPort.
-     * Below is the result of my guess. I could be wrong, of course:
-     * timesOfRootPort = root_ptp ? &root_ptp->portTimes
-     *                            : &tree->BridgeTimes;
+     * These comparisons happen three times, twice in clause g)
+     *   and once in clause i). Look for samePriorityAndTimers() calls.
+     * So, now I should guess what will work for the "times for the Root Port".
+     * Thanks to Rajani's experiments I know for sure that I should use
+     *  designatedTimes here. Thank you, Rajani!
      * NOTE: Both Alex Rozin (author of rstplib) and Srinivas Aji (author
-     *   of rstpd) compare portTimes with designatedTimes instead of
-     *   timesOfRootPort. This differs from my interpretation of the standard
-     *   because designatedTimes have incremented Message_Age (or decremented
-     *   remainingHops if rcvdInternal).
+     *   of rstpd) also compare portTimes with designatedTimes.
      */
 
     /* c) Set new rootTimes */
@@ -2318,12 +2315,10 @@ static void updtRolesTree(tree_t *tree)
         }
         else
             ++(tree->rootTimes.Message_Age);
-        timesOfRootPort = &root_ptp->portTimes;
     }
     else
     {
         assign(tree->rootTimes, tree->BridgeTimes);
-        timesOfRootPort = &tree->BridgeTimes;
     }
 
     FOREACH_PTP_IN_TREE(ptp, tree)
@@ -2377,7 +2372,7 @@ static void updtRolesTree(tree_t *tree)
                 if(!samePriorityAndTimers(&ptp->portPriority,
                                           &ptp->designatedPriority,
                                           &ptp->portTimes,
-                                          timesOfRootPort,
+                                          &ptp->designatedTimes,
                                           /*cist*/ false))
                     ptp->updtInfo = true;
                 continue;
@@ -2401,7 +2396,7 @@ static void updtRolesTree(tree_t *tree)
                 if(!samePriorityAndTimers(&ptp->portPriority,
                                           &ptp->designatedPriority,
                                           &ptp->portTimes,
-                                          timesOfRootPort,
+                                          &ptp->designatedTimes,
                                           /*cist*/ false))
                     ptp->updtInfo = true;
                 continue;
@@ -2424,7 +2419,7 @@ static void updtRolesTree(tree_t *tree)
                 if(!samePriorityAndTimers(&ptp->portPriority,
                                           &ptp->designatedPriority,
                                           &ptp->portTimes,
-                                          timesOfRootPort,
+                                          &ptp->designatedTimes,
                                           cist))
                     ptp->updtInfo = true;
                 continue;
