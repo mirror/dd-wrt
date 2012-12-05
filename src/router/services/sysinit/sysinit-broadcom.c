@@ -1137,7 +1137,7 @@ void start_sysinit(void)
 			nvram_set("ledbh0", "11");
 			nvram_set("ledbh1", "11");
 			nvram_set("ledbh2", "11");
-			nvram_set("ledbh11", "130");
+			nvram_set("ledbh11", "136");
 //			need_reboot = 1;
 		}
 #if 0
