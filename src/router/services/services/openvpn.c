@@ -420,12 +420,14 @@ void start_openvpn(void)
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
 		fprintf(fp,
-			"iptables -I INPUT -i %s1 -j logaccept\n"
-			"iptables -I FORWARD -i %s1 -j logaccept\n"
-			"iptables -I FORWARD -o %s1 -j logaccept\n",
-			nvram_safe_get("openvpncl_tuntap"),
-			nvram_safe_get("openvpncl_tuntap"),
+			"iptables -I INPUT -i %s1 -j logaccept\n",			
 			nvram_safe_get("openvpncl_tuntap"));
+		if(nvram_match("openvpncl_tuntap", "tun")	//only needed with tun
+			fprintf(fp,
+				"iptables -I FORWARD -i %s1 -j logaccept\n"
+				"iptables -I FORWARD -o %s1 -j logaccept\n",
+					nvram_safe_get("openvpncl_tuntap"),
+					nvram_safe_get("openvpncl_tuntap"));
 		}
 	if (nvram_match("openvpncl_sec", "0")
 			&& nvram_match("openvpncl_nat", "1"))
