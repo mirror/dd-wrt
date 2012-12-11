@@ -2131,6 +2131,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "1");
 	setRouter("TP-Link TL-WR741ND v4");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WA7510
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	setRouter("TP-Link TL-WA7510N v1");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR741
 	nvram_default_get("ath0_rxantenna", "1");
 	nvram_default_get("ath0_txantenna", "1");
