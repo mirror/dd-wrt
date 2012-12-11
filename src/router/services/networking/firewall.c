@@ -2005,7 +2005,7 @@ static void filter_input(void)
 			  nvram_safe_get("openvpn_port"), log_accept);
 		save2file("-A INPUT -i %s2 -j %s\n",
 			  nvram_safe_get("openvpn_tuntap"), log_accept);
-		if (nvram_match("openvpn_tuntap", "tun") {
+		if (nvram_match("openvpn_tuntap", "tun")) {
 			save2file("-A FORWARD -i %s2 -j %s\n",
 			  nvram_safe_get("openvpn_tuntap"), log_accept);
 			save2file("-A FORWARD -o %s2 -j %s\n",
