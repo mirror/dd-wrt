@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.7.0-rc7 Kernel Configuration
+# Linux/mips 3.7.0-rc8 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -57,7 +57,7 @@ CONFIG_MIPS=y
 CONFIG_MACH_AR7100=y
 CONFIG_AR9100=y
 # CONFIG_WR941 is not set
- 
+
 # CONFIG_WRT160NL is not set
 # CONFIG_E2100L is not set
 CONFIG_AR7100_LOW=y
