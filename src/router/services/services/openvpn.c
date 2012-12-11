@@ -422,7 +422,7 @@ void start_openvpn(void)
 		fprintf(fp,
 			"iptables -I INPUT -i %s1 -j logaccept\n",			
 			nvram_safe_get("openvpncl_tuntap"));
-		if(nvram_match("openvpncl_tuntap", "tun")	//only needed with tun
+		if(nvram_match("openvpncl_tuntap", "tun"))	//only needed with tun
 			fprintf(fp,
 				"iptables -I FORWARD -i %s1 -j logaccept\n"
 				"iptables -I FORWARD -o %s1 -j logaccept\n",
