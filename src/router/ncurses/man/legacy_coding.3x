@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright (c) 2005,2006 Free Software Foundation, Inc.                   *
+.\" Copyright (c) 2005-2006,2010 Free Software Foundation, Inc.              *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -28,7 +28,7 @@
 .\"
 .\" Author: Thomas E. Dickey
 .\"
-.\" $Id: legacy_coding.3x,v 1.2 2006/02/25 21:50:01 tom Exp $
+.\" $Id: legacy_coding.3x,v 1.4 2010/12/04 18:49:20 tom Exp $
 .TH legacy_coding 3X ""
 .SH NAME
 \fBuse_legacy_coding\fR \- use terminal's default colors
@@ -50,7 +50,7 @@ The \fIlevel\fP parameter controls the result:
 .TP 5
 0
 the library functions normally,
-rendering nonprinting characters as described in \fBunctrl\fP(3X).
+rendering nonprinting characters as described in \fBunctrl\fP.
 .TP
 1
 the library ignores \fBisprintf\fP for codes in the range 160-255.
@@ -74,9 +74,3 @@ be conditioned using NCURSES_VERSION.
 \fBunctrl\fR.
 .SH AUTHOR
 Thomas Dickey (to support lynx's font-switching feature).
-.\"#
-.\"# The following sets edit modes for GNU EMACS
-.\"# Local Variables:
-.\"# mode:nroff
-.\"# fill-column:79
-.\"# End:

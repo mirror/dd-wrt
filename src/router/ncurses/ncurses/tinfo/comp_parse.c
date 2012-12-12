@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -51,9 +51,8 @@
 #include <ctype.h>
 
 #include <tic.h>
-#include <term_entry.h>
 
-MODULE_ID("$Id: comp_parse.c,v 1.63 2006/07/08 18:55:14 tom Exp $")
+MODULE_ID("$Id: comp_parse.c,v 1.73 2010/12/25 23:06:37 tom Exp $")
 
 static void sanity_check2(TERMTYPE *, bool);
 NCURSES_IMPEXP void NCURSES_API(*_nc_check_termtype2) (TERMTYPE *, bool) = sanity_check2;
@@ -61,30 +60,6 @@ NCURSES_IMPEXP void NCURSES_API(*_nc_check_termtype2) (TERMTYPE *, bool) = sanit
 /* obsolete: 20040705 */
 static void sanity_check(TERMTYPE *);
 NCURSES_IMPEXP void NCURSES_API(*_nc_check_termtype) (TERMTYPE *) = sanity_check;
-
-/****************************************************************************
- *
- * Entry queue handling
- *
- ****************************************************************************/
-/*
- *  The entry list is a doubly linked list with NULLs terminating the lists:
- *
- *	  ---------   ---------   ---------
- *	  |       |   |       |   |       |   offset
- *        |-------|   |-------|   |-------|
- *	  |   ----+-->|   ----+-->|  NULL |   next
- *	  |-------|   |-------|   |-------|
- *	  |  NULL |<--+----   |<--+----   |   last
- *	  ---------   ---------   ---------
- *	      ^                       ^
- *	      |                       |
- *	      |                       |
- *	   _nc_head                _nc_tail
- */
-
-NCURSES_EXPORT_VAR(ENTRY *) _nc_head = 0;
-NCURSES_EXPORT_VAR(ENTRY *) _nc_tail = 0;
 
 static void
 enqueue(ENTRY * ep)
@@ -103,51 +78,6 @@ enqueue(ENTRY * ep)
 	newp->last->next = newp;
 }
 
-NCURSES_EXPORT(void)
-_nc_free_entries(ENTRY * headp)
-/* free the allocated storage consumed by list entries */
-{
-    (void) headp;		/* unused - _nc_head is altered here! */
-
-    while (_nc_head != 0) {
-	_nc_free_termtype(&(_nc_head->tterm));
-    }
-}
-
-NCURSES_EXPORT(ENTRY *)
-_nc_delink_entry(ENTRY * headp, TERMTYPE *tterm)
-/* delink the allocated storage for the given list entry */
-{
-    ENTRY *ep, *last;
-
-    for (last = 0, ep = headp; ep != 0; last = ep, ep = ep->next) {
-	if (&(ep->tterm) == tterm) {
-	    if (last != 0) {
-		last->next = ep->next;
-	    }
-	    if (ep == _nc_head) {
-		_nc_head = ep->next;
-	    }
-	    if (ep == _nc_tail) {
-		_nc_tail = last;
-	    }
-	    break;
-	}
-    }
-    return ep;
-}
-
-NCURSES_EXPORT(void)
-_nc_free_entry(ENTRY * headp, TERMTYPE *tterm)
-/* free the allocated storage consumed by the given list entry */
-{
-    ENTRY *ep;
-
-    if ((ep = _nc_delink_entry(headp, tterm)) != 0) {
-	free(ep);
-    }
-}
-
 static char *
 force_bar(char *dst, char *src)
 {
@@ -161,16 +91,18 @@ force_bar(char *dst, char *src)
     }
     return src;
 }
+#define ForceBar(dst, src) ((strchr(src, '|') == 0) ? force_bar(dst, src) : src)
 
 NCURSES_EXPORT(bool)
 _nc_entry_match(char *n1, char *n2)
 /* do any of the aliases in a pair of terminal names match? */
 {
     char *pstart, *qstart, *pend, *qend;
-    char nc1[MAX_NAME_SIZE + 2], nc2[MAX_NAME_SIZE + 2];
+    char nc1[MAX_NAME_SIZE + 2];
+    char nc2[MAX_NAME_SIZE + 2];
 
-    n1 = force_bar(nc1, n1);
-    n2 = force_bar(nc2, n2);
+    n1 = ForceBar(nc1, n1);
+    n2 = ForceBar(nc2, n2);
 
     for (pstart = n1; (pend = strchr(pstart, '|')); pstart = pend + 1)
 	for (qstart = n2; (qend = strchr(qstart, '|')); qstart = qend + 1)
@@ -252,7 +184,8 @@ _nc_resolve_uses2(bool fullresolve, bool literal)
 {
     ENTRY *qp, *rp, *lastread = 0;
     bool keepgoing;
-    int i, unresolved, total_unresolved, multiples;
+    unsigned i;
+    int unresolved, total_unresolved, multiples;
 
     DEBUG(2, ("RESOLUTION BEGINNING"));
 
@@ -341,7 +274,7 @@ _nc_resolve_uses2(bool fullresolve, bool literal)
 		unresolved++;
 		total_unresolved++;
 
-		_nc_curr_line = lookline;
+		_nc_curr_line = (int) lookline;
 		_nc_warning("resolution of use=%s failed", lookfor);
 		qp->uses[i].link = 0;
 	    }
@@ -443,7 +376,7 @@ _nc_resolve_uses2(bool fullresolve, bool literal)
 	if (_nc_check_termtype != 0) {
 	    _nc_curr_col = -1;
 	    for_entry_list(qp) {
-		_nc_curr_line = qp->startline;
+		_nc_curr_line = (int) qp->startline;
 		_nc_set_type(_nc_first_name(qp->tterm.term_names));
 		_nc_check_termtype2(&qp->tterm, literal);
 	    }
@@ -534,3 +467,25 @@ sanity_check(TERMTYPE *tp)
 {
     sanity_check2(tp, FALSE);
 }
+
+#if NO_LEAKS
+NCURSES_EXPORT(void)
+_nc_leaks_tic(void)
+{
+    _nc_alloc_entry_leaks();
+    _nc_captoinfo_leaks();
+    _nc_comp_scan_leaks();
+#if BROKEN_LINKER || USE_REENTRANT
+    _nc_names_leaks();
+    _nc_codes_leaks();
+#endif
+    _nc_tic_expand(0, FALSE, 0);
+}
+
+NCURSES_EXPORT(void)
+_nc_free_tic(int code)
+{
+    _nc_leaks_tic();
+    _nc_free_tinfo(code);
+}
+#endif

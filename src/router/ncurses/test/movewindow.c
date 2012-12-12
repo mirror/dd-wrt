@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2006 Free Software Foundation, Inc.                        *
+ * Copyright (c) 2006-2008,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: movewindow.c,v 1.19 2006/06/17 17:43:22 tom Exp $
+ * $Id: movewindow.c,v 1.24 2010/11/13 23:34:55 tom Exp $
  *
  * Demonstrate move functions for windows and derived windows from the curses
  * library.
@@ -47,6 +47,12 @@ mvwin
 #undef derwin
 #endif
 
+#ifdef NCURSES_VERSION
+#define CONST_FMT const
+#else
+#define CONST_FMT		/* nothing */
+#endif
+
 #undef LINE_MAX
 
 #define LINE_MIN	2
@@ -63,14 +69,14 @@ typedef struct {
     WINDOW *child;		/* the actual value */
 } FRAME;
 
-static void head_line(char *fmt,...) GCC_PRINTFLIKE(1, 2);
-static void tail_line(char *fmt,...) GCC_PRINTFLIKE(1, 2);
+static void head_line(CONST_FMT char *fmt,...) GCC_PRINTFLIKE(1, 2);
+static void tail_line(CONST_FMT char *fmt,...) GCC_PRINTFLIKE(1, 2);
 
 static unsigned num_windows;
 static FRAME *all_windows;
 
 static void
-message(int lineno, char *fmt, va_list argp)
+message(int lineno, CONST_FMT char *fmt, va_list argp)
 {
     int y, x;
 
@@ -93,7 +99,7 @@ message(int lineno, char *fmt, va_list argp)
 }
 
 static void
-head_line(char *fmt,...)
+head_line(CONST_FMT char *fmt,...)
 {
     va_list argp;
 
@@ -103,7 +109,7 @@ head_line(char *fmt,...)
 }
 
 static void
-tail_line(char *fmt,...)
+tail_line(CONST_FMT char *fmt,...)
 {
     va_list argp;
 
@@ -190,12 +196,12 @@ getwindow(WINDOW *parent, PAIR * ul, PAIR * lr)
     head_line("Use arrows to move cursor, anything else to mark corner 1");
     if ((tmp = selectcell(parent, min_line, min_col, max_line, max_col)) != 0) {
 	*ul = *tmp;
-	mvwaddch(parent, ul->y, ul->x, '*');
+	MvWAddCh(parent, ul->y, ul->x, '*');
 
 	head_line("Use arrows to move cursor, anything else to mark corner 2");
 	if ((tmp = selectcell(parent, ul->y, ul->x, max_line, max_col)) != 0) {
 	    *lr = *tmp;
-	    mvwaddch(parent, lr->y, lr->x, '*');
+	    MvWAddCh(parent, lr->y, lr->x, '*');
 	    wmove(parent, lr->y, lr->x);
 	    wsyncdown(parent);
 	    wrefresh(parent);
@@ -218,16 +224,16 @@ box_inside(WINDOW *win)
     getyx(win, y0, x0);
     getmaxyx(win, y1, x1);
 
-    mvwhline(win, 0, 0, ACS_HLINE, x1);
-    mvwhline(win, y1 - 1, 0, ACS_HLINE, x1);
+    MvWHLine(win, 0, 0, ACS_HLINE, x1);
+    MvWHLine(win, y1 - 1, 0, ACS_HLINE, x1);
 
-    mvwvline(win, 0, 0, ACS_VLINE, y1);
-    mvwvline(win, 0, x1 - 1, ACS_VLINE, y1);
+    MvWVLine(win, 0, 0, ACS_VLINE, y1);
+    MvWVLine(win, 0, x1 - 1, ACS_VLINE, y1);
 
-    mvwaddch(win, 0, 0, ACS_ULCORNER);
-    mvwaddch(win, y1 - 1, 0, ACS_LLCORNER);
-    mvwaddch(win, 0, x1 - 1, ACS_URCORNER);
-    mvwaddch(win, y1 - 1, x1 - 1, ACS_LRCORNER);
+    MvWAddCh(win, 0, 0, ACS_ULCORNER);
+    MvWAddCh(win, y1 - 1, 0, ACS_LLCORNER);
+    MvWAddCh(win, 0, x1 - 1, ACS_URCORNER);
+    MvWAddCh(win, y1 - 1, x1 - 1, ACS_LRCORNER);
 
     wsyncdown(win);
     wmove(win, y0, x0);
@@ -245,7 +251,7 @@ add_window(WINDOW *parent, WINDOW *child)
 
     keypad(child, TRUE);
     if (need > have) {
-	all_windows = (FRAME *) realloc(all_windows, need * sizeof(FRAME));
+	all_windows = typeRealloc(FRAME, need, all_windows);
     }
     all_windows[num_windows].parent = parent;
     all_windows[num_windows].child = child;
@@ -305,7 +311,7 @@ next_window(WINDOW *win)
     int n = window2num(win);
 
     if (n++ >= 0) {
-	result = all_windows[n % num_windows].child;
+	result = all_windows[(unsigned) n % num_windows].child;
 	wmove(result, 0, 0);
 	wrefresh(result);
     }
@@ -320,8 +326,8 @@ prev_window(WINDOW *win)
 
     if (n-- >= 0) {
 	if (n < 0)
-	    n = num_windows - 1;
-	result = all_windows[n % num_windows].child;
+	    n = (int) (num_windows - 1);
+	result = all_windows[(unsigned) n % num_windows].child;
 	wmove(result, 0, 0);
 	wrefresh(result);
     }
@@ -435,7 +441,7 @@ fill_window(WINDOW *win, chtype ch)
     getmaxyx(win, y1, x1);
     for (y = 0; y < y1; ++y) {
 	for (x = 0; x < x1; ++x) {
-	    mvwaddch(win, y, x, ch);
+	    MvWAddCh(win, y, x, ch);
 	}
     }
     wsyncdown(win);
@@ -511,7 +517,7 @@ show_help(WINDOW *current)
     /* *INDENT-OFF* */
     static struct {
 	int	key;
-	char *	msg;
+	CONST_FMT char * msg;
     } help[] = {
 	{ '?',		"Show this screen" },
 	{ 'b',		"Draw a box inside the current window" },

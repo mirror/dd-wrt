@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <!-- 
   ****************************************************************************
-  * Copyright (c) 1998-2003,2006 Free Software Foundation, Inc.              *
+  * Copyright (c) 1998-2007,2010 Free Software Foundation, Inc.              *
   *                                                                          *
   * Permission is hereby granted, free of charge, to any person obtaining a  *
   * copy of this software and associated documentation files (the            *
@@ -27,7 +27,7 @@
   * sale, use or other dealings in this Software without prior written       *
   * authorization.                                                           *
   ****************************************************************************
-  * @Id: panel.3x,v 1.12 2006/05/13 15:35:45 tom Exp @
+  * @Id: panel.3x,v 1.17 2010/10/02 23:22:44 tom Exp @
 -->
 <HTML>
 <HEAD>
@@ -102,32 +102,37 @@
               (causes   it  to   be   displayed  above  any other
               panel) and returns a pointer to the new panel.
 
-       <STRONG>void</STRONG> <STRONG>update_panels()</STRONG>
+       <STRONG>update_panels()</STRONG>
               refreshes the virtual screen to reflect  the  rela-
               tions between the panels in the stack, but does not
               call doupdate() to  refresh  the  physical  screen.
-              Use this function and not wrefresh or wnoutrefresh.
-              update_panels() may be called more than once before
-              a  call  to doupdate(), but doupdate() is the func-
-              tion responsible for updating the physical  screen.
+              Use this function and not <STRONG>wrefresh</STRONG> or <STRONG>wnoutrefresh</STRONG>.
+              <STRONG>update_panels</STRONG> may be called more than once before a
+              call  to doupdate(), but doupdate() is the function
+              responsible for updating the physical screen.
 
        <STRONG>del_panel(pan)</STRONG>
               removes the given panel from the  stack and deallo-
-              cates the <STRONG>PANEL</STRONG> structure (but not  its  associated
+              cates  the  <STRONG>PANEL</STRONG> structure (but not its associated
               window).
 
        <STRONG>hide_panel(pan)</STRONG>
-              removes  the  given  panel from the panel stack and
+              removes the given panel from the  panel  stack  and
               thus hides it from view. The <STRONG>PANEL</STRONG> structure is not
               lost, merely removed from the stack.
 
+       <STRONG>panel_hidden(pan)</STRONG>
+              returns TRUE if the panel is in  the  panel  stack,
+              FALSE  if  it  is  not.   If  the  panel  is a null
+              pointer, return ERR.
+
        <STRONG>show_panel(pan)</STRONG>
-              makes  a  hidden panel visible by placing it on top
+              makes a hidden panel visible by placing it  on  top
               of the panels in the panel stack. See COMPATIBILITY
               below.
 
        <STRONG>top_panel(pan)</STRONG>
-              puts  the  given visible panel on top of all panels
+              puts the given visible panel on top of  all  panels
               in the stack.  See COMPATIBILITY below.
 
        <STRONG>bottom_panel(pan)</STRONG>
@@ -135,26 +140,26 @@
 
        <STRONG>move_panel(pan,starty,startx)</STRONG>
               moves the given panel window so that its upper-left
-              corner  is  at  <STRONG>starty</STRONG>, <STRONG>startx</STRONG>.  It does not change
+              corner is at <STRONG>starty</STRONG>, <STRONG>startx</STRONG>.  It  does  not  change
               the position of the panel in the stack.  Be sure to
-              use  this  function,  not  <STRONG>mvwin()</STRONG>, to move a panel
+              use this function, not <STRONG>mvwin()</STRONG>,  to  move  a  panel
               window.
 
        <STRONG>replace_panel(pan,window)</STRONG>
-              replaces the current window of  panel  with  <STRONG>window</STRONG>
+              replaces  the  current  window of panel with <STRONG>window</STRONG>
               (useful, for example if you want to resize a panel;
               if you're using <STRONG>ncurses</STRONG>, you can call <STRONG>replace_panel</STRONG>
-              on  the output of <STRONG><A HREF="wresize.3x.html">wresize(3x)</A></STRONG>).  It does not change
+              on the output of <STRONG><A HREF="wresize.3x.html">wresize(3x)</A></STRONG>).  It does not  change
               the position of the panel in the stack.
 
        <STRONG>panel_above(pan)</STRONG>
-              returns a pointer to the panel above pan.   If  the
-              panel  argument is <STRONG>(PANEL</STRONG> <STRONG>*)0</STRONG>, it returns a pointer
+              returns  a  pointer to the panel above pan.  If the
+              panel argument is <STRONG>(PANEL</STRONG> <STRONG>*)0</STRONG>, it returns a  pointer
               to the bottom panel in the stack.
 
        <STRONG>panel_below(pan)</STRONG>
-              returns a pointer to the panel just below pan.   If
-              the  panel  argument  is  <STRONG>(PANEL</STRONG>  <STRONG>*)0</STRONG>, it returns a
+              returns  a pointer to the panel just below pan.  If
+              the panel argument is  <STRONG>(PANEL</STRONG>  <STRONG>*)0</STRONG>,  it  returns  a
               pointer to the top panel in the stack.
 
        <STRONG>set_panel_userptr(pan,ptr)</STRONG>
@@ -169,35 +174,35 @@
 
 </PRE>
 <H2>DIAGNOSTICS</H2><PRE>
-       Each  routine  that  returns  a pointer returns <STRONG>NULL</STRONG> if an
-       error occurs. Each  routine  that  returns  an  int  value
+       Each routine that returns a pointer  returns  <STRONG>NULL</STRONG>  if  an
+       error  occurs.  Each  routine  that  returns  an int value
        returns <STRONG>OK</STRONG> if it executes successfully and <STRONG>ERR</STRONG> if not.
 
 
 </PRE>
 <H2>COMPATIBILITY</H2><PRE>
-       Reasonable  care  has been taken to  ensure  compatibility
-       with  the  native  panel  facility  introduced  in  SVr3.2
-       (inspection of the SVr4 manual pages suggests the program-
-       ming interface is unchanged).  The <STRONG>PANEL</STRONG>  data  structures
-       are  merely   similar. The  programmer is cautioned not to
-       directly use <STRONG>PANEL</STRONG> fields.
+       Reasonable care has been taken to   ensure   compatibility
+       with   the   native   panel  facility introduced in SVr3.2
+       (inspection  of  the  SVr4  manual  pages   suggests   the
+       programming  interface  is  unchanged).   The  <STRONG>PANEL</STRONG>  data
+       structures are merely  similar. The   programmer  is  cau-
+       tioned not to directly use <STRONG>PANEL</STRONG> fields.
 
-       The functions <STRONG>show_panel()</STRONG> and <STRONG>top_panel()</STRONG>  are  identical
-       in  this  implementation,  and work equally well with dis-
+       The  functions  <STRONG>show_panel()</STRONG> and <STRONG>top_panel()</STRONG> are identical
+       in this implementation, and work equally  well  with  dis-
        played or hidden panels.  In the native System V implemen-
        tation, <STRONG>show_panel()</STRONG> is intended for making a hidden panel
-       visible (at the top  of  the  stack)  and  <STRONG>top_panel()</STRONG>  is
-       intended  for  making an already-visible panel move to the
-       top of the stack. You are cautioned  to  use  the  correct
-       function   to   ensure  compatibility  with  native  panel
+       visible  (at  the  top  of  the  stack) and <STRONG>top_panel()</STRONG> is
+       intended for making an already-visible panel move  to  the
+       top  of  the  stack.  You are cautioned to use the correct
+       function  to  ensure  compatibility  with   native   panel
        libraries.
 
 
 </PRE>
 <H2>NOTE</H2><PRE>
-       In your library list, libpanel.a should  be  before  libn-
-       curses.a;  that  is,  you want to say `-lpanel -lncurses',
+       In  your  library  list, libpanel.a should be before libn-
+       curses.a; that is, you want to  say  `-lpanel  -lncurses',
        not the other way around (which would usually give a link-
        error).
 
@@ -211,16 +216,16 @@
 
 </PRE>
 <H2>SEE ALSO</H2><PRE>
-       <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>
+       <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="curs_variables.3x.html">curs_variables(3x)</A></STRONG>,
 
-       This describes <STRONG>ncurses</STRONG> version 5.5 (patch 20061209).
+       This describes <STRONG>ncurses</STRONG> version 5.9 (patch 20110404).
 
 
 </PRE>
 <H2>AUTHOR</H2><PRE>
-       Originally   written   by   Warren  Tucker  &lt;wht@n4hgf.mt-
-       park.ga.us&gt;, primarily to assist  in  porting  u386mon  to
-       systems  without  a native panels library.  Repackaged for
+       Originally  written  by   Warren   Tucker   &lt;wht@n4hgf.mt-
+       park.ga.us&gt;,  primarily  to  assist  in porting u386mon to
+       systems without a native panels library.   Repackaged  for
        ncurses by Zeyd ben-Halim.
 
 

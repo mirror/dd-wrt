@@ -1,6 +1,6 @@
-# $Id: Makefile.in,v 1.101 2006/10/14 19:08:11 tom Exp $
+# $Id: Makefile.in,v 1.130 2010/11/27 21:45:27 tom Exp $
 ##############################################################################
-# Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.                #
+# Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.                #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -46,6 +46,7 @@
 .SUFFIXES:
 
 SHELL		= /bin/sh
+VPATH		= @srcdir@
 THIS		= Makefile
 
 CF_MFLAGS 	= @cf_cv_makeflags@
@@ -71,6 +72,7 @@ LIBTOOL_COMPILE	= @LIB_COMPILE@
 LIBTOOL_LINK	= @LIB_LINK@
 LIBTOOL_INSTALL	= @LIB_INSTALL@
 LIBTOOL_UNINSTALL = @LIB_UNINSTALL@
+LT_UNDEF	= @LT_UNDEF@
 
 INSTALL		= @INSTALL@
 INSTALL_LIB	= @INSTALL@ @INSTALL_LIB@
@@ -78,10 +80,13 @@ INSTALL_PROG	= @INSTALL_PROGRAM@
 INSTALL_DATA	= @INSTALL_DATA@
 
 AR		= @AR@
-AR_OPTS		= @AR_OPTS@
+ARFLAGS		= @ARFLAGS@
 AWK		= @AWK@
 LD		= @LD@
 LN_S		= @LN_S@
+
+CTAGS		= @CTAGS@
+ETAGS		= @ETAGS@
 
 CC		= @CC@
 CPP		= @CPP@
@@ -92,7 +97,7 @@ CPPFLAGS	= -DHAVE_CONFIG_H -I../ncurses -I$(srcdir) @CPPFLAGS@
 
 CCFLAGS		= $(CPPFLAGS) $(CFLAGS)
 
-BUILD_CPPFLAGS	= -I../include @BUILD_CPPFLAGS@
+BUILD_CPPFLAGS	= -I../include -DUSE_BUILD_CC @BUILD_CPPFLAGS@
 BUILD_CC	= @BUILD_CC@
 BUILD_CCFLAGS	= -DHAVE_CONFIG_H -I../ncurses -I$(srcdir) -I$(INCDIR) $(BUILD_CPPFLAGS) @BUILD_CFLAGS@
 BUILD_LDFLAGS	= @BUILD_LDFLAGS@
@@ -112,12 +117,13 @@ CFLAGS_SHARED	= $(CCFLAGS) @CC_SHARED_OPTS@
 
 CFLAGS_DEFAULT	= $(CFLAGS_@DFT_UPR_MODEL@)
 
-LINK		= $(LIBTOOL) $(CC)
+LINK		= $(LIBTOOL)
 LDFLAGS		= @LDFLAGS@ @LD_MODEL@ @LIBS@
 
 SHLIB_DIRS	= -L../lib
 SHLIB_LIST	= $(SHLIB_DIRS) @SHLIB_LIST@
 TINFO_LIST	= $(SHLIB_DIRS) @TINFO_LIST@
+TICS_LIST	= $(SHLIB_DIRS) @TICS_LIST@
 
 MK_SHARED_LIB	= @MK_SHARED_LIB@
 
@@ -128,8 +134,6 @@ ABI_VERSION	= @cf_cv_abi_version@
 
 RANLIB		= @LIB_PREP@
 
-IMPORT_LIB	= @IMPORT_LIB@
-SHARED_LIB	= @SHARED_LIB@
 LIBRARIES	= @LIBS_TO_MAKE@
 
 LINT		= @LINT@
@@ -138,7 +142,12 @@ LINT_LIBS	= -lncurses @LIBS@
 
 FALLBACK_LIST	= @FALLBACK_LIST@
 
+USE_BIG_STRINGS	= @USE_BIG_STRINGS@
 TERMINFO_CAPS	= $(top_srcdir)/include/@TERMINFO_CAPS@
+
+TERMINFO	= @TERMINFO@
+TERMINFO_SRC	= @TERMINFO_SRC@
+TIC_PATH	= @TIC_PATH@
 
 AUTO_SRC = \
 	./codes.c \
@@ -151,11 +160,22 @@ AUTO_SRC = \
 	./names.c \
 	./unctrl.c \
 	init_keytry.h \
-	keys.list \
-	names-stamp
+	keys.list
+
+HEADER_DEPS	= \
+	$(srcdir)/curses.priv.h \
+	../include/ncurses_dll.h \
+	../include/ncurses_cfg.h \
+	../include/curses.h \
+	$(INCDIR)/nc_panel.h \
+	../include/term.h \
+	$(INCDIR)/term_entry.h \
+	$(INCDIR)/nc_tparm.h \
+	$(INCDIR)/nc_alloc.h \
+	$(INCDIR)/nc_mingw.h
 
 TEST_DEPS	= ../lib/@LIB_PREFIX@ncurses@DFT_DEP_SUFFIX@
-TEST_ARGS	= -L../lib -lncurses@DFT_ARG_SUFFIX@
+TEST_ARGS	= @LDFLAGS_STATIC@ @TEST_ARGS@ @LDFLAGS_SHARED@ 
 TEST_LDFLAGS	= @LD_MODEL@ $(TEST_ARGS) @LIBS@ @LOCAL_LDFLAGS@ @LDFLAGS@
 
 TEST_PROGS = \
@@ -165,11 +185,12 @@ TEST_PROGS = \
 	hashmap$x \
 	lib_mvcur$x
 
-base	= $(srcdir)/base
-serial	= $(srcdir)/tty
-tinfo	= $(srcdir)/tinfo
-trace	= $(srcdir)/trace
-wide	= $(srcdir)/widechar
+base	 = $(srcdir)/base
+serial	 = $(srcdir)/tty
+tinfo	 = $(srcdir)/tinfo
+trace	 = $(srcdir)/trace
+wide	 = $(srcdir)/widechar
+win32con = $(srcdir)/win32con
 
 ################################################################################
 all \
@@ -179,15 +200,15 @@ sources:	$(AUTO_SRC)
 
 $(DESTDIR)$(bindir) \
 $(DESTDIR)$(libdir) :
-	sh $(srcdir)/../mkinstalldirs $@
+	mkdir -p $@
 
 ../lib : ; mkdir $@
 
 ./fallback.c : $(tinfo)/MKfallback.sh
-	sh $(tinfo)/MKfallback.sh @TERMINFO@ @TERMINFO_SRC@ $(FALLBACK_LIST) >$@
+	sh -e $(tinfo)/MKfallback.sh $(TERMINFO) $(TERMINFO_SRC) $(TIC_PATH) $(FALLBACK_LIST) >$@
 
 ./lib_gen.c : $(base)/MKlib_gen.sh ../include/curses.h
-	sh $(base)/MKlib_gen.sh "$(CPP) $(CPPFLAGS)" "$(AWK)" generated <../include/curses.h >$@
+	sh -e $(base)/MKlib_gen.sh "$(CPP) $(CPPFLAGS)" "$(AWK)" generated <../include/curses.h >$@
 
 init_keytry.h: make_keys$(BUILD_EXEEXT) keys.list
 	./make_keys$(BUILD_EXEEXT) keys.list > $@
@@ -197,47 +218,41 @@ keys.list :	$(tinfo)/MKkeys_list.sh
 
 make_keys$(BUILD_EXEEXT) : \
 		$(tinfo)/make_keys.c \
-		names-stamp
+		names.c
 	$(BUILD_CC) -o $@ $(BUILD_CCFLAGS) $(tinfo)/make_keys.c $(BUILD_LDFLAGS) $(BUILD_LIBS)
 
 make_hash$(BUILD_EXEEXT) : \
-		$(tinfo)/comp_hash.c \
+		$(tinfo)/make_hash.c \
 		../include/hashsize.h
-	$(BUILD_CC) -o $@ $(BUILD_CCFLAGS) -DMAIN_PROGRAM $(tinfo)/comp_hash.c $(BUILD_LDFLAGS) $(BUILD_LIBS)
+	$(BUILD_CC) -o $@ $(BUILD_CCFLAGS) $(tinfo)/make_hash.c $(BUILD_LDFLAGS) $(BUILD_LIBS)
 
-./expanded.c : $(serial)/MKexpanded.sh
-	sh $(serial)/MKexpanded.sh "$(CPP)" $(CPPFLAGS) > $@
+./expanded.c : $(srcdir)/curses.priv.h $(serial)/MKexpanded.sh
+	sh -e $(serial)/MKexpanded.sh "$(CPP)" $(CPPFLAGS) > $@
 
 ./comp_captab.c: \
 		make_hash$(BUILD_EXEEXT) \
 		../include/hashsize.h \
+		$(tinfo)/MKcaptab.sh \
 		$(tinfo)/MKcaptab.awk
-	sh $(tinfo)/MKcaptab.awk $(AWK) $(srcdir)/../include/@TERMINFO_CAPS@ > $@
+	sh -e $(tinfo)/MKcaptab.sh $(AWK) $(USE_BIG_STRINGS) $(tinfo)/MKcaptab.awk $(srcdir)/../include/@TERMINFO_CAPS@ > $@
 
 ./lib_keyname.c: keys.list $(base)/MKkeyname.awk
-	$(AWK) -f $(base)/MKkeyname.awk keys.list > $@
+	$(AWK) -f $(base)/MKkeyname.awk bigstrings=$(USE_BIG_STRINGS) keys.list > $@
 
-names-stamp: $(tinfo)/MKnames.awk
-	$(AWK) -f $(tinfo)/MKnames.awk $(srcdir)/../include/@TERMINFO_CAPS@
-	cat namehdr boolnames boolfnames numnames numfnames strnames strfnames nameftr >names.c
-	cat namehdr boolcodes numcodes strcodes codeftr >codes.c
-	-rm -f namehdr nameftr codeftr boolnames boolfnames boolcodes numnames numfnames numcodes strnames strfnames strcodes
-	@echo >$@
+./codes.c: $(tinfo)/MKcodes.awk
+	$(AWK) -f $(tinfo)/MKcodes.awk bigstrings=$(USE_BIG_STRINGS) $(srcdir)/../include/@TERMINFO_CAPS@ >$@
 
-./names.c: names-stamp
-	@echo made $@
-
-./codes.c: names-stamp
-	@echo made $@
+./names.c: $(tinfo)/MKnames.awk
+	$(AWK) -f $(tinfo)/MKnames.awk bigstrings=$(USE_BIG_STRINGS) $(srcdir)/../include/@TERMINFO_CAPS@ >$@
 
 ./unctrl.c: $(base)/MKunctrl.awk
-	echo | $(AWK) -f $(base)/MKunctrl.awk >$@
+	echo | $(AWK) -f $(base)/MKunctrl.awk bigstrings=$(USE_BIG_STRINGS) >$@
 
 tags:
-	ctags *.[ch] */*.[ch]
+	$(CTAGS) *.[ch] */*.[ch]
 
 @MAKE_UPPER_TAGS@TAGS:
-@MAKE_UPPER_TAGS@	etags *.[ch] */*.[ch]
+@MAKE_UPPER_TAGS@	$(ETAGS) *.[ch] */*.[ch]
 
 mostlyclean ::
 	-rm -f core tags TAGS *~ *.bak *.i *.ln *.atac trace
@@ -264,20 +279,20 @@ realclean :: distclean
 test_progs : $(TEST_PROGS)
 
 ./link_test.c : $(base)/MKlib_gen.sh ../include/curses.h
-	sh $(base)/MKlib_gen.sh "$(CPP) $(CPPFLAGS)" "$(AWK)" implemented <../include/curses.h >$@
+	sh -e $(base)/MKlib_gen.sh "$(CPP) $(CPPFLAGS)" "$(AWK)" implemented <../include/curses.h >$@
 
 captoinfo$x : $(tinfo)/captoinfo.c $(TEST_DEPS)
-	@ECHO_LINK@ $(CC) -o $@ $(CFLAGS_DEFAULT) -DMAIN $(tinfo)/captoinfo.c $(TEST_LDFLAGS)
+	@ECHO_LINK@ $(LIBTOOL_LINK) -o $@ $(CFLAGS_DEFAULT) -DMAIN $(tinfo)/captoinfo.c $(TEST_LDFLAGS)
 
 hardscroll$x : $(serial)/hardscroll.c $(TEST_DEPS)
-	@ECHO_LINK@ $(CC) -o $@ $(CFLAGS_DEFAULT) -DSCROLLDEBUG $(serial)/hardscroll.c $(TEST_LDFLAGS)
+	@ECHO_LINK@ $(LIBTOOL_LINK) -o $@ $(CFLAGS_DEFAULT) -DSCROLLDEBUG $(serial)/hardscroll.c $(TEST_LDFLAGS)
 
-hashmap$x : $(serial)/hashmap.c $(TEST_DEPS)
-	@ECHO_LINK@ $(CC) -o $@ $(CFLAGS_DEFAULT) -DHASHDEBUG $(serial)/hashmap.c $(TEST_LDFLAGS)
+hashmap$x : $(serial)/hashmap.c $(serial)/hardscroll.c $(TEST_DEPS)
+	@ECHO_LINK@ $(LIBTOOL_LINK) -o $@ $(CFLAGS_DEFAULT) -DHASHDEBUG $(serial)/hashmap.c $(serial)/hardscroll.c $(TEST_LDFLAGS)
 
 lib_mvcur$x : $(serial)/lib_mvcur.c $(TEST_DEPS) \
 		../@DFT_OBJ_SUBDIR@/dump_entry$o
-	@ECHO_LINK@ $(CC) -o $@ $(CFLAGS_DEFAULT) -DNCURSES_TEST -I$(serial)/../../progs $(serial)/lib_mvcur.c ../@DFT_OBJ_SUBDIR@/dump_entry$o $(TEST_LDFLAGS)
+	@ECHO_LINK@ $(LIBTOOL_LINK) -o $@ $(CFLAGS_DEFAULT) -DNCURSES_TEST -I$(serial)/../../progs $(serial)/lib_mvcur.c ../@DFT_OBJ_SUBDIR@/dump_entry$o $(TEST_LDFLAGS)
 
 link_test$x : ./link_test.c $(TEST_DEPS) \
 		../@DFT_OBJ_SUBDIR@/link_test$o

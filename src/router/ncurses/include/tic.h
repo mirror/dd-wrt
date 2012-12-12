@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2007,2009 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -33,7 +33,7 @@
  ****************************************************************************/
 
 /*
- * $Id: tic.h,v 1.55 2006/08/19 14:17:49 tom Exp $
+ * $Id: tic.h,v 1.65 2009/08/08 17:52:46 tom Exp $
  *	tic.h - Global variables and structures for the terminfo
  *			compiler.
  */
@@ -164,16 +164,6 @@ struct token
 extern NCURSES_EXPORT_VAR(struct token)	_nc_curr_token;
 
 	/*
-	 * List of keynames with their corresponding code.
-	 */
-struct kn {
-	const char *name;
-	int code;
-};
-
-extern NCURSES_EXPORT_VAR(const struct kn) _nc_key_names[];
-
-	/*
 	 * Offsets to string capabilities, with the corresponding functionkey
 	 * codes.
 	 */
@@ -185,13 +175,15 @@ struct tinfo_fkeys {
 #if	BROKEN_LINKER
 
 #define	_nc_tinfo_fkeys	_nc_tinfo_fkeysf()
-extern NCURSES_EXPORT(struct tinfo_fkeys *) _nc_tinfo_fkeysf (void);
+extern NCURSES_EXPORT(const struct tinfo_fkeys *) _nc_tinfo_fkeysf (void);
 
 #else
 
-extern NCURSES_EXPORT_VAR(struct tinfo_fkeys) _nc_tinfo_fkeys[];
+extern NCURSES_EXPORT_VAR(const struct tinfo_fkeys) _nc_tinfo_fkeys[];
 
 #endif
+
+typedef short HashValue;
 
 	/*
 	 * The file comp_captab.c contains an array of these structures, one
@@ -203,9 +195,20 @@ struct name_table_entry
 {
 	const char *nte_name;	/* name to hash on */
 	int	nte_type;	/* BOOLEAN, NUMBER or STRING */
-	short	nte_index;	/* index of associated variable in its array */
-	short	nte_link;	/* index in table of next hash, or -1 */
+	HashValue nte_index;	/* index of associated variable in its array */
+	HashValue nte_link;	/* index in table of next hash, or -1 */
 };
+
+	/*
+	 * Use this structure to hide differences between terminfo and termcap
+	 * tables.
+	 */
+typedef struct {
+	unsigned table_size;
+	const HashValue *table_data;
+	HashValue (*hash_of)(const char *);
+	int (*compare_names)(const char *, const char *);
+} HashData;
 
 struct alias
 {
@@ -214,14 +217,10 @@ struct alias
 	const char	*source;
 };
 
-extern NCURSES_EXPORT_VAR(const struct name_table_entry * const) _nc_info_hash_table[];
-extern NCURSES_EXPORT_VAR(const struct name_table_entry * const) _nc_cap_hash_table[];
-
-extern NCURSES_EXPORT_VAR(const struct alias) _nc_capalias_table[];
-extern NCURSES_EXPORT_VAR(const struct alias) _nc_infoalias_table[];
-
 extern NCURSES_EXPORT(const struct name_table_entry *) _nc_get_table (bool);
-extern NCURSES_EXPORT(const struct name_table_entry * const *) _nc_get_hash_table (bool);
+extern NCURSES_EXPORT(const HashData *) _nc_get_hash_info (bool);
+extern NCURSES_EXPORT(const HashValue *) _nc_get_hash_table (bool);
+extern NCURSES_EXPORT(const struct alias *) _nc_get_alias_table (bool);
 
 #define NOTFOUND	((struct name_table_entry *) 0)
 
@@ -259,9 +258,9 @@ extern NCURSES_EXPORT(char *) _nc_rootname (char *);
 
 /* comp_hash.c: name lookup */
 extern NCURSES_EXPORT(struct name_table_entry const *) _nc_find_entry
-	(const char *, const struct name_table_entry *const *);
+	(const char *, const HashValue *);
 extern NCURSES_EXPORT(struct name_table_entry const *) _nc_find_type_entry
-	(const char *, int, const struct name_table_entry *);
+	(const char *, int, bool);
 
 /* comp_scan.c: lexical analysis */
 extern NCURSES_EXPORT(int)  _nc_get_token (bool);

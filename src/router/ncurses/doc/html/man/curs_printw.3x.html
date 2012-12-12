@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <!-- 
   ****************************************************************************
-  * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+  * Copyright (c) 1998-2006,2010 Free Software Foundation, Inc.              *
   *                                                                          *
   * Permission is hereby granted, free of charge, to any person obtaining a  *
   * copy of this software and associated documentation files (the            *
@@ -27,7 +27,7 @@
   * sale, use or other dealings in this Software without prior written       *
   * authorization.                                                           *
   ****************************************************************************
-  * @Id: curs_printw.3x,v 1.16 2006/02/25 21:49:19 tom Exp @
+  * @Id: curs_printw.3x,v 1.20 2010/12/04 18:40:45 tom Exp @
 -->
 <HTML>
 <HEAD>
@@ -69,12 +69,12 @@
 </PRE>
 <H2>DESCRIPTION</H2><PRE>
        The  <STRONG>printw</STRONG>,  <STRONG>wprintw</STRONG>, <STRONG>mvprintw</STRONG> and <STRONG>mvwprintw</STRONG> routines are
-       analogous to <STRONG>printf</STRONG>  [see  <STRONG><A HREF="printf.3S.html">printf(3S)</A></STRONG>].   In  effect,  the
+       analogous to  <STRONG>printf</STRONG>  [see  <STRONG><A HREF="printf.3.html">printf(3)</A></STRONG>].   In  effect,  the
        string that would be output by <STRONG>printf</STRONG> is output instead as
        though <STRONG>waddstr</STRONG> were used on the given window.
 
        The <STRONG>vwprintw</STRONG>  and  <STRONG>wv_printw</STRONG>  routines  are  analogous  to
-       <STRONG>vprintf</STRONG>  [see  <STRONG><A HREF="printf.3S.html">printf(3S)</A></STRONG>]  and  perform a <STRONG>wprintw</STRONG> using a
+       <STRONG>vprintf</STRONG>  [see  <STRONG><A HREF="printf.3.html">printf(3)</A></STRONG>]  and  perform  a <STRONG>wprintw</STRONG> using a
        variable argument list.  The third argument is a  <STRONG>va_list</STRONG>,
        a   pointer   to  a  list  of  arguments,  as  defined  in
        <STRONG>&lt;stdarg.h&gt;</STRONG>.
@@ -90,6 +90,10 @@
        tion,  an  error  may  be  returned  if it cannot allocate
        enough memory for the buffer used to format  the  results.
        It will return an error if the window pointer is null.
+
+       Functions  with a "mv" prefix first perform a cursor move-
+       ment using <STRONG>wmove</STRONG>, and return an error if the  position  is
+       outside the window, or if the window pointer is null.
 
 
 </PRE>
@@ -107,7 +111,7 @@
 
 </PRE>
 <H2>SEE ALSO</H2><PRE>
-       <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="printf.3S.html">printf(3S)</A></STRONG>, <STRONG>vprintf(3S)</STRONG>
+       <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>, <STRONG><A HREF="printf.3.html">printf(3)</A></STRONG>, <STRONG>vprintf(3)</STRONG>
 
 
 

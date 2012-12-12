@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2002-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 2002-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -40,80 +40,74 @@
 #include <curses.priv.h>
 #include <ctype.h>
 
-MODULE_ID("$Id: lib_get_wch.c,v 1.13 2006/06/03 17:27:57 tom Exp $")
-
-#if HAVE_MBTOWC && HAVE_MBLEN
-#define reset_mbytes(state) mblen(NULL, 0), mbtowc(NULL, NULL, 0)
-#define count_mbytes(buffer,length,state) mblen(buffer,length)
-#define check_mbytes(wch,buffer,length,state) \
-	(int) mbtowc(&wch, buffer, length)
-#define state_unused
-#elif HAVE_MBRTOWC && HAVE_MBRLEN
-#define reset_mbytes(state) init_mb(state)
-#define count_mbytes(buffer,length,state) mbrlen(buffer,length,&state)
-#define check_mbytes(wch,buffer,length,state) \
-	(int) mbrtowc(&wch, buffer, length, &state)
-#else
-make an error
-#endif
+MODULE_ID("$Id: lib_get_wch.c,v 1.22 2010/08/28 21:00:35 tom Exp $")
 
 NCURSES_EXPORT(int)
 wget_wch(WINDOW *win, wint_t *result)
 {
+    SCREEN *sp;
     int code;
     char buffer[(MB_LEN_MAX * 9) + 1];	/* allow some redundant shifts */
     int status;
     size_t count = 0;
-    unsigned long value;
+    int value = 0;
     wchar_t wch;
 #ifndef state_unused
     mbstate_t state;
 #endif
 
-    T((T_CALLED("wget_wch(%p)"), win));
+    T((T_CALLED("wget_wch(%p)"), (void *) win));
 
     /*
      * We can get a stream of single-byte characters and KEY_xxx codes from
      * _nc_wgetch(), while we want to return a wide character or KEY_xxx code.
      */
-    for (;;) {
-	T(("reading %d of %d", count + 1, sizeof(buffer)));
-	code = _nc_wgetch(win, &value, TRUE EVENTLIST_2nd((_nc_eventlist *) 0));
-	if (code == ERR) {
-	    break;
-	} else if (code == KEY_CODE_YES) {
-	    /*
-	     * If we were processing an incomplete multibyte character, return
-	     * an error since we have a KEY_xxx code which interrupts it.  For
-	     * some cases, we could improve this by writing a new version of
-	     * lib_getch.c(!), but it is not clear whether the improvement
-	     * would be worth the effort.
-	     */
-	    if (count != 0) {
-		ungetch((int) value);
-		code = ERR;
-	    }
-	    break;
-	} else if (count + 1 >= sizeof(buffer)) {
-	    ungetch((int) value);
-	    code = ERR;
-	    break;
-	} else {
-	    buffer[count++] = UChar(value);
-	    reset_mbytes(state);
-	    status = count_mbytes(buffer, count, state);
-	    if (status >= 0) {
-		reset_mbytes(state);
-		if (check_mbytes(wch, buffer, count, state) != status) {
-		    code = ERR;	/* the two calls should match */
-		    ungetch((int) value);
-		}
-		value = wch;
+    _nc_lock_global(curses);
+    sp = _nc_screen_of(win);
+    if (sp != 0) {
+	for (;;) {
+	    T(("reading %d of %d", (int) count + 1, (int) sizeof(buffer)));
+	    code = _nc_wgetch(win, &value, TRUE EVENTLIST_2nd((_nc_eventlist
+							       *) 0));
+	    if (code == ERR) {
 		break;
+	    } else if (code == KEY_CODE_YES) {
+		/*
+		 * If we were processing an incomplete multibyte character,
+		 * return an error since we have a KEY_xxx code which
+		 * interrupts it.  For some cases, we could improve this by
+		 * writing a new version of lib_getch.c(!), but it is not clear
+		 * whether the improvement would be worth the effort.
+		 */
+		if (count != 0) {
+		    safe_ungetch(SP_PARM, value);
+		    code = ERR;
+		}
+		break;
+	    } else if (count + 1 >= sizeof(buffer)) {
+		safe_ungetch(SP_PARM, value);
+		code = ERR;
+		break;
+	    } else {
+		buffer[count++] = (char) UChar(value);
+		reset_mbytes(state);
+		status = count_mbytes(buffer, count, state);
+		if (status >= 0) {
+		    reset_mbytes(state);
+		    if (check_mbytes(wch, buffer, count, state) != status) {
+			code = ERR;	/* the two calls should match */
+			safe_ungetch(SP_PARM, value);
+		    }
+		    value = wch;
+		    break;
+		}
 	    }
 	}
+    } else {
+	code = ERR;
     }
-    *result = value;
-    T(("result %#lo", value));
+    *result = (wint_t) value;
+    _nc_unlock_global(curses);
+    T(("result %#o", value));
     returnCode(code);
 }

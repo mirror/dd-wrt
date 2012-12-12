@@ -2,7 +2,7 @@
  *  newdemo.c	-	A demo program using PDCurses. The program illustrate
  *  	 		the use of colours for text output.
  *
- * $Id: newdemo.c,v 1.29 2006/12/03 00:15:28 tom Exp $
+ * $Id: newdemo.c,v 1.35 2010/12/12 00:19:15 tom Exp $
  */
 
 #include <test.priv.h>
@@ -12,7 +12,7 @@
 /*
  *  The Australian map
  */
-static const char *AusMap[16] =
+static CONST_MENUS char *AusMap[16] =
 {
     "           A           A ",
     "    N.T. AAAAA       AAAA ",
@@ -33,7 +33,7 @@ static const char *AusMap[16] =
  */
 #define NMESSAGES   6
 
-static NCURSES_CONST char *messages[] =
+static const char *messages[] =
 {
     "Hello from the Land Down Under",
     "The Land of crocs. and a big Red Rock",
@@ -66,7 +66,7 @@ WaitForUser(WINDOW *win)
     nodelay(win, TRUE);
     t = time((time_t *) 0);
     while (1) {
-	if ((int) (key = wgetch(win)) != ERR) {
+	if ((int) (key = (chtype) wgetch(win)) != ERR) {
 	    if (key == 'q' || key == 'Q')
 		return 1;
 	    else
@@ -83,8 +83,8 @@ set_colors(WINDOW *win, int pair, int foreground, int background)
     if (has_colors()) {
 	if (pair > COLOR_PAIRS)
 	    pair = COLOR_PAIRS;
-	init_pair(pair, foreground, background);
-	wattrset(win, COLOR_PAIR(pair));
+	init_pair((short) pair, (short) foreground, (short) background);
+	(void) wattrset(win, (attr_t) COLOR_PAIR(pair));
     }
 }
 
@@ -94,9 +94,9 @@ use_colors(WINDOW *win, int pair, chtype attrs)
     if (has_colors()) {
 	if (pair > COLOR_PAIRS)
 	    pair = COLOR_PAIRS;
-	attrs |= COLOR_PAIR(pair);
+	attrs |= (chtype) COLOR_PAIR(pair);
     }
-    wattrset(win, attrs);
+    (void) wattrset(win, attrs);
     return attrs;
 }
 
@@ -122,17 +122,17 @@ SubWinTest(WINDOW *win)
 
     set_colors(swin1, 8, COLOR_RED, COLOR_BLUE);
     werase(swin1);
-    mvwaddstr(swin1, 0, 3, "Sub-window 1");
+    MvWAddStr(swin1, 0, 3, "Sub-window 1");
     wrefresh(swin1);
 
     set_colors(swin2, 9, COLOR_CYAN, COLOR_MAGENTA);
     werase(swin2);
-    mvwaddstr(swin2, 0, 3, "Sub-window 2");
+    MvWAddStr(swin2, 0, 3, "Sub-window 2");
     wrefresh(swin2);
 
     set_colors(swin3, 10, COLOR_YELLOW, COLOR_GREEN);
     werase(swin3);
-    mvwaddstr(swin3, 0, 3, "Sub-window 3");
+    MvWAddStr(swin3, 0, 3, "Sub-window 3");
     wrefresh(swin3);
 
     delwin(swin1);
@@ -192,13 +192,13 @@ BouncingBalls(WINDOW *win)
 	y3 = bounce(y3, &yd3, h);
 
 	set_colors(win, 11, COLOR_RED, COLOR_BLUE);
-	mvwaddch(win, y1, x1, 'O');
+	MvWAddCh(win, y1, x1, 'O');
 
 	set_colors(win, 12, COLOR_BLUE, COLOR_RED);
-	mvwaddch(win, y2, x2, '*');
+	MvWAddCh(win, y2, x2, '*');
 
 	set_colors(win, 13, COLOR_YELLOW, COLOR_WHITE);
-	mvwaddch(win, y3, x3, '@');
+	MvWAddCh(win, y3, x3, '@');
 
 	wmove(win, 0, 0);
 	wrefresh(win);
@@ -251,7 +251,7 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	for (i = 0; i < 5000; ++i) {
 	    x = rand() % (width - 2) + 1;
 	    y = rand() % (height - 2) + 1;
-	    mvwaddch(win, y, x, c);
+	    MvWAddCh(win, y, x, c);
 	    wrefresh(win);
 	    nodelay(win, TRUE);
 	    if (wgetch(win) != ERR)
@@ -276,7 +276,7 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	use_colors(win, 4, A_BOLD);
 	i = 0;
 	while (*AusMap[i]) {
-	    mvwaddstr(win, i + 1, 8, AusMap[i]);
+	    MvWAddStr(win, i + 1, 8, AusMap[i]);
 	    wrefresh(win);
 	    delay_output(50);
 	    ++i;
@@ -284,7 +284,7 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 
 	set_colors(win, 5, COLOR_BLUE, COLOR_WHITE);
 	use_colors(win, 5, A_BLINK);
-	mvwaddstr(win, height - 2, 6, " PDCurses 2.1 for DOS, OS/2 and Unix");
+	MvWAddStr(win, height - 2, 6, " PDCurses 2.1 for DOS, OS/2 and Unix");
 	wrefresh(win);
 
 	/* Draw running messages */
@@ -300,9 +300,9 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	    }
 
 	    if (i < w)
-		mvwaddnstr(win, height / 2, w - i, buffer, i);
+		(void) mvwaddnstr(win, height / 2, w - i, buffer, i);
 	    else
-		mvwaddnstr(win, height / 2, 1, buffer, w);
+		(void) mvwaddnstr(win, height / 2, 1, buffer, w);
 
 	    wrefresh(win);
 	    nodelay(win, TRUE);
@@ -319,20 +319,21 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	j = 0;
 	/*  Draw running As across in RED */
 	set_colors(win, 7, COLOR_RED, COLOR_GREEN);
+	memset(save, ' ', sizeof(save));
 	for (i = 2; i < width - 4; ++i) {
-	    k = mvwinch(win, 4, i);
+	    k = (int) mvwinch(win, 4, i);
 	    if (k == ERR)
 		break;
-	    save[j++] = c = k;
+	    save[j++] = c = (chtype) k;
 	    c &= A_CHARTEXT;
-	    mvwaddch(win, 4, i, c);
+	    MvWAddCh(win, 4, i, c);
 	}
 	wrefresh(win);
 
 	/* Put a message up wait for a key */
 	i = height - 2;
 	use_colors(win, 5, A_NORMAL);
-	mvwaddstr(win, i, 5, " Type a key to continue or 'Q' to quit ");
+	MvWAddStr(win, i, 5, " Type a key to continue or 'Q' to quit ");
 	wrefresh(win);
 
 	if (WaitForUser(win) == 1)
@@ -340,14 +341,14 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 
 	j = 0;			/* Restore the old line */
 	for (i = 2; i < width - 4; ++i)
-	    mvwaddch(win, 4, i, save[j++]);
+	    MvWAddCh(win, 4, i, save[j++]);
 	wrefresh(win);
 
 	BouncingBalls(win);
 	/* Put a message up wait for a key */
 	i = height - 2;
 	use_colors(win, 5, A_NORMAL);
-	mvwaddstr(win, i, 5, " Type a key to continue or 'Q' to quit ");
+	MvWAddStr(win, i, 5, " Type a key to continue or 'Q' to quit ");
 	wrefresh(win);
 	if (WaitForUser(win) == 1)
 	    break;

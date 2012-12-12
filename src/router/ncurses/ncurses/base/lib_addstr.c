@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -44,7 +44,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_addstr.c,v 1.46 2006/05/27 19:22:19 tom Exp $")
+MODULE_ID("$Id: lib_addstr.c,v 1.51 2010/12/19 01:22:58 tom Exp $")
 
 NCURSES_EXPORT(int)
 waddnstr(WINDOW *win, const char *astr, int n)
@@ -52,7 +52,7 @@ waddnstr(WINDOW *win, const char *astr, int n)
     const char *str = astr;
     int code = ERR;
 
-    T((T_CALLED("waddnstr(%p,%s,%d)"), win, _nc_visbufn(astr, n), n));
+    T((T_CALLED("waddnstr(%p,%s,%d)"), (void *) win, _nc_visbufn(astr, n), n));
 
     if (win && (str != 0)) {
 	TR(TRACE_VIRTPUT | TRACE_ATTRS,
@@ -80,17 +80,18 @@ waddnstr(WINDOW *win, const char *astr, int n)
 NCURSES_EXPORT(int)
 waddchnstr(WINDOW *win, const chtype *astr, int n)
 {
-    NCURSES_SIZE_T y = win->_cury;
-    NCURSES_SIZE_T x = win->_curx;
+    NCURSES_SIZE_T y, x;
     int code = OK;
     int i;
     struct ldat *line;
 
-    T((T_CALLED("waddchnstr(%p,%p,%d)"), win, astr, n));
+    T((T_CALLED("waddchnstr(%p,%p,%d)"), (void *) win, (const void *) astr, n));
 
     if (!win)
 	returnCode(ERR);
 
+    y = win->_cury;
+    x = win->_curx;
     if (n < 0) {
 	const chtype *str;
 	n = 0;
@@ -106,7 +107,7 @@ waddchnstr(WINDOW *win, const chtype *astr, int n)
     for (i = 0; i < n && ChCharOf(astr[i]) != '\0'; ++i) {
 	SetChar2(line->text[i + x], astr[i]);
     }
-    CHANGED_RANGE(line, x, x + n - 1);
+    CHANGED_RANGE(line, x, (NCURSES_SIZE_T) (x + n - 1));
 
     _nc_synchook(win);
     returnCode(code);
@@ -128,17 +129,22 @@ NCURSES_EXPORT(int)
 wadd_wchnstr(WINDOW *win, const cchar_t *astr, int n)
 {
     static const NCURSES_CH_T blank = NewChar(BLANK_TEXT);
-    NCURSES_SIZE_T y = win->_cury;
-    NCURSES_SIZE_T x = win->_curx;
+    NCURSES_SIZE_T y;
+    NCURSES_SIZE_T x;
     int code = OK;
     struct ldat *line;
     int i, j, start, len, end;
 
-    T((T_CALLED("wadd_wchnstr(%p,%s,%d)"), win, _nc_viscbuf(astr, n), n));
+    T((T_CALLED("wadd_wchnstr(%p,%s,%d)"),
+       (void *) win,
+       _nc_viscbuf(astr, n),
+       n));
 
     if (!win)
 	returnCode(ERR);
 
+    y = win->_cury;
+    x = win->_curx;
     if (n < 0) {
 	n = _nc_wchstrlen(astr);
     }
@@ -187,7 +193,7 @@ wadd_wchnstr(WINDOW *win, const cchar_t *astr, int n)
 		    SetWidecExt(line->text[x + j], j);
 		}
 	    }
-	    x += len;
+	    x = (NCURSES_SIZE_T) (x + len);
 	    end += len - 1;
 	} else {
 	    break;
@@ -214,7 +220,7 @@ waddnwstr(WINDOW *win, const wchar_t *str, int n)
 {
     int code = ERR;
 
-    T((T_CALLED("waddnwstr(%p,%s,%d)"), win, _nc_viswbufn(str, n), n));
+    T((T_CALLED("waddnwstr(%p,%s,%d)"), (void *) win, _nc_viswbufn(str, n), n));
 
     if (win && (str != 0)) {
 	TR(TRACE_VIRTPUT | TRACE_ATTRS,

@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <!-- 
   ****************************************************************************
-  * Copyright (c) 1998-2003,2006 Free Software Foundation, Inc.              *
+  * Copyright (c) 1998-2007,2010 Free Software Foundation, Inc.              *
   *                                                                          *
   * Permission is hereby granted, free of charge, to any person obtaining a  *
   * copy of this software and associated documentation files (the            *
@@ -27,20 +27,20 @@
   * sale, use or other dealings in this Software without prior written       *
   * authorization.                                                           *
   ****************************************************************************
-  * @Id: term.7,v 1.15 2006/02/25 21:47:06 tom Exp @
+  * @Id: term.7,v 1.22 2010/12/04 18:41:07 tom Exp @
 -->
 <HTML>
 <HEAD>
-<TITLE>TERM 7</TITLE>
+<TITLE>term 7</TITLE>
 <link rev=made href="mailto:bug-ncurses@gnu.org">
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 </HEAD>
 <BODY>
-<H1>TERM 7</H1>
+<H1>term 7</H1>
 <HR>
 <PRE>
 <!-- Manpage converted by man2html 3.0.1 -->
-<STRONG><A HREF="TERM.7.html">TERM(7)</A></STRONG>                                                         <STRONG><A HREF="TERM.7.html">TERM(7)</A></STRONG>
+<STRONG><A HREF="term.7.html">term(7)</A></STRONG>                                                         <STRONG><A HREF="term.7.html">term(7)</A></STRONG>
 
 
 
@@ -59,7 +59,7 @@
        mailer.
 
        A  default  <STRONG>TERM</STRONG>  value will be set on a per-line basis by
-       either <STRONG>/etc/inittab</STRONG> (Linux and  System-V-like  UNIXes)  or
+       either  <STRONG>/etc/inittab</STRONG>  (e.g.,  System-V-like   UNIXes)   or
        <STRONG>/etc/ttys</STRONG>  (BSD  UNIXes).  This will nearly always suffice
        for workstation and microcomputer consoles.
 
@@ -98,12 +98,12 @@
        from your shell.  These capability files are in  a  binary
        format optimized for retrieval speed (unlike the old text-
        based <STRONG>termcap</STRONG> format they replace); to examine  an  entry,
-       you  must  use  the <STRONG><A HREF="infocmp.1.html">infocmp(1)</A></STRONG> command.  Invoke it as fol-
+       you  must  use the <STRONG><A HREF="infocmp.1m.html">infocmp(1m)</A></STRONG> command.  Invoke it as fol-
        lows:
 
-            infocmp <EM>entry-name</EM>
+            infocmp <EM>entry</EM><STRONG>_</STRONG><EM>name</EM>
 
-       where <EM>entry-name</EM> is the name of the type you wish to exam-
+       where <EM>entry</EM><STRONG>_</STRONG><EM>name</EM> is the name of the type you wish to exam-
        ine  (and the name of its capability file the subdirectory
        of /usr/share/terminfo named for its first letter).   This
        command  dumps  a  capability  file  in  the  text  format
@@ -152,16 +152,16 @@
        thus <STRONG>vt100</STRONG>, <STRONG>hp2621</STRONG>, <STRONG>wy50</STRONG>.
 
        The root name for a PC-Unix console type should be the  OS
-       name,  i.e.  <STRONG>linux</STRONG>, <STRONG>bsdos</STRONG>, <STRONG>freebsd</STRONG>, <STRONG>netbsd</STRONG>.  It should <EM>not</EM>
+       name,  i.e., <STRONG>linux</STRONG>, <STRONG>bsdos</STRONG>, <STRONG>freebsd</STRONG>, <STRONG>netbsd</STRONG>.  It should <EM>not</EM>
        be <STRONG>console</STRONG> or any other generic that might cause confusion
        in  a  multi-platform environment!  If a model number fol-
        lows, it should indicate either the OS  release  level  or
        the console driver release level.
 
-       The root name for a terminal emulator (assuming it doesn't
-       fit one of the standard ANSI or vt100 types) should be the
-       program  name or a readily recognizable abbreviation of it
-       (i.e. <STRONG>versaterm</STRONG>, <STRONG>ctrm</STRONG>).
+       The  root  name  for a terminal emulator (assuming it does
+       not fit one of the standard ANSI or vt100 types) should be
+       the program name or a readily recognizable abbreviation of
+       it (i.e., <STRONG>versaterm</STRONG>, <STRONG>ctrm</STRONG>).
 
        Following the root name, you may add any reasonable number
        of hyphen-separated feature suffixes.
@@ -240,7 +240,7 @@
 
 
 
-                                                                <STRONG><A HREF="TERM.7.html">TERM(7)</A></STRONG>
+                                                                <STRONG><A HREF="term.7.html">term(7)</A></STRONG>
 </PRE>
 <HR>
 <ADDRESS>

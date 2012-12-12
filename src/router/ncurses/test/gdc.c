@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -33,7 +33,7 @@
  * modified 10-18-89 for curses (jrl)
  * 10-18-89 added signal handling
  *
- * $Id: gdc.c,v 1.28 2006/05/20 15:37:44 tom Exp $
+ * $Id: gdc.c,v 1.34 2010/11/13 21:01:23 tom Exp $
  */
 
 #include <test.priv.h>
@@ -78,21 +78,22 @@ drawbox(bool scrolling)
     int n;
 
     if (hascolor)
-	attrset(COLOR_PAIR(PAIR_FRAMES));
+	(void) attrset(COLOR_PAIR(PAIR_FRAMES));
 
-    mvaddch(YBASE - 1, XBASE - 1, ACS_ULCORNER);
+    MvAddCh(YBASE - 1, XBASE - 1, ACS_ULCORNER);
     hline(ACS_HLINE, XLENGTH);
-    mvaddch(YBASE - 1, XBASE + XLENGTH, ACS_URCORNER);
+    MvAddCh(YBASE - 1, XBASE + XLENGTH, ACS_URCORNER);
 
-    mvaddch(YBASE + YDEPTH, XBASE - 1, ACS_LLCORNER);
-    mvinchnstr(YBASE + YDEPTH, XBASE, bottom, XLENGTH);
-    for (n = 0; n < XLENGTH; n++) {
-	if (!scrolling)
-	    bottom[n] &= ~A_COLOR;
-	bottom[n] = ACS_HLINE | (bottom[n] & (A_ATTRIBUTES | A_COLOR));
+    MvAddCh(YBASE + YDEPTH, XBASE - 1, ACS_LLCORNER);
+    if ((mvinchnstr(YBASE + YDEPTH, XBASE, bottom, XLENGTH)) != ERR) {
+	for (n = 0; n < XLENGTH; n++) {
+	    if (!scrolling)
+		bottom[n] &= ~A_COLOR;
+	    bottom[n] = ACS_HLINE | (bottom[n] & (A_ATTRIBUTES | A_COLOR));
+	}
+	(void) mvaddchnstr(YBASE + YDEPTH, XBASE, bottom, XLENGTH);
     }
-    mvaddchnstr(YBASE + YDEPTH, XBASE, bottom, XLENGTH);
-    mvaddch(YBASE + YDEPTH, XBASE + XLENGTH, ACS_LRCORNER);
+    MvAddCh(YBASE + YDEPTH, XBASE + XLENGTH, ACS_LRCORNER);
 
     move(YBASE, XBASE - 1);
     vline(ACS_VLINE, YDEPTH);
@@ -101,7 +102,7 @@ drawbox(bool scrolling)
     vline(ACS_VLINE, YDEPTH);
 
     if (hascolor)
-	attrset(COLOR_PAIR(PAIR_OTHERS));
+	(void) attrset(COLOR_PAIR(PAIR_OTHERS));
 }
 
 static void
@@ -171,7 +172,7 @@ main(int argc, char *argv[])
 
     CATCHALL(sighndl);
 
-    while ((k = getopt(argc, argv, "sn")) != EOF) {
+    while ((k = getopt(argc, argv, "sn")) != -1) {
 	switch (k) {
 	case 's':
 	    scrol = TRUE;
@@ -186,6 +187,7 @@ main(int argc, char *argv[])
     }
     if (optind < argc) {
 	count = atoi(argv[optind++]);
+	assert(count >= 0);
     }
     if (optind < argc)
 	usage();
@@ -209,7 +211,7 @@ main(int argc, char *argv[])
     hascolor = has_colors();
 
     if (hascolor) {
-	int bg = COLOR_BLACK;
+	short bg = COLOR_BLACK;
 	start_color();
 #if HAVE_USE_DEFAULT_COLORS
 	if (use_default_colors() == OK)
@@ -218,7 +220,7 @@ main(int argc, char *argv[])
 	init_pair(PAIR_DIGITS, COLOR_BLACK, COLOR_RED);
 	init_pair(PAIR_OTHERS, COLOR_RED, bg);
 	init_pair(PAIR_FRAMES, COLOR_WHITE, bg);
-	attrset(COLOR_PAIR(PAIR_OTHERS));
+	(void) attrset(COLOR_PAIR(PAIR_OTHERS));
     }
 
   restart:
@@ -293,7 +295,7 @@ main(int argc, char *argv[])
 	/* this depends on the detailed format of ctime(3) */
 	(void) strcpy(buf, ctime(&now));
 	(void) strcpy(buf + 10, buf + 19);
-	mvaddstr(16, 30, buf);
+	MvAddStr(16, 30, buf);
 
 	move(6, 0);
 	drawbox(FALSE);
@@ -333,7 +335,7 @@ main(int argc, char *argv[])
 	    goto restart;
 	case ERR:
 	    if (sigtermed) {
-		standend();
+		(void) standend();
 		endwin();
 		fprintf(stderr, "gdc terminated by signal %d\n", sigtermed);
 		ExitProgram(EXIT_FAILURE);
@@ -343,7 +345,7 @@ main(int argc, char *argv[])
 	    continue;
 	}
     } while (--count);
-    standend();
+    (void) standend();
     endwin();
     ExitProgram(EXIT_SUCCESS);
 }
