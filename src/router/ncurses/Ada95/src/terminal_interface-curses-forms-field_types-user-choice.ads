@@ -7,7 +7,7 @@
 --                                 S P E C                                  --
 --                                                                          --
 ------------------------------------------------------------------------------
--- Copyright (c) 1998 Free Software Foundation, Inc.                        --
+-- Copyright (c) 1998-2008,2011 Free Software Foundation, Inc.              --
 --                                                                          --
 -- Permission is hereby granted, free of charge, to any person obtaining a  --
 -- copy of this software and associated documentation files (the            --
@@ -35,7 +35,8 @@
 ------------------------------------------------------------------------------
 --  Author:  Juergen Pfeifer, 1996
 --  Version Control:
---  $Revision: 1.11 $
+--  $Revision: 1.14 $
+--  $Date: 2011/03/19 12:27:47 $
 --  Binding Version 01.00
 ------------------------------------------------------------------------------
 with Interfaces.C;
@@ -44,7 +45,6 @@ package Terminal_Interface.Curses.Forms.Field_Types.User.Choice is
    pragma Preelaborate
      (Terminal_Interface.Curses.Forms.Field_Types.User.Choice);
 
-   use type Interfaces.C.int;
    subtype C_Int is Interfaces.C.int;
 
    type User_Defined_Field_Type_With_Choice is abstract new
@@ -75,22 +75,20 @@ package Terminal_Interface.Curses.Forms.Field_Types.User.Choice is
    --  | Private Part.
    --  |
 private
-   use type Interfaces.C.int;
-
    function C_Generic_Choice return C_Field_Type;
 
    function Generic_Next (Fld : Field;
-                          Usr : System.Address) return C_Int;
+                          Usr : System.Address) return Curses_Bool;
    pragma Convention (C, Generic_Next);
    --  This is the generic next Choice_Function for the low-level fieldtype
-   --  representing all the User_Defined_Field_Type derivates. It routes
+   --  representing all the User_Defined_Field_Type derivatives. It routes
    --  the call to the Next implementation for the type.
 
    function Generic_Prev (Fld : Field;
-                          Usr : System.Address) return C_Int;
+                          Usr : System.Address) return Curses_Bool;
    pragma Convention (C, Generic_Prev);
    --  This is the generic prev Choice_Function for the low-level fieldtype
-   --  representing all the User_Defined_Field_Type derivates. It routes
+   --  representing all the User_Defined_Field_Type derivatives. It routes
    --  the call to the Previous implementation for the type.
 
 end Terminal_Interface.Curses.Forms.Field_Types.User.Choice;

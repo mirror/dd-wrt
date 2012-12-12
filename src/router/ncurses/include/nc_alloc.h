@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -27,9 +27,9 @@
  ****************************************************************************/
 
 /****************************************************************************
- *  Author: Thomas E. Dickey <dickey@clark.net> 1996,1997                   *
+ *  Author: Thomas E. Dickey                    1996-on                     *
  ****************************************************************************/
-/* $Id: nc_alloc.h,v 1.13 2005/01/16 00:27:35 tom Exp $ */
+/* $Id: nc_alloc.h,v 1.18 2010/11/20 22:59:49 tom Exp $ */
 
 #ifndef NC_ALLOC_included
 #define NC_ALLOC_included 1
@@ -38,21 +38,23 @@
 extern "C" {
 #endif
 
-#if HAVE_LIBDMALLOC
+#if defined(HAVE_LIBDMALLOC) && HAVE_LIBDMALLOC
+#include <string.h>
+#undef strndup		/* workaround for #define in GLIBC 2.7 */
 #include <dmalloc.h>    /* Gray Watson's library */
 #else
 #undef  HAVE_LIBDMALLOC
 #define HAVE_LIBDMALLOC 0
 #endif
 
-#if HAVE_LIBDBMALLOC
+#if defined(HAVE_LIBDBMALLOC) && HAVE_LIBDBMALLOC
 #include <dbmalloc.h>   /* Conor Cahill's library */
 #else
 #undef  HAVE_LIBDBMALLOC
 #define HAVE_LIBDBMALLOC 0
 #endif
 
-#if HAVE_LIBMPATROL
+#if defined(HAVE_LIBMPATROL) && HAVE_LIBMPATROL
 #include <mpatrol.h>    /* Memory-Patrol library */
 #else
 #undef  HAVE_LIBMPATROL
@@ -67,10 +69,19 @@ extern "C" {
 #define HAVE_NC_FREEALL 1
 struct termtype;
 extern NCURSES_EXPORT(void) _nc_free_and_exit(int) GCC_NORETURN;
+extern NCURSES_EXPORT(void) _nc_free_tinfo(int) GCC_NORETURN;
+extern NCURSES_EXPORT(void) _nc_free_tic(int) GCC_NORETURN;
 extern NCURSES_EXPORT(void) _nc_free_tparm(void);
 extern NCURSES_EXPORT(void) _nc_leaks_dump_entry(void);
-#define ExitProgram(code) _nc_free_and_exit(code)
+extern NCURSES_EXPORT(void) _nc_leaks_tic(void);
+
+#if NCURSES_SP_FUNCS
+extern NCURSES_EXPORT(void) NCURSES_SP_NAME(_nc_free_and_exit)(SCREEN*, int) GCC_NORETURN;
 #endif
+
+#define ExitProgram(code) _nc_free_and_exit(code)
+
+#endif /* NO_LEAKS, etc */
 
 #ifndef HAVE_NC_FREEALL
 #define HAVE_NC_FREEALL 0
@@ -86,6 +97,9 @@ extern NCURSES_EXPORT(void *) _nc_doalloc(void *, size_t);
 #define strdup _nc_strdup
 extern NCURSES_EXPORT(char *) _nc_strdup(const char *);
 #endif
+
+/* entries.c */
+extern NCURSES_EXPORT(void) _nc_leaks_tinfo(void);
 
 #define typeMalloc(type,elts) (type *)malloc((elts)*sizeof(type))
 #define typeCalloc(type,elts) (type *)calloc((elts),sizeof(type))

@@ -1,6 +1,6 @@
 // * This makes emacs happy -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2003,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2007,2008 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -31,7 +31,7 @@
  *   Author: Juergen Pfeifer, 1997                                          *
  ****************************************************************************/
 
-// $Id: etip.h.in,v 1.32 2005/08/06 19:55:57 tom Exp $
+// $Id: etip.h.in,v 1.37 2008/08/30 19:27:32 tom Exp $
 
 #ifndef NCURSES_ETIP_H_incl
 #define NCURSES_ETIP_H_incl 1
@@ -49,8 +49,8 @@
 #define HAVE_GPP_BUILTIN_H 0
 #endif
 
-#ifndef HAVE_STRSTREAM_H
-#define HAVE_STRSTREAM_H 0
+#ifndef HAVE_IOSTREAM
+#define HAVE_IOSTREAM 0
 #endif
 
 #ifndef HAVE_TYPEINFO
@@ -77,12 +77,8 @@
 #define CPP_HAS_STATIC_CAST 0	// workaround for g++ 2.95.3
 #endif
 
-#ifndef USE_STRSTREAM_VSCAN
-#define USE_STRSTREAM_VSCAN 0
-#endif
-
-#ifndef USE_STRSTREAM_VSCAN_CAST
-#define USE_STRSTREAM_VSCAN_CAST 0
+#ifndef IOSTREAM_NAMESPACE
+#define IOSTREAM_NAMESPACE 0
 #endif
 
 #ifdef __GNUG__
@@ -335,30 +331,48 @@ public:
 };
 
 #if !((defined(__GNUG__) && defined(__EXCEPTIONS)) || defined(__SUNPRO_CC))
-#  include <iostream.h>
+#  if HAVE_IOSTREAM
+#     include <iostream>
+#     if IOSTREAM_NAMESPACE
+using std::cerr;
+using std::endl;
+#     endif
+#  else
+#     include <iostream.h>
+#  endif
    extern "C" void exit(int);
 #endif
 
 inline void THROW(const NCursesException *e) {
 #if defined(__GNUG__) && defined(__EXCEPTIONS)
 #  if ((__GNUG__ <= 2) && (__GNUC_MINOR__ < 8))
-      (*lib_error_handler)(e?e->classname():"",e?e->message:"");
+      (*lib_error_handler)(e ? e->classname() : "", e ? e->message : "");
 #else
-      throw *e;
+#define CPP_HAS_TRY_CATCH 1
 #endif
 #elif defined(__SUNPRO_CC)
 #  if !defined(__SUNPRO_CC_COMPAT) || (__SUNPRO_CC_COMPAT < 5)
   genericerror(1, ((e != 0) ? (char *)(e->message) : ""));
 #else
-  throw *e;
+#define CPP_HAS_TRY_CATCH 1
 #endif
 #else
   if (e)
     cerr << e->message << endl;
   exit(0);
 #endif
-}
 
-#define THROWS(s)
+#ifndef CPP_HAS_TRY_CATCH
+#define CPP_HAS_TRY_CATCH 0
+#define NCURSES_CPP_TRY		/* nothing */
+#define NCURSES_CPP_CATCH(e)	if (false)
+#define THROWS(s)		/* nothing */
+#elif CPP_HAS_TRY_CATCH
+  throw *e;
+#define NCURSES_CPP_TRY		try
+#define NCURSES_CPP_CATCH(e)	catch(e)
+#define THROWS(s)		throw(s)
+#endif
+}
 
 #endif /* NCURSES_ETIP_H_incl */

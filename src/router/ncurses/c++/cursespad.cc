@@ -1,6 +1,6 @@
 // * this is for making emacs happy: -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2003,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2007,2008 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -33,12 +33,10 @@
 
 #include "internal.h"
 
-#include <stdio.h>
+#include <etip.h>
+#include <cursesw.h>
 
-#include "etip.h"
-#include "cursesw.h"
-
-MODULE_ID("$Id: cursespad.cc,v 1.11 2005/07/23 20:51:23 tom Exp $")
+MODULE_ID("$Id: cursespad.cc,v 1.13 2008/08/04 18:59:22 tom Exp $")
 
 NCursesPad::NCursesPad(int nlines, int ncols)
   : NCursesWindow(),
@@ -214,6 +212,7 @@ void NCursesPad::setSubWindow(NCursesWindow& sub)
 {
   if (static_cast<NCursesWindow*>(0) == viewWin)
     err_handler("Pad has no viewport");
+  assert(viewWin != 0);
   if (!viewWin->isDescendant(sub))
     THROW(new NCursesException("NCursesFramePad", E_SYSTEM_ERROR));
   viewSub = &sub;

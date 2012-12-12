@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -33,6 +33,22 @@
  ****************************************************************************/
 
 /*
+ * Notes:
+ * The initial adaptation from 4.4BSD Lite sources in September 1995 used 686
+ * lines from that version, and made changes/additions for 150 lines.  There
+ * was no reformatting, so with/without ignoring whitespace, the amount of
+ * change is the same.
+ *
+ * Comparing with current (2009) source, excluding this comment:
+ * a) 209 lines match identically to the 4.4BSD Lite sources, with 771 lines
+ *    changed/added.
+ * a) Ignoring whitespace, the current version still uses 516 lines from the
+ *    4.4BSD Lite sources, with 402 lines changed/added.
+ *
+ * Raymond's original comment on this follows...
+ */
+
+/*
  * tset.c - terminal initialization utility
  *
  * This code was mostly swiped from 4.4BSD tset, with some obsolescent
@@ -52,11 +68,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -73,6 +85,7 @@
  * SUCH DAMAGE.
  */
 
+#define USE_LIBTINFO
 #define __INTERNAL_CAPS_VISIBLE	/* we need to see has_hardware_tabs */
 #include <progs.priv.h>
 
@@ -88,9 +101,12 @@
 char *ttyname(int fd);
 #endif
 
-/* this is just to stifle a missing-prototype warning */
-#ifdef linux
-# include <sys/ioctl.h>
+#if HAVE_SIZECHANGE
+# if !defined(sun) || !TERMIOS
+#  if HAVE_SYS_IOCTL_H
+#   include <sys/ioctl.h>
+#  endif
+# endif
 #endif
 
 #if NEED_PTEM_H
@@ -103,9 +119,31 @@ char *ttyname(int fd);
 #include <dump_entry.h>
 #include <transform.h>
 
-MODULE_ID("$Id: tset.c,v 1.67 2006/09/16 17:51:10 tom Exp $")
+MODULE_ID("$Id: tset.c,v 1.82 2010/05/01 21:42:46 tom Exp $")
 
+/*
+ * SCO defines TIOCGSIZE and the corresponding struct.  Other systems (SunOS,
+ * Solaris, IRIX) define TIOCGWINSZ and struct winsize.
+ */
+#ifdef TIOCGSIZE
+# define IOCTL_GET_WINSIZE TIOCGSIZE
+# define IOCTL_SET_WINSIZE TIOCSSIZE
+# define STRUCT_WINSIZE struct ttysize
+# define WINSIZE_ROWS(n) n.ts_lines
+# define WINSIZE_COLS(n) n.ts_cols
+#else
+# ifdef TIOCGWINSZ
+#  define IOCTL_GET_WINSIZE TIOCGWINSZ
+#  define IOCTL_SET_WINSIZE TIOCSWINSZ
+#  define STRUCT_WINSIZE struct winsize
+#  define WINSIZE_ROWS(n) n.ws_row
+#  define WINSIZE_COLS(n) n.ws_col
+# endif
+#endif
+
+#ifndef environ
 extern char **environ;
+#endif
 
 #undef CTRL
 #define CTRL(x)	((x) & 0x1f)
@@ -167,7 +205,7 @@ failed(const char *msg)
     char temp[BUFSIZ];
     unsigned len = strlen(_nc_progname) + 2;
 
-    if (len < sizeof(temp) - 12) {
+    if ((int) len < (int) sizeof(temp) - 12) {
 	strcpy(temp, _nc_progname);
 	strcat(temp, ": ");
     } else {
@@ -361,9 +399,13 @@ add_mapping(const char *port, char *arg)
     char *base = 0;
 
     copy = strdup(arg);
-    mapp = (MAP *) malloc(sizeof(MAP));
+    mapp = typeMalloc(MAP, 1);
     if (copy == 0 || mapp == 0)
 	failed("malloc");
+
+    assert(copy != 0);
+    assert(mapp != 0);
+
     mapp->next = 0;
     if (maplist == 0)
 	cur = maplist = mapp;
@@ -439,11 +481,15 @@ add_mapping(const char *port, char *arg)
 	mapp->conditional = ~mapp->conditional & (EQ | GT | LT);
 
     /* If user specified a port with an option flag, set it. */
-  done:if (port) {
-	if (mapp->porttype)
-	  badmopt:err("illegal -m option format: %s", copy);
+  done:
+    if (port) {
+	if (mapp->porttype) {
+	  badmopt:
+	    err("illegal -m option format: %s", copy);
+	}
 	mapp->porttype = port;
     }
+    free(copy);
 #ifdef MAPDEBUG
     (void) printf("port: %s\n", mapp->porttype ? mapp->porttype : "ANY");
     (void) printf("type: %s\n", mapp->type);
@@ -777,7 +823,22 @@ reset_mode(void)
 		      | OFDEL
 #endif
 #ifdef NLDLY
-		      | NLDLY | CRDLY | TABDLY | BSDLY | VTDLY | FFDLY
+		      | NLDLY
+#endif
+#ifdef CRDLY
+		      | CRDLY
+#endif
+#ifdef TABDLY
+		      | TABDLY
+#endif
+#ifdef BSDLY
+		      | BSDLY
+#endif
+#ifdef VTDLY
+		      | VTDLY
+#endif
+#ifdef FFDLY
+		      | FFDLY
 #endif
 	);
 
@@ -847,13 +908,13 @@ set_control_chars(void)
 {
 #ifdef TERMIOS
     if (DISABLED(mode.c_cc[VERASE]) || terasechar >= 0)
-	mode.c_cc[VERASE] = terasechar >= 0 ? terasechar : default_erase();
+	mode.c_cc[VERASE] = (terasechar >= 0) ? terasechar : default_erase();
 
     if (DISABLED(mode.c_cc[VINTR]) || intrchar >= 0)
-	mode.c_cc[VINTR] = intrchar >= 0 ? intrchar : CINTR;
+	mode.c_cc[VINTR] = (intrchar >= 0) ? intrchar : CINTR;
 
     if (DISABLED(mode.c_cc[VKILL]) || tkillchar >= 0)
-	mode.c_cc[VKILL] = tkillchar >= 0 ? tkillchar : CKILL;
+	mode.c_cc[VKILL] = (tkillchar >= 0) ? tkillchar : CKILL;
 #endif
 }
 
@@ -1112,24 +1173,21 @@ usage(void)
 static char
 arg_to_char(void)
 {
-    return (optarg[0] == '^' && optarg[1] != '\0')
-	? ((optarg[1] == '?') ? '\177' : CTRL(optarg[1]))
-	: optarg[0];
+    return (char) ((optarg[0] == '^' && optarg[1] != '\0')
+		   ? ((optarg[1] == '?') ? '\177' : CTRL(optarg[1]))
+		   : optarg[0]);
 }
 
 int
 main(int argc, char **argv)
 {
-#if defined(TIOCGWINSZ) && defined(TIOCSWINSZ)
-    struct winsize win;
-#endif
     int ch, noinit, noset, quiet, Sflag, sflag, showterm;
     const char *p;
     const char *ttype;
 
     obsolete(argv);
     noinit = noset = quiet = Sflag = sflag = showterm = 0;
-    while ((ch = getopt(argc, argv, "a:cd:e:Ii:k:m:np:qQSrsVw")) != EOF) {
+    while ((ch = getopt(argc, argv, "a:cd:e:Ii:k:m:np:qQSrsVw")) != -1) {
 	switch (ch) {
 	case 'c':		/* set control-chars */
 	    opt_c = TRUE;
@@ -1202,31 +1260,33 @@ main(int argc, char **argv)
     can_restore = TRUE;
     original = oldmode = mode;
 #ifdef TERMIOS
-    ospeed = cfgetospeed(&mode);
+    ospeed = (NCURSES_OSPEED) cfgetospeed(&mode);
 #else
-    ospeed = mode.sg_ospeed;
+    ospeed = (NCURSES_OSPEED) mode.sg_ospeed;
 #endif
 
-    if (!strcmp(_nc_progname, PROG_RESET)) {
+    if (same_program(_nc_progname, PROG_RESET)) {
 	isreset = TRUE;
 	reset_mode();
     }
 
-    ttype = get_termcap_entry(*argv);
+    (void) get_termcap_entry(*argv);
 
     if (!noset) {
 	tcolumns = columns;
 	tlines = lines;
 
-#if defined(TIOCGWINSZ) && defined(TIOCSWINSZ)
+#if HAVE_SIZECHANGE
 	if (opt_w) {
-	    /* Set window size */
-	    (void) ioctl(STDERR_FILENO, TIOCGWINSZ, &win);
-	    if (win.ws_row == 0 && win.ws_col == 0 &&
+	    STRUCT_WINSIZE win;
+	    /* Set window size if not set already */
+	    (void) ioctl(STDERR_FILENO, IOCTL_GET_WINSIZE, &win);
+	    if (WINSIZE_ROWS(win) == 0 &&
+		WINSIZE_COLS(win) == 0 &&
 		tlines > 0 && tcolumns > 0) {
-		win.ws_row = tlines;
-		win.ws_col = tcolumns;
-		(void) ioctl(STDERR_FILENO, TIOCSWINSZ, &win);
+		WINSIZE_ROWS(win) = tlines;
+		WINSIZE_COLS(win) = tcolumns;
+		(void) ioctl(STDERR_FILENO, IOCTL_SET_WINSIZE, &win);
 	    }
 	}
 #endif
@@ -1277,7 +1337,7 @@ main(int argc, char **argv)
 	 * environmental variable SHELL ending in "csh".
 	 */
 	if ((var = getenv("SHELL")) != 0
-	    && ((len = strlen(leaf = _nc_basename(var))) >= 3)
+	    && ((len = (int) strlen(leaf = _nc_basename(var))) >= 3)
 	    && !strcmp(leaf + len - 3, "csh"))
 	    p = "set noglob;\nsetenv TERM %s;\nunset noglob;\n";
 	else

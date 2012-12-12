@@ -7,7 +7,7 @@
 --                                 B O D Y                                  --
 --                                                                          --
 ------------------------------------------------------------------------------
--- Copyright (c) 2000-2004,2006 Free Software Foundation, Inc.              --
+-- Copyright (c) 2000-2008,2011 Free Software Foundation, Inc.              --
 --                                                                          --
 -- Permission is hereby granted, free of charge, to any person obtaining a  --
 -- copy of this software and associated documentation files (the            --
@@ -35,8 +35,8 @@
 ------------------------------------------------------------------------------
 --  Author: Eugene V. Melaragno <aldomel@ix.netcom.com> 2000
 --  Version Control
---  $Revision: 1.6 $
---  $Date: 2006/06/25 14:24:40 $
+--  $Revision: 1.8 $
+--  $Date: 2011/03/23 00:44:12 $
 --  Binding Version 01.00
 ------------------------------------------------------------------------------
 with ncurses2.util; use ncurses2.util;
@@ -121,8 +121,8 @@ procedure ncurses2.demo_pad is
          retval.seconds := 0;
          retval.microseconds := 0;
       else
-         retval.seconds := Integer (t.tv_sec);
-         retval.microseconds := Integer (t.tv_usec);
+         retval.seconds := Integer (t.all.tv_sec);
+         retval.microseconds := Integer (t.all.tv_usec);
       end if;
       return retval;
    end gettime;
@@ -592,19 +592,21 @@ procedure ncurses2.demo_pad is
 
          Update_Screen;
 
-         if timing then declare
-            s : String (1 .. 7);
-            elapsed : Long_Float;
-         begin
-            after := gettime;
-            elapsed := (Long_Float (after.seconds - before.seconds) +
-                        Long_Float (after.microseconds - before.microseconds)
-                        / 1.0e6);
-            Move_Cursor (Line => Lines - 1, Column => Columns - 20);
-            floatio.Put (s, elapsed, Aft => 3, Exp => 0);
-            Add (Str => s);
-            Refresh;
-         end;
+         if timing then
+            declare
+               s : String (1 .. 7);
+               elapsed : Long_Float;
+            begin
+               after := gettime;
+               elapsed := (Long_Float (after.seconds - before.seconds) +
+                           Long_Float (after.microseconds
+                                     - before.microseconds)
+                           / 1.0e6);
+               Move_Cursor (Line => Lines - 1, Column => Columns - 20);
+               floatio.Put (s, elapsed, Aft => 3, Exp => 0);
+               Add (Str => s);
+               Refresh;
+            end;
          end if;
 
          c := pgetc (pad);

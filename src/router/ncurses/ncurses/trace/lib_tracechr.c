@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2008,2009 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -39,35 +39,44 @@
 
 #include <ctype.h>
 
-MODULE_ID("$Id: lib_tracechr.c,v 1.12 2005/04/16 16:55:46 tom Exp $")
+MODULE_ID("$Id: lib_tracechr.c,v 1.20 2009/04/18 22:48:29 tom Exp $")
 
 #ifdef TRACE
+
 NCURSES_EXPORT(char *)
-_tracechar(int ch)
+_nc_tracechar(SCREEN *sp, int ch)
 {
-    static char result[40];
     NCURSES_CONST char *name;
+    char *MyBuffer = ((sp != 0)
+		      ? sp->tracechr_buf
+		      : _nc_globals.tracechr_buf);
 
     if (ch > KEY_MIN || ch < 0) {
-	name = keyname(ch);
+	name = safe_keyname(SP_PARM, ch);
 	if (name == 0 || *name == '\0')
 	    name = "NULL";
-	(void) sprintf(result, "'%.30s' = %#03o", name, ch);
+	(void) sprintf(MyBuffer, "'%.30s' = %#03o", name, ch);
     } else if (!is8bits(ch) || !isprint(UChar(ch))) {
 	/*
 	 * workaround for glibc bug:
 	 * sprintf changes the result from unctrl() to an empty string if it
 	 * does not correspond to a valid multibyte sequence.
 	 */
-	(void) sprintf(result, "%#03o", ch);
+	(void) sprintf(MyBuffer, "%#03o", ch);
     } else {
-	name = unctrl((chtype) ch);
+	name = safe_unctrl(SP_PARM, (chtype) ch);
 	if (name == 0 || *name == 0)
 	    name = "null";	/* shouldn't happen */
-	(void) sprintf(result, "'%.30s' = %#03o", name, ch);
+	(void) sprintf(MyBuffer, "'%.30s' = %#03o", name, ch);
     }
-    return (result);
+    return (MyBuffer);
+}
+
+NCURSES_EXPORT(char *)
+_tracechar(int ch)
+{
+    return _nc_tracechar(CURRENT_SCREEN, ch);
 }
 #else
-empty_module(_nc_lib_tracechr)
+EMPTY_MODULE(_nc_lib_tracechr)
 #endif

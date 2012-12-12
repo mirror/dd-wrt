@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2008,2009 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -40,7 +40,7 @@
  * results, use the ncurses(3) library.  On non-Intel machines, SVr4 curses is
  * just as good.
  *
- * $Id: blue.c,v 1.29 2006/05/20 15:38:18 tom Exp $
+ * $Id: blue.c,v 1.33 2009/10/24 21:03:35 tom Exp $
  */
 
 #include <test.priv.h>
@@ -173,6 +173,7 @@ deal_cards(void)
 {
     int ptr, card = 0, value, csuit, crank, suit, aces[4];
 
+    memset(aces, 0, sizeof(aces));
     for (suit = HEARTS; suit <= CLUBS; suit++) {
 	ptr = freeptr[suit];
 	grid[ptr++] = NOCARD;	/* 1st card space is blank */
@@ -299,7 +300,7 @@ play_game(void)
 		if (selection[i] != NOCARD) {
 		    move(BASEROW + (selection[i] / GRID_WIDTH) * 2 + 3,
 			 (selection[i] % GRID_WIDTH) * 5);
-		    (void) printw("   %c ", *lp++ = 'a' + i);
+		    (void) printw("   %c ", (*lp++ = (char) ('a' + i)));
 		}
 	    };
 	    *lp = '\0';
@@ -325,7 +326,9 @@ play_game(void)
 		    clrtoeol();
 		    (void) addch(' ');
 		} while
-		    (((c = getch()) < 'a' || c > 'd') && (c != 'r') && (c != 'q'));
+		    (((c = (char) getch()) < 'a' || c > 'd')
+		     && (c != 'r')
+		     && (c != 'q'));
 	    }
 
 	    for (j = 0; j < 4; j++)
@@ -352,9 +355,9 @@ play_game(void)
     }
 
     move(PROMPTROW, 0);
-    standout();
+    (void) standout();
     (void) printw("Finished deal %d - type any character to continue...", deal_number);
-    standend();
+    (void) standend();
     (void) getch();
 }
 
@@ -385,7 +388,7 @@ game_finished(int deal)
 {
     clear();
     (void) printw("You finished the game in %d deals. This is ", deal);
-    standout();
+    (void) standout();
     if (deal < 2)
 	(void) addstr("excellent");
     else if (deal < 4)
@@ -394,7 +397,7 @@ game_finished(int deal)
 	(void) addstr("average");
     else
 	(void) addstr("poor");
-    standend();
+    (void) standend();
     (void) addstr(".         ");
     refresh();
 }

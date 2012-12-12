@@ -7,7 +7,7 @@
 --                                 B O D Y                                  --
 --                                                                          --
 ------------------------------------------------------------------------------
--- Copyright (c) 2000,2006 Free Software Foundation, Inc.                   --
+-- Copyright (c) 2000-2008,2011 Free Software Foundation, Inc.              --
 --                                                                          --
 -- Permission is hereby granted, free of charge, to any person obtaining a  --
 -- copy of this software and associated documentation files (the            --
@@ -35,8 +35,8 @@
 ------------------------------------------------------------------------------
 --  Author: Eugene V. Melaragno <aldomel@ix.netcom.com> 2000
 --  Version Control
---  $Revision: 1.2 $
---  $Date: 2006/06/25 14:24:40 $
+--  $Revision: 1.5 $
+--  $Date: 2011/03/23 00:40:33 $
 --  Binding Version 01.00
 ------------------------------------------------------------------------------
 with ncurses2.util; use ncurses2.util;
@@ -50,14 +50,14 @@ with Ada.Strings.Bounded;
 
 procedure ncurses2.trace_set is
 
-   function menu_virtualize (c : Key_Code) return Menu_Request_Code;
+   function menu_virtualize (c : Key_Code) return Key_Code;
    function subset (super, sub : Trace_Attribute_Set) return Boolean;
    function trace_or (a, b : Trace_Attribute_Set) return Trace_Attribute_Set;
    function trace_num (tlevel : Trace_Attribute_Set) return String;
    function tracetrace (tlevel : Trace_Attribute_Set) return String;
-   function run_trace_menu (m : Menu) return Boolean;
+   function run_trace_menu (m : Menu; count : Integer) return Boolean;
 
-   function menu_virtualize (c : Key_Code) return Menu_Request_Code is
+   function menu_virtualize (c : Key_Code) return Key_Code is
    begin
       case c is
          when Character'Pos (newl) | Key_Exit =>
@@ -349,13 +349,13 @@ procedure ncurses2.trace_set is
       return To_String (buf);
    end tracetrace;
 
-   function run_trace_menu (m : Menu) return Boolean is
+   function run_trace_menu (m : Menu; count : Integer) return Boolean is
       i, p : Item;
       changed : Boolean;
       c, v : Key_Code;
    begin
       loop
-         changed := False;
+         changed := (count /= 0);
          c := Getchar (Get_Window (m));
          v := menu_virtualize (c);
          case Driver (m, v) is
@@ -398,6 +398,7 @@ procedure ncurses2.trace_set is
    menu_x : constant Column_Position := 8;
    ip : Item;
    m : Menu;
+   count : Integer;
    newtrace : Trace_Attribute_Set;
 begin
    Add (Line => 0, Column => 0, Str => "Interactively set trace level:");
@@ -415,9 +416,9 @@ begin
    Refresh;
 
    for n in t_tbl'Range loop
-      items_a (n) := New_Item (t_tbl (n).name.all);
+      items_a.all (n) := New_Item (t_tbl (n).name.all);
    end loop;
-   items_a (t_tbl'Last + 1) := Null_Item;
+   items_a.all (t_tbl'Last + 1) := Null_Item;
 
    m := New_Menu (items_a);
 
@@ -444,8 +445,9 @@ begin
       end if;
    end loop;
 
-   while run_trace_menu (m) loop
-      null;
+   count := 1;
+   while run_trace_menu (m, count) loop
+      count := count + 1;
    end loop;
 
    newtrace := Trace_Disable;

@@ -10,7 +10,7 @@ include(M4MACRO)dnl
 --                                 S P E C                                  --
 --                                                                          --
 ------------------------------------------------------------------------------
--- Copyright (c) 1998-2004,2006 Free Software Foundation, Inc.              --
+-- Copyright (c) 1998-2009,2011 Free Software Foundation, Inc.              --
 --                                                                          --
 -- Permission is hereby granted, free of charge, to any person obtaining a  --
 -- copy of this software and associated documentation files (the            --
@@ -38,8 +38,8 @@ include(M4MACRO)dnl
 ------------------------------------------------------------------------------
 --  Author:  Juergen Pfeifer, 1996
 --  Version Control:
---  $Revision: 1.27 $
---  $Date: 2006/06/25 14:30:22 $
+--  $Revision: 1.29 $
+--  $Date: 2011/03/19 12:35:58 $
 --  Binding Version 01.00
 ------------------------------------------------------------------------------
 include(`Mouse_Base_Defs')
@@ -49,10 +49,6 @@ package Terminal_Interface.Curses.Mouse is
    pragma Preelaborate (Terminal_Interface.Curses.Mouse);
 
    --  MANPAGE(`curs_mouse.3x')
-   --  Please note, that in ncurses-1.9.9e documentation mouse support
-   --  is still marked as experimental. So also this binding will change
-   --  if the ncurses methods change.
-   --
    --  mouse_trafo, wmouse_trafo are implemented as Transform_Coordinates
    --  in the parent package.
    --
@@ -95,20 +91,20 @@ package Terminal_Interface.Curses.Mouse is
    --  Return true if a mouse device is supported, false otherwise.
 
    procedure Register_Reportable_Event
-     (Button : in Mouse_Button;
-      State  : in Button_State;
+     (Button : Mouse_Button;
+      State  : Button_State;
       Mask   : in out Event_Mask);
    --  Stores the event described by the button and the state in the mask.
-   --  Before you call this the first time, you should init the mask
+   --  Before you call this the first time, you should initialize the mask
    --  with the Empty_Mask constant
    pragma Inline (Register_Reportable_Event);
 
    procedure Register_Reportable_Events
-     (Button : in Mouse_Button;
-      State  : in Button_States;
+     (Button : Mouse_Button;
+      State  : Button_States;
       Mask   : in out Event_Mask);
    --  Register all events described by the Button and the State bitmap.
-   --  Before you call this the first time, you should init the mask
+   --  Before you call this the first time, you should initialize the mask
    --  with the Empty_Mask constant
 
    --  ANCHOR(`mousemask()',`Start_Mouse')
@@ -121,7 +117,7 @@ package Terminal_Interface.Curses.Mouse is
    --  AKA
    pragma Inline (Start_Mouse);
 
-   procedure End_Mouse (Mask : in Event_Mask := No_Events);
+   procedure End_Mouse (Mask : Event_Mask := No_Events);
    --  Terminates the mouse, restores the specified event mask
    pragma Inline (End_Mouse);
 
@@ -130,7 +126,7 @@ package Terminal_Interface.Curses.Mouse is
    --  AKA
    pragma Inline (Get_Mouse);
 
-   procedure Get_Event (Event  : in  Mouse_Event;
+   procedure Get_Event (Event  : Mouse_Event;
                         Y      : out Line_Position;
                         X      : out Column_Position;
                         Button : out Mouse_Button;
@@ -142,7 +138,7 @@ package Terminal_Interface.Curses.Mouse is
    pragma Inline (Get_Event);
 
    --  ANCHOR(`ungetmouse()',`Unget_Mouse')
-   procedure Unget_Mouse (Event : in Mouse_Event);
+   procedure Unget_Mouse (Event : Mouse_Event);
    --  AKA
    pragma Inline (Unget_Mouse);
 

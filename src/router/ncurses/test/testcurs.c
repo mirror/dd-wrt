@@ -1,5 +1,4 @@
 /*
- *
  * This is a test program for the PDCurses screen package for IBM PC type
  * machines.
  *
@@ -7,7 +6,7 @@
  *  wrs(5/28/93) -- modified to be consistent (perform identically) with either
  *                  PDCurses or under Unix System V, R4
  *
- * $Id: testcurs.c,v 1.37 2005/12/31 20:23:09 tom Exp $
+ * $Id: testcurs.c,v 1.43 2010/11/13 21:02:28 tom Exp $
  */
 
 #include <test.priv.h>
@@ -44,14 +43,14 @@ static const COMMAND command[] =
     {"Input Test", inputTest},
     {"Output Test", outputTest}
 };
-#define MAX_OPTIONS SIZEOF(command)
+#define MAX_OPTIONS (int) SIZEOF(command)
 
 #if !HAVE_STRDUP
 #define strdup my_strdup
 static char *
 strdup(char *s)
 {
-    char *p = (char *) malloc(strlen(s) + 1);
+    char *p = typeMalloc(char, strlen(s) + 1);
     if (p)
 	strcpy(p, s);
     return (p);
@@ -70,7 +69,7 @@ main(
     int old_option = (-1);
     int new_option = 0;
     bool quit = FALSE;
-    unsigned n;
+    int n;
 
     setlocale(LC_ALL, "");
 
@@ -120,12 +119,15 @@ main(
 	    display_menu(old_option, new_option);
 	    break;
 	case KEY_UP:
-	    new_option = (new_option == 0) ? new_option : new_option - 1;
+	    new_option = ((new_option == 0)
+			  ? new_option
+			  : new_option - 1);
 	    display_menu(old_option, new_option);
 	    break;
 	case KEY_DOWN:
-	    new_option = (new_option == MAX_OPTIONS - 1) ? new_option :
-		new_option + 1;
+	    new_option = ((new_option == (MAX_OPTIONS - 1))
+			  ? new_option
+			  : new_option + 1);
 	    display_menu(old_option, new_option);
 	    break;
 	case 'Q':
@@ -162,11 +164,11 @@ Continue(WINDOW *win)
 
     save = mvwinch(win, y0, x1 - 1);
 
-    mvwaddstr(win, y0, x0, " Press any key to continue");
+    MvWAddStr(win, y0, x0, " Press any key to continue");
     wclrtoeol(win);
     getyx(win, y0, x0);
 
-    mvwaddch(win, y0, x1 - 1, save);
+    MvWAddCh(win, y0, x1 - 1, save);
 
     wmove(win, y0, x0);
     raw();
@@ -215,9 +217,9 @@ introTest(WINDOW *win)
     box(win, ACS_VLINE, ACS_HLINE);
     wrefresh(win);
     cbreak();
-    mvwaddstr(win, 1, 1,
+    MvWAddStr(win, 1, 1,
 	      "You should have rectangle in the middle of the screen");
-    mvwaddstr(win, 2, 1, "You should have heard a beep");
+    MvWAddStr(win, 2, 1, "You should have heard a beep");
     Continue(win);
     return;
 }
@@ -233,7 +235,7 @@ scrollTest(WINDOW *win)
     wclear(win);
     OldY = getmaxy(win);
     half = OldY / 2;
-    mvwprintw(win, OldY - 2, 1, Message);
+    MvWAddStr(win, OldY - 2, 1, Message);
     wrefresh(win);
     scrollok(win, TRUE);
     for (i = 1; i <= OldY; i++) {
@@ -244,9 +246,9 @@ scrollTest(WINDOW *win)
 
     werase(win);
     for (i = 1; i < OldY; i++) {
-	mvwprintw(win, i, 1, "Line %d", i);
+	MvWPrintw(win, i, 1, "Line %d", i);
     }
-    mvwprintw(win, OldY - 2, 1, "The top of the window will scroll");
+    MvWPrintw(win, OldY - 2, 1, "The top of the window will scroll");
     wmove(win, 1, 1);
     wsetscrreg(win, 0, half - 1);
     box(win, ACS_VLINE, ACS_HLINE);
@@ -260,9 +262,9 @@ scrollTest(WINDOW *win)
 
     werase(win);
     for (i = 1; i < OldY; i++) {
-	mvwprintw(win, i, 1, "Line %d", i);
+	MvWPrintw(win, i, 1, "Line %d", i);
     }
-    mvwprintw(win, 1, 1, "The bottom of the window will scroll");
+    MvWPrintw(win, 1, 1, "The bottom of the window will scroll");
     wmove(win, OldY - 2, 1);
     wsetscrreg(win, half, --OldY);
     box(win, ACS_VLINE, ACS_HLINE);
@@ -306,14 +308,14 @@ inputTest(WINDOW *win)
     wrefresh(win);
 
     nocbreak();
-    mvwaddstr(win, 2, 1, "Press some keys for 5 seconds");
-    mvwaddstr(win, 1, 1, "Pressing ^C should do nothing");
+    MvWAddStr(win, 2, 1, "Press some keys for 5 seconds");
+    MvWAddStr(win, 1, 1, "Pressing ^C should do nothing");
     wrefresh(win);
 
     werase(subWin);
     box(subWin, ACS_VLINE, ACS_HLINE);
     for (i = 0; i < 5; i++) {
-	mvwprintw(subWin, 1, 1, "Time = %d", i);
+	MvWPrintw(subWin, 1, 1, "Time = %d", i);
 	wrefresh(subWin);
 	napms(1000);
 	flushinp();
@@ -325,7 +327,7 @@ inputTest(WINDOW *win)
     wrefresh(win);
     napms(500);
 
-    mvwaddstr(win, 2, 1, "Press a key, followed by ENTER");
+    MvWAddStr(win, 2, 1, "Press a key, followed by ENTER");
     wmove(win, 9, 10);
     wrefresh(win);
     echo();
@@ -335,12 +337,12 @@ inputTest(WINDOW *win)
 
     wmove(win, 9, 10);
     wdelch(win);
-    mvwaddstr(win, 4, 1, "The character should now have been deleted");
+    MvWAddStr(win, 4, 1, "The character should now have been deleted");
     Continue(win);
 
     wclear(win);
-    mvwaddstr(win, 1, 1, "Press keys (or mouse buttons) to show their names");
-    mvwaddstr(win, 2, 1, "Press spacebar to finish");
+    MvWAddStr(win, 1, 1, "Press keys (or mouse buttons) to show their names");
+    MvWAddStr(win, 2, 1, "Press spacebar to finish");
     wrefresh(win);
 
     keypad(win, TRUE);
@@ -413,13 +415,13 @@ inputTest(WINDOW *win)
 	    "%d %[][a-zA-Z]s",
 	    "%d %[^0-9]"
 	};
-	const char *format = fmt[repeat % SIZEOF(fmt)];
+	const char *format = fmt[(unsigned) repeat % SIZEOF(fmt)];
 
 	wclear(win);
-	mvwaddstr(win, 3, 2, "The window should have moved");
-	mvwaddstr(win, 4, 2,
+	MvWAddStr(win, 3, 2, "The window should have moved");
+	MvWAddStr(win, 4, 2,
 		  "This text should have appeared without you pressing a key");
-	mvwprintw(win, 6, 2,
+	MvWPrintw(win, 6, 2,
 		  "Scanning with format \"%s\"", format);
 	mvwin(win, 2 + 2 * (repeat % 4), 1 + 2 * (repeat % 4));
 	erase();
@@ -430,7 +432,7 @@ inputTest(WINDOW *win)
 	num = 0;
 	*buffer = 0;
 	answered = mvwscanw(win, 7, 6, strdup(format), &num, buffer);
-	mvwprintw(win, 8, 6,
+	MvWPrintw(win, 8, 6,
 		  "String: %s Number: %d (%d values read)",
 		  buffer, num, answered);
 	Continue(win);
@@ -459,7 +461,7 @@ outputTest(WINDOW *win)
 
     nl();
     wclear(win);
-    mvwaddstr(win, 1, 1,
+    MvWAddStr(win, 1, 1,
 	      "You should now have a screen in the upper left corner, and this text should have wrapped");
     mvwin(win, 2, 1);
     waddstr(win, "\nThis text should be down\n");
@@ -468,17 +470,17 @@ outputTest(WINDOW *win)
 
     wclear(win);
     wattron(win, A_BOLD);
-    mvwaddstr(win, 1, 1, "A new window will appear with this text in it");
-    mvwaddstr(win, 8, 1, "Press any key to continue");
+    MvWAddStr(win, 1, 1, "A new window will appear with this text in it");
+    MvWAddStr(win, 8, 1, "Press any key to continue");
     wrefresh(win);
     wgetch(win);
 
     getbegyx(win, by, bx);
 
     if (LINES < 24 || COLS < 75) {
-	mvwaddstr(win, 5, 1,
+	MvWAddStr(win, 5, 1,
 		  "Some tests have been skipped as they require a");
-	mvwaddstr(win, 6, 1, "display of at least 24 LINES by 75 COLUMNS");
+	MvWAddStr(win, 6, 1, "display of at least 24 LINES by 75 COLUMNS");
 	Continue(win);
     } else {
 	win1 = newwin(10, 50, 14, 25);
@@ -496,7 +498,7 @@ outputTest(WINDOW *win)
 	wbkgd(win1, A_NORMAL);
 #endif
 	wclear(win1);
-	mvwaddstr(win1, 5, 1,
+	MvWAddStr(win1, 5, 1,
 		  "This text should appear; using overlay option");
 	copywin(win, win1, 0, 0, 0, 0, 9, 49, TRUE);
 
@@ -511,7 +513,7 @@ outputTest(WINDOW *win)
 
 	wclear(win1);
 	wattron(win1, A_BLINK);
-	mvwaddstr(win1, 4, 1,
+	MvWAddStr(win1, 4, 1,
 		  "This blinking text should appear in only the second window");
 	wattroff(win1, A_BLINK);
 	mvwin(win1, by, bx);
@@ -526,14 +528,14 @@ outputTest(WINDOW *win)
     clear();
     wclear(win);
     wrefresh(win);
-    mvwaddstr(win, 6, 2, "This line shouldn't appear");
-    mvwaddstr(win, 4, 2, "Only half of the next line is visible");
-    mvwaddstr(win, 5, 2, "Only half of the next line is visible");
+    MvWAddStr(win, 6, 2, "This line shouldn't appear");
+    MvWAddStr(win, 4, 2, "Only half of the next line is visible");
+    MvWAddStr(win, 5, 2, "Only half of the next line is visible");
     wmove(win, 6, 1);
     wclrtobot(win);
     wmove(win, 5, 20);
     wclrtoeol(win);
-    mvwaddstr(win, 8, 2, "This line also shouldn't appear");
+    MvWAddStr(win, 8, 2, "This line also shouldn't appear");
     wmove(win, 8, 1);
     wdeleteln(win);
     Continue(win);
@@ -548,20 +550,20 @@ outputTest(WINDOW *win)
     Continue(win);
 
 #if HAVE_WINSSTR
-    mvwinsstr(win, 6, 2, "A1B2C3D4E5");
+    (void) mvwinsstr(win, 6, 2, "A1B2C3D4E5");
     Continue(win);
 #endif
 
     wmove(win, 5, 1);
     winsertln(win);
-    mvwaddstr(win, 5, 2, "The lines below should have moved down");
+    MvWAddStr(win, 5, 2, "The lines below should have moved down");
     Continue(win);
 
     wclear(win);
     wmove(win, 2, 2);
     wprintw(win, "This is a formatted string in a window: %d %s\n", 42,
 	    "is it");
-    mvwaddstr(win, 10, 1, "Enter a string: ");
+    MvWAddStr(win, 10, 1, "Enter a string: ");
     wrefresh(win);
     noraw();
     echo();
@@ -569,21 +571,21 @@ outputTest(WINDOW *win)
     wscanw(win, "%s", Buffer);
 
     printw("This is a formatted string in stdscr: %d %s\n", 42, "is it");
-    mvaddstr(10, 1, "Enter a string: ");
+    MvAddStr(10, 1, "Enter a string: ");
     *Buffer = 0;
     scanw("%s", Buffer);
 
     if (TIGETSTR("cvvis", "vs") != 0) {
 	wclear(win);
 	curs_set(2);
-	mvwaddstr(win, 1, 1, "The cursor should appear as a block (visible)");
+	MvWAddStr(win, 1, 1, "The cursor should appear as a block (visible)");
 	Continue(win);
     }
 
     if (TIGETSTR("civis", "vi") != 0) {
 	wclear(win);
 	curs_set(0);
-	mvwaddstr(win, 1, 1,
+	MvWAddStr(win, 1, 1,
 		  "The cursor should have disappeared (invisible)");
 	Continue(win);
     }
@@ -591,13 +593,13 @@ outputTest(WINDOW *win)
     if (TIGETSTR("cnorm", "ve") != 0) {
 	wclear(win);
 	curs_set(1);
-	mvwaddstr(win, 1, 1, "The cursor should be an underline (normal)");
+	MvWAddStr(win, 1, 1, "The cursor should be an underline (normal)");
 	Continue(win);
     }
 #ifdef A_COLOR
     if (has_colors()) {
 	wclear(win);
-	mvwaddstr(win, 1, 1, "Colors should change after you press a key");
+	MvWAddStr(win, 1, 1, "Colors should change after you press a key");
 	Continue(win);
 	init_pair(1, COLOR_RED, COLOR_WHITE);
 	wrefresh(win);
@@ -607,20 +609,20 @@ outputTest(WINDOW *win)
     werase(win);
 
 #if HAVE_TERMNAME
-    mvwaddstr(win, 1, 1, "Information About Your Terminal");
-    mvwaddstr(win, 3, 1, termname());
-    mvwaddstr(win, 4, 1, longname());
+    MvWAddStr(win, 1, 1, "Information About Your Terminal");
+    MvWAddStr(win, 3, 1, termname());
+    MvWAddStr(win, 4, 1, longname());
     if (termattrs() & A_BLINK)
-	mvwaddstr(win, 5, 1, "This terminal supports blinking.");
+	MvWAddStr(win, 5, 1, "This terminal supports blinking.");
     else
-	mvwaddstr(win, 5, 1, "This terminal does NOT support blinking.");
+	MvWAddStr(win, 5, 1, "This terminal does NOT support blinking.");
 #endif
 
-    mvwaddnstr(win, 7, 5, "Have a nice day!ok", 16);
+    (void) mvwaddnstr(win, 7, 5, "Have a nice day!ok", 16);
     wrefresh(win);
 
-    mvwinnstr(win, 7, 5, Buffer, 18);
-    mvaddstr(LINES - 2, 10, Buffer);
+    (void) mvwinnstr(win, 7, 5, Buffer, 18);
+    MvAddStr(LINES - 2, 10, Buffer);
     refresh();
     Continue(win);
 }
@@ -654,13 +656,13 @@ resizeTest(WINDOW *dummy GCC_UNUSED)
 #endif
     wclear(win1);
 
-    mvwaddstr(win1, 1, 1, "The screen may now have 50 lines");
+    MvWAddStr(win1, 1, 1, "The screen may now have 50 lines");
     Continue(win1);
 
     wclear(win1);
     resetty();
 
-    mvwaddstr(win1, 1, 1, "The screen should now be reset");
+    MvWAddStr(win1, 1, 1, "The screen should now be reset");
     Continue(win1);
 
     delwin(win1);
@@ -676,37 +678,38 @@ padTest(WINDOW *dummy GCC_UNUSED)
 {
     WINDOW *pad, *spad;
 
-    pad = newpad(50, 100);
-    wattron(pad, A_REVERSE);
-    mvwaddstr(pad, 5, 2, "This is a new pad");
-    wattrset(pad, A_NORMAL);
-    mvwaddstr(pad, 8, 0,
-	      "The end of this line should be truncated here:except  now");
-    mvwaddstr(pad, 11, 1, "This line should not appear.It will now");
-    wmove(pad, 10, 1);
-    wclrtoeol(pad);
-    mvwaddstr(pad, 10, 1, " Press any key to continue");
-    prefresh(pad, 0, 0, 0, 0, 10, 45);
-    keypad(pad, TRUE);
-    raw();
-    wgetch(pad);
+    if ((pad = newpad(50, 100)) != 0) {
+	wattron(pad, A_REVERSE);
+	MvWAddStr(pad, 5, 2, "This is a new pad");
+	(void) wattrset(pad, A_NORMAL);
+	MvWAddStr(pad, 8, 0,
+		  "The end of this line should be truncated here:except  now");
+	MvWAddStr(pad, 11, 1, "This line should not appear.It will now");
+	wmove(pad, 10, 1);
+	wclrtoeol(pad);
+	MvWAddStr(pad, 10, 1, " Press any key to continue");
+	prefresh(pad, 0, 0, 0, 0, 10, 45);
+	keypad(pad, TRUE);
+	raw();
+	wgetch(pad);
 
-    spad = subpad(pad, 12, 25, 6, 52);
-    mvwaddstr(spad, 2, 2, "This is a new subpad");
-    box(spad, 0, 0);
-    prefresh(pad, 0, 0, 0, 0, 15, 75);
-    keypad(pad, TRUE);
-    raw();
-    wgetch(pad);
+	spad = subpad(pad, 12, 25, 6, 52);
+	MvWAddStr(spad, 2, 2, "This is a new subpad");
+	box(spad, 0, 0);
+	prefresh(pad, 0, 0, 0, 0, 15, 75);
+	keypad(pad, TRUE);
+	raw();
+	wgetch(pad);
 
-    mvwaddstr(pad, 35, 2, "This is displayed at line 35 in the pad");
-    mvwaddstr(pad, 40, 1, " Press any key to continue");
-    prefresh(pad, 30, 0, 0, 0, 10, 45);
-    keypad(pad, TRUE);
-    raw();
-    wgetch(pad);
+	MvWAddStr(pad, 35, 2, "This is displayed at line 35 in the pad");
+	MvWAddStr(pad, 40, 1, " Press any key to continue");
+	prefresh(pad, 30, 0, 0, 0, 10, 45);
+	keypad(pad, TRUE);
+	raw();
+	wgetch(pad);
 
-    delwin(pad);
+	delwin(pad);
+    }
 }
 
 static void
@@ -714,17 +717,21 @@ display_menu(int old_option, int new_option)
 {
     int i;
 
-    attrset(A_NORMAL);
-    mvaddstr(3, 20, "PDCurses Test Program");
+    assert((new_option >= 0) && (new_option < MAX_OPTIONS));
+
+    (void) attrset(A_NORMAL);
+    MvAddStr(3, 20, "PDCurses Test Program");
 
     for (i = 0; i < (int) MAX_OPTIONS; i++)
-	mvaddstr(5 + i, 25, command[i].text);
-    if (old_option != (-1))
-	mvaddstr(5 + old_option, 25, command[old_option].text);
-    attrset(A_REVERSE);
-    mvaddstr(5 + new_option, 25, command[new_option].text);
-    attrset(A_NORMAL);
-    mvaddstr(13, 3,
+	MvAddStr(5 + i, 25, command[i].text);
+
+    if ((old_option >= 0) && (old_option < MAX_OPTIONS))
+	MvAddStr(5 + old_option, 25, command[old_option].text);
+
+    (void) attrset(A_REVERSE);
+    MvAddStr(5 + new_option, 25, command[new_option].text);
+    (void) attrset(A_NORMAL);
+    MvAddStr(13, 3,
 	     "Use Up and Down Arrows to select - Enter to run - Q to quit");
     refresh();
 }

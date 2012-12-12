@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2002,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,41 +26,281 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: rain.c,v 1.22 2006/05/20 15:34:27 tom Exp $
+ * $Id: rain.c,v 1.38 2010/11/13 20:11:46 tom Exp $
  */
 #include <test.priv.h>
 
 /* rain 11/3/1980 EPS/CITHEP */
 
-static float ranf(void);
-static void onsig(int sig);
+#ifdef USE_PTHREADS
+#include <pthread.h>
+#endif
+
+WANT_USE_WINDOW();
+
+#define MAX_THREADS	10
+#define MAX_DROP	5
+
+struct DATA;
+
+typedef void (*DrawPart) (struct DATA *);
+
+typedef struct DATA {
+    int y, x;
+#ifdef USE_PTHREADS
+    DrawPart func;
+    int state;
+#endif
+} DATA;
+
+#ifdef USE_PTHREADS
+pthread_cond_t cond_next_drop;
+pthread_mutex_t mutex_next_drop;
+static int used_threads;
+
+typedef struct {
+    pthread_t myself;
+    long counter;
+} STATS;
+
+static STATS drop_threads[MAX_THREADS];
+#endif
+
+static void
+onsig(int n GCC_UNUSED)
+{
+    curs_set(1);
+    endwin();
+    ExitProgram(EXIT_FAILURE);
+}
+
+static double
+ranf(void)
+{
+    long r = (rand() & 077777);
+    return ((double) r / 32768.);
+}
+
+static int
+random_x(void)
+{
+    return (int) (((double) (COLS - 4) * ranf()) + 2);
+}
+
+static int
+random_y(void)
+{
+    return (int) (((double) (LINES - 4) * ranf()) + 2);
+}
 
 static int
 next_j(int j)
 {
     if (j == 0)
-	j = 4;
+	j = MAX_DROP - 1;
     else
 	--j;
     if (has_colors()) {
 	int z = (int) (3 * ranf());
-	chtype color = COLOR_PAIR(z);
+	chtype color = (chtype) COLOR_PAIR(z);
 	if (z)
 	    color |= A_BOLD;
-	attrset(color);
+	(void) attrset(color);
     }
     return j;
 }
 
-int
-main(
-	int argc GCC_UNUSED,
-	char *argv[]GCC_UNUSED)
+static void
+part1(DATA * drop)
 {
-    int x, y, j;
-    static int xpos[5], ypos[5];
-    float r;
-    float c;
+    MvAddCh(drop->y, drop->x, '.');
+}
+
+static void
+part2(DATA * drop)
+{
+    MvAddCh(drop->y, drop->x, 'o');
+}
+
+static void
+part3(DATA * drop)
+{
+    MvAddCh(drop->y, drop->x, 'O');
+}
+
+static void
+part4(DATA * drop)
+{
+    MvAddCh(drop->y - 1, drop->x, '-');
+    MvAddStr(drop->y, drop->x - 1, "|.|");
+    MvAddCh(drop->y + 1, drop->x, '-');
+}
+
+static void
+part5(DATA * drop)
+{
+    MvAddCh(drop->y - 2, drop->x, '-');
+    MvAddStr(drop->y - 1, drop->x - 1, "/ \\");
+    MvAddStr(drop->y, drop->x - 2, "| O |");
+    MvAddStr(drop->y + 1, drop->x - 1, "\\ /");
+    MvAddCh(drop->y + 2, drop->x, '-');
+}
+
+static void
+part6(DATA * drop)
+{
+    MvAddCh(drop->y - 2, drop->x, ' ');
+    MvAddStr(drop->y - 1, drop->x - 1, "   ");
+    MvAddStr(drop->y, drop->x - 2, "     ");
+    MvAddStr(drop->y + 1, drop->x - 1, "   ");
+    MvAddCh(drop->y + 2, drop->x, ' ');
+}
+
+#ifdef USE_PTHREADS
+static void
+napsome(void)
+{
+    napms(60);
+}
+
+/*
+ * This runs inside the use_window() mutex.
+ */
+static int
+really_draw(WINDOW *win, void *arg)
+{
+    DATA *data = (DATA *) arg;
+
+    (void) win;
+    next_j(data->state);
+    data->func(data);
+    refresh();
+    return OK;
+}
+
+static void
+draw_part(void (*func) (DATA *), int state, DATA * data)
+{
+    data->func = func;
+    data->state = state;
+    use_window(stdscr, really_draw, (void *) data);
+    napsome();
+}
+
+/*
+ * Tell the threads that one of them can start work on a new raindrop.
+ * They may all be busy if we're sending requests too rapidly.
+ */
+static int
+put_next_drop(void)
+{
+    pthread_cond_signal(&cond_next_drop);
+    pthread_mutex_unlock(&mutex_next_drop);
+
+    return 0;
+}
+
+/*
+ * Wait until we're assigned the task of drawing a new raindrop.
+ */
+static int
+get_next_drop(void)
+{
+    pthread_mutex_lock(&mutex_next_drop);
+    pthread_cond_wait(&cond_next_drop, &mutex_next_drop);
+
+    return TRUE;
+}
+
+static void *
+draw_drop(void *arg)
+{
+    DATA mydata;
+    int mystats;
+
+    /*
+     * Find myself in the list of threads so we can count the number of loops.
+     */
+    for (mystats = 0; mystats < MAX_THREADS; ++mystats) {
+#ifdef __MINGW32__
+	if (drop_threads[mystats].myself.p == pthread_self().p)
+#else
+	if (drop_threads[mystats].myself == pthread_self())
+#endif
+	    break;
+    }
+
+    do {
+	if (mystats < MAX_THREADS)
+	    drop_threads[mystats].counter++;
+
+	/*
+	 * Make a copy of caller's data.  We're cheating for the cases after
+	 * the first loop since we still have a pointer into the main thread
+	 * to the data which it uses for setting up this thread (but it has
+	 * been modified to use different coordinates).
+	 */
+	mydata = *(DATA *) arg;
+
+	draw_part(part1, 0, &mydata);
+	draw_part(part2, 1, &mydata);
+	draw_part(part3, 2, &mydata);
+	draw_part(part4, 3, &mydata);
+	draw_part(part5, 4, &mydata);
+	draw_part(part6, 0, &mydata);
+    } while (get_next_drop());
+
+    return NULL;
+}
+
+/*
+ * The description of pthread_create() is misleading, since it implies that
+ * threads will exit cleanly after their function returns.
+ * 
+ * Since they do not (and the number of threads is limited by system
+ * resources), make a limited number of threads, and signal any that are
+ * waiting when we want a thread past that limit.
+ */
+static int
+start_drop(DATA * data)
+{
+    int rc;
+
+    if (!used_threads) {
+	/* mutex and condition for signalling thread */
+	pthread_mutex_init(&mutex_next_drop, NULL);
+	pthread_cond_init(&cond_next_drop, NULL);
+    }
+
+    if (used_threads < MAX_THREADS) {
+	rc = pthread_create(&(drop_threads[used_threads].myself),
+			    NULL,
+			    draw_drop,
+			    data);
+	++used_threads;
+    } else {
+	rc = put_next_drop();
+    }
+    return rc;
+}
+#endif
+
+static int
+get_input(void)
+{
+    return USING_WINDOW(stdscr, wgetch);
+}
+
+int
+main(int argc GCC_UNUSED,
+     char *argv[]GCC_UNUSED)
+{
+    bool done = FALSE;
+    DATA drop;
+#ifndef USE_PTHREADS
+    DATA last[MAX_DROP];
+#endif
+    int j = 0;
 
     setlocale(LC_ALL, "");
 
@@ -74,60 +314,58 @@ main(
 	if (use_default_colors() == OK)
 	    bg = -1;
 #endif
-	init_pair(1, COLOR_BLUE, bg);
-	init_pair(2, COLOR_CYAN, bg);
+	init_pair(1, COLOR_BLUE, (short) bg);
+	init_pair(2, COLOR_CYAN, (short) bg);
     }
     nl();
     noecho();
     curs_set(0);
     timeout(0);
 
-    r = (float) (LINES - 4);
-    c = (float) (COLS - 4);
-    for (j = 5; --j >= 0;) {
-	xpos[j] = (int) (c * ranf()) + 2;
-	ypos[j] = (int) (r * ranf()) + 2;
+#ifndef USE_PTHREADS
+    for (j = MAX_DROP; --j >= 0;) {
+	last[j].x = random_x();
+	last[j].y = random_y();
     }
+    j = 0;
+#endif
 
-    for (j = 0;;) {
-	x = (int) (c * ranf()) + 2;
-	y = (int) (r * ranf()) + 2;
+    while (!done) {
+	drop.x = random_x();
+	drop.y = random_y();
 
-	mvaddch(y, x, '.');
+#ifdef USE_PTHREADS
+	if (start_drop(&drop) != 0) {
+	    beep();
+	}
+#else
+	/*
+	 * The non-threaded code draws parts of each drop on each loop.
+	 */
+	part1(&drop);
 
-	mvaddch(ypos[j], xpos[j], 'o');
-
-	j = next_j(j);
-	mvaddch(ypos[j], xpos[j], 'O');
-
-	j = next_j(j);
-	mvaddch(ypos[j] - 1, xpos[j], '-');
-	mvaddstr(ypos[j], xpos[j] - 1, "|.|");
-	mvaddch(ypos[j] + 1, xpos[j], '-');
-
-	j = next_j(j);
-	mvaddch(ypos[j] - 2, xpos[j], '-');
-	mvaddstr(ypos[j] - 1, xpos[j] - 1, "/ \\");
-	mvaddstr(ypos[j], xpos[j] - 2, "| O |");
-	mvaddstr(ypos[j] + 1, xpos[j] - 1, "\\ /");
-	mvaddch(ypos[j] + 2, xpos[j], '-');
+	part2(&last[j]);
 
 	j = next_j(j);
-	mvaddch(ypos[j] - 2, xpos[j], ' ');
-	mvaddstr(ypos[j] - 1, xpos[j] - 1, "   ");
-	mvaddstr(ypos[j], xpos[j] - 2, "     ");
-	mvaddstr(ypos[j] + 1, xpos[j] - 1, "   ");
-	mvaddch(ypos[j] + 2, xpos[j], ' ');
+	part3(&last[j]);
 
-	xpos[j] = x;
-	ypos[j] = y;
+	j = next_j(j);
+	part4(&last[j]);
 
-	switch (getch()) {
+	j = next_j(j);
+	part5(&last[j]);
+
+	j = next_j(j);
+	part6(&last[j]);
+
+	last[j] = drop;
+#endif
+
+	switch (get_input()) {
 	case ('q'):
 	case ('Q'):
-	    curs_set(1);
-	    endwin();
-	    ExitProgram(EXIT_SUCCESS);
+	    done = TRUE;
+	    break;
 	case 's':
 	    nodelay(stdscr, FALSE);
 	    break;
@@ -136,26 +374,17 @@ main(
 	    break;
 #ifdef KEY_RESIZE
 	case (KEY_RESIZE):
-	    r = (float) (LINES - 4);
-	    c = (float) (COLS - 4);
 	    break;
 #endif
 	}
 	napms(50);
     }
-}
-
-static void
-onsig(int n GCC_UNUSED)
-{
     curs_set(1);
     endwin();
-    ExitProgram(EXIT_FAILURE);
-}
-
-static float
-ranf(void)
-{
-    long r = (rand() & 077777);
-    return ((float) r / 32768.);
+#ifdef USE_PTHREADS
+    printf("Counts per thread:\n");
+    for (j = 0; j < MAX_THREADS; ++j)
+	printf("  %d:%ld\n", j, drop_threads[j].counter);
+#endif
+    ExitProgram(EXIT_SUCCESS);
 }

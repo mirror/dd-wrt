@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,7 +29,7 @@
  * This test was written by Alexander V. Lukyanov to demonstrate difference
  * between ncurses 4.1 and SVR4 curses
  *
- * $Id: firstlast.c,v 1.5 2006/04/01 19:03:18 tom Exp $
+ * $Id: firstlast.c,v 1.7 2010/05/01 19:11:55 tom Exp $
  */
 
 #include <test.priv.h>
@@ -38,12 +38,19 @@ static void
 fill(WINDOW *w, const char *str)
 {
     const char *s;
+    int x0 = -1, y0 = -1;
+    int x1, y1;
+
     for (;;) {
 	for (s = str; *s; s++) {
-	    if (waddch(w, UChar(*s)) == ERR) {
+	    getyx(w, y1, x1);
+	    if (waddch(w, UChar(*s)) == ERR
+		|| (x1 == x0 && y1 == y0)) {
 		wmove(w, 0, 0);
 		return;
 	    }
+	    x0 = x1;
+	    y0 = y1;
 	}
     }
 }
@@ -66,14 +73,14 @@ main(int argc GCC_UNUSED,
     wrefresh(large);
     wrefresh(small);
 
-    mvwaddstr(small, 5, 5, "   Test <place to change> String   ");
+    MvWAddStr(small, 5, 5, "   Test <place to change> String   ");
     wrefresh(small);
     getch();
 
     touchwin(large);
     wrefresh(large);
 
-    mvwaddstr(small, 5, 5, "   Test <***************> String   ");
+    MvWAddStr(small, 5, 5, "   Test <***************> String   ");
     wrefresh(small);
 
     /* DIFFERENCE! */

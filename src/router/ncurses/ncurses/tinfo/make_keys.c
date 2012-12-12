@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2000,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2008,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -27,7 +27,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- *  Author: Thomas E. Dickey <dickey@clark.net> 1997                        *
+ *  Author: Thomas E. Dickey                    1997-on                     *
  ****************************************************************************/
 
 /*
@@ -37,18 +37,18 @@
  */
 
 #define USE_TERMLIB 1
-#include <curses.priv.h>
+#include <build.priv.h>
 
-MODULE_ID("$Id: make_keys.c,v 1.12 2005/08/20 19:58:18 tom Exp $")
+MODULE_ID("$Id: make_keys.c,v 1.19 2010/06/05 22:08:00 tom Exp $")
 
 #include <names.c>
 
-#define UNKNOWN (SIZEOF(strnames) + SIZEOF(strfnames))
+#define UNKNOWN (unsigned) (SIZEOF(strnames) + SIZEOF(strfnames))
 
-static size_t
+static unsigned
 lookup(const char *name)
 {
-    size_t n;
+    unsigned n;
     bool found = FALSE;
     for (n = 0; strnames[n] != 0; n++) {
 	if (!strcmp(name, strnames[n])) {
@@ -71,22 +71,28 @@ static void
 make_keys(FILE *ifp, FILE *ofp)
 {
     char buffer[BUFSIZ];
-    char from[BUFSIZ];
-    char to[BUFSIZ];
-    int maxlen = 16;
+    char from[256];
+    char to[256];
+    unsigned maxlen = 16;
+    int scanned;
 
     while (fgets(buffer, sizeof(buffer), ifp) != 0) {
 	if (*buffer == '#')
 	    continue;
-	if (sscanf(buffer, "%s %s", to, from) == 2) {
-	    int code = lookup(from);
+
+	to[sizeof(to) - 1] = '\0';
+	from[sizeof(from) - 1] = '\0';
+
+	scanned = sscanf(buffer, "%255s %255s", to, from);
+	if (scanned == 2) {
+	    unsigned code = lookup(from);
 	    if (code == UNKNOWN)
 		continue;
-	    if ((int) strlen(from) > maxlen)
-		maxlen = strlen(from);
-	    fprintf(ofp, "\t{ %4d, %-*.*s },\t/* %s */\n",
+	    if (strlen(from) > maxlen)
+		maxlen = (unsigned) strlen(from);
+	    fprintf(ofp, "\t{ %4u, %-*.*s },\t/* %s */\n",
 		    code,
-		    maxlen, maxlen,
+		    (int) maxlen, (int) maxlen,
 		    to,
 		    from);
 	}
@@ -113,7 +119,7 @@ main(int argc, char *argv[])
 	"#if BROKEN_LINKER",
 	"static",
 	"#endif",
-	"struct tinfo_fkeys _nc_tinfo_fkeys[] = {",
+	"const struct tinfo_fkeys _nc_tinfo_fkeys[] = {",
 	0
     };
     static const char *suffix[] =

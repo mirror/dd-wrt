@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1999-2004,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1999-2008,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,7 +29,7 @@
 /*
  * Author: Thomas E. Dickey
  *
- * $Id: cardfile.c,v 1.28 2006/12/10 00:30:09 tom Exp $
+ * $Id: cardfile.c,v 1.38 2010/11/14 00:58:45 tom Exp $
  *
  * File format: text beginning in column 1 is a title; other text is content.
  */
@@ -71,9 +71,9 @@ static char default_name[] = "cardfile.dat";
 #if !HAVE_STRDUP
 #define strdup my_strdup
 static char *
-strdup(char *s)
+strdup(const char *s)
 {
-    char *p = (char *) malloc(strlen(s) + 1);
+    char *p = typeMalloc(char, strlen(s) + 1);
     if (p)
 	strcpy(p, s);
     return (p);
@@ -91,7 +91,7 @@ skip(const char *buffer)
 static void
 trim(char *buffer)
 {
-    unsigned n = strlen(buffer);
+    size_t n = strlen(buffer);
     while (n-- && isspace(UChar(buffer[n])))
 	buffer[n] = 0;
 }
@@ -111,7 +111,7 @@ add_title(const char *title)
 	    break;
     }
 
-    card = (CARD *) calloc(1, sizeof(CARD));
+    card = typeCalloc(CARD, 1);
     card->title = strdup(title);
     card->content = strdup("");
 
@@ -129,20 +129,23 @@ add_title(const char *title)
 static void
 add_content(CARD * card, const char *content)
 {
-    unsigned total, offset;
+    size_t total, offset;
 
     content = skip(content);
     if ((total = strlen(content)) != 0) {
-	if ((offset = strlen(card->content)) != 0) {
+	if (card->content != 0 && (offset = strlen(card->content)) != 0) {
 	    total += 1 + offset;
-	    card->content = (char *) realloc(card->content, total + 1);
-	    strcpy(card->content + offset++, " ");
+	    card->content = typeRealloc(char, total + 1, card->content);
+	    if (card->content)
+		strcpy(card->content + offset++, " ");
 	} else {
+	    offset = 0;
 	    if (card->content != 0)
 		free(card->content);
-	    card->content = (char *) malloc(total + 1);
+	    card->content = typeMalloc(char, total + 1);
 	}
-	strcpy(card->content + offset, content);
+	if (card->content)
+	    strcpy(card->content + offset, content);
     }
 }
 
@@ -259,7 +262,7 @@ next_card(CARD * now)
 	if (isVisible(tst))
 	    now = tst;
 	else
-	    tst = next_card(tst);
+	    (void) next_card(tst);
     }
     return now;
 }
@@ -306,8 +309,8 @@ form_virtualize(WINDOW *w)
 	return (MY_CTRL_N);
     case CTRL('P'):
 	return (MY_CTRL_P);
-    case CTRL('Q'):
-    case 033:
+    case QUIT:
+    case ESCAPE:
 	return (MY_CTRL_Q);
 
     case KEY_BACKSPACE:
@@ -334,7 +337,7 @@ form_virtualize(WINDOW *w)
 static FIELD **
 make_fields(CARD * p, int form_high, int form_wide)
 {
-    FIELD **f = (FIELD **) calloc(3, sizeof(FIELD *));
+    FIELD **f = typeCalloc(FIELD *, 3);
 
     f[0] = new_field(1, form_wide, 0, 0, 0, 0);
     set_field_back(f[0], A_REVERSE);
@@ -520,14 +523,12 @@ cardfile(char *fname)
 #if NO_LEAKS
     while (all_cards != 0) {
 	FIELD **f;
-	int count;
 
 	p = all_cards;
 	all_cards = all_cards->link;
 
 	if (isVisible(p)) {
 	    f = form_fields(p->form);
-	    count = field_count(p->form);
 
 	    unpost_form(p->form);	/* ...so we can free it */
 	    free_form(p->form);	/* this also disconnects the fields */
@@ -568,7 +569,7 @@ main(int argc, char *argv[])
 
     setlocale(LC_ALL, "");
 
-    while ((n = getopt(argc, argv, "c")) != EOF) {
+    while ((n = getopt(argc, argv, "c")) != -1) {
 	switch (n) {
 	case 'c':
 	    try_color = TRUE;
