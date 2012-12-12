@@ -1133,12 +1133,12 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_D1800H:
-		if (nvram_get("ledbh0") == NULL) {
+		if (nvram_get("ledbh0") == NULL || nvram_match("ledbh11","130")) {
 			nvram_set("ledbh0", "11");
 			nvram_set("ledbh1", "11");
 			nvram_set("ledbh2", "11");
 			nvram_set("ledbh11", "136");
-//			need_reboot = 1;
+			need_reboot = 1;
 		}
 #if 0
 		nvram_set("pci/1/1/maxp5ga0","40,100,100,66");
