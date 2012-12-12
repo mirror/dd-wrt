@@ -27,6 +27,20 @@
 #include <shutils.h>
 #include <bcmnvram.h>
 
+
+struct DEVICES {
+	int vendor;
+	int product;
+	char *driver;
+	char *controldevice;
+	char *datadevice;
+	int modeswitch;
+	void (*customsetup) (int needreset, int devicecount);
+	char *name;
+};
+
+static struct DEVICES devicelist[];
+
 static int scanFor(int Vendor, int Product)
 {
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
@@ -93,7 +107,7 @@ void checkreset(char *tty)
 #ifdef HAVE_CAMBRIA
 	FILE *check = NULL;
 	int count = 0;
-	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/reset.comgt\n", tty);
+	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/reset.comgt", tty);
 	sleep(1);
 	while (!(check = fopen(tty, "rb")) && count < 10) {
 		sleep(1);
@@ -104,7 +118,7 @@ void checkreset(char *tty)
 	else
 		fprintf(stderr, "reset error\n");
 	fprintf(stderr, "wakeup card\n");
-	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/wakeup.comgt\n", tty);
+	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/wakeup.comgt", tty);
 	sleep(5);		//give extra delay for registering
 #endif
 }
@@ -113,7 +127,7 @@ static void reset_mc(int needreset, int devicecount)
 {
 
 	if (needreset)
-		checkreset(devicelist.[devicecount].controldevice);
+		checkreset(devicelist[devicecount].controldevice);
 }
 
 static void hsoinit(int needreset, int devicecount)
@@ -133,8 +147,8 @@ static void modeswitch_nokia(int needreset, int devicecount)
 {
 	FILE *out;
 	out= fopen("/tmp/usb_modeswitch.conf", "wb");
-	fprintf(out, "DefaultVendor=0x%04x\n", devicelist.[devicecount].vendor); 
-	fprintf(out, "DefaultProduct=0x%04x\n", devicelist.[devicecount].product); 
+	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor); 
+	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product); 
 	fprintf(out,
 		"MessageContent=\"5553424312345678000000000000061b000000020000000000000000000000\"\n");
 	fprintf(out, "TargetClass=02\n");
@@ -149,8 +163,8 @@ static void hsoinit_icon(int needreset, int devicecount)
 {
 	FILE *out;
 	out= fopen("/tmp/usb_modeswitch.conf", "wb");
-	fprintf(out, "DefaultVendor=0x%04x\n", devicelist.[devicecount].vendor); 
-	fprintf(out, "DefaultProduct=0x%04x\n", devicelist.[devicecount].product); 
+	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor); 
+	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product); 
 	fprintf(out,
 		"MessageContent=\"55534243785634120100000080000601000000000000000000000000000000\"\n");
 	fprintf(out, "NoDriverLoading=1\n");
@@ -203,8 +217,8 @@ static void modeswitch_huawei_old(int needreset, int devicecount)
 {
 	FILE *out;
 	out= fopen("/tmp/usb_modeswitch.conf", "wb");
-	fprintf(out, "DefaultVendor=0x%04x\n", devicelist.[devicecount].vendor);
-	fprintf(out, "DefaultProduct=0x%04x\n", devicelist.[devicecount].product); 
+	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
+	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product); 
 	fprintf(out, "HuaweiMode=1\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
@@ -216,8 +230,8 @@ static void modeswitch_huawei_std(int needreset, int devicecount)
 {
 	FILE *out;
 	out= fopen("/tmp/usb_modeswitch.conf", "wb");
-	fprintf(out, "DefaultVendor=0x%04x\n", devicelist.[devicecount].vendor); 
-	fprintf(out, "DefaultProduct=0x%04x\n", devicelist.[devicecount].product); 
+	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor); 
+	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product); 
 	fprintf(out,
 		"MessageContent=\"55534243123456780000000000000011062000000100000000000000000000\"\n");
 	fclose(out);
@@ -257,8 +271,8 @@ static void modeswitch_zte_1msg (int needreset, int devicecount)
 {
 	FILE *out;
 	out= fopen("/tmp/usb_modeswitch.conf", "wb");
-	fprintf(out, "DefaultVendor=0x%04x\n", devicelist.[devicecount].vendor); 
-	fprintf(out, "DefaultProduct=0x%04x\n", devicelist.[devicecount].product); 
+	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor); 
+	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product); 
 	fprintf(out,
 		"MessageContent=\"5553424312345678000000000000061b000000020000000000000000000000\"\n");
 	fclose(out);
@@ -271,8 +285,8 @@ static void modeswitch_zte_2msg (int needreset, int devicecount)
 {
 	FILE *out;
 	out= fopen("/tmp/usb_modeswitch.conf", "wb");
-	fprintf(out, "DefaultVendor=0x%04x\n", devicelist.[devicecount].vendor); 
-	fprintf(out, "DefaultProduct=0x%04x\n", devicelist.[devicecount].product); 
+	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor); 
+	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product); 
 	fprintf(out,
 		"MessageContent=\"5553424312345678000000000000061e000000000000000000000000000000\"\n"
 		"MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n");
@@ -350,8 +364,8 @@ static void modeswitch_alcatel(int needreset, int devicecount)
 {
 	FILE *out;
 	out= fopen("/tmp/usb_modeswitch.conf", "wb");
-	fprintf(out, "DefaultVendor=0x%04x\n", devicelist.[devicecount].vendor); 
-	fprintf(out, "DefaultProduct=0x%04x\n", devicelist.[devicecount].product); 
+	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor); 
+	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product); 
 	fprintf(out,
 		"MessageContent=\"55534243123456788000000080000606f50402527000000000000000000000\"\n");
 	fprintf(out, "CheckSuccess=20\n");
@@ -410,28 +424,18 @@ static void modeswitch_linktop(int needreset, int devicecount)
 {
 	FILE *out;
 	out= fopen("/tmp/usb_modeswitch.conf", "wb");
-	fprintf(out, "DefaultVendor=0x%04x\n", devicelist.[devicecount].vendor); 
-	fprintf(out, "DefaultProduct=0x%04x\n", devicelist.[devicecount].product); 
+	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor); 
+	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product); 
 	fprintf(out, "Configuration=3\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 
 	sleep(2);
 
-	sysprintf("comgt -d /dev/ttyACM0 -s /etc/comgt/wakeup.comgt\n", controldev);
+	sysprintf("comgt -d /dev/ttyACM0 -s /etc/comgt/wakeup.comgt");
 	sleep(2);
 }
 
-struct DEVICES {
-	int vendor;
-	int product;
-	char *driver;
-	char *controldevice;
-	char *datadevice;
-	int modeswitch;
-	void (*customsetup) (int needreset, int devicecount);
-	char *name;
-};
 
 #define ACM 0x10  //cdc_acm
 #define GENERIC 0x20
@@ -661,7 +665,7 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x0086, "option", "1", "2", 2, NULL, "ZTE MF645 (modem)"},	//
 	{0x19d2, 0x0094, "option", "1", "0", 2, NULL, "ZTE AC581 (modem)"},	//
 	{0x19d2, 0x0101, "option", "1", "3", 2, &modeswitch_zte_1msg, "Vodafone (ZTE) K4505-Z (cdrom)"},	//
-	{0x19d2, 0x0103, "option", "1", "3", 2, &modeswitch_ztw_2msg, "ZTE MF112 (cdrom)"},	//
+	{0x19d2, 0x0103, "option", "1", "3", 2, &modeswitch_zte_2msg, "ZTE MF112 (cdrom)"},	//
 	{0x19d2, 0x0104, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K4505-Z (modem)"},	//
 	{0x19d2, 0x0108, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem)"},	//
 	{0x19d2, 0x0110, "option", "1", "0", 2, &modeswitch_zte_1msg, "ZTE MF637 (cdrom)"},	//
