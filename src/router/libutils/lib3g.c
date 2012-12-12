@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
- * This program is free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
@@ -109,13 +109,14 @@ void checkreset(char *tty)
 #endif
 }
 
-static void reset_mc(int needreset, char *controldev)
+static void reset_mc(int needreset, int devicecount)
 {
+
 	if (needreset)
-		checkreset(controldev);
+		checkreset(devicelist.[devicecount].controldevice);
 }
 
-static void hsoinit(int needreset, char *controldev)
+static void hsoinit(int needreset, int devicecount)
 {
 	system("insmod hso");
 	FILE *out = fopen("/tmp/conninfo.ini", "wb");
@@ -128,7 +129,7 @@ static void hsoinit(int needreset, char *controldev)
 	system("/etc/hso/hso_connect.sh restart");
 }
 
-static void modeswitch_nokia(int needreset, char *controldev)
+static void modeswitch_nokia(int needreset, int devicecount)
 {
 	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x0421\n");
@@ -188,29 +189,32 @@ static void modeswitch_nokia(int needreset, char *controldev)
 	sleep(2);
 }
 
-static void hsoinit_icon225(int needreset, char *controldev)
+static void hsoinit_icon225(int needreset, int devicecount)
 {
 	system("ozerocdoff -wi 0x6971");
 	sleep(10);
-	hsoinit(needreset, controldev);
+	hsoinit(needreset, devicecount);
 }
 
-static void hsoinit_icon461(int needreset, char *controldev)
+static void hsoinit_icon461(int needreset, int devicecount)
 {
 	system("ozerocdoff -wi 0x7a05");
 	sleep(10);
-	hsoinit(needreset, controldev);
+	hsoinit(needreset, devicecount);
 }
 
-static void hsoinit_icon505(int needreset, char *controldev)
+static void hsoinit_icon505(int needreset, int devicecount)
 {
 	system("ozerocdoff -wi 0xd055");
 	sleep(10);
-	hsoinit(needreset, controldev);
+	hsoinit(needreset, devicecount);
 }
 
-static void modeswitch_pantech(int needreset, char *controldev)
+static void modeswitch_pantech(int needreset, int devicecount)
 {
+
+// fprintf(out, "DefaultVendor=0x%04x,\n", devicelist.[devicecount].vendor);
+// fprintf(out, "DefaultProduct=0x%04x,\n", devicelist.[devicecount].product); 
 	system
 	    ("usb_modeswitch -v 0x106c -p 0x3b03 -M 555342431234567824000000800008ff024445564348470000000000000000");
 	system
@@ -221,7 +225,7 @@ static void modeswitch_pantech(int needreset, char *controldev)
 	sleep(2);
 }
 
-static void modeswitch_sierra(int needreset, char *controldev)
+static void modeswitch_sierra(int needreset, int devicecount)
 {
 	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
 
@@ -245,13 +249,23 @@ static void modeswitch_sierra(int needreset, char *controldev)
 	sleep(2);
 }
 
-static void modeswitch_huawei(int needreset, char *controldev)
+static void modeswitch_huawei_old(int needreset, int devicecount)
 {
-	system("usb_modeswitch -v 0x12d1 -p 0x1001 -H");
-	system("usb_modeswitch -v 0x12d1 -p 0x1003 -H");
-	system("usb_modeswitch -v 0x12d1 -p 0x1009 -H");
-	system("usb_modeswitch -v 0x12d1 -p 0x1411 -H");
-	system("usb_modeswitch -v 0x12d1 -p 0x1414 -H");
+	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x%04x,\n", devicelist.[devicecount].vendor);
+	fprintf(out, "DefaultProduct=0x%04x,\n", devicelist.[devicecount].product); 
+	fprintf(out, "HuaweiMode=1");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+}
+
+static void modeswitch_huawei(int needreset, int devicecount)
+{
+//	system("usb_modeswitch -v 0x12d1 -p 0x1001 -H");  these 5 will be handled by the new routine modeswitch_huawei_old
+//	system("usb_modeswitch -v 0x12d1 -p 0x1003 -H");
+//	system("usb_modeswitch -v 0x12d1 -p 0x1009 -H");
+//	system("usb_modeswitch -v 0x12d1 -p 0x1411 -H");
+//	system("usb_modeswitch -v 0x12d1 -p 0x1414 -H");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x101e -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
@@ -300,7 +314,7 @@ static void modeswitch_huawei(int needreset, char *controldev)
 	sleep(2);
 }
 
-static void modeswitch_usb760(int needreset, char *controldev)
+static void modeswitch_usb760(int needreset, int devicecount)
 {
 	system
 	    ("usb_modeswitch -v 0x1410 -p 0x5010 -M 5553424312345678000000000000061b000000020000000000000000000000");
@@ -318,7 +332,7 @@ static void modeswitch_usb760(int needreset, char *controldev)
 	sleep(2);
 }
 
-static void modeswitch_cmotech(int needreset, char *controldev)
+static void modeswitch_cmotech(int needreset, int devicecount)
 {
 	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x16d8\n");
@@ -334,7 +348,7 @@ static void modeswitch_cmotech(int needreset, char *controldev)
 	sleep(2);
 }
 
-static void modeswitch_onda(int needreset, char *controldev)
+static void modeswitch_onda(int needreset, int devicecount)
 {
 	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
 
@@ -352,7 +366,7 @@ static void modeswitch_onda(int needreset, char *controldev)
 	sleep(2);
 }
 
-static void modeswitch_onda2(int needreset, char *controldev)
+static void modeswitch_onda2(int needreset, int devicecount)
 {
 	system
 	    ("usb_modeswitch -v 0x19d2 -p 0x0003 -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
@@ -400,7 +414,7 @@ static void modeswitch_onda2(int needreset, char *controldev)
 	sleep(2);
 }
 
-static void modeswitch_bandrich(int needreset, char *controldev)
+static void modeswitch_bandrich(int needreset, int devicecount)
 {
 	FILE *out;
 	out= fopen("/tmp/usb_modeswitch.conf", "wb");
@@ -417,7 +431,7 @@ static void modeswitch_bandrich(int needreset, char *controldev)
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 
-out= fopen("/tmp/usb_modeswitch.conf", "wb");
+	out= fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x1a8d\n");
 	fprintf(out, "DefaultProduct=0x2000\n");
 	fprintf(out, "TargetVendor=0x1a8d\n");
@@ -434,7 +448,7 @@ out= fopen("/tmp/usb_modeswitch.conf", "wb");
 	sleep(2);
 }
 
-static void modeswitch_alcatel(int needreset, char *controldev)
+static void modeswitch_alcatel(int needreset, int devicecount)
 {
 	FILE *out;
 	out= fopen("/tmp/usb_modeswitch.conf", "wb");
@@ -459,7 +473,7 @@ static void modeswitch_alcatel(int needreset, char *controldev)
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 	
-out= fopen("/tmp/usb_modeswitch.conf", "wb");
+	out= fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x1bbb\n");
 	fprintf(out, "DefaultProduct=0xf052\n");
 	fprintf(out, "TargetVendor=0x1bbb\n");
@@ -474,7 +488,7 @@ out= fopen("/tmp/usb_modeswitch.conf", "wb");
 	sleep(2);
 }
 
-static void modeswitch_4g_xsstick(int needreset, char *controldev)
+static void modeswitch_4g_xsstick(int needreset, int devicecount)
 {
 	FILE *out;
 
@@ -503,7 +517,7 @@ static void modeswitch_4g_xsstick(int needreset, char *controldev)
 	sleep(2);
 }
 
-static void modeswitch_icon210(int needreset, char *controldev)
+static void modeswitch_icon210(int needreset, int devicecount)
 {
 	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x1e0e\n");
@@ -519,7 +533,7 @@ static void modeswitch_icon210(int needreset, char *controldev)
 	sleep(2);
 }
 
-static void modeswitch_linktop(int needreset, char *controldev)
+static void modeswitch_linktop(int needreset, int devicecount)
 {
 	system("usb_modeswitch -v 0x230d -p 0x0001 -u 3");
 	sleep(2);
@@ -538,7 +552,7 @@ struct DEVICES {
 	char *controldevice;
 	char *datadevice;
 	int modeswitch;
-	void (*customsetup) (int needreset, char *controldev);
+	void (*customsetup) (int needreset, int devicecount);
 	char *name;
 };
 
@@ -967,10 +981,7 @@ char *get3GControlDevice(void)
 			//start custom setup, if defined
 			if (devicelist[devicecount].customsetup) {
 				fprintf(stderr, "customsetup\n");
-				devicelist[devicecount].customsetup(needreset,
-								    devicelist
-								    [devicecount].
-								    controldevice);
+				devicelist[devicecount].customsetup(needreset, devicecount);
 			}
 			static char control[32];
 			if (!strcmp
