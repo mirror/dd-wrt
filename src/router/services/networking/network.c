@@ -1335,11 +1335,11 @@ void start_lan(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WA7510
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		nvram_setz(lan_ifnames, "eth1 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
-		PORTSETUPWAN("eth0");
+		nvram_setz(lan_ifnames, "eth1 ath0");
+		PORTSETUPWAN("eth1");
 	}
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
@@ -2947,7 +2947,7 @@ void start_wan(int status)
 #elif HAVE_WA7510
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_WR741
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
