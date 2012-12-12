@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2001,2002 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2008,2009 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,6 +29,8 @@
 /****************************************************************************
  *  Author: Zeyd M. Ben-Halim <zmbenhal@netcom.com> 1992,1995               *
  *     and: Eric S. Raymond <esr@snark.thyrsus.com>                         *
+ *     and: Thomas E. Dickey                        1996-on                 *
+ *     and: Juergen Pfeifer                         2009                    *
  ****************************************************************************/
 
 /*
@@ -40,40 +42,51 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_ungetch.c,v 1.8 2002/08/24 22:08:48 tom Exp $")
+MODULE_ID("$Id: lib_ungetch.c,v 1.14 2009/10/24 22:12:21 tom Exp $")
 
 #include <fifo_defs.h>
 
 #ifdef TRACE
 NCURSES_EXPORT(void)
-_nc_fifo_dump(void)
+_nc_fifo_dump(SCREEN *sp)
 {
     int i;
     T(("head = %d, tail = %d, peek = %d", head, tail, peek));
     for (i = 0; i < 10; i++)
-	T(("char %d = %s", i, _tracechar(SP->_fifo[i])));
+	T(("char %d = %s", i, _nc_tracechar(sp, sp->_fifo[i])));
 }
 #endif /* TRACE */
 
 NCURSES_EXPORT(int)
+safe_ungetch(SCREEN *sp, int ch)
+{
+    int rc = ERR;
+
+    T((T_CALLED("ungetch(%p,%s)"), (void *) sp, _nc_tracechar(sp, ch)));
+
+    if (tail != -1) {
+	if (head == -1) {
+	    head = 0;
+	    t_inc();
+	    peek = tail;	/* no raw keys */
+	} else
+	    h_dec();
+
+	sp->_fifo[head] = ch;
+	T(("ungetch %s ok", _nc_tracechar(sp, ch)));
+#ifdef TRACE
+	if (USE_TRACEF(TRACE_IEVENT)) {
+	    _nc_fifo_dump(sp);
+	    _nc_unlock_global(tracef);
+	}
+#endif
+	rc = OK;
+    }
+    returnCode(rc);
+}
+
+NCURSES_EXPORT(int)
 ungetch(int ch)
 {
-    T((T_CALLED("ungetch(%s)"), _tracechar(ch)));
-
-    if (tail == -1)
-	returnCode(ERR);
-    if (head == -1) {
-	head = 0;
-	t_inc()
-	    peek = tail;	/* no raw keys */
-    } else
-	h_dec();
-
-    SP->_fifo[head] = ch;
-    T(("ungetch %s ok", _tracechar(ch)));
-#ifdef TRACE
-    if (_nc_tracing & TRACE_IEVENT)
-	_nc_fifo_dump();
-#endif
-    returnCode(OK);
+    return safe_ungetch(CURRENT_SCREEN, ch);
 }

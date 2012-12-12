@@ -1,6 +1,6 @@
 // * this is for making emacs happy: -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2002,2003 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2003,2007 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -34,12 +34,23 @@
 #include "internal.h"
 #include "cursesapp.h"
 
-MODULE_ID("$Id: cursesmain.cc,v 1.11 2003/10/25 14:53:13 tom Exp $")
+#if CPP_HAS_TRY_CATCH && HAVE_IOSTREAM
+#include <iostream>
+#else
+#undef CPP_HAS_TRY_CATCH
+#define CPP_HAS_TRY_CATCH 0
+#endif
+
+MODULE_ID("$Id: cursesmain.cc,v 1.14 2007/04/07 17:10:11 tom Exp $")
 
 #if HAVE_LOCALE_H
 #include <locale.h>
 #else
 #define setlocale(name,string) /* nothing */
+#endif
+
+#if NO_LEAKS
+#include <nc_alloc.h>
 #endif
 
 /* This is the default implementation of main() for a NCursesApplication.
@@ -58,8 +69,25 @@ int main(int argc, char* argv[])
 
     A->handleArgs(argc,argv);
     ::endwin();
+#if CPP_HAS_TRY_CATCH
+    try {
+      res = (*A)();
+      ::endwin();
+    }
+    catch(const NCursesException &e) {
+      ::endwin();
+      std::cerr << e.message << std::endl;
+      res = e.errorno;
+    }
+#else
     res = (*A)();
     ::endwin();
+#endif
+#if NO_LEAKS
+    delete A;
+    _nc_free_and_exit(res);
+#else
     return(res);
+#endif
   }
 }

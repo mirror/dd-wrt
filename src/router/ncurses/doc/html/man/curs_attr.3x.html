@@ -2,7 +2,7 @@
 <!-- 
   * t
   ****************************************************************************
-  * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+  * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
   *                                                                          *
   * Permission is hereby granted, free of charge, to any person obtaining a  *
   * copy of this software and associated documentation files (the            *
@@ -28,7 +28,7 @@
   * sale, use or other dealings in this Software without prior written       *
   * authorization.                                                           *
   ****************************************************************************
-  * @Id: curs_attr.3x,v 1.30 2006/07/15 18:39:05 tom Exp @
+  * @Id: curs_attr.3x,v 1.36 2010/12/04 18:36:44 tom Exp @
 -->
 <HTML>
 <HEAD>
@@ -241,13 +241,18 @@
        This implementation returns an error if the window pointer
        is  null.  The <STRONG>wcolor_set</STRONG> function returns an error if the
        color  pair  parameter  is  outside  the   range   0..COL-
-       OR_PAIRS-1.
+       OR_PAIRS-1.   This  implementation  also provides <STRONG>getattrs</STRONG>
+       for compatibility with older versions of curses.
+
+       Functions with a "mv" prefix first perform a cursor  move-
+       ment  using  <STRONG>wmove</STRONG>, and return an error if the position is
+       outside the window, or if the window pointer is null.
 
 
 </PRE>
 <H2>SEE ALSO</H2><PRE>
        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>,        <STRONG><A HREF="curs_addch.3x.html">curs_addch(3x)</A></STRONG>,        <STRONG><A HREF="curs_addstr.3x.html">curs_addstr(3x)</A></STRONG>,
-       <STRONG><A HREF="curs_bkgd.3x.html">curs_bkgd(3x)</A></STRONG>, <STRONG><A HREF="curs_printw.3x.html">curs_printw(3x)</A></STRONG>
+       <STRONG><A HREF="curs_bkgd.3x.html">curs_bkgd(3x)</A></STRONG>, <STRONG><A HREF="curs_printw.3x.html">curs_printw(3x)</A></STRONG>, <STRONG><A HREF="curs_variables.3x.html">curs_variables(3x)</A></STRONG>
 
 
 

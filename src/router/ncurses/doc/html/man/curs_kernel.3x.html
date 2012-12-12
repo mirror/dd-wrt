@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <!-- 
   ****************************************************************************
-  * Copyright (c) 1998-2001,2005 Free Software Foundation, Inc.                        *
+  * Copyright (c) 1998-2005,2010 Free Software Foundation, Inc.                        *
   *                                                                          *
   * Permission is hereby granted, free of charge, to any person obtaining a  *
   * copy of this software and associated documentation files (the            *
@@ -27,7 +27,7 @@
   * sale, use or other dealings in this Software without prior written       *
   * authorization.                                                           *
   ****************************************************************************
-  * @Id: curs_kernel.3x,v 1.15 2005/05/15 16:18:13 tom Exp @
+  * @Id: curs_kernel.3x,v 1.19 2010/12/04 18:38:55 tom Exp @
 -->
 <HTML>
 <HEAD>
@@ -72,7 +72,7 @@
 </PRE>
 <H2>DESCRIPTION</H2><PRE>
        The  following  routines  give low-level access to various
-       <STRONG>curses</STRONG> capabilities.  Theses routines typically  are  used
+       <STRONG>curses</STRONG> capabilities.  These routines  typically  are  used
        inside library routines.
 
        The  <STRONG>def_prog_mode</STRONG>  and  <STRONG>def_shell_mode</STRONG>  routines save the
@@ -128,11 +128,11 @@
        <STRONG>ripoffline</STRONG>  can  be called up to five times before calling
        <STRONG>initscr</STRONG> or <STRONG>newterm</STRONG>.
 
-       The <STRONG>curs_set</STRONG> routine sets the cursor state is set  to  in-
-       visible,  normal,  or very visible for <STRONG>visibility</STRONG> equal to
-       <STRONG>0</STRONG>, <STRONG>1</STRONG>, or <STRONG>2</STRONG> respectively.  If  the  terminal  supports  the
-       <EM>visibility</EM>  requested,  the  previous  <EM>cursor</EM> state is re-
-       turned; otherwise, <STRONG>ERR</STRONG> is returned.
+       The <STRONG>curs_set</STRONG> routine sets the cursor state  to  invisible,
+       normal, or very visible for <STRONG>visibility</STRONG> equal to <STRONG>0</STRONG>, <STRONG>1</STRONG>, or <STRONG>2</STRONG>
+       respectively.  If the terminal supports the <EM>visibility</EM> re-
+       quested, the previous <EM>cursor</EM> state is returned; otherwise,
+       <STRONG>ERR</STRONG> is returned.
 
        The <STRONG>napms</STRONG> routine is used to sleep for <EM>ms</EM> milliseconds.
 
@@ -149,48 +149,49 @@
 
               <STRONG>def_prog_mode</STRONG>, <STRONG>def_shell_mode</STRONG>, <STRONG>reset_prog_mode</STRONG>, <STRONG>re-</STRONG>
               <STRONG>set_shell_mode</STRONG>
-                   return an error if the terminal was  not  ini-
-                   tialized,  or  if  the  I/O call to obtain the
+                   return  an  error if the terminal was not ini-
+                   tialized, or if the I/O  call  to  obtain  the
                    terminal settings fails.
 
               <STRONG>ripoffline</STRONG>
-                   returns an error  if  the  maximum  number  of
-                   ripped-off  lines exceeds the maximum (NRIPS =
+                   returns  an  error  if  the  maximum number of
+                   ripped-off lines exceeds the maximum (NRIPS  =
                    5).
 
 
 </PRE>
 <H2>NOTES</H2><PRE>
-       Note that <STRONG>getsyx</STRONG> is a macro, so <STRONG>&amp;</STRONG> is not necessary  before
+       Note  that <STRONG>getsyx</STRONG> is a macro, so <STRONG>&amp;</STRONG> is not necessary before
        the variables <EM>y</EM> and <EM>x</EM>.
 
-       Older  SVr4  man  pages  warn  that  the  return  value of
-       <STRONG>curs_set</STRONG> "is currently  incorrect".   This  implementation
-       gets  it  right, but it may be unwise to count on the cor-
+       Older SVr4  man  pages  warn  that  the  return  value  of
+       <STRONG>curs_set</STRONG>  "is  currently  incorrect".  This implementation
+       gets it right, but it may be unwise to count on  the  cor-
        rectness of the return value anywhere else.
 
-       Both ncurses and SVr4 will  call  <STRONG>curs_set</STRONG>  in  <STRONG>endwin</STRONG>  if
-       <STRONG>curs_set</STRONG>  has  been  called  to make the cursor other than
-       normal, i.e., either invisible or very visible.  There  is
-       no  way  for ncurses to determine the initial cursor state
+       Both  ncurses  and  SVr4  will  call <STRONG>curs_set</STRONG> in <STRONG>endwin</STRONG> if
+       <STRONG>curs_set</STRONG> has been called to make  the  cursor  other  than
+       normal,  i.e., either invisible or very visible.  There is
+       no way for ncurses to determine the initial  cursor  state
        to restore that.
 
 
 </PRE>
 <H2>PORTABILITY</H2><PRE>
-       The functions <STRONG>setsyx</STRONG> and <STRONG>getsyx</STRONG> are not described  in  the
-       XSI  Curses standard, Issue 4.  All other functions are as
+       The  functions  <STRONG>setsyx</STRONG> and <STRONG>getsyx</STRONG> are not described in the
+       XSI Curses standard, Issue 4.  All other functions are  as
        described in XSI Curses.
 
        The SVr4 documentation describes <STRONG>setsyx</STRONG> and <STRONG>getsyx</STRONG> as hav-
-       ing  return  type  int.  This  is  misleading, as they are
-       macros with no documented semantics for the return  value.
+       ing return type int.  This  is  misleading,  as  they  are
+       macros with no documented semantics for the return value.
 
 
 </PRE>
 <H2>SEE ALSO</H2><PRE>
        <STRONG><A HREF="ncurses.3x.html">curses(3x)</A></STRONG>,  <STRONG><A HREF="curs_initscr.3x.html">curs_initscr(3x)</A></STRONG>,  <STRONG><A HREF="curs_outopts.3x.html">curs_outopts(3x)</A></STRONG>, <STRONG>curs_re-</STRONG>
-       <STRONG><A HREF="curs_refresh.3x.html">fresh(3x)</A></STRONG>, <STRONG><A HREF="curs_scr_dump.3x.html">curs_scr_dump(3x)</A></STRONG>, <STRONG><A HREF="curs_slk.3x.html">curs_slk(3x)</A></STRONG>
+       <STRONG><A HREF="curs_refresh.3x.html">fresh(3x)</A></STRONG>,  <STRONG><A HREF="curs_scr_dump.3x.html">curs_scr_dump(3x)</A></STRONG>,  <STRONG><A HREF="curs_slk.3x.html">curs_slk(3x)</A></STRONG>,   <STRONG>curs_vari-</STRONG>
+       <STRONG><A HREF="curs_variables.3x.html">ables(3x)</A></STRONG>.
 
 
 

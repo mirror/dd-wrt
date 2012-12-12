@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2007,2008 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -61,33 +61,57 @@ Options:
   traces will be dumped.  The program stops and waits for one character of
   input at the beginning and end of the interval.
 
-  $Id: worm.c,v 1.41 2006/07/01 22:57:24 tom Exp $
+  $Id: worm.c,v 1.60 2010/11/13 20:21:21 tom Exp $
 */
 
 #include <test.priv.h>
+
+#ifdef USE_PTHREADS
+#include <pthread.h>
+#endif
+
+WANT_USE_WINDOW();
+
+#define MAX_WORMS	40
+#define MAX_LENGTH	1024
 
 static chtype flavor[] =
 {
     'O', '*', '#', '$', '%', '0', '@',
 };
-static const short xinc[] =
+static const int xinc[] =
 {
     1, 1, 1, 0, -1, -1, -1, 0
 }, yinc[] =
 {
     -1, 0, 1, 1, 1, 0, -1, -1
 };
-static struct worm {
-    int orientation, head;
-    short *xpos, *ypos;
-} worm[40];
+
+typedef struct worm {
+    int orientation;
+    int head;
+    int *xpos;
+    int *ypos;
+    chtype attrs;
+#ifdef USE_PTHREADS
+    pthread_t thread;
+#endif
+} WORM;
+
+static unsigned long sequence = 0;
+static bool quitting = FALSE;
+
+static WORM worm[MAX_WORMS];
+static int **refs;
+static int last_x, last_y;
 
 static const char *field;
 static int length = 16, number = 3;
 static chtype trail = ' ';
 
+static unsigned pending;
 #ifdef TRACE
-static int generation, trace_start, trace_end, singlestep;
+static int generation, trace_start, trace_end;
 #endif /* TRACE */
 /* *INDENT-OFF* */
 static const struct options {
@@ -180,8 +204,7 @@ static const struct options {
 static void
 cleanup(void)
 {
-    standend();
-    refresh();
+    USING_WINDOW(stdscr, wrefresh);
     curs_set(1);
     endwin();
 }
@@ -193,24 +216,208 @@ onsig(int sig GCC_UNUSED)
     ExitProgram(EXIT_FAILURE);
 }
 
-static float
+static double
 ranf(void)
 {
     long r = (rand() & 077777);
-    return ((float) r / 32768.);
+    return ((double) r / 32768.);
 }
+
+static int
+draw_worm(WINDOW *win, void *data)
+{
+    WORM *w = (WORM *) data;
+    const struct options *op;
+    unsigned mask = (unsigned) (~(1 << (w - worm)));
+    chtype attrs = w->attrs | ((mask & pending) ? A_REVERSE : 0);
+
+    int x;
+    int y;
+    int h;
+
+    bool done = FALSE;
+
+    if ((x = w->xpos[h = w->head]) < 0) {
+	wmove(win, y = w->ypos[h] = last_y, x = w->xpos[h] = 0);
+	waddch(win, attrs);
+	refs[y][x]++;
+    } else {
+	y = w->ypos[h];
+    }
+
+    if (x > last_x)
+	x = last_x;
+    if (y > last_y)
+	y = last_y;
+
+    if (++h == length)
+	h = 0;
+
+    if (w->xpos[w->head = h] >= 0) {
+	int x1, y1;
+	x1 = w->xpos[h];
+	y1 = w->ypos[h];
+	if (y1 < LINES
+	    && x1 < COLS
+	    && --refs[y1][x1] == 0) {
+	    wmove(win, y1, x1);
+	    waddch(win, trail);
+	}
+    }
+
+    op = &(x == 0
+	   ? (y == 0
+	      ? upleft
+	      : (y == last_y
+		 ? lowleft
+		 : left))
+	   : (x == last_x
+	      ? (y == 0
+		 ? upright
+		 : (y == last_y
+		    ? lowright
+		    : right))
+	      : (y == 0
+		 ? upper
+		 : (y == last_y
+		    ? lower
+		    : normal))))[w->orientation];
+
+    switch (op->nopts) {
+    case 0:
+	done = TRUE;
+	break;
+    case 1:
+	w->orientation = op->opts[0];
+	break;
+    default:
+	w->orientation = op->opts[(int) (ranf() * (double) op->nopts)];
+	break;
+    }
+
+    if (!done) {
+	x += xinc[w->orientation];
+	y += yinc[w->orientation];
+	wmove(win, y, x);
+
+	if (y < 0)
+	    y = 0;
+	waddch(win, attrs);
+
+	w->ypos[h] = y;
+	w->xpos[h] = x;
+	refs[y][x]++;
+    }
+
+    return done;
+}
+
+#ifdef USE_PTHREADS
+static bool
+quit_worm(int bitnum)
+{
+    pending |= (1 << bitnum);
+    napms(10);			/* let the other thread(s) have a chance */
+    pending &= ~(1 << bitnum);
+    return quitting;
+}
+
+static void *
+start_worm(void *arg)
+{
+    unsigned long compare = 0;
+    Trace(("start_worm"));
+    while (!quit_worm(((struct worm *) arg) - worm)) {
+	while (compare < sequence) {
+	    ++compare;
+#if HAVE_USE_WINDOW
+	    use_window(stdscr, draw_worm, arg);
+#else
+	    draw_worm(stdscr, arg);
+#endif
+	}
+    }
+    Trace(("...start_worm (done)"));
+    return NULL;
+}
+#endif
+
+static bool
+draw_all_worms(void)
+{
+    bool done = FALSE;
+    int n;
+    struct worm *w;
+
+#ifdef USE_PTHREADS
+    static bool first = TRUE;
+    if (first) {
+	first = FALSE;
+	for (n = 0, w = &worm[0]; n < number; n++, w++) {
+	    int rc;
+	    rc = pthread_create(&(w->thread), NULL, start_worm, w);
+	}
+    }
+#else
+    for (n = 0, w = &worm[0]; n < number; n++, w++) {
+	if (
+#if HAVE_USE_WINDOW
+	       USING_WINDOW2(stdscr, draw_worm, w)
+#else
+	       draw_worm(stdscr, w)
+#endif
+	    )
+	    done = TRUE;
+    }
+#endif
+    return done;
+}
+
+static int
+get_input(void)
+{
+    int ch;
+    ch = USING_WINDOW(stdscr, wgetch);
+    return ch;
+}
+
+#ifdef KEY_RESIZE
+static int
+update_refs(WINDOW *win)
+{
+    int x, y;
+
+    (void) win;
+    if (last_x != COLS - 1) {
+	for (y = 0; y <= last_y; y++) {
+	    refs[y] = typeRealloc(int, (size_t) COLS, refs[y]);
+	    for (x = last_x + 1; x < COLS; x++)
+		refs[y][x] = 0;
+	}
+	last_x = COLS - 1;
+    }
+    if (last_y != LINES - 1) {
+	for (y = LINES; y <= last_y; y++)
+	    free(refs[y]);
+	refs = typeRealloc(int *, (size_t) LINES, refs);
+	for (y = last_y + 1; y < LINES; y++) {
+	    refs[y] = typeMalloc(int, (size_t) COLS);
+	    for (x = 0; x < COLS; x++)
+		refs[y][x] = 0;
+	}
+	last_y = LINES - 1;
+    }
+    return OK;
+}
+#endif
 
 int
 main(int argc, char *argv[])
 {
-    short **ref;
     int x, y;
     int n;
     struct worm *w;
-    const struct options *op;
-    int h;
-    short *ip;
-    int last, bottom;
+    int *ip;
     bool done = FALSE;
 
     setlocale(LC_ALL, "");
@@ -227,7 +434,7 @@ main(int argc, char *argv[])
 	case 'l':
 	    if (++x == argc)
 		goto usage;
-	    if ((length = atoi(argv[x])) < 2 || length > 1024) {
+	    if ((length = atoi(argv[x])) < 2 || length > MAX_LENGTH) {
 		fprintf(stderr, "%s: Invalid length\n", *argv);
 		ExitProgram(EXIT_FAILURE);
 	    }
@@ -235,7 +442,7 @@ main(int argc, char *argv[])
 	case 'n':
 	    if (++x == argc)
 		goto usage;
-	    if ((number = atoi(argv[x])) < 1 || number > 40) {
+	    if ((number = atoi(argv[x])) < 1 || number > MAX_WORMS) {
 		fprintf(stderr, "%s: Invalid number of worms\n", *argv);
 		ExitProgram(EXIT_FAILURE);
 	    }
@@ -244,9 +451,6 @@ main(int argc, char *argv[])
 	    trail = '.';
 	    break;
 #ifdef TRACE
-	case 'S':
-	    singlestep = TRUE;
-	    break;
 	case 'T':
 	    trace_start = atoi(argv[++x]);
 	    trace_end = atoi(argv[++x]);
@@ -271,8 +475,8 @@ main(int argc, char *argv[])
 
     curs_set(0);
 
-    bottom = LINES - 1;
-    last = COLS - 1;
+    last_y = LINES - 1;
+    last_x = COLS - 1;
 
 #ifdef A_COLOR
     if (has_colors()) {
@@ -284,7 +488,7 @@ main(int argc, char *argv[])
 #endif
 
 #define SET_COLOR(num, fg) \
-	    init_pair(num+1, fg, bg); \
+	    init_pair(num+1, (short) fg, (short) bg); \
 	    flavor[num] |= COLOR_PAIR(num+1) | A_BOLD
 
 	SET_COLOR(0, COLOR_GREEN);
@@ -297,29 +501,32 @@ main(int argc, char *argv[])
     }
 #endif /* A_COLOR */
 
-    ref = typeMalloc(short *, LINES);
+    refs = typeMalloc(int *, (size_t) LINES);
     for (y = 0; y < LINES; y++) {
-	ref[y] = typeMalloc(short, COLS);
+	refs[y] = typeMalloc(int, (size_t) COLS);
 	for (x = 0; x < COLS; x++) {
-	    ref[y][x] = 0;
+	    refs[y][x] = 0;
 	}
     }
 
 #ifdef BADCORNER
     /* if addressing the lower right corner doesn't work in your curses */
-    ref[bottom][last] = 1;
+    refs[last_y][last_x] = 1;
 #endif /* BADCORNER */
 
     for (n = number, w = &worm[0]; --n >= 0; w++) {
-	w->orientation = w->head = 0;
-	if (!(ip = typeMalloc(short, (length + 1)))) {
+	w->attrs = flavor[(unsigned) n % SIZEOF(flavor)];
+	w->orientation = 0;
+	w->head = 0;
+
+	if (!(ip = typeMalloc(int, (size_t) (length + 1)))) {
 	    fprintf(stderr, "%s: out of memory\n", *argv);
 	    ExitProgram(EXIT_FAILURE);
 	}
 	w->xpos = ip;
 	for (x = length; --x >= 0;)
 	    *ip++ = -1;
-	if (!(ip = typeMalloc(short, (length + 1)))) {
+	if (!(ip = typeMalloc(int, (size_t) (length + 1)))) {
 	    fprintf(stderr, "%s: out of memory\n", *argv);
 	    ExitProgram(EXIT_FAILURE);
 	}
@@ -330,7 +537,7 @@ main(int argc, char *argv[])
     if (field) {
 	const char *p;
 	p = field;
-	for (y = bottom; --y >= 0;) {
+	for (y = last_y; --y >= 0;) {
 	    for (x = COLS; --x >= 0;) {
 		addch((chtype) (*p++));
 		if (!*p)
@@ -338,60 +545,40 @@ main(int argc, char *argv[])
 	    }
 	}
     }
-    napms(10);
-    refresh();
-#ifndef TRACE
+    USING_WINDOW(stdscr, wrefresh);
     nodelay(stdscr, TRUE);
-#endif
 
     while (!done) {
-#ifdef TRACE
-	if (trace_start || trace_end) {
-	    if (generation == trace_start) {
-		trace(TRACE_CALLS);
-		getch();
-	    } else if (generation == trace_end) {
-		trace(0);
-		getch();
-	    }
-
-	    if (singlestep && generation > trace_start && generation < trace_end)
-		getch();
-
-	    generation++;
-	}
-#else
 	int ch;
 
-	if ((ch = getch()) > 0) {
-#ifdef KEY_RESIZE
-	    if (ch == KEY_RESIZE) {
-		if (last != COLS - 1) {
-		    for (y = 0; y <= bottom; y++) {
-			ref[y] = typeRealloc(short, COLS, ref[y]);
-			for (x = last + 1; x < COLS; x++)
-			    ref[y][x] = 0;
-		    }
-		    last = COLS - 1;
+	++sequence;
+	if ((ch = get_input()) > 0) {
+#ifdef TRACE
+	    if (trace_start || trace_end) {
+		if (generation == trace_start) {
+		    trace(TRACE_CALLS);
+		    get_input();
+		} else if (generation == trace_end) {
+		    trace(0);
+		    get_input();
 		}
-		if (bottom != LINES - 1) {
-		    for (y = LINES; y <= bottom; y++)
-			free(ref[y]);
-		    ref = typeRealloc(short *, LINES, ref);
-		    for (y = bottom + 1; y < LINES; y++) {
-			ref[y] = typeMalloc(short, COLS);
-			for (x = 0; x < COLS; x++)
-			    ref[y][x] = 0;
-		    }
-		    bottom = LINES - 1;
-		}
+
+		generation++;
 	    }
 #endif
+
+#ifdef KEY_RESIZE
+	    if (ch == KEY_RESIZE) {
+		USING_WINDOW(stdscr, update_refs);
+	    }
+#endif
+
 	    /*
 	     * Make it simple to put this into single-step mode, or resume
 	     * normal operation -T.Dickey
 	     */
 	    if (ch == 'q') {
+		quitting = TRUE;
 		done = TRUE;
 		continue;
 	    } else if (ch == 's') {
@@ -400,68 +587,31 @@ main(int argc, char *argv[])
 		nodelay(stdscr, TRUE);
 	    }
 	}
-#endif /* TRACE */
 
-	for (n = 0, w = &worm[0]; n < number; n++, w++) {
-	    if ((x = w->xpos[h = w->head]) < 0) {
-		move(y = w->ypos[h] = bottom, x = w->xpos[h] = 0);
-		addch(flavor[n % SIZEOF(flavor)]);
-		ref[y][x]++;
-	    } else {
-		y = w->ypos[h];
-	    }
-	    if (x > last)
-		x = last;
-	    if (y > bottom)
-		y = bottom;
-	    if (++h == length)
-		h = 0;
-	    if (w->xpos[w->head = h] >= 0) {
-		int x1, y1;
-		x1 = w->xpos[h];
-		y1 = w->ypos[h];
-		if (y1 < LINES
-		    && x1 < COLS
-		    && --ref[y1][x1] == 0) {
-		    move(y1, x1);
-		    addch(trail);
-		}
-	    }
-	    op = &(x == 0 ? (y == 0 ? upleft : (y == bottom ? lowleft :
-						left)) :
-		   (x == last ? (y == 0 ? upright : (y == bottom ? lowright :
-						     right)) :
-		    (y == 0 ? upper : (y == bottom ? lower : normal))))[w->orientation];
-	    switch (op->nopts) {
-	    case 0:
-		done = TRUE;
-		continue;
-	    case 1:
-		w->orientation = op->opts[0];
-		break;
-	    default:
-		w->orientation = op->opts[(int) (ranf() * (float) op->nopts)];
-	    }
-	    move(y += yinc[w->orientation], x += xinc[w->orientation]);
-
-	    if (y < 0)
-		y = 0;
-	    addch(flavor[n % SIZEOF(flavor)]);
-	    ref[w->ypos[h] = y][w->xpos[h] = x]++;
-	}
+	done = draw_all_worms();
 	napms(10);
-	refresh();
+	USING_WINDOW(stdscr, wrefresh);
     }
 
+    Trace(("Cleanup"));
     cleanup();
 #ifdef NO_LEAKS
     for (y = 0; y < LINES; y++) {
-	free(ref[y]);
+	free(refs[y]);
     }
-    free(ref);
+    free(refs);
     for (n = number, w = &worm[0]; --n >= 0; w++) {
 	free(w->xpos);
 	free(w->ypos);
+    }
+#endif
+#ifdef USE_PTHREADS
+    /*
+     * Do this just in case one of the threads did not really exit.
+     */
+    Trace(("join all threads"));
+    for (n = 0; n < number; n++) {
+	pthread_join(worm[n].thread, NULL);
     }
 #endif
     ExitProgram(EXIT_SUCCESS);

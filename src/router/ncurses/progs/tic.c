@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2010,2011 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,7 +29,7 @@
 /****************************************************************************
  *  Author: Zeyd M. Ben-Halim <zmbenhal@netcom.com> 1992,1995               *
  *     and: Eric S. Raymond <esr@snark.thyrsus.com>                         *
- *     and: Thomas E. Dickey 1996 on                                        *
+ *     and: Thomas E. Dickey                        1996 on                 *
  ****************************************************************************/
 
 /*
@@ -44,7 +44,7 @@
 #include <dump_entry.h>
 #include <transform.h>
 
-MODULE_ID("$Id: tic.c,v 1.131 2006/12/02 22:13:17 tom Exp $")
+MODULE_ID("$Id: tic.c,v 1.147 2011/02/12 18:39:08 tom Exp $")
 
 const char *_nc_progname = "tic";
 
@@ -85,9 +85,25 @@ x\
 ] \
 source-file\n";
 
+#if NO_LEAKS
 static void
-cleanup(void)
+free_namelist(char **src)
 {
+    if (src != 0) {
+	int n;
+	for (n = 0; src[n] != 0; ++n)
+	    free(src[n]);
+	free(src);
+    }
+}
+#endif
+
+static void
+cleanup(char **namelst GCC_UNUSED)
+{
+#if NO_LEAKS
+    free_namelist(namelst);
+#endif
     if (tmp_fp != 0)
 	fclose(tmp_fp);
     if (to_remove != 0) {
@@ -103,7 +119,7 @@ static void
 failed(const char *msg)
 {
     perror(msg);
-    cleanup();
+    cleanup((char **) 0);
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -178,7 +194,7 @@ write_it(ENTRY * ep)
 	    d = result;
 	    t = s;
 	    while ((ch = *t++) != 0) {
-		*d++ = ch;
+		*d++ = (char) ch;
 		if (ch == '\\') {
 		    *d++ = *t++;
 		} else if ((ch == '%')
@@ -192,7 +208,7 @@ write_it(ENTRY * ep)
 			&& value < 127
 			&& isprint((int) value)) {
 			*d++ = S_QUOTE;
-			*d++ = (int) value;
+			*d++ = (char) value;
 			*d++ = S_QUOTE;
 			t = (v + 1);
 		    }
@@ -280,7 +296,7 @@ put_translate(int c)
 	    putchar(c);
 	    in_name = FALSE;
 	} else if (c != '>') {
-	    namebuf[used++] = c;
+	    namebuf[used++] = (char) c;
 	} else {		/* ah! candidate name! */
 	    char *up;
 	    NCURSES_CONST char *tp;
@@ -326,8 +342,15 @@ stripped(char *src)
     while (isspace(UChar(*src)))
 	src++;
     if (*src != '\0') {
-	char *dst = strcpy((char *) malloc(strlen(src) + 1), src);
-	size_t len = strlen(dst);
+	char *dst;
+	size_t len;
+
+	if ((dst = strdup(src)) == NULL)
+	    failed("strdup");
+
+	assert(dst != 0);
+
+	len = strlen(dst);
 	while (--len != 0 && isspace(UChar(dst[len])))
 	    dst[len] = '\0';
 	return dst;
@@ -354,10 +377,10 @@ open_input(const char *filename)
 }
 
 /* Parse the "-e" option-value into a list of names */
-static const char **
+static char **
 make_namelist(char *src)
 {
-    const char **dst = 0;
+    char **dst = 0;
 
     char *s, *base;
     unsigned pass, n, nn;
@@ -374,11 +397,13 @@ make_namelist(char *src)
 		if ((s = stripped(buffer)) != 0) {
 		    if (dst != 0)
 			dst[nn] = s;
+		    else
+			free(s);
 		    nn++;
 		}
 	    }
 	    if (pass == 1) {
-		dst = typeCalloc(const char *, nn + 1);
+		dst = typeCalloc(char *, nn + 1);
 		rewind(fp);
 	    }
 	}
@@ -401,10 +426,10 @@ make_namelist(char *src)
 		    break;
 	    }
 	    if (pass == 1)
-		dst = typeCalloc(const char *, nn + 1);
+		dst = typeCalloc(char *, nn + 1);
 	}
     }
-    if (showsummary) {
+    if (showsummary && (dst != 0)) {
 	fprintf(log_fp, "Entries that will be compiled:\n");
 	for (n = 0; dst[n] != 0; n++)
 	    fprintf(log_fp, "%u:%s\n", n + 1, dst[n]);
@@ -413,7 +438,7 @@ make_namelist(char *src)
 }
 
 static bool
-matches(const char **needle, const char *haystack)
+matches(char **needle, const char *haystack)
 /* does entry in needle list match |-separated field in haystack? */
 {
     bool code = FALSE;
@@ -468,7 +493,7 @@ main(int argc, char *argv[])
     bool limited = TRUE;
     char *tversion = (char *) NULL;
     const char *source_file = "terminfo";
-    const char **namelst = 0;
+    char **namelst = 0;
     char *outdir = (char *) NULL;
     bool check_only = FALSE;
     bool suppress_untranslatable = FALSE;
@@ -477,11 +502,11 @@ main(int argc, char *argv[])
 
     _nc_progname = _nc_rootname(argv[0]);
 
-    if ((infodump = (strcmp(_nc_progname, PROG_CAPTOINFO) == 0)) != FALSE) {
+    if ((infodump = same_program(_nc_progname, PROG_CAPTOINFO)) != FALSE) {
 	outform = F_TERMINFO;
 	sortmode = S_TERMINFO;
     }
-    if ((capdump = (strcmp(_nc_progname, PROG_INFOTOCAP) == 0)) != FALSE) {
+    if ((capdump = same_program(_nc_progname, PROG_INFOTOCAP)) != FALSE) {
 	outform = F_TERMCAP;
 	sortmode = S_TERMCAP;
     }
@@ -495,7 +520,7 @@ main(int argc, char *argv[])
      * be optional.
      */
     while ((this_opt = getopt(argc, argv,
-			      "0123456789CILNR:TUVace:fGgo:rstvwx")) != EOF) {
+			      "0123456789CILNR:TUVace:fGgo:rstvwx")) != -1) {
 	if (isdigit(this_opt)) {
 	    switch (last_opt) {
 	    case 'v':
@@ -543,7 +568,8 @@ main(int argc, char *argv[])
 	    break;
 	case 'V':
 	    puts(curses_version());
-	    return EXIT_SUCCESS;
+	    cleanup(namelst);
+	    ExitProgram(EXIT_SUCCESS);
 	case 'c':
 	    check_only = TRUE;
 	    break;
@@ -613,7 +639,7 @@ main(int argc, char *argv[])
     if (namelst && (!infodump && !capdump)) {
 	(void) fprintf(stderr,
 		       "Sorry, -e can't be used without -I or -C\n");
-	cleanup();
+	cleanup(namelst);
 	ExitProgram(EXIT_FAILURE);
     }
 #endif /* HAVE_BIG_CORE */
@@ -656,7 +682,7 @@ main(int argc, char *argv[])
 		    _nc_progname,
 		    _nc_progname,
 		    usage_string);
-	    cleanup();
+	    cleanup(namelst);
 	    ExitProgram(EXIT_FAILURE);
 	}
     }
@@ -690,7 +716,7 @@ main(int argc, char *argv[])
     /* do use resolution */
     if (check_only || (!infodump && !capdump) || forceresolve) {
 	if (!_nc_resolve_uses2(TRUE, literal) && !check_only) {
-	    cleanup();
+	    cleanup(namelst);
 	    ExitProgram(EXIT_FAILURE);
 	}
     }
@@ -738,9 +764,10 @@ main(int argc, char *argv[])
 			    put_translate(fgetc(tmp_fp));
 		    }
 
+		    repair_acsc(&qp->tterm);
 		    dump_entry(&qp->tterm, suppress_untranslatable,
 			       limited, numbers, NULL);
-		    for (j = 0; j < qp->nuses; j++)
+		    for (j = 0; j < (int) qp->nuses; j++)
 			dump_uses(qp->uses[j].name, !capdump);
 		    len = show_entry();
 		    if (debug_level != 0 && !limited)
@@ -784,7 +811,7 @@ main(int argc, char *argv[])
 	else
 	    fprintf(log_fp, "No entries written\n");
     }
-    cleanup();
+    cleanup(namelst);
     ExitProgram(EXIT_SUCCESS);
 }
 
@@ -817,15 +844,19 @@ check_acs(TERMTYPE *tp)
 	    }
 	    mapped[UChar(p[0])] = p[1];
 	}
+
 	if (mapped[UChar('I')] && !mapped[UChar('i')]) {
 	    _nc_warning("acsc refers to 'I', which is probably an error");
 	}
+
 	for (p = boxes, q = missing; *p != '\0'; ++p) {
 	    if (!mapped[UChar(p[0])]) {
 		*q++ = p[0];
 	    }
-	    *q = '\0';
 	}
+	*q = '\0';
+
+	assert(strlen(missing) <= strlen(boxes));
 	if (*missing != '\0' && strcmp(missing, boxes)) {
 	    _nc_warning("acsc is missing some line-drawing mapping: %s", missing);
 	}
@@ -869,10 +900,10 @@ check_colors(TERMTYPE *tp)
     }
 }
 
-static int
+static char
 keypad_final(const char *string)
 {
-    int result = '\0';
+    char result = '\0';
 
     if (VALID_STRING(string)
 	&& *string++ == '\033'
@@ -901,6 +932,157 @@ keypad_index(const char *string)
 }
 
 /*
+ * list[] is down, up, left, right
+ * "left" may be ^H rather than \E[D
+ * "down" may be ^J rather than \E[B
+ * But up/right are generally consistently escape sequences for ANSI terminals.
+ */
+static void
+check_ansi_cursor(char *list[4])
+{
+    int j, k;
+    int want;
+    size_t prefix = 0;
+    size_t suffix;
+    bool skip[4];
+    bool repeated = FALSE;
+
+    for (j = 0; j < 4; ++j) {
+	skip[j] = FALSE;
+	for (k = 0; k < j; ++k) {
+	    if (j != k
+		&& !strcmp(list[j], list[k])) {
+		char *value = _nc_tic_expand(list[k], TRUE, 0);
+		_nc_warning("repeated cursor control %s\n", value);
+		repeated = TRUE;
+	    }
+	}
+    }
+    if (!repeated) {
+	char *up = list[1];
+
+	if (UChar(up[0]) == '\033') {
+	    if (up[1] == '[') {
+		prefix = 2;
+	    } else {
+		prefix = 1;
+	    }
+	} else if (UChar(up[0]) == UChar('\233')) {
+	    prefix = 1;
+	}
+	if (prefix) {
+	    suffix = prefix;
+	    while (up[suffix] && isdigit(UChar(up[suffix])))
+		++suffix;
+	}
+	if (prefix && up[suffix] == 'A') {
+	    skip[1] = TRUE;
+	    if (!strcmp(list[0], "\n"))
+		skip[0] = TRUE;
+	    if (!strcmp(list[2], "\b"))
+		skip[2] = TRUE;
+
+	    for (j = 0; j < 4; ++j) {
+		if (skip[j] || strlen(list[j]) == 1)
+		    continue;
+		if (memcmp(list[j], up, prefix)) {
+		    char *value = _nc_tic_expand(list[j], TRUE, 0);
+		    _nc_warning("inconsistent prefix for %s\n", value);
+		    continue;
+		}
+		if (strlen(list[j]) < suffix) {
+		    char *value = _nc_tic_expand(list[j], TRUE, 0);
+		    _nc_warning("inconsistent length for %s, expected %d\n",
+				value, (int) suffix + 1);
+		    continue;
+		}
+		want = "BADC"[j];
+		if (list[j][suffix] != want) {
+		    char *value = _nc_tic_expand(list[j], TRUE, 0);
+		    _nc_warning("inconsistent suffix for %s, expected %c, have %c\n",
+				value, want, list[j][suffix]);
+		}
+	    }
+	}
+    }
+}
+
+#define EXPECTED(name) if (!PRESENT(name)) _nc_warning("expected " #name)
+
+static void
+check_cursor(TERMTYPE *tp)
+{
+    int count;
+    char *list[4];
+
+    /* if we have a parameterized form, then the non-parameterized is easy */
+    ANDMISSING(parm_down_cursor, cursor_down);
+    ANDMISSING(parm_up_cursor, cursor_up);
+    ANDMISSING(parm_left_cursor, cursor_left);
+    ANDMISSING(parm_right_cursor, cursor_right);
+
+    /* Given any of a set of cursor movement, the whole set should be present. 
+     * Technically this is not true (we could use cursor_address to fill in
+     * unsupported controls), but it is likely.
+     */
+    count = 0;
+    if (PRESENT(parm_down_cursor)) {
+	list[count++] = parm_down_cursor;
+    }
+    if (PRESENT(parm_up_cursor)) {
+	list[count++] = parm_up_cursor;
+    }
+    if (PRESENT(parm_left_cursor)) {
+	list[count++] = parm_left_cursor;
+    }
+    if (PRESENT(parm_right_cursor)) {
+	list[count++] = parm_right_cursor;
+    }
+    if (count == 4) {
+	check_ansi_cursor(list);
+    } else if (count != 0) {
+	EXPECTED(parm_down_cursor);
+	EXPECTED(parm_up_cursor);
+	EXPECTED(parm_left_cursor);
+	EXPECTED(parm_right_cursor);
+    }
+
+    count = 0;
+    if (PRESENT(cursor_down)) {
+	list[count++] = cursor_down;
+    }
+    if (PRESENT(cursor_up)) {
+	list[count++] = cursor_up;
+    }
+    if (PRESENT(cursor_left)) {
+	list[count++] = cursor_left;
+    }
+    if (PRESENT(cursor_right)) {
+	list[count++] = cursor_right;
+    }
+    if (count == 4) {
+	check_ansi_cursor(list);
+    } else if (count != 0) {
+	count = 0;
+	if (PRESENT(cursor_down) && strcmp(cursor_down, "\n"))
+	    ++count;
+	if (PRESENT(cursor_left) && strcmp(cursor_left, "\b"))
+	    ++count;
+	if (PRESENT(cursor_up) && strlen(cursor_up) > 1)
+	    ++count;
+	if (PRESENT(cursor_right) && strlen(cursor_right) > 1)
+	    ++count;
+	if (count) {
+	    EXPECTED(cursor_down);
+	    EXPECTED(cursor_up);
+	    EXPECTED(cursor_left);
+	    EXPECTED(cursor_right);
+	}
+    }
+}
+
+#define MAX_KP 5
+/*
  * Do a quick sanity-check for vt100-style keypads to see if the 5-key keypad
  * is mapped inconsistently.
  */
@@ -914,8 +1096,8 @@ check_keypad(TERMTYPE *tp)
 	VALID_STRING(key_b2) &&
 	VALID_STRING(key_c1) &&
 	VALID_STRING(key_c3)) {
-	char final[6];
-	int list[5];
+	char final[MAX_KP + 1];
+	int list[MAX_KP];
 	int increase = 0;
 	int j, k, kk;
 	int last;
@@ -929,6 +1111,7 @@ check_keypad(TERMTYPE *tp)
 	final[5] = '\0';
 
 	/* special case: legacy coding using 1,2,3,0,. on the bottom */
+	assert(strlen(final) <= MAX_KP);
 	if (!strcmp(final, "qsrpn"))
 	    return;
 
@@ -939,22 +1122,22 @@ check_keypad(TERMTYPE *tp)
 	list[4] = keypad_index(key_c3);
 
 	/* check that they're all vt100 keys */
-	for (j = 0; j < 5; ++j) {
+	for (j = 0; j < MAX_KP; ++j) {
 	    if (list[j] < 0) {
 		return;
 	    }
 	}
 
 	/* check if they're all in increasing order */
-	for (j = 1; j < 5; ++j) {
+	for (j = 1; j < MAX_KP; ++j) {
 	    if (list[j] > list[j - 1]) {
 		++increase;
 	    }
 	}
-	if (increase != 4) {
+	if (increase != (MAX_KP - 1)) {
 	    show[0] = '\0';
 
-	    for (j = 0, last = -1; j < 5; ++j) {
+	    for (j = 0, last = -1; j < MAX_KP; ++j) {
 		for (k = 0, kk = -1, test = 100; k < 5; ++k) {
 		    if (list[k] > last &&
 			list[k] < test) {
@@ -963,6 +1146,7 @@ check_keypad(TERMTYPE *tp)
 		    }
 		}
 		last = test;
+		assert(strlen(show) < (MAX_KP * 4));
 		switch (kk) {
 		case 0:
 		    strcat(show, " ka1");
@@ -1004,6 +1188,32 @@ check_keypad(TERMTYPE *tp)
 	if (*show != '\0')
 	    _nc_warning("vt100 keypad map incomplete:%s", show);
     }
+}
+
+static void
+check_printer(TERMTYPE *tp)
+{
+    PAIRED(enter_doublewide_mode, exit_doublewide_mode);
+    PAIRED(enter_italics_mode, exit_italics_mode);
+    PAIRED(enter_leftward_mode, exit_leftward_mode);
+    PAIRED(enter_micro_mode, exit_micro_mode);
+    PAIRED(enter_shadow_mode, exit_shadow_mode);
+    PAIRED(enter_subscript_mode, exit_subscript_mode);
+    PAIRED(enter_superscript_mode, exit_superscript_mode);
+    PAIRED(enter_upward_mode, exit_upward_mode);
+
+    ANDMISSING(start_char_set_def, stop_char_set_def);
+
+    /* if we have a parameterized form, then the non-parameterized is easy */
+    ANDMISSING(set_bottom_margin_parm, set_bottom_margin);
+    ANDMISSING(set_left_margin_parm, set_left_margin);
+    ANDMISSING(set_right_margin_parm, set_right_margin);
+    ANDMISSING(set_top_margin_parm, set_top_margin);
+
+    ANDMISSING(parm_down_micro, micro_down);
+    ANDMISSING(parm_left_micro, micro_left);
+    ANDMISSING(parm_right_micro, micro_right);
+    ANDMISSING(parm_up_micro, micro_up);
 }
 
 /*
@@ -1242,6 +1452,8 @@ similar_sgr(int num, char *a, char *b)
 	    } else if (delaying) {
 		a = skip_delay(a);
 		b = skip_delay(b);
+	    } else if ((*b == '0' || (*b == ';')) && *a == 'm') {
+		b++;
 	    } else {
 		a++;
 	    }
@@ -1317,7 +1529,7 @@ show_where(unsigned level)
     if (_nc_tracing >= DEBUG_LEVEL(level)) {
 	char my_name[256];
 	_nc_get_type(my_name);
-	fprintf(stderr, "\"%s\", line %d, '%s' ",
+	_tracef("\"%s\", line %d, '%s'",
 		_nc_get_source(),
 		_nc_curr_line, my_name);
     }
@@ -1385,7 +1597,9 @@ check_termtype(TERMTYPE *tp, bool literal)
 
     check_acs(tp);
     check_colors(tp);
+    check_cursor(tp);
     check_keypad(tp);
+    check_printer(tp);
 
     /*
      * These may be mismatched because the terminal description relies on
@@ -1405,6 +1619,11 @@ check_termtype(TERMTYPE *tp, bool literal)
      */
     ANDMISSING(change_scroll_region, save_cursor);
     ANDMISSING(change_scroll_region, restore_cursor);
+
+    /*
+     * If we can clear tabs, we should be able to initialize them.
+     */
+    ANDMISSING(clear_all_tabs, set_tab);
 
     if (PRESENT(set_attributes)) {
 	char *zero = 0;

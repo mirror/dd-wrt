@@ -7,7 +7,7 @@
 --                                 B O D Y                                  --
 --                                                                          --
 ------------------------------------------------------------------------------
--- Copyright (c) 2000-2004,2006 Free Software Foundation, Inc.              --
+-- Copyright (c) 2000-2008,2009 Free Software Foundation, Inc.              --
 --                                                                          --
 -- Permission is hereby granted, free of charge, to any person obtaining a  --
 -- copy of this software and associated documentation files (the            --
@@ -35,8 +35,8 @@
 ------------------------------------------------------------------------------
 --  Author: Eugene V. Melaragno <aldomel@ix.netcom.com> 2000
 --  Version Control
---  $Revision: 1.6 $
---  $Date: 2006/06/25 14:24:40 $
+--  $Revision: 1.8 $
+--  $Date: 2009/12/26 17:38:58 $
 --  Binding Version 01.00
 ------------------------------------------------------------------------------
 --  Character input test
@@ -121,14 +121,15 @@ begin
          Put (tmp6, Integer (c), 8);
          Add (Str => tmp6);
          Add (Ch => ' ');
-         if c = Key_Mouse then declare
-            event : Mouse_Event;
-         begin
-            event := Get_Mouse;
-            Add (Str => "KEY_MOUSE, ");
-            Add (Str => mouse_decode (event));
-            Add (Ch => newl);
-         end;
+         if c = Key_Mouse then
+            declare
+               event : Mouse_Event;
+            begin
+               event := Get_Mouse;
+               Add (Str => "KEY_MOUSE, ");
+               Add (Str => mouse_decode (event));
+               Add (Ch => newl);
+            end;
          elsif c >= Key_Min then
             Key_Name (c, tmp20);
             Add (Str => tmp20);
@@ -150,21 +151,22 @@ begin
                Add (Str => " (high-half character)");
                Add (Ch => newl);
             end;
-         else declare
-            c2 : constant Character := Character'Val (c mod 16#80#);
-         begin
-            if Ada.Characters.Handling.Is_Graphic (c2) then
-               Add (Ch => c2);
-               Add (Str => " (ASCII printable character)");
-               Add (Ch => newl);
-            else
-               Add (Str => Un_Control ((Ch => c2,
-                                       Color => Color_Pair'First,
-                                       Attr => Normal_Video)));
-               Add (Str => " (ASCII control character)");
-               Add (Ch => newl);
-            end if;
-         end;
+         else
+            declare
+               c2 : constant Character := Character'Val (c mod 16#80#);
+            begin
+               if Ada.Characters.Handling.Is_Graphic (c2) then
+                  Add (Ch => c2);
+                  Add (Str => " (ASCII printable character)");
+                  Add (Ch => newl);
+               else
+                  Add (Str => Un_Control ((Ch => c2,
+                                          Color => Color_Pair'First,
+                                          Attr => Normal_Video)));
+                  Add (Str => " (ASCII control character)");
+                  Add (Ch => newl);
+               end if;
+            end;
          end if;
          --  TODO I am not sure why this was in the C version
          --  the delay statement scroll anyway.
@@ -203,7 +205,7 @@ begin
                Add (Str => " I saw '");
                myAdd (Str => boundedbuf);
                Add (Str => "'.");
-               Add (ch => newl);
+               Add (Ch => newl);
             end if;
          end;
       elsif c = Character'Pos ('s') then

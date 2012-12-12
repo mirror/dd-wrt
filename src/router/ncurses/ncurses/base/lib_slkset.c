@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -44,12 +44,12 @@
 #endif
 #endif
 
-MODULE_ID("$Id: lib_slkset.c,v 1.16 2006/12/17 19:47:09 tom Exp $")
+MODULE_ID("$Id: lib_slkset.c,v 1.21 2010/12/25 23:43:58 tom Exp $")
 
 NCURSES_EXPORT(int)
-slk_set(int i, const char *astr, int format)
+NCURSES_SP_NAME(slk_set) (NCURSES_SP_DCLx int i, const char *astr, int format)
 {
-    SLK *slk = SP->_slk;
+    SLK *slk;
     int offset;
     int numchrs;
     int numcols;
@@ -57,15 +57,20 @@ slk_set(int i, const char *astr, int format)
     const char *str = astr;
     const char *p;
 
-    T((T_CALLED("slk_set(%d, \"%s\", %d)"), i, str, format));
+    T((T_CALLED("slk_set(%p, %d, \"%s\", %d)"), (void *) SP_PARM, i, str, format));
 
-    if (slk == NULL || i < 1 || i > slk->labcnt || format < 0 || format > 2)
+    if (SP_PARM == 0
+	|| (slk = SP_PARM->_slk) == 0
+	|| i < 1
+	|| i > slk->labcnt
+	|| format < 0
+	|| format > 2)
 	returnCode(ERR);
-    if (str == NULL)
+    if (str == 0)
 	str = "";
     --i;			/* Adjust numbering of labels */
 
-    limit = MAX_SKEY_LEN(SP->slk_format);
+    limit = MAX_SKEY_LEN(SP_PARM->slk_format);
     while (isspace(UChar(*str)))
 	str++;			/* skip over leading spaces  */
     p = str;
@@ -89,12 +94,12 @@ slk_set(int i, const char *astr, int format)
 	numcols += wcwidth(wc);
 	p += need;
     }
-    numchrs = (p - str);
+    numchrs = (int) (p - str);
 #else
     while (isprint(UChar(*p)))
 	p++;			/* The first non-print stops */
 
-    numcols = (p - str);
+    numcols = (int) (p - str);
     if (numcols > limit)
 	numcols = limit;
     numchrs = numcols;
@@ -142,3 +147,11 @@ slk_set(int i, const char *astr, int format)
     slk->ent[i].dirty = TRUE;
     returnCode(OK);
 }
+
+#if NCURSES_SP_FUNCS
+NCURSES_EXPORT(int)
+slk_set(int i, const char *astr, int format)
+{
+    return NCURSES_SP_NAME(slk_set) (CURRENT_SCREEN, i, astr, format);
+}
+#endif

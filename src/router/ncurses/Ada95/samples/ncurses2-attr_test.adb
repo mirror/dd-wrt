@@ -7,7 +7,7 @@
 --                                 B O D Y                                  --
 --                                                                          --
 ------------------------------------------------------------------------------
--- Copyright (c) 2000-2004,2006 Free Software Foundation, Inc.              --
+-- Copyright (c) 2000-2007,2008 Free Software Foundation, Inc.              --
 --                                                                          --
 -- Permission is hereby granted, free of charge, to any person obtaining a  --
 -- copy of this software and associated documentation files (the            --
@@ -35,8 +35,8 @@
 ------------------------------------------------------------------------------
 --  Author: Eugene V. Melaragno <aldomel@ix.netcom.com> 2000
 --  Version Control
---  $Revision: 1.6 $
---  $Date: 2006/06/25 14:24:40 $
+--  $Revision: 1.9 $
+--  $Date: 2008/07/26 18:47:26 $
 --  Binding Version 01.00
 ------------------------------------------------------------------------------
 with ncurses2.util; use ncurses2.util;
@@ -56,7 +56,7 @@ procedure ncurses2.attr_test is
                         attr : Character_Attribute_Set;
                         name : String;
                         once : Boolean) return Line_Position;
-   procedure attr_getc (skip : out Integer;
+   procedure attr_getc (skip : in out Integer;
                         fg, bg : in out Color_Number;
                         result : out Boolean);
 
@@ -178,9 +178,9 @@ procedure ncurses2.attr_test is
          end if;
          m := rest mod 2;
          rest := rest / 2;
---       if 1 = m then
---          a.Protected_Character := True;
---       end if;
+         if 1 = m then
+            a.Protected_Character := True;
+         end if;
          m := rest mod 2;
          rest := rest / 2;
          if 1 = m then
@@ -233,20 +233,18 @@ procedure ncurses2.attr_test is
       return row + 2;
    end show_attr;
 
-   procedure attr_getc (skip : out Integer; fg, bg : in out Color_Number;
-                                            result : out Boolean) is
+   procedure attr_getc (skip : in out Integer;
+                        fg, bg : in out Color_Number;
+                        result : out Boolean) is
       ch : constant Key_Code := Getchar;
       nc : constant Color_Number := Color_Number (Number_Of_Colors);
-      curscr : Window;
-      pragma Import (C, curscr, "curscr");
-      --  curscr is not implemented in the Ada binding
    begin
       result := True;
       if Ada.Characters.Handling.Is_Digit (Character'Val (ch)) then
          skip := ctoi (Code_To_Char (ch));
       elsif ch = CTRL ('L') then
          Touch;
-         Touch (curscr);
+         Touch (Current_Window);
          Refresh;
       elsif Has_Colors then
          case ch is
@@ -289,18 +287,18 @@ begin
       begin
          --  row := 2; -- weird, row is set to 0 without this.
          --  TODO delete the above line, it was a gdb quirk that confused me
-         if Has_Colors then declare
-            pair : constant Color_Pair :=
+         if Has_Colors then
+            declare pair : constant Color_Pair :=
               Color_Pair (fg * Color_Number (Number_Of_Colors) + bg);
-         begin
-            --  Go though each color pair. Assume that the number of
-            --  Redefinable_Color_Pairs is 8*8 with predefined Colors 0..7
-            if not pairs (pair) then
-               Init_Pair (pair, fg, bg);
-               pairs (pair) := True;
-            end if;
-            normal.Color := pair;
-         end;
+            begin
+               --  Go though each color pair. Assume that the number of
+               --  Redefinable_Color_Pairs is 8*8 with predefined Colors 0..7
+               if not pairs (pair) then
+                  Init_Pair (pair, fg, bg);
+                  pairs (pair) := True;
+               end if;
+               normal.Color := pair;
+            end;
          end if;
          Set_Background (Ch => normal);
          Erase;

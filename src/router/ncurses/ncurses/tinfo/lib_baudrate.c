@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998,2000,2002 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,6 +29,7 @@
 /****************************************************************************
  *  Author: Zeyd M. Ben-Halim <zmbenhal@netcom.com> 1992,1995               *
  *     and: Eric S. Raymond <esr@snark.thyrsus.com>                         *
+ *     and: Thomas E. Dickey                        1996-on                 *
  ****************************************************************************/
 
 /*
@@ -37,8 +38,10 @@
  */
 
 #include <curses.priv.h>
-#include <term.h>		/* cur_term, pad_char */
 #include <termcap.h>		/* ospeed */
+#if defined(__FreeBSD__)
+#include <sys/param.h>
+#endif
 
 /*
  * These systems use similar header files, which define B1200 as 1200, etc.,
@@ -46,7 +49,7 @@
  * of the indices up to B115200 fit nicely in a 'short', allowing us to retain
  * ospeed's type for compatibility.
  */
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#if (defined(__FreeBSD__) && (__FreeBSD_version < 700000)) || defined(__NetBSD__) || defined(__OpenBSD__)
 #undef B0
 #undef B50
 #undef B75
@@ -76,7 +79,7 @@
 #undef USE_OLD_TTY
 #endif /* USE_OLD_TTY */
 
-MODULE_ID("$Id: lib_baudrate.c,v 1.22 2002/01/19 23:07:53 Andrey.A.Chernov Exp $")
+MODULE_ID("$Id: lib_baudrate.c,v 1.31 2010/12/19 01:50:50 tom Exp $")
 
 /*
  *	int
@@ -141,16 +144,20 @@ static struct speed const speeds[] =
 NCURSES_EXPORT(int)
 _nc_baudrate(int OSpeed)
 {
+#if !USE_REENTRANT
     static int last_OSpeed;
     static int last_baudrate;
+#endif
 
-    int result;
+    int result = ERR;
     unsigned i;
 
+#if !USE_REENTRANT
     if (OSpeed == last_OSpeed) {
 	result = last_baudrate;
-    } else {
-	result = ERR;
+    }
+#endif
+    if (result == ERR) {
 	if (OSpeed >= 0) {
 	    for (i = 0; i < SIZEOF(speeds); i++) {
 		if (speeds[i].s == OSpeed) {
@@ -159,7 +166,12 @@ _nc_baudrate(int OSpeed)
 		}
 	    }
 	}
-	last_baudrate = result;
+#if !USE_REENTRANT
+	if (OSpeed == last_OSpeed) {
+	    last_OSpeed = OSpeed;
+	    last_baudrate = result;
+	}
+#endif
     }
     return (result);
 }
@@ -182,11 +194,11 @@ _nc_ospeed(int BaudRate)
 }
 
 NCURSES_EXPORT(int)
-baudrate(void)
+NCURSES_SP_NAME(baudrate) (NCURSES_SP_DCL0)
 {
     int result;
 
-    T((T_CALLED("baudrate()")));
+    T((T_CALLED("baudrate(%p)"), (void *) SP_PARM));
 
     /*
      * In debugging, allow the environment symbol to override when we're
@@ -194,29 +206,41 @@ baudrate(void)
      * that take into account costs that depend on baudrate.
      */
 #ifdef TRACE
-    if (SP && !isatty(fileno(SP->_ofp))
+    if (IsValidTIScreen(SP_PARM)
+	&& !isatty(fileno(SP_PARM ? SP_PARM->_ofp : stdout))
 	&& getenv("BAUDRATE") != 0) {
 	int ret;
 	if ((ret = _nc_getenv_num("BAUDRATE")) <= 0)
 	    ret = 9600;
-	ospeed = _nc_ospeed(ret);
+	ospeed = (NCURSES_OSPEED) _nc_ospeed(ret);
 	returnCode(ret);
     }
 #endif
 
+    if (IsValidTIScreen(SP_PARM)) {
 #ifdef USE_OLD_TTY
-    result = cfgetospeed(&cur_term->Nttyb);
-    ospeed = _nc_ospeed(result);
+	result = cfgetospeed(&(TerminalOf(SP_PARM)->Nttyb));
+	ospeed = _nc_ospeed(result);
 #else /* !USE_OLD_TTY */
 #ifdef TERMIOS
-    ospeed = cfgetospeed(&cur_term->Nttyb);
+	ospeed = (NCURSES_OSPEED) cfgetospeed(&(TerminalOf(SP_PARM)->Nttyb));
 #else
-    ospeed = cur_term->Nttyb.sg_ospeed;
+	ospeed = (NCURSES_OSPEED) TerminalOf(SP_PARM)->Nttyb.sg_ospeed;
 #endif
-    result = _nc_baudrate(ospeed);
+	result = _nc_baudrate(ospeed);
 #endif
-    if (cur_term != 0)
-	cur_term->_baudrate = result;
+	TerminalOf(SP_PARM)->_baudrate = result;
+    } else {
+	result = ERR;
+    }
 
     returnCode(result);
 }
+
+#if NCURSES_SP_FUNCS
+NCURSES_EXPORT(int)
+baudrate(void)
+{
+    return NCURSES_SP_NAME(baudrate) (CURRENT_SCREEN);
+}
+#endif
