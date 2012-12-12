@@ -1,7 +1,6 @@
 #!/bin/sh
-# $Id: tar-copy.sh,v 1.5 2003/10/25 14:40:07 tom Exp $
 ##############################################################################
-# Copyright (c) 1998,2003 Free Software Foundation, Inc.                     #
+# Copyright (c) 2007,2009 Free Software Foundation, Inc.                     #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -27,51 +26,31 @@
 # use or other dealings in this Software without prior written               #
 # authorization.                                                             #
 ##############################################################################
+# $Id: savescreen.sh,v 1.4 2009/10/10 17:08:45 tom Exp $
 #
-# Author: Thomas E. Dickey
-#
-# Copy a collection of files using 'tar', so that their dates and links are
-# preserved
-#
-# Parameters:
-#	$1 = files to copy
-#	$2 = source directory
-#	$3 = destination directory
-#
-#DOIT=echo
-DOIT=eval
+# Use this script to exercise "savescreen".
+# It starts by generating a series of temporary-filenames, which are passed
+# to the test-program.  Loop as long as the first file named exists.
+PARAMS=
+NFILES=4
+PREFIX=savescreen-$$
+n=0
+BEGINS=$PREFIX-$n.tmp
+while test $n != $NFILES
+do
+	LATEST=$PREFIX-$n.tmp
+	PARAMS="$PARAMS $LATEST"
+	n=`expr $n + 1`
+done
 
-if test $# != 3 ; then
-	echo "Usage: $0 files source target"
-	exit 1
-elif test ! -d "$2" ; then
-	echo "Source directory not found: $2"
-	exit 1
-elif test ! -d "$3" ; then
-	echo "Target directory not found: $3"
-	exit 1
-fi
-
-WD=`pwd`
-
-TMP=$WD/copy$$
-
-cd $2
-TEST=`ls -d $1 2>/dev/null`
-if test -z "$TEST"
+./savescreen $PARAMS
+if test -f $BEGINS
 then
-	echo "... no match for \"$1\" in $2"
+	while test -f $BEGINS
+	do
+		./savescreen -r $PARAMS
+		test $? != 0 && break
+	done
 else
-	echo "... installing files matching \"$1\" in $2"
-	trap "rm -f $TMP" 0 1 2 5 15
-	if ( tar cf $TMP $1 )
-	then
-		cd $3
-		LIST=`tar tf $TMP 2>&1`
-		$DOIT rm -rf $LIST 2>/dev/null
-		$DOIT tar xvf $TMP
-	else
-		echo "Cannot create tar of $1 files"
-		exit 1
-	fi
+	echo "No screens were saved"
 fi

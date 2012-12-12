@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 2009,2010 Free Software Foundation, Inc.                   *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -25,55 +25,76 @@
  * sale, use or other dealings in this Software without prior written       *
  * authorization.                                                           *
  ****************************************************************************/
-/* $Id: ncurses_dll.h,v 1.5 2006/04/22 22:07:51 tom Exp $ */
 
-#ifndef NCURSES_DLL_H_incl
-#define NCURSES_DLL_H_incl 1
+#define isQUIT(c)     ((c) == QUIT || (c) == ESCAPE)
 
-/* no longer needed on cygwin or mingw, thanks to auto-import       */
-/* but this structure may be useful at some point for an MSVC build */
-/* so, for now unconditionally define the important flags           */
-/* "the right way" for proper static and dll+auto-import behavior   */
-#undef NCURSES_DLL
-#define NCURSES_STATIC
+#define key_RECUR     CTRL('W')
+#define key_NEWLINE   CTRL('N')
+#define key_BACKSPACE '\b'
 
-#if defined(__CYGWIN__)
-#  if defined(NCURSES_DLL)
-#    if defined(NCURSES_STATIC)
-#      undef NCURSES_STATIC
-#    endif
-#  endif
-#  undef NCURSES_IMPEXP
-#  undef NCURSES_API
-#  undef NCURSES_EXPORT
-#  undef NCURSES_EXPORT_VAR
-#  if defined(NCURSES_DLL)
-/* building a DLL */
-#    define NCURSES_IMPEXP __declspec(dllexport)
-#  elif defined(NCURSES_STATIC)
-/* building or linking to a static library */
-#    define NCURSES_IMPEXP /* nothing */
-#  else
-/* linking to the DLL */
-#    define NCURSES_IMPEXP __declspec(dllimport)
-#  endif
-#  define NCURSES_API __cdecl
-#  define NCURSES_EXPORT(type) NCURSES_IMPEXP type NCURSES_API
-#  define NCURSES_EXPORT_VAR(type) NCURSES_IMPEXP type
-#endif
+static FILE *linedata;
 
-/* Take care of non-cygwin platforms */
-#if !defined(NCURSES_IMPEXP)
-#  define NCURSES_IMPEXP /* nothing */
-#endif
-#if !defined(NCURSES_API)
-#  define NCURSES_API /* nothing */
-#endif
-#if !defined(NCURSES_EXPORT)
-#  define NCURSES_EXPORT(type) NCURSES_IMPEXP type NCURSES_API
-#endif
-#if !defined(NCURSES_EXPORT_VAR)
-#  define NCURSES_EXPORT_VAR(type) NCURSES_IMPEXP type
-#endif
+static void
+failed(const char *s)
+{
+    perror(s);
+    ExitProgram(EXIT_FAILURE);
+}
 
-#endif /* NCURSES_DLL_H_incl */
+static void
+init_linedata(const char *name)
+{
+    if ((linedata = fopen(name, "r")) == 0) {
+	failed(name);
+    }
+}
+
+static int
+read_linedata(WINDOW *work)
+{
+    int result;
+    if (linedata != 0) {
+	result = fgetc(linedata);
+	if (result == EOF) {
+	    fclose(linedata);
+	    linedata = 0;
+	    result = read_linedata(work);
+	} else {
+	    wrefresh(work);
+	    if (result == '\n') {
+		result = key_NEWLINE;
+	    }
+	}
+    } else {
+#ifdef WIDE_LINEDATA
+	wint_t ch;
+	int code;
+
+	result = ERR;
+	while ((code = wget_wch(work, &ch)) != ERR) {
+
+	    if (code == KEY_CODE_YES) {
+		switch (ch) {
+		case KEY_DOWN:
+		    result = key_NEWLINE;
+		    break;
+		case KEY_BACKSPACE:
+		    result = key_BACKSPACE;
+		    break;
+		default:
+		    beep();
+		    continue;
+		}
+	    } else if (code != ERR) {
+		result = (int) ch;
+		break;
+	    } else {
+		break;
+	    }
+	}
+#else
+	result = wgetch(work);
+#endif
+    }
+    return result;
+}
