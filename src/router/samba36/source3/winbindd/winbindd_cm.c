@@ -1602,6 +1602,10 @@ static NTSTATUS cm_open_connection(struct winbindd_domain *domain,
 
 		result = cm_prepare_connection(domain, fd, domain->dcname,
 			&new_conn->cli, &retry);
+		if (!NT_STATUS_IS_OK(result)) {
+			/* Don't leak the smb connection socket */
+			close(fd);
+		}
 
 		if (!retry)
 			break;
@@ -2561,6 +2565,37 @@ NTSTATUS cm_connect_lsa(struct winbindd_domain *domain, TALLOC_CTX *mem_ctx,
 	*cli = conn->lsa_pipe;
 	*lsa_policy = conn->lsa_policy;
 	return result;
+}
+
+/****************************************************************************
+Open a LSA connection to a DC, suiteable for LSA lookup calls.
+****************************************************************************/
+
+NTSTATUS cm_connect_lsat(struct winbindd_domain *domain,
+			 TALLOC_CTX *mem_ctx,
+			 struct rpc_pipe_client **cli,
+			 struct policy_handle *lsa_policy)
+{
+	NTSTATUS status;
+
+	if (domain->can_do_ncacn_ip_tcp) {
+		status = cm_connect_lsa_tcp(domain, mem_ctx, cli);
+		if (NT_STATUS_EQUAL(status, NT_STATUS_ACCESS_DENIED) ||
+		    NT_STATUS_EQUAL(status, NT_STATUS_RPC_SEC_PKG_ERROR) ||
+		    NT_STATUS_EQUAL(status, NT_STATUS_NETWORK_ACCESS_DENIED)) {
+			invalidate_cm_connection(&domain->conn);
+			status = cm_connect_lsa_tcp(domain, mem_ctx, cli);
+		}
+		if (!NT_STATUS_IS_OK(status)) {
+			return status;
+		}
+
+		return NT_STATUS_OK;
+	}
+
+	status = cm_connect_lsa(domain, mem_ctx, cli, lsa_policy);
+
+	return status;
 }
 
 /****************************************************************************
