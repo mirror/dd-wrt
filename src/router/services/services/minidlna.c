@@ -42,6 +42,10 @@ void start_dlna(void)
 	mkdir("/tmp/db", 0700);
 	eval("rm","-f","/tmp/db/files.db");
 	FILE *fp = fopen("/tmp/minidlna.conf", "wb");
+	if (nvram_match("jffs_mounted","1")) {
+		mkdir("/jffs/minidlna",0700);
+		fprintf(fp, "db_dir=/jffs/minidlna\n");
+	}
 	fprintf(fp, "port=8200\n");
 	fprintf(fp, "network_interface=br0\n");
 	fprintf(fp, "media_dir=/%s\n", nvram_default_get("dlna_dir", "mnt"));	// comma separted list
