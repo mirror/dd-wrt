@@ -13942,32 +13942,15 @@ fi
 done
 
 
-for ac_header in md5.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "md5.h" "ac_cv_header_md5_h" "$ac_includes_default"
-if test "x$ac_cv_header_md5_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_MD5_H 1
-_ACEOF
-
-fi
-
-done
-
-
 samba_cv_md5lib=none
 
-if test x"$ac_cv_header_md5_h" = x"yes"; then
-
-$as_echo "#define HAVE_MD5_H 1" >>confdefs.h
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MD5Update in -lmd5" >&5
-$as_echo_n "checking for MD5Update in -lmd5... " >&6; }
-if ${ac_cv_lib_md5_MD5Update+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MD5Update in -lc" >&5
+$as_echo_n "checking for MD5Update in -lc... " >&6; }
+if ${ac_cv_lib_c_MD5Update+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmd5  $LIBS"
+LIBS="-lc  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -13987,24 +13970,22 @@ return MD5Update ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_md5_MD5Update=yes
+  ac_cv_lib_c_MD5Update=yes
 else
-  ac_cv_lib_md5_MD5Update=no
+  ac_cv_lib_c_MD5Update=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_md5_MD5Update" >&5
-$as_echo "$ac_cv_lib_md5_MD5Update" >&6; }
-if test "x$ac_cv_lib_md5_MD5Update" = xyes; then :
-  samba_cv_md5lib=md5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_MD5Update" >&5
+$as_echo "$ac_cv_lib_c_MD5Update" >&6; }
+if test "x$ac_cv_lib_c_MD5Update" = xyes; then :
+  samba_cv_md5lib=""
 fi
 
-fi
 
-if test x"$ac_cv_header_md5_h" = x"yes" -a \
-        x"$samba_cv_md5lib" = x"none" ; then
+if test x"$samba_cv_md5lib" = x"none" ; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MD5Update in -lmd" >&5
 $as_echo_n "checking for MD5Update in -lmd... " >&6; }
 if ${ac_cv_lib_md_MD5Update+:} false; then :
@@ -14047,15 +14028,14 @@ fi
 
 fi
 
-if test x"$ac_cv_header_md5_h" = x"yes" -a \
-        x"$samba_cv_md5lib" = x"none" ; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MD5Update in -lc" >&5
-$as_echo_n "checking for MD5Update in -lc... " >&6; }
-if ${ac_cv_lib_c_MD5Update+:} false; then :
+if test x"$samba_cv_md5lib" = x"none" ; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MD5Update in -lmd5" >&5
+$as_echo_n "checking for MD5Update in -lmd5... " >&6; }
+if ${ac_cv_lib_md5_MD5Update+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lc  $LIBS"
+LIBS="-lmd5  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -14075,32 +14055,47 @@ return MD5Update ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_c_MD5Update=yes
+  ac_cv_lib_md5_MD5Update=yes
 else
-  ac_cv_lib_c_MD5Update=no
+  ac_cv_lib_md5_MD5Update=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_MD5Update" >&5
-$as_echo "$ac_cv_lib_c_MD5Update" >&6; }
-if test "x$ac_cv_lib_c_MD5Update" = xyes; then :
-  samba_cv_md5lib=""
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_md5_MD5Update" >&5
+$as_echo "$ac_cv_lib_md5_MD5Update" >&6; }
+if test "x$ac_cv_lib_md5_MD5Update" = xyes; then :
+  samba_cv_md5lib=md5
 fi
 
 fi
 
 if test x"$samba_cv_md5lib" != x"none" ; then
+	for ac_header in md5.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "md5.h" "ac_cv_header_md5_h" "$ac_includes_default"
+if test "x$ac_cv_header_md5_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_MD5_H 1
+_ACEOF
+
+fi
+
+done
+
+fi
+
+CRYPTO_MD5_OBJ="../lib/crypto/md5.o"
+if test x"$ac_cv_header_md5_h" = x"yes" -a \
+        x"$samba_cv_md5lib" != x"none" ; then
 	if test x"$samba_cv_md5lib" != x ; then
 		LIBS="${LIBS} -l${samba_cv_md5lib}"
-	fi
-	CRYPTO_MD5_OBJ=
 
 $as_echo "#define HAVE_LIBMD5 1" >>confdefs.h
 
-else
-	CRYPTO_MD5_OBJ="../lib/crypto/md5.o"
+	fi
+	CRYPTO_MD5_OBJ=
 fi
 
 
@@ -30793,6 +30788,69 @@ $as_echo "$samba_cv_HAVE_ENCTYPE_ARCFOUR_HMAC" >&6; }
 $as_echo "#define HAVE_ENCTYPE_ARCFOUR_HMAC 1" >>confdefs.h
 
     found_arcfour_hmac=yes
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ENCTYPE_AES128_CTS_HMAC_SHA1_96" >&5
+$as_echo_n "checking for ENCTYPE_AES128_CTS_HMAC_SHA1_96... " >&6; }
+if ${samba_cv_HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <krb5.h>
+int
+main ()
+{
+krb5_enctype enctype; enctype = ENCTYPE_AES128_CTS_HMAC_SHA1_96;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  samba_cv_HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96=yes
+else
+  samba_cv_HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $samba_cv_HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96" >&5
+$as_echo "$samba_cv_HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96" >&6; }
+  if test x"$samba_cv_HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96" = x"yes"; then
+
+$as_echo "#define HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96 1" >>confdefs.h
+
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ENCTYPE_AES256_CTS_HMAC_SHA1_96" >&5
+$as_echo_n "checking for ENCTYPE_AES256_CTS_HMAC_SHA1_96... " >&6; }
+if ${samba_cv_HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <krb5.h>
+int
+main ()
+{
+krb5_enctype enctype; enctype = ENCTYPE_AES256_CTS_HMAC_SHA1_96;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  samba_cv_HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96=yes
+else
+  samba_cv_HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $samba_cv_HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96" >&5
+$as_echo "$samba_cv_HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96" >&6; }
+  if test x"$samba_cv_HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96" = x"yes"; then
+
+$as_echo "#define HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96 1" >>confdefs.h
+
   fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AP_OPTS_USE_SUBKEY" >&5

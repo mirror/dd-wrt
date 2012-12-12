@@ -47,13 +47,6 @@ NTSTATUS winbindd_lookup_sids(TALLOC_CTX *mem_ctx,
 			      char ***domains,
 			      char ***names,
 			      enum lsa_SidType **types);
-NTSTATUS winbindd_lookup_names(TALLOC_CTX *mem_ctx,
-			       struct winbindd_domain *domain,
-			       uint32_t num_names,
-			       const char **names,
-			       const char ***domains,
-			       struct dom_sid **sids,
-			       enum lsa_SidType **types);
 NTSTATUS rpc_lookup_sids(TALLOC_CTX *mem_ctx,
 			 struct winbindd_domain *domain,
 			 struct lsa_SidArray *sids,
@@ -170,6 +163,10 @@ NTSTATUS cm_connect_lsa(struct winbindd_domain *domain, TALLOC_CTX *mem_ctx,
 NTSTATUS cm_connect_lsa_tcp(struct winbindd_domain *domain,
 			    TALLOC_CTX *mem_ctx,
 			    struct rpc_pipe_client **cli);
+NTSTATUS cm_connect_lsat(struct winbindd_domain *domain,
+			 TALLOC_CTX *mem_ctx,
+			 struct rpc_pipe_client **cli,
+			 struct policy_handle *lsa_policy);
 NTSTATUS cm_connect_netlogon(struct winbindd_domain *domain,
 			     struct rpc_pipe_client **cli);
 bool fetch_current_dc_from_gencache(TALLOC_CTX *mem_ctx,

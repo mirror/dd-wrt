@@ -58,6 +58,13 @@ NTSTATUS smb1_file_se_access_check(struct connection_struct *conn,
 		return NT_STATUS_OK;
 	}
 
+	/*
+	 * If we can access the path to this file, by
+	 * default we have FILE_READ_ATTRIBUTES from the
+	 * containing directory. See the section:
+	 * "Algorithm to Check Access to an Existing File"
+	 * in MS-FSA.pdf.
+	 */
 	return se_access_check(sd,
 				token,
 				(access_desired & ~FILE_READ_ATTRIBUTES),
@@ -1416,7 +1423,14 @@ NTSTATUS smbd_calculate_access_mask(connection_struct *conn,
 				}
 			}
 
-			access_mask = access_granted;
+			/*
+			 * If we can access the path to this file, by
+			 * default we have FILE_READ_ATTRIBUTES from the
+			 * containing directory. See the section.
+			 * "Algorithm to Check Access to an Existing File"
+			 * in MS-FSA.pdf.
+			 */
+			access_mask = access_granted | FILE_READ_ATTRIBUTES;
 		} else {
 			access_mask = FILE_GENERIC_ALL;
 		}
@@ -2755,8 +2769,8 @@ static NTSTATUS open_directory(connection_struct *conn,
 
 	mtimespec = smb_dname->st.st_ex_mtime;
 
-	/* Temporary access mask used to open the directory fd. */
-	fsp->access_mask = FILE_READ_DATA | FILE_READ_ATTRIBUTES;
+	fsp->access_mask = access_mask;
+
 #ifdef O_DIRECTORY
 	status = fd_open(conn, fsp, O_RDONLY|O_DIRECTORY, 0);
 #else
