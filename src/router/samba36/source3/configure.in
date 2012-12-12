@@ -752,35 +752,31 @@ AC_CHECK_HEADERS(netgroup.h)
 AC_CHECK_HEADERS(linux/falloc.h)
 
 dnl check for OS implementation of md5 conformant to rfc1321
-AC_CHECK_HEADERS(md5.h)
-
 samba_cv_md5lib=none
 
-if test x"$ac_cv_header_md5_h" = x"yes"; then
-	AC_DEFINE(HAVE_MD5_H, 1,
-		[Whether md5.h is available.])
-	AC_CHECK_LIB(md5, MD5Update, [samba_cv_md5lib=md5])
-fi
+AC_CHECK_LIB(c, MD5Update, [samba_cv_md5lib=""])
 
-if test x"$ac_cv_header_md5_h" = x"yes" -a \
-        x"$samba_cv_md5lib" = x"none" ; then
+if test x"$samba_cv_md5lib" = x"none" ; then
 	AC_CHECK_LIB(md, MD5Update, [samba_cv_md5lib=md])
 fi
 
-if test x"$ac_cv_header_md5_h" = x"yes" -a \
-        x"$samba_cv_md5lib" = x"none" ; then
-	AC_CHECK_LIB(c, MD5Update, [samba_cv_md5lib=""])
+if test x"$samba_cv_md5lib" = x"none" ; then
+	AC_CHECK_LIB(md5, MD5Update, [samba_cv_md5lib=md5])
 fi
 
 if test x"$samba_cv_md5lib" != x"none" ; then
+	AC_CHECK_HEADERS(md5.h)
+fi
+
+CRYPTO_MD5_OBJ="../lib/crypto/md5.o"
+if test x"$ac_cv_header_md5_h" = x"yes" -a \
+        x"$samba_cv_md5lib" != x"none" ; then
 	if test x"$samba_cv_md5lib" != x ; then
 		LIBS="${LIBS} -l${samba_cv_md5lib}"
+		AC_DEFINE(HAVE_LIBMD5, 1,
+				  [Whether libmd5 conformant to rfc1321 is available.])
 	fi
 	CRYPTO_MD5_OBJ=
-	AC_DEFINE(HAVE_LIBMD5, 1,
-	    [Whether libmd5 conformant to rfc1321 is available.])
-else
-	CRYPTO_MD5_OBJ="../lib/crypto/md5.o"
 fi
 
 AC_SUBST(CRYPTO_MD5_OBJ)
@@ -4154,6 +4150,27 @@ if test x"$with_ads_support" != x"no"; then
     AC_DEFINE(HAVE_ENCTYPE_ARCFOUR_HMAC,1,
               [Whether the ENCTYPE_ARCFOUR_HMAC key type definition is available])
     found_arcfour_hmac=yes
+  fi
+
+  AC_CACHE_CHECK([for ENCTYPE_AES128_CTS_HMAC_SHA1_96],
+                 samba_cv_HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96,[
+    AC_TRY_COMPILE([#include <krb5.h>],
+      [krb5_enctype enctype; enctype = ENCTYPE_AES128_CTS_HMAC_SHA1_96;],
+      samba_cv_HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96=yes,
+      samba_cv_HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96=no)])
+  if test x"$samba_cv_HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96" = x"yes"; then
+    AC_DEFINE(HAVE_ENCTYPE_AES128_CTS_HMAC_SHA1_96,1,
+              [Whether the ENCTYPE_AES128_CTS_HMAC_SHA1_96 key type definition is available])
+  fi
+  AC_CACHE_CHECK([for ENCTYPE_AES256_CTS_HMAC_SHA1_96],
+                 samba_cv_HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96,[
+    AC_TRY_COMPILE([#include <krb5.h>],
+      [krb5_enctype enctype; enctype = ENCTYPE_AES256_CTS_HMAC_SHA1_96;],
+      samba_cv_HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96=yes,
+      samba_cv_HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96=no)])
+  if test x"$samba_cv_HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96" = x"yes"; then
+    AC_DEFINE(HAVE_ENCTYPE_AES256_CTS_HMAC_SHA1_96,1,
+              [Whether the ENCTYPE_AES256_CTS_HMAC_SHA1_96 key type definition is available])
   fi
 
   AC_CACHE_CHECK([for AP_OPTS_USE_SUBKEY],
