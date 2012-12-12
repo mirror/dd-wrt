@@ -508,6 +508,7 @@ int mtd_write(const char *path, const char *mtd)
 		int base = erase_info.start;
 #if defined(HAVE_80211AC) && !defined(HAVE_NORTHSTAR)
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
+			int redo=0;
 		      again:;
 			fprintf(stderr,
 				"write block [%ld] at [0x%08X]        \n",
@@ -523,8 +524,12 @@ int mtd_write(const char *path, const char *mtd)
 				goto again;
 			}
 			lseek(mtd_fd, (i + skipoffset) * mtd_info.erasesize, SEEK_SET);
+			
 			if (write(mtd_fd,buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
 				perror(mtd);
+				fprintf(stderr,"try again %d\n",redo++);
+				if (redo<10)
+				    goto again;
 				goto fail;
 			}
 
