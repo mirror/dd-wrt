@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2008,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -40,13 +40,11 @@
 
 #include <sys/stat.h>
 
-#include <dump_entry.h>
-
 #if USE_HASHED_DB
 #include <hashed_db.h>
 #endif
 
-MODULE_ID("$Id: toe.c,v 1.41 2006/08/19 18:18:09 tom Exp $")
+MODULE_ID("$Id: toe.c,v 1.52 2010/05/01 22:04:08 tom Exp $")
 
 #define isDotname(name) (!strcmp(name, ".") || !strcmp(name, ".."))
 
@@ -59,10 +57,16 @@ static void
 ExitProgram(int code)
 {
     _nc_free_entries(_nc_head);
-    _nc_leaks_dump_entry();
-    _nc_free_and_exit(code);
+    _nc_free_tic(code);
 }
 #endif
+
+static void
+failed(const char *msg)
+{
+    perror(msg);
+    ExitProgram(EXIT_FAILURE);
+}
 
 #if USE_HASHED_DB
 static bool
@@ -166,6 +170,7 @@ typelist(int eargc, char *eargv[],
     for (i = 0; i < eargc; i++) {
 #if USE_DATABASE
 	if (_nc_is_dir_path(eargv[i])) {
+	    char *cwd_buf = 0;
 	    DIR *termdir;
 	    DIRENT *subdir;
 
@@ -180,20 +185,30 @@ typelist(int eargc, char *eargv[],
 
 	    while ((subdir = readdir(termdir)) != 0) {
 		size_t len = NAMLEN(subdir);
-		char buf[PATH_MAX];
+		size_t cwd_len = len + strlen(eargv[i]) + 3;
 		char name_1[PATH_MAX];
 		DIR *entrydir;
 		DIRENT *entry;
+
+		cwd_buf = typeRealloc(char, cwd_len, cwd_buf);
+		if (cwd_buf == 0)
+		    failed("realloc cwd_buf");
+
+		assert(cwd_buf != 0);
 
 		strncpy(name_1, subdir->d_name, len)[len] = '\0';
 		if (isDotname(name_1))
 		    continue;
 
-		(void) sprintf(buf, "%s/%s/", eargv[i], name_1);
-		if (chdir(buf) != 0)
+		(void) sprintf(cwd_buf, "%s/%.*s/", eargv[i], (int) len, name_1);
+		if (chdir(cwd_buf) != 0)
 		    continue;
 
 		entrydir = opendir(".");
+		if (entrydir == 0) {
+		    perror(cwd_buf);
+		    continue;
+		}
 		while ((entry = readdir(entrydir)) != 0) {
 		    char name_2[PATH_MAX];
 		    TERMTYPE lterm;
@@ -225,6 +240,8 @@ typelist(int eargc, char *eargv[],
 		closedir(entrydir);
 	    }
 	    closedir(termdir);
+	    if (cwd_buf != 0)
+		free(cwd_buf);
 	}
 #if USE_HASHED_DB
 	else {
@@ -319,14 +336,15 @@ main(int argc, char *argv[])
     bool direct_dependencies = FALSE;
     bool invert_dependencies = FALSE;
     bool header = FALSE;
-    int i;
+    char *report_file = 0;
+    unsigned i;
     int code;
     int this_opt, last_opt = '?';
     int v_opt = 0;
 
     _nc_progname = _nc_rootname(argv[0]);
 
-    while ((this_opt = getopt(argc, argv, "0123456789ahuvUV")) != EOF) {
+    while ((this_opt = getopt(argc, argv, "0123456789ahu:vU:V")) != -1) {
 	/* handle optional parameter */
 	if (isdigit(this_opt)) {
 	    switch (last_opt) {
@@ -352,12 +370,14 @@ main(int argc, char *argv[])
 	    break;
 	case 'u':
 	    direct_dependencies = TRUE;
+	    report_file = optarg;
 	    break;
 	case 'v':
 	    v_opt = 1;
 	    break;
 	case 'U':
 	    invert_dependencies = TRUE;
+	    report_file = optarg;
 	    break;
 	case 'V':
 	    puts(curses_version());
@@ -368,15 +388,15 @@ main(int argc, char *argv[])
     }
     set_trace_level(v_opt);
 
-    if (direct_dependencies || invert_dependencies) {
-	if (freopen(argv[optind], "r", stdin) == 0) {
+    if (report_file != 0) {
+	if (freopen(report_file, "r", stdin) == 0) {
 	    (void) fflush(stdout);
-	    fprintf(stderr, "%s: can't open %s\n", _nc_progname, argv[optind]);
+	    fprintf(stderr, "%s: can't open %s\n", _nc_progname, report_file);
 	    ExitProgram(EXIT_FAILURE);
 	}
 
 	/* parse entries out of the source file */
-	_nc_set_source(argv[optind]);
+	_nc_set_source(report_file);
 	_nc_read_entry_source(stdin, 0, FALSE, FALSE, NULLHOOK);
     }
 
@@ -386,7 +406,7 @@ main(int argc, char *argv[])
 
 	for_entry_list(qp) {
 	    if (qp->nuses) {
-		int j;
+		unsigned j;
 
 		(void) printf("%s:", _nc_first_name(qp->tterm.term_names));
 		for (j = 0; j < qp->nuses; j++)
@@ -467,6 +487,10 @@ main(int argc, char *argv[])
 	    }
 	    if (!pass) {
 		eargv = typeCalloc(char *, count + 1);
+		if (eargv == 0)
+		    failed("realloc eargv");
+
+		assert(eargv != 0);
 	    } else {
 		code = typelist((int) count, eargv, header, deschook);
 		while (count-- > 0)

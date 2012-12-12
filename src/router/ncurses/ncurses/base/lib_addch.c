@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -36,7 +36,7 @@
 #include <curses.priv.h>
 #include <ctype.h>
 
-MODULE_ID("$Id: lib_addch.c,v 1.104 2006/10/14 20:31:19 tom Exp $")
+MODULE_ID("$Id: lib_addch.c,v 1.124 2010/04/24 22:41:05 tom Exp $")
 
 static const NCURSES_CH_T blankchar = NewChar(BLANK_TEXT);
 
@@ -77,12 +77,6 @@ render_char(WINDOW *win, NCURSES_CH_T ch)
 	    if ((pair = GET_WINDOW_PAIR(win)) == 0)
 		pair = GetPair(win->_nc_bkgd);
 	}
-#if 0
-	if (pair > 255) {
-	    NCURSES_CH_T fixme = ch;
-	    SetPair(fixme, pair);
-	}
-#endif
 	AddAttr(ch, (a & COLOR_MASK(AttrOf(ch))));
 	SetPair(ch, pair);
     }
@@ -131,7 +125,7 @@ newline_forces_scroll(WINDOW *win, NCURSES_SIZE_T * ypos)
 	*ypos = win->_regbottom;
 	result = TRUE;
     } else {
-	*ypos += 1;
+	*ypos = (NCURSES_SIZE_T) (*ypos + 1);
     }
     return result;
 }
@@ -176,8 +170,8 @@ fill_cells(WINDOW *win, int count)
 	if (waddch_literal(win, blank) == ERR)
 	    break;
     }
-    win->_curx = save_x;
-    win->_cury = save_y;
+    win->_curx = (NCURSES_SIZE_T) save_x;
+    win->_cury = (NCURSES_SIZE_T) save_y;
 }
 #endif
 
@@ -210,26 +204,26 @@ _nc_build_wch(WINDOW *win, ARG_CH_T ch)
     WINDOW_EXT(win, addch_y) = y;
 
     init_mb(state);
-    buffer[WINDOW_EXT(win, addch_used)] = CharOf(CHDEREF(ch));
+    buffer[WINDOW_EXT(win, addch_used)] = (char) CharOf(CHDEREF(ch));
     WINDOW_EXT(win, addch_used) += 1;
     buffer[WINDOW_EXT(win, addch_used)] = '\0';
-    if ((len = mbrtowc(&result,
-		       buffer,
-		       WINDOW_EXT(win, addch_used), &state)) > 0) {
+    if ((len = (int) mbrtowc(&result,
+			     buffer,
+			     WINDOW_EXT(win, addch_used), &state)) > 0) {
 	attr_t attrs = AttrOf(CHDEREF(ch));
+	if_EXT_COLORS(int pair = GetPair(CHDEREF(ch)));
 	SetChar(CHDEREF(ch), result, attrs);
+	if_EXT_COLORS(SetPair(CHDEREF(ch), pair));
 	WINDOW_EXT(win, addch_used) = 0;
-    } else {
-	if (len == -1) {
-	    /*
-	     * An error occurred.  We could either discard everything,
-	     * or assume that the error was in the previous input.
-	     * Try the latter.
-	     */
-	    TR(TRACE_VIRTPUT, ("Alert! mbrtowc returns error"));
-	    buffer[0] = CharOf(CHDEREF(ch));
-	    WINDOW_EXT(win, addch_used) = 1;
-	}
+    } else if (len == -1) {
+	/*
+	 * An error occurred.  We could either discard everything,
+	 * or assume that the error was in the previous input.
+	 * Try the latter.
+	 */
+	TR(TRACE_VIRTPUT, ("Alert! mbrtowc returns error"));
+	/* handle this with unctrl() */
+	WINDOW_EXT(win, addch_used) = 0;
     }
     return len;
 }
@@ -260,17 +254,37 @@ waddch_literal(WINDOW *win, NCURSES_CH_T ch)
     /*
      * Build up multibyte characters until we have a wide-character.
      */
+#if NCURSES_SP_FUNCS
+#define DeriveSP() SCREEN *sp = _nc_screen_of(win);
+#else
+#define DeriveSP()		/*nothing */
+#endif
     if_WIDEC({
+	DeriveSP();
 	if (WINDOW_EXT(win, addch_used) != 0 || !Charable(ch)) {
 	    int len = _nc_build_wch(win, CHREF(ch));
 
-	    if (len > 0) {
-		if (is8bits(CharOf(ch))) {
-		    const char *s = unctrl((chtype) CharOf(ch));
-		    if (s[1] != 0) {
-			return waddstr(win, s);
+	    if (len >= -1) {
+		attr_t attr = AttrOf(ch);
+
+		/* handle EILSEQ (i.e., when len >= -1) */
+		if (len == -1 && is8bits(CharOf(ch))) {
+		    int rc = OK;
+		    const char *s = NCURSES_SP_NAME(unctrl)
+		      (NCURSES_SP_ARGx (chtype) CharOf(ch));
+
+		    if (s[1] != '\0') {
+			while (*s != '\0') {
+			    rc = waddch(win, UChar(*s) | attr);
+			    if (rc != OK)
+				break;
+			    ++s;
+			}
+			return rc;
 		    }
 		}
+		if (len == -1)
+		    return waddch(win, ' ' | attr);
 	    } else {
 		return OK;
 	    }
@@ -287,12 +301,15 @@ waddch_literal(WINDOW *win, NCURSES_CH_T ch)
 	int len = wcwidth(CharOf(ch));
 	int i;
 	int j;
+	wchar_t *chars;
 
 	if (len == 0) {		/* non-spacing */
 	    if ((x > 0 && y >= 0)
-		|| ((y = win->_cury - 1) >= 0 &&
-		    (x = win->_maxx) > 0)) {
-		wchar_t *chars = (win->_line[y].text[x - 1].chars);
+		|| (win->_maxx >= 0 && win->_cury >= 1)) {
+		if (x > 0 && y >= 0)
+		    chars = (win->_line[y].text[x - 1].chars);
+		else
+		    chars = (win->_line[y - 1].text[win->_maxx].chars);
 		for (i = 0; i < CCHARW_MAX; ++i) {
 		    if (chars[i] == 0) {
 			TR(TRACE_VIRTPUT,
@@ -321,6 +338,7 @@ waddch_literal(WINDOW *win, NCURSES_CH_T ch)
 		    return ERR;
 		x = win->_curx;
 		y = win->_cury;
+		line = win->_line + y;
 	    }
 	    /*
 	     * Check for cells which are orphaned by adding this character, set
@@ -378,7 +396,7 @@ waddch_literal(WINDOW *win, NCURSES_CH_T ch)
     if (x > win->_maxx) {
 	return wrap_to_next_line(win);
     }
-    win->_curx = x;
+    win->_curx = (NCURSES_SIZE_T) x;
     return OK;
 }
 
@@ -387,9 +405,12 @@ waddch_nosync(WINDOW *win, const NCURSES_CH_T ch)
 /* the workhorse function -- add a character to the given window */
 {
     NCURSES_SIZE_T x, y;
-    chtype t = CharOf(ch);
-    const char *s = unctrl(t);
-
+    chtype t = (chtype) CharOf(ch);
+#if USE_WIDEC_SUPPORT || NCURSES_SP_FUNCS || USE_REENTRANT
+    SCREEN *sp = _nc_screen_of(win);
+#endif
+    const char *s = NCURSES_SP_NAME(unctrl) (NCURSES_SP_ARGx t);
+    int tabsize = 8;
     /*
      * If we are using the alternate character set, forget about locale.
      * Otherwise, if unctrl() returns a single-character or the locale
@@ -398,14 +419,14 @@ waddch_nosync(WINDOW *win, const NCURSES_CH_T ch)
     if ((AttrOf(ch) & A_ALTCHARSET)
 	|| (
 #if USE_WIDEC_SUPPORT
-	       (SP != 0 && SP->_legacy_coding) &&
+	       (sp != 0 && sp->_legacy_coding) &&
 #endif
 	       s[1] == 0
 	)
 	|| (
 	       isprint(t)
 #if USE_WIDEC_SUPPORT
-	       || ((SP == 0 || !SP->_legacy_coding) &&
+	       || ((sp == 0 || !sp->_legacy_coding) &&
 		   (WINDOW_EXT(win, addch_used)
 		    || !_nc_is_charable(CharOf(ch))))
 #endif
@@ -421,8 +442,12 @@ waddch_nosync(WINDOW *win, const NCURSES_CH_T ch)
 
     switch (t) {
     case '\t':
-	x += (TABSIZE - (x % TABSIZE));
-
+#if USE_REENTRANT
+	tabsize = *ptrTabsize(sp);
+#else
+	tabsize = TABSIZE;
+#endif
+	x = (NCURSES_SIZE_T) (x + (tabsize - (x % tabsize)));
 	/*
 	 * Space-fill the tab on the bottom line so that we'll get the
 	 * "correct" cursor position.
@@ -473,6 +498,7 @@ waddch_nosync(WINDOW *win, const NCURSES_CH_T ch)
 	while (*s) {
 	    NCURSES_CH_T sch;
 	    SetChar(sch, *s++, AttrOf(ch));
+	    if_EXT_COLORS(SetPair(sch, GetPair(ch)));
 	    if (waddch_literal(win, sch) == ERR)
 		return ERR;
 	}
@@ -507,7 +533,7 @@ waddch(WINDOW *win, const chtype ch)
     NCURSES_CH_T wch;
     SetChar2(wch, ch);
 
-    TR(TRACE_VIRTPUT | TRACE_CCALLS, (T_CALLED("waddch(%p, %s)"), win,
+    TR(TRACE_VIRTPUT | TRACE_CCALLS, (T_CALLED("waddch(%p, %s)"), (void *) win,
 				      _tracechtype(ch)));
 
     if (win && (waddch_nosync(win, wch) != ERR)) {
@@ -526,7 +552,8 @@ wechochar(WINDOW *win, const chtype ch)
     NCURSES_CH_T wch;
     SetChar2(wch, ch);
 
-    TR(TRACE_VIRTPUT | TRACE_CCALLS, (T_CALLED("wechochar(%p, %s)"), win,
+    TR(TRACE_VIRTPUT | TRACE_CCALLS, (T_CALLED("wechochar(%p, %s)"),
+				      (void *) win,
 				      _tracechtype(ch)));
 
     if (win && (waddch_nosync(win, wch) != ERR)) {

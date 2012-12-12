@@ -1,6 +1,6 @@
-# $Id: Makefile.in,v 1.42 2006/10/14 20:40:36 tom Exp $
+# $Id: Makefile.in,v 1.53 2010/11/27 21:45:27 tom Exp $
 ##############################################################################
-# Copyright (c) 1998-2004,2006 Free Software Foundation, Inc.                #
+# Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.                #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -27,7 +27,7 @@
 # authorization.                                                             #
 ##############################################################################
 #
-# Author: Thomas E. Dickey <dickey@clark.net> 1996,1997
+# Author: Thomas E. Dickey 1996-on
 #
 # Makefile for form source code.
 #
@@ -43,6 +43,7 @@
 .SUFFIXES:
 
 SHELL		= /bin/sh
+VPATH		= @srcdir@
 THIS		= Makefile
 
 x		= @EXEEXT@
@@ -63,6 +64,7 @@ LIBTOOL_COMPILE	= @LIB_COMPILE@
 LIBTOOL_LINK	= @LIB_LINK@
 LIBTOOL_INSTALL	= @LIB_INSTALL@
 LIBTOOL_UNINSTALL = @LIB_UNINSTALL@
+LT_UNDEF	= @LT_UNDEF@
 
 INSTALL		= @INSTALL@
 INSTALL_LIB	= @INSTALL@ @INSTALL_LIB@
@@ -70,10 +72,13 @@ INSTALL_PROG	= @INSTALL_PROGRAM@
 INSTALL_DATA	= @INSTALL_DATA@
 
 AR		= @AR@
-AR_OPTS		= @AR_OPTS@
+ARFLAGS		= @ARFLAGS@
 AWK		= @AWK@
 LD		= @LD@
 LN_S		= @LN_S@
+
+CTAGS		= @CTAGS@
+ETAGS		= @ETAGS@
 
 CC		= @CC@
 CPP		= @CPP@
@@ -91,7 +96,7 @@ CFLAGS_SHARED	= $(CCFLAGS) @CC_SHARED_OPTS@
 
 CFLAGS_DEFAULT	= $(CFLAGS_@DFT_UPR_MODEL@)
 
-LINK		= $(LIBTOOL_LINK) $(CC)
+LINK		= $(LIBTOOL_LINK)
 LDFLAGS		= @LDFLAGS@ @LD_MODEL@ @LIBS@
 
 SHLIB_DIRS	= -L../lib
@@ -106,8 +111,6 @@ ABI_VERSION	= @cf_cv_abi_version@
 
 RANLIB		= @LIB_PREP@
 
-IMPORT_LIB	= @IMPORT_LIB@
-SHARED_LIB	= @SHARED_LIB@
 LIBRARIES	= @LIBS_TO_MAKE@
 
 LINT		= @LINT@
@@ -126,7 +129,7 @@ sources :	$(AUTO_SRC)
 
 $(DESTDIR)$(bindir) \
 $(DESTDIR)$(libdir) :
-	sh $(srcdir)/../mkinstalldirs $@
+	mkdir -p $@
 
 # make copies to simplify include-paths while still keeping form's include
 # file in this directory.
@@ -134,7 +137,7 @@ $(DESTDIR)$(libdir) :
 	-rm -f $@
 	cp $(srcdir)/form.h $@
 
-FORM_PRIV_H = \
+HEADER_DEPS = \
 	$(srcdir)/form.priv.h \
 	$(srcdir)/form.h \
 	../include/mf_common.h \
@@ -142,10 +145,10 @@ FORM_PRIV_H = \
 	../include/eti.h
 
 tags:
-	ctags *.[ch]
+	$(CTAGS) *.[ch]
 
 @MAKE_UPPER_TAGS@TAGS:
-@MAKE_UPPER_TAGS@	etags *.[ch]
+@MAKE_UPPER_TAGS@	$(ETAGS) *.[ch]
 
 mostlyclean ::
 	-rm -f core tags TAGS *~ *.bak *.i *.ln *.atac trace

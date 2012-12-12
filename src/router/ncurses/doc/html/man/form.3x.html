@@ -2,7 +2,7 @@
 <!-- 
   * t
   ****************************************************************************
-  * Copyright (c) 1998-2002,2006 Free Software Foundation, Inc.              *
+  * Copyright (c) 1998-2008,2010 Free Software Foundation, Inc.              *
   *                                                                          *
   * Permission is hereby granted, free of charge, to any person obtaining a  *
   * copy of this software and associated documentation files (the            *
@@ -28,7 +28,7 @@
   * sale, use or other dealings in this Software without prior written       *
   * authorization.                                                           *
   ****************************************************************************
-  * @Id: form.3x,v 1.20 2006/11/04 18:50:09 tom Exp @
+  * @Id: form.3x,v 1.24 2010/12/04 18:40:45 tom Exp @
 -->
 <HTML>
 <HEAD>
@@ -65,21 +65,28 @@
        into forms, display forms on the screen, and handle inter-
        action with the user.
 
-       The <STRONG>form</STRONG> library uses the <STRONG>curses</STRONG> libraries, and  a  curses
-       initialization  routine  such  as  <STRONG>initscr</STRONG>  must be called
-       before using any of these  functions.   To  use  the  <STRONG>form</STRONG>
-       library, link with the options <STRONG>-lform</STRONG> <STRONG>-lcurses</STRONG>.
+       The <STRONG>form</STRONG> library uses the <STRONG>curses</STRONG> libraries.   To  use  the
+       <STRONG>form</STRONG> library, link with the options <STRONG>-lform</STRONG> <STRONG>-lcurses</STRONG>.
+
+       Your program should set up the locale, e.g.,
+
+            <STRONG>setlocale(LC_ALL,</STRONG> <STRONG>"");</STRONG>
+
+       so that input/output processing will work.
+
+       A  curses  initialization  routine such as <STRONG>initscr</STRONG> must be
+       called before using any of these functions.
 
    <STRONG>Current</STRONG> <STRONG>Default</STRONG> <STRONG>Values</STRONG> <STRONG>for</STRONG> <STRONG>Field</STRONG> <STRONG>Attributes</STRONG>
-       The  <STRONG>form</STRONG>  library  maintains  a  default  value for field
-       attributes.  You can get or set this  default  by  calling
-       the  appropriate  <STRONG>set_</STRONG>  or  retrieval  routine with a <STRONG>NULL</STRONG>
+       The <STRONG>form</STRONG> library  maintains  a  default  value  for  field
+       attributes.   You  can  get or set this default by calling
+       the appropriate <STRONG>set_</STRONG> or  retrieval  routine  with  a  <STRONG>NULL</STRONG>
        field pointer.  Changing this default with a <STRONG>set_</STRONG> function
-       affects  future  field  creations, but does not change the
+       affects future field creations, but does  not  change  the
        rendering of fields already created.
 
    <STRONG>Routine</STRONG> <STRONG>Name</STRONG> <STRONG>Index</STRONG>
-       The following table lists each <STRONG>form</STRONG> routine and  the  name
+       The  following  table lists each <STRONG>form</STRONG> routine and the name
        of the manual page on which it is described.
 
        <STRONG>curses</STRONG> Routine Name    Manual Page Name
@@ -88,7 +95,7 @@
        data_ahead             <STRONG><A HREF="form_data.3x.html">form_data(3x)</A></STRONG>
        data_behind            <STRONG><A HREF="form_data.3x.html">form_data(3x)</A></STRONG>
        dup_field              <STRONG><A HREF="form_field_new.3x.html">form_field_new(3x)</A></STRONG>
-       dynamic_fieldinfo      <STRONG><A HREF="form_field_info.3x.html">form_field_info(3x)</A></STRONG>
+       dynamic_field_info     <STRONG><A HREF="form_field_info.3x.html">form_field_info(3x)</A></STRONG>
        field_arg              <STRONG><A HREF="form_field_validation.3x.html">form_field_validation(3x)</A></STRONG>
        field_back             <STRONG><A HREF="form_field_attributes.3x.html">form_field_attributes(3x)</A></STRONG>
        field_buffer           <STRONG><A HREF="form_field_buffer.3x.html">form_field_buffer(3x)</A></STRONG>
@@ -105,6 +112,7 @@
        field_status           <STRONG><A HREF="form_field_buffer.3x.html">form_field_buffer(3x)</A></STRONG>
        field_term             <STRONG><A HREF="form_hook.3x.html">form_hook(3x)</A></STRONG>
        field_type             <STRONG><A HREF="form_field_validation.3x.html">form_field_validation(3x)</A></STRONG>
+
        field_userptr          <STRONG><A HREF="form_field_userptr.3x.html">form_field_userptr(3x)</A></STRONG>
        form_driver            <STRONG><A HREF="form_driver.3x.html">form_driver(3x)</A></STRONG>
        form_fields            <STRONG><A HREF="form_field.3x.html">form_field(3x)</A></STRONG>
@@ -112,7 +120,6 @@
        form_opts              <STRONG><A HREF="form_opts.3x.html">form_opts(3x)</A></STRONG>
        form_opts_off          <STRONG><A HREF="form_opts.3x.html">form_opts(3x)</A></STRONG>
        form_opts_on           <STRONG><A HREF="form_opts.3x.html">form_opts(3x)</A></STRONG>
-
        form_page              <STRONG><A HREF="form_page.3x.html">form_page(3x)</A></STRONG>
        form_request_by_name   <STRONG><A HREF="form_requestname.3x.html">form_requestname(3x)</A></STRONG>
        form_request_name      <STRONG><A HREF="form_requestname.3x.html">form_requestname(3x)</A></STRONG>
@@ -162,15 +169,15 @@
 
 </PRE>
 <H2>RETURN VALUE</H2><PRE>
-       Routines  that  return  pointers return <STRONG>NULL</STRONG> on error, and
-       set errno to  the  corresponding  error-code  returned  by
-       functions  returning  an integer.  Routines that return an
+       Routines that return pointers return <STRONG>NULL</STRONG>  on  error,  and
+       set  errno  to  the  corresponding  error-code returned by
+       functions returning an integer.  Routines that  return  an
        integer return one of the following error codes:
 
        <STRONG>E_OK</STRONG> The routine succeeded.
 
        <STRONG>E_BAD_ARGUMENT</STRONG>
-            Routine detected an incorrect or  out-of-range  argu-
+            Routine  detected  an incorrect or out-of-range argu-
             ment.
 
        <STRONG>E_BAD_STATE</STRONG>
@@ -216,27 +223,27 @@
        The header file <STRONG>&lt;form.h&gt;</STRONG> automatically includes the header
        files <STRONG>&lt;curses.h&gt;</STRONG> and <STRONG>&lt;eti.h&gt;</STRONG>.
 
-       In your library list, libform.a  should  be  before  libn-
+       In  your  library  list,  libform.a should be before libn-
        curses.a; that is, you want to say `-lform -lncurses', not
-       the other way around (which would give you  a  link  error
+       the  other  way  around (which would give you a link error
        using most linkers).
 
 
 </PRE>
 <H2>PORTABILITY</H2><PRE>
-       These  routines  emulate the System V forms library.  They
+       These routines emulate the System V forms  library.   They
        were not supported on Version 7 or BSD versions.
 
 
 </PRE>
 <H2>AUTHORS</H2><PRE>
-       Juergen Pfeifer.  Manual pages and adaptation for  ncurses
+       Juergen  Pfeifer.  Manual pages and adaptation for ncurses
        by Eric S. Raymond.
 
 
 </PRE>
 <H2>SEE ALSO</H2><PRE>
-       This describes <STRONG>ncurses</STRONG> version 5.5 (patch 20061209).
+       This describes <STRONG>ncurses</STRONG> version 5.9 (patch 20110404).
 
 
 

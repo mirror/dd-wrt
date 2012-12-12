@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998,2000 Free Software Foundation, Inc.                   *
+ * Copyright (c) 1998-2008,2009 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -27,13 +27,12 @@
  ****************************************************************************/
 
 /****************************************************************************
- *  Author: Zeyd M. Ben-Halim <zmbenhal@netcom.com> 1992,1995               *
- *     and: Eric S. Raymond <esr@snark.thyrsus.com>                         *
+ *  Author: Juergen Pfeifer                        1997                     *
+ *     and: Thomas E. Dickey                                                *
  ****************************************************************************/
 
-
 /*
- * $Id: nc_panel.h,v 1.3 2000/12/10 02:04:35 tom Exp $
+ * $Id: nc_panel.h,v 1.7 2009/07/04 18:20:02 tom Exp $
  *
  *	nc_panel.h
  *
@@ -45,22 +44,33 @@
 #define NC_PANEL_H 1
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-struct panel; /* Forward Declaration */
+  struct panel;			/* Forward Declaration */
 
-struct panelhook {
-  struct panel*   top_panel;
-  struct panel*   bottom_panel;
-  struct panel*   stdscr_pseudo_panel;
-};
+  struct panelhook
+    {
+      struct panel *top_panel;
+      struct panel *bottom_panel;
+      struct panel *stdscr_pseudo_panel;
+#if NO_LEAKS
+      int (*destroy) (struct panel *);
+#endif
+    };
 
-/* Retrieve the panelhook of the current screen */
-extern NCURSES_EXPORT(struct panelhook*) _nc_panelhook (void);
+  struct screen;		/* Forward declaration */
+/* Retrieve the panelhook of the specified screen */
+  extern NCURSES_EXPORT(struct panelhook *)
+    _nc_panelhook (void);
+#if NCURSES_SP_FUNCS
+  extern NCURSES_EXPORT(struct panelhook *)
+    NCURSES_SP_NAME(_nc_panelhook) (SCREEN *);
+#endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* NC_PANEL_H */
+#endif				/* NC_PANEL_H */

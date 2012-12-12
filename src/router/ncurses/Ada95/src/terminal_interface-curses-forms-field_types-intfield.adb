@@ -7,7 +7,7 @@
 --                                 B O D Y                                  --
 --                                                                          --
 ------------------------------------------------------------------------------
--- Copyright (c) 1998 Free Software Foundation, Inc.                        --
+-- Copyright (c) 1998-2009,2011 Free Software Foundation, Inc.              --
 --                                                                          --
 -- Permission is hereby granted, free of charge, to any person obtaining a  --
 -- copy of this software and associated documentation files (the            --
@@ -35,28 +35,22 @@
 ------------------------------------------------------------------------------
 --  Author:  Juergen Pfeifer, 1996
 --  Version Control:
---  $Revision: 1.8 $
+--  $Revision: 1.11 $
+--  $Date: 2011/03/19 00:45:37 $
 --  Binding Version 01.00
 ------------------------------------------------------------------------------
-with Interfaces.C;
 with Terminal_Interface.Curses.Aux; use Terminal_Interface.Curses.Aux;
 
 package body Terminal_Interface.Curses.Forms.Field_Types.IntField is
 
-   use type Interfaces.C.int;
-
-   procedure Set_Field_Type (Fld : in Field;
-                             Typ : in Integer_Field)
+   procedure Set_Field_Type (Fld : Field;
+                             Typ : Integer_Field)
    is
-      C_Integer_Field_Type : C_Field_Type;
-      pragma Import (C, C_Integer_Field_Type, "TYPE_INTEGER");
-
       function Set_Fld_Type (F    : Field := Fld;
-                             Cft  : C_Field_Type := C_Integer_Field_Type;
                              Arg1 : C_Int;
                              Arg2 : C_Long_Int;
                              Arg3 : C_Long_Int) return C_Int;
-      pragma Import (C, Set_Fld_Type, "set_field_type");
+      pragma Import (C, Set_Fld_Type, "set_field_type_integer");
 
       Res : Eti_Error;
    begin

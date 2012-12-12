@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2005,2006 Free Software Foundation, Inc.                   *
+ * Copyright (c) 2005-2010,2011 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: demo_menus.c,v 1.20 2006/06/17 17:39:37 tom Exp $
+ * $Id: demo_menus.c,v 1.32 2011/01/15 20:02:47 tom Exp $
  *
  * Demonstrate a variety of functions from the menu library.
  * Thomas Dickey - 2005/4/9
@@ -107,12 +107,14 @@ static MENU *mpBanner;
 static MENU *mpFile;
 static MENU *mpSelect;
 
+static bool loaded_file = FALSE;
+
 #if !HAVE_STRDUP
 #define strdup my_strdup
 static char *
 strdup(char *s)
 {
-    char *p = (char *) malloc(strlen(s) + 1);
+    char *p = typeMalloc(char, strlen(s) + 1);
     if (p)
 	strcpy(p, s);
     return (p);
@@ -130,14 +132,14 @@ wGetchar(WINDOW *win)
     while ((c = wgetch(win)) == CTRL('T')) {
 	if (_nc_tracing) {
 	    save_trace = _nc_tracing;
-	    _tracef("TOGGLE-TRACING OFF");
+	    Trace(("TOGGLE-TRACING OFF"));
 	    _nc_tracing = 0;
 	} else {
 	    _nc_tracing = save_trace;
 	}
 	trace(_nc_tracing);
 	if (_nc_tracing)
-	    _tracef("TOGGLE-TRACING ON");
+	    Trace(("TOGGLE-TRACING ON"));
     }
 #else
     c = wgetch(win);
@@ -200,7 +202,7 @@ menu_offset(MenuNo number)
 #endif
 
 	/* FIXME: MENU.itemlen seems the only way to get actual width of items */
-	result = (number - (eBanner + 1)) * (mpBanner->itemlen + spc_rows);
+	result = (number - (eBanner + 1)) * (menu_itemwidth(mpBanner) + spc_rows);
     }
     return result;
 }
@@ -256,23 +258,35 @@ menu_create(ITEM ** items, int count, int ncols, MenuNo number)
 static void
 menu_destroy(MENU * m)
 {
-    ITEM **ip;
     int count;
 
+    Trace(("menu_destroy %p", (void *) m));
     if (m != 0) {
-	delwin(menu_sub(m));
-	delwin(menu_win(m));
+	ITEM **items = menu_items(m);
+	const char *blob = 0;
 
-	ip = menu_items(m);
 	count = item_count(m);
+	Trace(("menu_destroy %p count %d", (void *) m, count));
+	if ((count > 0) && (m == mpSelect)) {
+	    blob = item_name(*items);
+	}
 
+	unpost_menu(m);
 	free_menu(m);
-#if 0
-	if (count > 0) {
-	    while (*ip) {
-		_tracef("freeing item %d:%d", ip - menu_items(m), count);
-		free_item(*ip++);
+
+	/* free the extra data allocated in build_select_menu() */
+	if ((count > 0) && (m == mpSelect)) {
+	    if (blob && loaded_file) {
+		Trace(("freeing blob %p", blob));
+		free((char *) blob);
 	    }
+	    free(items);
+	}
+#ifdef TRACE
+	if ((count > 0) && (m == mpTrace)) {
+	    ITEM **ip = items;
+	    while (*ip)
+		free(*ip++);
 	}
 #endif
     }
@@ -291,7 +305,7 @@ menu_display(MENU * m)
 static void
 build_file_menu(MenuNo number)
 {
-    static const char *labels[] =
+    static CONST_MENUS char *labels[] =
     {
 	"Exit",
 	(char *) 0
@@ -299,7 +313,7 @@ build_file_menu(MenuNo number)
     static ITEM *items[SIZEOF(labels)];
 
     ITEM **ip = items;
-    const char **ap;
+    CONST_MENUS char **ap;
 
     for (ap = labels; *ap; ap++)
 	*ip++ = new_item(*ap, "");
@@ -319,7 +333,7 @@ perform_file_menu(int cmd)
 static void
 build_select_menu(MenuNo number, char *filename)
 {
-    static const char *labels[] =
+    static CONST_MENUS char *labels[] =
     {
 	"Lions",
 	"Tigers",
@@ -339,7 +353,8 @@ build_select_menu(MenuNo number, char *filename)
     static ITEM **items;
 
     ITEM **ip;
-    const char **ap = 0;
+    CONST_MENUS char **ap = 0;
+    CONST_MENUS char **myList = 0;
     unsigned count = 0;
 
     if (filename != 0) {
@@ -347,12 +362,15 @@ build_select_menu(MenuNo number, char *filename)
 	if (stat(filename, &sb) == 0
 	    && (sb.st_mode & S_IFMT) == S_IFREG
 	    && sb.st_size != 0) {
-	    unsigned size = sb.st_size;
+	    size_t size = (size_t) sb.st_size;
 	    unsigned j, k;
-	    char *blob = malloc(size + 1);
-	    const char **list = (const char **) calloc(sizeof(*list), size + 1);
+	    char *blob = typeMalloc(char, size + 1);
+	    CONST_MENUS char **list = typeCalloc(CONST_MENUS char *, size + 1);
 
-	    items = (ITEM **) calloc(sizeof(ITEM *), size + 1);
+	    items = typeCalloc(ITEM *, size + 1);
+	    Trace(("build_select_menu blob=%p, items=%p",
+		   (void *) blob,
+		   (void *) items));
 	    if (blob != 0 && list != 0) {
 		FILE *fp = fopen(filename, "r");
 		if (fp != 0) {
@@ -374,16 +392,17 @@ build_select_menu(MenuNo number, char *filename)
 			}
 			list[k] = 0;
 			count = k;
-			ap = list;
+			ap = myList = list;
 		    }
 		    fclose(fp);
 		}
+		loaded_file = TRUE;
 	    }
 	}
     }
     if (ap == 0) {
 	count = SIZEOF(labels) - 1;
-	items = (ITEM **) calloc(count + 1, sizeof(*items));
+	items = typeCalloc(ITEM *, count + 1);
 	ap = labels;
     }
 
@@ -393,6 +412,8 @@ build_select_menu(MenuNo number, char *filename)
     *ip = 0;
 
     mpSelect = menu_create(items, (int) count, 1, number);
+    if (myList != 0)
+	free(myList);
 }
 
 static int
@@ -456,7 +477,7 @@ tracetrace(unsigned tlevel)
 	size_t need = 12;
 	for (n = 0; t_tbl[n].name != 0; n++)
 	    need += strlen(t_tbl[n].name) + 2;
-	buf = (char *) malloc(need);
+	buf = typeMalloc(char, need);
     }
     sprintf(buf, "0x%02x = {", tlevel);
     if (tlevel == 0) {
@@ -523,10 +544,10 @@ perform_trace_menu(int cmd)
 		    newtrace |= t_tbl[item_index(*ip)].mask;
 	    }
 	    trace(newtrace);
-	    _tracef("trace level interactively set to %s", tracetrace(_nc_tracing));
+	    Trace(("trace level interactively set to %s", tracetrace(_nc_tracing)));
 
-	    (void) mvprintw(LINES - 2, 0,
-			    "Trace level is %s\n", tracetrace(_nc_tracing));
+	    MvPrintw(LINES - 2, 0,
+		     "Trace level is %s\n", tracetrace(_nc_tracing));
 	    refresh();
 	}
     }
@@ -569,7 +590,7 @@ current_menu(void)
 static void
 build_menus(char *filename)
 {
-    static const char *labels[] =
+    static CONST_MENUS char *labels[] =
     {
 	"File",
 	"Select",
@@ -581,7 +602,7 @@ build_menus(char *filename)
     static ITEM *items[SIZEOF(labels)];
 
     ITEM **ip = items;
-    const char **ap;
+    CONST_MENUS char **ap;
 
     for (ap = labels; *ap; ap++)
 	*ip++ = new_item(*ap, "");
@@ -834,7 +855,7 @@ main(int argc, char *argv[])
 
     setlocale(LC_ALL, "");
 
-    while ((c = getopt(argc, argv, "a:de:fhmp:s:t:")) != EOF) {
+    while ((c = getopt(argc, argv, "a:de:fhmp:s:t:")) != -1) {
 	switch (c) {
 #if HAVE_RIPOFFLINE
 	case 'f':

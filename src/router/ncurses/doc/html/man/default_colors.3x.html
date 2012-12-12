@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <!-- 
   ****************************************************************************
-  * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+  * Copyright (c) 1998-2010,2011 Free Software Foundation, Inc.              *
   *                                                                          *
   * Permission is hereby granted, free of charge, to any person obtaining a  *
   * copy of this software and associated documentation files (the            *
@@ -28,7 +28,7 @@
   * authorization.                                                           *
   ****************************************************************************
   * Author: Thomas E. Dickey 1997,1999,2000,2005
-  * @Id: default_colors.3x,v 1.19 2006/02/25 21:49:19 tom Exp @
+  * @Id: default_colors.3x,v 1.23 2011/01/03 21:52:27 Tim.van.der.Molen Exp @
 -->
 <HTML>
 <HEAD>
@@ -115,13 +115,13 @@
        These functions return the integer <STRONG>ERR</STRONG> upon failure and <STRONG>OK</STRONG>
        on success.  They will fail if either  the  terminal  does
        not  support  the <EM>orig</EM><STRONG>_</STRONG><EM>pair</EM> or <EM>orig</EM><STRONG>_</STRONG><EM>colors</EM> capability.  If
-       the <EM>initialize</EM><STRONG>_</STRONG><EM>pair</EM> capability is found,  this  causes  an
-       error as well.
+       the <EM>initialize</EM><STRONG>_</STRONG><EM>pair</EM> capability is not found,  this  causes
+       an error as well.
 
 
 </PRE>
 <H2>NOTES</H2><PRE>
-       Associated with this extension, the <STRONG><A HREF="init_pair.3x.html">init_pair(3x)</A></STRONG> function
+       Associated  with  this  extension,  the <STRONG>init_pair</STRONG> function
        accepts negative arguments to specify  default  foreground
        or background colors.
 

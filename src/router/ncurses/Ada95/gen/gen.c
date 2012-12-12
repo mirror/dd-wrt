@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998,2004,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998,2010,2011 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -32,7 +32,7 @@
 
 /*
     Version Control
-    $Id: gen.c,v 1.40 2005/01/22 17:03:48 tom Exp $
+    $Id: gen.c,v 1.59 2011/03/31 23:50:24 tom Exp $
   --------------------------------------------------------------------------*/
 /*
   This program generates various record structures and constants from the
@@ -40,6 +40,13 @@
   Ada95 source on stdout, which is then merged using m4 into a template
   to produce the real source.
   */
+
+#ifdef HAVE_CONFIG_H
+#include <ncurses_cfg.h>
+#else
+#include <ncurses.h>
+#define HAVE_USE_DEFAULT_COLORS 1
+#endif
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -50,6 +57,7 @@
 #include <menu.h>
 #include <form.h>
 
+#define UChar(c)	((unsigned char)(c))
 #define RES_NAME "Reserved"
 
 static const char *model = "";
@@ -69,7 +77,7 @@ find_pos(char *s, unsigned len, int *low, int *high)
   int l = 0;
 
   *high = -1;
-  *low = 8 * len;
+  *low = (int)(8 * len);
 
   for (i = 0; i < len; i++, s++)
     {
@@ -88,9 +96,13 @@ find_pos(char *s, unsigned len, int *low, int *high)
 		}
 	      l++;
 	      if (little_endian)
-		*s >>= 1;
+		{
+		  *s >>= 1;
+		}
 	      else
-		*s <<= 1;
+		{
+		  *s = (char)(*s << 1);
+		}
 	    }
 	}
       else
@@ -106,13 +118,16 @@ find_pos(char *s, unsigned len, int *low, int *high)
  * bit size, i.e. they fit into an (u)int or a (u)short.
  */
 static void
-  gen_reps
-  (const name_attribute_pair * nap,	/* array of name_attribute_pair records */
-   const char *name,		/* name of the represented record type  */
-   int len,			/* size of the record in bytes          */
-   int bias)
+gen_reps(
+	  const name_attribute_pair * nap,	/* array of name_attribute_pair records */
+	  const char *name,	/* name of the represented record type  */
+	  int len,		/* size of the record in bytes          */
+	  int bias)
 {
-  int i, n, l, cnt = 0, low, high;
+  const char *unused_name = "Unused";
+  int long_bits = (8 * (int)sizeof(unsigned long));
+  int len_bits = (8 * len);
+  int i, j, n, l, cnt = 0, low, high;
   int width = strlen(RES_NAME) + 3;
   unsigned long a;
   unsigned long mask = 0;
@@ -122,7 +137,7 @@ static void
   for (i = 0; nap[i].name != (char *)0; i++)
     {
       cnt++;
-      l = strlen(nap[i].name);
+      l = (int)strlen(nap[i].name);
       if (l > width)
 	width = l;
     }
@@ -132,7 +147,31 @@ static void
   printf("      record\n");
   for (i = 0; nap[i].name != (char *)0; i++)
     {
+      mask |= nap[i].attr;
       printf("         %-*s : Boolean;\n", width, nap[i].name);
+    }
+
+  /*
+   * Compute a mask for the unused bits in this target.
+   */
+  mask = ~mask;
+  /*
+   * Bits in the biased area are unused by the target.
+   */
+  for (j = 0; j < bias; ++j)
+    {
+      mask &= (unsigned long)(~(1L << j));
+    }
+  /*
+   * Bits past the target's size are really unused.
+   */
+  for (j = len_bits + bias; j < long_bits; ++j)
+    {
+      mask &= (unsigned long)(~(1L << j));
+    }
+  if (mask != 0)
+    {
+      printf("         %-*s : Boolean;\n", width, unused_name);
     }
   printf("      end record;\n");
   printf("   pragma Convention (C, %s);\n\n", name);
@@ -143,16 +182,22 @@ static void
   for (i = 0; nap[i].name != (char *)0; i++)
     {
       a = nap[i].attr;
-      mask |= a;
       l = find_pos((char *)&a, sizeof(a), &low, &high);
       if (l >= 0)
 	printf("         %-*s at 0 range %2d .. %2d;\n", width, nap[i].name,
 	       low - bias, high - bias);
     }
+  if (mask != 0)
+    {
+      l = find_pos((char *)&mask, sizeof(mask), &low, &high);
+      if (l >= 0)
+	printf("         %-*s at 0 range %2d .. %2d;\n", width, unused_name,
+	       low - bias, high - bias);
+    }
   i = 1;
   n = cnt;
   printf("      end record;\n");
-  printf("   for %s'Size use %d;\n", name, 8 * len);
+  printf("   for %s'Size use %d;\n", name, len_bits);
   printf("   --  Please note: this rep. clause is generated and may be\n");
   printf("   --               different on your system.");
 }
@@ -160,7 +205,7 @@ static void
 static void
 chtype_rep(const char *name, attr_t mask)
 {
-  attr_t x = -1;
+  attr_t x = (attr_t)-1;
   attr_t t = x & mask;
   int low, high;
   int l = find_pos((char *)&t, sizeof(t), &low, &high);
@@ -217,7 +262,7 @@ gen_mrep_rep(const char *name)
   mrep_rep("Z", &x);
 
   memset(&x, 0, sizeof(x));
-  x.bstate = -1;
+  x.bstate = (mmask_t) - 1;
   mrep_rep("Bstate", &x);
 
   printf("      end record;\n");
@@ -229,7 +274,10 @@ static void
 gen_attr_set(const char *name)
 {
   /* All of the A_xxx symbols are defined in ncurses, but not all are nonzero
-   * if "configure --enable-widec" is specified.
+   * if "configure --enable-widec" is not specified.  Originally (in
+   * 1999-2000), the ifdef's also were needed since the proposed bit-layout
+   * for wide characters allocated 16-bits for A_CHARTEXT, leaving too few
+   * bits for a few of the A_xxx symbols.
    */
   static const name_attribute_pair nap[] =
   {
@@ -283,11 +331,12 @@ gen_attr_set(const char *name)
   chtype attr = A_ATTRIBUTES & ~A_COLOR;
   int start = -1;
   int len = 0;
-  int i, set;
+  int i;
+  chtype set;
   for (i = 0; i < (int)(8 * sizeof(chtype)); i++)
 
     {
-      set = attr & 1;
+      set = (attr & 1);
       if (set)
 	{
 	  if (start < 0)
@@ -319,6 +368,7 @@ gen_trace(const char *name)
     {"Internal_Calls", TRACE_ICALLS},
     {"Character_Calls", TRACE_CCALLS},
     {"Termcap_TermInfo", TRACE_DATABASE},
+    {"Attributes_And_Colors", TRACE_ATTRS},
     {(char *)0, 0}
   };
   gen_reps(nap, name, sizeof(int), 0);
@@ -433,13 +483,14 @@ keydef(const char *name, const char *old_name, int value, int mode)
   if (mode == 0)		/* Generate the new name */
     printf("   %-30s : constant Special_Key_Code := 8#%3o#;\n", name, value);
   else
-    {				/* generate the old name, but only if it doesn't conflict with the old
-				 * name (Ada95 isn't case sensitive!)
-				 */
+    {
       const char *s = old_name;
       const char *t = name;
 
-      while (*s && *t && (toupper(*s++) == toupper(*t++)));
+      /* generate the old name, but only if it doesn't conflict with the old
+       * name (Ada95 isn't case sensitive!)
+       */
+      while (*s && *t && (toupper(UChar(*s++)) == toupper(UChar(*t++))));
       if (*s || *t)
 	printf("   %-16s : Special_Key_Code renames %s;\n", old_name, name);
     }
@@ -756,10 +807,10 @@ gen_keydefs(int mode)
 static void
 acs_def(const char *name, chtype *a)
 {
-  int c = a - &acs_map[0];
+  int c = (int)(a - &acs_map[0]);
 
   printf("   %-24s : constant Character := ", name);
-  if (isprint(c) && (c != '`'))
+  if (isprint(UChar(c)) && (c != '`'))
     printf("'%c';\n", c);
   else
     printf("Character'Val (%d);\n", c);
@@ -771,6 +822,25 @@ acs_def(const char *name, chtype *a)
 static void
 gen_acs(void)
 {
+  printf("   type C_ACS_Map is array (Character'Val (0) .. Character'Val (127))\n");
+  printf("        of Attributed_Character;\n");
+#if USE_REENTRANT || BROKEN_LINKER
+  printf("   type C_ACS_Ptr is access C_ACS_Map;\n");
+  printf("   function ACS_Map return C_ACS_Ptr;\n");
+  printf("   pragma Import (C, ACS_Map, \""
+	 NCURSES_WRAP_PREFIX
+	 "acs_map\");\n");
+#else
+  printf("   ACS_Map : C_ACS_Map;\n");
+  printf("   pragma Import (C, ACS_Map, \"acs_map\");\n");
+#endif
+  printf("   --\n");
+  printf("   --\n");
+  printf("   --  Constants for several characters from the Alternate Character Set\n");
+  printf("   --  You must use these constants as indices into the ACS_Map array\n");
+  printf("   --  to get the corresponding attributed character at runtime.\n");
+  printf("   --\n");
+
 #ifdef ACS_ULCORNER
   acs_def("ACS_Upper_Left_Corner", &ACS_ULCORNER);
 #endif
@@ -877,8 +947,7 @@ gen_acs(void)
    printf("   %-25s : constant Event_Mask := 8#%011lo#;\n", \
           #name, name)
 
-static
-void
+static void
 gen_mouse_events(void)
 {
   mmask_t all1 = 0;
@@ -1004,6 +1073,56 @@ gen_mouse_events(void)
   GEN_EVENT(BUTTON4_EVENTS, all4);
 }
 
+static void
+wrap_one_var(const char *c_var,
+	     const char *c_type,
+	     const char *ada_func,
+	     const char *ada_type)
+{
+#if USE_REENTRANT
+  /* must wrap variables */
+  printf("\n");
+  printf("   function %s return %s\n", ada_func, ada_type);
+  printf("   is\n");
+  printf("      function Result return %s;\n", c_type);
+  printf("      pragma Import (C, Result, \"" NCURSES_WRAP_PREFIX "%s\");\n", c_var);
+  printf("   begin\n");
+  if (strcmp(c_type, ada_type))
+    printf("      return %s (Result);\n", ada_type);
+  else
+    printf("      return Result;\n");
+  printf("   end %s;\n", ada_func);
+#else
+  /* global variables are really global */
+  printf("\n");
+  printf("   function %s return %s\n", ada_func, ada_type);
+  printf("   is\n");
+  printf("      Result : %s;\n", c_type);
+  printf("      pragma Import (C, Result, \"%s\");\n", c_var);
+  printf("   begin\n");
+  if (strcmp(c_type, ada_type))
+    printf("      return %s (Result);\n", ada_type);
+  else
+    printf("      return Result;\n");
+  printf("   end %s;\n", ada_func);
+#endif
+}
+
+#define GEN_PUBLIC_VAR(c_var, c_type, ada_func, ada_type) \
+	wrap_one_var(#c_var, #c_type, #ada_func, #ada_type)
+
+static void
+gen_public_vars(void)
+{
+  GEN_PUBLIC_VAR(stdscr, Window, Standard_Window, Window);
+  GEN_PUBLIC_VAR(curscr, Window, Current_Window, Window);
+  GEN_PUBLIC_VAR(LINES, C_Int, Lines, Line_Count);
+  GEN_PUBLIC_VAR(COLS, C_Int, Columns, Column_Count);
+  GEN_PUBLIC_VAR(TABSIZE, C_Int, Tab_Size, Natural);
+  GEN_PUBLIC_VAR(COLORS, C_Int, Number_Of_Colors, Natural);
+  GEN_PUBLIC_VAR(COLOR_PAIRS, C_Int, Number_Of_Color_Pairs, Natural);
+}
+
 /*
  * Output some comment lines indicating that the file is generated.
  * The name parameter is the name of the facility to be used in
@@ -1079,15 +1198,13 @@ color_def(const char *name, int value)
   printf("   %-16s : constant Color_Number := %d;\n", name, value);
 }
 
-#define HAVE_USE_DEFAULT_COLORS 1
-
 /*
  * Generate all color definitions
  */
 static void
 gen_color(void)
 {
-#ifdef HAVE_USE_DEFAULT_COLORS
+#if HAVE_USE_DEFAULT_COLORS
   color_def("Default_Color", -1);
 #endif
 #ifdef COLOR_BLACK
@@ -1175,84 +1292,29 @@ eti_gen(char *buf, int code, const char *name, int *etimin, int *etimax)
     *etimin = code;
   if (code > *etimax)
     *etimax = code;
-  return strlen(buf);
+  return (int)strlen(buf);
 }
-
-#define GEN_OFFSET(member,itype)                                    \
-  if (sizeof(((WINDOW*)0)->member)==sizeof(itype)) {                \
-    o = offsetof(WINDOW, member);                                   \
-    if ((o%sizeof(itype) == 0)) {                                   \
-       printf("   Offset%-*s : constant Natural := %2ld; --  %s\n", \
-              12, #member, (long)(o/sizeof(itype)),#itype);         \
-    }                                                               \
-  }
 
 static void
 gen_offsets(void)
 {
-  long o;
   const char *s_bool = "";
 
-  GEN_OFFSET(_maxy, short);
-  GEN_OFFSET(_maxx, short);
-  GEN_OFFSET(_begy, short);
-  GEN_OFFSET(_begx, short);
-  GEN_OFFSET(_cury, short);
-  GEN_OFFSET(_curx, short);
-  GEN_OFFSET(_yoffset, short);
-  GEN_OFFSET(_pary, int);
-  GEN_OFFSET(_parx, int);
   if (sizeof(bool) == sizeof(char))
     {
-      GEN_OFFSET(_notimeout, char);
-      GEN_OFFSET(_clear, char);
-      GEN_OFFSET(_leaveok, char);
-      GEN_OFFSET(_scroll, char);
-      GEN_OFFSET(_idlok, char);
-      GEN_OFFSET(_idcok, char);
-      GEN_OFFSET(_immed, char);
-      GEN_OFFSET(_sync, char);
-      GEN_OFFSET(_use_keypad, char);
-
       s_bool = "char";
     }
   else if (sizeof(bool) == sizeof(short))
     {
-      GEN_OFFSET(_notimeout, short);
-      GEN_OFFSET(_clear, short);
-      GEN_OFFSET(_leaveok, short);
-      GEN_OFFSET(_scroll, short);
-      GEN_OFFSET(_idlok, short);
-      GEN_OFFSET(_idcok, short);
-      GEN_OFFSET(_immed, short);
-      GEN_OFFSET(_sync, short);
-      GEN_OFFSET(_use_keypad, short);
-
       s_bool = "short";
     }
   else if (sizeof(bool) == sizeof(int))
     {
-      GEN_OFFSET(_notimeout, int);
-      GEN_OFFSET(_clear, int);
-      GEN_OFFSET(_leaveok, int);
-      GEN_OFFSET(_scroll, int);
-      GEN_OFFSET(_idlok, int);
-      GEN_OFFSET(_idcok, int);
-      GEN_OFFSET(_immed, int);
-      GEN_OFFSET(_sync, int);
-      GEN_OFFSET(_use_keypad, int);
-
       s_bool = "int";
     }
   printf("   Sizeof%-*s : constant Natural := %2ld; --  %s\n",
 	 12, "_bool", (long)sizeof(bool), "bool");
 
-  /* In ncurses _maxy and _maxx needs an offset for the "public"
-   * value
-   */
-  printf("   Offset%-*s : constant Natural := %2d; --  %s\n",
-	 12, "_XY", 1, "int");
-  printf("\n");
   printf("   type Curses_Bool is mod 2 ** Interfaces.C.%s'Size;\n", s_bool);
 }
 
@@ -1291,9 +1353,6 @@ main(int argc, char *argv[])
 	case 'A':		/* chtype translation into Ada95 record type */
 	  gen_attr_set("Character_Attribute_Set");
 	  break;
-	case 'K':		/* translation of keycodes */
-	  gen_keydefs(0);
-	  break;
 	case 'B':		/* write some initial comment lines */
 	  basedefs();
 	  break;
@@ -1306,23 +1365,29 @@ main(int argc, char *argv[])
 	case 'E':		/* generate Mouse Event codes */
 	  gen_mouse_events();
 	  break;
-	case 'M':		/* generate constants for the ACS characters */
-	  gen_acs();
+	case 'K':		/* translation of keycodes */
+	  gen_keydefs(0);
 	  break;
 	case 'L':		/* generate the Linker_Options pragma */
 	  gen_linkopts();
 	  break;
+	case 'M':		/* generate constants for the ACS characters */
+	  gen_acs();
+	  break;
 	case 'O':		/* generate definitions of the old key code names */
 	  gen_keydefs(1);
+	  break;
+	case 'P':		/* generate definitions of the public variables */
+	  gen_public_vars();
 	  break;
 	case 'R':		/* generate representation clause for Attributed character */
 	  gen_chtype_rep("Attributed_Character");
 	  break;
-	case 'V':		/* generate version info */
-	  gen_version_info();
-	  break;
 	case 'T':		/* generate the Trace info */
 	  gen_trace("Trace_Attribute_Set");
+	  break;
+	case 'V':		/* generate version info */
+	  gen_version_info();
 	  break;
 	default:
 	  break;
@@ -1463,7 +1528,7 @@ main(int argc, char *argv[])
 	      }
 	    printf("   subtype Eti_Error is C_Int range %d .. %d;\n\n",
 		   etimin, etimax);
-	    printf(buf);
+	    printf("%s", buf);
 	  }
 	  break;
 	default:

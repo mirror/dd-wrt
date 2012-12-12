@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2002-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 2002-2007,2008 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: demo_defkey.c,v 1.16 2006/04/01 19:08:03 tom Exp $
+ * $Id: demo_defkey.c,v 1.20 2010/11/14 00:59:35 tom Exp $
  *
  * Demonstrate the define_key() function.
  * Thomas Dickey - 2002/11/23
@@ -76,6 +76,7 @@ visichar(int ch)
     static char temp[10];
 
     ch = UChar(ch);
+    assert(ch >= 0 && ch < 256);
     if (ch == '\\') {
 	strcpy(temp, "\\\\");
     } else if (ch == '\033') {
@@ -97,7 +98,7 @@ static char *
 visible(const char *string)
 {
     char *result = 0;
-    unsigned need = 1;
+    size_t need = 1;
     int pass;
     int n;
 
@@ -112,10 +113,10 @@ visible(const char *string)
 		    need += strlen(temp);
 	    }
 	    if (!pass)
-		result = (char *) calloc(need, 1);
+		result = typeCalloc(char, need);
 	}
     } else {
-	result = (char *) calloc(1, 1);
+	result = typeCalloc(char, 1);
     }
     return result;
 }
@@ -143,13 +144,12 @@ really_define_key(WINDOW *win, const char *new_string, int code)
 		code_name);
     }
     log_last_line(win);
+
     if (vis_string != 0) {
 	free(vis_string);
 	vis_string = 0;
     }
 
-    if (vis_string != 0)
-	free(vis_string);
     vis_string = visible(new_string);
     if ((rc = key_defined(new_string)) > 0) {
 	wprintw(win, "%s was bound to %s\n", vis_string, keyname(rc));

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -30,16 +30,8 @@
  *
  * Generate timing statistics for vertical-motion optimization.
  *
- * $Id: hashtest.c,v 1.26 2006/05/20 16:02:16 tom Exp $
+ * $Id: hashtest.c,v 1.31 2010/11/13 23:43:15 tom Exp $
  */
-
-#ifdef TRACE
-#define Trace(p) _tracef p
-#define USE_TRACE 1
-#else
-#define Trace(p)		/* nothing */
-#define USE_TRACE 0
-#endif
 
 #include <test.priv.h>
 
@@ -94,7 +86,8 @@ genlines(int base)
 
     move(head_lines, 0);
     for (i = head_lines; i < LINES - foot_lines; i++) {
-	chtype c = (base - LO_CHAR + i) % (HI_CHAR - LO_CHAR + 1) + LO_CHAR;
+	chtype c = (chtype) ((base - LO_CHAR + i) % (HI_CHAR - LO_CHAR + 1)
+			     + LO_CHAR);
 	int hi = (extend_corner || (i < LINES - 1)) ? COLS : COLS - 1;
 	for (j = 0; j < hi; j++)
 	    addch(c);
@@ -148,10 +141,10 @@ run_test(bool optimized GCC_UNUSED)
 #endif
 
     if (reverse_loops)
-	for (ch = hi; ch >= lo; ch--)
+	for (ch = (char) hi; ch >= lo; ch--)
 	    one_cycle(ch);
     else
-	for (ch = lo; ch <= hi; ch++)
+	for (ch = (char) lo; ch <= hi; ch++)
 	    one_cycle(ch);
 }
 
@@ -190,7 +183,7 @@ main(int argc, char *argv[])
 
     setlocale(LC_ALL, "");
 
-    while ((c = getopt(argc, argv, "cf:h:l:norsx")) != EOF) {
+    while ((c = getopt(argc, argv, "cf:h:l:norsx")) != -1) {
 	switch (c) {
 	case 'c':
 	    continuous = TRUE;
@@ -203,6 +196,7 @@ main(int argc, char *argv[])
 	    break;
 	case 'l':
 	    test_loops = atoi(optarg);
+	    assert(test_loops >= 0);
 	    break;
 	case 'n':
 	    test_normal = TRUE;

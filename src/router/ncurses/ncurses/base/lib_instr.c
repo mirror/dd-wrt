@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2007,2009 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -41,14 +41,14 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_instr.c,v 1.15 2005/11/20 01:38:03 tom Exp $")
+MODULE_ID("$Id: lib_instr.c,v 1.17 2009/10/24 22:55:45 tom Exp $")
 
 NCURSES_EXPORT(int)
 winnstr(WINDOW *win, char *str, int n)
 {
     int i = 0, row, col;
 
-    T((T_CALLED("winnstr(%p,%p,%d)"), win, str, n));
+    T((T_CALLED("winnstr(%p,%p,%d)"), (void *) win, str, n));
 
     if (!str)
 	returnCode(0);
@@ -79,18 +79,18 @@ winnstr(WINDOW *win, char *str, int n)
 
 			init_mb(state);
 			n3 = wcstombs(0, wch, 0);
-			if (isEILSEQ(n3) || (n3 == 0)) {
-			    ;
-			} else if ((int) (n3 + i) >= n) {
-			    done = TRUE;
-			} else if ((tmp = typeCalloc(char, n3 + 10)) == 0) {
-			    done = TRUE;
-			} else {
-			    init_mb(state);
-			    wcstombs(tmp, wch, n3);
-			    for (i3 = 0; i3 < n3; ++i3)
-				str[i++] = tmp[i3];
-			    free(tmp);
+			if (!isEILSEQ(n3) && (n3 != 0)) {
+			    if (((int) n3 + i) > n) {
+				done = TRUE;
+			    } else if ((tmp = typeCalloc(char, n3 + 10)) == 0) {
+				done = TRUE;
+			    } else {
+				init_mb(state);
+				wcstombs(tmp, wch, n3);
+				for (i3 = 0; i3 < n3; ++i3)
+				    str[i++] = tmp[i3];
+				free(tmp);
+			    }
 			}
 		    }
 		    free(wch);
@@ -102,9 +102,7 @@ winnstr(WINDOW *win, char *str, int n)
 	    str[i++] = (char) CharOf(win->_line[row].text[col]);
 #endif
 	    if (++col > win->_maxx) {
-		col = 0;
-		if (++row > win->_maxy)
-		    break;
+		break;
 	    }
 	}
     }

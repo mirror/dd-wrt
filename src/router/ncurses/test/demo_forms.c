@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2003-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 2003-2010,2011 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: demo_forms.c,v 1.22 2006/12/10 00:30:24 tom Exp $
+ * $Id: demo_forms.c,v 1.38 2011/01/15 18:15:11 tom Exp $
  *
  * Demonstrate a variety of functions from the form library.
  * Thomas Dickey - 2003/4/26
@@ -35,20 +35,13 @@
 TYPE_ENUM			-
 TYPE_REGEXP			-
 dup_field			-
-field_arg			-
-field_back			-
-field_count			-
-field_fore			-
 field_init			-
 field_just			-
-field_pad			-
 field_term			-
-field_type			-
 form_init			-
 form_opts			-
 form_opts_off			-
 form_opts_on			-
-form_page			-
 form_request_by_name		-
 form_term			-
 form_userptr			-
@@ -59,7 +52,6 @@ move_field			-
 new_page			-
 pos_form_cursor			-
 set_field_init			-
-set_field_pad			-
 set_field_term			-
 set_fieldtype_arg		-
 set_fieldtype_choice		-
@@ -91,7 +83,7 @@ make_label(int frow, int fcol, NCURSES_CONST char *label)
 
     if (f) {
 	set_field_buffer(f, 0, label);
-	set_field_opts(f, (int) (field_opts(f) & ~O_ACTIVE));
+	set_field_opts(f, (int) ((unsigned) field_opts(f) & ~O_ACTIVE));
     }
     return (f);
 }
@@ -105,6 +97,8 @@ make_field(int frow, int fcol, int rows, int cols)
     FIELD *f = new_field(rows, cols, frow, fcol, o_value, 1);
 
     if (f) {
+	FieldAttrs *ptr;
+
 	set_field_back(f, A_UNDERLINE);
 	/*
 	 * If -j and -d options are combined, -j loses.  It is documented in
@@ -112,10 +106,10 @@ make_field(int frow, int fcol, int rows, int cols)
 	 * O_STATIC off makes the form library ignore justification.
 	 */
 	set_field_just(f, j_value);
-	set_field_userptr(f, (void *) 0);
 	if (d_option) {
 	    if (has_colors()) {
 		set_field_fore(f, COLOR_PAIR(2));
+		set_field_back(f, A_UNDERLINE | COLOR_PAIR(3));
 	    } else {
 		set_field_fore(f, A_BOLD);
 	    }
@@ -126,6 +120,16 @@ make_field(int frow, int fcol, int rows, int cols)
 	    field_opts_off(f, O_STATIC);
 	    set_max_field(f, m_value);
 	}
+
+	/*
+	 * The userptr is used in edit_field.c's inactive_field().
+	 */
+	ptr = (FieldAttrs *) field_userptr(f);
+	if (ptr == 0) {
+	    ptr = typeCalloc(FieldAttrs, 1);
+	    ptr->background = field_back(f);
+	}
+	set_field_userptr(f, (void *) ptr);
 	if (t_value)
 	    set_field_buffer(f, 0, t_value);
     }
@@ -171,7 +175,7 @@ erase_form(FORM * f)
 static void
 show_insert_mode(bool insert_mode)
 {
-    mvaddstr(5, 57, (insert_mode
+    MvAddStr(5, 57, (insert_mode
 		     ? "form_status: insert "
 		     : "form_status: overlay"));
 }
@@ -212,7 +216,7 @@ my_form_driver(FORM * form, int c)
     case MY_EDT_MODE:
 	if ((field = current_field(form)) != 0) {
 	    set_current_field(form, another_field(form, field));
-	    if (field_opts(field) & O_EDIT) {
+	    if ((unsigned) field_opts(field) & O_EDIT) {
 		field_opts_off(field, O_EDIT);
 		set_field_status(field, 0);
 	    } else {
@@ -250,19 +254,25 @@ show_current_field(WINDOW *win, FORM * form)
     char *buffer;
     int nbuf;
     int field_rows, field_cols, field_max;
+    int currow, curcol;
 
     if (has_colors()) {
 	wbkgd(win, COLOR_PAIR(1));
     }
     werase(win);
-    wprintw(win, "Cursor: %d,%d", form->currow, form->curcol);
+    form_getyx(form, currow, curcol);
+    wprintw(win, "Cursor: %d,%d", currow, curcol);
     if (data_ahead(form))
 	waddstr(win, " ahead");
     if (data_behind(form))
 	waddstr(win, " behind");
     waddch(win, '\n');
     if ((field = current_field(form)) != 0) {
-	wprintw(win, "Field %d:", field_index(field));
+	wprintw(win, "Page %d%s, Field %d/%d%s:",
+		form_page(form),
+		new_page(field) ? "*" : "",
+		field_index(field), field_count(form),
+		field_arg(field) ? "(arg)" : "");
 	if ((type = field_type(field)) != 0) {
 	    if (type == TYPE_ALNUM)
 		waddstr(win, "ALNUM");
@@ -284,7 +294,7 @@ show_current_field(WINDOW *win, FORM * form)
 		waddstr(win, "other");
 	}
 
-	if (field_opts(field) & O_EDIT)
+	if ((unsigned) field_opts(field) & O_EDIT)
 	    waddstr(win, " editable");
 	else
 	    waddstr(win, " readonly");
@@ -297,11 +307,26 @@ show_current_field(WINDOW *win, FORM * form)
 	    wprintw(win, " size %dx%d (max %d)",
 		    field_rows, field_cols, field_max);
 	}
+
+	waddch(win, ' ');
+	(void) wattrset(win, field_fore(field));
+	waddstr(win, "fore");
+	wattroff(win, field_fore(field));
+
+	waddch(win, '/');
+
+	(void) wattrset(win, field_back(field));
+	waddstr(win, "back");
+	wattroff(win, field_back(field));
+
+	wprintw(win, ", pad '%c'",
+		field_pad(field));
+
 	waddstr(win, "\n");
 	for (nbuf = 0; nbuf <= 2; ++nbuf) {
 	    if ((buffer = field_buffer(field, nbuf)) != 0) {
 		wprintw(win, "buffer %d:", nbuf);
-		wattrset(win, A_REVERSE);
+		(void) wattrset(win, A_REVERSE);
 		waddstr(win, buffer);
 		wattroff(win, A_REVERSE);
 		waddstr(win, "\n");
@@ -316,20 +341,25 @@ demo_forms(void)
 {
     WINDOW *w;
     FORM *form;
-    FIELD *f[100];
+    FIELD *f[100];		/* FIXME memset to zero */
     int finished = 0, c;
     unsigned n = 0;
     int pg;
     WINDOW *also;
 
+#ifdef NCURSES_MOUSE_VERSION
+    mousemask(ALL_MOUSE_EVENTS, (mmask_t *) 0);
+#endif
+
     help_edit_field();
 
-    mvaddstr(4, 57, "Forms Entry Test");
+    MvAddStr(4, 57, "Forms Entry Test");
     show_insert_mode(TRUE);
 
     refresh();
 
     /* describe the form */
+    memset(f, 0, sizeof(f));
     for (pg = 0; pg < 4; ++pg) {
 	char label[80];
 	sprintf(label, "Sample Form Page %d", pg + 1);
@@ -361,6 +391,7 @@ demo_forms(void)
 
 	    f[n++] = make_label(2, 34, "MI");
 	    f[n++] = make_field(3, 34, 1, 1);
+	    set_field_pad(f[n - 1], '?');
 	    set_field_type(f[n - 1], TYPE_ALPHA, 1);
 	    break;
 	case 2:
@@ -390,39 +421,49 @@ demo_forms(void)
 
 	f[n++] = make_label(5, 0, "Comments");
 	f[n++] = make_field(6, 0, 4, 46);
+	set_field_buffer(f[n - 1], 0, "HELLO\nWORLD!");
+	set_field_buffer(f[n - 1], 1, "Hello\nWorld!");
     }
 
-    f[n++] = (FIELD *) 0;
+    f[n] = (FIELD *) 0;
 
-    form = new_form(f);
+    if ((form = new_form(f)) != 0) {
 
-    display_form(form);
+	display_form(form);
 
-    w = form_win(form);
-    also = newwin(getmaxy(stdscr) - getmaxy(w), COLS, getmaxy(w), 0);
-    show_current_field(also, form);
-
-    while (!finished) {
-	switch (edit_field(form, &c)) {
-	case E_OK:
-	    break;
-	case E_UNKNOWN_COMMAND:
-	    finished = my_form_driver(form, c);
-	    break;
-	default:
-	    beep();
-	    break;
-	}
+	w = form_win(form);
+	also = newwin(getmaxy(stdscr) - getmaxy(w), COLS, getmaxy(w), 0);
 	show_current_field(also, form);
+
+	while (!finished) {
+	    switch (edit_field(form, &c)) {
+	    case E_OK:
+		break;
+	    case E_UNKNOWN_COMMAND:
+		finished = my_form_driver(form, c);
+		break;
+	    default:
+		beep();
+		break;
+	    }
+	    show_current_field(also, form);
+	}
+
+	erase_form(form);
+
+	free_form(form);
     }
-
-    erase_form(form);
-
-    free_form(form);
-    for (c = 0; f[c] != 0; c++)
+    for (c = 0; f[c] != 0; c++) {
+	void *ptr = field_userptr(f[c]);
+	free(ptr);
 	free_field(f[c]);
+    }
     noraw();
     nl();
+
+#ifdef NCURSES_MOUSE_VERSION
+    mousemask(0, (mmask_t *) 0);
+#endif
 }
 
 static void
@@ -451,7 +492,7 @@ main(int argc, char *argv[])
 
     setlocale(LC_ALL, "");
 
-    while ((ch = getopt(argc, argv, "dj:m:o:t:")) != EOF) {
+    while ((ch = getopt(argc, argv, "dj:m:o:t:")) != -1) {
 	switch (ch) {
 	case 'd':
 	    d_option = TRUE;
@@ -489,6 +530,7 @@ main(int argc, char *argv[])
 	start_color();
 	init_pair(1, COLOR_WHITE, COLOR_BLUE);
 	init_pair(2, COLOR_GREEN, COLOR_BLACK);
+	init_pair(3, COLOR_CYAN, COLOR_BLACK);
 	bkgd(COLOR_PAIR(1));
 	refresh();
     }

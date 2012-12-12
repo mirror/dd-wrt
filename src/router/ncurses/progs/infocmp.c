@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2006 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -35,18 +35,18 @@
 /*
  *	infocmp.c -- decompile an entry, or compare two entries
  *		written by Eric S. Raymond
+ *		and Thomas E Dickey
  */
 
 #include <progs.priv.h>
 
 #include <dump_entry.h>
 
-MODULE_ID("$Id: infocmp.c,v 1.85 2006/08/19 21:20:37 tom Exp $")
+MODULE_ID("$Id: infocmp.c,v 1.105 2010/05/01 22:04:08 tom Exp $")
 
 #define L_CURL "{"
 #define R_CURL "}"
 
-#define MAXTERMS	32	/* max # terminal arguments we can handle */
 #define MAX_STRING	1024	/* maximum formatted string */
 
 const char *_nc_progname = "infocmp";
@@ -60,8 +60,7 @@ typedef char path[PATH_MAX];
  *
  ***************************************************************************/
 
-static char *tname[MAXTERMS];	/* terminal type names */
-static ENTRY entries[MAXTERMS];	/* terminfo entries */
+static ENTRY *entries;		/* terminfo entries */
 static int termcount;		/* count of terminal entries */
 
 static bool limited = TRUE;	/* "-r" option is not set */
@@ -96,7 +95,8 @@ ExitProgram(int code)
     while (termcount-- > 0)
 	_nc_free_termtype(&entries[termcount].tterm);
     _nc_leaks_dump_entry();
-    _nc_free_and_exit(code);
+    free(entries);
+    _nc_free_tic(code);
 }
 #endif
 
@@ -221,7 +221,7 @@ static bool
 useeq(ENTRY * e1, ENTRY * e2)
 /* are the use references in two entries equivalent? */
 {
-    int i, j;
+    unsigned i, j;
 
     if (e1->nuses != e2->nuses)
 	return (FALSE);
@@ -271,7 +271,7 @@ static void
 print_uses(ENTRY * ep, FILE *fp)
 /* print an entry's use references */
 {
-    int i;
+    unsigned i;
 
     if (!ep->nuses)
 	fputs("NULL", fp);
@@ -568,37 +568,41 @@ same_param(const char *table, const char *param, unsigned length)
 static char *
 lookup_params(const assoc * table, char *dst, char *src)
 {
+    char *result = 0;
     const char *ep = strtok(src, ";");
-    const assoc *ap;
 
-    do {
-	bool found = FALSE;
+    if (ep != 0) {
+	const assoc *ap;
 
-	for (ap = table; ap->from; ap++) {
-	    size_t tlen = strlen(ap->from);
+	do {
+	    bool found = FALSE;
 
-	    if (same_param(ap->from, ep, tlen)) {
-		(void) strcat(dst, ap->to);
-		found = TRUE;
-		break;
+	    for (ap = table; ap->from; ap++) {
+		size_t tlen = strlen(ap->from);
+
+		if (same_param(ap->from, ep, tlen)) {
+		    (void) strcat(dst, ap->to);
+		    found = TRUE;
+		    break;
+		}
 	    }
-	}
 
-	if (!found)
-	    (void) strcat(dst, ep);
-	(void) strcat(dst, ";");
-    } while
-	((ep = strtok((char *) 0, ";")));
+	    if (!found)
+		(void) strcat(dst, ep);
+	    (void) strcat(dst, ";");
+	} while
+	    ((ep = strtok((char *) 0, ";")));
 
-    dst[strlen(dst) - 1] = '\0';
+	dst[strlen(dst) - 1] = '\0';
 
-    return dst;
+	result = dst;
+    }
+    return result;
 }
 
 static void
 analyze_string(const char *name, const char *cap, TERMTYPE *tp)
 {
-    char buf[MAX_TERMINFO_LENGTH];
     char buf2[MAX_TERMINFO_LENGTH];
     const char *sp;
     const assoc *ap;
@@ -608,7 +612,6 @@ analyze_string(const char *name, const char *cap, TERMTYPE *tp)
 	return;
     (void) printf("%s: ", name);
 
-    buf[0] = '\0';
     for (sp = cap; *sp; sp++) {
 	int i;
 	int csi;
@@ -656,7 +659,7 @@ analyze_string(const char *name, const char *cap, TERMTYPE *tp)
 	if (!expansion) {
 	    csi = skip_csi(sp);
 	    for (ap = std_caps; ap->from; ap++) {
-		size_t adj = csi ? 2 : 0;
+		size_t adj = (size_t) (csi ? 2 : 0);
 
 		len = strlen(ap->from);
 		if (csi && skip_csi(ap->from) != csi)
@@ -665,7 +668,7 @@ analyze_string(const char *name, const char *cap, TERMTYPE *tp)
 		    && strncmp(ap->from + adj, sp + csi, len - adj) == 0) {
 		    expansion = ap->to;
 		    len -= adj;
-		    len += csi;
+		    len += (size_t) csi;
 		    break;
 		}
 	    }
@@ -675,13 +678,14 @@ analyze_string(const char *name, const char *cap, TERMTYPE *tp)
 	if (!expansion
 	    && (csi = skip_csi(sp)) != 0
 	    && (len = strspn(sp + csi, "0123456789;"))
-	    && (next = csi + len)
+	    && (len < sizeof(buf3))
+	    && (next = (size_t) csi + len)
 	    && ((sp[next] == 'h') || (sp[next] == 'l'))) {
 
 	    (void) strcpy(buf2, (sp[next] == 'h') ? "ECMA+" : "ECMA-");
 	    (void) strncpy(buf3, sp + csi, len);
 	    buf3[len] = '\0';
-	    len += csi + 1;
+	    len += (size_t) csi + 1;
 
 	    expansion = lookup_params(std_modes, buf2, buf3);
 	}
@@ -691,13 +695,14 @@ analyze_string(const char *name, const char *cap, TERMTYPE *tp)
 	    && (csi = skip_csi(sp)) != 0
 	    && sp[csi] == '?'
 	    && (len = strspn(sp + csi + 1, "0123456789;"))
-	    && (next = csi + 1 + len)
+	    && (len < sizeof(buf3))
+	    && (next = (size_t) csi + 1 + len)
 	    && ((sp[next] == 'h') || (sp[next] == 'l'))) {
 
 	    (void) strcpy(buf2, (sp[next] == 'h') ? "DEC+" : "DEC-");
 	    (void) strncpy(buf3, sp + csi + 1, len);
 	    buf3[len] = '\0';
-	    len += csi + 2;
+	    len += (size_t) csi + 2;
 
 	    expansion = lookup_params(private_modes, buf2, buf3);
 	}
@@ -706,13 +711,14 @@ analyze_string(const char *name, const char *cap, TERMTYPE *tp)
 	if (!expansion
 	    && (csi = skip_csi(sp)) != 0
 	    && (len = strspn(sp + csi, "0123456789;")) != 0
-	    && (next = csi + len)
+	    && (len < sizeof(buf3))
+	    && (next = (size_t) csi + len)
 	    && sp[next] == 'm') {
 
 	    (void) strcpy(buf2, "SGR:");
 	    (void) strncpy(buf3, sp + csi, len);
 	    buf3[len] = '\0';
-	    len += csi + 1;
+	    len += (size_t) csi + 1;
 
 	    expansion = lookup_params(ecma_highlights, buf2, buf3);
 	}
@@ -720,7 +726,7 @@ analyze_string(const char *name, const char *cap, TERMTYPE *tp)
 	if (!expansion
 	    && (csi = skip_csi(sp)) != 0
 	    && sp[csi] == 'm') {
-	    len = csi + 1;
+	    len = (size_t) csi + 1;
 	    (void) strcpy(buf2, "SGR:");
 	    strcat(buf2, ecma_highlights[0].to);
 	    expansion = buf2;
@@ -738,7 +744,7 @@ analyze_string(const char *name, const char *cap, TERMTYPE *tp)
 		if (strncmp(buf2, sp + csi, len) == 0)
 		    expansion = "RSR";
 	    }
-	    len += csi;
+	    len += (size_t) csi;
 	}
 
 	/* now check for home-down */
@@ -755,22 +761,21 @@ analyze_string(const char *name, const char *cap, TERMTYPE *tp)
 		    expansion = "LL";
 		}
 	    }
-	    len += csi;
+	    len += (size_t) csi;
 	}
 
 	/* now look at the expansion we got, if any */
 	if (expansion) {
-	    (void) sprintf(buf + strlen(buf), "{%s}", expansion);
+	    printf("{%s}", expansion);
 	    sp += len - 1;
-	    continue;
 	} else {
 	    /* couldn't match anything */
 	    buf2[0] = *sp;
 	    buf2[1] = '\0';
-	    (void) strcat(buf, TIC_EXPAND(buf2));
+	    fputs(TIC_EXPAND(buf2), stdout);
 	}
     }
-    (void) printf("%s\n", buf);
+    putchar('\n');
 }
 
 /***************************************************************************
@@ -789,6 +794,7 @@ file_comparison(int argc, char *argv[])
     ENTRY *qp, *rp;
     int i, n;
 
+    memset(heads, 0, sizeof(heads));
     dump_init((char *) 0, F_LITERAL, S_TERMINFO, 0, itrace, FALSE);
 
     for (n = 0; n < argc && n < MAXCOMPARE; n++) {
@@ -888,8 +894,6 @@ file_comparison(int argc, char *argv[])
 
     (void) printf("The following entries are equivalent:\n");
     for (qp = heads[0]; qp; qp = qp->next) {
-	rp = qp->crosslinks[0];
-
 	if (qp->ncrosslinks == 1) {
 	    rp = qp->crosslinks[0];
 
@@ -932,7 +936,8 @@ file_comparison(int argc, char *argv[])
 		case C_DIFFERENCE:
 		    if (itrace)
 			(void) fprintf(stderr,
-				       "infocmp: dumping differences\n");
+				       "%s: dumping differences\n",
+				       _nc_progname);
 		    (void) printf("comparing %s to %s.\n", name1, name2);
 		    compare_entry(compare_predicate, &entries->tterm, quiet);
 		    break;
@@ -940,7 +945,8 @@ file_comparison(int argc, char *argv[])
 		case C_COMMON:
 		    if (itrace)
 			(void) fprintf(stderr,
-				       "infocmp: dumping common capabilities\n");
+				       "%s: dumping common capabilities\n",
+				       _nc_progname);
 		    (void) printf("comparing %s to %s.\n", name1, name2);
 		    compare_entry(compare_predicate, &entries->tterm, quiet);
 		    break;
@@ -948,7 +954,8 @@ file_comparison(int argc, char *argv[])
 		case C_NAND:
 		    if (itrace)
 			(void) fprintf(stderr,
-				       "infocmp: dumping differences\n");
+				       "%s: dumping differences\n",
+				       _nc_progname);
 		    (void) printf("comparing %s to %s.\n", name1, name2);
 		    compare_entry(compare_predicate, &entries->tterm, quiet);
 		    break;
@@ -1056,7 +1063,6 @@ static void
 dump_initializers(TERMTYPE *term)
 {
     unsigned n;
-    int size;
     const char *str = 0;
 
     printf("\nstatic char %s[] = \"%s\";\n\n",
@@ -1083,7 +1089,6 @@ dump_initializers(TERMTYPE *term)
 	    }
 	    *tp++ = '"';
 	    *tp = '\0';
-	    size += (strlen(term->Strings[n]) + 1);
 	    (void) printf("static char %-20s[] = %s;\n",
 			  string_variable(ExtStrname(term, n, strnames)), buf);
 	}
@@ -1135,10 +1140,6 @@ dump_initializers(TERMTYPE *term)
 		      ExtNumname(term, n, numnames), str);
     }
     (void) printf("%s;\n", R_CURL);
-
-    size = (sizeof(TERMTYPE)
-	    + (NUM_BOOLEANS(term) * sizeof(term->Booleans[0]))
-	    + (NUM_NUMBERS(term) * sizeof(term->Numbers[0])));
 
     (void) printf("static char * %s[] = %s\n", name_initializer("string"), L_CURL);
 
@@ -1213,6 +1214,8 @@ dump_termtype(TERMTYPE *term)
 		  NUM_STRINGS(term) - STRCOUNT);
 
     (void) printf("#endif /* NCURSES_XNAMES */\n");
+#else
+    (void) term;
 #endif /* NCURSES_XNAMES */
     (void) printf("\t%s\n", R_CURL);
 }
@@ -1237,7 +1240,8 @@ terminal_env(void)
 
     if ((terminal = getenv("TERM")) == 0) {
 	(void) fprintf(stderr,
-		       "infocmp: environment variable TERM not set\n");
+		       "%s: environment variable TERM not set\n",
+		       _nc_progname);
 	exit(EXIT_FAILURE);
     }
     return terminal;
@@ -1249,13 +1253,27 @@ terminal_env(void)
  *
  ***************************************************************************/
 
+#if NO_LEAKS
+#define MAIN_LEAKS() \
+    free(myargv); \
+    free(tfile); \
+    free(tname)
+#else
+#define MAIN_LEAKS()		/* nothing */
+#endif
+
 int
 main(int argc, char *argv[])
 {
-    char *firstdir, *restdir;
     /* Avoid "local data >32k" error with mwcc */
     /* Also avoid overflowing smaller stacks on systems like AmigaOS */
-    path *tfile = (path *) malloc(sizeof(path) * MAXTERMS);
+    path *tfile = 0;
+    char **tname = 0;
+    int maxterms;
+
+    char **myargv;
+
+    char *firstdir, *restdir;
     int c, i, len;
     bool formatted = FALSE;
     bool filecompare = FALSE;
@@ -1270,9 +1288,16 @@ main(int argc, char *argv[])
     use_extended_names(FALSE);
 #endif
 
+    _nc_progname = _nc_rootname(argv[0]);
+
+    /* make sure we have enough space to add two terminal entries */
+    myargv = typeCalloc(char *, (size_t) (argc + 3));
+    memcpy(myargv, argv, (sizeof(char *) * (size_t) argc));
+    argv = myargv;
+
     while ((c = getopt(argc,
 		       argv,
-		       "1A:aB:CcdEeFfGgIiLlnpqR:rs:TtUuVv:w:x")) != EOF) {
+		       "1A:aB:CcdEeFfGgIiLlnpqR:rs:TtUuVv:w:x")) != -1) {
 	switch (c) {
 	case '1':
 	    mwidth = 0;
@@ -1373,7 +1398,6 @@ main(int argc, char *argv[])
 
 	case 'r':
 	    tversion = 0;
-	    limited = FALSE;
 	    break;
 
 	case 's':
@@ -1387,7 +1411,8 @@ main(int argc, char *argv[])
 		sortmode = S_TERMCAP;
 	    else {
 		(void) fprintf(stderr,
-			       "infocmp: unknown sort mode\n");
+			       "%s: unknown sort mode\n",
+			       _nc_progname);
 		ExitProgram(EXIT_FAILURE);
 	    }
 	    break;
@@ -1435,6 +1460,18 @@ main(int argc, char *argv[])
 	}
     }
 
+    maxterms = (argc + 2 - optind);
+    tfile = typeMalloc(path, maxterms);
+    tname = typeCalloc(char *, maxterms);
+    entries = typeCalloc(ENTRY, maxterms);
+
+    if (tfile == 0
+	|| tname == 0
+	|| entries == 0) {
+	fprintf(stderr, "%s: not enough memory\n", _nc_progname);
+	ExitProgram(EXIT_FAILURE);
+    }
+
     /* by default, sort by terminfo name */
     if (sortmode == S_DEFAULT)
 	sortmode = S_TERMINFO;
@@ -1458,53 +1495,57 @@ main(int argc, char *argv[])
 	/* grab the entries */
 	termcount = 0;
 	for (; optind < argc; optind++) {
-	    if (termcount >= MAXTERMS) {
-		(void) fprintf(stderr,
-			       "infocmp: too many terminal type arguments\n");
-		ExitProgram(EXIT_FAILURE);
-	    } else {
-		const char *directory = termcount ? restdir : firstdir;
-		int status;
+	    const char *directory = termcount ? restdir : firstdir;
+	    int status;
 
-		tname[termcount] = argv[optind];
+	    tname[termcount] = argv[optind];
 
-		if (directory) {
+	    if (directory) {
 #if USE_DATABASE
-		    (void) sprintf(tfile[termcount], "%s/%c/%s",
-				   directory,
-				   *argv[optind], argv[optind]);
-		    if (itrace)
-			(void) fprintf(stderr,
-				       "infocmp: reading entry %s from file %s\n",
-				       argv[optind], tfile[termcount]);
-
-		    status = _nc_read_file_entry(tfile[termcount],
-						 &entries[termcount].tterm);
+#if MIXEDCASE_FILENAMES
+#define LEAF_FMT "%c"
 #else
-		    (void) fprintf(stderr, "terminfo files not supported\n");
-		    ExitProgram(EXIT_FAILURE);
+#define LEAF_FMT "%02x"
 #endif
-		} else {
-		    if (itrace)
-			(void) fprintf(stderr,
-				       "infocmp: reading entry %s from database\n",
-				       tname[termcount]);
-
-		    status = _nc_read_entry(tname[termcount],
-					    tfile[termcount],
-					    &entries[termcount].tterm);
-		    directory = TERMINFO;	/* for error message */
-		}
-
-		if (status <= 0) {
+		(void) sprintf(tfile[termcount], "%s/" LEAF_FMT "/%s",
+			       directory,
+			       UChar(*argv[optind]), argv[optind]);
+		if (itrace)
 		    (void) fprintf(stderr,
-				   "infocmp: couldn't open terminfo file %s.\n",
-				   tfile[termcount]);
-		    ExitProgram(EXIT_FAILURE);
-		}
-		repair_acsc(&entries[termcount].tterm);
-		termcount++;
+				   "%s: reading entry %s from file %s\n",
+				   _nc_progname,
+				   argv[optind], tfile[termcount]);
+
+		status = _nc_read_file_entry(tfile[termcount],
+					     &entries[termcount].tterm);
+#else
+		(void) fprintf(stderr, "%s: terminfo files not supported\n",
+			       _nc_progname);
+		MAIN_LEAKS();
+		ExitProgram(EXIT_FAILURE);
+#endif
+	    } else {
+		if (itrace)
+		    (void) fprintf(stderr,
+				   "%s: reading entry %s from database\n",
+				   _nc_progname,
+				   tname[termcount]);
+
+		status = _nc_read_entry(tname[termcount],
+					tfile[termcount],
+					&entries[termcount].tterm);
 	    }
+
+	    if (status <= 0) {
+		(void) fprintf(stderr,
+			       "%s: couldn't open terminfo file %s.\n",
+			       _nc_progname,
+			       tfile[termcount]);
+		MAIN_LEAKS();
+		ExitProgram(EXIT_FAILURE);
+	    }
+	    repair_acsc(&entries[termcount].tterm);
+	    termcount++;
 	}
 
 #if NCURSES_XNAMES
@@ -1542,7 +1583,8 @@ main(int argc, char *argv[])
 	    case C_DEFAULT:
 		if (itrace)
 		    (void) fprintf(stderr,
-				   "infocmp: about to dump %s\n",
+				   "%s: about to dump %s\n",
+				   _nc_progname,
 				   tname[0]);
 		(void) printf("#\tReconstructed via infocmp from file: %s\n",
 			      tfile[0]);
@@ -1553,12 +1595,12 @@ main(int argc, char *argv[])
 			   NULL);
 		len = show_entry();
 		if (itrace)
-		    (void) fprintf(stderr, "infocmp: length %d\n", len);
+		    (void) fprintf(stderr, "%s: length %d\n", _nc_progname, len);
 		break;
 
 	    case C_DIFFERENCE:
 		if (itrace)
-		    (void) fprintf(stderr, "infocmp: dumping differences\n");
+		    (void) fprintf(stderr, "%s: dumping differences\n", _nc_progname);
 		(void) printf("comparing %s to %s.\n", tname[0], tname[1]);
 		compare_entry(compare_predicate, &entries->tterm, quiet);
 		break;
@@ -1566,7 +1608,8 @@ main(int argc, char *argv[])
 	    case C_COMMON:
 		if (itrace)
 		    (void) fprintf(stderr,
-				   "infocmp: dumping common capabilities\n");
+				   "%s: dumping common capabilities\n",
+				   _nc_progname);
 		(void) printf("comparing %s to %s.\n", tname[0], tname[1]);
 		compare_entry(compare_predicate, &entries->tterm, quiet);
 		break;
@@ -1574,14 +1617,15 @@ main(int argc, char *argv[])
 	    case C_NAND:
 		if (itrace)
 		    (void) fprintf(stderr,
-				   "infocmp: dumping differences\n");
+				   "%s: dumping differences\n",
+				   _nc_progname);
 		(void) printf("comparing %s to %s.\n", tname[0], tname[1]);
 		compare_entry(compare_predicate, &entries->tterm, quiet);
 		break;
 
 	    case C_USEALL:
 		if (itrace)
-		    (void) fprintf(stderr, "infocmp: dumping use entry\n");
+		    (void) fprintf(stderr, "%s: dumping use entry\n", _nc_progname);
 		dump_entry(&entries[0].tterm,
 			   suppress_untranslatable,
 			   limited,
@@ -1592,7 +1636,7 @@ main(int argc, char *argv[])
 					  || outform == F_TCONVERR));
 		len = show_entry();
 		if (itrace)
-		    (void) fprintf(stderr, "infocmp: length %d\n", len);
+		    (void) fprintf(stderr, "%s: length %d\n", _nc_progname, len);
 		break;
 	    }
 	}
@@ -1606,7 +1650,7 @@ main(int argc, char *argv[])
     else
 	file_comparison(argc - optind, argv + optind);
 
-    free(tfile);
+    MAIN_LEAKS();
     ExitProgram(EXIT_SUCCESS);
 }
 

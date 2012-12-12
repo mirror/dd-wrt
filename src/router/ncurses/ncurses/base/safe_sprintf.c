@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2001,2003 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -33,7 +33,7 @@
 #include <curses.priv.h>
 #include <ctype.h>
 
-MODULE_ID("$Id: safe_sprintf.c,v 1.18 2003/08/09 21:52:04 tom Exp $")
+MODULE_ID("$Id: safe_sprintf.c,v 1.24 2010/06/05 22:22:27 tom Exp $")
 
 #if USE_SAFE_SPRINTF
 
@@ -111,7 +111,7 @@ _nc_printf_length(const char *fmt, va_list ap)
 		    }
 		    sprintf(fmt_arg, "%d", ival);
 		    fmt_len += strlen(fmt_arg);
-		    if ((format = realloc(format, fmt_len)) == 0) {
+		    if ((format = _nc_doalloc(format, fmt_len)) == 0) {
 			return -1;
 		    }
 		    strcpy(&format[--f], fmt_arg);
@@ -207,56 +207,73 @@ _nc_printf_length(const char *fmt, va_list ap)
 }
 #endif
 
+#define my_buffer _nc_globals.safeprint_buf
+#define my_length _nc_globals.safeprint_used
+
 /*
  * Wrapper for vsprintf that allocates a buffer big enough to hold the result.
  */
 NCURSES_EXPORT(char *)
-_nc_printf_string(const char *fmt, va_list ap)
+NCURSES_SP_NAME(_nc_printf_string) (NCURSES_SP_DCLx
+				    const char *fmt,
+				    va_list ap)
 {
-    static char *buf;
-    static size_t used;
     char *result = 0;
 
     if (fmt != 0) {
 #if USE_SAFE_SPRINTF
-	int len = _nc_printf_length(fmt, ap);
+	va_list ap2;
+	int len;
 
-	if ((int) used < len + 1) {
-	    used = 2 * (len + 1);
-	    buf = typeRealloc(char, used, buf);
+	begin_va_copy(ap2, ap);
+	len = _nc_printf_length(fmt, ap2);
+	end_va_copy(ap2);
+
+	if ((int) my_length < len + 1) {
+	    my_length = 2 * (len + 1);
+	    my_buffer = typeRealloc(char, my_length, my_buffer);
 	}
-	if (buf != 0) {
-	    *buf = '\0';
+	if (my_buffer != 0) {
+	    *my_buffer = '\0';
 	    if (len >= 0) {
-		vsprintf(buf, fmt, ap);
+		vsprintf(my_buffer, fmt, ap);
 	    }
-	    result = buf;
+	    result = my_buffer;
 	}
 #else
-	static int rows, cols;
+#define MyCols _nc_globals.safeprint_cols
+#define MyRows _nc_globals.safeprint_rows
 
-	if (screen_lines > rows || screen_columns > cols) {
-	    if (screen_lines > rows)
-		rows = screen_lines;
-	    if (screen_columns > cols)
-		cols = screen_columns;
-	    used = (rows * (cols + 1)) + 1;
-	    buf = typeRealloc(char, used, buf);
+	if (screen_lines(SP_PARM) > MyRows || screen_columns(SP_PARM) > MyCols) {
+	    if (screen_lines(SP_PARM) > MyRows)
+		MyRows = screen_lines(SP_PARM);
+	    if (screen_columns(SP_PARM) > MyCols)
+		MyCols = screen_columns(SP_PARM);
+	    my_length = (size_t) (MyRows * (MyCols + 1)) + 1;
+	    my_buffer = typeRealloc(char, my_length, my_buffer);
 	}
 
-	if (buf != 0) {
+	if (my_buffer != 0) {
 # if HAVE_VSNPRINTF
-	    vsnprintf(buf, used, fmt, ap);	/* GNU extension */
+	    vsnprintf(my_buffer, my_length, fmt, ap);	/* GNU extension */
 # else
-	    vsprintf(buf, fmt, ap);	/* ANSI */
+	    vsprintf(my_buffer, fmt, ap);	/* ANSI */
 # endif
-	    result = buf;
+	    result = my_buffer;
 	}
 #endif
-    } else if (buf != 0) {	/* see _nc_freeall() */
-	free(buf);
-	buf = 0;
-	used = 0;
+    } else if (my_buffer != 0) {	/* see _nc_freeall() */
+	free(my_buffer);
+	my_buffer = 0;
+	my_length = 0;
     }
     return result;
 }
+
+#if NCURSES_SP_FUNCS
+NCURSES_EXPORT(char *)
+_nc_printf_string(const char *fmt, va_list ap)
+{
+    return NCURSES_SP_NAME(_nc_printf_string) (CURRENT_SCREEN, fmt, ap);
+}
+#endif

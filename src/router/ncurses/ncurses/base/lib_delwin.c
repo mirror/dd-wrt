@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998,2000,2001 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2008,2009 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,6 +29,8 @@
 /****************************************************************************
  *  Author: Zeyd M. Ben-Halim <zmbenhal@netcom.com> 1992,1995               *
  *     and: Eric S. Raymond <esr@snark.thyrsus.com>                         *
+ *     and: Thomas E. Dickey                        1996-on                 *
+ *     and: Juergen Pfeifer                         2008                    *
  ****************************************************************************/
 
 /*
@@ -40,15 +42,18 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_delwin.c,v 1.13 2001/08/26 00:40:20 tom Exp $")
+MODULE_ID("$Id: lib_delwin.c,v 1.20 2009/10/24 22:02:14 tom Exp $")
 
 static bool
 cannot_delete(WINDOW *win)
 {
     WINDOWLIST *p;
     bool result = TRUE;
+#ifdef USE_SP_WINDOWLIST
+    SCREEN *sp = _nc_screen_of(win);
+#endif
 
-    for (p = _nc_windows; p != 0; p = p->next) {
+    for (each_window(SP_PARM, p)) {
 	if (&(p->win) == win) {
 	    result = FALSE;
 	} else if ((p->win._flags & _SUBWIN) != 0
@@ -63,16 +68,26 @@ cannot_delete(WINDOW *win)
 NCURSES_EXPORT(int)
 delwin(WINDOW *win)
 {
-    T((T_CALLED("delwin(%p)"), win));
+    int result = ERR;
 
-    if (win == 0
-	|| cannot_delete(win))
-	returnCode(ERR);
+    T((T_CALLED("delwin(%p)"), (void *) win));
 
-    if (win->_flags & _SUBWIN)
-	touchwin(win->_parent);
-    else if (curscr != 0)
-	touchwin(curscr);
+    if (_nc_try_global(curses) == 0) {
+	if (win == 0
+	    || cannot_delete(win)) {
+	    result = ERR;
+	} else {
+#if NCURSES_SP_FUNCS
+	    SCREEN *sp = _nc_screen_of(win);
+#endif
+	    if (win->_flags & _SUBWIN)
+		touchwin(win->_parent);
+	    else if (CurScreen(SP_PARM) != 0)
+		touchwin(CurScreen(SP_PARM));
 
-    returnCode(_nc_freewin(win));
+	    result = _nc_freewin(win);
+	}
+	_nc_unlock_global(curses);
+    }
+    returnCode(result);
 }
