@@ -596,7 +596,7 @@
 
 #define ROUTER_HUAWEI_B970B 0xba0f
 
-// Netgear WNR3500Lv2 (??? BCM5357 cpu, 128MB NAND flash / 128MB ram, USB, giga switch, fccid: Netgear PY310400153)
+// Netgear WNR3500Lv2 (BCM5357 cpu (BCM47186B0), 128MB NAND flash / 128MB ram, USB, BCM53115 giga switch, fccid: Netgear PY310400153)
 #define ROUTER_NETGEAR_WNR3500LV2 0xbb0f
 
 #define NVROUTER "DD_BOARD"
