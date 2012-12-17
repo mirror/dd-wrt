@@ -1,6 +1,7 @@
  "openvpn_enable"   "OpenVPN Enable"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "openvpn_net"  "OpenVPN Network"  "NULL" "FALSE" "0"
- "openvpn_mask"  "OpenVPN Netmask"  "NULL"   "FALSE" "0"
+ "openvpn_mask"  "OpenVPN TAP Netmask"  "NULL"   "FALSE" "0"
+ "openvpn_tunmask"  "OpenVPN TUN Netmask"  "NULL"   "FALSE" "0"
  "openvpn_gateway"  "OpenVPN Gateway"  "NULL"   "FALSE" "0"
  "openvpn_startip"  "OpenVPN pool start ip"  "NULL"   "FALSE" "0"
  "openvpn_endip"  "OpenVPN pool end ip"  "NULL"   "FALSE" "0"

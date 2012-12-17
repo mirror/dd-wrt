@@ -2575,6 +2575,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_enable", "0", 0},
 	{"openvpn_net", "0.0.0.0", 0},
 	{"openvpn_mask", "0.0.0.0", 0},
+	{"openvpn_tunmask", "0.0.0.0", 0},
 	{"openvpn_gateway", "0.0.0.0", 0},
 	{"openvpn_startip", "0.0.0.0", 0},
 	{"openvpn_endip", "0.0.0.0", 0},
