@@ -133,7 +133,7 @@ void start_openvpnserver(void)
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
 				nvram_safe_get("openvpn_net"),
-				nvram_safe_get("openvpn_mask"));
+				nvram_safe_get("openvpn_tunmask"));
 			fprintf(fp, "dev tun2\n");
 //                      fprintf(fp, "tun-ipv6\n"); //enable ipv6 support. not supported on server in version 2.1.3
 		} else if (nvram_match("openvpn_tuntap", "tap") &&
