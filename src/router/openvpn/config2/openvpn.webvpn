@@ -30,7 +30,7 @@
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpnd_mask"); %></div>
-				<input size="15" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
+				<input size="15" maxlength="15" name="openvpn_tunmask" value="<% nvram_get("openvpn_mask"); %>" />
 			</div>
 		</div>
 		<div id="idbridge">
