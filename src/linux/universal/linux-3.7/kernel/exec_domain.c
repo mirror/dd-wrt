@@ -173,6 +173,8 @@ static const struct file_operations execdomains_proc_fops = {
 
 static int __init proc_execdomains_init(void)
 {
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return 0;
 	proc_create("execdomains", 0, NULL, &execdomains_proc_fops);
 	return 0;
 }

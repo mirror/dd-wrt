@@ -127,6 +127,9 @@ void vlan_proc_cleanup(struct net *net)
 {
 	struct vlan_net *vn = net_generic(net, vlan_net_id);
 
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return;
+
 	if (vn->proc_vlan_conf)
 		remove_proc_entry(name_conf, vn->proc_vlan_dir);
 
@@ -145,6 +148,9 @@ void vlan_proc_cleanup(struct net *net)
 int __net_init vlan_proc_init(struct net *net)
 {
 	struct vlan_net *vn = net_generic(net, vlan_net_id);
+
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return 0;
 
 	vn->proc_vlan_dir = proc_net_mkdir(net, name_root, net->proc_net);
 	if (!vn->proc_vlan_dir)

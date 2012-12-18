@@ -2661,6 +2661,8 @@ static struct pernet_operations igmp_net_ops = {
 
 int __init igmp_mc_proc_init(void)
 {
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return 0;
 	return register_pernet_subsys(&igmp_net_ops);
 }
 #endif

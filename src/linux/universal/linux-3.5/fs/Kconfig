@@ -61,6 +61,11 @@ config FILE_LOCKING
           for filesystems like NFS and for the flock() system
           call. Disabling this option saves about 11k.
 
+config DIRECT_IO
+	bool "Enable O_DIRECT support" if EXPERT
+	depends on BLOCK
+	default y
+
 source "fs/notify/Kconfig"
 
 source "fs/quota/Kconfig"

@@ -2267,6 +2267,8 @@ static const struct file_operations proc_locks_operations = {
 
 static int __init proc_locks_init(void)
 {
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return 0;
 	proc_create("locks", 0, NULL, &proc_locks_operations);
 	return 0;
 }
