@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.7.0-rc8 Kernel Configuration
+# Linux/mips 3.7.1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -695,8 +695,7 @@ CONFIG_WEXT_PRIV=y
 # CFG80211 needs to be enabled for MAC80211
 #
 # CONFIG_WIMAX is not set
-CONFIG_RFKILL=y
-CONFIG_RFKILL_LEDS=y
+# CONFIG_RFKILL is not set
 # CONFIG_NET_9P is not set
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
@@ -876,7 +875,7 @@ CONFIG_IMQ=m
 CONFIG_IMQ_BEHAVIOR_BA=y
 # CONFIG_IMQ_BEHAVIOR_BB is not set
 CONFIG_IMQ_NUM_DEVS=2
-CONFIG_TUN=y
+CONFIG_TUN=m
 # CONFIG_VETH is not set
 # CONFIG_ARCNET is not set
 
@@ -1234,7 +1233,7 @@ CONFIG_RTC_LIB=y
 #
 # Hardware Spinlock drivers
 #
-CONFIG_IOMMU_SUPPORT=y
+# CONFIG_IOMMU_SUPPORT is not set
 
 #
 # Remoteproc drivers (EXPERIMENTAL)
@@ -1264,10 +1263,10 @@ CONFIG_IOMMU_SUPPORT=y
 # CONFIG_BTRFS_FS is not set
 # CONFIG_NILFS2_FS is not set
 # CONFIG_FS_POSIX_ACL is not set
-CONFIG_FILE_LOCKING=y
-CONFIG_FSNOTIFY=y
+# CONFIG_FILE_LOCKING is not set
+# CONFIG_FSNOTIFY is not set
 # CONFIG_DNOTIFY is not set
-CONFIG_INOTIFY_USER=y
+# CONFIG_INOTIFY_USER is not set
 # CONFIG_FANOTIFY is not set
 # CONFIG_QUOTA is not set
 # CONFIG_QUOTACTL is not set
@@ -1333,8 +1332,6 @@ CONFIG_SQUASHFS_FRAGMENT_CACHE_SIZE=3
 # CONFIG_SYSV_FS is not set
 # CONFIG_UFS_FS is not set
 CONFIG_NETWORK_FILESYSTEMS=y
-# CONFIG_NFS_FS is not set
-# CONFIG_NFSD is not set
 # CONFIG_CEPH_FS is not set
 CONFIG_CIFS=m
 # CONFIG_CIFS_STATS is not set
@@ -1576,7 +1573,7 @@ CONFIG_CRC32_SLICEBY8=y
 # CONFIG_CRC32_SARWATE is not set
 # CONFIG_CRC32_BIT is not set
 # CONFIG_CRC7 is not set
-CONFIG_LIBCRC32C=y
+# CONFIG_LIBCRC32C is not set
 # CONFIG_CRC8 is not set
 CONFIG_ZLIB_INFLATE=y
 CONFIG_ZLIB_DEFLATE=y

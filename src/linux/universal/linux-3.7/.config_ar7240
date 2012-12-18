@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.7.0-rc8 Kernel Configuration
+# Linux/mips 3.7.1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1353,7 +1353,6 @@ CONFIG_USB_STORAGE=m
 # CONFIG_USB_STORAGE_KARMA is not set
 # CONFIG_USB_STORAGE_CYPRESS_ATACB is not set
 # CONFIG_USB_STORAGE_ENE_UB6250 is not set
-# CONFIG_USB_UAS is not set
 
 #
 # USB Imaging devices
