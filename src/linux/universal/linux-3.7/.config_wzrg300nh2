@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.7.0-rc8 Kernel Configuration
+# Linux/mips 3.7.1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -840,7 +840,7 @@ CONFIG_MTD_CFI_I2=y
 #
 # CONFIG_MTD_DOCG3 is not set
 # CONFIG_DIR825C1 is not set
-
+ 
 CONFIG_WZRG450NH=y
 CONFIG_WZRG300NH2=y
 # CONFIG_MTD_AR7240_SPI_FLASH is not set
@@ -1358,7 +1358,6 @@ CONFIG_USB_STORAGE=m
 # CONFIG_USB_STORAGE_KARMA is not set
 # CONFIG_USB_STORAGE_CYPRESS_ATACB is not set
 # CONFIG_USB_STORAGE_ENE_UB6250 is not set
-CONFIG_USB_UAS=m
 
 #
 # USB Imaging devices
