@@ -28,6 +28,10 @@
 #ifdef HAVE_SAMBA_SERVER
 #include <jansson.h>
 #endif
+#ifdef HAVE_ATH9K
+#include <glob.h>
+#endif
+
 
 void (*do_ej_buffer) (char *buffer, webs_t stream) = NULL;
 int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
@@ -1444,8 +1448,42 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 {
 	char name[32];
+	char *next, *bnext;
+	char var[80];
+	char eths[256];
+	static char bword[256];
+	char bufferif[512];
+#ifdef HAVE_ATH9K
+	glob_t globbuf;
+	char globstring[1024];
+	int globresult;
+#endif
+
 
 	show_bwif(wp, nvram_safe_get("lan_ifname"), "LAN");
+	memset(eths, 0, 256);
+	getIfLists(eths, 256);
+	memset(bufferif, 0, 256);
+	getIfList(bufferif, "br");
+	foreach(var, eths, next) {
+		if (!strcmp("etherip0", var))
+			continue;
+		if(!strcmp( "ath", var) )
+			continue;
+		if (strchr(var,'.') == NULL)  {
+			if (!strcmp(get_wan_face(), var))
+				continue;
+			if (!strcmp(nvram_safe_get("lan_ifname"), var))
+				continue;
+			foreach(bword, bufferif, bnext) {
+				if(!strcmp( bword, var) ) {
+					goto skip;
+				}
+			show_bwif(wp, var, var);
+			}
+		}
+	skip:;
+	}
 
 	if (!nvram_match("wan_proto", "disabled")) {
 #ifdef HAVE_MADWIFI
@@ -1470,8 +1508,6 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 	}
 #ifdef HAVE_MADWIFI
-	char var[80];
-	char *next;
 	int c = getdevicecount();
 	int i;
 
@@ -1505,7 +1541,22 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 				live_translate("share.wireless"), wdsdev);
 			show_bwif(wp, wdsdev, name);
 		}
-
+#ifdef HAVE_ATH9K
+		if (is_ath9k(dev)) {
+			sprintf(globstring, "/sys/class/ieee80211/phy*/device/net/%s.sta*",dev);
+			globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+			int awdscount;
+			for (awdscount = 0; awdscount < globbuf.gl_pathc; awdscount++) {
+				char *ifname;
+				ifname = strrchr(globbuf.gl_pathv[awdscount], '/');
+				if (!ifname)
+					continue;
+				sprintf(name, "%s (%s)", live_translate("share.wireless"), ifname);
+				show_bwif(wp, ifname, name);
+				}
+			globfree(&globbuf);
+			}
+#endif
 	}
 
 #else
@@ -1623,7 +1674,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	 ""},
 	{"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp",
 	 "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp",
-	 "Status_Bandwidth.asp", "Info.htm", "register.asp", "MyPage.asp", "",
+	 "Status_Bandwidth.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp",
 	 ""}
 	};
 	/*
@@ -1658,7 +1709,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		 "", "", "", ""},
 		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN",
 		 "statuSputnik", "statuVPN", "statuBand", "statuSysInfo",
-		 "statuActivate", "statuMyPage", "", ""}
+		 "statuActivate", "statuMyPage", "statuGpio", ""}
 	};
 	static char menu[8][12][32];
 	static char menuname[8][13][32];
@@ -1914,6 +1965,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifndef HAVE_CTORRENT
 				if (!strcmp(menu[i][j], "P2P.asp"))
+					j++;
+#endif
+#ifndef HAVE_STATUS_GPIO
+				if (!strcmp(menu[i][j], "Gpio.asp"))
 					j++;
 #endif
 				if ((!sputnik) && !strcmp(menu[i][j], "Status_SputnikAPD.asp"))	// jump 
@@ -3728,4 +3783,82 @@ void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 }
+#endif
+#ifdef HAVE_STATUS_GPIO
+void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
+{
+	char *var,*next,*rgpio,*gpio_name;
+	char nvgpio[32],gpio_new_name[32];
+
+	char *gpios = nvram_safe_get("gpio_outputs");
+	var = (char *)malloc(strlen(gpios)+1);
+	if (var != NULL) {
+		if (gpios != NULL) {
+			foreach(var, gpios, next) {
+				sprintf(nvgpio, "gpio%s", var);
+				sprintf(gpio_new_name, "gpio%s_name", var);
+			    rgpio = nvram_nget("gpio%s", var);
+				if (strlen(rgpio) == 0) nvram_set(nvgpio,"0");
+				
+			    rgpio = nvram_nget("gpio%s", var);
+			    gpio_name = nvram_nget("gpio%s_name", var);
+				// enable
+				websWrite(wp, 
+						"<div class=\"label\">%s (%s)</div>",nvgpio,gpio_name);
+				websWrite(wp, 
+						"<input type=text maxlength=\"17\" size=\"17\" id=\"%s\" name=\"%s\" value=\"%s\">",gpio_new_name,gpio_new_name,gpio_name);
+				websWrite(wp,
+					  "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"1\" %s />\n",
+					  	nvgpio,
+			  			nvram_match(nvgpio, "1") ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;");
+				//disable 
+				websWrite(wp,
+					  "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" %s />\n",
+					  	nvgpio,
+			  			nvram_match(nvgpio, "0") ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
+				}
+			}
+	free(var);
+	}
+}
+
+void ej_show_status_gpio_input(webs_t wp, int argc, char_t ** argv)
+{
+	char *var,*next,*rgpio,*gpio_name;
+	char nvgpio[32],gpio_new_name[32];
+
+	char *gpios = nvram_safe_get("gpio_inputs");
+	var = (char *)malloc(strlen(gpios)+1);
+	if (var != NULL) {
+		if (gpios != NULL) {
+			foreach(var, gpios, next) {
+				sprintf(nvgpio, "gpio%s", var);
+			    gpio_name = nvram_nget("gpio%s_name", var);
+				sprintf(gpio_new_name, "gpio%s_name", var);
+
+				// enable
+				websWrite(wp, 
+						"<div class=\"label\">%s</div>",nvgpio);
+				websWrite(wp, 
+						"<input maxlength=\"17\" size=\"17\" id=\"%s\" name=\"%s\" value=\"%s\">",gpio_new_name,gpio_new_name,gpio_name);
+
+				websWrite(wp,
+					  "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"1\" disabled=\"true\" %s />\n",
+					  	nvgpio,
+			  			!get_gpio(atoi(var)) ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;");
+				//Disable
+				websWrite(wp,
+					  "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" disabled=\"true\" %s />\n",
+					  	nvgpio,
+			  			 get_gpio(atoi(var)) ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
+				}
+			}
+	free(var);
+	}
+}
+
 #endif
