@@ -1945,7 +1945,7 @@ static void do_fetchif(struct mime_handler *handler, char *url,
 	fgets(line, sizeof(line), in);
 
 	while (fgets(line, sizeof(line), in) != NULL) {
-		if (strstr(line, querybuffer)) {
+		if (!strstr(line, "mon.") && strstr(line, querybuffer)) {
 			llen = strlen(line);
 			for (i = 0; i < llen; i++) {
 				buffer[strbuffer++] = line[i];
