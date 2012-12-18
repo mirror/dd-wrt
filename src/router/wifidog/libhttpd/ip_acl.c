@@ -14,7 +14,7 @@
 ** connection with the use or performance of this software.
 **
 **
-** $Id: ip_acl.c 274 2004-11-17 23:54:25Z alexcv $
+** $Id: ip_acl.c 1429 2009-11-04 14:21:07Z gbastien $
 **
 */
 
@@ -52,22 +52,22 @@ static int scanCidr(val, result, length)
 
 	cp = val;
 	res1 = atoi(cp);
-	cp = index(cp,'.');
+	cp = strchr(cp,'.');
 	if (!cp)
 		return(-1);
 	cp++;
 	res2 = atoi(cp);
-	cp = index(cp,'.');
+	cp = strchr(cp,'.');
 	if (!cp)
 		return(-1);
 	cp++;
 	res3 = atoi(cp);
-	cp = index(cp,'.');
+	cp = strchr(cp,'.');
 	if (!cp)
 		return(-1);
 	cp++;
 	res4 = atoi(cp);
-	cp = index(cp,'/');
+	cp = strchr(cp,'/');
 	if (!cp)
 	{
 		res5 = 32;

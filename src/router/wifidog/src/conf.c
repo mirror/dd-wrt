@@ -18,7 +18,7 @@
  *                                                                  *
  \********************************************************************/
 
-/* $Id: conf.c 1373 2008-09-30 09:27:40Z wichert $ */
+/* $Id: conf.c 1429 2009-11-04 14:21:07Z gbastien $ */
 /** @file conf.c
   @brief Config file parsing
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -633,7 +633,7 @@ config_read(const char *filename)
 {
 	FILE *fd;
 	char line[MAX_BUF], *s, *p1, *p2;
-	int linenum = 0, opcode, value;
+	int linenum = 0, opcode, value, len;
 
 	debug(LOG_INFO, "Reading configuration file '%s'", filename);
 
@@ -658,6 +658,17 @@ config_read(const char *filename)
 
 		if (p1) {
 			p1++;
+
+			// Trim leading spaces
+			len = strlen(p1);
+			while (*p1 && len) {
+				if (*p1 == ' ')
+					p1++;
+				else
+					break;
+				len = strlen(p1);
+			}
+
 
 			if ((p2 = strchr(p1, ' '))) {
 				p2[0] = '\0';

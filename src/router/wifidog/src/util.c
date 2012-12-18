@@ -19,7 +19,7 @@
  \********************************************************************/
 
 /*
- * $Id: util.c 1381 2008-09-30 12:16:08Z wichert $
+ * $Id: util.c 1429 2009-11-04 14:21:07Z gbastien $
  */
 /**
   @file util.c
@@ -114,8 +114,8 @@ execute(char *cmd_line, int quiet)
                         debug(LOG_ERR, "execvp(): %s", strerror(errno));
                 } else {
                         debug(LOG_ERR, "execvp() failed");
-		}
-		exit(1);
+                }
+                exit(1);
         }
 
         /* for the parent:      */

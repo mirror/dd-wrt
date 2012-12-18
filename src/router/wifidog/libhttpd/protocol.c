@@ -14,7 +14,7 @@
 ** connection with the use or performance of this software.
 **
 **
-** $Id: protocol.c 1371 2008-09-30 09:17:21Z wichert $
+** $Id: protocol.c 1429 2009-11-04 14:21:07Z gbastien $
 **
 */
 
@@ -607,7 +607,7 @@ void _httpd_sendFile(httpd *server, request *r, char *path)
 	char	*suffix;
 	struct 	stat sbuf;
 
-	suffix = rindex(path, '.');
+	suffix = strrchr(path, '.');
 	if (suffix != NULL)
 	{
 		if (strcasecmp(suffix,".gif") == 0) 
