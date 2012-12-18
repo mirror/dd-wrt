@@ -293,6 +293,8 @@ static int __init init_timer_list_procfs(void)
 {
 	struct proc_dir_entry *pe;
 
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return 0;
 	pe = proc_create("timer_list", 0444, NULL, &timer_list_fops);
 	if (!pe)
 		return -ENOMEM;

@@ -108,6 +108,9 @@ static const struct file_operations proc_consoles_operations = {
 
 static int __init proc_consoles_init(void)
 {
+	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
+		return 0;
+
 	proc_create("consoles", 0, NULL, &proc_consoles_operations);
 	return 0;
 }

@@ -70,6 +70,10 @@
 #define CONFIG_IP_PIMSM	1
 #endif
 
+#ifdef CONFIG_PROC_STRIPPED
+#undef CONFIG_PROC_FS
+#endif
+
 struct mr_table {
 	struct list_head	list;
 #ifdef CONFIG_NET_NS

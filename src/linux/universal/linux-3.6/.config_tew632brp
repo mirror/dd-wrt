@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.6.8 Kernel Configuration
+# Linux/mips 3.6.11 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -57,7 +57,7 @@ CONFIG_MIPS=y
 CONFIG_MACH_AR7100=y
 CONFIG_AR9100=y
 # CONFIG_WR941 is not set
-# CONFIG_WA901 is not set
+ 
 # CONFIG_WRT160NL is not set
 # CONFIG_E2100L is not set
 CONFIG_AR7100_LOW=y
@@ -929,6 +929,7 @@ CONFIG_SWCONFIG=y
 # CONFIG_VITESSE_PHY is not set
 # CONFIG_SMSC_PHY is not set
 # CONFIG_BROADCOM_PHY is not set
+# CONFIG_BCM87XX_PHY is not set
 # CONFIG_ICPLUS_PHY is not set
 # CONFIG_REALTEK_PHY is not set
 # CONFIG_NATIONAL_PHY is not set
@@ -1191,6 +1192,7 @@ CONFIG_IOMMU_SUPPORT=y
 # CONFIG_NILFS2_FS is not set
 # CONFIG_FS_POSIX_ACL is not set
 CONFIG_FILE_LOCKING=y
+# CONFIG_DIRECT_IO is not set
 CONFIG_FSNOTIFY=y
 # CONFIG_DNOTIFY is not set
 CONFIG_INOTIFY_USER=y
@@ -1226,6 +1228,7 @@ CONFIG_PROC_FS=y
 # CONFIG_PROC_KCORE is not set
 CONFIG_PROC_SYSCTL=y
 # CONFIG_PROC_PAGE_MONITOR is not set
+CONFIG_PROC_STRIPPED=y
 CONFIG_SYSFS=y
 CONFIG_TMPFS=y
 # CONFIG_TMPFS_XATTR is not set
