@@ -2642,7 +2642,6 @@ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_ATTANSIC, 0x1073,
 DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_ATTANSIC, 0x1083,
 			quirk_msi_intx_disable_bug);
 #endif /* CONFIG_PCI_MSI */
-#endif /* !CONFIG_PCI_DISABLE_COMMON_QUIRKS */
 
 /* Allow manual resource allocation for PCI hotplug bridges
  * via pci=hpmemsize=nnM and pci=hpiosize=nnM parameters. For
@@ -2882,6 +2881,7 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0x65f8, quirk_intel_mc_errata);
 DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0x65f9, quirk_intel_mc_errata);
 DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0x65fa, quirk_intel_mc_errata);
 
+#endif /* !CONFIG_PCI_DISABLE_COMMON_QUIRKS */
 
 static void do_one_fixup_debug(void (*fn)(struct pci_dev *dev), struct pci_dev *dev)
 {
@@ -2898,6 +2898,8 @@ static void do_one_fixup_debug(void (*fn)(struct pci_dev *dev), struct pci_dev *
 	printk(KERN_DEBUG "pci fixup %pF returned after %lld usecs for %s\n",
 			fn, duration, dev_name(&dev->dev));
 }
+
+#ifndef CONFIG_PCI_DISABLE_COMMON_QUIRKS
 
 /*
  * Some BIOS implementations leave the Intel GPU interrupts enabled,
@@ -2932,6 +2934,7 @@ static void __devinit disable_igfx_irq(struct pci_dev *dev)
 }
 DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL, 0x0102, disable_igfx_irq);
 DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL, 0x010a, disable_igfx_irq);
+#endif /* !CONFIG_PCI_DISABLE_COMMON_QUIRKS */
 
 static void pci_do_fixups(struct pci_dev *dev, struct pci_fixup *f,
 			  struct pci_fixup *end)
