@@ -33,7 +33,7 @@
 
 #include "conf.h"
 
-#ifdef NEED_PRINTF
+#ifdef NEED_PRINTF		//dd-wrt related
 /** @internal
 Do not use directly, use the debug macro */
 void

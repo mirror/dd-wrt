@@ -16,6 +16,10 @@
 			<div class="label"><% tran("hotspot.wifidog_httpdname"); %></div>
 			<input class="text" maxlength="100" size="39" name="wd_httpdname" value="<% nvram_get("wd_httpdname"); %>" />
 		</div>
+		<div class="setting"> 
+			<div class="label"><% tran("hotspotsys.dhcp"); %></div> 
+			<% show_ifselect("wd_interface"); %> 
+		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_port"); %></div>
 			<input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,hotspot.wifidog_port)" name="wd_gwport" value="<% nvram_get("wd_gwport"); %>" />
