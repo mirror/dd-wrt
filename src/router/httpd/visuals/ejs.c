@@ -1967,10 +1967,6 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp(menu[i][j], "P2P.asp"))
 					j++;
 #endif
-#ifndef HAVE_STATUS_GPIO
-				if (!strcmp(menu[i][j], "Gpio.asp"))
-					j++;
-#endif
 				if ((!sputnik) && !strcmp(menu[i][j], "Status_SputnikAPD.asp"))	// jump 
 					// over 
 					// Sputnik
@@ -1991,6 +1987,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// over 
 					// MyPage.asp
 					j++;
+#ifndef HAVE_STATUS_GPIO
+				if (!strcmp(menu[i][j], "Gpio.asp"))
+					j++;
+#endif
 #ifdef HAVE_MADWIFI
 				if (!strcmp(menu[i][j], submenu)
 				    && (strlen(menu[i][j])
