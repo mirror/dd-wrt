@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.6.8 Kernel Configuration
+# Linux/mips 3.6.11 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -292,7 +292,6 @@ CONFIG_MSDOS_PARTITION=y
 CONFIG_IOSCHED_NOOP=y
 # CONFIG_IOSCHED_DEADLINE is not set
 # CONFIG_IOSCHED_CFQ is not set
-# CONFIG_DEFAULT_DEADLINE is not set
 CONFIG_DEFAULT_NOOP=y
 CONFIG_DEFAULT_IOSCHED="noop"
 # CONFIG_INLINE_SPIN_TRYLOCK is not set
@@ -792,7 +791,7 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_FLASH_16MB is not set
 # CONFIG_MTD_FLASH_8MB is not set
 # CONFIG_DIR825C1 is not set
-# CONFIG_WDR2543 is not set
+ 
 # CONFIG_WZRG450NH is not set
 CONFIG_MTD_AR7240_SPI_FLASH=y
 # CONFIG_MTD_NAND is not set
@@ -846,7 +845,7 @@ CONFIG_HAVE_IDE=y
 #
 # SCSI device support
 #
-# CONFIG_SCSI_MOD is not set
+CONFIG_SCSI_MOD=y
 # CONFIG_RAID_ATTRS is not set
 # CONFIG_SCSI is not set
 # CONFIG_SCSI_DMA is not set
@@ -1265,6 +1264,7 @@ CONFIG_RTC_LIB=y
 # CONFIG_NILFS2_FS is not set
 # CONFIG_FS_POSIX_ACL is not set
 # CONFIG_FILE_LOCKING is not set
+# CONFIG_DIRECT_IO is not set
 # CONFIG_FSNOTIFY is not set
 # CONFIG_DNOTIFY is not set
 # CONFIG_INOTIFY_USER is not set
@@ -1300,6 +1300,7 @@ CONFIG_PROC_FS=y
 # CONFIG_PROC_KCORE is not set
 CONFIG_PROC_SYSCTL=y
 # CONFIG_PROC_PAGE_MONITOR is not set
+CONFIG_PROC_STRIPPED=y
 CONFIG_SYSFS=y
 CONFIG_TMPFS=y
 # CONFIG_TMPFS_XATTR is not set

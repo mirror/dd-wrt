@@ -2606,10 +2606,12 @@ static const struct file_operations fib_route_fops = {
 
 int __net_init fib_proc_init(struct net *net)
 {
-	if (!proc_net_fops_create(net, "fib_trie", S_IRUGO, &fib_trie_fops))
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED) &&
+	    !proc_net_fops_create(net, "fib_trie", S_IRUGO, &fib_trie_fops))
 		goto out1;
 
-	if (!proc_net_fops_create(net, "fib_triestat", S_IRUGO,
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED) &&
+	    !proc_net_fops_create(net, "fib_triestat", S_IRUGO,
 				  &fib_triestat_fops))
 		goto out2;
 
@@ -2628,8 +2630,10 @@ out1:
 
 void __net_exit fib_proc_exit(struct net *net)
 {
-	proc_net_remove(net, "fib_trie");
-	proc_net_remove(net, "fib_triestat");
+	if (!IS_ENABLED(CONFIG_PROC_STRIPPED)) {
+		proc_net_remove(net, "fib_trie");
+		proc_net_remove(net, "fib_triestat");
+	}
 	proc_net_remove(net, "route");
 }
 

@@ -51,8 +51,10 @@ static int setfl(int fd, struct file * filp, unsigned long arg)
 		   arg |= O_NONBLOCK;
 
 	if (arg & O_DIRECT) {
+#ifdef CONFIG_DIRECT_IO
 		if (!filp->f_mapping || !filp->f_mapping->a_ops ||
 			!filp->f_mapping->a_ops->direct_IO)
+#endif
 				return -EINVAL;
 	}
 

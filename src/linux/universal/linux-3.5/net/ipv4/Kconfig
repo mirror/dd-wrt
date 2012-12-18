@@ -402,6 +402,7 @@ config INET_LRO
 
 config INET_DIAG
 	tristate "INET: socket monitoring interface"
+	select SOCK_DIAG
 	default y
 	---help---
 	  Support for INET (TCP, DCCP, etc) socket monitoring interface used by

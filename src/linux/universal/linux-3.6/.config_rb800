@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.6.8 Kernel Configuration
+# Linux/powerpc 3.6.11 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -1628,7 +1628,6 @@ CONFIG_USB_STORAGE=m
 # CONFIG_USB_STORAGE_KARMA is not set
 # CONFIG_USB_STORAGE_CYPRESS_ATACB is not set
 # CONFIG_USB_STORAGE_ENE_UB6250 is not set
-# CONFIG_USB_UAS is not set
 # CONFIG_USB_LIBUSUAL is not set
 
 #
@@ -1824,6 +1823,7 @@ CONFIG_FS_MBCACHE=y
 # CONFIG_NILFS2_FS is not set
 # CONFIG_FS_POSIX_ACL is not set
 CONFIG_FILE_LOCKING=y
+# CONFIG_DIRECT_IO is not set
 CONFIG_FSNOTIFY=y
 # CONFIG_DNOTIFY is not set
 CONFIG_INOTIFY_USER=y
@@ -1863,6 +1863,7 @@ CONFIG_PROC_FS=y
 # CONFIG_PROC_KCORE is not set
 CONFIG_PROC_SYSCTL=y
 # CONFIG_PROC_PAGE_MONITOR is not set
+CONFIG_PROC_STRIPPED=y
 CONFIG_SYSFS=y
 CONFIG_TMPFS=y
 # CONFIG_TMPFS_XATTR is not set
