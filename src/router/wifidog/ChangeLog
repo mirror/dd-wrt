@@ -1,4 +1,15 @@
-# $Id: ChangeLog 1420 2009-09-18 23:01:57Z gbastien $
+# $Id: ChangeLog 1429 2009-11-04 14:21:07Z gbastien $
+2009-11-03
+    * Fix #625, does not display failure notice when quiet is set to true
+    * Fix #587, change index and rindex to strchr and strrchr
+    * Fix #548, trim leading spaces of the config file's options
+
+2009-09-28 Benoit Grégoire  <benoitg@coeus.ca>
+	* Fix #471, patch by  wichert
+
+2009-09-25 Geneviève Bastien <gbastien@versatic.net>
+	* Release 20090925
+	* Update contrib Makefiles
 
 2009-09-17 Geneviève Bastien <gbastien@versatic.net>
 	* Documented #537
