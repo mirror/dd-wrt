@@ -18,7 +18,7 @@
  *                                                                  *
  \********************************************************************/
 
-/* $Id: fw_iptables.c 1420 2009-09-18 23:01:57Z gbastien $ */
+/* $Id: fw_iptables.c 1454 2010-03-03 20:53:06Z gbastien $ */
 /** @internal
   @file fw_iptables.c
   @brief Firewall iptables functions
@@ -112,8 +112,13 @@ iptables_do_command(const char *format, ...)
 
 	rc = execute(cmd, fw_quiet);
 
-	if (rc!=0)
-		debug(LOG_ERR, "iptables command failed(%d): %s", rc, cmd);
+	if (rc!=0) {
+		// If quiet, do not display the error
+		if (fw_quiet == 0)
+			debug(LOG_ERR, "iptables command failed(%d): %s", rc, cmd);
+		else if (fw_quiet == 1)
+			debug(LOG_DEBUG, "iptables command failed(%d): %s", rc, cmd);
+	}
 
 	free(cmd);
 
@@ -550,7 +555,11 @@ iptables_fw_counters_update(void)
 					debug(LOG_DEBUG, "%s - Updated counter.outgoing to %llu bytes.  Updated last_updated to %d", ip, counter, p1->counters.last_updated);
 				}
 			} else {
-				debug(LOG_ERR, "Could not find %s in client list", ip);
+				debug(LOG_ERR, "iptables_fw_counters_update(): Could not find %s in client list, this should not happen unless if the gateway crashed", ip);
+				debug(LOG_ERR, "Preventively deleting firewall rules for %s in table %s", ip, TABLE_WIFIDOG_OUTGOING);
+				iptables_fw_destroy_mention("mangle", TABLE_WIFIDOG_OUTGOING, ip);
+				debug(LOG_ERR, "Preventively deleting firewall rules for %s in table %s", ip, TABLE_WIFIDOG_INCOMING);
+				iptables_fw_destroy_mention("mangle", TABLE_WIFIDOG_INCOMING, ip);
 			}
 			UNLOCK_CLIENT_LIST();
 		}
@@ -588,7 +597,11 @@ iptables_fw_counters_update(void)
 					debug(LOG_DEBUG, "%s - Updated counter.incoming to %llu bytes", ip, counter);
 				}
 			} else {
-				debug(LOG_ERR, "Could not find %s in client list", ip);
+				debug(LOG_ERR, "iptables_fw_counters_update(): Could not find %s in client list, this should not happen unless if the gateway crashed", ip);
+				debug(LOG_ERR, "Preventively deleting firewall rules for %s in table %s", ip, TABLE_WIFIDOG_OUTGOING);
+				iptables_fw_destroy_mention("mangle", TABLE_WIFIDOG_OUTGOING, ip);
+				debug(LOG_ERR, "Preventively deleting firewall rules for %s in table %s", ip, TABLE_WIFIDOG_INCOMING);
+				iptables_fw_destroy_mention("mangle", TABLE_WIFIDOG_INCOMING, ip);
 			}
 			UNLOCK_CLIENT_LIST();
 		}
