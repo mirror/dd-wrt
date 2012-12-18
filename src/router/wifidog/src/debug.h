@@ -30,7 +30,7 @@
 /** @brief Used to output messages.
  *The messages will include the finlname and line number, and will be sent to syslog if so configured in the config file 
  */
-#ifdef NEED_PRINTF
+#ifdef NEED_PRINTF		//dd-wrt related
 #define debug(level, format...) _debug(__FILE__, __LINE__, level, format)
 /** @internal */
 void _debug(char *filename, int line, int level, char *format, ...);
