@@ -2319,7 +2319,7 @@ gso:
 #else
 		if (!list_empty(&ptype_all))
 #endif
-			dev_queue_xmit_nit(skb, dev);
+			dev_queue_xmit_nit(nskb, dev);
 
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
 		if (!dev->eth_mangle_tx ||
