@@ -2274,10 +2274,11 @@ int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev,
 
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 		if (!list_empty(&ptype_all) &&
-					!(skb->imq_flags & IMQ_F_ENQUEUE))
+					!(skb->imq_flags & IMQ_F_ENQUEUE)) 
 #else
-		if (!list_empty(&ptype_all))
+		if (!list_empty(&ptype_all)) 
 #endif
+			dev_queue_xmit_nit(skb, dev);
 
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
 		if (!dev->eth_mangle_tx ||
@@ -2286,14 +2287,13 @@ int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev,
 		if (1)
 #endif
 		{
-			dev_queue_xmit_nit(skb, dev);
-
 			skb_len = skb->len;
 			rc = ops->ndo_start_xmit(skb, dev);
 			trace_net_dev_xmit(skb, rc, dev, skb_len);
 		} else {
 			rc = NETDEV_TX_OK;
 		}
+
 		if (rc == NETDEV_TX_OK)
 			txq_trans_update(txq);
 		return rc;
@@ -2313,12 +2313,7 @@ gso:
 		if (dev->priv_flags & IFF_XMIT_DST_RELEASE)
 			skb_dst_drop(nskb);
 
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-		if (!list_empty(&ptype_all) &&
-					!(skb->imq_flags & IMQ_F_ENQUEUE))
-#else
 		if (!list_empty(&ptype_all))
-#endif
 			dev_queue_xmit_nit(nskb, dev);
 
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
