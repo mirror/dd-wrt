@@ -43,7 +43,7 @@ static struct tcf_hashinfo connmark_hash_info = {
 	.lock	=	&connmark_lock,
 };
 
-static int tcf_connmark(struct sk_buff *skb, struct tc_action *a,
+static int tcf_connmark(struct sk_buff *skb, const struct tc_action *a,
 		       struct tcf_result *res)
 {
 	struct nf_conn *c;
