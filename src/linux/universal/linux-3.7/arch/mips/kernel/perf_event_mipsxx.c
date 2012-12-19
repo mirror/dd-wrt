@@ -1450,11 +1450,11 @@ init_hw_perf_events(void)
 	int counters, irq;
 	int counter_bits;
 
-	pr_info("Performance counters: ");
+	printk(KERN_INFO "Performance counters: ");
 
 	counters = n_counters();
 	if (counters == 0) {
-		pr_cont("No available PMU.\n");
+		printk(KERN_INFO "No available PMU.\n");
 		return -ENODEV;
 	}
 
@@ -1549,7 +1549,7 @@ init_hw_perf_events(void)
 
 	on_each_cpu(reset_counters, (void *)(long)counters, 1);
 
-	pr_cont("%s PMU enabled, %d %d-bit counters available to each "
+	printk(KERN_INFO "%s PMU enabled, %d %d-bit counters available to each "
 		"CPU, irq %d%s\n", mipspmu.name, counters, counter_bits, irq,
 		irq < 0 ? " (share with timer interrupt)" : "");
 

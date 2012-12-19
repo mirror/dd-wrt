@@ -338,7 +338,7 @@ arch_init_irq(void)
 
 		/* Use intmask5 register to route the timer interrupt */
 		intmask = (uint32 *) &((mips74kregs_t *)regs)->intmask[5];
-		W_REG(NULL, intmask, 1 << 31);
+		W_REG(NULL, intmask, 1 << 31 | 1 << 30);
 
 		intmask = (uint32 *) &((mips74kregs_t *)regs)->intmask[0];
 		shints = R_REG(NULL, intmask);
@@ -355,4 +355,5 @@ arch_init_irq(void)
 //					 handle_level_irq);
 		irq_set_chip_and_handler(i, (i < SBMIPS_NUMIRQS ? &brcm_irq_type : &brcm_irq2_type),handle_level_irq);
 	}
+//	cp0_perfcount_irq = AR71XX_MISC_IRQ_PERFC;
 }

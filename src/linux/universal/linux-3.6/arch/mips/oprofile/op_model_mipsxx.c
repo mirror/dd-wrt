@@ -221,7 +221,7 @@ static int mipsxx_perfcount_handler(void)
 
 	if (cpu_has_mips_r2 && !(read_c0_cause() & (1 << 26)))
 		return handled;
-
+	
 	switch (counters) {
 #define HANDLE_COUNTER(n)						\
 	case n + 1:							\
