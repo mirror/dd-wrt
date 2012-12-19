@@ -268,10 +268,10 @@ next:
 		if (!skb_make_writable(skb, skb->len))
 			return NF_DROP;
 
-		uh = (struct udphdr *)(skb->data + ip_hdrlen(skb));
+		uh = (void *)skb->data + protoff;
 		uh->dest = ct_sip_info->forced_dport;
 
-		if (!nf_nat_mangle_udp_packet(skb, ct, ctinfo, 0, 0, NULL, 0))
+		if (!nf_nat_mangle_udp_packet(skb, ct, ctinfo, protoff, 0, 0, NULL, 0))
 			return NF_DROP;
 	}
 
