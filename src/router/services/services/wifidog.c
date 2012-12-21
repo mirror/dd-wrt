@@ -43,9 +43,10 @@ void start_wifidog(void)
 		else
 			fprintf(fp, "GatewayID %s\n",
 				nvram_safe_get("wd_gwid"));
-		fprintf(fp, "ExternalInterface %s\n", get_wan_face());
+		fprintf(fp, "ExternalInterface %s\n", 
+			nvram_safe_get("wd_extiface"));
 		fprintf(fp, "GatewayInterface %s\n",
-			nvram_safe_get("wd_interface"));
+			nvram_safe_get("wd_iface"));
 		// fprintf (fp, "Portal %s\n", nvram_safe_get ("wd_url"));
 		fprintf(fp, "GatewayPort %s\n", nvram_safe_get("wd_gwport"));
 		fprintf(fp, "HTTPDMaxConn %s\n", nvram_safe_get("wd_httpdcon"));
