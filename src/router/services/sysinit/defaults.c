@@ -2683,7 +2683,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wd_auth", "0", 0},
 	{"wd_username", "", 0},
 	{"wd_password", "", 0},
-	{"wd_interface", "", 0},
+	{"wd_iface", "", 0},
+ 	{"wd_extiface", "", 0},
 #endif
 
 #ifdef HAVE_CHILLILOCAL

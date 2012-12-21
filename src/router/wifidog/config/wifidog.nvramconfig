@@ -17,4 +17,5 @@
 "wd_realm" "http username" "NULL" "TRUE" "0"
 "wd_username" "http username" "NULL" "TRUE" "0"
 "wd_password" "http password" "PASSWORD2" "63" "TRUE" "0"
-"wd_interface" "wifidog Interface" "NULL" "FALSE" "0"
+"wd_iface" "wifidog Interface" "NULL" "FALSE" "0"
+"wd_extiface" "wifidog Interface" "NULL" "FALSE" "0"
