@@ -2191,9 +2191,9 @@ static void filter_input(void)
 	 */
 	// removed first rule: -A INPUT -m state --state INVALID -j DROP
 	// (wolfiR)
-	save2file("-A INPUT -i lo -m state --state NEW -j %s\n");
+	save2file("-A INPUT -i lo -m state --state NEW -j ACCEPT\n");
 	save2file("-A INPUT -i %s -m state --state NEW -j %s\n",
-		  TARG_PASS, lanface, log_accept);
+		  lanface, log_accept);
 
 	/*
 	 * lonewolf mods for extra VLANs / interfaces 
