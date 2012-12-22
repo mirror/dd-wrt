@@ -1952,8 +1952,8 @@ static void filter_input(void)
 			     wanface, PPTP_PORT);
 		} else {
 			save2file
-			    ("-A INPUT -i %s -p tcp --dport %d -j ACCEPT\n",
-			     wanface, PPTP_PORT);
+			    ("-A INPUT -i %s -p tcp --dport %d -j %s\n",
+			     wanface, PPTP_PORT, TARG_PASS);
 		}
 	}
 #endif
@@ -1980,8 +1980,8 @@ static void filter_input(void)
 			     wanface, nvram_safe_get("proftpd_port"));
 		} else {
 			save2file
-			    ("-A INPUT -i %s -p tcp --dport %d -j ACCEPT\n",
-			     wanface, nvram_safe_get("proftpd_port"));
+			    ("-A INPUT -i %s -p tcp --dport %d -j %s\n",
+			     wanface, nvram_safe_get("proftpd_port"), TARG_PASS);
 			}
 	}
 #endif
@@ -2005,11 +2005,11 @@ static void filter_input(void)
 			  nvram_safe_get("openvpn_port"), log_accept);
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			save2file("-A INPUT -i %s2 -j %s\n",
-			  nvram_safe_get("openvpn_tuntap"), log_accept);
+			  nvram_safe_get("openvpn_tuntap"), TARG_PASS);
 			save2file("-A FORWARD -i %s2 -j %s\n",
-			  nvram_safe_get("openvpn_tuntap"), log_accept);
+			  nvram_safe_get("openvpn_tuntap"), TARG_PASS);
 			save2file("-A FORWARD -o %s2 -j %s\n",
-			  nvram_safe_get("openvpn_tuntap"), log_accept);
+			  nvram_safe_get("openvpn_tuntap"), TARG_PASS);
 		}
 	}
 #endif
@@ -2094,8 +2094,8 @@ static void filter_input(void)
 			     wanface, nvram_safe_get("sshd_port"));
 		else
 			save2file
-			    ("-A INPUT -i %s -p tcp --dport %s -j ACCEPT\n",
-			     wanface, nvram_safe_get("sshd_port"));
+			    ("-A INPUT -i %s -p tcp --dport %s -j %s\n",
+			     wanface, nvram_safe_get("sshd_port"), TARG_PASS);
 	}
 #endif
 	/*
@@ -2122,8 +2122,8 @@ static void filter_input(void)
 			     wanface);
 		else
 			save2file
-			    ("-A INPUT -i %s -p tcp --dport 23 -j ACCEPT\n",
-			     wanface);
+			    ("-A INPUT -i %s -p tcp --dport 23 -j %s\n",
+			     wanface, TARG_PASS);
 	}
 #endif
 	if (remotetelnet) {
@@ -2191,9 +2191,9 @@ static void filter_input(void)
 	 */
 	// removed first rule: -A INPUT -m state --state INVALID -j DROP
 	// (wolfiR)
-	save2file("-A INPUT -i lo -m state --state NEW -j ACCEPT\n");
+	save2file("-A INPUT -i lo -m state --state NEW -j %s\n");
 	save2file("-A INPUT -i %s -m state --state NEW -j %s\n",
-		  lanface, log_accept);
+		  TARG_PASS, lanface, log_accept);
 
 	/*
 	 * lonewolf mods for extra VLANs / interfaces 
@@ -3069,11 +3069,11 @@ void set_gprules(char *iface) {
 		
 		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -m state --state NEW -j DROP",
 			  giface, gipaddr);
-		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p udp --dport 67 -j ACCEPT", giface, gipaddr);
-		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p udp --dport 53 -j ACCEPT", giface, gipaddr);
-		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p tcp --dport 53 -j ACCEPT", giface, gipaddr);
+		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p udp --dport 67 -j %s", giface, gipaddr, TARG_PASS);
+		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p udp --dport 53 -j %s", giface, gipaddr, TARG_PASS);
+		sysprintf("iptables -I INPUT -i %s -d %s/255.255.255.255 -p tcp --dport 53 -j %s", giface, gipaddr, TARG_PASS);
 		
-		sysprintf("iptables -I FORWARD -i %s -m state --state NEW -j ACCEPT", giface);
+		sysprintf("iptables -I FORWARD -i %s -m state --state NEW -j %s", giface, TARG_PASS);
 		sysprintf("iptables -I FORWARD -i %s -o br0 -m state --state NEW -j DROP", giface);
 		sysprintf("iptables -I FORWARD -i br0 -o %s -m state --state NEW -j DROP", giface);
 	}
