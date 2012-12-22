@@ -1,0 +1,12 @@
+# User exported sparc header files
+
+
+generic-y += clkdev.h
+generic-y += div64.h
+generic-y += exec.h
+generic-y += local64.h
+generic-y += irq_regs.h
+generic-y += local.h
+generic-y += module.h
+generic-y += trace_clock.h
+generic-y += word-at-a-time.h

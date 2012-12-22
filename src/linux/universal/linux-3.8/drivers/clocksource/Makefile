@@ -1,0 +1,20 @@
+obj-$(CONFIG_ATMEL_TCB_CLKSRC)	+= tcb_clksrc.o
+obj-$(CONFIG_X86_CYCLONE_TIMER)	+= cyclone.o
+obj-$(CONFIG_X86_PM_TIMER)	+= acpi_pm.o
+obj-$(CONFIG_SCx200HR_TIMER)	+= scx200_hrt.o
+obj-$(CONFIG_CS5535_CLOCK_EVENT_SRC)	+= cs5535-clockevt.o
+obj-$(CONFIG_SH_TIMER_CMT)	+= sh_cmt.o
+obj-$(CONFIG_SH_TIMER_MTU2)	+= sh_mtu2.o
+obj-$(CONFIG_SH_TIMER_TMU)	+= sh_tmu.o
+obj-$(CONFIG_EM_TIMER_STI)	+= em_sti.o
+obj-$(CONFIG_CLKBLD_I8253)	+= i8253.o
+obj-$(CONFIG_CLKSRC_MMIO)	+= mmio.o
+obj-$(CONFIG_DW_APB_TIMER)	+= dw_apb_timer.o
+obj-$(CONFIG_DW_APB_TIMER_OF)	+= dw_apb_timer_of.o
+obj-$(CONFIG_CLKSRC_NOMADIK_MTU)	+= nomadik-mtu.o
+obj-$(CONFIG_CLKSRC_DBX500_PRCMU)	+= clksrc-dbx500-prcmu.o
+obj-$(CONFIG_ARMADA_370_XP_TIMER)	+= time-armada-370-xp.o
+obj-$(CONFIG_ARCH_BCM2835)	+= bcm2835_timer.o
+obj-$(CONFIG_SUNXI_TIMER)	+= sunxi_timer.o
+
+obj-$(CONFIG_CLKSRC_ARM_GENERIC)	+= arm_generic.o
