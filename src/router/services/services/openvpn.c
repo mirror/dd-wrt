@@ -418,21 +418,19 @@ void start_openvpn(void)
 		fprintf(fp,
 			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
+			if (nvram_match("openvpncl_sec", "0"))
+				fprintf(fp, "iptables -I INPUT -i %s1 -j logaccept\n",
+				nvram_safe_get("openvpncl_tuntap"));
 	else {
-		fprintf(fp,
-			"iptables -I INPUT -i %s1 -j logaccept\n",			
-			nvram_safe_get("openvpncl_tuntap"));
 		if(nvram_match("openvpncl_tuntap", "tun"))	//only needed with tun
 			fprintf(fp,
+				"iptables -I INPUT -i %s1 -j logaccept\n"
 				"iptables -I FORWARD -i %s1 -j logaccept\n"
 				"iptables -I FORWARD -o %s1 -j logaccept\n",
 					nvram_safe_get("openvpncl_tuntap"),
+					nvram_safe_get("openvpncl_tuntap"),
 					nvram_safe_get("openvpncl_tuntap"));
 		}
-	if (nvram_match("openvpncl_sec", "0")
-			&& nvram_match("openvpncl_nat", "1"))
-		fprintf(fp, "iptables -I INPUT -i %s1 -j logaccept\n",
-			nvram_safe_get("openvpncl_tuntap"));
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 //		fprintf(fp, "ip route flush table 10\n");
