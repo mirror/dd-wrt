@@ -18,6 +18,7 @@ void __kprobes __patch_text(void *addr, unsigned int insn)
 	bool thumb2 = IS_ENABLED(CONFIG_THUMB2_KERNEL);
 	int size;
 
+#if IS_ENABLED(CONFIG_THUMB2_KERNEL)
 	if (thumb2 && __opcode_is_thumb16(insn)) {
 		*(u16 *)addr = __opcode_to_mem_thumb16(insn);
 		size = sizeof(u16);
@@ -30,10 +31,14 @@ void __kprobes __patch_text(void *addr, unsigned int insn)
 		addrh[1] = __opcode_to_mem_thumb16(second);
 
 		size = sizeof(u32);
-	} else {
+	} else 
+#endif
+	{
+#if IS_ENABLED(CONFIG_THUMB2_KERNEL)
 		if (thumb2)
 			insn = __opcode_to_mem_thumb32(insn);
 		else
+#endif
 			insn = __opcode_to_mem_arm(insn);
 
 		*(u32 *)addr = insn;
