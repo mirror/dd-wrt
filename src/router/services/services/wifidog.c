@@ -43,7 +43,6 @@ void start_wifidog(void)
 		else
 			fprintf(fp, "GatewayID %s\n",
 				nvram_safe_get("wd_gwid"));
-		fprintf(fp, "ExternalInterface %s\n", 
 		if (nvram_invmatch("wan_proto", "disabled")) //WIP
 			fprintf(fp, "ExternalInterface %s\n", get_wan_face());
 		else 
