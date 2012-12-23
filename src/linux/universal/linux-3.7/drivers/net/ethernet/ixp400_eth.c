@@ -493,7 +493,7 @@ typedef struct {
     IX_OSAL_MBUF_POOL *tx_pool;
 
     /* id of thread for the link duplex monitoring */
-    int maintenanceCheckThreadId;
+    struct task_struct *maintenanceCheckThreadId;
 
     /* mutex locked by thread, until the thread exits */
     struct semaphore *maintenanceCheckThreadComplete;
@@ -1482,7 +1482,7 @@ static int dev_media_check_thread (void* arg)
     */
     down (priv->maintenanceCheckThreadComplete);
 
-    daemonize("ixp400 MediaCheck"); 
+//    daemonize("ixp400 MediaCheck"); 
     spin_lock_irq(&current->sighand->siglock);
 
     sigemptyset(&current->blocked);
@@ -2435,14 +2435,15 @@ static int port_enable(struct net_device *dev)
 	/* Starts the driver monitoring thread, if configured */
 	priv->maintenanceCheckStopped = FALSE;
 	
-	priv->maintenanceCheckThreadId = 
-	    kernel_thread(dev_media_check_thread,
-			  (void *) dev,
-			  CLONE_FS | CLONE_FILES);
-	if (priv->maintenanceCheckThreadId < 0)
+	priv->maintenanceCheckThreadId = kthread_create(dev_media_check_thread, (void *) dev, "ixp400 MediaCheck");
+
+	if (IS_ERR(priv->maintenanceCheckThreadId))
 	{
 	    P_ERROR("%s: Failed to start thread for media checks\n", dev->name);
 	    priv->maintenanceCheckStopped = TRUE;
+	}else
+	{
+	    wake_up_process(priv->maintenanceCheckThreadId);
 	}
     }
 
@@ -2527,8 +2528,7 @@ static void port_disable(struct net_device *dev)
 	/* Wake up the media-check thread with a signal.
 	   It will check the 'running' flag and exit */
 
-
-	if ((res = kill_proc_info(SIGKILL, SEND_SIG_PRIV, (pid_t)priv->maintenanceCheckThreadId)))
+	if ((res = kthread_stop(priv->maintenanceCheckThreadId)))
 	{
 	    P_ERROR("%s: unable to signal thread\n", dev->name);
 	}
