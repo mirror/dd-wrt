@@ -857,7 +857,6 @@ static int c_show(struct seq_file *m, void *v)
 	seq_printf(m, "CPUClock\t: %d\n",get_cns3xxx_cpu_clock());
 #endif
 
-#if defined(CONFIG_SMP)
 	for_each_online_cpu(i) {
 		/*
 		 * glibc reads /proc/cpuinfo to determine the number of
