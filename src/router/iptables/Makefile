@@ -40,6 +40,8 @@ COPT_FLAGS += -DNEED_PRINTF
 #endif
 #endif
 
+COPT_FLAGS+= -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
+
 ifeq ($(ARCH),mips)
 COPT_FLAGS+= -I$(LINUXDIR)/arch/mips/include
 endif
