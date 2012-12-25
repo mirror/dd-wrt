@@ -31,7 +31,10 @@ useful_functions.o ebtables.o
 
 OBJECTS:=$(OBJECTS2) $(EXT_OBJS) $(EXT_LIBS)
 
-KERNEL_INCLUDES=-I$(LINUXDIR)/include/
+KERNEL_INCLUDES=-I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
+
+
+KERNEL_INCLUDES+=-I$(LINUXDIR)/include/
 ifeq ($(ARCH),mips)
 KERNEL_INCLUDES+= -I$(LINUXDIR)/arch/mips/include
 endif
