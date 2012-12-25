@@ -20,10 +20,10 @@ PLUGIN_OBJS := pppoatm.o
 #HAVE_LIBATM=yes
 
 ifdef HAVE_LIBATM
-CFLAGS += -I$(TOP)/linux-atm/src/include -I$(LINUXDIR)/include 
+CFLAGS += -I$(TOP)/linux-atm/src/include -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include 
 LIBS := $(TOP)/linux-atm/src/lib/.libs/libatm.so.1
 else
-CFLAGS += -I. -I$(LINUXDIR)/include
+CFLAGS += -I. -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include
 PLUGIN_OBJS += text2qos.o text2atm.o misc.o ans.o
 LIBS := -lresolv
 endif
