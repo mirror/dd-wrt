@@ -44,6 +44,7 @@ struct ar8327_pad_cfg {
 	bool pipe_rxclk_sel;
 	bool txclk_delay_en;
 	bool rxclk_delay_en;
+	bool sgmii_delay_en;
 	enum ar8327_clk_delay_sel txclk_delay_sel;
 	enum ar8327_clk_delay_sel rxclk_delay_sel;
 };
@@ -74,7 +75,8 @@ struct ar8327_platform_data {
 	struct ar8327_pad_cfg *pad0_cfg;
 	struct ar8327_pad_cfg *pad5_cfg;
 	struct ar8327_pad_cfg *pad6_cfg;
-	struct ar8327_port_cfg cpuport_cfg;
+	struct ar8327_port_cfg port0_cfg;
+	struct ar8327_port_cfg port6_cfg;
 	struct ar8327_led_cfg *led_cfg;
 };
 
