@@ -202,7 +202,13 @@ prom_init(void)
 	 * space.
 	 */
 	if (MIPS74K(current_cpu_data.processor_id) && (mem == (128 MB)))
+#ifdef CONFIG_PAGE_SIZE_16KB
+		mem -= 0x1000*4;
+#elif CONFIG_PAGE_SIZE_64KB
+		mem -= 0x10000;
+#else
 		mem -= 0x1000;
+#endif
 
 	/* CFE could have loaded nvram during netboot
 	 * to top 32KB of RAM, Just check for nvram signature
@@ -233,7 +239,13 @@ prom_init(void)
 		 * shadows 0x0 -> 0x8000000)
 		 */
 		if (MIPS74K(current_cpu_data.processor_id) && (mem == (128 MB)))
-			extmem -= 0x1000;
+#ifdef CONFIG_PAGE_SIZE_16KB
+		extmem -= 0x1000*4;
+#elif CONFIG_PAGE_SIZE_64KB
+		extmem -= 0x10000;
+#else
+		extmem -= 0x1000;
+#endif
 		add_memory_region(SI_SDRAM_R2 + (128 MB) - 0x1000, extmem, BOOT_MEM_RAM);
 	}
 #endif  /* CONFIG_HIGHMEM */
