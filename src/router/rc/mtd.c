@@ -526,7 +526,6 @@ int mtd_write(const char *path, const char *mtd)
 			lseek(mtd_fd, (i + skipoffset) * mtd_info.erasesize, SEEK_SET);
 			
 			if (write(mtd_fd,buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
-				perror(mtd);
 				fprintf(stderr,"try again %d\n",redo++);
 				if (redo<10)
 				    goto again;
