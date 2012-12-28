@@ -1,0 +1,55 @@
+
+# http://commotionwireless.net/
+
+DebugLevel 0
+AllowNoInt yes
+IpVersion 4
+LinkQualityLevel 2
+LinkQualityAlgorithm "etx_ffeth"
+SmartGateway yes
+
+Hna4
+{
+#		101.149.21.0 255.255.255.0
+#		102.149.21.0 255.255.255.0
+#		103.149.21.0 255.255.255.0
+}
+
+LoadPlugin "olsrd_arprefresh.so.0.1"
+{
+}
+
+LoadPlugin "olsrd_dyn_gw.so.0.5"
+{
+}
+
+LoadPlugin "olsrd_httpinfo.so.0.1"
+{
+	PlParam "Net" "0.0.0.0 0.0.0.0"
+	PlParam "port" "1978"
+}
+
+LoadPlugin "olsrd_nameservice.so.0.3"
+{
+	PlParam "name" "commotion-7814921"
+	PlParam "sighup-pid-file" "/var/run/dnsmasq.pid"
+	PlParam "suffix" ".mesh"
+}
+
+LoadPlugin "olsrd_p2pd.so.0.1.0"
+{
+	PlParam "NonOlsrIf" "eth0"
+	PlParam "P2pdTtl" "5"
+	PlParam "UdpDestPort" "224.0.0.251 5353"
+}
+
+LoadPlugin "olsrd_txtinfo.so.0.1"
+{
+	PlParam "accept" "0.0.0.0"
+}
+
+Interface "wlan0"
+{
+	Ip4Broadcast 255.255.255.255
+}
+
