@@ -219,6 +219,10 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_SMART_GW_PERIOD
 %token TOK_SMART_GW_STABLECOUNT
 %token TOK_SMART_GW_THRESH
+%token TOK_SMART_GW_WEIGHT_EXITLINK_UP
+%token TOK_SMART_GW_WEIGHT_EXITLINK_DOWN
+%token TOK_SMART_GW_WEIGHT_ETX
+%token TOK_SMART_GW_DIVIDER_ETX
 %token TOK_SMART_GW_UPLINK
 %token TOK_SMART_GW_UPLINK_NAT
 %token TOK_SMART_GW_SPEED
@@ -302,6 +306,10 @@ stmt:       idebug
           | ismart_gw_period
           | asmart_gw_stablecount
           | asmart_gw_thresh
+          | asmart_gw_weight_exitlink_up
+          | asmart_gw_weight_exitlink_down
+          | asmart_gw_weight_etx
+          | asmart_gw_divider_etx
           | ssmart_gw_uplink
           | bsmart_gw_uplink_nat
           | ismart_gw_speed
@@ -1314,6 +1322,38 @@ asmart_gw_thresh: TOK_SMART_GW_THRESH TOK_INTEGER
 {
   PARSER_DEBUG_PRINTF("Smart gateway threshold: %d\n", $2->integer);
   olsr_cnf->smart_gw_thresh = $2->integer;
+  free($2);
+}
+;
+
+asmart_gw_weight_exitlink_up: TOK_SMART_GW_WEIGHT_EXITLINK_UP TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("Smart gateway exitlink uplink weight: %d\n", $2->integer);
+  olsr_cnf->smart_gw_weight_exitlink_up = $2->integer;
+  free($2);
+}
+;
+
+asmart_gw_weight_exitlink_down: TOK_SMART_GW_WEIGHT_EXITLINK_DOWN TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("Smart gateway exitlink downlink weight: %d\n", $2->integer);
+  olsr_cnf->smart_gw_weight_exitlink_down = $2->integer;
+  free($2);
+}
+;
+
+asmart_gw_weight_etx: TOK_SMART_GW_WEIGHT_ETX TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("Smart gateway ETX weight: %d\n", $2->integer);
+  olsr_cnf->smart_gw_weight_etx = $2->integer;
+  free($2);
+}
+;
+
+asmart_gw_divider_etx: TOK_SMART_GW_DIVIDER_ETX TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("Smart gateway ETX divider: %d\n", $2->integer);
+  olsr_cnf->smart_gw_divider_etx = $2->integer;
   free($2);
 }
 ;

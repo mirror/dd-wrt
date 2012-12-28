@@ -12,22 +12,31 @@
 
 /**
  <pre>
- field/sentence GPGGA   GPRMC
- utc:           x       x
- sig:           x       x
- fix:                   x
- PDOP:                          =sqrt(2)*HDOP  (GPGSA)
- HDOP:          x
- VDOP:                          =HDOP          (GPGSA)
- lat:           x       x
- lon:           x       x
- elv:           x
- speed:                 x
- direction:             x
+ field/sentence       GPGGA   GPGSA   GPGSV   GPRMC   GPVTG
+ present:               x       x       x       x       x
+ smask:                 x       x       x       x       x
+ utc (date):                                    x
+ utc (time):            x                       x
+ sig:                   x                       x1
+ fix:                           x               x1
+ PDOP:                          x                           =sqrt(2)*HDOP  (GPGSA)
+ HDOP:                  x       x
+ VDOP:                          x                           =HDOP          (GPGSA)
+ lat:                   x                       x
+ lon:                   x                       x
+ elv:                   x
+ speed:                                         x       x
+ track:                                         x       x
+ mtrack:                                                x
+ magvar:                                        x
+ satinfo (inuse count): x       x1
+ satinfo (inuse):               x
+ satinfo (inview):                      x
+
+ x1 = not present in the sentence but the library sets it up.
  </pre>
  */
-#define POSFILE_DEFAULT_SMASK           (GPGGA | GPRMC)
-#define POSFILE_SANITISE_SMASK          (GPGGA | GPRMC | GPGSA)
+#define POSFILE_DEFAULT_SMASK           (GPGGA | GPGSA | GPRMC | GPVTG)
 
 /* no default utc: current time is always used */
 #define POSFILE_DEFAULT_SIG             (NMEA_SIG_HIGH)
@@ -37,7 +46,9 @@
 #define POSFILE_DEFAULT_LON             (0.0)
 #define POSFILE_DEFAULT_ELV             (0.0)
 #define POSFILE_DEFAULT_SPEED           (0.0)
-#define POSFILE_DEFAULT_DIRECTION       (0.0)
+#define POSFILE_DEFAULT_TRACK           (0.0)
+#define POSFILE_DEFAULT_MTRACK          (0.0)
+#define POSFILE_DEFAULT_MAGVAR          (0.0)
 
 #define POSFILE_CALCULATED_VDOP(hdop)   (hdop)
 #define POSFILE_CALCULATED_PDOP(hdop)   (hdop * 1.414213562)
@@ -49,7 +60,9 @@
 #define POSFILE_NAME_LON                "lon"
 #define POSFILE_NAME_ELV                "elv"
 #define POSFILE_NAME_SPEED              "speed"
-#define POSFILE_NAME_DIRECTION          "direction"
+#define POSFILE_NAME_TRACK              "track"
+#define POSFILE_NAME_MTRACK             "mtrack"
+#define POSFILE_NAME_MAGVAR             "magvar"
 
 #define POSFILE_VALUE_SIG_BAD           "bad"
 #define POSFILE_VALUE_SIG_LOW           "low"

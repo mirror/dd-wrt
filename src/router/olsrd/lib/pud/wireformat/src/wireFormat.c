@@ -2,11 +2,44 @@
 
 #include <time.h>
 
-/* ************************************************************************
- * Validity Time
- * ************************************************************************ */
+/*
+ * NodeIdType
+ */
 
-/* inline getValidityTime */
+bool isValidNodeIdType(unsigned long long nodeIdType) {
+	return
+	(
+		(
+			(/* (nodeIdType >= PUD_NODEIDTYPE_GLOBAL_FIRST) && */ (nodeIdType <= PUD_NODEIDTYPE_GLOBAL_LAST)) ||
+			(   (nodeIdType >= PUD_NODEIDTYPE_LOCAL_FIRST ) &&    (nodeIdType <= PUD_NODEIDTYPE_LOCAL_LAST ))
+		)
+		&&
+		(
+			(nodeIdType != PUD_NODEIDTYPE_GAP1)
+		)
+	);
+}
+
+
+/*
+ * Validity Time
+ */
+
+/** Determine the validity time in seconds from the OLSR wire format value */
+#define PUD_VALIDITY_TIME_FROM_OLSR(msn, lsn) ((((lsn) + 16) * (1 << (msn))) - 16)
+
+/**
+ Get the validity time from a message
+
+ @param validityTimeField
+ A pointer to the validity time field
+
+ @return
+ The validity time in seconds
+ */
+unsigned long getValidityTime(uint8_t * validityTimeField) {
+	return PUD_VALIDITY_TIME_FROM_OLSR(*validityTimeField >> 4, *validityTimeField % 16);
+}
 
 /**
  Set the validity time of the position update message
@@ -16,8 +49,7 @@
  @param validityTime
  The validity time in seconds
  */
-void setValidityTime(uint8_t * validityTimeField,
-		unsigned long long validityTime) {
+void setValidityTime(uint8_t * validityTimeField, unsigned long long validityTime) {
 	unsigned int msn = 1;
 	unsigned long long lsn = 0;
 	unsigned long long upperBound;
@@ -43,44 +75,246 @@ void setValidityTime(uint8_t * validityTimeField,
 	*validityTimeField = ((msn << 4) | lsn);
 }
 
-/* ************************************************************************
- * UplinkPositionUpdate
- * ************************************************************************ */
+/*
+ * UplinkHeader
+ */
 
-/* inline uint8_t getUplinkMessageType */
-/* inline void setUplinkMessageType */
+/**
+ Get the type of the uplink message
 
-/* inline uint16_t getUplinkMessageLength */
-/* inline void setUplinkMessageLength */
+ @param uplinkHeader
+ A pointer to the uplink message
+ @return
+ The type of the uplink message
+ */
+uint8_t getUplinkMessageType(UplinkHeader * uplinkHeader) {
+	return uplinkHeader->type;
+}
 
-/* inline bool getUplinkMessageIPv6 */
-/* inline void setUplinkMessageIPv6 */
+/**
+ Set the type of the uplink message
 
-/* inline void setUplinkMessagePadding */
+ @param uplinkHeader
+ A pointer to the uplink message
+ @param type
+ The type of the uplink message
+ */
+void setUplinkMessageType(UplinkHeader * uplinkHeader,
+		uint8_t type) {
+	uplinkHeader->type = type;
+}
 
-/* ************************************************************************
- * OLSR Header
- * ************************************************************************ */
+/**
+ Get the length of the uplink message
 
-/* inline union olsr_ip_addr * getOlsrMessageOriginator */
+ @param uplinkHeader
+ A pointer to the uplink message
+ @return
+ The length of the uplink message
+ */
+uint16_t getUplinkMessageLength(UplinkHeader * uplinkHeader) {
+	return ntohs(uplinkHeader->length);
+}
 
-/* inline PudOlsrPositionUpdate * getOlsrMessagePayload */
+/**
+ Set the length of the uplink message
 
-/* ************************************************************************
+ @param uplinkHeader
+ A pointer to the uplink message
+ @param length
+ The length of the uplink message
+ */
+void setUplinkMessageLength(UplinkHeader * uplinkHeader,
+		uint16_t length) {
+	uplinkHeader->length = ntohs(length);
+}
+
+/**
+ Get the IPv6 status of the uplink message
+
+ @param uplinkHeader
+ A pointer to the uplink message
+ @return
+ true when the uplink message is sent from an olsrd stack in IPv6 mode, false
+ otherwise
+ */
+bool getUplinkMessageIPv6(UplinkHeader * uplinkHeader) {
+	return (uplinkHeader->ipv6 == 1);
+}
+
+/**
+ Set the IPv6 status of the uplink message
+
+ @param uplinkHeader
+ A pointer to the uplink message
+ @param ipv6
+ The IPv6 status of the uplink message (true when the uplink message is sent
+ from olsrd stack in IPv6 mode, false otherwise)
+ */
+void setUplinkMessageIPv6(UplinkHeader * uplinkHeader,
+		bool ipv6) {
+	uplinkHeader->ipv6 = ipv6 ? 1 : 0;
+}
+
+/**
+ Set the padding of the uplink message header
+
+ @param uplinkHeader
+ A pointer to the uplink message
+ @param pad
+ The padding of the uplink message header
+ */
+void setUplinkMessagePadding(UplinkHeader * uplinkHeader,
+		uint8_t pad) {
+	uplinkHeader->pad = pad;
+}
+
+/*
+ * OLSR header
+ */
+
+/**
+ Determine the size of an OLSR message
+
+ @param ipVersion
+ The IP version
+ @param olsrMessage
+ A pointer to the OLSR message
+ @return
+ The size of the OLSR message
+ */
+unsigned short getOlsrMessageSize(int ipVersion,
+		union olsr_message * olsrMessage) {
+	if (ipVersion == AF_INET) {
+		return ntohs(olsrMessage->v4.olsr_msgsize);
+	}
+
+	return ntohs(olsrMessage->v6.olsr_msgsize);
+}
+
+/**
+ Get the originator of an OLSR message
+
+ @param ipVersion
+ The IP version (AF_INET or AF_INET6)
+ @param olsrMessage
+ A pointer to the OLSR message
+ @return
+ A pointer to the originator address
+ */
+union olsr_ip_addr * getOlsrMessageOriginator(int ipVersion,
+		union olsr_message * olsrMessage) {
+	if (ipVersion == AF_INET) {
+		return (union olsr_ip_addr *) &olsrMessage->v4.originator;
+	}
+
+	return (union olsr_ip_addr *) &olsrMessage->v6.originator;
+}
+
+/**
+ Get the position update message in an OLSR message
+
+ @param ipVersion
+ The IP version (AF_INET or AF_INET6)
+ @param olsrMessage
+ A pointer to the OLSR message
+ @return
+ A pointer to the position update message
+ */
+PudOlsrPositionUpdate * getOlsrMessagePayload(int ipVersion,
+		union olsr_message * olsrMessage) {
+	if (ipVersion == AF_INET) {
+		return (PudOlsrPositionUpdate *) &olsrMessage->v4.message;
+	}
+
+	return (PudOlsrPositionUpdate *) &olsrMessage->v6.message;
+}
+
+/*
  * PudOlsrPositionUpdate
- * ************************************************************************ */
+ */
 
-/* inline uint8_t getPositionUpdateVersion */
-/* inline void setPositionUpdateVersion */
+/**
+ Get the version of the position update message
 
-/* inline uint8_t getPositionUpdateSmask */
-/* inline void setPositionUpdateSmask */
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @return
+ The version of the position update message
+ */
+uint8_t getPositionUpdateVersion(
+		PudOlsrPositionUpdate * olsrGpsMessage) {
+	return olsrGpsMessage->version;
+}
 
-/* ************************************************************************
+/**
+ Set the version of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param version
+ The version of the position update message
+ */
+void setPositionUpdateVersion(
+		PudOlsrPositionUpdate * olsrGpsMessage, uint8_t version) {
+	olsrGpsMessage->version = version;
+}
+
+/**
+ Get the smask of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @return
+ The smask of the position update message
+ */
+uint8_t getPositionUpdateSmask(
+		PudOlsrPositionUpdate * olsrGpsMessage) {
+	return olsrGpsMessage->smask;
+}
+
+/**
+ Set the smask of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param smask
+ The smask of the position update message
+ */
+void setPositionUpdateSmask(
+		PudOlsrPositionUpdate * olsrGpsMessage, uint8_t smask) {
+	olsrGpsMessage->smask = smask;
+}
+
+/**
+ Get the flags of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @return
+ The flags of the position update message
+ */
+uint8_t getPositionUpdateFlags(
+		PudOlsrPositionUpdate * olsrGpsMessage) {
+	return olsrGpsMessage->flags;
+}
+
+/**
+ Set the flags of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param flags
+ The flags of the position update message
+ */
+void setPositionUpdateFlags(
+		PudOlsrPositionUpdate * olsrGpsMessage, uint8_t flags) {
+	olsrGpsMessage->flags = flags;
+}
+
+/*
  * GpsInfo
- * ************************************************************************ */
-
-/* inline void setPositionUpdateTime */
+ */
 
 /**
  Convert the time of an OLSR message (the number of seconds after midnight) to
@@ -128,30 +362,323 @@ void getPositionUpdateTime(PudOlsrPositionUpdate * olsrGpsMessage,
 	nowStruct->tm_sec = (olsrTime % 60);
 }
 
-/* inline double getPositionUpdateLatitude */
-/* inline void setPositionUpdateLatitude */
+/**
+ Set the time of the position update message (the number of seconds after
+ midnight)
 
-/* inline double getPositionUpdateLongitude */
-/* inline void setPositionUpdateLongitude */
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param hour
+ The hours
+ @param min
+ The minutes
+ @param sec
+ The seconds
+ */
+void setPositionUpdateTime(PudOlsrPositionUpdate * olsrGpsMessage,
+		int hour, int min, int sec) {
+	olsrGpsMessage->gpsInfo.time = ((hour * 60 * 60) + (min * 60) + sec);
+}
 
-/* inline long getPositionUpdateAltitude */
-/* inline void setPositionUpdateAltitude */
+/**
+ Get the latitude of the position update message
 
-/* inline unsigned long getPositionUpdateSpeed */
-/* inline void setPositionUpdateSpeed */
+ @param olsrGpsMessage
+ A pointer to the position update message
 
-/* inline unsigned long getPositionUpdateTrack */
-/* inline void setPositionUpdateTrack */
+ @return
+ The latitude converted to degrees: [-90, 90>
+ */
+double getPositionUpdateLatitude(
+		PudOlsrPositionUpdate * olsrGpsMessage) {
+	uint32_t olsrLat = olsrGpsMessage->gpsInfo.lat;
+	double lat = (double) olsrLat;
 
-/* inline double getPositionUpdateHdop */
-/* inline void setPositionUpdateHdop */
+	/* lat is in [0, 2^LATITUDE_BITS> */
 
-/* ************************************************************************
+	/* take half of the rounding error */
+	lat += 0.5;
+
+	lat /= (double) (1 << PUD_LATITUDE_BITS);
+	/* lat is now in [0, 1> */
+
+	lat -= 0.5;
+	/* lat is now in [-0.5, 0.5> */
+
+	lat *= 180.0;
+	/* lat is now in [-90, 90> */
+
+	return lat;
+}
+
+/**
+ Set the latitude of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param latitude
+ The latitude in degrees: [-90, 90]
+ */
+void setPositionUpdateLatitude(
+		PudOlsrPositionUpdate * olsrGpsMessage, double latitude) {
+	double lat = latitude;
+
+	/* lat is in [-90, 90] */
+	assert(lat >= -90.0);
+	assert(lat <= 90.0);
+
+	lat /= 180.0;
+	/* lat is now in [-0.5, 0.5] */
+
+	lat += 0.5;
+	/* lat is now in [0, 1] */
+
+	lat *= (double) (1 << PUD_LATITUDE_BITS);
+	/* lat is now in [0, LATITUDE_BITS] */
+
+	/* clip max */
+	if (unlikely(lat > (double)((1 << PUD_LATITUDE_BITS) - 1))) {
+		lat = (double) ((1 << PUD_LATITUDE_BITS) - 1);
+	}
+	/* lat is now in [0, 2^LATITUDE_BITS> */
+
+	olsrGpsMessage->gpsInfo.lat = lrint(lat);
+}
+
+/**
+ Get the longitude of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+
+ @return
+ The longitude converted to degrees: [-180, 180>
+ */
+double getPositionUpdateLongitude(
+		PudOlsrPositionUpdate * olsrGpsMessage) {
+	uint32_t olsrLon = olsrGpsMessage->gpsInfo.lon;
+	double lon = (double) olsrLon;
+
+	/* lon is in [0, 2^LONGITUDE_BITS> */
+
+	/* take half of the rounding error */
+	lon += 0.5;
+
+	lon /= (1 << PUD_LONGITUDE_BITS);
+	/* lon is now in [0, 1> */
+
+	lon -= 0.5;
+	/* lon is now in [-0.5, 0.5> */
+
+	lon *= 360.0;
+	/* lon is now in [-180, 180> */
+
+	return lon;
+}
+
+/**
+ Set the longitude of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param longitude
+ The longitude in degrees: [-90, 90]
+ */
+void setPositionUpdateLongitude(
+		PudOlsrPositionUpdate * olsrGpsMessage, double longitude) {
+	double lon = longitude;
+
+	/* lon is in [-180, 180] */
+	assert(lon >= -180.0);
+	assert(lon <= 180.0);
+
+	lon /= 360.0;
+	/* lon is now in [-0.5, 0.5] */
+
+	lon += 0.5;
+	/* lon is now in [0, 1] */
+
+	lon *= (double) (1 << PUD_LONGITUDE_BITS);
+	/* lon is now in [0, LONGITUDE_BITS] */
+
+	/* clip max */
+	if (unlikely(lon > (double)((1 << PUD_LATITUDE_BITS) - 1))) {
+		lon = (double) ((1 << PUD_LATITUDE_BITS) - 1);
+	}
+
+	/* lon is now in [0, 2^LONGITUDE_BITS> */
+
+	olsrGpsMessage->gpsInfo.lon = lrint(lon);
+}
+
+/**
+ Get the altitude of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+
+ @return
+ The altitude in meters
+ */
+long getPositionUpdateAltitude(
+		PudOlsrPositionUpdate * olsrGpsMessage) {
+	return ((long) olsrGpsMessage->gpsInfo.alt + PUD_ALTITUDE_MIN);
+}
+
+/**
+ Set the altitude of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param altitude
+ The altitude in meters
+ */
+void setPositionUpdateAltitude(
+		PudOlsrPositionUpdate * olsrGpsMessage, double altitude) {
+	double alt = altitude;
+
+	if (unlikely(alt > PUD_ALTITUDE_MAX)) {
+		alt = PUD_ALTITUDE_MAX;
+	} else if (unlikely(alt < PUD_ALTITUDE_MIN)) {
+		alt = PUD_ALTITUDE_MIN;
+	}
+
+	alt -= PUD_ALTITUDE_MIN;
+
+	olsrGpsMessage->gpsInfo.alt = lrint(alt);
+}
+
+/**
+ Get the speed of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+
+ @return
+ The speed in kph
+ */
+unsigned long getPositionUpdateSpeed(
+		PudOlsrPositionUpdate * olsrGpsMessage) {
+	return olsrGpsMessage->gpsInfo.speed;
+}
+
+/**
+ Set the speed of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param speed
+ The speed in kph
+ */
+void setPositionUpdateSpeed(
+		PudOlsrPositionUpdate * olsrGpsMessage, double speed) {
+	double spd = speed;
+
+	if (unlikely(speed < 0)) {
+		spd = 0;
+	} else if (unlikely(speed > PUD_SPEED_MAX)) {
+		spd = PUD_SPEED_MAX;
+	}
+
+	olsrGpsMessage->gpsInfo.speed = lrint(spd);
+}
+
+/**
+ Get the track angle of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+
+ @return
+ The track angle in degrees
+ */
+unsigned long getPositionUpdateTrack(
+		PudOlsrPositionUpdate * olsrGpsMessage) {
+	return olsrGpsMessage->gpsInfo.track;
+}
+
+/**
+ Set the track angle of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param track
+ The track angle in degrees
+ */
+void setPositionUpdateTrack(
+		PudOlsrPositionUpdate * olsrGpsMessage, double track) {
+	olsrGpsMessage->gpsInfo.track = lrint(track);
+}
+
+/**
+ Get the HDOP of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+
+ @return
+ The HDOP
+ */
+double getPositionUpdateHdop(
+		PudOlsrPositionUpdate * olsrGpsMessage) {
+	return (olsrGpsMessage->gpsInfo.hdop * PUD_HDOP_RESOLUTION);
+}
+
+/**
+ Set the HDOP of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param hdop
+ The HDOP
+ */
+void setPositionUpdateHdop(PudOlsrPositionUpdate * olsrGpsMessage,
+		double hdop) {
+	double hdopInternal = hdop;
+
+	if (unlikely(hdopInternal > PUD_HDOP_MAX)) {
+		hdopInternal = PUD_HDOP_MAX;
+	}
+
+	olsrGpsMessage->gpsInfo.hdop = lrint(hdopInternal / PUD_HDOP_RESOLUTION);
+}
+
+/*
  * NodeInfo
- * ************************************************************************ */
+ */
 
-/* inline NodeIdType getPositionUpdateNodeIdType */
-/* inline void setPositionUpdateNodeIdType */
+/**
+ Get the nodeIdType of the position update message
+
+ @param ipVersion
+ The IP version (AF_INET or AF_INET6)
+ @param olsrGpsMessage
+ A pointer to the position update message
+
+ @return
+ The nodeIdType
+ */
+NodeIdType getPositionUpdateNodeIdType(int ipVersion,
+		PudOlsrPositionUpdate * olsrGpsMessage) {
+	if (getPositionUpdateFlags(olsrGpsMessage) & PUD_FLAGS_ID) {
+		return olsrGpsMessage->nodeInfo.nodeIdType;
+	}
+
+	return ((ipVersion == AF_INET) ? PUD_NODEIDTYPE_IPV4 : PUD_NODEIDTYPE_IPV6);
+}
+
+/**
+ Set the nodeIdType of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param nodeIdType
+ The nodeIdType
+ */
+void setPositionUpdateNodeIdType(
+		PudOlsrPositionUpdate * olsrGpsMessage, NodeIdType nodeIdType) {
+	olsrGpsMessage->nodeInfo.nodeIdType = nodeIdType;
+}
 
 /**
  Get the nodeId and its size, accounting for nodeId presence
@@ -231,6 +758,27 @@ void getPositionUpdateNodeId(int ipVersion, union olsr_message * olsrMessage,
 }
 
 /**
+ Set the nodeId of the position update message
+
+ @param olsrGpsMessage
+ A pointer to the position update message
+ @param nodeId
+ The nodeId
+ @param nodeIdSize
+ The number of bytes in nodeId
+ @param padWithNullByte
+ When true then an extra '\0' byte will be added at the end
+ */
+void setPositionUpdateNodeId(
+		PudOlsrPositionUpdate * olsrGpsMessage, unsigned char * nodeId,
+		unsigned int nodeIdSize, bool padWithNullByte) {
+	memcpy(&olsrGpsMessage->nodeInfo.nodeId, nodeId, nodeIdSize);
+	if (unlikely(padWithNullByte)) {
+		(&olsrGpsMessage->nodeInfo.nodeId)[nodeIdSize] = '\0';
+	}
+}
+
+/**
  Convert the node information to the node information for an OLSR message and
  put it in the PUD message in the OLSR message. Also updates the PUD message
  smask.
@@ -306,4 +854,72 @@ size_t setPositionUpdateNodeInfo(int ipVersion,
 	return ((sizeof(NodeInfo)
 			- (sizeof(olsrGpsMessage->nodeInfo.nodeId) /* nodeId placeholder */))
 			+ length);
+}
+
+/*
+ * UplinkClusterLeader
+ */
+
+/**
+ Get the version of the cluster leader message
+
+ @param clusterLeaderMessage
+ A pointer to the cluster leader message
+ @return
+ The version of the cluster leader message
+ */
+uint8_t getClusterLeaderVersion(
+		UplinkClusterLeader * clusterLeaderMessage) {
+	return clusterLeaderMessage->version;
+}
+
+/**
+ Set the version of the cluster leader message
+
+ @param clusterLeaderMessage
+ A pointer to the cluster leader message
+ @param version
+ The version of the cluster leader message
+ */
+void setClusterLeaderVersion(
+		UplinkClusterLeader * clusterLeaderMessage, uint8_t version) {
+	clusterLeaderMessage->version = version;
+}
+
+/**
+ Get the originator of a cluster leader message
+
+ @param ipVersion
+ The IP version (AF_INET or AF_INET6)
+ @param clusterLeaderMessage
+ A pointer to the cluster leader message
+ @return
+ A pointer to the originator address
+ */
+union olsr_ip_addr * getClusterLeaderOriginator(int ipVersion,
+		UplinkClusterLeader * clusterLeaderMessage) {
+	if (ipVersion == AF_INET) {
+		return (union olsr_ip_addr *) &clusterLeaderMessage->leader.v4.originator;
+	}
+
+	return (union olsr_ip_addr *) &clusterLeaderMessage->leader.v6.originator;
+}
+
+/**
+ Get the cluster leader of a cluster leader message
+
+ @param ipVersion
+ The IP version (AF_INET or AF_INET6)
+ @param clusterLeaderMessage
+ A pointer to the cluster leader message
+ @return
+ A pointer to the clust leader address
+ */
+union olsr_ip_addr * getClusterLeaderClusterLeader(int ipVersion,
+		UplinkClusterLeader * clusterLeaderMessage) {
+	if (ipVersion == AF_INET) {
+		return (union olsr_ip_addr *) &clusterLeaderMessage->leader.v4.clusterLeader;
+	}
+
+	return (union olsr_ip_addr *) &clusterLeaderMessage->leader.v6.clusterLeader;
 }

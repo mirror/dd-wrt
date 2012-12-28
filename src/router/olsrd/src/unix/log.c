@@ -53,7 +53,7 @@
 #endif
 
 void
-olsr_openlog(const char *ident)
+olsr_openlog(const char *ident __attribute__((unused)))
 {
 #ifndef __ANDROID__
   openlog(ident, LOG_PID | LOG_ODELAY, LOG_DAEMON);

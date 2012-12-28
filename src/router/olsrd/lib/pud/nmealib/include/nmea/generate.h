@@ -21,29 +21,19 @@
 #ifndef __NMEA_GENERATE_H__
 #define __NMEA_GENERATE_H__
 
-#include <nmea/info.h>
 #include <nmea/sentence.h>
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
-int nmea_generate(char *buff, int buff_sz, const nmeaINFO *info,
-		int generate_mask);
+int nmea_gen_GPGGA(char *s, const int len, const nmeaGPGGA *pack);
+int nmea_gen_GPGSA(char *s, const int len, const nmeaGPGSA *pack);
+int nmea_gen_GPGSV(char *s, const int len, const nmeaGPGSV *pack);
+int nmea_gen_GPRMC(char *s, const int len, const nmeaGPRMC *pack);
+int nmea_gen_GPVTG(char *s, const int len, const nmeaGPVTG *pack);
 
-int nmea_gen_GPGGA(char *buff, int buff_sz, nmeaGPGGA *pack);
-int nmea_gen_GPGSA(char *buff, int buff_sz, nmeaGPGSA *pack);
-int nmea_gen_GPGSV(char *buff, int buff_sz, nmeaGPGSV *pack);
-int nmea_gen_GPRMC(char *buff, int buff_sz, nmeaGPRMC *pack);
-int nmea_gen_GPVTG(char *buff, int buff_sz, nmeaGPVTG *pack);
-
-void nmea_info2GPGGA(const nmeaINFO *info, nmeaGPGGA *pack);
-void nmea_info2GPGSA(const nmeaINFO *info, nmeaGPGSA *pack);
-void nmea_info2GPRMC(const nmeaINFO *info, nmeaGPRMC *pack);
-void nmea_info2GPVTG(const nmeaINFO *info, nmeaGPVTG *pack);
-
-int nmea_gsv_npack(int sat_count);
-void nmea_info2GPGSV(const nmeaINFO *info, nmeaGPGSV *pack, int pack_idx);
+int nmea_generate(char *s, const int len, const nmeaINFO *info, const int generate_mask);
 
 #ifdef  __cplusplus
 }

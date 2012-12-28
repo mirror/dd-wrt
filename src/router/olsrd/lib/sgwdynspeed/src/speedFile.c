@@ -5,6 +5,7 @@
 
 /* OLSRD includes */
 #include "olsr_cfg.h"
+#include "gateway.h"
 
 /* System includes */
 #include <stddef.h>
@@ -13,6 +14,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <assert.h>
 
 #define SPEED_UPLINK_NAME   "upstream"
 #define SPEED_DOWNLINK_NAME "downstream"
@@ -41,7 +43,7 @@ static bool started = false;
 
 /** type to hold the cached stat result */
 typedef struct _CachedStat {
-	struct timespec st_mtim; /* Time of last modification. */
+	time_t timeStamp; /* Time of last modification (second resolution) */
 } CachedStat;
 
 /** the cached stat result */
@@ -65,12 +67,16 @@ static bool readUL(const char * valueName, const char * value, unsigned long * v
 	char * endPtr = NULL;
 	unsigned long valueNew;
 
+	assert(valueName != NULL);
+	assert(value != NULL);
+	assert(valueNumber != NULL);
+
 	errno = 0;
 	valueNew = strtoul(value, &endPtr, 10);
 
 	if (!((endPtr != value) && (*value != '\0') && (*endPtr == '\0'))) {
 		/* invalid conversion */
-		sgwDynSpeedError(true, "Configured %s (%s) could not be converted to a number", valueName, value);
+		sgwDynSpeedError(false, "Value of parameter %s (%s) could not be converted to a number", valueName, value);
 		return false;
 	}
 
@@ -84,31 +90,22 @@ static bool readUL(const char * valueName, const char * value, unsigned long * v
  * @return true upon success, false otherwise
  */
 bool startSpeedFile(void) {
-	int result;
-
 	if (started) {
 		return true;
 	}
 
-	result = regcomp(&regexComment, regexCommentString, REG_EXTENDED | REG_ICASE);
-	if (result) {
-		char msgbuf[256];
-		regerror(result, &regexComment, msgbuf, sizeof(msgbuf));
-		sgwDynSpeedError(false, "Could not compile regex \"%s\": %s", regexCommentString, msgbuf);
+	if (regcomp(&regexComment, regexCommentString, REG_EXTENDED | REG_ICASE)) {
+		sgwDynSpeedError(false, "Could not compile regex \"%s\"", regexCommentString);
 		return false;
 	}
 
-	result = regcomp(&regexNameValue, regexNameValueString, REG_EXTENDED | REG_ICASE);
-	if (result) {
-		char msgbuf[256];
-		regerror(result, &regexNameValue, msgbuf, sizeof(msgbuf));
-		sgwDynSpeedError(false, "Could not compile regex \"%s\": %s", regexNameValueString, msgbuf);
+	if (regcomp(&regexNameValue, regexNameValueString, REG_EXTENDED | REG_ICASE)) {
+		sgwDynSpeedError(false, "Could not compile regex \"%s\"", regexNameValueString);
 		regfree(&regexComment);
 		return false;
 	}
 
-	cachedStat.st_mtim.tv_sec = -1;
-	cachedStat.st_mtim.tv_nsec = -1;
+	cachedStat.timeStamp = -1;
 
 	started = true;
 	return true;
@@ -175,7 +172,7 @@ void readSpeedFile(char * fileName) {
 		goto out;
 	}
 
-	if (!memcmp(&cachedStat.st_mtim, &statBuf.st_mtim, sizeof(cachedStat.st_mtim))) {
+	if (!memcmp(&cachedStat.timeStamp, &statBuf.st_mtime, sizeof(cachedStat.timeStamp))) {
 		/* file did not change since last read */
 		goto out;
 	}
@@ -185,7 +182,7 @@ void readSpeedFile(char * fileName) {
 		goto out;
 	}
 
-	memcpy(&cachedStat.st_mtim, &statBuf.st_mtim, sizeof(cachedStat.st_mtim));
+	memcpy(&cachedStat.timeStamp, &statBuf.st_mtime, sizeof(cachedStat.timeStamp));
 
 	while (fgets(line, LINE_LENGTH, fd)) {
 		regmatch_t pmatch[regexNameValuematchCount];
@@ -232,6 +229,9 @@ void readSpeedFile(char * fileName) {
 	}
 	if (downlinkSet) {
 		olsr_cnf->smart_gw_downlink = downlink;
+	}
+	if (uplinkSet || downlinkSet) {
+	  refresh_smartgw_netmask();
 	}
 
 	out: return;

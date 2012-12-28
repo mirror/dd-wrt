@@ -18,496 +18,812 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * \file parse.h
- * \brief Functions of a low level for analysis of
- * packages of NMEA stream.
- *
- * \code
- * ...
- * ptype = nmea_pack_type(
- *     (const char *)parser->buffer + nparsed + 1,
- *     parser->buff_use - nparsed - 1);
- * 
- * if(0 == (node = malloc(sizeof(nmeaParserNODE))))
- *     goto mem_fail;
- * 
- * node->pack = 0;
- * 
- * switch(ptype)
- * {
- * case GPGGA:
- *     if(0 == (node->pack = malloc(sizeof(nmeaGPGGA))))
- *         goto mem_fail;
- *     node->packType = GPGGA;
- *     if(!nmea_parse_GPGGA(
- *         (const char *)parser->buffer + nparsed,
- *         sen_sz, (nmeaGPGGA *)node->pack))
- *     {
- *         free(node);
- *         node = 0;
- *     }
- *     break;
- * case GPGSA:
- *     if(0 == (node->pack = malloc(sizeof(nmeaGPGSA))))
- *         goto mem_fail;
- *     node->packType = GPGSA;
- *     if(!nmea_parse_GPGSA(
- *         (const char *)parser->buffer + nparsed,
- *         sen_sz, (nmeaGPGSA *)node->pack))
- *     {
- *         free(node);
- *         node = 0;
- *     }
- *     break;
- * ...
- * \endcode
- */
-
 #include <nmea/parse.h>
 
-#include <string.h>
-
-#include <nmea/config.h>
-#include <nmea/context.h>
+#include <nmea/gmath.h>
 #include <nmea/tok.h>
-#include <nmea/units.h>
+#include <nmea/context.h>
 
-#define NMEA_TIMEPARSE_BUF  (256)
+#include <string.h>
+#include <assert.h>
+#include <math.h>
+#include <ctype.h>
+#include <stdio.h>
 
-static int _nmea_parse_time(const char *buff, int buff_sz, nmeaTIME *res)
-{
-    int success = 0;
+/** the size of the buffer to put time string (that is to be parsed) into */
+#define NMEA_TIMEPARSE_BUF  256
 
-    switch(buff_sz)
-    {
-    case sizeof("hhmmss") - 1:
-        success = (3 == nmea_scanf(buff, buff_sz,
-            "%2d%2d%2d", &(res->hour), &(res->min), &(res->sec)
-            ));
-        break;
-    case sizeof("hhmmss.s") - 1:
-    case sizeof("hhmmss.ss") - 1:
-    case sizeof("hhmmss.sss") - 1:
-        success = (4 == nmea_scanf(buff, buff_sz,
-            "%2d%2d%2d.%d", &(res->hour), &(res->min), &(res->sec), &(res->hsec)
-            ));
-        break;
-    default:
-        nmea_error("Parse of time error (format error)!");
-        success = 0;
-        break;
-    }
+/**
+ * Parse nmeaTIME (time only, no date) from a string.
+ * The format that is used (hhmmss, hhmmss.s, hhmmss.ss or hhmmss.sss) is
+ * determined by the length of the string.
+ *
+ * @param s the string
+ * @param len the length of the string
+ * @param t a pointer to the nmeaTIME structure in which to store the parsed time
+ * @return true on success, false otherwise
+ */
+static bool _nmea_parse_time(const char *s, const int len, nmeaTIME *t) {
+	assert(s);
+	assert(t);
 
-    return (success?0:-1);        
+	if (len == (sizeof("hhmmss") - 1)) {
+		return (3 == nmea_scanf(s, len, "%2d%2d%2d", &t->hour, &t->min, &t->sec));
+	}
+
+	if (len == (sizeof("hhmmss.s") - 1)) {
+		if (4 == nmea_scanf(s, len, "%2d%2d%2d.%d", &t->hour, &t->min, &t->sec, &t->hsec)) {
+			t->hsec *= 10;
+			return true;
+		}
+		return false;
+	}
+
+	if (len == (sizeof("hhmmss.ss") - 1)) {
+		return (4 == nmea_scanf(s, len, "%2d%2d%2d.%d", &t->hour, &t->min, &t->sec, &t->hsec));
+	}
+
+	if (len == (sizeof("hhmmss.sss") - 1)) {
+		if ((4 == nmea_scanf(s, len, "%2d%2d%2d.%d", &t->hour, &t->min, &t->sec, &t->hsec))) {
+			t->hsec = (t->hsec + 9) / 10;
+			return true;
+		}
+		return false;
+	}
+
+	nmea_error("Parse error: invalid time format in %s", s);
+	return false;
 }
 
 /**
- * \brief Define packet type by header (nmeaPACKTYPE).
- * @param buff a constant character pointer of packet buffer.
- * @param buff_sz buffer size.
- * @return The defined packet type
- * @see nmeaPACKTYPE
+ * Validate the time fields in an nmeaTIME structure.
+ * Expects:
+ * <pre>
+ *   0 <= hour <   24
+ *   0 <= min  <   60
+ *   0 <= sec  <=  60
+ *   0 <= hsec <  100
+ * </pre>
+ *
+ * @param t a pointer to the structure
+ * @return true when valid, false otherwise
  */
-int nmea_pack_type(const char *buff, int buff_sz)
-{
-    static const char *pheads[] = {
-        "GPGGA",
-        "GPGSA",
-        "GPGSV",
-        "GPRMC",
-        "GPVTG",
-    };
+static bool validateTime(const nmeaTIME * t) {
+	if (!t) {
+		return false;
+	}
 
-    NMEA_ASSERT(buff);
+	if (!((t->hour >= 0) && (t->hour < 24) && (t->min >= 0) && (t->min < 60) && (t->sec >= 0) && (t->sec <= 60)
+			&& (t->hsec >= 0) && (t->hsec < 100))) {
+		nmea_error("Parse error: invalid time (%d:%d:%d.%d)", t->hour, t->min, t->sec, t->hsec);
+		return false;
+	}
 
-    if(buff_sz < 5)
-        return GPNON;
-    else if(0 == memcmp(buff, pheads[0], 5))
-        return GPGGA;
-    else if(0 == memcmp(buff, pheads[1], 5))
-        return GPGSA;
-    else if(0 == memcmp(buff, pheads[2], 5))
-        return GPGSV;
-    else if(0 == memcmp(buff, pheads[3], 5))
-        return GPRMC;
-    else if(0 == memcmp(buff, pheads[4], 5))
-        return GPVTG;
-
-    return GPNON;
+	return true;
 }
 
 /**
- * \brief Find tail of packet ("\r\n") in buffer and check control sum (CRC).
- * @param buff a constant character pointer of packets buffer.
- * @param buff_sz buffer size.
- * @param res_crc a integer pointer for return CRC of packet (must be defined).
- * @return Number of bytes to packet tail.
+ * Validate the date fields in an nmeaTIME structure.
+ * Expects:
+ * <pre>
+ *   year  [90, 189]
+ *   month [ 0,  11]
+ *   day   [ 1,  31]
+ * </pre>
+ *
+ * @param t a pointer to the structure
+ * @return true when valid, false otherwise
  */
-int nmea_find_tail(const char *buff, int buff_sz, int *res_crc)
-{
-    static const int tail_sz = 3 /* *[CRC] */ + 2 /* \r\n */;
+static bool validateDate(const nmeaTIME * t) {
+	if (!t) {
+		return false;
+	}
 
-    const char *end_buff = buff + buff_sz;
-    int nread = 0;
-    int crc = 0;
+	if (!((t->year >= 90) && (t->year <= 189) && (t->mon >= 0) && (t->mon <= 11) && (t->day >= 1) && (t->day <= 31))) {
+		nmea_error("Parse error: invalid date (%d-%d-%d - D-M-Y)", t->day, t->mon, t->year);
+		return false;
+	}
 
-    NMEA_ASSERT(buff && res_crc);
-
-    *res_crc = -1;
-
-    for(;buff < end_buff; ++buff, ++nread)
-    {
-        if(('$' == *buff) && nread)
-        {
-            buff = 0;
-            break;
-        }
-        else if('*' == *buff)
-        {
-            if(buff + tail_sz <= end_buff && '\r' == buff[3] && '\n' == buff[4])
-            {
-                *res_crc = nmea_atoi(buff + 1, 2, 16);
-                nread = buff_sz - (int)(end_buff - (buff + tail_sz));
-                if(*res_crc != crc)
-                {
-                    *res_crc = -1;
-                    buff = 0;
-                }
-            }
-
-            break;
-        }
-        else if(nread)
-            crc ^= (int)*buff;
-    }
-
-    if(*res_crc < 0 && buff)
-        nread = 0;
-
-    return nread;
+	return true;
 }
 
 /**
- * \brief Parse GGA packet from buffer.
- * @param buff a constant character pointer of packet buffer.
- * @param buff_sz buffer size.
- * @param pack a pointer of packet which will filled by function.
- * @return 1 (true) - if parsed successfully or 0 (false) - if fail.
+ * Validate north/south or east/west and uppercase it.
+ * Expects:
+ * <pre>
+ *   c in { n, N, s, S } (for north/south)
+ *   c in { e, E, w, W } (for east/west)
+ * </pre>
+ *
+ * @param c a pointer to the character. The character will be converted to uppercase.
+ * @param ns true: evaluate north/south, false: evaluate east/west
+ * @return true when valid, false otherwise
  */
-int nmea_parse_GPGGA(const char *buff, int buff_sz, nmeaGPGGA *pack)
-{
-    char time_buff[NMEA_TIMEPARSE_BUF];
+static bool validateNSEW(char * c, const bool ns) {
+	if (!c) {
+		return false;
+	}
 
-    NMEA_ASSERT(buff && pack);
+	*c = toupper(*c);
 
-    memset(pack, 0, sizeof(nmeaGPGGA));
+	if (ns) {
+		if (!((*c == 'N') || (*c == 'S'))) {
+			nmea_error("Parse error: invalid north/south (%c)", *c);
+			return false;
+		}
+	} else {
+		if (!((*c == 'E') || (*c == 'W'))) {
+			nmea_error("Parse error: invalid east/west (%c)", *c);
+			return false;
+		}
+	}
 
-    nmea_trace_buff(buff, buff_sz);
-
-    if(14 != nmea_scanf(buff, buff_sz,
-        "$GPGGA,%s,%f,%C,%f,%C,%d,%d,%f,%f,%C,%f,%C,%f,%d*",
-        &(time_buff[0]),
-        &(pack->lat), &(pack->ns), &(pack->lon), &(pack->ew),
-        &(pack->sig), &(pack->satinuse), &(pack->HDOP), &(pack->elv), &(pack->elv_units),
-        &(pack->diff), &(pack->diff_units), &(pack->dgps_age), &(pack->dgps_sid)))
-    {
-        nmea_error("GPGGA parse error!");
-        return 0;
-    }
-
-    if(0 != _nmea_parse_time(&time_buff[0], (int)strlen(&time_buff[0]), &(pack->utc)))
-    {
-        nmea_error("GPGGA time parse error!");
-        return 0;
-    }
-
-    return 1;
+	return true;
 }
 
 /**
- * \brief Parse GSA packet from buffer.
- * @param buff a constant character pointer of packet buffer.
- * @param buff_sz buffer size.
- * @param pack a pointer of packet which will filled by function.
- * @return 1 (true) - if parsed successfully or 0 (false) - if fail.
+ * Uppercase mode and validate it.
+ * Expects:
+ * <pre>
+ *   c in { A, D, E, F, M, N, P, R, S }
+ *
+ *   A = Autonomous. Satellite system used in non-differential mode in position fix
+ *   D = Differential. Satellite system used in differential mode in position fix
+ *   E = Estimated (dead reckoning) mode
+ *   F = Float RTK. Satellite system used in real time kinematic mode with floating integers
+ *   M = Manual input mode
+ *   N = No fix. Satellite system not used in position fix, or fix not valid
+ *   P = Precise. Satellite system used in precision mode. Precision mode is defined
+ *       as no deliberate degradation (such as Selective Availability) and higher
+ *       resolution code (P-code) is used to compute position fix.
+ *   R = Real Time Kinematic. Satellite system used in RTK mode with fixed integers
+ *   S = Simulator mode
+ * </pre>
+ *
+ * @param c a pointer to the character. The character will be converted to uppercase.
+ * @return true when valid, false otherwise
  */
-int nmea_parse_GPGSA(const char *buff, int buff_sz, nmeaGPGSA *pack)
-{
-    NMEA_ASSERT(buff && pack);
+static bool validateMode(char * c) {
+	if (!c) {
+		return false;
+	}
 
-    memset(pack, 0, sizeof(nmeaGPGSA));
+	*c = toupper(*c);
 
-    nmea_trace_buff(buff, buff_sz);
+	if (!((*c == 'A') || (*c == 'D') || (*c == 'E') || (*c == 'F') || (*c == 'M') || (*c == 'N') || (*c == 'P')
+			|| (*c == 'R') || (*c == 'S'))) {
+		nmea_error("Parse error: invalid mode (%c)", *c);
+		return false;
+	}
 
-    if(17 != nmea_scanf(buff, buff_sz,
-        "$GPGSA,%C,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f*",
-        &(pack->fix_mode), &(pack->fix_type),
-        &(pack->sat_prn[0]), &(pack->sat_prn[1]), &(pack->sat_prn[2]), &(pack->sat_prn[3]), &(pack->sat_prn[4]), &(pack->sat_prn[5]),
-        &(pack->sat_prn[6]), &(pack->sat_prn[7]), &(pack->sat_prn[8]), &(pack->sat_prn[9]), &(pack->sat_prn[10]), &(pack->sat_prn[11]),
-        &(pack->PDOP), &(pack->HDOP), &(pack->VDOP)))
-    {
-        nmea_error("GPGSA parse error!");
-        return 0;
-    }
-
-    return 1;
+	return true;
 }
 
 /**
- * \brief Parse GSV packet from buffer.
- * @param buff a constant character pointer of packet buffer.
- * @param buff_sz buffer size.
- * @param pack a pointer of packet which will filled by function.
- * @return 1 (true) - if parsed successfully or 0 (false) - if fail.
+ * Determine whether the given string contains characters that are not allowed
+ * for fields in an NMEA string.
+ *
+ * @param str
+ * The string to check
+ * @param str_len
+ * The length of the string to check
+ * @param strName
+ * The name of the string to report when invalid characters are encountered
+ * @param report
+ * A pointer to a buffer in which to place the report string when an invalid
+ * nmea character is detected
+ * @param reportSize
+ * The size of the report buffer
+ *
+ * @return
+ * - true when the string has invalid characters
+ * - false otherwise
  */
-int nmea_parse_GPGSV(const char *buff, int buff_sz, nmeaGPGSV *pack)
-{
-    int nsen, nsat;
+bool nmea_parse_sentence_has_invalid_chars(const char * str, const size_t str_len, const char * strName, char * report,
+		const size_t reportSize) {
+	static const char invalidChars[] = { '$', '*', ',', '!', '\\', '^', '~' };
+	static const char * invalidCharsNames[] = { "sentence delimiter ($)", "checksum field delimiter (*)", "comma (,)",
+			"exclamation mark (!)", "backslash (\\)", "power (^)", "tilde (~)" };
 
-    NMEA_ASSERT(buff && pack);
+	size_t i;
+	size_t j;
 
-    memset(pack, 0, sizeof(nmeaGPGSV));
+	if (!str || !str_len) {
+		return false;
+	}
 
-    nmea_trace_buff(buff, buff_sz);
+	for (i = 0; i < str_len; i++) {
+		char c = str[i];
 
-    nsen = nmea_scanf(buff, buff_sz,
-        "$GPGSV,%d,%d,%d,"
-        "%d,%d,%d,%d,"
-        "%d,%d,%d,%d,"
-        "%d,%d,%d,%d,"
-        "%d,%d,%d,%d*",
-        &(pack->pack_count), &(pack->pack_index), &(pack->sat_count),
-        &(pack->sat_data[0].id), &(pack->sat_data[0].elv), &(pack->sat_data[0].azimuth), &(pack->sat_data[0].sig),
-        &(pack->sat_data[1].id), &(pack->sat_data[1].elv), &(pack->sat_data[1].azimuth), &(pack->sat_data[1].sig),
-        &(pack->sat_data[2].id), &(pack->sat_data[2].elv), &(pack->sat_data[2].azimuth), &(pack->sat_data[2].sig),
-        &(pack->sat_data[3].id), &(pack->sat_data[3].elv), &(pack->sat_data[3].azimuth), &(pack->sat_data[3].sig));
+		if (!((c >= 32) && (c <= 126))) {
+			if (report && reportSize) {
+				snprintf(report, reportSize, "Configured %s (%s),"
+						" character %lu, can not contain non-printable"
+						" characters (codes outside the range [32, 126])", strName, str, (unsigned long) i + 1);
+			}
+			return true;
+		}
 
-    nsat = (pack->pack_index - 1) * NMEA_SATINPACK;
-    nsat = (nsat + NMEA_SATINPACK > pack->sat_count)?pack->sat_count - nsat:NMEA_SATINPACK;
-    nsat = nsat * 4 + 3 /* first three sentence`s */;
+		for (j = 0; j < sizeof(invalidChars); j++) {
+			if (c == invalidChars[j]) {
+				if (report && reportSize) {
+					snprintf(report, reportSize, "Configured %s (%s),"
+							" character %lu, can not contain %s characters", strName, str, (unsigned long) i + 1,
+							invalidCharsNames[j]);
+				}
+				return true;
+			}
+		}
+	}
 
-    if(nsen < nsat || nsen > (NMEA_SATINPACK * 4 + 3))
-    {
-        nmea_error("GPGSV parse error!");
-        return 0;
-    }
-
-    return 1;
+	return false;
 }
 
 /**
- * \brief Parse RMC packet from buffer.
- * @param buff a constant character pointer of packet buffer.
- * @param buff_sz buffer size.
- * @param pack a pointer of packet which will filled by function.
- * @return 1 (true) - if parsed successfully or 0 (false) - if fail.
+ * Determine sentence type (see nmeaPACKTYPE) by the header of a string.
+ * The header is the start of an NMEA sentence, right after the $.
+ *
+ * @param s the string. must be the NMEA string, right after the initial $
+ * @param len the length of the string
+ * @return The packet type (or GPNON when it could not be determined)
  */
-int nmea_parse_GPRMC(const char *buff, int buff_sz, nmeaGPRMC *pack)
-{
-    int nsen;
-    char time_buff[NMEA_TIMEPARSE_BUF];
+int nmea_parse_get_sentence_type(const char *s, const int len) {
+	static const char *pheads[] = { "GPGGA", "GPGSA", "GPGSV", "GPRMC", "GPVTG" };
+	static const int types[] = { GPGGA, GPGSA, GPGSV, GPRMC, GPVTG };
+	unsigned int i;
 
-    NMEA_ASSERT(buff && pack);
+	assert(s);
 
-    memset(pack, 0, sizeof(nmeaGPRMC));
+	if (len < 5)
+		return GPNON;
 
-    nmea_trace_buff(buff, buff_sz);
+	for (i = 0; i < (sizeof(types) / sizeof(int)); i++) {
+		if (!memcmp(s, pheads[i], 5)) {
+			return types[i];
+		}
+	}
 
-    nsen = nmea_scanf(buff, buff_sz,
-        "$GPRMC,%s,%C,%f,%C,%f,%C,%f,%f,%2d%2d%2d,%f,%C,%C*",
-        &(time_buff[0]),
-        &(pack->status), &(pack->lat), &(pack->ns), &(pack->lon), &(pack->ew),
-        &(pack->speed), &(pack->direction),
-        &(pack->utc.day), &(pack->utc.mon), &(pack->utc.year),
-        &(pack->declination), &(pack->declin_ew), &(pack->mode));
-
-    if(nsen != 13 && nsen != 14)
-    {
-        nmea_error("GPRMC parse error!");
-        return 0;
-    }
-
-    if(0 != _nmea_parse_time(&time_buff[0], (int)strlen(&time_buff[0]), &(pack->utc)))
-    {
-        nmea_error("GPRMC time parse error!");
-        return 0;
-    }
-
-    if(pack->utc.year < 90)
-        pack->utc.year += 100;
-    pack->utc.mon -= 1;
-
-    return 1;
+	return GPNON;
 }
 
 /**
- * \brief Parse VTG packet from buffer.
- * @param buff a constant character pointer of packet buffer.
- * @param buff_sz buffer size.
- * @param pack a pointer of packet which will filled by function.
- * @return 1 (true) - if parsed successfully or 0 (false) - if fail.
+ * Find the tail ("\r\n") of a sentence in a string and check the checksum of the sentence.
+ *
+ * @param s the string
+ * @param len the length of the string
+ * @param checksum a pointer to the location where the checksum (as specified
+ * in the sentence) should be stored (will be -1 if the checksum did not match
+ * the calculated checksum or a new sentence was found in s after the start of s)
+ * @return Number of bytes from the start of the string until the tail or 0
+ * when no sentence was found
  */
-int nmea_parse_GPVTG(const char *buff, int buff_sz, nmeaGPVTG *pack)
-{
-    NMEA_ASSERT(buff && pack);
+int nmea_parse_get_sentence_length(const char *s, const int len, int *checksum) {
+	static const int tail_sz = 1 + 2 + 2 /* *xx\r\n */;
 
-    memset(pack, 0, sizeof(nmeaGPVTG));
+	const char * s_end = s + len;
+	int nread = 0;
+	int cksum = 0;
 
-    nmea_trace_buff(buff, buff_sz);
+	assert(s);
+	assert(checksum);
 
-    if(8 != nmea_scanf(buff, buff_sz,
-        "$GPVTG,%f,%C,%f,%C,%f,%C,%f,%C*",
-        &(pack->dir), &(pack->dir_t),
-        &(pack->dec), &(pack->dec_m),
-        &(pack->spn), &(pack->spn_n),
-        &(pack->spk), &(pack->spk_k)))
-    {
-        nmea_error("GPVTG parse error!");
-        return 0;
-    }
+	*checksum = -1;
 
-    if( pack->dir_t != 'T' ||
-        pack->dec_m != 'M' ||
-        pack->spn_n != 'N' ||
-        pack->spk_k != 'K')
-    {
-        nmea_error("GPVTG parse error (format error)!");
-        return 0;
-    }
+	for (; s < s_end; s++, nread++) {
+		if ((*s == '$') && nread) {
+			/* found a new sentence start marker _after_ the first character of s */
+			s = NULL; /* do not reset nread when exiting */
+			break;
+		}
+		if ('*' == *s) {
+			/* found a sentence checksum marker */
+			if (((s + tail_sz) <= s_end) && ('\r' == s[3]) && ('\n' == s[4])) {
+				*checksum = nmea_atoi(s + 1, 2, 16);
+				nread = len - (int) (s_end - (s + tail_sz));
+				if (*checksum != cksum) {
+					*checksum = -1;
+					s = NULL; /* do not reset nread when exiting */
+				}
+			}
+			break;
+		}
+		if (nread) {
+			cksum ^= (int) *s;
+		}
+	}
 
-    return 1;
+	if (s && (*checksum < 0))
+		nread = 0;
+
+	return nread;
 }
 
 /**
- * \brief Fill nmeaINFO structure by GGA packet data.
- * @param pack a pointer of packet structure.
- * @param info a pointer of summary information structure.
+ * Parse a GPGGA sentence from a string
+ *
+ * @param s the string
+ * @param len the length of the string
+ * @param pack a pointer to the result structure
+ * @return 1 (true) - if parsed successfully or 0 (false) otherwise.
  */
-void nmea_GPGGA2info(nmeaGPGGA *pack, nmeaINFO *info)
-{
-    NMEA_ASSERT(pack && info);
+int nmea_parse_GPGGA(const char *s, const int len, nmeaGPGGA *pack) {
+	int token_count;
+	char time_buff[NMEA_TIMEPARSE_BUF];
+	size_t time_buff_len = 0;
 
-    info->utc.hour = pack->utc.hour;
-    info->utc.min = pack->utc.min;
-    info->utc.sec = pack->utc.sec;
-    info->utc.hsec = pack->utc.hsec;
-    info->sig = pack->sig;
-    info->HDOP = pack->HDOP;
-    info->elv = pack->elv;
-    info->lat = ((pack->ns == 'N')?pack->lat:-(pack->lat));
-    info->lon = ((pack->ew == 'E')?pack->lon:-(pack->lon));
-    info->smask |= GPGGA;
+	assert(s);
+	assert(pack);
+
+	nmea_trace_buff(s, len);
+
+	/*
+	 * Clear before parsing, to be able to detect absent fields
+	 */
+	time_buff[0] = '\0';
+	pack->present = 0;
+	pack->utc.hour = -1;
+	pack->utc.min = -1;
+	pack->utc.sec = -1;
+	pack->utc.hsec = -1;
+	pack->lat = NAN;
+	pack->ns = 0;
+	pack->lon = NAN;
+	pack->ew = 0;
+	pack->sig = -1;
+	pack->satinuse = -1;
+	pack->HDOP = NAN;
+	pack->elv = NAN;
+	pack->elv_units = 0;
+	pack->diff = 0;			/* ignored */
+	pack->diff_units = 0;	/* ignored */
+	pack->dgps_age = 0;		/* ignored */
+	pack->dgps_sid = 0;		/* ignored */
+
+	/* parse */
+	token_count = nmea_scanf(s, len, "$GPGGA,%s,%f,%C,%f,%C,%d,%d,%f,%f,%C,%f,%C,%f,%d*", &time_buff[0], &pack->lat,
+			&pack->ns, &pack->lon, &pack->ew, &pack->sig, &pack->satinuse, &pack->HDOP, &pack->elv, &pack->elv_units,
+			&pack->diff, &pack->diff_units, &pack->dgps_age, &pack->dgps_sid);
+
+	/* see that we have enough tokens */
+	if (token_count != 14) {
+		nmea_error("GPGGA parse error: need 14 tokens, got %d in %s", token_count, s);
+		return 0;
+	}
+
+	/* determine which fields are present and validate them */
+
+	time_buff_len = strlen(&time_buff[0]);
+	if (time_buff_len > (NMEA_TIMEPARSE_BUF - 1))
+		time_buff_len = NMEA_TIMEPARSE_BUF - 1;
+	if (time_buff_len) {
+		if (!_nmea_parse_time(&time_buff[0], time_buff_len, &pack->utc)) {
+			return 0;
+		}
+
+		if (!validateTime(&pack->utc)) {
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, UTCTIME);
+	}
+	if (!isnan(pack->lat) && (pack->ns)) {
+		if (!validateNSEW(&pack->ns, true)) {
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, LAT);
+	}
+	if (!isnan(pack->lon) && (pack->ew)) {
+		if (!validateNSEW(&pack->ew, false)) {
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, LON);
+	}
+	if (pack->sig != -1) {
+		if (!((pack->sig >= NMEA_SIG_FIRST) && (pack->sig <= NMEA_SIG_LAST))) {
+			nmea_error("GPGGA parse error: invalid signal %d, expected [%d, %d]", pack->sig, NMEA_SIG_FIRST, NMEA_SIG_LAST);
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, SIG);
+	}
+	if (pack->satinuse != -1) {
+		nmea_INFO_set_present(&pack->present, SATINUSECOUNT);
+	}
+	if (!isnan(pack->HDOP)) {
+		nmea_INFO_set_present(&pack->present, HDOP);
+	}
+	if (!isnan(pack->elv) && (pack->elv_units)) {
+		if (pack->elv_units != 'M') {
+			nmea_error("GPGGA parse error: invalid elevation unit (%c)", pack->elv_units);
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, ELV);
+	}
+	/* ignore diff and diff_units */
+	/* ignore dgps_age and dgps_sid */
+
+	return 1;
 }
 
 /**
- * \brief Fill nmeaINFO structure by GSA packet data.
- * @param pack a pointer of packet structure.
- * @param info a pointer of summary information structure.
+ * Parse a GPGSA sentence from a string
+ *
+ * @param s the string
+ * @param len the length of the string
+ * @param pack a pointer to the result structure
+ * @return 1 (true) - if parsed successfully or 0 (false) otherwise.
  */
-void nmea_GPGSA2info(nmeaGPGSA *pack, nmeaINFO *info)
-{
-    int i, j, nuse = 0;
+int nmea_parse_GPGSA(const char *s, const int len, nmeaGPGSA *pack) {
+	int token_count;
+	int i;
 
-    NMEA_ASSERT(pack && info);
+	assert(s);
+	assert(pack);
 
-    info->fix = pack->fix_type;
-    info->PDOP = pack->PDOP;
-    info->HDOP = pack->HDOP;
-    info->VDOP = pack->VDOP;
+	nmea_trace_buff(s, len);
 
-    for(i = 0; i < NMEA_MAXSAT; ++i)
-    {
-        for(j = 0; j < info->satinfo.inview; ++j)
-        {
-            if(pack->sat_prn[i] && pack->sat_prn[i] == info->satinfo.sat[j].id)
-            {
-                info->satinfo.sat[j].in_use = 1;
-                nuse++;
-            }
-        }
-    }
+	/*
+	 * Clear before parsing, to be able to detect absent fields
+	 */
+	pack->present = 0;
+	pack->fix_mode = 0;
+	pack->fix_type = -1;
+	for (i = 0; i < NMEA_MAXSAT; i++) {
+		pack->sat_prn[i] = 0;
+	}
+	pack->PDOP = NAN;
+	pack->HDOP = NAN;
+	pack->VDOP = NAN;
 
-    info->satinfo.inuse = nuse;
-    info->smask |= GPGSA;
+	/* parse */
+	token_count = nmea_scanf(s, len, "$GPGSA,%C,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f*", &pack->fix_mode,
+			&pack->fix_type, &pack->sat_prn[0], &pack->sat_prn[1], &pack->sat_prn[2], &pack->sat_prn[3],
+			&pack->sat_prn[4], &pack->sat_prn[5], &pack->sat_prn[6], &pack->sat_prn[7], &pack->sat_prn[8],
+			&pack->sat_prn[9], &pack->sat_prn[10], &pack->sat_prn[11], &pack->PDOP, &pack->HDOP, &pack->VDOP);
+
+	/* see that we have enough tokens */
+	if (token_count != 17) {
+		nmea_error("GPGSA parse error: need 17 tokens, got %d in %s", token_count, s);
+		return 0;
+	}
+
+	/* determine which fields are present and validate them */
+
+	pack->fix_mode = toupper(pack->fix_mode);
+	if (!((pack->fix_mode == 'A') || (pack->fix_mode == 'M'))) {
+		nmea_error("GPGSA parse error: invalid fix mode (%c)", pack->fix_mode);
+		return 0;
+	}
+	if (pack->fix_type != -1) {
+		if (!((pack->fix_type >= NMEA_FIX_FIRST) && (pack->fix_type <= NMEA_FIX_LAST))) {
+			nmea_error("GPGSA parse error: invalid fix type %d, expected [%d, %d]", pack->fix_type, NMEA_FIX_FIRST, NMEA_FIX_LAST);
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, FIX);
+	}
+	for (i = 0; i < NMEA_MAXSAT; i++) {
+		if (pack->sat_prn[i] != 0) {
+			nmea_INFO_set_present(&pack->present, SATINUSE);
+			break;
+		}
+	}
+	if (!isnan(pack->PDOP)) {
+		nmea_INFO_set_present(&pack->present, PDOP);
+	}
+	if (!isnan(pack->HDOP)) {
+		nmea_INFO_set_present(&pack->present, HDOP);
+	}
+	if (!isnan(pack->VDOP)) {
+		nmea_INFO_set_present(&pack->present, VDOP);
+	}
+
+	return 1;
 }
 
 /**
- * \brief Fill nmeaINFO structure by GSV packet data.
- * @param pack a pointer of packet structure.
- * @param info a pointer of summary information structure.
+ * Parse a GPGSV sentence from a string
+ *
+ * @param s the string
+ * @param len the length of the string
+ * @param pack a pointer to the result structure
+ * @return 1 (true) - if parsed successfully or 0 (false) otherwise.
  */
-void nmea_GPGSV2info(nmeaGPGSV *pack, nmeaINFO *info)
-{
-    int isat, isi, nsat;
+int nmea_parse_GPGSV(const char *s, const int len, nmeaGPGSV *pack) {
+	int token_count;
+	int token_count_expected;
+	int sat_count;
+	int sat_counted = 0;
 
-    NMEA_ASSERT(pack && info);
+	assert(s);
+	assert(pack);
 
-    if(pack->pack_index > pack->pack_count ||
-        pack->pack_index * NMEA_SATINPACK > NMEA_MAXSAT)
-        return;
+	nmea_trace_buff(s, len);
 
-    if(pack->pack_index < 1)
-        pack->pack_index = 1;
+	/*
+	 * Clear before parsing, to be able to detect absent fields
+	 */
+	memset(pack, 0, sizeof(nmeaGPGSV));
 
-    info->satinfo.inview = pack->sat_count;
+	/* parse */
+	token_count = nmea_scanf(s, len, "$GPGSV,%d,%d,%d,"
+			"%d,%d,%d,%d,"
+			"%d,%d,%d,%d,"
+			"%d,%d,%d,%d,"
+			"%d,%d,%d,%d*", &pack->pack_count, &pack->pack_index, &pack->sat_count, &pack->sat_data[0].id,
+			&pack->sat_data[0].elv, &pack->sat_data[0].azimuth, &pack->sat_data[0].sig, &pack->sat_data[1].id,
+			&pack->sat_data[1].elv, &pack->sat_data[1].azimuth, &pack->sat_data[1].sig, &pack->sat_data[2].id,
+			&pack->sat_data[2].elv, &pack->sat_data[2].azimuth, &pack->sat_data[2].sig, &pack->sat_data[3].id,
+			&pack->sat_data[3].elv, &pack->sat_data[3].azimuth, &pack->sat_data[3].sig);
 
-    nsat = (pack->pack_index - 1) * NMEA_SATINPACK;
-    nsat = (nsat + NMEA_SATINPACK > pack->sat_count)?pack->sat_count - nsat:NMEA_SATINPACK;
+	/* return if we have no sentences or sats */
+	if ((pack->pack_count < 1) || (pack->pack_count > NMEA_NSATPACKS) || (pack->pack_index < 1)
+			|| (pack->pack_index > pack->pack_count) || (pack->sat_count < 0) || (pack->sat_count > NMEA_MAXSAT)) {
+		nmea_error("GPGSV parse error: inconsistent pack (count/index/satcount = %d/%d/%d)", pack->pack_count,
+				pack->pack_index, pack->sat_count);
+		return 0;
+	}
 
-    for(isat = 0; isat < nsat; ++isat)
-    {
-        isi = (pack->pack_index - 1) * NMEA_SATINPACK + isat;
-        info->satinfo.sat[isi].id = pack->sat_data[isat].id;
-        info->satinfo.sat[isi].elv = pack->sat_data[isat].elv;
-        info->satinfo.sat[isi].azimuth = pack->sat_data[isat].azimuth;
-        info->satinfo.sat[isi].sig = pack->sat_data[isat].sig;
-    }
+	/* validate all sat settings and count the number of sats in the sentence */
+	for (sat_count = 0; sat_count < NMEA_SATINPACK; sat_count++) {
+		if (pack->sat_data[sat_count].id != 0) {
+			if ((pack->sat_data[sat_count].id < 0)) {
+				nmea_error("GPGSV parse error: invalid sat %d id (%d)", sat_count + 1, pack->sat_data[sat_count].id);
+				return 0;
+			}
+			if ((pack->sat_data[sat_count].elv < -90) || (pack->sat_data[sat_count].elv > 90)) {
+				nmea_error("GPGSV parse error: invalid sat %d elevation (%d)", sat_count + 1, pack->sat_data[sat_count].elv);
+				return 0;
+			}
+			if ((pack->sat_data[sat_count].azimuth < 0) || (pack->sat_data[sat_count].azimuth >= 360)) {
+				nmea_error("GPGSV parse error: invalid sat %d azimuth (%d)", sat_count + 1, pack->sat_data[sat_count].azimuth);
+				return 0;
+			}
+			if ((pack->sat_data[sat_count].sig < 0) || (pack->sat_data[sat_count].sig > 99)) {
+				nmea_error("GPGSV parse error: invalid sat %d signal (%d)", sat_count + 1, pack->sat_data[sat_count].sig);
+				return 0;
+			}
+			sat_counted++;
+		}
+	}
 
-    info->smask |= GPGSV;
+	/* see that we have enough tokens */
+	token_count_expected = (sat_counted * 4) + 3;
+	if ((token_count < token_count_expected) || (token_count > (NMEA_SATINPACK * 4 + 3))) {
+		nmea_error("GPGSV parse error: need %d tokens, got %d", token_count_expected, token_count);
+		return 0;
+	}
+
+	/* determine which fields are present and validate them */
+
+	if (pack->sat_count > 0) {
+		nmea_INFO_set_present(&pack->present, SATINVIEW);
+	}
+
+	return 1;
 }
 
 /**
- * \brief Fill nmeaINFO structure by RMC packet data.
- * @param pack a pointer of packet structure.
- * @param info a pointer of summary information structure.
+ * Parse a GPRMC sentence from a string
+ *
+ * @param s the string
+ * @param len the length of the string
+ * @param pack a pointer to the result structure
+ * @return 1 (true) - if parsed successfully or 0 (false) otherwise.
  */
-void nmea_GPRMC2info(nmeaGPRMC *pack, nmeaINFO *info)
-{
-    NMEA_ASSERT(pack && info);
+int nmea_parse_GPRMC(const char *s, const int len, nmeaGPRMC *pack) {
+	int token_count;
+	char time_buff[NMEA_TIMEPARSE_BUF];
+	size_t time_buff_len = 0;
 
-    if('A' == pack->status)
-    {
-        if(NMEA_SIG_BAD == info->sig)
-            info->sig = NMEA_SIG_MID;
-        if(NMEA_FIX_BAD == info->fix)
-            info->fix = NMEA_FIX_2D;
-    }
-    else if('V' == pack->status)
-    {
-        info->sig = NMEA_SIG_BAD;
-        info->fix = NMEA_FIX_BAD;
-    }
+	assert(s);
+	assert(pack);
 
-    info->utc = pack->utc;
-    info->lat = ((pack->ns == 'N')?pack->lat:-(pack->lat));
-    info->lon = ((pack->ew == 'E')?pack->lon:-(pack->lon));
-    info->speed = pack->speed * NMEA_TUD_KNOTS;
-    info->direction = pack->direction;
-    info->smask |= GPRMC;
+	nmea_trace_buff(s, len);
+
+	/*
+	 * Clear before parsing, to be able to detect absent fields
+	 */
+	time_buff[0] = '\0';
+	pack->present = 0;
+	pack->utc.year = -1;
+	pack->utc.mon = -1;
+	pack->utc.day = -1;
+	pack->utc.hour = -1;
+	pack->utc.min = -1;
+	pack->utc.sec = -1;
+	pack->utc.hsec = -1;
+	pack->status = 0;
+	pack->lat = NAN;
+	pack->ns = 0;
+	pack->lon = NAN;
+	pack->ew = 0;
+	pack->speed = NAN;
+	pack->track = NAN;
+	pack->magvar = NAN;
+	pack->magvar_ew = 0;
+	pack->mode = 0;
+
+	/* parse */
+	token_count = nmea_scanf(s, len, "$GPRMC,%s,%C,%f,%C,%f,%C,%f,%f,%2d%2d%2d,%f,%C,%C*", &time_buff[0], &pack->status,
+			&pack->lat, &pack->ns, &pack->lon, &pack->ew, &pack->speed, &pack->track, &pack->utc.day, &pack->utc.mon,
+			&pack->utc.year, &pack->magvar, &pack->magvar_ew, &pack->mode);
+
+	/* see that we have enough tokens */
+	if ((token_count != 13) && (token_count != 14)) {
+		nmea_error("GPRMC parse error: need 13 or 14 tokens, got %d in %s", token_count, s);
+		return 0;
+	}
+
+	/* determine which fields are present and validate them */
+
+	if ((pack->utc.year != -1) && (pack->utc.mon != -1) && (pack->utc.day != -1)) {
+		if (pack->utc.year < 90) {
+			pack->utc.year += 100;
+		}
+		pack->utc.mon -= 1;
+
+		if (!validateDate(&pack->utc)) {
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, UTCDATE);
+	}
+
+	time_buff_len = strlen(&time_buff[0]);
+	if (time_buff_len) {
+		if (!_nmea_parse_time(&time_buff[0], time_buff_len, &pack->utc)) {
+			return 0;
+		}
+
+		if (!validateTime(&pack->utc)) {
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, UTCTIME);
+	}
+
+	if (!pack->status) {
+		pack->status = 'V';
+	} else {
+		pack->status = toupper(pack->status);
+		if (!((pack->status == 'A') || (pack->status == 'V'))) {
+			nmea_error("GPRMC parse error: invalid status (%c)", pack->status);
+			return 0;
+		}
+	}
+	if (!isnan(pack->lat) && (pack->ns)) {
+		if (!validateNSEW(&pack->ns, true)) {
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, LAT);
+	}
+	if (!isnan(pack->lon) && (pack->ew)) {
+		if (!validateNSEW(&pack->ew, false)) {
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, LON);
+	}
+	if (!isnan(pack->speed)) {
+		nmea_INFO_set_present(&pack->present, SPEED);
+	}
+	if (!isnan(pack->track)) {
+		nmea_INFO_set_present(&pack->present, TRACK);
+	}
+	if (!isnan(pack->magvar) && (pack->magvar_ew)) {
+		if (!validateNSEW(&pack->magvar_ew, false)) {
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, MAGVAR);
+	}
+	if (token_count == 13) {
+		pack->mode = 'A';
+	} else {
+		if (!pack->mode) {
+			pack->mode = 'N';
+		} else {
+			if (!validateMode(&pack->mode)) {
+				return 0;
+			}
+		}
+	}
+
+	return 1;
 }
 
 /**
- * \brief Fill nmeaINFO structure by VTG packet data.
- * @param pack a pointer of packet structure.
- * @param info a pointer of summary information structure.
+ * Parse a GPVTG sentence from a string
+ *
+ * @param s the string
+ * @param len the length of the string
+ * @param pack a pointer to the result structure
+ * @return 1 (true) - if parsed successfully or 0 (false) otherwise.
  */
-void nmea_GPVTG2info(nmeaGPVTG *pack, nmeaINFO *info)
-{
-    NMEA_ASSERT(pack && info);
+int nmea_parse_GPVTG(const char *s, const int len, nmeaGPVTG *pack) {
+	int token_count;
 
-    info->direction = pack->dir;
-    info->declination = pack->dec;
-    info->speed = pack->spk;
-    info->smask |= GPVTG;
+	assert(s);
+	assert(pack);
+
+	nmea_trace_buff(s, len);
+
+	/*
+	 * Clear before parsing, to be able to detect absent fields
+	 */
+	pack->present = 0;
+	pack->track = NAN;
+	pack->track_t = 0;
+	pack->mtrack = NAN;
+	pack->mtrack_m = 0;
+	pack->spn = NAN;
+	pack->spn_n = 0;
+	pack->spk = NAN;
+	pack->spk_k = 0;
+
+	/* parse */
+	token_count = nmea_scanf(s, len, "$GPVTG,%f,%C,%f,%C,%f,%C,%f,%C*", &pack->track, &pack->track_t, &pack->mtrack,
+			&pack->mtrack_m, &pack->spn, &pack->spn_n, &pack->spk, &pack->spk_k);
+
+	/* see that we have enough tokens */
+	if (token_count != 8) {
+		nmea_error("GPVTG parse error: need 8 tokens, got %d in %s", token_count, s);
+		return 0;
+	}
+
+	/* determine which fields are present and validate them */
+
+	if (!isnan(pack->track) && (pack->track_t)) {
+		pack->track_t = toupper(pack->track_t);
+		if (pack->track_t != 'T') {
+			nmea_error("GPVTG parse error: invalid track unit, got %C, expected T", pack->track_t);
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, TRACK);
+	}
+	if (!isnan(pack->mtrack) && (pack->mtrack_m)) {
+		pack->mtrack_m = toupper(pack->mtrack_m);
+		if (pack->mtrack_m != 'M') {
+			nmea_error("GPVTG parse error: invalid mtrack unit, got %C, expected M", pack->mtrack_m);
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, MTRACK);
+	}
+	if (!isnan(pack->spn) && (pack->spn_n)) {
+		pack->spn_n = toupper(pack->spn_n);
+		if (pack->spn_n != 'N') {
+			nmea_error("GPVTG parse error: invalid knots speed unit, got %C, expected N", pack->spn_n);
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, SPEED);
+
+		if (isnan(pack->spk)) {
+			pack->spk = pack->spn * NMEA_TUD_KNOTS;
+			pack->spk_k = 'K';
+		}
+	}
+	if (!isnan(pack->spk) && (pack->spk_k)) {
+		pack->spk_k = toupper(pack->spk_k);
+		if (pack->spk_k != 'K') {
+			nmea_error("GPVTG parse error: invalid kph speed unit, got %C, expected K", pack->spk_k);
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, SPEED);
+
+		if (isnan(pack->spn)) {
+			pack->spn = pack->spk / NMEA_TUD_KNOTS;
+			pack->spn_n = 'N';
+		}
+	}
+
+	return 1;
 }

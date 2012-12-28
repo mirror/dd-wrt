@@ -6,32 +6,7 @@
 /* OLSR includes */
 
 /* System includes */
-#include <assert.h>
 #include <sys/ioctl.h>
-#include <unistd.h>
-
-/**
- Determine whether an IP address (v4 or v6) is a multicast address.
-
- @param addressFamily
- The address family (AF_INET or AF_INET6)
- @param addr
- An IP address (v4 or v6)
-
- @return
- - true when the address is a multicast address
- - false otherwise
- */
-bool isMulticast(int addressFamily, union olsr_sockaddr *addr) {
-	assert(addr != NULL);
-	assert((addressFamily == AF_INET) || (addressFamily == AF_INET6));
-
-	if (addressFamily == AF_INET) {
-		return IN_MULTICAST(ntohl(addr->in4.sin_addr.s_addr));
-	}
-
-	return IN6_IS_ADDR_MULTICAST(&addr->in6.sin6_addr);
-}
 
 /**
  Get the hardware address (MAC) of an interface
@@ -75,4 +50,44 @@ unsigned char * getHardwareAddress(const char * ifName, int family,
 	close(fd);
 
 	return (unsigned char *) &ifr->ifr_hwaddr.sa_data[0];
+}
+
+/**
+ Get the IPv4 address of an interface
+
+ @param ifName
+ the name of the interface
+ @param ifr
+ the buffer in which to write the IPv4 address
+
+ @return
+ - the pointer to the IPv4 address (inside ifr)
+ - NULL on failure
+ */
+struct in_addr * getIPv4Address(const char * ifName, struct ifreq *ifr) {
+	int fd;
+	int cpySize;
+
+	assert(ifName != NULL);
+	assert(strlen(ifName) <= IFNAMSIZ);
+	assert(ifr != NULL);
+
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+	ifr->ifr_addr.sa_family = AF_INET;
+	memset(ifr->ifr_name, 0, sizeof(ifr->ifr_name));
+	cpySize = (strlen(ifName) < sizeof(ifr->ifr_name)) ? strlen(ifName)
+			: sizeof(ifr->ifr_name);
+	strncpy(ifr->ifr_name, ifName, cpySize);
+
+	errno = 0;
+	if (ioctl(fd, SIOCGIFADDR, ifr) < 0) {
+		pudError(true, "%s@%u: ioctl(SIOCGIFADDR) error", __FILE__, __LINE__);
+		close(fd);
+		return NULL;
+	}
+
+	close(fd);
+
+	return &((struct sockaddr_in *) &ifr->ifr_addr)->sin_addr;
 }

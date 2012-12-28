@@ -39,16 +39,16 @@
 # Please also write a new version to:
 # gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")
 # gui/win32/Inst/installer.nsi (line 57, around "MessageBox MB_YESNO [...]")
-VERS =		0.6.3
+VERS =		0.6.4
 
 TOPDIR = .
+INSTALLOVERWRITE ?=
 include Makefile.inc
 
 # pass generated variables to save time
 MAKECMD = $(MAKE) OS="$(OS)" WARNINGS="$(WARNINGS)"
 
 LIBS +=		$(OS_LIB_DYNLOAD)
-
 ifeq ($(OS), win32)
 LDFLAGS +=	-Wl,--out-implib=libolsrd.a
 LDFLAGS +=	-Wl,--export-all-symbols
@@ -128,7 +128,12 @@ install_olsrd:	install_bin
 		@echo can be found at files/olsrd.conf.default.lq
 		@echo ==========================================================
 		mkdir -p $(ETCDIR)
-		-cp -i files/olsrd.conf.default.lq $(CFGFILE)
+		@if [ -e $(CFGFILE) ]; then \
+			cp -f files/olsrd.conf.default.lq $(CFGFILE).new; \
+			echo "Configuration file was saved as $(CFGFILE).new"; \
+		else \
+			cp -f files/olsrd.conf.default.lq $(CFGFILE); \
+		fi
 		@echo -------------------------------------------
 		@echo Edit $(CFGFILE) before running olsrd!!
 		@echo -------------------------------------------
@@ -147,7 +152,7 @@ ifneq ($(MANDIR),)
 		rm -f $(MANDIR)/man8/$(EXENAME).8.gz
 		rmdir -p --ignore-fail-on-non-empty $(MANDIR)/man8/
 endif
-		rm -f $(CFGFILE)
+		rm -f $(CFGFILE) $(CFGFILE).new
 		rmdir -p --ignore-fail-on-non-empty $(ETCDIR)
 
 tags:
@@ -165,13 +170,13 @@ rpm:
 
 # This is quite ugly but at least it works
 ifeq ($(OS),linux)
-SUBDIRS = arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns mini nameservice p2pd pgraph quagga secure tas txtinfo watchdog
+SUBDIRS = arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns mini nameservice p2pd pgraph pud quagga secure sgwdynspeed tas txtinfo watchdog
 else
 ifeq ($(OS),win32)
 SUBDIRS := dot_draw httpinfo jsoninfo mini pgraph secure txtinfo
 else
 ifeq ($(OS),android)
-SUBDIRS := arprefresh bmf dot_draw dyn_gw_plain httpinfo jsoninfo mini nameservice pgraph secure tas txtinfo watchdog
+SUBDIRS := arprefresh bmf dot_draw dyn_gw_plain httpinfo jsoninfo mini nameservice pgraph pud secure sgwdynspeed tas txtinfo watchdog
 else
 SUBDIRS := dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mini nameservice pgraph secure txtinfo watchdog
 endif

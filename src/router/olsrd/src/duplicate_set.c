@@ -198,7 +198,7 @@ olsr_print_duplicate_table(void)
 #ifndef NODEBUG
   /* The whole function makes no sense without it. */
   struct dup_entry *entry;
-  const int ipwidth = olsr_cnf->ip_version == AF_INET ? 15 : 30;
+  const int ipwidth = olsr_cnf->ip_version == AF_INET ? 15 : 39;
   struct ipaddr_str addrbuf;
 
   OLSR_PRINTF(1, "\n--- %s ------------------------------------------------- DUPLICATE SET\n\n" "%-*s %8s %s\n",

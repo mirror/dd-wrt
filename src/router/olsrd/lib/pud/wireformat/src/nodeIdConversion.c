@@ -17,7 +17,7 @@
  A pointer to the position update message.
  @param nodeIdTypeBuffer
  A pointer to the buffer in which the nodeIdType string representation is
- written (the buffer needs to be at least PUD_TX_NODEIDTYPE_DIGITS + 1 bytes).
+ written (the buffer needs to be at least PUD_TX_NODEIDTYPE_DIGITS bytes).
  When NULL then the nodeIdType string is not written.
  @param nodeIdTypeBufferSize
  The size of the nodeIdTypeBuffer. When zero then the nodeIdType string is not
@@ -26,23 +26,15 @@
 void getNodeTypeStringFromOlsr(int ipVersion,
 		PudOlsrPositionUpdate * olsrGpsMessage, char * nodeIdTypeBuffer,
 		int nodeIdTypeBufferSize) {
-	int chars;
-
 	if (unlikely(!nodeIdTypeBuffer || (nodeIdTypeBufferSize == 0))) {
 		return;
 	}
 
-	assert(nodeIdTypeBufferSize >= (PUD_TX_NODEIDTYPE_DIGITS + 1));
+	assert(nodeIdTypeBufferSize >= PUD_TX_NODEIDTYPE_DIGITS);
 
 	/* message has NO nodeId information */
-	chars = snprintf(&nodeIdTypeBuffer[0], nodeIdTypeBufferSize, "%u",
+	snprintf(&nodeIdTypeBuffer[0], nodeIdTypeBufferSize, "%u",
 			getPositionUpdateNodeIdType(ipVersion, olsrGpsMessage));
-	if (likely(chars < nodeIdTypeBufferSize)) {
-		nodeIdTypeBuffer[chars] = '\0';
-	} else {
-		nodeIdTypeBuffer[nodeIdTypeBufferSize] = '\0';
-	}
-
 	return;
 }
 
@@ -66,7 +58,6 @@ static char *getNodeIdNumberFromOlsr(unsigned char * buffer,
 		unsigned int bufferSize, char *nodeIdBuffer, socklen_t nodeIdBufferSize) {
 	unsigned long long val = 0;
 	unsigned int i = 0;
-	int chars;
 
 	while (i < bufferSize) {
 		val <<= 8;
@@ -74,12 +65,7 @@ static char *getNodeIdNumberFromOlsr(unsigned char * buffer,
 		i++;
 	}
 
-	chars = snprintf(nodeIdBuffer, nodeIdBufferSize, "%llu", val);
-	if (likely(chars < (int) nodeIdBufferSize)) {
-		nodeIdBuffer[chars] = '\0';
-	} else {
-		nodeIdBuffer[nodeIdBufferSize] = '\0';
-	}
+	snprintf(nodeIdBuffer, nodeIdBufferSize, "%llu", val);
 	return &nodeIdBuffer[0];
 }
 
@@ -94,7 +80,7 @@ static char *getNodeIdNumberFromOlsr(unsigned char * buffer,
  @param nodeIdStr
  A pointer to a variable in which to store the pointer to the buffer in which
  the nodeId string representation is written (the buffer needs to be at least
- PUD_TX_NODEIDTYPE_DIGITS + 1 bytes). Not written to when nodeIdStrBuffer or
+ PUD_TX_NODEID_BUFFERSIZE bytes). Not written to when nodeIdStrBuffer or
  nodeIdStr is NULL or when nodeIdStrBufferSize is zero. Can point to
  nodeIdStrBuffer or straight into the olsrMessage
  @param nodeIdStrBuffer
@@ -116,7 +102,7 @@ void getNodeIdStringFromOlsr(int ipVersion, union olsr_message *olsrMessage,
 		return;
 	}
 
-	assert(nodeIdStrBufferSize >= (PUD_TX_NODEID_BUFFERSIZE + 1));
+	assert(nodeIdStrBufferSize >= PUD_TX_NODEID_BUFFERSIZE);
 
 	olsrGpsMessage = getOlsrMessagePayload(ipVersion, olsrMessage);
 
@@ -125,18 +111,11 @@ void getNodeIdStringFromOlsr(int ipVersion, union olsr_message *olsrMessage,
 	switch (getPositionUpdateNodeIdType(ipVersion, olsrGpsMessage)) {
 	case PUD_NODEIDTYPE_MAC: /* hardware address */
 	{
-		int chars;
-
 		assert(nodeIdSize == 6);
 
-		chars = snprintf(nodeIdStrBuffer, nodeIdStrBufferSize,
+		snprintf(nodeIdStrBuffer, nodeIdStrBufferSize,
 				"%02x:%02x:%02x:%02x:%02x:%02x", nodeId[0], nodeId[1],
 				nodeId[2], nodeId[3], nodeId[4], nodeId[5]);
-		if (likely(chars < (int) nodeIdStrBufferSize)) {
-			nodeIdStrBuffer[chars] = '\0';
-		} else {
-			nodeIdStrBuffer[nodeIdStrBufferSize - 1] = '\0';
-		}
 		*nodeIdStr = &nodeIdStrBuffer[0];
 	}
 		break;

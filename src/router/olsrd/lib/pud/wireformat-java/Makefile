@@ -21,8 +21,15 @@ else
 DEBUGBOOLEAN = false
 endif
 
+
+DESTDIR ?=
+USRDIR ?= $(DESTDIR)/usr
+LIBDIR ?= $(USRDIR)/lib
+SHAREDIR ?= $(USRDIR)/share
+SHAREJAVADIR ?= $(SHAREDIR)/java/$(EXENAME)
+
+
 MACHINE=$(shell uname -m)
-LIBDIR_INSTALL = usr/lib
 ARCH=
 ifeq ($(strip $(MACHINE)),x86_64)
   ARCH=.$(MACHINE)
@@ -30,8 +37,8 @@ endif
 
 
 RESOURCES_DIR = resources
-
 BUILD_DIR = build
+LIBDIR_BUILD = lib
 
 INC_DIR_WIREFORMAT = ../wireformat/include
 INC_DIR_WIREFORMAT_FULL = $(INC_DIR_WIREFORMAT)/$(WIREFORMAT_PROJECT)
@@ -39,15 +46,12 @@ INC_DIR_WIREFORMAT_FULL = $(INC_DIR_WIREFORMAT)/$(WIREFORMAT_PROJECT)
 INC_DIR_JVM = /usr/lib/jvm/java-1.6.0-openjdk$(ARCH)/include
 INC_DIR_JVM_OS = $(INC_DIR_JVM)/$(OS)
 
-LIBDIR_BUILD = lib
 
 SRC_DIR_C = src/main/c
 
 INCLUDES = -I "$(INC_DIR_WIREFORMAT)" -I "$(INC_DIR_JVM)" -I "$(INC_DIR_JVM_OS)"
 LIBRARIES = -L ../wireformat/lib -l$(WIREFORMAT_PROJECT)
 
-DESTDIR ?=
-JAVA_DIR_INSTALL = usr/share/java/olsrd
 
 BUILD_DIR_JNI = $(BUILD_DIR)/jni
 
@@ -237,24 +241,24 @@ doc-clean:
 	@$(MAKE) -C doc clean
 
 install: all
-	mkdir -v -p "$(DESTDIR)/$(LIBDIR_INSTALL)"
-	cp "$(LIBDIR_BUILD)/$(SONAME)" "$(DESTDIR)/$(LIBDIR_INSTALL)/$(SONAME).$(PLUGIN_VER)"
-	$(STRIP) "$(DESTDIR)/$(LIBDIR_INSTALL)/$(SONAME).$(PLUGIN_VER)"
-	ldconfig -n "$(DESTDIR)/$(LIBDIR_INSTALL)"
-	mkdir -v -p "$(DESTDIR)/$(JAVA_DIR_INSTALL)"
-	cp -t "$(DESTDIR)/$(JAVA_DIR_INSTALL)" \
+	mkdir -v -p "$(LIBDIR)"
+	cp "$(LIBDIR_BUILD)/$(SONAME)" "$(LIBDIR)/$(SONAME).$(PLUGIN_VER)"
+	$(STRIP) "$(LIBDIR)/$(SONAME).$(PLUGIN_VER)"
+	/sbin/ldconfig -n "$(LIBDIR)"
+	mkdir -v -p "$(SHAREJAVADIR)"
+	cp -t "$(SHAREJAVADIR)" \
       "$(LIBDIR_BUILD)/$(PROJECT).jar" \
       "$(LIBDIR_BUILD)/$(PROJECT)-src.zip" \
       "$(LIBDIR_BUILD)/$(PROJECT)-doc.zip"
 
 uninstall:
-	rm -f "$(DESTDIR)/$(LIBDIR_INSTALL)/$(SONAME)" \
-	      "$(DESTDIR)/$(LIBDIR_INSTALL)/$(SONAME).$(PLUGIN_VER)"
-	ldconfig -n "$(DESTDIR)/$(LIBDIR_INSTALL)"
-	rmdir -v -p --ignore-fail-on-non-empty "$(DESTDIR)/$(LIBDIR_INSTALL)"
-	rm -f "$(DESTDIR)/$(JAVA_DIR_INSTALL)/$(PROJECT).jar" \
-          "$(DESTDIR)/$(JAVA_DIR_INSTALL)/$(PROJECT)-src.zip" \
-          "$(DESTDIR)/$(JAVA_DIR_INSTALL)/$(PROJECT)-doc.zip"
-	rmdir -v -p --ignore-fail-on-non-empty "$(DESTDIR)/$(JAVA_DIR_INSTALL)"
+	rm -f "$(LIBDIR)/$(SONAME)" \
+	      "$(LIBDIR)/$(SONAME).$(PLUGIN_VER)"
+	/sbin/ldconfig -n "$(LIBDIR)"
+	rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)"
+	rm -f "$(SHAREJAVADIR)/$(PROJECT).jar" \
+          "$(SHAREJAVADIR)/$(PROJECT)-src.zip" \
+          "$(SHAREJAVADIR)/$(PROJECT)-doc.zip"
+	rmdir -v -p --ignore-fail-on-non-empty "$(SHAREJAVADIR)"
 
 endif

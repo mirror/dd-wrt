@@ -22,107 +22,174 @@
 
 #include <nmea/sentence.h>
 #include <nmea/gmath.h>
-#include <nmea/time.h>
 
+#include <stdbool.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
+#include <sys/time.h>
+#include <assert.h>
 
-void nmea_zero_INFO(nmeaINFO *info)
-{
+/**
+ * Reset the time to now
+ *
+ * @param utc a pointer to the time structure
+ * @param present a pointer to a present field. when non-NULL then the UTCDATE
+ * and UTCTIME flags are set in it.
+ */
+void nmea_time_now(nmeaTIME *utc, uint32_t * present) {
+	struct timeval tp;
+	struct tm tt;
+
+	assert(utc);
+
+	gettimeofday(&tp, NULL );
+	gmtime_r(&tp.tv_sec, &tt);
+
+	utc->year = tt.tm_year;
+	utc->mon = tt.tm_mon;
+	utc->day = tt.tm_mday;
+	utc->hour = tt.tm_hour;
+	utc->min = tt.tm_min;
+	utc->sec = tt.tm_sec;
+	utc->hsec = (tp.tv_usec / 10000);
+	if (present) {
+		*present |= (UTCDATE | UTCTIME);
+	}
+}
+
+/**
+ * Clear an info structure.
+ * Resets the time to now, sets up the signal as BAD, the FIX as BAD, and
+ * signals presence of these fields.
+ * Resets all other fields to 0.
+ *
+ * @param info a pointer to the structure
+ */
+void nmea_zero_INFO(nmeaINFO *info) {
 	if (!info) {
 		return;
 	}
 
-    memset(info, 0, sizeof(nmeaINFO));
-    nmea_time_now(&info->utc);
-    info->sig = NMEA_SIG_BAD;
-    info->fix = NMEA_FIX_BAD;
+	memset(info, 0, sizeof(nmeaINFO));
+	nmea_time_now(&info->utc, &info->present);
+
+	info->sig = NMEA_SIG_BAD;
+	nmea_INFO_set_present(&info->present, SIG);
+
+	info->fix = NMEA_FIX_BAD;
+	nmea_INFO_set_present(&info->present, FIX);
 }
 
 /**
- * Determine whether a given nmeaINFO structure has a certain field.
+ * Determine if a nmeaINFO structure has a certain field (from the smask).
+ * Note: this is not the complete truth as fields may be absent in certain
+ * sentences and are presented as 'present' by this function.
  *
- * nmeaINFO dependencies:
- <pre>
- field/sentence GPGGA   GPGSA   GPGSV   GPRMC   GPVTG
- smask:         x       x       x       x       x
- utc:           x                       x
- sig:           x                       x
- fix:                   x               x
- PDOP:                  x
- HDOP:          x       x
- VDOP:                  x
- lat:           x                       x
- lon:           x                       x
- elv:           x
- speed:                                 x       x
- direction:                             x       x
- declination:                                   x
- satinfo:               x       x
- </pre>
- *
- * @param smask
- * the smask of a nmeaINFO structure
- * @param fieldName
- * the field name
- *
- * @return
- * - true when the nmeaINFO structure has the field
- * - false otherwise
+ * @deprecated use nmea_INFO_is_present instead
+ * @param smask the smask field
+ * @param fieldName use a name from nmeaINFO_FIELD
+ * @return a boolean, true when the structure has the requested field
  */
-bool nmea_INFO_has_field(int smask, nmeaINFO_FIELD fieldName) {
+bool nmea_INFO_is_present_smask(int smask, nmeaINFO_FIELD fieldName) {
 	switch (fieldName) {
-		case SMASK:
-			return true;
+	case SMASK:
+		return true;
 
-		case UTC:
-		case SIG:
-		case LAT:
-		case LON:
-			return ((smask & (GPGGA | GPRMC)) != 0);
+	case ELV:
+		return ((smask & GPGGA) != 0);
 
-		case FIX:
-			return ((smask & (GPGSA | GPRMC)) != 0);
+	case PDOP:
+	case VDOP:
+	case SATINUSE:
+		return ((smask & GPGSA) != 0);
 
-		case PDOP:
-		case VDOP:
-			return ((smask & GPGSA) != 0);
+	case SATINVIEW:
+		return ((smask & GPGSV) != 0);
 
-		case HDOP:
-			return ((smask & (GPGGA | GPGSA)) != 0);
+	case UTCDATE:
+	case MAGVAR:
+		return ((smask & GPRMC) != 0);
 
-		case ELV:
-			return ((smask & GPGGA) != 0);
+	case MTRACK:
+		return ((smask & GPVTG) != 0);
 
-		case SPEED:
-		case DIRECTION:
-			return ((smask & (GPRMC | GPVTG)) != 0);
+	case SATINUSECOUNT:
+	case HDOP:
+		return ((smask & (GPGGA | GPGSA)) != 0);
 
-		case DECLINATION:
-			return ((smask & GPVTG) != 0);
+	case UTCTIME:
+	case SIG:
+	case LAT:
+	case LON:
+		return ((smask & (GPGGA | GPRMC)) != 0);
 
-		case SATINFO:
-			return ((smask & (GPGSA | GPGSV)) != 0);
+	case FIX:
+		return ((smask & (GPGSA | GPRMC)) != 0);
 
-		default:
-			return false;
+	case SPEED:
+	case TRACK:
+		return ((smask & (GPRMC | GPVTG)) != 0);
+
+	default:
+		return false;
 	}
 }
 
 /**
+ * Determine if a nmeaINFO structure has a certain field
+ *
+ * @param present the presence field
+ * @param fieldName use a name from nmeaINFO_FIELD
+ * @return a boolean, true when the structure has the requested field
+ */
+bool nmea_INFO_is_present(uint32_t present, nmeaINFO_FIELD fieldName) {
+	return ((present & fieldName) != 0);
+}
+
+/**
+ * Flag a nmeaINFO structure to contain a certain field
+ *
+ * @param present a pointer to the presence field
+ * @param fieldName use a name from nmeaINFO_FIELD
+ */
+void nmea_INFO_set_present(uint32_t * present, nmeaINFO_FIELD fieldName) {
+	assert(present);
+	*present |= fieldName;
+}
+
+/**
+ * Flag a nmeaINFO structure to NOT contain a certain field
+ *
+ * @param present a pointer to the presence field
+ * @param fieldName use a name from nmeaINFO_FIELD
+ */
+void nmea_INFO_unset_present(uint32_t * present, nmeaINFO_FIELD fieldName) {
+	assert(present);
+	*present &= ~fieldName;
+}
+
+/**
  * Sanitise the NMEA info, make sure that:
+ * - sig is in the range [0, 8],
+ * - fix is in the range [1, 3],
+ * - DOPs are positive,
  * - latitude is in the range [-9000, 9000],
  * - longitude is in the range [-18000, 18000],
- * - DOPs are positive,
  * - speed is positive,
- * - direction is in the range [0, 360>.
+ * - track is in the range [0, 360>.
+ * - mtrack is in the range [0, 360>.
+ * - magvar is in the range [0, 360>.
+ * - satinfo:
+ *   - inuse and in_use are consistent (w.r.t. count)
+ *   - inview and sat are consistent (w.r.t. count/id)
+ *   - in_use and sat are consistent (w.r.t. count/id)
+ *   - elv is in the range [0, 90]
+ *   - azimuth is in the range [0, 359]
+ *   - sig is in the range [0, 99]
  *
  * Time is set to the current time when not present.
- *
- * When a field is not present then it is reset to its default (NMEA_SIG_BAD,
- * NMEA_FIX_BAD, 0).
- *
- * Satinfo is not touched.
+ * Fields are reset to their defaults (0) when not signaled as being present.
  *
  * @param nmeaInfo
  * the NMEA info structure to sanitise
@@ -131,71 +198,118 @@ void nmea_INFO_sanitise(nmeaINFO *nmeaInfo) {
 	double lat = 0;
 	double lon = 0;
 	double speed = 0;
-	double direction = 0;
+	double track = 0;
+	double mtrack = 0;
+	double magvar = 0;
 	bool latAdjusted = false;
 	bool lonAdjusted = false;
 	bool speedAdjusted = false;
-	bool directionAdjusted = false;
+	bool trackAdjusted = false;
+	bool mtrackAdjusted = false;
+	bool magvarAdjusted = false;
+	nmeaTIME utc;
+	int inuseIndex;
+	int inviewIndex;
 
 	if (!nmeaInfo) {
 		return;
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, UTC)) {
-		nmea_time_now(&nmeaInfo->utc);
+	nmeaInfo->present = nmeaInfo->present & NMEA_INFO_PRESENT_MASK;
+
+	if (!nmea_INFO_is_present(nmeaInfo->present, SMASK)) {
+		nmeaInfo->smask = 0;
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, SIG)) {
+	if (!nmea_INFO_is_present(nmeaInfo->present, UTCDATE) || !nmea_INFO_is_present(nmeaInfo->present, UTCTIME)) {
+		nmea_time_now(&utc, NULL);
+	}
+
+	if (!nmea_INFO_is_present(nmeaInfo->present, UTCDATE)) {
+		nmeaInfo->utc.year = utc.year;
+		nmeaInfo->utc.mon = utc.mon;
+		nmeaInfo->utc.day = utc.day;
+	}
+
+	if (!nmea_INFO_is_present(nmeaInfo->present, UTCTIME)) {
+		nmeaInfo->utc.hour = utc.hour;
+		nmeaInfo->utc.min = utc.min;
+		nmeaInfo->utc.sec = utc.sec;
+		nmeaInfo->utc.hsec = utc.hsec;
+	}
+
+	if (!nmea_INFO_is_present(nmeaInfo->present, SIG)) {
 		nmeaInfo->sig = NMEA_SIG_BAD;
+	} else {
+		if ((nmeaInfo->sig < NMEA_SIG_BAD) || (nmeaInfo->sig > NMEA_SIG_SIM)) {
+			nmeaInfo->sig = NMEA_SIG_BAD;
+		}
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, FIX)) {
+	if (!nmea_INFO_is_present(nmeaInfo->present, FIX)) {
 		nmeaInfo->fix = NMEA_FIX_BAD;
+	} else {
+		if ((nmeaInfo->fix < NMEA_FIX_BAD) || (nmeaInfo->fix > NMEA_FIX_3D)) {
+			nmeaInfo->fix = NMEA_FIX_BAD;
+		}
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, PDOP)) {
+	if (!nmea_INFO_is_present(nmeaInfo->present, PDOP)) {
 		nmeaInfo->PDOP = 0;
 	} else {
 		nmeaInfo->PDOP = fabs(nmeaInfo->PDOP);
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, HDOP)) {
+	if (!nmea_INFO_is_present(nmeaInfo->present, HDOP)) {
 		nmeaInfo->HDOP = 0;
 	} else {
 		nmeaInfo->HDOP = fabs(nmeaInfo->HDOP);
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, VDOP)) {
+	if (!nmea_INFO_is_present(nmeaInfo->present, VDOP)) {
 		nmeaInfo->VDOP = 0;
 	} else {
 		nmeaInfo->VDOP = fabs(nmeaInfo->VDOP);
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, LAT)) {
+	if (!nmea_INFO_is_present(nmeaInfo->present, LAT)) {
 		nmeaInfo->lat = 0;
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, LON)) {
+	if (!nmea_INFO_is_present(nmeaInfo->present, LON)) {
 		nmeaInfo->lon = 0;
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, ELV)) {
+	if (!nmea_INFO_is_present(nmeaInfo->present, ELV)) {
 		nmeaInfo->elv = 0;
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, SPEED)) {
+	if (!nmea_INFO_is_present(nmeaInfo->present, SPEED)) {
 		nmeaInfo->speed = 0;
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, DIRECTION)) {
-		nmeaInfo->direction = 0;
+	if (!nmea_INFO_is_present(nmeaInfo->present, TRACK)) {
+		nmeaInfo->track = 0;
 	}
 
-	if (!nmea_INFO_has_field(nmeaInfo->smask, DECLINATION)) {
-		nmeaInfo->declination = 0;
+	if (!nmea_INFO_is_present(nmeaInfo->present, MTRACK)) {
+		nmeaInfo->mtrack = 0;
 	}
 
-	/* satinfo is not used */
+	if (!nmea_INFO_is_present(nmeaInfo->present, MAGVAR)) {
+		nmeaInfo->magvar = 0;
+	}
+
+	if (!nmea_INFO_is_present(nmeaInfo->present, SATINUSECOUNT)) {
+		nmeaInfo->satinfo.inuse = 0;
+	}
+	if (!nmea_INFO_is_present(nmeaInfo->present, SATINUSE)) {
+		memset(&nmeaInfo->satinfo.in_use, 0, sizeof(nmeaInfo->satinfo.in_use));
+	}
+	if (!nmea_INFO_is_present(nmeaInfo->present, SATINVIEW)) {
+		nmeaInfo->satinfo.inview = 0;
+		memset(&nmeaInfo->satinfo.sat, 0, sizeof(nmeaInfo->satinfo.sat));
+	}
 
 	/*
 	 * lat
@@ -263,13 +377,16 @@ void nmea_INFO_sanitise(nmeaINFO *nmeaInfo) {
 	 */
 
 	speed = nmeaInfo->speed;
-	direction = nmeaInfo->direction;
+	track = nmeaInfo->track;
+	mtrack = nmeaInfo->mtrack;
 
 	if (speed < 0.0) {
 		speed = -speed;
-		direction += 180.0;
+		track += 180.0;
+		mtrack += 180.0;
 		speedAdjusted = true;
-		directionAdjusted = true;
+		trackAdjusted = true;
+		mtrackAdjusted = true;
 	}
 
 	/* speed is now in [0, max> */
@@ -279,23 +396,146 @@ void nmea_INFO_sanitise(nmeaINFO *nmeaInfo) {
 	}
 
 	/*
-	 * direction
+	 * track
 	 */
 
-	/* force direction in [0, 360> */
-	while (direction < 0.0) {
-		direction += 360.0;
-		directionAdjusted = true;
+	/* force track in [0, 360> */
+	while (track < 0.0) {
+		track += 360.0;
+		trackAdjusted = true;
 	}
-	while (direction >= 360.0) {
-		direction -= 360.0;
-		directionAdjusted = true;
+	while (track >= 360.0) {
+		track -= 360.0;
+		trackAdjusted = true;
 	}
 
-	/* direction is now in [0, 360> */
+	/* track is now in [0, 360> */
 
-	if (directionAdjusted) {
-		nmeaInfo->direction = direction;
+	if (trackAdjusted) {
+		nmeaInfo->track = track;
+	}
+
+	/*
+	 * mtrack
+	 */
+
+	/* force mtrack in [0, 360> */
+	while (mtrack < 0.0) {
+		mtrack += 360.0;
+		mtrackAdjusted = true;
+	}
+	while (mtrack >= 360.0) {
+		mtrack -= 360.0;
+		mtrackAdjusted = true;
+	}
+
+	/* mtrack is now in [0, 360> */
+
+	if (mtrackAdjusted) {
+		nmeaInfo->mtrack = mtrack;
+	}
+
+	/*
+	 * magvar
+	 */
+
+	magvar = nmeaInfo->magvar;
+
+	/* force magvar in [0, 360> */
+	while (magvar < 0.0) {
+		magvar += 360.0;
+		magvarAdjusted = true;
+	}
+	while (magvar >= 360.0) {
+		magvar -= 360.0;
+		magvarAdjusted = true;
+	}
+
+	/* magvar is now in [0, 360> */
+
+	if (magvarAdjusted) {
+		nmeaInfo->magvar = magvar;
+	}
+
+	/*
+	 * satinfo
+	 */
+
+	nmeaInfo->satinfo.inuse = 0;
+	for (inuseIndex = 0; inuseIndex < NMEA_MAXSAT; inuseIndex++) {
+		if (nmeaInfo->satinfo.in_use[inuseIndex])
+			nmeaInfo->satinfo.inuse++;
+	}
+
+	nmeaInfo->satinfo.inview = 0;
+	for (inviewIndex = 0; inviewIndex < NMEA_MAXSAT; inviewIndex++) {
+		if (nmeaInfo->satinfo.sat[inviewIndex].id) {
+			nmeaInfo->satinfo.inview++;
+
+			/* force elv in [-180, 180] */
+			while (nmeaInfo->satinfo.sat[inviewIndex].elv < -180) {
+				nmeaInfo->satinfo.sat[inviewIndex].elv += 360;
+			}
+			while (nmeaInfo->satinfo.sat[inviewIndex].elv > 180) {
+				nmeaInfo->satinfo.sat[inviewIndex].elv -= 360;
+			}
+
+			/* elv is now in [-180, 180] */
+
+			/* force elv from <90, 180] in [90, 0] */
+			if (nmeaInfo->satinfo.sat[inviewIndex].elv > 90) {
+				nmeaInfo->satinfo.sat[inviewIndex].elv = 180 - nmeaInfo->satinfo.sat[inviewIndex].elv;
+			}
+
+			/* force elv from [-180, -90> in [0, -90] */
+			if (nmeaInfo->satinfo.sat[inviewIndex].elv < -90) {
+				nmeaInfo->satinfo.sat[inviewIndex].elv = -180 - nmeaInfo->satinfo.sat[inviewIndex].elv;
+			}
+
+			/* elv is now in [-90, 90] */
+
+			if (nmeaInfo->satinfo.sat[inviewIndex].elv < 0) {
+				nmeaInfo->satinfo.sat[inviewIndex].elv = -nmeaInfo->satinfo.sat[inviewIndex].elv;
+			}
+
+			/* elv is now in [0, 90] */
+
+			/* force azimuth in [0, 360> */
+			while (nmeaInfo->satinfo.sat[inviewIndex].azimuth < 0) {
+				nmeaInfo->satinfo.sat[inviewIndex].azimuth += 360;
+			}
+			while (nmeaInfo->satinfo.sat[inviewIndex].azimuth >= 360) {
+				nmeaInfo->satinfo.sat[inviewIndex].azimuth -= 360;
+			}
+			/* azimuth is now in [0, 360> */
+
+			/* force sig in [0, 99] */
+			if (nmeaInfo->satinfo.sat[inviewIndex].sig < 0)
+				nmeaInfo->satinfo.sat[inviewIndex].sig = 0;
+			if (nmeaInfo->satinfo.sat[inviewIndex].sig > 99)
+				nmeaInfo->satinfo.sat[inviewIndex].sig = 99;
+		}
+	}
+
+	/* make sure the in_use IDs map to sat IDs */
+	for (inuseIndex = 0; inuseIndex < NMEA_MAXSAT; inuseIndex++) {
+		int inuseID = nmeaInfo->satinfo.in_use[inuseIndex];
+		if (inuseID) {
+			bool found = false;
+			for (inviewIndex = 0; inviewIndex < NMEA_MAXSAT; inviewIndex++) {
+				int inviewID = nmeaInfo->satinfo.sat[inviewIndex].id;
+				if (inuseID == inviewID) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				/* clear the id, did not find it */
+				nmeaInfo->satinfo.in_use[inuseIndex] = 0;
+				if (nmeaInfo->satinfo.inuse)
+					nmeaInfo->satinfo.inuse--;
+			}
+		}
 	}
 }
 
@@ -318,30 +558,31 @@ void nmea_INFO_unit_conversion(nmeaINFO * nmeaInfo) {
 	/* sig (already in correct format) */
 	/* fix (already in correct format) */
 
-	if (nmea_INFO_has_field(nmeaInfo->smask, PDOP)) {
+	if (nmea_INFO_is_present(nmeaInfo->present, PDOP)) {
 		nmeaInfo->PDOP = nmea_dop2meters(nmeaInfo->PDOP);
 	}
 
-	if (nmea_INFO_has_field(nmeaInfo->smask, HDOP)) {
+	if (nmea_INFO_is_present(nmeaInfo->present, HDOP)) {
 		nmeaInfo->HDOP = nmea_dop2meters(nmeaInfo->HDOP);
 	}
 
-	if (nmea_INFO_has_field(nmeaInfo->smask, VDOP)) {
+	if (nmea_INFO_is_present(nmeaInfo->present, VDOP)) {
 		nmeaInfo->VDOP = nmea_dop2meters(nmeaInfo->VDOP);
 	}
 
-	if (nmea_INFO_has_field(nmeaInfo->smask, LAT)) {
+	if (nmea_INFO_is_present(nmeaInfo->present, LAT)) {
 		nmeaInfo->lat = nmea_ndeg2degree(nmeaInfo->lat);
 	}
 
-	if (nmea_INFO_has_field(nmeaInfo->smask, LON)) {
+	if (nmea_INFO_is_present(nmeaInfo->present, LON)) {
 		nmeaInfo->lon = nmea_ndeg2degree(nmeaInfo->lon);
 	}
 
 	/* elv (already in correct format) */
 	/* speed (already in correct format) */
-	/* direction (already in correct format) */
-	/* declination (already in correct format) */
+	/* track (already in correct format) */
+	/* mtrack (already in correct format) */
+	/* magvar (already in correct format) */
 
-	/* satinfo (not used) */
+	/* satinfo (already in correct format) */
 }

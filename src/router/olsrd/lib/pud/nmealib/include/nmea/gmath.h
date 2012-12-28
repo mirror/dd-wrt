@@ -23,6 +23,10 @@
 
 #include <nmea/info.h>
 
+#define NMEA_TUD_YARDS              (1.0936133)                     /**< Yards, meter * NMEA_TUD_YARDS = yard */
+#define NMEA_TUD_KNOTS              (1.852)                         /**< Knots, kilometer / NMEA_TUD_KNOTS = knot */
+#define NMEA_TUD_MILES              (1.609344)                      /**< Miles, kilometer / NMEA_TUD_MILES = mile */
+#define NMEA_TUS_MS                 (3.6)                           /**< Meters per seconds, (k/h) / NMEA_TUS_MS= (m/s) */
 #define NMEA_PI                     (3.141592653589793)             /**< PI value */
 #define NMEA_PI180                  (NMEA_PI / 180)                 /**< PI division by 180 */
 #define NMEA_EARTHRADIUS_KM         (6378)                          /**< Earth's mean radius in km */
@@ -40,26 +44,26 @@ extern "C" {
  * degree VS radian
  */
 
-double nmea_degree2radian(double val);
-double nmea_radian2degree(double val);
+double nmea_degree2radian(const double val);
+double nmea_radian2degree(const double val);
 
 /*
  * NDEG (NMEA degree)
  */
 
-double nmea_ndeg2degree(double val);
-double nmea_degree2ndeg(double val);
+double nmea_ndeg2degree(const double val);
+double nmea_degree2ndeg(const double val);
 
-double nmea_ndeg2radian(double val);
-double nmea_radian2ndeg(double val);
+double nmea_ndeg2radian(const double val);
+double nmea_radian2ndeg(const double val);
 
 /*
  * DOP
  */
 
-double nmea_calc_pdop(double hdop, double vdop);
-double nmea_dop2meters(double dop);
-double nmea_meters2dop(double meters);
+double nmea_calc_pdop(const double hdop, const double vdop);
+double nmea_dop2meters(const double dop);
+double nmea_meters2dop(const double meters);
 
 /*
  * positions work
@@ -68,32 +72,15 @@ double nmea_meters2dop(double meters);
 void nmea_info2pos(const nmeaINFO *info, nmeaPOS *pos);
 void nmea_pos2info(const nmeaPOS *pos, nmeaINFO *info);
 
-double  nmea_distance(
-        const nmeaPOS *from_pos,
-        const nmeaPOS *to_pos
-        );
+double nmea_distance(const nmeaPOS *from_pos, const nmeaPOS *to_pos);
 
-double  nmea_distance_ellipsoid(
-        const nmeaPOS *from_pos,
-        const nmeaPOS *to_pos,
-        double *from_azimuth,
-        double *to_azimuth
-        );
+double nmea_distance_ellipsoid(const nmeaPOS *from_pos, const nmeaPOS *to_pos, double *from_azimuth,
+		double *to_azimuth);
 
-int     nmea_move_horz(
-        const nmeaPOS *start_pos,
-        nmeaPOS *end_pos,
-        double azimuth,
-        double distance
-        );
+int nmea_move_horz(const nmeaPOS *start_pos, nmeaPOS *end_pos, double azimuth, double distance);
 
-int     nmea_move_horz_ellipsoid(
-        const nmeaPOS *start_pos,
-        nmeaPOS *end_pos,
-        double azimuth,
-        double distance,
-        double *end_azimuth
-        );
+int nmea_move_horz_ellipsoid(const nmeaPOS *start_pos, nmeaPOS *end_pos, double azimuth, double distance,
+		double *end_azimuth);
 
 #ifdef  __cplusplus
 }
