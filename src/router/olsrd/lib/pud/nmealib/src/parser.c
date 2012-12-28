@@ -18,407 +18,390 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * \file parser.h
- */
-
 #include <nmea/parser.h>
 
-#include <stdlib.h>
-#include <stddef.h>
-#include <string.h>
-
-#include <nmea/config.h>
 #include <nmea/context.h>
 #include <nmea/parse.h>
 #include <nmea/sentence.h>
+#include <nmea/conversions.h>
 
-typedef struct _nmeaParserNODE
-{
-    int packType;
-    void *pack;
-    struct _nmeaParserNODE *next_node;
-
-} nmeaParserNODE;
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
 /*
  * high level
  */
 
 /**
- * \brief Initialization of parser object
+ * Initialise the parser.
+ * Allocates a buffer.
+ *
+ * @param parser a pointer to the parser
  * @return true (1) - success or false (0) - fail
  */
-int nmea_parser_init(nmeaPARSER *parser)
-{
-    int resv = 0;
-    int buff_size = nmea_property()->parse_buff_size;
+int nmea_parser_init(nmeaPARSER *parser) {
+	int resv = 0;
+	int buff_size = nmea_context_get_buffer_size();
 
-    NMEA_ASSERT(parser);
+	assert(parser);
 
-    if(buff_size < NMEA_MIN_PARSEBUFF)
-        buff_size = NMEA_MIN_PARSEBUFF;
+	memset(parser, 0, sizeof(nmeaPARSER));
 
-    memset(parser, 0, sizeof(nmeaPARSER));
+	if (!(parser->buffer = malloc(buff_size)))
+		nmea_error("nmea_parser_init: insufficient memory");
+	else {
+		parser->buff_size = buff_size;
+		resv = 1;
+	}
 
-    if(0 == (parser->buffer = malloc(buff_size)))
-        nmea_error("Insufficient memory!");
-    else
-    {
-        parser->buff_size = buff_size;
-        resv = 1;
-    }    
-
-    return resv;
+	return resv;
 }
 
 /**
- * \brief Destroy parser object
+ * Destroy the parser.
+ * Frees a buffer.
+ *
+ * @param parser a pointer to the parser
  */
-void nmea_parser_destroy(nmeaPARSER *parser)
-{
-    NMEA_ASSERT(parser);
-    if (parser->buffer) {
-    	free(parser->buffer);
-    	parser->buffer = NULL;
-    }
-    nmea_parser_queue_clear(parser);
-    memset(parser, 0, sizeof(nmeaPARSER));
+void nmea_parser_destroy(nmeaPARSER *parser) {
+	assert(parser);
+
+	if (parser->buffer) {
+		free(parser->buffer);
+		parser->buffer = NULL;
+	}
+	nmea_parser_queue_clear(parser);
+	memset(parser, 0, sizeof(nmeaPARSER));
 }
 
 /**
- * \brief Analysis of buffer and put results to information structure
- * @return Number of packets wos parsed
+ * Parse a string and store the results in the nmeaINFO structure
+ *
+ * @param parser a pointer to the parser
+ * @param s the string
+ * @param len the length of the string
+ * @param info a pointer to the nmeaINFO structure
+ * @return the number of packets that were parsed
  */
-int nmea_parse(    
-    nmeaPARSER *parser,
-    const char *buff, int buff_sz,
-    nmeaINFO *info
-    )
-{
-    int ptype, nread = 0;
-    void *pack = 0;
+int nmea_parse(nmeaPARSER *parser, const char *s, const int len, nmeaINFO *info) {
+	int packetType;
+	int packetsParsed = 0;
+	void *packet = 0;
 
-    NMEA_ASSERT(parser && parser->buffer);
+	assert(parser);
 
-    nmea_parser_push(parser, buff, buff_sz);
+	nmea_parser_push(parser, s, len);
 
-    while(GPNON != (ptype = nmea_parser_pop(parser, &pack)))
-    {
-        nread++;
+	while (GPNON != (packetType = nmea_parser_pop(parser, &packet))) {
+		packetsParsed++;
 
-        switch(ptype)
-        {
-        case GPGGA:
-            nmea_GPGGA2info((nmeaGPGGA *)pack, info);
-            break;
-        case GPGSA:
-            nmea_GPGSA2info((nmeaGPGSA *)pack, info);
-            break;
-        case GPGSV:
-            nmea_GPGSV2info((nmeaGPGSV *)pack, info);
-            break;
-        case GPRMC:
-            nmea_GPRMC2info((nmeaGPRMC *)pack, info);
-            break;
-        case GPVTG:
-            nmea_GPVTG2info((nmeaGPVTG *)pack, info);
-            break;
-        default:
-            break;
-        };
+		switch (packetType) {
+		case GPGGA:
+			nmea_GPGGA2info((nmeaGPGGA *) packet, info);
+			break;
+		case GPGSA:
+			nmea_GPGSA2info((nmeaGPGSA *) packet, info);
+			break;
+		case GPGSV:
+			nmea_GPGSV2info((nmeaGPGSV *) packet, info);
+			break;
+		case GPRMC:
+			nmea_GPRMC2info((nmeaGPRMC *) packet, info);
+			break;
+		case GPVTG:
+			nmea_GPVTG2info((nmeaGPVTG *) packet, info);
+			break;
+		default:
+			break;
+		};
 
-        free(pack);
-    }
+		free(packet);
+	}
 
-    return nread;
+	return packetsParsed;
 }
 
 /*
  * low level
  */
 
-static int nmea_parser_real_push(nmeaPARSER *parser, const char *buff, int buff_sz)
-{
-    int nparsed = 0, crc, sen_sz, ptype;
-    nmeaParserNODE *node = 0;
+/**
+ * Do the actual parsing of a string and store the results in the parser.
+ * This function is used to parse (broken up parts) of a complete string.
+ *
+ * @param parser a pointer to the parser
+ * @param s the string
+ * @param len the length of the string
+ * @return the number of bytes that were parsed, -1 on error
+ */
+static int nmea_parser_real_push(nmeaPARSER *parser, const char *s, int len) {
+	int charsParsed = 0;
+	int crc;
+	int sentenceLength;
+	int sentenceType;
+	nmeaParserNODE *node = NULL;
 
-    NMEA_ASSERT(parser && parser->buffer);
+	assert(parser);
+	assert(parser->buffer);
 
-    /* clear unuse buffer (for debug) */
-    /*
-    memset(
-        parser->buffer + parser->buff_use, 0,
-        parser->buff_size - parser->buff_use
-        );
-        */
+	if (!s || !len)
+		return 0;
 
-    /* add */
-    if(parser->buff_use + buff_sz >= parser->buff_size)
-        nmea_parser_buff_clear(parser);
+	/* clear the buffer if the string is too large */
+	if ((parser->buff_use + len) >= parser->buff_size)
+		nmea_parser_buff_clear(parser);
 
-    memcpy(parser->buffer + parser->buff_use, buff, buff_sz);
-    parser->buff_use += buff_sz;
+	/* check that the string will fit in the buffer */
+	if ((parser->buff_use + len) >= parser->buff_size) {
+		nmea_error("nmea_parser_real_push: string too long to fit in parser buffer");
+		return 0;
+	}
 
-    /* parse */
-    for(;;node = 0)
-    {
-        sen_sz = nmea_find_tail(
-            (const char *)parser->buffer + nparsed,
-            (int)parser->buff_use - nparsed, &crc);
+	/* put the string in the buffer */
+	memcpy(parser->buffer + parser->buff_use, s, len);
+	parser->buff_use += len;
 
-        if(!sen_sz)
-        {
-            if(nparsed)
-                memcpy(
-                parser->buffer,
-                parser->buffer + nparsed,
-                parser->buff_use -= nparsed);
-            break;
-        }
-        else if(crc >= 0)
-        {
-            ptype = nmea_pack_type(
-                (const char *)parser->buffer + nparsed + 1,
-                parser->buff_use - nparsed - 1);
+	/* parse */
+	for (;; node = NULL) {
+		sentenceLength = nmea_parse_get_sentence_length(parser->buffer + charsParsed, parser->buff_use - charsParsed,
+				&crc);
 
-            if(0 == (node = malloc(sizeof(nmeaParserNODE))))
-                goto mem_fail;
+		if (!sentenceLength) {
+			if (charsParsed)
+				memmove(parser->buffer, parser->buffer + charsParsed, parser->buff_use -= charsParsed);
+			break;
+		} else if (crc >= 0) {
+			sentenceType = nmea_parse_get_sentence_type(parser->buffer + charsParsed + 1,
+					parser->buff_use - charsParsed - 1);
 
-            node->pack = 0;
+			if (!(node = malloc(sizeof(nmeaParserNODE))))
+				goto mem_fail;
 
-            switch(ptype)
-            {
-            case GPGGA:
-                if(0 == (node->pack = malloc(sizeof(nmeaGPGGA))))
-                    goto mem_fail;
-                node->packType = GPGGA;
-                if(!nmea_parse_GPGGA(
-                    (const char *)parser->buffer + nparsed,
-                    sen_sz, (nmeaGPGGA *)node->pack))
-                {
-                    free(node->pack);
-                    free(node);
-                    node = 0;
-                }
-                break;
-            case GPGSA:
-                if(0 == (node->pack = malloc(sizeof(nmeaGPGSA))))
-                    goto mem_fail;
-                node->packType = GPGSA;
-                if(!nmea_parse_GPGSA(
-                    (const char *)parser->buffer + nparsed,
-                    sen_sz, (nmeaGPGSA *)node->pack))
-                {
-                    free(node->pack);
-                    free(node);
-                    node = 0;
-                }
-                break;
-            case GPGSV:
-                if(0 == (node->pack = malloc(sizeof(nmeaGPGSV))))
-                    goto mem_fail;
-                node->packType = GPGSV;
-                if(!nmea_parse_GPGSV(
-                    (const char *)parser->buffer + nparsed,
-                    sen_sz, (nmeaGPGSV *)node->pack))
-                {
-                    free(node->pack);
-                    free(node);
-                    node = 0;
-                }
-                break;
-            case GPRMC:
-                if(0 == (node->pack = malloc(sizeof(nmeaGPRMC))))
-                    goto mem_fail;
-                node->packType = GPRMC;
-                if(!nmea_parse_GPRMC(
-                    (const char *)parser->buffer + nparsed,
-                    sen_sz, (nmeaGPRMC *)node->pack))
-                {
-                    free(node->pack);
-                    free(node);
-                    node = 0;
-                }
-                break;
-            case GPVTG:
-                if(0 == (node->pack = malloc(sizeof(nmeaGPVTG))))
-                    goto mem_fail;
-                node->packType = GPVTG;
-                if(!nmea_parse_GPVTG(
-                    (const char *)parser->buffer + nparsed,
-                    sen_sz, (nmeaGPVTG *)node->pack))
-                {
-                    free(node->pack);
-                    free(node);
-                    node = 0;
-                }
-                break;
-            default:
-                free(node);
-                node = 0;
-                break;
-            };
+			node->pack = NULL;
 
-            if(node)
-            {
-                if(parser->end_node)
-                    ((nmeaParserNODE *)parser->end_node)->next_node = node;
-                parser->end_node = node;
-                if(!parser->top_node)
-                    parser->top_node = node;
-                node->next_node = 0;
-            }
-        }
+			switch (sentenceType) {
+			case GPGGA:
+				if (!(node->pack = malloc(sizeof(nmeaGPGGA))))
+					goto mem_fail;
+				node->packType = GPGGA;
+				if (!nmea_parse_GPGGA(parser->buffer + charsParsed, sentenceLength, (nmeaGPGGA *) node->pack)) {
+					free(node->pack);
+					free(node);
+					node = NULL;
+				}
+				break;
+			case GPGSA:
+				if (!(node->pack = malloc(sizeof(nmeaGPGSA))))
+					goto mem_fail;
+				node->packType = GPGSA;
+				if (!nmea_parse_GPGSA(parser->buffer + charsParsed, sentenceLength, (nmeaGPGSA *) node->pack)) {
+					free(node->pack);
+					free(node);
+					node = NULL;
+				}
+				break;
+			case GPGSV:
+				if (!(node->pack = malloc(sizeof(nmeaGPGSV))))
+					goto mem_fail;
+				node->packType = GPGSV;
+				if (!nmea_parse_GPGSV(parser->buffer + charsParsed, sentenceLength, (nmeaGPGSV *) node->pack)) {
+					free(node->pack);
+					free(node);
+					node = NULL;
+				}
+				break;
+			case GPRMC:
+				if (!(node->pack = malloc(sizeof(nmeaGPRMC))))
+					goto mem_fail;
+				node->packType = GPRMC;
+				if (!nmea_parse_GPRMC(parser->buffer + charsParsed, sentenceLength, (nmeaGPRMC *) node->pack)) {
+					free(node->pack);
+					free(node);
+					node = NULL;
+				}
+				break;
+			case GPVTG:
+				if (!(node->pack = malloc(sizeof(nmeaGPVTG))))
+					goto mem_fail;
+				node->packType = GPVTG;
+				if (!nmea_parse_GPVTG(parser->buffer + charsParsed, sentenceLength, (nmeaGPVTG *) node->pack)) {
+					free(node->pack);
+					free(node);
+					node = NULL;
+				}
+				break;
+			default:
+				free(node);
+				node = NULL;
+				break;
+			};
 
-        nparsed += sen_sz;
-    }
+			if (node) {
+				if (parser->end_node)
+					parser->end_node->next_node = node;
+				parser->end_node = node;
+				if (!parser->top_node)
+					parser->top_node = node;
+				node->next_node = NULL;
+			}
+		}
 
-    return nparsed;
+		charsParsed += sentenceLength;
+	}
 
-mem_fail:
-    if(node)
-        free(node);
+	return charsParsed;
 
-    nmea_error("Insufficient memory!");
+	mem_fail: if (node)
+		free(node);
+	nmea_error("Insufficient memory!");
 
-    return -1;
+	return -1;
 }
 
 /**
- * \brief Analysis of buffer and keep results into parser
- * @return Number of bytes wos parsed from buffer
+ * Parse a string and store the results in the parser
+ *
+ * @param parser a pointer to the parser
+ * @param s the string
+ * @param len the length of the string
+ * @return the number of bytes that were parsed
  */
-int nmea_parser_push(nmeaPARSER *parser, const char *buff, int buff_sz)
-{
-    int nparse, nparsed = 0;
+int nmea_parser_push(nmeaPARSER *parser, const char *s, int len) {
+	int charsParsed = 0;
 
-    do
-    {
-        if(buff_sz > parser->buff_size)
-            nparse = parser->buff_size;
-        else
-            nparse = buff_sz;
+	assert(parser);
 
-        nparsed += nmea_parser_real_push(
-            parser, buff, nparse);
+	if (!s || !len)
+		return 0;
 
-        buff_sz -= nparse;
+	do {
+		int charsToParse;
 
-    } while(buff_sz);
+		if (len > parser->buff_size)
+			charsToParse = parser->buff_size;
+		else
+			charsToParse = len;
 
-    return nparsed;
+		charsParsed += nmea_parser_real_push(parser, s, charsToParse);
+		len -= charsToParse;
+	} while (len);
+
+	return charsParsed;
 }
 
 /**
- * \brief Get type of top packet keeped into parser
- * @return Type of packet
- * @see nmeaPACKTYPE
+ * Get the type of top packet
+ *
+ * @param parser a pointer to the parser
+ * @return the type of the top packet (see nmeaPACKTYPE)
  */
-int nmea_parser_top(nmeaPARSER *parser)
-{
-    int retval = GPNON;
-    nmeaParserNODE *node = (nmeaParserNODE *)parser->top_node;
+int nmea_parser_top(const nmeaPARSER *parser) {
+	int retval = GPNON;
+	nmeaParserNODE *node;
 
-    NMEA_ASSERT(parser && parser->buffer);
+	assert(parser);
 
-    if(node)
-        retval = node->packType;
+	node = parser->top_node;
+	if (node)
+		retval = node->packType;
 
-    return retval;
+	return retval;
 }
 
 /**
- * \brief Withdraw top packet from parser
- * @return Received packet type
- * @see nmeaPACKTYPE
+ * Remove the top packet from the parser
+ *
+ * @param parser a pointer to the parser
+ * @param pack_ptr a pointer to the location where to store a pointer to the packet
+ * @return the type of the top packet (see nmeaPACKTYPE)
  */
-int nmea_parser_pop(nmeaPARSER *parser, void **pack_ptr)
-{
-    int retval = GPNON;
-    nmeaParserNODE *node = (nmeaParserNODE *)parser->top_node;
+int nmea_parser_pop(nmeaPARSER *parser, void **pack_ptr) {
+	int retval = GPNON;
+	nmeaParserNODE *node;
 
-    NMEA_ASSERT(parser && parser->buffer);
+	assert(parser);
 
-    if(node)
-    {
-        *pack_ptr = node->pack;
-        retval = node->packType;
-        parser->top_node = node->next_node;
-        if(!parser->top_node)
-            parser->end_node = 0;
-        free(node);
-    }
+	node = parser->top_node;
+	if (node) {
+		retval = node->packType;
+		if (pack_ptr)
+			*pack_ptr = node->pack;
+		parser->top_node = node->next_node;
+		if (!parser->top_node)
+			parser->end_node = 0;
+		free(node);
+	}
 
-    return retval;
+	return retval;
 }
 
 /**
- * \brief Get top packet from parser without withdraw
- * @return Received packet type
- * @see nmeaPACKTYPE
+ * Get the top packet from the parser without removing it
+ *
+ * @param parser a pointer to the parser
+ * @param pack_ptr a pointer to the location where to store a pointer to the packet
+ * @return the type of the top packet (see nmeaPACKTYPE)
  */
-int nmea_parser_peek(nmeaPARSER *parser, void **pack_ptr)
-{
-    int retval = GPNON;
-    nmeaParserNODE *node = (nmeaParserNODE *)parser->top_node;
+int nmea_parser_peek(const nmeaPARSER *parser, void **pack_ptr) {
+	int retval = GPNON;
+	nmeaParserNODE *node;
 
-    NMEA_ASSERT(parser && parser->buffer);
+	assert(parser);
 
-    if(node)
-    {
-        *pack_ptr = node->pack;
-        retval = node->packType;
-    }
+	node = parser->top_node;
+	if (node) {
+		retval = node->packType;
+		if (pack_ptr)
+			*pack_ptr = node->pack;
+	}
 
-    return retval;
+	return retval;
 }
 
 /**
- * \brief Delete top packet from parser
- * @return Deleted packet type
- * @see nmeaPACKTYPE
+ * Remove the top packet from the parser
+ *
+ * @param parser a pointer to the parser
+ * @return the type of the removed packet (see nmeaPACKTYPE)
  */
-int nmea_parser_drop(nmeaPARSER *parser)
-{
-    int retval = GPNON;
-    nmeaParserNODE *node = (nmeaParserNODE *)parser->top_node;
+int nmea_parser_drop(nmeaPARSER *parser) {
+	int retval = GPNON;
+	nmeaParserNODE *node;
 
-    NMEA_ASSERT(parser && parser->buffer);
+	assert(parser);
 
-    if(node)
-    {
-        if(node->pack)
-            free(node->pack);
-        retval = node->packType;
-        parser->top_node = node->next_node;
-        if(!parser->top_node)
-            parser->end_node = 0;
-        free(node);
-    }
+	node = parser->top_node;
+	if (node) {
+		retval = node->packType;
+		if (node->pack)
+			free(node->pack);
+		parser->top_node = node->next_node;
+		if (!parser->top_node)
+			parser->end_node = NULL;
+		free(node);
+	}
 
-    return retval;
+	return retval;
 }
 
 /**
- * \brief Clear cache of parser
- * @return true (1) - success
+ * Clear the cache of the parser
+ *
+ * @param parser a pointer to the parser
  */
-int nmea_parser_buff_clear(nmeaPARSER *parser)
-{
-    NMEA_ASSERT(parser && parser->buffer);
-    parser->buff_use = 0;
-    return 1;
+void nmea_parser_buff_clear(nmeaPARSER *parser) {
+	assert(parser);
+	parser->buff_use = 0;
 }
 
 /**
- * \brief Clear packets queue into parser
- * @return true (1) - success
+ * Clear the packets queue in the parser
+ *
+ * @param parser a pointer to the parser
  */
-int nmea_parser_queue_clear(nmeaPARSER *parser)
-{
-    NMEA_ASSERT(parser);
-    while(parser->top_node)
-        nmea_parser_drop(parser);
-    return 1;
+void nmea_parser_queue_clear(nmeaPARSER *parser) {
+	assert(parser);
+	while (parser->top_node)
+		nmea_parser_drop(parser);
 }

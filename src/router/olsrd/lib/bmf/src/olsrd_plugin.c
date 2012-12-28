@@ -124,6 +124,7 @@ static const struct olsrd_plugin_parameters plugin_parameters[] = {
     { .name = "DoLocalBroadcast", .set_plugin_parameter = &DoLocalBroadcast, .data = NULL },
     { .name = "BmfInterface", .set_plugin_parameter = &SetBmfInterfaceName, .data = NULL },
     { .name = "BmfInterfaceIp", .set_plugin_parameter = &SetBmfInterfaceIp, .data = NULL },
+    { .name = "BmfInterfacePersistent", .set_plugin_parameter = &SetBmfInterfacePersistent, .data = NULL },
     { .name = "CapturePacketsOnOlsrInterfaces", .set_plugin_parameter = &SetCapturePacketsOnOlsrInterfaces, .data = NULL },
     { .name = "BmfMechanism", .set_plugin_parameter = &SetBmfMechanism, .data = NULL },
     { .name = "FanOutLimit", .set_plugin_parameter = &SetFanOutLimit, .data = NULL },

@@ -569,6 +569,13 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
     return -1;
   }
 
+  /* no checks are needed on:
+   * - cnf->smart_gw_weight_exitlink_up
+   * - cnf->smart_gw_weight_exitlink_down
+   * - cnf->smart_gw_weight_etx
+   * - cnf->smart_gw_divider_etx
+   */
+
   if (cnf->smart_gw_type >= GW_UPLINK_CNT) {
     fprintf(stderr, "Error, illegal gateway uplink type: %d\n", cnf->smart_gw_type);
     return -1;
@@ -781,6 +788,10 @@ set_default_cnf(struct olsrd_config *cnf)
   cnf->smart_gw_period = DEF_GW_PERIOD;
   cnf->smart_gw_stablecount = DEF_GW_STABLE_COUNT;
   cnf->smart_gw_thresh = DEF_GW_THRESH;
+  cnf->smart_gw_weight_exitlink_up = DEF_GW_WEIGHT_EXITLINK_UP;
+  cnf->smart_gw_weight_exitlink_down = DEF_GW_WEIGHT_EXITLINK_DOWN;
+  cnf->smart_gw_weight_etx = DEF_GW_WEIGHT_ETX;
+  cnf->smart_gw_divider_etx = DEF_GW_DIVIDER_ETX;
   cnf->smart_gw_type = DEF_GW_TYPE;
   cnf->smart_gw_uplink = DEF_UPLINK_SPEED;
   cnf->smart_gw_uplink_nat = DEF_GW_UPLINK_NAT;

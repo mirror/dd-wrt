@@ -1,15 +1,6 @@
 #!/bin/sh
 
-channel=7
-essid=olsr.org
-
-if [ -x /usr/bin/nmcli ]; then
-	echo -n "Turning off NetworkManager wifi control: "
-    /usr/bin/nmcli nm wifi off
-    echo "done"
-fi
-
-if [ "$1" = "" ]; then
+if [ -z "$1" ]; then
     wlan=`/sbin/iwconfig 2>&1 | grep 'IEEE 802.11' | head -1 | cut -d ' ' -f 1`
 else
     wlan=$1
@@ -20,6 +11,32 @@ if [ "$wlan" = "" ]; then
     exit
 fi
 
+if [ -z "$2" ]; then
+    channel=5
+else
+    channel=$2
+fi
+
+if [ -z "$3" ]; then
+    essid=commotionwireless.net
+else
+    essid="$3"
+fi
+
+if [ -z "$4" ]; then
+    bssid=00:00:00:00:00:00
+else
+    bssid="$4"
+fi
+
+echo "Setting mesh on '$wlan' to channel $channel:"
+echo "    attaching to '$essid' with BSSID '$bssid'"
+
+if [ -x /usr/bin/nmcli ]; then
+	echo -n "Turning off NetworkManager wifi control: "
+    /usr/bin/nmcli dev disconnect iface $wlan
+    echo "done"
+fi
 
 echo -n "Setting up ad-hoc networking: "
 
@@ -27,7 +44,7 @@ echo -n "Setting up ad-hoc networking: "
 /sbin/ifconfig $wlan down
 
 # disassociate from current BSSID in case an ad-hoc BSSID already stuck there
-/sbin/iwconfig $wlan ap 00:00:00:00:00:00
+/sbin/iwconfig $wlan ap $bssid
 
 sleep 1
 
@@ -43,8 +60,8 @@ sleep 1
 
 /sbin/ifconfig $wlan up
 
-# some cards what to be configured after the interface is up
-sleep 4
+# some cards want to be configured after the interface is up
+sleep 5
 mode=`iwgetid --mode --raw`
 if [ "$mode" != "1" ]; then
     /sbin/iwconfig $wlan mode ad-hoc
@@ -61,7 +78,7 @@ echo -n "Setting up IP address: "
 # get MAC to generate hopefully unique IP address with, by using the last two
 # hex pairs as the last two hex pairs for the IP address, converting the hex
 # to decimal first.
-MAC=`/sbin/ifconfig | grep wlan0 | sed 's|.*HWaddr ||'`
+MAC=`/sbin/ifconfig | grep $wlan | sed 's|.*HWaddr ||'`
 MAC5=`echo $MAC | cut -d : -f 5`
 MAC6=`echo $MAC | cut -d : -f 6`
 ip3=`printf %d 0x$MAC5`

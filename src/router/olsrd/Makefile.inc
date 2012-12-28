@@ -51,6 +51,7 @@ TAGCMD ?=	etags
 DESTDIR  ?=
 ETCDIR   ?= $(DESTDIR)/etc
 USRDIR   ?= $(DESTDIR)/usr
+INCLUDEDIR ?= $(DESTDIR)/usr/include
 LIBDIR   ?= $(USRDIR)/lib
 SBINDIR  ?= $(USRDIR)/sbin
 SHAREDIR ?= $(USRDIR)/share
@@ -59,6 +60,9 @@ MANDIR   ?= $(SHAREDIR)/man
 EXENAME  ?= olsrd
 CFGNAME  ?= $(EXENAME).conf
 CFGFILE  ?= $(ETCDIR)/$(CFGNAME)
+
+DOCDIR_OLSRD ?= $(DOCDIR)/$(EXENAME)
+
 
 CPPFLAGS =	-Isrc
 ifneq ($(TOPDIR),.)
@@ -90,7 +94,6 @@ WARNINGS +=	-Wshadow
 WARNINGS +=	-Wformat
 WARNINGS +=	-Wsequence-point
 WARNINGS +=	-Wcast-align
-WARNINGS +=	-Wdouble-promotion
 WARNINGS +=	-Wformat-security
 WARNINGS +=	-Wformat-y2k
 WARNINGS +=	-Winit-self
@@ -98,8 +101,11 @@ WARNINGS +=	-Wswitch-default
 WARNINGS +=	-Wsync-nand
 WARNINGS +=	-Wundef
 WARNINGS +=	-Wlogical-op
+ifneq ($(OS),android)
+WARNINGS +=	-Wdouble-promotion
 WARNINGS +=	-Wjump-misses-init
 WARNINGS +=	-Wtrampolines
+endif
 WARNINGS +=	-Wunused-parameter
 # the following 2 do not work yet and need more work on it
 #WARNINGS +=	-Wconversion
@@ -129,7 +135,7 @@ WARNINGS +=	-finline-limit=350
 # from the source by hand.
 #WARNINGS +=	-ffunction-sections
 #WARNINGS +=	-fdata-sections
-WARNINGS :=	$(shell CC="$(CC)" $(TOPDIR)/gcc-warnings $(WARNINGS))
+WARNINGS :=	$(shell CC="$(CC)" "$(TOPDIR)/gcc-warnings" $(WARNINGS))
 endif
 CFLAGS +=	$(WARNINGS)
 CFLAGS +=	$(OPTIMIZE)

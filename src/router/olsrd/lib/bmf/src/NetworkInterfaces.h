@@ -112,6 +112,7 @@ extern enum TBmfMechanism BmfMechanism;
 
 int SetBmfInterfaceName(const char* ifname, void* data, set_plugin_parameter_addon addon);
 int SetBmfInterfaceIp(const char* ip, void* data, set_plugin_parameter_addon addon);
+int SetBmfInterfacePersistent(const char* value, void* data, set_plugin_parameter_addon addon);
 int SetCapturePacketsOnOlsrInterfaces(const char* enable, void* data, set_plugin_parameter_addon addon);
 int SetBmfMechanism(const char* mechanism, void* data, set_plugin_parameter_addon addon);
 int DeactivateSpoofFilter(void);
