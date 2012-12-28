@@ -126,7 +126,7 @@ struct ipv6hdr {
 
 	struct	in6_addr	saddr;
 	struct	in6_addr	daddr;
-} __packed;
+} __packed __attribute__((aligned(2)));
 
 #ifdef __KERNEL__
 /*
