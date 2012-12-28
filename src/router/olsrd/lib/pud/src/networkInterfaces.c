@@ -7,11 +7,11 @@
 
 /* OLSRD includes */
 #include "olsr.h"
+#include "interfaces.h"
 
 /* System includes */
 #include <unistd.h>
 #include <fcntl.h>
-#include <ifaddrs.h>
 
 /*
  * Main IP MAC address
@@ -37,7 +37,7 @@ unsigned char * getMainIpMacAddress(void) {
 			pudError(true, "Could not get the main interface");
 			return NULL;
 		}
-		macInIfr = getHardwareAddress(mainInterface->int_name,olsr_cnf->ip_version,&ifr);
+		macInIfr = getHardwareAddress(mainInterface->int_name, olsr_cnf->ip_version, &ifr);
 		if (!macInIfr) {
 			pudError(true, "Could not get the MAC address of the main interface");
 			return NULL;
@@ -75,21 +75,28 @@ TRxTxNetworkInterface *getRxNetworkInterfaces(void) {
  information, except for the socket descriptor.
  @param rxSocketHandlerFunction
  The function that handles reception of data on the network interface
+ @param rxMcAddr
+ The receive multicast address
 
  @return
  - the socket descriptor (>= 0)
  - -1 if an error occurred
  */
 static int createRxSocket(TRxTxNetworkInterface * networkInterface,
-		socket_handler_func rxSocketHandlerFunction) {
+		socket_handler_func rxSocketHandlerFunction, union olsr_sockaddr * rxMcAddr) {
 	int ipFamilySetting;
 	int ipProtoSetting;
 	int ipMcLoopSetting;
 	int ipAddMembershipSetting;
+
+	union olsr_sockaddr address;
+	void * addr;
+	size_t addrSize;
+
+	int rxSocket = -1;
+
 	int socketReuseFlagValue = 1;
 	int mcLoopValue = 1;
-	union olsr_sockaddr address;
-	int rxSocket = -1;
 
 	assert(networkInterface != NULL);
 	assert(rxSocketHandlerFunction != NULL);
@@ -97,8 +104,8 @@ static int createRxSocket(TRxTxNetworkInterface * networkInterface,
 					sizeof(networkInterface->name)) != 0);
 
 	memset(&address, 0, sizeof(address));
-	if (olsr_cnf->ip_version == AF_INET) {
-		assert(networkInterface->ipAddress.in4.sin_addr.s_addr != INADDR_ANY);
+	if (rxMcAddr->in.sa_family == AF_INET) {
+		assert(rxMcAddr->in4.sin_addr.s_addr != INADDR_ANY);
 
 		ipFamilySetting = AF_INET;
 		ipProtoSetting = IPPROTO_IP;
@@ -108,8 +115,10 @@ static int createRxSocket(TRxTxNetworkInterface * networkInterface,
 		address.in4.sin_family = ipFamilySetting;
 		address.in4.sin_addr.s_addr = INADDR_ANY;
 		address.in4.sin_port = getRxMcPort();
+		addr = &address.in4;
+		addrSize = sizeof(struct sockaddr_in);
 	} else {
-		assert(networkInterface->ipAddress.in6.sin6_addr.s6_addr != in6addr_any.s6_addr);
+		assert(rxMcAddr->in6.sin6_addr.s6_addr != in6addr_any.s6_addr);
 
 		ipFamilySetting = AF_INET6;
 		ipProtoSetting = IPPROTO_IPV6;
@@ -119,6 +128,8 @@ static int createRxSocket(TRxTxNetworkInterface * networkInterface,
 		address.in6.sin6_family = ipFamilySetting;
 		address.in6.sin6_addr = in6addr_any;
 		address.in6.sin6_port = getRxMcPort();
+		addr = &address.in6;
+		addrSize = sizeof(struct sockaddr_in6);
 	}
 
 	/* Create a datagram socket on which to receive. */
@@ -143,7 +154,7 @@ static int createRxSocket(TRxTxNetworkInterface * networkInterface,
 	/* Bind to the proper port number with the IP address INADDR_ANY
 	 * (INADDR_ANY is really required here, do not change it) */
 	errno = 0;
-	if (bind(rxSocket, (struct sockaddr *) &address, sizeof(address)) < 0) {
+	if (bind(rxSocket, addr, addrSize) < 0) {
 		pudError(true, "Could not bind the receive socket for interface"
 			" %s to port %u", networkInterface->name, ntohs(getRxMcPort()));
 		goto bail;
@@ -164,9 +175,17 @@ static int createRxSocket(TRxTxNetworkInterface * networkInterface,
 	 * which the multicast datagrams are to be received. */
 	if (ipFamilySetting == AF_INET) {
 		struct ip_mreq mc_settings;
+
+		struct ifreq ifr;
+		struct in_addr * ifAddr = getIPv4Address(networkInterface->name, &ifr);
+		if (!ifAddr) {
+			pudError(true, "Could not get interface address of %s", networkInterface->name);
+			goto bail;
+		}
+
 		(void) memset(&mc_settings, 0, sizeof(mc_settings));
-		mc_settings.imr_multiaddr = getRxMcAddr()->in4.sin_addr;
-		mc_settings.imr_interface = networkInterface->ipAddress.in4.sin_addr;
+		mc_settings.imr_multiaddr = rxMcAddr->in4.sin_addr;
+		mc_settings.imr_interface = *ifAddr;
 		errno = 0;
 		if (setsockopt(rxSocket, ipProtoSetting, ipAddMembershipSetting,
 				&mc_settings, sizeof(mc_settings)) < 0) {
@@ -177,8 +196,8 @@ static int createRxSocket(TRxTxNetworkInterface * networkInterface,
 	} else {
 		struct ipv6_mreq mc6_settings;
 		(void) memset(&mc6_settings, 0, sizeof(mc6_settings));
-		mc6_settings.ipv6mr_multiaddr = getRxMcAddr()->in6.sin6_addr;
-		mc6_settings.ipv6mr_interface = 0;
+		mc6_settings.ipv6mr_multiaddr = rxMcAddr->in6.sin6_addr;
+		mc6_settings.ipv6mr_interface = if_nametoindex(networkInterface->name);
 		errno = 0;
 		if (setsockopt(rxSocket, ipProtoSetting, ipAddMembershipSetting,
 				&mc6_settings, sizeof(mc6_settings)) < 0) {
@@ -206,17 +225,17 @@ static int createRxSocket(TRxTxNetworkInterface * networkInterface,
 
  @param ifName
  the network interface name
- @param ipAddr
- the IP address of the interface
  @param rxSocketHandlerFunction
  the function that handles reception of data on the network interface
+ @param rxMcAddr
+ The receive multicast address
 
  @return
  - true on success
  - false on failure
  */
-static bool createRxInterface(const char * ifName, union olsr_sockaddr ipAddr,
-		socket_handler_func rxSocketHandlerFunction) {
+static bool createRxInterface(const char * ifName,
+		socket_handler_func rxSocketHandlerFunction, union olsr_sockaddr * rxMcAddr) {
 	int socketFd = -1;
 	TRxTxNetworkInterface * networkInterface = NULL;
 
@@ -232,12 +251,11 @@ static bool createRxInterface(const char * ifName, union olsr_sockaddr ipAddr,
 
 	memcpy(networkInterface->name, ifName, sizeof(networkInterface->name));
 	networkInterface->name[IFNAMSIZ] = '\0';
-	networkInterface->ipAddress = ipAddr;
 	networkInterface->handler = NULL;
 	networkInterface->next = NULL;
 
 	/* networkInterface needs to be filled in when calling createRxSocket */
-	socketFd = createRxSocket(networkInterface, rxSocketHandlerFunction);
+	socketFd = createRxSocket(networkInterface, rxSocketHandlerFunction, rxMcAddr);
 	if (socketFd < 0) {
 		goto bail;
 	}
@@ -286,48 +304,69 @@ TRxTxNetworkInterface *getTxNetworkInterfaces(void) {
  @param networkInterface
  The network interface object. This function expects it to be filled with all
  information, except for the socket descriptor.
+ @param txMcAddr
+ The transmit multicast address
 
  @return
  - the socket descriptor (>= 0)
  - -1 if an error occurred
  */
-static int createTxSocket(TRxTxNetworkInterface * networkInterface) {
+static int createTxSocket(TRxTxNetworkInterface * networkInterface, union olsr_sockaddr * txMcAddr) {
 	int ipFamilySetting;
 	int ipProtoSetting;
 	int ipMcLoopSetting;
 	int ipMcIfSetting;
-	int mcLoopValue = 0;
-	unsigned char txTtl = getTxTtl();
+	int ipTtlSetting;
+	unsigned int ifIndex;
+
 	union olsr_sockaddr address;
+	void * addr;
+	size_t addrSize;
+
 	int txSocket = -1;
+
+	int mcLoopValue = 0;
+	int txTtl = getTxTtl();
 
 	assert(networkInterface != NULL);
 	assert(strncmp((char *) &networkInterface->name[0], "",
 					sizeof(networkInterface->name)) != 0);
 
 	memset(&address, 0, sizeof(address));
-	if (olsr_cnf->ip_version == AF_INET) {
-		assert(networkInterface->ipAddress.in4.sin_addr.s_addr != INADDR_ANY);
+	if (txMcAddr->in.sa_family == AF_INET) {
+		struct ifreq ifr;
+		struct in_addr * ifAddr = getIPv4Address(networkInterface->name, &ifr);
+		if (!ifAddr) {
+			pudError(true, "Could not get interface address of %s", networkInterface->name);
+			goto bail;
+		}
+
+		assert(txMcAddr->in4.sin_addr.s_addr != INADDR_ANY);
 
 		ipFamilySetting = AF_INET;
 		ipProtoSetting = IPPROTO_IP;
 		ipMcLoopSetting = IP_MULTICAST_LOOP;
 		ipMcIfSetting = IP_MULTICAST_IF;
+		ipTtlSetting = IP_MULTICAST_TTL;
+		ifIndex = 0;
 
 		address.in4.sin_family = ipFamilySetting;
-		address.in4.sin_addr = networkInterface->ipAddress.in4.sin_addr;
+		address.in4.sin_addr = *ifAddr;
 		address.in4.sin_port = getTxMcPort();
+		addr = &address.in4;
+		addrSize = sizeof(struct sockaddr_in);
 	} else {
-		assert(networkInterface->ipAddress.in6.sin6_addr.s6_addr != in6addr_any.s6_addr);
+		assert(txMcAddr->in6.sin6_addr.s6_addr != in6addr_any.s6_addr);
 
 		ipFamilySetting = AF_INET6;
 		ipProtoSetting = IPPROTO_IPV6;
 		ipMcLoopSetting = IPV6_MULTICAST_LOOP;
 		ipMcIfSetting = IPV6_MULTICAST_IF;
+		ipTtlSetting = IPV6_MULTICAST_HOPS;
+		ifIndex = if_nametoindex(networkInterface->name);
 
-		address.in6.sin6_family = ipFamilySetting;
-		address.in6.sin6_addr = networkInterface->ipAddress.in6.sin6_addr;
-		address.in6.sin6_port = getTxMcPort();
+		addr = &ifIndex;
+		addrSize = sizeof(ifIndex);
 	}
 
 	/*  Create a datagram socket on which to transmit */
@@ -339,10 +378,9 @@ static int createTxSocket(TRxTxNetworkInterface * networkInterface) {
 		goto bail;
 	}
 
-	/* Bind the socket to the desired interface and port */
+	/* Bind the socket to the desired interface */
 	errno = 0;
-	if (setsockopt(txSocket, ipProtoSetting, ipMcIfSetting, &address,
-			sizeof(address)) < 0) {
+	if (setsockopt(txSocket, ipProtoSetting, ipMcIfSetting, addr, addrSize) < 0) {
 		pudError(true, "Could not set the multicast interface on the"
 			" transmit socket to interface %s", networkInterface->name);
 		goto bail;
@@ -360,7 +398,7 @@ static int createTxSocket(TRxTxNetworkInterface * networkInterface) {
 
 	/* Set the TTL on the socket */
 	errno = 0;
-	if (setsockopt(txSocket, ipProtoSetting, IP_MULTICAST_TTL, &txTtl,
+	if (setsockopt(txSocket, ipProtoSetting, ipTtlSetting, &txTtl,
 			sizeof(txTtl)) < 0) {
 		pudError(true, "Could not set TTL on the transmit socket"
 			" for interface %s", networkInterface->name);
@@ -389,14 +427,14 @@ static int createTxSocket(TRxTxNetworkInterface * networkInterface) {
 
  @param ifName
  the network interface name
- @param ipAddr
- the IP address of the interface
+ @param txMcAddr
+ the transmit multicast address
 
  @return
  - true on success
  - false on failure
  */
-static bool createTxInterface(const char * ifName, union olsr_sockaddr ipAddr) {
+static bool createTxInterface(const char * ifName, union olsr_sockaddr * txMcAddr) {
 	int socketFd = -1;
 	TRxTxNetworkInterface * networkInterface = NULL;
 
@@ -412,12 +450,11 @@ static bool createTxInterface(const char * ifName, union olsr_sockaddr ipAddr) {
 
 	memcpy(networkInterface->name, ifName, sizeof(networkInterface->name));
 	networkInterface->name[IFNAMSIZ] = '\0';
-	networkInterface->ipAddress = ipAddr;
 	networkInterface->handler = NULL;
 	networkInterface->next = NULL;
 
 	/* networkInterface needs to be filled in when calling createTxSocket */
-	socketFd = createTxSocket(networkInterface);
+	socketFd = createTxSocket(networkInterface, txMcAddr);
 	if (socketFd < 0) {
 		goto bail;
 	}
@@ -462,29 +499,42 @@ int getDownlinkSocketFd(void) {
 /**
  Create an downlink socket
 
+ @param ipVersion
+ The IP version (AF_INET or AF_INET6) for the socket
+ @param rxSocketHandlerFunction
+ The socket handler function
+
  @return
  - the socket descriptor (>= 0)
  - -1 if an error occurred
  */
-static int createDownlinkSocket(socket_handler_func rxSocketHandlerFunction) {
-	int downlinkSocket = -1;
-	int socketReuseFlagValue = 1;
+static int createDownlinkSocket(int ipVersion, socket_handler_func rxSocketHandlerFunction) {
 	union olsr_sockaddr address;
+	void * addr;
+	size_t addrSize;
+
+	int downlinkSocket = -1;
+
+	int socketReuseFlagValue = 1;
 
 	memset(&address, 0, sizeof(address));
-	if (olsr_cnf->ip_version == AF_INET) {
+	if (ipVersion == AF_INET) {
 		address.in4.sin_family = AF_INET;
 		address.in4.sin_addr.s_addr = INADDR_ANY;
 		address.in4.sin_port = getDownlinkPort();
+		addr = &address.in4;
+		addrSize = sizeof(struct sockaddr_in);
 	} else {
 		address.in6.sin6_family = AF_INET6;
 		address.in6.sin6_addr = in6addr_any;
 		address.in6.sin6_port = getDownlinkPort();
+		addr = &address.in6;
+		addrSize = sizeof(struct sockaddr_in6);
 	}
 
 	/*  Create a datagram socket on which to receive */
 	errno = 0;
-	downlinkSocket = socket(olsr_cnf->ip_version, SOCK_DGRAM, 0);
+	downlinkSocket = socket(ipVersion, SOCK_DGRAM, 0);
 	if (downlinkSocket < 0) {
 		pudError(true, "Could not create the downlink socket");
 		goto bail;
@@ -502,7 +552,7 @@ static int createDownlinkSocket(socket_handler_func rxSocketHandlerFunction) {
 	/* Bind to the proper port number with the IP address INADDR_ANY
 	 * (INADDR_ANY is really required here, do not change it) */
 	errno = 0;
-	if (bind(downlinkSocket, (struct sockaddr *) &address, sizeof(address))) {
+	if (bind(downlinkSocket, addr, addrSize)) {
 		pudError(true, "Could not bind downlink socket to port %d",
 				getDownlinkPort());
 		goto bail;
@@ -519,77 +569,6 @@ static int createDownlinkSocket(socket_handler_func rxSocketHandlerFunction) {
 		close(downlinkSocket);
 	}
 	return -1;
-}
-
-/*
- * OLSR interfaces
- */
-
-/** The list of OLSR network interface objects */
-static TOLSRNetworkInterface *olsrNetworkInterfacesListHead = NULL;
-
-/** Pointer to the last OLSR network interface object */
-static TOLSRNetworkInterface *lastOlsrNetworkInterface = NULL;
-
-/**
- Get the OLSR interface structure for a certain OLSR interface. Note that
- pointer comparison is performed to compare the OLSR interfaces.
-
- @param olsrIntf
- a pointer to an OLSR interface
-
- @return
- - a pointer to the OLSR interface structure
- - NULL when not found
- */
-TOLSRNetworkInterface * getOlsrNetworkInterface(struct interface *olsrIntf) {
-	TOLSRNetworkInterface * retval = olsrNetworkInterfacesListHead;
-
-	while ((retval->olsrIntf != olsrIntf) && (retval != NULL)) {
-		retval = retval->next;
-	}
-
-	return retval;
-}
-
-/**
- Create an OLSR interface and add it to the list of OLSR network interface
- objects
-
- @param olsrIntf
- a pointer to the OLSR interface
-
- @return
- - true on success
- - false on failure
- */
-static int createOlsrInterface(struct interface *olsrIntf) {
-	TOLSRNetworkInterface * networkInterface = NULL;
-
-	networkInterface = olsr_malloc(sizeof(TOLSRNetworkInterface),
-			"TOLSRNetworkInterface (PUD)");
-	if (networkInterface == NULL) {
-		goto bail;
-	}
-
-	networkInterface->olsrIntf = olsrIntf;
-	networkInterface->next = NULL;
-
-	/* Add new object to the end of the global list. */
-	if (olsrNetworkInterfacesListHead == NULL) {
-		olsrNetworkInterfacesListHead = networkInterface;
-		lastOlsrNetworkInterface = networkInterface;
-	} else {
-		lastOlsrNetworkInterface->next = networkInterface;
-		lastOlsrNetworkInterface = networkInterface;
-	}
-
-	return true;
-
-	bail: if (networkInterface != NULL) {
-		free(networkInterface);
-	}
-	return false;
 }
 
 /*
@@ -611,102 +590,39 @@ static int createOlsrInterface(struct interface *olsrIntf) {
  */
 bool createNetworkInterfaces(socket_handler_func rxSocketHandlerFunction,
 		socket_handler_func rxSocketHandlerFunctionDownlink) {
-	int retval = false;
-	struct ifaddrs *ifAddrs = NULL;
-	struct ifaddrs *ifAddr = NULL;
+	union olsr_sockaddr * rxMcAddr = getRxMcAddr();
+	union olsr_sockaddr * txMcAddr = getTxMcAddr();
+	unsigned int count = 0;
 
-	errno = 0;
-	if (getifaddrs(&ifAddrs) != 0) {
-		pudError(true, "Could not get list of interfaces and their addresses");
-		return retval;
-	}
-
-	/* loop over all interfaces */
-	for (ifAddr = ifAddrs; ifAddr != NULL; ifAddr = ifAddr->ifa_next) {
-		struct sockaddr * addr = ifAddr->ifa_addr;
-		if (addr != NULL) {
-			int addrFamily = addr->sa_family;
-			if (addrFamily == olsr_cnf->ip_version) {
-				char * ifName = ifAddr->ifa_name;
-				union olsr_sockaddr ipAddr;
-
-				/* determine whether the iterated interface is an OLSR
-				 * interface: returns NULL when the interface is not an
-				 * OLSR interface */
-				struct interface *olsrIntf = if_ifwithname(ifName);
-				bool isOlsrIf = (olsrIntf != NULL);
-
-				/* determine whether the iterated interface is configured as a
-				 * non-OLSR interface in the plugin parameter list */
-				bool isRxNonOlsrIf = isRxNonOlsrInterface(ifName);
-				bool isTxNonOlsrIf = isTxNonOlsrInterface(ifName);
-				bool isNonOlsrIf = isRxNonOlsrIf || isTxNonOlsrIf;
-
-				if (!isOlsrIf && !isNonOlsrIf) {
-					/* Interface is not an OLSR interface AND interface is not
-					 * configured as non-OLSR interface: skip */
-					continue;
-				}
-
-				if (isOlsrIf && !createOlsrInterface(olsrIntf)) {
-					/* creating an OLSR interface failed */
-					goto end;
-				}
-
-				if (!isNonOlsrIf) {
-					/* interface is not configured as non-OLSR interface: skip */
-					continue;
-				}
-
-				if (addrFamily == AF_INET) {
-					memcpy(&ipAddr.in4, addr, sizeof(struct sockaddr_in));
-				} else {
-					memcpy(&ipAddr.in6, addr, sizeof(struct sockaddr_in6));
-				}
-
-				if (isRxNonOlsrIf && !createRxInterface(ifName, ipAddr,
-						rxSocketHandlerFunction)) {
-					/* creating a receive interface failed */
-					goto end;
-				}
-
-				if (isTxNonOlsrIf && !createTxInterface(ifName, ipAddr)) {
-					/* creating a transmit interface failed */
-					goto end;
-				}
-			}
+	/* loop over all configured rx interfaces */
+	count = getRxNonOlsrInterfaceCount();
+	while (count--) {
+		if (!createRxInterface((char *)getRxNonOlsrInterfaceName(count), rxSocketHandlerFunction, rxMcAddr)) {
+			/* creating a receive interface failed */
+			return false;
 		}
 	}
 
+	/* loop over all configured tx interfaces */
+	count = getTxNonOlsrInterfaceCount();
+	while (count--) {
+		if (!createTxInterface((char *)getTxNonOlsrInterfaceName(count), txMcAddr)) {
+			/* creating a transmit interface failed */
+			return false;
+		}
+	}
+
+	/* create uplink socket when needed */
 	if (isUplinkAddrSet()) {
-		downlinkSocketFd = createDownlinkSocket(rxSocketHandlerFunctionDownlink);
+		downlinkSocketFd = createDownlinkSocket(getUplinkAddr()->in.sa_family, rxSocketHandlerFunctionDownlink);
 		if (downlinkSocketFd == -1) {
-			goto end;
+			return false;
 		}
 	} else {
 		downlinkSocketFd = -1;
 	}
 
-	retval = true;
-
-	end: freeifaddrs(ifAddrs);
-	return retval;
-}
-
-/**
- Cleanup the OLSR network interfaces in the given list
-
- @param networkInterface
- the list of network interface to close and clean up
- */
-static void cleanupOlsrInterfaces(TOLSRNetworkInterface * networkInterface) {
-	TOLSRNetworkInterface * nextNetworkInterface = networkInterface;
-	while (nextNetworkInterface != NULL) {
-		TOLSRNetworkInterface * iteratedNetworkInterface = nextNetworkInterface;
-		nextNetworkInterface = iteratedNetworkInterface->next;
-		iteratedNetworkInterface->next = NULL;
-		free(iteratedNetworkInterface);
-	}
+	return true;
 }
 
 /**
@@ -745,11 +661,6 @@ void closeNetworkInterfaces(void) {
 	if (txNetworkInterfacesListHead != NULL) {
 		closeInterfaces(txNetworkInterfacesListHead);
 		txNetworkInterfacesListHead = NULL;
-	}
-
-	if (olsrNetworkInterfacesListHead != NULL) {
-		cleanupOlsrInterfaces(olsrNetworkInterfacesListHead);
-		olsrNetworkInterfacesListHead = NULL;
 	}
 
 	if (downlinkSocketFd != -1 ) {

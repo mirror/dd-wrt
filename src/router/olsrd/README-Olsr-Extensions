@@ -264,6 +264,55 @@ All other parameters will be ignored if SmartGateway is set to "no"
    of a new outgoing gateway if its routing cost is lower or equal to the
    configured percentage of the routing cost of the current gateway.
    The default setting is 0, which disables it.
+5- SmartGatewayWeightExitLinkUp, SmartGatewayWeightExitLinkDown,
+   SmartGatewayWeightEtx and SmartGatewayDividerEtx control the weighing
+   of gateway bandwidth and ETX costs.
+
+   If SmartGatewayDividerEtx is zero then no weighing is performed (classical
+   behaviour). Classical behaviour only takes ETX costs into account when
+   choosing a gateway (select the 'nearest' gateway).
+
+   The weighing also takes the gateway bandwidths into account (select the
+   'nearest fat pipe' gateway).
+
+   Gateways that have zero bandwidth for either their uplink or downlink are
+   ignored.
+
+   * The Weighing Process
+   ======================
+
+     ** Configuration Parameters
+     ===========================
+     SmartGatewayWeightExitLinkUp   = gateway exit link uplink weight
+     SmartGatewayWeightExitLinkDown = gateway exit link downlink weight
+     SmartGatewayWeightEtx          = ETX path cost weight
+     SmartGatewayDividerEtx         = ETX path cost divider
+
+     ** Gateway Parameters
+     ===========================
+     gw->uplink   (Mbps)            = gateway exit link uplink  , in Mbps
+     gw->downlink (Mbps)            = gateway exit link downlink, in Mbps
+
+     ** Weighing Formula
+     ===================
+                          SmartGatewayWeightExitLinkUp
+     path_cost_weighed =  ---------------------------- +
+                                gw->uplink (Mbps)
+
+                          SmartGatewayWeightExitLinkDown
+                          ------------------------------ +
+                                gw->downlink (Mbps)
+
+                           SmartGatewayWeightEtx
+                          ---------------------- * path_cost
+                          SmartGatewayDividerEtx
+
+     ** Recommended Configuration Parameter Settings
+     ===============================================
+     SmartGatewayWeightExitLinkUp   = 1 (default is 1)
+     SmartGatewayWeightExitLinkDown = 1 (default is 1)
+     SmartGatewayWeightEtx          = 1 (default is 1)
+     SmartGatewayDividerEtx         = 4 (default is 0)
 
 
     5.3) Uplink Side

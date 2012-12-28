@@ -77,7 +77,7 @@ static char my_sighup_pid_file[MAX_FILE + 1];
 static char my_add_hosts[MAX_FILE + 1];
 static char my_suffix[MAX_SUFFIX];
 static int my_interval = EMISSION_INTERVAL;
-static double my_timeout = NAME_VALID_TIME;
+static float my_timeout = NAME_VALID_TIME;
 static char my_resolv_file[MAX_FILE + 1];
 static char my_services_file[MAX_FILE + 1];
 static char my_macs_file[MAX_FILE + 1];

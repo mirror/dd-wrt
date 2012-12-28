@@ -18,37 +18,39 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nmea/nmea.h>
+#include <nmea/generator.h>
+#include <nmea/sentence.h>
 
 #include <stdio.h>
 #include <unistd.h>
 
 int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused))) {
-    nmeaGENERATOR *gen;
-    nmeaINFO info;
-    char buff[2048];
-    int gen_sz;
-    int it;
+	nmeaGENERATOR *gen;
+	nmeaINFO info;
+	char buff[2048];
+	int gen_sz;
+	int it;
 
-    nmea_zero_INFO(&info);
+	nmea_zero_INFO(&info);
 
-    if(0 == (gen = nmea_create_generator(NMEA_GEN_ROTATE, &info)))
-        return -1;
+	nmea_INFO_set_present(&info.present, PDOP);
+	nmea_INFO_set_present(&info.present, HDOP);
+	nmea_INFO_set_present(&info.present, VDOP);
+	nmea_INFO_set_present(&info.present, ELV);
 
-    for(it = 0; it < 10000; ++it)
-    {
-        gen_sz = nmea_generate_from(
-            &buff[0], 2048, &info, gen,
-            GPGGA | GPGSA | GPGSV | GPRMC | GPVTG
-            );
+	if (0 == (gen = nmea_create_generator(NMEA_GEN_ROTATE, &info)))
+		return -1;
 
-        buff[gen_sz] = 0;
-        printf("%s\n", &buff[0]);
+	for (it = 0; it < 10000; it++) {
+		gen_sz = nmea_generate_from(&buff[0], 2048, &info, gen, GPGGA | GPGSA | GPGSV | GPRMC | GPVTG);
 
-        usleep(500000);        
-    }
+		buff[gen_sz] = 0;
+		printf("%s\n", &buff[0]);
 
-    nmea_gen_destroy(gen);
+		usleep(500000);
+	}
 
-    return 0;
+	nmea_gen_destroy(gen);
+
+	return 0;
 }

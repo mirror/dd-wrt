@@ -17,6 +17,7 @@
 #include <nmea/parser.h>
 #include <nmea/gmath.h>
 #include <nmea/sentence.h>
+#include <nmea/context.h>
 #include <OlsrdPudWireFormat/wireFormat.h>
 
 /*
@@ -104,7 +105,7 @@ static void clearMovementType(MovementType * result) {
  - false otherwise
  */
 static bool positionValid(PositionUpdateEntry * position) {
-	return (nmea_INFO_has_field(position->nmeaInfo.smask, FIX)
+	return (nmea_INFO_is_present(position->nmeaInfo.present, FIX)
 			&& (position->nmeaInfo.fix != NMEA_FIX_BAD));
 }
 
@@ -141,7 +142,7 @@ static void txToAllOlsrInterfaces(TimedTxInterface interfaces) {
 
 	/* only fixup timestamp when the position is valid _and_ when the position was not updated */
 	if (positionValid(&transmitGpsInformation.txPosition) && !transmitGpsInformation.positionUpdated) {
-		nmea_time_now(&transmitGpsInformation.txPosition.nmeaInfo.utc);
+		nmea_time_now(&transmitGpsInformation.txPosition.nmeaInfo.utc, &transmitGpsInformation.txPosition.nmeaInfo.present);
 	}
 
 	nmeaInfo = transmitGpsInformation.txPosition.nmeaInfo;
@@ -161,6 +162,10 @@ static void txToAllOlsrInterfaces(TimedTxInterface interfaces) {
 		int r;
 		struct interface *ifn;
 		for (ifn = ifnet; ifn; ifn = ifn->int_next) {
+			/* force the pending buffer out if there's not enough space for our message */
+			if ((int)pu_size > net_outbuffer_bytes_left(ifn)) {
+			  net_output(ifn);
+			}
 			r = net_outbuffer_push(ifn, pu, pu_size);
 			if (r != (int) pu_size) {
 				pudError(
@@ -183,11 +188,14 @@ static void txToAllOlsrInterfaces(TimedTxInterface interfaces) {
 		int fd = getDownlinkSocketFd();
 		if (fd != -1) {
 			union olsr_sockaddr * uplink_addr = getUplinkAddr();
+			void * addr;
+			socklen_t addrSize;
 
 			UplinkMessage * cl_uplink = (UplinkMessage *) &txBuffer[txBufferBytesUsed];
 			UplinkClusterLeader * cl = &cl_uplink->msg.clusterLeader;
 			union olsr_ip_addr * cl_originator = getClusterLeaderOriginator(olsr_cnf->ip_version, cl);
 			union olsr_ip_addr * cl_clusterLeader = getClusterLeaderClusterLeader(olsr_cnf->ip_version, cl);
+
 			unsigned int cl_size =
 					sizeof(UplinkClusterLeader) - sizeof(cl->leader)
 							+ ((olsr_cnf->ip_version == AF_INET) ? sizeof(cl->leader.v4) :
@@ -195,6 +203,14 @@ static void txToAllOlsrInterfaces(TimedTxInterface interfaces) {
 
 			unsigned long long uplinkUpdateInterval =
 					(externalState == MOVEMENT_STATE_STATIONARY) ? getUplinkUpdateIntervalStationary() : getUplinkUpdateIntervalMoving();
+
+			if (uplink_addr->in.sa_family == AF_INET) {
+				addr = &uplink_addr->in4;
+				addrSize = sizeof(struct sockaddr_in);
+			} else {
+				addr = &uplink_addr->in6;
+				addrSize = sizeof(struct sockaddr_in6);
+			}
 
 			/*
 			 * position update message (pu)
@@ -236,8 +252,7 @@ static void txToAllOlsrInterfaces(TimedTxInterface interfaces) {
 			txBufferBytesUsed += cl_size;
 
 			errno = 0;
-			if (sendto(fd, &txBuffer, txBufferBytesUsed, 0, (struct sockaddr *) &uplink_addr->in,
-					sizeof(uplink_addr->in)) < 0) {
+			if (sendto(fd, &txBuffer, txBufferBytesUsed, 0, addr, addrSize) < 0) {
 				pudError(true, "Could not send to uplink (size=%u)", txBufferBytesUsed);
 			}
 		}
@@ -417,19 +432,19 @@ static void detemineMovingFromPosition(PositionUpdateEntry * avg, PositionUpdate
 	/* both avg and lastTx are valid here */
 
 	/* avg field presence booleans */
-	avgHasSpeed = nmea_INFO_has_field(avg->nmeaInfo.smask, SPEED);
-	avgHasPos = nmea_INFO_has_field(avg->nmeaInfo.smask, LAT)
-			&& nmea_INFO_has_field(avg->nmeaInfo.smask, LON);
-	avgHasHdop = nmea_INFO_has_field(avg->nmeaInfo.smask, HDOP);
-	avgHasElv = nmea_INFO_has_field(avg->nmeaInfo.smask, ELV);
-	avgHasVdop = nmea_INFO_has_field(avg->nmeaInfo.smask, VDOP);
+	avgHasSpeed = nmea_INFO_is_present(avg->nmeaInfo.present, SPEED);
+	avgHasPos = nmea_INFO_is_present(avg->nmeaInfo.present, LAT)
+			&& nmea_INFO_is_present(avg->nmeaInfo.present, LON);
+	avgHasHdop = nmea_INFO_is_present(avg->nmeaInfo.present, HDOP);
+	avgHasElv = nmea_INFO_is_present(avg->nmeaInfo.present, ELV);
+	avgHasVdop = nmea_INFO_is_present(avg->nmeaInfo.present, VDOP);
 
 	/* lastTx field presence booleans */
-	lastTxHasPos = nmea_INFO_has_field(lastTx->nmeaInfo.smask, LAT)
-			&& nmea_INFO_has_field(lastTx->nmeaInfo.smask, LON);
-	lastTxHasHdop = nmea_INFO_has_field(lastTx->nmeaInfo.smask, HDOP);
-	lastTxHasElv = nmea_INFO_has_field(lastTx->nmeaInfo.smask, ELV);
-	lastTxHasVdop = nmea_INFO_has_field(lastTx->nmeaInfo.smask, VDOP);
+	lastTxHasPos = nmea_INFO_is_present(lastTx->nmeaInfo.present, LAT)
+			&& nmea_INFO_is_present(lastTx->nmeaInfo.present, LON);
+	lastTxHasHdop = nmea_INFO_is_present(lastTx->nmeaInfo.present, HDOP);
+	lastTxHasElv = nmea_INFO_is_present(lastTx->nmeaInfo.present, ELV);
+	lastTxHasVdop = nmea_INFO_is_present(lastTx->nmeaInfo.present, VDOP);
 
 	/* fill in some values _or_ defaults */
 	dopMultiplier = getDopMultiplier();
@@ -653,7 +668,6 @@ bool receiverUpdateGpsInformation(unsigned char * rxBuffer, size_t rxCount) {
 	bool subStateExternalStateChange;
 	bool externalStateChange;
 	bool updateTransmitGpsInformation = false;
-	PositionUpdateEntry txPosition;
 	MovementState externalState;
 
 	/* do not process when the message does not start with $GP */
@@ -696,9 +710,7 @@ bool receiverUpdateGpsInformation(unsigned char * rxBuffer, size_t rxCount) {
 
 	clearMovementType(&movementResult);
 
-	txPosition = transmitGpsInformation.txPosition;
-
-	detemineMovingFromPosition(posAvgEntry, &txPosition, &movementResult);
+	detemineMovingFromPosition(posAvgEntry, &transmitGpsInformation.txPosition, &movementResult);
 
 	/*
 	 * State Determination
@@ -712,12 +724,23 @@ bool receiverUpdateGpsInformation(unsigned char * rxBuffer, size_t rxCount) {
 	 */
 
 	updateTransmitGpsInformation = subStateExternalStateChange
-			|| (positionValid(posAvgEntry) && !positionValid(&txPosition))
+			|| (positionValid(posAvgEntry) && !positionValid(&transmitGpsInformation.txPosition))
 			|| (movementResult.inside == TRISTATE_BOOLEAN_SET);
 
 	if ((externalState == MOVEMENT_STATE_MOVING) || updateTransmitGpsInformation) {
-		transmitGpsInformation.txPosition.nmeaInfo = posAvgEntry->nmeaInfo;
+		transmitGpsInformation.txPosition = *posAvgEntry;
 		transmitGpsInformation.positionUpdated = true;
+
+		/*
+		 * When we're stationary:
+		 * - the track is not reliable or even invalid, so we must clear it.
+		 * - to avoid confusion in consumers of the data, we must clear the speed
+		 *   because it is possible to have a very low speed while moving.
+		 */
+		if (externalState == MOVEMENT_STATE_STATIONARY) {
+			transmitGpsInformation.txPosition.nmeaInfo.speed = (double)0.0;
+			transmitGpsInformation.txPosition.nmeaInfo.track = (double)0.0;
+		}
 	}
 
 	if (externalStateChange) {
@@ -728,6 +751,15 @@ bool receiverUpdateGpsInformation(unsigned char * rxBuffer, size_t rxCount) {
 
 	end:
 	return retval;
+}
+
+/**
+ * Log nmea library errors as plugin errors
+ * @param str
+ * @param str_size
+ */
+static void nmea_errors(const char *str, int str_size __attribute__((unused))) {
+	pudError(false, "NMEA library error: %s", str);
 }
 
 /**
@@ -746,6 +778,9 @@ bool startReceiver(void) {
 		return false;
 	}
 
+	/* hook up the NMEA library error callback */
+	nmea_context_set_error_func(&nmea_errors);
+
 	if (positionFile) {
 		readPositionFile(positionFile, &transmitGpsInformation.txPosition.nmeaInfo);
 	} else {
@@ -757,8 +792,6 @@ bool startReceiver(void) {
 
 #ifdef HTTPINFO_PUD
 	olsr_cnf->pud_position = &transmitGpsInformation;
-#else
-	olsr_cnf->pud_position = NULL;
 #endif
 	initPositionAverageList(&positionAverageList, getAverageDepth());
 

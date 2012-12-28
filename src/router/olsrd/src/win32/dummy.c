@@ -10,11 +10,11 @@
 #include "../kernel_tunnel.h"
 #include "../net_os.h"
 
-int olsr_os_init_iptunnel(void) {
+int olsr_os_init_iptunnel(const char * name __attribute__((unused))) {
   return -1;
 }
 
-void olsr_os_cleanup_iptunnel(void) {
+void olsr_os_cleanup_iptunnel(const char * name __attribute__((unused))) {
 }
 
 struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target __attribute__ ((unused)),

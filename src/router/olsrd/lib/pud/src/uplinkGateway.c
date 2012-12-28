@@ -45,12 +45,18 @@ void getBestUplinkGateway(union olsr_ip_addr * bestGateway) {
 		bool eval6 = false;
 
 		struct tc_entry * tc = olsr_lookup_tc_entry(&gw->originator);
-		if (tc == NULL) {
+		if (!tc) {
+			/* gateways should not exist without tc entry */
 			continue;
 		}
 
-		/* do not consider nodes with an infinite ETX */
 		if (tc->path_cost == ROUTE_COST_BROKEN) {
+			/* do not consider nodes with an infinite ETX */
+			continue;
+		}
+
+		if (!gw->uplink || !gw->downlink) {
+			/* do not consider nodes without bandwidth or with a uni-directional link */
 			continue;
 		}
 

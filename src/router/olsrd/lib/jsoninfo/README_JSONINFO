@@ -1,11 +1,22 @@
 
-   PLUGIN USAGE
-==================
+The jsoninfo plugin aims to deliver all of the information about the
+runtime status and configuration of olsrd.  You can request specific
+chunks of information, or overviews of runtime or startup
+configuration, or all of the information in one report. Additionally,
+the jsoninfo plugin will dump the current olsrd config in the
+olsrd.conf format.  The jsoninfo plugin provides all of the
+information that both the txtinfo and httpinfo plugins provide, as
+well as quite a bit more.
 
-installation:
-make
-make install
+There is a Java library called OlsrInfo that provides Java classes for
+parsing the data from jsoninfo (and txtinfo also).  It is based on the
+Jackson JSON processing library
 
+OlsrInfo: https://github.com/guardianproject/OlsrInfo
+Jackson JSON: http://jackson.codehaus.org/
+
+PLUGIN USAGE
+============
 
 There are a number of commands for getting information from this
 plugin.  They are designed to be tacked onto a URL, but can also be
@@ -40,14 +51,14 @@ start-up information not in JSON format:
 * /olsrd.conf - the current config, formatted for writing directly to /etc/olsrd.conf
 
 
-   PLUGIN CONFIGURATION
-==========================
+PLUGIN CONFIGURATION
+====================
 
 The plugin accepts two parameters: "port" and "accept". There are no
 futher parameters.  Here's an example configuration for UNIX systems
 (for Windows, change the plugin to end in .dll):
 
-LoadPlugin "olsrd_jsoninfo.so.0.1"
+LoadPlugin "olsrd_jsoninfo.so.0.0"
 {
     # the default port is 9090 but you can change it like this:
     #PlParam     "port"   "8080"
@@ -61,4 +72,24 @@ LoadPlugin "olsrd_jsoninfo.so.0.1"
     #PlParam      "accept" "172.29.44.23"
     # if you set it to 0.0.0.0, it will accept all connections
     #PlParam      "accept" "0.0.0.0"
+
+    # specify a UUID for this node to track it for debugging
+    #PlParam      "UUIDFile" "/etc/olsrd/olsrd.uuid"
 }
+
+
+Example Usage
+=============
+
+You can use http URLs with various web tools to access the information:
+
+  curl http://localhost:9090/all
+
+You can combine the various commands to generate a custom report:
+
+  curl http://localhost:9090/interfaces/routes/links
+
+If you want a copy of the current configuration, you can download it
+using this URL:
+
+  wget http://localhost:9090/olsrd.conf

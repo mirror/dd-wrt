@@ -201,6 +201,12 @@ network.
     # The default prefix length is 32.
     PlParam "BmfInterfaceIp" "10.10.10.234/24"
 
+    # Enable or disable marking the BMF network interface as persistent.
+    # When the interface is persistent (default) then it will not be removed
+    # when olsrd shuts down. This is to facilitate other programs (for example
+    # multicast routing daemon mrouted) to continue using it.
+    PlParam "BmfInterfacePersistent" "yes"
+
     # Enable or disable the flooding of local broadcast packets
     # (e.g. packets with IP destination 192.168.1.255). Either "yes"
     # or "no". Defaults to "yes".

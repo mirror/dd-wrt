@@ -18,10 +18,7 @@ typedef struct _TRxTxNetworkInterface {
 		int socketFd;
 
 		/** The name of the interface */
-		unsigned char name[IFNAMSIZ + 1];
-
-		/** The IP address of the interface */
-		union olsr_sockaddr ipAddress;
+		char name[IFNAMSIZ + 1];
 
 		/** the socket handler function */
 		socket_handler_func handler;

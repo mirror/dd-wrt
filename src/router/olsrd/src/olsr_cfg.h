@@ -85,6 +85,10 @@
 #define DEF_GW_STABLE_COUNT  6
 #define DEF_GW_ALLOW_NAT     true
 #define DEF_GW_THRESH        0
+#define DEF_GW_WEIGHT_EXITLINK_UP   1
+#define DEF_GW_WEIGHT_EXITLINK_DOWN 1
+#define DEF_GW_WEIGHT_ETX           1
+#define DEF_GW_DIVIDER_ETX          0
 #define DEF_GW_TYPE          GW_UPLINK_IPV46
 #define DEF_GW_UPLINK_NAT    true
 #define DEF_UPLINK_SPEED     128
@@ -275,6 +279,10 @@ struct olsrd_config {
   uint32_t smart_gw_period;
   uint8_t smart_gw_stablecount;
   uint8_t smart_gw_thresh;
+  uint8_t smart_gw_weight_exitlink_up;
+  uint8_t smart_gw_weight_exitlink_down;
+  uint8_t smart_gw_weight_etx;
+  uint8_t smart_gw_divider_etx;
   enum smart_gw_uplinktype smart_gw_type;
   uint32_t smart_gw_uplink, smart_gw_downlink;
   struct olsr_ip_prefix smart_gw_prefix;

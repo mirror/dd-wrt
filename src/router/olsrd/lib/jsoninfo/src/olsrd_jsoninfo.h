@@ -54,6 +54,10 @@
 /* uncomment this to allow connections from 127.0.0.1 regardless of olsrd.conf (useful to allow externel ip/network + localhost) (ipv4 only)*/
 /* #define JSONINFO_ALLOW_LOCALHOST */
 
+#define UUIDLEN 256
+extern char uuid[UUIDLEN];
+extern char uuidfile[FILENAME_MAX];
+
 extern union olsr_ip_addr jsoninfo_accept_ip;
 extern union olsr_ip_addr jsoninfo_listen_ip;
 extern int ipc_port;

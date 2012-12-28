@@ -308,7 +308,7 @@ JNIEXPORT jstring JNICALL Java_org_olsr_plugin_pud_PositionUpdate_getPositionUpd
 			&isCopy);
 
     const char * nodeIdStr;
-    char nodeIdStrBuffer[PUD_TX_NODEID_BUFFERSIZE + 1];
+    char nodeIdStrBuffer[PUD_TX_NODEID_BUFFERSIZE];
 
 	getNodeIdStringFromOlsr	(
 			!getUplinkMessageIPv6(&uplinkMessage->header) ? AF_INET : AF_INET6,

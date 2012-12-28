@@ -128,7 +128,7 @@ index 5909131..92288bd 100644
  			zlog_debug("netlink_route_multipath() (single hop): "
  				   "nexthop via if %u", nexthop->ifindex);
 diff --git a/zebra/zebra_rib.c b/zebra/zebra_rib.c
-index 154e8d5..0090c39 100644
+index 154e8d5..4d613fd 100644
 --- a/zebra/zebra_rib.c
 +++ b/zebra/zebra_rib.c
 @@ -67,6 +67,9 @@ static const struct
@@ -141,9 +141,9 @@ index 154e8d5..0090c39 100644
    [ZEBRA_ROUTE_BABEL]   = {ZEBRA_ROUTE_BABEL,    95},
    /* no entry/default: 150 */
  };
-@@ -381,6 +384,18 @@ nexthop_active_ipv4 (struct rib *rib, struct nexthop *nexthop, int set,
- 	      
- 	      return 1;
+@@ -403,6 +406,18 @@ nexthop_active_ipv4 (struct rib *rib, struct nexthop *nexthop, int set,
+ 		  }
+ 	      return 0;
  	    }
 +	  else if (match->type == ZEBRA_ROUTE_OLSR)
 +	    {
@@ -157,12 +157,12 @@ index 154e8d5..0090c39 100644
 +		  }
 +	      return 0;
 +	    }
- 	  else if (CHECK_FLAG (rib->flags, ZEBRA_FLAG_INTERNAL))
+ 	  else
  	    {
- 	      for (newhop = match->nexthop; newhop; newhop = newhop->next)
-@@ -483,6 +498,18 @@ nexthop_active_ipv6 (struct rib *rib, struct nexthop *nexthop, int set,
- 	      
- 	      return 1;
+ 	      return 0;
+@@ -507,6 +522,18 @@ nexthop_active_ipv6 (struct rib *rib, struct nexthop *nexthop, int set,
+ 		  }
+ 	      return 0;
  	    }
 +	  else if (match->type == ZEBRA_ROUTE_OLSR)
 +	    {
@@ -176,9 +176,9 @@ index 154e8d5..0090c39 100644
 +		  }
 +	      return 0;
 +	    }
- 	  else if (CHECK_FLAG (rib->flags, ZEBRA_FLAG_INTERNAL))
+ 	  else
  	    {
- 	      for (newhop = match->nexthop; newhop; newhop = newhop->next)
+ 	      return 0;
 @@ -1236,6 +1263,8 @@ static const u_char meta_queue_map[ZEBRA_ROUTE_MAX] = {
    [ZEBRA_ROUTE_ISIS]    = 2,
    [ZEBRA_ROUTE_BGP]     = 3,
