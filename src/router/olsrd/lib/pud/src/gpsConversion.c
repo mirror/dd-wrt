@@ -9,6 +9,7 @@
 #include "olsr.h"
 
 /* System includes */
+#include <nmea/info.h>
 #include <nmea/tok.h>
 #include <nmea/gmath.h>
 #include <arpa/inet.h>
@@ -37,20 +38,20 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 	unsigned long validityTime;
 
 	struct tm timeStruct;
-	char latitudeString[PUD_TX_LATITUDE_DIGITS + 1];
+	char latitudeString[PUD_TX_LATITUDE_DIGITS];
 	const char * latitudeHemisphere;
-	char longitudeString[PUD_TX_LONGITUDE_DIGITS + 1];
+	char longitudeString[PUD_TX_LONGITUDE_DIGITS];
 	const char * longitudeHemisphere;
-	char altitudeString[PUD_TX_ALTITUDE_DIGITS + 1];
-	char speedString[PUD_TX_SPEED_DIGITS + 1];
-	char trackString[PUD_TX_TRACK_DIGITS + 1];
-	char hdopString[PUD_TX_HDOP_DIGITS + 1];
+	char altitudeString[PUD_TX_ALTITUDE_DIGITS];
+	char speedString[PUD_TX_SPEED_DIGITS];
+	char trackString[PUD_TX_TRACK_DIGITS];
+	char hdopString[PUD_TX_HDOP_DIGITS];
 	uint8_t smask;
 	uint8_t flags;
 	char gateway[2] = { '0', '\0' };
 
-	char nodeIdTypeString[PUD_TX_NODEIDTYPE_DIGITS + 1];
-	char nodeIdString[PUD_TX_NODEID_BUFFERSIZE + 1];
+	char nodeIdTypeString[PUD_TX_NODEIDTYPE_DIGITS];
+	char nodeIdString[PUD_TX_NODEID_BUFFERSIZE];
 	const char * nodeId;
 	const void * ipAddr;
 	char originatorBuffer[64];
@@ -79,7 +80,7 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 
 	smask = getPositionUpdateSmask(olsrGpsMessage);
 
-	flags = getPositionUpdateSmask(olsrGpsMessage);
+	flags = getPositionUpdateFlags(olsrGpsMessage);
 
 	if (flags & PUD_FLAGS_GATEWAY) {
 		gateway[0] = '1';
@@ -88,8 +89,7 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 	/* time is ALWAYS present so we can just use it */
 	getPositionUpdateTime(olsrGpsMessage, time(NULL), &timeStruct);
 
-	if (likely(nmea_INFO_has_field(smask, LAT))) {
-		int chars;
+	if (likely(nmea_INFO_is_present_smask(smask, LAT))) {
 		double latitude = getPositionUpdateLatitude(olsrGpsMessage);
 
 		if (latitude >= 0) {
@@ -100,20 +100,13 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 		}
 		latitude = nmea_degree2ndeg(latitude);
 
-		chars = snprintf(&latitudeString[0], PUD_TX_LATITUDE_DIGITS,
-				"%." PUD_TX_LATITUDE_DECIMALS "f", latitude);
-		if (likely(chars < PUD_TX_LATITUDE_DIGITS)) {
-			latitudeString[chars] = '\0';
-		} else {
-			latitudeString[PUD_TX_LATITUDE_DIGITS] = '\0';
-		}
+		snprintf(&latitudeString[0], PUD_TX_LATITUDE_DIGITS, "%." PUD_TX_LATITUDE_DECIMALS "f", latitude);
 	} else {
 		latitudeHemisphere = "";
 		latitudeString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_has_field(smask, LON))) {
-		int chars;
+	if (likely(nmea_INFO_is_present_smask(smask, LON))) {
 		double longitude = getPositionUpdateLongitude(olsrGpsMessage);
 
 		if (longitude >= 0) {
@@ -124,63 +117,33 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 		}
 		longitude = nmea_degree2ndeg(longitude);
 
-		chars = snprintf(&longitudeString[0], PUD_TX_LONGITUDE_DIGITS,
-				"%." PUD_TX_LONGITUDE_DECIMALS "f", longitude);
-		if (likely(chars < PUD_TX_LONGITUDE_DIGITS)) {
-			longitudeString[chars] = '\0';
-		} else {
-			longitudeString[PUD_TX_LONGITUDE_DIGITS] = '\0';
-		}
+		snprintf(&longitudeString[0], PUD_TX_LONGITUDE_DIGITS, "%." PUD_TX_LONGITUDE_DECIMALS "f", longitude);
 	} else {
 		longitudeHemisphere = "";
 		longitudeString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_has_field(smask, ELV))) {
-		int chars = snprintf(&altitudeString[0], PUD_TX_ALTITUDE_DIGITS, "%ld",
-				getPositionUpdateAltitude(olsrGpsMessage));
-		if (likely(chars < PUD_TX_ALTITUDE_DIGITS)) {
-			altitudeString[chars] = '\0';
-		} else {
-			altitudeString[PUD_TX_ALTITUDE_DIGITS] = '\0';
-		}
+	if (likely(nmea_INFO_is_present_smask(smask, ELV))) {
+		snprintf(&altitudeString[0], PUD_TX_ALTITUDE_DIGITS, "%ld", getPositionUpdateAltitude(olsrGpsMessage));
 	} else {
 		altitudeString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_has_field(smask, SPEED))) {
-		int chars = snprintf(&speedString[0], PUD_TX_SPEED_DIGITS, "%lu",
-				getPositionUpdateSpeed(olsrGpsMessage));
-		if (likely(chars < PUD_TX_SPEED_DIGITS)) {
-			speedString[chars] = '\0';
-		} else {
-			speedString[PUD_TX_SPEED_DIGITS] = '\0';
-		}
+	if (likely(nmea_INFO_is_present_smask(smask, SPEED))) {
+		snprintf(&speedString[0], PUD_TX_SPEED_DIGITS, "%lu", getPositionUpdateSpeed(olsrGpsMessage));
 	} else {
 		speedString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_has_field(smask, DIRECTION))) {
-		int chars = snprintf(&trackString[0], PUD_TX_TRACK_DIGITS, "%lu",
-				getPositionUpdateTrack(olsrGpsMessage));
-		if (likely(chars < PUD_TX_TRACK_DIGITS)) {
-			trackString[chars] = '\0';
-		} else {
-			trackString[PUD_TX_TRACK_DIGITS] = '\0';
-		}
+	if (likely(nmea_INFO_is_present_smask(smask, TRACK))) {
+		snprintf(&trackString[0], PUD_TX_TRACK_DIGITS, "%lu", getPositionUpdateTrack(olsrGpsMessage));
 	} else {
 		trackString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_has_field(smask, HDOP))) {
-		int chars = snprintf(&hdopString[0], PUD_TX_HDOP_DIGITS,
-				"%." PUD_TX_HDOP_DECIMALS "f", nmea_meters2dop(getPositionUpdateHdop(
-						olsrGpsMessage)));
-		if (likely(chars < PUD_TX_HDOP_DIGITS)) {
-			hdopString[chars] = '\0';
-		} else {
-			hdopString[PUD_TX_HDOP_DIGITS] = '\0';
-		}
+	if (likely(nmea_INFO_is_present_smask(smask, HDOP))) {
+		snprintf(&hdopString[0], PUD_TX_HDOP_DIGITS, "%." PUD_TX_HDOP_DECIMALS "f",
+				nmea_meters2dop(getPositionUpdateHdop(olsrGpsMessage)));
 	} else {
 		hdopString[0] = '\0';
 	}
@@ -274,37 +237,37 @@ unsigned int gpsToOlsr(nmeaINFO *nmeaInfo, union olsr_message *olsrMessage,
 	setPositionUpdateTime(olsrGpsMessage, nmeaInfo->utc.hour, nmeaInfo->utc.min,
 			nmeaInfo->utc.sec);
 
-	if (likely(nmea_INFO_has_field(nmeaInfo->smask, LAT))) {
+	if (likely(nmea_INFO_is_present(nmeaInfo->present, LAT))) {
 		setPositionUpdateLatitude(olsrGpsMessage, nmeaInfo->lat);
 	} else {
 		setPositionUpdateLatitude(olsrGpsMessage, 0.0);
 	}
 
-	if (likely(nmea_INFO_has_field(nmeaInfo->smask, LON))) {
+	if (likely(nmea_INFO_is_present(nmeaInfo->present, LON))) {
 		setPositionUpdateLongitude(olsrGpsMessage, nmeaInfo->lon);
 	} else {
 		setPositionUpdateLongitude(olsrGpsMessage, 0.0);
 	}
 
-	if (likely(nmea_INFO_has_field(nmeaInfo->smask, ELV))) {
+	if (likely(nmea_INFO_is_present(nmeaInfo->present, ELV))) {
 		setPositionUpdateAltitude(olsrGpsMessage, nmeaInfo->elv);
 	} else {
 		setPositionUpdateAltitude(olsrGpsMessage, 0.0);
 	}
 
-	if (likely(nmea_INFO_has_field(nmeaInfo->smask, SPEED))) {
+	if (likely(nmea_INFO_is_present(nmeaInfo->present, SPEED))) {
 		setPositionUpdateSpeed(olsrGpsMessage, nmeaInfo->speed);
 	} else {
 		setPositionUpdateSpeed(olsrGpsMessage, 0.0);
 	}
 
-	if (likely(nmea_INFO_has_field(nmeaInfo->smask, DIRECTION))) {
-		setPositionUpdateTrack(olsrGpsMessage, nmeaInfo->direction);
+	if (likely(nmea_INFO_is_present(nmeaInfo->present, TRACK))) {
+		setPositionUpdateTrack(olsrGpsMessage, nmeaInfo->track);
 	} else {
 		setPositionUpdateTrack(olsrGpsMessage, 0);
 	}
 
-	if (likely(nmea_INFO_has_field(nmeaInfo->smask, HDOP))) {
+	if (likely(nmea_INFO_is_present(nmeaInfo->present, HDOP))) {
 		setPositionUpdateHdop(olsrGpsMessage, nmeaInfo->HDOP);
 	} else {
 		setPositionUpdateHdop(olsrGpsMessage, PUD_HDOP_MAX);

@@ -14,6 +14,7 @@
 #include "ipcalc.h"
 #include "net_olsr.h"
 #include "parser.h"
+#include "log.h"
 
 /* System includes */
 
@@ -30,6 +31,9 @@
 /** The de-duplication list */
 static DeDupList deDupList;
 
+/** When false, use olsr_printf in pudError, otherwise use olsr_syslog */
+static bool pudErrorUseSysLog = false;
+
 /**
  Report a plugin error.
 
@@ -43,17 +47,16 @@ static DeDupList deDupList;
  */
 void pudError(bool useErrno, const char *format, ...) {
 	char strDesc[256];
-	char *stringErr = NULL;
-
-	if (useErrno) {
-		stringErr = strerror(errno);
-	}
+	const char *colon;
+	const char *stringErr;
 
 	if ((format == NULL) || (*format == '\0')) {
-		if (useErrno) {
-			olsr_printf(0, "%s: %s\n", PUD_PLUGIN_ABBR, stringErr);
+		strDesc[0] = '\0';
+		colon = "";
+		if (!useErrno) {
+			stringErr = "Unknown error";
 		} else {
-			olsr_printf(0, "%s: Unknown error\n", PUD_PLUGIN_ABBR);
+			stringErr = strerror(errno);
 		}
 	} else {
 		va_list arglist;
@@ -62,14 +65,19 @@ void pudError(bool useErrno, const char *format, ...) {
 		vsnprintf(strDesc, sizeof(strDesc), format, arglist);
 		va_end(arglist);
 
-		strDesc[sizeof(strDesc) - 1] = '\0'; /* Ensures null termination */
-
 		if (useErrno) {
-			olsr_printf(0, "%s: %s: %s\n", PUD_PLUGIN_ABBR, strDesc, stringErr);
+			colon = ": ";
+			stringErr = strerror(errno);
 		} else {
-			olsr_printf(0, "%s: %s\n", PUD_PLUGIN_ABBR, strDesc);
+			colon = "";
+			stringErr = "";
 		}
 	}
+
+	if (!pudErrorUseSysLog)
+		olsr_printf(0, "%s: %s%s%s\n", PUD_PLUGIN_ABBR, strDesc, colon, stringErr);
+	else
+		olsr_syslog(OLSR_LOG_ERR, "%s: %s%s%s\n", PUD_PLUGIN_ABBR, strDesc, colon, stringErr);
 }
 
 /**
@@ -82,16 +90,24 @@ void pudError(bool useErrno, const char *format, ...) {
  */
 static void sendToAllTxInterfaces(unsigned char *buffer,
 		unsigned int bufferLength) {
-	union olsr_sockaddr * txAddress;
+	union olsr_sockaddr * txAddress = getTxMcAddr();
+	void * addr;
+	socklen_t addrSize;
 	TRxTxNetworkInterface *txNetworkInterfaces = getTxNetworkInterfaces();
+
+	if (txAddress->in.sa_family == AF_INET) {
+		addr = &txAddress->in4;
+		addrSize = sizeof(struct sockaddr_in);
+	} else {
+		addr = &txAddress->in6;
+		addrSize = sizeof(struct sockaddr_in6);
+	}
+
 	while (txNetworkInterfaces != NULL) {
 		TRxTxNetworkInterface *networkInterface = txNetworkInterfaces;
 		errno = 0;
-		txAddress = getTxMcAddr();
-		if (sendto(networkInterface->socketFd, buffer, bufferLength, 0,
-				(struct sockaddr *) &txAddress->in, sizeof(txAddress->in)) < 0) {
-			pudError(true, "Transmit error on interface %s",
-					(char *) &networkInterface->name);
+		if (sendto(networkInterface->socketFd, buffer, bufferLength, 0, addr, addrSize) < 0) {
+			pudError(true, "Transmit error on interface %s", &networkInterface->name[0]);
 		}
 		txNetworkInterfaces = networkInterface->next;
 	}
@@ -162,14 +178,10 @@ static void packetReceivedFromDownlink(int skfd, void *data __attribute__ ((unus
 		unsigned char rxBuffer[BUFFER_SIZE_RX_DOWNLINK];
 		ssize_t rxCount = 0;
 		ssize_t rxIndex = 0;
-		struct sockaddr sender;
-		socklen_t senderSize = sizeof(sender);
 
 		/* Receive the captured Ethernet frame */
-		memset(&sender, 0, senderSize);
 		errno = 0;
-		rxCount = recvfrom(skfd, &rxBuffer[0], (sizeof(rxBuffer) - 1), 0,
-				&sender, &senderSize);
+		rxCount = recvfrom(skfd, &rxBuffer[0], (sizeof(rxBuffer) - 1), 0, NULL, NULL);
 		if (rxCount < 0) {
 			pudError(true, "Receive error in %s, ignoring message.", __func__);
 			return;
@@ -220,6 +232,10 @@ static void packetReceivedFromDownlink(int skfd, void *data __attribute__ ((unus
 				int r;
 				struct interface *ifn;
 				for (ifn = ifnet; ifn; ifn = ifn->int_next) {
+					/* force the pending buffer out if there's not enough space for our message */
+					if ((int)olsrMessageLength > net_outbuffer_bytes_left(ifn)) {
+					  net_output(ifn);
+					}
 					r = net_outbuffer_push(ifn, olsrMessage, olsrMessageLength);
 					if (r != (int) olsrMessageLength) {
 						pudError(
@@ -256,7 +272,7 @@ static void packetReceivedForOlsr(int skfd, void *data __attribute__ ((unused)),
 	if (skfd >= 0) {
 		unsigned char rxBuffer[BUFFER_SIZE_RX_NMEA];
 		ssize_t rxCount;
-		struct sockaddr sender;
+		union olsr_sockaddr sender;
 		socklen_t senderSize = sizeof(sender);
 
 		assert(data != NULL);
@@ -265,7 +281,7 @@ static void packetReceivedForOlsr(int skfd, void *data __attribute__ ((unused)),
 		memset(&sender, 0, senderSize);
 		errno = 0;
 		rxCount = recvfrom(skfd, &rxBuffer[0], (sizeof(rxBuffer) - 1), 0,
-				&sender, &senderSize);
+				(struct sockaddr *)&sender, &senderSize);
 		if (rxCount < 0) {
 			pudError(true, "Receive error in %s, ignoring message.", __func__);
 			return;
@@ -333,6 +349,9 @@ bool initPud(void) {
 	 * plugin arrive from the OLSR network
 	 */
 	olsr_parser_add_function(&packetReceivedFromOlsr, PUD_OLSR_MSG_TYPE);
+
+	/* switch to syslog logging, load was succesful */
+	pudErrorUseSysLog = !olsr_cnf->no_fork;
 
 	return true;
 

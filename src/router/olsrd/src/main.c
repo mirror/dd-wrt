@@ -637,7 +637,7 @@ int main(int argc, char *argv[]) {
  */
 #ifndef WIN32
 void olsr_reconfigure(int signo __attribute__ ((unused))) {
-  /* if we are started with -nofork, we do not weant to go into the
+  /* if we are started with -nofork, we do not want to go into the
    * background here. So we can simply stop on -HUP
    */
   olsr_syslog(OLSR_LOG_INFO, "sot: olsr_reconfigure()\n");
@@ -838,7 +838,7 @@ static void print_usage(bool error) {
         "  [-midint <mid interval (secs)>] [-hnaint <hna interval (secs)>]\n"
         "  [-T <Polling Rate (secs)>] [-nofork] [-hemu <ip_address>]\n"
         "  [-lql <LQ level>] [-lqa <LQ aging factor>]\n",
-        error ? "An error occured somwhere between your keyboard and your chair!\n" : "");*/
+        error ? "Error in command line parameters!\n" : "");*/
 }
 
 /**

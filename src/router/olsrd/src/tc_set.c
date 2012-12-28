@@ -708,7 +708,7 @@ olsr_print_tc_table(void)
 #ifndef NODEBUG
   /* The whole function makes no sense without it. */
   struct tc_entry *tc;
-  const int ipwidth = olsr_cnf->ip_version == AF_INET ? 15 : 30;
+  const int ipwidth = olsr_cnf->ip_version == AF_INET ? 15 : 39;
 
   OLSR_PRINTF(1, "\n--- %s ------------------------------------------------- TOPOLOGY\n\n" "%-*s %-*s %-14s  %s\n",
               olsr_wallclock_string(), ipwidth, "Source IP addr", ipwidth, "Dest IP addr", "      LQ      ", "ETX");

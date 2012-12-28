@@ -105,6 +105,30 @@
 
 # SmartGatewayThreshold 0
 
+# The weighing factor for the gateway uplink bandwidth (exit link, uplink).
+# See README-Olsr-Extensions for a description of smart gateways.
+# (default is 1)
+
+# SmartGatewayWeightExitLinkUp 1
+
+# The weighing factor for the gateway downlink bandwidth (exit link, downlink).
+# See README-Olsr-Extensions for a description of smart gateways.
+# (default is 1)
+
+# SmartGatewayWeightExitLinkDown 1
+
+# The weighing factor for the ETX costs.
+# See README-Olsr-Extensions for a description of smart gateways.
+# (default is 1)
+
+# SmartGatewayWeightEtx 1
+
+# The divider for the ETX costs.
+# See README-Olsr-Extensions for a description of smart gateways.
+# (default is 0)
+
+# SmartGatewayDividerEtx 0
+
 # Defines what kind of Uplink this node will publish as a
 # smartgateway. The existence of the uplink is detected by
 # a route to 0.0.0.0/0, ::ffff:0:0/96 and/or 2000::/3.

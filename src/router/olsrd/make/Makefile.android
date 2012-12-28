@@ -6,7 +6,7 @@
 #    (e.g. into to /opt, otherwise call 'make NDK_BASE=')
 #
 # 2) Compile olsrd with the make command:
-#    make OS=android DEBUG=0 NDK_BASE=/opt
+#    make OS=android DEBUG=0 NDK_BASE=/opt/android-ndk-r8
 #
 # 3) Install olsrd on your local PC, e.g.
 #    sudo make OS=android DEBUG=0 install_all
@@ -26,12 +26,18 @@
 # LINUX SPECIFIC CONFIGURATION
 #
 
-PREFIX ?= /data/local
-SBINDIR = $(PREFIX)/bin
-ETCDIR = $(PREFIX)/etc
-LIBDIR = $(PREFIX)/lib
-DOCDIR =
-MANDIR =
+DESTDIR ?=
+prefix ?=
+sbindir ?= $(prefix)/bin
+etcdir ?= $(prefix)/etc
+libdir ?= $(prefix)/lib
+datarootdir ?= $(prefix)/usr/share
+
+# the rest are defined in Makefile.inc, but we don't need to override defaults
+SBINDIR = $(DESTDIR)$(sbindir)
+ETCDIR = $(DESTDIR)$(etcdir)
+LIBDIR = $(DESTDIR)$(libdir)
+SHAREDIR = $(DESTDIR)$(datarootdir)
 
 # there probably should be an Android log.c and misc.c to support
 # Logcat, but this works for now
@@ -117,8 +123,8 @@ endif
 # (2.2), so we include the Android files here, and build with
 # -DPOSIX_MISTAKE like Android does.
 $(REGEX_OBJS): $(REGEX_SRCS)
-	echo "[CC] $<"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -DPOSIX_MISTAKE -c -o $@ $<
+	@echo "[CC] $<"
+	@$(CC) $(CFLAGS) $(CPPFLAGS) -DPOSIX_MISTAKE -c -o $@ $<
 
 regex: $(REGEX_OBJS)
 

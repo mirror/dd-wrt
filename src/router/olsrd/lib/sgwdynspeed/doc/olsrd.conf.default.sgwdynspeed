@@ -486,7 +486,8 @@ LoadPlugin "./lib/sgwdynspeed/olsrd_sgwdynspeed.so.1.0.0"
 {
   # Specifies the file to watch for (dynamic) values for SmartGatewaySpeed.
   # If not specified then no watching is performed.
-  # (default is unspecified)
+  # It has no default, but an example file is available:
+  #   /usr/share/doc/olsrd/olsrd.sgw.speed.conf
 
   # PlParam "speedFile" ""
 

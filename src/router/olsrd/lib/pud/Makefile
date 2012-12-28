@@ -12,7 +12,8 @@ TOPDIR = ../..
 include $(TOPDIR)/Makefile.inc
 
 
-CFLAGS += -Werror -D_GNU_SOURCE
+PUD_NMEALIB_STATICALLY_LINKED ?=
+CFLAGS += -D_GNU_SOURCE
 
 
 RESOURCESDIR = ./resources
@@ -20,18 +21,34 @@ NMEALIB_INC = $(NMEALIB_PATH)/include
 NMEALIB_LIB = $(NMEALIB_PATH)/lib
 LIBRARY_INC = $(LIBRARY_PATH)/include
 LIBRARY_LIB = $(LIBRARY_PATH)/lib
+NMEALIB_LIB_STATIC = $(NMEALIB_LIB)/lib$(NMEALIB_NAME).a
 
 CFLAGS += -I $(NMEALIB_INC) -I $(LIBRARY_INC)
+ifeq ($(PUD_NMEALIB_STATICALLY_LINKED),)
 LIBS += -L $(NMEALIB_LIB) -L $(LIBRARY_LIB) -l$(NMEALIB_NAME) -lm -l$(LIBRARY_NAME)
+else
+# libnmea is statically linked
+LIBS += -L $(LIBRARY_LIB) -lm -l$(LIBRARY_NAME)
+endif
 
-ifneq ($(OS),linux)
+
+SUPPORTED = 0
+ifeq ($(OS),linux)
+SUPPORTED = 1
+endif
+ifeq ($(OS),android)
+SUPPORTED = 1
+endif
+
+
+ifeq ($(SUPPORTED),0)
 
 .PHONY: all default_target install clean
 
 all: default_target
 
 default_target install clean:
-	@echo "*** $(PLUGIN_NAME) plugin only supported on Linux, sorry!"
+	@echo "*** $(PLUGIN_NAME) plugin not supported on $(OS), sorry!"
 
 else
 
@@ -49,57 +66,62 @@ default_target: nmealib library $(PLUGIN_FULLNAME)
 	@$(filter-out $(CCACHE),$(CC)) -M $(strip $(CPPFLAGS)) -I $(NMEALIB_INC) -I $(LIBRARY_INC) "$<" | sed -e '1s/\($(call quote,$(*F))\.o\)[ :]*/$(call quote,$(*D)/\1 $@: Makefile $(TOPDIR)$(if $(TOPDIR),/)Makefile.inc) /g' >"$@"
 
 $(PLUGIN_FULLNAME): $(OBJS) version-script.txt
-	@echo "[LD] $@"
+ifeq ($(PUD_NMEALIB_STATICALLY_LINKED),)
+	@echo "[LD] $@ (nmealib dynamically linked)"
 	@$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
+else
+	@echo "[LD] $@ (nmealib statically linked)"
+	@$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(NMEALIB_LIB_STATIC) $(LIBS)
+endif
 
 install: all
-	@$(MAKE) -C $(NMEALIB_PATH) DESTDIR=$(DESTDIR) install
-	@$(MAKE) -C $(LIBRARY_PATH) DESTDIR=$(DESTDIR) install
+	@$(MAKE) -C "$(NMEALIB_PATH)" DESTDIR="$(DESTDIR)" install
+	@$(MAKE) -C "$(LIBRARY_PATH)" DESTDIR="$(DESTDIR)" install
 	$(INSTALL_LIB)
-	mkdir -p "$(ETCDIR)"
-	cp "$(RESOURCESDIR)/olsrd.pud.position.conf" "$(ETCDIR)"
+	mkdir -p "$(DOCDIR_OLSRD)"
+	cp "$(RESOURCESDIR)/olsrd.pud.position.conf" "$(DOCDIR_OLSRD)"
 	$(STRIP) "$(LIBDIR)/$(PLUGIN_FULLNAME)"
 
 uninstall:
-	@$(MAKE) -C $(NMEALIB_PATH) DESTDIR=$(DESTDIR) uninstall
-	@$(MAKE) -C $(LIBRARY_PATH) DESTDIR=$(DESTDIR) uninstall
-	rm -f "$(LIBDIR)/lib$(PLUGIN_NAME).so" "$(LIBDIR)/$(PLUGIN_NAME)" "$(ETCDIR)/olsrd.pud.position.conf"
+	@$(MAKE) -C "$(NMEALIB_PATH)" DESTDIR="$(DESTDIR)" uninstall
+	@$(MAKE) -C "$(LIBRARY_PATH)" DESTDIR="$(DESTDIR)" uninstall
+	rm -f "$(LIBDIR)/lib$(PLUGIN_NAME).so" "$(LIBDIR)/$(PLUGIN_NAME)" "$(DOCDIR_OLSRD)/olsrd.pud.position.conf"
 	$(UNINSTALL_LIB)
-	rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)" "$(ETCDIR)"
+	rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)" "$(DOCDIR_OLSRD)"
 
 clean:
 	@echo "[$@]"
 	@rm -f $(OBJS) $(SRCS:%.c=%.d) "$(PLUGIN_FULLNAME)"
 	@$(MAKE) -C doc clean
-	@$(MAKE) -C $(NMEALIB_PATH) clean
-	@$(MAKE) -C $(LIBRARY_PATH) clean
-	@$(MAKE) -C $(JAVA_PATH) clean
+	@$(MAKE) -C "$(NMEALIB_PATH)" clean
+	@$(MAKE) -C "$(LIBRARY_PATH)" clean
+	@$(MAKE) -C "$(JAVA_PATH)" clean
 
 doc:
 	@$(MAKE) -C doc all
-	@$(MAKE) -C $(NMEALIB_PATH) doc
-	@$(MAKE) -C $(LIBRARY_PATH) doc
-	@$(MAKE) -C $(JAVA_PATH) doc
+	@$(MAKE) -C "$(NMEALIB_PATH)" doc
+	@$(MAKE) -C "$(LIBRARY_PATH)" doc
+	@$(MAKE) -C "$(JAVA_PATH)" doc
 
 doc-clean:
 	@$(MAKE) -C doc clean
-	@$(MAKE) -C $(NMEALIB_PATH) doc clean
-	@$(MAKE) -C $(LIBRARY_PATH) doc clean
-	@$(MAKE) -C $(JAVA_PATH) doc clean
+	@$(MAKE) -C "$(NMEALIB_PATH)" doc clean
+	@$(MAKE) -C "$(LIBRARY_PATH)" doc clean
+	@$(MAKE) -C "$(JAVA_PATH)" doc clean
 
 nmealib:
-	@$(MAKE) -C $(NMEALIB_PATH) all
+	@$(MAKE) -C "$(NMEALIB_PATH)" all
 
 library:
-	@$(MAKE) -C $(LIBRARY_PATH) all
+	@$(MAKE) -C "$(LIBRARY_PATH)" all
 
 java:
-	@$(MAKE) -C $(JAVA_PATH) all
+	@$(MAKE) -C "$(JAVA_PATH)" all
 
 java-install: java
-	@$(MAKE) -C $(JAVA_PATH) DESTDIR=$(DESTDIR) install
+	@$(MAKE) -C "$(JAVA_PATH)" DESTDIR="$(DESTDIR)" install
 
 java-uninstall:
-	@$(MAKE) -C $(JAVA_PATH) DESTDIR=$(DESTDIR) uninstall
+	@$(MAKE) -C "$(JAVA_PATH)" DESTDIR="$(DESTDIR)" uninstall
 
 endif

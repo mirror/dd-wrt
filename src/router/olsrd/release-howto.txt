@@ -19,7 +19,7 @@ cheat sheet for making a (stable) release tarball.
 
 3. Update the changelog
 
-4. Change VERS in Makefile.inc to your target release.
+4. Change VERS in Makefile to your target release.
    in this example the target release is 0.5.6-r5
    Please also write a new version to:
    gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")

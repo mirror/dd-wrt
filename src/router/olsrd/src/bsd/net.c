@@ -43,6 +43,9 @@
 #define _GNU_SOURCE 1
 #endif
 
+/* comment: we need this otherwise it does not include the proper files to find IPv6_PKTINFO */
+#define __APPLE_USE_RFC_2292
+
 #include "../defs.h"
 #include "../net_os.h"
 #include "../ipcalc.h"

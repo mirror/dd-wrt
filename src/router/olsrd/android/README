@@ -9,12 +9,15 @@ Building olsrd for Android
 --------------------------
 
 In order to build olsrd and the plugins for Android, you will need to
-download the free (as in beer, and mostly as in speech) Android
-NDK: http://developer.android.com/sdk/ndk/index.html
+download the free (as in beer, and mostly as in speech) Android NDK
+(the pud plugin requires NDK r8, everything else you can build with r6
+or maybe earlier):
+
+http://developer.android.com/sdk/ndk/index.html
 
 Once you have that installed, run this in your terminal:
 
-  make OS=android NDK_BASE=/path/to/your/android-ndk-r7b build_all
+  make OS=android NDK_BASE=/path/to/your/android-ndk-r8 build_all
 
 Then you can find olsrd in the root, and the plugin files in lib/*/*.so*
 

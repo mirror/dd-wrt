@@ -21,27 +21,26 @@
 #ifndef __NMEA_PARSE_H__
 #define __NMEA_PARSE_H__
 
-#include <nmea/info.h>
 #include <nmea/sentence.h>
+
+#include <stdbool.h>
+#include <stddef.h>
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
-int nmea_pack_type(const char *buff, int buff_sz);
-int nmea_find_tail(const char *buff, int buff_sz, int *res_crc);
+bool nmea_parse_sentence_has_invalid_chars(const char * str, const size_t str_len, const char * strName, char * report,
+		const size_t reportSize);
 
-int nmea_parse_GPGGA(const char *buff, int buff_sz, nmeaGPGGA *pack);
-int nmea_parse_GPGSA(const char *buff, int buff_sz, nmeaGPGSA *pack);
-int nmea_parse_GPGSV(const char *buff, int buff_sz, nmeaGPGSV *pack);
-int nmea_parse_GPRMC(const char *buff, int buff_sz, nmeaGPRMC *pack);
-int nmea_parse_GPVTG(const char *buff, int buff_sz, nmeaGPVTG *pack);
+int nmea_parse_get_sentence_type(const char *s, const int len);
+int nmea_parse_get_sentence_length(const char *s, const int len, int *checksum);
 
-void nmea_GPGGA2info(nmeaGPGGA *pack, nmeaINFO *info);
-void nmea_GPGSA2info(nmeaGPGSA *pack, nmeaINFO *info);
-void nmea_GPGSV2info(nmeaGPGSV *pack, nmeaINFO *info);
-void nmea_GPRMC2info(nmeaGPRMC *pack, nmeaINFO *info);
-void nmea_GPVTG2info(nmeaGPVTG *pack, nmeaINFO *info);
+int nmea_parse_GPGGA(const char *s, const int len, nmeaGPGGA *pack);
+int nmea_parse_GPGSA(const char *s, const int len, nmeaGPGSA *pack);
+int nmea_parse_GPGSV(const char *s, const int len, nmeaGPGSV *pack);
+int nmea_parse_GPRMC(const char *s, const int len, nmeaGPRMC *pack);
+int nmea_parse_GPVTG(const char *s, const int len, nmeaGPVTG *pack);
 
 #ifdef  __cplusplus
 }
