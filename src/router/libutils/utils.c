@@ -2080,6 +2080,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "3");
 	setRouter("TP-Link TL-WR840N v1");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_MR3220
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	setRouter("TP-Link TL-MR3220");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_MR3420
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
