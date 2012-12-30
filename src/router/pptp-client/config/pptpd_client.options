@@ -13,12 +13,11 @@ refuse-chap
 refuse-mschap
 nobsdcomp
 nodeflate
-#require-mppe
 mppc
 #lcp-echo-adaptive	#
 lcp-echo-failure 30
 lcp-echo-interval 2
-persist	#dont cloese session try to reconnect
+persist	#dont close session try to reconnect
 maxfail 0	#forever try to connect
 usepeerdns
 idle 0
