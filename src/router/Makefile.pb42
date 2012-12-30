@@ -1125,6 +1125,9 @@ ifeq ($(CONFIG_WR741),y)
 	-./tools/tplink/mktplinkfw -B TL-MR3420 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3420-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/MR3420-firmware.bin mips-uclibc/tplink-MR3420-firmware.bin
 
+	-./tools/tplink/mktplinkfw -B TL-MR3220 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3220-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/MR3220-firmware.bin mips-uclibc/tplink-MR3220-firmware.bin
+
 	-./tools/tplink/mktplinkfw -B RNX-N300RT -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/rosewill-RNX-N300RT-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/RNX-N300RT-firmware.bin mips-uclibc/rosewill-RNX-N300RT-firmware.bin
 
