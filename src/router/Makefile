@@ -78,7 +78,7 @@ endif
 export ARCH:= mipsel
 export ARCHEXT: = .brcm24
 export ARCHITECTURE:= broadcom
-export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time  -mno-branch-likely
 export CC := ccache $(CROSS_COMPILE)gcc
 export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
@@ -89,7 +89,7 @@ export RANLIB := $(CROSS_COMPILE)ranlib
 export STRIP := @true
 export SIZE := $(CROSS_COMPILE)size
 
-export CFLAGS :=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time
+export CFLAGS :=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time  -mno-branch-likely
 export LDFLAGS := 
 
 #
