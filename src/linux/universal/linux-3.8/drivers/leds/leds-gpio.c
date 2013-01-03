@@ -128,8 +128,9 @@ static int create_gpio_led(const struct gpio_led *template,
 
 	if (template->default_state != LEDS_GPIO_DEFSTATE_KEEP)  // KEEP means KEEP, this also affects output/input state
 		ret = devm_gpio_request_one(parent, template->gpio,
-			GPIOF_DIR_OUT | (led_dat->active_low ^ state),
-			template->name);
+				    (led_dat->active_low ^ state) ?
+				    GPIOF_OUT_INIT_HIGH : GPIOF_OUT_INIT_LOW,
+				    template->name);
 	if (ret < 0)
 		return ret;
 		
