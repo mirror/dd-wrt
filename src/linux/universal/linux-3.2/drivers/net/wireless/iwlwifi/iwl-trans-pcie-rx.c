@@ -311,6 +311,14 @@ static void iwlagn_rx_allocate(struct iwl_trans *trans, gfp_t priority)
 		rxb->page_dma = dma_map_page(bus(trans)->dev, page, 0,
 				PAGE_SIZE << hw_params(trans).rx_page_order,
 				DMA_FROM_DEVICE);
+		if (dma_mapping_error(bus(trans)->dev, rxb->page_dma)) {
+			rxb->page = NULL;
+			spin_lock_irqsave(&rxq->lock, flags);
+			list_add(&rxb->list, &rxq->rx_used);
+			spin_unlock_irqrestore(&rxq->lock, flags);
+			__free_pages(page, hw_params(trans).rx_page_order);
+			return;
+		}
 		/* dma address must be no more than 36 bits */
 		BUG_ON(rxb->page_dma & ~DMA_BIT_MASK(36));
 		/* and also 256 byte aligned! */
@@ -489,8 +497,19 @@ static void iwl_rx_handle(struct iwl_trans *trans)
 				0, PAGE_SIZE <<
 				    hw_params(trans).rx_page_order,
 				DMA_FROM_DEVICE);
-			list_add_tail(&rxb->list, &rxq->rx_free);
-			rxq->free_count++;
+			if (dma_mapping_error(bus(trans)->dev, rxb->page_dma)) {
+				/*
+				 * free the page(s) as well to not break
+				 * the invariant that the items on the used
+				 * list have no page(s)
+				 */
+				__free_pages(rxb->page, hw_params(trans).rx_page_order);
+				rxb->page = NULL;
+				list_add_tail(&rxb->list, &rxq->rx_used);
+			} else {
+				list_add_tail(&rxb->list, &rxq->rx_free);
+				rxq->free_count++;
+			}
 		} else
 			list_add_tail(&rxb->list, &rxq->rx_used);
 
@@ -1263,11 +1282,19 @@ static irqreturn_t iwl_isr(int irq, void *data)
 	 *    back-to-back ISRs and sporadic interrupts from our NIC.
 	 * If we have something to service, the tasklet will re-enable ints.
 	 * If we *don't* have something, we'll re-enable before leaving here. */
-	inta_mask = iwl_read32(bus(trans), CSR_INT_MASK);  /* just for debug */
+	inta_mask = iwl_read32(bus(trans), CSR_INT_MASK);
 	iwl_write32(bus(trans), CSR_INT_MASK, 0x00000000);
 
 	/* Discover which interrupts are active/pending */
 	inta = iwl_read32(bus(trans), CSR_INT);
+
+	if (inta & (~inta_mask)) {
+		IWL_DEBUG_ISR(trans,
+			      "We got a masked interrupt (0x%08x)...Ack and ignore\n",
+			      inta & (~inta_mask));
+		iwl_write32(bus(trans), CSR_INT, inta & (~inta_mask));
+		inta &= inta_mask;
+	}
 
 	/* Ignore interrupt if there's nothing in NIC to service.
 	 * This may be due to IRQ shared with another device,
@@ -1349,7 +1376,7 @@ irqreturn_t iwl_isr_ict(int irq, void *data)
 	 * If we have something to service, the tasklet will re-enable ints.
 	 * If we *don't* have something, we'll re-enable before leaving here.
 	 */
-	inta_mask = iwl_read32(bus(trans), CSR_INT_MASK);  /* just for debug */
+	inta_mask = iwl_read32(bus(trans), CSR_INT_MASK);
 	iwl_write32(bus(trans), CSR_INT_MASK, 0x00000000);
 
 
