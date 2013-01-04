@@ -516,6 +516,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"filter_web_host8", "", 0},	/* Website Blocking by URL Address */
 	{"filter_web_host9", "", 0},	/* Website Blocking by URL Address */
 	{"filter_web_host10", "", 0},	/* Website Blocking by URL Address */
+	{"filter_web_host11", "", 0},	/* Website Blocking by URL Address */
+	{"filter_web_host12", "", 0},	/* Website Blocking by URL Address */
+	{"filter_web_host13", "", 0},	/* Website Blocking by URL Address */
+	{"filter_web_host14", "", 0},	/* Website Blocking by URL Address */
 	{"filter_web_url1", "", 0},	/* Website Blocking by keyword */
 	{"filter_web_url2", "", 0},	/* Website Blocking by keyword */
 	{"filter_web_url3", "", 0},	/* Website Blocking by keyword */
@@ -526,6 +530,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"filter_web_url8", "", 0},	/* Website Blocking by keyword */
 	{"filter_web_url9", "", 0},	/* Website Blocking by keyword */
 	{"filter_web_url10", "", 0},	/* Website Blocking by keyword */
+	{"filter_web_url11", "", 0},	/* Website Blocking by keyword */
+	{"filter_web_url12", "", 0},	/* Website Blocking by keyword */
+	{"filter_web_url13", "", 0},	/* Website Blocking by keyword */
+	{"filter_web_url14", "", 0},	/* Website Blocking by keyword */
+	{"filter_web_url15", "", 0},	/* Website Blocking by keyword */
 	{"filter_port_grp1", "", 0},	/* Blocked Services */
 	{"filter_port_grp2", "", 0},	/* Blocked Services */
 	{"filter_port_grp3", "", 0},	/* Blocked Services */
