@@ -457,8 +457,12 @@ static int get_best_header(FLACParseContext* fpc, const uint8_t **poutbuf,
         check_header_mismatch(fpc, header, child, 0);
     }
 
+    if (header->fi.channels != fpc->avctx->channels ||
+        (!fpc->avctx->channel_layout && header->fi.channels <= 6)) {
+        fpc->avctx->channels = header->fi.channels;
+        ff_flac_set_channel_layout(fpc->avctx);
+    }
     fpc->avctx->sample_rate = header->fi.samplerate;
-    fpc->avctx->channels    = header->fi.channels;
     fpc->pc->duration       = header->fi.blocksize;
     *poutbuf = flac_fifo_read_wrap(fpc, header->offset, *poutbuf_size,
                                         &fpc->wrap_buf,
@@ -541,14 +545,18 @@ static int flac_parse(AVCodecParserContext *s, AVCodecContext *avctx,
         av_freep(&fpc->best_header);
     }
 
-    /* Find and score new headers. */
-    while ((buf && read_end < buf + buf_size &&
+    /* Find and score new headers.                                     */
+    /* buf_size is to zero when padding, so check for this since we do */
+    /* not want to try to read more input once we have found the end.  */
+    /* Note that as (non-modified) parameters, buf can be non-NULL,    */
+    /* while buf_size is 0.                                            */
+    while ((buf && buf_size && read_end < buf + buf_size &&
             fpc->nb_headers_buffered < FLAC_MIN_HEADERS)
-           || (!buf && !fpc->end_padded)) {
+           || ((!buf || !buf_size) && !fpc->end_padded)) {
         int start_offset;
 
         /* Pad the end once if EOF, to check the final region for headers. */
-        if (!buf) {
+        if (!buf || !buf_size) {
             fpc->end_padded      = 1;
             buf_size = MAX_FRAME_HEADER_SIZE;
             read_end = read_start + MAX_FRAME_HEADER_SIZE;
@@ -569,7 +577,7 @@ static int flac_parse(AVCodecParserContext *s, AVCodecContext *avctx,
             goto handle_error;
         }
 
-        if (buf) {
+        if (buf && buf_size) {
             av_fifo_generic_write(fpc->fifo_buf, (void*) read_start,
                                   read_end - read_start, NULL);
         } else {
