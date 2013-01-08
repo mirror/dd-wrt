@@ -449,10 +449,12 @@ int svqos_iptables(void)
 	system2("iptables -t mangle -X SVQOS_SVCS");
 	system2("iptables -t mangle -N SVQOS_SVCS");
 
+/* seems this is not necessary anymore ...
 	// chain to circumvent an problem with client specific service matches
 	system2("iptables -t mangle -F FOO");
 	system2("iptables -t mangle -X FOO");
 	system2("iptables -t mangle -N FOO");
+*/
 
 	system2("iptables -t mangle -F FILTER_OUT");
 	system2("iptables -t mangle -X FILTER_OUT");
@@ -465,7 +467,7 @@ int svqos_iptables(void)
 	system2("iptables -t mangle -F FILTER_IN");
 	system2("iptables -t mangle -X FILTER_IN");
 	system2("iptables -t mangle -N FILTER_IN");
-	system2("iptables -t mangle -A FILTER_IN -j FOO");
+//	system2("iptables -t mangle -A FILTER_IN -j FOO");
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --restore");
 	sysprintf
 	    ("iptables -t mangle -A FILTER_IN -m mark --mark %s -j SVQOS_SVCS",
@@ -778,6 +780,7 @@ int svqos_iptables(void)
 			    ("iptables -t mangle -A SVQOS_SVCS -p udp -m udp --sport %s -j MARK --set-mark %s",
 			     data, qos_nfmark(atol(level)));
 
+/* seems this is not necessary anymore ...
 			// workaround for non functional iptables matches
 			sysprintf
 			    ("iptables -t mangle -I FOO -p udp -m udp --dport %s -j MARK --set-mark %s",
@@ -785,6 +788,7 @@ int svqos_iptables(void)
 			sysprintf
 			    ("iptables -t mangle -I FOO -p udp -m udp --sport %s -j MARK --set-mark %s",
 			     data, "0xFFFFFFFF/0xFFFFFFFF");
+*/
 		}
 
 		if (strstr(type, "tcp") || strstr(type, "both")) {
@@ -795,6 +799,7 @@ int svqos_iptables(void)
 			    ("iptables -t mangle -A SVQOS_SVCS -p tcp -m tcp --sport %s -j MARK --set-mark %s",
 			     data, qos_nfmark(atol(level)));
 
+/*
 			// workaround for non functional iptables matches
 			sysprintf
 			    ("iptables -t mangle -I FOO -p tcp -m tcp --dport %s -j MARK --set-mark %s",
@@ -802,28 +807,31 @@ int svqos_iptables(void)
 			sysprintf
 			    ("iptables -t mangle -I FOO -p tcp -m tcp --sport %s -j MARK --set-mark %s",
 			     data, "0xFFFFFFFF/0xFFFFFFFF");
+*/
 		}
 
 		if (strstr(type, "l7")) {
 			sysprintf
 			    ("iptables -t mangle -A SVQOS_SVCS -m layer7 --l7proto %s -j MARK --set-mark %s",
 			     name, qos_nfmark(atol(level)));
-
+/*
 			// workaround for non functional iptables matches
 			sysprintf
 			    ("iptables -t mangle -I FOO -m layer7 --l7proto %s -j MARK --set-mark %s",
 			     name, "0xFFFFFFFF/0xFFFFFFFF");
+*/
 		}
 #ifdef HAVE_OPENDPI
 		if (strstr(type, "dpi")) {
 			sysprintf
 			    ("iptables -t mangle -A SVQOS_SVCS -m ndpi --%s -j MARK --set-mark %s",
 			     name, qos_nfmark(atol(level)));
-
+/*
 			// workaround for non functional iptables matches
 			sysprintf
 			    ("iptables -t mangle -I FOO -m ndpi --%s -j MARK --set-mark %s",
 			     name, "0xFFFFFFFF/0xFFFFFFFF");
+*/
 		}
 #endif
 
@@ -862,11 +870,12 @@ int svqos_iptables(void)
 				sysprintf
 				    ("iptables -t mangle -A SVQOS_SVCS -p tcp -m ipp2p --%s -j MARK --set-mark %s",
 				     proto, qos_nfmark(atol(level)));
-
+/*
 				// workaround for non functional iptables matches
 				sysprintf
 				    ("iptables -t mangle -I FOO -p tcp -m ipp2p --%s -j MARK --set-mark %s",
 				     proto, "0xFFFFFFFF/0xFFFFFFFF");
+*/
 
 				if (!strcmp(proto, "bit")) {
 					// bittorrent detection enhanced 
@@ -874,29 +883,32 @@ int svqos_iptables(void)
 					sysprintf
 					    ("iptables -t mangle -A SVQOS_SVCS -m layer7 --l7proto bt -j MARK --set-mark %s\n",
 					     qos_nfmark(atol(level)));
-
+/*
 					// workaround for non functional iptables matches
 					sysprintf
 					    ("iptables -t mangle -I FOO -m layer7 --l7proto bt -j MARK --set-mark %s",
 					     "0xFFFFFFFF/0xFFFFFFFF");
+*/
 #else
 					sysprintf
 					    ("iptables -t mangle -A SVQOS_SVCS -m length --length 0:550 -m layer7 --l7proto bt -j MARK --set-mark %s\n",
 					     qos_nfmark(atol(level)));
-
+/*
 					// workaround for non functional iptables matches
 					sysprintf
 					    ("iptables -t mangle -I FOO -m length --length 0:550 -m layer7 --l7proto bt -j MARK --set-mark %s",
 					     "0xFFFFFFFF/0xFFFFFFFF");
+*/
 #endif
 					sysprintf
 					    ("iptables -t mangle -A SVQOS_SVCS -m layer7 --l7proto bt2 -j MARK --set-mark %s\n",
 					     qos_nfmark(atol(level)));
-
+/*
 					// workaround for non functional iptables matches
 					sysprintf
 					    ("iptables -t mangle -I FOO -m layer7 --l7proto bt2 -j MARK --set-mark %s",
 					     "0xFFFFFFFF/0xFFFFFFFF");
+*/
 				}
 			}
 		}
