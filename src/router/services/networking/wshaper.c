@@ -904,13 +904,16 @@ int svqos_iptables(void)
 
 	// close mark-tables 
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
-	sysprintf
-	    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
-	     qos_nfmark(0x64));
+
+	// http://svn.dd-wrt.com/ticket/2760
+	//sysprintf
+	//    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
+	//     qos_nfmark(0x64));
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 
-	system2
-	    ("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");
+	// http://svn.dd-wrt.com/ticket/2760
+	//system2
+	//    ("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");
 	system2
 	    ("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
 	system2("iptables -t mangle -A FILTER_OUT -j VPN_DSCP");
