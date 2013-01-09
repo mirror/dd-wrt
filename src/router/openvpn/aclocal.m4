@@ -961,4 +961,12 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
-m4_include([acinclude.m4])
+m4_include([m4/ax_emptyarray.m4])
+m4_include([m4/ax_socklen_t.m4])
+m4_include([m4/ax_varargs.m4])
+m4_include([m4/libtool.m4])
+m4_include([m4/ltoptions.m4])
+m4_include([m4/ltsugar.m4])
+m4_include([m4/ltversion.m4])
+m4_include([m4/lt~obsolete.m4])
+m4_include([m4/pkg.m4])
