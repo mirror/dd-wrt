@@ -858,9 +858,10 @@ add_usermac(char *mac, int base, char *upstream, char *downstream,
 	strcpy(nullmask, qos_nfmark(0));
 
 	system2("iptables -t mangle -D FILTER_IN -j CONNMARK --save");
-	sysprintf
-	    ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s", 
-		 qos_nfmark(0x64));
+// http://svn.dd-wrt.com/ticket/2737 (default bandwidth level)
+//	sysprintf
+//	    ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s", 
+//		 qos_nfmark(0x64));
 	system2("iptables -t mangle -D FILTER_IN -j RETURN");
 
 	add_client_classes(base, uprate, downrate, lanrate, 0);
@@ -880,9 +881,10 @@ add_usermac(char *mac, int base, char *upstream, char *downstream,
 	     mac, nullmask, qos_nfmark(base));
 
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
-	sysprintf
-	    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
-		 qos_nfmark(0x64));
+// http://svn.dd-wrt.com/ticket/2737 (default bandwidth level)
+//	sysprintf
+//	    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
+//		 qos_nfmark(0x64));
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 }
 
@@ -902,9 +904,10 @@ add_userip(char *ip, int base, char *upstream, char *downstream,
 	strcpy(nullmask, qos_nfmark(0));
 	
 	system2("iptables -t mangle -D FILTER_IN -j CONNMARK --save");
-	sysprintf
-	    ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
-		 qos_nfmark(0x64));
+// http://svn.dd-wrt.com/ticket/2737 (default bandwidth level)
+//	sysprintf
+//	    ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
+//		 qos_nfmark(0x64));
 	system2("iptables -t mangle -D FILTER_IN -j RETURN");
 
 	system2
@@ -941,9 +944,10 @@ add_userip(char *ip, int base, char *upstream, char *downstream,
 	     ip, nullmask, qos_nfmark(base));
 
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
-	sysprintf
-	    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
-		 qos_nfmark(0x64));
+// http://svn.dd-wrt.com/ticket/2737 (default bandwidth level)
+//	sysprintf
+//	    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark %s",
+//		 qos_nfmark(0x64));
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 
 	system2
