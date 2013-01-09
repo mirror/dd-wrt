@@ -1263,7 +1263,7 @@ CONFIG_RTC_LIB=y
 # CONFIG_BTRFS_FS is not set
 # CONFIG_NILFS2_FS is not set
 # CONFIG_FS_POSIX_ACL is not set
-# CONFIG_FILE_LOCKING is not set
+CONFIG_FILE_LOCKING=y
 # CONFIG_DIRECT_IO is not set
 # CONFIG_FSNOTIFY is not set
 # CONFIG_DNOTIFY is not set
