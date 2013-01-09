@@ -1962,9 +1962,10 @@ script_setenv(var, value, iskey)
 		free(p-1);
 		script_env[i] = newstring;
 #ifdef USE_TDB
-		if (iskey && pppdb != NULL)
+		if (iskey && pppdb != NULL) {
 		    add_db_key(newstring);
-		update_db_entry();
+		    update_db_entry();
+		}
 #endif
 		return;
 	    }
