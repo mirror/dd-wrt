@@ -1964,8 +1964,9 @@ script_setenv(var, value, iskey)
 #ifdef USE_TDB
 		if (iskey && pppdb != NULL) {
 		    add_db_key(newstring);
-		    update_db_entry();
 		}
+		if (pppdb)
+		    update_db_entry();
 #endif
 		return;
 	    }
