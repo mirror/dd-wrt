@@ -181,7 +181,7 @@ int get_nfmark(int argc, char **argv)
 	if (argc < 3) {
 		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n"
 						"	services: FORWARD\n"
-						"		  SPUTNIK\n"
+						"		  HOTSPOT\n"
 						"		  QOS\n\n"
 						"	eg: get_nfmark QOS 10\n");
 		return 1;
