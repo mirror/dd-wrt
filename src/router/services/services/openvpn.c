@@ -81,7 +81,6 @@ void start_openvpnserver(void)
 			"writepid /var/run/openvpnd.pid\n"
 			"management 127.0.0.1 5002\n"
 			"management-log-cache 50\n"
-			"mtu-disc yes\n"
 			"topology subnet\n"
 			"client-config-dir /tmp/openvpn/ccd\n"
 			"script-security 2\n"
@@ -124,18 +123,19 @@ void start_openvpnserver(void)
 			fprintf(fp, "tun-mtu %s\n",
 				nvram_safe_get("openvpn_mtu"));
 		if (nvram_invmatch("openvpn_fragment", "")
-		    && nvram_match("openvpn_proto", "udp"))
+		    && nvram_match("openvpn_proto", "udp")) {
 			fprintf(fp, "fragment %s\n",
 				nvram_safe_get("openvpn_fragment"));
-		if (nvram_match("openvpn_mssfix", "1")
-		    && nvram_match("openvpn_proto", "udp"))
-			fprintf(fp, "mssfix\n");	//mssfix=1450 (default), should be set on one side only. when fragment->=mss	
+			if (nvram_match("openvpn_mssfix", "1")
+				fprintf(fp, "mssfix\n");	//mssfix=1450 (default), should be set on one side only. when fragment->=mss	
+		} else
+			fprintf(fp, "mtu-disc yes\n");
 		if (nvram_match("openvpn_tuntap", "tun")) {
 			fprintf(fp, "server %s %s\n",
 				nvram_safe_get("openvpn_net"),
 				nvram_safe_get("openvpn_tunmask"));
 			fprintf(fp, "dev tun2\n");
-//                      fprintf(fp, "tun-ipv6\n"); //enable ipv6 support. not supported on server in version 2.1.3
+			fprintf(fp, "tun-ipv6\n"); //enable ipv6 support.
 		} else if (nvram_match("openvpn_tuntap", "tap") &&
 			   nvram_match("openvpn_proxy", "0")) {
 			fprintf(fp, "server-bridge %s %s %s %s\n",
@@ -348,7 +348,7 @@ void start_openvpn(void)
 		"client\n"
 		"resolv-retry infinite\n"
 		"nobind\n" "persist-key\n" "persist-tun\n" 
-		"script-security 2\n" "mtu-disc yes\n");
+		"script-security 2\n");
 	fprintf(fp, "dev %s1\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
@@ -370,18 +370,19 @@ void start_openvpn(void)
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
 	if (nvram_invmatch("openvpncl_fragment", "")
-	    && nvram_match("openvpncl_proto", "udp")) 
+	    && nvram_match("openvpncl_proto", "udp")) {
 		fprintf(fp, "fragment %s\n",
 			nvram_safe_get("openvpncl_fragment"));
-	if (nvram_match("openvpncl_mssfix", "1")
-		 		&& nvram_match("openvpncl_proto", "udp"))
-		fprintf(fp, "mssfix\n");	//mssfix=1450 (default), should be set on one side only. when fragment->=mss	
+		if (nvram_match("openvpncl_mssfix", "1")
+			fprintf(fp, "mssfix\n");	//mssfix=1450 (default), should be set on one side only. when fragment->=mss	
+ } else
+			fprintf(fp, "mtu-disc yes\n");
 	if (nvram_match("openvpncl_certtype", "1"))
 		fprintf(fp, "ns-cert-type server\n");
 	if (nvram_match("openvpncl_proto", "udp"))
 		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
-//	if (nvram_match("openvpncl_tuntap", "tun"))
-//		fprintf(fp, "tun-ipv6\n");	//enable ipv6 support. not supported on server in version 2.1.3
+	if (nvram_match("openvpncl_tuntap", "tun"))
+		fprintf(fp, "tun-ipv6\n");	//enable ipv6 support.
 	if (strlen(nvram_safe_get("openvpncl_tlsauth")) > 0)
 		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	if (nvram_invmatch("openvpncl_tlscip", "0"))
