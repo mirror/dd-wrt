@@ -18,7 +18,7 @@ endif
 
 CONFIGURE_ARGS += \
 	--host=$(ARCH)-linux \
-	CPPFLAGS="-I../lzo/include -I$(SSLPATH)/include -L../lzo -L$(SSL_LIB_PATH) -L../lzo/src/.libs" \
+	CPPFLAGS="-I$(TOP)/lzo/include -I$(SSLPATH)/include -L$(TOP)/lzo -L$(SSL_LIB_PATH) -L$(TOP)/lzo/src/.libs" \
 	--enable-pthread \
 	--disable-plugins \
 	--enable-debug \
@@ -32,7 +32,7 @@ CONFIGURE_ARGS += \
 	--with-ssl-type=$(SSL_TYPE) \
 	$(SSL_ADDOPT) \
 	CFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L../$(SSL_LIB_PATH) -L../lzo -L../lzo/src/.libs -ldl" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/$(SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl" \
 	ac_cv_func_epoll_create=yes
 
 openvpn-conf-prep:
@@ -78,7 +78,7 @@ endif
 	make -j 4 -C $(OVPN)
 
 openvpn-install:
-	install -D $(OVPN)/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
+	install -D $(OVPN)/src/openvpn/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
 
 ifeq ($(CONFIG_AIRNET),y)
 	install -D openvpn/config-airnet/openvpncl.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpncl.nvramconfig
