@@ -928,6 +928,9 @@ static void nat_postrouting(void)
 
 	} else {
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
+
+		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
+//		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT","--notrack");	//this speeds up networking alot on slow systems 
 		if (strlen(wanface) > 0 && wanactive())
 			if (nvram_match("wl_br1_enable", "1"))
 				save2file
