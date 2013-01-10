@@ -94,7 +94,7 @@ static struct scsi_host_template ahci_platform_sht = {
 	AHCI_SHT("ahci_platform"),
 };
 
-static int __devinit ahci_probe(struct platform_device *pdev)
+static int ahci_probe(struct platform_device *pdev)
 {
 	const struct platform_device_id *platid = platform_get_device_id(pdev);
 	struct device *dev = &pdev->dev;

@@ -167,7 +167,7 @@ static void ltq_pci_setup_gpio(int gpio)
 	ltq_pci_req_mask = (gpio >> PCI_REQ_SHIFT) & PCI_REQ_MASK;
 }
 
-static int __devinit ltq_pci_startup(struct ltq_pci_data *conf)
+static int ltq_pci_startup(struct ltq_pci_data *conf)
 {
 	u32 temp_buffer;
 
@@ -266,7 +266,7 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	return 0;
 }
 
-static int __devinit ltq_pci_probe(struct platform_device *pdev)
+static int ltq_pci_probe(struct platform_device *pdev)
 {
 	struct ltq_pci_data *ltq_pci_data =
 		(struct ltq_pci_data *) pdev->dev.platform_data;
