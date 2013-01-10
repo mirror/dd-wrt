@@ -126,7 +126,7 @@ void start_openvpnserver(void)
 		    && nvram_match("openvpn_proto", "udp")) {
 			fprintf(fp, "fragment %s\n",
 				nvram_safe_get("openvpn_fragment"));
-			if (nvram_match("openvpn_mssfix", "1")
+			if (nvram_match("openvpn_mssfix", "1"))
 				fprintf(fp, "mssfix\n");	//mssfix=1450 (default), should be set on one side only. when fragment->=mss	
 		} else
 			fprintf(fp, "mtu-disc yes\n");
@@ -373,7 +373,7 @@ void start_openvpn(void)
 	    && nvram_match("openvpncl_proto", "udp")) {
 		fprintf(fp, "fragment %s\n",
 			nvram_safe_get("openvpncl_fragment"));
-		if (nvram_match("openvpncl_mssfix", "1")
+		if (nvram_match("openvpncl_mssfix", "1"))
 			fprintf(fp, "mssfix\n");	//mssfix=1450 (default), should be set on one side only. when fragment->=mss	
  } else
 			fprintf(fp, "mtu-disc yes\n");
