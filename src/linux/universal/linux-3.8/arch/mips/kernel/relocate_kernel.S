@@ -10,7 +10,6 @@
 #include <asm/asm_nosec.h>
 #include <asm/asmmacro.h>
 #include <asm/regdef.h>
-#include <asm/page.h>
 #include <asm/mipsregs.h>
 #include <asm/stackframe.h>
 #include <asm/addrspace.h>
@@ -51,7 +50,7 @@ process_entry:
 	and		s3, s2, 0x8
 	beq		s3, zero, process_entry
 	and		s2, s2, ~0x8
-	li		s6, (1 << PAGE_SHIFT) / SZREG
+	li		s6, (1 << _PAGE_SHIFT) / SZREG
 
 copy_word:
 	/* copy page word by word */
