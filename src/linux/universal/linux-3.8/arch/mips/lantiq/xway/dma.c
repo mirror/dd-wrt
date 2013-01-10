@@ -214,7 +214,7 @@ ltq_dma_init_port(int p)
 }
 EXPORT_SYMBOL_GPL(ltq_dma_init_port);
 
-int __init
+int
 ltq_dma_init(void)
 {
 	int i;
