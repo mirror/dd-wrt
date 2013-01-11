@@ -244,7 +244,6 @@ static void __init mi424wr_init(void)
 	platform_add_devices(mi424wr_devices, ARRAY_SIZE(mi424wr_devices));
 }
 
-
 MACHINE_START(MI424WR, "Actiontec MI424WR")
 	/* Maintainer: Jose Vasconcellos */
 	.map_io		= ixp4xx_map_io,
