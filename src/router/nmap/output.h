@@ -136,6 +136,18 @@
 #include "nmap.h"
 #include "global_structures.h"
 
+#ifdef RAISENTINET3
+//--- sentinet3
+typedef struct {
+	char Ip[17];             
+	char *Dns;          
+	char *Mac;          
+	char *MacVendor;
+	char *OpenPort;
+	char *OS;
+} risultatoScan;
+
+#endif /* RAISENTINET3 */
 #include <string>
 
 #ifdef WIN32
@@ -148,14 +160,22 @@ void win32_fatal_raw_sockets(const char *devname);
    ports found on the machine.  It also handles the Machine/Greppable
    output and the XML output.  It is pretty ugly -- in particular I
    should write helper functions to handle the table creation */
+#ifndef RAISENTINET3
 void printportoutput(Target *currenths, PortList *plist);
+#else /* RAISENTINET3 */
+void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultatoHost);
+#endif /* RAISENTINET3 */
 
 /* Prints the MAC address if one was found for the target (generally
    this means that the target is directly connected on an ethernet
    network.  This only prints to human output -- XML is handled by a
    separate call ( print_MAC_XML_Info ) because it needs to be printed
    in a certain place to conform to DTD. */
+#ifndef RAISENTINET3
 void printmacinfo(Target *currenths);
+#else /* RAISENTINET3 */
+void printmacinfo(Target *currenths, risultatoScan *risultatoHost);
+#endif /* RAISENTINET3 */
 
 char *logfilename(const char *str, struct tm *tm);
 
@@ -209,11 +229,19 @@ void write_host_header(Target *currenths);
 /* Writes host status info to the log streams (including STDOUT).  An
    example is "Host: 10.11.12.13 (foo.bar.example.com)\tStatus: Up\n" to 
    machine log. */
+#ifndef RAISENTINET3
 void write_host_status(Target *currenths);
+#else /* RAISENTINET3 */
+void write_host_status(Target *currenths, risultatoScan *risultatoHost);
+#endif /* RAISENTINET3 */
 
 /* Prints the formatted OS Scan output to stdout, logfiles, etc (but only
    if an OS Scan was performed */
+#ifndef RAISENTINET3
 void printosscanoutput(Target *currenths);
+#else /* RAISENTINET3 */
+void printosscanoutput(Target *currenths, risultatoScan *risultatoHost);
+#endif /* RAISENTINET3 */
 
 /* Prints the alternate hostname/OS/device information we got from the
    service scan (if it was performed) */
