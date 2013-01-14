@@ -843,6 +843,7 @@ CONFIG_MTD_ESR6650=y
 #
 # Ralink Non-volatile Device Drivers
 #
+# CONFIG_MTD_SPI_RALINK is not set
 
 #
 # Broadcom Flash Devices Support
