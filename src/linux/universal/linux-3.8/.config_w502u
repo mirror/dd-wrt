@@ -876,6 +876,7 @@ CONFIG_MTD_RALINK=y
 #
 # Ralink Non-volatile Device Drivers
 #
+# CONFIG_MTD_SPI_RALINK is not set
 
 #
 # Broadcom Flash Devices Support
