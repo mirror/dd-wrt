@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.7.1 Kernel Configuration
+# Linux/mips 3.7.2 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -843,6 +843,7 @@ CONFIG_MTD_RALINK=y
 #
 # Ralink Non-volatile Device Drivers
 #
+# CONFIG_MTD_SPI_RALINK is not set
 
 #
 # Broadcom Flash Devices Support

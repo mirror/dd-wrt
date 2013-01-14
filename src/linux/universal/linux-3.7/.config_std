@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.7.1 Kernel Configuration
+# Linux/mips 3.7.2 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -289,12 +289,6 @@ CONFIG_MODULE_UNLOAD=y
 # CONFIG_MODVERSIONS is not set
 CONFIG_MODULE_SRCVERSION_ALL=y
 # CONFIG_MODULE_SIG is not set
-CONFIG_MODULE_SIG_FORCE=y
-CONFIG_MODULE_SIG_SHA1=y
-# CONFIG_MODULE_SIG_SHA224 is not set
-# CONFIG_MODULE_SIG_SHA256 is not set
-# CONFIG_MODULE_SIG_SHA384 is not set
-# CONFIG_MODULE_SIG_SHA512 is not set
 CONFIG_BLOCK=y
 CONFIG_LBDAF=y
 # CONFIG_BLK_DEV_BSG is not set
