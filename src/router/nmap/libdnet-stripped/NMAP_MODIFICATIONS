@@ -1,0 +1,1098 @@
+$Id: NMAP_MODIFICATIONS 28906 2012-06-11 21:55:54Z david $
+
+This is Dug Song's excellent Libdnet networking library version 1.12.
+It has been stripped down for inclusion within Nmap and modified as follows:
+
+o Removed the following directories:
+  python, test, man, trunk
+
+o Removed the fw-* files except for fw-none because Nmap doesn't use
+  the firewall API.  Changed configure.in to always use fw-non.
+
+o Removed files in now-removed dirs that were referenced in the AC_OUTPUT
+  at the end of configure.in
+
+o Ran "aclocal -I . -I config" to regenerate aclocal.m4 with my newer
+  aclocal.
+
+o Added this NMAP_MODIFICATIONS file.
+
+o Added include/winconfig.h, which is a modified config.h to better support
+  Windows compilation via Visual Studio.  Added conditional includes
+  for it to a bunch of the dnet source files.
+
+o A number of portability changes to remove errors/warnings during
+  Win32 Visual Studio.Net compilation.  This was mostly a matter of
+  adding casts and a few extra include files.
+
+o Added libdnet-stripped.vcproj -- A Visual Studio.Net project file
+  for dnet.
+
+o Regenerated build files with Autoconf 2.63, Automake 1.10.1, and
+  libtool 2.2.6.
+
+o Added a check for socklen_t in configure.in and used socklen_t when
+  calling getsockname and getsockopt to avoid a "pointer targets differ
+  in signedness" warning on platforms where socklen_t is unsigned.
+
+o Made the following change for Windows Vista support (thanks to Dan
+Griffin):
+--- old/intf-win32.c        2005-12-28 16:30:38.000000000 -0800
++++ intf-win32.c        2006-11-26 20:46:13.000000000 -0800
+@@ -31,7 +31,7 @@
+        int              max;
+ };
+
+-#define MIB_IF_TYPE_MAX         32     /* XXX - ipifcons.h */
++#define MIB_IF_TYPE_MAX                MAX_IF_TYPE     /* XXX - ipifcons.h */
+
+ struct intf_handle {
+        struct ifcombo   ifcombo[MIB_IF_TYPE_MAX];
+
+o Removed config.sub, config.guess, install-sh, ltmain.sh, and missing from the
+  config directory. These files are found in the parent (i.e., Nmap's)
+  directory. Also removed config/mkinstalldirs because it is replaced with
+  $(install_sh) -d. Change Makefile.am not to use ac_aux_dir, which is an
+  internal Autoconf variable.
+Index: configure.in
+===================================================================
+--- configure.in	(revision 6317)
++++ configure.in	(working copy)
+@@ -6,8 +6,6 @@
+ dnl $Id: NMAP_MODIFICATIONS 28906 2012-06-11 21:55:54Z david $
+ 
+ AC_INIT(include/dnet.h)
+-AC_CONFIG_AUX_DIR(config)
+-AC_SUBST(ac_aux_dir)
+ 
+ AM_INIT_AUTOMAKE(libdnet, 1.10)
+ AM_CONFIG_HEADER(include/config.h)
+Index: Makefile.am
+===================================================================
+--- Makefile.am	(revision 6317)
++++ Makefile.am	(working copy)
+@@ -10,16 +10,12 @@
+ 
+ CLEANFILES =	dnet-config
+ 
+-AUX_DIST =	$(ac_aux_dir)/acinclude.m4	\
+-		$(ac_aux_dir)/config.guess	\
+-		$(ac_aux_dir)/config.sub	\
+-		$(ac_aux_dir)/install-sh	\
+-		$(ac_aux_dir)/ltmain.sh		\
+-		$(ac_aux_dir)/missing		\
+-		$(ac_aux_dir)/mkinstalldirs
++aux_dir = config
+ 
++AUX_DIST =	$(aux_dir)/acinclude.m4
++
+ dist-hook:
+-	(cd $(distdir) && mkdir $(ac_aux_dir))
++	(cd $(distdir) && mkdir $(aux_dir))
+ 	for file in $(AUX_DIST); do \
+ 		cp $$file $(distdir)/$$file; \
+ 	done
+
+o Remember the entry->intf_len before zeroing entry in _ifrow_to_entry.
+intf_loop relies on passing the length inside the structure to make sure
+interface aliases are accounted for.
+Index: src/intf-win32.c
+===================================================================
+--- src/intf-win32.c	(revision 6288)
++++ src/intf-win32.c	(working copy)
+@@ -103,7 +103,12 @@
+ 	struct addr *ap, *lap;
+ 	int i;
+ 	
++	/* The total length of the entry may be passed in inside entry.
++	   Remember it and clear the entry. */
++	u_int intf_len = entry->intf_len;
+ 	memset(entry, 0, sizeof(*entry));
++	/* Restore the length. */
++	entry->intf_len = intf_len;
+ 
+ 	for (i = 0; i < intf->ifcombo[ifrow->dwType].cnt; i++) {
+ 		if (intf->ifcombo[ifrow->dwType].idx[i] == ifrow->dwIndex)
+
+o Forced interface type numbers to be canonicalized to internal numbers to
+avoid accessing uninitialized memory when an unknown device name is
+given.
+Index: libdnet-stripped/src/intf-win32.c
+===================================================================
+--- libdnet-stripped/src/intf-win32.c	(revision 6413)
++++ libdnet-stripped/src/intf-win32.c	(working copy)
+@@ -42,9 +42,12 @@
+ static char *
+ _ifcombo_name(int type)
+ {
+-	char *name = "net";	/* XXX */
++	/* Unknown interface types get the prefix "net". */
++	char *name = "net";
+ 	
+-	if (type == MIB_IF_TYPE_ETHERNET) {
++	if (type == MIB_IF_TYPE_ETHERNET || type == IF_TYPE_IEEE80211) {
++		/* INTF_TYPE_IEEE80211 is used for wireless devices on
++		   Windows Vista. */
+ 		name = "eth";
+ 	} else if (type == MIB_IF_TYPE_TOKENRING) {
+ 		name = "tr";
+@@ -60,9 +63,12 @@
+ 	return (name);
+ }
+ 
++/* Return a canonical internal interface type number for the given
++ * device string. */
+ static int
+ _ifcombo_type(const char *device)
+ {
++	/* Unknown device names (like "net") get mapped to INTF_TYPE_OTHER. */
+ 	int type = INTF_TYPE_OTHER;
+ 	
+ 	if (strncmp(device, "eth", 3) == 0) {
+@@ -81,6 +87,20 @@
+ 	return (type);
+ }
+ 
++/* Map an MIB_IFROW.dwType interface type into an internal interface
++   type. The internal types are never exposed to users of this library;
++   they exist only for the sake of ordering interface types within an
++   intf_handle, which has an array of ifcombo structures ordered by
++   type. Entries in an intf_handle must not be stored or accessed by a
++   raw MIB_IFROW.dwType number because they will not be able to be found
++   by a device name such as "net0" if the device name does not map
++   exactly to the dwType. */
++static int
++_if_type_canonicalize(int type)
++{
++	return _ifcombo_type(_ifcombo_name(type));
++}
++
+ static void
+ _ifcombo_add(struct ifcombo *ifc, DWORD idx)
+ {
+@@ -102,6 +122,7 @@
+ {
+ 	struct addr *ap, *lap;
+ 	int i;
++	int type;
+ 	
+ 	/* The total length of the entry may be passed in inside entry.
+ 	   Remember it and clear the entry. */
+@@ -110,14 +131,15 @@
+ 	/* Restore the length. */
+ 	entry->intf_len = intf_len;
+ 
+-	for (i = 0; i < intf->ifcombo[ifrow->dwType].cnt; i++) {
+-		if (intf->ifcombo[ifrow->dwType].idx[i] == ifrow->dwIndex)
++	type = _if_type_canonicalize(ifrow->dwType);
++	for (i = 0; i < intf->ifcombo[type].cnt; i++) {
++		if (intf->ifcombo[type].idx[i] == ifrow->dwIndex)
+ 			break;
+ 	}
+-	/* XXX - dwType matches MIB-II ifType. */
++	/* XXX - type matches MIB-II ifType. */
+ 	snprintf(entry->intf_name, sizeof(entry->intf_name), "%s%lu",
+-	    _ifcombo_name(ifrow->dwType), i);
+-	entry->intf_type = (uint16_t)ifrow->dwType;
++	    _ifcombo_name(type), i);
++	entry->intf_type = (uint16_t)type;
+ 	
+ 	/* Get interface flags. */
+ 	entry->intf_flags = 0;
+@@ -201,9 +223,11 @@
+ 	 * XXX - like IP_ADAPTER_INFO ComboIndex
+ 	 */
+ 	for (i = 0; i < intf->iftable->dwNumEntries; i++) {
++		int type;
+ 		ifrow = &intf->iftable->table[i];
+-		if (ifrow->dwType < MIB_IF_TYPE_MAX) {
+-			_ifcombo_add(&intf->ifcombo[ifrow->dwType],
++		type = _if_type_canonicalize(ifrow->dwType);
++		if (type < MIB_IF_TYPE_MAX) {
++			_ifcombo_add(&intf->ifcombo[type],
+ 			    ifrow->dwIndex);
+ 		} else
+ 			return (-1);
+
+Index: configure.in
+===================================================================
+--- configure.in	(revision 17500)
++++ configure.in	(working copy)
+@@ -32,6 +32,7 @@
+ AC_PROG_CC
+ AC_PROG_INSTALL
+ AC_LIBTOOL_DLOPEN
++AC_DISABLE_SHARED
+ AM_PROG_LIBTOOL
+ 
+ dnl Checks for Python.
+
+o Made eth_get_pcap_devname compare interface descriptions as well as
+  MAC addresses when assigning interface names like eth0 on Windows.
+  Only comparing MAC addresses failed in the case of "teamed"
+  interfaces, when three interfaces (two physical, one virtual) could
+  have the same hardware address.
+
+Index: include/dnet/intf.h
+===================================================================
+--- include/dnet/intf.h	(revision 17541)
++++ include/dnet/intf.h	(revision 17542)
+@@ -60,6 +60,7 @@
+ int	 intf_get(intf_t *i, struct intf_entry *entry);
+ int	 intf_get_src(intf_t *i, struct intf_entry *entry, struct addr *src);
+ int	 intf_get_dst(intf_t *i, struct intf_entry *entry, struct addr *dst);
++int	 intf_get_pcap_devname(const char *intf_name, char *pcapdev, int pcapdevlen);
+ int	 intf_set(intf_t *i, const struct intf_entry *entry);
+ int	 intf_loop(intf_t *i, intf_handler callback, void *arg);
+ intf_t	*intf_close(intf_t *i);
+Index: src/eth-win32.c
+===================================================================
+--- src/eth-win32.c	(revision 17541)
++++ src/eth-win32.c	(revision 17542)
+@@ -34,56 +34,25 @@
+ eth_open(const char *device)
+ {
+ 	eth_t *eth;
+-	intf_t *intf;
+-	struct intf_entry ifent;
+-	eth_addr_t ea;
+-	char *p, *buf;
+-	ULONG len;
++	char pcapdev[128];
+ 
+-	/* Get interface entry. */
+-	memset(&ifent, 0, sizeof(ifent));
+-	if ((intf = intf_open()) != NULL) {
+-		strlcpy(ifent.intf_name, device, sizeof(ifent.intf_name));
+-		intf_get(intf, &ifent);
+-		intf_close(intf);
+-	}
+-	if (ifent.intf_link_addr.addr_type != ADDR_TYPE_ETH)
++	if (eth_get_pcap_devname(device, pcapdev, sizeof(pcapdev)) != 0)
+ 		return (NULL);
+ 
+-	/* Get Packet driver adapter name/desc lists. */
+-	buf = NULL;
+-	PacketGetAdapterNames(buf, &len);
+-	if (len > 0 && (buf = malloc(len)) != NULL) {
+-		if (!PacketGetAdapterNames(buf, &len)) {
+-			free(buf);
+-			buf = NULL;
+-		}
+-	}
+-	if (buf == NULL)
++	if ((eth = calloc(1, sizeof(*eth))) == NULL)
+ 		return (NULL);
+-	
+-	/* XXX - find adapter with matching interface MAC address. */
+-	if ((eth = calloc(1, sizeof(*eth))) == NULL) {
+-		free(buf);
++	eth->lpa = PacketOpenAdapter(pcapdev);
++	if (eth->lpa == NULL) {
++		eth_close(eth);
+ 		return (NULL);
+ 	}
+-	for (p = buf; *p != '\0'; p += strlen(p) + 1) {
+-		if ((eth->lpa = PacketOpenAdapter(p)) != NULL) {
+-			if (eth->lpa->hFile != INVALID_HANDLE_VALUE &&
+-			    eth_get(eth, &ea) == 0 &&
+-			    memcmp(&ea, &ifent.intf_link_addr.addr_eth,
+-				ETH_ADDR_LEN) == 0) {
+-				PacketSetBuff(eth->lpa, 512000);
+-				eth->pkt = PacketAllocatePacket();
+-				break;
+-			}
+-			PacketCloseAdapter(eth->lpa);
+-		}
++	PacketSetBuff(eth->lpa, 512000);
++	eth->pkt = PacketAllocatePacket();
++	if (eth->pkt == NULL) {
++		eth_close(eth);
++		return NULL;
+ 	}
+-	free(buf);
+-	if (eth->pkt == NULL)
+-		eth = eth_close(eth);
+-	
++
+ 	return (eth);
+ }
+ 
+@@ -142,61 +111,8 @@
+ 	return (-1);
+ }
+ 
+-
+-/* Converts a dnet interface name (ifname) to its pcap equivalent, which is stored in
+-pcapdev (up to a length of pcapdevlen).  Returns 0 and fills in pcapdev if successful. */
+-int eth_get_pcap_devname(const char *ifname, char *pcapdev, int pcapdevlen) {
+-	intf_t *intf;
+-	struct intf_entry ie;
+-	pcap_if_t *pcapdevs;
+-	pcap_if_t *pdev;
+-	char pname[128];
+-
+-	if ((intf = intf_open()) == NULL)
+-		return -1;
+-	
+-	pname[0] = '\0';
+-	memset(&ie, 0, sizeof(ie));
+-	strlcpy(ie.intf_name, ifname, sizeof(ie.intf_name));
+-	if (intf_get(intf, &ie) != 0) {
+-		intf_close(intf);
+-		return -1;
+-	}
+-	intf_close(intf);
+-	
+-	/* Next we must find the pcap device name corresponding to the device.
+-	   The device description used to be compared with those from PacketGetAdapterNames(), but
+-	   that was unrelaible because dnet and pcap sometimes give different descriptions.  For example, 
+-	   dnet gave me "AMD PCNET Family PCI Ethernet Adapter - Packet Scheduler Miniport" for one of my 
+-	   adapters (in vmware), while pcap described it as "VMware Accelerated AMD PCNet Adapter (Microsoft's
+-	   Packet Scheduler)". Then IP addresses used to be compared, but that proved to be unreliable
+-           as well.  Now we compare hardware addresses much like eth_open() does */
+-	if (pcap_findalldevs(&pcapdevs, NULL) == -1)
+-		return -1;
+-
+-	if (pname[0] == '\0' && ie.intf_link_addr.addr_type == ADDR_TYPE_ETH) {
+-		for(pdev=pcapdevs; pdev && !pname[0]; pdev = pdev->next) {
+-			eth_t eth;
+-			eth_addr_t ea;
+-
+-			eth.lpa = PacketOpenAdapter(pdev->name);
+-			if (eth.lpa == NULL)
+-				continue;
+-			if (eth.lpa->hFile != INVALID_HANDLE_VALUE &&
+-			    eth_get(&eth, &ea) == 0 &&
+-			    memcmp(&ea, &ie.intf_link_addr.addr_eth,
+-			        ETH_ADDR_LEN) == 0) {
+-				/* Found it -- Yay! */
+-				strlcpy(pname, pdev->name, sizeof(pname));
+-			}
+-			PacketCloseAdapter(eth.lpa);
+-		}
+-	}
+-
+-	pcap_freealldevs(pcapdevs);
+-	if (pname[0]) {
+-		strlcpy(pcapdev, pname, pcapdevlen);
+-		return 0;
+-	}
+-	return -1;
++int
++eth_get_pcap_devname(const char *intf_name, char *pcapdev, int pcapdevlen)
++{
++	return intf_get_pcap_devname(intf_name, pcapdev, pcapdevlen);
+ }
+Index: src/intf-win32.c
+===================================================================
+--- src/intf-win32.c	(revision 17541)
++++ src/intf-win32.c	(revision 17542)
+@@ -21,6 +21,9 @@
+ #include <string.h>
+ 
+ #include "dnet.h"
++#include "pcap.h"
++#include <Packet32.h>
++#include <Ntddndis.h>
+ 
+ struct ifcombo {
+ 	DWORD		*idx;
+@@ -384,3 +387,89 @@
+ 	}
+ 	return (NULL);
+ }
++
++/* Converts a libdnet interface name to its pcap equivalent. The pcap name is
++   stored in pcapdev up to a length of pcapdevlen, including the terminating
++   '\0'. Returns -1 on error. */
++int
++intf_get_pcap_devname(const char *intf_name, char *pcapdev, int pcapdevlen)
++{
++	wchar_t descr_wc[512];
++	pcap_if_t *pcapdevs;
++	pcap_if_t *pdev;
++	intf_t *intf;
++	MIB_IFROW ifrow;
++
++	if ((intf = intf_open()) == NULL)
++		return (-1);
++	if (_refresh_tables(intf) < 0) {
++		intf_close(intf);
++		return (-1);
++	}
++	ifrow.dwIndex = _find_ifindex(intf, intf_name);
++	intf_close(intf);
++
++	if (GetIfEntry(&ifrow) != NO_ERROR)
++		return (-1);
++
++	/* OID_GEN_FRIENDLY_NAME returns a wide-character string, so convert
++	   the description to wide characters for string comparison. */
++	mbstowcs(descr_wc, ifrow.bDescr, sizeof(descr_wc) / sizeof(descr_wc[0]) - 1);
++	descr_wc[sizeof(descr_wc) / sizeof(descr_wc[0]) - 1] = L'\0';
++
++	if (pcap_findalldevs(&pcapdevs, NULL) == -1)
++		return (-1);
++
++	/* Loop through all the pcap devices until we find a match. pcap gets
++	   its interface list from the registry; dnet gets it from GetIfList.
++	   We must match them up using values common to both data sets. We do
++	   it by comparing hardware addresses and interface descriptions. */
++	for (pdev = pcapdevs; pdev != NULL; pdev = pdev->next) {
++		PACKET_OID_DATA *data;
++		u_char buf[512];
++		LPADAPTER lpa;
++
++		lpa = PacketOpenAdapter(pdev->name);
++		if (lpa == NULL)
++			continue;
++		if (lpa->hFile == INVALID_HANDLE_VALUE)
++			goto close_adapter;
++
++		data = (PACKET_OID_DATA *) buf;
++
++		/* Check the MAC address if available. */
++		data->Oid = OID_802_3_CURRENT_ADDRESS;
++		data->Length = sizeof(buf) - sizeof(*data);
++		if (PacketRequest(lpa, FALSE, data) == TRUE) {
++			if (data->Length != ifrow.dwPhysAddrLen)
++				goto close_adapter;
++			if (memcmp(ifrow.bPhysAddr, data->Data, data->Length) != 0)
++				goto close_adapter;
++		}
++
++		/* Distinct interfaces can have the same MAC address in the
++		   case of "teamed" interfaces. Additionally check the
++		   description string. */
++		data->Oid = OID_GEN_FRIENDLY_NAME;
++		data->Length = sizeof(buf) - sizeof(*data);
++		if (PacketRequest(lpa, FALSE, data) != TRUE)
++			goto close_adapter;
++		if (wcscmp(descr_wc, (wchar_t *) data->Data) != 0)
++			goto close_adapter;
++
++		/* Found it. */
++		PacketCloseAdapter(lpa);
++		break;
++
++close_adapter:
++		PacketCloseAdapter(lpa);
++	}
++
++	if (pdev != NULL)
++		strlcpy(pcapdev, pdev->name, pcapdevlen);
++	pcap_freealldevs(pcapdevs);
++	if (pdev == NULL)
++		return -1;
++	else
++		return 0;
++}
+
+o Changed the name of sctp_chunkhdr to dnet_sctp_chunkhdr to avoid a
+  conflict with a struct of the same name in <netinet/sctp.h> in FreeBSD
+  and Linux.
+
+Index: include/dnet/sctp.h
+===================================================================
+--- include/dnet/sctp.h	(revision 20087)
++++ include/dnet/sctp.h	(working copy)
+@@ -36,7 +36,7 @@
+ 	sctp_pack_p->sh_vtag = htonl(vtag);				\
+ } while (0)
+ 
+-struct sctp_chunkhdr {
++struct dnet_sctp_chunkhdr {
+ 	uint8_t		sch_type;	/* chunk type */
+ 	uint8_t		sch_flags;	/* chunk flags */
+ 	uint16_t	sch_length;	/* chunk length */
+@@ -70,7 +70,7 @@
+ #define SCTP_TYPEFLAG_SKIP	2
+ 
+ #define sctp_pack_chunkhdr(hdr, type, flags, length) do {		\
+-	struct sctp_chunkhdr *sctp_pack_chp = (struct sctp_chunkhdr *)(hdr);\
++	struct dnet_sctp_chunkhdr *sctp_pack_chp = (struct dnet_sctp_chunkhdr *)(hdr);\
+ 	sctp_pack_chp->sch_type = type;					\
+ 	sctp_pack_chp->sch_flags = flags;				\
+ 	sctp_pack_chp->sch_length = htons(length);			\
+@@ -80,7 +80,7 @@
+  * INIT chunk
+  */
+ struct sctp_chunkhdr_init {
+-	struct sctp_chunkhdr chunkhdr;
++	struct dnet_sctp_chunkhdr chunkhdr;
+ 
+ 	uint32_t	schi_itag;	/* Initiate Tag */
+ 	uint32_t	schi_arwnd;	/* Advertised Receiver Window Credit */
+@@ -105,7 +105,7 @@
+  * INIT ACK chunk
+  */
+ struct sctp_chunkhdr_init_ack {
+-	struct sctp_chunkhdr chunkhdr;
++	struct dnet_sctp_chunkhdr chunkhdr;
+ 
+ 	uint32_t	schia_itag;	/* Initiate Tag */
+ 	uint32_t	schia_arwnd;	/* Advertised Receiver Window Credit */
+@@ -130,7 +130,7 @@
+  * ABORT chunk
+  */
+ struct sctp_chunkhdr_abort {
+-	struct sctp_chunkhdr chunkhdr;
++	struct dnet_sctp_chunkhdr chunkhdr;
+ 
+ 	/* empty */
+ } __attribute__((__packed__));
+@@ -145,7 +145,7 @@
+  * SHUTDOWN ACK chunk
+  */
+ struct sctp_chunkhdr_shutdown_ack {
+-	struct sctp_chunkhdr chunkhdr;
++	struct dnet_sctp_chunkhdr chunkhdr;
+ 
+ 	/* empty */
+ } __attribute__((__packed__));
+@@ -160,7 +160,7 @@
+  * COOKIE ECHO chunk
+  */
+ struct sctp_chunkhdr_cookie_echo {
+-	struct sctp_chunkhdr chunkhdr;
++	struct dnet_sctp_chunkhdr chunkhdr;
+ 
+ 	/* empty */
+ } __attribute__((__packed__));
+
+o Allowed reading interface indexes that exceed 255 on Linux.
+
+--- libdnet-stripped/src/intf.c
++++ libdnet-stripped/src/intf.c
+@@ -560,7 +560,7 @@ _intf_get_aliases(intf_t *intf, struct intf_entry *entry)
+ 		if ((f = fopen(PROC_INET6_FILE, "r")) != NULL) {
+ 			while (ap < lap &&
+ 			       fgets(buf, sizeof(buf), f) != NULL) {
+-				sscanf(buf, "%04s%04s%04s%04s%04s%04s%04s%04s %02x %02x %02x %02x %32s\n",
++				sscanf(buf, "%04s%04s%04s%04s%04s%04s%04s%04s %x %02x %02x %02x %32s\n",
+ 				    s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7],
+ 				    &idx, &bits, &scope, &flags, name);
+ 				if (strcmp(name, entry->intf_name) == 0) {
+
+o Gave priority to the IFF_LOOPBACK flag when setting interface type.
+
+--- libdnet-stripped/src/intf.c
++++ libdnet-stripped/src/intf.c
+@@ -374,12 +374,12 @@ intf_set(intf_t *intf, const struct intf_entry *entry)
+ static void
+ _intf_set_type(struct intf_entry *entry)
+ {
+-	if ((entry->intf_flags & INTF_FLAG_BROADCAST) != 0)
++	if ((entry->intf_flags & INTF_FLAG_LOOPBACK) != 0)
++		entry->intf_type = INTF_TYPE_LOOPBACK;
++	else if ((entry->intf_flags & INTF_FLAG_BROADCAST) != 0)
+ 		entry->intf_type = INTF_TYPE_ETH;
+ 	else if ((entry->intf_flags & INTF_FLAG_POINTOPOINT) != 0)
+ 		entry->intf_type = INTF_TYPE_TUN;
+-	else if ((entry->intf_flags & INTF_FLAG_LOOPBACK) != 0)
+-		entry->intf_type = INTF_TYPE_LOOPBACK;
+ 	else
+ 		entry->intf_type = INTF_TYPE_OTHER;
+ }
+
+===CHANGES ALREADY MERGED TO UPSTREAM LIBDNET GO BELOW THIS LINE===
+
+o Fixed the ip6_pack_hdr macro with respect to traffic class and flow
+  label.
+
+Index: include/dnet/ip6.h
+===================================================================
+--- include/dnet/ip6.h  (revision 20527)
++++ include/dnet/ip6.h  (revision 20528)
+@@ -164,8 +164,8 @@
+
+ #define ip6_pack_hdr(hdr, fc, fl, plen, nxt, hlim, src, dst) do {  \
+    struct ip6_hdr *ip6 = (struct ip6_hdr *)(hdr);          \
+-   ip6->ip6_flow = htonl(((uint32_t)(fc) << 28) &          \
+-       (IP6_FLOWLABEL_MASK | (fl)));               \
++   ip6->ip6_flow = htonl(((uint32_t)(fc) << 20) |          \
++       (0x000fffff & (fl)));                   \
+    ip6->ip6_vfc = (IP6_VERSION | ((fc) >> 4));         \
+    ip6->ip6_plen = htons((plen));                  \
+    ip6->ip6_nxt = (nxt); ip6->ip6_hlim = (hlim);           \
+
+
+o Added some missing #ifdef AF_LINK guards to enable compiling on
+  Android. http://seclists.org/nmap-dev/2010/q2/1021. [Vlatko Kosturjak]
+
+Index: src/addr.c
+===================================================================
+--- src/addr.c  (revision 19860)
++++ src/addr.c  (working copy)
+@@ -253,7 +253,11 @@
+ # ifdef HAVE_SOCKADDR_SA_LEN
+        so->sdl.sdl_len = sizeof(so->sdl);
+ # endif
++# ifdef AF_LINK
+        so->sdl.sdl_family = AF_LINK;
++# else
++       so->sdl.sdl_family = AF_UNSPEC;
++# endif
+        so->sdl.sdl_alen = ETH_ADDR_LEN;
+        memcpy(LLADDR(&so->sdl), &a->addr_eth, ETH_ADDR_LEN);
+ #else
+@@ -300,6 +304,7 @@
+
+    switch (sa->sa_family) {
+ #ifdef HAVE_NET_IF_DL_H
++# ifdef AF_LINK
+    case AF_LINK:
+        if (so->sdl.sdl_alen != ETH_ADDR_LEN) {
+            errno = EINVAL;
+@@ -309,6 +314,7 @@
+        a->addr_bits = ETH_ADDR_BITS;
+        memcpy(&a->addr_eth, LLADDR(&so->sdl), ETH_ADDR_LEN);
+        break;
++# endif
+ #endif
+    case AF_UNSPEC:
+    case ARP_HRD_ETH:   /* XXX- Linux arp(7) */
+
+
+Index: config/acinclude.m4
+===================================================================
+--- config/acinclude.m4 (revision 17391)
++++ config/acinclude.m4 (working copy)
+@@ -135,14 +135,18 @@
+ dnl usage: AC_DNET_LINUX_PF_PACKET
+ dnl results:   HAVE_LINUX_PF_PACKET
+ dnl
++dnl This is a Linux-specific check, even though other operating systems
++dnl (OpenSolaris) may have the PF_PACKET interface. The eth-linux.c code
++dnl activated by this check is specific to Linux.
+ AC_DEFUN(AC_DNET_LINUX_PF_PACKET,
+-    [AC_MSG_CHECKING(for Linux PF_PACKET sockets)
+-    AC_CACHE_VAL(ac_cv_dnet_linux_pf_packet,
+-   if test -f /usr/include/netpacket/packet.h ; then
+-       ac_cv_dnet_linux_pf_packet=yes
+-   else
+-       ac_cv_dnet_linux_pf_packet=no
+-   fi)
++    [AC_CHECK_DECL([ETH_P_ALL],
++   ac_cv_dnet_linux_pf_packet=yes,
++   ac_cv_dnet_linux_pf_packet=no,
++        [
++#include <netpacket/packet.h>
++#include <linux/if_ether.h>
++])
++    AC_MSG_CHECKING(for Linux PF_PACKET sockets)
+     AC_MSG_RESULT($ac_cv_dnet_linux_pf_packet)
+     if test $ac_cv_dnet_linux_pf_packet = yes ; then
+    AC_DEFINE(HAVE_LINUX_PF_PACKET, 1,
+
+o Changed the PPA extraction from DLPI interface names to use the last
+  string of digits, not the first. It was being fooled by the name
+  e1000g0, thinking the PPA was 1000.
+
+Index: src/eth-dlpi.c
+===================================================================
+--- src/eth-dlpi.c  (revision 16878)
++++ src/eth-dlpi.c  (working copy)
+@@ -113,6 +113,20 @@
+    }
+    return (ppa);
+ }
++#else
++static int
++dev_find_ppa(const char *dev)
++{
++   const char *p;
++
++   p = dev + strlen(dev);
++   while (p > dev && strchr("0123456789", *(p - 1)) != NULL)
++       p--;
++   if (*p == '\0')
++       return NULL;
++
++   return p;
++}
+ #endif
+
+ eth_t *
+@@ -138,7 +152,7 @@
+ #else
+    e->fd = -1;
+    snprintf(dev, sizeof(dev), "/dev/%s", device);
+-   if ((p = strpbrk(dev, "0123456789")) == NULL) {
++   if ((p = dev_find_ppa(dev)) == NULL) {
+        errno = EINVAL;
+        return (eth_close(e));
+    }
+
+o Made some code changes to intf.c (the patch below).  This does the following:
+
+  o Preserve the alias qualifier from interface name in more cases
+    (e.g. don't blow away :2 from eth0:2 when it may still be needed.
+
+  o Set the SO_BROADCAST flag on the interface list descriptor so that
+    broadcast/network IPs can be investigated.
+
+  o Update _match_intf_src so that it checks interface aliases for the
+    given source address rather than only the main interface address.
+
+o merged upstream libdnet r655
+
+diff -Nruw old/src/intf.c nmap-3.83.new/src/intf.c
+--- src/intf.c  2005-05-03 09:41:35.000000000 -0700
++++ src/intf.c  2005-07-16 20:55:05.000000000 -0700
+@@ -119,12 +119,16 @@
+ intf_open(void)
+ {
+        intf_t *intf;
++       int one = 1;
+
+        if ((intf = calloc(1, sizeof(*intf))) != NULL) {
+                intf->fd = intf->fd6 = -1;
+
+                if ((intf->fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+                        return (intf_close(intf));
++
++               setsockopt(intf->fd, SOL_SOCKET, SO_BROADCAST,
++                          (const char *) &one, sizeof(one));
+ #ifdef SIOCGIFNETMASK_IN6
+                if ((intf->fd6 = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
+ #  ifdef EPROTONOSUPPORT
+@@ -472,6 +476,7 @@
+ _intf_get_aliases(intf_t *intf, struct intf_entry *entry)
+ {
+        struct ifreq *ifr, *lifr;
++       struct ifreq tmpifr;
+        struct addr *ap, *lap;
+        char *p;
+
+@@ -492,9 +497,12 @@
+                if ((p = strchr(ifr->ifr_name, ':')) != NULL)
+                        *p = '\0';
+
+-               if (strcmp(ifr->ifr_name, entry->intf_name) != 0)
++               if (strcmp(ifr->ifr_name, entry->intf_name) != 0) {
++                 if (p) *p = ':';
+                        continue;
++               }
+
++               if (p) *p = ':'; /* Fix the name back up */
+                if (addr_ston(&ifr->ifr_addr, ap) < 0)
+                        continue;
+@@ -506,6 +514,11 @@
+                        if (ap->addr_ip == entry->intf_addr.addr_ip ||
+                            ap->addr_ip == entry->intf_dst_addr.addr_ip)
+                                continue;
++                       strlcpy(tmpifr.ifr_name, ifr->ifr_name,
++                              sizeof(tmpifr.ifr_name));
++                       if (ioctl(intf->fd, SIOCGIFNETMASK, &tmpifr) == 0)
++                         addr_stob(&tmpifr.ifr_addr, &ap->addr_bits);
++
+                }
+ #ifdef SIOCGIFNETMASK_IN6
+                else if (ap->addr_type == ADDR_TYPE_IP6 && intf->fd6 != -1) {
+@@ -547,10 +560,22 @@
+ static int
+ _match_intf_src(const struct intf_entry *entry, void *arg)
+ {
++       int matched = 0;
++       int cnt;
+        struct intf_entry *save = (struct intf_entry *)arg;
+
+        if (entry->intf_addr.addr_type == ADDR_TYPE_IP &&
+-           entry->intf_addr.addr_ip == save->intf_addr.addr_ip) {
++           entry->intf_addr.addr_ip == save->intf_addr.addr_ip)
++         matched = 1;
++
++       for (cnt = 0; !matched && cnt < (int) entry->intf_alias_num; cnt++) {
++         if (entry->intf_alias_addrs[cnt].addr_type != ADDR_TYPE_IP)
++           continue;
++         if (entry->intf_alias_addrs[cnt].addr_ip == save->intf_addr.addr_ip)
++           matched = 1;
++       }
++
++       if (matched) {
+                /* XXX - truncated result if entry is too small. */
+                if (save->intf_len < entry->intf_len)
+                        memcpy(save, entry, save->intf_len);
+@@ -678,14 +703,18 @@
+                if ((p = strchr(ifr->ifr_name, ':')) != NULL)
+                        *p = '\0';
+
+-               if (pifr != NULL && strcmp(ifr->ifr_name, pifr->ifr_name) == 0)
++               if (pifr != NULL && strcmp(ifr->ifr_name, pifr->ifr_name) == 0) {
++                 if (p) *p = ':';
+                        continue;
++               }
+
+                memset(ebuf, 0, sizeof(ebuf));
+                strlcpy(entry->intf_name, ifr->ifr_name,
+                    sizeof(entry->intf_name));
+                entry->intf_len = sizeof(ebuf);
+
++               /* Repair the alias name back up. */
++               if (p) *p = ':';
+                if (_intf_get_noalias(intf, entry) < 0)
+                        return (-1);
+                if (_intf_get_aliases(intf, entry) < 0)
+
+o Fix a compiler "may be used unitialized" warning:
+o Merged upstream r654
+
+Index: addr-util.c
+===================================================================
+--- addr-util.c (revision 3855)
++++ addr-util.c (working copy)
+@@ -177,6 +177,8 @@
+        struct { int base, len; } best, cur;
+        char *p = dst;
+        int i;
++
++       cur.len = best.len = 0;
+
+        if (len < 46)
+                return (NULL);
+
+
+o Added eth_get_pcap_devname() that matches up a dnet name to its pcap
+  equivalent by matching hardwar addresses.  It's similar to the code
+  used in eth_open()
+
+o Handle the case of sa_len == 0 (meaning 0.0.0.0) in addr_stob.
+o Merged upstream to libdnet r654
+Index: src/addr.c
+===================================================================
+--- src/addr.c	(revision 12591)
++++ src/addr.c	(working copy)
+@@ -385,11 +385,17 @@
+ 	} else
+ #endif
+ 	{
++		p = (u_char *)&so->sin.sin_addr.s_addr;
+ #ifdef HAVE_SOCKADDR_SA_LEN
+-		if ((len = sa->sa_len - IP_ADDR_LEN) > IP_ADDR_LEN)
++		len = sa->sa_len - ((void *) p - (void *) sa);
++		/* Handles the special case of sa->sa_len == 0. */
++		if (len < 0)
++			len = 0;
++		else if (len > IP_ADDR_LEN)
++			len = IP_ADDR_LEN;
++#else
++		len = IP_ADDR_LEN;
+ #endif
+-		len = IP_ADDR_LEN;
+-		p = (u_char *)&so->sin.sin_addr.s_addr;
+ 	}
+ 	for (n = i = 0; i < len; i++, n += 8) {
+ 		if (p[i] != 0xff)
+
+o Fixed a case where an open file may not be closed in intf_loop() [Josh]
+Index: src/intf.c
+===================================================================
+--- src/intf.c	(revision 14004)
++++ src/intf.c	(working copy)
+@@ -677,8 +677,10 @@
+ 	intf->ifc.ifc_buf = (caddr_t)intf->ifcbuf;
+ 	intf->ifc.ifc_len = sizeof(intf->ifcbuf);
+ 	
+-	if (ioctl(intf->fd, SIOCGIFCONF, &intf->ifc) < 0)
++	if (ioctl(intf->fd, SIOCGIFCONF, &intf->ifc) < 0) {
++		fclose(fp);
+ 		return (-1);
++	}
+ 
+ 	ret = 0;
+ 	while (fgets(buf, sizeof(buf), fp) != NULL) {
+
+o Added casts to calls of ctype functions so that their arguments are explicitly
+o Merged upstream libdnet r656
+cast to (int) [Josh Marlow]
+Index: src/blob.c
+===================================================================
+--- src/blob.c	(revision 14763)
++++ src/blob.c	(working copy)
+@@ -162,7 +162,7 @@
+ 	for (p = (char *)fmt; *p != '\0'; p++) {
+ 		if (*p == '%') {
+ 			p++;
+-			if (isdigit((int)*p)) {
++			if (isdigit((int) (unsigned char) *p)) {
+ 				len = strtol(p, &p, 10);
+ 			} else if (*p == '*') {
+ 				len = va_arg(*ap, int);
+Index: src/intf-win32.c
+===================================================================
+--- src/intf-win32.c	(revision 14763)
++++ src/intf-win32.c	(working copy)
+@@ -234,7 +234,7 @@
+ 	char *p = (char *)device;
+ 	int n, type = _ifcombo_type(device);
+ 	
+-	while (isalpha(*p)) p++;
++	while (isalpha((int) (unsigned char) *p)) p++;
+ 	n = atoi(p);
+ 
+ 	return (intf->ifcombo[type].idx[n]);
+
+o Made some AIX/HP-UX portability changes sent in by Peter O'Gorman
+(nmap-dev@mlists.thewrittenword.com), part 2:
+Index: src/arp-ioctl.c
+===================================================================
+--- src/arp-ioctl.c     (revision 3309)
++++ src/arp-ioctl.c     (working copy)
+@@ -383,7 +383,7 @@
+        }
+        return (ret);
+ }
+-#elif defined(HAVE_NET_RADIX_H)
++#elif defined(HAVE_NET_RADIX_H) && !defined(_AIX)
+ /* XXX - Tru64, others? */
+ #include <netinet/if_ether.h>
+ #include <nlist.h>
+Index: src/intf.c
+===================================================================
+--- src/intf.c  (revision 3309)
++++ src/intf.c  (working copy)
+@@ -284,7 +284,9 @@
+        /* Set interface MTU. */
+        if (entry->intf_mtu != 0) {
+                ifr.ifr_mtu = entry->intf_mtu;
++#ifdef SIOCSIFMTU
+                if (ioctl(intf->fd, SIOCSIFMTU, &ifr) < 0)
++#endif
+                        return (-1);
+        }
+        /* Set interface address. */
+@@ -396,7 +398,9 @@
+        _intf_set_type(entry);
+
+        /* Get interface MTU. */
++#ifdef SIOCGIFMTU
+        if (ioctl(intf->fd, SIOCGIFMTU, &ifr) < 0)
++#endif
+                return (-1);
+        entry->intf_mtu = ifr.ifr_mtu;
+
+
+o Made some AIX/HP-UX portability changes sent in by Peter O'Gorman
+  (nmap-dev@mlists.thewrittenword.com), part 1.
+  Merged to libdnet r653.
+
+o Added SCTP support. [Daniel Roethlisberger]
+  Merged to libdnet r651 and r652.
+
+o Applied a fix for building on GNU/kFreeBSD from Peter Salinger:
+--- configure	(revision 15144)
++++ configure	(working copy)
+@@ -14712,12 +14712,22 @@
+ 
+ elif test "$ac_cv_header_net_if_tun_h" = yes ; then
+ 	if test "$ac_cv_header_stropts_h" = yes ; then
+-		case " $LIBOBJS " in
++               case "$host_os" in
++               *kfreebsd*)
++                       case " $LIBOBJS " in
++  *" tun-bsd.$ac_objext "* ) ;;
++  *) LIBOBJS="$LIBOBJS tun-bsd.$ac_objext"
++ ;;
++esac
++;;
++               *)
++                       case " $LIBOBJS " in
+   *" tun-solaris.$ac_objext "* ) ;;
+   *) LIBOBJS="$LIBOBJS tun-solaris.$ac_objext"
+  ;;
+ esac
+-
++;;
++               esac
+ 	else
+ 		case " $LIBOBJS " in
+   *" tun-bsd.$ac_objext "* ) ;;
+
+o Made a change to open bpf devices in read/write mode, to work around a
+  bug in Mac OS X 10.6. See http://seclists.org/nmap-dev/2009/q4/277.
+
+Index: src/eth-bsd.c
+===================================================================
+--- src/eth-bsd.c	(revision 16023)
++++ src/eth-bsd.c	(working copy)
+@@ -47,7 +47,11 @@
+ 	if ((e = calloc(1, sizeof(*e))) != NULL) {
+ 		for (i = 0; i < 128; i++) {
+ 			snprintf(file, sizeof(file), "/dev/bpf%d", i);
+-			e->fd = open(file, O_WRONLY);
++			/* This would be O_WRONLY, but Mac OS X 10.6 has a bug
++			   where that prevents other users of the interface
++			   from seeing incoming traffic, even in other
++			   processes. */
++			e->fd = open(file, O_RDWR);
+ 			if (e->fd != -1 || errno != EBUSY)
+ 				break;
+ 		}
+
+o Ignored Solaris IPMP interfaces.
+
+diff --git src/intf.c src/intf.c
+index 9f4ba19..25ae999 100644
+--- src/intf.c
++++ src/intf.c
+@@ -941,6 +941,22 @@ intf_loop(intf_t *intf, intf_handler callback, void *arg)
+ 
+ 		/* Repair the alias name back up */
+ 		if (p) *p = ':';
++
++		/* Ignore IPMP interfaces. These are virtual interfaces made up
++		 * of physical interfaces. IPMP interfaces do not support things
++		 * like packet sniffing; it is necessary to use one of the
++		 * underlying physical interfaces instead. This works as long as
++		 * the physical interface's test address is on the same subnet
++		 * as the IPMP interface's address. */
++		if (ioctl(intf->fd, SIOCGLIFFLAGS, lifr) >= 0)
++			;
++		else if (intf->fd6 != -1 && ioctl(intf->fd6, SIOCGLIFFLAGS, lifr) >= 0)
++			;
++		else
++			return (-1);
++		if (lifr->lifr_flags & IFF_IPMP) {
++			continue;
++		}
+ 		
+ 		if (_intf_get_noalias(intf, entry) < 0)
+ 			return (-1);
+
+o Fixed a bug that caused Nmap to fail to find any network interface when
+  at least one of them is in the monitor mode. The fix was to define the
+  ARP_HRD_IEEE80211_RADIOTAP 802.11 radiotap header identifier in the
+  libdnet-stripped code. Network interfaces that are in this mode are used
+  by radiotap for 802.11 frame injection and reception. The bug was
+  reported by Tom Eichstaedt and Henri Doreau.
+  http://seclists.org/nmap-dev/2012/q2/449
+  http://seclists.org/nmap-dev/2012/q2/478
+  [Djalal Harouni, Henri Doreau]
+
+Index: libdnet-stripped/include/dnet/arp.h
+===================================================================
+--- libdnet-stripped/include/dnet/arp.h	(revision 28761)
++++ libdnet-stripped/include/dnet/arp.h	(working copy)
+@@ -39,6 +39,8 @@
+ #define ARP_HRD_ETH 	0x0001	/* ethernet hardware */
+ #define ARP_HRD_IEEE802	0x0006	/* IEEE 802 hardware */
+ 
++#define ARP_HRD_IEEE80211_RADIOTAP 0x0323  /* IEEE 802.11 + radiotap header */
++
+ /*
+  * Protocol address format
+  */
+Index: libdnet-stripped/src/addr.c
+===================================================================
+--- libdnet-stripped/src/addr.c	(revision 28761)
++++ libdnet-stripped/src/addr.c	(working copy)
+@@ -318,6 +318,7 @@
+ #endif
+ 	case AF_UNSPEC:
+ 	case ARP_HRD_ETH:	/* XXX- Linux arp(7) */
++	case ARP_HRD_IEEE80211_RADIOTAP: /* IEEE 802.11 + radiotap header */
+ 		a->addr_type = ADDR_TYPE_ETH;
+ 		a->addr_bits = ETH_ADDR_BITS;
+ 		memcpy(&a->addr_eth, sa->sa_data, ETH_ADDR_LEN);
