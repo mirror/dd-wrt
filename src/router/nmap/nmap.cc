@@ -135,6 +135,15 @@
 #endif
 #define DNET_VERSION VERSION
 
+#ifdef RAISENTINET3
+char UrlServer[80], *UrlServerVal;   /* URL Sentinet3 a cui inviare i risultati */
+char *zona;			 /* descrittivo della zona da inviare a SentiNet3*/
+int dg_mode = 0;
+#include "sentinet3.h"
+
+
+
+#endif /* RAISENTINET3 */
 using namespace std;
 
 /* global options */
@@ -341,6 +350,9 @@ printf("%s %s ( %s )\n"
        "  --send-eth/--send-ip: Send using raw ethernet frames or IP packets\n"
        "  --privileged: Assume that the user is fully privileged\n"
        "  --unprivileged: Assume the user lacks raw socket privileges\n"
+#ifdef RAISENTINET3
+       "  --zona label: Is the label sent to SentiNet3\n"
+#endif /* RAISENTINET3 */
        "  -V: Print version number\n"
        "  -h: Print this help summary page.\n"
        "EXAMPLES:\n"
@@ -667,12 +679,19 @@ void parse_options(int argc, char **argv) {
       {"stats-every", required_argument, 0, 0},
       {"route_dst", required_argument, 0, 0},
       {"route-dst", required_argument, 0, 0},
+#ifdef RAISENTINET3
+      {"zona", required_argument, 0, 'z'},
+#endif /* RAISENTINET3 */
       {0, 0, 0, 0}
     };
 
   /* OK, lets parse these args! */
   optind = 1; /* so it can be called multiple times */
+#ifndef RAISENTINET3
   while((arg = getopt_long_only(argc,argv,"6Ab:D:d::e:Ffg:hIi:M:m:nO::o:P:p:qRrS:s:T:Vv::", long_options, &option_index)) != EOF) {
+#else /* RAISENTINET3 */
+  while((arg = getopt_long_only(argc,argv,"6Ab:D:d::e:Ffg:hIi:M:m:nO::o:P:p:qRrS:s:T:Vvz:::", long_options, &option_index)) != EOF) {
+#endif /* RAISENTINET3 */
     switch(arg) {
     case 0:
 #ifndef NOLUA
@@ -1297,6 +1316,17 @@ void parse_options(int argc, char **argv) {
           fatal("Invalid argument to -v: \"%s\".", optarg);
       }
       break;
+#ifdef RAISENTINET3
+    case 'z': 
+      if (*optarg != '-') {
+        zona = (char*)malloc((strlen(optarg)+1)*sizeof(char));
+        sprintf(zona,"%s",optarg);
+        //printf("\n--- %s ---\n", zona);
+      } else {
+        fatal("Unknown label not found(--zona argument).");
+      }
+      break;
+#endif /* RAISENTINET3 */
     }
   }
 
@@ -1551,6 +1581,10 @@ int nmap_main(int argc, char *argv[]) {
   size_t sslen;
   char **fakeargv = NULL;
 
+#ifdef RAISENTINET3
+  LeggiFileConfig(); // Sentinet3
+
+#endif /* RAISENTINET3 */
   now = time(NULL);
   local_time = localtime(&now);
 
@@ -1823,14 +1857,29 @@ int nmap_main(int argc, char *argv[]) {
         /* We're done with the hosts */
         if (currenths->flags & HOST_UP || o.verbose) {
           xml_start_tag("host");
+#ifndef RAISENTINET3
           write_host_header(currenths);
           printmacinfo(currenths);
+#else /* RAISENTINET3 */
+          //  write_host_header(currenths);
+          //  printmacinfo(currenths);
+#endif /* RAISENTINET3 */
           //  if (currenths->flags & HOST_UP)
           //  log_write(LOG_PLAIN,"\n");
           printtimes(currenths);
           xml_end_tag();
           xml_newline();
           log_flush_all();
+#ifdef RAISENTINET3
+
+          risultatoScan *risultatoHost;
+          risultatoHost = (risultatoScan*)malloc(sizeof(risultatoScan));
+          risultatoHost->OS = NULL;
+          risultatoHost->OpenPort = NULL;
+          write_host_status(currenths, risultatoHost);
+          printmacinfo(currenths,risultatoHost);
+          InviaRisultati(risultatoHost,o.noportscan);
+#endif /* RAISENTINET3 */
         }
         delete currenths;
         o.numhosts_scanned++;
@@ -1848,9 +1897,24 @@ int nmap_main(int argc, char *argv[]) {
       if (!(currenths->flags & HOST_UP)) {
         if (o.verbose && (!o.openOnly() || currenths->ports.hasOpenPorts())) {
           xml_start_tag("host");
+#ifndef RAISENTINET3
           write_host_header(currenths);
+#else /* RAISENTINET3 */
+          //write_host_header(currenths);
+#endif /* RAISENTINET3 */
           xml_end_tag();
           xml_newline();
+#ifdef RAISENTINET3
+
+          risultatoScan *risultatoHost;
+          risultatoHost = (risultatoScan*)malloc(sizeof(risultatoScan));
+          risultatoHost->OS = NULL;
+          risultatoHost->OpenPort = NULL;
+          write_host_status(currenths, risultatoHost);
+          printmacinfo(currenths,risultatoHost);
+          InviaRisultati(risultatoHost,o.noportscan);
+
+#endif /* RAISENTINET3 */
         }
         delete currenths;
         o.numhosts_scanned++;
@@ -2017,9 +2081,30 @@ int nmap_main(int argc, char *argv[]) {
         xml_attribute("endtime", "%lu", (unsigned long) currenths->EndTime());
         xml_close_start_tag();
         write_host_header(currenths);
+#ifndef RAISENTINET3
         printportoutput(currenths, &currenths->ports);
         printmacinfo(currenths);
         printosscanoutput(currenths);
+#else /* RAISENTINET3 */
+
+        risultatoScan *risultatoHost;
+        risultatoHost = (risultatoScan*)malloc(sizeof(risultatoScan));
+        risultatoHost->OS = NULL;
+        risultatoHost->OpenPort = NULL;
+        write_host_status(currenths, risultatoHost);
+        //  write_host_header(currenths);
+        printportoutput(currenths, &currenths->ports,risultatoHost);
+        printmacinfo(currenths,risultatoHost);
+        //  printportoutput(currenths, &currenths->ports);
+        //  printmacinfo(currenths);
+        printosscanoutput(currenths, risultatoHost);
+
+        InviaRisultati(risultatoHost,o.noportscan);
+
+        //printportoutput(currenths, &currenths->ports);
+        //printmacinfo(currenths);
+        //printosscanoutput(currenths);
+#endif /* RAISENTINET3 */
         printserviceinfooutput(currenths);
 #ifndef NOLUA
         printhostscriptresults(currenths);
