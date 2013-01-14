@@ -247,6 +247,7 @@ include rules/minidlna.mk
 include rules/nrpe.mk
 include rules/links.mk
 include rules/softflowd.mk
+include rules/nextmediaextra.mk
 
 #
 # Generic rules
