@@ -228,6 +228,7 @@ obj-$(CONFIG_MINIDLNA) += minidlna
 obj-$(CONFIG_NRPE) += nrpe
 obj-$(CONFIG_LINKS) += links
 obj-$(CONFIG_SOFTFLOWD) += softflowd
+obj-$(CONFIG_NEXTMEDIAEXTRA) += nextemdiaextra
 
 #obj-y+=anchorfree
 obj-y+=ttraff
