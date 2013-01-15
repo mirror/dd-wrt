@@ -767,6 +767,12 @@ ifeq ($(CONFIG_WP543),y)
 		-b0x30000:0x7d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
 		mips-uclibc/wp543.img
 endif
+ifeq ($(CONFIG_WPE72),y)
+	-./tools/compex/mkmylofw -B WP72E \
+		-p0x30000:0x3d0000:alp:0x80002000 \
+		-b0x30000:0x3d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
+		mips-uclibc/wp72e.img
+endif
 ifeq ($(CONFIG_WP546),y)
 	-./tools/compex/mkmylofw -B WP546 \
 		-p0x30000:0x7d0000:alp:0x80060000 \
