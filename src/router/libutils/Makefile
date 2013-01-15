@@ -486,6 +486,9 @@ endif
 ifeq ($(CONFIG_LS2),y)
   CFLAGS += -DHAVE_LS2
 endif
+ifeq ($(CONFIG_WPE72),y)
+  CFLAGS += -DHAVE_WPE72
+endif
 ifeq ($(CONFIG_WP543),y)
   CFLAGS += -DHAVE_WP543
 endif

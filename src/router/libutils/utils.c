@@ -1730,6 +1730,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WPE72
+	setRouter("Compex WPE72");
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	return ROUTER_BOARD_NS5M;
 #elif HAVE_UBNTM
 	typedef struct UBNTDEV {
 		char *devicename;	// device name 
@@ -4253,6 +4258,11 @@ int led_control(int type, int act)
 		connected_gpio = 0x10b;
 		ses_gpio = 0x10c;
 		break;
+#ifdef HAVE_WPE72
+	case ROUTER_BOARD_NS5M:
+		diag_gpio = 0x10d;
+		break;
+#endif
 	case ROUTER_BOARD_UNIFI:
 		diag_gpio = 0x001;
 		break;

@@ -899,6 +899,9 @@ ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS_EXTRA += -DHAVE_RELAYD
 endif
 endif
+ifeq ($(CONFIG_WPE72),y)
+CFLAGS_EXTRA += -DHAVE_WPE72
+endif
 ifeq ($(CONFIG_WP54G),y)
 CFLAGS_EXTRA += -DHAVE_WP54G
 endif
