@@ -124,6 +124,12 @@ void start_sysinit(void)
 	detect_wireless_devices();
 
 	int brand = getRouterBrand();
+#ifdef HAVE_WPE72
+		sysprintf
+		    ("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
+
+
+#else
 	if (brand == ROUTER_BOARD_UNIFI) {
 		setWirelessLed(0, 0);
 	} else {
@@ -131,7 +137,7 @@ void start_sysinit(void)
 		sysprintf
 		    ("/sbin/wlanled -l generic_0:-94 -l generic_1:-80 -l generic_11:-73 -l generic_7:-65");
 	}
-
+#endif
 	/* ubnt has a hardware fault as it seems, so the power bridge feature can break the hardware which causes endless reboot loops. we keep it disabled here. devices which are already broken will work again then */
 	if (nvram_match("ubnt_power", "1"))
 		eval("gpio", "enable", "8");	//enable power passthrough
