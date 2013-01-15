@@ -508,6 +508,10 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 	unsigned int fragsz = SKB_DATA_ALIGN(length + NET_SKB_PAD) +
 			      SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
+
 	if (fragsz <= PAGE_SIZE && !(gfp_mask & (__GFP_WAIT | GFP_DMA))) {
 		void *data;
 
@@ -515,7 +519,6 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 			gfp_mask |= __GFP_MEMALLOC;
 
 		data = __netdev_alloc_frag(fragsz, gfp_mask);
-
 		if (likely(data)) {
 			skb = build_skb(data, fragsz);
 			if (unlikely(!skb))
