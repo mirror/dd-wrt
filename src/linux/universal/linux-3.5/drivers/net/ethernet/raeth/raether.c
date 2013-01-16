@@ -1954,7 +1954,7 @@ int ei_open(struct net_device *dev)
 	err = request_irq(25, esw_interrupt, IRQF_DISABLED, "Ralink_ESW", dev);
 	if (err)
 	{
-	printk("unable to request ESW irq %d\n",SURFBOARDINT_ESW);
+	printk("unable to request ESW irq %d\n",25);
 	
 	}	
 
@@ -2028,6 +2028,10 @@ int ei_close(struct net_device *dev)
 #endif // WORKQUEUE_BH //
 
 	free_irq(dev->irq, dev);
+
+#if defined (CONFIG_RT_3052_ESW)
+	free_irq(25, dev);
+#endif
 
         for ( i = 0; i < NUM_RX_DESC; i++)
         {
@@ -2419,6 +2423,7 @@ extern int rtl_smi_init(void);
 	dev->irq  = IRQ_ENET0;
 	dev->addr_len = 6;
 	dev->base_addr = RALINK_FRAME_ENGINE_BASE;
+	rather_probe(dev);
 
 	ra2880_setup_dev_fptable(dev);
 
