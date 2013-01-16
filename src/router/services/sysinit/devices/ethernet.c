@@ -51,6 +51,7 @@ static int detect(char *devicename)
 static int detect_ethernet_devices(void)
 {
 	int returncode = 0;
+#ifndef HAVE_XSCALE
 	if (detect("Rhine-"))	// VIA Rhine-I, Rhine-II, Rhine-III
 		returncode = try_module("via-rhine");
 	if (detect("VT6120"))	// VIA Rhine-I, Rhine-II, Rhine-III
@@ -83,7 +84,7 @@ static int detect_ethernet_devices(void)
 		returncode = try_module("e100");
 	else if (detect("8255"))	// intel 100 mbit 
 		returncode = try_module("e100");
-
+#endif
 	if (detect("PRO/1000"))	// Intel Gigabit 
 	{
 		returncode = try_module("e1000");
@@ -137,6 +138,7 @@ static int detect_ethernet_devices(void)
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	}
+#ifndef HAVE_XSCALE
 	if (detect("Tolapai"))	// Realtek 8169 Adapter (various notebooks) 
 	{
 		returncode = try_module("e1000");
@@ -150,6 +152,7 @@ static int detect_ethernet_devices(void)
 		returncode = try_module("e1000gcu");
 		returncode = try_module("e1000gbe");
 	}
+#endif
 	if (detect("RTL-8110"))	// Realtek 8169 Adapter (various notebooks) 
 		returncode = try_module("r8169");
 	else if (detect("RTL-8111"))	// Realtek 8169 Adapter (various notebooks) 
@@ -165,9 +168,11 @@ static int detect_ethernet_devices(void)
 		// notebooks) 
 		returncode = try_module("r8169");
 
+#ifndef HAVE_XSCALE
 	if (detect("Happy Meal"))
 		returncode = try_module("sunhme");
 
+#endif
 	if (detect("8139"))	// Realtek 8139 Adapter (various notebooks) 
 		returncode = try_module("8139too");
 	if (detect("DFE-690TXD"))	// Realtek 8139 Adapter (various
@@ -179,6 +184,7 @@ static int detect_ethernet_devices(void)
 	else if (detect("Robotics"))	// Realtek 8139 Adapter (various
 		// notebooks) 
 		returncode = try_module("8139too");
+#ifndef HAVE_XSCALE
 
 	if (detect("nForce2 Ethernet"))	// nForce2 
 		returncode = try_module("forcedeth");
@@ -276,6 +282,6 @@ static int detect_ethernet_devices(void)
 		nvram_set("use_crypto", "1");
 	} else
 		nvram_set("use_crypto", "0");
-
+#endif
 	return returncode;
 }
