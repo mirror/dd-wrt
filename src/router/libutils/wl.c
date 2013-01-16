@@ -1853,7 +1853,6 @@ int getRssi(char *ifname, unsigned char *mac)
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
 		close(s);
 		free(buf);
-		fprintf(stderr, "stainfo error\n");
 		return 0;
 	}
 	len = iwr.u.data.length;
