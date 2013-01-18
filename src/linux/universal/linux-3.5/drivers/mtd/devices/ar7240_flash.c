@@ -114,6 +114,10 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_EMERG "uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
+		if (ofs[i] == 0x004d594c) {
+			printk(KERN_EMERG "compex mylo detected\n");
+			return i * 4;	// compex, lzma image
+		}
 		if (ofs[i] == 0x32303033) {
 			printk(KERN_EMERG "WNR2000 uboot detected\n");
 			return 0x50000;	// uboot, lzma image
