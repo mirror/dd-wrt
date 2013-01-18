@@ -1463,6 +1463,18 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	getIfLists(eths, 256);
 	memset(bufferif, 0, 256);
 	getIfList(bufferif, "br");
+
+
+#ifndef HAVE_MADWIFI
+	int cnt = get_wl_instances();
+	int c;
+	for (c = 0; c < cnt; c++) {
+		strcat(bufferif," ");
+		strcat(bufferif,get_wl_instance_name(c));
+	}
+#endif
+
+
 	foreach(var, eths, next) {
 		if (!strcmp("etherip0", var))
 			continue;
@@ -1478,7 +1490,8 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 					goto skip;
 				}
 			}
-			show_bwif(wp, var, var);
+			sprintf(name, "LAN (%s)",var);
+			show_bwif(wp, var, name);
 		}
 	      skip:;
 	}
@@ -1565,9 +1578,6 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	}
 
 #else
-	int cnt = get_wl_instances();
-	int c;
-
 	for (c = 0; c < cnt; c++) {
 		sprintf(name, "%s (wl%d)", live_translate("share.wireless"), c);
 		show_bwif(wp, get_wl_instance_name(c), name);
