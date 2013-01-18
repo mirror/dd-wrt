@@ -520,8 +520,14 @@ ifneq ($(CONFIG_USBIP),y)
 endif
 ifneq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/scsi
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/cdrom
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/isofs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/udf
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/exportfs
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/fat
@@ -767,12 +773,6 @@ ifeq ($(CONFIG_WP543),y)
 		-b0x30000:0x7d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
 		mips-uclibc/wp543.img
 endif
-ifeq ($(CONFIG_WPE72),y)
-	-./tools/compex/mkmylofw -B WP72E \
-		-p0x30000:0x3d0000:alp:0x80002000 \
-		-b0x30000:0x3d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
-		mips-uclibc/wp72e.img
-endif
 ifeq ($(CONFIG_WP546),y)
 	-./tools/compex/mkmylofw -B WP546 \
 		-p0x30000:0x7d0000:alp:0x80060000 \
@@ -780,6 +780,14 @@ ifeq ($(CONFIG_WP546),y)
 		mips-uclibc/wp546.img
 endif
 endif
+endif
+ifeq ($(CONFIG_WPE72),y)
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.lsx bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.lsx
+	-./tools/compex/mkmylofw -B WP72E \
+		-p0x30000:0x3d0000:alp:0x80002000 \
+		-b0x30000:0x3d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
+		mips-uclibc/wpe72.img
 endif
 ifeq ($(CONFIG_UBNTM),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
@@ -1156,7 +1164,7 @@ ifeq ($(CONFIG_WR741),y)
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA7510N-firmware.bin mips-uclibc/tplink-WA7510N-firmware.bin
 endif
 ifeq ($(CONFIG_WDR2543),y)
-	-./tools/tplink/mktplinkfw -B TL-WDR2543 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR2543-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR2543 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR2543-firmware.bin -v 3.13.99
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR2543-firmware.bin mips-uclibc/tplink-TL-WDR2543-firmware.bin
 endif
 ifeq ($(CONFIG_WDR4300),y)
