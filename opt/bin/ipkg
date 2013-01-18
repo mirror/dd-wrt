@@ -229,11 +229,13 @@ ipkg_download() {
 	fi
 
 	echo "Downloading $src ..."
+	# create target path
+	mkdir -p $IPKG_TMP
 	rm -f $IPKG_TMP/$src_file
 	case "$src" in
 	http://* | ftp://*)
 		if ! wget $proxyoption $proxyuser $proxypassword -P $IPKG_TMP $src; then
-			echo "ipkg_download: ERROR: Failed to retrieve $src, returning $err"
+			echo "ipkg_download: ERROR: Failed to save $src to $IPKG_TMP, returning $err"
 			return 1
 		fi
 		mv $IPKG_TMP/$src_file $dest_dir/$dest_file 2>/dev/null
@@ -748,7 +750,7 @@ ipkg_install_file_dest() {
 	fi
 
 	# Check dependencies
-	local depends="`ipkg_depends $pkg | sed -e "s/\<$pkg\>//"`"
+	local depends="`ipkg_depends $pkg | sed -e "s/\([[:space:]]\|^\)$pkg\([[:space:]]\|$\)//"`"
 
 	# Don't worry about deps that are scheduled for installation
 	local missing_deps=
@@ -1124,11 +1126,6 @@ ipkg_remove() {
 # ipkg main
 ###########
 
-# check for jffs
-if [ "$(nvram get sys_enable_jffs2)" = "0" ]; then
-    echo "please enable jffs first, you can't use IPKG without jffs support"   
-    exit 1 
-fi
 # Parse options
 while [ $# -gt 0 ]; do
 	arg="$1"
