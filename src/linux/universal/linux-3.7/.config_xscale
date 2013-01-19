@@ -852,7 +852,7 @@ CONFIG_UEVENT_HELPER_PATH=""
 # CONFIG_SYS_HYPERVISOR is not set
 # CONFIG_GENERIC_CPU_DEVICES is not set
 # CONFIG_DMA_SHARED_BUFFER is not set
-CONFIG_CMA=y
+# CONFIG_CMA is not set
 
 #
 # Default contiguous memory area size:
