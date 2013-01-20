@@ -15,6 +15,7 @@
 		<option value="3" <% nvram_selmatch("wan_dial", "3", "selected"); %> >#99***3# (LTE/3.75/4G)</option>
 		<option value="2" <% nvram_selmatch("wan_dial", "2", "selected"); %> >#777 (CDMA/EVDO)</option>
 		<option value="4" <% nvram_selmatch("wan_dial", "4", "selected"); %> >*99***2#(UMTS/3G/3.5G)</option>
+		<option value="5" <% nvram_selmatch("wan_dial", "5", "selected"); %> >*99***4#(UMTS/3G/3.5G/LTE)</option>
 	</select>
 </div>
 <div class="setting">

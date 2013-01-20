@@ -271,7 +271,7 @@ void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 	    || nvram_match("umts_override", "1")) {
 #endif
 		websWrite(wp,
-			  "<option value=\"3g\" %s >3G/UMTS/4G/LTE</option>\n",
+			  "<option value=\"3g\" %s >Mobile Broadband</option>\n",
 			  nvram_selmatch(wp, "wan_proto",
 					 "3g") ? "selected=\"selected\"" : "");
 #ifdef HAVE_BUFFALO
