@@ -1979,11 +1979,11 @@ static void filter_input(void)
 		&& nvram_match("proftpd_wan", "1")) {
 		if (nvram_match("limit_ftp", "1")) {
 			save2file
-			    ("-A INPUT -i %s -p tcp --dport %d -j logbrute\n",
+			    ("-A INPUT -i %s -p tcp --dport %s -j logbrute\n",
 			     wanface, nvram_safe_get("proftpd_port"));
 		} else {
 			save2file
-			    ("-A INPUT -i %s -p tcp --dport %d -j %s\n",
+			    ("-A INPUT -i %s -p tcp --dport %s -j %s\n",
 			     wanface, nvram_safe_get("proftpd_port"), TARG_PASS);
 			}
 	}
