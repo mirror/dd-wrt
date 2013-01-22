@@ -30,9 +30,6 @@ static void ar7240_spi_poll(void);
 static void ar7240_spi_write_page(uint32_t addr, uint8_t * data, int len);
 static void ar7240_spi_sector_erase(uint32_t addr);
 
-static const char *part_probes[] __initdata =
-    { "cmdlinepart", "RedBoot", NULL };
-
 #define down mutex_lock
 #define up mutex_unlock
 #define init_MUTEX mutex_init
@@ -97,14 +94,22 @@ static int ar7240_flash_probe()
 }
 
 static int zcom=0;
+static int nocalibration=0;
 static unsigned int zcomoffset = 0;
 int guessbootsize(void *offset, unsigned int maxscan)
 {
 	unsigned int i,a;
+	unsigned char *ofsb = (unsigned char *)offset;
 	unsigned int *ofs = (unsigned int *)offset;
 	maxscan -= 0x20000;
 	maxscan /= 4;
 	zcom=0;
+	if (!strncmp((char *)(ofsb + 0x29da), "myloram.bin", 11)) {
+		printk(KERN_EMERG "compex WP72E detected\n");
+		nocalibration=1;
+		return 0x30000;	// compex, lzma image
+	}
+
 	for (i = 0; i < maxscan; i += 16384) {
 		if (ofs[i] == 0x6d000080) {
 			printk(KERN_EMERG "redboot or compatible detected\n");
@@ -304,25 +309,22 @@ struct fis_image_desc {
  */
 static int __init ar7240_flash_init(void)
 {
-	int i, np;
+	int i;
 	ar7240_flash_geom_t *geom;
 	struct mtd_info *mtd;
-	struct mtd_partition *mtd_parts;
 	uint8_t index;
 	int result = -1;
 	char *buf;
-	struct fis_image_desc *fis;
-	unsigned char *p;
 	int offset = 0;
 	struct squashfs_super_block *sb;
 	size_t rootsize;
 	size_t len;
-
+	int fsize;
 	init_MUTEX(&ar7240_flash_sem);
 
 	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x43);
-	buf = 0xbf000000;
-	int fsize = guessflashsize(buf);
+	buf = (char *)0xbf000000;
+	fsize = guessflashsize(buf);
 	for (i = 0; i < AR7240_FLASH_MAX_BANKS; i++) {
 
 		index = ar7240_flash_probe();
@@ -356,17 +358,10 @@ static int __init ar7240_flash_init(void)
 
 		offset = 0;
 
-		int compex = 0;
 		int guess = guessbootsize(buf, mtd->size);
 		if (guess > 0) {
 			printk(KERN_EMERG "guessed bootloader size = %X\n",
 			       guess);
-//			if (guess>0x30000)
-//			{
-//			dir_parts[0].size = guess-0x30000;
-//			dir_parts[0].offset = 0x30000;
-//			}else{
-//			}
 			dir_parts[0].offset = 0;
 			dir_parts[0].size = guess;			
 			dir_parts[7].size = guess;			
@@ -396,7 +391,7 @@ static int __init ar7240_flash_init(void)
 				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize*2);	//nvram
 				dir_parts[4].size = mtd->erasesize;
 				#else
-				dir_parts[4].offset = dir_parts[5].offset - mtd->erasesize;	//nvram
+				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize - (nocalibration * mtd->erasesize));	//nvram
 				dir_parts[4].size = mtd->erasesize;
 				#endif
 				dir_parts[3].size =
@@ -411,7 +406,6 @@ static int __init ar7240_flash_init(void)
 			offset += 4096;
 			buf += 4096;
 		}
-	      def:;
 		dir_parts[6].offset = 0;	// linux + nvram = phy size
 		dir_parts[6].size = mtd->size;	// linux + nvram = phy size
 		result = add_mtd_partitions(mtd, dir_parts, 8);
