@@ -76,6 +76,25 @@ void start_sysinit(void)
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
 		unsigned char buf2[256];
+#ifdef HAVE_WPE72
+		fseek(fp, 0x1f810, SEEK_SET);
+		fread(buf2, 256, 1, fp);
+		fclose(fp);
+		if ((!memcmp(buf2,"\xff\xff\xff\xff\xff\xff",6) || !memcmp(buf2,"\x00\x00\x00\x00\x00\x00",6)))
+		    goto out;
+		char mac[32];
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fprintf(stderr, "configure eth0 to %s\n", mac);
+		eval("ifconfig", "eth0", "hw", "ether", mac);
+		MAC_ADD(mac);
+		fprintf(stderr, "configure eth1 to %s\n", mac);
+		eval("ifconfig", "eth1", "hw", "ether", mac);
+#else
 		if (fseek(fp, 0x07f0000, SEEK_SET))
 		    fseek(fp, 0x03f0000, SEEK_SET);
 		fread(buf2, 256, 1, fp);
@@ -93,6 +112,7 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
+#endif
 	}
 	out:;
 
