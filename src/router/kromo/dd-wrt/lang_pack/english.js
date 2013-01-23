@@ -1613,6 +1613,7 @@ status_router.sys_firmver="Firmware Version";
 status_router.sys_time="Current Time";
 status_router.sys_up="Uptime";
 status_router.sys_load="Load Average";
+status_router.sys_kernel="Kernel Version";
 status_router.legend2="CPU";
 status_router.cpu="CPU Model";
 status_router.clock="CPU Clock";
