@@ -353,7 +353,7 @@ endif
 	dd if=$(LINUXDIR)/arch/arm/boot/uImage of=$(ARCH)-uclibc/laguna-firmware.raw2 bs=131072 conv=sync
 	cat $(ARCH)-uclibc/dd-wrt.jffs2>>$(ARCH)-uclibc/laguna-firmware.raw1
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/laguna-firmware.raw2
-	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/laguna-firmware-jffs.bin $(ARCH)-uclibc/laguna-firmware.raw1
+	-./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/laguna-firmware-jffs.bin $(ARCH)-uclibc/laguna-firmware.raw1
 	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/laguna-firmware-squashfs.bin $(ARCH)-uclibc/laguna-firmware.raw2
 
 
