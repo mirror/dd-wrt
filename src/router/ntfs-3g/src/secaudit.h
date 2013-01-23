@@ -56,8 +56,8 @@
 #else
 #define USESTUBS 0 /* direct calls to API, based on following definitions */
 #define ENVNTFS3G "NTFS3G"
-#define LIBFILE64 "/lib64/libntfs-3g.so.837"
-#define LIBFILE "/lib/libntfs-3g.so.837"
+#define LIBFILE64 "/lib64/libntfs-3g.so.4921"
+#define LIBFILE "/lib/libntfs-3g.so.4921"
 #endif
 
 #define MAPDIR ".NTFS-3G"
@@ -154,8 +154,8 @@ typedef int BOOL;   /* Already defined in windows.h */
 typedef u32 DWORD; /* must be 32 bits whatever the platform */
 typedef DWORD *LPDWORD;
 
-#define MS_NONE 0    /* no flag for mounting the device */
-#define MS_RDONLY 1  /* flag for mounting the device read-only */
+#define NTFS_MNT_NONE 0    /* no flag for mounting the device */
+#define NTFS_MNT_RDONLY 1  /* flag for mounting the device read-only */
 
 #endif /* WIN32 */
 

@@ -24,8 +24,8 @@
 
 # Autoconf
 AC_PREREQ(2.59)
-AC_INIT([ntfs-3g],[2012.1.15AR.7],[ntfs-3g-devel@lists.sf.net])
-LIBNTFS_3G_VERSION="837"
+AC_INIT([ntfs-3g],[2013.1.13],[ntfs-3g-devel@lists.sf.net])
+LIBNTFS_3G_VERSION="84"
 AC_CONFIG_SRCDIR([src/ntfs-3g.c])
 
 # Environment
@@ -210,27 +210,31 @@ case "${target}" in
 	;;
 esac
 
-AC_MSG_CHECKING([fuse compatibility])
-case "${target_os}" in
-linux*|solaris*)
-	AC_ARG_WITH(
-		[fuse],
-		[AS_HELP_STRING([--with-fuse=<internal|external>],[Select FUSE library: internal or external @<:@default=internal@:>@])],
-		,
-		[with_fuse="internal"]
-	)
-	;;
-darwin*|netbsd*|kfreebsd*-gnu)
-	with_fuse="external"
-	;;
-freebsd*)
-	AC_MSG_ERROR([Please see FreeBSD support at http://www.freshports.org/sysutils/fusefs-ntfs])
-	;;
-*)
-	AC_MSG_ERROR([ntfs-3g can be built for Linux, FreeBSD, Mac OS X, NetBSD, and Solaris only.])
-	;;
-esac
-AC_MSG_RESULT([${with_fuse}])
+if test "x${enable_ntfs_3g}" = "xyes"; then
+	AC_MSG_CHECKING([fuse compatibility])
+	case "${target_os}" in
+	linux*|solaris*)
+		AC_ARG_WITH(
+			[fuse],
+			[AS_HELP_STRING([--with-fuse=<internal|external>],[Select FUSE library: internal or external @<:@default=internal@:>@])],
+			,
+			[with_fuse="internal"]
+		)
+		;;
+	darwin*|netbsd*|kfreebsd*-gnu)
+		with_fuse="external"
+		;;
+	freebsd*)
+		AC_MSG_ERROR([Please see FreeBSD support at http://www.freshports.org/sysutils/fusefs-ntfs])
+		;;
+	*)
+		AC_MSG_ERROR([ntfs-3g can be built for Linux, FreeBSD, Mac OS X, NetBSD, and Solaris only.])
+		;;
+	esac
+	AC_MSG_RESULT([${with_fuse}])
+else
+        with_fuse="none"
+fi
 
 case "${target_os}" in
 solaris*)
@@ -270,7 +274,28 @@ if test "${with_fuse}" = "internal"; then
 		[1],
 		[Define to 1 if using internal fuse]
 	)
-else
+
+	AC_MSG_CHECKING([Solaris OS])
+	AC_LANG_PUSH([C])
+	AC_COMPILE_IFELSE(
+		[
+			AC_LANG_SOURCE(
+				[[#if !((defined(sun) || defined(__sun)) && (defined(__SVR4) || defined(__svr4__)))]]
+				[[#error "Not a Solaris system."]]
+				[[#endif]]
+			)
+		],
+		[
+			AC_MSG_RESULT([yes])
+			LIBFUSE_LITE_CFLAGS="${LIBFUSE_LITE_CFLAGS} -std=c99 -D__SOLARIS__ -D_XOPEN_SOURCE=600 -D__EXTENSIONS__"
+			LIBFUSE_LITE_LIBS="${LIBFUSE_LITE_LIBS} -lxnet"
+		],
+		[
+			AC_MSG_RESULT([no])
+		]
+	)
+	AC_LANG_POP([C])
+elif test "${with_fuse}" = "external"; then
 	if test -z "$PKG_CONFIG"; then
 		AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
 	fi
@@ -350,16 +375,46 @@ if test "x$extrapath" != "x"; then
 		MKNTFS_CPPFLAGS="$MKNTFS_CPPFLAGS -I$extrapath/include"
 		MKNTFS_LIBS="$MKNTFS_LIBS -L$extrapath/lib"
 	fi
+
+	search_for_luuid="yes"
 	AC_CHECK_HEADER([uuid/uuid.h],
-		AC_CHECK_LIB([uuid], [uuid_generate],
-			AC_DEFINE([ENABLE_UUID], 1,
-			[Define this to 1 if you want to enable generation of
-			DCE compliant UUIDs.])
-			MKNTFS_LIBS="$MKNTFS_LIBS -luuid",
-			AC_MSG_WARN([ntfsprogs DCE compliant UUID generation code requires the uuid library.]),
-		),
-		AC_MSG_WARN([ntfsprogs DCE compliant UUID generation code requires the uuid library.]),
+		[],
+		[
+			AC_MSG_WARN([ntfsprogs DCE compliant UUID generation code requires the uuid library.])
+			search_for_luuid="no"
+		],
 	)
+
+	if test "x$search_for_luuid" != "xno"; then
+		# Look for uuid_generate in the standard C library.
+		AC_CHECK_FUNC([uuid_generate],
+			[
+				AC_DEFINE([ENABLE_UUID], 1,
+					[Define this to 1 if you want to enable
+					generation of DCE compliant UUIDs.])
+				search_for_luuid="no"
+			],
+			[],
+		)
+	fi
+
+	if test "x$search_for_luuid" != "xno"; then
+		# Look for uuid_generate in the 'uuid' library.
+		AC_CHECK_LIB([uuid], [uuid_generate],
+			[
+				AC_DEFINE([ENABLE_UUID], 1,
+					[Define this to 1 if you want to enable
+					generation of DCE compliant UUIDs.])
+				MKNTFS_LIBS="$MKNTFS_LIBS -luuid"
+				search_for_luuid="no"
+			],
+			[],
+		)
+	fi
+
+	if test "x$search_for_luuid" != "xno"; then
+		AC_MSG_WARN([ntfsprogs DCE compliant UUID generation code requires the uuid library.])
+	fi
 fi
 
 # Checks for header files.
@@ -386,7 +441,7 @@ AC_C_BIGENDIAN(
 	]
 	,
 )
-# AC_C_CONST
+AC_C_CONST
 AC_C_INLINE
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
@@ -495,6 +550,7 @@ AC_SUBST([rootbindir])
 AC_SUBST([rootsbindir])
 AC_SUBST([rootlibdir])
 AC_SUBST([LIBNTFS_3G_VERSION])
+AC_SUBST([LIBFUSE_LITE_CFLAGS])
 AC_SUBST([LIBFUSE_LITE_LIBS])
 AC_SUBST([MKNTFS_CPPFLAGS])
 AC_SUBST([MKNTFS_LIBS])

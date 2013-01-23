@@ -93,8 +93,9 @@ static const char *corrupt_volume_msg =
 "for more details.\n";
 
 static const char *hibernated_volume_msg =
-"The NTFS partition is hibernated. Please resume and shutdown Windows\n"
-"properly, or mount the volume read-only with the 'ro' mount option.\n";
+"The NTFS partition is in an unsafe state. Please resume and shutdown\n"
+"Windows fully (no hibernation or fast restarting), or mount the volume\n"
+"read-only with the 'ro' mount option.\n";
 
 static const char *unclean_journal_msg =
 "Write access is denied because the disk wasn't safely powered\n"
@@ -465,7 +466,8 @@ error_exit:
  * Return the allocated volume structure on success and NULL on error with
  * errno set to the error code.
  */
-ntfs_volume *ntfs_volume_startup(struct ntfs_device *dev, unsigned long flags)
+ntfs_volume *ntfs_volume_startup(struct ntfs_device *dev,
+		ntfs_mount_flags flags)
 {
 	LCN mft_zone_size, mft_lcn;
 	s64 br;
@@ -507,7 +509,7 @@ ntfs_volume *ntfs_volume_startup(struct ntfs_device *dev, unsigned long flags)
 #else
 	NVolClearCompression(vol);
 #endif
-	if (flags & MS_RDONLY)
+	if (flags & NTFS_MNT_RDONLY)
 		NVolSetReadOnly(vol);
 	
 	/* ...->open needs bracketing to compile with glibc 2.7 */
@@ -660,6 +662,24 @@ static int ntfs_volume_check_logfile(ntfs_volume *vol)
 	
 	if (!ntfs_check_logfile(na, &rp) || !ntfs_is_logfile_clean(na, rp))
 		err = EOPNOTSUPP;
+		/*
+		 * If the latest restart page was identified as version
+		 * 2.0, then Windows may have kept a cached copy of
+		 * metadata for fast restarting, and we should not mount.
+		 * Hibernation will be seen the same way on a non
+		 * Windows-system partition, so we have to use the same
+		 * error code (EPERM).
+		 * The restart page may also be identified as version 2.0
+		 * when access to the file system is terminated abruptly
+		 * by unplugging or power cut, so mounting is also rejected
+		 * after such an event.
+		 */
+	if (rp
+	    && (rp->major_ver == const_cpu_to_le16(2))
+	    && (rp->minor_ver == const_cpu_to_le16(0))) {
+		ntfs_log_error("Metadata kept in Windows cache, refused to mount.\n");
+		err = EPERM;
+	}
 	free(rp);
 	ntfs_attr_close(na);
 out:	
@@ -868,7 +888,7 @@ static int fix_txf_data(ntfs_volume *vol)
  * @flags is an optional second parameter. The same flags are used as for
  * the mount system call (man 2 mount). Currently only the following flag
  * is implemented:
- *	MS_RDONLY	- mount volume read-only
+ *	NTFS_MNT_RDONLY	- mount volume read-only
  *
  * The function opens the device @dev and verifies that it contains a valid
  * bootsector. Then, it allocates an ntfs_volume structure and initializes
@@ -879,7 +899,7 @@ static int fix_txf_data(ntfs_volume *vol)
  * Return the allocated volume structure on success and NULL on error with
  * errno set to the error code.
  */
-ntfs_volume *ntfs_device_mount(struct ntfs_device *dev, unsigned long flags)
+ntfs_volume *ntfs_device_mount(struct ntfs_device *dev, ntfs_mount_flags flags)
 {
 	s64 l;
 	ntfs_volume *vol;
@@ -1207,12 +1227,13 @@ ntfs_volume *ntfs_device_mount(struct ntfs_device *dev, unsigned long flags)
 	 * Check for dirty logfile and hibernated Windows.
 	 * We care only about read-write mounts.
 	 */
-	if (!(flags & (MS_RDONLY | MS_FORENSIC))) {
-		if (!(flags & MS_IGNORE_HIBERFILE) && 
+	if (!(flags & (NTFS_MNT_RDONLY | NTFS_MNT_FORENSIC))) {
+		if (!(flags & NTFS_MNT_IGNORE_HIBERFILE) &&
 		    ntfs_volume_check_hiberfile(vol, 1) < 0)
 			goto error_exit;
 		if (ntfs_volume_check_logfile(vol) < 0) {
-			if (!(flags & MS_RECOVER))
+			/* Always reject cached metadata for now */
+			if (!(flags & NTFS_MNT_RECOVER) || (errno == EPERM))
 				goto error_exit;
 			ntfs_log_info("The file system wasn't safely "
 				      "closed on Windows. Fixing.\n");
@@ -1301,7 +1322,7 @@ int ntfs_set_ignore_case(ntfs_volume *vol)
  * @flags is an optional second parameter. The same flags are used as for
  * the mount system call (man 2 mount). Currently only the following flags
  * is implemented:
- *	MS_RDONLY	- mount volume read-only
+ *	NTFS_MNT_RDONLY	- mount volume read-only
  *
  * The function opens the device or file @name and verifies that it contains a
  * valid bootsector. Then, it allocates an ntfs_volume structure and initializes
@@ -1316,7 +1337,7 @@ int ntfs_set_ignore_case(ntfs_volume *vol)
  * soon as the function returns.
  */
 ntfs_volume *ntfs_mount(const char *name __attribute__((unused)),
-		unsigned long flags __attribute__((unused)))
+		ntfs_mount_flags flags __attribute__((unused)))
 {
 #ifndef NO_NTFS_DEVICE_DEFAULT_IO_OPS
 	struct ntfs_device *dev;
@@ -1708,6 +1729,10 @@ int ntfs_volume_error(int err)
 			ret = NTFS_VOLUME_CORRUPT;
 			break;
 		case EPERM:
+			/*
+			 * Hibernation and fast restarting are seen the
+			 * same way on a non Windows-system partition.
+			 */
 			ret = NTFS_VOLUME_HIBERNATED;
 			break;
 		case EOPNOTSUPP:
@@ -1808,7 +1833,7 @@ int ntfs_volume_get_free_space(ntfs_volume *vol)
  *
  * Change the label on the volume @vol to @label.
  */
-int ntfs_volume_rename(ntfs_volume *vol, ntfschar *label, int label_len)
+int ntfs_volume_rename(ntfs_volume *vol, const ntfschar *label, int label_len)
 {
 	ntfs_attr *na;
 	char *old_vol_name;
@@ -1843,7 +1868,7 @@ int ntfs_volume_rename(ntfs_volume *vol, ntfschar *label, int label_len)
 
 		/* The volume name attribute does not exist.  Need to add it. */
 		if (ntfs_attr_add(vol->vol_ni, AT_VOLUME_NAME, AT_UNNAMED, 0,
-			(u8*) label, label_len))
+			(const u8*) label, label_len))
 		{
 			err = errno;
 			ntfs_log_perror("Encountered error while adding "
