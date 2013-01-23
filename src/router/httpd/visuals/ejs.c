@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/statfs.h>
+#include <sys/utsname.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <broadcom.h>
@@ -1360,6 +1361,14 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 #else
 	websWrite(wp, "%s", nvram_safe_get("DD_BOARD"));
 #endif
+}
+
+
+void ej_get_syskernel(webs_t wp, int argc, char_t ** argv)
+{
+	struct utsname name;
+	uname(&name); 
+	websWrite(wp, "%s %s %s %s",name.sysname,name.release,name.version,name.machine);
 }
 
 void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
