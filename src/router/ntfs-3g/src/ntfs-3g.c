@@ -562,7 +562,7 @@ static int ntfs_macfuse_getxtimes(const char *org_path,
 	}
 	
 	/* We have no backup timestamp in NTFS. */
-	*crtime = ntfs2timespec(ni->creation_time);
+	crtime->tv_sec = ni->creation_time;
 exit:
 	if (ntfs_inode_close(ni))
 		set_fuse_error(&res);
@@ -572,7 +572,7 @@ exit:
 	return res;
 }
 
-static int ntfs_macfuse_setcrtime(const char *path, const struct timespec *tv)
+int ntfs_macfuse_setcrtime(const char *path, const struct timespec *tv)
 {
 	ntfs_inode *ni;
 	int res = 0;
@@ -584,7 +584,7 @@ static int ntfs_macfuse_setcrtime(const char *path, const struct timespec *tv)
 		return -errno;
 	
 	if (tv) {
-		ni->creation_time = timespec2ntfs(*tv);
+		ni->creation_time = tv->tv_sec;
 		ntfs_fuse_update_times(ni, NTFS_UPDATE_CTIME);
 	}
 
@@ -593,7 +593,7 @@ static int ntfs_macfuse_setcrtime(const char *path, const struct timespec *tv)
 	return res;
 }
 
-static int ntfs_macfuse_setbkuptime(const char *path, const struct timespec *tv)
+int ntfs_macfuse_setbkuptime(const char *path, const struct timespec *tv)
 {
 	ntfs_inode *ni;
 	int res = 0;
@@ -614,7 +614,7 @@ static int ntfs_macfuse_setbkuptime(const char *path, const struct timespec *tv)
 	return res;
 }
 
-static int ntfs_macfuse_setchgtime(const char *path, const struct timespec *tv)
+int ntfs_macfuse_setchgtime(const char *path, const struct timespec *tv)
 {
 	ntfs_inode *ni;
 	int res = 0;
@@ -626,7 +626,7 @@ static int ntfs_macfuse_setchgtime(const char *path, const struct timespec *tv)
 		return -errno;
 
 	if (tv) {
-		ni->last_mft_change_time = timespec2ntfs(*tv);
+		ni->last_mft_change_time = tv->tv_sec;
 		ntfs_fuse_update_times(ni, 0);
 	}
 
@@ -3392,13 +3392,13 @@ static int ntfs_open(const char *device)
 	unsigned long flags = 0;
 	
 	if (!ctx->blkdev)
-		flags |= MS_EXCLUSIVE;
+		flags |= NTFS_MNT_EXCLUSIVE;
 	if (ctx->ro)
-		flags |= MS_RDONLY;
+		flags |= NTFS_MNT_RDONLY;
 	if (ctx->recover)
-		flags |= MS_RECOVER;
+		flags |= NTFS_MNT_RECOVER;
 	if (ctx->hiberfile)
-		flags |= MS_IGNORE_HIBERFILE;
+		flags |= NTFS_MNT_IGNORE_HIBERFILE;
 
 	ctx->vol = ntfs_mount(device, flags);
 	if (!ctx->vol) {
