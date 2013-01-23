@@ -95,6 +95,10 @@ addEvent(window, "unload", function() {
 									<% get_firmware_version(); %> - build <% get_firmware_svnrev(); %>
 								</div>
 								<div class="setting">
+									<div class="label"><% tran("status_router.sys_kernel"); %></div>
+									<% get_syskernel(); %>
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("share.mac"); %></div>
 									<script type="text/javascript">
 									//<![CDATA[
