@@ -1482,8 +1482,8 @@ err_out:
  * on error with errno set to the error code.
  */
 static ntfs_inode *__ntfs_create(ntfs_inode *dir_ni, le32 securid,
-		ntfschar *name, u8 name_len, mode_t type, dev_t dev,
-		ntfschar *target, int target_len)
+		const ntfschar *name, u8 name_len, mode_t type, dev_t dev,
+		const ntfschar *target, int target_len)
 {
 	ntfs_inode *ni;
 	int rollback_data = 0, rollback_sd = 0;
@@ -1752,7 +1752,7 @@ err_out:
  * Some wrappers around __ntfs_create() ...
  */
 
-ntfs_inode *ntfs_create(ntfs_inode *dir_ni, le32 securid, ntfschar *name,
+ntfs_inode *ntfs_create(ntfs_inode *dir_ni, le32 securid, const ntfschar *name,
 		u8 name_len, mode_t type)
 {
 	if (type != S_IFREG && type != S_IFDIR && type != S_IFIFO &&
@@ -1764,7 +1764,7 @@ ntfs_inode *ntfs_create(ntfs_inode *dir_ni, le32 securid, ntfschar *name,
 }
 
 ntfs_inode *ntfs_create_device(ntfs_inode *dir_ni, le32 securid,
-		ntfschar *name, u8 name_len, mode_t type, dev_t dev)
+		const ntfschar *name, u8 name_len, mode_t type, dev_t dev)
 {
 	if (type != S_IFCHR && type != S_IFBLK) {
 		ntfs_log_error("Invalid arguments.\n");
@@ -1774,7 +1774,8 @@ ntfs_inode *ntfs_create_device(ntfs_inode *dir_ni, le32 securid,
 }
 
 ntfs_inode *ntfs_create_symlink(ntfs_inode *dir_ni, le32 securid,
-		ntfschar *name, u8 name_len, ntfschar *target, int target_len)
+		const ntfschar *name, u8 name_len, const ntfschar *target,
+		int target_len)
 {
 	if (!target || !target_len) {
 		ntfs_log_error("%s: Invalid argument (%p, %d)\n", __FUNCTION__,
@@ -1849,7 +1850,8 @@ no_hardlink:
  * Return 0 on success or -1 on error with errno set to the error code.
  */
 int ntfs_delete(ntfs_volume *vol, const char *pathname,
-		ntfs_inode *ni, ntfs_inode *dir_ni, ntfschar *name, u8 name_len)
+		ntfs_inode *ni, ntfs_inode *dir_ni, const ntfschar *name,
+		u8 name_len)
 {
 	ntfs_attr_search_ctx *actx = NULL;
 	FILE_NAME_ATTR *fn = NULL;
@@ -2140,7 +2142,7 @@ err_out:
  *
  * Return 0 on success or -1 on error with errno set to the error code.
  */
-static int ntfs_link_i(ntfs_inode *ni, ntfs_inode *dir_ni, ntfschar *name,
+static int ntfs_link_i(ntfs_inode *ni, ntfs_inode *dir_ni, const ntfschar *name,
 			 u8 name_len, FILE_NAME_TYPE_FLAGS nametype)
 {
 	FILE_NAME_ATTR *fn = NULL;
@@ -2226,7 +2228,8 @@ err_out:
 	return -1;
 }
 
-int ntfs_link(ntfs_inode *ni, ntfs_inode *dir_ni, ntfschar *name, u8 name_len)
+int ntfs_link(ntfs_inode *ni, ntfs_inode *dir_ni, const ntfschar *name,
+		u8 name_len)
 {
 	return (ntfs_link_i(ni, dir_ni, name, name_len, FILE_NAME_POSIX));
 }
@@ -2277,6 +2280,8 @@ ntfs_inode *ntfs_dir_parent_inode(ntfs_inode *ni)
 /*
  *		Get a DOS name for a file in designated directory
  *
+ *	Not allowed if there are several non-dos names (EMLINK)
+ *
  *	Returns size if found
  *		0 if not found
  *		-1 if there was an error (described by errno)
@@ -2285,6 +2290,7 @@ ntfs_inode *ntfs_dir_parent_inode(ntfs_inode *ni)
 static int get_dos_name(ntfs_inode *ni, u64 dnum, ntfschar *dosname)
 {
 	size_t outsize = 0;
+	int namecount = 0;
 	FILE_NAME_ATTR *fn;
 	ntfs_attr_search_ctx *ctx;
 
@@ -2299,6 +2305,8 @@ static int get_dos_name(ntfs_inode *ni, u64 dnum, ntfschar *dosname)
 		fn = (FILE_NAME_ATTR*)((u8*)ctx->attr +
 				le16_to_cpu(ctx->attr->value_offset));
 
+		if (fn->file_name_type != FILE_NAME_DOS)
+			namecount++;
 		if ((fn->file_name_type & FILE_NAME_DOS)
 		    && (MREF_LE(fn->parent_directory) == dnum)) {
 				/*
@@ -2313,12 +2321,18 @@ static int get_dos_name(ntfs_inode *ni, u64 dnum, ntfschar *dosname)
 		}
 	}
 	ntfs_attr_put_search_ctx(ctx);
+	if ((outsize > 0) && (namecount > 1)) {
+		outsize = -1;
+		errno = EMLINK; /* this error implies there is a dos name */
+	}
 	return (outsize);
 }
 
 
 /*
  *		Get a long name for a file in designated directory
+ *
+ *	Not allowed if there are several non-dos names (EMLINK)
  *
  *	Returns size if found
  *		0 if not found
@@ -2328,6 +2342,7 @@ static int get_dos_name(ntfs_inode *ni, u64 dnum, ntfschar *dosname)
 static int get_long_name(ntfs_inode *ni, u64 dnum, ntfschar *longname)
 {
 	size_t outsize = 0;
+	int namecount = 0;
 	FILE_NAME_ATTR *fn;
 	ntfs_attr_search_ctx *ctx;
 
@@ -2343,6 +2358,8 @@ static int get_long_name(ntfs_inode *ni, u64 dnum, ntfschar *longname)
 		fn = (FILE_NAME_ATTR*)((u8*)ctx->attr +
 				le16_to_cpu(ctx->attr->value_offset));
 
+		if (fn->file_name_type != FILE_NAME_DOS)
+			namecount++;
 		if ((fn->file_name_type & FILE_NAME_WIN32)
 		    && (MREF_LE(fn->parent_directory) == dnum)) {
 				/*
@@ -2352,6 +2369,11 @@ static int get_long_name(ntfs_inode *ni, u64 dnum, ntfschar *longname)
 			outsize = fn->file_name_length;
 			memcpy(longname,fn->file_name,outsize*sizeof(ntfschar));
 		}
+	}
+	if (namecount > 1) {
+		ntfs_attr_put_search_ctx(ctx);
+		errno = EMLINK;
+		return -1;
 	}
 		/* if not found search for POSIX names */
 	if (!outsize) {
@@ -2429,7 +2451,7 @@ int ntfs_get_ntfs_dos_name(ntfs_inode *ni, ntfs_inode *dir_ni,
  */
 
 static int set_namespace(ntfs_inode *ni, ntfs_inode *dir_ni,
-			ntfschar *name, int len,
+			const ntfschar *name, int len,
 			FILE_NAME_TYPE_FLAGS nametype)
 {
 	ntfs_attr_search_ctx *actx;
@@ -2503,9 +2525,9 @@ static int set_namespace(ntfs_inode *ni, ntfs_inode *dir_ni,
  */
 
 static int set_dos_name(ntfs_inode *ni, ntfs_inode *dir_ni,
-			ntfschar *shortname, int shortlen,
-			ntfschar *longname, int longlen,
-			ntfschar *deletename, int deletelen, BOOL existed)
+			const ntfschar *shortname, int shortlen,
+			const ntfschar *longname, int longlen,
+			const ntfschar *deletename, int deletelen, BOOL existed)
 {
 	unsigned int linkcount;
 	ntfs_volume *vol;
@@ -2673,7 +2695,8 @@ int ntfs_set_ntfs_dos_name(ntfs_inode *ni, ntfs_inode *dir_ni,
 			res = -1;
 	} else {
 		res = -1;
-		errno = ENOENT;
+		if (!longlen)
+			errno = ENOENT;
 	}
 	free(shortname);
 	if (!closed) {
@@ -2749,7 +2772,8 @@ int ntfs_remove_ntfs_dos_name(ntfs_inode *ni, ntfs_inode *dir_ni)
 			}
 		}
 	} else {
-		errno = ENOENT;
+		if (!longlen)
+			errno = ENOENT;
 		res = -1;
 	}
 	if (!deleted) {
