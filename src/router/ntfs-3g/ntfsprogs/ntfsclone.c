@@ -103,9 +103,10 @@ static const char *EXEC_NAME = "ntfsclone";
 
 static const char *bad_sectors_warning_msg =
 "*************************************************************************\n"
-"* WARNING: The disk has bad sector. This means physical damage on the   *\n"
-"* disk surface caused by deterioration, manufacturing faults or other   *\n"
-"* reason. The reliability of the disk may stay stable or degrade fast.  *\n"
+"* WARNING: The disk has one or more bad sectors. This means that damage *\n"
+"* has occurred on the disk surface, possibly caused by deterioration of *\n"
+"* the physical media, manufacturing faults or other reasons. The        *\n"
+"* reliability of the disk may stay stable or degrade fast.              *\n"
 "* Use the --rescue option to efficiently save as much data as possible! *\n"
 "*************************************************************************\n";
 
@@ -1575,7 +1576,7 @@ static void walk_runs(struct ntfs_walk_cluster *walk)
 			u64 k = (u64)lcn + j;
 			if (ntfs_bit_get_and_set(lcn_bitmap.bm, k, 1))
 				err_exit("Cluster %llu referenced twice!\n"
-					 "You didn't shutdown your Windows"
+					 "You didn't shutdown your Windows "
 					 "properly?\n", (unsigned long long)k);
 		}
 
@@ -2177,7 +2178,7 @@ static s64 open_volume(void)
 {
 	s64 device_size;
 
-	mount_volume(MS_RDONLY);
+	mount_volume(NTFS_MNT_RDONLY);
 
 	device_size = ntfs_device_size_get(vol->dev, 1);
 	if (device_size <= 0)
@@ -2447,7 +2448,7 @@ int main(int argc, char **argv)
 	   FIXME: use mount flags to avoid potential side-effects in future */
 		opt.force++;
 		ntfs_umount(vol,FALSE);
-		mount_volume(0 /*MS_NOATIME*/);
+		mount_volume(0 /*NTFS_MNT_NOATIME*/);
 	}
 
 	free(lcn_bitmap.bm);
