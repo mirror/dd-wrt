@@ -3216,6 +3216,9 @@ void hotspot_save(webs_t wp) {
 #ifdef HAVE_TIEXTRA1
 	chillispot_save(wp);
 #endif
+#ifdef HAVE_TIEXTRA2
+	wifidogs_save(wp);
+#endif
 	validate_cgi(wp);
 }
 
