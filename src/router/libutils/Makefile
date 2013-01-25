@@ -154,6 +154,12 @@ ifeq ($(CONFIG_TIEXTRA1),y)
   CFLAGS += -DHAVE_TIEXTRA1
   OBJS += $(TOP)/jansson/src/.libs/libjansson.a
 endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+  OBJS += $(TOP)/private/telkom/mwifidog.o
+  CFLAGS += -I$(TOP)/jansson/src -I$(TOP)/private/telkom
+  CFLAGS += -DHAVE_TIEXTRA2
+  OBJS += $(TOP)/jansson/src/.libs/libjansson.a
+endif
 ifeq ($(CONFIG_GEMTEK),y)
   CFLAGS += -DHAVE_GEMTEK
 endif
