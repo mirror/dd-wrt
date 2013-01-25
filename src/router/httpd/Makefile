@@ -349,6 +349,9 @@ endif
 ifeq ($(CONFIG_BKM),y)
 CFLAGS += -DHAVE_BKM
 endif
+ifeq ($(CONFIG_STATUS_GPIO),y)
+CFLAGS += -DHAVE_STATUS_GPIO
+endif
 ifeq ($(CONFIG_SOLO51),y)
 CFLAGS += -DHAVE_SOLO51
 endif
@@ -885,6 +888,13 @@ CFLAGS += -DHAVE_TIEXTRA1
 VISOBJS  += $(TOP)/private/telkom/mchillispotejs.o
 VISOBJS += $(TOP)/jansson/src/.libs/libjansson.a
 WEBSOBJS  += $(TOP)/private/telkom/mchillispotvalidate.o
+WEBSOBJS += $(TOP)/jansson/src/.libs/libjansson.a
+endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+CFLAGS += -DHAVE_TIEXTRA2
+VISOBJS  += $(TOP)/private/telkom/mwifidogejs.o
+VISOBJS += $(TOP)/jansson/src/.libs/libjansson.a
+WEBSOBJS  += $(TOP)/private/telkom/mwifidogvalidate.o
 WEBSOBJS += $(TOP)/jansson/src/.libs/libjansson.a
 endif
 
