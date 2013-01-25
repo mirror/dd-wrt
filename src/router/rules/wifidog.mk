@@ -16,7 +16,7 @@ wifidog-install:
 	install -D wifidog/config/*.nvramconfig $(INSTALLDIR)/wifidog/etc/config
 	install -D wifidog/config/*.webhotspot $(INSTALLDIR)/wifidog/etc/config
 ifeq ($(CONFIG_TIEXTRA2),y)
-	install -D private/telkom/mwifidog.webhotspot $(INSTALLDIR)/wifidog/etc/config/wifidogm.webhotspot
+	install -D private/telkom/mwifidog.webhotspot $(INSTALLDIR)/wifidog/etc/config/5wifidogm.webhotspot
 endif
 	install -D wifidog/wifidog-msg.html $(INSTALLDIR)/wifidog/etc
 
