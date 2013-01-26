@@ -29,17 +29,19 @@
 
 #include "config.h"
 
-#include <stdarg.h>
-#include <string.h>
-
-#include "ghash.h"
-#include "gmessages.h"
-#include "gtestutils.h"
-#include "gstring.h"
-
-#undef G_DISABLE_DEPRECATED
+/* we know we are deprecated here, no need for warnings */
+#define GLIB_DISABLE_DEPRECATION_WARNINGS
 
 #include "grel.h"
+
+#include <glib/gmessages.h>
+#include <glib/gtestutils.h>
+#include <glib/gstring.h>
+#include <glib/gslice.h>
+#include <glib/ghash.h>
+
+#include <stdarg.h>
+#include <string.h>
 
 /**
  * SECTION:relations
@@ -280,9 +282,9 @@ g_relation_index (GRelation   *relation,
 /**
  * g_relation_insert:
  * @relation: a #GRelation.
- * @Varargs: the fields of the record to add. These must match the
- *           number of fields in the #GRelation, and of type #gpointer
- *           or #gconstpointer.
+ * @...: the fields of the record to add. These must match the
+ *       number of fields in the #GRelation, and of type #gpointer
+ *       or #gconstpointer.
  *
  * Inserts a record into a #GRelation.
  *
@@ -516,8 +518,8 @@ g_relation_count (GRelation     *relation,
 /**
  * g_relation_exists:
  * @relation: a #GRelation.
- * @Varargs: the fields of the record to compare. The number must match
- *           the number of fields in the #GRelation.
+ * @...: the fields of the record to compare. The number must match
+ *       the number of fields in the #GRelation.
  * @Returns: %TRUE if a record matches.
  *
  * Returns %TRUE if a record with the given values exists in a
