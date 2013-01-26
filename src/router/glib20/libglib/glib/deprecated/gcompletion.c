@@ -30,15 +30,16 @@
 
 #include "config.h"
 
-#include <string.h>
-
-#include "gstrfuncs.h"
-#include "gmessages.h"
-#include "gunicode.h"
-
-#undef G_DISABLE_DEPRECATED
+/* we know we are deprecated here, no need for warnings */
+#define GLIB_DISABLE_DEPRECATION_WARNINGS
 
 #include "gcompletion.h"
+
+#include <glib/gstrfuncs.h>
+#include <glib/gmessages.h>
+#include <glib/gunicode.h>
+
+#include <string.h>
 
 /**
  * SECTION:completion
@@ -137,7 +138,7 @@ g_completion_new (GCompletionFunc func)
 /**
  * g_completion_add_items:
  * @cmp: the #GCompletion.
- * @items: the list of items to add.
+ * @items: (transfer none): the list of items to add.
  *
  * Adds items to the #GCompletion.
  *
@@ -175,9 +176,11 @@ g_completion_add_items (GCompletion* cmp,
 /**
  * g_completion_remove_items:
  * @cmp: the #GCompletion.
- * @items: the items to remove.
+ * @items: (transfer none): the items to remove.
  *
- * Removes items from a #GCompletion.
+ * Removes items from a #GCompletion. The items are not freed, so if the memory
+ * was dynamically allocated, free @items with g_list_free_full() after calling
+ * this function.
  *
  * Deprecated: 2.26: Rarely used API
  **/
@@ -208,7 +211,9 @@ g_completion_remove_items (GCompletion* cmp,
  * g_completion_clear_items:
  * @cmp: the #GCompletion.
  *
- * Removes all items from the #GCompletion.
+ * Removes all items from the #GCompletion. The items are not freed, so if the
+ * memory was dynamically allocated, it should be freed after calling this
+ * function.
  *
  * Deprecated: 2.26: Rarely used API
  **/
@@ -286,7 +291,7 @@ completion_check_cache (GCompletion* cmp,
  * You should use this function instead of g_completion_complete() if your 
  * items are UTF-8 strings.
  *
- * Return value: the list of items whose strings begin with @prefix. This should
+ * Return value: (element-type utf8) (transfer none): the list of items whose strings begin with @prefix. This should
  * not be changed.
  *
  * Since: 2.4
@@ -331,8 +336,8 @@ g_completion_complete_utf8 (GCompletion  *cmp,
  *              common to all items that matched @prefix, or %NULL if
  *              no items matched @prefix.  This string should be freed
  *              when no longer needed.
- * @Returns: the list of items whose strings begin with @prefix. This
- *           should not be changed.
+ * @Returns: (transfer none): the list of items whose strings begin with
+ *           @prefix. This should not be changed.
  *
  * Attempts to complete the string @prefix using the #GCompletion
  * target items.
@@ -405,7 +410,9 @@ g_completion_complete (GCompletion* cmp,
  * g_completion_free:
  * @cmp: the #GCompletion.
  *
- * Frees all memory used by the #GCompletion.
+ * Frees all memory used by the #GCompletion. The items are not freed, so if
+ * the memory was dynamically allocated, it should be freed after calling this
+ * function.
  *
  * Deprecated: 2.26: Rarely used API
  **/

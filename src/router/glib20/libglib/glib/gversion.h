@@ -1,5 +1,5 @@
 /* GLIB - Library of useful routines for C programming
- * Copyright (C) 1995-1997 Peter Mattis, Spencer Kimball and Josh MacDonald
+ * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,39 +21,36 @@
  * Modified by the GLib Team and others 1997-2000.  See the AUTHORS
  * file for a list of people on the GLib Team.  See the ChangeLog
  * files for a list of changes.  These files are distributed with
- * GTK+ at ftp://ftp.gtk.org/pub/gtk/. 
+ * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
-#ifndef __G_DEBUG_H__
-#define __G_DEBUG_H__
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#error "Only <glib.h> can be included directly."
+#endif
 
-G_BEGIN_DECLS 
+#ifndef __G_VERSION_H__
+#define __G_VERSION_H__
 
-typedef enum {
-  G_DEBUG_FATAL_WARNINGS  = 1 << 0,
-  G_DEBUG_FATAL_CRITICALS = 1 << 1
-} GDebugFlag;
+#include <glib/gtypes.h>
 
+G_BEGIN_DECLS
 
-#ifdef G_ENABLE_DEBUG
+GLIB_VAR const guint glib_major_version;
+GLIB_VAR const guint glib_minor_version;
+GLIB_VAR const guint glib_micro_version;
+GLIB_VAR const guint glib_interface_age;
+GLIB_VAR const guint glib_binary_age;
 
-#define G_NOTE(type, action)            G_STMT_START { \
-    if (!_g_debug_initialized)                         \
-       { _g_debug_init (); }                           \
-    if (_g_debug_flags & G_DEBUG_##type)               \
-       { action; };                         } G_STMT_END
+const gchar * glib_check_version (guint required_major,
+                                  guint required_minor,
+                                  guint required_micro);
 
-#else /* !G_ENABLE_DEBUG */
-
-#define G_NOTE(type, action)
-      
-#endif /* G_ENABLE_DEBUG */
-
-GLIB_VAR gboolean _g_debug_initialized;
-GLIB_VAR guint _g_debug_flags;
-
-G_GNUC_INTERNAL void _g_debug_init (void);
+#define GLIB_CHECK_VERSION(major,minor,micro)    \
+    (GLIB_MAJOR_VERSION > (major) || \
+     (GLIB_MAJOR_VERSION == (major) && GLIB_MINOR_VERSION > (minor)) || \
+     (GLIB_MAJOR_VERSION == (major) && GLIB_MINOR_VERSION == (minor) && \
+      GLIB_MICRO_VERSION >= (micro)))
 
 G_END_DECLS
 
-#endif /* __G_DEBUG_H__ */
+#endif /*  __G_VERSION_H__ */
