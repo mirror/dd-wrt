@@ -35,6 +35,8 @@
 
 #include "gnode.h"
 
+#include "gslice.h"
+
 #include "gtestutils.h"
 
 /**
@@ -51,8 +53,9 @@
  * g_node_insert_before(), g_node_append() and g_node_prepend().
  *
  * To create a new node and insert it into a tree use
- * g_node_insert_data(), g_node_insert_data_before(),
- * g_node_append_data() and g_node_prepend_data().
+ * g_node_insert_data(), g_node_insert_data_after(),
+ * g_node_insert_data_before(), g_node_append_data()
+ * and g_node_prepend_data().
  *
  * To reverse the children of a node use g_node_reverse_children().
  *
@@ -88,37 +91,6 @@
  * The #GNode struct represents one node in a
  * <link linkend="glib-N-ary-Trees">N-ary Tree</link>. fields
  **/
-
-/**
- * g_node_push_allocator:
- * @dummy: the #GAllocator to use when allocating #GNode elements.
- *
- * Sets the allocator to use to allocate #GNode elements. Use
- * g_node_pop_allocator() to restore the previous allocator.
- *
- * Note that this function is not available if GLib has been compiled
- * with <option>--disable-mem-pools</option>
- *
- * Deprecated:2.10: It does nothing, since #GNode has been converted to
- *                  the <link linkend="glib-Memory-Slices">slice
- *                  allocator</link>
- **/
-void g_node_push_allocator (gpointer dummy) { /* present for binary compat only */ }
-
-/**
- * g_node_pop_allocator:
- *
- * Restores the previous #GAllocator, used when allocating #GNode
- * elements.
- *
- * Note that this function is not available if GLib has been compiled
- * with <option>--disable-mem-pools</option>
- *
- * Deprecated:2.10: It does nothing, since #GNode has been converted to
- *                  the <link linkend="glib-Memory-Slices">slice
- *                  allocator</link>
- **/
-void g_node_pop_allocator  (void)           { /* present for binary compat only */ }
 
 #define g_node_alloc0()         g_slice_new0 (GNode)
 #define g_node_free(node)       g_slice_free (GNode, node)

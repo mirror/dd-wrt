@@ -49,11 +49,11 @@
 
 #include "grand.h"
 
+#include "genviron.h"
 #include "gmain.h"
 #include "gmem.h"
 #include "gtestutils.h"
 #include "gthread.h"
-#include "gthreadprivate.h"
 
 #ifdef G_OS_WIN32
 #include <process.h>		/* For getpid() */
@@ -130,10 +130,10 @@ static GRand* global_random = NULL;
 static guint
 get_random_version (void)
 {
-  static gboolean initialized = FALSE;
+  static gsize initialized = FALSE;
   static guint random_version;
-  
-  if (!initialized)
+
+  if (g_once_init_enter (&initialized))
     {
       const gchar *version_string = g_getenv ("G_RANDOM_VERSION");
       if (!version_string || version_string[0] == '\000' || 
@@ -147,19 +147,10 @@ get_random_version (void)
 		     version_string);
 	  random_version = 22;
 	}
-      initialized = TRUE;
+      g_once_init_leave (&initialized, TRUE);
     }
   
   return random_version;
-}
-
-/* This is called from g_thread_init(). It's used to
- * initialize some static data in a threadsafe way.
- */
-void 
-_g_rand_thread_init (void)
-{
-  (void)get_random_version ();
 }
 
 struct _GRand
@@ -225,11 +216,10 @@ g_rand_new (void)
       FILE* dev_urandom;
 
       do
-        {
-	  errno = 0;
+	{
 	  dev_urandom = fopen("/dev/urandom", "rb");
 	}
-      while G_UNLIKELY (errno == EINTR);
+      while G_UNLIKELY (dev_urandom == NULL && errno == EINTR);
 
       if (dev_urandom)
 	{
@@ -330,7 +320,7 @@ g_rand_set_seed (GRand* rand, guint32 seed)
       /* [KNUTH 1981, The Art of Computer Programming */
       /*    Vol. 2 (2nd Ed.), pp102]                  */
       
-      if (seed == 0) /* This would make the PRNG procude only zeros */
+      if (seed == 0) /* This would make the PRNG produce only zeros */
 	seed = 0x6b842128; /* Just set it to another number */
       
       rand->mt[0]= seed;

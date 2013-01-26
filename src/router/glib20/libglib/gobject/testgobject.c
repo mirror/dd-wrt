@@ -47,7 +47,7 @@ test_iface_get_type (void)
 
   if (!test_iface_type)
     {
-      static const GTypeInfo test_iface_info =
+      const GTypeInfo test_iface_info =
       {
 	sizeof (TestIfaceClass),
 	(GBaseInitFunc)	iface_base_init,		/* base_init */
@@ -163,7 +163,7 @@ test_object_get_type (void)
 
   if (!test_object_type)
     {
-      static const GTypeInfo test_object_info =
+      const GTypeInfo test_object_info =
       {
 	sizeof (TestObjectClass),
 	NULL,           /* base_init */
@@ -231,8 +231,8 @@ test_signal_accumulator (GSignalInvocationHint *ihint,
 			 const GValue          *handler_return,
 			 gpointer               data)
 {
-  gchar *accu_string = g_value_get_string (return_accu);
-  gchar *new_string = g_value_get_string (handler_return);
+  const gchar *accu_string = g_value_get_string (return_accu);
+  const gchar *new_string = g_value_get_string (handler_return);
   gchar *result_string;
 
   if (accu_string)
@@ -320,14 +320,14 @@ struct _DerivedObjectPrivate
 };
 static void derived_object_class_init (DerivedObjectClass *class);
 static void derived_object_init       (DerivedObject      *dobject);
-GType
+static GType
 derived_object_get_type (void)
 {
   static GType derived_object_type = 0;
 
   if (!derived_object_type)
     {
-      static const GTypeInfo derived_object_info =
+      const GTypeInfo derived_object_info =
       {
 	sizeof (DerivedObjectClass),
 	NULL,           /* base_init */
@@ -391,8 +391,10 @@ main (int   argc,
   /* test new fundamentals */
   g_assert (G_TYPE_MAKE_FUNDAMENTAL (G_TYPE_RESERVED_USER_FIRST) == g_type_fundamental_next ());
   type = g_type_register_fundamental (g_type_fundamental_next (), "FooShadow1", &info, &finfo, 0);
+  g_assert (type == G_TYPE_RESERVED_USER_FIRST);
   g_assert (G_TYPE_MAKE_FUNDAMENTAL (G_TYPE_RESERVED_USER_FIRST + 1) == g_type_fundamental_next ());
   type = g_type_register_fundamental (g_type_fundamental_next (), "FooShadow2", &info, &finfo, 0);
+  g_assert (type == G_TYPE_RESERVED_USER_FIRST + 1);
   g_assert (G_TYPE_MAKE_FUNDAMENTAL (G_TYPE_RESERVED_USER_FIRST + 2) == g_type_fundamental_next ());
   g_assert (g_type_from_name ("FooShadow1") == G_TYPE_MAKE_FUNDAMENTAL (G_TYPE_RESERVED_USER_FIRST));
   g_assert (g_type_from_name ("FooShadow2") == G_TYPE_MAKE_FUNDAMENTAL (G_TYPE_RESERVED_USER_FIRST + 1));

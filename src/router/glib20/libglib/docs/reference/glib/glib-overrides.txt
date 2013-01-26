@@ -1,6 +1,16 @@
 # This file makes most of the thread related macros look like
 # functions, which they really were, if possible easy.
 
+<MACRO>
+<NAME>GLIB_DISABLE_DEPRECATION_WARNINGS</NAME>
+#ifdef GLIB_DISABLE_DEPRECATION_WARNINGS
+</MACRO>
+
+<MACRO>
+<NAME>G_ATOMIC_LOCK_FREE</NAME>
+#define G_ATOMIC_LOCK_FREE
+</MACRO>
+
 # default thread implementation
 
 <MACRO>
@@ -9,7 +19,7 @@
 </MACRO>
 
 <MACRO>
-<NAME>G_THREADS_IMPL_NONE</NAME>
+<NAME>G_THREADS_IMPL_WIN32</NAME>
 #define G_THREADS_IMPL_NONE
 </MACRO>
 
@@ -172,24 +182,10 @@ GCond *cond
 </FUNCTION>
 
 # GPrivate
-
-<FUNCTION>
-<NAME>g_private_new</NAME>
-<RETURNS>GPrivate*</RETURNS>
-GDestroyNotify destructor
-</FUNCTION>
-
-<FUNCTION>
-<NAME>g_private_get</NAME>
-<RETURNS>gpointer</RETURNS>
-GPrivate *private_key
-</FUNCTION>
-
-<FUNCTION>
-<NAME>g_private_set</NAME>
-<RETURNS>void</RETURNS>
-GPrivate *private_key, gpointer data
-</FUNCTION>
+<MACRO>
+<NAME>G_PRIVATE_INIT</NAME>
+#define G_PRIVATE_INIT(notify)
+</MACRO>
 
 # GStaticPrivate
 

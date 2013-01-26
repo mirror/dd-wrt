@@ -67,8 +67,367 @@
 #include "gutils.h"
 
 
+/**
+ * SECTION:keyfile
+ * @title: Key-value file parser
+ * @short_description: parses .ini-like config files
+ *
+ * #GKeyFile lets you parse, edit or create files containing groups of
+ * key-value pairs, which we call <firstterm>key files</firstterm> for
+ * lack of a better name. Several freedesktop.org specifications use
+ * key files now, e.g the
+ * <ulink url="http://freedesktop.org/Standards/desktop-entry-spec">Desktop
+ * Entry Specification</ulink> and the
+ * <ulink url="http://freedesktop.org/Standards/icon-theme-spec">Icon
+ * Theme Specification</ulink>.
+ *
+ * The syntax of key files is described in detail in the
+ * <ulink url="http://freedesktop.org/Standards/desktop-entry-spec">Desktop
+ * Entry Specification</ulink>, here is a quick summary: Key files
+ * consists of groups of key-value pairs, interspersed with comments.
+ *
+ * |[
+ * # this is just an example
+ * # there can be comments before the first group
+ *
+ * [First Group]
+ *
+ * Name=Key File Example\tthis value shows\nescaping
+ *
+ * # localized strings are stored in multiple key-value pairs
+ * Welcome=Hello
+ * Welcome[de]=Hallo
+ * Welcome[fr_FR]=Bonjour
+ * Welcome[it]=Ciao
+ * Welcome[be@latin]=Hello
+ *
+ * [Another Group]
+ *
+ * Numbers=2;20;-200;0
+ *
+ * Booleans=true;false;true;true
+ * ]|
+ *
+ * Lines beginning with a '#' and blank lines are considered comments.
+ *
+ * Groups are started by a header line containing the group name enclosed
+ * in '[' and ']', and ended implicitly by the start of the next group or
+ * the end of the file. Each key-value pair must be contained in a group.
+ *
+ * Key-value pairs generally have the form <literal>key=value</literal>,
+ * with the exception of localized strings, which have the form
+ * <literal>key[locale]=value</literal>, with a locale identifier of the
+ * form <literal>lang_COUNTRY@MODIFIER</literal> where
+ * <literal>COUNTRY</literal> and <literal>MODIFIER</literal> are optional.
+ * Space before and after the '=' character are ignored. Newline, tab,
+ * carriage return and backslash characters in value are escaped as \n,
+ * \t, \r, and \\, respectively. To preserve leading spaces in values,
+ * these can also be escaped as \s.
+ *
+ * Key files can store strings (possibly with localized variants), integers,
+ * booleans and lists of these. Lists are separated by a separator character,
+ * typically ';' or ','. To use the list separator character in a value in
+ * a list, it has to be escaped by prefixing it with a backslash.
+ *
+ * This syntax is obviously inspired by the .ini files commonly met
+ * on Windows, but there are some important differences:
+ * <itemizedlist>
+ *   <listitem>.ini files use the ';' character to begin comments,
+ *     key files use the '#' character.</listitem>
+ *   <listitem>Key files do not allow for ungrouped keys meaning only
+ *     comments can precede the first group.</listitem>
+ *   <listitem>Key files are always encoded in UTF-8.</listitem>
+ *   <listitem>Key and Group names are case-sensitive. For example, a
+ *     group called <literal>[GROUP]</literal> is a different from
+ *     <literal>[group]</literal>.</listitem>
+ *   <listitem>.ini files don't have a strongly typed boolean entry type,
+ *     they only have GetProfileInt(). In key files, only
+ *     <literal>true</literal> and <literal>false</literal> (in lower case)
+ *     are allowed.</listitem>
+ *  </itemizedlist>
+ *
+ * Note that in contrast to the
+ * <ulink url="http://freedesktop.org/Standards/desktop-entry-spec">Desktop
+ * Entry Specification</ulink>, groups in key files may contain the same
+ * key multiple times; the last entry wins. Key files may also contain
+ * multiple groups with the same name; they are merged together.
+ * Another difference is that keys and group names in key files are not
+ * restricted to ASCII characters.
+ */
+
+/**
+ * G_KEY_FILE_ERROR:
+ *
+ * Error domain for key file parsing. Errors in this domain will
+ * be from the #GKeyFileError enumeration.
+ *
+ * See #GError for information on error domains.
+ */
+
+/**
+ * GKeyFileError:
+ * @G_KEY_FILE_ERROR_UNKNOWN_ENCODING: the text being parsed was in
+ *     an unknown encoding
+ * @G_KEY_FILE_ERROR_PARSE: document was ill-formed
+ * @G_KEY_FILE_ERROR_NOT_FOUND: the file was not found
+ * @G_KEY_FILE_ERROR_KEY_NOT_FOUND: a requested key was not found
+ * @G_KEY_FILE_ERROR_GROUP_NOT_FOUND: a requested group was not found
+ * @G_KEY_FILE_ERROR_INVALID_VALUE: a value could not be parsed
+ *
+ * Error codes returned by key file parsing.
+ */
+
+/**
+ * GKeyFileFlags:
+ * @G_KEY_FILE_NONE: No flags, default behaviour
+ * @G_KEY_FILE_KEEP_COMMENTS: Use this flag if you plan to write the
+ *     (possibly modified) contents of the key file back to a file;
+ *     otherwise all comments will be lost when the key file is
+ *     written back.
+ * @G_KEY_FILE_KEEP_TRANSLATIONS: Use this flag if you plan to write the
+ *     (possibly modified) contents of the key file back to a file;
+ *     otherwise only the translations for the current language will be
+ *     written back.
+ *
+ * Flags which influence the parsing.
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_GROUP:
+ *
+ * The name of the main group of a desktop entry file, as defined in the
+ * <ulink url="http://freedesktop.org/Standards/desktop-entry-spec">Desktop
+ * Entry Specification</ulink>. Consult the specification for more
+ * details about the meanings of the keys below.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_TYPE:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a string
+ * giving the type of the desktop entry. Usually
+ * #G_KEY_FILE_DESKTOP_TYPE_APPLICATION,
+ * #G_KEY_FILE_DESKTOP_TYPE_LINK, or
+ * #G_KEY_FILE_DESKTOP_TYPE_DIRECTORY.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_VERSION:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a string
+ * giving the version of the Desktop Entry Specification used for
+ * the desktop entry file.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_NAME:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a localized
+ * string giving the specific name of the desktop entry.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_GENERIC_NAME:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a localized
+ * string giving the generic name of the desktop entry.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_NO_DISPLAY:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a boolean
+ * stating whether the desktop entry should be shown in menus.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_COMMENT:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a localized
+ * string giving the tooltip for the desktop entry.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_ICON:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a localized
+ * string giving the name of the icon to be displayed for the desktop
+ * entry.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_HIDDEN:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a boolean
+ * stating whether the desktop entry has been deleted by the user.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_ONLY_SHOW_IN:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a list of
+ * strings identifying the environments that should display the
+ * desktop entry.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_NOT_SHOW_IN:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a list of
+ * strings identifying the environments that should not display the
+ * desktop entry.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_TRY_EXEC:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a string
+ * giving the file name of a binary on disk used to determine if the
+ * program is actually installed. It is only valid for desktop entries
+ * with the <literal>Application</literal> type.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_EXEC:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a string
+ * giving the command line to execute. It is only valid for desktop
+ * entries with the <literal>Application</literal> type.
+ *
+ * Since: 2.14
+ */
+
+ /**
+  * G_KEY_FILE_DESKTOP_KEY_PATH:
+  *
+  * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a string
+  * containing the working directory to run the program in. It is only
+  * valid for desktop entries with the <literal>Application</literal> type.
+  *
+  * Since: 2.14
+  */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_TERMINAL:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a boolean
+ * stating whether the program should be run in a terminal window.
+ * It is only valid for desktop entries with the
+ * <literal>Application</literal> type.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_MIME_TYPE:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a list
+ * of strings giving the MIME types supported by this desktop entry.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_CATEGORIES:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a list
+ * of strings giving the categories in which the desktop entry
+ * should be shown in a menu.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_STARTUP_NOTIFY:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a boolean
+ * stating whether the application supports the <ulink
+ * url="http://www.freedesktop.org/Standards/startup-notification-spec">Startup
+ * Notification Protocol Specification</ulink>.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_STARTUP_WM_CLASS:
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is string
+ * identifying the WM class or name hint of a window that the application
+ * will create, which can be used to emulate Startup Notification with
+ * older applications.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_KEY_URL :
+ *
+ * A key under #G_KEY_FILE_DESKTOP_GROUP, whose value is a string
+ * giving the URL to access. It is only valid for desktop entries
+ * with the <literal>Link</literal> type.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_TYPE_APPLICATION:
+ *
+ * The value of the #G_KEY_FILE_DESKTOP_KEY_TYPE, key for desktop
+ * entries representing applications.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_TYPE_LINK:
+ *
+ * The value of the #G_KEY_FILE_DESKTOP_KEY_TYPE, key for desktop
+ * entries representing links to documents.
+ *
+ * Since: 2.14
+ */
+
+/**
+ * G_KEY_FILE_DESKTOP_TYPE_DIRECTORY:
+ *
+ * The value of the #G_KEY_FILE_DESKTOP_KEY_TYPE, key for desktop
+ * entries representing directories.
+ *
+ * Since: 2.14
+ */
+
 typedef struct _GKeyFileGroup GKeyFileGroup;
 
+/**
+ * GKeyFile:
+ *
+ * The GKeyFile struct contains only private data
+ * and should not be accessed directly.
+ */
 struct _GKeyFile
 {
   GList *groups;
@@ -79,15 +438,13 @@ struct _GKeyFile
 
   GString *parse_buffer; /* Holds up to one line of not-yet-parsed data */
 
-  /* Used for sizing the output buffer during serialization
-   */
-  gsize approximate_size;
-
   gchar list_separator;
 
   GKeyFileFlags flags;
 
   gchar **locales;
+
+  volatile gint ref_count;
 };
 
 typedef struct _GKeyFileKeyValuePair GKeyFileKeyValuePair;
@@ -97,9 +454,8 @@ struct _GKeyFileGroup
   const gchar *name;  /* NULL for above first group (which will be comments) */
 
   GKeyFileKeyValuePair *comment; /* Special comment that is stuck to the top of a group */
-  gboolean has_trailing_blank_line;
 
-  GList *key_value_pairs; 
+  GList *key_value_pairs;
 
   /* Used in parallel with key_value_pairs for
    * increased lookup performance
@@ -198,12 +554,7 @@ static void                  g_key_file_parse_data             (GKeyFile        
 static void                  g_key_file_flush_parse_buffer     (GKeyFile               *key_file,
 								GError                **error);
 
-
-GQuark
-g_key_file_error_quark (void)
-{
-  return g_quark_from_static_string ("g-key-file-error-quark");
-}
+G_DEFINE_QUARK (g-key-file-error-quark, g_key_file_error)
 
 static void
 g_key_file_init (GKeyFile *key_file)
@@ -213,7 +564,6 @@ g_key_file_init (GKeyFile *key_file)
   key_file->group_hash = g_hash_table_new (g_str_hash, g_str_equal);
   key_file->start_group = NULL;
   key_file->parse_buffer = g_string_sized_new (128);
-  key_file->approximate_size = 0;
   key_file->list_separator = ';';
   key_file->flags = 0;
   key_file->locales = g_strdupv ((gchar **)g_get_language_names ());
@@ -244,8 +594,11 @@ g_key_file_clear (GKeyFile *key_file)
       g_key_file_remove_group_node (key_file, group_node);
     }
 
-  g_hash_table_destroy (key_file->group_hash);
-  key_file->group_hash = NULL;
+  if (key_file->group_hash != NULL)
+    {
+      g_hash_table_destroy (key_file->group_hash);
+      key_file->group_hash = NULL;
+    }
 
   g_warn_if_fail (key_file->groups == NULL);
 }
@@ -259,7 +612,7 @@ g_key_file_clear (GKeyFile *key_file)
  * g_key_file_load_from_dirs() or g_key_file_load_from_data_dirs() to
  * read an existing key file.
  *
- * Return value: an empty #GKeyFile.
+ * Return value: (transfer full): an empty #GKeyFile.
  *
  * Since: 2.6
  **/
@@ -269,6 +622,7 @@ g_key_file_new (void)
   GKeyFile *key_file;
 
   key_file = g_slice_new0 (GKeyFile);
+  key_file->ref_count = 1;
   g_key_file_init (key_file);
 
   return key_file;
@@ -385,7 +739,8 @@ g_key_file_load_from_fd (GKeyFile       *key_file,
   gssize bytes_read;
   struct stat stat_buf;
   gchar read_buf[4096];
-  
+  gchar list_separator;
+
   if (fstat (fd, &stat_buf) < 0)
     {
       g_set_error_literal (error, G_FILE_ERROR,
@@ -402,19 +757,10 @@ g_key_file_load_from_fd (GKeyFile       *key_file,
       return FALSE;
     }
 
-  if (stat_buf.st_size == 0)
-    {
-      g_set_error_literal (error, G_KEY_FILE_ERROR,
-                           G_KEY_FILE_ERROR_PARSE,
-                           _("File is empty"));
-      return FALSE;
-    }
-
-  if (key_file->approximate_size > 0)
-    {
-      g_key_file_clear (key_file);
-      g_key_file_init (key_file);
-    }
+  list_separator = key_file->list_separator;
+  g_key_file_clear (key_file);
+  g_key_file_init (key_file);
+  key_file->list_separator = list_separator;
   key_file->flags = flags;
 
   do
@@ -461,12 +807,12 @@ g_key_file_load_from_fd (GKeyFile       *key_file,
 /**
  * g_key_file_load_from_file:
  * @key_file: an empty #GKeyFile struct
- * @file: the path of a filename to load, in the GLib filename encoding
+ * @file: (type filename): the path of a filename to load, in the GLib filename encoding
  * @flags: flags from #GKeyFileFlags
  * @error: return location for a #GError, or %NULL
  *
  * Loads a key file into an empty #GKeyFile structure.
- * If the file could not be loaded then %error is set to 
+ * If the file could not be loaded then @error is set to
  * either a #GFileError or #GKeyFileError.
  *
  * Return value: %TRUE if a key file could be loaded, %FALSE otherwise
@@ -511,7 +857,7 @@ g_key_file_load_from_file (GKeyFile       *key_file,
  * g_key_file_load_from_data:
  * @key_file: an empty #GKeyFile struct
  * @data: key file loaded in memory
- * @length: the length of @data in bytes
+ * @length: the length of @data in bytes (or -1 if data is nul-terminated)
  * @flags: flags from #GKeyFileFlags
  * @error: return location for a #GError, or %NULL
  *
@@ -530,19 +876,18 @@ g_key_file_load_from_data (GKeyFile       *key_file,
 			   GError        **error)
 {
   GError *key_file_error = NULL;
+  gchar list_separator;
 
   g_return_val_if_fail (key_file != NULL, FALSE);
-  g_return_val_if_fail (data != NULL, FALSE);
-  g_return_val_if_fail (length != 0, FALSE);
+  g_return_val_if_fail (data != NULL || length == 0, FALSE);
 
   if (length == (gsize)-1)
     length = strlen (data);
 
-  if (key_file->approximate_size > 0)
-    {
-      g_key_file_clear (key_file);
-      g_key_file_init (key_file);
-    }
+  list_separator = key_file->list_separator;
+  g_key_file_clear (key_file);
+  g_key_file_init (key_file);
+  key_file->list_separator = list_separator;
   key_file->flags = flags;
 
   g_key_file_parse_data (key_file, data, length, &key_file_error);
@@ -567,9 +912,9 @@ g_key_file_load_from_data (GKeyFile       *key_file,
 /**
  * g_key_file_load_from_dirs:
  * @key_file: an empty #GKeyFile struct
- * @file: a relative path to a filename to open and parse
- * @search_dirs: %NULL-terminated array of directories to search
- * @full_path: return location for a string containing the full path
+ * @file: (type filename): a relative path to a filename to open and parse
+ * @search_dirs: (array zero-terminated=1) (element-type filename): %NULL-terminated array of directories to search
+ * @full_path: (out) (type filename) (allow-none): return location for a string containing the full path
  *   of the file, or %NULL
  * @flags: flags from #GKeyFileFlags
  * @error: return location for a #GError, or %NULL
@@ -641,8 +986,8 @@ g_key_file_load_from_dirs (GKeyFile       *key_file,
 /**
  * g_key_file_load_from_data_dirs:
  * @key_file: an empty #GKeyFile struct
- * @file: a relative path to a filename to open and parse
- * @full_path: return location for a string containing the full path
+ * @file: (type filename): a relative path to a filename to open and parse
+ * @full_path: (out) (type filename) (allow-none): return location for a string containing the full path
  *   of the file, or %NULL
  * @flags: flags from #GKeyFileFlags 
  * @error: return location for a #GError, or %NULL
@@ -697,10 +1042,32 @@ g_key_file_load_from_data_dirs (GKeyFile       *key_file,
 }
 
 /**
- * g_key_file_free:
+ * g_key_file_ref: (skip)
  * @key_file: a #GKeyFile
  *
- * Frees a #GKeyFile.
+ * Increases the reference count of @key_file.
+ *
+ * Returns: the same @key_file.
+ *
+ * Since: 2.32
+ **/
+GKeyFile *
+g_key_file_ref (GKeyFile *key_file)
+{
+  g_return_val_if_fail (key_file != NULL, NULL);
+
+  g_atomic_int_inc (&key_file->ref_count);
+
+  return key_file;
+}
+
+/**
+ * g_key_file_free: (skip)
+ * @key_file: a #GKeyFile
+ *
+ * Clears all keys and groups from @key_file, and decreases the
+ * reference count by 1. If the reference count reaches zero,
+ * frees the key file and all its allocated memory.
  *
  * Since: 2.6
  **/
@@ -708,9 +1075,30 @@ void
 g_key_file_free (GKeyFile *key_file)
 {
   g_return_if_fail (key_file != NULL);
-  
+
   g_key_file_clear (key_file);
-  g_slice_free (GKeyFile, key_file);
+  g_key_file_unref (key_file);
+}
+
+/**
+ * g_key_file_unref:
+ * @key_file: a #GKeyFile
+ *
+ * Decreases the reference count of @key_file by 1. If the reference count
+ * reaches zero, frees the key file and all its allocated memory.
+ *
+ * Since: 2.32
+ **/
+void
+g_key_file_unref (GKeyFile *key_file)
+{
+  g_return_if_fail (key_file != NULL);
+
+  if (g_atomic_int_dec_and_test (&key_file->ref_count))
+    {
+      g_key_file_clear (key_file);
+      g_slice_free (GKeyFile, key_file);
+    }
 }
 
 /* If G_KEY_FILE_KEEP_TRANSLATIONS is not set, only returns
@@ -766,8 +1154,8 @@ g_key_file_parse_line (GKeyFile     *key_file,
       g_set_error (error, G_KEY_FILE_ERROR,
                    G_KEY_FILE_ERROR_PARSE,
                    _("Key file contains line '%s' which is not "
-                     "a key-value pair, group, or comment"), 
-		   line_utf8);
+                     "a key-value pair, group, or comment"),
+                   line_utf8);
       g_free (line_utf8);
 
       return;
@@ -796,9 +1184,6 @@ g_key_file_parse_comment (GKeyFile     *key_file,
   
   key_file->current_group->key_value_pairs =
     g_list_prepend (key_file->current_group->key_value_pairs, pair);
-
-  if (length == 0 || line[0] != '#')
-    key_file->current_group->has_trailing_blank_line = TRUE;
 }
 
 static void
@@ -959,7 +1344,7 @@ g_key_file_parse_data (GKeyFile     *key_file,
   gsize i;
 
   g_return_if_fail (key_file != NULL);
-  g_return_if_fail (data != NULL);
+  g_return_if_fail (data != NULL || length == 0);
 
   parse_error = NULL;
 
@@ -1009,8 +1394,6 @@ g_key_file_parse_data (GKeyFile     *key_file,
           i += line_length;
         }
     }
-
-  key_file->approximate_size += length;
 }
 
 static void
@@ -1041,7 +1424,7 @@ g_key_file_flush_parse_buffer (GKeyFile  *key_file,
 /**
  * g_key_file_to_data:
  * @key_file: a #GKeyFile
- * @length: return location for the length of the 
+ * @length: (out) (allow-none): return location for the length of the
  *   returned string, or %NULL
  * @error: return location for a #GError, or %NULL
  *
@@ -1062,12 +1445,11 @@ g_key_file_to_data (GKeyFile  *key_file,
 {
   GString *data_string;
   GList *group_node, *key_file_node;
-  gboolean has_blank_line = TRUE;
 
   g_return_val_if_fail (key_file != NULL, NULL);
 
-  data_string = g_string_sized_new (2 * key_file->approximate_size);
-  
+  data_string = g_string_new (NULL);
+
   for (group_node = g_list_last (key_file->groups);
        group_node != NULL;
        group_node = group_node->prev)
@@ -1077,9 +1459,9 @@ g_key_file_to_data (GKeyFile  *key_file,
       group = (GKeyFileGroup *) group_node->data;
 
       /* separate groups by at least an empty line */
-      if (!has_blank_line)
-	g_string_append_c (data_string, '\n');
-      has_blank_line = group->has_trailing_blank_line;
+      if (data_string->len >= 2 &&
+          data_string->str[data_string->len - 2] != '\n')
+        g_string_append_c (data_string, '\n');
 
       if (group->comment != NULL)
         g_string_append_printf (data_string, "%s\n", group->comment->value);
@@ -1112,7 +1494,7 @@ g_key_file_to_data (GKeyFile  *key_file,
  * g_key_file_get_keys:
  * @key_file: a #GKeyFile
  * @group_name: a group name
- * @length: return location for the number of keys returned, or %NULL
+ * @length: (out) (allow-none): return location for the number of keys returned, or %NULL
  * @error: return location for a #GError, or %NULL
  *
  * Returns all keys for the group name @group_name.  The array of
@@ -1121,7 +1503,7 @@ g_key_file_to_data (GKeyFile  *key_file,
  * be found, %NULL is returned and @error is set to
  * #G_KEY_FILE_ERROR_GROUP_NOT_FOUND.
  *
- * Return value: a newly-allocated %NULL-terminated array of strings. 
+ * Return value: (array zero-terminated=1) (transfer full): a newly-allocated %NULL-terminated array of strings.
  *     Use g_strfreev() to free it.
  *
  * Since: 2.6
@@ -1210,13 +1592,13 @@ g_key_file_get_start_group (GKeyFile *key_file)
 /**
  * g_key_file_get_groups:
  * @key_file: a #GKeyFile
- * @length: return location for the number of returned groups, or %NULL
+ * @length: (out) (allow-none): return location for the number of returned groups, or %NULL
  *
  * Returns all groups in the key file loaded with @key_file.  
  * The array of returned groups will be %NULL-terminated, so 
  * @length may optionally be %NULL.
  *
- * Return value: a newly-allocated %NULL-terminated array of strings. 
+ * Return value: (array zero-terminated=1) (transfer full): a newly-allocated %NULL-terminated array of strings.
  *   Use g_strfreev() to free it.
  * Since: 2.6
  **/
@@ -1448,7 +1830,7 @@ g_key_file_get_string (GKeyFile     *key_file,
           g_set_error (error, G_KEY_FILE_ERROR,
                        G_KEY_FILE_ERROR_INVALID_VALUE,
                        _("Key file contains key '%s' "
-                         "which has value that cannot be interpreted."),
+                         "which has a value that cannot be interpreted."),
                        key);
           g_error_free (key_file_error);
         }
@@ -1495,7 +1877,7 @@ g_key_file_set_string (GKeyFile    *key_file,
  * @key_file: a #GKeyFile
  * @group_name: a group name
  * @key: a key
- * @length: return location for the number of returned strings, or %NULL
+ * @length: (out) (allow-none): return location for the number of returned strings, or %NULL
  * @error: return location for a #GError, or %NULL
  *
  * Returns the values associated with @key under @group_name.
@@ -1505,8 +1887,9 @@ g_key_file_set_string (GKeyFile    *key_file,
  * event that the @group_name cannot be found, %NULL is returned
  * and @error is set to #G_KEY_FILE_ERROR_GROUP_NOT_FOUND.
  *
- * Return value: a %NULL-terminated string array or %NULL if the specified 
- *   key cannot be found. The array should be freed with g_strfreev().
+ * Return value: (array zero-terminated=1 length=length) (element-type utf8) (transfer full): 
+ *  a %NULL-terminated string array or %NULL if the specified 
+ *  key cannot be found. The array should be freed with g_strfreev().
  *
  * Since: 2.6
  **/
@@ -1570,6 +1953,7 @@ g_key_file_get_string_list (GKeyFile     *key_file,
       else
         g_propagate_error (error, key_file_error);
 
+      g_slist_free_full (pieces, g_free);
       return NULL;
     }
 
@@ -1592,7 +1976,7 @@ g_key_file_get_string_list (GKeyFile     *key_file,
  * @key_file: a #GKeyFile
  * @group_name: a group name
  * @key: a key
- * @list: an array of string values
+ * @list: (array zero-terminated=1 length=length) (element-type utf8): an array of string values
  * @length: number of string values in @list
  *
  * Associates a list of string values for @key under @group_name.
@@ -1669,7 +2053,7 @@ g_key_file_set_locale_string (GKeyFile     *key_file,
  * @key_file: a #GKeyFile
  * @group_name: a group name
  * @key: a key
- * @locale: a locale identifier or %NULL
+ * @locale: (allow-none): a locale identifier or %NULL
  * @error: return location for a #GError, or %NULL
  *
  * Returns the value associated with @key under @group_name
@@ -1751,13 +2135,13 @@ g_key_file_get_locale_string (GKeyFile     *key_file,
   return translated_value;
 }
 
-/** 
- * g_key_file_get_locale_string_list: 
+/**
+ * g_key_file_get_locale_string_list:
  * @key_file: a #GKeyFile
  * @group_name: a group name
  * @key: a key
- * @locale: a locale identifier or %NULL
- * @length: return location for the number of returned strings or %NULL
+ * @locale: (allow-none): a locale identifier or %NULL
+ * @length: (out) (allow-none): return location for the number of returned strings or %NULL
  * @error: return location for a #GError or %NULL
  *
  * Returns the values associated with @key under @group_name
@@ -1771,7 +2155,7 @@ g_key_file_get_locale_string (GKeyFile     *key_file,
  * returned array is %NULL-terminated, so @length may optionally 
  * be %NULL.
  *
- * Return value: a newly allocated %NULL-terminated string array
+ * Return value: (array zero-terminated=1 length=length) (element-type utf8) (transfer full): a newly allocated %NULL-terminated string array
  *   or %NULL if the key isn't found. The string array should be freed
  *   with g_strfreev().
  *
@@ -1832,7 +2216,7 @@ g_key_file_get_locale_string_list (GKeyFile     *key_file,
  * @group_name: a group name
  * @key: a key
  * @locale: a locale identifier
- * @list: a %NULL-terminated array of locale string values
+ * @list: (array zero-terminated=1 length=length): a %NULL-terminated array of locale string values
  * @length: the length of @list
  *
  * Associates a list of string values for @key and @locale under
@@ -1931,7 +2315,7 @@ g_key_file_get_boolean (GKeyFile     *key_file,
           g_set_error (error, G_KEY_FILE_ERROR,
                        G_KEY_FILE_ERROR_INVALID_VALUE,
                        _("Key file contains key '%s' "
-                         "which has value that cannot be interpreted."),
+                         "which has a value that cannot be interpreted."),
                        key);
           g_error_free (key_file_error);
         }
@@ -1974,7 +2358,7 @@ g_key_file_set_boolean (GKeyFile    *key_file,
  * @key_file: a #GKeyFile
  * @group_name: a group name
  * @key: a key
- * @length: the number of booleans returned
+ * @length: (out): the number of booleans returned
  * @error: return location for a #GError
  *
  * Returns the values associated with @key under @group_name as
@@ -1985,8 +2369,10 @@ g_key_file_set_boolean (GKeyFile    *key_file,
  * with @key cannot be interpreted as booleans then %NULL is returned
  * and @error is set to #G_KEY_FILE_ERROR_INVALID_VALUE.
  *
- * Return value: the values associated with the key as a list of
- *    booleans, or %NULL if the key was not found or could not be parsed.
+ * Return value: (array length=length) (element-type gboolean) (transfer container):
+ *    the values associated with the key as a list of booleans, or %NULL if the
+ *    key was not found or could not be parsed. The returned list of booleans
+ *    should be freed with g_free() when no longer needed.
  * 
  * Since: 2.6
  **/
@@ -2050,7 +2436,7 @@ g_key_file_get_boolean_list (GKeyFile     *key_file,
  * @key_file: a #GKeyFile
  * @group_name: a group name
  * @key: a key
- * @list: an array of boolean values
+ * @list: (array length=length): an array of boolean values
  * @length: length of @list
  *
  * Associates a list of boolean values with @key under @group_name.  
@@ -2146,8 +2532,8 @@ g_key_file_get_integer (GKeyFile     *key_file,
           g_set_error (error, G_KEY_FILE_ERROR,
                        G_KEY_FILE_ERROR_INVALID_VALUE,
                        _("Key file contains key '%s' in group '%s' "
-                         "which has value that cannot be interpreted."), key, 
-                       group_name);
+                         "which has a value that cannot be interpreted."),
+                         key, group_name);
           g_error_free (key_file_error);
         }
       else
@@ -2223,8 +2609,9 @@ g_key_file_get_int64 (GKeyFile     *key_file,
   if (*s == '\0' || *end != '\0')
     {
       g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
-          "Key '%s' in group '%s' has value '%s' where int64 was expected",
-          key, group_name, s);
+                   _("Key '%s' in group '%s' has value '%s' "
+                     "where %s was expected"),
+                   key, group_name, s, "int64");
       return 0;
     }
 
@@ -2298,8 +2685,9 @@ g_key_file_get_uint64 (GKeyFile     *key_file,
   if (*s == '\0' || *end != '\0')
     {
       g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE,
-          "Key '%s' in group '%s' has value '%s' where uint64 was expected",
-          key, group_name, s);
+                   _("Key '%s' in group '%s' has value '%s' "
+                     "where %s was expected"),
+                   key, group_name, s, "uint64");
       return 0;
     }
 
@@ -2339,7 +2727,7 @@ g_key_file_set_uint64 (GKeyFile    *key_file,
  * @key_file: a #GKeyFile
  * @group_name: a group name
  * @key: a key
- * @length: the number of integers returned
+ * @length: (out): the number of integers returned
  * @error: return location for a #GError
  *
  * Returns the values associated with @key under @group_name as
@@ -2350,8 +2738,10 @@ g_key_file_set_uint64 (GKeyFile    *key_file,
  * with @key cannot be interpreted as integers then %NULL is returned
  * and @error is set to #G_KEY_FILE_ERROR_INVALID_VALUE.
  *
- * Return value: the values associated with the key as a list of
- *     integers, or %NULL if the key was not found or could not be parsed.
+ * Return value: (array length=length) (element-type gint) (transfer container):
+ *     the values associated with the key as a list of integers, or %NULL if
+ *     the key was not found or could not be parsed. The returned list of
+ *     integers should be freed with g_free() when no longer needed.
  *
  * Since: 2.6
  **/
@@ -2413,7 +2803,7 @@ g_key_file_get_integer_list (GKeyFile     *key_file,
  * @key_file: a #GKeyFile
  * @group_name: a group name
  * @key: a key
- * @list: an array of integer values
+ * @list: (array length=length): an array of integer values
  * @length: number of integer values in @list
  *
  * Associates a list of integer values with @key under @group_name.  
@@ -2508,8 +2898,8 @@ g_key_file_get_double  (GKeyFile     *key_file,
           g_set_error (error, G_KEY_FILE_ERROR,
                        G_KEY_FILE_ERROR_INVALID_VALUE,
                        _("Key file contains key '%s' in group '%s' "
-                         "which has value that cannot be interpreted."), key,
-                       group_name);
+                         "which has a value that cannot be interpreted."),
+                       key, group_name);
           g_error_free (key_file_error);
         }
       else
@@ -2550,7 +2940,7 @@ g_key_file_set_double  (GKeyFile    *key_file,
  * @key_file: a #GKeyFile
  * @group_name: a group name
  * @key: a key
- * @length: the number of doubles returned
+ * @length: (out): the number of doubles returned
  * @error: return location for a #GError
  *
  * Returns the values associated with @key under @group_name as
@@ -2561,8 +2951,10 @@ g_key_file_set_double  (GKeyFile    *key_file,
  * with @key cannot be interpreted as doubles then %NULL is returned
  * and @error is set to #G_KEY_FILE_ERROR_INVALID_VALUE.
  *
- * Return value: the values associated with the key as a list of
- *     doubles, or %NULL if the key was not found or could not be parsed.
+ * Return value: (array length=length) (element-type gdouble) (transfer container):
+ *     the values associated with the key as a list of doubles, or %NULL if the
+ *     key was not found or could not be parsed. The returned list of doubles
+ *     should be freed with g_free() when no longer needed.
  *
  * Since: 2.12
  **/
@@ -2624,7 +3016,7 @@ g_key_file_get_double_list  (GKeyFile     *key_file,
  * @key_file: a #GKeyFile
  * @group_name: a group name
  * @key: a key
- * @list: an array of double values
+ * @list: (array length=length): an array of double values
  * @length: number of double values in @list
  *
  * Associates a list of double values with @key under
@@ -2788,14 +3180,8 @@ g_key_file_set_top_comment (GKeyFile     *key_file,
   /* Note all keys must be comments at the top of
    * the file, so we can just free it all.
    */
-  if (group->key_value_pairs != NULL)
-    {
-      g_list_foreach (group->key_value_pairs, 
-                      (GFunc) g_key_file_key_value_pair_free, 
-                      NULL);
-      g_list_free (group->key_value_pairs);
-      group->key_value_pairs = NULL;
-    }
+  g_list_free_full (group->key_value_pairs, (GDestroyNotify) g_key_file_key_value_pair_free);
+  group->key_value_pairs = NULL;
 
   if (comment == NULL)
      return TRUE;
@@ -2813,8 +3199,8 @@ g_key_file_set_top_comment (GKeyFile     *key_file,
 /**
  * g_key_file_set_comment:
  * @key_file: a #GKeyFile
- * @group_name: a group name, or %NULL
- * @key: a key
+ * @group_name: (allow-none): a group name, or %NULL
+ * @key: (allow-none): a key
  * @comment: a comment
  * @error: return location for a #GError
  *
@@ -2851,9 +3237,6 @@ g_key_file_set_comment (GKeyFile     *key_file,
       if (!g_key_file_set_top_comment (key_file, comment, error))
         return FALSE;
     }
-
-  if (comment != NULL)
-    key_file->approximate_size += strlen (comment);
 
   return TRUE;
 }
@@ -3046,7 +3429,7 @@ g_key_file_get_top_comment (GKeyFile  *key_file,
 /**
  * g_key_file_get_comment:
  * @key_file: a #GKeyFile
- * @group_name: a group name, or %NULL
+ * @group_name: (allow-none): a group name, or %NULL
  * @key: a key
  * @error: return location for a #GError
  *
@@ -3078,8 +3461,8 @@ g_key_file_get_comment (GKeyFile     *key_file,
 /**
  * g_key_file_remove_comment:
  * @key_file: a #GKeyFile
- * @group_name: a group name, or %NULL
- * @key: a key
+ * @group_name: (allow-none): a group name, or %NULL
+ * @key: (allow-none): a key
  * @error: return location for a #GError
  *
  * Removes a comment above @key from @group_name.
@@ -3129,26 +3512,15 @@ g_key_file_has_group (GKeyFile    *key_file,
   return g_key_file_lookup_group (key_file, group_name) != NULL;
 }
 
-/**
- * g_key_file_has_key:
- * @key_file: a #GKeyFile
- * @group_name: a group name
- * @key: a key name
- * @error: return location for a #GError
- *
- * Looks whether the key file has the key @key in the group
- * @group_name. 
- *
- * Return value: %TRUE if @key is a part of @group_name, %FALSE
- * otherwise.
- *
- * Since: 2.6
- **/
-gboolean
-g_key_file_has_key (GKeyFile     *key_file,
-		    const gchar  *group_name,
-		    const gchar  *key,
-		    GError      **error)
+/* This code remains from a historical attempt to add a new public API
+ * which respects the GError rules.
+ */
+static gboolean
+g_key_file_has_key_full (GKeyFile     *key_file,
+			 const gchar  *group_name,
+			 const gchar  *key,
+			 gboolean     *has_key,
+			 GError      **error)
 {
   GKeyFileKeyValuePair *pair;
   GKeyFileGroup *group;
@@ -3171,7 +3543,52 @@ g_key_file_has_key (GKeyFile     *key_file,
 
   pair = g_key_file_lookup_key_value_pair (key_file, group, key);
 
-  return pair != NULL;
+  if (has_key)
+    *has_key = pair != NULL;
+  return TRUE;
+}
+
+/**
+ * g_key_file_has_key: (skip)
+ * @key_file: a #GKeyFile
+ * @group_name: a group name
+ * @key: a key name
+ * @error: return location for a #GError
+ *
+ * Looks whether the key file has the key @key in the group
+ * @group_name.
+ *
+ * <note>This function does not follow the rules for #GError strictly;
+ * the return value both carries meaning and signals an error.  To use
+ * this function, you must pass a #GError pointer in @error, and check
+ * whether it is not %NULL to see if an error occurred.</note>
+ *
+ * Language bindings should use g_key_file_get_value() to test whether
+ * or not a key exists.
+ *
+ * Return value: %TRUE if @key is a part of @group_name, %FALSE
+ * otherwise.
+ *
+ * Since: 2.6
+ **/
+gboolean
+g_key_file_has_key (GKeyFile     *key_file,
+		    const gchar  *group_name,
+		    const gchar  *key,
+		    GError      **error)
+{
+  GError *temp_error = NULL;
+  gboolean has_key;
+
+  if (g_key_file_has_key_full (key_file, group_name, key, &has_key, &temp_error))
+    {
+      return has_key;
+    }
+  else
+    {
+      g_propagate_error (error, temp_error);
+      return FALSE;
+    }
 }
 
 static void
@@ -3194,7 +3611,6 @@ g_key_file_add_group (GKeyFile    *key_file,
   group->name = g_strdup (group_name);
   group->lookup_map = g_hash_table_new (g_str_hash, g_str_equal);
   key_file->groups = g_list_prepend (key_file->groups, group);
-  key_file->approximate_size += strlen (group_name) + 3;
   key_file->current_group = group;
 
   if (key_file->start_group == NULL)
@@ -3235,11 +3651,7 @@ g_key_file_remove_key_value_pair_node (GKeyFile      *key_file,
 
   group->key_value_pairs = g_list_remove_link (group->key_value_pairs, pair_node);
 
-  if (pair->key != NULL)
-    key_file->approximate_size -= strlen (pair->key) + 1;
-
   g_warn_if_fail (pair->value != NULL);
-  key_file->approximate_size -= strlen (pair->value);
 
   g_key_file_key_value_pair_free (pair);
 
@@ -3295,9 +3707,6 @@ g_key_file_remove_group_node (GKeyFile *key_file,
 
   key_file->groups = g_list_remove_link (key_file->groups, group_node);
 
-  if (group->name != NULL)
-    key_file->approximate_size -= strlen (group->name) + 3;
-
   tmp = group->key_value_pairs;
   while (tmp != NULL)
     {
@@ -3309,6 +3718,12 @@ g_key_file_remove_group_node (GKeyFile *key_file,
     }
 
   g_warn_if_fail (group->key_value_pairs == NULL);
+
+  if (group->comment)
+    {
+      g_key_file_key_value_pair_free (group->comment);
+      group->comment = NULL;
+    }
 
   if (group->lookup_map)
     {
@@ -3367,8 +3782,6 @@ g_key_file_add_key_value_pair (GKeyFile             *key_file,
 {
   g_hash_table_replace (group->lookup_map, pair->key, pair);
   group->key_value_pairs = g_list_prepend (group->key_value_pairs, pair);
-  group->has_trailing_blank_line = FALSE;
-  key_file->approximate_size += strlen (pair->key) + strlen (pair->value) + 2;
 }
 
 static void
@@ -3435,10 +3848,8 @@ g_key_file_remove_key (GKeyFile     *key_file,
       return FALSE;
     }
 
-  key_file->approximate_size -= strlen (pair->key) + strlen (pair->value) + 2;
-
   group->key_value_pairs = g_list_remove (group->key_value_pairs, pair);
-  g_hash_table_remove (group->lookup_map, pair->key);  
+  g_hash_table_remove (group->lookup_map, pair->key);
   g_key_file_key_value_pair_free (pair);
 
   return TRUE;
@@ -3816,14 +4227,14 @@ g_key_file_parse_value_as_integer (GKeyFile     *key_file,
 				   const gchar  *value,
 				   GError      **error)
 {
-  gchar *end_of_valid_int;
- glong long_value;
+  gchar *eof_int;
+  glong long_value;
   gint int_value;
 
   errno = 0;
-  long_value = strtol (value, &end_of_valid_int, 10);
+  long_value = strtol (value, &eof_int, 10);
 
-  if (*value == '\0' || *end_of_valid_int != '\0')
+  if (*value == '\0' || (*eof_int != '\0' && !g_ascii_isspace(*eof_int)))
     {
       gchar *value_utf8 = _g_utf8_make_valid (value);
       g_set_error (error, G_KEY_FILE_ERROR,

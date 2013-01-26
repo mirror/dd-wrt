@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import gobject
+from gi.repository import GLib
 import time
 
 import dbus
@@ -193,9 +193,9 @@ class TestService(dbus.service.Object):
     # ----------------------------------------------------------------------------------------------------
 
     @dbus.service.method("com.example.Frob",
-                          in_signature='', out_signature='')
-    def FrobInvalidateProperty(self):
-        self.frob_props["PropertyThatWillBeInvalidated"] = "OMGInvalidated"
+                          in_signature='s', out_signature='')
+    def FrobInvalidateProperty(self, new_value):
+        self.frob_props["PropertyThatWillBeInvalidated"] = new_value
         message = dbus.lowlevel.SignalMessage("/com/example/TestObject",
                                               "org.freedesktop.DBus.Properties",
                                               "PropertiesChanged")
@@ -218,13 +218,25 @@ class TestService(dbus.service.Object):
 
     # ----------------------------------------------------------------------------------------------------
 
+    @dbus.service.signal("com.example.Frob",
+                         signature="i")
+    def TestSignal2(self, int1):
+        pass
+
+    @dbus.service.method("com.example.Frob",
+                          in_signature='', out_signature='')
+    def EmitSignal2(self):
+        self.TestSignal2 (42)
+
+    # ----------------------------------------------------------------------------------------------------
+
     @dbus.service.method("com.example.Frob", in_signature='i', out_signature='',
                          async_callbacks=('return_cb', 'raise_cb'))
     def Sleep(self, msec, return_cb, raise_cb):
         def return_from_async_wait():
             return_cb()
             return False
-        gobject.timeout_add(msec, return_from_async_wait)
+        GLib.timeout_add(msec, return_from_async_wait)
 
     # ----------------------------------------------------------------------------------------------------
 
@@ -283,5 +295,5 @@ if __name__ == '__main__':
     obj.frob_props["foo"] = "a frobbed string"
     obj.frob_props["PropertyThatWillBeInvalidated"] = "InitialValue"
 
-    mainloop = gobject.MainLoop()
+    mainloop = GLib.MainLoop()
     mainloop.run()

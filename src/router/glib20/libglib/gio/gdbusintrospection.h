@@ -36,7 +36,7 @@ G_BEGIN_DECLS
  * @ref_count: The reference count or -1 if statically allocated.
  * @key: The name of the annotation, e.g. "org.freedesktop.DBus.Deprecated".
  * @value: The value of the annotation.
- * @annotations: A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
+ * @annotations: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
  *
  * Information about an annotation.
  *
@@ -44,6 +44,7 @@ G_BEGIN_DECLS
  */
 struct _GDBusAnnotationInfo
 {
+  /*< public >*/
   volatile gint         ref_count;
   gchar                *key;
   gchar                *value;
@@ -55,7 +56,7 @@ struct _GDBusAnnotationInfo
  * @ref_count: The reference count or -1 if statically allocated.
  * @name: Name of the argument, e.g. @unix_user_id.
  * @signature: D-Bus signature of the argument (a single complete type).
- * @annotations: A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
+ * @annotations: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
  *
  * Information about an argument for a method or a signal.
  *
@@ -63,6 +64,7 @@ struct _GDBusAnnotationInfo
  */
 struct _GDBusArgInfo
 {
+  /*< public >*/
   volatile gint         ref_count;
   gchar                *name;
   gchar                *signature;
@@ -73,9 +75,9 @@ struct _GDBusArgInfo
  * GDBusMethodInfo:
  * @ref_count: The reference count or -1 if statically allocated.
  * @name: The name of the D-Bus method, e.g. @RequestName.
- * @in_args: A pointer to a %NULL-terminated array of pointers to #GDBusArgInfo structures or %NULL if there are no in arguments.
- * @out_args: A pointer to a %NULL-terminated array of pointers to #GDBusArgInfo structures or %NULL if there are no out arguments.
- * @annotations: A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
+ * @in_args: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusArgInfo structures or %NULL if there are no in arguments.
+ * @out_args: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusArgInfo structures or %NULL if there are no out arguments.
+ * @annotations: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
  *
  * Information about a method on an D-Bus interface.
  *
@@ -83,6 +85,7 @@ struct _GDBusArgInfo
  */
 struct _GDBusMethodInfo
 {
+  /*< public >*/
   volatile gint         ref_count;
   gchar                *name;
   GDBusArgInfo        **in_args;
@@ -94,8 +97,8 @@ struct _GDBusMethodInfo
  * GDBusSignalInfo:
  * @ref_count: The reference count or -1 if statically allocated.
  * @name: The name of the D-Bus signal, e.g. "NameOwnerChanged".
- * @args: A pointer to a %NULL-terminated array of pointers to #GDBusArgInfo structures or %NULL if there are no arguments.
- * @annotations: A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
+ * @args: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusArgInfo structures or %NULL if there are no arguments.
+ * @annotations: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
  *
  * Information about a signal on a D-Bus interface.
  *
@@ -103,6 +106,7 @@ struct _GDBusMethodInfo
  */
 struct _GDBusSignalInfo
 {
+  /*< public >*/
   volatile gint         ref_count;
   gchar                *name;
   GDBusArgInfo        **args;
@@ -115,7 +119,7 @@ struct _GDBusSignalInfo
  * @name: The name of the D-Bus property, e.g. "SupportedFilesystems".
  * @signature: The D-Bus signature of the property (a single complete type).
  * @flags: Access control flags for the property.
- * @annotations: A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
+ * @annotations: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
  *
  * Information about a D-Bus property on a D-Bus interface.
  *
@@ -123,6 +127,7 @@ struct _GDBusSignalInfo
  */
 struct _GDBusPropertyInfo
 {
+  /*< public >*/
   volatile gint             ref_count;
   gchar                    *name;
   gchar                    *signature;
@@ -134,10 +139,10 @@ struct _GDBusPropertyInfo
  * GDBusInterfaceInfo:
  * @ref_count: The reference count or -1 if statically allocated.
  * @name: The name of the D-Bus interface, e.g. "org.freedesktop.DBus.Properties".
- * @methods: A pointer to a %NULL-terminated array of pointers to #GDBusMethodInfo structures or %NULL if there are no methods.
- * @signals: A pointer to a %NULL-terminated array of pointers to #GDBusSignalInfo structures or %NULL if there are no signals.
- * @properties: A pointer to a %NULL-terminated array of pointers to #GDBusPropertyInfo structures or %NULL if there are no properties.
- * @annotations: A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
+ * @methods: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusMethodInfo structures or %NULL if there are no methods.
+ * @signals: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusSignalInfo structures or %NULL if there are no signals.
+ * @properties: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusPropertyInfo structures or %NULL if there are no properties.
+ * @annotations: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
  *
  * Information about a D-Bus interface.
  *
@@ -145,6 +150,7 @@ struct _GDBusPropertyInfo
  */
 struct _GDBusInterfaceInfo
 {
+  /*< public >*/
   volatile gint         ref_count;
   gchar                *name;
   GDBusMethodInfo     **methods;
@@ -157,9 +163,9 @@ struct _GDBusInterfaceInfo
  * GDBusNodeInfo:
  * @ref_count: The reference count or -1 if statically allocated.
  * @path: The path of the node or %NULL if omitted. Note that this may be a relative path. See the D-Bus specification for more details.
- * @interfaces: A pointer to a %NULL-terminated array of pointers to #GDBusInterfaceInfo structures or %NULL if there are no interfaces.
- * @nodes: A pointer to a %NULL-terminated array of pointers to #GDBusNodeInfo structures or %NULL if there are no nodes.
- * @annotations: A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
+ * @interfaces: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusInterfaceInfo structures or %NULL if there are no interfaces.
+ * @nodes: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusNodeInfo structures or %NULL if there are no nodes.
+ * @annotations: (array zero-terminated=1): A pointer to a %NULL-terminated array of pointers to #GDBusAnnotationInfo structures or %NULL if there are no annotations.
  *
  * Information about nodes in a remote object hierarchy.
  *
@@ -167,6 +173,7 @@ struct _GDBusInterfaceInfo
  */
 struct _GDBusNodeInfo
 {
+  /*< public >*/
   volatile gint         ref_count;
   gchar                *path;
   GDBusInterfaceInfo  **interfaces;
@@ -182,6 +189,9 @@ GDBusSignalInfo    *g_dbus_interface_info_lookup_signal    (GDBusInterfaceInfo  
                                                             const gchar          *name);
 GDBusPropertyInfo  *g_dbus_interface_info_lookup_property  (GDBusInterfaceInfo   *info,
                                                             const gchar          *name);
+void                g_dbus_interface_info_cache_build      (GDBusInterfaceInfo   *info);
+void                g_dbus_interface_info_cache_release    (GDBusInterfaceInfo   *info);
+
 void                g_dbus_interface_info_generate_xml     (GDBusInterfaceInfo   *info,
                                                             guint                 indent,
                                                             GString              *string_builder);

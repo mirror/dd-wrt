@@ -27,19 +27,23 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -62,7 +66,6 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
@@ -72,7 +75,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>../../../gio;../../../gmodule;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN="GLib-GIO";G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR="gio/modules";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;G_LOG_DOMAIN="GLib-GIO";GIO_COMPILATION;DLL_EXPORT;GIO_MODULE_DIR="gio/modules";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -83,7 +86,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>zdll.lib;ws2_32.lib;shlwapi.lib;dnsapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>zlib1d.lib;ws2_32.lib;shlwapi.lib;dnsapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)gio.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -98,7 +101,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>../../../gio;../../../gmodule;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN="GLib-GIO";G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR="gio/modules";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>G_LOG_DOMAIN="GLib-GIO";GIO_COMPILATION;DLL_EXPORT;GIO_MODULE_DIR="gio/modules";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -107,7 +110,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>zdll.lib;ws2_32.lib;shlwapi.lib;dnsapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>zlib1.lib;ws2_32.lib;shlwapi.lib;dnsapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)gio.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -125,7 +128,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>../../../gio;../../../gmodule;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN="GLib-GIO";G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR="gio/modules";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;G_LOG_DOMAIN="GLib-GIO";GIO_COMPILATION;DLL_EXPORT;GIO_MODULE_DIR="gio/modules";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -136,7 +139,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>zdll.lib;ws2_32.lib;shlwapi.lib;dnsapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>zlib1d.lib;ws2_32.lib;shlwapi.lib;dnsapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)gio.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -151,7 +154,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>../../../gio;../../../gmodule;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN="GLib-GIO";G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR="gio/modules";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>G_LOG_DOMAIN="GLib-GIO";GIO_COMPILATION;DLL_EXPORT;GIO_MODULE_DIR="gio/modules";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -160,7 +163,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>zdll.lib;ws2_32.lib;shlwapi.lib;dnsapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>zlib1.lib;ws2_32.lib;shlwapi.lib;dnsapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)gio.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -177,6 +180,8 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\gio\gaction.c" />
     <ClCompile Include="..\..\..\gio\gactiongroup.c" />
+    <ClCompile Include="..\..\..\gio\gactiongroupexporter.c" />
+    <ClCompile Include="..\..\..\gio\gactionmap.c" />
     <ClCompile Include="..\..\..\gio\gappinfo.c" />
     <ClCompile Include="..\..\..\gio\gapplication.c" />
     <ClCompile Include="..\..\..\gio\gapplicationcommandline.c" />
@@ -188,13 +193,14 @@
     <ClCompile Include="..\..\..\gio\gbufferedoutputstream.c" />
     <ClCompile Include="..\..\..\gio\gcancellable.c" />
     <ClCompile Include="..\..\..\gio\gcharsetconverter.c" />
-    <ClCompile Include="..\..\..\gio\gcontenttype.c" />
+    <ClCompile Include="..\..\..\gio\gcontenttype-win32.c" />
     <ClCompile Include="..\..\..\gio\gconverter.c" />
     <ClCompile Include="..\..\..\gio\gconverterinputstream.c" />
     <ClCompile Include="..\..\..\gio\gconverteroutputstream.c" />
     <ClCompile Include="..\..\..\gio\gcredentials.c" />
     <ClCompile Include="..\..\..\gio\gdatainputstream.c" />
     <ClCompile Include="..\..\..\gio\gdataoutputstream.c" />
+    <ClCompile Include="..\..\..\gio\gdbusactiongroup.c" />
     <ClCompile Include="..\..\..\gio\gdbusaddress.c" />
     <ClCompile Include="..\..\..\gio\gdbusauth.c" />
     <ClCompile Include="..\..\..\gio\gdbusauthmechanismanon.c" />
@@ -203,12 +209,23 @@
     <ClCompile Include="..\..\..\gio\gdbusauthmechanismsha1.c" />
     <ClCompile Include="..\..\..\gio\gdbusauthobserver.c" />
     <ClCompile Include="..\..\..\gio\gdbusconnection.c" />
+    <ClCompile Include="..\..\..\gio\gdbusdaemon.c" />
+    <ClCompile Include="..\..\..\gio\gdbus-daemon-generated.c" />
     <ClCompile Include="..\..\..\gio\gdbuserror.c" />
+    <ClCompile Include="..\..\..\gio\gdbusinterface.c" />
+    <ClCompile Include="..\..\..\gio\gdbusinterfaceskeleton.c" />
     <ClCompile Include="..\..\..\gio\gdbusintrospection.c" />
+    <ClCompile Include="..\..\..\gio\gdbusmenumodel.c" />
     <ClCompile Include="..\..\..\gio\gdbusmessage.c" />
     <ClCompile Include="..\..\..\gio\gdbusmethodinvocation.c" />
     <ClCompile Include="..\..\..\gio\gdbusnameowning.c" />
     <ClCompile Include="..\..\..\gio\gdbusnamewatching.c" />
+    <ClCompile Include="..\..\..\gio\gdbusobject.c" />
+    <ClCompile Include="..\..\..\gio\gdbusobjectmanager.c" />
+    <ClCompile Include="..\..\..\gio\gdbusobjectmanagerclient.c" />
+    <ClCompile Include="..\..\..\gio\gdbusobjectmanagerserver.c" />
+    <ClCompile Include="..\..\..\gio\gdbusobjectproxy.c" />
+    <ClCompile Include="..\..\..\gio\gdbusobjectskeleton.c" />
     <ClCompile Include="..\..\..\gio\gdbusprivate.c" />
     <ClCompile Include="..\..\..\gio\gdbusproxy.c" />
     <ClCompile Include="..\..\..\gio\gdbusserver.c" />
@@ -235,12 +252,12 @@
     <ClCompile Include="..\..\..\gio\gfilteroutputstream.c" />
     <ClCompile Include="..\..\..\gio\gicon.c" />
     <ClCompile Include="..\..\..\gio\ginetaddress.c" />
+    <ClCompile Include="..\..\..\gio\ginetaddressmask.c" />
     <ClCompile Include="..\..\..\gio\ginetsocketaddress.c" />
     <ClCompile Include="..\..\..\gio\ginitable.c" />
     <ClCompile Include="..\..\..\gio\ginputstream.c" />
     <ClCompile Include="..\..\..\gio\gioenumtypes.c" />
     <ClCompile Include="..\..\..\gio\gioerror.c" />
-    <ClCompile Include="..\..\..\gio\gio-marshal.c" />
     <ClCompile Include="..\..\..\gio\giomodule.c" />
     <ClCompile Include="..\..\..\gio\gioscheduler.c" />
     <ClCompile Include="..\..\..\gio\giostream.c" />
@@ -258,22 +275,32 @@
     <ClCompile Include="..\..\..\gio\gmemoryinputstream.c" />
     <ClCompile Include="..\..\..\gio\gmemoryoutputstream.c" />
     <ClCompile Include="..\..\..\gio\gmemorysettingsbackend.c" />
+    <ClCompile Include="..\..\..\gio\gmenu.c" />
+    <ClCompile Include="..\..\..\gio\gmenuexporter.c" />
+    <ClCompile Include="..\..\..\gio\gmenumodel.c" />
     <ClCompile Include="..\..\..\gio\gmount.c" />
     <ClCompile Include="..\..\..\gio\gmountoperation.c" />
     <ClCompile Include="..\..\..\gio\gnativevolumemonitor.c" />
     <ClCompile Include="..\..\..\gio\gnetworkaddress.c" />
+    <ClCompile Include="..\..\..\gio\gnetworkmonitorbase.c" />
+    <ClCompile Include="..\..\..\gio\gnetworkmonitor.c" />
     <ClCompile Include="..\..\..\gio\gnetworkservice.c" />
     <ClCompile Include="..\..\..\gio\gnullsettingsbackend.c" />
     <ClCompile Include="..\..\..\gio\goutputstream.c" />
     <ClCompile Include="..\..\..\gio\gpermission.c" />
     <ClCompile Include="..\..\..\gio\gpollableinputstream.c" />
     <ClCompile Include="..\..\..\gio\gpollableoutputstream.c" />
+    <ClCompile Include="..\..\..\gio\gpollableutils.c" />
     <ClCompile Include="..\..\..\gio\gpollfilemonitor.c" />
     <ClCompile Include="..\..\..\gio\gproxyaddress.c" />
     <ClCompile Include="..\..\..\gio\gproxyaddressenumerator.c" />
     <ClCompile Include="..\..\..\gio\gproxy.c" />
     <ClCompile Include="..\..\..\gio\gproxyresolver.c" />
+    <ClCompile Include="..\..\..\gio\gregistrysettingsbackend.c" />
+    <ClCompile Include="..\..\..\gio\gremoteactiongroup.c" />
     <ClCompile Include="..\..\..\gio\gresolver.c" />
+    <ClCompile Include="..\..\..\gio\gresource.c" />
+    <ClCompile Include="..\..\..\gio\gresourcefile.c" />
     <ClCompile Include="..\..\..\gio\gseekable.c" />
     <ClCompile Include="..\..\..\gio\gsettingsbackend.c" />
     <ClCompile Include="..\..\..\gio\gsettings.c" />
@@ -300,6 +327,7 @@
     <ClCompile Include="..\..\..\gio\gsrvtarget.c" />
     <ClCompile Include="..\..\..\gio\gtcpconnection.c" />
     <ClCompile Include="..\..\..\gio\gtcpwrapperconnection.c" />
+    <ClCompile Include="..\..\..\gio\gtestdbus.c" />
     <ClCompile Include="..\..\..\gio\gthemedicon.c" />
     <ClCompile Include="..\..\..\gio\gthreadedresolver.c" />
     <ClCompile Include="..\..\..\gio\gthreadedsocketservice.c" />
@@ -307,21 +335,23 @@
     <ClCompile Include="..\..\..\gio\gtlscertificate.c" />
     <ClCompile Include="..\..\..\gio\gtlsclientconnection.c" />
     <ClCompile Include="..\..\..\gio\gtlsconnection.c" />
+    <ClCompile Include="..\..\..\gio\gtlsdatabase.c" />
+    <ClCompile Include="..\..\..\gio\gtlsfiledatabase.c" />
+    <ClCompile Include="..\..\..\gio\gtlsinteraction.c" />
+    <ClCompile Include="..\..\..\gio\gtlspassword.c" />
     <ClCompile Include="..\..\..\gio\gtlsserverconnection.c" />
     <ClCompile Include="..\..\..\gio\gunionvolumemonitor.c" />
     <ClCompile Include="..\..\..\gio\gvdb\gvdb-reader.c" />
     <ClCompile Include="..\..\..\gio\gvfs.c" />
     <ClCompile Include="..\..\..\gio\gvolume.c" />
     <ClCompile Include="..\..\..\gio\gvolumemonitor.c" />
+    <ClCompile Include="..\..\..\gio\gwin32appinfo.c" />
     <ClCompile Include="..\..\..\gio\gwin32inputstream.c" />
     <ClCompile Include="..\..\..\gio\gwin32mount.c" />
     <ClCompile Include="..\..\..\gio\gwin32outputstream.c" />
-    <ClCompile Include="..\..\..\gio\gwin32resolver.c" />
     <ClCompile Include="..\..\..\gio\gwin32volumemonitor.c" />
     <ClCompile Include="..\..\..\gio\gzlibcompressor.c" />
     <ClCompile Include="..\..\..\gio\gzlibdecompressor.c" />
-    <ClCompile Include="..\..\..\gio\gregistrysettingsbackend.c" />
-    <ClCompile Include="..\..\..\gio\gwin32appinfo.c" />
     <ClCompile Include="..\..\..\gio\win32\gwin32directorymonitor.c" />
     <ClCompile Include="..\..\..\gio\win32\gwinhttpfile.c" />
     <ClCompile Include="..\..\..\gio\win32\gwinhttpfileinputstream.c" />

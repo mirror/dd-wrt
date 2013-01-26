@@ -47,6 +47,7 @@
 #include "glib.h"
 #include "gprintfint.h"
 #include "glibintl.h"
+#include "gthread.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -205,11 +206,8 @@ protect_argv (gchar  **argv,
   return argc;
 }
 
-GQuark
-g_spawn_error_quark (void)
-{
-  return g_quark_from_static_string ("g-exec-error-quark");
-}
+G_DEFINE_QUARK (g-exec-error-quark, g_spawn_error)
+G_DEFINE_QUARK (g-spawn-exit-error-quark, g_spawn_exit_error)
 
 gboolean
 g_spawn_async_utf8 (const gchar          *working_directory,
@@ -1219,6 +1217,25 @@ void
 g_spawn_close_pid (GPid pid)
 {
     CloseHandle (pid);
+}
+
+gboolean
+g_spawn_check_exit_status (gint      exit_status,
+			   GError  **error)
+{
+  gboolean ret = FALSE;
+
+  if (exit_status != 0)
+    {
+      g_set_error (error, G_SPAWN_EXIT_ERROR, exit_status,
+		   _("Child process exited with code %ld"),
+		   (long) exit_status);
+      goto out;
+    }
+
+  ret = TRUE;
+ out:
+  return ret;
 }
 
 #if !defined (_WIN64)

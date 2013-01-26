@@ -1,5 +1,6 @@
 /* #included into both socket-client.c and socket-server.c */
 
+#ifdef G_OS_UNIX
 static const char *unix_socket_address_types[] = {
   "invalid",
   "anonymous",
@@ -7,6 +8,7 @@ static const char *unix_socket_address_types[] = {
   "abstract",
   "padded"
 };
+#endif
 
 static char *
 socket_address_to_string (GSocketAddress *address)
@@ -39,7 +41,7 @@ socket_address_to_string (GSocketAddress *address)
   return res;
 }
 
-GSocketAddress *
+static GSocketAddress *
 socket_address_from_string (const char *name)
 {
 #ifdef G_OS_UNIX

@@ -10,11 +10,17 @@ typedef struct {
 } CollateTest;
 
 typedef struct {
-  const gchar *key;
+  gchar *key;
   const gchar *str;
 } Line;
 
-int
+static void
+clear_line (Line *line)
+{
+  g_free (line->key);
+}
+
+static int
 compare_collate (const void *a, const void *b)
 {
   const Line *line_a = a;
@@ -23,7 +29,7 @@ compare_collate (const void *a, const void *b)
   return g_utf8_collate (line_a->str, line_b->str);
 }
 
-int
+static int
 compare_key (const void *a, const void *b)
 {
   const Line *line_a = a;
@@ -35,9 +41,12 @@ compare_key (const void *a, const void *b)
 static void
 do_collate (gboolean for_file, gboolean use_key, const CollateTest *test)
 {
-  GArray *line_array = g_array_new (FALSE, FALSE, sizeof(Line));
+  GArray *line_array;
   Line line;
   gint i;
+
+  line_array = g_array_new (FALSE, FALSE, sizeof(Line));
+  g_array_set_clear_func (line_array, (GDestroyNotify)clear_line);
 
   for (i = 0; test->input[i]; i++)
     {
@@ -61,6 +70,8 @@ do_collate (gboolean for_file, gboolean use_key, const CollateTest *test)
       else
         g_assert_cmpstr (str, ==, test->sorted[i]);
     }
+
+  g_array_free (line_array, TRUE);
 }
 
 static void
@@ -90,6 +101,7 @@ const gchar *input0[] = {
   "eer34",
   "223",
   "er1",
+  "üĠണ",
   "foo",
   "bar",
   "baz",
@@ -106,6 +118,7 @@ const gchar *sorted0[] = {
   "er1",
   "foo",
   "GTK+",
+  "üĠണ",
   "z",
   NULL
 };
@@ -119,6 +132,7 @@ const gchar *file_sorted0[] = {
   "er1",
   "foo",
   "GTK+",
+  "üĠണ",
   "z",
   NULL
 };

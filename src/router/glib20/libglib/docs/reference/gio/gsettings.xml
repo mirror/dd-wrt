@@ -1,5 +1,17 @@
 <refentry id="gsettings-tool" lang="en">
 
+<refentryinfo>
+  <title>gsettings</title>
+  <productname>GIO</productname>
+  <authorgroup>
+    <author>
+      <contrib>Developer</contrib>
+      <firstname>Ryan</firstname>
+      <surname>Lortie</surname>
+    </author>
+  </authorgroup>
+</refentryinfo>
+
 <refmeta>
   <refentrytitle>gsettings</refentrytitle>
   <manvolnum>1</manvolnum>
@@ -22,7 +34,7 @@
     <command>gsettings</command>
     <arg choice="plain">monitor</arg>
     <arg choice="plain"><replaceable>SCHEMA</replaceable><arg choice="opt">:<replaceable>PATH</replaceable></arg></arg>
-    <arg choice="plain"><replaceable>KEY</replaceable></arg>
+    <arg choice="opt"><replaceable>KEY</replaceable></arg>
   </cmdsynopsis>
   <cmdsynopsis>
     <command>gsettings</command>
@@ -51,6 +63,11 @@
   </cmdsynopsis>
   <cmdsynopsis>
     <command>gsettings</command>
+    <arg choice="plain">reset-recursively</arg>
+    <arg choice="plain"><replaceable>SCHEMA</replaceable><arg choice="opt">:<replaceable>PATH</replaceable></arg></arg>
+  </cmdsynopsis>
+  <cmdsynopsis>
+    <command>gsettings</command>
     <arg choice="plain">list-schemas</arg>
   </cmdsynopsis>
   <cmdsynopsis>
@@ -70,7 +87,7 @@
   <cmdsynopsis>
     <command>gsettings</command>
     <arg choice="plain">list-recursively</arg>
-    <arg choice="plain"><replaceable>SCHEMA</replaceable><arg choice="opt">:<replaceable>PATH</replaceable></arg></arg>
+    <arg choice="opt"><replaceable>SCHEMA</replaceable><arg choice="opt">:<replaceable>PATH</replaceable></arg></arg>
   </cmdsynopsis>
   <cmdsynopsis>
     <command>gsettings</command>
@@ -99,8 +116,9 @@ so e.g. a string
 must include explicit quotes: "'foo'". This format is also used when printing
 out values.
 </para>
+</refsect1>
 
-<refsect2><title>Commands</title>
+<refsect1><title>Commands</title>
 <variablelist>
 
 <varlistentry>
@@ -116,7 +134,8 @@ The value is printed out as a serialised
 <term><option>monitor</option></term>
 <listitem><para>
 Monitors <replaceable>KEY</replaceable> for changes and prints the changed
-values. Monitoring will continue until the process is terminated.
+values. If no <replaceable>KEY</replaceable> is specified, all keys in the
+schema are monitored. Monitoring will continue until the process is terminated.
 </para></listitem>
 </varlistentry>
 
@@ -147,6 +166,13 @@ Sets the value of <replaceable>KEY</replaceable> to
 <term><option>reset</option></term>
 <listitem><para>
 Resets <replaceable>KEY</replaceable> to its default value.
+</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>reset-recursively</option></term>
+<listitem><para>
+Reset all keys under the given <replaceable>SCHEMA</replaceable>.
 </para></listitem>
 </varlistentry>
 
@@ -185,7 +211,8 @@ Lists the children of <replaceable>SCHEMA</replaceable>.
 <varlistentry>
 <term><option>list-recursively</option></term>
 <listitem><para>
-Lists keys and values, recursively.
+Lists keys and values, recursively. If no <replaceable>SCHEMA</replaceable>
+is given, list keys in all schemas.
 </para></listitem>
 </varlistentry>
 
@@ -197,8 +224,6 @@ Prints help and exits.
 </varlistentry>
 
 </variablelist>
-</refsect2>
 
 </refsect1>
 </refentry>
-

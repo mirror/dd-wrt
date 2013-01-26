@@ -1,7 +1,7 @@
 /* -*- mode: C; c-file-style: "gnu"; indent-tabs-mode: nil; -*- */
 
 /* GIO - GLib Input, Output and Streaming Library
- * 
+ *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
@@ -47,351 +47,6 @@
  * string like "audio". Such strings can be looked up in the registry at
  * HKEY_CLASSES_ROOT.
  **/
-
-#ifdef G_OS_WIN32
-
-#include <windows.h>
-
-static char *
-get_registry_classes_key (const char    *subdir,
-                          const wchar_t *key_name)
-{
-  wchar_t *wc_key;
-  HKEY reg_key = NULL;
-  DWORD key_type;
-  DWORD nbytes;
-  char *value_utf8;
-
-  value_utf8 = NULL;
-  
-  nbytes = 0;
-  wc_key = g_utf8_to_utf16 (subdir, -1, NULL, NULL, NULL);
-  if (RegOpenKeyExW (HKEY_CLASSES_ROOT, wc_key, 0,
-                     KEY_QUERY_VALUE, &reg_key) == ERROR_SUCCESS &&
-      RegQueryValueExW (reg_key, key_name, 0,
-                        &key_type, NULL, &nbytes) == ERROR_SUCCESS &&
-      (key_type == REG_SZ || key_type == REG_EXPAND_SZ))
-    {
-      wchar_t *wc_temp = g_new (wchar_t, (nbytes+1)/2 + 1);
-      RegQueryValueExW (reg_key, key_name, 0,
-                        &key_type, (LPBYTE) wc_temp, &nbytes);
-      wc_temp[nbytes/2] = '\0';
-      if (key_type == REG_EXPAND_SZ)
-        {
-          wchar_t dummy[1];
-          int len = ExpandEnvironmentStringsW (wc_temp, dummy, 1);
-          if (len > 0)
-            {
-              wchar_t *wc_temp_expanded = g_new (wchar_t, len);
-              if (ExpandEnvironmentStringsW (wc_temp, wc_temp_expanded, len) == len)
-                value_utf8 = g_utf16_to_utf8 (wc_temp_expanded, -1, NULL, NULL, NULL);
-              g_free (wc_temp_expanded);
-            }
-        }
-      else
-        {
-          value_utf8 = g_utf16_to_utf8 (wc_temp, -1, NULL, NULL, NULL);
-        }
-      g_free (wc_temp);
-      
-    }
-  g_free (wc_key);
-  
-  if (reg_key != NULL)
-    RegCloseKey (reg_key);
-
-  return value_utf8;
-}
-
-gboolean
-g_content_type_equals (const gchar *type1,
-                       const gchar *type2)
-{
-  char *progid1, *progid2;
-  gboolean res;
-  
-  g_return_val_if_fail (type1 != NULL, FALSE);
-  g_return_val_if_fail (type2 != NULL, FALSE);
-
-  if (g_ascii_strcasecmp (type1, type2) == 0)
-    return TRUE;
-
-  res = FALSE;
-  progid1 = get_registry_classes_key (type1, NULL);
-  progid2 = get_registry_classes_key (type2, NULL);
-  if (progid1 != NULL && progid2 != NULL &&
-      strcmp (progid1, progid2) == 0)
-    res = TRUE;
-  g_free (progid1);
-  g_free (progid2);
-  
-  return res;
-}
-
-gboolean
-g_content_type_is_a (const gchar *type,
-                     const gchar *supertype)
-{
-  gboolean res;
-  char *value_utf8;
-
-  g_return_val_if_fail (type != NULL, FALSE);
-  g_return_val_if_fail (supertype != NULL, FALSE);
-
-  if (g_content_type_equals (type, supertype))
-    return TRUE;
-
-  res = FALSE;
-  value_utf8 = get_registry_classes_key (type, L"PerceivedType");
-  if (value_utf8 && strcmp (value_utf8, supertype) == 0)
-    res = TRUE;
-  g_free (value_utf8);
-  
-  return res;
-}
-
-gboolean
-g_content_type_is_unknown (const gchar *type)
-{
-  g_return_val_if_fail (type != NULL, FALSE);
-
-  return strcmp ("*", type) == 0;
-}
-
-gchar *
-g_content_type_get_description (const gchar *type)
-{
-  char *progid;
-  char *description;
-
-  g_return_val_if_fail (type != NULL, NULL);
-
-  progid = get_registry_classes_key (type, NULL);
-  if (progid)
-    {
-      description = get_registry_classes_key (progid, NULL);
-      g_free (progid);
-
-      if (description)
-        return description;
-    }
-
-  if (g_content_type_is_unknown (type))
-    return g_strdup (_("Unknown type"));
-  return g_strdup_printf (_("%s filetype"), type);
-}
-
-gchar *
-g_content_type_get_mime_type (const gchar *type)
-{
-  char *mime;
-
-  g_return_val_if_fail (type != NULL, NULL);
-
-  mime = get_registry_classes_key (type, L"Content Type");
-  if (mime)
-    return mime;
-  else if (g_content_type_is_unknown (type))
-    return g_strdup ("application/octet-stream");
-  else if (*type == '.')
-    return g_strdup_printf ("application/x-ext-%s", type+1);
-  /* TODO: Map "image" to "image/ *", etc? */
-
-  return g_strdup ("application/octet-stream");
-}
-
-G_LOCK_DEFINE_STATIC (_type_icons);
-static GHashTable *_type_icons = NULL;
-
-GIcon *
-g_content_type_get_icon (const gchar *type)
-{
-  GIcon *themed_icon;
-  char *name = NULL;
-
-  g_return_val_if_fail (type != NULL, NULL);
-
-  /* In the Registry icons are the default value of
-     HKEY_CLASSES_ROOT\<progid>\DefaultIcon with typical values like:
-     <type>: <value>
-     REG_EXPAND_SZ: %SystemRoot%\System32\Wscript.exe,3
-     REG_SZ: shimgvw.dll,3
-  */
-  G_LOCK (_type_icons);
-  if (!_type_icons)
-    _type_icons = g_hash_table_new (g_str_hash, g_str_equal);
-  name = g_hash_table_lookup (_type_icons, type);
-  if (!name && type[0] == '.')
-    {
-      /* double lookup by extension */
-      gchar *key = get_registry_classes_key (type, NULL);
-      if (!key)
-        key = g_strconcat (type+1, "file\\DefaultIcon", NULL);
-      else
-        {
-          gchar *key2 = g_strconcat (key, "\\DefaultIcon", NULL);
-          g_free (key);
-          key = key2;
-        }
-      name = get_registry_classes_key (key, NULL);
-      if (name && strcmp (name, "%1") == 0)
-        {
-          g_free (name);
-          name = NULL;
-        }
-      if (name)
-        g_hash_table_insert (_type_icons, g_strdup (type), g_strdup (name));
-      g_free (key);
-    }
-
-  /* icon-name similar to how it was with gtk-2-12 */
-  if (name)
-    {
-      themed_icon = g_themed_icon_new (name);
-    }
-  else
-    {
-      /* if not found an icon fall back to gtk-builtins */
-      name = strcmp (type, "inode/directory") == 0 ? "gtk-directory" : 
-                           g_content_type_can_be_executable (type) ? "gtk-execute" : "gtk-file";
-      g_hash_table_insert (_type_icons, g_strdup (type), g_strdup (name));
-      themed_icon = g_themed_icon_new_with_default_fallbacks (name);
-    }
-  G_UNLOCK (_type_icons);
-
-  return G_ICON (themed_icon);
-}
-
-gboolean
-g_content_type_can_be_executable (const gchar *type)
-{
-  g_return_val_if_fail (type != NULL, FALSE);
-
-  if (strcmp (type, ".exe") == 0 ||
-      strcmp (type, ".com") == 0 ||
-      strcmp (type, ".bat") == 0)
-    return TRUE;
-
-  /* TODO: Also look at PATHEXT, which lists the extensions for
-   * "scripts" in addition to those for true binary executables.
-   *
-   * (PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH for me
-   * right now, for instance). And in a sense, all associated file
-   * types are "executable" on Windows... You can just type foo.jpg as
-   * a command name in cmd.exe, and it will run the application
-   * associated with .jpg. Hard to say what this API actually means
-   * with "executable".
-   */
-
-  return FALSE;
-}
-
-static gboolean
-looks_like_text (const guchar *data, 
-                 gsize         data_size)
-{
-  gsize i;
-  guchar c;
-  for (i = 0; i < data_size; i++)
-    {
-      c = data[i];
-      if (g_ascii_iscntrl (c) && !g_ascii_isspace (c) && c != '\b')
-        return FALSE;
-    }
-  return TRUE;
-}
-
-gchar *
-g_content_type_from_mime_type (const gchar *mime_type)
-{
-  char *key, *content_type;
-
-  g_return_val_if_fail (mime_type != NULL, NULL);
-
-  key = g_strconcat ("MIME\\DataBase\\Content Type\\", mime_type, NULL);
-  content_type = get_registry_classes_key (key, L"Extension");
-  g_free (key);
-
-  return content_type;
-}
-
-gchar *
-g_content_type_guess (const gchar  *filename,
-                      const guchar *data,
-                      gsize         data_size,
-                      gboolean     *result_uncertain)
-{
-  char *basename;
-  char *type;
-  char *dot;
-
-  type = NULL;
-
-  if (result_uncertain)
-    *result_uncertain = FALSE;
-
-  if (filename)
-    {
-      basename = g_path_get_basename (filename);
-      dot = strrchr (basename, '.');
-      if (dot)
-        type = g_strdup (dot);
-      g_free (basename);
-    }
-
-  if (type)
-    return type;
-
-  if (data && looks_like_text (data, data_size))
-    return g_strdup (".txt");
-
-  return g_strdup ("*");
-}
-
-GList *
-g_content_types_get_registered (void)
-{
-  DWORD index;
-  wchar_t keyname[256];
-  DWORD key_len;
-  char *key_utf8;
-  GList *types;
-
-  types = NULL;
-  index = 0;
-  key_len = 256;
-  while (RegEnumKeyExW(HKEY_CLASSES_ROOT,
-                       index,
-                       keyname,
-                       &key_len,
-                       NULL,
-                       NULL,
-                       NULL,
-                       NULL) == ERROR_SUCCESS)
-    {
-      key_utf8 = g_utf16_to_utf8 (keyname, -1, NULL, NULL, NULL);
-      if (key_utf8)
-        {
-          if (*key_utf8 == '.')
-            types = g_list_prepend (types, key_utf8);
-          else
-            g_free (key_utf8);
-        }
-      index++;
-      key_len = 256;
-    }
-  
-  return g_list_reverse (types);
-}
-
-gchar **
-g_content_type_guess_for_tree (GFile *root)
-{
-  /* FIXME: implement */
-  return NULL;
-}
-
-#else /* !G_OS_WIN32 - Unix specific version */
 
 #include <dirent.h>
 
@@ -738,6 +393,68 @@ g_content_type_get_mime_type (const char *type)
   return g_strdup (type);
 }
 
+
+static GIcon *
+g_content_type_get_icon_internal (const gchar *type,
+                                  gboolean     symbolic)
+{
+  char *mimetype_icon;
+  char *generic_mimetype_icon = NULL;
+  char *q;
+  char *xdg_mimetype_icon;
+  char *legacy_mimetype_icon;
+  char *xdg_mimetype_generic_icon;
+  char *icon_names[5];
+  int n = 0;
+  GIcon *themed_icon;
+  const char *file_template;
+
+  g_return_val_if_fail (type != NULL, NULL);
+
+  if (symbolic)
+    {
+      file_template = "%s-symbolic";
+    }
+  else
+    {
+      file_template = "%s";
+    }
+
+  G_LOCK (gio_xdgmime);
+  xdg_mimetype_icon = g_strdup_printf (file_template, xdg_mime_get_icon (type));
+  G_UNLOCK (gio_xdgmime);
+  xdg_mimetype_generic_icon = g_content_type_get_generic_icon_name (type);
+
+  mimetype_icon = g_strdup_printf (file_template, type);
+  if (xdg_mimetype_generic_icon)
+    generic_mimetype_icon = g_strdup_printf (file_template, xdg_mimetype_generic_icon);
+
+  while ((q = strchr (mimetype_icon, '/')) != NULL)
+    *q = '-';
+
+  /* Not all icons have migrated to the new icon theme spec, look for old names too */
+  legacy_mimetype_icon = g_strconcat ("gnome-mime-", mimetype_icon, NULL);
+
+  if (xdg_mimetype_icon)
+    icon_names[n++] = xdg_mimetype_icon;
+
+  icon_names[n++] = mimetype_icon;
+  icon_names[n++] = legacy_mimetype_icon;
+
+  if (generic_mimetype_icon)
+    icon_names[n++] = generic_mimetype_icon;
+
+  themed_icon = g_themed_icon_new_from_names (icon_names, n);
+
+  g_free (xdg_mimetype_icon);
+  g_free (xdg_mimetype_generic_icon);
+  g_free (mimetype_icon);
+  g_free (legacy_mimetype_icon);
+  g_free (generic_mimetype_icon);
+
+  return themed_icon;
+}
+
 /**
  * g_content_type_get_icon:
  * @type: a content type string
@@ -750,58 +467,70 @@ g_content_type_get_mime_type (const char *type)
 GIcon *
 g_content_type_get_icon (const gchar *type)
 {
-  char *mimetype_icon, *generic_mimetype_icon, *q;
-  char *xdg_mimetype_icon, *legacy_mimetype_icon;
-  char *xdg_mimetype_generic_icon;
-  char *icon_names[5];
-  int n = 0;
-  const char *p;
-  GIcon *themed_icon;
+  return g_content_type_get_icon_internal (type, FALSE);
+}
 
-  g_return_val_if_fail (type != NULL, NULL);
+/**
+ * g_content_type_get_symbolic_icon:
+ * @type: a content type string
+ *
+ * Gets the symbolic icon for a content type.
+ *
+ * Returns: (transfer full): symbolic #GIcon corresponding to the content type.
+ *     Free the returned object with g_object_unref()
+ *
+ * Since: 2.34
+ */
+GIcon *
+g_content_type_get_symbolic_icon (const gchar *type)
+{
+  return g_content_type_get_icon_internal (type, TRUE);
+}
+
+/**
+ * g_content_type_get_generic_icon_name:
+ * @type: a content type string
+ *
+ * Gets the generic icon name for a content type.
+ *
+ * See the <ulink url="http://www.freedesktop.org/wiki/Specifications/shared-mime-info-spec">shared-mime-info</ulink>
+ * specification for more on the generic icon name.
+ *
+ * Returns: (allow-none): the registered generic icon name for the given @type,
+ *     or %NULL if unknown. Free with g_free()
+ *
+ * Since: 2.34
+ */
+gchar *
+g_content_type_get_generic_icon_name (const gchar *type)
+{
+  const gchar *xdg_icon_name;
+  gchar *icon_name;
 
   G_LOCK (gio_xdgmime);
-  xdg_mimetype_icon = g_strdup (xdg_mime_get_icon (type));
-  xdg_mimetype_generic_icon = g_strdup (xdg_mime_get_generic_icon (type));
+  xdg_icon_name = xdg_mime_get_generic_icon (type);
   G_UNLOCK (gio_xdgmime);
 
-  mimetype_icon = g_strdup (type);
+  if (!xdg_icon_name)
+    {
+      const char *p;
+      const char *suffix = "-x-generic";
 
-  while ((q = strchr (mimetype_icon, '/')) != NULL)
-    *q = '-';
+      p = strchr (type, '/');
+      if (p == NULL)
+        p = type + strlen (type);
 
-  p = strchr (type, '/');
-  if (p == NULL)
-    p = type + strlen (type);
+      icon_name = g_malloc (p - type + strlen (suffix) + 1);
+      memcpy (icon_name, type, p - type);
+      memcpy (icon_name + (p - type), suffix, strlen (suffix));
+      icon_name[(p - type) + strlen (suffix)] = 0;
+    }
+  else
+    {
+      icon_name = g_strdup (xdg_icon_name);
+    }
 
-  /* Not all icons have migrated to the new icon theme spec, look for old names too */
-  legacy_mimetype_icon = g_strconcat ("gnome-mime-", mimetype_icon, NULL);
-
-  generic_mimetype_icon = g_malloc (p - type + strlen ("-x-generic") + 1);
-  memcpy (generic_mimetype_icon, type, p - type);
-  memcpy (generic_mimetype_icon + (p - type), "-x-generic", strlen ("-x-generic"));
-  generic_mimetype_icon[(p - type) + strlen ("-x-generic")] = 0;
-
-  if (xdg_mimetype_icon)
-    icon_names[n++] = xdg_mimetype_icon;
-
-  icon_names[n++] = mimetype_icon;
-  icon_names[n++] = legacy_mimetype_icon;
-
-  if (xdg_mimetype_generic_icon)
-    icon_names[n++] = xdg_mimetype_generic_icon;
-
-  icon_names[n++] = generic_mimetype_icon;
-
-  themed_icon = g_themed_icon_new_from_names (icon_names, n);
-
-  g_free (xdg_mimetype_icon);
-  g_free (xdg_mimetype_generic_icon);
-  g_free (mimetype_icon);
-  g_free (legacy_mimetype_icon);
-  g_free (generic_mimetype_icon);
-
-  return themed_icon;
+  return icon_name;
 }
 
 /**
@@ -905,6 +634,10 @@ g_content_type_guess (const gchar  *filename,
 
   if (result_uncertain)
     *result_uncertain = FALSE;
+
+  /* our test suite and potentially other code used -1 in the past, which is
+   * not documented and not allowed; guard against that */
+  g_return_val_if_fail (data_size != (gsize) -1, g_strdup (XDG_MIME_TYPE_UNKNOWN));
 
   G_LOCK (gio_xdgmime);
 
@@ -1063,8 +796,7 @@ enumerate_mimetypes_dir (const char *dir,
  * Gets a list of strings containing all the registered content types
  * known to the system. The list and its data should be freed using
  * <programlisting>
- * g_list_foreach (list, g_free, NULL);
- * g_list_free (list);
+ * g_list_free_full (list, g_free);
  * </programlisting>
  *
  * Returns: (element-type utf8) (transfer full): #GList of the registered content types
@@ -1130,8 +862,7 @@ typedef struct
 static void
 tree_matchlet_free (TreeMatchlet *matchlet)
 {
-  g_list_foreach (matchlet->matches, (GFunc)tree_matchlet_free, NULL);
-  g_list_free (matchlet->matches);
+  g_list_free_full (matchlet->matches, (GDestroyNotify) tree_matchlet_free);
   g_free (matchlet->path);
   g_free (matchlet->mimetype);
   g_slice_free (TreeMatchlet, matchlet);
@@ -1140,8 +871,7 @@ tree_matchlet_free (TreeMatchlet *matchlet)
 static void
 tree_match_free (TreeMatch *match)
 {
-  g_list_foreach (match->matches, (GFunc)tree_matchlet_free, NULL);
-  g_list_free (match->matches);
+  g_list_free_full (match->matches, (GDestroyNotify) tree_matchlet_free);
   g_free (match->contenttype);
   g_slice_free (TreeMatch, match);
 }
@@ -1330,8 +1060,7 @@ xdg_mime_reload (void *user_data)
 static void
 tree_magic_shutdown (void)
 {
-  g_list_foreach (tree_matches, (GFunc)tree_match_free, NULL);
-  g_list_free (tree_matches);
+  g_list_free_full (tree_matches, (GDestroyNotify) tree_match_free);
   tree_matches = NULL;
 }
 
@@ -1653,7 +1382,7 @@ match_match (TreeMatch    *match,
  * g_mount_guess_content_type().
  *
  * Returns: (transfer full) (array zero-terminated=1): an %NULL-terminated
- *     array of zero or more content types, or %NULL. Free with g_strfreev()
+ *     array of zero or more content types. Free with g_strfreev()
  *
  * Since: 2.18
  */
@@ -1680,5 +1409,3 @@ g_content_type_guess_for_tree (GFile *root)
 
   return (gchar **)g_ptr_array_free (types, FALSE);
 }
-
-#endif /* Unix version */

@@ -24,7 +24,6 @@
 
 #include "gpollableinputstream.h"
 #include "gasynchelper.h"
-#include "gio-marshal.h"
 #include "glibintl.h"
 
 /**
@@ -33,7 +32,7 @@
  * @include: gio/gio.h
  * @see_also: #GInputStream, #GPollableOutputStream, #GFileDescriptorBased
  *
- * #GPollableInputStream is implemented by #GInputStream<!-- -->s that
+ * #GPollableInputStream is implemented by #GInputStreams that
  * can be polled for readiness to read. This can be used when
  * interfacing with a non-GIO API that expects
  * UNIX-file-descriptor-style asynchronous I/O rather than GIO-style.
@@ -46,7 +45,7 @@ G_DEFINE_INTERFACE (GPollableInputStream, g_pollable_input_stream, G_TYPE_INPUT_
 static gboolean g_pollable_input_stream_default_can_poll         (GPollableInputStream *stream);
 static gssize   g_pollable_input_stream_default_read_nonblocking (GPollableInputStream  *stream,
 								  void                  *buffer,
-								  gsize                  size,
+								  gsize                  count,
 								  GError               **error);
 
 static void
@@ -115,7 +114,7 @@ g_pollable_input_stream_is_readable (GPollableInputStream *stream)
 }
 
 /**
- * g_pollable_input_stream_create_source: (skip)
+ * g_pollable_input_stream_create_source:
  * @stream: a #GPollableInputStream.
  * @cancellable: (allow-none): a #GCancellable, or %NULL
  *
@@ -145,7 +144,7 @@ g_pollable_input_stream_create_source (GPollableInputStream *stream,
 static gssize
 g_pollable_input_stream_default_read_nonblocking (GPollableInputStream  *stream,
 						  void                  *buffer,
-						  gsize                  size,
+						  gsize                  count,
 						  GError               **error)
 {
   if (!g_pollable_input_stream_is_readable (stream))
@@ -155,20 +154,20 @@ g_pollable_input_stream_default_read_nonblocking (GPollableInputStream  *stream,
       return -1;
     }
 
-  return g_input_stream_read (G_INPUT_STREAM (stream), buffer, size,
-			      NULL, error);
+  return G_INPUT_STREAM_GET_CLASS (stream)->
+    read_fn (G_INPUT_STREAM (stream), buffer, count, NULL, error);
 }
 
 /**
  * g_pollable_input_stream_read_nonblocking:
  * @stream: a #GPollableInputStream
- * @buffer: a buffer to read data into (which should be at least @size
+ * @buffer: a buffer to read data into (which should be at least @count
  *     bytes long).
- * @size: the number of bytes you want to read
+ * @count: the number of bytes you want to read
  * @cancellable: (allow-none): a #GCancellable, or %NULL
  * @error: #GError for error reporting, or %NULL to ignore.
  *
- * Attempts to read up to @size bytes from @stream into @buffer, as
+ * Attempts to read up to @count bytes from @stream into @buffer, as
  * with g_input_stream_read(). If @stream is not currently readable,
  * this will immediately return %G_IO_ERROR_WOULD_BLOCK, and you can
  * use g_pollable_input_stream_create_source() to create a #GSource
@@ -187,118 +186,36 @@ g_pollable_input_stream_default_read_nonblocking (GPollableInputStream  *stream,
 gssize
 g_pollable_input_stream_read_nonblocking (GPollableInputStream  *stream,
 					  void                  *buffer,
-					  gsize                  size,
+					  gsize                  count,
 					  GCancellable          *cancellable,
 					  GError               **error)
 {
+  gssize res;
+
   g_return_val_if_fail (G_IS_POLLABLE_INPUT_STREAM (stream), -1);
+  g_return_val_if_fail (buffer != NULL, 0);
 
   if (g_cancellable_set_error_if_cancelled (cancellable, error))
     return -1;
 
-  return G_POLLABLE_INPUT_STREAM_GET_INTERFACE (stream)->
-    read_nonblocking (stream, buffer, size, error);
-}
+  if (count == 0)
+    return 0;
 
-/* GPollableSource */
+  if (((gssize) count) < 0)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
+		   _("Too large count value passed to %s"), G_STRFUNC);
+      return -1;
+    }
 
-typedef struct {
-  GSource       source;
+  if (cancellable)
+    g_cancellable_push_current (cancellable);
 
-  GObject      *stream;
-} GPollableSource;
+  res = G_POLLABLE_INPUT_STREAM_GET_INTERFACE (stream)->
+    read_nonblocking (stream, buffer, count, error);
 
-static gboolean
-pollable_source_prepare (GSource *source,
-			 gint    *timeout)
-{
-  *timeout = -1;
-  return FALSE;
-}
+  if (cancellable)
+    g_cancellable_pop_current (cancellable);
 
-static gboolean
-pollable_source_check (GSource *source)
-{
-  return FALSE;
-}
-
-static gboolean
-pollable_source_dispatch (GSource     *source,
-			  GSourceFunc  callback,
-			  gpointer     user_data)
-{
-  GPollableSourceFunc func = (GPollableSourceFunc)callback;
-  GPollableSource *pollable_source = (GPollableSource *)source;
-
-  return (*func) (pollable_source->stream, user_data);
-}
-
-static void
-pollable_source_finalize (GSource *source)
-{
-  GPollableSource *pollable_source = (GPollableSource *)source;
-
-  g_object_unref (pollable_source->stream);
-}
-
-static gboolean
-pollable_source_closure_callback (GObject  *stream,
-				  gpointer  data)
-{
-  GClosure *closure = data;
-
-  GValue param = { 0, };
-  GValue result_value = { 0, };
-  gboolean result;
-
-  g_value_init (&result_value, G_TYPE_BOOLEAN);
-
-  g_value_init (&param, G_TYPE_OBJECT);
-  g_value_set_object (&param, stream);
-
-  g_closure_invoke (closure, &result_value, 1, &param, NULL);
-
-  result = g_value_get_boolean (&result_value);
-  g_value_unset (&result_value);
-  g_value_unset (&param);
-
-  return result;
-}
-
-static GSourceFuncs pollable_source_funcs =
-{
-  pollable_source_prepare,
-  pollable_source_check,
-  pollable_source_dispatch,
-  pollable_source_finalize,
-  (GSourceFunc)pollable_source_closure_callback,
-  (GSourceDummyMarshal)_gio_marshal_BOOLEAN__VOID,
-};
-
-/**
- * g_pollable_source_new: (skip)
- * @pollable_stream: the stream associated with the new source
- *
- * Utility method for #GPollableInputStream and #GPollableOutputStream
- * implementations. Creates a new #GSource that expects a callback of
- * type #GPollableSourceFunc. The new source does not actually do
- * anything on its own; use g_source_add_child_source() to add other
- * sources to it to cause it to trigger.
- *
- * Return value: (transfer full): the new #GSource.
- *
- * Since: 2.28
- */
-GSource *
-g_pollable_source_new (GObject *pollable_stream)
-{
-  GSource *source;
-  GPollableSource *pollable_source;
-
-  source = g_source_new (&pollable_source_funcs, sizeof (GPollableSource));
-  g_source_set_name (source, "GPollableSource");
-  pollable_source = (GPollableSource *)source;
-  pollable_source->stream = g_object_ref (pollable_stream);
-
-  return source;
+  return res;
 }

@@ -21,11 +21,14 @@
 
 #include <string.h>
 
+/* for GValueArray */
+#define GLIB_DISABLE_DEPRECATION_WARNINGS
+
 #include "gboxed.h"
+#include "gclosure.h"
 #include "gtype-private.h"
 #include "gvalue.h"
 #include "gvaluearray.h"
-#include "gclosure.h"
 #include "gvaluecollector.h"
 
 
@@ -75,9 +78,9 @@ value_free (GValue *value)
 }
 
 void
-g_boxed_type_init (void)
+_g_boxed_type_init (void)
 {
-  static const GTypeInfo info = {
+  const GTypeInfo info = {
     0,                          /* class_size */
     NULL,                       /* base_init */
     NULL,                       /* base_destroy */
@@ -127,20 +130,26 @@ G_DEFINE_BOXED_TYPE (GHashTable, g_hash_table, g_hash_table_ref, g_hash_table_un
 G_DEFINE_BOXED_TYPE (GArray, g_array, g_array_ref, g_array_unref)
 G_DEFINE_BOXED_TYPE (GPtrArray, g_ptr_array,g_ptr_array_ref, g_ptr_array_unref)
 G_DEFINE_BOXED_TYPE (GByteArray, g_byte_array, g_byte_array_ref, g_byte_array_unref)
+G_DEFINE_BOXED_TYPE (GBytes, g_bytes, g_bytes_ref, g_bytes_unref);
 
-#ifdef ENABLE_REGEX
 G_DEFINE_BOXED_TYPE (GRegex, g_regex, g_regex_ref, g_regex_unref)
-#else
-GType g_regex_get_type (void) { return G_TYPE_INVALID; }
-#endif /* ENABLE_REGEX */
+G_DEFINE_BOXED_TYPE (GMatchInfo, g_match_info, g_match_info_ref, g_match_info_unref)
 
 #define g_variant_type_get_type g_variant_type_get_gtype
 G_DEFINE_BOXED_TYPE (GVariantType, g_variant_type, g_variant_type_copy, g_variant_type_free)
 #undef g_variant_type_get_type
 
+G_DEFINE_BOXED_TYPE (GVariantBuilder, g_variant_builder, g_variant_builder_ref, g_variant_builder_unref)
+
 G_DEFINE_BOXED_TYPE (GError, g_error, g_error_copy, g_error_free)
 
 G_DEFINE_BOXED_TYPE (GDateTime, g_date_time, g_date_time_ref, g_date_time_unref);
+G_DEFINE_BOXED_TYPE (GTimeZone, g_time_zone, g_time_zone_ref, g_time_zone_unref);
+G_DEFINE_BOXED_TYPE (GKeyFile, g_key_file, g_key_file_ref, g_key_file_unref)
+
+G_DEFINE_BOXED_TYPE (GMainLoop, g_main_loop, g_main_loop_ref, g_main_loop_unref)
+G_DEFINE_BOXED_TYPE (GMainContext, g_main_context, g_main_context_ref, g_main_context_unref)
+G_DEFINE_BOXED_TYPE (GSource, g_source, g_source_ref, g_source_unref)
 
 /* This one can't use G_DEFINE_BOXED_TYPE (GStrv, g_strv, g_strdupv, g_strfreev) */
 GType
@@ -293,7 +302,7 @@ g_boxed_type_register_static (const gchar   *name,
 
   type = g_type_register_static (G_TYPE_BOXED, name, &type_info, 0);
 
-  /* install proxy functions upon successfull registration */
+  /* install proxy functions upon successful registration */
   if (type)
     _g_type_boxed_init (type, boxed_copy, boxed_free);
 
@@ -336,7 +345,7 @@ g_boxed_copy (GType         boxed_type,
        * (data[0].v_pointer is the boxed struct, and
        * data[1].v_uint holds the G_VALUE_NOCOPY_CONTENTS flag,
        * rest zero).
-       * but then, we can expect that since we layed out the
+       * but then, we can expect that since we laid out the
        * g_boxed_*() API.
        * data[1].v_uint&G_VALUE_NOCOPY_CONTENTS shouldn't be set
        * after a copy.
@@ -459,7 +468,7 @@ value_set_boxed_internal (GValue       *value,
 /**
  * g_value_set_boxed:
  * @value: a valid #GValue of %G_TYPE_BOXED derived type
- * @v_boxed: boxed value to be set
+ * @v_boxed: (allow-none): boxed value to be set
  *
  * Set the contents of a %G_TYPE_BOXED derived #GValue to @v_boxed.
  */
@@ -476,7 +485,7 @@ g_value_set_boxed (GValue       *value,
 /**
  * g_value_set_static_boxed:
  * @value: a valid #GValue of %G_TYPE_BOXED derived type
- * @v_boxed: static boxed value to be set
+ * @v_boxed: (allow-none): static boxed value to be set
  *
  * Set the contents of a %G_TYPE_BOXED derived #GValue to @v_boxed.
  * The boxed value is assumed to be static, and is thus not duplicated
@@ -495,7 +504,7 @@ g_value_set_static_boxed (GValue       *value,
 /**
  * g_value_set_boxed_take_ownership:
  * @value: a valid #GValue of %G_TYPE_BOXED derived type
- * @v_boxed: duplicated unowned boxed value to be set
+ * @v_boxed: (allow-none): duplicated unowned boxed value to be set
  *
  * This is an internal function introduced mainly for C marshallers.
  *
@@ -511,7 +520,7 @@ g_value_set_boxed_take_ownership (GValue       *value,
 /**
  * g_value_take_boxed:
  * @value: a valid #GValue of %G_TYPE_BOXED derived type
- * @v_boxed: duplicated unowned boxed value to be set
+ * @v_boxed: (allow-none): duplicated unowned boxed value to be set
  *
  * Sets the contents of a %G_TYPE_BOXED derived #GValue to @v_boxed
  * and takes over the ownership of the callers reference to @v_boxed;

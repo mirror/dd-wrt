@@ -55,7 +55,7 @@ check_node (GSequenceNode *node)
     }
 }
 
-void
+static void
 g_sequence_check (GSequence *seq)
 {
   GSequenceNode *node = seq->end_node;
@@ -1179,6 +1179,13 @@ run_random_tests (gconstpointer d)
         }
 
       check_integrity (seq);
+    }
+
+  for (k = 0; k < N_SEQUENCES; ++k)
+    {
+      g_queue_free (sequences[k].queue);
+      g_sequence_free (sequences[k].sequence);
+      sequences[k].n_items = 0;
     }
 }
 

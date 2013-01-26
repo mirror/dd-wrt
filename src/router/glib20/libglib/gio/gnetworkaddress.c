@@ -251,7 +251,7 @@ g_network_address_set_addresses (GNetworkAddress *addr,
  * Creates a new #GSocketConnectable for connecting to the given
  * @hostname and @port.
  *
- * Return value: (transfer full): the new #GNetworkAddress
+ * Return value: (transfer full) (type GNetworkAddress): the new #GNetworkAddress
  *
  * Since: 2.22
  */
@@ -279,8 +279,7 @@ g_network_address_new (const gchar *hostname,
  * address, an IPv4 address, or a domain name (in which case a DNS
  * lookup is performed). Quoting with [] is supported for all address
  * types. A port override may be specified in the usual way with a
- * colon. Ports may be given as decimal numbers or symbolic names (in
- * which case an /etc/services lookup is performed).
+ * colon.
  *
  * If no port is specified in @host_and_port then @default_port will be
  * used as the port number to connect to.
@@ -288,6 +287,11 @@ g_network_address_new (const gchar *hostname,
  * In general, @host_and_port is expected to be provided by the user
  * (allowing them to give the hostname, and a port overide if necessary)
  * and @default_port is expected to be provided by the application.
+ *
+ * (The port component of @host_and_port can also be specified as a
+ * service name rather than as a numeric port, but this functionality
+ * is deprecated, because it depends on the contents of /etc/services,
+ * which is generally quite sparse on platforms other than Linux.)
  *
  * Return value: (transfer full): the new #GNetworkAddress, or %NULL on error
  *
@@ -471,15 +475,15 @@ _g_uri_parse_authority (const char  *uri,
     return FALSE;
 
   start += 2;
-  p = strchr (start, '@');
 
-  if (p != NULL)
+  if (strchr (start, '@') != NULL)
     {
       /* Decode userinfo:
        * userinfo      = *( unreserved / pct-encoded / sub-delims / ":" )
        * unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
        * pct-encoded   = "%" HEXDIG HEXDIG
        */
+      p = start;
       while (1)
 	{
 	  c = *p++;
@@ -500,7 +504,7 @@ _g_uri_parse_authority (const char  *uri,
 	    }
 
 	  /* unreserved /  sub-delims / : */
-	  if (!(g_ascii_isalnum(c) ||
+	  if (!(g_ascii_isalnum (c) ||
 		strchr (G_URI_OTHER_UNRESERVED, c) ||
 		strchr (G_URI_RESERVED_CHARS_SUBCOMPONENT_DELIMITERS, c) ||
 		c == ':'))
@@ -536,7 +540,7 @@ _g_uri_parse_authority (const char  *uri,
 	    break;
 
 	  /* unreserved /  sub-delims */
-	  if (!(g_ascii_isalnum(c) ||
+	  if (!(g_ascii_isalnum (c) ||
 		strchr (G_URI_OTHER_UNRESERVED, c) ||
 		strchr (G_URI_RESERVED_CHARS_SUBCOMPONENT_DELIMITERS, c) ||
 		c == ':' ||
@@ -570,7 +574,7 @@ _g_uri_parse_authority (const char  *uri,
 	    }
 
 	  /* unreserved /  sub-delims */
-	  if (!(g_ascii_isalnum(c) ||
+	  if (!(g_ascii_isalnum (c) ||
 		strchr (G_URI_OTHER_UNRESERVED, c) ||
 		strchr (G_URI_RESERVED_CHARS_SUBCOMPONENT_DELIMITERS, c)))
 	    goto error;
@@ -677,7 +681,7 @@ _g_uri_from_authority (const gchar *protocol,
  * @uri. May fail and return %NULL in case parsing @uri fails.
  *
  * Using this rather than g_network_address_new() or
- * g_network_address_parse_host() allows #GSocketClient to determine
+ * g_network_address_parse() allows #GSocketClient to determine
  * when to use application-specific proxy protocols.
  *
  * Return value: (transfer full): the new #GNetworkAddress, or %NULL on error
@@ -790,6 +794,7 @@ typedef struct {
 
 } GNetworkAddressAddressEnumeratorClass;
 
+static GType _g_network_address_address_enumerator_get_type (void);
 G_DEFINE_TYPE (GNetworkAddressAddressEnumerator, _g_network_address_address_enumerator, G_TYPE_SOCKET_ADDRESS_ENUMERATOR)
 
 static void

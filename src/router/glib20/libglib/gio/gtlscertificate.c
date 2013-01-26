@@ -35,9 +35,9 @@
  * @see_also: #GTlsConnection
  *
  * A certificate used for TLS authentication and encryption.
- * This can represent either a public key only (eg, the certificate
+ * This can represent either a certificate only (eg, the certificate
  * received by a client from a server), or the combination of
- * a public key and a private key (which is needed when acting as a
+ * a certificate and a private key (which is needed when acting as a
  * #GTlsServerConnection).
  *
  * Since: 2.28
@@ -98,10 +98,9 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
   /**
    * GTlsCertificate:certificate:
    *
-   * The DER (binary) encoded representation of the certificate's
-   * public key. This property and the
-   * #GTlsCertificate:certificate-pem property represent the same
-   * data, just in different forms.
+   * The DER (binary) encoded representation of the certificate.
+   * This property and the #GTlsCertificate:certificate-pem property
+   * represent the same data, just in different forms.
    *
    * Since: 2.28
    */
@@ -116,8 +115,8 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
   /**
    * GTlsCertificate:certificate-pem:
    *
-   * The PEM (ASCII) encoded representation of the certificate's
-   * public key. This property and the #GTlsCertificate:certificate
+   * The PEM (ASCII) encoded representation of the certificate.
+   * This property and the #GTlsCertificate:certificate
    * property represent the same data, just in different forms.
    *
    * Since: 2.28
@@ -134,9 +133,14 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * GTlsCertificate:private-key:
    *
    * The DER (binary) encoded representation of the certificate's
-   * private key. This property (or the
-   * #GTlsCertificate:private-key-pem property) can be set when
-   * constructing a key (eg, from a file), but cannot be read.
+   * private key, in either PKCS#1 format or unencrypted PKCS#8
+   * format. This property (or the #GTlsCertificate:private-key-pem
+   * property) can be set when constructing a key (eg, from a file),
+   * but cannot be read.
+   *
+   * PKCS#8 format is supported since 2.32; earlier releases only
+   * support PKCS#1. You can use the <literal>openssl rsa</literal>
+   * tool to convert PKCS#8 keys to PKCS#1.
    *
    * Since: 2.28
    */
@@ -152,9 +156,15 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
    * GTlsCertificate:private-key-pem:
    *
    * The PEM (ASCII) encoded representation of the certificate's
-   * private key. This property (or the #GTlsCertificate:private-key
-   * property) can be set when constructing a key (eg, from a file),
-   * but cannot be read.
+   * private key in either PKCS#1 format ("<literal>BEGIN RSA PRIVATE
+   * KEY</literal>") or unencrypted PKCS#8 format ("<literal>BEGIN
+   * PRIVATE KEY</literal>"). This property (or the
+   * #GTlsCertificate:private-key property) can be set when
+   * constructing a key (eg, from a file), but cannot be read.
+   *
+   * PKCS#8 format is supported since 2.32; earlier releases only
+   * support PKCS#1. You can use the <literal>openssl rsa</literal>
+   * tool to convert PKCS#8 keys to PKCS#1.
    *
    * Since: 2.28
    */
@@ -204,20 +214,70 @@ g_tls_certificate_new_internal (const gchar  *certificate_pem,
   return G_TLS_CERTIFICATE (cert);
 }
 
-#define PEM_CERTIFICATE_HEADER "-----BEGIN CERTIFICATE-----"
-#define PEM_CERTIFICATE_FOOTER "-----END CERTIFICATE-----"
-#define PEM_PRIVKEY_HEADER     "-----BEGIN RSA PRIVATE KEY-----"
-#define PEM_PRIVKEY_FOOTER     "-----END RSA PRIVATE KEY-----"
+#define PEM_CERTIFICATE_HEADER     "-----BEGIN CERTIFICATE-----"
+#define PEM_CERTIFICATE_FOOTER     "-----END CERTIFICATE-----"
+#define PEM_PKCS1_PRIVKEY_HEADER   "-----BEGIN RSA PRIVATE KEY-----"
+#define PEM_PKCS1_PRIVKEY_FOOTER   "-----END RSA PRIVATE KEY-----"
+#define PEM_PKCS8_PRIVKEY_HEADER   "-----BEGIN PRIVATE KEY-----"
+#define PEM_PKCS8_PRIVKEY_FOOTER   "-----END PRIVATE KEY-----"
+#define PEM_PKCS8_ENCRYPTED_HEADER "-----BEGIN ENCRYPTED PRIVATE KEY-----"
+#define PEM_PKCS8_ENCRYPTED_FOOTER "-----END ENCRYPTED PRIVATE KEY-----"
 
-static GTlsCertificate *
+static gchar *
+parse_private_key (const gchar *data,
+		   gsize data_len,
+		   gboolean required,
+		   GError **error)
+{
+  const gchar *start, *end, *footer;
+
+  start = g_strstr_len (data, data_len, PEM_PKCS1_PRIVKEY_HEADER);
+  if (start)
+    footer = PEM_PKCS1_PRIVKEY_FOOTER;
+  else
+    {
+      start = g_strstr_len (data, data_len, PEM_PKCS8_PRIVKEY_HEADER);
+      if (start)
+	footer = PEM_PKCS8_PRIVKEY_FOOTER;
+      else
+	{
+	  start = g_strstr_len (data, data_len, PEM_PKCS8_ENCRYPTED_HEADER);
+	  if (start)
+	    {
+	      g_set_error_literal (error, G_TLS_ERROR, G_TLS_ERROR_BAD_CERTIFICATE,
+				   _("Cannot decrypt PEM-encoded private key"));
+	    }
+	  else if (required)
+	    {
+	      g_set_error_literal (error, G_TLS_ERROR, G_TLS_ERROR_BAD_CERTIFICATE,
+				   _("No PEM-encoded private key found"));
+	    }
+	  return NULL;
+	}
+    }
+
+  end = g_strstr_len (start, data_len - (data - start), footer);
+  if (!end)
+    {
+      g_set_error_literal (error, G_TLS_ERROR, G_TLS_ERROR_BAD_CERTIFICATE,
+			   _("Could not parse PEM-encoded private key"));
+      return NULL;
+    }
+  end += strlen (footer);
+  while (*end == '\r' || *end == '\n')
+    end++;
+
+  return g_strndup (start, end - start);
+}
+
+
+static gchar *
 parse_next_pem_certificate (const gchar **data,
 			    const gchar  *data_end,
 			    gboolean      required,
 			    GError      **error)
 {
-  const gchar *start, *end, *next;
-  gchar *cert_pem, *privkey_pem = NULL;
-  GTlsCertificate *cert;
+  const gchar *start, *end;
 
   start = g_strstr_len (*data, data_end - *data, PEM_CERTIFICATE_HEADER);
   if (!start)
@@ -241,38 +301,9 @@ parse_next_pem_certificate (const gchar **data,
   while (*end == '\r' || *end == '\n')
     end++;
 
-  cert_pem = g_strndup (start, end - start);
-
   *data = end;
 
-  next = g_strstr_len (*data, data_end - *data, PEM_CERTIFICATE_HEADER);
-  start = g_strstr_len (*data, data_end - *data, PEM_PRIVKEY_HEADER);
-  if (start)
-    end = g_strstr_len (start, data_end - start, PEM_PRIVKEY_FOOTER);
-
-  if (start && (!next || start < next))
-    {
-      if (!end || (next && end > next))
-	{
-	  g_set_error_literal (error, G_TLS_ERROR, G_TLS_ERROR_BAD_CERTIFICATE,
-			       _("Could not parse PEM-encoded private key"));
-	  return NULL;
-	}
-
-      end += strlen (PEM_PRIVKEY_FOOTER);
-      while (*end == '\r' || *end == '\n')
-	end++;
-
-      privkey_pem = g_strndup (start, end - start);
-
-      *data = end + strlen (PEM_PRIVKEY_FOOTER);
-    }
-
-  cert = g_tls_certificate_new_internal (cert_pem, privkey_pem, error);
-  g_free (cert_pem);
-  g_free (privkey_pem);
-
-  return cert;
+  return g_strndup (start, end - start);
 }
 
 /**
@@ -283,7 +314,9 @@ parse_next_pem_certificate (const gchar **data,
  *
  * Creates a new #GTlsCertificate from the PEM-encoded data in @data.
  * If @data includes both a certificate and a private key, then the
- * returned certificate will include the private key data as well.
+ * returned certificate will include the private key data as well. (See
+ * the #GTlsCertificate:private-key-pem property for information about
+ * supported formats.)
  *
  * If @data includes multiple certificates, only the first one will be
  * parsed.
@@ -298,14 +331,32 @@ g_tls_certificate_new_from_pem  (const gchar  *data,
 				 GError      **error)
 {
   const gchar *data_end;
+  gchar *key_pem, *cert_pem;
+  GTlsCertificate *cert;
 
   g_return_val_if_fail (data != NULL, NULL);
 
   if (length == -1)
-    data_end = data + strlen (data);
-  else
-    data_end = data + length;
-  return parse_next_pem_certificate (&data, data_end, TRUE, error);
+    length = strlen (data);
+
+  data_end = data + length;
+
+  key_pem = parse_private_key (data, length, FALSE, error);
+  if (error && *error)
+    return NULL;
+
+  cert_pem = parse_next_pem_certificate (&data, data_end, TRUE, error);
+  if (error && *error)
+    {
+      g_free (key_pem);
+      return NULL;
+    }
+
+  cert = g_tls_certificate_new_internal (cert_pem, key_pem, error);
+  g_free (key_pem);
+  g_free (cert_pem);
+
+  return cert;
 }
 
 /**
@@ -315,7 +366,8 @@ g_tls_certificate_new_from_pem  (const gchar  *data,
  *
  * Creates a #GTlsCertificate from the PEM-encoded data in @file. If
  * @file cannot be read or parsed, the function will return %NULL and
- * set @error. Otherwise, this behaves like g_tls_certificate_new().
+ * set @error. Otherwise, this behaves like
+ * g_tls_certificate_new_from_pem().
  *
  * Return value: the new certificate, or %NULL on error
  *
@@ -346,7 +398,7 @@ g_tls_certificate_new_from_file (const gchar  *file,
  * Creates a #GTlsCertificate from the PEM-encoded data in @cert_file
  * and @key_file. If either file cannot be read or parsed, the
  * function will return %NULL and set @error. Otherwise, this behaves
- * like g_tls_certificate_new().
+ * like g_tls_certificate_new_from_pem().
  *
  * Return value: the new certificate, or %NULL on error
  *
@@ -359,18 +411,34 @@ g_tls_certificate_new_from_files (const gchar  *cert_file,
 {
   GTlsCertificate *cert;
   gchar *cert_data, *key_data;
+  gsize cert_len, key_len;
+  gchar *cert_pem, *key_pem;
+  const gchar *p;
 
-  if (!g_file_get_contents (cert_file, &cert_data, NULL, error))
+  if (!g_file_get_contents (cert_file, &cert_data, &cert_len, error))
     return NULL;
-  if (!g_file_get_contents (key_file, &key_data, NULL, error))
+  p = cert_data;
+  cert_pem = parse_next_pem_certificate (&p, p + cert_len, TRUE, error);
+  g_free (cert_data);
+  if (error && *error)
+    return NULL;
+
+  if (!g_file_get_contents (key_file, &key_data, &key_len, error))
     {
-      g_free (cert_data);
+      g_free (cert_pem);
+      return NULL;
+    }
+  key_pem = parse_private_key (key_data, key_len, TRUE, error);
+  g_free (key_data);
+  if (error && *error)
+    {
+      g_free (cert_pem);
       return NULL;
     }
 
-  cert = g_tls_certificate_new_internal (cert_data, key_data, error);
-  g_free (cert_data);
-  g_free (key_data);
+  cert = g_tls_certificate_new_internal (cert_pem, key_pem, error);
+  g_free (cert_pem);
+  g_free (key_pem);
   return cert;
 }
 
@@ -395,8 +463,7 @@ GList *
 g_tls_certificate_list_new_from_file (const gchar  *file,
 				      GError      **error)
 {
-  GTlsCertificate *cert;
-  GList *list, *l;
+  GQueue queue = G_QUEUE_INIT;
   gchar *contents, *end;
   const gchar *p;
   gsize length;
@@ -404,24 +471,30 @@ g_tls_certificate_list_new_from_file (const gchar  *file,
   if (!g_file_get_contents (file, &contents, &length, error))
     return NULL;
 
-  list = NULL;
   end = contents + length;
   p = contents;
   while (p && *p)
     {
-      cert = parse_next_pem_certificate (&p, end, FALSE, error);
+      gchar *cert_pem;
+      GTlsCertificate *cert = NULL;
+
+      cert_pem = parse_next_pem_certificate (&p, end, FALSE, error);
+      if (cert_pem)
+	{
+	  cert = g_tls_certificate_new_internal (cert_pem, NULL, error);
+	  g_free (cert_pem);
+	}
       if (!cert)
 	{
-	  for (l = list; l; l = l->next)
-	    g_object_unref (l->data);
-	  g_list_free (list);
-	  list = NULL;
+	  g_list_free_full (queue.head, g_object_unref);
+	  queue.head = NULL;
 	  break;
 	}
-      list = g_list_prepend (list, cert);
+      g_queue_push_tail (&queue, cert);
     }
 
-  return g_list_reverse (list);
+  g_free (contents);
+  return queue.head;
 }
 
 
@@ -485,4 +558,41 @@ g_tls_certificate_verify (GTlsCertificate     *cert,
 			  GTlsCertificate     *trusted_ca)
 {
   return G_TLS_CERTIFICATE_GET_CLASS (cert)->verify (cert, identity, trusted_ca);
+}
+
+/**
+ * g_tls_certificate_is_same:
+ * @cert_one: first certificate to compare
+ * @cert_two: second certificate to compare
+ *
+ * Check if two #GTlsCertificate objects represent the same certificate.
+ * The raw DER byte data of the two certificates are checked for equality.
+ * This has the effect that two certificates may compare equal even if
+ * their #GTlsCertificate:issuer, #GTlsCertificate:private-key, or
+ * #GTlsCertificate:private-key-pem properties differ.
+ *
+ * Return value: whether the same or not
+ *
+ * Since: 2.34
+ */
+gboolean
+g_tls_certificate_is_same (GTlsCertificate     *cert_one,
+                           GTlsCertificate     *cert_two)
+{
+  GByteArray *b1, *b2;
+  gboolean equal;
+
+  g_return_val_if_fail (G_IS_TLS_CERTIFICATE (cert_one), FALSE);
+  g_return_val_if_fail (G_IS_TLS_CERTIFICATE (cert_two), FALSE);
+
+  g_object_get (cert_one, "certificate", &b1, NULL);
+  g_object_get (cert_two, "certificate", &b2, NULL);
+
+  equal = (b1->len == b2->len &&
+           memcmp (b1->data, b2->data, b1->len) == 0);
+
+  g_byte_array_unref (b1);
+  g_byte_array_unref (b2);
+
+  return equal;
 }

@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include "gfilemonitor.h"
-#include "gio-marshal.h"
 #include "gioenumtypes.h"
 #include "gfile.h"
 #include "gvfs.h"
@@ -176,8 +175,7 @@ g_file_monitor_finalize (GObject *object)
 
   g_hash_table_destroy (monitor->priv->rate_limiter);
 
-  if (monitor->priv->context)
-    g_main_context_unref (monitor->priv->context);
+  g_main_context_unref (monitor->priv->context);
 
   G_OBJECT_CLASS (g_file_monitor_parent_class)->finalize (object);
 }
@@ -197,8 +195,7 @@ g_file_monitor_dispose (GObject *object)
       g_source_unref (priv->pending_file_change_source);
       priv->pending_file_change_source = NULL;
     }
-  g_slist_foreach (priv->pending_file_changes, (GFunc) file_change_free, NULL);
-  g_slist_free (priv->pending_file_changes);
+  g_slist_free_full (priv->pending_file_changes, (GDestroyNotify) file_change_free);
   priv->pending_file_changes = NULL;
 
   /* Make sure we cancel on last unref */
@@ -224,13 +221,13 @@ g_file_monitor_class_init (GFileMonitorClass *klass)
    * GFileMonitor::changed:
    * @monitor: a #GFileMonitor.
    * @file: a #GFile.
-   * @other_file: a #GFile or #NULL.
+   * @other_file: (allow-none): a #GFile or #NULL.
    * @event_type: a #GFileMonitorEvent.
    *
    * Emitted when @file has been changed.
    *
    * If using #G_FILE_MONITOR_SEND_MOVED flag and @event_type is
-   * #G_FILE_MONITOR_SEND_MOVED, @file will be set to a #GFile containing the
+   * #G_FILE_MONITOR_EVENT_MOVED, @file will be set to a #GFile containing the
    * old path, and @other_file will be set to a #GFile containing the new path.
    *
    * In all the other cases, @other_file will be set to #NULL.
@@ -241,7 +238,7 @@ g_file_monitor_class_init (GFileMonitorClass *klass)
 		  G_SIGNAL_RUN_LAST,
 		  G_STRUCT_OFFSET (GFileMonitorClass, changed),
 		  NULL, NULL,
-		  _gio_marshal_VOID__OBJECT_OBJECT_ENUM,
+		  NULL,
 		  G_TYPE_NONE, 3,
 		  G_TYPE_FILE, G_TYPE_FILE, G_TYPE_FILE_MONITOR_EVENT);
 
@@ -274,7 +271,7 @@ g_file_monitor_init (GFileMonitor *monitor)
   monitor->priv->rate_limit_msec = DEFAULT_RATE_LIMIT_MSECS;
   monitor->priv->rate_limiter = g_hash_table_new_full (g_file_hash, (GEqualFunc)g_file_equal,
 						       NULL, (GDestroyNotify) rate_limiter_free);
-  monitor->priv->context = g_main_context_get_thread_default ();
+  monitor->priv->context = g_main_context_ref_thread_default ();
 }
 
 /**
@@ -440,7 +437,7 @@ emit_in_idle (GFileMonitor      *monitor,
 static guint32
 get_time_msecs (void)
 {
-  return g_thread_gettime() / (1000 * 1000);
+  return g_get_monotonic_time () / G_TIME_SPAN_MILLISECOND;
 }
 
 static guint32
@@ -512,7 +509,7 @@ calc_min_time (GFileMonitor *monitor,
 
   if (limiter->last_sent_change_time != 0)
     {
-      /* Set a timeout at 2*rate limit so that we can clear out the change from the hash eventualy */
+      /* Set a timeout at 2*rate limit so that we can clear out the change from the hash eventually */
       expire_at = limiter->last_sent_change_time + 2 * monitor->priv->rate_limit_msec;
 
       if (time_difference (time_now, expire_at) > 0)
@@ -720,7 +717,7 @@ g_file_monitor_emit_event (GFileMonitor      *monitor,
 	  
 	  limiter->last_sent_change_time = time_now;
 	  limiter->send_delayed_change_at = 0;
-	  /* Set a timeout of 2*rate limit so that we can clear out the change from the hash eventualy */
+	  /* Set a timeout of 2*rate limit so that we can clear out the change from the hash eventually */
 	  update_rate_limiter_timeout (monitor, time_now + 2 * monitor->priv->rate_limit_msec);
 	}
       

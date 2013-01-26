@@ -33,12 +33,13 @@
 #include "gstrfuncs.h"
 #include "ghash.h"
 #include "gthread.h"
-#include "gbuffer.h"
+#include "gbytes.h"
+#include "gslice.h"
 
 /**
  * SECTION:timezone
  * @title: GTimeZone
- * @short_description: A structure representing a time zone
+ * @short_description: a structure representing a time zone
  * @see_also: #GDateTime
  *
  * #GTimeZone is a structure that represents a time zone, at no
@@ -116,12 +117,16 @@ struct ttinfo
 struct _GTimeZone
 {
   gchar   *name;
-
-  GBuffer *zoneinfo;
+  gchar    version;
+  GBytes  *zoneinfo;
 
   const struct tzhead *header;
   const struct ttinfo *infos;
-  const gint64_be     *trans;
+  union
+  {
+    const gint32_be     *one;
+    const gint64_be     *two;
+  } trans;
   const guint8        *indices;
   const gchar         *abbrs;
   gint                 timecnt;
@@ -131,25 +136,6 @@ struct _GTimeZone
 
 G_LOCK_DEFINE_STATIC (time_zones);
 static GHashTable/*<string?, GTimeZone>*/ *time_zones;
-
-static guint
-g_str_hash0 (gconstpointer data)
-{
-  return data ? g_str_hash (data) : 0;
-}
-
-static gboolean
-g_str_equal0 (gconstpointer a,
-              gconstpointer b)
-{
-  if (a == b)
-    return TRUE;
-
-  if (!a || !b)
-    return FALSE;
-
-  return g_str_equal (a, b);
-}
 
 /**
  * g_time_zone_unref:
@@ -162,21 +148,42 @@ g_str_equal0 (gconstpointer a,
 void
 g_time_zone_unref (GTimeZone *tz)
 {
-  g_assert (tz->ref_count > 0);
+  int ref_count;
 
-  G_LOCK(time_zones);
-  if (g_atomic_int_dec_and_test (&tz->ref_count))
+again:
+  ref_count = g_atomic_int_get (&tz->ref_count);
+
+  g_assert (ref_count > 0);
+
+  if (ref_count == 1)
     {
-      g_hash_table_remove (time_zones, tz->name);
+      if (tz->name != NULL)
+        {
+          G_LOCK(time_zones);
+
+          /* someone else might have grabbed a ref in the meantime */
+          if G_UNLIKELY (g_atomic_int_get (&tz->ref_count) != 1)
+            {
+              G_UNLOCK(time_zones);
+              goto again;
+            }
+
+          g_hash_table_remove (time_zones, tz->name);
+          G_UNLOCK(time_zones);
+        }
 
       if (tz->zoneinfo)
-        g_buffer_unref (tz->zoneinfo);
+        g_bytes_unref (tz->zoneinfo);
 
       g_free (tz->name);
 
       g_slice_free (GTimeZone, tz);
     }
-  G_UNLOCK(time_zones);
+
+  else if G_UNLIKELY (!g_atomic_int_compare_and_exchange (&tz->ref_count,
+                                                          ref_count,
+                                                          ref_count - 1))
+    goto again;
 }
 
 /**
@@ -206,39 +213,39 @@ g_time_zone_ref (GTimeZone *tz)
  *  - mm is 00 to 59
  */
 static gboolean
-parse_time (const gchar *time,
+parse_time (const gchar *time_,
             gint32      *offset)
 {
-  if (*time < '0' || '2' < *time)
+  if (*time_ < '0' || '2' < *time_)
     return FALSE;
 
-  *offset = 10 * 60 * 60 * (*time++ - '0');
+  *offset = 10 * 60 * 60 * (*time_++ - '0');
 
-  if (*time < '0' || '9' < *time)
+  if (*time_ < '0' || '9' < *time_)
     return FALSE;
 
-  *offset += 60 * 60 * (*time++ - '0');
+  *offset += 60 * 60 * (*time_++ - '0');
 
   if (*offset > 23 * 60 * 60)
     return FALSE;
 
-  if (*time == '\0')
+  if (*time_ == '\0')
     return TRUE;
 
-  if (*time == ':')
-    time++;
+  if (*time_ == ':')
+    time_++;
 
-  if (*time < '0' || '5' < *time)
+  if (*time_ < '0' || '5' < *time_)
     return FALSE;
 
-  *offset += 10 * 60 * (*time++ - '0');
+  *offset += 10 * 60 * (*time_++ - '0');
 
-  if (*time < '0' || '9' < *time)
+  if (*time_ < '0' || '9' < *time_)
     return FALSE;
 
-  *offset += 60 * (*time++ - '0');
+  *offset += 60 * (*time_++ - '0');
 
-  return *time == '\0';
+  return *time_ == '\0';
 }
 
 static gboolean
@@ -266,7 +273,7 @@ parse_constant_offset (const gchar *name,
     }
 }
 
-static GBuffer *
+static GBytes *
 zone_for_constant_offset (const gchar *name)
 {
   const gchar fake_zoneinfo_headers[] =
@@ -293,7 +300,7 @@ zone_for_constant_offset (const gchar *name)
   fake->info.tt_abbrind = 0;
   strcpy (fake->abbr, name);
 
-  return g_buffer_new_take_data (fake, sizeof *fake);
+  return g_bytes_new_take (fake, sizeof *fake);
 }
 
 /* Construction {{{1 */
@@ -342,13 +349,17 @@ GTimeZone *
 g_time_zone_new (const gchar *identifier)
 {
   GTimeZone *tz;
+  GMappedFile *file;
 
   G_LOCK (time_zones);
   if (time_zones == NULL)
-    time_zones = g_hash_table_new (g_str_hash0,
-                                   g_str_equal0);
+    time_zones = g_hash_table_new (g_str_hash, g_str_equal);
 
-  tz = g_hash_table_lookup (time_zones, identifier);
+  if (identifier)
+    tz = g_hash_table_lookup (time_zones, identifier);
+  else
+    tz = NULL;
+
   if (tz == NULL)
     {
       tz = g_slice_new0 (GTimeZone);
@@ -361,6 +372,10 @@ g_time_zone_new (const gchar *identifier)
         {
           gchar *filename;
 
+          /* identifier can be a relative or absolute path name;
+             if relative, it is interpreted starting from /usr/share/zoneinfo
+             while the POSIX standard says it should start with :,
+             glibc allows both syntaxes, so we should too */
           if (identifier != NULL)
             {
               const gchar *tzdir;
@@ -369,50 +384,75 @@ g_time_zone_new (const gchar *identifier)
               if (tzdir == NULL)
                 tzdir = "/usr/share/zoneinfo";
 
-              filename = g_build_filename (tzdir, identifier, NULL);
+              if (*identifier == ':')
+                identifier ++;
+
+              if (g_path_is_absolute (identifier))
+                filename = g_strdup (identifier);
+              else
+                filename = g_build_filename (tzdir, identifier, NULL);
             }
           else
             filename = g_strdup ("/etc/localtime");
 
-          tz->zoneinfo = (GBuffer *) g_mapped_file_new (filename, FALSE, NULL);
+          file = g_mapped_file_new (filename, FALSE, NULL);
+          if (file != NULL)
+            {
+              tz->zoneinfo = g_bytes_new_with_free_func (g_mapped_file_get_contents (file),
+                                                         g_mapped_file_get_length (file),
+                                                         (GDestroyNotify)g_mapped_file_unref,
+                                                         g_mapped_file_ref (file));
+              g_mapped_file_unref (file);
+            }
           g_free (filename);
         }
 
       if (tz->zoneinfo != NULL)
         {
-          const struct tzhead *header = tz->zoneinfo->data;
-          gsize size = tz->zoneinfo->size;
+          gsize size;
+          const struct tzhead *header = g_bytes_get_data (tz->zoneinfo, &size);
 
-          /* we only bother to support version 2 */
-          if (size < sizeof (struct tzhead) || memcmp (header, "TZif2", 5))
+          if (size < sizeof (struct tzhead) || memcmp (header, "TZif", 4))
             {
-              g_buffer_unref (tz->zoneinfo);
+              g_bytes_unref (tz->zoneinfo);
               tz->zoneinfo = NULL;
             }
           else
             {
               gint typecnt;
-
+              tz->version = header->tzh_version;
               /* we trust the file completely. */
-              tz->header = (const struct tzhead *)
-                (((const gchar *) (header + 1)) +
-                  guint32_from_be(header->tzh_ttisgmtcnt) +
-                  guint32_from_be(header->tzh_ttisstdcnt) +
-                  8 * guint32_from_be(header->tzh_leapcnt) +
-                  5 * guint32_from_be(header->tzh_timecnt) +
-                  6 * guint32_from_be(header->tzh_typecnt) +
-                  guint32_from_be(header->tzh_charcnt));
+              if (tz->version == '2')
+                tz->header = (const struct tzhead *)
+                  (((const gchar *) (header + 1)) +
+                   guint32_from_be(header->tzh_ttisgmtcnt) +
+                   guint32_from_be(header->tzh_ttisstdcnt) +
+                   8 * guint32_from_be(header->tzh_leapcnt) +
+                   5 * guint32_from_be(header->tzh_timecnt) +
+                   6 * guint32_from_be(header->tzh_typecnt) +
+                   guint32_from_be(header->tzh_charcnt));
+              else
+                tz->header = header;
 
               typecnt     = guint32_from_be (tz->header->tzh_typecnt);
               tz->timecnt = guint32_from_be (tz->header->tzh_timecnt);
-              tz->trans   = (gconstpointer) (tz->header + 1);
-              tz->indices = (gconstpointer) (tz->trans + tz->timecnt);
+              if (tz->version == '2')
+                {
+                  tz->trans.two = (gconstpointer) (tz->header + 1);
+                  tz->indices   = (gconstpointer) (tz->trans.two + tz->timecnt);
+                }
+              else
+                {
+                  tz->trans.one = (gconstpointer) (tz->header + 1);
+                  tz->indices   = (gconstpointer) (tz->trans.one + tz->timecnt);
+                }
               tz->infos   = (gconstpointer) (tz->indices + tz->timecnt);
               tz->abbrs   = (gconstpointer) (tz->infos + typecnt);
             }
         }
 
-      g_hash_table_insert (time_zones, tz->name, tz);
+      if (identifier)
+        g_hash_table_insert (time_zones, tz->name, tz);
     }
   g_atomic_int_inc (&tz->ref_count);
   G_UNLOCK (time_zones);
@@ -444,12 +484,13 @@ g_time_zone_new_utc (void)
 /**
  * g_time_zone_new_local:
  *
- * Creates a #GTimeZone corresponding to local time.
+ * Creates a #GTimeZone corresponding to local time.  The local time
+ * zone may change between invocations to this function; for example,
+ * if the system administrator changes it.
  *
  * This is equivalent to calling g_time_zone_new() with the value of the
  * <varname>TZ</varname> environment variable (including the possibility
- * of %NULL).  Changes made to <varname>TZ</varname> after the first
- * call to this function may or may not be noticed by future calls.
+ * of %NULL).
  *
  * You should release the return value by calling g_time_zone_unref()
  * when you are done with it.
@@ -480,8 +521,12 @@ interval_start (GTimeZone *tz,
                 gint       interval)
 {
   if (interval)
-    return gint64_from_be (tz->trans[interval - 1]);
-
+    {
+      if (tz->version == '2')
+        return gint64_from_be (tz->trans.two[interval - 1]);
+      else
+        return gint32_from_be (tz->trans.one[interval - 1]);
+    }
   return G_MININT64;
 }
 
@@ -490,8 +535,12 @@ interval_end (GTimeZone *tz,
               gint       interval)
 {
   if (interval < tz->timecnt)
-    return gint64_from_be (tz->trans[interval]) - 1;
-
+    {
+      if (tz->version == '2')
+        return gint64_from_be (tz->trans.two[interval]) - 1;
+      else
+        return gint32_from_be (tz->trans.one[interval]) - 1;
+    }
   return G_MAXINT64;
 }
 
@@ -548,34 +597,34 @@ interval_valid (GTimeZone *tz,
 /**
  * g_time_zone_adjust_time:
  * @tz: a #GTimeZone
- * @type: the #GTimeType of @time
- * @time: a pointer to a number of seconds since January 1, 1970
+ * @type: the #GTimeType of @time_
+ * @time_: a pointer to a number of seconds since January 1, 1970
  *
- * Finds an interval within @tz that corresponds to the given @time,
- * possibly adjusting @time if required to fit into an interval.
- * The meaning of @time depends on @type.
+ * Finds an interval within @tz that corresponds to the given @time_,
+ * possibly adjusting @time_ if required to fit into an interval.
+ * The meaning of @time_ depends on @type.
  *
  * This function is similar to g_time_zone_find_interval(), with the
  * difference that it always succeeds (by making the adjustments
  * described below).
  *
  * In any of the cases where g_time_zone_find_interval() succeeds then
- * this function returns the same value, without modifying @time.
+ * this function returns the same value, without modifying @time_.
  *
- * This function may, however, modify @time in order to deal with
- * non-existent times.  If the non-existent local @time of 02:30 were
- * requested on March 13th 2010 in Toronto then this function would
- * adjust @time to be 03:00 and return the interval containing the
+ * This function may, however, modify @time_ in order to deal with
+ * non-existent times.  If the non-existent local @time_ of 02:30 were
+ * requested on March 14th 2010 in Toronto then this function would
+ * adjust @time_ to be 03:00 and return the interval containing the
  * adjusted time.
  *
- * Returns: the interval containing @time, never -1
+ * Returns: the interval containing @time_, never -1
  *
  * Since: 2.26
  **/
 gint
 g_time_zone_adjust_time (GTimeZone *tz,
                          GTimeType  type,
-                         gint64    *time)
+                         gint64    *time_)
 {
   gint i;
 
@@ -585,47 +634,47 @@ g_time_zone_adjust_time (GTimeZone *tz,
   /* find the interval containing *time UTC
    * TODO: this could be binary searched (or better) */
   for (i = 0; i < tz->timecnt; i++)
-    if (*time <= interval_end (tz, i))
+    if (*time_ <= interval_end (tz, i))
       break;
 
-  g_assert (interval_start (tz, i) <= *time && *time <= interval_end (tz, i));
+  g_assert (interval_start (tz, i) <= *time_ && *time_ <= interval_end (tz, i));
 
   if (type != G_TIME_TYPE_UNIVERSAL)
     {
-      if (*time < interval_local_start (tz, i))
+      if (*time_ < interval_local_start (tz, i))
         /* if time came before the start of this interval... */
         {
           i--;
 
           /* if it's not in the previous interval... */
-          if (*time > interval_local_end (tz, i))
+          if (*time_ > interval_local_end (tz, i))
             {
               /* it doesn't exist.  fast-forward it. */
               i++;
-              *time = interval_local_start (tz, i);
+              *time_ = interval_local_start (tz, i);
             }
         }
 
-      else if (*time > interval_local_end (tz, i))
+      else if (*time_ > interval_local_end (tz, i))
         /* if time came after the end of this interval... */
         {
           i++;
 
           /* if it's not in the next interval... */
-          if (*time < interval_local_start (tz, i))
+          if (*time_ < interval_local_start (tz, i))
             /* it doesn't exist.  fast-forward it. */
-            *time = interval_local_start (tz, i);
+            *time_ = interval_local_start (tz, i);
         }
 
       else if (interval_isdst (tz, i) != type)
         /* it's in this interval, but dst flag doesn't match.
          * check neighbours for a better fit. */
         {
-          if (i && *time <= interval_local_end (tz, i - 1))
+          if (i && *time_ <= interval_local_end (tz, i - 1))
             i--;
 
           else if (i < tz->timecnt &&
-                   *time >= interval_local_start (tz, i + 1))
+                   *time_ >= interval_local_start (tz, i + 1))
             i++;
         }
     }
@@ -636,19 +685,19 @@ g_time_zone_adjust_time (GTimeZone *tz,
 /**
  * g_time_zone_find_interval:
  * @tz: a #GTimeZone
- * @type: the #GTimeType of @time
- * @time: a number of seconds since January 1, 1970
+ * @type: the #GTimeType of @time_
+ * @time_: a number of seconds since January 1, 1970
  *
- * Finds an the interval within @tz that corresponds to the given @time.
- * The meaning of @time depends on @type.
+ * Finds an the interval within @tz that corresponds to the given @time_.
+ * The meaning of @time_ depends on @type.
  *
  * If @type is %G_TIME_TYPE_UNIVERSAL then this function will always
  * succeed (since universal time is monotonic and continuous).
  *
- * Otherwise @time is treated is local time.  The distinction between
+ * Otherwise @time_ is treated is local time.  The distinction between
  * %G_TIME_TYPE_STANDARD and %G_TIME_TYPE_DAYLIGHT is ignored except in
- * the case that the given @time is ambiguous.  In Toronto, for example,
- * 01:30 on November 7th 2010 occured twice (once inside of daylight
+ * the case that the given @time_ is ambiguous.  In Toronto, for example,
+ * 01:30 on November 7th 2010 occurred twice (once inside of daylight
  * savings time and the next, an hour later, outside of daylight savings
  * time).  In this case, the different value of @type would result in a
  * different interval being returned.
@@ -658,14 +707,14 @@ g_time_zone_adjust_time (GTimeZone *tz,
  * forward to begin daylight savings time).  -1 is returned in that
  * case.
  *
- * Returns: the interval containing @time, or -1 in case of failure
+ * Returns: the interval containing @time_, or -1 in case of failure
  *
  * Since: 2.26
  */
 gint
 g_time_zone_find_interval (GTimeZone *tz,
                            GTimeType  type,
-                           gint64     time)
+                           gint64     time_)
 {
   gint i;
 
@@ -673,30 +722,30 @@ g_time_zone_find_interval (GTimeZone *tz,
     return 0;
 
   for (i = 0; i < tz->timecnt; i++)
-    if (time <= interval_end (tz, i))
+    if (time_ <= interval_end (tz, i))
       break;
 
   if (type == G_TIME_TYPE_UNIVERSAL)
     return i;
 
-  if (time < interval_local_start (tz, i))
+  if (time_ < interval_local_start (tz, i))
     {
-      if (time > interval_local_end (tz, --i))
+      if (time_ > interval_local_end (tz, --i))
         return -1;
     }
 
-  else if (time > interval_local_end (tz, i))
+  else if (time_ > interval_local_end (tz, i))
     {
-      if (time < interval_local_start (tz, ++i))
+      if (time_ < interval_local_start (tz, ++i))
         return -1;
     }
 
   else if (interval_isdst (tz, i) != type)
     {
-      if (i && time <= interval_local_end (tz, i - 1))
+      if (i && time_ <= interval_local_end (tz, i - 1))
         i--;
 
-      else if (i < tz->timecnt && time >= interval_local_start (tz, i + 1))
+      else if (i < tz->timecnt && time_ >= interval_local_start (tz, i + 1))
         i++;
     }
 

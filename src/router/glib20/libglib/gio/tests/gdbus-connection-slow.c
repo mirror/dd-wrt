@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include <sys/types.h>
-#include <sys/wait.h>
 
 #include "gdbus-tests.h"
 
@@ -95,8 +94,8 @@ test_connection_flush (void)
                                        &exit_status,
                                        &error);
       g_assert_no_error (error);
-      g_assert (WIFEXITED (exit_status));
-      g_assert_cmpint (WEXITSTATUS (exit_status), ==, 0);
+      g_spawn_check_exit_status (exit_status, &error);
+      g_assert_no_error (error);
       g_assert (ret);
 
       timeout_mainloop_id = g_timeout_add (1000, test_connection_flush_on_timeout, GUINT_TO_POINTER (n));
@@ -105,7 +104,6 @@ test_connection_flush (void)
     }
 
   g_dbus_connection_signal_unsubscribe (connection, signal_handler_id);
-  _g_object_wait_for_single_ref (connection);
   g_object_unref (connection);
 
   session_bus_down ();
@@ -144,7 +142,7 @@ large_message_on_name_appeared (GDBusConnection *connection,
                                         g_variant_new ("(s)", request), /* parameters */
                                         G_VARIANT_TYPE ("(s)"),         /* return type */
                                         G_DBUS_CALL_FLAGS_NONE,
-                                        -1,
+                                        G_MAXINT,
                                         NULL,
                                         &error);
   g_assert_no_error (error);
@@ -202,11 +200,7 @@ main (int   argc,
   /* all the tests rely on a shared main loop */
   loop = g_main_loop_new (NULL, FALSE);
 
-  /* all the tests use a session bus with a well-known address that we can bring up and down
-   * using session_bus_up() and session_bus_down().
-   */
-  g_unsetenv ("DISPLAY");
-  g_setenv ("DBUS_SESSION_BUS_ADDRESS", session_bus_get_temporary_address (), TRUE);
+  g_test_dbus_unset ();
 
   g_test_add_func ("/gdbus/connection/flush", test_connection_flush);
   g_test_add_func ("/gdbus/connection/large_message", test_connection_large_message);

@@ -118,6 +118,10 @@ test_properties (void)
   GDataOutputStream *o;
   int i;
   GError *error = NULL;
+  gsize data_size_fun;
+  gsize data_size_prop;
+  gpointer data_fun;
+  gpointer data_prop;
 
   g_test_bug ("605733");
 
@@ -133,18 +137,79 @@ test_properties (void)
       g_assert_no_error (error);
     }
 
-  gsize data_size_fun = g_memory_output_stream_get_data_size (G_MEMORY_OUTPUT_STREAM (mo));
-  gsize data_size_prop;
+  data_size_fun = g_memory_output_stream_get_data_size (G_MEMORY_OUTPUT_STREAM (mo));
   g_object_get (mo, "data-size", &data_size_prop, NULL);
   g_assert_cmpint (data_size_fun, ==, data_size_prop);
 
-  gpointer data_fun = g_memory_output_stream_get_data (G_MEMORY_OUTPUT_STREAM (mo));
-  gpointer data_prop;
+  data_fun = g_memory_output_stream_get_data (G_MEMORY_OUTPUT_STREAM (mo));
   g_object_get (mo, "data", &data_prop, NULL);
   g_assert_cmphex (GPOINTER_TO_SIZE (data_fun), ==, GPOINTER_TO_SIZE (data_prop));
 
   g_object_unref (o);
   g_object_unref (mo);
+}
+
+static void
+test_write_bytes (void)
+{
+  GOutputStream *mo;
+  GBytes *bytes, *bytes2;
+  GError *error = NULL;
+
+  mo = (GOutputStream*) g_object_new (G_TYPE_MEMORY_OUTPUT_STREAM,
+                                      "realloc-function", g_realloc,
+                                      "destroy-function", g_free,
+                                      NULL);
+  bytes = g_bytes_new_static ("hello world!", strlen ("hello world!") + 1);
+  g_output_stream_write_bytes (mo, bytes, NULL, &error);
+  g_assert_no_error (error);
+
+  g_output_stream_close (mo, NULL, &error);
+  g_assert_no_error (error);
+
+  bytes2 = g_memory_output_stream_steal_as_bytes (G_MEMORY_OUTPUT_STREAM (mo));
+  g_object_unref (mo);
+  g_assert (g_bytes_equal (bytes, bytes2));
+
+  g_bytes_unref (bytes);
+  g_bytes_unref (bytes2);
+}
+
+static void
+test_steal_as_bytes (void)
+{
+  GOutputStream *mo;
+  GDataOutputStream *o;
+  GError *error = NULL;
+  GBytes *bytes;
+  gsize size;
+
+  mo = (GOutputStream*) g_object_new (G_TYPE_MEMORY_OUTPUT_STREAM,
+                                      "realloc-function", g_realloc,
+                                      "destroy-function", g_free,
+                                      NULL);
+  o = g_data_output_stream_new (mo);
+
+  g_data_output_stream_put_string (o, "hello ", NULL, &error);
+  g_assert_no_error (error);
+
+  g_data_output_stream_put_string (o, "world!", NULL, &error);
+  g_assert_no_error (error);
+
+  g_data_output_stream_put_byte (o, '\0', NULL, &error);
+  g_assert_no_error (error);
+
+  g_output_stream_close ((GOutputStream*) o, NULL, &error);
+  g_assert_no_error (error);
+
+  bytes = g_memory_output_stream_steal_as_bytes ((GMemoryOutputStream*)mo);
+  g_object_unref (mo);
+
+  g_assert_cmpint (g_bytes_get_size (bytes), ==, strlen ("hello world!") + 1);
+  g_assert_cmpstr (g_bytes_get_data (bytes, &size), ==, "hello world!");
+
+  g_bytes_unref (bytes);
+  g_object_unref (o);
 }
 
 int
@@ -159,6 +224,8 @@ main (int   argc,
   g_test_add_func ("/memory-output-stream/seek", test_seek);
   g_test_add_func ("/memory-output-stream/get-data-size", test_data_size);
   g_test_add_func ("/memory-output-stream/properties", test_properties);
+  g_test_add_func ("/memory-output-stream/write-bytes", test_write_bytes);
+  g_test_add_func ("/memory-output-stream/steal_as_bytes", test_steal_as_bytes);
 
   return g_test_run();
 }

@@ -52,6 +52,7 @@
 #endif /* _MSC_VER || __DMC__ */
 
 #include "glib.h"
+#include "gthreadprivate.h"
 
 #ifdef G_WITH_CYGWIN
 #include <sys/cygwin.h>
@@ -202,7 +203,7 @@ g_win32_error_message (gint error)
 
 /**
  * g_win32_get_package_installation_directory_of_module:
- * @hmodule: The Win32 handle for a DLL loaded into the current process, or %NULL
+ * @hmodule: (allow-none): The Win32 handle for a DLL loaded into the current process, or %NULL
  *
  * This function tries to determine the installation directory of a
  * software package based on the location of a DLL of the software
@@ -321,8 +322,8 @@ get_package_directory_from_module (const gchar *module_name)
 
 /**
  * g_win32_get_package_installation_directory:
- * @package: You should pass %NULL for this.
- * @dll_name: The name of a DLL that a package provides in UTF-8, or %NULL.
+ * @package: (allow-none): You should pass %NULL for this.
+ * @dll_name: (allow-none): The name of a DLL that a package provides in UTF-8, or %NULL.
  *
  * Try to determine the installation directory for a software package.
  *
@@ -427,8 +428,8 @@ g_win32_get_package_installation_directory (const gchar *package,
 
 /**
  * g_win32_get_package_installation_subdirectory:
- * @package: You should pass %NULL for this.
- * @dll_name: The name of a DLL that a package provides, in UTF-8, or %NULL.
+ * @package: (allow-none): You should pass %NULL for this.
+ * @dll_name: (allow-none): The name of a DLL that a package provides, in UTF-8, or %NULL.
  * @subdir: A subdirectory of the package installation directory, also in UTF-8
  *
  * This function is deprecated. Use
@@ -492,29 +493,6 @@ g_win32_get_package_installation_subdirectory (const gchar *package,
 
 #endif
 
-static guint windows_version;
-
-static void 
-g_win32_windows_version_init (void)
-{
-  static gboolean beenhere = FALSE;
-
-  if (!beenhere)
-    {
-      beenhere = TRUE;
-      windows_version = GetVersion ();
-
-      if (windows_version & 0x80000000)
-	g_error ("This version of GLib requires NT-based Windows.");
-    }
-}
-
-void 
-_g_win32_thread_init (void)
-{
-  g_win32_windows_version_init ();
-}
-
 /**
  * g_win32_get_windows_version:
  *
@@ -525,7 +503,7 @@ _g_win32_thread_init (void)
  * on NT-based systems, so checking whether your are running on Win9x
  * in your own software is moot. The least significant byte is 4 on
  * Windows NT 4, and 5 on Windows XP. Software that needs really
- * detailled version and feature information should use Win32 API like
+ * detailed version and feature information should use Win32 API like
  * GetVersionEx() and VerifyVersionInfo().
  *
  * Returns: The version information.
@@ -535,8 +513,11 @@ _g_win32_thread_init (void)
 guint
 g_win32_get_windows_version (void)
 {
-  g_win32_windows_version_init ();
-  
+  static gsize windows_version;
+
+  if (g_once_init_enter (&windows_version))
+    g_once_init_leave (&windows_version, GetVersion ());
+
   return windows_version;
 }
 

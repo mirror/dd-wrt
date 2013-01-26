@@ -41,7 +41,6 @@
 #include "gioenumtypes.h"
 #include "gdbusprivate.h"
 #include "gdbusauthobserver.h"
-#include "gio-marshal.h"
 #include "ginitable.h"
 #include "gsocketservice.h"
 #include "gthreadedsocketservice.h"
@@ -63,7 +62,13 @@
  * @include: gio/gio.h
  *
  * #GDBusServer is a helper for listening to and accepting D-Bus
- * connections.
+ * connections. This can be used to create a new D-Bus server, allowing two
+ * peers to use the D-Bus protocol for their own specialized communication.
+ * A server instance provided in this way will not perform message routing or
+ * implement the org.freedesktop.DBus interface.
+ *
+ * To just export an object on a well-known name on a message bus, such as the
+ * session or system bus, you should instead use g_bus_own_name().
  *
  * <example id="gdbus-peer-to-peer"><title>D-Bus peer-to-peer example</title><programlisting><xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../../gio/tests/gdbus-example-peer.c"><xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback></xi:include></programlisting></example>
  */
@@ -94,7 +99,7 @@ struct _GDBusServer
   gboolean is_using_listener;
   gulong run_signal_handler_id;
 
-  /* The result of g_main_context_get_thread_default() when the object
+  /* The result of g_main_context_ref_thread_default() when the object
    * was created (the GObject _init() function) - this is used for delivery
    * of the :new-connection GObject signal.
    */
@@ -143,7 +148,7 @@ enum
   LAST_SIGNAL,
 };
 
-guint _signals[LAST_SIGNAL] = {0};
+static guint _signals[LAST_SIGNAL] = {0};
 
 static void initable_iface_init       (GInitableIface *initable_iface);
 
@@ -178,8 +183,7 @@ g_dbus_server_finalize (GObject *object)
    */
   g_free (server->nonce_file);
 
-  if (server->main_context_at_construction != NULL)
-    g_main_context_unref (server->main_context_at_construction);
+  g_main_context_unref (server->main_context_at_construction);
 
   G_OBJECT_CLASS (g_dbus_server_parent_class)->finalize (object);
 }
@@ -420,7 +424,7 @@ g_dbus_server_class_init (GDBusServerClass *klass)
                                                   G_STRUCT_OFFSET (GDBusServerClass, new_connection),
                                                   g_signal_accumulator_true_handled,
                                                   NULL, /* accu_data */
-                                                  _gio_marshal_BOOLEAN__OBJECT,
+                                                  NULL,
                                                   G_TYPE_BOOLEAN,
                                                   1,
                                                   G_TYPE_DBUS_CONNECTION);
@@ -429,9 +433,7 @@ g_dbus_server_class_init (GDBusServerClass *klass)
 static void
 g_dbus_server_init (GDBusServer *server)
 {
-  server->main_context_at_construction = g_main_context_get_thread_default ();
-  if (server->main_context_at_construction != NULL)
-    g_main_context_ref (server->main_context_at_construction);
+  server->main_context_at_construction = g_main_context_ref_thread_default ();
 }
 
 static gboolean
@@ -445,8 +447,8 @@ on_run (GSocketService    *service,
  * @address: A D-Bus address.
  * @flags: Flags from the #GDBusServerFlags enumeration.
  * @guid: A D-Bus GUID.
- * @observer: A #GDBusAuthObserver or %NULL.
- * @cancellable: A #GCancellable or %NULL.
+ * @observer: (allow-none): A #GDBusAuthObserver or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @error: Return location for server or %NULL.
  *
  * Creates a new D-Bus server that listens on the first address in
@@ -464,7 +466,8 @@ on_run (GSocketService    *service,
  * See <xref linkend="gdbus-peer-to-peer"/> for how #GDBusServer can
  * be used.
  *
- * This is a synchronous failable constructor.
+ * This is a synchronous failable constructor. See
+ * g_dbus_server_new() for the asynchronous version.
  *
  * Returns: A #GDBusServer or %NULL if @error is set. Free with
  * g_object_unref().
@@ -493,15 +496,6 @@ g_dbus_server_new_sync (const gchar        *address,
                            "guid", guid,
                            "authentication-observer", observer,
                            NULL);
-  if (server != NULL)
-    {
-      /* Right now we don't have any transport not using the listener... */
-      g_assert (server->is_using_listener);
-      server->run_signal_handler_id = g_signal_connect (G_SOCKET_SERVICE (server->listener),
-                                                        "run",
-                                                        G_CALLBACK (on_run),
-                                                        server);
-    }
 
   return server;
 }
@@ -769,7 +763,7 @@ try_unix (GDBusServer  *server,
 /* ---------------------------------------------------------------------------------------------------- */
 
 /* note that address_entry has already been validated =>
- *  both host and port (guranteed to be a number in [0, 65535]) are set (family is optional)
+ *  both host and port (guaranteed to be a number in [0, 65535]) are set (family is optional)
  */
 static gboolean
 try_tcp (GDBusServer  *server,
@@ -781,21 +775,18 @@ try_tcp (GDBusServer  *server,
   gboolean ret;
   const gchar *host;
   const gchar *port;
-  const gchar *family;
   gint port_num;
-  GSocketAddress *address;
   GResolver *resolver;
   GList *resolved_addresses;
   GList *l;
 
   ret = FALSE;
-  address = NULL;
   resolver = NULL;
   resolved_addresses = NULL;
 
   host = g_hash_table_lookup (key_value_pairs, "host");
   port = g_hash_table_lookup (key_value_pairs, "port");
-  family = g_hash_table_lookup (key_value_pairs, "family");
+  /* family = g_hash_table_lookup (key_value_pairs, "family"); */
   if (g_hash_table_lookup (key_value_pairs, "noncefile") != NULL)
     {
       g_set_error_literal (error,
@@ -852,6 +843,7 @@ try_tcp (GDBusServer  *server,
       guint n;
       gsize bytes_written;
       gsize bytes_remaining;
+      char *file_escaped;
 
       server->nonce = g_new0 (guchar, 16);
       for (n = 0; n < 16; n++)
@@ -887,10 +879,12 @@ try_tcp (GDBusServer  *server,
           bytes_remaining -= ret;
         }
       close (fd);
+      file_escaped = g_uri_escape_string (server->nonce_file, "/\\", FALSE);
       server->client_address = g_strdup_printf ("nonce-tcp:host=%s,port=%d,noncefile=%s",
                                                 host,
                                                 port_num,
-                                                server->nonce_file);
+                                                file_escaped);
+      g_free (file_escaped);
     }
   else
     {
@@ -900,8 +894,7 @@ try_tcp (GDBusServer  *server,
   ret = TRUE;
 
  out:
-  g_list_foreach (resolved_addresses, (GFunc) g_object_unref, NULL);
-  g_list_free (resolved_addresses);
+  g_list_free_full (resolved_addresses, g_object_unref);
   g_object_unref (resolver);
   return ret;
 }
@@ -1107,9 +1100,6 @@ initable_init (GInitable     *initable,
         }
     }
 
-  if (!ret)
-    goto out;
-
  out:
 
   g_strfreev (addr_array);
@@ -1118,6 +1108,13 @@ initable_init (GInitable     *initable,
     {
       if (last_error != NULL)
         g_error_free (last_error);
+
+      /* Right now we don't have any transport not using the listener... */
+      g_assert (server->is_using_listener);
+      server->run_signal_handler_id = g_signal_connect (G_SOCKET_SERVICE (server->listener),
+                                                        "run",
+                                                        G_CALLBACK (on_run),
+                                                        server);
     }
   else
     {

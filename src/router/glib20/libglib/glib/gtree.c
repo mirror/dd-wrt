@@ -34,6 +34,7 @@
 
 #include "gatomic.h"
 #include "gtestutils.h"
+#include "gslice.h"
 
 /**
  * SECTION:trees-binary
@@ -94,8 +95,8 @@ struct _GTreeNode
   gpointer   value;       /* value stored at this node */
   GTreeNode *left;        /* left subtree */
   GTreeNode *right;       /* right subtree */
-  gint8      balance;     /* height (left) - height (right) */
-  guint8     left_child;  
+  gint8      balance;     /* height (right) - height (left) */
+  guint8     left_child;
   guint8     right_child;
 };
 
@@ -887,10 +888,10 @@ g_tree_lookup_extended (GTree         *tree,
 /**
  * g_tree_foreach:
  * @tree: a #GTree.
- * @func: the function to call for each node visited. If this function
- *   returns %TRUE, the traversal is stopped.
+ * @func: the function to call for each node visited.
+ *     If this function returns %TRUE, the traversal is stopped.
  * @user_data: user data to pass to the function.
- * 
+ *
  * Calls the given function for each of the key/value pairs in the #GTree.
  * The function is passed the key and value of each pair, and the given
  * @data parameter. The tree is traversed in sorted order.
@@ -1003,23 +1004,23 @@ g_tree_traverse (GTree         *tree,
 
 /**
  * g_tree_search:
- * @tree: a #GTree.
- * @search_func: a function used to search the #GTree. 
- * @user_data: the data passed as the second argument to the @search_func 
- * function.
- * 
+ * @tree: a #GTree
+ * @search_func: a function used to search the #GTree
+ * @user_data: the data passed as the second argument to @search_func
+ *
  * Searches a #GTree using @search_func.
  *
- * The @search_func is called with a pointer to the key of a key/value pair in 
- * the tree, and the passed in @user_data. If @search_func returns 0 for a 
- * key/value pair, then g_tree_search_func() will return the value of that 
- * pair. If @search_func returns -1,  searching will proceed among the 
- * key/value pairs that have a smaller key; if @search_func returns 1, 
- * searching will proceed among the key/value pairs that have a larger key.
+ * The @search_func is called with a pointer to the key of a key/value
+ * pair in the tree, and the passed in @user_data. If @search_func returns
+ * 0 for a key/value pair, then the corresponding value is returned as
+ * the result of g_tree_search(). If @search_func returns -1, searching
+ * will proceed among the key/value pairs that have a smaller key; if
+ * @search_func returns 1, searching will proceed among the key/value
+ * pairs that have a larger key.
  *
- * Return value: the value corresponding to the found key, or %NULL if the key 
- * was not found.
- **/
+ * Return value: the value corresponding to the found key, or %NULL if
+ * the key was not found.
+ */
 gpointer
 g_tree_search (GTree         *tree,
 	       GCompareFunc   search_func,
@@ -1253,7 +1254,6 @@ g_tree_node_rotate_left (GTreeNode *node)
   else
     {
       node->right_child = FALSE;
-      node->right = right;
       right->left_child = TRUE;
     }
   right->left = node;
@@ -1295,7 +1295,6 @@ g_tree_node_rotate_right (GTreeNode *node)
   else
     {
       node->left_child = FALSE;
-      node->left = left;
       left->right_child = TRUE;
     }
   left->right = node;

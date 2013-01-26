@@ -31,19 +31,23 @@
 #include "gdbusconnection.h"
 #include "gdbuserror.h"
 #include "gdbusprivate.h"
-#include "gio-marshal.h"
 #include "ginitable.h"
 #include "gasyncinitable.h"
 #include "gioerror.h"
 #include "gasyncresult.h"
 #include "gsimpleasyncresult.h"
 #include "gcancellable.h"
+#include "gdbusinterface.h"
+
+#ifdef G_OS_UNIX
+#include "gunixfdlist.h"
+#endif
 
 #include "glibintl.h"
 
 /**
  * SECTION:gdbusproxy
- * @short_description: Client-side proxies
+ * @short_description: Client-side D-Bus interface proxy
  * @include: gio/gio.h
  *
  * #GDBusProxy is a base class used for proxies to access a D-Bus
@@ -69,41 +73,90 @@
  * the message bus launching an owner (unless
  * %G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START is set).
  *
- * The generic #GDBusProxy::g-properties-changed and #GDBusProxy::g-signal
- * signals are not very convenient to work with. Therefore, the recommended
- * way of working with proxies is to subclass #GDBusProxy, and have
- * more natural properties and signals in your derived class.
+ * The generic #GDBusProxy::g-properties-changed and
+ * #GDBusProxy::g-signal signals are not very convenient to work
+ * with. Therefore, the recommended way of working with proxies is to
+ * subclass #GDBusProxy, and have more natural properties and signals
+ * in your derived class. See <xref linkend="gdbus-example-gdbus-codegen"/>
+ * for how this can easily be done using the
+ * <command><link linkend="gdbus-codegen">gdbus-codegen</link></command>
+ * tool.
  *
- * See <xref linkend="gdbus-example-proxy-subclass"/> for an example.
+ * A #GDBusProxy instance can be used from multiple threads but note
+ * that all signals (e.g. #GDBusProxy::g-signal, #GDBusProxy::g-properties-changed
+ * and #GObject::notify) are emitted in the
+ * <link linkend="g-main-context-push-thread-default">thread-default main loop</link>
+ * of the thread where the instance was constructed.
  *
  * <example id="gdbus-wellknown-proxy"><title>GDBusProxy for a well-known-name</title><programlisting><xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../../gio/tests/gdbus-example-watch-proxy.c"><xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback></xi:include></programlisting></example>
  */
 
+/* lock protecting the mutable properties: name_owner, timeout_msec,
+ * expected_interface, and the properties hash table
+ */
+G_LOCK_DEFINE_STATIC (properties_lock);
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+G_LOCK_DEFINE_STATIC (signal_subscription_lock);
+
+typedef struct
+{
+  volatile gint ref_count;
+  GDBusProxy *proxy;
+} SignalSubscriptionData;
+
+static SignalSubscriptionData *
+signal_subscription_ref (SignalSubscriptionData *data)
+{
+  g_atomic_int_inc (&data->ref_count);
+  return data;
+}
+
+static void
+signal_subscription_unref (SignalSubscriptionData *data)
+{
+  if (g_atomic_int_dec_and_test (&data->ref_count))
+    {
+      g_slice_free (SignalSubscriptionData, data);
+    }
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
 struct _GDBusProxyPrivate
 {
   GBusType bus_type;
+  GDBusProxyFlags flags;
   GDBusConnection *connection;
 
-  GDBusProxyFlags flags;
   gchar *name;
+  /* mutable, protected by properties_lock */
   gchar *name_owner;
   gchar *object_path;
   gchar *interface_name;
+  /* mutable, protected by properties_lock */
   gint timeout_msec;
 
   guint name_owner_changed_subscription_id;
 
   GCancellable *get_all_cancellable;
 
-  /* gchar* -> GVariant* */
+  /* gchar* -> GVariant*, protected by properties_lock */
   GHashTable *properties;
 
+  /* mutable, protected by properties_lock */
   GDBusInterfaceInfo *expected_interface;
 
-  guint properties_changed_subscriber_id;
-  guint signals_subscriber_id;
+  guint properties_changed_subscription_id;
+  guint signals_subscription_id;
 
   gboolean initialized;
+
+  /* mutable, protected by properties_lock */
+  GDBusObject *object;
+
+  SignalSubscriptionData *signal_subscription_data;
 };
 
 enum
@@ -127,15 +180,33 @@ enum
   LAST_SIGNAL,
 };
 
-guint signals[LAST_SIGNAL] = {0};
+static guint signals[LAST_SIGNAL] = {0};
 
+static void dbus_interface_iface_init (GDBusInterfaceIface *dbus_interface_iface);
 static void initable_iface_init       (GInitableIface *initable_iface);
 static void async_initable_iface_init (GAsyncInitableIface *async_initable_iface);
 
 G_DEFINE_TYPE_WITH_CODE (GDBusProxy, g_dbus_proxy, G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (G_TYPE_DBUS_INTERFACE, dbus_interface_iface_init)
                          G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, initable_iface_init)
                          G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, async_initable_iface_init)
                          );
+
+static void
+g_dbus_proxy_dispose (GObject *object)
+{
+  GDBusProxy *proxy = G_DBUS_PROXY (object);
+  G_LOCK (signal_subscription_lock);
+  if (proxy->priv->signal_subscription_data != NULL)
+    {
+      proxy->priv->signal_subscription_data->proxy = NULL;
+      signal_subscription_unref (proxy->priv->signal_subscription_data);
+      proxy->priv->signal_subscription_data = NULL;
+    }
+  G_UNLOCK (signal_subscription_lock);
+
+  G_OBJECT_CLASS (g_dbus_proxy_parent_class)->dispose (object);
+}
 
 static void
 g_dbus_proxy_finalize (GObject *object)
@@ -148,15 +219,16 @@ g_dbus_proxy_finalize (GObject *object)
     g_dbus_connection_signal_unsubscribe (proxy->priv->connection,
                                           proxy->priv->name_owner_changed_subscription_id);
 
-  if (proxy->priv->properties_changed_subscriber_id > 0)
+  if (proxy->priv->properties_changed_subscription_id > 0)
     g_dbus_connection_signal_unsubscribe (proxy->priv->connection,
-                                          proxy->priv->properties_changed_subscriber_id);
+                                          proxy->priv->properties_changed_subscription_id);
 
-  if (proxy->priv->signals_subscriber_id > 0)
+  if (proxy->priv->signals_subscription_id > 0)
     g_dbus_connection_signal_unsubscribe (proxy->priv->connection,
-                                          proxy->priv->signals_subscriber_id);
+                                          proxy->priv->signals_subscription_id);
 
-  g_object_unref (proxy->priv->connection);
+  if (proxy->priv->connection != NULL)
+    g_object_unref (proxy->priv->connection);
   g_free (proxy->priv->name);
   g_free (proxy->priv->name_owner);
   g_free (proxy->priv->object_path);
@@ -165,7 +237,13 @@ g_dbus_proxy_finalize (GObject *object)
     g_hash_table_unref (proxy->priv->properties);
 
   if (proxy->priv->expected_interface != NULL)
-    g_dbus_interface_info_unref (proxy->priv->expected_interface);
+    {
+      g_dbus_interface_info_cache_release (proxy->priv->expected_interface);
+      g_dbus_interface_info_unref (proxy->priv->expected_interface);
+    }
+
+  if (proxy->priv->object != NULL)
+    g_object_remove_weak_pointer (G_OBJECT (proxy->priv->object), (gpointer *) &proxy->priv->object);
 
   G_OBJECT_CLASS (g_dbus_proxy_parent_class)->finalize (object);
 }
@@ -193,7 +271,7 @@ g_dbus_proxy_get_property (GObject    *object,
       break;
 
     case PROP_G_NAME_OWNER:
-      g_value_set_string (value, proxy->priv->name_owner);
+      g_value_take_string (value, g_dbus_proxy_get_name_owner (proxy));
       break;
 
     case PROP_G_OBJECT_PATH:
@@ -205,7 +283,7 @@ g_dbus_proxy_get_property (GObject    *object,
       break;
 
     case PROP_G_DEFAULT_TIMEOUT:
-      g_value_set_int (value, proxy->priv->timeout_msec);
+      g_value_set_int (value, g_dbus_proxy_get_default_timeout (proxy));
       break;
 
     case PROP_G_INTERFACE_INFO:
@@ -271,6 +349,7 @@ g_dbus_proxy_class_init (GDBusProxyClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
+  gobject_class->dispose      = g_dbus_proxy_dispose;
   gobject_class->finalize     = g_dbus_proxy_finalize;
   gobject_class->set_property = g_dbus_proxy_set_property;
   gobject_class->get_property = g_dbus_proxy_get_property;
@@ -282,10 +361,33 @@ g_dbus_proxy_class_init (GDBusProxyClass *klass)
    * GDBusProxy:g-interface-info:
    *
    * Ensure that interactions with this proxy conform to the given
-   * interface.  For example, when completing a method call, if the
-   * type signature of the message isn't what's expected, the given
-   * #GError is set.  Signals that have a type signature mismatch are
-   * simply dropped.
+   * interface. This is mainly to ensure that malformed data received
+   * from the other peer is ignored. The given #GDBusInterfaceInfo is
+   * said to be the <emphasis>expected interface</emphasis>.
+   *
+   * The checks performed are:
+   * <itemizedlist>
+   *   <listitem><para>
+   *     When completing a method call, if the type signature of
+   *     the reply message isn't what's expected, the reply is
+   *     discarded and the #GError is set to %G_IO_ERROR_INVALID_ARGUMENT.
+   *   </para></listitem>
+   *   <listitem><para>
+   *     Received signals that have a type signature mismatch are dropped and
+   *     a warning is logged via g_warning().
+   *   </para></listitem>
+   *   <listitem><para>
+   *     Properties received via the initial <literal>GetAll()</literal> call
+   *     or via the <literal>::PropertiesChanged</literal> signal (on the
+   *     <ulink url="http://dbus.freedesktop.org/doc/dbus-specification.html#standard-interfaces-properties">org.freedesktop.DBus.Properties</ulink> interface) or
+   *     set using g_dbus_proxy_set_cached_property() with a type signature
+   *     mismatch are ignored and a warning is logged via g_warning().
+   *   </para></listitem>
+   * </itemizedlist>
+   * Note that these checks are never done on methods, signals and
+   * properties that are not referenced in the given
+   * #GDBusInterfaceInfo, since extending a D-Bus interface on the
+   * service-side is not considered an ABI break.
    *
    * Since: 2.26
    */
@@ -388,7 +490,7 @@ g_dbus_proxy_class_init (GDBusProxyClass *klass)
   /**
    * GDBusProxy:g-name-owner:
    *
-   * The unique name that owns #GDBusProxy:name or %NULL if no-one
+   * The unique name that owns #GDBusProxy:g-name or %NULL if no-one
    * currently owns that name. You may connect to #GObject::notify signal to
    * track changes to this property.
    *
@@ -485,6 +587,10 @@ g_dbus_proxy_class_init (GDBusProxyClass *klass)
    * that both @changed_properties and @invalidated_properties are
    * guaranteed to never be %NULL (either may be empty though).
    *
+   * If the proxy has the flag
+   * %G_DBUS_PROXY_FLAGS_GET_INVALIDATED_PROPERTIES set, then
+   * @invalidated_properties will always be empty.
+   *
    * This signal corresponds to the
    * <literal>PropertiesChanged</literal> D-Bus signal on the
    * <literal>org.freedesktop.DBus.Properties</literal> interface.
@@ -493,11 +599,11 @@ g_dbus_proxy_class_init (GDBusProxyClass *klass)
    */
   signals[PROPERTIES_CHANGED_SIGNAL] = g_signal_new ("g-properties-changed",
                                                      G_TYPE_DBUS_PROXY,
-                                                     G_SIGNAL_RUN_LAST,
+                                                     G_SIGNAL_RUN_LAST | G_SIGNAL_MUST_COLLECT,
                                                      G_STRUCT_OFFSET (GDBusProxyClass, g_properties_changed),
                                                      NULL,
                                                      NULL,
-                                                     _gio_marshal_VOID__VARIANT_BOXED,
+                                                     NULL,
                                                      G_TYPE_NONE,
                                                      2,
                                                      G_TYPE_VARIANT,
@@ -506,7 +612,7 @@ g_dbus_proxy_class_init (GDBusProxyClass *klass)
   /**
    * GDBusProxy::g-signal:
    * @proxy: The #GDBusProxy emitting the signal.
-   * @sender_name: The sender of the signal or %NULL if the connection is not a bus connection.
+   * @sender_name: (allow-none): The sender of the signal or %NULL if the connection is not a bus connection.
    * @signal_name: The name of the signal.
    * @parameters: A #GVariant tuple with parameters for the signal.
    *
@@ -516,11 +622,11 @@ g_dbus_proxy_class_init (GDBusProxyClass *klass)
    */
   signals[SIGNAL_SIGNAL] = g_signal_new ("g-signal",
                                          G_TYPE_DBUS_PROXY,
-                                         G_SIGNAL_RUN_LAST,
+                                         G_SIGNAL_RUN_LAST | G_SIGNAL_MUST_COLLECT,
                                          G_STRUCT_OFFSET (GDBusProxyClass, g_signal),
                                          NULL,
                                          NULL,
-                                         _gio_marshal_VOID__STRING_STRING_VARIANT,
+                                         NULL,
                                          G_TYPE_NONE,
                                          3,
                                          G_TYPE_STRING,
@@ -535,6 +641,9 @@ static void
 g_dbus_proxy_init (GDBusProxy *proxy)
 {
   proxy->priv = G_TYPE_INSTANCE_GET_PRIVATE (proxy, G_TYPE_DBUS_PROXY, GDBusProxyPrivate);
+  proxy->priv->signal_subscription_data = g_slice_new0 (SignalSubscriptionData);
+  proxy->priv->signal_subscription_data->ref_count = 1;
+  proxy->priv->signal_subscription_data->proxy = proxy;
   proxy->priv->properties = g_hash_table_new_full (g_str_hash,
                                                    g_str_equal,
                                                    g_free,
@@ -556,8 +665,9 @@ property_name_sort_func (const gchar **a,
  *
  * Gets the names of all cached properties on @proxy.
  *
- * Returns: A %NULL-terminated array of strings or %NULL if @proxy has
- * no cached properties. Free the returned array with g_strfreev().
+ * Returns: (transfer full): A %NULL-terminated array of strings or %NULL if
+ *          @proxy has no cached properties. Free the returned array with
+ *          g_strfreev().
  *
  * Since: 2.26
  */
@@ -570,6 +680,8 @@ g_dbus_proxy_get_cached_property_names (GDBusProxy  *proxy)
   const gchar *key;
 
   g_return_val_if_fail (G_IS_DBUS_PROXY (proxy), NULL);
+
+  G_LOCK (properties_lock);
 
   names = NULL;
   if (g_hash_table_size (proxy->priv->properties) == 0)
@@ -586,26 +698,25 @@ g_dbus_proxy_get_cached_property_names (GDBusProxy  *proxy)
   names = (gchar **) g_ptr_array_free (p, FALSE);
 
  out:
+  G_UNLOCK (properties_lock);
   return names;
 }
 
+/* properties_lock must be held for as long as you will keep the
+ * returned value
+ */
 static const GDBusPropertyInfo *
-lookup_property_info_or_warn (GDBusProxy  *proxy,
-                              const gchar *property_name)
+lookup_property_info (GDBusProxy  *proxy,
+                      const gchar *property_name)
 {
-  const GDBusPropertyInfo *info;
+  const GDBusPropertyInfo *info = NULL;
 
   if (proxy->priv->expected_interface == NULL)
-    return NULL;
+    goto out;
 
   info = g_dbus_interface_info_lookup_property (proxy->priv->expected_interface, property_name);
-  if (info == NULL)
-    {
-      g_warning ("Trying to lookup property %s which isn't in expected interface %s",
-                 property_name,
-                 proxy->priv->expected_interface->name);
-    }
 
+ out:
   return info;
 }
 
@@ -618,8 +729,8 @@ lookup_property_info_or_warn (GDBusProxy  *proxy,
  * blocking IO.
  *
  * If @proxy has an expected interface (see
- * #GDBusProxy:g-interface-info), then @property_name (for existence)
- * is checked against it.
+ * #GDBusProxy:g-interface-info) and @property_name is referenced by
+ * it, then @value is checked against the type of the property.
  *
  * Returns: A reference to the #GVariant instance that holds the value
  * for @property_name or %NULL if the value is not in the cache. The
@@ -631,23 +742,38 @@ GVariant *
 g_dbus_proxy_get_cached_property (GDBusProxy   *proxy,
                                   const gchar  *property_name)
 {
+  const GDBusPropertyInfo *info;
   GVariant *value;
 
   g_return_val_if_fail (G_IS_DBUS_PROXY (proxy), NULL);
   g_return_val_if_fail (property_name != NULL, NULL);
 
+  G_LOCK (properties_lock);
+
   value = g_hash_table_lookup (proxy->priv->properties, property_name);
   if (value == NULL)
+    goto out;
+
+  info = lookup_property_info (proxy, property_name);
+  if (info != NULL)
     {
-      const GDBusPropertyInfo *info;
-      info = lookup_property_info_or_warn (proxy, property_name);
-      /* no difference */
-      goto out;
+      const gchar *type_string = g_variant_get_type_string (value);
+      if (g_strcmp0 (type_string, info->signature) != 0)
+        {
+          g_warning ("Trying to get property %s with type %s but according to the expected "
+                     "interface the type is %s",
+                     property_name,
+                     type_string,
+                     info->signature);
+          value = NULL;
+          goto out;
+        }
     }
 
   g_variant_ref (value);
 
  out:
+  G_UNLOCK (properties_lock);
   return value;
 }
 
@@ -664,8 +790,8 @@ g_dbus_proxy_get_cached_property (GDBusProxy   *proxy,
  * property cache.
  *
  * If @proxy has an expected interface (see
- * #GDBusProxy:g-interface-info), then @property_name (for existence)
- * and @value (for the type) is checked against it.
+ * #GDBusProxy:g-interface-info) and @property_name is referenced by
+ * it, then @value is checked against the type of the property.
  *
  * If the @value #GVariant is floating, it is consumed. This allows
  * convenient 'inline' use of g_variant_new(), e.g.
@@ -704,15 +830,17 @@ g_dbus_proxy_set_cached_property (GDBusProxy   *proxy,
   g_return_if_fail (G_IS_DBUS_PROXY (proxy));
   g_return_if_fail (property_name != NULL);
 
+  G_LOCK (properties_lock);
+
   if (value != NULL)
     {
-      info = lookup_property_info_or_warn (proxy, property_name);
+      info = lookup_property_info (proxy, property_name);
       if (info != NULL)
         {
           if (g_strcmp0 (info->signature, g_variant_get_type_string (value)) != 0)
             {
-              g_warning (_("Trying to set property %s of type %s but according to the expected "
-                           "interface the type is %s"),
+              g_warning ("Trying to set property %s of type %s but according to the expected "
+			 "interface the type is %s",
                          property_name,
                          g_variant_get_type_string (value),
                          info->signature);
@@ -729,7 +857,7 @@ g_dbus_proxy_set_cached_property (GDBusProxy   *proxy,
     }
 
  out:
-  ;
+  G_UNLOCK (properties_lock);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -743,13 +871,58 @@ on_signal_received (GDBusConnection *connection,
                     GVariant        *parameters,
                     gpointer         user_data)
 {
-  GDBusProxy *proxy = G_DBUS_PROXY (user_data);
+  SignalSubscriptionData *data = user_data;
+  GDBusProxy *proxy;
+
+  G_LOCK (signal_subscription_lock);
+  proxy = data->proxy;
+  if (proxy == NULL)
+    {
+      G_UNLOCK (signal_subscription_lock);
+      return;
+    }
+  else
+    {
+      g_object_ref (proxy);
+      G_UNLOCK (signal_subscription_lock);
+    }
 
   if (!proxy->priv->initialized)
     goto out;
 
+  G_LOCK (properties_lock);
+
   if (proxy->priv->name_owner != NULL && g_strcmp0 (sender_name, proxy->priv->name_owner) != 0)
-    goto out;
+    {
+      G_UNLOCK (properties_lock);
+      goto out;
+    }
+
+  if (proxy->priv->expected_interface != NULL)
+    {
+      const GDBusSignalInfo *info;
+      info = g_dbus_interface_info_lookup_signal (proxy->priv->expected_interface, signal_name);
+      if (info != NULL)
+        {
+          GVariantType *expected_type;
+          expected_type = _g_dbus_compute_complete_signature (info->args);
+          if (!g_variant_type_equal (expected_type, g_variant_get_type (parameters)))
+            {
+              gchar *expected_type_string = g_variant_type_dup_string (expected_type);
+              g_warning ("Dropping signal %s of type %s since the type from the expected interface is %s",
+                         info->name,
+                         g_variant_get_type_string (parameters),
+                         expected_type_string);
+              g_free (expected_type_string);
+              g_variant_type_free (expected_type);
+              G_UNLOCK (properties_lock);
+              goto out;
+            }
+          g_variant_type_free (expected_type);
+        }
+    }
+
+  G_UNLOCK (properties_lock);
 
   g_signal_emit (proxy,
                  signals[SIGNAL_SIGNAL],
@@ -757,11 +930,107 @@ on_signal_received (GDBusConnection *connection,
                  sender_name,
                  signal_name,
                  parameters);
+
  out:
-  ;
+  if (proxy != NULL)
+    g_object_unref (proxy);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
+
+/* must hold properties_lock */
+static void
+insert_property_checked (GDBusProxy  *proxy,
+			 gchar *property_name,
+			 GVariant *value)
+{
+  if (proxy->priv->expected_interface != NULL)
+    {
+      const GDBusPropertyInfo *info;
+      info = g_dbus_interface_info_lookup_property (proxy->priv->expected_interface, property_name);
+      /* Only check known properties */
+      if (info != NULL)
+        {
+          /* Warn about properties with the wrong type */
+          if (g_strcmp0 (info->signature, g_variant_get_type_string (value)) != 0)
+            {
+              g_warning ("Received property %s with type %s does not match expected type "
+                         "%s in the expected interface",
+                         property_name,
+                         g_variant_get_type_string (value),
+                         info->signature);
+              goto invalid;
+            }
+        }
+    }
+
+  g_hash_table_insert (proxy->priv->properties,
+		       property_name, /* adopts string */
+		       value); /* adopts value */
+
+  return;
+
+ invalid:
+  g_variant_unref (value);
+  g_free (property_name);
+}
+
+typedef struct
+{
+  GDBusProxy *proxy;
+  gchar *prop_name;
+} InvalidatedPropGetData;
+
+static void
+invalidated_property_get_cb (GDBusConnection *connection,
+                             GAsyncResult    *res,
+                             gpointer         user_data)
+{
+  InvalidatedPropGetData *data = user_data;
+  const gchar *invalidated_properties[] = {NULL};
+  GVariantBuilder builder;
+  GVariant *value = NULL;
+  GVariant *unpacked_value = NULL;
+
+  /* errors are fine, the other end could have disconnected */
+  value = g_dbus_connection_call_finish (connection, res, NULL);
+  if (value == NULL)
+    {
+      goto out;
+    }
+
+  if (!g_variant_is_of_type (value, G_VARIANT_TYPE ("(v)")))
+    {
+      g_warning ("Expected type `(v)' for Get() reply, got `%s'", g_variant_get_type_string (value));
+      goto out;
+    }
+
+  g_variant_get (value, "(v)", &unpacked_value);
+
+  /* synthesize the a{sv} in the PropertiesChanged signal */
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+  g_variant_builder_add (&builder, "{sv}", data->prop_name, unpacked_value);
+
+  G_LOCK (properties_lock);
+  insert_property_checked (data->proxy,
+                           data->prop_name,  /* adopts string */
+                           unpacked_value);  /* adopts value */
+  data->prop_name = NULL;
+  G_UNLOCK (properties_lock);
+
+  g_signal_emit (data->proxy,
+                 signals[PROPERTIES_CHANGED_SIGNAL], 0,
+                 g_variant_builder_end (&builder), /* consumed */
+                 invalidated_properties);
+
+
+ out:
+  if (value != NULL)
+    g_variant_unref (value);
+  g_object_unref (data->proxy);
+  g_free (data->prop_name);
+  g_slice_free (InvalidatedPropGetData, data);
+}
 
 static void
 on_properties_changed (GDBusConnection *connection,
@@ -772,8 +1041,9 @@ on_properties_changed (GDBusConnection *connection,
                        GVariant        *parameters,
                        gpointer         user_data)
 {
-  GDBusProxy *proxy = G_DBUS_PROXY (user_data);
-  GError *error;
+  SignalSubscriptionData *data = user_data;
+  gboolean emit_g_signal = FALSE;
+  GDBusProxy *proxy;
   const gchar *interface_name_for_signal;
   GVariant *changed_properties;
   gchar **invalidated_properties;
@@ -782,20 +1052,38 @@ on_properties_changed (GDBusConnection *connection,
   GVariant *value;
   guint n;
 
-  error = NULL;
   changed_properties = NULL;
   invalidated_properties = NULL;
+
+  G_LOCK (signal_subscription_lock);
+  proxy = data->proxy;
+  if (proxy == NULL)
+    {
+      G_UNLOCK (signal_subscription_lock);
+      goto out;
+    }
+  else
+    {
+      g_object_ref (proxy);
+      G_UNLOCK (signal_subscription_lock);
+    }
 
   if (!proxy->priv->initialized)
     goto out;
 
+  G_LOCK (properties_lock);
+
   if (proxy->priv->name_owner != NULL && g_strcmp0 (sender_name, proxy->priv->name_owner) != 0)
-    goto out;
+    {
+      G_UNLOCK (properties_lock);
+      goto out;
+    }
 
   if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(sa{sv}as)")))
     {
       g_warning ("Value for PropertiesChanged signal with type `%s' does not match `(sa{sv}as)'",
                  g_variant_get_type_string (parameters));
+      G_UNLOCK (properties_lock);
       goto out;
     }
 
@@ -806,31 +1094,70 @@ on_properties_changed (GDBusConnection *connection,
                  &invalidated_properties);
 
   if (g_strcmp0 (interface_name_for_signal, proxy->priv->interface_name) != 0)
-    goto out;
+    {
+      G_UNLOCK (properties_lock);
+      goto out;
+    }
 
   g_variant_iter_init (&iter, changed_properties);
   while (g_variant_iter_next (&iter, "{sv}", &key, &value))
     {
-      g_hash_table_insert (proxy->priv->properties,
-                           key, /* adopts string */
-                           value); /* adopts value */
+      insert_property_checked (proxy,
+			       key, /* adopts string */
+			       value); /* adopts value */
+      emit_g_signal = TRUE;
     }
 
-  for (n = 0; invalidated_properties[n] != NULL; n++)
+  if (proxy->priv->flags & G_DBUS_PROXY_FLAGS_GET_INVALIDATED_PROPERTIES)
     {
-      g_hash_table_remove (proxy->priv->properties, invalidated_properties[n]);
+      if (proxy->priv->name_owner != NULL)
+        {
+          for (n = 0; invalidated_properties[n] != NULL; n++)
+            {
+              InvalidatedPropGetData *data;
+              data = g_slice_new0 (InvalidatedPropGetData);
+              data->proxy = g_object_ref (proxy);
+              data->prop_name = g_strdup (invalidated_properties[n]);
+              g_dbus_connection_call (proxy->priv->connection,
+                                      proxy->priv->name_owner,
+                                      proxy->priv->object_path,
+                                      "org.freedesktop.DBus.Properties",
+                                      "Get",
+                                      g_variant_new ("(ss)", proxy->priv->interface_name, data->prop_name),
+                                      G_VARIANT_TYPE ("(v)"),
+                                      G_DBUS_CALL_FLAGS_NONE,
+                                      -1,           /* timeout */
+                                      NULL,         /* GCancellable */
+                                      (GAsyncReadyCallback) invalidated_property_get_cb,
+                                      data);
+            }
+        }
+    }
+  else
+    {
+      emit_g_signal = TRUE;
+      for (n = 0; invalidated_properties[n] != NULL; n++)
+        {
+          g_hash_table_remove (proxy->priv->properties, invalidated_properties[n]);
+        }
     }
 
-  /* emit signal */
-  g_signal_emit (proxy, signals[PROPERTIES_CHANGED_SIGNAL],
-                 0,
-                 changed_properties,
-                 invalidated_properties);
+  G_UNLOCK (properties_lock);
+
+  if (emit_g_signal)
+    {
+      g_signal_emit (proxy, signals[PROPERTIES_CHANGED_SIGNAL],
+                     0,
+                     changed_properties,
+                     invalidated_properties);
+    }
 
  out:
   if (changed_properties != NULL)
     g_variant_unref (changed_properties);
   g_free (invalidated_properties);
+  if (proxy != NULL)
+    g_object_unref (proxy);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -842,6 +1169,7 @@ process_get_all_reply (GDBusProxy *proxy,
   GVariantIter *iter;
   gchar *key;
   GVariant *value;
+  guint num_properties;
 
   if (!g_variant_is_of_type (result, G_VARIANT_TYPE ("(a{sv})")))
     {
@@ -850,17 +1178,22 @@ process_get_all_reply (GDBusProxy *proxy,
       goto out;
     }
 
+  G_LOCK (properties_lock);
+
   g_variant_get (result, "(a{sv})", &iter);
   while (g_variant_iter_next (iter, "{sv}", &key, &value))
     {
-      g_hash_table_insert (proxy->priv->properties,
-                           key, /* adopts string */
-                           value); /* adopts value */
+      insert_property_checked (proxy,
+			       key, /* adopts string */
+			       value); /* adopts value */
     }
   g_variant_iter_free (iter);
 
+  num_properties = g_hash_table_size (proxy->priv->properties);
+  G_UNLOCK (properties_lock);
+
   /* Synthesize ::g-properties-changed changed */
-  if (g_hash_table_size (proxy->priv->properties) > 0)
+  if (num_properties > 0)
     {
       GVariant *changed_properties;
       const gchar *invalidated_properties[1] = {NULL};
@@ -923,11 +1256,12 @@ on_name_owner_changed_get_all_cb (GDBusConnection *connection,
   /* and finally we can notify */
   if (!cancelled)
     {
+      G_LOCK (properties_lock);
       g_free (data->proxy->priv->name_owner);
       data->proxy->priv->name_owner = data->name_owner;
       data->name_owner = NULL; /* to avoid an extra copy, we steal the string */
-
       g_hash_table_remove_all (data->proxy->priv->properties);
+      G_UNLOCK (properties_lock);
       if (result != NULL)
         {
           process_get_all_reply (data->proxy, result);
@@ -955,9 +1289,23 @@ on_name_owner_changed (GDBusConnection *connection,
                        GVariant         *parameters,
                        gpointer          user_data)
 {
-  GDBusProxy *proxy = G_DBUS_PROXY (user_data);
+  SignalSubscriptionData *data = user_data;
+  GDBusProxy *proxy;
   const gchar *old_owner;
   const gchar *new_owner;
+
+  G_LOCK (signal_subscription_lock);
+  proxy = data->proxy;
+  if (proxy == NULL)
+    {
+      G_UNLOCK (signal_subscription_lock);
+      goto out;
+    }
+  else
+    {
+      g_object_ref (proxy);
+      G_UNLOCK (signal_subscription_lock);
+    }
 
   /* if we are already trying to load properties, cancel that */
   if (proxy->priv->get_all_cancellable != NULL)
@@ -974,6 +1322,7 @@ on_name_owner_changed (GDBusConnection *connection,
 
   if (strlen (new_owner) == 0)
     {
+      G_LOCK (properties_lock);
       g_free (proxy->priv->name_owner);
       proxy->priv->name_owner = NULL;
 
@@ -982,14 +1331,13 @@ on_name_owner_changed (GDBusConnection *connection,
           g_hash_table_size (proxy->priv->properties) > 0)
         {
           GVariantBuilder builder;
-          GVariant *changed_properties;
           GPtrArray *invalidated_properties;
           GHashTableIter iter;
           const gchar *key;
 
           /* Build changed_properties (always empty) and invalidated_properties ... */
           g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-          changed_properties = g_variant_builder_end (&builder);
+
           invalidated_properties = g_ptr_array_new_with_free_func (g_free);
           g_hash_table_iter_init (&iter, proxy->priv->properties);
           while (g_hash_table_iter_next (&iter, (gpointer) &key, NULL))
@@ -999,32 +1347,46 @@ on_name_owner_changed (GDBusConnection *connection,
           /* ... throw out the properties ... */
           g_hash_table_remove_all (proxy->priv->properties);
 
+          G_UNLOCK (properties_lock);
+
           /* ... and finally emit the ::g-properties-changed signal */
           g_signal_emit (proxy, signals[PROPERTIES_CHANGED_SIGNAL],
                          0,
-                         changed_properties,
+                         g_variant_builder_end (&builder) /* consumed */,
                          (const gchar* const *) invalidated_properties->pdata);
-          g_variant_unref (changed_properties);
           g_ptr_array_unref (invalidated_properties);
+        }
+      else
+        {
+          G_UNLOCK (properties_lock);
         }
       g_object_notify (G_OBJECT (proxy), "g-name-owner");
     }
   else
     {
+      G_LOCK (properties_lock);
+
       /* ignore duplicates - this can happen when activating the service */
       if (g_strcmp0 (new_owner, proxy->priv->name_owner) == 0)
-        goto out;
+        {
+          G_UNLOCK (properties_lock);
+          goto out;
+        }
 
       if (proxy->priv->flags & G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES)
         {
           g_free (proxy->priv->name_owner);
           proxy->priv->name_owner = g_strdup (new_owner);
+
           g_hash_table_remove_all (proxy->priv->properties);
+          G_UNLOCK (properties_lock);
           g_object_notify (G_OBJECT (proxy), "g-name-owner");
         }
       else
         {
           LoadPropertiesOnNameOwnerChangedData *data;
+
+          G_UNLOCK (properties_lock);
 
           /* start loading properties.. only then emit notify::g-name-owner .. we
            * need to be able to cancel this in the event another NameOwnerChanged
@@ -1053,7 +1415,8 @@ on_name_owner_changed (GDBusConnection *connection,
     }
 
  out:
-  ;
+  if (proxy != NULL)
+    g_object_unref (proxy);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -1114,52 +1477,43 @@ async_init_get_all_cb (GDBusConnection *connection,
   async_init_data_free (data);
 }
 
-
 static void
-async_init_get_name_owner_cb (GDBusConnection *connection,
-                              GAsyncResult    *res,
-                              gpointer         user_data)
+async_init_data_set_name_owner (AsyncInitData *data,
+                                const gchar   *name_owner)
 {
-  AsyncInitData *data = user_data;
+  gboolean get_all;
 
-  if (res != NULL)
+
+  if (name_owner != NULL)
     {
-      GError *error;
-      GVariant *result;
-
-      error = NULL;
-      result = g_dbus_connection_call_finish (connection,
-                                              res,
-                                              &error);
-      if (result == NULL)
-        {
-          if (error->domain == G_DBUS_ERROR &&
-              error->code == G_DBUS_ERROR_NAME_HAS_NO_OWNER)
-            {
-              g_error_free (error);
-            }
-          else
-            {
-              g_simple_async_result_take_error (data->simple, error);
-              g_simple_async_result_complete_in_idle (data->simple);
-              async_init_data_free (data);
-              goto out;
-            }
-        }
-      else
-        {
-          g_variant_get (result,
-                         "(s)",
-                         &data->proxy->priv->name_owner);
-          g_variant_unref (result);
-        }
+      /* it starts as NULL anyway */
+      G_LOCK (properties_lock);
+      data->proxy->priv->name_owner = g_strdup (name_owner);
+      G_UNLOCK (properties_lock);
     }
 
-  if (!(data->proxy->priv->flags & G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES))
+  get_all = TRUE;
+
+  if (data->proxy->priv->flags & G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES)
+    {
+      /* Don't load properties if the API user doesn't want them */
+      get_all = FALSE;
+    }
+  else if (name_owner == NULL && data->proxy->priv->name != NULL)
+    {
+      /* Don't attempt to load properties if the name_owner is NULL (which
+       * usually means the name isn't owned), unless name is also NULL (which
+       * means we actually wanted to talk to the directly-connected process -
+       * either dbus-daemon or a peer - instead of going via dbus-daemon)
+       */
+        get_all = FALSE;
+    }
+
+  if (get_all)
     {
       /* load all properties asynchronously */
       g_dbus_connection_call (data->proxy->priv->connection,
-                              data->proxy->priv->name_owner,
+                              name_owner,
                               data->proxy->priv->object_path,
                               "org.freedesktop.DBus.Properties",
                               "GetAll",
@@ -1176,9 +1530,45 @@ async_init_get_name_owner_cb (GDBusConnection *connection,
       g_simple_async_result_complete_in_idle (data->simple);
       async_init_data_free (data);
     }
+}
 
- out:
-  ;
+static void
+async_init_get_name_owner_cb (GDBusConnection *connection,
+                              GAsyncResult    *res,
+                              gpointer         user_data)
+{
+  AsyncInitData *data = user_data;
+  GError *error;
+  GVariant *result;
+
+  error = NULL;
+  result = g_dbus_connection_call_finish (connection,
+                                          res,
+                                          &error);
+  if (result == NULL)
+    {
+      if (error->domain == G_DBUS_ERROR &&
+          error->code == G_DBUS_ERROR_NAME_HAS_NO_OWNER)
+        {
+          g_error_free (error);
+          async_init_data_set_name_owner (data, NULL);
+        }
+      else
+        {
+          g_simple_async_result_take_error (data->simple, error);
+          g_simple_async_result_complete_in_idle (data->simple);
+          async_init_data_free (data);
+        }
+    }
+  else
+    {
+      /* borrowed from result to avoid an extra copy */
+      const gchar *name_owner;
+
+      g_variant_get (result, "(&s)", &name_owner);
+      async_init_data_set_name_owner (data, name_owner);
+      g_variant_unref (result);
+    }
 }
 
 static void
@@ -1219,21 +1609,39 @@ async_init_start_service_by_name_cb (GDBusConnection *connection,
        *   org.freedesktop.DBus.Error.ServiceUnknown: The name org.gnome.Epiphany2
        *   was not provided by any .service files
        *
+       * or (see #677718)
+       *
+       *   org.freedesktop.systemd1.Masked: Unit polkit.service is masked.
+       *
        * This doesn't mean that the name doesn't have an owner, just
-       * that it's not provided by a .service file. So just proceed to
-       * invoke GetNameOwner() if dealing with that error.
+       * that it's not provided by a .service file or can't currently
+       * be started.
+       *
+       * In particular, in both cases, it could be that a service
+       * owner will actually appear later. So instead of erroring out,
+       * we just proceed to invoke GetNameOwner() if dealing with the
+       * kind of errors above.
        */
-      if (error->domain == G_DBUS_ERROR &&
-          error->code == G_DBUS_ERROR_SERVICE_UNKNOWN)
+      if (error->domain == G_DBUS_ERROR && error->code == G_DBUS_ERROR_SERVICE_UNKNOWN)
         {
           g_error_free (error);
         }
       else
         {
-          g_prefix_error (&error,
-                          _("Error calling StartServiceByName for %s: "),
-                          data->proxy->priv->name);
-          goto failed;
+          gchar *remote_error = g_dbus_error_get_remote_error (error);
+          if (g_strcmp0 (remote_error, "org.freedesktop.systemd1.Masked") == 0)
+            {
+              g_error_free (error);
+              g_free (remote_error);
+            }
+          else
+            {
+              g_prefix_error (&error,
+                              _("Error calling StartServiceByName for %s: "),
+                              data->proxy->priv->name);
+              g_free (remote_error);
+              goto failed;
+            }
         }
     }
   else
@@ -1305,17 +1713,17 @@ async_initable_init_second_async (GAsyncInitable      *initable,
                                             callback,
                                             user_data,
                                             NULL);
+  g_simple_async_result_set_check_cancellable (data->simple, cancellable);
 
   /* Check name ownership asynchronously - possibly also start the service */
   if (proxy->priv->name == NULL)
     {
       /* Do nothing */
-      async_init_get_name_owner_cb (proxy->priv->connection, NULL, data);
+      async_init_data_set_name_owner (data, NULL);
     }
   else if (g_dbus_is_unique_name (proxy->priv->name))
     {
-      proxy->priv->name_owner = g_strdup (proxy->priv->name);
-      async_init_get_name_owner_cb (proxy->priv->connection, NULL, data);
+      async_init_data_set_name_owner (data, proxy->priv->name);
     }
   else
     {
@@ -1368,7 +1776,7 @@ async_initable_init_first (GAsyncInitable *initable)
   if (!(proxy->priv->flags & G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES))
     {
       /* subscribe to PropertiesChanged() */
-      proxy->priv->properties_changed_subscriber_id =
+      proxy->priv->properties_changed_subscription_id =
         g_dbus_connection_signal_subscribe (proxy->priv->connection,
                                             proxy->priv->name,
                                             "org.freedesktop.DBus.Properties",
@@ -1377,14 +1785,14 @@ async_initable_init_first (GAsyncInitable *initable)
                                             proxy->priv->interface_name,
                                             G_DBUS_SIGNAL_FLAGS_NONE,
                                             on_properties_changed,
-                                            proxy,
-                                            NULL);
+                                            signal_subscription_ref (proxy->priv->signal_subscription_data),
+                                            (GDestroyNotify) signal_subscription_unref);
     }
 
   if (!(proxy->priv->flags & G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS))
     {
       /* subscribe to all signals for the object */
-      proxy->priv->signals_subscriber_id =
+      proxy->priv->signals_subscription_id =
         g_dbus_connection_signal_subscribe (proxy->priv->connection,
                                             proxy->priv->name,
                                             proxy->priv->interface_name,
@@ -1393,8 +1801,8 @@ async_initable_init_first (GAsyncInitable *initable)
                                             NULL,                        /* arg0 */
                                             G_DBUS_SIGNAL_FLAGS_NONE,
                                             on_signal_received,
-                                            proxy,
-                                            NULL);
+                                            signal_subscription_ref (proxy->priv->signal_subscription_data),
+                                            (GDestroyNotify) signal_subscription_unref);
     }
 
   if (proxy->priv->name != NULL && !g_dbus_is_unique_name (proxy->priv->name))
@@ -1408,8 +1816,8 @@ async_initable_init_first (GAsyncInitable *initable)
                                             proxy->priv->name,       /* arg0 */
                                             G_DBUS_SIGNAL_FLAGS_NONE,
                                             on_name_owner_changed,
-                                            proxy,
-                                            NULL);
+                                            signal_subscription_ref (proxy->priv->signal_subscription_data),
+                                            (GDestroyNotify) signal_subscription_unref);
     }
 }
 
@@ -1451,6 +1859,7 @@ get_connection_cb (GObject       *source_object,
                                           data->callback,
                                           data->user_data,
                                           NULL);
+      g_simple_async_result_set_check_cancellable (simple, data->cancellable);
       g_simple_async_result_take_error (simple, error);
       g_simple_async_result_complete_in_idle (simple);
       g_object_unref (simple);
@@ -1467,8 +1876,8 @@ get_connection_cb (GObject       *source_object,
 
   if (data->cancellable != NULL)
     g_object_unref (data->cancellable);
-  if (data->proxy != NULL)
-    g_object_unref (data->proxy);
+
+  g_object_unref (data->proxy);
   g_free (data);
 }
 
@@ -1616,7 +2025,7 @@ initable_iface_init (GInitableIface *initable_iface)
  * @name: (allow-none): A bus name (well-known or unique) or %NULL if @connection is not a message bus connection.
  * @object_path: An object path.
  * @interface_name: A D-Bus interface name.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @callback: Callback function to invoke when the proxy is ready.
  * @user_data: User data to pass to @callback.
  *
@@ -1786,7 +2195,7 @@ g_dbus_proxy_new_sync (GDBusConnection     *connection,
  * @name: A bus name (well-known or unique).
  * @object_path: An object path.
  * @interface_name: A D-Bus interface name.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @callback: Callback function to invoke when the proxy is ready.
  * @user_data: User data to pass to @callback.
  *
@@ -1852,7 +2261,7 @@ g_dbus_proxy_new_for_bus_finish (GAsyncResult  *res,
  * @name: A bus name (well-known or unique).
  * @object_path: An object path.
  * @interface_name: A D-Bus interface name.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
  * Like g_dbus_proxy_new_sync() but takes a #GBusType instead of a #GDBusConnection.
@@ -1964,8 +2373,14 @@ g_dbus_proxy_get_name (GDBusProxy *proxy)
 gchar *
 g_dbus_proxy_get_name_owner (GDBusProxy *proxy)
 {
+  gchar *ret;
+
   g_return_val_if_fail (G_IS_DBUS_PROXY (proxy), NULL);
-  return g_strdup (proxy->priv->name_owner);
+
+  G_LOCK (properties_lock);
+  ret = g_strdup (proxy->priv->name_owner);
+  G_UNLOCK (properties_lock);
+  return ret;
 }
 
 /**
@@ -2019,8 +2434,14 @@ g_dbus_proxy_get_interface_name (GDBusProxy *proxy)
 gint
 g_dbus_proxy_get_default_timeout (GDBusProxy *proxy)
 {
+  gint ret;
+
   g_return_val_if_fail (G_IS_DBUS_PROXY (proxy), -1);
-  return proxy->priv->timeout_msec;
+
+  G_LOCK (properties_lock);
+  ret = proxy->priv->timeout_msec;
+  G_UNLOCK (properties_lock);
+  return ret;
 }
 
 /**
@@ -2043,11 +2464,18 @@ g_dbus_proxy_set_default_timeout (GDBusProxy *proxy,
   g_return_if_fail (G_IS_DBUS_PROXY (proxy));
   g_return_if_fail (timeout_msec == -1 || timeout_msec >= 0);
 
-  /* TODO: locking? */
+  G_LOCK (properties_lock);
+
   if (proxy->priv->timeout_msec != timeout_msec)
     {
       proxy->priv->timeout_msec = timeout_msec;
+      G_UNLOCK (properties_lock);
+
       g_object_notify (G_OBJECT (proxy), "g-default-timeout");
+    }
+  else
+    {
+      G_UNLOCK (properties_lock);
     }
 }
 
@@ -2055,10 +2483,9 @@ g_dbus_proxy_set_default_timeout (GDBusProxy *proxy,
  * g_dbus_proxy_get_interface_info:
  * @proxy: A #GDBusProxy
  *
- * Returns the #GDBusInterfaceInfo, if any, specifying the minimal
- * interface that @proxy conforms to.
- *
- * See the #GDBusProxy:g-interface-info property for more details.
+ * Returns the #GDBusInterfaceInfo, if any, specifying the interface
+ * that @proxy conforms to. See the #GDBusProxy:g-interface-info
+ * property for more details.
  *
  * Returns: A #GDBusInterfaceInfo or %NULL. Do not unref the returned
  * object, it is owned by @proxy.
@@ -2068,8 +2495,17 @@ g_dbus_proxy_set_default_timeout (GDBusProxy *proxy,
 GDBusInterfaceInfo *
 g_dbus_proxy_get_interface_info (GDBusProxy *proxy)
 {
+  GDBusInterfaceInfo *ret;
+
   g_return_val_if_fail (G_IS_DBUS_PROXY (proxy), NULL);
-  return proxy->priv->expected_interface;
+
+  G_LOCK (properties_lock);
+  ret = proxy->priv->expected_interface;
+  G_UNLOCK (properties_lock);
+  /* FIXME: returning a borrowed ref with no guarantee that nobody will
+   * call g_dbus_proxy_set_interface_info() and make it invalid...
+   */
+  return ret;
 }
 
 /**
@@ -2078,12 +2514,8 @@ g_dbus_proxy_get_interface_info (GDBusProxy *proxy)
  * @info: (allow-none): Minimum interface this proxy conforms to or %NULL to unset.
  *
  * Ensure that interactions with @proxy conform to the given
- * interface.  For example, when completing a method call, if the type
- * signature of the message isn't what's expected, the given #GError
- * is set.  Signals that have a type signature mismatch are simply
- * dropped.
- *
- * See the #GDBusProxy:g-interface-info property for more details.
+ * interface. See the #GDBusProxy:g-interface-info property for more
+ * details.
  *
  * Since: 2.26
  */
@@ -2092,9 +2524,18 @@ g_dbus_proxy_set_interface_info (GDBusProxy         *proxy,
                                  GDBusInterfaceInfo *info)
 {
   g_return_if_fail (G_IS_DBUS_PROXY (proxy));
+  G_LOCK (properties_lock);
+
   if (proxy->priv->expected_interface != NULL)
-    g_dbus_interface_info_unref (proxy->priv->expected_interface);
+    {
+      g_dbus_interface_info_cache_release (proxy->priv->expected_interface);
+      g_dbus_interface_info_unref (proxy->priv->expected_interface);
+    }
   proxy->priv->expected_interface = info != NULL ? g_dbus_interface_info_ref (info) : NULL;
+  if (proxy->priv->expected_interface != NULL)
+    g_dbus_interface_info_cache_build (proxy->priv->expected_interface);
+
+  G_UNLOCK (properties_lock);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -2130,6 +2571,24 @@ maybe_split_method_name (const gchar  *method_name,
   return was_split;
 }
 
+typedef struct
+{
+  GVariant *value;
+#ifdef G_OS_UNIX
+  GUnixFDList *fd_list;
+#endif
+} ReplyData;
+
+static void
+reply_data_free (ReplyData *data)
+{
+  g_variant_unref (data->value);
+#ifdef G_OS_UNIX
+  if (data->fd_list != NULL)
+    g_object_unref (data->fd_list);
+#endif
+  g_slice_free (ReplyData, data);
+}
 
 static void
 reply_cb (GDBusConnection *connection,
@@ -2139,20 +2598,34 @@ reply_cb (GDBusConnection *connection,
   GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (user_data);
   GVariant *value;
   GError *error;
+#ifdef G_OS_UNIX
+  GUnixFDList *fd_list;
+#endif
 
   error = NULL;
+#ifdef G_OS_UNIX
+  value = g_dbus_connection_call_with_unix_fd_list_finish (connection,
+                                                           &fd_list,
+                                                           res,
+                                                           &error);
+#else
   value = g_dbus_connection_call_finish (connection,
                                          res,
                                          &error);
+#endif
   if (error != NULL)
     {
       g_simple_async_result_take_error (simple, error);
     }
   else
     {
-      g_simple_async_result_set_op_res_gpointer (simple,
-                                                 value,
-                                                 (GDestroyNotify) g_variant_unref);
+      ReplyData *data;
+      data = g_slice_new0 (ReplyData);
+      data->value = value;
+#ifdef G_OS_UNIX
+      data->fd_list = fd_list;
+#endif
+      g_simple_async_result_set_op_res_gpointer (simple, data, (GDestroyNotify) reply_data_free);
     }
 
   /* no need to complete in idle since the method GDBusConnection already does */
@@ -2160,25 +2633,27 @@ reply_cb (GDBusConnection *connection,
   g_object_unref (simple);
 }
 
+/* properties_lock must be held for as long as you will keep the
+ * returned value
+ */
 static const GDBusMethodInfo *
-lookup_method_info_or_warn (GDBusProxy  *proxy,
-                            const gchar *method_name)
+lookup_method_info (GDBusProxy  *proxy,
+                    const gchar *method_name)
 {
-  const GDBusMethodInfo *info;
+  const GDBusMethodInfo *info = NULL;
 
   if (proxy->priv->expected_interface == NULL)
-    return NULL;
+    goto out;
 
   info = g_dbus_interface_info_lookup_method (proxy->priv->expected_interface, method_name);
-  if (info == NULL)
-    {
-      g_warning ("Trying to invoke method %s which isn't in expected interface %s",
-                 method_name, proxy->priv->expected_interface->name);
-    }
 
+out:
   return info;
 }
 
+/* properties_lock must be held for as long as you will keep the
+ * returned value
+ */
 static const gchar *
 get_destination_for_call (GDBusProxy *proxy)
 {
@@ -2204,6 +2679,273 @@ get_destination_for_call (GDBusProxy *proxy)
   return ret;
 }
 
+/* ---------------------------------------------------------------------------------------------------- */
+
+static void
+g_dbus_proxy_call_internal (GDBusProxy          *proxy,
+                            const gchar         *method_name,
+                            GVariant            *parameters,
+                            GDBusCallFlags       flags,
+                            gint                 timeout_msec,
+                            GUnixFDList         *fd_list,
+                            GCancellable        *cancellable,
+                            GAsyncReadyCallback  callback,
+                            gpointer             user_data)
+{
+  GSimpleAsyncResult *simple;
+  gboolean was_split;
+  gchar *split_interface_name;
+  const gchar *split_method_name;
+  const gchar *target_method_name;
+  const gchar *target_interface_name;
+  gchar *destination;
+  GVariantType *reply_type;
+  GAsyncReadyCallback my_callback;
+
+  g_return_if_fail (G_IS_DBUS_PROXY (proxy));
+  g_return_if_fail (g_dbus_is_member_name (method_name) || g_dbus_is_interface_name (method_name));
+  g_return_if_fail (parameters == NULL || g_variant_is_of_type (parameters, G_VARIANT_TYPE_TUPLE));
+  g_return_if_fail (timeout_msec == -1 || timeout_msec >= 0);
+#ifdef G_OS_UNIX
+  g_return_if_fail (fd_list == NULL || G_IS_UNIX_FD_LIST (fd_list));
+#else
+  g_return_if_fail (fd_list == NULL);
+#endif
+
+  reply_type = NULL;
+  split_interface_name = NULL;
+
+  /* g_dbus_connection_call() is optimised for the case of a NULL
+   * callback.  If we get a NULL callback from our user then make sure
+   * we pass along a NULL callback for ourselves as well.
+   */
+  if (callback != NULL)
+    {
+      my_callback = (GAsyncReadyCallback) reply_cb;
+      simple = g_simple_async_result_new (G_OBJECT (proxy),
+                                          callback,
+                                          user_data,
+                                          g_dbus_proxy_call_internal);
+      g_simple_async_result_set_check_cancellable (simple, cancellable);
+    }
+  else
+    {
+      my_callback = NULL;
+      simple = NULL;
+    }
+
+  G_LOCK (properties_lock);
+
+  was_split = maybe_split_method_name (method_name, &split_interface_name, &split_method_name);
+  target_method_name = was_split ? split_method_name : method_name;
+  target_interface_name = was_split ? split_interface_name : proxy->priv->interface_name;
+
+  /* Warn if method is unexpected (cf. :g-interface-info) */
+  if (!was_split)
+    {
+      const GDBusMethodInfo *expected_method_info;
+      expected_method_info = lookup_method_info (proxy, target_method_name);
+      if (expected_method_info != NULL)
+        reply_type = _g_dbus_compute_complete_signature (expected_method_info->out_args);
+    }
+
+  destination = NULL;
+  if (proxy->priv->name != NULL)
+    {
+      destination = g_strdup (get_destination_for_call (proxy));
+      if (destination == NULL)
+        {
+          if (simple != NULL)
+            {
+              g_simple_async_result_set_error (simple,
+                                               G_IO_ERROR,
+                                               G_IO_ERROR_FAILED,
+                                               _("Cannot invoke method; proxy is for a well-known name without an owner and proxy was constructed with the G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START flag"));
+              g_simple_async_result_complete_in_idle (simple);
+              g_object_unref (simple);
+            }
+          G_UNLOCK (properties_lock);
+          goto out;
+        }
+    }
+
+  G_UNLOCK (properties_lock);
+
+#ifdef G_OS_UNIX
+  g_dbus_connection_call_with_unix_fd_list (proxy->priv->connection,
+                                            destination,
+                                            proxy->priv->object_path,
+                                            target_interface_name,
+                                            target_method_name,
+                                            parameters,
+                                            reply_type,
+                                            flags,
+                                            timeout_msec == -1 ? proxy->priv->timeout_msec : timeout_msec,
+                                            fd_list,
+                                            cancellable,
+                                            my_callback,
+                                            simple);
+#else
+  g_dbus_connection_call (proxy->priv->connection,
+                          destination,
+                          proxy->priv->object_path,
+                          target_interface_name,
+                          target_method_name,
+                          parameters,
+                          reply_type,
+                          flags,
+                          timeout_msec == -1 ? proxy->priv->timeout_msec : timeout_msec,
+                          cancellable,
+                          my_callback,
+                          simple);
+#endif
+
+ out:
+  if (reply_type != NULL)
+    g_variant_type_free (reply_type);
+
+  g_free (destination);
+  g_free (split_interface_name);
+}
+
+static GVariant *
+g_dbus_proxy_call_finish_internal (GDBusProxy    *proxy,
+                                   GUnixFDList  **out_fd_list,
+                                   GAsyncResult  *res,
+                                   GError       **error)
+{
+  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
+  GVariant *value;
+  ReplyData *data;
+
+  g_return_val_if_fail (G_IS_DBUS_PROXY (proxy), NULL);
+  g_return_val_if_fail (G_IS_ASYNC_RESULT (res), NULL);
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_dbus_proxy_call_internal);
+
+  value = NULL;
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    goto out;
+
+  data = g_simple_async_result_get_op_res_gpointer (simple);
+  value = g_variant_ref (data->value);
+#ifdef G_OS_UNIX
+  if (out_fd_list != NULL)
+    *out_fd_list = data->fd_list != NULL ? g_object_ref (data->fd_list) : NULL;
+#endif
+
+ out:
+  return value;
+}
+
+static GVariant *
+g_dbus_proxy_call_sync_internal (GDBusProxy      *proxy,
+                                 const gchar     *method_name,
+                                 GVariant        *parameters,
+                                 GDBusCallFlags   flags,
+                                 gint             timeout_msec,
+                                 GUnixFDList     *fd_list,
+                                 GUnixFDList    **out_fd_list,
+                                 GCancellable    *cancellable,
+                                 GError         **error)
+{
+  GVariant *ret;
+  gboolean was_split;
+  gchar *split_interface_name;
+  const gchar *split_method_name;
+  const gchar *target_method_name;
+  const gchar *target_interface_name;
+  gchar *destination;
+  GVariantType *reply_type;
+
+  g_return_val_if_fail (G_IS_DBUS_PROXY (proxy), NULL);
+  g_return_val_if_fail (g_dbus_is_member_name (method_name) || g_dbus_is_interface_name (method_name), NULL);
+  g_return_val_if_fail (parameters == NULL || g_variant_is_of_type (parameters, G_VARIANT_TYPE_TUPLE), NULL);
+  g_return_val_if_fail (timeout_msec == -1 || timeout_msec >= 0, NULL);
+#ifdef G_OS_UNIX
+  g_return_val_if_fail (fd_list == NULL || G_IS_UNIX_FD_LIST (fd_list), NULL);
+#else
+  g_return_val_if_fail (fd_list == NULL, NULL);
+#endif
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  reply_type = NULL;
+
+  G_LOCK (properties_lock);
+
+  was_split = maybe_split_method_name (method_name, &split_interface_name, &split_method_name);
+  target_method_name = was_split ? split_method_name : method_name;
+  target_interface_name = was_split ? split_interface_name : proxy->priv->interface_name;
+
+  /* Warn if method is unexpected (cf. :g-interface-info) */
+  if (!was_split)
+    {
+      const GDBusMethodInfo *expected_method_info;
+      expected_method_info = lookup_method_info (proxy, target_method_name);
+      if (expected_method_info != NULL)
+        reply_type = _g_dbus_compute_complete_signature (expected_method_info->out_args);
+    }
+
+  destination = NULL;
+  if (proxy->priv->name != NULL)
+    {
+      destination = g_strdup (get_destination_for_call (proxy));
+      if (destination == NULL)
+        {
+          g_set_error_literal (error,
+                               G_IO_ERROR,
+                               G_IO_ERROR_FAILED,
+                               _("Cannot invoke method; proxy is for a well-known name without an owner and proxy was constructed with the G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START flag"));
+          ret = NULL;
+          G_UNLOCK (properties_lock);
+          goto out;
+        }
+    }
+
+  G_UNLOCK (properties_lock);
+
+#ifdef G_OS_UNIX
+  ret = g_dbus_connection_call_with_unix_fd_list_sync (proxy->priv->connection,
+                                                       destination,
+                                                       proxy->priv->object_path,
+                                                       target_interface_name,
+                                                       target_method_name,
+                                                       parameters,
+                                                       reply_type,
+                                                       flags,
+                                                       timeout_msec == -1 ? proxy->priv->timeout_msec : timeout_msec,
+                                                       fd_list,
+                                                       out_fd_list,
+                                                       cancellable,
+                                                       error);
+#else
+  ret = g_dbus_connection_call_sync (proxy->priv->connection,
+                                     destination,
+                                     proxy->priv->object_path,
+                                     target_interface_name,
+                                     target_method_name,
+                                     parameters,
+                                     reply_type,
+                                     flags,
+                                     timeout_msec == -1 ? proxy->priv->timeout_msec : timeout_msec,
+                                     cancellable,
+                                     error);
+#endif
+
+ out:
+  if (reply_type != NULL)
+    g_variant_type_free (reply_type);
+
+  g_free (destination);
+  g_free (split_interface_name);
+
+  return ret;
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
 /**
  * g_dbus_proxy_call:
  * @proxy: A #GDBusProxy.
@@ -2212,8 +2954,8 @@ get_destination_for_call (GDBusProxy *proxy)
  * @flags: Flags from the #GDBusCallFlags enumeration.
  * @timeout_msec: The timeout in milliseconds (with %G_MAXINT meaning
  *                "infinite") or -1 to use the proxy default timeout.
- * @cancellable: A #GCancellable or %NULL.
- * @callback: A #GAsyncReadyCallback to call when the request is satisfied or %NULL if you don't
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
+ * @callback: (allow-none): A #GAsyncReadyCallback to call when the request is satisfied or %NULL if you don't
  * care about the result of the method invocation.
  * @user_data: The data to pass to @callback.
  *
@@ -2245,13 +2987,20 @@ get_destination_for_call (GDBusProxy *proxy)
  *                     &amp;data);
  * ]|
  *
+ * If @proxy has an expected interface (see
+ * #GDBusProxy:g-interface-info) and @method_name is referenced by it,
+ * then the return value is checked against the return type.
+ *
  * This is an asynchronous method. When the operation is finished,
  * @callback will be invoked in the
- * <link linkend="g-main-context-push-thread-default">thread-default
- * main loop</link> of the thread you are calling this method from.
+ * <link linkend="g-main-context-push-thread-default">thread-default main loop</link>
+ * of the thread you are calling this method from.
  * You can then call g_dbus_proxy_call_finish() to get the result of
  * the operation. See g_dbus_proxy_call_sync() for the synchronous
  * version of this method.
+ *
+ * If @callback is %NULL then the D-Bus method call message will be sent with
+ * the %G_DBUS_MESSAGE_FLAGS_NO_REPLY_EXPECTED flag set.
  *
  * Since: 2.26
  */
@@ -2265,73 +3014,7 @@ g_dbus_proxy_call (GDBusProxy          *proxy,
                    GAsyncReadyCallback  callback,
                    gpointer             user_data)
 {
-  GSimpleAsyncResult *simple;
-  gboolean was_split;
-  gchar *split_interface_name;
-  const gchar *split_method_name;
-  const gchar *target_method_name;
-  const gchar *target_interface_name;
-  const gchar *destination;
-  GVariantType *reply_type;
-
-  g_return_if_fail (G_IS_DBUS_PROXY (proxy));
-  g_return_if_fail (g_dbus_is_member_name (method_name) || g_dbus_is_interface_name (method_name));
-  g_return_if_fail (parameters == NULL || g_variant_is_of_type (parameters, G_VARIANT_TYPE_TUPLE));
-  g_return_if_fail (timeout_msec == -1 || timeout_msec >= 0);
-
-  reply_type = NULL;
-  split_interface_name = NULL;
-
-  simple = g_simple_async_result_new (G_OBJECT (proxy),
-                                      callback,
-                                      user_data,
-                                      g_dbus_proxy_call);
-
-  was_split = maybe_split_method_name (method_name, &split_interface_name, &split_method_name);
-  target_method_name = was_split ? split_method_name : method_name;
-  target_interface_name = was_split ? split_interface_name : proxy->priv->interface_name;
-
-  /* Warn if method is unexpected (cf. :g-interface-info) */
-  if (!was_split)
-    {
-      const GDBusMethodInfo *expected_method_info;
-      expected_method_info = lookup_method_info_or_warn (proxy, target_method_name);
-      if (expected_method_info != NULL)
-        reply_type = _g_dbus_compute_complete_signature (expected_method_info->out_args);
-    }
-
-  destination = NULL;
-  if (proxy->priv->name != NULL)
-    {
-      destination = get_destination_for_call (proxy);
-      if (destination == NULL)
-        {
-          g_simple_async_result_set_error (simple,
-                                           G_IO_ERROR,
-                                           G_IO_ERROR_FAILED,
-                                           _("Cannot invoke method; proxy is for a well-known name without an owner and proxy was constructed with the G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START flag"));
-          goto out;
-        }
-    }
-
-  g_dbus_connection_call (proxy->priv->connection,
-                          destination,
-                          proxy->priv->object_path,
-                          target_interface_name,
-                          target_method_name,
-                          parameters,
-                          reply_type,
-                          flags,
-                          timeout_msec == -1 ? proxy->priv->timeout_msec : timeout_msec,
-                          cancellable,
-                          (GAsyncReadyCallback) reply_cb,
-                          simple);
-
- out:
-  if (reply_type != NULL)
-    g_variant_type_free (reply_type);
-
-  g_free (split_interface_name);
+  g_dbus_proxy_call_internal (proxy, method_name, parameters, flags, timeout_msec, NULL, cancellable, callback, user_data);
 }
 
 /**
@@ -2352,24 +3035,7 @@ g_dbus_proxy_call_finish (GDBusProxy    *proxy,
                           GAsyncResult  *res,
                           GError       **error)
 {
-  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-  GVariant *value;
-
-  g_return_val_if_fail (G_IS_DBUS_PROXY (proxy), NULL);
-  g_return_val_if_fail (G_IS_ASYNC_RESULT (res), NULL);
-  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_dbus_proxy_call);
-
-  value = NULL;
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    goto out;
-
-  value = g_variant_ref (g_simple_async_result_get_op_res_gpointer (simple));
-
- out:
-  return value;
+  return g_dbus_proxy_call_finish_internal (proxy, NULL, res, error);
 }
 
 /**
@@ -2381,7 +3047,7 @@ g_dbus_proxy_call_finish (GDBusProxy    *proxy,
  * @flags: Flags from the #GDBusCallFlags enumeration.
  * @timeout_msec: The timeout in milliseconds (with %G_MAXINT meaning
  *                "infinite") or -1 to use the proxy default timeout.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
  * Synchronously invokes the @method_name method on @proxy.
@@ -2415,6 +3081,10 @@ g_dbus_proxy_call_finish (GDBusProxy    *proxy,
  * g_dbus_proxy_call() for the asynchronous version of this
  * method.
  *
+ * If @proxy has an expected interface (see
+ * #GDBusProxy:g-interface-info) and @method_name is referenced by it,
+ * then the return value is checked against the return type.
+ *
  * Returns: %NULL if @error is set. Otherwise a #GVariant tuple with
  * return values. Free with g_variant_unref().
  *
@@ -2429,70 +3099,159 @@ g_dbus_proxy_call_sync (GDBusProxy      *proxy,
                         GCancellable    *cancellable,
                         GError         **error)
 {
-  GVariant *ret;
-  gboolean was_split;
-  gchar *split_interface_name;
-  const gchar *split_method_name;
-  const gchar *target_method_name;
-  const gchar *target_interface_name;
-  const gchar *destination;
-  GVariantType *reply_type;
+  return g_dbus_proxy_call_sync_internal (proxy, method_name, parameters, flags, timeout_msec, NULL, NULL, cancellable, error);
+}
 
-  g_return_val_if_fail (G_IS_DBUS_PROXY (proxy), NULL);
-  g_return_val_if_fail (g_dbus_is_member_name (method_name) || g_dbus_is_interface_name (method_name), NULL);
-  g_return_val_if_fail (parameters == NULL || g_variant_is_of_type (parameters, G_VARIANT_TYPE_TUPLE), NULL);
-  g_return_val_if_fail (timeout_msec == -1 || timeout_msec >= 0, NULL);
-  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+/* ---------------------------------------------------------------------------------------------------- */
 
-  reply_type = NULL;
+#ifdef G_OS_UNIX
 
-  was_split = maybe_split_method_name (method_name, &split_interface_name, &split_method_name);
-  target_method_name = was_split ? split_method_name : method_name;
-  target_interface_name = was_split ? split_interface_name : proxy->priv->interface_name;
+/**
+ * g_dbus_proxy_call_with_unix_fd_list:
+ * @proxy: A #GDBusProxy.
+ * @method_name: Name of method to invoke.
+ * @parameters: (allow-none): A #GVariant tuple with parameters for the signal or %NULL if not passing parameters.
+ * @flags: Flags from the #GDBusCallFlags enumeration.
+ * @timeout_msec: The timeout in milliseconds (with %G_MAXINT meaning
+ *                "infinite") or -1 to use the proxy default timeout.
+ * @fd_list: (allow-none): A #GUnixFDList or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
+ * @callback: (allow-none): A #GAsyncReadyCallback to call when the request is satisfied or %NULL if you don't
+ * care about the result of the method invocation.
+ * @user_data: The data to pass to @callback.
+ *
+ * Like g_dbus_proxy_call() but also takes a #GUnixFDList object.
+ *
+ * This method is only available on UNIX.
+ *
+ * Since: 2.30
+ */
+void
+g_dbus_proxy_call_with_unix_fd_list (GDBusProxy          *proxy,
+                                     const gchar         *method_name,
+                                     GVariant            *parameters,
+                                     GDBusCallFlags       flags,
+                                     gint                 timeout_msec,
+                                     GUnixFDList         *fd_list,
+                                     GCancellable        *cancellable,
+                                     GAsyncReadyCallback  callback,
+                                     gpointer             user_data)
+{
+  g_dbus_proxy_call_internal (proxy, method_name, parameters, flags, timeout_msec, fd_list, cancellable, callback, user_data);
+}
 
-  /* Warn if method is unexpected (cf. :g-interface-info) */
-  if (!was_split)
-    {
-      const GDBusMethodInfo *expected_method_info;
-      expected_method_info = lookup_method_info_or_warn (proxy, target_method_name);
-      if (expected_method_info != NULL)
-        reply_type = _g_dbus_compute_complete_signature (expected_method_info->out_args);
-    }
+/**
+ * g_dbus_proxy_call_with_unix_fd_list_finish:
+ * @proxy: A #GDBusProxy.
+ * @out_fd_list: (out) (allow-none): Return location for a #GUnixFDList or %NULL.
+ * @res: A #GAsyncResult obtained from the #GAsyncReadyCallback passed to g_dbus_proxy_call_with_unix_fd_list().
+ * @error: Return location for error or %NULL.
+ *
+ * Finishes an operation started with g_dbus_proxy_call_with_unix_fd_list().
+ *
+ * Returns: %NULL if @error is set. Otherwise a #GVariant tuple with
+ * return values. Free with g_variant_unref().
+ *
+ * Since: 2.30
+ */
+GVariant *
+g_dbus_proxy_call_with_unix_fd_list_finish (GDBusProxy    *proxy,
+                                            GUnixFDList  **out_fd_list,
+                                            GAsyncResult  *res,
+                                            GError       **error)
+{
+  return g_dbus_proxy_call_finish_internal (proxy, out_fd_list, res, error);
+}
 
-  destination = NULL;
-  if (proxy->priv->name != NULL)
-    {
-      destination = get_destination_for_call (proxy);
-      if (destination == NULL)
-        {
-          g_set_error_literal (error,
-                               G_IO_ERROR,
-                               G_IO_ERROR_FAILED,
-                               _("Cannot invoke method; proxy is for a well-known name without an owner and proxy was constructed with the G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START flag"));
-          ret = NULL;
-          goto out;
-        }
-    }
+/**
+ * g_dbus_proxy_call_with_unix_fd_list_sync:
+ * @proxy: A #GDBusProxy.
+ * @method_name: Name of method to invoke.
+ * @parameters: (allow-none): A #GVariant tuple with parameters for the signal
+ *              or %NULL if not passing parameters.
+ * @flags: Flags from the #GDBusCallFlags enumeration.
+ * @timeout_msec: The timeout in milliseconds (with %G_MAXINT meaning
+ *                "infinite") or -1 to use the proxy default timeout.
+ * @fd_list: (allow-none): A #GUnixFDList or %NULL.
+ * @out_fd_list: (out) (allow-none): Return location for a #GUnixFDList or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
+ * @error: Return location for error or %NULL.
+ *
+ * Like g_dbus_proxy_call_sync() but also takes and returns #GUnixFDList objects.
+ *
+ * This method is only available on UNIX.
+ *
+ * Returns: %NULL if @error is set. Otherwise a #GVariant tuple with
+ * return values. Free with g_variant_unref().
+ *
+ * Since: 2.30
+ */
+GVariant *
+g_dbus_proxy_call_with_unix_fd_list_sync (GDBusProxy      *proxy,
+                                          const gchar     *method_name,
+                                          GVariant        *parameters,
+                                          GDBusCallFlags   flags,
+                                          gint             timeout_msec,
+                                          GUnixFDList     *fd_list,
+                                          GUnixFDList    **out_fd_list,
+                                          GCancellable    *cancellable,
+                                          GError         **error)
+{
+  return g_dbus_proxy_call_sync_internal (proxy, method_name, parameters, flags, timeout_msec, fd_list, out_fd_list, cancellable, error);
+}
 
-  ret = g_dbus_connection_call_sync (proxy->priv->connection,
-                                     destination,
-                                     proxy->priv->object_path,
-                                     target_interface_name,
-                                     target_method_name,
-                                     parameters,
-                                     reply_type,
-                                     flags,
-                                     timeout_msec == -1 ? proxy->priv->timeout_msec : timeout_msec,
-                                     cancellable,
-                                     error);
+#endif /* G_OS_UNIX */
 
- out:
-  if (reply_type != NULL)
-    g_variant_type_free (reply_type);
+/* ---------------------------------------------------------------------------------------------------- */
 
-  g_free (split_interface_name);
+static GDBusInterfaceInfo *
+_g_dbus_proxy_get_info (GDBusInterface *interface)
+{
+  GDBusProxy *proxy = G_DBUS_PROXY (interface);
+  return g_dbus_proxy_get_interface_info (proxy);
+}
 
+static GDBusObject *
+_g_dbus_proxy_get_object (GDBusInterface *interface)
+{
+  GDBusProxy *proxy = G_DBUS_PROXY (interface);
+  return proxy->priv->object;
+}
+
+static GDBusObject *
+_g_dbus_proxy_dup_object (GDBusInterface *interface)
+{
+  GDBusProxy *proxy = G_DBUS_PROXY (interface);
+  GDBusObject *ret = NULL;
+
+  G_LOCK (properties_lock);
+  if (proxy->priv->object != NULL)
+    ret = g_object_ref (proxy->priv->object);
+  G_UNLOCK (properties_lock);
   return ret;
+}
+
+static void
+_g_dbus_proxy_set_object (GDBusInterface *interface,
+                          GDBusObject    *object)
+{
+  GDBusProxy *proxy = G_DBUS_PROXY (interface);
+  G_LOCK (properties_lock);
+  if (proxy->priv->object != NULL)
+    g_object_remove_weak_pointer (G_OBJECT (proxy->priv->object), (gpointer *) &proxy->priv->object);
+  proxy->priv->object = object;
+  if (proxy->priv->object != NULL)
+    g_object_add_weak_pointer (G_OBJECT (proxy->priv->object), (gpointer *) &proxy->priv->object);
+  G_UNLOCK (properties_lock);
+}
+
+static void
+dbus_interface_iface_init (GDBusInterfaceIface *dbus_interface_iface)
+{
+  dbus_interface_iface->get_info   = _g_dbus_proxy_get_info;
+  dbus_interface_iface->get_object = _g_dbus_proxy_get_object;
+  dbus_interface_iface->dup_object = _g_dbus_proxy_dup_object;
+  dbus_interface_iface->set_object = _g_dbus_proxy_set_object;
 }
 
 /* ---------------------------------------------------------------------------------------------------- */

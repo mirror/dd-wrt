@@ -1,23 +1,26 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="UserMacros">
-    <CopyDir>..\..\..\..\..\vs10\$(Platform)</CopyDir>
-	<DefDir>$(SolutionDir)$(Configuration)\$(PlatformName)\obj\</DefDir>
+    <GlibEtcInstallRoot>..\..\..\..\vs10\$(Platform)</GlibEtcInstallRoot>
+    <CopyDir>$(GlibEtcInstallRoot)</CopyDir>
+    <DefDir>$(SolutionDir)$(Configuration)\$(PlatformName)\obj\$(ProjectName)\</DefDir>
     <ApiVersion>2.0</ApiVersion>
     <GlibDoInstall>
 mkdir $(CopyDir)\bin
 
 copy $(SolutionDir)$(Configuration)\$(Platform)\bin\*.dll $(CopyDir)\bin
 
-if exist $(SolutionDir)$(Configuration)_ExtPCRE copy $(SolutionDir)$(Configuration)_ExtPCRE\$(Platform)\bin\*.dll $(CopyDir)\bin
-
 copy $(SolutionDir)$(Configuration)\$(Platform)\bin\glib-genmarshal.exe $(CopyDir)\bin
 
-copy $(SolutionDir)$(Configuration)\$(Platform)\bin\gspawn-win32-helper*.exe $(CopyDir)\bin
+copy $(SolutionDir)$(Configuration)\$(Platform)\bin\gspawn-win*-helper*.exe $(CopyDir)\bin
 
 copy $(SolutionDir)$(Configuration)\$(Platform)\bin\glib-compile-schemas.exe $(CopyDir)\bin
 
 copy $(SolutionDir)$(Configuration)\$(Platform)\bin\gsettings.exe $(CopyDir)\bin
+
+copy $(SolutionDir)$(Configuration)\$(Platform)\bin\glib-compile-resources.exe $(CopyDir)\bin
+
+copy $(SolutionDir)$(Configuration)\$(Platform)\bin\gresource.exe $(CopyDir)\bin
 
 
 mkdir $(CopyDir)\include\glib-$(ApiVersion)\glib
@@ -45,11 +48,11 @@ copy ..\..\..\glib\gbitlock.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gbookmarkfile.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
-copy ..\..\..\glib\gcache.h $(CopyDir)\include\glib-$(ApiVersion)\glib
+copy ..\..\..\glib\gbytes.h $(CopyDir)\include\glib-$(ApiVersion)\glib
+
+copy ..\..\..\glib\gcharset.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gchecksum.h $(CopyDir)\include\glib-$(ApiVersion)\glib
-
-copy ..\..\..\glib\gcompletion.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gconvert.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
@@ -61,11 +64,17 @@ copy ..\..\..\glib\gdatetime.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gdir.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
+copy ..\..\..\glib\genviron.h $(CopyDir)\include\glib-$(ApiVersion)\glib
+
 copy ..\..\..\glib\gerror.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gfileutils.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
+copy ..\..\..\glib\ggettext.h $(CopyDir)\include\glib-$(ApiVersion)\glib
+
 copy ..\..\..\glib\ghash.h $(CopyDir)\include\glib-$(ApiVersion)\glib
+
+copy ..\..\..\glib\ghmac.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\ghook.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
@@ -115,8 +124,6 @@ copy ..\..\..\glib\grand.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gregex.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
-copy ..\..\..\glib\grel.h $(CopyDir)\include\glib-$(ApiVersion)\glib
-
 copy ..\..\..\glib\gscanner.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gsequence.h $(CopyDir)\include\glib-$(ApiVersion)\glib
@@ -130,6 +137,8 @@ copy ..\..\..\glib\gslist.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 copy ..\..\..\glib\gspawn.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gstdio.h $(CopyDir)\include\glib-$(ApiVersion)\glib
+
+copy ..\..\..\glib\gstringchunk.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gstrfuncs.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
@@ -145,6 +154,8 @@ copy ..\..\..\glib\gtimer.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gtimezone.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
+copy ..\..\..\glib\gtrashstack.h $(CopyDir)\include\glib-$(ApiVersion)\glib
+
 copy ..\..\..\glib\gtree.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gtypes.h $(CopyDir)\include\glib-$(ApiVersion)\glib
@@ -159,7 +170,26 @@ copy ..\..\..\glib\gvariant.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
 copy ..\..\..\glib\gvarianttype.h $(CopyDir)\include\glib-$(ApiVersion)\glib
 
+copy ..\..\..\glib\gversion.h $(CopyDir)\include\glib-$(ApiVersion)\glib
+
+copy ..\..\..\glib\gversionmacros.h $(CopyDir)\include\glib-$(ApiVersion)\glib
+
 copy ..\..\..\glib\gwin32.h $(CopyDir)\include\glib-$(ApiVersion)\glib
+
+
+mkdir $(CopyDir)\include\glib-$(ApiVersion)\glib\deprecated
+
+copy ..\..\..\glib\deprecated\gallocator.h $(CopyDir)\include\glib-$(ApiVersion)\glib\deprecated
+
+copy ..\..\..\glib\deprecated\gcache.h $(CopyDir)\include\glib-$(ApiVersion)\glib\deprecated
+
+copy ..\..\..\glib\deprecated\gcompletion.h $(CopyDir)\include\glib-$(ApiVersion)\glib\deprecated
+
+copy ..\..\..\glib\deprecated\gmain.h $(CopyDir)\include\glib-$(ApiVersion)\glib\deprecated
+
+copy ..\..\..\glib\deprecated\grel.h $(CopyDir)\include\glib-$(ApiVersion)\glib\deprecated
+
+copy ..\..\..\glib\deprecated\gthread.h $(CopyDir)\include\glib-$(ApiVersion)\glib\deprecated
 
 
 copy ..\..\..\gmodule\gmodule.h $(CopyDir)\include\glib-$(ApiVersion)
@@ -174,6 +204,8 @@ copy ..\..\..\gobject\gboxed.h $(CopyDir)\include\glib-$(ApiVersion)\gobject
 copy ..\..\..\gobject\gclosure.h $(CopyDir)\include\glib-$(ApiVersion)\gobject
 
 copy ..\..\..\gobject\genums.h $(CopyDir)\include\glib-$(ApiVersion)\gobject
+
+copy ..\..\..\gobject\glib-types.h $(CopyDir)\include\glib-$(ApiVersion)\gobject
 
 copy ..\..\..\gobject\gmarshal.h $(CopyDir)\include\glib-$(ApiVersion)\gobject
 
@@ -210,6 +242,10 @@ copy ..\..\..\gio\gaction.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gactiongroup.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
+copy ..\..\..\gio\gactiongroupexporter.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gactionmap.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
 copy ..\..\..\gio\gappinfo.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gapplication.h $(CopyDir)\include\glib-$(ApiVersion)\gio
@@ -236,13 +272,15 @@ copy ..\..\..\gio\gconverterinputstream.h $(CopyDir)\include\glib-$(ApiVersion)\
 
 copy ..\..\..\gio\gconverteroutputstream.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
+copy ..\..\..\gio\gcredentials.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
 copy ..\..\..\gio\gdatainputstream.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gdataoutputstream.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
-copy ..\..\..\gio\gdbusauthobserver.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+copy ..\..\..\gio\gdbusactiongroup.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
-copy ..\..\..\gio\gcredentials.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+copy ..\..\..\gio\gdbusauthobserver.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gdbusutils.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
@@ -252,11 +290,29 @@ copy ..\..\..\gio\gdbusaddress.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gdbusconnection.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
+copy ..\..\..\gio\gdbusinterface.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gdbusinterfaceskeleton.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gdbusmenumodel.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
 copy ..\..\..\gio\gdbusmessage.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gdbusnameowning.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gdbusnamewatching.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gdbusobject.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gdbusobjectmanager.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gdbusobjectmanagerclient.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gdbusobjectmanagerserver.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gdbusobjectproxy.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gdbusobjectskeleton.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gdbusproxy.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
@@ -298,6 +354,8 @@ copy ..\..\..\gio\gfilteroutputstream.h $(CopyDir)\include\glib-$(ApiVersion)\gi
 
 copy ..\..\..\gio\gicon.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
+copy ..\..\..\gio\ginetaddressmask.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
 copy ..\..\..\gio\ginetaddress.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\ginetsocketaddress.h $(CopyDir)\include\glib-$(ApiVersion)\gio
@@ -328,6 +386,12 @@ copy ..\..\..\gio\gmemoryinputstream.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gmemoryoutputstream.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
+copy ..\..\..\gio\gmenuexporter.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gmenumodel.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gmenu.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
 copy ..\..\..\gio\gmount.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gmountoperation.h $(CopyDir)\include\glib-$(ApiVersion)\gio
@@ -335,6 +399,8 @@ copy ..\..\..\gio\gmountoperation.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 copy ..\..\..\gio\gnativevolumemonitor.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gnetworkaddress.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gnetworkmonitor.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gnetworkservice.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
@@ -346,6 +412,8 @@ copy ..\..\..\gio\gpollableinputstream.h $(CopyDir)\include\glib-$(ApiVersion)\g
 
 copy ..\..\..\gio\gpollableoutputstream.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
+copy ..\..\..\gio\gpollableutils.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
 copy ..\..\..\gio\gproxy.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gproxyaddress.h $(CopyDir)\include\glib-$(ApiVersion)\gio
@@ -354,9 +422,15 @@ copy ..\..\..\gio\gproxyaddressenumerator.h $(CopyDir)\include\glib-$(ApiVersion
 
 copy ..\..\..\gio\gproxyresolver.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
+copy ..\..\..\gio\gremoteactiongroup.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
 copy ..\..\..\gio\gresolver.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
+copy ..\..\..\gio\gresource.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
 copy ..\..\..\gio\gseekable.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gsettingsschema.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gsettings.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
@@ -392,6 +466,8 @@ copy ..\..\..\gio\gtcpconnection.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gtcpwrapperconnection.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
+copy ..\..\..\gio\gtestdbus.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
 copy ..\..\..\gio\gthemedicon.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gthreadedsocketservice.h $(CopyDir)\include\glib-$(ApiVersion)\gio
@@ -403,6 +479,14 @@ copy ..\..\..\gio\gtlscertificate.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 copy ..\..\..\gio\gtlsclientconnection.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gtlsconnection.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gtlsdatabase.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gtlsfiledatabase.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gtlsinteraction.h $(CopyDir)\include\glib-$(ApiVersion)\gio
+
+copy ..\..\..\gio\gtlspassword.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
 copy ..\..\..\gio\gtlsserverconnection.h $(CopyDir)\include\glib-$(ApiVersion)\gio
 
@@ -431,11 +515,10 @@ copy ..\..\..\glib\glibconfig.h $(CopyDir)\lib\glib-$(ApiVersion)\include
 
 copy $(SolutionDir)$(Configuration)\$(Platform)\bin\*-$(ApiVersion).lib $(CopyDir)\lib
 
-if exist $(SolutionDir)$(Configuration)_ExtPCRE copy $(SolutionDir)$(Configuration)_ExtPCRE\$(Platform)\bin\*-$(ApiVersion).lib $(CopyDir)\lib
 
+mkdir $(CopyDir)\share\glib-$(ApiVersion)\schemas
 
-mkdir $(CopyDir)\share\glib-2.0\schemas
-copy ..\..\..\gio\gschema.dtd $(CopyDir)\share\glib-2.0\schemas
+copy ..\..\..\gio\gschema.dtd $(CopyDir)\share\glib-$(ApiVersion)\schemas
 
 </GlibDoInstall>
     <GlibGenerateGlibDef>echo EXPORTS &gt;"$(DefDir)glib.def" &amp;&amp; cl /EP -DG_OS_WIN32 -DINCLUDE_INTERNAL_SYMBOLS -DALL_FILES -DG_GNUC_MALLOC= -DG_GNUC_CONST= -DG_GNUC_NULL_TERMINATED= -DG_GNUC_NORETURN= -DG_GNUC_PRINTF=;G_GNUC_PRINTF -DG_GNUC_FORMAT=;G_GNUC_FORMAT ..\..\..\glib\glib.symbols &gt;&gt;"$(DefDir)glib.def"</GlibGenerateGlibDef>
@@ -445,23 +528,21 @@ copy ..\..\..\gio\gschema.dtd $(CopyDir)\share\glib-2.0\schemas
     <GlibGenerateGobjectDef>echo EXPORTS &gt;"$(DefDir)gobject.def" &amp;&amp; cl /EP -DINCLUDE_VARIABLES -DG_OS_WIN32 -DALL_FILES -DG_GNUC_MALLOC= -DG_GNUC_CONST= -DG_GNUC_NULL_TERMINATED= -DG_GNUC_NORETURN= -DG_GNUC_PRINTF=;G_GNUC_PRINTF ..\..\..\gobject\gobject.symbols &gt;&gt;"$(DefDir)gobject.def"</GlibGenerateGobjectDef>
     <GlibGenerateGioDef>echo EXPORTS &gt;"$(DefDir)gio.def" &amp;&amp; cl /EP -DINCLUDE_VARIABLES -DG_OS_WIN32 -DINCLUDE_INTERNAL_SYMBOLS -DALL_FILES -DG_GNUC_MALLOC= -DG_GNUC_CONST= -DG_GNUC_NULL_TERMINATED= -DG_GNUC_NORETURN= -DG_GNUC_PRINTF=;G_GNUC_PRINTF ..\..\..\gio\gio.symbols &gt;&gt;"$(DefDir)gio.def"</GlibGenerateGioDef>
     <GlibLibtoolCompatibleDllPrefix>lib</GlibLibtoolCompatibleDllPrefix>
-    <GlibLibtoolCompatibleDllSuffix>-2.0-0</GlibLibtoolCompatibleDllSuffix>
+    <GlibLibtoolCompatibleDllSuffix>-$(ApiVersion)-0</GlibLibtoolCompatibleDllSuffix>
     <GlibSeparateVS10DllPrefix />
     <GlibSeparateVS10DllSuffix>-2-vs10</GlibSeparateVS10DllSuffix>
     <GlibDllPrefix>$(GlibSeparateVS10DllPrefix)</GlibDllPrefix>
     <GlibDllSuffix>$(GlibSeparateVS10DllSuffix)</GlibDllSuffix>
-    <GlibEtcInstallRoot>..\..\..\..\..\vs10\$(Platform)</GlibEtcInstallRoot>
   </PropertyGroup>
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <_PropertySheetDisplayName>glibprops</_PropertySheetDisplayName>
     <OutDir>$(SolutionDir)$(Configuration)\$(PlatformName)\bin\</OutDir>
-    <IntDir>$(SolutionDir)$(Configuration)\$(PlatformName)\obj\</IntDir>
+    <IntDir>$(SolutionDir)$(Configuration)\$(PlatformName)\obj\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\..;..\..\..\glib;$(GlibEtcInstallRoot)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;G_DISABLE_DEPRECATED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ForcedIncludeFiles>msvc_recommended_pragmas.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -490,10 +571,19 @@ copy ..\..\..\gmodule\gmoduleconf.h.win32 ..\..\..\gmodule\gmoduleconf.h
 
 :DONE_GMODULECONF_H
 
+if exist ..\..\..\gio\gconstructor_as_data.h goto DONE_GCONSTRUCTOR_AS_DATA_H
+
+perl ..\..\..\gio\data-to-c.pl ..\..\..\glib\gconstructor.h gconstructor_code > ..\..\..\gio\gconstructor_as_data.h
+
+:DONE_GCONSTRUCTOR_AS_DATA_H
+
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <BuildMacro Include="GlibEtcInstallRoot">
+      <Value>$(GlibEtcInstallRoot)</Value>
+    </BuildMacro>
     <BuildMacro Include="CopyDir">
       <Value>$(CopyDir)</Value>
     </BuildMacro>
@@ -538,9 +628,6 @@ copy ..\..\..\gmodule\gmoduleconf.h.win32 ..\..\..\gmodule\gmoduleconf.h
     </BuildMacro>
     <BuildMacro Include="GlibDllSuffix">
       <Value>$(GlibDllSuffix)</Value>
-    </BuildMacro>
-    <BuildMacro Include="GlibEtcInstallRoot">
-      <Value>$(GlibEtcInstallRoot)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

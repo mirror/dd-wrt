@@ -28,14 +28,14 @@
 #include "ginputstream.h"
 #include "gioerror.h"
 #include "glibintl.h"
-
+#include "gpollableoutputstream.h"
 
 /**
  * SECTION:goutputstream
  * @short_description: Base class for implementing streaming output
  * @include: gio/gio.h
  *
- * GOutputStream has functions to write to a stream (g_output_stream_write()),
+ * #GOutputStream has functions to write to a stream (g_output_stream_write()),
  * to close a stream (g_output_stream_close()) and to flush pending writes
  * (g_output_stream_flush()). 
  *
@@ -95,6 +95,9 @@ static void     g_output_stream_real_close_async   (GOutputStream             *s
 static gboolean g_output_stream_real_close_finish  (GOutputStream             *stream,
 						    GAsyncResult              *result,
 						    GError                   **error);
+static gboolean _g_output_stream_close_internal    (GOutputStream             *stream,
+                                                    GCancellable              *cancellable,
+                                                    GError                   **error);
 
 static void
 g_output_stream_finalize (GObject *object)
@@ -151,7 +154,7 @@ g_output_stream_init (GOutputStream *stream)
  * @buffer: (array length=count) (element-type guint8): the buffer containing the data to write. 
  * @count: the number of bytes to write
  * @cancellable: (allow-none): optional cancellable object
- * @error: location to store the error occuring, or %NULL to ignore
+ * @error: location to store the error occurring, or %NULL to ignore
  *
  * Tries to write @count bytes from @buffer into the stream. Will block
  * during the operation.
@@ -166,7 +169,7 @@ g_output_stream_init (GOutputStream *stream)
  * is written or an error occurs; 0 is never returned (unless
  * @count is 0).
  * 
- * If @cancellable is not NULL, then the operation can be cancelled by
+ * If @cancellable is not %NULL, then the operation can be cancelled by
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned. If an
  * operation was partially finished when the operation was cancelled the
@@ -174,6 +177,8 @@ g_output_stream_init (GOutputStream *stream)
  *
  * On error -1 is returned and @error is set accordingly.
  * 
+ * Virtual: write_fn
+ *
  * Return value: Number of bytes written, or -1 on error
  **/
 gssize
@@ -232,7 +237,7 @@ g_output_stream_write (GOutputStream  *stream,
  * @bytes_written: (out): location to store the number of bytes that was 
  *     written to the stream
  * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
- * @error: location to store the error occuring, or %NULL to ignore
+ * @error: location to store the error occurring, or %NULL to ignore
  *
  * Tries to write @count bytes from @buffer into the stream. Will block
  * during the operation.
@@ -243,7 +248,7 @@ g_output_stream_write (GOutputStream  *stream,
  * On a successful write of @count bytes, %TRUE is returned, and @bytes_written
  * is set to @count.
  * 
- * If there is an error during the operation FALSE is returned and @error
+ * If there is an error during the operation %FALSE is returned and @error
  * is set to indicate the error status, @bytes_written is updated to contain
  * the number of bytes written into the stream before the error occurred.
  *
@@ -288,13 +293,61 @@ g_output_stream_write_all (GOutputStream  *stream,
 }
 
 /**
+ * g_output_stream_write_bytes:
+ * @stream: a #GOutputStream.
+ * @bytes: the #GBytes to write
+ * @cancellable: (allow-none): optional cancellable object
+ * @error: location to store the error occurring, or %NULL to ignore
+ *
+ * Tries to write the data from @bytes into the stream. Will block
+ * during the operation.
+ *
+ * If @bytes is 0-length, returns 0 and does nothing. A #GBytes larger
+ * than %G_MAXSSIZE will cause a %G_IO_ERROR_INVALID_ARGUMENT error.
+ *
+ * On success, the number of bytes written to the stream is returned.
+ * It is not an error if this is not the same as the requested size, as it
+ * can happen e.g. on a partial I/O error, or if there is not enough
+ * storage in the stream. All writes block until at least one byte
+ * is written or an error occurs; 0 is never returned (unless
+ * the size of @bytes is 0).
+ *
+ * If @cancellable is not %NULL, then the operation can be cancelled by
+ * triggering the cancellable object from another thread. If the operation
+ * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned. If an
+ * operation was partially finished when the operation was cancelled the
+ * partial result will be returned, without an error.
+ *
+ * On error -1 is returned and @error is set accordingly.
+ *
+ * Return value: Number of bytes written, or -1 on error
+ **/
+gssize
+g_output_stream_write_bytes (GOutputStream  *stream,
+			     GBytes         *bytes,
+			     GCancellable   *cancellable,
+			     GError        **error)
+{
+  gsize size;
+  gconstpointer data;
+
+  data = g_bytes_get_data (bytes, &size);
+
+  return g_output_stream_write (stream,
+                                data, size,
+				cancellable,
+				error);
+}
+
+/**
  * g_output_stream_flush:
  * @stream: a #GOutputStream.
  * @cancellable: (allow-none): optional cancellable object
- * @error: location to store the error occuring, or %NULL to ignore
+ * @error: location to store the error occurring, or %NULL to ignore
  *
- * Flushed any outstanding buffers in the stream. Will block during 
- * the operation. Closing the stream will implicitly cause a flush.
+ * Forces a write of all user-space buffered data for the given
+ * @stream. Will block during the operation. Closing the stream will
+ * implicitly cause a flush.
  *
  * This function is optional for inherited classes.
  * 
@@ -342,13 +395,16 @@ g_output_stream_flush (GOutputStream  *stream,
  * @source: a #GInputStream.
  * @flags: a set of #GOutputStreamSpliceFlags.
  * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
- * @error: a #GError location to store the error occuring, or %NULL to
+ * @error: a #GError location to store the error occurring, or %NULL to
  * ignore.
  *
  * Splices an input stream into an output stream.
  *
  * Returns: a #gssize containing the size of the data spliced, or
- *     -1 if an error occurred.
+ *     -1 if an error occurred. Note that if the number of bytes
+ *     spliced is greater than %G_MAXSSIZE, then that will be
+ *     returned, and there is no way to determine the actual number
+ *     of bytes spliced.
  **/
 gssize
 g_output_stream_splice (GOutputStream             *stream,
@@ -397,7 +453,7 @@ g_output_stream_real_splice (GOutputStream             *stream,
 {
   GOutputStreamClass *class = G_OUTPUT_STREAM_GET_CLASS (stream);
   gssize n_read, n_written;
-  gssize bytes_copied;
+  gsize bytes_copied;
   char buffer[8192], *p;
   gboolean res;
 
@@ -437,6 +493,9 @@ g_output_stream_real_splice (GOutputStream             *stream,
 	  n_read -= n_written;
 	  bytes_copied += n_written;
 	}
+
+      if (bytes_copied > G_MAXSSIZE)
+	bytes_copied = G_MAXSSIZE;
     }
   while (res);
 
@@ -453,9 +512,7 @@ g_output_stream_real_splice (GOutputStream             *stream,
   if (flags & G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET)
     {
       /* But write errors on close are bad! */
-      if (class->close_fn &&
-	  !class->close_fn (stream, cancellable, error))
-	res = FALSE;
+      res = _g_output_stream_close_internal (stream, cancellable, error);
     }
 
   if (res)
@@ -464,12 +521,60 @@ g_output_stream_real_splice (GOutputStream             *stream,
   return -1;
 }
 
+/* Must always be called inside
+ * g_output_stream_set_pending()/g_output_stream_clear_pending(). */
+static gboolean
+_g_output_stream_close_internal (GOutputStream  *stream,
+                                 GCancellable   *cancellable,
+                                 GError        **error)
+{
+  GOutputStreamClass *class;
+  gboolean res;
+
+  if (stream->priv->closed)
+    return TRUE;
+
+  class = G_OUTPUT_STREAM_GET_CLASS (stream);
+
+  stream->priv->closing = TRUE;
+
+  if (cancellable)
+    g_cancellable_push_current (cancellable);
+
+  if (class->flush)
+    res = class->flush (stream, cancellable, error);
+  else
+    res = TRUE;
+
+  if (!res)
+    {
+      /* flushing caused the error that we want to return,
+       * but we still want to close the underlying stream if possible
+       */
+      if (class->close_fn)
+        class->close_fn (stream, cancellable, NULL);
+    }
+  else
+    {
+      res = TRUE;
+      if (class->close_fn)
+        res = class->close_fn (stream, cancellable, error);
+    }
+
+  if (cancellable)
+    g_cancellable_pop_current (cancellable);
+
+  stream->priv->closing = FALSE;
+  stream->priv->closed = TRUE;
+
+  return res;
+}
 
 /**
  * g_output_stream_close:
  * @stream: A #GOutputStream.
  * @cancellable: (allow-none): optional cancellable object
- * @error: location to store the error occuring, or %NULL to ignore
+ * @error: location to store the error occurring, or %NULL to ignore
  *
  * Closes the stream, releasing resources related to it.
  *
@@ -493,7 +598,7 @@ g_output_stream_real_splice (GOutputStream             *stream,
  * is important to check and report the error to the user, otherwise
  * there might be a loss of data as all data might not be written.
  * 
- * If @cancellable is not NULL, then the operation can be cancelled by
+ * If @cancellable is not %NULL, then the operation can be cancelled by
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned.
  * Cancelling a close will still leave the stream closed, but there some streams
@@ -508,12 +613,9 @@ g_output_stream_close (GOutputStream  *stream,
 		       GCancellable   *cancellable,
 		       GError        **error)
 {
-  GOutputStreamClass *class;
   gboolean res;
 
   g_return_val_if_fail (G_IS_OUTPUT_STREAM (stream), FALSE);
-
-  class = G_OUTPUT_STREAM_GET_CLASS (stream);
 
   if (stream->priv->closed)
     return TRUE;
@@ -521,36 +623,8 @@ g_output_stream_close (GOutputStream  *stream,
   if (!g_output_stream_set_pending (stream, error))
     return FALSE;
 
-  stream->priv->closing = TRUE;
+  res = _g_output_stream_close_internal (stream, cancellable, error);
 
-  if (cancellable)
-    g_cancellable_push_current (cancellable);
-
-  if (class->flush)
-    res = class->flush (stream, cancellable, error);
-  else
-    res = TRUE;
-  
-  if (!res)
-    {
-      /* flushing caused the error that we want to return,
-       * but we still want to close the underlying stream if possible
-       */
-      if (class->close_fn)
-	class->close_fn (stream, cancellable, NULL);
-    }
-  else
-    {
-      res = TRUE;
-      if (class->close_fn)
-	res = class->close_fn (stream, cancellable, error);
-    }
-  
-  if (cancellable)
-    g_cancellable_pop_current (cancellable);
-
-  stream->priv->closing = FALSE;
-  stream->priv->closed = TRUE;
   g_output_stream_clear_pending (stream);
   
   return res;
@@ -749,7 +823,7 @@ g_output_stream_write_async (GOutputStream       *stream,
  * g_output_stream_write_finish:
  * @stream: a #GOutputStream.
  * @result: a #GAsyncResult.
- * @error: a #GError location to store the error occuring, or %NULL to 
+ * @error: a #GError location to store the error occurring, or %NULL to 
  * ignore.
  * 
  * Finishes a stream write operation.
@@ -761,25 +835,131 @@ g_output_stream_write_finish (GOutputStream  *stream,
                               GAsyncResult   *result,
                               GError        **error)
 {
-  GSimpleAsyncResult *simple;
   GOutputStreamClass *class;
 
   g_return_val_if_fail (G_IS_OUTPUT_STREAM (stream), -1);
   g_return_val_if_fail (G_IS_ASYNC_RESULT (result), -1);
 
-  if (G_IS_SIMPLE_ASYNC_RESULT (result))
+  if (g_async_result_legacy_propagate_error (result, error))
+    return -1;
+  else if (g_async_result_is_tagged (result, g_output_stream_write_async))
     {
-      simple = G_SIMPLE_ASYNC_RESULT (result);
-      if (g_simple_async_result_propagate_error (simple, error))
-	return -1;
-
       /* Special case writes of 0 bytes */
-      if (g_simple_async_result_get_source_tag (simple) == g_output_stream_write_async)
-	return 0;
+      return 0;
     }
   
   class = G_OUTPUT_STREAM_GET_CLASS (stream);
   return class->write_finish (stream, result, error);
+}
+
+static void
+write_bytes_callback (GObject      *stream,
+		      GAsyncResult *result,
+		      gpointer      user_data)
+{
+  GSimpleAsyncResult *simple = user_data;
+  GError *error = NULL;
+  gssize nwrote;
+
+  nwrote = g_output_stream_write_finish (G_OUTPUT_STREAM (stream),
+					 result, &error);
+  if (nwrote == -1)
+    g_simple_async_result_take_error (simple, error);
+  else
+    g_simple_async_result_set_op_res_gssize (simple, nwrote);
+  g_simple_async_result_complete (simple);
+  g_object_unref (simple);
+}
+
+/**
+ * g_output_stream_write_bytes_async:
+ * @stream: A #GOutputStream.
+ * @bytes: The bytes to write
+ * @io_priority: the io priority of the request.
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @callback: (scope async): callback to call when the request is satisfied
+ * @user_data: (closure): the data to pass to callback function
+ *
+ * Request an asynchronous write of the data in @bytes to the stream.
+ * When the operation is finished @callback will be called. You can
+ * then call g_output_stream_write_bytes_finish() to get the result of
+ * the operation.
+ *
+ * During an async request no other sync and async calls are allowed,
+ * and will result in %G_IO_ERROR_PENDING errors.
+ *
+ * A #GBytes larger than %G_MAXSSIZE will cause a
+ * %G_IO_ERROR_INVALID_ARGUMENT error.
+ *
+ * On success, the number of bytes written will be passed to the
+ * @callback. It is not an error if this is not the same as the
+ * requested size, as it can happen e.g. on a partial I/O error,
+ * but generally we try to write as many bytes as requested.
+ *
+ * You are guaranteed that this method will never fail with
+ * %G_IO_ERROR_WOULD_BLOCK - if @stream can't accept more data, the
+ * method will just wait until this changes.
+ *
+ * Any outstanding I/O request with higher priority (lower numerical
+ * value) will be executed before an outstanding request with lower
+ * priority. Default priority is %G_PRIORITY_DEFAULT.
+ *
+ * For the synchronous, blocking version of this function, see
+ * g_output_stream_write_bytes().
+ **/
+void
+g_output_stream_write_bytes_async (GOutputStream       *stream,
+				   GBytes              *bytes,
+				   int                  io_priority,
+				   GCancellable        *cancellable,
+				   GAsyncReadyCallback  callback,
+				   gpointer             user_data)
+{
+  GSimpleAsyncResult *simple;
+  gsize size;
+  gconstpointer data;
+
+  data = g_bytes_get_data (bytes, &size);
+
+  simple = g_simple_async_result_new (G_OBJECT (stream),
+				      callback, user_data,
+				      g_output_stream_write_bytes_async);
+  g_simple_async_result_set_op_res_gpointer (simple, g_bytes_ref (bytes),
+					     (GDestroyNotify) g_bytes_unref);
+
+  g_output_stream_write_async (stream,
+                               data, size,
+                               io_priority,
+                               cancellable,
+                               write_bytes_callback,
+                               simple);
+}
+
+/**
+ * g_output_stream_write_bytes_finish:
+ * @stream: a #GOutputStream.
+ * @result: a #GAsyncResult.
+ * @error: a #GError location to store the error occurring, or %NULL to
+ * ignore.
+ *
+ * Finishes a stream write-from-#GBytes operation.
+ *
+ * Returns: a #gssize containing the number of bytes written to the stream.
+ **/
+gssize
+g_output_stream_write_bytes_finish (GOutputStream  *stream,
+				    GAsyncResult   *result,
+				    GError        **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (G_IS_OUTPUT_STREAM (stream), -1);
+  g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (stream), g_output_stream_write_bytes_async), -1);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+  if (g_simple_async_result_propagate_error (simple, error))
+    return -1;
+  return g_simple_async_result_get_op_res_gssize (simple);
 }
 
 typedef struct {
@@ -875,30 +1055,28 @@ g_output_stream_splice_async (GOutputStream            *stream,
  * g_output_stream_splice_finish:
  * @stream: a #GOutputStream.
  * @result: a #GAsyncResult.
- * @error: a #GError location to store the error occuring, or %NULL to 
+ * @error: a #GError location to store the error occurring, or %NULL to 
  * ignore.
  *
  * Finishes an asynchronous stream splice operation.
  * 
- * Returns: a #gssize of the number of bytes spliced.
+ * Returns: a #gssize of the number of bytes spliced. Note that if the
+ *     number of bytes spliced is greater than %G_MAXSSIZE, then that
+ *     will be returned, and there is no way to determine the actual
+ *     number of bytes spliced.
  **/
 gssize
 g_output_stream_splice_finish (GOutputStream  *stream,
 			       GAsyncResult   *result,
 			       GError        **error)
 {
-  GSimpleAsyncResult *simple;
   GOutputStreamClass *class;
 
   g_return_val_if_fail (G_IS_OUTPUT_STREAM (stream), -1);
   g_return_val_if_fail (G_IS_ASYNC_RESULT (result), -1);
 
-  if (G_IS_SIMPLE_ASYNC_RESULT (result))
-    {
-      simple = G_SIMPLE_ASYNC_RESULT (result);
-      if (g_simple_async_result_propagate_error (simple, error))
-	return -1;
-    }
+  if (g_async_result_legacy_propagate_error (result, error))
+    return -1;
   
   class = G_OUTPUT_STREAM_GET_CLASS (stream);
   return class->splice_finish (stream, result, error);
@@ -912,7 +1090,8 @@ g_output_stream_splice_finish (GOutputStream  *stream,
  * @callback: (scope async): a #GAsyncReadyCallback to call when the request is satisfied
  * @user_data: (closure): the data to pass to callback function
  * 
- * Flushes a stream asynchronously.
+ * Forces an asynchronous write of all user-space buffered data for
+ * the given @stream.
  * For behaviour details see g_output_stream_flush().
  *
  * When the operation is finished @callback will be 
@@ -965,33 +1144,29 @@ g_output_stream_flush_async (GOutputStream       *stream,
  * g_output_stream_flush_finish:
  * @stream: a #GOutputStream.
  * @result: a GAsyncResult.
- * @error: a #GError location to store the error occuring, or %NULL to 
+ * @error: a #GError location to store the error occurring, or %NULL to 
  * ignore.
  * 
  * Finishes flushing an output stream.
  * 
- * Returns: %TRUE if flush operation suceeded, %FALSE otherwise.
+ * Returns: %TRUE if flush operation succeeded, %FALSE otherwise.
  **/
 gboolean
 g_output_stream_flush_finish (GOutputStream  *stream,
                               GAsyncResult   *result,
                               GError        **error)
 {
-  GSimpleAsyncResult *simple;
   GOutputStreamClass *klass;
 
   g_return_val_if_fail (G_IS_OUTPUT_STREAM (stream), FALSE);
   g_return_val_if_fail (G_IS_ASYNC_RESULT (result), FALSE);
 
-  if (G_IS_SIMPLE_ASYNC_RESULT (result))
+  if (g_async_result_legacy_propagate_error (result, error))
+    return FALSE;
+  else if (g_async_result_is_tagged (result, g_output_stream_flush_async))
     {
-      simple = G_SIMPLE_ASYNC_RESULT (result);
-      if (g_simple_async_result_propagate_error (simple, error))
-	return FALSE;
-
       /* Special case default implementation */
-      if (g_simple_async_result_get_source_tag (simple) == g_output_stream_flush_async)
-	return TRUE;
+      return 0;
     }
 
   klass = G_OUTPUT_STREAM_GET_CLASS (stream);
@@ -1087,7 +1262,7 @@ g_output_stream_close_async (GOutputStream       *stream,
  * g_output_stream_close_finish:
  * @stream: a #GOutputStream.
  * @result: a #GAsyncResult.
- * @error: a #GError location to store the error occuring, or %NULL to 
+ * @error: a #GError location to store the error occurring, or %NULL to 
  * ignore.
  * 
  * Closes an output stream.
@@ -1099,21 +1274,17 @@ g_output_stream_close_finish (GOutputStream  *stream,
                               GAsyncResult   *result,
                               GError        **error)
 {
-  GSimpleAsyncResult *simple;
   GOutputStreamClass *class;
 
   g_return_val_if_fail (G_IS_OUTPUT_STREAM (stream), FALSE);
   g_return_val_if_fail (G_IS_ASYNC_RESULT (result), FALSE);
 
-  if (G_IS_SIMPLE_ASYNC_RESULT (result))
+  if (g_async_result_legacy_propagate_error (result, error))
+    return FALSE;
+  else if (g_async_result_is_tagged (result, g_output_stream_close_async))
     {
-      simple = G_SIMPLE_ASYNC_RESULT (result);
-      if (g_simple_async_result_propagate_error (simple, error))
-	return FALSE;
-
       /* Special case already closed */
-      if (g_simple_async_result_get_source_tag (simple) == g_output_stream_close_async)
-	return TRUE;
+      return TRUE;
     }
 
   class = G_OUTPUT_STREAM_GET_CLASS (stream);
@@ -1176,7 +1347,7 @@ g_output_stream_has_pending (GOutputStream *stream)
 /**
  * g_output_stream_set_pending:
  * @stream: a #GOutputStream.
- * @error: a #GError location to store the error occuring, or %NULL to 
+ * @error: a #GError location to store the error occurring, or %NULL to 
  * ignore.
  * 
  * Sets @stream to have actions pending. If the pending flag is
@@ -1235,7 +1406,19 @@ typedef struct {
   const void         *buffer;
   gsize               count_requested;
   gssize              count_written;
+
+  GCancellable       *cancellable;
+  gint                io_priority;
+  gboolean            need_idle;
 } WriteData;
+
+static void
+free_write_data (WriteData *op)
+{
+  if (op->cancellable)
+    g_object_unref (op->cancellable);
+  g_slice_free (WriteData, op);
+}
 
 static void
 write_async_thread (GSimpleAsyncResult *res,
@@ -1254,6 +1437,60 @@ write_async_thread (GSimpleAsyncResult *res,
     g_simple_async_result_take_error (res, error);
 }
 
+static void write_async_pollable (GPollableOutputStream *stream,
+				  GSimpleAsyncResult    *result);
+
+static gboolean
+write_async_pollable_ready (GPollableOutputStream *stream,
+			    gpointer               user_data)
+{
+  GSimpleAsyncResult *result = user_data;
+
+  write_async_pollable (stream, result);
+  return FALSE;
+}
+
+static void
+write_async_pollable (GPollableOutputStream *stream,
+		      GSimpleAsyncResult    *result)
+{
+  GError *error = NULL;
+  WriteData *op = g_simple_async_result_get_op_res_gpointer (result);
+
+  if (g_cancellable_set_error_if_cancelled (op->cancellable, &error))
+    op->count_written = -1;
+  else
+    {
+      op->count_written = G_POLLABLE_OUTPUT_STREAM_GET_INTERFACE (stream)->
+	write_nonblocking (stream, op->buffer, op->count_requested, &error);
+    }
+
+  if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK))
+    {
+      GSource *source;
+
+      g_error_free (error);
+      op->need_idle = FALSE;
+
+      source = g_pollable_output_stream_create_source (stream, op->cancellable);
+      g_source_set_callback (source,
+			     (GSourceFunc) write_async_pollable_ready,
+			     g_object_ref (result), g_object_unref);
+      g_source_set_priority (source, op->io_priority);
+      g_source_attach (source, g_main_context_get_thread_default ());
+      g_source_unref (source);
+      return;
+    }
+
+  if (op->count_written == -1)
+    g_simple_async_result_take_error (result, error);
+
+  if (op->need_idle)
+    g_simple_async_result_complete_in_idle (result);
+  else
+    g_simple_async_result_complete (result);
+}
+
 static void
 g_output_stream_real_write_async (GOutputStream       *stream,
                                   const void          *buffer,
@@ -1266,13 +1503,20 @@ g_output_stream_real_write_async (GOutputStream       *stream,
   GSimpleAsyncResult *res;
   WriteData *op;
 
-  op = g_new0 (WriteData, 1);
+  op = g_slice_new0 (WriteData);
   res = g_simple_async_result_new (G_OBJECT (stream), callback, user_data, g_output_stream_real_write_async);
-  g_simple_async_result_set_op_res_gpointer (res, op, g_free);
+  g_simple_async_result_set_op_res_gpointer (res, op, (GDestroyNotify) free_write_data);
   op->buffer = buffer;
   op->count_requested = count;
+  op->cancellable = cancellable ? g_object_ref (cancellable) : NULL;
+  op->io_priority = io_priority;
+  op->need_idle = TRUE;
   
-  g_simple_async_result_run_in_thread (res, write_async_thread, io_priority, cancellable);
+  if (G_IS_POLLABLE_OUTPUT_STREAM (stream) &&
+      g_pollable_output_stream_can_poll (G_POLLABLE_OUTPUT_STREAM (stream)))
+    write_async_pollable (G_POLLABLE_OUTPUT_STREAM (stream), res);
+  else
+    g_simple_async_result_run_in_thread (res, write_async_thread, io_priority, cancellable);
   g_object_unref (res);
 }
 
@@ -1285,6 +1529,10 @@ g_output_stream_real_write_finish (GOutputStream  *stream,
   WriteData *op;
 
   g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_output_stream_real_write_async);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return -1;
+
   op = g_simple_async_result_get_op_res_gpointer (simple);
   return op->count_written;
 }
@@ -1352,6 +1600,10 @@ g_output_stream_real_splice_finish (GOutputStream  *stream,
   SpliceData *op;
 
   g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_output_stream_real_splice_async);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return -1;
+
   op = g_simple_async_result_get_op_res_gpointer (simple);
   return op->bytes_copied;
 }
@@ -1395,6 +1647,10 @@ g_output_stream_real_flush_finish (GOutputStream  *stream,
                                    GAsyncResult   *result,
                                    GError        **error)
 {
+  GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
   return TRUE;
 }
 
@@ -1459,6 +1715,10 @@ g_output_stream_real_close_finish (GOutputStream  *stream,
                                    GError        **error)
 {
   GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
+
   g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_output_stream_real_close_async);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
   return TRUE;
 }

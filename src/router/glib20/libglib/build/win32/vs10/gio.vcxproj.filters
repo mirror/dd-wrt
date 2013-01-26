@@ -17,6 +17,8 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\gio\gaction.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gactiongroup.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gactiongroupexporter.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gactionmap.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gappinfo.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gapplication.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gapplicationcommandline.c"><Filter>Source Files</Filter></ClCompile>
@@ -28,13 +30,14 @@
     <ClCompile Include="..\..\..\gio\gbufferedoutputstream.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gcancellable.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gcharsetconverter.c"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\..\..\gio\gcontenttype.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gcontenttype-win32.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gconverter.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gconverterinputstream.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gconverteroutputstream.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gcredentials.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdatainputstream.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdataoutputstream.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbusactiongroup.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusaddress.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusauth.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusauthmechanismanon.c"><Filter>Source Files</Filter></ClCompile>
@@ -43,12 +46,23 @@
     <ClCompile Include="..\..\..\gio\gdbusauthmechanismsha1.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusauthobserver.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusconnection.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbusdaemon.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbus-daemon-generated.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbuserror.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbusinterface.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbusinterfaceskeleton.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusintrospection.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbusmenumodel.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusmessage.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusmethodinvocation.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusnameowning.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusnamewatching.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbusobject.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbusobjectmanager.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbusobjectmanagerclient.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbusobjectmanagerserver.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbusobjectproxy.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gdbusobjectskeleton.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusprivate.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusproxy.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gdbusserver.c"><Filter>Source Files</Filter></ClCompile>
@@ -75,12 +89,12 @@
     <ClCompile Include="..\..\..\gio\gfilteroutputstream.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gicon.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\ginetaddress.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\ginetaddressmask.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\ginetsocketaddress.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\ginitable.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\ginputstream.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gioenumtypes.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gioerror.c"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\..\..\gio\gio-marshal.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\giomodule.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gioscheduler.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\giostream.c"><Filter>Source Files</Filter></ClCompile>
@@ -98,22 +112,32 @@
     <ClCompile Include="..\..\..\gio\gmemoryinputstream.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gmemoryoutputstream.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gmemorysettingsbackend.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gmenu.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gmenuexporter.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gmenumodel.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gmount.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gmountoperation.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gnativevolumemonitor.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gnetworkaddress.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gnetworkmonitorbase.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gnetworkmonitor.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gnetworkservice.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gnullsettingsbackend.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\goutputstream.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gpermission.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gpollableinputstream.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gpollableoutputstream.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gpollableutils.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gpollfilemonitor.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gproxyaddress.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gproxyaddressenumerator.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gproxy.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gproxyresolver.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gregistrysettingsbackend.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gremoteactiongroup.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gresolver.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gresource.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gresourcefile.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gseekable.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gsettingsbackend.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gsettings.c"><Filter>Source Files</Filter></ClCompile>
@@ -140,6 +164,7 @@
     <ClCompile Include="..\..\..\gio\gsrvtarget.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gtcpconnection.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gtcpwrapperconnection.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gtestdbus.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gthemedicon.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gthreadedresolver.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gthreadedsocketservice.c"><Filter>Source Files</Filter></ClCompile>
@@ -147,40 +172,28 @@
     <ClCompile Include="..\..\..\gio\gtlscertificate.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gtlsclientconnection.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gtlsconnection.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gtlsdatabase.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gtlsfiledatabase.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gtlsinteraction.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gtlspassword.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gtlsserverconnection.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gunionvolumemonitor.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gvdb\gvdb-reader.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gvfs.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gvolume.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gvolumemonitor.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\gwin32appinfo.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gwin32inputstream.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gwin32mount.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gwin32outputstream.c"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\..\..\gio\gwin32resolver.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gwin32volumemonitor.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gzlibcompressor.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gio\gzlibdecompressor.c"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\..\..\gio\gregistrysettingsbackend.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gio\gwin32appinfo.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gio\win32\gwin32directorymonitor.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gio\win32\gwinhttpfile.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gio\win32\gwinhttpfileinputstream.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gio\win32\gwinhttpfileoutputstream.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gio\win32\gwinhttpvfs.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClCompile Include="..\..\..\gio\win32\gwin32directorymonitor.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\win32\gwinhttpfile.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\win32\gwinhttpfileinputstream.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\win32\gwinhttpfileoutputstream.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gio\win32\gwinhttpvfs.c"><Filter>Source Files</Filter></ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\gio\gio.rc">

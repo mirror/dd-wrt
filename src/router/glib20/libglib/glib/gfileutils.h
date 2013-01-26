@@ -18,7 +18,7 @@
  *   Boston, MA 02111-1307, USA.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -60,7 +60,7 @@ typedef enum
   G_FILE_ERROR_FAILED
 } GFileError;
 
-/* For backward-compat reasons, these are synced to an old 
+/* For backward-compat reasons, these are synced to an old
  * anonymous enum in libgnome. But don't use that enum
  * in new code.
  */
@@ -90,40 +90,89 @@ gboolean g_file_test         (const gchar  *filename,
                               GFileTest     test);
 gboolean g_file_get_contents (const gchar  *filename,
                               gchar       **contents,
-                              gsize        *length,    
+                              gsize        *length,
                               GError      **error);
 gboolean g_file_set_contents (const gchar *filename,
-			      const gchar *contents,
-			      gssize	     length,
-			      GError	   **error);
+                              const gchar *contents,
+                              gssize         length,
+                              GError       **error);
 gchar   *g_file_read_link    (const gchar  *filename,
-			      GError      **error);
+                              GError      **error);
+
+/* Wrapper / workalike for mkdtemp() */
+GLIB_AVAILABLE_IN_2_30
+gchar   *g_mkdtemp            (gchar        *tmpl);
+GLIB_AVAILABLE_IN_2_30
+gchar   *g_mkdtemp_full       (gchar        *tmpl,
+                               gint          mode);
 
 /* Wrapper / workalike for mkstemp() */
-gint    g_mkstemp            (gchar        *tmpl);
-gint    g_mkstemp_full       (gchar        *tmpl,
-                              int           flags,
-                              int           mode);
+gint     g_mkstemp            (gchar        *tmpl);
+gint     g_mkstemp_full       (gchar        *tmpl,
+                               gint          flags,
+                               gint          mode);
 
-/* Wrapper for g_mkstemp */
-gint    g_file_open_tmp      (const gchar  *tmpl,
-			      gchar       **name_used,
-			      GError      **error);
+/* Wrappers for g_mkstemp and g_mkdtemp() */
+gint     g_file_open_tmp      (const gchar  *tmpl,
+                               gchar       **name_used,
+                               GError      **error);
+GLIB_AVAILABLE_IN_2_30
+gchar   *g_dir_make_tmp       (const gchar  *tmpl,
+                               GError      **error);
 
-char *g_format_size_for_display (goffset size);
+gchar   *g_build_path         (const gchar *separator,
+                               const gchar *first_element,
+                               ...) G_GNUC_MALLOC G_GNUC_NULL_TERMINATED;
+gchar   *g_build_pathv        (const gchar  *separator,
+                               gchar       **args) G_GNUC_MALLOC;
 
-gchar *g_build_path     (const gchar *separator,
-			 const gchar *first_element,
-			 ...) G_GNUC_MALLOC G_GNUC_NULL_TERMINATED;
-gchar *g_build_pathv    (const gchar  *separator,
-			 gchar       **args) G_GNUC_MALLOC;
+gchar   *g_build_filename     (const gchar *first_element,
+                               ...) G_GNUC_MALLOC G_GNUC_NULL_TERMINATED;
+gchar   *g_build_filenamev    (gchar      **args) G_GNUC_MALLOC;
 
-gchar *g_build_filename (const gchar *first_element,
-			 ...) G_GNUC_MALLOC G_GNUC_NULL_TERMINATED;
-gchar *g_build_filenamev (gchar      **args) G_GNUC_MALLOC;
+gint     g_mkdir_with_parents (const gchar *pathname,
+                               gint         mode);
 
-int    g_mkdir_with_parents (const gchar *pathname,
-			     int          mode);
+#ifdef G_OS_WIN32
+
+/* On Win32, the canonical directory separator is the backslash, and
+ * the search path separator is the semicolon. Note that also the
+ * (forward) slash works as directory separator.
+ */
+#define G_DIR_SEPARATOR '\\'
+#define G_DIR_SEPARATOR_S "\\"
+#define G_IS_DIR_SEPARATOR(c) ((c) == G_DIR_SEPARATOR || (c) == '/')
+#define G_SEARCHPATH_SEPARATOR ';'
+#define G_SEARCHPATH_SEPARATOR_S ";"
+
+#else  /* !G_OS_WIN32 */
+
+#define G_DIR_SEPARATOR '/'
+#define G_DIR_SEPARATOR_S "/"
+#define G_IS_DIR_SEPARATOR(c) ((c) == G_DIR_SEPARATOR)
+#define G_SEARCHPATH_SEPARATOR ':'
+#define G_SEARCHPATH_SEPARATOR_S ":"
+
+#endif /* !G_OS_WIN32 */
+
+gboolean     g_path_is_absolute (const gchar *file_name);
+const gchar *g_path_skip_root   (const gchar *file_name);
+
+GLIB_DEPRECATED_FOR(g_path_get_basename)
+const gchar *g_basename         (const gchar *file_name);
+#ifndef G_DISABLE_DEPRECATED
+#define g_dirname g_path_get_dirname
+#endif
+
+#ifndef __GTK_DOC_IGNORE__
+#ifdef G_OS_WIN32
+#define g_get_current_dir g_get_current_dir_utf8
+#endif
+#endif
+
+gchar *g_get_current_dir   (void);
+gchar *g_path_get_basename (const gchar *file_name) G_GNUC_MALLOC;
+gchar *g_path_get_dirname  (const gchar *file_name) G_GNUC_MALLOC;
 
 G_END_DECLS
 

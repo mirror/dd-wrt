@@ -26,8 +26,8 @@
 
 #include <glib/gtestutils.h>
 #include <glib/gthread.h>
+#include <glib/gslice.h>
 #include <glib/ghash.h>
-
 
 /* < private >
  * GVariantTypeInfo:
@@ -50,7 +50,7 @@
  * for "as" (note that "s" and "v" always exist in the static array).
  *
  * The trickiest part of GVariantTypeInfo (and in fact, the major reason
- * for its existance) is the storage of somewhat magical constants that
+ * for its existence) is the storage of somewhat magical constants that
  * allow for O(1) lookups of items in tuples.  This is described below.
  *
  * 'container_class' is set to 'a' or 'r' if the GVariantTypeInfo is
@@ -222,8 +222,8 @@ g_variant_type_info_get_type_string (GVariantTypeInfo *info)
 /* < private >
  * g_variant_type_info_query:
  * @info: a #GVariantTypeInfo
- * @alignment: the location to store the alignment, or %NULL
- * @fixed_size: the location to store the fixed size, or %NULL
+ * @alignment: (allow-none): the location to store the alignment, or %NULL
+ * @fixed_size: (allow-none): the location to store the fixed size, or %NULL
  *
  * Queries @info to determine the alignment requirements and fixed size
  * (if any) of the type.
@@ -254,11 +254,11 @@ g_variant_type_info_query (GVariantTypeInfo *info,
 }
 
 /* == array == */
-#define ARRAY_INFO_CLASS 'a'
+#define GV_ARRAY_INFO_CLASS 'a'
 static ArrayInfo *
-ARRAY_INFO (GVariantTypeInfo *info)
+GV_ARRAY_INFO (GVariantTypeInfo *info)
 {
-  g_variant_type_info_check (info, ARRAY_INFO_CLASS);
+  g_variant_type_info_check (info, GV_ARRAY_INFO_CLASS);
 
   return (ArrayInfo *) info;
 }
@@ -268,7 +268,7 @@ array_info_free (GVariantTypeInfo *info)
 {
   ArrayInfo *array_info;
 
-  g_assert (info->container_class == ARRAY_INFO_CLASS);
+  g_assert (info->container_class == GV_ARRAY_INFO_CLASS);
   array_info = (ArrayInfo *) info;
 
   g_variant_type_info_unref (array_info->element);
@@ -281,7 +281,7 @@ array_info_new (const GVariantType *type)
   ArrayInfo *info;
 
   info = g_slice_new (ArrayInfo);
-  info->container.info.container_class = ARRAY_INFO_CLASS;
+  info->container.info.container_class = GV_ARRAY_INFO_CLASS;
 
   info->element = g_variant_type_info_get (g_variant_type_element (type));
   info->container.info.alignment = info->element->alignment;
@@ -300,14 +300,14 @@ array_info_new (const GVariantType *type)
 GVariantTypeInfo *
 g_variant_type_info_element (GVariantTypeInfo *info)
 {
-  return ARRAY_INFO (info)->element;
+  return GV_ARRAY_INFO (info)->element;
 }
 
 /* < private >
  * g_variant_type_query_element:
  * @info: a #GVariantTypeInfo for an array or maybe type
- * @alignment: the location to store the alignment, or %NULL
- * @fixed_size: the location to store the fixed size, or %NULL
+ * @alignment: (allow-none): the location to store the alignment, or %NULL
+ * @fixed_size: (allow-none): the location to store the fixed size, or %NULL
  *
  * Returns the alignment requires and fixed size (if any) for the
  * element type of the array.  This call is a convenience wrapper around
@@ -318,16 +318,16 @@ g_variant_type_info_query_element (GVariantTypeInfo *info,
                                    guint            *alignment,
                                    gsize            *fixed_size)
 {
-  g_variant_type_info_query (ARRAY_INFO (info)->element,
+  g_variant_type_info_query (GV_ARRAY_INFO (info)->element,
                              alignment, fixed_size);
 }
 
 /* == tuple == */
-#define TUPLE_INFO_CLASS 'r'
+#define GV_TUPLE_INFO_CLASS 'r'
 static TupleInfo *
-TUPLE_INFO (GVariantTypeInfo *info)
+GV_TUPLE_INFO (GVariantTypeInfo *info)
 {
-  g_variant_type_info_check (info, TUPLE_INFO_CLASS);
+  g_variant_type_info_check (info, GV_TUPLE_INFO_CLASS);
 
   return (TupleInfo *) info;
 }
@@ -338,7 +338,7 @@ tuple_info_free (GVariantTypeInfo *info)
   TupleInfo *tuple_info;
   gint i;
 
-  g_assert (info->container_class == TUPLE_INFO_CLASS);
+  g_assert (info->container_class == GV_TUPLE_INFO_CLASS);
   tuple_info = (TupleInfo *) info;
 
   for (i = 0; i < tuple_info->n_members; i++)
@@ -662,7 +662,7 @@ tuple_info_new (const GVariantType *type)
   TupleInfo *info;
 
   info = g_slice_new (TupleInfo);
-  info->container.info.container_class = TUPLE_INFO_CLASS;
+  info->container.info.container_class = GV_TUPLE_INFO_CLASS;
 
   tuple_allocate_members (type, &info->members, &info->n_members);
   tuple_generate_table (info);
@@ -681,7 +681,7 @@ tuple_info_new (const GVariantType *type)
 gsize
 g_variant_type_info_n_members (GVariantTypeInfo *info)
 {
-  return TUPLE_INFO (info)->n_members;
+  return GV_TUPLE_INFO (info)->n_members;
 }
 
 /* < private >
@@ -700,7 +700,7 @@ const GVariantMemberInfo *
 g_variant_type_info_member_info (GVariantTypeInfo *info,
                                  gsize             index)
 {
-  TupleInfo *tuple_info = TUPLE_INFO (info);
+  TupleInfo *tuple_info = GV_TUPLE_INFO (info);
 
   if (index < tuple_info->n_members)
     return &tuple_info->members[index];
@@ -709,7 +709,7 @@ g_variant_type_info_member_info (GVariantTypeInfo *info,
 }
 
 /* == new/ref/unref == */
-static GStaticRecMutex g_variant_type_info_lock = G_STATIC_REC_MUTEX_INIT;
+static GRecMutex g_variant_type_info_lock;
 static GHashTable *g_variant_type_info_table;
 
 /* < private >
@@ -742,7 +742,7 @@ g_variant_type_info_get (const GVariantType *type)
 
       type_string = g_variant_type_dup_string (type);
 
-      g_static_rec_mutex_lock (&g_variant_type_info_lock);
+      g_rec_mutex_lock (&g_variant_type_info_lock);
 
       if (g_variant_type_info_table == NULL)
         g_variant_type_info_table = g_hash_table_new (g_str_hash,
@@ -773,7 +773,7 @@ g_variant_type_info_get (const GVariantType *type)
       else
         g_variant_type_info_ref (info);
 
-      g_static_rec_mutex_unlock (&g_variant_type_info_lock);
+      g_rec_mutex_unlock (&g_variant_type_info_lock);
       g_variant_type_info_check (info, 0);
       g_free (type_string);
 
@@ -834,7 +834,7 @@ g_variant_type_info_unref (GVariantTypeInfo *info)
     {
       ContainerInfo *container = (ContainerInfo *) info;
 
-      g_static_rec_mutex_lock (&g_variant_type_info_lock);
+      g_rec_mutex_lock (&g_variant_type_info_lock);
       if (g_atomic_int_dec_and_test (&container->ref_count))
         {
           g_hash_table_remove (g_variant_type_info_table,
@@ -844,21 +844,21 @@ g_variant_type_info_unref (GVariantTypeInfo *info)
               g_hash_table_unref (g_variant_type_info_table);
               g_variant_type_info_table = NULL;
             }
-          g_static_rec_mutex_unlock (&g_variant_type_info_lock);
+          g_rec_mutex_unlock (&g_variant_type_info_lock);
 
           g_free (container->type_string);
 
-          if (info->container_class == ARRAY_INFO_CLASS)
+          if (info->container_class == GV_ARRAY_INFO_CLASS)
             array_info_free (info);
 
-          else if (info->container_class == TUPLE_INFO_CLASS)
+          else if (info->container_class == GV_TUPLE_INFO_CLASS)
             tuple_info_free (info);
 
           else
             g_assert_not_reached ();
         }
       else
-        g_static_rec_mutex_unlock (&g_variant_type_info_lock);
+        g_rec_mutex_unlock (&g_variant_type_info_lock);
     }
 }
 

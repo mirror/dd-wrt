@@ -49,7 +49,7 @@
  * types and interface implementations are in use, the module is kept
  * loaded. When the types and interfaces are gone, the module may be
  * unloaded. If the types and interfaces become used again, the module
- * will be reloaded. Note that the last unref can not happen in module
+ * will be reloaded. Note that the last unref cannot happen in module
  * code, since that would lead to the caller's code being unloaded before
  * g_object_unref() returns to it.
  *
@@ -153,7 +153,7 @@ g_type_module_get_type (void)
 
   if (!type_module_type)
     {
-      static const GTypeInfo type_module_info = {
+      const GTypeInfo type_module_info = {
         sizeof (GTypeModuleClass),
         NULL,           /* base_init */
         NULL,           /* base_finalize */
@@ -164,7 +164,7 @@ g_type_module_get_type (void)
         0,              /* n_preallocs */
         NULL,           /* instance_init */
       };
-      static const GInterfaceInfo iface_info = {
+      const GInterfaceInfo iface_info = {
         (GInterfaceInitFunc) g_type_module_iface_init,
         NULL,               /* interface_finalize */
         NULL,               /* interface_data */

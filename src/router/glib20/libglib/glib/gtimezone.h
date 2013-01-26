@@ -19,7 +19,7 @@
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -63,11 +63,11 @@ void                    g_time_zone_unref                               (GTimeZo
 
 gint                    g_time_zone_find_interval                       (GTimeZone   *tz,
                                                                          GTimeType    type,
-                                                                         gint64       time);
+                                                                         gint64       time_);
 
 gint                    g_time_zone_adjust_time                         (GTimeZone   *tz,
                                                                          GTimeType    type,
-                                                                         gint64      *time);
+                                                                         gint64      *time_);
 
 const gchar *           g_time_zone_get_abbreviation                    (GTimeZone   *tz,
                                                                          gint         interval);

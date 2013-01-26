@@ -41,26 +41,6 @@ G_BEGIN_DECLS
 
 typedef struct _GActionGroupInterface                       GActionGroupInterface;
 
-/**
- * GActionGroupInterface:
- * @has_action: the virtual function pointer for g_action_group_has_action()
- * @list_actions: the virtual function pointer for g_action_group_list_actions()
- * @get_parameter_type: the virtual function pointer for g_action_group_get_parameter_type()
- * @get_state_type: the virtual function pointer for g_action_group_get_state_type()
- * @get_state_hint: the virtual function pointer for g_action_group_get_state_hint()
- * @get_enabled: the virtual function pointer for g_action_group_get_enabled()
- * @get_state: the virtual function pointer for g_action_group_get_state()
- * @set_state: the virtual function pointer for g_action_group_set_state()
- * @activate: the virtual function pointer for g_action_group_activate()
- * @action_added: the class closure for the action-added signal
- * @action_removed: the class closure for the action-removed signal
- * @action_enabled_changed: the class closure for the action-enabled-changed signal
- * @action_state_changed: the class closure for the action-enabled-changed signal
- *
- * The virtual function table for #GActionGroup.
- *
- * Since: 2.28
- */
 struct _GActionGroupInterface
 {
   GTypeInterface g_iface;
@@ -104,7 +84,16 @@ struct _GActionGroupInterface
                                                         gboolean       enabled);
   void                  (* action_state_changed)       (GActionGroup   *action_group,
                                                         const gchar    *action_name,
-                                                        GVariant       *value);
+                                                        GVariant       *state);
+
+  /* more virtual functions */
+  gboolean              (* query_action)               (GActionGroup        *action_group,
+                                                        const gchar         *action_name,
+                                                        gboolean            *enabled,
+                                                        const GVariantType **parameter_type,
+                                                        const GVariantType **state_type,
+                                                        GVariant           **state_hint,
+                                                        GVariant           **state);
 };
 
 GType                   g_action_group_get_type                         (void) G_GNUC_CONST;
@@ -145,6 +134,15 @@ void                    g_action_group_action_enabled_changed           (GAction
 void                    g_action_group_action_state_changed             (GActionGroup *action_group,
                                                                          const gchar  *action_name,
                                                                          GVariant     *state);
+
+GLIB_AVAILABLE_IN_2_32
+gboolean                g_action_group_query_action                     (GActionGroup        *action_group,
+                                                                         const gchar         *action_name,
+                                                                         gboolean            *enabled,
+                                                                         const GVariantType **parameter_type,
+                                                                         const GVariantType **state_type,
+                                                                         GVariant           **state_hint,
+                                                                         GVariant           **state);
 
 G_END_DECLS
 

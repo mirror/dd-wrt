@@ -5,24 +5,21 @@
 include $(top_srcdir)/Makefile.decl
 
 SUBDIRS = .
-
-CLEANFILES=
-
-if HAVE_THREADS
-THREAD_FLAGS=-DG_THREADS_MANDATORY
+if BUILD_MODULAR_TESTS
+SUBDIRS += tests 
 endif
+
+BUILT_SOURCES=
+CLEANFILES=
 
 AM_CPPFLAGS = 					\
 	-DG_LOG_DOMAIN=\"GLib-GObject\"		\
 	$(gthread_INCLUDES) 			\
 	$(GLIB_DEBUG_FLAGS)			\
-	$(THREAD_FLAGS)				\
-	-DG_DISABLE_DEPRECATED			\
-	-DGOBJECT_COMPILATION			\
-	-DG_DISABLE_CONST_RETURNS
+	-DGOBJECT_COMPILATION
 
 gobject.def: gobject.symbols
-	$(AM_V_GEN) (echo -e EXPORTS; $(CPP) -P -DINCLUDE_VARIABLES -DINCLUDE_INTERNAL_SYMBOLS -DG_OS_WIN32 -DALL_FILES - <$(srcdir)/gobject.symbols | sed -e '/^$$/d' -e 's/^/	/' -e 's/G_GNUC_[^ ]*//g' | sort) > gobject.def
+	$(AM_V_GEN) (echo EXPORTS; $(CPP) -P -DINCLUDE_VARIABLES -DINCLUDE_INTERNAL_SYMBOLS -DG_OS_WIN32 -DALL_FILES - <$(srcdir)/gobject.symbols | $(SED) -e '/^$$/d' -e 's/^/	/' -e 's/G_GNUC_[^ ]*//g' | sort) > $(builddir)/gobject.def
 
 if OS_LINUX
 if HAVE_GNUC_VISIBILITY
@@ -55,14 +52,14 @@ no_undefined = -no-undefined
 endif
 
 if OS_WIN32_AND_DLL_COMPILATION
-export_symbols = -export-symbols gobject.def
+export_symbols = -export-symbols $(builddir)/gobject.def
 gobject_def = gobject.def
 
 gobject_win32_res = gobject-win32-res.o
 gobject_win32_res_ldflag = -Wl,$(gobject_win32_res)
 
 install-def-file:
-	$(INSTALL) gobject.def $(DESTDIR)$(libdir)/gobject-2.0.def
+	$(INSTALL) $(builddir)/gobject.def $(DESTDIR)$(libdir)/gobject-2.0.def
 
 uninstall-def-file:
 	-rm $(DESTDIR)$(libdir)/gobject-2.0.def
@@ -80,7 +77,9 @@ libgobject_2_0_la_LDFLAGS = $(GLIB_LINK_FLAGS) \
   -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
   -export-dynamic $(no_undefined) $(export_symbols)
 
-libgobject_2_0_la_LIBADD = $(libglib)
+libgobject_2_0_la_CFLAGS = 
+
+libgobject_2_0_la_LIBADD = $(libglib) 
 
 libgobject_2_0_la_DEPENDENCIES = $(gobject_win32_res) $(gobject_def)
 
@@ -89,10 +88,12 @@ libgobject_2_0_la_DEPENDENCIES = $(gobject_win32_res) $(gobject_def)
 #
 # GObject library header files for public installation
 gobject_public_h_sources = \
+	glib-types.h		\
 	gbinding.h		\
 	gboxed.h		\
 	gclosure.h		\
 	genums.h		\
+	gmarshal.h		\
 	gobject.h		\
 	gparam.h		\
 	gparamspecs.h		\
@@ -105,8 +106,7 @@ gobject_public_h_sources = \
 	gvaluearray.h		\
 	gvaluecollector.h	\
 	gvaluetypes.h		\
-	gobjectnotifyqueue.c	\
-	gmarshal.h
+	gobjectnotifyqueue.c
 
 # GObject library header files that don't get installed
 gobject_private_h_sources =     \
@@ -121,6 +121,7 @@ gobject_c_sources = \
 	gboxed.c		\
 	gclosure.c		\
 	genums.c		\
+	gmarshal.c		\
 	gobject.c		\
 	gobject_trace.h		\
 	gparam.c		\
@@ -135,15 +136,12 @@ gobject_c_sources = \
 	gvaluetransform.c	\
 	gvaluetypes.c
 
-# these sources (also mentioned above) are generated.
-BUILT_SOURCES = gmarshal.h gmarshal.c
-
 if ENABLE_DTRACE
 gobject_probes.h: gobject_probes.d Makefile
-	$(DTRACE) -C -h -s $< -o $@.tmp
-	sed -e "s,define STAP_HAS_SEMAPHORES 1,undef STAP_HAS_SEMAPHORES," < $@.tmp > $@ && rm -f $@.tmp
+	$(AM_V_GEN) $(DTRACE) -C -h -s $< -o $@.tmp
+	@$(SED) -e "s,define STAP_HAS_SEMAPHORES 1,undef STAP_HAS_SEMAPHORES," < $@.tmp > $@ && rm -f $@.tmp
 gobject_probes.o: gobject_probes.d Makefile
-	$(DTRACE) -G -s $< -o $@
+	$(AM_V_GEN) $(DTRACE) -G -s $< -o $@
 BUILT_SOURCES += gobject_probes.h gobject_probes.o
 CLEANFILES += gobject_probes.h
 libgobject_2_0_la_LIBADD += gobject_probes.o
@@ -176,6 +174,14 @@ EXTRA_DIST += \
 	$(gobject_extra_sources) 	\
 	marshal-genstrings.pl
 
+# This is read by gobject-introspection/misc/ and gtk-doc
+gobject-public-headers.txt: Makefile
+	echo $(gobject_public_h_sources) > $@.tmp && mv $@.tmp $@
+
+CLEANFILES += gobject-public-headers.txt
+
+all-local: gobject-public-headers.txt
+
 #
 # rules to generate built sources
 #
@@ -190,37 +196,14 @@ CLEANFILES += $(gen_sources)
 # srcdir to be writable, passing --disable-rebuilds to
 # ../configure will supress all autogeneration rules.
 
-if CROSS_COMPILING
-  glib_genmarshal=$(GLIB_GENMARSHAL)
-else
-  glib_genmarshal=./glib-genmarshal
-endif
-
-gmarshal.h: stamp-gmarshal.h
-	@true
-stamp-gmarshal.h: @REBUILD@ gmarshal.list glib-genmarshal$(EXEEXT)
-	$(MAKE) glib-genmarshal$(EXEEXT)
-	$(AM_V_GEN) echo "#ifndef __G_MARSHAL_H__" > xgen-gmh \
-	&& echo "#define __G_MARSHAL_H__" >> xgen-gmh \
-	&& $(glib_genmarshal) --nostdinc --prefix=g_cclosure_marshal $(srcdir)/gmarshal.list --header >> xgen-gmh \
-	&& echo "#endif /* __G_MARSHAL_H__ */" >> xgen-gmh \
-	&& (cmp -s xgen-gmh gmarshal.h 2>/dev/null || cp xgen-gmh gmarshal.h) \
-	&& rm -f xgen-gmh xgen-gmh~ \
-	&& echo timestamp > $@
-
-gmarshal.c: @REBUILD@ stamp-gmarshal.h
-	$(AM_V_GEN) $(glib_genmarshal) --nostdinc --prefix=g_cclosure_marshal $(srcdir)/gmarshal.list --body >> xgen-gmc \
-	&& cp xgen-gmc gmarshal.c \
-	&& rm -f xgen-gmc xgen-gmc~
 
 gmarshal.strings: @REBUILD@ $(srcdir)/gmarshal.list
 	$(AM_V_GEN) grep '^[A-Z]' $(srcdir)/gmarshal.list \
-	| sed -e 's/^/"g_cclosure_marshal_/' -e 's/:/__/' -e 's/,/_/g' -e 's/$$/",/' > xgen-gms \
+	| $(SED) -e 's/^/"g_cclosure_marshal_/' -e 's/:/__/' -e 's/,/_/g' -e 's/$$/",/' > xgen-gms \
 	&& cp xgen-gms gmarshal.strings \
 	&& rm -f xgen-gms xgen-gms~
 
 glib-genmarshal.o: gmarshal.strings
-gsignal.lo: gmarshal.c
 
 # target platform:
 libgobjectinclude_HEADERS = $(gobject_target_headers)
@@ -252,18 +235,17 @@ EXTRA_DIST += 			\
 	glib-mkenums.in		\
 	abicheck.sh
 
+CLEANFILES += libgobject-gdb.py
+
 BUILT_EXTRA_DIST = \
 	makefile.msc		\
-	gobject.rc		\
-	gmarshal.h		\
-	gmarshal.c		\
-	stamp-gmarshal.h
+	gobject.rc
 
 gobject-win32-res.o: gobject.rc
 	$(AM_V_GEN) $(WINDRES) gobject.rc $@
 
 gobject-2.0.lib: libgobject-2.0.la gobject.def
-	lib -machine:@LIB_EXE_MACHINE_FLAG@ -name:libgobject-2.0-$(LT_CURRENT_MINUS_AGE).dll -def:gobject.def -out:$@
+	lib -machine:@LIB_EXE_MACHINE_FLAG@ -name:libgobject-2.0-$(LT_CURRENT_MINUS_AGE).dll -def:$(builddir)/gobject.def -out:$@
 
 dist-hook: $(BUILT_EXTRA_DIST) ../build/win32/vs9/gobject.vcproj ../build/win32/vs10/gobject.vcxproj ../build/win32/vs10/gobject.vcxproj.filters
 	files='$(BUILT_EXTRA_DIST)'; \
@@ -290,7 +272,7 @@ dist-hook: $(BUILT_EXTRA_DIST) ../build/win32/vs9/gobject.vcproj ../build/win32/
 	done >libgobject.vs10.sourcefiles
 	$(CPP) -P - <$(top_srcdir)/build/win32/vs10/gobject.vcxprojin >$@
 	rm libgobject.vs10.sourcefiles
-	
+
 ../build/win32/vs10/gobject.vcxproj.filters: $(top_srcdir)/build/win32/vs10/gobject.vcxproj.filtersin
 	for F in $(libgobject_2_0_la_SOURCES); do \
 		case $$F in \
@@ -298,9 +280,9 @@ dist-hook: $(BUILT_EXTRA_DIST) ../build/win32/vs9/gobject.vcproj ../build/win32/
 		     ;; \
 		esac; \
 	done >libgobject.vs10.sourcefiles.filters
-	$(CPP) -P - <$(top_srcdir)/build/win32/vs10/gobject.vcxproj.filtersin >$@	
+	$(CPP) -P - <$(top_srcdir)/build/win32/vs10/gobject.vcxproj.filtersin >$@
 	rm libgobject.vs10.sourcefiles.filters
-	
+
 install-data-local: install-ms-lib install-def-file
 
 uninstall-local: uninstall-ms-lib uninstall-def-file uninstall-gdb
@@ -308,7 +290,6 @@ uninstall-local: uninstall-ms-lib uninstall-def-file uninstall-gdb
 distclean-local:
 	if test $(srcdir) = .; then :; else \
 	    rm -f $(BUILT_EXTRA_DIST); \
-	    rm -f libgobject-gdb.py; \
 	fi
 
 # install gdb scripts
@@ -316,14 +297,14 @@ gdbdir = $(datadir)/glib-2.0/gdb
 dist_gdb_SCRIPTS = gobject.py
 
 libgobject-gdb.py: libgobject-gdb.py.in
-	$(AM_V_GEN) $(SED) -e "s|\@datadir\@|$(datadir)|" $(srcdir)/libgobject-gdb.py.in > libgobject-gdb.py
+	$(AM_V_GEN) $(SED) -e "s|\@datadir\@|$(datadir)|" $(srcdir)/libgobject-gdb.py.in > $(builddir)/libgobject-gdb.py
 
 uninstall-gdb:
 	-rm -r $(DESTDIR)$(datadir)/gdb
 
 install-data-hook: libgobject-gdb.py
 	mkdir -p $(DESTDIR)$(datadir)/gdb/auto-load/$(ABS_GLIB_RUNTIME_LIBDIR)
-	$(INSTALL) libgobject-gdb.py $(DESTDIR)$(datadir)/gdb/auto-load/$(ABS_GLIB_RUNTIME_LIBDIR)/libgobject-2.0.so.0.$(LT_CURRENT).$(LT_REVISION)-gdb.py
+	$(INSTALL) $(builddir)/libgobject-gdb.py $(DESTDIR)$(datadir)/gdb/auto-load/$(ABS_GLIB_RUNTIME_LIBDIR)/libgobject-2.0.so.0.$(LT_CURRENT).$(LT_REVISION)-gdb.py
 if HAVE_GLIB_RUNTIME_LIBDIR
 	mkdir -p $(DESTDIR)$(libdir)/$(GLIB_RUNTIME_LIBDIR)
 	mv $(DESTDIR)$(libdir)/libgobject-2.0.so.0 $(DESTDIR)$(libdir)/$(GLIB_RUNTIME_LIBDIR)

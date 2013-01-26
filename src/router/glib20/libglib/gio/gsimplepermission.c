@@ -32,7 +32,7 @@
  *
  * #GSimplePermission is a trivial implementation of #GPermission that
  * represents a permission that is either always or never allowed.  The
- * value is given at constuction and doesn't change.
+ * value is given at construction and doesn't change.
  *
  * Calling request or release will result in errors.
  **/
@@ -66,10 +66,11 @@ g_simple_permission_class_init (GSimplePermissionClass *class)
 /**
  * g_simple_permission_new:
  * @allowed: %TRUE if the action is allowed
- * @returns: the #GSimplePermission, as a #GPermission
  *
  * Creates a new #GPermission instance that represents an action that is
  * either always or never allowed.
+ *
+ * Returns: the #GSimplePermission, as a #GPermission
  *
  * Since: 2.26
  **/

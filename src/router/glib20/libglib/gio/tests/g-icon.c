@@ -41,6 +41,9 @@ test_g_icon_serialize (void)
   GFile *location;
   char *data;
   GError *error;
+  gint origin;
+  GIcon *i;
+  GFile *file;
 
   error = NULL;
 
@@ -49,8 +52,13 @@ test_g_icon_serialize (void)
   uri = "file:///some/native/path/to/an/icon.png";
   location = g_file_new_for_uri (uri);
   icon = g_file_icon_new (location);
+
+  g_object_get (icon, "file", &file, NULL);
+  g_assert (file == location);
+  g_object_unref (file);
+
   data = g_icon_to_string (icon);
-  g_assert_cmpstr (data, ==, "/some/native/path/to/an/icon.png");
+  g_assert_cmpstr (data, ==, G_DIR_SEPARATOR_S "some" G_DIR_SEPARATOR_S "native" G_DIR_SEPARATOR_S "path" G_DIR_SEPARATOR_S "to" G_DIR_SEPARATOR_S "an" G_DIR_SEPARATOR_S "icon.png");
   icon2 = g_icon_new_for_string (data, &error);
   g_assert_no_error (error);
   g_assert (g_icon_equal (icon, icon2));
@@ -63,7 +71,7 @@ test_g_icon_serialize (void)
   location = g_file_new_for_uri (uri);
   icon = g_file_icon_new (location);
   data = g_icon_to_string (icon);
-  g_assert_cmpstr (data, ==, "/some/native/path/to/an/icon with spaces.png");
+  g_assert_cmpstr (data, ==, G_DIR_SEPARATOR_S "some" G_DIR_SEPARATOR_S "native" G_DIR_SEPARATOR_S "path" G_DIR_SEPARATOR_S "to" G_DIR_SEPARATOR_S "an" G_DIR_SEPARATOR_S "icon with spaces.png");
   icon2 = g_icon_new_for_string (data, &error);
   g_assert_no_error (error);
   g_assert (g_icon_equal (icon, icon2));
@@ -130,7 +138,7 @@ test_g_icon_serialize (void)
   icon = g_icon_new_for_string ("/path/to/somewhere with whitespace.png", &error);
   g_assert_no_error (error);
   data = g_icon_to_string (icon);
-  g_assert_cmpstr (data, ==, "/path/to/somewhere with whitespace.png");
+  g_assert_cmpstr (data, ==, G_DIR_SEPARATOR_S "path" G_DIR_SEPARATOR_S "to" G_DIR_SEPARATOR_S "somewhere with whitespace.png");
   g_free (data);
   location = g_file_new_for_commandline_arg ("/path/to/somewhere with whitespace.png");
   icon2 = g_file_icon_new (location);
@@ -223,6 +231,12 @@ test_g_icon_serialize (void)
   icon5 = g_icon_new_for_string (data, &error);
   g_assert_no_error (error);
   g_assert (g_icon_equal (icon4, icon5));
+
+  g_object_get (emblem1, "origin", &origin, "icon", &i, NULL);
+  g_assert (origin == G_EMBLEM_ORIGIN_DEVICE);
+  g_assert (i == icon2);
+  g_object_unref (i);
+
   g_object_unref (emblem1);
   g_object_unref (emblem2);
   g_object_unref (icon);
@@ -279,6 +293,7 @@ test_emblemed_icon (void)
   GIcon *icon1, *icon2, *icon3, *icon4;
   GEmblem *emblem, *emblem1, *emblem2;
   GList *emblems;
+  GIcon *icon;
 
   icon1 = g_themed_icon_new ("testicon");
   icon2 = g_themed_icon_new ("testemblem");
@@ -304,6 +319,14 @@ test_emblemed_icon (void)
   emblem = emblems->next->data;
   g_assert (g_emblem_get_icon (emblem) == icon2);
   g_assert (g_emblem_get_origin (emblem) == G_EMBLEM_ORIGIN_UNKNOWN);
+
+  g_emblemed_icon_clear_emblems (G_EMBLEMED_ICON (icon4));
+  g_assert (g_emblemed_icon_get_emblems (G_EMBLEMED_ICON (icon4)) == NULL);
+
+  g_assert (g_icon_hash (icon4) != g_icon_hash (icon2));
+  g_object_get (icon4, "gicon", &icon, NULL);
+  g_assert (icon == icon1);
+  g_object_unref (icon);
 
   g_object_unref (icon1);
   g_object_unref (icon2);

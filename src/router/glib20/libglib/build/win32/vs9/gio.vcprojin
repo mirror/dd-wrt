@@ -28,7 +28,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../gio,../../../gmodule"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
+				PreprocessorDefinitions="_DEBUG;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;GIO_COMPILATION;DLL_EXPORT;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -39,7 +39,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="zdll.lib ws2_32.lib shlwapi.lib dnsapi.lib"
+				AdditionalDependencies="zlib1d.lib ws2_32.lib shlwapi.lib dnsapi.lib"
 				OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
 				LinkIncremental="2"
 				ModuleDefinitionFile="$(IntDir)\gio.def"
@@ -61,7 +61,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="../../../gio,../../../gmodule"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
+				PreprocessorDefinitions="G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;GIO_COMPILATION;DLL_EXPORT;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -70,7 +70,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="zdll.lib ws2_32.lib shlwapi.lib dnsapi.lib"
+				AdditionalDependencies="zlib1.lib ws2_32.lib shlwapi.lib dnsapi.lib"
 				OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile="$(IntDir)\gio.def"
@@ -94,7 +94,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../gio,../../../gmodule"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
+				PreprocessorDefinitions="_DEBUG;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;GIO_COMPILATION;DLL_EXPORT;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -105,7 +105,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="zdll.lib ws2_32.lib shlwapi.lib dnsapi.lib"
+				AdditionalDependencies="zlib1d.lib ws2_32.lib shlwapi.lib dnsapi.lib"
 				OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
 				LinkIncremental="2"
 				ModuleDefinitionFile="$(IntDir)\gio.def"
@@ -127,7 +127,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="../../../gio,../../../gmodule"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
+				PreprocessorDefinitions="G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;GIO_COMPILATION;DLL_EXPORT;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -136,7 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="zdll.lib ws2_32.lib shlwapi.lib dnsapi.lib"
+				AdditionalDependencies="zlib1.lib ws2_32.lib shlwapi.lib dnsapi.lib"
 				OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile="$(IntDir)\gio.def"
@@ -160,13 +160,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 #include "libgio.sourcefiles"
-			<File RelativePath="..\..\..\gio\gregistrysettingsbackend.c" />
-			<File RelativePath="..\..\..\gio\gwin32appinfo.c" />
-			<File RelativePath="..\..\..\gio\win32\gwin32directorymonitor.c" />
-			<File RelativePath="..\..\..\gio\win32\gwinhttpfile.c" />
-			<File RelativePath="..\..\..\gio\win32\gwinhttpfileinputstream.c" />
-			<File RelativePath="..\..\..\gio\win32\gwinhttpfileoutputstream.c" />
-			<File RelativePath="..\..\..\gio\win32\gwinhttpvfs.c" />
 		</Filter>
 		<Filter
 			Name="Header Files"
