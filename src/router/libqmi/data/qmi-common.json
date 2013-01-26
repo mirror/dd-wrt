@@ -1,0 +1,25 @@
+[
+    { "common-ref" : "Operation Result",
+      "name"       : "Result",
+      "fullname"   : "Qmi Message Result",
+      "id"         : "0x02",
+      "mandatory"  : "yes",
+      "type"       : "TLV",
+      "format"     : "struct",
+      "contents"   : [ { "name"   : "Error Status",
+                         "format" : "guint16" },
+                       { "name"   : "Error Code",
+                         "format" : "guint16" } ] },
+
+    { "common-ref" : "Success",
+      "type"       : "prerequisite",
+      "field"      : "Result.Error Status",
+      "operation"  : "==",
+      "value"      : "QMI_STATUS_SUCCESS" },
+
+    { "common-ref" : "No Success",
+      "type"       : "prerequisite",
+      "field"      : "Result.Error Status",
+      "operation"  : "!=",
+      "value"      : "QMI_STATUS_SUCCESS" }
+]
