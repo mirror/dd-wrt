@@ -1,19 +1,29 @@
 glib20-configure:
-	cd glib20/libiconv && ./configure --enable-shared --disable-static --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -Drpl_malloc=malloc"
+	cd glib20/libffi && ./configure --enable-static --disable-shared --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -Drpl_malloc=malloc"
+	$(MAKE) -C glib20/libffi clean all
+
+	cd glib20/libiconv && ./configure --enable-shared --disable-static --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -Drpl_malloc=malloc"
 	$(MAKE) -C glib20/libiconv clean all
 
-	cd glib20/gettext && ./configure --enable-shared --disable-static --disable-openmp --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -Drpl_malloc=malloc"
+	cd glib20/gettext && ./configure --enable-shared --disable-static --disable-openmp --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -Drpl_malloc=malloc"
 	$(MAKE) -C glib20/gettext clean all
 
-	cd glib20/libglib && ./configure --enable-shared --disable-static --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -I$(TOP)/zlib -DNEED_PRINTF -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/gettext/gettext-runtime/intl  -I$(TOP)/glib20/libiconv/include -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/glib20/gettext/gettext-runtime/intl/.libs -L$(TOP)/zlib" --with-libiconv=gnu
+	cd glib20/libglib && ./configure --enable-shared --disable-static --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -I$(TOP)/zlib -DNEED_PRINTF -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/gettext/gettext-runtime/intl  -I$(TOP)/glib20/libiconv/include -I$(TOP)/glib20/libffi/$(ARCH)-unknown-linux-gnu/include  -L$(TOP)/glib20/libffi/$(ARCH)-unknown-linux-gnu/.libs -lffi -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/glib20/gettext/gettext-runtime/intl/.libs -L$(TOP)/zlib" --with-libiconv=gnu --disable-modular-tests \
+	LIBFFI_CFLAGS="-I$(TOP)/glib20/libffi/$(ARCH)-unknown-linux-gnu/include" \
+	LIBFFI_LIBS="-L$(TOP)/glib20/libffi/$(ARCH)-unknown-linux-gnu/.libs -lffi" \
+	ZLIB_CFLAGS="-I$(TOP)/zlib" \
+	ZLIB_LIBS="-L$(TOP)/zlib -lz"
+
 	$(MAKE) -C glib20/libglib clean all
 
 glib20:
+	$(MAKE) -C glib20/libffi all
 	$(MAKE) -C glib20/libiconv all
 	$(MAKE) -C glib20/gettext all
 	$(MAKE) -C glib20/libglib all
 
 glib20-clean:
+	$(MAKE) -C glib20/libffi clean
 	$(MAKE) -C glib20/libiconv clean
 	$(MAKE) -C glib20/gettext clean
 	$(MAKE) -C glib20/libglib clean
@@ -22,6 +32,12 @@ glib20-install:
 	install -D glib20/libglib/glib/.libs/libglib-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libglib-2.0.so.0
 ifeq ($(CONFIG_MC),y)
 	install -D glib20/libglib/gmodule/.libs/libgmodule-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgmodule-2.0.so.0
+endif
+ifeq ($(CONFIG_LIBQMI),y)
+	install -D glib20/libglib/gmodule/.libs/libgmodule-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgmodule-2.0.so.0
+	install -D glib20/libglib/gthread/.libs/libgthread-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgthread-2.0.so.0
+	install -D glib20/libglib/gobject/.libs/libgobject-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgobject-2.0.so.0
+	install -D glib20/libglib/gio/.libs/libgio-2.0.so.0 $(INSTALLDIR)/glib20/usr/lib/libgio-2.0.so.0
 endif
 	install -D glib20/libiconv/lib/.libs/libiconv.so.2 $(INSTALLDIR)/glib20/usr/lib/libiconv.so.2
 	install -D glib20/gettext/gettext-runtime/intl/.libs/libintl.so.8 $(INSTALLDIR)/glib20/usr/lib/libintl.so.8
