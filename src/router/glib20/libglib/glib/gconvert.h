@@ -24,7 +24,7 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -153,7 +153,7 @@ gchar *g_filename_to_uri   (const gchar *filename,
 			    const gchar *hostname,
 			    GError     **error) G_GNUC_MALLOC;
 gchar *g_filename_display_name (const gchar *filename) G_GNUC_MALLOC;
-gboolean g_get_filename_charsets (G_CONST_RETURN gchar ***charsets);
+gboolean g_get_filename_charsets (const gchar ***charsets);
 
 gchar *g_filename_display_basename (const gchar *filename) G_GNUC_MALLOC;
 

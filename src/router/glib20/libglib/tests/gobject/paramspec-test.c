@@ -36,7 +36,7 @@ static void
 test_param_spec_char (void)
 {
   GParamSpec *pspec;
-  GValue value = { 0, };
+  GValue value = G_VALUE_INIT;
   gboolean modified;
  
   pspec = g_param_spec_char ("char", "nick", "blurb",
@@ -67,6 +67,22 @@ test_param_spec_char (void)
   modified = g_param_value_validate (pspec, &value);
   g_assert (modified && g_value_get_char (&value) == 40);
 
+  g_value_set_schar (&value, 0);
+  modified = g_param_value_validate (pspec, &value);
+  g_assert (modified && g_value_get_schar (&value) == 20);
+
+  g_value_set_schar (&value, 20);
+  modified = g_param_value_validate (pspec, &value);
+  g_assert (!modified && g_value_get_schar (&value) == 20);
+
+  g_value_set_schar (&value, 40);
+  modified = g_param_value_validate (pspec, &value);
+  g_assert (!modified && g_value_get_schar (&value) == 40);
+
+  g_value_set_schar (&value, 60);
+  modified = g_param_value_validate (pspec, &value);
+  g_assert (modified && g_value_get_schar (&value) == 40);
+
   g_param_spec_unref (pspec);
 }
 
@@ -74,7 +90,7 @@ static void
 test_param_spec_string (void)
 {
   GParamSpec *pspec;
-  GValue value = { 0, };
+  GValue value = G_VALUE_INIT;
   gboolean modified;
 
   pspec = g_param_spec_string ("string", "nick", "blurb",
@@ -146,7 +162,7 @@ static void
 test_param_spec_override (void)
 {
   GParamSpec *ospec, *pspec;
-  GValue value = { 0, };
+  GValue value = G_VALUE_INIT;
   gboolean modified;
  
   ospec = g_param_spec_char ("char", "nick", "blurb",
@@ -186,7 +202,7 @@ static void
 test_param_spec_gtype (void)
 {
   GParamSpec *pspec;
-  GValue value = { 0, };
+  GValue value = G_VALUE_INIT;
   gboolean modified;
   
   pspec = g_param_spec_gtype ("gtype", "nick", "blurb",
@@ -210,7 +226,7 @@ static void
 test_param_spec_variant (void)
 {
   GParamSpec *pspec;
-  GValue value = { 0, };
+  GValue value = G_VALUE_INIT;
   gboolean modified;
 
   pspec = g_param_spec_variant ("variant", "nick", "blurb",

@@ -1,10 +1,18 @@
 ## Process this file with automake to produce Makefile.in
 include $(top_srcdir)/Makefile.decl
 
+# http://people.gnome.org/~walters/docs/build-api.txt
+.buildapi-allow-builddir:
+
 ACLOCAL_AMFLAGS = -I m4macros ${ACLOCAL_FLAGS}
 
-SUBDIRS = . m4macros glib gmodule gthread gobject gio
+SUBDIRS = . m4macros glib gmodule gthread gobject gio po docs
 DIST_SUBDIRS = $(SUBDIRS) build
+if BUILD_MODULAR_TESTS
+SUBDIRS += tests 
+else
+DIST_SUBDIRS += tests
+endif
 
 bin_SCRIPTS = glib-gettextize
 
@@ -36,7 +44,6 @@ EXTRA_DIST += 			\
 	INSTALL.in		\
 	README.win32		\
 	HACKING			\
-	MAINTAINERS		\
 	autogen.sh		\
 	Makefile.decl		\
 	mkinstalldirs		\
@@ -52,14 +59,7 @@ EXTRA_DIST += 			\
 	gthread-2.0.pc.in	\
 	gio-2.0.pc.in		\
 	gio-unix-2.0.pc.in	\
-	gio-windows-2.0.pc.in	\
-	glib-2.0-uninstalled.pc.in 	\
-	gobject-2.0-uninstalled.pc.in 	\
-	gmodule-2.0-uninstalled.pc.in	\
-	gthread-2.0-uninstalled.pc.in	\
-	gmodule-no-export-2.0-uninstalled.pc.in \
-	gio-2.0-uninstalled.pc.in		\
-	gio-unix-2.0-uninstalled.pc.in
+	gio-windows-2.0.pc.in
 
 
 # These may be in the builddir too
@@ -103,7 +103,7 @@ gettextdir = $(datadir)/glib-2.0/gettext
 gettext_SCRIPTS = mkinstalldirs
 
 # build documentation when doing distcheck
-DISTCHECK_CONFIGURE_FLAGS = --enable-debug --enable-gtk-doc --enable-man
+DISTCHECK_CONFIGURE_FLAGS = --enable-debug --enable-gtk-doc --enable-man --disable-maintainer-mode
 
 DISTCLEANFILES = config.lt
 

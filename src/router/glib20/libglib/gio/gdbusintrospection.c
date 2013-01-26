@@ -40,7 +40,7 @@
  * used when registering objects with g_dbus_connection_register_object().
  *
  * The format of D-Bus introspection XML is specified in the
- * <link linkend="http://dbus.freedesktop.org/doc/dbus-specification.html&num;introspection-format">D-Bus specification</link>.
+ * <ulink url="http://dbus.freedesktop.org/doc/dbus-specification.html#introspection-format">D-Bus specification</ulink>.
  */
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -773,7 +773,7 @@ g_dbus_property_info_generate_xml (GDBusPropertyInfo *info,
  * g_dbus_interface_info_generate_xml:
  * @info: A #GDBusNodeInfo
  * @indent: Indentation level.
- * @string_builder: A #GString to to append XML data to.
+ * @string_builder: (out): A #GString to to append XML data to.
  *
  * Appends an XML representation of @info (and its children) to @string_builder.
  *
@@ -822,7 +822,7 @@ g_dbus_interface_info_generate_xml (GDBusInterfaceInfo *info,
  * g_dbus_node_info_generate_xml:
  * @info: A #GDBusNodeInfo.
  * @indent: Indentation level.
- * @string_builder: A #GString to to append XML data to.
+ * @string_builder: (out): A #GString to to append XML data to.
  *
  * Appends an XML representation of @info (and its children) to @string_builder.
  *
@@ -1755,6 +1755,13 @@ parser_error (GMarkupParseContext *context,
  *
  * Parses @xml_data and returns a #GDBusNodeInfo representing the data.
  *
+ * The introspection XML must contain exactly one top-level
+ * <tag class="starttag">node</tag> element.
+ *
+ * Note that this routine is using a
+ * <link linkend="glib-Simple-XML-Subset-Parser.description">GMarkup</link>-based
+ * parser that only accepts a subset of valid XML documents.
+ *
  * Returns: A #GDBusNodeInfo structure or %NULL if @error is set. Free
  * with g_dbus_node_info_unref().
  *
@@ -1810,11 +1817,8 @@ g_dbus_node_info_new_for_xml (const gchar  *xml_data,
       /* clean up */
       for (n = 0; n < num_nodes; n++)
         {
-          for (n = 0; n < num_nodes; n++)
-            {
-              g_dbus_node_info_unref (ughret[n]);
-              ughret[n] = NULL;
-            }
+          g_dbus_node_info_unref (ughret[n]);
+          ughret[n] = NULL;
         }
     }
 
@@ -1834,7 +1838,7 @@ g_dbus_node_info_new_for_xml (const gchar  *xml_data,
 
 /**
  * g_dbus_annotation_info_lookup:
- * @annotations: A %NULL-terminated array of annotations or %NULL.
+ * @annotations: (array zero-terminated=1) (allow-none): A %NULL-terminated array of annotations or %NULL.
  * @name: The name of the annotation to look up.
  *
  * Looks up the value of an annotation.
@@ -1868,6 +1872,37 @@ g_dbus_annotation_info_lookup (GDBusAnnotationInfo **annotations,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+G_LOCK_DEFINE_STATIC (info_cache_lock);
+
+typedef struct
+{
+  gint use_count;
+
+  /* gchar* -> GDBusMethodInfo* */
+  GHashTable *method_name_to_data;
+
+  /* gchar* -> GDBusMethodInfo* */
+  GHashTable *signal_name_to_data;
+
+  /* gchar* -> GDBusMethodInfo* */
+  GHashTable *property_name_to_data;
+} InfoCacheEntry;
+
+static void
+info_cache_free (InfoCacheEntry *cache)
+{
+  g_assert (cache->use_count == 0);
+  g_hash_table_unref (cache->method_name_to_data);
+  g_hash_table_unref (cache->signal_name_to_data);
+  g_hash_table_unref (cache->property_name_to_data);
+  g_slice_free (InfoCacheEntry, cache);
+}
+
+/* maps from GDBusInterfaceInfo* to InfoCacheEntry* */
+static GHashTable *info_cache = NULL;
+
+/* ---------------------------------------------------------------------------------------------------- */
+
 /**
  * g_dbus_interface_info_lookup_method:
  * @info: A #GDBusInterfaceInfo.
@@ -1875,9 +1910,10 @@ g_dbus_annotation_info_lookup (GDBusAnnotationInfo **annotations,
  *
  * Looks up information about a method.
  *
- * This cost of this function is O(n) in number of methods.
+ * This cost of this function is O(n) in number of methods unless
+ * g_dbus_interface_info_cache_build() has been used on @info.
  *
- * Returns: A #GDBusMethodInfo or %NULL if not found. Do not free, it is owned by @info.
+ * Returns: (transfer none): A #GDBusMethodInfo or %NULL if not found. Do not free, it is owned by @info.
  *
  * Since: 2.26
  */
@@ -1887,6 +1923,20 @@ g_dbus_interface_info_lookup_method (GDBusInterfaceInfo *info,
 {
   guint n;
   GDBusMethodInfo *result;
+
+  G_LOCK (info_cache_lock);
+  if (G_LIKELY (info_cache != NULL))
+    {
+      InfoCacheEntry *cache;
+      cache = g_hash_table_lookup (info_cache, info);
+      if (G_LIKELY (cache != NULL))
+        {
+          result = g_hash_table_lookup (cache->method_name_to_data, name);
+          G_UNLOCK (info_cache_lock);
+          goto out;
+        }
+    }
+  G_UNLOCK (info_cache_lock);
 
   for (n = 0; info->methods != NULL && info->methods[n] != NULL; n++)
     {
@@ -1914,9 +1964,10 @@ g_dbus_interface_info_lookup_method (GDBusInterfaceInfo *info,
  *
  * Looks up information about a signal.
  *
- * This cost of this function is O(n) in number of signals.
+ * This cost of this function is O(n) in number of signals unless
+ * g_dbus_interface_info_cache_build() has been used on @info.
  *
- * Returns: A #GDBusSignalInfo or %NULL if not found. Do not free, it is owned by @info.
+ * Returns: (transfer none): A #GDBusSignalInfo or %NULL if not found. Do not free, it is owned by @info.
  *
  * Since: 2.26
  */
@@ -1926,6 +1977,20 @@ g_dbus_interface_info_lookup_signal (GDBusInterfaceInfo *info,
 {
   guint n;
   GDBusSignalInfo *result;
+
+  G_LOCK (info_cache_lock);
+  if (G_LIKELY (info_cache != NULL))
+    {
+      InfoCacheEntry *cache;
+      cache = g_hash_table_lookup (info_cache, info);
+      if (G_LIKELY (cache != NULL))
+        {
+          result = g_hash_table_lookup (cache->signal_name_to_data, name);
+          G_UNLOCK (info_cache_lock);
+          goto out;
+        }
+    }
+  G_UNLOCK (info_cache_lock);
 
   for (n = 0; info->signals != NULL && info->signals[n] != NULL; n++)
     {
@@ -1953,9 +2018,10 @@ g_dbus_interface_info_lookup_signal (GDBusInterfaceInfo *info,
  *
  * Looks up information about a property.
  *
- * This cost of this function is O(n) in number of properties.
+ * This cost of this function is O(n) in number of properties unless
+ * g_dbus_interface_info_cache_build() has been used on @info.
  *
- * Returns: A #GDBusPropertyInfo or %NULL if not found. Do not free, it is owned by @info.
+ * Returns: (transfer none): A #GDBusPropertyInfo or %NULL if not found. Do not free, it is owned by @info.
  *
  * Since: 2.26
  */
@@ -1965,6 +2031,20 @@ g_dbus_interface_info_lookup_property (GDBusInterfaceInfo *info,
 {
   guint n;
   GDBusPropertyInfo *result;
+
+  G_LOCK (info_cache_lock);
+  if (G_LIKELY (info_cache != NULL))
+    {
+      InfoCacheEntry *cache;
+      cache = g_hash_table_lookup (info_cache, info);
+      if (G_LIKELY (cache != NULL))
+        {
+          result = g_hash_table_lookup (cache->property_name_to_data, name);
+          G_UNLOCK (info_cache_lock);
+          goto out;
+        }
+    }
+  G_UNLOCK (info_cache_lock);
 
   for (n = 0; info->properties != NULL && info->properties[n] != NULL; n++)
     {
@@ -1986,6 +2066,95 @@ g_dbus_interface_info_lookup_property (GDBusInterfaceInfo *info,
 /* ---------------------------------------------------------------------------------------------------- */
 
 /**
+ * g_dbus_interface_info_cache_build:
+ * @info: A #GDBusInterfaceInfo.
+ *
+ * Builds a lookup-cache to speed up
+ * g_dbus_interface_info_lookup_method(),
+ * g_dbus_interface_info_lookup_signal() and
+ * g_dbus_interface_info_lookup_property().
+ *
+ * If this has already been called with @info, the existing cache is
+ * used and its use count is increased.
+ *
+ * Note that @info cannot be modified until
+ * g_dbus_interface_info_cache_release() is called.
+ *
+ * Since: 2.30
+ */
+void
+g_dbus_interface_info_cache_build (GDBusInterfaceInfo *info)
+{
+  InfoCacheEntry *cache;
+  guint n;
+
+  G_LOCK (info_cache_lock);
+  if (info_cache == NULL)
+    info_cache = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, (GDestroyNotify) info_cache_free);
+  cache = g_hash_table_lookup (info_cache, info);
+  if (cache != NULL)
+    {
+      cache->use_count += 1;
+      goto out;
+    }
+  cache = g_slice_new0 (InfoCacheEntry);
+  cache->use_count = 1;
+  cache->method_name_to_data = g_hash_table_new (g_str_hash, g_str_equal);
+  cache->signal_name_to_data = g_hash_table_new (g_str_hash, g_str_equal);
+  cache->property_name_to_data = g_hash_table_new (g_str_hash, g_str_equal);
+  for (n = 0; info->methods != NULL && info->methods[n] != NULL; n++)
+    g_hash_table_insert (cache->method_name_to_data, info->methods[n]->name, info->methods[n]);
+  for (n = 0; info->signals != NULL && info->signals[n] != NULL; n++)
+    g_hash_table_insert (cache->signal_name_to_data, info->signals[n]->name, info->signals[n]);
+  for (n = 0; info->properties != NULL && info->properties[n] != NULL; n++)
+    g_hash_table_insert (cache->property_name_to_data, info->properties[n]->name, info->properties[n]);
+  g_hash_table_insert (info_cache, info, cache);
+ out:
+  G_UNLOCK (info_cache_lock);
+}
+
+/**
+ * g_dbus_interface_info_cache_release:
+ * @info: A GDBusInterfaceInfo
+ *
+ * Decrements the usage count for the cache for @info built by
+ * g_dbus_interface_info_cache_build() (if any) and frees the
+ * resources used by the cache if the usage count drops to zero.
+ *
+ * Since: 2.30
+ */
+void
+g_dbus_interface_info_cache_release (GDBusInterfaceInfo *info)
+{
+  InfoCacheEntry *cache;
+
+  G_LOCK (info_cache_lock);
+  if (G_UNLIKELY (info_cache == NULL))
+    {
+      g_warning ("%s called for interface %s but there is no cache", info->name, G_STRFUNC);
+      goto out;
+    }
+
+  cache = g_hash_table_lookup (info_cache, info);
+  if (G_UNLIKELY (cache == NULL))
+    {
+      g_warning ("%s called for interface %s but there is no cache entry", info->name, G_STRFUNC);
+      goto out;
+    }
+  cache->use_count -= 1;
+  if (cache->use_count == 0)
+    {
+      g_hash_table_remove (info_cache, info);
+      /* could nuke info_cache itself if empty */
+    }
+ out:
+  G_UNLOCK (info_cache_lock);
+}
+
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+/**
  * g_dbus_node_info_lookup_interface:
  * @info: A #GDBusNodeInfo.
  * @name: A D-Bus interface name.
@@ -1994,7 +2163,7 @@ g_dbus_interface_info_lookup_property (GDBusInterfaceInfo *info,
  *
  * This cost of this function is O(n) in number of interfaces.
  *
- * Returns: A #GDBusInterfaceInfo or %NULL if not found. Do not free, it is owned by @info.
+ * Returns: (transfer none): A #GDBusInterfaceInfo or %NULL if not found. Do not free, it is owned by @info.
  *
  * Since: 2.26
  */

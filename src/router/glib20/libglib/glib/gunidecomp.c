@@ -19,6 +19,29 @@
  *   Boston, MA 02111-1307, USA.
  */
 
+/**
+ * SECTION:unicode
+ * @Title: Unicode Manipulation
+ * @Short_description: functions operating on Unicode characters and
+ *     UTF-8 strings
+ * @See_also: g_locale_to_utf8(), g_locale_from_utf8()
+ *
+ * This section describes a number of functions for dealing with
+ * Unicode characters and strings.  There are analogues of the
+ * traditional <filename>ctype.h</filename> character classification
+ * and case conversion functions, UTF-8 analogues of some string utility
+ * functions, functions to perform normalization, case conversion and
+ * collation on UTF-8 strings and finally functions to convert between
+ * the UTF-8, UTF-16 and UCS-4 encodings of Unicode.
+ *
+ * The implementations of the Unicode functions in GLib are based
+ * on the Unicode Character Data tables, which are available from
+ * <ulink url="http://www.unicode.org/">www.unicode.org</ulink>.
+ * GLib 2.8 supports Unicode 4.0, GLib 2.10 supports Unicode 4.1,
+ * GLib 2.12 supports Unicode 5.0, GLib 2.16.3 supports Unicode 5.1,
+ * GLib 2.30 supports Unicode 6.0.
+ */
+
 #include "config.h"
 
 #include <stdlib.h>
@@ -127,40 +150,27 @@ g_unicode_canonical_ordering (gunichar *string,
  * only calculate the result_len; however, a buffer with space for three
  * characters will always be big enough. */
 static void
-decompose_hangul (gunichar s, 
+decompose_hangul (gunichar s,
                   gunichar *r,
                   gsize *result_len)
 {
   gint SIndex = s - SBase;
+  gint TIndex = SIndex % TCount;
 
-  /* not a hangul syllable */
-  if (SIndex < 0 || SIndex >= SCount)
+  if (r)
+    {
+      r[0] = LBase + SIndex / NCount;
+      r[1] = VBase + (SIndex % NCount) / TCount;
+    }
+
+  if (TIndex)
     {
       if (r)
-        r[0] = s;
-      *result_len = 1;
+	r[2] = TBase + TIndex;
+      *result_len = 3;
     }
   else
-    {
-      gunichar L = LBase + SIndex / NCount;
-      gunichar V = VBase + (SIndex % NCount) / TCount;
-      gunichar T = TBase + SIndex % TCount;
-
-      if (r)
-        {
-          r[0] = L;
-          r[1] = V;
-        }
-
-      if (T != TBase) 
-        {
-          if (r)
-            r[2] = T;
-          *result_len = 3;
-        }
-      else
-        *result_len = 2;
-    }
+    *result_len = 2;
 }
 
 /* returns a pointer to a null-terminated UTF-8 string */
@@ -217,6 +227,9 @@ find_decomposition (gunichar ch,
  * 
  * Return value: a newly allocated string of Unicode characters.
  *   @result_len is set to the resulting length of the string.
+ *
+ * Deprecated: 2.30: Use the more flexible g_unichar_fully_decompose()
+ *   instead.
  **/
 gunichar *
 g_unicode_canonical_decomposition (gunichar ch,
@@ -227,7 +240,7 @@ g_unicode_canonical_decomposition (gunichar ch,
   gunichar *r;
 
   /* Hangul syllable */
-  if (ch >= 0xac00 && ch <= 0xd7a3)
+  if (ch >= SBase && ch < SBase + SCount)
     {
       decompose_hangul (ch, NULL, result_len);
       r = g_malloc (*result_len * sizeof (gunichar));
@@ -252,9 +265,6 @@ g_unicode_canonical_decomposition (gunichar ch,
       *result_len = 1;
     }
 
-  /* Supposedly following the Unicode 2.1.9 table means that the
-     decompositions come out in canonical order.  I haven't tested
-     this, but we rely on it here.  */
   return r;
 }
 
@@ -366,7 +376,7 @@ _g_utf8_normalize_wc (const gchar    *str,
       const gchar *decomp;
       gunichar wc = g_utf8_get_char (p);
 
-      if (wc >= 0xac00 && wc <= 0xd7a3)
+      if (wc >= SBase && wc < SBase + SCount)
         {
           gsize result_len;
           decompose_hangul (wc, NULL, &result_len);
@@ -397,7 +407,7 @@ _g_utf8_normalize_wc (const gchar    *str,
       int cc;
       gsize old_n_wc = n_wc;
 	  
-      if (wc >= 0xac00 && wc <= 0xd7a3)
+      if (wc >= SBase && wc < SBase + SCount)
         {
           gsize result_len;
           decompose_hangul (wc, wc_buffer + n_wc, &result_len);
@@ -529,4 +539,213 @@ g_utf8_normalize (const gchar    *str,
   g_free (result_wc);
 
   return result;
+}
+
+static gboolean
+decompose_hangul_step (gunichar  ch,
+                       gunichar *a,
+                       gunichar *b)
+{
+  gint SIndex, TIndex;
+
+  if (ch < SBase || ch >= SBase + SCount)
+    return FALSE;  /* not a hangul syllable */
+
+  SIndex = ch - SBase;
+  TIndex = SIndex % TCount;
+
+  if (TIndex)
+    {
+      /* split LVT -> LV,T */
+      *a = ch - TIndex;
+      *b = TBase + TIndex;
+    }
+  else
+    {
+      /* split LV -> L,V */
+      *a = LBase + SIndex / NCount;
+      *b = VBase + (SIndex % NCount) / TCount;
+    }
+
+  return TRUE;
+}
+
+/**
+ * g_unichar_decompose:
+ * @ch: a Unicode character
+ * @a: return location for the first component of @ch
+ * @b: return location for the second component of @ch
+ *
+ * Performs a single decomposition step of the
+ * Unicode canonical decomposition algorithm.
+ *
+ * This function does not include compatibility
+ * decompositions. It does, however, include algorithmic
+ * Hangul Jamo decomposition, as well as 'singleton'
+ * decompositions which replace a character by a single
+ * other character. In the case of singletons *@b will
+ * be set to zero.
+ *
+ * If @ch is not decomposable, *@a is set to @ch and *@b
+ * is set to zero.
+ *
+ * Note that the way Unicode decomposition pairs are
+ * defined, it is guaranteed that @b would not decompose
+ * further, but @a may itself decompose.  To get the full
+ * canonical decomposition for @ch, one would need to
+ * recursively call this function on @a.  Or use
+ * g_unichar_fully_decompose().
+ *
+ * See <ulink url="http://unicode.org/reports/tr15/">UAX#15</ulink>
+ * for details.
+ *
+ * Returns: %TRUE if the character could be decomposed
+ *
+ * Since: 2.30
+ */
+gboolean
+g_unichar_decompose (gunichar  ch,
+                     gunichar *a,
+                     gunichar *b)
+{
+  gint start = 0;
+  gint end = G_N_ELEMENTS (decomp_step_table);
+
+  if (decompose_hangul_step (ch, a, b))
+    return TRUE;
+
+  /* TODO use bsearch() */
+  if (ch >= decomp_step_table[start].ch &&
+      ch <= decomp_step_table[end - 1].ch)
+    {
+      while (TRUE)
+        {
+          gint half = (start + end) / 2;
+          const decomposition_step *p = &(decomp_step_table[half]);
+          if (ch == p->ch)
+            {
+              *a = p->a;
+              *b = p->b;
+              return TRUE;
+            }
+          else if (half == start)
+            break;
+          else if (ch > p->ch)
+            start = half;
+          else
+            end = half;
+        }
+    }
+
+  *a = ch;
+  *b = 0;
+
+  return FALSE;
+}
+
+/**
+ * g_unichar_compose:
+ * @a: a Unicode character
+ * @b: a Unicode character
+ * @ch: return location for the composed character
+ *
+ * Performs a single composition step of the
+ * Unicode canonical composition algorithm.
+ *
+ * This function includes algorithmic Hangul Jamo composition,
+ * but it is not exactly the inverse of g_unichar_decompose().
+ * No composition can have either of @a or @b equal to zero.
+ * To be precise, this function composes if and only if
+ * there exists a Primary Composite P which is canonically
+ * equivalent to the sequence <@a,@b>.  See the Unicode
+ * Standard for the definition of Primary Composite.
+ *
+ * If @a and @b do not compose a new character, @ch is set to zero.
+ *
+ * See <ulink url="http://unicode.org/reports/tr15/">UAX#15</ulink>
+ * for details.
+ *
+ * Returns: %TRUE if the characters could be composed
+ *
+ * Since: 2.30
+ */
+gboolean
+g_unichar_compose (gunichar  a,
+                   gunichar  b,
+                   gunichar *ch)
+{
+  if (combine (a, b, ch))
+    return TRUE;
+
+  *ch = 0;
+  return FALSE;
+}
+
+/**
+ * g_unichar_fully_decompose:
+ * @ch: a Unicode character.
+ * @compat: whether perform canonical or compatibility decomposition
+ * @result: (allow-none): location to store decomposed result, or %NULL
+ * @result_len: length of @result
+ *
+ * Computes the canonical or compatibility decomposition of a
+ * Unicode character.  For compatibility decomposition,
+ * pass %TRUE for @compat; for canonical decomposition
+ * pass %FALSE for @compat.
+ *
+ * The decomposed sequence is placed in @result.  Only up to
+ * @result_len characters are written into @result.  The length
+ * of the full decomposition (irrespective of @result_len) is
+ * returned by the function.  For canonical decomposition,
+ * currently all decompositions are of length at most 4, but
+ * this may change in the future (very unlikely though).
+ * At any rate, Unicode does guarantee that a buffer of length
+ * 18 is always enough for both compatibility and canonical
+ * decompositions, so that is the size recommended. This is provided
+ * as %G_UNICHAR_MAX_DECOMPOSITION_LENGTH.
+ *
+ * See <ulink url="http://unicode.org/reports/tr15/">UAX#15</ulink>
+ * for details.
+ *
+ * Return value: the length of the full decomposition.
+ *
+ * Since: 2.30
+ **/
+gsize
+g_unichar_fully_decompose (gunichar  ch,
+			   gboolean  compat,
+			   gunichar *result,
+			   gsize     result_len)
+{
+  const gchar *decomp;
+  const gchar *p;
+
+  /* Hangul syllable */
+  if (ch >= SBase && ch < SBase + SCount)
+    {
+      gsize len, i;
+      gunichar buffer[3];
+      decompose_hangul (ch, result ? buffer : NULL, &len);
+      if (result)
+        for (i = 0; i < len && i < result_len; i++)
+	  result[i] = buffer[i];
+      return len;
+    }
+  else if ((decomp = find_decomposition (ch, compat)) != NULL)
+    {
+      /* Found it.  */
+      gsize len, i;
+
+      len = g_utf8_strlen (decomp, -1);
+
+      for (p = decomp, i = 0; i < len && i < result_len; p = g_utf8_next_char (p), i++)
+        result[i] = g_utf8_get_char (p);
+
+      return len;
+    }
+
+  /* Does not decompose */
+  if (result && result_len >= 1)
+    *result = ch;
+  return 1;
 }

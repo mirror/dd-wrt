@@ -25,13 +25,13 @@
 #include <string.h>
 
 #include <sys/types.h>
-#include <sys/wait.h>
 
 #include "gdbus-tests.h"
 
 /* all tests rely on a shared mainloop */
 static GMainLoop *loop = NULL;
 
+#if 0
 G_GNUC_UNUSED static void
 _log (const gchar *format, ...)
 {
@@ -56,12 +56,15 @@ _log (const gchar *format, ...)
            str);
   g_free (str);
 }
+#else
+#define _log(...)
+#endif
 
 static gboolean
 test_connection_quit_mainloop (gpointer user_data)
 {
   volatile gboolean *quit_mainloop_fired = user_data;
-  //_log ("quit_mainloop_fired");
+  _log ("quit_mainloop_fired");
   *quit_mainloop_fired = TRUE;
   g_main_loop_quit (loop);
   return TRUE;
@@ -113,7 +116,7 @@ a_gdestroynotify_that_sets_a_gboolean_to_true_and_quits_loop (gpointer user_data
 {
   volatile gboolean *val = user_data;
   *val = TRUE;
-  //_log ("destroynotify fired for %p", val);
+  _log ("destroynotify fired for %p", val);
   g_main_loop_quit (loop);
 }
 
@@ -138,7 +141,7 @@ test_connection_life_cycle (void)
    *
    */
   c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
-  _g_assert_error_domain (error, G_IO_ERROR);
+  g_assert (error != NULL);
   g_assert (!g_dbus_error_is_remote_error (error));
   g_assert (c == NULL);
   g_error_free (error);
@@ -232,13 +235,13 @@ test_connection_life_cycle (void)
   g_object_unref (c2);
   quit_mainloop_fired = FALSE;
   quit_mainloop_id = g_timeout_add (30000, test_connection_quit_mainloop, (gpointer) &quit_mainloop_fired);
-  //_log ("destroynotifies for\n"
-  //      " register_object %p\n"
-  //      " filter          %p\n"
-  //      " signal          %p",
-  //      &on_register_object_freed_called,
-  //      &on_filter_freed_called,
-  //      &on_signal_registration_freed_called);
+  _log ("destroynotifies for\n"
+        " register_object %p\n"
+        " filter          %p\n"
+        " signal          %p",
+        &on_register_object_freed_called,
+        &on_filter_freed_called,
+        &on_signal_registration_freed_called);
   while (TRUE)
     {
       if (on_signal_registration_freed_called &&
@@ -247,9 +250,9 @@ test_connection_life_cycle (void)
         break;
       if (quit_mainloop_fired)
         break;
-      //_log ("entering loop");
+      _log ("entering loop");
       g_main_loop_run (loop);
-      //_log ("exiting loop");
+      _log ("exiting loop");
     }
   g_source_remove (quit_mainloop_id);
   g_assert (on_signal_registration_freed_called);
@@ -263,13 +266,12 @@ test_connection_life_cycle (void)
    */
   g_assert (!g_dbus_connection_is_closed (c));
   g_dbus_connection_set_exit_on_close (c, FALSE);
-  session_bus_down ();
-  if (!g_dbus_connection_is_closed (c))
-    _g_assert_signal_received (c, "closed");
+  session_bus_stop ();
+  _g_assert_signal_received (c, "closed");
   g_assert (g_dbus_connection_is_closed (c));
-
-  _g_object_wait_for_single_ref (c);
   g_object_unref (c);
+
+  session_bus_down ();
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -466,7 +468,7 @@ test_connection_send (void)
    * Check that we get an error when sending to a connection that is disconnected.
    */
   g_dbus_connection_set_exit_on_close (c, FALSE);
-  session_bus_down ();
+  session_bus_stop ();
   _g_assert_signal_received (c, "closed");
   g_assert (g_dbus_connection_is_closed (c));
 
@@ -483,8 +485,9 @@ test_connection_send (void)
                           NULL);
   g_main_loop_run (loop);
 
-  _g_object_wait_for_single_ref (c);
   g_object_unref (c);
+
+  session_bus_down ();
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -529,6 +532,8 @@ test_connection_signals (void)
   GError *error;
   gboolean ret;
   GVariant *result;
+  gboolean quit_mainloop_fired;
+  guint quit_mainloop_id;
 
   error = NULL;
 
@@ -614,18 +619,6 @@ test_connection_signals (void)
   count_name_owner_changed = 0;
 
   /*
-   * Bring up two other connections
-   */
-  c2 = _g_bus_get_priv (G_BUS_TYPE_SESSION, NULL, NULL);
-  g_assert (c2 != NULL);
-  g_assert (!g_dbus_connection_is_closed (c2));
-  g_assert_cmpstr (g_dbus_connection_get_unique_name (c2), ==, ":1.2");
-  c3 = _g_bus_get_priv (G_BUS_TYPE_SESSION, NULL, NULL);
-  g_assert (c3 != NULL);
-  g_assert (!g_dbus_connection_is_closed (c3));
-  g_assert_cmpstr (g_dbus_connection_get_unique_name (c3), ==, ":1.3");
-
-  /*
    * Make c2 emit "Foo" - we should catch it twice
    *
    * Note that there is no way to be sure that the signal subscriptions
@@ -650,6 +643,19 @@ test_connection_signals (void)
   g_assert_no_error (error);
   g_assert (result != NULL);
   g_variant_unref (result);
+
+  /*
+   * Bring up two other connections
+   */
+  c2 = _g_bus_get_priv (G_BUS_TYPE_SESSION, NULL, NULL);
+  g_assert (c2 != NULL);
+  g_assert (!g_dbus_connection_is_closed (c2));
+  g_assert_cmpstr (g_dbus_connection_get_unique_name (c2), ==, ":1.2");
+  c3 = _g_bus_get_priv (G_BUS_TYPE_SESSION, NULL, NULL);
+  g_assert (c3 != NULL);
+  g_assert (!g_dbus_connection_is_closed (c3));
+  g_assert_cmpstr (g_dbus_connection_get_unique_name (c3), ==, ":1.3");
+
   /* now, emit the signal on c2 */
   ret = g_dbus_connection_emit_signal (c2,
                                        NULL, /* destination bus name */
@@ -686,8 +692,6 @@ test_connection_signals (void)
    * Also to check the total amount of NameOwnerChanged signals - use a 5 second ceiling
    * to avoid spinning forever
    */
-  gboolean quit_mainloop_fired;
-  guint quit_mainloop_id;
   quit_mainloop_fired = FALSE;
   quit_mainloop_id = g_timeout_add (30000, test_connection_quit_mainloop, &quit_mainloop_fired);
   while (count_name_owner_changed < 2 && !quit_mainloop_fired)
@@ -701,10 +705,6 @@ test_connection_signals (void)
   g_dbus_connection_signal_unsubscribe (c1, s2);
   g_dbus_connection_signal_unsubscribe (c1, s3);
   g_dbus_connection_signal_unsubscribe (c1, s1b);
-
-  _g_object_wait_for_single_ref (c1);
-  _g_object_wait_for_single_ref (c2);
-  _g_object_wait_for_single_ref (c3);
 
   g_object_unref (c1);
   g_object_unref (c2);
@@ -989,12 +989,100 @@ test_connection_filter (void)
 
   g_dbus_connection_remove_filter (c, filter_id);
 
-  _g_object_wait_for_single_ref (c);
   g_object_unref (c);
   g_object_unref (m);
 
   session_bus_down ();
 }
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+#define NUM_THREADS 50
+
+static void
+send_bogus_message (GDBusConnection *c, guint32 *out_serial)
+{
+  GDBusMessage *m;
+  GError *error;
+
+  m = g_dbus_message_new_method_call ("org.freedesktop.DBus", /* name */
+                                      "/org/freedesktop/DBus", /* path */
+                                      "org.freedesktop.DBus", /* interface */
+                                      "GetNameOwner");
+  g_dbus_message_set_body (m, g_variant_new ("(s)", "org.freedesktop.DBus"));
+  error = NULL;
+  g_dbus_connection_send_message (c, m, G_DBUS_SEND_MESSAGE_FLAGS_NONE, out_serial, &error);
+  g_assert_no_error (error);
+}
+
+static gpointer
+serials_thread_func (GDBusConnection *c)
+{
+  guint32 message_serial;
+
+  /* No calls on this thread yet */
+  g_assert_cmpint (g_dbus_connection_get_last_serial(c), ==, 0);
+
+  /* Send a bogus message and store its serial */
+  message_serial = 0;
+  send_bogus_message (c, &message_serial);
+
+  /* Give it some time to actually send the message out */
+  g_usleep (250000);
+
+  g_assert_cmpint (g_dbus_connection_get_last_serial(c), !=, 0);
+  g_assert_cmpint (g_dbus_connection_get_last_serial(c), ==, message_serial);
+
+  return NULL;
+}
+
+static void
+test_connection_serials (void)
+{
+  GDBusConnection *c;
+  GError *error;
+  GThread *pool[NUM_THREADS];
+  int i;
+
+  session_bus_up ();
+
+  error = NULL;
+  c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+  g_assert_no_error (error);
+  g_assert (c != NULL);
+
+  /* Status after initialization */
+  g_assert_cmpint (g_dbus_connection_get_last_serial (c), ==, 1);
+
+  /* Send a bogus message */
+  send_bogus_message (c, NULL);
+  g_assert_cmpint (g_dbus_connection_get_last_serial (c), ==, 2);
+
+  /* Start the threads */
+  for (i = 0; i < NUM_THREADS; i++)
+    pool[i] = g_thread_new (NULL, (GThreadFunc) serials_thread_func, c);
+
+  /* Wait until threads are finished */
+  for (i = 0; i < NUM_THREADS; i++)
+    {
+      g_thread_join (pool[i]);
+      g_thread_unref (pool[i]);
+    }
+
+  /* No calls in between on this thread, should be the last value */
+  g_assert_cmpint (g_dbus_connection_get_last_serial (c), ==, 2);
+
+  send_bogus_message (c, NULL);
+
+  /* All above calls + calls in threads */
+  g_assert_cmpint (g_dbus_connection_get_last_serial (c), ==, 3 + NUM_THREADS);
+
+  g_object_unref (c);
+
+  session_bus_down ();
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
 
 static void
 test_connection_basic (void)
@@ -1043,7 +1131,6 @@ test_connection_basic (void)
   g_free (name);
   g_free (guid);
 
-  _g_object_wait_for_single_ref (connection);
   g_object_unref (connection);
 
   session_bus_down ();
@@ -1061,16 +1148,13 @@ main (int   argc,
   /* all the tests rely on a shared main loop */
   loop = g_main_loop_new (NULL, FALSE);
 
-  /* all the tests use a session bus with a well-known address that we can bring up and down
-   * using session_bus_up() and session_bus_down().
-   */
-  g_unsetenv ("DISPLAY");
-  g_setenv ("DBUS_SESSION_BUS_ADDRESS", session_bus_get_temporary_address (), TRUE);
+  g_test_dbus_unset ();
 
   g_test_add_func ("/gdbus/connection/basic", test_connection_basic);
   g_test_add_func ("/gdbus/connection/life-cycle", test_connection_life_cycle);
   g_test_add_func ("/gdbus/connection/send", test_connection_send);
   g_test_add_func ("/gdbus/connection/signals", test_connection_signals);
   g_test_add_func ("/gdbus/connection/filter", test_connection_filter);
+  g_test_add_func ("/gdbus/connection/serials", test_connection_serials);
   return g_test_run();
 }

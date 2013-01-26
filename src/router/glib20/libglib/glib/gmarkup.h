@@ -18,7 +18,7 @@
  *   Boston, MA 02111-1307, USA.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -194,8 +194,8 @@ gpointer             g_markup_parse_context_pop   (GMarkupParseContext *context)
 
 gboolean             g_markup_parse_context_end_parse (GMarkupParseContext *context,
                                                        GError             **error);
-G_CONST_RETURN gchar *g_markup_parse_context_get_element (GMarkupParseContext *context);
-G_CONST_RETURN GSList *g_markup_parse_context_get_element_stack (GMarkupParseContext *context);
+const gchar *        g_markup_parse_context_get_element (GMarkupParseContext *context);
+const GSList *       g_markup_parse_context_get_element_stack (GMarkupParseContext *context);
 
 /* For user-constructed error messages, has no precise semantics */
 void                 g_markup_parse_context_get_position (GMarkupParseContext *context,

@@ -33,7 +33,6 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#define _GNU_SOURCE
 #include <fcntl.h>
 #include <errno.h>
 #ifdef HAVE_GRP_H
@@ -91,7 +90,6 @@
 #include "glocalfileinfo.h"
 #include "gioerror.h"
 #include "gthemedicon.h"
-#include "gcontenttype.h"
 #include "gcontenttypeprivate.h"
 
 
@@ -1249,10 +1247,10 @@ get_content_type (const char          *basename,
 	    sniff_length = 4096;
 
 #ifdef O_NOATIME	  
-          fd = open (path, O_RDONLY | O_NOATIME);
+          fd = g_open (path, O_RDONLY | O_NOATIME, 0);
           if (fd < 0 && errno == EPERM)
 #endif
-	    fd = open (path, O_RDONLY);
+	    fd = g_open (path, O_RDONLY, 0);
 
 	  if (fd != -1)
 	    {
@@ -1293,8 +1291,8 @@ get_thumbnail_attributes (const char *path,
   basename = g_strconcat (g_checksum_get_string (checksum), ".png", NULL);
   g_checksum_free (checksum);
 
-  filename = g_build_filename (g_get_home_dir (),
-                               ".thumbnails", "normal", basename,
+  filename = g_build_filename (g_get_user_cache_dir (),
+                               "thumbnails", "normal", basename,
                                NULL);
 
   if (g_file_test (filename, G_FILE_TEST_IS_REGULAR))
@@ -1302,8 +1300,8 @@ get_thumbnail_attributes (const char *path,
   else
     {
       g_free (filename);
-      filename = g_build_filename (g_get_home_dir (),
-                                   ".thumbnails", "fail",
+      filename = g_build_filename (g_get_user_cache_dir (),
+                                   "thumbnails", "fail",
                                    "gnome-thumbnail-factory",
                                    basename,
                                    NULL);
@@ -1407,6 +1405,142 @@ win32_get_file_user_info (const gchar  *filename,
 }
 #endif /* G_OS_WIN32 */
 
+void
+_g_local_file_info_get_nostat (GFileInfo              *info,
+                               const char             *basename,
+			       const char             *path,
+                               GFileAttributeMatcher  *attribute_matcher)
+{
+  g_file_info_set_name (info, basename);
+
+  if (_g_file_attribute_matcher_matches_id (attribute_matcher,
+					    G_FILE_ATTRIBUTE_ID_STANDARD_DISPLAY_NAME))
+    {
+      char *display_name = g_filename_display_basename (path);
+     
+      /* look for U+FFFD REPLACEMENT CHARACTER */ 
+      if (strstr (display_name, "\357\277\275") != NULL)
+	{
+	  char *p = display_name;
+	  display_name = g_strconcat (display_name, _(" (invalid encoding)"), NULL);
+	  g_free (p);
+	}
+      g_file_info_set_display_name (info, display_name);
+      g_free (display_name);
+    }
+  
+  if (_g_file_attribute_matcher_matches_id (attribute_matcher,
+					    G_FILE_ATTRIBUTE_ID_STANDARD_EDIT_NAME))
+    {
+      char *edit_name = g_filename_display_basename (path);
+      g_file_info_set_edit_name (info, edit_name);
+      g_free (edit_name);
+    }
+
+  
+  if (_g_file_attribute_matcher_matches_id (attribute_matcher,
+					    G_FILE_ATTRIBUTE_ID_STANDARD_COPY_NAME))
+    {
+      char *copy_name = g_filename_to_utf8 (basename, -1, NULL, NULL, NULL);
+      if (copy_name)
+	_g_file_info_set_attribute_string_by_id (info, G_FILE_ATTRIBUTE_ID_STANDARD_COPY_NAME, copy_name);
+      g_free (copy_name);
+    }
+}
+
+static const char *
+get_icon_name (const char *path,
+               gboolean    use_symbolic,
+               gboolean   *with_fallbacks_out)
+{
+  const char *name = NULL;
+  gboolean with_fallbacks = TRUE;
+
+  if (strcmp (path, g_get_home_dir ()) == 0)
+    {
+      name = use_symbolic ? "user-home-symbolic" : "user-home";
+      with_fallbacks = FALSE;
+    }
+  else if (strcmp (path, g_get_user_special_dir (G_USER_DIRECTORY_DESKTOP)) == 0)
+    {
+      name = use_symbolic ? "user-desktop-symbolic" : "user-desktop";
+      with_fallbacks = FALSE;
+    }
+  else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_DOCUMENTS)) == 0)
+    {
+      name = use_symbolic ? "folder-documents-symbolic" : "folder-documents";
+    }
+  else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_DOWNLOAD)) == 0)
+    {
+      name = use_symbolic ? "folder-download-symbolic" : "folder-download";
+    }
+  else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_MUSIC)) == 0)
+    {
+      name = use_symbolic ? "folder-music-symbolic" : "folder-music";
+    }
+  else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_PICTURES)) == 0)
+    {
+      name = use_symbolic ? "folder-pictures-symbolic" : "folder-pictures";
+    }
+  else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_PUBLIC_SHARE)) == 0)
+    {
+      name = use_symbolic ? "folder-publicshare-symbolic" : "folder-publicshare";
+    }
+  else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_TEMPLATES)) == 0)
+    {
+      name = use_symbolic ? "folder-templates-symbolic" : "folder-templates";
+    }
+  else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_VIDEOS)) == 0)
+    {
+      name = use_symbolic ? "folder-videos-symbolic" : "folder-videos";
+    }
+  else
+    {
+      name = NULL;
+    }
+
+  if (with_fallbacks_out != NULL)
+    *with_fallbacks_out = with_fallbacks;
+
+  return name;
+}
+
+static GIcon *
+get_icon (const char *path,
+          const char *content_type,
+          gboolean    is_folder,
+          gboolean    use_symbolic)
+{
+  GIcon *icon = NULL;
+  const char *icon_name;
+  gboolean with_fallbacks;
+
+  icon_name = get_icon_name (path, use_symbolic, &with_fallbacks);
+  if (icon_name != NULL)
+    {
+      if (with_fallbacks)
+        icon = g_themed_icon_new_with_default_fallbacks (icon_name);
+      else
+        icon = g_themed_icon_new (icon_name);
+    }
+  else
+    {
+#ifdef G_OS_UNIX
+      if (use_symbolic)
+        icon = g_content_type_get_symbolic_icon (content_type);
+      else
+#endif
+        icon = g_content_type_get_icon (content_type);
+
+      if (G_IS_THEMED_ICON (icon) && is_folder)
+        {
+          g_themed_icon_append_name (G_THEMED_ICON (icon), use_symbolic ? "folder-symbolic" : "folder");
+        }
+    }
+
+  return icon;
+}
+
 GFileInfo *
 _g_local_file_info_get (const char             *basename,
 			const char             *path,
@@ -1436,11 +1570,13 @@ _g_local_file_info_get (const char             *basename,
   /* Make sure we don't set any unwanted attributes */
   g_file_info_set_attribute_mask (info, attribute_matcher);
   
-  g_file_info_set_name (info, basename);
+  _g_local_file_info_get_nostat (info, basename, path, attribute_matcher);
 
-  /* Avoid stat in trivial case */
   if (attribute_matcher == NULL)
-    return info;
+    {
+      g_file_info_unset_attribute_mask (info);
+      return info;
+    }
 
 #ifndef G_OS_WIN32
   res = g_lstat (path, &statbuf);
@@ -1480,7 +1616,7 @@ _g_local_file_info_get (const char             *basename,
           g_object_unref (info);
           g_set_error (error, G_IO_ERROR,
 		       g_io_error_from_errno (errsv),
-		       _("Error stating file '%s': %s"),
+		       _("Error when getting information for file '%s': %s"),
 		       display_name, g_strerror (errsv));
           g_free (display_name);
           return NULL;
@@ -1556,43 +1692,11 @@ _g_local_file_info_get (const char             *basename,
     }
 #endif
   if (_g_file_attribute_matcher_matches_id (attribute_matcher,
-					    G_FILE_ATTRIBUTE_ID_STANDARD_DISPLAY_NAME))
-    {
-      char *display_name = g_filename_display_basename (path);
-     
-      /* look for U+FFFD REPLACEMENT CHARACTER */ 
-      if (strstr (display_name, "\357\277\275") != NULL)
-	{
-	  char *p = display_name;
-	  display_name = g_strconcat (display_name, _(" (invalid encoding)"), NULL);
-	  g_free (p);
-	}
-      g_file_info_set_display_name (info, display_name);
-      g_free (display_name);
-    }
-  
-  if (_g_file_attribute_matcher_matches_id (attribute_matcher,
-					    G_FILE_ATTRIBUTE_ID_STANDARD_EDIT_NAME))
-    {
-      char *edit_name = g_filename_display_basename (path);
-      g_file_info_set_edit_name (info, edit_name);
-      g_free (edit_name);
-    }
-
-  
-  if (_g_file_attribute_matcher_matches_id (attribute_matcher,
-					    G_FILE_ATTRIBUTE_ID_STANDARD_COPY_NAME))
-    {
-      char *copy_name = g_filename_to_utf8 (basename, -1, NULL, NULL, NULL);
-      if (copy_name)
-	_g_file_info_set_attribute_string_by_id (info, G_FILE_ATTRIBUTE_ID_STANDARD_COPY_NAME, copy_name);
-      g_free (copy_name);
-    }
-
-  if (_g_file_attribute_matcher_matches_id (attribute_matcher,
 					    G_FILE_ATTRIBUTE_ID_STANDARD_CONTENT_TYPE) ||
       _g_file_attribute_matcher_matches_id (attribute_matcher,
-					    G_FILE_ATTRIBUTE_ID_STANDARD_ICON))
+					    G_FILE_ATTRIBUTE_ID_STANDARD_ICON) ||
+      _g_file_attribute_matcher_matches_id (attribute_matcher,
+					    G_FILE_ATTRIBUTE_ID_STANDARD_SYMBOLIC_ICON))
     {
       char *content_type = get_content_type (basename, path, stat_ok ? &statbuf : NULL, is_symlink, symlink_broken, flags, FALSE);
 
@@ -1601,47 +1705,28 @@ _g_local_file_info_get (const char             *basename,
 	  g_file_info_set_content_type (info, content_type);
 
 	  if (_g_file_attribute_matcher_matches_id (attribute_matcher,
-						    G_FILE_ATTRIBUTE_ID_STANDARD_ICON))
+                                                     G_FILE_ATTRIBUTE_ID_STANDARD_ICON)
+               || _g_file_attribute_matcher_matches_id (attribute_matcher,
+                                                        G_FILE_ATTRIBUTE_ID_STANDARD_SYMBOLIC_ICON))
 	    {
 	      GIcon *icon;
 
-              if (strcmp (path, g_get_home_dir ()) == 0)
-                icon = g_themed_icon_new ("user-home");
-              else if (strcmp (path, g_get_user_special_dir (G_USER_DIRECTORY_DESKTOP)) == 0)
-                icon = g_themed_icon_new ("user-desktop");
-              else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_DOCUMENTS)) == 0)
-                icon = g_themed_icon_new_with_default_fallbacks ("folder-documents");
-              else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_DOWNLOAD)) == 0)
-                icon = g_themed_icon_new_with_default_fallbacks ("folder-download");
-              else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_MUSIC)) == 0)
-                icon = g_themed_icon_new_with_default_fallbacks ("folder-music");
-              else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_PICTURES)) == 0)
-                icon = g_themed_icon_new_with_default_fallbacks ("folder-pictures");
-              else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_PUBLIC_SHARE)) == 0)
-                icon = g_themed_icon_new_with_default_fallbacks ("folder-publicshare");
-              else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_TEMPLATES)) == 0)
-                icon = g_themed_icon_new_with_default_fallbacks ("folder-templates");
-              else if (g_strcmp0 (path, g_get_user_special_dir (G_USER_DIRECTORY_VIDEOS)) == 0)
-                icon = g_themed_icon_new_with_default_fallbacks ("folder-videos");
-              else
-                {
-                  icon = g_content_type_get_icon (content_type);
-                  if (G_IS_THEMED_ICON (icon))
-                    {
-                      const char *type_icon = NULL;
-
-                      if (S_ISDIR (statbuf.st_mode)) 
-                        type_icon = "folder";
-                      if (type_icon)
-                        g_themed_icon_append_name (G_THEMED_ICON (icon), type_icon);
-                    }
-                }
-
+              /* non symbolic icon */
+              icon = get_icon (path, content_type, S_ISDIR (statbuf.st_mode), FALSE);
               if (icon != NULL)
                 {
                   g_file_info_set_icon (info, icon);
                   g_object_unref (icon);
                 }
+
+              /* symbolic icon */
+              icon = get_icon (path, content_type, S_ISDIR (statbuf.st_mode), TRUE);
+              if (icon != NULL)
+                {
+                  g_file_info_set_symbolic_icon (info, icon);
+                  g_object_unref (icon);
+                }
+
 	    }
 	  
 	  g_free (content_type);
@@ -1766,7 +1851,7 @@ _g_local_file_info_get_from_fd (int         fd,
 
       g_set_error (error, G_IO_ERROR,
 		   g_io_error_from_errno (errsv),
-		   _("Error stating file descriptor: %s"),
+		   _("Error when getting information for file descriptor: %s"),
 		   g_strerror (errsv));
       return NULL;
     }
@@ -1883,7 +1968,7 @@ set_unix_mode (char                       *filename,
 	       const GFileAttributeValue  *value,
 	       GError                    **error)
 {
-  guint32 val;
+  guint32 val = 0;
   int res = 0;
   
   if (!get_uint32 (value, &val, error))
@@ -1934,7 +2019,7 @@ set_unix_uid_gid (char                       *filename,
 		  GError                    **error)
 {
   int res;
-  guint32 val;
+  guint32 val = 0;
   uid_t uid;
   gid_t gid;
   
@@ -2070,8 +2155,8 @@ set_mtime_atime (char                       *filename,
 		 GError                    **error)
 {
   int res;
-  guint64 val;
-  guint32 val_usec;
+  guint64 val = 0;
+  guint32 val_usec = 0;
   struct stat statbuf;
   gboolean got_stat = FALSE;
   struct timeval times[2] = { {0, 0}, {0, 0} };

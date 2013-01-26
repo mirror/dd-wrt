@@ -20,6 +20,7 @@
     <ClCompile Include="..\..\..\gobject\gboxed.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gobject\gclosure.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gobject\genums.c"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\..\..\gobject\gmarshal.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gobject\gobject.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gobject\gparam.c"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="..\..\..\gobject\gparamspecs.c"><Filter>Source Files</Filter></ClCompile>

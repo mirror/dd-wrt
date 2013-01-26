@@ -105,8 +105,8 @@ typedef struct _GFileIface    		GFileIface;
  * @replace_async: Asynchronously replaces the contents of a file.
  * @replace_finish: Finishes asynchronously replacing a file.
  * @delete_file: Deletes a file.
- * @_delete_file_async: Asynchronously deletes a file.
- * @_delete_file_finish: Finishes an asynchronous delete.
+ * @delete_file_async: Asynchronously deletes a file.
+ * @delete_file_finish: Finishes an asynchronous delete.
  * @trash: Sends a #GFile to the Trash location.
  * @_trash_async: Asynchronously sends a #GFile to the Trash location.
  * @_trash_finish: Finishes an asynchronous file trashing operation.
@@ -353,8 +353,14 @@ struct _GFileIface
   gboolean            (* delete_file)                 (GFile                *file,
                                                        GCancellable         *cancellable,
                                                        GError              **error);
-  void                (* _delete_file_async)          (void);
-  void                (* _delete_file_finish)         (void);
+  void                (* delete_file_async)           (GFile                *file,
+						       int                   io_priority,
+						       GCancellable         *cancellable,
+						       GAsyncReadyCallback   callback,
+						       gpointer              user_data);
+  gboolean            (* delete_file_finish)          (GFile                *file,
+						       GAsyncResult         *result,
+						       GError              **error);
 
   gboolean            (* trash)                       (GFile                *file,
                                                        GCancellable         *cancellable,
@@ -550,6 +556,10 @@ GType                   g_file_get_type                   (void) G_GNUC_CONST;
 GFile *                 g_file_new_for_path               (const char                 *path);
 GFile *                 g_file_new_for_uri                (const char                 *uri);
 GFile *                 g_file_new_for_commandline_arg    (const char                 *arg);
+GLIB_AVAILABLE_IN_2_32
+GFile *                 g_file_new_tmp                    (const char                 *tmpl,
+                                                           GFileIOStream             **iostream,
+                                                           GError                    **error);
 GFile *                 g_file_parse_name                 (const char                 *parse_name);
 GFile *                 g_file_dup                        (GFile                      *file);
 guint                   g_file_hash                       (gconstpointer               file);
@@ -747,6 +757,19 @@ GFile *                 g_file_set_display_name_finish    (GFile                
 gboolean                g_file_delete                     (GFile                      *file,
 							   GCancellable               *cancellable,
 							   GError                    **error);
+
+GLIB_AVAILABLE_IN_2_34
+void                    g_file_delete_async               (GFile                      *file,
+							   int                         io_priority,
+							   GCancellable               *cancellable,
+							   GAsyncReadyCallback         callback,
+							   gpointer                    user_data);
+
+GLIB_AVAILABLE_IN_2_34
+gboolean                g_file_delete_finish              (GFile                      *file,
+							   GAsyncResult               *result,
+							   GError                    **error);
+
 gboolean                g_file_trash                      (GFile                      *file,
 							   GCancellable               *cancellable,
 							   GError                    **error);
@@ -869,16 +892,17 @@ void                    g_file_mount_mountable            (GFile                
 GFile *                 g_file_mount_mountable_finish     (GFile                      *file,
 							   GAsyncResult               *result,
 							   GError                    **error);
-#ifndef G_DISABLE_DEPRECATED
+GLIB_DEPRECATED_FOR(g_file_unmount_mountable_with_operation)
 void                    g_file_unmount_mountable          (GFile                      *file,
-							   GMountUnmountFlags          flags,
-							   GCancellable               *cancellable,
-							   GAsyncReadyCallback         callback,
-							   gpointer                    user_data);
+                                                           GMountUnmountFlags          flags,
+                                                           GCancellable               *cancellable,
+                                                           GAsyncReadyCallback         callback,
+                                                           gpointer                    user_data);
+
+GLIB_DEPRECATED_FOR(g_file_unmount_mountable_with_operation_finish)
 gboolean                g_file_unmount_mountable_finish   (GFile                      *file,
-							   GAsyncResult               *result,
-							   GError                    **error);
-#endif
+                                                           GAsyncResult               *result,
+                                                           GError                    **error);
 void                    g_file_unmount_mountable_with_operation (GFile                *file,
 							   GMountUnmountFlags          flags,
 							   GMountOperation            *mount_operation,
@@ -888,16 +912,17 @@ void                    g_file_unmount_mountable_with_operation (GFile          
 gboolean                g_file_unmount_mountable_with_operation_finish (GFile         *file,
 							   GAsyncResult               *result,
 							   GError                    **error);
-#ifndef G_DISABLE_DEPRECATED
+GLIB_DEPRECATED_FOR(g_file_eject_mountable_with_operation)
 void                    g_file_eject_mountable            (GFile                      *file,
-							   GMountUnmountFlags          flags,
-							   GCancellable               *cancellable,
-							   GAsyncReadyCallback         callback,
-							   gpointer                    user_data);
+                                                           GMountUnmountFlags          flags,
+                                                           GCancellable               *cancellable,
+                                                           GAsyncReadyCallback         callback,
+                                                           gpointer                    user_data);
+
+GLIB_DEPRECATED_FOR(g_file_eject_mountable_with_operation_finish)
 gboolean                g_file_eject_mountable_finish     (GFile                      *file,
-							   GAsyncResult               *result,
-							   GError                    **error);
-#endif
+                                                           GAsyncResult               *result,
+                                                           GError                    **error);
 void                    g_file_eject_mountable_with_operation (GFile                  *file,
 							   GMountUnmountFlags          flags,
 							   GMountOperation            *mount_operation,

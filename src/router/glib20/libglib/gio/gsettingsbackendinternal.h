@@ -100,4 +100,9 @@ GType                   g_null_settings_backend_get_type                (void);
 G_GNUC_INTERNAL
 GType                   g_memory_settings_backend_get_type              (void);
 
+#ifdef HAVE_COCOA
+G_GNUC_INTERNAL
+GType                   g_nextstep_settings_backend_get_type            (void);
+#endif
+
 #endif  /* __G_SETTINGS_BACKEND_INTERNAL_H__ */

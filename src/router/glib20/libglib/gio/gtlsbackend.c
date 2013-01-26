@@ -67,8 +67,9 @@
 /**
  * GTlsBackend:
  *
- * Type implemented by TLS #GIOModules to provide access to additional
- * TLS-related types.
+ * TLS (Transport Layer Security, aka SSL) backend. This is an
+ * internal type used to coordinate the different classes implemented
+ * by a TLS backend.
  *
  * Since: 2.28
  */
@@ -80,51 +81,20 @@ g_tls_backend_default_init (GTlsBackendInterface *iface)
 {
 }
 
-static gpointer
-get_default_tls_backend (gpointer arg)
-{
-  const char *use_this;
-  GList *extensions;
-  GIOExtensionPoint *ep;
-  GIOExtension *extension;
-
-  _g_io_modules_ensure_loaded ();
-
-  ep = g_io_extension_point_lookup (G_TLS_BACKEND_EXTENSION_POINT_NAME);
-
-  use_this = g_getenv ("GIO_USE_TLS");
-  if (use_this)
-    {
-      extension = g_io_extension_point_get_extension_by_name (ep, use_this);
-      if (extension)
-	return g_object_new (g_io_extension_get_type (extension), NULL);
-    }
-
-  extensions = g_io_extension_point_get_extensions (ep);
-  if (extensions)
-    {
-      extension = extensions->data;
-      return g_object_new (g_io_extension_get_type (extension), NULL);
-    }
-
-  return NULL;
-}
-
 /**
  * g_tls_backend_get_default:
  *
  * Gets the default #GTlsBackend for the system.
  *
- * Returns: a #GTlsBackend
+ * Returns: (transfer none): a #GTlsBackend
  *
  * Since: 2.28
  */
 GTlsBackend *
 g_tls_backend_get_default (void)
 {
-  static GOnce once_init = G_ONCE_INIT;
-
-  return g_once (&once_init, get_default_tls_backend, NULL);
+  return _g_io_module_get_default (G_TLS_BACKEND_EXTENSION_POINT_NAME,
+				   "GIO_USE_TLS", NULL);
 }
 
 /**
@@ -147,6 +117,29 @@ g_tls_backend_supports_tls (GTlsBackend *backend)
     return FALSE;
   else
     return TRUE;
+}
+
+/**
+ * g_tls_backend_get_default_database:
+ * @backend: the #GTlsBackend
+ *
+ * Gets the default #GTlsDatabase used to verify TLS connections.
+ *
+ * Return value: (transfer full): the default database, which should be
+ *               unreffed when done.
+ *
+ * Since: 2.30
+ */
+GTlsDatabase *
+g_tls_backend_get_default_database (GTlsBackend *backend)
+{
+  g_return_val_if_fail (G_IS_TLS_BACKEND (backend), NULL);
+
+  /* This method was added later, so accept the (remote) possibility it can be NULL */
+  if (!G_TLS_BACKEND_GET_INTERFACE (backend)->get_default_database)
+    return NULL;
+
+  return G_TLS_BACKEND_GET_INTERFACE (backend)->get_default_database (backend);
 }
 
 /**
@@ -198,4 +191,26 @@ GType
 g_tls_backend_get_server_connection_type (GTlsBackend *backend)
 {
   return G_TLS_BACKEND_GET_INTERFACE (backend)->get_server_connection_type ();
+}
+
+/**
+ * g_tls_backend_get_file_database_type:
+ * @backend: the #GTlsBackend
+ *
+ * Gets the #GType of @backend's #GTlsFileDatabase implementation.
+ *
+ * Return value: the #GType of backend's #GTlsFileDatabase implementation.
+ *
+ * Since: 2.30
+ */
+GType
+g_tls_backend_get_file_database_type (GTlsBackend *backend)
+{
+  g_return_val_if_fail (G_IS_TLS_BACKEND (backend), 0);
+
+  /* This method was added later, so accept the (remote) possibility it can be NULL */
+  if (!G_TLS_BACKEND_GET_INTERFACE (backend)->get_file_database_type)
+    return 0;
+
+  return G_TLS_BACKEND_GET_INTERFACE (backend)->get_file_database_type ();
 }

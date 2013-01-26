@@ -213,6 +213,31 @@ test_bus_own_name (void)
   g_assert (!name_has_owner_reply);
   g_variant_unref (result);
 
+  /* Now try owning the name and then immediately decide to unown the name */
+  g_assert_cmpint (data.num_bus_acquired, ==, 1);
+  g_assert_cmpint (data.num_acquired, ==, 1);
+  g_assert_cmpint (data.num_lost,     ==, 0);
+  g_assert_cmpint (data.num_free_func, ==, 2);
+  id = g_bus_own_name (G_BUS_TYPE_SESSION,
+                       name,
+                       G_BUS_NAME_OWNER_FLAGS_NONE,
+                       bus_acquired_handler,
+                       name_acquired_handler,
+                       name_lost_handler,
+                       &data,
+                       (GDestroyNotify) own_name_data_free_func);
+  g_assert_cmpint (data.num_bus_acquired, ==, 1);
+  g_assert_cmpint (data.num_acquired, ==, 1);
+  g_assert_cmpint (data.num_lost,     ==, 0);
+  g_assert_cmpint (data.num_free_func, ==, 2);
+  g_bus_unown_name (id);
+  g_assert_cmpint (data.num_bus_acquired, ==, 1);
+  g_assert_cmpint (data.num_acquired, ==, 1);
+  g_assert_cmpint (data.num_lost,     ==, 0);
+  g_assert_cmpint (data.num_free_func, ==, 2);
+  g_main_loop_run (loop); /* the GDestroyNotify is called in idle because the bus is acquired in idle */
+  g_assert_cmpint (data.num_free_func, ==, 3);
+
   /*
    * Own the name again.
    */
@@ -344,7 +369,7 @@ test_bus_own_name (void)
   g_bus_unown_name (id);
   g_assert_cmpint (data.num_bus_acquired, ==, 1);
   g_assert_cmpint (data.num_acquired, ==, 1);
-  g_assert_cmpint (data.num_free_func, ==, 3);
+  g_assert_cmpint (data.num_free_func, ==, 4);
   /* grab it again */
   data.num_bus_acquired = 0;
   data.num_acquired = 0;
@@ -437,17 +462,18 @@ test_bus_own_name (void)
    *
    */
   data.expect_null_connection = TRUE;
-  session_bus_down ();
+  session_bus_stop ();
   while (data.num_lost != 2)
     g_main_loop_run (loop);
   g_assert_cmpint (data.num_acquired, ==, 2);
   g_assert_cmpint (data.num_lost,     ==, 2);
   g_bus_unown_name (id);
-  g_assert_cmpint (data.num_free_func, ==, 4);
+  g_assert_cmpint (data.num_free_func, ==, 5);
 
-  _g_object_wait_for_single_ref (c);
   g_object_unref (c);
   g_object_unref (c2);
+
+  session_bus_down ();
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -671,7 +697,7 @@ test_bus_watch_name (void)
    * Nuke the bus and check that the name vanishes and is lost.
    */
   data.expect_null_connection = TRUE;
-  session_bus_down ();
+  session_bus_stop ();
   g_main_loop_run (loop);
   g_assert_cmpint (data.num_lost,     ==, 1);
   g_assert_cmpint (data.num_vanished, ==, 2);
@@ -682,6 +708,7 @@ test_bus_watch_name (void)
   g_bus_unown_name (owner_id);
   g_assert_cmpint (data.num_free_func, ==, 2);
 
+  session_bus_down ();
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -747,11 +774,7 @@ main (int   argc,
 
   loop = g_main_loop_new (NULL, FALSE);
 
-  /* all the tests use a session bus with a well-known address that we can bring up and down
-   * using session_bus_up() and session_bus_down().
-   */
-  g_unsetenv ("DISPLAY");
-  g_setenv ("DBUS_SESSION_BUS_ADDRESS", session_bus_get_temporary_address (), TRUE);
+  g_test_dbus_unset ();
 
   g_test_add_func ("/gdbus/validate-names", test_validate_names);
   g_test_add_func ("/gdbus/bus-own-name", test_bus_own_name);

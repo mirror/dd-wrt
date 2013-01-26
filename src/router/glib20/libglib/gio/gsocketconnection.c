@@ -52,7 +52,7 @@
  * depends on the type of the underlying socket that is in use. For
  * instance, for a TCP/IP connection it will be a #GTcpConnection.
  *
- * Chosing what type of object to construct is done with the socket
+ * Choosing what type of object to construct is done with the socket
  * connection factory, and it is possible for 3rd parties to register
  * custom socket connection types for specific combination of socket
  * family/type/protocol using g_socket_connection_factory_register_type().
@@ -111,6 +111,167 @@ g_socket_connection_get_output_stream (GIOStream *io_stream)
       _g_socket_output_stream_new (connection->priv->socket);
 
   return connection->priv->output_stream;
+}
+
+/**
+ * g_socket_connection_is_connected:
+ * @connection: a #GSocketConnection
+ *
+ * Checks if @connection is connected. This is equivalent to calling
+ * g_socket_is_connected() on @connection's underlying #GSocket.
+ *
+ * Returns: whether @connection is connected
+ *
+ * Since: 2.32
+ */
+gboolean
+g_socket_connection_is_connected (GSocketConnection  *connection)
+{
+  return g_socket_is_connected (connection->priv->socket);
+}
+
+/**
+ * g_socket_connection_connect:
+ * @connection: a #GSocketConnection
+ * @address: a #GSocketAddress specifying the remote address.
+ * @cancellable: (allow-none): a %GCancellable or %NULL
+ * @error: #GError for error reporting, or %NULL to ignore.
+ *
+ * Connect @connection to the specified remote address.
+ *
+ * Returns: %TRUE if the connection succeeded, %FALSE on error
+ *
+ * Since: 2.32
+ */
+gboolean
+g_socket_connection_connect (GSocketConnection  *connection,
+			     GSocketAddress     *address,
+			     GCancellable       *cancellable,
+			     GError            **error)
+{
+  g_return_val_if_fail (G_IS_SOCKET_CONNECTION (connection), FALSE);
+  g_return_val_if_fail (G_IS_SOCKET_ADDRESS (address), FALSE);
+
+  return g_socket_connect (connection->priv->socket, address,
+			   cancellable, error);
+}
+
+static gboolean g_socket_connection_connect_callback (GSocket      *socket,
+						      GIOCondition  condition,
+						      gpointer      user_data);
+
+/**
+ * g_socket_connection_connect_async:
+ * @connection: a #GSocketConnection
+ * @address: a #GSocketAddress specifying the remote address.
+ * @cancellable: (allow-none): a %GCancellable or %NULL
+ * @callback: (scope async): a #GAsyncReadyCallback
+ * @user_data: (closure): user data for the callback
+ *
+ * Asynchronously connect @connection to the specified remote address.
+ *
+ * This clears the #GSocket:blocking flag on @connection's underlying
+ * socket if it is currently set.
+ *
+ * Use g_socket_connection_connect_finish() to retrieve the result.
+ *
+ * Since: 2.32
+ */
+void
+g_socket_connection_connect_async (GSocketConnection   *connection,
+				   GSocketAddress      *address,
+				   GCancellable        *cancellable,
+				   GAsyncReadyCallback  callback,
+				   gpointer             user_data)
+{
+  GSimpleAsyncResult *simple;
+  GError *tmp_error = NULL;
+
+  g_return_if_fail (G_IS_SOCKET_CONNECTION (connection));
+  g_return_if_fail (G_IS_SOCKET_ADDRESS (address));
+
+  simple = g_simple_async_result_new (G_OBJECT (connection),
+				      callback, user_data,
+				      g_socket_connection_connect_async);
+
+  g_socket_set_blocking (connection->priv->socket, FALSE);
+
+  if (g_socket_connect (connection->priv->socket, address,
+			cancellable, &tmp_error))
+    {
+      g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+      g_simple_async_result_complete_in_idle (simple);
+    }
+  else if (g_error_matches (tmp_error, G_IO_ERROR, G_IO_ERROR_PENDING))
+    {
+      GSource *source;
+
+      g_simple_async_result_set_check_cancellable (simple, cancellable);
+
+      g_error_free (tmp_error);
+      source = g_socket_create_source (connection->priv->socket,
+				       G_IO_OUT, cancellable);
+      g_source_set_callback (source,
+			     (GSourceFunc) g_socket_connection_connect_callback,
+			     simple, NULL);
+      g_source_attach (source, g_main_context_get_thread_default ());
+      g_source_unref (source);
+    }
+  else
+    {
+      g_simple_async_result_take_error (simple, tmp_error);
+      g_simple_async_result_complete_in_idle (simple);
+    }
+}
+
+static gboolean
+g_socket_connection_connect_callback (GSocket      *socket,
+				      GIOCondition  condition,
+				      gpointer      user_data)
+{
+  GSimpleAsyncResult *simple = user_data;
+  GSocketConnection *connection;
+  GError *error = NULL;
+
+  connection = G_SOCKET_CONNECTION (g_async_result_get_source_object (G_ASYNC_RESULT (simple)));
+  g_object_unref (connection);
+
+  if (g_socket_check_connect_result (connection->priv->socket, &error))
+    g_simple_async_result_set_op_res_gboolean (simple, TRUE);
+  else
+    g_simple_async_result_take_error (simple, error);
+
+  g_simple_async_result_complete (simple);
+  g_object_unref (simple);
+  return FALSE;
+}
+
+/**
+ * g_socket_connection_connect_finish:
+ * @connection: a #GSocketConnection
+ * @result: the #GAsyncResult
+ * @error: #GError for error reporting, or %NULL to ignore.
+ *
+ * Gets the result of a g_socket_connection_connect_async() call.
+ *
+ * Returns: %TRUE if the connection succeeded, %FALSE on error
+ *
+ * Since: 2.32
+ */
+gboolean
+g_socket_connection_connect_finish (GSocketConnection  *connection,
+				    GAsyncResult       *result,
+				    GError            **error)
+{
+  GSimpleAsyncResult *simple;
+
+  g_return_val_if_fail (G_IS_SOCKET_CONNECTION (connection), FALSE);
+  g_return_val_if_fail (g_simple_async_result_is_valid (result, G_OBJECT (connection), g_socket_connection_connect_async), FALSE);
+
+  simple = G_SIMPLE_ASYNC_RESULT (result);
+  if (g_simple_async_result_propagate_error (simple, error))
+    return FALSE;
+  return TRUE;
 }
 
 /**
@@ -404,7 +565,7 @@ G_LOCK_DEFINE_STATIC(connection_factories);
  * @protocol: a protocol id
  *
  * Looks up the #GType to be used when creating socket connections on
- * sockets with the specified @family,@type and @protocol.
+ * sockets with the specified @family, @type and @protocol.
  *
  * If no type is registered, the #GSocketConnection base type is returned.
  *
@@ -443,11 +604,10 @@ g_socket_connection_factory_register_type (GType         g_type,
 static void
 init_builtin_types (void)
 {
-  volatile GType a_type;
 #ifndef G_OS_WIN32
-  a_type = g_unix_connection_get_type ();
+  g_type_ensure (G_TYPE_UNIX_CONNECTION);
 #endif
-  a_type = g_tcp_connection_get_type ();
+  g_type_ensure (G_TYPE_TCP_CONNECTION);
 }
 
 /**
@@ -457,7 +617,7 @@ init_builtin_types (void)
  * @protocol_id: a protocol id
  *
  * Looks up the #GType to be used when creating socket connections on
- * sockets with the specified @family,@type and @protocol_id.
+ * sockets with the specified @family, @type and @protocol_id.
  *
  * If no type is registered, the #GSocketConnection base type is returned.
  *

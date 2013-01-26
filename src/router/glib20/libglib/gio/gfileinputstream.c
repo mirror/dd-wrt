@@ -45,7 +45,7 @@
  * stream to jump to arbitrary positions in the file, provided the 
  * filesystem of the file allows it. To find the position of a file
  * input stream, use g_seekable_tell(). To find out if a file input
- * stream supports seeking, use g_seekable_stream_can_seek().
+ * stream supports seeking, use g_seekable_can_seek().
  * To position a file input stream, use g_seekable_seek().
  **/
 
@@ -113,7 +113,7 @@ g_file_input_stream_init (GFileInputStream *stream)
  * @stream: a #GFileInputStream.
  * @attributes: a file attribute query string.
  * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore. 
- * @error: a #GError location to store the error occuring, or %NULL to 
+ * @error: a #GError location to store the error occurring, or %NULL to 
  * ignore.
  *
  * Queries a file input stream the given @attributes. This function blocks 
@@ -234,7 +234,7 @@ g_file_input_stream_query_info_async (GFileInputStream    *stream,
  * g_file_input_stream_query_info_finish:
  * @stream: a #GFileInputStream.
  * @result: a #GAsyncResult.
- * @error: a #GError location to store the error occuring, 
+ * @error: a #GError location to store the error occurring, 
  *     or %NULL to ignore.
  * 
  * Finishes an asynchronous info query operation.
@@ -246,18 +246,13 @@ g_file_input_stream_query_info_finish (GFileInputStream  *stream,
                                        GAsyncResult      *result,
                                        GError           **error)
 {
-  GSimpleAsyncResult *simple;
   GFileInputStreamClass *class;
 
   g_return_val_if_fail (G_IS_FILE_INPUT_STREAM (stream), NULL);
   g_return_val_if_fail (G_IS_ASYNC_RESULT (result), NULL);
 
-  if (G_IS_SIMPLE_ASYNC_RESULT (result))
-    {
-      simple = G_SIMPLE_ASYNC_RESULT (result);
-      if (g_simple_async_result_propagate_error (simple, error))
-	return NULL;
-    }
+  if (g_async_result_legacy_propagate_error (result, error))
+    return NULL;
 
   class = G_FILE_INPUT_STREAM_GET_CLASS (stream);
   return class->query_info_finish (stream, result, error);
@@ -455,6 +450,9 @@ g_file_input_stream_real_query_info_finish (GFileInputStream  *stream,
   QueryInfoAsyncData *data;
 
   g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_file_input_stream_real_query_info_async);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return NULL;
 
   data = g_simple_async_result_get_op_res_gpointer (simple);
   if (data->info)

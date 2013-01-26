@@ -24,7 +24,7 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -169,6 +169,19 @@ GNode*	 g_node_find		(GNode		  *root,
      g_node_insert ((parent), (position), g_node_new (data))
 
 /**
+ * g_node_insert_data_after:
+ * @parent: the #GNode to place the new #GNode under
+ * @sibling: the sibling #GNode to place the new #GNode after
+ * @data: the data for the new #GNode
+ *
+ * Inserts a new #GNode after the given sibling.
+ *
+ * Returns: the new #GNode
+ */
+
+#define	g_node_insert_data_after(parent, sibling, data)	\
+     g_node_insert_after ((parent), (sibling), g_node_new (data))
+/**
  * g_node_insert_data_before:
  * @parent: the #GNode to place the new #GNode under
  * @sibling: the sibling #GNode to place the new #GNode before
@@ -279,11 +292,6 @@ GNode*	 g_node_last_sibling	 (GNode		  *node);
  */
 #define	 g_node_first_child(node)	((node) ? \
 					 ((GNode*) (node))->children : NULL)
-
-#ifndef G_DISABLE_DEPRECATED
-void     g_node_push_allocator  (gpointer          dummy);
-void     g_node_pop_allocator   (void);
-#endif
 
 G_END_DECLS
 

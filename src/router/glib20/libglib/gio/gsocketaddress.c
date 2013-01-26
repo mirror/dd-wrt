@@ -23,6 +23,7 @@
 
 #include <config.h>
 #include <glib.h>
+#include <string.h>
 
 #include "gsocketaddress.h"
 #include "ginetaddress.h"
@@ -171,7 +172,7 @@ g_socket_address_get_native_size (GSocketAddress *address)
  * sockaddr</type>, which can be passed to low-level functions like
  * connect() or bind().
  *
- * If not enough space is availible, a %G_IO_ERROR_NO_SPACE error is
+ * If not enough space is available, a %G_IO_ERROR_NO_SPACE error is
  * returned. If the address type is not known on the system
  * then a %G_IO_ERROR_NOT_SUPPORTED error is returned.
  *
@@ -241,8 +242,26 @@ g_socket_address_new_from_native (gpointer native,
       if (len < sizeof (*addr))
 	return NULL;
 
-      iaddr = g_inet_address_new_from_bytes ((guint8 *) &(addr->sin6_addr), AF_INET6);
-      sockaddr = g_inet_socket_address_new (iaddr, g_ntohs (addr->sin6_port));
+      if (IN6_IS_ADDR_V4MAPPED (&(addr->sin6_addr)))
+	{
+	  struct sockaddr_in sin_addr;
+
+	  sin_addr.sin_family = AF_INET;
+	  sin_addr.sin_port = addr->sin6_port;
+	  memcpy (&(sin_addr.sin_addr.s_addr), addr->sin6_addr.s6_addr + 12, 4);
+	  iaddr = g_inet_address_new_from_bytes ((guint8 *) &(sin_addr.sin_addr), AF_INET);
+	}
+      else
+	{
+	  iaddr = g_inet_address_new_from_bytes ((guint8 *) &(addr->sin6_addr), AF_INET6);
+	}
+
+      sockaddr = g_object_new (G_TYPE_INET_SOCKET_ADDRESS,
+			       "address", iaddr,
+			       "port", g_ntohs (addr->sin6_port),
+			       "flowinfo", g_ntohl (addr->sin6_flowinfo),
+			       "scope_id", g_ntohl (addr->sin6_scope_id),
+			       NULL);
       g_object_unref (iaddr);
       return sockaddr;
     }
@@ -260,7 +279,12 @@ g_socket_address_new_from_native (gpointer native,
 	}
       else if (addr->sun_path[0] == 0)
 	{
-	  if (len < sizeof (*addr))
+	  if (!g_unix_socket_address_abstract_names_supported ())
+	    {
+	      return g_unix_socket_address_new_with_type ("", 0,
+							  G_UNIX_SOCKET_ADDRESS_ANONYMOUS);
+	    }
+	  else if (len < sizeof (*addr))
 	    {
 	      return g_unix_socket_address_new_with_type (addr->sun_path + 1,
 							  path_len - 1,
@@ -296,6 +320,7 @@ typedef struct {
 
 } GSocketAddressAddressEnumeratorClass;
 
+static GType _g_socket_address_address_enumerator_get_type (void);
 G_DEFINE_TYPE (GSocketAddressAddressEnumerator, _g_socket_address_address_enumerator, G_TYPE_SOCKET_ADDRESS_ENUMERATOR)
 
 static void

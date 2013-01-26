@@ -44,7 +44,7 @@ typedef struct _GMountIface    GMountIface;
  * @g_iface: The parent interface.
  * @changed: Changed signal that is emitted when the mount's state has changed.
  * @unmounted: The unmounted signal that is emitted when the #GMount have been unmounted. If the recipient is holding references to the object they should release them so the object can be finalized.
- * @pre_unmount: The pre_unmout signal that is emitted when the #GMount will soon be emitted. If the recipient is somehow holding the mount open by keeping an open file on it it should close the file.
+ * @pre_unmount: The ::pre-unmount signal that is emitted when the #GMount will soon be emitted. If the recipient is somehow holding the mount open by keeping an open file on it it should close the file.
  * @get_root: Gets a #GFile to the root directory of the #GMount.
  * @get_name: Gets a string containing the name of the #GMount.
  * @get_icon: Gets a #GIcon for the #GMount.
@@ -62,13 +62,15 @@ typedef struct _GMountIface    GMountIface;
  * @guess_content_type: Starts guessing the type of the content of a #GMount.
  *     See g_mount_guess_content_type() for more information on content
  *     type guessing. This operation was added in 2.18.
- * @guess_content_type_finish: Finishes a contenet type guessing operation. Added in 2.18.
+ * @guess_content_type_finish: Finishes a content type guessing operation. Added in 2.18.
  * @guess_content_type_sync: Synchronous variant of @guess_content_type. Added in 2.18
  * @unmount_with_operation: Starts unmounting a #GMount using a #GMountOperation. Since 2.22.
  * @unmount_with_operation_finish: Finishes an unmounting operation using a #GMountOperation. Since 2.22.
  * @eject_with_operation: Starts ejecting a #GMount using a #GMountOperation. Since 2.22.
  * @eject_with_operation_finish: Finishes an eject operation using a #GMountOperation. Since 2.22.
  * @get_default_location: Gets a #GFile indication a start location that can be use as the entry point for this mount. Since 2.24.
+ * @get_sort_key: Gets a key used for sorting #GMount instance or %NULL if no such key exists. Since 2.32.
+ * @get_symbolic_icon: Gets a symbolic #GIcon for the #GMount. Since 2.34.
  *
  * Interface for implementing operations for mounts.
  **/
@@ -156,6 +158,9 @@ struct _GMountIface
                                              GAsyncResult        *result,
                                              GError             **error);
   GFile     * (* get_default_location)      (GMount              *mount);
+
+  const gchar * (* get_sort_key)            (GMount              *mount);
+  GIcon       * (* get_symbolic_icon)       (GMount              *mount);
 };
 
 GType       g_mount_get_type                  (void) G_GNUC_CONST;
@@ -164,31 +169,36 @@ GFile     * g_mount_get_root                  (GMount              *mount);
 GFile     * g_mount_get_default_location      (GMount              *mount);
 char      * g_mount_get_name                  (GMount              *mount);
 GIcon     * g_mount_get_icon                  (GMount              *mount);
+GIcon     * g_mount_get_symbolic_icon         (GMount              *mount);
 char      * g_mount_get_uuid                  (GMount              *mount);
 GVolume   * g_mount_get_volume                (GMount              *mount);
 GDrive    * g_mount_get_drive                 (GMount              *mount);
 gboolean    g_mount_can_unmount               (GMount              *mount);
 gboolean    g_mount_can_eject                 (GMount              *mount);
 
-#ifndef G_DISABLE_DEPRECATED
+GLIB_DEPRECATED_FOR(g_mount_unmount_with_operation)
 void        g_mount_unmount                   (GMount              *mount,
                                                GMountUnmountFlags   flags,
                                                GCancellable        *cancellable,
                                                GAsyncReadyCallback  callback,
                                                gpointer             user_data);
+
+GLIB_DEPRECATED_FOR(g_mount_unmount_with_operation_finish)
 gboolean    g_mount_unmount_finish            (GMount              *mount,
                                                GAsyncResult        *result,
                                                GError             **error);
 
+GLIB_DEPRECATED_FOR(g_mount_eject_with_operation)
 void        g_mount_eject                     (GMount              *mount,
                                                GMountUnmountFlags   flags,
                                                GCancellable        *cancellable,
                                                GAsyncReadyCallback  callback,
                                                gpointer             user_data);
+
+GLIB_DEPRECATED_FOR(g_mount_eject_with_operation_finish)
 gboolean    g_mount_eject_finish              (GMount              *mount,
                                                GAsyncResult        *result,
                                                GError             **error);
-#endif
 
 void        g_mount_remount                   (GMount              *mount,
                                                GMountMountFlags     flags,
@@ -236,6 +246,8 @@ void        g_mount_eject_with_operation      (GMount              *mount,
 gboolean    g_mount_eject_with_operation_finish (GMount            *mount,
                                                GAsyncResult        *result,
                                                GError             **error);
+
+const gchar *g_mount_get_sort_key             (GMount              *mount);
 
 G_END_DECLS
 

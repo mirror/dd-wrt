@@ -126,7 +126,6 @@ create_empty_file (GFile * parent, const char *filename,
 		   GFileCreateFlags create_flags)
 {
   GFile *child;
-  gboolean res;
   GError *error;
   GFileOutputStream *outs;
 
@@ -138,7 +137,7 @@ create_empty_file (GFile * parent, const char *filename,
   g_assert_no_error (error);
   g_assert (outs != NULL);
   error = NULL;
-  res = g_output_stream_close (G_OUTPUT_STREAM (outs), NULL, &error);
+  g_output_stream_close (G_OUTPUT_STREAM (outs), NULL, &error);
   g_object_unref (outs);
   return child;
 }
@@ -432,6 +431,7 @@ test_initial_structure (gconstpointer test_data)
       test_attributes (item, info);
 
       g_object_unref (child);
+      g_object_unref (info);
     }
 
   /*  read and test the pattern file  */
@@ -448,6 +448,7 @@ test_initial_structure (gconstpointer test_data)
   g_assert (info != NULL);
   size = g_file_info_get_size (info);
   g_assert_cmpint (size, ==, PATTERN_FILE_SIZE);
+  g_object_unref (info);
 
   error = NULL;
   ins = g_file_read (child, NULL, &error);
@@ -539,6 +540,9 @@ traverse_recurse_dirs (GFile * parent, GFile * root)
 
       g_object_unref (descend);
       error = NULL;
+      g_object_unref (info);
+      g_free (relative_path);
+
       info = g_file_enumerator_next_file (enumerator, NULL, &error);
     }
   g_assert_no_error (error);
@@ -892,6 +896,7 @@ test_create (gconstpointer test_data)
 		     error->code, error->message);
 	      g_assert_cmpint (res, ==, TRUE);
 	      g_assert_no_error (error);
+              g_object_unref (os);
 	    }
 	  g_object_unref (child);
 	}
@@ -962,6 +967,7 @@ test_open (gconstpointer test_data)
 				      &error);
 	      g_assert_cmpint (res, ==, TRUE);
 	      g_assert_no_error (error);
+              g_object_unref (input_stream);
 	    }
 	  g_object_unref (child);
 	}
@@ -978,6 +984,7 @@ test_delete (gconstpointer test_data)
   GError *error;
   guint i;
   struct StructureItem item;
+  gchar *path;
 
   g_assert (test_data != NULL);
   log ("\n");
@@ -1001,8 +1008,10 @@ test_delete (gconstpointer test_data)
 	  g_assert (child != NULL);
 	  /*  we don't care about result here  */
 
-	  log ("  Deleting %s, path = %s\n", item.filename,
-	       g_file_get_path (child));
+          path = g_file_get_path (child);
+	  log ("  Deleting %s, path = %s\n", item.filename, path);
+          g_free (path);
+
 	  error = NULL;
 	  if ((item.extra_flags & TEST_DELETE_NORMAL) == TEST_DELETE_NORMAL)
 	    res = g_file_delete (child, NULL, &error);
@@ -1038,6 +1047,94 @@ test_delete (gconstpointer test_data)
   g_object_unref (root);
 }
 
+static void
+test_make_directory_with_parents (gconstpointer test_data)
+{
+  GFile *root, *child, *grandchild, *greatgrandchild;
+  gboolean res;
+  GError *error = NULL;
+
+  g_assert (test_data != NULL);
+
+  root = g_file_new_for_commandline_arg ((char *) test_data);
+  g_assert (root != NULL);
+  res = g_file_query_exists (root, NULL);
+  g_assert_cmpint (res, ==, TRUE);
+
+  child = g_file_get_child (root, "a");
+  grandchild = g_file_get_child (child, "b");
+  greatgrandchild = g_file_get_child (grandchild, "c");
+
+  /* Check that we can successfully make directory hierarchies of
+   * depth 1, 2, or 3
+   */
+  res = g_file_make_directory_with_parents (child, NULL, &error);
+  g_assert_cmpint (res, ==, TRUE);
+  g_assert_no_error (error);
+  res = g_file_query_exists (child, NULL);
+  g_assert_cmpint (res, ==, TRUE);
+
+  g_file_delete (child, NULL, NULL);
+
+  res = g_file_make_directory_with_parents (grandchild, NULL, &error);
+  g_assert_cmpint (res, ==, TRUE);
+  g_assert_no_error (error);
+  res = g_file_query_exists (grandchild, NULL);
+  g_assert_cmpint (res, ==, TRUE);
+
+  g_file_delete (grandchild, NULL, NULL);
+  g_file_delete (child, NULL, NULL);
+
+  res = g_file_make_directory_with_parents (greatgrandchild, NULL, &error);
+  g_assert_cmpint (res, ==, TRUE);
+  g_assert_no_error (error);
+  res = g_file_query_exists (greatgrandchild, NULL);
+  g_assert_cmpint (res, ==, TRUE);
+
+  g_file_delete (greatgrandchild, NULL, NULL);
+  g_file_delete (grandchild, NULL, NULL);
+  g_file_delete (child, NULL, NULL);
+
+  /* Now test failure by trying to create a directory hierarchy
+   * where a ancestor exists but is read-only
+   */
+
+  /* No obvious way to do this on Windows */
+  if (!posix_compat)
+    goto out;
+
+#ifndef G_PLATFORM_WIN32
+  if (getuid() == 0) /* permissions are ignored for root */
+    goto out;
+#endif
+
+  g_file_make_directory (child, NULL, NULL);
+  g_assert_cmpint (res, ==, TRUE);
+
+  res = g_file_set_attribute_uint32 (child,
+                                     G_FILE_ATTRIBUTE_UNIX_MODE,
+                                     S_IRUSR + S_IXUSR, /* -r-x------ */
+                                     G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                     NULL, NULL);
+  g_assert_cmpint (res, ==, TRUE);
+
+  res = g_file_make_directory_with_parents (grandchild, NULL, &error);
+  g_assert_cmpint (res, ==, FALSE);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED);
+  g_clear_error (&error);
+
+  res = g_file_make_directory_with_parents (greatgrandchild, NULL, &error);
+  g_assert_cmpint (res, ==, FALSE);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED);
+  g_clear_error (&error);
+
+out:
+  g_object_unref (greatgrandchild);
+  g_object_unref (grandchild);
+  g_object_unref (child);
+  g_object_unref (root);
+}
+
 
 static void
 cleanup_dir_recurse (GFile *parent, GFile *root)
@@ -1051,11 +1148,10 @@ cleanup_dir_recurse (GFile *parent, GFile *root)
 
   g_assert (root != NULL);
 
-  error = NULL;
   enumerator =
     g_file_enumerate_children (parent, "*",
 			       G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS, NULL,
-			       &error);
+			       NULL);
   if (! enumerator)
 	  return;
 
@@ -1067,6 +1163,7 @@ cleanup_dir_recurse (GFile *parent, GFile *root)
       g_assert (descend != NULL);
       relative_path = g_file_get_relative_path (root, descend);
       g_assert (relative_path != NULL);
+      g_free (relative_path);
 
       log ("    deleting '%s'\n", g_file_info_get_display_name (info));
 
@@ -1079,6 +1176,8 @@ cleanup_dir_recurse (GFile *parent, GFile *root)
 
       g_object_unref (descend);
       error = NULL;
+      g_object_unref (info);
+
       info = g_file_enumerator_next_file (enumerator, NULL, &error);
     }
   g_assert_no_error (error);
@@ -1176,6 +1275,7 @@ main (int argc, char *argv[])
       return g_test_run ();
     }
 
+  g_option_context_free (context);
   
   /*  Write test - clean target directory first  */
   /*    this can be also considered as a test - enumerate + delete  */ 
@@ -1221,6 +1321,11 @@ main (int argc, char *argv[])
   if (write_test && (!only_create_struct))
     g_test_add_data_func ("/live-g-file/test_delete", target_path,
 			  test_delete);
+
+  /*  Write test - make_directory_with_parents */
+  if (write_test && (!only_create_struct))
+    g_test_add_data_func ("/live-g-file/test_make_directory_with_parents", target_path,
+			  test_make_directory_with_parents);
 
   if (write_test || only_create_struct)
     g_test_add_data_func ("/live-g-file/final_clean", target_path,

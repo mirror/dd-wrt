@@ -65,6 +65,13 @@
  * structure and a #GTypeFundamentalInfo structure but it is seldom used
  * since most fundamental types are predefined rather than user-defined.
  *
+ * Type instance and class structs are limited to a total of 64 KiB,
+ * including all parent types. Similarly, type instances' private data
+ * (as created by g_type_class_add_private()) are limited to a total of
+ * 64 KiB. If a type instance needs a large static buffer, allocate it
+ * separately (typically by using #GArray or #GPtrArray) and put a pointer
+ * to the buffer in the structure.
+ *
  * A final word about type names.
  * Such an identifier needs to be at least three characters long. There is no
  * upper length limit. The first character needs to be a letter (a-z or A-Z)
@@ -103,15 +110,15 @@
  */
 
 #ifdef LOCK_DEBUG
-#define G_READ_LOCK(rw_lock)    do { g_printerr (G_STRLOC ": readL++\n"); g_static_rw_lock_reader_lock (rw_lock); } while (0)
-#define G_READ_UNLOCK(rw_lock)  do { g_printerr (G_STRLOC ": readL--\n"); g_static_rw_lock_reader_unlock (rw_lock); } while (0)
-#define G_WRITE_LOCK(rw_lock)   do { g_printerr (G_STRLOC ": writeL++\n"); g_static_rw_lock_writer_lock (rw_lock); } while (0)
-#define G_WRITE_UNLOCK(rw_lock) do { g_printerr (G_STRLOC ": writeL--\n"); g_static_rw_lock_writer_unlock (rw_lock); } while (0)
+#define G_READ_LOCK(rw_lock)    do { g_printerr (G_STRLOC ": readL++\n"); g_rw_lock_reader_lock (rw_lock); } while (0)
+#define G_READ_UNLOCK(rw_lock)  do { g_printerr (G_STRLOC ": readL--\n"); g_rw_lock_reader_unlock (rw_lock); } while (0)
+#define G_WRITE_LOCK(rw_lock)   do { g_printerr (G_STRLOC ": writeL++\n"); g_rw_lock_writer_lock (rw_lock); } while (0)
+#define G_WRITE_UNLOCK(rw_lock) do { g_printerr (G_STRLOC ": writeL--\n"); g_rw_lock_writer_unlock (rw_lock); } while (0)
 #else
-#define G_READ_LOCK(rw_lock)    g_static_rw_lock_reader_lock (rw_lock)
-#define G_READ_UNLOCK(rw_lock)  g_static_rw_lock_reader_unlock (rw_lock)
-#define G_WRITE_LOCK(rw_lock)   g_static_rw_lock_writer_lock (rw_lock)
-#define G_WRITE_UNLOCK(rw_lock) g_static_rw_lock_writer_unlock (rw_lock)
+#define G_READ_LOCK(rw_lock)    g_rw_lock_reader_lock (rw_lock)
+#define G_READ_UNLOCK(rw_lock)  g_rw_lock_reader_unlock (rw_lock)
+#define G_WRITE_LOCK(rw_lock)   g_rw_lock_writer_lock (rw_lock)
+#define G_WRITE_UNLOCK(rw_lock) g_rw_lock_writer_unlock (rw_lock)
 #endif
 #define	INVALID_RECURSION(func, arg, type_name) G_STMT_START{ \
     static const gchar _action[] = " invalidly modified type ";  \
@@ -368,8 +375,8 @@ typedef struct {
 
 
 /* --- variables --- */
-static GStaticRWLock   type_rw_lock = G_STATIC_RW_LOCK_INIT;
-static GStaticRecMutex class_init_rec_mutex = G_STATIC_REC_MUTEX_INIT;
+static GRWLock         type_rw_lock;
+static GRecMutex       class_init_rec_mutex;
 static guint           static_n_class_cache_funcs = 0;
 static ClassCacheFunc *static_class_cache_funcs = NULL;
 static guint           static_n_iface_check_funcs = 0;
@@ -488,7 +495,7 @@ type_node_any_new_W (TypeNode             *pnode,
   node->global_gdata = NULL;
   
   g_hash_table_insert (static_type_nodes_ht,
-		       g_quark_to_string (node->qname),
+		       (gpointer) g_quark_to_string (node->qname),
 		       (gpointer) type);
   return node;
 }
@@ -1079,7 +1086,7 @@ type_data_make_W (TypeNode              *node,
       vtable_size += 2;
     }
    
-  if (node->is_instantiatable) /* carefull, is_instantiatable is also is_classed */
+  if (node->is_instantiatable) /* careful, is_instantiatable is also is_classed */
     {
       TypeNode *pnode = lookup_type_node_I (NODE_PARENT_TYPE (node));
 
@@ -1559,7 +1566,7 @@ g_type_interface_add_prerequisite (GType interface_type,
     {
       guint i;
       
-      /* can have at most one publically installable instantiatable prerequisite */
+      /* can have at most one publicly installable instantiatable prerequisite */
       for (i = 0; i < IFACE_NODE_N_PREREQUISITES (iface); i++)
 	{
 	  TypeNode *prnode = lookup_type_node_I (IFACE_NODE_PREREQUISITES (iface)[i]);
@@ -1847,16 +1854,14 @@ g_type_create_instance (GType type)
   node = lookup_type_node_I (type);
   if (!node || !node->is_instantiatable)
     {
-      g_warning ("cannot create new instance of invalid (non-instantiatable) type `%s'",
+      g_error ("cannot create new instance of invalid (non-instantiatable) type `%s'",
 		 type_descriptive_name_I (type));
-      return NULL;
     }
   /* G_TYPE_IS_ABSTRACT() is an external call: _U */
   if (!node->mutatable_check_cache && G_TYPE_IS_ABSTRACT (type))
     {
-      g_warning ("cannot create instance of abstract (non-instantiatable) type `%s'",
+      g_error ("cannot create instance of abstract (non-instantiatable) type `%s'",
 		 type_descriptive_name_I (type));
-      return NULL;
     }
   
   class = g_type_class_ref (type);
@@ -2416,11 +2421,11 @@ type_data_unref_U (TypeNode *node,
 
       g_assert (current > 0);
 
-      g_static_rec_mutex_lock (&class_init_rec_mutex); /* required locking order: 1) class_init_rec_mutex, 2) type_rw_lock */
+      g_rec_mutex_lock (&class_init_rec_mutex); /* required locking order: 1) class_init_rec_mutex, 2) type_rw_lock */
       G_WRITE_LOCK (&type_rw_lock);
       type_data_last_unref_Wm (node, uncached);
       G_WRITE_UNLOCK (&type_rw_lock);
-      g_static_rec_mutex_unlock (&class_init_rec_mutex);
+      g_rec_mutex_unlock (&class_init_rec_mutex);
       return;
     }
   } while (!g_atomic_int_compare_and_exchange ((int *) &node->ref_count, current, current - 1));
@@ -2577,10 +2582,11 @@ g_type_remove_interface_check (gpointer                check_data,
  * @flags: Bitwise combination of #GTypeFlags values.
  *
  * Registers @type_id as the predefined identifier and @type_name as the
- * name of a fundamental type.  The type system uses the information
- * contained in the #GTypeInfo structure pointed to by @info and the
- * #GTypeFundamentalInfo structure pointed to by @finfo to manage the
- * type and its instances.  The value of @flags determines additional
+ * name of a fundamental type. If @type_id is already registered, or a type
+ * named @type_name is already registered, the behaviour is undefined. The type
+ * system uses the information contained in the #GTypeInfo structure pointed to
+ * by @info and the #GTypeFundamentalInfo structure pointed to by @finfo to
+ * manage the type and its instances. The value of @flags determines additional
  * characteristics of the fundamental type.
  *
  * Returns: The predefined type identifier.
@@ -2666,6 +2672,12 @@ g_type_register_static_simple (GType             parent_type,
 			       GTypeFlags	 flags)
 {
   GTypeInfo info;
+
+  /* Instances are not allowed to be larger than this. If you have a big
+   * fixed-length array or something, point to it instead.
+   */
+  g_return_val_if_fail (class_size <= G_MAXUINT16, G_TYPE_INVALID);
+  g_return_val_if_fail (instance_size <= G_MAXUINT16, G_TYPE_INVALID);
 
   info.class_size = class_size;
   info.base_init = NULL;
@@ -2787,9 +2799,9 @@ g_type_register_dynamic (GType        parent_type,
  * @info: The #GInterfaceInfo structure for this
  *        (@instance_type, @interface_type) combination.
  *
- * Adds the static @interface_type to @instantiable_type.  The information
- * contained in the #GTypeInterfaceInfo structure pointed to by @info
- * is used to manage the relationship.
+ * Adds the static @interface_type to @instantiable_type.  The
+ * information contained in the #GInterfaceInfo structure pointed to by
+ * @info is used to manage the relationship.
  */
 void
 g_type_add_interface_static (GType                 instance_type,
@@ -2804,7 +2816,7 @@ g_type_add_interface_static (GType                 instance_type,
    * class initialized, however this function is rarely enough called to take
    * the simple route and always acquire class_init_rec_mutex.
    */
-  g_static_rec_mutex_lock (&class_init_rec_mutex); /* required locking order: 1) class_init_rec_mutex, 2) type_rw_lock */
+  g_rec_mutex_lock (&class_init_rec_mutex); /* required locking order: 1) class_init_rec_mutex, 2) type_rw_lock */
   G_WRITE_LOCK (&type_rw_lock);
   if (check_add_interface_L (instance_type, interface_type))
     {
@@ -2814,7 +2826,7 @@ g_type_add_interface_static (GType                 instance_type,
         type_add_interface_Wm (node, iface, info, NULL);
     }
   G_WRITE_UNLOCK (&type_rw_lock);
-  g_static_rec_mutex_unlock (&class_init_rec_mutex);
+  g_rec_mutex_unlock (&class_init_rec_mutex);
 }
 
 /**
@@ -2842,7 +2854,7 @@ g_type_add_interface_dynamic (GType        instance_type,
     return;
 
   /* see comment in g_type_add_interface_static() about class_init_rec_mutex */
-  g_static_rec_mutex_lock (&class_init_rec_mutex); /* required locking order: 1) class_init_rec_mutex, 2) type_rw_lock */
+  g_rec_mutex_lock (&class_init_rec_mutex); /* required locking order: 1) class_init_rec_mutex, 2) type_rw_lock */
   G_WRITE_LOCK (&type_rw_lock);
   if (check_add_interface_L (instance_type, interface_type))
     {
@@ -2850,7 +2862,7 @@ g_type_add_interface_dynamic (GType        instance_type,
       type_add_interface_Wm (node, iface, NULL, plugin);
     }
   G_WRITE_UNLOCK (&type_rw_lock);
-  g_static_rec_mutex_unlock (&class_init_rec_mutex);
+  g_rec_mutex_unlock (&class_init_rec_mutex);
 }
 
 
@@ -2897,7 +2909,7 @@ g_type_class_ref (GType type)
    * node->data->class.init_state == INITIALIZED, because any
    * concurrently running initialization was guarded by class_init_rec_mutex.
    */
-  g_static_rec_mutex_lock (&class_init_rec_mutex); /* required locking order: 1) class_init_rec_mutex, 2) type_rw_lock */
+  g_rec_mutex_lock (&class_init_rec_mutex); /* required locking order: 1) class_init_rec_mutex, 2) type_rw_lock */
 
   /* we need an initialized parent class for initializing derived classes */
   ptype = NODE_PARENT_TYPE (node);
@@ -2916,7 +2928,7 @@ g_type_class_ref (GType type)
   if (pclass)
     g_type_class_unref (pclass);
 
-  g_static_rec_mutex_unlock (&class_init_rec_mutex);
+  g_rec_mutex_unlock (&class_init_rec_mutex);
 
   return node->data->class.class;
 }
@@ -3188,12 +3200,12 @@ g_type_default_interface_ref (GType g_type)
   if (!node->data || !node->data->iface.dflt_vtable)
     {
       G_WRITE_UNLOCK (&type_rw_lock);
-      g_static_rec_mutex_lock (&class_init_rec_mutex); /* required locking order: 1) class_init_rec_mutex, 2) type_rw_lock */
+      g_rec_mutex_lock (&class_init_rec_mutex); /* required locking order: 1) class_init_rec_mutex, 2) type_rw_lock */
       G_WRITE_LOCK (&type_rw_lock);
       node = lookup_type_node_I (g_type);
       type_data_ref_Wm (node);
       type_iface_ensure_dflt_vtable_Wm (node);
-      g_static_rec_mutex_unlock (&class_init_rec_mutex);
+      g_rec_mutex_unlock (&class_init_rec_mutex);
     }
   else
     type_data_ref_Wm (node); /* ref_count >= 1 already */
@@ -3275,7 +3287,7 @@ g_type_default_interface_unref (gpointer g_iface)
  *
  * Returns: Static type name or %NULL.
  */
-G_CONST_RETURN gchar*
+const gchar *
 g_type_name (GType type)
 {
   TypeNode *node;
@@ -4044,7 +4056,7 @@ g_type_check_class_cast (GTypeClass *type_class,
  * Private helper function to aid implementation of the G_TYPE_CHECK_INSTANCE()
  * macro.
  *
- * @Returns:  #TRUE if @instance is valid, #FALSE otherwise.
+ * Returns: %TRUE if @instance is valid, %FALSE otherwise.
  */
 gboolean
 g_type_check_instance (GTypeInstance *type_instance)
@@ -4197,7 +4209,7 @@ g_type_value_table_peek (GType type)
   return NULL;
 }
 
-G_CONST_RETURN gchar*
+const gchar *
 g_type_name_from_instance (GTypeInstance *instance)
 {
   if (!instance)
@@ -4206,7 +4218,7 @@ g_type_name_from_instance (GTypeInstance *instance)
     return g_type_name_from_class (instance->g_class);
 }
 
-G_CONST_RETURN gchar*
+const gchar *
 g_type_name_from_class (GTypeClass *g_class)
 {
   if (!g_class)
@@ -4251,6 +4263,8 @@ _g_type_boxed_init (GType          type,
  *               debugging purposes.
  *
  * Similar to g_type_init(), but additionally sets debug flags.
+ *
+ * This function is idempotent.
  */
 void
 g_type_init_with_debug_flags (GTypeDebugFlags debug_flags)
@@ -4259,12 +4273,7 @@ g_type_init_with_debug_flags (GTypeDebugFlags debug_flags)
   const gchar *env_string;
   GTypeInfo info;
   TypeNode *node;
-  volatile GType votype;
-
-#ifdef G_THREADS_ENABLED
-  if (!g_thread_get_initialized())
-    g_thread_init (NULL);
-#endif
+  GType type;
 
   G_LOCK (type_init_lock);
   
@@ -4282,15 +4291,12 @@ g_type_init_with_debug_flags (GTypeDebugFlags debug_flags)
   env_string = g_getenv ("GOBJECT_DEBUG");
   if (env_string != NULL)
     {
-      static GDebugKey debug_keys[] = {
-	{ "objects", G_TYPE_DEBUG_OBJECTS },
-	{ "signals", G_TYPE_DEBUG_SIGNALS },
+      GDebugKey debug_keys[] = {
+        { "objects", G_TYPE_DEBUG_OBJECTS },
+        { "signals", G_TYPE_DEBUG_SIGNALS },
       };
-      
-      _g_type_debug_flags |= g_parse_debug_string (env_string,
-						   debug_keys,
-						   sizeof (debug_keys) / sizeof (debug_keys[0]));
-      env_string = NULL;
+
+      _g_type_debug_flags |= g_parse_debug_string (env_string, debug_keys, G_N_ELEMENTS (debug_keys));
     }
   
   /* quarks */
@@ -4308,56 +4314,56 @@ g_type_init_with_debug_flags (GTypeDebugFlags debug_flags)
   /* void type G_TYPE_NONE
    */
   node = type_node_fundamental_new_W (G_TYPE_NONE, g_intern_static_string ("void"), 0);
-  votype = NODE_TYPE (node);
-  g_assert (votype == G_TYPE_NONE);
+  type = NODE_TYPE (node);
+  g_assert (type == G_TYPE_NONE);
   
   /* interface fundamental type G_TYPE_INTERFACE (!classed)
    */
   memset (&info, 0, sizeof (info));
   node = type_node_fundamental_new_W (G_TYPE_INTERFACE, g_intern_static_string ("GInterface"), G_TYPE_FLAG_DERIVABLE);
-  votype = NODE_TYPE (node);
+  type = NODE_TYPE (node);
   type_data_make_W (node, &info, NULL);
-  g_assert (votype == G_TYPE_INTERFACE);
+  g_assert (type == G_TYPE_INTERFACE);
   
   G_WRITE_UNLOCK (&type_rw_lock);
   
-  g_value_c_init ();
+  _g_value_c_init ();
 
   /* G_TYPE_TYPE_PLUGIN
    */
-  votype = g_type_plugin_get_type ();
+  g_type_ensure (g_type_plugin_get_type ());
   
   /* G_TYPE_* value types
    */
-  g_value_types_init ();
+  _g_value_types_init ();
   
   /* G_TYPE_ENUM & G_TYPE_FLAGS
    */
-  g_enum_types_init ();
+  _g_enum_types_init ();
   
   /* G_TYPE_BOXED
    */
-  g_boxed_type_init ();
+  _g_boxed_type_init ();
   
   /* G_TYPE_PARAM
    */
-  g_param_type_init ();
+  _g_param_type_init ();
   
   /* G_TYPE_OBJECT
    */
-  g_object_type_init ();
+  _g_object_type_init ();
   
   /* G_TYPE_PARAM_* pspec types
    */
-  g_param_spec_types_init ();
+  _g_param_spec_types_init ();
   
   /* Value Transformations
    */
-  g_value_transforms_init ();
+  _g_value_transforms_init ();
   
   /* Signal system
    */
-  g_signal_init ();
+  _g_signal_init ();
   
   G_UNLOCK (type_init_lock);
 }
@@ -4369,6 +4375,11 @@ g_type_init_with_debug_flags (GTypeDebugFlags debug_flags)
  * to initialize the type system and assorted other code portions
  * (such as the various fundamental type implementations or the signal
  * system).
+ *
+ * This function is idempotent: If you call it multiple times, all but
+ * the first calls will be silently ignored.
+ *
+ * There is no way to undo the effect of g_type_init().
  *
  * Since version 2.24 this also initializes the thread system
  */
@@ -4391,7 +4402,7 @@ g_type_init (void)
  * structures.
  *
  * Note that the accumulated size of the private structures of
- * a type and all its parent types cannot excced 64kB.
+ * a type and all its parent types cannot exceed 64 KiB.
  *
  * This function should be called in the type's class_init() function.
  * The private structure can be retrieved using the
@@ -4402,6 +4413,8 @@ g_type_init (void)
  * <structname>MyObject</structname> defined in the standard GObject
  * fashion.
  * type's class_init() function.
+ * Note the use of a structure member "priv" to avoid the overhead
+ * of repeatedly calling MY_OBJECT_GET_PRIVATE().
  *
  * |[
  * typedef struct _MyObject        MyObject;
@@ -4434,7 +4447,11 @@ g_type_init (void)
  * static int
  * my_object_get_some_field (MyObject *my_object)
  * {
- *   MyObjectPrivate *priv = my_object->priv;
+ *   MyObjectPrivate *priv;
+ *
+ *   g_return_val_if_fail (MY_IS_OBJECT (my_object), 0);
+ *
+ *   priv = my_object->priv;
  *
  *   return priv->some_field;
  * }
@@ -4636,4 +4653,35 @@ g_type_class_get_private (GTypeClass *klass,
     }
 
   return G_STRUCT_MEMBER_P (klass, offset);
+}
+
+/**
+ * g_type_ensure:
+ * @type: a #GType.
+ *
+ * Ensures that the indicated @type has been registered with the
+ * type system, and its _class_init() method has been run.
+ *
+ * In theory, simply calling the type's _get_type() method (or using
+ * the corresponding macro) is supposed take care of this. However,
+ * _get_type() methods are often marked %G_GNUC_CONST for performance
+ * reasons, even though this is technically incorrect (since
+ * %G_GNUC_CONST requires that the function not have side effects,
+ * which _get_type() methods do on the first call). As a result, if
+ * you write a bare call to a _get_type() macro, it may get optimized
+ * out by the compiler. Using g_type_ensure() guarantees that the
+ * type's _get_type() method is called.
+ *
+ * Since: 2.34
+ */
+void
+g_type_ensure (GType type)
+{
+  /* In theory, @type has already been resolved and so there's nothing
+   * to do here. But this protects us in the case where the function
+   * gets inlined (as it might in g_type_init_with_debug_flags()
+   * above).
+   */
+  if (G_UNLIKELY (type == (GType)-1))
+    g_error ("can't happen");
 }

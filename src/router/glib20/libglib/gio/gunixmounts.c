@@ -38,9 +38,6 @@
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #endif
-#if HAVE_SYS_STATVFS_H
-#include <sys/statvfs.h>
-#endif
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -50,6 +47,25 @@
 #include <gstdio.h>
 #include <dirent.h>
 
+#if HAVE_SYS_STATFS_H
+#include <sys/statfs.h>
+#endif
+#if HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#endif
+#if HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#elif HAVE_SYS_MOUNT_H
+#if HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#include <sys/mount.h>
+#endif
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 #include "gunixmounts.h"
 #include "gfile.h"
 #include "gfilemonitor.h"
@@ -57,7 +73,9 @@
 #include "gthemedicon.h"
 
 
+#ifdef HAVE_MNTENT_H
 static const char *_resolve_dev_root (void);
+#endif
 
 /**
  * SECTION:gunixmounts
@@ -117,6 +135,7 @@ struct _GUnixMountPoint {
   char *mount_path;
   char *device_path;
   char *filesystem_type;
+  char *options;
   gboolean is_read_only;
   gboolean is_user_mountable;
   gboolean is_loopback;
@@ -135,6 +154,8 @@ struct _GUnixMountMonitor {
 
   GFileMonitor *fstab_monitor;
   GFileMonitor *mtab_monitor;
+
+  GSource *proc_mounts_watch_source;
 };
 
 struct _GUnixMountMonitorClass {
@@ -171,7 +192,7 @@ G_DEFINE_TYPE (GUnixMountMonitor, g_unix_mount_monitor, G_TYPE_OBJECT);
 #include <fshelp.h>
 #endif
 
-#if defined(HAVE_GETMNTINFO) && defined(HAVE_FSTAB_H) && defined(HAVE_SYS_MOUNT_H)
+#if (defined(HAVE_GETVFSSTAT) || defined(HAVE_GETFSSTAT)) && defined(HAVE_FSTAB_H) && defined(HAVE_SYS_MOUNT_H)
 #include <sys/ucred.h>
 #include <sys/mount.h>
 #include <fstab.h>
@@ -227,6 +248,8 @@ g_unix_is_mount_path_system_internal (const char *mount_path)
     "/home",
     "/lib",
     "/lib64",
+    "/live/cow",
+    "/live/image",
     "/media",
     "/mnt",
     "/opt",
@@ -237,7 +260,12 @@ g_unix_is_mount_path_system_internal (const char *mount_path)
     "/usr",
     "/usr/local",
     "/var",
+    "/var/crash",
+    "/var/local",
+    "/var/log",
     "/var/log/audit", /* https://bugzilla.redhat.com/show_bug.cgi?id=333041 */
+    "/var/mail",
+    "/var/run",
     "/var/tmp",       /* https://bugzilla.redhat.com/show_bug.cgi?id=335241 */
     "/proc",
     "/sbin",
@@ -328,7 +356,11 @@ static char *
 get_mtab_monitor_file (void)
 {
 #ifdef _PATH_MOUNTED
+# ifdef __linux__
+  return "/proc/mounts";
+# else
   return _PATH_MOUNTED;
+# endif
 #else	
   return "/etc/mtab";
 #endif
@@ -559,7 +591,7 @@ _g_get_unix_mounts (void)
   return g_list_reverse (return_list);
 }
 
-#elif defined(HAVE_GETMNTINFO) && defined(HAVE_FSTAB_H) && defined(HAVE_SYS_MOUNT_H)
+#elif (defined(HAVE_GETVFSSTAT) || defined(HAVE_GETFSSTAT)) && defined(HAVE_FSTAB_H) && defined(HAVE_SYS_MOUNT_H)
 
 static char *
 get_mtab_monitor_file (void)
@@ -570,13 +602,35 @@ get_mtab_monitor_file (void)
 static GList *
 _g_get_unix_mounts (void)
 {
+#if defined(HAVE_GETVFSSTAT)
+  struct statvfs *mntent = NULL;
+#elif defined(HAVE_GETFSSTAT)
   struct statfs *mntent = NULL;
+#else
+  #error statfs juggling failed
+#endif
+  size_t bufsize;
   int num_mounts, i;
   GUnixMountEntry *mount_entry;
   GList *return_list;
   
-  /* Pass MNT_NOWAIT to avoid blocking trying to update NFS mounts. */
-  if ((num_mounts = getmntinfo (&mntent, MNT_NOWAIT)) == 0)
+  /* Pass NOWAIT to avoid blocking trying to update NFS mounts. */
+#if defined(HAVE_GETVFSSTAT)
+  num_mounts = getvfsstat (NULL, 0, ST_NOWAIT);
+#elif defined(HAVE_GETFSSTAT)
+  num_mounts = getfsstat (NULL, 0, MNT_NOWAIT);
+#endif
+  if (num_mounts == -1)
+    return NULL;
+
+  bufsize = num_mounts * sizeof (*mntent);
+  mntent = g_malloc (bufsize);
+#if defined(HAVE_GETVFSSTAT)
+  num_mounts = getvfsstat (mntent, bufsize, ST_NOWAIT);
+#elif defined(HAVE_GETFSSTAT)
+  num_mounts = getfsstat (mntent, bufsize, MNT_NOWAIT);
+#endif
+  if (num_mounts == -1)
     return NULL;
   
   return_list = NULL;
@@ -588,16 +642,22 @@ _g_get_unix_mounts (void)
       mount_entry->mount_path = g_strdup (mntent[i].f_mntonname);
       mount_entry->device_path = g_strdup (mntent[i].f_mntfromname);
       mount_entry->filesystem_type = g_strdup (mntent[i].f_fstypename);
+#if defined(HAVE_GETVFSSTAT)
+      if (mntent[i].f_flag & ST_RDONLY)
+#elif defined(HAVE_GETFSSTAT)
       if (mntent[i].f_flags & MNT_RDONLY)
-	mount_entry->is_read_only = TRUE;
+#endif
+        mount_entry->is_read_only = TRUE;
 
       mount_entry->is_system_internal =
-	guess_system_internal (mount_entry->mount_path,
-			       mount_entry->filesystem_type,
-			       mount_entry->device_path);
+        guess_system_internal (mount_entry->mount_path,
+                               mount_entry->filesystem_type,
+                               mount_entry->device_path);
       
       return_list = g_list_prepend (return_list, mount_entry);
     }
+
+  g_free (mntent);
   
   return g_list_reverse (return_list);
 }
@@ -710,7 +770,8 @@ _g_get_unix_mount_points (void)
 #endif
     {
       if ((strcmp (mntent->mnt_dir, "ignore") == 0) ||
-	  (strcmp (mntent->mnt_dir, "swap") == 0))
+          (strcmp (mntent->mnt_dir, "swap") == 0) ||
+          (strcmp (mntent->mnt_dir, "none") == 0))
 	continue;
 
       mount_entry = g_new0 (GUnixMountPoint, 1);
@@ -720,6 +781,7 @@ _g_get_unix_mount_points (void)
       else
         mount_entry->device_path = g_strdup (mntent->mnt_fsname);
       mount_entry->filesystem_type = g_strdup (mntent->mnt_type);
+      mount_entry->options = g_strdup (mntent->mnt_opts);
       
 #ifdef HAVE_HASMNTOPT
       if (hasmntopt (mntent, MNTOPT_RO) != NULL)
@@ -776,7 +838,8 @@ _g_get_unix_mount_points (void)
   while (! getmntent (file, &mntent))
     {
       if ((strcmp (mntent.mnt_mountp, "ignore") == 0) ||
-	  (strcmp (mntent.mnt_mountp, "swap") == 0))
+          (strcmp (mntent.mnt_mountp, "swap") == 0) ||
+          (strcmp (mntent.mnt_mountp, "none") == 0))
 	continue;
       
       mount_entry = g_new0 (GUnixMountPoint, 1);
@@ -784,6 +847,7 @@ _g_get_unix_mount_points (void)
       mount_entry->mount_path = g_strdup (mntent.mnt_mountp);
       mount_entry->device_path = g_strdup (mntent.mnt_special);
       mount_entry->filesystem_type = g_strdup (mntent.mnt_fstype);
+      mount_entry->options = g_strdup (mntent.mnt_mntopts);
       
 #ifdef HAVE_HASMNTOPT
       if (hasmntopt (&mntent, MNTOPT_RO) != NULL)
@@ -948,6 +1012,7 @@ _g_get_unix_mount_points (void)
 	  mount_entry->mount_path = g_strdup (mntent.mnt_mount);
 	  mount_entry->device_path = g_strdup (mntent.mnt_special);
 	  mount_entry->filesystem_type = g_strdup (mntent.mnt_fstype);
+	  mount_entry->options = g_strdup (mntent.mnt_options);
 	  mount_entry->is_read_only = TRUE;
 	  mount_entry->is_user_mountable = TRUE;
 	  
@@ -960,7 +1025,7 @@ _g_get_unix_mount_points (void)
   return g_list_reverse (return_list);
 }
 
-#elif defined(HAVE_GETMNTINFO) && defined(HAVE_FSTAB_H) && defined(HAVE_SYS_MOUNT_H)
+#elif (defined(HAVE_GETVFSSTAT) || defined(HAVE_GETFSSTAT)) && defined(HAVE_FSTAB_H) && defined(HAVE_SYS_MOUNT_H)
 
 static GList *
 _g_get_unix_mount_points (void)
@@ -1011,6 +1076,7 @@ _g_get_unix_mount_points (void)
       mount_entry->mount_path = g_strdup (fstab->fs_file);
       mount_entry->device_path = g_strdup (fstab->fs_spec);
       mount_entry->filesystem_type = g_strdup (fstab->fs_vfstype);
+      mount_entry->options = g_strdup (fstab->fs_mntops);
       
       if (strcmp (fstab->fs_type, "ro") == 0)
 	mount_entry->is_read_only = TRUE;
@@ -1137,7 +1203,7 @@ g_unix_mount_at (const char *mount_path,
  * Gets a #GList of #GUnixMountPoint containing the unix mount points.
  * If @time_read is set, it will be filled with the mount timestamp,
  * allowing for checking if the mounts have changed with
- * g_unix_mounts_points_changed_since().
+ * g_unix_mount_points_changed_since().
  *
  * Returns: (element-type GUnixMountPoint) (transfer full):
  *     a #GList of the UNIX mountpoints.
@@ -1192,6 +1258,9 @@ g_unix_mount_monitor_finalize (GObject *object)
       g_object_unref (monitor->fstab_monitor);
     }
   
+  if (monitor->proc_mounts_watch_source != NULL)
+    g_source_destroy (monitor->proc_mounts_watch_source);
+
   if (monitor->mtab_monitor)
     {
       g_file_monitor_cancel (monitor->mtab_monitor);
@@ -1278,6 +1347,17 @@ mtab_file_changed (GFileMonitor      *monitor,
   g_signal_emit (mount_monitor, signals[MOUNTS_CHANGED], 0);
 }
 
+static gboolean
+proc_mounts_changed (GIOChannel   *channel,
+                     GIOCondition  cond,
+                     gpointer      user_data)
+{
+  GUnixMountMonitor *mount_monitor = G_UNIX_MOUNT_MONITOR (user_data);
+  if (cond & G_IO_ERR)
+    g_signal_emit (mount_monitor, signals[MOUNTS_CHANGED], 0);
+  return TRUE;
+}
+
 static void
 g_unix_mount_monitor_init (GUnixMountMonitor *monitor)
 {
@@ -1294,11 +1374,43 @@ g_unix_mount_monitor_init (GUnixMountMonitor *monitor)
   
   if (get_mtab_monitor_file () != NULL)
     {
-      file = g_file_new_for_path (get_mtab_monitor_file ());
-      monitor->mtab_monitor = g_file_monitor_file (file, 0, NULL, NULL);
-      g_object_unref (file);
-      
-      g_signal_connect (monitor->mtab_monitor, "changed", (GCallback)mtab_file_changed, monitor);
+      const gchar *mtab_path;
+
+      mtab_path = get_mtab_monitor_file ();
+      /* /proc/mounts monitoring is special - can't just use GFileMonitor.
+       * See 'man proc' for more details.
+       */
+      if (g_strcmp0 (mtab_path, "/proc/mounts") == 0)
+        {
+          GIOChannel *proc_mounts_channel;
+          GError *error = NULL;
+          proc_mounts_channel = g_io_channel_new_file ("/proc/mounts", "r", &error);
+          if (proc_mounts_channel == NULL)
+            {
+              g_warning ("Error creating IO channel for /proc/mounts: %s (%s, %d)",
+                         error->message, g_quark_to_string (error->domain), error->code);
+              g_error_free (error);
+            }
+          else
+            {
+              monitor->proc_mounts_watch_source = g_io_create_watch (proc_mounts_channel, G_IO_ERR);
+              g_source_set_callback (monitor->proc_mounts_watch_source,
+                                     (GSourceFunc) proc_mounts_changed,
+                                     monitor,
+                                     NULL);
+              g_source_attach (monitor->proc_mounts_watch_source,
+                               g_main_context_get_thread_default ());
+              g_source_unref (monitor->proc_mounts_watch_source);
+              g_io_channel_unref (proc_mounts_channel);
+            }
+        }
+      else
+        {
+          file = g_file_new_for_path (mtab_path);
+          monitor->mtab_monitor = g_file_monitor_file (file, 0, NULL, NULL);
+          g_object_unref (file);
+          g_signal_connect (monitor->mtab_monitor, "changed", (GCallback)mtab_file_changed, monitor);
+        }
     }
 }
 
@@ -1350,7 +1462,7 @@ g_unix_mount_monitor_new (void)
 
 /**
  * g_unix_mount_free:
- * @mount_entry: a #GUnixMount.
+ * @mount_entry: a #GUnixMountEntry.
  * 
  * Frees a unix mount.
  */
@@ -1379,6 +1491,7 @@ g_unix_mount_point_free (GUnixMountPoint *mount_point)
   g_free (mount_point->mount_path);
   g_free (mount_point->device_path);
   g_free (mount_point->filesystem_type);
+  g_free (mount_point->options);
   g_free (mount_point);
 }
 
@@ -1529,6 +1642,10 @@ g_unix_mount_point_compare (GUnixMountPoint *mount1,
   if (res != 0) 
     return res;
 
+  res = g_strcmp0 (mount1->options, mount2->options);
+  if (res != 0) 
+    return res;
+
   res =  mount1->is_read_only - mount2->is_read_only;
   if (res != 0) 
     return res;
@@ -1590,6 +1707,24 @@ g_unix_mount_point_get_fs_type (GUnixMountPoint *mount_point)
   g_return_val_if_fail (mount_point != NULL, NULL);
 
   return mount_point->filesystem_type;
+}
+
+/**
+ * g_unix_mount_point_get_options:
+ * @mount_point: a #GUnixMountPoint.
+ * 
+ * Gets the options for the mount point.
+ * 
+ * Returns: a string containing the options.
+ *
+ * Since: 2.32
+ */
+const gchar *
+g_unix_mount_point_get_options (GUnixMountPoint *mount_point)
+{
+  g_return_val_if_fail (mount_point != NULL, NULL);
+
+  return mount_point->options;
 }
 
 /**
@@ -1766,7 +1901,7 @@ g_unix_mount_point_guess_type (GUnixMountPoint *mount_point)
 }
 
 static const char *
-type_to_icon (GUnixMountType type, gboolean is_mount_point)
+type_to_icon (GUnixMountType type, gboolean is_mount_point, gboolean use_symbolic)
 {
   const char *icon_name;
   
@@ -1774,55 +1909,51 @@ type_to_icon (GUnixMountType type, gboolean is_mount_point)
     {
     case G_UNIX_MOUNT_TYPE_HD:
       if (is_mount_point)
-        icon_name = "drive-removable-media";
+        icon_name = use_symbolic ? "drive-removable-media-symbolic" : "drive-removable-media";
       else
-        icon_name = "drive-harddisk";
+        icon_name = use_symbolic ? "drive-harddisk-symbolic" : "drive-harddisk";
       break;
     case G_UNIX_MOUNT_TYPE_FLOPPY:
     case G_UNIX_MOUNT_TYPE_ZIP:
     case G_UNIX_MOUNT_TYPE_JAZ:
       if (is_mount_point)
-        icon_name = "drive-removable-media";
+        icon_name = use_symbolic ? "drive-removable-media-symbolic" : "drive-removable-media";
       else
-        icon_name = "media-floppy";
+        icon_name = use_symbolic ? "media-removable-symbolic" : "media-floppy";
       break;
     case G_UNIX_MOUNT_TYPE_CDROM:
       if (is_mount_point)
-        icon_name = "drive-optical";
+        icon_name = use_symbolic ? "drive-optical-symbolic" : "drive-optical";
       else
-        icon_name = "media-optical";
+        icon_name = use_symbolic ? "media-optical-symbolic" : "media-optical";
       break;
     case G_UNIX_MOUNT_TYPE_NFS:
-      /* TODO: Would like a better icon here... */
-      if (is_mount_point)
-        icon_name = "drive-removable-media";
-      else
-        icon_name = "drive-harddisk";
+        icon_name = use_symbolic ? "folder-remote-symbolic" : "folder-remote";
       break;
     case G_UNIX_MOUNT_TYPE_MEMSTICK:
       if (is_mount_point)
-        icon_name = "drive-removable-media";
+        icon_name = use_symbolic ? "drive-removable-media-symbolic" : "drive-removable-media";
       else
-        icon_name = "media-flash";
+        icon_name = use_symbolic ? "media-removable-symbolic" : "media-flash";
       break;
     case G_UNIX_MOUNT_TYPE_CAMERA:
       if (is_mount_point)
-        icon_name = "drive-removable-media";
+        icon_name = use_symbolic ? "drive-removable-media-symbolic" : "drive-removable-media";
       else
-        icon_name = "camera-photo";
+        icon_name = use_symbolic ? "camera-photo-symbolic" : "camera-photo";
       break;
     case G_UNIX_MOUNT_TYPE_IPOD:
       if (is_mount_point)
-        icon_name = "drive-removable-media";
+        icon_name = use_symbolic ? "drive-removable-media-symbolic" : "drive-removable-media";
       else
-        icon_name = "multimedia-player";
+        icon_name = use_symbolic ? "multimedia-player-symbolic" : "multimedia-player";
       break;
     case G_UNIX_MOUNT_TYPE_UNKNOWN:
     default:
       if (is_mount_point)
-        icon_name = "drive-removable-media";
+        icon_name = use_symbolic ? "drive-removable-media-symbolic" : "drive-removable-media";
       else
-        icon_name = "drive-harddisk";
+        icon_name = use_symbolic ? "drive-harddisk-symbolic" : "drive-harddisk";
       break;
     }
 
@@ -1863,7 +1994,23 @@ g_unix_mount_guess_name (GUnixMountEntry *mount_entry)
 GIcon *
 g_unix_mount_guess_icon (GUnixMountEntry *mount_entry)
 {
-  return g_themed_icon_new_with_default_fallbacks (type_to_icon (g_unix_mount_guess_type (mount_entry), FALSE));
+  return g_themed_icon_new_with_default_fallbacks (type_to_icon (g_unix_mount_guess_type (mount_entry), FALSE, FALSE));
+}
+
+/**
+ * g_unix_mount_guess_symbolic_icon:
+ * @mount_entry: a #GUnixMountEntry
+ *
+ * Guesses the symbolic icon of a Unix mount.
+ *
+ * Returns: (transfer full): a #GIcon
+ *
+ * Since: 2.34
+ */
+GIcon *
+g_unix_mount_guess_symbolic_icon (GUnixMountEntry *mount_entry)
+{
+  return g_themed_icon_new_with_default_fallbacks (type_to_icon (g_unix_mount_guess_type (mount_entry), FALSE, TRUE));
 }
 
 /**
@@ -1900,7 +2047,23 @@ g_unix_mount_point_guess_name (GUnixMountPoint *mount_point)
 GIcon *
 g_unix_mount_point_guess_icon (GUnixMountPoint *mount_point)
 {
-  return g_themed_icon_new_with_default_fallbacks (type_to_icon (g_unix_mount_point_guess_type (mount_point), TRUE));
+  return g_themed_icon_new_with_default_fallbacks (type_to_icon (g_unix_mount_point_guess_type (mount_point), TRUE, FALSE));
+}
+
+/**
+ * g_unix_mount_point_guess_symbolic_icon:
+ * @mount_point: a #GUnixMountPoint
+ *
+ * Guesses the symbolic icon of a Unix mount point.
+ *
+ * Returns: (transfer full): a #GIcon
+ *
+ * Since: 2.34
+ */
+GIcon *
+g_unix_mount_point_guess_symbolic_icon (GUnixMountPoint *mount_point)
+{
+  return g_themed_icon_new_with_default_fallbacks (type_to_icon (g_unix_mount_point_guess_type (mount_point), TRUE, TRUE));
 }
 
 /**
@@ -1936,21 +2099,32 @@ gboolean
 g_unix_mount_guess_should_display (GUnixMountEntry *mount_entry)
 {
   const char *mount_path;
+  const gchar *user_name;
+  gsize user_name_len;
 
   /* Never display internal mountpoints */
   if (g_unix_mount_is_system_internal (mount_entry))
     return FALSE;
   
   /* Only display things in /media (which are generally user mountable)
-     and home dir (fuse stuff) */
+     and home dir (fuse stuff) and /run/media/$USER */
   mount_path = mount_entry->mount_path;
   if (mount_path != NULL)
     {
+      gboolean is_in_runtime_dir = FALSE;
       /* Hide mounts within a dot path, suppose it was a purpose to hide this mount */
       if (g_strstr_len (mount_path, -1, "/.") != NULL)
         return FALSE;
 
-      if (g_str_has_prefix (mount_path, "/media/")) 
+      /* Check /run/media/$USER/ */
+      user_name = g_get_user_name ();
+      user_name_len = strlen (user_name);
+      if (strncmp (mount_path, "/run/media/", sizeof ("/run/media/") - 1) == 0 &&
+          strncmp (mount_path + sizeof ("/run/media/") - 1, user_name, user_name_len) == 0 &&
+          mount_path[sizeof ("/run/media/") - 1 + user_name_len] == '/')
+        is_in_runtime_dir = TRUE;
+
+      if (is_in_runtime_dir || g_str_has_prefix (mount_path, "/media/"))
         {
           char *path;
           /* Avoid displaying mounts that are not accessible to the user.
@@ -2010,7 +2184,7 @@ g_unix_mount_point_guess_can_eject (GUnixMountPoint *mount_point)
   return FALSE;
 }
 
-
+#ifdef HAVE_MNTENT_H
 /* borrowed from gtk/gtkfilesystemunix.c in GTK+ on 02/23/2006 */
 static void
 _canonicalize_filename (gchar *filename)
@@ -2117,7 +2291,6 @@ _resolve_symlink (const char *file)
   return f;
 }
 
-#ifdef HAVE_MNTENT_H
 static const char *
 _resolve_dev_root (void)
 {

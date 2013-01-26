@@ -100,16 +100,37 @@ test_default_handler (void)
       exit (0);
     }
   g_test_trap_assert_passed ();
+  g_test_trap_assert_stdout_unmatched ("*INFO*message5*");
+
+  g_setenv ("G_MESSAGES_DEBUG", "foo bar baz", TRUE);
+  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT))
+    {
+      g_log ("bar", G_LOG_LEVEL_INFO, "message5");
+      exit (0);
+    }
+  g_test_trap_assert_passed ();
   g_test_trap_assert_stdout ("*INFO*message5*");
 
   if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT))
     {
-      g_debug ("message6");
+      g_log ("baz", G_LOG_LEVEL_DEBUG, "message6");
       exit (0);
     }
   g_test_trap_assert_passed ();
   g_test_trap_assert_stdout ("*DEBUG*message6*");
 
+  g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
+  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT))
+    {
+      g_log ("foo", G_LOG_LEVEL_DEBUG, "6");
+      g_log ("bar", G_LOG_LEVEL_DEBUG, "6");
+      g_log ("baz", G_LOG_LEVEL_DEBUG, "6");
+      exit (0);
+    }
+  g_test_trap_assert_passed ();
+  g_test_trap_assert_stdout ("*DEBUG*6*6*6*");
+
+  g_unsetenv ("G_MESSAGES_DEBUG");
   if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT))
     {
       g_log (G_LOG_DOMAIN, 1<<10, "message7");
@@ -132,15 +153,114 @@ test_fatal_log_mask (void)
   g_log_set_fatal_mask ("bu", flags);
 }
 
+static gint my_print_count = 0;
+static void
+my_print_handler (const gchar *text)
+{
+  my_print_count++;
+}
+
+static void
+test_print_handler (void)
+{
+  GPrintFunc old_print_handler;
+
+  old_print_handler = g_set_print_handler (my_print_handler);
+  g_assert (old_print_handler == NULL);
+
+  my_print_count = 0;
+  g_print ("bu ba");
+  g_assert_cmpint (my_print_count, ==, 1);
+
+  g_set_print_handler (NULL);
+}
+
+static void
+test_printerr_handler (void)
+{
+  GPrintFunc old_printerr_handler;
+
+  old_printerr_handler = g_set_printerr_handler (my_print_handler);
+  g_assert (old_printerr_handler == NULL);
+
+  my_print_count = 0;
+  g_printerr ("bu ba");
+  g_assert_cmpint (my_print_count, ==, 1);
+
+  g_set_printerr_handler (NULL);
+}
+
+static char *fail_str = "foo";
+static char *log_str = "bar";
+
+static gboolean
+good_failure_handler (const gchar    *log_domain,
+                      GLogLevelFlags  log_level,
+                      const gchar    *msg,
+                      gpointer        user_data)
+{
+  g_test_message ("The Good Fail Message Handler\n");
+  g_assert ((char *)user_data != log_str);
+  g_assert ((char *)user_data == fail_str);
+
+  return FALSE;
+}
+
+static gboolean
+bad_failure_handler (const gchar    *log_domain,
+                     GLogLevelFlags  log_level,
+                     const gchar    *msg,
+                     gpointer        user_data)
+{
+  g_test_message ("The Bad Fail Message Handler\n");
+  g_assert ((char *)user_data == log_str);
+  g_assert ((char *)user_data != fail_str);
+
+  return FALSE;
+}
+
+static void
+test_handler (const gchar    *log_domain,
+              GLogLevelFlags  log_level,
+              const gchar    *msg,
+              gpointer        user_data)
+{
+  g_test_message ("The Log Message Handler\n");
+  g_assert ((char *)user_data != fail_str);
+  g_assert ((char *)user_data == log_str);
+}
+
+static void
+bug653052 (void)
+{
+  g_test_bug ("653052");
+
+  g_test_log_set_fatal_handler (good_failure_handler, fail_str);
+  g_log_set_default_handler (test_handler, log_str);
+
+  g_return_if_fail (0);
+
+  g_test_log_set_fatal_handler (bad_failure_handler, fail_str);
+  g_log_set_default_handler (test_handler, log_str);
+
+  g_return_if_fail (0);
+}
+
 int
 main (int argc, char *argv[])
 {
+  g_unsetenv ("G_MESSAGES_DEBUG");
+
   g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/logging/default-handler", test_default_handler);
   g_test_add_func ("/logging/warnings", test_warnings);
   g_test_add_func ("/logging/fatal-log-mask", test_fatal_log_mask);
   g_test_add_func ("/logging/set-handler", test_set_handler);
+  g_test_add_func ("/logging/print-handler", test_print_handler);
+  g_test_add_func ("/logging/printerr-handler", test_printerr_handler);
+  g_test_add_func ("/logging/653052", bug653052);
 
   return g_test_run ();
 }

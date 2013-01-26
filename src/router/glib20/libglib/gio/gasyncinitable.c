@@ -187,9 +187,11 @@ g_async_initable_default_init (GAsyncInitableInterface *iface)
  * the object doesn't support cancellable initialization, the error
  * %G_IO_ERROR_NOT_SUPPORTED will be returned.
  *
- * If this function is not called, or returns with an error, then all
- * operations on the object should fail, generally returning the
- * error %G_IO_ERROR_NOT_INITIALIZED.
+ * As with #GInitable, if the object is not initialized, or initialization
+ * returns with an error, then all operations on the object except
+ * g_object_ref() and g_object_unref() are considered to be invalid, and
+ * have undefined behaviour. They will often fail with g_critical() or
+ * g_warning(), but this must not be relied on.
  *
  * Implementations of this method must be idempotent: i.e. multiple calls
  * to this function with the same argument should return the same results.
@@ -225,7 +227,7 @@ g_async_initable_init_async (GAsyncInitable      *initable,
  * g_async_initable_init_finish:
  * @initable: a #GAsyncInitable.
  * @res: a #GAsyncResult.
- * @error: a #GError location to store the error occuring, or %NULL to
+ * @error: a #GError location to store the error occurring, or %NULL to
  * ignore.
  *
  * Finishes asynchronous initialization and returns the result.
@@ -246,12 +248,8 @@ g_async_initable_init_finish (GAsyncInitable  *initable,
   g_return_val_if_fail (G_IS_ASYNC_INITABLE (initable), FALSE);
   g_return_val_if_fail (G_IS_ASYNC_RESULT (res), FALSE);
 
-  if (G_IS_SIMPLE_ASYNC_RESULT (res))
-    {
-      GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
-      if (g_simple_async_result_propagate_error (simple, error))
-	return FALSE;
-    }
+  if (g_async_result_legacy_propagate_error (res, error))
+    return FALSE;
 
   iface = G_ASYNC_INITABLE_GET_IFACE (initable);
 
@@ -292,7 +290,17 @@ g_async_initable_real_init_finish (GAsyncInitable  *initable,
 				   GAsyncResult    *res,
 				   GError         **error)
 {
-  return TRUE; /* Errors handled by base impl */
+  /* For backward compatibility we have to process GSimpleAsyncResults
+   * even if they aren't tagged from g_async_initable_real_init_async.
+   */
+  if (G_IS_SIMPLE_ASYNC_RESULT (res))
+    {
+      GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
+      if (g_simple_async_result_propagate_error (simple, error))
+	return FALSE;
+    }
+
+  return TRUE;
 }
 
 /**
@@ -304,12 +312,12 @@ g_async_initable_real_init_finish (GAsyncInitable  *initable,
  * @callback: a #GAsyncReadyCallback to call when the initialization is
  *     finished
  * @user_data: the data to pass to callback function
- * @first_property_name: the name of the first property, or %NULL if no
+ * @first_property_name: (allow-none): the name of the first property, or %NULL if no
  *     properties
  * @...:  the value of the first property, followed by other property
  *    value pairs, and ended by %NULL.
  *
- * Helper function for constructing #GAsyncInitiable object. This is
+ * Helper function for constructing #GAsyncInitable object. This is
  * similar to g_object_new() but also initializes the object asynchronously.
  *
  * When the initialization is finished, @callback will be called. You can
@@ -349,7 +357,7 @@ g_async_initable_new_async (GType                object_type,
  *     finished
  * @user_data: the data to pass to callback function
  *
- * Helper function for constructing #GAsyncInitiable object. This is
+ * Helper function for constructing #GAsyncInitable object. This is
  * similar to g_object_newv() but also initializes the object asynchronously.
  *
  * When the initialization is finished, @callback will be called. You can
@@ -391,7 +399,7 @@ g_async_initable_newv_async (GType                object_type,
  *     finished
  * @user_data: the data to pass to callback function
  *
- * Helper function for constructing #GAsyncInitiable object. This is
+ * Helper function for constructing #GAsyncInitable object. This is
  * similar to g_object_new_valist() but also initializes the object
  * asynchronously.
  *
@@ -427,15 +435,14 @@ g_async_initable_new_valist_async (GType                object_type,
 /**
  * g_async_initable_new_finish:
  * @initable: the #GAsyncInitable from the callback
- * @res: the #GAsyncResult.from the callback
- * @error: a #GError location to store the error occuring, or %NULL to
- *     ignore.
+ * @res: the #GAsyncResult from the callback
+ * @error: return location for errors, or %NULL to ignore
  *
- * Finishes the async construction for the various g_async_initable_new calls,
- * returning the created object or %NULL on error.
+ * Finishes the async construction for the various g_async_initable_new
+ * calls, returning the created object or %NULL on error.
  *
- * Returns: (transfer full): a newly created #GObject, or %NULL on error. Free with
- *     g_object_unref().
+ * Returns: (transfer full): a newly created #GObject, or %NULL on error.
+ *     Free with g_object_unref().
  *
  * Since: 2.22
  */

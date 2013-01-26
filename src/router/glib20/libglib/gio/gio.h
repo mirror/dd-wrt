@@ -27,11 +27,11 @@
 
 #include <gio/giotypes.h>
 
-#include <gio/gappinfo.h>
 #include <gio/gaction.h>
-#include <gio/gsimpleaction.h>
 #include <gio/gactiongroup.h>
-#include <gio/gsimpleactiongroup.h>
+#include <gio/gactiongroupexporter.h>
+#include <gio/gactionmap.h>
+#include <gio/gappinfo.h>
 #include <gio/gapplication.h>
 #include <gio/gapplicationcommandline.h>
 #include <gio/gasyncinitable.h>
@@ -75,6 +75,7 @@
 #include <gio/gfilteroutputstream.h>
 #include <gio/gicon.h>
 #include <gio/ginetaddress.h>
+#include <gio/ginetaddressmask.h>
 #include <gio/ginetsocketaddress.h>
 #include <gio/ginitable.h>
 #include <gio/ginputstream.h>
@@ -91,18 +92,24 @@
 #include <gio/gmountoperation.h>
 #include <gio/gnativevolumemonitor.h>
 #include <gio/gnetworkaddress.h>
+#include <gio/gnetworkmonitor.h>
 #include <gio/gnetworkservice.h>
 #include <gio/goutputstream.h>
 #include <gio/gpermission.h>
 #include <gio/gpollableinputstream.h>
 #include <gio/gpollableoutputstream.h>
+#include <gio/gpollableutils.h>
 #include <gio/gproxy.h>
 #include <gio/gproxyaddress.h>
 #include <gio/gproxyaddressenumerator.h>
 #include <gio/gproxyresolver.h>
 #include <gio/gresolver.h>
+#include <gio/gresource.h>
 #include <gio/gseekable.h>
+#include <gio/gsettingsschema.h>
 #include <gio/gsettings.h>
+#include <gio/gsimpleaction.h>
+#include <gio/gsimpleactiongroup.h>
 #include <gio/gsimpleasyncresult.h>
 #include <gio/gsimplepermission.h>
 #include <gio/gsocketaddressenumerator.h>
@@ -117,18 +124,37 @@
 #include <gio/gsrvtarget.h>
 #include <gio/gtcpconnection.h>
 #include <gio/gtcpwrapperconnection.h>
+#include <gio/gtestdbus.h>
 #include <gio/gthemedicon.h>
 #include <gio/gthreadedsocketservice.h>
 #include <gio/gtlsbackend.h>
 #include <gio/gtlscertificate.h>
 #include <gio/gtlsclientconnection.h>
 #include <gio/gtlsconnection.h>
+#include <gio/gtlsdatabase.h>
+#include <gio/gtlsfiledatabase.h>
+#include <gio/gtlsinteraction.h>
 #include <gio/gtlsserverconnection.h>
+#include <gio/gtlspassword.h>
 #include <gio/gvfs.h>
 #include <gio/gvolume.h>
 #include <gio/gvolumemonitor.h>
 #include <gio/gzlibcompressor.h>
 #include <gio/gzlibdecompressor.h>
+#include <gio/gdbusinterface.h>
+#include <gio/gdbusinterfaceskeleton.h>
+#include <gio/gdbusobject.h>
+#include <gio/gdbusobjectskeleton.h>
+#include <gio/gdbusobjectproxy.h>
+#include <gio/gdbusobjectmanager.h>
+#include <gio/gdbusobjectmanagerclient.h>
+#include <gio/gdbusobjectmanagerserver.h>
+#include <gio/gdbusactiongroup.h>
+#include <gio/gremoteactiongroup.h>
+#include <gio/gmenumodel.h>
+#include <gio/gmenu.h>
+#include <gio/gmenuexporter.h>
+#include <gio/gdbusmenumodel.h>
 
 #undef __GIO_GIO_H_INSIDE__
 

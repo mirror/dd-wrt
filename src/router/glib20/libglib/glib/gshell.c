@@ -31,6 +31,7 @@
 #include "gstring.h"
 #include "gtestutils.h"
 #include "glibintl.h"
+#include "gthread.h"
 
 /**
  * SECTION:shell
@@ -54,11 +55,7 @@
  *
  * Error codes returned by shell functions.
  **/
-GQuark
-g_shell_error_quark (void)
-{
-  return g_quark_from_static_string ("g-shell-error-quark");
-}
+G_DEFINE_QUARK (g-shell-error-quark, g_shell_error)
 
 /* Single quotes preserve the literal string exactly. escape
  * sequences are not allowed; not even \' - if you want a '
@@ -521,10 +518,28 @@ tokenize_command_line (const gchar *command_line,
               g_string_append_c (current_token, *p);
 
               /* FALL THRU */
-              
-            case '#':
             case '\\':
               current_quote = *p;
+              break;
+
+            case '#':
+              if (p == command_line)
+	        { /* '#' was the first char */
+                  current_quote = *p;
+                  break;
+                }
+              switch(*(p-1))
+                {
+                  case ' ':
+                  case '\n':
+                  case '\0':
+                    current_quote = *p;
+                    break;
+                  default:
+                    ensure_token (&current_token);
+                    g_string_append_c (current_token, *p);
+		    break;
+                }
               break;
 
             default:
@@ -587,12 +602,8 @@ tokenize_command_line (const gchar *command_line,
 
  error:
   g_assert (error == NULL || *error != NULL);
-  
-  if (retval)
-    {
-      g_slist_foreach (retval, (GFunc)g_free, NULL);
-      g_slist_free (retval);
-    }
+
+  g_slist_free_full (retval, g_free);
 
   return NULL;
 }
@@ -667,8 +678,7 @@ g_shell_parse_argv (const gchar *command_line,
       ++i;
     }
   
-  g_slist_foreach (tokens, (GFunc)g_free, NULL);
-  g_slist_free (tokens);
+  g_slist_free_full (tokens, g_free);
   
   if (argcp)
     *argcp = argc;
@@ -684,8 +694,7 @@ g_shell_parse_argv (const gchar *command_line,
 
   g_assert (error == NULL || *error != NULL);
   g_strfreev (argv);
-  g_slist_foreach (tokens, (GFunc) g_free, NULL);
-  g_slist_free (tokens);
+  g_slist_free_full (tokens, g_free);
   
   return FALSE;
 }

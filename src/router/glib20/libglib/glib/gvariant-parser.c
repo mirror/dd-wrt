@@ -32,6 +32,8 @@
 #include "gtestutils.h"
 #include "gvariant.h"
 #include "gvarianttype.h"
+#include "gslice.h"
+#include "gthread.h"
 
 /*
  * two-pass algorithm
@@ -69,16 +71,7 @@
  *
  * Error codes returned by parsing text-format GVariants.
  **/
-GQuark
-g_variant_parser_get_error_quark (void)
-{
-  static GQuark the_quark;
-
-  if (the_quark == 0)
-    the_quark = g_quark_from_static_string ("g-variant-parse-error-quark");
-
-  return the_quark;
-}
+G_DEFINE_QUARK (g-variant-parse-error-quark, g_variant_parser_get_error)
 
 typedef struct
 {
@@ -160,14 +153,14 @@ token_stream_set_error (TokenStream  *stream,
   va_end (ap);
 }
 
-static void
+static gboolean
 token_stream_prepare (TokenStream *stream)
 {
   gint brackets = 0;
   const gchar *end;
 
   if (stream->this != NULL)
-    return;
+    return TRUE;
 
   while (stream->stream != stream->end && g_ascii_isspace (*stream->stream))
     stream->stream++;
@@ -175,7 +168,7 @@ token_stream_prepare (TokenStream *stream)
   if (stream->stream == stream->end || *stream->stream == '\0')
     {
       stream->this = stream->stream;
-      return;
+      return FALSE;
     }
 
   switch (stream->stream[0])
@@ -248,6 +241,8 @@ token_stream_prepare (TokenStream *stream)
 
   stream->this = stream->stream;
   stream->stream = end;
+
+  return TRUE;
 }
 
 static void
@@ -260,7 +255,8 @@ static gboolean
 token_stream_peek (TokenStream *stream,
                    gchar        first_char)
 {
-  token_stream_prepare (stream);
+  if (!token_stream_prepare (stream))
+    return FALSE;
 
   return stream->this[0] == first_char;
 }
@@ -270,7 +266,8 @@ token_stream_peek2 (TokenStream *stream,
                     gchar        first_char,
                     gchar        second_char)
 {
-  token_stream_prepare (stream);
+  if (!token_stream_prepare (stream))
+    return FALSE;
 
   return stream->this[0] == first_char &&
          stream->this[1] == second_char;
@@ -279,7 +276,8 @@ token_stream_peek2 (TokenStream *stream,
 static gboolean
 token_stream_is_keyword (TokenStream *stream)
 {
-  token_stream_prepare (stream);
+  if (!token_stream_prepare (stream))
+    return FALSE;
 
   return g_ascii_isalpha (stream->this[0]) &&
          g_ascii_isalpha (stream->this[1]);
@@ -288,7 +286,8 @@ token_stream_is_keyword (TokenStream *stream)
 static gboolean
 token_stream_is_numeric (TokenStream *stream)
 {
-  token_stream_prepare (stream);
+  if (!token_stream_prepare (stream))
+    return FALSE;
 
   return (g_ascii_isdigit (stream->this[0]) ||
           stream->this[0] == '-' ||
@@ -297,21 +296,25 @@ token_stream_is_numeric (TokenStream *stream)
 }
 
 static gboolean
-token_stream_consume (TokenStream *stream,
-                      const gchar *token)
+token_stream_peek_string (TokenStream *stream,
+                          const gchar *token)
 {
   gint length = strlen (token);
 
-  token_stream_prepare (stream);
+  return token_stream_prepare (stream) &&
+         stream->stream - stream->this == length &&
+         memcmp (stream->this, token, length) == 0;
+}
 
-  if (stream->stream - stream->this == length &&
-      memcmp (stream->this, token, length) == 0)
-    {
-      token_stream_next (stream);
-      return TRUE;
-    }
+static gboolean
+token_stream_consume (TokenStream *stream,
+                      const gchar *token)
+{
+  if (!token_stream_peek_string (stream, token))
+    return FALSE;
 
-  return FALSE;
+  token_stream_next (stream);
+  return TRUE;
 }
 
 static gboolean
@@ -347,7 +350,8 @@ token_stream_get (TokenStream *stream)
 {
   gchar *result;
 
-  token_stream_prepare (stream);
+  if (!token_stream_prepare (stream))
+    return NULL;
 
   result = g_strndup (stream->this, stream->stream - stream->this);
 
@@ -369,7 +373,7 @@ token_stream_end_ref (TokenStream *stream,
   ref->end = stream->stream - stream->start;
 }
 
-void
+static void
 pattern_copy (gchar       **out,
               const gchar **in)
 {
@@ -1014,6 +1018,12 @@ tuple_get_value (AST                 *ast,
     {
       GVariant *child;
 
+      if (childtype == NULL)
+        {
+          g_variant_builder_clear (&builder);
+          return ast_type_error (ast, type, error);
+        }
+
       if (!(child = ast_get_value (tuple->children[i], childtype, error)))
         {
           g_variant_builder_clear (&builder);
@@ -1022,6 +1032,12 @@ tuple_get_value (AST                 *ast,
 
       g_variant_builder_add_value (&builder, child);
       childtype = g_variant_type_next (childtype);
+    }
+
+  if (childtype != NULL)
+    {
+      g_variant_builder_clear (&builder);
+      return ast_type_error (ast, type, error);
     }
 
   return g_variant_builder_end (&builder);
@@ -1754,8 +1770,9 @@ number_get_pattern (AST     *ast,
   Number *number = (Number *) ast;
 
   if (strchr (number->token, '.') ||
-      (!g_str_has_prefix (number->token, "0x") &&
-       strchr (number->token, 'e')))
+      (!g_str_has_prefix (number->token, "0x") && strchr (number->token, 'e')) ||
+      strstr (number->token, "inf") ||
+      strstr (number->token, "nan"))
     return g_strdup ("Md");
 
   return g_strdup ("MN");
@@ -1862,7 +1879,7 @@ number_get_value (AST                 *ast,
     case 'q':
       if (negative || abs_val > G_MAXUINT16)
         return number_overflow (ast, type, error);
-      return g_variant_new_uint16 (negative ? -abs_val : abs_val);
+      return g_variant_new_uint16 (abs_val);
 
     case 'i':
       if (abs_val - negative > G_MAXINT32)
@@ -1872,7 +1889,7 @@ number_get_value (AST                 *ast,
     case 'u':
       if (negative || abs_val > G_MAXUINT32)
         return number_overflow (ast, type, error);
-      return g_variant_new_uint32 (negative ? -abs_val : abs_val);
+      return g_variant_new_uint32 (abs_val);
 
     case 'x':
       if (abs_val - negative > G_MAXINT64)
@@ -1882,7 +1899,7 @@ number_get_value (AST                 *ast,
     case 't':
       if (negative)
         return number_overflow (ast, type, error);
-      return g_variant_new_uint64 (negative ? -abs_val : abs_val);
+      return g_variant_new_uint64 (abs_val);
 
     case 'h':
       if (abs_val - negative > G_MAXINT32)
@@ -2241,6 +2258,11 @@ parse (TokenStream  *stream,
   else if (token_stream_consume (stream, "false"))
     result = boolean_new (FALSE);
 
+  else if (token_stream_is_numeric (stream) ||
+           token_stream_peek_string (stream, "inf") ||
+           token_stream_peek_string (stream, "nan"))
+    result = number_parse (stream, app, error);
+
   else if (token_stream_peek (stream, 'n') ||
            token_stream_peek (stream, 'j'))
     result = maybe_parse (stream, app, error);
@@ -2248,9 +2270,6 @@ parse (TokenStream  *stream,
   else if (token_stream_peek (stream, '@') ||
            token_stream_is_keyword (stream))
     result = typedecl_parse (stream, app, error);
-
-  else if (token_stream_is_numeric (stream))
-    result = number_parse (stream, app, error);
 
   else if (token_stream_peek (stream, '\'') ||
            token_stream_peek (stream, '"'))
@@ -2279,11 +2298,11 @@ parse (TokenStream  *stream,
 
 /**
  * g_variant_parse:
- * @type: a #GVariantType, or %NULL
+ * @type: (allow-none): a #GVariantType, or %NULL
  * @text: a string containing a GVariant in text form
- * @limit: a pointer to the end of @text, or %NULL
- * @endptr: a location to store the end pointer, or %NULL
- * @error: a pointer to a %NULL #GError pointer, or %NULL
+ * @limit: (allow-none): a pointer to the end of @text, or %NULL
+ * @endptr: (allow-none): a location to store the end pointer, or %NULL
+ * @error: (allow-none): a pointer to a %NULL #GError pointer, or %NULL
  * @Returns: a reference to a #GVariant, or %NULL
  *
  * Parses a #GVariant from a text representation.
@@ -2312,7 +2331,7 @@ parse (TokenStream  *stream,
  * is returned.
  *
  * In case of any error, %NULL will be returned.  If @error is non-%NULL
- * then it will be set to reflect the error that occured.
+ * then it will be set to reflect the error that occurred.
  *
  * Officially, the language understood by the parser is "any string
  * produced by g_variant_print()".
@@ -2379,7 +2398,6 @@ g_variant_parse (const GVariantType  *type,
  * g_variant_new_parsed_va:
  * @format: a text format #GVariant
  * @app: a pointer to a #va_list
- * @returns: a new, usually floating, #GVariant
  *
  * Parses @format and returns the result.
  *
@@ -2398,6 +2416,8 @@ g_variant_parse (const GVariantType  *type,
  * At this point, the caller will have their own full reference to the
  * result.  This can also be done by adding the result to a container,
  * or by passing it to another g_variant_new() call.
+ *
+ * Returns: a new, usually floating, #GVariant
  **/
 GVariant *
 g_variant_new_parsed_va (const gchar *format,
@@ -2434,7 +2454,6 @@ g_variant_new_parsed_va (const gchar *format,
  * g_variant_new_parsed:
  * @format: a text format #GVariant
  * @...: arguments as per @format
- * @returns: a new floating #GVariant instance
  *
  * Parses @format and returns the result.
  *
@@ -2460,8 +2479,10 @@ g_variant_new_parsed_va (const gchar *format,
  *
  * You may not use this function to return, unmodified, a single
  * #GVariant pointer from the argument list.  ie: @format may not solely
- * be anything along the lines of "%*", "%?", "%r", or anything starting
+ * be anything along the lines of "%*", "%?", "\%r", or anything starting
  * with "%@".
+ *
+ * Returns: a new floating #GVariant instance
  **/
 GVariant *
 g_variant_new_parsed (const gchar *format,

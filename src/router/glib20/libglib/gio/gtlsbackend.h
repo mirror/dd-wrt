@@ -42,25 +42,18 @@ G_BEGIN_DECLS
 #define G_IS_TLS_BACKEND(obj)	         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), G_TYPE_TLS_BACKEND))
 #define G_TLS_BACKEND_GET_INTERFACE(obj) (G_TYPE_INSTANCE_GET_INTERFACE ((obj), G_TYPE_TLS_BACKEND, GTlsBackendInterface))
 
-/**
- * GTlsBackend:
- *
- * TLS (Transport Layer Security, aka SSL) backend. This is an
- * internal type used to coordinate the different classes implemented
- * by a TLS backend.
- *
- * Since: 2.28
- */
-
 typedef struct _GTlsBackend          GTlsBackend;
 typedef struct _GTlsBackendInterface GTlsBackendInterface;
 
 /**
  * GTlsBackendInterface:
  * @g_iface: The parent interface.
+ * @supports_tls: returns whether the backend supports TLS.
+ * @get_default_database: returns a default #GTlsDatabase instance.
  * @get_certificate_type: returns the #GTlsCertificate implementation type
  * @get_client_connection_type: returns the #GTlsClientConnection implementation type
  * @get_server_connection_type: returns the #GTlsServerConnection implementation type
+ * @get_file_database_type: returns the #GTlsFileDatabase implementation type.
  *
  * Provides an interface for describing TLS-related types.
  *
@@ -71,21 +64,26 @@ struct _GTlsBackendInterface
   GTypeInterface g_iface;
 
   /* methods */
-  gboolean ( *supports_tls)               (GTlsBackend *backend);
-  GType    ( *get_certificate_type)       (void);
-  GType    ( *get_client_connection_type) (void);
-  GType    ( *get_server_connection_type) (void);
+  gboolean       ( *supports_tls)               (GTlsBackend *backend);
+  GType          ( *get_certificate_type)       (void);
+  GType          ( *get_client_connection_type) (void);
+  GType          ( *get_server_connection_type) (void);
+  GType          ( *get_file_database_type)     (void);
+  GTlsDatabase * ( *get_default_database)       (GTlsBackend *backend);
 };
 
-GType        g_tls_backend_get_type                   (void) G_GNUC_CONST;
+GType          g_tls_backend_get_type                   (void) G_GNUC_CONST;
 
-GTlsBackend *g_tls_backend_get_default                (void);
+GTlsBackend *  g_tls_backend_get_default                (void);
 
-gboolean     g_tls_backend_supports_tls               (GTlsBackend *backend);
+GTlsDatabase * g_tls_backend_get_default_database       (GTlsBackend *backend);
 
-GType        g_tls_backend_get_certificate_type       (GTlsBackend *backend);
-GType        g_tls_backend_get_client_connection_type (GTlsBackend *backend);
-GType        g_tls_backend_get_server_connection_type (GTlsBackend *backend);
+gboolean       g_tls_backend_supports_tls               (GTlsBackend *backend);
+
+GType          g_tls_backend_get_certificate_type       (GTlsBackend *backend);
+GType          g_tls_backend_get_client_connection_type (GTlsBackend *backend);
+GType          g_tls_backend_get_server_connection_type (GTlsBackend *backend);
+GType          g_tls_backend_get_file_database_type     (GTlsBackend *backend);
 
 G_END_DECLS
 

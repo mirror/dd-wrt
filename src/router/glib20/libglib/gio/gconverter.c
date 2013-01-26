@@ -59,10 +59,10 @@ g_converter_default_init (GConverterInterface *iface)
  * @inbuf_size: the number of bytes in @inbuf
  * @outbuf: a buffer to write converted data in.
  * @outbuf_size: the number of bytes in @outbuf, must be at least one
- * @flags: a #GConvertFlags controlling the conversion details
+ * @flags: a #GConverterFlags controlling the conversion details
  * @bytes_read: (out): will be set to the number of bytes read from @inbuf on success
  * @bytes_written: (out): will be set to the number of bytes written to @outbuf on success
- * @error: location to store the error occuring, or %NULL to ignore
+ * @error: location to store the error occurring, or %NULL to ignore
  *
  * This is the main operation used when converting data. It is to be called
  * multiple times in a loop, and each time it will do some work, i.e.
@@ -90,9 +90,9 @@ g_converter_default_init (GConverterInterface *iface)
  * When some data has successfully been converted @bytes_read and is set to
  * the number of bytes read from @inbuf, and @bytes_written is set to indicate
  * how many bytes was written to @outbuf. If there are more data to output
- * or consume (i.e. unless the G_CONVERTER_INPUT_AT_END is specified) then
- * G_CONVERTER_CONVERTED is returned, and if no more data is to be output
- * then G_CONVERTER_FINISHED is returned.
+ * or consume (i.e. unless the %G_CONVERTER_INPUT_AT_END is specified) then
+ * %G_CONVERTER_CONVERTED is returned, and if no more data is to be output
+ * then %G_CONVERTER_FINISHED is returned.
  *
  * On error %G_CONVERTER_ERROR is returned and @error is set accordingly.
  * Some errors need special handling:
@@ -126,7 +126,7 @@ g_converter_default_init (GConverterInterface *iface)
  * If the flag %G_CONVERTER_FLUSH is set then conversion is modified
  * to try to write out all internal state to the output. The application
  * has to call the function multiple times with the flag set, and when
- * the availible input has been consumed and all internal state has
+ * the available input has been consumed and all internal state has
  * been produced then %G_CONVERTER_FLUSHED (or %G_CONVERTER_FINISHED if
  * really at the end) is returned instead of %G_CONVERTER_CONVERTED.
  * This is somewhat similar to what happens at the end of the input stream,

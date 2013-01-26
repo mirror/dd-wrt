@@ -26,7 +26,6 @@
 
 #include "gmountoperation.h"
 #include "gioenumtypes.h"
-#include "gio-marshal.h"
 #include "glibintl.h"
 
 
@@ -60,6 +59,7 @@ enum {
   REPLY,
   ABORTED,
   SHOW_PROCESSES,
+  SHOW_UNMOUNT_PROGRESS,
   LAST_SIGNAL
 };
 
@@ -201,7 +201,7 @@ reply_non_handled_in_idle (gpointer data)
   GMountOperation *op = data;
 
   g_mount_operation_reply (op, G_MOUNT_OPERATION_UNHANDLED);
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 
 static void
@@ -241,6 +241,15 @@ show_processes (GMountOperation      *op,
 }
 
 static void
+show_unmount_progress (GMountOperation *op,
+                       const gchar     *message,
+                       gint64           time_left,
+                       gint64           bytes_left)
+{
+  /* nothing to do */
+}
+
+static void
 g_mount_operation_class_init (GMountOperationClass *klass)
 {
   GObjectClass *object_class;
@@ -255,6 +264,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
   klass->ask_password = ask_password;
   klass->ask_question = ask_question;
   klass->show_processes = show_processes;
+  klass->show_unmount_progress = show_unmount_progress;
   
   /**
    * GMountOperation::ask-password:
@@ -276,7 +286,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
 		  G_SIGNAL_RUN_LAST,
 		  G_STRUCT_OFFSET (GMountOperationClass, ask_password),
 		  NULL, NULL,
-		  _gio_marshal_VOID__STRING_STRING_STRING_FLAGS,
+		  NULL,
 		  G_TYPE_NONE, 4,
 		  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_ASK_PASSWORD_FLAGS);
 		  
@@ -299,7 +309,7 @@ g_mount_operation_class_init (GMountOperationClass *klass)
 		  G_SIGNAL_RUN_LAST,
 		  G_STRUCT_OFFSET (GMountOperationClass, ask_question),
 		  NULL, NULL,
-		  _gio_marshal_VOID__STRING_BOXED,
+		  NULL,
 		  G_TYPE_NONE, 2,
 		  G_TYPE_STRING, G_TYPE_STRV);
 		  
@@ -344,7 +354,8 @@ g_mount_operation_class_init (GMountOperationClass *klass)
    * GMountOperation::show-processes:
    * @op: a #GMountOperation.
    * @message: string containing a message to display to the user.
-   * @processes: an array of #GPid for processes blocking the operation.
+   * @processes: (element-type GPid): an array of #GPid for processes
+   *   blocking the operation.
    * @choices: an array of strings for each possible choice.
    *
    * Emitted when one or more processes are blocking an operation
@@ -368,9 +379,47 @@ g_mount_operation_class_init (GMountOperationClass *klass)
 		  G_SIGNAL_RUN_LAST,
 		  G_STRUCT_OFFSET (GMountOperationClass, show_processes),
 		  NULL, NULL,
-		  _gio_marshal_VOID__STRING_BOXED_BOXED,
+		  NULL,
 		  G_TYPE_NONE, 3,
 		  G_TYPE_STRING, G_TYPE_ARRAY, G_TYPE_STRV);
+
+  /**
+   * GMountOperation::show-unmount-progress:
+   * @op: a #GMountOperation:
+   * @message: string containing a mesage to display to the user
+   * @time_left: the estimated time left before the operation completes,
+   *     in microseconds, or -1
+   * @bytes_left: the amount of bytes to be written before the operation
+   *     completes (or -1 if such amount is not known), or zero if the operation
+   *     is completed
+   *
+   * Emitted when an unmount operation has been busy for more than some time
+   * (typically 1.5 seconds).
+   *
+   * When unmounting or ejecting a volume, the kernel might need to flush
+   * pending data in its buffers to the volume stable storage, and this operation
+   * can take a considerable amount of time. This signal may be emitted several
+   * times as long as the unmount operation is outstanding, and then one
+   * last time when the operation is completed, with @bytes_left set to zero.
+   *
+   * Implementations of GMountOperation should handle this signal by
+   * showing an UI notification, and then dismiss it, or show another notification
+   * of completion, when @bytes_left reaches zero.
+   *
+   * If the message contains a line break, the first line should be
+   * presented as a heading. For example, it may be used as the
+   * primary text in a #GtkMessageDialog.
+   *
+   * Since: 2.34
+   */
+  signals[SHOW_UNMOUNT_PROGRESS] =
+    g_signal_new (I_("show-unmount-progress"),
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (GMountOperationClass, show_unmount_progress),
+                  NULL, NULL, NULL,
+                  G_TYPE_NONE, 3,
+                  G_TYPE_STRING, G_TYPE_INT64, G_TYPE_INT64);
 
   /**
    * GMountOperation:username:
@@ -483,7 +532,7 @@ g_mount_operation_new (void)
 }
 
 /**
- * g_mount_operation_get_username
+ * g_mount_operation_get_username:
  * @op: a #GMountOperation.
  * 
  * Get the user name from the mount operation.

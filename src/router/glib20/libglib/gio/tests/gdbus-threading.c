@@ -29,9 +29,6 @@
 /* all tests rely on a global connection */
 static GDBusConnection *c = NULL;
 
-/* all tests rely on a shared mainloop */
-static GMainLoop *loop = NULL;
-
 /* ---------------------------------------------------------------------------------------------------- */
 /* Ensure that signal and method replies are delivered in the right thread */
 /* ---------------------------------------------------------------------------------------------------- */
@@ -221,27 +218,17 @@ test_delivery_in_thread_func (gpointer _data)
   g_main_loop_unref (thread_loop);
   g_main_context_unref (thread_context);
 
-  g_main_loop_quit (loop);
-
   return NULL;
 }
 
 static void
 test_delivery_in_thread (void)
 {
-  GError *error;
   GThread *thread;
 
-  error = NULL;
-  thread = g_thread_create (test_delivery_in_thread_func,
-                            NULL,
-                            TRUE,
-                            &error);
-  g_assert_no_error (error);
-  g_assert (thread != NULL);
-
-  /* run the event loop - it is needed to dispatch D-Bus messages */
-  g_main_loop_run (loop);
+  thread = g_thread_new ("deliver",
+                         test_delivery_in_thread_func,
+                         NULL);
 
   g_thread_join (thread);
 }
@@ -256,8 +243,6 @@ typedef struct {
 
   GMainLoop *thread_loop;
   GThread *thread;
-
-  gboolean done;
 } SyncThreadData;
 
 static void
@@ -342,9 +327,6 @@ test_sleep_in_thread_func (gpointer _data)
   g_main_loop_unref (data->thread_loop);
   g_main_context_unref (thread_context);
 
-  data->done = TRUE;
-  g_main_loop_quit (loop);
-
   return NULL;
 }
 
@@ -379,12 +361,10 @@ test_method_calls_on_proxy (GDBusProxy *proxy)
       SyncThreadData data1;
       SyncThreadData data2;
       SyncThreadData data3;
-      GError *error;
       GTimeVal start_time;
       GTimeVal end_time;
       guint elapsed_msec;
 
-      error = NULL;
       do_async = (n == 0);
 
       g_get_current_time (&start_time);
@@ -393,41 +373,25 @@ test_method_calls_on_proxy (GDBusProxy *proxy)
       data1.msec = 40;
       data1.num = 100;
       data1.async = do_async;
-      data1.done = FALSE;
-      thread1 = g_thread_create (test_sleep_in_thread_func,
-                                 &data1,
-                                 TRUE,
-                                 &error);
-      g_assert_no_error (error);
-      g_assert (thread1 != NULL);
+      thread1 = g_thread_new ("sleep",
+                              test_sleep_in_thread_func,
+                              &data1);
 
       data2.proxy = proxy;
       data2.msec = 20;
       data2.num = 200;
       data2.async = do_async;
-      data2.done = FALSE;
-      thread2 = g_thread_create (test_sleep_in_thread_func,
-                                 &data2,
-                                 TRUE,
-                                 &error);
-      g_assert_no_error (error);
-      g_assert (thread2 != NULL);
+      thread2 = g_thread_new ("sleep2",
+                              test_sleep_in_thread_func,
+                              &data2);
 
       data3.proxy = proxy;
       data3.msec = 100;
       data3.num = 40;
       data3.async = do_async;
-      data3.done = FALSE;
-      thread3 = g_thread_create (test_sleep_in_thread_func,
-                                 &data3,
-                                 TRUE,
-                                 &error);
-      g_assert_no_error (error);
-      g_assert (thread3 != NULL);
-
-      /* we handle messages in the main loop - threads will quit it when they are done */
-      while (!(data1.done && data2.done && data3.done))
-        g_main_loop_run (loop);
+      thread3 = g_thread_new ("sleep3",
+                              test_sleep_in_thread_func,
+                              &data3);
 
       g_thread_join (thread1);
       g_thread_join (thread2);
@@ -442,12 +406,10 @@ test_method_calls_on_proxy (GDBusProxy *proxy)
 
       /* elapsed_msec should be 4000 msec +/- change for overhead/inaccuracy */
       g_assert_cmpint (elapsed_msec, >=, 3950);
-      g_assert_cmpint (elapsed_msec,  <, 6000);
+      g_assert_cmpint (elapsed_msec,  <, 8000);
 
       g_print (" ");
     }
-
-  g_main_loop_quit (loop);
 }
 
 static void
@@ -484,6 +446,133 @@ test_method_calls_in_thread (void)
   g_object_unref (connection);
 }
 
+#define SLEEP_MIN_USEC 1
+#define SLEEP_MAX_USEC 10
+
+/* Can run in any thread */
+static void
+ensure_connection_works (GDBusConnection *conn)
+{
+  GVariant *v;
+  GError *error = NULL;
+
+  v = g_dbus_connection_call_sync (conn, "org.freedesktop.DBus",
+      "/org/freedesktop/DBus", "org.freedesktop.DBus", "GetId", NULL, NULL, 0, -1,
+      NULL, &error);
+  g_assert_no_error (error);
+  g_assert (v != NULL);
+  g_assert (g_variant_is_of_type (v, G_VARIANT_TYPE ("(s)")));
+  g_variant_unref (v);
+}
+
+/*
+ * get_sync_in_thread:
+ * @data: (type guint): delay in microseconds
+ *
+ * Sleep for a short time, then get a session bus connection and call
+ * a method on it.
+ *
+ * Runs in a non-main thread.
+ *
+ * Returns: (transfer full): the connection
+ */
+static gpointer
+get_sync_in_thread (gpointer data)
+{
+  guint delay = GPOINTER_TO_UINT (data);
+  GError *error = NULL;
+  GDBusConnection *conn;
+
+  g_usleep (delay);
+
+  conn = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+  g_assert_no_error (error);
+
+  ensure_connection_works (conn);
+
+  return conn;
+}
+
+static void
+test_threaded_singleton (void)
+{
+  guint i, n;
+  guint unref_wins = 0;
+  guint get_wins = 0;
+
+  if (g_test_thorough ())
+    n = 100000;
+  else
+    n = 5000;
+
+  for (i = 0; i < n; i++)
+    {
+      GThread *thread;
+      guint j;
+      guint unref_delay, get_delay;
+      GDBusConnection *new_conn;
+
+      /* We want to be the last ref, so let it finish setting up */
+      for (j = 0; j < 100; j++)
+        {
+          guint r = g_atomic_int_get (&G_OBJECT (c)->ref_count);
+
+          if (r == 1)
+            break;
+
+          g_debug ("run %u: refcount is %u, sleeping", i, r);
+          g_usleep (1000);
+        }
+
+      if (j == 100)
+        g_error ("connection had too many refs");
+
+      if (g_test_verbose () && (i % (n/50)) == 0)
+        g_print ("%u%%\n", ((i * 100) / n));
+
+      /* Delay for a random time on each side of the race, to perturb the
+       * timing. Ideally, we want each side to win half the races; these
+       * timings are about right on smcv's laptop.
+       */
+      unref_delay = g_random_int_range (SLEEP_MIN_USEC, SLEEP_MAX_USEC);
+      get_delay = g_random_int_range (SLEEP_MIN_USEC / 2, SLEEP_MAX_USEC / 2);
+
+      /* One half of the race is to call g_bus_get_sync... */
+      thread = g_thread_new ("get_sync_in_thread", get_sync_in_thread,
+          GUINT_TO_POINTER (get_delay));
+
+      /* ... and the other half is to unref the shared connection, which must
+       * have exactly one ref at this point
+       */
+      g_usleep (unref_delay);
+      g_object_unref (c);
+
+      /* Wait for the thread to run; see what it got */
+      new_conn = g_thread_join (thread);
+
+      /* If the thread won the race, it will have kept the same connection,
+       * and it'll have one ref
+       */
+      if (new_conn == c)
+        {
+          get_wins++;
+        }
+      else
+        {
+          unref_wins++;
+          /* c is invalid now, but new_conn is suitable for the
+           * next round
+           */
+          c = new_conn;
+        }
+
+      ensure_connection_works (c);
+    }
+
+  if (g_test_verbose ())
+    g_print ("Unref won %u races; Get won %u races\n", unref_wins, get_wins);
+}
+
 /* ---------------------------------------------------------------------------------------------------- */
 
 int
@@ -494,24 +583,9 @@ main (int   argc,
   gint ret;
 
   g_type_init ();
-  g_thread_init (NULL);
   g_test_init (&argc, &argv, NULL);
 
-  /* all the tests rely on a shared main loop */
-  loop = g_main_loop_new (NULL, FALSE);
-
-  /* all the tests use a session bus with a well-known address that we can bring up and down
-   * using session_bus_up() and session_bus_down().
-   */
-  g_unsetenv ("DISPLAY");
-  g_setenv ("DBUS_SESSION_BUS_ADDRESS", session_bus_get_temporary_address (), TRUE);
-
   session_bus_up ();
-
-  /* TODO: wait a bit for the bus to come up.. ideally session_bus_up() won't return
-   * until one can connect to the bus but that's not how things work right now
-   */
-  usleep (500 * 1000);
 
   /* this is safe; testserver will exit once the bus goes away */
   g_assert (g_spawn_command_line_async (SRCDIR "/gdbus-testserver.py", NULL));
@@ -527,6 +601,7 @@ main (int   argc,
 
   g_test_add_func ("/gdbus/delivery-in-thread", test_delivery_in_thread);
   g_test_add_func ("/gdbus/method-calls-in-thread", test_method_calls_in_thread);
+  g_test_add_func ("/gdbus/threaded-singleton", test_threaded_singleton);
 
   ret = g_test_run();
 

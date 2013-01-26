@@ -335,7 +335,7 @@ G_BEGIN_DECLS
  * G_TYPE_IS_ABSTRACT:
  * @type: A #GType value.
  * 
- * Checks if @type is an abstract type.  An abstract type can not be
+ * Checks if @type is an abstract type.  An abstract type cannot be
  * instantiated and is normally used as an abstract base class for
  * derived classes.
  *
@@ -666,7 +666,7 @@ typedef enum	/*< skip >*/
 /* --- prototypes --- */
 void                  g_type_init                    (void);
 void                  g_type_init_with_debug_flags   (GTypeDebugFlags  debug_flags);
-G_CONST_RETURN gchar* g_type_name                    (GType            type);
+const gchar *         g_type_name                    (GType            type);
 GQuark                g_type_qname                   (GType            type);
 GType                 g_type_from_name               (const gchar     *name);
 GType                 g_type_parent                  (GType            type);
@@ -1125,10 +1125,11 @@ struct _GInterfaceInfo
  *  It should be noted, that it is generally a bad idea to follow the
  *  #G_VALUE_NOCOPY_CONTENTS hint for reference counted types. Due to
  *  reentrancy requirements and reference count assertions performed
- *  by the #GSignal code, reference counts should always be incremented
- *  for reference counted contents stored in the value->data array.
- *  To deviate from our string example for a moment, and taking a look
- *  at an exemplary implementation for collect_value() of #GObject:
+ *  by the signal emission code, reference counts should always be
+ *  incremented for reference counted contents stored in the value->data
+ *  array.  To deviate from our string example for a moment, and taking
+ *  a look at an exemplary implementation for collect_value() of
+ *  #GObject:
  *  |[
  *  if (collect_values[0].v_pointer)
  *  {
@@ -1205,12 +1206,12 @@ struct _GTypeValueTable
 				  GValue       *dest_value);
   /* varargs functionality (optional) */
   gpointer (*value_peek_pointer) (const GValue *value);
-  gchar	    *collect_format;
+  const gchar *collect_format;
   gchar*   (*collect_value)      (GValue       *value,
 				  guint         n_collect_values,
 				  GTypeCValue  *collect_values,
 				  guint		collect_flags);
-  gchar	    *lcopy_format;
+  const gchar *lcopy_format;
   gchar*   (*lcopy_value)        (const GValue *value,
 				  guint         n_collect_values,
 				  GTypeCValue  *collect_values,
@@ -1257,6 +1258,8 @@ void      g_type_add_class_private      (GType    		     class_type,
 gpointer  g_type_class_get_private      (GTypeClass 		    *klass,
 					 GType			     private_type);
 
+GLIB_AVAILABLE_IN_2_34
+void      g_type_ensure                 (GType                       type);
 
 /* --- GType boilerplate --- */
 /**
@@ -1365,7 +1368,7 @@ gpointer  g_type_class_get_private      (GTypeClass 		    *klass,
  *                                        (GInstanceInitFunc) gtk_gadget_init,
  *                                        (GTypeFlags) flags);
  *       {
- *         static const GInterfaceInfo g_implement_interface_info = {
+ *         const GInterfaceInfo g_implement_interface_info = {
  *           (GInterfaceInitFunc) gtk_gadget_gizmo_init
  *         };
  *         g_type_add_interface_static (g_define_type_id, TYPE_GIZMO, &g_implement_interface_info);
@@ -1537,7 +1540,7 @@ type_name##_get_type (void) \
  */
 #define G_DEFINE_BOXED_TYPE_WITH_CODE(TypeName, type_name, copy_func, free_func, _C_) _G_DEFINE_BOXED_TYPE_BEGIN (TypeName, type_name, copy_func, free_func) {_C_;} _G_DEFINE_TYPE_EXTENDED_END()
 
-#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 7)
+#if !defined (__cplusplus) && (__GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 7))
 #define _G_DEFINE_BOXED_TYPE_BEGIN(TypeName, type_name, copy_func, free_func) \
 GType \
 type_name##_get_type (void) \
@@ -1657,20 +1660,8 @@ gboolean         g_type_test_flags              (GType               type,
 
 
 /* --- debugging functions --- */
-G_CONST_RETURN gchar* g_type_name_from_instance	(GTypeInstance	*instance);
-G_CONST_RETURN gchar* g_type_name_from_class	(GTypeClass	*g_class);
-
-
-/* --- internal functions --- */
-G_GNUC_INTERNAL void    g_value_c_init          (void); /* sync with gvalue.c */
-G_GNUC_INTERNAL void    g_value_types_init      (void); /* sync with gvaluetypes.c */
-G_GNUC_INTERNAL void    g_enum_types_init       (void); /* sync with genums.c */
-G_GNUC_INTERNAL void    g_param_type_init       (void); /* sync with gparam.c */
-G_GNUC_INTERNAL void    g_boxed_type_init       (void); /* sync with gboxed.c */
-G_GNUC_INTERNAL void    g_object_type_init      (void); /* sync with gobject.c */
-G_GNUC_INTERNAL void    g_param_spec_types_init (void); /* sync with gparamspecs.c */
-G_GNUC_INTERNAL void    g_value_transforms_init (void); /* sync with gvaluetransform.c */
-G_GNUC_INTERNAL void    g_signal_init           (void); /* sync with gsignal.c */
+const gchar *    g_type_name_from_instance      (GTypeInstance	*instance);
+const gchar *    g_type_name_from_class         (GTypeClass	*g_class);
 
 
 /* --- implementation bits --- */

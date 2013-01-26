@@ -35,9 +35,10 @@
 
 /**
  * SECTION:gurifuncs
- * @short_description: URI Functions
- * 
- * Functions for manipulating Universal Resource Identifiers (URIs) as 
+ * @title: URI Functions
+ * @short_description: manipulating URIs
+ *
+ * Functions for manipulating Universal Resource Identifiers (URIs) as
  * defined by <ulink url="http://www.ietf.org/rfc/rfc3986.txt">
  * RFC 3986</ulink>. It is highly recommended that you have read and
  * understand RFC 3986 for understanding this API.
@@ -62,9 +63,9 @@ unescape_character (const char *scanner)
 
 /**
  * g_uri_unescape_segment:
- * @escaped_string: a string.
- * @escaped_string_end: a string.
- * @illegal_characters: an optional string of illegal characters not to be allowed.
+ * @escaped_string: (allow-none): A string, may be %NULL
+ * @escaped_string_end: (allow-none): Pointer to end of @escaped_string, may be %NULL
+ * @illegal_characters: (allow-none): An optional string of illegal characters not to be allowed, may be %NULL
  * 
  * Unescapes a segment of an escaped string.
  *
@@ -75,7 +76,9 @@ unescape_character (const char *scanner)
  * handling.
  *
  * Returns: an unescaped version of @escaped_string or %NULL on error.
- * The returned string should be freed when no longer needed.
+ * The returned string should be freed when no longer needed.  As a
+ * special case if %NULL is given for @escaped_string, this function
+ * will return %NULL.
  *
  * Since: 2.16
  **/

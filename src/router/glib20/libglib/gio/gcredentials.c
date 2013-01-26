@@ -22,7 +22,12 @@
 
 #include "config.h"
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <string.h>
+#endif
+#ifdef __OpenBSD__
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -63,6 +68,9 @@
  *
  * On FreeBSD, the native credential type is a <type>struct cmsgcred</type>.
  * This corresponds to %G_CREDENTIALS_TYPE_FREEBSD_CMSGCRED.
+ *
+ * On OpenBSD, the native credential type is a <type>struct sockpeercred</type>.
+ * This corresponds to %G_CREDENTIALS_TYPE_OPENBSD_SOCKPEERCRED.
  */
 
 /**
@@ -80,8 +88,10 @@ struct _GCredentials
 
 #ifdef __linux__
   struct ucred native;
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   struct cmsgcred native;
+#elif defined(__OpenBSD__)
+  struct sockpeercred native;
 #else
 #ifdef __GNUC__
 #warning Please add GCredentials support for your OS
@@ -130,11 +140,15 @@ g_credentials_init (GCredentials *credentials)
   credentials->native.pid = getpid ();
   credentials->native.uid = geteuid ();
   credentials->native.gid = getegid ();
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   memset (&credentials->native, 0, sizeof (struct cmsgcred));
   credentials->native.cmcred_pid  = getpid ();
   credentials->native.cmcred_euid = geteuid ();
   credentials->native.cmcred_gid  = getegid ();
+#elif defined(__OpenBSD__)
+  credentials->native.pid = getpid ();
+  credentials->native.uid = geteuid ();
+  credentials->native.gid = getegid ();
 #endif
 }
 
@@ -188,7 +202,7 @@ g_credentials_to_string (GCredentials *credentials)
     g_string_append_printf (ret, "gid=%" G_GINT64_FORMAT ",", (gint64) credentials->native.gid);
   if (ret->str[ret->len - 1] == ',')
     ret->str[ret->len - 1] = '\0';
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   g_string_append (ret, "freebsd-cmsgcred:");
   if (credentials->native.cmcred_pid != -1)
     g_string_append_printf (ret, "pid=%" G_GINT64_FORMAT ",", (gint64) credentials->native.cmcred_pid);
@@ -196,6 +210,16 @@ g_credentials_to_string (GCredentials *credentials)
     g_string_append_printf (ret, "uid=%" G_GINT64_FORMAT ",", (gint64) credentials->native.cmcred_euid);
   if (credentials->native.cmcred_gid != -1)
     g_string_append_printf (ret, "gid=%" G_GINT64_FORMAT ",", (gint64) credentials->native.cmcred_gid);
+#elif defined(__OpenBSD__)
+  g_string_append (ret, "openbsd-sockpeercred:");
+  if (credentials->native.pid != -1)
+    g_string_append_printf (ret, "pid=%" G_GINT64_FORMAT ",", (gint64) credentials->native.pid);
+  if (credentials->native.uid != -1)
+    g_string_append_printf (ret, "uid=%" G_GINT64_FORMAT ",", (gint64) credentials->native.uid);
+  if (credentials->native.gid != -1)
+    g_string_append_printf (ret, "gid=%" G_GINT64_FORMAT ",", (gint64) credentials->native.gid);
+  if (ret->str[ret->len - 1] == ',')
+    ret->str[ret->len - 1] = '\0';
 #else
   g_string_append (ret, "unknown");
 #endif
@@ -236,8 +260,11 @@ g_credentials_is_same_user (GCredentials  *credentials,
 #ifdef __linux__
   if (credentials->native.uid == other_credentials->native.uid)
     ret = TRUE;
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   if (credentials->native.cmcred_euid == other_credentials->native.cmcred_euid)
+    ret = TRUE;
+#elif defined(__OpenBSD__)
+  if (credentials->native.uid == other_credentials->native.uid)
     ret = TRUE;
 #else
   g_set_error_literal (error,
@@ -289,12 +316,23 @@ g_credentials_get_native (GCredentials     *credentials,
     {
       ret = &credentials->native;
     }
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   if (native_type != G_CREDENTIALS_TYPE_FREEBSD_CMSGCRED)
     {
       g_warning ("g_credentials_get_native: Trying to get credentials of type %d but only "
 		 "G_CREDENTIALS_TYPE_FREEBSD_CMSGCRED is supported.",
 		 native_type);
+    }
+  else
+    {
+      ret = &credentials->native;
+    }
+#elif defined(__OpenBSD__)
+  if (native_type != G_CREDENTIALS_TYPE_OPENBSD_SOCKPEERCRED)
+    {
+      g_warning ("g_credentials_get_native: Trying to get credentials of type %d but only "
+                 "G_CREDENTIALS_TYPE_OPENBSD_SOCKPEERCRED is supported.",
+                 native_type);
     }
   else
     {
@@ -339,7 +377,7 @@ g_credentials_set_native (GCredentials     *credentials,
     {
       memcpy (&credentials->native, native, sizeof (struct ucred));
     }
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   if (native_type != G_CREDENTIALS_TYPE_FREEBSD_CMSGCRED)
     {
       g_warning ("g_credentials_set_native: Trying to set credentials of type %d "
@@ -349,6 +387,17 @@ g_credentials_set_native (GCredentials     *credentials,
   else
     {
       memcpy (&credentials->native, native, sizeof (struct cmsgcred));
+    }
+#elif defined(__OpenBSD__)
+  if (native_type != G_CREDENTIALS_TYPE_OPENBSD_SOCKPEERCRED)
+    {
+      g_warning ("g_credentials_set_native: Trying to set credentials of type %d "
+                 "but only G_CREDENTIALS_TYPE_OPENBSD_SOCKPEERCRED is supported.",
+                 native_type);
+    }
+  else
+    {
+      memcpy (&credentials->native, native, sizeof (struct sockpeercred));
     }
 #else
   g_warning ("g_credentials_set_native: Trying to set credentials but GLib has no support "
@@ -386,8 +435,10 @@ g_credentials_get_unix_user (GCredentials    *credentials,
 
 #ifdef __linux__
   ret = credentials->native.uid;
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   ret = credentials->native.cmcred_euid;
+#elif defined(__OpenBSD__)
+  ret = credentials->native.uid;
 #else
   ret = -1;
   g_set_error_literal (error,
@@ -431,8 +482,11 @@ g_credentials_set_unix_user (GCredentials    *credentials,
 #ifdef __linux__
   credentials->native.uid = uid;
   ret = TRUE;
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   credentials->native.cmcred_euid = uid;
+  ret = TRUE;
+#elif defined(__OpenBSD__)
+  credentials->native.uid = uid;
   ret = TRUE;
 #else
   g_set_error_literal (error,

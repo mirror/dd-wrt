@@ -204,11 +204,10 @@ static gpointer
 array_large_size_remalloc_impl (gpointer mem,
 				gsize n_bytes)
 {
-  /* We only care that g_array_set_size() doesn't hang; we'll never
-   * actually use any of the 2G of memory that it requests, so it's
-   * OK that we don't actually allocate the whole thing.
+  /* We only care that g_array_set_size() doesn't hang before
+   * calling g_realloc(). So if we got here, we already won.
    */
-  return realloc (mem, MIN (n_bytes, 1024 * 1024));
+  exit (0);
 }
 
 static GMemVTable array_large_size_mem_vtable = {
@@ -229,7 +228,7 @@ array_large_size (void)
     {
       g_mem_set_vtable (&array_large_size_mem_vtable);
       g_array_set_size (array, 1073750016);
-      exit (0); /* success */
+      g_assert_not_reached ();
     }
   g_test_trap_assert_passed ();
 
@@ -303,6 +302,43 @@ array_sort_with_data (void)
     }
 
   g_array_free (garray, TRUE);
+}
+
+static gint num_clear_func_invocations = 0;
+
+static void
+my_clear_func (gpointer data)
+{
+  num_clear_func_invocations += 1;
+}
+
+static void
+array_clear_func (void)
+{
+  GArray *garray;
+  gint i;
+  gint cur;
+
+  garray = g_array_new (FALSE, FALSE, sizeof (gint));
+  g_array_set_clear_func (garray, my_clear_func);
+
+  for (i = 0; i < 10; i++)
+    {
+      cur = g_random_int_range (0, 100);
+      g_array_append_val (garray, cur);
+    }
+
+  g_array_remove_index (garray, 9);
+  g_assert_cmpint (num_clear_func_invocations, ==, 1);
+
+  g_array_remove_range (garray, 5, 3);
+  g_assert_cmpint (num_clear_func_invocations, ==, 4);
+
+  g_array_remove_index_fast (garray, 4);
+  g_assert_cmpint (num_clear_func_invocations, ==, 5);
+
+  g_array_free (garray, TRUE);
+  g_assert_cmpint (num_clear_func_invocations, ==, 10);
 }
 
 static void
@@ -393,23 +429,30 @@ pointer_array_free_func (void)
   g_ptr_array_add (gparray, g_strdup ("baz"));
   g_ptr_array_remove_index (gparray, 0);
   g_assert_cmpint (num_free_func_invocations, ==, 1);
+  g_ptr_array_remove_index_fast (gparray, 1);
+  g_assert_cmpint (num_free_func_invocations, ==, 2);
   s = g_strdup ("frob");
   g_ptr_array_add (gparray, s);
   g_assert (g_ptr_array_remove (gparray, s));
-  g_assert_cmpint (num_free_func_invocations, ==, 2);
-  g_ptr_array_set_size (gparray, 1);
+  g_assert (!g_ptr_array_remove (gparray, "nuun"));
+  g_assert (!g_ptr_array_remove_fast (gparray, "mlo"));
   g_assert_cmpint (num_free_func_invocations, ==, 3);
+  s = g_strdup ("frob");
+  g_ptr_array_add (gparray, s);
+  g_ptr_array_set_size (gparray, 1);
+  g_assert_cmpint (num_free_func_invocations, ==, 4);
   g_ptr_array_ref (gparray);
   g_ptr_array_unref (gparray);
-  g_assert_cmpint (num_free_func_invocations, ==, 3);
-  g_ptr_array_unref (gparray);
   g_assert_cmpint (num_free_func_invocations, ==, 4);
+  g_ptr_array_unref (gparray);
+  g_assert_cmpint (num_free_func_invocations, ==, 5);
 
   num_free_func_invocations = 0;
-  gparray = g_ptr_array_new_with_free_func (my_free_func);
+  gparray = g_ptr_array_new_full (10, my_free_func);
   g_ptr_array_add (gparray, g_strdup ("foo"));
   g_ptr_array_add (gparray, g_strdup ("bar"));
   g_ptr_array_add (gparray, g_strdup ("baz"));
+  g_ptr_array_set_size (gparray, 20);
   g_ptr_array_add (gparray, NULL);
   gparray2 = g_ptr_array_ref (gparray);
   strv = (gchar **) g_ptr_array_free (gparray, FALSE);
@@ -423,6 +466,7 @@ pointer_array_free_func (void)
   g_ptr_array_add (gparray, g_strdup ("foo"));
   g_ptr_array_add (gparray, g_strdup ("bar"));
   g_ptr_array_add (gparray, g_strdup ("baz"));
+  g_ptr_array_remove_range (gparray, 1, 1);
   g_ptr_array_unref (gparray);
   g_assert_cmpint (num_free_func_invocations, ==, 3);
 
@@ -759,12 +803,45 @@ byte_array_sort_with_data (void)
   g_byte_array_free (gbarray, TRUE);
 }
 
+static void
+byte_array_new_take (void)
+{
+  GByteArray *gbarray;
+  guint8 *data;
+
+  data = g_memdup ("woooweeewow", 11);
+  gbarray = g_byte_array_new_take (data, 11);
+  g_assert (gbarray->data == data);
+  g_assert_cmpuint (gbarray->len, ==, 11);
+  g_byte_array_free (gbarray, TRUE);
+}
+
+static void
+byte_array_free_to_bytes (void)
+{
+  GByteArray *gbarray;
+  gpointer memory;
+  GBytes *bytes;
+  gsize size;
+
+  gbarray = g_byte_array_new ();
+  g_byte_array_append (gbarray, (guint8 *)"woooweeewow", 11);
+  memory = gbarray->data;
+
+  bytes = g_byte_array_free_to_bytes (gbarray);
+  g_assert (bytes != NULL);
+  g_assert_cmpuint (g_bytes_get_size (bytes), ==, 11);
+  g_assert (g_bytes_get_data (bytes, &size) == memory);
+  g_assert_cmpuint (size, ==, 11);
+
+  g_bytes_unref (bytes);
+}
 int
 main (int argc, char *argv[])
 {
   g_test_init (&argc, &argv, NULL);
 
-  g_test_bug_base ("http://bugs.gnome.org/%s");
+  g_test_bug_base ("http://bugs.gnome.org/");
 
   /* array tests */
   g_test_add_func ("/array/append", array_append);
@@ -776,6 +853,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/array/large-size", array_large_size);
   g_test_add_func ("/array/sort", array_sort);
   g_test_add_func ("/array/sort-with-data", array_sort_with_data);
+  g_test_add_func ("/array/clear-func", array_clear_func);
 
   /* pointer arrays */
   g_test_add_func ("/pointerarray/add", pointer_array_add);
@@ -793,6 +871,8 @@ main (int argc, char *argv[])
   g_test_add_func ("/bytearray/ref-count", byte_array_ref_count);
   g_test_add_func ("/bytearray/sort", byte_array_sort);
   g_test_add_func ("/bytearray/sort-with-data", byte_array_sort_with_data);
+  g_test_add_func ("/bytearray/new-take", byte_array_new_take);
+  g_test_add_func ("/bytearray/free-to-bytes", byte_array_free_to_bytes);
 
   return g_test_run ();
 }

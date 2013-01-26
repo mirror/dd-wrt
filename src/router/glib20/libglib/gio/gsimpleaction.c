@@ -26,30 +26,32 @@
 #include "gaction.h"
 #include "glibintl.h"
 
-static void g_simple_action_iface_init (GActionInterface *iface);
-G_DEFINE_TYPE_WITH_CODE (GSimpleAction, g_simple_action, G_TYPE_OBJECT,
-  G_IMPLEMENT_INTERFACE (G_TYPE_ACTION, g_simple_action_iface_init))
-
 /**
  * SECTION:gsimpleaction
  * @title: GSimpleAction
- * @short_description: A simple GSimpleAction
+ * @short_description: A simple GAction implementation
  *
- * A #GSimpleAction is the obvious simple implementation of the #GSimpleAction
- * interface.  This is the easiest way to create an action for purposes of
+ * A #GSimpleAction is the obvious simple implementation of the #GAction
+ * interface. This is the easiest way to create an action for purposes of
  * adding it to a #GSimpleActionGroup.
  *
  * See also #GtkAction.
- **/
-
-struct _GSimpleActionPrivate
+ */
+struct _GSimpleAction
 {
+  GObject       parent_instance;
+
   gchar        *name;
   GVariantType *parameter_type;
-  guint         enabled : 1;
-  guint         state_set : 1;
+  gboolean      enabled;
   GVariant     *state;
 };
+
+typedef GObjectClass GSimpleActionClass;
+
+static void g_simple_action_iface_init (GActionInterface *iface);
+G_DEFINE_TYPE_WITH_CODE (GSimpleAction, g_simple_action, G_TYPE_OBJECT,
+  G_IMPLEMENT_INTERFACE (G_TYPE_ACTION, g_simple_action_iface_init))
 
 enum
 {
@@ -63,6 +65,7 @@ enum
 
 enum
 {
+  SIGNAL_CHANGE_STATE,
   SIGNAL_ACTIVATE,
   NR_SIGNALS
 };
@@ -74,15 +77,15 @@ g_simple_action_get_name (GAction *action)
 {
   GSimpleAction *simple = G_SIMPLE_ACTION (action);
 
-  return simple->priv->name;
+  return simple->name;
 }
 
-const GVariantType *
+static const GVariantType *
 g_simple_action_get_parameter_type (GAction *action)
 {
   GSimpleAction *simple = G_SIMPLE_ACTION (action);
 
-  return simple->priv->parameter_type;
+  return simple->parameter_type;
 }
 
 static const GVariantType *
@@ -90,8 +93,8 @@ g_simple_action_get_state_type (GAction *action)
 {
   GSimpleAction *simple = G_SIMPLE_ACTION (action);
 
-  if (simple->priv->state != NULL)
-    return g_variant_get_type (simple->priv->state);
+  if (simple->state != NULL)
+    return g_variant_get_type (simple->state);
   else
     return NULL;
 }
@@ -107,34 +110,66 @@ g_simple_action_get_enabled (GAction *action)
 {
   GSimpleAction *simple = G_SIMPLE_ACTION (action);
 
-  return simple->priv->enabled;
+  return simple->enabled;
 }
 
 static void
-g_simple_action_set_state (GAction  *action,
-                           GVariant *value)
+g_simple_action_change_state (GAction  *action,
+                              GVariant *value)
 {
   GSimpleAction *simple = G_SIMPLE_ACTION (action);
 
+  /* If the user connected a signal handler then they are responsible
+   * for handling state changes.
+   */
+  if (g_signal_has_handler_pending (action, g_simple_action_signals[SIGNAL_CHANGE_STATE], 0, TRUE))
+    g_signal_emit (action, g_simple_action_signals[SIGNAL_CHANGE_STATE], 0, value);
+
+  /* If not, then the default behaviour is to just set the state. */
+  else
+    g_simple_action_set_state (simple, value);
+}
+
+/**
+ * g_simple_action_set_state:
+ * @simple: a #GSimpleAction
+ * @value: the new #GVariant for the state
+ *
+ * Sets the state of the action.
+ *
+ * This directly updates the 'state' property to the given value.
+ *
+ * This should only be called by the implementor of the action.  Users
+ * of the action should not attempt to directly modify the 'state'
+ * property.  Instead, they should call g_action_change_state() to
+ * request the change.
+ *
+ * Since: 2.30
+ **/
+void
+g_simple_action_set_state (GSimpleAction *simple,
+                           GVariant      *value)
+{
+  g_return_if_fail (G_IS_SIMPLE_ACTION (simple));
   g_return_if_fail (value != NULL);
 
   {
     const GVariantType *state_type;
 
-    state_type = simple->priv->state ?
-                   g_variant_get_type (simple->priv->state) : NULL;
+    state_type = simple->state ?
+                   g_variant_get_type (simple->state) : NULL;
     g_return_if_fail (state_type != NULL);
     g_return_if_fail (g_variant_is_of_type (value, state_type));
   }
 
   g_variant_ref_sink (value);
 
-  if (!g_variant_equal (simple->priv->state, value))
+  if (!simple->state || !g_variant_equal (simple->state, value))
     {
-      if (simple->priv->state)
-        g_variant_unref (simple->priv->state);
+      if (simple->state)
+        g_variant_unref (simple->state);
 
-      simple->priv->state = g_variant_ref (value);
+      simple->state = g_variant_ref (value);
 
       g_object_notify (G_OBJECT (simple), "state");
     }
@@ -147,7 +182,7 @@ g_simple_action_get_state (GAction *action)
 {
   GSimpleAction *simple = G_SIMPLE_ACTION (action);
 
-  return simple->priv->state ? g_variant_ref (simple->priv->state) : NULL;
+  return simple->state ? g_variant_ref (simple->state) : NULL;
 }
 
 static void
@@ -156,16 +191,16 @@ g_simple_action_activate (GAction  *action,
 {
   GSimpleAction *simple = G_SIMPLE_ACTION (action);
 
-  g_return_if_fail (simple->priv->parameter_type == NULL ?
+  g_return_if_fail (simple->parameter_type == NULL ?
                       parameter == NULL :
                     (parameter != NULL &&
                      g_variant_is_of_type (parameter,
-                                           simple->priv->parameter_type)));
+                                           simple->parameter_type)));
 
   if (parameter != NULL)
     g_variant_ref_sink (parameter);
 
-  if (simple->priv->enabled)
+  if (simple->enabled)
     g_signal_emit (simple, g_simple_action_signals[SIGNAL_ACTIVATE], 0, parameter);
 
   if (parameter != NULL)
@@ -173,53 +208,29 @@ g_simple_action_activate (GAction  *action,
 }
 
 static void
-g_simple_action_set_property (GObject      *object,
-                              guint         prop_id,
-                              const GValue *value,
-                              GParamSpec   *pspec)
+g_simple_action_set_property (GObject    *object,
+                              guint       prop_id,
+                              const GValue     *value,
+                              GParamSpec *pspec)
 {
-  GSimpleAction *simple = G_SIMPLE_ACTION (object);
+  GSimpleAction *action = G_SIMPLE_ACTION (object);
 
   switch (prop_id)
     {
     case PROP_NAME:
-      g_assert (simple->priv->name == NULL);
-      simple->priv->name = g_value_dup_string (value);
+      action->name = g_strdup (g_value_get_string (value));
       break;
 
     case PROP_PARAMETER_TYPE:
-      g_assert (simple->priv->parameter_type == NULL);
-      simple->priv->parameter_type = g_value_dup_boxed (value);
+      action->parameter_type = g_value_dup_boxed (value);
       break;
 
     case PROP_ENABLED:
-      g_simple_action_set_enabled (simple, g_value_get_boolean (value));
+      action->enabled = g_value_get_boolean (value);
       break;
 
     case PROP_STATE:
-      /* PROP_STATE is marked as G_PARAM_CONSTRUCT so we always get a
-       * call during object construction, even if it is NULL.  We treat
-       * that first call differently, for a number of reasons.
-       *
-       * First, we don't want the value to be rejected by the
-       * possibly-overridden .set_state() function.  Second, we don't
-       * want to be tripped by the assertions in g_simple_action_set_state()
-       * that would enforce the catch22 that we only provide a value of
-       * the same type as the existing value (when there is not yet an
-       * existing value).
-       */
-      if (simple->priv->state_set)
-        g_simple_action_set_state (G_ACTION (simple),
-                                   g_value_get_variant (value));
-
-      else /* this is the special case */
-        {
-          /* only do it the first time. */
-          simple->priv->state_set = TRUE;
-
-          /* blindly set it. */
-          simple->priv->state = g_value_dup_variant (value);
-        }
+      action->state = g_value_dup_variant (value);
       break;
 
     default:
@@ -267,11 +278,11 @@ g_simple_action_finalize (GObject *object)
 {
   GSimpleAction *simple = G_SIMPLE_ACTION (object);
 
-  g_free (simple->priv->name);
-  if (simple->priv->parameter_type)
-    g_variant_type_free (simple->priv->parameter_type);
-  if (simple->priv->state)
-    g_variant_unref (simple->priv->state);
+  g_free (simple->name);
+  if (simple->parameter_type)
+    g_variant_type_free (simple->parameter_type);
+  if (simple->state)
+    g_variant_unref (simple->state);
 
   G_OBJECT_CLASS (g_simple_action_parent_class)
     ->finalize (object);
@@ -280,9 +291,7 @@ g_simple_action_finalize (GObject *object)
 void
 g_simple_action_init (GSimpleAction *simple)
 {
-  simple->priv = G_TYPE_INSTANCE_GET_PRIVATE (simple,
-                                              G_TYPE_SIMPLE_ACTION,
-                                              GSimpleActionPrivate);
+  simple->enabled = TRUE;
 }
 
 void
@@ -294,7 +303,7 @@ g_simple_action_iface_init (GActionInterface *iface)
   iface->get_state_hint = g_simple_action_get_state_hint;
   iface->get_enabled = g_simple_action_get_enabled;
   iface->get_state = g_simple_action_get_state;
-  iface->set_state = g_simple_action_set_state;
+  iface->change_state = g_simple_action_change_state;
   iface->activate = g_simple_action_activate;
 }
 
@@ -303,9 +312,8 @@ g_simple_action_class_init (GSimpleActionClass *class)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (class);
 
-
-  object_class->get_property = g_simple_action_get_property;
   object_class->set_property = g_simple_action_set_property;
+  object_class->get_property = g_simple_action_get_property;
   object_class->finalize = g_simple_action_finalize;
 
   /**
@@ -323,9 +331,58 @@ g_simple_action_class_init (GSimpleActionClass *class)
   g_simple_action_signals[SIGNAL_ACTIVATE] =
     g_signal_new (I_("activate"),
                   G_TYPE_SIMPLE_ACTION,
-                  G_SIGNAL_RUN_LAST,
-                  G_STRUCT_OFFSET (GSimpleActionClass, activate),
-                  NULL, NULL,
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_MUST_COLLECT,
+                  0, NULL, NULL,
+                  g_cclosure_marshal_VOID__VARIANT,
+                  G_TYPE_NONE, 1,
+                  G_TYPE_VARIANT);
+
+  /**
+   * GSimpleAction::change-state:
+   * @simple: the #GSimpleAction
+   * @value: (allow-none): the requested value for the state
+   *
+   * Indicates that the action just received a request to change its
+   * state.
+   *
+   * @value will always be of the correct state type.  In the event that
+   * an incorrect type was given, no signal will be emitted.
+   *
+   * If no handler is connected to this signal then the default
+   * behaviour is to call g_simple_action_set_state() to set the state
+   * to the requested value.  If you connect a signal handler then no
+   * default action is taken.  If the state should change then you must
+   * call g_simple_action_set_state() from the handler.
+   *
+   * <example>
+   * <title>Example 'change-state' handler</title>
+   * <programlisting>
+   * static void
+   * change_volume_state (GSimpleAction *action,
+   *                      GVariant      *value,
+   *                      gpointer       user_data)
+   * {
+   *   gint requested;
+   *
+   *   requested = g_variant_get_int32 (value);
+   *
+   *   // Volume only goes from 0 to 10
+   *   if (0 <= requested && requested <= 10)
+   *     g_simple_action_set_state (action, value);
+   * }
+   * </programlisting>
+   * </example>
+   *
+   * The handler need not set the state to the requested value.  It
+   * could set it to any value at all, or take some other action.
+   *
+   * Since: 2.30
+   */
+  g_simple_action_signals[SIGNAL_CHANGE_STATE] =
+    g_signal_new (I_("change-state"),
+                  G_TYPE_SIMPLE_ACTION,
+                  G_SIGNAL_RUN_LAST | G_SIGNAL_MUST_COLLECT,
+                  0, NULL, NULL,
                   g_cclosure_marshal_VOID__VARIANT,
                   G_TYPE_NONE, 1,
                   G_TYPE_VARIANT);
@@ -369,8 +426,8 @@ g_simple_action_class_init (GSimpleActionClass *class)
    *
    * If @action is currently enabled.
    *
-   * If the action is disabled then calls to g_simple_action_activate() and
-   * g_simple_action_set_state() have no effect.
+   * If the action is disabled then calls to g_action_activate() and
+   * g_action_change_state() have no effect.
    *
    * Since: 2.28
    **/
@@ -379,7 +436,6 @@ g_simple_action_class_init (GSimpleActionClass *class)
                                                          P_("Enabled"),
                                                          P_("If the action can be activated"),
                                                          TRUE,
-                                                         G_PARAM_CONSTRUCT |
                                                          G_PARAM_READWRITE |
                                                          G_PARAM_STATIC_STRINGS));
 
@@ -412,11 +468,8 @@ g_simple_action_class_init (GSimpleActionClass *class)
                                                          P_("The state the action is in"),
                                                          G_VARIANT_TYPE_ANY,
                                                          NULL,
-                                                         G_PARAM_CONSTRUCT |
                                                          G_PARAM_READWRITE |
                                                          G_PARAM_STATIC_STRINGS));
-
-  g_type_class_add_private (class, sizeof (GSimpleActionPrivate));
 }
 
 /**
@@ -429,6 +482,9 @@ g_simple_action_class_init (GSimpleActionClass *class)
  * An action must be enabled in order to be activated or in order to
  * have its state changed from outside callers.
  *
+ * This should only be called by the implementor of the action.  Users
+ * of the action should not attempt to modify its enabled flag.
+ *
  * Since: 2.28
  **/
 void
@@ -439,9 +495,9 @@ g_simple_action_set_enabled (GSimpleAction *simple,
 
   enabled = !!enabled;
 
-  if (simple->priv->enabled != enabled)
+  if (simple->enabled != enabled)
     {
-      simple->priv->enabled = enabled;
+      simple->enabled = enabled;
       g_object_notify (G_OBJECT (simple), "enabled");
     }
 }

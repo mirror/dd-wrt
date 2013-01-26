@@ -44,37 +44,45 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -113,20 +121,23 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">Debug\$(Platform)\bin\</OutDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">Debug\$(Platform)\bin\</OutDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">false</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">Release\$(Platform)\bin\</OutDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">false</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">Release\$(Platform)\bin\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";G_ENABLE_DEBUG;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";G_ENABLE_DEBUG;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;SUPPORT_UCP;SUPPORT_UTF;SUPPORT_UTF8;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -137,7 +148,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)glib.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -152,7 +163,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";G_ENABLE_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";G_ENABLE_DEBUG;USE_SYSTEM_PCRE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -163,7 +174,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;pcred.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;pcred.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)glib.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -178,7 +189,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";G_ENABLE_DEBUG;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";G_ENABLE_DEBUG;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;SUPPORT_UCP;SUPPORT_UTF;SUPPORT_UTF8;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -189,7 +200,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)glib.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -204,7 +215,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";G_ENABLE_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";G_ENABLE_DEBUG;USE_SYSTEM_PCRE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -215,7 +226,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;pcred.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;pcred.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)glib.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -229,7 +240,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;SUPPORT_UCP;SUPPORT_UTF;SUPPORT_UTF8;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -238,7 +249,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)glib.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -254,7 +265,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";USE_SYSTEM_PCRE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -263,7 +274,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;pcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;pcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)glib.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -279,7 +290,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;SUPPORT_UCP;SUPPORT_UTF;SUPPORT_UTF8;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -288,7 +299,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)glib.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -304,7 +315,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN="Glib";USE_SYSTEM_PCRE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -313,7 +324,7 @@
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;pcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;pcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <ModuleDefinitionFile>$(IntDir)glib.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -329,9 +340,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
 #include "libglib.vs10.sourcefiles"
-    <ClCompile Include="..\..\..\glib\gatomic.c" />
     <ClCompile Include="..\..\..\glib\giowin32.c" />
     <ClCompile Include="..\..\..\glib\gspawn-win32.c" />
+    <ClCompile Include="..\..\..\glib\gthread-win32.c" />
     <ClCompile Include="..\..\..\glib\gwin32.c" />
     <ClCompile Include="..\..\..\glib\libcharset\localcharset.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">LIBDIR=/irrelevant/lib;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -348,94 +359,174 @@
     <ClCompile Include="..\..\..\glib\gnulib\printf-parse.c" />
     <ClCompile Include="..\..\..\glib\gnulib\printf.c" />
     <ClCompile Include="..\..\..\glib\gnulib\vasnprintf.c" />
-    <ClCompile Include="..\..\..\glib\pcre\pcre_chartables.c">
+    <ClCompile Include="..\..\..\glib\pcre\pcre_byte_order.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\glib\pcre\pcre_chartables.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_compile.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_config.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_dfa_exec.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_exec.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_fullinfo.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_get.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_globals.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\glib\pcre\pcre_jit_compile.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_newline.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_ord2utf8.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\glib\pcre\pcre_string_utils.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_study.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_tables.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\..\glib\pcre\pcre_try_flipped.c">
+    <ClCompile Include="..\..\..\glib\pcre\pcre_valid_utf8.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\..\..\glib\pcre\pcre_ucp_searchfuncs.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\glib\pcre\pcre_xclass.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_ExtPCRE|x64'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">-DG_LOG_DOMAIN=\"GLib-GRegex\" -UBSR_ANYCRLF -UEBCDIC %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_ExtPCRE|x64'">true</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>

@@ -278,7 +278,7 @@ use_inet_address (gboolean synchronous)
 {
   GSocketAddressEnumerator *enumerator;
   GSocketAddress *sockaddr;
-  GInetAddress *addr;
+  GInetAddress *addr = NULL;
   guint port = 0;
   gchar **ip_and_port;
 
@@ -322,7 +322,7 @@ use_unix_address (gboolean synchronous)
   GSocketAddressEnumerator *enumerator;
   GSocketAddress *sockaddr;
 
-  sockaddr = g_unix_socket_address_new_abstract (info, -1);
+  sockaddr = g_unix_socket_address_new_with_type (info, -1, G_UNIX_SOCKET_ADDRESS_ABSTRACT);
 
   if (sockaddr == NULL)
     {

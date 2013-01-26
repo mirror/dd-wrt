@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -104,11 +104,35 @@ G_BEGIN_DECLS
  * @G_REGEX_ERROR_TOO_MANY_BRANCHES_IN_DEFINE: "DEFINE" group contains more
  *     than one branch. Since 2.16
  * @G_REGEX_ERROR_DEFINE_REPETION: Repeating a "DEFINE" group is not allowed.
- *     Since 2.16
+ *     This error is never raised. Since: 2.16 Deprecated: 2.34
  * @G_REGEX_ERROR_INCONSISTENT_NEWLINE_OPTIONS: Inconsistent newline options.
  *     Since 2.16
- * @G_REGEX_ERROR_MISSING_BACK_REFERENCE: "\\g" is not followed by a braced
- *     name or an optionally braced non-zero number. Since 2.16
+ * @G_REGEX_ERROR_MISSING_BACK_REFERENCE: "\\g" is not followed by a braced,
+ *      angle-bracketed, or quoted name or number, or by a plain number. Since: 2.16
+ * @G_REGEX_ERROR_INVALID_RELATIVE_REFERENCE: relative reference must not be zero. Since: 2.34
+ * @G_REGEX_ERROR_BACKTRACKING_CONTROL_VERB_ARGUMENT_FORBIDDEN: the backtracing
+ *     control verb used does not allow an argument. Since: 2.34
+ * @G_REGEX_ERROR_UNKNOWN_BACKTRACKING_CONTROL_VERB: unknown backtracing 
+ *     control verb. Since: 2.34
+ * @G_REGEX_ERROR_NUMBER_TOO_BIG: number is too big in escape sequence. Since: 2.34
+ * @G_REGEX_ERROR_MISSING_SUBPATTERN_NAME: Missing subpattern name. Since: 2.34
+ * @G_REGEX_ERROR_MISSING_DIGIT: Missing digit. Since 2.34
+ * @G_REGEX_ERROR_INVALID_DATA_CHARACTER: In JavaScript compatibility mode,
+ *     "[" is an invalid data character. Since: 2.34
+ * @G_REGEX_ERROR_EXTRA_SUBPATTERN_NAME: different names for subpatterns of the 
+ *     same number are not allowed. Since: 2.34
+ * @G_REGEX_ERROR_BACKTRACKING_CONTROL_VERB_ARGUMENT_REQUIRED: the backtracing control
+ *     verb requires an argument. Since: 2.34
+ * @G_REGEX_ERROR_INVALID_CONTROL_CHAR: "\\c" must be followed by an ASCII 
+ *     character. Since: 2.34
+ * @G_REGEX_ERROR_MISSING_NAME: "\\k" is not followed by a braced, angle-bracketed, or 
+ *     quoted name. Since: 2.34
+ * @G_REGEX_ERROR_NOT_SUPPORTED_IN_CLASS: "\\N" is not supported in a class. Since: 2.34
+ * @G_REGEX_ERROR_TOO_MANY_FORWARD_REFERENCES: too many forward references. Since: 2.34
+ * @G_REGEX_ERROR_NAME_TOO_LONG: the name is too long in "(*MARK)", "(*PRUNE)", 
+ *     "(*SKIP)", or "(*THEN)". Since: 2.34
+ * @G_REGEX_ERROR_CHARACTER_VALUE_TOO_LARGE: the character value in the \\u sequence is
+ *     too large. Since: 2.34
  *
  * Error codes returned by regular expressions functions.
  *
@@ -159,7 +183,22 @@ typedef enum
   G_REGEX_ERROR_TOO_MANY_BRANCHES_IN_DEFINE = 154,
   G_REGEX_ERROR_DEFINE_REPETION = 155,
   G_REGEX_ERROR_INCONSISTENT_NEWLINE_OPTIONS = 156,
-  G_REGEX_ERROR_MISSING_BACK_REFERENCE = 157
+  G_REGEX_ERROR_MISSING_BACK_REFERENCE = 157,
+  G_REGEX_ERROR_INVALID_RELATIVE_REFERENCE = 158,
+  G_REGEX_ERROR_BACKTRACKING_CONTROL_VERB_ARGUMENT_FORBIDDEN = 159,
+  G_REGEX_ERROR_UNKNOWN_BACKTRACKING_CONTROL_VERB  = 160,
+  G_REGEX_ERROR_NUMBER_TOO_BIG = 161,
+  G_REGEX_ERROR_MISSING_SUBPATTERN_NAME = 162,
+  G_REGEX_ERROR_MISSING_DIGIT = 163,
+  G_REGEX_ERROR_INVALID_DATA_CHARACTER = 164,
+  G_REGEX_ERROR_EXTRA_SUBPATTERN_NAME = 165,
+  G_REGEX_ERROR_BACKTRACKING_CONTROL_VERB_ARGUMENT_REQUIRED = 166,
+  G_REGEX_ERROR_INVALID_CONTROL_CHAR = 168,
+  G_REGEX_ERROR_MISSING_NAME = 169,
+  G_REGEX_ERROR_NOT_SUPPORTED_IN_CLASS = 171,
+  G_REGEX_ERROR_TOO_MANY_FORWARD_REFERENCES = 172,
+  G_REGEX_ERROR_NAME_TOO_LONG = 175,
+  G_REGEX_ERROR_CHARACTER_VALUE_TOO_LARGE = 176
 } GRegexError;
 
 /**
@@ -215,7 +254,7 @@ GQuark g_regex_error_quark (void);
  *     It can also be set by a "(?U)" option setting within the pattern.
  * @G_REGEX_RAW: Usually strings must be valid UTF-8 strings, using this
  *     flag they are considered as a raw sequence of bytes.
- *     @G_REGEX_NO_AUTO_CAPTURE: Disables the use of numbered capturing
+ * @G_REGEX_NO_AUTO_CAPTURE: Disables the use of numbered capturing
  *     parentheses in the pattern. Any opening parenthesis that is not
  *     followed by "?" behaves as if it were followed by "?:" but named
  *     parentheses can still be used for capturing (and they acquire numbers
@@ -223,16 +262,29 @@ GQuark g_regex_error_quark (void);
  * @G_REGEX_OPTIMIZE: Optimize the regular expression. If the pattern will
  *     be used many times, then it may be worth the effort to optimize it
  *     to improve the speed of matches.
+ * @G_REGEX_FIRSTLINE: Limits an unanchored pattern to match before (or at) the
+ *     first newline. Since: 2.34
  * @G_REGEX_DUPNAMES: Names used to identify capturing subpatterns need not
  *     be unique. This can be helpful for certain types of pattern when it
  *     is known that only one instance of the named subpattern can ever be
  *     matched.
- * @G_REGEX_NEWLINE_CR: Usually any newline character is recognized, if this
- *     option is set, the only recognized newline character is '\r'.
- * @G_REGEX_NEWLINE_LF: Usually any newline character is recognized, if this
- *     option is set, the only recognized newline character is '\n'.
- * @G_REGEX_NEWLINE_CRLF: Usually any newline character is recognized, if this
- *     option is set, the only recognized newline character sequence is '\r\n'.
+ * @G_REGEX_NEWLINE_CR: Usually any newline character or character sequence is
+ *     recognized. If this option is set, the only recognized newline character
+ *     is '\r'.
+ * @G_REGEX_NEWLINE_LF: Usually any newline character or character sequence is
+ *     recognized. If this option is set, the only recognized newline character
+ *     is '\n'.
+ * @G_REGEX_NEWLINE_CRLF: Usually any newline character or character sequence is
+ *     recognized. If this option is set, the only recognized newline character
+ *     sequence is '\r\n'.
+ * @G_REGEX_NEWLINE_ANYCRLF: Usually any newline character or character sequence
+ *     is recognized. If this option is set, the only recognized newline character
+ *     sequences are '\r', '\n', and '\r\n'. Since: 2.34
+ * @G_REGEX_BSR_ANYCRLF: Usually any newline character or character sequence
+ *     is recognised. If this option is set, then "\R" only recognizes the newline
+ *    characters '\r', '\n' and '\r\n'. Since: 2.34
+ * @G_REGEX_JAVASCRIPT_COMPAT: Changes behaviour so that it is compatible with
+ *     JavaScript rather than PCRE. Since: 2.34
  *
  * Flags specifying compile-time options.
  *
@@ -252,10 +304,14 @@ typedef enum
   G_REGEX_RAW               = 1 << 11,
   G_REGEX_NO_AUTO_CAPTURE   = 1 << 12,
   G_REGEX_OPTIMIZE          = 1 << 13,
+  G_REGEX_FIRSTLINE         = 1 << 18,
   G_REGEX_DUPNAMES          = 1 << 19,
   G_REGEX_NEWLINE_CR        = 1 << 20,
   G_REGEX_NEWLINE_LF        = 1 << 21,
-  G_REGEX_NEWLINE_CRLF      = G_REGEX_NEWLINE_CR | G_REGEX_NEWLINE_LF
+  G_REGEX_NEWLINE_CRLF      = G_REGEX_NEWLINE_CR | G_REGEX_NEWLINE_LF,
+  G_REGEX_NEWLINE_ANYCRLF   = G_REGEX_NEWLINE_CR | 1 << 22,
+  G_REGEX_BSR_ANYCRLF       = 1 << 23,
+  G_REGEX_JAVASCRIPT_COMPAT = 1 << 25
 } GRegexCompileFlags;
 
 /**
@@ -292,10 +348,33 @@ typedef enum
  * @G_REGEX_MATCH_NEWLINE_LF: Overrides the newline definition set when
  *     creating a new #GRegex, setting the '\n' character as line terminator.
  * @G_REGEX_MATCH_NEWLINE_CRLF: Overrides the newline definition set when
- *     creating a new #GRegex, setting the '\r\n' characters as line terminator.
+ *     creating a new #GRegex, setting the '\r\n' characters sequence as line terminator.
  * @G_REGEX_MATCH_NEWLINE_ANY: Overrides the newline definition set when
- *     creating a new #GRegex, any newline character or character sequence
- *     is recognized.
+ *     creating a new #GRegex, any Unicode newline sequence
+ *     is recognised as a newline. These are '\r', '\n' and '\rn', and the
+ *     single characters U+000B LINE TABULATION, U+000C FORM FEED (FF),
+ *     U+0085 NEXT LINE (NEL), U+2028 LINE SEPARATOR and
+ *     U+2029 PARAGRAPH SEPARATOR.
+ * @G_REGEX_MATCH_NEWLINE_ANYCRLF: Overrides the newline definition set when
+ *     creating a new #GRegex; any '\r', '\n', or '\r\n' character sequence
+ *     is recognized as a newline. Since: 2.34
+ * @G_REGEX_MATCH_BSR_ANYCRLF: Overrides the newline definition for "\R" set when
+ *     creating a new #GRegex; only '\r', '\n', or '\r\n' character sequences
+ *     are recognized as a newline by "\R". Since: 2.34
+ * @G_REGEX_MATCH_BSR_ANY: Overrides the newline definition for "\R" set when
+ *     creating a new #GRegex; any Unicode newline character or character sequence
+ *     are recognized as a newline by "\R". These are '\r', '\n' and '\rn', and the
+ *     single characters U+000B LINE TABULATION, U+000C FORM FEED (FF),
+ *     U+0085 NEXT LINE (NEL), U+2028 LINE SEPARATOR and
+ *     U+2029 PARAGRAPH SEPARATOR. Since: 2.34
+ * @G_REGEX_MATCH_PARTIAL_SOFT: An alias for #G_REGEX_MATCH_PARTIAL. Since: 2.34
+ * @G_REGEX_MATCH_PARTIAL_HARD: Turns on the partial matching feature. In contrast to
+ *     to #G_REGEX_MATCH_PARTIAL_SOFT, this stops matching as soon as a partial match
+ *     is found, without continuing to search for a possible complete match. See
+ *     see g_match_info_is_partial_match() for more information. Since: 2.34
+ * @G_REGEX_MATCH_NOTEMPTY_ATSTART: Like #G_REGEX_MATCH_NOTEMPTY, but only applied to
+ *     the start of the matched string. For anchored
+ *     patterns this can only happen for pattern containing "\K". Since: 2.34
  *
  * Flags specifying match-time options.
  *
@@ -305,15 +384,21 @@ typedef enum
  * adding a new flag. */
 typedef enum
 {
-  G_REGEX_MATCH_ANCHORED      = 1 << 4,
-  G_REGEX_MATCH_NOTBOL        = 1 << 7,
-  G_REGEX_MATCH_NOTEOL        = 1 << 8,
-  G_REGEX_MATCH_NOTEMPTY      = 1 << 10,
-  G_REGEX_MATCH_PARTIAL       = 1 << 15,
-  G_REGEX_MATCH_NEWLINE_CR    = 1 << 20,
-  G_REGEX_MATCH_NEWLINE_LF    = 1 << 21,
-  G_REGEX_MATCH_NEWLINE_CRLF  = G_REGEX_MATCH_NEWLINE_CR | G_REGEX_MATCH_NEWLINE_LF,
-  G_REGEX_MATCH_NEWLINE_ANY   = 1 << 22
+  G_REGEX_MATCH_ANCHORED         = 1 << 4,
+  G_REGEX_MATCH_NOTBOL           = 1 << 7,
+  G_REGEX_MATCH_NOTEOL           = 1 << 8,
+  G_REGEX_MATCH_NOTEMPTY         = 1 << 10,
+  G_REGEX_MATCH_PARTIAL          = 1 << 15,
+  G_REGEX_MATCH_NEWLINE_CR       = 1 << 20,
+  G_REGEX_MATCH_NEWLINE_LF       = 1 << 21,
+  G_REGEX_MATCH_NEWLINE_CRLF     = G_REGEX_MATCH_NEWLINE_CR | G_REGEX_MATCH_NEWLINE_LF,
+  G_REGEX_MATCH_NEWLINE_ANY      = 1 << 22,
+  G_REGEX_MATCH_NEWLINE_ANYCRLF  = G_REGEX_MATCH_NEWLINE_CR | G_REGEX_MATCH_NEWLINE_ANY,
+  G_REGEX_MATCH_BSR_ANYCRLF      = 1 << 23,
+  G_REGEX_MATCH_BSR_ANY          = 1 << 24,
+  G_REGEX_MATCH_PARTIAL_SOFT     = G_REGEX_MATCH_PARTIAL,
+  G_REGEX_MATCH_PARTIAL_HARD     = 1 << 27,
+  G_REGEX_MATCH_NOTEMPTY_ATSTART = 1 << 28
 } GRegexMatchFlags;
 
 /**
@@ -338,7 +423,7 @@ typedef struct _GMatchInfo	GMatchInfo;
  * @user_data: user data passed to g_regex_replace_eval()
  *
  * Specifies the type of the function passed to g_regex_replace_eval().
- * It is called for each occurance of the pattern in the string passed
+ * It is called for each occurrence of the pattern in the string passed
  * to g_regex_replace_eval(), and it should append the replacement to
  * @result.
  *
@@ -360,9 +445,12 @@ void		  g_regex_unref			(GRegex              *regex);
 const gchar	 *g_regex_get_pattern		(const GRegex        *regex);
 gint		  g_regex_get_max_backref	(const GRegex        *regex);
 gint		  g_regex_get_capture_count	(const GRegex        *regex);
+gboolean          g_regex_get_has_cr_or_lf      (const GRegex        *regex);
 gint		  g_regex_get_string_number	(const GRegex        *regex, 
 						 const gchar         *name);
 gchar		 *g_regex_escape_string		(const gchar         *string,
+						 gint                 length);
+gchar		 *g_regex_escape_nul		(const gchar         *string,
 						 gint                 length);
 
 GRegexCompileFlags g_regex_get_compile_flags    (const GRegex        *regex);
@@ -443,6 +531,8 @@ gboolean	  g_regex_check_replacement	(const gchar         *replacement,
 GRegex		 *g_match_info_get_regex	(const GMatchInfo    *match_info);
 const gchar      *g_match_info_get_string       (const GMatchInfo    *match_info);
 
+GMatchInfo       *g_match_info_ref              (GMatchInfo          *match_info);
+void              g_match_info_unref            (GMatchInfo          *match_info);
 void		  g_match_info_free		(GMatchInfo          *match_info);
 gboolean	  g_match_info_next		(GMatchInfo          *match_info,
 						 GError             **error);

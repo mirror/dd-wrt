@@ -27,6 +27,7 @@
 #define __G_SIMPLE_ACTION_GROUP_H__
 
 #include "gactiongroup.h"
+#include "gactionmap.h"
 
 G_BEGIN_DECLS
 
@@ -81,6 +82,11 @@ void                    g_simple_action_group_insert                    (GSimple
 
 void                    g_simple_action_group_remove                    (GSimpleActionGroup *simple,
                                                                          const gchar        *action_name);
+
+void                    g_simple_action_group_add_entries               (GSimpleActionGroup *simple,
+                                                                         const GActionEntry *entries,
+                                                                         gint                n_entries,
+                                                                         gpointer            user_data);
 
 G_END_DECLS
 

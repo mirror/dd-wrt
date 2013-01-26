@@ -15,12 +15,13 @@ G_GNUC_INTERNAL
 void                    g_application_impl_destroy                      (GApplicationImpl   *impl);
 
 G_GNUC_INTERNAL
-GApplicationImpl *      g_application_impl_register                     (GApplication       *application,
-                                                                         const gchar        *appid,
-                                                                         GApplicationFlags   flags,
-                                                                         GHashTable        **remote_actions,
-                                                                         GCancellable       *cancellable,
-                                                                         GError            **error);
+GApplicationImpl *      g_application_impl_register                     (GApplication        *application,
+                                                                         const gchar         *appid,
+                                                                         GApplicationFlags    flags,
+                                                                         GActionGroup        *exported_actions,
+                                                                         GRemoteActionGroup **remote_actions,
+                                                                         GCancellable        *cancellable,
+                                                                         GError             **error);
 
 G_GNUC_INTERNAL
 void                    g_application_impl_activate                     (GApplicationImpl   *impl,
@@ -39,16 +40,10 @@ int                     g_application_impl_command_line                 (GApplic
                                                                          GVariant           *platform_data);
 
 G_GNUC_INTERNAL
-void                    g_application_impl_change_action_state          (GApplicationImpl   *impl,
-                                                                         const gchar        *action_name,
-                                                                         GVariant           *value,
-                                                                         GVariant           *platform_data);
-
-G_GNUC_INTERNAL
-void                    g_application_impl_activate_action              (GApplicationImpl   *impl,
-                                                                         const gchar        *action_name,
-                                                                         GVariant           *parameter,
-                                                                         GVariant           *platform_data);
-
-G_GNUC_INTERNAL
 void                    g_application_impl_flush                        (GApplicationImpl   *impl);
+
+G_GNUC_INTERNAL
+GDBusConnection *       g_application_impl_get_dbus_connection          (GApplicationImpl   *impl);
+
+G_GNUC_INTERNAL
+const gchar *           g_application_impl_get_dbus_object_path         (GApplicationImpl   *impl);

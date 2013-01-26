@@ -24,7 +24,7 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -36,20 +36,16 @@
 
 G_BEGIN_DECLS
 
-/* Fatal error handlers.
- * g_on_error_query() will prompt the user to either
- * [E]xit, [H]alt, [P]roceed or show [S]tack trace.
- * g_on_error_stack_trace() invokes gdb, which attaches to the current
- * process and shows a stack trace.
- * These function may cause different actions on non-unix platforms.
- * The prg_name arg is required by gdb to find the executable, if it is
- * passed as NULL, g_on_error_query() will try g_get_prgname().
- */
 void g_on_error_query (const gchar *prg_name);
 void g_on_error_stack_trace (const gchar *prg_name);
 
-/* Hacker macro to place breakpoints for selected machines.
- * Actual use is strongly discouraged of course ;)
+/**
+ * G_BREAKPOINT:
+ *
+ * Inserts a breakpoint instruction into the code.
+ *
+ * On x86 and alpha systems this is implemented as a soft interrupt
+ * and on other architectures it raises a <literal>SIGTRAP</literal> signal.
  */
 #if (defined (__i386__) || defined (__x86_64__)) && defined (__GNUC__) && __GNUC__ >= 2
 #  define G_BREAKPOINT()        G_STMT_START{ __asm__ __volatile__ ("int $03"); }G_STMT_END

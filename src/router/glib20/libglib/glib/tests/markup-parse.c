@@ -1,6 +1,7 @@
 #undef G_DISABLE_ASSERT
 #undef G_LOG_DOMAIN
 
+#include <locale.h>
 #include <string.h>
 #include <stdio.h>
 #include <glib.h>
@@ -175,12 +176,14 @@ test_file (const gchar *filename)
   if (!g_markup_parse_context_parse (context, contents, length, NULL))
     {
       g_markup_parse_context_free (context);
+      g_free (contents);
       return 1;
     }
 
   if (!g_markup_parse_context_end_parse (context, NULL))
     {
       g_markup_parse_context_free (context);
+      g_free (contents);
       return 1;
     }
 
@@ -188,23 +191,40 @@ test_file (const gchar *filename)
 
   /* A byte at a time */
   if (test_in_chunks (contents, length, 1) != 0)
-    return 1;
+    {
+      g_free (contents);
+      return 1;
+    }
 
   /* 2 bytes */
   if (test_in_chunks (contents, length, 2) != 0)
-    return 1;
+    {
+      g_free (contents);
+      return 1;
+    }
 
   /*5 bytes */
   if (test_in_chunks (contents, length, 5) != 0)
-    return 1;
-  
+    {
+      g_free (contents);
+      return 1;
+    }
+
   /* 12 bytes */
   if (test_in_chunks (contents, length, 12) != 0)
-    return 1;
-  
+    {
+      g_free (contents);
+      return 1;
+    }
+
   /* 1024 bytes */
   if (test_in_chunks (contents, length, 1024) != 0)
-    return 1;
+    {
+      g_free (contents);
+      return 1;
+    }
+
+  g_free (contents);
 
   return 0;
 }
@@ -216,7 +236,8 @@ get_expected_filename (const gchar *filename)
 
   f = g_strdup (filename);
   p = strstr (f, ".gmarkup");
-  *p = 0;
+  if (p)
+    *p = 0;
   expected = g_strconcat (f, ".expected", NULL);
   g_free (f);
 
@@ -260,6 +281,9 @@ main (int argc, char *argv[])
   const gchar *name;
   gchar *path;
 
+  g_setenv ("LANG", "en_US.utf-8", TRUE);
+  setlocale (LC_ALL, "");
+
   g_test_init (&argc, &argv, NULL);
 
   /* allow to easily generate expected output for new test cases */
@@ -280,7 +304,8 @@ main (int argc, char *argv[])
         continue;
 
       path = g_strdup_printf ("/markup/parse/%s", name);
-      g_test_add_data_func (path, g_build_filename (SRCDIR, "markups", name, NULL),  test_parse);
+      g_test_add_data_func_full (path, g_build_filename (SRCDIR, "markups", name, NULL),
+                                 test_parse, g_free);
       g_free (path);
     }
   g_dir_close (dir);

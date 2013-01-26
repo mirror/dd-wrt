@@ -24,7 +24,7 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -85,8 +85,12 @@ gchar*          g_win32_error_message (gint error);
 
 #ifndef G_DISABLE_DEPRECATED
 
+#ifndef __GTK_DOC_IGNORE__
+#ifdef _WIN64
 #define g_win32_get_package_installation_directory g_win32_get_package_installation_directory_utf8
 #define g_win32_get_package_installation_subdirectory g_win32_get_package_installation_subdirectory_utf8
+#endif
+#endif
 
 gchar*          g_win32_get_package_installation_directory (const gchar *package,
 							    const gchar *dll_name);
