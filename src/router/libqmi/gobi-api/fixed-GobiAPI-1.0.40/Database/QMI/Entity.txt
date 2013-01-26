@@ -1,0 +1,964 @@
+30^"32,1"^"CTL/Set Instance ID Request/Instance"^50900^-1^0
+30^"34,1"^"CTL/Get Client ID Request/Type"^50905^-1^0
+30^"35,1"^"CTL/Release Client ID Request/ID"^50906^-1^0
+30^"38,1"^"CTL/Set Data Format Request/Format"^50907^-1^0
+30^"38,16"^"CTL/Set Data Format Request/Protocol"^50908^-1^0
+30^"40,1"^"CTL/Set Event Report Request/Report"^50909^-1^0
+30^"41,1"^"CTL/Set Power Save Config Request/Descriptor"^50911^-1^0
+30^"41,17"^"CTL/Set Power Save Config Request/Permitted Set"^50912^-1^0
+30^"42,1"^"CTL/Set Power Save Mode Request/Mode"^50913^-1^0
+31^"32,1"^"CTL/Set Instance ID Response/Link"^50901^-1^0
+31^"32,2"^"CTL/Set Instance ID Response/Result Code"^50000^-1^0
+31^"33,1"^"CTL/Get Version Info Response/List"^50902^-1^0
+31^"33,2"^"CTL/Get Version Info Response/Result Code"^50000^-1^0
+31^"33,16"^"CTL/Get Version Info Response/Addendum"^50904^-1^0
+31^"34,1"^"CTL/Get Client ID Response/ID"^50906^-1^0
+31^"34,2"^"CTL/Get Client ID Response/Result Code"^50000^-1^0
+31^"35,1"^"CTL/Release Client ID Response/ID"^50906^-1^0
+31^"35,2"^"CTL/Release Client ID Response/Result Code"^50000^-1^0
+31^"38,2"^"CTL/Set Data Format Response/Result Code"^50000^-1^0
+31^"38,16"^"CTL/Set Data Format Response/Protocol"^50908^-1^0
+31^"40,2"^"CTL/Set Event Report Response/Result Code"^50000^-1^0
+31^"41,2"^"CTL/Set Power Save Config Response/Result Code"^50000^-1^0
+31^"42,2"^"CTL/Set Power Save Mode Response/Result Code"^50000^-1^0
+31^"43,1"^"CTL/Get Power Save Mode Response/Mode"^50913^-1^0
+31^"43,2"^"CTL/Get Power Save Mode Response/Result Code"^50000^-1^0
+32^"36,1"^"CTL/Release Client ID Indication/ID"^50906^-1^0
+32^"37,1"^"CTL/Invalid Client ID Indication/ID"^50906^-1^0
+32^"40,1"^"CTL/Event Report Indication/Report"^50910^-1^0
+33^"1,16"^"WDS/Set Event Report Request/Channel Rate Indicator"^50010^-1
+33^"1,17"^"WDS/Set Event Report Request/Transfer Statistics Indicator"^50011^-1
+33^"1,18"^"WDS/Set Event Report Request/Data Bearer Technology Indicator"^50012^-1
+33^"1,19"^"WDS/Set Event Report Request/Dormancy Status Indicator"^50041^-1
+33^"1,20"^"WDS/Set Event Report Request/MIP Status Indicator"^50087^-1
+33^"1,21"^"WDS/Set Event Report Request/Current Data Bearer Technology Indicator"^50012^-1
+33^"2,1"^"WDS/Abort Request/Transaction ID"^50001^-1
+33^"32,16"^"WDS/Start Network Interface Request/Primary DNS"^50021^-1
+33^"32,17"^"WDS/Start Network Interface Request/Secondary DNS"^50021^-1
+33^"32,18"^"WDS/Start Network Interface Request/Primary NBNS"^50021^-1
+33^"32,19"^"WDS/Start Network Interface Request/Secondary NBNS"^50021^-1
+33^"32,20"^"WDS/Start Network Interface Request/Context APN Name"^50022^-1
+33^"32,21"^"WDS/Start Network Interface Request/IP Address"^50021^-1
+33^"32,22"^"WDS/Start Network Interface Request/Authentication"^50023^-1
+33^"32,23"^"WDS/Start Network Interface Request/Username"^50024^-1
+33^"32,24"^"WDS/Start Network Interface Request/Password"^50025^-1
+33^"32,25"^"WDS/Start Network Interface Request/IP Family"^50097^-1
+33^"32,48"^"WDS/Start Network Interface Request/Technology Preference"^50026^-1
+33^"32,49"^"WDS/Start Network Interface Request/3GPP Profile Identifier"^50027^-1
+33^"32,50"^"WDS/Start Network Interface Request/3GPP2 Profile Identifier"^50027^-1
+33^"32,51"^"WDS/Start Network Interface Request/Autoconnect"^50045^-1
+33^"32,52"^"WDS/Start Network Interface Request/Extended Technology Preference"^50095^-1
+33^"32,53"^"WDS/Start Network Interface Request/Call Type"^50096^-1
+33^"33,1"^"WDS/Stop Network Interface Request/Packet Data Handle"^50028^-1
+33^"33,16"^"WDS/Stop Network Interface Request/Autoconnect"^50046^-1
+33^"36,1"^"WDS/Get Packet Statistics Request/Packet Stats Mask"^50032^-1
+33^"39,1"^"WDS/Create Profile Request/Profile Type"^50033^-1
+33^"39,16"^"WDS/Create Profile Request/Profile Name"^50034^-1
+33^"39,17"^"WDS/Create Profile Request/PDP Type"^50035^-1
+33^"39,20"^"WDS/Create Profile Request/APN Name"^50022^-1
+33^"39,21"^"WDS/Create Profile Request/Primary DNS"^50021^-1
+33^"39,22"^"WDS/Create Profile Request/Secondary DNS"^50021^-1
+33^"39,23"^"WDS/Create Profile Request/UMTS Requested QoS"^50036^-1
+33^"39,24"^"WDS/Create Profile Request/UMTS Minimum QoS"^50036^-1
+33^"39,25"^"WDS/Create Profile Request/GPRS Requested QoS"^50037^-1
+33^"39,26"^"WDS/Create Profile Request/GPRS Minimum QoS"^50037^-1
+33^"39,27"^"WDS/Create Profile Request/Username"^50024^-1
+33^"39,28"^"WDS/Create Profile Request/Password"^50025^-1
+33^"39,29"^"WDS/Create Profile Request/Authentication"^50023^-1
+33^"39,30"^"WDS/Create Profile Request/IP Address"^50021^-1
+33^"39,31"^"WDS/Create Profile Request/P-CSCF"^50099^-1
+33^"40,1"^"WDS/Modify Profile Request/Profile Identifier"^50038^-1
+33^"40,16"^"WDS/Modify Profile Request/Profile Name"^50034^-1
+33^"40,17"^"WDS/Modify Profile Request/PDP Type"^50035^-1
+33^"40,20"^"WDS/Modify Profile Request/APN Name"^50022^-1
+33^"40,21"^"WDS/Modify Profile Request/Primary DNS"^50021^-1
+33^"40,22"^"WDS/Modify Profile Request/Secondary DNS"^50021^-1
+33^"40,23"^"WDS/Modify Profile Request/UMTS Requested QoS"^50036^-1
+33^"40,24"^"WDS/Modify Profile Request/UMTS Minimum QoS"^50036^-1
+33^"40,25"^"WDS/Modify Profile Request/GPRS Requested QoS"^50037^-1
+33^"40,26"^"WDS/Modify Profile Request/GPRS Minimum QoS"^50037^-1
+33^"40,27"^"WDS/Modify Profile Request/Username"^50024^-1
+33^"40,28"^"WDS/Modify Profile Request/Password"^50025^-1
+33^"40,29"^"WDS/Modify Profile Request/Authentication"^50023^-1
+33^"40,30"^"WDS/Modify Profile Request/IP Address"^50021^-1
+33^"40,31"^"WDS/Modify Profile Request/P-CSCF"^50099^-1
+33^"40,32"^"WDS/Modify Profile Request/PDP Access Control Flag"^60086^-1
+33^"40,33"^"WDS/Modify Profile Request/P-CSCF Address Using DHCP"^60087^-1
+33^"40,34"^"WDS/Modify Profile Request/IM CN Flag"^60088^-1
+33^"40,35"^"WDS/Modify Profile Request/Traffic Flow Template ID1 Parameters"^60018^-1
+33^"40,36"^"WDS/Modify Profile Request/Traffic Flow Template ID2 Parameters"^60018^-1
+33^"40,37"^"WDS/Modify Profile Request/PDP Context Number"^60020^-1
+33^"40,38"^"WDS/Modify Profile Request/PDP Context Secondary Flag"^60021^-1
+33^"40,39"^"WDS/Modify Profile Request/PDP Context Primary ID"^60022^-1
+33^"40,40"^"WDS/Modify Profile Request/IPv6 Address"^60023^-1
+33^"40,41"^"WDS/Modify Profile Request/Requested QoS"^60024^-1
+33^"40,42"^"WDS/Modify Profile Request/Minimum QoS"^60024^-1
+33^"40,43"^"WDS/Modify Profile Request/Primary IPv6"^60090^-1
+33^"40,44"^"WDS/Modify Profile Request/Secondary IPv6"^60090^-1
+33^"40,45"^"WDS/Modify Profile Request/Address Allocation Preference"^60028^-1
+33^"40,46"^"WDS/Modify Profile Request/LTE QoS Parameters"^60029^-1
+33^"40,144"^"WDS/Modify Profile Request/Negotiate DNS Server Prefrence"^60059^-1
+33^"40,145"^"WDS/Modify Profile Request/PPP Session Close Timer DO"^60060^-1
+33^"40,146"^"WDS/Modify Profile Request/PPP Session Close Timer 1X"^60061^-1
+33^"40,147"^"WDS/Modify Profile Request/Allow Linger"^60062^-1
+33^"40,148"^"WDS/Modify Profile Request/LCP ACK Timeout"^60063^-1
+33^"40,149"^"WDS/Modify Profile Request/IPCP ACK Timeout"^60064^-1
+33^"40,150"^"WDS/Modify Profile Request/Authentication Timeout"^60065^-1
+33^"40,154"^"WDS/Modify Profile Request/Authentication Protocol"^60069^-1
+33^"40,155"^"WDS/Modify Profile Request/User ID"^60070^-1
+33^"40,156"^"WDS/Modify Profile Request/Authentication Password"^60071^-1
+33^"40,157"^"WDS/Modify Profile Request/Data Rate"^60072^-1
+33^"40,158"^"WDS/Modify Profile Request/Application Type"^60073^-1
+33^"40,159"^"WDS/Modify Profile Request/Data Mode"^60074^-1
+33^"40,160"^"WDS/Modify Profile Request/Application Priority"^60075^-1
+33^"40,161"^"WDS/Modify Profile Request/APN String"^60076^-1
+33^"40,162"^"WDS/Modify Profile Request/PDN Type"^60077^-1
+33^"40,163"^"WDS/Modify Profile Request/P-CSCF Address Needed"^60078^-1
+33^"40,164"^"WDS/Modify Profile Request/Primary IPv4 Address"^60079^-1
+33^"40,165"^"WDS/Modify Profile Request/Secondary IPv4 Address"^60080^-1
+33^"40,166"^"WDS/Modify Profile Request/Primary IPv6 Address"^60081^-1
+33^"40,167"^"WDS/Modify Profile Request/Secondary IPv6 Address"^60082^-1
+33^"41,1"^"WDS/Delete Profile Request/Profile Identifier"^50038^-1
+33^"43,1"^"WDS/Get Profile Settings Request/Profile Identifier"^50038^-1
+33^"44,1"^"WDS/Get Default Settings Request/Profile Type"^50033^-1
+33^"45,16"^"WDS/Get Current Settings Request/Requested Settings"^50084^-1
+33^"46,1"^"WDS/Set MIP Mode Request/Mobile IP Mode"^50044^-1
+33^"56,1"^"WDS/Get Modem Info Request/Requested Status"^50051^-1
+33^"56,16"^"WDS/Get Modem Info Request/Connection Status Indicator"^50052^-1
+33^"56,17"^"WDS/Get Modem Info Request/Transfer Statistics Indicator"^50053^-1
+33^"56,18"^"WDS/Get Modem Info Request/Dormancy Status Indicator"^50041^-1
+33^"56,19"^"WDS/Get Modem Info Request/Data Bearer Technology Indicator"^50012^-1
+33^"56,20"^"WDS/Get Modem Info Request/Channel Rate Indicator"^50010^-1
+33^"61,1"^"WDS/Set Active MIP Profile Request/Index"^50056^-1
+33^"62,1"^"WDS/Get MIP Profile Request/Index"^50027^-1
+33^"63,1"^"WDS/Set MIP Profile Request/Index"^50056^-1
+33^"63,16"^"WDS/Set MIP Profile Request/State"^50057^-1
+33^"63,17"^"WDS/Set MIP Profile Request/Home Address"^50021^-1
+33^"63,18"^"WDS/Set MIP Profile Request/Primary Home Agent Address"^50021^-1
+33^"63,19"^"WDS/Set MIP Profile Request/Secondary Home Agent Address"^50021^-1
+33^"63,20"^"WDS/Set MIP Profile Request/Reverse Tunneling"^50058^-1
+33^"63,21"^"WDS/Set MIP Profile Request/NAI"^50059^-1
+33^"63,22"^"WDS/Set MIP Profile Request/HA SPI"^50060^-1
+33^"63,23"^"WDS/Set MIP Profile Requeste/AAA SPI"^50061^-1
+33^"63,24"^"WDS/Set MIP Profile Request/MN-HA"^50062^-1
+33^"63,25"^"WDS/Set MIP Profile Request/MN-AAA"^50063^-1
+33^"65,1"^"WDS/Set MIP Parameters Request/SPC"^50070^-1
+33^"65,16"^"WDS/Set MIP Parameters Request/Mobile IP Mode"^50044^-1
+33^"65,17"^"WDS/Set MIP Parameters Request/Retry Attempt Limit"^50064^-1
+33^"65,18"^"WDS/Set MIP Parameters Request/Retry Attempt Interval"^50065^-1
+33^"65,19"^"WDS/Set MIP Parameters Request/Re-Registration Period"^50066^-1
+33^"65,20"^"WDS/Set MIP Parameters Request/Re-Registration Only With Traffic"^50067^-1
+33^"65,21"^"WDS/Set MIP Parameters Request/MN-HA Authenticator Calculator"^50068^-1
+33^"65,22"^"WDS/Set MIP Parameters Request/MN-HA RFC 2002 BIS Authentication"^50069^-1
+33^"69,16"^"WDS/Get Call List Request/List Type"^50073^-1
+33^"70,1"^"WDS/Get Call Record Request/Record ID"^50077^-1
+33^"81,1"^"WDS/Set Autoconnect Setting Request/Autoconnect"^50045^-1
+33^"81,16"^"WDS/Set Autoconnect Setting Request/Roam"^60008^-1
+33^"83,16"^"WDS/Set DNS Setting Request/Primary"^60009^-1
+33^"83,17"^"WDS/Set DNS Setting Request/Secondary"^60009^-1
+33^"83,18"^"WDS/Set DNS Setting Request/Primary IPv6 Address"^60084^-1
+33^"83,19"^"WDS/Set DNS Setting Request/Secondary IPv6 Address"^60085^-1
+34^"0,2"^"WDS/Reset Response/Result Code"^50000^-1
+34^"1,2"^"WDS/Set Event Report Response/Result Code"^50000^-1
+34^"2,2"^"WDS/Abort Response/Result Code"^50000^-1
+34^"32,1"^"WDS/Start Network Interface Response/Packet Data Handle"^50028^-1
+34^"32,2"^"WDS/Start Network Interface Response/Result Code"^50000^-1
+34^"32,16"^"WDS/Start Network Interface Response/Call End Reason"^50043^-1
+34^"32,17"^"WDS/Start Network Interface Response/Verbose Call End Reason"^50098^-1
+34^"33,2"^"WDS/Stop Network Interface Response/Result Code"^50000^-1
+34^"34,1"^"WDS/Get Packet Service Status Response/Status"^50029^-1
+34^"34,2"^"WDS/Get Packet Service Status Response/Result Code"^50000^-1
+34^"35,1"^"WDS/Get Channel Rates Response/Channel Rates"^50031^-1
+34^"35,2"^"WDS/Get Channel Rates Response/Result Code"^50000^-1
+34^"36,2"^"WDS/Get Packet Statistics Response/Result Code"^50000^-1
+34^"36,16"^"WDS/Get Packet Statistics Response/TX Packet Successes"^50013^-1
+34^"36,17"^"WDS/Get Packet Statistics Response/RX Packet Successes"^50014^-1
+34^"36,18"^"WDS/Get Packet Statistics Response/TX Packet Errors"^50015^-1
+34^"36,19"^"WDS/Get Packet Statistics Response/RX Packet Errors"^50016^-1
+34^"36,20"^"WDS/Get Packet Statistics Response/TX Overflows"^50017^-1
+34^"36,21"^"WDS/Get Packet Statistics Response/RX Overflows"^50018^-1
+34^"36,25"^"WDS/Get Packet Statistics Response/TX Bytes"^50054^-1
+34^"36,26"^"WDS/Get Packet Statistics Response/RX Bytes"^50055^-1
+34^"36,27"^"WDS/Get Packet Statistics Response/Previous TX Bytes"^50079^-1
+34^"36,28"^"WDS/Get Packet Statistics Response/Previous RX Bytes"^50080^-1
+34^"37,2"^"WDS/Go Dormant Response/Result Code"^50000^-1
+34^"38,2"^"WDS/Go Active Response/Result Code"^50000^-1
+34^"39,1"^"WDS/Create Profile Response/Profile Identifier"^50038^-1
+34^"39,2"^"WDS/Create Profile Response/Result Code"^50000^-1
+34^"40,2"^"WDS/Modify Profile Response/Result Code"^50000^-1
+34^"40,151"^"WDS/Modify Profile Request/LCP Config Retry Count"^60066^-1
+34^"40,152"^"WDS/Modify Profile Request/IPCP Config Retry Count"^60067^-1
+34^"40,153"^"WDS/Modify Profile Request/Authentication Retry"^60068^-1
+34^"40,224"^"WDS/Modify Profile Request/Extended Error Code"^60083^-1
+34^"41,2"^"WDS/Delete Profile Response/Result Code"^50000^-1
+34^"42,1"^"WDS/Get Profile List Response/Profile List"^50039^-1
+34^"42,2"^"WDS/Get Profile List Response/Result Code"^50000^-1
+34^"43,2"^"WDS/Get Profile Settings Response/Result Code"^50000^-1
+34^"43,16"^"WDS/Get Profile Settings Response/Profile Name"^50034^-1
+34^"43,17"^"WDS/Get Profile Settings Response/PDP Type"^50035^-1
+34^"43,20"^"WDS/Get Profile Settings Response/APN Name"^50022^-1
+34^"43,21"^"WDS/Get Profile Settings Response/Primary DNS"^50021^-1
+34^"43,22"^"WDS/Get Profile Settings Response/Secondary DNS"^50021^-1
+34^"43,23"^"WDS/Get Profile Settings Response/UMTS Requested QoS"^50036^-1
+34^"43,24"^"WDS/Get Profile Settings Response/UMTS Minimum QoS"^50036^-1
+34^"43,25"^"WDS/Get Profile Settings Response/GPRS Requested QoS"^50037^-1
+34^"43,26"^"WDS/Get Profile Settings Response/GPRS Minimum QoS"^50037^-1
+34^"43,27"^"WDS/Get Profile Settings Response/Username"^50024^-1
+34^"43,29"^"WDS/Get Profile Settings Response/Authentication"^50023^-1
+34^"43,30"^"WDS/Get Profile Settings Response/IP Address"^50021^-1
+34^"43,31"^"WDS/Get Profile Settings Response/P-CSCF"^50099^-1
+34^"44,2"^"WDS/Get Default Settings Response/Result Code"^50000^-1
+34^"44,16"^"WDS/Get Default Settings Response/Profile Name"^50034^-1
+34^"44,17"^"WDS/Get Default Settings Response/PDP Type"^50035^-1
+34^"44,20"^"WDS/Get Default Settings Response/APN Name"^50022^-1
+34^"44,21"^"WDS/Get Default Settings Response/Primary DNS"^50021^-1
+34^"44,22"^"WDS/Get Default Settings Response/Secondary DNS"^50021^-1
+34^"44,23"^"WDS/Get Default Settings Response/UMTS Requested QoS"^50036^-1
+34^"44,24"^"WDS/Get Default Settings Response/UMTS Minimum QoS"^50036^-1
+34^"44,25"^"WDS/Get Default Settings Response/GPRS Requested QoS"^50037^-1
+34^"44,26"^"WDS/Get Default Settings Response/GPRS Minimum QoS"^50037^-1
+34^"44,27"^"WDS/Get Default Settings Response/Username"^50024^-1
+34^"44,28"^"WDS/Get Default Settings Response/Password"^50025^-1
+34^"44,29"^"WDS/Get Default Settings Response/Authentication"^50023^-1
+34^"44,30"^"WDS/Get Default Settings Response/IP Address"^50021^-1
+34^"44,31"^"WDS/Get Default Settings Response/P-CSCF"^50099^-1
+34^"44,32"^"WDS/Get Default Settings Response/PDP Access Control Flag"^60015^-1
+34^"44,33"^"WDS/Get Default Settings Response/P-CSCF Address Using DHCP"^60016^-1
+34^"44,34"^"WDS/Get Default Settings Response/IM CN Flag"^60017^-1
+34^"44,35"^"WDS/Get Default Settings Response/Traffic Flow Template ID1 Parameters"^60018^-1
+34^"44,36"^"WDS/Get Default Settings Response/Traffic Flow Template ID2 Parameters"^60019^-1
+34^"44,37"^"WDS/Get Default Settings Response/PDP Context Number"^60020^-1
+34^"44,38"^"WDS/Get Default Settings Response/PDP Context Secondary Flag"^60021^-1
+34^"44,39"^"WDS/Get Default Settings Response/PDP Context Primary ID"^60022^-1
+34^"44,40"^"WDS/Get Default Settings Response/IPv6 Address"^60023^-1
+34^"44,41"^"WDS/Get Default Settings Response/Requested QoS"^60024^-1
+34^"44,42"^"WDS/Get Default Settings Response/Minimum QoS"^60025^-1
+34^"44,43"^"WDS/Get Default Settings Response/Primary DNS IPv6 Address"^60026^-1
+34^"44,44"^"WDS/Get Default Settings Response/Secondary DNS IPv6 Address"^60027^-1
+34^"44,45"^"WDS/Get Default Settings Response/DHCP NAS Preference"^60028^-1
+34^"44,46"^"WDS/Get Default Settings Response/LTE QoS Parameters"^60029^-1
+34^"44,144"^"WDS/Get Default Settings Response/Negotiate DSN Server Preferences"^60030^-1
+34^"44,145"^"WDS/Get Default Settings Response/PPP Session CLose Timer DO"^60031^-1
+34^"44,146"^"WDS/Get Default Settings Response/PPP Session Close Timer 1X"^60032^-1
+34^"44,147"^"WDS/Get Default Settings Response/Allow Lingering Interface"^60033^-1
+34^"44,148"^"WDS/Get Default Settings Response/LCP ACK Timeout"^60034^-1
+34^"44,149"^"WDS/Get Default Settings Response/IPCP ACK Timeout"^60035^-1
+34^"44,150"^"WDS/Get Default Settings Response/Authentication Timeout"^60036^-1
+34^"44,151"^"WDS/Get Default Settings Response/LCP Config Retry Count"^60037^-1
+34^"44,152"^"WDS/Get Default Settings Response/IPCP Config Retry Count"^60038^-1
+34^"44,153"^"WDS/Get Default Settings Response/Authentication Retry"^60039^-1
+34^"44,154"^"WDS/Get Default Settings Response/Authentication Protocol"^60040^-1
+34^"44,155"^"WDS/Get Default Settings Response/User ID"^60041^-1^0^-1^0^0
+34^"44,156"^"WDS/Get Default Settings Response/Authentication Password"^60042^-1
+34^"44,157"^"WDS/Get Default Settings Response/Data Rate"^60043^-1
+34^"44,158"^"WDS/Get Default Settings Response/Application Type"^60044^-1
+34^"44,159"^"WDS/Get Default Settings Response/Data Mode"^60045^-1
+34^"44,160"^"WDS/Get Default Settings Response/Application Priority"^60046^-1
+34^"44,161"^"WDS/Get Default Settings Response/APN String"^60047^-1
+34^"44,162"^"WDS/Get Default Settings Response/PDN Type"^60048^-1
+34^"44,163"^"WDS/Get Default Settings Response/P-CSCF Address Needed"^60049^-1
+34^"44,164"^"WDS/Get Default Settings Response/Primary DNS Address"^60050^-1
+34^"44,165"^"WDS/Get Default Settings Response/Secondary DNS Address"^60051^-1
+34^"44,166"^"WDS/Get Default Settings Response/Primary IPv6 Address"^60052^-1
+34^"44,167"^"WDS/Get Default Settings Response/Secondary IPv6 Address"^60053^-1
+34^"44,224"^"WDS/Get Default Settings Response/Extended Error Code"^60054^-1
+34^"45,2"^"WDS/Get Current Settings Response/Result Code"^50000^-1
+34^"45,16"^"WDS/Get Current Settings Response/Profile Name"^50034^-1
+34^"45,17"^"WDS/Get Current Settings Response/PDP Type"^50035^-1
+34^"45,20"^"WDS/Get Current Settings Response/APN Name"^50022^-1
+34^"45,21"^"WDS/Get Current Settings Response/Primary DNS"^50021^-1
+34^"45,22"^"WDS/Get Current Settings Response/Secondary DNS"^50021^-1
+34^"45,23"^"WDS/Get Current Settings Response/UMTS Granted QoS"^50036^-1
+34^"45,25"^"WDS/Get Current Settings Response/GPRS Granted QoS"^50037^-1
+34^"45,27"^"WDS/Get Current Settings Response/Username"^50024^-1
+34^"45,29"^"WDS/Get Current Settings Response/Authentication"^50023^-1
+34^"45,30"^"WDS/Get Current Settings Response/IP Address"^50021^-1
+34^"45,31"^"WDS/Get Current Settings Response/Profile ID"^50038^-1
+34^"45,32"^"WDS/Get Current Settings Response/Gateway Address"^50021^-1
+34^"45,33"^"WDS/Get Current Settings Response/Gateway Subnet Mask"^50085^-1
+34^"45,34"^"WDS/Get Current Settings Response/P-CSCF"^50099^-1
+34^"45,35"^"WDS/Get Current Settings Response/P-CSCF Server Address List"^60000^-1
+34^"45,36"^"WDS/Get Current Settings Response/P-CSCF Domain Name List"^60001^-1
+34^"45,37"^"WDS/Get Current Settings Response/IPv6 Address"^60010^-1
+34^"45,38"^"WDS/Get Current Settings Response/IPv6 Gateway Address"^60011^-1
+34^"45,39"^"WDS/Get Current Settings Response/Primary IPv6 DNS"^60003^-1
+34^"45,40"^"WDS/Get Current Settings Response/Secondary IPv6 DNS"^60003^-1
+34^"45,41"^"WDS/Get Current Settings Response/MTU"^60004^-1
+34^"45,42"^"WDS/Get Current Settings Response/Domain Name List"^60005^-1
+34^"45,43"^"WDS/Get Current Settings Response/IP Family"^50097^-1
+34^"45,44"^"WDS/Get Current Settings Response/IM CN Flag"^60007^-1
+34^"45,45"^"WDS/Get Current Settings Response/Extended Technology"^50095^-1
+34^"45,46"^"WDS/Get Current Settings Response/P-CSCF IPv6 Address List"^60057^-1
+34^"46,2"^"WDS/Set MIP Mode Response/Result Code"^50000^-1
+34^"47,1"^"WDS/Get MIP Mode Response/Mobile IP Mode"^50044^-1
+34^"47,2"^"WDS/Get MIP Mode Response/Result Code"^50000^-1
+34^"48,1"^"WDS/Get Dormancy Response/Dormancy Status"^50042^-1
+34^"48,2"^"WDS/Get Dormancy Response/Result Code"^50000^-1
+34^"52,1"^"WDS/Get Autoconnect Setting Response/Autoconnect"^50045^-1
+34^"52,2"^"WDS/Get Autoconnect Setting Response/Result Code"^50000^-1
+34^"52,16"^"WDS/Get Autoconnect Setting Response/Roam"^60008^-1
+34^"53,1"^"WDS/Get Data Session Duration Response/Duration"^50047^-1
+34^"53,2"^"WDS/Get Data Session Duration Response/Result Code"^50000^-1
+34^"53,16"^"WDS/Get Data Session Duration Response/Previous Duration"^50081^-1
+34^"53,17"^"WDS/Get Data Session Duration Response/Active Duration"^50082^-1
+34^"53,18"^"WDS/Get Data Session Duration Response/Previous Active Duration"^50083^-1
+34^"54,1"^"WDS/Get Modem Status Response/Status"^50048^-1
+34^"54,2"^"WDS/Get Modem Status Response/Result Code"^50000^-1
+34^"54,16"^"WDS/Get Modem Status Response/Call End Reason"^50049^-1
+34^"55,1"^"WDS/Get Data Bearer Technology Response/Technology"^50020^-1
+34^"55,2"^"WDS/Get Data Bearer Technology Response/Result Code"^50000^-1
+34^"55,16"^"WDS/Get Data Bearer Technology Response/Last Call Technology"^50020^-1
+34^"56,2"^"WDS/Get Modem Info Response/Result Code"^50000^-1
+34^"56,16"^"WDS/Get Modem Info Response/Status"^50048^-1
+34^"56,17"^"WDS/Get Modem Info Response/Call End Reason"^50049^-1
+34^"56,18"^"WDS/Get Modem Info Response/TX Bytes"^50054^-1
+34^"56,19"^"WDS/Get Modem Info Response/RX Bytes"^50055^-1
+34^"56,20"^"WDS/Get Modem Info Response/Dormancy Status"^50042^-1
+34^"56,21"^"WDS/Get Modem Info Response/Technology"^50020^-1
+34^"56,22"^"WDS/Get Modem Info Response/Rates"^50031^-1
+34^"56,23"^"WDS/Get Modem Info Response/Previous TX Bytes"^50079^-1
+34^"56,24"^"WDS/Get Modem Info Response/Previous RX Bytes"^50080^-1
+34^"56,25"^"WDS/Get Modem Info Duration Response/Active Duration"^50082^-1
+34^"60,1"^"WDS/Get Active MIP Profile Response/Index"^50027^-1
+34^"60,2"^"WDS/Get Active MIP Profile Response/Result Code"^50000^-1
+34^"61,2"^"WDS/Set Active MIP Profile Response/Result Code"^50000^-1
+34^"62,2"^"WDS/Get MIP Profile Response/Result Code"^50000^-1
+34^"62,16"^"WDS/Get MIP Profile Response/State"^50057^-1
+34^"62,17"^"WDS/Get MIP Profile Response/Home Address"^50021^-1
+34^"62,18"^"WDS/Get MIP Profile Response/Primary Home Agent Address"^50021^-1
+34^"62,19"^"WDS/Get MIP Profile Response/Secondary Home Agent Address"^50021^-1
+34^"62,20"^"WDS/Get MIP Profile Response/Reverse Tunneling"^50058^-1
+34^"62,21"^"WDS/Get MIP Profile Response/NAI"^50059^-1
+34^"62,22"^"WDS/Get MIP Profile Response/HA SPI"^50060^-1
+34^"62,23"^"WDS/Get MIP Profile Response/AAA SPI"^50061^-1
+34^"62,26"^"WDS/Get MIP Profile Response/HA State"^50086^-1
+34^"62,27"^"WDS/Get MIP Profile Response/AAA State"^50086^-1
+34^"63,2"^"WDS/Set MIP Profile Response/Result Code"^50000^-1
+34^"64,2"^"WDS/Get MIP Parameters Response/Result Code"^50000^-1
+34^"64,16"^"WDS/Get MIP Parameters Response/Mobile IP Mode"^50044^-1
+34^"64,17"^"WDS/Get MIP Parameters Response/Retry Attempt Limit"^50064^-1
+34^"64,18"^"WDS/Get MIP Parameters Response/Retry Attempt Interval"^50065^-1
+34^"64,19"^"WDS/Get MIP Parameters Response/Re-Registration Period"^50066^-1
+34^"64,20"^"WDS/Get MIP Parameters Response/Re-Registration Only With Traffic"^50067^-1
+34^"64,21"^"WDS/Get MIP Parameters Response/MN-HA Authenticator Calculator"^50068^-1
+34^"64,22"^"WDS/Get MIP Parameters Response/MN-HA RFC 2002 BIS Authentication"^50069^-1
+34^"65,2"^"WDS/Set MIP Parameters Response/Result Code"^50000^-1
+34^"66,1"^"WDS/Get Last MIP Status Response/Status"^50071^-1
+34^"66,2"^"WDS/Get Last MIP Status Response/Result Code"^50000^-1
+34^"67,1"^"WDS/Get AN-AAA Authentication Status Response/Status"^50072^-1
+34^"67,2"^"WDS/Get AN-AAA Authentication Status Response/Result Code"^50000^-1
+34^"68,1"^"WDS/Get Current Data Bearer Technology Response/Technology"^50090^-1
+34^"68,2"^"WDS/Get Current Data Bearer Technology Response/Result Code"^50000^-1
+34^"69,2"^"WDS/Get Call List Response/Result Code"^50000^-1
+34^"69,16"^"WDS/Get Call List Response/Full List"^50074^-1
+34^"69,17"^"WDS/Get Call List Response/ID List"^50076^-1
+34^"70,1"^"WDS/Get Call Record Response/Record"^50075^-1
+34^"70,2"^"WDS/Get Call Record Response/Result Code"^50000^-1
+34^"71,2"^"WDS/Clear Call List Response/Result Code"^50000^-1
+34^"72,1"^"WDS/Get Call List Max Size Response/Maximum"^50078^-1
+34^"72,2"^"WDS/Get Call List Max Size Response/Result Code"^50000^-1
+34^"81,2"^"WDS/Set Autoconnect Setting Response/Result Code"^50000^-1
+34^"82,2"^"WDS/Get DNS Setting Response/Result Code"^50000^-1
+34^"82,16"^"WDS/Get DNS Setting Response/Primary"^60009^-1
+34^"82,17"^"WDS/Get DNS Setting Response/Secondary"^60009^-1
+34^"82,18"^"WDS/Get DNS Setting Response/Primary IPv6"^60055^-1
+34^"82,19"^"WDS/Get DNS Setting Response/Secondary IPv6"^60056^-1
+34^"83,2"^"WDS/Set DNS Setting Response/Result Code"^50000^-1
+35^"1,16"^"WDS/Event Report/TX Packet Successes"^50013^-1
+35^"1,17"^"WDS/Event Report/RX Packet Successes"^50014^-1
+35^"1,18"^"WDS/Event Report/TX Packet Errors"^50015^-1
+35^"1,19"^"WDS/Event Report/RX Packet Errors"^50016^-1
+35^"1,20"^"WDS/Event Report/TX Overflows"^50017^-1
+35^"1,21"^"WDS/Event Report/RX Overflows"^50018^-1
+35^"1,22"^"WDS/Event Report/Channel Rates"^50019^-1
+35^"1,23"^"WDS/Event Report/Data Bearer Technology"^50020^-1
+35^"1,24"^"WDS/Event Report/Dormancy Status"^50042^-1
+35^"1,25"^"WDS/Event Report/TX Bytes"^50054^-1
+35^"1,26"^"WDS/Event Report/RX Bytes"^50055^-1
+35^"1,27"^"WDS/Event Report/MIP Status"^50088^-1
+35^"1,29"^"WDS/Event Report/Current Data Bearer Technology"^50090^-1
+35^"34,1"^"WDS/Packet Service Status Report/Status"^50030^-1
+35^"34,16"^"WDS/Packet Service Status Report/Call End Reason"^50043^-1
+35^"34,17"^"WDS/Packet Service Status Report/Verbose Call End Reason"^50098^-1
+35^"54,1"^"WDS/Modem Status Report/Status"^50050^-1
+35^"54,16"^"WDS/Modem Status Report/Call End Reason"^50049^-1
+35^"56,16"^"WDS/Modem Info Report/Status"^50050^-1
+35^"56,17"^"WDS/Modem Info Report/Call End Reason"^50049^-1
+35^"56,18"^"WDS/Modem Info Report/TX Bytes"^50054^-1
+35^"56,19"^"WDS/Modem Info Report/RX Bytes"^50055^-1
+35^"56,20"^"WDS/Modem Info Report/Dormancy Status"^50042^-1
+35^"56,21"^"WDS/Modem Info Report/Technology"^50020^-1
+35^"56,22"^"WDS/Modem Info Report/Rates"^50019^-1
+36^"1,16"^"DMS/Set Event Report Request/Power State"^50100^-1
+36^"1,17"^"DMS/Set Event Report Request/Battery Level"^50101^-1
+36^"1,18"^"DMS/Set Event Report Request/PIN Status"^50133^-1
+36^"1,19"^"DMS/Set Event Report Request/Activation State"^50111^-1
+36^"1,20"^"DMS/Set Event Report Request/Operating Mode"^50144^-1
+36^"1,21"^"DMS/Set Event Report Request/UIM State"^50151^-1
+36^"1,22"^"DMS/Set Event Report Request/Wireless Disable State"^50166^-1
+36^"39,1"^"DMS/UIM Set PIN Protection Request/Info"^50127^-1
+36^"40,1"^"DMS/UIM Verify PIN Request/Info"^50129^-1
+36^"41,1"^"DMS/UIM Unblock PIN Request/Info"^50130^-1
+36^"42,1"^"DMS/UIM Change PIN Request/Info"^50131^-1
+36^"46,1"^"DMS/Set Operating Mode Request/Operating Mode"^50115^-1
+36^"50,1"^"DMS/Activate Automatic Request/Activation Code"^50118^-1
+36^"51,1"^"DMS/Activate Manual Request/Activation Data"^50119^-1
+36^"51,16"^"DMS/Activate Manual Request/PRL (Obsolete)"^50120^-1
+36^"51,17"^"DMS/Activate Manual Request/MN-HA Key"^50121^-1
+36^"51,18"^"DMS/Activate Manual Request/MN-AAA Key"^50122^-1
+36^"51,19"^"DMS/Activate Manual Request/PRL"^50135^-1
+36^"53,1"^"DMS/Set Lock State Request/Lock State"^50124^-1
+36^"54,1"^"DMS/Set Lock Code Request/Lock Code"^50125^-1
+36^"56,1"^"DMS/Write User Data Request/User Data"^50126^-1
+36^"58,1"^"DMS/Reset Factory Defaults Request/SPC"^50134^-1
+36^"59,1"^"DMS/Validate SPC Request/SPC"^50070^-1
+36^"62,1"^"DMS/UIM Set Firmware ID Request/ID"^50141^-1
+36^"64,1"^"DMS/UIM Get Control Key Status Request/Facility"^50145^-1
+36^"65,1"^"DMS/UIM Set Control Key Protection Request/Facility"^50147^-1
+36^"66,1"^"DMS/UIM Unblock Control Key Request/Facility"^50149^-1
+36^"72,1"^"DMS/Set Firmware Preference Request/Image List"^50155^-1
+36^"72,16"^"DMS/Set Firmware Preference Request/Override"^50157^-1
+36^"72,17"^"DMS/Set Firmware Preference Request/Index"^50158^-1
+36^"74,1"^"DMS/Delete Stored Firmware Request/Image"^50156^-1
+36^"75,1"^"DMS/Set Device Time Request/Time"^50170^-1
+36^"75,16"^"DMS/Set Device Time Request/Type"^50171^-1
+36^"76,1"^"DMS/Get Stored Firmware Info Request/Image"^50156^-1
+36^"78,1"^"DMS/Set Alternate Net Config Request/Config"^50169^-1
+36^"80,1"^"DMS/Set Image Download Mode Request/Mode"^50175^-1
+37^"0,2"^"DMS/Reset Response/Result Code"^50000^-1
+37^"1,2"^"DMS/Set Event Report Response/Result Code"^50000^-1
+37^"32,1"^"DMS/Get Device Capabilities Response/Capabilities"^50103^-1
+37^"32,2"^"DMS/Get Device Capabilities Response/Result Code"^50000^-1
+37^"33,1"^"DMS/Get Device Manfacturer Response/Manfacturer"^50104^-1
+37^"33,2"^"DMS/Get Device Manfacturer Response/Result Code"^50000^-1
+37^"34,1"^"DMS/Get Device Model Response/Model"^50105^-1
+37^"34,2"^"DMS/Get Device Model Response/Result Code"^50000^-1
+37^"35,1"^"DMS/Get Device Revision Response/Revision"^50106^-1
+37^"35,2"^"DMS/Get Device Revision Response/Result Code"^50000^-1
+37^"35,16"^"DMS/Get Device Revision Response/Boot Code Revision"^50136^-1
+37^"35,17"^"DMS/Get Device Revision Response/UQCN Revision"^50136^-1
+37^"36,1"^"DMS/Get Device Voice Number Response/Voice Number"^50107^-1
+37^"36,2"^"DMS/Get Device Voice Number Response/Result Code"^50000^-1
+37^"36,16"^"DMS/Get Device Voice Number Response/Mobile ID Number"^50113^-1
+37^"36,17"^"DMS/Get Device Voice Number Response/IMSI"^50138^-1
+37^"37,2"^"DMS/Get Device Serial Numbers Response/Result Code"^50000^-1
+37^"37,16"^"DMS/Get Device Serial Numbers Response/ESN"^50108^-1
+37^"37,17"^"DMS/Get Device Serial Numbers Response/IMEI"^50109^-1
+37^"37,18"^"DMS/Get Device Serial Numbers Response/MEID"^50110^-1
+37^"38,1"^"DMS/Get Power State Response/Power State"^50102^-1
+37^"38,2"^"DMS/Get Power State Response/Result Code"^50000^-1
+37^"39,2"^"DMS/UIM Set PIN Protection Response/Result Code"^50000^-1
+37^"39,16"^"DMS/UIM Set PIN Protection Response/Retry Info"^50128^-1
+37^"40,2"^"DMS/UIM Verify PIN Response/Result Code"^50000^-1
+37^"40,16"^"DMS/UIM Verify PIN Response/Retry Info"^50128^-1
+37^"41,2"^"DMS/UIM Unblock PIN Response/Result Code"^50000^-1
+37^"41,16"^"DMS/UIM Unblock PIN Response/Retry Info"^50128^-1
+37^"42,2"^"DMS/UIM Change PIN Response/Result Code"^50000^-1
+37^"42,16"^"DMS/UIM Change PIN Response/Retry Info"^50128^-1
+37^"43,2"^"DMS/UIM Get PIN Status Response/Result Code"^50000^-1
+37^"43,17"^"DMS/UIM Get PIN Status Response/PIN1 Status"^50132^-1
+37^"43,18"^"DMS/UIM Get PIN Status Response/PIN2 Status"^50132^-1
+37^"44,1"^"DMS/Get Hardware Revision Response/Hardware Revision"^50114^-1
+37^"44,2"^"DMS/Get Hardware Revision Response/Result Code"^50000^-1
+37^"45,1"^"DMS/Get Operating Mode Response/Operating Mode"^50115^-1
+37^"45,2"^"DMS/Get Operating Mode Response/Result Code"^50000^-1
+37^"45,16"^"DMS/Get Operating Mode Response/Offline Reason"^50139^-1
+37^"45,17"^"DMS/Get Operating Mode Response/Platform Restricted"^50143^-1
+37^"46,2"^"DMS/Set Operating Mode Response/Result Code"^50000^-1
+37^"47,1"^"DMS/Get Timestamp Response/Timestamp"^50116^-1
+37^"47,2"^"DMS/Get Timestamp Response/Result Code"^50000^-1
+37^"48,1"^"DMS/Get PRL Version Response/PRL Version"^50117^-1
+37^"48,2"^"DMS/Get PRL Version Response/Result Code"^50000^-1
+37^"49,1"^"DMS/Get Activation State Response/Activation State"^50112^-1
+37^"49,2"^"DMS/Get Activation State Response/Result Code"^50000^-1
+37^"50,2"^"DMS/Activate Automatic Response/Result Code"^50000^-1
+37^"51,2"^"DMS/Activate Manual Response/Result Code"^50000^-1
+37^"52,1"^"DMS/Get Lock State Response/Lock State"^50123^-1
+37^"52,2"^"DMS/Get Lock State Response/Result Code"^50000^-1
+37^"53,2"^"DMS/Set Lock State Response/Result Code"^50000^-1
+37^"54,2"^"DMS/Set Lock Code Response/Result Code"^50000^-1
+37^"55,1"^"DMS/Read User Data Response/User Data"^50126^-1
+37^"55,2"^"DMS/Read User Data Response/Result Code"^50000^-1
+37^"56,2"^"DMS/Write User Data Response/Result Code"^50000^-1
+37^"57,1"^"DMS/Read ERI Data Response/User Data"^50126^-1
+37^"57,2"^"DMS/Read ERI Data Response/Result Code"^50000^-1
+37^"58,2"^"DMS/Reset Factory Defaults Response/Result Code"^50000^-1
+37^"59,2"^"DMS/Validate SPC Response/Result Code"^50000^-1
+37^"60,1"^"DMS/UIM Get ICCID Response/ICCID"^50140^-1
+37^"60,2"^"DMS/UIM Get ICCID Response/Result Code"^50000^-1
+37^"61,1"^"DMS/UIM Get Firmware ID Response/ID"^50141^-1
+37^"61,2"^"DMS/UIM Get Firmware ID Response/Result Code"^50000^-1
+37^"62,2"^"DMS/UIM Set Firmware ID Response/Result Code"^50000^-1
+37^"63,1"^"DMS/UIM Get Host Lock ID Response/ID"^50142^-1
+37^"63,2"^"DMS/UIM Get Host Lock ID Response/Result Code"^50000^-1
+37^"64,1"^"DMS/UIM Get Control Key Status Response/Status"^50146^-1
+37^"64,2"^"DMS/UIM Get Control Key Status Response/Result Code"^50000^-1
+37^"64,16"^"DMS/UIM Get Control Key Status Response/Blocking"^50153^-1
+37^"65,2"^"DMS/UIM Set Control Key Protection Response/Result Code"^50000^-1
+37^"65,16"^"DMS/UIM Set Control Key Protection Response/Status"^50148^-1
+37^"66,2"^"DMS/UIM Unblock Control Key Response/Result Code"^50000^-1
+37^"66,16"^"DMS/UIM Unblock Control Key Response/Status"^50150^-1
+37^"67,1"^"DMS/Get IMSI Response/IMSI"^50138^-1
+37^"67,2"^"DMS/Get IMSI Response/Result Code"^50000^-1
+37^"68,1"^"DMS/Get UIM State Response/State"^50152^-1
+37^"68,2"^"DMS/Get UIM State Response/Result Code"^50000^-1
+37^"69,1"^"DMS/Get Band Capabilities Response/Bands"^50165^-1
+37^"69,2"^"DMS/Get Band Capabilities Response/Result Code"^50000^-1
+37^"70,1"^"DMS/Get Factory Serial Number Response/ID"^50168^-1^0
+37^"70,2"^"DMS/Get Factory Serial Number Response/Result Code"^50000^-1^0
+37^"71,1"^"DMS/Get Firmware Preference Response/Image List"^50155^-1
+37^"71,2"^"DMS/Get Firmware Preference Response/Result Code"^50000^-1
+37^"72,1"^"DMS/Set Firmware Preference Response/Image List"^50159^-1
+37^"72,2"^"DMS/Set Firmware Preference Response/Result Code"^50000^-1
+37^"72,16"^"DMS/Set Firmware Preference Response/Maximum"^50160^-1
+37^"73,1"^"DMS/List Stored Firmware Response/Image List"^50161^-1
+37^"73,2"^"DMS/List Stored Firmware Response/Result Code"^50000^-1
+37^"74,2"^"DMS/Delete Stored Firmware Response/Result Code"^50000^-1
+37^"75,2"^"DMS/Set Device Time Response/Result Code"^50000^-1
+37^"76,2"^"DMS/Get Stored Firmware Info Response/Result Code"^50000^-1
+37^"76,16"^"DMS/Get Stored Firmware Info Response/Boot Version"^50172^-1
+37^"76,17"^"DMS/Get Stored Firmware Info Response/PRI Version"^50173^-1
+37^"76,18"^"DMS/Get Stored Firmware Info Response/OEM Lock ID"^50174^-1
+37^"77,1"^"DMS/Get Alternate Net Config Response/Config"^50169^-1
+37^"77,2"^"DMS/Get Alternate Net Config Response/Result Code"^50000^-1
+37^"78,2"^"DMS/Set Alternate Net Config Response/Result Code"^50000^-1
+37^"79,2"^"DMS/Get Image Download Mode Response/Result Code"^50000^-1
+37^"79,16"^"DMS/Get Image Download Mode Response/Mode"^50175^-1
+37^"80,2"^"DMS/Set Image Download Mode Response/Result Code"^50000^-1
+38^"1,16"^"DMS/Event Report/Power State"^50102^-1
+38^"1,17"^"DMS/Event Report/PIN1 State"^50132^-1
+38^"1,18"^"DMS/Event Report/PIN2 State"^50132^-1
+38^"1,19"^"DMS/Event Report/Activation State"^50112^-1
+38^"1,20"^"DMS/Event Report/Operating Mode"^50115^-1
+38^"1,21"^"DMS/Event Report/UIM State"^50152^-1
+38^"1,22"^"DMS/Event Report/Wireless Disable State"^50167^-1
+39^"1,1"^"NAS/Abort Request/Transaction ID"^50001^-1
+39^"2,16"^"NAS/Set Event Report Request/Signal Indicator"^50200^-1
+39^"2,17"^"NAS/Set Event Report Request/RF Indicator"^50233^-1
+39^"2,18"^"NAS/Set Event Report Request/Registration Reject Indicator"^50234^-1
+39^"2,19"^"NAS/Set Event Report Request/RSSI Indicator"^50240^-1
+39^"2,20"^"NAS/Set Event Report Request/ECIO Indicator"^50241^-1
+39^"2,21"^"NAS/Set Event Report Request/IO Indicator"^50242^-1
+39^"2,22"^"NAS/Set Event Report Request/SINR Indicator"^50243^-1
+39^"2,23"^"NAS/Set Event Report Request/Error Rate Indicator"^50244^-1
+39^"2,24"^"NAS/Set Event Report Request/RSRQ Indicator"^50277^-1
+39^"3,16"^"NAS/Set Registration Event Report Request/System Select Indicator"^50250^-1
+39^"3,18"^"NAS/Set Registration Event Report Request/DDTM Indicator"^50251^-1
+39^"3,19"^"NAS/Set Registration Event Report Request/Serving System Indicator"^50252^-1
+39^"32,16"^"NAS/Get Signal Strength Request/Request Mask"^50253^-1
+39^"34,1"^"NAS/Initiate Network Register Request/Action"^50204^-1
+39^"34,16"^"NAS/Initiate Network Register Request/Manual Info"^50205^-1
+39^"34,17"^"NAS/Initiate Network Register Request/Change Duration"^50276^-1
+39^"35,16"^"NAS/Initiate Attach Request/Action"^50206^-1
+39^"39,16"^"NAS/Set Preferred Networks Request/Networks"^50210^-1
+39^"41,16"^"NAS/Set Forbidden Networks Request/Networks"^50213^-1
+39^"42,1"^"NAS/Set Technology Preference Request/Preference"^50216^-1
+39^"45,1"^"NAS/Set ACCOLC Request/ACCOLC"^50219^-1
+39^"48,16"^"NAS/Set Network Parameters Request/SPC"^50230^-1
+39^"48,20"^"NAS/Set Network Parameters Request/CDMA 1xEV-DO Revision"^50228^-1
+39^"48,21"^"NAS/Set Network Parameters Request/CDMA 1xEV-DO SCP Custom"^50229^-1
+39^"48,22"^"NAS/Set Network Parameters Request/Roaming"^50231^-1
+39^"51,16"^"NAS/Set System Selection Pref Request/Emergency Mode"^50263^-1
+39^"51,17"^"NAS/Set System Selection Pref Request/Mode"^50264^-1
+39^"51,18"^"NAS/Set System Selection Pref Request/Band"^50265^-1
+39^"51,19"^"NAS/Set System Selection Pref Request/PRL"^50266^-1
+39^"51,20"^"NAS/Set System Selection Pref Request/Roaming"^50267^-1
+39^"55,1"^"NAS/Set DDTM Preference Request/DDTM"^50268^-1
+39^"68,1"^"NAS/Get PLMN Name Request/PLMN"^50214^-1
+40^"0,2"^"NAS/Reset Response/Result Code"^50000^-1
+40^"1,2"^"NAS/Abort Response/Result Code"^50000^-1
+40^"2,2"^"NAS/Set Event Report Response/Result Code"^50000^-1
+40^"3,2"^"NAS/Set Registration Event Report Response/Result Code"^50000^-1
+40^"32,1"^"NAS/Get Signal Strength Response/Signal Strength"^50201^-1
+40^"32,2"^"NAS/Get Signal Strength Response/Result Code"^50000^-1
+40^"32,16"^"NAS/Get Signal Strength Response/Signal Strength List"^50220^-1
+40^"32,17"^"NAS/Get Signal Strength Response/RSSI List"^50254^-1
+40^"32,18"^"NAS/Get Signal Strength Response/ECIO List"^50255^-1
+40^"32,19"^"NAS/Get Signal Strength Response/IO"^50247^-1
+40^"32,20"^"NAS/Get Signal Strength Response/SINR"^50248^-1
+40^"32,21"^"NAS/Get Signal Strength Response/Error Rate List"^50256^-1
+40^"33,2"^"NAS/Perform Network Scan Response/Result Code"^50000^-1
+40^"33,16"^"NAS/Perform Network Scan Response/Network Info"^50202^-1
+40^"33,17"^"NAS/Perform Network Scan Response/Network RAT"^50270^-1
+40^"34,2"^"NAS/Initiate Network Register Response/Result Code"^50000^-1
+40^"35,2"^"NAS/Initiate Attach Response/Result Code"^50000^-1
+40^"36,1"^"NAS/Get Serving System Response/Serving System"^50207^-1
+40^"36,2"^"NAS/Get Serving System Response/Result Code"^50000^-1
+40^"36,16"^"NAS/Get Serving System Response/Roaming Indicator"^50208^-1
+40^"36,17"^"NAS/Get Serving System Response/Data Services"^50223^-1
+40^"36,18"^"NAS/Get Serving System Response/Current PLMN"^50209^-1
+40^"36,19"^"NAS/Get Serving System Response/System ID"^50215^-1
+40^"36,20"^"NAS/Get Serving System Response/Base Station"^50257^-1
+40^"36,21"^"NAS/Get Serving System Response/Roaming List"^50258^-1
+40^"36,22"^"NAS/Get Serving System Response/Default Roaming"^50260^-1
+40^"36,23"^"NAS/Get Serving System Response/Time Zone"^50261^-1
+40^"36,24"^"NAS/Get Serving System Response/Protocol Revision"^50262^-1
+40^"37,1"^"NAS/Get Home Network Response/Home Network"^50209^-1
+40^"37,2"^"NAS/Get Home Network Response/Result Code"^50000^-1
+40^"37,16"^"NAS/Get Home Network Response/Home IDs"^50215^-1
+40^"37,17"^"NAS/Get Home Network Response/Extended Home Network"^50269^-1
+40^"38,2"^"NAS/Get Preferred Networks Response/Result Code"^50000^-1
+40^"38,16"^"NAS/Get Preferred Networks Response/Networks"^50210^-1
+40^"38,17"^"NAS/Get Preferred Networks Response/Static Networks"^50210^-1
+40^"39,2"^"NAS/Set Preferred Networks Response/Result Code"^50000^-1
+40^"40,2"^"NAS/Get Forbidden Networks Response/Result Code"^50000^-1
+40^"40,16"^"NAS/Get Forbidden Networks Response/Networks"^50213^-1
+40^"41,2"^"NAS/Set Forbidden Networks Response/Result Code"^50000^-1
+40^"42,2"^"NAS/Set Technology Preference Response/Result Code"^50000^-1
+40^"43,1"^"NAS/Get Technology Preference Response/Active Preference"^50216^-1
+40^"43,2"^"NAS/Get Technology Preference Response/Result Code"^50000^-1
+40^"43,16"^"NAS/Get Technology Preference Response/Persistent Preference"^50217^-1
+40^"44,1"^"NAS/Get ACCOLC Response/ACCOLC"^50218^-1
+40^"44,2"^"NAS/Get ACCOLC Response/Result Code"^50000^-1
+40^"45,2"^"NAS/Set ACCOLC Response/Result Code"^50000^-1
+40^"46,1"^"NAS/Get System Preference/Pref"^50224^-1
+40^"46,2"^"NAS/Get System Preference/Result Code"^50000^-1
+40^"47,2"^"NAS/Get Network Parameters Response/Result Code"^50000^-1
+40^"47,17"^"NAS/Get Network Parameters Response/SCI"^50225^-1
+40^"47,18"^"NAS/Get Network Parameters Response/SCM"^50226^-1
+40^"47,19"^"NAS/Get Network Parameters Response/Registration"^50227^-1
+40^"47,20"^"NAS/Get Network Parameters Response/CDMA 1xEV-DO Revision"^50228^-1
+40^"47,21"^"NAS/Get Network Parameters Response/CDMA 1xEV-DO SCP Custom"^50229^-1
+40^"47,22"^"NAS/Get Network Parameters Response/Roaming"^50231^-1
+40^"48,2"^"NAS/Set Network Parameters Response/Result Code"^50000^-1
+40^"49,1"^"NAS/Get RF Info Response/RF Info"^50235^-1
+40^"49,2"^"NAS/Get RF Info Response/Result Code"^50000^-1
+40^"50,1"^"NAS/Get AN-AAA Authentication Status Response/Status"^50237^-1
+40^"50,2"^"NAS/Get AN-AAA Authentication Status Response/Result Code"^50000^-1
+40^"51,2"^"NAS/Set System Selection Pref Response/Result Code"^50000^-1
+40^"52,2"^"NAS/Get System Selection Pref Response/Result Code"^50000^-1
+40^"52,16"^"NAS/Get System Selection Pref Response/Emergency Mode"^50263^-1
+40^"52,17"^"NAS/Get System Selection Pref Response/Mode"^50264^-1
+40^"52,18"^"NAS/Get System Selection Pref Response/Band"^50265^-1
+40^"52,19"^"NAS/Get System Selection Pref Response/PRL"^50266^-1
+40^"52,20"^"NAS/Get System Selection Pref Response/Roaming"^50267^-1
+40^"55,2"^"NAS/Set DDTM Preference Response/Result Code"^50000^-1
+40^"56,1"^"NAS/Get DDTM Preference Response/DDTM"^50268^-1
+40^"56,2"^"NAS/Get DDTM Preference Response/Result Code"^50000^-1
+40^"59,2"^"NAS/Get CSP PLMN Mode Response/Result Code"^50000^-1
+40^"59,16"^"NAS/Get CSP PLMN Mode Response/Mode"^50273^-1
+40^"68,2"^"NAS/Get PLMN Name Response/Result Code"^50000^-1
+40^"68,16"^"NAS/Get PLMN Name Response/Name"^50274^-1
+41^"2,16"^"NAS/Event Report/Signal Strength"^50201^-1
+41^"2,17"^"NAS/Event Report/RF Info"^50235^-1
+41^"2,18"^"NAS/Event Report/Registration Reject"^50236^-1
+41^"2,19"^"NAS/Event Report/RSSI"^50245^-1
+41^"2,20"^"NAS/Event Report/ECIO"^50246^-1
+41^"2,21"^"NAS/Event Report/IO"^50247^-1
+41^"2,22"^"NAS/Event Report/SINR"^50248^-1
+41^"2,23"^"NAS/Event Report/Error Rate"^50249^-1
+41^"2,24"^"NAS/Event Report/RSRQ"^50275^-1
+41^"36,1"^"NAS/Serving System Indication/Serving System"^50207^-1
+41^"36,16"^"NAS/Serving System Indication/Roaming Indicator"^50208^-1
+41^"36,17"^"NAS/Serving System Indication/Data Services"^50223^-1
+41^"36,18"^"NAS/Serving System Indication/Current PLMN"^50209^-1
+41^"36,19"^"NAS/Serving System Indication/System ID"^50215^-1
+41^"36,20"^"NAS/Serving System Indication/Base Station"^50257^-1
+41^"36,21"^"NAS/Serving System Indication/Roaming List"^50258^-1
+41^"36,22"^"NAS/Serving System Indication/Default Roaming"^50260^-1
+41^"36,23"^"NAS/Serving System Indication/Time Zone"^50261^-1
+41^"36,24"^"NAS/Serving System Indication/Protocol Revision"^50262^-1
+41^"36,25"^"NAS/Serving System Indication/PLMN Change"^50272^-1
+41^"52,16"^"NAS/System Selection Pref Indication/Emergency Mode"^50263^-1
+41^"52,17"^"NAS/System Selection Pref Indication/Mode"^50264^-1
+41^"52,18"^"NAS/System Selection Pref Indication/Band"^50265^-1
+41^"52,19"^"NAS/System Selection Pref Indication/PRL"^50266^-1
+41^"52,20"^"NAS/System Selection Pref Indication/Roaming"^50267^-1
+41^"56,1"^"NAS/DDTM Preference Indication/DDTM"^50268^-1
+41^"60,16"^"NAS/CSP PLMN Mode Indication/Mode"^50273^-1
+45^"1,16"^"WMS/Set Event Report Request/New MT Message Indicator"^50300^-1
+45^"32,1"^"WMS/Raw Send Request/Message Data"^50302^-1
+45^"32,16"^"WMS/Raw Send Request/Force On DC"^50321^-1
+45^"32,17"^"WMS/Raw Send Request/Follow On DC"^50322^-1
+45^"32,18"^"WMS/Raw Send Request/Link Control"^50323^-1
+45^"33,1"^"WMS/Raw Write Request/Message Data"^50304^-1
+45^"34,1"^"WMS/Raw Read Request/Message Index"^50301^-1
+45^"34,16"^"WMS/Raw Read Request/Message Mode"^50310^-1
+45^"35,1"^"WMS/Modify Tag Request/Message Tag"^50307^-1
+45^"35,16"^"WMS/Modify Tag Request/Message Mode"^50310^-1
+45^"36,1"^"WMS/Delete Request/Memory Storage"^50308^-1
+45^"36,16"^"WMS/Delete Request/Message Index"^50305^-1
+45^"36,17"^"WMS/Delete Request/Message Tag"^50309^-1
+45^"36,18"^"WMS/Delete Request/Message Mode"^50310^-1
+45^"49,1"^"WMS/List Messages Request/Memory Storage"^50308^-1
+45^"49,16"^"WMS/List Messages Request/Message Tag"^50309^-1
+45^"49,17"^"WMS/List Messages Request/Message Mode"^50310^-1
+45^"50,1"^"WMS/Set Routes Request/Route List"^50313^-1
+45^"50,16"^"WMS/Set Routes Request/Transfer Status Report"^50326^-1
+45^"53,1"^"WMS/Set SMSC Address Request/Address"^50319^-1
+45^"53,16"^"WMS/Set SMSC Address Request/Address Type"^50318^-1
+45^"54,1"^"WMS/Get Storage Max Size Request/Memory Storage"^50308^-1
+45^"54,16"^"WMS/Get Storage Max Size Request/Message Mode"^50310^-1
+45^"55,1"^"WMS/Send ACK Request/ACK"^50329^-1
+45^"55,16"^"WMS/Send ACK Request/3GPP2 Failure Info"^50330^-1
+45^"55,17"^"WMS/Send ACK Request/3GPP Failure Info"^50331^-1
+45^"56,1"^"WMS/Set Retry Period Request/Period"^50332^-1
+45^"57,1"^"WMS/Set Retry Interval Request/Interval"^50333^-1
+45^"58,1"^"WMS/Set DC Disconnect Timer Request/Timer"^50334^-1
+45^"59,1"^"WMS/Set Memory Status Request/Status"^50335^-1
+45^"60,1"^"WMS/Set Broadcast Activation Request/BC Info"^50336^-1
+45^"61,1"^"WMS/Set Broadcast Config Request/Mode"^50310^-1
+45^"61,16"^"WMS/Set Broadcast Config Request/3GPP Info"^50337^-1
+45^"61,17"^"WMS/Set Broadcast Config Request/3GPP2 Info"^50339^-1
+45^"62,1"^"WMS/Get Broadcast Config Request/Mode"^50310^-1
+45^"65,1"^"WMS/Set Domain Preference Request/Pref"^50344^-1
+45^"66,1"^"WMS/Send From Memory Store Request/Info"^50345^-1
+46^"0,2"^"WMS/Reset Response/Result Code"^50000^-1
+46^"1,2"^"WMS/Set Event Report Response/Result Code"^50000^-1
+46^"32,2"^"WMS/Raw Send Response/Result Code"^50000^-1
+46^"32,16"^"WMS/Raw Send Response/Cause Code"^50303^-1
+46^"32,17"^"WMS/Raw Send Response/Error Class"^50324^-1
+46^"32,18"^"WMS/Raw Send Response/Cause Info"^50325^-1
+46^"33,1"^"WMS/Raw Write Response/Message Index"^50305^-1
+46^"33,2"^"WMS/Raw Write Response/Result Code"^50000^-1
+46^"34,1"^"WMS/Raw Read Response/Message Data"^50306^-1
+46^"34,2"^"WMS/Raw Read Response/Result Code"^50000^-1
+46^"35,2"^"WMS/Modify Tag Response/Result Code"^50000^-1
+46^"36,2"^"WMS/Delete Response/Result Code"^50000^-1
+46^"48,1"^"WMS/Get Message Protocol Response/Message Protocol"^50310^-1
+46^"48,2"^"WMS/Get Message Protocol Response/Result Code"^50000^-1
+46^"49,1"^"WMS/List Messages Response/Message List"^50311^-1
+46^"49,2"^"WMS/List Messages Response/Result Code"^50000^-1
+46^"50,2"^"WMS/Set Routes Response/Result Code"^50000^-1
+46^"51,1"^"WMS/Get Routes Response/Route List"^50315^-1
+46^"51,16"^"WMS/Get Routes Response/Transfer Status Report"^50326^-1
+46^"51,2"^"WMS/Get Routes Response/Result Code"^50000^-1
+46^"52,1"^"WMS/Get SMSC Address Response/Address"^50317^-1
+46^"52,2"^"WMS/Get SMSC Address Response/Result Code"^50000^-1
+46^"54,1"^"WMS/Get Storage Max Size Response/Max Size"^50327^-1
+46^"54,2"^"WMS/Get Storage Max Size Response/Result Code"^50000^-1
+46^"54,16"^"WMS/Get Storage Max Size Response/Available Size"^50328^-1
+46^"55,2"^"WMS/Send ACK Response/Result Code"^50000^-1
+46^"56,2"^"WMS/Set Retry Period Response/Result Code"^50000^-1
+46^"57,2"^"WMS/Set Retry Interval Response/Result Code"^50000^-1
+46^"58,2"^"WMS/Set DC Disconnect Timer Response/Result Code"^50000^-1
+46^"59,2"^"WMS/Set Memory Status Response/Result Code"^50000^-1
+46^"60,2"^"WMS/Set Broadcast Activation Response/Result Code"^50000^-1
+46^"61,2"^"WMS/Set Broadcast Config Response/Result Code"^50000^-1
+46^"62,2"^"WMS/Get Broadcast Config Response/Result Code"^50000^-1
+46^"62,16"^"WMS/Get Broadcast Config Response/3GPP Info"^50341^-1
+46^"62,17"^"WMS/Get Broadcast Config Response/3GPP2 Info"^50342^-1
+46^"64,1"^"WMS/Get Domain Preference Response/Pref"^50344^-1
+46^"64,2"^"WMS/Get Domain Preference Response/Result Code"^50000^-1
+46^"65,2"^"WMS/Set Domain Preference Response/Result Code"^50000^-1
+46^"66,2"^"WMS/Send From Memory Store Response/Result Code"^50000^-1
+46^"66,16"^"WMS/Send From Memory Store Response/Message ID"^50346^-1
+46^"66,17"^"WMS/Send From Memory Store Response/Cause Code"^50303^-1
+46^"66,18"^"WMS/Send From Memory Store Response/Error Class"^50324^-1
+46^"66,19"^"WMS/Send From Memory Store Response/Cause Info"^50325^-1
+47^"1,16"^"WMS/Event Report/Received MT Message"^50301^-1
+47^"1,17"^"WMS/Event Report/Transfer Route MT Message"^50320^-1
+47^"1,18"^"WMS/Event Report/Message Mode"^50310^-1
+47^"63,1"^"WMS/Memory Full Indication/Info"^50343^-1
+47^"70,1"^"WMS/SMSC Address Indication/Address"^50317^-1
+48^"1,16"^"PDS/Set Event Report Request/NMEA Indicator"^50400^-1
+48^"1,17"^"PDS/Set Event Report Request/Mode Indicator"^50416^-1
+48^"1,18"^"PDS/Set Event Report Request/Raw Indicator"^50420^-1
+48^"1,19"^"PDS/Set Event Report Request/XTRA Request Indicator"^50421^-1
+48^"1,20"^"PDS/Set Event Report Request/Time Injection Indicator"^50422^-1
+48^"1,21"^"PDS/Set Event Report Request/Wi-Fi Indicator"^50423^-1
+48^"1,22"^"PDS/Set Event Report Request/Satellite Indicator"^50424^-1
+48^"1,23"^"PDS/Set Event Report Request/VX Network Indicator"^50425^-1
+48^"1,24"^"PDS/Set Event Report Request/SUPL Network Indicator"^50426^-1
+48^"1,25"^"PDS/Set Event Report Request/UMTS CP Network Indicator"^50427^-1
+48^"1,26"^"PDS/Set Event Report Request/PDS Comm Indicator"^50428^-1
+48^"33,1"^"PDS/Set Service State Request/State"^50403^-1
+48^"34,1"^"PDS/Start Tracking Session Request/Session"^50404^-1
+48^"39,1"^"PDS/Set NMEA Config Request/Config"^50405^-1
+48^"40,1"^"PDS/Inject Time Reference Request/Time"^50406^-1
+48^"42,1"^"PDS/Set Defaults Request/Defaults"^50407^-1
+48^"44,16"^"PDS/Set XTRA Parameters Request/Automatic"^50408^-1
+48^"44,17"^"PDS/Set XTRA Parameters Request/Medium"^50409^-1
+48^"44,18"^"PDS/Set XTRA Parameters Request/Network"^50410^-1
+48^"44,20"^"PDS/Set XTRA Parameters Request/Embedded"^50441^-1
+48^"46,18"^"PDS/Get AGPS Config Request/Network Mode"^50471^-1
+48^"47,16"^"PDS/Set AGPS Config Request/Server"^50412^-1
+48^"47,17"^"PDS/Set AGPS Config Request/Server URL"^50432^-1
+48^"47,18"^"PDS/Set AGPS Config Request/Network Mode"^50471^-1
+48^"49,1"^"PDS/Set Service Auto-Tracking State Request/State"^50413^-1
+48^"51,1"^"PDS/Set COM Port Auto-Tracking Config Request/Config"^50413^-1
+48^"52,16"^"PDS/Reset PDS Data Request/GPS Data"^50414^-1
+48^"52,17"^"PDS/Reset PDS Data Request/Cell Data"^50415^-1
+48^"53,16"^"PDS/Single Position Fix Request/Mode"^50442^-1
+48^"53,17"^"PDS/Single Position Fix Request/Timeout"^50443^-1
+48^"53,18"^"PDS/Single Position Fix Request/Accuracy"^50444^-1
+48^"55,1"^"PDS/Inject XTRA Data Request/Data"^50446^-1
+48^"56,16"^"PDS/Inject Position Data Request/Timestamp"^50447^-1
+48^"56,17"^"PDS/Inject Position Data Request/Latitude"^50448^-1
+48^"56,18"^"PDS/Inject Position Data Request/Longitude"^50449^-1
+48^"56,19"^"PDS/Inject Position Data Request/Altitude Ellipsoid"^50450^-1
+48^"56,20"^"PDS/Inject Position Data Request/Altitude Sea Level"^50451^-1
+48^"56,21"^"PDS/Inject Position Data Request/Horizontal Uncertainty"^50452^-1
+48^"56,22"^"PDS/Inject Position Data Request/Vertical Uncertainty"^50453^-1
+48^"56,23"^"PDS/Inject Position Data Request/Horizontal Confidence"^50454^-1
+48^"56,24"^"PDS/Inject Position Data Request/Vertical Confidence"^50455^-1
+48^"56,25"^"PDS/Inject Position Data Request/Source"^50456^-1
+48^"57,16"^"PDS/Inject Wi-Fi Position Data Request/Time"^50457^-1
+48^"57,17"^"PDS/Inject Wi-Fi Position Data Request/Position"^50458^-1
+48^"57,18"^"PDS/Inject Wi-Fi Position Data Request/AP Info"^50459^-1
+48^"59,16"^"PDS/Set SBAS Config Request/Config"^50462^-1
+48^"60,1"^"PDS/Send Network Initiated Response Request/Action"^50463^-1
+48^"60,16"^"PDS/Send Network Initiated Response Request/VX"^50437^-1
+48^"60,17"^"PDS/Send Network Initiated Response Request/SUPL"^50438^-1
+48^"60,18"^"PDS/Send Network Initiated Response Request/UMTS CP"^50439^-1
+48^"61,1"^"PDS/Inject Absolute Time Request/Time"^50464^-1
+48^"62,1"^"PDS/Inject EFS Data Request/Date File"^50465^-1
+48^"64,1"^"PDS/Set DPO Config Request/Config"^50467^-1
+48^"66,16"^"PDS/Set ODP Config Request/Config"^50468^-1
+48^"81,16"^"PDS/Set Position Methods State Request/XTRA Time"^50470^-1
+48^"81,17"^"PDS/Set Position Methods State Request/XTRA Data"^50470^-1
+48^"81,18"^"PDS/Set Position Methods State Request/Wi-Fi"^50470^-1
+49^"0,2"^"PDS/Reset Response/Result Code"^50000^-1
+49^"1,2"^"PDS/Set Event Report Response/Result Code"^50000^-1
+49^"32,1"^"PDS/Get Service State Response/State"^50402^-1
+49^"32,2"^"PDS/Get Service State Response/Result Code"^50000^-1
+49^"33,2"^"PDS/Set Service State Response/Result Code"^50000^-1
+49^"34,2"^"PDS/Start Tracking Session Response/Result Code"^50000^-1
+49^"35,1"^"PDS/Get Tracking Session Info Response/Info"^50404^-1
+49^"35,2"^"PDS/Get Tracking Session Info Response/Result Code"^50000^-1
+49^"36,2"^"PDS/Fix Position Response/Result Code"^50000^-1
+49^"37,2"^"PDS/End Tracking Session Response/Result Code"^50000^-1
+49^"38,1"^"PDS/Get NMEA Config Response/Config"^50405^-1
+49^"38,2"^"PDS/Get NMEA Config Response/Result Code"^50000^-1
+49^"39,2"^"PDS/Set NMEA Config Response/Result Code"^50000^-1
+49^"40,2"^"PDS/Inject Time Reference Response/Result Code"^50000^-1
+49^"41,1"^"PDS/Get Defaults Response/Defaults"^50407^-1
+49^"41,2"^"PDS/Get Defaults Response/Result Code"^50000^-1
+49^"42,2"^"PDS/Set Defaults Response/Result Code"^50000^-1
+49^"43,2"^"PDS/Get XTRA Parameters Response/Result Code"^50000^-1
+49^"43,16"^"PDS/Get XTRA Parameters Response/Automatic"^50408^-1
+49^"43,17"^"PDS/Get XTRA Parameters Response/Medium"^50409^-1
+49^"43,18"^"PDS/Get XTRA Parameters Response/Network"^50410^-1
+49^"43,19"^"PDS/Get XTRA Parameters Response/Validity"^50411^-1
+49^"43,20"^"PDS/Get XTRA Parameters Response/Embedded"^50441^-1
+49^"44,2"^"PDS/Set XTRA Parameters Response/Result Code"^50000^-1
+49^"45,2"^"PDS/Force XTRA Download Response/Result Code"^50000^-1
+49^"46,2"^"PDS/Get AGPS Config Response/Result Code"^50000^-1
+49^"46,16"^"PDS/Get AGPS Config Response/Server"^50412^-1
+49^"46,17"^"PDS/Get AGPS Config Response/Server URL"^50432^-1
+49^"47,2"^"PDS/Set AGPS Config Response/Result Code"^50000^-1
+49^"48,1"^"PDS/Get Service Auto-Tracking State Response/State"^50413^-1
+49^"48,2"^"PDS/Get Service Auto-Tracking State Response/Result Code"^50000^-1
+49^"49,2"^"PDS/Set Service Auto-Tracking State Response/Result Code"^50000^-1
+49^"50,1"^"PDS/Get COM Port Auto-Tracking Config Response/Config"^50413^-1
+49^"50,2"^"PDS/Get COM Port Auto-Tracking Config Response/Result Code"^50000^-1
+49^"51,2"^"PDS/Set COM Port Auto-Tracking Config Response/Result Code"^50000^-1
+49^"52,2"^"PDS/Reset PDS Data Response/Result Code"^50000^-1
+49^"53,2"^"PDS/Single Position Fix Response/Result Code"^50000^-1
+49^"54,1"^"PDS/Get Service Version Response/Version"^50445^-1
+49^"54,2"^"PDS/Get Service Version Response/Result Code"^50000^-1
+49^"55,2"^"PDS/Inject XTRA Data Response/Result Code"^50000^-1
+49^"56,2"^"PDS/Inject Position Data Response/Result Code"^50000^-1
+49^"57,2"^"PDS/Inject Wi-Fi Position Data Response/Result Code"^50000^-1
+49^"58,2"^"PDS/Get SBAS Config Response/Result Code"^50000^-1
+49^"58,16"^"PDS/Get SBAS Config Response/Config"^50461^-1
+49^"59,2"^"PDS/Set SBAS Config Response/Result Code"^50000^-1
+49^"60,2"^"PDS/Send Network Initiated Response Response/Result Code"^50000^-1
+49^"61,2"^"PDS/Inject Absolute Time Response/Result Code"^50000^-1
+49^"62,2"^"PDS/Inject EFS Data Response/Result Code"^50000^-1
+49^"63,2"^"PDS/Get DPO Config Response/Result Code"^50000^-1
+49^"63,16"^"PDS/Get DPO Config Response/Config"^50466^-1
+49^"64,2"^"PDS/Set DPO Config Response/Result Code"^50000^-1
+49^"65,2"^"PDS/Get ODP Config Response/Result Code"^50000^-1
+49^"65,16"^"PDS/Get ODP Config Response/Config"^50468^-1
+49^"66,2"^"PDS/Set ODP Config Response/Result Code"^50000^-1
+49^"67,2"^"PDS/Cancel Single Position Fix Response/Result Code"^50000^-1
+49^"68,2"^"PDS/Get GPS State Response/Result Code"^50000^-1
+49^"68,16"^"PDS/Get GPS State Response/State"^50469^-1
+49^"80,2"^"PDS/Get Position Methods State Response/Result Code"^50000^-1
+49^"80,16"^"PDS/Get Position Methods State Response/XTRA Time"^50470^-1
+49^"80,17"^"PDS/Get Position Methods State Response/XTRA Data"^50470^-1
+49^"80,18"^"PDS/Get Position Methods State Response/Wi-Fi"^50470^-1
+49^"81,2"^"PDS/Set Position Methods State Response/Result Code"^50000^-1
+50^"1,16"^"PDS/Event Report/NMEA Sentence"^50401^-1
+50^"1,17"^"PDS/Event Report/NMEA Sentence Plus Mode"^50417^-1
+50^"1,18"^"PDS/Event Report/Position Session Status"^50429^-1
+50^"1,19"^"PDS/Event Report/Parsed Position Data"^50430^-1
+50^"1,20"^"PDS/Event Report/External XTRA Request"^50431^-1
+50^"1,21"^"PDS/Event Report/External Time Injection Request"^50433^-1
+50^"1,22"^"PDS/Event Report/External Wi-Fi Position Request"^50434^-1
+50^"1,23"^"PDS/Event Report/Satellite Info"^50435^-1
+50^"1,24"^"PDS/Event Report/VX Network Initiated Prompt"^50437^-1
+50^"1,25"^"PDS/Event Report/SUPL Network Initiated Prompt"^50438^-1
+50^"1,26"^"PDS/Event Report/UMTS CP Network Initiated Prompt"^50439^-1
+50^"1,27"^"PDS/Event Report/Comm Events"^50440^-1
+50^"32,1"^"PDS/Service State Indication/State"^50402^-1
+51^"32,16"^"AUTH/Start EAP Session Request/Method Mask"^50700^-1^0
+51^"33,1"^"AUTH/Send EAP Packet Request/Request Packet"^50701^-1^0
+52^"32,2"^"AUTH/Start EAP Session Response/Result Code"^50000^-1^0
+52^"33,1"^"AUTH/Send EAP Packet Response/Response Packet"^50703^-1^0
+52^"33,2"^"AUTH/Send EAP Packet Response/Result Code"^50000^-1^0
+52^"35,1"^"AUTH/Get EAP Session Keys Response/Session Keys"^50705^-1^0
+52^"35,2"^"AUTH/Get EAP Session Keys Response/Result Code"^50000^-1^0
+52^"36,2"^"AUTH/End EAP Session Response/Result Code"^50000^-1^0
+52^"34,1"^"AUTH/EAP Session Result/Result"^50704^-1^0
+54^"1,16"^"CAT/Set Event Report Request/Report Mask"^50600^-1^0
+54^"33,1"^"CAT/Send Terminal Response Request/Terminal Response Type"^50612^-1^0
+54^"34,1"^"CAT/Envelope Command Request/Envelope Command"^50613^-1^0
+55^"0,2"^"CAT/Reset Response/Result Code"^50000^-1^0
+55^"1,2"^"CAT/Set Event Report Response/Result Code"^50000^-1^0
+55^"1,16"^"CAT/Set Event Report Response/Reg Status Mask"^50600^-1^0
+55^"32,1"^"CAT/Get Service State Response/CAT Service State"^50615^-1^0
+55^"32,2"^"CAT/Get Service State Response/Result Code"^50000^-1^0
+55^"33,2"^"CAT/Send Terminal Response Response/Result Code"^50000^-1^0
+55^"34,2"^"CAT/Envelope Command Response/Result Code"^50000^-1^0
+56^"1,16"^"CAT/Event Report/Display Text Event"^50601^-1^0
+56^"1,17"^"CAT/Event Report/Get Inkey Event"^50602^-1^0
+56^"1,18"^"CAT/Event Report/Get Input Event"^50603^-1^0
+56^"1,19"^"CAT/Event Report/Setup Menu Event"^50604^-1^0
+56^"1,20"^"CAT/Event Report/Select Item Event"^50605^-1^0
+56^"1,21"^"CAT/Event Report/Alpha ID Available"^50606^-1^0
+56^"1,22"^"CAT/Event Report/Setup Event List"^50607^-1^0
+56^"1,23"^"CAT/Event Report/Setup Idle Mode Text Event"^50608^-1^0
+56^"1,24"^"CAT/Event Report/Language Notification Event"^50609^-1^0
+56^"1,25"^"CAT/Event Report/Refresh Event"^50610^-1^0
+56^"1,26"^"CAT/Event Report/End Proactive Session"^50611^-1^0
+57^"33,16"^"RMS/Set SMS Wake Request/State"^50500^-1^0
+57^"33,17"^"RMS/Set SMS Wake Request/Mask"^50501^-1^0
+58^"0,2"^"RMS/Reset Response/Result Code"^50000^-1^0
+58^"32,2"^"RMS/Get SMS Wake Response/Result Code"^50000^-1^0
+58^"32,16"^"RMS/Get SMS Wake Response/State"^50500^-1^0
+58^"32,17"^"RMS/Get SMS Wake Request/Mask"^50501^-1^0
+58^"33,2"^"RMS/Set SMS Wake Response/Result Code"^50000^-1^0
+60^"1,16"^"OMA/Set Event Report Request/NIA"^50800^-1^0
+60^"1,17"^"OMA/Set Event Report Request/Status"^50801^-1^0
+60^"32,16"^"OMA/Start Session Request/Type"^50805^-1^0
+60^"35,16"^"OMA/Send Selection Request/Type"^50808^-1^0
+60^"37,16"^"OMA/Set Features Response/Provisioning"^50809^-1^0
+60^"37,17"^"OMA/Set Features Response/PRL Update"^50810^-1^0
+60^"37,18"^"OMA/Set Features Response/HFA Feature"^50811^-1^0
+61^"0,2"^"OMA/Reset Response/Result Code"^50000^-1^0
+61^"1,2"^"OMA/Set Event Report Response/Result Code"^50000^-1^0
+61^"32,2"^"OMA/Start Session Response/Result Code"^50000^-1^0
+61^"33,2"^"OMA/Cancel Session Response/Result Code"^50000^-1^0
+61^"34,2"^"OMA/Get Session Info Response/Result Code"^50000^-1^0
+61^"34,16"^"OMA/Get Session Info Response/Info"^50806^-1^0
+61^"34,17"^"OMA/Get Session Info Response/Failure"^50804^-1^0
+61^"34,18"^"OMA/Get Session Info Response/Retry"^50807^-1^0
+61^"34,19"^"OMA/Get Session Info Response/NIA"^50802^-1^0
+61^"35,2"^"OMA/Send Selection Response/Result Code"^50000^-1^0
+61^"36,2"^"OMA/Get Features Response/Result Code"^50000^-1^0
+61^"36,16"^"OMA/Get Features Response/Provisioning"^50809^-1^0
+61^"36,17"^"OMA/Get Features Response/PRL Update"^50810^-1^0
+61^"36,18"^"OMA/Get Features Response/HFA Feature"^50811^-1^0
+61^"36,19"^"OMA/Get Features Response/HFA Done State"^50812^-1^0
+61^"37,2"^"OMA/Set Features Response/Result Code"^50000^-1^0
+62^"1,16"^"OMA/Event Report/NIA"^50802^-1^0
+62^"1,17"^"OMA/Event Report/Status"^50803^-1^0
+62^"1,18"^"OMA/Event Report/Failure"^50804^-1^0
+63^"58,1"^"Voice/Initiate USSD Request/Info"^70000^-1^0
+63^"59,1"^"Voice/Answer USSD Request/Info"^70000^-1^0
+63^"67,1"^"Voice/Async Initiate USSD Request/Info"^70000^-1^0
+64^"58,2"^"Voice/Initiate USSD Response/Result Code"^50000^-1^0
+64^"58,16"^"Voice/Initiate USSD Response/Fail Cause"^70001^-1^0
+64^"58,17"^"Voice/Initiate USSD Response/Alpha ID"^70002^-1^0
+64^"58,18"^"Voice/Initiate USSD Response/Data"^70000^-1^0
+64^"59,2"^"Voice/Answer USSD Response/Result Code"^50000^-1^0
+64^"60,2"^"Voice/Cancel USSD Response/Result Code"^50000^-1^0
+64^"67,2"^"Voice/Async Initiate USSD Response/Result Code"^50000^-1^0
+65^"62,1"^"Voice/USSD Indication/Type"^70003^-1^0
+65^"62,16"^"Voice/USSD Indication/Data"^70000^-1
+65^"67,16"^"Voice/USSD Async Indication/Error"^70004^-1^0
+65^"67,17"^"Voice/USSD Async Indication/Fail Cause"^70001^-1^0
+65^"67,18"^"Voice/USSD Async Indication/Info"^70000^-1^0
+65^"67,19"^"Voice/USSD Async Indication/Alpha ID"^70002^-1^0
