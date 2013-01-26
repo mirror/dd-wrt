@@ -68,6 +68,7 @@
  *   FOO_BAR_ERROR_FAILED,
  *   FOO_BAR_ERROR_ANOTHER_ERROR,
  *   FOO_BAR_ERROR_SOME_THIRD_ERROR,
+ *   FOO_BAR_N_ERRORS /<!-- -->*< skip >*<!-- -->/
  * } FooBarError;
  *
  * /<!-- -->* foo-bar-error.c: *<!-- -->/
@@ -79,6 +80,9 @@
  *   {FOO_BAR_ERROR_SOME_THIRD_ERROR, "org.project.Foo.Bar.Error.SomeThirdError"},
  * };
  *
+ * /<!-- -->* Ensure that every error code has an associated D-Bus error name *<!-- -->/
+ * G_STATIC_ASSERT (G_N_ELEMENTS (foo_bar_error_entries) == FOO_BAR_N_ERRORS);
+ *
  * GQuark
  * foo_bar_error_quark (void)
  * {
@@ -87,13 +91,15 @@
  *                                       &quark_volatile,
  *                                       foo_bar_error_entries,
  *                                       G_N_ELEMENTS (foo_bar_error_entries));
- *   G_STATIC_ASSERT (G_N_ELEMENTS (foo_bar_error_entries) - 1 == FOO_BAR_ERROR_SOME_THIRD_ERROR);
  *   return (GQuark) quark_volatile;
  * }
  * </programlisting></example>
  * With this setup, a D-Bus peer can transparently pass e.g. %FOO_BAR_ERROR_ANOTHER_ERROR and
  * other peers will see the D-Bus error name <literal>org.project.Foo.Bar.Error.AnotherError</literal>.
- * If the other peer is using GDBus, the peer will see also %FOO_BAR_ERROR_ANOTHER_ERROR instead
+ *
+ * If the other peer is using GDBus, and has registered the association with
+ * g_dbus_error_register_error_domain() in advance (e.g. by invoking the %FOO_BAR_ERROR quark
+ * generation itself in the previous example) the peer will see also %FOO_BAR_ERROR_ANOTHER_ERROR instead
  * of %G_IO_ERROR_DBUS_ERROR. Note that GDBus clients can still recover
  * <literal>org.project.Foo.Bar.Error.AnotherError</literal> using g_dbus_error_get_remote_error().
  *
@@ -650,7 +656,7 @@ g_dbus_error_new_for_dbus_error (const gchar *dbus_error_name,
  * @error: A pointer to a #GError or %NULL.
  * @dbus_error_name: D-Bus error name.
  * @dbus_error_message: D-Bus error message.
- * @format: printf()-style format to prepend to @dbus_error_message or %NULL.
+ * @format: (allow-none): printf()-style format to prepend to @dbus_error_message or %NULL.
  * @...: Arguments for @format.
  *
  * Does nothing if @error is %NULL. Otherwise sets *@error to
@@ -695,7 +701,7 @@ g_dbus_error_set_dbus_error (GError      **error,
  * @error: A pointer to a #GError or %NULL.
  * @dbus_error_name: D-Bus error name.
  * @dbus_error_message: D-Bus error message.
- * @format: printf()-style format to prepend to @dbus_error_message or %NULL.
+ * @format: (allow-none): printf()-style format to prepend to @dbus_error_message or %NULL.
  * @var_args: Arguments for @format.
  *
  * Like g_dbus_error_set_dbus_error() but intended for language bindings.
@@ -837,6 +843,10 @@ g_dbus_error_encode_gerror (const GError *error)
        * hex-encode it for transport across the wire.
        */
       domain_as_string = g_quark_to_string (error->domain);
+
+      /* 0 is not a domain; neither are non-quark integers */
+      g_return_val_if_fail (domain_as_string != NULL, NULL);
+
       s = g_string_new ("org.gtk.GDBus.UnmappedGError.Quark._");
       for (n = 0; domain_as_string[n] != 0; n++)
         {

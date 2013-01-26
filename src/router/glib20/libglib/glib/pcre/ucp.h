@@ -10,6 +10,11 @@ the UCD access macros. New values that are added for new releases of Unicode
 should always be at the end of each enum, for backwards compatibility. */
 
 /* These are the general character categories. */
+#ifdef GLIB_COMPILATION
+#include "gunicode.h"
+#else
+#include <glib.h>
+#endif
 
 enum {
   ucp_C,     /* Other */
@@ -24,41 +29,44 @@ enum {
 /* These are the particular character types. */
 
 enum {
-  ucp_Cc,    /* Control */
-  ucp_Cf,    /* Format */
-  ucp_Cn,    /* Unassigned */
-  ucp_Co,    /* Private use */
-  ucp_Cs,    /* Surrogate */
-  ucp_Ll,    /* Lower case letter */
-  ucp_Lm,    /* Modifier letter */
-  ucp_Lo,    /* Other letter */
-  ucp_Lt,    /* Title case letter */
-  ucp_Lu,    /* Upper case letter */
-  ucp_Mc,    /* Spacing mark */
-  ucp_Me,    /* Enclosing mark */
-  ucp_Mn,    /* Non-spacing mark */
-  ucp_Nd,    /* Decimal number */
-  ucp_Nl,    /* Letter number */
-  ucp_No,    /* Other number */
-  ucp_Pc,    /* Connector punctuation */
-  ucp_Pd,    /* Dash punctuation */
-  ucp_Pe,    /* Close punctuation */
-  ucp_Pf,    /* Final punctuation */
-  ucp_Pi,    /* Initial punctuation */
-  ucp_Po,    /* Other punctuation */
-  ucp_Ps,    /* Open punctuation */
-  ucp_Sc,    /* Currency symbol */
-  ucp_Sk,    /* Modifier symbol */
-  ucp_Sm,    /* Mathematical symbol */
-  ucp_So,    /* Other symbol */
-  ucp_Zl,    /* Line separator */
-  ucp_Zp,    /* Paragraph separator */
-  ucp_Zs     /* Space separator */
+  ucp_Cc = G_UNICODE_CONTROL,                   /* Control */
+  ucp_Cf = G_UNICODE_FORMAT,                    /* Format */
+  ucp_Cn = G_UNICODE_UNASSIGNED,                /* Unassigned */
+  ucp_Co = G_UNICODE_PRIVATE_USE,               /* Private use */
+  ucp_Cs = G_UNICODE_SURROGATE,                 /* Surrogate */
+  ucp_Ll = G_UNICODE_LOWERCASE_LETTER,          /* Lower case letter */
+  ucp_Lm = G_UNICODE_MODIFIER_LETTER,           /* Modifier letter */
+  ucp_Lo = G_UNICODE_OTHER_LETTER,              /* Other letter */
+  ucp_Lt = G_UNICODE_TITLECASE_LETTER,          /* Title case letter */
+  ucp_Lu = G_UNICODE_UPPERCASE_LETTER,          /* Upper case letter */
+  ucp_Mc = G_UNICODE_SPACING_MARK,              /* Spacing mark */
+  ucp_Me = G_UNICODE_ENCLOSING_MARK,            /* Enclosing mark */
+  ucp_Mn = G_UNICODE_NON_SPACING_MARK,          /* Non-spacing mark */
+  ucp_Nd = G_UNICODE_DECIMAL_NUMBER,            /* Decimal number */
+  ucp_Nl = G_UNICODE_LETTER_NUMBER,             /* Letter number */
+  ucp_No = G_UNICODE_OTHER_NUMBER,              /* Other number */
+  ucp_Pc = G_UNICODE_CONNECT_PUNCTUATION,       /* Connector punctuation */
+  ucp_Pd = G_UNICODE_DASH_PUNCTUATION,          /* Dash punctuation */
+  ucp_Pe = G_UNICODE_CLOSE_PUNCTUATION,         /* Close punctuation */
+  ucp_Pf = G_UNICODE_FINAL_PUNCTUATION,         /* Final punctuation */
+  ucp_Pi = G_UNICODE_INITIAL_PUNCTUATION,       /* Initial punctuation */
+  ucp_Po = G_UNICODE_OTHER_PUNCTUATION,         /* Other punctuation */
+  ucp_Ps = G_UNICODE_OPEN_PUNCTUATION,          /* Open punctuation */
+  ucp_Sc = G_UNICODE_CURRENCY_SYMBOL,           /* Currency symbol */
+  ucp_Sk = G_UNICODE_MODIFIER_SYMBOL,           /* Modifier symbol */
+  ucp_Sm = G_UNICODE_MATH_SYMBOL,               /* Mathematical symbol */
+  ucp_So = G_UNICODE_OTHER_SYMBOL,              /* Other symbol */
+  ucp_Zl = G_UNICODE_LINE_SEPARATOR,            /* Line separator */
+  ucp_Zp = G_UNICODE_PARAGRAPH_SEPARATOR,       /* Paragraph separator */
+  ucp_Zs = G_UNICODE_SPACE_SEPARATOR            /* Space separator */
 };
 
 /* These are the script identifications. */
 
 enum {
+  ucp_Common = G_UNICODE_SCRIPT_COMMON,
+  ucp_Inherited = G_UNICODE_SCRIPT_INHERITED,
+
   ucp_Arabic = G_UNICODE_SCRIPT_ARABIC,
   ucp_Armenian = G_UNICODE_SCRIPT_ARMENIAN,
   ucp_Bengali = G_UNICODE_SCRIPT_BENGALI,
@@ -68,7 +76,6 @@ enum {
   ucp_Buhid = G_UNICODE_SCRIPT_BUHID,
   ucp_Canadian_Aboriginal = G_UNICODE_SCRIPT_CANADIAN_ABORIGINAL,
   ucp_Cherokee = G_UNICODE_SCRIPT_CHEROKEE,
-  ucp_Common = G_UNICODE_SCRIPT_COMMON,
   ucp_Coptic = G_UNICODE_SCRIPT_COPTIC,
   ucp_Cypriot = G_UNICODE_SCRIPT_CYPRIOT,
   ucp_Cyrillic = G_UNICODE_SCRIPT_CYRILLIC,
@@ -86,7 +93,6 @@ enum {
   ucp_Hanunoo = G_UNICODE_SCRIPT_HANUNOO,
   ucp_Hebrew = G_UNICODE_SCRIPT_HEBREW,
   ucp_Hiragana = G_UNICODE_SCRIPT_HIRAGANA,
-  ucp_Inherited = G_UNICODE_SCRIPT_INHERITED,
   ucp_Kannada = G_UNICODE_SCRIPT_KANNADA,
   ucp_Katakana = G_UNICODE_SCRIPT_KATAKANA,
   ucp_Kharoshthi = G_UNICODE_SCRIPT_KHAROSHTHI,
@@ -120,11 +126,13 @@ enum {
   ucp_Tifinagh = G_UNICODE_SCRIPT_TIFINAGH,
   ucp_Ugaritic = G_UNICODE_SCRIPT_UGARITIC,
   ucp_Yi = G_UNICODE_SCRIPT_YI,
+  /* New for Unicode 5.0: */
   ucp_Balinese = G_UNICODE_SCRIPT_BALINESE,
   ucp_Cuneiform = G_UNICODE_SCRIPT_CUNEIFORM,
   ucp_Nko = G_UNICODE_SCRIPT_NKO,
   ucp_Phags_Pa = G_UNICODE_SCRIPT_PHAGS_PA,
   ucp_Phoenician = G_UNICODE_SCRIPT_PHOENICIAN,
+  /* New for Unicode 5.1: */
   ucp_Carian = G_UNICODE_SCRIPT_CARIAN,
   ucp_Cham = G_UNICODE_SCRIPT_CHAM,
   ucp_Kayah_Li = G_UNICODE_SCRIPT_KAYAH_LI,
@@ -136,6 +144,7 @@ enum {
   ucp_Saurashtra = G_UNICODE_SCRIPT_SAURASHTRA,
   ucp_Sundanese = G_UNICODE_SCRIPT_SUNDANESE,
   ucp_Vai = G_UNICODE_SCRIPT_VAI,
+  /* New for Unicode 5.2: */
   ucp_Avestan = G_UNICODE_SCRIPT_AVESTAN,
   ucp_Bamum = G_UNICODE_SCRIPT_BAMUM,
   ucp_Egyptian_Hieroglyphs = G_UNICODE_SCRIPT_EGYPTIAN_HIEROGLYPHS,
@@ -151,12 +160,20 @@ enum {
   ucp_Samaritan = G_UNICODE_SCRIPT_SAMARITAN,
   ucp_Tai_Tham = G_UNICODE_SCRIPT_TAI_THAM,
   ucp_Tai_Viet = G_UNICODE_SCRIPT_TAI_VIET,
+  /* New for Unicode 6.0.0: */
   ucp_Batak = G_UNICODE_SCRIPT_BATAK,
   ucp_Brahmi = G_UNICODE_SCRIPT_BRAHMI,
-  ucp_Mandaic = G_UNICODE_SCRIPT_MANDAIC
+  ucp_Mandaic = G_UNICODE_SCRIPT_MANDAIC,
+  /* New for Unicode 6.1.0: */
+  ucp_Chakma = G_UNICODE_SCRIPT_CHAKMA,
+  ucp_Meroitic_Cursive = G_UNICODE_SCRIPT_MEROITIC_CURSIVE,
+  ucp_Meroitic_Hieroglyphs = G_UNICODE_SCRIPT_MEROITIC_HIEROGLYPHS,
+  ucp_Miao = G_UNICODE_SCRIPT_MIAO,
+  ucp_Sharada = G_UNICODE_SCRIPT_SHARADA,
+  ucp_Sora_Sompeng = G_UNICODE_SCRIPT_SORA_SOMPENG,
+  ucp_Takri = G_UNICODE_SCRIPT_TAKRI,
 };
 
 #endif
 
 /* End of ucp.h */
-

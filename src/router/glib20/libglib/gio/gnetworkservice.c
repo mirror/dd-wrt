@@ -245,7 +245,7 @@ g_network_service_get_property (GObject    *object,
  * @protocol, and @domain. This will initially be unresolved; use the
  * #GSocketConnectable interface to resolve it.
  *
- * Return value: (transfer full): a new #GNetworkService
+ * Return value: (transfer full) (type GNetworkService): a new #GNetworkService
  *
  * Since: 2.22
  */
@@ -405,6 +405,7 @@ typedef struct {
 
 } GNetworkServiceAddressEnumeratorClass;
 
+static GType _g_network_service_address_enumerator_get_type (void);
 G_DEFINE_TYPE (GNetworkServiceAddressEnumerator, _g_network_service_address_enumerator, G_TYPE_SOCKET_ADDRESS_ENUMERATOR)
 
 static GSocketAddress *

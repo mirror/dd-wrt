@@ -5,7 +5,7 @@
 
 /* GMutex */
 
-static GMutex* test_g_mutex_mutex = NULL;
+static GMutex test_g_mutex_mutex;
 static guint test_g_mutex_int = 0;
 static gboolean test_g_mutex_thread_ready;
 G_LOCK_DEFINE_STATIC (test_g_mutex);
@@ -14,12 +14,12 @@ static gpointer
 test_g_mutex_thread (gpointer data)
 {
   g_assert (GPOINTER_TO_INT (data) == 42);
-  g_assert (g_mutex_trylock (test_g_mutex_mutex) == FALSE);
+  g_assert (g_mutex_trylock (&test_g_mutex_mutex) == FALSE);
   g_assert (G_TRYLOCK (test_g_mutex) == FALSE);
   test_g_mutex_thread_ready = TRUE;
-  g_mutex_lock (test_g_mutex_mutex);
+  g_mutex_lock (&test_g_mutex_mutex);
   g_assert (test_g_mutex_int == 42);
-  g_mutex_unlock (test_g_mutex_mutex);
+  g_mutex_unlock (&test_g_mutex_mutex);
 
   return GINT_TO_POINTER (41);
 }
@@ -28,9 +28,8 @@ static void
 test_g_mutex (void)
 {
   GThread *thread;
-  test_g_mutex_mutex = g_mutex_new ();
 
-  g_assert (g_mutex_trylock (test_g_mutex_mutex));
+  g_assert (g_mutex_trylock (&test_g_mutex_mutex));
   g_assert (G_TRYLOCK (test_g_mutex));
   test_g_mutex_thread_ready = FALSE;
   thread = g_thread_create (test_g_mutex_thread, GINT_TO_POINTER (42),
@@ -41,9 +40,8 @@ test_g_mutex (void)
     g_usleep (G_USEC_PER_SEC / 5);
   test_g_mutex_int = 42;
   G_UNLOCK (test_g_mutex);
-  g_mutex_unlock (test_g_mutex_mutex);
+  g_mutex_unlock (&test_g_mutex_mutex);
   g_assert (GPOINTER_TO_INT (g_thread_join (thread)) == 41);
-  g_mutex_free (test_g_mutex_mutex);
 }
 
 /* GStaticRecMutex */
@@ -110,25 +108,25 @@ test_g_static_rec_mutex (void)
 
 static GStaticPrivate test_g_static_private_private1 = G_STATIC_PRIVATE_INIT;
 static GStaticPrivate test_g_static_private_private2 = G_STATIC_PRIVATE_INIT;
-static GStaticMutex test_g_static_private_mutex = G_STATIC_MUTEX_INIT;
+static GMutex test_g_static_private_mutex;
 static guint test_g_static_private_counter = 0;
 static guint test_g_static_private_ready = 0;
 
 static gpointer
 test_g_static_private_constructor (void)
 {
-  g_static_mutex_lock (&test_g_static_private_mutex);
+  g_mutex_lock (&test_g_static_private_mutex);
   test_g_static_private_counter++;
-  g_static_mutex_unlock (&test_g_static_private_mutex);  
+  g_mutex_unlock (&test_g_static_private_mutex);  
   return g_new (guint,1);
 }
 
 static void
 test_g_static_private_destructor (gpointer data)
 {
-  g_static_mutex_lock (&test_g_static_private_mutex);
+  g_mutex_lock (&test_g_static_private_mutex);
   test_g_static_private_counter--;
-  g_static_mutex_unlock (&test_g_static_private_mutex);  
+  g_mutex_unlock (&test_g_static_private_mutex);  
   g_free (data);
 }
 
@@ -162,9 +160,9 @@ test_g_static_private_thread (gpointer data)
       g_assert (number == *private1);
       g_assert (number * 2 == *private2);      
     }
-  g_static_mutex_lock (&test_g_static_private_mutex);
+  g_mutex_lock (&test_g_static_private_mutex);
   test_g_static_private_ready++;
-  g_static_mutex_unlock (&test_g_static_private_mutex);  
+  g_mutex_unlock (&test_g_static_private_mutex);  
 
   /* Busy wait is not nice but that's just a test */
   while (test_g_static_private_ready != 0)
@@ -384,9 +382,6 @@ int
 main (int   argc,
       char *argv[])
 {
-  /* Only run the test, if threads are enabled and a default thread
-     implementation is available */
-#if defined(G_THREADS_ENABLED) && ! defined(G_THREADS_IMPL_NONE)
   g_thread_init (NULL);
   run_all_tests ();
 
@@ -397,6 +392,5 @@ main (int   argc,
   g_thread_use_default_impl = FALSE;
   run_all_tests ();
   
-#endif
   return 0;
 }

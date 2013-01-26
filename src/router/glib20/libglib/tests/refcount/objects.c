@@ -37,7 +37,7 @@ my_test_get_type (void)
   static GType test_type = 0;
 
   if (!test_type) {
-    static const GTypeInfo test_info = {
+    const GTypeInfo test_info = {
       sizeof (GTestClass),
       NULL,
       NULL,
@@ -81,7 +81,7 @@ my_test_dispose (GObject * object)
 
   test = MY_TEST (object);
 
-  g_print ("dispose %p!\n", object);
+  g_print ("dispose %p!\n", test);
 
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
@@ -117,7 +117,6 @@ main (int argc, char **argv)
   GArray *test_threads;
   const guint n_threads = 5;
 
-  g_thread_init (NULL);
   g_print ("START: %s\n", argv[0]);
   g_log_set_always_fatal (G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL | g_log_set_always_fatal (G_LOG_FATAL_MASK));
   g_type_init ();

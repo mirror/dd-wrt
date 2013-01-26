@@ -35,7 +35,9 @@
 #include <string.h>
 
 #include "gdataset.h"
+#include "gbitlock.h"
 
+#include "gslice.h"
 #include "gdatasetprivate.h"
 #include "ghash.h"
 #include "gquark.h"
@@ -135,28 +137,35 @@
  **/
 
 /* --- defines --- */
-#define	G_QUARK_BLOCK_SIZE			(512)
+#define	G_QUARK_BLOCK_SIZE			(2048)
+
+#define G_DATALIST_FLAGS_MASK_INTERNAL 0x7
 
 /* datalist pointer accesses have to be carried out atomically */
 #define G_DATALIST_GET_POINTER(datalist)						\
-  ((GData*) ((gsize) g_atomic_pointer_get (datalist) & ~(gsize) G_DATALIST_FLAGS_MASK))
+  ((GData*) ((gsize) g_atomic_pointer_get (datalist) & ~(gsize) G_DATALIST_FLAGS_MASK_INTERNAL))
 
 #define G_DATALIST_SET_POINTER(datalist, pointer)       G_STMT_START {                  \
   gpointer _oldv, _newv;                                                                \
   do {                                                                                  \
     _oldv = g_atomic_pointer_get (datalist);                                            \
-    _newv = (gpointer) (((gsize) _oldv & G_DATALIST_FLAGS_MASK) | (gsize) pointer);     \
+    _newv = (gpointer) (((gsize) _oldv & G_DATALIST_FLAGS_MASK_INTERNAL) | (gsize) pointer);     \
   } while (!g_atomic_pointer_compare_and_exchange ((void**) datalist, _oldv, _newv));   \
 } G_STMT_END
 
 /* --- structures --- */
+typedef struct {
+  GQuark          key;
+  gpointer        data;
+  GDestroyNotify  destroy;
+} GDataElt;
+
 typedef struct _GDataset GDataset;
 struct _GData
 {
-  GData *next;
-  GQuark id;
-  gpointer data;
-  GDestroyNotify destroy_func;
+  guint32  len;     /* Number of elements */
+  guint32  alloc;   /* Number of allocated elements */
+  GDataElt data[1]; /* Flexible array */
 };
 
 struct _GDataset
@@ -176,69 +185,100 @@ static inline gpointer	g_data_set_internal		(GData     	**datalist,
 							 GDestroyNotify   destroy_func,
 							 GDataset	 *dataset);
 static void		g_data_initialize		(void);
-static inline GQuark	g_quark_new			(gchar  	*string);
 
+/* Locking model:
+ * Each standalone GDataList is protected by a bitlock in the datalist pointer,
+ * which protects that modification of the non-flags part of the datalist pointer
+ * and the contents of the datalist.
+ *
+ * For GDataSet we have a global lock g_dataset_global that protects
+ * the global dataset hash and cache, and additionally it protects the
+ * datalist such that we can avoid to use the bit lock in a few places
+ * where it is easy.
+ */
 
 /* --- variables --- */
 G_LOCK_DEFINE_STATIC (g_dataset_global);
 static GHashTable   *g_dataset_location_ht = NULL;
 static GDataset     *g_dataset_cached = NULL; /* should this be
-						 threadspecific? */
-G_LOCK_DEFINE_STATIC (g_quark_global);
-static GHashTable   *g_quark_ht = NULL;
-static gchar       **g_quarks = NULL;
-static GQuark        g_quark_seq_id = 0;
+						 thread specific? */
 
 /* --- functions --- */
 
-/* HOLDS: g_dataset_global_lock */
-static inline void
+#define DATALIST_LOCK_BIT 2
+
+static void
+g_datalist_lock (GData **datalist)
+{
+  g_pointer_bit_lock ((void **)datalist, DATALIST_LOCK_BIT);
+}
+
+static void
+g_datalist_unlock (GData **datalist)
+{
+  g_pointer_bit_unlock ((void **)datalist, DATALIST_LOCK_BIT);
+}
+
+/* Called with the datalist lock held, or the dataset global
+ * lock for dataset lists
+ */
+static void
 g_datalist_clear_i (GData **datalist)
 {
-  register GData *list;
-  
-  /* unlink *all* items before walking their destructors
-   */
-  list = G_DATALIST_GET_POINTER (datalist);
+  GData *data;
+  gint i;
+
+  data = G_DATALIST_GET_POINTER (datalist);
   G_DATALIST_SET_POINTER (datalist, NULL);
-  
-  while (list)
+
+  if (data)
     {
-      register GData *prev;
-      
-      prev = list;
-      list = prev->next;
-      
-      if (prev->destroy_func)
-	{
-	  G_UNLOCK (g_dataset_global);
-	  prev->destroy_func (prev->data);
-	  G_LOCK (g_dataset_global);
-	}
-      
-      g_slice_free (GData, prev);
+      G_UNLOCK (g_dataset_global);
+      for (i = 0; i < data->len; i++)
+        {
+          if (data->data[i].data && data->data[i].destroy)
+            data->data[i].destroy (data->data[i].data);
+        }
+      G_LOCK (g_dataset_global);
+
+      g_free (data);
     }
+
 }
 
 /**
  * g_datalist_clear:
  * @datalist: a datalist.
  *
- * Frees all the data elements of the datalist. The data elements'
- * destroy functions are called if they have been set.
+ * Frees all the data elements of the datalist.
+ * The data elements' destroy functions are called
+ * if they have been set.
  **/
 void
 g_datalist_clear (GData **datalist)
 {
-  g_return_if_fail (datalist != NULL);
-  
-  G_LOCK (g_dataset_global);
-  if (!g_dataset_location_ht)
-    g_data_initialize ();
+  GData *data;
+  gint i;
 
-  while (G_DATALIST_GET_POINTER (datalist))
-    g_datalist_clear_i (datalist);
-  G_UNLOCK (g_dataset_global);
+  g_return_if_fail (datalist != NULL);
+
+  g_datalist_lock (datalist);
+
+  data = G_DATALIST_GET_POINTER (datalist);
+  G_DATALIST_SET_POINTER (datalist, NULL);
+
+  g_datalist_unlock (datalist);
+
+  if (data)
+    {
+      for (i = 0; i < data->len; i++)
+        {
+          if (data->data[i].data && data->data[i].destroy)
+            data->data[i].destroy (data->data[i].data);
+        }
+
+      g_free (data);
+    }
 }
 
 /* HOLDS: g_dataset_global_lock */
@@ -266,7 +306,7 @@ g_dataset_destroy_internal (GDataset *dataset)
   dataset_location = dataset->location;
   while (dataset)
     {
-      if (!dataset->datalist)
+      if (G_DATALIST_GET_POINTER(&dataset->datalist) == NULL)
 	{
 	  if (dataset == g_dataset_cached)
 	    g_dataset_cached = NULL;
@@ -286,7 +326,7 @@ g_dataset_destroy_internal (GDataset *dataset)
  *
  * Destroys the dataset, freeing all memory allocated, and calling any
  * destroy functions set for data elements.
- **/
+ */
 void
 g_dataset_destroy (gconstpointer  dataset_location)
 {
@@ -304,109 +344,149 @@ g_dataset_destroy (gconstpointer  dataset_location)
   G_UNLOCK (g_dataset_global);
 }
 
-/* HOLDS: g_dataset_global_lock */
+/* HOLDS: g_dataset_global_lock if dataset != null */
 static inline gpointer
 g_data_set_internal (GData	  **datalist,
 		     GQuark         key_id,
-		     gpointer       data,
-		     GDestroyNotify destroy_func,
+		     gpointer       new_data,
+		     GDestroyNotify new_destroy_func,
 		     GDataset	   *dataset)
 {
-  register GData *list;
-  
-  list = G_DATALIST_GET_POINTER (datalist);
-  if (!data)
-    {
-      register GData *prev;
-      
-      prev = NULL;
-      while (list)
-	{
-	  if (list->id == key_id)
-	    {
-	      gpointer ret_data = NULL;
+  GData *d, *old_d;
+  GDataElt old, *data, *data_last, *data_end;
 
-	      if (prev)
-		prev->next = list->next;
-	      else
+  g_datalist_lock (datalist);
+
+  d = G_DATALIST_GET_POINTER (datalist);
+
+  if (new_data == NULL) /* remove */
+    {
+      if (d)
+	{
+	  data = d->data;
+	  data_last = data + d->len - 1;
+	  while (data <= data_last)
+	    {
+	      if (data->key == key_id)
 		{
-		  G_DATALIST_SET_POINTER (datalist, list->next);
-		  
-		  /* the dataset destruction *must* be done
-		   * prior to invocation of the data destroy function
+		  old = *data;
+		  if (data != data_last)
+		    *data = *data_last;
+		  d->len--;
+
+		  /* We don't bother to shrink, but if all data are now gone
+		   * we at least free the memory
+                   */
+		  if (d->len == 0)
+		    {
+		      G_DATALIST_SET_POINTER (datalist, NULL);
+		      g_free (d);
+		      /* datalist may be situated in dataset, so must not be
+		       * unlocked after we free it
+		       */
+		      g_datalist_unlock (datalist);
+
+		      /* the dataset destruction *must* be done
+		       * prior to invocation of the data destroy function
+		       */
+		      if (dataset)
+			g_dataset_destroy_internal (dataset);
+		    }
+		  else
+		    {
+		      g_datalist_unlock (datalist);
+		    }
+
+		  /* We found and removed an old value
+		   * the GData struct *must* already be unlinked
+		   * when invoking the destroy function.
+		   * we use (new_data==NULL && new_destroy_func!=NULL) as
+		   * a special hint combination to "steal"
+		   * data without destroy notification
 		   */
-		  if (!list->next && dataset)
-		    g_dataset_destroy_internal (dataset);
+		  if (old.destroy && !new_destroy_func)
+		    {
+		      if (dataset)
+			G_UNLOCK (g_dataset_global);
+		      old.destroy (old.data);
+		      if (dataset)
+			G_LOCK (g_dataset_global);
+		      old.data = NULL;
+		    }
+
+		  return old.data;
 		}
-	      
-	      /* the GData struct *must* already be unlinked
-	       * when invoking the destroy function.
-	       * we use (data==NULL && destroy_func!=NULL) as
-	       * a special hint combination to "steal"
-	       * data without destroy notification
-	       */
-	      if (list->destroy_func && !destroy_func)
-		{
-		  G_UNLOCK (g_dataset_global);
-		  list->destroy_func (list->data);
-		  G_LOCK (g_dataset_global);
-		}
-	      else
-		ret_data = list->data;
-	      
-              g_slice_free (GData, list);
-	      
-	      return ret_data;
+	      data++;
 	    }
-	  
-	  prev = list;
-	  list = list->next;
 	}
     }
   else
     {
-      while (list)
+      old.data = NULL;
+      if (d)
 	{
-	  if (list->id == key_id)
+	  data = d->data;
+	  data_end = data + d->len;
+	  while (data < data_end)
 	    {
-	      if (!list->destroy_func)
+	      if (data->key == key_id)
 		{
-		  list->data = data;
-		  list->destroy_func = destroy_func;
+		  if (!data->destroy)
+		    {
+		      data->data = new_data;
+		      data->destroy = new_destroy_func;
+		      g_datalist_unlock (datalist);
+		    }
+		  else
+		    {
+		      old = *data;
+		      data->data = new_data;
+		      data->destroy = new_destroy_func;
+
+		      g_datalist_unlock (datalist);
+
+		      /* We found and replaced an old value
+		       * the GData struct *must* already be unlinked
+		       * when invoking the destroy function.
+		       */
+		      if (dataset)
+			G_UNLOCK (g_dataset_global);
+		      old.destroy (old.data);
+		      if (dataset)
+			G_LOCK (g_dataset_global);
+		    }
+		  return NULL;
 		}
-	      else
-		{
-		  register GDestroyNotify dfunc;
-		  register gpointer ddata;
-		  
-		  dfunc = list->destroy_func;
-		  ddata = list->data;
-		  list->data = data;
-		  list->destroy_func = destroy_func;
-		  
-		  /* we need to have updated all structures prior to
-		   * invocation of the destroy function
-		   */
-		  G_UNLOCK (g_dataset_global);
-		  dfunc (ddata);
-		  G_LOCK (g_dataset_global);
-		}
-	      
-	      return NULL;
+	      data++;
 	    }
-	  
-	  list = list->next;
 	}
-      
-      list = g_slice_new (GData);
-      list->next = G_DATALIST_GET_POINTER (datalist);
-      list->id = key_id;
-      list->data = data;
-      list->destroy_func = destroy_func;
-      G_DATALIST_SET_POINTER (datalist, list);
+
+      /* The key was not found, insert it */
+      old_d = d;
+      if (d == NULL)
+	{
+	  d = g_malloc (sizeof (GData));
+	  d->len = 0;
+	  d->alloc = 1;
+	}
+      else if (d->len == d->alloc)
+	{
+	  d->alloc = d->alloc * 2;
+	  d = g_realloc (d, sizeof (GData) + (d->alloc - 1) * sizeof (GDataElt));
+	}
+      if (old_d != d)
+	G_DATALIST_SET_POINTER (datalist, d);
+
+      d->data[d->len].key = key_id;
+      d->data[d->len].data = new_data;
+      d->data[d->len].destroy = new_destroy_func;
+      d->len++;
     }
 
+  g_datalist_unlock (datalist);
+
   return NULL;
+
 }
 
 /**
@@ -512,7 +592,7 @@ g_dataset_id_set_data_full (gconstpointer  dataset_location,
  * g_datalist_id_set_data_full:
  * @datalist: a datalist.
  * @key_id: the #GQuark to identify the data element.
- * @data: the data element or %NULL to remove any previous element
+ * @data: (allow-none): the data element or %NULL to remove any previous element
  *        corresponding to @key_id.
  * @destroy_func: the function to call when the data element is
  *                removed. This function will be called with the data
@@ -529,7 +609,7 @@ g_dataset_id_set_data_full (gconstpointer  dataset_location,
  * g_datalist_set_data_full:
  * @dl: a datalist.
  * @k: the string to identify the data element.
- * @d: the data element, or %NULL to remove any previous element
+ * @d: (allow-none): the data element, or %NULL to remove any previous element
  *     corresponding to @k.
  * @f: the function to call when the data element is removed. This
  *     function will be called with the data element and can be used to
@@ -543,7 +623,7 @@ g_dataset_id_set_data_full (gconstpointer  dataset_location,
  * g_datalist_id_set_data:
  * @dl: a datalist.
  * @q: the #GQuark to identify the data element.
- * @d: the data element, or %NULL to remove any previous element
+ * @d: (allow-none): the data element, or %NULL to remove any previous element
  *     corresponding to @q.
  *
  * Sets the data corresponding to the given #GQuark id. Any previous
@@ -554,7 +634,7 @@ g_dataset_id_set_data_full (gconstpointer  dataset_location,
  * g_datalist_set_data:
  * @dl: a datalist.
  * @k: the string to identify the data element.
- * @d: the data element, or %NULL to remove any previous element
+ * @d: (allow-none): the data element, or %NULL to remove any previous element
  *     corresponding to @k.
  *
  * Sets the data element corresponding to the given string identifier.
@@ -591,12 +671,7 @@ g_datalist_id_set_data_full (GData	  **datalist,
 	return;
     }
 
-  G_LOCK (g_dataset_global);
-  if (!g_dataset_location_ht)
-    g_data_initialize ();
-  
   g_data_set_internal (datalist, key_id, data, destroy_func, NULL);
-  G_UNLOCK (g_dataset_global);
 }
 
 /**
@@ -661,10 +736,8 @@ g_datalist_id_remove_no_notify (GData	**datalist,
 
   g_return_val_if_fail (datalist != NULL, NULL);
 
-  G_LOCK (g_dataset_global);
-  if (key_id && g_dataset_location_ht)
+  if (key_id)
     ret_data = g_data_set_internal (datalist, key_id, NULL, (GDestroyNotify) 42, NULL);
-  G_UNLOCK (g_dataset_global);
 
   return ret_data;
 }
@@ -691,68 +764,282 @@ gpointer
 g_dataset_id_get_data (gconstpointer  dataset_location,
 		       GQuark         key_id)
 {
+  gpointer retval = NULL;
+
   g_return_val_if_fail (dataset_location != NULL, NULL);
   
   G_LOCK (g_dataset_global);
   if (key_id && g_dataset_location_ht)
     {
-      register GDataset *dataset;
+      GDataset *dataset;
       
       dataset = g_dataset_lookup (dataset_location);
       if (dataset)
-	{
-	  register GData *list;
-	  
-	  for (list = dataset->datalist; list; list = list->next)
-	    if (list->id == key_id)
-	      {
-		G_UNLOCK (g_dataset_global);
-		return list->data;
-	      }
-	}
+	retval = g_datalist_id_get_data (&dataset->datalist, key_id);
     }
   G_UNLOCK (g_dataset_global);
  
-  return NULL;
+  return retval;
 }
 
 /**
  * g_datalist_id_get_data:
  * @datalist: a datalist.
  * @key_id: the #GQuark identifying a data element.
- * @Returns: the data element, or %NULL if it is not found.
  *
  * Retrieves the data element corresponding to @key_id.
- **/
+ *
+ * Returns: the data element, or %NULL if it is not found.
+ */
+gpointer
+g_datalist_id_get_data (GData  **datalist,
+			GQuark   key_id)
+{
+  return g_datalist_id_dup_data (datalist, key_id, NULL, NULL);
+}
+
+/**
+ * GDuplicateFunc:
+ * @data: the data to duplicate
+ * @user_data: user data that was specified in g_datalist_id_dup_data()
+ *
+ * The type of functions that are used to 'duplicate' an object.
+ * What this means depends on the context, it could just be
+ * incrementing the reference count, if @data is a ref-counted
+ * object.
+ *
+ * Returns: a duplicate of data
+ */
+
+/**
+ * g_datalist_id_dup_data:
+ * @datalist: location of a datalist
+ * @key_id: the #GQuark identifying a data element
+ * @dup_func: (allow-none): function to duplicate the old value
+ * @user_data: (allow-none): passed as user_data to @dup_func
+ *
+ * This is a variant of g_datalist_id_get_data() which
+ * returns a 'duplicate' of the value. @dup_func defines the
+ * meaning of 'duplicate' in this context, it could e.g.
+ * take a reference on a ref-counted object.
+ *
+ * If the @key_id is not set in the datalist then @dup_func
+ * will be called with a %NULL argument.
+ *
+ * Note that @dup_func is called while the datalist is locked, so it
+ * is not allowed to read or modify the datalist.
+ *
+ * This function can be useful to avoid races when multiple
+ * threads are using the same datalist and the same key.
+ *
+ * Returns: the result of calling @dup_func on the value
+ *     associated with @key_id in @datalist, or %NULL if not set.
+ *     If @dup_func is %NULL, the value is returned unmodified.
+ *
+ * Since: 2.34
+ */
+gpointer
+g_datalist_id_dup_data (GData          **datalist,
+                        GQuark           key_id,
+                        GDuplicateFunc   dup_func,
+                        gpointer         user_data)
+{
+  gpointer val = NULL;
+  gpointer retval = NULL;
+  GData *d;
+  GDataElt *data, *data_end;
+
+  g_return_val_if_fail (datalist != NULL, NULL);
+  g_return_val_if_fail (key_id != 0, NULL);
+
+  g_datalist_lock (datalist);
+
+  d = G_DATALIST_GET_POINTER (datalist);
+  if (d)
+    {
+      data = d->data;
+      data_end = data + d->len - 1;
+      while (data <= data_end)
+        {
+          if (data->key == key_id)
+            {
+              val = data->data;
+              break;
+            }
+          data++;
+        }
+    }
+
+  if (dup_func)
+    retval = dup_func (val, user_data);
+  else
+    retval = val;
+
+  g_datalist_unlock (datalist);
+
+  return retval;
+}
+
+/**
+ * g_datalist_id_replace_data:
+ * @datalist: location of a datalist
+ * @key_id: the #GQuark identifying a data element
+ * @oldval: (allow-none): the old value to compare against
+ * @newval: (allow-none): the new value to replace it with
+ * @destroy: (allow-none): destroy notify for the new value
+ * @old_destroy: (allow-none): destroy notify for the existing value
+ *
+ * Compares the member that is associated with @key_id in
+ * @datalist to @oldval, and if they are the same, replace
+ * @oldval with @newval.
+ *
+ * This is like a typical atomic compare-and-exchange
+ * operation, for a member of @datalist.
+ *
+ * If the previous value was replaced then ownership of the
+ * old value (@oldval) is passed to the caller, including
+ * the registred destroy notify for it (passed out in @old_destroy).
+ * Its up to the caller to free this as he wishes, which may
+ * or may not include using @old_destroy as sometimes replacement
+ * should not destroy the object in the normal way.
+ *
+ * Return: %TRUE if the existing value for @key_id was replaced
+ *  by @newval, %FALSE otherwise.
+ *
+ * Since: 2.34
+ */
+gboolean
+g_datalist_id_replace_data (GData          **datalist,
+                            GQuark           key_id,
+                            gpointer         oldval,
+                            gpointer         newval,
+                            GDestroyNotify   destroy,
+                            GDestroyNotify  *old_destroy)
+{
+  gpointer val = NULL;
+  GData *d;
+  GDataElt *data, *data_end;
+
+  g_return_val_if_fail (datalist != NULL, FALSE);
+  g_return_val_if_fail (key_id != 0, FALSE);
+
+  if (old_destroy)
+    *old_destroy = NULL;
+
+  g_datalist_lock (datalist);
+
+  d = G_DATALIST_GET_POINTER (datalist);
+  if (d)
+    {
+      data = d->data;
+      data_end = data + d->len - 1;
+      while (data <= data_end)
+        {
+          if (data->key == key_id)
+            {
+              val = data->data;
+              if (val == oldval)
+                {
+                  if (old_destroy)
+                    *old_destroy = data->destroy;
+                  if (newval != NULL)
+                    {
+                      data->data = newval;
+                      data->destroy = destroy;
+                    }
+                  else
+                   {
+                     if (data != data_end)
+                       *data = *data_end;
+                     d->len--;
+
+                     /* We don't bother to shrink, but if all data are now gone
+                      * we at least free the memory
+                      */
+                     if (d->len == 0)
+                       {
+                         G_DATALIST_SET_POINTER (datalist, NULL);
+                         g_free (d);
+                       }
+                   }
+                }
+              break;
+            }
+          data++;
+        }
+    }
+
+  if (val == NULL && oldval == NULL && newval != NULL)
+    {
+      GData *old_d;
+
+      /* insert newval */
+      old_d = d;
+      if (d == NULL)
+	{
+          d = g_malloc (sizeof (GData));
+          d->len = 0;
+          d->alloc = 1;
+        }
+      else if (d->len == d->alloc)
+        {
+          d->alloc = d->alloc * 2;
+          d = g_realloc (d, sizeof (GData) + (d->alloc - 1) * sizeof (GDataElt));
+        }
+      if (old_d != d)
+        G_DATALIST_SET_POINTER (datalist, d);
+
+      d->data[d->len].key = key_id;
+      d->data[d->len].data = newval;
+      d->data[d->len].destroy = destroy;
+      d->len++;
+    }
+
+  g_datalist_unlock (datalist);
+
+  return val == oldval;
+}
+
 /**
  * g_datalist_get_data:
- * @dl: a datalist.
- * @k: the string identifying a data element.
+ * @datalist: a datalist.
+ * @key: the string identifying a data element.
  * @Returns: the data element, or %NULL if it is not found.
  *
- * Gets a data element, using its string identifer. This is slower than
- * g_datalist_id_get_data() because the string is first converted to a
- * #GQuark.
+ * Gets a data element, using its string identifier. This is slower than
+ * g_datalist_id_get_data() because it compares strings.
  **/
 gpointer
-g_datalist_id_get_data (GData	 **datalist,
-			GQuark     key_id)
+g_datalist_get_data (GData	 **datalist,
+		     const gchar *key)
 {
-  gpointer data = NULL;
+  gpointer res = NULL;
+  GData *d;
+  GDataElt *data, *data_end;
+
   g_return_val_if_fail (datalist != NULL, NULL);
-  if (key_id)
+
+  g_datalist_lock (datalist);
+
+  d = G_DATALIST_GET_POINTER (datalist);
+  if (d)
     {
-      register GData *list;
-      G_LOCK (g_dataset_global);
-      for (list = G_DATALIST_GET_POINTER (datalist); list; list = list->next)
-	if (list->id == key_id)
-	  {
-            data = list->data;
-            break;
-          }
-      G_UNLOCK (g_dataset_global);
+      data = d->data;
+      data_end = data + d->len;
+      while (data < data_end)
+	{
+	  if (strcmp (g_quark_to_string (data->key), key) == 0)
+	    {
+	      res = data->data;
+	      break;
+	    }
+	  data++;
+	}
     }
-  return data;
+
+  g_datalist_unlock (datalist);
+
+  return res;
 }
 
 /**
@@ -793,15 +1080,7 @@ g_dataset_foreach (gconstpointer    dataset_location,
       dataset = g_dataset_lookup (dataset_location);
       G_UNLOCK (g_dataset_global);
       if (dataset)
-	{
-	  register GData *list, *next;
-	  
-	  for (list = dataset->datalist; list; list = next)
-	    {
-	      next = list->next;
-	      func (list->id, list->data, user_data);
-	    }
-	}
+	g_datalist_foreach (&dataset->datalist, func, user_data);
     }
   else
     {
@@ -827,16 +1106,41 @@ g_datalist_foreach (GData	   **datalist,
 		    GDataForeachFunc func,
 		    gpointer         user_data)
 {
-  register GData *list, *next;
+  GData *d;
+  int i, j, len;
+  GQuark *keys;
 
   g_return_if_fail (datalist != NULL);
   g_return_if_fail (func != NULL);
+
+  d = G_DATALIST_GET_POINTER (datalist);
+  if (d == NULL) 
+    return;
+
+  /* We make a copy of the keys so that we can handle it changing
+     in the callback */
+  len = d->len;
+  keys = g_new (GQuark, len);
+  for (i = 0; i < len; i++)
+    keys[i] = d->data[i].key;
   
-  for (list = G_DATALIST_GET_POINTER (datalist); list; list = next)
+  for (i = 0; i < len; i++)
     {
-      next = list->next;
-      func (list->id, list->data, user_data);
+      /* A previous callback might have removed a later item, so always check that
+	 it still exists before calling */
+      d = G_DATALIST_GET_POINTER (datalist);
+      
+      if (d == NULL)
+	break;
+      for (j = 0; j < d->len; j++)
+	{
+	  if (d->data[j].key == keys[i]) {
+	    func (d->data[i].key, d->data[i].data, user_data);
+	    break;
+	  }
+	}
     }
+  g_free (keys);
 }
 
 /**
@@ -876,16 +1180,10 @@ void
 g_datalist_set_flags (GData **datalist,
 		      guint   flags)
 {
-  gpointer oldvalue;
   g_return_if_fail (datalist != NULL);
   g_return_if_fail ((flags & ~G_DATALIST_FLAGS_MASK) == 0);
-  
-  do
-    {
-      oldvalue = g_atomic_pointer_get (datalist);
-    }
-  while (!g_atomic_pointer_compare_and_exchange ((void**) datalist, oldvalue,
-                                                 (gpointer) ((gsize) oldvalue | flags)));
+
+  g_atomic_pointer_or (datalist, (gsize)flags);
 }
 
 /**
@@ -905,16 +1203,10 @@ void
 g_datalist_unset_flags (GData **datalist,
 			guint   flags)
 {
-  gpointer oldvalue;
   g_return_if_fail (datalist != NULL);
   g_return_if_fail ((flags & ~G_DATALIST_FLAGS_MASK) == 0);
-  
-  do
-    {
-      oldvalue = g_atomic_pointer_get (datalist);
-    }
-  while (!g_atomic_pointer_compare_and_exchange ((void**) datalist, oldvalue,
-                                                 (gpointer) ((gsize) oldvalue & ~(gsize) flags)));
+
+  g_atomic_pointer_and (datalist, ~(gsize)flags);
 }
 
 /**
@@ -944,280 +1236,4 @@ g_data_initialize (void)
 
   g_dataset_location_ht = g_hash_table_new (g_direct_hash, NULL);
   g_dataset_cached = NULL;
-}
-
-/**
- * SECTION:quarks
- * @title: Quarks
- * @short_description: a 2-way association between a string and a
- *                     unique integer identifier
- *
- * Quarks are associations between strings and integer identifiers.
- * Given either the string or the #GQuark identifier it is possible to
- * retrieve the other.
- *
- * Quarks are used for both <link
- * linkend="glib-datasets">Datasets</link> and <link
- * linkend="glib-keyed-data-lists">Keyed Data Lists</link>.
- *
- * To create a new quark from a string, use g_quark_from_string() or
- * g_quark_from_static_string().
- *
- * To find the string corresponding to a given #GQuark, use
- * g_quark_to_string().
- *
- * To find the #GQuark corresponding to a given string, use
- * g_quark_try_string().
- *
- * Another use for the string pool maintained for the quark functions
- * is string interning, using g_intern_string() or
- * g_intern_static_string(). An interned string is a canonical
- * representation for a string. One important advantage of interned
- * strings is that they can be compared for equality by a simple
- * pointer comparision, rather than using strcmp().
- **/
-
-/**
- * GQuark:
- *
- * A GQuark is a non-zero integer which uniquely identifies a
- * particular string. A GQuark value of zero is associated to %NULL.
- **/
-
-/**
- * g_quark_try_string:
- * @string: a string.
- * @Returns: the #GQuark associated with the string, or 0 if @string is
- *           %NULL or there is no #GQuark associated with it.
- *
- * Gets the #GQuark associated with the given string, or 0 if string is
- * %NULL or it has no associated #GQuark.
- *
- * If you want the GQuark to be created if it doesn't already exist,
- * use g_quark_from_string() or g_quark_from_static_string().
- **/
-GQuark
-g_quark_try_string (const gchar *string)
-{
-  GQuark quark = 0;
-
-  if (string == NULL)
-    return 0;
-
-  G_LOCK (g_quark_global);
-  if (g_quark_ht)
-    quark = GPOINTER_TO_UINT (g_hash_table_lookup (g_quark_ht, string));
-  G_UNLOCK (g_quark_global);
-  
-  return quark;
-}
-
-#define QUARK_STRING_BLOCK_SIZE (4096 - sizeof (gsize))
-static char *quark_block = NULL;
-static int quark_block_offset = 0;
-
-/* HOLDS: g_quark_global_lock */
-static char *
-quark_strdup(const gchar *string)
-{
-  gchar *copy;
-  gsize len;
-
-  len = strlen (string) + 1;
-
-  /* For strings longer than half the block size, fall back
-     to strdup so that we fill our blocks at least 50%. */
-  if (len > QUARK_STRING_BLOCK_SIZE / 2)
-    return g_strdup (string);
-
-  if (quark_block == NULL ||
-      QUARK_STRING_BLOCK_SIZE - quark_block_offset < len)
-    {
-      quark_block = g_malloc (QUARK_STRING_BLOCK_SIZE);
-      quark_block_offset = 0;
-    }
-
-  copy = quark_block + quark_block_offset;
-  memcpy (copy, string, len);
-  quark_block_offset += len;
-
-  return copy;
-}
-
-/* HOLDS: g_quark_global_lock */
-static inline GQuark
-g_quark_from_string_internal (const gchar *string, 
-			      gboolean     duplicate)
-{
-  GQuark quark = 0;
-  
-  if (g_quark_ht)
-    quark = GPOINTER_TO_UINT (g_hash_table_lookup (g_quark_ht, string));
-  
-  if (!quark)
-    {
-      quark = g_quark_new (duplicate ? quark_strdup (string) : (gchar *)string);
-      TRACE(GLIB_QUARK_NEW(string, quark));
-    }
-
-  return quark;
-}
-
-/**
- * g_quark_from_string:
- * @string: a string.
- * @Returns: the #GQuark identifying the string, or 0 if @string is
- *           %NULL.
- *
- * Gets the #GQuark identifying the given string. If the string does
- * not currently have an associated #GQuark, a new #GQuark is created,
- * using a copy of the string.
- **/
-GQuark
-g_quark_from_string (const gchar *string)
-{
-  GQuark quark;
-  
-  if (!string)
-    return 0;
-  
-  G_LOCK (g_quark_global);
-  quark = g_quark_from_string_internal (string, TRUE);
-  G_UNLOCK (g_quark_global);
-  
-  return quark;
-}
-
-/**
- * g_quark_from_static_string:
- * @string: a string.
- * @Returns: the #GQuark identifying the string, or 0 if @string is
- *           %NULL.
- *
- * Gets the #GQuark identifying the given (static) string. If the
- * string does not currently have an associated #GQuark, a new #GQuark
- * is created, linked to the given string.
- *
- * Note that this function is identical to g_quark_from_string() except
- * that if a new #GQuark is created the string itself is used rather
- * than a copy. This saves memory, but can only be used if the string
- * will <emphasis>always</emphasis> exist. It can be used with
- * statically allocated strings in the main program, but not with
- * statically allocated memory in dynamically loaded modules, if you
- * expect to ever unload the module again (e.g. do not use this
- * function in GTK+ theme engines).
- **/
-GQuark
-g_quark_from_static_string (const gchar *string)
-{
-  GQuark quark;
-  
-  if (!string)
-    return 0;
-  
-  G_LOCK (g_quark_global);
-  quark = g_quark_from_string_internal (string, FALSE);
-  G_UNLOCK (g_quark_global);
-
-  return quark;
-}
-
-/**
- * g_quark_to_string:
- * @quark: a #GQuark.
- * @Returns: the string associated with the #GQuark.
- *
- * Gets the string associated with the given #GQuark.
- **/
-G_CONST_RETURN gchar*
-g_quark_to_string (GQuark quark)
-{
-  gchar* result = NULL;
-
-  G_LOCK (g_quark_global);
-  if (quark < g_quark_seq_id)
-    result = g_quarks[quark];
-  G_UNLOCK (g_quark_global);
-
-  return result;
-}
-
-/* HOLDS: g_quark_global_lock */
-static inline GQuark
-g_quark_new (gchar *string)
-{
-  GQuark quark;
-  
-  if (g_quark_seq_id % G_QUARK_BLOCK_SIZE == 0)
-    g_quarks = g_renew (gchar*, g_quarks, g_quark_seq_id + G_QUARK_BLOCK_SIZE);
-  if (!g_quark_ht)
-    {
-      g_assert (g_quark_seq_id == 0);
-      g_quark_ht = g_hash_table_new (g_str_hash, g_str_equal);
-      g_quarks[g_quark_seq_id++] = NULL;
-    }
-
-  quark = g_quark_seq_id++;
-  g_quarks[quark] = string;
-  g_hash_table_insert (g_quark_ht, string, GUINT_TO_POINTER (quark));
-  
-  return quark;
-}
-
-/**
- * g_intern_string:
- * @string: a string
- * 
- * Returns a canonical representation for @string. Interned strings can
- * be compared for equality by comparing the pointers, instead of using strcmp().
- * 
- * Returns: a canonical representation for the string
- *
- * Since: 2.10
- */
-G_CONST_RETURN gchar*
-g_intern_string (const gchar *string)
-{
-  const gchar *result;
-  GQuark quark;
-
-  if (!string)
-    return NULL;
-
-  G_LOCK (g_quark_global);
-  quark = g_quark_from_string_internal (string, TRUE);
-  result = g_quarks[quark];
-  G_UNLOCK (g_quark_global);
-
-  return result;
-}
-
-/**
- * g_intern_static_string:
- * @string: a static string
- * 
- * Returns a canonical representation for @string. Interned strings can
- * be compared for equality by comparing the pointers, instead of using strcmp().
- * g_intern_static_string() does not copy the string, therefore @string must
- * not be freed or modified. 
- * 
- * Returns: a canonical representation for the string
- *
- * Since: 2.10
- */
-G_CONST_RETURN gchar*
-g_intern_static_string (const gchar *string)
-{
-  GQuark quark;
-  const gchar *result;
-
-  if (!string)
-    return NULL;
-
-  G_LOCK (g_quark_global);
-  quark = g_quark_from_string_internal (string, FALSE);
-  result = g_quarks[quark];
-  G_UNLOCK (g_quark_global);
-
-  return result;
 }

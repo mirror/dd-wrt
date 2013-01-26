@@ -79,7 +79,7 @@ $FOLDING_MAPPING = 2;
      'Ll' => "G_UNICODE_LOWERCASE_LETTER",
      'Lt' => "G_UNICODE_TITLECASE_LETTER",
      'Mn' => "G_UNICODE_NON_SPACING_MARK",
-     'Mc' => "G_UNICODE_COMBINING_MARK",
+     'Mc' => "G_UNICODE_SPACING_MARK",
      'Me' => "G_UNICODE_ENCLOSING_MARK",
      'Nd' => "G_UNICODE_DECIMAL_NUMBER",
      'Nl' => "G_UNICODE_LETTER_NUMBER",
@@ -118,6 +118,7 @@ $FOLDING_MAPPING = 2;
      'BB' => "G_UNICODE_BREAK_BEFORE",
      'BK' => "G_UNICODE_BREAK_MANDATORY",
      'CB' => "G_UNICODE_BREAK_CONTINGENT",
+     'CJ' => "G_UNICODE_BREAK_CONDITIONAL_JAPANESE_STARTER",
      'CL' => "G_UNICODE_BREAK_CLOSE_PUNCTUATION",
      'CM' => "G_UNICODE_BREAK_COMBINING_MARK",
      'CP' => "G_UNICODE_BREAK_CLOSE_PARANTHESIS",
@@ -126,6 +127,7 @@ $FOLDING_MAPPING = 2;
      'GL' => "G_UNICODE_BREAK_NON_BREAKING_GLUE",
      'H2' => "G_UNICODE_BREAK_HANGUL_LV_SYLLABLE",
      'H3' => "G_UNICODE_BREAK_HANGUL_LVT_SYLLABLE",
+     'HL' => "G_UNICODE_BREAK_HEBREW_LETTER",
      'HY' => "G_UNICODE_BREAK_HYPHEN",
      'ID' => "G_UNICODE_BREAK_IDEOGRAPHIC",
      'IN' => "G_UNICODE_BREAK_INSEPARABLE",
@@ -870,6 +872,33 @@ sub print_decomp
 
     printf OUT "static const gchar decomp_expansion_string[] = %s;\n\n", $decomp_string;
 
+    print OUT "typedef struct\n{\n";
+    print OUT "  gunichar ch;\n";
+    print OUT "  gunichar a;\n";
+    print OUT "  gunichar b;\n";
+    print OUT "} decomposition_step;\n\n";
+
+    # There's lots of room to optimize the following table...
+    print OUT "static const decomposition_step decomp_step_table[] =\n{\n";
+    $first = 1;
+    my @steps = ();
+    for ($count = 0; $count <= $last; ++$count)
+    {
+        if ((defined $decompositions[$count]) && (!$decompose_compat[$count]))
+        {
+            print OUT ",\n"
+                if ! $first;
+            $first = 0;
+            my @list;
+            @list = (split(' ', $decompositions[$count]), "0");
+            printf OUT qq(  { 0x%05x, 0x%05x, 0x%05x }), $count, hex($list[0]), hex($list[1]);
+            # don't include 1:1 in the compose table
+            push @steps, [ ($count, hex($list[0]), hex($list[1])) ]
+                if hex($list[1])
+        }
+    }
+    print OUT "\n};\n\n";
+
     print OUT "#endif /* DECOMP_H */\n";
 
     printf STDERR "Generated %d bytes in decomp tables\n", $bytes_out;
@@ -1082,6 +1111,10 @@ sub output_composition_table
 	@values = map { hex ($_) } split /\s+/, $compositions{$code};
 
         # non-starters
+	if ($cclass[$code]) {
+	    delete $compositions{$code};
+	    next;
+	}
 	if ($cclass[$values[0]]) {
 	    delete $compositions{$code};
 	    next;

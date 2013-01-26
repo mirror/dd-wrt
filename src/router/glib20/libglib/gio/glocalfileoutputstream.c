@@ -541,6 +541,16 @@ g_local_file_output_stream_query_info (GFileOutputStream  *stream,
 }
 
 GFileOutputStream *
+_g_local_file_output_stream_new (int fd)
+{
+  GLocalFileOutputStream *stream;
+
+  stream = g_object_new (G_TYPE_LOCAL_FILE_OUTPUT_STREAM, NULL);
+  stream->priv->fd = fd;
+  return G_FILE_OUTPUT_STREAM (stream);
+}
+
+GFileOutputStream *
 _g_local_file_output_stream_open  (const char        *filename,
 				   gboolean          readable,
 				   GCancellable      *cancellable,
@@ -830,7 +840,7 @@ handle_overwrite_open (const char    *filename,
       char *display_name = g_filename_display_name (filename);
       g_set_error (error, G_IO_ERROR,
 		   g_io_error_from_errno (errsv),
-		   _("Error stating file '%s': %s"),
+		   _("Error when getting information for file '%s': %s"),
 		   display_name, g_strerror (errsv));
       g_free (display_name);
       goto err_out;
@@ -909,10 +919,16 @@ handle_overwrite_open (const char    *filename,
 	    )
 	  )
 	{
-	  struct stat tmp_statbuf;
-	  
+          GLocalFileStat tmp_statbuf;
+          int tres;
+
+#ifdef G_OS_WIN32
+          tres = _fstati64 (tmpfd, &tmp_statbuf);
+#else
+          tres = fstat (tmpfd, &tmp_statbuf);
+#endif
 	  /* Check that we really needed to change something */
-	  if (fstat (tmpfd, &tmp_statbuf) != 0 ||
+	  if (tres != 0 ||
 	      original_stat.st_uid != tmp_statbuf.st_uid ||
 	      original_stat.st_gid != tmp_statbuf.st_gid ||
 	      original_stat.st_mode != tmp_statbuf.st_mode)

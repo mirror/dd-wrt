@@ -1,5 +1,5 @@
 /* GIO - GLib Input, Output and Streaming Library
- * 
+ *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
@@ -39,7 +39,7 @@
  * (using g_file_get_path()) when using g_app_info_launch() even if
  * the application requested an URI and not a POSIX path. For example
  * for an desktop-file based application with Exec key <literal>totem
- * %%U</literal> and a single URI,
+ * &percnt;U</literal> and a single URI,
  * <literal>sftp://foo/file.avi</literal>, then
  * <literal>/home/user/.gvfs/sftp on foo/file.avi</literal> will be
  * passed. This will only work if a set of suitable GIO extensions
@@ -313,11 +313,11 @@ g_app_info_set_as_default_for_type (GAppInfo    *appinfo,
  * @appinfo: a #GAppInfo.
  * @content_type: the content type.
  * @error: a #GError.
- * 
+ *
  * Sets the application as the last used application for a given type.
- * This will make the application appear as first in the list returned by
- * #g_app_info_get_recommended_for_type, regardless of the default application
- * for that content type.
+ * This will make the application appear as first in the list returned
+ * by g_app_info_get_recommended_for_type(), regardless of the default
+ * application for that content type.
  *
  * Returns: %TRUE on success, %FALSE on error.
  **/
@@ -458,6 +458,37 @@ g_app_info_remove_supports_type (GAppInfo    *appinfo,
   return FALSE;
 }
 
+/**
+ * g_app_info_get_supported_types:
+ * @appinfo: a #GAppInfo that can handle files
+ *
+ * Retrieves the list of content types that @app_info claims to support.
+ * If this information is not provided by the environment, this function
+ * will return %NULL.
+ * This function does not take in consideration associations added with
+ * g_app_info_add_supports_type(), but only those exported directly by
+ * the application.
+ *
+ * Returns: (transfer none) (array zero-terminated=1) (element-type utf8):
+ *    a list of content types.
+ *
+ * Since: 2.34
+ */
+const char **
+g_app_info_get_supported_types (GAppInfo *appinfo)
+{
+  GAppInfoIface *iface;
+
+  g_return_val_if_fail (G_IS_APP_INFO (appinfo), NULL);
+
+  iface = G_APP_INFO_GET_IFACE (appinfo);
+
+  if (iface->get_supported_types)
+    return iface->get_supported_types (appinfo);
+  else
+    return NULL;
+}
+
 
 /**
  * g_app_info_get_icon:
@@ -465,7 +496,8 @@ g_app_info_remove_supports_type (GAppInfo    *appinfo,
  * 
  * Gets the icon for the application.
  *
- * Returns: (transfer none): the default #GIcon for @appinfo.
+ * Returns: (transfer none): the default #GIcon for @appinfo or %NULL
+ * if there is no default icon.
  **/
 GIcon *
 g_app_info_get_icon (GAppInfo *appinfo)
@@ -483,7 +515,7 @@ g_app_info_get_icon (GAppInfo *appinfo)
 /**
  * g_app_info_launch:
  * @appinfo: a #GAppInfo
- * @files: (element-type GFile): a #GList of #GFile objects
+ * @files: (allow-none) (element-type GFile): a #GList of #GFile objects
  * @launch_context: (allow-none): a #GAppLaunchContext or %NULL
  * @error: a #GError
  * 
@@ -499,9 +531,13 @@ g_app_info_get_icon (GAppInfo *appinfo)
  * no way to detect this.
  *
  * Some URIs can be changed when passed through a GFile (for instance
- * unsupported uris with strange formats like mailto:), so if you have
- * a textual uri you want to pass in as argument, consider using
+ * unsupported URIs with strange formats like mailto:), so if you have
+ * a textual URI you want to pass in as argument, consider using
  * g_app_info_launch_uris() instead.
+ *
+ * The launched application inherits the environment of the launching
+ * process, but it can be modified with g_app_launch_context_setenv() and
+ * g_app_launch_context_unsetenv().
  *
  * On UNIX, this function sets the <envar>GIO_LAUNCHED_DESKTOP_FILE</envar>
  * environment variable with the path of the launched desktop file and
@@ -575,16 +611,16 @@ g_app_info_supports_files (GAppInfo *appinfo)
 /**
  * g_app_info_launch_uris:
  * @appinfo: a #GAppInfo
- * @uris: (element-type utf8): a #GList containing URIs to launch.
+ * @uris: (allow-none) (element-type utf8): a #GList containing URIs to launch.
  * @launch_context: (allow-none): a #GAppLaunchContext or %NULL
  * @error: a #GError
  * 
- * Launches the application. Passes @uris to the launched application
+ * Launches the application. This passes the @uris to the launched application
  * as arguments, using the optional @launch_context to get information
  * about the details of the launcher (like what screen it is on).
  * On error, @error will be set accordingly.
  *
- * To lauch the application without arguments pass a %NULL @uris list.
+ * To launch the application without arguments pass a %NULL @uris list.
  *
  * Note that even if the launch is successful the application launched
  * can fail to start if it runs into problems during startup. There is
@@ -647,21 +683,37 @@ g_app_info_launch_default_for_uri (const char         *uri,
 				   GAppLaunchContext  *launch_context,
 				   GError            **error)
 {
-  GAppInfo *app_info;
-  GFile *file;
+  char *uri_scheme;
+  GAppInfo *app_info = NULL;
   GList l;
   gboolean res;
 
-  file = g_file_new_for_uri (uri);
-  app_info = g_file_query_default_handler (file, NULL, error);
-  g_object_unref (file);
-  if (app_info == NULL)
-    return FALSE;
-
-  /* Use the uri, not the GFile, as the GFile roundtrip may
-   * affect the uri which we don't want (for instance for a
-   * mailto: uri).
+  /* g_file_query_default_handler() calls
+   * g_app_info_get_default_for_uri_scheme() too, but we have to do it
+   * here anyway in case GFile can't parse @uri correctly.
    */
+  uri_scheme = g_uri_parse_scheme (uri);
+  if (uri_scheme && uri_scheme[0] != '\0')
+    app_info = g_app_info_get_default_for_uri_scheme (uri_scheme);
+  g_free (uri_scheme);
+
+  if (!app_info)
+    {
+      GFile *file;
+
+      file = g_file_new_for_uri (uri);
+      app_info = g_file_query_default_handler (file, NULL, error);
+      g_object_unref (file);
+      if (app_info == NULL)
+	return FALSE;
+
+      /* We still use the original @uri rather than calling
+       * g_file_get_uri(), because GFile might have modified the URI
+       * in ways we don't want (eg, removing the fragment identifier
+       * from a file: URI).
+       */
+    }
+
   l.data = (char *)uri;
   l.next = l.prev = NULL;
   res = g_app_info_launch_uris (app_info, &l,
@@ -732,6 +784,10 @@ g_app_info_delete (GAppInfo *appinfo)
 
 G_DEFINE_TYPE (GAppLaunchContext, g_app_launch_context, G_TYPE_OBJECT);
 
+struct _GAppLaunchContextPrivate {
+  char **envp;
+};
+
 /**
  * g_app_launch_context_new:
  * 
@@ -747,13 +803,96 @@ g_app_launch_context_new (void)
 }
 
 static void
-g_app_launch_context_class_init (GAppLaunchContextClass *klass)
+g_app_launch_context_finalize (GObject *object)
 {
+  GAppLaunchContext *context = G_APP_LAUNCH_CONTEXT (object);
+
+  g_strfreev (context->priv->envp);
+
+  G_OBJECT_CLASS (g_app_launch_context_parent_class)->finalize (object);
 }
 
 static void
-g_app_launch_context_init (GAppLaunchContext *launch_context)
+g_app_launch_context_class_init (GAppLaunchContextClass *klass)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  g_type_class_add_private (klass, sizeof (GAppLaunchContextPrivate));
+
+  object_class->finalize = g_app_launch_context_finalize;
+}
+
+static void
+g_app_launch_context_init (GAppLaunchContext *context)
+{
+  context->priv = G_TYPE_INSTANCE_GET_PRIVATE (context, G_TYPE_APP_LAUNCH_CONTEXT, GAppLaunchContextPrivate);
+}
+
+/**
+ * g_app_launch_context_setenv:
+ * @context: a #GAppLaunchContext
+ * @variable: the environment variable to set
+ * @value: the value for to set the variable to.
+ *
+ * Arranges for @variable to be set to @value in the child's
+ * environment when @context is used to launch an application.
+ *
+ * Since: 2.32
+ */
+void
+g_app_launch_context_setenv (GAppLaunchContext *context,
+                             const char        *variable,
+                             const char        *value)
+{
+  if (!context->priv->envp)
+    context->priv->envp = g_get_environ ();
+
+  context->priv->envp =
+    g_environ_setenv (context->priv->envp, variable, value, TRUE);
+}
+
+/**
+ * g_app_launch_context_unsetenv:
+ * @context: a #GAppLaunchContext
+ * @variable: the environment variable to remove
+ *
+ * Arranges for @variable to be unset in the child's environment
+ * when @context is used to launch an application.
+ *
+ * Since: 2.32
+ */
+void
+g_app_launch_context_unsetenv (GAppLaunchContext *context,
+                               const char        *variable)
+{
+  if (!context->priv->envp)
+    context->priv->envp = g_get_environ ();
+
+  context->priv->envp =
+    g_environ_unsetenv (context->priv->envp, variable);
+}
+
+/**
+ * g_app_launch_context_get_environment:
+ * @context: a #GAppLaunchContext
+ *
+ * Gets the complete environment variable list to be passed to
+ * the child process when @context is used to launch an application.
+ * This is a %NULL-terminated array of strings, where each string has
+ * the form <literal>KEY=VALUE</literal>.
+ *
+ * Return value: (array zero-terminated=1) (transfer full): the
+ *     child's environment
+ *
+ * Since: 2.32
+ */
+char **
+g_app_launch_context_get_environment (GAppLaunchContext *context)
+{
+  if (!context->priv->envp)
+    context->priv->envp = g_get_environ ();
+
+  return g_strdupv (context->priv->envp);
 }
 
 /**
@@ -767,7 +906,7 @@ g_app_launch_context_init (GAppLaunchContext *launch_context)
  * application, by setting the <envar>DISPLAY</envar> environment variable.
  *
  * Returns: a display string for the display.
- **/
+ */
 char *
 g_app_launch_context_get_display (GAppLaunchContext *context,
 				  GAppInfo          *info,

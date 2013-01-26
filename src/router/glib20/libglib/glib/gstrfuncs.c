@@ -30,18 +30,25 @@
 
 #include "config.h"
 
-#define _GNU_SOURCE             /* For stpcpy */
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <locale.h>
 #include <string.h>
 #include <locale.h>
 #include <errno.h>
 #include <ctype.h>              /* For tolower() */
-#if !defined (HAVE_STRSIGNAL) || !defined(NO_SYS_SIGLIST_DECL)
-#include <signal.h>
+
+#ifdef HAVE_XLOCALE_H
+/* Needed on BSD/OS X for e.g. strtod_l */
+#include <xlocale.h>
 #endif
+
+#ifdef G_OS_WIN32
+#include <windows.h>
+#endif
+
+/* do not include <unistd.h> here, it may interfere with g_strsignal() */
 
 #include "gstrfuncs.h"
 
@@ -50,12 +57,242 @@
 #include "glibintl.h"
 
 
-#ifdef G_OS_WIN32
-#include <windows.h>
-#endif
+/**
+ * SECTION:string_utils
+ * @title: String Utility Functions
+ * @short_description: various string-related functions
+ *
+ * This section describes a number of utility functions for creating,
+ * duplicating, and manipulating strings.
+ *
+ * Note that the functions g_printf(), g_fprintf(), g_sprintf(),
+ * g_snprintf(), g_vprintf(), g_vfprintf(), g_vsprintf() and g_vsnprintf()
+ * are declared in the header <filename>gprintf.h</filename> which is
+ * <emphasis>not</emphasis> included in <filename>glib.h</filename>
+ * (otherwise using <filename>glib.h</filename> would drag in
+ * <filename>stdio.h</filename>), so you'll have to explicitly include
+ * <literal>&lt;glib/gprintf.h&gt;</literal> in order to use the GLib
+ * printf() functions.
+ *
+ * <para id="string-precision">While you may use the printf() functions
+ * to format UTF-8 strings, notice that the precision of a
+ * <literal>&percnt;Ns</literal> parameter is interpreted as the
+ * number of <emphasis>bytes</emphasis>, not <emphasis>characters</emphasis>
+ * to print. On top of that, the GNU libc implementation of the printf()
+ * functions has the "feature" that it checks that the string given for
+ * the <literal>&percnt;Ns</literal> parameter consists of a whole number
+ * of characters in the current encoding. So, unless you are sure you are
+ * always going to be in an UTF-8 locale or your know your text is restricted
+ * to ASCII, avoid using <literal>&percnt;Ns</literal>. If your intention is
+ * to format strings for a certain number of columns, then
+ * <literal>&percnt;Ns</literal> is not a correct solution anyway, since it
+ * fails to take wide characters (see g_unichar_iswide()) into account.
+ * </para>
+ */
 
-/* do not include <unistd.h> in this place since it
- * interferes with g_strsignal() on some OSes
+/**
+ * g_ascii_isalnum:
+ * @c: any character
+ *
+ * Determines whether a character is alphanumeric.
+ *
+ * Unlike the standard C library isalnum() function, this only
+ * recognizes standard ASCII letters and ignores the locale,
+ * returning %FALSE for all non-ASCII characters. Also, unlike
+ * the standard library function, this takes a <type>char</type>,
+ * not an <type>int</type>, so don't call it on <literal>EOF</literal>, but no need to
+ * cast to #guchar before passing a possibly non-ASCII character in.
+ *
+ * Returns: %TRUE if @c is an ASCII alphanumeric character
+ */
+
+/**
+ * g_ascii_isalpha:
+ * @c: any character
+ *
+ * Determines whether a character is alphabetic (i.e. a letter).
+ *
+ * Unlike the standard C library isalpha() function, this only
+ * recognizes standard ASCII letters and ignores the locale,
+ * returning %FALSE for all non-ASCII characters. Also, unlike
+ * the standard library function, this takes a <type>char</type>,
+ * not an <type>int</type>, so don't call it on <literal>EOF</literal>, but no need to
+ * cast to #guchar before passing a possibly non-ASCII character in.
+ *
+ * Returns: %TRUE if @c is an ASCII alphabetic character
+ */
+
+/**
+ * g_ascii_iscntrl:
+ * @c: any character
+ *
+ * Determines whether a character is a control character.
+ *
+ * Unlike the standard C library iscntrl() function, this only
+ * recognizes standard ASCII control characters and ignores the
+ * locale, returning %FALSE for all non-ASCII characters. Also,
+ * unlike the standard library function, this takes a <type>char</type>,
+ * not an <type>int</type>, so don't call it on <literal>EOF</literal>, but no need to
+ * cast to #guchar before passing a possibly non-ASCII character in.
+ *
+ * Returns: %TRUE if @c is an ASCII control character.
+ */
+
+/**
+ * g_ascii_isdigit:
+ * @c: any character
+ *
+ * Determines whether a character is digit (0-9).
+ *
+ * Unlike the standard C library isdigit() function, this takes
+ * a <type>char</type>, not an <type>int</type>, so don't call it
+ * on <literal>EOF</literal>, but no need to cast to #guchar before passing a possibly
+ * non-ASCII character in.
+ *
+ * Returns: %TRUE if @c is an ASCII digit.
+ */
+
+/**
+ * g_ascii_isgraph:
+ * @c: any character
+ *
+ * Determines whether a character is a printing character and not a space.
+ *
+ * Unlike the standard C library isgraph() function, this only
+ * recognizes standard ASCII characters and ignores the locale,
+ * returning %FALSE for all non-ASCII characters. Also, unlike
+ * the standard library function, this takes a <type>char</type>,
+ * not an <type>int</type>, so don't call it on <literal>EOF</literal>, but no need
+ * to cast to #guchar before passing a possibly non-ASCII character in.
+ *
+ * Returns: %TRUE if @c is an ASCII printing character other than space.
+ */
+
+/**
+ * g_ascii_islower:
+ * @c: any character
+ *
+ * Determines whether a character is an ASCII lower case letter.
+ *
+ * Unlike the standard C library islower() function, this only
+ * recognizes standard ASCII letters and ignores the locale,
+ * returning %FALSE for all non-ASCII characters. Also, unlike
+ * the standard library function, this takes a <type>char</type>,
+ * not an <type>int</type>, so don't call it on <literal>EOF</literal>, but no need
+ * to worry about casting to #guchar before passing a possibly
+ * non-ASCII character in.
+ *
+ * Returns: %TRUE if @c is an ASCII lower case letter
+ */
+
+/**
+ * g_ascii_isprint:
+ * @c: any character
+ *
+ * Determines whether a character is a printing character.
+ *
+ * Unlike the standard C library isprint() function, this only
+ * recognizes standard ASCII characters and ignores the locale,
+ * returning %FALSE for all non-ASCII characters. Also, unlike
+ * the standard library function, this takes a <type>char</type>,
+ * not an <type>int</type>, so don't call it on <literal>EOF</literal>, but no need
+ * to cast to #guchar before passing a possibly non-ASCII character in.
+ *
+ * Returns: %TRUE if @c is an ASCII printing character.
+ */
+
+/**
+ * g_ascii_ispunct:
+ * @c: any character
+ *
+ * Determines whether a character is a punctuation character.
+ *
+ * Unlike the standard C library ispunct() function, this only
+ * recognizes standard ASCII letters and ignores the locale,
+ * returning %FALSE for all non-ASCII characters. Also, unlike
+ * the standard library function, this takes a <type>char</type>,
+ * not an <type>int</type>, so don't call it on <literal>EOF</literal>, but no need to
+ * cast to #guchar before passing a possibly non-ASCII character in.
+ *
+ * Returns: %TRUE if @c is an ASCII punctuation character.
+ */
+
+/**
+ * g_ascii_isspace:
+ * @c: any character
+ *
+ * Determines whether a character is a white-space character.
+ *
+ * Unlike the standard C library isspace() function, this only
+ * recognizes standard ASCII white-space and ignores the locale,
+ * returning %FALSE for all non-ASCII characters. Also, unlike
+ * the standard library function, this takes a <type>char</type>,
+ * not an <type>int</type>, so don't call it on <literal>EOF</literal>, but no need to
+ * cast to #guchar before passing a possibly non-ASCII character in.
+ *
+ * Returns: %TRUE if @c is an ASCII white-space character
+ */
+
+/**
+ * g_ascii_isupper:
+ * @c: any character
+ *
+ * Determines whether a character is an ASCII upper case letter.
+ *
+ * Unlike the standard C library isupper() function, this only
+ * recognizes standard ASCII letters and ignores the locale,
+ * returning %FALSE for all non-ASCII characters. Also, unlike
+ * the standard library function, this takes a <type>char</type>,
+ * not an <type>int</type>, so don't call it on <literal>EOF</literal>, but no need to
+ * worry about casting to #guchar before passing a possibly non-ASCII
+ * character in.
+ *
+ * Returns: %TRUE if @c is an ASCII upper case letter
+ */
+
+/**
+ * g_ascii_isxdigit:
+ * @c: any character
+ *
+ * Determines whether a character is a hexadecimal-digit character.
+ *
+ * Unlike the standard C library isxdigit() function, this takes
+ * a <type>char</type>, not an <type>int</type>, so don't call it
+ * on <literal>EOF</literal>, but no need to cast to #guchar before passing a
+ * possibly non-ASCII character in.
+ *
+ * Returns: %TRUE if @c is an ASCII hexadecimal-digit character.
+ */
+
+/**
+ * G_ASCII_DTOSTR_BUF_SIZE:
+ *
+ * A good size for a buffer to be passed into g_ascii_dtostr().
+ * It is guaranteed to be enough for all output of that function
+ * on systems with 64bit IEEE-compatible doubles.
+ *
+ * The typical usage would be something like:
+ * |[
+ *   char buf[G_ASCII_DTOSTR_BUF_SIZE];
+ *
+ *   fprintf (out, "value=&percnt;s\n", g_ascii_dtostr (buf, sizeof (buf), value));
+ * ]|
+ */
+
+/**
+ * g_strstrip:
+ * @string: a string to remove the leading and trailing whitespace from
+ *
+ * Removes leading and trailing whitespace from a string.
+ * See g_strchomp() and g_strchug().
+ *
+ * Returns: @string
+ */
+
+/**
+ * G_STR_DELIMITERS:
+ *
+ * The standard delimiters, used in g_strdelimit().
  */
 
 static const guint16 ascii_table_data[256] = {
@@ -79,6 +316,31 @@ static const guint16 ascii_table_data[256] = {
 };
 
 const guint16 * const g_ascii_table = ascii_table_data;
+
+#if defined (HAVE_NEWLOCALE) && \
+    defined (HAVE_USELOCALE) && \
+    defined (HAVE_STRTOD_L) && \
+    defined (HAVE_STRTOULL_L) && \
+    defined (HAVE_STRTOLL_L)
+#define USE_XLOCALE 1
+#endif
+
+#ifdef USE_XLOCALE
+static locale_t
+get_C_locale (void)
+{
+  static gsize initialized = FALSE;
+  static locale_t C_locale = NULL;
+
+  if (g_once_init_enter (&initialized))
+    {
+      C_locale = newlocale (LC_ALL_MASK, "C", NULL);
+      g_once_init_leave (&initialized, TRUE);
+    }
+
+  return C_locale;
+}
+#endif
 
 /**
  * g_strdup:
@@ -261,7 +523,7 @@ g_strdup_vprintf (const gchar *format,
  * g_strdup_printf:
  * @format: a standard printf() format string, but notice
  *     <link linkend="string-precision">string precision pitfalls</link>
- * @Varargs: the parameters to insert into the format string
+ * @...: the parameters to insert into the format string
  *
  * Similar to the standard C sprintf() function but safer, since it
  * calculates the maximum space required and allocates memory to hold
@@ -287,7 +549,7 @@ g_strdup_printf (const gchar *format,
 /**
  * g_strconcat:
  * @string1: the first string to add, which must not be %NULL
- * @Varargs: a %NULL-terminated list of strings to append to the string
+ * @...: a %NULL-terminated list of strings to append to the string
  *
  * Concatenates all of the given strings into one long string.
  * The returned string should be freed with g_free() when no longer needed.
@@ -351,7 +613,7 @@ g_strconcat (const gchar *string1, ...)
  * if the string is not completely converted it attempts the conversion
  * again with g_ascii_strtod(), and returns the best match.
  *
- * This function should seldomly be used. The normal situation when reading
+ * This function should seldom be used. The normal situation when reading
  * numbers not for human consumption is to use g_ascii_strtod(). Only when
  * you know that you must expect both locale formatted and C formatted numbers
  * should you use this. Make sure that you don't pass strings such as comma
@@ -415,20 +677,30 @@ g_strtod (const gchar *nptr,
  * To convert from a #gdouble to a string in a locale-insensitive
  * way, use g_ascii_dtostr().
  *
- * If the correct value would cause overflow, plus or minus %HUGE_VAL
- * is returned (according to the sign of the value), and %ERANGE is
- * stored in %errno. If the correct value would cause underflow,
- * zero is returned and %ERANGE is stored in %errno.
+ * If the correct value would cause overflow, plus or minus <literal>HUGE_VAL</literal>
+ * is returned (according to the sign of the value), and <literal>ERANGE</literal> is
+ * stored in <literal>errno</literal>. If the correct value would cause underflow,
+ * zero is returned and <literal>ERANGE</literal> is stored in <literal>errno</literal>.
  *
- * This function resets %errno before calling strtod() so that
+ * This function resets <literal>errno</literal> before calling strtod() so that
  * you can reliably detect overflow and underflow.
  *
  * Return value: the #gdouble value.
- **/
+ */
 gdouble
 g_ascii_strtod (const gchar *nptr,
                 gchar      **endptr)
 {
+#ifdef USE_XLOCALE
+
+  g_return_val_if_fail (nptr != NULL, 0);
+
+  errno = 0;
+
+  return strtod_l (nptr, endptr, get_C_locale ());
+
+#else
+
   gchar *fail_pos;
   gdouble val;
   struct lconv *locale_data;
@@ -573,6 +845,7 @@ g_ascii_strtod (const gchar *nptr,
   errno = strtod_errno;
 
   return val;
+#endif
 }
 
 
@@ -625,6 +898,15 @@ g_ascii_formatd (gchar       *buffer,
                  const gchar *format,
                  gdouble      d)
 {
+#ifdef USE_XLOCALE
+  locale_t old_locale;
+
+  old_locale = uselocale (get_C_locale ());
+  _g_snprintf (buffer, buf_len, format, d);
+  uselocale (old_locale);
+
+  return buffer;
+#else
   struct lconv *locale_data;
   const char *decimal_point;
   int decimal_point_len;
@@ -690,7 +972,18 @@ g_ascii_formatd (gchar       *buffer,
     }
 
   return buffer;
+#endif
 }
+
+#define ISSPACE(c)              ((c) == ' ' || (c) == '\f' || (c) == '\n' || \
+                                 (c) == '\r' || (c) == '\t' || (c) == '\v')
+#define ISUPPER(c)              ((c) >= 'A' && (c) <= 'Z')
+#define ISLOWER(c)              ((c) >= 'a' && (c) <= 'z')
+#define ISALPHA(c)              (ISUPPER (c) || ISLOWER (c))
+#define TOUPPER(c)              (ISLOWER (c) ? (c) - 'a' + 'A' : (c))
+#define TOLOWER(c)              (ISUPPER (c) ? (c) - 'A' + 'a' : (c))
+
+#ifndef USE_XLOCALE
 
 static guint64
 g_parse_long_long (const gchar  *nptr,
@@ -704,13 +997,6 @@ g_parse_long_long (const gchar  *nptr,
    * Copyright (C) 1991,92,94,95,96,97,98,99,2000,01,02
    *        Free Software Foundation, Inc.
    */
-#define ISSPACE(c)              ((c) == ' ' || (c) == '\f' || (c) == '\n' || \
-                                 (c) == '\r' || (c) == '\t' || (c) == '\v')
-#define ISUPPER(c)              ((c) >= 'A' && (c) <= 'Z')
-#define ISLOWER(c)              ((c) >= 'a' && (c) <= 'z')
-#define ISALPHA(c)              (ISUPPER (c) || ISLOWER (c))
-#define TOUPPER(c)              (ISLOWER (c) ? (c) - 'a' + 'A' : (c))
-#define TOLOWER(c)              (ISUPPER (c) ? (c) - 'A' + 'a' : (c))
   gboolean overflow;
   guint64 cutoff;
   guint64 cutlim;
@@ -822,6 +1108,7 @@ g_parse_long_long (const gchar  *nptr,
     }
   return 0;
 }
+#endif /* !USE_XLOCALE */
 
 /**
  * g_ascii_strtoull:
@@ -842,10 +1129,11 @@ g_parse_long_long (const gchar  *nptr,
  * locale-sensitive system strtoull() function.
  *
  * If the correct value would cause overflow, %G_MAXUINT64
- * is returned, and %ERANGE is stored in %errno.  If the base is
- * outside the valid range, zero is returned, and %EINVAL is stored
- * in %errno.  If the string conversion fails, zero is returned, and
- * @endptr returns @nptr (if @endptr is non-%NULL).
+ * is returned, and <literal>ERANGE</literal> is stored in <literal>errno</literal>.
+ * If the base is outside the valid range, zero is returned, and
+ * <literal>EINVAL</literal> is stored in <literal>errno</literal>.
+ * If the string conversion fails, zero is returned, and @endptr returns
+ * @nptr (if @endptr is non-%NULL).
  *
  * Return value: the #guint64 value or zero on error.
  *
@@ -856,6 +1144,9 @@ g_ascii_strtoull (const gchar *nptr,
                   gchar      **endptr,
                   guint        base)
 {
+#ifdef USE_XLOCALE
+  return strtoull_l (nptr, endptr, base, get_C_locale ());
+#else
   gboolean negative;
   guint64 result;
 
@@ -863,6 +1154,7 @@ g_ascii_strtoull (const gchar *nptr,
 
   /* Return the result of the appropriate sign.  */
   return negative ? -result : result;
+#endif
 }
 
 /**
@@ -884,10 +1176,11 @@ g_ascii_strtoull (const gchar *nptr,
  * locale-sensitive system strtoll() function.
  *
  * If the correct value would cause overflow, %G_MAXINT64 or %G_MININT64
- * is returned, and %ERANGE is stored in %errno.  If the base is
- * outside the valid range, zero is returned, and %EINVAL is stored
- * in %errno.  If the string conversion fails, zero is returned, and
- * @endptr returns @nptr (if @endptr is non-%NULL).
+ * is returned, and <literal>ERANGE</literal> is stored in <literal>errno</literal>.
+ * If the base is outside the valid range, zero is returned, and
+ * <literal>EINVAL</literal> is stored in <literal>errno</literal>. If the
+ * string conversion fails, zero is returned, and @endptr returns @nptr
+ * (if @endptr is non-%NULL).
  *
  * Return value: the #gint64 value or zero on error.
  *
@@ -898,6 +1191,9 @@ g_ascii_strtoll (const gchar *nptr,
                  gchar      **endptr,
                  guint        base)
 {
+#ifdef USE_XLOCALE
+  return strtoll_l (nptr, endptr, base, get_C_locale ());
+#else
   gboolean negative;
   guint64 result;
 
@@ -917,6 +1213,7 @@ g_ascii_strtoll (const gchar *nptr,
     return - (gint64) result;
   else
     return (gint64) result;
+#endif
 }
 
 /**
@@ -930,474 +1227,35 @@ g_ascii_strtoll (const gchar *nptr,
  * not all platforms support the strerror() function.
  *
  * Returns: a UTF-8 string describing the error code. If the error code
- *     is unknown, it returns "unknown error (&lt;code&gt;)". The string
- *     can only be used until the next call to g_strerror()
+ *     is unknown, it returns "unknown error (&lt;code&gt;)".
  */
-G_CONST_RETURN gchar*
+const gchar *
 g_strerror (gint errnum)
 {
-  static GStaticPrivate msg_private = G_STATIC_PRIVATE_INIT;
-  char *msg;
-  int saved_errno = errno;
+  gchar buf[64];
+  gchar *msg;
+  gchar *tofree;
+  const gchar *ret;
+  gint saved_errno = errno;
+
+  msg = tofree = NULL;
 
 #ifdef HAVE_STRERROR
-  const char *msg_locale;
+  msg = strerror (errnum);
+  if (!g_get_charset (NULL))
+    msg = tofree = g_locale_to_utf8 (msg, -1, NULL, NULL, NULL);
+#endif
 
-  msg_locale = strerror (errnum);
-  if (g_get_charset (NULL))
-    {
-      errno = saved_errno;
-      return msg_locale;
-    }
-  else
-    {
-      gchar *msg_utf8 = g_locale_to_utf8 (msg_locale, -1, NULL, NULL, NULL);
-      if (msg_utf8)
-        {
-          /* Stick in the quark table so that we can return a static result
-           */
-          GQuark msg_quark = g_quark_from_string (msg_utf8);
-          g_free (msg_utf8);
-
-          msg_utf8 = (gchar *) g_quark_to_string (msg_quark);
-          errno = saved_errno;
-          return msg_utf8;
-        }
-    }
-#elif NO_SYS_ERRLIST
-  switch (errnum)
-    {
-#ifdef E2BIG
-    case E2BIG: return "argument list too long";
-#endif
-#ifdef EACCES
-    case EACCES: return "permission denied";
-#endif
-#ifdef EADDRINUSE
-    case EADDRINUSE: return "address already in use";
-#endif
-#ifdef EADDRNOTAVAIL
-    case EADDRNOTAVAIL: return "can't assign requested address";
-#endif
-#ifdef EADV
-    case EADV: return "advertise error";
-#endif
-#ifdef EAFNOSUPPORT
-    case EAFNOSUPPORT: return "address family not supported by protocol family";
-#endif
-#ifdef EAGAIN
-    case EAGAIN: return "try again";
-#endif
-#ifdef EALIGN
-    case EALIGN: return "EALIGN";
-#endif
-#ifdef EALREADY
-    case EALREADY: return "operation already in progress";
-#endif
-#ifdef EBADE
-    case EBADE: return "bad exchange descriptor";
-#endif
-#ifdef EBADF
-    case EBADF: return "bad file number";
-#endif
-#ifdef EBADFD
-    case EBADFD: return "file descriptor in bad state";
-#endif
-#ifdef EBADMSG
-    case EBADMSG: return "not a data message";
-#endif
-#ifdef EBADR
-    case EBADR: return "bad request descriptor";
-#endif
-#ifdef EBADRPC
-    case EBADRPC: return "RPC structure is bad";
-#endif
-#ifdef EBADRQC
-    case EBADRQC: return "bad request code";
-#endif
-#ifdef EBADSLT
-    case EBADSLT: return "invalid slot";
-#endif
-#ifdef EBFONT
-    case EBFONT: return "bad font file format";
-#endif
-#ifdef EBUSY
-    case EBUSY: return "mount device busy";
-#endif
-#ifdef ECHILD
-    case ECHILD: return "no children";
-#endif
-#ifdef ECHRNG
-    case ECHRNG: return "channel number out of range";
-#endif
-#ifdef ECOMM
-    case ECOMM: return "communication error on send";
-#endif
-#ifdef ECONNABORTED
-    case ECONNABORTED: return "software caused connection abort";
-#endif
-#ifdef ECONNREFUSED
-    case ECONNREFUSED: return "connection refused";
-#endif
-#ifdef ECONNRESET
-    case ECONNRESET: return "connection reset by peer";
-#endif
-#if defined(EDEADLK) && (!defined(EWOULDBLOCK) || (EDEADLK != EWOULDBLOCK))
-    case EDEADLK: return "resource deadlock avoided";
-#endif
-#if defined(EDEADLOCK) && (!defined(EDEADLK) || (EDEADLOCK != EDEADLK))
-    case EDEADLOCK: return "resource deadlock avoided";
-#endif
-#ifdef EDESTADDRREQ
-    case EDESTADDRREQ: return "destination address required";
-#endif
-#ifdef EDIRTY
-    case EDIRTY: return "mounting a dirty fs w/o force";
-#endif
-#ifdef EDOM
-    case EDOM: return "math argument out of range";
-#endif
-#ifdef EDOTDOT
-    case EDOTDOT: return "cross mount point";
-#endif
-#ifdef EDQUOT
-    case EDQUOT: return "disk quota exceeded";
-#endif
-#ifdef EDUPPKG
-    case EDUPPKG: return "duplicate package name";
-#endif
-#ifdef EEXIST
-    case EEXIST: return "file already exists";
-#endif
-#ifdef EFAULT
-    case EFAULT: return "bad address in system call argument";
-#endif
-#ifdef EFBIG
-    case EFBIG: return "file too large";
-#endif
-#ifdef EHOSTDOWN
-    case EHOSTDOWN: return "host is down";
-#endif
-#ifdef EHOSTUNREACH
-    case EHOSTUNREACH: return "host is unreachable";
-#endif
-#ifdef EIDRM
-    case EIDRM: return "identifier removed";
-#endif
-#ifdef EINIT
-    case EINIT: return "initialization error";
-#endif
-#ifdef EINPROGRESS
-    case EINPROGRESS: return "operation now in progress";
-#endif
-#ifdef EINTR
-    case EINTR: return "interrupted system call";
-#endif
-#ifdef EINVAL
-    case EINVAL: return "invalid argument";
-#endif
-#ifdef EIO
-    case EIO: return "I/O error";
-#endif
-#ifdef EISCONN
-    case EISCONN: return "socket is already connected";
-#endif
-#ifdef EISDIR
-    case EISDIR: return "is a directory";
-#endif
-#ifdef EISNAME
-    case EISNAM: return "is a name file";
-#endif
-#ifdef ELBIN
-    case ELBIN: return "ELBIN";
-#endif
-#ifdef EL2HLT
-    case EL2HLT: return "level 2 halted";
-#endif
-#ifdef EL2NSYNC
-    case EL2NSYNC: return "level 2 not synchronized";
-#endif
-#ifdef EL3HLT
-    case EL3HLT: return "level 3 halted";
-#endif
-#ifdef EL3RST
-    case EL3RST: return "level 3 reset";
-#endif
-#ifdef ELIBACC
-    case ELIBACC: return "can not access a needed shared library";
-#endif
-#ifdef ELIBBAD
-    case ELIBBAD: return "accessing a corrupted shared library";
-#endif
-#ifdef ELIBEXEC
-    case ELIBEXEC: return "can not exec a shared library directly";
-#endif
-#ifdef ELIBMAX
-    case ELIBMAX: return "attempting to link in more shared libraries than system limit";
-#endif
-#ifdef ELIBSCN
-    case ELIBSCN: return ".lib section in a.out corrupted";
-#endif
-#ifdef ELNRNG
-    case ELNRNG: return "link number out of range";
-#endif
-#ifdef ELOOP
-    case ELOOP: return "too many levels of symbolic links";
-#endif
-#ifdef EMFILE
-    case EMFILE: return "too many open files";
-#endif
-#ifdef EMLINK
-    case EMLINK: return "too many links";
-#endif
-#ifdef EMSGSIZE
-    case EMSGSIZE: return "message too long";
-#endif
-#ifdef EMULTIHOP
-    case EMULTIHOP: return "multihop attempted";
-#endif
-#ifdef ENAMETOOLONG
-    case ENAMETOOLONG: return "file name too long";
-#endif
-#ifdef ENAVAIL
-    case ENAVAIL: return "not available";
-#endif
-#ifdef ENET
-    case ENET: return "ENET";
-#endif
-#ifdef ENETDOWN
-    case ENETDOWN: return "network is down";
-#endif
-#ifdef ENETRESET
-    case ENETRESET: return "network dropped connection on reset";
-#endif
-#ifdef ENETUNREACH
-    case ENETUNREACH: return "network is unreachable";
-#endif
-#ifdef ENFILE
-    case ENFILE: return "file table overflow";
-#endif
-#ifdef ENOANO
-    case ENOANO: return "anode table overflow";
-#endif
-#if defined(ENOBUFS) && (!defined(ENOSR) || (ENOBUFS != ENOSR))
-    case ENOBUFS: return "no buffer space available";
-#endif
-#ifdef ENOCSI
-    case ENOCSI: return "no CSI structure available";
-#endif
-#ifdef ENODATA
-    case ENODATA: return "no data available";
-#endif
-#ifdef ENODEV
-    case ENODEV: return "no such device";
-#endif
-#ifdef ENOENT
-    case ENOENT: return "no such file or directory";
-#endif
-#ifdef ENOEXEC
-    case ENOEXEC: return "exec format error";
-#endif
-#ifdef ENOLCK
-    case ENOLCK: return "no locks available";
-#endif
-#ifdef ENOLINK
-    case ENOLINK: return "link has be severed";
-#endif
-#ifdef ENOMEM
-    case ENOMEM: return "not enough memory";
-#endif
-#ifdef ENOMSG
-    case ENOMSG: return "no message of desired type";
-#endif
-#ifdef ENONET
-    case ENONET: return "machine is not on the network";
-#endif
-#ifdef ENOPKG
-    case ENOPKG: return "package not installed";
-#endif
-#ifdef ENOPROTOOPT
-    case ENOPROTOOPT: return "bad proocol option";
-#endif
-#ifdef ENOSPC
-    case ENOSPC: return "no space left on device";
-#endif
-#ifdef ENOSR
-    case ENOSR: return "out of stream resources";
-#endif
-#ifdef ENOSTR
-    case ENOSTR: return "not a stream device";
-#endif
-#ifdef ENOSYM
-    case ENOSYM: return "unresolved symbol name";
-#endif
-#ifdef ENOSYS
-    case ENOSYS: return "function not implemented";
-#endif
-#ifdef ENOTBLK
-    case ENOTBLK: return "block device required";
-#endif
-#ifdef ENOTCONN
-    case ENOTCONN: return "socket is not connected";
-#endif
-#ifdef ENOTDIR
-    case ENOTDIR: return "not a directory";
-#endif
-#ifdef ENOTEMPTY
-    case ENOTEMPTY: return "directory not empty";
-#endif
-#ifdef ENOTNAM
-    case ENOTNAM: return "not a name file";
-#endif
-#ifdef ENOTSOCK
-    case ENOTSOCK: return "socket operation on non-socket";
-#endif
-#ifdef ENOTTY
-    case ENOTTY: return "inappropriate device for ioctl";
-#endif
-#ifdef ENOTUNIQ
-    case ENOTUNIQ: return "name not unique on network";
-#endif
-#ifdef ENXIO
-    case ENXIO: return "no such device or address";
-#endif
-#ifdef EOPNOTSUPP
-    case EOPNOTSUPP: return "operation not supported on socket";
-#endif
-#ifdef EPERM
-    case EPERM: return "not owner";
-#endif
-#ifdef EPFNOSUPPORT
-    case EPFNOSUPPORT: return "protocol family not supported";
-#endif
-#ifdef EPIPE
-    case EPIPE: return "broken pipe";
-#endif
-#ifdef EPROCLIM
-    case EPROCLIM: return "too many processes";
-#endif
-#ifdef EPROCUNAVAIL
-    case EPROCUNAVAIL: return "bad procedure for program";
-#endif
-#ifdef EPROGMISMATCH
-    case EPROGMISMATCH: return "program version wrong";
-#endif
-#ifdef EPROGUNAVAIL
-    case EPROGUNAVAIL: return "RPC program not available";
-#endif
-#ifdef EPROTO
-    case EPROTO: return "protocol error";
-#endif
-#ifdef EPROTONOSUPPORT
-    case EPROTONOSUPPORT: return "protocol not suppored";
-#endif
-#ifdef EPROTOTYPE
-    case EPROTOTYPE: return "protocol wrong type for socket";
-#endif
-#ifdef ERANGE
-    case ERANGE: return "math result unrepresentable";
-#endif
-#if defined(EREFUSED) && (!defined(ECONNREFUSED) || (EREFUSED != ECONNREFUSED))
-    case EREFUSED: return "EREFUSED";
-#endif
-#ifdef EREMCHG
-    case EREMCHG: return "remote address changed";
-#endif
-#ifdef EREMDEV
-    case EREMDEV: return "remote device";
-#endif
-#ifdef EREMOTE
-    case EREMOTE: return "pathname hit remote file system";
-#endif
-#ifdef EREMOTEIO
-    case EREMOTEIO: return "remote i/o error";
-#endif
-#ifdef EREMOTERELEASE
-    case EREMOTERELEASE: return "EREMOTERELEASE";
-#endif
-#ifdef EROFS
-    case EROFS: return "read-only file system";
-#endif
-#ifdef ERPCMISMATCH
-    case ERPCMISMATCH: return "RPC version is wrong";
-#endif
-#ifdef ERREMOTE
-    case ERREMOTE: return "object is remote";
-#endif
-#ifdef ESHUTDOWN
-    case ESHUTDOWN: return "can't send afer socket shutdown";
-#endif
-#ifdef ESOCKTNOSUPPORT
-    case ESOCKTNOSUPPORT: return "socket type not supported";
-#endif
-#ifdef ESPIPE
-    case ESPIPE: return "invalid seek";
-#endif
-#ifdef ESRCH
-    case ESRCH: return "no such process";
-#endif
-#ifdef ESRMNT
-    case ESRMNT: return "srmount error";
-#endif
-#ifdef ESTALE
-    case ESTALE: return "stale remote file handle";
-#endif
-#ifdef ESUCCESS
-    case ESUCCESS: return "Error 0";
-#endif
-#ifdef ETIME
-    case ETIME: return "timer expired";
-#endif
-#ifdef ETIMEDOUT
-    case ETIMEDOUT: return "connection timed out";
-#endif
-#ifdef ETOOMANYREFS
-    case ETOOMANYREFS: return "too many references: can't splice";
-#endif
-#ifdef ETXTBSY
-    case ETXTBSY: return "text file or pseudo-device busy";
-#endif
-#ifdef EUCLEAN
-    case EUCLEAN: return "structure needs cleaning";
-#endif
-#ifdef EUNATCH
-    case EUNATCH: return "protocol driver not attached";
-#endif
-#ifdef EUSERS
-    case EUSERS: return "too many users";
-#endif
-#ifdef EVERSION
-    case EVERSION: return "version mismatch";
-#endif
-#if defined(EWOULDBLOCK) && (!defined(EAGAIN) || (EWOULDBLOCK != EAGAIN))
-    case EWOULDBLOCK: return "operation would block";
-#endif
-#ifdef EXDEV
-    case EXDEV: return "cross-domain link";
-#endif
-#ifdef EXFULL
-    case EXFULL: return "message tables full";
-#endif
-    }
-#else /* NO_SYS_ERRLIST */
-  extern int sys_nerr;
-  extern char *sys_errlist[];
-
-  if ((errnum > 0) && (errnum <= sys_nerr))
-    return sys_errlist [errnum];
-#endif /* NO_SYS_ERRLIST */
-
-  msg = g_static_private_get (&msg_private);
   if (!msg)
     {
-      msg = g_new (gchar, 64);
-      g_static_private_set (&msg_private, msg, g_free);
+      msg = buf;
+      _g_sprintf (msg, "unknown error (%d)", errnum);
     }
 
-  _g_sprintf (msg, "unknown error (%d)", errnum);
-
+  ret = g_intern_string (msg);
+  g_free (tofree);
   errno = saved_errno;
-  return msg;
+  return ret;
 }
 
 /**
@@ -1411,161 +1269,34 @@ g_strerror (gint errnum)
  * the strsignal() function.
  *
  * Returns: a UTF-8 string describing the signal. If the signal is unknown,
- *     it returns "unknown signal (&lt;signum&gt;)". The string can only be
- *     used until the next call to g_strsignal()
+ *     it returns "unknown signal (&lt;signum&gt;)".
  */
-G_CONST_RETURN gchar*
+const gchar *
 g_strsignal (gint signum)
 {
-  static GStaticPrivate msg_private = G_STATIC_PRIVATE_INIT;
-  char *msg;
+  gchar *msg;
+  gchar *tofree;
+  const gchar *ret;
+
+  msg = tofree = NULL;
 
 #ifdef HAVE_STRSIGNAL
-  const char *msg_locale;
-
-#if defined(G_OS_BEOS) || defined(G_WITH_CYGWIN)
-extern const char *strsignal(int);
-#else
-  /* this is declared differently (const) in string.h on BeOS */
-  extern char *strsignal (int sig);
-#endif /* !G_OS_BEOS && !G_WITH_CYGWIN */
-  msg_locale = strsignal (signum);
-  if (g_get_charset (NULL))
-    return msg_locale;
-  else
-    {
-      gchar *msg_utf8 = g_locale_to_utf8 (msg_locale, -1, NULL, NULL, NULL);
-      if (msg_utf8)
-        {
-          /* Stick in the quark table so that we can return a static result
-           */
-          GQuark msg_quark = g_quark_from_string (msg_utf8);
-          g_free (msg_utf8);
-
-          return g_quark_to_string (msg_quark);
-        }
-    }
-#elif NO_SYS_SIGLIST
-  switch (signum)
-    {
-#ifdef SIGHUP
-    case SIGHUP: return "Hangup";
-#endif
-#ifdef SIGINT
-    case SIGINT: return "Interrupt";
-#endif
-#ifdef SIGQUIT
-    case SIGQUIT: return "Quit";
-#endif
-#ifdef SIGILL
-    case SIGILL: return "Illegal instruction";
-#endif
-#ifdef SIGTRAP
-    case SIGTRAP: return "Trace/breakpoint trap";
-#endif
-#ifdef SIGABRT
-    case SIGABRT: return "IOT trap/Abort";
-#endif
-#ifdef SIGBUS
-    case SIGBUS: return "Bus error";
-#endif
-#ifdef SIGFPE
-    case SIGFPE: return "Floating point exception";
-#endif
-#ifdef SIGKILL
-    case SIGKILL: return "Killed";
-#endif
-#ifdef SIGUSR1
-    case SIGUSR1: return "User defined signal 1";
-#endif
-#ifdef SIGSEGV
-    case SIGSEGV: return "Segmentation fault";
-#endif
-#ifdef SIGUSR2
-    case SIGUSR2: return "User defined signal 2";
-#endif
-#ifdef SIGPIPE
-    case SIGPIPE: return "Broken pipe";
-#endif
-#ifdef SIGALRM
-    case SIGALRM: return "Alarm clock";
-#endif
-#ifdef SIGTERM
-    case SIGTERM: return "Terminated";
-#endif
-#ifdef SIGSTKFLT
-    case SIGSTKFLT: return "Stack fault";
-#endif
-#ifdef SIGCHLD
-    case SIGCHLD: return "Child exited";
-#endif
-#ifdef SIGCONT
-    case SIGCONT: return "Continued";
-#endif
-#ifdef SIGSTOP
-    case SIGSTOP: return "Stopped (signal)";
-#endif
-#ifdef SIGTSTP
-    case SIGTSTP: return "Stopped";
-#endif
-#ifdef SIGTTIN
-    case SIGTTIN: return "Stopped (tty input)";
-#endif
-#ifdef SIGTTOU
-    case SIGTTOU: return "Stopped (tty output)";
-#endif
-#ifdef SIGURG
-    case SIGURG: return "Urgent condition";
-#endif
-#ifdef SIGXCPU
-    case SIGXCPU: return "CPU time limit exceeded";
-#endif
-#ifdef SIGXFSZ
-    case SIGXFSZ: return "File size limit exceeded";
-#endif
-#ifdef SIGVTALRM
-    case SIGVTALRM: return "Virtual time alarm";
-#endif
-#ifdef SIGPROF
-    case SIGPROF: return "Profile signal";
-#endif
-#ifdef SIGWINCH
-    case SIGWINCH: return "Window size changed";
-#endif
-#ifdef SIGIO
-    case SIGIO: return "Possible I/O";
-#endif
-#ifdef SIGPWR
-    case SIGPWR: return "Power failure";
-#endif
-#ifdef SIGUNUSED
-    case SIGUNUSED: return "Unused signal";
-#endif
-    }
-#else /* NO_SYS_SIGLIST */
-
-#ifdef NO_SYS_SIGLIST_DECL
-  extern char *sys_siglist[];   /*(see Tue Jan 19 00:44:24 1999 in changelog)*/
+  msg = strsignal (signum);
+  if (!g_get_charset (NULL))
+    msg = tofree = g_locale_to_utf8 (msg, -1, NULL, NULL, NULL);
 #endif
 
-  return (char*) /* this function should return const --josh */ sys_siglist [signum];
-#endif /* NO_SYS_SIGLIST */
-
-  msg = g_static_private_get (&msg_private);
   if (!msg)
-    {
-      msg = g_new (gchar, 64);
-      g_static_private_set (&msg_private, msg, g_free);
-    }
+    msg = tofree = g_strdup_printf ("unknown signal (%d)", signum);
+  ret = g_intern_string (msg);
+  g_free (tofree);
 
-  _g_sprintf (msg, "unknown signal (%d)", signum);
-
-  return msg;
+  return ret;
 }
 
 /* Functions g_strlcpy and g_strlcat were originally developed by
  * Todd C. Miller <Todd.Miller@courtesan.com> to simplify writing secure code.
- * See ftp://ftp.openbsd.org/pub/OpenBSD/src/lib/libc/string/strlcpy.3
+ * See http://www.openbsd.org/cgi-bin/man.cgi?query=strlcpy 
  * for more information.
  */
 
@@ -1891,7 +1622,7 @@ g_strreverse (gchar *string)
  * all non-ASCII characters unchanged, even if they are lower case
  * letters in a particular character set. Also unlike the standard
  * library function, this takes and returns a char, not an int, so
- * don't call it on %EOF but no need to worry about casting to #guchar
+ * don't call it on <literal>EOF</literal> but no need to worry about casting to #guchar
  * before passing a possibly non-ASCII character in.
  *
  * Return value: the result of converting @c to lower case.
@@ -1915,7 +1646,7 @@ g_ascii_tolower (gchar c)
  * all non-ASCII characters unchanged, even if they are upper case
  * letters in a particular character set. Also unlike the standard
  * library function, this takes and returns a char, not an int, so
- * don't call it on %EOF but no need to worry about casting to #guchar
+ * don't call it on <literal>EOF</literal> but no need to worry about casting to #guchar
  * before passing a possibly non-ASCII character in.
  *
  * Return value: the result of converting @c to upper case.
@@ -2165,7 +1896,25 @@ g_strncasecmp (const gchar *s1,
 #endif
 }
 
-gchar*
+/**
+ * g_strdelimit:
+ * @string: the string to convert
+ * @delimiters: (allow-none): a string containing the current delimiters, or %NULL
+ *     to use the standard delimiters defined in #G_STR_DELIMITERS
+ * @new_delimiter: the new delimiter character
+ *
+ * Converts any delimiter characters in @string to @new_delimiter.
+ * Any characters in @string which are found in @delimiters are
+ * changed to the @new_delimiter character. Modifies @string in place,
+ * and returns @string itself, not a copy. The return value is to
+ * allow nesting such as
+ * |[
+ *   g_ascii_strup (g_strdelimit (str, "abc", '?'))
+ * ]|
+ *
+ * Returns: @string
+ */
+gchar *
 g_strdelimit (gchar       *string,
               const gchar *delimiters,
               gchar        new_delim)
@@ -2186,7 +1935,23 @@ g_strdelimit (gchar       *string,
   return string;
 }
 
-gchar*
+/**
+ * g_strcanon:
+ * @string: a nul-terminated array of bytes
+ * @valid_chars: bytes permitted in @string
+ * @substitutor: replacement character for disallowed bytes
+ *
+ * For each character in @string, if the character is not in
+ * @valid_chars, replaces the character with @substitutor.
+ * Modifies @string in place, and return @string itself, not
+ * a copy. The return value is to allow nesting such as
+ * |[
+ *   g_ascii_strup (g_strcanon (str, "abc", '?'))
+ * ]|
+ *
+ * Returns: @string
+ */
+gchar *
 g_strcanon (gchar       *string,
             const gchar *valid_chars,
             gchar        substitutor)
@@ -2205,12 +1970,28 @@ g_strcanon (gchar       *string,
   return string;
 }
 
-gchar*
+/**
+ * g_strcompress:
+ * @source: a string to compress
+ *
+ * Replaces all escaped characters with their one byte equivalent.
+ *
+ * This function does the reverse conversion of g_strescape().
+ *
+ * Returns: a newly-allocated copy of @source with all escaped
+ *     character compressed
+ */
+gchar *
 g_strcompress (const gchar *source)
 {
   const gchar *p = source, *octal;
-  gchar *dest = g_malloc (strlen (source) + 1);
-  gchar *q = dest;
+  gchar *dest;
+  gchar *q;
+
+  g_return_val_if_fail (source != NULL, NULL);
+
+  dest = g_malloc (strlen (source) + 1);
+  q = dest;
 
   while (*p)
     {
@@ -2249,6 +2030,9 @@ g_strcompress (const gchar *source)
             case 't':
               *q++ = '\t';
               break;
+            case 'v':
+              *q++ = '\v';
+              break;
             default:            /* Also handles \" and \\ */
               *q++ = *p;
               break;
@@ -2264,6 +2048,23 @@ out:
   return dest;
 }
 
+/**
+ * g_strescape:
+ * @source: a string to escape
+ * @exceptions: a string of characters not to escape in @source
+ *
+ * Escapes the special characters '\b', '\f', '\n', '\r', '\t', '\v', '\'
+ * and '&quot;' in the string @source by inserting a '\' before
+ * them. Additionally all characters in the range 0x01-0x1F (everything
+ * below SPACE) and in the range 0x7F-0xFF (all non-ASCII chars) are
+ * replaced with a '\' followed by their octal representation.
+ * Characters supplied in @exceptions are not escaped.
+ *
+ * g_strcompress() does the reverse conversion.
+ *
+ * Returns: a newly-allocated copy of @source with certain
+ *     characters escaped. See above.
+ */
 gchar *
 g_strescape (const gchar *source,
              const gchar *exceptions)
@@ -2319,6 +2120,10 @@ g_strescape (const gchar *source,
               *q++ = '\\';
               *q++ = 't';
               break;
+            case '\v':
+              *q++ = '\\';
+              *q++ = 'v';
+              break;
             case '\\':
               *q++ = '\\';
               *q++ = '\\';
@@ -2346,7 +2151,22 @@ g_strescape (const gchar *source,
   return dest;
 }
 
-gchar*
+/**
+ * g_strchug:
+ * @string: a string to remove the leading whitespace from
+ *
+ * Removes leading whitespace from a string, by moving the rest
+ * of the characters forward.
+ *
+ * This function doesn't allocate or reallocate any memory;
+ * it modifies @string in place. The pointer to @string is
+ * returned to allow the nesting of functions.
+ *
+ * Also see g_strchomp() and g_strstrip().
+ *
+ * Returns: @string
+ */
+gchar *
 g_strchug (gchar *string)
 {
   guchar *start;
@@ -2361,7 +2181,21 @@ g_strchug (gchar *string)
   return string;
 }
 
-gchar*
+/**
+ * g_strchomp:
+ * @string: a string to remove the trailing whitespace from
+ *
+ * Removes trailing whitespace from a string.
+ *
+ * This function doesn't allocate or reallocate any memory;
+ * it modifies @string in place. The pointer to @string is
+ * returned to allow the nesting of functions.
+ *
+ * Also see g_strchug() and g_strstrip().
+ *
+ * Returns: @string.
+ */
+gchar *
 g_strchomp (gchar *string)
 {
   gsize len;
@@ -2382,16 +2216,16 @@ g_strchomp (gchar *string)
 
 /**
  * g_strsplit:
- * @string: a string to split.
- * @delimiter: a string which specifies the places at which to split the string.
- *     The delimiter is not included in any of the resulting strings, unless
- *     @max_tokens is reached.
- * @max_tokens: the maximum number of pieces to split @string into. If this is
- *              less than 1, the string is split completely.
+ * @string: a string to split
+ * @delimiter: a string which specifies the places at which to split
+ *     the string. The delimiter is not included in any of the resulting
+ *     strings, unless @max_tokens is reached.
+ * @max_tokens: the maximum number of pieces to split @string into.
+ *     If this is less than 1, the string is split completely.
  *
  * Splits a string into a maximum of @max_tokens pieces, using the given
- * @delimiter. If @max_tokens is reached, the remainder of @string is appended
- * to the last token.
+ * @delimiter. If @max_tokens is reached, the remainder of @string is
+ * appended to the last token.
  *
  * As a special case, the result of splitting the empty string "" is an empty
  * vector, not a vector containing a single string. The reason for this
@@ -2402,7 +2236,7 @@ g_strchomp (gchar *string)
  *
  * Return value: a newly-allocated %NULL-terminated array of strings. Use
  *    g_strfreev() to free it.
- **/
+ */
 gchar**
 g_strsplit (const gchar *string,
             const gchar *delimiter,
@@ -2459,9 +2293,9 @@ g_strsplit (const gchar *string,
  * g_strsplit_set:
  * @string: The string to be tokenized
  * @delimiters: A nul-terminated string containing bytes that are used
- *              to split the string.
+ *     to split the string.
  * @max_tokens: The maximum number of tokens to split @string into.
- *              If this is less than 1, the string is split completely
+ *     If this is less than 1, the string is split completely
  *
  * Splits @string into a number of tokens not containing any of the characters
  * in @delimiter. A token is the (possibly empty) longest string that does not
@@ -2555,7 +2389,7 @@ g_strsplit_set (const gchar *string,
 
 /**
  * g_strfreev:
- * @str_array: a %NULL-terminated array of strings to free.
+ * @str_array: a %NULL-terminated array of strings to free
 
  * Frees a %NULL-terminated array of strings, and the array itself.
  * If called on a %NULL value, g_strfreev() simply returns.
@@ -2576,7 +2410,7 @@ g_strfreev (gchar **str_array)
 
 /**
  * g_strdupv:
- * @str_array: %NULL-terminated array of strings.
+ * @str_array: a %NULL-terminated array of strings
  *
  * Copies %NULL-terminated array of strings. The copy is a deep copy;
  * the new array should be freed by first freeing each string, then
@@ -2584,7 +2418,7 @@ g_strfreev (gchar **str_array)
  * on a %NULL value, g_strdupv() simply returns %NULL.
  *
  * Return value: a new %NULL-terminated array of strings.
- **/
+ */
 gchar**
 g_strdupv (gchar **str_array)
 {
@@ -2615,7 +2449,7 @@ g_strdupv (gchar **str_array)
 
 /**
  * g_strjoinv:
- * @separator: a string to insert between each of the strings, or %NULL
+ * @separator: (allow-none): a string to insert between each of the strings, or %NULL
  * @str_array: a %NULL-terminated array of strings to join
  *
  * Joins a number of strings together to form one long string, with the
@@ -2667,8 +2501,8 @@ g_strjoinv (const gchar  *separator,
 
 /**
  * g_strjoin:
- * @separator: a string to insert between each of the strings, or %NULL
- * @Varargs: a %NULL-terminated list of strings to join
+ * @separator: (allow-none): a string to insert between each of the strings, or %NULL
+ * @...: a %NULL-terminated list of strings to join
  *
  * Joins a number of strings together to form one long string, with the
  * optional @separator inserted between each of them. The returned string
@@ -2678,7 +2512,7 @@ g_strjoinv (const gchar  *separator,
  *     together, with @separator between them
  */
 gchar*
-g_strjoin (const gchar  *separator,
+g_strjoin (const gchar *separator,
            ...)
 {
   gchar *string, *s;
@@ -2736,11 +2570,11 @@ g_strjoin (const gchar  *separator,
 
 /**
  * g_strstr_len:
- * @haystack: a string.
+ * @haystack: a string
  * @haystack_len: the maximum length of @haystack. Note that -1 is
- * a valid length, if @haystack is nul-terminated, meaning it will
- * search through the whole string.
- * @needle: the string to search for.
+ *     a valid length, if @haystack is nul-terminated, meaning it will
+ *     search through the whole string.
+ * @needle: the string to search for
  *
  * Searches the string @haystack for the first occurrence
  * of the string @needle, limiting the length of the search
@@ -2748,7 +2582,7 @@ g_strjoin (const gchar  *separator,
  *
  * Return value: a pointer to the found occurrence, or
  *    %NULL if not found.
- **/
+ */
 gchar *
 g_strstr_len (const gchar *haystack,
               gssize       haystack_len,
@@ -2792,15 +2626,15 @@ g_strstr_len (const gchar *haystack,
 
 /**
  * g_strrstr:
- * @haystack: a nul-terminated string.
- * @needle: the nul-terminated string to search for.
+ * @haystack: a nul-terminated string
+ * @needle: the nul-terminated string to search for
  *
  * Searches the string @haystack for the last occurrence
  * of the string @needle.
  *
  * Return value: a pointer to the found occurrence, or
  *    %NULL if not found.
- **/
+ */
 gchar *
 g_strrstr (const gchar *haystack,
            const gchar *needle)
@@ -2841,9 +2675,9 @@ g_strrstr (const gchar *haystack,
 
 /**
  * g_strrstr_len:
- * @haystack: a nul-terminated string.
- * @haystack_len: the maximum length of @haystack.
- * @needle: the nul-terminated string to search for.
+ * @haystack: a nul-terminated string
+ * @haystack_len: the maximum length of @haystack
+ * @needle: the nul-terminated string to search for
  *
  * Searches the string @haystack for the last occurrence
  * of the string @needle, limiting the length of the search
@@ -2851,7 +2685,7 @@ g_strrstr (const gchar *haystack,
  *
  * Return value: a pointer to the found occurrence, or
  *    %NULL if not found.
- **/
+ */
 gchar *
 g_strrstr_len (const gchar *haystack,
                gssize        haystack_len,
@@ -2896,18 +2730,18 @@ g_strrstr_len (const gchar *haystack,
 
 /**
  * g_str_has_suffix:
- * @str: a nul-terminated string.
- * @suffix: the nul-terminated suffix to look for.
+ * @str: a nul-terminated string
+ * @suffix: the nul-terminated suffix to look for
  *
  * Looks whether the string @str ends with @suffix.
  *
  * Return value: %TRUE if @str end with @suffix, %FALSE otherwise.
  *
  * Since: 2.2
- **/
+ */
 gboolean
-g_str_has_suffix (const gchar  *str,
-                  const gchar  *suffix)
+g_str_has_suffix (const gchar *str,
+                  const gchar *suffix)
 {
   int str_len;
   int suffix_len;
@@ -2926,18 +2760,18 @@ g_str_has_suffix (const gchar  *str,
 
 /**
  * g_str_has_prefix:
- * @str: a nul-terminated string.
- * @prefix: the nul-terminated prefix to look for.
+ * @str: a nul-terminated string
+ * @prefix: the nul-terminated prefix to look for
  *
  * Looks whether the string @str begins with @prefix.
  *
  * Return value: %TRUE if @str begins with @prefix, %FALSE otherwise.
  *
  * Since: 2.2
- **/
+ */
 gboolean
-g_str_has_prefix (const gchar  *str,
-                  const gchar  *prefix)
+g_str_has_prefix (const gchar *str,
+                  const gchar *prefix)
 {
   int str_len;
   int prefix_len;
@@ -2954,38 +2788,9 @@ g_str_has_prefix (const gchar  *str,
   return strncmp (str, prefix, prefix_len) == 0;
 }
 
-
-/**
- * g_strip_context:
- * @msgid: a string
- * @msgval: another string
- *
- * An auxiliary function for gettext() support (see Q_()).
- *
- * Return value: @msgval, unless @msgval is identical to @msgid and contains
- *   a '|' character, in which case a pointer to the substring of msgid after
- *   the first '|' character is returned.
- *
- * Since: 2.4
- **/
-G_CONST_RETURN gchar *
-g_strip_context  (const gchar *msgid,
-                  const gchar *msgval)
-{
-  if (msgval == msgid)
-    {
-      const char *c = strchr (msgid, '|');
-      if (c != NULL)
-        return c + 1;
-    }
-
-  return msgval;
-}
-
-
 /**
  * g_strv_length:
- * @str_array: a %NULL-terminated array of strings.
+ * @str_array: a %NULL-terminated array of strings
  *
  * Returns the length of the given %NULL-terminated
  * string array @str_array.
@@ -2993,7 +2798,7 @@ g_strip_context  (const gchar *msgid,
  * Return value: length of @str_array.
  *
  * Since: 2.6
- **/
+ */
 guint
 g_strv_length (gchar **str_array)
 {
@@ -3005,281 +2810,4 @@ g_strv_length (gchar **str_array)
     ++i;
 
   return i;
-}
-
-
-/**
- * g_dpgettext:
- * @domain: the translation domain to use, or %NULL to use
- *   the domain set with textdomain()
- * @msgctxtid: a combined message context and message id, separated
- *   by a \004 character
- * @msgidoffset: the offset of the message id in @msgctxid
- *
- * This function is a variant of g_dgettext() which supports
- * a disambiguating message context. GNU gettext uses the
- * '\004' character to separate the message context and
- * message id in @msgctxtid.
- * If 0 is passed as @msgidoffset, this function will fall back to
- * trying to use the deprecated convention of using "|" as a separation
- * character.
- *
- * This uses g_dgettext() internally.  See that functions for differences
- * with dgettext() proper.
- *
- * Applications should normally not use this function directly,
- * but use the C_() macro for translations with context.
- *
- * Returns: The translated string
- *
- * Since: 2.16
- */
-G_CONST_RETURN gchar *
-g_dpgettext (const gchar *domain,
-             const gchar *msgctxtid,
-             gsize        msgidoffset)
-{
-  const gchar *translation;
-  gchar *sep;
-
-  translation = g_dgettext (domain, msgctxtid);
-
-  if (translation == msgctxtid)
-    {
-      if (msgidoffset > 0)
-        return msgctxtid + msgidoffset;
-
-      sep = strchr (msgctxtid, '|');
-
-      if (sep)
-        {
-          /* try with '\004' instead of '|', in case
-           * xgettext -kQ_:1g was used
-           */
-          gchar *tmp = g_alloca (strlen (msgctxtid) + 1);
-          strcpy (tmp, msgctxtid);
-          tmp[sep - msgctxtid] = '\004';
-
-          translation = g_dgettext (domain, tmp);
-
-          if (translation == tmp)
-            return sep + 1;
-        }
-    }
-
-  return translation;
-}
-
-/* This function is taken from gettext.h
- * GNU gettext uses '\004' to separate context and msgid in .mo files.
- */
-/**
- * g_dpgettext2:
- * @domain: the translation domain to use, or %NULL to use
- *   the domain set with textdomain()
- * @context: the message context
- * @msgid: the message
- *
- * This function is a variant of g_dgettext() which supports
- * a disambiguating message context. GNU gettext uses the
- * '\004' character to separate the message context and
- * message id in @msgctxtid.
- *
- * This uses g_dgettext() internally.  See that functions for differences
- * with dgettext() proper.
- *
- * This function differs from C_() in that it is not a macro and
- * thus you may use non-string-literals as context and msgid arguments.
- *
- * Returns: The translated string
- *
- * Since: 2.18
- */
-G_CONST_RETURN char *
-g_dpgettext2 (const char *domain,
-              const char *msgctxt,
-              const char *msgid)
-{
-  size_t msgctxt_len = strlen (msgctxt) + 1;
-  size_t msgid_len = strlen (msgid) + 1;
-  const char *translation;
-  char* msg_ctxt_id;
-
-  msg_ctxt_id = g_alloca (msgctxt_len + msgid_len);
-
-  memcpy (msg_ctxt_id, msgctxt, msgctxt_len - 1);
-  msg_ctxt_id[msgctxt_len - 1] = '\004';
-  memcpy (msg_ctxt_id + msgctxt_len, msgid, msgid_len);
-
-  translation = g_dgettext (domain, msg_ctxt_id);
-
-  if (translation == msg_ctxt_id)
-    {
-      /* try the old way of doing message contexts, too */
-      msg_ctxt_id[msgctxt_len - 1] = '|';
-      translation = g_dgettext (domain, msg_ctxt_id);
-
-      if (translation == msg_ctxt_id)
-        return msgid;
-    }
-
-  return translation;
-}
-
-static gboolean
-_g_dgettext_should_translate (void)
-{
-  static gsize translate = 0;
-  enum {
-    SHOULD_TRANSLATE = 1,
-    SHOULD_NOT_TRANSLATE = 2
-  };
-
-  if (G_UNLIKELY (g_once_init_enter (&translate)))
-    {
-      gboolean should_translate = TRUE;
-
-      const char *default_domain     = textdomain (NULL);
-      const char *translator_comment = gettext ("");
-#ifndef G_OS_WIN32
-      const char *translate_locale   = setlocale (LC_MESSAGES, NULL);
-#else
-      const char *translate_locale   = g_win32_getlocale ();
-#endif
-      /* We should NOT translate only if all the following hold:
-       *   - user has called textdomain() and set textdomain to non-default
-       *   - default domain has no translations
-       *   - locale does not start with "en_" and is not "C"
-       *
-       * Rationale:
-       *   - If text domain is still the default domain, maybe user calls
-       *     it later. Continue with old behavior of translating.
-       *   - If locale starts with "en_", we can continue using the
-       *     translations even if the app doesn't have translations for
-       *     this locale.  That is, en_UK and en_CA for example.
-       *   - If locale is "C", maybe user calls setlocale(LC_ALL,"") later.
-       *     Continue with old behavior of translating.
-       */
-      if (0 != strcmp (default_domain, "messages") &&
-          '\0' == *translator_comment &&
-          0 != strncmp (translate_locale, "en_", 3) &&
-          0 != strcmp (translate_locale, "C"))
-        should_translate = FALSE;
-
-      g_once_init_leave (&translate,
-                         should_translate ?
-                         SHOULD_TRANSLATE :
-                         SHOULD_NOT_TRANSLATE);
-    }
-
-  return translate == SHOULD_TRANSLATE;
-}
-
-/**
- * g_dgettext:
- * @domain: the translation domain to use, or %NULL to use
- *   the domain set with textdomain()
- * @msgid: message to translate
- *
- * This function is a wrapper of dgettext() which does not translate
- * the message if the default domain as set with textdomain() has no
- * translations for the current locale.
- *
- * The advantage of using this function over dgettext() proper is that
- * libraries using this function (like GTK+) will not use translations
- * if the application using the library does not have translations for
- * the current locale.  This results in a consistent English-only
- * interface instead of one having partial translations.  For this
- * feature to work, the call to textdomain() and setlocale() should
- * precede any g_dgettext() invocations.  For GTK+, it means calling
- * textdomain() before gtk_init or its variants.
- *
- * This function disables translations if and only if upon its first
- * call all the following conditions hold:
- * <itemizedlist>
- * <listitem>@domain is not %NULL</listitem>
- * <listitem>textdomain() has been called to set a default text domain</listitem>
- * <listitem>there is no translations available for the default text domain
- *           and the current locale</listitem>
- * <listitem>current locale is not "C" or any English locales (those
- *           starting with "en_")</listitem>
- * </itemizedlist>
- *
- * Note that this behavior may not be desired for example if an application
- * has its untranslated messages in a language other than English.  In those
- * cases the application should call textdomain() after initializing GTK+.
- *
- * Applications should normally not use this function directly,
- * but use the _() macro for translations.
- *
- * Returns: The translated string
- *
- * Since: 2.18
- */
-G_CONST_RETURN gchar *
-g_dgettext (const gchar *domain,
-            const gchar *msgid)
-{
-  if (domain && G_UNLIKELY (!_g_dgettext_should_translate ()))
-    return msgid;
-
-  return dgettext (domain, msgid);
-}
-
-/**
- * g_dcgettext:
- * @domain: (allow-none): the translation domain to use, or %NULL to use
- *   the domain set with textdomain()
- * @msgid: message to translate
- * @category: a locale category
- *
- * This is a variant of g_dgettext() that allows specifying a locale
- * category instead of always using %LC_MESSAGES. See g_dgettext() for
- * more information about how this functions differs from calling
- * dcgettext() directly.
- *
- * Returns: the translated string for the given locale category
- *
- * Since: 2.26
- */
-G_CONST_RETURN gchar *
-g_dcgettext (const gchar *domain,
-             const gchar *msgid,
-             int          category)
-{
-  if (domain && G_UNLIKELY (!_g_dgettext_should_translate ()))
-    return msgid;
-
-  return dcgettext (domain, msgid, category);
-}
-
-/**
- * g_dngettext:
- * @domain: the translation domain to use, or %NULL to use
- *   the domain set with textdomain()
- * @msgid: message to translate
- * @msgid_plural: plural form of the message
- * @n: the quantity for which translation is needed
- *
- * This function is a wrapper of dngettext() which does not translate
- * the message if the default domain as set with textdomain() has no
- * translations for the current locale.
- *
- * See g_dgettext() for details of how this differs from dngettext()
- * proper.
- *
- * Returns: The translated string
- *
- * Since: 2.18
- */
-G_CONST_RETURN gchar *
-g_dngettext (const gchar *domain,
-             const gchar *msgid,
-             const gchar *msgid_plural,
-             gulong       n)
-{
-  if (domain && G_UNLIKELY (!_g_dgettext_should_translate ()))
-    return n == 1 ? msgid : msgid_plural;
-
-  return dngettext (domain, msgid, msgid_plural, n);
 }

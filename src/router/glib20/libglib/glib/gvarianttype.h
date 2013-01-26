@@ -20,7 +20,7 @@
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -239,6 +239,13 @@ typedef struct _GVariantType GVariantType;
 #define G_VARIANT_TYPE_STRING_ARRAY         ((const GVariantType *) "as")
 
 /**
+ * G_VARIANT_TYPE_OBJECT_PATH_ARRAY:
+ *
+ * The type of an array of object paths.
+ **/
+#define G_VARIANT_TYPE_OBJECT_PATH_ARRAY    ((const GVariantType *) "ao")
+
+/**
  * G_VARIANT_TYPE_BYTESTRING:
  *
  * The type of an array of bytes.  This type is commonly used to pass
@@ -255,6 +262,16 @@ typedef struct _GVariantType GVariantType;
  **/
 #define G_VARIANT_TYPE_BYTESTRING_ARRAY     ((const GVariantType *) "aay")
 
+/**
+ * G_VARIANT_TYPE_VARDICT:
+ *
+ * The type of a dictionary mapping strings to variants (the ubiquitous
+ * "a{sv}" type).
+ *
+ * Since: 2.30
+ **/
+#define G_VARIANT_TYPE_VARDICT              ((const GVariantType *) "a{sv}")
+
 
 /**
  * G_VARIANT_TYPE:
@@ -265,7 +282,8 @@ typedef struct _GVariantType GVariantType;
  * to ensure that @string is a valid GVariant type string.
  *
  * It is always a programmer error to use this macro with an invalid
- * type string.
+ * type string. If in doubt, use g_variant_type_string_is_valid() to
+ * check if the string is valid.
  *
  * Since 2.24
  **/

@@ -24,6 +24,7 @@
 
 #include "gchecksum.h"
 
+#include "gslice.h"
 #include "gmem.h"
 #include "gstrfuncs.h"
 #include "gtestutils.h"
@@ -34,7 +35,7 @@
 /**
  * SECTION:checksum
  * @title: Data Checksums
- * @short_description: Computes the checksum for data
+ * @short_description: computes the checksum for data
  *
  * GLib provides a generic API for computing checksums (or "digests")
  * for a sequence of arbitrary bytes, using various hashing algorithms
@@ -66,7 +67,10 @@ typedef struct
   guint32 buf[4];
   guint32 bits[2];
 
-  guchar data[MD5_DATASIZE];
+  union {
+    guchar data[MD5_DATASIZE];
+    guint32 data32[MD5_DATASIZE / 4];
+  } u;
 
   guchar digest[MD5_DIGEST_LEN];
 } Md5sum;
@@ -328,13 +332,13 @@ md5_sum_update (Md5sum       *md5,
 
   md5->bits[1] += length >> 29;
 
-  /* bytes already in Md5sum->data */
+  /* bytes already in Md5sum->u.data */
   bit = (bit >> 3) & 0x3f;
 
   /* handle any leading odd-sized chunks */
   if (bit)
     {
-      guchar *p = (guchar *) md5->data + bit;
+      guchar *p = md5->u.data + bit;
 
       bit = MD5_DATASIZE - bit;
       if (length < bit)
@@ -345,8 +349,8 @@ md5_sum_update (Md5sum       *md5,
 
       memcpy (p, data, bit);
 
-      md5_byte_reverse (md5->data, 16);
-      md5_transform (md5->buf, (guint32 *) md5->data);
+      md5_byte_reverse (md5->u.data, 16);
+      md5_transform (md5->buf, md5->u.data32);
 
       data += bit;
       length -= bit;
@@ -355,17 +359,17 @@ md5_sum_update (Md5sum       *md5,
   /* process data in 64-byte chunks */
   while (length >= MD5_DATASIZE)
     {
-      memcpy (md5->data, data, MD5_DATASIZE);
+      memcpy (md5->u.data, data, MD5_DATASIZE);
 
-      md5_byte_reverse (md5->data, 16);
-      md5_transform (md5->buf, (guint32 *) md5->data);
+      md5_byte_reverse (md5->u.data, 16);
+      md5_transform (md5->buf, md5->u.data32);
 
       data += MD5_DATASIZE;
       length -= MD5_DATASIZE;
     }
 
   /* handle any remaining bytes of data */
-  memcpy (md5->data, data, length);
+  memcpy (md5->u.data, data, length);
 }
 
 /* closes a checksum */
@@ -381,7 +385,7 @@ md5_sum_close (Md5sum *md5)
   /* Set the first char of padding to 0x80.
    * This is safe since there is always at least one byte free
    */
-  p = md5->data + count;
+  p = md5->u.data + count;
   *p++ = 0x80;
 
   /* Bytes of padding needed to make 64 bytes */
@@ -393,11 +397,11 @@ md5_sum_close (Md5sum *md5)
       /* Two lots of padding:  Pad the first block to 64 bytes */
       memset (p, 0, count);
 
-      md5_byte_reverse (md5->data, 16);
-      md5_transform (md5->buf, (guint32 *) md5->data);
+      md5_byte_reverse (md5->u.data, 16);
+      md5_transform (md5->buf, md5->u.data32);
 
       /* Now fill the next block with 56 bytes */
-      memset (md5->data, 0, MD5_DATASIZE - 8);
+      memset (md5->u.data, 0, MD5_DATASIZE - 8);
     }
   else
     {
@@ -405,20 +409,20 @@ md5_sum_close (Md5sum *md5)
       memset (p, 0, count - 8);
     }
 
-  md5_byte_reverse (md5->data, 14);
+  md5_byte_reverse (md5->u.data, 14);
 
   /* Append length in bits and transform */
-  ((guint32 *) md5->data)[14] = md5->bits[0];
-  ((guint32 *) md5->data)[15] = md5->bits[1];
+  md5->u.data32[14] = md5->bits[0];
+  md5->u.data32[15] = md5->bits[1];
 
-  md5_transform (md5->buf, (guint32 *) md5->data);
+  md5_transform (md5->buf, md5->u.data32);
   md5_byte_reverse ((guchar *) md5->buf, 4);
 
   memcpy (md5->digest, md5->buf, 16);
 
   /* Reset buffers in case they contain sensitive data */
   memset (md5->buf, 0, sizeof (md5->buf));
-  memset (md5->data, 0, sizeof (md5->data));
+  memset (md5->u.data, 0, sizeof (md5->u.data));
 }
 
 static gchar *
@@ -563,7 +567,7 @@ sha1_transform (guint32  buf[5],
   D = buf[3];
   E = buf[4];
 
-  /* Heavy mangling, in 4 sub-rounds of 20 interations each. */
+  /* Heavy mangling, in 4 sub-rounds of 20 iterations each. */
   subRound (A, B, C, D, E, f1, K1, in[0]);
   subRound (E, A, B, C, D, f1, K1, in[1]);
   subRound (D, E, A, B, C, f1, K1, in[2]);
@@ -1289,7 +1293,7 @@ g_checksum_update (GChecksum    *checksum,
  *
  * Since: 2.16
  */
-G_CONST_RETURN gchar *
+const gchar *
 g_checksum_get_string (GChecksum *checksum)
 {
   gchar *str = NULL;
@@ -1457,4 +1461,34 @@ g_compute_checksum_for_string (GChecksumType  checksum_type,
     length = strlen (str);
 
   return g_compute_checksum_for_data (checksum_type, (const guchar *) str, length);
+}
+
+/**
+ * g_compute_checksum_for_bytes:
+ * @checksum_type: a #GChecksumType
+ * @data: binary blob to compute the digest of
+ *
+ * Computes the checksum for a binary @data. This is a
+ * convenience wrapper for g_checksum_new(), g_checksum_get_string()
+ * and g_checksum_free().
+ *
+ * The hexadecimal string returned will be in lower case.
+ *
+ * Return value: the digest of the binary data as a string in hexadecimal.
+ *   The returned string should be freed with g_free() when done using it.
+ *
+ * Since: 2.34
+ */
+gchar *
+g_compute_checksum_for_bytes (GChecksumType  checksum_type,
+                              GBytes        *data)
+{
+  gconstpointer byte_data;
+  gsize length;
+
+  g_return_val_if_fail (IS_VALID_TYPE (checksum_type), NULL);
+  g_return_val_if_fail (data != NULL, NULL);
+
+  byte_data = g_bytes_get_data (data, &length);
+  return g_compute_checksum_for_data (checksum_type, byte_data, length);
 }

@@ -135,7 +135,7 @@ G_BEGIN_DECLS
  * @G_PARAM_DEPRECATED: the parameter is deprecated and will be removed
  *  in a future version. A warning will be generated if it is used
  *  while running with G_ENABLE_DIAGNOSTIC=1.
- *  Since: 2.26
+ *  Since 2.26
  * 
  * Through the #GParamFlags flag values, certain aspects of parameters
  * can be configured.
@@ -193,7 +193,7 @@ typedef struct _GParamSpecPool  GParamSpecPool;
 /**
  * GParamSpec:
  * @g_type_instance: private #GTypeInstance portion
- * @name: name of this parameter
+ * @name: name of this parameter: always an interned string
  * @flags: #GParamFlags flags for this parameter
  * @value_type: the #GValue type for this parameter
  * @owner_type: #GType type that uses (introduces) this parameter
@@ -205,7 +205,7 @@ struct _GParamSpec
 {
   GTypeInstance  g_type_instance;
 
-  gchar         *name;
+  const gchar   *name;          /* interned string */
   GParamFlags    flags;
   GType		 value_type;
   GType		 owner_type;	/* class or interface using this property */
@@ -228,7 +228,7 @@ struct _GParamSpec
  *  g_param_value_set_default().
  * @value_validate: Ensures that the contents of @value comply with the 
  *  specifications set out by this type (optional), see 
- *  g_param_value_set_validate().
+ *  g_param_value_validate().
  * @values_cmp: Compares @value1 with @value2 according to this type
  *  (recommended, the default is memcmp()), see g_param_values_cmp().
  * 
@@ -263,7 +263,7 @@ struct _GParamSpecClass
  * The <structname>GParameter</structname> struct is an auxiliary structure used
  * to hand parameter name/value pairs to g_object_newv().
  */
-struct _GParameter /* auxillary structure for _setv() variants */
+struct _GParameter /* auxiliary structure for _setv() variants */
 {
   const gchar *name;
   GValue       value;
@@ -301,9 +301,9 @@ gboolean	g_param_value_convert		(GParamSpec    *pspec,
 gint		g_param_values_cmp		(GParamSpec    *pspec,
 						 const GValue  *value1,
 						 const GValue  *value2);
-G_CONST_RETURN gchar*	g_param_spec_get_name	(GParamSpec    *pspec);
-G_CONST_RETURN gchar*	g_param_spec_get_nick	(GParamSpec    *pspec);
-G_CONST_RETURN gchar*	g_param_spec_get_blurb	(GParamSpec    *pspec);
+const gchar *   g_param_spec_get_name           (GParamSpec    *pspec);
+const gchar *   g_param_spec_get_nick           (GParamSpec    *pspec);
+const gchar *   g_param_spec_get_blurb          (GParamSpec    *pspec);
 void            g_value_set_param               (GValue	       *value,
 						 GParamSpec    *param);
 GParamSpec*     g_value_get_param               (const GValue  *value);
@@ -312,10 +312,9 @@ GParamSpec*     g_value_dup_param               (const GValue  *value);
 
 void           g_value_take_param               (GValue        *value,
 					         GParamSpec    *param);
-#ifndef G_DISABLE_DEPRECATED
+GLIB_DEPRECATED_FOR(g_value_take_param)
 void           g_value_set_param_take_ownership (GValue        *value,
-					         GParamSpec    *param);
-#endif
+                                                 GParamSpec    *param);
 
 /* --- convenience functions --- */
 typedef struct _GParamSpecTypeInfo GParamSpecTypeInfo;
@@ -331,7 +330,7 @@ typedef struct _GParamSpecTypeInfo GParamSpecTypeInfo;
  *  g_param_value_set_default().
  * @value_validate: Ensures that the contents of @value comply with the 
  *  specifications set out by @pspec (optional), see 
- *  g_param_value_set_validate().
+ *  g_param_value_validate().
  * @values_cmp: Compares @value1 with @value2 according to @pspec 
  *  (recommended, the default is memcmp()), see g_param_values_cmp().
  * 

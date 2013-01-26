@@ -23,6 +23,7 @@
 #include <time.h>
 #include <glib.h>
 #include <glib/gstdio.h>
+#include <locale.h>
 
 #define ASSERT_DATE(dt,y,m,d) G_STMT_START { \
   g_assert_cmpint ((y), ==, g_date_time_get_year ((dt))); \
@@ -107,16 +108,17 @@ test_GDateTime_new_from_unix (void)
   g_date_time_unref (dt);
 
   memset (&tm, 0, sizeof (tm));
-  tm.tm_year = 70;
+  tm.tm_year = 90;
   tm.tm_mday = 1;
   tm.tm_mon = 0;
   tm.tm_hour = 0;
   tm.tm_min = 0;
   tm.tm_sec = 0;
+  tm.tm_isdst = -1;
   t = mktime (&tm);
 
   dt = g_date_time_new_from_unix_local (t);
-  g_assert_cmpint (g_date_time_get_year (dt), ==, 1970);
+  g_assert_cmpint (g_date_time_get_year (dt), ==, 1990);
   g_assert_cmpint (g_date_time_get_month (dt), ==, 1);
   g_assert_cmpint (g_date_time_get_day_of_month (dt), ==, 1);
   g_assert_cmpint (g_date_time_get_hour (dt), ==, 0);
@@ -307,6 +309,31 @@ test_GDateTime_new_from_timeval (void)
 
   g_get_current_time (&tv);
   dt = g_date_time_new_from_timeval_local (&tv);
+
+  if (g_test_verbose ())
+    g_print ("\nDT%04d-%02d-%02dT%02d:%02d:%02d%s\n",
+             g_date_time_get_year (dt),
+             g_date_time_get_month (dt),
+             g_date_time_get_day_of_month (dt),
+             g_date_time_get_hour (dt),
+             g_date_time_get_minute (dt),
+             g_date_time_get_second (dt),
+             g_date_time_get_timezone_abbreviation (dt));
+
+  g_date_time_to_timeval (dt, &tv2);
+  g_assert_cmpint (tv.tv_sec, ==, tv2.tv_sec);
+  g_assert_cmpint (tv.tv_usec, ==, tv2.tv_usec);
+  g_date_time_unref (dt);
+}
+
+static void
+test_GDateTime_new_from_timeval_utc (void)
+{
+  GDateTime *dt;
+  GTimeVal   tv, tv2;
+
+  g_get_current_time (&tv);
+  dt = g_date_time_new_from_timeval_utc (&tv);
 
   if (g_test_verbose ())
     g_print ("\nDT%04d-%02d-%02dT%02d:%02d:%02d%s\n",
@@ -625,6 +652,30 @@ test_GDateTime_now_utc (void)
 }
 
 static void
+test_GDateTime_new_from_unix_utc (void)
+{
+  GDateTime *dt;
+  gint64 t;
+
+  t = g_get_real_time ();
+
+#if 0
+  dt = g_date_time_new_from_unix_utc (t);
+  g_assert (dt == NULL);
+#endif
+
+  t = t / 1e6;  /* oops, this was microseconds */
+
+  dt = g_date_time_new_from_unix_utc (t);
+  g_assert (dt != NULL);
+
+  g_assert (dt == g_date_time_ref (dt));
+  g_date_time_unref (dt);
+  g_assert_cmpint (g_date_time_to_unix (dt), ==, t);
+  g_date_time_unref (dt);
+}
+
+static void
 test_GDateTime_get_utc_offset (void)
 {
   GDateTime *dt;
@@ -638,6 +689,9 @@ test_GDateTime_get_utc_offset (void)
   ts = g_date_time_get_utc_offset (dt);
 #ifdef HAVE_STRUCT_TM_TM_GMTOFF
   g_assert_cmpint (ts, ==, (tm.tm_gmtoff * G_TIME_SPAN_SECOND));
+#endif
+#ifdef HAVE_STRUCT_TM___TM_GMTOFF
+  g_assert_cmpint (ts, ==, (tm.__tm_gmtoff * G_TIME_SPAN_SECOND));
 #endif
   g_date_time_unref (dt);
 }
@@ -696,7 +750,7 @@ test_GDateTime_to_utc (void)
     memcpy (&tm, tmp, sizeof (struct tm));
   }
 #endif
-  dt2 = g_date_time_new_now_local ();
+  dt2 = g_date_time_new_from_unix_local (t);
   dt = g_date_time_to_utc (dt2);
   g_assert_cmpint (tm.tm_year + 1900, ==, g_date_time_get_year (dt));
   g_assert_cmpint (tm.tm_mon + 1, ==, g_date_time_get_month (dt));
@@ -795,7 +849,6 @@ GDateTime *__dt = g_date_time_new_local (2009, 10, 24, 0, 0, 0);\
   TEST_PRINTF_TIME (10, 13, 13, "%l", "10");
   TEST_PRINTF ("%m", "10");
   TEST_PRINTF ("%M", "00");
-  TEST_PRINTF ("%N", "0");
   TEST_PRINTF ("%p", "AM");
   TEST_PRINTF_TIME (13, 13, 13, "%p", "PM");
   TEST_PRINTF ("%P", "am");
@@ -807,7 +860,6 @@ GDateTime *__dt = g_date_time_new_local (2009, 10, 24, 0, 0, 0);\
   //TEST_PRINTF ("%s", t_str);
   TEST_PRINTF ("%S", "00");
   TEST_PRINTF ("%t", "	");
-  TEST_PRINTF ("%W", "42");
   TEST_PRINTF ("%u", "6");
   TEST_PRINTF ("%x", "10/24/09");
   TEST_PRINTF ("%X", "00:00:00");
@@ -818,6 +870,150 @@ GDateTime *__dt = g_date_time_new_local (2009, 10, 24, 0, 0, 0);\
   TEST_PRINTF ("%", "");
   TEST_PRINTF ("%9", NULL);
   TEST_PRINTF ("%Z", dst);
+}
+
+static void
+test_non_utf8_printf (void)
+{
+  gchar *oldlocale;
+
+  oldlocale = g_strdup (setlocale (LC_ALL, NULL));
+  setlocale (LC_ALL, "ja_JP.eucjp");
+  if (strstr (setlocale (LC_ALL, NULL), "ja_JP") == NULL)
+    {
+      g_test_message ("locale ja_JP.eucjp not available, skipping non-UTF8 tests");
+      g_free (oldlocale);
+      return;
+    }
+  if (g_get_charset (NULL))
+    {
+      g_test_message ("locale ja_JP.eucjp may be available, but glib seems to think that it's equivalent to UTF-8, skipping non-UTF-8 tests.");
+      g_test_message ("This is a known issue on Darwin");
+      setlocale (LC_ALL, oldlocale);
+      g_free (oldlocale);
+      return;
+    }
+
+  /* These are the outputs that ja_JP.UTF-8 generates; if everything
+   * is working then ja_JP.eucjp should generate the same.
+   */
+  TEST_PRINTF ("%a", "\345\234\237");
+  TEST_PRINTF ("%A", "\345\234\237\346\233\234\346\227\245");
+#ifndef HAVE_CARBON /* OSX just returns the number */
+  TEST_PRINTF ("%b", "10\346\234\210");
+#endif
+  TEST_PRINTF ("%B", "10\346\234\210");
+  TEST_PRINTF ("%d", "24");
+  TEST_PRINTF_DATE (2009, 1, 1, "%d", "01");
+  TEST_PRINTF ("%e", "24"); // fixme
+#ifndef HAVE_CARBON /* OSX just returns the number */
+  TEST_PRINTF ("%h", "10\346\234\210");
+#endif
+  TEST_PRINTF ("%H", "00");
+  TEST_PRINTF_TIME (15, 0, 0, "%H", "15");
+  TEST_PRINTF ("%I", "12");
+  TEST_PRINTF_TIME (12, 0, 0, "%I", "12");
+  TEST_PRINTF_TIME (15, 0, 0, "%I", "03");
+  TEST_PRINTF ("%j", "297");
+  TEST_PRINTF ("%k", " 0");
+  TEST_PRINTF_TIME (13, 13, 13, "%k", "13");
+  TEST_PRINTF ("%l", "12");
+  TEST_PRINTF_TIME (12, 0, 0, "%I", "12");
+  TEST_PRINTF_TIME (13, 13, 13, "%l", " 1");
+  TEST_PRINTF_TIME (10, 13, 13, "%l", "10");
+  TEST_PRINTF ("%m", "10");
+  TEST_PRINTF ("%M", "00");
+#ifndef HAVE_CARBON /* OSX returns latin "AM", not japanese */
+  TEST_PRINTF ("%p", "\345\215\210\345\211\215");
+  TEST_PRINTF_TIME (13, 13, 13, "%p", "\345\215\210\345\276\214");
+  TEST_PRINTF ("%P", "\345\215\210\345\211\215");
+  TEST_PRINTF_TIME (13, 13, 13, "%P", "\345\215\210\345\276\214");
+  TEST_PRINTF ("%r", "\345\215\210\345\211\21512\346\231\20200\345\210\20600\347\247\222");
+  TEST_PRINTF_TIME (13, 13, 13, "%r", "\345\215\210\345\276\21401\346\231\20213\345\210\20613\347\247\222");
+#endif
+  TEST_PRINTF ("%R", "00:00");
+  TEST_PRINTF_TIME (13, 13, 31, "%R", "13:13");
+  TEST_PRINTF ("%S", "00");
+  TEST_PRINTF ("%t", "	");
+  TEST_PRINTF ("%u", "6");
+#ifndef HAVE_CARBON /* OSX returns YYYY/MM/DD in ASCII */
+  TEST_PRINTF ("%x", "2009\345\271\26410\346\234\21024\346\227\245");
+#endif
+  TEST_PRINTF ("%X", "00\346\231\20200\345\210\20600\347\247\222");
+  TEST_PRINTF_TIME (13, 14, 15, "%X", "13\346\231\20214\345\210\20615\347\247\222");
+  TEST_PRINTF ("%y", "09");
+  TEST_PRINTF ("%Y", "2009");
+  TEST_PRINTF ("%%", "%");
+  TEST_PRINTF ("%", "");
+  TEST_PRINTF ("%9", NULL);
+
+  setlocale (LC_ALL, oldlocale);
+  g_free (oldlocale);
+}
+
+static void
+test_modifiers (void)
+{
+  gchar *oldlocale;
+
+  TEST_PRINTF_DATE (2009, 1,  1,  "%d", "01");
+  TEST_PRINTF_DATE (2009, 1,  1, "%_d", " 1");
+  TEST_PRINTF_DATE (2009, 1,  1, "%-d", "1");
+  TEST_PRINTF_DATE (2009, 1,  1, "%0d", "01");
+  TEST_PRINTF_DATE (2009, 1, 21,  "%d", "21");
+  TEST_PRINTF_DATE (2009, 1, 21, "%_d", "21");
+  TEST_PRINTF_DATE (2009, 1, 21, "%-d", "21");
+  TEST_PRINTF_DATE (2009, 1, 21, "%0d", "21");
+
+  TEST_PRINTF_DATE (2009, 1,  1,  "%e", " 1");
+  TEST_PRINTF_DATE (2009, 1,  1, "%_e", " 1");
+  TEST_PRINTF_DATE (2009, 1,  1, "%-e", "1");
+  TEST_PRINTF_DATE (2009, 1,  1, "%0e", "01");
+  TEST_PRINTF_DATE (2009, 1, 21,  "%e", "21");
+  TEST_PRINTF_DATE (2009, 1, 21, "%_e", "21");
+  TEST_PRINTF_DATE (2009, 1, 21, "%-e", "21");
+  TEST_PRINTF_DATE (2009, 1, 21, "%0e", "21");
+
+  TEST_PRINTF_TIME ( 1, 0, 0,  "%H", "01");
+  TEST_PRINTF_TIME ( 1, 0, 0, "%_H", " 1");
+  TEST_PRINTF_TIME ( 1, 0, 0, "%-H", "1");
+  TEST_PRINTF_TIME ( 1, 0, 0, "%0H", "01");
+  TEST_PRINTF_TIME (21, 0, 0,  "%H", "21");
+  TEST_PRINTF_TIME (21, 0, 0, "%_H", "21");
+  TEST_PRINTF_TIME (21, 0, 0, "%-H", "21");
+  TEST_PRINTF_TIME (21, 0, 0, "%0H", "21");
+
+  TEST_PRINTF_TIME ( 1, 0, 0,  "%I", "01");
+  TEST_PRINTF_TIME ( 1, 0, 0, "%_I", " 1");
+  TEST_PRINTF_TIME ( 1, 0, 0, "%-I", "1");
+  TEST_PRINTF_TIME ( 1, 0, 0, "%0I", "01");
+  TEST_PRINTF_TIME (23, 0, 0,  "%I", "11");
+  TEST_PRINTF_TIME (23, 0, 0, "%_I", "11");
+  TEST_PRINTF_TIME (23, 0, 0, "%-I", "11");
+  TEST_PRINTF_TIME (23, 0, 0, "%0I", "11");
+
+  TEST_PRINTF_TIME ( 1, 0, 0,  "%k", " 1");
+  TEST_PRINTF_TIME ( 1, 0, 0, "%_k", " 1");
+  TEST_PRINTF_TIME ( 1, 0, 0, "%-k", "1");
+  TEST_PRINTF_TIME ( 1, 0, 0, "%0k", "01");
+
+  oldlocale = g_strdup (setlocale (LC_ALL, NULL));
+  setlocale (LC_ALL, "fa_IR.utf-8");
+  if (strstr (setlocale (LC_ALL, NULL), "fa_IR") != NULL)
+    {
+      TEST_PRINTF_TIME (23, 0, 0, "%OH", "\333\262\333\263");    /* '23' */
+      TEST_PRINTF_TIME (23, 0, 0, "%OI", "\333\261\333\261");    /* '11' */
+      TEST_PRINTF_TIME (23, 0, 0, "%OM", "\333\260\333\260");    /* '00' */
+
+      TEST_PRINTF_DATE (2011, 7, 1, "%Om", "\333\260\333\267");  /* '07' */
+      TEST_PRINTF_DATE (2011, 7, 1, "%0Om", "\333\260\333\267"); /* '07' */
+      TEST_PRINTF_DATE (2011, 7, 1, "%-Om", "\333\267");         /* '7' */
+      TEST_PRINTF_DATE (2011, 7, 1, "%_Om", " \333\267");        /* ' 7' */
+    }
+  else
+    g_test_message ("locale fa_IR not available, skipping O modifier tests");
+  setlocale (LC_ALL, oldlocale);
+  g_free (oldlocale);
 }
 
 static void
@@ -992,6 +1188,8 @@ test_all_dates (void)
                 else
                   week_num++;
               }
+
+            g_date_time_unref (dt);
           }
     }
 
@@ -1003,17 +1201,121 @@ test_z (void)
 {
   GTimeZone *tz;
   GDateTime *dt;
+  gchar *p;
 
   g_test_bug ("642935");
 
   tz = g_time_zone_new ("-08:00");
   dt = g_date_time_new (tz, 0, 0, 0, 0, 0, 0);
-  gchar *p = g_date_time_format (dt, "%z");
+  p = g_date_time_format (dt, "%z");
   g_assert_cmpstr (p, ==, "-0800");
   g_date_time_unref (dt);
+  g_time_zone_unref (tz);
   g_free (p);
 }
 
+static void
+test_strftime (void)
+{
+  /* this is probably going to cause various buggy libcs to explode... */
+#define TEST_FORMAT \
+  "a%a A%A b%b B%B c%c C%C d%d e%e F%F g%g G%G h%h H%H I%I j%j m%m M%M " \
+  "n%n p%p r%r R%R S%S t%t T%T u%u V%V w%w x%x X%X y%y Y%Y z%z Z%Z %%"
+  time_t t;
+
+  /* 127997 is prime, 1315005118 is now */
+  for (t = 0; t < 1315005118; t += 127997)
+    {
+      GDateTime *date_time;
+      gchar c_str[1000];
+      gchar *dt_str;
+
+      date_time = g_date_time_new_from_unix_local (t);
+      dt_str = g_date_time_format (date_time, TEST_FORMAT);
+      strftime (c_str, sizeof c_str, TEST_FORMAT, localtime (&t));
+      g_assert_cmpstr (c_str, ==, dt_str);
+      g_date_time_unref (date_time);
+      g_free (dt_str);
+    }
+}
+
+static void
+test_find_interval (void)
+{
+  GTimeZone *tz;
+  GDateTime *dt;
+  gint64 u;
+  gint i1, i2;
+
+  tz = g_time_zone_new ("Canada/Eastern");
+  dt = g_date_time_new_utc (2010, 11, 7, 1, 30, 0);
+  u = g_date_time_to_unix (dt);
+
+  i1 = g_time_zone_find_interval (tz, G_TIME_TYPE_STANDARD, u);
+  i2 = g_time_zone_find_interval (tz, G_TIME_TYPE_DAYLIGHT, u);
+
+  g_assert_cmpint (i1, !=, i2);
+
+  g_date_time_unref (dt);
+
+  dt = g_date_time_new_utc (2010, 3, 14, 2, 0, 0);
+  u = g_date_time_to_unix (dt);
+
+  i1 = g_time_zone_find_interval (tz, G_TIME_TYPE_STANDARD, u);
+  g_assert_cmpint (i1, ==, -1);
+
+  g_date_time_unref (dt);
+  g_time_zone_unref (tz);
+}
+
+static void
+test_adjust_time (void)
+{
+  GTimeZone *tz;
+  GDateTime *dt;
+  gint64 u, u2;
+  gint i1, i2;
+
+  tz = g_time_zone_new ("Canada/Eastern");
+  dt = g_date_time_new_utc (2010, 11, 7, 1, 30, 0);
+  u = g_date_time_to_unix (dt);
+  u2 = u;
+
+  i1 = g_time_zone_find_interval (tz, G_TIME_TYPE_DAYLIGHT, u);
+  i2 = g_time_zone_adjust_time (tz, G_TIME_TYPE_DAYLIGHT, &u2);
+
+  g_assert_cmpint (i1, ==, i2);
+  g_assert (u == u2);
+
+  g_date_time_unref (dt);
+
+  dt = g_date_time_new_utc (2010, 3, 14, 2, 30, 0);
+  u2 = g_date_time_to_unix (dt);
+  g_date_time_unref (dt);
+
+  dt = g_date_time_new_utc (2010, 3, 14, 3, 0, 0);
+  u = g_date_time_to_unix (dt);
+  g_date_time_unref (dt);
+
+  i1 = g_time_zone_adjust_time (tz, G_TIME_TYPE_DAYLIGHT, &u2);
+  g_assert (u == u2);
+
+  g_time_zone_unref (tz);
+}
+
+static void
+test_no_header (void)
+{
+  GTimeZone *tz;
+
+  tz = g_time_zone_new ("blabla");
+
+  g_assert_cmpstr (g_time_zone_get_abbreviation (tz, 0), ==, "UTC");
+  g_assert_cmpint (g_time_zone_get_offset (tz, 0), ==, 0);
+  g_assert (!g_time_zone_is_dst (tz, 0));
+
+  g_time_zone_unref (tz);
+}
 
 gint
 main (gint   argc,
@@ -1047,10 +1349,15 @@ main (gint   argc,
   g_test_add_func ("/GDateTime/get_year", test_GDateTime_get_year);
   g_test_add_func ("/GDateTime/hash", test_GDateTime_hash);
   g_test_add_func ("/GDateTime/new_from_unix", test_GDateTime_new_from_unix);
+  g_test_add_func ("/GDateTime/new_from_unix_utc", test_GDateTime_new_from_unix_utc);
   g_test_add_func ("/GDateTime/new_from_timeval", test_GDateTime_new_from_timeval);
+  g_test_add_func ("/GDateTime/new_from_timeval_utc", test_GDateTime_new_from_timeval_utc);
   g_test_add_func ("/GDateTime/new_full", test_GDateTime_new_full);
   g_test_add_func ("/GDateTime/now", test_GDateTime_now);
   g_test_add_func ("/GDateTime/printf", test_GDateTime_printf);
+  g_test_add_func ("/GDateTime/non_utf8_printf", test_non_utf8_printf);
+  g_test_add_func ("/GDateTime/strftime", test_strftime);
+  g_test_add_func ("/GDateTime/modifiers", test_modifiers);
   g_test_add_func ("/GDateTime/to_local", test_GDateTime_to_local);
   g_test_add_func ("/GDateTime/to_unix", test_GDateTime_to_unix);
   g_test_add_func ("/GDateTime/to_timeval", test_GDateTime_to_timeval);
@@ -1059,6 +1366,9 @@ main (gint   argc,
   g_test_add_func ("/GDateTime/dst", test_GDateTime_dst);
   g_test_add_func ("/GDateTime/test_z", test_z);
   g_test_add_func ("/GDateTime/test-all-dates", test_all_dates);
+  g_test_add_func ("/GTimeZone/find-interval", test_find_interval);
+  g_test_add_func ("/GTimeZone/adjust-time", test_adjust_time);
+  g_test_add_func ("/GTimeZone/no-header", test_no_header);
 
   return g_test_run ();
 }

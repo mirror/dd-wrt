@@ -34,9 +34,9 @@
  * prop3: Defined in TestIface, Implemented in BaseObject, Overridden in DerivedObject
  * prop4: Defined in BaseObject, Overridden in DerivedObject
  */
-   
-static GType base_object_get_type ();
-static GType derived_object_get_type ();
+
+static GType base_object_get_type (void);
+static GType derived_object_get_type (void);
 
 enum {
   BASE_PROP_0,
@@ -154,8 +154,8 @@ base_object_constructor (GType                  type,
   /* The constructor is the one place where a GParamSpecOverride is visible
    * to the outside world, so we do a bunch of checks here
    */
-  GValue value1 = { 0, };
-  GValue value2 = { 0, };
+  GValue value1 = G_VALUE_INIT;
+  GValue value2 = G_VALUE_INIT;
   GParamSpec *pspec;
 
   g_assert (n_construct_properties == 1);
@@ -552,6 +552,7 @@ struct _Base2ObjectClass
   GObjectClass parent_class;
 };
 
+static GType base2_object_get_type (void);
 G_DEFINE_TYPE_WITH_CODE (Base2Object, base2_object, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (TEST_TYPE_IFACE,
                                                 base2_object_test_iface_init))
@@ -614,18 +615,19 @@ base2_object_init (Base2Object *object)
 static void
 test_not_overridden (void)
 {
+  Base2Object *object;
+
+  if (!g_test_undefined ())
+    return;
+
   g_test_bug ("637738");
 
-  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT|G_TEST_TRAP_SILENCE_STDERR))
-    {
-      Base2Object *object;
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
+                         "*Base2Object doesn't implement property 'prop3' from interface 'TestIface'*");
+  object = g_object_new (BASE2_TYPE_OBJECT, NULL);
+  g_test_assert_expected_messages ();
 
-      object = g_object_new (BASE2_TYPE_OBJECT, NULL);
-      g_object_unref (object);
-      exit (0);
-    }
-  g_test_trap_assert_failed ();
-  g_test_trap_assert_stderr ("*Base2Object doesn't implement property 'prop3' from interface 'TestIface'*");
+  g_object_unref (object);
 }
 
 int

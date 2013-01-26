@@ -401,7 +401,6 @@ g_inet_address_init (GInetAddress *address)
 GInetAddress *
 g_inet_address_new_from_string (const gchar *string)
 {
-  volatile GType type;
 #ifdef G_OS_WIN32
   struct sockaddr_storage sa;
   struct sockaddr_in *sin = (struct sockaddr_in *)&sa;
@@ -413,7 +412,7 @@ g_inet_address_new_from_string (const gchar *string)
 #endif
 
   /* Make sure _g_networking_init() has been called */
-  type = g_inet_address_get_type ();
+  g_type_ensure (G_TYPE_INET_ADDRESS);
 
 #ifdef G_OS_WIN32
   memset (&sa, 0, sizeof (sa));
@@ -438,12 +437,12 @@ g_inet_address_new_from_string (const gchar *string)
 
 /**
  * g_inet_address_new_from_bytes:
- * @bytes: raw address data
+ * @bytes: (array) (element-type guint8): raw address data
  * @family: the address family of @bytes
  *
  * Creates a new #GInetAddress from the given @family and @bytes.
- * @bytes should be 4 bytes for %G_INET_ADDRESS_IPV4 and 16 bytes for
- * %G_INET_ADDRESS_IPV6.
+ * @bytes should be 4 bytes for %G_SOCKET_FAMILY_IPV4 and 16 bytes for
+ * %G_SOCKET_FAMILY_IPV6.
  *
  * Returns: a new #GInetAddress corresponding to @family and @bytes.
  *
@@ -864,4 +863,33 @@ g_inet_address_get_is_mc_site_local (GInetAddress *address)
     return FALSE;
   else
     return IN6_IS_ADDR_MC_SITELOCAL (&address->priv->addr.ipv6);
+}
+
+/**
+ * g_inet_address_equal:
+ * @address: A #GInetAddress.
+ * @other_address: Another #GInetAddress.
+ *
+ * Checks if two #GInetAddress instances are equal, e.g. the same address.
+ *
+ * Returns: %TRUE if @address and @other_address are equal, %FALSE otherwise.
+ *
+ * Since: 2.30
+ */
+gboolean
+g_inet_address_equal (GInetAddress *address,
+                      GInetAddress *other_address)
+{
+  g_return_val_if_fail (G_IS_INET_ADDRESS (address), FALSE);
+  g_return_val_if_fail (G_IS_INET_ADDRESS (other_address), FALSE);
+
+  if (g_inet_address_get_family (address) != g_inet_address_get_family (other_address))
+    return FALSE;
+
+  if (memcmp (g_inet_address_to_bytes (address),
+              g_inet_address_to_bytes (other_address),
+              g_inet_address_get_native_size (address)) != 0)
+    return FALSE;
+
+  return TRUE;
 }

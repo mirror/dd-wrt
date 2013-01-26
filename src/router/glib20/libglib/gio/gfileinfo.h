@@ -163,6 +163,17 @@ typedef struct _GFileInfoClass   GFileInfoClass;
 #define G_FILE_ATTRIBUTE_STANDARD_ICON "standard::icon"                     /* object (GIcon) */
 
 /**
+ * G_FILE_ATTRIBUTE_STANDARD_SYMBOLIC_ICON:
+ *
+ * A key in the "standard" namespace for getting the symbolic icon for the file.
+ * Corresponding #GFileAttributeType is %G_FILE_ATTRIBUTE_TYPE_OBJECT.
+ * The value for this key should contain a #GIcon.
+ *
+ * Since: 2.34
+ **/
+#define G_FILE_ATTRIBUTE_STANDARD_SYMBOLIC_ICON "standard::symbolic-icon"   /* object (GIcon) */
+
+/**
  * G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE:
  *
  * A key in the "standard" namespace for getting the content type of the file.
@@ -729,6 +740,17 @@ typedef struct _GFileInfoClass   GFileInfoClass;
 #define G_FILE_ATTRIBUTE_FILESYSTEM_FREE "filesystem::free"                       /* uint64 */
 
 /**
+ * G_FILE_ATTRIBUTE_FILESYSTEM_USED:
+ *
+ * A key in the "filesystem" namespace for getting the number of bytes of used on the
+ * file system. Corresponding #GFileAttributeType is
+ * %G_FILE_ATTRIBUTE_TYPE_UINT64.
+ *
+ * Since: 2.32
+ */
+#define G_FILE_ATTRIBUTE_FILESYSTEM_USED "filesystem::used"                       /* uint64 */
+
+/**
  * G_FILE_ATTRIBUTE_FILESYSTEM_TYPE:
  *
  * A key in the "filesystem" namespace for getting the file system's type.
@@ -789,11 +811,11 @@ typedef struct _GFileInfoClass   GFileInfoClass;
  * A key in the "trash" namespace.  When requested against
  * items in "trash:///", will return the original path to the file before it
  * was trashed. Corresponding #GFileAttributeType is
- * %G_FILE_ATTRIBUTE_TYPE_STRING.
+ * %G_FILE_ATTRIBUTE_TYPE_BYTE_STRING.
  *
  * Since: 2.24.
  **/
-#define G_FILE_ATTRIBUTE_TRASH_ORIG_PATH "trash::orig-path"     /* string */
+#define G_FILE_ATTRIBUTE_TRASH_ORIG_PATH "trash::orig-path"     /* byte string */
 
 /**
  * G_FILE_ATTRIBUTE_TRASH_DELETION_DATE:
@@ -897,6 +919,7 @@ const char *      g_file_info_get_name               (GFileInfo         *info);
 const char *      g_file_info_get_display_name       (GFileInfo         *info);
 const char *      g_file_info_get_edit_name          (GFileInfo         *info);
 GIcon *           g_file_info_get_icon               (GFileInfo         *info);
+GIcon *           g_file_info_get_symbolic_icon      (GFileInfo         *info);
 const char *      g_file_info_get_content_type       (GFileInfo         *info);
 goffset           g_file_info_get_size               (GFileInfo         *info);
 void              g_file_info_get_modification_time  (GFileInfo         *info,
@@ -924,6 +947,8 @@ void              g_file_info_set_edit_name          (GFileInfo         *info,
 						      const char        *edit_name);
 void              g_file_info_set_icon               (GFileInfo         *info,
 						      GIcon             *icon);
+void              g_file_info_set_symbolic_icon      (GFileInfo         *info,
+						      GIcon             *icon);
 void              g_file_info_set_content_type       (GFileInfo         *info,
 						      const char        *content_type);
 void              g_file_info_set_size               (GFileInfo         *info,
@@ -935,10 +960,14 @@ void              g_file_info_set_symlink_target     (GFileInfo         *info,
 void              g_file_info_set_sort_order         (GFileInfo         *info,
 						      gint32             sort_order);
 
-GType                  g_file_attribute_matcher_get_type       (void) G_GNUC_CONST;
+#define G_TYPE_FILE_ATTRIBUTE_MATCHER (g_file_attribute_matcher_get_type ())
+GType g_file_attribute_matcher_get_type (void) G_GNUC_CONST;
+
 GFileAttributeMatcher *g_file_attribute_matcher_new            (const char            *attributes);
 GFileAttributeMatcher *g_file_attribute_matcher_ref            (GFileAttributeMatcher *matcher);
 void                   g_file_attribute_matcher_unref          (GFileAttributeMatcher *matcher);
+GFileAttributeMatcher *g_file_attribute_matcher_subtract       (GFileAttributeMatcher *matcher,
+                                                                GFileAttributeMatcher *subtract);
 gboolean               g_file_attribute_matcher_matches        (GFileAttributeMatcher *matcher,
 								const char            *attribute);
 gboolean               g_file_attribute_matcher_matches_only   (GFileAttributeMatcher *matcher,
@@ -946,6 +975,8 @@ gboolean               g_file_attribute_matcher_matches_only   (GFileAttributeMa
 gboolean               g_file_attribute_matcher_enumerate_namespace (GFileAttributeMatcher *matcher,
 								     const char            *ns);
 const char *           g_file_attribute_matcher_enumerate_next (GFileAttributeMatcher *matcher);
+GLIB_AVAILABLE_IN_2_32
+char *                 g_file_attribute_matcher_to_string      (GFileAttributeMatcher *matcher);
 
 G_END_DECLS
 

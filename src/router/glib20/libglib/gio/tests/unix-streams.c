@@ -22,6 +22,7 @@
 #include <gio/gio.h>
 #include <gio/gunixinputstream.h>
 #include <gio/gunixoutputstream.h>
+#include <glib/glib-unix.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,6 +65,7 @@ writer_thread (gpointer user_data)
 
   if (g_cancellable_is_cancelled (writer_cancel))
     {
+      g_clear_error (&err);
       g_cancellable_cancel (main_cancel);
       g_object_unref (out);
       return NULL;
@@ -194,7 +196,7 @@ timeout (gpointer cancellable)
 }
 
 static void
-test_pipe_io (void)
+test_pipe_io (gconstpointer nonblocking)
 {
   GThread *writer, *reader;
   GInputStream *in;
@@ -212,12 +214,26 @@ test_pipe_io (void)
 
   g_assert (pipe (writer_pipe) == 0 && pipe (reader_pipe) == 0);
 
+  if (nonblocking)
+    {
+      GError *error = NULL;
+
+      g_unix_set_fd_nonblocking (writer_pipe[0], TRUE, &error);
+      g_assert_no_error (error);
+      g_unix_set_fd_nonblocking (writer_pipe[1], TRUE, &error);
+      g_assert_no_error (error);
+      g_unix_set_fd_nonblocking (reader_pipe[0], TRUE, &error);
+      g_assert_no_error (error);
+      g_unix_set_fd_nonblocking (reader_pipe[1], TRUE, &error);
+      g_assert_no_error (error);
+    }
+
   writer_cancel = g_cancellable_new ();
   reader_cancel = g_cancellable_new ();
   main_cancel = g_cancellable_new ();
 
-  writer = g_thread_create (writer_thread, NULL, TRUE, NULL);
-  reader = g_thread_create (reader_thread, NULL, TRUE, NULL);
+  writer = g_thread_new ("writer", writer_thread, NULL);
+  reader = g_thread_new ("reader", reader_thread, NULL);
 
   in = g_unix_input_stream_new (writer_pipe[0], TRUE);
   out = g_unix_output_stream_new (reader_pipe[1], TRUE);
@@ -242,15 +258,57 @@ test_pipe_io (void)
   g_object_unref (out);
 }
 
+static void
+test_basic (void)
+{
+  GUnixInputStream *is;
+  GUnixOutputStream *os;
+  gint fd;
+  gboolean close_fd;
+
+  is = G_UNIX_INPUT_STREAM (g_unix_input_stream_new (0, TRUE));
+  g_object_get (is,
+                "fd", &fd,
+                "close-fd", &close_fd,
+                NULL);
+  g_assert_cmpint (fd, ==, 0);
+  g_assert (close_fd);
+
+  g_unix_input_stream_set_close_fd (is, FALSE);
+  g_assert (!g_unix_input_stream_get_close_fd (is));
+  g_assert_cmpint (g_unix_input_stream_get_fd (is), ==, 0);
+
+  g_object_unref (is);
+
+  os = G_UNIX_OUTPUT_STREAM (g_unix_output_stream_new (1, TRUE));
+  g_object_get (os,
+                "fd", &fd,
+                "close-fd", &close_fd,
+                NULL);
+  g_assert_cmpint (fd, ==, 1);
+  g_assert (close_fd);
+
+  g_unix_output_stream_set_close_fd (os, FALSE);
+  g_assert (!g_unix_output_stream_get_close_fd (os));
+  g_assert_cmpint (g_unix_output_stream_get_fd (os), ==, 1);
+
+  g_object_unref (os);
+}
+
 int
 main (int   argc,
       char *argv[])
 {
-  g_thread_init (NULL);
   g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
-  g_test_add_func ("/unix-streams/pipe-io-test", test_pipe_io);
+  g_test_add_func ("/unix-streams/basic", test_basic);
+  g_test_add_data_func ("/unix-streams/pipe-io-test",
+			GINT_TO_POINTER (FALSE),
+			test_pipe_io);
+  g_test_add_data_func ("/unix-streams/nonblocking-io-test",
+			GINT_TO_POINTER (TRUE),
+			test_pipe_io);
 
   return g_test_run();
 }

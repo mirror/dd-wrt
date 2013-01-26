@@ -28,6 +28,7 @@
 #include        <gobject/gparam.h>
 #include        <gobject/gclosure.h>
 #include        <gobject/gsignal.h>
+#include        <gobject/gboxed.h>
 
 G_BEGIN_DECLS
 
@@ -229,7 +230,7 @@ typedef void (*GObjectFinalizeFunc)     (GObject      *object);
  * A #GWeakNotify function can be added to an object as a callback that gets
  * triggered when the object is finalized. Since the object is already being
  * finalized when the #GWeakNotify is called, there's not much you could do 
- * with the object, apart from e.g. using its adress as hash-index or the like. 
+ * with the object, apart from e.g. using its address as hash-index or the like. 
  */
 typedef void (*GWeakNotify)		(gpointer      data,
 					 GObject      *where_the_object_was);
@@ -317,7 +318,7 @@ struct  _GObjectClass
   GSList      *construct_properties;
 
   /*< public >*/
-  /* seldomly overidden */
+  /* seldom overidden */
   GObject*   (*constructor)     (GType                  type,
                                  guint                  n_construct_properties,
                                  GObjectConstructParam *construct_properties);
@@ -332,7 +333,7 @@ struct  _GObjectClass
                                          GParamSpec     *pspec);
   void       (*dispose)			(GObject        *object);
   void       (*finalize)		(GObject        *object);
-  /* seldomly overidden */
+  /* seldom overidden */
   void       (*dispatch_properties_changed) (GObject      *object,
 					     guint	   n_pspecs,
 					     GParamSpec  **pspecs);
@@ -490,6 +491,20 @@ void        g_object_set_qdata_full           (GObject        *object,
 					       GDestroyNotify  destroy);
 gpointer    g_object_steal_qdata              (GObject        *object,
 					       GQuark          quark);
+
+GLIB_AVAILABLE_IN_2_34
+gpointer    g_object_dup_qdata                (GObject        *object,
+                                               GQuark          quark,
+                                               GDuplicateFunc  dup_func,
+					       gpointer         user_data);
+GLIB_AVAILABLE_IN_2_34
+gboolean    g_object_replace_qdata            (GObject        *object,
+                                               GQuark          quark,
+                                               gpointer        oldval,
+                                               gpointer        newval,
+                                               GDestroyNotify  destroy,
+					       GDestroyNotify *old_destroy);
+
 gpointer    g_object_get_data                 (GObject        *object,
 					       const gchar    *key);
 void        g_object_set_data                 (GObject        *object,
@@ -501,6 +516,21 @@ void        g_object_set_data_full            (GObject        *object,
 					       GDestroyNotify  destroy);
 gpointer    g_object_steal_data               (GObject        *object,
 					       const gchar    *key);
+
+GLIB_AVAILABLE_IN_2_34
+gpointer    g_object_dup_data                 (GObject        *object,
+                                               const gchar    *key,
+                                               GDuplicateFunc  dup_func,
+					       gpointer         user_data);
+GLIB_AVAILABLE_IN_2_34
+gboolean    g_object_replace_data             (GObject        *object,
+                                               const gchar    *key,
+                                               gpointer        oldval,
+                                               gpointer        newval,
+                                               GDestroyNotify  destroy,
+					       GDestroyNotify *old_destroy);
+
+
 void        g_object_watch_closure            (GObject        *object,
 					       GClosure       *closure);
 GClosure*   g_cclosure_new_object             (GCallback       callback_func,
@@ -526,15 +556,13 @@ void        g_object_run_dispose	      (GObject	      *object);
 
 void        g_value_take_object               (GValue         *value,
 					       gpointer        v_object);
-#ifndef G_DISABLE_DEPRECATED
+GLIB_DEPRECATED_FOR(g_value_take_object)
 void        g_value_set_object_take_ownership (GValue         *value,
-					       gpointer        v_object);
-#endif
+                                               gpointer        v_object);
 
-#if !defined(G_DISABLE_DEPRECATED) || defined(GTK_COMPILATION)
+GLIB_DEPRECATED
 gsize	    g_object_compat_control	      (gsize	       what,
 					       gpointer	       data);
-#endif
 
 /* --- implementation macros --- */
 #define G_OBJECT_WARN_INVALID_PSPEC(object, pname, property_id, pspec) \
@@ -563,19 +591,19 @@ G_STMT_START { \
     G_OBJECT_WARN_INVALID_PSPEC ((object), "property", (property_id), (pspec))
 
 void    g_clear_object (volatile GObject **object_ptr);
-#define g_clear_object(object_ptr) \
-  G_STMT_START {                                                             \
-    /* Only one access, please */                                            \
-    gpointer *_p = (gpointer) (object_ptr);                                  \
-    gpointer _o;                                                             \
-                                                                             \
-    do                                                                       \
-      _o = g_atomic_pointer_get (_p);                                        \
-    while G_UNLIKELY (!g_atomic_pointer_compare_and_exchange (_p, _o, NULL));\
-                                                                             \
-    if (_o)                                                                  \
-      g_object_unref (_o);                                                   \
-  } G_STMT_END
+#define g_clear_object(object_ptr) g_clear_pointer ((object_ptr), g_object_unref)
+
+typedef struct {
+    /*<private>*/
+    union { gpointer p; } priv;
+} GWeakRef;
+
+void     g_weak_ref_init       (GWeakRef *weak_ref,
+                                gpointer  object);
+void     g_weak_ref_clear      (GWeakRef *weak_ref);
+gpointer g_weak_ref_get        (GWeakRef *weak_ref);
+void     g_weak_ref_set        (GWeakRef *weak_ref,
+                                gpointer  object);
 
 G_END_DECLS
 

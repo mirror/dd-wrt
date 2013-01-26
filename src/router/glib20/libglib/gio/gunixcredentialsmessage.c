@@ -37,8 +37,6 @@
 
 /* ---------------------------------------------------------------------------------------------------- */
 #ifdef __linux__
-
-#define _GNU_SOURCE
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -46,7 +44,7 @@
 #include <fcntl.h>
 #define G_UNIX_CREDENTIALS_MESSAGE_SUPPORTED 1
 
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -86,7 +84,7 @@ g_unix_credentials_message_get_size (GSocketControlMessage *message)
 {
 #ifdef __linux__
   return sizeof (struct ucred);
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   return sizeof (struct cmsgcred);
 #else
   return 0;
@@ -98,7 +96,7 @@ g_unix_credentials_message_get_level (GSocketControlMessage *message)
 {
 #ifdef __linux__
   return SOL_SOCKET;
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   return SOL_SOCKET;
 #else
   return 0;
@@ -110,7 +108,7 @@ g_unix_credentials_message_get_msg_type (GSocketControlMessage *message)
 {
 #ifdef __linux__
   return SCM_CREDENTIALS;
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   return SCM_CREDS;
 #else
   return 0;
@@ -146,6 +144,13 @@ g_unix_credentials_message_deserialize (gint     level,
 
     ucred = data;
 
+    if (ucred->uid == (uid_t)-1 &&
+	ucred->gid == (gid_t)-1)
+      {
+	/* This happens if the remote side didn't pass the credentials */
+	goto out;
+      }
+
     credentials = g_credentials_new ();
     g_credentials_set_native (credentials, G_CREDENTIALS_TYPE_LINUX_UCRED, ucred);
     message = g_unix_credentials_message_new_with_credentials (credentials);
@@ -153,7 +158,7 @@ g_unix_credentials_message_deserialize (gint     level,
  out:
     ;
   }
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   {
     GCredentials *credentials;
     struct cmsgcred *cred;
@@ -162,7 +167,7 @@ g_unix_credentials_message_deserialize (gint     level,
       {
         goto out;
       }
-    if (size < CMSG_LEN (sizeof *cred))
+    if (size < sizeof *cred)
       {
         g_warning ("Expected a struct cmsgcred (%" G_GSIZE_FORMAT " bytes) but "
                    "got %" G_GSIZE_FORMAT " bytes of data",
@@ -195,7 +200,7 @@ g_unix_credentials_message_serialize (GSocketControlMessage *_message,
           g_credentials_get_native (message->priv->credentials,
                                     G_CREDENTIALS_TYPE_LINUX_UCRED),
           sizeof (struct ucred));
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
   memcpy (data,
           g_credentials_get_native (message->priv->credentials,
                                     G_CREDENTIALS_TYPE_FREEBSD_CMSGCRED),
@@ -323,7 +328,7 @@ g_unix_credentials_message_class_init (GUnixCredentialsMessageClass *class)
 /**
  * g_unix_credentials_message_is_supported:
  *
- * Checks if passing a #GCredential on a #GSocket is supported on this platform.
+ * Checks if passing #GCredentials on a #GSocket is supported on this platform.
  *
  * Returns: %TRUE if supported, %FALSE otherwise
  *

@@ -23,7 +23,6 @@
 
 #include "gtlsserverconnection.h"
 #include "ginitable.h"
-#include "gio-marshal.h"
 #include "gioenumtypes.h"
 #include "gsocket.h"
 #include "gtlsbackend.h"
@@ -74,7 +73,8 @@ g_tls_server_connection_default_init (GTlsServerConnectionInterface *iface)
  * Creates a new #GTlsServerConnection wrapping @base_io_stream (which
  * must have pollable input and output streams).
  *
- * Return value: the new #GTlsServerConnection, or %NULL on error
+ * Return value: (transfer full) (type GTlsServerConnection): the new
+ * #GTlsServerConnection, or %NULL on error
  *
  * Since: 2.28
  */

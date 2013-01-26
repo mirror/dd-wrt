@@ -272,7 +272,10 @@ _xdg_mime_magic_parse_header (FILE *magic_file, XdgMimeMagicMatch *match)
 
   buffer = (char *)_xdg_mime_magic_read_to_newline (magic_file, &end_of_file);
   if (end_of_file)
-    return XDG_MIME_MAGIC_EOF;
+    {
+      free (buffer);
+      return XDG_MIME_MAGIC_EOF;
+    }
 
   end_ptr = buffer;
   while (*end_ptr != ']' && *end_ptr != '\000' && *end_ptr != '\n')
@@ -476,7 +479,9 @@ _xdg_mime_magic_parse_magic_line (FILE              *magic_file,
       /* We clean up the matchlet, byte swapping if needed */
       if (matchlet->word_size > 1)
 	{
+#if LITTLE_ENDIAN
 	  int i;
+#endif
 	  if (matchlet->value_length % matchlet->word_size != 0)
 	    {
 	      _xdg_mime_magic_matchlet_free (matchlet);

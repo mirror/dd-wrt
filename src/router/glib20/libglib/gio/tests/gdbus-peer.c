@@ -20,6 +20,8 @@
  * Author: David Zeuthen <davidz@redhat.com>
  */
 
+#include "config.h"
+
 #include <gio/gio.h>
 #include <unistd.h>
 #include <string.h>
@@ -45,12 +47,15 @@
 
 #include "gdbus-tests.h"
 
+#include "gdbus-example-objectmanager-generated.h"
+
 #ifdef G_OS_UNIX
 static gboolean is_unix = TRUE;
 #else
 static gboolean is_unix = FALSE;
 #endif
 
+static gchar *tmp_address = NULL;
 static gchar *test_guid = NULL;
 static GMainLoop *service_loop = NULL;
 static GDBusServer *server = NULL;
@@ -173,7 +178,7 @@ test_interface_method_call (GDBusConnection       *connection,
 
       error = NULL;
 
-      fd = open (path, O_RDONLY);
+      fd = g_open (path, O_RDONLY, 0);
       g_unix_fd_list_append (fd_list, fd, &error);
       g_assert_no_error (error);
       close (fd);
@@ -320,15 +325,18 @@ service_thread_func (gpointer user_data)
 {
   PeerData *data = user_data;
   GMainContext *service_context;
-  GDBusAuthObserver *observer;
+  GDBusAuthObserver *observer, *o;
   GError *error;
+  GDBusServerFlags f;
+  gchar *a, *g;
+  gboolean b;
 
   service_context = g_main_context_new ();
   g_main_context_push_thread_default (service_context);
 
   error = NULL;
   observer = g_dbus_auth_observer_new ();
-  server = g_dbus_server_new_sync (is_unix ? "unix:tmpdir=/tmp/gdbus-test-" : "nonce-tcp:",
+  server = g_dbus_server_new_sync (tmp_address,
                                    G_DBUS_SERVER_FLAGS_NONE,
                                    test_guid,
                                    observer,
@@ -344,6 +352,25 @@ service_thread_func (gpointer user_data)
                     "authorize-authenticated-peer",
                     G_CALLBACK (on_authorize_authenticated_peer),
                     data);
+
+  g_assert_cmpint (g_dbus_server_get_flags (server), ==, G_DBUS_SERVER_FLAGS_NONE);
+  g_assert_cmpstr (g_dbus_server_get_guid (server), ==, test_guid);
+  g_object_get (server,
+                "flags", &f,
+                "address", &a,
+                "guid", &g,
+                "active", &b,
+                "authentication-observer", &o,
+                NULL);
+  g_assert_cmpint (f, ==, G_DBUS_SERVER_FLAGS_NONE);
+  g_assert_cmpstr (a, ==, tmp_address);
+  g_assert_cmpstr (g, ==, test_guid);
+  g_assert (!b);
+  g_assert (o == observer);
+  g_free (a);
+  g_free (g);
+  g_object_unref (o);
+
   g_object_unref (observer);
 
   g_dbus_server_start (server);
@@ -598,11 +625,10 @@ test_peer (void)
   g_assert (c == NULL);
 
   /* bring up a server - we run the server in a different thread to avoid deadlocks */
-  error = NULL;
-  service_thread = g_thread_create (service_thread_func,
-                                    &data,
-                                    TRUE,
-                                    &error);
+  service_loop = NULL;
+  service_thread = g_thread_new ("test_peer",
+                                 service_thread_func,
+                                 &data);
   while (service_loop == NULL)
     g_thread_yield ();
   g_assert (server != NULL);
@@ -792,6 +818,18 @@ test_peer (void)
       g_assert (native_creds->pid == getpid ());
     }
     g_object_unref (credentials);
+#elif defined (__OpenBSD__)
+    {
+      struct sockpeercred *native_creds;
+      g_assert_no_error (error);
+      g_assert (G_IS_CREDENTIALS (credentials));
+      native_creds = g_credentials_get_native (credentials, G_CREDENTIALS_TYPE_OPENBSD_SOCKPEERCRED);
+      g_assert (native_creds != NULL);
+      g_assert (native_creds->uid == getuid ());
+      g_assert (native_creds->gid == getgid ());
+      g_assert (native_creds->pid == getpid ());
+    }
+    g_object_unref (credentials);
 #else
     g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
     g_assert (credentials == NULL);
@@ -910,8 +948,7 @@ dmp_data_free (DmpData *data)
   g_main_loop_unref (data->loop);
   g_main_context_unref (data->context);
   g_object_unref (data->server);
-  g_list_foreach (data->connections, (GFunc) g_object_unref, NULL);
-  g_list_free (data->connections);
+  g_list_free_full (data->connections, g_object_unref);
   g_free (data);
 }
 
@@ -1002,7 +1039,7 @@ dmp_thread_func (gpointer user_data)
 
   error = NULL;
   guid = g_dbus_generate_guid ();
-  data->server = g_dbus_server_new_sync ("unix:tmpdir=/tmp/gdbus-test-",
+  data->server = g_dbus_server_new_sync (tmp_address,
                                          G_DBUS_SERVER_FLAGS_NONE,
                                          guid,
                                          NULL, /* GDBusAuthObserver */
@@ -1035,11 +1072,9 @@ delayed_message_processing (void)
 
   data = g_new0 (DmpData, 1);
 
-  error = NULL;
-  service_thread = g_thread_create (dmp_thread_func,
-                                    data,
-                                    TRUE,
-                                    &error);
+  service_thread = g_thread_new ("dmp",
+                                 dmp_thread_func,
+                                 data);
   while (data->server == NULL || !g_dbus_server_is_active (data->server))
     g_thread_yield ();
 
@@ -1083,7 +1118,6 @@ delayed_message_processing (void)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-#ifdef BUG_631379_FIXED
 static gboolean
 nonce_tcp_on_authorize_authenticated_peer (GDBusAuthObserver *observer,
                                            GIOStream         *stream,
@@ -1185,10 +1219,9 @@ test_nonce_tcp (void)
   error = NULL;
   server = NULL;
   service_loop = NULL;
-  service_thread = g_thread_create (nonce_tcp_service_thread_func,
-                                    &data,
-                                    TRUE,
-                                    &error);
+  service_thread = g_thread_new ("nonce-tcp-service",
+                                 nonce_tcp_service_thread_func,
+                                 &data);
   while (service_loop == NULL)
     g_thread_yield ();
   g_assert (server != NULL);
@@ -1205,7 +1238,7 @@ test_nonce_tcp (void)
   g_assert_no_error (error);
   g_assert (c != NULL);
   while (data.current_connections->len < 1)
-    g_main_loop_run (loop);
+    g_thread_yield ();
   g_assert_cmpint (data.current_connections->len, ==, 1);
   g_assert_cmpint (data.num_connection_attempts, ==, 1);
   g_assert (g_dbus_connection_get_unique_name (c) == NULL);
@@ -1285,7 +1318,6 @@ test_nonce_tcp (void)
   g_main_loop_quit (service_loop);
   g_thread_join (service_thread);
 }
-#endif
 
 static void
 test_credentials (void)
@@ -1438,15 +1470,338 @@ test_overflow (void)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+static gboolean
+tcp_anonymous_on_new_connection (GDBusServer     *server,
+                                 GDBusConnection *connection,
+                                 gpointer         user_data)
+{
+  gboolean *seen_connection = user_data;
+  *seen_connection = TRUE;
+  return TRUE;
+}
+
+static gpointer
+tcp_anonymous_service_thread_func (gpointer user_data)
+{
+  gboolean *seen_connection = user_data;
+  GMainContext *service_context;
+  GError *error;
+
+  service_context = g_main_context_new ();
+  g_main_context_push_thread_default (service_context);
+
+  error = NULL;
+  server = g_dbus_server_new_sync ("tcp:",
+                                   G_DBUS_SERVER_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS,
+                                   test_guid,
+                                   NULL, /* GDBusObserver* */
+                                   NULL, /* GCancellable* */
+                                   &error);
+  g_assert_no_error (error);
+
+  g_signal_connect (server,
+                    "new-connection",
+                    G_CALLBACK (tcp_anonymous_on_new_connection),
+                    seen_connection);
+
+  g_dbus_server_start (server);
+
+  service_loop = g_main_loop_new (service_context, FALSE);
+  g_main_loop_run (service_loop);
+
+  g_main_context_pop_thread_default (service_context);
+
+  g_main_loop_unref (service_loop);
+  g_main_context_unref (service_context);
+
+  return NULL;
+}
+
+static void
+test_tcp_anonymous (void)
+{
+  gboolean seen_connection;
+  GThread *service_thread;
+  GDBusConnection *connection;
+  GError *error;
+
+  seen_connection = FALSE;
+  service_loop = NULL;
+  service_thread = g_thread_new ("tcp-anon-service",
+                                 tcp_anonymous_service_thread_func,
+                                 &seen_connection);
+  while (service_loop == NULL)
+    g_thread_yield ();
+  g_assert (server != NULL);
+
+  error = NULL;
+  connection = g_dbus_connection_new_for_address_sync (g_dbus_server_get_client_address (server),
+                                                       G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
+                                                       NULL, /* GDBusAuthObserver* */
+                                                       NULL, /* GCancellable */
+                                                       &error);
+  g_assert_no_error (error);
+  g_assert (connection != NULL);
+
+  while (!seen_connection)
+    g_thread_yield ();
+
+  g_object_unref (connection);
+
+  g_main_loop_quit (service_loop);
+  g_dbus_server_stop (server);
+  g_object_unref (server);
+  server = NULL;
+
+  g_thread_join (service_thread);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+static GDBusServer *codegen_server = NULL;
+
+static gboolean
+codegen_on_animal_poke (ExampleAnimal          *animal,
+                        GDBusMethodInvocation  *invocation,
+                        gboolean                make_sad,
+                        gboolean                make_happy,
+                        gpointer                user_data)
+{
+  if ((make_sad && make_happy) || (!make_sad && !make_happy))
+    {
+      g_main_loop_quit (service_loop);
+
+      g_dbus_method_invocation_return_dbus_error (invocation,
+                                                  "org.gtk.GDBus.Examples.ObjectManager.Error.Failed",
+                                                  "Exactly one of make_sad or make_happy must be TRUE");
+      goto out;
+    }
+
+  if (make_sad)
+    {
+      if (g_strcmp0 (example_animal_get_mood (animal), "Sad") == 0)
+        {
+          g_dbus_method_invocation_return_dbus_error (invocation,
+                                                      "org.gtk.GDBus.Examples.ObjectManager.Error.SadAnimalIsSad",
+                                                      "Sad animal is already sad");
+          goto out;
+        }
+
+      example_animal_set_mood (animal, "Sad");
+      example_animal_complete_poke (animal, invocation);
+      goto out;
+    }
+
+  if (make_happy)
+    {
+      if (g_strcmp0 (example_animal_get_mood (animal), "Happy") == 0)
+        {
+          g_dbus_method_invocation_return_dbus_error (invocation,
+                                                      "org.gtk.GDBus.Examples.ObjectManager.Error.HappyAnimalIsHappy",
+                                                      "Happy animal is already happy");
+          goto out;
+        }
+
+      example_animal_set_mood (animal, "Happy");
+      example_animal_complete_poke (animal, invocation);
+      goto out;
+    }
+
+  g_assert_not_reached ();
+
+ out:
+  return TRUE; /* to indicate that the method was handled */
+}
+
+/* Runs in thread we created GDBusServer in (since we didn't pass G_DBUS_SERVER_FLAGS_RUN_IN_THREAD) */
+static gboolean
+codegen_on_new_connection (GDBusServer *server,
+                           GDBusConnection *connection,
+                           gpointer user_data)
+{
+  ExampleAnimal *animal = user_data;
+  GError        *error = NULL;
+
+  /* g_print ("Client connected.\n" */
+  /*          "Negotiated capabilities: unix-fd-passing=%d\n", */
+  /*          g_dbus_connection_get_capabilities (connection) & G_DBUS_CAPABILITY_FLAGS_UNIX_FD_PASSING); */
+
+  g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (animal), connection,
+                                    "/Example/Animals/000", &error);
+  g_assert_no_error (error);
+
+  return TRUE;
+}
+
+static gpointer
+codegen_service_thread_func (gpointer user_data)
+{
+  GMainContext   *service_context;
+  ExampleAnimal  *animal;
+  GError         *error = NULL;
+
+  service_context = g_main_context_new ();
+  g_main_context_push_thread_default (service_context);
+
+  /* Create the animal in the right thread context */
+  animal = example_animal_skeleton_new ();
+
+  /* Handle Poke() D-Bus method invocations on the .Animal interface */
+  g_signal_connect (animal, "handle-poke",
+                    G_CALLBACK (codegen_on_animal_poke),
+                    NULL); /* user_data */
+
+  codegen_server = g_dbus_server_new_sync (tmp_address,
+                                           G_DBUS_SERVER_FLAGS_NONE,
+                                           test_guid,
+                                           NULL, /* observer */
+                                           NULL, /* cancellable */
+                                           &error);
+  g_assert_no_error (error);
+  g_dbus_server_start (codegen_server);
+
+  g_signal_connect (codegen_server, "new-connection",
+                    G_CALLBACK (codegen_on_new_connection),
+                    animal);
+
+  service_loop = g_main_loop_new (service_context, FALSE);
+  g_main_loop_run (service_loop);
+
+  g_object_unref (animal);
+
+  g_main_context_pop_thread_default (service_context);
+
+  g_main_loop_unref (service_loop);
+  g_main_context_unref (service_context);
+
+  g_dbus_server_stop (codegen_server);
+  g_object_unref (codegen_server);
+  codegen_server = NULL;
+
+  return NULL;
+}
+
+
+gboolean
+codegen_quit_mainloop_timeout (gpointer data)
+{
+  g_main_loop_quit (loop);
+  return FALSE;
+}
+
+static void
+codegen_test_peer (void)
+{
+  GDBusConnection     *connection;
+  ExampleAnimal       *animal1, *animal2;
+  GThread             *service_thread;
+  GError              *error = NULL;
+  GVariant            *value;
+
+  /* bring up a server - we run the server in a different thread to avoid deadlocks */
+  service_loop = NULL;
+  service_thread = g_thread_new ("codegen_test_peer",
+                                 codegen_service_thread_func,
+                                 NULL);
+  while (service_loop == NULL)
+    g_thread_yield ();
+  g_assert (codegen_server != NULL);
+
+  /* Get an animal 1 ...  */
+  connection = g_dbus_connection_new_for_address_sync (g_dbus_server_get_client_address (codegen_server),
+                                                       G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
+                                                       NULL, /* GDBusAuthObserver */
+                                                       NULL, /* cancellable */
+                                                       &error);
+  g_assert_no_error (error);
+  g_assert (connection != NULL);
+
+  animal1 = example_animal_proxy_new_sync (connection, 0, NULL,
+                                           "/Example/Animals/000", NULL, &error);
+  g_assert_no_error (error);
+  g_assert (animal1 != NULL);
+  g_object_unref (connection);
+
+  /* Get animal 2 ...  */
+  connection = g_dbus_connection_new_for_address_sync (g_dbus_server_get_client_address (codegen_server),
+                                                       G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT,
+                                                       NULL, /* GDBusAuthObserver */
+                                                       NULL, /* cancellable */
+                                                       &error);
+  g_assert_no_error (error);
+  g_assert (connection != NULL);
+
+  animal2 = example_animal_proxy_new_sync (connection, 0, NULL,
+                                           "/Example/Animals/000", NULL, &error);
+  g_assert_no_error (error);
+  g_assert (animal2 != NULL);
+  g_object_unref (connection);
+
+  /* Make animal sad via animal1  */
+  example_animal_call_poke_sync (animal1, TRUE, FALSE, NULL, &error);
+  g_assert_no_error (error);
+
+  /* Poke server and make sure animal is updated */
+  value = g_dbus_proxy_call_sync (G_DBUS_PROXY (animal1),
+                                  "org.freedesktop.DBus.Peer.Ping",
+                                  NULL, G_DBUS_CALL_FLAGS_NONE, -1,
+                                  NULL, &error);
+  g_assert_no_error (error);
+  g_assert (value != NULL);
+  g_variant_unref (value);
+
+  /* Give the proxies a chance to refresh in the defaul main loop */
+  g_timeout_add (100, codegen_quit_mainloop_timeout, NULL);
+  g_main_loop_run (loop);
+
+  /* Assert animals are sad */
+  g_assert_cmpstr (example_animal_get_mood (animal1), ==, "Sad");
+  g_assert_cmpstr (example_animal_get_mood (animal2), ==, "Sad");
+
+  /* Make animal happy via animal2  */
+  example_animal_call_poke_sync (animal2, FALSE, TRUE, NULL, &error);
+  g_assert_no_error (error);
+
+  /* Poke server and make sure animal is updated */
+  value = g_dbus_proxy_call_sync (G_DBUS_PROXY (animal2),
+                                  "org.freedesktop.DBus.Peer.Ping",
+                                  NULL, G_DBUS_CALL_FLAGS_NONE, -1,
+                                  NULL, &error);
+  g_assert_no_error (error);
+  g_assert (value != NULL);
+  g_variant_unref (value);
+
+  /* Give the proxies a chance to refresh in the defaul main loop */
+  g_timeout_add (1000, codegen_quit_mainloop_timeout, NULL);
+  g_main_loop_run (loop);
+
+  /* Assert animals are happy */
+  g_assert_cmpstr (example_animal_get_mood (animal1), ==, "Happy");
+  g_assert_cmpstr (example_animal_get_mood (animal2), ==, "Happy");
+
+  /* This final call making the animal happy and sad will cause
+   * the server to quit, when the server quits we dont get property
+   * change notifications anyway because those are done from an idle handler
+   */
+  example_animal_call_poke_sync (animal2, TRUE, TRUE, NULL, &error);
+
+  g_object_unref (animal1);
+  g_object_unref (animal2);
+  g_thread_join (service_thread);
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+
 int
 main (int   argc,
       char *argv[])
 {
   gint ret;
   GDBusNodeInfo *introspection_data = NULL;
+  gchar *tmpdir = NULL;
 
   g_type_init ();
-  g_thread_init (NULL);
   g_test_init (&argc, &argv, NULL);
 
   introspection_data = g_dbus_node_info_new_for_xml (test_interface_introspection_xml, NULL);
@@ -1455,22 +1810,42 @@ main (int   argc,
 
   test_guid = g_dbus_generate_guid ();
 
+  if (is_unix)
+    {
+      if (g_unix_socket_address_abstract_names_supported ())
+	tmp_address = g_strdup ("unix:tmpdir=/tmp/gdbus-test-");
+      else
+	{
+	  tmpdir = g_dir_make_tmp ("gdbus-test-XXXXXX", NULL);
+	  tmp_address = g_strdup_printf ("unix:tmpdir=%s", tmpdir);
+	}
+    }
+  else
+    tmp_address = g_strdup ("nonce-tcp:");
+
   /* all the tests rely on a shared main loop */
   loop = g_main_loop_new (NULL, FALSE);
 
   g_test_add_func ("/gdbus/peer-to-peer", test_peer);
   g_test_add_func ("/gdbus/delayed-message-processing", delayed_message_processing);
-#ifdef BUG_631379_FIXED
   g_test_add_func ("/gdbus/nonce-tcp", test_nonce_tcp);
-#endif
+  g_test_add_func ("/gdbus/tcp-anonymous", test_tcp_anonymous);
   g_test_add_func ("/gdbus/credentials", test_credentials);
   g_test_add_func ("/gdbus/overflow", test_overflow);
+  g_test_add_func ("/gdbus/codegen-peer-to-peer", codegen_test_peer);
 
   ret = g_test_run();
 
   g_main_loop_unref (loop);
   g_free (test_guid);
   g_dbus_node_info_unref (introspection_data);
+  if (is_unix)
+    g_free (tmp_address);
+  if (tmpdir)
+    {
+      g_rmdir (tmpdir);
+      g_free (tmpdir);
+    }
 
   return ret;
 }

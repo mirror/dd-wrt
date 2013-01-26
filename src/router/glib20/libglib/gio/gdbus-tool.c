@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <locale.h>
 
 #include <gio/gio.h>
 
@@ -94,6 +95,7 @@ usage (gint *argc, gchar **argv[], gboolean use_stdout)
                          "  introspect   Introspect a remote object\n"
                          "  monitor      Monitor a remote object\n"
                          "  call         Invoke a method on a remote object\n"
+                         "  emit         Emit a signal\n"
                          "\n"
                          "Use \"%s COMMAND --help\" to get help on each command.\n"),
                        program_name);
@@ -359,7 +361,9 @@ connection_get_group (void)
                           N_("Options specifying the connection endpoint"),
                           NULL,
                           NULL);
+  g_option_group_set_translation_domain (g, GETTEXT_PACKAGE);
   g_option_group_add_entries (g, connection_entries);
+
   return g;
 }
 
@@ -521,15 +525,213 @@ _g_variant_parse_me_harder (GVariantType   *type,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+static gchar *opt_emit_dest = NULL;
+static gchar *opt_emit_object_path = NULL;
+static gchar *opt_emit_signal = NULL;
+
+static const GOptionEntry emit_entries[] =
+{
+  { "dest", 'd', 0, G_OPTION_ARG_STRING, &opt_emit_dest, N_("Optional destination for signal (unique name)"), NULL},
+  { "object-path", 'o', 0, G_OPTION_ARG_STRING, &opt_emit_object_path, N_("Object path to emit signal on"), NULL},
+  { "signal", 's', 0, G_OPTION_ARG_STRING, &opt_emit_signal, N_("Signal and interface name"), NULL},
+  { NULL }
+};
+
+static gboolean
+handle_emit (gint        *argc,
+             gchar      **argv[],
+             gboolean     request_completion,
+             const gchar *completion_cur,
+             const gchar *completion_prev)
+{
+  gint ret;
+  GOptionContext *o;
+  gchar *s;
+  GError *error;
+  GDBusConnection *c;
+  GVariant *parameters;
+  gchar *interface_name;
+  gchar *signal_name;
+  GVariantBuilder builder;
+  guint n;
+
+  ret = FALSE;
+  c = NULL;
+  parameters = NULL;
+  interface_name = NULL;
+  signal_name = NULL;
+
+  modify_argv0_for_command (argc, argv, "emit");
+
+  o = g_option_context_new (NULL);
+  g_option_context_set_help_enabled (o, FALSE);
+  g_option_context_set_summary (o, _("Emit a signal."));
+  g_option_context_add_main_entries (o, emit_entries, GETTEXT_PACKAGE);
+  g_option_context_add_group (o, connection_get_group ());
+
+  if (!g_option_context_parse (o, argc, argv, NULL))
+    {
+      if (!request_completion)
+        {
+          s = g_option_context_get_help (o, FALSE, NULL);
+          g_printerr ("%s", s);
+          g_free (s);
+          goto out;
+        }
+    }
+
+  error = NULL;
+  c = connection_get_dbus_connection (&error);
+  if (c == NULL)
+    {
+      if (request_completion)
+        {
+          if (g_strcmp0 (completion_prev, "--address") == 0)
+            {
+              g_print ("unix:\n"
+                       "tcp:\n"
+                       "nonce-tcp:\n");
+            }
+          else
+            {
+              g_print ("--system \n--session \n--address \n");
+            }
+        }
+      else
+        {
+          g_printerr (_("Error connecting: %s\n"), error->message);
+          g_error_free (error);
+        }
+      goto out;
+    }
+
+  /* All done with completion now */
+  if (request_completion)
+    goto out;
+
+  if (opt_emit_object_path == NULL)
+    {
+      g_printerr (_("Error: object path not specified.\n"));
+      goto out;
+    }
+  if (!g_variant_is_object_path (opt_emit_object_path))
+    {
+      g_printerr (_("Error: %s is not a valid object path\n"), opt_emit_object_path);
+      goto out;
+    }
+
+  if (opt_emit_signal == NULL)
+    {
+      g_printerr (_("Error: signal not specified.\n"));
+      goto out;
+    }
+
+  s = strrchr (opt_emit_signal, '.');
+  if (s == NULL)
+    {
+      g_printerr (_("Error: signal must be the fully-qualified name.\n"));
+      goto out;
+    }
+  signal_name = g_strdup (s + 1);
+  interface_name = g_strndup (opt_emit_signal, s - opt_emit_signal);
+
+  if (!g_dbus_is_interface_name (interface_name))
+    {
+      g_printerr (_("Error: %s is not a valid interface name\n"), interface_name);
+      goto out;
+    }
+
+  if (!g_dbus_is_member_name (signal_name))
+    {
+      g_printerr (_("Error: %s is not a valid member name\n"), signal_name);
+      goto out;
+    }
+
+  if (opt_emit_dest != NULL && !g_dbus_is_unique_name (opt_emit_dest))
+    {
+      g_printerr (_("Error: %s is not a valid unique bus name.\n"), opt_emit_dest);
+      goto out;
+    }
+
+  /* Read parameters */
+  g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
+  for (n = 1; n < (guint) *argc; n++)
+    {
+      GVariant *value;
+
+      error = NULL;
+      value = g_variant_parse (NULL,
+                               (*argv)[n],
+                               NULL,
+                               NULL,
+                               &error);
+      if (value == NULL)
+        {
+          g_error_free (error);
+          error = NULL;
+          value = _g_variant_parse_me_harder (NULL, (*argv)[n], &error);
+          if (value == NULL)
+            {
+              g_printerr (_("Error parsing parameter %d: %s\n"),
+                          n,
+                          error->message);
+              g_error_free (error);
+              g_variant_builder_clear (&builder);
+              goto out;
+            }
+        }
+      g_variant_builder_add_value (&builder, value);
+    }
+  parameters = g_variant_builder_end (&builder);
+
+  if (parameters != NULL)
+    parameters = g_variant_ref_sink (parameters);
+  if (!g_dbus_connection_emit_signal (c,
+                                      opt_emit_dest,
+                                      opt_emit_object_path,
+                                      interface_name,
+                                      signal_name,
+                                      parameters,
+                                      &error))
+    {
+      g_printerr (_("Error: %s\n"), error->message);
+      g_error_free (error);
+      goto out;
+    }
+
+  if (!g_dbus_connection_flush_sync (c, NULL, &error))
+    {
+      g_printerr (_("Error flushing connection: %s\n"), error->message);
+      g_error_free (error);
+      goto out;
+    }
+
+  ret = TRUE;
+
+ out:
+  if (c != NULL)
+    g_object_unref (c);
+  if (parameters != NULL)
+    g_variant_unref (parameters);
+  g_free (interface_name);
+  g_free (signal_name);
+  g_option_context_free (o);
+  return ret;
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
 static gchar *opt_call_dest = NULL;
 static gchar *opt_call_object_path = NULL;
 static gchar *opt_call_method = NULL;
+static gint opt_call_timeout = -1;
 
 static const GOptionEntry call_entries[] =
 {
   { "dest", 'd', 0, G_OPTION_ARG_STRING, &opt_call_dest, N_("Destination name to invoke method on"), NULL},
   { "object-path", 'o', 0, G_OPTION_ARG_STRING, &opt_call_object_path, N_("Object path to invoke method on"), NULL},
   { "method", 'm', 0, G_OPTION_ARG_STRING, &opt_call_method, N_("Method and interface name"), NULL},
+  { "timeout", 't', 0, G_OPTION_ARG_INT, &opt_call_timeout, N_("Timeout in seconds"), NULL},
   { NULL }
 };
 
@@ -569,7 +771,7 @@ handle_call (gint        *argc,
   o = g_option_context_new (NULL);
   g_option_context_set_help_enabled (o, FALSE);
   g_option_context_set_summary (o, _("Invoke a method on a remote object."));
-  g_option_context_add_main_entries (o, call_entries, NULL /* GETTEXT_PACKAGE*/);
+  g_option_context_add_main_entries (o, call_entries, GETTEXT_PACKAGE);
   g_option_context_add_group (o, connection_get_group ());
 
   complete_names = FALSE;
@@ -806,7 +1008,7 @@ handle_call (gint        *argc,
                                         parameters,
                                         NULL,
                                         G_DBUS_CALL_FLAGS_NONE,
-                                        -1,
+                                        opt_call_timeout > 0 ? opt_call_timeout * 1000 : opt_call_timeout,
                                         NULL,
                                         &error);
   if (result == NULL)
@@ -853,7 +1055,11 @@ handle_call (gint        *argc,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-/* TODO: dump annotations */
+static gchar *opt_introspect_dest = NULL;
+static gchar *opt_introspect_object_path = NULL;
+static gboolean opt_introspect_xml = FALSE;
+static gboolean opt_introspect_recurse = FALSE;
+static gboolean opt_introspect_only_properties = FALSE;
 
 static void
 dump_annotation (const GDBusAnnotationInfo *o,
@@ -1091,13 +1297,13 @@ dump_interface (GDBusConnection          *c,
     dump_annotation (o->annotations[n], indent, FALSE);
 
   g_print ("%*sinterface %s {\n", indent, "", o->name);
-  if (o->methods != NULL)
+  if (o->methods != NULL && !opt_introspect_only_properties)
     {
       g_print ("%*s  methods:\n", indent, "");
       for (n = 0; o->methods[n] != NULL; n++)
         dump_method (o->methods[n], indent + 4);
     }
-  if (o->signals != NULL)
+  if (o->signals != NULL && !opt_introspect_only_properties)
     {
       g_print ("%*s  signals:\n", indent, "");
       for (n = 0; o->signals[n] != NULL; n++)
@@ -1119,12 +1325,18 @@ dump_interface (GDBusConnection          *c,
   g_hash_table_unref (properties);
 }
 
+static gboolean
+introspect_do (GDBusConnection *c,
+               const gchar     *object_path,
+               guint            indent);
+
 static void
 dump_node (GDBusConnection      *c,
            const gchar          *name,
            const GDBusNodeInfo  *o,
            guint                 indent,
-           const gchar          *object_path)
+           const gchar          *object_path,
+           gboolean              recurse)
 {
   guint n;
   const gchar *object_path_to_print;
@@ -1141,9 +1353,51 @@ dump_node (GDBusConnection      *c,
     {
       g_print (" {\n");
       for (n = 0; o->interfaces != NULL && o->interfaces[n] != NULL; n++)
-        dump_interface (c, name, o->interfaces[n], indent + 2, object_path);
+        {
+          if (opt_introspect_only_properties)
+            {
+              if (o->interfaces[n]->properties != NULL && o->interfaces[n]->properties[0] != NULL)
+                dump_interface (c, name, o->interfaces[n], indent + 2, object_path);
+            }
+          else
+            {
+              dump_interface (c, name, o->interfaces[n], indent + 2, object_path);
+            }
+        }
       for (n = 0; o->nodes != NULL && o->nodes[n] != NULL; n++)
-        dump_node (NULL, NULL, o->nodes[n], indent + 2, NULL);
+        {
+          if (recurse)
+            {
+              gchar *child_path;
+              if (g_variant_is_object_path (o->nodes[n]->path))
+                {
+                  child_path = g_strdup (o->nodes[n]->path);
+                  /* avoid infinite loops */
+                  if (g_str_has_prefix (child_path, object_path))
+                    {
+                      introspect_do (c, child_path, indent + 2);
+                    }
+                  else
+                    {
+                      g_print ("Skipping path %s that is not enclosed by parent %s\n",
+                               child_path, object_path);
+                    }
+                }
+              else
+                {
+                  if (g_strcmp0 (object_path, "/") == 0)
+                    child_path = g_strdup_printf ("/%s", o->nodes[n]->path);
+                  else
+                    child_path = g_strdup_printf ("%s/%s", object_path, o->nodes[n]->path);
+                  introspect_do (c, child_path, indent + 2);
+                }
+              g_free (child_path);
+            }
+          else
+            {
+              dump_node (NULL, NULL, o->nodes[n], indent + 2, NULL, recurse);
+            }
+        }
       g_print ("%*s};\n",
                indent, "");
     }
@@ -1153,17 +1407,78 @@ dump_node (GDBusConnection      *c,
     }
 }
 
-static gchar *opt_introspect_dest = NULL;
-static gchar *opt_introspect_object_path = NULL;
-static gboolean opt_introspect_xml = FALSE;
-
 static const GOptionEntry introspect_entries[] =
 {
   { "dest", 'd', 0, G_OPTION_ARG_STRING, &opt_introspect_dest, N_("Destination name to introspect"), NULL},
   { "object-path", 'o', 0, G_OPTION_ARG_STRING, &opt_introspect_object_path, N_("Object path to introspect"), NULL},
   { "xml", 'x', 0, G_OPTION_ARG_NONE, &opt_introspect_xml, N_("Print XML"), NULL},
+  { "recurse", 'r', 0, G_OPTION_ARG_NONE, &opt_introspect_recurse, N_("Introspect children"), NULL},
+  { "only-properties", 'p', 0, G_OPTION_ARG_NONE, &opt_introspect_only_properties, N_("Only print properties"), NULL},
   { NULL }
 };
+
+static gboolean
+introspect_do (GDBusConnection *c,
+               const gchar     *object_path,
+               guint            indent)
+{
+  GError *error;
+  GVariant *result;
+  GDBusNodeInfo *node;
+  gboolean ret;
+  const gchar *xml_data;
+
+  ret = FALSE;
+  node = NULL;
+  result = NULL;
+
+  error = NULL;
+  result = g_dbus_connection_call_sync (c,
+                                        opt_introspect_dest,
+                                        object_path,
+                                        "org.freedesktop.DBus.Introspectable",
+                                        "Introspect",
+                                        NULL,
+                                        G_VARIANT_TYPE ("(s)"),
+                                        G_DBUS_CALL_FLAGS_NONE,
+                                        3000, /* 3 sec */
+                                        NULL,
+                                        &error);
+  if (result == NULL)
+    {
+      g_printerr (_("Error: %s\n"), error->message);
+      g_error_free (error);
+      goto out;
+    }
+  g_variant_get (result, "(&s)", &xml_data);
+
+  if (opt_introspect_xml)
+    {
+      g_print ("%s", xml_data);
+    }
+  else
+    {
+      error = NULL;
+      node = g_dbus_node_info_new_for_xml (xml_data, &error);
+      if (node == NULL)
+        {
+          g_printerr (_("Error parsing introspection XML: %s\n"), error->message);
+          g_error_free (error);
+          goto out;
+        }
+
+      dump_node (c, opt_introspect_dest, node, indent, object_path, opt_introspect_recurse);
+    }
+
+  ret = TRUE;
+
+ out:
+  if (node != NULL)
+    g_dbus_node_info_unref (node);
+  if (result != NULL)
+    g_variant_unref (result);
+  return ret;
+}
 
 static gboolean
 handle_introspect (gint        *argc,
@@ -1177,16 +1492,11 @@ handle_introspect (gint        *argc,
   gchar *s;
   GError *error;
   GDBusConnection *c;
-  GVariant *result;
-  const gchar *xml_data;
-  GDBusNodeInfo *node;
   gboolean complete_names;
   gboolean complete_paths;
 
   ret = FALSE;
   c = NULL;
-  node = NULL;
-  result = NULL;
 
   modify_argv0_for_command (argc, argv, "introspect");
 
@@ -1195,7 +1505,7 @@ handle_introspect (gint        *argc,
     g_option_context_set_ignore_unknown_options (o, TRUE);
   g_option_context_set_help_enabled (o, FALSE);
   g_option_context_set_summary (o, _("Introspect a remote object."));
-  g_option_context_add_main_entries (o, introspect_entries, NULL /* GETTEXT_PACKAGE*/);
+  g_option_context_add_main_entries (o, introspect_entries, GETTEXT_PACKAGE);
   g_option_context_add_group (o, connection_get_group ());
 
   complete_names = FALSE;
@@ -1304,54 +1614,26 @@ handle_introspect (gint        *argc,
       goto out;
     }
 
+  if (request_completion && opt_introspect_object_path != NULL && !opt_introspect_recurse)
+    {
+      g_print ("--recurse \n");
+    }
+
+  if (request_completion && opt_introspect_object_path != NULL && !opt_introspect_only_properties)
+    {
+      g_print ("--only-properties \n");
+    }
+
   /* All done with completion now */
   if (request_completion)
     goto out;
 
-  result = g_dbus_connection_call_sync (c,
-                                        opt_introspect_dest,
-                                        opt_introspect_object_path,
-                                        "org.freedesktop.DBus.Introspectable",
-                                        "Introspect",
-                                        NULL,
-                                        G_VARIANT_TYPE ("(s)"),
-                                        G_DBUS_CALL_FLAGS_NONE,
-                                        3000, /* 3 sec */
-                                        NULL,
-                                        &error);
-  if (result == NULL)
-    {
-      g_printerr (_("Error: %s\n"), error->message);
-      g_error_free (error);
-      goto out;
-    }
-  g_variant_get (result, "(&s)", &xml_data);
-
-  if (opt_introspect_xml)
-    {
-      g_print ("%s", xml_data);
-    }
-  else
-    {
-      error = NULL;
-      node = g_dbus_node_info_new_for_xml (xml_data, &error);
-      if (node == NULL)
-        {
-          g_printerr (_("Error parsing introspection XML: %s\n"), error->message);
-          g_error_free (error);
-          goto out;
-        }
-
-      dump_node (c, opt_introspect_dest, node, 0, opt_introspect_object_path);
-    }
+  if (!introspect_do (c, opt_introspect_object_path, 0))
+    goto out;
 
   ret = TRUE;
 
  out:
-  if (node != NULL)
-    g_dbus_node_info_unref (node);
-  if (result != NULL)
-    g_variant_unref (result);
   if (c != NULL)
     g_object_unref (c);
   g_option_context_free (o);
@@ -1455,7 +1737,7 @@ handle_monitor (gint        *argc,
     g_option_context_set_ignore_unknown_options (o, TRUE);
   g_option_context_set_help_enabled (o, FALSE);
   g_option_context_set_summary (o, _("Monitor a remote object."));
-  g_option_context_add_main_entries (o, monitor_entries, NULL /* GETTEXT_PACKAGE*/);
+  g_option_context_add_main_entries (o, monitor_entries, GETTEXT_PACKAGE);
   g_option_context_add_group (o, connection_get_group ());
 
   complete_names = FALSE;
@@ -1646,6 +1928,22 @@ main (gint argc, gchar *argv[])
   gchar *completion_cur;
   gchar *completion_prev;
 
+  setlocale (LC_ALL, "");
+  textdomain (GETTEXT_PACKAGE);
+
+#ifdef G_OS_WIN32
+  extern gchar *_glib_get_locale_dir (void);
+  gchar *tmp = _glib_get_locale_dir ();
+  bindtextdomain (GETTEXT_PACKAGE, tmp);
+  g_free (tmp);
+#else
+  bindtextdomain (GETTEXT_PACKAGE, GLIB_LOCALE_DIR);
+#endif
+
+#ifdef HAVE_BIND_TEXTDOMAIN_CODESET
+  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+#endif
+
   ret = 1;
   completion_cur = NULL;
   completion_prev = NULL;
@@ -1675,6 +1973,16 @@ main (gint argc, gchar *argv[])
           usage (&argc, &argv, TRUE);
           ret = 0;
         }
+      goto out;
+    }
+  else if (g_strcmp0 (command, "emit") == 0)
+    {
+      if (handle_emit (&argc,
+                       &argv,
+                       request_completion,
+                       completion_cur,
+                       completion_prev))
+        ret = 0;
       goto out;
     }
   else if (g_strcmp0 (command, "call") == 0)
@@ -1776,7 +2084,7 @@ main (gint argc, gchar *argv[])
     {
       if (request_completion)
         {
-          g_print ("help \ncall \nintrospect \nmonitor \n");
+          g_print ("help \nemit \ncall \nintrospect \nmonitor \n");
           ret = 0;
           goto out;
         }

@@ -17,6 +17,7 @@ enum { PROP_0, PROP_FOO, PROP_BAR, PROP_BAZ, N_PROPERTIES };
 
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
+static GType test_object_get_type (void);
 G_DEFINE_TYPE (TestObject, test_object, G_TYPE_OBJECT);
 
 static void
@@ -212,6 +213,8 @@ properties_construct (void)
 {
   TestObject *obj;
   gint val;
+  gboolean b;
+  gchar *s;
 
   g_test_bug ("630357");
 
@@ -222,11 +225,13 @@ properties_construct (void)
                       "foo", 3,
                       "foo", 4,
                       "foo", 5,
+                      "bar", FALSE,
                       "foo", 6,
                       "foo", 7,
                       "foo", 8,
                       "foo", 9,
                       "foo", 10,
+                      "baz", "boo",
                       "foo", 11,
                       "foo", 12,
                       "foo", 13,
@@ -239,6 +244,11 @@ properties_construct (void)
 
   g_object_get (obj, "foo", &val, NULL);
   g_assert (val == 18);
+  g_object_get (obj, "bar", &b, NULL);
+  g_assert (!b);
+  g_object_get (obj, "baz", &s, NULL);
+  g_assert_cmpstr (s, ==, "boo");
+  g_free (s);
 
   g_object_unref (obj);
 }

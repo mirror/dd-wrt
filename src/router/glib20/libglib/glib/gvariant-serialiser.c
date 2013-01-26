@@ -89,7 +89,7 @@
 /* < private >
  * GVariantSerialised:
  * @type_info: the #GVariantTypeInfo of this value
- * @data: the serialised data of this value, or %NULL
+ * @data: (allow-none): the serialised data of this value, or %NULL
  * @size: the size of this value
  *
  * A structure representing a GVariant in serialised form.  This
@@ -511,7 +511,7 @@ gvs_fixed_sized_array_is_normal (GVariantSerialised value)
  * Variable sized arrays, containing variable-sized elements, must be
  * able to determine the boundaries between the elements.  The items
  * cannot simply be concatenated.  Additionally, we are faced with the
- * fact that non-fixed-sized values do not neccessarily have a size that
+ * fact that non-fixed-sized values do not necessarily have a size that
  * is a multiple of their alignment requirement, so we may need to
  * insert zero-filled padding.
  *
@@ -862,7 +862,7 @@ gvs_tuple_get_child (GVariantSerialised value,
 
   /* tuples are the only (potentially) fixed-sized containers, so the
    * only ones that have to deal with the possibility of having %NULL
-   * data with a non-zero %size if errors occured elsewhere.
+   * data with a non-zero %size if errors occurred elsewhere.
    */
   if G_UNLIKELY (value.data == NULL && value.size != 0)
     {
@@ -1300,11 +1300,12 @@ gvs_variant_is_normal (GVariantSerialised value)
 /* < private >
  * g_variant_serialised_n_children:
  * @serialised: a #GVariantSerialised
- * @returns: the number of children
  *
  * For serialised data that represents a container value (maybes,
  * tuples, arrays, variants), determine how many child items are inside
  * that container.
+ *
+ * Returns: the number of children
  */
 gsize
 g_variant_serialised_n_children (GVariantSerialised serialised)
@@ -1323,7 +1324,6 @@ g_variant_serialised_n_children (GVariantSerialised serialised)
  * g_variant_serialised_get_child:
  * @serialised: a #GVariantSerialised
  * @index_: the index of the child to fetch
- * @returns: a #GVariantSerialised for the child
  *
  * Extracts a child from a serialised data representing a container
  * value.
@@ -1338,6 +1338,8 @@ g_variant_serialised_n_children (GVariantSerialised serialised)
  * item of a variable-sized type is being returned.
  *
  * .data is never non-%NULL if size is 0.
+ *
+ * Returns: a #GVariantSerialised for the child
  */
 GVariantSerialised
 g_variant_serialised_get_child (GVariantSerialised serialised,
@@ -1591,11 +1593,20 @@ gboolean
 g_variant_serialiser_is_string (gconstpointer data,
                                 gsize         size)
 {
+  const gchar *expected_end;
   const gchar *end;
+
+  if (size == 0)
+    return FALSE;
+
+  expected_end = ((gchar *) data) + size - 1;
+
+  if (*expected_end != '\0')
+    return FALSE;
 
   g_utf8_validate (data, size, &end);
 
-  return data == end - (size - 1);
+  return end == expected_end;
 }
 
 /* < private >

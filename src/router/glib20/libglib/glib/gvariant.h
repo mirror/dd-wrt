@@ -20,7 +20,7 @@
  * Author: Ryan Lortie <desrt@desrt.ca>
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -60,6 +60,7 @@ void                            g_variant_unref                         (GVarian
 GVariant *                      g_variant_ref                           (GVariant             *value);
 GVariant *                      g_variant_ref_sink                      (GVariant             *value);
 gboolean                        g_variant_is_floating                   (GVariant             *value);
+GVariant *                      g_variant_take_ref                      (GVariant             *value);
 
 const GVariantType *            g_variant_get_type                      (GVariant             *value);
 const gchar *                   g_variant_get_type_string               (GVariant             *value);
@@ -85,10 +86,16 @@ gboolean                        g_variant_is_signature                  (const g
 GVariant *                      g_variant_new_variant                   (GVariant             *value);
 GVariant *                      g_variant_new_strv                      (const gchar * const  *strv,
                                                                          gssize                length);
+GLIB_AVAILABLE_IN_2_30
+GVariant *                      g_variant_new_objv                      (const gchar * const  *strv,
+                                                                         gssize                length);
 GVariant *                      g_variant_new_bytestring                (const gchar          *string);
 GVariant *                      g_variant_new_bytestring_array          (const gchar * const  *strv,
                                                                          gssize                length);
-
+GVariant *                      g_variant_new_fixed_array               (const GVariantType   *element_type,
+                                                                         gconstpointer         elements,
+                                                                         gsize                 n_elements,
+                                                                         gsize                 element_size);
 gboolean                        g_variant_get_boolean                   (GVariant             *value);
 guchar                          g_variant_get_byte                      (GVariant             *value);
 gint16                          g_variant_get_int16                     (GVariant             *value);
@@ -107,6 +114,11 @@ gchar *                         g_variant_dup_string                    (GVarian
 const gchar **                  g_variant_get_strv                      (GVariant             *value,
                                                                          gsize                *length);
 gchar **                        g_variant_dup_strv                      (GVariant             *value,
+                                                                         gsize                *length);
+GLIB_AVAILABLE_IN_2_30
+const gchar **                  g_variant_get_objv                      (GVariant             *value,
+                                                                         gsize                *length);
+gchar **                        g_variant_dup_objv                      (GVariant             *value,
                                                                          gsize                *length);
 const gchar *                   g_variant_get_bytestring                (GVariant             *value);
 gchar *                         g_variant_dup_bytestring                (GVariant             *value,
@@ -253,7 +265,9 @@ void                            g_variant_get_va                        (GVarian
                                                                          const gchar          *format_string,
                                                                          const gchar         **endptr,
                                                                          va_list              *app);
-
+gboolean                        g_variant_check_format_string           (GVariant             *value,
+                                                                         const gchar          *format_string,
+                                                                         gboolean              copy_only);
 
 GVariant *                      g_variant_parse                         (const GVariantType   *type,
                                                                          const gchar          *text,

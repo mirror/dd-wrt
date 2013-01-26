@@ -94,8 +94,8 @@ g_icon_hash (gconstpointer icon)
 
 /**
  * g_icon_equal:
- * @icon1: pointer to the first #GIcon.
- * @icon2: pointer to the second #GIcon.
+ * @icon1: (allow-none): pointer to the first #GIcon.
+ * @icon2: (allow-none): pointer to the second #GIcon.
  * 
  * Checks if two icons are equal.
  * 
@@ -124,7 +124,6 @@ g_icon_equal (GIcon *icon1,
 static gboolean
 g_icon_to_string_tokenized (GIcon *icon, GString *s)
 {
-  char *ret;
   GPtrArray *tokens;
   gint version;
   GIconIface *icon_iface;
@@ -132,8 +131,6 @@ g_icon_to_string_tokenized (GIcon *icon, GString *s)
 
   g_return_val_if_fail (icon != NULL, FALSE);
   g_return_val_if_fail (G_IS_ICON (icon), FALSE);
-
-  ret = NULL;
 
   icon_iface = G_ICON_GET_IFACE (icon);
   if (icon_iface->to_tokens == NULL)
@@ -191,7 +188,7 @@ g_icon_to_string_tokenized (GIcon *icon, GString *s)
  *     (such as <literal>/path/to/my icon.png</literal>) without escaping
  *     if the #GFile for @icon is a native file.  If the file is not
  *     native, the returned string is the result of g_file_get_uri()
- *     (such as <literal>sftp://path/to/my%%20icon.png</literal>).
+ *     (such as <literal>sftp://path/to/my&percnt;20icon.png</literal>).
  * </para></listitem>
  * <listitem><para>
  *    If @icon is a #GThemedIcon with exactly one name, the encoding is
@@ -378,11 +375,10 @@ g_icon_new_from_tokens (char   **tokens,
 static void
 ensure_builtin_icon_types (void)
 {
-  static volatile GType t;
-  t = g_themed_icon_get_type ();
-  t = g_file_icon_get_type ();
-  t = g_emblemed_icon_get_type ();
-  t = g_emblem_get_type ();
+  g_type_ensure (G_TYPE_THEMED_ICON);
+  g_type_ensure (G_TYPE_FILE_ICON);
+  g_type_ensure (G_TYPE_EMBLEMED_ICON);
+  g_type_ensure (G_TYPE_EMBLEM);
 }
 
 /**
@@ -429,7 +425,7 @@ g_icon_new_for_string (const gchar   *str,
 	g_set_error_literal (error,
 			     G_IO_ERROR,
 			     G_IO_ERROR_INVALID_ARGUMENT,
-			     _("Can't handle the supplied version the icon encoding"));
+			     _("Can't handle the supplied version of the icon encoding"));
     }
   else
     {
@@ -437,7 +433,7 @@ g_icon_new_for_string (const gchar   *str,
 
       /* handle special GFileIcon and GThemedIcon cases */
       scheme = g_uri_parse_scheme (str);
-      if (scheme != NULL || str[0] == '/')
+      if (scheme != NULL || str[0] == '/' || str[0] == G_DIR_SEPARATOR)
         {
           GFile *location;
           location = g_file_new_for_commandline_arg (str);

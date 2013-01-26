@@ -76,6 +76,11 @@ gboolean     _g_dbus_worker_flush_sync   (GDBusWorker    *worker,
                                           GCancellable   *cancellable,
                                           GError        **error);
 
+/* can be called from any thread */
+void         _g_dbus_worker_close        (GDBusWorker         *worker,
+                                          GCancellable        *cancellable,
+                                          GSimpleAsyncResult  *result);
+
 /* ---------------------------------------------------------------------------------------------------- */
 
 void _g_dbus_initialize (void);
@@ -112,8 +117,6 @@ gchar *_g_dbus_get_machine_id (GError **error);
 
 gchar *_g_dbus_enum_to_string (GType enum_type, gint value);
 
-G_END_DECLS
-
 /* ---------------------------------------------------------------------------------------------------- */
 
 GDBusMethodInvocation *_g_dbus_method_invocation_new (const gchar           *sender,
@@ -125,5 +128,24 @@ GDBusMethodInvocation *_g_dbus_method_invocation_new (const gchar           *sen
                                                       GDBusMessage          *message,
                                                       GVariant              *parameters,
                                                       gpointer               user_data);
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+gboolean _g_signal_accumulator_false_handled (GSignalInvocationHint *ihint,
+                                              GValue                *return_accu,
+                                              const GValue          *handler_return,
+                                              gpointer               dummy);
+
+gboolean _g_dbus_object_skeleton_has_authorize_method_handlers (GDBusObjectSkeleton *object);
+
+void _g_dbus_object_proxy_add_interface (GDBusObjectProxy *proxy,
+                                         GDBusProxy       *interface_proxy);
+void _g_dbus_object_proxy_remove_interface (GDBusObjectProxy *proxy,
+                                            const gchar      *interface_name);
+
+/* Implemented in gdbusconnection.c */
+GDBusConnection *_g_bus_get_singleton_if_exists (GBusType bus_type);
+
+G_END_DECLS
 
 #endif /* __G_DBUS_PRIVATE_H__ */

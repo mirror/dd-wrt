@@ -7,6 +7,7 @@ typedef struct _BindingSource
   GObject parent_instance;
 
   gint foo;
+  gint bar;
   gdouble value;
   gboolean toggle;
 } BindingSource;
@@ -21,10 +22,12 @@ enum
   PROP_SOURCE_0,
 
   PROP_SOURCE_FOO,
+  PROP_SOURCE_BAR,
   PROP_SOURCE_VALUE,
   PROP_SOURCE_TOGGLE
 };
 
+static GType binding_source_get_type (void);
 G_DEFINE_TYPE (BindingSource, binding_source, G_TYPE_OBJECT);
 
 static void
@@ -39,6 +42,10 @@ binding_source_set_property (GObject      *gobject,
     {
     case PROP_SOURCE_FOO:
       source->foo = g_value_get_int (value);
+      break;
+
+    case PROP_SOURCE_BAR:
+      source->bar = g_value_get_int (value);
       break;
 
     case PROP_SOURCE_VALUE:
@@ -68,6 +75,10 @@ binding_source_get_property (GObject    *gobject,
       g_value_set_int (value, source->foo);
       break;
 
+    case PROP_SOURCE_BAR:
+      g_value_set_int (value, source->bar);
+      break;
+
     case PROP_SOURCE_VALUE:
       g_value_set_double (value, source->value);
       break;
@@ -91,6 +102,11 @@ binding_source_class_init (BindingSourceClass *klass)
 
   g_object_class_install_property (gobject_class, PROP_SOURCE_FOO,
                                    g_param_spec_int ("foo", "Foo", "Foo",
+                                                     -1, 100,
+                                                     0,
+                                                     G_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class, PROP_SOURCE_BAR,
+                                   g_param_spec_int ("bar", "Bar", "Bar",
                                                      -1, 100,
                                                      0,
                                                      G_PARAM_READWRITE));
@@ -133,6 +149,7 @@ enum
   PROP_TARGET_TOGGLE
 };
 
+static GType binding_target_get_type (void);
 G_DEFINE_TYPE (BindingTarget, binding_target, G_TYPE_OBJECT);
 
 static void
@@ -329,11 +346,52 @@ data_free (gpointer data)
 }
 
 static void
-binding_transform (void)
+binding_transform_default (void)
 {
   BindingSource *source = g_object_new (binding_source_get_type (), NULL);
   BindingTarget *target = g_object_new (binding_target_get_type (), NULL);
   GBinding *binding;
+  gpointer src, trg;
+  gchar *src_prop, *trg_prop;
+  GBindingFlags flags;
+
+  binding = g_object_bind_property (source, "foo",
+                                    target, "value",
+                                    G_BINDING_BIDIRECTIONAL);
+
+  g_object_get (binding,
+                "source", &src,
+                "source-property", &src_prop,
+                "target", &trg,
+                "target-property", &trg_prop,
+                "flags", &flags,
+                NULL);
+  g_assert (src == source);
+  g_assert (trg == target);
+  g_assert_cmpstr (src_prop, ==, "foo");
+  g_assert_cmpstr (trg_prop, ==, "value");
+  g_assert_cmpint (flags, ==, G_BINDING_BIDIRECTIONAL);
+  g_object_unref (src);
+  g_object_unref (trg);
+  g_free (src_prop);
+  g_free (trg_prop);
+
+  g_object_set (source, "foo", 24, NULL);
+  g_assert_cmpfloat (target->value, ==, 24.0);
+
+  g_object_set (target, "value", 69.0, NULL);
+  g_assert_cmpint (source->foo, ==, 69);
+
+  g_object_unref (target);
+  g_object_unref (source);
+}
+
+static void
+binding_transform (void)
+{
+  BindingSource *source = g_object_new (binding_source_get_type (), NULL);
+  BindingTarget *target = g_object_new (binding_target_get_type (), NULL);
+  GBinding *binding G_GNUC_UNUSED;
   gboolean unused_data = FALSE;
 
   binding = g_object_bind_property_full (source, "value",
@@ -360,7 +418,7 @@ binding_transform_closure (void)
 {
   BindingSource *source = g_object_new (binding_source_get_type (), NULL);
   BindingTarget *target = g_object_new (binding_target_get_type (), NULL);
-  GBinding *binding;
+  GBinding *binding G_GNUC_UNUSED;
   gboolean unused_data_1 = FALSE, unused_data_2 = FALSE;
   GClosure *c2f_clos, *f2c_clos;
 
@@ -471,7 +529,7 @@ binding_invert_boolean (void)
 
   binding = g_object_bind_property (source, "toggle",
                                     target, "toggle",
-                                    G_BINDING_DEFAULT | G_BINDING_INVERT_BOOLEAN);
+                                    G_BINDING_BIDIRECTIONAL | G_BINDING_INVERT_BOOLEAN);
 
   g_assert (source->toggle);
   g_assert (!target->toggle);
@@ -480,9 +538,36 @@ binding_invert_boolean (void)
   g_assert (!source->toggle);
   g_assert (target->toggle);
 
+  g_object_set (target, "toggle", FALSE, NULL);
+  g_assert (source->toggle);
+  g_assert (!target->toggle);
+
   g_object_unref (binding);
   g_object_unref (source);
   g_object_unref (target);
+}
+
+static void
+binding_same_object (void)
+{
+  BindingSource *source = g_object_new (binding_source_get_type (),
+                                        "foo", 100,
+                                        "bar", 50,
+                                        NULL);
+  GBinding *binding G_GNUC_UNUSED;
+
+  binding = g_object_bind_property (source, "foo",
+                                    source, "bar",
+                                    G_BINDING_BIDIRECTIONAL);
+
+  g_object_set (source, "foo", 10, NULL);
+  g_assert_cmpint (source->foo, ==, 10);
+  g_assert_cmpint (source->bar, ==, 10);
+  g_object_set (source, "bar", 30, NULL);
+  g_assert_cmpint (source->foo, ==, 30);
+  g_assert_cmpint (source->bar, ==, 30);
+
+  g_object_unref (source);
 }
 
 int
@@ -496,10 +581,12 @@ main (int argc, char *argv[])
   g_test_add_func ("/binding/default", binding_default);
   g_test_add_func ("/binding/bidirectional", binding_bidirectional);
   g_test_add_func ("/binding/transform", binding_transform);
+  g_test_add_func ("/binding/transform-default", binding_transform_default);
   g_test_add_func ("/binding/transform-closure", binding_transform_closure);
   g_test_add_func ("/binding/chain", binding_chain);
   g_test_add_func ("/binding/sync-create", binding_sync_create);
   g_test_add_func ("/binding/invert-boolean", binding_invert_boolean);
+  g_test_add_func ("/binding/same-object", binding_same_object);
 
   return g_test_run ();
 }

@@ -31,13 +31,10 @@
 #include "ginetsocketaddress.h"
 #include "gsimpleasyncresult.h"
 #include "gsrvtarget.h"
+#include "gthreadedresolver.h"
 
 #ifdef G_OS_UNIX
-#include "gunixresolver.h"
 #include <sys/stat.h>
-#endif
-#ifdef G_OS_WIN32
-#include "gwin32resolver.h"
 #endif
 
 #include <stdlib.h>
@@ -81,15 +78,83 @@ struct _GResolverPrivate {
  */
 G_DEFINE_TYPE (GResolver, g_resolver, G_TYPE_OBJECT)
 
+static GList *
+srv_records_to_targets (GList *records)
+{
+  const gchar *hostname;
+  guint16 port, priority, weight;
+  GSrvTarget *target;
+  GList *l;
+
+  for (l = records; l != NULL; l = g_list_next (l))
+    {
+      g_variant_get (l->data, "(qqq&s)", &priority, &weight, &port, &hostname);
+      target = g_srv_target_new (hostname, port, priority, weight);
+      g_variant_unref (l->data);
+      l->data = target;
+    }
+
+  return g_srv_target_list_sort (records);
+}
+
+static GList *
+g_resolver_real_lookup_service (GResolver            *resolver,
+                                const gchar          *rrname,
+                                GCancellable         *cancellable,
+                                GError              **error)
+{
+  GList *records;
+
+  records = G_RESOLVER_GET_CLASS (resolver)->lookup_records (resolver,
+                                                             rrname,
+                                                             G_RESOLVER_RECORD_SRV,
+                                                             cancellable,
+                                                             error);
+
+  return srv_records_to_targets (records);
+}
+
+static void
+g_resolver_real_lookup_service_async (GResolver            *resolver,
+                                      const gchar          *rrname,
+                                      GCancellable         *cancellable,
+                                      GAsyncReadyCallback   callback,
+                                      gpointer              user_data)
+{
+  G_RESOLVER_GET_CLASS (resolver)->lookup_records_async (resolver,
+                                                         rrname,
+                                                         G_RESOLVER_RECORD_SRV,
+                                                         cancellable,
+                                                         callback,
+                                                         user_data);
+}
+
+static GList *
+g_resolver_real_lookup_service_finish (GResolver            *resolver,
+                                       GAsyncResult         *result,
+                                       GError              **error)
+{
+  GList *records;
+
+  records = G_RESOLVER_GET_CLASS (resolver)->lookup_records_finish (resolver,
+                                                                    result,
+                                                                    error);
+
+  return srv_records_to_targets (records);
+}
+
 static void
 g_resolver_class_init (GResolverClass *resolver_class)
 {
-  volatile GType type;
+  /* Automatically pass these over to the lookup_records methods */
+  resolver_class->lookup_service = g_resolver_real_lookup_service;
+  resolver_class->lookup_service_async = g_resolver_real_lookup_service_async;
+  resolver_class->lookup_service_finish = g_resolver_real_lookup_service_finish;
 
   g_type_class_add_private (resolver_class, sizeof (GResolverPrivate));
 
   /* Make sure _g_networking_init() has been called */
-  type = g_inet_address_get_type ();
+  g_type_ensure (G_TYPE_INET_ADDRESS);
 
   /* Initialize _g_resolver_addrinfo_hints */
 #ifdef AI_ADDRCONFIG
@@ -141,8 +206,7 @@ static GResolver *default_resolver;
  *
  * Gets the default #GResolver. You should unref it when you are done
  * with it. #GResolver may use its reference count as a hint about how
- * many threads/processes, etc it should allocate for concurrent DNS
- * resolutions.
+ * many threads it should allocate for concurrent DNS resolutions.
  *
  * Return value: (transfer full): the default #GResolver.
  *
@@ -152,18 +216,7 @@ GResolver *
 g_resolver_get_default (void)
 {
   if (!default_resolver)
-    {
-      if (g_thread_supported ())
-        default_resolver = g_object_new (G_TYPE_THREADED_RESOLVER, NULL);
-      else
-        {
-#if defined(G_OS_UNIX)
-          default_resolver = g_object_new (G_TYPE_UNIX_RESOLVER, NULL);
-#elif defined(G_OS_WIN32)
-          default_resolver = g_object_new (G_TYPE_WIN32_RESOLVER, NULL);
-#endif
-        }
-    }
+    default_resolver = g_object_new (G_TYPE_THREADED_RESOLVER, NULL);
 
   return g_object_ref (default_resolver);
 }
@@ -211,6 +264,36 @@ g_resolver_maybe_reload (GResolver *resolver)
 #endif
 }
 
+/* filter out duplicates, cf. https://bugzilla.gnome.org/show_bug.cgi?id=631379 */
+static void
+remove_duplicates (GList *addrs)
+{
+  GList *l;
+  GList *ll;
+  GList *lll;
+
+  /* TODO: if this is too slow (it's O(n^2) but n is typically really
+   * small), we can do something more clever but note that we must not
+   * change the order of elements...
+   */
+  for (l = addrs; l != NULL; l = l->next)
+    {
+      GInetAddress *address = G_INET_ADDRESS (l->data);
+      for (ll = l->next; ll != NULL; ll = lll)
+        {
+          GInetAddress *other_address = G_INET_ADDRESS (ll->data);
+          lll = ll->next;
+          if (g_inet_address_equal (address, other_address))
+            {
+              g_object_unref (other_address);
+              /* we never return the first element */
+              g_warn_if_fail (g_list_delete_link (addrs, ll) == addrs);
+            }
+        }
+    }
+}
+
+
 /**
  * g_resolver_lookup_by_name:
  * @resolver: a #GResolver
@@ -224,9 +307,12 @@ g_resolver_maybe_reload (GResolver *resolver)
  * a wrapper around g_inet_address_new_from_string()).
  *
  * On success, g_resolver_lookup_by_name() will return a #GList of
- * #GInetAddress, sorted in order of preference. (That is, you should
- * attempt to connect to the first address first, then the second if
- * the first fails, etc.)
+ * #GInetAddress, sorted in order of preference and guaranteed to not
+ * contain duplicates. That is, if using the result to connect to
+ * @hostname, you should attempt to connect to the first address
+ * first, then the second if the first fails, etc. If you are using
+ * the result to listen on a socket, it is appropriate to add each
+ * result using e.g. g_socket_listener_add_address().
  *
  * If the DNS resolution fails, @error (if non-%NULL) will be set to a
  * value from #GResolverError.
@@ -270,6 +356,8 @@ g_resolver_lookup_by_name (GResolver     *resolver,
   g_resolver_maybe_reload (resolver);
   addrs = G_RESOLVER_GET_CLASS (resolver)->
     lookup_by_name (resolver, hostname, cancellable, error);
+
+  remove_duplicates (addrs);
 
   g_free (ascii_hostname);
   return addrs;
@@ -353,27 +441,28 @@ g_resolver_lookup_by_name_finish (GResolver     *resolver,
                                   GAsyncResult  *result,
                                   GError       **error)
 {
+  GList *addrs;
+
   g_return_val_if_fail (G_IS_RESOLVER (resolver), NULL);
 
-  if (G_IS_SIMPLE_ASYNC_RESULT (result))
+  if (g_async_result_legacy_propagate_error (result, error))
+    return NULL;
+  else if (g_async_result_is_tagged (result, g_resolver_lookup_by_name_async))
     {
       GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-
-      if (g_simple_async_result_propagate_error (simple, error))
-        return NULL;
+      GInetAddress *addr;
 
       /* Handle the stringified-IP-addr case */
-      if (g_simple_async_result_get_source_tag (simple) == g_resolver_lookup_by_name_async)
-        {
-          GInetAddress *addr;
-
-          addr = g_simple_async_result_get_op_res_gpointer (simple);
-          return g_list_append (NULL, g_object_ref (addr));
-        }
+      addr = g_simple_async_result_get_op_res_gpointer (simple);
+      return g_list_append (NULL, g_object_ref (addr));
     }
 
-  return G_RESOLVER_GET_CLASS (resolver)->
+  addrs = G_RESOLVER_GET_CLASS (resolver)->
     lookup_by_name_finish (resolver, result, error);
+
+  remove_duplicates (addrs);
+
+  return addrs;
 }
 
 /**
@@ -487,13 +576,8 @@ g_resolver_lookup_by_address_finish (GResolver     *resolver,
 {
   g_return_val_if_fail (G_IS_RESOLVER (resolver), NULL);
 
-  if (G_IS_SIMPLE_ASYNC_RESULT (result))
-    {
-      GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-
-      if (g_simple_async_result_propagate_error (simple, error))
-        return NULL;
-    }
+  if (g_async_result_legacy_propagate_error (result, error))
+    return NULL;
 
   return G_RESOLVER_GET_CLASS (resolver)->
     lookup_by_address_finish (resolver, result, error);
@@ -647,13 +731,8 @@ g_resolver_lookup_service_finish (GResolver     *resolver,
 {
   g_return_val_if_fail (G_IS_RESOLVER (resolver), NULL);
 
-  if (G_IS_SIMPLE_ASYNC_RESULT (result))
-    {
-      GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (result);
-
-      if (g_simple_async_result_propagate_error (simple, error))
-        return NULL;
-    }
+  if (g_async_result_legacy_propagate_error (result, error))
+    return NULL;
 
   return G_RESOLVER_GET_CLASS (resolver)->
     lookup_service_finish (resolver, result, error);
@@ -681,6 +760,112 @@ g_resolver_free_targets (GList *targets)
 }
 
 /**
+ * g_resolver_lookup_records:
+ * @resolver: a #GResolver
+ * @rrname: the DNS name to lookup the record for
+ * @record_type: the type of DNS record to lookup
+ * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @error: return location for a #GError, or %NULL
+ *
+ * Synchronously performs a DNS record lookup for the given @rrname and returns
+ * a list of records as #GVariant tuples. See #GResolverRecordType for
+ * information on what the records contain for each @record_type.
+ *
+ * If the DNS resolution fails, @error (if non-%NULL) will be set to
+ * a value from #GResolverError.
+ *
+ * If @cancellable is non-%NULL, it can be used to cancel the
+ * operation, in which case @error (if non-%NULL) will be set to
+ * %G_IO_ERROR_CANCELLED.
+ *
+ * Return value: (element-type GVariant) (transfer full): a #GList of #GVariant,
+ * or %NULL on error. You must free each of the records and the list when you are
+ * done with it. (You can use g_list_free_full() with g_variant_unref() to do this.)
+ *
+ * Since: 2.34
+ */
+GList *
+g_resolver_lookup_records (GResolver            *resolver,
+                           const gchar          *rrname,
+                           GResolverRecordType   record_type,
+                           GCancellable         *cancellable,
+                           GError              **error)
+{
+  GList *records;
+
+  g_return_val_if_fail (G_IS_RESOLVER (resolver), NULL);
+  g_return_val_if_fail (rrname != NULL, NULL);
+
+  g_resolver_maybe_reload (resolver);
+  records = G_RESOLVER_GET_CLASS (resolver)->
+    lookup_records (resolver, rrname, record_type, cancellable, error);
+
+  return records;
+}
+
+/**
+ * g_resolver_lookup_records_async:
+ * @resolver: a #GResolver
+ * @rrname: the DNS name to lookup the record for
+ * @record_type: the type of DNS record to lookup
+ * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @callback: (scope async): callback to call after resolution completes
+ * @user_data: (closure): data for @callback
+ *
+ * Begins asynchronously performing a DNS lookup for the given
+ * @rrname, and eventually calls @callback, which must call
+ * g_resolver_lookup_records_finish() to get the final result. See
+ * g_resolver_lookup_records() for more details.
+ *
+ * Since: 2.34
+ */
+void
+g_resolver_lookup_records_async (GResolver           *resolver,
+                                 const gchar         *rrname,
+                                 GResolverRecordType  record_type,
+                                 GCancellable        *cancellable,
+                                 GAsyncReadyCallback  callback,
+                                 gpointer             user_data)
+{
+  g_return_if_fail (G_IS_RESOLVER (resolver));
+  g_return_if_fail (rrname != NULL);
+
+  g_resolver_maybe_reload (resolver);
+  G_RESOLVER_GET_CLASS (resolver)->
+    lookup_records_async (resolver, rrname, record_type, cancellable, callback, user_data);
+}
+
+/**
+ * g_resolver_lookup_records_finish:
+ * @resolver: a #GResolver
+ * @result: the result passed to your #GAsyncReadyCallback
+ * @error: return location for a #GError, or %NULL
+ *
+ * Retrieves the result of a previous call to
+ * g_resolver_lookup_records_async(). Returns a list of records as #GVariant
+ * tuples. See #GResolverRecordType for information on what the records contain.
+ *
+ * If the DNS resolution failed, @error (if non-%NULL) will be set to
+ * a value from #GResolverError. If the operation was cancelled,
+ * @error will be set to %G_IO_ERROR_CANCELLED.
+ *
+ * Return value: (element-type GVariant) (transfer full): a #GList of #GVariant,
+ * or %NULL on error. You must free each of the records and the list when you are
+ * done with it. (You can use g_list_free_full() with g_variant_unref() to do this.)
+ *
+ * Since: 2.34
+ */
+GList *
+g_resolver_lookup_records_finish (GResolver     *resolver,
+                                  GAsyncResult  *result,
+                                  GError       **error)
+{
+  g_return_val_if_fail (G_IS_RESOLVER (resolver), NULL);
+  return G_RESOLVER_GET_CLASS (resolver)->
+    lookup_records_finish (resolver, result, error);
+}
+
+/**
  * g_resolver_error_quark:
  *
  * Gets the #GResolver Error Quark.
@@ -689,12 +874,7 @@ g_resolver_free_targets (GList *targets)
  *
  * Since: 2.22
  */
-GQuark
-g_resolver_error_quark (void)
-{
-  return g_quark_from_static_string ("g-resolver-error-quark");
-}
-
+G_DEFINE_QUARK (g-resolver-error-quark, g_resolver_error)
 
 static GResolverError
 g_resolver_error_from_addrinfo_error (gint err)
@@ -794,22 +974,190 @@ _g_resolver_name_from_nameinfo (GInetAddress  *address,
 }
 
 #if defined(G_OS_UNIX)
+
+static gboolean
+parse_short (guchar  **p,
+             guchar   *end,
+             guint16  *value)
+{
+  if (*p + 2 > end)
+    return FALSE;
+  GETSHORT (*value, *p);
+  return TRUE;
+}
+
+static gboolean
+parse_long (guchar  **p,
+            guchar   *end,
+            guint32  *value)
+{
+  if (*p + 4 > end)
+    return FALSE;
+  GETLONG (*value, *p);
+  return TRUE;
+}
+
+static GVariant *
+parse_res_srv (guchar  *answer,
+               guchar  *end,
+               guchar  *p)
+{
+  gchar namebuf[1024];
+  guint16 priority, weight, port;
+  gint n;
+
+  if (!parse_short (&p, end, &priority) ||
+      !parse_short (&p, end, &weight) ||
+      !parse_short (&p, end, &port))
+    return NULL;
+
+  n = dn_expand (answer, end, p, namebuf, sizeof (namebuf));
+  if (n < 0)
+    return NULL;
+  *p += n;
+
+  return g_variant_new ("(qqqs)",
+                        priority,
+                        weight,
+                        port,
+                        namebuf);
+}
+
+static GVariant *
+parse_res_soa (guchar  *answer,
+               guchar  *end,
+               guchar  *p)
+{
+  gchar mnamebuf[1024];
+  gchar rnamebuf[1024];
+  guint32 serial, refresh, retry, expire, ttl;
+  gint n;
+
+  n = dn_expand (answer, end, p, mnamebuf, sizeof (mnamebuf));
+  if (n < 0)
+    return NULL;
+  p += n;
+
+  n = dn_expand (answer, end, p, rnamebuf, sizeof (rnamebuf));
+  if (n < 0)
+    return NULL;
+  p += n;
+
+  if (!parse_long (&p, end, &serial) ||
+      !parse_long (&p, end, &refresh) ||
+      !parse_long (&p, end, &retry) ||
+      !parse_long (&p, end, &expire) ||
+      !parse_long (&p, end, &ttl))
+    return NULL;
+
+  return g_variant_new ("(ssuuuuu)",
+                        mnamebuf,
+                        rnamebuf,
+                        serial,
+                        refresh,
+                        retry,
+                        expire,
+                        ttl);
+}
+
+static GVariant *
+parse_res_ns (guchar  *answer,
+              guchar  *end,
+              guchar  *p)
+{
+  gchar namebuf[1024];
+  gint n;
+
+  n = dn_expand (answer, end, p, namebuf, sizeof (namebuf));
+  if (n < 0)
+    return NULL;
+
+  return g_variant_new ("(s)", namebuf);
+}
+
+static GVariant *
+parse_res_mx (guchar  *answer,
+              guchar  *end,
+              guchar  *p)
+{
+  gchar namebuf[1024];
+  guint16 preference;
+  gint n;
+
+  if (!parse_short (&p, end, &preference))
+    return NULL;
+
+  n = dn_expand (answer, end, p, namebuf, sizeof (namebuf));
+  if (n < 0)
+    return NULL;
+  p += n;
+
+  return g_variant_new ("(qs)",
+                        preference,
+                        namebuf);
+}
+
+static GVariant *
+parse_res_txt (guchar  *answer,
+               guchar  *end,
+               guchar  *p)
+{
+  GVariant *record;
+  GPtrArray *array;
+  gsize len;
+
+  array = g_ptr_array_new_with_free_func (g_free);
+  while (p < end)
+    {
+      len = *(p++);
+      if (len > p - end)
+        break;
+      g_ptr_array_add (array, g_strndup ((gchar *)p, len));
+      p += len;
+    }
+
+  record = g_variant_new ("(@as)",
+                          g_variant_new_strv ((const gchar **)array->pdata, array->len));
+  g_ptr_array_free (array, TRUE);
+  return record;
+}
+
+gint
+_g_resolver_record_type_to_rrtype (GResolverRecordType type)
+{
+  switch (type)
+  {
+    case G_RESOLVER_RECORD_SRV:
+      return T_SRV;
+    case G_RESOLVER_RECORD_TXT:
+      return T_TXT;
+    case G_RESOLVER_RECORD_SOA:
+      return T_SOA;
+    case G_RESOLVER_RECORD_NS:
+      return T_NS;
+    case G_RESOLVER_RECORD_MX:
+      return T_MX;
+  }
+  g_return_val_if_reached (-1);
+}
+
 /* Private method to process a res_query response into GSrvTargets */
 GList *
-_g_resolver_targets_from_res_query (const gchar      *rrname,
+_g_resolver_records_from_res_query (const gchar      *rrname,
+                                    gint              rrtype,
                                     guchar           *answer,
                                     gint              len,
                                     gint              herr,
                                     GError          **error)
 {
   gint count;
-  gchar namebuf[1024];
   guchar *end, *p;
-  guint16 type, qclass, rdlength, priority, weight, port;
+  guint16 type, qclass, rdlength;
   guint32 ttl;
   HEADER *header;
-  GSrvTarget *target;
-  GList *targets;
+  GList *records;
+  GVariant *record;
+  gint n, i;
 
   if (len <= 0)
     {
@@ -819,7 +1167,7 @@ _g_resolver_targets_from_res_query (const gchar      *rrname,
       if (len == 0 || herr == HOST_NOT_FOUND || herr == NO_DATA)
         {
           errnum = G_RESOLVER_ERROR_NOT_FOUND;
-          format = _("No service record for '%s'");
+          format = _("No DNS record of the requested type for '%s'");
         }
       else if (herr == TRY_AGAIN)
         {
@@ -836,7 +1184,7 @@ _g_resolver_targets_from_res_query (const gchar      *rrname,
       return NULL;
     }
 
-  targets = NULL;
+  records = NULL;
 
   header = (HEADER *)answer;
   p = answer + sizeof (HEADER);
@@ -844,50 +1192,171 @@ _g_resolver_targets_from_res_query (const gchar      *rrname,
 
   /* Skip query */
   count = ntohs (header->qdcount);
-  while (count-- && p < end)
+  for (i = 0; i < count && p < end; i++)
     {
-      p += dn_expand (answer, end, p, namebuf, sizeof (namebuf));
+      n = dn_skipname (p, end);
+      if (n < 0)
+        break;
+      p += n;
       p += 4;
+    }
+
+  /* Incomplete response */
+  if (i < count)
+    {
+      g_set_error (error, G_RESOLVER_ERROR, G_RESOLVER_ERROR_TEMPORARY_FAILURE,
+                   _("Incomplete data received for '%s'"), rrname);
+      return NULL;
     }
 
   /* Read answers */
   count = ntohs (header->ancount);
-  while (count-- && p < end)
+  for (i = 0; i < count && p < end; i++)
     {
-      p += dn_expand (answer, end, p, namebuf, sizeof (namebuf));
-      GETSHORT (type, p);
-      GETSHORT (qclass, p);
-      GETLONG  (ttl, p);
-      GETSHORT (rdlength, p);
+      n = dn_skipname (p, end);
+      if (n < 0)
+        break;
+      p += n;
 
-      if (type != T_SRV || qclass != C_IN)
+      if (!parse_short (&p, end, &type) ||
+          !parse_short (&p, end, &qclass) ||
+          !parse_long (&p, end, &ttl) ||
+          !parse_short (&p, end, &rdlength))
+        break;
+
+      ttl = ttl; /* To avoid -Wunused-but-set-variable */
+
+      if (p + rdlength > end)
+        break;
+
+      if (type == rrtype && qclass == C_IN)
         {
-          p += rdlength;
-          continue;
+          switch (rrtype)
+            {
+            case T_SRV:
+              record = parse_res_srv (answer, end, p);
+              break;
+            case T_MX:
+              record = parse_res_mx (answer, end, p);
+              break;
+            case T_SOA:
+              record = parse_res_soa (answer, end, p);
+              break;
+            case T_NS:
+              record = parse_res_ns (answer, end, p);
+              break;
+            case T_TXT:
+              record = parse_res_txt (answer, p + rdlength, p);
+              break;
+            default:
+              g_warn_if_reached ();
+              record = NULL;
+              break;
+            }
+
+          if (record != NULL)
+            records = g_list_prepend (records, record);
         }
 
-      GETSHORT (priority, p);
-      GETSHORT (weight, p);
-      GETSHORT (port, p);
-      p += dn_expand (answer, end, p, namebuf, sizeof (namebuf));
-
-      target = g_srv_target_new (namebuf, port, priority, weight);
-      targets = g_list_prepend (targets, target);
+      p += rdlength;
     }
 
-  return g_srv_target_list_sort (targets);
+  /* Somehow got a truncated response */
+  if (i < count)
+    {
+      g_list_free_full (records, (GDestroyNotify)g_variant_unref);
+      g_set_error (error, G_RESOLVER_ERROR, G_RESOLVER_ERROR_TEMPORARY_FAILURE,
+                   _("Incomplete data received for '%s'"), rrname);
+      return NULL;
+    }
+
+  return records;
 }
+
 #elif defined(G_OS_WIN32)
-/* Private method to process a DnsQuery response into GSrvTargets */
+static GVariant *
+parse_dns_srv (DNS_RECORD *rec)
+{
+  return g_variant_new ("(qqqs)",
+                        (guint16)rec->Data.SRV.wPriority,
+                        (guint16)rec->Data.SRV.wWeight,
+                        (guint16)rec->Data.SRV.wPort,
+                        rec->Data.SRV.pNameTarget);
+}
+
+static GVariant *
+parse_dns_soa (DNS_RECORD *rec)
+{
+  return g_variant_new ("(ssuuuuu)",
+                        rec->Data.SOA.pNamePrimaryServer,
+                        rec->Data.SOA.pNameAdministrator,
+                        (guint32)rec->Data.SOA.dwSerialNo,
+                        (guint32)rec->Data.SOA.dwRefresh,
+                        (guint32)rec->Data.SOA.dwRetry,
+                        (guint32)rec->Data.SOA.dwExpire,
+                        (guint32)rec->Data.SOA.dwDefaultTtl);
+}
+
+static GVariant *
+parse_dns_ns (DNS_RECORD *rec)
+{
+  return g_variant_new ("(s)", rec->Data.NS.pNameHost);
+}
+
+static GVariant *
+parse_dns_mx (DNS_RECORD *rec)
+{
+  return g_variant_new ("(qs)",
+                        (guint16)rec->Data.MX.wPreference,
+                        rec->Data.MX.pNameExchange);
+}
+
+static GVariant *
+parse_dns_txt (DNS_RECORD *rec)
+{
+  GVariant *record;
+  GPtrArray *array;
+  DWORD i;
+
+  array = g_ptr_array_new ();
+  for (i = 0; i < rec->Data.TXT.dwStringCount; i++)
+    g_ptr_array_add (array, rec->Data.TXT.pStringArray[i]);
+  record = g_variant_new ("(@as)",
+                          g_variant_new_strv ((const gchar **)array->pdata, array->len));
+  g_ptr_array_free (array, TRUE);
+  return record;
+}
+
+WORD
+_g_resolver_record_type_to_dnstype (GResolverRecordType type)
+{
+  switch (type)
+  {
+    case G_RESOLVER_RECORD_SRV:
+      return DNS_TYPE_SRV;
+    case G_RESOLVER_RECORD_TXT:
+      return DNS_TYPE_TEXT;
+    case G_RESOLVER_RECORD_SOA:
+      return DNS_TYPE_SOA;
+    case G_RESOLVER_RECORD_NS:
+      return DNS_TYPE_NS;
+    case G_RESOLVER_RECORD_MX:
+      return DNS_TYPE_MX;
+  }
+  g_return_val_if_reached (-1);
+}
+
+/* Private method to process a DnsQuery response into GVariants */
 GList *
-_g_resolver_targets_from_DnsQuery (const gchar  *rrname,
+_g_resolver_records_from_DnsQuery (const gchar  *rrname,
+                                   WORD          dnstype,
                                    DNS_STATUS    status,
                                    DNS_RECORD   *results,
                                    GError      **error)
 {
   DNS_RECORD *rec;
-  GSrvTarget *target;
-  GList *targets;
+  gpointer record;
+  GList *records;
 
   if (status != ERROR_SUCCESS)
     {
@@ -897,7 +1366,7 @@ _g_resolver_targets_from_DnsQuery (const gchar  *rrname,
       if (status == DNS_ERROR_RCODE_NAME_ERROR)
         {
           errnum = G_RESOLVER_ERROR_NOT_FOUND;
-          format = _("No service record for '%s'");
+          format = _("No DNS record of the requested type for '%s'");
         }
       else if (status == DNS_ERROR_RCODE_SERVER_FAILURE)
         {
@@ -914,20 +1383,38 @@ _g_resolver_targets_from_DnsQuery (const gchar  *rrname,
       return NULL;
     }
 
-  targets = NULL;
+  records = NULL;
   for (rec = results; rec; rec = rec->pNext)
     {
-      if (rec->wType != DNS_TYPE_SRV)
+      if (rec->wType != dnstype)
         continue;
-
-      target = g_srv_target_new (rec->Data.SRV.pNameTarget,
-                                 rec->Data.SRV.wPort,
-                                 rec->Data.SRV.wPriority,
-                                 rec->Data.SRV.wWeight);
-      targets = g_list_prepend (targets, target);
+      switch (dnstype)
+        {
+        case DNS_TYPE_SRV:
+          record = parse_dns_srv (rec);
+          break;
+        case DNS_TYPE_SOA:
+          record = parse_dns_soa (rec);
+          break;
+        case DNS_TYPE_NS:
+          record = parse_dns_ns (rec);
+          break;
+        case DNS_TYPE_MX:
+          record = parse_dns_mx (rec);
+          break;
+        case DNS_TYPE_TEXT:
+          record = parse_dns_txt (rec);
+          break;
+        default:
+          g_warn_if_reached ();
+          record = NULL;
+          break;
+        }
+      if (record != NULL)
+        records = g_list_prepend (records, g_variant_ref_sink (record));
     }
 
-  return g_srv_target_list_sort (targets);
+  return records;
 }
 
 #endif

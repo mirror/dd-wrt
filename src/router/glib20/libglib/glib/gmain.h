@@ -17,7 +17,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -88,8 +88,6 @@ typedef struct _GSourceCallbackFuncs    GSourceCallbackFuncs;
  *     callback function with @user_data and whatever additional parameters
  *     are needed for this type of event source.
  * @finalize: Called when the source is finalized.
- * @closure_callback:
- * @closure_marshal:
  *
  * The <structname>GSourceFuncs</structname> struct contains a table of
  * functions used to handle event sources in a generic manner.
@@ -121,22 +119,37 @@ typedef struct _GSourceFuncs            GSourceFuncs;
  *
  * On UNIX, processes are identified by a process id (an integer),
  * while Windows uses process handles (which are pointers).
+ *
+ * GPid is used in GLib only for descendant processes spawned with
+ * the g_spawn functions.
  */
 
-typedef gboolean (*GSourceFunc)       (gpointer data);
+/**
+ * GSourceFunc:
+ * @user_data: data passed to the function, set when the source was
+ *     created with one of the above functions
+ *
+ * Specifies the type of function passed to g_timeout_add(),
+ * g_timeout_add_full(), g_idle_add(), and g_idle_add_full().
+ *
+ * Returns: %FALSE if the source should be removed
+ */
+typedef gboolean (*GSourceFunc)       (gpointer user_data);
 
 /**
  * GChildWatchFunc:
  * @pid: the process id of the child process
- * @status: Status information about the child process,
- *     see waitpid(2) for more information about this field
- * @data: user data passed to g_child_watch_add()
+ * @status: Status information about the child process, encoded
+ *     in a platform-specific manner
+ * @user_data: user data passed to g_child_watch_add()
  *
- * The type of functions to be called when a child exists.
+ * Prototype of a #GChildWatchSource callback, called when a child
+ * process has exited.  To interpret @status, see the documentation
+ * for g_spawn_check_exit_status().
  */
 typedef void     (*GChildWatchFunc)   (GPid     pid,
                                        gint     status,
-                                       gpointer data);
+                                       gpointer user_data);
 struct _GSource
 {
   /*< private >*/
@@ -172,6 +185,12 @@ struct _GSourceCallbackFuncs
                  gpointer    *data);
 };
 
+/**
+ * GSourceDummyMarshal:
+ *
+ * This is just a placeholder for #GClosureMarshal,
+ * which cannot be used here for dependency reasons.
+ */
 typedef void (*GSourceDummyMarshal) (void);
 
 struct _GSourceFuncs
@@ -184,6 +203,7 @@ struct _GSourceFuncs
                         gpointer    user_data);
   void     (*finalize) (GSource    *source); /* Can be NULL */
 
+  /*< private >*/
   /* For use by g_source_set_closure */
   GSourceFunc     closure_callback;        
   GSourceDummyMarshal closure_marshal; /* Really is of type GClosureMarshal */
@@ -241,6 +261,26 @@ struct _GSourceFuncs
  * It is not used within GLib or GTK+.
  */
 #define G_PRIORITY_LOW              300
+
+/**
+ * G_SOURCE_REMOVE:
+ *
+ * Use this macro as the return value of a #GSourceFunc to remove
+ * the #GSource from the main loop.
+ *
+ * Since: 2.32
+ */
+#define G_SOURCE_REMOVE         FALSE
+
+/**
+ * G_SOURCE_CONTINUE:
+ *
+ * Use this macro as the return value of a #GSourceFunc to leave
+ * the #GSource in the main loop.
+ *
+ * Since: 2.32
+ */
+#define G_SOURCE_CONTINUE       TRUE
 
 /* GMainContext: */
 
@@ -306,6 +346,7 @@ GSource *g_main_current_source      (void);
 void          g_main_context_push_thread_default (GMainContext *context);
 void          g_main_context_pop_thread_default  (GMainContext *context);
 GMainContext *g_main_context_get_thread_default  (void);
+GMainContext *g_main_context_ref_thread_default  (void);
 
 /* GMainLoop: */
 
@@ -350,7 +391,7 @@ gboolean g_source_is_destroyed    (GSource        *source);
 
 void                 g_source_set_name       (GSource        *source,
                                               const char     *name);
-G_CONST_RETURN char* g_source_get_name       (GSource        *source);
+const char *         g_source_get_name       (GSource        *source);
 void                 g_source_set_name_by_id (guint           tag,
                                               const char     *name);
 
@@ -370,10 +411,10 @@ void     g_source_add_child_source    (GSource        *source,
 void     g_source_remove_child_source (GSource        *source,
 				       GSource        *child_source);
 
-#ifndef G_DISABLE_DEPRECATED
+GLIB_DEPRECATED_IN_2_28_FOR(g_source_get_time)
 void     g_source_get_current_time (GSource        *source,
                                     GTimeVal       *timeval);
-#endif
+
 gint64   g_source_get_time         (GSource        *source);
 
  /* void g_source_connect_closure (GSource        *source,
@@ -393,106 +434,6 @@ void   g_get_current_time                 (GTimeVal       *result);
 gint64 g_get_monotonic_time               (void);
 gint64 g_get_real_time                    (void);
 
-/* ============== Compat main loop stuff ================== */
-
-#ifndef G_DISABLE_DEPRECATED
-
-/**
- * g_main_new:
- * @is_running: set to %TRUE to indicate that the loop is running. This
- *     is not very important since calling g_main_run() will set this
- *     to %TRUE anyway.
- *
- * Creates a new #GMainLoop for th default main context.
- *
- * Returns: a new #GMainLoop
- *
- * Deprecated: 2.2: Use g_main_loop_new() instead
- */
-#define         g_main_new(is_running)  g_main_loop_new (NULL, is_running)
-
-/**
- * g_main_run:
- * @loop: a #GMainLoop
- *
- * Runs a main loop until it stops running.
- *
- * Deprecated: 2.2: Use g_main_loop_run() instead
- */
-#define         g_main_run(loop)        g_main_loop_run(loop)
-
-/**
- * g_main_quit:
- * @loop: a #GMainLoop
- *
- * Stops the #GMainLoop.
- * If g_main_run() was called to run the #GMainLoop, it will now return.
- *
- * Deprecated: 2.2: Use g_main_loop_quit() instead
- */
-#define g_main_quit(loop)       g_main_loop_quit(loop)
-
-/**
- * g_main_destroy:
- * @loop: a #GMainLoop
- *
- * Frees the memory allocated for the #GMainLoop.
- *
- * Deprecated: 2.2: Use g_main_loop_unref() instead
- */
-#define g_main_destroy(loop)    g_main_loop_unref(loop)
-
-/**
- * g_main_is_running:
- * @loop: a #GMainLoop
- *
- * Checks if the main loop is running.
- *
- * Returns: %TRUE if the main loop is running
- *
- * Deprecated: 2.2: Use g_main_loop_is_running() instead
- */
-#define g_main_is_running(loop) g_main_loop_is_running(loop)
-
-/**
- * g_main_iteration:
- * @may_block: set to %TRUE if it should block (i.e. wait) until an event
- *     source becomes ready. It will return after an event source has been
- *     processed. If set to %FALSE it will return immediately if no event
- *     source is ready to be processed.
- *
- * Runs a single iteration for the default #GMainContext.
- *
- * Returns: %TRUE if more events are pending.
- *
- * Deprecated: 2.2: Use g_main_context_iteration() instead.
- */
-#define g_main_iteration(may_block) g_main_context_iteration (NULL, may_block)
-
-/**
- * g_main_pending:
- *
- * Checks if any events are pending for the default #GMainContext
- * (i.e. ready to be processed).
- *
- * Returns: %TRUE if any events are pending.
- *
- * Deprected: 2.2: Use g_main_context_pending() instead.
- */
-#define g_main_pending()            g_main_context_pending (NULL)
-
-/**
- * g_main_set_poll_func:
- * @func: the function to call to poll all file descriptors
- *
- * Sets the function to use for the handle polling of file descriptors
- * for the default main context.
- *
- * Deprecated: 2.2: Use g_main_context_set_poll_func() again
- */
-#define g_main_set_poll_func(func)  g_main_context_set_poll_func (NULL, func)
-
-#endif /* G_DISABLE_DEPRECATED */
 
 /* Source manipulation by ID */
 gboolean g_source_remove                     (guint          tag);

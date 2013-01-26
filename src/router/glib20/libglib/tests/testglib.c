@@ -448,6 +448,8 @@ binary_tree_test (void)
       g_tree_foreach (tree, my_traverse, NULL);
       g_print ("\n");
     }
+
+  g_tree_unref (tree);
 }
 
 static gboolean
@@ -509,12 +511,13 @@ find_first_that(gpointer key,
 static void
 test_g_parse_debug_string (void)
 {
-  GDebugKey keys[3] = { 
+  GDebugKey keys[] = { 
     { "foo", 1 },
     { "bar", 2 },
-    { "baz", 4 }
+    { "baz", 4 },
+    { "weird", 8 },
   };
-  guint n_keys = 3;
+  guint n_keys = G_N_ELEMENTS (keys);
   guint result;
   
   result = g_parse_debug_string ("bar:foo:blubb", keys, n_keys);
@@ -528,6 +531,22 @@ test_g_parse_debug_string (void)
 
   result = g_parse_debug_string (" : ", keys, n_keys);
   g_assert (result == 0);
+
+  result = g_parse_debug_string ("all", keys, n_keys);
+  g_assert_cmpuint (result, ==, (1 << n_keys) - 1);
+
+  /* Test subtracting debug flags from "all" */
+  result = g_parse_debug_string ("all:foo", keys, n_keys);
+  g_assert_cmpuint (result, ==, 2 | 4 | 8);
+
+  result = g_parse_debug_string ("foo baz,all", keys, n_keys);
+  g_assert_cmpuint (result, ==, 2 | 8);
+
+  result = g_parse_debug_string ("all,fooo,baz", keys, n_keys);
+  g_assert_cmpuint (result, ==, 1 | 2 | 8);
+
+  result = g_parse_debug_string ("all:weird", keys, n_keys);
+  g_assert_cmpuint (result, ==, 1 | 2 | 4);
 }
 
 static void
@@ -672,8 +691,10 @@ test_info (void)
 {
   const gchar *un, *rn, *hn;
   const gchar *tmpdir, *homedir, *userdatadir, *uconfdir, *ucachedir;
-  const gchar *uddesktop, *udddocs, *uddpubshare;
+  const gchar *uddesktop, *udddocs, *uddpubshare, *uruntimedir;
   gchar **sv, *cwd, *sdatadirs, *sconfdirs, *langnames;
+  const gchar *charset;
+  gboolean charset_is_utf8;
   if (g_test_verbose())
     g_print ("TestGLib v%u.%u.%u (i:%u b:%u)\n",
              glib_major_version,
@@ -695,6 +716,10 @@ test_info (void)
     }
   g_free (cwd);
 
+  /* reload, just for fun */
+  g_reload_user_special_dirs_cache ();
+  g_reload_user_special_dirs_cache ();
+
   tmpdir = g_get_tmp_dir();
   g_assert (tmpdir != NULL);
   homedir = g_get_home_dir ();
@@ -710,6 +735,8 @@ test_info (void)
   g_assert (uddesktop != NULL);
   udddocs = g_get_user_special_dir (G_USER_DIRECTORY_DOCUMENTS);
   uddpubshare = g_get_user_special_dir (G_USER_DIRECTORY_PUBLIC_SHARE);
+  uruntimedir = g_get_user_runtime_dir ();
+  g_assert (uruntimedir != NULL);
 
   sv = (gchar **) g_get_system_data_dirs ();
   sdatadirs = g_strjoinv (G_SEARCHPATH_SEPARATOR_S, sv);
@@ -725,6 +752,7 @@ test_info (void)
       g_print ("user_data: %s\n", userdatadir);
       g_print ("user_config: %s\n", uconfdir);
       g_print ("user_cache: %s\n", ucachedir);
+      g_print ("user_runtime: %s\n", uruntimedir);
       g_print ("system_data: %s\n", sdatadirs);
       g_print ("system_config: %s\n", sconfdirs);
       g_print ("languages: %s\n", langnames);
@@ -735,15 +763,19 @@ test_info (void)
   g_free (sdatadirs);
   g_free (sconfdirs);
   g_free (langnames);
-  
+
+  charset_is_utf8 = g_get_charset ((const char**)&charset);
+
   if (g_test_verbose())
     {
-      const gchar *charset;
-      if (g_get_charset ((G_CONST_RETURN char**)&charset))
+      if (charset_is_utf8)
         g_print ("current charset is UTF-8: %s\n", charset);
       else
         g_print ("current charset is not UTF-8: %s\n", charset);
+    }
 
+  if (g_test_verbose())
+    {
 #ifdef G_PLATFORM_WIN32
       g_print ("current locale: %s\n", g_win32_getlocale ());
 
@@ -913,6 +945,7 @@ test_file_functions (void)
   remove (template);
 
   error = NULL;
+  name_used = NULL;
   strcpy (template, "zap" G_DIR_SEPARATOR_S "barXXXXXX");
   fd = g_file_open_tmp (template, &name_used, &error);
   if (g_test_verbose())
@@ -922,10 +955,13 @@ test_file_functions (void)
       else
         g_print ("g_file_open_tmp correctly returns error: %s\n", error->message);
     }
-  close (fd);
+  if (fd != -1)
+    close (fd);
   g_clear_error (&error);
+  g_free (name_used);
 
 #ifdef G_OS_WIN32
+  name_used = NULL;
   strcpy (template, "zap/barXXXXXX");
   fd = g_file_open_tmp (template, &name_used, &error);
   if (g_test_verbose())
@@ -937,9 +973,11 @@ test_file_functions (void)
     }
   close (fd);
   g_clear_error (&error);
+  g_free (name_used);
 #endif
 
   strcpy (template, "zapXXXXXX");
+  name_used = NULL;
   fd = g_file_open_tmp (template, &name_used, &error);
   if (fd == -1)
     g_error ("g_file_open_tmp didn't work for template '%s': %s\n", template, error->message);
@@ -948,13 +986,16 @@ test_file_functions (void)
   close (fd);
   g_clear_error (&error);
   remove (name_used);
+  g_free (name_used);
 
+  name_used = NULL;
   fd = g_file_open_tmp (NULL, &name_used, &error);
   if (fd == -1)
     g_error ("g_file_open_tmp didn't work for a NULL template: %s\n", error->message);
   close (fd);
   g_clear_error (&error);
   remove (name_used);
+  g_free (name_used);
 }
 
 static void
@@ -1522,6 +1563,8 @@ test_mem_chunks (void)
     }
   for (i = 0; i < 10000; i++)
     g_mem_chunk_free (mem_chunk, mem[i]);
+
+  g_mem_chunk_destroy (mem_chunk);
 }
 #endif
 

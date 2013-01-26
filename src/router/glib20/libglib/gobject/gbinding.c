@@ -151,8 +151,8 @@ struct _GBinding
   GObject *target;
 
   /* the property names are interned, so they should not be freed */
-  gchar *source_property;
-  gchar *target_property;
+  const gchar *source_property;
+  const gchar *target_property;
 
   GParamSpec *source_pspec;
   GParamSpec *target_pspec;
@@ -350,8 +350,8 @@ on_source_notify (GObject    *gobject,
                   GBinding   *binding)
 {
   const gchar *p_name;
-  GValue source_value = { 0, };
-  GValue target_value = { 0, };
+  GValue source_value = G_VALUE_INIT;
+  GValue target_value = G_VALUE_INIT;
   gboolean res;
 
   if (binding->is_frozen)
@@ -391,8 +391,8 @@ on_target_notify (GObject    *gobject,
                   GBinding   *binding)
 {
   const gchar *p_name;
-  GValue source_value = { 0, };
-  GValue target_value = { 0, };
+  GValue source_value = G_VALUE_INIT;
+  GValue target_value = G_VALUE_INIT;
   gboolean res;
 
   if (binding->is_frozen)
@@ -575,9 +575,11 @@ g_binding_constructed (GObject *gobject)
                                                G_CALLBACK (on_target_notify),
                                                binding);
 
-  g_object_weak_ref (binding->target, weak_unbind, binding);
-  add_binding_qdata (binding->target, binding);
-
+  if (binding->target != binding->source)
+    {
+      g_object_weak_ref (binding->target, weak_unbind, binding);
+      add_binding_qdata (binding->target, binding);
+    }
 }
 
 static void
@@ -742,7 +744,7 @@ g_binding_get_target (GBinding *binding)
  *
  * Since: 2.26
  */
-G_CONST_RETURN gchar *
+const gchar *
 g_binding_get_source_property (GBinding *binding)
 {
   g_return_val_if_fail (G_IS_BINDING (binding), NULL);
@@ -761,7 +763,7 @@ g_binding_get_source_property (GBinding *binding)
  *
  * Since: 2.26
  */
-G_CONST_RETURN gchar *
+const gchar *
 g_binding_get_target_property (GBinding *binding)
 {
   g_return_val_if_fail (G_IS_BINDING (binding), NULL);
@@ -771,9 +773,9 @@ g_binding_get_target_property (GBinding *binding)
 
 /**
  * g_object_bind_property_full:
- * @source: the source #GObject
+ * @source: (type GObject.Object): the source #GObject
  * @source_property: the property on @source to bind
- * @target: the target #GObject
+ * @target: (type GObject.Object): the target #GObject
  * @target_property: the property on @target to bind
  * @flags: flags to pass to #GBinding
  * @transform_to: (scope notified) (allow-none): the transformation function
@@ -912,7 +914,7 @@ g_object_bind_property_full (gpointer               source,
   if ((flags & G_BINDING_BIDIRECTIONAL) &&
       !(pspec->flags & G_PARAM_READABLE))
     {
-      g_warning ("%s: The starget object of type %s has no writable property called '%s'",
+      g_warning ("%s: The target object of type %s has no readable property called '%s'",
                  G_STRLOC,
                  G_OBJECT_TYPE_NAME (target),
                  target_property);
@@ -961,9 +963,9 @@ g_object_bind_property_full (gpointer               source,
 
 /**
  * g_object_bind_property:
- * @source: the source #GObject
+ * @source: (type GObject.Object): the source #GObject
  * @source_property: the property on @source to bind
- * @target: the target #GObject
+ * @target: (type GObject.Object): the target #GObject
  * @target_property: the property on @target to bind
  * @flags: flags to pass to #GBinding
  *
@@ -1026,8 +1028,8 @@ bind_with_closures_transform_to (GBinding     *binding,
                                  gpointer      data)
 {
   TransformData *t_data = data;
-  GValue params[3] = { { 0, }, { 0, }, { 0, } };
-  GValue retval = { 0, };
+  GValue params[3] = { G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT };
+  GValue retval = G_VALUE_INIT;
   gboolean res;
 
   g_value_init (&params[0], G_TYPE_BINDING);
@@ -1069,8 +1071,8 @@ bind_with_closures_transform_from (GBinding     *binding,
                                    gpointer      data)
 {
   TransformData *t_data = data;
-  GValue params[3] = { { 0, }, { 0, }, { 0, } };
-  GValue retval = { 0, };
+  GValue params[3] = { G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT };
+  GValue retval = G_VALUE_INIT;
   gboolean res;
 
   g_value_init (&params[0], G_TYPE_BINDING);
@@ -1121,9 +1123,9 @@ bind_with_closures_free_func (gpointer data)
 
 /**
  * g_object_bind_property_with_closures:
- * @source: the source #GObject
+ * @source: (type GObject.Object): the source #GObject
  * @source_property: the property on @source to bind
- * @target: the target #GObject
+ * @target: (type GObject.Object): the target #GObject
  * @target_property: the property on @target to bind
  * @flags: flags to pass to #GBinding
  * @transform_to: a #GClosure wrapping the transformation function

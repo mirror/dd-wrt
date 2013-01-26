@@ -22,6 +22,11 @@
 #include "config.h"
 
 #include "gpermission.h"
+
+#include "gioerror.h"
+#include "gioenums.h"
+#include "gasyncresult.h"
+#include "gsimpleasyncresult.h"
 #include "glibintl.h"
 
 
@@ -74,9 +79,8 @@ enum  {
 /**
  * g_permission_acquire:
  * @permission: a #GPermission instance
- * @cancellable: a #GCancellable, or %NULL
+ * @cancellable: (allow-none): a #GCancellable, or %NULL
  * @error: a pointer to a %NULL #GError, or %NULL
- * @returns: %TRUE if the permission was successfully acquired
  *
  * Attempts to acquire the permission represented by @permission.
  *
@@ -94,6 +98,8 @@ enum  {
  * user interaction is required).  See g_permission_acquire_async() for
  * the non-blocking version.
  *
+ * Returns: %TRUE if the permission was successfully acquired
+ *
  * Since: 2.26
  */
 gboolean
@@ -108,7 +114,7 @@ g_permission_acquire (GPermission   *permission,
 /**
  * g_permission_acquire_async:
  * @permission: a #GPermission instance
- * @cancellable: a #GCancellable, or %NULL
+ * @cancellable: (allow-none): a #GCancellable, or %NULL
  * @callback: the #GAsyncReadyCallback to call when done
  * @user_data: the user data to pass to @callback
  *
@@ -134,13 +140,14 @@ g_permission_acquire_async (GPermission         *permission,
  * @permission: a #GPermission instance
  * @result: the #GAsyncResult given to the #GAsyncReadyCallback
  * @error: a pointer to a %NULL #GError, or %NULL
- * @returns: %TRUE if the permission was successfully acquired
  *
  * Collects the result of attempting to acquire the permission
  * represented by @permission.
  *
  * This is the second half of the asynchronous version of
  * g_permission_acquire().
+ *
+ * Returns: %TRUE if the permission was successfully acquired
  *
  * Since: 2.26
  **/
@@ -156,9 +163,8 @@ g_permission_acquire_finish (GPermission   *permission,
 /**
  * g_permission_release:
  * @permission: a #GPermission instance
- * @cancellable: a #GCancellable, or %NULL
+ * @cancellable: (allow-none): a #GCancellable, or %NULL
  * @error: a pointer to a %NULL #GError, or %NULL
- * @returns: %TRUE if the permission was successfully released
  *
  * Attempts to release the permission represented by @permission.
  *
@@ -176,6 +182,8 @@ g_permission_acquire_finish (GPermission   *permission,
  * user interaction is required).  See g_permission_release_async() for
  * the non-blocking version.
  *
+ * Returns: %TRUE if the permission was successfully released
+ *
  * Since: 2.26
  **/
 gboolean
@@ -190,7 +198,7 @@ g_permission_release (GPermission   *permission,
 /**
  * g_permission_release_async:
  * @permission: a #GPermission instance
- * @cancellable: a #GCancellable, or %NULL
+ * @cancellable: (allow-none): a #GCancellable, or %NULL
  * @callback: the #GAsyncReadyCallback to call when done
  * @user_data: the user data to pass to @callback
  *
@@ -216,13 +224,14 @@ g_permission_release_async (GPermission         *permission,
  * @permission: a #GPermission instance
  * @result: the #GAsyncResult given to the #GAsyncReadyCallback
  * @error: a pointer to a %NULL #GError, or %NULL
- * @returns: %TRUE if the permission was successfully released
  *
  * Collects the result of attempting to release the permission
  * represented by @permission.
  *
  * This is the second half of the asynchronous version of
  * g_permission_release().
+ *
+ * Returns: %TRUE if the permission was successfully released
  *
  * Since: 2.26
  **/
@@ -238,11 +247,12 @@ g_permission_release_finish (GPermission   *permission,
 /**
  * g_permission_get_allowed:
  * @permission: a #GPermission instance
- * @returns: the value of the 'allowed' property
  *
  * Gets the value of the 'allowed' property.  This property is %TRUE if
  * the caller currently has permission to perform the action that
  * @permission represents the permission to perform.
+ *
+ * Returns: the value of the 'allowed' property
  *
  * Since: 2.26
  **/
@@ -255,11 +265,12 @@ g_permission_get_allowed (GPermission *permission)
 /**
  * g_permission_get_can_acquire:
  * @permission: a #GPermission instance
- * @returns: the value of the 'can-acquire' property
  *
  * Gets the value of the 'can-acquire' property.  This property is %TRUE
  * if it is generally possible to acquire the permission by calling
  * g_permission_acquire().
+ *
+ * Returns: the value of the 'can-acquire' property
  *
  * Since: 2.26
  **/
@@ -272,11 +283,12 @@ g_permission_get_can_acquire (GPermission *permission)
 /**
  * g_permission_get_can_release:
  * @permission: a #GPermission instance
- * @returns: the value of the 'can-release' property
  *
  * Gets the value of the 'can-release' property.  This property is %TRUE
  * if it is generally possible to release the permission by calling
  * g_permission_release().
+ *
+ * Returns: the value of the 'can-release' property
  *
  * Since: 2.26
  **/
@@ -311,21 +323,24 @@ g_permission_impl_update (GPermission *permission,
 
   g_object_freeze_notify (object);
 
+  allowed = allowed != FALSE;
   if (allowed != permission->priv->allowed)
     {
-      permission->priv->allowed = !!allowed;
+      permission->priv->allowed = allowed;
       g_object_notify (object, "allowed");
     }
 
+  can_acquire = can_acquire != FALSE;
   if (can_acquire != permission->priv->can_acquire)
     {
-      permission->priv->can_acquire = !!can_acquire;
+      permission->priv->can_acquire = can_acquire;
       g_object_notify (object, "can-acquire");
     }
 
+  can_release = can_release != FALSE;
   if (can_release != permission->priv->can_release)
     {
-      permission->priv->can_release = !!can_release;
+      permission->priv->can_release = can_release;
       g_object_notify (object, "can-release");
     }
 
@@ -365,12 +380,51 @@ g_permission_init (GPermission *permission)
                                                   GPermissionPrivate);
 }
 
+static gboolean
+acquire_or_release (GPermission   *permission,
+                    GCancellable  *cancellable,
+                    GError       **error)
+{
+  g_set_error_literal  (error,
+                        G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                        "Can't acquire or release permission");
+  return FALSE;
+}
+
+static void
+acquire_or_release_async (GPermission         *permission,
+                          GCancellable        *cancellable,
+                          GAsyncReadyCallback  callback,
+                          gpointer             user_data)
+{
+  g_simple_async_report_error_in_idle (G_OBJECT (permission),
+                                       callback, user_data,
+                                       G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                                       "Can't acquire or release permission");
+}
+
+static gboolean
+acquire_or_release_finish (GPermission   *permission,
+                           GAsyncResult  *result,
+                           GError       **error)
+{
+  g_async_result_legacy_propagate_error (result, error);
+  return FALSE;
+}
+
 static void
 g_permission_class_init (GPermissionClass *class)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (class);
 
   object_class->get_property = g_permission_get_property;
+
+  class->acquire = acquire_or_release;
+  class->release = acquire_or_release;
+  class->acquire_async = acquire_or_release_async;
+  class->release_async = acquire_or_release_async;
+  class->acquire_finish = acquire_or_release_finish;
+  class->release_finish = acquire_or_release_finish;
 
   /**
    * GPermission:allowed:

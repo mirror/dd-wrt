@@ -25,11 +25,11 @@
 #include "gasynchelper.h"
 
 
-/**
+/*< private >
  * SECTION:gasynchelper
  * @short_description: Asynchronous Helper Functions
  * @include: gio/gio.h
- * @see_also: #GAsyncReady
+ * @see_also: #GAsyncResult
  * 
  * Provides helper functions for asynchronous operations.
  *
@@ -87,8 +87,8 @@ fd_source_closure_callback (int           fd,
 {
   GClosure *closure = data;
 
-  GValue params[2] = { { 0, }, { 0, } };
-  GValue result_value = { 0, };
+  GValue params[2] = { G_VALUE_INIT, G_VALUE_INIT };
+  GValue result_value = G_VALUE_INIT;
   gboolean result;
 
   g_value_init (&result_value, G_TYPE_BOOLEAN);
@@ -168,3 +168,52 @@ _g_fd_source_new (int           fd,
 
   return source;
 }
+
+#ifdef G_OS_WIN32
+gboolean
+_g_win32_overlap_wait_result (HANDLE           hfile,
+                              OVERLAPPED      *overlap,
+                              DWORD           *transferred,
+                              GCancellable    *cancellable)
+{
+  GPollFD pollfd[2];
+  gboolean result = FALSE;
+  gint num, npoll;
+
+  pollfd[0].fd = (gint)overlap->hEvent;
+  pollfd[0].events = G_IO_IN;
+  num = 1;
+
+  if (g_cancellable_make_pollfd (cancellable, &pollfd[1]))
+    num++;
+
+loop:
+  npoll = g_poll (pollfd, num, -1);
+  if (npoll <= 0)
+    /* error out, should never happen */
+    goto end;
+
+  if (g_cancellable_is_cancelled (cancellable))
+    {
+      /* CancelIO only cancels pending operations issued by the
+       * current thread and since we're doing only sync operations,
+       * this is safe.... */
+      /* CancelIoEx is only Vista+. Since we have only one overlap
+       * operaton on this thread, we can just use: */
+      result = CancelIo (hfile);
+      g_warn_if_fail (result);
+    }
+
+  result = GetOverlappedResult (overlap->hEvent, overlap, transferred, FALSE);
+  if (result == FALSE &&
+      GetLastError () == ERROR_IO_INCOMPLETE &&
+      !g_cancellable_is_cancelled (cancellable))
+    goto loop;
+
+end:
+  if (num > 1)
+    g_cancellable_release_fd (cancellable);
+
+  return result;
+}
+#endif
