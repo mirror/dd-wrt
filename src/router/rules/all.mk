@@ -248,6 +248,7 @@ include rules/nrpe.mk
 include rules/links.mk
 include rules/softflowd.mk
 include rules/nextmediaextra.mk
+include rules/libqmi.mk
 
 #
 # Generic rules
