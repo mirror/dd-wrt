@@ -1,5 +1,5 @@
 /* GIO - GLib Input, Output and Streaming Library
- * 
+ *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  * Copyright © 2007 Ryan Lortie
  *
@@ -26,13 +26,10 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
 
 #ifdef HAVE_CRT_EXTERNS_H
 #include <crt_externs.h>
 #endif
-
-#undef G_DISABLE_DEPRECATED
 
 #include "gcontenttypeprivate.h"
 #include "gdesktopappinfo.h"
@@ -64,7 +61,15 @@
 #define ADDED_ASSOCIATIONS_GROUP    "Added Associations"
 #define REMOVED_ASSOCIATIONS_GROUP  "Removed Associations"
 #define MIME_CACHE_GROUP            "MIME Cache"
+#define GENERIC_NAME_KEY            "GenericName"
 #define FULL_NAME_KEY               "X-GNOME-FullName"
+#define KEYWORDS_KEY                "Keywords"
+#define STARTUP_WM_CLASS_KEY        "StartupWMClass"
+
+enum {
+  PROP_0,
+  PROP_FILENAME
+};
 
 static void     g_desktop_app_info_iface_init         (GAppInfoIface    *iface);
 static GList *  get_all_desktop_entries_for_mime_type (const char       *base_mime_type,
@@ -88,24 +93,27 @@ struct _GDesktopAppInfo
   char *filename;
 
   char *name;
-  /* FIXME: what about GenericName ? */
+  char *generic_name;
   char *fullname;
   char *comment;
   char *icon_name;
   GIcon *icon;
+  char **keywords;
   char **only_show_in;
   char **not_show_in;
   char *try_exec;
   char *exec;
   char *binary;
   char *path;
+  char *categories;
+  char *startup_wm_class;
+  char **mime_types;
 
   guint nodisplay       : 1;
   guint hidden          : 1;
   guint terminal        : 1;
   guint startup_notify  : 1;
   guint no_fuse         : 1;
-  /* FIXME: what about StartupWMClass ? */
 };
 
 typedef enum {
@@ -119,6 +127,9 @@ typedef enum {
 G_DEFINE_TYPE_WITH_CODE (GDesktopAppInfo, g_desktop_app_info, G_TYPE_OBJECT,
 			 G_IMPLEMENT_INTERFACE (G_TYPE_APP_INFO,
 						g_desktop_app_info_iface_init))
+
+G_LOCK_DEFINE_STATIC (g_desktop_env);
+static gchar *g_desktop_env = NULL;
 
 static gpointer
 search_path_init (gpointer data)
@@ -161,19 +172,63 @@ g_desktop_app_info_finalize (GObject *object)
   g_free (info->desktop_id);
   g_free (info->filename);
   g_free (info->name);
+  g_free (info->generic_name);
   g_free (info->fullname);
   g_free (info->comment);
   g_free (info->icon_name);
   if (info->icon)
     g_object_unref (info->icon);
+  g_strfreev (info->keywords);
   g_strfreev (info->only_show_in);
   g_strfreev (info->not_show_in);
   g_free (info->try_exec);
   g_free (info->exec);
   g_free (info->binary);
   g_free (info->path);
+  g_free (info->categories);
+  g_free (info->startup_wm_class);
+  g_strfreev (info->mime_types);
   
   G_OBJECT_CLASS (g_desktop_app_info_parent_class)->finalize (object);
+}
+
+static void
+g_desktop_app_info_set_property(GObject         *object,
+				guint            prop_id,
+				const GValue    *value,
+				GParamSpec      *pspec)
+{
+  GDesktopAppInfo *self = G_DESKTOP_APP_INFO (object);
+
+  switch (prop_id)
+    {
+    case PROP_FILENAME:
+      self->filename = g_value_dup_string (value);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+    }
+}
+
+static void
+g_desktop_app_info_get_property(GObject         *object,
+				guint            prop_id,
+				GValue          *value,
+				GParamSpec      *pspec)
+{
+  GDesktopAppInfo *self = G_DESKTOP_APP_INFO (object);
+
+  switch (prop_id)
+    {
+    case PROP_FILENAME:
+      g_value_set_string (value, self->filename);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+    }
 }
 
 static void
@@ -181,7 +236,20 @@ g_desktop_app_info_class_init (GDesktopAppInfoClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   
+  gobject_class->get_property = g_desktop_app_info_get_property;
+  gobject_class->set_property = g_desktop_app_info_set_property;
   gobject_class->finalize = g_desktop_app_info_finalize;
+
+  /**
+   * GDesktopAppInfo:filename:
+   *
+   * The origin filename of this #GDesktopAppInfo
+   */
+  g_object_class_install_property (gobject_class,
+                                   PROP_FILENAME,
+                                   g_param_spec_string ("filename", "Filename", "",
+							NULL,
+                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }
 
 static void
@@ -205,29 +273,19 @@ binary_from_exec (const char *exec)
   
 }
 
-/**
- * g_desktop_app_info_new_from_keyfile:
- * @key_file: an opened #GKeyFile
- * 
- * Creates a new #GDesktopAppInfo.
- *
- * Returns: a new #GDesktopAppInfo or %NULL on error.
- *
- * Since: 2.18
- **/
-GDesktopAppInfo *
-g_desktop_app_info_new_from_keyfile (GKeyFile *key_file)
+static gboolean
+g_desktop_app_info_load_from_keyfile (GDesktopAppInfo *info, 
+				      GKeyFile        *key_file)
 {
-  GDesktopAppInfo *info;
   char *start_group;
   char *type;
   char *try_exec;
-  
+
   start_group = g_key_file_get_start_group (key_file);
   if (start_group == NULL || strcmp (start_group, G_KEY_FILE_DESKTOP_GROUP) != 0)
     {
       g_free (start_group);
-      return NULL;
+      return FALSE;
     }
   g_free (start_group);
 
@@ -238,7 +296,7 @@ g_desktop_app_info_new_from_keyfile (GKeyFile *key_file)
   if (type == NULL || strcmp (type, G_KEY_FILE_DESKTOP_TYPE_APPLICATION) != 0)
     {
       g_free (type);
-      return NULL;
+      return FALSE;
     }
   g_free (type);
 
@@ -253,16 +311,15 @@ g_desktop_app_info_new_from_keyfile (GKeyFile *key_file)
       if (t == NULL)
 	{
 	  g_free (try_exec);
-	  return NULL;
+	  return FALSE;
 	}
       g_free (t);
     }
 
-  info = g_object_new (G_TYPE_DESKTOP_APP_INFO, NULL);
-  info->filename = NULL;
-
   info->name = g_key_file_get_locale_string (key_file, G_KEY_FILE_DESKTOP_GROUP, G_KEY_FILE_DESKTOP_KEY_NAME, NULL, NULL);
+  info->generic_name = g_key_file_get_locale_string (key_file, G_KEY_FILE_DESKTOP_GROUP, GENERIC_NAME_KEY, NULL, NULL);
   info->fullname = g_key_file_get_locale_string (key_file, G_KEY_FILE_DESKTOP_GROUP, FULL_NAME_KEY, NULL, NULL);
+  info->keywords = g_key_file_get_locale_string_list (key_file, G_KEY_FILE_DESKTOP_GROUP, KEYWORDS_KEY, NULL, NULL, NULL);
   info->comment = g_key_file_get_locale_string (key_file, G_KEY_FILE_DESKTOP_GROUP, G_KEY_FILE_DESKTOP_KEY_COMMENT, NULL, NULL);
   info->nodisplay = g_key_file_get_boolean (key_file, G_KEY_FILE_DESKTOP_GROUP, G_KEY_FILE_DESKTOP_KEY_NO_DISPLAY, NULL) != FALSE;
   info->icon_name =  g_key_file_get_locale_string (key_file, G_KEY_FILE_DESKTOP_GROUP, G_KEY_FILE_DESKTOP_KEY_ICON, NULL, NULL);
@@ -275,6 +332,9 @@ g_desktop_app_info_new_from_keyfile (GKeyFile *key_file)
   info->startup_notify = g_key_file_get_boolean (key_file, G_KEY_FILE_DESKTOP_GROUP, G_KEY_FILE_DESKTOP_KEY_STARTUP_NOTIFY, NULL) != FALSE;
   info->no_fuse = g_key_file_get_boolean (key_file, G_KEY_FILE_DESKTOP_GROUP, "X-GIO-NoFuse", NULL) != FALSE;
   info->hidden = g_key_file_get_boolean (key_file, G_KEY_FILE_DESKTOP_GROUP, G_KEY_FILE_DESKTOP_KEY_HIDDEN, NULL) != FALSE;
+  info->categories = g_key_file_get_string (key_file, G_KEY_FILE_DESKTOP_GROUP, G_KEY_FILE_DESKTOP_KEY_CATEGORIES, NULL);
+  info->startup_wm_class = g_key_file_get_string (key_file, G_KEY_FILE_DESKTOP_GROUP, STARTUP_WM_CLASS_KEY, NULL);
+  info->mime_types = g_key_file_get_string_list (key_file, G_KEY_FILE_DESKTOP_GROUP, G_KEY_FILE_DESKTOP_KEY_MIME_TYPE, NULL, NULL);
   
   info->icon = NULL;
   if (info->icon_name)
@@ -311,6 +371,53 @@ g_desktop_app_info_new_from_keyfile (GKeyFile *key_file)
       info->path = NULL;
     }
 
+  return TRUE;
+}
+
+static gboolean
+g_desktop_app_info_load_file (GDesktopAppInfo *self)
+{
+  GKeyFile *key_file;
+  gboolean retval = FALSE;
+  
+  g_return_val_if_fail (self->filename != NULL, FALSE);
+
+  key_file = g_key_file_new ();
+  
+  if (g_key_file_load_from_file (key_file,
+				 self->filename,
+				 G_KEY_FILE_NONE,
+				 NULL))
+    {
+      retval = g_desktop_app_info_load_from_keyfile (self, key_file);
+    }
+
+  g_key_file_free (key_file);
+  return retval;
+}
+
+/**
+ * g_desktop_app_info_new_from_keyfile:
+ * @key_file: an opened #GKeyFile
+ * 
+ * Creates a new #GDesktopAppInfo.
+ *
+ * Returns: a new #GDesktopAppInfo or %NULL on error.
+ *
+ * Since: 2.18
+ **/
+GDesktopAppInfo *
+g_desktop_app_info_new_from_keyfile (GKeyFile *key_file)
+{
+  GDesktopAppInfo *info;
+
+  info = g_object_new (G_TYPE_DESKTOP_APP_INFO, NULL);
+  info->filename = NULL;
+  if (!g_desktop_app_info_load_from_keyfile (info, key_file))
+    {
+      g_object_unref (info);
+      return NULL;
+    }
   return info;
 }
 
@@ -325,23 +432,14 @@ g_desktop_app_info_new_from_keyfile (GKeyFile *key_file)
 GDesktopAppInfo *
 g_desktop_app_info_new_from_filename (const char *filename)
 {
-  GKeyFile *key_file;
   GDesktopAppInfo *info = NULL;
 
-  key_file = g_key_file_new ();
-  
-  if (g_key_file_load_from_file (key_file,
-				 filename,
-				 G_KEY_FILE_NONE,
-				 NULL))
+  info = g_object_new (G_TYPE_DESKTOP_APP_INFO, "filename", filename, NULL);
+  if (!g_desktop_app_info_load_file (info))
     {
-      info = g_desktop_app_info_new_from_keyfile (key_file);
-      if (info)
-        info->filename = g_strdup (filename);
-    }  
-
-  g_key_file_free (key_file);
-
+      g_object_unref (info);
+      return NULL;
+    }
   return info;
 }
 
@@ -430,7 +528,9 @@ g_desktop_app_info_dup (GAppInfo *appinfo)
   new_info->desktop_id = g_strdup (info->desktop_id);
   
   new_info->name = g_strdup (info->name);
+  new_info->generic_name = g_strdup (info->generic_name);
   new_info->fullname = g_strdup (info->fullname);
+  new_info->keywords = g_strdupv (info->keywords);
   new_info->comment = g_strdup (info->comment);
   new_info->nodisplay = info->nodisplay;
   new_info->icon_name = g_strdup (info->icon_name);
@@ -553,6 +653,135 @@ g_desktop_app_info_get_icon (GAppInfo *appinfo)
   GDesktopAppInfo *info = G_DESKTOP_APP_INFO (appinfo);
 
   return info->icon;
+}
+
+/**
+ * g_desktop_app_info_get_categories:
+ * @info: a #GDesktopAppInfo
+ *
+ * Gets the categories from the desktop file.
+ *
+ * Returns: The unparsed Categories key from the desktop file;
+ *     i.e. no attempt is made to split it by ';' or validate it.
+ */
+const char *
+g_desktop_app_info_get_categories (GDesktopAppInfo *info)
+{
+  return info->categories;
+}
+
+/**
+ * g_desktop_app_info_get_keywords:
+ * @info: a #GDesktopAppInfo
+ *
+ * Gets the keywords from the desktop file.
+ *
+ * Returns: (transfer none): The value of the Keywords key
+ *
+ * Since: 2.32
+ */
+const char * const *
+g_desktop_app_info_get_keywords (GDesktopAppInfo *info)
+{
+  return (const char * const *)info->keywords;
+}
+
+/**
+ * g_desktop_app_info_get_generic_name:
+ * @info: a #GDesktopAppInfo
+ *
+ * Gets the generic name from the destkop file.
+ *
+ * Returns: The value of the GenericName key
+ */
+const char *
+g_desktop_app_info_get_generic_name (GDesktopAppInfo *info)
+{
+  return info->generic_name;
+}
+
+/**
+ * g_desktop_app_info_get_nodisplay:
+ * @info: a #GDesktopAppInfo
+ *
+ * Gets the value of the NoDisplay key, which helps determine if the
+ * application info should be shown in menus. See
+ * #G_KEY_FILE_DESKTOP_KEY_NO_DISPLAY and g_app_info_should_show().
+ *
+ * Returns: The value of the NoDisplay key
+ *
+ * Since: 2.30
+ */
+gboolean
+g_desktop_app_info_get_nodisplay (GDesktopAppInfo *info)
+{
+  return info->nodisplay;
+}
+
+/**
+ * g_desktop_app_info_get_show_in:
+ * @info: a #GDesktopAppInfo
+ * @desktop_env: a string specifying a desktop name
+ *
+ * Checks if the application info should be shown in menus that list available
+ * applications for a specific name of the desktop, based on the
+ * <literal>OnlyShowIn</literal> and <literal>NotShowIn</literal> keys.
+ *
+ * If @desktop_env is %NULL, then the name of the desktop set with
+ * g_desktop_app_info_set_desktop_env() is used.
+ *
+ * Note that g_app_info_should_show() for @info will include this check (with
+ * %NULL for @desktop_env) as well as additional checks.
+ *
+ * Returns: %TRUE if the @info should be shown in @desktop_env according to the
+ * <literal>OnlyShowIn</literal> and <literal>NotShowIn</literal> keys, %FALSE
+ * otherwise.
+ *
+ * Since: 2.30
+ */
+gboolean
+g_desktop_app_info_get_show_in (GDesktopAppInfo *info,
+                                const gchar     *desktop_env)
+{
+  gboolean found;
+  int i;
+
+  g_return_val_if_fail (G_IS_DESKTOP_APP_INFO (info), FALSE);
+
+  if (!desktop_env) {
+    G_LOCK (g_desktop_env);
+    desktop_env = g_desktop_env;
+    G_UNLOCK (g_desktop_env);
+  }
+
+  if (info->only_show_in)
+    {
+      if (desktop_env == NULL)
+	return FALSE;
+
+      found = FALSE;
+      for (i = 0; info->only_show_in[i] != NULL; i++)
+	{
+	  if (strcmp (info->only_show_in[i], desktop_env) == 0)
+	    {
+	      found = TRUE;
+	      break;
+	    }
+	}
+      if (!found)
+	return FALSE;
+    }
+
+  if (info->not_show_in && desktop_env)
+    {
+      for (i = 0; info->not_show_in[i] != NULL; i++)
+	{
+	  if (strcmp (info->not_show_in[i], desktop_env) == 0)
+	    return FALSE;
+	}
+    }
+
+  return TRUE;
 }
 
 static char *
@@ -900,9 +1129,8 @@ typedef struct
 {
   GSpawnChildSetupFunc user_setup;
   gpointer user_setup_data;
-  char *display;
-  char *sn_id;
-  char *desktop_file;
+
+  char *pid_envvar;
 } ChildSetupData;
 
 static void
@@ -910,20 +1138,22 @@ child_setup (gpointer user_data)
 {
   ChildSetupData *data = user_data;
 
-  if (data->display)
-    g_setenv ("DISPLAY", data->display, TRUE);
-
-  if (data->sn_id)
-    g_setenv ("DESKTOP_STARTUP_ID", data->sn_id, TRUE);
-
-  if (data->desktop_file)
+  if (data->pid_envvar)
     {
-      gchar pid[20];
+      pid_t pid = getpid ();
+      char buf[20];
+      int i;
 
-      g_setenv ("GIO_LAUNCHED_DESKTOP_FILE", data->desktop_file, TRUE);
-
-      g_snprintf (pid, 20, "%ld", (long)getpid ());
-      g_setenv ("GIO_LAUNCHED_DESKTOP_FILE_PID", pid, TRUE);
+      /* Write the pid into the space already reserved for it in the
+       * environment array. We can't use sprintf because it might
+       * malloc, so we do it by hand. It's simplest to write the pid
+       * out backwards first, then copy it over.
+       */
+      for (i = 0; pid; i++, pid /= 10)
+        buf[i] = (pid % 10) + '0';
+      for (i--; i >= 0; i--)
+        *(data->pid_envvar++) = buf[i];
+      *data->pid_envvar = '\0';
     }
 
   if (data->user_setup)
@@ -1012,7 +1242,7 @@ _g_desktop_app_info_launch_uris_internal (GAppInfo                   *appinfo,
   GDBusConnection *session_bus;
   gboolean completed = FALSE;
   GList *old_uris;
-  char **argv;
+  char **argv, **envp;
   int argc;
   ChildSetupData data;
 
@@ -1022,66 +1252,93 @@ _g_desktop_app_info_launch_uris_internal (GAppInfo                   *appinfo,
 
   session_bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
 
+  if (launch_context)
+    envp = g_app_launch_context_get_environment (launch_context);
+  else
+    envp = g_get_environ ();
+
   do
     {
       GPid pid;
       GList *launched_uris;
       GList *iter;
+      char *display, *sn_id;
 
       old_uris = uris;
       if (!expand_application_parameters (info, &uris,
-					  &argc, &argv, error))
-	goto out;
+                                          &argc, &argv, error))
+        goto out;
 
       /* Get the subset of URIs we're launching with this process */
       launched_uris = NULL;
       for (iter = old_uris; iter != NULL && iter != uris; iter = iter->next)
-	launched_uris = g_list_prepend (launched_uris, iter->data);
+        launched_uris = g_list_prepend (launched_uris, iter->data);
       launched_uris = g_list_reverse (launched_uris);
-      
+
       if (info->terminal && !prepend_terminal_to_vector (&argc, &argv))
-	{
-	  g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+        {
+          g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
                                _("Unable to find terminal required for application"));
-	  goto out;
-	}
+          goto out;
+        }
 
       data.user_setup = user_setup;
       data.user_setup_data = user_setup_data;
-      data.display = NULL;
-      data.sn_id = NULL;
-      data.desktop_file = info->filename;
 
+      if (info->filename)
+        {
+          envp = g_environ_setenv (envp,
+                                   "GIO_LAUNCHED_DESKTOP_FILE",
+                                   info->filename,
+                                   TRUE);
+          envp = g_environ_setenv (envp,
+                                   "GIO_LAUNCHED_DESKTOP_FILE_PID",
+                                   "XXXXXXXXXXXXXXXXXXXX", /* filled in child_setup */
+                                   TRUE);
+          data.pid_envvar = (char *)g_environ_getenv (envp, "GIO_LAUNCHED_DESKTOP_FILE_PID");
+        }
+      else
+        {
+          data.pid_envvar = NULL;
+        }
+
+      display = NULL;
+      sn_id = NULL;
       if (launch_context)
-	{
-	  GList *launched_files = create_files_for_uris (launched_uris);
+        {
+          GList *launched_files = create_files_for_uris (launched_uris);
 
-	  data.display = g_app_launch_context_get_display (launch_context,
-						           appinfo,
-						           launched_files);
+          display = g_app_launch_context_get_display (launch_context,
+                                                      appinfo,
+                                                      launched_files);
+          if (display)
+            envp = g_environ_setenv (envp, "DISPLAY", display, TRUE);
 
-	  if (info->startup_notify)
-	    data.sn_id = g_app_launch_context_get_startup_notify_id (launch_context,
-								     appinfo,
-								     launched_files);
-	  g_list_foreach (launched_files, (GFunc)g_object_unref, NULL);
-	  g_list_free (launched_files);
-	}
+          if (info->startup_notify)
+            {
+              sn_id = g_app_launch_context_get_startup_notify_id (launch_context,
+                                                                  appinfo,
+                                                                  launched_files);
+              envp = g_environ_setenv (envp, "DESKTOP_STARTUP_ID", sn_id, TRUE);
+            }
+
+          g_list_free_full (launched_files, g_object_unref);
+        }
 
       if (!g_spawn_async (info->path,
-			  argv,
-			  NULL,
-			  spawn_flags,
-			  child_setup,
-			  &data,
-			  &pid,
-			  error))
-	{
-	  if (data.sn_id)
-	    g_app_launch_context_launch_failed (launch_context, data.sn_id);
+                          argv,
+                          envp,
+                          spawn_flags,
+                          child_setup,
+                          &data,
+                          &pid,
+                          error))
+        {
+	  if (sn_id)
+	    g_app_launch_context_launch_failed (launch_context, sn_id);
 
-	  g_free (data.sn_id);
-	  g_free (data.display);
+	  g_free (display);
+	  g_free (sn_id);
 	  g_list_free (launched_uris);
 
 	  goto out;
@@ -1093,12 +1350,12 @@ _g_desktop_app_info_launch_uris_internal (GAppInfo                   *appinfo,
       notify_desktop_launch (session_bus,
 			     info,
 			     pid,
-			     data.display,
-			     data.sn_id,
+			     display,
+			     sn_id,
 			     launched_uris);
 
-      g_free (data.sn_id);
-      g_free (data.display);
+      g_free (display);
+      g_free (sn_id);
       g_list_free (launched_uris);
 
       g_strfreev (argv);
@@ -1116,13 +1373,14 @@ _g_desktop_app_info_launch_uris_internal (GAppInfo                   *appinfo,
        * the connection if we were the initial owner.
        */
       g_dbus_connection_flush (session_bus, NULL, NULL, NULL);
-      g_object_unref (session_bus);
     }
 
   completed = TRUE;
 
  out:
+  g_clear_object (&session_bus);
   g_strfreev (argv);
+  g_strfreev (envp);
 
   return completed;
 }
@@ -1182,8 +1440,7 @@ g_desktop_app_info_launch (GAppInfo           *appinfo,
   
   res = g_desktop_app_info_launch_uris (appinfo, uris, launch_context, error);
   
-  g_list_foreach  (uris, (GFunc)g_free, NULL);
-  g_list_free (uris);
+  g_list_free_full (uris, g_free);
   
   return res;
 }
@@ -1199,7 +1456,7 @@ g_desktop_app_info_launch (GAppInfo           *appinfo,
  * @user_setup_data: (closure user_setup): User data for @user_setup
  * @pid_callback: (scope call): Callback for child processes
  * @pid_callback_data: (closure pid_callback): User data for @callback
- * @error: a #GError
+ * @error: return location for a #GError, or %NULL
  *
  * This function performs the equivalent of g_app_info_launch_uris(),
  * but is intended primarily for operating system components that
@@ -1212,9 +1469,11 @@ g_desktop_app_info_launch (GAppInfo           *appinfo,
  *
  * This guarantee allows additional control over the exact environment
  * of the child processes, which is provided via a setup function
- * @setup, as well as the process identifier of each child process via
- * @pid_callback.  See g_spawn_async() for more information about the
- * semantics of the @setup function.
+ * @user_setup, as well as the process identifier of each child process
+ * via @pid_callback. See g_spawn_async() for more information about the
+ * semantics of the @user_setup function.
+ *
+ * Returns: %TRUE on successful launch, %FALSE otherwise.
  */
 gboolean
 g_desktop_app_info_launch_uris_as_manager (GDesktopAppInfo            *appinfo,
@@ -1238,26 +1497,26 @@ g_desktop_app_info_launch_uris_as_manager (GDesktopAppInfo            *appinfo,
 						   error);
 }
 
-G_LOCK_DEFINE_STATIC (g_desktop_env);
-static gchar *g_desktop_env = NULL;
-
 /**
  * g_desktop_app_info_set_desktop_env:
  * @desktop_env: a string specifying what desktop this is
  *
  * Sets the name of the desktop that the application is running in.
- * This is used by g_app_info_should_show() to evaluate the
+ * This is used by g_app_info_should_show() and
+ * g_desktop_app_info_get_show_in() to evaluate the
  * <literal>OnlyShowIn</literal> and <literal>NotShowIn</literal>
  * desktop entry fields.
  *
- * The <ulink url="http://standards.freedesktop.org/menu-spec/latest/">Desktop 
+ * The <ulink url="http://standards.freedesktop.org/menu-spec/latest/">Desktop
  * Menu specification</ulink> recognizes the following:
  * <simplelist>
  *   <member>GNOME</member>
  *   <member>KDE</member>
  *   <member>ROX</member>
  *   <member>XFCE</member>
- *   <member>Old</member> 
+ *   <member>LXDE</member>
+ *   <member>Unity</member>
+ *   <member>Old</member>
  * </simplelist>
  *
  * Should be called only once; subsequent calls are ignored.
@@ -1275,45 +1534,11 @@ static gboolean
 g_desktop_app_info_should_show (GAppInfo *appinfo)
 {
   GDesktopAppInfo *info = G_DESKTOP_APP_INFO (appinfo);
-  gboolean found;
-  const gchar *desktop_env;
-  int i;
 
   if (info->nodisplay)
     return FALSE;
 
-  G_LOCK (g_desktop_env);
-  desktop_env = g_desktop_env;
-  G_UNLOCK (g_desktop_env);
-
-  if (info->only_show_in)
-    {
-      if (desktop_env == NULL)
-	return FALSE;
-      
-      found = FALSE;
-      for (i = 0; info->only_show_in[i] != NULL; i++)
-	{
-	  if (strcmp (info->only_show_in[i], desktop_env) == 0)
-	    {
-	      found = TRUE;
-	      break;
-	    }
-	}
-      if (!found)
-	return FALSE;
-    }
-
-  if (info->not_show_in && desktop_env)
-    {
-      for (i = 0; info->not_show_in[i] != NULL; i++)
-	{
-	  if (strcmp (info->not_show_in[i], desktop_env) == 0)
-	    return FALSE;
-	}
-    }
-  
-  return TRUE;
+  return g_desktop_app_info_get_show_in (info, NULL);
 }
 
 typedef enum {
@@ -1362,9 +1587,8 @@ update_mimeapps_list (const char  *desktop_id,
 {
   char *dirname, *filename, *string;
   GKeyFile *key_file;
-  gboolean load_succeeded, res, explicit_default;
+  gboolean load_succeeded, res;
   char **old_list, **list;
-  GList *system_list;
   gsize length, data_size;
   char *data;
   int i, j, k;
@@ -1383,7 +1607,10 @@ update_mimeapps_list (const char  *desktop_id,
 
   key_file = g_key_file_new ();
   load_succeeded = g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, NULL);
-  if (!load_succeeded || !g_key_file_has_group (key_file, ADDED_ASSOCIATIONS_GROUP))
+  if (!load_succeeded ||
+      (!g_key_file_has_group (key_file, ADDED_ASSOCIATIONS_GROUP) &&
+       !g_key_file_has_group (key_file, REMOVED_ASSOCIATIONS_GROUP) &&
+       !g_key_file_has_group (key_file, DEFAULT_APPLICATIONS_GROUP)))
     {
       g_key_file_free (key_file);
       key_file = g_key_file_new ();
@@ -1399,8 +1626,6 @@ update_mimeapps_list (const char  *desktop_id,
     {
       content_types = g_key_file_get_keys (key_file, DEFAULT_APPLICATIONS_GROUP, NULL, NULL);
     }
-
-  explicit_default = FALSE;
 
   for (k = 0; content_types && content_types[k]; k++)
     {
@@ -1426,14 +1651,10 @@ update_mimeapps_list (const char  *desktop_id,
                                content_types[k],
                                NULL);
       else
-        {
-          g_key_file_set_string (key_file,
-                                 DEFAULT_APPLICATIONS_GROUP,
-                                 content_types[k],
-                                 string);
-
-          explicit_default = TRUE;
-        }
+        g_key_file_set_string (key_file,
+                               DEFAULT_APPLICATIONS_GROUP,
+                               content_types[k],
+                               string);
 
       g_free (string);
     }
@@ -1504,33 +1725,11 @@ update_mimeapps_list (const char  *desktop_id,
 			       content_types[k],
 			       NULL);
       else
-        {
-          g_key_file_set_string_list (key_file,
-                                      ADDED_ASSOCIATIONS_GROUP,
-                                      content_types[k],
-                                      (const char * const *)list, i);
+        g_key_file_set_string_list (key_file,
+                                    ADDED_ASSOCIATIONS_GROUP,
+                                    content_types[k],
+                                    (const char * const *)list, i);
 
-          /* if we had no explicit default set, we should add the system default to the
-           * list, to avoid overriding it with applications from this list.
-           */
-          if (!explicit_default)
-            {
-              system_list = get_all_desktop_entries_for_mime_type (content_type, (const char **) list, FALSE, NULL);
-
-              if (system_list != NULL)
-                {
-                  string = system_list->data;
-
-                  g_key_file_set_string (key_file,
-                                         DEFAULT_APPLICATIONS_GROUP,
-                                         content_types[k],
-                                         string);
-                }
-
-              g_list_free_full (system_list, g_free);
-            }
-        }
-   
       g_strfreev (list);
     }
   
@@ -1583,18 +1782,18 @@ update_mimeapps_list (const char  *desktop_id,
       g_strfreev (list);
     }
 
-  g_strfreev (content_types);  
+  g_strfreev (content_types);
 
   data = g_key_file_to_data (key_file, &data_size, error);
   g_key_file_free (key_file);
-  
+
   res = g_file_set_contents (filename, data, data_size, error);
 
   mime_info_cache_reload (NULL);
-			  
+
   g_free (filename);
   g_free (data);
-  
+
   return res;
 }
 
@@ -1607,6 +1806,13 @@ g_desktop_app_info_set_as_last_used_for_type (GAppInfo    *appinfo,
 
   if (!g_desktop_app_info_ensure_saved (info, error))
     return FALSE;
+
+  if (!info->desktop_id)
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           _("Application information lacks an identifier"));
+      return FALSE;
+    }
 
   /* both add support for the content type and set as last used */
   return update_mimeapps_list (info->desktop_id, content_type,
@@ -1623,8 +1829,15 @@ g_desktop_app_info_set_as_default_for_type (GAppInfo    *appinfo,
   GDesktopAppInfo *info = G_DESKTOP_APP_INFO (appinfo);
 
   if (!g_desktop_app_info_ensure_saved (info, error))
-    return FALSE;  
-  
+    return FALSE;
+
+  if (!info->desktop_id)
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           _("Application information lacks an identifier"));
+      return FALSE;
+    }
+
   return update_mimeapps_list (info->desktop_id, content_type,
                                UPDATE_MIME_SET_DEFAULT,
                                error);
@@ -1636,8 +1849,7 @@ update_program_done (GPid     pid,
 		     gpointer data)
 {
   /* Did the application exit correctly */
-  if (WIFEXITED (status) &&
-      WEXITSTATUS (status) == 0)
+  if (g_spawn_check_exit_status (status, NULL))
     {
       /* Here we could clean out any caches in use */
     }
@@ -1770,6 +1982,15 @@ g_desktop_app_info_remove_supports_type (GAppInfo    *appinfo,
                                error);
 }
 
+static const char **
+g_desktop_app_info_get_supported_types (GAppInfo *appinfo)
+{
+  GDesktopAppInfo *info = G_DESKTOP_APP_INFO (appinfo);
+
+  return (const char**) info->mime_types;
+}
+
+
 static gboolean
 g_desktop_app_info_ensure_saved (GDesktopAppInfo  *info,
 				 GError          **error)
@@ -1806,12 +2027,19 @@ g_desktop_app_info_ensure_saved (GDesktopAppInfo  *info,
   if (info->terminal) 
     g_key_file_set_boolean (key_file, G_KEY_FILE_DESKTOP_GROUP,
 			    G_KEY_FILE_DESKTOP_KEY_TERMINAL, TRUE);
+  if (info->nodisplay)
+    g_key_file_set_boolean (key_file, G_KEY_FILE_DESKTOP_GROUP,
+			    G_KEY_FILE_DESKTOP_KEY_NO_DISPLAY, TRUE);
 
   g_key_file_set_string (key_file, G_KEY_FILE_DESKTOP_GROUP,
 			 G_KEY_FILE_DESKTOP_KEY_EXEC, info->exec);
 
   g_key_file_set_string (key_file, G_KEY_FILE_DESKTOP_GROUP,
 			 G_KEY_FILE_DESKTOP_KEY_NAME, info->name);
+
+  if (info->generic_name != NULL)
+    g_key_file_set_string (key_file, G_KEY_FILE_DESKTOP_GROUP,
+			   GENERIC_NAME_KEY, info->generic_name);
 
   if (info->fullname != NULL)
     g_key_file_set_string (key_file, G_KEY_FILE_DESKTOP_GROUP,
@@ -1850,6 +2078,7 @@ g_desktop_app_info_ensure_saved (GDesktopAppInfo  *info,
   close (fd);
   
   res = g_file_set_contents (filename, data, data_size, error);
+  g_free (data);
   if (!res)
     {
       g_free (desktop_id);
@@ -1909,9 +2138,15 @@ g_desktop_app_info_delete (GAppInfo *appinfo)
  * @commandline: the commandline to use
  * @application_name: (allow-none): the application name, or %NULL to use @commandline
  * @flags: flags that can specify details of the created #GAppInfo
- * @error: a #GError location to store the error occuring, %NULL to ignore.
+ * @error: a #GError location to store the error occurring, %NULL to ignore.
  *
  * Creates a new #GAppInfo from the given information.
+ *
+ * Note that for @commandline, the quoting rules of the Exec key of the
+ * <ulink url="http://freedesktop.org/Standards/desktop-entry-spec">freedesktop.org Desktop
+ * Entry Specification</ulink> are applied. For example, if the @commandline contains
+ * percent-encoded URIs, the percent-character must be doubled in order to prevent it from
+ * being swallowed by Exec key unquoting. See the specification for exact quoting rules.
  *
  * Returns: (transfer full): new #GAppInfo for given command.
  **/
@@ -1984,6 +2219,7 @@ g_desktop_app_info_iface_init (GAppInfoIface *iface)
   iface->get_commandline = g_desktop_app_info_get_commandline;
   iface->get_display_name = g_desktop_app_info_get_display_name;
   iface->set_as_last_used_for_type = g_desktop_app_info_set_as_last_used_for_type;
+  iface->get_supported_types = g_desktop_app_info_get_supported_types;
 }
 
 static gboolean
@@ -2007,7 +2243,7 @@ app_info_in_list (GAppInfo *info,
  * those applications which claim to support the given content type exactly,
  * and not by MIME type subclassing.
  * Note that the first application of the list is the last used one, i.e.
- * the last one for which #g_app_info_set_as_last_used_for_type has been
+ * the last one for which g_app_info_set_as_last_used_for_type() has been
  * called.
  *
  * Returns: (element-type GAppInfo) (transfer full): #GList of #GAppInfos
@@ -2098,8 +2334,11 @@ g_app_info_get_fallback_for_type (const gchar *content_type)
 /**
  * g_app_info_get_all_for_type:
  * @content_type: the content type to find a #GAppInfo for
- * 
- * Gets a list of all #GAppInfos for a given content type.
+ *
+ * Gets a list of all #GAppInfos for a given content type,
+ * including the recommended and fallback #GAppInfos. See
+ * g_app_info_get_recommended_for_type() and
+ * g_app_info_get_fallback_for_type().
  *
  * Returns: (element-type GAppInfo) (transfer full): #GList of #GAppInfos
  *     for given @content_type or %NULL on error.
@@ -2150,12 +2389,13 @@ g_app_info_get_all_for_type (const char *content_type)
 
 /**
  * g_app_info_reset_type_associations:
- * @content_type: a content type 
+ * @content_type: a content type
  *
  * Removes all changes to the type associations done by
- * g_app_info_set_as_default_for_type(), 
- * g_app_info_set_as_default_for_extension(), 
- * g_app_info_add_supports_type() or g_app_info_remove_supports_type().
+ * g_app_info_set_as_default_for_type(),
+ * g_app_info_set_as_default_for_extension(),
+ * g_app_info_add_supports_type() or
+ * g_app_info_remove_supports_type().
  *
  * Since: 2.20
  */
@@ -2172,12 +2412,12 @@ g_app_info_reset_type_associations (const char *content_type)
  * @content_type: the content type to find a #GAppInfo for
  * @must_support_uris: if %TRUE, the #GAppInfo is expected to
  *     support URIs
- * 
- * Gets the #GAppInfo that corresponds to a given content type.
+ *
+ * Gets the default #GAppInfo for a given content type.
  *
  * Returns: (transfer full): #GAppInfo for given @content_type or
  *     %NULL on error.
- **/
+ */
 GAppInfo *
 g_app_info_get_default_for_type (const char *content_type,
 				 gboolean    must_support_uris)
@@ -2243,13 +2483,13 @@ g_app_info_get_default_for_type (const char *content_type,
  * g_app_info_get_default_for_uri_scheme:
  * @uri_scheme: a string containing a URI scheme.
  *
- * Gets the default application for launching applications 
- * using this URI scheme. A URI scheme is the initial part 
- * of the URI, up to but not including the ':', e.g. "http", 
+ * Gets the default application for handling URIs with
+ * the given URI scheme. A URI scheme is the initial part
+ * of the URI, up to but not including the ':', e.g. "http",
  * "ftp" or "sip".
- * 
+ *
  * Returns: (transfer full): #GAppInfo for given @uri_scheme or %NULL on error.
- **/
+ */
 GAppInfo *
 g_app_info_get_default_for_uri_scheme (const char *uri_scheme)
 {
@@ -2412,8 +2652,7 @@ destroy_info_cache_value (gpointer  key,
                           GList    *value, 
                           gpointer  data)
 {
-  g_list_foreach (value, (GFunc)g_free, NULL);
-  g_list_free (value);
+  g_list_free_full (value, g_free);
 }
 
 static void
@@ -2931,10 +3170,7 @@ mime_info_cache_free (MimeInfoCache *cache)
   if (cache == NULL)
     return;
   
-  g_list_foreach (cache->dirs,
-		  (GFunc) mime_info_cache_dir_free,
-		  NULL);
-  g_list_free (cache->dirs);
+  g_list_free_full (cache->dirs, (GDestroyNotify) mime_info_cache_dir_free);
   g_hash_table_destroy (cache->global_defaults_cache);
   g_free (cache);
 }
@@ -2997,10 +3233,12 @@ get_all_desktop_entries_for_mime_type (const char  *base_mime_type,
   GList *desktop_entries, *removed_entries, *list, *dir_list, *tmp;
   MimeInfoCacheDir *dir;
   char *mime_type, *default_entry = NULL;
+  char *old_default_entry = NULL;
   const char *entry;
   char **mime_types;
   char **default_entries;
   char **removed_associations;
+  gboolean already_found_handler;
   int i, j, k;
   GPtrArray *array;
   char **anc;
@@ -3052,6 +3290,11 @@ get_all_desktop_entries_for_mime_type (const char  *base_mime_type,
     {
       mime_type = mime_types[i];
 
+      /* This is true if we already found a handler for a more specific
+         mimetype. If its set we ignore any defaults for the less specific
+         mimetypes. */
+      already_found_handler = (desktop_entries != NULL);
+
       /* Go through all apps listed in user and system dirs */
       for (dir_list = mime_info_cache->dirs;
 	   dir_list != NULL;
@@ -3062,7 +3305,7 @@ get_all_desktop_entries_for_mime_type (const char  *base_mime_type,
           /* Pick the explicit default application if we got no result earlier
            * (ie, for more specific mime types)
            */
-          if (desktop_entries == NULL)
+          if (!already_found_handler)
             {
               entry = g_hash_table_lookup (dir->mimeapps_list_defaults_map, mime_type);
 
@@ -3087,7 +3330,12 @@ get_all_desktop_entries_for_mime_type (const char  *base_mime_type,
 	  /* Then system defaults (or old per-user config) (using removed associations from this dir or earlier) */
 	  default_entries = g_hash_table_lookup (dir->defaults_list_map, mime_type);
 	  for (j = 0; default_entries != NULL && default_entries[j] != NULL; j++)
-	    desktop_entries = append_desktop_entry (desktop_entries, default_entries[j], removed_entries);
+            {
+              if (default_entry == NULL && old_default_entry == NULL && !already_found_handler)
+                old_default_entry = g_strdup (default_entries[j]);
+
+              desktop_entries = append_desktop_entry (desktop_entries, default_entries[j], removed_entries);
+            }
 	}
 
       /* Go through all entries that support the mimetype */
@@ -3107,13 +3355,23 @@ get_all_desktop_entries_for_mime_type (const char  *base_mime_type,
 
   g_strfreev (mime_types);
 
+  /* If we have no default from mimeapps.list, take it from
+   * defaults.list intead.
+   *
+   * If we do have a default from mimeapps.list, free any one that came
+   * from defaults.list.
+   */
+  if (default_entry == NULL)
+    default_entry = old_default_entry;
+  else
+    g_free (old_default_entry);
+
   if (explicit_default != NULL)
     *explicit_default = default_entry;
   else
     g_free (default_entry);
 
-  g_list_foreach (removed_entries, (GFunc)g_free, NULL);
-  g_list_free (removed_entries);
+  g_list_free_full (removed_entries, g_free);
 
   desktop_entries = g_list_reverse (desktop_entries);
   
@@ -3121,6 +3379,8 @@ get_all_desktop_entries_for_mime_type (const char  *base_mime_type,
 }
 
 /* GDesktopAppInfoLookup interface: */
+
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 
 typedef GDesktopAppInfoLookupIface GDesktopAppInfoLookupInterface;
 G_DEFINE_INTERFACE (GDesktopAppInfoLookup, g_desktop_app_info_lookup, G_TYPE_OBJECT)
@@ -3153,10 +3413,33 @@ g_desktop_app_info_lookup_get_default_for_uri_scheme (GDesktopAppInfoLookup *loo
 						      const char            *uri_scheme)
 {
   GDesktopAppInfoLookupIface *iface;
-  
+
   g_return_val_if_fail (G_IS_DESKTOP_APP_INFO_LOOKUP (lookup), NULL);
 
   iface = G_DESKTOP_APP_INFO_LOOKUP_GET_IFACE (lookup);
 
   return (* iface->get_default_for_uri_scheme) (lookup, uri_scheme);
+}
+
+G_GNUC_END_IGNORE_DEPRECATIONS
+
+/**
+ * g_desktop_app_info_get_startup_wm_class:
+ * @info: a #GDesktopAppInfo that supports startup notify
+ *
+ * Retrieves the StartupWMClass field from @info. This represents the
+ * WM_CLASS property of the main window of the application, if launched
+ * through @info.
+ *
+ * Returns: (transfer none): the startup WM class, or %NULL if none is set
+ * in the desktop file.
+ *
+ * Since: 2.34
+ */
+const char *
+g_desktop_app_info_get_startup_wm_class (GDesktopAppInfo *info)
+{
+  g_return_val_if_fail (G_IS_DESKTOP_APP_INFO (info), NULL);
+
+  return info->startup_wm_class;
 }

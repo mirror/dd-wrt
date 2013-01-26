@@ -1,5 +1,18 @@
 <refentry id="gdbus" lang="en">
 
+<refentryinfo>
+  <title>gdbus</title>
+  <productname>GIO</productname>
+  <authorgroup>
+    <author>
+      <contrib>Developer</contrib>
+      <firstname>David</firstname>
+      <surname>Zeuthen</surname>
+      <email>zeuthen@gmail.com</email>
+    </author>
+  </authorgroup>
+</refentryinfo>
+
 <refmeta>
   <refentrytitle>gdbus</refentrytitle>
   <manvolnum>1</manvolnum>
@@ -8,7 +21,7 @@
 
 <refnamediv>
   <refname>gdbus</refname>
-  <refpurpose>Introspect and call remote objects</refpurpose>
+  <refpurpose>Tool for working with D-Bus objects</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv>
@@ -22,7 +35,15 @@
     </group>
     <arg choice="plain">--dest <replaceable>bus_name</replaceable></arg>
     <arg choice="plain">--object-path <replaceable>/path/to/object</replaceable></arg>
-    <arg choice="plain">--xml</arg>
+    <group>
+      <arg choice="plain">--xml</arg>
+    </group>
+    <group>
+      <arg choice="plain">--recurse</arg>
+    </group>
+    <group>
+      <arg choice="plain">--only-properties</arg>
+    </group>
   </cmdsynopsis>
   <cmdsynopsis>
     <command>gdbus</command>
@@ -48,6 +69,25 @@
     <arg choice="plain">--dest <replaceable>bus_name</replaceable></arg>
     <arg choice="plain">--object-path <replaceable>/path/to/object</replaceable></arg>
     <arg choice="plain">--method <replaceable>org.project.InterfaceName.MethodName</replaceable></arg>
+    <group>
+      <arg choice="plain">--timeout <replaceable>seconds</replaceable></arg>
+    </group>
+    <arg choice="plain">ARG1</arg>
+    <arg choice="plain" rep="repeat">ARG2</arg>
+  </cmdsynopsis>
+  <cmdsynopsis>
+    <command>gdbus</command>
+    <arg choice="plain">emit</arg>
+    <group>
+      <arg choice="plain">--system</arg>
+      <arg choice="plain">--session</arg>
+      <arg choice="plain">--address <replaceable>address</replaceable></arg>
+    </group>
+    <arg choice="plain">--object-path <replaceable>/path/to/object</replaceable></arg>
+    <arg choice="plain">--signal <replaceable>org.project.InterfaceName.SignalName</replaceable></arg>
+    <group>
+      <arg choice="plain">--dest <replaceable>unique_bus_name</replaceable></arg>
+    </group>
     <arg choice="plain">ARG1</arg>
     <arg choice="plain" rep="repeat">ARG2</arg>
   </cmdsynopsis>
@@ -60,10 +100,10 @@
 <refsect1>
   <title>Description</title>
   <para>
-    <command>gdbus</command> offers a simple commandline utility for
-    introspecting and calling methods on remote objects.
+    <command>gdbus</command> is a simple tool for working with D-Bus objects.
   </para>
-  <refsect2>
+</refsect1>
+<refsect1>
     <title>Commands</title>
     <variablelist>
       <varlistentry>
@@ -72,7 +112,14 @@
           Prints out interfaces and property values for a remote object.
           For this to work, the owner of the object needs to implement the
           <literal>org.freedesktop.DBus.Introspectable</literal> interface.
-        </para></listitem>
+          If the <option>--xml</option> option is used, the returned
+          introspection XML is printed, otherwise a parsed pretty
+          representation is printed.
+          The <option>--recurse</option> option can be used to
+          introspect children (and their children and so on) and the
+          <option>--only-properties</option> option can be used to
+          only print the interfaces with properties.
+          </para></listitem>
       </varlistentry>
       <varlistentry>
         <term><option>monitor</option></term>
@@ -93,13 +140,20 @@
         </para></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>emit</option></term>
+        <listitem><para>
+          Emits a signal. Each argument to include in the signal must be specified as a serialized
+          <link linkend="GVariant"><type>GVariant</type></link> except that strings do
+          not need explicit quotes.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>help</option></term>
         <listitem><para>
           Prints help and exit.
         </para></listitem>
       </varlistentry>
     </variablelist>
-  </refsect2>
 </refsect1>
 
 <refsect1>
@@ -162,6 +216,40 @@ node /org/freedesktop/NetworkManager/Devices/0 {
       readonly s Driver = 'e1000e';
       readwrite s Interface = 'eth0';
       readonly s Udi = '/sys/devices/pci0000:00/0000:00:19.0/net/eth0';
+  };
+};
+</programlisting>
+<para>
+  The <option>--recurse</option> and <option>--only-properties</option> options can be useful when wanting to inspect all objects owned by a particular process:
+</para>
+<programlisting>
+$ gdbus introspect --system --dest org.freedesktop.UPower --object-path / --recurse  --only-properties 
+node / {
+  node /org {
+    node /org/freedesktop {
+      node /org/freedesktop/UPower {
+        interface org.freedesktop.UPower {
+          properties:
+            readonly b IsDocked = true;
+            readonly b LidForceSleep = false;
+            readonly b LidIsPresent = false;
+            readonly b LidIsClosed = false;
+            readonly b OnLowBattery = false;
+            readonly b OnBattery = false;
+            readonly b CanHibernate = true;
+            readonly b CanSuspend = true;
+            readonly s DaemonVersion = '0.9.10';
+        };
+        node /org/freedesktop/UPower/Policy {
+        };
+        node /org/freedesktop/UPower/Wakeups {
+          interface org.freedesktop.UPower.Wakeups {
+            properties:
+              readonly b HasCapability = true;
+          };
+        };
+      };
+    };
   };
 };
 </programlisting>
@@ -235,18 +323,24 @@ The name org.freedesktop.NetworkManager is owned by :1.5
 /org/freedesktop/NetworkManager/AccessPoint/4141: org.freedesktop.NetworkManager.AccessPoint.PropertiesChanged ({'Strength': &lt;byte 0x64&gt;},)
 </programlisting>
 
+<para>
+  Emitting a signal:
+</para>
+<programlisting>
+$ gdbus emit --session --object-path /foo --signal org.bar.Foo "['foo', 'bar', 'baz']"
+</programlisting>
+
+<para>
+  Emitting a signal to a specific process:
+</para>
+<programlisting>
+$ gdbus emit --session --object-path /bar --signal org.bar.Bar someString --dest :1.42
+</programlisting>
+
 </refsect1>
 
 <refsect1>
-  <title>AUTHOR</title>
-  <para>
-    Written by David Zeuthen <email>zeuthen@gmail.com</email> with
-    a lot of help from many others.
-  </para>
-</refsect1>
-
-<refsect1>
-  <title>BUGS</title>
+  <title>Bugs</title>
   <para>
     Please send bug reports to either the distribution bug tracker
     or the upstream bug tracker at
@@ -255,7 +349,7 @@ The name org.freedesktop.NetworkManager is owned by :1.5
 </refsect1>
 
 <refsect1>
-  <title>SEE ALSO</title>
+  <title>See Also</title>
   <para>
     <citerefentry>
       <refentrytitle>dbus-send</refentrytitle><manvolnum>1</manvolnum>

@@ -48,6 +48,9 @@ gpointer               g_dbus_method_invocation_get_user_data        (GDBusMetho
 
 void                   g_dbus_method_invocation_return_value         (GDBusMethodInvocation *invocation,
                                                                       GVariant              *parameters);
+void                   g_dbus_method_invocation_return_value_with_unix_fd_list (GDBusMethodInvocation *invocation,
+                                                                                GVariant              *parameters,
+                                                                                GUnixFDList           *fd_list);
 void                   g_dbus_method_invocation_return_error         (GDBusMethodInvocation *invocation,
                                                                       GQuark                 domain,
                                                                       gint                   code,
@@ -64,6 +67,8 @@ void                   g_dbus_method_invocation_return_error_literal (GDBusMetho
                                                                       const gchar           *message);
 void                   g_dbus_method_invocation_return_gerror        (GDBusMethodInvocation *invocation,
                                                                       const GError          *error);
+void                   g_dbus_method_invocation_take_error           (GDBusMethodInvocation *invocation,
+                                                                      GError                *error);
 void                   g_dbus_method_invocation_return_dbus_error    (GDBusMethodInvocation *invocation,
                                                                       const gchar           *error_name,
                                                                       const gchar           *error_message);

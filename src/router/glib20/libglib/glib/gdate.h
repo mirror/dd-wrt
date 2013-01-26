@@ -24,7 +24,7 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -175,6 +175,7 @@ void         g_date_set_time_t            (GDate       *date,
 void         g_date_set_time_val          (GDate       *date,
 					   GTimeVal    *timeval);
 #ifndef G_DISABLE_DEPRECATED
+GLIB_DEPRECATED_FOR(g_date_set_time_t)
 void         g_date_set_time              (GDate       *date,
                                            GTime        time_);
 #endif

@@ -936,16 +936,11 @@ static void
 test_dispatch (const gchar *object_path)
 {
   GThread *thread;
-  GError *error;
 
   /* run this in a thread to avoid deadlocks */
-  error = NULL;
-  thread = g_thread_create (test_dispatch_thread_func,
-                            (gpointer) object_path,
-                            TRUE,
-                            &error);
-  g_assert_no_error (error);
-  g_assert (thread != NULL);
+  thread = g_thread_new ("test_dispatch",
+                         test_dispatch_thread_func,
+                         (gpointer) object_path);
   g_main_loop_run (loop);
   g_thread_join (thread);
 }
@@ -1098,6 +1093,7 @@ test_object_registration (void)
 
   /* unregister it via the id */
   g_assert (g_dbus_connection_unregister_object (c, registration_id));
+  g_main_context_iteration (NULL, FALSE);
   g_assert_cmpint (data.num_unregistered_calls, ==, 1);
   intern2_foo_reg_id = 0;
 
@@ -1153,6 +1149,7 @@ test_object_registration (void)
   /* unregister it, then register it again */
   g_assert_cmpint (data.num_unregistered_subtree_calls, ==, 0);
   g_assert (g_dbus_connection_unregister_subtree (c, subtree_registration_id));
+  g_main_context_iteration (NULL, FALSE);
   g_assert_cmpint (data.num_unregistered_subtree_calls, ==, 1);
   subtree_registration_id = g_dbus_connection_register_subtree (c,
                                                                 "/foo/boss/executives",
@@ -1344,13 +1341,14 @@ test_object_registration (void)
 
   /* To prevent from exiting and attaching a D-Bus tool like D-Feet; uncomment: */
 #if 0
-  g_debug ("Point D-feet or other tool at: %s", session_bus_get_temporary_address());
+  g_debug ("Point D-feet or other tool at: %s", g_test_dbus_get_temporary_address());
   g_main_loop_run (loop);
 #endif
 
   /* check that unregistering the subtree handler works */
   g_assert_cmpint (data.num_unregistered_subtree_calls, ==, 1);
   g_assert (g_dbus_connection_unregister_subtree (c, subtree_registration_id));
+  g_main_context_iteration (NULL, FALSE);
   g_assert_cmpint (data.num_unregistered_subtree_calls, ==, 2);
   nodes = get_nodes_at (c, "/foo/boss/executives");
   g_assert (nodes != NULL);
@@ -1370,6 +1368,7 @@ test_object_registration (void)
   g_assert (g_dbus_connection_unregister_object (c, non_subtree_object_path_bar_reg_id));
   g_assert (g_dbus_connection_unregister_object (c, non_subtree_object_path_foo_reg_id));
 
+  g_main_context_iteration (NULL, FALSE);
   g_assert_cmpint (data.num_unregistered_calls, ==, num_successful_registrations);
 
   /* check that we no longer export any objects - TODO: it looks like there's a bug in
@@ -1382,6 +1381,144 @@ test_object_registration (void)
   g_strfreev (nodes);
 #endif
 
+  g_object_unref (c);
+}
+
+static const GDBusInterfaceInfo test_interface_info1 =
+{
+  -1,
+  "org.example.Foo",
+  (GDBusMethodInfo **) NULL,
+  (GDBusSignalInfo **) NULL,
+  (GDBusPropertyInfo **) NULL,
+  NULL,
+};
+
+static const GDBusInterfaceInfo test_interface_info2 =
+{
+  -1,
+  "org.freedesktop.DBus.Properties",
+  (GDBusMethodInfo **) NULL,
+  (GDBusSignalInfo **) NULL,
+  (GDBusPropertyInfo **) NULL,
+  NULL,
+};
+
+static void
+check_interfaces (GDBusConnection  *c,
+                  const gchar      *object_path,
+                  const gchar     **interfaces)
+{
+  GError *error;
+  GDBusProxy *proxy;
+  gchar *xml_data;
+  GDBusNodeInfo *node_info;
+  gint i, j;
+
+  error = NULL;
+  proxy = g_dbus_proxy_new_sync (c,
+                                 G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
+                                 G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
+                                 NULL,
+                                 g_dbus_connection_get_unique_name (c),
+                                 object_path,
+                                 "org.freedesktop.DBus.Introspectable",
+                                 NULL,
+                                 &error);
+  g_assert_no_error (error);
+  g_assert (proxy != NULL);
+
+  /* do this async to avoid libdbus-1 deadlocks */
+  xml_data = NULL;
+  g_dbus_proxy_call (proxy,
+                     "Introspect",
+                     NULL,
+                     G_DBUS_CALL_FLAGS_NONE,
+                     -1,
+                     NULL,
+                     (GAsyncReadyCallback) introspect_callback,
+                     &xml_data);
+  g_main_loop_run (loop);
+  g_assert (xml_data != NULL);
+
+  node_info = g_dbus_node_info_new_for_xml (xml_data, &error);
+  g_assert_no_error (error);
+  g_assert (node_info != NULL);
+
+  g_assert (node_info->interfaces != NULL);
+  for (i = 0; node_info->interfaces[i]; i++) ;
+#if 0
+  if (g_strv_length ((gchar**)interfaces) != i - 1)
+    {
+      g_print ("expected ");
+      for (i = 0; interfaces[i]; i++)
+        g_print ("%s ", interfaces[i]);
+      g_print ("\ngot ");
+      for (i = 0; node_info->interfaces[i]; i++)
+        g_print ("%s ", node_info->interfaces[i]->name);
+      g_print ("\n");
+    }
+#endif
+  g_assert_cmpint (g_strv_length ((gchar**)interfaces), ==, i - 1);
+
+  for (i = 0; interfaces[i]; i++)
+    {
+      for (j = 0; node_info->interfaces[j]; j++)
+        {
+          if (strcmp (interfaces[i], node_info->interfaces[j]->name) == 0)
+            goto found;
+        }
+
+      g_assert_not_reached ();
+
+ found: ;
+    }
+
+  g_object_unref (proxy);
+  g_free (xml_data);
+  g_dbus_node_info_unref (node_info);
+}
+
+static void
+test_registered_interfaces (void)
+{
+  GError *error;
+  guint id1, id2;
+  const gchar *interfaces[] = {
+    "org.example.Foo",
+    "org.freedesktop.DBus.Properties",
+    "org.freedesktop.DBus.Introspectable",
+    NULL,
+  };
+
+  error = NULL;
+  c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+  g_assert_no_error (error);
+  g_assert (c != NULL);
+
+  id1 = g_dbus_connection_register_object (c,
+                                           "/test",
+                                           (GDBusInterfaceInfo *) &test_interface_info1,
+                                           NULL,
+                                           NULL,
+                                           NULL,
+                                           &error);
+  g_assert_no_error (error);
+  g_assert (id1 > 0);
+  id2 = g_dbus_connection_register_object (c,
+                                           "/test",
+                                           (GDBusInterfaceInfo *) &test_interface_info2,
+                                           NULL,
+                                           NULL,
+                                           NULL,
+                                           &error);
+  g_assert_no_error (error);
+  g_assert (id2 > 0);
+
+  check_interfaces (c, "/test", interfaces);
+
+  g_assert (g_dbus_connection_unregister_object (c, id1));
+  g_assert (g_dbus_connection_unregister_object (c, id2));
   g_object_unref (c);
 }
 
@@ -1400,20 +1537,11 @@ main (int   argc,
   /* all the tests rely on a shared main loop */
   loop = g_main_loop_new (NULL, FALSE);
 
-  /* all the tests use a session bus with a well-known address that we can bring up and down
-   * using session_bus_up() and session_bus_down().
-   */
-  g_unsetenv ("DISPLAY");
-  g_setenv ("DBUS_SESSION_BUS_ADDRESS", session_bus_get_temporary_address (), TRUE);
-
   session_bus_up ();
 
-  /* TODO: wait a bit for the bus to come up.. ideally session_bus_up() won't return
-   * until one can connect to the bus but that's not how things work right now
-   */
-  usleep (500 * 1000);
-
   g_test_add_func ("/gdbus/object-registration", test_object_registration);
+  g_test_add_func ("/gdbus/registered-interfaces", test_registered_interfaces);
+
   /* TODO: check that we spit out correct introspection data */
   /* TODO: check that registering a whole subtree works */
 

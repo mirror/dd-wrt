@@ -193,6 +193,7 @@ check_utf8_to_ucs4 (const char     *utf8,
       g_assert (result);
       for (i = 0; i <= items_written; i++)
 	g_assert (result[i] == ucs4[i]);
+      g_error_free (error3);
     }
   else if (error_pos)
     {
@@ -333,6 +334,7 @@ check_utf8_to_utf16 (const char      *utf8,
       g_assert (result);
       for (i = 0; i <= items_written; i++)
 	g_assert (result[i] == utf16[i]);
+      g_error_free (error3);
     }
   else if (error_pos)
     {
@@ -407,6 +409,7 @@ check_utf16_to_utf8 (const gunichar2 *utf16,
       g_assert (items_written == utf8_len);
       g_assert (result);
       g_assert (strcmp (result, utf8) == 0);
+      g_error_free (error3);
     }
   else if (error_pos)
     {
@@ -549,6 +552,7 @@ check_utf16_to_ucs4 (const gunichar2 *utf16,
       g_assert (result);
       for (i = 0; i <= items_written; i++)
 	g_assert (result[i] == ucs4[i]);
+      g_error_free (error3);
     }
   else if (error_pos)
     {
@@ -650,15 +654,66 @@ test_unicode_conversions (void)
   check_ucs4_to_utf16 (ucs4, 3, utf16, 0, 2);
 }
 
+static void
+test_filename_utf8 (void)
+{
+  const gchar *filename = "/my/path/to/foo";
+  gchar *utf8;
+  gchar *back;
+  GError *error;
+
+  error = NULL;
+  utf8 = g_filename_to_utf8 (filename, -1, NULL, NULL, &error);
+  g_assert_no_error (error);
+  back = g_filename_from_utf8 (utf8, -1, NULL, NULL, &error);
+  g_assert_no_error (error);
+  g_assert_cmpstr (back, ==, filename);
+
+  g_free (utf8);
+  g_free (back);
+}
+
+static void
+test_filename_display (void)
+{
+  const gchar *filename = "/my/path/to/foo";
+  char *display;
+
+  display = g_filename_display_basename (filename);
+  g_assert_cmpstr (display, ==, "foo");
+
+  g_free (display);
+}
+
+static void
+test_no_conv (void)
+{
+  gchar *in = "";
+  gchar *out G_GNUC_UNUSED;
+  gsize bytes_read = 0;
+  gsize bytes_written = 0;
+  GError *error = NULL;
+
+  out = g_convert (in, -1, "XXX", "UVZ",
+                   &bytes_read, &bytes_written, &error);
+
+  /* error code is unreliable, since we mishandle errno there */
+  g_assert (error && error->domain == G_CONVERT_ERROR);
+  g_error_free (error);
+}
+
 int
 main (int argc, char *argv[])
 {
   g_test_init (&argc, &argv, NULL);
 
+  g_test_add_func ("/conversion/no-conv", test_no_conv);
   g_test_add_func ("/conversion/iconv-state", test_iconv_state);
   g_test_add_func ("/conversion/illegal-sequence", test_one_half);
   g_test_add_func ("/conversion/byte-order", test_byte_order);
   g_test_add_func ("/conversion/unicode", test_unicode_conversions);
+  g_test_add_func ("/conversion/filename-utf8", test_filename_utf8);
+  g_test_add_func ("/conversion/filename-display", test_filename_display);
 
   return g_test_run ();
 }

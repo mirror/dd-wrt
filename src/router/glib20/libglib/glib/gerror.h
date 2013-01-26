@@ -18,7 +18,7 @@
  *   Boston, MA 02111-1307, USA.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -31,6 +31,15 @@
 
 G_BEGIN_DECLS
 
+/**
+ * GError:
+ * @domain: error domain, e.g. #G_FILE_ERROR
+ * @code: error code, e.g. %G_FILE_ERROR_NOENT
+ * @message: human-readable informative error message
+ *
+ * The <structname>GError</structname> structure contains
+ * information about an error that has occurred.
+ */
 typedef struct _GError GError;
 
 struct _GError

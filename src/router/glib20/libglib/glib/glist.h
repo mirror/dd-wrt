@@ -24,7 +24,7 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -32,6 +32,7 @@
 #define __G_LIST_H__
 
 #include <glib/gmem.h>
+#include <glib/gnode.h>
 
 G_BEGIN_DECLS
 
@@ -81,6 +82,12 @@ GList*   g_list_delete_link             (GList            *list,
 					 GList            *link_) G_GNUC_WARN_UNUSED_RESULT;
 GList*   g_list_reverse                 (GList            *list) G_GNUC_WARN_UNUSED_RESULT;
 GList*   g_list_copy                    (GList            *list) G_GNUC_WARN_UNUSED_RESULT;
+
+GLIB_AVAILABLE_IN_2_34
+GList*   g_list_copy_deep               (GList            *list,
+					 GCopyFunc         func,
+					 gpointer          user_data) G_GNUC_WARN_UNUSED_RESULT;
+
 GList*   g_list_nth                     (GList            *list,
 					 guint             n);
 GList*   g_list_nth_prev                (GList            *list,
@@ -111,11 +118,6 @@ gpointer g_list_nth_data                (GList            *list,
 
 #define g_list_previous(list)	        ((list) ? (((GList *)(list))->prev) : NULL)
 #define g_list_next(list)	        ((list) ? (((GList *)(list))->next) : NULL)
-
-#ifndef G_DISABLE_DEPRECATED
-void     g_list_push_allocator          (gpointer          allocator);
-void     g_list_pop_allocator           (void);
-#endif
 
 G_END_DECLS
 

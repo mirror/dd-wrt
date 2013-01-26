@@ -11,100 +11,90 @@ guchar
 
 <SUBSECTION>
 gint
+G_MININT
+G_MAXINT
 guint
+G_MAXUINT
 gshort
+G_MINSHORT
+G_MAXSHORT
 gushort
+G_MAXUSHORT
 glong
+G_MINLONG
+G_MAXLONG
 gulong
+G_MAXULONG
 
 <SUBSECTION>
 gint8
+G_MININT8
+G_MAXINT8
 guint8
+G_MAXUINT8
 gint16
+G_MININT16
+G_MAXINT16
+G_GINT16_MODIFIER
+G_GINT16_FORMAT
 guint16
+G_MAXUINT16
+G_GUINT16_FORMAT
 gint32
+G_MININT32
+G_MAXINT32
+G_GINT32_MODIFIER
+G_GINT32_FORMAT
 guint32
-
-<SUBSECTION>
-G_HAVE_GINT64
+G_MAXUINT32
+G_GUINT32_FORMAT
 gint64
-guint64
+G_MININT64
+G_MAXINT64
+G_GINT64_MODIFIER
+G_GINT64_FORMAT
 G_GINT64_CONSTANT
+guint64
+G_MAXUINT64
+G_GUINT64_FORMAT
 G_GUINT64_CONSTANT
 
 <SUBSECTION>
 gfloat
+G_MINFLOAT
+G_MAXFLOAT
 gdouble
+G_MINDOUBLE
+G_MAXDOUBLE
 
 <SUBSECTION>
 gsize
+G_MAXSIZE
+G_GSIZE_MODIFIER
+G_GSIZE_FORMAT
 gssize
+G_MINSSIZE
+G_MAXSSIZE
+G_GSSIZE_FORMAT
 goffset
+G_MINOFFSET
+G_MAXOFFSET
+G_GOFFSET_MODIFIER
+G_GOFFSET_FORMAT
 G_GOFFSET_CONSTANT
 
 <SUBSECTION>
 gintptr
+G_GINTPTR_MODIFIER
+G_GINTPTR_FORMAT
 guintptr
+G_GUINTPTR_FORMAT
 
 <SUBSECTION Private>
 GLIB_SIZEOF_VOID_P
 GLIB_SIZEOF_LONG
 GLIB_SIZEOF_SIZE_T
-</SECTION>
-
-<SECTION>
-<TITLE>Limits of Basic Types</TITLE>
-<FILE>limits</FILE>
-G_MININT
-G_MAXINT
-G_MAXUINT
-
-<SUBSECTION>
-G_MINSHORT
-G_MAXSHORT
-G_MAXUSHORT
-
-<SUBSECTION>
-G_MINLONG
-G_MAXLONG
-G_MAXULONG
-
-<SUBSECTION>
-G_MININT8
-G_MAXINT8
-G_MAXUINT8
-
-<SUBSECTION>
-G_MININT16
-G_MAXINT16
-G_MAXUINT16
-
-<SUBSECTION>
-G_MININT32
-G_MAXINT32
-G_MAXUINT32
-
-<SUBSECTION>
-G_MININT64
-G_MAXINT64
-G_MAXUINT64
-
-<SUBSECTION>
-G_MAXSIZE
-G_MINSSIZE
-G_MAXSSIZE
-
-<SUBSECTION>
-G_MINOFFSET
-G_MAXOFFSET
-
-<SUBSECTION>
-G_MINFLOAT
-G_MAXFLOAT
-
-<SUBSECTION>
-G_MINDOUBLE
-G_MAXDOUBLE
+G_HAVE_GINT64
 </SECTION>
 
 <SECTION>
@@ -122,6 +112,15 @@ GLIB_MAJOR_VERSION
 GLIB_MINOR_VERSION
 GLIB_MICRO_VERSION
 GLIB_CHECK_VERSION
+
+<SUBSECTION>
+GLIB_VERSION_2_26
+GLIB_VERSION_2_28
+GLIB_VERSION_2_30
+GLIB_VERSION_2_32
+GLIB_VERSION_MIN_REQUIRED
+GLIB_VERSION_MAX_ALLOWED
+GLIB_DISABLE_DEPRECATION_WARNINGS
 </SECTION>
 
 <SECTION>
@@ -165,6 +164,8 @@ G_MEM_ALIGN
 <SUBSECTION>
 G_CONST_RETURN
 
+<SUBSECTION>
+G_N_ELEMENTS
 </SECTION>
 
 <SECTION>
@@ -303,7 +304,6 @@ GFloatIEEE754
 GDoubleIEEE754
 
 <SUBSECTION>
-<SUBSECTION>
 G_E
 G_LN2
 G_LN10
@@ -328,15 +328,13 @@ G_BEGIN_DECLS
 G_END_DECLS
 
 <SUBSECTION>
-G_N_ELEMENTS
-
-<SUBSECTION>
 G_VA_COPY
 
 <SUBSECTION>
 G_STRINGIFY
 G_PASTE
 G_STATIC_ASSERT
+G_STATIC_ASSERT_EXPR
 
 <SUBSECTION>
 G_GNUC_EXTENSION
@@ -347,6 +345,8 @@ G_GNUC_ALLOC_SIZE
 G_GNUC_ALLOC_SIZE2
 G_GNUC_DEPRECATED
 G_GNUC_DEPRECATED_FOR
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+G_GNUC_END_IGNORE_DEPRECATIONS
 G_GNUC_NORETURN
 G_GNUC_UNUSED
 G_GNUC_PRINTF
@@ -362,31 +362,17 @@ G_GNUC_INTERNAL
 G_GNUC_MAY_ALIAS
 
 <SUBSECTION>
+G_DEPRECATED
+G_DEPRECATED_FOR
+G_UNAVAILABLE
+
+<SUBSECTION>
 G_LIKELY
 G_UNLIKELY
 
 <SUBSECTION>
 G_STRLOC
 G_STRFUNC
-
-<SUBSECTION>
-G_GINT16_MODIFIER
-G_GINT16_FORMAT
-G_GUINT16_FORMAT
-G_GINT32_MODIFIER
-G_GINT32_FORMAT
-G_GUINT32_FORMAT
-G_GINT64_MODIFIER
-G_GINT64_FORMAT
-G_GUINT64_FORMAT
-G_GSIZE_MODIFIER
-G_GSIZE_FORMAT
-G_GSSIZE_FORMAT
-G_GOFFSET_MODIFIER
-G_GOFFSET_FORMAT
-G_GINTPTR_MODIFIER
-G_GINTPTR_FORMAT
-G_GUINTPTR_FORMAT
 
 <SUBSECTION Private>
 GLIB_VAR
@@ -401,6 +387,8 @@ G_HAVE_GNUC_VARARGS
 G_HAVE_ISO_VARARGS
 G_HAVE_GROWING_STACK
 G_VA_COPY_AS_ARRAY
+GLIB_DEPRECATED
+GLIB_DEPRECATED_FOR
 </SECTION>
 
 <SECTION>
@@ -446,6 +434,10 @@ G_PRIORITY_DEFAULT_IDLE
 G_PRIORITY_LOW
 
 <SUBSECTION>
+G_SOURCE_CONTINUE
+G_SOURCE_REMOVE
+
+<SUBSECTION>
 GMainContext
 g_main_context_new
 g_main_context_ref
@@ -480,6 +472,7 @@ g_main_context_invoke_full
 
 <SUBSECTION>
 g_main_context_get_thread_default
+g_main_context_ref_thread_default
 g_main_context_push_thread_default
 g_main_context_pop_thread_default
 
@@ -564,46 +557,130 @@ G_WIN32_MSG_HANDLE
 g_idle_funcs
 g_timeout_funcs
 g_child_watch_funcs
+GSourcePrivate
 </SECTION>
+
 
 <SECTION>
 <TITLE>Threads</TITLE>
 <FILE>threads</FILE>
 <SUBSECTION>
-G_THREADS_ENABLED
-G_THREADS_IMPL_POSIX
-G_THREADS_IMPL_NONE
-
-<SUBSECTION>
 G_THREAD_ERROR
 GThreadError
 
 <SUBSECTION>
-GThreadFunctions
+GThread
+GThreadFunc
+g_thread_new
+g_thread_try_new
+g_thread_ref
+g_thread_unref
+g_thread_join
+g_thread_yield
+g_thread_exit
+g_thread_self
+
+<SUBSECTION>
+GMutex
+g_mutex_init
+g_mutex_clear
+g_mutex_lock
+g_mutex_trylock
+g_mutex_unlock
+
+<SUBSECTION>
+G_LOCK_DEFINE
+G_LOCK_DEFINE_STATIC
+G_LOCK_EXTERN
+G_LOCK
+G_TRYLOCK
+G_UNLOCK
+
+<SUBSECTION>
+GRecMutex
+g_rec_mutex_init
+g_rec_mutex_clear
+g_rec_mutex_lock
+g_rec_mutex_trylock
+g_rec_mutex_unlock
+
+<SUBSECTION>
+GRWLock
+g_rw_lock_init
+g_rw_lock_clear
+g_rw_lock_writer_lock
+g_rw_lock_writer_trylock
+g_rw_lock_writer_unlock
+g_rw_lock_reader_lock
+g_rw_lock_reader_trylock
+g_rw_lock_reader_unlock
+
+<SUBSECTION>
+GCond
+g_cond_init
+g_cond_clear
+g_cond_wait
+g_cond_timed_wait
+g_cond_wait_until
+g_cond_signal
+g_cond_broadcast
+
+<SUBSECTION>
+GPrivate
+G_PRIVATE_INIT
+g_private_get
+g_private_set
+g_private_replace
+
+<SUBSECTION>
+GOnce
+GOnceStatus
+G_ONCE_INIT
+g_once
+g_once_init_enter
+g_once_init_leave
+
+<SUBSECTION>
+g_bit_lock
+g_bit_trylock
+g_bit_unlock
+g_pointer_bit_lock
+g_pointer_bit_trylock
+g_pointer_bit_unlock
+
+<SUBSECTION Private>
+G_LOCK_NAME
+atexit
+g_thread_error_quark
+g_once_impl
+</SECTION>
+
+<SECTION>
+<TITLE>Deprecated Thread APIs</TITLE>
+<FILE>threads-deprecated</FILE>
+
+<SUBSECTION>
+G_THREADS_IMPL_POSIX
+G_THREADS_IMPL_WIN32
+
+<SUBSECTION>
 g_thread_init
 g_thread_supported
 g_thread_get_initialized
 
 <SUBSECTION>
-GThreadFunc
-GThreadPriority
-GThread
 g_thread_create
 g_thread_create_full
-g_thread_self
-g_thread_join
+GThreadPriority
 g_thread_set_priority
-g_thread_yield
-g_thread_exit
 g_thread_foreach
 
 <SUBSECTION>
-GMutex
 g_mutex_new
-g_mutex_lock
-g_mutex_trylock
-g_mutex_unlock
 g_mutex_free
+g_cond_new
+g_cond_free
+g_private_new
 
 <SUBSECTION>
 GStaticMutex
@@ -614,14 +691,6 @@ g_static_mutex_trylock
 g_static_mutex_unlock
 g_static_mutex_get_mutex
 g_static_mutex_free
-
-<SUBSECTION>
-G_LOCK_DEFINE
-G_LOCK_DEFINE_STATIC
-G_LOCK_EXTERN
-G_LOCK
-G_TRYLOCK
-G_UNLOCK
 
 <SUBSECTION>
 GStaticRecMutex
@@ -647,21 +716,6 @@ g_static_rw_lock_writer_unlock
 g_static_rw_lock_free
 
 <SUBSECTION>
-GCond
-g_cond_new
-g_cond_signal
-g_cond_broadcast
-g_cond_wait
-g_cond_timed_wait
-g_cond_free
-
-<SUBSECTION>
-GPrivate
-g_private_new
-g_private_get
-g_private_set
-
-<SUBSECTION>
 GStaticPrivate
 G_STATIC_PRIVATE_INIT
 g_static_private_init
@@ -669,42 +723,16 @@ g_static_private_get
 g_static_private_set
 g_static_private_free
 
-<SUBSECTION>
-GOnce
-GOnceStatus
-G_ONCE_INIT
-g_once
-g_once_init_enter
-g_once_init_leave
-
-<SUBSECTION>
-g_bit_lock
-g_bit_trylock
-g_bit_unlock
-
 <SUBSECTION Private>
-G_THREAD_ECF
-G_THREAD_CF
-G_THREAD_UF
-g_static_mutex_get_mutex_impl
-g_static_mutex_get_mutex_impl_shortcut
-G_MUTEX_DEBUG_MAGIC
+GThreadFunctions
 g_thread_init_with_errorcheck_mutexes
-G_LOCK_NAME
-glib_dummy_decl
-GSystemThread
+G_THREADS_ENABLED
+g_static_mutex_get_mutex_impl
 g_thread_use_default_impl
 g_threads_got_initialized
 g_thread_functions_for_glib_use
 g_thread_gettime
-g_thread_init_glib
-g_thread_error_quark
-g_once_impl
 g_once_init_enter_impl
-atexit
-g_system_thread_assign
-g_system_thread_equal
-g_system_thread_equal_simple
 </SECTION>
 
 <SECTION>
@@ -739,7 +767,7 @@ g_async_queue_push
 g_async_queue_push_sorted
 g_async_queue_pop
 g_async_queue_try_pop
-g_async_queue_timed_pop
+g_async_queue_timeout_pop
 g_async_queue_length
 g_async_queue_sort
 
@@ -752,27 +780,42 @@ g_async_queue_push_unlocked
 g_async_queue_push_sorted_unlocked
 g_async_queue_pop_unlocked
 g_async_queue_try_pop_unlocked
-g_async_queue_timed_pop_unlocked
+g_async_queue_timeout_pop_unlocked
 g_async_queue_length_unlocked
 g_async_queue_sort_unlocked
+
+<SUBSECTION>
+g_async_queue_timed_pop
+g_async_queue_timed_pop_unlocked
 </SECTION>
 
 <SECTION>
 <TITLE>Atomic Operations</TITLE>
-<FILE>atomic_operations</FILE>g
+<FILE>atomic_operations</FILE>
+G_ATOMIC_LOCK_FREE
+
+<SUBSECTION>
 g_atomic_int_get
 g_atomic_int_set
-g_atomic_int_add
-g_atomic_int_exchange_and_add
+g_atomic_int_inc
+g_atomic_int_dec_and_test
 g_atomic_int_compare_and_exchange
+g_atomic_int_add
+g_atomic_int_and
+g_atomic_int_or
+g_atomic_int_xor
+
+<SUBSECTION>
 g_atomic_pointer_get
 g_atomic_pointer_set
 g_atomic_pointer_compare_and_exchange
-g_atomic_int_inc
-g_atomic_int_dec_and_test
+g_atomic_pointer_add
+g_atomic_pointer_and
+g_atomic_pointer_or
+g_atomic_pointer_xor
 
-<SUBSECTION Private>
-G_ATOMIC_OP_MEMORY_BARRIER_NEEDED
+<SUBSECTION>
+g_atomic_int_exchange_and_add
 </SECTION>
 
 <SECTION>
@@ -840,11 +883,6 @@ g_io_channel_set_encoding
 g_io_channel_get_close_on_unref
 g_io_channel_set_close_on_unref
 
-<SUBSECTION Private>
-g_io_channel_win32_poll
-g_io_channel_win32_make_pollfd
-g_io_channel_win32_get_fd
- 
 <SUBSECTION>
 g_io_channel_read
 GIOError
@@ -853,8 +891,12 @@ g_io_channel_seek
 g_io_channel_close
 
 <SUBSECTION Private>
+g_io_channel_win32_poll
+g_io_channel_win32_make_pollfd
+g_io_channel_win32_get_fd
 g_io_channel_error_quark
 g_io_watch_funcs
+G_IO_FLAG_IS_WRITEABLE
 </SECTION>
 
 <SECTION>
@@ -883,6 +925,7 @@ g_try_realloc_n
 
 <SUBSECTION>
 g_free
+g_clear_pointer
 g_mem_gc_friendly
 
 <SUBSECTION>
@@ -962,10 +1005,12 @@ g_regex_unref
 g_regex_get_pattern
 g_regex_get_max_backref
 g_regex_get_capture_count
+g_regex_get_has_cr_or_lf
 g_regex_get_string_number
 g_regex_get_compile_flags
 g_regex_get_match_flags
 g_regex_escape_string
+g_regex_escape_nul
 g_regex_match_simple
 g_regex_match
 g_regex_match_full
@@ -981,6 +1026,8 @@ g_regex_check_replacement
 GMatchInfo
 g_match_info_get_regex
 g_match_info_get_string
+g_match_info_ref
+g_match_info_unref
 g_match_info_free
 g_match_info_matches
 g_match_info_next
@@ -1046,6 +1093,7 @@ GSpawnChildSetupFunc
 g_spawn_async_with_pipes
 g_spawn_async
 g_spawn_sync
+g_spawn_check_exit_status
 g_spawn_command_line_async
 g_spawn_command_line_sync
 g_spawn_close_pid
@@ -1156,6 +1204,9 @@ g_mkstemp_full
 g_file_open_tmp
 g_file_read_link
 g_mkdir_with_parents
+g_mkdtemp
+g_mkdtemp_full
+g_dir_make_tmp
 
 <SUBSECTION>
 GDir
@@ -1167,11 +1218,13 @@ g_dir_close
 <SUBSECTION>
 GMappedFile
 g_mapped_file_new
+g_mapped_file_new_from_fd
 g_mapped_file_ref
 g_mapped_file_unref
 g_mapped_file_free
 g_mapped_file_get_length
 g_mapped_file_get_contents
+g_mapped_file_get_bytes
 
 <SUBSECTION>
 g_open
@@ -1309,6 +1362,7 @@ g_strsignal
 
 <SUBSECTION Private>
 GAsciiType
+g_ascii_table
 </SECTION>
 
 <SECTION>
@@ -1600,6 +1654,9 @@ g_set_application_name
 g_get_prgname
 g_set_prgname
 g_get_environ
+g_environ_getenv
+g_environ_setenv
+g_environ_unsetenv
 g_getenv
 g_setenv
 g_unsetenv
@@ -1631,6 +1688,11 @@ g_build_filename
 g_build_filenamev
 g_build_path
 g_build_pathv
+
+<SUBSECTION>
+g_format_size
+GFormatSizeFlags
+g_format_size_full
 g_format_size_for_display
 
 <SUBSECTION>
@@ -1735,6 +1797,8 @@ GKeyFileFlags
 <SUBSECTION>
 g_key_file_new
 g_key_file_free
+g_key_file_ref
+g_key_file_unref
 g_key_file_set_list_separator
 g_key_file_load_from_file
 g_key_file_load_from_data
@@ -1809,6 +1873,7 @@ G_KEY_FILE_DESKTOP_TYPE_DIRECTORY
 
 <SUBSECTION Private>
 g_key_file_error_quark
+g_key_file_get_type
 </SECTION>
 
 <SECTION>
@@ -1924,38 +1989,21 @@ g_win32_ftruncate
 
 </SECTION>
 
-# Data Structures
-
 <SECTION>
-<TITLE>Memory Chunks</TITLE>
-<FILE>memory_chunks</FILE>
-GMemChunk
-G_ALLOC_AND_FREE
-G_ALLOC_ONLY
+<TITLE>UNIX-specific utilities and integration</TITLE>
+<FILE>gunix</FILE>
+G_UNIX_ERROR
+g_unix_open_pipe
+g_unix_signal_add
+g_unix_signal_add_full
+g_unix_signal_source_new
+g_unix_set_fd_nonblocking
 
-<SUBSECTION>
-g_mem_chunk_new
-g_mem_chunk_alloc
-g_mem_chunk_alloc0
-g_mem_chunk_free
-g_mem_chunk_destroy
-
-<SUBSECTION>
-g_mem_chunk_create
-g_chunk_new
-g_chunk_new0
-g_chunk_free
-
-<SUBSECTION>
-g_mem_chunk_reset
-g_mem_chunk_clean
-g_blow_chunks
-
-<SUBSECTION>
-g_mem_chunk_info
-g_mem_chunk_print
-
+<SUBSECTION Private>
+g_unix_error_quark
 </SECTION>
+
+# Data Structures
 
 <SECTION>
 <TITLE>Memory Slices</TITLE>
@@ -2006,6 +2054,7 @@ g_list_free1
 <SUBSECTION>
 g_list_length
 g_list_copy
+g_list_copy_deep
 g_list_reverse
 g_list_sort
 GCompareFunc
@@ -2030,10 +2079,6 @@ g_list_find
 g_list_find_custom
 g_list_position
 g_list_index
-
-<SUBSECTION>
-g_list_push_allocator
-g_list_pop_allocator
 </SECTION>
 
 <SECTION>
@@ -2060,6 +2105,7 @@ g_slist_free1
 <SUBSECTION>
 g_slist_length
 g_slist_copy
+g_slist_copy_deep
 g_slist_reverse
 g_slist_insert_sorted_with_data
 g_slist_sort
@@ -2078,10 +2124,6 @@ g_slist_find
 g_slist_find_custom
 g_slist_position
 g_slist_index
-
-<SUBSECTION>
-g_slist_push_allocator
-g_slist_pop_allocator
 </SECTION>
 
 <SECTION>
@@ -2091,6 +2133,7 @@ g_slist_pop_allocator
 GQueue
 g_queue_new
 g_queue_free
+g_queue_free_full
 G_QUEUE_INIT
 g_queue_init
 g_queue_clear
@@ -2208,6 +2251,8 @@ GHashFunc
 GEqualFunc
 g_hash_table_insert
 g_hash_table_replace
+g_hash_table_add
+g_hash_table_contains
 g_hash_table_size
 g_hash_table_lookup
 g_hash_table_lookup_extended
@@ -2232,6 +2277,7 @@ GHashTableIter
 g_hash_table_iter_init
 g_hash_table_iter_next
 g_hash_table_iter_get_hash_table
+g_hash_table_iter_replace
 g_hash_table_iter_remove
 g_hash_table_iter_steal
 
@@ -2282,6 +2328,7 @@ g_string_erase
 g_string_truncate
 g_string_set_size
 g_string_free
+g_string_free_to_bytes
 
 <SUBSECTION>
 g_string_up
@@ -2291,6 +2338,8 @@ g_string_down
 g_string_hash
 g_string_equal
 
+<SUBSECTION Private>
+g_string_append_c_inline
 </SECTION>
 
 <SECTION>
@@ -2328,6 +2377,7 @@ g_array_sort
 g_array_sort_with_data
 g_array_index
 g_array_set_size
+g_array_set_clear_func
 g_array_free
 </SECTION>
 
@@ -2338,6 +2388,7 @@ GPtrArray
 g_ptr_array_new
 g_ptr_array_sized_new
 g_ptr_array_new_with_free_func
+g_ptr_array_new_full
 g_ptr_array_set_free_func
 g_ptr_array_ref
 g_ptr_array_unref
@@ -2359,8 +2410,10 @@ g_ptr_array_foreach
 <SECTION>
 <TITLE>Byte Arrays</TITLE>
 <FILE>arrays_byte</FILE>
+<SUBSECTION>
 GByteArray
 g_byte_array_new
+g_byte_array_new_take
 g_byte_array_sized_new
 g_byte_array_ref
 g_byte_array_unref
@@ -2373,7 +2426,27 @@ g_byte_array_sort
 g_byte_array_sort_with_data
 g_byte_array_set_size
 g_byte_array_free
+g_byte_array_free_to_bytes
 
+<SUBSECTION>
+GBytes
+g_bytes_new
+g_bytes_new_take
+g_bytes_new_static
+g_bytes_new_with_free_func
+g_bytes_new_from_bytes
+g_bytes_get_data
+g_bytes_get_size
+g_bytes_hash
+g_bytes_equal
+g_bytes_compare
+g_bytes_ref
+g_bytes_unref
+g_bytes_unref_to_data
+g_bytes_unref_to_array
+
+<SUBSECTION Private>
+g_bytes_get_type
 </SECTION>
 
 <SECTION>
@@ -2419,6 +2492,7 @@ g_node_prepend
 
 <SUBSECTION>
 g_node_insert_data
+g_node_insert_data_after
 g_node_insert_data_before
 g_node_append_data
 g_node_prepend_data
@@ -2457,10 +2531,6 @@ g_node_max_height
 <SUBSECTION>
 g_node_unlink
 g_node_destroy
-
-<SUBSECTION>
-g_node_push_allocator
-g_node_pop_allocator
 </SECTION>
 
 
@@ -2468,6 +2538,7 @@ g_node_pop_allocator
 <TITLE>Quarks</TITLE>
 <FILE>quarks</FILE>
 GQuark
+G_DEFINE_QUARK
 g_quark_from_string
 g_quark_from_static_string
 g_quark_to_string
@@ -2488,6 +2559,9 @@ g_datalist_id_set_data_full
 g_datalist_id_get_data
 g_datalist_id_remove_data
 g_datalist_id_remove_no_notify
+GDuplicateFunc
+g_datalist_id_dup_data
+g_datalist_id_replace_data
 
 <SUBSECTION>
 g_datalist_set_data
@@ -2572,19 +2646,6 @@ GCacheNewFunc
 </SECTION>
 
 <SECTION>
-<TITLE>Memory Allocators</TITLE>
-<FILE>allocators</FILE>
-GAllocator
-g_allocator_new
-g_allocator_free
-
-<SUBSECTION Private>
-G_ALLOCATOR_LIST
-G_ALLOCATOR_NODE
-G_ALLOCATOR_SLIST
-</SECTION>
-
-<SECTION>
 <TITLE>Random Numbers</TITLE>
 <FILE>random_numbers</FILE>
 GRand
@@ -2630,6 +2691,7 @@ GConvertError
 
 <SUBSECTION>
 g_get_charset
+g_get_codeset
 
 <SUBSECTION Private>
 g_convert_error_quark
@@ -2665,7 +2727,12 @@ g_unichar_tolower
 g_unichar_totitle
 g_unichar_digit_value
 g_unichar_xdigit_value
+g_unichar_compose
+g_unichar_decompose
+g_unichar_fully_decompose
+G_UNICHAR_MAX_DECOMPOSITION_LENGTH
 GUnicodeType
+G_UNICODE_COMBINING_MARK
 g_unichar_type
 GUnicodeBreakType
 g_unichar_break_type
@@ -2675,6 +2742,8 @@ g_unicode_canonical_decomposition
 g_unichar_get_mirror_char
 GUnicodeScript
 g_unichar_get_script
+g_unicode_script_from_iso15924
+g_unicode_script_to_iso15924
 
 <SUBSECTION>
 g_utf8_next_char
@@ -2690,6 +2759,7 @@ g_utf8_strncpy
 g_utf8_strchr
 g_utf8_strrchr
 g_utf8_strreverse
+g_utf8_substring
 g_utf8_validate
 
 <SUBSECTION>
@@ -2711,6 +2781,9 @@ g_utf16_to_utf8
 g_ucs4_to_utf16
 g_ucs4_to_utf8
 g_unichar_to_utf8
+
+<SUBSECTION Private>
+g_utf8_skip
 </SECTION>
 
 <SECTION>
@@ -2777,6 +2850,23 @@ g_checksum_get_digest
 <SUBSECTION>
 g_compute_checksum_for_data
 g_compute_checksum_for_string
+g_compute_checksum_for_bytes
+</SECTION>
+
+<SECTION>
+<TITLE>Data HMACs</TITLE>
+<FILE>hmac</FILE>
+GHmac
+g_hmac_new
+g_hmac_copy
+g_hmac_ref
+g_hmac_unref
+g_hmac_update
+g_hmac_get_string
+g_hmac_get_digest
+<SUBSECTION>
+g_compute_hmac_for_data
+g_compute_hmac_for_string
 </SECTION>
 
 <SECTION>
@@ -2790,14 +2880,17 @@ g_test_slow
 g_test_thorough
 g_test_perf
 g_test_verbose
+g_test_undefined
 g_test_quiet
 g_test_run
 GTestFunc
 g_test_add_func
 GTestDataFunc
 g_test_add_data_func
+g_test_add_data_func_full
 g_test_add
 
+g_test_fail
 g_test_message
 g_test_bug_base
 g_test_bug
@@ -2811,6 +2904,9 @@ g_test_timer_last
 g_test_queue_free
 g_test_queue_destroy
 g_test_queue_unref
+
+g_test_expect_message
+g_test_assert_expected_messages
 
 GTestTrapFlags
 g_test_trap_fork
@@ -2856,6 +2952,9 @@ g_assertion_message_expr
 g_assertion_message_cmpstr
 g_assertion_message_cmpnum
 g_assertion_message_error
+g_test_assert_expected_messages_internal
+
+g_test_config_vars
 
 g_test_add_vtable
 GTestConfig
@@ -2898,8 +2997,10 @@ G_VARIANT_TYPE_UNIT
 G_VARIANT_TYPE_DICT_ENTRY
 G_VARIANT_TYPE_DICTIONARY
 G_VARIANT_TYPE_STRING_ARRAY
+G_VARIANT_TYPE_OBJECT_PATH_ARRAY
 G_VARIANT_TYPE_BYTESTRING
 G_VARIANT_TYPE_BYTESTRING_ARRAY
+G_VARIANT_TYPE_VARDICT
 
 <SUBSECTION>
 G_VARIANT_TYPE
@@ -2952,6 +3053,7 @@ g_variant_unref
 g_variant_ref
 g_variant_ref_sink
 g_variant_is_floating
+g_variant_take_ref
 g_variant_get_type
 g_variant_get_type_string
 g_variant_is_of_type
@@ -2963,6 +3065,7 @@ g_variant_classify
 GVariantClass
 
 <SUBSECTION>
+g_variant_check_format_string
 g_variant_get
 g_variant_get_va
 g_variant_new
@@ -2986,6 +3089,7 @@ g_variant_new_signature
 g_variant_is_signature
 g_variant_new_variant
 g_variant_new_strv
+g_variant_new_objv
 g_variant_new_bytestring
 g_variant_new_bytestring_array
 
@@ -3005,6 +3109,8 @@ g_variant_dup_string
 g_variant_get_variant
 g_variant_get_strv
 g_variant_dup_strv
+g_variant_get_objv
+g_variant_dup_objv
 g_variant_get_bytestring
 g_variant_dup_bytestring
 g_variant_get_bytestring_array
@@ -3015,6 +3121,7 @@ g_variant_new_maybe
 g_variant_new_array
 g_variant_new_tuple
 g_variant_new_dict_entry
+g_variant_new_fixed_array
 
 <SUBSECTION>
 g_variant_get_maybe

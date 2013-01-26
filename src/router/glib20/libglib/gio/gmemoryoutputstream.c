@@ -25,6 +25,7 @@
 #include "config.h"
 #include "gmemoryoutputstream.h"
 #include "goutputstream.h"
+#include "gpollableoutputstream.h"
 #include "gseekable.h"
 #include "gsimpleasyncresult.h"
 #include "gioerror.h"
@@ -41,6 +42,8 @@
  * #GMemoryOutputStream is a class for using arbitrary
  * memory chunks as output for GIO streaming output operations.
  *
+ * As of GLib 2.34, #GMemoryOutputStream implements
+ * #GPollableOutputStream.
  */
 
 #define MIN_ARRAY_SIZE  16
@@ -86,16 +89,6 @@ static gboolean g_memory_output_stream_close       (GOutputStream  *stream,
                                                     GCancellable   *cancellable,
                                                     GError        **error);
 
-static void     g_memory_output_stream_write_async  (GOutputStream        *stream,
-                                                     const void           *buffer,
-                                                     gsize                 count,
-                                                     int                   io_priority,
-                                                     GCancellable         *cancellable,
-                                                     GAsyncReadyCallback   callback,
-                                                     gpointer              data);
-static gssize   g_memory_output_stream_write_finish (GOutputStream        *stream,
-                                                     GAsyncResult         *result,
-                                                     GError              **error);
 static void     g_memory_output_stream_close_async  (GOutputStream        *stream,
                                                      int                   io_priority,
                                                      GCancellable         *cancellable,
@@ -119,9 +112,17 @@ static gboolean g_memory_output_stream_truncate            (GSeekable       *see
                                                            GCancellable    *cancellable,
                                                            GError         **error);
 
+static gboolean g_memory_output_stream_is_writable       (GPollableOutputStream *stream);
+static GSource *g_memory_output_stream_create_source     (GPollableOutputStream *stream,
+							  GCancellable          *cancellable);
+
+static void g_memory_output_stream_pollable_iface_init (GPollableOutputStreamInterface *iface);
+
 G_DEFINE_TYPE_WITH_CODE (GMemoryOutputStream, g_memory_output_stream, G_TYPE_OUTPUT_STREAM,
                          G_IMPLEMENT_INTERFACE (G_TYPE_SEEKABLE,
-                                                g_memory_output_stream_seekable_iface_init))
+                                                g_memory_output_stream_seekable_iface_init);
+                         G_IMPLEMENT_INTERFACE (G_TYPE_POLLABLE_OUTPUT_STREAM,
+                                                g_memory_output_stream_pollable_iface_init))
 
 
 static void
@@ -141,8 +142,6 @@ g_memory_output_stream_class_init (GMemoryOutputStreamClass *klass)
 
   ostream_class->write_fn = g_memory_output_stream_write;
   ostream_class->close_fn = g_memory_output_stream_close;
-  ostream_class->write_async  = g_memory_output_stream_write_async;
-  ostream_class->write_finish = g_memory_output_stream_write_finish;
   ostream_class->close_async  = g_memory_output_stream_close_async;
   ostream_class->close_finish = g_memory_output_stream_close_finish;
 
@@ -222,6 +221,13 @@ g_memory_output_stream_class_init (GMemoryOutputStreamClass *klass)
                                                          P_("Function called with the buffer as argument when the stream is destroyed."),
                                                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
                                                          G_PARAM_STATIC_STRINGS));
+}
+
+static void
+g_memory_output_stream_pollable_iface_init (GPollableOutputStreamInterface *iface)
+{
+  iface->is_writable = g_memory_output_stream_is_writable;
+  iface->create_source = g_memory_output_stream_create_source;
 }
 
 static void
@@ -329,11 +335,11 @@ g_memory_output_stream_init (GMemoryOutputStream *stream)
 
 /**
  * g_memory_output_stream_new: (skip)
- * @data: pointer to a chunk of memory to use, or %NULL
+ * @data: (allow-none): pointer to a chunk of memory to use, or %NULL
  * @size: the size of @data
- * @realloc_function: a function with realloc() semantics (like g_realloc())
+ * @realloc_function: (allow-none): a function with realloc() semantics (like g_realloc())
  *     to be called when @data needs to be grown, or %NULL
- * @destroy_function: a function to be called on @data when the stream is
+ * @destroy_function: (allow-none): a function to be called on @data when the stream is
  *     finalized, or %NULL
  *
  * Creates a new #GMemoryOutputStream.
@@ -467,6 +473,34 @@ g_memory_output_stream_steal_data (GMemoryOutputStream *ostream)
   ostream->priv->data = NULL;
 
   return data;
+}
+
+/**
+ * g_memory_output_stream_steal_as_bytes:
+ * @ostream: a #GMemoryOutputStream
+ *
+ * Returns data from the @ostream as a #GBytes. @ostream must be
+ * closed before calling this function.
+ *
+ * Returns: (transfer full): the stream's data
+ *
+ * Since: 2.34
+ **/
+GBytes *
+g_memory_output_stream_steal_as_bytes (GMemoryOutputStream *ostream)
+{
+  GBytes *result;
+
+  g_return_val_if_fail (G_IS_MEMORY_OUTPUT_STREAM (ostream), NULL);
+  g_return_val_if_fail (g_output_stream_is_closed (G_OUTPUT_STREAM (ostream)), NULL);
+
+  result = g_bytes_new_with_free_func (ostream->priv->data,
+				       ostream->priv->valid_len,
+				       ostream->priv->destroy,
+				       ostream->priv->data);
+  ostream->priv->data = NULL;
+			     
+  return result;
 }
 
 static gboolean
@@ -611,52 +645,6 @@ g_memory_output_stream_close (GOutputStream  *stream,
 }
 
 static void
-g_memory_output_stream_write_async (GOutputStream       *stream,
-                                    const void          *buffer,
-                                    gsize                count,
-                                    int                  io_priority,
-                                    GCancellable        *cancellable,
-                                    GAsyncReadyCallback  callback,
-                                    gpointer             data)
-{
-  GSimpleAsyncResult *simple;
-  gssize nwritten;
-
-  nwritten = g_memory_output_stream_write (stream,
-                                           buffer,
-                                           count,
-                                           cancellable,
-                                           NULL);
-
-  simple = g_simple_async_result_new (G_OBJECT (stream),
-                                      callback,
-                                      data,
-                                      g_memory_output_stream_write_async);
-
-  g_simple_async_result_set_op_res_gssize (simple, nwritten);
-  g_simple_async_result_complete_in_idle (simple);
-  g_object_unref (simple);
-}
-
-static gssize
-g_memory_output_stream_write_finish (GOutputStream  *stream,
-                                     GAsyncResult   *result,
-                                     GError        **error)
-{
-  GSimpleAsyncResult *simple;
-  gssize nwritten;
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) ==
-                  g_memory_output_stream_write_async);
-
-  nwritten = g_simple_async_result_get_op_res_gssize (simple);
-
-  return nwritten;
-}
-
-static void
 g_memory_output_stream_close_async (GOutputStream       *stream,
                                     int                  io_priority,
                                     GCancellable        *cancellable,
@@ -795,4 +783,24 @@ g_memory_output_stream_truncate (GSeekable     *seekable,
     return FALSE;
 
   return TRUE;
+}
+
+static gboolean
+g_memory_output_stream_is_writable (GPollableOutputStream *stream)
+{
+  return TRUE;
+}
+
+static GSource *
+g_memory_output_stream_create_source (GPollableOutputStream *stream,
+				      GCancellable          *cancellable)
+{
+  GSource *base_source, *pollable_source;
+
+  base_source = g_timeout_source_new (0);
+  pollable_source = g_pollable_source_new_full (stream, base_source,
+						cancellable);
+  g_source_unref (base_source);
+
+  return pollable_source;
 }

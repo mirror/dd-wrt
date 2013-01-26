@@ -44,12 +44,20 @@ typedef struct _GSignalInvocationHint	 GSignalInvocationHint;
  */
 typedef GClosureMarshal			 GSignalCMarshaller;
 /**
+ * GSignalCVaMarshaller:
+ * 
+ * This is the signature of va_list marshaller functions, an optional
+ * marshaller that can be used in some situations to avoid
+ * marshalling the signal argument into GValues.
+ */
+typedef GVaClosureMarshal		 GSignalCVaMarshaller;
+/**
  * GSignalEmissionHook:
  * @ihint: Signal invocation hint, see #GSignalInvocationHint.
  * @n_param_values: the number of parameters to the function, including
  *  the instance on which the signal was emitted.
- * @param_values: the instance on which the signal was emitted, followed by the 
- *  parameters of the emission.
+ * @param_values: (array length=n_param_values): the instance on which
+ *  the signal was emitted, followed by the parameters of the emission.
  * @data: user data associated with the hook.
  * 
  * A simple function pointer to get invoked when the signal is emitted. This 
@@ -108,6 +116,11 @@ typedef gboolean (*GSignalAccumulator)	(GSignalInvocationHint *ihint,
  *  of as object methods which can be called generically by 
  *  third-party code.
  * @G_SIGNAL_NO_HOOKS: No emissions hooks are supported for this signal.
+ * @G_SIGNAL_MUST_COLLECT: Varargs signal emission will always collect the
+ *   arguments, even if there are no signal handlers connected.  Since 2.30.
+ * @G_SIGNAL_DEPRECATED: The signal is deprecated and will be removed
+ *   in a future version. A warning will be generated if it is connected while
+ *   running with G_ENABLE_DIAGNOSTIC=1.  Since 2.32.
  * 
  * The signal flags are used to specify a signal's behaviour, the overall
  * signal description outlines how especially the RUN flags control the
@@ -121,14 +134,16 @@ typedef enum
   G_SIGNAL_NO_RECURSE	= 1 << 3,
   G_SIGNAL_DETAILED	= 1 << 4,
   G_SIGNAL_ACTION	= 1 << 5,
-  G_SIGNAL_NO_HOOKS	= 1 << 6
+  G_SIGNAL_NO_HOOKS	= 1 << 6,
+  G_SIGNAL_MUST_COLLECT = 1 << 7,
+  G_SIGNAL_DEPRECATED   = 1 << 8
 } GSignalFlags;
 /**
  * G_SIGNAL_FLAGS_MASK:
  * 
  * A mask for all #GSignalFlags bits.
  */
-#define G_SIGNAL_FLAGS_MASK  0x7f
+#define G_SIGNAL_FLAGS_MASK  0x1ff
 /**
  * GConnectFlags:
  * @G_CONNECT_AFTER: whether the handler should be called before or after the 
@@ -223,12 +238,12 @@ struct _GSignalInvocationHint
  * @signal_flags: The signal flags as passed in to g_signal_new().
  * @return_type: The return type for user callbacks.
  * @n_params: The number of parameters that user callbacks take.
- * @param_types: The individual parameter types for user callbacks, note that the
- *  effective callback signature is:
+ * @param_types: (array length=n_params): The individual parameter types for
+ *  user callbacks, note that the effective callback signature is:
  *  <programlisting>
  *  @return_type callback (#gpointer     data1,
- *  [#param_types param_names,]
- *  #gpointer     data2);
+ *  [param_types param_names,]
+ *  gpointer     data2);
  *  </programlisting>
  * 
  * A structure holding in-depth information for a specific signal. It is
@@ -287,6 +302,9 @@ guint            g_signal_new_class_handler (const gchar        *signal_name,
                                              GType               return_type,
                                              guint               n_params,
                                              ...);
+void             g_signal_set_va_marshaller (guint              signal_id,
+					     GType              instance_type,
+					     GSignalCVaMarshaller va_marshaller);
 
 void                  g_signal_emitv        (const GValue       *instance_and_params,
 					     guint               signal_id,
@@ -305,7 +323,7 @@ void                  g_signal_emit_by_name (gpointer            instance,
 					     ...);
 guint                 g_signal_lookup       (const gchar        *name,
 					     GType               itype);
-G_CONST_RETURN gchar* g_signal_name         (guint               signal_id);
+const gchar *         g_signal_name         (guint               signal_id);
 void                  g_signal_query        (guint               signal_id,
 					     GSignalQuery       *query);
 guint*                g_signal_list_ids     (GType               itype,
@@ -465,6 +483,21 @@ void   g_signal_chain_from_overridden_handler (gpointer           instance,
     g_signal_handlers_disconnect_matched ((instance),								\
 					  (GSignalMatchType) (G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA),	\
 					  0, 0, NULL, (func), (data))
+
+/**
+ * g_signal_handlers_disconnect_by_data:
+ * @instance: The instance to remove handlers from
+ * @data: the closure data of the handlers' closures
+ *
+ * Disconnects all handlers on an instance that match @data.
+ *
+ * Returns: The number of handlers that matched.
+ *
+ * Since: 2.32
+ */
+#define g_signal_handlers_disconnect_by_data(instance, data) \
+  g_signal_handlers_disconnect_matched ((instance), G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, (data))
+
 /**
  * g_signal_handlers_block_by_func:
  * @instance: The instance to block handlers from.

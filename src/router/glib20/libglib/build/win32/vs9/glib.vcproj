@@ -28,7 +28,7 @@
    <Tool
     Name="VCCLCompilerTool"
     Optimization="0"
-    PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;G_ENABLE_DEBUG;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000"
+    PreprocessorDefinitions="_DEBUG;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;G_ENABLE_DEBUG;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;SUPPORT_UCP;SUPPORT_UTF;SUPPORT_UTF8"
     MinimalRebuild="true"
     BasicRuntimeChecks="3"
     RuntimeLibrary="3"
@@ -39,7 +39,7 @@
    />
    <Tool
     Name="VCLinkerTool"
-    AdditionalDependencies="ws2_32.lib"
+    AdditionalDependencies="ws2_32.lib winmm.lib"
     OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
     LinkIncremental="2"
     ModuleDefinitionFile="$(IntDir)\glib.def"
@@ -54,13 +54,14 @@
   <Configuration
    Name="Debug_ExtPCRE|Win32"
    InheritedPropertySheets=".\glib.vsprops"
+   OutputDirectory="$(SolutionDir)\Debug\$(PlatformName)\bin"
    ConfigurationType="2"
    CharacterSet="2"
    >
    <Tool
     Name="VCCLCompilerTool"
     Optimization="0"
-    PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;G_ENABLE_DEBUG"
+    PreprocessorDefinitions="_DEBUG;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;G_ENABLE_DEBUG;USE_SYSTEM_PCRE"
     MinimalRebuild="true"
     BasicRuntimeChecks="3"
     RuntimeLibrary="3"
@@ -71,7 +72,7 @@
    />
    <Tool
     Name="VCLinkerTool"
-    AdditionalDependencies="ws2_32.lib pcred.lib"
+    AdditionalDependencies="ws2_32.lib winmm.lib pcred.lib"
     OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
     LinkIncremental="2"
     ModuleDefinitionFile="$(IntDir)\glib.def"
@@ -92,7 +93,7 @@
    <Tool
     Name="VCCLCompilerTool"
     Optimization="0"
-    PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;G_ENABLE_DEBUG;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000"
+    PreprocessorDefinitions="_DEBUG;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;G_ENABLE_DEBUG;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;SUPPORT_UCP;SUPPORT_UTF;SUPPORT_UTF8"
     MinimalRebuild="true"
     BasicRuntimeChecks="3"
     RuntimeLibrary="3"
@@ -103,7 +104,7 @@
    />
    <Tool
     Name="VCLinkerTool"
-    AdditionalDependencies="ws2_32.lib"
+    AdditionalDependencies="ws2_32.lib winmm.lib"
     OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
     LinkIncremental="2"
     ModuleDefinitionFile="$(IntDir)\glib.def"
@@ -118,13 +119,14 @@
   <Configuration
    Name="Debug_ExtPCRE|x64"
    InheritedPropertySheets=".\glib.vsprops"
+   OutputDirectory="$(SolutionDir)\Debug\$(PlatformName)\bin"
    ConfigurationType="2"
    CharacterSet="2"
    >
    <Tool
     Name="VCCLCompilerTool"
     Optimization="0"
-    PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;G_ENABLE_DEBUG"
+    PreprocessorDefinitions="_DEBUG;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;G_ENABLE_DEBUG;USE_SYSTEM_PCRE"
     MinimalRebuild="true"
     BasicRuntimeChecks="3"
     RuntimeLibrary="3"
@@ -135,7 +137,7 @@
    />
    <Tool
     Name="VCLinkerTool"
-    AdditionalDependencies="ws2_32.lib pcred.lib"
+    AdditionalDependencies="ws2_32.lib winmm.lib pcred.lib"
     OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
     LinkIncremental="2"
     ModuleDefinitionFile="$(IntDir)\glib.def"
@@ -156,7 +158,7 @@
    >
    <Tool
     Name="VCCLCompilerTool"
-    PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000"
+    PreprocessorDefinitions="GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;SUPPORT_UCP;SUPPORT_UTF;SUPPORT_UTF8"
     RuntimeLibrary="2"
     UsePrecompiledHeader="0"
     WarningLevel="3"
@@ -165,7 +167,7 @@
    />
    <Tool
     Name="VCLinkerTool"
-    AdditionalDependencies="ws2_32.lib"
+    AdditionalDependencies="ws2_32.lib winmm.lib"
     OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
     LinkIncremental="1"
     ModuleDefinitionFile="$(IntDir)\glib.def"
@@ -182,13 +184,14 @@
   <Configuration
    Name="Release_ExtPCRE|Win32"
    InheritedPropertySheets=".\glib.vsprops"
+   OutputDirectory="$(SolutionDir)\Release\$(PlatformName)\bin"
    ConfigurationType="2"
    CharacterSet="2"
    WholeProgramOptimization="1"
    >
    <Tool
     Name="VCCLCompilerTool"
-    PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;"
+    PreprocessorDefinitions="GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;USE_SYSTEM_PCRE"
     RuntimeLibrary="2"
     UsePrecompiledHeader="0"
     WarningLevel="3"
@@ -197,7 +200,7 @@
    />
    <Tool
     Name="VCLinkerTool"
-    AdditionalDependencies="ws2_32.lib pcre.lib"
+    AdditionalDependencies="ws2_32.lib winmm.lib pcre.lib"
     OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
     LinkIncremental="1"
     ModuleDefinitionFile="$(IntDir)\glib.def"
@@ -220,7 +223,7 @@
    >
    <Tool
     Name="VCCLCompilerTool"
-    PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000"
+    PreprocessorDefinitions="GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000;SUPPORT_UCP;SUPPORT_UTF;SUPPORT_UTF8"
     RuntimeLibrary="2"
     UsePrecompiledHeader="0"
     WarningLevel="3"
@@ -229,7 +232,7 @@
    />
    <Tool
     Name="VCLinkerTool"
-    AdditionalDependencies="ws2_32.lib"
+    AdditionalDependencies="ws2_32.lib winmm.lib"
     OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
     LinkIncremental="1"
     ModuleDefinitionFile="$(IntDir)\glib.def"
@@ -246,13 +249,14 @@
   <Configuration
    Name="Release_ExtPCRE|x64"
    InheritedPropertySheets=".\glib.vsprops"
+   OutputDirectory="$(SolutionDir)\Release\$(PlatformName)\bin"
    ConfigurationType="2"
    CharacterSet="2"
    WholeProgramOptimization="1"
    >
    <Tool
     Name="VCCLCompilerTool"
-    PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;"
+    PreprocessorDefinitions="GLIB_COMPILATION;DLL_EXPORT;G_LOG_DOMAIN=\&quot;Glib\&quot;;USE_SYSTEM_PCRE"
     RuntimeLibrary="2"
     UsePrecompiledHeader="0"
     WarningLevel="3"
@@ -261,7 +265,7 @@
    />
    <Tool
     Name="VCLinkerTool"
-    AdditionalDependencies="ws2_32.lib pcre.lib"
+    AdditionalDependencies="ws2_32.lib winmm.lib pcre.lib"
     OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
     LinkIncremental="1"
     ModuleDefinitionFile="$(IntDir)\glib.def"
@@ -284,28 +288,38 @@
    Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
    UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
    >
+   <File RelativePath="..\..\..\glib\deprecated\gallocator.c" />
+   <File RelativePath="..\..\..\glib\deprecated\gcache.c" />
+   <File RelativePath="..\..\..\glib\deprecated\gcompletion.c" />
+   <File RelativePath="..\..\..\glib\deprecated\grel.c" />
+   <File RelativePath="..\..\..\glib\deprecated\gthread-deprecated.c" />
    <File RelativePath="..\..\..\glib\garray.c" />
    <File RelativePath="..\..\..\glib\gasyncqueue.c" />
+   <File RelativePath="..\..\..\glib\gatomic.c" />
    <File RelativePath="..\..\..\glib\gbacktrace.c" />
    <File RelativePath="..\..\..\glib\gbase64.c" />
    <File RelativePath="..\..\..\glib\gbitlock.c" />
    <File RelativePath="..\..\..\glib\gbookmarkfile.c" />
-   <File RelativePath="..\..\..\glib\gbuffer.c" />
-   <File RelativePath="..\..\..\glib\gcache.c" />
+   <File RelativePath="..\..\..\glib\gbytes.c" />
+   <File RelativePath="..\..\..\glib\gcharset.c" />
    <File RelativePath="..\..\..\glib\gchecksum.c" />
-   <File RelativePath="..\..\..\glib\gcompletion.c" />
    <File RelativePath="..\..\..\glib\gconvert.c" />
    <File RelativePath="..\..\..\glib\gdataset.c" />
    <File RelativePath="..\..\..\glib\gdate.c" />
    <File RelativePath="..\..\..\glib\gdatetime.c" />
    <File RelativePath="..\..\..\glib\gdir.c" />
+   <File RelativePath="..\..\..\glib\genviron.c" />
    <File RelativePath="..\..\..\glib\gerror.c" />
    <File RelativePath="..\..\..\glib\gfileutils.c" />
+   <File RelativePath="..\..\..\glib\ggettext.c" />
    <File RelativePath="..\..\..\glib\ghash.c" />
+   <File RelativePath="..\..\..\glib\ghmac.c" />
    <File RelativePath="..\..\..\glib\ghook.c" />
    <File RelativePath="..\..\..\glib\ghostutils.c" />
    <File RelativePath="..\..\..\glib\giochannel.c" />
    <File RelativePath="..\..\..\glib\gkeyfile.c" />
+   <File RelativePath="..\..\..\glib\glib-init.c" />
+   <File RelativePath="..\..\..\glib\glib-private.c" />
    <File RelativePath="..\..\..\glib\glist.c" />
    <File RelativePath="..\..\..\glib\gmain.c" />
    <File RelativePath="..\..\..\glib\gmappedfile.c" />
@@ -318,8 +332,8 @@
    <File RelativePath="..\..\..\glib\gpoll.c" />
    <File RelativePath="..\..\..\glib\gprimes.c" />
    <File RelativePath="..\..\..\glib\gqsort.c" />
+   <File RelativePath="..\..\..\glib\gquark.c" />
    <File RelativePath="..\..\..\glib\gqueue.c" />
-   <File RelativePath="..\..\..\glib\grel.c" />
    <File RelativePath="..\..\..\glib\grand.c" />
    <File RelativePath="..\..\..\glib\gregex.c" />
    <File RelativePath="..\..\..\glib\gscanner.c" />
@@ -330,11 +344,13 @@
    <File RelativePath="..\..\..\glib\gstdio.c" />
    <File RelativePath="..\..\..\glib\gstrfuncs.c" />
    <File RelativePath="..\..\..\glib\gstring.c" />
+   <File RelativePath="..\..\..\glib\gstringchunk.c" />
    <File RelativePath="..\..\..\glib\gtestutils.c" />
    <File RelativePath="..\..\..\glib\gthread.c" />
    <File RelativePath="..\..\..\glib\gthreadpool.c" />
    <File RelativePath="..\..\..\glib\gtimer.c" />
    <File RelativePath="..\..\..\glib\gtimezone.c" />
+   <File RelativePath="..\..\..\glib\gtrashstack.c" />
    <File RelativePath="..\..\..\glib\gtree.c" />
    <File RelativePath="..\..\..\glib\guniprop.c" />
    <File RelativePath="..\..\..\glib\gutf8.c" />
@@ -349,81 +365,25 @@
    <File RelativePath="..\..\..\glib\gvariant-serialiser.c" />
    <File RelativePath="..\..\..\glib\gvarianttypeinfo.c" />
    <File RelativePath="..\..\..\glib\gvarianttype.c" />
+   <File RelativePath="..\..\..\glib\gversion.c" />
+   <File RelativePath="..\..\..\glib\gwakeup.c" />
    <File RelativePath="..\..\..\glib\gprintf.c" />
-   <File RelativePath="..\..\..\glib\gatomic.c" />
    <File RelativePath="..\..\..\glib\giowin32.c" />
    <File RelativePath="..\..\..\glib\gspawn-win32.c" />
+   <File RelativePath="..\..\..\glib\gthread-win32.c" />
    <File RelativePath="..\..\..\glib\gwin32.c" />
    <Filter
     Name="libcharset"
     >
-    <File
-     RelativePath="..\..\..\glib\libcharset\localcharset.c"
-     >
-     <FileConfiguration
-      Name="Debug|Win32"
-      >
-      <Tool
-       Name="VCCLCompilerTool"
-       PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"
-      />
-     </FileConfiguration>
-     <FileConfiguration
-      Name="Debug_ExtPCRE|Win32"
-      >
-      <Tool
-       Name="VCCLCompilerTool"
-       PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"
-      />
-     </FileConfiguration>
-     <FileConfiguration
-      Name="Debug|x64"
-      >
-      <Tool
-       Name="VCCLCompilerTool"
-       PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"
-      />
-     </FileConfiguration>
-     <FileConfiguration
-      Name="Debug_ExtPCRE|x64"
-      >
-      <Tool
-       Name="VCCLCompilerTool"
-       PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"
-      />
-     </FileConfiguration>
-     <FileConfiguration
-      Name="Release|Win32"
-      >
-      <Tool
-       Name="VCCLCompilerTool"
-       PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"
-      />
-     </FileConfiguration>
-     <FileConfiguration
-      Name="Release_ExtPCRE|Win32"
-      >
-      <Tool
-       Name="VCCLCompilerTool"
-       PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"
-      />
-     </FileConfiguration>
-     <FileConfiguration
-      Name="Release|x64"
-      >
-      <Tool
-       Name="VCCLCompilerTool"
-       PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"
-      />
-     </FileConfiguration>
-     <FileConfiguration
-      Name="Release_ExtPCRE|x64"
-      >
-      <Tool
-       Name="VCCLCompilerTool"
-       PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"
-      />
-     </FileConfiguration>
+    <File RelativePath="..\..\..\glib\libcharset\localcharset.c">
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"/></FileConfiguration>
+     <FileConfiguration Name="Debug_ExtPCRE|Win32"><Tool Name="VCCLCompilerTool" PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"/></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"/></FileConfiguration>
+     <FileConfiguration Name="Debug_ExtPCRE|x64"><Tool Name="VCCLCompilerTool" PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"/></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"/></FileConfiguration>
+     <FileConfiguration Name="Release_ExtPCRE|Win32"><Tool Name="VCCLCompilerTool" PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"/></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"/></FileConfiguration>
+     <FileConfiguration Name="Release_ExtPCRE|x64"><Tool Name="VCCLCompilerTool" PreprocessorDefinitions="LIBDIR=&quot;/irrelevant/lib&quot;"/></FileConfiguration>
     </File>
    </Filter>
    <Filter
@@ -438,94 +398,174 @@
    <Filter
     Name="pcre"
     >
-    <File RelativePath="..\..\..\glib\pcre\pcre_chartables.c" >
+    <File RelativePath="..\..\..\glib\pcre\pcre_byte_order.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+    </File>
+    <File RelativePath="..\..\..\glib\pcre\pcre_chartables.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_compile.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_config.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_dfa_exec.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_exec.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_fullinfo.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_get.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_globals.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+    </File>
+    <File RelativePath="..\..\..\glib\pcre\pcre_jit_compile.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_newline.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_ord2utf8.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+    </File>
+    <File RelativePath="..\..\..\glib\pcre\pcre_string_utils.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
+     <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_study.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_tables.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
-    <File RelativePath="..\..\..\glib\pcre\pcre_try_flipped.c" >
+    <File RelativePath="..\..\..\glib\pcre\pcre_valid_utf8.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
-     <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
-    </File>
-    <File RelativePath="..\..\..\glib\pcre\pcre_ucp_searchfuncs.c" >
-     <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
-     <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
-     <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
     <File RelativePath="..\..\..\glib\pcre\pcre_xclass.c" >
+     <FileConfiguration Name="Debug|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|Win32"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|Win32" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Debug|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Debug_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
+     <FileConfiguration Name="Release|x64"><Tool Name="VCCLCompilerTool" AdditionalOptions="-DG_LOG_DOMAIN=\&quot;GLib-GRegex\&quot; -UBSR_ANYCRLF -UEBCDIC" /></FileConfiguration>
      <FileConfiguration Name="Release_ExtPCRE|x64" ExcludedFromBuild="true" ><Tool Name="VCCLCompilerTool" /></FileConfiguration>
     </File>
    </Filter>

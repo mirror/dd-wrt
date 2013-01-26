@@ -53,7 +53,7 @@ G_BEGIN_DECLS
 /**
  * G_VALUE_TYPE:
  * @value: A #GValue structure.
- * 
+ *
  * Get the type identifier of @value.
  *
  * Returns: the #GType.
@@ -63,7 +63,7 @@ G_BEGIN_DECLS
  * G_VALUE_TYPE_NAME:
  * @value: A #GValue structure.
  *
- * Gets the the type name of @value. 
+ * Gets the type name of @value.
  *
  * Returns: the type name.
  */
@@ -72,7 +72,7 @@ G_BEGIN_DECLS
  * G_VALUE_HOLDS:
  * @value: A #GValue structure.
  * @type: A #GType value.
- * 
+ *
  * Checks if @value holds (or contains) a value of @type.
  * This macro will also check for @value != %NULL and issue a
  * warning if the check fails.
@@ -101,7 +101,7 @@ typedef void (*GValueTransform) (const GValue *src_value,
  * to functions within a #GTypeValueTable structure, or implementations of
  * the g_value_*() API. That is, code portions which implement new fundamental
  * types.
- * #GValue users can not make any assumptions about how data is stored
+ * #GValue users cannot make any assumptions about how data is stored
  * within the 2 element @data union, and the @g_type member should
  * only be accessed through the G_VALUE_TYPE() macro.
  */
@@ -157,9 +157,25 @@ void	g_value_register_transform_func	(GType		 src_type,
  *
  * If passed to G_VALUE_COLLECT(), allocated data won't be copied
  * but used verbatim. This does not affect ref-counted types like
- * objects. For more details, see the #GValueTable documentation.
+ * objects.
  */
 #define G_VALUE_NOCOPY_CONTENTS (1 << 27)
+
+/**
+ * G_VALUE_INIT:
+ *
+ * A #GValue must be initialized before it can be used.
+ * This macro can be used as initializer instead of an explicit
+ * <literal>{ 0 }</literal> when declaring a variable,
+ * but it cannot be assigned to a variable.
+ *
+ * |[
+ *   GValue value = G_VALUE_INIT;
+ * ]|
+ *
+ * Since: 2.30
+ */
+#define G_VALUE_INIT  { 0, { { 0 } } }
 
 
 G_END_DECLS

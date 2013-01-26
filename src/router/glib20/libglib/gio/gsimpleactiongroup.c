@@ -20,6 +20,9 @@
  */
 
 #include "gsimpleactiongroup.h"
+
+#include "gsimpleaction.h"
+#include "gactionmap.h"
 #include "gaction.h"
 
 /**
@@ -28,7 +31,7 @@
  * @short_description: A simple GActionGroup implementation
  *
  * #GSimpleActionGroup is a hash table filled with #GAction objects,
- * implementing the #GActionGroup interface.
+ * implementing the #GActionGroup and #GActionMap interfaces.
  **/
 
 struct _GSimpleActionGroupPrivate
@@ -37,10 +40,13 @@ struct _GSimpleActionGroupPrivate
 };
 
 static void g_simple_action_group_iface_init (GActionGroupInterface *);
+static void g_simple_action_group_map_iface_init (GActionMapInterface *);
 G_DEFINE_TYPE_WITH_CODE (GSimpleActionGroup,
   g_simple_action_group, G_TYPE_OBJECT,
   G_IMPLEMENT_INTERFACE (G_TYPE_ACTION_GROUP,
-    g_simple_action_group_iface_init))
+                         g_simple_action_group_iface_init);
+  G_IMPLEMENT_INTERFACE (G_TYPE_ACTION_MAP,
+                         g_simple_action_group_map_iface_init))
 
 static gchar **
 g_simple_action_group_list_actions (GActionGroup *group)
@@ -64,62 +70,13 @@ g_simple_action_group_list_actions (GActionGroup *group)
 }
 
 static gboolean
-g_simple_action_group_has_action (GActionGroup *group,
-                                  const gchar  *action_name)
-{
-  GSimpleActionGroup *simple = G_SIMPLE_ACTION_GROUP (group);
-
-  return g_hash_table_lookup (simple->priv->table, action_name) != NULL;
-}
-
-static const GVariantType *
-g_simple_action_group_get_parameter_type (GActionGroup *group,
-                                          const gchar  *action_name)
-{
-  GSimpleActionGroup *simple = G_SIMPLE_ACTION_GROUP (group);
-  GAction *action;
-
-  action = g_hash_table_lookup (simple->priv->table, action_name);
-
-  if (action == NULL)
-    return NULL;
-
-  return g_action_get_parameter_type (action);
-}
-
-static const GVariantType *
-g_simple_action_group_get_state_type (GActionGroup *group,
-                                      const gchar  *action_name)
-{
-  GSimpleActionGroup *simple = G_SIMPLE_ACTION_GROUP (group);
-  GAction *action;
-
-  action = g_hash_table_lookup (simple->priv->table, action_name);
-
-  if (action == NULL)
-    return NULL;
-
-  return g_action_get_state_type (action);
-}
-
-static GVariant *
-g_simple_action_group_get_state_hint (GActionGroup *group,
-                                       const gchar  *action_name)
-{
-  GSimpleActionGroup *simple = G_SIMPLE_ACTION_GROUP (group);
-  GAction *action;
-
-  action = g_hash_table_lookup (simple->priv->table, action_name);
-
-  if (action == NULL)
-    return NULL;
-
-  return g_action_get_state_hint (action);
-}
-
-static gboolean
-g_simple_action_group_get_enabled (GActionGroup *group,
-                                   const gchar  *action_name)
+g_simple_action_group_query_action (GActionGroup        *group,
+                                    const gchar         *action_name,
+                                    gboolean            *enabled,
+                                    const GVariantType **parameter_type,
+                                    const GVariantType **state_type,
+                                    GVariant           **state_hint,
+                                    GVariant           **state)
 {
   GSimpleActionGroup *simple = G_SIMPLE_ACTION_GROUP (group);
   GAction *action;
@@ -129,28 +86,28 @@ g_simple_action_group_get_enabled (GActionGroup *group,
   if (action == NULL)
     return FALSE;
 
-  return g_action_get_enabled (action);
-}
+  if (enabled)
+    *enabled = g_action_get_enabled (action);
 
-static GVariant *
-g_simple_action_group_get_state (GActionGroup *group,
-                                 const gchar  *action_name)
-{
-  GSimpleActionGroup *simple = G_SIMPLE_ACTION_GROUP (group);
-  GAction *action;
+  if (parameter_type)
+    *parameter_type = g_action_get_parameter_type (action);
 
-  action = g_hash_table_lookup (simple->priv->table, action_name);
+  if (state_type)
+    *state_type = g_action_get_state_type (action);
 
-  if (action == NULL)
-    return NULL;
+  if (state_hint)
+    *state_hint = g_action_get_state_hint (action);
 
-  return g_action_get_state (action);
+  if (state)
+    *state = g_action_get_state (action);
+
+  return TRUE;
 }
 
 static void
-g_simple_action_group_set_state (GActionGroup *group,
-                                 const gchar  *action_name,
-                                 GVariant     *value)
+g_simple_action_group_change_state (GActionGroup *group,
+                                    const gchar  *action_name,
+                                    GVariant     *value)
 {
   GSimpleActionGroup *simple = G_SIMPLE_ACTION_GROUP (group);
   GAction *action;
@@ -160,7 +117,7 @@ g_simple_action_group_set_state (GActionGroup *group,
   if (action == NULL)
     return;
 
-  g_action_set_state (action, value);
+  g_action_change_state (action, value);
 }
 
 static void
@@ -214,6 +171,67 @@ g_simple_action_group_disconnect (gpointer key,
                                         user_data);
 }
 
+static GAction *
+g_simple_action_group_lookup_action (GActionMap *action_map,
+                                     const gchar        *action_name)
+{
+  GSimpleActionGroup *simple = G_SIMPLE_ACTION_GROUP (action_map);
+
+  return g_hash_table_lookup (simple->priv->table, action_name);
+}
+
+static void
+g_simple_action_group_add_action (GActionMap *action_map,
+                                  GAction    *action)
+{
+  GSimpleActionGroup *simple = G_SIMPLE_ACTION_GROUP (action_map);
+  const gchar *action_name;
+  GAction *old_action;
+
+  action_name = g_action_get_name (action);
+  old_action = g_hash_table_lookup (simple->priv->table, action_name);
+
+  if (old_action != action)
+    {
+      if (old_action != NULL)
+        {
+          g_action_group_action_removed (G_ACTION_GROUP (simple),
+                                         action_name);
+          g_simple_action_group_disconnect (NULL, old_action, simple);
+        }
+
+      g_signal_connect (action, "notify::enabled",
+                        G_CALLBACK (action_enabled_notify), simple);
+
+      if (g_action_get_state_type (action) != NULL)
+        g_signal_connect (action, "notify::state",
+                          G_CALLBACK (action_state_notify), simple);
+
+      g_hash_table_insert (simple->priv->table,
+                           g_strdup (action_name),
+                           g_object_ref (action));
+
+      g_action_group_action_added (G_ACTION_GROUP (simple), action_name);
+    }
+}
+
+static void
+g_simple_action_group_remove_action (GActionMap  *action_map,
+                                     const gchar *action_name)
+{
+  GSimpleActionGroup *simple = G_SIMPLE_ACTION_GROUP (action_map);
+  GAction *action;
+
+  action = g_hash_table_lookup (simple->priv->table, action_name);
+
+  if (action != NULL)
+    {
+      g_action_group_action_removed (G_ACTION_GROUP (simple), action_name);
+      g_simple_action_group_disconnect (NULL, action, simple);
+      g_hash_table_remove (simple->priv->table, action_name);
+    }
+}
+
 static void
 g_simple_action_group_finalize (GObject *object)
 {
@@ -252,14 +270,17 @@ static void
 g_simple_action_group_iface_init (GActionGroupInterface *iface)
 {
   iface->list_actions = g_simple_action_group_list_actions;
-  iface->has_action = g_simple_action_group_has_action;
-  iface->get_action_parameter_type = g_simple_action_group_get_parameter_type;
-  iface->get_action_state_type = g_simple_action_group_get_state_type;
-  iface->get_action_state_hint = g_simple_action_group_get_state_hint;
-  iface->get_action_enabled = g_simple_action_group_get_enabled;
-  iface->get_action_state = g_simple_action_group_get_state;
-  iface->change_action_state = g_simple_action_group_set_state;
+  iface->query_action = g_simple_action_group_query_action;
+  iface->change_action_state = g_simple_action_group_change_state;
   iface->activate_action = g_simple_action_group_activate;
+}
+
+static void
+g_simple_action_group_map_iface_init (GActionMapInterface *iface)
+{
+  iface->add_action = g_simple_action_group_add_action;
+  iface->remove_action = g_simple_action_group_remove_action;
+  iface->lookup_action = g_simple_action_group_lookup_action;
 }
 
 /**
@@ -289,14 +310,14 @@ g_simple_action_group_new (void)
  * Returns: (transfer none): a #GAction, or %NULL
  *
  * Since: 2.28
- **/
+ */
 GAction *
 g_simple_action_group_lookup (GSimpleActionGroup *simple,
                               const gchar        *action_name)
 {
   g_return_val_if_fail (G_IS_SIMPLE_ACTION_GROUP (simple), NULL);
 
-  return g_hash_table_lookup (simple->priv->table, action_name);
+  return g_action_map_lookup_action (G_ACTION_MAP (simple), action_name);
 }
 
 /**
@@ -317,37 +338,9 @@ void
 g_simple_action_group_insert (GSimpleActionGroup *simple,
                               GAction            *action)
 {
-  const gchar *action_name;
-  GAction *old_action;
-
   g_return_if_fail (G_IS_SIMPLE_ACTION_GROUP (simple));
-  g_return_if_fail (G_IS_ACTION (action));
 
-  action_name = g_action_get_name (action);
-  old_action = g_hash_table_lookup (simple->priv->table, action_name);
-
-  if (old_action != action)
-    {
-      if (old_action != NULL)
-        {
-          g_action_group_action_removed (G_ACTION_GROUP (simple),
-                                         action_name);
-          g_simple_action_group_disconnect (NULL, old_action, simple);
-        }
-
-      g_signal_connect (action, "notify::enabled",
-                        G_CALLBACK (action_enabled_notify), simple);
-
-      if (g_action_get_state_type (action) != NULL)
-        g_signal_connect (action, "notify::state",
-                          G_CALLBACK (action_state_notify), simple);
-
-      g_hash_table_insert (simple->priv->table,
-                           g_strdup (action_name),
-                           g_object_ref (action));
-
-      g_action_group_action_added (G_ACTION_GROUP (simple), action_name);
-    }
+  g_action_map_add_action (G_ACTION_MAP (simple), action);
 }
 
 /**
@@ -365,16 +358,30 @@ void
 g_simple_action_group_remove (GSimpleActionGroup *simple,
                               const gchar        *action_name)
 {
-  GAction *action;
-
   g_return_if_fail (G_IS_SIMPLE_ACTION_GROUP (simple));
 
-  action = g_hash_table_lookup (simple->priv->table, action_name);
+  g_action_map_remove_action (G_ACTION_MAP (simple), action_name);
+}
 
-  if (action != NULL)
-    {
-      g_action_group_action_removed (G_ACTION_GROUP (simple), action_name);
-      g_simple_action_group_disconnect (NULL, action, simple);
-      g_hash_table_remove (simple->priv->table, action_name);
-    }
+
+/**
+ * g_simple_action_group_add_entries:
+ * @simple: a #GSimpleActionGroup
+ * @entries: (array length=n_entries): a pointer to the first item in
+ *           an array of #GActionEntry structs
+ * @n_entries: the length of @entries, or -1
+ * @user_data: the user data for signal connections
+ *
+ * A convenience function for creating multiple #GSimpleAction instances
+ * and adding them to the action group.
+ *
+ * Since: 2.30
+ **/
+void
+g_simple_action_group_add_entries (GSimpleActionGroup *simple,
+                                   const GActionEntry *entries,
+                                   gint                n_entries,
+                                   gpointer            user_data)
+{
+  g_action_map_add_action_entries (G_ACTION_MAP (simple), entries, n_entries, user_data);
 }

@@ -24,7 +24,6 @@
 #include "gtlsclientconnection.h"
 #include "ginitable.h"
 #include "gioenumtypes.h"
-#include "gio-marshal.h"
 #include "gsocket.h"
 #include "gsocketconnectable.h"
 #include "gtlsbackend.h"
@@ -154,7 +153,8 @@ g_tls_client_connection_default_init (GTlsClientConnectionInterface *iface)
  * must have pollable input and output streams) which is assumed to
  * communicate with the server identified by @server_identity.
  *
- * Return value: the new #GTlsClientConnection, or %NULL on error
+ * Return value: (transfer full) (type GTlsClientConnection): the new
+ * #GTlsClientConnection, or %NULL on error
  *
  * Since: 2.28
  */
@@ -222,7 +222,7 @@ g_tls_client_connection_set_validation_flags (GTlsClientConnection  *conn,
  *
  * Gets @conn's expected server identity
  *
- * Return value: a #GSocketConnectable describing the
+ * Return value: (transfer none): a #GSocketConnectable describing the
  * expected server identity, or %NULL if the expected identity is not
  * known.
  *

@@ -19,13 +19,14 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
 #ifndef __G_MAPPED_FILE_H__
 #define __G_MAPPED_FILE_H__
 
+#include <glib/gbytes.h>
 #include <glib/gerror.h>
 
 G_BEGIN_DECLS
@@ -35,14 +36,18 @@ typedef struct _GMappedFile GMappedFile;
 GMappedFile *g_mapped_file_new          (const gchar  *filename,
 				         gboolean      writable,
 				         GError      **error) G_GNUC_MALLOC;
+GMappedFile *g_mapped_file_new_from_fd  (gint          fd,
+					 gboolean      writable,
+					 GError      **error) G_GNUC_MALLOC;
 gsize        g_mapped_file_get_length   (GMappedFile  *file);
 gchar       *g_mapped_file_get_contents (GMappedFile  *file);
+GLIB_AVAILABLE_IN_2_34
+GBytes *     g_mapped_file_get_bytes    (GMappedFile  *file);
 GMappedFile *g_mapped_file_ref          (GMappedFile  *file);
 void         g_mapped_file_unref        (GMappedFile  *file);
 
-#ifndef G_DISABLE_DEPRECATED
+GLIB_DEPRECATED_FOR(g_mapped_file_unref)
 void         g_mapped_file_free         (GMappedFile  *file);
-#endif
 
 G_END_DECLS
 

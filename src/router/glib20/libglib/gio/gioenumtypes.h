@@ -63,6 +63,14 @@ GType g_emblem_origin_get_type (void) G_GNUC_CONST;
 #define G_TYPE_EMBLEM_ORIGIN (g_emblem_origin_get_type ())
 GType g_resolver_error_get_type (void) G_GNUC_CONST;
 #define G_TYPE_RESOLVER_ERROR (g_resolver_error_get_type ())
+GType g_resolver_record_type_get_type (void) G_GNUC_CONST;
+#define G_TYPE_RESOLVER_RECORD_TYPE (g_resolver_record_type_get_type ())
+GType g_resource_error_get_type (void) G_GNUC_CONST;
+#define G_TYPE_RESOURCE_ERROR (g_resource_error_get_type ())
+GType g_resource_flags_get_type (void) G_GNUC_CONST;
+#define G_TYPE_RESOURCE_FLAGS (g_resource_flags_get_type ())
+GType g_resource_lookup_flags_get_type (void) G_GNUC_CONST;
+#define G_TYPE_RESOURCE_LOOKUP_FLAGS (g_resource_lookup_flags_get_type ())
 GType g_socket_family_get_type (void) G_GNUC_CONST;
 #define G_TYPE_SOCKET_FAMILY (g_socket_family_get_type ())
 GType g_socket_type_get_type (void) G_GNUC_CONST;
@@ -121,6 +129,24 @@ GType g_tls_authentication_mode_get_type (void) G_GNUC_CONST;
 #define G_TYPE_TLS_AUTHENTICATION_MODE (g_tls_authentication_mode_get_type ())
 GType g_tls_rehandshake_mode_get_type (void) G_GNUC_CONST;
 #define G_TYPE_TLS_REHANDSHAKE_MODE (g_tls_rehandshake_mode_get_type ())
+GType g_tls_password_flags_get_type (void) G_GNUC_CONST;
+#define G_TYPE_TLS_PASSWORD_FLAGS (g_tls_password_flags_get_type ())
+GType g_tls_interaction_result_get_type (void) G_GNUC_CONST;
+#define G_TYPE_TLS_INTERACTION_RESULT (g_tls_interaction_result_get_type ())
+GType g_dbus_interface_skeleton_flags_get_type (void) G_GNUC_CONST;
+#define G_TYPE_DBUS_INTERFACE_SKELETON_FLAGS (g_dbus_interface_skeleton_flags_get_type ())
+GType g_dbus_object_manager_client_flags_get_type (void) G_GNUC_CONST;
+#define G_TYPE_DBUS_OBJECT_MANAGER_CLIENT_FLAGS (g_dbus_object_manager_client_flags_get_type ())
+GType g_tls_database_verify_flags_get_type (void) G_GNUC_CONST;
+#define G_TYPE_TLS_DATABASE_VERIFY_FLAGS (g_tls_database_verify_flags_get_type ())
+GType g_tls_database_lookup_flags_get_type (void) G_GNUC_CONST;
+#define G_TYPE_TLS_DATABASE_LOOKUP_FLAGS (g_tls_database_lookup_flags_get_type ())
+GType g_io_module_scope_flags_get_type (void) G_GNUC_CONST;
+#define G_TYPE_IO_MODULE_SCOPE_FLAGS (g_io_module_scope_flags_get_type ())
+GType g_socket_client_event_get_type (void) G_GNUC_CONST;
+#define G_TYPE_SOCKET_CLIENT_EVENT (g_socket_client_event_get_type ())
+GType g_test_dbus_flags_get_type (void) G_GNUC_CONST;
+#define G_TYPE_TEST_DBUS_FLAGS (g_test_dbus_flags_get_type ())
 
 /* enumerations from "gsettings.h" */
 GType g_settings_bind_flags_get_type (void) G_GNUC_CONST;

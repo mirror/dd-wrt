@@ -20,7 +20,12 @@
  */
 
 #include <string.h>
+#include <unistd.h>
 #include <errno.h>
+
+/* We are testing some deprecated APIs here */
+#define GLIB_DISABLE_DEPRECATION_WARNINGS
+
 #include <glib.h>
 #include <glib/gstdio.h>
 
@@ -103,6 +108,7 @@ test_build_pathv (void)
 {
   gchar *args[10];
 
+  g_assert (g_build_pathv ("", NULL) == NULL);
   args[0] = NULL;
   check_string (g_build_pathv ("", args), "");
   args[0] = ""; args[1] = NULL;
@@ -457,6 +463,10 @@ test_mkdir_with_parents_1 (const gchar *base)
   g_remove (p2);
   g_remove (p1);
   g_remove (p0);
+
+  g_free (p2);
+  g_free (p1);
+  g_free (p0);
 }
 
 static void
@@ -478,17 +488,284 @@ test_mkdir_with_parents (void)
     g_print ("checking g_mkdir_with_parents() in cwd: %s", cwd);
   test_mkdir_with_parents_1 (cwd);
   g_free (cwd);
+
+  g_assert (g_mkdir_with_parents (NULL, 0) == -1);
+  g_assert (errno == EINVAL);
 }
 
 static void
 test_format_size_for_display (void)
 {
+  /* nobody called setlocale(), so we should get "C" behaviour... */
   check_string (g_format_size_for_display (0), "0 bytes");
   check_string (g_format_size_for_display (1), "1 byte");
   check_string (g_format_size_for_display (2), "2 bytes");
   check_string (g_format_size_for_display (1024), "1.0 KB");
   check_string (g_format_size_for_display (1024 * 1024), "1.0 MB");
   check_string (g_format_size_for_display (1024 * 1024 * 1024), "1.0 GB");
+  check_string (g_format_size_for_display (1024ULL * 1024 * 1024 * 1024), "1.0 TB");
+  check_string (g_format_size_for_display (1024ULL * 1024 * 1024 * 1024 * 1024), "1.0 PB");
+  check_string (g_format_size_for_display (1024ULL * 1024 * 1024 * 1024 * 1024 * 1024), "1.0 EB");
+
+  check_string (g_format_size (0), "0 bytes");
+  check_string (g_format_size (1), "1 byte");
+  check_string (g_format_size (2), "2 bytes");
+  check_string (g_format_size (1000ULL), "1.0 kB");
+  check_string (g_format_size (1000ULL * 1000), "1.0 MB");
+  check_string (g_format_size (1000ULL * 1000 * 1000), "1.0 GB");
+  check_string (g_format_size (1000ULL * 1000 * 1000 * 1000), "1.0 TB");
+  check_string (g_format_size (1000ULL * 1000 * 1000 * 1000 * 1000), "1.0 PB");
+  check_string (g_format_size (1000ULL * 1000 * 1000 * 1000 * 1000 * 1000), "1.0 EB");
+
+  check_string (g_format_size_full (0, G_FORMAT_SIZE_IEC_UNITS), "0 bytes");
+  check_string (g_format_size_full (1, G_FORMAT_SIZE_IEC_UNITS), "1 byte");
+  check_string (g_format_size_full (2, G_FORMAT_SIZE_IEC_UNITS), "2 bytes");
+
+  check_string (g_format_size_full (2048ULL, G_FORMAT_SIZE_IEC_UNITS), "2.0 KiB");
+  check_string (g_format_size_full (2048ULL * 1024, G_FORMAT_SIZE_IEC_UNITS), "2.0 MiB");
+  check_string (g_format_size_full (2048ULL * 1024 * 1024, G_FORMAT_SIZE_IEC_UNITS), "2.0 GiB");
+  check_string (g_format_size_full (2048ULL * 1024 * 1024 * 1024, G_FORMAT_SIZE_IEC_UNITS), "2.0 TiB");
+  check_string (g_format_size_full (2048ULL * 1024 * 1024 * 1024 * 1024, G_FORMAT_SIZE_IEC_UNITS), "2.0 PiB");
+  check_string (g_format_size_full (2048ULL * 1024 * 1024 * 1024 * 1024 * 1024, G_FORMAT_SIZE_IEC_UNITS), "2.0 EiB");
+
+  check_string (g_format_size_full (238472938, G_FORMAT_SIZE_IEC_UNITS), "227.4 MiB");
+  check_string (g_format_size_full (238472938, G_FORMAT_SIZE_DEFAULT), "238.5 MB");
+  check_string (g_format_size_full (238472938, G_FORMAT_SIZE_LONG_FORMAT), "238.5 MB (238472938 bytes)");
+}
+
+static void
+test_file_errors (void)
+{
+#ifdef EEXIST
+  g_assert (g_file_error_from_errno (EEXIST) == G_FILE_ERROR_EXIST);
+#endif
+#ifdef EISDIR
+  g_assert (g_file_error_from_errno (EISDIR) == G_FILE_ERROR_ISDIR);
+#endif
+#ifdef EACCES
+  g_assert (g_file_error_from_errno (EACCES) == G_FILE_ERROR_ACCES);
+#endif
+#ifdef ENAMETOOLONG
+  g_assert (g_file_error_from_errno (ENAMETOOLONG) == G_FILE_ERROR_NAMETOOLONG);
+#endif
+#ifdef ENOENT
+  g_assert (g_file_error_from_errno (ENOENT) == G_FILE_ERROR_NOENT);
+#endif
+#ifdef ENOTDIR
+  g_assert (g_file_error_from_errno (ENOTDIR) == G_FILE_ERROR_NOTDIR);
+#endif
+#ifdef ENXIO
+  g_assert (g_file_error_from_errno (ENXIO) == G_FILE_ERROR_NXIO);
+#endif
+#ifdef ENODEV
+  g_assert (g_file_error_from_errno (ENODEV) == G_FILE_ERROR_NODEV);
+#endif
+#ifdef EROFS
+  g_assert (g_file_error_from_errno (EROFS) == G_FILE_ERROR_ROFS);
+#endif
+#ifdef ETXTBSY
+  g_assert (g_file_error_from_errno (ETXTBSY) == G_FILE_ERROR_TXTBSY);
+#endif
+#ifdef EFAULT
+  g_assert (g_file_error_from_errno (EFAULT) == G_FILE_ERROR_FAULT);
+#endif
+#ifdef ELOOP
+  g_assert (g_file_error_from_errno (ELOOP) == G_FILE_ERROR_LOOP);
+#endif
+#ifdef ENOSPC
+  g_assert (g_file_error_from_errno (ENOSPC) == G_FILE_ERROR_NOSPC);
+#endif
+#ifdef ENOMEM
+  g_assert (g_file_error_from_errno (ENOMEM) == G_FILE_ERROR_NOMEM);
+#endif
+#ifdef EMFILE
+  g_assert (g_file_error_from_errno (EMFILE) == G_FILE_ERROR_MFILE);
+#endif
+#ifdef ENFILE
+  g_assert (g_file_error_from_errno (ENFILE) == G_FILE_ERROR_NFILE);
+#endif
+#ifdef EBADF
+  g_assert (g_file_error_from_errno (EBADF) == G_FILE_ERROR_BADF);
+#endif
+#ifdef EINVAL
+  g_assert (g_file_error_from_errno (EINVAL) == G_FILE_ERROR_INVAL);
+#endif
+#ifdef EPIPE
+  g_assert (g_file_error_from_errno (EPIPE) == G_FILE_ERROR_PIPE);
+#endif
+#ifdef EAGAIN
+  g_assert (g_file_error_from_errno (EAGAIN) == G_FILE_ERROR_AGAIN);
+#endif
+#ifdef EINTR
+  g_assert (g_file_error_from_errno (EINTR) == G_FILE_ERROR_INTR);
+#endif
+#ifdef EIO
+  g_assert (g_file_error_from_errno (EIO) == G_FILE_ERROR_IO);
+#endif
+#ifdef EPERM
+  g_assert (g_file_error_from_errno (EPERM) == G_FILE_ERROR_PERM);
+#endif
+#ifdef ENOSYS
+  g_assert (g_file_error_from_errno (ENOSYS) == G_FILE_ERROR_NOSYS);
+#endif
+}
+
+static void
+test_basename (void)
+{
+  gchar *b;
+
+  b = g_path_get_basename ("");
+  g_assert_cmpstr (b, ==, ".");
+  g_free (b);
+
+  b = g_path_get_basename ("///");
+  g_assert_cmpstr (b, ==, "/");
+  g_free (b);
+
+  b = g_path_get_basename ("/a/b/c/d");
+  g_assert_cmpstr (b, ==, "d");
+  g_free (b);
+}
+
+static void
+test_dir_make_tmp (void)
+{
+  gchar *name;
+  GError *error = NULL;
+
+  name = g_dir_make_tmp ("testXXXXXXtest", &error);
+  g_assert_no_error (error);
+  g_assert (g_file_test (name, G_FILE_TEST_IS_DIR));
+  g_assert (g_rmdir (name) == 0);
+  g_free (name);
+
+  name = g_dir_make_tmp (NULL, &error);
+  g_assert_no_error (error);
+  g_assert (g_file_test (name, G_FILE_TEST_IS_DIR));
+  g_assert (g_rmdir (name) == 0);
+  g_free (name);
+
+  name = g_dir_make_tmp ("test/XXXXXX", &error);
+  g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_FAILED);
+  g_clear_error (&error);
+  g_assert (name == NULL);
+
+  name = g_dir_make_tmp ("XXXXxX", &error);
+  g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_FAILED);
+  g_clear_error (&error);
+  g_assert (name == NULL);
+}
+
+static void
+test_file_open_tmp (void)
+{
+  gchar *name = NULL;
+  GError *error = NULL;
+  gint fd;
+
+  fd = g_file_open_tmp ("testXXXXXXtest", &name, &error);
+  g_assert (fd != -1);
+  g_assert_no_error (error);
+  g_assert (name != NULL);
+  unlink (name);
+  g_free (name);
+  close (fd);
+
+  fd = g_file_open_tmp (NULL, &name, &error);
+  g_assert (fd != -1);
+  g_assert_no_error (error);
+  g_assert (name != NULL);
+  g_unlink (name);
+  g_free (name);
+  close (fd);
+
+  name = NULL;
+  fd = g_file_open_tmp ("test/XXXXXX", &name, &error);
+  g_assert (fd == -1);
+  g_assert (name == NULL);
+  g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_FAILED);
+  g_clear_error (&error);
+
+  fd = g_file_open_tmp ("XXXXxX", &name, &error);
+  g_assert (fd == -1);
+  g_assert (name == NULL);
+  g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_FAILED);
+  g_clear_error (&error);
+}
+
+static void
+test_mkstemp (void)
+{
+  gchar *name;
+  gint fd;
+
+  name = g_strdup ("testXXXXXXtest"),
+  fd = g_mkstemp (name);
+  g_assert (fd != -1);
+  g_assert (strstr (name, "XXXXXX") == NULL);
+  unlink (name);
+  close (fd);
+  g_free (name);
+
+  name = g_strdup ("testYYYYYYtest"),
+  fd = g_mkstemp (name);
+  g_assert (fd == -1);
+  g_free (name);
+}
+
+static void
+test_mkdtemp (void)
+{
+  gchar *name;
+  gchar *ret;
+
+  name = g_strdup ("testXXXXXXtest"),
+  ret = g_mkdtemp (name);
+  g_assert (ret == name);
+  g_assert (strstr (name, "XXXXXX") == NULL);
+  g_rmdir (name);
+  g_free (name);
+
+  name = g_strdup ("testYYYYYYtest"),
+  ret = g_mkdtemp (name);
+  g_assert (ret == NULL);
+  g_free (name);
+}
+
+static void
+test_set_contents (void)
+{
+  GError *error = NULL;
+  gint fd;
+  gchar *name;
+  gchar *buf;
+  gsize len;
+  gboolean ret;
+
+  fd = g_file_open_tmp (NULL, &name, &error);
+  g_assert_no_error (error);
+  write (fd, "a", 1);
+  close (fd);
+
+  ret = g_file_get_contents (name, &buf, &len, &error);
+  g_assert (ret);
+  g_assert_no_error (error);
+  g_assert_cmpstr (buf, ==, "a");
+  g_free (buf);
+
+  ret = g_file_set_contents (name, "b", 1, &error);
+  g_assert (ret);
+  g_assert_no_error (error);
+
+  ret = g_file_get_contents (name, &buf, &len, &error);
+  g_assert (ret);
+  g_assert_no_error (error);
+  g_assert_cmpstr (buf, ==, "b");
+  g_free (buf);
+
+  g_remove (name);
+  g_free (name);
 }
 
 int
@@ -503,6 +780,13 @@ main (int   argc,
   g_test_add_func ("/fileutils/build-filenamev", test_build_filenamev);
   g_test_add_func ("/fileutils/mkdir-with-parents", test_mkdir_with_parents);
   g_test_add_func ("/fileutils/format-size-for-display", test_format_size_for_display);
+  g_test_add_func ("/fileutils/errors", test_file_errors);
+  g_test_add_func ("/fileutils/basename", test_basename);
+  g_test_add_func ("/fileutils/dir-make-tmp", test_dir_make_tmp);
+  g_test_add_func ("/fileutils/file-open-tmp", test_file_open_tmp);
+  g_test_add_func ("/fileutils/mkstemp", test_mkstemp);
+  g_test_add_func ("/fileutils/mkdtemp", test_mkdtemp);
+  g_test_add_func ("/fileutils/set-contents", test_set_contents);
 
-  return g_test_run();
+  return g_test_run ();
 }

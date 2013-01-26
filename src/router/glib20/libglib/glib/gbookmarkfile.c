@@ -359,21 +359,8 @@ bookmark_metadata_free (BookmarkMetadata *metadata)
   
   g_free (metadata->mime_type);
     
-  if (metadata->groups)
-    {
-      g_list_foreach (metadata->groups,
-		      (GFunc) g_free,
-		      NULL);
-      g_list_free (metadata->groups);
-    }
-  
-  if (metadata->applications)
-    {
-      g_list_foreach (metadata->applications,
-		      (GFunc) bookmark_app_info_free,
-		      NULL);
-      g_list_free (metadata->applications);
-    }
+  g_list_free_full (metadata->groups, g_free);
+  g_list_free_full (metadata->applications, (GDestroyNotify) bookmark_app_info_free);
 
   g_hash_table_destroy (metadata->apps_by_name);
 
@@ -687,15 +674,8 @@ g_bookmark_file_clear (GBookmarkFile *bookmark)
   g_free (bookmark->title);
   g_free (bookmark->description);
 
-  if (bookmark->items)
-    {
-      g_list_foreach (bookmark->items,
-		      (GFunc) bookmark_item_free,
-		      NULL);
-      g_list_free (bookmark->items);
-      
-      bookmark->items = NULL;
-    }
+  g_list_free_full (bookmark->items, (GDestroyNotify) bookmark_item_free);
+  bookmark->items = NULL;
   
   if (bookmark->items_by_uri)
     {
@@ -1438,9 +1418,9 @@ static const GMarkupParser markup_parser =
 
 static gboolean
 g_bookmark_file_parse (GBookmarkFile  *bookmark,
-			 const gchar      *buffer,
-			 gsize             length,
-			 GError          **error)
+			 const gchar  *buffer,
+			 gsize         length,
+			 GError       **error)
 {
   GMarkupParseContext *context;
   ParseData *parse_data;
@@ -1451,6 +1431,9 @@ g_bookmark_file_parse (GBookmarkFile  *bookmark,
 
   if (!buffer)
     return FALSE;
+
+  parse_error = NULL;
+  end_error = NULL;
   
   if (length == (gsize) -1)
     length = strlen (buffer);
@@ -1463,30 +1446,22 @@ g_bookmark_file_parse (GBookmarkFile  *bookmark,
   					parse_data,
   					(GDestroyNotify) parse_data_free);
   
-  parse_error = NULL;
   retval = g_markup_parse_context_parse (context,
   					 buffer,
   					 length,
   					 &parse_error);
   if (!retval)
-    {
-      g_propagate_error (error, parse_error);
-      
-      return FALSE;
-    }
-  
-  end_error = NULL;
-  retval = g_markup_parse_context_end_parse (context, &end_error);
-  if (!retval)
-    {
-      g_propagate_error (error, end_error);
-      
-      return FALSE;
-    }
-  
+    g_propagate_error (error, parse_error);
+  else
+   {
+     retval = g_markup_parse_context_end_parse (context, &end_error);
+      if (!retval)
+        g_propagate_error (error, end_error);
+   }
+ 
   g_markup_parse_context_free (context);
-  
-  return TRUE;
+
+  return retval;
 }
 
 static gchar *
@@ -1610,15 +1585,7 @@ timestamp_from_iso8601 (const gchar *iso_date)
   return (time_t) stamp.tv_sec;
 }
 
-
-
-GQuark
-g_bookmark_file_error_quark (void)
-{
-  return g_quark_from_static_string ("g-bookmark-file-error-quark");
-}
-
-
+G_DEFINE_QUARK (g-bookmark-file-error-quark, g_bookmark_file_error)
 
 /********************
  *    Public API    *
@@ -1705,14 +1672,11 @@ g_bookmark_file_load_from_data (GBookmarkFile  *bookmark,
 
   parse_error = NULL;
   retval = g_bookmark_file_parse (bookmark, data, length, &parse_error);
+
   if (!retval)
-    {
-      g_propagate_error (error, parse_error);
-      
-      return FALSE;
-    }
-  
-  return TRUE;
+    g_propagate_error (error, parse_error);
+
+  return retval;
 }
 
 /**
@@ -1844,7 +1808,7 @@ find_file_in_data_dirs (const gchar   *file,
  * g_bookmark_file_load_from_data_dirs:
  * @bookmark: a #GBookmarkFile
  * @file: a relative path to a filename to open and parse
- * @full_path: return location for a string containing the full path
+ * @full_path: (allow-none): return location for a string containing the full path
  *   of the file, or %NULL
  * @error: return location for a #GError, or %NULL
  *
@@ -1854,7 +1818,7 @@ find_file_in_data_dirs (const gchar   *file,
  * @full_path.  If the file could not be loaded then an %error is
  * set to either a #GFileError or #GBookmarkFileError.
  *
- * Return value: %TRUE if a key file could be loaded, %FALSE othewise
+ * Return value: %TRUE if a key file could be loaded, %FALSE otherwise
  *
  * Since: 2.12
  */
@@ -1925,7 +1889,7 @@ g_bookmark_file_load_from_data_dirs (GBookmarkFile  *bookmark,
 /**
  * g_bookmark_file_to_data:
  * @bookmark: a #GBookmarkFile
- * @length: return location for the length of the returned string, or %NULL
+ * @length: (allow-none): return location for the length of the returned string, or %NULL
  * @error: return location for a #GError, or %NULL
  *
  * This function outputs @bookmark as a string.
@@ -2115,7 +2079,7 @@ g_bookmark_file_has_item (GBookmarkFile *bookmark,
 /**
  * g_bookmark_file_get_uris:
  * @bookmark: a #GBookmarkFile
- * @length: return location for the number of returned URIs, or %NULL
+ * @length: (allow-none): return location for the number of returned URIs, or %NULL
  *
  * Returns all URIs of the bookmarks in the bookmark file @bookmark.
  * The array of returned URIs will be %NULL-terminated, so @length may
@@ -2159,7 +2123,7 @@ g_bookmark_file_get_uris (GBookmarkFile *bookmark,
 /**
  * g_bookmark_file_set_title:
  * @bookmark: a #GBookmarkFile
- * @uri: a valid URI or %NULL
+ * @uri: (allow-none): a valid URI or %NULL
  * @title: a UTF-8 encoded string
  *
  * Sets @title as the title of the bookmark for @uri inside the
@@ -2204,7 +2168,7 @@ g_bookmark_file_set_title (GBookmarkFile *bookmark,
 /**
  * g_bookmark_file_get_title:
  * @bookmark: a #GBookmarkFile
- * @uri: a valid URI or %NULL
+ * @uri: (allow-none): a valid URI or %NULL
  * @error: return location for a #GError, or %NULL
  *
  * Returns the title of the bookmark for @uri.
@@ -2247,7 +2211,7 @@ g_bookmark_file_get_title (GBookmarkFile  *bookmark,
 /**
  * g_bookmark_file_set_description:
  * @bookmark: a #GBookmarkFile
- * @uri: a valid URI or %NULL
+ * @uri: (allow-none): a valid URI or %NULL
  * @description: a string
  *
  * Sets @description as the description of the bookmark for @uri.
@@ -2900,7 +2864,7 @@ g_bookmark_file_remove_group (GBookmarkFile  *bookmark,
  * g_bookmark_file_set_groups:
  * @bookmark: a #GBookmarkFile
  * @uri: an item's URI
- * @groups: an array of group names, or %NULL to remove all groups
+ * @groups: (allow-none): an array of group names, or %NULL to remove all groups
  * @length: number of group name values in @groups
  *
  * Sets a list of group names for the item with URI @uri.  Each previously
@@ -2933,14 +2897,8 @@ g_bookmark_file_set_groups (GBookmarkFile  *bookmark,
   if (!item->metadata)
     item->metadata = bookmark_metadata_new ();
 
-  if (item->metadata->groups != NULL)
-    {
-      g_list_foreach (item->metadata->groups,
-		      (GFunc) g_free,
-		      NULL);
-      g_list_free (item->metadata->groups);
-      item->metadata->groups = NULL;
-    }
+  g_list_free_full (item->metadata->groups, g_free);
+  item->metadata->groups = NULL;
   
   if (groups)
     {
@@ -2956,7 +2914,7 @@ g_bookmark_file_set_groups (GBookmarkFile  *bookmark,
  * g_bookmark_file_get_groups:
  * @bookmark: a #GBookmarkFile
  * @uri: a valid URI
- * @length: return location for the length of the returned string, or %NULL
+ * @length: (allow-none): return location for the length of the returned string, or %NULL
  * @error: return location for a #GError, or %NULL
  *
  * Retrieves the list of group names of the bookmark for @uri.
@@ -3028,9 +2986,9 @@ g_bookmark_file_get_groups (GBookmarkFile  *bookmark,
  * g_bookmark_file_add_application:
  * @bookmark: a #GBookmarkFile
  * @uri: a valid URI
- * @name: the name of the application registering the bookmark
+ * @name: (allow-none): the name of the application registering the bookmark
  *   or %NULL
- * @exec: command line to be used to launch the bookmark or %NULL
+ * @exec: (allow-none): command line to be used to launch the bookmark or %NULL
  *
  * Adds the application with @name and @exec to the list of
  * applications that have registered a bookmark for @uri into
@@ -3045,7 +3003,7 @@ g_bookmark_file_get_groups (GBookmarkFile  *bookmark,
  * If @name is %NULL, the name of the application will be the
  * same returned by g_get_application_name(); if @exec is %NULL, the
  * command line will be a composition of the program name as
- * returned by g_get_prgname() and the "%u" modifier, which will be
+ * returned by g_get_prgname() and the "\%u" modifier, which will be
  * expanded to the bookmark's URI.
  *
  * This function will automatically take care of updating the
@@ -3208,9 +3166,9 @@ g_bookmark_file_has_application (GBookmarkFile  *bookmark,
  *
  * @name can be any UTF-8 encoded string used to identify an
  * application.
- * @exec can have one of these two modifiers: "%f", which will
+ * @exec can have one of these two modifiers: "\%f", which will
  * be expanded as the local file name retrieved from the bookmark's
- * URI; "%u", which will be expanded as the bookmark's URI.
+ * URI; "\%u", which will be expanded as the bookmark's URI.
  * The expansion is done automatically when retrieving the stored
  * command line using the g_bookmark_file_get_app_info() function.
  * @count is the number of times the application has registered the
@@ -3268,6 +3226,9 @@ g_bookmark_file_set_app_info (GBookmarkFile  *bookmark,
 	}
     }
   
+  if (!item->metadata)
+    item->metadata = bookmark_metadata_new ();
+
   ai = bookmark_item_lookup_app_info (item, name);
   if (!ai)
     {
@@ -3378,9 +3339,9 @@ expand_exec_line (const gchar *exec_fmt,
  * @bookmark: a #GBookmarkFile
  * @uri: a valid URI
  * @name: an application's name
- * @exec: location for the command line of the application, or %NULL
- * @count: return location for the registration count, or %NULL
- * @stamp: return location for the last registration time, or %NULL
+ * @exec: (allow-none): location for the command line of the application, or %NULL
+ * @count: (allow-none): return location for the registration count, or %NULL
+ * @stamp: (allow-none): return location for the last registration time, or %NULL
  * @error: return location for a #GError, or %NULL
  *
  * Gets the registration informations of @app_name for the bookmark for
@@ -3478,7 +3439,7 @@ g_bookmark_file_get_app_info (GBookmarkFile  *bookmark,
  * g_bookmark_file_get_applications:
  * @bookmark: a #GBookmarkFile
  * @uri: a valid URI
- * @length: return location of the length of the returned list, or %NULL
+ * @length: (allow-none): return location of the length of the returned list, or %NULL
  * @error: return location for a #GError, or %NULL
  *
  * Retrieves the names of the applications that have registered the
@@ -3570,7 +3531,7 @@ g_bookmark_file_get_size (GBookmarkFile *bookmark)
  * g_bookmark_file_move_item:
  * @bookmark: a #GBookmarkFile
  * @old_uri: a valid URI
- * @new_uri: a valid URI, or %NULL
+ * @new_uri: (allow-none): a valid URI, or %NULL
  * @error: return location for a #GError or %NULL
  *
  * Changes the URI of a bookmark item from @old_uri to @new_uri.  Any
@@ -3649,7 +3610,7 @@ g_bookmark_file_move_item (GBookmarkFile  *bookmark,
  * g_bookmark_file_set_icon:
  * @bookmark: a #GBookmarkFile
  * @uri: a valid URI
- * @href: the URI of the icon for the bookmark, or %NULL
+ * @href: (allow-none): the URI of the icon for the bookmark, or %NULL
  * @mime_type: the MIME type of the icon for the bookmark
  *
  * Sets the icon for the bookmark for @uri. If @href is %NULL, unsets
@@ -3698,8 +3659,8 @@ g_bookmark_file_set_icon (GBookmarkFile *bookmark,
  * g_bookmark_file_get_icon:
  * @bookmark: a #GBookmarkFile
  * @uri: a valid URI
- * @href: return location for the icon's location or %NULL
- * @mime_type: return location for the icon's MIME type or %NULL
+ * @href: (allow-none): return location for the icon's location or %NULL
+ * @mime_type: (allow-none): return location for the icon's MIME type or %NULL
  * @error: return location for a #GError or %NULL
  *
  * Gets the icon of the bookmark for @uri.

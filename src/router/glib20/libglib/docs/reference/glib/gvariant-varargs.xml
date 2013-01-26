@@ -4,12 +4,17 @@
  <refmeta>
   <refentrytitle>GVariant Format Strings</refentrytitle>
  </refmeta>
+ <refnamediv>
+  <refname>GVariant Format Strings</refname>
+  <refpurpose>varargs conversion of GVariants</refpurpose>
+ </refnamediv>
 
  <refsect1>
   <title>Variable Argument Conversions</title>
 
   <para>
-   This page attempts to document how to perform variable argument conversions with GVariant.
+   This page attempts to document how to perform variable argument
+   conversions with GVariant.
   </para>
   <para>
    Conversions occur according to format strings.  A format string is a two-way mapping between a single
@@ -46,8 +51,8 @@
    <listitem>
     <para>
      '<literal>&amp;s</literal>' '<literal>&amp;o</literal>', '<literal>&amp;g</literal>', '<literal>^as</literal>',
-     '<literal>^a&amp;s</literal>', '<literal>^ay</literal>', '<literal>^&amp;ay</literal>', '<literal>^aay</literal>'
-     or '<literal>^a&amp;ay</literal>'.
+     '<literal>^a&amp;s</literal>', '<literal>^ao</literal>', '<literal>^a&amp;o</literal>','<literal>^ay</literal>',
+     '<literal>^&amp;ay</literal>', '<literal>^aay</literal>' or '<literal>^a&amp;ay</literal>'.
     </para>
    </listitem>
    <listitem>
@@ -671,11 +676,12 @@ g_variant_unref (value);]]></programlisting></informalexample>
    </para>
 
    <para>
-    The first way is used with format strings starting with '<literal>s</literal>', '<literal>o</literal>',
-    '<literal>g</literal>', '<literal>v</literal>', '<literal>@</literal>', '<literal>*</literal>',
-    '<literal>?</literal>', '<literal>r</literal>', '<literal>&amp;</literal>', or '<literal>^</literal>'.  In all of
-    these cases, for non-maybe types, <link linkend='g-variant-new'><function>g_variant_new()</function></link> takes
-    a pointer to a non-<link linkend='NULL:CAPS'><literal>NULL</literal></link> value and
+    The first way is used with format strings starting with '<literal>a</literal>', '<literal>s</literal>',
+    '<literal>o</literal>', '<literal>g</literal>', '<literal>v</literal>', '<literal>@</literal>',
+    '<literal>*</literal>', '<literal>?</literal>', '<literal>r</literal>', '<literal>&amp;</literal>', or
+    '<literal>^</literal>'.  In all of these cases, for non-maybe types,
+    <link linkend='g-variant-new'><function>g_variant_new()</function></link> takes a pointer to a
+    non-<link linkend='NULL:CAPS'><literal>NULL</literal></link> value and
     <link linkend='g-variant-get'><function>g_variant_get()</function></link> returns (by reference) a
     non-<link linkend='NULL:CAPS'><literal>NULL</literal></link> pointer.  When any of these format strings are
     prefixed with an '<literal>m</literal>', the type of arguments that are collected does not change in any way, but
@@ -926,7 +932,7 @@ value2 = g_variant_new ("(@(iii)*)", value1, g_variant_new_string ("foo"));
   GVariant *value;
 
   value = g_variant_new ("&s", "hello world");
-  str = g_variant_get ("&s", &str);
+  str = g_variant_get (value, "&s", &str);
   g_print ("string is: %s\n", str);
   /* no need to free str */
 }]]></programlisting></informalexample>
@@ -1014,6 +1020,41 @@ value2 = g_variant_new ("(@(iii)*)", value1, g_variant_new_string ("foo"));
        <entry colsep='1' rowsep='1'>
         <para>
          equivalent to <link linkend='g-variant-get-strv'><function>g_variant_get_strv()</function></link>
+        </para>
+       </entry>
+      </row>
+
+      <row rowsep='1'>
+       <entry colsep='1' rowsep='1'>
+        <para>
+         <emphasis role='strong'>
+          <literal>^ao</literal>
+         </emphasis>
+        </para>
+       </entry>
+       <entry colsep='1' rowsep='1' morerows='1'>
+        <para>
+         equivalent to <link linkend='g-variant-new-objv'><function>g_variant_new_objv()</function></link>
+        </para>
+       </entry>
+       <entry colsep='1' rowsep='1'>
+        <para>
+         equivalent to <link linkend='g-variant-dup-objv'><function>g_variant_dup_objv()</function></link>
+        </para>
+       </entry>
+      </row>
+
+      <row rowsep='1'>
+       <entry colsep='1' rowsep='1'>
+        <para>
+         <emphasis role='strong'>
+          <literal>^a&amp;o</literal>
+         </emphasis>
+        </para>
+       </entry>
+       <entry colsep='1' rowsep='1'>
+        <para>
+         equivalent to <link linkend='g-variant-get-objv'><function>g_variant_get_objv()</function></link>
         </para>
        </entry>
       </row>

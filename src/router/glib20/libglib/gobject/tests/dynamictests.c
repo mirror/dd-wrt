@@ -25,7 +25,7 @@
 /* This test tests the macros for defining dynamic types.
  */
 
-static GMutex *sync_mutex = NULL;
+static GMutex sync_mutex;
 static gboolean loaded = FALSE;
 
 /* MODULE */
@@ -101,7 +101,7 @@ static GType test_module_get_type (void)
 }
 
 
-GTypeModule *
+static GTypeModule *
 test_module_new (TestModuleRegisterFunc register_func)
 {
   TestModule *test_module = g_object_new (TEST_TYPE_MODULE, NULL);
@@ -129,6 +129,7 @@ struct _DynamicObjectClass
   guint val;
 };
 
+static GType dynamic_object_get_type (void);
 G_DEFINE_DYNAMIC_TYPE(DynamicObject, dynamic_object, G_TYPE_OBJECT);
 
 static void
@@ -169,8 +170,8 @@ ref_unref_thread (gpointer data)
    */
   if (g_test_verbose())
     g_print ("WAITING!\n");
-  g_mutex_lock (sync_mutex);
-  g_mutex_unlock (sync_mutex);
+  g_mutex_lock (&sync_mutex);
+  g_mutex_unlock (&sync_mutex);
   if (g_test_verbose ())
     g_print ("STARTING\n");
 
@@ -198,21 +199,23 @@ test_multithreaded_dynamic_type_init (void)
   guint i;
 
   module = test_module_new (module_register);
+  g_assert (module != NULL);
+
   /* Not loaded until we call ref for the first time */
   class = g_type_class_peek (DYNAMIC_OBJECT_TYPE);
   g_assert (class == NULL);
   g_assert (!loaded);
 
   /* pause newly created threads */
-  g_mutex_lock (sync_mutex);
+  g_mutex_lock (&sync_mutex);
 
   /* create threads */
   for (i = 0; i < N_THREADS; i++) {
-    threads[i] = g_thread_create (ref_unref_thread, (gpointer) DYNAMIC_OBJECT_TYPE, TRUE, NULL);
+    threads[i] = g_thread_new ("test", ref_unref_thread, (gpointer) DYNAMIC_OBJECT_TYPE);
   }
 
   /* execute threads */
-  g_mutex_unlock (sync_mutex);
+  g_mutex_unlock (&sync_mutex);
 
   for (i = 0; i < N_THREADS; i++) {
     g_thread_join (threads[i]);
@@ -248,8 +251,10 @@ struct _DynIfaceInterface
 
 static void dyn_obj_iface_init (DynIfaceInterface *iface);
 
+static GType dyn_iface_get_type (void);
 G_DEFINE_INTERFACE (DynIface, dyn_iface, G_TYPE_OBJECT)
 
+static GType dyn_obj_get_type (void);
 G_DEFINE_DYNAMIC_TYPE_EXTENDED(DynObj, dyn_obj, G_TYPE_OBJECT, 0,
                       G_IMPLEMENT_INTERFACE_DYNAMIC(dyn_iface_get_type (), dyn_obj_iface_init))
 
@@ -337,10 +342,14 @@ test_dynamic_interface_properties (void)
 {
   GTypeModule *module;
   DynObj *obj;
+  gint val;
 
   module = test_module_new (mod_register);
+  g_assert (module != NULL);
 
   obj = g_object_new (dyn_obj_get_type (), "foo", 1, NULL);
+  g_object_get (obj, "foo", &val, NULL);
+  g_assert_cmpint (val, ==, 1);
 
   g_object_unref (obj);
 }
@@ -349,11 +358,8 @@ int
 main (int   argc,
       char *argv[])
 {
-  g_thread_init (NULL);
   g_test_init (&argc, &argv, NULL);
   g_type_init ();
-
-  sync_mutex = g_mutex_new();
 
   g_test_add_func ("/GObject/threaded-dynamic-ref-unref-init", test_multithreaded_dynamic_type_init);
   g_test_add_func ("/GObject/dynamic-interface-properties", test_dynamic_interface_properties);

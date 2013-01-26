@@ -593,6 +593,7 @@ test_checksum (gconstpointer d)
 {
   const ChecksumTest *test = d;
   GChecksum *checksum;
+  GChecksum *checksum2;
   const char *p;
   int chunk_length;
 
@@ -604,9 +605,12 @@ test_checksum (gconstpointer d)
 	  g_checksum_update (checksum, (const guchar *)p,
 			     MIN (chunk_length, test->length - (p - FIXED_STR)));
 	}
-
+      checksum2 = g_checksum_copy (checksum);
       g_assert_cmpstr (g_checksum_get_string (checksum), ==, test->sum);
       g_checksum_free (checksum);
+
+      g_assert_cmpstr (g_checksum_get_string (checksum2), ==, test->sum);
+      g_checksum_free (checksum2);
     }
 }
 
@@ -615,9 +619,23 @@ hexval (const gchar c)
 {
   switch (c)
     {
-     case '0' ... '9':
+     case '0':
+     case '1':
+     case '2':
+     case '3':
+     case '4':
+     case '5':
+     case '6':
+     case '7':
+     case '8':
+     case '9':
        return c - '0';
-     case 'a' ... 'f':
+     case 'a':
+     case 'b':
+     case 'c':
+     case 'd':
+     case 'e':
+     case 'f':
        return 10 + c - 'a';
      default:
        return 0;
@@ -682,12 +700,12 @@ test_checksum_reset (gconstpointer d)
 typedef struct {
   GChecksumType   checksum_type;
   const gchar   **sums;
-} ChecksumStringTest;
+} ChecksumComputeTest;
 
 static void
 test_checksum_string (gconstpointer d)
 {
-  const ChecksumStringTest *test = d;
+  const ChecksumComputeTest *test = d;
   int length;
   gchar *checksum;
 
@@ -707,30 +725,80 @@ test_checksum_string (gconstpointer d)
   g_free (checksum);
 }
 
-#define test(type, length) {                                    \
-  ChecksumTest *test;                                           \
-  gchar *path;                                                  \
-  test = g_new0 (ChecksumTest, 1);                              \
-  test->checksum_type = G_CHECKSUM_##type;                      \
-  test->sum = type##_sums[length];                              \
-  test->length = length;                                        \
-  path = g_strdup_printf ("/checksum/%s/%d", #type, length);    \
-  g_test_add_data_func (path, test, test_checksum);             \
-  g_free (path);                                                \
-  path = g_strdup_printf ("/checksum/%s/reset/%d", #type, length); \
-  g_test_add_data_func (path, test, test_checksum_reset);       \
-  g_free (path);                                                \
+static void
+test_checksum_bytes (gconstpointer d)
+{
+  const ChecksumComputeTest *test = d;
+  GBytes *input;
+  int length;
+  gchar *checksum;
+
+  for (length = 0; length <= FIXED_LEN; length++)
+    {
+      input = g_bytes_new_static (FIXED_STR, length);
+      checksum = g_compute_checksum_for_bytes (test->checksum_type, input);
+      g_bytes_unref (input);
+
+      g_assert_cmpstr (checksum, ==, test->sums[length]);
+      g_free (checksum);
+    }
 }
 
-#define test_string(type) {                                     \
-  ChecksumStringTest *test;                                     \
-  gchar *path;                                                  \
-  test = g_new0 (ChecksumStringTest, 1);                        \
-  test->checksum_type = G_CHECKSUM_##type;                      \
-  test->sums = type##_sums;                                     \
-  path = g_strdup_printf ("/checksum/%s/string", #type);        \
-  g_test_add_data_func (path, test, test_checksum_string);      \
-  g_free (path);                                                \
+static void
+add_checksum_test (GChecksumType  type,
+                   const char    *type_name,
+                   const char    *sum,
+                   gint           length)
+{
+  ChecksumTest *test;
+  gchar *path;
+
+  test = g_new0 (ChecksumTest, 1);
+  test->checksum_type = type;
+  test->sum = sum;
+  test->length = length;
+
+  path = g_strdup_printf ("/checksum/%s/%d", type_name, length);
+  g_test_add_data_func (path, test, test_checksum);
+  g_free (path);
+
+  path = g_strdup_printf ("/checksum/%s/reset/%d", type_name, length);
+  g_test_add_data_func_full (path, test, test_checksum_reset, g_free);
+  g_free (path);
+}
+
+static void
+add_checksum_string_test (GChecksumType   type,
+                          const gchar    *type_name,
+                          const gchar   **sums)
+{
+  ChecksumComputeTest *test;
+  gchar *path;
+
+  test = g_new0 (ChecksumComputeTest, 1);
+  test->checksum_type = type;
+  test->sums = sums;
+
+  path = g_strdup_printf ("/checksum/%s/string", type_name);
+  g_test_add_data_func_full (path, test, test_checksum_string, g_free);
+  g_free (path);
+}
+
+static void
+add_checksum_bytes_test (GChecksumType   type,
+                          const gchar    *type_name,
+                          const gchar   **sums)
+{
+  ChecksumComputeTest *test;
+  gchar *path;
+
+  test = g_new0 (ChecksumComputeTest, 1);
+  test->checksum_type = type;
+  test->sums = sums;
+
+  path = g_strdup_printf ("/checksum/%s/bytes", type_name);
+  g_test_add_data_func_full (path, test, test_checksum_bytes, g_free);
+  g_free (path);
 }
 
 static void
@@ -750,16 +818,19 @@ main (int argc, char *argv[])
   g_test_add_func ("/checksum/unsupported", test_unsupported);
 
   for (length = 0; length <= FIXED_LEN; length++)
-    test (MD5, length);
-  test_string (MD5);
+    add_checksum_test (G_CHECKSUM_MD5, "MD5", MD5_sums[length], length);
+  add_checksum_string_test (G_CHECKSUM_MD5, "MD5", MD5_sums);
+  add_checksum_bytes_test (G_CHECKSUM_MD5, "MD5", MD5_sums);
 
   for (length = 0; length <= FIXED_LEN; length++)
-    test (SHA1, length);
-  test_string (SHA1);
+    add_checksum_test (G_CHECKSUM_SHA1, "SHA1", SHA1_sums[length], length);
+  add_checksum_string_test (G_CHECKSUM_SHA1, "SHA1", SHA1_sums);
+  add_checksum_bytes_test (G_CHECKSUM_SHA1, "SHA1", SHA1_sums);
 
   for (length = 0; length <= FIXED_LEN; length++)
-    test (SHA256, length);
-  test_string (SHA256);
+    add_checksum_test (G_CHECKSUM_SHA256, "SHA256", SHA256_sums[length], length);
+  add_checksum_string_test (G_CHECKSUM_SHA256, "SHA256", SHA256_sums);
+  add_checksum_bytes_test (G_CHECKSUM_SHA256, "SHA256", SHA256_sums);
 
   return g_test_run ();
 }

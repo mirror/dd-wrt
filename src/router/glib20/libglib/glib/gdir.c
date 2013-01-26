@@ -48,6 +48,12 @@
 #include "../build/win32/dirent/wdirent.c"
 #endif
 
+/**
+ * GDir:
+ *
+ * An opaque structure representing an opened directory.
+ */
+
 struct _GDir
 {
 #ifdef G_OS_WIN32
@@ -182,7 +188,11 @@ g_dir_open (const gchar  *path,
  * Retrieves the name of another entry in the directory, or %NULL.
  * The order of entries returned from this function is not defined,
  * and may vary by file system or other operating-system dependent
- * factors. 
+ * factors.
+ *
+ * %NULL may also be returned in case of errors. On Unix, you can
+ * check <literal>errno</literal> to find out if %NULL was returned
+ * because of an error.
  *
  * On Unix, the '.' and '..' entries are omitted, and the returned
  * name is in the on-disk encoding.
@@ -190,11 +200,11 @@ g_dir_open (const gchar  *path,
  * On Windows, as is true of all GLib functions which operate on
  * filenames, the returned name is in UTF-8.
  *
- * Return value: The entry's name or %NULL if there are no 
+ * Return value: The entry's name or %NULL if there are no
  *   more entries. The return value is owned by GLib and
  *   must not be modified or freed.
  **/
-G_CONST_RETURN gchar*
+const gchar *
 g_dir_read_name (GDir *dir)
 {
 #ifdef G_OS_WIN32
@@ -250,7 +260,7 @@ g_dir_read_name (GDir *dir)
 
 /* Binary compatibility version. Not for newly compiled code. */
 
-G_CONST_RETURN gchar*
+const gchar *
 g_dir_read_name (GDir *dir)
 {
   while (1)

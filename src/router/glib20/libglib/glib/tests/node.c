@@ -66,10 +66,13 @@ traversal_test (void)
 {
   GNode *root;
   GNode *node_B;
+  GNode *node_C;
   GNode *node_D;
+  GNode *node_E;
   GNode *node_F;
   GNode *node_G;
   GNode *node_J;
+  GNode *n;
   gchar *tstring;
 
   root = g_node_new (C2P ('A'));
@@ -100,6 +103,16 @@ traversal_test (void)
    * for in-order traversal, 'G' is considered to be the "left"
    * child of 'F', which will cause 'F' to be the last node visited.
    */
+
+  node_C = node_B->children;
+  node_E = node_D->next;
+
+  n = g_node_last_sibling (node_C);
+  g_assert (n == node_E);
+  n = g_node_last_sibling (node_D);
+  g_assert (n == node_E);
+  n = g_node_last_sibling (node_E);
+  g_assert (n == node_E);
 
   tstring = NULL;
   g_node_traverse (root, G_PRE_ORDER, G_TRAVERSE_ALL, -1, node_build_string, &tstring);
@@ -216,6 +229,8 @@ construct_test (void)
 
   for (i = 0; i < g_node_n_children (node_G); i++)
     g_assert_cmpint (g_node_child_position (node_G, g_node_nth_child (node_G, i)), ==, i);
+
+  g_node_destroy (root);
 }
 
 static void

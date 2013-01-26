@@ -24,7 +24,7 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -98,12 +98,15 @@ typedef enum
   G_IO_FLAG_APPEND = 1 << 0,
   G_IO_FLAG_NONBLOCK = 1 << 1,
   G_IO_FLAG_IS_READABLE = 1 << 2,	/* Read only flag */
-  G_IO_FLAG_IS_WRITEABLE = 1 << 3,	/* Read only flag */
+  G_IO_FLAG_IS_WRITABLE = 1 << 3,	/* Read only flag */
   G_IO_FLAG_IS_SEEKABLE = 1 << 4,	/* Read only flag */
   G_IO_FLAG_MASK = (1 << 5) - 1,
   G_IO_FLAG_GET_MASK = G_IO_FLAG_MASK,
   G_IO_FLAG_SET_MASK = G_IO_FLAG_APPEND | G_IO_FLAG_NONBLOCK
 } GIOFlags;
+
+/* Misspelling in enum in 2.29.10 and earlier */
+#define G_IO_FLAG_IS_WRITEABLE (G_IO_FLAG_IS_WRITABLE)
 
 struct _GIOChannel
 {
@@ -170,20 +173,25 @@ void        g_io_channel_init   (GIOChannel    *channel);
 GIOChannel *g_io_channel_ref    (GIOChannel    *channel);
 void        g_io_channel_unref  (GIOChannel    *channel);
 
-#ifndef G_DISABLE_DEPRECATED
-GIOError    g_io_channel_read   (GIOChannel    *channel, 
-			         gchar         *buf, 
-			         gsize          count,
-			         gsize         *bytes_read);
-GIOError  g_io_channel_write    (GIOChannel    *channel, 
-			         const gchar   *buf, 
-			         gsize          count,
-			         gsize         *bytes_written);
+GLIB_DEPRECATED_FOR(g_io_channel_read_for)
+GIOError    g_io_channel_read   (GIOChannel    *channel,
+                                 gchar         *buf,
+                                 gsize          count,
+                                 gsize         *bytes_read);
+
+GLIB_DEPRECATED_FOR(g_io_channel_write_chars)
+GIOError  g_io_channel_write    (GIOChannel    *channel,
+                                 const gchar   *buf,
+                                 gsize          count,
+                                 gsize         *bytes_written);
+
+GLIB_DEPRECATED_FOR(g_io_channel_seek_position)
 GIOError  g_io_channel_seek     (GIOChannel    *channel,
-			         gint64         offset, 
-			         GSeekType      type);
+                                 gint64         offset,
+                                 GSeekType      type);
+
+GLIB_DEPRECATED_FOR(g_io_channel_shutdown)
 void      g_io_channel_close    (GIOChannel    *channel);
-#endif /* G_DISABLE_DEPRECATED */
 
 GIOStatus g_io_channel_shutdown (GIOChannel      *channel,
 				 gboolean         flush,
@@ -215,7 +223,7 @@ GIOFlags              g_io_channel_get_flags            (GIOChannel   *channel);
 void                  g_io_channel_set_line_term        (GIOChannel   *channel,
 							 const gchar  *line_term,
 							 gint          length);
-G_CONST_RETURN gchar* g_io_channel_get_line_term        (GIOChannel   *channel,
+const gchar *         g_io_channel_get_line_term        (GIOChannel   *channel,
 							 gint         *length);
 void		      g_io_channel_set_buffered		(GIOChannel   *channel,
 							 gboolean      buffered);
@@ -223,7 +231,7 @@ gboolean	      g_io_channel_get_buffered		(GIOChannel   *channel);
 GIOStatus             g_io_channel_set_encoding         (GIOChannel   *channel,
 							 const gchar  *encoding,
 							 GError      **error);
-G_CONST_RETURN gchar* g_io_channel_get_encoding         (GIOChannel   *channel);
+const gchar *         g_io_channel_get_encoding         (GIOChannel   *channel);
 void                  g_io_channel_set_close_on_unref	(GIOChannel   *channel,
 							 gboolean      do_close);
 gboolean              g_io_channel_get_close_on_unref	(GIOChannel   *channel);

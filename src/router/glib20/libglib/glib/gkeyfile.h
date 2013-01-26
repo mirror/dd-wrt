@@ -20,7 +20,7 @@
  *   Boston, MA 02111-1307, USA.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -55,6 +55,8 @@ typedef enum
 } GKeyFileFlags;
 
 GKeyFile *g_key_file_new                    (void);
+GKeyFile *g_key_file_ref                    (GKeyFile             *key_file);
+void      g_key_file_unref                  (GKeyFile             *key_file);
 void      g_key_file_free                   (GKeyFile             *key_file);
 void      g_key_file_set_list_separator     (GKeyFile             *key_file,
 					     gchar                 separator);

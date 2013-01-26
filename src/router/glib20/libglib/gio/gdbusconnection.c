@@ -47,7 +47,7 @@
  *        distribution)
  *
  *   - (ideally) this requires D-Bus spec work because none of
- *     this has never really been specced out properly (excect
+ *     this has never really been specced out properly (except
  *     the X11 bits)
  *
  * - Related to the above, we also need to be able to launch a message bus
@@ -57,7 +57,7 @@
  * - probably want a G_DBUS_NONCE_TCP_TMPDIR environment variable
  *   to specify where the nonce is stored. This will allow people to use
  *   G_DBUS_NONCE_TCP_TMPDIR=/mnt/secure.company.server/dbus-nonce-dir
- *   to easily acheive secure RPC via nonce-tcp.
+ *   to easily achieve secure RPC via nonce-tcp.
  *
  * - need to expose an extension point for resolving D-Bus address and
  *   turning them into GIOStream objects. This will allow us to implement
@@ -121,7 +121,6 @@
 #include "gdbusmethodinvocation.h"
 #include "gdbusprivate.h"
 #include "gdbusauthobserver.h"
-#include "gio-marshal.h"
 #include "ginitable.h"
 #include "gasyncinitable.h"
 #include "giostream.h"
@@ -148,6 +147,31 @@
  * This class is rarely used directly in D-Bus clients. If you are writing
  * an D-Bus client, it is often easier to use the g_bus_own_name(),
  * g_bus_watch_name() or g_dbus_proxy_new_for_bus() APIs.
+ *
+ * As an exception to the usual GLib rule that a particular object must not be
+ * used by two threads at the same time, #GDBusConnection's methods may be
+ * called from any thread<footnote>
+ * <para>
+ *   This is so that g_bus_get() and g_bus_get_sync() can safely return the
+ *   same #GDBusConnection when called from any thread.
+ * </para>
+ * </footnote>.
+ *
+ * Most of the ways to obtain a #GDBusConnection automatically initialize it
+ * (i.e. connect to D-Bus): for instance, g_dbus_connection_new() and
+ * g_bus_get(), and the synchronous versions of those methods, give you an
+ * initialized connection. Language bindings for GIO should use
+ * g_initable_new() or g_async_initable_new_async(), which also initialize the
+ * connection.
+ *
+ * If you construct an uninitialized #GDBusConnection, such as via
+ * g_object_new(), you must initialize it via g_initable_init() or
+ * g_async_initable_init_async() before using its methods or properties.
+ * Calling methods or accessing properties on a #GDBusConnection that has not
+ * completed initialization successfully is considered to be invalid, and leads
+ * to undefined behaviour. In particular, if initialization fails with a
+ * #GError, the only valid thing you can do with that #GDBusConnection is to
+ * free it with g_object_unref().
  *
  * <example id="gdbus-server"><title>D-Bus server example</title><programlisting><xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../../gio/tests/gdbus-example-server.c"><xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback></xi:include></programlisting></example>
  *
@@ -184,8 +208,19 @@ struct _GDBusConnectionClass
 
 G_LOCK_DEFINE_STATIC (message_bus_lock);
 
-static GDBusConnection *the_session_bus = NULL;
-static GDBusConnection *the_system_bus = NULL;
+static GWeakRef the_session_bus;
+static GWeakRef the_system_bus;
+
+/* Extra pseudo-member of GDBusSendMessageFlags.
+ * Set by initable_init() to indicate that despite not being initialized yet,
+ * enough of the only-valid-after-init members are set that we can send a
+ * message, and we're being called from its thread, so no memory barrier is
+ * required before accessing them.
+ */
+#define SEND_MESSAGE_FLAGS_INITIALIZING (1<<31)
+
+/* Same as SEND_MESSAGE_FLAGS_INITIALIZING, but in GDBusCallFlags */
+#define CALL_FLAGS_INITIALIZING (1<<31)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -214,8 +249,8 @@ call_destroy_notify_data_free (CallDestroyNotifyData *data)
 
 /*
  * call_destroy_notify: <internal>
- * @context: A #GMainContext or %NULL.
- * @callback: A #GDestroyNotify or %NULL.
+ * @context: (allow-none): A #GMainContext or %NULL.
+ * @callback: (allow-none): A #GDestroyNotify or %NULL.
  * @user_data: Data to pass to @callback.
  *
  * Schedules @callback to run in @context.
@@ -225,34 +260,27 @@ call_destroy_notify (GMainContext  *context,
                      GDestroyNotify callback,
                      gpointer       user_data)
 {
+  GSource *idle_source;
+  CallDestroyNotifyData *data;
+
   if (callback == NULL)
     goto out;
 
-  if (context == g_main_context_get_thread_default ())
-    {
-      callback (user_data);
-    }
-  else
-    {
-      GSource *idle_source;
-      CallDestroyNotifyData *data;
+  data = g_new0 (CallDestroyNotifyData, 1);
+  data->callback = callback;
+  data->user_data = user_data;
+  data->context = context;
+  if (data->context != NULL)
+    g_main_context_ref (data->context);
 
-      data = g_new0 (CallDestroyNotifyData, 1);
-      data->callback = callback;
-      data->user_data = user_data;
-      data->context = context;
-      if (data->context != NULL)
-        g_main_context_ref (data->context);
-
-      idle_source = g_idle_source_new ();
-      g_source_set_priority (idle_source, G_PRIORITY_DEFAULT);
-      g_source_set_callback (idle_source,
-                             call_destroy_notify_data_in_idle,
-                             data,
-                             (GDestroyNotify) call_destroy_notify_data_free);
-      g_source_attach (idle_source, data->context);
-      g_source_unref (idle_source);
-    }
+  idle_source = g_idle_source_new ();
+  g_source_set_priority (idle_source, G_PRIORITY_DEFAULT);
+  g_source_set_callback (idle_source,
+                         call_destroy_notify_data_in_idle,
+                         data,
+                         (GDestroyNotify) call_destroy_notify_data_free);
+  g_source_attach (idle_source, data->context);
+  g_source_unref (idle_source);
 
  out:
   ;
@@ -281,7 +309,7 @@ _g_strv_has_string (const gchar* const *haystack,
 #else
 // TODO: for some reason this doesn't work on Windows
 #define CONNECTION_ENSURE_LOCK(obj) do {                                \
-    if (G_UNLIKELY (g_mutex_trylock((obj)->lock)))                      \
+    if (G_UNLIKELY (g_mutex_trylock(&(obj)->lock)))                     \
       {                                                                 \
         g_assertion_message (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, \
                              "CONNECTION_ENSURE_LOCK: GDBusConnection object lock is not locked"); \
@@ -290,12 +318,19 @@ _g_strv_has_string (const gchar* const *haystack,
 #endif
 
 #define CONNECTION_LOCK(obj) do {                                       \
-    g_mutex_lock ((obj)->lock);                                         \
+    g_mutex_lock (&(obj)->lock);                                        \
   } while (FALSE)
 
 #define CONNECTION_UNLOCK(obj) do {                                     \
-    g_mutex_unlock ((obj)->lock);                                       \
+    g_mutex_unlock (&(obj)->lock);                                      \
   } while (FALSE)
+
+/* Flags in connection->atomic_flags */
+enum {
+    FLAG_INITIALIZED = 1 << 0,
+    FLAG_EXIT_ON_CLOSE = 1 << 1,
+    FLAG_CLOSED = 1 << 2
+};
 
 /**
  * GDBusConnection:
@@ -314,84 +349,119 @@ struct _GDBusConnection
   /* -- General object state ------------------------------------------------ */
   /* ------------------------------------------------------------------------ */
 
-  /* object-wide lock */
-  GMutex *lock;
+  /* General-purpose lock for most fields */
+  GMutex lock;
 
   /* A lock used in the init() method of the GInitable interface - see comments
-   * in initable_init() for why a separate lock is needed
+   * in initable_init() for why a separate lock is needed.
+   *
+   * If you need both @lock and @init_lock, you must take @init_lock first.
    */
-  GMutex *init_lock;
+  GMutex init_lock;
 
   /* Set (by loading the contents of /var/lib/dbus/machine-id) the first time
-   * someone calls org.freedesktop.DBus.GetMachineId()
+   * someone calls org.freedesktop.DBus.GetMachineId(). Protected by @lock.
    */
   gchar *machine_id;
 
-  /* The underlying stream used for communication */
+  /* The underlying stream used for communication
+   * Read-only after initable_init(), so it may be read if you either
+   * hold @init_lock or check for initialization first.
+   */
   GIOStream *stream;
 
-  /* The object used for authentication (if any) */
+  /* The object used for authentication (if any).
+   * Read-only after initable_init(), so it may be read if you either
+   * hold @init_lock or check for initialization first.
+   */
   GDBusAuth *auth;
 
-  /* Set to TRUE if the connection has been closed */
-  gboolean closed;
-
-  /* Last serial used */
+  /* Last serial used. Protected by @lock. */
   guint32 last_serial;
 
-  /* The object used to send/receive message */
+  /* The object used to send/receive messages.
+   * Read-only after initable_init(), so it may be read if you either
+   * hold @init_lock or check for initialization first.
+   */
   GDBusWorker *worker;
 
   /* If connected to a message bus, this contains the unique name assigned to
-   * us by the bus (e.g. ":1.42")
+   * us by the bus (e.g. ":1.42").
+   * Read-only after initable_init(), so it may be read if you either
+   * hold @init_lock or check for initialization first.
    */
   gchar *bus_unique_name;
 
   /* The GUID returned by the other side if we authenticed as a client or
-   * the GUID to use if authenticating as a server
+   * the GUID to use if authenticating as a server.
+   * Read-only after initable_init(), so it may be read if you either
+   * hold @init_lock or check for initialization first.
    */
   gchar *guid;
 
-  /* set to TRUE exactly when initable_init() has finished running */
-  gboolean is_initialized;
+  /* FLAG_INITIALIZED is set exactly when initable_init() has finished running.
+   * Inspect @initialization_error to see whether it succeeded or failed.
+   *
+   * FLAG_EXIT_ON_CLOSE is the exit-on-close property.
+   *
+   * FLAG_CLOSED is the closed property. It may be read at any time, but
+   * may only be written while holding @lock.
+   */
+  volatile gint atomic_flags;
 
-  /* If the connection could not be established during initable_init(), this GError will set */
+  /* If the connection could not be established during initable_init(),
+   * this GError will be set.
+   * Read-only after initable_init(), so it may be read if you either
+   * hold @init_lock or check for initialization first.
+   */
   GError *initialization_error;
 
-  /* The result of g_main_context_get_thread_default() when the object
+  /* The result of g_main_context_ref_thread_default() when the object
    * was created (the GObject _init() function) - this is used for delivery
    * of the :closed GObject signal.
+   *
+   * Only set in the GObject init function, so no locks are needed.
    */
   GMainContext *main_context_at_construction;
 
-  /* construct properties */
+  /* Read-only construct properties, no locks needed */
   gchar *address;
   GDBusConnectionFlags flags;
 
-  /* Map used for managing method replies */
+  /* Map used for managing method replies, protected by @lock */
   GHashTable *map_method_serial_to_send_message_data;  /* guint32 -> SendMessageData* */
 
-  /* Maps used for managing signal subscription */
+  /* Maps used for managing signal subscription, protected by @lock */
   GHashTable *map_rule_to_signal_data;                      /* match rule (gchar*)    -> SignalData */
   GHashTable *map_id_to_signal_data;                        /* id (guint)             -> SignalData */
   GHashTable *map_sender_unique_name_to_signal_data_array;  /* unique sender (gchar*) -> GPtrArray* of SignalData */
 
-  /* Maps used for managing exported objects and subtrees */
+  /* Maps used for managing exported objects and subtrees,
+   * protected by @lock
+   */
   GHashTable *map_object_path_to_eo;  /* gchar* -> ExportedObject* */
   GHashTable *map_id_to_ei;           /* guint  -> ExportedInterface* */
   GHashTable *map_object_path_to_es;  /* gchar* -> ExportedSubtree* */
   GHashTable *map_id_to_es;           /* guint  -> ExportedSubtree* */
 
-  /* Structure used for message filters */
+  /* Map used for storing last used serials for each thread, protected by @lock */
+  GHashTable *map_thread_to_last_serial;
+
+  /* Structure used for message filters, protected by @lock */
   GPtrArray *filters;
 
-  /* Whether to exit on close */
-  gboolean exit_on_close;
-
-  /* Capabilities negotiated during authentication */
+  /* Capabilities negotiated during authentication
+   * Read-only after initable_init(), so it may be read without holding a
+   * lock, if you check for initialization first.
+   */
   GDBusCapabilityFlags capabilities;
 
+  /* Protected by @init_lock */
   GDBusAuthObserver *authentication_observer;
+
+  /* Read-only after initable_init(), so it may be read if you either
+   * hold @init_lock or check for initialization first.
+   */
   GCredentials *credentials;
 
   /* set to TRUE when finalizing */
@@ -455,6 +525,82 @@ G_DEFINE_TYPE_WITH_CODE (GDBusConnection, g_dbus_connection, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE, async_initable_iface_init)
                          );
 
+/*
+ * Check that all members of @connection that can only be accessed after
+ * the connection is initialized can safely be accessed. If not,
+ * log a critical warning. This function is a memory barrier.
+ *
+ * Returns: %TRUE if initialized
+ */
+static gboolean
+check_initialized (GDBusConnection *connection)
+{
+  /* The access to @atomic_flags isn't conditional, so that this function
+   * provides a memory barrier for thread-safety even if checks are disabled.
+   * (If you don't want this stricter guarantee, you can call
+   * g_return_if_fail (check_initialized (c)).)
+   *
+   * This isn't strictly necessary now that we've decided use of an
+   * uninitialized GDBusConnection is undefined behaviour, but it seems
+   * better to be as deterministic as is feasible.
+   *
+   * (Anything that could suffer a crash from seeing undefined values
+   * must have a race condition - thread A initializes the connection while
+   * thread B calls a method without initialization, hoping that thread A will
+   * win the race - so its behaviour is undefined anyway.)
+   */
+  gint flags = g_atomic_int_get (&connection->atomic_flags);
+
+  g_return_val_if_fail (flags & FLAG_INITIALIZED, FALSE);
+
+  /* We can safely access this, due to the memory barrier above */
+  g_return_val_if_fail (connection->initialization_error == NULL, FALSE);
+
+  return TRUE;
+}
+
+typedef enum {
+    MAY_BE_UNINITIALIZED = (1<<1)
+} CheckUnclosedFlags;
+
+/*
+ * Check the same thing as check_initialized(), and also that the
+ * connection is not closed. If the connection is uninitialized,
+ * raise a critical warning (it's programmer error); if it's closed,
+ * raise a recoverable GError (it's a runtime error).
+ *
+ * This function is a memory barrier.
+ *
+ * Returns: %TRUE if initialized and not closed
+ */
+static gboolean
+check_unclosed (GDBusConnection     *connection,
+                CheckUnclosedFlags   check,
+                GError             **error)
+{
+  /* check_initialized() is effectively inlined, so we don't waste time
+   * doing two memory barriers
+   */
+  gint flags = g_atomic_int_get (&connection->atomic_flags);
+
+  if (!(check & MAY_BE_UNINITIALIZED))
+    {
+      g_return_val_if_fail (flags & FLAG_INITIALIZED, FALSE);
+      g_return_val_if_fail (connection->initialization_error == NULL, FALSE);
+    }
+
+  if (flags & FLAG_CLOSED)
+    {
+      g_set_error_literal (error,
+                           G_IO_ERROR,
+                           G_IO_ERROR_CLOSED,
+                           _("The connection is closed"));
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
 static GHashTable *alive_connections = NULL;
 
 static void
@@ -463,14 +609,6 @@ g_dbus_connection_dispose (GObject *object)
   GDBusConnection *connection = G_DBUS_CONNECTION (object);
 
   G_LOCK (message_bus_lock);
-  if (connection == the_session_bus)
-    {
-      the_session_bus = NULL;
-    }
-  else if (connection == the_system_bus)
-    {
-      the_system_bus = NULL;
-    }
   CONNECTION_LOCK (connection);
   if (connection->worker != NULL)
     {
@@ -514,12 +652,6 @@ g_dbus_connection_finalize (GObject *object)
 
   if (connection->stream != NULL)
     {
-      /* We don't really care if closing the stream succeeds or not */
-      g_io_stream_close_async (connection->stream,
-                               G_PRIORITY_DEFAULT,
-                               NULL,  /* GCancellable */
-                               NULL,  /* GAsyncReadyCallback */
-                               NULL); /* userdata */
       g_object_unref (connection->stream);
       connection->stream = NULL;
     }
@@ -543,17 +675,19 @@ g_dbus_connection_finalize (GObject *object)
   g_hash_table_unref (connection->map_id_to_es);
   g_hash_table_unref (connection->map_object_path_to_es);
 
-  if (connection->main_context_at_construction != NULL)
-    g_main_context_unref (connection->main_context_at_construction);
+  g_hash_table_unref (connection->map_thread_to_last_serial);
+
+  g_main_context_unref (connection->main_context_at_construction);
 
   g_free (connection->machine_id);
 
-  g_mutex_free (connection->init_lock);
-  g_mutex_free (connection->lock);
+  g_mutex_clear (&connection->init_lock);
+  g_mutex_clear (&connection->lock);
 
   G_OBJECT_CLASS (g_dbus_connection_parent_class)->finalize (object);
 }
 
+/* called in any user thread, with the connection's lock not held */
 static void
 g_dbus_connection_get_property (GObject    *object,
                                 guint       prop_id,
@@ -594,6 +728,7 @@ g_dbus_connection_get_property (GObject    *object,
     }
 }
 
+/* called in any user thread, with the connection's lock not held */
 static void
 g_dbus_connection_set_property (GObject      *object,
                                 guint         prop_id,
@@ -634,12 +769,25 @@ g_dbus_connection_set_property (GObject      *object,
     }
 }
 
+/* Base-class implementation of GDBusConnection::closed.
+ *
+ * Called in a user thread, by the main context that was thread-default when
+ * the object was constructed.
+ */
 static void
 g_dbus_connection_real_closed (GDBusConnection *connection,
                                gboolean         remote_peer_vanished,
                                GError          *error)
 {
-  if (remote_peer_vanished && connection->exit_on_close)
+  gint flags = g_atomic_int_get (&connection->atomic_flags);
+
+  /* Because atomic int access is a memory barrier, we can safely read
+   * initialization_error without a lock, as long as we do it afterwards.
+   */
+  if (remote_peer_vanished &&
+      (flags & FLAG_EXIT_ON_CLOSE) != 0 &&
+      (flags & FLAG_INITIALIZED) != 0 &&
+      connection->initialization_error == NULL)
     {
       if (error != NULL)
         {
@@ -674,6 +822,13 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    * GDBusConnection:stream:
    *
    * The underlying #GIOStream used for I/O.
+   *
+   * If this is passed on construction and is a #GSocketConnection,
+   * then the corresponding #GSocket will be put into non-blocking mode.
+   *
+   * While the #GDBusConnection is active, it will interact with this
+   * stream from a worker thread, so it is not safe to interact with
+   * the stream directly.
    *
    * Since: 2.26
    */
@@ -806,6 +961,9 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    * calling <literal>raise(SIGTERM)</literal>) if the connection
    * is closed by the remote peer.
    *
+   * Note that #GDBusConnection objects returned by g_bus_get_finish() and
+   * g_bus_get_sync() will (usually) have this property set to %TRUE.
+   *
    * Since: 2.26
    */
   g_object_class_install_property (gobject_class,
@@ -864,7 +1022,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    * @connection: The #GDBusConnection emitting the signal.
    * @remote_peer_vanished: %TRUE if @connection is closed because the
    * remote peer closed its end of the connection.
-   * @error: A #GError with more details about the event or %NULL.
+   * @error: (allow-none): A #GError with more details about the event or %NULL.
    *
    * Emitted when the connection is closed.
    *
@@ -897,7 +1055,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
                                          G_STRUCT_OFFSET (GDBusConnectionClass, closed),
                                          NULL,
                                          NULL,
-                                         _gio_marshal_VOID__BOOLEAN_BOXED,
+                                         NULL,
                                          G_TYPE_NONE,
                                          2,
                                          G_TYPE_BOOLEAN,
@@ -907,8 +1065,8 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
 static void
 g_dbus_connection_init (GDBusConnection *connection)
 {
-  connection->lock = g_mutex_new ();
-  connection->init_lock = g_mutex_new ();
+  g_mutex_init (&connection->lock);
+  g_mutex_init (&connection->init_lock);
 
   connection->map_method_serial_to_send_message_data = g_hash_table_new (g_direct_hash, g_direct_equal);
 
@@ -937,9 +1095,10 @@ g_dbus_connection_init (GDBusConnection *connection)
   connection->map_id_to_es = g_hash_table_new (g_direct_hash,
                                                g_direct_equal);
 
-  connection->main_context_at_construction = g_main_context_get_thread_default ();
-  if (connection->main_context_at_construction != NULL)
-    g_main_context_ref (connection->main_context_at_construction);
+  connection->map_thread_to_last_serial = g_hash_table_new (g_direct_hash,
+                                                            g_direct_equal);
+
+  connection->main_context_at_construction = g_main_context_ref_thread_default ();
 
   connection->filters = g_ptr_array_new ();
 }
@@ -950,6 +1109,10 @@ g_dbus_connection_init (GDBusConnection *connection)
  *
  * Gets the underlying stream used for IO.
  *
+ * While the #GDBusConnection is active, it will interact with this
+ * stream from a worker thread, so it is not safe to interact with
+ * the stream directly.
+ *
  * Returns: (transfer none): the stream used for IO
  *
  * Since: 2.26
@@ -958,6 +1121,11 @@ GIOStream *
 g_dbus_connection_get_stream (GDBusConnection *connection)
 {
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
+
+  /* do not use g_return_val_if_fail(), we want the memory barrier */
+  if (!check_initialized (connection))
+    return NULL;
+
   return connection->stream;
 }
 
@@ -976,6 +1144,12 @@ void
 g_dbus_connection_start_message_processing (GDBusConnection *connection)
 {
   g_return_if_fail (G_IS_DBUS_CONNECTION (connection));
+
+  /* do not use g_return_val_if_fail(), we want the memory barrier */
+  if (!check_initialized (connection))
+    return;
+
+  g_assert (connection->worker != NULL);
   _g_dbus_worker_unfreeze (connection->worker);
 }
 
@@ -992,8 +1166,13 @@ g_dbus_connection_start_message_processing (GDBusConnection *connection)
 gboolean
 g_dbus_connection_is_closed (GDBusConnection *connection)
 {
+  gint flags;
+
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), FALSE);
-  return connection->closed;
+
+  flags = g_atomic_int_get (&connection->atomic_flags);
+
+  return (flags & FLAG_CLOSED) ? TRUE : FALSE;
 }
 
 /**
@@ -1010,11 +1189,17 @@ GDBusCapabilityFlags
 g_dbus_connection_get_capabilities (GDBusConnection *connection)
 {
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), G_DBUS_CAPABILITY_FLAGS_NONE);
+
+  /* do not use g_return_val_if_fail(), we want the memory barrier */
+  if (!check_initialized (connection))
+    return G_DBUS_CAPABILITY_FLAGS_NONE;
+
   return connection->capabilities;
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/* Called in a temporary thread without holding locks. */
 static void
 flush_in_thread_func (GSimpleAsyncResult *res,
                       GObject            *object,
@@ -1032,7 +1217,7 @@ flush_in_thread_func (GSimpleAsyncResult *res,
 /**
  * g_dbus_connection_flush:
  * @connection: A #GDBusConnection.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @callback: (allow-none): A #GAsyncReadyCallback to call when the request is
  *            satisfied or %NULL if you don't care about the result.
  * @user_data: The data to pass to @callback.
@@ -1069,6 +1254,7 @@ g_dbus_connection_flush (GDBusConnection     *connection,
                                       callback,
                                       user_data,
                                       g_dbus_connection_flush);
+  g_simple_async_result_set_check_cancellable (simple, cancellable);
   g_simple_async_result_run_in_thread (simple,
                                        flush_in_thread_func,
                                        G_PRIORITY_DEFAULT,
@@ -1116,7 +1302,7 @@ g_dbus_connection_flush_finish (GDBusConnection  *connection,
 /**
  * g_dbus_connection_flush_sync:
  * @connection: A #GDBusConnection.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
  * Synchronously flushes @connection. The calling thread is blocked
@@ -1140,14 +1326,17 @@ g_dbus_connection_flush_sync (GDBusConnection  *connection,
 
   ret = FALSE;
 
-  if (connection->closed)
-    {
-      g_set_error_literal (error,
-                           G_IO_ERROR,
-                           G_IO_ERROR_CLOSED,
-                           _("The connection is closed"));
-      goto out;
-    }
+  /* This is only a best-effort attempt to see whether the connection is
+   * closed, so it doesn't need the lock. If the connection closes just
+   * after this check, but before scheduling the flush operation, the
+   * result will be more or less the same as if the connection closed while
+   * the flush operation was pending - it'll fail with either CLOSED or
+   * CANCELLED.
+   */
+  if (!check_unclosed (connection, 0, error))
+    goto out;
+
+  g_assert (connection->worker != NULL);
 
   ret = _g_dbus_worker_flush_sync (connection->worker,
                                    cancellable,
@@ -1175,6 +1364,9 @@ emit_closed_data_free (EmitClosedData *data)
   g_free (data);
 }
 
+/* Called in a user thread that has acquired the main context that was
+ * thread-default when the object was constructed
+ */
 static gboolean
 emit_closed_in_idle (gpointer user_data)
 {
@@ -1191,20 +1383,18 @@ emit_closed_in_idle (gpointer user_data)
   return FALSE;
 }
 
-/* Can be called from any thread, must hold lock */
+/* Can be called from any thread, must hold lock.
+ * FLAG_CLOSED must already have been set.
+ */
 static void
-set_closed_unlocked (GDBusConnection *connection,
-                     gboolean         remote_peer_vanished,
-                     GError          *error)
+schedule_closed_unlocked (GDBusConnection *connection,
+                          gboolean         remote_peer_vanished,
+                          GError          *error)
 {
   GSource *idle_source;
   EmitClosedData *data;
 
   CONNECTION_ENSURE_LOCK (connection);
-
-  g_assert (!connection->closed);
-
-  connection->closed = TRUE;
 
   data = g_new0 (EmitClosedData, 1);
   data->connection = g_object_ref (connection);
@@ -1223,24 +1413,10 @@ set_closed_unlocked (GDBusConnection *connection,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-static void
-close_in_thread_func (GSimpleAsyncResult *res,
-                      GObject            *object,
-                      GCancellable       *cancellable)
-{
-  GError *error;
-
-  error = NULL;
-  if (!g_dbus_connection_close_sync (G_DBUS_CONNECTION (object),
-                                     cancellable,
-                                     &error))
-    g_simple_async_result_take_error (res, error);
-}
-
 /**
  * g_dbus_connection_close:
  * @connection: A #GDBusConnection.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @callback: (allow-none): A #GAsyncReadyCallback to call when the request is
  *            satisfied or %NULL if you don't care about the result.
  * @user_data: The data to pass to @callback.
@@ -1282,14 +1458,18 @@ g_dbus_connection_close (GDBusConnection     *connection,
 
   g_return_if_fail (G_IS_DBUS_CONNECTION (connection));
 
+  /* do not use g_return_val_if_fail(), we want the memory barrier */
+  if (!check_initialized (connection))
+    return;
+
+  g_assert (connection->worker != NULL);
+
   simple = g_simple_async_result_new (G_OBJECT (connection),
                                       callback,
                                       user_data,
                                       g_dbus_connection_close);
-  g_simple_async_result_run_in_thread (simple,
-                                       close_in_thread_func,
-                                       G_PRIORITY_DEFAULT,
-                                       cancellable);
+  g_simple_async_result_set_check_cancellable (simple, cancellable);
+  _g_dbus_worker_close (connection->worker, cancellable, simple);
   g_object_unref (simple);
 }
 
@@ -1330,10 +1510,27 @@ g_dbus_connection_close_finish (GDBusConnection  *connection,
   return ret;
 }
 
+typedef struct {
+    GMainLoop *loop;
+    GAsyncResult *result;
+} SyncCloseData;
+
+/* Can be called by any thread, without the connection lock */
+static void
+sync_close_cb (GObject *source_object,
+               GAsyncResult *res,
+               gpointer user_data)
+{
+  SyncCloseData *data = user_data;
+
+  data->result = g_object_ref (res);
+  g_main_loop_quit (data->loop);
+}
+
 /**
  * g_dbus_connection_close_sync:
  * @connection: A #GDBusConnection.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
  * Synchronously closees @connection. The calling thread is blocked
@@ -1357,22 +1554,56 @@ g_dbus_connection_close_sync (GDBusConnection     *connection,
 
   ret = FALSE;
 
+  if (check_unclosed (connection, 0, error))
+    {
+      GMainContext *context;
+      SyncCloseData data;
+
+      context = g_main_context_new ();
+      g_main_context_push_thread_default (context);
+      data.loop = g_main_loop_new (context, TRUE);
+      data.result = NULL;
+
+      g_dbus_connection_close (connection, cancellable, sync_close_cb, &data);
+      g_main_loop_run (data.loop);
+      ret = g_dbus_connection_close_finish (connection, data.result, error);
+
+      g_object_unref (data.result);
+      g_main_loop_unref (data.loop);
+      g_main_context_pop_thread_default (context);
+      g_main_context_unref (context);
+    }
+
+  return ret;
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+/**
+ * g_dbus_connection_get_last_serial:
+ * @connection: A #GDBusConnection.
+ *
+ * Retrieves the last serial number assigned to a #GDBusMessage on
+ * the current thread. This includes messages sent via both low-level
+ * API such as g_dbus_connection_send_message() as well as
+ * high-level API such as g_dbus_connection_emit_signal(),
+ * g_dbus_connection_call() or g_dbus_proxy_call().
+ *
+ * Returns: the last used serial or zero when no message has been sent
+ * within the current thread.
+ *
+ * Since: 2.34
+ */
+guint32
+g_dbus_connection_get_last_serial (GDBusConnection *connection)
+{
+  guint32 ret;
+
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), 0);
+
   CONNECTION_LOCK (connection);
-  if (!connection->closed)
-    {
-      ret = g_io_stream_close (connection->stream,
-                               cancellable,
-                               error);
-      if (ret)
-        set_closed_unlocked (connection, FALSE, NULL);
-    }
-  else
-    {
-      g_set_error_literal (error,
-                           G_IO_ERROR,
-                           G_IO_ERROR_CLOSED,
-                           _("The connection is closed"));
-    }
+  ret = GPOINTER_TO_UINT (g_hash_table_lookup (connection->map_thread_to_last_serial,
+                                               g_thread_self ()));
   CONNECTION_UNLOCK (connection);
 
   return ret;
@@ -1380,6 +1611,7 @@ g_dbus_connection_close_sync (GDBusConnection     *connection,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/* Can be called by any thread, with the connection lock held */
 static gboolean
 g_dbus_connection_send_message_unlocked (GDBusConnection   *connection,
                                          GDBusMessage      *message,
@@ -1405,14 +1637,15 @@ g_dbus_connection_send_message_unlocked (GDBusConnection   *connection,
   if (out_serial != NULL)
     *out_serial = 0;
 
-  if (connection->closed)
-    {
-      g_set_error_literal (error,
-                           G_IO_ERROR,
-                           G_IO_ERROR_CLOSED,
-                           _("The connection is closed"));
-      goto out;
-    }
+  /* If we're in initable_init(), don't check for being initialized, to avoid
+   * chicken-and-egg problems. initable_init() is responsible for setting up
+   * our prerequisites (mainly connection->worker), and only calling us
+   * from its own thread (so no memory barrier is needed).
+   */
+  if (!check_unclosed (connection,
+                       (flags & SEND_MESSAGE_FLAGS_INITIALIZING) ? MAY_BE_UNINITIALIZED : 0,
+                       error))
+    goto out;
 
   blob = g_dbus_message_to_blob (message,
                                  &blob_size,
@@ -1451,6 +1684,15 @@ g_dbus_connection_send_message_unlocked (GDBusConnection   *connection,
 
   if (out_serial != NULL)
     *out_serial = serial_to_use;
+
+  /* store used serial for the current thread */
+  /* TODO: watch the thread disposal and remove associated record
+   *       from hashtable
+   *  - see https://bugzilla.gnome.org/show_bug.cgi?id=676825#c7
+   */
+  g_hash_table_replace (connection->map_thread_to_last_serial,
+                        g_thread_self (),
+                        GUINT_TO_POINTER (serial_to_use));
 
   if (!(flags & G_DBUS_SEND_MESSAGE_FLAGS_PRESERVE_SERIAL))
     g_dbus_message_set_serial (message, serial_to_use);
@@ -1544,6 +1786,7 @@ typedef struct
   gboolean delivered;
 } SendMessageData;
 
+/* Can be called from any thread with or without lock held */
 static SendMessageData *
 send_message_data_ref (SendMessageData *data)
 {
@@ -1551,6 +1794,7 @@ send_message_data_ref (SendMessageData *data)
   return data;
 }
 
+/* Can be called from any thread with or without lock held */
 static void
 send_message_data_unref (SendMessageData *data)
 {
@@ -1562,8 +1806,7 @@ send_message_data_unref (SendMessageData *data)
       g_object_unref (data->connection);
       if (data->cancellable != NULL)
         g_object_unref (data->cancellable);
-      if (data->main_context != NULL)
-        g_main_context_unref (data->main_context);
+      g_main_context_unref (data->main_context);
       g_free (data);
     }
 }
@@ -1572,7 +1815,7 @@ send_message_data_unref (SendMessageData *data)
 
 /* can be called from any thread with lock held - caller must have prepared GSimpleAsyncResult already */
 static void
-send_message_with_reply_deliver (SendMessageData *data)
+send_message_with_reply_deliver (SendMessageData *data, gboolean remove)
 {
   CONNECTION_ENSURE_LOCK (data->connection);
 
@@ -1595,15 +1838,18 @@ send_message_with_reply_deliver (SendMessageData *data)
       data->cancellable_handler_id = 0;
     }
 
-  g_warn_if_fail (g_hash_table_remove (data->connection->map_method_serial_to_send_message_data,
-                                       GUINT_TO_POINTER (data->serial)));
+  if (remove)
+    {
+      g_warn_if_fail (g_hash_table_remove (data->connection->map_method_serial_to_send_message_data,
+                                           GUINT_TO_POINTER (data->serial)));
+    }
 
   send_message_data_unref (data);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-/* must hold lock */
+/* Can be called from any thread with lock held */
 static void
 send_message_data_deliver_reply_unlocked (SendMessageData *data,
                                           GDBusMessage    *reply)
@@ -1615,7 +1861,7 @@ send_message_data_deliver_reply_unlocked (SendMessageData *data,
                                              g_object_ref (reply),
                                              g_object_unref);
 
-  send_message_with_reply_deliver (data);
+  send_message_with_reply_deliver (data, TRUE);
 
  out:
   ;
@@ -1623,6 +1869,7 @@ send_message_data_deliver_reply_unlocked (SendMessageData *data,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/* Called from a user thread, lock is not held */
 static gboolean
 send_message_with_reply_cancelled_idle_cb (gpointer user_data)
 {
@@ -1637,7 +1884,7 @@ send_message_with_reply_cancelled_idle_cb (gpointer user_data)
                                    G_IO_ERROR_CANCELLED,
                                    _("Operation was cancelled"));
 
-  send_message_with_reply_deliver (data);
+  send_message_with_reply_deliver (data, TRUE);
 
  out:
   CONNECTION_UNLOCK (data->connection);
@@ -1667,6 +1914,7 @@ send_message_with_reply_cancelled_cb (GCancellable *cancellable,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/* Called from a user thread, lock is not held */
 static gboolean
 send_message_with_reply_timeout_cb (gpointer user_data)
 {
@@ -1681,7 +1929,7 @@ send_message_with_reply_timeout_cb (gpointer user_data)
                                    G_IO_ERROR_TIMED_OUT,
                                    _("Timeout was reached"));
 
-  send_message_with_reply_deliver (data);
+  send_message_with_reply_deliver (data, TRUE);
 
  out:
   CONNECTION_UNLOCK (data->connection);
@@ -1691,6 +1939,7 @@ send_message_with_reply_timeout_cb (gpointer user_data)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/* Called from a user thread, connection's lock is held */
 static void
 g_dbus_connection_send_message_with_reply_unlocked (GDBusConnection     *connection,
                                                     GDBusMessage        *message,
@@ -1718,6 +1967,7 @@ g_dbus_connection_send_message_with_reply_unlocked (GDBusConnection     *connect
                                       callback,
                                       user_data,
                                       g_dbus_connection_send_message_with_reply);
+  g_simple_async_result_set_check_cancellable (simple, cancellable);
 
   if (g_cancellable_is_cancelled (cancellable))
     {
@@ -1725,17 +1975,6 @@ g_dbus_connection_send_message_with_reply_unlocked (GDBusConnection     *connect
                                        G_IO_ERROR,
                                        G_IO_ERROR_CANCELLED,
                                        _("Operation was cancelled"));
-      g_simple_async_result_complete_in_idle (simple);
-      g_object_unref (simple);
-      goto out;
-    }
-
-  if (connection->closed)
-    {
-      g_simple_async_result_set_error (simple,
-                                       G_IO_ERROR,
-                                       G_IO_ERROR_CLOSED,
-                                       _("The connection is closed"));
       g_simple_async_result_complete_in_idle (simple);
       g_object_unref (simple);
       goto out;
@@ -1755,9 +1994,7 @@ g_dbus_connection_send_message_with_reply_unlocked (GDBusConnection     *connect
   data->connection = g_object_ref (connection);
   data->simple = simple;
   data->serial = *out_serial;
-  data->main_context = g_main_context_get_thread_default ();
-  if (data->main_context != NULL)
-    g_main_context_ref (data->main_context);
+  data->main_context = g_main_context_ref_thread_default ();
 
   if (cancellable != NULL)
     {
@@ -1766,10 +2003,6 @@ g_dbus_connection_send_message_with_reply_unlocked (GDBusConnection     *connect
                                                             G_CALLBACK (send_message_with_reply_cancelled_cb),
                                                             send_message_data_ref (data),
                                                             (GDestroyNotify) send_message_data_unref);
-      g_object_set_data_full (G_OBJECT (simple),
-                              "cancellable",
-                              g_object_ref (cancellable),
-                              (GDestroyNotify) g_object_unref);
     }
 
   if (timeout_msec != G_MAXINT)
@@ -1801,7 +2034,7 @@ g_dbus_connection_send_message_with_reply_unlocked (GDBusConnection     *connect
  *                timeout or %G_MAXINT for no timeout.
  * @out_serial: (out) (allow-none): Return location for serial number assigned
  *              to @message when sending it or %NULL.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @callback: (allow-none): A #GAsyncReadyCallback to call when the request is
  *            satisfied or %NULL if you don't care about the result.
  * @user_data: The data to pass to @callback.
@@ -1871,7 +2104,7 @@ g_dbus_connection_send_message_with_reply (GDBusConnection     *connection,
  * Finishes an operation started with g_dbus_connection_send_message_with_reply().
  *
  * Note that @error is only set if a local in-process error
- * occured. That is to say that the returned #GDBusMessage object may
+ * occurred. That is to say that the returned #GDBusMessage object may
  * be of type %G_DBUS_MESSAGE_TYPE_ERROR. Use
  * g_dbus_message_to_gerror() to transcode this to a #GError.
  *
@@ -1890,7 +2123,6 @@ g_dbus_connection_send_message_with_reply_finish (GDBusConnection  *connection,
 {
   GSimpleAsyncResult *simple = G_SIMPLE_ASYNC_RESULT (res);
   GDBusMessage *reply;
-  GCancellable *cancellable;
 
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
@@ -1903,16 +2135,7 @@ g_dbus_connection_send_message_with_reply_finish (GDBusConnection  *connection,
     goto out;
 
   reply = g_object_ref (g_simple_async_result_get_op_res_gpointer (simple));
-  cancellable = g_object_get_data (G_OBJECT (simple), "cancellable");
-  if (cancellable != NULL && g_cancellable_is_cancelled (cancellable))
-    {
-      g_object_unref (reply);
-      reply = NULL;
-      g_set_error_literal (error,
-                           G_IO_ERROR,
-                           G_IO_ERROR_CANCELLED,
-                           _("Operation was cancelled"));
-    }
+
  out:
   return reply;
 }
@@ -1926,6 +2149,7 @@ typedef struct
   GMainLoop *loop;
 } SendMessageSyncData;
 
+/* Called from a user thread, lock is not held */
 static void
 send_message_with_reply_sync_cb (GDBusConnection *connection,
                                  GAsyncResult    *res,
@@ -1945,7 +2169,7 @@ send_message_with_reply_sync_cb (GDBusConnection *connection,
  *                timeout or %G_MAXINT for no timeout.
  * @out_serial: (out) (allow-none): Return location for serial number assigned
  *              to @message when sending it or %NULL.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
  * Synchronously sends @message to the peer represented by @connection
@@ -1966,7 +2190,7 @@ send_message_with_reply_sync_cb (GDBusConnection *connection,
  * the operation fails with %G_IO_ERROR_INVALID_ARGUMENT.
  *
  * Note that @error is only set if a local in-process error
- * occured. That is to say that the returned #GDBusMessage object may
+ * occurred. That is to say that the returned #GDBusMessage object may
  * be of type %G_DBUS_MESSAGE_TYPE_ERROR. Use
  * g_dbus_message_to_gerror() to transcode this to a #GError.
  *
@@ -2044,7 +2268,7 @@ typedef struct
   GDestroyNotify              user_data_free_func;
 } FilterData;
 
-/* Called in worker's thread - we must not block */
+/* Called in GDBusWorker's thread - we must not block - with no lock held */
 static void
 on_worker_message_received (GDBusWorker  *worker,
                             GDBusMessage *message,
@@ -2052,8 +2276,6 @@ on_worker_message_received (GDBusWorker  *worker,
 {
   GDBusConnection *connection;
   FilterCallback *filters;
-  gboolean consumed_by_filter;
-  gboolean altered_by_filter;
   guint num_filters;
   guint n;
   gboolean alive;
@@ -2089,8 +2311,6 @@ on_worker_message_received (GDBusWorker  *worker,
   CONNECTION_UNLOCK (connection);
 
   /* then call the filters in order (without holding the lock) */
-  consumed_by_filter = FALSE;
-  altered_by_filter = FALSE;
   for (n = 0; n < num_filters; n++)
     {
       message = filters[n].func (connection,
@@ -2150,7 +2370,7 @@ on_worker_message_received (GDBusWorker  *worker,
   g_free (filters);
 }
 
-/* Called in worker's thread */
+/* Called in GDBusWorker's thread, lock is not held */
 static GDBusMessage *
 on_worker_message_about_to_be_sent (GDBusWorker  *worker,
                                     GDBusMessage *message,
@@ -2205,7 +2425,29 @@ on_worker_message_about_to_be_sent (GDBusWorker  *worker,
   return message;
 }
 
-/* Called in worker's thread - we must not block */
+/* called with connection lock held, in GDBusWorker thread */
+static gboolean
+cancel_method_on_close (gpointer key, gpointer value, gpointer user_data)
+{
+  SendMessageData *data = value;
+
+  if (data->delivered)
+    return FALSE;
+
+  g_simple_async_result_set_error (data->simple,
+                                   G_IO_ERROR,
+                                   G_IO_ERROR_CLOSED,
+                                   _("The connection is closed"));
+
+  /* Ask send_message_with_reply_deliver not to remove the element from the
+   * hash table - we're in the middle of a foreach; that would be unsafe.
+   * Instead, return TRUE from this function so that it gets removed safely.
+   */
+  send_message_with_reply_deliver (data, FALSE);
+  return TRUE;
+}
+
+/* Called in GDBusWorker's thread - we must not block - without lock held */
 static void
 on_worker_closed (GDBusWorker *worker,
                   gboolean     remote_peer_vanished,
@@ -2214,6 +2456,7 @@ on_worker_closed (GDBusWorker *worker,
 {
   GDBusConnection *connection;
   gboolean alive;
+  guint old_atomic_flags;
 
   G_LOCK (message_bus_lock);
   alive = (g_hash_table_lookup (alive_connections, user_data) != NULL);
@@ -2229,8 +2472,17 @@ on_worker_closed (GDBusWorker *worker,
   //g_debug ("in on_worker_closed: %s", error->message);
 
   CONNECTION_LOCK (connection);
-  if (!connection->closed)
-    set_closed_unlocked (connection, remote_peer_vanished, error);
+  /* Even though this is atomic, we do it inside the lock to avoid breaking
+   * assumptions in remove_match_rule(). We'd need the lock in a moment
+   * anyway, so, no loss.
+   */
+  old_atomic_flags = g_atomic_int_or (&connection->atomic_flags, FLAG_CLOSED);
+
+  if (!(old_atomic_flags & FLAG_CLOSED))
+    {
+      g_hash_table_foreach_remove (connection->map_method_serial_to_send_message_data, cancel_method_on_close, NULL);
+      schedule_closed_unlocked (connection, remote_peer_vanished, error);
+    }
   CONNECTION_UNLOCK (connection);
 
   g_object_unref (connection);
@@ -2238,7 +2490,11 @@ on_worker_closed (GDBusWorker *worker,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-/* Determines the biggest set of capabilities we can support on this connection */
+/* Determines the biggest set of capabilities we can support on this
+ * connection.
+ *
+ * Called with the init_lock held.
+ */
 static GDBusCapabilityFlags
 get_offered_capabilities_max (GDBusConnection *connection)
 {
@@ -2251,6 +2507,7 @@ get_offered_capabilities_max (GDBusConnection *connection)
       return ret;
 }
 
+/* Called in a user thread, lock is not held */
 static gboolean
 initable_init (GInitable     *initable,
                GCancellable  *cancellable,
@@ -2267,24 +2524,21 @@ initable_init (GInitable     *initable,
    * callbacks above needs the lock during initialization (for message
    * bus connections we do a synchronous Hello() call on the bus).
    */
-  g_mutex_lock (connection->init_lock);
+  g_mutex_lock (&connection->init_lock);
 
   ret = FALSE;
 
-  /* First, handle the case where the connection already has an
-   * initialization error set.
+  /* Make this a no-op if we're already initialized (successfully or
+   * unsuccessfully)
    */
-  if (connection->initialization_error != NULL)
-    goto out;
-
-  /* Also make this a no-op if we're already initialized fine */
-  if (connection->is_initialized)
+  if ((g_atomic_int_get (&connection->atomic_flags) & FLAG_INITIALIZED))
     {
-      ret = TRUE;
+      ret = (connection->initialization_error == NULL);
       goto out;
     }
 
-  g_assert (connection->initialization_error == NULL && !connection->is_initialized);
+  /* Because of init_lock, we can't get here twice in different threads */
+  g_assert (connection->initialization_error == NULL);
 
   /* The user can pass multiple (but mutally exclusive) construct
    * properties:
@@ -2302,7 +2556,7 @@ initable_init (GInitable     *initable,
       if ((connection->flags & G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_SERVER) ||
           (connection->flags & G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS))
         {
-          g_set_error_literal (error,
+          g_set_error_literal (&connection->initialization_error,
                                G_IO_ERROR,
                                G_IO_ERROR_INVALID_ARGUMENT,
                                _("Unsupported flags encountered when constructing a client-side connection"));
@@ -2348,6 +2602,7 @@ initable_init (GInitable     *initable,
       g_assert (connection->guid == NULL);
       connection->auth = _g_dbus_auth_new (connection->stream);
       connection->guid = _g_dbus_auth_run_client (connection->auth,
+                                                  connection->authentication_observer,
                                                   get_offered_capabilities_max (connection),
                                                   &connection->capabilities,
                                                   cancellable,
@@ -2367,11 +2622,8 @@ initable_init (GInitable     *initable,
   //g_debug ("haz unix fd passing powers: %d", connection->capabilities & G_DBUS_CAPABILITY_FLAGS_UNIX_FD_PASSING);
 
 #ifdef G_OS_UNIX
-  /* Hack used until
-   *
-   *  https://bugzilla.gnome.org/show_bug.cgi?id=616458
-   *
-   * has been resolved
+  /* We want all IO operations to be non-blocking since they happen in
+   * the worker thread which is shared by _all_ connections.
    */
   if (G_IS_SOCKET_CONNECTION (connection->stream))
     {
@@ -2387,7 +2639,7 @@ initable_init (GInitable     *initable,
 
   connection->worker = _g_dbus_worker_new (connection->stream,
                                            connection->capabilities,
-                                           (connection->flags & G_DBUS_CONNECTION_FLAGS_DELAY_MESSAGE_PROCESSING),
+                                           ((connection->flags & G_DBUS_CONNECTION_FLAGS_DELAY_MESSAGE_PROCESSING) != 0),
                                            on_worker_message_received,
                                            on_worker_message_about_to_be_sent,
                                            on_worker_closed,
@@ -2415,7 +2667,7 @@ initable_init (GInitable     *initable,
                                                   "Hello",
                                                   NULL, /* parameters */
                                                   G_VARIANT_TYPE ("(s)"),
-                                                  G_DBUS_CALL_FLAGS_NONE,
+                                                  CALL_FLAGS_INITIALIZING,
                                                   -1,
                                                   NULL, /* TODO: cancellable */
                                                   &connection->initialization_error);
@@ -2427,8 +2679,6 @@ initable_init (GInitable     *initable,
       //g_debug ("unique name is `%s'", connection->bus_unique_name);
     }
 
-  connection->is_initialized = TRUE;
-
   ret = TRUE;
  out:
   if (!ret)
@@ -2437,7 +2687,8 @@ initable_init (GInitable     *initable,
       g_propagate_error (error, g_error_copy (connection->initialization_error));
     }
 
-  g_mutex_unlock (connection->init_lock);
+  g_atomic_int_or (&connection->atomic_flags, FLAG_INITIALIZED);
+  g_mutex_unlock (&connection->init_lock);
 
   return ret;
 }
@@ -2464,12 +2715,19 @@ async_initable_iface_init (GAsyncInitableIface *async_initable_iface)
  * @guid: (allow-none): The GUID to use if a authenticating as a server or %NULL.
  * @flags: Flags describing how to make the connection.
  * @observer: (allow-none): A #GDBusAuthObserver or %NULL.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @callback: A #GAsyncReadyCallback to call when the request is satisfied.
  * @user_data: The data to pass to @callback.
  *
  * Asynchronously sets up a D-Bus connection for exchanging D-Bus messages
  * with the end represented by @stream.
+ *
+ * If @stream is a #GSocketConnection, then the corresponding #GSocket
+ * will be put into non-blocking mode.
+ *
+ * The D-Bus connection will interact with @stream from a worker thread.
+ * As a result, the caller should not interact with @stream after this
+ * method has been called, except by calling g_object_unref() on it.
  *
  * If @observer is not %NULL it may be used to control the
  * authentication process.
@@ -2545,11 +2803,18 @@ g_dbus_connection_new_finish (GAsyncResult  *res,
  * @guid: (allow-none): The GUID to use if a authenticating as a server or %NULL.
  * @flags: Flags describing how to make the connection.
  * @observer: (allow-none): A #GDBusAuthObserver or %NULL.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
  * Synchronously sets up a D-Bus connection for exchanging D-Bus messages
  * with the end represented by @stream.
+ *
+ * If @stream is a #GSocketConnection, then the corresponding #GSocket
+ * will be put into non-blocking mode.
+ *
+ * The D-Bus connection will interact with @stream from a worker thread.
+ * As a result, the caller should not interact with @stream after this
+ * method has been called, except by calling g_object_unref() on it.
  *
  * If @observer is not %NULL it may be used to control the
  * authentication process.
@@ -2588,7 +2853,7 @@ g_dbus_connection_new_sync (GIOStream             *stream,
  * @address: A D-Bus address.
  * @flags: Flags describing how to make the connection.
  * @observer: (allow-none): A #GDBusAuthObserver or %NULL.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @callback: A #GAsyncReadyCallback to call when the request is satisfied.
  * @user_data: The data to pass to @callback.
  *
@@ -2673,7 +2938,7 @@ g_dbus_connection_new_for_address_finish (GAsyncResult  *res,
  * @address: A D-Bus address.
  * @flags: Flags describing how to make the connection.
  * @observer: (allow-none): A #GDBusAuthObserver or %NULL.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
  * Synchronously connects and sets up a D-Bus client connection for
@@ -2740,7 +3005,12 @@ g_dbus_connection_set_exit_on_close (GDBusConnection *connection,
                                      gboolean         exit_on_close)
 {
   g_return_if_fail (G_IS_DBUS_CONNECTION (connection));
-  connection->exit_on_close = exit_on_close;
+
+  if (exit_on_close)
+    g_atomic_int_or (&connection->atomic_flags, FLAG_EXIT_ON_CLOSE);
+  else
+    g_atomic_int_and (&connection->atomic_flags, ~FLAG_EXIT_ON_CLOSE);
+
 }
 
 /**
@@ -2760,7 +3030,11 @@ gboolean
 g_dbus_connection_get_exit_on_close (GDBusConnection *connection)
 {
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), FALSE);
-  return connection->exit_on_close;
+
+  if (g_atomic_int_get (&connection->atomic_flags) & FLAG_EXIT_ON_CLOSE)
+    return TRUE;
+  else
+    return FALSE;
 }
 
 /**
@@ -2800,6 +3074,11 @@ const gchar *
 g_dbus_connection_get_unique_name (GDBusConnection *connection)
 {
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
+
+  /* do not use g_return_val_if_fail(), we want the memory barrier */
+  if (!check_initialized (connection))
+    return NULL;
+
   return connection->bus_unique_name;
 }
 
@@ -2826,6 +3105,11 @@ GCredentials *
 g_dbus_connection_get_peer_credentials (GDBusConnection *connection)
 {
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
+
+  /* do not use g_return_val_if_fail(), we want the memory barrier */
+  if (!check_initialized (connection))
+    return NULL;
+
   return connection->credentials;
 }
 
@@ -2847,15 +3131,13 @@ static guint _global_filter_id = 1;
  * added as a filter more than once, in which case it will be run more
  * than once.  Filters added during a filter callback won't be run on
  * the message being processed. Filter functions are allowed to modify
- * and even drop messages - see the #GDBusMessageFilterResult
- * enumeration for details.
+ * and even drop messages.
  *
  * Note that filters are run in a dedicated message handling thread so
  * they can't block and, generally, can't do anything but signal a
  * worker thread. Also note that filters are rarely needed - use API
  * such as g_dbus_connection_send_message_with_reply(),
- * g_dbus_connection_signal_subscribe() or
- * g_dbus_connection_call() instead.
+ * g_dbus_connection_signal_subscribe() or g_dbus_connection_call() instead.
  *
  * If a filter consumes an incoming message the message is not
  * dispatched anywhere else - not even the standard dispatch machinery
@@ -2879,6 +3161,7 @@ g_dbus_connection_add_filter (GDBusConnection            *connection,
 
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), 0);
   g_return_val_if_fail (filter_function != NULL, 0);
+  g_return_val_if_fail (check_initialized (connection), 0);
 
   CONNECTION_LOCK (connection);
   data = g_new0 (FilterData, 1);
@@ -2923,6 +3206,7 @@ g_dbus_connection_remove_filter (GDBusConnection *connection,
   FilterData *to_destroy;
 
   g_return_if_fail (G_IS_DBUS_CONNECTION (connection));
+  g_return_if_fail (check_initialized (connection));
 
   CONNECTION_LOCK (connection);
   to_destroy = NULL;
@@ -3021,7 +3305,7 @@ static guint _global_subtree_registration_id = 1;
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-/* must hold lock when calling */
+/* Called in a user thread, lock is held */
 static void
 add_match_rule (GDBusConnection *connection,
                 const gchar     *match_rule)
@@ -3052,7 +3336,7 @@ add_match_rule (GDBusConnection *connection,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-/* must hold lock when calling */
+/* Called in a user thread, lock is held */
 static void
 remove_match_rule (GDBusConnection *connection,
                    const gchar     *match_rule)
@@ -3076,6 +3360,10 @@ remove_match_rule (GDBusConnection *connection,
                                                 NULL,
                                                 &error))
     {
+      /* If we could get G_IO_ERROR_CLOSED here, it wouldn't be reasonable to
+       * critical; but we're holding the lock, and our caller checked whether
+       * we were already closed, so we can't get that error.
+       */
       g_critical ("Error while sending RemoveMatch() message: %s", error->message);
       g_error_free (error);
     }
@@ -3110,7 +3398,8 @@ is_signal_data_for_name_lost_or_acquired (SignalData *signal_data)
  * @flags: Flags describing how to subscribe to the signal (currently unused).
  * @callback: Callback to invoke when there is a signal matching the requested data.
  * @user_data: User data to pass to @callback.
- * @user_data_free_func: Function to free @user_data with when subscription is removed or %NULL.
+ * @user_data_free_func: (allow-none): Function to free @user_data with when
+ *                       subscription is removed or %NULL.
  *
  * Subscribes to signals on @connection and invokes @callback with a
  * whenever the signal is received. Note that @callback
@@ -3166,6 +3455,7 @@ g_dbus_connection_signal_subscribe (GDBusConnection     *connection,
   g_return_val_if_fail (member == NULL || g_dbus_is_member_name (member), 0);
   g_return_val_if_fail (object_path == NULL || g_variant_is_object_path (object_path), 0);
   g_return_val_if_fail (callback != NULL, 0);
+  g_return_val_if_fail (check_initialized (connection), 0);
 
   CONNECTION_LOCK (connection);
 
@@ -3189,9 +3479,7 @@ g_dbus_connection_signal_subscribe (GDBusConnection     *connection,
   subscriber.user_data = user_data;
   subscriber.user_data_free_func = user_data_free_func;
   subscriber.id = _global_subscriber_id++; /* TODO: overflow etc. */
-  subscriber.context = g_main_context_get_thread_default ();
-  if (subscriber.context != NULL)
-    g_main_context_ref (subscriber.context);
+  subscriber.context = g_main_context_ref_thread_default ();
 
   /* see if we've already have this rule */
   signal_data = g_hash_table_lookup (connection->map_rule_to_signal_data, rule);
@@ -3251,6 +3539,7 @@ g_dbus_connection_signal_subscribe (GDBusConnection     *connection,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/* called in any thread */
 /* must hold lock when calling this (except if connection->finalizing is TRUE) */
 static void
 unsubscribe_id_internal (GDBusConnection *connection,
@@ -3298,12 +3587,20 @@ unsubscribe_id_internal (GDBusConnection *connection,
             }
 
           /* remove the match rule from the bus unless NameLost or NameAcquired (see subscribe()) */
-          if (connection->flags & G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION)
+          if ((connection->flags & G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION) &&
+              !is_signal_data_for_name_lost_or_acquired (signal_data) &&
+              !g_dbus_connection_is_closed (connection) &&
+              !connection->finalizing)
             {
-              if (!is_signal_data_for_name_lost_or_acquired (signal_data))
-                if (!connection->closed && !connection->finalizing)
-                  remove_match_rule (connection, signal_data->rule);
+              /* The check for g_dbus_connection_is_closed() means that
+               * sending the RemoveMatch message can't fail with
+               * G_IO_ERROR_CLOSED, because we're holding the lock,
+               * so on_worker_closed() can't happen between the check we just
+               * did, and releasing the lock later.
+               */
+              remove_match_rule (connection, signal_data->rule);
             }
+
           signal_data_free (signal_data);
         }
 
@@ -3333,6 +3630,7 @@ g_dbus_connection_signal_unsubscribe (GDBusConnection *connection,
   guint n;
 
   g_return_if_fail (G_IS_DBUS_CONNECTION (connection));
+  g_return_if_fail (check_initialized (connection));
 
   subscribers = g_array_new (FALSE, FALSE, sizeof (SignalSubscriber));
 
@@ -3353,8 +3651,7 @@ g_dbus_connection_signal_unsubscribe (GDBusConnection *connection,
       call_destroy_notify (subscriber->context,
                            subscriber->user_data_free_func,
                            subscriber->user_data);
-      if (subscriber->context != NULL)
-        g_main_context_unref (subscriber->context);
+      g_main_context_unref (subscriber->context);
     }
 
   g_array_free (subscribers, TRUE);
@@ -3423,8 +3720,7 @@ emit_signal_instance_in_idle_cb (gpointer data)
                                parameters,
                                signal_instance->user_data);
 
-  if (parameters != NULL)
-    g_variant_unref (parameters);
+  g_variant_unref (parameters);
 
   return FALSE;
 }
@@ -3437,7 +3733,7 @@ signal_instance_free (SignalInstance *signal_instance)
   g_free (signal_instance);
 }
 
-/* called in message handler thread WITH lock held */
+/* called in GDBusWorker thread WITH lock held */
 static void
 schedule_callbacks (GDBusConnection *connection,
                     GPtrArray       *signal_data_array,
@@ -3524,7 +3820,7 @@ schedule_callbacks (GDBusConnection *connection,
     }
 }
 
-/* called in message handler thread with lock held */
+/* called in GDBusWorker thread with lock held */
 static void
 distribute_signals (GDBusConnection *connection,
                     GDBusMessage    *message)
@@ -3601,8 +3897,7 @@ purge_all_signal_subscriptions (GDBusConnection *connection)
       call_destroy_notify (subscriber->context,
                            subscriber->user_data_free_func,
                            subscriber->user_data);
-      if (subscriber->context != NULL)
-        g_main_context_unref (subscriber->context);
+      g_main_context_unref (subscriber->context);
     }
 
   g_array_free (subscribers, TRUE);
@@ -3680,14 +3975,14 @@ typedef struct
 static void
 exported_interface_free (ExportedInterface *ei)
 {
+  g_dbus_interface_info_cache_release (ei->interface_info);
   g_dbus_interface_info_unref ((GDBusInterfaceInfo *) ei->interface_info);
 
   call_destroy_notify (ei->context,
                        ei->user_data_free_func,
                        ei->user_data);
 
-  if (ei->context != NULL)
-    g_main_context_unref (ei->context);
+  g_main_context_unref (ei->context);
 
   g_free (ei->interface_name);
   _g_dbus_interface_vtable_free (ei->vtable);
@@ -3700,7 +3995,7 @@ exported_interface_free (ExportedInterface *ei)
  * @subtree_registration_id (if not zero) has been unregistered. If
  * so, returns %TRUE.
  *
- * Caller must *not* hold lock.
+ * May be called by any thread. Caller must *not* hold lock.
  */
 static gboolean
 has_object_been_unregistered (GDBusConnection  *connection,
@@ -3788,8 +4083,7 @@ invoke_get_property_in_idle_cb (gpointer _data)
     {
       g_assert_no_error (error);
 
-      if (g_variant_is_floating (value))
-        g_variant_ref_sink (value);
+      g_variant_take_ref (value);
       reply = g_dbus_message_new_method_reply (data->message);
       g_dbus_message_set_body (reply, g_variant_new ("(v)", value));
       g_dbus_connection_send_message (data->connection, reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, NULL);
@@ -3878,7 +4172,7 @@ invoke_set_property_in_idle_cb (gpointer _data)
   return FALSE;
 }
 
-/* called with lock held */
+/* called in any thread with connection's lock held */
 static gboolean
 validate_and_maybe_schedule_property_getset (GDBusConnection            *connection,
                                              GDBusMessage               *message,
@@ -3992,7 +4286,7 @@ validate_and_maybe_schedule_property_getset (GDBusConnection            *connect
   return handled;
 }
 
-/* called with lock held */
+/* called in GDBusWorker thread with connection's lock held */
 static gboolean
 handle_getset_property (GDBusConnection *connection,
                         ExportedObject  *eo,
@@ -4075,7 +4369,6 @@ invoke_get_all_properties_in_idle_cb (gpointer _data)
 {
   PropertyGetAllData *data = _data;
   GVariantBuilder builder;
-  GError *error;
   GDBusMessage *reply;
   guint n;
 
@@ -4091,8 +4384,6 @@ invoke_get_all_properties_in_idle_cb (gpointer _data)
       g_object_unref (reply);
       goto out;
     }
-
-  error = NULL;
 
   /* TODO: Right now we never fail this call - we just omit values if
    *       a get_property() call is failing.
@@ -4121,8 +4412,7 @@ invoke_get_all_properties_in_idle_cb (gpointer _data)
       if (value == NULL)
         continue;
 
-      if (g_variant_is_floating (value))
-        g_variant_ref_sink (value);
+      g_variant_take_ref (value);
       g_variant_builder_add (&builder,
                              "{sv}",
                              property_info->name,
@@ -4140,7 +4430,7 @@ invoke_get_all_properties_in_idle_cb (gpointer _data)
   return FALSE;
 }
 
-/* called with lock held */
+/* called in any thread with connection's lock held */
 static gboolean
 validate_and_maybe_schedule_property_get_all (GDBusConnection            *connection,
                                               GDBusMessage               *message,
@@ -4190,7 +4480,7 @@ validate_and_maybe_schedule_property_get_all (GDBusConnection            *connec
   return handled;
 }
 
-/* called with lock held */
+/* called in GDBusWorker thread with connection's lock held */
 static gboolean
 handle_get_all_properties (GDBusConnection *connection,
                            ExportedObject  *eo,
@@ -4312,6 +4602,7 @@ maybe_add_path (const gchar *path, gsize path_len, const gchar *object_path, GHa
 }
 
 /* TODO: we want a nicer public interface for this */
+/* called in any thread with connection's lock held */
 static gchar **
 g_dbus_connection_list_registered_unlocked (GDBusConnection *connection,
                                             const gchar     *path)
@@ -4353,6 +4644,7 @@ g_dbus_connection_list_registered_unlocked (GDBusConnection *connection,
   return ret;
 }
 
+/* called in any thread with connection's lock not held */
 static gchar **
 g_dbus_connection_list_registered (GDBusConnection *connection,
                                    const gchar     *path)
@@ -4364,7 +4656,7 @@ g_dbus_connection_list_registered (GDBusConnection *connection,
   return ret;
 }
 
-/* called in message handler thread with lock held */
+/* called in GDBusWorker thread with connection's lock held */
 static gboolean
 handle_introspect (GDBusConnection *connection,
                    ExportedObject  *eo,
@@ -4421,9 +4713,6 @@ call_in_idle_cb (gpointer user_data)
   guint registration_id;
   guint subtree_registration_id;
 
-  vtable = g_object_get_data (G_OBJECT (invocation), "g-dbus-interface-vtable");
-  g_assert (vtable != NULL && vtable->method_call != NULL);
-
   registration_id = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (invocation), "g-dbus-registration-id"));
   subtree_registration_id = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (invocation), "g-dbus-subtree-registration-id"));
 
@@ -4442,6 +4731,9 @@ call_in_idle_cb (gpointer user_data)
       goto out;
     }
 
+  vtable = g_object_get_data (G_OBJECT (invocation), "g-dbus-interface-vtable");
+  g_assert (vtable != NULL && vtable->method_call != NULL);
+
   vtable->method_call (g_dbus_method_invocation_get_connection (invocation),
                        g_dbus_method_invocation_get_sender (invocation),
                        g_dbus_method_invocation_get_object_path (invocation),
@@ -4455,7 +4747,7 @@ call_in_idle_cb (gpointer user_data)
   return FALSE;
 }
 
-/* called in message handler thread with lock held */
+/* called in GDBusWorker thread with connection's lock held */
 static gboolean
 validate_and_maybe_schedule_method_call (GDBusConnection            *connection,
                                          GDBusMessage               *message,
@@ -4565,7 +4857,7 @@ validate_and_maybe_schedule_method_call (GDBusConnection            *connection,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-/* called in message handler thread with lock held */
+/* called in GDBusWorker thread with connection's lock held */
 static gboolean
 obj_message_func (GDBusConnection *connection,
                   ExportedObject  *eo,
@@ -4642,13 +4934,13 @@ obj_message_func (GDBusConnection *connection,
 
 /**
  * g_dbus_connection_register_object:
- * @connection: A #GDBusConnection
- * @object_path: The object path to register at
- * @interface_info: Introspection data for the interface
- * @vtable: (allow-none): A #GDBusInterfaceVTable to call into, or %NULL
- * @user_data: Data to pass to functions in @vtable
- * @user_data_free_func: Function to call when the object path is unregistered
- * @error: Return location for error or %NULL
+ * @connection: A #GDBusConnection.
+ * @object_path: The object path to register at.
+ * @interface_info: Introspection data for the interface.
+ * @vtable: (allow-none): A #GDBusInterfaceVTable to call into or %NULL.
+ * @user_data: (allow-none): Data to pass to functions in @vtable.
+ * @user_data_free_func: Function to call when the object path is unregistered.
+ * @error: Return location for error or %NULL.
  *
  * Registers callbacks for exported objects at @object_path with the
  * D-Bus interface that is described in @interface_info.
@@ -4687,12 +4979,7 @@ obj_message_func (GDBusConnection *connection,
  * reference count is -1, see g_dbus_interface_info_ref()) for as long
  * as the object is exported. Also note that @vtable will be copied.
  *
- * A %NULL @vtable can be used for
- * <ulink url="http://en.wikipedia.org/wiki/Marker_interface_pattern">marker
- * interfaces</ulink>.
- *
- * See <xref linkend="gdbus-server"/> for an example of how to use this
- * method.
+ * See <xref linkend="gdbus-server"/> for an example of how to use this method.
  *
  * Returns: 0 if @error is set, otherwise a registration id (never 0)
  * that can be used with g_dbus_connection_unregister_object() .
@@ -4717,6 +5004,7 @@ g_dbus_connection_register_object (GDBusConnection            *connection,
   g_return_val_if_fail (interface_info != NULL, 0);
   g_return_val_if_fail (g_dbus_is_interface_name (interface_info->name), 0);
   g_return_val_if_fail (error == NULL || *error == NULL, 0);
+  g_return_val_if_fail (check_initialized (connection), 0);
 
   ret = 0;
 
@@ -4754,10 +5042,9 @@ g_dbus_connection_register_object (GDBusConnection            *connection,
   ei->user_data_free_func = user_data_free_func;
   ei->vtable = _g_dbus_interface_vtable_copy (vtable);
   ei->interface_info = g_dbus_interface_info_ref (interface_info);
+  g_dbus_interface_info_cache_build (ei->interface_info);
   ei->interface_name = g_strdup (interface_info->name);
-  ei->context = g_main_context_get_thread_default ();
-  if (ei->context != NULL)
-    g_main_context_ref (ei->context);
+  ei->context = g_main_context_ref_thread_default ();
 
   g_hash_table_insert (eo->map_if_name_to_ei,
                        (gpointer) ei->interface_name,
@@ -4794,6 +5081,7 @@ g_dbus_connection_unregister_object (GDBusConnection *connection,
   gboolean ret;
 
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), FALSE);
+  g_return_val_if_fail (check_initialized (connection), FALSE);
 
   ret = FALSE;
 
@@ -4866,6 +5154,7 @@ g_dbus_connection_emit_signal (GDBusConnection  *connection,
   g_return_val_if_fail (interface_name != NULL && g_dbus_is_interface_name (interface_name), FALSE);
   g_return_val_if_fail (signal_name != NULL && g_dbus_is_member_name (signal_name), FALSE);
   g_return_val_if_fail (parameters == NULL || g_variant_is_of_type (parameters, G_VARIANT_TYPE_TUPLE), FALSE);
+  g_return_val_if_fail (check_initialized (connection), FALSE);
 
   if (G_UNLIKELY (_g_dbus_debug_emission ()))
     {
@@ -4911,6 +5200,7 @@ static GVariant *
 decode_method_reply (GDBusMessage        *reply,
                      const gchar         *method_name,
                      const GVariantType  *reply_type,
+                     GUnixFDList        **out_fd_list,
                      GError             **error)
 {
   GVariant *result;
@@ -4944,6 +5234,18 @@ decode_method_reply (GDBusMessage        *reply,
           g_free (type_string);
           result = NULL;
         }
+
+#ifdef G_OS_UNIX
+      if (result != NULL)
+        {
+          if (out_fd_list != NULL)
+            {
+              *out_fd_list = g_dbus_message_get_unix_fd_list (reply);
+              if (*out_fd_list != NULL)
+                g_object_ref (*out_fd_list);
+            }
+        }
+#endif
       break;
 
     case G_DBUS_MESSAGE_TYPE_ERROR:
@@ -4965,18 +5267,35 @@ typedef struct
   GVariantType *reply_type;
   gchar *method_name; /* for error message */
   guint32 serial;
+
+  GVariant *value;
+  GUnixFDList *fd_list;
 } CallState;
 
+static void
+call_state_free (CallState *state)
+{
+  g_variant_type_free (state->reply_type);
+  g_free (state->method_name);
+
+  if (state->value != NULL)
+    g_variant_unref (state->value);
+  if (state->fd_list != NULL)
+    g_object_unref (state->fd_list);
+  g_slice_free (CallState, state);
+}
+
+/* called in any thread, with the connection's lock not held */
 static void
 g_dbus_connection_call_done (GObject      *source,
                              GAsyncResult *result,
                              gpointer      user_data)
 {
+  GSimpleAsyncResult *simple;
   GDBusConnection *connection = G_DBUS_CONNECTION (source);
   CallState *state = user_data;
   GError *error;
   GDBusMessage *reply;
-  GVariant *value;
 
   error = NULL;
   reply = g_dbus_connection_send_message_with_reply_finish (connection,
@@ -5004,29 +5323,294 @@ g_dbus_connection_call_done (GObject      *source,
       _g_dbus_debug_print_unlock ();
     }
 
-
   if (reply != NULL)
+    state->value = decode_method_reply (reply, state->method_name, state->reply_type, &state->fd_list, &error);
+
+  simple = state->simple; /* why? because state is freed before we unref simple.. */
+  if (error != NULL)
     {
-      value = decode_method_reply (reply, state->method_name,
-                                   state->reply_type, &error);
-      g_object_unref (reply);
+      g_simple_async_result_take_error (state->simple, error);
+      g_simple_async_result_complete (state->simple);
+      call_state_free (state);
     }
   else
-    value = NULL;
-
-  if (value == NULL)
-    g_simple_async_result_take_error (state->simple, error);
-  else
-    g_simple_async_result_set_op_res_gpointer (state->simple, value,
-                                               (GDestroyNotify) g_variant_unref);
-
-  g_simple_async_result_complete (state->simple);
-  g_variant_type_free (state->reply_type);
-  g_object_unref (state->simple);
-  g_free (state->method_name);
-
-  g_slice_free (CallState, state);
+    {
+      g_simple_async_result_set_op_res_gpointer (state->simple, state, (GDestroyNotify) call_state_free);
+      g_simple_async_result_complete (state->simple);
+    }
+  g_clear_object (&reply);
+  g_object_unref (simple);
 }
+
+/* called in any thread, with the connection's lock not held */
+static void
+g_dbus_connection_call_internal (GDBusConnection        *connection,
+                                 const gchar            *bus_name,
+                                 const gchar            *object_path,
+                                 const gchar            *interface_name,
+                                 const gchar            *method_name,
+                                 GVariant               *parameters,
+                                 const GVariantType     *reply_type,
+                                 GDBusCallFlags          flags,
+                                 gint                    timeout_msec,
+                                 GUnixFDList            *fd_list,
+                                 GCancellable           *cancellable,
+                                 GAsyncReadyCallback     callback,
+                                 gpointer                user_data)
+{
+  GDBusMessage *message;
+  guint32 serial;
+
+  g_return_if_fail (G_IS_DBUS_CONNECTION (connection));
+  g_return_if_fail (bus_name == NULL || g_dbus_is_name (bus_name));
+  g_return_if_fail (object_path != NULL && g_variant_is_object_path (object_path));
+  g_return_if_fail (interface_name != NULL && g_dbus_is_interface_name (interface_name));
+  g_return_if_fail (method_name != NULL && g_dbus_is_member_name (method_name));
+  g_return_if_fail (timeout_msec >= 0 || timeout_msec == -1);
+  g_return_if_fail ((parameters == NULL) || g_variant_is_of_type (parameters, G_VARIANT_TYPE_TUPLE));
+  g_return_if_fail (check_initialized (connection));
+#ifdef G_OS_UNIX
+  g_return_if_fail (fd_list == NULL || G_IS_UNIX_FD_LIST (fd_list));
+#else
+  g_return_if_fail (fd_list == NULL);
+#endif
+
+  message = g_dbus_message_new_method_call (bus_name,
+                                            object_path,
+                                            interface_name,
+                                            method_name);
+  add_call_flags (message, flags);
+  if (parameters != NULL)
+    g_dbus_message_set_body (message, parameters);
+
+#ifdef G_OS_UNIX
+  if (fd_list != NULL)
+    g_dbus_message_set_unix_fd_list (message, fd_list);
+#endif
+
+  /* If the user has no callback then we can just send the message with
+   * the G_DBUS_MESSAGE_FLAGS_NO_REPLY_EXPECTED flag set and skip all
+   * the logic for processing the reply.  If the service sends the reply
+   * anyway then it will just be ignored.
+   */
+  if (callback != NULL)
+    {
+      CallState *state;
+
+      state = g_slice_new0 (CallState);
+      state->simple = g_simple_async_result_new (G_OBJECT (connection),
+                                                 callback, user_data,
+                                                 g_dbus_connection_call_internal);
+      g_simple_async_result_set_check_cancellable (state->simple, cancellable);
+      state->method_name = g_strjoin (".", interface_name, method_name, NULL);
+
+      if (reply_type == NULL)
+        reply_type = G_VARIANT_TYPE_ANY;
+
+      state->reply_type = g_variant_type_copy (reply_type);
+
+      g_dbus_connection_send_message_with_reply (connection,
+                                                 message,
+                                                 G_DBUS_SEND_MESSAGE_FLAGS_NONE,
+                                                 timeout_msec,
+                                                 &state->serial,
+                                                 cancellable,
+                                                 g_dbus_connection_call_done,
+                                                 state);
+      serial = state->serial;
+    }
+  else
+    {
+      GDBusMessageFlags flags;
+
+      flags = g_dbus_message_get_flags (message);
+      flags |= G_DBUS_MESSAGE_FLAGS_NO_REPLY_EXPECTED;
+      g_dbus_message_set_flags (message, flags);
+
+      g_dbus_connection_send_message (connection,
+                                      message,
+                                      G_DBUS_SEND_MESSAGE_FLAGS_NONE,
+                                      &serial, NULL);
+    }
+
+  if (G_UNLIKELY (_g_dbus_debug_call ()))
+    {
+      _g_dbus_debug_print_lock ();
+      g_print ("========================================================================\n"
+               "GDBus-debug:Call:\n"
+               " >>>> ASYNC %s.%s()\n"
+               "      on object %s\n"
+               "      owned by name %s (serial %d)\n",
+               interface_name,
+               method_name,
+               object_path,
+               bus_name != NULL ? bus_name : "(none)",
+               serial);
+      _g_dbus_debug_print_unlock ();
+    }
+
+  if (message != NULL)
+    g_object_unref (message);
+}
+
+/* called in any thread, with the connection's lock not held */
+static GVariant *
+g_dbus_connection_call_finish_internal (GDBusConnection  *connection,
+                                        GUnixFDList     **out_fd_list,
+                                        GAsyncResult     *res,
+                                        GError          **error)
+{
+  GSimpleAsyncResult *simple;
+  CallState *state;
+
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
+  g_return_val_if_fail (g_simple_async_result_is_valid (res, G_OBJECT (connection),
+                                                        g_dbus_connection_call_internal), NULL);
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  simple = G_SIMPLE_ASYNC_RESULT (res);
+
+  if (g_simple_async_result_propagate_error (simple, error))
+    return NULL;
+
+  state = g_simple_async_result_get_op_res_gpointer (simple);
+  if (out_fd_list != NULL)
+    *out_fd_list = state->fd_list != NULL ? g_object_ref (state->fd_list) : NULL;
+  return g_variant_ref (state->value);
+}
+
+/* called in any user thread, with the connection's lock not held */
+static GVariant *
+g_dbus_connection_call_sync_internal (GDBusConnection         *connection,
+                                      const gchar             *bus_name,
+                                      const gchar             *object_path,
+                                      const gchar             *interface_name,
+                                      const gchar             *method_name,
+                                      GVariant                *parameters,
+                                      const GVariantType      *reply_type,
+                                      GDBusCallFlags           flags,
+                                      gint                     timeout_msec,
+                                      GUnixFDList             *fd_list,
+                                      GUnixFDList            **out_fd_list,
+                                      GCancellable            *cancellable,
+                                      GError                 **error)
+{
+  GDBusMessage *message;
+  GDBusMessage *reply;
+  GVariant *result;
+  GError *local_error;
+  GDBusSendMessageFlags send_flags;
+
+  message = NULL;
+  reply = NULL;
+  result = NULL;
+
+  g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
+  g_return_val_if_fail (bus_name == NULL || g_dbus_is_name (bus_name), NULL);
+  g_return_val_if_fail (object_path != NULL && g_variant_is_object_path (object_path), NULL);
+  g_return_val_if_fail (interface_name != NULL && g_dbus_is_interface_name (interface_name), NULL);
+  g_return_val_if_fail (method_name != NULL && g_dbus_is_member_name (method_name), NULL);
+  g_return_val_if_fail (timeout_msec >= 0 || timeout_msec == -1, NULL);
+  g_return_val_if_fail ((parameters == NULL) || g_variant_is_of_type (parameters, G_VARIANT_TYPE_TUPLE), NULL);
+#ifdef G_OS_UNIX
+  g_return_val_if_fail (fd_list == NULL || G_IS_UNIX_FD_LIST (fd_list), NULL);
+#else
+  g_return_val_if_fail (fd_list == NULL, NULL);
+#endif
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  if (!(flags & CALL_FLAGS_INITIALIZING))
+    g_return_val_if_fail (check_initialized (connection), FALSE);
+
+  if (reply_type == NULL)
+    reply_type = G_VARIANT_TYPE_ANY;
+
+  message = g_dbus_message_new_method_call (bus_name,
+                                            object_path,
+                                            interface_name,
+                                            method_name);
+  add_call_flags (message, flags);
+  if (parameters != NULL)
+    g_dbus_message_set_body (message, parameters);
+
+#ifdef G_OS_UNIX
+  if (fd_list != NULL)
+    g_dbus_message_set_unix_fd_list (message, fd_list);
+#endif
+
+  if (G_UNLIKELY (_g_dbus_debug_call ()))
+    {
+      _g_dbus_debug_print_lock ();
+      g_print ("========================================================================\n"
+               "GDBus-debug:Call:\n"
+               " >>>> SYNC %s.%s()\n"
+               "      on object %s\n"
+               "      owned by name %s\n",
+               interface_name,
+               method_name,
+               object_path,
+               bus_name != NULL ? bus_name : "(none)");
+      _g_dbus_debug_print_unlock ();
+    }
+
+  local_error = NULL;
+
+  send_flags = G_DBUS_SEND_MESSAGE_FLAGS_NONE;
+
+  /* translate from one flavour of flags to another... */
+  if (flags & CALL_FLAGS_INITIALIZING)
+    send_flags |= SEND_MESSAGE_FLAGS_INITIALIZING;
+
+  reply = g_dbus_connection_send_message_with_reply_sync (connection,
+                                                          message,
+                                                          send_flags,
+                                                          timeout_msec,
+                                                          NULL, /* volatile guint32 *out_serial */
+                                                          cancellable,
+                                                          &local_error);
+
+  if (G_UNLIKELY (_g_dbus_debug_call ()))
+    {
+      _g_dbus_debug_print_lock ();
+      g_print ("========================================================================\n"
+               "GDBus-debug:Call:\n"
+               " <<<< SYNC COMPLETE %s.%s()\n"
+               "      ",
+               interface_name,
+               method_name);
+      if (reply != NULL)
+        {
+          g_print ("SUCCESS\n");
+        }
+      else
+        {
+          g_print ("FAILED: %s\n",
+                   local_error->message);
+        }
+      _g_dbus_debug_print_unlock ();
+    }
+
+  if (reply == NULL)
+    {
+      if (error != NULL)
+        *error = local_error;
+      else
+        g_error_free (local_error);
+      goto out;
+    }
+
+  result = decode_method_reply (reply, method_name, reply_type, out_fd_list, error);
+
+ out:
+  if (message != NULL)
+    g_object_unref (message);
+  if (reply != NULL)
+    g_object_unref (reply);
+
+  return result;
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
 
 /**
  * g_dbus_connection_call:
@@ -5042,9 +5626,9 @@ g_dbus_connection_call_done (GObject      *source,
  * @flags: Flags from the #GDBusCallFlags enumeration.
  * @timeout_msec: The timeout in milliseconds, -1 to use the default
  *                timeout or %G_MAXINT for no timeout.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @callback: (allow-none): A #GAsyncReadyCallback to call when the request is
- *            satisfied or %NULL if you don't * care about the result of the
+ *            satisfied or %NULL if you don't care about the result of the
  *            method invocation.
  * @user_data: The data to pass to @callback.
  *
@@ -5088,6 +5672,9 @@ g_dbus_connection_call_done (GObject      *source,
  * See g_dbus_connection_call_sync() for the synchronous version of this
  * function.
  *
+ * If @callback is %NULL then the D-Bus method call message will be sent with
+ * the %G_DBUS_MESSAGE_FLAGS_NO_REPLY_EXPECTED flag set.
+ *
  * Since: 2.26
  */
 void
@@ -5104,63 +5691,7 @@ g_dbus_connection_call (GDBusConnection        *connection,
                         GAsyncReadyCallback     callback,
                         gpointer                user_data)
 {
-  GDBusMessage *message;
-  CallState *state;
-
-  g_return_if_fail (G_IS_DBUS_CONNECTION (connection));
-  g_return_if_fail (bus_name == NULL || g_dbus_is_name (bus_name));
-  g_return_if_fail (object_path != NULL && g_variant_is_object_path (object_path));
-  g_return_if_fail (interface_name != NULL && g_dbus_is_interface_name (interface_name));
-  g_return_if_fail (method_name != NULL && g_dbus_is_member_name (method_name));
-  g_return_if_fail (timeout_msec >= 0 || timeout_msec == -1);
-  g_return_if_fail ((parameters == NULL) || g_variant_is_of_type (parameters, G_VARIANT_TYPE_TUPLE));
-
-  state = g_slice_new (CallState);
-  state->simple = g_simple_async_result_new (G_OBJECT (connection),
-                                             callback, user_data,
-                                             g_dbus_connection_call);
-  state->method_name = g_strjoin (".", interface_name, method_name, NULL);
-
-  if (reply_type == NULL)
-    reply_type = G_VARIANT_TYPE_ANY;
-
-  state->reply_type = g_variant_type_copy (reply_type);
-
-  message = g_dbus_message_new_method_call (bus_name,
-                                            object_path,
-                                            interface_name,
-                                            method_name);
-  add_call_flags (message, flags);
-  if (parameters != NULL)
-    g_dbus_message_set_body (message, parameters);
-
-  g_dbus_connection_send_message_with_reply (connection,
-                                             message,
-                                             G_DBUS_SEND_MESSAGE_FLAGS_NONE,
-                                             timeout_msec,
-                                             &state->serial,
-                                             cancellable,
-                                             g_dbus_connection_call_done,
-                                             state);
-
-  if (G_UNLIKELY (_g_dbus_debug_call ()))
-    {
-      _g_dbus_debug_print_lock ();
-      g_print ("========================================================================\n"
-               "GDBus-debug:Call:\n"
-               " >>>> ASYNC %s.%s()\n"
-               "      on object %s\n"
-               "      owned by name %s (serial %d)\n",
-               interface_name,
-               method_name,
-               object_path,
-               bus_name != NULL ? bus_name : "(none)",
-               state->serial);
-      _g_dbus_debug_print_unlock ();
-    }
-
-  if (message != NULL)
-    g_object_unref (message);
+  g_dbus_connection_call_internal (connection, bus_name, object_path, interface_name, method_name, parameters, reply_type, flags, timeout_msec, NULL, cancellable, callback, user_data);
 }
 
 /**
@@ -5181,27 +5712,14 @@ g_dbus_connection_call_finish (GDBusConnection  *connection,
                                GAsyncResult     *res,
                                GError          **error)
 {
-  GSimpleAsyncResult *simple;
-
-  g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
-  g_return_val_if_fail (g_simple_async_result_is_valid (res, G_OBJECT (connection),
-                                                        g_dbus_connection_call), NULL);
-  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
-
-  simple = G_SIMPLE_ASYNC_RESULT (res);
-
-  if (g_simple_async_result_propagate_error (simple, error))
-    return NULL;
-
-  return g_variant_ref (g_simple_async_result_get_op_res_gpointer (simple));
+  return g_dbus_connection_call_finish_internal (connection, NULL, res, error);
 }
-
-/* ---------------------------------------------------------------------------------------------------- */
 
 /**
  * g_dbus_connection_call_sync:
  * @connection: A #GDBusConnection.
- * @bus_name: A unique or well-known bus name.
+ * @bus_name: (allow-none): A unique or well-known bus name or %NULL if
+ *            @connection is not a message bus connection.
  * @object_path: Path of remote object.
  * @interface_name: D-Bus interface to invoke method on.
  * @method_name: The name of the method to invoke.
@@ -5211,7 +5729,7 @@ g_dbus_connection_call_finish (GDBusConnection  *connection,
  * @flags: Flags from the #GDBusCallFlags enumeration.
  * @timeout_msec: The timeout in milliseconds, -1 to use the default
  *                timeout or %G_MAXINT for no timeout.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
  * Synchronously invokes the @method_name method on the
@@ -5269,98 +5787,128 @@ g_dbus_connection_call_sync (GDBusConnection         *connection,
                              GCancellable            *cancellable,
                              GError                 **error)
 {
-  GDBusMessage *message;
-  GDBusMessage *reply;
-  GVariant *result;
-  GError *local_error;
-
-  message = NULL;
-  reply = NULL;
-  result = NULL;
-
-  g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), NULL);
-  g_return_val_if_fail (bus_name == NULL || g_dbus_is_name (bus_name), NULL);
-  g_return_val_if_fail (object_path != NULL && g_variant_is_object_path (object_path), NULL);
-  g_return_val_if_fail (interface_name != NULL && g_dbus_is_interface_name (interface_name), NULL);
-  g_return_val_if_fail (method_name != NULL && g_dbus_is_member_name (method_name), NULL);
-  g_return_val_if_fail (timeout_msec >= 0 || timeout_msec == -1, NULL);
-  g_return_val_if_fail ((parameters == NULL) || g_variant_is_of_type (parameters, G_VARIANT_TYPE_TUPLE), NULL);
-
-  if (reply_type == NULL)
-    reply_type = G_VARIANT_TYPE_ANY;
-
-  message = g_dbus_message_new_method_call (bus_name,
-                                            object_path,
-                                            interface_name,
-                                            method_name);
-  add_call_flags (message, flags);
-  if (parameters != NULL)
-    g_dbus_message_set_body (message, parameters);
-
-  if (G_UNLIKELY (_g_dbus_debug_call ()))
-    {
-      _g_dbus_debug_print_lock ();
-      g_print ("========================================================================\n"
-               "GDBus-debug:Call:\n"
-               " >>>> SYNC %s.%s()\n"
-               "      on object %s\n"
-               "      owned by name %s\n",
-               interface_name,
-               method_name,
-               object_path,
-               bus_name != NULL ? bus_name : "(none)");
-      _g_dbus_debug_print_unlock ();
-    }
-
-  local_error = NULL;
-  reply = g_dbus_connection_send_message_with_reply_sync (connection,
-                                                          message,
-							  G_DBUS_SEND_MESSAGE_FLAGS_NONE,
-                                                          timeout_msec,
-                                                          NULL, /* volatile guint32 *out_serial */
-                                                          cancellable,
-                                                          &local_error);
-
-  if (G_UNLIKELY (_g_dbus_debug_call ()))
-    {
-      _g_dbus_debug_print_lock ();
-      g_print ("========================================================================\n"
-               "GDBus-debug:Call:\n"
-               " <<<< SYNC COMPLETE %s.%s()\n"
-               "      ",
-               interface_name,
-               method_name);
-      if (reply != NULL)
-        {
-          g_print ("SUCCESS\n");
-        }
-      else
-        {
-          g_print ("FAILED: %s\n",
-                   local_error->message);
-        }
-      _g_dbus_debug_print_unlock ();
-    }
-
-  if (reply == NULL)
-    {
-      if (error != NULL)
-        *error = local_error;
-      else
-        g_error_free (local_error);
-      goto out;
-    }
-
-  result = decode_method_reply (reply, method_name, reply_type, error);
-
- out:
-  if (message != NULL)
-    g_object_unref (message);
-  if (reply != NULL)
-    g_object_unref (reply);
-
-  return result;
+  return g_dbus_connection_call_sync_internal (connection, bus_name, object_path, interface_name, method_name, parameters, reply_type, flags, timeout_msec, NULL, NULL, cancellable, error);
 }
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+#ifdef G_OS_UNIX
+
+/**
+ * g_dbus_connection_call_with_unix_fd_list:
+ * @connection: A #GDBusConnection.
+ * @bus_name: (allow-none): A unique or well-known bus name or %NULL if
+ *            @connection is not a message bus connection.
+ * @object_path: Path of remote object.
+ * @interface_name: D-Bus interface to invoke method on.
+ * @method_name: The name of the method to invoke.
+ * @parameters: (allow-none): A #GVariant tuple with parameters for the method
+ *              or %NULL if not passing parameters.
+ * @reply_type: (allow-none): The expected type of the reply, or %NULL.
+ * @flags: Flags from the #GDBusCallFlags enumeration.
+ * @timeout_msec: The timeout in milliseconds, -1 to use the default
+ *                timeout or %G_MAXINT for no timeout.
+ * @fd_list: (allow-none): A #GUnixFDList or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
+ * @callback: (allow-none): A #GAsyncReadyCallback to call when the request is
+ *            satisfied or %NULL if you don't * care about the result of the
+ *            method invocation.
+ * @user_data: The data to pass to @callback.
+ *
+ * Like g_dbus_connection_call() but also takes a #GUnixFDList object.
+ *
+ * This method is only available on UNIX.
+ *
+ * Since: 2.30
+ */
+void
+g_dbus_connection_call_with_unix_fd_list (GDBusConnection        *connection,
+                                          const gchar            *bus_name,
+                                          const gchar            *object_path,
+                                          const gchar            *interface_name,
+                                          const gchar            *method_name,
+                                          GVariant               *parameters,
+                                          const GVariantType     *reply_type,
+                                          GDBusCallFlags          flags,
+                                          gint                    timeout_msec,
+                                          GUnixFDList            *fd_list,
+                                          GCancellable           *cancellable,
+                                          GAsyncReadyCallback     callback,
+                                          gpointer                user_data)
+{
+  g_dbus_connection_call_internal (connection, bus_name, object_path, interface_name, method_name, parameters, reply_type, flags, timeout_msec, fd_list, cancellable, callback, user_data);
+}
+
+/**
+ * g_dbus_connection_call_with_unix_fd_list_finish:
+ * @connection: A #GDBusConnection.
+ * @out_fd_list: (out) (allow-none): Return location for a #GUnixFDList or %NULL.
+ * @res: A #GAsyncResult obtained from the #GAsyncReadyCallback passed to g_dbus_connection_call_with_unix_fd_list().
+ * @error: Return location for error or %NULL.
+ *
+ * Finishes an operation started with g_dbus_connection_call_with_unix_fd_list().
+ *
+ * Returns: %NULL if @error is set. Otherwise a #GVariant tuple with
+ * return values. Free with g_variant_unref().
+ *
+ * Since: 2.30
+ */
+GVariant *
+g_dbus_connection_call_with_unix_fd_list_finish (GDBusConnection  *connection,
+                                                 GUnixFDList     **out_fd_list,
+                                                 GAsyncResult     *res,
+                                                 GError          **error)
+{
+  return g_dbus_connection_call_finish_internal (connection, out_fd_list, res, error);
+}
+
+/**
+ * g_dbus_connection_call_with_unix_fd_list_sync:
+ * @connection: A #GDBusConnection.
+ * @bus_name: (allow-none): A unique or well-known bus name or %NULL if
+ *            @connection is not a message bus connection.
+ * @object_path: Path of remote object.
+ * @interface_name: D-Bus interface to invoke method on.
+ * @method_name: The name of the method to invoke.
+ * @parameters: (allow-none): A #GVariant tuple with parameters for the method
+ *              or %NULL if not passing parameters.
+ * @reply_type: (allow-none): The expected type of the reply, or %NULL.
+ * @flags: Flags from the #GDBusCallFlags enumeration.
+ * @timeout_msec: The timeout in milliseconds, -1 to use the default
+ *                timeout or %G_MAXINT for no timeout.
+ * @fd_list: (allow-none): A #GUnixFDList or %NULL.
+ * @out_fd_list: (out) (allow-none): Return location for a #GUnixFDList or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
+ * @error: Return location for error or %NULL.
+ *
+ * Like g_dbus_connection_call_sync() but also takes and returns #GUnixFDList objects.
+ *
+ * This method is only available on UNIX.
+ *
+ * Returns: %NULL if @error is set. Otherwise a #GVariant tuple with
+ * return values. Free with g_variant_unref().
+ *
+ * Since: 2.30
+ */
+GVariant *
+g_dbus_connection_call_with_unix_fd_list_sync (GDBusConnection         *connection,
+                                               const gchar             *bus_name,
+                                               const gchar             *object_path,
+                                               const gchar             *interface_name,
+                                               const gchar             *method_name,
+                                               GVariant                *parameters,
+                                               const GVariantType      *reply_type,
+                                               GDBusCallFlags           flags,
+                                               gint                     timeout_msec,
+                                               GUnixFDList             *fd_list,
+                                               GUnixFDList            **out_fd_list,
+                                               GCancellable            *cancellable,
+                                               GError                 **error)
+{
+  return g_dbus_connection_call_sync_internal (connection, bus_name, object_path, interface_name, method_name, parameters, reply_type, flags, timeout_msec, fd_list, out_fd_list, cancellable, error);
+}
+
+#endif /* G_OS_UNIX */
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -5384,15 +5932,16 @@ exported_subtree_free (ExportedSubtree *es)
                        es->user_data_free_func,
                        es->user_data);
 
-  if (es->context != NULL)
-    g_main_context_unref (es->context);
+  g_main_context_unref (es->context);
 
   _g_dbus_subtree_vtable_free (es->vtable);
   g_free (es->object_path);
   g_free (es);
 }
 
-/* called without lock held */
+/* called without lock held in the thread where the caller registered
+ * the subtree
+ */
 static gboolean
 handle_subtree_introspect (GDBusConnection *connection,
                            ExportedSubtree *es,
@@ -5501,7 +6050,9 @@ handle_subtree_introspect (GDBusConnection *connection,
   return handled;
 }
 
-/* called without lock held */
+/* called without lock held in the thread where the caller registered
+ * the subtree
+ */
 static gboolean
 handle_subtree_method_invocation (GDBusConnection *connection,
                                   ExportedSubtree *es,
@@ -5768,7 +6319,7 @@ process_subtree_vtable_message_in_idle_cb (gpointer _data)
   return FALSE;
 }
 
-/* called in message handler thread with lock held */
+/* called in GDBusWorker thread with connection's lock held */
 static gboolean
 subtree_message_func (GDBusConnection *connection,
                       ExportedSubtree *es,
@@ -5864,6 +6415,7 @@ g_dbus_connection_register_subtree (GDBusConnection           *connection,
   g_return_val_if_fail (object_path != NULL && g_variant_is_object_path (object_path), 0);
   g_return_val_if_fail (vtable != NULL, 0);
   g_return_val_if_fail (error == NULL || *error == NULL, 0);
+  g_return_val_if_fail (check_initialized (connection), 0);
 
   ret = 0;
 
@@ -5889,9 +6441,7 @@ g_dbus_connection_register_subtree (GDBusConnection           *connection,
   es->id = _global_subtree_registration_id++; /* TODO: overflow etc. */
   es->user_data = user_data;
   es->user_data_free_func = user_data_free_func;
-  es->context = g_main_context_get_thread_default ();
-  if (es->context != NULL)
-    g_main_context_ref (es->context);
+  es->context = g_main_context_ref_thread_default ();
 
   g_hash_table_insert (connection->map_object_path_to_es, es->object_path, es);
   g_hash_table_insert (connection->map_id_to_es,
@@ -5927,6 +6477,7 @@ g_dbus_connection_unregister_subtree (GDBusConnection *connection,
   gboolean ret;
 
   g_return_val_if_fail (G_IS_DBUS_CONNECTION (connection), FALSE);
+  g_return_val_if_fail (check_initialized (connection), FALSE);
 
   ret = FALSE;
 
@@ -5950,7 +6501,7 @@ g_dbus_connection_unregister_subtree (GDBusConnection *connection,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-/* must be called with lock held */
+/* may be called in any thread, with connection's lock held */
 static void
 handle_generic_ping_unlocked (GDBusConnection *connection,
                               const gchar     *object_path,
@@ -5962,7 +6513,7 @@ handle_generic_ping_unlocked (GDBusConnection *connection,
   g_object_unref (reply);
 }
 
-/* must be called with lock held */
+/* may be called in any thread, with connection's lock held */
 static void
 handle_generic_get_machine_id_unlocked (GDBusConnection *connection,
                                         const gchar     *object_path,
@@ -5995,7 +6546,7 @@ handle_generic_get_machine_id_unlocked (GDBusConnection *connection,
   g_object_unref (reply);
 }
 
-/* must be called with lock held */
+/* may be called in any thread, with connection's lock held */
 static void
 handle_generic_introspect_unlocked (GDBusConnection *connection,
                                     const gchar     *object_path,
@@ -6023,7 +6574,7 @@ handle_generic_introspect_unlocked (GDBusConnection *connection,
   g_string_free (s, TRUE);
 }
 
-/* must be called with lock held */
+/* may be called in any thread, with connection's lock held */
 static gboolean
 handle_generic_unlocked (GDBusConnection *connection,
                          GDBusMessage    *message)
@@ -6070,7 +6621,7 @@ handle_generic_unlocked (GDBusConnection *connection,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-/* called in message handler thread with lock held */
+/* called in GDBusWorker thread with connection's lock held */
 static void
 distribute_method_call (GDBusConnection *connection,
                         GDBusMessage    *message)
@@ -6081,7 +6632,6 @@ distribute_method_call (GDBusConnection *connection,
   const gchar *object_path;
   const gchar *interface_name;
   const gchar *member;
-  const gchar *signature;
   const gchar *path;
   gchar *subtree_path;
   gchar *needle;
@@ -6090,7 +6640,6 @@ distribute_method_call (GDBusConnection *connection,
 
   interface_name = g_dbus_message_get_interface (message);
   member = g_dbus_message_get_member (message);
-  signature = g_dbus_message_get_signature (message);
   path = g_dbus_message_get_path (message);
   subtree_path = g_strdup (path);
   needle = strrchr (subtree_path, '/');
@@ -6120,14 +6669,6 @@ distribute_method_call (GDBusConnection *connection,
                g_dbus_message_get_serial (message));
       _g_dbus_debug_print_unlock ();
     }
-
-#if 0
-  g_debug ("interface    = `%s'", interface_name);
-  g_debug ("member       = `%s'", member);
-  g_debug ("signature    = `%s'", signature);
-  g_debug ("path         = `%s'", path);
-  g_debug ("subtree_path = `%s'", subtree_path != NULL ? subtree_path : "N/A");
-#endif
 
   object_path = g_dbus_message_get_path (message);
   g_assert (object_path != NULL);
@@ -6174,11 +6715,12 @@ distribute_method_call (GDBusConnection *connection,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
-static GDBusConnection **
+/* Called in any user thread, with the message_bus_lock held. */
+static GWeakRef *
 message_bus_get_singleton (GBusType   bus_type,
                            GError   **error)
 {
-  GDBusConnection **ret;
+  GWeakRef *ret;
   const gchar *starter_bus;
 
   ret = NULL;
@@ -6236,12 +6778,13 @@ message_bus_get_singleton (GBusType   bus_type,
   return ret;
 }
 
+/* Called in any user thread, without holding locks. */
 static GDBusConnection *
 get_uninitialized_connection (GBusType       bus_type,
                               GCancellable  *cancellable,
                               GError       **error)
 {
-  GDBusConnection **singleton;
+  GWeakRef *singleton;
   GDBusConnection *ret;
 
   ret = NULL;
@@ -6251,23 +6794,23 @@ get_uninitialized_connection (GBusType       bus_type,
   if (singleton == NULL)
     goto out;
 
-  if (*singleton == NULL)
+  ret = g_weak_ref_get (singleton);
+
+  if (ret == NULL)
     {
       gchar *address;
       address = g_dbus_address_get_for_bus_sync (bus_type, cancellable, error);
       if (address == NULL)
         goto out;
-      ret = *singleton = g_object_new (G_TYPE_DBUS_CONNECTION,
-                                       "address", address,
-                                       "flags", G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT |
-                                                G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION,
-                                       "exit-on-close", TRUE,
-                                       NULL);
+      ret = g_object_new (G_TYPE_DBUS_CONNECTION,
+                          "address", address,
+                          "flags", G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT |
+                                   G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION,
+                          "exit-on-close", TRUE,
+                          NULL);
+
+      g_weak_ref_set (singleton, ret);
       g_free (address);
-    }
-  else
-    {
-      ret = g_object_ref (*singleton);
     }
 
   g_assert (ret != NULL);
@@ -6277,10 +6820,29 @@ get_uninitialized_connection (GBusType       bus_type,
   return ret;
 }
 
+/* May be called from any thread. Must not hold message_bus_lock. */
+GDBusConnection *
+_g_bus_get_singleton_if_exists (GBusType bus_type)
+{
+  GWeakRef *singleton;
+  GDBusConnection *ret = NULL;
+
+  G_LOCK (message_bus_lock);
+  singleton = message_bus_get_singleton (bus_type, NULL);
+  if (singleton == NULL)
+    goto out;
+
+  ret = g_weak_ref_get (singleton);
+
+ out:
+  G_UNLOCK (message_bus_lock);
+  return ret;
+}
+
 /**
  * g_bus_get_sync:
  * @bus_type: A #GBusType.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
  * Synchronously connects to the message bus specified by @bus_type.
@@ -6357,7 +6919,7 @@ bus_get_async_initable_cb (GObject      *source_object,
 /**
  * g_bus_get:
  * @bus_type: A #GBusType.
- * @cancellable: A #GCancellable or %NULL.
+ * @cancellable: (allow-none): A #GCancellable or %NULL.
  * @callback: A #GAsyncReadyCallback to call when the request is satisfied.
  * @user_data: The data to pass to @callback.
  *
@@ -6385,6 +6947,7 @@ g_bus_get (GBusType             bus_type,
                                       callback,
                                       user_data,
                                       g_bus_get);
+  g_simple_async_result_set_check_cancellable (simple, cancellable);
 
   error = NULL;
   connection = get_uninitialized_connection (bus_type, cancellable, &error);
@@ -6415,7 +6978,7 @@ g_bus_get (GBusType             bus_type,
  * The returned object is a singleton, that is, shared with other
  * callers of g_bus_get() and g_bus_get_sync() for @bus_type. In the
  * event that you need a private message bus connection, use
- * g_dbus_address_get_for_bus() and
+ * g_dbus_address_get_for_bus_sync() and
  * g_dbus_connection_new_for_address().
  *
  * Note that the returned #GDBusConnection object will (usually) have

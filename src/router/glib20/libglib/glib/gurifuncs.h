@@ -20,7 +20,7 @@
  * Author: Alexander Larsson <alexl@redhat.com>
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -39,7 +39,7 @@ G_BEGIN_DECLS
 #define G_URI_RESERVED_CHARS_GENERIC_DELIMITERS ":/?#[]@"
 
 /**
- * G_URI_RESERVED_CHARS_SUBCOMPONENT_DELIMITERS
+ * G_URI_RESERVED_CHARS_SUBCOMPONENT_DELIMITERS:
  * 
  * Subcomponent delimiter characters as defined in RFC 3986. Includes "!$&'()*+,;=".
  **/

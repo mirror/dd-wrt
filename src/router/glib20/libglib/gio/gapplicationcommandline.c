@@ -57,7 +57,7 @@ G_DEFINE_TYPE (GApplicationCommandLine, g_application_command_line, G_TYPE_OBJEC
  * of this object (ie: the process exits when the last reference is
  * dropped).
  *
- * The main use for #GApplicationCommandline (and the
+ * The main use for #GApplicationCommandLine (and the
  * #GApplication::command-line signal) is 'Emacs server' like use cases:
  * You can set the <envar>EDITOR</envar> environment variable to have
  * e.g. git use your favourite editor to edit commit messages, and if you
@@ -99,7 +99,7 @@ G_DEFINE_TYPE (GApplicationCommandLine, g_application_command_line, G_TYPE_OBJEC
  * <para>
  * An example of deferred commandline handling. Here, the commandline is
  * not completely handled before the #GApplication::command-line handler
- * returns. Instead, we keep a reference to the GApplicationCommandline
+ * returns. Instead, we keep a reference to the GApplicationCommandLine
  * object and handle it later(in this example, in an idle). Note that it
  * is necessary to hold the application until you are done with the
  * commandline.
@@ -119,6 +119,14 @@ G_DEFINE_TYPE (GApplicationCommandLine, g_application_command_line, G_TYPE_OBJEC
  * </example>
  **/
 
+/**
+ * GApplicationCommandLineClass:
+ *
+ * The <structname>GApplicationCommandLineClass</structname> structure
+ * contains private data only
+ *
+ * Since: 2.28
+ **/
 enum
 {
   PROP_NONE,
@@ -131,9 +139,9 @@ struct _GApplicationCommandLinePrivate
 {
   GVariant *platform_data;
   GVariant *arguments;
-  GVariant *cwd;
+  gchar *cwd;
 
-  const gchar **environ;
+  gchar **environ;
   gint exit_status;
 };
 
@@ -154,14 +162,14 @@ grok_platform_data (GApplicationCommandLine *cmdline)
     if (strcmp (key, "cwd") == 0)
       {
         if (!cmdline->priv->cwd)
-          cmdline->priv->cwd = g_variant_ref (value);
+          cmdline->priv->cwd = g_variant_dup_bytestring (value, NULL);
       }
 
     else if (strcmp (key, "environ") == 0)
       {
         if (!cmdline->priv->environ)
           cmdline->priv->environ =
-            g_variant_get_bytestring_array (value, NULL);
+            g_variant_dup_bytestring_array (value, NULL);
       }
 }
 
@@ -169,14 +177,14 @@ static void
 g_application_command_line_real_print_literal (GApplicationCommandLine *cmdline,
                                                const gchar             *message)
 {
-  g_print ("%s\n", message);
+  g_print ("%s", message);
 }
 
 static void
 g_application_command_line_real_printerr_literal (GApplicationCommandLine *cmdline,
                                                   const gchar             *message)
 {
-  g_printerr ("%s\n", message);
+  g_printerr ("%s", message);
 }
 
 static void
@@ -242,8 +250,9 @@ g_application_command_line_finalize (GObject *object)
     g_variant_unref (cmdline->priv->platform_data);
   if (cmdline->priv->arguments)
     g_variant_unref (cmdline->priv->arguments);
-  if (cmdline->priv->cwd)
-    g_variant_unref (cmdline->priv->cwd);
+
+  g_free (cmdline->priv->cwd);
+  g_strfreev (cmdline->priv->environ);
 
   G_OBJECT_CLASS (g_application_command_line_parent_class)
     ->finalize (object);
@@ -259,6 +268,22 @@ g_application_command_line_init (GApplicationCommandLine *cmdline)
 }
 
 static void
+g_application_command_line_constructed (GObject *object)
+{
+  GApplicationCommandLine *cmdline = G_APPLICATION_COMMAND_LINE (object);
+
+  if (IS_REMOTE (cmdline))
+    return;
+
+  /* In the local case, set cmd and environ */
+  if (!cmdline->priv->cwd)
+    cmdline->priv->cwd = g_get_current_dir ();
+
+  if (!cmdline->priv->environ)
+    cmdline->priv->environ = g_get_environ ();
+}
+
+static void
 g_application_command_line_class_init (GApplicationCommandLineClass *class)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (class);
@@ -266,6 +291,8 @@ g_application_command_line_class_init (GApplicationCommandLineClass *class)
   object_class->get_property = g_application_command_line_get_property;
   object_class->set_property = g_application_command_line_set_property;
   object_class->finalize = g_application_command_line_finalize;
+  object_class->constructed = g_application_command_line_constructed;
+
   class->printerr_literal = g_application_command_line_real_printerr_literal;
   class->print_literal = g_application_command_line_real_print_literal;
 
@@ -299,7 +326,7 @@ g_application_command_line_class_init (GApplicationCommandLineClass *class)
 /**
  * g_application_command_line_get_arguments:
  * @cmdline: a #GApplicationCommandLine
- * @argc: (out): the length of the arguments array, or %NULL
+ * @argc: (out) (allow-none): the length of the arguments array, or %NULL
  *
  * Gets the list of arguments that was passed on the command line.
  *
@@ -350,10 +377,7 @@ g_application_command_line_get_arguments (GApplicationCommandLine *cmdline,
 const gchar *
 g_application_command_line_get_cwd (GApplicationCommandLine *cmdline)
 {
-  if (cmdline->priv->cwd)
-    return g_variant_get_bytestring (cmdline->priv->cwd);
-  else
-    return NULL;
+  return cmdline->priv->cwd;
 }
 
 /**
@@ -378,13 +402,13 @@ g_application_command_line_get_cwd (GApplicationCommandLine *cmdline)
  *
  * Returns: (array zero-terminated=1) (transfer none): the environment
  * strings, or %NULL if they were not sent
- * 
+ *
  * Since: 2.28
  **/
 const gchar * const *
 g_application_command_line_get_environ (GApplicationCommandLine *cmdline)
 {
-  return cmdline->priv->environ;
+  return (const gchar **)cmdline->priv->environ;
 }
 
 /**
@@ -405,7 +429,7 @@ g_application_command_line_get_environ (GApplicationCommandLine *cmdline)
  * long as @cmdline exists.
  *
  * Returns: the value of the variable, or %NULL if unset or unsent
- * 
+ *
  * Since: 2.28
  **/
 const gchar *
@@ -575,13 +599,13 @@ g_application_command_line_get_exit_status (GApplicationCommandLine *cmdline)
  * Gets the platform data associated with the invocation of @cmdline.
  *
  * This is a #GVariant dictionary containing information about the
- * context in which the invocation occured.  It typically contains
+ * context in which the invocation occurred.  It typically contains
  * information like the current working directory and the startup
  * notification ID.
  *
  * For local invocation, it will be %NULL.
  *
- * Returns: the platform data, or %NULL
+ * Returns: (allow-none): the platform data, or %NULL
  *
  * Since: 2.28
  **/

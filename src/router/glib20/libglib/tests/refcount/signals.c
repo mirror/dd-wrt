@@ -27,6 +27,7 @@ struct _GTestClass
 
   void (*test_signal1) (GTest * test, gint an_int);
   void (*test_signal2) (GTest * test, gint an_int);
+  gchar * (*test_signal3) (GTest * test, gint an_int);
 };
 
 static GType my_test_get_type (void);
@@ -37,6 +38,7 @@ enum
 {
   TEST_SIGNAL1,
   TEST_SIGNAL2,
+  TEST_SIGNAL3,
   /* add more above */
   LAST_SIGNAL
 };
@@ -52,6 +54,7 @@ static void my_test_init (GTest * test);
 static void my_test_dispose (GObject * object);
 
 static void signal2_handler (GTest * test, gint anint);
+static gchar * signal3_handler (GTest * test, gint anint);
 
 static void my_test_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
@@ -68,7 +71,7 @@ my_test_get_type (void)
   static GType test_type = 0;
 
   if (!test_type) {
-    static const GTypeInfo test_info = {
+    const GTypeInfo test_info = {
       sizeof (GTestClass),
       NULL,
       NULL,
@@ -98,9 +101,6 @@ my_test_class_init (GTestClass * klass)
 
   parent_class = g_type_class_ref (G_TYPE_OBJECT);
 
-  if (!g_thread_supported ())
-    g_thread_init (NULL);
-
   gobject_class->dispose = my_test_dispose;
   gobject_class->set_property = my_test_set_property;
   gobject_class->get_property = my_test_get_property;
@@ -113,12 +113,17 @@ my_test_class_init (GTestClass * klass)
       g_signal_new ("test-signal2", G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST, G_STRUCT_OFFSET (GTestClass, test_signal2), NULL,
       NULL, g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT);
+  my_test_signals[TEST_SIGNAL3] =
+      g_signal_new ("test-signal3", G_TYPE_FROM_CLASS (klass),
+      G_SIGNAL_RUN_LAST, G_STRUCT_OFFSET (GTestClass, test_signal3), NULL,
+      NULL, g_cclosure_marshal_generic, G_TYPE_STRING, 1, G_TYPE_INT);
 
   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_TEST_PROP,
       g_param_spec_int ("test-prop", "Test Prop", "Test property",
           0, 1, 0, G_PARAM_READWRITE));
 
   klass->test_signal2 = signal2_handler;
+  klass->test_signal3 = signal3_handler;
 }
 
 static void
@@ -136,7 +141,7 @@ my_test_dispose (GObject * object)
 
   test = MY_TEST (object);
 
-  g_print ("dispose %p!\n", object);
+  g_print ("dispose %p!\n", test);
 
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
@@ -194,6 +199,22 @@ my_test_do_signal2 (GTest * test)
   g_signal_emit (G_OBJECT (test), my_test_signals[TEST_SIGNAL2], 0, 0);
 }
 
+static gchar *
+signal3_handler (GTest * test, gint anint)
+{
+  return g_strdup ("test");
+}
+
+static void
+my_test_do_signal3 (GTest * test)
+{
+  gchar *res;
+
+  g_signal_emit (G_OBJECT (test), my_test_signals[TEST_SIGNAL3], 0, 0, &res);
+  g_assert (res);
+  g_free (res);
+}
+
 static void
 my_test_do_prop (GTest * test)
 {
@@ -213,6 +234,8 @@ run_thread (GTest * test)
       my_test_do_signal2 (test);
     if (TESTNUM == 3)
       my_test_do_prop (test);
+    if (TESTNUM == 4)
+      my_test_do_signal3 (test);
     if ((i++ % 10000) == 0) {
       g_print (".");
       g_thread_yield(); /* force context switch */
@@ -239,7 +262,6 @@ main (int argc, char **argv)
   GArray *test_threads;
   const gint n_threads = 1;
 
-  g_thread_init (NULL);
   g_print ("START: %s\n", argv[0]);
   g_log_set_always_fatal (G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL | g_log_set_always_fatal (G_LOG_FATAL_MASK));
   g_type_init ();
@@ -279,6 +301,10 @@ main (int argc, char **argv)
   }
 
   g_print ("stopped\n");
+
+  g_array_free (test_threads, TRUE);
+  g_object_unref (test1);
+  g_object_unref (test2);
 
   return 0;
 }

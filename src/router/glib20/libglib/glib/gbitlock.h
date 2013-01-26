@@ -25,7 +25,7 @@
 
 #include <glib/gtypes.h>
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -37,6 +37,35 @@ gboolean  g_bit_trylock                   (volatile gint *address,
                                            gint           lock_bit);
 void      g_bit_unlock                    (volatile gint *address,
                                            gint           lock_bit);
+
+void      g_pointer_bit_lock              (volatile void *address,
+                                           gint           lock_bit);
+gboolean  g_pointer_bit_trylock           (volatile void *address,
+                                           gint           lock_bit);
+void      g_pointer_bit_unlock            (volatile void *address,
+                                           gint           lock_bit);
+
+#ifdef __GNUC__
+
+#define g_pointer_bit_lock(address, lock_bit) \
+  (G_GNUC_EXTENSION ({                                                       \
+    G_STATIC_ASSERT (sizeof *(address) == sizeof (gpointer));                \
+    g_pointer_bit_lock ((address), (lock_bit));                              \
+  }))
+
+#define g_pointer_bit_trylock(address, lock_bit) \
+  (G_GNUC_EXTENSION ({                                                       \
+    G_STATIC_ASSERT (sizeof *(address) == sizeof (gpointer));                \
+    g_pointer_bit_trylock ((address), (lock_bit));                           \
+  }))
+
+#define g_pointer_bit_unlock(address, lock_bit) \
+  (G_GNUC_EXTENSION ({                                                       \
+    G_STATIC_ASSERT (sizeof *(address) == sizeof (gpointer));                \
+    g_pointer_bit_unlock ((address), (lock_bit));                            \
+  }))
+
+#endif
 
 G_END_DECLS
 

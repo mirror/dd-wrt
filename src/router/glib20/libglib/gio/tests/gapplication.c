@@ -1,92 +1,11 @@
 #include <gio/gio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#include "gdbus-tests.h"
 #include "gdbus-sessionbus.h"
 
-static void
-activate (GApplication *application)
-{
-  g_application_hold (application);
-  g_print ("activated\n");
-  g_application_release (application);
-}
-
-static void
-open (GApplication  *application,
-      GFile        **files,
-      gint           n_files,
-      const gchar   *hint)
-{
-  gint i;
-
-  g_application_hold (application);
-  g_print ("open");
-
-  for (i = 0; i < n_files; i++)
-    {
-      gchar *uri = g_file_get_uri (files[i]);
-      g_print (" %s", uri);
-      g_free (uri);
-    }
-  g_application_release (application);
-
-  g_print ("\n");
-}
-
-static int
-command_line (GApplication            *application,
-              GApplicationCommandLine *cmdline)
-{
-  gchar **argv;
-  gint argc;
-
-  argv = g_application_command_line_get_arguments (cmdline, &argc);
-
-  g_application_command_line_print (cmdline, "%d + %d = %d\n", 40, 2, 42);
-
-  g_assert_cmpint (argc, ==, 3);
-  g_assert_cmpstr (argv[0], ==, "./cmd");
-  g_assert_cmpstr (argv[1], ==, "40 +");
-  g_assert_cmpstr (argv[2], ==, "2");
-  g_assert (argv[3] == NULL);
-  g_print ("cmdline '%s' '%s'\n", argv[1], argv[2]);
-  g_strfreev (argv);
-
-  return 42;
-}
-
-static int
-app_main (int argc, char **argv)
-{
-  GApplication *app;
-  int status;
-
-  app = g_application_new ("org.gtk.TestApplication",
-                           G_APPLICATION_HANDLES_OPEN |
-                           (strcmp (argv[0], "./cmd") == 0 ?
-                             G_APPLICATION_HANDLES_COMMAND_LINE
-                           : 0));
-  g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
-  g_signal_connect (app, "open", G_CALLBACK (open), NULL);
-  g_signal_connect (app, "command-line", G_CALLBACK (command_line), NULL);
-#ifdef STANDALONE
-  g_application_set_inactivity_timeout (app, 10000);
-#else
-  g_application_set_inactivity_timeout (app, 1000);
-#endif
-  status = g_application_run (app, argc, argv);
-  g_object_unref (app);
-
-  return status;
-}
-
-#ifdef STANDALONE
-int
-main (int argc, char **argv)
-{
-  return app_main (argc - 1, argv + 1);
-}
-#else
 static gint outstanding_watches;
 static GMainLoop *main_loop;
 
@@ -135,63 +54,44 @@ spawn (const gchar *expected_stdout,
        const gchar *first_arg,
        ...)
 {
-  gint pipefd[2];
+  GError *error = NULL;
+  const gchar *arg;
+  GPtrArray *array;
+  ChildData *data;
+  gchar **args;
+  va_list ap;
   GPid pid;
-  int s;
 
-  /* We assume that the child will not produce enough stdout
-   * to deadlock by filling the pipe.
-   */
-  s = pipe (pipefd);
-  g_assert_cmpint (s, ==, 0);
+  va_start (ap, first_arg);
+  array = g_ptr_array_new ();
+  g_ptr_array_add (array, g_strdup ("./basic-application"));
+  for (arg = first_arg; arg; arg = va_arg (ap, const gchar *))
+    g_ptr_array_add (array, g_strdup (arg));
+  g_ptr_array_add (array, NULL);
+  args = (gchar **) g_ptr_array_free (array, FALSE);
 
-  pid = fork ();
+  va_end (ap);
 
-  if (pid == 0)
-    {
-      const gchar *arg;
-      GPtrArray *array;
-      gchar **args;
-      int status;
-      va_list ap;
+  data = g_slice_new (ChildData);
+  data->expected_stdout = expected_stdout;
 
-      dup2 (pipefd[1], 1);
-      close (pipefd[0]);
-      close (pipefd[1]);
+  g_spawn_async_with_pipes (NULL, args, NULL,
+                            G_SPAWN_DO_NOT_REAP_CHILD,
+                            NULL, NULL, &pid, NULL,
+                            &data->stdout_pipe, NULL, &error);
+  g_assert_no_error (error);
 
-      va_start (ap, first_arg);
-      array = g_ptr_array_new ();
-      for (arg = first_arg; arg; arg = va_arg (ap, const gchar *))
-        g_ptr_array_add (array, g_strdup (arg));
-      g_ptr_array_add (array, NULL);
-      args = (gchar **) g_ptr_array_free (array, FALSE);
-
-      status = app_main (g_strv_length (args), args);
-      g_strfreev (args);
-
-      g_print ("exit status: %d\n", status);
-      exit (0);
-    }
-  else if (pid > 0)
-    {
-      ChildData *data;
-
-      data = g_slice_new (ChildData);
-      data->expected_stdout = expected_stdout;
-      data->stdout_pipe = pipefd[0];
-      close (pipefd[1]);
-
-      g_child_watch_add (pid, child_quit, data);
-      outstanding_watches++;
-    }
-  else
-    g_assert_not_reached ();
+  g_child_watch_add (pid, child_quit, data);
+  outstanding_watches++;
 }
 
 static void
 basic (void)
 {
+  GDBusConnection *c;
+
   session_bus_up ();
+  c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
 
   main_loop = g_main_loop_new (NULL, 0);
 
@@ -218,16 +118,353 @@ basic (void)
 
   g_main_loop_run (main_loop);
 
+  g_object_unref (c);
   session_bus_down ();
+}
+
+
+#if 0
+/* Now that we register non-unique apps on the bus we need to fix the
+ * following test not to assume that it's safe to create multiple instances
+ * of the same app in one process.
+ *
+ * See https://bugzilla.gnome.org/show_bug.cgi?id=647986 for the patch that
+ * introduced this problem.
+ */
+
+static GApplication *recently_activated;
+static GMainLoop *loop;
+
+static void
+nonunique_activate (GApplication *application)
+{
+  recently_activated = application;
+
+  if (loop != NULL)
+    g_main_loop_quit (loop);
+}
+
+static GApplication *
+make_app (gboolean non_unique)
+{
+  GApplication *app;
+  gboolean ok;
+
+  app = g_application_new ("org.gtk.Test-Application",
+                           non_unique ? G_APPLICATION_NON_UNIQUE : 0);
+  g_signal_connect (app, "activate", G_CALLBACK (nonunique_activate), NULL);
+  ok = g_application_register (app, NULL, NULL);
+  if (!ok)
+    {
+      g_object_unref (app);
+      return NULL;
+    }
+
+  g_application_activate (app);
+
+  return app;
+}
+
+static void
+test_nonunique (void)
+{
+  GApplication *first, *second, *third, *fourth;
+
+  session_bus_up ();
+
+  first = make_app (TRUE);
+  /* non-remote because it is non-unique */
+  g_assert (!g_application_get_is_remote (first));
+  g_assert (recently_activated == first);
+  recently_activated = NULL;
+
+  second = make_app (FALSE);
+  /* non-remote because it is first */
+  g_assert (!g_application_get_is_remote (second));
+  g_assert (recently_activated == second);
+  recently_activated = NULL;
+
+  third = make_app (TRUE);
+  /* non-remote because it is non-unique */
+  g_assert (!g_application_get_is_remote (third));
+  g_assert (recently_activated == third);
+  recently_activated = NULL;
+
+  fourth = make_app (FALSE);
+  /* should have failed to register due to being
+   * unable to register the object paths
+   */
+  g_assert (fourth == NULL);
+  g_assert (recently_activated == NULL);
+
+  g_object_unref (first);
+  g_object_unref (second);
+  g_object_unref (third);
+
+  session_bus_down ();
+}
+#endif
+
+static void
+properties (void)
+{
+  GDBusConnection *c;
+  GObject *app;
+  gchar *id;
+  GApplicationFlags flags;
+  gboolean registered;
+  guint timeout;
+  gboolean remote;
+  gboolean ret;
+  GError *error = NULL;
+
+  session_bus_up ();
+  c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
+
+  app = g_object_new (G_TYPE_APPLICATION,
+                      "application-id", "org.gtk.TestApplication",
+                      NULL);
+
+  g_object_get (app,
+                "application-id", &id,
+                "flags", &flags,
+                "is-registered", &registered,
+                "inactivity-timeout", &timeout,
+                NULL);
+
+  g_assert_cmpstr (id, ==, "org.gtk.TestApplication");
+  g_assert_cmpint (flags, ==, G_APPLICATION_FLAGS_NONE);
+  g_assert (!registered);
+  g_assert_cmpint (timeout, ==, 0);
+
+  ret = g_application_register (G_APPLICATION (app), NULL, &error);
+  g_assert (ret);
+  g_assert_no_error (error);
+
+  g_object_get (app,
+                "is-registered", &registered,
+                "is-remote", &remote,
+                NULL);
+
+  g_assert (registered);
+  g_assert (!remote);
+
+  g_object_set (app,
+                "inactivity-timeout", 1000,
+                NULL);
+
+  g_application_quit (G_APPLICATION (app));
+
+  g_object_unref (c);
+  g_object_unref (app);
+  g_free (id);
+
+  session_bus_down ();
+}
+
+static void
+appid (void)
+{
+  gchar *id;
+
+  g_assert (!g_application_id_is_valid (""));
+  g_assert (!g_application_id_is_valid ("."));
+  g_assert (!g_application_id_is_valid ("a"));
+  g_assert (!g_application_id_is_valid ("abc"));
+  g_assert (!g_application_id_is_valid (".abc"));
+  g_assert (!g_application_id_is_valid ("abc."));
+  g_assert (!g_application_id_is_valid ("a..b"));
+  g_assert (!g_application_id_is_valid ("a/b"));
+  g_assert (!g_application_id_is_valid ("a\nb"));
+  g_assert (!g_application_id_is_valid ("a\nb"));
+  g_assert (!g_application_id_is_valid ("_a.b"));
+  g_assert (!g_application_id_is_valid ("-a.b"));
+  id = g_new0 (gchar, 261);
+  memset (id, 'a', 260);
+  id[1] = '.';
+  id[260] = 0;
+  g_assert (!g_application_id_is_valid (id));
+  g_free (id);
+
+  g_assert (g_application_id_is_valid ("a.b"));
+  g_assert (g_application_id_is_valid ("A.B"));
+  g_assert (g_application_id_is_valid ("A-.B"));
+  g_assert (g_application_id_is_valid ("a_b.c-d"));
+  g_assert (g_application_id_is_valid ("org.gnome.SessionManager"));
+}
+
+static gboolean nodbus_activated;
+
+static gboolean
+release_app (gpointer user_data)
+{
+  g_application_release (user_data);
+  return G_SOURCE_REMOVE;
+}
+
+static void
+nodbus_activate (GApplication *app)
+{
+  nodbus_activated = TRUE;
+  g_application_hold (app);
+
+  g_assert (g_application_get_dbus_connection (app) == NULL);
+  g_assert (g_application_get_dbus_object_path (app) == NULL);
+
+  g_idle_add (release_app, app);
+}
+
+static void
+test_nodbus (void)
+{
+  gchar *argv[] = { "./unimportant", NULL };
+  GApplication *app;
+
+  app = g_application_new ("org.gtk.Unimportant", G_APPLICATION_FLAGS_NONE);
+  g_signal_connect (app, "activate", G_CALLBACK (nodbus_activate), NULL);
+  g_application_run (app, 1, argv);
+  g_object_unref (app);
+
+  g_assert (nodbus_activated);
+}
+
+static gboolean noappid_activated;
+
+static void
+noappid_activate (GApplication *app)
+{
+  noappid_activated = TRUE;
+  g_application_hold (app);
+
+  g_assert (g_application_get_flags (app) & G_APPLICATION_NON_UNIQUE);
+
+  g_idle_add (release_app, app);
+}
+
+/* test that no appid -> non-unique */
+static void
+test_noappid (void)
+{
+  gchar *argv[] = { "./unimportant", NULL };
+  GApplication *app;
+
+  app = g_application_new (NULL, G_APPLICATION_FLAGS_NONE);
+  g_signal_connect (app, "activate", G_CALLBACK (noappid_activate), NULL);
+  g_application_run (app, 1, argv);
+  g_object_unref (app);
+
+  g_assert (noappid_activated);
+}
+
+
+static gboolean
+quit_app (gpointer user_data)
+{
+  g_application_quit (user_data);
+  return G_SOURCE_REMOVE;
+}
+
+static gboolean quit_activated;
+
+static void
+quit_activate (GApplication *app)
+{
+  quit_activated = TRUE;
+  g_application_hold (app);
+
+  g_assert (g_application_get_dbus_connection (app) != NULL);
+  g_assert (g_application_get_dbus_object_path (app) != NULL);
+
+  g_idle_add (quit_app, app);
+}
+
+static void
+test_quit (void)
+{
+  GDBusConnection *c;
+  gchar *argv[] = { "./unimportant", NULL };
+  GApplication *app;
+
+  session_bus_up ();
+  c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, NULL);
+
+  app = g_application_new ("org.gtk.Unimportant",
+                           G_APPLICATION_FLAGS_NONE);
+  g_signal_connect (app, "activate", G_CALLBACK (quit_activate), NULL);
+  g_application_run (app, 1, argv);
+  g_object_unref (app);
+  g_object_unref (c);
+
+  g_assert (quit_activated);
+
+  session_bus_down ();
+}
+
+static void
+on_activate (GApplication *app)
+{
+  gchar **actions;
+  GAction *action;
+  GVariant *state;
+
+  g_assert (!g_application_get_is_remote (app));
+
+  actions = g_action_group_list_actions (G_ACTION_GROUP (app));
+  g_assert (g_strv_length (actions) == 0);
+  g_strfreev (actions);
+
+  action = (GAction*)g_simple_action_new_stateful ("test", G_VARIANT_TYPE_BOOLEAN, g_variant_new_boolean (FALSE));
+  g_action_map_add_action (G_ACTION_MAP (app), action);
+
+  actions = g_action_group_list_actions (G_ACTION_GROUP (app));
+  g_assert (g_strv_length (actions) == 1);
+  g_strfreev (actions);
+
+  g_action_group_change_action_state (G_ACTION_GROUP (app), "test", g_variant_new_boolean (TRUE));
+  state = g_action_group_get_action_state (G_ACTION_GROUP (app), "test");
+  g_assert (g_variant_get_boolean (state) == TRUE);
+
+  g_action_map_remove_action (G_ACTION_MAP (app), "test");
+
+  actions = g_action_group_list_actions (G_ACTION_GROUP (app));
+  g_assert (g_strv_length (actions) == 0);
+  g_strfreev (actions);
+
+  g_idle_add (quit_app, app);
+}
+
+static void
+test_actions (void)
+{
+  gchar *argv[] = { "./unimportant", NULL };
+  GApplication *app;
+
+  g_unsetenv ("DBUS_SESSION_BUS_ADDRESS");
+
+  app = g_application_new ("org.gtk.Unimportant",
+                           G_APPLICATION_FLAGS_NONE);
+  g_signal_connect (app, "activate", G_CALLBACK (on_activate), NULL);
+  g_application_run (app, 1, argv);
+  g_object_unref (app);
 }
 
 int
 main (int argc, char **argv)
 {
+  g_type_init ();
+
   g_test_init (&argc, &argv, NULL);
 
+  g_test_dbus_unset ();
+
+  g_test_add_func ("/gapplication/no-dbus", test_nodbus);
   g_test_add_func ("/gapplication/basic", basic);
+  g_test_add_func ("/gapplication/no-appid", test_noappid);
+/*  g_test_add_func ("/gapplication/non-unique", test_nonunique); */
+  g_test_add_func ("/gapplication/properties", properties);
+  g_test_add_func ("/gapplication/app-id", appid);
+  g_test_add_func ("/gapplication/quit", test_quit);
+  g_test_add_func ("/gapplication/actions", test_actions);
 
   return g_test_run ();
 }
-#endif

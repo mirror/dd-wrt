@@ -46,9 +46,6 @@ typedef struct _GApplicationClass                           GApplicationClass;
 /**
  * GApplication:
  *
- * The <structname>GApplication</structname> structure contains private
- * data and should only be accessed using the provided API
- *
  * Since: 2.28
  */
 struct _GApplication
@@ -59,33 +56,6 @@ struct _GApplication
   GApplicationPrivate *priv;
 };
 
-/**
- * GApplicationClass:
- * @startup: invoked on the primary instance immediately after registration
- * @activate: invoked on the primary instance when an activation occurs
- * @open: invoked on the primary instance when there are files to open
- * @command_line: invoked on the primary instance when a command-line is
- *   not handled locally
- * @local_command_line: invoked (locally) when the process has been invoked
- *     via commandline execution.  The virtual function has the chance to
- *     inspect (and possibly replace) the list of command line arguments.
- *     See g_application_run() for more information.
- * @before_emit: invoked on the primary instance before 'activate', 'open',
- *     'command-line' or any action invocation, gets the 'platform data' from
- *     the calling instance
- * @after_emit: invoked on the primary instance after 'activate', 'open',
- *     'command-line' or any action invocation, gets the 'platform data' from
- *     the calling instance
- * @add_platform_data: invoked (locally) to add 'platform data' to be sent to
- *     the primary instance when activating, opening or invoking actions
- * @quit_mainloop: invoked on the primary instance when the use count of the
- *     application drops to zero (and after any inactivity timeout, if
- *     requested)
- * @run_mainloop: invoked on the primary instance from g_application_run()
- *     if the use-count is non-zero
- *
- * Since: 2.28
- */
 struct _GApplicationClass
 {
   /*< private >*/
@@ -118,9 +88,18 @@ struct _GApplicationClass
                                                      GVariantBuilder           *builder);
   void                      (* quit_mainloop)       (GApplication              *application);
   void                      (* run_mainloop)        (GApplication              *application);
+  void                      (* shutdown)            (GApplication              *application);
+
+  gboolean                  (* dbus_register)       (GApplication              *application,
+                                                     GDBusConnection           *connection,
+                                                     const gchar               *object_path,
+                                                     GError                   **error);
+  void                      (* dbus_unregister)     (GApplication              *application,
+                                                     GDBusConnection           *connection,
+                                                     const gchar               *object_path);
 
   /*< private >*/
-  gpointer padding[12];
+  gpointer padding[9];
 };
 
 GType                   g_application_get_type                          (void) G_GNUC_CONST;
@@ -134,6 +113,11 @@ const gchar *           g_application_get_application_id                (GApplic
 void                    g_application_set_application_id                (GApplication             *application,
                                                                          const gchar              *application_id);
 
+GLIB_AVAILABLE_IN_2_34
+GDBusConnection *       g_application_get_dbus_connection               (GApplication             *application);
+GLIB_AVAILABLE_IN_2_34
+const gchar *           g_application_get_dbus_object_path              (GApplication             *application);
+
 guint                   g_application_get_inactivity_timeout            (GApplication             *application);
 void                    g_application_set_inactivity_timeout            (GApplication             *application,
                                                                          guint                     inactivity_timeout);
@@ -142,6 +126,7 @@ GApplicationFlags       g_application_get_flags                         (GApplic
 void                    g_application_set_flags                         (GApplication             *application,
                                                                          GApplicationFlags         flags);
 
+GLIB_DEPRECATED
 void                    g_application_set_action_group                  (GApplication             *application,
                                                                          GActionGroup             *action_group);
 
@@ -165,6 +150,13 @@ void                    g_application_open                              (GApplic
 int                     g_application_run                               (GApplication             *application,
                                                                          int                       argc,
                                                                          char                    **argv);
+
+void                    g_application_quit                              (GApplication             *application);
+
+GLIB_AVAILABLE_IN_2_32
+GApplication *          g_application_get_default                       (void);
+GLIB_AVAILABLE_IN_2_32
+void                    g_application_set_default                       (GApplication             *application);
 
 G_END_DECLS
 

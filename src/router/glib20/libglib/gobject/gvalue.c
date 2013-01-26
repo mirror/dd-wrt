@@ -28,6 +28,7 @@
 #include "gvalue.h"
 #include "gvaluecollector.h"
 #include "gbsearcharray.h"
+#include "gtype-private.h"
 
 
 /**
@@ -73,9 +74,9 @@
  * main (int   argc,
  *       char *argv[])
  * {
- *   /&ast; GValues must start zero-filled &ast;/
- *   GValue a = {0};
- *   GValue b = {0};
+ *   /&ast; GValues must be initialized &ast;/
+ *   GValue a = G_VALUE_INIT;
+ *   GValue b = G_VALUE_INIT;
  *   const gchar *message;
  *
  *   g_type_init ();
@@ -139,7 +140,7 @@ static GBSearchConfig transform_bconfig = {
 
 /* --- functions --- */
 void
-g_value_c_init (void)
+_g_value_c_init (void)
 {
   transform_array = g_bsearch_array_create (&transform_bconfig);
 }
@@ -326,7 +327,7 @@ g_value_peek_pointer (const GValue *value)
 /**
  * g_value_set_instance:
  * @value: An initialized #GValue structure.
- * @instance: the instance
+ * @instance: (allow-none): the instance
  *
  * Sets @value from an instantiatable type via the
  * value_table's collect_value() function.

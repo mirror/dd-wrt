@@ -25,11 +25,15 @@
 #include "gapplication.h"
 
 #include "gapplicationcommandline.h"
+#include "gsimpleactiongroup.h"
+#include "gremoteactiongroup.h"
 #include "gapplicationimpl.h"
 #include "gactiongroup.h"
+#include "gactionmap.h"
+#include "gmenumodel.h"
+#include "gsettings.h"
 
 #include "gioenumtypes.h"
-#include "gio-marshal.h"
 #include "gioenums.h"
 #include "gfile.h"
 
@@ -42,55 +46,74 @@
  * @title: GApplication
  * @short_description: Core application class
  *
- * A #GApplication is the foundation of an application, unique for a
- * given application identifier.  The GApplication class wraps some
+ * A #GApplication is the foundation of an application.  It wraps some
  * low-level platform-specific services and is intended to act as the
  * foundation for higher-level application classes such as
  * #GtkApplication or #MxApplication.  In general, you should not use
  * this class outside of a higher level framework.
  *
- * One of the core features that GApplication provides is process
- * uniqueness, in the context of a "session".  The session concept is
- * platform-dependent, but corresponds roughly to a graphical desktop
- * login.  When your application is launched again, its arguments
- * are passed through platform communication to the already running
- * program. The already running instance of the program is called the
- * <firstterm>primary instance</firstterm>.
- *
- * Before using GApplication, you must choose an "application identifier".
- * The expected form of an application identifier is very close to that of
- * of a <ulink url="http://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-interface">DBus bus name</ulink>.
- * Examples include: "com.example.MyApp", "org.example.internal-apps.Calculator".
- * For details on valid application identifiers, see
- * g_application_id_is_valid().
- *
- * The application identifier is claimed by the application as a
- * well-known bus name on the user's session bus.  This means that the
- * uniqueness of your application is scoped to the current session.  It
- * also means that your application may provide additional services
- * (through registration of other object paths) at that bus name.
- *
- * The registration of these object paths should be done with the shared
- * GDBus session bus.  Note that due to the internal architecture of
- * GDBus, method calls can be dispatched at any time (even if a main
- * loop is not running).  For this reason, you must ensure that any
- * object paths that you wish to register are registered before
- * #GApplication attempts to acquire the bus name of your application
- * (which happens in g_application_register()).  Unfortunately, this
- * means that you can not use g_application_get_is_remote() to decide if
- * you want to register object paths.
- *
  * GApplication provides convenient life cycle management by maintaining
  * a <firstterm>use count</firstterm> for the primary application instance.
  * The use count can be changed using g_application_hold() and
  * g_application_release(). If it drops to zero, the application exits.
+ * Higher-level classes such as #GtkApplication employ the use count to
+ * ensure that the application stays alive as long as it has any opened
+ * windows.
  *
- * GApplication also implements the #GActionGroup interface and lets you
- * easily export actions by adding them with g_application_set_action_group().
- * When invoking an action by calling g_action_group_activate_action() on
- * the application, it is always invoked in the primary instance.
+ * Another feature that GApplication (optionally) provides is process
+ * uniqueness.  Applications can make use of this functionality by
+ * providing a unique application ID.  If given, only one application
+ * with this ID can be running at a time per session.  The session
+ * concept is platform-dependent, but corresponds roughly to a graphical
+ * desktop login.  When your application is launched again, its
+ * arguments are passed through platform communication to the already
+ * running program.  The already running instance of the program is
+ * called the <firstterm>primary instance</firstterm>; for non-unique
+ * applications this is the always the current instance.
+ * On Linux, the D-Bus session bus is used for communication.
  *
- * There is a number of different entry points into a #GApplication:
+ * The use of #GApplication differs from some other commonly-used
+ * uniqueness libraries (such as libunique) in important ways.  The
+ * application is not expected to manually register itself and check if
+ * it is the primary instance.  Instead, the <code>main()</code>
+ * function of a #GApplication should do very little more than
+ * instantiating the application instance, possibly connecting signal
+ * handlers, then calling g_application_run().  All checks for
+ * uniqueness are done internally.  If the application is the primary
+ * instance then the startup signal is emitted and the mainloop runs.
+ * If the application is not the primary instance then a signal is sent
+ * to the primary instance and g_application_run() promptly returns.
+ * See the code examples below.
+ *
+ * If used, the expected form of an application identifier is very close
+ * to that of of a
+ * <ulink url="http://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-interface">DBus bus name</ulink>.
+ * Examples include: "com.example.MyApp", "org.example.internal-apps.Calculator".
+ * For details on valid application identifiers, see g_application_id_is_valid().
+ *
+ * On Linux, the application identifier is claimed as a well-known bus name
+ * on the user's session bus.  This means that the uniqueness of your
+ * application is scoped to the current session.  It also means that your
+ * application may provide additional services (through registration of other
+ * object paths) at that bus name.  The registration of these object paths
+ * should be done with the shared GDBus session bus.  Note that due to the
+ * internal architecture of GDBus, method calls can be dispatched at any time
+ * (even if a main loop is not running).  For this reason, you must ensure that
+ * any object paths that you wish to register are registered before #GApplication
+ * attempts to acquire the bus name of your application (which happens in
+ * g_application_register()).  Unfortunately, this means that you cannot use
+ * g_application_get_is_remote() to decide if you want to register object paths.
+ *
+ * GApplication also implements the #GActionGroup and #GActionMap
+ * interfaces and lets you easily export actions by adding them with
+ * g_action_map_add_action(). When invoking an action by calling
+ * g_action_group_activate_action() on the application, it is always
+ * invoked in the primary instance. The actions are also exported on
+ * the session bus, and GIO provides the #GDBusActionGroup wrapper to
+ * conveniently access them remotely. GIO provides a #GDBusMenuModel wrapper
+ * for remote access to exported #GMenuModels.
+ *
+ * There is a number of different entry points into a GApplication:
  * <itemizedlist>
  * <listitem>via 'Activate' (i.e. just starting the application)</listitem>
  * <listitem>via 'Open' (i.e. opening some files)</listitem>
@@ -106,7 +129,7 @@
  * in the form of a #GVariant dictionary mapping strings to variants.
  * To use platform data, override the @before_emit or @after_emit virtual
  * functions in your #GApplication subclass. When dealing with
- * #GApplicationCommandline objects, the platform data is directly
+ * #GApplicationCommandLine objects, the platform data is directly
  * available via g_application_command_line_get_cwd(),
  * g_application_command_line_get_environ() and
  * g_application_command_line_get_platform_data().
@@ -116,7 +139,7 @@
  * "cwd"), and optionally the environment (ie the set of environment
  * variables and their values) of the calling process (key "environ").
  * The environment is only added to the platform data if the
- * #G_APPLICATION_SEND_ENVIONMENT flag is set. GApplication subclasses
+ * %G_APPLICATION_SEND_ENVIRONMENT flag is set. #GApplication subclasses
  * can add their own platform data by overriding the @add_platform_data
  * virtual function. For instance, #GtkApplication adds startup notification
  * data in this way.
@@ -141,6 +164,67 @@
  * </xi:include>
  * </programlisting>
  * </example>
+ *
+ * <example id="gapplication-example-menu"><title>A GApplication with menus</title>
+ * <programlisting>
+ * <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../../gio/tests/gapplication-example-menu.c">
+ *   <xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback>
+ * </xi:include>
+ * </programlisting>
+ * </example>
+ *
+ * <example id="gapplication-example-dbushooks"><title>Using extra D-Bus hooks with a GApplication</title>
+ * <programlisting>
+ * <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="text" href="../../../../gio/tests/gapplication-example-dbushooks.c">
+ *   <xi:fallback>FIXME: MISSING XINCLUDE CONTENT</xi:fallback>
+ * </xi:include>
+ * </programlisting>
+ * </example>
+ */
+
+/**
+ * GApplicationClass:
+ * @startup: invoked on the primary instance immediately after registration
+ * @shutdown: invoked only on the registered primary instance immediately
+ *      after the main loop terminates
+ * @activate: invoked on the primary instance when an activation occurs
+ * @open: invoked on the primary instance when there are files to open
+ * @command_line: invoked on the primary instance when a command-line is
+ *   not handled locally
+ * @local_command_line: invoked (locally) when the process has been invoked
+ *     via commandline execution (as opposed to, say, D-Bus activation - which
+ *     is not currently supported by GApplication). The virtual function has
+ *     the chance to inspect (and possibly replace) the list of command line
+ *     arguments. See g_application_run() for more information.
+ * @before_emit: invoked on the primary instance before 'activate', 'open',
+ *     'command-line' or any action invocation, gets the 'platform data' from
+ *     the calling instance
+ * @after_emit: invoked on the primary instance after 'activate', 'open',
+ *     'command-line' or any action invocation, gets the 'platform data' from
+ *     the calling instance
+ * @add_platform_data: invoked (locally) to add 'platform data' to be sent to
+ *     the primary instance when activating, opening or invoking actions
+ * @quit_mainloop: Used to be invoked on the primary instance when the use
+ *     count of the application drops to zero (and after any inactivity
+ *     timeout, if requested). Not used anymore since 2.32
+ * @run_mainloop: Used to be invoked on the primary instance from
+ *     g_application_run() if the use-count is non-zero. Since 2.32,
+ *     GApplication is iterating the main context directly and is not
+ *     using @run_mainloop anymore
+ * @dbus_register: invoked locally during registration, if the application is
+ *     using its D-Bus backend. You can use this to export extra objects on the
+ *     bus, that need to exist before the application tries to own the bus name.
+ *     The function is passed the #GDBusConnection to to session bus, and the
+ *     object path that #GApplication will use to export is D-Bus API.
+ *     If this function returns %TRUE, registration will proceed; otherwise
+ *     registration will abort. Since: 2.34
+ * @dbus_unregister: invoked locally during unregistration, if the application
+ *     is using its D-Bus backend. Use this to undo anything done by the
+ *     @dbus_register vfunc. Since: 2.34
+ *
+ * Virtual function table for #GApplication.
+ *
+ * Since: 2.28
  */
 
 struct _GApplicationPrivate
@@ -149,7 +233,8 @@ struct _GApplicationPrivate
   gchar             *id;
 
   GActionGroup      *actions;
-  GMainLoop         *mainloop;
+  GMenuModel        *app_menu;
+  GMenuModel        *menubar;
 
   guint              inactivity_timeout_id;
   guint              inactivity_timeout;
@@ -157,9 +242,12 @@ struct _GApplicationPrivate
 
   guint              is_registered : 1;
   guint              is_remote : 1;
+  guint              did_startup : 1;
+  guint              did_shutdown : 1;
+  guint              must_quit_now : 1;
 
-  GHashTable        *remote_actions;  /* string -> RemoteActionInfo */
-  GApplicationImpl  *impl;
+  GRemoteActionGroup *remote_actions;
+  GApplicationImpl   *impl;
 };
 
 enum
@@ -176,6 +264,7 @@ enum
 enum
 {
   SIGNAL_STARTUP,
+  SIGNAL_SHUTDOWN,
   SIGNAL_ACTIVATE,
   SIGNAL_OPEN,
   SIGNAL_ACTION,
@@ -186,9 +275,96 @@ enum
 static guint g_application_signals[NR_SIGNALS];
 
 static void g_application_action_group_iface_init (GActionGroupInterface *);
+static void g_application_action_map_iface_init (GActionMapInterface *);
 G_DEFINE_TYPE_WITH_CODE (GApplication, g_application, G_TYPE_OBJECT,
- G_IMPLEMENT_INTERFACE (G_TYPE_ACTION_GROUP,
-   g_application_action_group_iface_init))
+ G_IMPLEMENT_INTERFACE (G_TYPE_ACTION_GROUP, g_application_action_group_iface_init)
+ G_IMPLEMENT_INTERFACE (G_TYPE_ACTION_MAP, g_application_action_map_iface_init))
+
+/* GApplicationExportedActions {{{1 */
+
+/* We create a subclass of GSimpleActionGroup that implements
+ * GRemoteActionGroup and deals with the platform data using
+ * GApplication's before/after_emit vfuncs.  This is the action group we
+ * will be exporting.
+ *
+ * We could implement GRemoteActionGroup on GApplication directly, but
+ * this would be potentially extremely confusing to have exposed as part
+ * of the public API of GApplication.  We certainly don't want anyone in
+ * the same process to be calling these APIs...
+ */
+typedef GSimpleActionGroupClass GApplicationExportedActionsClass;
+typedef struct
+{
+  GSimpleActionGroup parent_instance;
+  GApplication *application;
+} GApplicationExportedActions;
+
+static GType g_application_exported_actions_get_type   (void);
+static void  g_application_exported_actions_iface_init (GRemoteActionGroupInterface *iface);
+G_DEFINE_TYPE_WITH_CODE (GApplicationExportedActions, g_application_exported_actions, G_TYPE_SIMPLE_ACTION_GROUP,
+                         G_IMPLEMENT_INTERFACE (G_TYPE_REMOTE_ACTION_GROUP, g_application_exported_actions_iface_init))
+
+static void
+g_application_exported_actions_activate_action_full (GRemoteActionGroup *remote,
+                                                     const gchar        *action_name,
+                                                     GVariant           *parameter,
+                                                     GVariant           *platform_data)
+{
+  GApplicationExportedActions *exported = (GApplicationExportedActions *) remote;
+
+  G_APPLICATION_GET_CLASS (exported->application)
+    ->before_emit (exported->application, platform_data);
+
+  g_action_group_activate_action (G_ACTION_GROUP (exported), action_name, parameter);
+
+  G_APPLICATION_GET_CLASS (exported->application)
+    ->after_emit (exported->application, platform_data);
+}
+
+static void
+g_application_exported_actions_change_action_state_full (GRemoteActionGroup *remote,
+                                                         const gchar        *action_name,
+                                                         GVariant           *value,
+                                                         GVariant           *platform_data)
+{
+  GApplicationExportedActions *exported = (GApplicationExportedActions *) remote;
+
+  G_APPLICATION_GET_CLASS (exported->application)
+    ->before_emit (exported->application, platform_data);
+
+  g_action_group_change_action_state (G_ACTION_GROUP (exported), action_name, value);
+
+  G_APPLICATION_GET_CLASS (exported->application)
+    ->after_emit (exported->application, platform_data);
+}
+
+static void
+g_application_exported_actions_init (GApplicationExportedActions *actions)
+{
+}
+
+static void
+g_application_exported_actions_iface_init (GRemoteActionGroupInterface *iface)
+{
+  iface->activate_action_full = g_application_exported_actions_activate_action_full;
+  iface->change_action_state_full = g_application_exported_actions_change_action_state_full;
+}
+
+static void
+g_application_exported_actions_class_init (GApplicationExportedActionsClass *class)
+{
+}
+
+static GActionGroup *
+g_application_exported_actions_new (GApplication *application)
+{
+  GApplicationExportedActions *actions;
+
+  actions = g_object_new (g_application_exported_actions_get_type (), NULL);
+  actions->application = application;
+
+  return G_ACTION_GROUP (actions);
+}
 
 /* vfunc defaults {{{1 */
 static void
@@ -206,6 +382,13 @@ g_application_real_after_emit (GApplication *application,
 static void
 g_application_real_startup (GApplication *application)
 {
+  application->priv->did_startup = TRUE;
+}
+
+static void
+g_application_real_shutdown (GApplication *application)
+{
+  application->priv->did_shutdown = TRUE;
 }
 
 static void
@@ -262,7 +445,7 @@ g_application_real_command_line (GApplication            *application,
     {
       static gboolean warned;
 
-      if (warned) 
+      if (warned)
         return 1;
 
       g_warning ("Your application claims to support custom command line "
@@ -354,20 +537,20 @@ g_application_real_add_platform_data (GApplication    *application,
 {
 }
 
-static void
-g_application_real_quit_mainloop (GApplication *application)
+static gboolean
+g_application_real_dbus_register (GApplication    *application,
+                                  GDBusConnection *connection,
+                                  const gchar     *object_path,
+                                  GError         **error)
 {
-  if (application->priv->mainloop != NULL)
-    g_main_loop_quit (application->priv->mainloop);
+  return TRUE;
 }
 
 static void
-g_application_real_run_mainloop (GApplication *application)
+g_application_real_dbus_unregister (GApplication    *application,
+                                    GDBusConnection *connection,
+                                    const gchar     *object_path)
 {
-  if (application->priv->mainloop == NULL)
-    application->priv->mainloop = g_main_loop_new (NULL, FALSE);
-
-  g_main_loop_run (application->priv->mainloop);
 }
 
 /* GObject implementation stuff {{{1 */
@@ -396,8 +579,8 @@ g_application_set_property (GObject      *object,
       break;
 
     case PROP_ACTION_GROUP:
-      g_application_set_action_group (application,
-                                      g_value_get_object (value));
+      g_clear_object (&application->priv->actions);
+      application->priv->actions = g_value_dup_object (value);
       break;
 
     default:
@@ -410,14 +593,16 @@ g_application_set_property (GObject      *object,
  * @application: a #GApplication
  * @action_group: (allow-none): a #GActionGroup, or %NULL
  *
- * Sets or unsets the group of actions associated with the application.
- *
- * These actions are the actions that can be remotely invoked.
- *
- * It is an error to call this function after the application has been
- * registered.
+ * This used to be how actions were associated with a #GApplication.
+ * Now there is #GActionMap for that.
  *
  * Since: 2.28
+ *
+ * Deprecated:2.32:Use the #GActionMap interface instead.  Never ever
+ * mix use of this API with use of #GActionMap on the same @application
+ * or things will go very badly wrong.  This function is known to
+ * introduce buggy behaviour (ie: signals not emitted on changes to the
+ * action group), so you should really use #GActionMap instead.
  **/
 void
 g_application_set_action_group (GApplication *application,
@@ -480,7 +665,8 @@ g_application_constructed (GObject *object)
 {
   GApplication *application = G_APPLICATION (object);
 
-  g_assert (application->priv->id != NULL);
+  if (g_application_get_default () == NULL)
+    g_application_set_default (application);
 }
 
 static void
@@ -492,8 +678,11 @@ g_application_finalize (GObject *object)
     g_application_impl_destroy (application->priv->impl);
   g_free (application->priv->id);
 
-  if (application->priv->mainloop)
-    g_main_loop_unref (application->priv->mainloop);
+  if (g_application_get_default () == application)
+    g_application_set_default (NULL);
+
+  if (application->priv->actions)
+    g_object_unref (application->priv->actions);
 
   G_OBJECT_CLASS (g_application_parent_class)
     ->finalize (object);
@@ -505,6 +694,20 @@ g_application_init (GApplication *application)
   application->priv = G_TYPE_INSTANCE_GET_PRIVATE (application,
                                                    G_TYPE_APPLICATION,
                                                    GApplicationPrivate);
+
+  application->priv->actions = g_application_exported_actions_new (application);
+
+  /* application->priv->actions is the one and only ref on the group, so when
+   * we dispose, the action group will die, disconnecting all signals.
+   */
+  g_signal_connect_swapped (application->priv->actions, "action-added",
+                            G_CALLBACK (g_action_group_action_added), application);
+  g_signal_connect_swapped (application->priv->actions, "action-enabled-changed",
+                            G_CALLBACK (g_action_group_action_enabled_changed), application);
+  g_signal_connect_swapped (application->priv->actions, "action-state-changed",
+                            G_CALLBACK (g_action_group_action_state_changed), application);
+  g_signal_connect_swapped (application->priv->actions, "action-removed",
+                            G_CALLBACK (g_action_group_action_removed), application);
 }
 
 static void
@@ -520,13 +723,14 @@ g_application_class_init (GApplicationClass *class)
   class->before_emit = g_application_real_before_emit;
   class->after_emit = g_application_real_after_emit;
   class->startup = g_application_real_startup;
+  class->shutdown = g_application_real_shutdown;
   class->activate = g_application_real_activate;
   class->open = g_application_real_open;
   class->command_line = g_application_real_command_line;
   class->local_command_line = g_application_real_local_command_line;
   class->add_platform_data = g_application_real_add_platform_data;
-  class->quit_mainloop = g_application_real_quit_mainloop;
-  class->run_mainloop = g_application_real_run_mainloop;
+  class->dbus_register = g_application_real_dbus_register;
+  class->dbus_unregister = g_application_real_dbus_unregister;
 
   g_object_class_install_property (object_class, PROP_APPLICATION_ID,
     g_param_spec_string ("application-id",
@@ -557,7 +761,7 @@ g_application_class_init (GApplicationClass *class)
   g_object_class_install_property (object_class, PROP_INACTIVITY_TIMEOUT,
     g_param_spec_uint ("inactivity-timeout",
                        P_("Inactivity timeout"),
-                       P_("Iime (ms) to stay alive after becoming idle"),
+                       P_("Time (ms) to stay alive after becoming idle"),
                        0, G_MAXUINT, 0,
                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
@@ -565,8 +769,8 @@ g_application_class_init (GApplicationClass *class)
     g_param_spec_object ("action-group",
                          P_("Action group"),
                          P_("The group of actions that the application exports"),
-                         G_TYPE_ACTION_GROUP, 
-                         G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
+                         G_TYPE_ACTION_GROUP,
+                         G_PARAM_DEPRECATED | G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
 
   /**
    * GApplication::startup:
@@ -576,8 +780,20 @@ g_application_class_init (GApplicationClass *class)
    * after registration. See g_application_register().
    */
   g_application_signals[SIGNAL_STARTUP] =
-    g_signal_new ("startup", G_TYPE_APPLICATION, G_SIGNAL_RUN_LAST,
+    g_signal_new ("startup", G_TYPE_APPLICATION, G_SIGNAL_RUN_FIRST,
                   G_STRUCT_OFFSET (GApplicationClass, startup),
+                  NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
+  /**
+   * GApplication::shutdown:
+   * @application: the application
+   *
+   * The ::shutdown signal is emitted only on the registered primary instance
+   * immediately after the main loop terminates.
+   */
+  g_application_signals[SIGNAL_SHUTDOWN] =
+    g_signal_new ("shutdown", G_TYPE_APPLICATION, G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (GApplicationClass, shutdown),
                   NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
   /**
@@ -606,7 +822,7 @@ g_application_class_init (GApplicationClass *class)
   g_application_signals[SIGNAL_OPEN] =
     g_signal_new ("open", G_TYPE_APPLICATION, G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (GApplicationClass, open),
-                  NULL, NULL, _gio_marshal_VOID__POINTER_INT_STRING,
+                  NULL, NULL, NULL,
                   G_TYPE_NONE, 3, G_TYPE_POINTER, G_TYPE_INT, G_TYPE_STRING);
 
   /**
@@ -617,7 +833,7 @@ g_application_class_init (GApplicationClass *class)
    *
    * The ::command-line signal is emitted on the primary instance when
    * a commandline is not handled locally. See g_application_run() and
-   * the #GApplicationCommandline documentation for more information.
+   * the #GApplicationCommandLine documentation for more information.
    *
    * Returns: An integer that is set as the exit status for the calling
    *   process. See g_application_command_line_set_exit_status().
@@ -626,7 +842,7 @@ g_application_class_init (GApplicationClass *class)
     g_signal_new ("command-line", G_TYPE_APPLICATION, G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (GApplicationClass, command_line),
                   g_signal_accumulator_first_wins, NULL,
-                  _gio_marshal_INT__OBJECT,
+                  NULL,
                   G_TYPE_INT, 1, G_TYPE_APPLICATION_COMMAND_LINE);
 
   g_type_class_add_private (class, sizeof (GApplicationPrivate));
@@ -651,7 +867,7 @@ get_platform_data (GApplication *application)
     {
       GVariant *array;
       gchar **envp;
-     
+
       envp = g_get_environ ();
       array = g_variant_new_bytestring_array ((const gchar **) envp, -1);
       g_strfreev (envp);
@@ -673,7 +889,6 @@ get_platform_data (GApplication *application)
 /**
  * g_application_id_is_valid:
  * @application_id: a potential application identifier
- * @returns: %TRUE if @application_id is valid
  *
  * Checks if @application_id is a valid application identifier.
  *
@@ -689,6 +904,8 @@ get_platform_data (GApplication *application)
  *   <listitem>Application identifiers must not contain consecutive '.' (period) characters.</listitem>
  *   <listitem>Application identifiers must not exceed 255 characters.</listitem>
  * </itemizedlist>
+ *
+ * Returns: %TRUE if @application_id is valid
  **/
 gboolean
 g_application_id_is_valid (const gchar *application_id)
@@ -733,25 +950,30 @@ g_application_id_is_valid (const gchar *application_id)
 
   return TRUE;
 }
- 
+
 /* Public Constructor {{{1 */
 /**
  * g_application_new:
- * @application_id: the application id
+ * @application_id: (allow-none): the application id
  * @flags: the application flags
- * @returns: a new #GApplication instance
  *
  * Creates a new #GApplication instance.
  *
  * This function calls g_type_init() for you.
  *
- * The application id must be valid.  See g_application_id_is_valid().
+ * If non-%NULL, the application id must be valid.  See
+ * g_application_id_is_valid().
+ *
+ * If no application ID is given then some features of #GApplication
+ * (most notably application uniqueness) will be disabled.
+ *
+ * Returns: a new #GApplication instance
  **/
 GApplication *
 g_application_new (const gchar       *application_id,
                    GApplicationFlags  flags)
 {
-  g_return_val_if_fail (g_application_id_is_valid (application_id), NULL);
+  g_return_val_if_fail (application_id == NULL || g_application_id_is_valid (application_id), NULL);
 
   g_type_init ();
 
@@ -765,9 +987,10 @@ g_application_new (const gchar       *application_id,
 /**
  * g_application_get_application_id:
  * @application: a #GApplication
- * @returns: the identifier for @application, owned by @application
  *
  * Gets the unique identifier for @application.
+ *
+ * Returns: the identifier for @application, owned by @application
  *
  * Since: 2.28
  **/
@@ -782,14 +1005,15 @@ g_application_get_application_id (GApplication *application)
 /**
  * g_application_set_application_id:
  * @application: a #GApplication
- * @application_id: the identifier for @application
+ * @application_id: (allow-none): the identifier for @application
  *
  * Sets the unique identifier for @application.
  *
  * The application id can only be modified if @application has not yet
  * been registered.
  *
- * The application id must be valid.  See g_application_id_is_valid().
+ * If non-%NULL, the application id must be valid.  See
+ * g_application_id_is_valid().
  *
  * Since: 2.28
  **/
@@ -801,7 +1025,7 @@ g_application_set_application_id (GApplication *application,
 
   if (g_strcmp0 (application->priv->id, application_id) != 0)
     {
-      g_return_if_fail (g_application_id_is_valid (application_id));
+      g_return_if_fail (application_id == NULL || g_application_id_is_valid (application_id));
       g_return_if_fail (!application->priv->is_registered);
 
       g_free (application->priv->id);
@@ -814,11 +1038,12 @@ g_application_set_application_id (GApplication *application,
 /**
  * g_application_get_flags:
  * @application: a #GApplication
- * @returns: the flags for @application
  *
  * Gets the flags for @application.
  *
  * See #GApplicationFlags.
+ *
+ * Returns: the flags for @application
  *
  * Since: 2.28
  **/
@@ -895,8 +1120,6 @@ g_application_get_inactivity_timeout (GApplication *application)
  * used for next time g_application_release() drops the use count to
  * zero.  Any timeouts currently in progress are not impacted.
  *
- * Returns: the timeout, in milliseconds
- *
  * Since: 2.28
  **/
 void
@@ -912,16 +1135,17 @@ g_application_set_inactivity_timeout (GApplication *application,
       g_object_notify (G_OBJECT (application), "inactivity-timeout");
     }
 }
-/* Read-only property getters (is registered, is remote) {{{1 */
+/* Read-only property getters (is registered, is remote, dbus stuff) {{{1 */
 /**
  * g_application_get_is_registered:
  * @application: a #GApplication
- * @returns: %TRUE if @application is registered
  *
  * Checks if @application is registered.
  *
  * An application is registered if g_application_register() has been
  * successfully called.
+ *
+ * Returns: %TRUE if @application is registered
  *
  * Since: 2.28
  **/
@@ -936,7 +1160,6 @@ g_application_get_is_registered (GApplication *application)
 /**
  * g_application_get_is_remote:
  * @application: a #GApplication
- * @returns: %TRUE if @application is remote
  *
  * Checks if @application is remote.
  *
@@ -945,9 +1168,11 @@ g_application_get_is_registered (GApplication *application)
  * perform actions on @application will result in the actions being
  * performed by the primary instance.
  *
- * The value of this property can not be accessed before
+ * The value of this property cannot be accessed before
  * g_application_register() has been called.  See
  * g_application_get_is_registered().
+ *
+ * Returns: %TRUE if @application is remote
  *
  * Since: 2.28
  **/
@@ -960,13 +1185,75 @@ g_application_get_is_remote (GApplication *application)
   return application->priv->is_remote;
 }
 
+/**
+ * g_application_get_dbus_connection:
+ * @application: a #GApplication
+ *
+ * Gets the #GDBusConnection being used by the application, or %NULL.
+ *
+ * If #GApplication is using its D-Bus backend then this function will
+ * return the #GDBusConnection being used for uniqueness and
+ * communication with the desktop environment and other instances of the
+ * application.
+ *
+ * If #GApplication is not using D-Bus then this function will return
+ * %NULL.  This includes the situation where the D-Bus backend would
+ * normally be in use but we were unable to connect to the bus.
+ *
+ * This function must not be called before the application has been
+ * registered.  See g_application_get_is_registered().
+ *
+ * Returns: (transfer none): a #GDBusConnection, or %NULL
+ *
+ * Since: 2.34
+ **/
+GDBusConnection *
+g_application_get_dbus_connection (GApplication *application)
+{
+  g_return_val_if_fail (G_IS_APPLICATION (application), FALSE);
+  g_return_val_if_fail (application->priv->is_registered, FALSE);
+
+  return g_application_impl_get_dbus_connection (application->priv->impl);
+}
+
+/**
+ * g_application_get_dbus_object_path:
+ * @application: a #GApplication
+ *
+ * Gets the D-Bus object path being used by the application, or %NULL.
+ *
+ * If #GApplication is using its D-Bus backend then this function will
+ * return the D-Bus object path that #GApplication is using.  If the
+ * application is the primary instance then there is an object published
+ * at this path.  If the application is not the primary instance then
+ * the result of this function is undefined.
+ *
+ * If #GApplication is not using D-Bus then this function will return
+ * %NULL.  This includes the situation where the D-Bus backend would
+ * normally be in use but we were unable to connect to the bus.
+ *
+ * This function must not be called before the application has been
+ * registered.  See g_application_get_is_registered().
+ *
+ * Returns: the object path, or %NULL
+ *
+ * Since: 2.34
+ **/
+const gchar *
+g_application_get_dbus_object_path (GApplication *application)
+{
+  g_return_val_if_fail (G_IS_APPLICATION (application), FALSE);
+  g_return_val_if_fail (application->priv->is_registered, FALSE);
+
+  return g_application_impl_get_dbus_object_path (application->priv->impl);
+}
+
 /* Register {{{1 */
 /**
  * g_application_register:
  * @application: a #GApplication
- * @cancellable: a #GCancellable, or %NULL
+ * @cancellable: (allow-none): a #GCancellable, or %NULL
  * @error: a pointer to a NULL #GError, or %NULL
- * @returns: %TRUE if registration succeeded
  *
  * Attempts registration of the application.
  *
@@ -975,6 +1262,9 @@ g_application_get_is_remote (GApplication *application)
  * primary instance.  This is implemented by attempting to acquire the
  * application identifier as a unique bus name on the session bus using
  * GDBus.
+ *
+ * If there is no application ID or if %G_APPLICATION_NON_UNIQUE was
+ * given, then this process will always become the primary instance.
  *
  * Due to the internal architecture of GDBus, method calls can be
  * dispatched at any time (even if a main loop is not running).  For
@@ -985,7 +1275,8 @@ g_application_get_is_remote (GApplication *application)
  * returned with no work performed.
  *
  * The #GApplication::startup signal is emitted if registration succeeds
- * and @application is the primary instance.
+ * and @application is the primary instance (including the non-unique
+ * case).
  *
  * In the event of an error (such as @cancellable being cancelled, or a
  * failure to connect to the session bus), %FALSE is returned and @error
@@ -994,6 +1285,8 @@ g_application_get_is_remote (GApplication *application)
  * Note: the return value of this function is not an indicator that this
  * instance is or is not the primary instance of the application.  See
  * g_application_get_is_remote() for that.
+ *
+ * Returns: %TRUE if registration succeeded
  *
  * Since: 2.28
  **/
@@ -1006,9 +1299,13 @@ g_application_register (GApplication  *application,
 
   if (!application->priv->is_registered)
     {
+      if (application->priv->id == NULL)
+        application->priv->flags |= G_APPLICATION_NON_UNIQUE;
+
       application->priv->impl =
         g_application_impl_register (application, application->priv->id,
                                      application->priv->flags,
+                                     application->priv->actions,
                                      &application->priv->remote_actions,
                                      cancellable, error);
 
@@ -1021,7 +1318,14 @@ g_application_register (GApplication  *application,
       g_object_notify (G_OBJECT (application), "is-registered");
 
       if (!application->priv->is_remote)
-        g_signal_emit (application, g_application_signals[SIGNAL_STARTUP], 0);
+        {
+          g_signal_emit (application, g_application_signals[SIGNAL_STARTUP], 0);
+
+          if (!application->priv->did_startup)
+            g_critical ("GApplication subclass '%s' failed to chain up on"
+                        " ::startup (from start of override function)",
+                        G_OBJECT_TYPE_NAME (application));
+        }
     }
 
   return TRUE;
@@ -1035,7 +1339,7 @@ g_application_register (GApplication  *application,
  * Increases the use count of @application.
  *
  * Use this function to indicate that the application has a reason to
- * continue to run.  For example, g_application_hold() is called by GTK+ 
+ * continue to run.  For example, g_application_hold() is called by GTK+
  * when a toplevel window is on the screen.
  *
  * To cancel the hold, call g_application_release().
@@ -1043,6 +1347,8 @@ g_application_register (GApplication  *application,
 void
 g_application_hold (GApplication *application)
 {
+  g_return_if_fail (G_IS_APPLICATION (application));
+
   if (application->priv->inactivity_timeout_id)
     {
       g_source_remove (application->priv->inactivity_timeout_id);
@@ -1057,10 +1363,9 @@ inactivity_timeout_expired (gpointer data)
 {
   GApplication *application = G_APPLICATION (data);
 
-  G_APPLICATION_GET_CLASS (application)
-    ->quit_mainloop (application);
+  application->priv->inactivity_timeout_id = 0;
 
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 
 
@@ -1078,19 +1383,13 @@ inactivity_timeout_expired (gpointer data)
 void
 g_application_release (GApplication *application)
 {
+  g_return_if_fail (G_IS_APPLICATION (application));
+
   application->priv->use_count--;
 
-  if (application->priv->use_count == 0)
-    {
-      if (application->priv->inactivity_timeout)
-        application->priv->inactivity_timeout_id =
-          g_timeout_add (application->priv->inactivity_timeout,
-                         inactivity_timeout_expired, application);
-
-      else
-        G_APPLICATION_GET_CLASS (application)
-          ->quit_mainloop (application);
-    }
+  if (application->priv->use_count == 0 && application->priv->inactivity_timeout)
+    application->priv->inactivity_timeout_id = g_timeout_add (application->priv->inactivity_timeout,
+                                                              inactivity_timeout_expired, application);
 }
 
 /* Activate, Open {{{1 */
@@ -1100,7 +1399,7 @@ g_application_release (GApplication *application)
  *
  * Activates the application.
  *
- * In essence, this results in the #GApplication::activate() signal being
+ * In essence, this results in the #GApplication::activate signal being
  * emitted in the primary instance.
  *
  * The application must be registered before calling this function.
@@ -1171,8 +1470,7 @@ g_application_open (GApplication  *application,
  * g_application_run:
  * @application: a #GApplication
  * @argc: the argc from main() (or 0 if @argv is %NULL)
- * @argv: (array length=argc): the argv from main(), or %NULL
- * @returns: the exit status
+ * @argv: (array length=argc) (allow-none): the argv from main(), or %NULL
  *
  * Runs the application.
  *
@@ -1201,7 +1499,7 @@ g_application_open (GApplication  *application,
  * If local_command_line() returns %FALSE then the application is registered
  * and the #GApplication::command-line signal is emitted in the primary
  * instance (which may or may not be this instance). The signal handler
- * gets passed a #GApplicationCommandline object that (among other things)
+ * gets passed a #GApplicationCommandLine object that (among other things)
  * contains the remaining commandline arguments that have not been handled
  * by local_command_line().
  *
@@ -1221,7 +1519,7 @@ g_application_open (GApplication  *application,
  *
  * If you need to handle commandline arguments that are not filenames,
  * and you don't mind commandline handling to happen in the primary
- * instance, you should set %G_APPLICATION_HANDLED_COMMAND_LINE and
+ * instance, you should set %G_APPLICATION_HANDLES_COMMAND_LINE and
  * process the commandline arguments in your #GApplication::command-line
  * signal handler, either manually or using the #GOptionContext API.
  *
@@ -1234,12 +1532,14 @@ g_application_open (GApplication  *application,
  *
  * If, after the above is done, the use count of the application is zero
  * then the exit status is returned immediately.  If the use count is
- * non-zero then the mainloop is run until the use count falls to zero,
- * at which point 0 is returned.
+ * non-zero then the default main context is iterated until the use count
+ * falls to zero, at which point 0 is returned.
  *
  * If the %G_APPLICATION_IS_SERVICE flag is set, then the exiting at
  * use count of zero is delayed for a while (ie: the instance stays
  * around to provide its <emphasis>service</emphasis> to others).
+ *
+ * Returns: the exit status
  *
  * Since: 2.28
  **/
@@ -1254,6 +1554,7 @@ g_application_run (GApplication  *application,
 
   g_return_val_if_fail (G_IS_APPLICATION (application), 1);
   g_return_val_if_fail (argc == 0 || argv != NULL, 1);
+  g_return_val_if_fail (!application->priv->must_quit_now, 1);
 
   arguments = g_new (gchar *, argc + 1);
   for (i = 0; i < argc; i++)
@@ -1315,34 +1616,31 @@ g_application_run (GApplication  *application,
         g_timeout_add (10000, inactivity_timeout_expired, application);
     }
 
-  if (application->priv->use_count ||
-      application->priv->inactivity_timeout_id)
+  while (application->priv->use_count || application->priv->inactivity_timeout_id)
     {
-      G_APPLICATION_GET_CLASS (application)
-        ->run_mainloop (application);
+      if (application->priv->must_quit_now)
+        break;
+
+      g_main_context_iteration (NULL, TRUE);
       status = 0;
+    }
+
+  if (!application->priv->is_remote)
+    {
+      g_signal_emit (application, g_application_signals[SIGNAL_SHUTDOWN], 0);
+
+      if (!application->priv->did_shutdown)
+        g_critical ("GApplication subclass '%s' failed to chain up on"
+                    " ::shutdown (from end of override function)",
+                    G_OBJECT_TYPE_NAME (application));
     }
 
   if (application->priv->impl)
     g_application_impl_flush (application->priv->impl);
 
+  g_settings_sync ();
+
   return status;
-}
-
-static gboolean
-g_application_has_action (GActionGroup *action_group,
-                          const gchar  *action_name)
-{
-  GApplication *application = G_APPLICATION (action_group);
-
-  g_return_val_if_fail (application->priv->is_registered, FALSE);
-
-  if (application->priv->remote_actions != NULL)
-    return g_hash_table_lookup (application->priv->remote_actions,
-                                action_name) != NULL;
-
-  return application->priv->actions &&
-         g_action_group_has_action (application->priv->actions, action_name);
 }
 
 static gchar **
@@ -1353,23 +1651,7 @@ g_application_list_actions (GActionGroup *action_group)
   g_return_val_if_fail (application->priv->is_registered, NULL);
 
   if (application->priv->remote_actions != NULL)
-    {
-      GHashTableIter iter;
-      gint n, i = 0;
-      gchar **keys;
-      gpointer key;
-
-      n = g_hash_table_size (application->priv->remote_actions);
-      keys = g_new (gchar *, n + 1);
-
-      g_hash_table_iter_init (&iter, application->priv->remote_actions);
-      while (g_hash_table_iter_next (&iter, &key, NULL))
-        keys[i++] = g_strdup (key);
-      g_assert_cmpint (i, ==, n);
-      keys[n] = NULL;
-
-      return keys;
-    }
+    return g_action_group_list_actions (G_ACTION_GROUP (application->priv->remote_actions));
 
   else if (application->priv->actions != NULL)
     return g_action_group_list_actions (application->priv->actions);
@@ -1380,108 +1662,37 @@ g_application_list_actions (GActionGroup *action_group)
 }
 
 static gboolean
-g_application_get_action_enabled (GActionGroup *action_group,
-                                  const gchar  *action_name)
+g_application_query_action (GActionGroup        *group,
+                            const gchar         *action_name,
+                            gboolean            *enabled,
+                            const GVariantType **parameter_type,
+                            const GVariantType **state_type,
+                            GVariant           **state_hint,
+                            GVariant           **state)
 {
-  GApplication *application = G_APPLICATION (action_group);
+  GApplication *application = G_APPLICATION (group);
 
-  g_return_val_if_fail (application->priv->remote_actions != NULL ||
-                        application->priv->actions != NULL, FALSE);
   g_return_val_if_fail (application->priv->is_registered, FALSE);
 
-  if (application->priv->remote_actions)
-    {
-      RemoteActionInfo *info;
+  if (application->priv->remote_actions != NULL)
+    return g_action_group_query_action (G_ACTION_GROUP (application->priv->remote_actions),
+                                        action_name,
+                                        enabled,
+                                        parameter_type,
+                                        state_type,
+                                        state_hint,
+                                        state);
 
-      info = g_hash_table_lookup (application->priv->remote_actions,
-                                  action_name);
+  if (application->priv->actions != NULL)
+    return g_action_group_query_action (application->priv->actions,
+                                        action_name,
+                                        enabled,
+                                        parameter_type,
+                                        state_type,
+                                        state_hint,
+                                        state);
 
-      return info && info->enabled;
-    }
-
-  return g_action_group_get_action_enabled (application->priv->actions,
-                                            action_name);
-}
-
-static const GVariantType *
-g_application_get_action_parameter_type (GActionGroup *action_group,
-                                         const gchar  *action_name)
-{
-  GApplication *application = G_APPLICATION (action_group);
-
-  g_return_val_if_fail (application->priv->remote_actions != NULL ||
-                        application->priv->actions != NULL, NULL);
-  g_return_val_if_fail (application->priv->is_registered, NULL);
-
-  if (application->priv->remote_actions)
-    {
-      RemoteActionInfo *info;
-
-      info = g_hash_table_lookup (application->priv->remote_actions,
-                                  action_name);
-
-      if (info)
-        return info->parameter_type;
-      else
-        return NULL;
-    }
-
-  return g_action_group_get_action_parameter_type (application->priv->actions,
-                                                   action_name);
-}
-
-static const GVariantType *
-g_application_get_action_state_type (GActionGroup *action_group,
-                                     const gchar  *action_name)
-{
-  GApplication *application = G_APPLICATION (action_group);
-
-  g_return_val_if_fail (application->priv->remote_actions != NULL ||
-                        application->priv->actions != NULL, NULL);
-  g_return_val_if_fail (application->priv->is_registered, NULL);
-
-  if (application->priv->remote_actions)
-    {
-      RemoteActionInfo *info;
-
-      info = g_hash_table_lookup (application->priv->remote_actions,
-                                  action_name);
-
-      if (info && info->state)
-        return g_variant_get_type (info->state);
-      else
-        return NULL;
-    }
-
-  return g_action_group_get_action_state_type (application->priv->actions,
-                                               action_name);
-}
-
-static GVariant *
-g_application_get_action_state (GActionGroup *action_group,
-                                const gchar  *action_name)
-{
-  GApplication *application = G_APPLICATION (action_group);
-
-  g_return_val_if_fail (application->priv->remote_actions != NULL ||
-                        application->priv->actions != NULL, NULL);
-  g_return_val_if_fail (application->priv->is_registered, NULL);
-
-  if (application->priv->remote_actions)
-    {
-      RemoteActionInfo *info;
-
-      info = g_hash_table_lookup (application->priv->remote_actions,
-                                  action_name);
-
-      if (info && info->state)
-        return g_variant_ref (info->state);
-      else
-        return NULL;
-    }
-
-  return g_action_group_get_action_state (application->priv->actions,
-                                          action_name);
+  return FALSE;
 }
 
 static void
@@ -1495,14 +1706,12 @@ g_application_change_action_state (GActionGroup *action_group,
                     application->priv->actions != NULL);
   g_return_if_fail (application->priv->is_registered);
 
-  if (application->priv->is_remote)
-    g_application_impl_change_action_state (application->priv->impl,
-                                            action_name, value,
-                                            get_platform_data (application));
+  if (application->priv->remote_actions)
+    g_remote_action_group_change_action_state_full (application->priv->remote_actions,
+                                                    action_name, value, get_platform_data (application));
 
   else
-    g_action_group_change_action_state (application->priv->actions,
-                                        action_name, value);
+    g_action_group_change_action_state (application->priv->actions, action_name, value);
 }
 
 static void
@@ -1516,28 +1725,130 @@ g_application_activate_action (GActionGroup *action_group,
                     application->priv->actions != NULL);
   g_return_if_fail (application->priv->is_registered);
 
-  if (application->priv->is_remote)
-    g_application_impl_activate_action (application->priv->impl,
-                                        action_name, parameter,
-                                        get_platform_data (application));
+  if (application->priv->remote_actions)
+    g_remote_action_group_activate_action_full (application->priv->remote_actions,
+                                                action_name, parameter, get_platform_data (application));
 
   else
-    g_action_group_activate_action (application->priv->actions,
-                                    action_name, parameter);
+    g_action_group_activate_action (application->priv->actions, action_name, parameter);
+}
+
+static GAction *
+g_application_lookup_action (GActionMap  *action_map,
+                             const gchar *action_name)
+{
+  GApplication *application = G_APPLICATION (action_map);
+
+  g_return_val_if_fail (G_IS_SIMPLE_ACTION_GROUP (application->priv->actions), NULL);
+
+  return g_simple_action_group_lookup (G_SIMPLE_ACTION_GROUP (application->priv->actions), action_name);
+}
+
+static void
+g_application_add_action (GActionMap *action_map,
+                          GAction    *action)
+{
+  GApplication *application = G_APPLICATION (action_map);
+
+  g_return_if_fail (G_IS_SIMPLE_ACTION_GROUP (application->priv->actions));
+
+  g_simple_action_group_insert (G_SIMPLE_ACTION_GROUP (application->priv->actions), action);
+}
+
+static void
+g_application_remove_action (GActionMap  *action_map,
+                             const gchar *action_name)
+{
+  GApplication *application = G_APPLICATION (action_map);
+
+  g_return_if_fail (G_IS_SIMPLE_ACTION_GROUP (application->priv->actions));
+
+  g_simple_action_group_remove (G_SIMPLE_ACTION_GROUP (application->priv->actions), action_name);
 }
 
 static void
 g_application_action_group_iface_init (GActionGroupInterface *iface)
 {
-  iface->has_action = g_application_has_action;
   iface->list_actions = g_application_list_actions;
-
-  iface->get_action_enabled = g_application_get_action_enabled;
-  iface->get_action_parameter_type = g_application_get_action_parameter_type;
-  iface->get_action_state_type = g_application_get_action_state_type;
-  iface->get_action_state = g_application_get_action_state;
+  iface->query_action = g_application_query_action;
   iface->change_action_state = g_application_change_action_state;
   iface->activate_action = g_application_activate_action;
+}
+
+static void
+g_application_action_map_iface_init (GActionMapInterface *iface)
+{
+  iface->lookup_action = g_application_lookup_action;
+  iface->add_action = g_application_add_action;
+  iface->remove_action = g_application_remove_action;
+}
+
+/* Default Application {{{1 */
+
+static GApplication *default_app;
+
+/**
+ * g_application_get_default:
+ *
+ * Returns the default #GApplication instance for this process.
+ *
+ * Normally there is only one #GApplication per process and it becomes
+ * the default when it is created.  You can exercise more control over
+ * this by using g_application_set_default().
+ *
+ * If there is no default application then %NULL is returned.
+ *
+ * Returns: (transfer none): the default application for this process, or %NULL
+ *
+ * Since: 2.32
+ **/
+GApplication *
+g_application_get_default (void)
+{
+  return default_app;
+}
+
+/**
+ * g_application_set_default:
+ * @application: (allow-none): the application to set as default, or %NULL
+ *
+ * Sets or unsets the default application for the process, as returned
+ * by g_application_get_default().
+ *
+ * This function does not take its own reference on @application.  If
+ * @application is destroyed then the default application will revert
+ * back to %NULL.
+ *
+ * Since: 2.32
+ **/
+void
+g_application_set_default (GApplication *application)
+{
+  default_app = application;
+}
+
+/**
+ * g_application_quit:
+ * @application: a #GApplication
+ *
+ * Immediately quits the application.
+ *
+ * Upon return to the mainloop, g_application_run() will return,
+ * calling only the 'shutdown' function before doing so.
+ *
+ * The hold count is ignored.
+ *
+ * The result of calling g_application_run() again after it returns is
+ * unspecified.
+ *
+ * Since: 2.32
+ **/
+void
+g_application_quit (GApplication *application)
+{
+  g_return_if_fail (G_IS_APPLICATION (application));
+
+  application->priv->must_quit_now = TRUE;
 }
 
 /* Epilogue {{{1 */

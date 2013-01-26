@@ -36,6 +36,7 @@
 #include "gcancellable.h"
 #include "gsimpleasyncresult.h"
 #include "gasynchelper.h"
+#include "gfiledescriptorbased.h"
 #include "glibintl.h"
 
 
@@ -45,9 +46,11 @@
  * @include: gio/gunixoutputstream.h
  * @see_also: #GOutputStream
  *
- * #GUnixOutputStream implements #GOutputStream for writing to a
- * UNIX file descriptor, including asynchronous operations. The file
- * descriptor must be selectable, so it doesn't work with opened files.
+ * #GUnixOutputStream implements #GOutputStream for writing to a UNIX
+ * file descriptor, including asynchronous operations. (If the file
+ * descriptor refers to a socket or pipe, this will use poll() to do
+ * asynchronous I/O. If it refers to a regular file, it will fall back
+ * to doing asynchronous I/O in another thread.)
  *
  * Note that <filename>&lt;gio/gunixoutputstream.h&gt;</filename> belongs
  * to the UNIX-specific GIO interfaces, thus you have to use the
@@ -61,15 +64,19 @@ enum {
 };
 
 static void g_unix_output_stream_pollable_iface_init (GPollableOutputStreamInterface *iface);
+static void g_unix_output_stream_file_descriptor_based_iface_init (GFileDescriptorBasedIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (GUnixOutputStream, g_unix_output_stream, G_TYPE_OUTPUT_STREAM,
 			 G_IMPLEMENT_INTERFACE (G_TYPE_POLLABLE_OUTPUT_STREAM,
 						g_unix_output_stream_pollable_iface_init)
-			 );
+			 G_IMPLEMENT_INTERFACE (G_TYPE_FILE_DESCRIPTOR_BASED,
+						g_unix_output_stream_file_descriptor_based_iface_init)
+			 )
 
 struct _GUnixOutputStreamPrivate {
   int fd;
-  gboolean close_fd;
+  guint close_fd : 1;
+  guint is_pipe_or_socket : 1;
 };
 
 static void     g_unix_output_stream_set_property (GObject              *object,
@@ -88,16 +95,6 @@ static gssize   g_unix_output_stream_write        (GOutputStream        *stream,
 static gboolean g_unix_output_stream_close        (GOutputStream        *stream,
 						   GCancellable         *cancellable,
 						   GError              **error);
-static void     g_unix_output_stream_write_async  (GOutputStream        *stream,
-						   const void           *buffer,
-						   gsize                 count,
-						   int                   io_priority,
-						   GCancellable         *cancellable,
-						   GAsyncReadyCallback   callback,
-						   gpointer              data);
-static gssize   g_unix_output_stream_write_finish (GOutputStream        *stream,
-						   GAsyncResult         *result,
-						   GError              **error);
 static void     g_unix_output_stream_close_async  (GOutputStream        *stream,
 						   int                   io_priority,
 						   GCancellable         *cancellable,
@@ -107,6 +104,7 @@ static gboolean g_unix_output_stream_close_finish (GOutputStream        *stream,
 						   GAsyncResult         *result,
 						   GError              **error);
 
+static gboolean g_unix_output_stream_pollable_can_poll      (GPollableOutputStream *stream);
 static gboolean g_unix_output_stream_pollable_is_writable   (GPollableOutputStream *stream);
 static GSource *g_unix_output_stream_pollable_create_source (GPollableOutputStream *stream,
 							     GCancellable         *cancellable);
@@ -131,8 +129,6 @@ g_unix_output_stream_class_init (GUnixOutputStreamClass *klass)
 
   stream_class->write_fn = g_unix_output_stream_write;
   stream_class->close_fn = g_unix_output_stream_close;
-  stream_class->write_async = g_unix_output_stream_write_async;
-  stream_class->write_finish = g_unix_output_stream_write_finish;
   stream_class->close_async = g_unix_output_stream_close_async;
   stream_class->close_finish = g_unix_output_stream_close_finish;
 
@@ -170,8 +166,15 @@ g_unix_output_stream_class_init (GUnixOutputStreamClass *klass)
 static void
 g_unix_output_stream_pollable_iface_init (GPollableOutputStreamInterface *iface)
 {
+  iface->can_poll = g_unix_output_stream_pollable_can_poll;
   iface->is_writable = g_unix_output_stream_pollable_is_writable;
   iface->create_source = g_unix_output_stream_pollable_create_source;
+}
+
+static void
+g_unix_output_stream_file_descriptor_based_iface_init (GFileDescriptorBasedIface *iface)
+{
+  iface->get_fd = (int (*) (GFileDescriptorBased *))g_unix_output_stream_get_fd;
 }
 
 static void
@@ -188,6 +191,10 @@ g_unix_output_stream_set_property (GObject         *object,
     {
     case PROP_FD:
       unix_stream->priv->fd = g_value_get_int (value);
+      if (lseek (unix_stream->priv->fd, 0, SEEK_CUR) == -1 && errno == ESPIPE)
+	unix_stream->priv->is_pipe_or_socket = TRUE;
+      else
+	unix_stream->priv->is_pipe_or_socket = FALSE;
       break;
     case PROP_CLOSE_FD:
       unix_stream->priv->close_fd = g_value_get_boolean (value);
@@ -329,55 +336,65 @@ g_unix_output_stream_write (GOutputStream  *stream,
 			    GError        **error)
 {
   GUnixOutputStream *unix_stream;
-  gssize res;
+  gssize res = -1;
   GPollFD poll_fds[2];
+  int nfds;
   int poll_ret;
 
   unix_stream = G_UNIX_OUTPUT_STREAM (stream);
 
-  if (g_cancellable_make_pollfd (cancellable, &poll_fds[1]))
+  poll_fds[0].fd = unix_stream->priv->fd;
+  poll_fds[0].events = G_IO_OUT;
+
+  if (unix_stream->priv->is_pipe_or_socket &&
+      g_cancellable_make_pollfd (cancellable, &poll_fds[1]))
+    nfds = 2;
+  else
+    nfds = 1;
+
+  while (1)
     {
-      poll_fds[0].fd = unix_stream->priv->fd;
-      poll_fds[0].events = G_IO_OUT;
+      poll_fds[0].revents = poll_fds[1].revents = 0;
       do
-	poll_ret = g_poll (poll_fds, 2, -1);
+	poll_ret = g_poll (poll_fds, nfds, -1);
       while (poll_ret == -1 && errno == EINTR);
-      g_cancellable_release_fd (cancellable);
-      
+
       if (poll_ret == -1)
 	{
           int errsv = errno;
 
 	  g_set_error (error, G_IO_ERROR,
 		       g_io_error_from_errno (errsv),
-		       _("Error writing to unix: %s"),
+		       _("Error writing to file descriptor: %s"),
 		       g_strerror (errsv));
-	  return -1;
+	  break;
 	}
-    }
-      
-  while (1)
-    {
+
       if (g_cancellable_set_error_if_cancelled (cancellable, error))
-	return -1;
+	break;
+
+      if (!poll_fds[0].revents)
+	continue;
 
       res = write (unix_stream->priv->fd, buffer, count);
       if (res == -1)
 	{
           int errsv = errno;
 
-	  if (errsv == EINTR)
+	  if (errsv == EINTR || errsv == EAGAIN)
 	    continue;
-	  
+
 	  g_set_error (error, G_IO_ERROR,
 		       g_io_error_from_errno (errsv),
-		       _("Error writing to unix: %s"),
+		       _("Error writing to file descriptor: %s"),
 		       g_strerror (errsv));
 	}
-      
+
       break;
     }
-  
+
+  if (nfds == 2)
+    g_cancellable_release_fd (cancellable);
   return res;
 }
 
@@ -404,121 +421,13 @@ g_unix_output_stream_close (GOutputStream  *stream,
 
 	  g_set_error (error, G_IO_ERROR,
 		       g_io_error_from_errno (errsv),
-		       _("Error closing unix: %s"),
+		       _("Error closing file descriptor: %s"),
 		       g_strerror (errsv));
 	}
       break;
     }
 
   return res != -1;
-}
-
-typedef struct {
-  gsize count;
-  const void *buffer;
-  GAsyncReadyCallback callback;
-  gpointer user_data;
-  GCancellable *cancellable;
-  GUnixOutputStream *stream;
-} WriteAsyncData;
-
-static gboolean
-write_async_cb (int             fd,
-		GIOCondition    condition,
-		WriteAsyncData *data)
-{
-  GSimpleAsyncResult *simple;
-  GError *error = NULL;
-  gssize count_written;
-
-  while (1)
-    {
-      if (g_cancellable_set_error_if_cancelled (data->cancellable, &error))
-	{
-	  count_written = -1;
-	  break;
-	}
-      
-      count_written = write (data->stream->priv->fd, data->buffer, data->count);
-      if (count_written == -1)
-	{
-          int errsv = errno;
-
-	  if (errsv == EINTR)
-	    continue;
-	  
-	  g_set_error (&error, G_IO_ERROR,
-		       g_io_error_from_errno (errsv),
-		       _("Error writing to unix: %s"),
-		       g_strerror (errsv));
-	}
-      break;
-    }
-
-  simple = g_simple_async_result_new (G_OBJECT (data->stream),
-				      data->callback,
-				      data->user_data,
-				      g_unix_output_stream_write_async);
-  
-  g_simple_async_result_set_op_res_gssize (simple, count_written);
-
-  if (count_written == -1)
-    g_simple_async_result_take_error (simple, error);
-
-  /* Complete immediately, not in idle, since we're already in a mainloop callout */
-  g_simple_async_result_complete (simple);
-  g_object_unref (simple);
-
-  return FALSE;
-}
-
-static void
-g_unix_output_stream_write_async (GOutputStream       *stream,
-				  const void          *buffer,
-				  gsize                count,
-				  int                  io_priority,
-				  GCancellable        *cancellable,
-				  GAsyncReadyCallback  callback,
-				  gpointer             user_data)
-{
-  GSource *source;
-  GUnixOutputStream *unix_stream;
-  WriteAsyncData *data;
-
-  unix_stream = G_UNIX_OUTPUT_STREAM (stream);
-
-  data = g_new0 (WriteAsyncData, 1);
-  data->count = count;
-  data->buffer = buffer;
-  data->callback = callback;
-  data->user_data = user_data;
-  data->cancellable = cancellable;
-  data->stream = unix_stream;
-
-  source = _g_fd_source_new (unix_stream->priv->fd,
-			     G_IO_OUT,
-			     cancellable);
-  g_source_set_name (source, "GUnixOutputStream");
-  
-  g_source_set_callback (source, (GSourceFunc)write_async_cb, data, g_free);
-  g_source_attach (source, g_main_context_get_thread_default ());
-  
-  g_source_unref (source);
-}
-
-static gssize
-g_unix_output_stream_write_finish (GOutputStream  *stream,
-				   GAsyncResult   *result,
-				   GError        **error)
-{
-  GSimpleAsyncResult *simple;
-  gssize nwritten;
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == g_unix_output_stream_write_async);
-  
-  nwritten = g_simple_async_result_get_op_res_gssize (simple);
-  return nwritten;
 }
 
 typedef struct {
@@ -553,7 +462,7 @@ close_async_cb (CloseAsyncData *data)
 
 	  g_set_error (&error, G_IO_ERROR,
 		       g_io_error_from_errno (errsv),
-		       _("Error closing unix: %s"),
+		       _("Error closing file descriptor: %s"),
 		       g_strerror (errsv));
 	}
       break;
@@ -609,6 +518,12 @@ g_unix_output_stream_close_finish (GOutputStream  *stream,
 }
 
 static gboolean
+g_unix_output_stream_pollable_can_poll (GPollableOutputStream *stream)
+{
+  return G_UNIX_OUTPUT_STREAM (stream)->priv->is_pipe_or_socket;
+}
+
+static gboolean
 g_unix_output_stream_pollable_is_writable (GPollableOutputStream *stream)
 {
   GUnixOutputStream *unix_stream = G_UNIX_OUTPUT_STREAM (stream);
@@ -617,6 +532,7 @@ g_unix_output_stream_pollable_is_writable (GPollableOutputStream *stream)
 
   poll_fd.fd = unix_stream->priv->fd;
   poll_fd.events = G_IO_OUT;
+  poll_fd.revents = 0;
 
   do
     result = g_poll (&poll_fd, 1, 0);

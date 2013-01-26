@@ -19,10 +19,6 @@
 
 #include "config.h"
 
-#ifndef _WIN32
-#define _GNU_SOURCE		/* For vasprintf */
-#endif
-
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -35,7 +31,7 @@
  * g_printf:
  * @format: a standard printf() format string, but notice 
  *          <link linkend="string-precision">string precision pitfalls</link>.
- * @Varargs: the arguments to insert in the output.
+ * @...: the arguments to insert in the output.
  *
  * An implementation of the standard printf() function which supports 
  * positional parameters, as specified in the Single Unix Specification.
@@ -63,7 +59,7 @@ g_printf (gchar const *format,
  * @file: the stream to write to.
  * @format: a standard printf() format string, but notice 
  *          <link linkend="string-precision">string precision pitfalls</link>.
- * @Varargs: the arguments to insert in the output.
+ * @...: the arguments to insert in the output.
  *
  * An implementation of the standard fprintf() function which supports 
  * positional parameters, as specified in the Single Unix Specification.
@@ -94,7 +90,7 @@ g_fprintf (FILE        *file,
  *          enough to hold the formatted result
  * @format: a standard printf() format string, but notice
  *          <link linkend="string-precision">string precision pitfalls</link>.
- * @Varargs: the arguments to insert in the output.
+ * @...: the arguments to insert in the output.
  *
  * An implementation of the standard sprintf() function which supports
  * positional parameters, as specified in the Single Unix Specification.
@@ -130,7 +126,7 @@ g_sprintf (gchar       *string,
  *     terminating nul character).
  * @format: a standard printf() format string, but notice
  *          <link linkend="string-precision">string precision pitfalls</link>.
- * @Varargs: the arguments to insert in the output.
+ * @...: the arguments to insert in the output.
  *
  * A safer form of the standard sprintf() function. The output is guaranteed
  * to not exceed @n characters (including the terminating nul character), so

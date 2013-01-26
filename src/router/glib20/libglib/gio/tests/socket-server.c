@@ -63,8 +63,6 @@ main (int argc,
   GInputStream *istream;
   GOutputStream *ostream;
 
-  g_thread_init (NULL);
-
   g_type_init ();
 
   context = g_option_context_new (" - Test GSocket server stuff");
@@ -83,8 +81,10 @@ main (int argc,
 
   if (cancel_timeout)
     {
+      GThread *thread;
       cancellable = g_cancellable_new ();
-      g_thread_create (cancel_thread, cancellable, FALSE, NULL);
+      thread = g_thread_new ("cancel", cancel_thread, cancellable);
+      g_thread_unref (thread);
     }
   else
     {

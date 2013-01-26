@@ -213,11 +213,6 @@ g_timer_continue (GTimer *timer)
  * stopped. The return value is the number of seconds elapsed,
  * including any fractional part. The @microseconds out parameter is
  * essentially useless.
- *
- * <warning><para>
- *  Calling initialization functions, in particular g_thread_init(), while a
- *  timer is running will cause invalid return values from this function.
- * </para></warning>
  **/
 gdouble
 g_timer_elapsed (GTimer *timer,
@@ -241,6 +236,17 @@ g_timer_elapsed (GTimer *timer,
   return total;
 }
 
+/**
+ * g_usleep:
+ * @microseconds: number of microseconds to pause
+ *
+ * Pauses the current thread for the given number of microseconds.
+ *
+ * There are 1 million microseconds per second (represented by the
+ * #G_USEC_PER_SEC macro). g_usleep() may have limited precision,
+ * depending on hardware and operating system; don't rely on the exact
+ * length of the sleep.
+ */
 void
 g_usleep (gulong microseconds)
 {
@@ -328,10 +334,15 @@ mktime_utc (struct tm *tm)
 /**
  * g_time_val_from_iso8601:
  * @iso_date: an ISO 8601 encoded date string
- * @time_: a #GTimeVal
+ * @time_: (out): a #GTimeVal
  *
  * Converts a string containing an ISO 8601 encoded date and time
  * to a #GTimeVal and puts it into @time_.
+ *
+ * @iso_date must include year, month, day, hours, minutes, and
+ * seconds. It can optionally include fractions of a second and a time
+ * zone indicator. (In the absence of any time zone indication, the
+ * timestamp is assumed to be in local time.)
  *
  * Return value: %TRUE if the conversion was successful.
  *
@@ -464,8 +475,26 @@ g_time_val_from_iso8601 (const gchar *iso_date,
  * g_time_val_to_iso8601:
  * @time_: a #GTimeVal
  * 
- * Converts @time_ into an ISO 8601 encoded string, relative to the
- * Coordinated Universal Time (UTC).
+ * Converts @time_ into an RFC 3339 encoded string, relative to the
+ * Coordinated Universal Time (UTC). This is one of the many formats
+ * allowed by ISO 8601.
+ *
+ * ISO 8601 allows a large number of date/time formats, with or without
+ * punctuation and optional elements. The format returned by this function
+ * is a complete date and time, with optional punctuation included, the
+ * UTC time zone represented as "Z", and the @tv_usec part included if
+ * and only if it is nonzero, i.e. either
+ * "YYYY-MM-DDTHH:MM:SSZ" or "YYYY-MM-DDTHH:MM:SS.fffffZ".
+ *
+ * This corresponds to the Internet date/time format defined by
+ * <ulink url="https://www.ietf.org/rfc/rfc3339.txt">RFC 3339</ulink>, and
+ * to either of the two most-precise formats defined by
+ * <ulink url="http://www.w3.org/TR/NOTE-datetime-19980827">the W3C Note
+ * "Date and Time Formats"</ulink>. Both of these documents are profiles of
+ * ISO 8601.
+ *
+ * Use g_date_time_format() or g_strdup_printf() if a different
+ * variation of ISO 8601 format is required.
  *
  * Return value: a newly allocated string containing an ISO 8601 date
  *

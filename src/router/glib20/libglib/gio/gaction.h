@@ -39,20 +39,6 @@ G_BEGIN_DECLS
 
 typedef struct _GActionInterface                            GActionInterface;
 
-/**
- * GActionInterface:
- * @get_name: the virtual function pointer for g_action_get_name()
- * @get_parameter_type: the virtual function pointer for g_action_get_parameter_type()
- * @get_state_type: the virtual function pointer for g_action_get_state_type()
- * @get_state_hint: the virtual function pointer for g_action_get_state_hint()
- * @get_enabled: the virtual function pointer for g_action_get_enabled()
- * @get_state: the virtual function pointer for g_action_get_state()
- * @set_state: the virtual function pointer for g_action_set_state()
- * @activate: the virtual function pointer for g_action_activate().  Note that #GAction does not have an
- *            'activate' signal but that implementations of it may have one.
- *
- * Since: 2.28
- */
 struct _GActionInterface
 {
   GTypeInterface g_iface;
@@ -65,13 +51,14 @@ struct _GActionInterface
 
   gboolean             (* get_enabled)          (GAction  *action);
   GVariant *           (* get_state)            (GAction  *action);
-  void                 (* set_state)            (GAction  *action,
-                                                 GVariant *value);
 
+  void                 (* change_state)         (GAction  *action,
+                                                 GVariant *value);
   void                 (* activate)             (GAction  *action,
                                                  GVariant *parameter);
 };
 
+GLIB_AVAILABLE_IN_2_30
 GType                   g_action_get_type                               (void) G_GNUC_CONST;
 
 const gchar *           g_action_get_name                               (GAction            *action);
@@ -81,9 +68,9 @@ GVariant *              g_action_get_state_hint                         (GAction
 
 gboolean                g_action_get_enabled                            (GAction            *action);
 GVariant *              g_action_get_state                              (GAction            *action);
-void                    g_action_set_state                              (GAction            *action,
-                                                                         GVariant           *value);
 
+void                    g_action_change_state                           (GAction            *action,
+                                                                         GVariant           *value);
 void                    g_action_activate                               (GAction            *action,
                                                                          GVariant           *parameter);
 G_END_DECLS

@@ -52,9 +52,11 @@ typedef	struct _GModule			 GModule;
 typedef const gchar* (*GModuleCheckInit) (GModule	*module);
 typedef void	     (*GModuleUnload)	 (GModule	*module);
 
+#ifndef __GTK_DOC_IGNORE__
 #ifdef G_OS_WIN32
 #define g_module_open g_module_open_utf8
 #define g_module_name g_module_name_utf8
+#endif
 #endif
 
 /* return TRUE if dynamic module loading is supported */
@@ -71,7 +73,7 @@ gboolean              g_module_close         (GModule      *module);
 void                  g_module_make_resident (GModule      *module);
 
 /* query the last module error as a string */
-G_CONST_RETURN gchar* g_module_error         (void);
+const gchar *         g_module_error         (void);
 
 /* retrieve a symbol pointer from `module', returns TRUE on success */
 gboolean              g_module_symbol        (GModule      *module,
@@ -79,7 +81,7 @@ gboolean              g_module_symbol        (GModule      *module,
 					      gpointer     *symbol);
 
 /* retrieve the file name from an existing module */
-G_CONST_RETURN gchar* g_module_name          (GModule      *module);
+const gchar *         g_module_name          (GModule      *module);
 
 /* Build the actual file name containing a module. `directory' is the
  * directory where the module file is supposed to be, or NULL or empty
@@ -87,7 +89,7 @@ G_CONST_RETURN gchar* g_module_name          (GModule      *module);
  * some operating systems, in some standard place, for instance on the
  * PATH. Hence, to be absoultely sure to get the correct module,
  * always pass in a directory. The file name consists of the directory,
- * if supplied, and `module_name' suitably decorated accoring to
+ * if supplied, and `module_name' suitably decorated according to
  * the operating system's conventions (for instance lib*.so or *.dll).
  *
  * No checks are made that the file exists, or is of correct type.

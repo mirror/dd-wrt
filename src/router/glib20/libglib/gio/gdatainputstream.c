@@ -251,7 +251,7 @@ g_data_input_stream_get_byte_order (GDataInputStream *stream)
  * 
  * Note that using G_DATA_STREAM_NEWLINE_TYPE_ANY is slightly unsafe. If a read
  * chunk ends in "CR" we must read an additional byte to know if this is "CR" or
- * "CR LF", and this might block if there is no more data availible.
+ * "CR LF", and this might block if there is no more data available.
  *  
  **/
 void
@@ -734,17 +734,20 @@ scan_for_newline (GDataInputStream *stream,
  * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
  * @error: #GError for error reporting.
  *
- * Reads a line from the data input stream.
+ * Reads a line from the data input stream.  Note that no encoding
+ * checks or conversion is performed; the input is not guaranteed to
+ * be UTF-8, and may in fact have embedded NUL characters.
  *
  * If @cancellable is not %NULL, then the operation can be cancelled by
  * triggering the cancellable object from another thread. If the operation
  * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned.
  *
- * Returns: (transfer full): a string with the line that was read in
- *     (without the newlines).  Set @length to a #gsize to get the
- *     length of the read line.  On an error, it will return %NULL and
- *     @error will be set. If there's no content to read, it will
- *     still return %NULL, but @error won't be set.
+ * Returns: (transfer full) (array zero-terminated=1) (element-type guint8): a
+ *  NUL terminated byte array with the line that was read in (without
+ *  the newlines).  Set @length to a #gsize to get the length of the
+ *  read line.  On an error, it will return %NULL and @error will be
+ *  set. If there's no content to read, it will still return %NULL,
+ *  but @error won't be set.
  **/
 char *
 g_data_input_stream_read_line (GDataInputStream  *stream,
@@ -808,6 +811,51 @@ g_data_input_stream_read_line (GDataInputStream  *stream,
   line[found_pos] = 0;
   
   return line;
+}
+
+/**
+ * g_data_input_stream_read_line_utf8:
+ * @stream: a given #GDataInputStream.
+ * @length: (out): a #gsize to get the length of the data read in.
+ * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @error: #GError for error reporting.
+ *
+ * Reads a UTF-8 encoded line from the data input stream.
+ *
+ * If @cancellable is not %NULL, then the operation can be cancelled by
+ * triggering the cancellable object from another thread. If the operation
+ * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned.
+ *
+ * Returns: (transfer full): a NUL terminated UTF-8 string with the
+ *  line that was read in (without the newlines).  Set @length to a
+ *  #gsize to get the length of the read line.  On an error, it will
+ *  return %NULL and @error will be set.  For UTF-8 conversion errors,
+ *  the set error domain is %G_CONVERT_ERROR.  If there's no content to
+ *  read, it will still return %NULL, but @error won't be set.
+ *
+ * Since: 2.30
+ **/
+char *
+g_data_input_stream_read_line_utf8 (GDataInputStream  *stream,
+				    gsize             *length,
+				    GCancellable      *cancellable,
+				    GError           **error)
+{
+  char *res;
+
+  res = g_data_input_stream_read_line (stream, length, cancellable, error);
+  if (!res)
+    return NULL;
+  
+  if (!g_utf8_validate (res, -1, NULL))
+    {
+      g_set_error_literal (error, G_CONVERT_ERROR,
+			   G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
+			   _("Invalid byte sequence in conversion input"));
+      g_free (res);
+      return NULL;
+    }
+  return res;
 }
 
 static gssize
@@ -1182,13 +1230,16 @@ g_data_input_stream_read_until_async (GDataInputStream    *stream,
  * @error: #GError for error reporting.
  *
  * Finish an asynchronous call started by
- * g_data_input_stream_read_line_async().
+ * g_data_input_stream_read_line_async().  Note the warning about
+ * string encoding in g_data_input_stream_read_line() applies here as
+ * well.
  *
- * Returns: (transfer full): a string with the line that was read in
- *     (without the newlines).  Set @length to a #gsize to get the
- *     length of the read line.  On an error, it will return %NULL and
- *     @error will be set. If there's no content to read, it will
- *     still return %NULL, but @error won't be set.
+ * Returns: (transfer full) (array zero-terminated=1) (element-type guint8):  a 
+ *  NUL-terminated byte array with the line that was read in
+ *  (without the newlines).  Set @length to a #gsize to get the
+ *  length of the read line.  On an error, it will return %NULL and
+ *  @error will be set. If there's no content to read, it will
+ *  still return %NULL, but @error won't be set.
  *
  * Since: 2.20
  */
@@ -1203,6 +1254,48 @@ g_data_input_stream_read_line_finish (GDataInputStream  *stream,
       g_data_input_stream_read_line_async), NULL);
 
   return g_data_input_stream_read_finish (stream, result, length, error);
+}
+
+/**
+ * g_data_input_stream_read_line_finish_utf8:
+ * @stream: a given #GDataInputStream.
+ * @result: the #GAsyncResult that was provided to the callback.
+ * @length: (out): a #gsize to get the length of the data read in.
+ * @error: #GError for error reporting.
+ *
+ * Finish an asynchronous call started by
+ * g_data_input_stream_read_line_async().
+ *
+ * Returns: (transfer full): a string with the line that was read in
+ *  (without the newlines).  Set @length to a #gsize to get the length
+ *  of the read line.  On an error, it will return %NULL and @error
+ *  will be set. For UTF-8 conversion errors, the set error domain is
+ *  %G_CONVERT_ERROR.  If there's no content to read, it will still
+ *  return %NULL, but @error won't be set.
+ *
+ * Since: 2.30
+ */
+gchar *
+g_data_input_stream_read_line_finish_utf8 (GDataInputStream  *stream,
+					   GAsyncResult      *result,
+					   gsize             *length,
+					   GError           **error)
+{
+  gchar *res;
+
+  res = g_data_input_stream_read_line_finish (stream, result, length, error);
+  if (!res)
+    return NULL;
+
+  if (!g_utf8_validate (res, -1, NULL))
+    {
+      g_set_error_literal (error, G_CONVERT_ERROR,
+			   G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
+			   _("Invalid byte sequence in conversion input"));
+      g_free (res);
+      return NULL;
+    }
+  return res;
 }
 
 /**
@@ -1261,7 +1354,7 @@ g_data_input_stream_read_until_finish (GDataInputStream  *stream,
  *     a #gsize to get the length of the string. This function will
  *     return %NULL on an error
  *
- * Since: 2.24
+ * Since: 2.26
  */
 char *
 g_data_input_stream_read_upto (GDataInputStream  *stream,
@@ -1354,7 +1447,7 @@ g_data_input_stream_read_upto (GDataInputStream  *stream,
  * can then call g_data_input_stream_read_upto_finish() to get
  * the result of the operation.
  *
- * Since: 2.24
+ * Since: 2.26
  */
 void
 g_data_input_stream_read_upto_async (GDataInputStream    *stream,

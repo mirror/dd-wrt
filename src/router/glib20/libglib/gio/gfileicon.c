@@ -158,7 +158,8 @@ g_file_icon_init (GFileIcon *file)
  * 
  * Creates a new icon for a file.
  * 
- * Returns: (transfer full): a #GIcon for the given @file, or %NULL on error.
+ * Returns: (transfer full) (type GFileIcon): a #GIcon for the given
+ *   @file, or %NULL on error.
  **/
 GIcon *
 g_file_icon_new (GFile *file)
@@ -330,6 +331,7 @@ load_async_callback (GObject      *source_object,
   g_simple_async_result_complete (simple);
   
   load_data_free (data);
+  g_object_unref (simple);
 }
 
 static void

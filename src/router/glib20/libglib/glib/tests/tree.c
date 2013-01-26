@@ -27,6 +27,9 @@
 #undef G_DISABLE_ASSERT
 #undef G_LOG_DOMAIN
 
+/* We are testing some deprecated APIs here */
+#define GLIB_DISABLE_DEPRECATION_WARNINGS
+
 #include <stdio.h>
 #include <string.h>
 #include "glib.h"
@@ -333,6 +336,7 @@ test_tree_traverse (void)
   g_assert_cmpstr (result, ==, "02146538A9CEDB7GIHKMLJOQPSUTRNFWYXacbZegfikjhdmonqsrpuwvzyxtlV");
 
   g_tree_unref (tree);
+  g_free (result);
 }
 
 int

@@ -90,7 +90,7 @@ test_message_cb1 (GIOChannel  * channel,
   GIOStatus  status;
   guchar     buf[512];
   gsize      read_bytes = 0;
-
+ 
   g_assert_cmpuint (condition, ==, G_IO_IN);
 
   for (status = g_io_channel_read_chars (channel, (gchar*)buf, sizeof (buf), &read_bytes, NULL);
@@ -138,6 +138,8 @@ test_message (void)
   int             pipes[2];
   int             passed = 0;
   int             messages = 0;
+  const char    * line_term;
+  int             line_term_len;
 
   if (0 > pipe (pipes))
     {
@@ -164,6 +166,11 @@ test_message (void)
   g_io_channel_set_encoding (channel, NULL, NULL);
   g_io_channel_set_buffered (channel, FALSE);
   g_io_channel_set_flags (channel, G_IO_FLAG_NONBLOCK, NULL);
+  g_assert (g_io_channel_get_line_term (channel, NULL) == NULL);
+  g_io_channel_set_line_term (channel, "\n", 1);
+  line_term = g_io_channel_get_line_term (channel, &line_term_len);
+  g_assert_cmpint (*line_term, ==, '\n');
+  g_assert_cmpint (line_term_len, ==, 1);
 
   io_source = g_io_add_watch (channel, G_IO_IN, test_message_cb1, tlb);
   child_source = g_child_watch_add (pid, test_message_cb2, loop);
@@ -193,8 +200,8 @@ test_message (void)
           {
             gchar const* known_messages[] = {
                     "this is a regular g_test_message() from the test suite",
-                    "MESSAGE: this is a regular g_message() from the test suite",
-                    "DEBUG: this is a regular g_debug() from the test suite"
+                    "GLib-MESSAGE: this is a regular g_message() from the test suite",
+                    "GLib-DEBUG: this is a regular g_debug() from the test suite"
             };
             g_assert_cmpint (messages, <, G_N_ELEMENTS (known_messages));
             g_assert_cmpstr (msg->strings[0], ==, known_messages[messages]);
@@ -207,10 +214,15 @@ test_message (void)
         default:
           g_error ("unexpected log message type: %s", g_test_log_type_name (msg->log_type));
         }
+       g_test_log_msg_free (msg);
     }
 
   g_assert_cmpint (passed, ==, 3);
   g_assert_cmpint (messages, ==, 3);
+
+  g_free (argv[1]);
+  g_main_loop_unref (loop);
+  g_test_log_buffer_free (tlb);
 }
 
 static void
@@ -297,9 +309,9 @@ test_error (void)
             case G_TEST_LOG_ERROR:
                 {
                   gchar const* known_messages[] = {
-                          "FATAL-WARNING: this is a regular g_warning() from the test suite",
-                          "FATAL-CRITICAL: this is a regular g_critical() from the test suite",
-                          "FATAL-ERROR: this is a regular g_error() from the test suite"
+                          "GLib-FATAL-WARNING: this is a regular g_warning() from the test suite",
+                          "GLib-FATAL-CRITICAL: this is a regular g_critical() from the test suite",
+                          "GLib-FATAL-ERROR: this is a regular g_error() from the test suite"
                   };
                   g_assert_cmpint (messages, <, G_N_ELEMENTS (known_messages));
                   g_assert_cmpstr (msg->strings[0], ==, known_messages[messages]);
@@ -309,7 +321,12 @@ test_error (void)
             default:
               g_error ("unexpected log message type: %s", g_test_log_type_name (msg->log_type));
             }
+            g_test_log_msg_free (msg);
         }
+
+      g_free (argv[1]);
+      g_main_loop_unref (loop);
+      g_test_log_buffer_free (tlb);
     }
 
   g_assert_cmpint (messages, ==, 3);

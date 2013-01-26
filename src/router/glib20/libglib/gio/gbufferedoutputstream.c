@@ -23,8 +23,10 @@
 #include "config.h"
 #include "gbufferedoutputstream.h"
 #include "goutputstream.h"
+#include "gseekable.h"
 #include "gsimpleasyncresult.h"
 #include "string.h"
+#include "gioerror.h"
 #include "glibintl.h"
 
 /**
@@ -88,16 +90,6 @@ static gboolean g_buffered_output_stream_close        (GOutputStream  *stream,
                                                        GCancellable   *cancellable,
                                                        GError        **error);
 
-static void     g_buffered_output_stream_write_async  (GOutputStream        *stream,
-                                                       const void           *buffer,
-                                                       gsize                 count,
-                                                       int                   io_priority,
-                                                       GCancellable         *cancellable,
-                                                       GAsyncReadyCallback   callback,
-                                                       gpointer              data);
-static gssize   g_buffered_output_stream_write_finish (GOutputStream        *stream,
-                                                       GAsyncResult         *result,
-                                                       GError              **error);
 static void     g_buffered_output_stream_flush_async  (GOutputStream        *stream,
                                                        int                   io_priority,
                                                        GCancellable         *cancellable,
@@ -115,9 +107,25 @@ static gboolean g_buffered_output_stream_close_finish (GOutputStream        *str
                                                        GAsyncResult         *result,
                                                        GError              **error);
 
-G_DEFINE_TYPE (GBufferedOutputStream,
-               g_buffered_output_stream,
-               G_TYPE_FILTER_OUTPUT_STREAM)
+static void     g_buffered_output_stream_seekable_iface_init (GSeekableIface  *iface);
+static goffset  g_buffered_output_stream_tell                (GSeekable       *seekable);
+static gboolean g_buffered_output_stream_can_seek            (GSeekable       *seekable);
+static gboolean g_buffered_output_stream_seek                (GSeekable       *seekable,
+							      goffset          offset,
+							      GSeekType        type,
+							      GCancellable    *cancellable,
+							      GError         **error);
+static gboolean g_buffered_output_stream_can_truncate        (GSeekable       *seekable);
+static gboolean g_buffered_output_stream_truncate            (GSeekable       *seekable,
+							      goffset          offset,
+							      GCancellable    *cancellable,
+							      GError         **error);
+
+G_DEFINE_TYPE_WITH_CODE (GBufferedOutputStream,
+			 g_buffered_output_stream,
+			 G_TYPE_FILTER_OUTPUT_STREAM,
+			 G_IMPLEMENT_INTERFACE (G_TYPE_SEEKABLE,
+						g_buffered_output_stream_seekable_iface_init))
 
 
 static void
@@ -137,8 +145,6 @@ g_buffered_output_stream_class_init (GBufferedOutputStreamClass *klass)
   ostream_class->write_fn = g_buffered_output_stream_write;
   ostream_class->flush = g_buffered_output_stream_flush;
   ostream_class->close_fn = g_buffered_output_stream_close;
-  ostream_class->write_async  = g_buffered_output_stream_write_async;
-  ostream_class->write_finish = g_buffered_output_stream_write_finish;
   ostream_class->flush_async  = g_buffered_output_stream_flush_async;
   ostream_class->flush_finish = g_buffered_output_stream_flush_finish;
   ostream_class->close_async  = g_buffered_output_stream_close_async;
@@ -345,6 +351,16 @@ g_buffered_output_stream_init (GBufferedOutputStream *stream)
 
 }
 
+static void
+g_buffered_output_stream_seekable_iface_init (GSeekableIface *iface)
+{
+  iface->tell         = g_buffered_output_stream_tell;
+  iface->can_seek     = g_buffered_output_stream_can_seek;
+  iface->seek         = g_buffered_output_stream_seek;
+  iface->can_truncate = g_buffered_output_stream_can_truncate;
+  iface->truncate_fn  = g_buffered_output_stream_truncate;
+}
+
 /**
  * g_buffered_output_stream_new:
  * @base_stream: a #GOutputStream.
@@ -513,6 +529,104 @@ g_buffered_output_stream_close (GOutputStream  *stream,
   return res;
 }
 
+static goffset
+g_buffered_output_stream_tell (GSeekable *seekable)
+{
+  GBufferedOutputStream        *bstream;
+  GBufferedOutputStreamPrivate *priv;
+  GOutputStream *base_stream;
+  GSeekable    *base_stream_seekable;
+  goffset base_offset;
+  
+  bstream = G_BUFFERED_OUTPUT_STREAM (seekable);
+  priv = bstream->priv;
+
+  base_stream = G_FILTER_OUTPUT_STREAM (seekable)->base_stream;
+  if (!G_IS_SEEKABLE (base_stream))
+    return 0;
+
+  base_stream_seekable = G_SEEKABLE (base_stream);
+  
+  base_offset = g_seekable_tell (base_stream_seekable);
+  return base_offset + priv->pos;
+}
+
+static gboolean
+g_buffered_output_stream_can_seek (GSeekable *seekable)
+{
+  GOutputStream *base_stream;
+  
+  base_stream = G_FILTER_OUTPUT_STREAM (seekable)->base_stream;
+  return G_IS_SEEKABLE (base_stream) && g_seekable_can_seek (G_SEEKABLE (base_stream));
+}
+
+static gboolean
+g_buffered_output_stream_seek (GSeekable     *seekable,
+			       goffset        offset,
+			       GSeekType      type,
+			       GCancellable  *cancellable,
+			       GError       **error)
+{
+  GBufferedOutputStream *bstream;
+  GOutputStream *base_stream;
+  GSeekable *base_stream_seekable;
+  gboolean flushed;
+
+  bstream = G_BUFFERED_OUTPUT_STREAM (seekable);
+
+  base_stream = G_FILTER_OUTPUT_STREAM (seekable)->base_stream;
+  if (!G_IS_SEEKABLE (base_stream))
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                           _("Seek not supported on base stream"));
+      return FALSE;
+    }
+
+  base_stream_seekable = G_SEEKABLE (base_stream);
+  flushed = flush_buffer (bstream, cancellable, error);
+  if (!flushed)
+    return FALSE;
+
+  return g_seekable_seek (base_stream_seekable, offset, type, cancellable, error);
+}
+
+static gboolean
+g_buffered_output_stream_can_truncate (GSeekable *seekable)
+{
+  GOutputStream *base_stream;
+  
+  base_stream = G_FILTER_OUTPUT_STREAM (seekable)->base_stream;
+  return G_IS_SEEKABLE (base_stream) && g_seekable_can_truncate (G_SEEKABLE (base_stream));
+}
+
+static gboolean
+g_buffered_output_stream_truncate (GSeekable     *seekable,
+				   goffset        offset,
+				   GCancellable  *cancellable,
+				   GError       **error)
+{
+  GBufferedOutputStream        *bstream;
+  GOutputStream *base_stream;
+  GSeekable *base_stream_seekable;
+  gboolean flushed;
+
+  bstream = G_BUFFERED_OUTPUT_STREAM (seekable);
+  base_stream = G_FILTER_OUTPUT_STREAM (seekable)->base_stream;
+  if (!G_IS_SEEKABLE (base_stream))
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                           _("Truncate not supported on base stream"));
+      return FALSE;
+    }
+
+  base_stream_seekable = G_SEEKABLE (base_stream);
+
+  flushed = flush_buffer (bstream, cancellable, error);
+  if (!flushed)
+    return FALSE;
+  return g_seekable_truncate (base_stream_seekable, offset, cancellable, error);
+}
+
 /* ************************** */
 /* Async stuff implementation */
 /* ************************** */
@@ -576,102 +690,6 @@ flush_buffer_thread (GSimpleAsyncResult *result,
 
   if (res == FALSE)
     g_simple_async_result_take_error (result, error);
-}
-
-typedef struct {
-    
-  FlushData fdata;
-
-  gsize  count;
-  const void  *buffer;
-
-} WriteData;
-
-static void 
-free_write_data (gpointer data)
-{
-  g_slice_free (WriteData, data);
-}
-
-static void
-g_buffered_output_stream_write_async (GOutputStream        *stream,
-                                      const void           *buffer,
-                                      gsize                 count,
-                                      int                   io_priority,
-                                      GCancellable         *cancellable,
-                                      GAsyncReadyCallback   callback,
-                                      gpointer              data)
-{
-  GBufferedOutputStream *buffered_stream;
-  GBufferedOutputStreamPrivate *priv;
-  GSimpleAsyncResult *res;
-  WriteData *wdata;
-
-  buffered_stream = G_BUFFERED_OUTPUT_STREAM (stream);
-  priv = buffered_stream->priv;
-
-  wdata = g_slice_new (WriteData);
-  wdata->count  = count;
-  wdata->buffer = buffer;
-
-  res = g_simple_async_result_new (G_OBJECT (stream),
-                                   callback,
-                                   data,
-                                   g_buffered_output_stream_write_async);
-
-  g_simple_async_result_set_op_res_gpointer (res, wdata, free_write_data);
-
-  /* if we have space left directly call the
-   * callback (from idle) otherwise schedule a buffer 
-   * flush in the thread. In both cases the actual
-   * copying of the data to the buffer will be done in
-   * the write_finish () func since that should
-   * be fast enough */
-  if (priv->len - priv->pos > 0)
-    {
-      g_simple_async_result_complete_in_idle (res);
-    }
-  else
-    {
-      wdata->fdata.flush_stream = FALSE;
-      wdata->fdata.close_stream = FALSE;
-      g_simple_async_result_run_in_thread (res, 
-                                           flush_buffer_thread, 
-                                           io_priority,
-                                           cancellable);
-      g_object_unref (res);
-    }
-}
-
-static gssize
-g_buffered_output_stream_write_finish (GOutputStream        *stream,
-                                       GAsyncResult         *result,
-                                       GError              **error)
-{
-  GBufferedOutputStreamPrivate *priv;
-  GBufferedOutputStream        *buffered_stream;
-  GSimpleAsyncResult *simple;
-  WriteData          *wdata;
-  gssize              count;
-
-  simple = G_SIMPLE_ASYNC_RESULT (result);
-  buffered_stream = G_BUFFERED_OUTPUT_STREAM (stream);
-  priv = buffered_stream->priv;
-
-  g_warn_if_fail (g_simple_async_result_get_source_tag (simple) == 
-            g_buffered_output_stream_write_async);
-
-  wdata = g_simple_async_result_get_op_res_gpointer (simple);
-
-  /* Now do the real copying of data to the buffer */
-  count = priv->len - priv->pos; 
-  count = MIN (wdata->count, count);
-
-  memcpy (priv->buffer + priv->pos, wdata->buffer, count);
-  
-  priv->pos += count;
-
-  return count;
 }
 
 static void

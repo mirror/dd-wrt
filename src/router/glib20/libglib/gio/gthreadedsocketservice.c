@@ -30,18 +30,18 @@
  *
  * A #GThreadedSocketService is a simple subclass of #GSocketService
  * that handles incoming connections by creating a worker thread and
- * dispatching the connection to it by emitting the ::run signal in
- * the new thread.
+ * dispatching the connection to it by emitting the
+ * #GThreadedSocketService::run signal in the new thread.
  *
  * The signal handler may perform blocking IO and need not return
  * until the connection is closed.
  *
  * The service is implemented using a thread pool, so there is a
- * limited amount of threads availible to serve incomming requests.
+ * limited amount of threads available to serve incoming requests.
  * The service automatically stops the #GSocketService from accepting
  * new connections when all threads are busy.
  *
- * As with #GSocketService, you may connect to #GThreadedSocketService:run,
+ * As with #GSocketService, you may connect to #GThreadedSocketService::run,
  * or subclass and override the default handler.
  */
 
@@ -49,8 +49,6 @@
 #include "gsocketconnection.h"
 #include "gthreadedsocketservice.h"
 #include "glibintl.h"
-
-#include "gio-marshal.h"
 
 
 static guint g_threaded_socket_service_run_signal;
@@ -234,13 +232,13 @@ g_threaded_socket_service_class_init (GThreadedSocketServiceClass *class)
    * @connection and may perform blocking IO. The signal handler need
    * not return until the connection is closed.
    *
-   * Returns: %TRUE to stope further signal handlers from being called
+   * Returns: %TRUE to stop further signal handlers from being called
    */
   g_threaded_socket_service_run_signal =
     g_signal_new ("run", G_TYPE_FROM_CLASS (class), G_SIGNAL_RUN_LAST,
 		  G_STRUCT_OFFSET (GThreadedSocketServiceClass, run),
 		  g_signal_accumulator_true_handled, NULL,
-		  _gio_marshal_BOOLEAN__OBJECT_OBJECT, G_TYPE_BOOLEAN,
+		  NULL, G_TYPE_BOOLEAN,
 		  2, G_TYPE_SOCKET_CONNECTION, G_TYPE_OBJECT);
 
   g_object_class_install_property (gobject_class, PROP_MAX_THREADS,
@@ -259,7 +257,7 @@ g_threaded_socket_service_class_init (GThreadedSocketServiceClass *class)
  *   handling incoming clients, -1 means no limit
  *
  * Creates a new #GThreadedSocketService with no listeners. Listeners
- * must be added with g_socket_service_add_listeners().
+ * must be added with one of the #GSocketListener "add" methods.
  *
  * Returns: a new #GSocketService.
  *

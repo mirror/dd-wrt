@@ -1,5 +1,6 @@
 /*
  * Copyright © 2010 Codethink Limited
+ * Copyright © 2011 Canonical Limited
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,57 +23,39 @@
 
 #include <glib-object.h>
 
-G_BEGIN_DECLS
-
-#define G_TYPE_SETTINGS_SCHEMA                              (g_settings_schema_get_type ())
-#define G_SETTINGS_SCHEMA(inst)                             (G_TYPE_CHECK_INSTANCE_CAST ((inst),                     \
-                                                             G_TYPE_SETTINGS_SCHEMA, GSettingsSchema))
-#define G_SETTINGS_SCHEMA_CLASS(class)                      (G_TYPE_CHECK_CLASS_CAST ((class),                       \
-                                                             G_TYPE_SETTINGS_SCHEMA, GSettingsSchemaClass))
-#define G_IS_SETTINGS_SCHEMA(inst)                          (G_TYPE_CHECK_INSTANCE_TYPE ((inst),                     \
-                                                             G_TYPE_SETTINGS_SCHEMA))
-#define G_IS_SETTINGS_SCHEMA_CLASS(class)                   (G_TYPE_CHECK_CLASS_TYPE ((class),                       \
-                                                             G_TYPE_SETTINGS_SCHEMA))
-#define G_SETTINGS_SCHEMA_GET_CLASS(inst)                   (G_TYPE_INSTANCE_GET_CLASS ((inst),                      \
-                                                             G_TYPE_SETTINGS_SCHEMA, GSettingsSchemaClass))
-
-typedef struct _GSettingsSchemaPrivate                      GSettingsSchemaPrivate;
-typedef struct _GSettingsSchemaClass                        GSettingsSchemaClass;
+typedef struct _GSettingsSchemaSource                       GSettingsSchemaSource;
 typedef struct _GSettingsSchema                             GSettingsSchema;
 
-struct _GSettingsSchemaClass
-{
-  GObjectClass parent_class;
-};
+#define                 G_TYPE_SETTINGS_SCHEMA_SOURCE                   (g_settings_schema_source_get_type ())
+GLIB_AVAILABLE_IN_2_32
+GType                   g_settings_schema_source_get_type               (void) G_GNUC_CONST;
 
-struct _GSettingsSchema
-{
-  GObject parent_instance;
+GLIB_AVAILABLE_IN_2_32
+GSettingsSchemaSource * g_settings_schema_source_get_default            (void);
+GLIB_AVAILABLE_IN_2_32
+GSettingsSchemaSource * g_settings_schema_source_ref                    (GSettingsSchemaSource  *source);
+GLIB_AVAILABLE_IN_2_32
+void                    g_settings_schema_source_unref                  (GSettingsSchemaSource  *source);
 
-  GSettingsSchemaPrivate *priv;
-};
+GSettingsSchemaSource * g_settings_schema_source_new_from_directory     (const gchar            *directory,
+                                                                         GSettingsSchemaSource  *parent,
+                                                                         gboolean                trusted,
+                                                                         GError                **error);
 
-G_GNUC_INTERNAL
-GType                   g_settings_schema_get_type                      (void);
-G_GNUC_INTERNAL
-GSettingsSchema *       g_settings_schema_new                           (const gchar      *name);
-G_GNUC_INTERNAL
-const gchar *           g_settings_schema_get_path                      (GSettingsSchema  *schema);
-G_GNUC_INTERNAL
-const gchar *           g_settings_schema_get_gettext_domain            (GSettingsSchema  *schema);
-G_GNUC_INTERNAL
-GVariantIter *          g_settings_schema_get_value                     (GSettingsSchema  *schema,
-                                                                         const gchar      *key);
-G_GNUC_INTERNAL
-gboolean                g_settings_schema_has_key                       (GSettingsSchema  *schema,
-                                                                         const gchar      *key);
-G_GNUC_INTERNAL
-const GQuark *          g_settings_schema_list                          (GSettingsSchema  *schema,
-                                                                         gint             *n_items);
-G_GNUC_INTERNAL
-const gchar *           g_settings_schema_get_string                    (GSettingsSchema  *schema,
-                                                                         const gchar      *key);
+GSettingsSchema *       g_settings_schema_source_lookup                 (GSettingsSchemaSource  *source,
+                                                                         const gchar            *schema_id,
+                                                                         gboolean                recursive);
 
-G_END_DECLS
+#define                 G_TYPE_SETTINGS_SCHEMA                          (g_settings_schema_get_type ())
+GLIB_AVAILABLE_IN_2_32
+GType                   g_settings_schema_get_type                      (void) G_GNUC_CONST;
+
+GLIB_AVAILABLE_IN_2_32
+GSettingsSchema *       g_settings_schema_ref                           (GSettingsSchema        *schema);
+GLIB_AVAILABLE_IN_2_32
+void                    g_settings_schema_unref                         (GSettingsSchema        *schema);
+
+const gchar *           g_settings_schema_get_id                        (GSettingsSchema        *schema);
+const gchar *           g_settings_schema_get_path                      (GSettingsSchema        *schema);
 
 #endif /* __G_SETTINGS_SCHEMA_H__ */

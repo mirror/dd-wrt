@@ -21,8 +21,12 @@
  * Author: Matthias Clasen
  */
 
+#define GLIB_DISABLE_DEPRECATION_WARNINGS
+
 #include "glib.h"
 
+#include <stdlib.h>
+#include <string.h>
 #include <stdarg.h>
 
 static gboolean
@@ -89,9 +93,10 @@ test_locale_variants (void)
 static void
 test_version (void)
 {
-  g_print ("(header %d.%d.%d library %d.%d.%d) ",
-                  GLIB_MAJOR_VERSION, GLIB_MINOR_VERSION, GLIB_MICRO_VERSION,
-                  glib_major_version, glib_minor_version, glib_micro_version);
+  if (g_test_verbose ())
+    g_print ("(header %d.%d.%d library %d.%d.%d) ",
+              GLIB_MAJOR_VERSION, GLIB_MINOR_VERSION, GLIB_MICRO_VERSION,
+              glib_major_version, glib_minor_version, glib_micro_version);
 
   g_assert (glib_check_version (GLIB_MAJOR_VERSION,
                                 GLIB_MINOR_VERSION,
@@ -151,6 +156,347 @@ test_tmpdir (void)
   g_assert_cmpstr (g_get_tmp_dir (), !=, "");
 }
 
+static void
+test_bits (void)
+{
+  gulong mask;
+  gint max_bit;
+  gint i, pos;
+
+  pos = g_bit_nth_lsf (0, -1);
+  g_assert_cmpint (pos, ==, -1);
+
+  max_bit = sizeof (gulong) * 8;
+  for (i = 0; i < max_bit; i++)
+    {
+      mask = 1UL << i;
+
+      pos = g_bit_nth_lsf (mask, -1);
+      g_assert_cmpint (pos, ==, i);
+
+      pos = g_bit_nth_lsf (mask, i - 3);
+      g_assert_cmpint (pos , ==, i);
+
+      pos = g_bit_nth_lsf (mask, i);
+      g_assert_cmpint (pos , ==, -1);
+
+      pos = g_bit_nth_lsf (mask, i + 1);
+      g_assert_cmpint (pos , ==, -1);
+    }
+
+  pos = g_bit_nth_msf (0, -1);
+  g_assert_cmpint (pos, ==, -1);
+
+  for (i = 0; i < max_bit; i++)
+    {
+      mask = 1UL << i;
+
+      pos = g_bit_nth_msf (mask, -1);
+      g_assert_cmpint (pos, ==, i);
+
+      pos = g_bit_nth_msf (mask, i + 3);
+      g_assert_cmpint (pos , ==, i);
+
+      pos = g_bit_nth_msf (mask, i);
+      g_assert_cmpint (pos , ==, -1);
+
+      if (i > 0)
+        {
+          pos = g_bit_nth_msf (mask, i - 1);
+          g_assert_cmpint (pos , ==, -1);
+        }
+    }
+}
+
+static void
+test_swap (void)
+{
+  guint16 a16, b16;
+  guint32 a32, b32;
+  guint64 a64, b64;
+
+  a16 = 0xaabb;
+  b16 = 0xbbaa;
+
+  g_assert_cmpint (GUINT16_SWAP_LE_BE (a16), ==, b16);
+
+  a32 = 0xaaaabbbb;
+  b32 = 0xbbbbaaaa;
+
+  g_assert_cmpint (GUINT32_SWAP_LE_BE (a32), ==, b32);
+
+  a64 = 0xaaaaaaaabbbbbbbb;
+  b64 = 0xbbbbbbbbaaaaaaaa;
+
+  g_assert_cmpint (GUINT64_SWAP_LE_BE (a64), ==, b64);
+}
+
+static void
+test_find_program (void)
+{
+  gchar *res;
+
+  res = g_find_program_in_path ("sh");
+  g_assert (res != NULL);
+  g_free (res);
+
+  res = g_find_program_in_path ("/bin/sh");
+  g_assert (res != NULL);
+  g_free (res);
+
+  res = g_find_program_in_path ("this_program_does_not_exit");
+  g_assert (res == NULL);
+
+  res = g_find_program_in_path ("/bin");
+  g_assert (res == NULL);
+
+  res = g_find_program_in_path ("/etc/passwd");
+  g_assert (res == NULL);
+}
+
+static void
+test_debug (void)
+{
+  GDebugKey keys[] = {
+    { "key1", 1 },
+    { "key2", 2 },
+    { "key3", 4 },
+  };
+  guint res;
+
+  res = g_parse_debug_string (NULL, keys, G_N_ELEMENTS (keys));
+  g_assert_cmpint (res, ==, 0);
+
+  res = g_parse_debug_string ("foobabla;#!%!$%112 223", keys, G_N_ELEMENTS (keys));
+  g_assert_cmpint (res, ==, 0);
+
+  res = g_parse_debug_string ("key1:key2", keys, G_N_ELEMENTS (keys));
+  g_assert_cmpint (res, ==, 3);
+
+  res = g_parse_debug_string ("key1;key2", keys, G_N_ELEMENTS (keys));
+  g_assert_cmpint (res, ==, 3);
+
+  res = g_parse_debug_string ("key1,key2", keys, G_N_ELEMENTS (keys));
+  g_assert_cmpint (res, ==, 3);
+
+  res = g_parse_debug_string ("key1   key2", keys, G_N_ELEMENTS (keys));
+  g_assert_cmpint (res, ==, 3);
+
+  res = g_parse_debug_string ("key1\tkey2", keys, G_N_ELEMENTS (keys));
+  g_assert_cmpint (res, ==, 3);
+
+  res = g_parse_debug_string ("all", keys, G_N_ELEMENTS (keys));
+  g_assert_cmpint (res, ==, 7);
+
+  if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDERR))
+    {
+      res = g_parse_debug_string ("help", keys, G_N_ELEMENTS (keys));
+      g_assert_cmpint (res, ==, 0);
+      exit (0);
+    }
+  g_test_trap_assert_passed ();
+  g_test_trap_assert_stderr ("*Supported debug values: key1 key2 key3 all help*");
+}
+
+static void
+test_codeset (void)
+{
+  gchar *c;
+  const gchar *c2;
+
+  c = g_get_codeset ();
+  g_get_charset (&c2);
+
+  g_assert_cmpstr (c, ==, c2);
+
+  g_free (c);
+}
+
+static void
+test_basename (void)
+{
+  const gchar *path = "/path/to/a/file/deep/down.sh";
+  const gchar *b;
+
+  b = g_basename (path);
+
+  g_assert_cmpstr (b, ==, "down.sh");
+}
+
+extern const gchar *glib_pgettext (const gchar *msgidctxt, gsize msgidoffset);
+
+static void
+test_gettext (void)
+{
+  const gchar *am0, *am1, *am2, *am3;
+
+  am0 = glib_pgettext ("GDateTime\004AM", strlen ("GDateTime") + 1);
+  am1 = g_dpgettext ("glib20", "GDateTime\004AM", strlen ("GDateTime") + 1);
+  am2 = g_dpgettext ("glib20", "GDateTime|AM", 0);
+  am3 = g_dpgettext2 ("glib20", "GDateTime", "AM");
+
+  g_assert_cmpstr (am0, ==, am1);
+  g_assert_cmpstr (am1, ==, am2);
+  g_assert_cmpstr (am2, ==, am3);
+}
+
+static void
+test_username (void)
+{
+  const gchar *name;
+
+  name = g_get_user_name ();
+
+  g_assert (name != NULL);
+}
+
+static void
+test_realname (void)
+{
+  const gchar *name;
+
+  name = g_get_real_name ();
+
+  g_assert (name != NULL);
+}
+
+static void
+test_hostname (void)
+{
+  const gchar *name;
+
+  name = g_get_host_name ();
+
+  g_assert (name != NULL);
+}
+
+static void
+test_xdg_dirs (void)
+{
+  gchar *xdg;
+  const gchar *dir;
+  const gchar * const *dirs;
+  gchar *s;
+
+  xdg = g_strdup (g_getenv ("XDG_CONFIG_HOME"));
+  if (!xdg)
+    xdg = g_build_filename (g_get_home_dir (), ".config", NULL);
+
+  dir = g_get_user_config_dir ();
+
+  g_assert_cmpstr (dir, ==, xdg);
+  g_free (xdg);
+
+  xdg = g_strdup (g_getenv ("XDG_DATA_HOME"));
+  if (!xdg)
+    xdg = g_build_filename (g_get_home_dir (), ".local", "share", NULL);
+
+  dir = g_get_user_data_dir ();
+
+  g_assert_cmpstr (dir, ==, xdg);
+  g_free (xdg);
+
+  xdg = g_strdup (g_getenv ("XDG_CACHE_HOME"));
+  if (!xdg)
+    xdg = g_build_filename (g_get_home_dir (), ".cache", NULL);
+
+  dir = g_get_user_cache_dir ();
+
+  g_assert_cmpstr (dir, ==, xdg);
+  g_free (xdg);
+
+  xdg = g_strdup (g_getenv ("XDG_RUNTIME_DIR"));
+  if (!xdg)
+    xdg = g_strdup (g_get_user_cache_dir ());
+
+  dir = g_get_user_runtime_dir ();
+
+  g_assert_cmpstr (dir, ==, xdg);
+  g_free (xdg);
+
+  xdg = (gchar *)g_getenv ("XDG_CONFIG_DIRS");
+  if (!xdg)
+    xdg = "/etc/xdg";
+
+  dirs = g_get_system_config_dirs ();
+
+  s = g_strjoinv (":", (gchar **)dirs);
+
+  g_assert_cmpstr (s, ==, xdg);
+
+  g_strfreev ((gchar **)dirs);
+  g_free (s);
+}
+
+static void
+test_special_dir (void)
+{
+  const gchar *dir, *dir2;
+
+  dir = g_get_user_special_dir (G_USER_DIRECTORY_DESKTOP);
+  g_reload_user_special_dirs_cache ();
+  dir2 = g_get_user_special_dir (G_USER_DIRECTORY_DESKTOP);
+
+  g_assert_cmpstr (dir, ==, dir2);
+}
+
+static void
+test_desktop_special_dir (void)
+{
+  const gchar *dir, *dir2;
+
+  dir = g_get_user_special_dir (G_USER_DIRECTORY_DESKTOP);
+  g_assert (dir != NULL);
+
+  g_reload_user_special_dirs_cache ();
+  dir2 = g_get_user_special_dir (G_USER_DIRECTORY_DESKTOP);
+  g_assert (dir2 != NULL);
+}
+
+static void
+test_clear_pointer (void)
+{
+  gpointer a;
+
+  a = g_malloc (5);
+  g_clear_pointer (&a, g_free);
+  g_assert (a == NULL);
+
+  a = g_malloc (5);
+  (g_clear_pointer) (&a, g_free);
+  g_assert (a == NULL);
+}
+
+static void
+test_misc_mem (void)
+{
+  gpointer a;
+
+  a = g_try_malloc (0);
+  g_assert (a == NULL);
+
+  a = g_try_malloc0 (0);
+  g_assert (a == NULL);
+
+  a = g_malloc (16);
+  a = g_try_realloc (a, 20);
+  a = g_try_realloc (a, 0);
+
+  g_assert (a == NULL);
+}
+
+static void
+test_nullify (void)
+{
+  gpointer p = &test_nullify;
+
+  g_assert (p != NULL);
+
+  g_nullify_pointer (&p);
+
+  g_assert (p == NULL);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -170,6 +516,22 @@ main (int   argc,
   g_test_add_func ("/utils/version", test_version);
   g_test_add_func ("/utils/appname", test_appname);
   g_test_add_func ("/utils/tmpdir", test_tmpdir);
+  g_test_add_func ("/utils/bits", test_bits);
+  g_test_add_func ("/utils/swap", test_swap);
+  g_test_add_func ("/utils/find-program", test_find_program);
+  g_test_add_func ("/utils/debug", test_debug);
+  g_test_add_func ("/utils/codeset", test_codeset);
+  g_test_add_func ("/utils/basename", test_basename);
+  g_test_add_func ("/utils/gettext", test_gettext);
+  g_test_add_func ("/utils/username", test_username);
+  g_test_add_func ("/utils/realname", test_realname);
+  g_test_add_func ("/utils/hostname", test_hostname);
+  g_test_add_func ("/utils/xdgdirs", test_xdg_dirs);
+  g_test_add_func ("/utils/specialdir", test_special_dir);
+  g_test_add_func ("/utils/specialdir/desktop", test_desktop_special_dir);
+  g_test_add_func ("/utils/clear-pointer", test_clear_pointer);
+  g_test_add_func ("/utils/misc-mem", test_misc_mem);
+  g_test_add_func ("/utils/nullify", test_nullify);
 
-  return g_test_run();
+  return g_test_run ();
 }
