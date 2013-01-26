@@ -24,7 +24,7 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -66,35 +66,41 @@ struct _GTuples
  * g_relation_count() counts ...
  */
 
-#ifndef G_DISABLE_DEPRECATED
-
+GLIB_DEPRECATED_IN_2_26
 GRelation* g_relation_new     (gint         fields);
+GLIB_DEPRECATED_IN_2_26
 void       g_relation_destroy (GRelation   *relation);
+GLIB_DEPRECATED_IN_2_26
 void       g_relation_index   (GRelation   *relation,
                                gint         field,
                                GHashFunc    hash_func,
                                GEqualFunc   key_equal_func);
+GLIB_DEPRECATED_IN_2_26
 void       g_relation_insert  (GRelation   *relation,
                                ...);
+GLIB_DEPRECATED_IN_2_26
 gint       g_relation_delete  (GRelation   *relation,
                                gconstpointer  key,
                                gint         field);
+GLIB_DEPRECATED_IN_2_26
 GTuples*   g_relation_select  (GRelation   *relation,
                                gconstpointer  key,
                                gint         field);
+GLIB_DEPRECATED_IN_2_26
 gint       g_relation_count   (GRelation   *relation,
                                gconstpointer  key,
                                gint         field);
+GLIB_DEPRECATED_IN_2_26
 gboolean   g_relation_exists  (GRelation   *relation,
                                ...);
+GLIB_DEPRECATED_IN_2_26
 void       g_relation_print   (GRelation   *relation);
-
+GLIB_DEPRECATED_IN_2_26
 void       g_tuples_destroy   (GTuples     *tuples);
+GLIB_DEPRECATED_IN_2_26
 gpointer   g_tuples_index     (GTuples     *tuples,
                                gint         index_,
                                gint         field);
-
-#endif
 
 G_END_DECLS
 

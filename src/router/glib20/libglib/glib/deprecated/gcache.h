@@ -24,7 +24,7 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/.
  */
 
-#if defined(G_DISABLE_SINGLE_INCLUDES) && !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
+#if !defined (__GLIB_H_INSIDE__) && !defined (GLIB_COMPILATION)
 #error "Only <glib.h> can be included directly."
 #endif
 
@@ -43,6 +43,7 @@ typedef void            (*GCacheDestroyFunc)    (gpointer       value);
 
 /* Caches
  */
+GLIB_DEPRECATED
 GCache*  g_cache_new           (GCacheNewFunc      value_new_func,
                                 GCacheDestroyFunc  value_destroy_func,
                                 GCacheDupFunc      key_dup_func,
@@ -50,19 +51,22 @@ GCache*  g_cache_new           (GCacheNewFunc      value_new_func,
                                 GHashFunc          hash_key_func,
                                 GHashFunc          hash_value_func,
                                 GEqualFunc         key_equal_func);
+GLIB_DEPRECATED
 void     g_cache_destroy       (GCache            *cache);
+GLIB_DEPRECATED
 gpointer g_cache_insert        (GCache            *cache,
                                 gpointer           key);
+GLIB_DEPRECATED
 void     g_cache_remove        (GCache            *cache,
                                 gconstpointer      value);
+GLIB_DEPRECATED
 void     g_cache_key_foreach   (GCache            *cache,
                                 GHFunc             func,
                                 gpointer           user_data);
-#ifndef G_DISABLE_DEPRECATED
+GLIB_DEPRECATED
 void     g_cache_value_foreach (GCache            *cache,
                                 GHFunc             func,
                                 gpointer           user_data);
-#endif
 
 G_END_DECLS
 
