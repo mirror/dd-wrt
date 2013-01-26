@@ -1,0 +1,147 @@
+50000^"QMI Results"^-1^0
+50001^"QMI Errors"^-1^0
+50002^"QMI Data Bearer Technologies"^-1^0
+50003^"QMI Connection Status"^-1^0
+50004^"QMI Profile Types"^-1^0
+50005^"QMI PDP Types"^-1^0
+50006^"QMI Traffic Classes"^-1^0
+50007^"QMI QoS Delivery Orders"^-1^0
+50008^"QMI SDU Error Ratios"^-1^0
+50009^"QMI SDU Residual Bit Error Ratios"^-1^0
+50010^"QMI Erroneous SDU Deliveries"^-1^0
+50011^"QMI Dormancy Status"^-1^0
+50012^"QMI Call End Reasons"^-1^0
+50013^"QMI Mobile IP Modes"^-1^0
+50014^"QMI Call History Types"^-1^0
+50015^"QMI Call Types"^-1^0
+50016^"QMI HA/AAA Key States"^-1^0
+50017^"QMI WDS Network Types"^-1^0
+50018^"QMI WDS Extended Tech Prefs"^-1^0
+50019^"QMI WDS Call Types"^-1^0
+50020^"QMI WDS IP Families"^-1^0
+50021^"QMI WDS Mobile IP Call End Reasons"^-1^0
+50022^"QMI WDS Internal Call End Reasons"^-1^0
+50023^"QMI WDS Call Manager Call End Reasons"^-1^0
+50024^"QMI WDS 3GPP Call End Reasons"^-1^0
+50025^"QMI WDS Call End Reason Types"^-1^0
+50026^"QMI WDS Autoconnect Settings"^-1^0
+50027^"QMI WDS Autoconnect Roam Settings"^-1^0
+50028^"QMI PDP Access Control Flag"^-1^0
+50029^"QMI IP Version"^-1^0
+50030^"QMI Address Allocation Preference"^-1^0
+50031^"QMI QoS Class Identifier"^-1^0
+50032^"QMI Authentication Protocol"^-1^0
+50033^"QMI Data Rate"^-1^0
+50034^"QMI Application Type"^-1^0
+50035^"QMI Data Mode"^-1^0
+50036^"QMI PDN Type"^-1^0
+50037^"QMI Extended Error Code"^-1^0
+50100^"QMI Power Sources"^-1^0
+50101^"QMI Data Service Capabilities 1"^-1^0
+50102^"QMI DMS Radio Interfaces"^-1^0
+50103^"QMI DMS Activation States"^-1^0
+50104^"QMI DMS Operating Modes"^-1^0
+50105^"QMI DMS Timestamp Sources"^-1^0
+50106^"QMI DMS Activation Types"^-1^0
+50107^"QMI DMS Lock States"^-1^0
+50108^"QMI DMS PIN Status"^-1^0
+50109^"QMI DMS UIM Facility"^-1^0
+50110^"QMI DMS UIM Facility States"^-1^0
+50111^"QMI DMS UIM States"^-1^0
+50112^"QMI DMS Image Types"^-1^0
+50113^"QMI DMS Time References"^-1^0
+50200^"QMI NAS Radio Interfaces"^-1^0
+50201^"QMI In Use States"^-1^0
+50202^"QMI Roaming States"^-1^0
+50203^"QMI Forbidden States"^-1^0
+50204^"QMI Preferred States"^-1^0
+50205^"QMI Register Actions"^-1^0
+50206^"QMI Radio Access Technologies"^-1^0
+50207^"QMI PS Attach Actions"^-1^0
+50208^"QMI Registration States"^-1^0
+50209^"QMI CS/PS Attach States"^-1^0
+50210^"QMI Registered Networks"^-1^0
+50211^"QMI Roaming Indicators"^-1^0
+50212^"QMI Tech Pref Durations"^-1^0
+50213^"QMI Tech Prefs"^-1^0
+50214^"QMI Data Service Capabilities 2"^-1^0
+50215^"QMI NAS System Preferences"^-1^0
+50216^"QMI NAS Roaming Preferences"^-1^0
+50217^"QMI NAS Band Classes"^-1^0
+50218^"QMI NAS Service Domains"^-1^0
+50219^"QMI NAS AN-AAA Authentication Status"^-1^0
+50220^"QMI NAS SINR Levels"^-1^0
+50221^"QMI NAS PRL Preferences"^-1^0
+50222^"QMI NAS Roaming Preferences 2"^-1^0
+50223^"QMI NAS DDTM Preferences"^-1^0
+50224^"QMI NAS Service Option Actions"^-1^0
+50225^"QMI NAS Network Description Displays"^-1^0
+50226^"QMI NAS Network Description Encodings"^-1^0
+50227^"QMI NAS PLMN Name Encoding Schemes"^-1^0
+50228^"QMI NAS PLMN Name Country Initials"^-1^0
+50229^"QMI NAS PLMN Name Spare Bits"^-1^0
+50230^"QMI Change Duration"^-1^0
+50300^"QMI WMS Storage Types"^-1^0
+50301^"QMI WMS Message Formats"^-1^0
+50302^"QMI WMS Message Tags"^-1^0
+50303^"QMI WMS Message Protocols"^-1^0
+50304^"QMI WMS Message Types"^-1^0
+50305^"QMI WMS Message Classes"^-1^0
+50306^"QMI WMS Receipt Actions"^-1^0
+50307^"QMI WMS Route Values"^-1^0
+50308^"QMI WMS CDMA Service Options"^-1^0
+50309^"QMI WMS Error Classes"^-1^0
+50310^"QMI WMS Error Classes 2"^-1^0
+50311^"QMI WMS GSM/WCDMA Domains"^-1^0
+50400^"QMI PDS Tracking Session States"^-1^0
+50401^"QMI PDS Session Control Types"^-1^0
+50402^"QMI PDS Session Types"^-1^0
+50403^"QMI PDS Operation Types"^-1^0
+50404^"QMI PDS Server Options"^-1^0
+50405^"QMI PDS Output Devices"^-1^0
+50406^"QMI PDS NMEA Reporting Options"^-1^0
+50407^"QMI PDS Mediums"^-1^0
+50408^"QMI PDS WWAN Network Preferences"^-1^0
+50409^"QMI PDS NMEA Sentence Operating Modes"^-1^0
+50410^"QMI PDS Session Status"^-1^0
+50411^"QMI PDS Calendar Months"^-1^0
+50412^"QMI PDS Calendar Days"^-1^0
+50413^"QMI PDS Wi-Fi Request Types"^-1^0
+50414^"QMI PDS SV Systems"^-1^0
+50415^"QMI PDS SV Health Status"^-1^0
+50416^"QMI PDS SV Processing Status"^-1^0
+50417^"QMI PDS SV Ephemeris Status"^-1^0
+50418^"QMI PDS SV Almanac Status"^-1^0
+50419^"QMI PDS Privacy Modes"^-1^0
+50420^"QMI PDS VX Modes"^-1^0
+50421^"QMI PDS VX Data Coding Schemes"^-1^0
+50422^"QMI PDS SUPL Modes"^-1^0
+50423^"QMI PDS SUPL Data Coding Schemes"^-1^0
+50424^"QMI PDS SUPL ID/Name Data Coding Schemes"^-1^0
+50425^"QMI PDS UMTS CP Data Coding Schemes"^-1^0
+50426^"QMI PDS UMTS CP Location Types"^-1^0
+50427^"QMI PDS Comm Event Types"^-1^0
+50428^"QMI PDS Comm Event Protocols"^-1^0
+50429^"QMI PDS Injected Position Sources"^-1^0
+50430^"QMI PDS SBAS States"^-1^0
+50431^"QMI PDS Time Bases"^-1^0
+50432^"QMI PDS EFS File Operations"^-1^0
+50433^"QMI PDS ODP States"^-1^0
+50434^"QMI PDS Method States"^-1^0
+50435^"QMI Network Mode"^-1^0
+50600^"QMI CAT Alpha ID Command Type"^-1^0
+50601^"QMI CAT Refresh Stage"^-1^0
+50602^"QMI CAT Proactive Session End Type"^-1^0
+50603^"QMI CAT Envelope Command Type"^-1^0
+50700^"QMI AUTH EAP Result"^-1^0
+50800^"QMI OMA Session Types"^-1^0
+50801^"QMI OMA Session States"^-1^0
+50802^"QMI OMA Session Failure Reasons"^-1^0
+50803^"QMI OMA Selections"^-1^0
+50804^"QMI OMA HFA Done States"^-1^0
+50900^"QMI Service Types"^-1^0
+50901^"QMI Driver Data Formats"^-1^0
+50902^"QMI Power Save States "^-1^0
+70000^"USSD Data Coding Schemes"^-1^0
+70001^"USSD Alpha Coding Schemes"^-1^0
+70002^"USSD Notifcation Types"^-1^0

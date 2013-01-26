@@ -1,0 +1,967 @@
+50000^"QMI Result"^16^1^50000^0
+50001^"QMI Error"^16^1^50001^0
+50002^"Transaction ID"^16^0^4^0
+50100^"Report Channel Rate"^8^0^0^0
+50101^"Transfer Statistics Interval (Seconds)"^8^0^2^0
+50102^"Report TX Packet Successes"^1^0^0^0
+50103^"Report RX Packet Successes"^1^0^0^0
+50104^"Report TX Packet Errors"^1^0^0^0
+50105^"Report RX Packet Errors"^1^0^0^0
+50106^"Report TX Overflows"^1^0^0^0
+50107^"Report RX Overflows"^1^0^0^0
+50108^"Report Data Bearer Technology"^8^0^0^0
+50109^"TX Packet Successes"^32^0^6^0
+50110^"RX Packet Successes"^32^0^6^0
+50111^"TX Packet Errors"^32^0^6^0
+50112^"RX Packet Errors"^32^0^6^0
+50113^"TX Overflows"^32^0^6^0
+50114^"RX Overflows"^32^0^6^0
+50115^"Channel TX Rate (bps)"^32^0^6^0
+50116^"Channel RX Rate (bps)"^32^0^6^0
+50117^"Data Bearer Technology"^8^1^50002^0
+50118^"IP V4 Address"^8^0^2^0
+50119^"APN Name"^0^0^11^0
+50120^"Enable PAP"^1^0^0^0
+50121^"Enable CHAP"^1^0^0^0
+50122^"Username"^0^0^11^0
+50123^"Password"^0^0^11^0
+50124^"Enable 3GPP"^1^0^0^0
+50125^"Enable 3GPP2"^1^0^0^0
+50126^"Profile Index"^8^0^2^0
+50127^"Packet Data Handle"^32^0^6^1
+50128^"Connection Status"^8^1^50003^0
+50129^"Reconfigure Required"^8^0^0^0
+50130^"Max Channel TX Rate (bps)"^32^0^6^0
+50131^"Max Channel RX Rate (bps)"^32^0^6^0
+50132^"Profile Type"^8^1^50004^0
+50133^"Profile Name"^0^0^11^0
+50134^"PDP Type"^8^1^50005^0
+50135^"Traffic Class"^8^1^50006^0
+50136^"Max Uplink Bitrate"^32^0^6^0
+50137^"Max Downlink Bitrate"^32^0^6^0
+50138^"Guaranteed Uplink Bitrate"^32^0^6^0
+50139^"Guaranteed Downlink Bitrate"^32^0^6^0
+50140^"QoS Delivery Order"^8^1^50007^0
+50141^"Max SDU Size"^32^0^6^0
+50142^"SDU Error Ratio"^8^1^50008^0
+50143^"SDU Residual Bit Error Ratio"^8^1^50009^0
+50144^"Erroneous SDU Delivery"^8^1^50010^0
+50145^"Transfer Delay"^32^0^6^0
+50146^"Traffic Handling Priority"^32^0^6^0
+50147^"Precedence Class"^32^0^6^0
+50148^"Delay Class"^32^0^6^0
+50149^"Reliability Class"^32^0^6^0
+50150^"Peak Throughput Class"^32^0^6^0
+50151^"Mean Throughput Class"^32^0^6^0
+50152^"Number Of Profiles"^8^0^2^0
+50153^"Profile Name Length"^8^0^2^0
+50154^"Profile Name"^8^0^9^0
+50155^"Report Dormancy Status"^8^0^0^0
+50156^"Dormancy Status"^8^1^50011^0
+50157^"Call End"^16^1^50012^0
+50158^"MIP Mode"^8^1^50013^0
+50159^"Autoconnect Setting"^8^1^50026^0
+50160^"Autoconnect Off"^8^0^0^0
+50161^"Data Session Duration"^64^0^8^0
+50162^"Connection Status"^1^0^0^0
+50163^"Last Call End Reason"^1^0^0^0
+50164^"RX/TX Byte Totals"^1^0^0^0
+50165^"Dormancy Status"^1^0^0^0
+50166^"Data Bearer Technology"^1^0^0^0
+50167^"Channel Rates"^1^0^0^0
+50168^"Report Connection Status"^8^0^0^0
+50169^"TX Byte Total"^1^0^0^0
+50170^"RX Byte Total"^1^0^0^0
+50171^"TX Byte Total"^64^0^8^0
+50172^"RX Byte Total"^64^0^8^0
+50173^"SPC"^48^0^9^0
+50174^"Enabled"^8^0^0^0
+50175^"Reverse Tunneling"^8^0^0^0
+50176^"NAI"^0^0^11^0
+50177^"HA SPI"^32^0^6^0
+50178^"AAA SPI"^32^0^6^0
+50179^"MN-HA Key"^0^0^11^0
+50180^"MN-AAA Key"^0^0^11^0
+50181^"Retry Attempt Limit"^8^0^2^0
+50182^"Retry Attempt Interval"^8^0^2^0
+50183^"Re-Registration Period"^8^0^2^0
+50184^"Re-Registration Only With Traffic"^8^0^0^0
+50185^"MN-HA Authenticator Calculator"^8^0^0^0
+50186^"MN-HA RFC 2002 BIS Authentication"^8^0^0^0
+50187^"Last MIP Status"^8^0^2^0
+50188^"AN-AAA Authenticated"^8^0^0^0
+50189^"Call List Type"^8^1^50014^0
+50190^"Call Records"^16^0^4^0
+50191^"ID"^16^0^4^0
+50192^"Type"^8^1^50015^0
+50193^"Data Bearer"^8^1^50002^0
+50194^"Timestamp"^64^0^8^1
+50196^"Total Duration"^64^0^8^0
+50197^"Active Duration"^64^0^8^0
+50198^"RX Byte Total"^64^0^8^0
+50199^"TX Byte Total"^64^0^8^0
+50201^"Phone Number Length"^8^0^2^0
+50202^"Phone Number"^8^0^9^0
+50203^"Call List Max Size"^16^0^4^0
+50204^"Previous Call TX Byte Total"^64^0^8^0
+50205^"Previous Call RX Byte Total"^64^0^8^0
+50206^"Previous Data Session Duration"^64^0^8^0
+50207^"Data Session Active Duration"^64^0^8^0
+50208^"Previous Data Session Active Duration"^64^0^8^0
+50209^"Duration"^1^0^0^0
+50210^"Profile ID"^1^0^0^0
+50211^"Profile Name"^1^0^0^0
+50212^"PDP Type"^1^0^0^0
+50213^"APN Name"^1^0^0^0
+50214^"DNS Address"^1^0^0^0
+50215^"Granted QoS"^1^0^0^0
+50216^"Username"^1^0^0^0
+50217^"Authentication Protocol"^1^0^0^0
+50218^"IP Address"^1^0^0^0
+50219^"Gateway Info"^1^0^0^0
+50220^"IPv4 Subnet Mask"^32^0^6^1
+50221^"Key State"^8^1^50016^0
+50222^"Report MIP Status"^8^0^0^0
+50223^"MIP Status"^8^0^2^0
+50230^"Network Type"^8^1^50017^0
+50231^"CDMA 1x"^1^0^0^0
+50232^"CDMA 1x Ev-DO Rev. 0"^1^0^0^0
+50233^"CDMA 1x Ev-DO Rev. A"^1^0^0^0
+50234^"WCDMA"^1^0^0^0
+50235^"GPRS"^1^0^0^0
+50236^"HSDPA"^1^0^0^0
+50237^"HSUPA"^1^0^0^0
+50238^"EDGE"^1^0^0^0
+50239^"CDMA 1x IS95"^1^0^0^0
+50240^"CDMA 1x IS2000"^1^0^0^0
+50241^"CDMA 1x IS2000 Rel. A"^1^0^0^0
+50242^"CDMA 1x Ev-DO Rev. A DPA"^1^0^0^0
+50243^"CDMA 1x Ev-DO Rev. A MFPA"^1^0^0^0
+50244^"CDMA 1x Ev-DO Rev. A EMPA"^1^0^0^0
+50245^"Extended Technology Preference"^16^1^50018^0
+50246^"Call Type"^8^1^50019^0
+50247^"IP Family"^8^1^50020^0
+50248^"Call End Reason Type"^16^1^50025^0
+50249^"Call End Reason Value"^16^0^4^0
+50250^"Call End Reason"^16^1^50021^0
+50251^"Call End Reason"^16^1^50022^0
+50252^"Call End Reason"^16^1^50023^0
+50253^"Call End Reason"^16^1^50024^0
+50254^"P-CSCF Address Using PCO"^8^0^0^0
+50255^"P-CSCF Address"^1^0^0^0
+50256^"P-CSCF Server Address List"^1^0^0^0
+50257^"P-CSCF Domain Name List"^1^0^0^0
+50258^"MTU"^1^0^0^0
+50259^"Domain Name List"^1^0^0^0
+50260^"IP Family"^1^0^0^0
+50261^"IM CN Flag"^1^0^0^0
+50262^"Extended Technology"^1^0^0^0
+50263^"Number Of Instances"^8^0^2^0
+50264^"FQDN Length"^16^0^4^0
+50265^"FQDN"^8^0^9^0
+50266^"MTU"^32^0^6^0
+50267^"Domain Name Length"^16^0^4^0
+50268^"Domain Name"^8^0^9^0
+50269^"IM CN"^8^0^0^0
+50270^"Autoconnect Roam Setting"^8^1^50027^0
+50271^"DNS Address"^8^0^2^0
+50272^"IP Prefix Length"^8^0^2^0
+50273^"LTE"^1^0^0^0
+50274^"CDMA 1x Ev-DO Rev. A EMPA EHRPD"^1^0^0^0
+50275^"IPv6 Address"^16^0^4^1
+50276^"PDP Access Control Flag"^8^1^50028^0
+50277^"P-CSCF Address Using DHCP"^8^0^0^0
+50278^"Filter ID"^8^0^2^0
+50279^"Evaluation ID"^8^0^2^0
+50280^"IP Version"^8^1^50029^0
+50281^"IP Source"^8^0^2^0
+50282^"Source IP Mask"^8^0^2^0
+50283^"Next Header"^8^0^2^0
+50284^"Destination Port Range Start"^16^0^4^0
+50285^"Destination Port Range End"^16^0^4^0
+50286^"Source Port Range Start"^16^0^4^0
+50287^"Source Port Range End"^16^0^4^0
+50288^"IPSEC Security Parameter Index"^32^0^6^0
+50289^"TOS Mask"^16^0^4^0
+50290^"Flow Label"^32^0^6^0
+50291^"PDP Context Number"^8^0^2^0
+50292^"PDP Context Secondary Flag"^8^0^0^0
+50293^"PDP Primary ID"^8^0^2^0
+50294^"Signaling Indication"^8^0^0^0
+50295^"Address Allocation Preference"^8^1^50030^0
+50296^"QoS Class Identifier"^8^1^50031^0
+50297^"Negotiate DNS Server Preference"^8^0^0^0
+50298^"PPP Session Close Timer DO"^32^0^6^0
+50299^"PPP Session Close Timer 1X"^32^0^6^0
+50300^"Allow Linger"^8^0^0^0
+50301^"Timeout"^16^0^4^0
+50302^"Retry Count"^8^0^2^0
+50303^"Authentication Protocol"^8^1^50032^0
+50304^"Data Rate"^8^1^50033^0
+50305^"Application Type"^32^1^50034^0
+50306^"Data Mode"^8^1^50035^0
+50307^"Application Priority"^8^0^2^0
+50308^"PDN Type"^8^1^50036^0
+50309^"P-CSCF Address Needed"^8^0^0^0
+50310^"Extended Error Code"^16^1^50037^0
+50311^"Number Of Addresses"^8^0^2^0
+51000^"Report Power State"^8^0^0^0
+51001^"Battery Level Lower Limit (%)"^8^0^2^0
+51002^"Battery Level Upper Limit (%)"^8^0^2^0
+51003^"Power Source"^1^1^50100^0
+51004^"Battery Connected"^1^0^0^0
+51005^"Battery Charging"^1^0^0^0
+51006^"Power Fault"^1^0^0^0
+51007^"Battery Level (%)"^8^0^2^0
+51008^"Max TX Rate (bps)"^32^0^6^0
+51009^"Max RX Rate (bps)"^32^0^6^0
+51010^"Data Service Capability"^8^1^50101^0
+51011^"SIM Supported"^8^0^0^0
+51012^"Radio Interface Count"^8^0^2^0
+51013^"Radio Interface"^8^1^50102^0
+51014^"Device Manfacturer"^0^0^11^0
+51015^"Device Model ID"^0^0^11^0
+51016^"Device Revision ID"^0^0^11^0
+51017^"Device Voice Number"^0^0^11^0
+51018^"ESN"^0^0^11^0
+51019^"IMEI"^0^0^11^0
+51020^"MEID"^0^0^11^0
+51021^"Report Activation State"^8^0^0^0
+51022^"Activation State"^16^1^50103^0
+51023^"Device Mobile ID Number"^0^0^11^0
+51024^"Device Hardware Revision"^0^0^11^0
+51025^"Operating Mode"^8^1^50104^0
+51026^"Timestamp"^48^0^8^1
+51027^"Source"^16^1^50105^0
+51028^"PRL Version"^16^0^4^0
+51030^"SPC"^48^0^9^0
+51031^"SID"^16^0^4^0
+51032^"MDN Length"^8^0^2^0
+51033^"MDN"^8^0^9^0
+51034^"MIN Length"^8^0^2^0
+51035^"MIN"^8^0^9^0
+51036^"PRL Length"^16^0^4^0
+51037^"PRL"^8^0^2^1
+51038^"MN-HA Length"^8^0^2^0
+51039^"MN-HA"^8^0^9^0
+51040^"MN-AAA Length"^8^0^2^0
+51041^"MN-AAA"^8^0^9^0
+51042^"Lock State"^8^1^50107^0
+51043^"Lock Code"^32^0^9^0
+51044^"Current Lock Code"^32^0^9^0
+51045^"New Lock Code"^32^0^9^0
+51046^"Data Length"^16^0^4^0
+51047^"Data"^8^0^2^1
+51048^"Code Length"^8^0^2^0
+51049^"Code"^8^0^9^0
+51050^"PIN ID"^8^0^2^0
+51051^"PIN Enabled"^8^0^2^0
+51052^"PIN Length"^8^0^2^0
+51053^"PIN Value"^8^0^9^0
+51054^"Remaining Verify Retries"^8^0^2^0
+51055^"Remaining Unblock Retries"^8^0^2^0
+51056^"PUK Length"^8^0^2^0
+51057^"PUK Value"^8^0^9^0
+51058^"Old PIN Length"^8^0^2^0
+51059^"Old PIN Value"^8^0^9^0
+51060^"New PIN Length"^8^0^2^0
+51061^"New PIN Value"^8^0^9^0
+51062^"PIN Status"^8^1^50108^0
+51063^"Report PIN Status"^8^0^0^0
+51064^"PRL Total Length"^16^0^4^0
+51065^"PRL Segment Length"^16^0^4^0
+51066^"PRL Segment ID"^8^0^2^0
+51067^"Boot Code Revision ID"^0^0^11^0
+51068^"UQCN Revision ID"^0^0^11^0
+51069^"IMSI"^0^0^11^0
+51070^"Host Image Mismatch"^1^0^2^0
+51071^"UQCN Image Mismatch"^1^0^2^0
+51072^"Incompatible UQCN"^1^0^2^0
+51073^"ICCID"^0^0^11^0
+51074^"Firmware ID"^32^0^6^0
+51075^"Host Lock Code"^32^0^6^0
+51076^"Platform Restricted"^8^0^0^0
+51077^"Report Operating Mode"^8^0^0^0
+51078^"Facility"^8^1^50109^0
+51079^"Facility State"^8^1^50110^0
+51080^"Control Key Length"^8^0^2^0
+51081^"Control Key"^8^0^9^0
+51082^"UQCN Copy Issue"^1^0^2^0
+51083^"Report UIM State"^8^0^0^0
+51084^"UIM State"^8^1^50111^0
+51085^"Operation Blocking"^8^0^0^0
+51090^"Number Of Images"^8^0^2^0
+51091^"Image Type"^8^1^50112^0
+51092^"Image ID"^8^0^2^1
+51093^"Build ID Length"^8^0^2^0
+51094^"Build ID"^8^0^9^0
+51095^"Force Download"^8^0^0^0
+51096^"Storage Index"^8^0^2^0
+51097^"Maximum Build ID Length"^8^0^2^0
+51098^"Number Of Image Types"^8^0^2^0
+51099^"Maximum Number Of Images"^8^0^2^0
+51100^"Index Of Executing Image"^8^0^2^0
+51101^"Failure Count"^8^0^2^0
+51110^"Band Class 0 - A System"^1^0^0^0
+51111^"Band Class 0 - B System"^1^0^0^0
+51112^"Band Class 1"^1^0^0^0
+51113^"Band Class 2"^1^0^0^0
+51114^"Band Class 3 - A System"^1^0^0^0
+51115^"Band Class 4"^1^0^0^0
+51116^"Band Class 5"^1^0^0^0
+51117^"GSM DCS"^1^0^0^0
+51118^"GSM Primary"^1^0^0^0
+51119^"GSM Extended"^1^0^0^0
+51120^"Band Class 6"^1^0^0^0
+51121^"Band Class 7"^1^0^0^0
+51122^"Band Class 8"^1^0^0^0
+51123^"Band Class 9"^1^0^0^0
+51124^"Band Class 10"^1^0^0^0
+51125^"Band Class 11"^1^0^0^0
+51126^"GSM 450"^1^0^0^0
+51127^"GSM 480"^1^0^0^0
+51128^"GSM 750"^1^0^0^0
+51129^"GSM 850"^1^0^0^0
+51130^"GSM Railways"^1^0^0^0
+51131^"GSM PCS"^1^0^0^0
+51132^"WCDMA 2100I"^1^0^0^0
+51133^"WCDMA PCS 1900"^1^0^0^0
+51134^"WCDMA DCS 1800"^1^0^0^0
+51135^"WCDMA 1700 (US)"^1^0^0^0
+51136^"WCDMA 850"^1^0^0^0
+51137^"WCDMA 800"^1^0^0^0
+51138^"Band Class 12"^1^0^0^0
+51139^"Band Class 14"^1^0^0^0
+51140^"Band Class 15"^1^0^0^0
+51141^"WCDMA 2600"^1^0^0^0
+51142^"WCDMA 900"^1^0^0^0
+51143^"WCDMA 1700 (Japan)"^1^0^0^0
+51144^"Band Class 16"^1^0^0^0
+51145^"Band Class 17"^1^0^0^0
+51146^"Band Class 18"^1^0^0^0
+51147^"Band Class 19"^1^0^0^0
+51148^"Report Wireless Disable State"^8^0^0^0
+51149^"Wireless Disable On"^8^0^0^0
+51150^"Factory Serial Number"^0^0^11^0
+51151^"Alternate Enabled"^8^0^0^0
+51152^"Time In Milliseconds"^64^0^8^0
+51153^"Time Reference"^32^1^50113^0
+51154^"Boot Major Version"^16^0^4^0
+51155^"Boot Minor Version"^16^0^4^0
+51156^"PRI Version"^32^0^6^1
+51157^"PRI Info"^256^0^9^0
+51158^"OEM Lock ID"^32^0^6^1
+51159^"BAR Mode"^8^0^0^0
+52000^"Report Signal Strength"^8^0^0^0
+52001^"Number Of Thresholds"^8^0^2^0
+52002^"Signal Strength Threshold (dBm)"^8^0^1^0
+52003^"Signal Strength (dBm)"^8^0^1^0
+52004^"Radio Interface"^8^1^50200^0
+52005^"Number Of Info Instances"^16^0^4^0
+52006^"Mobile Country Code"^16^0^4^0
+52007^"Mobile Network Code"^16^0^4^0
+52008^"In Use Status"^2^1^50201^0
+52009^"Roaming Status"^2^1^50202^0
+52010^"Forbidden Status"^2^1^50203^0
+52011^"Preferred Status"^2^1^50204^0
+52012^"Description Length"^8^0^2^0
+52013^"Description"^8^0^9^0
+52014^"Register Action"^8^1^50205^0
+52015^"Radio Access Technology"^8^1^50206^0
+52016^"PS Attach Action"^8^1^50207^0
+52017^"Registration State"^8^1^50208^0
+52018^"CS Attach State"^8^1^50209^0
+52019^"PS Attach State"^8^1^50209^0
+52020^"Registered Network"^8^1^50210^0
+52021^"Number Of Radio Interfaces In Use"^8^0^2^0
+52022^"Roaming Indicator"^8^1^50211^0
+52023^"Number Of Preferred Networks"^16^0^4^0
+52024^"GSM Compact"^1^0^0^0
+52025^"GSM"^1^0^0^0
+52026^"UMTS"^1^0^0^0
+52027^"Number Of Forbidden Networks"^16^0^4^0
+52028^"System ID"^16^0^4^0
+52029^"Network ID"^16^0^4^0
+52032^"Duration"^8^1^50212^0
+52033^"ACCOLC"^8^0^2^0
+52034^"SPC"^48^0^9^0
+52035^"Technology"^2^1^50213^0
+52036^"Analog"^1^0^2^0
+52037^"Digital"^1^0^2^0
+52038^"EV-DO"^1^0^2^0
+52039^"GSM"^1^0^2^0
+52040^"WCDMA"^1^0^2^0
+52041^"Number Of Data Capabilities"^8^0^2^0
+52042^"Data Capability"^8^1^50214^0
+52043^"System Preference"^8^1^50215^0
+52044^"Slot Cycle Index"^8^0^2^0
+52045^"Station Class Mark"^8^0^2^0
+52046^"Register On Home System"^8^0^0^0
+52047^"Register On Foreign System"^8^0^0^0
+52048^"Register On Foreign Network"^8^0^0^0
+52049^"Force CDMA 1xEV-DO Rev. 0"^8^0^0^0
+52050^"CDMA 1xEV-DO SCP Custom Config"^8^0^0^0
+52051^"Subtype 2 Physical Layer"^1^0^0^0
+52052^"Enhanced CC MAC"^1^0^0^0
+52053^"Enhanced AC MAC"^1^0^0^0
+52054^"Enhanced FTC MAC"^1^0^0^0
+52055^"Subtype 3 RTC MAC"^1^0^0^0
+52056^"Subtype 1 RTC MAC"^1^0^0^0
+52057^"Enhanced Idle"^1^0^0^0
+52058^"Generic Multimode Capable Disc Port"^1^0^0^0
+52059^"Generic Broadcast"^1^0^0^0
+52060^"SN Multiflow Packet Application"^1^0^0^0
+52061^"SN Enhanced Multiflow Packet Application"^1^0^0^0
+52062^"Roam Preference"^8^1^50216^0
+52063^"Active Band Class"^16^1^50217^0
+52064^"Active Channel"^16^0^4^0
+52065^"Report RF Info"^8^0^0^0
+52066^"Report LU Reject"^8^0^0^0
+52067^"Number Of Instances"^8^0^2^0
+52068^"Service Domain"^8^1^50218^0
+52069^"Reject Cause"^16^0^4^0
+52070^"AN-AAA Authentication Status"^8^1^50219^0
+52080^"Report RSSI"^8^0^0^0
+52081^"RSSI Delta"^8^0^2^0
+52082^"Report ECIO"^8^0^0^0
+52083^"ECIO Delta"^8^0^2^0
+52084^"Report IO"^8^0^0^0
+52085^"IO Delta"^8^0^2^0
+52086^"Report SINR"^8^0^0^0
+52087^"SINR Delta"^8^0^2^0
+52088^"Report Error Rate"^8^0^0^0
+52089^"RSSI"^8^0^2^0
+52090^"ECIO"^8^0^2^0
+52091^"IO"^32^0^6^0
+52092^"SINR"^8^1^50220^0
+52093^"Error Rate"^16^0^4^0
+52094^"Report System Select"^8^0^0^0
+52095^"Report DDTM"^8^0^0^0
+52096^"Report Serving System"^8^0^0^0
+52097^"Number Of Measurements"^16^0^4^0
+52098^"Base Station ID"^16^0^4^0
+52099^"Latitude"^32^0^5^0
+52100^"Longitude"^32^0^5^0
+52101^"Leap Seconds"^8^0^2^0
+52102^"Local Time Offset"^8^0^1^0
+52103^"Daylight Savings In Effect"^8^0^0^0
+52104^"Protocol Revision"^8^0^2^0
+52105^"Emergency Mode On"^8^0^0^0
+52106^"CDMA 1x"^1^0^0^0
+52107^"CDMA 1xEV-DO"^1^0^0^0
+52108^"GSM"^1^0^0^0
+52109^"UMTS"^1^0^0^0
+52110^"Band Class 0 - A System"^1^0^0^0
+52111^"Band Class 0 - B System"^1^0^0^0
+52112^"Band Class 1"^1^0^0^0
+52113^"Band Class 2"^1^0^0^0
+52114^"Band Class 3 - A System"^1^0^0^0
+52115^"Band Class 4"^1^0^0^0
+52116^"Band Class 5"^1^0^0^0
+52117^"GSM DCS"^1^0^0^0
+52118^"GSM Primary"^1^0^0^0
+52119^"GSM Extended"^1^0^0^0
+52120^"Band Class 6"^1^0^0^0
+52121^"Band Class 7"^1^0^0^0
+52122^"Band Class 8"^1^0^0^0
+52123^"Band Class 9"^1^0^0^0
+52124^"Band Class 10"^1^0^0^0
+52125^"Band Class 11"^1^0^0^0
+52126^"GSM 450"^1^0^0^0
+52127^"GSM 480"^1^0^0^0
+52128^"GSM 750"^1^0^0^0
+52129^"GSM 850"^1^0^0^0
+52130^"GSM Railways"^1^0^0^0
+52131^"GSM PCS"^1^0^0^0
+52132^"WCDMA 2100I"^1^0^0^0
+52133^"WCDMA PCS 1900"^1^0^0^0
+52134^"WCDMA DCS 1800"^1^0^0^0
+52135^"WCDMA 1700 (US)"^1^0^0^0
+52136^"WCDMA 850"^1^0^0^0
+52137^"WCDMA 800"^1^0^0^0
+52138^"Band Class 12"^1^0^0^0
+52139^"Band Class 14"^1^0^0^0
+52140^"Band Class 15"^1^0^0^0
+52141^"WCDMA 2600"^1^0^0^0
+52142^"WCDMA 900"^1^0^0^0
+52143^"WCDMA 1700 (Japan)"^1^0^0^0
+52144^"Band Class 16"^1^0^0^0
+52145^"Band Class 17"^1^0^0^0
+52146^"Band Class 18"^1^0^0^0
+52147^"Band Class 19"^1^0^0^0
+52148^"PRL Preference"^16^1^50221^0
+52149^"Roaming Preference"^16^1^50222^0
+52150^"DDTM Preference"^8^1^50223^0
+52151^"Suppress L2 ACK"^1^0^0^0
+52152^"Suppress 1x Registrations"^1^0^0^0
+52153^"Ignore Service Option Pages"^1^0^0^0
+52154^"Block Mobile Originated SMS And DBM"^1^0^0^0
+52155^"Service Option Action"^8^1^50224^0
+52156^"Service Option"^16^0^4^0
+52157^"Query RSSI"^1^0^0^0
+52158^"Query ECIO"^1^0^0^0
+52159^"Query IO"^1^0^0^0
+52160^"Query SINR"^1^0^0^0
+52161^"Query Error Rate"^1^0^0^0
+52162^"Display Network Description"^8^1^50225^0
+52163^"Network Description Encoding"^8^1^50226^0
+52164^"Network Description Length"^8^0^2^0
+52165^"Network Description"^8^0^2^1
+52166^"PLMN Changed"^8^0^0^0
+52167^"Restrict Manual PLMN Selection"^8^0^0^0
+52168^"SPN Encoding"^8^1^50227^0
+52169^"SPN Length"^8^0^2^0
+52170^"SPN"^8^0^2^1
+52171^"PLMN Short Encoding"^8^1^50227^0
+52172^"PLMN Short Country Initials"^8^1^50228^0
+52173^"PLMN Spare Bits"^8^1^50229^0
+52174^"PLMN Short Length"^8^0^2^0
+52175^"PLMN Short"^8^0^2^1
+52176^"PLMN Long Encoding"^8^1^50227^0
+52177^"PLMN Long Country Initials"^8^1^50228^0
+52178^"PLMN Long Bits"^8^1^50229^0
+52179^"PLMN Long Length"^8^0^2^0
+52180^"PLMN Long"^8^0^2^1
+52181^"RSRQ"^8^0^1^0
+52182^"Change Duration"^8^1^50230^0
+52183^"Report RSRQ"^8^0^0^0
+52184^"RSRQ Delta"^8^0^2^0
+53000^"Report New MT Messages"^8^0^0^0
+53001^"Storage Type"^8^1^50300^0
+53002^"Storage Index"^32^0^6^0
+53003^"Message Format"^8^1^50301^0
+53004^"Raw Message Length"^16^0^4^0
+53005^"Raw Message"^8^0^2^1
+53006^"Cause Code"^16^0^4^0
+53007^"Message Tag"^8^1^50302^0
+53008^"Mode"^8^1^50303^0
+53009^"Number Of Messages"^32^0^6^0
+53010^"Number Of Routes"^16^0^4^0
+53011^"Message Type"^8^1^50304^0
+53012^"Message Class"^8^1^50305^0
+53013^"Receipt Action"^8^1^50306^0
+53014^"Route Value"^8^1^50307^0
+53015^"SMSC Address Type"^24^0^9^0
+53016^"SMSC Address Length"^8^0^2^0
+53017^"SMSC Address"^8^0^9^0
+53018^"SMSC Address Type"^8^0^11^0
+53019^"SMSC Address"^8^0^11^0
+53020^"ACK Required"^8^0^0^0
+53021^"Transaction ID"^32^0^6^0
+53022^"Force Send On DC"^8^0^0^0
+53023^"Service Option"^8^1^50308^0
+53024^"Do Not Disconnect DC"^8^0^0^0
+53025^"Link Timer In Seconds"^8^0^2^0
+53026^"Error Class"^8^1^50309^0
+53027^"GSM/WCDMA RP Cause"^16^0^4^0
+53028^"GSM/WCDMA TP Cause"^8^0^2^0
+53029^"Transfer Status Reports"^8^0^0^0
+53030^"Max Storage Size In Messages"^32^0^6^0
+53031^"Free Storage Size In Messages"^32^0^6^0
+53032^"Processed Successfully"^8^0^0^0
+53033^"Error Class"^8^1^50310^0
+53034^"Transport Layer Status"^8^0^2^0
+53035^"GSM/WCDMA RP Cause"^8^0^2^0
+53036^"Retry Period In Seconds"^32^0^6^0
+53037^"Retry Interval In Seconds"^32^0^6^0
+53038^"DC Disconnect Timer In Seconds"^32^0^6^0
+53039^"Memory Is Available"^8^0^0^0
+53040^"Activate Broadcast"^8^0^0^0
+53041^"Number Of Instances"^16^0^4^0
+53042^"Message ID Start"^16^0^4^0
+53043^"Message ID End"^16^0^4^0
+53044^"Selected"^8^0^0^0
+53045^"Service Category"^16^0^4^0
+53046^"Language"^16^0^4^0
+53047^"Activated"^8^0^0^0
+53048^"Domain Preference"^8^1^50311^0
+53049^"Message ID"^16^0^4^0
+54000^"Report NMEA Sentences"^8^0^0^0
+54001^"NMEA Sentence"^0^0^11^0
+54002^"Service Enabled"^8^0^0^0
+54003^"Tracking Session State"^8^1^50400^0
+54004^"Session Control"^8^1^50401^0
+54005^"Session Type"^8^1^50402^0
+54006^"Session Operation"^8^1^50403^0
+54007^"Server Option"^8^1^50404^0
+54008^"Timeout In Seconds"^8^0^2^0
+54009^"Session Fix Requests"^32^0^6^0
+54010^"Fix Request Interval In Seconds"^32^0^6^0
+54011^"Desired Accuracy In Meters"^32^0^6^0
+54012^"GGA NMEA Sentences"^1^0^0^0
+54013^"RMC NMEA Sentences"^1^0^0^0
+54014^"GSV NMEA Sentences"^1^0^0^0
+54015^"GSA NMEA Sentences"^1^0^0^0
+54016^"VTG NMEA Sentences"^1^0^0^0
+54017^"Output Device"^8^1^50405^0
+54018^"NMEA Reporting"^8^1^50406^0
+54019^"System Time"^64^0^8^0
+54020^"System Discontinuties"^16^0^4^0
+54021^"Automatic Download Enabled"^8^0^0^0
+54022^"Download Interval In Hours"^16^0^4^0
+54023^"Medium Preferences"^8^0^2^0
+54024^"Medium Preference"^8^1^50407^0
+54025^"WWAN Network Preference"^8^1^50408^0
+54026^"Valid Period - GPS Start Week"^16^0^4^0
+54027^"Valid Period - GPS Start Week Offset In Minutes"^16^0^4^0
+54028^"Valid Period - Duration In Hours"^16^0^4^0
+54029^"Server Address"^8^0^2^0
+54030^"Server Port"^32^0^6^0
+54031^"Auto-Tracking Enabled"^8^0^0^0
+54032^"Reset EPH"^1^0^0^0
+54033^"Reset ALM"^1^0^0^0
+54034^"Reset POS"^1^0^0^0
+54035^"Reset TIME"^1^0^0^0
+54036^"Reset IONO"^1^0^0^0
+54037^"Reset UTC"^1^0^0^0
+54038^"Reset HEALTH"^1^0^0^0
+54039^"Reset SVDIR"^1^0^0^0
+54040^"Reset SVSTEER"^1^0^0^0
+54041^"Reset SADATA"^1^0^0^0
+54042^"Reset RTI"^1^0^0^0
+54043^"Reset ALM CORR"^1^0^0^0
+54044^"Reset FREQ BIAS EST"^1^0^0^0
+54045^"Reset POS"^1^0^0^0
+54046^"Reset LATEST GPS POS"^1^0^0^0
+54047^"Reset OTA POS"^1^0^0^0
+54048^"Reset EXT REF POS"^1^0^0^0
+54049^"Reset TIMETAG"^1^0^0^0
+54050^"Reset CELLID"^1^0^0^0
+54051^"Reset CACHED CELLID"^1^0^0^0
+54052^"Reset LAST SRV CELL"^1^0^0^0
+54053^"Reset CUR SRV CELL"^1^0^0^0
+54054^"Reset NEIGHBOR INFO"^1^0^0^0
+54055^"Report NMEA Sentences Plus Mode"^8^0^0^0
+54056^"NMEA Sentence Operating Mode"^8^1^50409^0
+54057^"NMEA Sentence Length"^16^0^4^0
+54058^"NMEA Sentence"^8^0^9^0
+54100^"Report Raw Position Data"^8^0^0^0
+54101^"Report External XTRA Data Requests"^8^0^0^0
+54102^"Report External Time Injections"^8^0^0^0
+54103^"Report External Wi-Fi Requests"^8^0^0^0
+54104^"Report Satellite Info"^8^0^0^0
+54105^"Report VX Network Initiated Prompts"^8^0^0^0
+54106^"Report SUPL Network Initiated Prompts"^8^0^0^0
+54107^"Report UMTS CP Network Initiated Prompts"^8^0^0^0
+54108^"Report PDS Comm Events"^8^0^0^0
+54109^"Session Status"^8^1^50410^0
+54110^"Timestamp Calendar Valid"^1^0^0^0
+54111^"Timestamp UTC Valid"^1^0^0^0
+54112^"Leap Seconds Valid"^1^0^0^0
+54113^"Time Uncertainty Valid"^1^0^0^0
+54114^"Latitude Valid"^1^0^0^0
+54115^"Longitude Valid"^1^0^0^0
+54116^"Ellipsoid Altitude Valid"^1^0^0^0
+54117^"Mean Sea Level Altitude Valid"^1^0^0^0
+54118^"Horizontal Speed Valid"^1^0^0^0
+54119^"Vertical Speed Valid"^1^0^0^0
+54120^"Heading Valid"^1^0^0^0
+54121^"Horizontal Uncertainty Circular Valid"^1^0^0^0
+54122^"Horizontal Uncertainty Ellipse Semi-Major Valid"^1^0^0^0
+54123^"Horizontal Uncertainty Ellipse Semi-Minor Valid"^1^0^0^0
+54124^"Horizontal Uncertainty Ellipse Orient Azimuth Valid"^1^0^0^0
+54125^"Vertical Uncertainty Valid"^1^0^0^0
+54126^"Horizontal Velocity Uncertainty Valid"^1^0^0^0
+54127^"Vertical Velocity Uncertainty Valid"^1^0^0^0
+54128^"Horizontal Confidence Valid"^1^0^0^0
+54129^"Position DOP Valid"^1^0^0^0
+54130^"Horizontal DOP  Valid"^1^0^0^0
+54131^"Vertical DOP Valid"^1^0^0^0
+54132^"Operating Mode Used Valid"^1^0^0^0
+54133^"Calendar Year"^16^0^4^0
+54134^"Calendar Month"^8^1^50411^0
+54135^"Calendar Day"^8^1^50412^0
+54136^"Calendar Day Of Month"^8^0^2^0
+54137^"Calendar Hour"^8^0^2^0
+54138^"Calendar Minute"^8^0^2^0
+54139^"Calendar Second"^8^0^2^0
+54140^"Calendar Millisecond"^16^0^4^0
+54141^"Calendar Leap Seconds"^8^0^2^0
+54142^"UTC Timestamp"^64^0^8^1
+54143^"UTC Timestamp Uncertainty"^32^0^6^0
+54144^"Latitude"^64^0^14^0
+54145^"Longitude"^64^0^14^0
+54146^"Ellipsoid Altitude"^32^0^13^0
+54147^"Mean Sea Level Altitude"^32^0^13^0
+54148^"Horizontal Speed"^32^0^13^0
+54149^"Vertical Speed"^32^0^13^0
+54150^"Heading"^32^0^13^0
+54151^"Horizontal Uncertainty Circular"^32^0^13^0
+54152^"Horizontal Uncertainty Ellipse Semi-Major"^32^0^13^0
+54153^"Horizontal Uncertainty Ellipse Semi-Minor"^32^0^13^0
+54154^"Horizontal Uncertainty Ellipse Orient Azimuth"^32^0^13^0
+54155^"Vertical Uncertainty"^32^0^13^0
+54156^"Horizontal Velocity Uncertainty"^32^0^13^0
+54157^"Vertical Velocity Uncertainty"^32^0^13^0
+54158^"Horizontal Confidence"^8^0^2^0
+54159^"Position DOP "^32^0^13^0
+54160^"Horizontal DOP"^32^0^13^0
+54161^"Vertical DOP"^32^0^13^0
+54162^"Operating Mode"^8^1^50409^0
+54163^"Maximum File Size"^16^0^4^0
+54164^"URL Record Count"^8^0^2^0
+54165^"URL Length"^8^0^2^0
+54166^"URL"^8^0^9^0
+54167^"Delay Threshold"^32^0^6^0
+54168^"Wi-Fi Request Type"^8^1^50413^0
+54169^"Wi-Fi Request Time Between Fixes"^16^0^4^0
+54170^"Iono Valid"^1^0^0^0
+54171^"Satellite Count Valid"^1^0^0^0
+54172^"Satellite List Valid"^1^0^0^0
+54173^"Ionospheric Corrections"^8^0^0^0
+54174^"SV Record Count"^8^0^2^0
+54175^"System Valid"^1^0^0^0
+54176^"PRN Valid"^1^0^0^0
+54177^"Health Status Valid"^1^0^0^0
+54178^"Process Status Valid"^1^0^0^0
+54179^"Ephemeris State Valid"^1^0^0^0
+54180^"Almanac State Valid"^1^0^0^0
+54181^"Elevation Valid"^1^0^0^0
+54182^"Azimuth Valid"^1^0^0^0
+54183^"CN0 Valid"^1^0^0^0
+54184^"System"^8^1^50414^0
+54185^"PRN"^8^0^2^0
+54186^"Health Level"^8^1^50415^0
+54187^"Processing Status"^8^1^50416^0
+54188^"Ephemeris State"^8^1^50417^0
+54189^"Almanac State"^8^1^50418^0
+54190^"Azimuth"^16^0^4^0
+54191^"CN0"^16^0^4^0
+54192^"Privacy Valid"^1^0^0^0
+54193^"QoS Valid"^1^0^0^0
+54194^"Count Valid"^1^0^0^0
+54195^"Interval Valid"^1^0^0^0
+54196^"Mode Valid"^1^0^0^0
+54197^"Requestor ID Valid"^1^0^0^0
+54198^"Privacy"^8^1^50419^0
+54199^"QoS"^8^0^2^0
+54200^"Position Count"^32^0^6^0
+54201^"Interval Between Fixes"^32^0^6^0
+54202^"Mode"^8^1^50420^0
+54203^"Requestor ID DCS"^8^1^50421^0
+54204^"Requestor ID Length"^8^0^2^0
+54205^"Requestor ID"^8^0^2^1
+54206^"Privacy Valid"^1^0^0^0
+54207^"INIT Hash Valid"^1^0^0^0
+54208^"Mode Valid"^1^0^0^0
+54209^"SLP Session ID Valid"^1^0^0^0
+54210^"SLP Server IPv4 Address Valid"^1^0^0^0
+54211^"SLP Server IPv6 Address  Valid"^1^0^0^0
+54212^"SLP Server URL Address  Valid"^1^0^0^0
+54213^"DCS Valid"^1^0^0^0
+54214^"Requestor ID Valid"^1^0^0^0
+54215^"Client Name Valid"^1^0^0^0
+54216^"QoP Horizontal Accuracy Valid"^1^0^0^0
+54217^"QoP Vertical Accuracy Valid"^1^0^0^0
+54218^"QoP Max Location Age Valid"^1^0^0^0
+54219^"QoP Delay Valid"^1^0^0^0
+54220^"Privacy"^8^1^50419^0
+54221^"INIT Hash"^64^0^8^1
+54222^"Mode"^8^1^50422^0
+54223^"SLP Session ID"^32^0^6^0
+54224^"SLP Server IPv4 Port"^32^0^6^0
+54225^"SLP Server IPv4 Address"^8^0^2^0
+54226^"SLP Server IPv6 Address"^8^0^2^0
+54227^"SLP Server URL Length"^8^0^2^0
+54228^"SLP Server URL Address"^8^0^9^0
+54229^"Request DCS"^8^1^50423^0
+54230^"Requestor ID DCS"^8^1^50424^0
+54231^"Requestor ID Length"^8^0^2^0
+54232^"Requestor ID"^8^0^2^1
+54233^"Client Name DCS"^8^1^50424^0
+54234^"Client Name Length"^8^0^2^0
+54235^"Client Name"^8^0^2^1
+54236^"QoP Horizontal Accuracy"^8^0^2^0
+54237^"QoP Vertical Accuracy"^8^0^2^0
+54238^"QoP Max Location Age"^8^0^2^0
+54239^"QoP Delay"^8^0^2^0
+54250^"Privacy Valid"^1^0^0^0
+54251^"Invoke ID Valid"^1^0^0^0
+54252^"Notification Text Valid"^1^0^0^0
+54253^"Client Address Valid"^1^0^0^0
+54254^"Location Type Valid"^1^0^0^0
+54255^"Requestor ID Valid"^1^0^0^0
+54256^"Codeword String Valid"^1^0^0^0
+54257^"Service Type ID Valid"^1^0^0^0
+54258^"Privacy"^8^1^50419^0
+54259^"Invoke ID"^8^0^2^0
+54260^"Notification Text DCS"^8^1^50425^0
+54261^"Notification Text Length"^8^0^2^0
+54262^"Notification Text"^8^0^2^1
+54263^"Client Address Length"^8^0^2^0
+54264^"Client Address"^8^0^9^0
+54265^"Location Type"^8^1^50426^0
+54266^"Requestor ID DCS"^8^1^50425^0
+54267^"Requestor ID Length"^8^0^2^0
+54268^"Requestor ID"^8^0^2^1
+54269^"Codeword DCS"^8^1^50425^0
+54270^"Codeword Length"^8^0^2^0
+54271^"Codeword"^8^0^2^1
+54272^"Service Type ID"^8^0^2^0
+54273^"Type"^8^1^50427^0
+54274^"Protocol/Data Type"^8^1^50428^0
+54275^"Embedded XTRA Data Client Enabled"^8^0^0^0
+54276^"Embedded XTRA Time Client Enabled"^8^0^0^0
+54277^"Service Major Version"^8^0^2^0
+54278^"Service Minor Version"^8^0^2^0
+54279^"Sequence Number"^8^0^2^0
+54280^"Total Length"^16^0^4^0
+54281^"Sequence Length"^16^0^4^0
+54282^"Data"^8^0^2^1
+54283^"Vertical Confidence"^8^0^2^0
+54284^"Source"^8^1^50429^0
+54285^"Wi-Fi Time Counter"^32^0^6^0
+54286^"Wi-Fi Latitude"^32^0^5^0
+54287^"Wi-Fi Longitude"^32^0^5^0
+54288^"HEPE In Meters"^16^0^4^0
+54289^"AP Count"^8^0^2^0
+54290^"Error Code"^8^0^2^0
+54291^"MAC Address"^8^0^2^1
+54292^"RSSI"^32^0^6^0
+54293^"Beacon Channel"^16^0^4^0
+54294^"State"^8^1^50430^0
+54295^"Enable SBAS"^8^0^0^0
+54296^"Allow Request"^8^0^0^0
+54297^"Timestamp"^64^0^8^0
+54298^"Time Uncertainty"^32^0^6^0
+54299^"Time Base"^8^1^50431^0
+54300^"Force Acceptance"^8^0^0^0
+54301^"Filename Length"^8^0^2^0
+54302^"Filename"^8^0^9^0
+54303^"File Operation"^8^1^50432^0
+54304^"Data Length"^32^0^6^0
+54305^"Part Number"^8^0^2^0
+54306^"Total Parts"^8^0^2^0
+54307^"Data"^8^0^2^1
+54308^"Data Power Optimization Enabled"^8^0^0^0
+54309^"Enable Data Power Optimization"^8^0^0^0
+54310^"On Demand Positioning"^8^1^50433^0
+54311^"Position Valid"^1^0^0^0
+54312^"Altitude/Vertical Uncertainty Valid"^1^0^0^0
+54313^"Time Milliseconds Valid"^1^0^0^0
+54314^"Time Week Number Valid"^1^0^0^0
+54315^"Time Uncertainty Valid"^1^0^0^0
+54316^"Iono Valid"^1^0^0^0
+54317^"GPS Ephemeris Valid"^1^0^0^0
+54318^"GPS Almanac Valid"^1^0^0^0
+54319^"GPS Health Valid"^1^0^0^0
+54320^"GPS Visible SVs Valid"^1^0^0^0
+54321^"Glonass Ephemeris Valid"^1^0^0^0
+54322^"Glonass Almanac Valid"^1^0^0^0
+54323^"Glonass Health Valid"^1^0^0^0
+54324^"Glonass Visible SVs Valid"^1^0^0^0
+54325^"SBAS Ephemeris Valid"^1^0^0^0
+54326^"SBAS Almanac Valid"^1^0^0^0
+54327^"SBAS Health Valid"^1^0^0^0
+54328^"SBAS Visible SVs Valid"^1^0^0^0
+54329^"XTRA Information Valid"^1^0^0^0
+54330^"Timestamp In TOW Milliseconds"^32^0^6^0
+54331^"GPS Week Number"^16^0^4^0
+54332^"Iono Is Valid"^8^0^0^0
+54333^"GPS Ephemeris SV Mask"^32^0^6^1
+54334^"GPS Almanac SV Mask"^32^0^6^1
+54335^"GPS Health SV Mask"^32^0^6^1
+54336^"GPS Visible SV Mask"^32^0^6^1
+54337^"Glonass Ephemeris SV Mask"^32^0^6^1
+54338^"Glonass Almanac SV Mask"^32^0^6^1
+54339^"Glonass Health SV Mask"^32^0^6^1
+54340^"Glonass Visible SV Mask"^32^0^6^1
+54341^"SBAS Ephemeris SV Mask"^32^0^6^1
+54342^"SBAS Almanac SV Mask"^32^0^6^1
+54343^"SBAS Health SV Mask"^32^0^6^1
+54344^"SBAS Visible SV Mask"^32^0^6^1
+54345^"XTRA GPS Start Week"^16^0^4^0
+54346^"XTRA GPS Start Minutes"^16^0^4^0
+54347^"XTRA GPS Valid Hours"^16^0^4^0
+54348^"Elevation"^32^0^13^0
+54349^"SLP Server IPv6 Port"^32^0^6^0
+54350^"Used For Position"^1^0^0^0
+54351^"Hidden SSID"^1^0^0^0
+54352^"Encryption On"^1^0^0^0
+54353^"Infrastructure Mode"^1^0^0^0
+54354^"Engine Enabled"^8^0^0^0
+54355^"Method State"^8^1^50434^0
+54356^"Network Mode"^8^1^50435^0
+55000^"SMS Wake Enabled"^8^0^0^0^-1^0
+55001^"Mask"^32^0^6^1^-1^0
+56000^"Display Text"^1^0^0^0^-1^0
+56001^"Get Inkey"^1^0^0^0^-1^0
+56002^"Get Input"^1^0^0^0^-1^0
+56003^"Setup Menu"^1^0^0^0^-1^0
+56004^"Select Item"^1^0^0^0^-1^0
+56005^"Send SMS Alpha Identifier"^1^0^0^0^-1^0
+56006^"Setup Event User Activity"^1^0^0^0^-1^0
+56007^"Setup Event Idle Screen Notify"^1^0^0^0^-1^0
+56008^"Setup Event Language Sel Notify"^1^0^0^0^-1^0
+56009^"Setup Idle Mode Text"^1^0^0^0^-1^0
+56010^"Language Notification"^1^0^0^0^-1^0
+56011^"Refresh"^1^0^0^0^-1^0
+56012^"End Proactive Session"^1^0^0^0^-1^0
+56013^"Reference ID"^32^0^6^1^-1^0
+56014^"Command Length"^16^0^4^0^-1^0
+56015^"Display Text Command"^8^0^2^1^-1^0
+56016^"Get Inkey Command"^8^0^2^1^-1^0
+56017^"Get Input Command"^8^0^2^1^-1^0
+56018^"Setup Menu Command"^8^0^2^1^-1^0
+56019^"Select Item Command"^8^0^2^1^-1^0
+56020^"Alpha ID Command Type"^8^1^50600^1^-1^0
+56021^"Alpha ID Length"^16^0^4^0^-1^0
+56022^"Alpha ID"^8^0^2^1^-1^0
+56023^"User Activity Notify"^1^0^0^0^-1^0
+56024^"Idle Screen Available"^1^0^0^0^-1^0
+56025^"Language Selection Notify"^1^0^0^0^-1^0
+56026^"Setup Idle Mode Text Command"^8^0^2^1^-1^0
+56027^"Language Notification Command"^8^0^2^1^-1^0
+56028^"Refresh Mode"^16^0^4^1^-1^0
+56029^"Refresh Stage"^16^1^50601^1^-1^0
+56030^"Proactive Session End Type"^8^1^50602^1^-1^0
+56031^"Terminal Response Length"^16^0^4^0^-1^0
+56032^"Terminal Response"^8^0^2^1^-1^0
+56033^"Envelope Command Type"^16^1^50005^0^-1^0
+56034^"Envelope Length"^16^0^4^0^-1^0
+56035^"Envelope Data"^8^0^2^1^-1^0
+56036^"Envelope Command Type"^16^1^50603^0^-1^0
+57000^"EAP-SIM"^1^0^0^0^-1^0
+57001^"EAP-AKA"^1^0^0^0^-1^0
+57002^"EAP Request Packet"^8^0^2^1^-1^0
+57003^"Response Packet"^8^0^2^1^-1^0
+57005^"Session Keys"^8^0^2^1^-1^0
+57006^"Result"^8^1^50700^0^-1^0
+58000^"Report Network Initiated Alerts"^8^0^0^0^-1^0
+58001^"Report Session Status"^8^0^0^0^-1^0
+58002^"Session Type"^8^1^50800^0^-1^0
+58003^"Session ID"^16^0^4^0^-1^0
+58004^"Session State"^8^1^50801^0^-1^0
+58005^"Session Failure"^8^1^50802^0^-1^0
+58006^"Retry Count"^8^0^2^0^-1^0
+58007^"Retry Pause Timer"^16^0^4^0^-1^0
+58008^"Remaining Time"^16^0^4^0^-1^0
+58009^"Selection"^8^1^50803^0^-1^0
+58010^"Device Provisioning Service Update Enabled"^8^0^0^0^-1^0
+58011^"PRL Service Update Enabled"^8^0^0^0^-1^0
+58012^"HFA Feature Enabled"^8^0^0^0^-1^0
+58013^"HFA Feature Done State"^8^1^50804^0^-1^0
+59000^"Instance ID"^8^0^2^0^-1^0
+59001^"Link ID"^16^0^4^0^-1^0
+59002^"Service Count"^8^0^2^0^-1^0
+59003^"Service Type"^8^1^50900^0^-1^0
+59004^"Major Version"^16^0^4^0^-1^0
+59005^"Minor Version"^16^0^4^0^-1^0
+59006^"Addendum Label Length"^8^0^2^0^-1^0
+59007^"Addendum Label"^8^0^9^0^-1^0
+59008^"Client ID"^8^0^2^0^-1^0
+59009^"Data Format"^8^1^50901^0^-1^0
+59010^"Link Protocol - 802.3"^1^0^0^0^-1^0
+59011^"Link Protocol - IP"^1^0^0^0^-1^0
+59012^"Report Power State Changes"^8^0^0^0^-1^0
+59013^"Current Power Save State"^32^1^50902^0^-1^0
+59014^"Previous Power Save State"^32^1^50902^0^-1^0
+59015^"Message ID"^16^0^4^0^-1^0
+70000^"USS DCS"^8^1^70000^0^-1^0
+70001^"USS Length"^8^0^2^0^-1^0
+70002^"USS Data"^8^0^2^1^-1^0
+70003^"Failure Cause"^16^0^4^1^-1^0
+70004^"Alpha DCS"^8^1^70001^0^-1^0
+70005^"Alpha Length"^8^0^2^0^-1^0
+70006^"Alpha Data"^8^0^2^1^-1^0
+70007^"Notification Type"^8^1^70002^0^-1^0

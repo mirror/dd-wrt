@@ -1,0 +1,97 @@
+#!/usr/bin/env python
+# -*- Mode: python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation; either version 2 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Copyright (C) 2012 Lanedo GmbH
+#
+
+import os
+import sys
+import optparse
+import json
+
+from Client      import Client
+from MessageList import MessageList
+import utils
+
+def codegen_main():
+    # Input arguments
+    arg_parser = optparse.OptionParser('%prog [options]')
+    arg_parser.add_option('', '--input', metavar='JSONFILE',
+                          help='Input JSON-formatted database')
+    arg_parser.add_option('', '--output', metavar='OUTFILES',
+                          help='Generate C code in OUTFILES.[ch]')
+    arg_parser.add_option('', '--include', metavar='JSONFILE', action='append',
+                          help='Additional common types in a JSON-formatted database')
+    (opts, args) = arg_parser.parse_args();
+
+    if opts.input == None:
+        raise RuntimeError('Input JSON file is mandatory')
+    if opts.output == None:
+        raise RuntimeError('Output file pattern is mandatory')
+    if opts.include == None:
+        opts.include = []
+
+    # Prepare output file names
+    output_file_c = open(opts.output + ".c", 'w')
+    output_file_h = open(opts.output + ".h", 'w')
+    output_file_sections = open(opts.output + ".sections", 'w')
+
+    # Load all common types
+    common_object_list_json = []
+    opts.include.append(opts.input)
+    for include in opts.include:
+        include_contents = utils.read_json_file(include)
+        include_list = json.loads(include_contents)
+        for obj in include_list:
+            if 'common-ref' in obj:
+                common_object_list_json.append(obj)
+
+    # Load database file contents
+    database_file_contents = utils.read_json_file(opts.input)
+
+    # Build message list
+    object_list_json = json.loads(database_file_contents)
+    message_list = MessageList(object_list_json, common_object_list_json)
+
+    # Add common stuff to the output files
+    utils.add_copyright(output_file_c);
+    utils.add_copyright(output_file_h);
+    utils.add_header_start(output_file_h, os.path.basename(opts.output), message_list.service)
+    utils.add_source_start(output_file_c, os.path.basename(opts.output))
+
+    # Emit the message creation/parsing code
+    message_list.emit(output_file_h, output_file_c)
+
+    # Build our own client
+    client = Client(object_list_json)
+    client.emit(output_file_h, output_file_c, message_list)
+
+    # Emit sections
+    client.emit_sections(output_file_sections)
+    message_list.emit_sections(output_file_sections)
+
+    utils.add_header_stop(output_file_h, os.path.basename(opts.output))
+
+    output_file_c.close()
+    output_file_h.close()
+    output_file_sections.close()
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    codegen_main()
