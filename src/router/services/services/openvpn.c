@@ -79,7 +79,7 @@ void start_openvpnserver(void)
 			"verb 4\n" "#mute 3\n"
 			"log-append /var/log/openvpn\n"
 			"writepid /var/run/openvpnd.pid\n"
-			"management 127.0.0.1 5002\n"
+			"management 127.0.0.1 14\n"
 			"management-log-cache 50\n"
 			"topology subnet\n"
 			"client-config-dir /tmp/openvpn/ccd\n"
@@ -340,7 +340,7 @@ void start_openvpn(void)
 			fprintf(fp, "key /tmp/openvpncl/client.key\n");
 		}
 	fprintf(fp,
-		"management 127.0.0.1 5001\n"
+		"management 127.0.0.1 16\n"
 		"management-log-cache 50\n"
 		"verb 4\n" "#mute 3\n"
 		"log-append /var/log/openvpncl\n"
