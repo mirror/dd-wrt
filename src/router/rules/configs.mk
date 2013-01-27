@@ -229,7 +229,7 @@ obj-$(CONFIG_NRPE) += nrpe
 obj-$(CONFIG_LINKS) += links
 obj-$(CONFIG_SOFTFLOWD) += softflowd
 obj-$(CONFIG_NEXTMEDIAEXTRA) += nextmediaextra
-obj-$(CONFIG_LIBQMI) += libqmi
+obj-$(CONFIG_LIBQMI) += glib20 libqmi
 
 #obj-y+=anchorfree
 obj-y+=ttraff
