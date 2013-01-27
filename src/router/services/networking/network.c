@@ -3287,15 +3287,26 @@ void start_wan(int status)
 		unlink("/tmp/ppp/set-pppoepid");
 		char *controldevice = get3GControlDevice();
 		int timeout = 5;
+#ifdef LIBQMI
 		if (controldevice && !strcmp(controldevice, "qmi"))
 		{
+		//set pin
+		sysprintf("qmicli -d /dev/cdc-wdm0 --dms-uim-verify-pin=PIN,%s\n",nvram_safe_get("wan_pin"));
+		//set apn and dial
+		FILE *fp = fopen("/tmp/qmi-network.conf","wb");
+		fprintf(fp, "APN=%s\n",nvram_safe_get("wan_apn"));
+		fclose(fp);
+		
+		eval("qmi-network","/dev/cdc-wdm0","start");
 		eval("ifconfig", "wwan0", "up");
 		start_dhcpc("wwan0", NULL, NULL, 1);
 		if (status != REDIAL) {
 			start_redial();
 		}
 		
-		}else if (controldevice && !strcmp(controldevice, "hso")) {
+		}else
+#endif
+		 if (controldevice && !strcmp(controldevice, "hso")) {
 		    
 		} else {
 
