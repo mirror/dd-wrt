@@ -73,7 +73,7 @@ static GOptionEntry entries[] = {
     },
     { "nas-set-network-mode", 0, 0, G_OPTION_ARG_STRING, &set_lte_str,
       "Set Network Mode",
-      "LTE|LTEUMTS|GSMUMTS|GSM|ANY",
+      "LTE|LTEUMTS|UMTSGSM|GSMUMTS|GSM|ANY",
     },
     { "nas-get-serving-system", 0, 0, G_OPTION_ARG_NONE, &get_serving_system_flag,
       "Get serving system",
@@ -2119,6 +2119,11 @@ qmicli_nas_run (QmiDevice *device,
 		ltepref = QMI_NAS_RAT_MODE_PREFERENCE_LTE|QMI_NAS_RAT_MODE_PREFERENCE_UMTS;	
 		qmi_message_nas_set_system_selection_preference_input_set_mode_preference(input, ltepref, NULL);
 	} else if (g_ascii_strcasecmp(set_lte_str, "GSMUMTS") == 0) {
+		ltepref = QMI_NAS_RAT_MODE_PREFERENCE_GSM|QMI_NAS_RAT_MODE_PREFERENCE_UMTS;		
+		order = QMI_NAS_GSM_WCDMA_ACQUISITION_ORDER_PREFERENCE_GSM;
+		qmi_message_nas_set_system_selection_preference_input_set_mode_preference(input, ltepref, NULL);
+    		qmi_message_nas_set_system_selection_preference_input_set_gsm_wcdma_acquisition_order_preference (input, order, NULL);
+	} else if (g_ascii_strcasecmp(set_lte_str, "UMTSGSM") == 0) {
 		ltepref = QMI_NAS_RAT_MODE_PREFERENCE_GSM|QMI_NAS_RAT_MODE_PREFERENCE_UMTS;		
 		order = QMI_NAS_GSM_WCDMA_ACQUISITION_ORDER_PREFERENCE_WCDMA;
 		qmi_message_nas_set_system_selection_preference_input_set_mode_preference(input, ltepref, NULL);
