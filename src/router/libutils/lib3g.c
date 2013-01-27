@@ -849,12 +849,9 @@ char *get3GControlDevice(void)
 				devicelist[devicecount].name);
 
 			if ((devicelist[devicecount].modeswitch & QMI)) {
-				insmod("usbserial");
-				insmod("usb_wwan");
 				insmod("cdc-wdm");
 				insmod("usbnet");
 				insmod("qmi_wwan");
-				insmod("option");
 				//start custom setup, if defined
 				if (devicelist[devicecount].customsetup) {
 					fprintf(stderr, "customsetup QMI\n");
