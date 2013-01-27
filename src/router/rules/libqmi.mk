@@ -12,5 +12,5 @@ libqmi-clean:
 
 libqmi-install:
 	install -D libqmi/utils/qmi-network $(INSTALLDIR)/libqmi/usr/sbin/qmi-network
-	install -D libqmi/cli/.libs/qmicli $(INSTALLDIR)/libqmi/usr/sbin/qmicli
+	install -D libqmi/cli/qmicli $(INSTALLDIR)/libqmi/usr/sbin/qmicli
 	install -D libqmi/libqmi-glib/.libs/libqmi-glib.so.0.0.0 $(INSTALLDIR)/libqmi/usr/lib/libqmi-glib.so.0
