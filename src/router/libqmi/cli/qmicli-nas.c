@@ -44,6 +44,8 @@ static Context *ctx;
 static gboolean get_signal_strength_flag;
 static gboolean get_signal_info_flag;
 static gboolean get_home_network_flag;
+static gchar *set_roaming_str;
+static gchar *set_lte_str;
 static gboolean get_serving_system_flag;
 static gboolean get_system_info_flag;
 static gboolean get_technology_preference_flag;
@@ -64,6 +66,14 @@ static GOptionEntry entries[] = {
     { "nas-get-home-network", 0, 0, G_OPTION_ARG_NONE, &get_home_network_flag,
       "Get home network",
       NULL
+    },
+    { "nas-set-roaming", 0, 0, G_OPTION_ARG_STRING, &set_roaming_str,
+      "Set Roaming",
+      "OFF|ANY",
+    },
+    { "nas-set-network-mode", 0, 0, G_OPTION_ARG_STRING, &set_lte_str,
+      "Set Network Mode",
+      "LTE|LTEUMTS|GSMUMTS|GSM|ANY",
     },
     { "nas-get-serving-system", 0, 0, G_OPTION_ARG_NONE, &get_serving_system_flag,
       "Get serving system",
@@ -123,6 +133,8 @@ qmicli_nas_options_enabled (void)
     n_actions = (get_signal_strength_flag +
                  get_signal_info_flag +
                  get_home_network_flag +
+                 !!set_roaming_str +
+                 !!set_lte_str +
                  get_serving_system_flag +
                  get_system_info_flag +
                  get_technology_preference_flag +
@@ -454,6 +466,24 @@ get_signal_strength_ready (QmiClientNas *client,
     /* Just skip others for now */
 
     qmi_message_nas_get_signal_strength_output_unref (output);
+    shutdown (TRUE);
+}
+
+static void
+set_roaming_ready (QmiClientNas *client,
+                        GAsyncResult *res)
+{
+    QmiMessageNasSetSystemSelectionPreferenceOutput *output;
+    GError *error = NULL;
+
+    output = qmi_client_nas_set_system_selection_preference_finish(client, res, &error);
+    if (!output) {
+        g_printerr ("error: operation failed: %s\n", error->message);
+        g_error_free (error);
+        shutdown (FALSE);
+        return;
+    }
+    qmi_message_nas_set_system_selection_preference_output_unref (output);
     shutdown (TRUE);
 }
 
@@ -2048,6 +2078,66 @@ qmicli_nas_run (QmiDevice *device,
                                          ctx->cancellable,
                                          (GAsyncReadyCallback)get_home_network_ready,
                                          NULL);
+        return;
+    }
+
+    /* Set roaming mode */
+    if (set_roaming_str) {
+	QmiMessageNasSetSystemSelectionPreferenceInput *input = NULL;
+	QmiNasRoamingPreference roamingpref = QMI_NAS_ROAMING_PREFERENCE_OFF;
+        g_debug ("Asynchronously setting roaming mode...");
+	if (g_ascii_strcasecmp(set_roaming_str, "OFF") == 0) {
+		roamingpref = QMI_NAS_ROAMING_PREFERENCE_OFF;
+	} else {
+		roamingpref = QMI_NAS_ROAMING_PREFERENCE_ANY;
+	}
+	input = qmi_message_nas_set_system_selection_preference_input_new();
+	qmi_message_nas_set_system_selection_preference_input_set_roaming_preference(input, roamingpref, NULL);
+        qmi_client_nas_set_system_selection_preference(ctx->client,
+                                         input,
+                                         10,
+                                         ctx->cancellable,
+                                         (GAsyncReadyCallback)set_roaming_ready,
+                                         NULL);
+	qmi_message_nas_set_system_selection_preference_input_unref(input);
+        return;
+    }
+
+    /* Set lte mode */
+    if (set_lte_str) {
+	QmiMessageNasSetSystemSelectionPreferenceInput *input = NULL;	
+	QmiNasRatModePreference ltepref = 0;
+	QmiNasGsmWcdmaAcquisitionOrderPreference order = QMI_NAS_GSM_WCDMA_ACQUISITION_ORDER_PREFERENCE_AUTOMATIC;
+
+
+        g_debug ("Asynchronously setting lte mode...");
+	input = qmi_message_nas_set_system_selection_preference_input_new();
+	if (g_ascii_strcasecmp(set_lte_str, "LTE") == 0) {
+		ltepref = QMI_NAS_RAT_MODE_PREFERENCE_LTE;
+		qmi_message_nas_set_system_selection_preference_input_set_mode_preference(input, ltepref, NULL);
+	} else if (g_ascii_strcasecmp(set_lte_str, "LTEUMTS") == 0) {
+		ltepref = QMI_NAS_RAT_MODE_PREFERENCE_LTE|QMI_NAS_RAT_MODE_PREFERENCE_UMTS;	
+		qmi_message_nas_set_system_selection_preference_input_set_mode_preference(input, ltepref, NULL);
+	} else if (g_ascii_strcasecmp(set_lte_str, "GSMUMTS") == 0) {
+		ltepref = QMI_NAS_RAT_MODE_PREFERENCE_GSM|QMI_NAS_RAT_MODE_PREFERENCE_UMTS;		
+		order = QMI_NAS_GSM_WCDMA_ACQUISITION_ORDER_PREFERENCE_WCDMA;
+		qmi_message_nas_set_system_selection_preference_input_set_mode_preference(input, ltepref, NULL);
+    		qmi_message_nas_set_system_selection_preference_input_set_gsm_wcdma_acquisition_order_preference (input, order, NULL);
+	} else if (g_ascii_strcasecmp(set_lte_str, "GSM") == 0) {
+		ltepref = QMI_NAS_RAT_MODE_PREFERENCE_GSM;	
+		qmi_message_nas_set_system_selection_preference_input_set_mode_preference(input, ltepref, NULL);
+	} else {
+		ltepref = QMI_NAS_RAT_MODE_PREFERENCE_CDMA_1X|QMI_NAS_RAT_MODE_PREFERENCE_CDMA_1XEVDO|QMI_NAS_RAT_MODE_PREFERENCE_GSM|QMI_NAS_RAT_MODE_PREFERENCE_UMTS|QMI_NAS_RAT_MODE_PREFERENCE_LTE|QMI_NAS_RAT_MODE_PREFERENCE_TD_SCDMA;
+		qmi_message_nas_set_system_selection_preference_input_set_mode_preference(input, ltepref, NULL);
+	}
+        qmi_message_nas_set_system_selection_preference_input_set_change_duration (input, QMI_NAS_CHANGE_DURATION_PERMANENT, NULL);
+        qmi_client_nas_set_system_selection_preference(ctx->client,
+                                         input,
+                                         10,
+                                         ctx->cancellable,
+                                         (GAsyncReadyCallback)set_roaming_ready,
+                                         NULL);
+	qmi_message_nas_set_system_selection_preference_input_unref(input);
         return;
     }
 
