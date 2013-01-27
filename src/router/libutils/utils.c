@@ -3250,7 +3250,19 @@ int check_wan_link(int num)
 				unlink(filename);
 			}
 		}
-	} else
+	}
+#ifdef HAVE_LIBQMI
+	 else if (nvram_match("wan_proto","3g") && nvram_match("3gdata","qmi"))
+		FILE *fp = popen("qmicli -d /dev/cdc-wdm0 --wds-get-packet-service-status|grep disconnected|wc -l","rb");
+			int value;
+			fscanf(fp,"%d",value);
+		fclose(fp);
+		if (value)
+		    return 0;
+		return 1;
+	}
+#endif
+    	else
 #ifdef HAVE_IPETH
 	if (nvram_match("wan_proto", "iphone")) {
 		FILE *fp;
