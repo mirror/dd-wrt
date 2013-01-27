@@ -3287,7 +3287,7 @@ void start_wan(int status)
 		unlink("/tmp/ppp/set-pppoepid");
 		char *controldevice = get3GControlDevice();
 		int timeout = 5;
-#ifdef LIBQMI
+#ifdef HAVE_LIBQMI
 		if (controldevice && !strcmp(controldevice, "qmi"))
 		{
 		//set pin
