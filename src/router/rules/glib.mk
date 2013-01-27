@@ -8,11 +8,12 @@ glib20-configure:
 	cd glib20/gettext && ./configure --enable-shared --disable-static --disable-openmp --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -Drpl_malloc=malloc"
 	$(MAKE) -C glib20/gettext clean all
 
-	cd glib20/libglib && ./configure --enable-shared --disable-static --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -I$(TOP)/zlib -DNEED_PRINTF -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/gettext/gettext-runtime/intl  -I$(TOP)/glib20/libiconv/include -I$(TOP)/glib20/libffi/$(ARCH)-unknown-linux-gnu/include  -L$(TOP)/glib20/libffi/$(ARCH)-unknown-linux-gnu/.libs -lffi -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/glib20/gettext/gettext-runtime/intl/.libs -L$(TOP)/zlib" --with-libiconv=gnu --disable-modular-tests \
+	cd glib20/libglib && ./configure --enable-shared --disable-static --disable-fam  --enable-debug=no --disable-selinux --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -I$(TOP)/zlib -DNEED_PRINTF -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/gettext/gettext-runtime/intl  -I$(TOP)/glib20/libiconv/include -I$(TOP)/glib20/libffi/$(ARCH)-unknown-linux-gnu/include  -L$(TOP)/glib20/libffi/$(ARCH)-unknown-linux-gnu/.libs -lffi -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/glib20/gettext/gettext-runtime/intl/.libs -L$(TOP)/zlib -pthread -lpthread" --with-libiconv=gnu --disable-modular-tests \
 	LIBFFI_CFLAGS="-I$(TOP)/glib20/libffi/$(ARCH)-unknown-linux-gnu/include" \
 	LIBFFI_LIBS="-L$(TOP)/glib20/libffi/$(ARCH)-unknown-linux-gnu/.libs -lffi" \
 	ZLIB_CFLAGS="-I$(TOP)/zlib" \
-	ZLIB_LIBS="-L$(TOP)/zlib -lz"
+	ZLIB_LIBS="-L$(TOP)/zlib -lz" \
+	glib_cv_stack_grows=no glib_cv_uscore=no ac_cv_func_mmap_fixed_mapped=yes ac_cv_func_posix_getpwuid_r=yes ac_cv_func_posix_getgrgid_r=yes
 
 	$(MAKE) -C glib20/libglib clean all
 
