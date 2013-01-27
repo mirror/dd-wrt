@@ -3287,8 +3287,16 @@ void start_wan(int status)
 		unlink("/tmp/ppp/set-pppoepid");
 		char *controldevice = get3GControlDevice();
 		int timeout = 5;
-		if (controldevice && !strcmp(controldevice, "hso")) {
-
+		if (controldevice && !strcmp(controldevice, "qmi"))
+		{
+		eval("ifconfig", "wwan0", "up");
+		start_dhcpc("wwan0", NULL, NULL, 1);
+		if (status != REDIAL) {
+			start_redial();
+		}
+		
+		}else if (controldevice && !strcmp(controldevice, "hso")) {
+		    
 		} else {
 
 			/* init PIN */

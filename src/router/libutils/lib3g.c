@@ -597,7 +597,8 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x1505, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E398"},	//
 	{0x12d1, 0x1506, "option", "2", "0", 2, NULL, "Huawei E367/E398 (modem)"},	//
 	{0x12d1, 0x150f, "option", "0", "0", 2, NULL, "Huawei E367"},	//
-	{0x12d1, 0x151a, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E392u-12"},	//
+	{0x12d1, 0x151a, "option", "0", "0", 2 | QMI, &modeswitch_huawei_std, "Huawei E392u-12"},	//
+	{0x12d1, 0x151b, "option", "0", "0", 2 | QMI, NULL, "Huawei E392u-12"},	//
 	{0x12d1, 0x1520, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei K3765"},	//
 	{0x12d1, 0x1521, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei K4505"},	//
 	{0x12d1, 0x1523, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei R120"},	//
@@ -786,6 +787,8 @@ char *get3GDeviceVendor(void) {
 
 char *get3GControlDevice(void)
 {
+	static char control[32];
+	static char data[32];
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	mkdir("/tmp/usb",0700);
 	eval("mount", "-t", "usbfs", "usb", "/tmp/usb");
@@ -844,13 +847,35 @@ char *get3GControlDevice(void)
 		     devicelist[devicecount].product)) {
 			fprintf(stderr, "%s detected\n",
 				devicelist[devicecount].name);
+
+			if ((devicelist[devicecount].modeswitch & QMI)) {
+				insmod("usbserial");
+				insmod("usb_wwan");
+				insmod("cdc-wdm");
+				insmod("usbnet");
+				insmod("qmi_wwan");
+				insmod("option");
+				//start custom setup, if defined
+				if (devicelist[devicecount].customsetup) {
+					fprintf(stderr, "customsetup QMI\n");
+					devicelist[devicecount].customsetup(needreset, devicecount);
+				}
+				sprintf(control, "qmi");
+				sprintf(data, "/dev/usb/tts/%s",devicelist[devicecount].datadevice);
+				nvram_set("3gdata", data);
+				return control;
+			}
+
+
 			if (devicelist[devicecount].driver) {
 				insmod("usbserial");
 				insmod("usb_wwan");
+				insmod("cdc-wdm");
+				insmod("usbnet");
+				insmod("qmi_wwan");
 				insmod(devicelist[devicecount].driver);
 			}
 			if (devicelist[devicecount].datadevice) {
-				static char data[32];
 				if (!strcmp
 				    (devicelist[devicecount].datadevice, "hso"))
 					sprintf(data, "hso");
@@ -872,6 +897,9 @@ char *get3GControlDevice(void)
 						     devicelist
 						     [devicecount].product);
 						insmod("usb_wwan");
+						insmod("cdc-wdm");
+						insmod("usbnet");
+						insmod("qmi_wwan");
 						sprintf(data, "/dev/usb/tts/%s",
 							devicelist
 							[devicecount].datadevice);
@@ -895,7 +923,6 @@ char *get3GControlDevice(void)
 				fprintf(stderr, "customsetup\n");
 				devicelist[devicecount].customsetup(needreset, devicecount);
 			}
-			static char control[32];
 			if (!strcmp
 			    (devicelist[devicecount].controldevice, "hso"))
 				sprintf(control, "hso");
@@ -913,6 +940,9 @@ char *get3GControlDevice(void)
 					     devicelist[devicecount].vendor,
 					     devicelist[devicecount].product);
 					insmod("usb_wwan");
+					insmod("cdc-wdm");
+					insmod("usbnet");
+					insmod("qmi_wwan");
 					sprintf(control, "/dev/usb/tts/%s",
 						devicelist
 						[devicecount].controldevice);
@@ -929,6 +959,9 @@ char *get3GControlDevice(void)
 	insmod("cdc-acm");
 	insmod("usbserial");
 	insmod("usb_wwan");
+	insmod("cdc-wdm");
+	insmod("usbnet");
+	insmod("qmi_wwan");
 	insmod("sierra");
 	insmod("option");
 	return ttsdevice;
