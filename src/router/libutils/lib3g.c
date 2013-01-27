@@ -858,8 +858,7 @@ char *get3GControlDevice(void)
 					devicelist[devicecount].customsetup(needreset, devicecount);
 				}
 				sprintf(control, "qmi");
-				sprintf(data, "/dev/usb/tts/%s",devicelist[devicecount].datadevice);
-				nvram_set("3gdata", data);
+				nvram_set("3gdata", "qmi");
 				return control;
 			}
 
