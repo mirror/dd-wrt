@@ -3218,7 +3218,7 @@ int check_wan_link(int num)
 	     || nvram_match("wan_proto", "3g")
 #endif
 	     || nvram_match("wan_proto", "heartbeat"))
-	    && !nvram_match("3gdata", "hso")) {
+	    && !nvram_match("3gdata", "hso") && !nvram_match("3gdata", "qmi")) {
 		FILE *fp;
 		char filename[80];
 		char *name;
