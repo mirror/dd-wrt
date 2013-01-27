@@ -342,6 +342,9 @@ ifeq ($(CONFIG_3G),y)
   CFLAGS += -DHAVE_3G
   OBJS += lib3g.o
 endif
+ifeq ($(CONFIG_LIBQMI),y)
+  CFLAGS += -DHAVE_LIBQMI
+endif
 ifeq ($(CONFIG_MAGICBOX),y)
   CFLAGS += -DHAVE_MAGICBOX
 endif
