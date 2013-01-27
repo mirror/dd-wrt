@@ -3288,15 +3288,30 @@ void start_wan(int status)
 		char *controldevice = get3GControlDevice();
 		int timeout = 5;
 #ifdef HAVE_LIBQMI
-		if (controldevice && !strcmp(controldevice, "qmi"))
-		{
+		if (controldevice && !strcmp(controldevice, "qmi")) {
+		if (nvram_match("wan_conmode","6"))
+		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
+//		if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
+//		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
+		if (nvram_match("wan_conmode","4"))
+		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSMUMTS");
+		if (nvram_match("wan_conmode","3"))
+		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTSGSM");
+		if (nvram_match("wan_conmode","2"))
+		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSM");
+		if (nvram_match("wan_conmode","1"))
+		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTS");
+		if (nvram_match("wan_conmode","0"))
+		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=ANY");
+		
 		//set pin
-		sysprintf("qmicli -d /dev/cdc-wdm0 --dms-uim-verify-pin=PIN,%s\n",nvram_safe_get("wan_pin"));
+		sysprintf("qmicli -d /dev/cdc-wdm0 --dms-uim-verify-pin=PIN,%s",nvram_safe_get("wan_pin"));
 		//set apn and dial
 		FILE *fp = fopen("/tmp/qmi-network.conf","wb");
 		fprintf(fp, "APN=%s\n",nvram_safe_get("wan_apn"));
 		fclose(fp);
 		
+		eval("qmi-network","/dev/cdc-wdm0","stop"); //release it before
 		eval("qmi-network","/dev/cdc-wdm0","start");
 		eval("ifconfig", "wwan0", "up");
 		start_dhcpc("wwan0", NULL, NULL, 1);
@@ -3313,7 +3328,7 @@ void start_wan(int status)
 			/* init PIN */
 			if (strlen(nvram_safe_get("wan_pin")))
 				sysprintf
-				    ("export COMGTPIN=%s;comgt PIN -d %s\n",
+				    ("export COMGTPIN=%s;comgt PIN -d %s",
 				     nvram_safe_get("wan_pin"), controldevice);
 			// set netmode, even if it is auto, should be set every time, the stick might save it
 			// some sticks, don't save it ;-)
@@ -3350,7 +3365,7 @@ void start_wan(int status)
 					}
 				}
 				sysprintf
-				    ("export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out\n",
+				    ("export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out",
 				     nvram_safe_get("3gnmvariant"), netmode,
 				     controldevice);
 				printf
@@ -3360,7 +3375,7 @@ void start_wan(int status)
 			// Wait for device to attach to the provider network
 			int retcgatt = 0;
 			retcgatt = sysprintf
-			    ("comgt CGATT -d %s >/tmp/comgt-cgatt.out 2>&1\n",
+			    ("comgt CGATT -d %s >/tmp/comgt-cgatt.out 2>&1",
 			     controldevice);
 			// if (retcgatt == 0) 
 			// {
@@ -3370,7 +3385,7 @@ void start_wan(int status)
 			if (strlen(nvram_safe_get("wan_apn")))
 				if (!nvram_match("wan_dial", "2"))
 					sysprintf
-					    ("export COMGTAPN=\"%s\";comgt APN -d %s\n",
+					    ("export COMGTAPN=\"%s\";comgt APN -d %s",
 					     nvram_safe_get("wan_apn"),
 					     controldevice);
 			// Lets open option file and enter all the parameters.
