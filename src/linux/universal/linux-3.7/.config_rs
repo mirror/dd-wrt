@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.7.2 Kernel Configuration
+# Linux/mips 3.7.5 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1044,15 +1044,29 @@ CONFIG_SLHC=y
 # CONFIG_USB_KAWETH is not set
 # CONFIG_USB_PEGASUS is not set
 # CONFIG_USB_RTL8150 is not set
-# CONFIG_USB_USBNET is not set
+CONFIG_USB_USBNET=m
+# CONFIG_USB_NET_AX8817X is not set
+# CONFIG_USB_NET_CDCETHER is not set
+# CONFIG_USB_NET_CDC_EEM is not set
+# CONFIG_USB_NET_CDC_NCM is not set
+# CONFIG_USB_NET_DM9601 is not set
+# CONFIG_USB_NET_SMSC75XX is not set
+# CONFIG_USB_NET_SMSC95XX is not set
+# CONFIG_USB_NET_GL620A is not set
+# CONFIG_USB_NET_NET1080 is not set
+# CONFIG_USB_NET_PLUSB is not set
+# CONFIG_USB_NET_MCS7830 is not set
+# CONFIG_USB_NET_RNDIS_HOST is not set
+# CONFIG_USB_NET_CDC_SUBSET is not set
+# CONFIG_USB_NET_ZAURUS is not set
+# CONFIG_USB_NET_CX82310_ETH is not set
+# CONFIG_USB_NET_KALMIA is not set
+CONFIG_USB_NET_QMI_WWAN=m
 CONFIG_USB_HSO=m
-# CONFIG_USB_IPHETH is not set
-CONFIG_WLAN=y
-# CONFIG_ATMEL is not set
-# CONFIG_PRISM54 is not set
-# CONFIG_USB_ZD1201 is not set
-# CONFIG_HOSTAP is not set
-# CONFIG_WL_TI is not set
+# CONFIG_USB_NET_INT51X1 is not set
+CONFIG_USB_IPHETH=m
+CONFIG_USB_SIERRA_NET=m
+# CONFIG_WLAN is not set
 
 #
 # Enable WiMAX (Networking options) to see the WiMAX drivers
@@ -1300,7 +1314,7 @@ CONFIG_USB_OHCI_LITTLE_ENDIAN=y
 #
 CONFIG_USB_ACM=m
 CONFIG_USB_PRINTER=m
-# CONFIG_USB_WDM is not set
+CONFIG_USB_WDM=m
 # CONFIG_USB_TMC is not set
 
 #
@@ -1743,7 +1757,6 @@ CONFIG_CRYPTO_HASH=y
 CONFIG_CRYPTO_HASH2=y
 CONFIG_CRYPTO_RNG=y
 CONFIG_CRYPTO_RNG2=y
-CONFIG_CRYPTO_PCOMP2=y
 CONFIG_CRYPTO_MANAGER=y
 CONFIG_CRYPTO_MANAGER2=y
 # CONFIG_CRYPTO_USER is not set
