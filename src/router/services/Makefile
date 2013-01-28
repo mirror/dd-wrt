@@ -994,6 +994,9 @@ endif
 ifeq ($(CONFIG_TIEXTRA1),y)
 CFLAGS += -DHAVE_TIEXTRA1
 endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+CFLAGS += -DHAVE_TIEXTRA2
+endif
 
 ifeq ($(CONFIG_GGEW),y)
 CFLAGS_EXTRA += -DHAVE_GGEW
