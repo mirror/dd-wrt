@@ -103,6 +103,9 @@ void start_wifidog(void)
 		eval("wifidog");
 		dd_syslog(LOG_INFO, "wifidog successfully started\n");
 	}
+#ifdef HAVE_TIEXTRA2
+	start_mwifidog();
+#endif
 }
 
 void stop_wifidog(void)
