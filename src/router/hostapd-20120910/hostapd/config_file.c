@@ -2105,6 +2105,24 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		} else if (os_strcmp(buf, "radius_das_require_event_timestamp")
 			   == 0) {
 			bss->radius_das_require_event_timestamp = atoi(pos);
+		} else if (os_strcmp(buf, "radius_eap_allowed") == 0) {
+			char *tok;
+			int j = 1;
+
+			tok = pos;
+			while ((tok = os_strchr(tok, ','))) {
+				j++;
+				tok++;
+			}
+
+			bss->n_radius_eap_allowed = j;
+			bss->radius_eap_allowed = os_malloc(j);
+
+			tok = pos;
+			for (j = 0; j < bss->n_radius_eap_allowed; j++) {
+				bss->radius_eap_allowed[j] = atoi(tok);
+				tok = os_strchr(tok, ',') + 1;
+			}
 #endif /* CONFIG_NO_RADIUS */
 		} else if (os_strcmp(buf, "auth_algs") == 0) {
 			bss->auth_algs = atoi(pos);
