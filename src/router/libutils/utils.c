@@ -3258,7 +3258,7 @@ int check_wan_link(int num)
 		    ("qmicli -d /dev/cdc-wdm0 --wds-get-packet-service-status|grep disconnected|wc -l",
 		     "rb");
 		int value;
-		fscanf(fp, "%d", value);
+		fscanf(fp, "%d", &value);
 		fclose(fp);
 		if (value)
 			return 0;
