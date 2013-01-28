@@ -3253,9 +3253,8 @@ int check_wan_link(int num)
 	}
 #ifdef HAVE_LIBQMI
 	else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi")) {
-		sysprintf("qmicli -d /dev/cdc-wdm0 --wds-get-packet-service-status|grep disconnected|wc -l>/tmp/qmistatus");
 		FILE *fp = fopen("/tmp/qmistatus","rb");
-		int value = 1;
+		int value = 0;
 		if (fp) {
 			fscanf(fp, "%d", &value);
 			fclose(fp);
