@@ -529,6 +529,23 @@ int add_common_radius_attr(struct hostapd_data *hapd,
 	return 0;
 }
 
+static Boolean ieee8021x_eap_allowed(struct hostapd_bss_config *conf, int type)
+{
+	int i;
+
+	if (type <= EAP_TYPE_NAK)
+		return TRUE;
+
+	if (!conf->radius_eap_allowed)
+		return TRUE;
+
+	for (i = 0; i < conf->n_radius_eap_allowed; i++)
+		if (conf->radius_eap_allowed[i] == type)
+			return TRUE;
+
+	return FALSE;
+}
+
 
 static void ieee802_1x_encapsulate_radius(struct hostapd_data *hapd,
 					  struct sta_info *sta,
@@ -536,9 +553,16 @@ static void ieee802_1x_encapsulate_radius(struct hostapd_data *hapd,
 {
 	struct radius_msg *msg;
 	struct eapol_state_machine *sm = sta->eapol_sm;
+	int type = -1;
 
 	if (sm == NULL)
 		return;
+
+	if (len > sizeof(struct eap_hdr)) {
+		type = eap[sizeof(struct eap_hdr)];
+		if (!ieee8021x_eap_allowed(hapd->conf, type))
+			return;
+	}
 
 	ieee802_1x_learn_identity(hapd, sm, eap, len);
 
