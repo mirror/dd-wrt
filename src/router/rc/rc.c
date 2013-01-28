@@ -58,7 +58,11 @@ int redial_main(int argc, char **argv)
 		sleep(atoi(argv[1]));
 		num = 0;
 		count++;
-
+#ifdef HAVE_LIBQMI
+		if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi")) {
+			sysprintf("qmicli -d /dev/cdc-wdm0 --wds-get-packet-service-status|grep disconnected|wc -l>/tmp/qmistatus");
+		}
+#endif
 		// fprintf(stderr, "check PPPoE %d\n", num);
 		if (!check_wan_link(num)) {
 			// fprintf(stderr, "PPPoE %d need to redial\n", num);
