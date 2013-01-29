@@ -3215,10 +3215,10 @@ int check_wan_link(int num)
 	     || nvram_match("wan_proto", "pppoa")
 #endif
 #ifdef HAVE_3G
-	     || nvram_match("wan_proto", "3g")
+	     || (nvram_match("wan_proto", "3g") && !nvram_match("3gdata", "hso") && !nvram_match("3gdata", "qmi"))
 #endif
 	     || nvram_match("wan_proto", "heartbeat"))
-	    && !nvram_match("3gdata", "hso") && !nvram_match("3gdata", "qmi")) {
+	    ) {
 		FILE *fp;
 		char filename[80];
 		char *name;
@@ -3818,9 +3818,6 @@ char *get_wan_face(void)
 #ifdef HAVE_L2TP
 	    || nvram_match("wan_proto", "l2tp")
 #endif
-#ifdef HAVE_3G
-	    || nvram_match("wan_proto", "3g")
-#endif
 #ifdef HAVE_PPPOATM
 	    || nvram_match("wan_proto", "pppoa")
 #endif
@@ -3831,6 +3828,22 @@ char *get_wan_face(void)
 			strncpy(localwanface, nvram_safe_get("pppd_pppifname"),
 				IFNAMSIZ);
 	}
+#ifdef HAVE_3G
+	else if(nvram_match("wan_proto", "3g")) {
+	    if (nvram_match("3gdata","qmi"))
+		{
+			strncpy(localwanface, "wwan0", IFNAMSIZ);
+		}else
+		{
+		if (nvram_match("pppd_pppifname", ""))
+			strncpy(localwanface, "ppp0", IFNAMSIZ);
+		else
+			strncpy(localwanface, nvram_safe_get("pppd_pppifname"),
+				IFNAMSIZ);		
+		}
+
+	}
+#endif
 #ifndef HAVE_MADWIFI
 	else if (getSTA()) {
 		strcpy(localwanface, getSTA());
