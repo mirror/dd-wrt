@@ -224,6 +224,7 @@ EXTRA_DIST = \
 	utils.py \
 	qmi-codegen
 
+CLEANFILES = *.pyc
 all: all-am
 
 .SUFFIXES:
@@ -328,6 +329,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)

@@ -247,7 +247,7 @@ class VariableInteger(Variable):
                 '${lp}    g_string_append_printf (${printable}, "%s", tmp ? "yes" : "no");\n')
         elif self.public_format != self.private_format:
             translations['public_type_underscore'] = utils.build_underscore_name_from_camelcase(self.public_format)
-            translations['public_type_underscore_upper'] = string.upper(utils.build_underscore_name_from_camelcase(self.public_format))
+            translations['public_type_underscore_upper'] = utils.build_underscore_name_from_camelcase(self.public_format).upper()
             template += (
                 '#if defined  __${public_type_underscore_upper}_IS_ENUM__\n'
                 '${lp}    g_string_append_printf (${printable}, "%s", ${public_type_underscore}_get_string ((${public_format})tmp));\n'

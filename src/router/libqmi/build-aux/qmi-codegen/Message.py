@@ -53,7 +53,7 @@ class Message:
         self.fullname = self.prefix + ' ' + self.service + ' ' + self.name
 
         # Create the ID enumeration name
-        self.id_enum_name = string.upper(utils.build_underscore_name(self.fullname))
+        self.id_enum_name = utils.build_underscore_name(self.fullname).upper()
 
         # Build output container.
         # Every defined message will have its own output container, which
