@@ -109,7 +109,7 @@ class MessageList:
     messages of a given service.
     """
     def __emit_get_printable(self, hfile, cfile):
-        translations = { 'service'    : string.lower(self.service) }
+        translations = { 'service'    : self.service.lower() }
 
         template = (
             '\n'
@@ -175,7 +175,7 @@ class MessageList:
     introduced.
     """
     def __emit_get_version_introduced(self, hfile, cfile):
-        translations = { 'service'    : string.lower(self.service) }
+        translations = { 'service'    : self.service.lower() }
 
         template = (
             '\n'

@@ -45,7 +45,7 @@ class Variable:
         self.needs_dispose = False
 
         self.endian = "QMI_ENDIAN_LITTLE"
-        if dictionary.has_key('endian'):
+        if 'endian' in dictionary:
             endian = dictionary['endian']
             if endian == 'network' or endian == 'big':
                 self.endian = "QMI_ENDIAN_BIG"

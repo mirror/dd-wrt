@@ -151,7 +151,7 @@ class Fields:
             self.byid[field.id] = field
 
     def has_child(self, fid):
-        return self.byid.has_key(fid)
+        return fid in self.byid
 
     def get_child(self, fid):
         return self.byid[fid]
