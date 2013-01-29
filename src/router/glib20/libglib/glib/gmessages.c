@@ -845,6 +845,8 @@ static GSList *expected_messages = NULL;
  * If the log level has been set as fatal, the abort()
  * function is called to terminate the program.
  */
+#ifdef NEED_PRINTF
+
 void
 g_logv (const gchar   *log_domain,
 	GLogLevelFlags log_level,
@@ -1003,7 +1005,7 @@ g_log (const gchar   *log_domain,
   g_logv (log_domain, log_level, format, args);
   va_end (args);
 }
-
+#endif
 void
 g_return_if_fail_warning (const char *log_domain,
 			  const char *pretty_function,
