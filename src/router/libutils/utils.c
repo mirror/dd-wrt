@@ -3253,17 +3253,15 @@ int check_wan_link(int num)
 	}
 #ifdef HAVE_LIBQMI
 	else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi")) {
-//		FILE *fp = fopen("/tmp/qmistatus","rb");
-//		int value = 0;
-//		if (fp) {
-//			fscanf(fp, "%d", &value);
-//			fclose(fp);
-//		}
-//		if (value)
-//			return 0;
-//		return 1;
-		if (nvram_invmatch("wan_ipaddr", "0.0.0.0"))
-			wan_link = 1;
+		FILE *fp = fopen("/tmp/qmistatus","rb");
+		int value = 0;
+		if (fp) {
+			fscanf(fp, "%d", &value);
+			fclose(fp);
+		}
+		if (value)
+			return 0;
+		return 1;
 	}
 #endif
 	else
