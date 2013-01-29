@@ -3308,7 +3308,12 @@ void start_wan(int status)
 		sysprintf("qmicli -d /dev/cdc-wdm0 --dms-uim-verify-pin=PIN,%s",nvram_safe_get("wan_pin"));
 		//set apn and dial
 		FILE *fp = fopen("/tmp/qmi-network.conf","wb");
-		fprintf(fp, "APN=%s\n",nvram_safe_get("wan_apn"));
+		fprintf(fp, "APN=%s",nvram_safe_get("wan_apn"));
+		if (strlen(nvram_safe_get("ppp_username")) > 0) && strlen(nvram_safe_get("ppp_passwd")) > 0) {
+			fprintf(fp,",BOTH,%s,%s\n",nvram_safe_get("ppp_username"),nvram_safe_get("ppp_passwd"));
+		} else {
+			fprintf(fp,"\n");
+		}		
 		fclose(fp);
 		
 		eval("qmi-network","/dev/cdc-wdm0","stop"); //release it before
