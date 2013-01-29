@@ -94,6 +94,8 @@ void            g_log_default_handler   (const gchar    *log_domain,
                                          gpointer        unused_data);
 GLogFunc        g_log_set_default_handler (GLogFunc      log_func,
 					   gpointer      user_data);
+
+#ifdef NEED_PRINTF
 void            g_log                   (const gchar    *log_domain,
                                          GLogLevelFlags  log_level,
                                          const gchar    *format,
@@ -102,6 +104,10 @@ void            g_logv                  (const gchar    *log_domain,
                                          GLogLevelFlags  log_level,
                                          const gchar    *format,
                                          va_list         args);
+#else
+#define g_log(domain,level,format,...) do {    } while(0)
+#define g_logv(domain,level,format,...) do {    } while(0)
+#endif
 GLogLevelFlags  g_log_set_fatal_mask    (const gchar    *log_domain,
                                          GLogLevelFlags  fatal_mask);
 GLogLevelFlags  g_log_set_always_fatal  (GLogLevelFlags  fatal_mask);
