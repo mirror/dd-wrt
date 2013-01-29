@@ -16,3 +16,5 @@ EXTRA_DIST = \
 	VariableString.py \
 	utils.py \
 	qmi-codegen
+
+CLEANFILES = *.pyc

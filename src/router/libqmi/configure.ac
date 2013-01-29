@@ -30,8 +30,6 @@ dnl General dependencies for libqmi-glib
 PKG_CHECK_MODULES(LIBQMI_GLIB,
                   glib-2.0 >= 2.32
                   gobject-2.0
-                  gmodule-2.0
-                  gthread-2.0
                   gio-2.0)
 AC_SUBST(LIBQMI_GLIB_CFLAGS)
 AC_SUBST(LIBQMI_GLIB_LIBS)
@@ -40,8 +38,6 @@ dnl General dependencies for qmicli
 PKG_CHECK_MODULES(QMICLI,
                   glib-2.0 >= 2.28
                   gobject-2.0
-                  gmodule-2.0
-                  gthread-2.0
                   gio-2.0)
 AC_SUBST(QMICLI_CFLAGS)
 AC_SUBST(QMICLI_LIBS)

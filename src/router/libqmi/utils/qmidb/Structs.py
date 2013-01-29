@@ -336,7 +336,7 @@ class Structs(utils.DbFile):
             s.validate(fields, self)
 
     def has_child(self, sid):
-        return self.structs.has_key(sid)
+        return sid in self.structs
 
     def get_child(self, sid):
         return self.structs[sid]

@@ -57,10 +57,10 @@ class Field:
         self.variable = VariableFactory.create_variable(dictionary, self.fullname, self.container_type)
 
         # Create the variable name within the Container
-        self.variable_name = 'arg_' + string.lower(utils.build_underscore_name(self.name))
+        self.variable_name = 'arg_' + utils.build_underscore_name(self.name).lower()
 
         # Create the ID enumeration name
-        self.id_enum_name = string.upper(utils.build_underscore_name(self.prefix + ' TLV ' + self.name))
+        self.id_enum_name = utils.build_underscore_name(self.prefix + ' TLV ' + self.name).upper()
 
         # Output Fields may have prerequisites
         self.prerequisites = []

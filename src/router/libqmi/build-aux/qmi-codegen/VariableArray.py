@@ -86,7 +86,7 @@ class VariableArray(Variable):
     def clear_func_name(self):
         # element public format might be a base type like 'gchar *' rather
         # than a structure name like QmiFooBar
-        elt_name = string.replace(self.array_element.public_format, '*', 'pointer')
+        elt_name = self.array_element.public_format.replace('*', 'pointer')
         return utils.build_underscore_name(self.name) + \
              '_' + \
              utils.build_underscore_name_from_camelcase(utils.build_camelcase_name(elt_name))

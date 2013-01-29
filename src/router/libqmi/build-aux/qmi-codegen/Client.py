@@ -61,10 +61,10 @@ class Client:
                 break
 
         translations = { 'underscore'                 : utils.build_underscore_name(self.name),
-                         'no_prefix_underscore_upper' : string.upper(utils.build_underscore_name(self.name[4:])),
+                         'no_prefix_underscore_upper' : utils.build_underscore_name(self.name[4:]).upper(),
                          'camelcase'                  : utils.build_camelcase_name(self.name),
                          'hyphened'                   : utils.build_dashed_name(self.name),
-                         'service'                    : string.upper(self.service) }
+                         'service'                    : self.service.upper() }
 
         # Emit class header
         template = (
@@ -207,8 +207,8 @@ class Client:
                     # At least one field in the indication
                     translations['output_camelcase'] = utils.build_camelcase_name(message.output.fullname)
                     translations['bundle_type'] = 'QMI_TYPE_' + utils.remove_prefix(utils.build_underscore_uppercase_name(message.output.fullname), 'QMI_')
-                    translations['service'] = string.upper(self.service)
-                    translations['message_name_dashed'] = string.replace(message.name, ' ', '-')
+                    translations['service'] = self.service.upper()
+                    translations['message_name_dashed'] = message.name.replace(' ', '-')
                     inner_template += (
                         '\n'
                         '    /**\n'
@@ -263,8 +263,8 @@ class Client:
     def __emit_methods(self, hfile, cfile, message_list):
         translations = { 'underscore'        : utils.build_underscore_name(self.name),
                          'camelcase'         : utils.build_camelcase_name (self.name),
-                         'service_lowercase' : string.lower(self.service),
-                         'service_uppercase' : string.upper(self.service),
+                         'service_lowercase' : self.service.lower(),
+                         'service_uppercase' : self.service.upper(),
                          'service_camelcase' : string.capwords(self.service) }
 
         for message in message_list.list:
@@ -518,7 +518,7 @@ class Client:
     """
     def emit_sections(self, sfile):
         translations = { 'underscore'                 : utils.build_underscore_name(self.name),
-                         'no_prefix_underscore_upper' : string.upper(utils.build_underscore_name(self.name[4:])),
+                         'no_prefix_underscore_upper' : utils.build_underscore_name(self.name[4:]).upper(),
                          'camelcase'                  : utils.build_camelcase_name (self.name),
                          'hyphened'                   : utils.build_dashed_name (self.name) }
 
