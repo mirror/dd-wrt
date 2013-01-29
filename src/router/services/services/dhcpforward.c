@@ -95,6 +95,9 @@ void start_dhcpfwd(void)
 				wan_ifname);
 		}
 #ifdef HAVE_3G
+		else if (strcmp(wan_proto, "3g") == 0 && nvram_match("3gdata","qmi")) {
+			fprintf(fp, "if	wwan0	false	true	true\n");
+		}
 		else if (strcmp(wan_proto, "3g") == 0) {
 			fprintf(fp, "if	ppp0	false	true	true\n");
 		}
