@@ -518,6 +518,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	int isrepeater = 0;
 	unsigned char hwbuff[16];
 	char macaddr[32];
+	char *types;
 	if (isfirst && vapid == 0) {
 		sprintf(ifname, "%s", maininterface);
 	} else {
@@ -707,6 +708,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "eap_server=0\n");
 			fprintf(fp, "auth_algs=1\n");
 			fprintf(fp, "radius_retry_primary_interval=60\n");
+			types = hostapd_eap_get_types();
+			fprintf(fp, "%s", types);
+			free(types);
 			fprintf(fp, "auth_server_addr=%s\n",
 				nvram_nget("%s_radius_ipaddr", ifname));
 			fprintf(fp, "auth_server_port=%s\n",
