@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 18.jun.2012, svn 19375	//
+//				Slovenian translation DD-WRT by Eko, last revision: 27.jan.2013, svn 20579	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -13,6 +13,7 @@ share.pin="PIN";
 share.dial="Klicni niz";
 share.mode_3g="Način zveze";
 share.mode_3g_auto="Avtomatsko 3G/2G";
+share.mode_3g_4g="Prisili LTE/4G";
 share.mode_3g_3g="Prisili 3G";
 share.mode_3g_2g="Prisili 2G";
 share.mode_3g_prefer_3g="Prednost 3G";
@@ -738,6 +739,11 @@ nas.samba3_legend="Souporaba datotek";
 
 hnas.right2="Lista Uporabnik Geslo: V vsako linijo vnesite enega Uporabnika Geslo. Geslo je lahko v navadni obliki ali v MD5 crypt.";
 
+// ** DLNA **
+nas.dlna_legend="DLNA strežnik";
+nas.dlna_srv="MiniDLNA";
+nas.dlna_dir="Mapa za datoteke";
+
 // ** Hotspot.asp **//
 
 hotspot.titl="Hotspot";
@@ -1353,8 +1359,8 @@ service.snmp_write="RW skupnost";
 
 //openvpn.webvpn
 service.vpnd_legend="OpenVPN strežnik/demon";
-service.vpnd_srv="Začni OpenVPN demon";
-service.vpnd_starttype="Začni ob";
+service.vpnd_srv="OpenVPN";
+service.vpnd_starttype="Začni tip";
 service.vpnd_startWanup="WAN vzpostavljen";
 service.vpnd_startSystem="Sistem";
 service.vpnd_crl="Seznam preklicanih certifikatov";
@@ -1363,6 +1369,7 @@ service.vpnd_dhpem="DH PEM";
 service.vpnd_tlsauth="OpenVPN TLS Auth";
 service.vpnd_cert="Javno strežniško potrdilo";
 service.vpnd_key="Zasebni strežniški ključ";
+service.vpnd_pkcs="PKCS12 ključ";
 service.vpnd_mode="Način strežnika";
 service.vpnd_net="Mreža";
 service.vpnd_mask="Mrežna maska";
@@ -1379,8 +1386,9 @@ service.vpn_redirgate="Preusmeri privzeti prehod";
 service.vpn_legend="OpenVPN odjemalec";
 service.vpn_srv="Začni OpenVPN";
 service.vpn_ipname="Strežnikov IP/ime";
-service.vpn_mtu="TUN MTU nastavitev";
-service.vpn_mss="MSS-fiksiranje/fragmentiranje preko tunela";
+service.vpn_mtu="TUN MTU nastavitev na tunelu";
+service.vpn_mss="MSS-fiksiranje na tunelu";
+service.vpn_fragment="UDP fragmentiranje na tunelu";
 service.vpn_compress="Uporabi LZO stiskanje";
 service.vpn_cl2cl="Dovoli odjemalec-odjemalec";
 service.vpn_tunnel="Tunelski protokol";
@@ -1399,8 +1407,9 @@ service.vpn_route="Usmerjanje po politiki";
 
 //help container
 
-hstatus_vpn.right1="<i>Usmerjanje po politiki:</i><br>Dodaj IPje v obliki 0.0.0.0/0 da prisiliš odjemalce k uporabi tunela za privzeti prehod. Ena vrstica za IP. Presmeritveni prehod MORA biti izključen.";
-hstatus_vpn.right2="<i>Dodatne nastavitve:</i><br>Da prisiliš poti odjemalcem dodaj \'push \"route 0.0.0.0\"\', da prisiliš DNS/WINS dodaj \'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"\' k konfiguraciji.";
+hstatus_vpn.right1="Usmerjanje po politiki:<br><i>Dodaj IPje v obliki 0.0.0.0/0 da prisiliš odjemalce k uporabi tunela za privzeti prehod. Ena vrstica za IP. Presmeritveni prehod MORA biti izključen.</i>";
+hstatus_vpn.right2="Dodatne nastavitve:<br><i>Da prisiliš poti odjemalcem dodaj \'push \"route 0.0.0.0\"\', da prisiliš DNS/WINS dodaj \'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"\' k konfiguraciji.</i>";
+status_vpn.right3="Splošno:<br><i>Podprti so 3 auth načini: pkcs12 (+dh na strežniku), static, standard certs</i>. Omogoči MSS samo na eni strani zveze, fragmentiranje na obeh.</i>";";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1602,6 +1611,7 @@ status_router.sys_firmver="Verzija strojne programske opreme";
 status_router.sys_time="Trenutni čas";
 status_router.sys_up="Neprekinjeno delovanje";
 status_router.sys_load="Povprečna obremenitev";
+status_router.sys_kernel="Verzija jedra";
 status_router.legend2="Procesor";
 status_router.cpu="Model procesorja";
 status_router.clock="Ura procesorja";
