@@ -720,6 +720,7 @@ void start_modules(void)
 #else
 		runStartup("/jffs/etc/config", ".startup");	// if available
 		runStartup("/mmc/etc/config", ".startup");	// if available
+		runStartup("/sd/etc/config", ".startup");	// if available
 #endif
 #ifdef HAVE_REGISTER
 	}
@@ -743,6 +744,7 @@ void start_wanup(void)
 		runStartup("/jffs/etc/config", ".wanup");	// if available
 		runStartup("/mmc/etc/config", ".wanup");	// if available
 		runStartup("/tmp/etc/config", ".wanup");	// if available
+		runStartup("/sd/etc/config", ".wanup");		// if available
 #endif
 	}
 	return;
@@ -1927,6 +1929,7 @@ void start_restore_defaults(void)
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)	
 	buffalo_defaults(restore_defaults);
 #endif
+	runStartup("/sd/etc/config", ".pf");
 	// if (!nvram_match("default_init","1"))
 	{
 		for (t = srouter_defaults; t->name; t++) {
@@ -2731,6 +2734,18 @@ nvram_set("wan_iface", "");
 	nvram_unset("filter_services5");
 	nvram_unset("filter_services6");
 	nvram_unset("filter_services7");
+
+	// fix openvpnclient and server values (was 0/1 now is yes/no/adaptive)
+	// convert 0 -> no and 1 -> adaptive
+	if (nvram_match("openvpn_lzo", "0"))
+		nvram_set("openvpn_lzo", "no");
+	if (nvram_match("openvpn_lzo", "1"))
+		nvram_set("openvpn_lzo", "adaptive");
+
+	if (nvram_match("openvpncl_lzo", "0"))
+		nvram_set("openvpncl_lzo", "no");
+	if (nvram_match("openvpncl_lzo", "1"))
+		nvram_set("openvpncl_lzo", "adaptive");
 
 	nvram_unset("vdsl_state");	// important (this value should never 
 	// 
