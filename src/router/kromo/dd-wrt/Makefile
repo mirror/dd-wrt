@@ -376,6 +376,16 @@ ifeq ($(CONFIG_IMMERSIVE),y)
 	cp immersive/help/* $(INSTALLDIR)/www/help
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 endif
+ifeq ($(CONFIG_ONNET),y)
+	mkdir $(INSTALLDIR)/www/style/onnet
+	cp onnet/style.css $(INSTALLDIR)/www/style/onnet
+	cp onnet/images/* $(INSTALLDIR)/www/images
+	#cp onnet/About.htm $(INSTALLDIR)/www
+	cp onnet/help/* $(INSTALLDIR)/www/help
+	cp onnet/help/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
+	rm -f $(INSTALLDIR)/www/images/favicon.ico
+	ls -l $(INSTALLDIR)/www/help/
+endif
 
 ifeq ($(CONFIG_GLAUCO),y)
 	cp -f glauco/logo.png $(INSTALLDIR)/www/style
