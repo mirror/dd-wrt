@@ -3277,6 +3277,7 @@ void start_firewall(void)
 			system("/tmp/.rc_firewall");
 		}
 		runStartup("/etc/config", ".firewall");
+		runStartup("/sd/etc/config", ".firewall");
 	}
 
 	cprintf("Ready\n");
