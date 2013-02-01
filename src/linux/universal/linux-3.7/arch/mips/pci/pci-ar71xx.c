@@ -295,7 +295,7 @@ static struct resource ar71xx_pci_io_resource = {
 static struct resource ar71xx_pci_mem_resource = {
 	.name		= "PCI memory space",
 	.start		= AR71XX_PCI_MEM_BASE,
-	.end		= AR71XX_PCI_MEM_BASE + AR71XX_PCI_MEM_SIZE - 1,
+	.end		= AR71XX_PCI_MEM_BASE + 0x07000000 - 1,
 	.flags		= IORESOURCE_MEM
 };
 
