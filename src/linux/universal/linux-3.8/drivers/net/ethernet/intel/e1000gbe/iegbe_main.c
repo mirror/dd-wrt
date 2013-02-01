@@ -3987,10 +3987,9 @@ static bool iegbe_clean_rx_irq_ps(struct iegbe_adapter *adapter,
 				ps_page_dma->ps_page_dma[0],
 				PAGE_SIZE,
 				PCI_DMA_FROMDEVICE);
-			vaddr = kmap_atomic(ps_page->ps_page[0],
-			                    KM_SKB_DATA_SOFTIRQ);
+			vaddr = kmap_atomic(ps_page->ps_page[0]);
 			memcpy(skb_tail_pointer(skb), vaddr, l1);
-			kunmap_atomic(vaddr, KM_SKB_DATA_SOFTIRQ);
+			kunmap_atomic(vaddr);
 			pci_dma_sync_single_for_device(pdev,
 				ps_page_dma->ps_page_dma[0],
 				PAGE_SIZE, PCI_DMA_FROMDEVICE);
