@@ -225,7 +225,7 @@ typedef unsigned int ar7100_reg_t;
 /*
  * PCI block
  */
-#define AR7100_PCI_WINDOW           0x8000000       /* 128MB */
+#define AR7100_PCI_WINDOW           0x7000000       /* 128MB */
 #define AR7100_PCI_WINDOW0_OFFSET   AR7100_DDR_CTL_BASE+0x7c
 #define AR7100_PCI_WINDOW1_OFFSET   AR7100_DDR_CTL_BASE+0x80
 #define AR7100_PCI_WINDOW2_OFFSET   AR7100_DDR_CTL_BASE+0x84

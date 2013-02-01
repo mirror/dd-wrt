@@ -153,7 +153,7 @@ typedef unsigned int ar7240_reg_t;
 /*
  * PCI block
  */
-#define AR7240_PCI_WINDOW           0x8000000       /* 128MB */
+#define AR7240_PCI_WINDOW           0x4000000       /* 128MB */
 #define AR7240_PCI_WINDOW0_OFFSET   AR7240_DDR_CTL_BASE+0x7c
 #define AR7240_PCI_WINDOW1_OFFSET   AR7240_DDR_CTL_BASE+0x80
 #define AR7240_PCI_WINDOW2_OFFSET   AR7240_DDR_CTL_BASE+0x84
