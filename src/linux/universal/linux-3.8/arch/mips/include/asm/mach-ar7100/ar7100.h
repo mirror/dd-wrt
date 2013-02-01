@@ -40,7 +40,7 @@ typedef unsigned int ar7100_reg_t;
 #define AR7100_SPI_BASE                 0x1f000000
 
 #define AR71XX_PCI_MEM_BASE	0x10000000
-#define AR71XX_PCI_MEM_SIZE	0x08000000
+#define AR71XX_PCI_MEM_SIZE	0x04000000
 #define AR71XX_APB_BASE		0x18000000
 #define AR71XX_GE0_BASE		0x19000000
 #define AR71XX_GE0_SIZE		0x01000000
@@ -225,7 +225,7 @@ typedef unsigned int ar7100_reg_t;
 /*
  * PCI block
  */
-#define AR7100_PCI_WINDOW           0x8000000       /* 128MB */
+#define AR7100_PCI_WINDOW           0x7000000       /* 128MB */
 #define AR7100_PCI_WINDOW0_OFFSET   AR7100_DDR_CTL_BASE+0x7c
 #define AR7100_PCI_WINDOW1_OFFSET   AR7100_DDR_CTL_BASE+0x80
 #define AR7100_PCI_WINDOW2_OFFSET   AR7100_DDR_CTL_BASE+0x84
