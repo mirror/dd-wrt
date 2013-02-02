@@ -371,6 +371,37 @@ distclean mrproper: $(obj-distclean) clean_target
 optimize-lib:
 	make -f Makefile.pb42 lib.$(ARCH)-install
 
+
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+
+ifneq ($(CONFIG_NOOPT),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+
+	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
+	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
+	-mkdir -p /tmp/$(ARCHITECTURE)/
+	find $(TARGETDIR) -type f -perm +100 -exec \
+		file -r -N -F '' {} + | \
+		awk ' /executable.*dynamically/ { print $$1 }' > /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	find $(TARGETDIR) -type f -name \*.so\* -exec \
+		file -r -N -F '' {} + | \
+		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-uClibc.so.0 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
+else
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
 		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
@@ -403,32 +434,8 @@ optimize-lib:
 		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
 		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libpthread.so.0
-
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
-
-ifneq ($(CONFIG_NOOPT),y)
-	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
-	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
-	-mkdir -p /tmp/$(ARCHITECTURE)/
-	find $(TARGETDIR) -type f -perm +100 -exec \
-		file -r -N -F '' {} + | \
-		awk ' /executable.*dynamically/ { print $$1 }' > /tmp/$(ARCHITECTURE)/mklibs-progs
-
-	find $(TARGETDIR) -type f -name \*.so\* -exec \
-		file -r -N -F '' {} + | \
-		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
-
-	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
-	mklibs.py -D \
-		-d /tmp/$(ARCHITECTURE)/mklibs-out \
-		--sysroot $(TARGETDIR) \
-		-L /lib \
-		-L /usr/lib \
-		--ldlib /lib/ld-uClibc.so.0 \
-		--target $(ARCH)-linux-uclibc \
-		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
-	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
 endif
+
 	rm -f $(TARGETDIR)/lib/*.a
 	rm -f $(TARGETDIR)/lib/*.map
 #	cp lib.$(ARCH)/libresolv.so.0 $(TARGETDIR)/lib
@@ -732,15 +739,21 @@ endif
 else
 	tools/bufenc/encryptRC4 WZR-HP-G302H 1.80 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
 	tools/bufenc/mkfw-multi -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.80" "2.08" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_MULTI.enc
+	tools/bufenc/encryptRC4 WZR-300HP 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr_300hp-firmware.enc
+	tools/bufenc/mkfw-multi -hw_ver=4 -hcrypt="Buffalo" "WZR-300HP" "WZR-300HP" "1.82" "1.06" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr_300hp-firmware.enc $(ARCH)-uclibc/wzr_300hp-firmware_MULTI.enc
 endif
 else
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
 #eu-us region
 	tools/bufenc/encryptRC4 WZR-HP-G302H 1.80 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
 	tools/bufenc/mkfw-eu-us -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.80" "2.08" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+	tools/bufenc/encryptRC4 WZR-300HP 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr_300hp-firmware.enc
+	tools/bufenc/mkfw-eu-us -hw_ver=4 -hcrypt="Buffalo" "WZR-300HP" "WZR-300HP" "1.82" "1.06" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr_300hp-firmware.enc $(ARCH)-uclibc/wzr_300hp-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
 else
 	tools/bufenc/encryptRC4 WZR-HP-G302H 1.80 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
 	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.80" "2.08" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+	tools/bufenc/encryptRC4 WZR-300HP 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr_300hp-firmware.enc
+	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-300HP" "WZR-300HP" "1.82" "1.06" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr_300hp-firmware.enc $(ARCH)-uclibc/wzr_300hp-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
 endif
 endif
 endif
@@ -776,6 +789,8 @@ endif
 else
 	tools/bufenc/encryptRC4 WZR-HP-AG300H 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
 	tools/bufenc/mkfw-multi -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.74" "3.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_MULTI.enc
+	tools/bufenc/encryptRC4 WZR-600DHP 1.99 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
+	tools/bufenc/mkfw-multi -hw_ver=0 -hcrypt="Buffalo" "WZR-600DHP" "WZR-600DHP" "1.99" "3.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzr_600dhp-firmware_MULTI.enc
 endif
 else
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
