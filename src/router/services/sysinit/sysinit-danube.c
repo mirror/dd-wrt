@@ -237,8 +237,8 @@ void start_sysinit(void)
 #else
 	writeproc("/proc/sys/dev/wifi0/ledpin","15");
 	writeproc("/proc/sys/dev/wifi0/softled","1");
-#endif
 
+#endif
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
 	led_control(LED_SES2, LED_OFF);
@@ -249,6 +249,11 @@ void start_sysinit(void)
 	led_control(LED_CONNECTED, LED_OFF);
 	system2("gpio disable 1");
 	system2("gpio disable 18");
+
+	system("swconfig dev eth0 set reset 1");
+	system("swconfig dev eth0 set enable_vlan 0");
+	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4 5\"");
+	system("swconfig dev eth0 set apply");
 #endif
 #ifdef HAVE_SX763
 	char mac[18];
