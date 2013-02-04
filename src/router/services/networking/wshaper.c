@@ -926,6 +926,11 @@ int svqos_iptables(void)
 	// http://svn.dd-wrt.com/ticket/2760
 	//system2
 	//    ("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");
+
+	// http://svn.dd-wrt.com/ticket/2803 / http://www.dd-wrt.com/phpBB2/viewtopic.php?p=488166&highlight=#488166
+	system2
+		("iptables -t mangle -I FILTER_OUT 4 -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK ACK -m length --length :64 -j CLASSIFY --set-class 1:100");
+	
 	system2
 	    ("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
 	system2("iptables -t mangle -A FILTER_OUT -j VPN_DSCP");
