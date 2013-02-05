@@ -1060,7 +1060,7 @@ $code.=<<___ if ($flavour =~ /nubi/i);	# optimize non-nubi prologue
 ___
 $code.=<<___ if ($flavour !~ /o32/i);	# non-o32 PIC-ification
 	.cplocal	$Tbl
-	.cpsetup	$pf,$zero,AES_set_encrypt_key
+	.cpsetup	$pf,$zero,asm_AES_set_encrypt_key
 ___
 $code.=<<___;
 	.set	reorder
@@ -1115,7 +1115,7 @@ $code.=<<___ if ($flavour =~ /nubi/i);	# optimize non-nubi prologue
 ___
 $code.=<<___ if ($flavour !~ /o32/i);	# non-o32 PIC-ification
 	.cplocal	$Tbl
-	.cpsetup	$pf,$zero,AES_set_decrypt_key
+	.cpsetup	$pf,$zero,asm_AES_set_decrypt_key
 ___
 $code.=<<___;
 	.set	reorder
