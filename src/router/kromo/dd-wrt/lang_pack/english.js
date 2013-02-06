@@ -936,6 +936,7 @@ idx.stp="STP";
 idx.stp_mess="(disable for COMCAST ISP)";
 idx.optional="Optional Settings";
 idx.mtu="MTU";
+ifx.txqlen="TX Queue Length";
 idx.h23="Network Setup";
 idx.routerip="Router IP";
 idx.lanip="Local IP Address";
