@@ -274,6 +274,10 @@ endif
 ifeq ($(ARCH),powerpc)
 	cp busybox/.config_powerpc busybox/.config
 endif
+ifeq ($(CONFIG_WGET_TIMEOUT),y)
+	sed -i 's/\# CONFIG_FEATURE_WGET_TIMEOUT is not set/CONFIG_FEATURE_WGET_TIMEOUT=y/g' busybox/.config
+endif
+
 ifeq ($(CONFIG_IPV6),y)
 	echo "CONFIG_TRACEROUTE6=y" >> busybox/.config
 	echo "CONFIG_PING6=y" >> busybox/.config
