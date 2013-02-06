@@ -191,8 +191,19 @@ char *getTXQ(char *ifname)
 	if (!ifname)
 		return "1000";
 	char *txq = nvram_nget("%s_txq", ifname);
-	if (!txq || strlen(mtu) == 0)
-		return "1000";
+	if (!txq || strlen(mtu) == 0) {
+		int s;
+		struct ifreq ifr;
+		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		    return "0";
+		strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+		ioctl(s, SIOCGIFTXQLEN, &ifr);
+		close(s);
+		static char txq[32];
+		sprintf(txq,"%d",ifr.ifr_qlen);
+		// get default len from interface
+		return txq;
+	    }
 	return txq;
 }
 
