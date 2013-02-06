@@ -8184,6 +8184,19 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</div>\n",
 			  var);
+		// qlen here
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\">%s</div>\n",
+			  live_translate("idx.txqlen"));
+		char txq[32];
+		sprintf(mtu, "%s_txq", var);
+		websWrite(wp,
+			  "<input class=\"num\" maxlength=\"4\" onblur=\"valid_range(this,0,10000,idx.txq\" size=\"5\" name=\"%s\" value=\"%s\" />\n",
+			  txq, nvram_default_get(txq, "1000"));
+		websWrite(wp, "</div>\n");
+		
+		// qlen end
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>&nbsp;\n",
 			  layer, var, nvram_default_match(ssid,
@@ -8204,8 +8217,8 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		char mtu[32];
 		sprintf(mtu, "%s_mtu", var);
 		websWrite(wp,
-			  "<input class=\"num\" maxlength=\"4\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s_mtu\" value=\"%s\" />\n",
-			  var, nvram_default_get(mtu, "1500"));
+			  "<input class=\"num\" maxlength=\"4\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s\" value=\"%s\" />\n",
+			  mtu, nvram_default_get(mtu, "1500"));
 		websWrite(wp, "</div>\n");
 
 		char mcast[32];
