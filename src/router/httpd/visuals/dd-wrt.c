@@ -8121,6 +8121,7 @@ void ej_bandwidth(webs_t wp, int argc, char_t ** argv)
 #endif
 
 #ifdef HAVE_PORTSETUP
+extern char *getTXQ(char *ifname);
 void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 {
 	char ssid[64];
@@ -8190,10 +8191,10 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"label\">%s</div>\n",
 			  live_translate("idx.txqlen"));
 		char txq[32];
-		sprintf(mtu, "%s_txq", var);
+		sprintf(txq, "%s_txq", var);
 		websWrite(wp,
 			  "<input class=\"num\" maxlength=\"4\" onblur=\"valid_range(this,0,10000,idx.txq\" size=\"5\" name=\"%s\" value=\"%s\" />\n",
-			  txq, nvram_default_get(txq, "1000"));
+			  txq, nvram_default_get(txq, getTXQ(txq)));
 		websWrite(wp, "</div>\n");
 		
 		// qlen end
