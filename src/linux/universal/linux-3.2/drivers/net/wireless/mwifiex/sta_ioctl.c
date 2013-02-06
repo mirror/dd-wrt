@@ -53,8 +53,7 @@ int mwifiex_copy_mcast_addr(struct mwifiex_multicast_list *mlist,
  */
 int mwifiex_wait_queue_complete(struct mwifiex_adapter *adapter)
 {
-	bool cancel_flag = false;
-	int status = adapter->cmd_wait_q.status;
+	int status;
 	struct cmd_ctrl_node *cmd_queued;
 
 	if (!adapter->cmd_queued)
@@ -70,15 +69,14 @@ int mwifiex_wait_queue_complete(struct mwifiex_adapter *adapter)
 	queue_work(adapter->workqueue, &adapter->main_work);
 
 	/* Wait for completion */
-	wait_event_interruptible(adapter->cmd_wait_q.wait,
-					*(cmd_queued->condition));
-	if (!*(cmd_queued->condition))
-		cancel_flag = true;
-
-	if (cancel_flag) {
-		mwifiex_cancel_pending_ioctl(adapter);
-		dev_dbg(adapter->dev, "cmd cancel\n");
+	status = wait_event_interruptible(adapter->cmd_wait_q.wait,
+					  *(cmd_queued->condition));
+	if (status) {
+		dev_err(adapter->dev, "cmd_wait_q terminated: %d\n", status);
+		return status;
 	}
+
+	status = adapter->cmd_wait_q.status;
 	adapter->cmd_wait_q.status = 0;
 
 	return status;
@@ -240,6 +238,8 @@ int mwifiex_bss_start(struct mwifiex_private *priv, struct cfg80211_bss *bss,
 
 		if (!netif_queue_stopped(priv->netdev))
 			netif_stop_queue(priv->netdev);
+		if (netif_carrier_ok(priv->netdev))
+			netif_carrier_off(priv->netdev);
 
 		/* Clear any past association response stored for
 		 * application retrieval */
@@ -271,6 +271,8 @@ int mwifiex_bss_start(struct mwifiex_private *priv, struct cfg80211_bss *bss,
 
 		if (!netif_queue_stopped(priv->netdev))
 			netif_stop_queue(priv->netdev);
+		if (netif_carrier_ok(priv->netdev))
+			netif_carrier_off(priv->netdev);
 
 		if (!ret) {
 			dev_dbg(adapter->dev, "info: network found in scan"
@@ -421,8 +423,11 @@ int mwifiex_enable_hs(struct mwifiex_adapter *adapter)
 		return false;
 	}
 
-	wait_event_interruptible(adapter->hs_activate_wait_q,
-			adapter->hs_activate_wait_q_woken);
+	if (wait_event_interruptible(adapter->hs_activate_wait_q,
+				     adapter->hs_activate_wait_q_woken)) {
+		dev_err(adapter->dev, "hs_activate_wait_q terminated\n");
+		return false;
+	}
 
 	return true;
 }
