@@ -194,6 +194,7 @@ char *getTXQ(char *ifname)
 	if (!txq || strlen(txq) == 0) {
 		int s;
 		struct ifreq ifr;
+		memset(&ifr,0,sizeof(ifr));
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		    return "0";
 		strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
