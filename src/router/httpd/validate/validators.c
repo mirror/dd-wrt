@@ -784,6 +784,13 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		else
 			nvram_set(val, "1500");
 
+		sprintf(val, "%s_txq", var);
+		char *txq = websGetVar(wp, val, NULL);
+		if (txq)
+			nvram_set(val, txq);
+		else
+			nvram_set(val, "1000");
+
 		if (bridged && strcmp(bridged, "0") == 0) {
 			sprintf(val, "%s_ipaddr", var);
 			char ipaddr[64];
