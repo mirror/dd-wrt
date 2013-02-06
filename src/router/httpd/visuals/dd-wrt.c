@@ -8193,7 +8193,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		char txq[32];
 		sprintf(txq, "%s_txq", var);
 		websWrite(wp,
-			  "<input class=\"num\" maxlength=\"4\" onblur=\"valid_range(this,0,10000,idx.txq\" size=\"5\" name=\"%s\" value=\"%s\" />\n",
+			  "<input class=\"num\" maxlength=\"4\" onblur=\"valid_range(this,0,10000,idx.txqlen)\" size=\"5\" name=\"%s\" value=\"%s\" />\n",
 			  txq, nvram_default_get(txq, getTXQ(txq)));
 		websWrite(wp, "</div>\n");
 		
