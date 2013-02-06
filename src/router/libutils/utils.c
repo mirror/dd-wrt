@@ -191,7 +191,7 @@ char *getTXQ(char *ifname)
 	if (!ifname)
 		return "1000";
 	char *txq = nvram_nget("%s_txq", ifname);
-	if (!txq || strlen(mtu) == 0) {
+	if (!txq || strlen(txq) == 0) {
 		int s;
 		struct ifreq ifr;
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
