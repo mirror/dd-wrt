@@ -238,45 +238,6 @@ void start_bridging(void)
 extern char *getBridgeMTU(char *);
 extern char *getMTU(char *);
 
-/* moved to utils.c
-char *getBridgeMTU(char *ifname)
-{
-	static char word[256];
-	char *next, *wordlist;
-
-	wordlist = nvram_safe_get("bridges");
-	foreach(word, wordlist, next) {
-		char *stp = word;
-		char *bridge = strsep(&stp, ">");
-		char *mtu = stp;
-		char *prio = strsep(&mtu, ">");
-
-		if (prio)
-			strsep(&mtu, ">");
-
-		if (!bridge || !stp)
-			break;
-		if (!strcmp(bridge, ifname)) {
-			if (!prio || !mtu)
-				return "1500";
-			else
-				return mtu;
-		}
-	}
-	return "1500";
-}
-
-char *getMTU(char *ifname)
-{
-	if (!ifname)
-		return "1500";
-	char *mtu = nvram_nget("%s_mtu", ifname);
-	if (!mtu || strlen(mtu) == 0)
-		return "1500";
-	return mtu;
-}
-*/
-
 char *getBridge(char *ifname)
 {
 	static char word[256];

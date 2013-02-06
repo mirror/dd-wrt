@@ -165,6 +165,7 @@ void start_wanup(void);
 //void stop_anchorfree(void);
 
 char *getMTU(char *ifname);
+char *getTXQ(char *ifname);
 char *getBridgeMTU(char *ifname);
 
 int br_add_bridge(const char *brname);
