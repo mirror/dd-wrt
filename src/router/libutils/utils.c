@@ -185,6 +185,17 @@ char *getMTU(char *ifname)
 	return mtu;
 }
 
+
+char *getTXQ(char *ifname)
+{
+	if (!ifname)
+		return "1000";
+	char *txq = nvram_nget("%s_txq", ifname);
+	if (!txq || strlen(mtu) == 0)
+		return "1000";
+	return txq;
+}
+
 #ifdef HAVE_SVQOS
 char
 *get_wshaper_dev(void)

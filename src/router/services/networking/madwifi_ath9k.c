@@ -1203,6 +1203,7 @@ void ath9k_start_supplicant(int count)
 			sysprintf("ifconfig %s 0.0.0.0 up", dev);
 		} else {
 			sysprintf("ifconfig %s mtu %s", dev, getMTU(dev));
+			sysprintf("ifconfig %s txqueuelen %s", dev, getTXQ(dev));
 			sysprintf("ifconfig %s %s netmask %s up", dev,
 				  nvram_nget("%s_ipaddr", dev),
 				  nvram_nget("%s_netmask", dev));
@@ -1220,6 +1221,7 @@ void ath9k_start_supplicant(int count)
 		sprintf(bridged, "%s_bridged", dev);
 		if (nvram_default_match(bridged, "0", "1")) {
 			sysprintf("ifconfig %s mtu %s", dev, getMTU(dev));
+			sysprintf("ifconfig %s txqueuelen %s", dev, getTXQ(dev));
 			sysprintf("ifconfig %s %s netmask %s up", dev,
 				  nvram_nget("%s_ipaddr", dev),
 				  nvram_nget("%s_netmask", dev));
@@ -1244,6 +1246,7 @@ void ath9k_start_supplicant(int count)
 					sprintf(mask, "%s_netmask", var);
 					sysprintf("ifconfig %s mtu %s",
 						  var, getMTU(var));
+					sysprintf("ifconfig %s txqueuelen %s", var, getTXQ(var));
 					sysprintf
 					    ("ifconfig %s %s netmask %s up",
 					     var, nvram_safe_get(ip),

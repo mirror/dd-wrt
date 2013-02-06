@@ -1218,6 +1218,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			}
 		} else {
 			sysprintf("ifconfig %s mtu %s", "ra0", getMTU("ra0"));
+			sysprintf("ifconfig %s txqueuelen %s", "ra0", getTXQ("ra0"));
 			sysprintf("ifconfig %s %s netmask %s up", "ra0",
 				  nvram_nget("%s_ipaddr", getRADev(dev)),
 				  nvram_nget("%s_netmask", getRADev(dev)));
@@ -1288,6 +1289,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 				sysprintf("ifconfig ra0 0.0.0.0 up");
 				sysprintf("ifconfig %s mtu %s", "apcli0",
 					  getMTU("apcli0"));
+				sysprintf("ifconfig %s txqueuelen %s", "apcli0", getTXQ("apcli0"));
 				sysprintf("ifconfig %s %s netmask %s up", "ra0",
 					  nvram_nget("%s_ipaddr",
 						     getRADev(dev)),
@@ -1296,6 +1298,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			} else {
 				sysprintf("ifconfig %s mtu %s", "ra0",
 					  getMTU("ra0"));
+			sysprintf("ifconfig %s txqueuelen %s", "ra0", getTXQ("ra0"));
 				sysprintf("ifconfig %s %s netmask %s up", "ra0",
 					  nvram_nget("%s_ipaddr",
 						     getRADev(dev)),
@@ -1337,6 +1340,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 					sprintf(raa, "ra%d", count);
 					sysprintf("ifconfig %s mtu %s", raa,
 						  getMTU(raa));
+					sysprintf("ifconfig %s txqueuelen %s", raa, getTXQ(raa));
 					sysprintf
 					    ("ifconfig ra%d %s netmask %s up",
 					     count, nvram_safe_get(ip),
