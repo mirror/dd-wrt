@@ -199,10 +199,10 @@ char *getTXQ(char *ifname)
 		strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 		ioctl(s, SIOCGIFTXQLEN, &ifr);
 		close(s);
-		static char txq[32];
-		sprintf(txq,"%d",ifr.ifr_qlen);
+		static char rtxq[32];
+		sprintf(rtxq,"%d",ifr.ifr_qlen);
 		// get default len from interface
-		return txq;
+		return rtxq;
 	    }
 	return txq;
 }
