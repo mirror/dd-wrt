@@ -2021,6 +2021,7 @@ void start_lan(void)
 				eval("ifconfig", realname, "down");	//fixup for some ethernet drivers
 			}
 			eval("ifconfig", realname, "mtu", getMTU(realname));
+			eval("ifconfig", realname, "txqueuelen", getTXQ(realname));
 			if (strncmp(realname, "ath", 3) != 0) {	// this is not an ethernet driver
 				eval("ifconfig", realname, "up");	//fixup for some ethernet drivers
 			}
@@ -3200,16 +3201,19 @@ void start_wan(int status)
 #ifdef HAVE_PPPOE
 	if (nvram_match("wan_proto", "pppoe")) {
 		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
+		ifr.ifr_qlen = atoi(getTXQ(wan_ifname));	// default queue len
 	} else
 #endif
 #ifdef HAVE_PPTP
 	if (nvram_match("wan_proto", "pptp")) {
 		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
+		ifr.ifr_qlen = atoi(getTXQ(wan_ifname));	// default queue len
 	} else
 #endif
 #ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp")) {
 		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
+		ifr.ifr_qlen = atoi(getTXQ(wan_ifname));	// default queue len
 	} else
 #endif
 	{
@@ -3217,9 +3221,11 @@ void start_wan(int status)
 		if (mtu == 1500)
 			mtu = atoi(getMTU(wan_ifname));
 		ifr.ifr_mtu = mtu;
+		ifr.ifr_qlen = atoi(getTXQ(wan_ifname));	// default queue len
 	}
 	// fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
 	ioctl(s, SIOCSIFMTU, &ifr);
+	ioctl(s, SIOCSIFTXQLEN, &ifr);
 
 	if (strcmp(wan_proto, "disabled") == 0) {
 		start_wan_done(wan_ifname);
