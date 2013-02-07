@@ -289,6 +289,21 @@ endif
 ifeq ($(CONFIG_WDR2543),y)
 	cp $(LINUXDIR)/.config_wdr2543 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_JJAP93),y)
+	cp $(LINUXDIR)/.config_ar7240_nousb $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_JJAP005),y)
+	cp $(LINUXDIR)/.config_ar7240_nousb $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_JJAP501),y)
+	cp $(LINUXDIR)/.config_ar7240_nousb $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_AC722),y)
+	cp $(LINUXDIR)/.config_ar7240_nousb $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_AC622),y)
+	cp $(LINUXDIR)/.config_ar7240_nousb $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_KERNEL_ELF_CORE),y)
 	sed -i 's/\# CONFIG_ELF_CORE is not set/CONFIG_ELF_CORE=y/g' $(LINUXDIR)/.config
 endif
@@ -847,6 +862,31 @@ ifeq ($(CONFIG_UBNTM),y)
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ar7420-firmware.bin $(ARCH)-uclibc/aligned.uimage
 	tools/ubnt/src/mkfwimage -v XM.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntm-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 	tools/ubnt/src/mkfwimage -v BZ.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+endif
+ifeq ($(CONFIG_JJAP93),y)
+	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
+	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
+	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/ap93-firmware.bin $(ARCH)-uclibc/aligned.uimage
+endif
+ifeq ($(CONFIG_JJAP005),y)
+	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
+	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
+	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/ap93-firmware.bin $(ARCH)-uclibc/aligned.uimage
+endif
+ifeq ($(CONFIG_JJAP501),y)
+	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
+	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
+	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/ap93-firmware.bin $(ARCH)-uclibc/aligned.uimage
+endif
+ifeq ($(CONFIG_AC722),y)
+	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
+	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
+	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/ap93-firmware.bin $(ARCH)-uclibc/aligned.uimage
+endif
+ifeq ($(CONFIG_AC622),y)
+	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
+	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
+	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/ap93-firmware.bin $(ARCH)-uclibc/aligned.uimage
 endif
 ifeq ($(CONFIG_WHRHPGN),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
