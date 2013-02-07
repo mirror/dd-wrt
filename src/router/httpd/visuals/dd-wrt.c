@@ -2042,26 +2042,26 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 
 		// sprintf (mdhcp_name, "%s.%s", tag, port);
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">DHCP %d</div>\n", count);
+		websWrite(wp, "<div class=\"label\">DHCP %d</div>\n", totalcount);
 		// interface
-		sprintf(vlan_name, "mdhcpifname%d", count);
+		sprintf(vlan_name, "mdhcpifname%d", totalcount);
 		showOptions(wp, vlan_name, buffer, "");
 		// on off
-		sprintf(vlan_name, "mdhcpon%d", count);
+		sprintf(vlan_name, "mdhcpon%d", totalcount);
 		showOptions(wp, vlan_name, "On Off", "");
 		// start
-		sprintf(vlan_name, "mdhcpstart%d", count);
+		sprintf(vlan_name, "mdhcpstart%d", totalcount);
 		websWrite(wp, "&nbsp;Start&nbsp;");
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n",
 			  vlan_name, "100");
 		// max
-		sprintf(vlan_name, "mdhcpmax%d", count);
+		sprintf(vlan_name, "mdhcpmax%d", totalcount);
 		websWrite(wp, "&nbsp;Max&nbsp;");
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n",
 			  vlan_name, "50");
-		sprintf(vlan_name, "mdhcpleasetime%d", count);
+		sprintf(vlan_name, "mdhcpleasetime%d", totalcount);
 		websWrite(wp, "&nbsp;Leasetime&nbsp;");
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n",
