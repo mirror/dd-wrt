@@ -1,7 +1,7 @@
 /*
- * sysinit-whrhpgn.c
+ * sysinit-jjap005.c
  *
- * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2013 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -71,7 +71,7 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
-	insmod("ag7240_mod");
+	system("insmod ag71xx || insmod ag7240_mod");
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
 		// fseek(fp, 0xFF0000, SEEK_SET);
