@@ -33,7 +33,7 @@
 #include <syslog.h>
 
 #include <typedefs.h>
-#include <netconf.h>
+//#include <netconf.h>
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
@@ -110,7 +110,11 @@ static char *filter[] = { "lan_ifnames",
 int nvram_critical(char *name)
 {
 	int a = 0;
-
+	if (name[0]=='@')
+	{
+	    fprintf(stderr,"ommit %s\n",name);
+	    return 1;
+	}
 	while (filter[a] != NULL) {
 		if (!strcmp(name, filter[a++])) {
 			return 1;
@@ -291,3 +295,14 @@ int nvram_backup(char *filename)
 	fclose(fp);
 	return 0;
 }
+
+
+#ifdef TEST
+int main(int argc,char *argv[])
+{
+
+nvram_backup("/tmp/fixup.bin");
+nvram_restore("/tmp/fixup.bin");
+}
+
+#endif
