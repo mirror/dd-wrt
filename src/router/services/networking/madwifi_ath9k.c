@@ -190,7 +190,6 @@ void configure_single_ath9k(int count)
 		nvram_default_get(txantenna, txdefstr);
 		nvram_default_get(rxantenna, rxdefstr);
 	}
-	fprintf(stderr,"set chains %d/%d\n",txchain,rxchain);
 	mac80211_set_antennas(phy_idx,txchain,rxchain);
 
 	sprintf(wl, "ath%d_mode", count);
