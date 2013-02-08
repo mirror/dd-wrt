@@ -118,10 +118,10 @@ void configure_single_ath9k(int count)
 	// // sleep(3);
 	if (count == 0)
 		vapcount = 0;
-	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
+	sprintf(wif, "phy%d", phy_idx);
 	sprintf(wifivifs, "ath%d_vifs", count);
 	fprintf(stderr, "ath9k configure_single: phy%d ath%d\n",
-		get_ath9k_phy_idx(count), count);
+		 phy_idx, count);
 	sprintf(channel, "ath%d_channel", count);
 	sprintf(sens, "ath%d_distance", count);
 	sprintf(diversity, "ath%d_diversity", count);
