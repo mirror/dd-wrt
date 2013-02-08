@@ -102,6 +102,7 @@ void start_wifidog(void)
 		fclose(fp);
 		eval("wifidog");
 		dd_syslog(LOG_INFO, "wifidog successfully started\n");
+		eval("iptables", "-D", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j", "ACCEPT" );
 		eval("iptables", "-I", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j", "ACCEPT" );
 	}
 #ifdef HAVE_TIEXTRA2
