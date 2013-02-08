@@ -876,7 +876,11 @@ nla_put_failure:
 void mac80211_set_antennas(int phy,uint32_t tx_ant,uint32_t rx_ant ) {
 	struct nl_msg *msg;
 
+	if (tx_ant==0 || rx_ant==0)
+		return;
 	msg = unl_genl_msg(&unl, NL80211_CMD_SET_WIPHY, false);
+	if (!msg)
+		return;
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (isap8x() && tx_ant == 5) 
 		tx_ant=3;
@@ -897,51 +901,38 @@ static int mac80211_get_antennas(int phy,int which,int direction) {
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
 	int ret=0;
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
+
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
 		return 0;
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
-	gnlh=nlmsg_data(nlmsg_hdr(msg));
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
+	if (!msg)
+		return 0;
 
+	gnlh=nlmsg_data(nlmsg_hdr(msg));
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
 		  genlmsg_attrlen(gnlh, 0), NULL);
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 
 	if (which == 0 && direction == 0) {
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 		if (tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX])
 		     ret = ((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX]));
 	}
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 
 	if (which == 0 && direction == 1) {
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 		if (tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_RX])
 		     ret = ((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_RX]));
 	}
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 
 	if (which == 1 && direction == 0) {
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 		if (tb[NL80211_ATTR_WIPHY_ANTENNA_TX])
 		     ret = ((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_TX]));
 	}
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 
 	if (which == 1 && direction == 1) {
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 		if (tb[NL80211_ATTR_WIPHY_ANTENNA_RX])
 		     ret = ((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_RX]));
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	}
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	nlmsg_free(msg);
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	return ret;
 nla_put_failure:
 	nlmsg_free(msg);
@@ -949,17 +940,13 @@ nla_put_failure:
 }
 
 int mac80211_get_avail_tx_antenna(int phy) {
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	int ret=mac80211_get_antennas(phy,0,0);
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	if (isap8x() && ret == 3)
 		ret=5;
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	return(ret);
 	}
 
 int mac80211_get_avail_rx_antenna(int phy) {
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 	return(mac80211_get_antennas(phy,0,1));
 	}
 
