@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.8.0-rc3 Kernel Configuration
+# Linux/mips 3.8.0-rc7 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1408,7 +1408,7 @@ CONFIG_USB_OHCI_LITTLE_ENDIAN=y
 #
 CONFIG_USB_ACM=m
 CONFIG_USB_PRINTER=m
-# CONFIG_USB_WDM is not set
+CONFIG_USB_WDM=m
 # CONFIG_USB_TMC is not set
 
 #
@@ -1615,7 +1615,6 @@ CONFIG_USBIP_HOST=m
 # CONFIG_NET_VENDOR_SILICOM is not set
 # CONFIG_CED1401 is not set
 # CONFIG_DGRP is not set
-# CONFIG_SB105X is not set
 
 #
 # Hardware Spinlock drivers
@@ -1679,8 +1678,8 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
 CONFIG_FUSE_FS=m
-# CONFIG_OVERLAYFS_FS is not set
 CONFIG_CUSE=m
+# CONFIG_OVERLAYFS_FS is not set
 
 #
 # Caches
