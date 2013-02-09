@@ -814,7 +814,7 @@ static void BCMFASTPATH_HOST __copy_skb_header(struct sk_buff *new, const struct
 	new->network_header	= old->network_header;
 	new->mac_header		= old->mac_header;
 	new->inner_transport_header = old->inner_transport_header;
-	new->inner_network_header = old->inner_transport_header;
+	new->inner_network_header = old->inner_network_header;
 	skb_dst_copy(new, old);
 	new->rxhash		= old->rxhash;
 	new->ooo_okay		= old->ooo_okay;
