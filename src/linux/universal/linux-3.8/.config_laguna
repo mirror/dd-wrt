@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.8.0-rc3 Kernel Configuration
+# Linux/arm 3.8.0-rc7 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -2235,7 +2235,6 @@ CONFIG_USBIP_HOST=m
 # CONFIG_NET_VENDOR_SILICOM is not set
 # CONFIG_CED1401 is not set
 # CONFIG_DGRP is not set
-# CONFIG_SB105X is not set
 
 #
 # Hardware Spinlock drivers
@@ -2304,8 +2303,8 @@ CONFIG_FILE_LOCKING=y
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
 CONFIG_FUSE_FS=m
-# CONFIG_OVERLAYFS_FS is not set
 # CONFIG_CUSE is not set
+# CONFIG_OVERLAYFS_FS is not set
 
 #
 # Caches

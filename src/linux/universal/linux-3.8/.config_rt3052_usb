@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.8.0-rc3 Kernel Configuration
+# Linux/mips 3.8.0-rc7 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -296,8 +296,7 @@ CONFIG_MODULES_USE_ELF_REL=y
 #
 CONFIG_HAVE_GENERIC_DMA_COHERENT=y
 CONFIG_SLABINFO=y
-CONFIG_RT_MUTEXES=y
-CONFIG_BASE_SMALL=0
+CONFIG_BASE_SMALL=1
 CONFIG_MODULES=y
 # CONFIG_MODULE_FORCE_LOAD is not set
 CONFIG_MODULE_UNLOAD=y
@@ -1596,8 +1595,8 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
 CONFIG_FUSE_FS=m
-# CONFIG_OVERLAYFS_FS is not set
 # CONFIG_CUSE is not set
+# CONFIG_OVERLAYFS_FS is not set
 
 #
 # Caches

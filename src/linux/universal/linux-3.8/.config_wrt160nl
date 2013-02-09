@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.8.0-rc3 Kernel Configuration
+# Linux/mips 3.8.0-rc7 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1486,8 +1486,8 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
 CONFIG_FUSE_FS=m
-# CONFIG_OVERLAYFS_FS is not set
 # CONFIG_CUSE is not set
+# CONFIG_OVERLAYFS_FS is not set
 
 #
 # Caches

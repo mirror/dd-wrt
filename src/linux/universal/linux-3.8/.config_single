@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 3.8.0-rc3 Kernel Configuration
+# Linux/i386 3.8.0-rc7 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -2743,8 +2743,8 @@ CONFIG_FANOTIFY=y
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
 CONFIG_FUSE_FS=m
-# CONFIG_OVERLAYFS_FS is not set
 # CONFIG_CUSE is not set
+# CONFIG_OVERLAYFS_FS is not set
 
 #
 # Caches
