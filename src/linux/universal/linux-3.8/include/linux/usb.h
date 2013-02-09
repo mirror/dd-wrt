@@ -361,6 +361,8 @@ struct usb_bus {
 	struct dentry *usbfs_dentry;	/* usbfs dentry entry for the bus */
 #endif
 
+	unsigned resuming_ports;	/* bit array: resuming root-hub ports */
+
 #if defined(CONFIG_USB_MON) || defined(CONFIG_USB_MON_MODULE)
 	struct mon_bus *mon_bus;	/* non-null when associated */
 	int monitored;			/* non-zero when monitored */
