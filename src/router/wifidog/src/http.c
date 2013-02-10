@@ -292,7 +292,7 @@ http_callback_auth(httpd *webserver, request *r)
 			}
 			UNLOCK_CLIENT_LIST();
 			if (!logout) {
-				authenticate_client(r);
+				authenticate_client(r, token->value);
 			}
 			free(mac);
 		}
