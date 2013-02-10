@@ -95,6 +95,7 @@ client_list_append(const char *ip, const char *mac, const char *token)
     curclient->ip = safe_strdup(ip);
     curclient->mac = safe_strdup(mac);
     curclient->token = safe_strdup(token);
+    curclient->fw_connection_state = 0;
     curclient->counters.incoming = curclient->counters.incoming_history = curclient->counters.outgoing = curclient->counters.outgoing_history = 0;
     curclient->counters.last_updated = time(NULL);
 

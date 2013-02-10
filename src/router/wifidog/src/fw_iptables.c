@@ -489,7 +489,7 @@ iptables_fw_destroy_mention(
 	int
 iptables_fw_access(fw_access_t type, const char *ip, const char *mac, int tag)
 {
-	int rc;
+	int rc, status;
 
 	fw_quiet = 0;
 
@@ -499,8 +499,16 @@ iptables_fw_access(fw_access_t type, const char *ip, const char *mac, int tag)
 			rc = iptables_do_command("-t mangle -A " TABLE_WIFIDOG_INCOMING " -d %s -j ACCEPT", ip);
 			break;
 		case FW_ACCESS_DENY:
-			iptables_do_command("-t mangle -D " TABLE_WIFIDOG_OUTGOING " -s %s -m mac --mac-source %s -j MARK --set-mark %d", ip, mac, tag);
-			rc = iptables_do_command("-t mangle -D " TABLE_WIFIDOG_INCOMING " -d %s -j ACCEPT", ip);
+			// we *really* want to delete these rules.
+			// continue to remove rules until iptables returns a non-zero exit code (which indicates there was no rule left to delete)
+			do {
+				status = iptables_do_command("-t mangle -D " TABLE_WIFIDOG_OUTGOING " -s %s -m mac --mac-source %s -j MARK --set-mark %d", ip, mac, tag);
+			} while (!status);
+			do {
+				status = iptables_do_command("-t mangle -D " TABLE_WIFIDOG_INCOMING " -d %s -j ACCEPT", ip);
+			} while (!status);
+			// return code isn't used anywhere. besides, which one would we return?
+			rc = 0;
 			break;
 		default:
 			rc = -1;
