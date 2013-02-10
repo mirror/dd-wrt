@@ -305,8 +305,9 @@ fw_sync_with_authserver(void)
                         case AUTH_ALLOWED:
                             if (p1->fw_connection_state != FW_MARK_KNOWN) {
                                 debug(LOG_INFO, "%s - Access has changed to allowed, refreshing firewall and clearing counters", p1->ip);
-                                //WHY did we deny, then allow!?!? benoitg 2007-06-21
-                                //fw_deny(p1->ip, p1->mac, p1->fw_connection_state);
+                                // deny here to clear the extra iptables rules
+                                // so they don't end up with two (one with each mark set)
+                                fw_deny(p1->ip, p1->mac, p1->fw_connection_state);
 
                                 if (p1->fw_connection_state != FW_MARK_PROBATION) {
      p1->counters.incoming = p1->counters.outgoing = 0;

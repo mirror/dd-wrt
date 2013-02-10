@@ -168,8 +168,10 @@ authenticate_client(request *r)
 		debug(LOG_INFO, "Got VALIDATION from central server authenticating token %s from %s at %s"
 				"- adding to firewall and redirecting them to activate message", client->token,
 				client->ip, client->mac);
-		client->fw_connection_state = FW_MARK_PROBATION;
-		fw_allow(client->ip, client->mac, FW_MARK_PROBATION);
+		if (client->fw_connection_state == FW_NONE) {
+			client->fw_connection_state = FW_MARK_PROBATION;
+			fw_allow(client->ip, client->mac, FW_MARK_PROBATION);
+		}
 		safe_asprintf(&urlFragment, "%smessage=%s",
 			auth_server->authserv_msg_script_path_fragment,
 			GATEWAY_MESSAGE_ACTIVATE_ACCOUNT
@@ -182,9 +184,15 @@ authenticate_client(request *r)
 		/* Logged in successfully as a regular account */
 		debug(LOG_INFO, "Got ALLOWED from central server authenticating token %s from %s at %s - "
 				"adding to firewall and redirecting them to portal", client->token, client->ip, client->mac);
-		client->fw_connection_state = FW_MARK_KNOWN;
-		fw_allow(client->ip, client->mac, FW_MARK_KNOWN);
-        served_this_session++;
+		if (client->fw_connection_state == FW_MARK_PROBATION) {
+			// call deny first to remove duplicate iptables rules
+			fw_deny(client->ip, client->mac, FW_MARK_KNOWN);
+		}
+		if (client->fw_connection_state == FW_NONE || client->fw_connection_state == FW_MARK_PROBATION) {
+			client->fw_connection_state = FW_MARK_KNOWN;
+			fw_allow(client->ip, client->mac, FW_MARK_KNOWN);
+		}
+		served_this_session++;
 		safe_asprintf(&urlFragment, "%sgw_id=%s",
 			auth_server->authserv_portal_script_path_fragment,
 			config->gw_id
