@@ -31,6 +31,7 @@ int icmp_fd;
 
 /** Used by fw_iptables.c */
 typedef enum _t_fw_marks {
+    FW_NONE = 0, /**< @brief The client is unknown to the firewall */
     FW_MARK_PROBATION = 1, /**< @brief The client is in probation period and must be authenticated 
 			    @todo: VERIFY THAT THIS IS ACCURATE*/
     FW_MARK_KNOWN = 2,  /**< @brief The client is known to the firewall */ 
