@@ -2,7 +2,7 @@ VERSION = 3
 PATCHLEVEL = 8
 SUBLEVEL = 0
 EXTRAVERSION = -rc7
-NAME = Terrified Chipmunk
+NAME = Unicycling Gorilla
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
