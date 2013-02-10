@@ -2,6 +2,7 @@
  * lib3g.c
  *
  * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
+ *  			2012 - 2013 LOM
  *
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License
@@ -425,8 +426,10 @@ static struct DEVICES devicelist[] = {
 	{0x0421, 0x060e, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-10 (modem)"},	//
 	{0x0421, 0x0610, "option", "0", "0", 2, &modeswitch_zte_1msg, "Nokia CS-15 (cdrom)"},	//
 	{0x0421, 0x0612, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-15/CS-18 (modem)"},	//
+	{0x0421, 0x0618, "option", "0", "0", 2, &modeswitch_zte_1msg, "Nokia CS-12 (cdrom)"},	//
+	{0x0421, 0x0619, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-12 (modem)"},	//
 	{0x0421, 0x061d, "option", "0", "0", 2, &modeswitch_zte_1msg, "Nokia CS-11 (cdrom)"},	//
-	{0x0421, 0x061e, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-11 (modem)"},	//	
+	{0x0421, 0x061e, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-11 (modem)"},	//
 	{0x0421, 0x0622, "option", "0", "0", 2, &modeswitch_zte_1msg, "Nokia CS-17 (cdrom)"},	//
 	{0x0421, 0x0623, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-17 (modem)"},	//
 	{0x0421, 0x0627, "option", "0", "0", 2, &modeswitch_zte_1msg, "Nokia CS-18 (cdrom)"},	//
@@ -439,15 +442,15 @@ static struct DEVICES devicelist[] = {
 	{0x05c6, 0x1000, "option", "0", "0", 0, &modeswitch_zte_1msg, "Generic Qualcomm (cdrom)"},	//
 	{0x05c6, 0x2001, "option", "0", "0", 0, &modeswitch_zte_1msg, "Generic Qualcomm (cdrom)"},	//
 	{0x05c6, 0x6503, "option", "0", "0", 0, &modeswitch_zte_1msg, "Generic Qualcomm (cdrom)"},	//
-	{0x05c6, 0x9000, "option", "0", "0", 0, NULL, "Generic Qualcomm (modem)"},	//
+	{0x05c6, 0x9000, "option", "1", "2", 0, NULL, "Generic Qualcomm (modem)"},	//
 	{0x05c6, 0xf000, "option", "0", "0", 0, &modeswitch_zte_1msg, "Generic Qualcomm (cdrom)"},	//
 
 //D-Link
 	{0x07d1, 0x3e01, "option", "1", "0", 2 | GENERIC, NULL, "D-Link DWM-152 (modem)"},	//
 	{0x07d1, 0x3e02, "option", "1", "0", 2 | GENERIC, NULL, "D-Link DWM-156 (modem)"},	//
-	{0x07d1, 0x7e11, "option", "1", "2", 2 | GENERIC, NULL, "D-Link DWL-156 (modem)"},	//
+	{0x07d1, 0x7e11, "option", "1", "2", 2 | GENERIC, NULL, "D-Link DWM-156 (modem)"},	//
 	{0x07d1, 0xa800, "option", "0", "0", 0, &modeswitch_zte_1msg, "D-Link DWM-152/DWM-156 (cdrom)"},	//
-	{0x07d1, 0xa804, "option", "0", "0", 0, &modeswitch_zte_1msg, "D-Link DWL-156 (cdrom)"},	//
+	{0x07d1, 0xa804, "option", "0", "0", 0, &modeswitch_zte_1msg, "D-Link DWM-156 (cdrom)"},	//
 
 //Option
 	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon, "Option ICON 225"},	//
@@ -458,6 +461,7 @@ static struct DEVICES devicelist[] = {
 	{0x0af0, 0x9000, "option", "2", "2", 3, NULL, "Option GTM661W"},	//
 	{0x0af0, 0x9200, "option", "2", "2", 3, NULL, "Option GTM671WFS"},	//
 	{0x0af0, 0xd001, "option", "2", "2", 3, NULL, "Option GI1515"},	//
+	{0x0af0, 0xd033, NULL, "hso", "hso", 0, &hsoinit_icon, "Qualcomm ICON 322"},	//
 	{0x0af0, 0xd055, NULL, "hso", "hso", 0, &hsoinit_icon, "Qualcomm ICON 505"},	//
 
 //Ericsson Business Mobile Networks
@@ -605,6 +609,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x1526, "option", "0", "0", 2, &modeswitch_huawei_other, "Huawei K3772 (cdrom)"},	//
 	{0x12d1, 0x1553, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E1553"},	//
 	{0x12d1, 0x1557, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E173"},	//
+	{0x12d1, 0x155b, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E171/E320"},	//
 	{0x12d1, 0x1c05, "option", "2", "0", 2, NULL, "Huawei E173s (modem)"},	//
 	{0x12d1, 0x1c08, "option", "1", "0", 2, NULL, "Huawei E173s (modem)"},	//
 	{0x12d1, 0x1c0b, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E173s (cdrom)"},	//
@@ -682,6 +687,7 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x0121, "option", "1", "3", 2, NULL, "ZTE MF637 (modem)"},	//
 	{0x19d2, 0x0124, "option", "1", "4", 2, NULL, "ZTE MF110 (Variant) (modem)"},	//
 	{0x19d2, 0x0128, "option", "1", "3", 2, NULL, "ZTE MF651 (modem)"},	//
+	{0x19d2, 0x0149, "option", "0", "0", 2, &modeswitch_zte_3msg, "ZTE MF190 (cdrom)"},	//
 	{0x19d2, 0x0154, "option", "0", "0", 2, &modeswitch_zte_2msg, "ZTE MF190S (cdrom)"},	//
 	{0x19d2, 0x0166, "option", "0", "0", 2, &modeswitch_zte_other, "ZTE MF821 (Variant) (cdrom)"},	//
 	{0x19d2, 0x0167, "option", "1", "3", 2, NULL, "ZTE MF820D (variant) (modem)"},	//
@@ -721,6 +727,9 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0xfff6, "option", "0", "0", 2, &modeswitch_zte_other, "ZTE generic (cdrom)"},	//
 	{0x19d2, 0xfffe, "option", "1", "0", 2, NULL, "ZTE generic (modem)"},	//
 	{0x19d2, 0xffff, "option", "1", "0", 2, NULL, "ZTE generic (modem)"},	//
+	
+//Infomark
+//	{0x19f2, 0x1700, "option", "0", "0", 0 | ETH, NULL, "Clear Spot Voyager mifi"},	//
 
 //Bandrich
 	{0x1a8d, 0x1000, "option", "0", "0", 2, &modeswitch_bandrich, "Bandrich C-100/C-120/C-170/C-180/C-270/C-320/C321 (cdrom)"},	//
@@ -734,6 +743,7 @@ static struct DEVICES devicelist[] = {
 
 //T&A Mobile Phones (Alcatel)
 	{0x1bbb, 0x0000, "option", "2", "2", 2, NULL, "Alcatel X060S/X070S/X080S/X200 (modem)"},	//
+	{0x1bbb, 0x0012, "option", "2", "2", 2 | GENERIC, NULL, "Alcatel X085C (modem)"},	//
 	{0x1bbb, 0x0017, "option", "4", "4", 2, NULL, "Alcatel X220L (Variant), X500D (modem)"},	//
 	{0x1bbb, 0x0052, "option", "4", "4", 2 | GENERIC, NULL, "Alcatel X220L (Variant), (modem)"},	//
 	{0x1bbb, 0x00ca, "option", "0", "0", 2 | GENERIC, NULL, "Alcatel X080C (Variant), (modem)"},	//
@@ -753,7 +763,7 @@ static struct DEVICES devicelist[] = {
 //Qualcomm / Option / ALink
 	{0x1e0e, 0x9000, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU (modem)"},	//
 	{0x1e0e, 0x9200, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU (modem)"},	//
-	{0x1e0e, 0xce16, "option", "1", "0", 3 | GENERIC, NULL, "D-Link DWM-162-U5, Micromax MMX 300c (modem)"},	//
+	{0x1e0e, 0xce16, "option", "1", "0", 3, NULL, "D-Link DWM-162-U5, Micromax MMX 300c (modem)"},	//
 	{0x1e0e, 0xf000, "option", "0", "0", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU (cdrom)"},	//
 
 //Linktop
