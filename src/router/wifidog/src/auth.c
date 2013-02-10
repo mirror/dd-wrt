@@ -89,9 +89,10 @@ thread_client_timeout_check(const void *arg)
 /** Authenticates a single client against the central server and returns when done
  * Alters the firewall rules depending on what the auth server says
 @param r httpd request struct
+@param tokenValue the request token string
 */
 void
-authenticate_client(request *r)
+authenticate_client(request *r, const char *tokenValue)
 {
 	t_client	*client;
 	t_authresponse	auth_response;
@@ -112,7 +113,7 @@ authenticate_client(request *r)
 	}
 	
 	mac = safe_strdup(client->mac);
-	token = safe_strdup(client->token);
+	token = safe_strdup(tokenValue);
 	
 	UNLOCK_CLIENT_LIST();
 	
