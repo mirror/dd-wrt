@@ -121,6 +121,7 @@ typedef struct archive_handle_t {
 #define ARCHIVE_DONT_RESTORE_PERM   (1 << 6)
 #define ARCHIVE_NUMERIC_OWNER       (1 << 7)
 #define ARCHIVE_O_TRUNC             (1 << 8)
+#define ARCHIVE_REMEMBER_NAMES      (1 << 9)
 
 
 /* POSIX tar Header Block, from POSIX 1003.1-1990  */
@@ -219,9 +220,9 @@ IF_DESKTOP(long long) int unpack_xz_stream(transformer_aux_data_t *aux, int src_
 
 char* append_ext(char *filename, const char *expected_ext) FAST_FUNC;
 int bbunpack(char **argv,
-	    IF_DESKTOP(long long) int FAST_FUNC (*unpacker)(transformer_aux_data_t *aux),
-	    char* FAST_FUNC (*make_new_name)(char *filename, const char *expected_ext),
-	    const char *expected_ext
+		IF_DESKTOP(long long) int FAST_FUNC (*unpacker)(transformer_aux_data_t *aux),
+		char* FAST_FUNC (*make_new_name)(char *filename, const char *expected_ext),
+		const char *expected_ext
 ) FAST_FUNC;
 
 void check_errors_in_children(int signo);

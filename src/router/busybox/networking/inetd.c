@@ -165,6 +165,8 @@
 //usage:     "\n		(default: 0 - disabled)"
 
 #include <syslog.h>
+#include <sys/resource.h> /* setrlimit */
+#include <sys/socket.h> /* un.h may need this */
 #include <sys/un.h>
 
 #include "libbb.h"
@@ -183,8 +185,6 @@
 #undef  ENABLE_FEATURE_INETD_SUPPORT_BUILTIN_CHARGEN
 #define ENABLE_FEATURE_INETD_SUPPORT_BUILTIN_CHARGEN 0
 #endif
-
-#define _PATH_INETDPID  "/var/run/inetd.pid"
 
 #define CNT_INTERVAL    60      /* servers in CNT_INTERVAL sec. */
 #define RETRYTIME       60      /* retry after bind or server fail */
@@ -1130,7 +1130,7 @@ static void clean_up_and_exit(int sig UNUSED_PARAM)
 		if (ENABLE_FEATURE_CLEAN_UP)
 			close(sep->se_fd);
 	}
-	remove_pidfile(_PATH_INETDPID);
+	remove_pidfile(CONFIG_PID_FILE_PATH "/inetd.pid");
 	exit(EXIT_SUCCESS);
 }
 
@@ -1179,7 +1179,7 @@ int inetd_main(int argc UNUSED_PARAM, char **argv)
 		setgroups(1, &gid);
 	}
 
-	write_pidfile(_PATH_INETDPID);
+	write_pidfile(CONFIG_PID_FILE_PATH "/inetd.pid");
 
 	/* never fails under Linux (except if you pass it bad arguments) */
 	getrlimit(RLIMIT_NOFILE, &rlim_ofile);

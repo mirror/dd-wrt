@@ -1,6 +1,6 @@
 VERSION = 1
-PATCHLEVEL = 20
-SUBLEVEL = 2
+PATCHLEVEL = 21
+SUBLEVEL = 0
 EXTRAVERSION =
 NAME = Unnamed
 
@@ -297,6 +297,7 @@ NM		= $(CROSS_COMPILE)nm
 STRIP		= $(CROSS_COMPILE)strip
 OBJCOPY		= $(CROSS_COMPILE)objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
+PKG_CONFIG	?= $(CROSS_COMPILE)pkg-config
 AWK		= awk
 GENKSYMS	= scripts/genksyms/genksyms
 DEPMOD		= /sbin/depmod
