@@ -26,8 +26,8 @@
 #include "dhcpc.h"
 
 #include <netinet/if_ether.h>
-#include <netpacket/packet.h>
 #include <linux/filter.h>
+#include <linux/if_packet.h>
 
 /* "struct client_config_t client_config" is in bb_common_bufsiz1 */
 
@@ -589,7 +589,6 @@ static void init_packet(struct dhcp_packet *packet, char type)
 
 static void add_client_options(struct dhcp_packet *packet)
 {
-	uint8_t c;
 	int i, end, len;
 
 	udhcp_add_simple_option(packet, DHCP_MAX_SIZE, htons(IP_UDP_DHCP_SIZE));
@@ -599,13 +598,9 @@ static void add_client_options(struct dhcp_packet *packet)
 	 * No bounds checking because it goes towards the head of the packet. */
 	end = udhcp_end_option(packet->options);
 	len = 0;
-	for (i = 0; (c = dhcp_optflags[i].code) != 0; i++) {
-		if ((   (dhcp_optflags[i].flags & OPTION_REQ)
-		     && !client_config.no_default_options
-		    )
-		 || (client_config.opt_mask[c >> 3] & (1 << (c & 7)))
-		) {
-			packet->options[end + OPT_DATA + len] = c;
+	for (i = 1; i < DHCP_END; i++) {
+		if (client_config.opt_mask[i >> 3] & (1 << (i & 7))) {
+			packet->options[end + OPT_DATA + len] = i;
 			len++;
 		}
 	}
@@ -841,12 +836,31 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 	int bytes;
 	struct ip_udp_dhcp_packet packet;
 	uint16_t check;
+	unsigned char cmsgbuf[CMSG_LEN(sizeof(struct tpacket_auxdata))];
+	struct iovec iov;
+	struct msghdr msg;
+	struct cmsghdr *cmsg;
 
-	bytes = safe_read(fd, &packet, sizeof(packet));
-	if (bytes < 0) {
-		log1("Packet read error, ignoring");
-		/* NB: possible down interface, etc. Caller should pause. */
-		return bytes; /* returns -1 */
+	/* used to use just safe_read(fd, &packet, sizeof(packet))
+	 * but we need to check for TP_STATUS_CSUMNOTREADY :(
+	 */
+	iov.iov_base = &packet;
+	iov.iov_len = sizeof(packet);
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = &iov;
+	msg.msg_iovlen = 1;
+	msg.msg_control = cmsgbuf;
+	msg.msg_controllen = sizeof(cmsgbuf);
+	for (;;) {
+		bytes = recvmsg(fd, &msg, 0);
+		if (bytes < 0) {
+			if (errno == EINTR)
+				continue;
+			log1("Packet read error, ignoring");
+			/* NB: possible down interface, etc. Caller should pause. */
+			return bytes; /* returns -1 */
+		}
+		break;
 	}
 
 	if (bytes < (int) (sizeof(packet.ip) + sizeof(packet.udp))) {
@@ -883,6 +897,20 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 		return -2;
 	}
 
+	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+		if (cmsg->cmsg_level == SOL_PACKET
+		 && cmsg->cmsg_type == PACKET_AUXDATA
+		) {
+			/* some VMs don't checksum UDP and TCP data
+			 * they send to the same physical machine,
+			 * here we detect this case:
+			 */
+			struct tpacket_auxdata *aux = (void *)CMSG_DATA(cmsg);
+			if (aux->tp_status & TP_STATUS_CSUMNOTREADY)
+				goto skip_udp_sum_check;
+		}
+	}
+
 	/* verify UDP checksum. IP header has to be modified for this */
 	memset(&packet.ip, 0, offsetof(struct iphdr, protocol));
 	/* ip.xx fields which are not memset: protocol, check, saddr, daddr */
@@ -893,6 +921,7 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 		log1("Packet with bad UDP checksum received, ignoring");
 		return -2;
 	}
+ skip_udp_sum_check:
 
 	if (packet.data.cookie != htonl(DHCP_MAGIC)) {
 		bb_info_msg("Packet with bad magic, ignoring");
@@ -988,7 +1017,7 @@ static int udhcp_raw_socket(int ifindex)
 	log1("Opening raw socket on ifindex %d", ifindex); //log2?
 
 	fd = xsocket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
-	log1("Got raw socket fd %d", fd); //log2?
+	log1("Got raw socket fd"); //log2?
 
 	sock.sll_family = AF_PACKET;
 	sock.sll_protocol = htons(ETH_P_IP);
@@ -1000,7 +1029,14 @@ static int udhcp_raw_socket(int ifindex)
 		/* Ignoring error (kernel may lack support for this) */
 		if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER, &filter_prog,
 				sizeof(filter_prog)) >= 0)
-			log1("Attached filter to raw socket fd %d", fd); // log?
+			log1("Attached filter to raw socket fd"); // log?
+	}
+
+	if (setsockopt(fd, SOL_PACKET, PACKET_AUXDATA,
+			&const_int_1, sizeof(int)) < 0
+	) {
+		if (errno != ENOPROTOOPT)
+			log1("Can't set PACKET_AUXDATA on raw socket");
 	}
 
 	log1("Created raw socket");
@@ -1257,8 +1293,6 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		SERVER_PORT = CLIENT_PORT - 1;
 	}
 #endif
-	if (opt & OPT_o)
-		client_config.no_default_options = 1;
 	while (list_O) {
 		char *optstr = llist_pop(&list_O);
 		unsigned n = bb_strtou(optstr, NULL, 0);
@@ -1267,6 +1301,14 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 			n = dhcp_optflags[n].code;
 		}
 		client_config.opt_mask[n >> 3] |= 1 << (n & 7);
+	}
+	if (!(opt & OPT_o)) {
+		unsigned i, n;
+		for (i = 0; (n = dhcp_optflags[i].code) != 0; i++) {
+			if (dhcp_optflags[i].flags & OPTION_REQ) {
+				client_config.opt_mask[n >> 3] |= 1 << (n & 7);
+			}
+		}
 	}
 	while (list_x) {
 		char *optstr = llist_pop(&list_x);
@@ -1362,8 +1404,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		retval = 0;
 		/* If we already timed out, fall through with retval = 0, else... */
 		if ((int)tv.tv_sec > 0) {
+			log1("Waiting on select %u seconds", (int)tv.tv_sec);
 			timestamp_before_wait = (unsigned)monotonic_sec();
-			log1("Waiting on select...");
 			retval = select(max_fd + 1, &rfds, NULL, NULL, &tv);
 			if (retval < 0) {
 				/* EINTR? A signal was caught, don't panic */
@@ -1400,7 +1442,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 
 			switch (state) {
 			case INIT_SELECTING:
-				if (packet_num < discover_retries) {
+				if (!discover_retries || packet_num < discover_retries) {
 					if (packet_num == 0)
 						xid = random_xid();
 					/* broadcast */
@@ -1429,7 +1471,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				packet_num = 0;
 				continue;
 			case REQUESTING:
-				if (packet_num < discover_retries) {
+				if (!discover_retries || packet_num < discover_retries) {
 					/* send broadcast select packet */
 					send_select(xid, server_addr, requested_ip);
 					timeout = discover_timeout;
@@ -1681,7 +1723,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 #endif
 				/* enter bound state */
 				timeout = lease_seconds / 2;
-			        temp_addr.s_addr = packet.yiaddr;
+				temp_addr.s_addr = packet.yiaddr;
 				bb_info_msg("Lease of %s obtained, lease time %u",
 					inet_ntoa(temp_addr), (unsigned)lease_seconds);
 				requested_ip = packet.yiaddr;

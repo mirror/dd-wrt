@@ -1026,8 +1026,8 @@ static int check_deps(deb_file_t **deb_file, int deb_start /*, int dep_max_count
 			if (package_edge->type == EDGE_CONFLICTS) {
 				const unsigned package_num =
 					search_package_hashtable(package_edge->name,
-								 package_edge->version,
-								 package_edge->operator);
+								package_edge->version,
+								package_edge->operator);
 				int result = 0;
 				if (package_hashtable[package_num] != NULL) {
 					status_num = search_status_hashtable(name_hashtable[package_hashtable[package_num]->name]);
@@ -1114,7 +1114,7 @@ static int check_deps(deb_file_t **deb_file, int deb_start /*, int dep_max_count
 				 */
 				if (root_of_alternatives && package_edge->type != root_of_alternatives->type - 1)
 					bb_error_msg_and_die("fatal error, package dependencies corrupt: %d != %d - 1",
-							     package_edge->type, root_of_alternatives->type);
+							package_edge->type, root_of_alternatives->type);
 
 				if (package_hashtable[package_num] != NULL)
 					result = !package_satisfies_dependency(package_num, package_edge->type);
@@ -1665,20 +1665,25 @@ static void unpack_package(deb_file_t *deb_file)
 	archive_handle = init_archive_deb_ar(deb_file->filename);
 	init_archive_deb_data(archive_handle);
 	archive_handle->dpkg__sub_archive->accept = conffile_list;
+	/* Why ARCHIVE_REMEMBER_NAMES?
+	 * We want names collected in ->passed list even if conffile_list
+	 * is NULL (otherwise get_header_tar may optimize name saving out):
+	 */
+	archive_handle->dpkg__sub_archive->ah_flags |= ARCHIVE_REMEMBER_NAMES | ARCHIVE_UNLINK_OLD;
 	archive_handle->dpkg__sub_archive->filter = filter_rename_config;
 	archive_handle->dpkg__sub_archive->action_data = data_extract_all_prefix;
 	archive_handle->dpkg__sub_archive->dpkg__buffer = (char*)"/"; /* huh? */
-	archive_handle->dpkg__sub_archive->ah_flags |= ARCHIVE_UNLINK_OLD;
 	unpack_ar_archive(archive_handle);
 
 	/* Create the list file */
 	list_filename = xasprintf("/var/lib/dpkg/info/%s.%s", package_name, "list");
 	out_stream = xfopen_for_write(list_filename);
+	archive_handle->dpkg__sub_archive->passed = llist_rev(archive_handle->dpkg__sub_archive->passed);
 	while (archive_handle->dpkg__sub_archive->passed) {
+		char *filename = llist_pop(&archive_handle->dpkg__sub_archive->passed);
 		/* the leading . has been stripped by data_extract_all_prefix already */
-		fputs(archive_handle->dpkg__sub_archive->passed->data, out_stream);
-		fputc('\n', out_stream);
-		archive_handle->dpkg__sub_archive->passed = archive_handle->dpkg__sub_archive->passed->link;
+		fprintf(out_stream, "%s\n", filename);
+		free(filename);
 	}
 	fclose(out_stream);
 
