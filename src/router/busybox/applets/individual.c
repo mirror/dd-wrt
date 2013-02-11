@@ -14,7 +14,7 @@ const char *applet_name;
 int main(int argc, char **argv)
 {
 	applet_name = argv[0];
-	return APPLET_main(argc,argv);
+	return APPLET_main(argc, argv);
 }
 
 #ifndef HAVE_NOMESSAGE

@@ -796,9 +796,9 @@ static void parse_conf(const char *path, int flag)
 		/* the line is not recognized */
  config_error:
 		bb_error_msg("config error '%s' in '%s'", buf, filename);
-	 } /* while (fgets) */
+	} /* while (fgets) */
 
-	 fclose(f);
+	fclose(f);
 }
 
 #if ENABLE_FEATURE_HTTPD_ENCODE_URL_STR
@@ -1414,7 +1414,7 @@ static void send_cgi_and_exit(
 		if (script != url) { /* paranoia */
 			*script = '\0';
 			if (chdir(url + 1) != 0) {
-				bb_perror_msg("chdir(%s)", url + 1);
+				bb_perror_msg("can't change directory to '%s'", url + 1);
 				goto error_execing_cgi;
 			}
 			// not needed: *script = '/';
@@ -1708,7 +1708,7 @@ static int pam_talker(int num_msg,
 		case PAM_PROMPT_ECHO_OFF:
 			s = userinfo->pw;
 			break;
-	        case PAM_ERROR_MSG:
+		case PAM_ERROR_MSG:
         	case PAM_TEXT_INFO:
         		s = "";
 			break;

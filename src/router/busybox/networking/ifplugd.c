@@ -22,9 +22,9 @@
 //usage:     "\n	-r PROG		Script to run"
 //usage:     "\n	-x ARG		Extra argument for script"
 //usage:     "\n	-I		Don't exit on nonzero exit code from script"
-//usage:     "\n	-p		Don't run script on daemon startup"
-//usage:     "\n	-q		Don't run script on daemon quit"
-//usage:     "\n	-l		Run script on startup even if no cable is detected"
+//usage:     "\n	-p		Don't run \"up\" script on startup"
+//usage:     "\n	-q		Don't run \"down\" script on exit"
+//usage:     "\n	-l		Always run script on startup"
 //usage:     "\n	-t SECS		Poll time in seconds"
 //usage:     "\n	-u SECS		Delay before running script after link up"
 //usage:     "\n	-d SECS		Delay after link down"
@@ -551,7 +551,7 @@ int ifplugd_main(int argc UNUSED_PARAM, char **argv)
 	applet_name = xasprintf("ifplugd(%s)", G.iface);
 
 #if ENABLE_FEATURE_PIDFILE
-	pidfile_name = xasprintf(_PATH_VARRUN"ifplugd.%s.pid", G.iface);
+	pidfile_name = xasprintf(CONFIG_PID_FILE_PATH "/ifplugd.%s.pid", G.iface);
 	pid_from_pidfile = read_pid(pidfile_name);
 
 	if (opts & FLAG_KILL) {
