@@ -308,6 +308,10 @@ else
 	echo "# CONFIG_SWAPONOFF is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_SWAPON_PRI is not set" >> busybox/.config
 endif
+	echo "# CONFIG_SHA3SUM is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_KMSG_SYSLOG is not set" >> busybox/.config
+	echo "CONFIG_SHA3_SMALL=1" >> busybox/.config
+
 	cd busybox && make oldconfig
 	
 	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
