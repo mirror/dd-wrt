@@ -158,7 +158,7 @@ int xhci_fake_doorbell(struct xhci_hcd *xhci, int slot_id)
 	/*
 	 * Wait for the HCHalted Status bit to be 0 to indicate the host is running.
 	 */
-	ret = handshake(xhci, &xhci->op_regs->status,
+	ret = xhci_handshake(xhci, &xhci->op_regs->status,
 		STS_HALT, 0, XHCI_MAX_HALT_USEC);
 
 	if (ret == -ETIMEDOUT) {
