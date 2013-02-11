@@ -67,7 +67,7 @@
 # include <linux/if_bridge.h>
 
 /* FIXME: These 4 funcs are not really clean and could be improved */
-static ALWAYS_INLINE void strtotimeval(struct timeval *tv,
+static ALWAYS_INLINE void bb_strtotimeval(struct timeval *tv,
 		const char *time_str)
 {
 	double secs;
@@ -104,7 +104,7 @@ static void jiffies_to_tv(struct timeval *tv, unsigned long jiffies)
 static unsigned long str_to_jiffies(const char *time_str)
 {
 	struct timeval tv;
-	strtotimeval(&tv, time_str);
+	bb_strtotimeval(&tv, time_str);
 	return tv_to_jiffies(&tv);
 }
 
@@ -129,15 +129,15 @@ int brctl_main(int argc UNUSED_PARAM, char **argv)
 		"setageing\0" "setfd\0" "sethello\0" "setmaxage\0"
 		"setpathcost\0" "setportprio\0" "setbridgeprio\0"
 	)
-	IF_FEATURE_BRCTL_SHOW("showmacs\0" "show\0");
+	IF_FEATURE_BRCTL_SHOW("show\0");
 
 	enum { ARG_addbr = 0, ARG_delbr, ARG_addif, ARG_delif
 		IF_FEATURE_BRCTL_FANCY(,
-		   ARG_stp,
-		   ARG_setageing, ARG_setfd, ARG_sethello, ARG_setmaxage,
-		   ARG_setpathcost, ARG_setportprio, ARG_setbridgeprio
+			ARG_stp,
+			ARG_setageing, ARG_setfd, ARG_sethello, ARG_setmaxage,
+			ARG_setpathcost, ARG_setportprio, ARG_setbridgeprio
 		)
-		IF_FEATURE_BRCTL_SHOW(, ARG_showmacs, ARG_show)
+		IF_FEATURE_BRCTL_SHOW(, ARG_show)
 	};
 
 	int fd;
@@ -285,7 +285,7 @@ int brctl_main(int argc UNUSED_PARAM, char **argv)
 					bb_error_msg_and_die(bb_msg_invalid_arg, *argv, "port");
 				memset(ifidx, 0, sizeof ifidx);
 				arm_ioctl(args, BRCTL_GET_PORT_LIST, (unsigned long)ifidx,
-						  MAX_PORTS);
+						MAX_PORTS);
 				xioctl(fd, SIOCDEVPRIVATE, &ifr);
 				for (i = 0; i < MAX_PORTS; i++) {
 					if (ifidx[i] == port) {

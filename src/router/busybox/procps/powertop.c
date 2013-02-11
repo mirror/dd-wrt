@@ -9,7 +9,7 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
-//applet:IF_POWERTOP(APPLET(powertop, BB_DIR_BIN, BB_SUID_DROP))
+//applet:IF_POWERTOP(APPLET(powertop, BB_DIR_USR_SBIN, BB_SUID_DROP))
 
 //kbuild:lib-$(CONFIG_POWERTOP) += powertop.o
 
@@ -493,7 +493,7 @@ static NOINLINE int process_timer_stats(void)
  * Get information about CPU using CPUID opcode.
  */
 static void cpuid(unsigned int *eax, unsigned int *ebx, unsigned int *ecx,
-				  unsigned int *edx)
+				unsigned int *edx)
 {
 	/* EAX value specifies what information to return */
 	__asm__(
@@ -650,7 +650,7 @@ static void show_timerstats(void)
 	} else {
 		bb_putchar('\n');
 		bb_error_msg("no stats available; run as root or"
-				" enable the cpufreq_stats module");
+				" enable the timer_stats module");
 	}
 }
 

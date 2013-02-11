@@ -23,8 +23,9 @@
  *      define DEBUG=1 to compile in debugging ('set -o debug' to turn on)
  *      define DEBUG=2 to compile in and turn on debugging.
  *
- * When debugging is on, debugging info will be written to ./trace and
- * a quit signal will generate a core dump.
+ * When debugging is on (DEBUG is 1 and "set -o debug" was executed),
+ * debugging info will be written to ./trace and a quit signal
+ * will generate a core dump.
  */
 #define DEBUG 0
 /* Tweak debug output verbosity here */
@@ -1899,6 +1900,10 @@ static const struct {
 	const char *var_text;
 	void (*var_func)(const char *) FAST_FUNC;
 } varinit_data[] = {
+	/*
+	 * Note: VEXPORT would not work correctly here for NOFORK applets:
+	 * some environment strings may be constant.
+	 */
 	{ VSTRFIXED|VTEXTFIXED       , defifsvar   , NULL            },
 #if ENABLE_ASH_MAIL
 	{ VSTRFIXED|VTEXTFIXED|VUNSET, "MAIL"      , changemail      },
@@ -3559,7 +3564,8 @@ set_curjob(struct job *jp, unsigned mode)
 		break;
 	case CUR_RUNNING:
 		/* newly created job or backgrounded job,
-		   put after all stopped jobs. */
+		 * put after all stopped jobs.
+		 */
 		while (1) {
 			jp1 = *jpp;
 #if JOBS
@@ -5105,15 +5111,14 @@ openredirect(union node *redir)
 	char *fname;
 	int f;
 
+	fname = redir->nfile.expfname;
 	switch (redir->nfile.type) {
 	case NFROM:
-		fname = redir->nfile.expfname;
 		f = open(fname, O_RDONLY);
 		if (f < 0)
 			goto eopen;
 		break;
 	case NFROMTO:
-		fname = redir->nfile.expfname;
 		f = open(fname, O_RDWR|O_CREAT, 0666);
 		if (f < 0)
 			goto ecreate;
@@ -5124,7 +5129,6 @@ openredirect(union node *redir)
 #endif
 		/* Take care of noclobber mode. */
 		if (Cflag) {
-			fname = redir->nfile.expfname;
 			f = noclobberopen(fname);
 			if (f < 0)
 				goto ecreate;
@@ -5132,13 +5136,11 @@ openredirect(union node *redir)
 		}
 		/* FALLTHROUGH */
 	case NCLOBBER:
-		fname = redir->nfile.expfname;
 		f = open(fname, O_WRONLY|O_CREAT|O_TRUNC, 0666);
 		if (f < 0)
 			goto ecreate;
 		break;
 	case NAPPEND:
-		fname = redir->nfile.expfname;
 		f = open(fname, O_WRONLY|O_CREAT|O_APPEND, 0666);
 		if (f < 0)
 			goto ecreate;
@@ -6138,7 +6140,9 @@ argstr(char *p, int flags, struct strlist *var_str_list)
 			length++;
 			goto addquote;
 		case CTLVAR:
+			TRACE(("argstr: evalvar('%s')\n", p));
 			p = evalvar(p, flags, var_str_list);
+			TRACE(("argstr: evalvar:'%s'\n", (char *)stackblock()));
 			goto start;
 		case CTLBACKQ:
 			c = '\0';
@@ -6335,7 +6339,8 @@ subevalvar(char *p, char *varname, int strloc, int subtype,
 	IF_ASH_BASH_COMPAT(const char *repl = NULL;)
 	IF_ASH_BASH_COMPAT(int pos, len, orig_len;)
 	int saveherefd = herefd;
-	int amount, workloc, resetloc;
+	int amount, resetloc;
+	IF_ASH_BASH_COMPAT(int workloc;)
 	int zero;
 	char *(*scan)(char*, char*, char*, char*, int, int);
 
@@ -6448,9 +6453,9 @@ subevalvar(char *p, char *varname, int strloc, int subtype,
 	rmescend--;
 	str = (char *)stackblock() + strloc;
 	preglob(str, varflags & VSQUOTE, 0);
-	workloc = expdest - (char *)stackblock();
 
 #if ENABLE_ASH_BASH_COMPAT
+	workloc = expdest - (char *)stackblock();
 	if (subtype == VSREPLACE || subtype == VSREPLACEALL) {
 		char *idx, *end;
 
@@ -7248,6 +7253,7 @@ expandarg(union node *arg, struct arglist *arglist, int flag)
 	STARTSTACKSTR(expdest);
 	ifsfirst.next = NULL;
 	ifslastp = NULL;
+	TRACE(("expandarg: argstr('%s',flags:%x)\n", arg->narg.text, flag));
 	argstr(arg->narg.text, flag,
 			/* var_str_list: */ arglist ? arglist->list : NULL);
 	p = _STPUTC('\0', expdest);
@@ -7256,6 +7262,7 @@ expandarg(union node *arg, struct arglist *arglist, int flag)
 		return;                 /* here document expanded */
 	}
 	p = grabstackstr(p);
+	TRACE(("expandarg: p:'%s'\n", p));
 	exparg.lastp = &exparg.list;
 	/*
 	 * TODO - EXP_REDIR
@@ -7266,8 +7273,10 @@ expandarg(union node *arg, struct arglist *arglist, int flag)
 		exparg.lastp = &exparg.list;
 		expandmeta(exparg.list /*, flag*/);
 	} else {
-		if (flag & EXP_REDIR) /*XXX - for now, just remove escapes */
+		if (flag & EXP_REDIR) { /*XXX - for now, just remove escapes */
 			rmescapes(p, 0);
+			TRACE(("expandarg: rmescapes:'%s'\n", p));
+		}
 		sp = stzalloc(sizeof(*sp));
 		sp->text = p;
 		*exparg.lastp = sp;
@@ -8664,8 +8673,20 @@ expredir(union node *n)
 		case NCLOBBER:
 		case NAPPEND:
 			expandarg(redir->nfile.fname, &fn, EXP_TILDE | EXP_REDIR);
+			TRACE(("expredir expanded to '%s'\n", fn.list->text));
 #if ENABLE_ASH_BASH_COMPAT
  store_expfname:
+#endif
+#if 0
+// By the design of stack allocator, the loop of this kind:
+//	while true; do while true; do break; done </dev/null; done
+// will look like a memory leak: ash plans to free expfname's
+// of "/dev/null" as soon as it finishes running the loop
+// (in this case, never).
+// This "fix" is wrong:
+			if (redir->nfile.expfname)
+				stunalloc(redir->nfile.expfname);
+// It results in corrupted state of stacked allocations.
 #endif
 			redir->nfile.expfname = fn.list->text;
 			break;
@@ -9302,11 +9323,11 @@ evalcommand(union node *cmd, int flags)
 
 	/* Now locate the command. */
 	if (argc) {
-		const char *oldpath;
 		int cmd_flag = DO_ERR;
-
+#if ENABLE_ASH_CMDCMD
+		const char *oldpath = path + 5;
+#endif
 		path += 5;
-		oldpath = path;
 		for (;;) {
 			find_command(argv[0], &cmdentry, cmd_flag, path);
 			if (cmdentry.cmdtype == CMDUNKNOWN) {
@@ -11629,8 +11650,9 @@ parsebackq: {
 	INT_ON;
 	if (oldstyle) {
 		/* We must read until the closing backquote, giving special
-		   treatment to some slashes, and then push the string and
-		   reread it as input, interpreting it normally.  */
+		 * treatment to some slashes, and then push the string and
+		 * reread it as input, interpreting it normally.
+		 */
 		char *pout;
 		size_t psavelen;
 		char *pstr;
@@ -12621,9 +12643,27 @@ exportcmd(int argc UNUSED_PARAM, char **argv)
 	char *name;
 	const char *p;
 	char **aptr;
-	int flag = argv[0][0] == 'r' ? VREADONLY : VEXPORT;
+	char opt;
+	int flag;
+	int flag_off;
 
-	if (nextopt("p") != 'p') {
+	/* "readonly" in bash accepts, but ignores -n.
+	 * We do the same: it saves a conditional in nextopt's param.
+	 */
+	flag_off = 0;
+	while ((opt = nextopt("np")) != '\0') {
+		if (opt == 'n')
+			flag_off = VEXPORT;
+	}
+	flag = VEXPORT;
+	if (argv[0][0] == 'r') {
+		flag = VREADONLY;
+		flag_off = 0; /* readonly ignores -n */
+	}
+	flag_off = ~flag_off;
+
+	/*if (opt_p_not_specified) - bash doesnt check this. Try "export -p NAME" */
+	{
 		aptr = argptr;
 		name = *aptr;
 		if (name) {
@@ -12634,15 +12674,19 @@ exportcmd(int argc UNUSED_PARAM, char **argv)
 				} else {
 					vp = *findvar(hashvar(name), name);
 					if (vp) {
-						vp->flags |= flag;
+						vp->flags = ((vp->flags | flag) & flag_off);
 						continue;
 					}
 				}
-				setvar(name, p, flag);
+				setvar(name, p, (flag & flag_off));
 			} while ((name = *++aptr) != NULL);
 			return 0;
 		}
 	}
+
+	/* No arguments. Show the list of exported or readonly vars.
+	 * -n is ignored.
+	 */
 	showvars(argv[0], flag, 0);
 	return 0;
 }
@@ -12795,6 +12839,10 @@ readcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 		}
 	}
 
+	/* "read -s" needs to save/restore termios, can't allow ^C
+	 * to jump out of it.
+	 */
+	INT_OFF;
 	r = shell_builtin_read(setvar2,
 		argptr,
 		bltinlookup("IFS"), /* can be NULL */
@@ -12804,6 +12852,7 @@ readcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 		opt_t,
 		opt_u
 	);
+	INT_ON;
 
 	if ((uintptr_t)r > 1)
 		ash_msg_and_raise_error(r);

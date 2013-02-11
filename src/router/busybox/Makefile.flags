@@ -30,6 +30,7 @@ CFLAGS += $(call cc-option,-Wstrict-prototypes,)
 CFLAGS += $(call cc-option,-Wunused -Wunused-parameter,)
 CFLAGS += $(call cc-option,-Wunused-function -Wunused-value,)
 CFLAGS += $(call cc-option,-Wmissing-prototypes -Wmissing-declarations,)
+CFLAGS += $(call cc-option,-Wno-format-security,)
 # warn about C99 declaration after statement
 CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
 # If you want to add more -Wsomething above, make sure that it is
@@ -58,6 +59,9 @@ CFLAGS += $(call cc-option,-Os -fno-builtin-strlen -finline-limit=0 -fomit-frame
 CFLAGS += $(call cc-option,-fno-guess-branch-probability,)
 CFLAGS += $(call cc-option,-funsigned-char -static-libgcc,)
 CFLAGS += $(call cc-option,-falign-functions=1 -falign-jumps=1 -falign-labels=1 -falign-loops=1,)
+# Defeat .eh_frame bloat (gcc 4.6.3 x86-32 defconfig: 20% smaller busybox binary):
+CFLAGS += $(call cc-option,-fno-unwind-tables,)
+CFLAGS += $(call cc-option,-fno-asynchronous-unwind-tables,)
 
 # FIXME: These warnings are at least partially to be concerned about and should
 # be fixed..
@@ -80,6 +84,12 @@ ARCH_FPIC ?= -fpic
 ARCH_FPIE ?= -fpie
 ARCH_PIE ?= -pie
 
+# Usage: $(eval $(call pkg_check_modules,VARIABLE-PREFIX,MODULES))
+define pkg_check_modules
+$(1)_CFLAGS := $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --cflags $(2))
+$(1)_LIBS := $(shell $(PKG_CONFIG) $(PKG_CONFIG_FLAGS) --libs $(2))
+endef
+
 ifeq ($(CONFIG_BUILD_LIBBUSYBOX),y)
 # on i386: 14% smaller libbusybox.so
 # (code itself is 9% bigger, we save on relocs/PLT/GOT)
@@ -91,6 +101,7 @@ endif
 
 ifeq ($(CONFIG_STATIC),y)
 CFLAGS_busybox += -static
+PKG_CONFIG_FLAGS += --static
 endif
 
 ifeq ($(CONFIG_PIE),y)
@@ -133,7 +144,10 @@ LDLIBS += pam pam_misc pthread
 endif
 
 ifeq ($(CONFIG_SELINUX),y)
-LDLIBS += selinux sepol
+SELINUX_PC_MODULES = libselinux libsepol
+$(eval $(call pkg_check_modules,SELINUX,$(SELINUX_PC_MODULES)))
+CPPFLAGS += $(SELINUX_CFLAGS)
+LDLIBS += $(if $(SELINUX_LIBS),$(SELINUX_LIBS:-l%=%),$(SELINUX_PC_MODULES:lib%=%))
 endif
 
 ifeq ($(CONFIG_EFENCE),y)

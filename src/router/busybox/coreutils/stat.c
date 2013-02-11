@@ -99,9 +99,15 @@ static const char *file_type(const struct stat *st)
 	if (S_ISFIFO(st->st_mode)) return "fifo";
 	if (S_ISLNK(st->st_mode))  return "symbolic link";
 	if (S_ISSOCK(st->st_mode)) return "socket";
+#ifdef S_TYPEISMQ
 	if (S_TYPEISMQ(st))        return "message queue";
+#endif
+#ifdef S_TYPEISSEM
 	if (S_TYPEISSEM(st))       return "semaphore";
+#endif
+#ifdef S_TYPEISSHM
 	if (S_TYPEISSHM(st))       return "shared memory object";
+#endif
 #ifdef S_TYPEISTMO
 	if (S_TYPEISTMO(st))       return "typed memory object";
 #endif
@@ -436,7 +442,7 @@ static bool do_statfs(const char *filename, const char *format)
 		     : getfilecon(filename, &scontext)
 		    ) < 0
 		) {
-			bb_perror_msg(filename);
+			bb_simple_perror_msg(filename);
 			return 0;
 		}
 	}
@@ -549,7 +555,7 @@ static bool do_stat(const char *filename, const char *format)
 		     : getfilecon(filename, &scontext)
 		    ) < 0
 		) {
-			bb_perror_msg(filename);
+			bb_simple_perror_msg(filename);
 			return 0;
 		}
 	}
@@ -585,37 +591,43 @@ static bool do_stat(const char *filename, const char *format)
 # else
 		if (option_mask32 & OPT_TERSE) {
 			format = (option_mask32 & OPT_SELINUX ?
-				  "%n %s %b %f %u %g %D %i %h %t %T %X %Y %Z %o %C\n":
-				  "%n %s %b %f %u %g %D %i %h %t %T %X %Y %Z %o\n");
+				"%n %s %b %f %u %g %D %i %h %t %T %X %Y %Z %o %C\n"
+				:
+				"%n %s %b %f %u %g %D %i %h %t %T %X %Y %Z %o\n"
+				);
 		} else {
 			if (S_ISBLK(statbuf.st_mode) || S_ISCHR(statbuf.st_mode)) {
 				format = (option_mask32 & OPT_SELINUX ?
-					  "  File: %N\n"
-					  "  Size: %-10s\tBlocks: %-10b IO Block: %-6o %F\n"
-					  "Device: %Dh/%dd\tInode: %-10i  Links: %-5h"
-					  " Device type: %t,%T\n"
-					  "Access: (%04a/%10.10A)  Uid: (%5u/%8U)   Gid: (%5g/%8G)\n"
-					  "   S_Context: %C\n"
-					  "Access: %x\n" "Modify: %y\n" "Change: %z\n":
-					  "  File: %N\n"
-					  "  Size: %-10s\tBlocks: %-10b IO Block: %-6o %F\n"
-					  "Device: %Dh/%dd\tInode: %-10i  Links: %-5h"
-					  " Device type: %t,%T\n"
-					  "Access: (%04a/%10.10A)  Uid: (%5u/%8U)   Gid: (%5g/%8G)\n"
-					  "Access: %x\n" "Modify: %y\n" "Change: %z\n");
+					"  File: %N\n"
+					"  Size: %-10s\tBlocks: %-10b IO Block: %-6o %F\n"
+					"Device: %Dh/%dd\tInode: %-10i  Links: %-5h"
+					" Device type: %t,%T\n"
+					"Access: (%04a/%10.10A)  Uid: (%5u/%8U)   Gid: (%5g/%8G)\n"
+					"   S_Context: %C\n"
+					"Access: %x\n" "Modify: %y\n" "Change: %z\n"
+					:
+					"  File: %N\n"
+					"  Size: %-10s\tBlocks: %-10b IO Block: %-6o %F\n"
+					"Device: %Dh/%dd\tInode: %-10i  Links: %-5h"
+					" Device type: %t,%T\n"
+					"Access: (%04a/%10.10A)  Uid: (%5u/%8U)   Gid: (%5g/%8G)\n"
+					"Access: %x\n" "Modify: %y\n" "Change: %z\n"
+					);
 			} else {
 				format = (option_mask32 & OPT_SELINUX ?
-					  "  File: %N\n"
-					  "  Size: %-10s\tBlocks: %-10b IO Block: %-6o %F\n"
-					  "Device: %Dh/%dd\tInode: %-10i  Links: %h\n"
-					  "Access: (%04a/%10.10A)  Uid: (%5u/%8U)   Gid: (%5g/%8G)\n"
-					  "S_Context: %C\n"
-					  "Access: %x\n" "Modify: %y\n" "Change: %z\n":
-					  "  File: %N\n"
-					  "  Size: %-10s\tBlocks: %-10b IO Block: %-6o %F\n"
-					  "Device: %Dh/%dd\tInode: %-10i  Links: %h\n"
-					  "Access: (%04a/%10.10A)  Uid: (%5u/%8U)   Gid: (%5g/%8G)\n"
-					  "Access: %x\n" "Modify: %y\n" "Change: %z\n");
+					"  File: %N\n"
+					"  Size: %-10s\tBlocks: %-10b IO Block: %-6o %F\n"
+					"Device: %Dh/%dd\tInode: %-10i  Links: %h\n"
+					"Access: (%04a/%10.10A)  Uid: (%5u/%8U)   Gid: (%5g/%8G)\n"
+					"S_Context: %C\n"
+					"Access: %x\n" "Modify: %y\n" "Change: %z\n"
+					:
+					"  File: %N\n"
+					"  Size: %-10s\tBlocks: %-10b IO Block: %-6o %F\n"
+					"Device: %Dh/%dd\tInode: %-10i  Links: %h\n"
+					"Access: (%04a/%10.10A)  Uid: (%5u/%8U)   Gid: (%5g/%8G)\n"
+					"Access: %x\n" "Modify: %y\n" "Change: %z\n"
+					);
 			}
 		}
 # endif
