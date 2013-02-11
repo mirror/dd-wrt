@@ -236,7 +236,7 @@ static inline unsigned char tt_start_uframe(struct ehci_hcd *ehci, __hc32 mask)
 }
 
 static const unsigned char
-max_tt_usecs[] = { 125, 125, 125, 125, 125, 125, 30, 0 };
+max_tt_usecs[] = { 125, 125, 125, 125, 125, 125, 125, 25 };
 
 /* carryover low/fullspeed bandwidth that crosses uframe boundries */
 static inline void carryover_tt_bandwidth(unsigned short tt_usecs[8])
@@ -2336,5 +2336,5 @@ restart:
 			break;
 		frame = (frame + 1) & fmask;
 	}
-	ehci->next_frame = now_frame;
+	ehci->next_frame = (frame - 1) & fmask;
 }
