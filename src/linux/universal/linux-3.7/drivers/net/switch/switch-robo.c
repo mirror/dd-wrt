@@ -62,6 +62,7 @@
 #define  ROBO_DEVICE_ID_5397	0x97
 #define  ROBO_DEVICE_ID_5398	0x98
 #define  ROBO_DEVICE_ID_53115	0x3115
+#define	 ROBO_DEVICE_ID_53125	0x3125	
 
 /* Private et.o ioctls */
 #define SIOCGETCPHYRD           (SIOCDEVPRIVATE + 9)
@@ -426,9 +427,7 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 	/* write config now */
 
 	if (robo.devid != ROBO_DEVICE_ID_5325) {
-		__u8 regoff = ((robo.devid == ROBO_DEVICE_ID_5395) ||
-			(robo.devid == ROBO_DEVICE_ID_53115)) ? 0x20 : 0;
-
+		__u8 regoff = ((robo.devid == ROBO_DEVICE_ID_5395) || (robo.devid == ROBO_DEVICE_ID_53115) || (robo.devid == ROBO_DEVICE_ID_53125)) ? 0x20 : 0;
 		robo_write32(ROBO_ARLIO_PAGE, 0x63 + regoff, (c->untag << 9) | c->port);
 		robo_write16(ROBO_ARLIO_PAGE, 0x61 + regoff, nr);
 		robo_write16(ROBO_ARLIO_PAGE, 0x60 + regoff, 1 << 7);
