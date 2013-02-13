@@ -3590,23 +3590,23 @@ void ddns_update_value(webs_t wp)
 
 void port_vlan_table_save(webs_t wp)
 {
-	int port = 0, vlan = 0, vlans[21], i;
+	int port = 0, vlan = 0, vlans[22], i;
 	char portid[32], portvlan[64], *portval, buff[32], *c, *next,
 	    br0vlans[64], br1vlans[64], br2vlans[64];
 
 	strcpy(portvlan, "");
 
-	for (vlan = 0; vlan < 21; vlan++)
+	for (vlan = 0; vlan < 22; vlan++)
 		vlans[vlan] = 0;
 
 	vlans[16] = 1;
 
 	for (port = 0; port < 5; port++) {
-		for (vlan = 0; vlan < 21; vlan++) {
+		for (vlan = 0; vlan < 22; vlan++) {
 			snprintf(portid, 31, "port%dvlan%d", port, vlan);
 			portval = websGetVar(wp, portid, "");
 
-			if (vlan < 17 || vlan > 20)
+			if (vlan < 17 || vlan > 21)
 				i = (strcmp(portval, "on") == 0);
 			else
 				i = (strcmp(portval, "on") != 0);

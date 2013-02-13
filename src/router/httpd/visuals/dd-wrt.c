@@ -7174,10 +7174,11 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	 * (x 16 dosn't apply) 
 	 */
 
-	int i, j, vlans[21][6], tmp, wl_br;
+	int i, j, vlans[22][6], tmp, wl_br;
 	char *c, *next, buff[32], portvlan[32];
+	int a;
 
-	for (i = 0; i < 21; i++)
+	for (i = 0; i < 22; i++)
 		for (j = 0; j < 6; j++)
 			vlans[i][j] = -1;
 
@@ -7224,7 +7225,13 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 
-	for (i = 0; i < 21; i++) {
+	for (a = 0; a < 22; a++) {
+		i=a;
+		if (a==18)
+		    i=21;
+		if (a>18)
+		    i=a-1;
+		
 		websWrite(wp, "              <tr>\n");
 		websWrite(wp, "<td>");
 
@@ -7246,6 +7253,9 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		case 20:
 			websWrite(wp, "Enabled");
 			break;
+		case 21:
+			websWrite(wp, "Gigabit");
+			break;
 		default:
 			snprintf(buff, 31, "%d", i);
 			websWrite(wp, buff);
@@ -7265,7 +7275,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				  " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" name=");
 			websWrite(wp, buff);
 
-			if (i < 17 || i > 20) {
+			if (i < 17 || i > 21) {
 				if (vlans[i][j] == 1)
 					websWrite(wp, " checked=\"checked\"");
 			} else {
@@ -7306,7 +7316,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "</tr>\n");
 
-		if (i == 16 || i == 20) {
+		if (i == 16 || i == 21) {
 			websWrite(wp, "<tr><td>&nbsp;</td></tr>\n");
 		}
 	}
