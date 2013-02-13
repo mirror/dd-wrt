@@ -16,12 +16,12 @@ function SelSpeed(F,I) {
 		for(i=0;i<20;i++) {
 			choose_disable(eval("F."+I+"vlan"+i));
 		}
-			choose_disable(eval("F."+I+"vlan21"));
+		choose_disable(eval("F."+I+"vlan21"));
 	} else {
 		for(i=0;i<20;i++) {
 			choose_enable(eval("F."+I+"vlan"+i));
 		}
-			choose_enable(eval("F."+I+"vlan21"));
+		choose_enable(eval("F."+I+"vlan21"));
 	    SelVLAN(F,I);
 	    if(eval("F."+I+"vlan17").checked) {
 	    	    eval("F."+I+"vlan18").checked=true;

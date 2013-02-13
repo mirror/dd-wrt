@@ -424,13 +424,13 @@ void start_setup_vlans(void)
 						tagged[use] = 1;
 					if (tmp == 17)	// no auto negotiate
 						mask |= 4;
-					if (tmp == 18)	// full speed
+					if (tmp == 18)	// no full speed
 						mask |= 1;
-					if (tmp == 19)	// full duplex
+					if (tmp == 19)	// no full duplex
 						mask |= 2;
-					if (tmp == 20)	// enabled
+					if (tmp == 20)	// disabled
 						mask |= 8;
-					if (tmp == 21)
+					if (tmp == 21)  // no gigabit
 						mask |= 16;
 
 				}
@@ -448,11 +448,11 @@ void start_setup_vlans(void)
 				 phy, use);
 			if ((fp = fopen(buff, "r+"))) {
 				if ((mask & 4) == 4) {
-					if (mask & 16) {
+					if (!(mask & 16)) {
 						if (mask & 2)
-							fputs("1000FD", fp);
-						else
 							fputs("1000HD", fp);
+						else
+							fputs("1000FD", fp);
 
 					} else {
 						switch (mask & 3) {
