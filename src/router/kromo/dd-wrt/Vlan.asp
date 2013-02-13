@@ -16,19 +16,30 @@ function SelSpeed(F,I) {
 		for(i=0;i<20;i++) {
 			choose_disable(eval("F."+I+"vlan"+i));
 		}
+			choose_disable(eval("F."+I+"vlan21"));
 	} else {
 		for(i=0;i<20;i++) {
 			choose_enable(eval("F."+I+"vlan"+i));
 		}
+			choose_enable(eval("F."+I+"vlan21"));
 	    SelVLAN(F,I);
 	    if(eval("F."+I+"vlan17").checked) {
 	    	    eval("F."+I+"vlan18").checked=true;
 		    eval("F."+I+"vlan19").checked=true;
+		    eval("F."+I+"vlan21").checked=true;
 		    choose_disable(eval("F."+I+"vlan18"));
 		    choose_disable(eval("F."+I+"vlan19"));
+		    choose_disable(eval("F."+I+"vlan21"));
 	    } else {
 		    choose_enable(eval("F."+I+"vlan18"));
 		    choose_enable(eval("F."+I+"vlan19"));
+		    choose_enable(eval("F."+I+"vlan21"));
+	    }
+	    if(eval("F."+I+"vlan21").checked) {
+	    	    eval("F."+I+"vlan18").checked=true;
+		    choose_disable(eval("F."+I+"vlan18"));
+	    } else {
+		    choose_enable(eval("F."+I+"vlan18"));
 	    }
 	}
 }
