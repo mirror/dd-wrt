@@ -420,16 +420,18 @@ void start_setup_vlans(void)
 						(char *)&portsettings[tmp][0],
 						use);
 				} else {
-					if (tmp == 16)
+					if (tmp == 16)	// vlan tagged
 						tagged[use] = 1;
-					if (tmp == 17)
+					if (tmp == 17)	// no auto negotiate
 						mask |= 4;
-					if (tmp == 18)
+					if (tmp == 18)	// full speed
 						mask |= 1;
-					if (tmp == 19)
+					if (tmp == 19)	// full duplex
 						mask |= 2;
-					if (tmp == 20)
+					if (tmp == 20)	// enabled
 						mask |= 8;
+					if (tmp == 21)
+						mask |= 16;
 
 				}
 			}
@@ -446,29 +448,27 @@ void start_setup_vlans(void)
 				 phy, use);
 			if ((fp = fopen(buff, "r+"))) {
 				if ((mask & 4) == 4) {
-					if ((mask & 3) == 0) {
-						fprintf(stderr,
-							"set port %d to 100FD\n",
-							use);
-						fputs("100FD", fp);
-					}
-					if ((mask & 3) == 1) {
-						fprintf(stderr,
-							"set port %d to 10FD\n",
-							use);
-						fputs("10FD", fp);
-					}
-					if ((mask & 3) == 2) {
-						fprintf(stderr,
-							"set port %d to 100HD\n",
-							use);
-						fputs("100HD", fp);
-					}
-					if ((mask & 3) == 3) {
-						fprintf(stderr,
-							"set port %d to 10HD\n",
-							use);
-						fputs("10HD", fp);
+					if (mask & 16) {
+						if (mask & 2)
+							fputs("1000FD", fp);
+						else
+							fputs("1000HD", fp);
+
+					} else {
+						switch (mask & 3) {
+						case 0:
+							fputs("100FD", fp);
+							break;
+						case 1:
+							fputs("10FD", fp);
+							break;
+						case 2:
+							fputs("100HD", fp);
+							break;
+						case 3:
+							fputs("10HD", fp);
+							break;
+						}
 					}
 				} else {
 					fprintf(stderr, "set port %d to AUTO\n",
@@ -745,54 +745,3 @@ int flush_interfaces(void)
 
 	return 0;
 }
-
-/*
- * int start_nonstd_interfaces (void) { char br_ifnames[256],
- * all_ifnames[256], ifnames[256], buff[256], buff2[256], buff3[32]; char
- * *next, *next2; int i, j, k, cidr;
- * 
- * strcpy (br_ifnames, nvram_safe_get ("lan_ifnames")); if (strlen
- * (br_ifnames) > 0) strcat (br_ifnames, " ");
- * 
- * strcat (br_ifnames, nvram_safe_get ("wan_ifname")); strcat (br_ifnames, "
- * "); strcat (br_ifnames, nvram_safe_get ("wan_ifnames"));
- * 
- * strcpy (all_ifnames, "eth1"); strcpy (ifnames, nvram_safe_get
- * ("port5vlans")); if (strlen (ifnames) < 1) strcat (all_ifnames, " eth0");
- * foreach (buff, ifnames, next) { if (atoi (buff) > 15) continue; snprintf
- * (buff2, 63, " vlan%s", buff); strcat (all_ifnames, buff2); }
- * 
- * strcpy (ifnames, "");
- * 
- * foreach (buff, all_ifnames, next) { i = 1;
- * 
- * foreach (buff2, br_ifnames, next2) { if (strcmp (buff, buff2) == 0) i = 0;
- * }
- * 
- * if (i) { if (strlen (ifnames) > 1) strcat (ifnames, " ");
- * 
- * strcat (ifnames, buff); } }
- * 
- * i = 1;
- * 
- * foreach (buff2, ifnames, next) { snprintf (buff, sizeof (buff),
- * "%s_ipaddr", buff2); strcpy (all_ifnames, nvram_safe_get (buff)); snprintf
- * (buff, sizeof (buff), "%s_netmask", buff2); strcpy (br_ifnames,
- * nvram_safe_get (buff));
- * 
- * next2 = strtok (br_ifnames, "."); j = 0; cidr = 0; while ((next2 != NULL)
- * && (j < 4)) { for (k = 0; k < 8; k++) cidr += ((atoi (next2) << j) & 255)
- * >> 7;
- * 
- * next2 = strtok (NULL, "."); j++; }
- * 
- * snprintf (buff, sizeof (buff), "%s/%d", all_ifnames, cidr);
- * 
- * eval ("ifconfig", buff2, "up"); eval ("ip", "addr", "add", buff,
- * "broadcast", "+", "dev", buff2);
- * 
- * snprintf (buff, sizeof (buff), "%s_alias", buff2); strcpy (all_ifnames,
- * nvram_safe_get (buff)); foreach (buff3, all_ifnames, next2) { snprintf
- * (buff, sizeof (buff), "%s:%d", buff2, i); eval ("ip", "addr", "add", buff3, 
- * "broadcast", "+", "label", buff, "dev", buff2); i++; } } return 0; } 
- */
