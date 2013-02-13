@@ -139,6 +139,18 @@ int mtd_erase(const char *mtd)
 	}
 
 	erase_info.length = mtd_info.erasesize;
+#if defined(HAVE_80211AC) && !defined(HAVE_NORTHSTAR)
+	for (erase_info.start = 0;
+	     erase_info.start < mtd_info.size;
+	     erase_info.start += mtd_info.erasesize) {
+		fprintf(stderr, "erase[%d]\r", erase_info.start);
+		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
+		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+			fprintf(stderr,"\nerror on sector %d, skip\n",erase_info.start);
+			continue;
+		}
+	}
+#else
 
 	for (erase_info.start = 0;
 	     erase_info.start < mtd_info.size;
@@ -151,7 +163,7 @@ int mtd_erase(const char *mtd)
 			return errno;
 		}
 	}
-
+#endif
 	close(mtd_fd);
 	fprintf(stderr, "erase[%d]\n", erase_info.start);
 	/* 
