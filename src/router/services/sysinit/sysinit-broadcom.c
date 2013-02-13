@@ -2000,7 +2000,7 @@ void start_sysinit(void)
 #endif
 				break;
 			case ROUTER_D1800H:
-				modules = "et";
+				modules = "et switch-core switch-robo";
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
 			case ROUTER_MOTOROLA:
@@ -2098,7 +2098,7 @@ void start_sysinit(void)
 #endif
 				break;
 			case ROUTER_D1800H:
-				modules = "et";
+				modules = "et switch-core switch-robo";
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
 				modules =
@@ -2590,6 +2590,7 @@ char *enable_dtag_vlan(int enable)
 
 	if (!donothing) {
 		writevaproc("1", "/proc/switch/%s/reset", eth);
+		writevaproc("1", "/proc/switch/%s/enable_vlan", eth);
 		if (enable) {
 			fprintf(stderr, "enable vlan port mapping %s/%s\n",
 				vlan_lan_ports, vlan7ports);

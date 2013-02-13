@@ -156,6 +156,7 @@ void start_config_vlan(void)
 
 	// configure ports
 	writevaproc("1", "/proc/switch/%s/reset", phy);
+	writevaproc("1", "/proc/switch/%s/enable_vlan", phy);
 	for (i = 0; i < 16; i++) {
 		char vlanb[16];
 
