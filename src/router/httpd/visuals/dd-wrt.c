@@ -7224,13 +7224,16 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			}
 		}
 	}
-
-	for (a = 0; a < 22; a++) {
+	int hasgiga=1;
+	
+	for (a = 0; a < 21+hasgiga; a++) {
 		i=a;
-		if (a==18)
-		    i=21;
-		if (a>18)
-		    i=a-1;
+		if (hasgiga) {
+			if (a==18)
+				i=21;
+			if (a>18)
+				i=a-1;
+		}
 		
 		websWrite(wp, "              <tr>\n");
 		websWrite(wp, "<td>");
