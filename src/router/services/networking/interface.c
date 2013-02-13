@@ -248,7 +248,7 @@ void start_setup_vlans(void)
 		return;
 	}
 
-	int ports[21][6], i, j, ret = 0, tmp, workaround = 0, found;
+	int i, j, ret = 0, tmp, workaround = 0, found;
 	char *vlans, *next, vlan[4], buff[70], buff2[16];
 	FILE *fp;
 	char portsettings[16][64];
