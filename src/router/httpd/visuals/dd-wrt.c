@@ -7291,7 +7291,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				snprintf(buff, sizeof(buff),
 					 "\"SelVLAN(this.form,'port%d')\"", j);
 				websWrite(wp, buff);
-			} else if (i == 17 || i == 20) {
+			} else if (i == 17 || i == 20 || i == 21) {
 				websWrite(wp, " onclick=");
 				snprintf(buff, sizeof(buff),
 					 "\"SelSpeed(this.form,'port%d')\"", j);
@@ -7319,7 +7319,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "</tr>\n");
 
-		if (i == 16 || i == 21) {
+		if (i == 16 || i == 20) {
 			websWrite(wp, "<tr><td>&nbsp;</td></tr>\n");
 		}
 	}
