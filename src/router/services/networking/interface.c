@@ -430,7 +430,7 @@ void start_setup_vlans(void)
 						mask |= 2;
 					if (tmp == 20)	// disabled
 						mask |= 8;
-					if (tmp == 21)  // no gigabit
+					if (tmp == 21)	// no gigabit
 						mask |= 16;
 
 				}
@@ -444,38 +444,48 @@ void start_setup_vlans(void)
 					    "/proc/switch/%s/port/%d/enable",
 					    phy, use);
 			}
-			snprintf(buff, 69, "/proc/switch/%s/port/%d/media",
-				 phy, use);
-			if ((fp = fopen(buff, "r+"))) {
-				if ((mask & 4) == 4) {
-					if (!(mask & 16)) {
-						if (mask & 2)
-							fputs("1000HD", fp);
-						else
-							fputs("1000FD", fp);
+			if (use < 5) {
+				snprintf(buff, 69,
+					 "/proc/switch/%s/port/%d/media", phy,
+					 use);
+				if ((fp = fopen(buff, "r+"))) {
+					if ((mask & 4) == 4) {
+						if (!(mask & 16)) {
+							if (mask & 2)
+								fputs("1000HD",
+								      fp);
+							else
+								fputs("1000FD",
+								      fp);
 
-					} else {
-						switch (mask & 3) {
-						case 0:
-							fputs("100FD", fp);
-							break;
-						case 1:
-							fputs("10FD", fp);
-							break;
-						case 2:
-							fputs("100HD", fp);
-							break;
-						case 3:
-							fputs("10HD", fp);
-							break;
+						} else {
+							switch (mask & 3) {
+							case 0:
+								fputs("100FD",
+								      fp);
+								break;
+							case 1:
+								fputs("10FD",
+								      fp);
+								break;
+							case 2:
+								fputs("100HD",
+								      fp);
+								break;
+							case 3:
+								fputs("10HD",
+								      fp);
+								break;
+							}
 						}
+					} else {
+						fprintf(stderr,
+							"set port %d to AUTO\n",
+							use);
+						fputs("AUTO", fp);
 					}
-				} else {
-					fprintf(stderr, "set port %d to AUTO\n",
-						use);
-					fputs("AUTO", fp);
+					fclose(fp);
 				}
-				fclose(fp);
 			}
 
 		}
