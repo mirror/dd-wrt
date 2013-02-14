@@ -98,6 +98,9 @@ int gpio_kernel_api(unsigned int cmd, unsigned int mask, unsigned int val)
 		case 1:
 			si_gpioouten(gpio_sih, mask, val, GPIO_HI_PRIORITY);
 			break;
+		case 2:
+			return si_gpioin(gpio_sih);
+			break;
 		case 3:
 			si_gpioreserve(gpio_sih, mask, GPIO_HI_PRIORITY);
 			break;
