@@ -40,14 +40,14 @@ int nvram_init(void *unused)
 		goto err;
 
 	/* Map kernel string buffer into user space */
-	if ((nvram_buf =
-	     mmap(NULL, NVRAM_SPACE, PROT_READ, MAP_SHARED, nvram_fd,
-		  0)) == MAP_FAILED) {
+	nvram_buf = mmap(NULL, NVRAM_SPACE, PROT_READ, MAP_SHARED, nvram_fd, 0);
+	if (nvram_buf == MAP_FAILED) {
 		close(nvram_fd);
 		fprintf(stderr, "nvram_init(): failed\n");
 		nvram_fd = -1;
 		goto err;
 	}
+	fcntl(nvram_fd, F_SETFD, FD_CLOEXEC);
 
 	return 0;
 
