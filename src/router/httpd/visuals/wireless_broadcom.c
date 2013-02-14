@@ -359,11 +359,14 @@ ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance,
 	char desc[30];
 	int macmask;
 
+#ifdef FASTWEB
+	ejArgs(argc, argv, "%d", &macmask);
+#else
 	if (ejArgs(argc, argv, "%d", &macmask) < 1) {
 		websError(wp, 400, "Insufficient args\n");
 		return cnt;
 	}
-
+#endif
 	unlink(WDS_RSSI_TMP);
 
 	mode = nvram_nget("wl%d_mode", instance);
@@ -433,4 +436,53 @@ ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance,
 
 	unlink(WDS_RSSI_TMP);
 	return cnt;
+}
+
+
+static unsigned int bits_count(unsigned int n)
+{
+	unsigned int count = 0;
+
+	while (n > 0) {
+		if (n & 1)
+			count++;
+		n >>= 1;
+	}
+
+	return count;
+}
+
+/* Writes "1" if Tx beamforming is supported. Otherwise, "0" */
+static int
+ej_wl_txbf_capable(webs_t wp, int argc, char_t **argv)
+{
+	char *name = NULL;
+	char tmp[NVRAM_BUFSIZE], prefix[] = "wlXXXXXXXXXX_";
+	int txbf_capable = 0;
+	wlc_rev_info_t revinfo;
+	char *ifname;
+
+	ejArgs(argc, argv, "%s", &ifname);
+
+	name = nvram_nget("%s_ifname", ifname);
+
+	/* Get revision info */
+	wl_ioctl(name, WLC_GET_REVINFO, &revinfo, sizeof(revinfo));
+
+	/*
+	 * Beamforming is available on core revs >= 40. Currently, 1-2
+	 * streams have beamforming.
+	 */
+	if (revinfo.corerev >= 40) {
+		int txchain;
+
+		if (wl_iovar_getint(name, "txchain", &txchain))
+			return -1;
+
+		if (bits_count((unsigned int)txchain) > 1) {
+			txbf_capable = 1;
+		}
+	}
+
+	return websWrite(wp, "%d", txbf_capable);
 }
