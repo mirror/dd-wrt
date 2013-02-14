@@ -11,4 +11,4 @@ EXTRA_AFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include
 # 2 of the License, or (at your option) any later version.
 #
 
-obj-m	:= switch-core.o switch-robo.o
+obj-m	:= switch-core.o switch-robo.o switch-adm.o
