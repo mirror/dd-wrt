@@ -2033,8 +2033,8 @@ void start_lan(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 			strncpy(ifr.ifr_name, lan_ifname, IFNAMSIZ);
 			if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0 &&
-			    memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0",
-				   ETHER_ADDR_LEN) == 0
+					    (memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN) == 0 ||
+					    (((ifr.ifr_hwaddr.sa_data[0] & 0x01) == 0) && ((ifr.ifr_hwaddr.sa_data[1] & 0x02) == 0x02)))
 			    && strcmp(wl_face, realname) == 0) {
 				strncpy(ifr.ifr_name, realname, IFNAMSIZ);
 				if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
