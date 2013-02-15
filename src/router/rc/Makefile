@@ -974,7 +974,7 @@ ifeq ($(CONFIG_WPS),y)
 	$(CC) $(CFLAGS) -o wpswatcher wpswatcher.c $(LDFLAGS)
 endif
 ifeq ($(CONFIG_UBNTM),y)
-	$(CC) -I$(LINUXDIR)/include $(CFLAGS) -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include -o wlanled wlanled.c $(LDFLAGS) -lwireless
+	$(CC) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include $(CFLAGS)  -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include -o wlanled wlanled.c $(LDFLAGS) -lwireless
 endif
 #	$(CC) $(CFLAGS) -o event event.c
 	$(CC) $(CFLAGS) -o radio_timer radio_timer.c $(LDFLAGS)
