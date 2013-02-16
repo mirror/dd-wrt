@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//      Update (19924 based)               - DD-WRT V24 SP2 by mrc_torres 18/SEP/2012       //
+//      Update (20649 based)               - DD-WRT V24 SP2 by mrc_torres 15/FEB/2013       //
 //      Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006       //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -11,7 +11,8 @@ share.apn="APN";
 share.pin="PIN";
 share.dial="Dial String";
 share.mode_3g="Tipo de Conexão";
-share.mode_3g_auto="Auto 3G/2G";
+share.mode_3g_auto="Auto 4G/3G/2G";
+share.mode_3g_4g="Forçar LTE/4G";
 share.mode_3g_3g="Forçar 3G";
 share.mode_3g_2g="Forçar 2G";
 share.mode_3g_prefer_3g="Preferir 3G";
@@ -708,8 +709,12 @@ nas.samba3_legend="Compartilhamento de Arquivos";
 
 hnas.right2="Na lista de senhas de usuários entre com uma senha de usuário por linha. A senha pode ser em texto plano ou em criptografia MD5.";
 
-// ******************************************* Hotspot.asp *******************************************//
+// ** DLNA ** 
+nas.dlna_legend="Servidor DLNA"; 
+nas.dlna_srv="MiniDLNA"; 
+nas.dlna_dir="Pasta de Arquivos"; 
 
+// ** Hotspot.asp **//
 hotspot.titl="Hotspot";
 hotspot.h2="Portal do Hotspot";
 hotspot.legend="Chillispot";
@@ -889,6 +894,7 @@ idx.stp="STP";
 idx.stp_mess="(desabilitar para ISPs COMCAST)";
 idx.optional="Configurações Opcionais";
 idx.mtu="MTU";
+idx.txqlen="Comprimento de Fila TX";
 idx.h23="Configurações de Rede";
 idx.routerip="IP do Roteador";
 idx.lanip="Endereço IP Local";
@@ -1294,8 +1300,8 @@ service.snmp_read="Comunidade RO";
 service.snmp_write="Comunidade RW";
 
 //openvpn.webvpn
-service.vpn_legend="Cliente OpenVPN";
-service.vpn_srv="Iniciar OpenVPN";
+service.vpnd_legend="Servidor/Daemon OpenVPN";
+service.vpnd_srv="OpenVPN";
 service.vpnd_starttype="Tipo de Início";
 service.vpnd_startWanup="WAN Up";
 service.vpnd_startSystem="Sistema";
@@ -1305,13 +1311,14 @@ service.vpnd_dhpem="DH PEM";
 service.vpnd_tlsauth="Chave de Autenticação TLS";
 service.vpnd_cert="Certificado Público do Servidor";
 service.vpnd_key="Chave Privada do Servidor";
+service.vpnd_pkcs="Chave PKCS12";
 service.vpnd_mode="Modo do Servidor";
 service.vpnd_net="Rede";
 service.vpnd_mask="Máscara de Sub-Rede";
 service.vpnd_startip="Endereço IP incial do Pool";
 service.vpnd_endip="Endereço IP final do Pool ";
 service.vpnd_cl2cl="Conexão Cliente-a-Cliente permitida";
-service.vpnd_switch="Config via";
+service.vpnd_switch="Config como";
 service.vpnd_dupcn="Permitir cn duplicado";
 service.vpnd_proxy="Modo Proxy-DHCP";
 service.vpnd_clcon="Script de conexão de cliente";
@@ -1322,8 +1329,9 @@ service.vpn_redirgate="Redirecionar Gateway padrão";
 service.vpn_legend="Cliente OpenVPN";
 service.vpn_srv="Iniciar Cliente OpenVPN";
 service.vpn_ipname="IP/Nome do Servidor";
-service.vpn_mtu="configuração TUN MTU";
-service.vpn_mss="MSS-Fixar/Fragmentar através do túnel";
+service.vpn_mtu="Configuração MTU do túnel";
+service.vpn_mss="Unir MSS no túnel UDP";
+service.vpn_fragment="Fragmentar no túnel UDP"; 
 service.vpn_compress="Usar Compressão LZO";
 service.vpn_cl2cl="Permitir Cliente-a-Cliente";
 service.vpn_tunnel="Protocolo do Túnel";
@@ -1341,8 +1349,9 @@ service.vpn_tlscip="Cifra TLS";
 service.vpn_route="Roteamento Baseado em Políticas";
 
 //help container
-hstatus_vpn.right1="<i>Roteamento Baseado em Políticas:</i><br>Adicione IPs/Redes no formato 0.0.0.0/0 para forçar clientes a usar o tunel como gateway padrão. Uma linha por IP/REDE.<br><i>Endereço IP/Máscara de Sub-Rede:</i><br>Deve ser configurado quando se está utilizando o modo DHCP-Proxy e TAP local NÃO está em modo bridged.";
-hstatus_vpn.right2="<i>Configurações Adicionais:</i><br>Para entregar rotas a clientes adicione \'push \"route IP mask gateway\"\', para entregar DNS/WINS adicione \'push \"dhcp-option DNS (ou WINS) IP\"\' à configuração.";
+hstatus_vpn.right1="Roteamento Baseado em Políticas:<br><i>Adicione IPs/Redes no formato 0.0.0.0/0 para forçar clientes a usar o tunel como gateway padrão. Uma linha por IP/REDE.</i><br>Endereço IP/Máscara de Sub-Rede:<br><i>Deve ser configurado quando se está utilizando o modo DHCP-Proxy e TAP local NÃO está em modo bridged.</i>";
+hstatus_vpn.right2="Configurações Adicionais:<br><i>Para entregar rotas a clientes adicione \'push \"route IP mask gateway\"\', para entregar DNS/WINS adicione \'push \"dhcp-option DNS (ou WINS) IP\"\' à configuração.</i>";
+hstatus_vpn.right3="Geral:<br><i>3 métodos de autenticação são suportados: pkcs12 (+dh no servidor), estático e certificados padrão. Habilitar o MSS em apenas um dos lados do link irá fragmentar em ambos.</i>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1537,6 +1546,7 @@ status_router.sys_firmver="Versão do Firmware";
 status_router.sys_time="Hora Atual";
 status_router.sys_up="Tempo em Atividade";
 status_router.sys_load="Estimativa de Utilização";
+status_router.sys_kernel="Versão do Kernel";
 status_router.legend2="CPU";
 status_router.cpu="Modelo da CPU";
 status_router.clock="Clock da CPU";
