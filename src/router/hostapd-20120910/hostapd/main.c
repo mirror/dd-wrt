@@ -148,6 +148,14 @@ static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
 }
 #endif /* CONFIG_NO_HOSTAPD_LOGGER */
 
+static void hostapd_setup_complete_cb(void *ctx)
+{
+	if (daemonize && os_daemonize(pid_file)) {
+		perror("daemon");
+		return;
+	}
+	daemonize = 0;
+}
 
 /**
  * hostapd_init - Allocate and initialize per-interface data
@@ -191,6 +199,7 @@ static struct hostapd_iface * hostapd_init(const char *config_file)
 		if (hapd == NULL)
 			goto fail;
 		hapd->msg_ctx = hapd;
+		hapd->setup_complete_cb = hostapd_setup_complete_cb;
 	}
 
 	return hapd_iface;
@@ -281,14 +290,6 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
 	return 0;
 }
 
-static void hostapd_setup_complete_cb(void *ctx)
-{
-	if (daemonize && os_daemonize(pid_file)) {
-		perror("daemon");
-		return;
-	}
-	daemonize = 0;
-}
 
 static struct hostapd_iface *
 hostapd_interface_init(struct hapd_interfaces *interfaces,
@@ -308,7 +309,6 @@ hostapd_interface_init(struct hapd_interfaces *interfaces,
 			iface->bss[0]->conf->logger_stdout_level--;
 	}
 
-	iface->bss[0]->setup_complete_cb = hostapd_setup_complete_cb;
 	if (iface->conf->bss[0].iface[0] != 0 ||
 	    hostapd_drv_none(iface->bss[0])) {
 		if (hostapd_driver_init(iface) ||
@@ -320,6 +320,7 @@ hostapd_interface_init(struct hapd_interfaces *interfaces,
 
 	return iface;
 }
+
 
 /**
  * handle_term - SIGINT and SIGTERM handler to terminate hostapd process
