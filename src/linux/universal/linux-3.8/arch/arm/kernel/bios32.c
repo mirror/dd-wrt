@@ -442,10 +442,10 @@ static int __init pcibios_init_resources(int busnr, struct pci_sys_data *sys)
 	sys->io_res.flags = IORESOURCE_IO;
 	sys->io_res.name = sys->io_res_name;
 	sprintf(sys->io_res_name, "PCI%d I/O", busnr);
-
+	printk(KERN_INFO "request %x\n",sys->io_res.start);
 	ret = request_resource(&ioport_resource, &sys->io_res);
 	if (ret) {
-		pr_err("PCI: unable to allocate I/O port region (%d)\n", ret);
+		pr_err("PCI: unable to allocate I/O port region (%d) (%X)\n", ret,sys->io_res.start);
 		return ret;
 	}
 	pci_add_resource_offset(&sys->resources, &sys->io_res,

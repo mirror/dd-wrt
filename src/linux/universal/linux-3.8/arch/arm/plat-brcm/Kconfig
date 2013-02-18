@@ -7,6 +7,7 @@ config PLAT_MPCORE
 	select ARM_GIC
 	select HAVE_SMP
 	select NEED_MACH_MEMORY_H
+	select NEED_MACH_IO_H
 	select HAVE_ARM_TWD
 	select HAVE_ARM_SCU
 	select HAVE_CLK
