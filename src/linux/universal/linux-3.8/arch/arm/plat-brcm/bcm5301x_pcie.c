@@ -143,19 +143,19 @@ static struct resource soc_pcie_regs[3] = {
 	.name = "pcie0",
 	.start = 0x18012000,
 	.end   = 0x18012fff,
-	.flags = IORESOURCE_MEM,
+	.flags = IORESOURCE_IO,
 	},
 	{
 	.name = "pcie1",
 	.start = 0x18013000,
 	.end   = 0x18013fff,
-	.flags = IORESOURCE_MEM,
+	.flags = IORESOURCE_IO,
 	},
 	{
 	.name = "pcie2",
 	.start = 0x18014000,
 	.end   = 0x18014fff,
-	.flags = IORESOURCE_MEM,
+	.flags = IORESOURCE_IO,
 	},
 };
 
@@ -480,7 +480,7 @@ static int soc_pci_write_config(struct pci_bus *bus, unsigned int devfn,
 static int soc_pci_setup(int nr, struct pci_sys_data *sys)
 {
         struct soc_pcie_port *port = soc_pcie_sysdata2port(sys);
-	request_resource( &iomem_resource, port->owin_res );
+//	request_resource( &iomem_resource, port->owin_res );
 	pci_add_resource_offset(&sys->resources, port->owin_res, sys->mem_offset);
 	
 	sys->private_data = port;
@@ -923,7 +923,7 @@ static int __init soc_pcie_init(void)
         unsigned i;
 
 
-	pcibios_min_io = 32;
+//	pcibios_min_io = 32;
 	pcibios_min_mem = 32;
 
 	hndpci_init(sih);
@@ -961,10 +961,12 @@ static int __init soc_pcie_init(void)
 		if( ! port->enable )
 			continue;
 		/* Setup PCIe controller registers */
-		BUG_ON( request_resource( &iomem_resource, port->regs_res ));
-		port->reg_base = ioremap( port->regs_res->start, resource_size(port->regs_res) );
-		BUG_ON( IS_ERR_OR_NULL(port->reg_base ));
 
+		pci_ioremap_io(SZ_64K * (i-1), port->regs_res->start);
+//		BUG_ON( request_resource( &iomem_resource, port->regs_res ));
+		port->reg_base = PCI_IO_VIRT_BASE + SZ_64K * (i-1);
+//		port->reg_base = ioremap( port->regs_res->start, resource_size(port->regs_res) );
+		BUG_ON( IS_ERR_OR_NULL(port->reg_base ));
                 soc_pcie_hw_init( port );
 		soc_pcie_map_init( port );
 
