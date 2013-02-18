@@ -65,6 +65,20 @@
 #define  ROBO_DEVICE_ID_53115	0x3115
 #define  ROBO_DEVICE_ID_53125	0x3125
 
+#define ROBO_DEVICE_ID_53010	0x53010	/* 53010 */
+#define ROBO_DEVICE_ID_53011	0x53011	/* 53011 */
+#define ROBO_DEVICE_ID_53012	/* 53012 */
+#define ROBO_DEVICE_ID_53019	/* 53019 */
+
+
+#define DEVID53010	0x53010	/* 53010 */
+#define DEVID53011	0x53011	/* 53011 */
+#define DEVID53012	0x53012	/* 53012 */
+#define DEVID53019	0x53019	/* 53019 */
+#define ROBO_IS_BCM5301X(id) ((id) == DEVID53010 || (id) == DEVID53011 || (id) == DEVID53012 || \
+(id) == DEVID53019)
+
+
 /* Private et.o ioctls */
 #define SIOCGETCPHYRD           (SIOCDEVPRIVATE + 9)
 #define SIOCSETCPHYWR           (SIOCDEVPRIVATE + 10)
@@ -255,7 +269,7 @@ static int robo_switch_enable(void)
 		robo_write16(ROBO_CTRL_PAGE, ROBO_IM_PORT_CTRL, 0);
 	}
 
-	if (robo.devid == ROBO_DEVICE_ID_53115 || robo.devid == ROBO_DEVICE_ID_53125) {
+	if (robo.devid == ROBO_DEVICE_ID_53115 || robo.devid == ROBO_DEVICE_ID_53125 || ROBO_IS_BCM5301X(robo.devid)) {
 		/* Make IM port status link by default */
 		val = robo_read16(ROBO_CTRL_PAGE, ROBO_PORT_OVERRIDE_CTRL) | 0x81;
 		robo_write16(ROBO_CTRL_PAGE, ROBO_PORT_OVERRIDE_CTRL, val);
@@ -408,6 +422,8 @@ static int robo_probe(char *devname)
 			robo.port[i] = i;
 	}
 	robo.port[i] = ROBO_IM_PORT_CTRL;
+	printk(KERN_INFO PFX "trying a 5%s%x!%s at %s\n", robo.devid & 0xff00 ? "" : "3", robo.devid,
+		robo.is_5350 ? " It's a 5350." : "", devname);
 
 	robo_switch_reset();
 	err = robo_switch_enable();
@@ -443,7 +459,7 @@ static int handle_vlan_port_read(void *driver, char *buf, int nr)
 
 		if ((robo.devid == ROBO_DEVICE_ID_5395) ||
 		    (robo.devid == ROBO_DEVICE_ID_53115) ||
-		    (robo.devid == ROBO_DEVICE_ID_53125)) {
+		    (robo.devid == ROBO_DEVICE_ID_53125) || (ROBO_IS_BCM5301X(robo.devid))) {
 			vtbl_access = ROBO_VTBL_ACCESS_5395;
 			vtbl_index = ROBO_VTBL_INDX_5395;
 			vtbl_entry = ROBO_VTBL_ENTRY_5395;
@@ -520,7 +536,7 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 
 		if ((robo.devid == ROBO_DEVICE_ID_5395) ||
 		    (robo.devid == ROBO_DEVICE_ID_53115) ||
-		    (robo.devid == ROBO_DEVICE_ID_53125)) {
+		    (robo.devid == ROBO_DEVICE_ID_53125) || (ROBO_IS_BCM5301X(robo.devid))) {
 			vtbl_access = ROBO_VTBL_ACCESS_5395;
 			vtbl_index = ROBO_VTBL_INDX_5395;
 			vtbl_entry = ROBO_VTBL_ENTRY_5395;
@@ -686,7 +702,7 @@ static int handle_reset(void *driver, char *buf, int nr)
 
 		if ((robo.devid == ROBO_DEVICE_ID_5395) ||
 		    (robo.devid == ROBO_DEVICE_ID_53115) ||
-		    (robo.devid == ROBO_DEVICE_ID_53125)) {
+		    (robo.devid == ROBO_DEVICE_ID_53125) || ROBO_IS_BCM5301X(robo.devid)) {
 			vtbl_access = ROBO_VTBL_ACCESS_5395;
 			vtbl_index = ROBO_VTBL_INDX_5395;
 			vtbl_entry = ROBO_VTBL_ENTRY_5395;
