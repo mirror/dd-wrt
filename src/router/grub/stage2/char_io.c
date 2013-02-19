@@ -1345,5 +1345,12 @@ grub_strcpy (char *dest, const char *src)
 #ifndef GRUB_UTIL
 # undef memcpy
 /* GCC emits references to memcpy() for struct copies etc.  */
+#ifdef __APPLE__
+void *memcpy (void *dest, const void *src, int n)
+{
+	return grub_memmove(dest, src, n);
+}
+#else
 void *memcpy (void *dest, const void *src, int n)  __attribute__ ((alias ("grub_memmove")));
+#endif
 #endif
