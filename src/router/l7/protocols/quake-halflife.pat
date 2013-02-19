@@ -1,2 +1,2 @@
 quake-halflife
-^\xff\xff\xff\xffget(info|challenge)
+^\xff\xff\xff\xffget(info|challenge|status)
