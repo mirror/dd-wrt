@@ -803,7 +803,7 @@ static int dwc_otg_driver_remove(struct platform_device *pdev)
 static struct platform_driver dwc_otg_platform_driver = {
 	.driver.name = "dwc_otg",
 	.probe = dwc_otg_driver_probe,
-	.remove = dwc_otg_driver_remove),
+	.remove = dwc_otg_driver_remove,
 };
 
 static int __init dwc_otg_init_module(void)
