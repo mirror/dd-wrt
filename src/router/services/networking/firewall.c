@@ -1512,26 +1512,26 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 
 				char *proto = NULL;
 
-				if (!strcasecmp(realname, "gnutella"))
-					proto = "gnu";
-				if (!strcasecmp(realname, "bearshare"))
-					proto = "gnu";
-				if (!strcasecmp(realname, "edonkey"))
-					proto = "edk";
-				if (!strcasecmp(realname, "kazaa"))
-					proto = "kazaa";
-				if (!strcasecmp(realname, "directconnect"))
-					proto = "dc";
-				if (!strcasecmp(realname, "bittorrent"))
-					proto = "bit";
 				if (!strcasecmp(realname, "applejuice"))
 					proto = "apple";
-				if (!strcasecmp(realname, "soulseek"))
-					proto = "soul";
 				if (!strcasecmp(realname, "ares"))
 					proto = "ares";
+				if (!strcasecmp(realname, "bearshare"))
+					proto = "gnu";
+				if (!strcasecmp(realname, "bittorrent"))
+					proto = "bit";
+				if (!strcasecmp(realname, "directconnect"))
+					proto = "dc";
+				if (!strcasecmp(realname, "edonkey"))
+					proto = "edk";
+				if (!strcasecmp(realname, "gnutella"))
+					proto = "gnu";
+				if (!strcasecmp(realname, "kazaa"))
+					proto = "kazaa";
 				if (!strcasecmp(realname, "mute"))
 					proto = "mute";
+				if (!strcasecmp(realname, "soulseek"))
+					proto = "soul";
 				if (!strcasecmp(realname, "waste"))
 					proto = "waste";
 				if (!strcasecmp(realname, "winmx"))
@@ -1584,13 +1584,42 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		insmod("ipt_ipp2p");
 		save2file("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,
 			  log_drop);
-		/* bittorrent detection enhanced */
+		/* p2p detection enhanced */
 #ifdef HAVE_OPENDPI
 		insmod("/lib/opendpi/xt_opendpi.ko");
 		save2file
+		    ("-A advgrp_%d -m ndpi --applejuice -j %s\n",
+		     seq, log_drop);
+				save2file
 		    ("-A advgrp_%d -m ndpi --bittorrent -j %s\n",
 		     seq, log_drop);
-
+		   save2file
+		    ("-A advgrp_%d -m ndpi --directconnect -j %s\n",
+		     seq, log_drop);
+		   save2file
+		    ("-A advgrp_%d -m ndpi --edonkey -j %s\n",
+		     seq, log_drop);
+		   save2file
+		    ("-A advgrp_%d -m ndpi --fasttrack -j %s\n",
+		     seq, log_drop);
+		   save2file
+		    ("-A advgrp_%d -m ndpi --filetopia -j %s\n",
+		     seq, log_drop);
+		   save2file
+		    ("-A advgrp_%d -m ndpi --gnutella -j %s\n",
+		     seq, log_drop);
+		   save2file
+		    ("-A advgrp_%d -m ndpi --imesh -j %s\n",
+		     seq, log_drop);
+		   save2file
+		    ("-A advgrp_%d -m ndpi --pando -j %s\n",
+		     seq, log_drop);
+		   save2file
+		    ("-A advgrp_%d -m ndpi --soulseek -j %s\n",
+		     seq, log_drop);
+		   save2file
+		    ("-A advgrp_%d -m ndpi --winmx -j %s\n",
+		     seq, log_drop);
 #else
 		insmod("ipt_layer7");
 		insmod("xt_layer7");
