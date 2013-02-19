@@ -1107,6 +1107,9 @@ qos.maxrate_o="Max Rate";
 qos.legend4="MAC-Priorität";
 qos.legend5="Ethernet-Port-Priorität";
 qos.legend6="Standard-Bandbreiten-Zuweisung";
+qos.legend7="TCP-Packet Priority";
+qos.pktdesc="Priorisiere kleine TCP-Packete mit den folgenden Attributen:";
+qos.enabledefaultlvls="Nutzer Bandbreiten Management";
 qos.bandwidth="Bandbreite in Kbits";
 
 //help container
