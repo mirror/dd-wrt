@@ -336,7 +336,7 @@ static struct miscdevice cns3xxx_wdt_miscdev = {
 	.fops		= &cns3xxx_wdt_fops,
 };
 
-static int __devinit cns3xxx_wdt_probe(struct platform_device *dev)
+static int cns3xxx_wdt_probe(struct platform_device *dev)
 {
 	struct cns3xxx_wdt *wdt;
 	struct resource *res;
@@ -437,7 +437,7 @@ err_out:
 	return ret;
 }
 
-static int __devexit cns3xxx_wdt_remove(struct platform_device *dev)
+static int cns3xxx_wdt_remove(struct platform_device *dev)
 {
 	struct cns3xxx_wdt *wdt = platform_get_drvdata(dev);
 
@@ -458,7 +458,7 @@ static int __devexit cns3xxx_wdt_remove(struct platform_device *dev)
 
 static struct platform_driver cns3xxx_wdt_driver = {
 	.probe		= cns3xxx_wdt_probe,
-	.remove		= __devexit_p(cns3xxx_wdt_remove),
+	.remove		= cns3xxx_wdt_remove,
 	.shutdown	= cns3xxx_wdt_shutdown,
 	.driver		= {
 		.owner	= THIS_MODULE,

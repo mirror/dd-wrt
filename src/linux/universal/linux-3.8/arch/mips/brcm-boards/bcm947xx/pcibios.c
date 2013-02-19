@@ -170,7 +170,7 @@ char * __init pcibios_setup(char *str)
 	return (str);
 }
 
-void __devinit
+void 
 pcibios_fixup_bus(struct pci_bus *b)
 {
 	struct pci_dev *d, *dev;

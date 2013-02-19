@@ -185,7 +185,7 @@ err_alloc_master:
 	return err;
 }
 
-static int __devexit spi_gpio_remove(struct platform_device *pdev)
+static int spi_gpio_remove(struct platform_device *pdev)
 {
 	struct spi_gpio *sp;
 	struct spi_gpio_platform_data *pdata;
@@ -205,7 +205,7 @@ static struct platform_driver spi_gpio_driver = {
 		.owner	= THIS_MODULE,
 	},
 	.probe		= spi_gpio_probe,
-	.remove		= __devexit_p(spi_gpio_remove),
+	.remove		= spi_gpio_remove,
 };
 
 

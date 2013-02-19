@@ -154,7 +154,7 @@ static const struct rtc_class_ops rtc7301_rtc_ops = {
 	.set_time	= rtc7301_set_datetime,
 };
 
-static int __devinit rtc7301_probe(struct platform_device *pdev)
+static int rtc7301_probe(struct platform_device *pdev)
 {
 	struct rtc_device *rtc;
 	struct resource *res;
@@ -180,7 +180,7 @@ static int __devinit rtc7301_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int __devexit rtc7301_remove(struct platform_device *pdev)
+static int rtc7301_remove(struct platform_device *pdev)
 {
 	struct rtc_device *rtc = platform_get_drvdata(pdev);
 
@@ -197,7 +197,7 @@ static struct platform_driver rtc7301_driver = {
 		.owner	= THIS_MODULE,
 	},
 	.probe	= rtc7301_probe,
-	.remove = __devexit_p(rtc7301_remove),
+	.remove = rtc7301_remove,
 };
 
 static __init int rtc7301_init(void)

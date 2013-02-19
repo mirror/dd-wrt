@@ -525,8 +525,8 @@ typedef struct {
 } npe_info_t;
 
 
-static int __devinit dev_eth_probe(struct device *dev);
-static int __devexit dev_eth_remove(struct device *dev);
+static int dev_eth_probe(struct device *dev);
+static int dev_eth_remove(struct device *dev);
 static void dev_eth_release(struct device *dev);
 
 static struct device_driver ixp400_eth_driver = {
@@ -4048,7 +4048,7 @@ static struct net_device_ops mac_net_ops;
 /* Initialize device structs.
  * Resource allocation is deffered until do_dev_open
  */
-static int __devinit dev_eth_probe(struct device *dev)
+static int dev_eth_probe(struct device *dev)
 {
     priv_data_t *priv = NULL;
     struct net_device *ndev = NULL;
@@ -4378,7 +4378,7 @@ done:
     return 0;
 }
 
-static int __devexit dev_eth_remove(struct device *dev)
+static int dev_eth_remove(struct device *dev)
 {
     struct net_device *ndev = dev_get_drvdata(dev);
     priv_data_t *priv = netdev_priv(ndev);

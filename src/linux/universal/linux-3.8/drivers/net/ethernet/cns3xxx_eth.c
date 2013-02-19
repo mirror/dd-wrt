@@ -1153,7 +1153,7 @@ static const struct net_device_ops cns3xxx_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 };
 
-static int __devinit eth_init_one(struct platform_device *pdev)
+static int eth_init_one(struct platform_device *pdev)
 {
 	int i;
 	struct port *port;
@@ -1297,7 +1297,7 @@ err_free:
 	return err;
 }
 
-static int __devexit eth_remove_one(struct platform_device *pdev)
+static int eth_remove_one(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct sw *sw = netdev_priv(dev);

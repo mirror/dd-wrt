@@ -892,7 +892,7 @@ out:
 }
 
 
-bool __devinit
+bool 
 plat_fixup_bus(struct pci_bus *b)
 {
 	struct list_head *ln;

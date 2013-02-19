@@ -191,7 +191,7 @@ static int easy98000_addon_remove(struct platform_device *pdev)
 
 static struct platform_driver easy98000_addon_driver = {
 	.probe = easy98000_addon_probe,
-	.remove = __devexit_p(easy98000_addon_remove),
+	.remove = easy98000_addon_remove,
 	.driver = {
 		.name = "easy98000_addon",
 		.owner = THIS_MODULE,

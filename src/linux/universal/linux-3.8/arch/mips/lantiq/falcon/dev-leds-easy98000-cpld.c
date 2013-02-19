@@ -131,7 +131,7 @@ static int led_remove(struct platform_device *pdev)
 
 static struct platform_driver led_driver = {
 	.probe = led_probe,
-	.remove = __devexit_p(led_remove),
+	.remove = led_remove,
 	.driver = {
 		   .name = LED_NAME,
 		   .owner = THIS_MODULE,

@@ -71,7 +71,7 @@ static void gcu_exit_module(void);
 static int gcu_probe(struct pci_dev *pdev, const struct pci_device_id *ent);
 static void gcu_probe_err(enum gcu_err_type err, struct pci_dev *pdev,
                           struct gcu_adapter *adapter);
-static void __devexit gcu_remove(struct pci_dev *pdev);
+static void gcu_remove(struct pci_dev *pdev);
 static int gcu_notify_reboot(struct notifier_block *, unsigned long event,
                              void *ptr);
 static int gcu_suspend(struct pci_dev *pdev, uint32_t state);
@@ -89,7 +89,7 @@ static struct pci_driver gcu_driver = {
     .name     = gcu_driver_name,
     .id_table = gcu_pci_tbl,
     .probe    = gcu_probe,
-    .remove   = __devexit_p(gcu_remove),
+    .remove   = gcu_remove,
 };
 
 static struct gcu_adapter *global_adapter = 0;
@@ -164,7 +164,7 @@ module_exit(gcu_exit_module);
  * The OS initialization, configuring of the adapter private structure,
  * and a hardware reset occur.
  **/
-static int __devinit
+static int
 gcu_probe(struct pci_dev *pdev,
           const struct pci_device_id *ent)
 {
@@ -270,7 +270,7 @@ gcu_probe_err(enum gcu_err_type err, struct pci_dev *pdev,
  * Hot-Plug event, or because the driver is going to be removed from
  * memory.
  **/
-static void __devexit
+static void
 gcu_remove(struct pci_dev *pdev)
 {
     struct gcu_adapter *adapter = pci_get_drvdata(pdev);

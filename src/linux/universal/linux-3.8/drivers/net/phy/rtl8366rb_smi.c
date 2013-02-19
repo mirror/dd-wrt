@@ -1850,7 +1850,7 @@ static int __init rtl8366rb_smi_probe(struct platform_device *pdev)
 	return err;
 }
 
-static int __devexit rtl8366rb_smi_remove(struct platform_device *pdev)
+static int rtl8366rb_smi_remove(struct platform_device *pdev)
 {
 	struct rtl8366_smi *smi = platform_get_drvdata(pdev);
 
@@ -1878,7 +1878,7 @@ static struct platform_driver rtl8366rb_smi_driver = {
 		.owner		= THIS_MODULE,
 	},
 	.probe		= rtl8366rb_smi_probe,
-	.remove		= __devexit_p(rtl8366rb_smi_remove),
+	.remove		= rtl8366rb_smi_remove,
 };
 
 static struct phy_driver rtl8366rb_smi_phy_driver = {

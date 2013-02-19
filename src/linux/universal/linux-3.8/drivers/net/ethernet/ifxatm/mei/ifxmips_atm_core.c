@@ -4609,7 +4609,7 @@ static int atm_showtime_exit(void)
  *    0    --- successful
  *    else --- failure, usually it is negative value of error code
  */
-static int __devinit ifx_atm_init(void)
+static int ifx_atm_init(void)
 {
     int ret;
     int port_num;

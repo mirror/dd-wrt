@@ -70,12 +70,12 @@ GPL LICENSE SUMMARY
  */
 
 #define E1000_PARAM(X, desc) \
-    static const int __devinitdata X[E1000_MAX_NIC+1] = E1000_PARAM_INIT; \
+    static const int X[E1000_MAX_NIC+1] = E1000_PARAM_INIT; \
     MODULE_PARM(X, "1-" __MODULE_STRING(E1000_MAX_NIC) "i"); \
     MODULE_PARM_DESC(X, desc);
 #else
 #define E1000_PARAM(X, desc) \
-    static int __devinitdata X[E1000_MAX_NIC+1] = E1000_PARAM_INIT; \
+    static int X[E1000_MAX_NIC+1] = E1000_PARAM_INIT; \
     static int num_##X = 0; \
     module_param_array_named(X, X, int, &num_##X, 0); \
     MODULE_PARM_DESC(X, desc);
@@ -264,7 +264,7 @@ struct iegbe_option {
     } arg;
 };
 
-static int __devinit
+static int 
 iegbe_validate_option(int *value, struct iegbe_option *opt,
         struct iegbe_adapter *adapter)
 {
@@ -329,7 +329,7 @@ static void iegbe_check_copper_options(struct iegbe_adapter *adapter);
  * in a variable in the adapter structure.
  **/
 
-void __devinit
+void 
 iegbe_check_options(struct iegbe_adapter *adapter)
 {
     int bd = adapter->bd_number;
@@ -602,7 +602,7 @@ iegbe_check_options(struct iegbe_adapter *adapter)
  * Handles speed and duplex options on fiber adapters
  **/
 
-static void __devinit
+static void 
 iegbe_check_fiber_options(struct iegbe_adapter *adapter)
 {
     int bd = adapter->bd_number;
@@ -643,7 +643,7 @@ iegbe_check_fiber_options(struct iegbe_adapter *adapter)
  * Handles speed and duplex options on copper adapters
  **/
 
-static void __devinit
+static void 
 iegbe_check_copper_options(struct iegbe_adapter *adapter)
 {
     int speed, dplx;

@@ -563,7 +563,7 @@ static struct i2c_algorithm falcon_i2c_algorithm = {
 	.functionality	= falcon_i2c_functionality,
 };
 
-static int __devinit falcon_i2c_probe(struct platform_device *pdev)
+static int falcon_i2c_probe(struct platform_device *pdev)
 {
 	int ret = 0;
 	struct falcon_i2c *priv;
@@ -748,7 +748,7 @@ err_free_priv:
 	return ret;
 }
 
-static int __devexit falcon_i2c_remove(struct platform_device *pdev)
+static int falcon_i2c_remove(struct platform_device *pdev)
 {
 	struct falcon_i2c *priv = platform_get_drvdata(pdev);
 	struct resource *mmres;
@@ -782,7 +782,7 @@ static int __devexit falcon_i2c_remove(struct platform_device *pdev)
 
 static struct platform_driver falcon_i2c_driver = {
 	.probe	= falcon_i2c_probe,
-	.remove	= __devexit_p(falcon_i2c_remove),
+	.remove	= falcon_i2c_remove,
 	.driver	= {
 		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,
