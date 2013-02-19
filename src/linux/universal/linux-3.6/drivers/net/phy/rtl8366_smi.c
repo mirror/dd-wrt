@@ -15,6 +15,9 @@
 #include <linux/gpio.h>
 #include <linux/spinlock.h>
 #include <linux/skbuff.h>
+#include <linux/of.h>
+#include <linux/of_platform.h>
+#include <linux/of_gpio.h>
 #include <linux/rtl8366.h>
 
 #ifdef CONFIG_RTL8366_SMI_DEBUG_FS
@@ -1106,6 +1109,7 @@ int rtl8366_sw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 
 	port = &val->value.ports[0];
 	for (i = 0; i < val->len; i++, port++) {
+		int pvid;
 		member |= BIT(port->id);
 
 		if (!(port->flags & BIT(SWITCH_PORT_FLAG_TAGGED)))
@@ -1115,9 +1119,14 @@ int rtl8366_sw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 		 * To ensure that we have a valid MC entry for this VLAN,
 		 * initialize the port VLAN ID here.
 		 */
-		err = rtl8366_set_pvid(smi, port->id, val->port_vlan);
+		err = rtl8366_get_pvid(smi, port->id, &pvid);
 		if (err < 0)
 			return err;
+		if (pvid == 0) {
+			err = rtl8366_set_pvid(smi, port->id, val->port_vlan);
+			if (err < 0)
+				return err;
+		}
 	}
 
 	return rtl8366_set_vlan(smi, val->port_vlan, member, untag, 0);
@@ -1369,6 +1378,71 @@ void rtl8366_smi_cleanup(struct rtl8366_smi *smi)
 	__rtl8366_smi_cleanup(smi);
 }
 EXPORT_SYMBOL_GPL(rtl8366_smi_cleanup);
+
+#ifdef CONFIG_OF
+int rtl8366_smi_probe_of(struct platform_device *pdev, struct rtl8366_smi *smi)
+{
+	int sck = of_get_named_gpio(pdev->dev.of_node, "gpio-sck", 0);
+	int sda = of_get_named_gpio(pdev->dev.of_node, "gpio-sda", 0);
+
+	if (!gpio_is_valid(sck) || !gpio_is_valid(sda)) {
+		dev_err(&pdev->dev, "gpios missing in devictree\n");
+		return -EINVAL;
+	}
+
+	smi->gpio_sda = sda;
+	smi->gpio_sck = sck;
+
+	return 0;
+}
+#else
+static inline int rtl8366_smi_probe_of(struct platform_device *pdev, struct rtl8366_smi *smi)
+{
+	return -ENODEV;
+}
+#endif
+
+int rtl8366_smi_probe_plat(struct platform_device *pdev, struct rtl8366_smi *smi)
+{
+	struct rtl8366_platform_data *pdata = pdev->dev.platform_data;
+
+	if (!pdev->dev.platform_data) {
+		dev_err(&pdev->dev, "no platform data specified\n");
+		return -EINVAL;
+	}
+
+	smi->gpio_sda = pdata->gpio_sda;
+	smi->gpio_sck = pdata->gpio_sck;
+	smi->hw_reset = pdata->hw_reset;
+
+	return 0;
+}
+
+
+struct rtl8366_smi *rtl8366_smi_probe(struct platform_device *pdev)
+{
+	struct rtl8366_smi *smi;
+	int err;
+
+	smi = rtl8366_smi_alloc(&pdev->dev);
+	if (!smi)
+		return NULL;
+
+	if (pdev->dev.of_node)
+		err = rtl8366_smi_probe_of(pdev, smi);
+	else
+		err = rtl8366_smi_probe_plat(pdev, smi);
+
+	if (err)
+		goto free_smi;
+
+	return smi;
+
+free_smi:
+	kfree(smi);
+	return NULL;
+}
+EXPORT_SYMBOL_GPL(rtl8366_smi_probe);
 
 MODULE_DESCRIPTION("Realtek RTL8366 SMI interface driver");
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
