@@ -52,7 +52,7 @@ $TCA $3 parent 1:1 classid 1:100 hfsc rt umax 1500b dmax 30ms rate 100kbit ls ra
 $TCA $3 parent 1:1 classid 1:10 hfsc rt rate $(((${UL}*30)/100))kbit ls rate $(((${UL}*75)/100))kbit ul rate ${UL}kbit
 $TCA $3 parent 1:1 classid 1:20 hfsc rt rate $(((${UL}*20)/100))kbit ls rate $(((${UL}*75)/100))kbit ul rate ${UL}kbit
 $TCA $3 parent 1:1 classid 1:30 hfsc rt rate $(((${UL}*10)/100))kbit ls rate $(((${UL}*55)/100))kbit ul rate ${UL}kbit
-$TCA $3 parent 1:1 classid 1:40 hfsc rt rate $(((${UL}*10)/100))kbit ls rate $(((${UL}*10)/100))kbit ul rate $(((${UL}*90)/100))kbit
+$TCA $3 parent 1:1 classid 1:40 hfsc rt rate $(((${UL}*10)/100))kbit ls rate $(((${UL}*10)/100))kbit ul rate ${UL}kbit
 $TQA $3 parent 1:100 handle 100: sfq perturb 10 quantum $4
 $TQA $3 parent 1:10 handle 10: sfq perturb 10 quantum $4
 $TQA $3 parent 1:20 handle 20: sfq perturb 10 quantum $4
@@ -73,7 +73,7 @@ $TCA $5 parent 1:1 classid 1:100 hfsc rt umax 1500b dmax 30ms rate 100kbit ls ra
 $TCA $5 parent 1:1 classid 1:10 hfsc rt rate $(((${DL}*30)/100))kbit ls rate $(((${DL}*75)/100))kbit ul rate ${DL}kbit
 $TCA $5 parent 1:1 classid 1:20 hfsc rt rate $(((${DL}*20)/100))kbit ls rate $(((${DL}*75)/100))kbit ul rate ${DL}kbit
 $TCA $5 parent 1:1 classid 1:30 hfsc rt rate $(((${DL}*10)/100))kbit ls rate $(((${DL}*55)/100))kbit ul rate ${DL}kbit
-$TCA $5 parent 1:1 classid 1:40 hfsc rt rate $(((${DL}*10)/100))kbit ls rate $(((${DL}*10)/100))kbit ul rate $(((${DL}*90)/100))kbit
+$TCA $5 parent 1:1 classid 1:40 hfsc rt rate $(((${DL}*10)/100))kbit ls rate $(((${DL}*10)/100))kbit ul rate ${DL}kbit
 $TQA $5 parent 1:100 handle 100: sfq perturb 10 quantum $4
 $TQA $5 parent 1:10 handle 10: sfq perturb 10 quantum $4
 $TQA $5 parent 1:20 handle 20: sfq perturb 10 quantum $4
@@ -94,7 +94,7 @@ $TCA $6 parent 1:1 classid 1:100 hfsc rt umax 1500b dmax 30ms rate 100kbit ls ra
 $TCA $6 parent 1:1 classid 1:10 hfsc rt rate $(((1000000*30)/100))kbit ls rate $(((1000000*75)/100))kbit ul rate 1000000kbit
 $TCA $6 parent 1:1 classid 1:20 hfsc rt rate $(((1000000*20)/100))kbit ls rate $(((1000000*75)/100))kbit ul rate 1000000kbit
 $TCA $6 parent 1:1 classid 1:30 hfsc rt rate $(((1000000*10)/100))kbit ls rate $(((1000000*55)/100))kbit ul rate 1000000kbit
-$TCA $6 parent 1:1 classid 1:40 hfsc rt rate $(((1000000*10)/100))kbit ls rate $(((1000000*10)/100))kbit ul rate $(((1000000*90)/100))kbit
+$TCA $6 parent 1:1 classid 1:40 hfsc rt rate $(((1000000*10)/100))kbit ls rate $(((1000000*10)/100))kbit ul rate 1000000kbit
 $TCA $6 parent 1:1 classid 1:2 hfsc ls rate 1000000kbit ul rate 1000000kbit
 $TQA $6 parent 1:100 handle 100: sfq perturb 10 quantum $4
 $TQA $6 parent 1:10 handle 10: sfq perturb 10 quantum $4
