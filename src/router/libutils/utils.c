@@ -268,7 +268,7 @@ add_client_mac_srvfilter(char *name, char *type, char *data, char *level,
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
 		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -m mac --mac-source %s -m dpi --%s -j MARK --set-mark %s",
+		    ("iptables -t mangle -I FILTER_IN 3 -m mac --mac-source %s -m ndpi --%s -j MARK --set-mark %s",
 		     client, name, qos_nfmark(base + idx));
 	}
 #endif
