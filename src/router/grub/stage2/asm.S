@@ -95,14 +95,16 @@ VARIABLE(stage2_id)
 VARIABLE(force_lba)
 	.byte	0
 VARIABLE(version_string)
-	.string VERSION
+	.ascii VERSION
+	.byte	0
 VARIABLE(config_file)
 #ifndef STAGE1_5
-	.string "/boot/grub/menu.lst"
+	.ascii "/boot/grub/menu.lst"
 #else   /* STAGE1_5 */
 	.long	0xffffffff
-	.string "/boot/grub/stage2"
+	.ascii "/boot/grub/stage2"
 #endif  /* STAGE1_5 */
+	.byte	0
 
 	/*
 	 *  Leave some breathing room for the config file name.
@@ -762,7 +764,9 @@ ENTRY(chain_stage1)
 	call	EXT_C(prot_to_real)
 	.code16
 
-#ifdef ABSOLUTE_WITHOUT_ASTERISK
+#ifdef __APPLE__
+	DATA32	ADDR32	ljmp	offset
+#elif defined(ABSOLUTE_WITHOUT_ASTERISK)
 	DATA32	ADDR32	ljmp	(offset)
 #else
 	DATA32	ADDR32	ljmp	*(offset)

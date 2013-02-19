@@ -56,6 +56,8 @@ fi
 
 AC_CHECK_TOOL(CC, gcc)
 AC_PROG_CC
+AM_PROG_CC_C_O
+AM_PROG_AS
 # We need this for older versions of Autoconf.
 _AM_DEPENDENCIES(CC)
 
@@ -175,26 +177,22 @@ grub_ASM_ABSOLUTE_WITHOUT_ASTERISK
 
 grub_CHECK_START_SYMBOL
 grub_CHECK_USCORE_START_SYMBOL
-if test "x$grub_cv_check_start_symbol" != "xyes" \
-	-a "x$grub_cv_check_uscore_start_symbol" != "xyes"; then
-  AC_MSG_ERROR([Neither start nor _start is defined])
-fi
 
 grub_CHECK_USCORE_USCORE_BSS_START_SYMBOL
 grub_CHECK_USCORE_EDATA_SYMBOL
 grub_CHECK_EDATA_SYMBOL
-if test "x$grub_cv_check_uscore_uscore_bss_start_symbol" != "xyes" \
-	-a "x$grub_cv_check_uscore_edata_symbol" != "xyes" \
-	-a "x$grub_cv_check_edata_symbol" != "xyes"; then
-  AC_MSG_ERROR([None of __bss_start, _edata, edata defined])
-fi
+# if test "x$grub_cv_check_uscore_uscore_bss_start_symbol" != "xyes" \
+#	-a "x$grub_cv_check_uscore_edata_symbol" != "xyes" \
+#	-a "x$grub_cv_check_edata_symbol" != "xyes"; then
+#  AC_MSG_ERROR([None of __bss_start, _edata, edata defined])
+# fi
 
 grub_CHECK_END_SYMBOL
 grub_CHECK_USCORE_END_SYMBOL
-if test "x$grub_cv_check_end_symbol" != "xyes" \
-	-a "x$grub_cv_check_uscore_end_symbol" != "xyes"; then
-  AC_MSG_ERROR([Neither end nor _end is defined])
-fi
+#if test "x$grub_cv_check_end_symbol" != "xyes" \
+#	-a "x$grub_cv_check_uscore_end_symbol" != "xyes"; then
+#  AC_MSG_ERROR([Neither end nor _end is defined])
+#fi
 
 # Check for curses libraries.
 AC_ARG_WITH(curses,
