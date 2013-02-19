@@ -7365,6 +7365,24 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 /*
  * Note: VLAN #16 designates tagging.  There is no VLAN #16 (only 0-15) 
  */
+                      
+void ej_get_qospkts(webs_t wp, int argc, char_t ** argv)
+{
+    char *qos_pkts = nvram_safe_get("svqos_pkts");
+    char pkt_filter[4];
+    
+    websWrite(wp, "<tr>\
+                    <td><input type=\"checkbox\" name=\"svqos_pktack\" value=\"ACK\" %s><script type=\"text/javascript\">Capture(qos.pktack)</script></input></td>\
+                    <td><input type=\"checkbox\" name=\"svqos_pktsyn\" value=\"SYN\" %s><script type=\"text/javascript\">Capture(qos.pktsyn)</script></input></td>\
+                    <td><input type=\"checkbox\" name=\"svqos_pktfin\" value=\"FIN\" %s><script type=\"text/javascript\">Capture(qos.pktfin)</script></input></td>\
+                    <td><input type=\"checkbox\" name=\"svqos_pktrst\" value=\"RST\" %s><script type=\"text/javascript\">Capture(qos.pktrst)</script></input></td>\
+                  </tr>\n",
+              strstr(qos_pkts, "ACK") ? "checked" : "",
+              strstr(qos_pkts, "SYN") ? "checked" : "",
+              strstr(qos_pkts, "FIN") ? "checked" : "",
+              strstr(qos_pkts, "RST") ? "checked" : ""
+            );
+}
 
 void ej_get_qossvcs(webs_t wp, int argc, char_t ** argv)
 {

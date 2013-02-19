@@ -1175,6 +1175,12 @@ qos.maxrate_o="Max Rate";
 qos.legend4="MAC Priority";
 qos.legend5="Ethernet Port Priority";
 qos.legend6="Default Bandwidth Level";
+qos.legend7="TCP-Packet Priority";
+qos.pktdesc="Prioritize small tcp-packets with the following flags:"
+qos.pktack="ACK"
+qos.pktrst="RST"
+qos.pktsyn="SYN"
+qos.pktfin="FIN"
 qos.enabledefaultlvls="Enable Per User Default Limits";
 qos.bandwidth="Bandwidth in kbits";
 
