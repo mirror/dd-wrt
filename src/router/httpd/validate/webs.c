@@ -1405,8 +1405,9 @@ void qos_save(webs_t wp)
 {
 	char *value = websGetVar(wp, "action", "");
 	char svqos_var[4096] = { 0 };
+    char svqos_pktstr[30] = { 0 };
 	char field[32] = { 0 };
-	char *name, *data, *level, *level2, *lanlevel, *prio, *delete;
+	char *name, *data, *level, *level2, *lanlevel, *prio, *delete, *pktopt;
 	int no_svcs = atoi(websGetVar(wp, "svqos_nosvcs", NULL));
 	int no_ips = atoi(websGetVar(wp, "svqos_noips", NULL));
 	int no_macs = atoi(websGetVar(wp, "svqos_nomacs", NULL));
@@ -1438,12 +1439,33 @@ void qos_save(webs_t wp)
 
 	// nvram_commit ();
 
-	memset(svqos_var, 0, sizeof(svqos_var));
+    /*
+     * tcp-packet flags
+     */
+    memset(svqos_pktstr, 0, sizeof(svqos_pktstr));
 
+    pktopt = websGetVar(wp, "svqos_pktack", NULL);
+    if (pktopt)
+        strcat(svqos_pktstr, "ACK | ");
+    pktopt = websGetVar(wp, "svqos_pktsyn", NULL);
+    if (pktopt)
+        strcat(svqos_pktstr, "SYN | ");
+    pktopt = websGetVar(wp, "svqos_pktfin", NULL);
+    if (pktopt)
+        strcat(svqos_pktstr, "FIN | ");
+    pktopt = websGetVar(wp, "svqos_pktrst", NULL);
+    if (pktopt)
+        strcat(svqos_pktstr, "RST | ");
+  
+    nvram_set("svqos_pkts", svqos_pktstr);
+    
 	/*
 	 * services priorities 
 	 */
-	for (i = 0; i < no_svcs; i++) {
+    memset(svqos_var, 0, sizeof(svqos_var));
+
+	
+    for (i = 0; i < no_svcs; i++) {
 		char protocol[100], ports[100];
 
 		memset(protocol, 0, 100);

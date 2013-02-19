@@ -10,6 +10,13 @@ function svcs_grey(sw_disabled,F) {
 	}
 }
 
+function pkts_grey(sw_disabled,F) {
+    F.svqos_pktack.disabled = sw_disabled;
+    F.svqos_pktsyn.disabled = sw_disabled;
+    F.svqos_pktfin.disabled = sw_disabled;
+    F.svqos_pktrst.disabled = sw_disabled;
+}
+
 function macs_grey(sw_disabled,F,overwrite) {
 	F.svqos_hwaddr0.disabled = sw_disabled;
 	F.svqos_hwaddr1.disabled = sw_disabled;
@@ -111,6 +118,7 @@ function qos_grey(num,F) {
 	F.add_svc_button.disabled = sw_disabled;
 	F.edit_svc_button.disabled = sw_disabled;
 	<% nvram_match("portprio_support","0","/"); %><% nvram_match("portprio_support","0","/"); %>port_grey(sw_disabled, F);
+    pkts_grey(sw_disabled, F);
 	macs_grey(sw_disabled, F, false);
 	ips_grey(sw_disabled, F, false);
 	svcs_grey(sw_disabled, F);		
@@ -260,6 +268,16 @@ addEvent(window, "unload", function() {
 									<input type="checkbox" name="_enable_game" value="1" <% nvram_checked("enable_game", "1"); %> />
 								</div>
 							</fieldset><br />
+                            
+                            <fieldset>
+                                <legend><% tran("qos.legend7"); %></legend>
+                                <table class="table" summary="packet-type priority table">
+                                    <tr>
+                                        <td colspan="4"><% tran("qos.pktdesc"); %></td>
+                                    </tr>
+                                    <% get_qospkts(); %>
+                                </table>
+                            </fieldset><br />
 							
 							<fieldset>
 								<legend><% tran("qos.legend2"); %></legend>
