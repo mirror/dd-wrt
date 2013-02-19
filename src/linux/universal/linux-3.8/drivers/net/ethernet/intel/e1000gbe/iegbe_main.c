@@ -100,7 +100,7 @@ void iegbe_update_stats(struct iegbe_adapter *adapter);
 static int iegbe_init_module(void);
 static void iegbe_exit_module(void);
 static int iegbe_probe(struct pci_dev *pdev, const struct pci_device_id *ent);
-static void __devexit iegbe_remove(struct pci_dev *pdev);
+static void iegbe_remove(struct pci_dev *pdev);
 static int iegbe_alloc_queues(struct iegbe_adapter *adapter);
 static int iegbe_sw_init(struct iegbe_adapter *adapter);
 static int iegbe_open(struct net_device *netdev);
@@ -198,7 +198,7 @@ static struct pci_driver iegbe_driver = {
     .name     = iegbe_driver_name,
     .id_table = iegbe_pci_tbl,
     .probe    = iegbe_probe,
-    .remove   = __devexit_p(iegbe_remove),
+    .remove   = iegbe_remove,
     /* Power Managment Hooks */
 #ifdef CONFIG_PM
     .suspend  = iegbe_suspend,
@@ -757,7 +757,7 @@ static const struct net_device_ops iegbe_netdev_ops = {
 #define DECLARE_MAC_BUF(var) char var[18] __maybe_unused
 
 
-static int __devinit iegbe_probe(struct pci_dev *pdev,
+static int iegbe_probe(struct pci_dev *pdev,
             const struct pci_device_id *ent)
 {
     struct net_device *netdev;
@@ -1009,7 +1009,7 @@ err_dma:
  * memory.
  **/
 
-static void __devexit
+static void 
 iegbe_remove(struct pci_dev *pdev)
 {
     struct net_device *netdev = pci_get_drvdata(pdev);
@@ -1048,7 +1048,7 @@ iegbe_remove(struct pci_dev *pdev)
  * OS network device settings (MTU size).
  **/
 
-static int __devinit
+static int 
 iegbe_sw_init(struct iegbe_adapter *adapter)
 {
     struct iegbe_hw *hw = &adapter->hw;
@@ -1127,7 +1127,7 @@ iegbe_sw_init(struct iegbe_adapter *adapter)
  * number of queues at compile-time.
  **/
 
-static int __devinit
+static int 
 iegbe_alloc_queues(struct iegbe_adapter *adapter)
 {
 

@@ -779,7 +779,7 @@ extern int ra_check_flash_type(void);
  * matches what the READ command supports, at least until this driver
  * understands FAST_READ (for clocks over 25 MHz).
  */
-static int __devinit raspi_prob(void)
+static int raspi_prob(void)
 {
 	struct chip_info		*chip;
 	unsigned			i;
@@ -864,7 +864,7 @@ static int __devinit raspi_prob(void)
 	return add_mtd_partitions(&flash->mtd, rt2880_partitions, ARRAY_SIZE(rt2880_partitions));
 }
 
-static void __devexit raspi_remove(void)
+static void raspi_remove(void)
 {
 	/* Clean up MTD stuff. */
 	del_mtd_partitions(&flash->mtd);

@@ -1486,7 +1486,7 @@ static struct net_device_ops amac_dev_ops = {
 #endif
 };
 
-static void __devinit amac_default_mac_addr( struct net_device * dev, u8 unit )
+static void amac_default_mac_addr( struct net_device * dev, u8 unit )
 {
 	static const u8 def_hw_addr[] = 
 		{ 0x80, 0xde, 0xad, 0xfa, 0xce, 0x00 };
@@ -1519,7 +1519,7 @@ static void __devinit amac_default_mac_addr( struct net_device * dev, u8 unit )
 
 }
 
-static int __devinit amac_dev_init( struct net_device * dev, unsigned unit )
+static int amac_dev_init( struct net_device * dev, unsigned unit )
 {
 	struct amac_priv * priv = netdev_priv(dev);
 	void * __iomem base;

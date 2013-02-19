@@ -363,7 +363,7 @@ static void rx_tasklet_cleanup(struct net_device *dev)
 	tasklet_kill(&sp->rx_tasklet);
 }
 
-static int __devexit ar231x_remove(struct platform_device *pdev)
+static int ar231x_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct ar231x_private *sp = netdev_priv(dev);
@@ -402,7 +402,7 @@ static int ar231x_restart(struct net_device *dev)
 static struct platform_driver ar231x_driver = {
 	.driver.name = "ar231x-eth",
 	.probe = ar231x_probe,
-	.remove = __devexit_p(ar231x_remove),
+	.remove = ar231x_remove,
 };
 
 

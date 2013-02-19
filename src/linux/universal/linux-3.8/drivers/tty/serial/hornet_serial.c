@@ -2371,7 +2371,7 @@ void serial8250_resume_port(int line)
  * list is terminated with a zero flags entry, which means we expect
  * all entries to have at least UPF_BOOT_AUTOCONF set.
  */
-static int __devinit serial8250_probe(struct platform_device *dev)
+static int serial8250_probe(struct platform_device *dev)
 {
 	struct plat_serial8250_port *p = dev->dev.platform_data;
 	struct uart_port port;
@@ -2410,7 +2410,7 @@ static int __devinit serial8250_probe(struct platform_device *dev)
 /*
  * Remove serial ports registered against a platform device.
  */
-static int __devexit serial8250_remove(struct platform_device *dev)
+static int serial8250_remove(struct platform_device *dev)
 {
 	int i;
 
@@ -2453,7 +2453,7 @@ static int serial8250_resume(struct platform_device *dev)
 
 static struct platform_driver serial8250_isa_driver = {
 	.probe		= serial8250_probe,
-	.remove		= __devexit_p(serial8250_remove),
+	.remove		= serial8250_remove,
 	.suspend	= serial8250_suspend,
 	.resume		= serial8250_resume,
 	.driver		= {

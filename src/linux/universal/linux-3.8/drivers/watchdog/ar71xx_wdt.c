@@ -229,7 +229,7 @@ static struct miscdevice ar71xx_wdt_miscdev = {
 	.fops = &ar71xx_wdt_fops,
 };
 
-static int __devinit ar71xx_wdt_probe(struct platform_device *pdev)
+static int ar71xx_wdt_probe(struct platform_device *pdev)
 {
 	int ret;
 
@@ -310,7 +310,7 @@ err_out:
 	return ret;
 }
 
-static int __devexit ar71xx_wdt_remove(struct platform_device *pdev)
+static int ar71xx_wdt_remove(struct platform_device *pdev)
 {
 	misc_deregister(&ar71xx_wdt_miscdev);
 	return 0;
@@ -323,7 +323,7 @@ static void ar71xx_wdt_shutdown(struct platform_device *pdev)
 
 static struct platform_driver ar71xx_wdt_driver = {
 	.probe		= ar71xx_wdt_probe,
-	.remove		= __devexit_p(ar71xx_wdt_remove),
+	.remove		= ar71xx_wdt_remove,
 	.shutdown	= ar71xx_wdt_shutdown,
 	.driver		= {
 		.name	= DRV_NAME,
