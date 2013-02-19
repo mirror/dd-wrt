@@ -616,7 +616,7 @@ void add_client_classes(unsigned int base, unsigned int level)
 		sysprintf	// interior
 		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d", wan_dev, 2, base, uprate, uplimit, quantum);
 		sysprintf	// expempt
-		    ("tc class ad dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", wan_dev, base, base + 1, uprate, uplimit, quantum);
+		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", wan_dev, base, base + 1, uprate, uplimit, quantum);
 		sysprintf	// premium
 		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", wan_dev, base, base + 2, uprate * 75 / 100, uplimit, quantum);
 		sysprintf	// express
@@ -629,7 +629,7 @@ void add_client_classes(unsigned int base, unsigned int level)
 		sysprintf	// interior
 		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d", "imq0", 2, base, downrate, downlimit, quantum);
 		sysprintf	// exempt
-		    ("tc class ad dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", "imq0", base, base + 1, downrate, downlimit, quantum);
+		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", "imq0", base, base + 1, downrate, downlimit, quantum);
 		sysprintf	// premium
 		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq0", base, base + 2, downrate * 75 / 100, downlimit, quantum);
 		sysprintf	// express
@@ -643,7 +643,7 @@ void add_client_classes(unsigned int base, unsigned int level)
 			sysprintf	// interior
 			    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d", "imq1", 2, base, lanrate, lanlimit, quantum);
 			sysprintf	// exempt
-			    ("tc class ad dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", "imq1", base, base + 1, lanrate, lanlimit, quantum);
+			    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", "imq1", base, base + 1, lanrate, lanlimit, quantum);
 			sysprintf	// premium
 			    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq1", base, base + 2, lanrate * 75 / 100, lanlimit, quantum);
 			sysprintf	// express
