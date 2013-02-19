@@ -12,7 +12,9 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
-#include <linux/platform_device.h>
+#include <linux/device.h>
+#include <linux/of.h>
+#include <linux/of_platform.h>
 #include <linux/delay.h>
 #include <linux/skbuff.h>
 #include <linux/rtl8366.h>
@@ -1048,10 +1050,9 @@ static struct rtl8366_smi_ops rtl8366s_smi_ops = {
 	.enable_port	= rtl8366s_enable_port,
 };
 
-static int __devinit rtl8366s_probe(struct platform_device *pdev)
+static int rtl8366s_probe(struct platform_device *pdev)
 {
 	static int rtl8366_smi_version_printed;
-	struct rtl8366_platform_data *pdata;
 	struct rtl8366_smi *smi;
 	int err;
 
@@ -1059,22 +1060,9 @@ static int __devinit rtl8366s_probe(struct platform_device *pdev)
 		printk(KERN_NOTICE RTL8366S_DRIVER_DESC
 		       " version " RTL8366S_DRIVER_VER"\n");
 
-	pdata = pdev->dev.platform_data;
-	if (!pdata) {
-		dev_err(&pdev->dev, "no platform data specified\n");
-		err = -EINVAL;
-		goto err_out;
-	}
-
-	smi = rtl8366_smi_alloc(&pdev->dev);
-	if (!smi) {
-		err = -ENOMEM;
-		goto err_out;
-	}
-
-	smi->gpio_sda = pdata->gpio_sda;
-	smi->gpio_sck = pdata->gpio_sck;
-	smi->hw_reset = pdata->hw_reset;
+	smi = rtl8366_smi_probe(pdev);
+	if (!smi)
+		return -ENODEV;
 
 	smi->clk_delay = 10;
 	smi->cmd_read = 0xa9;
@@ -1103,11 +1091,10 @@ static int __devinit rtl8366s_probe(struct platform_device *pdev)
 	rtl8366_smi_cleanup(smi);
  err_free_smi:
 	kfree(smi);
- err_out:
 	return err;
 }
 
-static int __devexit rtl8366s_remove(struct platform_device *pdev)
+static int rtl8366s_remove(struct platform_device *pdev)
 {
 	struct rtl8366_smi *smi = platform_get_drvdata(pdev);
 
@@ -1121,13 +1108,24 @@ static int __devexit rtl8366s_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id rtl8366s_match[] = {
+	{ .compatible = "rtl8366s" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, rtl8366s_match);
+#endif
+
 static struct platform_driver rtl8366s_driver = {
 	.driver = {
 		.name		= RTL8366S_DRIVER_NAME,
 		.owner		= THIS_MODULE,
+#ifdef CONFIG_OF
+		.of_match_table = of_match_ptr(rtl8366s_match),
+#endif
 	},
 	.probe		= rtl8366s_probe,
-	.remove		= __devexit_p(rtl8366s_remove),
+	.remove		= rtl8366s_remove,
 };
 
 static int __init rtl8366s_module_init(void)
