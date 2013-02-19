@@ -11,7 +11,9 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
-#include <linux/platform_device.h>
+#include <linux/device.h>
+#include <linux/of.h>
+#include <linux/of_platform.h>
 #include <linux/delay.h>
 #include <linux/skbuff.h>
 #include <linux/rtl8367.h>
@@ -1453,27 +1455,15 @@ static struct rtl8366_smi_ops rtl8367b_smi_ops = {
 	.enable_port	= rtl8367b_enable_port,
 };
 
-static int rtl8367b_probe(struct platform_device *pdev)
+static int  rtl8367b_probe(struct platform_device *pdev)
 {
-	struct rtl8367_platform_data *pdata;
 	struct rtl8366_smi *smi;
 	int err;
 
-	pdata = pdev->dev.platform_data;
-	if (!pdata) {
-		dev_err(&pdev->dev, "no platform data specified\n");
-		err = -EINVAL;
-		goto err_out;
-	}
+	smi = rtl8366_smi_probe(pdev);
+	if (!smi)
+		return -ENODEV;
 
-	smi = rtl8366_smi_alloc(&pdev->dev);
-	if (!smi) {
-		err = -ENOMEM;
-		goto err_out;
-	}
-
-	smi->gpio_sda = pdata->gpio_sda;
-	smi->gpio_sck = pdata->gpio_sck;
 	smi->clk_delay = 1500;
 	smi->cmd_read = 0xb9;
 	smi->cmd_write = 0xb8;
@@ -1501,7 +1491,6 @@ static int rtl8367b_probe(struct platform_device *pdev)
 	rtl8366_smi_cleanup(smi);
  err_free_smi:
 	kfree(smi);
- err_out:
 	return err;
 }
 
@@ -1527,10 +1516,21 @@ static void rtl8367b_shutdown(struct platform_device *pdev)
 		rtl8367b_reset_chip(smi);
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id rtl8367b_match[] = {
+	{ .compatible = "rtl8367b" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, rtl8367b_match);
+#endif
+
 static struct platform_driver rtl8367b_driver = {
 	.driver = {
 		.name		= RTL8367B_DRIVER_NAME,
 		.owner		= THIS_MODULE,
+#ifdef CONFIG_OF
+		.of_match_table = of_match_ptr(rtl8367b_match),
+#endif
 	},
 	.probe		= rtl8367b_probe,
 	.remove		= rtl8367b_remove,
