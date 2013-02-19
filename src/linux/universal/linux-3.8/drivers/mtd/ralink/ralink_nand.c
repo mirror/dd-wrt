@@ -1821,7 +1821,7 @@ static struct nand_ecclayout ra_oob_layout = {
 	// 5th byte is bad-block flag.
 };
 
-int __devinit ra_nand_init(void) 
+int ra_nand_init(void) 
 {
 	struct ra_nand_chip *ra;
 	int alloc_size, bbt_size, buffers_size;
@@ -1946,7 +1946,7 @@ int __devinit ra_nand_init(void)
 #endif
 }
 
-static void __devexit ra_nand_remove(void)
+static void ra_nand_remove(void)
 {
 	struct ra_nand_chip *ra;
 	

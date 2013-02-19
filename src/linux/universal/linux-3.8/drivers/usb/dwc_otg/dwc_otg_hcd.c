@@ -398,7 +398,7 @@ static struct tasklet_struct reset_tasklet = {
  */
 int init_hcd_usecs(dwc_otg_hcd_t *_hcd);
 
-int  __devinit  dwc_otg_hcd_init(struct device *_dev, dwc_otg_device_t * dwc_otg_device)
+int  dwc_otg_hcd_init(struct device *_dev, dwc_otg_device_t * dwc_otg_device)
 {
 	struct usb_hcd *hcd = NULL;
 	dwc_otg_hcd_t *dwc_otg_hcd = NULL;

@@ -125,7 +125,7 @@ static int ndfc_chip_init(struct ndfc_controller *ndfc,
 	return rb_nand_probe(chip, 0);
 }
 
-static int __devinit ndfc_probe(struct of_device *ofdev,
+static int ndfc_probe(struct of_device *ofdev,
 				const struct of_device_id *match)
 {
 	struct ndfc_controller *ndfc = &ndfc_ctrl;
@@ -177,7 +177,7 @@ static int __devinit ndfc_probe(struct of_device *ofdev,
 	return 0;
 }
 
-static int __devexit ndfc_remove(struct of_device *ofdev)
+static int ndfc_remove(struct of_device *ofdev)
 {
 	return 0;
 }
@@ -195,7 +195,7 @@ static struct of_platform_driver ndfc_driver = {
 		.of_match_table = ndfc_match,
 	},
 	.probe = ndfc_probe,
-	.remove = __devexit_p(ndfc_remove),
+	.remove = ndfc_remove,
 };
 
 static int __init ndfc_nand_init(void)

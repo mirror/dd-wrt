@@ -114,7 +114,7 @@ static int ltq_stp_hw_init(void)
 }
 
 extern int register_stp_proc(void);
-static int __devinit ltq_stp_probe(struct platform_device *pdev)
+static int ltq_stp_probe(struct platform_device *pdev)
 {
 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	int ret = 0;

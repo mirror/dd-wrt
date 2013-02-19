@@ -636,7 +636,7 @@ dwc_otg_driver_remove(struct platform_device *_dev)
  *
  * @return
  */
-static int __devinit
+static int 
 dwc_otg_driver_probe(struct platform_device *_dev)
 {
 	int retval = 0;

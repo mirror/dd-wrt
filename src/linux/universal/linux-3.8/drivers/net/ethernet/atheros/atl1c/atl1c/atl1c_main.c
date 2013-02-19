@@ -553,7 +553,7 @@ static int atl1c_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
  * @adapter: board private structure to initialize
  *
  */
-static int __devinit atl1c_alloc_queues(struct atl1c_adapter *adapter)
+static int atl1c_alloc_queues(struct atl1c_adapter *adapter)
 {
 	return 0;
 }
@@ -606,7 +606,7 @@ static int atl1c_setup_mac_funcs(struct atl1c_hw *hw)
  * Fields are initialized based on PCI device information and
  * OS network device settings (MTU size).
  */
-static int __devinit atl1c_sw_init(struct atl1c_adapter *adapter)
+static int atl1c_sw_init(struct atl1c_adapter *adapter)
 {
 	struct atl1c_hw *hw   = &adapter->hw;
 	struct pci_dev	*pdev = adapter->pdev;
@@ -2515,7 +2515,7 @@ static int atl1c_init_netdev(struct net_device *netdev, struct pci_dev *pdev)
  * The OS initialization, configuring of the adapter private structure,
  * and a hardware reset occur.
  */
-static int __devinit atl1c_probe(struct pci_dev *pdev,
+static int atl1c_probe(struct pci_dev *pdev,
 				 const struct pci_device_id *ent)
 {
 	struct net_device *netdev;
@@ -2672,7 +2672,7 @@ err_dma:
  * Hot-Plug event, or because the driver is going to be removed from
  * memory.
  */
-static void __devexit atl1c_remove(struct pci_dev *pdev)
+static void atl1c_remove(struct pci_dev *pdev)
 {
 	struct net_device *netdev = pci_get_drvdata(pdev);
 	struct atl1c_adapter *adapter = netdev_priv(netdev);
@@ -2775,7 +2775,7 @@ static struct pci_driver atl1c_driver = {
 	.name     = atl1c_driver_name,
 	.id_table = atl1c_pci_tbl,
 	.probe    = atl1c_probe,
-	.remove   = __devexit_p(atl1c_remove),
+	.remove   = atl1c_remove,
 	/* Power Managment Hooks */
 	.suspend  = atl1c_suspend,
 	.resume   = atl1c_resume,

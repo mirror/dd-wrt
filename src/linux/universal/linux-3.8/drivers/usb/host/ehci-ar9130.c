@@ -305,7 +305,7 @@ err:
 }
 #endif
 
-static int __devinit ehci_hcd_ar9130_init (void)
+static int ehci_hcd_ar9130_init (void)
 {
 #ifdef CONFIG_USB_AR9130_OTG
     return usb_otg_ar9130_probe(&ehci_hc_ar9130_driver);
@@ -314,7 +314,7 @@ static int __devinit ehci_hcd_ar9130_init (void)
 #endif
 }
 
-static void __devexit ehci_hcd_ar9130_cleanup(void)
+static void ehci_hcd_ar9130_cleanup(void)
 {
 #ifdef CONFIG_USB_AR9130_OTG
     struct ar9130_otg *ar9130_otg = ar9130_get_otg();

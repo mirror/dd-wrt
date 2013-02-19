@@ -110,7 +110,7 @@ void usb_hcd_ar71xx_remove(struct usb_hcd *hcd, struct platform_device *pdev)
 	usb_put_hcd(hcd);
 }
 
-static int __devinit ohci_ar71xx_start(struct usb_hcd *hcd)
+static int ohci_ar71xx_start(struct usb_hcd *hcd)
 {
 	struct ohci_hcd	*ohci = hcd_to_ohci(hcd);
 	int ret;

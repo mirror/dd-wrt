@@ -266,7 +266,7 @@ static void spi_gpio_cleanup(struct spi_device *spi)
 	spi_bitbang_cleanup(spi);
 }
 
-static int __devinit spi_gpio_alloc(unsigned pin, const char *label, bool is_in)
+static int spi_gpio_alloc(unsigned pin, const char *label, bool is_in)
 {
 	int value;
 
@@ -280,7 +280,7 @@ static int __devinit spi_gpio_alloc(unsigned pin, const char *label, bool is_in)
 	return value;
 }
 
-static int __devinit
+static int
 spi_gpio_request(struct spi_gpio_platform_data *pdata, const char *label,
 	u16 *res_flags)
 {
@@ -322,7 +322,7 @@ done:
 	return value;
 }
 
-static int __devinit spi_gpio_probe(struct platform_device *pdev)
+static int spi_gpio_probe(struct platform_device *pdev)
 {
 	int				status;
 	struct spi_master		*master;
@@ -390,7 +390,7 @@ gpio_free:
 	return status;
 }
 
-static int __devexit spi_gpio_remove(struct platform_device *pdev)
+static int spi_gpio_remove(struct platform_device *pdev)
 {
 	struct spi_gpio			*spi_gpio;
 	struct spi_gpio_platform_data	*pdata;
@@ -420,7 +420,7 @@ static struct platform_driver spi_gpio_driver = {
 	.driver.name	= DRIVER_NAME,
 	.driver.owner	= THIS_MODULE,
 	.probe		= spi_gpio_probe,
-	.remove		= __devexit_p(spi_gpio_remove),
+	.remove		= spi_gpio_remove,
 };
 
 static int __init spi_gpio_init(void)
