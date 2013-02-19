@@ -13,6 +13,7 @@
 
 #include <linux/phy.h>
 #include <linux/switch.h>
+#include <linux/platform_device.h>
 
 struct rtl8366_smi_ops;
 struct rtl8366_vlan_ops;
@@ -145,5 +146,7 @@ int rtl8366_sw_get_vlan_enable(struct switch_dev *dev,
 int rtl8366_sw_set_vlan_enable(struct switch_dev *dev,
 			       const struct switch_attr *attr,
 			       struct switch_val *val);
+
+struct rtl8366_smi* rtl8366_smi_probe(struct platform_device *pdev);
 
 #endif /*  _RTL8366_SMI_H */
