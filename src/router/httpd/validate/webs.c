@@ -1955,6 +1955,8 @@ void add_vifs_single(char *prefix, int device)
 	nvram_set(v2, "KMT_vap");
 #elif defined(HAVE_CORENET)
 	nvram_set(v2, "corenet.ap");
+#elif defined(HAVE_ONNET)
+	nvram_set(v2, "OTAi_vap");
 #else
 	nvram_set(v2, "dd-wrt_vap");
 #endif

@@ -1359,7 +1359,19 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_XIOCOM
 	websWrite(wp, "XWR");
 #else
+#ifdef HAVE_ONNET
+	if(nvram_match("DD_BOARD", "Atheros Hornet")) {
+		websWrite(wp, "OTAi 9331");
+	} else if(nvram_match("DD_BOARD", "ACCTON AC622")) {
+		websWrite(wp, "OTAi 724AP");
+	} else if(nvram_match("DD_BOARD", "ACCTON AC722")) {
+		websWrite(wp, "OTAi 724AP");
+	} else {
+		websWrite(wp, "OTAi %s", nvram_get("DD_BOARD"));
+	}
+#else
 	websWrite(wp, "%s", nvram_safe_get("DD_BOARD"));
+#endif
 #endif
 }
 
