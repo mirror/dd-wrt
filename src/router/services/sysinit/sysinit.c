@@ -2426,6 +2426,7 @@ void start_drivers(void)
 		cprintf("loading usb2 module\n");
 		insmod("ehci-hcd");
 		insmod("ehci-platform");
+		insmod("ehci-pci");
 
 		cprintf("loading usb-uhci\n");
 		insmod("usb-uhci");
