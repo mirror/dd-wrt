@@ -272,6 +272,9 @@ endif
 ifeq ($(CONFIG_IPR),y)
 CFLAGS += -DHAVE_IPR
 endif
+ifeq ($(CONFIG_ONNET),y)
+CFLAGS += -DHAVE_ONNET
+endif
 ifeq ($(CONFIG_WIFIDOG),y)
 CFLAGS += -DHAVE_WIFIDOG
 endif
