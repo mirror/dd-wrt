@@ -622,4 +622,12 @@ config MTD_NAND_FSMC
 	  Enables support for NAND Flash chips on the ST Microelectronics
 	  Flexible Static Memory Controller (FSMC)
 
+config MTD_NAND_ATH
+	tristate "Support for NAND on Atheros board"
+	default n
+	depends on MTD_NAND && WASP_SUPPORT
+	help
+	  Enables support for NAND Flash chip on Atheros board.
+
+
 endif # MTD_NAND
