@@ -85,7 +85,7 @@ static int nand_supports_backup(struct mtd_info *mtd) {
 		ops.oobbuf = (uint8_t *)&oobdata;
 		ops.ooboffs = BACKUP_4xFF_OFFSET;
 		ops.datbuf = NULL;
-		ops.mode = MTD_OOB_RAW;
+		ops.mode = MTD_OPS_RAW;
 
 		if (mtd->block_isbad(mtd, ofs)) {
 			continue;
