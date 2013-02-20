@@ -35,7 +35,7 @@ void ej_compile_time(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 {
-#ifdef HAVE_ESPOD
+#if defined(HAVE_ESPOD) || defined(HAVE_ONNET)
 	char *p;
 	char string[32], date[16];
 	sprintf( string, CYBERTAN_VERSION );
@@ -85,6 +85,16 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "Carlson Wireless v5.3 (%s)", SVN_REVISION);
 #elif HAVE_IPR
 		websWrite(wp, "IPR-CP v1.0 (%s)", SVN_REVISION);
+#elif HAVE_ONNET
+	if(nvram_match("DD_BOARD", "Atheros Hornet")) {
+		websWrite(wp, "OTAi 9331 (%s)", date);
+	} else if(nvram_match("DD_BOARD", "ACCTON AC622")) {
+		websWrite(wp, "OTAi 724AP (%s)", date);
+	} else if(nvram_match("DD_BOARD", "ACCTON AC722")) {
+		websWrite(wp, "OTAi 724AP (%s)", date);
+	} else {
+		websWrite(wp, "OTAi %s (%s)", nvram_get("DD_BOARD"), date);
+	}
 #else
 
 		websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
