@@ -1586,7 +1586,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		/* p2p detection enhanced */
 #ifdef HAVE_OPENDPI
 		insmod("/lib/opendpi/xt_opendpi.ko");
-/*		save2file
+/*		save2file		//doesnt work. needs investigation
 		    ("-A advgrp_%d -m ndpi --applejuice -j %s\n",
 		     seq, log_drop); */
 		save2file
@@ -1627,6 +1627,9 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		    ("-A advgrp_%d -m layer7 --l7proto ares -j %s\n",
 		     seq, log_drop);
 		     /*order pattern, speed matters*/
+		save2file	//use l7 applejuice
+		    ("-A advgrp_%d -m layer7 --l7proto applejuice -j %s\n",
+		     seq, log_drop);
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto bt4 -j %s\n",
 		     seq, log_drop);
