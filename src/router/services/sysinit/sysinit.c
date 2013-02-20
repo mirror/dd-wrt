@@ -2425,6 +2425,7 @@ void start_drivers(void)
 
 		cprintf("loading usb2 module\n");
 		insmod("ehci-hcd");
+		insmod("ehci-platform");
 
 		cprintf("loading usb-uhci\n");
 		insmod("usb-uhci");
@@ -2490,6 +2491,7 @@ void start_drivers(void)
 		eval("rmmod", "ohci-hcd");
 		eval("rmmod", "uhci-hcd");
 		eval("rmmod", "usb-uhci");
+		eval("rmmod", "ehci-platform");
 		eval("rmmod", "ehci-hcd");
 		eval("rmmod", "usbcore");
 /* unload filesystems */
