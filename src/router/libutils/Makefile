@@ -468,6 +468,9 @@ endif
 ifeq ($(CONFIG_IPR),y)
   CFLAGS += -DHAVE_IPR
 endif
+ifeq ($(CONFIG_ONNET),y)
+  CFLAGS += -DHAVE_ONNET
+endif
 ifeq ($(CONFIG_SUB3),y)
 CFLAGS += -DHAVE_SUB3
 endif

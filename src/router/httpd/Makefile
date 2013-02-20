@@ -221,6 +221,9 @@ ifeq ($(CONFIG_AOSS),y)
 endif
 ifeq ($(CONFIG_IAS),y)
   CFLAGS += -DHAVE_IAS
+ifeq ($(CONFIG_IAS_NOPWD),y)
+  CFLAGS += -DCONFIG_IAS_NOPLNPWD
+endif
 endif
 ifeq ($(CONFIG_RELAYD),y)
   CFLAGS += -DHAVE_RELAYD
@@ -339,6 +342,9 @@ CFLAGS += -DHAVE_IPR
 endif
 ifeq ($(CONFIG_ENEO),y)
 CFLAGS += -DHAVE_ENEO
+endif
+ifeq ($(CONFIG_ONNET),y)
+CFLAGS += -DHAVE_ONNET
 endif
 ifeq ($(CONFIG_VILIM),y)
 CFLAGS += -DHAVE_VILIM
@@ -1035,7 +1041,11 @@ ifneq ($(CONFIG_NOSSL),y)
 endif
 ifeq ($(CONFIG_IAS),y)
 	install -d $(INSTALLDIR)/etc/config
+ifeq ($(CONFIG_IAS_NOPLNPWD),y)
+	install ../private/buffalo/intatstart/config/admincard_noplnpwd.webdisplay $(INSTALLDIR)/etc/config/admincard.webdisplay
+else
 	install ../private/buffalo/intatstart/config/admincard.webdisplay $(INSTALLDIR)/etc/config/admincard.webdisplay
+endif
 endif
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf httpd httpsclient
 
@@ -1043,10 +1053,14 @@ cert:
 ifeq ($(CONFIG_CARLSONWIRELESS),y)
 	./gencert_carlsonwireless.sh
 else
+ifeq ($(CONFIG_ONNET),y)
+	./gencert_onnet.sh
+else
 ifeq ($(CONFIG_IPR),y)
 	./gencert_ipr.sh
 else
 	./gencert.sh
+endif
 endif
 endif
 	
