@@ -1586,9 +1586,9 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		/* p2p detection enhanced */
 #ifdef HAVE_OPENDPI
 		insmod("/lib/opendpi/xt_opendpi.ko");
-/*		save2file		//doesnt work. needs investigation
-		    ("-A advgrp_%d -m ndpi --applejuice -j %s\n",
-		     seq, log_drop); */
+		save2file		//doesnt work. needs investigation
+		    ("-A advgrp_%d -m ndpi --apple -j %s\n",
+		     seq, log_drop); 
 		save2file
 		    ("-A advgrp_%d -m ndpi --bittorrent -j %s\n",
 		     seq, log_drop);
