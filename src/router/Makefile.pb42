@@ -304,6 +304,9 @@ endif
 ifeq ($(CONFIG_AC622),y)
 	cp $(LINUXDIR)/.config_ar7240_nousb $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WNDR3700V4),y)
+	cp $(LINUXDIR)/.config_wndr3700v4 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_KERNEL_ELF_CORE),y)
 	sed -i 's/\# CONFIG_ELF_CORE is not set/CONFIG_ELF_CORE=y/g' $(LINUXDIR)/.config
 endif
@@ -373,6 +376,7 @@ clean: rc-clean httpd-clean services-clean shared-clean libutils-clean madwifi-c
 	rm -rf $(TARGETDIR)
 	rm -f $(TARGETDIR)/*
 	-rm -f $(ARCH)-uclibc/*
+
 
 distclean mrproper: $(obj-distclean) clean_target
 	rm -rf $(INSTALLDIR)
@@ -966,6 +970,33 @@ ifeq ($(CONFIG_TEW673GRU),y)
 	cp $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/tew673gru-uimage.bin
 	cat tools/tew673gru.tag >> $(ARCH)-uclibc/tew673gru-uimage.bin
 endif
+ifeq ($(CONFIG_WNDR3700V4),y)
+	./tools/wndr3700/wndr3700v4 \
+		$(ARCH)-uclibc/root.uimage \
+		$(ARCH)-uclibc/root.wndr3700v4
+
+
+	mkimage -A mips -O linux -T filesystem -C none \
+		-a 0xbf070000 -e 0xbf070000 \
+		-n 'wndr3700v4-V1.1.4.68' \
+		-d $(ARCH)-uclibc/root.fs \
+		$(ARCH)-uclibc/rootfs.uimage
+
+	./tools/wndr3700/wndr3700v4 \
+		$(ARCH)-uclibc/rootfs.uimage \
+		$(ARCH)-uclibc/rootfs.wndr3700v4
+	
+	dd if=$(ARCH)-uclibc/root.wndr3700v4 bs=$(shell expr $(shell expr $(shell expr $(shell expr $(shell expr 128 + $(shell du -b $(ARCH)-uclibc/root.wndr3700v4 | awk {'print $$1'})) / 131072) + 1) \* 131072) - 64) conv=sync of=$(ARCH)-uclibc/root.wndr3700v4.final
+
+	export KERNEL_SIZE=$(shell du -b $(ARCH)-uclibc/root.wndr3700v4.final | awk {'print $$1'})
+	dd if=$(ARCH)-uclibc/rootfs.wndr3700v4 bs=64 count=1 >> $(ARCH)-uclibc/root.wndr3700v4.final
+	( \
+	    dd if=$(ARCH)-uclibc/root.wndr3700v4.final bs=$(shell du -b $(ARCH)-uclibc/root.wndr3700v4.final | awk {'print $$1'}) conv=sync; \
+	    dd if=$(ARCH)-uclibc/root.fs bs=64k; \
+	) > $(ARCH)-uclibc/aligned.wndr3700v4
+	./tools/wndr3700/mkdniimg -B WNDR3700v4 -v 1.1.4.68 -r "" -i $(ARCH)-uclibc/aligned.wndr3700v4 -o $(ARCH)-uclibc/wndr3700v4-factory.img -H "29763948+128+128"
+endif
+
 ifeq ($(CONFIG_WNR2000),y)
 	mkdir -p $(ARCH)-uclibc/wnr2000v3/image
 	./tools/wndr3700/wnr2000v3 \
