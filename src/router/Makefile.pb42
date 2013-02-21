@@ -995,6 +995,7 @@ ifeq ($(CONFIG_WNDR3700V4),y)
 	    dd if=$(ARCH)-uclibc/root.fs bs=64k; \
 	) > $(ARCH)-uclibc/aligned.wndr3700v4
 	./tools/wndr3700/mkdniimg -B WNDR3700v4 -v 1.1.4.68 -r "" -i $(ARCH)-uclibc/aligned.wndr3700v4 -o $(ARCH)-uclibc/wndr3700v4-factory.img -H "29763948+128+128"
+	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/wndr3700v4-factory.img $(ARCH)-uclibc/wndr3700v4.bin	
 endif
 
 ifeq ($(CONFIG_WNR2000),y)
