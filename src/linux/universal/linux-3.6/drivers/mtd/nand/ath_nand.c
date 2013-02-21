@@ -1426,7 +1426,7 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				len &= ~(mtd->erasesize - 1);
 				dir_parts[2].size = (len & 0x1ffffff) - dir_parts[2].offset;
 				dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size;
-				dir_parts[3].offset = mtd->size - dir_parts[3].offset;
+				dir_parts[3].size = mtd->size - dir_parts[3].offset;
 				dir_parts[6].size = mtd->size;
 				break;
 		}
