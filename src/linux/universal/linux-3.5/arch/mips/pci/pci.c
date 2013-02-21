@@ -237,7 +237,10 @@ static void __init pcibios_set_cache_line_size(void)
 #ifdef CONFIG_BCM47XX
 extern int __init pcibios_init(void);
 #else
-static int __init pcibios_init(void)
+#ifndef CONFIG_MTD_NAND_ATH
+static 
+#endif
+int __init pcibios_init(void)
 {
 	struct pci_controller *hose;
 
@@ -254,7 +257,9 @@ static int __init pcibios_init(void)
 	return 0;
 }
 #endif
+#ifndef CONFIG_MTD_NAND_ATH
 subsys_initcall(pcibios_init);
+#endif
 
 static int pcibios_enable_resources(struct pci_dev *dev, int mask)
 {
