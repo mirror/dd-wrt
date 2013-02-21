@@ -2476,6 +2476,7 @@ static void filter_forward(void)
 	 * Drop the wrong state, INVALID, packets 
 	 */
 	// save2file("-A FORWARD -m state --state INVALID -j DROP\n");
+
 	/*
 	 * Sveasoft add - log invalid packets 
 	 */
@@ -2507,6 +2508,14 @@ static void filter_forward(void)
 			  "-m webstr --content %d -j %s\n",
 			  lanface, wanface, webfilter, log_reject);
 	}
+	
+	/*
+	 * Accept those established/related connections 
+	 */
+	save2file
+	    ("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s\n",
+	     log_accept);
+
 	/*
 	 * Filter setting by user definition 
 	 */
@@ -2518,13 +2527,6 @@ static void filter_forward(void)
 	 */
 	if (nvram_invmatch("filter", "off"))
 		parse_port_filter(nvram_safe_get("filter_port"));
-
-	/*
-	 * Accept those established/related connections 
-	 */
-	save2file
-	    ("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s\n",
-	     log_accept);
 
 	/*
 	 * Sveasoft mods - accept OSPF protocol broadcasts 
