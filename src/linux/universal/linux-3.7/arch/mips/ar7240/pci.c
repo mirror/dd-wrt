@@ -43,7 +43,7 @@ int pcibios_plat_dev_init(struct pci_dev *dev)
 int __init pcibios_map_irq(const struct pci_dev *dev, uint8_t slot, uint8_t pin)
 {
 	int ret = 0;
-
+	printk(KERN_INFO "map irq for slot %d to pin %d\n",slot,pin);
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR7141:

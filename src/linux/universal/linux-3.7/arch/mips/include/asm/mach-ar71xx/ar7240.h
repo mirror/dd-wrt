@@ -746,7 +746,7 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define AR9342_REV_1_0			0x1120
 #define AR9341_REV_1_0			0x0120
 
-
+/*
 #define is_ar7240()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_2) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_1) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_0))
@@ -760,12 +760,11 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define is_ar9344()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9344_REV_1_0)
 #define is_ar9342()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9342_REV_1_0)
 #define is_ar9341()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9341_REV_1_0)
-
 #define is_ar9330()     (((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_0) || \
 			((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_1))
 
 #define is_ar934x()	(is_ar9344() || is_ar9342() || is_ar9341())
-
+*/
 
 #define AR7240_PLL_USE_REV_ID    0
 #define AR7240_PLL_200_200_100   1

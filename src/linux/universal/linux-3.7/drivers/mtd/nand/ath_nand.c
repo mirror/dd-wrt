@@ -22,6 +22,7 @@
 #include <linux/mtd/nand.h>
 #include <linux/mtd/nand_ecc.h>
 #include <linux/mtd/partitions.h>
+#include <linux/squashfs_fs.h>
 
 #include <asm/cacheflush.h>
 #include "../mtdcore.h"
@@ -678,7 +679,7 @@ ath_nand_rw_buff(struct mtd_info *mtd, int rd, uint8_t *buff,
 			for (i = 0; (i < mtd->writesize) && (buff[i] == 0xff); i++);
 			if (i == mtd->writesize) {
 				ret = ATH_NF_STATUS_OK;
-				printk("Skipping write for 0x%llx\n", addr);
+			//	printk("Skipping write for 0x%llx\n", addr);
 				goto skip_write_for_all_0xff;
 			}
 
@@ -1131,7 +1132,7 @@ ath_nand_block_markbad(struct mtd_info *mtd, loff_t ofs)
 	return 0;
 }
 
-static unsigned long 
+static uint64_t 
 ath_parse_read_id(ath_nand_sc_t *sc)
 {
 	int	i;
@@ -1377,17 +1378,63 @@ ath_nand_ecc_init(struct mtd_info *mtd)
 #endif
 }
 
+static struct mtd_partition dir_parts[] = {
+      {name: "RedBoot", offset: 0x0, size:0x80000,},
+      {name: "linux", offset: 0x6c0000, size:0x40000,},
+      {name: "rootfs", offset: 0x0, size:0x2b0000,},
+      {name: "ddwrt", offset: 0x0, size:0x2b0000,},
+      {name: "nvram", offset: 0x340000, size:0x80000,},
+      {name: "board_config", offset: 0x80000, size:0x40000,},
+      {name: "fullflash", offset: 0x0, size:0x10000,},
+      {name:NULL,},
+};
+
+
 /*
  * Device management interface
  */
 static int ath_nand_add_partition(ath_nand_sc_t *sc)
 {
 	struct mtd_info *mtd = &sc->mtd;
+#ifdef CONFIG_MTD
+	struct squashfs_super_block *sb;
+	uint64_t offset;
+	char buf[512];
+	char *bbuf = NULL;
+	int retlen;
+	unsigned int rootsize,len;
+	uint64_t base = offset + mtd->erasesize;
+	while (base < mtd->size) {
+		mtd_read(mtd,offset,512,&retlen,&buf[0]);
+		if (*((__u32 *)buf) == SQUASHFS_MAGIC)
+		    bbuf = buf;
+		else
+		if (*((__u32 *)&buf[128]) == SQUASHFS_MAGIC)
+		{
+		    bbuf = &buf[128];
+		    offset+=128;
+		}
+		else
+		    bbuf = NULL;
+		if (bbuf) {
+				printk(KERN_EMERG "\nfound squashfs at 0x%llX\n",offset);
+				sb = (struct squashfs_super_block *)buf;
+				dir_parts[2].offset = offset;
+				dir_parts[2].size = sb->bytes_used;
+				len = dir_parts[2].offset + dir_parts[2].size;
+				len += (mtd->erasesize - 1);
+				len &= ~(mtd->erasesize - 1);
+				dir_parts[2].size = (len & 0x1ffffff) - dir_parts[2].offset;
+				dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size;
+				dir_parts[3].offset = mtd->size - dir_parts[3].offset;
+				dir_parts[6].size = mtd->size;
+				break;
+		}
+	offset += mtd->erasesize;
+	base += mtd->erasesize;
+	}
 
-#ifdef CONFIG_MTD_PARTITIONS
-	sc->nr_partitions = parse_mtd_partitions(mtd, part_probes,
-						 &sc->partitions, 0);
-	return add_mtd_partitions(mtd, sc->partitions, sc->nr_partitions);
+	return add_mtd_partitions(mtd, dir_parts, 7);
 #else
 	return add_mtd_device(mtd);
 #endif
@@ -1395,7 +1442,7 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 
 static int ath_nand_remove(void)
 {
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 	/* Deregister partitions */
 	del_mtd_partitions(&ath_nand_sc->mtd);
 #endif
@@ -1404,7 +1451,7 @@ static int ath_nand_remove(void)
 	return 0;
 }
 
-
+extern void nand_postinit(struct mtd_info *mtd);
 /*
  * ath_nand_probe
  *
@@ -1538,7 +1585,7 @@ static int ath_nand_probe(void)
 		"page = 0x%x block = 0x%x oob = 0x%x\n", sc, sc->bbt, bbt_size,
 		sc->nf_ctrl, mtd->writesize, mtd->erasesize, mtd->oobsize);
 
-
+	nand_postinit(mtd);
 	return 0;
 
 out_err_hw_init:
