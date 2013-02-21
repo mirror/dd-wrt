@@ -263,7 +263,16 @@ int main(int argc, char **argv)
 
 	dev = swlib_connect(cdev);
 	if (!dev) {
-		fprintf(stderr, "Failed to connect to the switch\n");
+		if (!strcmp(cdev,"eth0"))
+		{
+		    dev = swlib_connect("switch0");
+		    if (!dev)
+		    dev = swlib_connect("rtl8366s");
+		    if (!dev)
+		    dev = swlib_connect("rtl8366rb");		    
+		}
+		if (!dev)
+			fprintf(stderr, "Failed to connect to the switch\n");
 		return 1;
 	}
 
