@@ -255,7 +255,6 @@ static void ar934x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
 static void ar934x_ip2_irq_init(void)
 {
 	int i;
-
 	for (i = AR934X_IP2_IRQ_BASE;
 	     i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
 		irq_set_chip_and_handler(i, &dummy_irq_chip,

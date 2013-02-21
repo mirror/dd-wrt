@@ -52,6 +52,8 @@ __init void ap91_pci_setup_wmac_gpio(u32 mask, u32 val)
 	wmac_data.gpio_val = val;
 }
 
+int __init pcibios_init(void);
+
 void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 {
 	if (cal_data)
@@ -64,7 +66,10 @@ void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 	}
 
 	ar71xx_pci_plat_dev_init = ap91_pci_plat_dev_init;
-	ar71xx_pci_init(ARRAY_SIZE(ap91_pci_irqs), ap91_pci_irqs);
 	pci_enable_ath9k_fixup(0, wmac_data.eeprom_data);
+	ar71xx_pci_init(ARRAY_SIZE(ap91_pci_irqs), ap91_pci_irqs);
+#ifdef CONFIG_MTD_NAND_ATH
+	pcibios_init();
+#endif
 }
 #endif

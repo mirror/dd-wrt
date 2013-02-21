@@ -45,6 +45,7 @@
 #include "devices.h"
 #include <asm/mach-ar71xx/ar933x_uart_platform.h>
 #include <linux/ar8216_platform.h>
+#include <linux/mtd/mtd.h>
 
 void serial_print(char *fmt, ...);
 
@@ -555,7 +556,9 @@ int __init ar7240_platform_init(void)
 	ee = (u8 *) KSEG1ADDR(0x1fff1000);
 	ar9xxx_add_device_wmac(ee, mac);
 #elif CONFIG_WASP_SUPPORT
+#ifndef CONFIG_MTD_NAND_ATH
 	ee = (u8 *) KSEG1ADDR(0x1fff1000);
+
 #ifdef CONFIG_DIR825C1
 	ar9xxx_add_device_wmac(ee, mac0);
 #elif CONFIG_DIR615I
@@ -563,6 +566,7 @@ int __init ar7240_platform_init(void)
 #else
 	ar9xxx_add_device_wmac(ee, NULL);
 #endif
+
 #ifdef CONFIG_DIR825C1
 	ap91_pci_init(ee+0x4000, mac1);
 #else
@@ -570,7 +574,8 @@ int __init ar7240_platform_init(void)
 	ap91_pci_init(NULL, NULL);
 #endif
 #endif
-#else
+#endif
+#else // WASP_SUPPORT
 	ee = getCalData(0);
 	if (ee && !mac) {
 	    if (!memcmp(((u8 *)ee)+0x20c,"\xff\xff\xff\xff\xff\xff",6) || !memcmp(((u8 *)ee)+0x20c,"\x00\x00\x00\x00\x00\x00",6)) {
@@ -587,6 +592,18 @@ int __init ar7240_platform_init(void)
 #endif
 return ret;
 }
+#ifdef CONFIG_MTD_NAND_ATH
+void nand_postinit(struct mtd_info *mtd)
+{
 
+	u8 *ee = (u8 *)kmalloc(0x9000,GFP_ATOMIC);
+	int i;
+	printk(KERN_INFO "cal size = %lld\n",mtd->size);
+	int mtdlen;
+	mtd_read(mtd,0x80000,0x9000,&mtdlen,ee);
+	ar9xxx_add_device_wmac(ee+0x1000, ee+6);
+	ap91_pci_init(ee+0x5000, ee+12);
+}
+#endif
 arch_initcall(ar7240_platform_init);
     
