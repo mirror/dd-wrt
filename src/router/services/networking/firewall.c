@@ -1593,7 +1593,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		    ("-A advgrp_%d -m ndpi --bittorrent -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m ndpi --directconnect -j %s\n",
+		    ("-A advgrp_%d -p tcp -m ndpi --directconnect -j %s\n",
 		     seq, log_drop);
 		save2file
 		    ("-A advgrp_%d -m ndpi --edonkey -j %s\n",
@@ -1605,26 +1605,32 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		    ("-A advgrp_%d -m ndpi --filetopia -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m ndpi --gnutella -j %s\n",
+		    ("-A advgrp_%d -p tcp -m ndpi --gnutella -j %s\n",
 		     seq, log_drop);
 		save2file
 		    ("-A advgrp_%d -m ndpi --imesh -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m ndpi --pando -j %s\n",
+		    ("-A advgrp_%d -p tcp -m ndpi --openft -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m ndpi --soulseek -j %s\n",
+		    ("-A advgrp_%d -p tcp -m ndpi --pando -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m ndpi --winmx -j %s\n",
-		     seq, log_drop);
-		  /*match protocols unknown to opendpi/ndpi atm*/   
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto audiogalaxy -j %s\n",
+		    ("-A advgrp_%d -p tcp -m ndpi --soulseek -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto ares -j %s\n",
+		    ("-A advgrp_%d -m ndpi -p tcp --winmx -j %s\n",
+		     seq, log_drop);
+		  /*match protocols unknown to opendpi/ndpi atm*/
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto audiogalaxy -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto ares -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s\n",
 		     seq, log_drop);
 		     /*order pattern, speed matters*/
 		save2file
@@ -1641,21 +1647,39 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		     seq, log_drop);
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
-		     seq, log_drop); 
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto freenet -j %s\n",
+		     seq, log_drop);
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto gnucleuslan -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto mute -j %s\n",
+		    ("-A advgrp_%d -m layer7 --l7proto goboogy -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto napster -j %s\n",
+		    ("-A advgrp_%d -m layer7 --l7proto hotline -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto openft -j %s\n",
+		    ("-A advgrp_%d -m layer7 --l7proto kugoo -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto soribada -j %s\n",
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto mute -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto napster -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto tesla -j %s\n",
+		     seq, log_drop);		     
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto waste -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto xdcc -j %s\n",
 		     seq, log_drop);
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto xunlei -j %s\n",
@@ -1677,7 +1701,10 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		    ("-A advgrp_%d -m layer7 --l7proto audiogalaxy -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto ares -j %s\n",
+		    ("-A advgrp_%d -m layer7 -p tcp --l7proto ares -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s\n",
 		     seq, log_drop);
 		     /*order pattern, speed matters*/
 		save2file
@@ -1696,7 +1723,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
 		     seq, log_drop); */ 
 		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto directconnect -j %s\n",
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto directconnect -j %s\n",
 		     seq, log_drop);
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto edonkey -j %s\n",
@@ -1705,25 +1732,55 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		    ("-A advgrp_%d -m layer7 --l7proto fasttrack -j %s\n",
 		     seq, log_drop);
 		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto freenet -j %s\n",
+		     seq, log_drop);
+		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto gnucleuslan -j %s\n",
 		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto gnutella -j %s\n",
+		     seq, log_drop);	
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto goboogy -j %s\n",
+		     seq, log_drop);	
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto hotline -j %s\n",
+		     seq, log_drop);	     
 	 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto imesh -j %s\n",
 		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto mute -j %s\n",
+	 		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto kugoo -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto napster -j %s\n",
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto mute -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto openft -j %s\n",
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto napster -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto soribada -j %s\n",
+		    ("-A advgrp_%d -p tcp -m layer7 -p tcp --l7proto openft -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 -p tcp --l7proto pando -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s\n",
 		     seq, log_drop);
 			save2file
-		    ("-A advgrp_%d -m layer7 --l7proto soulseek -j %s\n",
+		    ("-A advgrp_%d -p tcp -m layer7 -p tcp --l7proto soulseek -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto tesla -j %s\n",
+		     seq, log_drop);	
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto waste -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto winmx -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto xdcc -j %s\n",
 		     seq, log_drop);
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto xunlei -j %s\n",
