@@ -2015,7 +2015,7 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 		goto free_priv;
 
 	swdev = &priv->dev;
-//	swdev->alias = dev_name(&priv->mii_bus->dev);
+	swdev->alias = dev_name(&priv->mii_bus->dev);
 	ret = register_switch(swdev, NULL);
 	if (ret)
 		goto free_priv;
