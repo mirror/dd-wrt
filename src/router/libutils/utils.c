@@ -1,4 +1,5 @@
-/*
+/*7
+
  * utils.c
  *
  * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
@@ -1679,6 +1680,13 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR835A1
 	setRouter("Dlink DIR835-A1");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "7");
+	nvram_default_get("ath1_txantenna", "7");
+	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WNDR4300
+	setRouter("Netgear WNDR4300");
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	nvram_default_get("ath1_rxantenna", "7");
