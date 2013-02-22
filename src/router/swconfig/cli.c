@@ -271,9 +271,10 @@ int main(int argc, char **argv)
 		    if (!dev)
 		    dev = swlib_connect("rtl8366rb");		    
 		}
-		if (!dev)
+		if (!dev) {
 			fprintf(stderr, "Failed to connect to the switch\n");
-		return 1;
+			return 1;
+		}
 	}
 
 	swlib_scan(dev);
