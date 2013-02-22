@@ -88,10 +88,22 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_ONNET
 	if(nvram_match("DD_BOARD", "Atheros Hornet")) {
 		websWrite(wp, "OTAi 9331 (%s)", date);
+	} else if(nvram_match("DD_BOARD", "Compex WPE72")) {
+		websWrite(wp, "OTAi 724 (%s)", date);
 	} else if(nvram_match("DD_BOARD", "ACCTON AC622")) {
-		websWrite(wp, "OTAi 724AP (%s)", date);
+		if(iscpe()) {
+			websWrite(wp, "OTAi 724S (%s)", date);
+		} else {
+			websWrite(wp, "OTAi 724AP (%s)", date);
+		}
 	} else if(nvram_match("DD_BOARD", "ACCTON AC722")) {
-		websWrite(wp, "OTAi 724AP (%s)", date);
+		if(iscpe()) {
+			websWrite(wp, "OTAi 724S (%s)", date);
+		} else {
+			websWrite(wp, "OTAi 724AP (%s)", date);
+		}
+	} else if(nvram_match("DD_BOARD", "Compex WP546")) {
+		websWrite(wp, "OTAi 724S (%s)", date);
 	} else {
 		websWrite(wp, "OTAi %s (%s)", nvram_get("DD_BOARD"), date);
 	}

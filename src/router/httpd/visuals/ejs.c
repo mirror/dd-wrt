@@ -1362,10 +1362,22 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_ONNET
 	if(nvram_match("DD_BOARD", "Atheros Hornet")) {
 		websWrite(wp, "OTAi 9331");
+	} else if(nvram_match("DD_BOARD", "Compex WPE72")) {
+		websWrite(wp, "OTAi 724");
 	} else if(nvram_match("DD_BOARD", "ACCTON AC622")) {
-		websWrite(wp, "OTAi 724AP");
+		if(iscpe()) {
+			websWrite(wp, "OTAi 724S");
+		} else {
+			websWrite(wp, "OTAi 724AP");
+		}
 	} else if(nvram_match("DD_BOARD", "ACCTON AC722")) {
-		websWrite(wp, "OTAi 724AP");
+		if(iscpe()) {
+			websWrite(wp, "OTAi 724S");
+		} else {
+			websWrite(wp, "OTAi 724AP");
+		}
+	} else if(nvram_match("DD_BOARD", "Compex WP546")) {
+		websWrite(wp, "OTAi 724S");
 	} else {
 		websWrite(wp, "OTAi %s", nvram_get("DD_BOARD"));
 	}
