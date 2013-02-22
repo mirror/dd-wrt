@@ -134,7 +134,7 @@ void start_sysinit(void)
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
 #ifdef HAVE_WNDR3700V4
-	setWirelessLed(0,15);
+	setWirelessLed(0,11);
 	setWirelessLed(1,14);
 #elif  HAVE_DIR825C1
 	setWirelessLed(0,13);
