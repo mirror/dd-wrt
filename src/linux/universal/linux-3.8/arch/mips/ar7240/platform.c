@@ -240,6 +240,13 @@ static struct ar8327_pad_cfg db120_ar8327_pad0_cfg = {
 	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
  };
 
+static struct ar8327_led_cfg dir825c1_ar8327_led_cfg = {
+	.led_ctrl0 = 0xc737c737,
+	.led_ctrl1 = 0x00000000,
+	.led_ctrl2 = 0x00000000,
+	.led_ctrl3 = 0x0030c300,
+	.open_drain = false,
+};
 
 static struct ar8327_platform_data db120_ar8327_data = {
 	.pad0_cfg = &db120_ar8327_pad0_cfg,
@@ -254,7 +261,10 @@ static struct ar8327_platform_data db120_ar8327_data = {
 		.duplex = 1,
 		.txpause = 1,
 		.rxpause = 1,
- 	}
+ 	},
+#ifdef CONFIG_DIR825C1
+	.led_cfg = &dir825c1_ar8327_led_cfg,
+#endif
  };
 
 
