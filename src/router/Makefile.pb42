@@ -377,6 +377,17 @@ clean: rc-clean httpd-clean services-clean shared-clean libutils-clean madwifi-c
 	rm -f $(TARGETDIR)/*
 	-rm -f $(ARCH)-uclibc/*
 
+#test:
+#	dd if=$(ARCH)-uclibc/root.wndr3700v4 bs=$(shell expr $(shell expr $(shell expr $(shell expr $(shell expr 128 + $(shell du -b $(ARCH)-uclibc/root.wndr3700v4 | awk {'print $$1'})) / 131072) + 1) \* 131072) - 64) conv=sync of=$(ARCH)-uclibc/root.wndr3700v4.final
+#
+#	export KERNEL_SIZE=$(shell du -b $(ARCH)-uclibc/root.wndr3700v4.final | awk {'print $$1'})
+#	dd if=$(ARCH)-uclibc/rootfs.wndr3700v4 bs=64 count=1 >> $(ARCH)-uclibc/root.wndr3700v4.final
+#	( \
+#	    dd if=$(ARCH)-uclibc/root.wndr3700v4.final bs=$(shell du -b $(ARCH)-uclibc/root.wndr3700v4.final | awk {'print $$1'}) conv=sync; \
+#	    dd if=$(ARCH)-uclibc/root.fs bs=64k; \
+#	) > $(ARCH)-uclibc/aligned.wndr3700v4
+#	./tools/wndr3700/mkdniimg -B WNDR3700v4 -v 1.1.4.68 -r "" -i $(ARCH)-uclibc/aligned.wndr3700v4 -o $(ARCH)-uclibc/wndr3700v4-factory.img -H "29763948+128+128"
+
 
 distclean mrproper: $(obj-distclean) clean_target
 	rm -rf $(INSTALLDIR)
@@ -987,7 +998,6 @@ ifeq ($(CONFIG_WNDR3700V4),y)
 		$(ARCH)-uclibc/rootfs.wndr3700v4
 	
 	dd if=$(ARCH)-uclibc/root.wndr3700v4 bs=$(shell expr $(shell expr $(shell expr $(shell expr $(shell expr 128 + $(shell du -b $(ARCH)-uclibc/root.wndr3700v4 | awk {'print $$1'})) / 131072) + 1) \* 131072) - 64) conv=sync of=$(ARCH)-uclibc/root.wndr3700v4.final
-
 	export KERNEL_SIZE=$(shell du -b $(ARCH)-uclibc/root.wndr3700v4.final | awk {'print $$1'})
 	dd if=$(ARCH)-uclibc/rootfs.wndr3700v4 bs=64 count=1 >> $(ARCH)-uclibc/root.wndr3700v4.final
 	( \
@@ -995,7 +1005,7 @@ ifeq ($(CONFIG_WNDR3700V4),y)
 	    dd if=$(ARCH)-uclibc/root.fs bs=64k; \
 	) > $(ARCH)-uclibc/aligned.wndr3700v4
 	./tools/wndr3700/mkdniimg -B WNDR3700v4 -v 1.1.4.68 -r "" -i $(ARCH)-uclibc/aligned.wndr3700v4 -o $(ARCH)-uclibc/wndr3700v4-factory.img -H "29763948+128+128"
-	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/wndr3700v4-factory.img $(ARCH)-uclibc/wndr3700v4.bin	
+	./tools/trx_n  -m 40000000 -o$(ARCH)-uclibc/wndr3700v4-webflash.bin  $(ARCH)-uclibc/aligned.wndr3700v4 
 endif
 
 ifeq ($(CONFIG_WNR2000),y)
