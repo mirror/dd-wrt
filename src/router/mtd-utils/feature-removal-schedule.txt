@@ -1,0 +1,79 @@
+The following is a list of files and features that are going to be
+removed in the mtd-utils source tree.  Every entry should contain what
+exactly is going away, why it is happening, and who is going to be doing
+the work.  When the feature is removed from the utils, it should also
+be removed from this file.
+
+---------------------------
+1. Kill --squash-rino-perm and --nosquash-rino-perm parameters of mkfs.ubifs.
+
+Originally, mkfs.ubifs did not have these parameters, and it always set
+permissions for the UBIFS root inode to be {uid=gid=root, u+rwx,go+rx}. This was
+a bug which was found too late, when mkfs.ubifs had already been used in
+production. To fix this bug, 2 new options were introduced:
+--squash-rino-perm which preserves the old behavior and --nosquash-rino-perm
+which makes mkfs.ubifs use the right permissions for the root
+inode.
+
+For a while (releases 1.4.0-1.4.3) --squash-rino-perm was the default, and if
+neither --squash-rino-perm nor --nosquash-rino-perm were used,
+mkfs.ubifs printed a warning. This was introduced in mtd-utils-1.4.0 (13 Sep 2010).
+
+Now we have removed a warning and made --nosquash-rino-perm to be the
+default. Also, both options are declared deprecated, so users should try
+to stop using them.
+
+The further step is to remove both of them.
+
+---------------------------
+2. Kill -m parameter of mtdinfo
+
+We cannot assume that mtd device names follow the "/dev/mtd%d" pattern,
+because it is up to udev rules to name the devices. So we are removing
+the -m option. For now, we just have a warning, but the option will be
+removed in release 1.4.6.
+
+---------------------------
+3. flash_info utility
+
+This is duplicating behavior with the mtdinfo utility.  Now the util
+warns when people use it, but it'll be removed in release 1.4.6.
+
+---------------------------
+
+4. Rename --noskipbad option, kill --omitbad, change default BB method for nanddump
+
+Our bad block handling methods are getting disorganized. They will be replaced
+by a series of --bb=METHOD options (see `nanddump --help').
+
+In addition, the previous default bad block behavior was to dump 0xFF in place
+of bad blocks. This was not a good "inverse operation" of nandwrite. Thus, the
+current default behavior has become the (new) option --bb=padbad, and in 1.4.6,
+the default will be --bb=skipbad.
+
+The new `--bb=METHOD' options are included in this release, but all feature
+removals and changed defaults will occur in 1.4.6. For now, there are
+appropriate deprecation warning messages and an alert telling about the
+soon-to-be-default settings.
+
+Transition summary table:
+-----------------------------------------------------------------------------------------------------------
+ Old option     New option                 Comment
+-----------------------------------------------------------------------------------------------------------
+ <default>      --bb=padbad                dump flash data, substituting 0xFF for any bad blocks
+ --noskipbad    --bb=dumpbad               dump flash data, including any bad blocks
+ --skipbad      --bb=skipbad, <default>    dump good data, completely skipping any bad blocks (new default)
+ --omitbad      N/A                        very similar to `skipbad', will be removed soon
+
+---------------------------
+
+5. nanddump will not dump OOB by default
+
+In 1.4.6, nanddump will not dump OOB by default. To dump OOB, you will have to
+explicitly use the option `--oob'. For now, there is simply a warning every
+time you use nanddump without explicitly choosing `--oob' or `--omitoob'.
+
+Note that `-o' will no longer stand for `--omitoob'. To unify with nandwrite,
+it will stand for `--oob' (Dump OOB data).
+
+---------------------------
