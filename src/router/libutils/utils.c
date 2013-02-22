@@ -4721,6 +4721,16 @@ int led_control(int type, int act)
 		diag_gpio = 0x10e;
 		connected_gpio = 0x10f;
 		break;
+#elif HAVE_WNDR3700V4
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x102;
+		power_gpio = 0x100;
+		connected_gpio = 0x101;
+		disconnected_gpio = 0x103;
+//              usb_power = 0x01a;
+		usb_gpio = 0x10d;
+                ses_gpio = 0x110;
+		break;
 #elif HAVE_DIR825C1
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x10f;
