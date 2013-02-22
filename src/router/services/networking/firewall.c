@@ -1675,12 +1675,12 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto tesla -j %s\n",
 		     seq, log_drop);		     
-		save2file
+/*		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto waste -j %s\n",
 		     seq, log_drop);
 		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto xdcc -j %s\n",
-		     seq, log_drop);
+		     seq, log_drop);*/
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto xunlei -j %s\n",
 		     seq, log_drop); 
@@ -1761,9 +1761,9 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto openft -j %s\n",
 		     seq, log_drop);
-		save2file
+/*		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto pando -j %s\n",
-		     seq, log_drop);
+		     seq, log_drop); */
 		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s\n",
 		     seq, log_drop);
@@ -1773,15 +1773,15 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto tesla -j %s\n",
 		     seq, log_drop);	
-		save2file
+/*		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto waste -j %s\n",
-		     seq, log_drop);
+		     seq, log_drop); */
 		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto winmx -j %s\n",
 		     seq, log_drop);
-		save2file
+/*		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto xdcc -j %s\n",
-		     seq, log_drop);
+		     seq, log_drop); */
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto xunlei -j %s\n",
 		     seq, log_drop); 
