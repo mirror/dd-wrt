@@ -149,6 +149,15 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_WNDR3700V4)
+int getbuttonstate()
+{
+	int ret = get_gpio(21);
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_DIR825C1)
 int getbuttonstate()
 {
