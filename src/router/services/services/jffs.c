@@ -40,7 +40,11 @@ void start_jffs2(void)
 		if (nvram_match("sys_clean_jffs2", "1")) {
 			nvram_set("sys_clean_jffs2", "0");
 			nvram_commit();
+#ifdef HAVE_WNDR3700V4
+			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3","-e","131072");
+#else
 			itworked = eval("mtd", "erase", rwpart);
+#endif
 			insmod("crc32");
 			insmod("lzma_compress");
 			insmod("lzma_decompress");
