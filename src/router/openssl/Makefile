@@ -4,7 +4,7 @@
 ## Makefile for OpenSSL
 ##
 
-VERSION=1.0.1d
+VERSION=1.0.1e
 MAJOR=1
 MINOR=0.1
 SHLIB_VERSION_NUMBER=1.0.0
@@ -13,8 +13,8 @@ SHLIB_MAJOR=1
 SHLIB_MINOR=0.0
 SHLIB_EXT=.so.$(SHLIB_MAJOR).$(SHLIB_MINOR)
 PLATFORM=linux-openwrt
-OPTIONS=--prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT enable-threads enable-zlib-dynamic no-aes192 no-ans1 no-camellia no-ec no-ec_nistp_64_gcc_128 no-ecdh no-ecdsa no-engines no-err no-gmp no-gost no-hw no-idea no-jpake no-krb5 no-md2 no-mdc2 no-perlasm no-rc5 no-rfc3779 no-ripemd no-rmd160 no-sctp no-sha0 no-shared no-smime no-store static-engine
-CONFIGURE_ARGS=linux-openwrt --prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5 no-ec no-err no-hw threads zlib-dynamic no-engines no-perlasm
+OPTIONS=--prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT enable-threads enable-zlib-dynamic no-aes192 no-ans1 no-camellia no-ec no-ec_nistp_64_gcc_128 no-ecdh no-ecdsa no-engines no-err no-gmp no-gost no-hw no-idea no-jpake no-krb5 no-md2 no-mdc2 no-perlasm no-rc5 no-rfc3779 no-ripemd no-rmd160 no-sctp no-sha0 no-shared no-smime no-store static-engine
+CONFIGURE_ARGS=linux-openwrt --prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5 no-ec no-err no-hw threads zlib-dynamic no-engines no-perlasm
 SHLIB_TARGET=linux-shared
 
 # HERE indicates where this Makefile lives.  This can be used to indicate
@@ -60,7 +60,7 @@ OPENSSLDIR=/etc/ssl
 # PKCS1_CHECK - pkcs1 tests.
 
 CC= ccache mips-linux-uclibc-gcc
-CFLAG= -DZLIB_SHARED -DZLIB -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -ffunction-sections -fdata-sections -DNDEBUG -DOPENSSL_SMALL_FOOTPRINT -DOPENSSL_NO_ERR -DTERMIO $(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall
+CFLAG= -DZLIB_SHARED -DZLIB -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DASMAES512 -ffunction-sections -fdata-sections -DNDEBUG -DOPENSSL_SMALL_FOOTPRINT -DOPENSSL_NO_ERR -DTERMIO $(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall
 DEPFLAG= -DOPENSSL_NO_AES192 -DOPENSSL_NO_ANS1 -DOPENSSL_NO_CAMELLIA -DOPENSSL_NO_EC -DOPENSSL_NO_EC_NISTP_64_GCC_128 -DOPENSSL_NO_ECDH -DOPENSSL_NO_ECDSA -DOPENSSL_NO_ENGINES -DOPENSSL_NO_GMP -DOPENSSL_NO_GOST -DOPENSSL_NO_IDEA -DOPENSSL_NO_JPAKE -DOPENSSL_NO_MD2 -DOPENSSL_NO_MDC2 -DOPENSSL_NO_PERLASM -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_RIPEMD -DOPENSSL_NO_RMD160 -DOPENSSL_NO_SCTP -DOPENSSL_NO_SHA0 -DOPENSSL_NO_SMIME -DOPENSSL_NO_STORE
 PEX_LIBS= 
 EX_LIBS= -Wl,--gc-sections -ldl -ldl
@@ -71,7 +71,7 @@ RANLIB= mips-linux-uclibc-ranlib
 NM= nm
 PERL= /usr/bin/perl
 TAR= tar
-TARFLAGS= --no-recursion
+TARFLAGS= --no-recursion --record-size=10240
 MAKEDEPPROG=makedepend
 LIBDIR=lib
 
