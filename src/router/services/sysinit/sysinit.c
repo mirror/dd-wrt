@@ -2492,6 +2492,7 @@ void start_drivers(void)
 		eval("rmmod", "ohci-hcd");
 		eval("rmmod", "uhci-hcd");
 		eval("rmmod", "usb-uhci");
+		eval("rmmod", "ehci-pci");
 		eval("rmmod", "ehci-platform");
 		eval("rmmod", "ehci-hcd");
 		eval("rmmod", "usbcore");
