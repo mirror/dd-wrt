@@ -1511,21 +1511,22 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 			if (!strcmp(protocol, "p2p")) {
 
 				char *proto = NULL;
-
-				if (!strcasecmp(realname, "applejuice"))
-					proto = "apple";
-				if (!strcasecmp(realname, "ares"))
-					proto = "ares";
-				if (!strcasecmp(realname, "bearshare"))
-					proto = "gnu";
+				/*commonly used protocols, decending*/
 				if (!strcasecmp(realname, "bittorrent"))
 					proto = "bit";
-				if (!strcasecmp(realname, "directconnect"))
-					proto = "dc";
 				if (!strcasecmp(realname, "edonkey"))
-					proto = "edk";
+					proto = "edk";	
 				if (!strcasecmp(realname, "gnutella"))
 					proto = "gnu";
+				if (!strcasecmp(realname, "ares"))
+					proto = "ares";
+				/*atm rarly used protocols*/
+				if (!strcasecmp(realname, "applejuice"))
+					proto = "apple";
+				if (!strcasecmp(realname, "bearshare"))
+					proto = "gnu";
+				if (!strcasecmp(realname, "directconnect"))
+					proto = "dc";
 				if (!strcasecmp(realname, "kazaa"))
 					proto = "kazaa";
 				if (!strcasecmp(realname, "mute"))
@@ -1583,20 +1584,25 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	if (nvram_nmatch("1", "filter_p2p_grp%d", seq)) {
 		insmod("ipt_layer7");
 		insmod("xt_layer7");
+		insmod("ipt_ipp2p");
+		save2file("-A advgrp_%d -m ipp2p --ipp2p -j %s\n", seq,
+			  log_drop);
 		/* p2p detection enhanced */
 #ifdef HAVE_OPENDPI
 		insmod("/lib/opendpi/xt_opendpi.ko");
-		save2file
-		    ("-A advgrp_%d -m ndpi --apple -j %s\n",
-		     seq, log_drop); 
+		/*commonly used protocols, decending*/
 		save2file
 		    ("-A advgrp_%d -m ndpi --bittorrent -j %s\n",
 		     seq, log_drop);
 		save2file
-		    ("-A advgrp_%d -p tcp -m ndpi --directconnect -j %s\n",
-		     seq, log_drop);
-		save2file
 		    ("-A advgrp_%d -m ndpi --edonkey -j %s\n",
+		     seq, log_drop);
+		/*atm rarly used protocols*/
+		save2file
+		    ("-A advgrp_%d -m ndpi --apple -j %s\n",
+		     seq, log_drop); 
+		save2file
+		    ("-A advgrp_%d -p tcp -m ndpi --directconnect -j %s\n",
 		     seq, log_drop);
 		save2file
 		    ("-A advgrp_%d -m ndpi --fasttrack -j %s\n",
@@ -1622,68 +1628,6 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		save2file
 		    ("-A advgrp_%d -p tcp -m ndpi --winmx -j %s\n",
 		     seq, log_drop);
-		  /*match protocols unknown to opendpi/ndpi atm*/
-		save2file
-		    ("-A advgrp_%d -p tcp -m layer7 --l7proto audiogalaxy -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -p tcp -m layer7 --l7proto ares -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s\n",
-		     seq, log_drop);
-		     /*order pattern, speed matters*/
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto bt4 -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto bt1 -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto bittorrent -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto freenet -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto gnucleuslan -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto goboogy -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto hotline -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto kugoo -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -p tcp -m layer7 --l7proto mute -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -p tcp -m layer7 --l7proto napster -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto tesla -j %s\n",
-		     seq, log_drop);		     
-/*		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto waste -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -p tcp -m layer7 --l7proto xdcc -j %s\n",
-		     seq, log_drop);*/
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto xunlei -j %s\n",
-		     seq, log_drop); 
 #else
 #ifdef HAVE_MICRO
 		save2file
@@ -1694,19 +1638,8 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		    ("-A advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s\n",
 		     seq, log_drop);
 #endif
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto applejuice -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto audiogalaxy -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d  -p tcp -m layer7 --l7proto ares -j %s\n",
-		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s\n",
-		     seq, log_drop);
-		     /*order pattern, speed matters*/
+#endif
+		/*commonly used protocols, decending*/
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto bt4 -j %s\n",
 		     seq, log_drop);
@@ -1721,7 +1654,23 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		     seq, log_drop);
 /*		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto bt -j %s\n",
-		     seq, log_drop); */ 
+		     seq, log_drop); */
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto gnutella -j %s\n",
+		     seq, log_drop);	
+		save2file
+		    ("-A advgrp_%d  -p tcp -m layer7 --l7proto ares -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto applejuice -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -m layer7 --l7proto audiogalaxy -j %s\n",
+		     seq, log_drop);
+		save2file
+		    ("-A advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s\n",
+		     seq, log_drop);
+		/*atm rarly used protocols*/
 		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto directconnect -j %s\n",
 		     seq, log_drop);
@@ -1737,9 +1686,6 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto gnucleuslan -j %s\n",
 		     seq, log_drop);
-		save2file
-		    ("-A advgrp_%d -p tcp -m layer7 --l7proto gnutella -j %s\n",
-		     seq, log_drop);	
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto goboogy -j %s\n",
 		     seq, log_drop);	
@@ -1761,9 +1707,6 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto openft -j %s\n",
 		     seq, log_drop);
-/*		save2file
-		    ("-A advgrp_%d -p tcp -m layer7 --l7proto pando -j %s\n",
-		     seq, log_drop); */
 		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s\n",
 		     seq, log_drop);
@@ -1773,22 +1716,12 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto tesla -j %s\n",
 		     seq, log_drop);	
-/*		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto waste -j %s\n",
-		     seq, log_drop); */
 		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto winmx -j %s\n",
 		     seq, log_drop);
-/*		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto xdcc -j %s\n",
-		     seq, log_drop); */
 		save2file
 		    ("-A advgrp_%d -m layer7 --l7proto xunlei -j %s\n",
 		     seq, log_drop); 
-#endif
-		insmod("ipt_ipp2p");
-		save2file("-A advgrp_%d -m ipp2p --ipp2p -j %s\n", seq,
-			  log_drop);
 	}
 	free(services);
 	/*
@@ -2460,17 +2393,6 @@ static void filter_forward(void)
 			}
 		}
 	}
-	/*
-	 * Accept the redirect, might be seen as INVALID, packets 
-	 */
-	save2file("-A FORWARD -i %s -o %s -j %s\n", lanface, lanface,
-		  log_accept);
-
-	/*
-	 * Drop all traffic from lan 
-	 */
-	if (nvram_match("pptpd_lockdown", "1"))
-		save2file("-A FORWARD -i %s -j %s\n", lanface, log_drop);
 
 	/*
 	 * Drop the wrong state, INVALID, packets 
@@ -2485,6 +2407,19 @@ static void filter_forward(void)
 			  log_drop);
 
 	/*
+	 * Filter setting by user definition 
+	 */
+	// save2file ("-A FORWARD -i %s -j lan2wan\n", lanface);
+	save2file("-A FORWARD -j lan2wan\n");
+
+	/*
+	 * Accept those established/related connections 
+	 */
+	save2file
+	    ("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s\n",
+	     log_accept);
+
+	/*
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */
 //    if( atoi( nvram_safe_get( "wan_mtu" ) ) > 0 )
@@ -2495,6 +2430,18 @@ static void filter_forward(void)
 //            "--set-mss %d\n", atoi( nvram_safe_get( "wan_mtu" ) ) - 39,
 //            atoi( nvram_safe_get( "wan_mtu" ) ) - 40 );
 
+	/*
+	 * Accept the redirect, might be seen as INVALID, packets 
+	 */
+	save2file("-A FORWARD -i %s -o %s -j %s\n", lanface, lanface,
+		  log_accept);
+		  
+	/*
+	 * Drop all traffic from lan 
+	 */
+	if (nvram_match("pptpd_lockdown", "1"))
+		save2file("-A FORWARD -i %s -j %s\n", lanface, log_drop);
+		
 	/*
 	 * Filter Web application 
 	 */
@@ -2508,19 +2455,6 @@ static void filter_forward(void)
 			  "-m webstr --content %d -j %s\n",
 			  lanface, wanface, webfilter, log_reject);
 	}
-	
-	/*
-	 * Accept those established/related connections 
-	 */
-	save2file
-	    ("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s\n",
-	     log_accept);
-
-	/*
-	 * Filter setting by user definition 
-	 */
-	// save2file ("-A FORWARD -i %s -j lan2wan\n", lanface);
-	save2file("-A FORWARD -j lan2wan\n");
 
 	/*
 	 * Filter by destination ports "filter_port" if firewall on 
@@ -2546,6 +2480,7 @@ static void filter_forward(void)
 		save2file("-A FORWARD -p udp --sport 698 -j %s\n", log_accept);
 	}
 #endif
+
 	/*
 	 * Sveasoft mod - FORWARD br1 to br0, protecting br0 
 	 */
