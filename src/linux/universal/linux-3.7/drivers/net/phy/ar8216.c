@@ -1,4 +1,4 @@
-n/*
+/*
  * ar8216.c: AR8216 switch driver
  *
  * Copyright (C) 2009 Felix Fietkau <nbd@openwrt.org>
