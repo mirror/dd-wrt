@@ -1,4 +1,4 @@
-/*
+n/*
  * ar8216.c: AR8216 switch driver
  *
  * Copyright (C) 2009 Felix Fietkau <nbd@openwrt.org>
@@ -1891,7 +1891,7 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 
 	priv->init = false;
 
-	ar8xxx_mib_start(priv);
+//	ar8xxx_mib_start(priv);
 
 	return 0;
 }
@@ -1902,7 +1902,7 @@ ar8xxx_phy_read_status(struct phy_device *phydev)
 	struct ar8xxx_priv *priv = phydev->priv;
 	struct switch_port_link link;
 	int ret;
-
+	    
 	if (phydev->addr != 0)
 		return genphy_read_status(phydev);
 
@@ -2087,7 +2087,7 @@ ar8xxx_phy_remove(struct phy_device *phydev)
 	mutex_unlock(&ar8xxx_dev_list_lock);
 
 	unregister_switch(&priv->dev);
-	ar8xxx_mib_stop(priv);
+//	ar8xxx_mib_stop(priv);
 	ar8xxx_free(priv);
 }
 

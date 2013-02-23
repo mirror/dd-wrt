@@ -504,7 +504,9 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_eth(1);
 #else
 #ifndef CONFIG_WDR4300
+#ifndef CONFIG_DIR825C1
 	ar71xx_add_device_mdio(1, 0x0);
+#endif
 #endif
 	ar71xx_add_device_mdio(0, 0x0);
 
@@ -533,6 +535,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_eth(0);
 
 #ifndef CONFIG_WDR4300
+#ifndef CONFIG_DIR825C1
 	/* GMAC1 is connected to the internal switch */
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, art + DB120_MAC1_OFFSET, 0);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
@@ -540,6 +543,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
 	ar71xx_add_device_eth(1);
+#endif
 #endif
 #endif
 
