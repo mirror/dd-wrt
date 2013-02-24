@@ -331,18 +331,15 @@ static void __init ar724x_pci_irq_init(int irq)
 	u32 t;
 	int i;
 
-printk(KERN_INFO "trigger reset\n");
 	t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
 	if (t & (AR724X_RESET_PCIE | AR724X_RESET_PCIE_PHY |
 		 AR724X_RESET_PCIE_PHY_SERIAL)) {
-		printk(KERN_INFO "reset fail\n");
 		return;
 	}
 
 	__raw_writel(0, base + AR724X_PCI_REG_INT_MASK);
 	__raw_writel(0, base + AR724X_PCI_REG_INT_STATUS);
 
-printk(KERN_INFO "register IRQ Handler\n");
 	for (i = AR71XX_PCI_IRQ_BASE;
 	     i < AR71XX_PCI_IRQ_BASE + AR71XX_PCI_IRQ_COUNT; i++)
 		irq_set_chip_and_handler(i, &ar724x_pci_irq_chip,
@@ -354,7 +351,6 @@ printk(KERN_INFO "register IRQ Handler\n");
 int __init ar724x_pcibios_init(int irq)
 {
 	int ret = -ENOMEM;
-	printk(KERN_INFO "%s with irq %d\n",__func__,irq);
 
 	ar724x_pci_localcfg_base = ioremap_nocache(AR724X_PCI_CRP_BASE,
 						   AR724X_PCI_CRP_SIZE);
