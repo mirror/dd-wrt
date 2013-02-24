@@ -27,6 +27,10 @@ extern void set_wl0_gpio(int gpio,int val);
 
 extern int get_wl0_gpio(int gpio);
 
+extern void set_wmac_gpio(int gpio,int val);
+
+extern int get_wmac_gpio(int gpio);
+
 
 
 #define PROCFS_MAX_SIZE 64
@@ -48,7 +52,12 @@ gpio_proc_read (char *buf, char **start, off_t offset,
 		int len, int *eof, void *data)
 {
   u32 reg = 0;
-    reg = get_wl0_gpio((unsigned int)data);
+#ifdef CONFIG_WASP_SUPPORT
+  if (((unsigned int)data)>=16)
+	reg = get_wmac_gpio((unsigned int)data-16);
+  else
+#endif
+	reg = get_wl0_gpio((unsigned int)data);
 
   if (reg)
     buf[0] = '1';
@@ -87,7 +96,13 @@ gpio_proc_write (struct file *file, const char *buffer, unsigned long count,
     reg = 0;
   if (procfs_buffer[0] == '1' || procfs_buffer[0] == 'o')
     reg = 1;
-    set_wl0_gpio(((unsigned int) data),reg);
+
+#ifdef CONFIG_WASP_SUPPORT
+  if (((unsigned int)data)>=16)
+	set_wmac_gpio(((unsigned int) data)-16,reg);
+     else
+#endif
+	set_wl0_gpio(((unsigned int) data),reg);
   return procfs_buffer_size;
 }
 
@@ -100,8 +115,11 @@ register_proc (void)
 {
   unsigned char i, flag = 0;
   char proc_name[64];
+#ifdef CONFIG_WASP_SUPPORT
+  int gpiocount = 32;
+#else
   int gpiocount = 16;
-
+#endif
   /* create directory gpio */
   gpio_dir = proc_mkdir ("wl0gpio", NULL);
   if (gpio_dir == NULL)
@@ -134,7 +152,11 @@ cleanup_proc (void)
 {
   unsigned char i;
   char proc_name[64];
-  int gpiocount=16;
+#ifdef CONFIG_WASP_SUPPORT
+  int gpiocount = 32;
+#else
+  int gpiocount = 16;
+#endif
 
   for (i = 0; i < gpiocount; i++)
     {

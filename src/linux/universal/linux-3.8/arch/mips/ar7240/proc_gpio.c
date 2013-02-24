@@ -180,6 +180,10 @@ typedef u32 gpio_words;
 #define	GPIO_WL0_ADDR		KSEG1ADDR(AR7240_PCI_MEM_BASE + 0x4048)	//AR9220 GPIO IN/OUT REGISTER   --> PCI MAP 0xB0000000 + OFFSET [0x4048]
 #define	GPIOOUT_WL0_ADDR		KSEG1ADDR(AR7240_PCI_MEM_BASE + 0x404c)	//AR9223 GPIO IN/OUT REGISTER   --> PCI MAP 0xB0010000 + OFFSET [0x4048]
 
+#define	GPIOOUT_WMAC_ADDR		KSEG1ADDR(0x18100000 + 0x4030)	//AR9223 GPIO IN/OUT REGISTER   --> PCI MAP 0xB0010000 + OFFSET [0x4048]
+#define	GPIO_WMAC_ADDR		KSEG1ADDR(0x18100000 + 0x4028)	//AR9220 GPIO IN/OUT REGISTER   --> PCI MAP 0xB0000000 + OFFSET [0x4048]
+#define	GPIOIN_WMAC_ADDR		KSEG1ADDR(0x18100000 + 0x402c)	//AR9220 GPIO IN/OUT REGISTER   --> PCI MAP 0xB0000000 + OFFSET [0x4048]
+
 #define AR_GPIO_OE_OUT                           0x404c	// GPIO output register
 #define AR_GPIO_OE_OUT_DRV                       0x3	// 2 bit field mask, shifted by 2*bitpos
 #define AR_GPIO_OE_OUT_DRV_NO                    0x0	// tristate
@@ -189,6 +193,33 @@ typedef u32 gpio_words;
 
 int is_ar9300 = 0;
 
+#ifdef CONFIG_WASP_SUPPORT
+void set_wmac_gpio(int gpio, int val)
+{
+	register gpio_words wl0;
+	int shift;
+	int addr;
+
+	unsigned int output = GPIOOUT_WMAC_ADDR;
+
+	wl0 = (gpio_words) ar7240_reg_rd(output);
+	shift = gpio * 2;
+	wl0 |= AR_GPIO_OE_OUT_DRV << shift;
+	ar7240_reg_wr(output, wl0);	//ar9283 register [0x4048]
+	ar7240_reg_rd(output);	//ar9283 register [0x4048]
+
+	wl0 = (gpio_words) ar7240_reg_rd(GPIO_WMAC_ADDR);	//ar9280 register [0x4048]
+	if (val)
+		wl0 |= 1 << gpio;
+	else
+		wl0 &= (~(1 << gpio));
+
+	ar7240_reg_wr(GPIO_WMAC_ADDR, wl0);	//ar9283 register [0x4048]
+	ar7240_reg_rd(GPIO_WMAC_ADDR);	//ar9283 register [0x4048]
+
+
+}
+#endif
 void set_wl0_gpio(int gpio, int val)
 {
 	register gpio_words wl0;
@@ -230,17 +261,43 @@ void set_wl0_gpio(int gpio, int val)
             ar7240_reg_rmw_set(((_off)), (_set)); \
 	} while(0)
 
+#define AR9300_GPIO_IN_VAL                       0x0001FFFF
+#define AR9300_GPIO_IN_VAL_S                     0
+
 int get_wl0_gpio(int gpio)
 {
 	u32 gpio_shift;
 	gpio_shift = 2 * gpio;
-	ar7240_reg_rmw(GPIOOUT_WL0_ADDR,
+
+	unsigned int output = GPIOOUT_WL0_ADDR;
+	if (is_ar9300)
+		output = KSEG1ADDR(AR7240_PCI_MEM_BASE + 0x4050);
+
+	ar7240_reg_rmw(output,
 		       (AR9287_GPIO_OE_OUT_DRV_NO << gpio_shift),
 		       (AR9287_GPIO_OE_OUT_DRV << gpio_shift));
 
-	return (MS(ar7240_reg_rd(GPIO_WL0_ADDR), AR9287_GPIO_IN_VAL) &
+	if (is_ar9300)
+		return (MS(ar7240_reg_rd(GPIOOUT_WL0_ADDR), AR9300_GPIO_IN_VAL) &
+			(1 << gpio)) != 0;
+	else
+		return (MS(ar7240_reg_rd(GPIO_WL0_ADDR), AR9287_GPIO_IN_VAL) &
+			(1 << gpio)) != 0;
+	
+}
+#ifdef CONFIG_WASP_SUPPORT
+int get_wmac_gpio(int gpio)
+{
+	u32 gpio_shift;
+	gpio_shift = 2 * gpio;
+	ar7240_reg_rmw(GPIOOUT_WMAC_ADDR,
+		       (AR9287_GPIO_OE_OUT_DRV_NO << gpio_shift),
+		       (AR9287_GPIO_OE_OUT_DRV << gpio_shift));
+
+	return (MS(ar7240_reg_rd(GPIOIN_WMAC_ADDR), AR9300_GPIO_IN_VAL) &
 		(1 << gpio)) != 0;
 }
+#endif
 
 #define USB_LED_OFF 1
 #define USB_LED_ON 0
