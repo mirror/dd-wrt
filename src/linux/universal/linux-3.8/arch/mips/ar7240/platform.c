@@ -612,7 +612,6 @@ void nand_postinit(struct mtd_info *mtd)
 
 	u8 *ee = (u8 *)kmalloc(0x9000,GFP_ATOMIC);
 	int i;
-	printk(KERN_INFO "cal size = %lld\n",mtd->size);
 	int mtdlen;
 	mtd_read(mtd,0x80000,0x9000,&mtdlen,ee);
 	ar9xxx_add_device_wmac(ee+0x1000, ee+6);

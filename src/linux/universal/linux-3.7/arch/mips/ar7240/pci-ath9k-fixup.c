@@ -48,7 +48,6 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 		break;
 	}
 
-printk(KERN_INFO "caldata pointer %p\n",cal_data);
 	if (cal_data == NULL)
 		return;
 

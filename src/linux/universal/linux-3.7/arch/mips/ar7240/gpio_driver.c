@@ -20,10 +20,12 @@
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include "dev-leds-gpio.h"
+#include "ar7240.h"
 
 static DEFINE_SPINLOCK(ar71xx_gpio_lock);
 
 void set_wl0_gpio(int gpio,int val);
+void set_wmac_gpio(int gpio,int val);
 void set_wl1_gpio(int gpio,int val);
 
 unsigned long ar71xx_gpio_count;
@@ -32,6 +34,13 @@ EXPORT_SYMBOL(ar71xx_gpio_count);
 void __ar71xx_gpio_set_value(unsigned gpio, int value)
 {
 	void __iomem *base = ar71xx_gpio_base;
+#ifdef CONFIG_WASP_SUPPORT
+	if (gpio>=48)
+	    {
+	    set_wmac_gpio(gpio-48,value);
+	    return;
+	    }
+#endif
 	if (gpio>=32)
 	    {
 	    set_wl0_gpio(gpio-32,value);
@@ -456,6 +465,89 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 47,
 		.active_low	= 1,
 	}, 
+#ifdef CONFIG_WASP_SUPPORT
+	{
+		.name		= "wireless_generic_16",
+		.gpio		= 48,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_17",
+		.gpio		= 49,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_18",
+		.gpio		= 50,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_19",
+		.gpio		= 51,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_20",
+		.gpio		= 52,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_21",
+		.gpio		= 53,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_22",
+		.gpio		= 54,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_23",
+		.gpio		= 55,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_24",
+		.gpio		= 56,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_25",
+		.gpio		= 57,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_26",
+		.gpio		= 58,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_27",
+		.gpio		= 59,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_28",
+		.gpio		= 60,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_29",
+		.gpio		= 61,
+		.active_low	= 1,
+	}
+	, 
+	{
+		.name		= "wireless_generic_30",
+		.gpio		= 62,
+		.active_low	= 1,
+	}, 
+	{
+		.name		= "wireless_generic_31",
+		.gpio		= 63,
+		.active_low	= 1,
+	}, 
+#endif
 #endif
 };
 
@@ -464,7 +556,7 @@ void serial_print(char *fmt, ...);
 void __init ar71xx_gpio_init(void)
 {
 	int err;
-	u32 t;
+	u32 t,rddata;
 
 	if (!request_mem_region(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE,
 				"AR71xx GPIO controller"))
@@ -473,7 +565,11 @@ void __init ar71xx_gpio_init(void)
 #ifdef CONFIG_MACH_HORNET
 	ar71xx_gpio_chip.ngpio = 32;
 #else
+#ifdef CONFIG_WASP_SUPPORT
+	ar71xx_gpio_chip.ngpio = 64;
+#else
 	ar71xx_gpio_chip.ngpio = 48;
+#endif
 #endif
 
 	err = gpiochip_add(&ar71xx_gpio_chip);
@@ -509,5 +605,25 @@ printk(KERN_INFO "fixup WR741 Switch LED's\n");
 	ar71xx_reset_wr(AR933X_RESET_REG_BOOTSTRAP, t);
 //	gpio_request(26, "USB power");
 //	gpio_direction_output(26, 1);
+#endif
+#ifdef CONFIG_MTD_NAND_ATH
+#define ATH_APB_BASE			0x18000000	/* 384M */
+#define ATH_GPIO_BASE			ATH_APB_BASE+0x00040000
+#define ATH_GPIO_OUT_FUNCTION2		ATH_GPIO_BASE+0x34
+#define ATH_GPIO_OUT_FUNCTION2_ENABLE_GPIO_11(x)	((0xff&x)<<24)
+#define ATH_GPIO_FUNCTIONS		ATH_GPIO_BASE+0x6c
+
+
+	printk(KERN_INFO "fixup WNDR3700v4 wifi led\n");
+	// enable gpio 11
+	rddata = ar7240_reg_rd(ATH_GPIO_OUT_FUNCTION2);
+	rddata = rddata & 0x00ffffff;
+	rddata = rddata | ATH_GPIO_OUT_FUNCTION2_ENABLE_GPIO_11(0x0);
+	ar7240_reg_wr(ATH_GPIO_OUT_FUNCTION2, rddata);
+	//disable jtag
+	ar7240_reg_rmw_set(ATH_GPIO_FUNCTIONS, (1 << 1));
+	
+	// finally disable 2.4 ghz led and let the driver handle it
+	__ar71xx_gpio_set_value(11,1);	
 #endif
 }
