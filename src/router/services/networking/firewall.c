@@ -1594,9 +1594,10 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		save2file
 		    ("-A advgrp_%d -m ndpi --bittorrent -j %s\n",
 		     seq, log_drop);
+/*  disable till pattern works
 		save2file
 		    ("-A advgrp_%d -m ndpi --edonkey -j %s\n",
-		     seq, log_drop);
+		     seq, log_drop); */
 		/*atm rarly used protocols*/
 		save2file
 		    ("-A advgrp_%d -m ndpi --apple -j %s\n",
