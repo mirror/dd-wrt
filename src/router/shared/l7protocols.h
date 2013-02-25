@@ -158,10 +158,6 @@ l7filters filters_list[] = {
 	// http://edonkey2000.com and others
 	{
 	 "exe", 0},		// Executable - Microsoft PE file format.
-#ifdef HAVE_OPENDPI
-	{
-	 "facebook", 2},
-#endif
 	{
 	 "fasttrack", DPI},	// FastTrack - P2P filesharing (Kazaa,
 	// Morpheus, iMesh, Grokster, etc)
@@ -200,14 +196,6 @@ l7filters filters_list[] = {
 	{
 	 "gkrellm", 0},		// Gkrellm - a system monitor -
 	// http://gkrellm.net
-#ifdef HAVE_OPENDPI
-	{
-	 "gmail", 2},
-#endif
-#ifdef HAVE_OPENDPI
-	{
-	 "gmaps", 2},
-#endif
 	{
 	 "gnucleuslan", 0},	// GnucleusLAN - LAN-only P2P filesharing
 	{
@@ -242,6 +230,10 @@ l7filters filters_list[] = {
 	 "gtalk_file_1", 0},
 	{
 	 "gtalk_vista", 0},
+#ifdef HAVE_OPENDPI
+	{
+	 "gtp", 2},		// LPD - Line Printer Daemon Protocol
+#endif
 	{
 	 "guildwars", DPI},	// Guild Wars - online game - http://guildwars.com
 	{
@@ -309,10 +301,6 @@ l7filters filters_list[] = {
 	{
 	 "icecast", 2},
 	{
-	 "icloud", 2},
-	{
-	 "itunes", 2},
-	{
 	 "igmp", 2},
 	{
 	 "icmp", 2},
@@ -370,8 +358,6 @@ l7filters filters_list[] = {
 	{
 	 "kontiki", 2},
 	{
-	 "last.fm", 2},		// Medal of Honor Allied Assault - an
-	{
 	 "ldap", 2},
 #endif
 	// http://www.kugoo.com
@@ -380,6 +366,15 @@ l7filters filters_list[] = {
 	// http://live365.com
 	{
 	 "liveforspeed", 0},	// Live For Speed - A racing game.
+#ifdef HAVE_OPENDPI
+	{
+	 "lotus_notes", 2},		// LPD - Line Printer Daemon Protocol
+#endif
+
+#ifdef HAVE_OPENDPI
+	{
+	 "llmnr", 2},		// LPD - Line Printer Daemon Protocol
+#endif
 	{
 	 "lpd", 0},		// LPD - Line Printer Daemon Protocol
 	// (old-style UNIX printing) - RFC 1179
@@ -575,6 +570,8 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{
 	 "realmedia", 2},
+	{
+	 "remotescan", 2},
 #endif
 	{
 	 "replaytv-ivs", 0},	// ReplayTV Internet Video Sharing - Digital
@@ -594,6 +591,10 @@ l7filters filters_list[] = {
 	// http://www.rtsp.org - RFC 2326
 	{
 	 "runesofmagic", 0},	// Runes of Magic - game - http://www.runesofmagic.com
+#ifdef HAVE_OPENDPI
+	{
+	 "sap", 2},		// LPD - Line Printer Daemon Protocol
+#endif
 #ifdef HAVE_OPENDPI
 	{
 	 "sctp", 2},
@@ -729,8 +730,6 @@ l7filters filters_list[] = {
 	// Protocol
 #ifdef HAVE_OPENDPI
 	{
-	 "tuenti", 2},
-	{
 	 "tvants", 2},
 	{
 	 "tvuplayer", 2},
@@ -739,6 +738,10 @@ l7filters filters_list[] = {
 #endif
 	{
 	 "unknown", 0},		// -
+#ifdef HAVE_OPENDPI
+	{
+	 "upnp", 2},		// LPD - Line Printer Daemon Protocol
+#endif
 	{
 	 "uucp", 0},		// UUCP - Unix to Unix Copy
 #ifdef HAVE_OPENDPI
@@ -752,10 +755,6 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{
 	 "veohtv", 2},
-#endif
-#ifdef HAVE_OPENDPI
-	{
-	 "viper", 2},
 #endif
 	{
 	 "vnc", DPI},		// VNC - Virtual Network Computing. Also
@@ -796,7 +795,7 @@ l7filters filters_list[] = {
 	 "webmail_yam", 0},
 #ifdef HAVE_OPENDPI
 	{
-	 "whatsapp", 2},
+	 "whatOAsapp", 2},
 #endif
 	{
 	 "whois", 0},		// Whois - query/response system, usually
@@ -843,9 +842,6 @@ l7filters filters_list[] = {
 	 "yahoo_login", 0},
 	{
 	 "yahoo_voice", 0},
-#ifdef HAVE_OPENDPI
-	{
-	 "youtube", 2},
 #endif
 #ifdef HAVE_OPENDPI
 	{
