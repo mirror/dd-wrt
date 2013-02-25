@@ -1,23 +1,25 @@
 /*
  * ndpi_macros.h
+ *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * 
- * This file is part of OpenDPI, an open source deep packet inspection
- * library based on the PACE technology by ipoque GmbH
- * 
- * OpenDPI is free software: you can redistribute it and/or modify
+ * Copyright (C) 2011-13 - ntop.org
+ *
+ * This file is part of nDPI, an open source deep packet inspection
+ * library based on the OpenDPI and PACE technology by ipoque GmbH
+ *
+ * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
- * OpenDPI is distributed in the hope that it will be useful,
+ *
+ * nDPI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OpenDPI.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 
@@ -27,8 +29,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
   typedef struct ndpi_protocol_bitmask_struct {
     u_int64_t bitmask[3];
   } ndpi_protocol_bitmask_struct_t;
@@ -59,8 +59,8 @@ extern "C" {
 /* this is a very very tricky macro *g*,
   * the compiler will remove all shifts here if the protocol is static...
  */
-#define NDPI_ADD_PROTOCOL_TO_BITMASK(bmask,value)         \
-  {(bmask).bitmask[(value) >> 6] |= (((u_int64_t)1)<<((value) & 0x3F));}    \
+#define NDPI_ADD_PROTOCOL_TO_BITMASK(bmask,value)	\
+  {(bmask).bitmask[(value) >> 6] |= (((u_int64_t)1)<<((value) & 0x3F));} \
 
 #define NDPI_DEL_PROTOCOL_FROM_BITMASK(bmask,value)               \
   {(bmask).bitmask[(value) >> 6] = (bmask).bitmask[(value) >> 6] & (~(((u_int64_t)1)<<((value) & 0x3F)));}  \
@@ -74,6 +74,8 @@ extern "C" {
 #define NDPI_BITMASK_IS_ZERO(a) ( (a).bitmask[0] == 0 && (a).bitmask[1] == 0 && (a).bitmask[2] == 0)
 #define NDPI_BITMASK_CONTAINS_NEGATED_BITMASK(a,b) ((((a).bitmask[0] & ~(b).bitmask[0]) == ~(b).bitmask[0]) && (((a).bitmask[1] & ~(b).bitmask[1]) == ~(b).bitmask[1]) && (((a).bitmask[2] & ~(b).bitmask[2]) == ~(b).bitmask[2]))
 
+#define ndpi_min(a,b)   ((a < b) ? a : b)
+#define ndpi_max(a,b)   ((a > b) ? a : b)
 
 #define NDPI_PARSE_PACKET_LINE_INFO(ndpi_struct,flow,packet)		\
                         if (packet->packet_lines_parsed_complete != 1) {        \

@@ -1,23 +1,25 @@
 /*
  * ndpi_public_functions.h
+ *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * 
- * This file is part of OpenDPI, an open source deep packet inspection
- * library based on the PACE technology by ipoque GmbH
- * 
- * OpenDPI is free software: you can redistribute it and/or modify
+ * Copyright (C) 2011-13 - ntop.org
+ *
+ * This file is part of nDPI, an open source deep packet inspection
+ * library based on the OpenDPI and PACE technology by ipoque GmbH
+ *
+ * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
- * OpenDPI is distributed in the hope that it will be useful,
+ *
+ * nDPI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OpenDPI.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 
@@ -28,11 +30,15 @@
 #ifndef __NDPI_PUBLIC_FUNCTIONS_H__
 #define __NDPI_PUBLIC_FUNCTIONS_H__
 
-#include "ndpi_structs.h"
+//#include "ndpi_structs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+  /* Forward */
+  struct ndpi_flow_struct;
+  struct ndpi_id_struct;
+
   /**
    * struct for a unique ipv4 flow address
    */
@@ -122,6 +128,11 @@ extern "C" {
   u_int32_t ndpi_detection_get_sizeof_ndpi_id_struct(void);
 
 
+  /* Public malloc/free */
+  void* ndpi_malloc(unsigned long size);
+  void  ndpi_free(void *ptr);
+
+
   /**
    * This function returns a new initialized detection module. 
    * @param ticks_per_second the timestamp resolution per second (like 1000 for millisecond resolution)
@@ -129,10 +140,9 @@ extern "C" {
    * @param ndpi_debug_printf a function pointer to a debug output function, use NULL in productive envionments
    * @return the initialized detection module
    */
-  struct ndpi_detection_module_struct *ndpi_init_detection_module(u_int32_t ticks_per_second, void
-								  *(*ndpi_malloc)
-								  (unsigned
-								   long size),
+  struct ndpi_detection_module_struct *ndpi_init_detection_module(u_int32_t ticks_per_second,
+								  void* (*__ndpi_malloc)(unsigned long size),
+								  void  (*__ndpi_free)(void *ptr),
 								  ndpi_debug_function_ptr ndpi_debug_printf);
   /**
    * This function destroys the detection module
@@ -223,12 +233,20 @@ extern "C" {
   u_int8_t ndpi_detection_flow_protocol_history_contains_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 								  struct ndpi_flow_struct *flow,
 								  u_int16_t protocol_id);
-  unsigned int ndpi_find_port_based_protocol(u_int8_t proto, u_int32_t shost, u_int16_t sport, u_int32_t dhost, u_int16_t dport);  
-  unsigned int ndpi_guess_undetected_protocol(u_int8_t proto, u_int32_t shost, u_int16_t sport, u_int32_t dhost, u_int16_t dport);
+  unsigned int ndpi_find_port_based_protocol(struct ndpi_detection_module_struct *ndpi_struct, 
+					     u_int8_t proto, u_int32_t shost, u_int16_t sport, u_int32_t dhost, u_int16_t dport);  
+  unsigned int ndpi_guess_undetected_protocol(struct ndpi_detection_module_struct *ndpi_struct, 
+					      u_int8_t proto, u_int32_t shost, u_int16_t sport, u_int32_t dhost, u_int16_t dport);
+  char* ndpi_get_proto_name(struct ndpi_detection_module_struct *mod, u_int16_t proto_id);
+  void ndpi_dump_protocols(struct ndpi_detection_module_struct *mod);
+
   char* ndpi_strnstr(const char *s, const char *find, size_t slen);
-  int matchStringProtocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, 
+  static int matchStringProtocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, 
 			  char *string_to_match, u_int string_to_match_len);
 
+  int ndpi_load_protocols_file(struct ndpi_detection_module_struct *ndpi_mod, char* path);
+
+  u_int ndpi_get_num_supported_protocols(void);
 #ifdef __cplusplus
 }
 #endif
