@@ -1,23 +1,25 @@
 /*
  * http.c
+ *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * 
- * This file is part of OpenDPI, an open source deep packet inspection
- * library based on the PACE technology by ipoque GmbH
- * 
- * OpenDPI is free software: you can redistribute it and/or modify
+ * Copyright (C) 2011-13 - ntop.org
+ *
+ * This file is part of nDPI, an open source deep packet inspection
+ * library based on the OpenDPI and PACE technology by ipoque GmbH
+ *
+ * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
- * OpenDPI is distributed in the hope that it will be useful,
+ *
+ * nDPI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OpenDPI.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 
@@ -477,38 +479,136 @@ char* ndpi_strnstr(const char *s, const char *find, size_t slen) {
   return ((char *)s);
 }
 
+#ifdef AHOCORASICK
+static AC_AUTOMATA_t *ac_automa = NULL;
 
-static ndpi_protocol_match host_match[] = {
-  { ".twitter.com",      NDPI_PROTOCOL_TWITTER },
-  { ".netflix.com",      NDPI_PROTOCOL_NETFLIX },
-  { ".twttr.com",        NDPI_PROTOCOL_TWITTER },
-  { ".facebook.com",     NDPI_PROTOCOL_FACEBOOK },
-  { ".fbcdn.net",        NDPI_PROTOCOL_FACEBOOK },
-  { ".dropbox.com",      NDPI_PROTOCOL_DROPBOX },
-  { ".gmail.",           NDPI_PROTOCOL_GMAIL },
-  { "maps.google.com",   NDPI_PROTOCOL_GOOGLE_MAPS },
-  { "maps.gstatic.com",  NDPI_PROTOCOL_GOOGLE_MAPS },
-  { ".gstatic.com",      NDPI_PROTOCOL_GOOGLE },
-  { ".google.com",       NDPI_PROTOCOL_GOOGLE },
-  { ".youtube.",         NDPI_PROTOCOL_YOUTUBE },
-  { "itunes.apple.com",  NDPI_PROTOCOL_APPLE_ITUNES },
-  { ".apple.com",        NDPI_PROTOCOL_APPLE },
-  { ".mzstatic.com",     NDPI_PROTOCOL_APPLE },
-  { ".facebook.com",     NDPI_PROTOCOL_FACEBOOK },
-  { ".icloud.com",       NDPI_PROTOCOL_APPLE_ICLOUD },
-  { ".viber.com",        NDPI_PROTOCOL_VIBER },
-  { ".last.fm",          NDPI_PROTOCOL_LASTFM },
-  { ".grooveshark.com",  NDPI_PROTOCOL_GROOVESHARK },
-  { ".tuenti.com",       NDPI_PROTOCOL_TUENTI },
-  { NULL, 0 }
-};
+static int matching_protocol_id;
 
-int matchStringProtocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, 
-			char *string_to_match, u_int string_to_match_len) {
-  int i = 0;
+int ac_match_handler(AC_MATCH_t *m, void *param) {
+
+  /* Available info:
+   * m->match_num
+   * m->position
+   * for (j=0; j < m->match_num; j++) {
+   *   m->patterns[j].rep.number
+   *   m->patterns[j].astring);
+   * }
+   */
+
+  /* Stopping to the first match. We might consider searching
+   * for the more specific match, paying more cpu cycles. */
+  matching_protocol_id = m->patterns[0].rep.number;
+
+  return 1; /* 0 to continue searching, !0 to stop */
+}
+#else
+static ndpi_protocol_match *host_match = NULL;
+static int host_match_num_items = 0;
+#endif
+
+static char *ndpi_strdup(const char *s);
+
+static void ndpi_http_subprotocol_conf(struct ndpi_detection_module_struct *ndpi_struct, 
+				char *attr, char *value, int protocol_id) {
+#ifdef AHOCORASICK
+  AC_PATTERN_t ac_pattern;
+#else
+  ndpi_protocol_match *tmp_host_match;
+#endif
+
+  /* e.g attr = "host" value = ".facebook.com" protocol_id = NDPI_PROTOCOL_FACEBOOK */
+
+#ifdef AHOCORASICK
+  if (strcmp(attr, "finalize") == 0) { /* trick to finalize automa */
+    if (ac_automa != NULL)
+      ac_automata_finalize(ac_automa);
+    return;
+  }
+#endif
+
+  if (strcmp(attr, "host") != 0) {
+#ifdef DEBUG
+    printf("[NTOP] attribute %s not supported\n", attr);
+#endif
+    return;
+  }
+
+#ifdef AHOCORASICK
+  if (ac_automa == NULL)
+    ac_automa = ac_automata_init(ac_match_handler); 
+    /* call ac_automata_release(ac_automa); to free ac_automa */
+
+  ac_pattern.astring = value;
+  ac_pattern.rep.number = protocol_id;
+  ac_pattern.length = strlen(tmp_patt.astring);
+  ac_automata_add(ac_automa, &ac_pattern);
+#else
+  /* realloc */
+  tmp_host_match = ndpi_malloc(sizeof(ndpi_protocol_match) * (host_match_num_items + 1));
+  if (tmp_host_match == NULL) {
+    return;
+  }
+  if (host_match != NULL) {
+    memcpy(tmp_host_match, host_match, sizeof(ndpi_protocol_match) * host_match_num_items);
+    ndpi_free(host_match);
+  }
+  host_match = tmp_host_match; 
+  
+  host_match[host_match_num_items].string_to_match = ndpi_strdup(value);
+  if (host_match[host_match_num_items].string_to_match == NULL) {
+    return;
+  }
+
+  host_match[host_match_num_items].protocol_id = protocol_id;
+
+  host_match_num_items++;
+#endif
+
+#ifdef DEBUG
+  printf("[NTOP] new http subprotocol: %s = %s -> %d\n", attr, value, protocol_id);
+#endif
+}
+
+static int matchStringProtocol(struct ndpi_detection_module_struct *ndpi_struct, 
+			struct ndpi_flow_struct *flow, 
+			char *string_to_match, 
+			u_int string_to_match_len) {
+  int i = 0, end = string_to_match_len-1, num_found = 0;
   struct ndpi_packet_struct *packet = &flow->packet;
+#ifdef AHOCORASICK
+  AC_TEXT_t ac_input_text;
+#endif
 
-  while(host_match[i].string_to_match != NULL) {
+  while(end > 0) {
+    if(string_to_match[end] == '.') {
+      num_found++;
+      if(num_found == 2) {
+	end++;
+	break;
+      }
+    }
+    end--;
+  }
+
+  strncpy(flow->l4.tcp.host_server_name, 
+	  &string_to_match[end], 
+	  ndpi_min(sizeof(flow->l4.tcp.host_server_name)-1, string_to_match_len-end));
+
+#ifdef AHOCORASICK
+  matching_protocol_id = -1;
+
+  ac_input_text.astring = string_to_match;
+  ac_input_text.length = string_to_match_len;
+  ac_automata_search (ac_automa, &ac_input_text, 0);
+  
+  ac_automata_reset(ac_automa);
+
+  if (matching_protocol_id != -1) {
+    packet->detected_protocol_stack[0] = matching_protocol_id;
+    return(packet->detected_protocol_stack[0]);
+  }
+#else
+  for (i = 0; i < host_match_num_items; i++) {
     if(ndpi_strnstr(string_to_match, 
 		    host_match[i].string_to_match, 
 		    string_to_match_len) != NULL) {
@@ -517,6 +617,7 @@ int matchStringProtocol(struct ndpi_detection_module_struct *ndpi_struct, struct
     } else
       i++;
   }
+#endif
 
 #ifdef DEBUG
   string_to_match[string_to_match_len] = '\0';
@@ -527,7 +628,7 @@ int matchStringProtocol(struct ndpi_detection_module_struct *ndpi_struct, struct
 }
 
 static void parseHttpSubprotocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  int i = 0;
+  // int i = 0;
   struct ndpi_packet_struct *packet = &flow->packet;
 
   if(packet->iph /* IPv4 only */) {
@@ -699,6 +800,10 @@ static u_int16_t http_request_url_offset(struct ndpi_detection_module_struct *nd
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 
+  NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "====>>>> HTTP: %c%c%c%c [len: %u]\n",
+	   packet->payload[0], packet->payload[1], packet->payload[2], packet->payload[3],
+	   packet->payload_packet_len);
+
   /* FIRST PAYLOAD PACKET FROM CLIENT */
   /* check if the packet starts with POST or GET */
   if (packet->payload_packet_len >= 4 && memcmp(packet->payload, "GET ", 4) == 0) {
@@ -811,6 +916,12 @@ static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struc
     if (flow->l4.tcp.http_stage == 0) {
       filename_start = http_request_url_offset(ndpi_struct, flow);
       if (filename_start == 0) {
+	if (packet->payload_packet_len >= 7 && memcmp(packet->payload, "HTTP/1.", 7) == 0) {
+	  NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "HTTP response found (truncated flow ?)\n");
+	  ndpi_int_http_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_HTTP);
+	  return;
+	}
+
 	NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "filename not found, exclude\n");
 	http_bitmask_exclude(flow);
 	return;
@@ -821,6 +932,9 @@ static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struc
       if (packet->parsed_lines <= 1) {
 	/* parse one more packet .. */
 	NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "just one line, search next packet\n");
+
+	packet->http_method.ptr = packet->line[0].ptr;
+        packet->http_method.len = filename_start - 1;
 	flow->l4.tcp.http_stage = 1;
 	return;
       }
@@ -857,7 +971,6 @@ static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struc
       ndpi_parse_packet_line_info(ndpi_struct, flow);
 
       if (packet->parsed_lines <= 1) {
-
 	/* wait some packets in case request is split over more than 2 packets */
 	if (flow->packet_counter < 5) {
 	  NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG,
@@ -883,7 +996,19 @@ static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struc
 	return;
       }
     }
+  } else {
+    /* We have received a response for a previously identified partial HTTP request */
+    
+    if((packet->parsed_lines == 1) && (packet->packet_direction == 1 /* server -> client */)) {
+      /* 
+	 In apache if you do "GET /\n\n" the response comes without any header so we can assume that
+	 this can be the case
+      */
+      ndpi_int_http_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_HTTP);
+      return;
+    }
   }
+
   NDPI_LOG(NDPI_PROTOCOL_HTTP, ndpi_struct, NDPI_LOG_DEBUG, "HTTP: REQUEST NOT HTTP CONFORM\n");
   http_bitmask_exclude(flow);
   return;

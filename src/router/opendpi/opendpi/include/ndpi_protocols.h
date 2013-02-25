@@ -1,22 +1,24 @@
 /*
  * ndpi_protocols.h
+ *
  * Copyright (C) 2009-2011 by ipoque GmbH
+ * Copyright (C) 2011-13 - ntop.org
  *
- * This file is part of OpenDPI, an open source deep packet inspection
- * library based on the PACE technology by ipoque GmbH
+ * This file is part of nDPI, an open source deep packet inspection
+ * library based on the OpenDPI and PACE technology by ipoque GmbH
  *
- * OpenDPI is free software: you can redistribute it and/or modify
+ * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * OpenDPI is distributed in the hope that it will be useful,
+ * nDPI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OpenDPI.  If not, see <http://www.gnu.org/licenses/>.
+ * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -41,7 +43,7 @@
 #define get_l32(X,O)  get_u_int32_t(X,O)
 #elif defined(__BIG_ENDIAN__)
 /* convert the bytes from big to little endian */
-#ifndef OPENDPI_NETFILTER_MODULE
+#ifndef __KERNEL__
 # define get_l16(X,O) bswap_16(get_u_int16_t(X,O))
 # define get_l32(X,O) bswap_32(get_u_int32_t(X,O))
 #else
@@ -54,7 +56,6 @@
 #error "__BYTE_ORDER MUST BE DEFINED !"
 
 #endif							/* __BYTE_ORDER */
-
 
 
 /* define memory callback function */
@@ -135,6 +136,8 @@ static void ndpi_search_mail_smtp_tcp(struct ndpi_detection_module_struct
 			       *ndpi_struct, struct ndpi_flow_struct *flow);
 
 /* HTTP entry */
+static void ndpi_http_subprotocol_conf(struct ndpi_detection_module_struct *ndpi_struct, 
+				char *attr, char *value, int protocol_id);
 static void ndpi_search_http_tcp(struct ndpi_detection_module_struct
 			  *ndpi_struct, struct ndpi_flow_struct *flow);
 
