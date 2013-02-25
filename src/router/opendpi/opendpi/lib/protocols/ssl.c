@@ -1,22 +1,24 @@
 /*
  * ssl.c
+ *
  * Copyright (C) 2009-2011 by ipoque GmbH
+ * Copyright (C) 2011-13 - ntop.org
  *
- * This file is part of OpenDPI, an open source deep packet inspection
- * library based on the PACE technology by ipoque GmbH
+ * This file is part of nDPI, an open source deep packet inspection
+ * library based on the OpenDPI and PACE technology by ipoque GmbH
  *
- * OpenDPI is free software: you can redistribute it and/or modify
+ * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * OpenDPI is distributed in the hope that it will be useful,
+ * nDPI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OpenDPI.  If not, see <http://www.gnu.org/licenses/>.
+ * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -37,23 +39,16 @@ static void ndpi_int_ssl_add_connection(struct ndpi_detection_module_struct *ndp
   }
 }
 
-#ifndef WIN32
-#ifndef OPENDPI_NETFILTER_MODULE
-inline int min(int a, int b) { return(a < b ? a : b); }
-#endif
-#endif
-
-#ifdef OPENDPI_NETFILTER_MODULE
 /* Can't call libc functions from kernel space, define some stub instead */
-#define isalpha(ch) (((ch) >= 'a' && (ch) <= 'z') || ((ch) >= 'A' && (ch) <= 'Z'))
-#define isdigit(ch) ((ch) >= '0' && (ch) <= '9')
-#define isspace(ch) (((ch) >= '\t' && (ch) <= '\r') || ((ch) == ' '))
-#define isprint(ch) ((ch) >= 0x20 && (ch) <= 0x7e)
-#define ispunct(ch) (((ch) >= '!' && (ch) <= '/') || \
+
+#define ndpi_isalpha(ch) (((ch) >= 'a' && (ch) <= 'z') || ((ch) >= 'A' && (ch) <= 'Z'))
+#define ndpi_isdigit(ch) ((ch) >= '0' && (ch) <= '9')
+#define ndpi_isspace(ch) (((ch) >= '\t' && (ch) <= '\r') || ((ch) == ' '))
+#define ndpi_isprint(ch) ((ch) >= 0x20 && (ch) <= 0x7e)
+#define ndpi_ispunct(ch) (((ch) >= '!' && (ch) <= '/') || \
                      ((ch) >= ':' && (ch) <= '@') || \
                      ((ch) >= '[' && (ch) <= '`') || \
                      ((ch) >= '{' && (ch) <= '~')) 
-#endif
 
 static void stripCertificateTrailer(char *buffer, int buffer_len) {
   int i;
@@ -61,8 +56,8 @@ static void stripCertificateTrailer(char *buffer, int buffer_len) {
   for(i=0; i<buffer_len; i++) {
     if((buffer[i] != '.')
        && (buffer[i] != '-')
-       && (!isalpha(buffer[i]))
-       && (!isdigit(buffer[i])))
+       && (!ndpi_isalpha(buffer[i]))
+       && (!ndpi_isdigit(buffer[i])))
       buffer[i] = '\0';
     break;
   }
@@ -93,19 +88,19 @@ int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct, struct n
 	    u_int8_t begin = 0, len, j, num_dots;
 
 	    while(begin < server_len) {
-	      if(!isprint(server_name[begin]))
+	      if(!ndpi_isprint(server_name[begin]))
 		begin++;
 	      else
 		break;
 	    }
 
-	    len = min(server_len-begin, buffer_len-1);
+	    len = ndpi_min(server_len-begin, buffer_len-1);
 	    strncpy(buffer, &server_name[begin], len);
 	    buffer[len] = '\0';
 
 	    /* We now have to check if this looks like an IP address or host name */
 	    for(j=0, num_dots = 0; j<len; j++) {
-	      if(!isprint((buffer[j]))) {
+	      if(!ndpi_isprint((buffer[j]))) {
 		num_dots = 0; /* This is not what we look for */
 		break;
 	      } else if(buffer[j] == '.') {
@@ -157,15 +152,15 @@ int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct, struct n
 		char *server_name = (char*)&packet->payload[offset+extension_offset];
 
 		while(begin < extension_len) {
-		  if((!isprint(server_name[begin]))
-		     || ispunct(server_name[begin])
-		     || isspace(server_name[begin]))
+		  if((!ndpi_isprint(server_name[begin]))
+		     || ndpi_ispunct(server_name[begin])
+		     || ndpi_isspace(server_name[begin]))
 		    begin++;
 		  else
 		    break;
 		}
 
-		len = min(extension_len-begin, buffer_len-1);
+		len = ndpi_min(extension_len-begin, buffer_len-1);
 		strncpy(buffer, &server_name[begin], len);
 		buffer[len] = '\0';
 		stripCertificateTrailer(buffer, buffer_len);
@@ -188,7 +183,7 @@ int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct, struct n
 int sslDetectProtocolFromCertificate(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 
-  if(!packet->iph /* IPv4 */) return 0;
+  if(!packet->iph /* IPv4 */) return(-1);
 
   if((packet->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN)
      || (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_SSL)) {

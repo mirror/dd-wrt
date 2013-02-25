@@ -106,3 +106,5 @@
 #include "protocols/fiesta.c"
 #include "protocols/http.c"
 #include "protocols/teamviewer.c"
+#include "protocols/lotus_notes.c"
+#include "protocols/gtp.c"

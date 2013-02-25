@@ -1,19 +1,23 @@
 /*
  * dropbox.c
- * Copyright (C) 2011 by ntop.org
- * 
- * This module is free software: you can redistribute it and/or modify
+ *
+ * Copyright (C) 2011-13 by ntop.org
+ *
+ * This file is part of nDPI, an open source deep packet inspection
+ * library based on the OpenDPI and PACE technology by ipoque GmbH
+ *
+ * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
- * This module is distributed in the hope that it will be useful,
+ *
+ * nDPI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public License.
- * If not, see <http://www.gnu.org/licenses/>.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
 
@@ -34,7 +38,7 @@ static void ndpi_int_dropbox_add_connection(struct ndpi_detection_module_struct 
 static void ndpi_check_dropbox(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;  
-//  const u_int8_t *packet_payload = packet->payload;
+  // const u_int8_t *packet_payload = packet->payload;
   u_int32_t payload_len = packet->payload_packet_len;
 
   if(packet->udp != NULL) {
