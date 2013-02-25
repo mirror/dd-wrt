@@ -41,8 +41,8 @@ void start_jffs2(void)
 			nvram_set("sys_clean_jffs2", "0");
 			nvram_commit();
 #ifdef HAVE_WNDR3700V4
-			itworked = eval("mtd", "erase", rwpart);
-			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072");
+			itworked = eval("erase", rwpart);
+			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
 #else
 			itworked = eval("mtd", "erase", rwpart);
 #endif
