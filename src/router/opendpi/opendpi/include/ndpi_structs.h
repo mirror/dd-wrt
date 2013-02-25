@@ -1,23 +1,25 @@
 /*
  * ndpi_structs.h
+ *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * 
- * This file is part of OpenDPI, an open source deep packet inspection
- * library based on the PACE technology by ipoque GmbH
- * 
- * OpenDPI is free software: you can redistribute it and/or modify
+ * Copyright (C) 2011-13 - ntop.org
+ *
+ * This file is part of nDPI, an open source deep packet inspection
+ * library based on the OpenDPI and PACE technology by ipoque GmbH
+ *
+ * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
- * OpenDPI is distributed in the hope that it will be useful,
+ *
+ * nDPI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
- * along with OpenDPI.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 
@@ -210,6 +212,9 @@ typedef struct ndpi_id_struct {
   u_int32_t pplive_last_packet_time_set:1;
 #endif
 } ndpi_id_struct;
+
+/* ************************************************** */ 
+
 struct ndpi_flow_tcp_struct {
 #ifdef NDPI_PROTOCOL_FLASH
   u_int16_t flash_bytes;
@@ -278,6 +283,7 @@ struct ndpi_flow_tcp_struct {
   u_int32_t http_stage:2;
   u_int32_t http_empty_line_seen:1;
   u_int32_t http_wait_for_retransmission:1;
+  u_char    host_server_name[64];
 #endif							// NDPI_PROTOCOL_HTTP
 #ifdef NDPI_PROTOCOL_FLASH
   u_int32_t flash_stage:3;
@@ -356,10 +362,16 @@ struct ndpi_flow_tcp_struct {
   u_int8_t citrix_packet_id;
 #endif
 
+#ifdef NDPI_PROTOCOL_LOTUS_NOTES
+  u_int8_t lotus_notes_packet_id;
+#endif
+
 #ifdef NDPI_PROTOCOL_TEAMVIEWER
   u_int8_t teamviewer_stage;
 #endif
-} 
+}
+
+/* ************************************************** */ 
 
 #if !defined(WIN32)
   __attribute__ ((__packed__))
@@ -407,6 +419,8 @@ struct ndpi_flow_udp_struct {
   u_int8_t teamviewer_stage;
 #endif
 }
+
+/* ************************************************** */ 
 
 #if !defined(WIN32)
   __attribute__ ((__packed__))
@@ -498,6 +512,27 @@ typedef struct ndpi_call_function_struct {
   u_int8_t detection_feature;
 } ndpi_call_function_struct_t;
 
+typedef struct ndpi_subprotocol_conf_struct {
+  void (*func) (struct ndpi_detection_module_struct *, char *attr, char *value, int protocol_id);
+} ndpi_subprotocol_conf_struct_t;
+
+#define MAX_DEFAULT_PORTS        5
+
+typedef struct {
+  u_int16_t port_low, port_high;
+} ndpi_port_range;
+
+/* ntop extensions */
+typedef struct ndpi_proto_defaults {
+  char *protoName;
+  u_int16_t protoId;
+} ndpi_proto_defaults_t;
+
+typedef struct ndpi_default_ports_tree_node {
+  ndpi_proto_defaults_t *proto;
+  u_int16_t default_port;
+} ndpi_default_ports_tree_node_t;
+
 typedef struct ndpi_detection_module_struct {
   NDPI_PROTOCOL_BITMASK detection_bitmask;
   NDPI_PROTOCOL_BITMASK generic_http_packet_bitmask;
@@ -518,10 +553,8 @@ typedef struct ndpi_detection_module_struct {
   struct ndpi_call_function_struct callback_buffer_tcp_payload[NDPI_MAX_SUPPORTED_PROTOCOLS + 1];
   u_int32_t callback_buffer_size_tcp_payload;
 
-
   struct ndpi_call_function_struct callback_buffer_udp[NDPI_MAX_SUPPORTED_PROTOCOLS + 1];
   u_int32_t callback_buffer_size_udp;
-
 
   struct ndpi_call_function_struct callback_buffer_non_tcp_udp[NDPI_MAX_SUPPORTED_PROTOCOLS + 1];
   u_int32_t callback_buffer_size_non_tcp_udp;
@@ -539,6 +572,9 @@ typedef struct ndpi_detection_module_struct {
   u_int32_t edonkey_upper_ports_only:1;
   u_int32_t edonkey_safe_mode:1;
   u_int32_t directconnect_connection_ip_tick_timeout;
+
+  /* subprotocol registration handler */
+  struct ndpi_subprotocol_conf_struct subprotocol_conf[NDPI_MAX_SUPPORTED_PROTOCOLS + 1];
 
   /*gadu gadu*/
   u_int32_t gadugadu_peer_connection_timeout;
@@ -574,6 +610,9 @@ typedef struct ndpi_detection_module_struct {
   char ip_string[NDPI_IP_STRING_SIZE];
 #endif
   u_int8_t ip_version_limit;
+
+  /* ********************* */
+  ndpi_proto_defaults_t proto_defaults[NDPI_MAX_SUPPORTED_PROTOCOLS+NDPI_MAX_NUM_CUSTOM_PROTOCOLS];
 } ndpi_detection_module_struct_t;
 
 typedef struct ndpi_flow_struct {

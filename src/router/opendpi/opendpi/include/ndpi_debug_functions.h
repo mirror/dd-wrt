@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
-  static void ndpi_debug_get_last_log_function_line(struct ndpi_detection_module_struct *ndpi_struct,
+  void ndpi_debug_get_last_log_function_line(struct ndpi_detection_module_struct *ndpi_struct,
 					     const char **file, const char **func, u_int32_t * line);
 #endif
 #ifdef __cplusplus

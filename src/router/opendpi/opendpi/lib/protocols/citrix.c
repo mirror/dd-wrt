@@ -1,19 +1,23 @@
 /*
  * citrix.c
- * Copyright (C) 2012 by ntop.org
  *
- * This module is free software: you can redistribute it and/or modify
+ * Copyright (C) 2012-13 - ntop.org
+ *
+ * This file is part of nDPI, an open source deep packet inspection
+ * library based on the OpenDPI and PACE technology by ipoque GmbH
+ *
+ * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This module is distributed in the hope that it will be useful,
+ * nDPI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License.
- * If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -27,8 +31,6 @@
 static void ndpi_check_citrix(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
-  
-  const u_int8_t *packet_payload = packet->payload;
   u_int32_t payload_len = packet->payload_packet_len;
 
 #if 0
@@ -50,7 +52,7 @@ static void ndpi_check_citrix(struct ndpi_detection_module_struct *ndpi_struct, 
       if(payload_len == 6) {
 	char citrix_header[] = { 0x07, 0x07, 0x49, 0x43, 0x41, 0x00 };
 	
-	if(memcmp(packet_payload, citrix_header, sizeof(citrix_header)) == 0) {
+	if(memcmp(packet->payload, citrix_header, sizeof(citrix_header)) == 0) {
 	  NDPI_LOG(NDPI_PROTOCOL_CITRIX, ndpi_struct, NDPI_LOG_DEBUG, "Found citrix.\n");
 	  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_CITRIX, NDPI_REAL_PROTOCOL);
 	}
@@ -59,8 +61,8 @@ static void ndpi_check_citrix(struct ndpi_detection_module_struct *ndpi_struct, 
       } else if(payload_len > 4) {
 	char citrix_header[] = { 0x1a, 0x43, 0x47, 0x50, 0x2f, 0x30, 0x31 };
 	
-	if((memcmp(packet_payload, citrix_header, sizeof(citrix_header)) == 0)
-	   || (ndpi_strnstr(packet_payload, "Citrix.TcpProxyService", payload_len) != NULL)) {
+	if((memcmp(packet->payload, citrix_header, sizeof(citrix_header)) == 0)
+	   || (ndpi_strnstr(packet->payload, "Citrix.TcpProxyService", payload_len) != NULL)) {
 	  NDPI_LOG(NDPI_PROTOCOL_CITRIX, ndpi_struct, NDPI_LOG_DEBUG, "Found citrix.\n");
 	  ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_CITRIX, NDPI_REAL_PROTOCOL);
 	}
