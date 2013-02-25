@@ -1,5 +1,5 @@
 #!/bin/sh
-/bin/echo "status 2" | /usr/bin/nc 127.0.0.1 5002  | grep -v "^>\|TITLE" | awk -F "," 'BEGIN{print "<table>"}{
+/bin/echo "status 2" | /usr/bin/nc 127.0.0.1 14  | grep -v "^>\|TITLE" | awk -F "," 'BEGIN{print "<table>"}{
 	print "<tr>";
 	if ($1 == "HEADER")
 		{
