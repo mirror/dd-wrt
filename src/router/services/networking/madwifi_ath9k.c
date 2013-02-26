@@ -354,6 +354,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp,
 	} else {
 		sprintf(ht, "20");
 	}
+	// fix for repeater mode as long as the driver is not able to do that
+	if (isrepeater) {
+		sprintf(ht, "20");
+	}
 	char regdomain[16];
 	char *country;
 	sprintf(regdomain, "%s_regdomain", prefix);
