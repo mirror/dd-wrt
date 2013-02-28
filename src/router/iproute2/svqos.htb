@@ -14,6 +14,7 @@ TQA="${TC} qdisc add dev "
 
 UL=$1
 DL=$2
+LL=1000000
 
 if [ "$1" = "status" ]
 then
@@ -47,13 +48,17 @@ then
 	exit
 fi
 $TQA $3 root handle 1: htb default 30 
-$TCA $3 parent 1: classid 1:1 htb rate ${UL}kbit prio 1 quantum $((${4}+18))
-$TCA $3 parent 1:1 classid 1:100 htb rate ${UL}kbit prio 1 quantum $((${4}+18))
-$TCA $3 parent 1:1 classid 1:2 htb rate ${UL}kbit prio 3 quantum $((${4}+18))
-$TCA $3 parent 1:2 classid 1:10 htb rate $((75*${UL}/100))kbit ceil ${UL}kbit prio 3 quantum $((${4}+18))
-$TCA $3 parent 1:2 classid 1:20 htb rate $((15*${UL}/100))kbit ceil ${UL}kbit prio 5 quantum $((${4}+18))
-$TCA $3 parent 1:2 classid 1:30 htb rate $((10*${UL}/100))kbit ceil ${UL}kbit prio 8 quantum $((${4}+18))
-$TCA $3 parent 1:2 classid 1:40 htb rate 1kbit ceil ${UL}kbit prio 9 quantum $((${4}+18))
+$TCA $3 parent 1: classid 1:1 htb rate ${UL}kbit ceil ${UL}kbit quantum $((${4}+18))
+$TCA $3 parent 1:1 classid 1:2 htb rate $((60*${UL}/100))kbit ceil ${UL}kbit quantum $((${4}+18))
+$TCA $3 parent 1:1 classid 1:3 htb rate $((25*${UL}/100))kbit ceil ${UL}kbit quantum $((${4}+18))
+$TCA $3 parent 1:1 classid 1:4 htb rate $((10*${UL}/100))kbit ceil ${UL}kbit quantum $((${4}+18))
+$TCA $3 parent 1:1 classid 1:5 htb rate $((5*${UL}/100))kbit ceil ${UL}kbit quantum $((${4}+18))
+$TCA $3 parent 1:1 classid 1:6 htb rate $((1*${UL}/100))kbit ceil ${UL}kbit quantum $((${4}+18))
+$TCA $3 parent 1:2 classid 1:100 htb rate $((60*${UL}/100))kbit ceil ${UL}kbit prio 0 quantum $((${4}+18))
+$TCA $3 parent 1:3 classid 1:10 htb rate $((25*${UL}/100))kbit ceil ${UL}kbit prio 1 quantum $((${4}+18))
+$TCA $3 parent 1:4 classid 1:20 htb rate $((10*${UL}/100))kbit ceil ${UL}kbit prio 2 quantum $((${4}+18))
+$TCA $3 parent 1:5 classid 1:30 htb rate $((5*${UL}/100))kbit ceil ${UL}kbit prio 5 quantum $((${4}+18))
+$TCA $3 parent 1:6 classid 1:40 htb rate $((1*${UL}/100))kbit ceil ${UL}kbit prio 7 quantum $((${4}+18))
 $TQA $3 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10
 $TQA $3 parent 1:10 handle 10: sfq quantum $((${4}+18)) perturb 10
 $TQA $3 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10
@@ -69,13 +74,17 @@ if [ "$2" != "0" ] ; then
 $IP link set $5 up
 
 $TQA $5 root handle 1: htb default 30
-$TCA $5 parent 1: classid 1:1 htb rate ${DL}kbit prio 1 quantum $((${4}+18))
-$TCA $5 parent 1:1 classid 1:100 htb rate ${DL}kbit prio 1 quantum $((${4}+18))
-$TCA $5 parent 1:1 classid 1:2 htb rate ${DL}kbit prio 3 quantum $((${4}+18))
-$TCA $5 parent 1:2 classid 1:10 htb rate $((75*${DL}/100))kbit ceil ${DL}kbit prio 3 quantum $((${4}+18))
-$TCA $5 parent 1:2 classid 1:20 htb rate $((15*${DL}/100))kbit ceil ${DL}kbit prio 5 quantum $((${4}+18))
-$TCA $5 parent 1:2 classid 1:30 htb rate $((10*${DL}/100))kbit ceil ${DL}kbit prio 8 quantum $((${4}+18))
-$TCA $5 parent 1:2 classid 1:40 htb rate 1kbit ceil ${DL}kbit prio 9 quantum $((${4}+18))
+$TCA $5 parent 1: classid 1:1 htb rate ${DL}kbit ceil ${DL}kbit quantum $((${4}+18))
+$TCA $5 parent 1:1 classid 1:2 htb rate $((60*${DL}/100))kbit ceil ${DL}kbit quantum $((${4}+18))
+$TCA $5 parent 1:1 classid 1:3 htb rate $((25*${DL}/100))kbit ceil ${DL}kbit quantum $((${4}+18))
+$TCA $5 parent 1:1 classid 1:4 htb rate $((10*${DL}/100))kbit ceil ${DL}kbit quantum $((${4}+18))
+$TCA $5 parent 1:1 classid 1:5 htb rate $((5*${DL}/100))kbit ceil ${DL}kbit quantum $((${4}+18))
+$TCA $5 parent 1:1 classid 1:6 htb rate $((1*${DL}/100))kbit ceil ${DL}kbit quantum $((${4}+18))
+$TCA $5 parent 1:2 classid 1:100 htb rate $((60*${DL}/100))kbit ceil ${DL}kbit prio 0 quantum $((${4}+18))
+$TCA $5 parent 1:3 classid 1:10 htb rate $((25*${DL}/100))kbit ceil ${DL}kbit prio 1 quantum $((${4}+18))
+$TCA $5 parent 1:4 classid 1:20 htb rate $((10*${DL}/100))kbit ceil ${DL}kbit prio 2 quantum $((${4}+18))
+$TCA $5 parent 1:5 classid 1:30 htb rate $((5*${DL}/100))kbit ceil ${DL}kbit prio 5 quantum $((${4}+18))
+$TCA $5 parent 1:6 classid 1:40 htb rate $((1*${DL}/100))kbit ceil ${DL}kbit prio 7 quantum $((${4}+18))
 $TQA $5 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10
 $TQA $5 parent 1:10 handle 10: sfq quantum $((${4}+18)) perturb 10
 $TQA $5 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10
@@ -91,14 +100,18 @@ if [ "$6" != "0" ] ; then
 $IP link set $6 up
 
 $TQA $6 root handle 1: htb default 30
-$TCA $6 parent 1: classid 1:1 htb rate 1000000kbit prio 1 quantum $((${4}+18))
-$TCA $6 parent 1:1 classid 1:100 htb rate 1000000kbit prio 1 quantum $((${4}+18))
-$TCA $6 parent 1:1 classid 1:2 htb rate 1000000kbit prio 3 quantum $((${4}+18))
-$TCA $6 parent 1:2 classid 1:10 htb rate $((75*1000000/100))kbit ceil 1000000kbit prio 3 quantum $((${4}+18))
-$TCA $6 parent 1:2 classid 1:20 htb rate $((15*1000000/100))kbit ceil 1000000kbit prio 5 quantum $((${4}+18))
-$TCA $6 parent 1:2 classid 1:30 htb rate $((10*1000000/100))kbit ceil 1000000kbit prio 8 quantum $((${4}+18))
-$TCA $6 parent 1:2 classid 1:40 htb rate 10kbit ceil 1000000kbit prio 9 quantum $((${4}+18))
-$TQA $6 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10                                     
+$TCA $6 parent 1: classid 1:1 htb rate ${LL}kbit prio 0 quantum $((${4}+18))
+$TCA $6 parent 1:1 classid 1:2 htb rate $((60*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
+$TCA $6 parent 1:1 classid 1:3 htb rate $((25*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
+$TCA $6 parent 1:1 classid 1:4 htb rate $((10*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
+$TCA $6 parent 1:1 classid 1:5 htb rate $((5*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
+$TCA $6 parent 1:1 classid 1:6 htb rate $((1*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
+$TCA $6 parent 1:2 classid 1:100 htb rate $((60*${LL}/100))kbit ceil ${LL}kbit prio 0 quantum $((${4}+18))
+$TCA $6 parent 1:3 classid 1:10 htb rate $((25*${LL}/100))kbit ceil ${LL}kbit prio 1 quantum $((${4}+18))
+$TCA $6 parent 1:4 classid 1:20 htb rate $((10*${LL}/100))kbit ceil ${LL}kbit prio 2 quantum $((${4}+18))
+$TCA $6 parent 1:5 classid 1:30 htb rate $((5*${LL}/100))kbit ceil ${LL}kbit prio 5 quantum $((${4}+18))
+$TCA $6 parent 1:6 classid 1:40 htb rate 10kbit ceil ${LL}kbit prio 7 quantum $((${4}+18))
+$TQA $6 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10
 $TQA $6 parent 1:10 handle 10: sfq quantum $((${4}+18)) perturb 10                                       
 $TQA $6 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10                                       
 $TQA $6 parent 1:30 handle 30: sfq quantum $((${4}+18)) perturb 10                                       
