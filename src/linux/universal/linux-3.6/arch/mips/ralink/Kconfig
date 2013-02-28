@@ -72,6 +72,10 @@ config RALINK_RT3350
 	bool "RT3350"
 	depends on SOC_RT305X
 
+config RALINK_RT5350
+	bool "RT5350"
+	depends on SOC_RT305X
+
 
 config RALINK_DEV_GPIO_BUTTONS
 	def_bool n

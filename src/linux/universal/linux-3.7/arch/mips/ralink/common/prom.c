@@ -18,38 +18,41 @@
 
 #include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/machine.h>
-#include <ralink_soc.h>
+
+unsigned long ramips_mem_base;
+unsigned long ramips_mem_size_min;
+unsigned long ramips_mem_size_max;
 
 static inline void *to_ram_addr(void *addr)
 {
 	u32 base;
 
-	base = KSEG0ADDR(RALINK_SOC_SDRAM_BASE);
+	base = KSEG0ADDR(ramips_mem_base);
 	if (((u32) addr > base) &&
-	    ((u32) addr < (base + RALINK_SOC_MEM_SIZE_MAX)))
+	    ((u32) addr < (base + ramips_mem_size_max)))
 		return addr;
 
-	base = KSEG1ADDR(RALINK_SOC_SDRAM_BASE);
+	base = KSEG1ADDR(ramips_mem_base);
 	if (((u32) addr > base) &&
-	    ((u32) addr < (base + RALINK_SOC_MEM_SIZE_MAX)))
+	    ((u32) addr < (base + ramips_mem_size_max)))
 		return addr;
 
 	/* some U-Boot variants uses physical addresses */
-	base = RALINK_SOC_SDRAM_BASE;
+	base = ramips_mem_base;
 	if (((u32) addr > base) &&
-	    ((u32) addr < (base + RALINK_SOC_MEM_SIZE_MAX)))
+	    ((u32) addr < (base + ramips_mem_size_max)))
 		return (void *)KSEG0ADDR(addr);
 
 	return NULL;
 }
 
+static char ramips_cmdline_buf[COMMAND_LINE_SIZE] __initdata;
 static void __init prom_append_cmdline(const char *name,
 				       const char *value)
 {
-	char buf[COMMAND_LINE_SIZE];
-
-	snprintf(buf, sizeof(buf), " %s=%s", name, value);
-	strlcat(arcs_cmdline, buf, sizeof(arcs_cmdline));
+	snprintf(ramips_cmdline_buf, sizeof(ramips_cmdline_buf),
+		 " %s=%s", name, value);
+	strlcat(arcs_cmdline, ramips_cmdline_buf, sizeof(arcs_cmdline));
 }
 
 #ifdef CONFIG_IMAGE_CMDLINE_HACK
@@ -142,6 +145,8 @@ void __init prom_init(void)
 	int argc;
 	char **envp;
 	char **argv;
+
+	ramips_soc_prom_init();
 
 	printk(KERN_DEBUG
 	       "prom: fw_arg0=%08x, fw_arg1=%08x, fw_arg2=%08x, fw_arg3=%08x\n",

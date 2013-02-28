@@ -17,7 +17,8 @@
 #include <linux/init.h>
 #include <linux/io.h>
 
-void rt288x_detect_sys_type(void);
+#define RT288X_MEM_SIZE_MIN    (2 * 1024 * 1024)
+#define RT288X_MEM_SIZE_MAX    (128 * 1024 * 1024)
 
 #define RT288X_CPU_IRQ_BASE	0
 #define RT288X_INTC_IRQ_BASE	8
@@ -65,5 +66,11 @@ static inline u32 rt288x_memc_rr(unsigned reg)
 }
 
 void rt288x_gpio_init(u32 mode);
+
+#ifdef CONFIG_PCI
+int rt288x_register_pci(void);
+#else
+static inline int rt288x_register_pci(void) { return 0; }
+#endif /* CONFIG_PCI */
 
 #endif /* _RT228X_H_ */
