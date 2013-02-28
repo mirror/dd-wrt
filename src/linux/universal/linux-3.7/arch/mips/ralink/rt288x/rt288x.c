@@ -23,15 +23,16 @@
 void __iomem * rt288x_sysc_base;
 void __iomem * rt288x_memc_base;
 
-void __init rt288x_detect_sys_type(void)
+void __init ramips_soc_prom_init(void)
 {
+	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT2880_SYSC_BASE);
 	u32 n0;
 	u32 n1;
 	u32 id;
 
-	n0 = rt288x_sysc_rr(SYSC_REG_CHIP_NAME0);
-	n1 = rt288x_sysc_rr(SYSC_REG_CHIP_NAME1);
-	id = rt288x_sysc_rr(SYSC_REG_CHIP_ID);
+	n0 = __raw_readl(sysc + SYSC_REG_CHIP_NAME0);
+	n1 = __raw_readl(sysc + SYSC_REG_CHIP_NAME1);
+	id = __raw_readl(sysc + SYSC_REG_CHIP_ID);
 
 	snprintf(ramips_sys_type, RAMIPS_SYS_TYPE_LEN,
 		"Ralink %c%c%c%c%c%c%c%c id:%u rev:%u",
@@ -41,6 +42,10 @@ void __init rt288x_detect_sys_type(void)
 		(char) ((n1 >> 16) & 0xff), (char) ((n1 >> 24) & 0xff),
 		(id >> CHIP_ID_ID_SHIFT) & CHIP_ID_ID_MASK,
 		(id & CHIP_ID_REV_MASK));
+
+	ramips_mem_base = RT2880_SDRAM_BASE;
+	ramips_mem_size_min = RT288X_MEM_SIZE_MIN;
+	ramips_mem_size_max = RT288X_MEM_SIZE_MAX;
 }
 
 static struct ramips_gpio_chip rt288x_gpio_chips[] = {

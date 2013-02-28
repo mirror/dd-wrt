@@ -16,6 +16,7 @@
 #include <linux/etherdevice.h>
 #include <linux/err.h>
 #include <linux/clk.h>
+#include <linux/rt2x00_platform.h>
 
 #include <asm/addrspace.h>
 
@@ -34,10 +35,14 @@ static struct resource rt288x_flash0_resources[] = {
 	},
 };
 
+struct physmap_flash_data rt288x_flash0_data;
 static struct platform_device rt288x_flash0_device = {
 	.name		= "physmap-flash",
 	.resource	= rt288x_flash0_resources,
 	.num_resources	= ARRAY_SIZE(rt288x_flash0_resources),
+	.dev = {
+		.platform_data = &rt288x_flash0_data,
+	},
 };
 
 static struct resource rt288x_flash1_resources[] = {
@@ -49,17 +54,21 @@ static struct resource rt288x_flash1_resources[] = {
 	},
 };
 
+struct physmap_flash_data rt288x_flash1_data;
 static struct platform_device rt288x_flash1_device = {
 	.name		= "physmap-flash",
 	.resource	= rt288x_flash1_resources,
 	.num_resources	= ARRAY_SIZE(rt288x_flash1_resources),
+	.dev = {
+		.platform_data = &rt288x_flash1_data,
+	},
 };
 
 static int rt288x_flash_instance __initdata;
-void __init rt288x_register_flash(unsigned int id,
-				  struct physmap_flash_data *pdata)
+void __init rt288x_register_flash(unsigned int id)
 {
 	struct platform_device *pdev;
+	struct physmap_flash_data *pdata;
 	u32 t;
 	int reg;
 
@@ -79,6 +88,7 @@ void __init rt288x_register_flash(unsigned int id,
 	t = rt288x_memc_rr(reg);
 	t = (t >> FLASH_CFG_WIDTH_SHIFT) & FLASH_CFG_WIDTH_MASK;
 
+	pdata = pdev->dev.platform_data;
 	switch (t) {
 	case FLASH_CFG_WIDTH_8BIT:
 		pdata->width = 1;
@@ -94,13 +104,39 @@ void __init rt288x_register_flash(unsigned int id,
 		return;
 	}
 
-	pdev->dev.platform_data = pdata;
 	pdev->id = rt288x_flash_instance;
 
 	platform_device_register(pdev);
 	rt288x_flash_instance++;
 }
 
+static struct resource rt288x_wifi_resources[] = {
+	{
+		.start	= RT2880_WMAC_BASE,
+		.end	= RT2880_WMAC_BASE + 0x3FFFF,
+		.flags	= IORESOURCE_MEM,
+	}, {
+		.start	= RT288X_CPU_IRQ_WNIC,
+		.end	= RT288X_CPU_IRQ_WNIC,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct rt2x00_platform_data rt288x_wifi_data;
+static struct platform_device rt288x_wifi_device = {
+	.name			= "rt2800_wmac",
+	.resource		= rt288x_wifi_resources,
+	.num_resources	= ARRAY_SIZE(rt288x_wifi_resources),
+	.dev = {
+		.platform_data = &rt288x_wifi_data,
+	}
+};
+
+void __init rt288x_register_wifi(void)
+{
+	rt288x_wifi_data.eeprom_file_name = "soc_wmac.eeprom";
+	platform_device_register(&rt288x_wifi_device);
+}
 
 static void rt288x_fe_reset(void)
 {

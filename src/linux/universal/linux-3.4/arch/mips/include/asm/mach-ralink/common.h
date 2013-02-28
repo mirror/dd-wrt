@@ -11,10 +11,15 @@
 
 #define RAMIPS_SYS_TYPE_LEN	64
 extern unsigned char ramips_sys_type[RAMIPS_SYS_TYPE_LEN];
+extern unsigned long ramips_mem_base;
+extern unsigned long ramips_mem_size_min;
+extern unsigned long ramips_mem_size_max;
+extern unsigned long (*ramips_get_mem_size)(void);
 
 void ramips_intc_irq_init(unsigned intc_base, unsigned irq, unsigned irq_base);
 u32 ramips_intc_get_status(void);
 
+void ramips_soc_prom_init(void);
 void ramips_soc_setup(void);
 void ramips_early_serial_setup(int line, unsigned base, unsigned freq,
 			       unsigned irq);
