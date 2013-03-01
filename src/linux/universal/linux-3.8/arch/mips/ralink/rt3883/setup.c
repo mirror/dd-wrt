@@ -1,7 +1,7 @@
 /*
- * Ralink RT305x SoC specific setup
+ * Ralink RT3662/RT3883 SoC specific setup
  *
- * Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
  *
  * Parts of this file are based on Ralink's 2.6.21 BSP
  *
@@ -21,19 +21,19 @@
 #include <asm/time.h>
 
 #include <asm/mach-ralink/common.h>
-#include <asm/mach-ralink/rt305x.h>
-#include <asm/mach-ralink/rt305x_regs.h>
+#include <asm/mach-ralink/rt3883.h>
+#include <asm/mach-ralink/rt3883_regs.h>
 #include "common.h"
 
-static void rt305x_restart(char *command)
+static void rt3883_restart(char *command)
 {
-	rt305x_sysc_wr(RT305X_RESET_SYSTEM, SYSC_REG_RESET_CTRL);
+	rt3883_sysc_wr(RT3883_RSTCTRL_SYS, RT3883_SYSC_REG_RSTCTRL);
 	while (1)
 		if (cpu_wait)
 			cpu_wait();
 }
 
-static void rt305x_halt(void)
+static void rt3883_halt(void)
 {
 	while (1)
 		if (cpu_wait)
@@ -45,17 +45,14 @@ unsigned int __cpuinit get_c0_compare_irq(void)
 	return CP0_LEGACY_COMPARE_IRQ;
 }
 
-
-
-
 void __init ramips_soc_setup(void)
 {
 	struct clk *clk;
 
-	rt305x_sysc_base = ioremap_nocache(RT305X_SYSC_BASE, PAGE_SIZE);
-	rt305x_memc_base = ioremap_nocache(RT305X_MEMC_BASE, PAGE_SIZE);
+	rt3883_sysc_base = ioremap_nocache(RT3883_SYSC_BASE, PAGE_SIZE);
+	rt3883_memc_base = ioremap_nocache(RT3883_MEMC_BASE, PAGE_SIZE);
 
-	rt305x_clocks_init();
+	rt3883_clocks_init();
 
 	clk = clk_get(NULL, "cpu");
 	if (IS_ERR(clk))
@@ -65,18 +62,18 @@ void __init ramips_soc_setup(void)
 		clk_get_rate(clk) / 1000000,
 		(clk_get_rate(clk) % 1000000) * 100 / 1000000);
 
-	_machine_restart = rt305x_restart;
-	_machine_halt = rt305x_halt;
-	pm_power_off = rt305x_halt;
+	_machine_restart = rt3883_restart;
+	_machine_halt = rt3883_halt;
+	pm_power_off = rt3883_halt;
 
 	clk = clk_get(NULL, "uart");
 	if (IS_ERR(clk))
 		panic("unable to get UART clock, err=%ld", PTR_ERR(clk));
 
-	ramips_early_serial_setup(0, RT305X_UART0_BASE, clk_get_rate(clk),
-				  RT305X_INTC_IRQ_UART0);
-	ramips_early_serial_setup(1, RT305X_UART1_BASE, clk_get_rate(clk),
-				  RT305X_INTC_IRQ_UART1);
+	ramips_early_serial_setup(0, RT3883_UART0_BASE, clk_get_rate(clk),
+				  RT3883_INTC_IRQ_UART0);
+	ramips_early_serial_setup(1, RT3883_UART1_BASE, clk_get_rate(clk),
+				  RT3883_INTC_IRQ_UART1);
 }
 
 void __init plat_time_init(void)
