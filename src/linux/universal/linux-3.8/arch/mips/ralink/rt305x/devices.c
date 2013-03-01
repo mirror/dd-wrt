@@ -17,8 +17,8 @@
 #include <linux/spi/spi.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
-//#include <linux/usb/ehci_pdriver.h>
-//#include <linux/usb/ohci_pdriver.h>
+#include <linux/usb/ehci_pdriver.h>
+#include <linux/usb/ohci_pdriver.h>
 
 #include <asm/addrspace.h>
 
@@ -316,7 +316,7 @@ static void rt3352_usb_power_off(struct platform_device *pdev)
 		udelay(10000);
 	}
 }
-#if 0
+
 static struct usb_ehci_pdata rt3352_ehci_data = {
 	.power_on	= rt3352_usb_power_on,
 	.power_off	= rt3352_usb_power_off,
@@ -376,14 +376,15 @@ static struct platform_device rt3352_ohci_device = {
 		.platform_data		= &rt3352_ohci_data,
 	},
 };
-#endif
+
+
 void __init rt305x_register_usb(void)
 {
 	if (soc_is_rt305x() || soc_is_rt3350()) {
 		platform_device_register(&rt305x_dwc_otg_device);
 	} else if (soc_is_rt3352() || soc_is_rt5350()) {
-//		platform_device_register(&rt3352_ehci_device);
-//		platform_device_register(&rt3352_ohci_device);
+		platform_device_register(&rt3352_ehci_device);
+		platform_device_register(&rt3352_ohci_device);
 	} else {
 		BUG();
 	}
