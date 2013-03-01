@@ -349,7 +349,7 @@ int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no
     unsigned int vlan_id=0;
 #if defined (CONFIG_RAETH_QOS_DSCP_BASED)
     static char DscpToAcMap[8]={1,0,0,1,2,2,3,3};
-#elif defined (CONFIG_RAETH_QOS_PORT_BASED)
+#elif defined (CONFIG_RAETH_QOS_VPRI_BASED)
     static char VlanPriToAcMap[8]={1,0,0,1,2,2,3,3};
 #endif
 
@@ -376,6 +376,8 @@ int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no
     static unsigned char AcToRing_GE2Map[4] = {0, 0, 1, 1};
 #elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883) || \
       defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || \
+      defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
+      defined (CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621) || \
      (defined (CONFIG_RALINK_RT3883) && !defined(CONFIG_RAETH_GMAC2))
     /* 
      * 1) Bridge: VO->Ring3, VI->Ring2, BG->Ring1, BE->Ring0 
@@ -408,7 +410,7 @@ int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no
 	if (veth->h_vlan_encapsulated_proto == htons(ETH_P_IP)) { //IPv4 
 #if defined (CONFIG_RAETH_QOS_DSCP_BASED)
 	    ac = DscpToAcMap[(iph->tos & 0xe0) >> 5];
-#elif defined (CONFIG_RAETH_QOS_PORT_BASED)
+#elif defined (CONFIG_RAETH_QOS_VPRI_BASED)
 	    ac = VlanPriToAcMap[skb->priority];
 #endif
 	}else { //Ipv6, ARP ...etc
@@ -419,7 +421,7 @@ int  pkt_classifier(struct sk_buff *skb,int gmac_no, int *ring_no, int *queue_no
 #if defined (CONFIG_RAETH_QOS_DSCP_BASED)
 	    iph= (struct iphdr *)(skb->data + ETH_HLEN);
 	    ac = DscpToAcMap[(iph->tos & 0xe0) >> 5];
-#elif defined (CONFIG_RAETH_QOS_PORT_BASED)
+#elif defined (CONFIG_RAETH_QOS_VPRI_BASED)
 	    ac= VlanPriToAcMap[skb->priority];
 #endif
 	}else { // IPv6, ARP ...etc
@@ -547,11 +549,24 @@ void set_scheduler_weight(void)
     /* 
      * STEP2: Ring scheduling configuration 
      */
+#if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
+    defined (CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
+    /* MIN_RATE_RATIO0=0, MAX_RATE_ULMT0=1, Weight0=1 */
+    *(unsigned long *)SCH_Q01_CFG =  (0 << 10) | (1<<14) | (0 << 12);
+    /* MIN_RATE_RATIO1=0, MAX_RATE_ULMT1=1, Weight1=4 */
+    *(unsigned long *)SCH_Q01_CFG |= (0 << 26) | (1<<30) | (2 << 28);
+
+    /* MIN_RATE_RATIO2=0, MAX_RATE_ULMT2=1, Weight0=1 */
+    *(unsigned long *)SCH_Q23_CFG =  (0 << 10) | (1<<14) | (0 << 12);
+    /* MIN_RATE_RATIO3=0, MAX_RATE_ULMT3=1, Weight1=4 */
+    *(unsigned long *)SCH_Q23_CFG |= (0 << 26) | (1<<30) | (2 << 28);
+#else
     *(unsigned long *)PDMA_SCH_CFG = (WRR_SCH << 24) | 
 	(QUEUE_WEIGHT_16 << 12) | /* ring 3 weight */
 	(QUEUE_WEIGHT_4 << 8) |  /* ring 2 weight */
 	(QUEUE_WEIGHT_16 << 4) |  /* ring 1 weight */
 	(QUEUE_WEIGHT_4 << 0);   /* ring 0 weight */
+#endif
 }
 
 /*
@@ -582,7 +597,11 @@ void set_scheduler_weight(void)
  */
 void set_schedule_pause_condition(void)
 {
-#if !defined (CONFIG_RALINK_RT5350) 
+#if defined (CONFIG_RALINK_MT7620)
+    
+#elif defined (CONFIG_RALINK_RT5350)
+    *(unsigned long *)SDM_TRING = (0xC << 28) | (0x3 << 24) | (0xC << 4) | 0x3;
+#else
     /* 
      * STEP1: Set queue priority is high or low 
      *
@@ -611,8 +630,6 @@ void set_schedule_pause_condition(void)
 	( PSE_P2_HQ_FULL << 16 ) | /* queue 2 */
 	( PSE_P1_HQ_FULL << 8 ) |  /* queue 1 */
 	( PSE_P1_HQ_FULL << 0 );  /* queue 0 */
-#else
-    *(unsigned long *)SDM_TRING = (0xC << 28) | (0x3 << 24) | (0xC << 4) | 0x3;
 #endif
     
 }

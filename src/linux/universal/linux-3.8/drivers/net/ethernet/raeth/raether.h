@@ -39,7 +39,7 @@
 #define NUM_RX_DESC     256
 #define NUM_TX_DESC     256
 #endif
-#ifdef CONFIG_RALINK_RT3883
+#if defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_MT7620) 
 #define NUM_RX_MAX_PROCESS 2
 #else
 #define NUM_RX_MAX_PROCESS 16
@@ -47,12 +47,21 @@
 #endif
 
 #define DEV_NAME        "eth2"
+#define DEV2_NAME       "eth3"
 
 #define GMAC2_OFFSET    0x22
+#if ! defined (CONFIG_RALINK_RT6855A)
 #define GMAC0_OFFSET    0x28 
+#else
+#define GMAC0_OFFSET    0xE000
+#endif
 #define GMAC1_OFFSET    0x2E
 
+#if defined(CONFIG_RALINK_RT6855A)
+#define IRQ_ENET0	24
+#else
 #define IRQ_ENET0	5 	/* hardware interrupt #3, defined in RT2880 Soc Design Spec Rev 0.03, pp43 */
+#endif
 
 #define FE_INT_STATUS_REG (*(volatile unsigned long *)(FE_INT_STATUS))
 #define FE_INT_STATUS_CLEAN(reg) (*(volatile unsigned long *)(FE_INT_STATUS)) = reg
@@ -78,4 +87,6 @@ void ei_xmit_housekeeping(unsigned long data);
 
 u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data);
 u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data);
+void fe_sw_init(void);
+
 #endif

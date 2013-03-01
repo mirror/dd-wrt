@@ -812,18 +812,18 @@ static int raspi_prob(void)
 	flash->mtd.flags = MTD_CAP_NORFLASH;
 	flash->mtd.size = chip->sector_size * chip->n_sectors;
 	flash->mtd.erasesize = chip->sector_size;
-	flash->mtd.erase = ramtd_erase;
-	flash->mtd.read = ramtd_read;
-	flash->mtd.write = ramtd_write;
-	flash->mtd.lock = ramtd_lock;
-	flash->mtd.unlock = ramtd_unlock;
+	flash->mtd._erase = ramtd_erase;
+	flash->mtd._read = ramtd_read;
+	flash->mtd._write = ramtd_write;
+	flash->mtd._lock = ramtd_lock;
+	flash->mtd._unlock = ramtd_unlock;
 	flash->mtd.owner = THIS_MODULE;
 
 
-	printk("%s(%02x %04x) (%d Kbytes)\n", 
+	printk("%s(%02x %04x) (%lld Kbytes)\n", 
 	       chip->name, chip->id, chip->jedec_id, flash->mtd.size / 1024);
 
-	printk("mtd .name = %s, .size = 0x%.8x (%uM) "
+	printk("mtd .name = %s, .size = 0x%.8llx (%lluM) "
 			".erasesize = 0x%.8x (%uK) .numeraseregions = %d\n",
 		flash->mtd.name,
 		flash->mtd.size, flash->mtd.size / (1024*1024),
@@ -832,7 +832,7 @@ static int raspi_prob(void)
 
 	if (flash->mtd.numeraseregions)
 		for (i = 0; i < flash->mtd.numeraseregions; i++)
-			printk("mtd.eraseregions[%d] = { .offset = 0x%.8x, "
+			printk("mtd.eraseregions[%d] = { .offset = 0x%.8llx, "
 				".erasesize = 0x%.8x (%uK), "
 				".numblocks = %d }\n",
 				i, flash->mtd.eraseregions[i].offset,
@@ -847,7 +847,7 @@ static int raspi_prob(void)
 			    while((offset+flash->mtd.erasesize)<flash->mtd.size)
 			    {
 			    int retlen;
-			    flash->mtd.read(&flash->mtd,offset,4, &retlen, buf);
+			    mtd_read(&flash->mtd,offset,4, &retlen, buf);
 			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
 				    {
 				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
