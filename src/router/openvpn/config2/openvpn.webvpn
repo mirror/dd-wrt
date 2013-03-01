@@ -124,7 +124,7 @@
 				<div class="label"><% tran("service.vpn_compress"); %></div>
 				<select name="openvpn_lzo">
 				<option value="yes" <% nvram_selected("openvpn_lzo","yes"); %>>Yes</option>
-				<option value="adaptive" <% nvram_selected("openvpn_lzo","Adaptive"); %>>Adaptive</option>
+				<option value="adaptive" <% nvram_selected("openvpn_lzo",adaptive"); %>>Adaptive</option>
 				<option value="no" <% nvram_selected("openvpn_lzo","no"); %>>No</option>
 				<option value="0" <% nvram_selected("openvpn_lzo","0"); %>>Disabled</option>
 				</select>
