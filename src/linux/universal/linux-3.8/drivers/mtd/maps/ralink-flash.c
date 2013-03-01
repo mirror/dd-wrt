@@ -297,8 +297,8 @@ int __init rt2880_mtd_init(void)
 		ralink_mtd[i] = do_map_probe("cfi_probe", &ralink_map[i]);
 		if (ralink_mtd[i]) {
 			ralink_mtd[i]->owner = THIS_MODULE;
-			ralink_mtd[i]->lock = ralink_lock;
-			ralink_mtd[i]->unlock = ralink_unlock;
+			ralink_mtd[i]->_lock = ralink_lock;
+			ralink_mtd[i]->_unlock = ralink_unlock;
 			++found;
 		}
 		else
@@ -452,14 +452,14 @@ int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf)
 	ei.addr = 0;
 	ei.len = mtd->erasesize;
 	ei.priv = 0;
-	ret = mtd->erase(mtd, &ei);
+	ret = mtd_erase(mtd, &ei);
 	if (ret != 0) {
 		put_mtd_device(mtd);
 		kfree(bak);
 		return ret;
 	}
 
-	ret = mtd->write(mtd, 0, mtd->erasesize, &wrlen, bak);
+	ret = mtd_write(mtd, 0, mtd->erasesize, &wrlen, bak);
 
 	put_mtd_device(mtd);
 	kfree(bak);
