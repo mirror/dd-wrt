@@ -15,6 +15,8 @@
 #include <linux/init.h>
 #include <linux/module.h>
 
+#include <asm/mipsregs.h>
+
 #include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/ramips_gpio.h>
 #include <asm/mach-ralink/rt305x.h>
@@ -22,25 +24,98 @@
 
 void __iomem * rt305x_sysc_base;
 void __iomem * rt305x_memc_base;
+enum rt305x_soc_type rt305x_soc;
 
-void __init rt305x_detect_sys_type(void)
+static unsigned long rt5350_get_mem_size(void)
 {
+	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT305X_SYSC_BASE);
+	unsigned long ret;
+	u32 t;
+
+	t = __raw_readl(sysc + SYSC_REG_SYSTEM_CONFIG);
+	t = (t >> RT5350_SYSCFG0_DRAM_SIZE_SHIFT) &
+	    RT5350_SYSCFG0_DRAM_SIZE_MASK;
+
+	switch (t) {
+	case RT5350_SYSCFG0_DRAM_SIZE_2M:
+		ret = 2 * 1024 * 1024;
+		break;
+	case RT5350_SYSCFG0_DRAM_SIZE_8M:
+		ret = 8 * 1024 * 1024;
+		break;
+	case RT5350_SYSCFG0_DRAM_SIZE_16M:
+		ret = 16 * 1024 * 1024;
+		break;
+	case RT5350_SYSCFG0_DRAM_SIZE_32M:
+		ret = 32 * 1024 * 1024;
+		break;
+	case RT5350_SYSCFG0_DRAM_SIZE_64M:
+		ret = 64 * 1024 * 1024;
+		break;
+	default:
+		panic("rt5350: invalid DRAM size: %u", t);
+		break;
+	}
+
+	return ret;
+}
+
+void __init ramips_soc_prom_init(void)
+{
+	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT305X_SYSC_BASE);
+	const char *name = "unknown";
 	u32 n0;
 	u32 n1;
 	u32 id;
 
-	n0 = rt305x_sysc_rr(SYSC_REG_CHIP_NAME0);
-	n1 = rt305x_sysc_rr(SYSC_REG_CHIP_NAME1);
-	id = rt305x_sysc_rr(SYSC_REG_CHIP_ID);
+	n0 = __raw_readl(sysc + SYSC_REG_CHIP_NAME0);
+	n1 = __raw_readl(sysc + SYSC_REG_CHIP_NAME1);
+
+	if (n0 == RT3052_CHIP_NAME0 && n1 == RT3052_CHIP_NAME1) {
+		unsigned long icache_sets;
+
+		icache_sets = (read_c0_config1() >> 22) & 7;
+		if (icache_sets == 1) {
+			rt305x_soc = RT305X_SOC_RT3050;
+			name = "RT3050";
+		} else {
+			rt305x_soc = RT305X_SOC_RT3052;
+			name = "RT3052";
+		}
+	} else if (n0 == RT3350_CHIP_NAME0 && n1 == RT3350_CHIP_NAME1) {
+		rt305x_soc = RT305X_SOC_RT3350;
+		name = "RT3350";
+	} else if (n0 == RT3352_CHIP_NAME0 && n1 == RT3352_CHIP_NAME1) {
+		rt305x_soc = RT305X_SOC_RT3352;
+		name = "RT3352";
+	} else if (n0 == RT5350_CHIP_NAME0 && n1 == RT5350_CHIP_NAME1) {
+		rt305x_soc = RT305X_SOC_RT5350;
+		name = "RT5350";
+	} else {
+		panic("rt305x: unknown SoC, n0:%08x n1:%08x\n", n0, n1);
+	}
+
+	id = __raw_readl(sysc + SYSC_REG_CHIP_ID);
 
 	snprintf(ramips_sys_type, RAMIPS_SYS_TYPE_LEN,
-		"Ralink %c%c%c%c%c%c%c%c id:%u rev:%u",
-		(char) (n0 & 0xff), (char) ((n0 >> 8) & 0xff),
-		(char) ((n0 >> 16) & 0xff), (char) ((n0 >> 24) & 0xff),
-		(char) (n1 & 0xff), (char) ((n1 >> 8) & 0xff),
-		(char) ((n1 >> 16) & 0xff), (char) ((n1 >> 24) & 0xff),
+		"Ralink %s id:%u rev:%u",
+		name,
 		(id >> CHIP_ID_ID_SHIFT) & CHIP_ID_ID_MASK,
 		(id & CHIP_ID_REV_MASK));
+
+	ramips_mem_base = RT305X_SDRAM_BASE;
+
+	if (soc_is_rt5350()) {
+		ramips_get_mem_size = rt5350_get_mem_size;
+	} else if (soc_is_rt305x() || soc_is_rt3350() ) {
+		ramips_mem_size_min = RT305X_MEM_SIZE_MIN;
+		ramips_mem_size_max = RT305X_MEM_SIZE_MAX;
+	} else if (soc_is_rt3352()) {
+		ramips_mem_size_min = RT3352_MEM_SIZE_MIN;
+		ramips_mem_size_max = RT3352_MEM_SIZE_MAX;
+	} else {
+		BUG();
+	}
 }
 
 static struct ramips_gpio_chip rt305x_gpio_chips[] = {
