@@ -1474,6 +1474,9 @@ int internal_getRouterBrand()
 #elif HAVE_F5D8235
 	setRouter("Belkin F5D8235-4 v2");
 	return ROUTER_BOARD_F5D8235;
+#elif HAVE_HAMEA15
+	setRouter("Hame A-15");
+	return ROUTER_BOARD_HAMEA15;
 #elif HAVE_WCRGN
 	setRouter("Buffalo WCR-GN");
 	return ROUTER_BOARD_WCRGN;
@@ -4691,6 +4694,11 @@ int led_control(int type, int act)
 #endif
 		break;
 #endif
+	case ROUTER_BOARD_HAMEA15:
+		diag_gpio = 0x111;
+		connected_gpio = 0x114;
+//              ses_gpio = 0x10e;
+		break;
 	case ROUTER_BOARD_WCRGN:
 		diag_gpio = 0x107;
 		connected_gpio = 0x10b;
