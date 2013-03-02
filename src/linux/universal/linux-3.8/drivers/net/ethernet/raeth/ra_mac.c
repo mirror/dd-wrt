@@ -307,7 +307,7 @@ void ethtool_init(struct net_device *dev)
 #endif
 	return;
 }
-
+#if 0
 #if defined(CONFIG_RAETH_QOS)
 /*
  *	Routine Name : get_idx(mode, index)
@@ -1241,3 +1241,4 @@ void debug_proc_exit(void)
     printk(KERN_ALERT "proc exit\n");
 }
 EXPORT_SYMBOL(procRegDir);
+#endif
