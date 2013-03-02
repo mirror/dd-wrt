@@ -97,7 +97,7 @@ void start_sysinit(void)
 	writeproc("/proc/rt3052/mii/ctrl","write 2 0 0x3300");
 	writeproc("/proc/rt3052/mii/ctrl","write 3 0 0x3300");
 #endif
-#if defined(HAVE_RT10N) || defined(HAVE_F5D8235) || defined(HAVE_RT15N) || defined(HAVE_WCRGN)
+#if defined(HAVE_RT10N) || defined(HAVE_F5D8235) || defined(HAVE_RT15N) || defined(HAVE_WCRGN) && !defined(HAVE_HAMEA15)
 	FILE *in = fopen("/dev/mtdblock/2", "rb");
 	unsigned char mac[32];
 	if (in != NULL) {
