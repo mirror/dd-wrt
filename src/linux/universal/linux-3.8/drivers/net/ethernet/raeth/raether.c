@@ -3838,13 +3838,13 @@ extern int rtl_smi_init(void);
 #ifdef CONFIG_RAETH_NETLINK
 	csr_netlink_init();
 #endif
-	ret = debug_proc_init();
+//	ret = debug_proc_init();
 
 	dev_raether = dev;
 #ifdef CONFIG_RALINK_RT3052
 	rt3052_access_init();
 #endif
-	return ret;
+	return 0;
 }
 
 void fe_sw_init(void)
@@ -4121,7 +4121,7 @@ void ra2882eth_cleanup_module(void)
 	RAETH_PRINT("Free ei_local and unregister netdev...\n");
 
 	free_netdev(dev);
-	debug_proc_exit();
+//	debug_proc_exit();
 #ifdef CONFIG_RAETH_NETLINK
 	csr_netlink_end();
 #endif
