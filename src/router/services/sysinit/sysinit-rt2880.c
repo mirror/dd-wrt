@@ -117,6 +117,33 @@ void start_sysinit(void)
 	}
 
 #endif
+#ifdef HAVE_HAMEA15
+	FILE *in = fopen("/dev/mtdblock/1", "rb");
+	if (in != NULL) {
+		unsigned char *config = malloc(65536);
+		memset(config, 0, 65536);
+		fread(config, 65536, 1, in);
+		int len = strlen("WAN_MAC_ADDR=");
+		int i;
+		for (i = 0; i < 65535 - (len + 18); i++) {
+			if (!strncmp(&config[i], "WAN_MAC_ADDR=", len)) {
+				char *mac = &config[i + len];
+				if (mac[0] == '"')
+					mac++;
+				mac[17] = 0;
+				eval("ifconfig", "eth2", "hw", "ether", mac);
+				nvram_set("et0macaddr_safe", mac);
+				nvram_set("et0macaddr", mac);
+				break;
+			}
+		}
+		free(config);
+		fclose(in);
+	}
+
+
+
+#endif
 #if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) || defined(HAVE_AR690W)
 	FILE *in = fopen("/dev/mtdblock/1", "rb");
 	if (in != NULL) {
@@ -124,23 +151,19 @@ void start_sysinit(void)
 		memset(config, 0, 65536);
 		fread(config, 65536, 1, in);
 #if defined(HAVE_AR670W) || defined(HAVE_AR690W)
-		int len = sizeof("lanmac=");
+		int len = strlen("lanmac=");
 #else
-		int len = sizeof("ethaddr=");
+		int len = strlen("ethaddr=");
 #endif
 		int i;
-		for (i = 0; i < 65535 - 18; i++) {
+		for (i = 0; i < 65535 - (18 + len); i++) {
 #if defined(HAVE_AR670W) || defined(HAVE_AR690W)
 			if (!strncmp(&config[i], "lanmac=", 7))
 #else
 			if (!strncmp(&config[i], "ethaddr=", 8))
 #endif
 			{
-#if defined(HAVE_AR670W) || defined(HAVE_AR690W)
-				char *mac = &config[i + 7];
-#else
-				char *mac = &config[i + 8];
-#endif
+				char *mac = &config[i + len];
 				if (mac[0] == '"')
 					mac++;
 				mac[17] = 0;
