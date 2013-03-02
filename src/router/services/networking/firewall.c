@@ -763,31 +763,50 @@ static int wanactive(void)
 
 static void nat_postrouting(void)
 {
-	if (nvram_match("wan_proto", "disabled")) {
-		if (has_gateway()) {
-			if (nvram_match("hotss_enable", "1")) {
+ if (nvram_match("hotss_enable", "1")) 
+		|| (nvram_match("chilli_enable", "1")) {
+			if (nvram_match("wan_proto", "disabled")) {
+//		if (has_gateway()) {
 				if (strlen(nvram_safe_get("hotss_net")) > 0)
 					save2file
-					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					    ("-t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
 					     nvram_safe_get("hotss_net"),
 					     nvram_safe_get("lan_ipaddr"));
 				else
 					save2file
-					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					    ("-t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 					     nvram_safe_get("lan_ipaddr"));
-			} 
-			else if (nvram_match("chilli_enable", "1")) {
-				if (strlen(nvram_safe_get("chilli_net")) > 0)
+			if (strlen(nvram_safe_get("chilli_net")) > 0)
 					save2file
-					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					    ("-t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
 					     nvram_safe_get("chilli_net"),
 					     nvram_safe_get("lan_ipaddr"));
 				else
 					save2file
-					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					    ("-t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 					     nvram_safe_get("lan_ipaddr"));
-			}
-		}
+//		}
+	}
+	else {
+				if (strlen(nvram_safe_get("hotss_net")) > 0)
+					save2file
+					    ("-t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					     nvram_safe_get("hotss_net"),
+					     nvram_safe_get("wan_ipaddr"));
+				else
+					save2file
+					    ("-t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					     nvram_safe_get("wan_ipaddr")); 
+			if (strlen(nvram_safe_get("chilli_net")) > 0)
+					save2file
+					    ("-t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					     nvram_safe_get("chilli_net"),
+					     nvram_safe_get("wan_ipaddr"));
+				else
+					save2file
+					    ("-t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					     nvram_safe_get("wan_ipaddr"));	
+					}
 	}
 #ifdef HAVE_PPPOESERVER
 	if (nvram_match("pppoeserver_enabled", "1")
@@ -2716,18 +2735,25 @@ static void filter_table(void)
 		save2file("-A logbrute -j %s\n", log_drop);
 	}
 #endif
-	if (nvram_match("chilli_enable", "1")) {
-		if (has_gateway()) {
+	if (nvram_match("chilli_enable", "1")) 
+		|| (nvram_match("hotss_enable", "1")) {
+/*	if we have a gw traffic will go there.
+		but if we dont have any gw we might use chilli on a local network only 
+		also we need to allow traffic outgoing to chilli
+		since nat doesnt do connection tracking (mangle) "state NEW" isnt enough 
+		so lets do it like this 4 testing*/
+/*		if (has_gateway()) {
 			save2file
-			    ("-I INPUT -m state --state NEW -i tun0 -j %s\n",
+			    ("-I INPUT -i tun0 -m state --state NEW -j %s\n",
 			     log_accept);
 			save2file
-			    ("-I FORWARD -m state --state NEW -i tun0 -j %s\n",
+			    ("-I FORWARD -i tun0 -m state --state NEW -j %s\n",
 			     log_accept);
-		} else {
+		} else {	*/
 			save2file("-I INPUT -i tun0 -j %s\n", log_accept);
 			save2file("-I FORWARD -i tun0 -j %s\n", log_accept);
-		}
+			save2file("-I FORWARD -o tun0 -j %s\n", log_accept);
+//		}
 	}
 
 	if (wanactive()) {
