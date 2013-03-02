@@ -769,42 +769,42 @@ static void nat_postrouting(void)
 //		if (has_gateway()) {
 				if (strlen(nvram_safe_get("hotss_net")) > 0)
 					save2file
-					    ("-t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
 					     nvram_safe_get("hotss_net"),
 					     nvram_safe_get("lan_ipaddr"));
 				else
 					save2file
-					    ("-t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 					     nvram_safe_get("lan_ipaddr"));
 			if (strlen(nvram_safe_get("chilli_net")) > 0)
 					save2file
-					    ("-t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
 					     nvram_safe_get("chilli_net"),
 					     nvram_safe_get("lan_ipaddr"));
 				else
 					save2file
-					    ("-t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 					     nvram_safe_get("lan_ipaddr"));
 //		}
 	}
 	else {
 				if (strlen(nvram_safe_get("hotss_net")) > 0)
 					save2file
-					    ("-t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
 					     nvram_safe_get("hotss_net"),
 					     nvram_safe_get("wan_ipaddr"));
 				else
 					save2file
-					    ("-t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 					     nvram_safe_get("wan_ipaddr")); 
 			if (strlen(nvram_safe_get("chilli_net")) > 0)
 					save2file
-					    ("-t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
 					     nvram_safe_get("chilli_net"),
 					     nvram_safe_get("wan_ipaddr"));
 				else
 					save2file
-					    ("-t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 					     nvram_safe_get("wan_ipaddr"));	
 					}
 	}
