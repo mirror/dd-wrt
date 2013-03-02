@@ -412,7 +412,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 
 	startradius = 0;
 	deconfigure_wifi();
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)
 	char mac[32];
 	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
 	MAC_ADD(mac);
@@ -1188,7 +1188,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	fclose(fp);
 
 	if (isSTA()) {
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)
 		if (nvram_match("mac_clone_enable", "1") &&
 		    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 		    nvram_invmatch("def_whwaddr", "")) {
@@ -1232,7 +1232,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		nvram_set(vathmac, vmacaddr);
 		setupSupplicant("wl0");
 	} else {
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)
 		if (nvram_match("mac_clone_enable", "1") &&
 		    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
 		    nvram_invmatch("def_whwaddr", "")) {
