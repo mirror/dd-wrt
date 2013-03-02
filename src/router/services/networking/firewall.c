@@ -769,49 +769,47 @@ static void nat_postrouting(void)
 //		if (has_gateway()) {
 				if (strlen(nvram_safe_get("hotss_net")) > 0)
 					save2file
-					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					    ("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
 					     nvram_safe_get("hotss_net"),
 					     nvram_safe_get("lan_ipaddr"));
 				else
 					save2file
-					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					    ("-A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 					     nvram_safe_get("lan_ipaddr"));
 			if (strlen(nvram_safe_get("chilli_net")) > 0)
 					save2file
-					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					    ("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
 					     nvram_safe_get("chilli_net"),
 					     nvram_safe_get("lan_ipaddr"));
 				else
 					save2file
-					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					    ("-A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 					     nvram_safe_get("lan_ipaddr"));
 //		}
 	}
 	else {
 				if (strlen(nvram_safe_get("hotss_net")) > 0)
 					save2file
-					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-					     nvram_safe_get("hotss_net"),
-					     nvram_safe_get("wan_ipaddr"));
+					    ("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					     nvram_safe_get("hotss_net"), wanaddr);
 				else
 					save2file
-					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-					     nvram_safe_get("wan_ipaddr")); 
+					    ("-A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					     wanaddr); 
 			if (strlen(nvram_safe_get("chilli_net")) > 0)
 					save2file
-					    ("-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-					     nvram_safe_get("chilli_net"),
-					     nvram_safe_get("wan_ipaddr"));
+					    ("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					     nvram_safe_get("chilli_net"), wanaddr);
 				else
 					save2file
-					    ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-					     nvram_safe_get("wan_ipaddr"));	
+					    ("-A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					     wanaddr);	
 					}
 	}
 #ifdef HAVE_PPPOESERVER
 	if (nvram_match("pppoeserver_enabled", "1")
 	    && wanactive())
-		save2file("-I POSTROUTING -s %s/%s -j SNAT --to-source=%s\n",
+		save2file("-A POSTROUTING -s %s/%s -j SNAT --to-source=%s\n",
 			  nvram_safe_get("pppoeserver_remotenet"),
 			  nvram_safe_get("pppoeserver_remotemask"), wanaddr);
 #endif
