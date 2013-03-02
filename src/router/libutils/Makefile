@@ -326,6 +326,9 @@ endif
 ifeq ($(CONFIG_WHRG300N),y)
   CFLAGS += -DHAVE_WHRG300N
 endif
+ifeq ($(CONFIG_HAMEA15),y)
+  CFLAGS += -DHAVE_HAMEA15
+endif
 ifeq ($(CONFIG_WCRGN),y)
   CFLAGS += -DHAVE_WCRGN
 endif

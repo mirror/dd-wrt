@@ -217,6 +217,9 @@ endif
 ifeq ($(CONFIG_RT3352),y)
   CFLAGS_EXTRA += -DHAVE_RT3352
 endif
+ifeq ($(CONFIG_RT5350),y)
+  CFLAGS_EXTRA += -DHAVE_RT5350
+endif
 ifeq ($(CONFIG_NP25G),y)
   CFLAGS_EXTRA += -DHAVE_NP25G
 endif
@@ -1227,6 +1230,9 @@ ifeq ($(CONFIG_RT2880),y)
 endif
 ifeq ($(CONFIG_RT61),y)
   CFLAGS_EXTRA += -DHAVE_RT61
+endif
+ifeq ($(CONFIG_HAMEA15),y)
+  CFLAGS_EXTRA += -DHAVE_HAMEA15
 endif
 ifeq ($(CONFIG_WCRGN),y)
   CFLAGS_EXTRA += -DHAVE_WCRGN

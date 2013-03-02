@@ -232,6 +232,12 @@ endif
 ifeq ($(CONFIG_IPETH),y)
 CFLAGS += -DHAVE_IPETH
 endif
+ifeq ($(CONFIG_WCRGN),y)
+CFLAGS += -DHAVE_WCRGN
+endif
+ifeq ($(CONFIG_HAMEA15),y)
+CFLAGS += -DHAVE_HAMEA15
+endif
 ifeq ($(CONFIG_OLED),y)
 CFLAGS += -DHAVE_OLED
 endif
