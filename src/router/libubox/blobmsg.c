@@ -1,18 +1,18 @@
 /*
- * blobmsg - library for generating/parsing structured blob messages
+ * Copyright (C) 2010-2012 Felix Fietkau <nbd@openwrt.org>
  *
- * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License version 2.1
- * as published by the Free Software Foundation
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
 #include "blobmsg.h"
 
 static const int blob_type[__BLOBMSG_TYPE_LAST] = {
@@ -21,6 +21,7 @@ static const int blob_type[__BLOBMSG_TYPE_LAST] = {
 	[BLOBMSG_TYPE_INT32] = BLOB_ATTR_INT32,
 	[BLOBMSG_TYPE_INT64] = BLOB_ATTR_INT64,
 	[BLOBMSG_TYPE_STRING] = BLOB_ATTR_STRING,
+	[BLOBMSG_TYPE_UNSPEC] = BLOB_ATTR_BINARY,
 };
 
 static uint16_t
@@ -52,7 +53,7 @@ bool blobmsg_check_attr(const struct blob_attr *attr, bool name)
 	len = blobmsg_data_len(attr);
 	data = blobmsg_data(attr);
 
-	if (!id || id > BLOBMSG_TYPE_LAST)
+	if (id > BLOBMSG_TYPE_LAST)
 		return false;
 
 	if (!blob_type[id])
@@ -60,6 +61,61 @@ bool blobmsg_check_attr(const struct blob_attr *attr, bool name)
 
 	return blob_check_type(data, len, blob_type[id]);
 }
+
+bool blobmsg_check_attr_list(const struct blob_attr *attr, int type)
+{
+	struct blob_attr *cur;
+	bool name;
+	int rem;
+
+	switch (blobmsg_type(attr)) {
+	case BLOBMSG_TYPE_TABLE:
+		name = true;
+		break;
+	case BLOBMSG_TYPE_ARRAY:
+		name = false;
+		break;
+	default:
+		return false;
+	}
+
+	blobmsg_for_each_attr(cur, attr, rem) {
+		if (blobmsg_type(cur) != type)
+			return false;
+
+		if (!blobmsg_check_attr(cur, name))
+			return false;
+	}
+
+	return true;
+}
+
+int blobmsg_parse_array(const struct blobmsg_policy *policy, int policy_len,
+			struct blob_attr **tb, void *data, int len)
+{
+	struct blob_attr *attr;
+	int i = 0;
+
+	memset(tb, 0, policy_len * sizeof(*tb));
+	__blob_for_each_attr(attr, data, len) {
+		if (policy[i].type != BLOBMSG_TYPE_UNSPEC &&
+		    blob_id(attr) != policy[i].type)
+			continue;
+
+		if (!blobmsg_check_attr(attr, false))
+			return -1;
+
+		if (tb[i])
+			continue;
+
+		tb[i++] = attr;
+		if (i == policy_len)
+			break;
+	}
+
+	return 0;
+}
+
 
 int blobmsg_parse(const struct blobmsg_policy *policy, int policy_len,
                   struct blob_attr **tb, void *data, int len)
@@ -160,6 +216,31 @@ blobmsg_open_nested(struct blob_buf *buf, const char *name, bool array)
 	return (void *)offset;
 }
 
+void
+blobmsg_vprintf(struct blob_buf *buf, const char *name, const char *format, va_list arg)
+{
+	va_list arg2;
+	char cbuf;
+	int len;
+
+	va_copy(arg2, arg);
+	len = vsnprintf(&cbuf, sizeof(cbuf), format, arg2);
+	va_end(arg2);
+
+	vsprintf(blobmsg_alloc_string_buffer(buf, name, len + 1), format, arg);
+	blobmsg_add_string_buffer(buf);
+}
+
+void
+blobmsg_printf(struct blob_buf *buf, const char *name, const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	blobmsg_vprintf(buf, name, format, ap);
+	va_end(ap);
+}
+
 void *
 blobmsg_alloc_string_buffer(struct blob_buf *buf, const char *name, int maxlen)
 {
@@ -175,6 +256,23 @@ blobmsg_alloc_string_buffer(struct blob_buf *buf, const char *name, int maxlen)
 	blob_set_raw_len(attr, blob_raw_len(attr) - maxlen);
 
 	return data_dest;
+}
+
+void *
+blobmsg_realloc_string_buffer(struct blob_buf *buf, int maxlen)
+{
+	struct blob_attr *attr = blob_next(buf->head);
+	int offset = attr_to_offset(buf, blob_next(buf->head)) + blob_pad_len(attr);
+	int required = maxlen - (buf->buflen - offset);
+
+	if (required <= 0)
+		goto out;
+
+	blob_buf_grow(buf, required);
+	attr = blob_next(buf->head);
+
+out:
+	return blobmsg_data(attr);
 }
 
 void

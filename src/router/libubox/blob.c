@@ -50,6 +50,17 @@ attr_to_offset(struct blob_buf *buf, struct blob_attr *attr)
 	return (char *)attr - (char *) buf->buf;
 }
 
+void
+blob_buf_grow(struct blob_buf *buf, int required)
+{
+	int offset_head = attr_to_offset(buf, buf->head);
+
+	if (!buf->grow || !buf->grow(buf, required))
+		return;
+
+	buf->head = offset_to_attr(buf, offset_head);
+}
+
 static struct blob_attr *
 blob_add(struct blob_buf *buf, struct blob_attr *pos, int id, int payload)
 {
@@ -58,12 +69,7 @@ blob_add(struct blob_buf *buf, struct blob_attr *pos, int id, int payload)
 	struct blob_attr *attr;
 
 	if (required > 0) {
-		int offset_head = attr_to_offset(buf, buf->head);
-
-		if (!buf->grow || !buf->grow(buf, required))
-			return NULL;
-
-		buf->head = offset_to_attr(buf, offset_head);
+		blob_buf_grow(buf, required);
 		attr = offset_to_attr(buf, offset);
 	} else {
 		attr = pos;
@@ -242,4 +248,18 @@ blob_attr_equal(const struct blob_attr *a1, const struct blob_attr *a2)
 		return false;
 
 	return !memcmp(a1, a2, blob_pad_len(a1));
+}
+
+struct blob_attr *
+blob_memdup(struct blob_attr *attr)
+{
+	struct blob_attr *ret;
+	int size = blob_pad_len(attr);
+
+	ret = malloc(size);
+	if (!ret)
+		return NULL;
+
+	memcpy(ret, attr, size);
+	return ret;
 }

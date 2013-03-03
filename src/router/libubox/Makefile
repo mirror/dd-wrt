@@ -8,7 +8,7 @@ default_target: all
 #=============================================================================
 # Special targets provided by cmake.
 
-# Disable implicit rules so canoncical targets will work.
+# Disable implicit rules so canonical targets will work.
 .SUFFIXES:
 
 # Remove some rules from gmake that .SUFFIXES does not remove.
@@ -30,19 +30,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /home/xfs/openwrt/trunk2/trunk/staging_dir/host/bin/cmake
+CMAKE_COMMAND = /usr/bin/cmake
 
 # The command to remove a file.
-RM = /home/xfs/openwrt/trunk2/trunk/staging_dir/host/bin/cmake -E remove -f
+RM = /usr/bin/cmake -E remove -f
 
 # The program to use to edit the cache.
-CMAKE_EDIT_COMMAND = /home/xfs/openwrt/trunk2/trunk/staging_dir/host/bin/ccmake
+CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/xfs/openwrt/trunk2/trunk/build_dir/target-mips_r2_uClibc-0.9.32/libubox-2011-11-17
+CMAKE_SOURCE_DIR = /home/seg/DEV/pb42/src/router/libubox
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/xfs/openwrt/trunk2/trunk/build_dir/target-mips_r2_uClibc-0.9.32/libubox-2011-11-17
+CMAKE_BINARY_DIR = /home/seg/DEV/pb42/src/router/libubox
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -50,7 +50,7 @@ CMAKE_BINARY_DIR = /home/xfs/openwrt/trunk2/trunk/build_dir/target-mips_r2_uClib
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	/home/xfs/openwrt/trunk2/trunk/staging_dir/host/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/usr/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -60,19 +60,19 @@ edit_cache/fast: edit_cache
 # Special rule for the target install
 install: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/home/xfs/openwrt/trunk2/trunk/staging_dir/host/bin/cmake -P cmake_install.cmake
+	/usr/bin/cmake -P cmake_install.cmake
 .PHONY : install
 
 # Special rule for the target install
 install/fast: preinstall/fast
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/home/xfs/openwrt/trunk2/trunk/staging_dir/host/bin/cmake -P cmake_install.cmake
+	/usr/bin/cmake -P cmake_install.cmake
 .PHONY : install/fast
 
 # Special rule for the target install/local
 install/local: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/home/xfs/openwrt/trunk2/trunk/staging_dir/host/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
 .PHONY : install/local
 
 # Special rule for the target install/local
@@ -82,7 +82,7 @@ install/local/fast: install/local
 # Special rule for the target install/strip
 install/strip: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/home/xfs/openwrt/trunk2/trunk/staging_dir/host/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
 .PHONY : install/strip
 
 # Special rule for the target install/strip
@@ -101,7 +101,7 @@ list_install_components/fast: list_install_components
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/home/xfs/openwrt/trunk2/trunk/staging_dir/host/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -110,9 +110,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/xfs/openwrt/trunk2/trunk/build_dir/target-mips_r2_uClibc-0.9.32/libubox-2011-11-17/CMakeFiles /home/xfs/openwrt/trunk2/trunk/build_dir/target-mips_r2_uClibc-0.9.32/libubox-2011-11-17/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/seg/DEV/pb42/src/router/libubox/CMakeFiles /home/seg/DEV/pb42/src/router/libubox/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/xfs/openwrt/trunk2/trunk/build_dir/target-mips_r2_uClibc-0.9.32/libubox-2011-11-17/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/seg/DEV/pb42/src/router/libubox/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -140,32 +140,6 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named blobmsg_json
-
-# Build rule for target.
-blobmsg_json: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 blobmsg_json
-.PHONY : blobmsg_json
-
-# fast build rule for target.
-blobmsg_json/fast:
-	$(MAKE) -f CMakeFiles/blobmsg_json.dir/build.make CMakeFiles/blobmsg_json.dir/build
-.PHONY : blobmsg_json/fast
-
-#=============================================================================
-# Target rules for targets named jshn
-
-# Build rule for target.
-jshn: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 jshn
-.PHONY : jshn
-
-# fast build rule for target.
-jshn/fast:
-	$(MAKE) -f CMakeFiles/jshn.dir/build.make CMakeFiles/jshn.dir/build
-.PHONY : jshn/fast
-
-#=============================================================================
 # Target rules for targets named ubox
 
 # Build rule for target.
@@ -177,6 +151,30 @@ ubox: cmake_check_build_system
 ubox/fast:
 	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/build
 .PHONY : ubox/fast
+
+avl-cmp.o: avl-cmp.c.o
+.PHONY : avl-cmp.o
+
+# target to build an object file
+avl-cmp.c.o:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/avl-cmp.c.o
+.PHONY : avl-cmp.c.o
+
+avl-cmp.i: avl-cmp.c.i
+.PHONY : avl-cmp.i
+
+# target to preprocess a source file
+avl-cmp.c.i:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/avl-cmp.c.i
+.PHONY : avl-cmp.c.i
+
+avl-cmp.s: avl-cmp.c.s
+.PHONY : avl-cmp.s
+
+# target to generate assembly for a file
+avl-cmp.c.s:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/avl-cmp.c.s
+.PHONY : avl-cmp.c.s
 
 avl.o: avl.c.o
 .PHONY : avl.o
@@ -250,54 +248,6 @@ blobmsg.c.s:
 	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/blobmsg.c.s
 .PHONY : blobmsg.c.s
 
-blobmsg_json.o: blobmsg_json.c.o
-.PHONY : blobmsg_json.o
-
-# target to build an object file
-blobmsg_json.c.o:
-	$(MAKE) -f CMakeFiles/blobmsg_json.dir/build.make CMakeFiles/blobmsg_json.dir/blobmsg_json.c.o
-.PHONY : blobmsg_json.c.o
-
-blobmsg_json.i: blobmsg_json.c.i
-.PHONY : blobmsg_json.i
-
-# target to preprocess a source file
-blobmsg_json.c.i:
-	$(MAKE) -f CMakeFiles/blobmsg_json.dir/build.make CMakeFiles/blobmsg_json.dir/blobmsg_json.c.i
-.PHONY : blobmsg_json.c.i
-
-blobmsg_json.s: blobmsg_json.c.s
-.PHONY : blobmsg_json.s
-
-# target to generate assembly for a file
-blobmsg_json.c.s:
-	$(MAKE) -f CMakeFiles/blobmsg_json.dir/build.make CMakeFiles/blobmsg_json.dir/blobmsg_json.c.s
-.PHONY : blobmsg_json.c.s
-
-jshn.o: jshn.c.o
-.PHONY : jshn.o
-
-# target to build an object file
-jshn.c.o:
-	$(MAKE) -f CMakeFiles/jshn.dir/build.make CMakeFiles/jshn.dir/jshn.c.o
-.PHONY : jshn.c.o
-
-jshn.i: jshn.c.i
-.PHONY : jshn.i
-
-# target to preprocess a source file
-jshn.c.i:
-	$(MAKE) -f CMakeFiles/jshn.dir/build.make CMakeFiles/jshn.dir/jshn.c.i
-.PHONY : jshn.c.i
-
-jshn.s: jshn.c.s
-.PHONY : jshn.s
-
-# target to generate assembly for a file
-jshn.c.s:
-	$(MAKE) -f CMakeFiles/jshn.dir/build.make CMakeFiles/jshn.dir/jshn.c.s
-.PHONY : jshn.c.s
-
 uloop.o: uloop.c.o
 .PHONY : uloop.o
 
@@ -346,21 +296,118 @@ usock.c.s:
 	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/usock.c.s
 .PHONY : usock.c.s
 
+ustream-fd.o: ustream-fd.c.o
+.PHONY : ustream-fd.o
+
+# target to build an object file
+ustream-fd.c.o:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/ustream-fd.c.o
+.PHONY : ustream-fd.c.o
+
+ustream-fd.i: ustream-fd.c.i
+.PHONY : ustream-fd.i
+
+# target to preprocess a source file
+ustream-fd.c.i:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/ustream-fd.c.i
+.PHONY : ustream-fd.c.i
+
+ustream-fd.s: ustream-fd.c.s
+.PHONY : ustream-fd.s
+
+# target to generate assembly for a file
+ustream-fd.c.s:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/ustream-fd.c.s
+.PHONY : ustream-fd.c.s
+
+ustream.o: ustream.c.o
+.PHONY : ustream.o
+
+# target to build an object file
+ustream.c.o:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/ustream.c.o
+.PHONY : ustream.c.o
+
+ustream.i: ustream.c.i
+.PHONY : ustream.i
+
+# target to preprocess a source file
+ustream.c.i:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/ustream.c.i
+.PHONY : ustream.c.i
+
+ustream.s: ustream.c.s
+.PHONY : ustream.s
+
+# target to generate assembly for a file
+ustream.c.s:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/ustream.c.s
+.PHONY : ustream.c.s
+
+utils.o: utils.c.o
+.PHONY : utils.o
+
+# target to build an object file
+utils.c.o:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/utils.c.o
+.PHONY : utils.c.o
+
+utils.i: utils.c.i
+.PHONY : utils.i
+
+# target to preprocess a source file
+utils.c.i:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/utils.c.i
+.PHONY : utils.c.i
+
+utils.s: utils.c.s
+.PHONY : utils.s
+
+# target to generate assembly for a file
+utils.c.s:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/utils.c.s
+.PHONY : utils.c.s
+
+vlist.o: vlist.c.o
+.PHONY : vlist.o
+
+# target to build an object file
+vlist.c.o:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/vlist.c.o
+.PHONY : vlist.c.o
+
+vlist.i: vlist.c.i
+.PHONY : vlist.i
+
+# target to preprocess a source file
+vlist.c.i:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/vlist.c.i
+.PHONY : vlist.c.i
+
+vlist.s: vlist.c.s
+.PHONY : vlist.s
+
+# target to generate assembly for a file
+vlist.c.s:
+	$(MAKE) -f CMakeFiles/ubox.dir/build.make CMakeFiles/ubox.dir/vlist.c.s
+.PHONY : vlist.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... blobmsg_json"
 	@echo "... edit_cache"
 	@echo "... install"
 	@echo "... install/local"
 	@echo "... install/strip"
-	@echo "... jshn"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... ubox"
+	@echo "... avl-cmp.o"
+	@echo "... avl-cmp.i"
+	@echo "... avl-cmp.s"
 	@echo "... avl.o"
 	@echo "... avl.i"
 	@echo "... avl.s"
@@ -370,18 +417,24 @@ help:
 	@echo "... blobmsg.o"
 	@echo "... blobmsg.i"
 	@echo "... blobmsg.s"
-	@echo "... blobmsg_json.o"
-	@echo "... blobmsg_json.i"
-	@echo "... blobmsg_json.s"
-	@echo "... jshn.o"
-	@echo "... jshn.i"
-	@echo "... jshn.s"
 	@echo "... uloop.o"
 	@echo "... uloop.i"
 	@echo "... uloop.s"
 	@echo "... usock.o"
 	@echo "... usock.i"
 	@echo "... usock.s"
+	@echo "... ustream-fd.o"
+	@echo "... ustream-fd.i"
+	@echo "... ustream-fd.s"
+	@echo "... ustream.o"
+	@echo "... ustream.i"
+	@echo "... ustream.s"
+	@echo "... utils.o"
+	@echo "... utils.i"
+	@echo "... utils.s"
+	@echo "... vlist.o"
+	@echo "... vlist.i"
+	@echo "... vlist.s"
 .PHONY : help
 
 
