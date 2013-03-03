@@ -230,6 +230,8 @@ obj-$(CONFIG_LINKS) += links
 obj-$(CONFIG_SOFTFLOWD) += softflowd
 obj-$(CONFIG_NEXTMEDIAEXTRA) += nextmediaextra
 obj-$(CONFIG_LIBQMI) += glib20 libqmi
+obj-$(CONFIG_UQMI) += libubox uqmi
+obj-$(CONFIG_MTDUTILS) += mtd-utils
 
 #obj-y+=anchorfree
 obj-y+=ttraff
