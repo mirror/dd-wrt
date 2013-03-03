@@ -764,7 +764,7 @@ static int wanactive(void)
 static void nat_postrouting(void)
 {
  if (nvram_match("hotss_enable", "1") 
-		|| (nvram_match("chilli_enable", "1")) {
+		|| nvram_match("chilli_enable", "1")) {
 			if (nvram_match("wan_proto", "disabled")) {
 //		if (has_gateway()) {
 				if (strlen(nvram_safe_get("hotss_net")) > 0)
@@ -2733,8 +2733,8 @@ static void filter_table(void)
 		save2file("-A logbrute -j %s\n", log_drop);
 	}
 #endif
-	if (nvram_match("chilli_enable", "1")) 
-		|| (nvram_match("hotss_enable", "1")) {
+	if (nvram_match("chilli_enable", "1") 
+		|| nvram_match("hotss_enable", "1")) {
 /*	if we have a gw traffic will go there.
 		but if we dont have any gw we might use chilli on a local network only 
 		also we need to allow traffic outgoing to chilli
