@@ -1,4 +1,4 @@
-# Install script for directory: /home/xfs/qmi/uqmi/uqmi
+# Install script for directory: /home/seg/DEV/pb42/src/router/uqmi
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -33,7 +33,7 @@ IF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 ENDIF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 
 IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
-  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/sbin" TYPE EXECUTABLE FILES "/home/xfs/qmi/uqmi/uqmi/CMakeFiles/CMakeRelink.dir/uqmi")
+  FILE(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/sbin" TYPE EXECUTABLE FILES "/home/seg/DEV/pb42/src/router/uqmi/CMakeFiles/CMakeRelink.dir/uqmi")
   IF(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/sbin/uqmi" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/sbin/uqmi")
     IF(CMAKE_INSTALL_DO_STRIP)
@@ -48,7 +48,7 @@ ELSE(CMAKE_INSTALL_COMPONENT)
   SET(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 ENDIF(CMAKE_INSTALL_COMPONENT)
 
-FILE(WRITE "/home/xfs/qmi/uqmi/uqmi/${CMAKE_INSTALL_MANIFEST}" "")
+FILE(WRITE "/home/seg/DEV/pb42/src/router/uqmi/${CMAKE_INSTALL_MANIFEST}" "")
 FOREACH(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  FILE(APPEND "/home/xfs/qmi/uqmi/uqmi/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
+  FILE(APPEND "/home/seg/DEV/pb42/src/router/uqmi/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
 ENDFOREACH(file)
