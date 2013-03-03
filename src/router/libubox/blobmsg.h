@@ -1,21 +1,22 @@
 /*
- * blobmsg - library for generating/parsing structured blob messages
+ * Copyright (C) 2010-2012 Felix Fietkau <nbd@openwrt.org>
  *
- * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License version 2.1
- * as published by the Free Software Foundation
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
 #ifndef __BLOBMSG_H
 #define __BLOBMSG_H
 
+#include <stdarg.h>
 #include "blob.h"
 
 #define BLOBMSG_ALIGN	2
@@ -78,8 +79,11 @@ static inline int blobmsg_data_len(const struct blob_attr *attr)
 }
 
 bool blobmsg_check_attr(const struct blob_attr *attr, bool name);
+bool blobmsg_check_attr_list(const struct blob_attr *attr, int type);
 int blobmsg_parse(const struct blobmsg_policy *policy, int policy_len,
                   struct blob_attr **tb, void *data, int len);
+int blobmsg_parse_array(const struct blobmsg_policy *policy, int policy_len,
+			struct blob_attr **tb, void *data, int len);
 
 int blobmsg_add_field(struct blob_buf *buf, int type, const char *name,
                       const void *data, int len);
@@ -115,6 +119,13 @@ static inline int
 blobmsg_add_string(struct blob_buf *buf, const char *name, const char *string)
 {
 	return blobmsg_add_field(buf, BLOBMSG_TYPE_STRING, name, string, strlen(string) + 1);
+}
+
+static inline int
+blobmsg_add_blob(struct blob_buf *buf, struct blob_attr *attr)
+{
+	return blobmsg_add_field(buf, blobmsg_type(attr), blobmsg_name(attr),
+				 blobmsg_data(attr), blobmsg_data_len(attr));
 }
 
 void *blobmsg_open_nested(struct blob_buf *buf, const char *name, bool array);
@@ -170,11 +181,25 @@ static inline uint32_t blobmsg_get_u32(struct blob_attr *attr)
 
 static inline uint64_t blobmsg_get_u64(struct blob_attr *attr)
 {
-	return be64_to_cpu(*(uint64_t *) blobmsg_data(attr));
+	uint32_t *ptr = blobmsg_data(attr);
+	uint64_t tmp = ((uint64_t) be32_to_cpu(ptr[0])) << 32;
+	tmp |= be32_to_cpu(ptr[1]);
+	return tmp;
+}
+
+static inline char *blobmsg_get_string(struct blob_attr *attr)
+{
+	return blobmsg_data(attr);
 }
 
 void *blobmsg_alloc_string_buffer(struct blob_buf *buf, const char *name, int maxlen);
+void *blobmsg_realloc_string_buffer(struct blob_buf *buf, int maxlen);
 void blobmsg_add_string_buffer(struct blob_buf *buf);
+
+void blobmsg_vprintf(struct blob_buf *buf, const char *name, const char *format, va_list arg);
+void blobmsg_printf(struct blob_buf *buf, const char *name, const char *format, ...)
+     __attribute__((format(printf, 3, 4)));
+
 
 /* blobmsg to json formatting */
 

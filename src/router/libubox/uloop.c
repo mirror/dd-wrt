@@ -1,24 +1,20 @@
 /*
- *   Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
- *   Copyright (C) 2010 John Crispin <blogic@openwrt.org>
- *   Copyright (C) 2010 Steven Barth <steven@midlink.org>
+ * uloop - event loop implementation
  *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ * Copyright (C) 2010-2013 Felix Fietkau <nbd@openwrt.org>
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
- *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
 #include <sys/time.h>
 #include <sys/types.h>
 
@@ -32,6 +28,7 @@
 #include <stdbool.h>
 
 #include "uloop.h"
+#include "utils.h"
 
 #ifdef USE_KQUEUE
 #include <sys/event.h>
@@ -41,10 +38,6 @@
 #endif
 #include <sys/wait.h>
 
-
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
 #define ULOOP_MAX_EVENTS 10
 
 static struct list_head timeouts = LIST_HEAD_INIT(timeouts);
@@ -54,17 +47,24 @@ static int poll_fd = -1;
 bool uloop_cancelled = false;
 bool uloop_handle_sigchld = true;
 static bool do_sigchld = false;
+static int cur_fd, cur_nfds;
 
 #ifdef USE_KQUEUE
 
 int uloop_init(void)
 {
+	struct timespec timeout = { 0, 0 };
+	struct kevent ev = {};
+
 	if (poll_fd >= 0)
 		return 0;
 
 	poll_fd = kqueue();
 	if (poll_fd < 0)
 		return -1;
+
+	EV_SET(&ev, SIGCHLD, EVFILT_SIGNAL, EV_ADD, 0, 0, 0);
+	kevent(poll_fd, &ev, 1, NULL, 0, &timeout);
 
 	return 0;
 }
@@ -84,58 +84,89 @@ static uint16_t get_flags(unsigned int flags, unsigned int mask)
 	return kflags;
 }
 
-static int register_poll(struct uloop_fd *fd, unsigned int flags)
+static struct kevent events[ULOOP_MAX_EVENTS];
+
+static int register_kevent(struct uloop_fd *fd, unsigned int flags)
 {
 	struct timespec timeout = { 0, 0 };
 	struct kevent ev[2];
-	unsigned int changed;
 	int nev = 0;
+	unsigned int fl = 0;
+	unsigned int changed;
+	uint16_t kflags;
 
-	changed = fd->kqflags ^ flags;
+	if (flags & ULOOP_EDGE_DEFER)
+		flags &= ~ULOOP_EDGE_TRIGGER;
+
+	changed = flags ^ fd->flags;
 	if (changed & ULOOP_EDGE_TRIGGER)
 		changed |= flags;
 
 	if (changed & ULOOP_READ) {
-		uint16_t kflags = get_flags(flags, ULOOP_READ);
+		kflags = get_flags(flags, ULOOP_READ);
 		EV_SET(&ev[nev++], fd->fd, EVFILT_READ, kflags, 0, 0, fd);
 	}
 
 	if (changed & ULOOP_WRITE) {
-		uint16_t kflags = get_flags(flags, ULOOP_WRITE);
+		kflags = get_flags(flags, ULOOP_WRITE);
 		EV_SET(&ev[nev++], fd->fd, EVFILT_WRITE, kflags, 0, 0, fd);
 	}
 
-	if (nev && (kevent(poll_fd, ev, nev, NULL, 0, &timeout) == -1))
+	if (!flags)
+		fl |= EV_DELETE;
+
+	fd->flags = flags;
+	if (kevent(poll_fd, ev, nev, NULL, fl, &timeout) == -1)
 		return -1;
 
-	fd->kqflags = flags;
 	return 0;
+}
+
+static int register_poll(struct uloop_fd *fd, unsigned int flags)
+{
+	if (flags & ULOOP_EDGE_TRIGGER)
+		flags |= ULOOP_EDGE_DEFER;
+	else
+		flags &= ~ULOOP_EDGE_DEFER;
+
+	return register_kevent(fd, flags);
 }
 
 int uloop_fd_delete(struct uloop_fd *sock)
 {
+	int i;
+
+	for (i = cur_fd + 1; i < cur_nfds; i++) {
+		if (events[i].udata != sock)
+			continue;
+
+		events[i].udata = NULL;
+	}
+
 	sock->registered = false;
 	return register_poll(sock, 0);
 }
 
 static void uloop_run_events(int timeout)
 {
-	struct kevent events[ULOOP_MAX_EVENTS];
 	struct timespec ts;
 	int nfds, n;
 
-	if (timeout > 0) {
+	if (timeout >= 0) {
 		ts.tv_sec = timeout / 1000;
 		ts.tv_nsec = (timeout % 1000) * 1000000;
 	}
 
-	nfds = kevent(poll_fd, NULL, 0, events, ARRAY_SIZE(events), timeout > 0 ? &ts : NULL);
+	nfds = kevent(poll_fd, NULL, 0, events, ARRAY_SIZE(events), timeout >= 0 ? &ts : NULL);
 	for(n = 0; n < nfds; ++n)
 	{
 		struct uloop_fd *u = events[n].udata;
 		unsigned int ev = 0;
 
-		if(events[n].flags & EV_ERROR) {
+		if (!u)
+			continue;
+
+		if (events[n].flags & EV_ERROR) {
 			u->error = true;
 			uloop_fd_delete(u);
 		}
@@ -145,14 +176,22 @@ static void uloop_run_events(int timeout)
 		else if (events[n].filter == EVFILT_WRITE)
 			ev |= ULOOP_WRITE;
 
-		if(events[n].flags & EV_EOF)
+		if (events[n].flags & EV_EOF)
 			u->eof = true;
 		else if (!ev)
 			continue;
 
-		if(u->cb)
+		if (u->cb) {
+			cur_fd = n;
+			cur_nfds = nfds;
 			u->cb(u, ev);
+			if (u->flags & ULOOP_EDGE_DEFER) {
+				u->flags &= ~ULOOP_EDGE_DEFER;
+				register_kevent(u, u->flags);
+			}
+		}
 	}
+	cur_nfds = 0;
 }
 
 #endif
@@ -201,16 +240,28 @@ static int register_poll(struct uloop_fd *fd, unsigned int flags)
 	return epoll_ctl(poll_fd, op, fd->fd, &ev);
 }
 
+static struct epoll_event events[ULOOP_MAX_EVENTS];
+
 int uloop_fd_delete(struct uloop_fd *sock)
 {
+	int i;
+
+	if (!sock->registered)
+		return 0;
+
+	for (i = cur_fd + 1; i < cur_nfds; i++) {
+		if (events[i].data.ptr != sock)
+			continue;
+
+		events[i].data.ptr = NULL;
+	}
 	sock->registered = false;
 	return epoll_ctl(poll_fd, EPOLL_CTL_DEL, sock->fd, 0);
 }
 
 static void uloop_run_events(int timeout)
 {
-	struct epoll_event events[ULOOP_MAX_EVENTS];
-	int nfds, n;
+	int n, nfds;
 
 	nfds = epoll_wait(poll_fd, events, ARRAY_SIZE(events), timeout);
 	for(n = 0; n < nfds; ++n)
@@ -218,12 +269,15 @@ static void uloop_run_events(int timeout)
 		struct uloop_fd *u = events[n].data.ptr;
 		unsigned int ev = 0;
 
-		if(events[n].events & EPOLLERR) {
+		if (!u)
+			continue;
+
+		if(events[n].events & (EPOLLERR|EPOLLHUP)) {
 			u->error = true;
 			uloop_fd_delete(u);
 		}
 
-		if(!(events[n].events & (EPOLLRDHUP|EPOLLIN|EPOLLOUT|EPOLLERR)))
+		if(!(events[n].events & (EPOLLRDHUP|EPOLLIN|EPOLLOUT|EPOLLERR|EPOLLHUP)))
 			continue;
 
 		if(events[n].events & EPOLLRDHUP)
@@ -235,9 +289,13 @@ static void uloop_run_events(int timeout)
 		if(events[n].events & EPOLLOUT)
 			ev |= ULOOP_WRITE;
 
-		if(u->cb)
+		if(u->cb) {
+			cur_fd = n;
+			cur_nfds = nfds;
 			u->cb(u, ev);
+		}
 	}
+	cur_nfds = 0;
 }
 
 #endif
@@ -246,6 +304,9 @@ int uloop_fd_add(struct uloop_fd *sock, unsigned int flags)
 {
 	unsigned int fl;
 	int ret;
+
+	if (!(flags & (ULOOP_READ | ULOOP_WRITE)))
+		return uloop_fd_delete(sock);
 
 	if (!sock->registered && !(flags & ULOOP_BLOCKING)) {
 		fl = fcntl(sock->fd, F_GETFL, 0);
@@ -266,10 +327,9 @@ out:
 
 static int tv_diff(struct timeval *t1, struct timeval *t2)
 {
-	if (t1->tv_sec != t2->tv_sec)
-		return (t1->tv_sec - t2->tv_sec) * 1000;
-	else
-		return (t1->tv_usec - t2->tv_usec) / 1000;
+	return
+		(t1->tv_sec - t2->tv_sec) * 1000 +
+		(t1->tv_usec - t2->tv_usec) / 1000;
 }
 
 int uloop_timeout_add(struct uloop_timeout *timeout)
@@ -293,6 +353,15 @@ int uloop_timeout_add(struct uloop_timeout *timeout)
 	return 0;
 }
 
+static void uloop_gettime(struct timeval *tv)
+{
+	struct timespec ts;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	tv->tv_sec = ts.tv_sec;
+	tv->tv_usec = ts.tv_nsec / 1000;
+}
+
 int uloop_timeout_set(struct uloop_timeout *timeout, int msecs)
 {
 	struct timeval *time = &timeout->time;
@@ -300,14 +369,14 @@ int uloop_timeout_set(struct uloop_timeout *timeout, int msecs)
 	if (timeout->pending)
 		uloop_timeout_cancel(timeout);
 
-	gettimeofday(&timeout->time, NULL);
+	uloop_gettime(&timeout->time);
 
 	time->tv_sec += msecs / 1000;
-	time->tv_usec += msecs % 1000;
+	time->tv_usec += (msecs % 1000) * 1000;
 
 	if (time->tv_usec > 1000000) {
 		time->tv_sec++;
-		time->tv_usec %= 100000;
+		time->tv_usec %= 1000000;
 	}
 
 	return uloop_timeout_add(timeout);
@@ -322,6 +391,18 @@ int uloop_timeout_cancel(struct uloop_timeout *timeout)
 	timeout->pending = false;
 
 	return 0;
+}
+
+int uloop_timeout_remaining(struct uloop_timeout *timeout)
+{
+	struct timeval now;
+
+	if (!timeout->pending)
+		return -1;
+
+	uloop_gettime(&now);
+
+	return tv_diff(&timeout->time, &now);
 }
 
 int uloop_process_add(struct uloop_process *p)
@@ -426,9 +507,11 @@ static int uloop_get_next_timeout(struct timeval *tv)
 
 static void uloop_process_timeouts(struct timeval *tv)
 {
-	struct uloop_timeout *t, *tmp;
+	struct uloop_timeout *t;
 
-	list_for_each_entry_safe(t, tmp, &timeouts, list) {
+	while (!list_empty(&timeouts)) {
+		t = list_first_entry(&timeouts, struct uloop_timeout, list);
+
 		if (tv_diff(&t->time, tv) > 0)
 			break;
 
@@ -438,6 +521,22 @@ static void uloop_process_timeouts(struct timeval *tv)
 	}
 }
 
+static void uloop_clear_timeouts(void)
+{
+	struct uloop_timeout *t, *tmp;
+
+	list_for_each_entry_safe(t, tmp, &timeouts, list)
+		uloop_timeout_cancel(t);
+}
+
+static void uloop_clear_processes(void)
+{
+	struct uloop_process *p, *tmp;
+
+	list_for_each_entry_safe(p, tmp, &processes, list)
+		uloop_process_delete(p);
+}
+
 void uloop_run(void)
 {
 	struct timeval tv;
@@ -445,7 +544,7 @@ void uloop_run(void)
 	uloop_setup_signals();
 	while(!uloop_cancelled)
 	{
-		gettimeofday(&tv, NULL);
+		uloop_gettime(&tv);
 		uloop_process_timeouts(&tv);
 		if (uloop_cancelled)
 			break;
@@ -463,4 +562,7 @@ void uloop_done(void)
 
 	close(poll_fd);
 	poll_fd = -1;
+
+	uloop_clear_timeouts();
+	uloop_clear_processes();
 }

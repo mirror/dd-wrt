@@ -26,59 +26,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-
-#if defined(__linux__) || defined(__CYGWIN__)
-#include <byteswap.h>
-#include <endian.h>
-
-#elif defined(__APPLE__)
-#include <machine/endian.h>
-#include <machine/byte_order.h>
-#define bswap_16(x) OSSwapInt16(x)
-#define bswap_32(x) OSSwapInt32(x)
-#define bswap_64(x) OSSwapInt64(x)
-#elif defined(__FreeBSD__)
-#include <sys/endian.h>
-#define bswap_16(x) bswap16(x)
-#define bswap_32(x) bswap32(x)
-#define bswap_64(x) bswap64(x)
-#else
-#include <machine/endian.h>
-#define bswap_16(x) swap16(x)
-#define bswap_32(x) swap32(x)
-#define bswap_64(x) swap64(x)
-#endif
-
-#ifndef __BYTE_ORDER
-#define __BYTE_ORDER BYTE_ORDER
-#endif
-#ifndef __BIG_ENDIAN
-#define __BIG_ENDIAN BIG_ENDIAN
-#endif
-#ifndef __LITTLE_ENDIAN
-#define __LITTLE_ENDIAN LITTLE_ENDIAN
-#endif
-
-#define cpu_to_be64(x) bswap_64(x)
-#define cpu_to_be32(x) bswap_32(x)
-#define cpu_to_be16(x) bswap_16(x)
-
-#define be64_to_cpu(x) bswap_64(x)
-#define be32_to_cpu(x) bswap_32(x)
-#define be16_to_cpu(x) bswap_16(x)
-
-#else
-
-#define cpu_to_be64(x) (x)
-#define cpu_to_be32(x) (x)
-#define cpu_to_be16(x) (x)
-
-#define be64_to_cpu(x) (x)
-#define be32_to_cpu(x) (x)
-#define be16_to_cpu(x) (x)
-
-#endif
+#include "utils.h"
 
 enum {
 	BLOB_ATTR_UNSPEC,
@@ -96,10 +44,6 @@ enum {
 #define BLOB_ATTR_ID_SHIFT 24
 #define BLOB_ATTR_LEN_MASK 0x00ffffff
 #define BLOB_ATTR_ALIGN    4
-
-#ifndef __packed
-#define __packed __attribute__((packed))
-#endif
 
 struct blob_attr {
 	uint32_t id_len;
@@ -191,8 +135,10 @@ blob_get_u32(const struct blob_attr *attr)
 static inline uint64_t
 blob_get_u64(const struct blob_attr *attr)
 {
-	uint64_t *tmp = (uint64_t*)attr->data;
-	return be64_to_cpu(*tmp);
+	uint32_t *ptr = blob_data(attr);
+	uint64_t tmp = ((uint64_t) be32_to_cpu(ptr[0])) << 32;
+	tmp |= be32_to_cpu(ptr[1]);
+	return tmp;
 }
 
 static inline int8_t
@@ -236,12 +182,14 @@ extern void blob_set_raw_len(struct blob_attr *attr, unsigned int len);
 extern bool blob_attr_equal(const struct blob_attr *a1, const struct blob_attr *a2);
 extern int blob_buf_init(struct blob_buf *buf, int id);
 extern void blob_buf_free(struct blob_buf *buf);
+extern void blob_buf_grow(struct blob_buf *buf, int required);
 extern struct blob_attr *blob_new(struct blob_buf *buf, int id, int payload);
 extern void *blob_nest_start(struct blob_buf *buf, int id);
 extern void blob_nest_end(struct blob_buf *buf, void *cookie);
 extern struct blob_attr *blob_put(struct blob_buf *buf, int id, const void *ptr, int len);
 extern bool blob_check_type(const void *ptr, int len, int type);
 extern int blob_parse(struct blob_attr *attr, struct blob_attr **data, const struct blob_attr_info *info, int max);
+extern struct blob_attr *blob_memdup(struct blob_attr *attr);
 
 static inline struct blob_attr *
 blob_put_string(struct blob_buf *buf, int id, const char *str)
