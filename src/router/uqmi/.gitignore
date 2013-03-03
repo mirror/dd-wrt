@@ -1,0 +1,10 @@
+uqmi
+.*
+Makefile
+CMakeCache.txt
+CMakeFiles
+*.cmake
+install_manifest.txt
+qmi-message-*.h
+qmi-message-*.c
+qmi-errors.c
