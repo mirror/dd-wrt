@@ -1,7 +1,7 @@
 PKG_BUILD_DIR_LIBUBOX=$(TOP)/libubox
 STAGING_DIR=$(TOP)/_staging
 PKG_INSTALL:=1
-CMAKE_C_COMPILER:=mips-linux-uclibc-gcc
+
 
 MAKE_FLAGS+=VERBOSE=0
 EXTRA_CFLAGS:=-I$(TOP)/_staging/usr/include
@@ -9,7 +9,7 @@ LDFLAGS+=-L$(TOP)/_staging/usr/lib
 
 
 libubox-configure: 
-	$(call CMakeConfigure,$(PKG_BUILD_DIR_LIBUBOX),$(STAGING_DIR),$(CMAKE_OPTIONS) -DBUILD_LUA=OFF)
+	-$(call CMakeConfigure,$(PKG_BUILD_DIR_LIBUBOX),$(STAGING_DIR),$(CMAKE_OPTIONS) -DBUILD_LUA=OFF CMAKE_C_COMPILER=mips-linux-uclibc-gcc)
 
 libubox: 
 	$(MAKE) -C libubox
