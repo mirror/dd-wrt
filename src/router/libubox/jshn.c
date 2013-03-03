@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2011-2013 Felix Fietkau <nbd@openwrt.org>
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
 #include <json/json.h>
 #include <string.h>
 #include <stdlib.h>
@@ -8,6 +23,9 @@
 #include "list.h"
 
 #define MAX_VARLEN	256
+
+static const char *var_prefix = "";
+static int var_prefix_len = 0;
 
 static int add_json_element(const char *key, json_object *obj);
 
@@ -145,8 +163,8 @@ static char *get_keys(const char *prefix)
 {
 	char *keys;
 
-	keys = alloca(strlen(prefix) + sizeof("KEYS_") + 1);
-	sprintf(keys, "KEYS_%s", prefix);
+	keys = alloca(var_prefix_len + strlen(prefix) + sizeof("KEYS_") + 1);
+	sprintf(keys, "%sKEYS_%s", var_prefix, prefix);
 	return getenv(keys);
 }
 
@@ -154,12 +172,15 @@ static void get_var(const char *prefix, const char **name, char **var, char **ty
 {
 	char *tmpname, *varname;
 
-	tmpname = alloca(strlen(prefix) + 1 + strlen(*name) + 1 + sizeof("TYPE_"));
-	sprintf(tmpname, "TYPE_%s_%s", prefix, *name);
-	*var = getenv(tmpname + 5);
+	tmpname = alloca(var_prefix_len + strlen(prefix) + 1 + strlen(*name) + 1 + sizeof("TYPE_"));
+
+	sprintf(tmpname, "%s%s_%s", var_prefix, prefix, *name);
+	*var = getenv(tmpname);
+
+	sprintf(tmpname, "%sTYPE_%s_%s", var_prefix, prefix, *name);
 	*type = getenv(tmpname);
 
-	memcpy(tmpname, "NAME", 4);
+	sprintf(tmpname, "%sNAME_%s_%s", var_prefix, prefix, *name);
 	varname = getenv(tmpname);
 	if (varname)
 		*name = varname;
@@ -238,8 +259,12 @@ int main(int argc, char **argv)
 	bool no_newline = false;
 	int ch;
 
-	while ((ch = getopt(argc, argv, "nr:w")) != -1) {
+	while ((ch = getopt(argc, argv, "p:nr:w")) != -1) {
 		switch(ch) {
+		case 'p':
+			var_prefix = optarg;
+			var_prefix_len = strlen(var_prefix);
+			break;
 		case 'r':
 			return jshn_parse(optarg);
 		case 'w':

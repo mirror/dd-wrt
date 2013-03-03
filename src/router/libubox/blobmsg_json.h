@@ -1,18 +1,18 @@
 /*
- * blobmsg - library for generating/parsing structured blob messages
+ * Copyright (C) 2010-2012 Felix Fietkau <nbd@openwrt.org>
  *
- * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License version 2.1
- * as published by the Free Software Foundation
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
 #ifndef __BLOBMSG_JSON_H
 #define __BLOBMSG_JSON_H
 
@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include "blobmsg.h"
 
+bool blobmsg_add_object(struct blob_buf *b, json_object *obj);
 bool blobmsg_add_json_element(struct blob_buf *b, const char *name, json_object *obj);
 bool blobmsg_add_json_from_string(struct blob_buf *b, const char *str);
 
