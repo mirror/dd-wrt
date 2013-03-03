@@ -6,7 +6,7 @@
 
 #define dms_helptext \
 		"  --get-pin-status:                 Get PIN verification status\n" \
-		"  --verify-pin1:                    Verify PIN1\n" \
-		"  --verify-pin2:                    Verify PIN2\n" \
+		"  --verify-pin1 <pin>:              Verify PIN1\n" \
+		"  --verify-pin2 <pin>:              Verify PIN2\n" \
 		"  --get-imsi:                       Get International Mobile Subscriber ID\n" \
 
