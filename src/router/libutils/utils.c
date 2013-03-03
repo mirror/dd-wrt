@@ -3314,7 +3314,7 @@ int check_wan_link(int num)
 			}
 		}
 	}
-#ifdef HAVE_LIBQMI
+#if defined(HAVE_LIBQMI) || defined(HAVE_UQMI)
 	else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi")) {
 		FILE *fp = fopen("/tmp/qmistatus","rb");
 		int value = 0;

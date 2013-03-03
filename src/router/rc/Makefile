@@ -117,6 +117,9 @@ endif
 ifeq ($(CONFIG_LIBQMI),y)
 CFLAGS += -DHAVE_LIBQMI
 endif
+ifeq ($(CONFIG_UQMI),y)
+CFLAGS += -DHAVE_UQMI
+endif
 ifeq ($(CONFIG_SOLO51),y)
 CFLAGS += -DHAVE_SOLO51
 endif

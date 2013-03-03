@@ -3289,7 +3289,59 @@ void start_wan(int status)
 		unlink("/tmp/ppp/set-pppoepid");
 		char *controldevice = get3GControlDevice();
 		int timeout = 5;
-#ifdef HAVE_LIBQMI
+#ifdef HAVE_UQMI
+		if (controldevice && !strcmp(controldevice, "qmi")) {
+		/* disconnect network */
+		int clientid=0;
+		FILE *fp = fopen("/tmp/qmi-clientid","rb");
+		if (fp) {
+			fscanf(fp,"%d",&clientid);
+			fclose(fp);
+			sysprintf("uqmi --set-client-id wds,%d --release-client-id",clientid);
+		}
+		clientid=0;
+		if (nvram_match("wan_conmode","6"))
+		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes lte");
+//		if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
+//		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
+		if (nvram_match("wan_conmode","4"))
+		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm,umts");
+		if (nvram_match("wan_conmode","3"))
+		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes umts,gsm");
+		if (nvram_match("wan_conmode","2"))
+		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm");
+		if (nvram_match("wan_conmode","1"))
+		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes umts");
+		if (nvram_match("wan_conmode","0"))
+		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes all");
+		
+		//set pin
+		sysprintf("uqmi -d /dev/cdc-wdm0 --verify-pin1 %s",nvram_safe_get("wan_pin"));
+		//set apn and dial
+		fp = popen("/usr/sbin/uqmi -d /dev/cdc-wdm0 --get-client-id wds","rb");
+		fscanf(fp,"%d",&clientid);
+		fclose(fp);
+		fp = fopen("/tmp/qmi-clientid","wb");
+		fprintf(fp,"%d",clientid);
+		fclose(fp);
+
+
+
+		fprintf(fp, "APN=%s",nvram_safe_get("wan_apn"));
+		if (strlen(nvram_safe_get("ppp_username")) > 0 && strlen(nvram_safe_get("ppp_passwd")) > 0) {
+			sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --username %s --password %s",clientid,nvram_safe_get("wan_apn"),nvram_safe_get("ppp_username"),nvram_safe_get("ppp_passwd"));
+		} else {
+			sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both",clientid,nvram_safe_get("wan_apn"));
+		}				
+		eval("ifconfig", "wwan0", "up");
+		start_dhcpc("wwan0", NULL, NULL, 1);
+		if (status != REDIAL) {
+			start_redial();
+		}
+		
+		}else
+
+#elif HAVE_LIBQMI
 		if (controldevice && !strcmp(controldevice, "qmi")) {
 		if (nvram_match("wan_conmode","6"))
 		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
