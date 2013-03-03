@@ -763,7 +763,7 @@ static int wanactive(void)
 
 static void nat_postrouting(void)
 {
- if (nvram_match("hotss_enable", "1")) 
+ if (nvram_match("hotss_enable", "1") 
 		|| (nvram_match("chilli_enable", "1")) {
 			if (nvram_match("wan_proto", "disabled")) {
 //		if (has_gateway()) {
