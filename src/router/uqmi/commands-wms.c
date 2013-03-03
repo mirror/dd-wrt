@@ -48,7 +48,7 @@ put_unicode_char(char *dest, uint16_t c)
 
 
 static int
-pdu_decode_7bit_char(char *dest, int len, char c, bool *escape)
+pdu_decode_7bit_char(char *dest, int len, unsigned char c, bool *escape)
 {
 	uint16_t conv_0x20[] = {
 		0x0040, 0x00A3, 0x0024, 0x00A5, 0x00E8, 0x00E9, 0x00F9, 0x00EC,
