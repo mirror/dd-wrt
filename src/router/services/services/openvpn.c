@@ -53,6 +53,13 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/cert.p12", "openvpn_pkcs12");
 	write_nvram("/tmp/openvpn/static.key", "openvpn_static");
 
+	if (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1"))	{
+			mkdir("/jffs/etc/openvpn", 0700);
+			mkdir("/jffs/etc/openvpn/ccd", 0700);
+		}		
+
 	FILE *fp = fopen("/tmp/openvpn/openvpn.conf", "wb");
 	if (fp == NULL)
 		return;
@@ -81,7 +88,6 @@ void start_openvpnserver(void)
 			"management 127.0.0.1 14\n"
 			"management-log-cache 50\n"
 			"topology subnet\n"
-			"client-config-dir /tmp/openvpn/ccd\n"
 			"script-security 2\n"
 			"port %s\n"
 			"proto %s\n"
@@ -90,6 +96,12 @@ void start_openvpnserver(void)
 			nvram_safe_get("openvpn_proto"),
 			nvram_safe_get("openvpn_cipher"),
 			nvram_safe_get("openvpn_auth"));
+	if (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1"))
+			printf(fp,"client-config-dir /tmp/openvpn/ccd\n");
+	else
+			printf(fp,"client-config-dir /jffs/etc/openvpn/ccd\n");
 	if (nvram_invmatch("openvpn_lzo", "0")) 
 		fprintf(fp, "comp-lzo %s\n",    //yes/no/adaptive/disable 
 		nvram_safe_get("openvpn_lzo"));
