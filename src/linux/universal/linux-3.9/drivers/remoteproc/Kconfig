@@ -1,0 +1,41 @@
+menu "Remoteproc drivers"
+
+# REMOTEPROC gets selected by whoever wants it
+config REMOTEPROC
+	tristate
+	depends on HAS_DMA
+	select FW_CONFIG
+	select VIRTIO
+
+config OMAP_REMOTEPROC
+	tristate "OMAP remoteproc support"
+	depends on HAS_DMA
+	depends on ARCH_OMAP4
+	depends on OMAP_IOMMU
+	depends on OMAP_MBOX_FWK
+	select REMOTEPROC
+	select RPMSG
+	help
+	  Say y here to support OMAP's remote processors (dual M3
+	  and DSP on OMAP4) via the remote processor framework.
+
+	  Currently only supported on OMAP4.
+
+	  Usually you want to say y here, in order to enable multimedia
+	  use-cases to run on your platform (multimedia codecs are
+	  offloaded to remote DSP processors using this framework).
+
+	  It's safe to say n here if you're not interested in multimedia
+	  offloading or just want a bare minimum kernel.
+
+config STE_MODEM_RPROC
+	tristate "STE-Modem remoteproc support"
+	depends on HAS_DMA
+	select REMOTEPROC
+	default n
+	help
+	  Say y or m here to support STE-Modem shared memory driver.
+	  This can be either built-in or a loadable module.
+	  If unsure say N.
+
+endmenu
