@@ -28,7 +28,7 @@
 #include <fcntl.h>
 
 #include <avl.h>
-#include <list.h>
+//#include <list.h>
 #include <linux/nl80211.h>
 #include <unl.h>
 
