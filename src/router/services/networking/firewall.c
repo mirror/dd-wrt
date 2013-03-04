@@ -782,6 +782,7 @@ static void nat_postrouting(void)
 				save2file
 					("-A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 						nvram_safe_get("lan_ipaddr"));
+		}
 	else {
 		if (nvram_match("hotss_enable", "1")
 			&& strlen(nvram_safe_get("hotss_net")) > 0)
@@ -799,7 +800,6 @@ static void nat_postrouting(void)
 					("-A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 						wanaddr);	
 		}
-	}
 #ifdef HAVE_PPPOESERVER
 	if (nvram_match("pppoeserver_enabled", "1")
 	    && wanactive())
