@@ -365,7 +365,7 @@ spftree_area_del (struct isis_area *area)
       area->spftree[1] = NULL;
     }
 #ifdef HAVE_IPV6
-    if (area->spftree[1] != NULL)
+    if (area->spftree6[1] != NULL)
     {
       isis_spftree_del (area->spftree6[1]);
       area->spftree6[1] = NULL;
@@ -813,6 +813,8 @@ lspfragloop:
     for (ALL_LIST_ELEMENTS_RO (lsp->tlv_data.te_ipv4_reachs,
                                node, te_ipv4_reach))
     {
+      assert ((te_ipv4_reach->control & 0x3F) <= IPV4_MAX_BITLEN);
+
       dist = cost + ntohl (te_ipv4_reach->te_metric);
       vtype = VTYPE_IPREACH_TE;
       prefix.u.prefix4 = newprefix2inaddr (&te_ipv4_reach->prefix_start,
@@ -829,7 +831,9 @@ lspfragloop:
     prefix.family = AF_INET6;
     for (ALL_LIST_ELEMENTS_RO (lsp->tlv_data.ipv6_reachs, node, ip6reach))
     {
-      dist = cost + ip6reach->metric;
+      assert (ip6reach->prefix_len <= IPV6_MAX_BITLEN);
+
+      dist = cost + ntohl(ip6reach->metric);
       vtype = (ip6reach->control_info & CTRL_INFO_DISTRIBUTION) ?
         VTYPE_IP6REACH_EXTERNAL : VTYPE_IP6REACH_INTERNAL;
       prefix.prefixlen = ip6reach->prefix_len;
@@ -1176,13 +1180,13 @@ isis_run_spf (struct isis_area *area, int level, int family, u_char *sysid)
   u_char lsp_id[ISIS_SYS_ID_LEN + 2];
   struct isis_lsp *lsp;
   struct route_table *table = NULL;
-  struct timespec time_now;
+  struct timeval time_now;
   unsigned long long start_time, end_time;
 
   /* Get time that can't roll backwards. */
-  clock_gettime(CLOCK_MONOTONIC, &time_now);
+  quagga_gettime(QUAGGA_CLK_MONOTONIC, &time_now);
   start_time = time_now.tv_sec;
-  start_time = (start_time * 1000000) + (time_now.tv_nsec / 1000);
+  start_time = (start_time * 1000000) + time_now.tv_usec;
 
   if (family == AF_INET)
     spftree = area->spftree[level - 1];
@@ -1278,9 +1282,9 @@ out:
   spftree->pending = 0;
   spftree->runcount++;
   spftree->last_run_timestamp = time (NULL);
-  clock_gettime(CLOCK_MONOTONIC, &time_now);
+  quagga_gettime(QUAGGA_CLK_MONOTONIC, &time_now);
   end_time = time_now.tv_sec;
-  end_time = (end_time * 1000000) + (time_now.tv_nsec / 1000);
+  end_time = (end_time * 1000000) + time_now.tv_usec;
   spftree->last_run_duration = end_time - start_time;
 
 
@@ -1488,7 +1492,7 @@ isis_print_paths (struct vty *vty, struct list *paths, u_char *root_sysid)
   struct listnode *anode;
   struct isis_vertex *vertex;
   struct isis_adjacency *adj;
-  u_char buff[255];
+  u_char buff[BUFSIZ];
 
   vty_out (vty, "Vertex               Type         Metric "
                 "Next-Hop             Interface Parent%s", VTY_NEWLINE);

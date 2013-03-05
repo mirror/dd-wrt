@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in.
 
-INCLUDES = @INCLUDES@ -I.. -I$(top_srcdir) -I$(top_srcdir)/lib @SNMP_INCLUDES@
+INCLUDES = @INCLUDES@ -I.. -I$(top_srcdir) -I$(top_srcdir)/lib -I$(top_builddir)/lib
 DEFS = @DEFS@ -DSYSCONFDIR=\"$(sysconfdir)/\" -DMULTIPATH_NUM=@MULTIPATH_NUM@
 INSTALL_SDATA=@INSTALL@ -m 600
 
@@ -19,6 +19,10 @@ ioctl_method = @IOCTL_METHOD@
 otherobj = $(ioctl_method) $(ipforward) $(if_method) $(if_proc) \
 	$(rt_method) $(rtread_method) $(kernel_method) $(other_method)
 
+if HAVE_NETLINK
+othersrc = zebra_fpm_netlink.c
+endif
+
 AM_CFLAGS = $(PICFLAGS)
 AM_LDFLAGS = $(PILDFLAGS)
 
@@ -29,7 +33,8 @@ noinst_PROGRAMS = testzebra
 zebra_SOURCES = \
 	zserv.c main.c interface.c connected.c zebra_rib.c zebra_routemap.c \
 	redistribute.c debug.c rtadv.c zebra_snmp.c zebra_vty.c \
-	irdp_main.c irdp_interface.c irdp_packet.c router-id.c
+	irdp_main.c irdp_interface.c irdp_packet.c router-id.c zebra_fpm.c \
+	$(othersrc)
 
 testzebra_SOURCES = test_main.c zebra_rib.c interface.c connected.c debug.c \
 	zebra_vty.c \
@@ -37,11 +42,12 @@ testzebra_SOURCES = test_main.c zebra_rib.c interface.c connected.c debug.c \
 
 noinst_HEADERS = \
 	connected.h ioctl.h rib.h rt.h zserv.h redistribute.h debug.h rtadv.h \
-	interface.h ipforward.h irdp.h router-id.h kernel_socket.h
+	interface.h ipforward.h irdp.h router-id.h kernel_socket.h \
+	rt_netlink.h zebra_fpm.h zebra_fpm_private.h
 
-zebra_LDADD = $(otherobj) $(LIBCAP) $(LIB_IPV6) ../lib/libzebra.la
+zebra_LDADD = $(otherobj) ../lib/libzebra.la $(LIBCAP) $(LIB_IPV6)
 
-testzebra_LDADD = $(LIBCAP) $(LIB_IPV6) ../lib/libzebra.la
+testzebra_LDADD = ../lib/libzebra.la $(LIBCAP) $(LIB_IPV6)
 
 zebra_DEPENDENCIES = $(otherobj)
 

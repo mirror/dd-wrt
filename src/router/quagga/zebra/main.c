@@ -39,6 +39,7 @@
 #include "zebra/router-id.h"
 #include "zebra/irdp.h"
 #include "zebra/rtadv.h"
+#include "zebra/zebra_fpm.h"
 
 /* Zebra instance */
 struct zebra_t zebrad =
@@ -104,7 +105,7 @@ struct zebra_privs_t zserv_privs =
   .vty_group = VTY_GROUP,
 #endif
   .caps_p = _caps_p,
-  .cap_num_p = sizeof(_caps_p)/sizeof(_caps_p[0]),
+  .cap_num_p = array_size(_caps_p),
   .cap_num_i = 0
 };
 
@@ -313,7 +314,7 @@ main (int argc, char **argv)
   zprivs_init (&zserv_privs);
 
   /* Vty related initialize. */
-  signal_init (zebrad.master, Q_SIGC(zebra_signals), zebra_signals);
+  signal_init (zebrad.master, array_size(zebra_signals), zebra_signals);
   cmd_init (1);
   vty_init (zebrad.master);
   memory_init ();
@@ -348,6 +349,12 @@ main (int argc, char **argv)
 #ifdef HAVE_SNMP
   zebra_snmp_init ();
 #endif /* HAVE_SNMP */
+
+#ifdef HAVE_FPM
+  zfpm_init (zebrad.master, 1, 0);
+#else
+  zfpm_init (zebrad.master, 0, 0);
+#endif
 
   /* Process the configuration file. Among other configuration
   *  directives we can meet those installing static routes. Such

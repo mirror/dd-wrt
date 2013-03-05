@@ -24,9 +24,20 @@
 #ifndef _ZEBRA_VERSION_H
 #define _ZEBRA_VERSION_H
 
+#ifdef GIT_VERSION
+#include "gitversion.h"
+#endif
+
+#ifndef GIT_SUFFIX
+#define GIT_SUFFIX ""
+#endif
+#ifndef GIT_INFO
+#define GIT_INFO ""
+#endif
+
 #define QUAGGA_PROGNAME   "Quagga"
 
-#define QUAGGA_VERSION     "0.99.21"
+#define QUAGGA_VERSION     "0.99.22" GIT_SUFFIX
 
 #define ZEBRA_BUG_ADDRESS "https://bugzilla.quagga.net"
 

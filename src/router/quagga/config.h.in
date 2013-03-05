@@ -24,6 +24,9 @@
 /* Disable BGP installation to zebra */
 #undef DISABLE_BGP_ANNOUNCE
 
+/* include git version info */
+#undef GIT_VERSION
+
 /* GNU Linux */
 #undef GNU_LINUX
 
@@ -41,6 +44,9 @@
 
 /* Broken CMSG_FIRSTHDR */
 #undef HAVE_BROKEN_CMSG_FIRSTHDR
+
+/* BSD ifi_link_state available */
+#undef HAVE_BSD_IFI_LINK_STATE
 
 /* BSD link-detect */
 #undef HAVE_BSD_LINK_DETECT
@@ -84,6 +90,9 @@
 
 /* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
+
+/* Forwarding Plane Manager support */
+#undef HAVE_FPM
 
 /* Define to 1 if you have the `ftruncate' function. */
 #undef HAVE_FTRUNCATE
@@ -228,9 +237,6 @@
 
 /* netlink */
 #undef HAVE_NETLINK
-
-/* Net SNMP */
-#undef HAVE_NETSNMP
 
 /* Define to 1 if you have the <net/if_dl.h> header file. */
 #undef HAVE_NET_IF_DL_H
@@ -401,6 +407,9 @@
 /* Define to 1 if `ifm_status' is a member of `struct ifmediareq'. */
 #undef HAVE_STRUCT_IFMEDIAREQ_IFM_STATUS
 
+/* Define to 1 if `ifi_link_state' is a member of `struct if_data'. */
+#undef HAVE_STRUCT_IF_DATA_IFI_LINK_STATE
+
 /* Define to 1 if the system has the type `struct in6_aliasreq'. */
 #undef HAVE_STRUCT_IN6_ALIASREQ
 
@@ -428,6 +437,9 @@
 
 /* Define to 1 if the system has the type `struct sockaddr_dl'. */
 #undef HAVE_STRUCT_SOCKADDR_DL
+
+/* Define to 1 if `sdl_len' is a member of `struct sockaddr_dl'. */
+#undef HAVE_STRUCT_SOCKADDR_DL_SDL_LEN
 
 /* Define to 1 if the system has the type `struct sockaddr_in'. */
 #undef HAVE_STRUCT_SOCKADDR_IN
@@ -497,6 +509,25 @@
 
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
 #undef HAVE_SYS_WAIT_H
+
+/* Define this if your system can create weak aliases */
+#undef HAVE_SYS_WEAK_ALIAS
+
+/* Define this if weak aliases may be created with __attribute__ */
+#undef HAVE_SYS_WEAK_ALIAS_ATTRIBUTE
+
+/* Define this if weak aliases may be created with #pragma _CRI duplicate */
+#undef HAVE_SYS_WEAK_ALIAS_CRIDUPLICATE
+
+/* Define this if weak aliases in other files are honored */
+#undef HAVE_SYS_WEAK_ALIAS_CROSSFILE
+
+/* Define this if weak aliases may be created with #pragma _HP_SECONDARY_DEF
+   */
+#undef HAVE_SYS_WEAK_ALIAS_HPSECONDARY
+
+/* Define this if weak aliases may be created with #pragma weak */
+#undef HAVE_SYS_WEAK_ALIAS_PRAGMA
 
 /* Old Linux 2.4 TCP MD5 Signature Patch */
 #undef HAVE_TCP_MD5_LINUX24
@@ -673,6 +704,12 @@
 
 /* Define to the type of arg 5 for `select'. */
 #undef SELECT_TYPE_ARG5
+
+/* Use SNMP AgentX to interface with snmpd */
+#undef SNMP_AGENTX
+
+/* Use SNMP SMUX to interface with snmpd */
+#undef SNMP_SMUX
 
 /* Solaris IPv6 */
 #undef SOLARIS_IPV6

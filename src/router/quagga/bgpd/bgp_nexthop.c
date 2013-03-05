@@ -28,6 +28,8 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "network.h"
 #include "log.h"
 #include "memory.h"
+#include "hash.h"
+#include "jhash.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_table.h"
@@ -451,7 +453,7 @@ bgp_scan (afi_t afi, safi_t safi)
 	      changed = 0;
 	      metricchanged = 0;
 
-	      if (peer_sort (bi->peer) == BGP_PEER_EBGP && bi->peer->ttl == 1)
+	      if (bi->peer->sort == BGP_PEER_EBGP && bi->peer->ttl == 1)
 		valid = bgp_nexthop_onlink (afi, bi->attr);
 	      else
 		valid = bgp_nexthop_lookup (afi, bi->peer, bi,
@@ -504,6 +506,16 @@ bgp_scan (afi_t afi, safi_t safi)
       else if (afi == AFI_IP6)
 	zlog_debug ("scanning IPv6 Unicast routing tables");
     }
+
+  /* Reevaluate default-originate route-maps and announce/withdraw
+   * default route if neccesary. */
+  for (ALL_LIST_ELEMENTS (bgp->peer, node, nnode, peer))
+    {
+      if (peer->status == Established
+	  && CHECK_FLAG(peer->af_flags[afi][safi], PEER_FLAG_DEFAULT_ORIGINATE)
+	  && peer->default_rmap[afi][safi].name)
+	bgp_default_originate (peer, afi, safi, 0);
+    }
 }
 
 /* BGP scan thread.  This thread check nexthop reachability. */
@@ -524,6 +536,83 @@ bgp_scan_timer (struct thread *t)
 
   return 0;
 }
+
+/* BGP own address structure */
+struct bgp_addr
+{
+  struct in_addr addr;
+  int refcnt;
+};
+
+static struct hash *bgp_address_hash;
+
+static void *
+bgp_address_hash_alloc (void *p)
+{
+  struct in_addr *val = p;
+  struct bgp_addr *addr;
+
+  addr = XMALLOC (MTYPE_BGP_ADDR, sizeof (struct bgp_addr));
+  addr->refcnt = 0;
+  addr->addr.s_addr = val->s_addr;
+
+  return addr;
+}
+
+static unsigned int
+bgp_address_hash_key_make (void *p)
+{
+  const struct bgp_addr *addr = p;
+
+  return jhash_1word(addr->addr.s_addr, 0);
+}
+
+static int
+bgp_address_hash_cmp (const void *p1, const void *p2)
+{
+  const struct bgp_addr *addr1 = p1;
+  const struct bgp_addr *addr2 = p2;
+
+  return addr1->addr.s_addr == addr2->addr.s_addr;
+}
+
+void
+bgp_address_init (void)
+{
+  bgp_address_hash = hash_create (bgp_address_hash_key_make,
+                                  bgp_address_hash_cmp);
+}
+
+static void
+bgp_address_add (struct prefix *p)
+{
+  struct bgp_addr tmp;
+  struct bgp_addr *addr;
+
+  tmp.addr = p->u.prefix4;
+
+  addr = hash_get (bgp_address_hash, &tmp, bgp_address_hash_alloc);
+  addr->refcnt++;
+}
+
+static void
+bgp_address_del (struct prefix *p)
+{
+  struct bgp_addr tmp;
+  struct bgp_addr *addr;
+
+  tmp.addr = p->u.prefix4;
+
+  addr = hash_lookup (bgp_address_hash, &tmp);
+  addr->refcnt--;
+
+  if (addr->refcnt == 0)
+    {
+      hash_release (bgp_address_hash, addr);
+      XFREE (MTYPE_BGP_ADDR, addr);
+    }
+}
+
 
 struct bgp_connected_ref
 {
@@ -556,6 +645,8 @@ bgp_connected_add (struct connected *ifc)
 
       if (prefix_ipv4_any ((struct prefix_ipv4 *) &p))
 	return;
+
+      bgp_address_add (addr);
 
       rn = bgp_node_get (bgp_connected_table[AFI_IP], (struct prefix *) &p);
       if (rn->info)
@@ -622,6 +713,8 @@ bgp_connected_delete (struct connected *ifc)
       if (prefix_ipv4_any ((struct prefix_ipv4 *) &p))
 	return;
 
+      bgp_address_del (addr);
+
       rn = bgp_node_lookup (bgp_connected_table[AFI_IP], &p);
       if (! rn)
 	return;
@@ -666,25 +759,16 @@ bgp_connected_delete (struct connected *ifc)
 }
 
 int
-bgp_nexthop_self (afi_t afi, struct attr *attr)
+bgp_nexthop_self (struct attr *attr)
 {
-  struct listnode *node;
-  struct listnode *node2;
-  struct interface *ifp;
-  struct connected *ifc;
-  struct prefix *p;
+  struct bgp_addr tmp, *addr;
 
-  for (ALL_LIST_ELEMENTS_RO (iflist, node, ifp))
-    {
-      for (ALL_LIST_ELEMENTS_RO (ifp->connected, node2, ifc))
-	{
-	  p = ifc->address;
+  tmp.addr = attr->nexthop;
 
-	  if (p && p->family == AF_INET 
-	      && IPV4_ADDR_SAME (&p->u.prefix4, &attr->nexthop))
-	    return 1;
-	}
-    }
+  addr = hash_lookup (bgp_address_hash, &tmp);
+  if (addr)
+    return 1;
+
   return 0;
 }
 
