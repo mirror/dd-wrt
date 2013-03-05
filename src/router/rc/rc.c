@@ -42,6 +42,27 @@
 
 #include <revision.h>
 
+#if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
+static void check_qmi(void)
+{
+#ifdef HAVE_UQMI
+	int clientid = 0;
+	FILE *fp = fopen("/tmp/qmi-clientid", "rb");
+	if (fp) {
+		fscanf(fp, "%d", &clientid);
+		fclose(fp);
+		system
+		    ("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-serving-system|grep registered|wc -l>/tmp/qmistatus",
+		     clientid);
+	} else {
+		sysprintf("echo 0 > /tmp/qmistatus");
+	}
+#else
+	sysprintf
+	    ("qmi-network /dev/cdc-wdm0 status|grep disconnected|wc -l>/tmp/qmistatus");
+#endif
+}
+#endif
 /* 
  * Call when keepalive mode
  */
@@ -54,28 +75,22 @@ int redial_main(int argc, char **argv)
 	int num;
 
 	while (1) {
-#ifdef HAVE_UQMI
-		if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi") && count==1) {
-		int clientid=0;
-		FILE *fp = fopen("/tmp/qmi-clientid","rb");
-		if (fp) {
-			fscanf(fp,"%d",&clientid);
-			fclose(fp);
-			system("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-serving-system|grep registered|wc -l>/tmp/qmistatus",clientid);
-		}else{
-			sysprintf("echo 0 > /tmp/qmistatus");
-		}
-#endif
-
-
-#ifdef HAVE_LIBQMI
-		if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi") && count==1) {
-			sysprintf("qmi-network /dev/cdc-wdm0 status|grep disconnected|wc -l>/tmp/qmistatus");
+#if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
+		if (nvram_match("wan_proto", "3g")
+		    && nvram_match("3gdata", "qmi") && count == 1) {
+			check_qmi();
 		}
 #endif
 		sleep(atoi(argv[1]));
 		num = 0;
 		count++;
+
+#if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
+		if (nvram_match("wan_proto", "3g")
+		    && nvram_match("3gdata", "qmi")) {
+			check_qmi();
+		}
+#endif
 
 		// fprintf(stderr, "check PPPoE %d\n", num);
 		if (!check_wan_link(num)) {
@@ -198,14 +213,14 @@ int get_nfmark(int argc, char **argv)
 {
 	if (argc < 3) {
 		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n"
-						"	services: FORWARD\n"
-						"		  HOTSPOT\n"
-						"		  QOS\n\n"
-						"	eg: get_nfmark QOS 10\n");
+			"	services: FORWARD\n"
+			"		  HOTSPOT\n"
+			"		  QOS\n\n"
+			"	eg: get_nfmark QOS 10\n");
 		return 1;
 	}
 
-	fprintf(stdout, "%s\n", get_NFServiceMark(argv[1], atol(argv[2])) );
+	fprintf(stdout, "%s\n", get_NFServiceMark(argv[1], atol(argv[2])));
 }
 
 int gratarp(int argc, char **argv)
@@ -219,21 +234,21 @@ int gratarp(int argc, char **argv)
 		fprintf(stderr, "usage: gratarp <interface>\n");
 		return 1;
 	}
-	
+
 	pid = fork();
 	switch (pid) {
-		case -1:
-			perror("fork failed");
-			exit(1);
-			break;
-		case 0:
-			gratarp_main(argv[1]);
-			return 0;
-			break;
-		default:
-			//waitpid(pid, &status, 0);
-			// dprintf("parent\n");
-			break;
+	case -1:
+		perror("fork failed");
+		exit(1);
+		break;
+	case 0:
+		gratarp_main(argv[1]);
+		return 0;
+		break;
+	default:
+		//waitpid(pid, &status, 0);
+		// dprintf("parent\n");
+		break;
 	}
 
 	return 0;
@@ -299,7 +314,7 @@ static struct MAIN maincalls[] = {
 #ifdef HAVE_PPPOESERVER
 	{"addpppoeconnected", "addpppoeconnected", NULL},
 	{"delpppoeconnected", "delpppoeconnected", NULL},
-	{"addpppoetime", "addpppoetime", NULL}, 
+	{"addpppoetime", "addpppoetime", NULL},
 #endif
 	{"startservices", NULL, start_services_main},
 	{"start_single_service", NULL, start_single_service_main},
