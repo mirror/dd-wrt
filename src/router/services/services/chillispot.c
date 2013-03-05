@@ -55,7 +55,8 @@ void start_chilli(void)
 		nvram_set("chilli_interface", get_wdev());
 	if (!strlen(nvram_safe_get("hotss_interface")))
 		nvram_set("hotss_interface", get_wdev());
-
+	main_config();
+	
 #ifdef HAVE_HOTSPOT
 
 	if (nvram_match("chilli_enable", "1")
@@ -130,25 +131,44 @@ void stop_chilli(void)
 	return;
 }
 
+static char log_accept[15];
+static char log_drop[15];
+static char log_reject[64];
+
 void main_config(void)
 {
+	int log_level = 0;
+	log_level = atoi(nvram_safe_get("log_level"));
 	mkdir("/tmp/chilli", 0700);
 
 	FILE *fp = fopen("/tmp/chilli/ip-up.sh", "wb");
 	if (fp == NULL)
 		return;
 
+	if (log_level >= 1)
+		sprintf(log_drop, "%s", "logdrop");
+	else
+		sprintf(log_drop, "%s", "DROP");
+	if (log_level >= 2)
+		sprintf(log_accept, "%s", "logaccept");
+	else
+		sprintf(log_accept, "%s", TARG_PASS);
+	if (log_level >= 1)
+		sprintf(log_reject, "%s", "logreject");
+	else
+		sprintf(log_reject, "%s", TARG_RST);
+
 	fprintf(fp, "#!/bin/sh\n");
 /*	if we have a gw traffic will go there.
 		but if we dont have any gw we might use chilli on a local network only 
 		also we need to allow traffic in/outgoing to chilli*/
 
-	fprintf(fp, "iptables -I INPUT -i tun0 -j logaccept\n");
-	fprintf(fp, "iptables -I FORWARD -i tun0 -j logaccept\n");
-	fprintf(fp, "iptables -I FORWARD -o tun0 -j logaccept\n");
+	fprintf(fp, "iptables -I INPUT -i tun0 -j %s\n",log_accept);
+	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n",log_accept);
+	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n",log_accept);
 			// DD-WRT BrainSlayer CHILLI Security Fix 
-	fprintf(fp, "iptables -A FORWARD -i br0 -j logdrop\n");
-	fprintf(fp, "iptables -A FORWARD -o br0 -j logdrop\n");
+	fprintf(fp, "iptables -A FORWARD -i br0 -j %s\n",log_drop);
+	fprintf(fp, "iptables -A FORWARD -o br0 -j %s\n",log_drop);
 
 		// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
