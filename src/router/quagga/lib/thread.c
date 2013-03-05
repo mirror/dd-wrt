@@ -29,6 +29,21 @@
 #include "hash.h"
 #include "command.h"
 #include "sigevent.h"
+
+#if defined HAVE_SNMP && defined SNMP_AGENTX
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+#include <net-snmp/agent/net-snmp-agent-includes.h>
+#include <net-snmp/agent/snmp_vars.h>
+
+extern int agentx_enabled;
+#endif
+
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+#endif
+
 
 /* Recent absolute time of day */
 struct timeval recent_time;
@@ -93,7 +108,7 @@ timeval_elapsed (struct timeval a, struct timeval b)
 	  + (a.tv_usec - b.tv_usec));
 }
 
-#ifndef HAVE_CLOCK_MONOTONIC
+#if !defined(HAVE_CLOCK_MONOTONIC) && !defined(__APPLE__)
 static void
 quagga_gettimeofday_relative_adjust (void)
 {
@@ -112,7 +127,7 @@ quagga_gettimeofday_relative_adjust (void)
     }
   last_recent_time = recent_time;
 }
-#endif /* !HAVE_CLOCK_MONOTONIC */
+#endif /* !HAVE_CLOCK_MONOTONIC && !__APPLE__ */
 
 /* gettimeofday wrapper, to keep recent_time updated */
 static int
@@ -152,7 +167,23 @@ quagga_get_relative (struct timeval *tv)
         relative_time.tv_usec = tp.tv_nsec / 1000;
       }
   }
-#else /* !HAVE_CLOCK_MONOTONIC */
+#elif defined(__APPLE__)
+  {
+    uint64_t ticks;
+    uint64_t useconds;
+    static mach_timebase_info_data_t timebase_info;
+
+    ticks = mach_absolute_time();
+    if (timebase_info.denom == 0)
+      mach_timebase_info(&timebase_info);
+
+    useconds = ticks * timebase_info.numer / timebase_info.denom / 1000;
+    relative_time.tv_sec = useconds / 1000000;
+    relative_time.tv_usec = useconds % 1000000;
+
+    return 0;
+  }
+#else /* !HAVE_CLOCK_MONOTONIC && !__APPLE__ */
   if (!(ret = quagga_gettimeofday (&recent_time)))
     quagga_gettimeofday_relative_adjust();
 #endif /* HAVE_CLOCK_MONOTONIC */
@@ -235,7 +266,7 @@ cpu_record_hash_alloc (struct cpu_thread_history *a)
   struct cpu_thread_history *new;
   new = XCALLOC (MTYPE_THREAD_STATS, sizeof (struct cpu_thread_history));
   new->func = a->func;
-  new->funcname = XSTRDUP(MTYPE_THREAD_FUNCNAME, a->funcname);
+  strcpy(new->funcname, a->funcname);
   return new;
 }
 
@@ -244,7 +275,6 @@ cpu_record_hash_free (void *a)
 {
   struct cpu_thread_history *hist = a;
  
-  XFREE (MTYPE_THREAD_FUNCNAME, hist->funcname);
   XFREE (MTYPE_THREAD_STATS, hist);
 }
 
@@ -303,7 +333,7 @@ cpu_record_print(struct vty *vty, thread_type filter)
   void *args[3] = {&tmp, vty, &filter};
 
   memset(&tmp, 0, sizeof tmp);
-  tmp.funcname = (char *)"TOTAL";
+  strcpy(tmp.funcname, "TOTAL");
   tmp.types = filter;
 
 #ifdef HAVE_RUSAGE
@@ -577,8 +607,6 @@ thread_list_free (struct thread_master *m, struct thread_list *list)
   for (t = list->head; t; t = next)
     {
       next = t->next;
-      if (t->funcname)
-        XFREE (MTYPE_THREAD_FUNCNAME, t->funcname);
       XFREE (MTYPE_THREAD, t);
       list->count--;
       m->alloc--;
@@ -636,11 +664,11 @@ thread_timer_remain_second (struct thread *thread)
 }
 
 /* Trim blankspace and "()"s */
-static char *
-strip_funcname (const char *funcname) 
+void
+strip_funcname (char *dest, const char *funcname)
 {
-  char buff[100];
-  char tmp, *ret, *e, *b = buff;
+  char buff[FUNCNAME_LEN];
+  char tmp, *e, *b = buff;
 
   strncpy(buff, funcname, sizeof(buff));
   buff[ sizeof(buff) -1] = '\0';
@@ -656,10 +684,8 @@ strip_funcname (const char *funcname)
 
   tmp = *e;
   *e = '\0';
-  ret  = XSTRDUP (MTYPE_THREAD_FUNCNAME, b);
+  strcpy (dest, b);
   *e = tmp;
-
-  return ret;
 }
 
 /* Get new thread.  */
@@ -667,15 +693,9 @@ static struct thread *
 thread_get (struct thread_master *m, u_char type,
 	    int (*func) (struct thread *), void *arg, const char* funcname)
 {
-  struct thread *thread;
+  struct thread *thread = thread_trim_head (&m->unuse);
 
-  if (!thread_empty (&m->unuse))
-    {
-      thread = thread_trim_head (&m->unuse);
-      if (thread->funcname)
-        XFREE(MTYPE_THREAD_FUNCNAME, thread->funcname);
-    }
-  else
+  if (! thread)
     {
       thread = XCALLOC (MTYPE_THREAD, sizeof (struct thread));
       m->alloc++;
@@ -686,7 +706,7 @@ thread_get (struct thread_master *m, u_char type,
   thread->func = func;
   thread->arg = arg;
   
-  thread->funcname = strip_funcname(funcname);
+  strip_funcname (thread->funcname, funcname);
 
   return thread;
 }
@@ -934,6 +954,24 @@ thread_cancel_event (struct thread_master *m, void *arg)
           thread_add_unuse (m, t);
         }
     }
+
+  /* thread can be on the ready list too */
+  thread = m->ready.head;
+  while (thread)
+    {
+      struct thread *t;
+
+      t = thread;
+      thread = t->next;
+
+      if (t->arg == arg)
+        {
+          ret++;
+          thread_list_delete (&m->ready, t);
+          t->type = THREAD_UNUSED;
+          thread_add_unuse (m, t);
+        }
+    }
   return ret;
 }
 
@@ -954,7 +992,6 @@ thread_run (struct thread_master *m, struct thread *thread,
 {
   *fetch = *thread;
   thread->type = THREAD_UNUSED;
-  thread->funcname = NULL;  /* thread_call will free fetch's copied pointer */
   thread_add_unuse (m, thread);
   return fetch;
 }
@@ -1042,6 +1079,11 @@ thread_fetch (struct thread_master *m, struct thread *fetch)
   while (1)
     {
       int num = 0;
+#if defined HAVE_SNMP && defined SNMP_AGENTX
+      struct timeval snmp_timer_wait;
+      int snmpblock = 0;
+      int fdsetsize;
+#endif
       
       /* Signals pre-empt everything */
       quagga_sigevent_process ();
@@ -1077,6 +1119,26 @@ thread_fetch (struct thread_master *m, struct thread *fetch)
             timer_wait = timer_wait_bg;
         }
       
+#if defined HAVE_SNMP && defined SNMP_AGENTX
+      /* When SNMP is enabled, we may have to select() on additional
+	 FD. snmp_select_info() will add them to `readfd'. The trick
+	 with this function is its last argument. We need to set it to
+	 0 if timer_wait is not NULL and we need to use the provided
+	 new timer only if it is still set to 0. */
+      if (agentx_enabled)
+        {
+          fdsetsize = FD_SETSIZE;
+          snmpblock = 1;
+          if (timer_wait)
+            {
+              snmpblock = 0;
+              memcpy(&snmp_timer_wait, timer_wait, sizeof(struct timeval));
+            }
+          snmp_select_info(&fdsetsize, &readfd, &snmp_timer_wait, &snmpblock);
+          if (snmpblock == 0)
+            timer_wait = &snmp_timer_wait;
+        }
+#endif
       num = select (FD_SETSIZE, &readfd, &writefd, &exceptfd, timer_wait);
       
       /* Signals should get quick treatment */
@@ -1087,6 +1149,20 @@ thread_fetch (struct thread_master *m, struct thread *fetch)
           zlog_warn ("select() error: %s", safe_strerror (errno));
             return NULL;
         }
+
+#if defined HAVE_SNMP && defined SNMP_AGENTX
+      if (agentx_enabled)
+        {
+          if (num > 0)
+            snmp_read(&readfd);
+          else if (num == 0)
+            {
+              snmp_timeout();
+              run_alarms();
+            }
+          netsnmp_check_outstanding_agent_requests();
+        }
+#endif
 
       /* Check foreground timers.  Historically, they have had higher
          priority than I/O threads, so let's push them onto the ready
@@ -1146,7 +1222,7 @@ int
 thread_should_yield (struct thread *thread)
 {
   quagga_get_relative (NULL);
-  return (timeval_elapsed(relative_time, thread->ru.real) >
+  return (timeval_elapsed(relative_time, thread->real) >
   	  THREAD_YIELD_TIME_SLOT);
 }
 
@@ -1175,7 +1251,7 @@ void
 thread_call (struct thread *thread)
 {
   unsigned long realtime, cputime;
-  RUSAGE_T ru;
+  RUSAGE_T before, after;
 
  /* Cache a pointer to the relevant cpu history thread, if the thread
   * does not have it yet.
@@ -1188,19 +1264,20 @@ thread_call (struct thread *thread)
       struct cpu_thread_history tmp;
       
       tmp.func = thread->func;
-      tmp.funcname = thread->funcname;
+      strcpy(tmp.funcname, thread->funcname);
       
       thread->hist = hash_get (cpu_record, &tmp, 
                     (void * (*) (void *))cpu_record_hash_alloc);
     }
 
-  GETRUSAGE (&thread->ru);
+  GETRUSAGE (&before);
+  thread->real = before.real;
 
   (*thread->func) (thread);
 
-  GETRUSAGE (&ru);
+  GETRUSAGE (&after);
 
-  realtime = thread_consumed_time (&ru, &thread->ru, &cputime);
+  realtime = thread_consumed_time (&after, &before, &cputime);
   thread->hist->real.total += realtime;
   if (thread->hist->real.max < realtime)
     thread->hist->real.max = realtime;
@@ -1227,8 +1304,6 @@ thread_call (struct thread *thread)
 		 realtime/1000, cputime/1000);
     }
 #endif /* CONSUMED_TIME_CHECK */
-
-  XFREE (MTYPE_THREAD_FUNCNAME, thread->funcname);
 }
 
 /* Execute thread */
@@ -1249,10 +1324,8 @@ funcname_thread_execute (struct thread_master *m,
   dummy.func = func;
   dummy.arg = arg;
   dummy.u.val = val;
-  dummy.funcname = strip_funcname (funcname);
+  strip_funcname (dummy.funcname, funcname);
   thread_call (&dummy);
-
-  XFREE (MTYPE_THREAD_FUNCNAME, dummy.funcname);
 
   return NULL;
 }

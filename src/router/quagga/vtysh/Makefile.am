@@ -1,6 +1,6 @@
 ## Process this file with Automake to create Makefile.in
 
-INCLUDES = @INCLUDES@ -I$(top_srcdir) -I$(top_srcdir)/lib
+INCLUDES = @INCLUDES@ -I$(top_srcdir) -I$(top_srcdir)/lib -I$(top_builddir)/lib
 DEFS = @DEFS@ -DSYSCONFDIR=\"$(sysconfdir)/\"
 
 LIBS = @LIBS@ @CURSES@ @LIBPAM@
@@ -33,7 +33,8 @@ vtysh_cmd_FILES = $(top_srcdir)/bgpd/*.c $(top_srcdir)/isisd/*.c \
 		  $(top_srcdir)/zebra/irdp_interface.c \
 		  $(top_srcdir)/zebra/rtadv.c $(top_srcdir)/zebra/zebra_vty.c \
 		  $(top_srcdir)/zebra/zserv.c $(top_srcdir)/zebra/router-id.c \
-		  $(top_srcdir)/zebra/zebra_routemap.c
+		  $(top_srcdir)/zebra/zebra_routemap.c \
+	          $(top_srcdir)/zebra/zebra_fpm.c
 
 vtysh_cmd.c: $(vtysh_cmd_FILES)
 	./$(EXTRA_DIST) $(vtysh_cmd_FILES) > vtysh_cmd.c

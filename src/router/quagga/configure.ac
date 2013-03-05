@@ -7,7 +7,7 @@
 ##
 AC_PREREQ(2.53)
 
-AC_INIT(Quagga, 0.99.21, [https://bugzilla.quagga.net])
+AC_INIT(Quagga, 0.99.22, [https://bugzilla.quagga.net])
 AC_CONFIG_SRCDIR(lib/zebra.h)
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -19,8 +19,9 @@ AC_CANONICAL_HOST()
 AC_CANONICAL_TARGET()
 
 AM_INIT_AUTOMAKE(1.6)
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS(config.h)
 
+AC_PATH_PROG(PERL, perl)
 AC_CHECK_PROG([GAWK],[gawk],[gawk],[not-in-PATH])
 if test "x$GAWK" = "xnot-in-PATH" ; then
 	AC_MSG_ERROR([GNU awk is required for lib/memtype.h made by memtypes.awk.
@@ -128,7 +129,7 @@ AC_MSG_CHECKING([whether to set a default CFLAGS])
 if test "x${cflags_specified}" = "x" ; then
   case ${COMPILER} in
     "ICC")
-        CFLAGS="-Os -g -Wall -wd 279,869,981"
+        CFLAGS="-Os -g -Wall"
         AC_MSG_RESULT([Intel default])
         ;;
     "GCC")
@@ -189,12 +190,20 @@ AC_PROG_LIBTOOL
 dnl ----------------------
 dnl Packages configuration
 dnl ----------------------
+AC_ARG_WITH(pkg-extra-version,
+	AS_HELP_STRING([--with-pkg-extra-version=VER], [add extra version field, for packagers/distributions]),
+	[EXTRAVERSION=$withval],)
+AC_ARG_WITH(pkg-git-version,
+	AS_HELP_STRING([--with-pkg-git-version], [add git information to MOTD and build version string]),
+	[ test "x$withval" != "xno" && with_pkg_git_version="yes" ])
 AC_ARG_ENABLE(vtysh,
 [  --enable-vtysh          include integrated vty shell for Quagga])
 AC_ARG_ENABLE(ipv6,
 [  --disable-ipv6          turn off IPv6 related features and daemons])
 AC_ARG_ENABLE(doc,
 [  --disable-doc           do not build docs])
+AC_ARG_ENABLE(tests,
+[  --disable-tests         do not build tests])
 AC_ARG_ENABLE(zebra,
 [  --disable-zebra         do not build zebra daemon])
 AC_ARG_ENABLE(bgpd,
@@ -221,10 +230,8 @@ AC_ARG_ENABLE(netlink,
 [  --enable-netlink        force to use Linux netlink interface])
 AC_ARG_ENABLE(broken-aliases,
 [  --enable-broken-aliases enable aliases as distinct interfaces for Linux 2.2.X])
-AC_ARG_WITH(crypto,
-[  --without-crypto        do not use libcrypto in SNMP])
 AC_ARG_ENABLE(snmp,
-[  --enable-snmp           enable SNMP support])
+[  --enable-snmp=ARG       enable SNMP support (smux or agentx)])
 AC_ARG_WITH(libpam,
 [  --with-libpam           use libpam for PAM support in vtysh])
 AC_ARG_ENABLE(tcp-zebra,
@@ -259,6 +266,8 @@ AC_ARG_ENABLE(isis_topology,
 [  --enable-isis-topology        enable IS-IS topology generator])
 AC_ARG_ENABLE(capabilities,
 [  --disable-capabilities        disable using POSIX capabilities])
+AC_ARG_ENABLE(rusage,
+[  --disable-rusage              disable using getrusage])
 AC_ARG_ENABLE(gcc_ultra_verbose,
 [  --enable-gcc-ultra-verbose    enable ultra verbose GCC warnings])
 AC_ARG_ENABLE(linux24_tcp_md5,
@@ -269,6 +278,8 @@ AC_ARG_ENABLE(time-check,
 [  --disable-time-check          disable slow thread warning messages])
 AC_ARG_ENABLE(pcreposix,
 [  --enable-pcreposix          enable using PCRE Posix libs for regex functions])
+AC_ARG_ENABLE(fpm,
+[  --enable-fpm            enable Forwarding Plane Manager support])
 
 if test x"${enable_gcc_ultra_verbose}" = x"yes" ; then
   CFLAGS="${CFLAGS} -W -Wcast-qual -Wstrict-prototypes"
@@ -287,6 +298,10 @@ if test x"${enable_time_check}" != x"no" ; then
   else
     AC_DEFINE_UNQUOTED(CONSUMED_TIME_CHECK,$enable_time_check,Consumed Time Check)
   fi
+fi
+
+if test "${enable_fpm}" = "yes"; then
+   AC_DEFINE(HAVE_FPM,,Forwarding Plane Manager support)
 fi
 
 if test "${enable_broken_aliases}" = "yes"; then
@@ -329,7 +344,7 @@ fi
 
 if test "${enable_isisd}" = "yes" && test "${enable_isis_topology}" = yes; then
   AC_DEFINE(TOPOLOGY_GENERATE,,Enable IS-IS topology generator code)
-  ISIS_TOPOLOGY_INCLUDES="-I./topology"
+  ISIS_TOPOLOGY_INCLUDES="-I\$(srcdir)/topology"
   ISIS_TOPOLOGY_DIR="topology"
   ISIS_TOPOLOGY_LIB="./topology/libtopology.a"
 fi
@@ -384,6 +399,25 @@ esac
 
 AC_SUBST(MULTIPATH_NUM)
 
+dnl -----------------------------------
+dnl Add extra version string to package
+dnl name, string and version fields.
+dnl -----------------------------------
+if test "x${EXTRAVERSION}" != "x" ; then
+  VERSION="${VERSION}${EXTRAVERSION}"
+  PACKAGE_VERSION="${PACKAGE_VERSION}${EXTRAVERSION}"
+  PACKAGE_STRING="${PACKAGE_STRING}${EXTRAVERSION}"
+fi
+
+if test "x$with_pkg_git_version" = "xyes"; then
+	if test -d "${srcdir}/.git"; then
+		AC_DEFINE(GIT_VERSION, [1], [include git version info])
+	else	with_pkg_git_version="no"
+		AC_MSG_WARN([--with-pkg-git-version given, but this is not a git checkout])
+	fi
+fi
+AM_CONDITIONAL([GIT_VERSION], [test "x$with_pkg_git_version" = "xyes"])
+
 dnl ------------------------------------
 dnl Check C keywords and standard  types
 dnl ------------------------------------
@@ -437,6 +471,9 @@ m4_define([QUAGGA_INCLUDES],
 #endif
 #if HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
+#endif
+#ifdef __APPLE__
+# define __APPLE_USE_RFC_3542
 #endif
 #if HAVE_NETINET_IN_H
 # include <netinet/in.h>
@@ -592,7 +629,6 @@ dnl ---------------------
 case "${enable_vtysh}" in
   "yes") VTYSH="vtysh";
          AC_DEFINE(VTYSH,,VTY shell)
-	 AC_PATH_PROG(PERL, perl)
 dnl	 Vtysh uses libreadline, which looks for termcap functions at
 dnl	 configure time.  We follow readlines search order.
 dnl	 The required procedures are in libtermcap on NetBSD, in
@@ -815,6 +851,7 @@ fi
 AC_SUBST(RT_METHOD)
 AC_SUBST(KERNEL_METHOD)
 AC_SUBST(OTHER_METHOD)
+AM_CONDITIONAL([HAVE_NETLINK], [test "x$netlink" = "xyes"])
 
 dnl --------------------------
 dnl Determine IS-IS I/O method
@@ -946,7 +983,7 @@ AC_CHECK_MEMBERS([struct ip_mreqn.imr_ifindex], [], [], QUAGGA_INCLUDES)
 AC_MSG_CHECKING([for BSD struct ip_mreq hack])
 AC_TRY_COMPILE([#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
-#endif],[#if (defined(__FreeBSD__) && ((__FreeBSD_version >= 500022 && __FreeBSD_version < 700000) || (__FreeBSD_version < 500000 && __FreeBSD_version >= 440000))) || (defined(__NetBSD__) && defined(__NetBSD_Version__) && __NetBSD_Version__ >= 106010000)
+#endif],[#if (defined(__FreeBSD__) && ((__FreeBSD_version >= 500022 && __FreeBSD_version < 700000) || (__FreeBSD_version < 500000 && __FreeBSD_version >= 440000))) || (defined(__NetBSD__) && defined(__NetBSD_Version__) && __NetBSD_Version__ >= 106010000) || defined(__OpenBSD__) || defined(__APPLE__)
   return (0);
 #else
   #error No support for BSD struct ip_mreq hack detected
@@ -978,6 +1015,16 @@ AC_CHECK_HEADER([net/if.h],
     [],
     QUAGGA_INCLUDES)], 
   [], QUAGGA_INCLUDES )
+
+dnl ---------------------------------------------------------------
+dnl Additional, newer way to check link-state using ifi_link_state.
+dnl Not available in all BSD's when ifmediareq available
+dnl ---------------------------------------------------------------
+AC_CHECK_HEADER([net/if.h],
+    AC_CHECK_MEMBERS([struct if_data.ifi_link_state],
+      AC_DEFINE(HAVE_BSD_IFI_LINK_STATE,,[BSD ifi_link_state available]),
+      [], QUAGGA_INCLUDES),
+    ,)
 
 dnl ------------------------
 dnl TCP_MD5SIG socket option
@@ -1221,6 +1268,13 @@ else
   DOC="doc"
 fi
 
+dnl can't use TESTS as name, that's special with automake
+if test "${enable_tests}" = "no";then
+  BUILD_TESTS=""
+else
+  BUILD_TESTS="tests"
+fi
+
 dnl --------------------
 dnl Daemon disable check
 dnl --------------------
@@ -1314,6 +1368,7 @@ else
 fi
 
 AC_SUBST(DOC)
+AC_SUBST(BUILD_TESTS)
 AC_SUBST(ZEBRA)
 AC_SUBST(BGPD)
 AC_SUBST(RIPD)
@@ -1365,21 +1420,39 @@ AC_SUBST(LIB_REGEX)
 dnl ------------------
 dnl check Net-SNMP library
 dnl ------------------
-if test "${enable_snmp}" = "yes"; then
-    if test "$with_crypto" != "no"; then
-        LIBS="${LIBS} -lcrypto";
-    fi
-    AC_CHECK_LIB(netsnmp, asn_parse_int,
-    	[AC_DEFINE(HAVE_NETSNMP,,Net SNMP) 
-    	 AC_DEFINE(HAVE_SNMP,,SNMP)
-    	 LIBS="${LIBS} -lnetsnmp"],
-    	[AC_MSG_ERROR([--enable-snmp given, but cannot find support for SNMP])])
-
-    AC_CHECK_HEADER([net-snmp/net-snmp-config.h],
-        [],
-        [AC_MSG_ERROR([--enable-snmp given, but cannot find net-snmp-config.h])],
-	QUAGGA_INCLUDES)
-    AC_SUBST(SNMP_INCLUDES)
+if test "${enable_snmp}" != ""; then
+   AC_PATH_TOOL([NETSNMP_CONFIG], [net-snmp-config], [no])
+   if test x"$NETSNMP_CONFIG" = x"no"; then
+      AC_MSG_ERROR([--enable-snmp given but unable to find net-snmp-config])
+   fi
+   LIBS="$LIBS `${NETSNMP_CONFIG} --agent-libs`"
+   CFLAGS="`${NETSNMP_CONFIG} --base-cflags` $CFLAGS"
+   AC_MSG_CHECKING([whether we can link to Net-SNMP])
+   AC_LINK_IFELSE([AC_LANG_PROGRAM([
+int main(void);
+],
+[
+{
+  return 0;
+}
+])],[AC_MSG_RESULT(yes)],[
+     AC_MSG_RESULT(no)
+     AC_MSG_ERROR([--enable-snmp given but not usable])])
+   AC_DEFINE(HAVE_SNMP,,SNMP)
+   case "${enable_snmp}" in
+     yes)
+      SNMP_METHOD=agentx
+      ;;
+     smux|agentx)
+      SNMP_METHOD="${enable_snmp}"
+      ;;
+     *)
+      AC_MSG_ERROR([--enable-snmp given with an unknown method (${enable_snmp}). Use smux or agentx])
+      ;;
+   esac
+   AH_TEMPLATE([SNMP_SMUX], [Use SNMP SMUX to interface with snmpd])
+   AH_TEMPLATE([SNMP_AGENTX], [Use SNMP AgentX to interface with snmpd])
+   AC_DEFINE_UNQUOTED(AS_TR_CPP(SNMP_${SNMP_METHOD}),,SNMP method to interface with snmpd)
 fi
 
 dnl ---------------------------
@@ -1396,6 +1469,7 @@ AC_CHECK_TYPES([struct sockaddr, struct sockaddr_in,
 AC_CHECK_MEMBERS([struct sockaddr.sa_len,
 	struct sockaddr_in.sin_len, struct sockaddr_un.sun_len,
 	struct sockaddr_in6.sin6_scope_id,
+	struct sockaddr_dl.sdl_len,
 	struct if6_aliasreq.ifra_lifetime,
 	struct nd_opt_adv_interval.nd_opt_ai_type],
 	[], [], QUAGGA_INCLUDES)
@@ -1418,12 +1492,13 @@ AC_CHECK_TYPES([struct in_pktinfo],
 dnl --------------------------------------
 dnl checking for getrusage struct and call
 dnl --------------------------------------
-AC_MSG_CHECKING(whether getrusage is available)
-AC_TRY_COMPILE([#include <sys/resource.h>
-],[struct rusage ac_x; getrusage (RUSAGE_SELF, &ac_x);],
-[AC_MSG_RESULT(yes)
- AC_DEFINE(HAVE_RUSAGE,,rusage)],
- AC_MSG_RESULT(no))
+if test "${enable_rusage}" != "no"; then
+  AC_MSG_CHECKING(whether getrusage is available)
+  AC_TRY_COMPILE([#include <sys/resource.h>],[struct rusage ac_x; getrusage (RUSAGE_SELF, &ac_x);],
+    [AC_MSG_RESULT(yes)
+     AC_DEFINE(HAVE_RUSAGE,,rusage)],
+      AC_MSG_RESULT(no))
+fi
 
 dnl --------------------------------------
 dnl checking for clock_time monotonic struct and call
@@ -1471,6 +1546,22 @@ if test "${enable_capabilities}" != "no"; then
   fi
 fi
 AC_SUBST(LIBCAP)
+
+dnl ---------------------------------------------------------------------------
+dnl http://www.gnu.org/software/autoconf-archive/ax_sys_weak_alias.html
+dnl Check for and set one of the following = 1
+dnl   HAVE_SYS_WEAK_ALIAS_ATTRIBUTE
+dnl   HAVE_SYS_WEAK_ALIAS_PRAGMA
+dnl   HAVE_SYS_WEAK_ALIAS_HPSECONDARY
+dnl   HAVE_SYS_WEAK_ALIAS_CRIDUPLICATE
+dnl If any scheme is found, set
+dnl   HAVE_SYS_WEAK_ALIAS=1
+dnl The following variable is set to text value
+dnl   WEAK_ALIAS = "attribute" || "pragma" || "hpsecondary" || "criduplicate" || "no"
+dnl If weak alias can cross object file boundaries
+dnl   WEAK_ALIAS_CROSSFILE = "yes" || "no"
+dnl ---------------------------------------------------------------------------
+AX_SYS_WEAK_ALIAS
 
 dnl ---------------------------
 dnl check for glibc 'backtrace'
@@ -1620,12 +1711,12 @@ echo "
 Quagga configuration
 --------------------
 quagga version          : ${PACKAGE_VERSION}
-host operating system  : ${host_os}
+host operating system   : ${host_os}
 source code location    : ${srcdir}
 compiler                : ${CC}
 compiler flags          : ${CFLAGS}
 make                    : ${MAKE-make}
-includes                : ${INCLUDES} ${SNMP_INCLUDES}
+includes                : ${INCLUDES}
 linker flags            : ${LDFLAGS} ${LIBS} ${LIBCAP} ${LIBREADLINE} ${LIBM}
 state file directory    : ${quagga_statedir}
 config file directory   : `eval echo \`echo ${sysconfdir}\``

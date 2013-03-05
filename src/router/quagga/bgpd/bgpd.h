@@ -59,6 +59,7 @@ struct bgp_master
 #define BGP_OPT_NO_FIB                   (1 << 0)
 #define BGP_OPT_MULTIPLE_INSTANCE        (1 << 1)
 #define BGP_OPT_CONFIG_CISCO             (1 << 2)
+#define BGP_OPT_NO_LISTEN                (1 << 3)
 };
 
 /* BGP instance structure.  */
@@ -123,7 +124,6 @@ struct bgp
   /* BGP Per AF flags */
   u_int16_t af_flags[AFI_MAX][SAFI_MAX];
 #define BGP_CONFIG_DAMPENING              (1 << 0)
-#define BGP_CONFIG_PGBGP                  (1 << 1)
 
   /* Static route configuration.  */
   struct bgp_table *route[AFI_MAX][SAFI_MAX];
@@ -260,6 +260,16 @@ struct bgp_filter
   } usmap;
 };
 
+/* IBGP/EBGP identifier.  We also have a CONFED peer, which is to say,
+   a peer who's AS is part of our Confederation.  */
+typedef enum
+{
+  BGP_PEER_IBGP = 1,
+  BGP_PEER_EBGP,
+  BGP_PEER_INTERNAL,
+  BGP_PEER_CONFED,
+} bgp_peer_sort_t;
+
 /* BGP neighbor structure. */
 struct peer
 {
@@ -282,6 +292,8 @@ struct peer
 
   /* Peer's local AS number. */
   as_t local_as;
+
+  bgp_peer_sort_t sort;
 
   /* Peer's Change local AS number. */
   as_t change_local_as;
@@ -369,6 +381,7 @@ struct peer
 #define PEER_FLAG_DYNAMIC_CAPABILITY        (1 << 5) /* dynamic capability */
 #define PEER_FLAG_DISABLE_CONNECTED_CHECK   (1 << 6) /* disable-connected-check */
 #define PEER_FLAG_LOCAL_AS_NO_PREPEND       (1 << 7) /* local-as no-prepend */
+#define PEER_FLAG_LOCAL_AS_REPLACE_AS       (1 << 8) /* local-as no-prepend replace-as */
 
   /* NSF mode (graceful restart) */
   u_char nsf[AFI_MAX][SAFI_MAX];
@@ -751,16 +764,6 @@ struct bgp_nlri
 /* Check AS path loop when we send NLRI.  */
 /* #define BGP_SEND_ASPATH_CHECK */
 
-/* IBGP/EBGP identifier.  We also have a CONFED peer, which is to say,
-   a peer who's AS is part of our Confederation.  */
-enum
-{
-  BGP_PEER_IBGP,
-  BGP_PEER_EBGP,
-  BGP_PEER_INTERNAL,
-  BGP_PEER_CONFED
-};
-
 /* Flag for peer_clear_soft().  */
 enum bgp_clear_type
 {
@@ -813,6 +816,7 @@ enum bgp_clear_type
 #define BGP_ERR_NO_EBGP_MULTIHOP_WITH_TTLHACK	-30
 #define BGP_ERR_NO_IBGP_WITH_TTLHACK		-31
 #define BGP_ERR_MAX				-32
+#define BGP_ERR_CANNOT_HAVE_LOCAL_AS_SAME_AS_REMOTE_AS    -33
 
 extern struct bgp_master *bm;
 
@@ -835,7 +839,7 @@ extern struct peer *peer_lookup_with_open (union sockunion *, as_t, struct in_ad
 				    int *);
 extern struct peer *peer_lock (struct peer *);
 extern struct peer *peer_unlock (struct peer *);
-extern int peer_sort (struct peer *peer);
+extern bgp_peer_sort_t peer_sort (struct peer *peer);
 extern int peer_active (struct peer *);
 extern int peer_active_nego (struct peer *);
 extern struct peer *peer_create_accept (struct bgp *);
@@ -940,7 +944,7 @@ extern int peer_distribute_unset (struct peer *, afi_t, safi_t, int);
 extern int peer_allowas_in_set (struct peer *, afi_t, safi_t, int);
 extern int peer_allowas_in_unset (struct peer *, afi_t, safi_t);
 
-extern int peer_local_as_set (struct peer *, as_t, int);
+extern int peer_local_as_set (struct peer *, as_t, int, int);
 extern int peer_local_as_unset (struct peer *);
 
 extern int peer_prefix_list_set (struct peer *, afi_t, safi_t, int, const char *);

@@ -22,14 +22,8 @@
 #include <zebra.h>
 
 #ifdef HAVE_SNMP
-#ifdef HAVE_NETSNMP
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
-#else
-#include <asn1.h>
-#include <snmp.h>
-#include <snmp_impl.h>
-#endif
 
 #include "if.h"
 #include "log.h"
@@ -156,7 +150,7 @@ ipFwNumber (struct variable *v, oid objid[], size_t *objid_len,
   /* Return number of routing entries. */
   result = 0;
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       result++;
 
   return (u_char *)&result;
@@ -181,7 +175,7 @@ ipCidrNumber (struct variable *v, oid objid[], size_t *objid_len,
   /* Return number of routing entries. */
   result = 0;
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       result++;
 
   return (u_char *)&result;
@@ -381,7 +375,7 @@ get_fwtable_route_node(struct variable *v, oid objid[], size_t *objid_len,
 	{
 	  if (!in_addr_cmp(&(*np)->p.u.prefix, (u_char *)&dest))
 	    {
-	      for (*rib = (*np)->info; *rib; *rib = (*rib)->next)
+	      RNODE_FOREACH_RIB (*np, *rib)
 	        {
 		  if (!in_addr_cmp((u_char *)&(*rib)->nexthop->gate.ipv4,
 				   (u_char *)&nexthop))
@@ -400,12 +394,12 @@ get_fwtable_route_node(struct variable *v, oid objid[], size_t *objid_len,
 
       /* Check destination first */
       if (in_addr_cmp(&np2->p.u.prefix, (u_char *)&dest) > 0)
-        for (rib2 = np2->info; rib2; rib2 = rib2->next)
+	RNODE_FOREACH_RIB (np2, rib2)
 	  check_replace(np2, rib2, np, rib);
 
       if (in_addr_cmp(&np2->p.u.prefix, (u_char *)&dest) == 0)
         { /* have to look at each rib individually */
-          for (rib2 = np2->info; rib2; rib2 = rib2->next)
+	  RNODE_FOREACH_RIB (np2, rib2)
 	    {
 	      int proto2, policy2;
 
@@ -462,6 +456,10 @@ ipFwTable (struct variable *v, oid objid[], size_t *objid_len,
   static int resarr[2];
   static struct in_addr netmask;
   struct nexthop *nexthop;
+
+  if (smux_header_table(v, objid, objid_len, exact, val_len, write_method)
+      == MATCH_FAILED)
+    return NULL;
 
   get_fwtable_route_node(v, objid, objid_len, exact, &np, &rib);
   if (!np)
@@ -561,6 +559,10 @@ static u_char *
 ipCidrTable (struct variable *v, oid objid[], size_t *objid_len,
 	     int exact, size_t *val_len, WriteMethod **write_method)
 {
+  if (smux_header_table(v, objid, objid_len, exact, val_len, write_method)
+      == MATCH_FAILED)
+    return NULL;
+
   switch (v->magic)
     {
     case IPCIDRROUTEDEST:

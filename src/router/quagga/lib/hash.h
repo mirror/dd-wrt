@@ -66,8 +66,7 @@ extern void *hash_release (struct hash *, void *);
 
 extern void hash_iterate (struct hash *, 
 		   void (*) (struct hash_backet *, void *), void *);
-extern int hash_iterate_until(struct hash *,
-			      int (*) (struct hash_backet *, void *), void *);
+
 extern void hash_clean (struct hash *, void (*) (void *));
 extern void hash_free (struct hash *);
 
