@@ -193,15 +193,15 @@ void main_config(void)
 		if (nvram_match("hotss_enable", "1")
 			&& strlen(nvram_safe_get("hotss_net")) > 0)
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("hotss_net"), get_wan_addr);
+						nvram_safe_get("hotss_net"), get_wan_ipaddr());
 		else if (nvram_match("chilli_enable", "1")
 				&& strlen(nvram_safe_get("chilli_net")) > 0)
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("chilli_net"), get_wan_addr);
+						nvram_safe_get("chilli_net"), get_wan_ipaddr());
 		else if (nvram_match("hotss_enable", "1") 
 			|| nvram_match("chilli_enable", "1"))
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-						get_wan_addr);
+						get_wan_ipaddr());
 						}
 	fclose(fp);
 						
@@ -242,15 +242,15 @@ void main_config(void)
 		if (nvram_match("hotss_enable", "1")
 			&& strlen(nvram_safe_get("hotss_net")) > 0)
 				fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("hotss_net"), get_wan_addr);
+						nvram_safe_get("hotss_net"), get_wan_ipaddr());
 		else if (nvram_match("chilli_enable", "1")
 				&& strlen(nvram_safe_get("chilli_net")) > 0)
 				fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("chilli_net"), get_wan_addr);
+						nvram_safe_get("chilli_net"), get_wan_ipaddr());
 		else if (nvram_match("hotss_enable", "1") 
 			|| nvram_match("chilli_enable", "1"))
 				fprintf(fp, "iptables -t nat -D POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-						get_wan_addr);
+						get_wan_ipaddr());
 						}
 	fclose(fp);
 }
