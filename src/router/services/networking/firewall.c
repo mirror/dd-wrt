@@ -2834,19 +2834,19 @@ static void filter_table(void)
 		if (nvram_match("hotss_enable", "1")
 			&& strlen(nvram_safe_get("hotss_net")) > 0)
 				save2file
-					("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					("-t nat -A POSTROUTING -s %s -j SNAT --to-source=%s\n",
 						nvram_safe_get("hotss_net"),
 						nvram_safe_get("lan_ipaddr"));
 		else if (nvram_match("chilli_enable", "1")
 			&& strlen(nvram_safe_get("chilli_net")) > 0)
 				save2file
-					("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
+					("-t nat -A POSTROUTING -s %s -j SNAT --to-source=%s\n",
 						nvram_safe_get("chilli_net"),
 						nvram_safe_get("lan_ipaddr"));
 		else if (nvram_match("hotss_enable", "1") 
 			|| nvram_match("chilli_enable", "1"))
 				save2file
-					("-A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+					("-t nat -A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 						nvram_safe_get("lan_ipaddr"));
 		}
 	else {
