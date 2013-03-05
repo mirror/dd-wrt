@@ -53,12 +53,15 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/cert.p12", "openvpn_pkcs12");
 	write_nvram("/tmp/openvpn/static.key", "openvpn_static");
 
+	//	use jffs for ccd if available
 	if (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
 		&& nvram_match("sys_enable_jffs2", "1"))	{
 			mkdir("/jffs/etc", 0700);
 			mkdir("/jffs/etc/openvpn", 0700);
 			mkdir("/jffs/etc/openvpn/ccd", 0700);
+			if (strlen(nvram_safe_get("openvpn_ccddef")) > 0)	//	reduces writes
+				write_nvram("/jffs/etc/openvpn/ccd/DEFAULT", "openvpn_ccddef");
 		}		
 
 	FILE *fp = fopen("/tmp/openvpn/openvpn.conf", "wb");
@@ -97,7 +100,7 @@ void start_openvpnserver(void)
 			nvram_safe_get("openvpn_proto"),
 			nvram_safe_get("openvpn_cipher"),
 			nvram_safe_get("openvpn_auth"));
-	if (nvram_match("enable_jffs2", "1")
+	if (nvram_match("enable_jffs2", "1")	//	use jffs for ccd if available
 		&& nvram_match("jffs_mounted", "1")
 		&& nvram_match("sys_enable_jffs2", "1"))
 			fprintf(fp,"client-config-dir /tmp/openvpn/ccd\n");
