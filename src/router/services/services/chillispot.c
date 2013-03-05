@@ -37,7 +37,7 @@
 #include <services.h>
 
 #ifdef HAVE_CHILLI
-
+void main_config(void);
 #ifdef HAVE_HOTSPOT
 void hotspotsys_config(void);
 #endif
@@ -103,12 +103,12 @@ void start_chilli(void)
 
 	ret = killall("chilli", SIGTERM);
 	ret = killall("chilli", SIGKILL);
-	if (f_exists("/tmp/hotss.conf")) {
-		ret = eval("chilli", "-c", "/tmp/hotss.conf");
+	if (f_exists("/tmp/chilli/hotss.conf")) {
+		ret = eval("chilli", "-c", "/tmp/chilli/hotss.conf");
 		dd_syslog(LOG_INFO,
 			  "hotspotsystem : chilli daemon successfully started\n");
 	} else {
-		ret = eval("chilli", "-c", "/tmp/chilli.conf");
+		ret = eval("chilli", "-c", "/tmp/chilli/chilli.conf");
 		dd_syslog(LOG_INFO,
 			  "chilli : chilli daemon successfully started\n");
 	}
@@ -123,11 +123,114 @@ void start_chilli(void)
 void stop_chilli(void)
 {
 	if (stop_process("chilli", "chilli daemon")) {
-		unlink("/tmp/chilli.conf");
-		unlink("/tmp/hotss.conf");
+		unlink("/tmp/chilli/chilli.conf");
+		unlink("/tmp/chilli/hotss.conf");
 	}
 	cprintf("done\n");
 	return;
+}
+
+void main_config(void)
+{
+	mkdir("/tmp/chilli", 0700);
+
+	FILE *fp = fopen("/tmp/chilli/ip-up.sh", "wb");
+	if (fp == NULL)
+		return;
+
+	fprintf(fp, "#!/bin/sh\n");
+/*	if we have a gw traffic will go there.
+		but if we dont have any gw we might use chilli on a local network only 
+		also we need to allow traffic in/outgoing to chilli*/
+
+	fprintf(fp, "iptables -I INPUT -i tun0 -j %s\n", log_accept);
+	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n", log_accept);
+	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n", log_accept);
+			// DD-WRT BrainSlayer CHILLI Security Fix 
+	fprintf(fp, "iptables -A FORWARD -i br0 -j %s\n", log_drop);
+	fprintf(fp, "iptables -A FORWARD -o br0 -j %s\n", log_drop);
+
+		// MASQUERADE chilli/hotss
+	if (nvram_match("wan_proto", "disabled")) {
+		if (nvram_match("hotss_enable", "1")
+			&& strlen(nvram_safe_get("hotss_net")) > 0)
+				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("hotss_net"),
+						nvram_safe_get("lan_ipaddr"));
+		else if (nvram_match("chilli_enable", "1")
+			&& strlen(nvram_safe_get("chilli_net")) > 0)
+				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("chilli_net"),
+						nvram_safe_get("lan_ipaddr"));
+		else if (nvram_match("hotss_enable", "1") 
+			|| nvram_match("chilli_enable", "1"))
+				fprintf(fp, "iptables -t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+						nvram_safe_get("lan_ipaddr"));
+		}
+	else {
+		if (nvram_match("hotss_enable", "1")
+			&& strlen(nvram_safe_get("hotss_net")) > 0)
+				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("hotss_net"), wanaddr);
+		else if (nvram_match("chilli_enable", "1")
+				&& strlen(nvram_safe_get("chilli_net")) > 0)
+				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("chilli_net"), wanaddr);
+		else if (nvram_match("hotss_enable", "1") 
+			|| nvram_match("chilli_enable", "1"))
+				fprintf(fp, "iptables -t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+						wanaddr);
+						}
+	fclose(fp);
+						
+	FILE *fp = fopen("/tmp/chilli/ip-down.sh", "wb");
+	if (fp == NULL)
+		return;
+
+	fprintf(fp, "#!/bin/sh\n");
+/*	if we have a gw traffic will go there.
+		but if we dont have any gw we might use chilli on a local network only 
+		also we need to allow traffic in/outgoing to chilli*/
+
+	fprintf(fp, "iptables -D INPUT -i tun0 -j %s\n", log_accept);
+	fprintf(fp, "iptables -D FORWARD -i tun0 -j %s\n", log_accept);
+	fprintf(fp, "iptables -D FORWARD -o tun0 -j %s\n", log_accept);
+			// DD-WRT BrainSlayer CHILLI Security Fix 
+	fprintf(fp, "iptables -D FORWARD -i br0 -j %s\n", log_drop);
+	fprintf(fp, "iptables -D FORWARD -o br0 -j %s\n", log_drop);
+
+		// MASQUERADE chilli/hotss
+	if (nvram_match("wan_proto", "disabled")) {
+		if (nvram_match("hotss_enable", "1")
+			&& strlen(nvram_safe_get("hotss_net")) > 0)
+				fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("hotss_net"),
+						nvram_safe_get("lan_ipaddr"));
+		else if (nvram_match("chilli_enable", "1")
+			&& strlen(nvram_safe_get("chilli_net")) > 0)
+				fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("chilli_net"),
+						nvram_safe_get("lan_ipaddr"));
+		else if (nvram_match("hotss_enable", "1") 
+			|| nvram_match("chilli_enable", "1"))
+				fprintf(fp, "iptables -t nat -D POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+						nvram_safe_get("lan_ipaddr"));
+		}
+	else {
+		if (nvram_match("hotss_enable", "1")
+			&& strlen(nvram_safe_get("hotss_net")) > 0)
+				fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("hotss_net"), wanaddr);
+		else if (nvram_match("chilli_enable", "1")
+				&& strlen(nvram_safe_get("chilli_net")) > 0)
+				fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("chilli_net"), wanaddr);
+		else if (nvram_match("hotss_enable", "1") 
+			|| nvram_match("chilli_enable", "1"))
+				fprintf(fp, "iptables -t nat -D POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+						wanaddr);
+						}
+	fclose(fp);
 }
 
 void chilli_config(void)
@@ -137,8 +240,8 @@ void chilli_config(void)
 
 #ifdef HAVE_CHILLILOCAL
 
-	if (!(fp = fopen("/tmp/fonusers.local", "w"))) {
-		perror("/tmp/fonusers.local");
+	if (!(fp = fopen("/tmp/chilli/fonusers.local", "w"))) {
+		perror("/tmp/chilli/fonusers.local");
 		return;
 	}
 	char *users = nvram_safe_get("fon_userlist");
@@ -159,11 +262,12 @@ void chilli_config(void)
 	fclose(fp);
 #endif
 
-	if (!(fp = fopen("/tmp/chilli.conf", "w"))) {
-		perror("/tmp/chilli.conf");
+	if (!(fp = fopen("/tmp/chilli/chilli.conf", "w"))) {
+		perror("/tmp/chilli/chilli.conf");
 		return;
 	}
-
+	fprintf(fp, "ipup /tmp/chilli/ip-up.sh");
+	fprintf(fp, "ipdown /tmp/chilli/ip-down.sh");
 	fprintf(fp, "radiusserver1 %s\n", nvram_get("chilli_radius"));
 	fprintf(fp, "radiusserver2 %s\n", nvram_get("chilli_backup"));
 	fprintf(fp, "radiussecret %s\n", nvram_get("chilli_pass"));
@@ -281,11 +385,13 @@ void hotspotsys_config(void)
 		system2(sendid);
 	}
 
-	if (!(fp = fopen("/tmp/hotss.conf", "w"))) {
-		perror("/tmp/hotss.conf");
+	if (!(fp = fopen("/tmp/chilli/hotss.conf", "w"))) {
+		perror("/tmp/chilli/hotss.conf");
 		return;
 	}
 
+	fprintf(fp, "ipup /tmp/chilli/ip-up.sh");
+	fprintf(fp, "ipdown /tmp/chilli/ip-down.sh");
 	fprintf(fp, "radiusserver1 radius.hotspotsystem.com\n");
 	fprintf(fp, "radiusserver2 radius2.hotspotsystem.com\n");
 	fprintf(fp, "radiussecret hotsys123\n");
