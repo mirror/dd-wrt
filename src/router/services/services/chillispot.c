@@ -205,7 +205,7 @@ void main_config(void)
 						}
 	fclose(fp);
 						
-	FILE *fp = fopen("/tmp/chilli/ip-down.sh", "wb");
+	fp = fopen("/tmp/chilli/ip-down.sh", "wb");
 	if (fp == NULL)
 		return;
 
