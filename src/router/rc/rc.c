@@ -63,7 +63,7 @@ int redial_main(int argc, char **argv)
 			fclose(fp);
 			system("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-serving-system|grep registered|wc -l>/tmp/qmistatus",clientid);
 		}else{
-			sysprintf("echo 1 > /tmp/qmistatus");
+			sysprintf("echo 0 > /tmp/qmistatus");
 		}
 #endif
 
