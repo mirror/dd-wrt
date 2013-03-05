@@ -143,12 +143,12 @@ void main_config(void)
 		but if we dont have any gw we might use chilli on a local network only 
 		also we need to allow traffic in/outgoing to chilli*/
 
-	fprintf(fp, "iptables -I INPUT -i tun0 -j %s\n", log_accept);
-	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n", log_accept);
-	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n", log_accept);
+	fprintf(fp, "iptables -I INPUT -i tun0 -j logaccept\n");
+	fprintf(fp, "iptables -I FORWARD -i tun0 -j logaccept\n");
+	fprintf(fp, "iptables -I FORWARD -o tun0 -j logaccept\n");
 			// DD-WRT BrainSlayer CHILLI Security Fix 
-	fprintf(fp, "iptables -A FORWARD -i br0 -j %s\n", log_drop);
-	fprintf(fp, "iptables -A FORWARD -o br0 -j %s\n", log_drop);
+	fprintf(fp, "iptables -A FORWARD -i br0 -j logdrop\n");
+	fprintf(fp, "iptables -A FORWARD -o br0 -j logdrop\n");
 
 		// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
@@ -171,15 +171,15 @@ void main_config(void)
 		if (nvram_match("hotss_enable", "1")
 			&& strlen(nvram_safe_get("hotss_net")) > 0)
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("hotss_net"), wanaddr);
+						nvram_safe_get("hotss_net"), get_wan_addr);
 		else if (nvram_match("chilli_enable", "1")
 				&& strlen(nvram_safe_get("chilli_net")) > 0)
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("chilli_net"), wanaddr);
+						nvram_safe_get("chilli_net"), get_wan_addr);
 		else if (nvram_match("hotss_enable", "1") 
 			|| nvram_match("chilli_enable", "1"))
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-						wanaddr);
+						get_wan_addr);
 						}
 	fclose(fp);
 						
@@ -192,12 +192,12 @@ void main_config(void)
 		but if we dont have any gw we might use chilli on a local network only 
 		also we need to allow traffic in/outgoing to chilli*/
 
-	fprintf(fp, "iptables -D INPUT -i tun0 -j %s\n", log_accept);
-	fprintf(fp, "iptables -D FORWARD -i tun0 -j %s\n", log_accept);
-	fprintf(fp, "iptables -D FORWARD -o tun0 -j %s\n", log_accept);
+	fprintf(fp, "iptables -D INPUT -i tun0 -j logaccept\n");
+	fprintf(fp, "iptables -D FORWARD -i tun0 -j logaccept\n");
+	fprintf(fp, "iptables -D FORWARD -o tun0 -j logaccept\n");
 			// DD-WRT BrainSlayer CHILLI Security Fix 
-	fprintf(fp, "iptables -D FORWARD -i br0 -j %s\n", log_drop);
-	fprintf(fp, "iptables -D FORWARD -o br0 -j %s\n", log_drop);
+	fprintf(fp, "iptables -D FORWARD -i br0 -j logdrop\n");
+	fprintf(fp, "iptables -D FORWARD -o br0 -j logdrop\n");
 
 		// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
@@ -220,15 +220,15 @@ void main_config(void)
 		if (nvram_match("hotss_enable", "1")
 			&& strlen(nvram_safe_get("hotss_net")) > 0)
 				fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("hotss_net"), wanaddr);
+						nvram_safe_get("hotss_net"), get_wan_addr);
 		else if (nvram_match("chilli_enable", "1")
 				&& strlen(nvram_safe_get("chilli_net")) > 0)
 				fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("chilli_net"), wanaddr);
+						nvram_safe_get("chilli_net"), get_wan_addr);
 		else if (nvram_match("hotss_enable", "1") 
 			|| nvram_match("chilli_enable", "1"))
 				fprintf(fp, "iptables -t nat -D POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-						wanaddr);
+						get_wan_addr);
 						}
 	fclose(fp);
 }
