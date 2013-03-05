@@ -134,6 +134,8 @@ void stop_chilli(void)
 static char log_accept[15];
 static char log_drop[15];
 static char log_reject[64];
+#define TARG_PASS		"ACCEPT"
+#define TARG_RST		"REJECT --reject-with tcp-reset"
 
 void main_config(void)
 {
