@@ -253,6 +253,9 @@ void main_config(void)
 						get_wan_ipaddr());
 						}
 	fclose(fp);
+	
+	chmod("/tmp/chilli/ip-up.sh", 0750)
+	chmod("/tmp/chilli/ip-down.sh", 0750)
 }
 
 void chilli_config(void)
