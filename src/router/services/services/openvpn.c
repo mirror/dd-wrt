@@ -56,6 +56,7 @@ void start_openvpnserver(void)
 	if (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
 		&& nvram_match("sys_enable_jffs2", "1"))	{
+			mkdir("/jffs/etc", 0700);
 			mkdir("/jffs/etc/openvpn", 0700);
 			mkdir("/jffs/etc/openvpn/ccd", 0700);
 		}		
@@ -99,9 +100,9 @@ void start_openvpnserver(void)
 	if (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
 		&& nvram_match("sys_enable_jffs2", "1"))
-			printf(fp,"client-config-dir /tmp/openvpn/ccd\n");
+			fprintf(fp,"client-config-dir /tmp/openvpn/ccd\n");
 	else
-			printf(fp,"client-config-dir /jffs/etc/openvpn/ccd\n");
+			fprintf(fp,"client-config-dir /jffs/etc/openvpn/ccd\n");
 	if (nvram_invmatch("openvpn_lzo", "0")) 
 		fprintf(fp, "comp-lzo %s\n",    //yes/no/adaptive/disable 
 		nvram_safe_get("openvpn_lzo"));
