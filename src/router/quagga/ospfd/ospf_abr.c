@@ -88,23 +88,18 @@ ospf_area_range_add (struct ospf_area *area, struct ospf_area_range *range)
 }
 
 static void
-ospf_area_range_delete (struct ospf_area *area, struct ospf_area_range *range)
+ospf_area_range_delete (struct ospf_area *area, struct route_node *rn)
 {
-  struct route_node *rn;
-  struct prefix_ipv4 p;
+  struct ospf_area_range *range = rn->info;
 
-  p.family = AF_INET;
-  p.prefixlen = range->masklen;
-  p.prefix = range->addr;
+  if (range->specifics != 0)
+    ospf_delete_discard_route (area->ospf->new_table,
+			       (struct prefix_ipv4 *) &rn->p);
 
-  rn = route_node_lookup (area->ranges, (struct prefix *)&p);
-  if (rn)
-    {
-      ospf_area_range_free (rn->info);
-      rn->info = NULL;
-      route_unlock_node (rn);
-      route_unlock_node (rn);
-    }
+  ospf_area_range_free (range);
+  rn->info = NULL;
+  route_unlock_node (rn);
+  route_unlock_node (rn);
 }
 
 struct ospf_area_range *
@@ -263,20 +258,20 @@ ospf_area_range_unset (struct ospf *ospf, struct in_addr area_id,
 		       struct prefix_ipv4 *p)
 {
   struct ospf_area *area;
-  struct ospf_area_range *range;
+  struct route_node *rn;
 
   area = ospf_area_lookup_by_area_id (ospf, area_id);
   if (area == NULL)
     return 0;
 
-  range = ospf_area_range_lookup (area, p);
-  if (range == NULL)
+  rn = route_node_lookup (area->ranges, (struct prefix*)p);
+  if (rn == NULL)
     return 0;
 
-  if (ospf_area_range_active (range))
+  if (ospf_area_range_active (rn->info))
     ospf_schedule_abr_task (ospf);
 
-  ospf_area_range_delete (area, range);
+  ospf_area_range_delete (area, rn);
 
   return 1;
 }
@@ -571,12 +566,20 @@ ospf_check_abr_status (struct ospf *ospf)
 
 static void
 ospf_abr_update_aggregate (struct ospf_area_range *range,
-                           struct ospf_route *or)
+                           struct ospf_route *or, struct ospf_area *area)
 {
   if (IS_DEBUG_OSPF_EVENT)
     zlog_debug ("ospf_abr_update_aggregate(): Start");
 
-  if (range->cost_config != OSPF_AREA_RANGE_COST_UNSPEC)
+  if (CHECK_FLAG (area->stub_router_state, OSPF_AREA_IS_STUB_ROUTED) &&
+      (range->cost != OSPF_STUB_MAX_METRIC_SUMMARY_COST))
+    {
+      range->cost = OSPF_STUB_MAX_METRIC_SUMMARY_COST;
+      if (IS_DEBUG_OSPF_EVENT)
+        zlog_debug ("ospf_abr_update_aggregate(): use summary max-metric 0x%08x",
+                   range->cost);
+    }
+  else if (range->cost_config != OSPF_AREA_RANGE_COST_UNSPEC)
     {
       if (IS_DEBUG_OSPF_EVENT)
         zlog_debug ("ospf_abr_update_aggregate(): use configured cost %d",
@@ -587,12 +590,18 @@ ospf_abr_update_aggregate (struct ospf_area_range *range,
   else
     {
       if (range->specifics == 0)
-        range->cost = or->cost; /* 1st time get 1st cost */
+	{
+	  if (IS_DEBUG_OSPF_EVENT)
+	    zlog_debug ("ospf_abr_update_aggregate(): use or->cost %d",
+			or->cost);
+
+	  range->cost = or->cost; /* 1st time get 1st cost */
+	}
 
       if (or->cost > range->cost)
         {
           if (IS_DEBUG_OSPF_EVENT)
-            zlog_debug ("ospf_abr_update_aggregate(): largest cost, update");
+            zlog_debug ("ospf_abr_update_aggregate(): update to %d", or->cost);
 
           range->cost = or->cost;
         }
@@ -716,9 +725,15 @@ ospf_abr_announce_network_to_area (struct prefix_ipv4 *p, u_int32_t cost,
 {
   struct ospf_lsa *lsa, *old = NULL;
   struct summary_lsa *sl = NULL;
+  u_int32_t full_cost;
 
   if (IS_DEBUG_OSPF_EVENT)
     zlog_debug ("ospf_abr_announce_network_to_area(): Start");
+
+  if (CHECK_FLAG (area->stub_router_state, OSPF_AREA_IS_STUB_ROUTED))
+    full_cost = OSPF_STUB_MAX_METRIC_SUMMARY_COST;
+  else
+    full_cost = cost;
 
   old = ospf_lsa_lookup_by_prefix (area->lsdb, OSPF_SUMMARY_LSA, 
                                    (struct prefix_ipv4 *) p,
@@ -734,8 +749,9 @@ ospf_abr_announce_network_to_area (struct prefix_ipv4 *p, u_int32_t cost,
         zlog_debug ("ospf_abr_announce_network_to_area(): "
         	   "old metric: %d, new metric: %d",
                GET_METRIC (sl->metric), cost);
-               
-      if (GET_METRIC (sl->metric) == cost)
+
+      if ((GET_METRIC (sl->metric) == full_cost) &&
+	  ((old->flags & OSPF_LSA_IN_MAXAGE) == 0))
         {
           /* unchanged. simply reapprove it */
           if (IS_DEBUG_OSPF_EVENT)
@@ -749,7 +765,7 @@ ospf_abr_announce_network_to_area (struct prefix_ipv4 *p, u_int32_t cost,
           if (IS_DEBUG_OSPF_EVENT)
             zlog_debug ("ospf_abr_announce_network_to_area(): "
                        "refreshing summary");
-          set_metric (old, cost);
+          set_metric (old, full_cost);
           lsa = ospf_lsa_refresh (area->ospf, old);
           
           if (!lsa)
@@ -773,7 +789,7 @@ ospf_abr_announce_network_to_area (struct prefix_ipv4 *p, u_int32_t cost,
       if (IS_DEBUG_OSPF_EVENT)
         zlog_debug ("ospf_abr_announce_network_to_area(): "
         	   "creating new summary");
-      lsa = ospf_summary_lsa_originate ( (struct prefix_ipv4 *)p, cost, area);
+      lsa = ospf_summary_lsa_originate ( (struct prefix_ipv4 *)p, full_cost, area);
           /* This will flood through area. */
       
       if (!lsa)
@@ -934,7 +950,7 @@ ospf_abr_announce_network (struct ospf *ospf,
                        inet_ntoa (p->prefix), p->prefixlen);
             if ((range = ospf_area_range_match (or_area, p)) 
                  && !ospf_area_is_transit (area))
-              ospf_abr_update_aggregate (range, or);
+              ospf_abr_update_aggregate (range, or, area);
             else
               ospf_abr_announce_network_to_area (p, or->cost, area);
         }
@@ -1124,7 +1140,8 @@ ospf_abr_announce_rtr_to_area (struct prefix_ipv4 *p, u_int32_t cost,
 		   GET_METRIC (slsa->metric), cost);
     }
 
-  if (old && (GET_METRIC (slsa->metric) == cost))
+  if (old && (GET_METRIC (slsa->metric) == cost) &&
+      ((old->flags & OSPF_LSA_IN_MAXAGE) == 0))
     {
       if (IS_DEBUG_OSPF_EVENT)
 	zlog_debug ("ospf_abr_announce_rtr_to_area(): old summary approved");
@@ -1695,7 +1712,8 @@ ospf_abr_manage_discard_routes (struct ospf *ospf)
 	      ospf_add_discard_route (ospf->new_table, area,
 				      (struct prefix_ipv4 *) &rn->p);
 	    else
-	      ospf_delete_discard_route ((struct prefix_ipv4 *) &rn->p);
+	      ospf_delete_discard_route (ospf->new_table,
+					 (struct prefix_ipv4 *) &rn->p);
 	  }
 }
 

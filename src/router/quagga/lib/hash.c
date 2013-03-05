@@ -166,35 +166,6 @@ hash_iterate (struct hash *hash,
       }
 }
 
-/*
-  Iterates until 0 is returned or until completion
-  Return: 1 if iteration completed
-  Return: 0 if iteration was interrupted
-*/
-
-int
-hash_iterate_until(struct hash *hash,
-		   int (*func) (struct hash_backet *, void *), void *arg)
-{
-  unsigned int i;
-  struct hash_backet *hb;
-  struct hash_backet *hbnext;
-  int ret;
-  
-  for (i = 0; i < hash->size; i++)
-    for (hb = hash->index[i]; hb; hb = hbnext)
-      {
-	/* get pointer to next hash backet here, in case (*func)
-	 * decides to delete hb by calling hash_release
-	 */
-	hbnext = hb->next;
-	ret = (*func) (hb, arg);
-	if (!ret)
-	  return 0;
-      }
-  return 1;
-}
-
 /* Clean up hash.  */
 void
 hash_clean (struct hash *hash, void (*free_func) (void *))

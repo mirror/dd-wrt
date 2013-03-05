@@ -2054,7 +2054,7 @@ validate_metric_style_narrow (struct vty *vty, struct isis_area *area)
     {
       if ((area->is_type & IS_LEVEL_1) &&
           (circuit->is_type & IS_LEVEL_1) &&
-          (circuit->metrics[0].metric_default > MAX_NARROW_LINK_METRIC))
+          (circuit->te_metric[0] > MAX_NARROW_LINK_METRIC))
         {
           vty_out (vty, "ISIS circuit %s metric is invalid%s",
                    circuit->interface->name, VTY_NEWLINE);
@@ -2062,7 +2062,7 @@ validate_metric_style_narrow (struct vty *vty, struct isis_area *area)
         }
       if ((area->is_type & IS_LEVEL_2) &&
           (circuit->is_type & IS_LEVEL_2) &&
-          (circuit->metrics[1].metric_default > MAX_NARROW_LINK_METRIC))
+          (circuit->te_metric[1] > MAX_NARROW_LINK_METRIC))
         {
           vty_out (vty, "ISIS circuit %s metric is invalid%s",
                    circuit->interface->name, VTY_NEWLINE);
@@ -2092,19 +2092,22 @@ DEFUN (metric_style,
       area->newmetric = 1;
       area->oldmetric = 0;
     }
-  else if (strncmp (argv[0], "t", 1) == 0)
-    {
-      area->newmetric = 1;
-      area->oldmetric = 1;
-    }
-  else if (strncmp (argv[0], "n", 1) == 0)
+  else
     {
       ret = validate_metric_style_narrow (vty, area);
       if (ret != CMD_SUCCESS)
         return ret;
 
-      area->newmetric = 0;
-      area->oldmetric = 1;
+      if (strncmp (argv[0], "t", 1) == 0)
+	{
+	  area->newmetric = 1;
+	  area->oldmetric = 1;
+	}
+      else if (strncmp (argv[0], "n", 1) == 0)
+	{
+	  area->newmetric = 0;
+	  area->oldmetric = 1;
+	}
     }
 
   return CMD_SUCCESS;
@@ -2855,6 +2858,11 @@ isis_config_write (struct vty *vty)
 	      vty_out (vty, " metric-style wide%s", VTY_NEWLINE);
 	    else
 	      vty_out (vty, " metric-style transition%s", VTY_NEWLINE);
+	    write++;
+	  }
+	else
+	  {
+	    vty_out (vty, " metric-style narrow%s", VTY_NEWLINE);
 	    write++;
 	  }
 	/* ISIS - overload-bit */

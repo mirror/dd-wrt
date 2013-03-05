@@ -61,7 +61,6 @@ struct vtysh_client
   { .fd = -1, .name = "babeld", .flag = VTYSH_BABELD, .path = BABEL_VTYSH_PATH},
 };
 
-#define VTYSH_INDEX_MAX (sizeof(vtysh_client)/sizeof(vtysh_client[0]))
 
 /* We need direct access to ripd to implement vtysh_exit_ripd_only. */
 static struct vtysh_client *ripd_client = NULL;
@@ -269,7 +268,7 @@ vtysh_pager_init (void)
   if (pager_defined)
     vtysh_pager_name = strdup (pager_defined);
   else
-    vtysh_pager_name = strdup ("cat");
+    vtysh_pager_name = strdup ("more");
 }
 
 /* Command execution over the vty interface. */
@@ -374,7 +373,7 @@ vtysh_execute_func (const char *line, int pager)
 
 	if (! strcmp(cmd->string,"configure terminal"))
 	  {
-	    for (i = 0; i < VTYSH_INDEX_MAX; i++)
+	    for (i = 0; i < array_size(vtysh_client); i++)
 	      {
 	        cmd_stat = vtysh_client_execute(&vtysh_client[i], line, fp);
 		if (cmd_stat == CMD_WARNING)
@@ -413,7 +412,7 @@ vtysh_execute_func (const char *line, int pager)
 	  }
 
 	cmd_stat = CMD_SUCCESS;
-	for (i = 0; i < VTYSH_INDEX_MAX; i++)
+	for (i = 0; i < array_size(vtysh_client); i++)
 	  {
 	    if (cmd->daemon & vtysh_client[i].flag)
 	      {
@@ -525,7 +524,7 @@ vtysh_config_from_file (struct vty *vty, FILE *fp)
 	    u_int i;
 	    int cmd_stat = CMD_SUCCESS;
 
-	    for (i = 0; i < VTYSH_INDEX_MAX; i++)
+	    for (i = 0; i < array_size(vtysh_client); i++)
 	      {
 	        if (cmd->daemon & vtysh_client[i].flag)
 		  {
@@ -1354,7 +1353,7 @@ DEFUN (vtysh_show_memory,
   int ret = CMD_SUCCESS;
   char line[] = "show memory\n";
   
-  for (i = 0; i < VTYSH_INDEX_MAX; i++)
+  for (i = 0; i < array_size(vtysh_client); i++)
     if ( vtysh_client[i].fd >= 0 )
       {
         fprintf (stdout, "Memory statistics for %s:\n", 
@@ -1377,7 +1376,7 @@ DEFUN (vtysh_show_logging,
   int ret = CMD_SUCCESS;
   char line[] = "show logging\n";
   
-  for (i = 0; i < VTYSH_INDEX_MAX; i++)
+  for (i = 0; i < array_size(vtysh_client); i++)
     if ( vtysh_client[i].fd >= 0 )
       {
         fprintf (stdout,"Logging configuration for %s:\n", 
@@ -1733,7 +1732,7 @@ DEFUN (vtysh_write_terminal,
 	   VTY_NEWLINE);
   vty_out (vty, "!%s", VTY_NEWLINE);
 
-  for (i = 0; i < VTYSH_INDEX_MAX; i++)
+  for (i = 0; i < array_size(vtysh_client); i++)
     ret = vtysh_client_config (&vtysh_client[i], line);
 
   /* Integrate vtysh specific configuration. */
@@ -1807,7 +1806,7 @@ write_config_integrated(void)
       return CMD_SUCCESS;
     }
 
-  for (i = 0; i < VTYSH_INDEX_MAX; i++)
+  for (i = 0; i < array_size(vtysh_client); i++)
     ret = vtysh_client_config (&vtysh_client[i], line);
 
   vtysh_config_dump (fp);
@@ -1844,9 +1843,10 @@ DEFUN (vtysh_write_memory,
 
   fprintf (stdout,"Building Configuration...\n");
 	  
-  for (i = 0; i < VTYSH_INDEX_MAX; i++)
+  for (i = 0; i < array_size(vtysh_client); i++)
     ret = vtysh_client_execute (&vtysh_client[i], line, stdout);
-  
+
+  system("startservice quagga_writememory");  
   fprintf (stdout,"[OK]\n");
 
   return ret;
@@ -1885,7 +1885,7 @@ DEFUN (vtysh_terminal_length,
 {
   int lines;
   char *endptr = NULL;
-  char default_pager[12];
+  char default_pager[10];
 
   lines = strtol (argv[0], &endptr, 10);
   if (lines < 0 || lines > 512 || *endptr != '\0')
@@ -1902,7 +1902,7 @@ DEFUN (vtysh_terminal_length,
 
   if (lines != 0)
     {
-      snprintf(default_pager, 12, "head -n %i", lines);
+      snprintf(default_pager, 10, "more -%i", lines);
       vtysh_pager_name = strdup (default_pager);
     }
 
@@ -1934,7 +1934,7 @@ DEFUN (vtysh_show_daemons,
 {
   u_int i;
 
-  for (i = 0; i < VTYSH_INDEX_MAX; i++)
+  for (i = 0; i < array_size(vtysh_client); i++)
     if ( vtysh_client[i].fd >= 0 )
       vty_out(vty, " %s", vtysh_client[i].name);
   vty_out(vty, "%s", VTY_NEWLINE);
@@ -2068,7 +2068,7 @@ DEFUN (vtysh_telnet_port,
   execute_command ("telnet", 2, argv[0], argv[1]);
   return CMD_SUCCESS;
 }
-
+/*
 DEFUN (vtysh_ssh,
        vtysh_ssh_cmd,
        "ssh WORD",
@@ -2078,8 +2078,8 @@ DEFUN (vtysh_ssh,
   execute_command ("ssh", 1, argv[0], NULL);
   return CMD_SUCCESS;
 }
-
-DEFUN (vtysh_start_shell,
+*/
+/*DEFUN (vtysh_start_shell,
        vtysh_start_shell_cmd,
        "start-shell",
        "Start UNIX shell\n")
@@ -2087,8 +2087,8 @@ DEFUN (vtysh_start_shell,
   execute_command ("sh", 0, NULL, NULL);
   return CMD_SUCCESS;
 }
-
-DEFUN (vtysh_start_bash,
+*/
+/*DEFUN (vtysh_start_bash,
        vtysh_start_bash_cmd,
        "start-shell bash",
        "Start UNIX shell\n"
@@ -2096,8 +2096,8 @@ DEFUN (vtysh_start_bash,
 {
   execute_command ("bash", 0, NULL, NULL);
   return CMD_SUCCESS;
-}
-
+}*/
+/*
 DEFUN (vtysh_start_zsh,
        vtysh_start_zsh_cmd,
        "start-shell zsh",
@@ -2107,7 +2107,7 @@ DEFUN (vtysh_start_zsh,
   execute_command ("zsh", 0, NULL, NULL);
   return CMD_SUCCESS;
 }
-
+*/
 static void
 vtysh_install_default (enum node_type node)
 {
@@ -2184,7 +2184,7 @@ vtysh_connect_all(const char *daemon_name)
   int rc = 0;
   int matches = 0;
 
-  for (i = 0; i < VTYSH_INDEX_MAX; i++)
+  for (i = 0; i < array_size(vtysh_client); i++)
     {
       if (!daemon_name || !strcmp(daemon_name, vtysh_client[i].name))
 	{
@@ -2430,7 +2430,6 @@ vtysh_init_vty (void)
 #endif
   install_element (VIEW_NODE, &vtysh_telnet_cmd);
   install_element (VIEW_NODE, &vtysh_telnet_port_cmd);
-  install_element (VIEW_NODE, &vtysh_ssh_cmd);
   install_element (ENABLE_NODE, &vtysh_ping_cmd);
   install_element (ENABLE_NODE, &vtysh_ping_ip_cmd);
   install_element (ENABLE_NODE, &vtysh_traceroute_cmd);
@@ -2441,10 +2440,6 @@ vtysh_init_vty (void)
 #endif
   install_element (ENABLE_NODE, &vtysh_telnet_cmd);
   install_element (ENABLE_NODE, &vtysh_telnet_port_cmd);
-  install_element (ENABLE_NODE, &vtysh_ssh_cmd);
-  install_element (ENABLE_NODE, &vtysh_start_shell_cmd);
-  install_element (ENABLE_NODE, &vtysh_start_bash_cmd);
-  install_element (ENABLE_NODE, &vtysh_start_zsh_cmd);
   
   install_element (VIEW_NODE, &vtysh_show_memory_cmd);
   install_element (ENABLE_NODE, &vtysh_show_memory_cmd);

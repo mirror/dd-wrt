@@ -68,7 +68,7 @@ struct zebra_privs_t ospfd_privs =
   .vty_group = VTY_GROUP,
 #endif
   .caps_p = _caps_p,
-  .cap_num_p = sizeof(_caps_p)/sizeof(_caps_p[0]),
+  .cap_num_p = array_size(_caps_p),
   .cap_num_i = 0
 };
 
@@ -191,6 +191,11 @@ main (int argc, char **argv)
   /* Set umask before anything for security */
   umask (0027);
 
+#ifdef SUPPORT_OSPF_API
+  /* OSPF apiserver is disabled by default. */
+  ospf_apiserver_enable = 0;
+#endif /* SUPPORT_OSPF_API */
+
   /* get program name */
   progname = ((p = strrchr (argv[0], '/')) ? ++p : argv[0]);
 
@@ -275,17 +280,12 @@ main (int argc, char **argv)
   /* OSPF master init. */
   ospf_master_init ();
 
-#ifdef SUPPORT_OSPF_API
-  /* OSPF apiserver is disabled by default. */
-  ospf_apiserver_enable = 0;
-#endif /* SUPPORT_OSPF_API */
-
   /* Initializations. */
   master = om->master;
 
   /* Library inits. */
   zprivs_init (&ospfd_privs);
-  signal_init (master, Q_SIGC(ospf_signals), ospf_signals);
+  signal_init (master, array_size(ospf_signals), ospf_signals);
   cmd_init (1);
   debug_init ();
   vty_init (master);

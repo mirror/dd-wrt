@@ -187,8 +187,7 @@ static const struct message orf_type_str[] =
   { ORF_TYPE_PREFIX,		"Prefixlist"		},
   { ORF_TYPE_PREFIX_OLD,	"Prefixlist (old)"	},
 };
-static const int orf_type_str_max
-	= sizeof(orf_type_str)/sizeof(orf_type_str[0]);
+static const int orf_type_str_max = array_size(orf_type_str);
 
 static const struct message orf_mode_str[] =
 {
@@ -196,8 +195,7 @@ static const struct message orf_mode_str[] =
   { ORF_MODE_SEND,	"Send"		},
   { ORF_MODE_BOTH,	"Both"		},
 };
-static const int orf_mode_str_max
-	 = sizeof(orf_mode_str)/sizeof(orf_mode_str[0]);
+static const int orf_mode_str_max = array_size(orf_mode_str);
 
 static int
 bgp_capability_orf_entry (struct peer *peer, struct capability_header *hdr)
@@ -336,28 +334,6 @@ bgp_capability_orf_entry (struct peer *peer, struct capability_header *hdr)
 }
 
 static int
-bgp_capability_orf (struct peer *peer, struct capability_header *hdr)
-{
-  struct stream *s = BGP_INPUT (peer);
-  size_t end = stream_get_getp (s) + hdr->length;
-  
-  assert (stream_get_getp(s) + sizeof(struct capability_orf_entry) <= end);
-  
-  /* We must have at least one ORF entry, as the caller has already done
-   * minimum length validation for the capability code - for ORF there must
-   * at least one ORF entry (header and unknown number of pairs of bytes).
-   */
-  do
-    {
-      if (bgp_capability_orf_entry (peer, hdr) == -1)
-        return -1;
-    } 
-  while (stream_get_getp(s) + sizeof(struct capability_orf_entry) < end);
-  
-  return 0;
-}
-
-static int
 bgp_capability_restart (struct peer *peer, struct capability_header *caphdr)
 {
   struct stream *s = BGP_INPUT (peer);
@@ -449,7 +425,7 @@ static const struct message capcode_str[] =
   { CAPABILITY_CODE_REFRESH_OLD,	"Route Refresh (Old)"		},
   { CAPABILITY_CODE_ORF_OLD,		"ORF (Old)"			},
 };
-static const int capcode_str_max = sizeof(capcode_str)/sizeof(capcode_str[0]);
+static const int capcode_str_max = array_size(capcode_str);
 
 /* Minimum sizes for length field of each cap (so not inc. the header) */
 static const size_t cap_minsizes[] = 
@@ -575,7 +551,7 @@ bgp_capability_parse (struct peer *peer, size_t length, int *mp_capability,
             break;
           case CAPABILITY_CODE_ORF:
           case CAPABILITY_CODE_ORF_OLD:
-            if (bgp_capability_orf (peer, &caphdr))
+            if (bgp_capability_orf_entry (peer, &caphdr))
               return -1;
             break;
           case CAPABILITY_CODE_RESTART:

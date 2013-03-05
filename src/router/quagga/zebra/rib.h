@@ -24,6 +24,8 @@
 #define _ZEBRA_RIB_H
 
 #include "prefix.h"
+#include "table.h"
+#include "queue.h"
 
 #define DISTANCE_INFINITY  255
 
@@ -38,10 +40,6 @@ union g_addr {
 
 struct rib
 {
-  /* Status Flags for the *route_node*, but kept in the head RIB.. */
-  u_char rn_status;
-#define RIB_ROUTE_QUEUED(x)	(1 << (x))
-
   /* Link list. */
   struct rib *next;
   struct rib *prev;
@@ -96,6 +94,74 @@ struct meta_queue
   struct list *subq[MQ_SIZE];
   u_int32_t size; /* sum of lengths of all subqueues */
 };
+
+/*
+ * Structure that represents a single destination (prefix).
+ */
+typedef struct rib_dest_t_
+{
+
+  /*
+   * Back pointer to the route node for this destination. This helps
+   * us get to the prefix that this structure is for.
+   */
+  struct route_node *rnode;
+
+  /*
+   * Doubly-linked list of routes for this prefix.
+   */
+  struct rib *routes;
+
+  /*
+   * Flags, see below.
+   */
+  u_int32_t flags;
+
+  /*
+   * Linkage to put dest on the FPM processing queue.
+   */
+  TAILQ_ENTRY(rib_dest_t_) fpm_q_entries;
+
+} rib_dest_t;
+
+#define RIB_ROUTE_QUEUED(x)	(1 << (x))
+
+/*
+ * The maximum qindex that can be used.
+ */
+#define ZEBRA_MAX_QINDEX        (MQ_SIZE - 1)
+
+/*
+ * This flag indicates that a given prefix has been 'advertised' to
+ * the FPM to be installed in the forwarding plane.
+ */
+#define RIB_DEST_SENT_TO_FPM   (1 << (ZEBRA_MAX_QINDEX + 1))
+
+/*
+ * This flag is set when we need to send an update to the FPM about a
+ * dest.
+ */
+#define RIB_DEST_UPDATE_FPM    (1 << (ZEBRA_MAX_QINDEX + 2))
+
+/*
+ * Macro to iterate over each route for a destination (prefix).
+ */
+#define RIB_DEST_FOREACH_ROUTE(dest, rib)				\
+  for ((rib) = (dest) ? (dest)->routes : NULL; (rib); (rib) = (rib)->next)
+
+/*
+ * Same as above, but allows the current node to be unlinked.
+ */
+#define RIB_DEST_FOREACH_ROUTE_SAFE(dest, rib, next)	\
+  for ((rib) = (dest) ? (dest)->routes : NULL;		\
+       (rib) && ((next) = (rib)->next, 1);		\
+       (rib) = (next))
+
+#define RNODE_FOREACH_RIB(rn, rib)				\
+  RIB_DEST_FOREACH_ROUTE (rib_dest_from_rnode (rn), rib)
+
+#define RNODE_FOREACH_RIB_SAFE(rn, rib, next)				\
+  RIB_DEST_FOREACH_ROUTE_SAFE (rib_dest_from_rnode (rn), rib, next)
 
 /* Static route information. */
 struct static_ipv4
@@ -220,6 +286,44 @@ struct vrf
   struct route_table *stable[AFI_MAX][SAFI_MAX];
 };
 
+/*
+ * rib_table_info_t
+ *
+ * Structure that is hung off of a route_table that holds information about
+ * the table.
+ */
+typedef struct rib_table_info_t_
+{
+
+  /*
+   * Back pointer to vrf.
+   */
+  struct vrf *vrf;
+  afi_t afi;
+  safi_t safi;
+
+} rib_table_info_t;
+
+typedef enum
+{
+  RIB_TABLES_ITER_S_INIT,
+  RIB_TABLES_ITER_S_ITERATING,
+  RIB_TABLES_ITER_S_DONE
+} rib_tables_iter_state_t;
+
+/*
+ * Structure that holds state for iterating over all tables in the
+ * Routing Information Base.
+ */
+typedef struct rib_tables_iter_t_
+{
+  uint32_t vrf_id;
+  int afi_safi_ix;
+
+  rib_tables_iter_state_t state;
+} rib_tables_iter_t;
+
+extern const char *nexthop_type_to_str (enum nexthop_types_t nh_type);
 extern struct nexthop *nexthop_ifindex_add (struct rib *, unsigned int);
 extern struct nexthop *nexthop_ifname_add (struct rib *, char *);
 extern struct nexthop *nexthop_blackhole_add (struct rib *);
@@ -306,5 +410,118 @@ static_delete_ipv6 (struct prefix *p, u_char type, struct in6_addr *gate,
 		    const char *ifname, u_char distance, u_int32_t vrf_id);
 
 #endif /* HAVE_IPV6 */
+
+extern int rib_gc_dest (struct route_node *rn);
+extern struct route_table *rib_tables_iter_next (rib_tables_iter_t *iter);
+
+/*
+ * Inline functions.
+ */
+
+/*
+ * rib_table_info
+ */
+static inline rib_table_info_t *
+rib_table_info (struct route_table *table)
+{
+  return (rib_table_info_t *) table->info;
+}
+
+/*
+ * rib_dest_from_rnode
+ */
+static inline rib_dest_t *
+rib_dest_from_rnode (struct route_node *rn)
+{
+  return (rib_dest_t *) rn->info;
+}
+
+/*
+ * rnode_to_ribs
+ *
+ * Returns a pointer to the list of routes corresponding to the given
+ * route_node.
+ */
+static inline struct rib *
+rnode_to_ribs (struct route_node *rn)
+{
+  rib_dest_t *dest;
+
+  dest = rib_dest_from_rnode (rn);
+  if (!dest)
+    return NULL;
+
+  return dest->routes;
+}
+
+/*
+ * rib_dest_prefix
+ */
+static inline struct prefix *
+rib_dest_prefix (rib_dest_t *dest)
+{
+  return &dest->rnode->p;
+}
+
+/*
+ * rib_dest_af
+ *
+ * Returns the address family that the destination is for.
+ */
+static inline u_char
+rib_dest_af (rib_dest_t *dest)
+{
+  return dest->rnode->p.family;
+}
+
+/*
+ * rib_dest_table
+ */
+static inline struct route_table *
+rib_dest_table (rib_dest_t *dest)
+{
+  return dest->rnode->table;
+}
+
+/*
+ * rib_dest_vrf
+ */
+static inline struct vrf *
+rib_dest_vrf (rib_dest_t *dest)
+{
+  return rib_table_info (rib_dest_table (dest))->vrf;
+}
+
+/*
+ * rib_tables_iter_init
+ */
+static inline void
+rib_tables_iter_init (rib_tables_iter_t *iter)
+
+{
+  memset (iter, 0, sizeof (*iter));
+  iter->state = RIB_TABLES_ITER_S_INIT;
+}
+
+/*
+ * rib_tables_iter_started
+ *
+ * Returns TRUE if this iterator has started iterating over the set of
+ * tables.
+ */
+static inline int
+rib_tables_iter_started (rib_tables_iter_t *iter)
+{
+  return iter->state != RIB_TABLES_ITER_S_INIT;
+}
+
+/*
+ * rib_tables_iter_cleanup
+ */
+static inline void
+rib_tables_iter_cleanup (rib_tables_iter_t *iter)
+{
+  iter->state = RIB_TABLES_ITER_S_DONE;
+}
 
 #endif /*_ZEBRA_RIB_H */

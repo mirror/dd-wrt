@@ -62,7 +62,7 @@ static const struct message attr_str [] =
   { BGP_ATTR_AS4_AGGREGATOR,   "AS4_AGGREGATOR" }, 
   { BGP_ATTR_AS_PATHLIMIT,     "AS_PATHLIMIT" },
 };
-static const int attr_str_max = sizeof(attr_str)/sizeof(attr_str[0]);
+static const int attr_str_max = array_size(attr_str);
 
 static const struct message attr_flag_str[] =
 {
@@ -72,8 +72,7 @@ static const struct message attr_flag_str[] =
   /* bgp_attr_flags_diagnose() relies on this bit being last in this list */
   { BGP_ATTR_FLAG_EXTLEN,   "Extended Length" },
 };
-static const size_t attr_flag_str_max =
-  sizeof (attr_flag_str) / sizeof (attr_flag_str[0]);
+static const size_t attr_flag_str_max = array_size(attr_flag_str);
 
 static struct hash *cluster_hash;
 
@@ -319,8 +318,25 @@ bgp_attr_extra_get (struct attr *attr)
 void
 bgp_attr_dup (struct attr *new, struct attr *orig)
 {
+  struct attr_extra *extra = new->extra;
+
   *new = *orig;
-  if (orig->extra)
+  /* if caller provided attr_extra space, use it in any case.
+   *
+   * This is neccesary even if orig->extra equals NULL, because otherwise
+   * memory may be later allocated on the heap by bgp_attr_extra_get.
+   *
+   * That memory would eventually be leaked, because the caller must not
+   * call bgp_attr_extra_free if he provided attr_extra on the stack.
+   */
+  if (extra)
+    {
+      new->extra = extra;
+      memset(new->extra, 0, sizeof(struct attr_extra));
+      if (orig->extra)
+        *new->extra = *orig->extra;
+    }
+  else if (orig->extra)
     {
       new->extra = bgp_attr_extra_new();
       *new->extra = *orig->extra;
@@ -342,7 +358,8 @@ attr_unknown_count (void)
 unsigned int
 attrhash_key_make (void *p)
 {
-  const struct attr * attr = (struct attr *) p;
+  const struct attr *attr = (struct attr *) p;
+  const struct attr_extra *extra = attr->extra;
   uint32_t key = 0;
 #define MIX(val)	key = jhash_1word(val, key)
 
@@ -356,12 +373,12 @@ attrhash_key_make (void *p)
   key += attr->med;
   key += attr->local_pref;
   
-  if (attr->extra)
+  if (extra)
     {
-      MIX(attr->extra->aggregator_as);
-      MIX(attr->extra->aggregator_addr.s_addr);
-      MIX(attr->extra->weight);
-      MIX(attr->extra->mp_nexthop_global_in.s_addr);
+      MIX(extra->aggregator_as);
+      MIX(extra->aggregator_addr.s_addr);
+      MIX(extra->weight);
+      MIX(extra->mp_nexthop_global_in.s_addr);
     }
   
   if (attr->aspath)
@@ -369,19 +386,19 @@ attrhash_key_make (void *p)
   if (attr->community)
     MIX(community_hash_make (attr->community));
   
-  if (attr->extra)
+  if (extra)
     {
-      if (attr->extra->ecommunity)
-        MIX(ecommunity_hash_make (attr->extra->ecommunity));
-      if (attr->extra->cluster)
-        MIX(cluster_hash_key_make (attr->extra->cluster));
-      if (attr->extra->transit)
-        MIX(transit_hash_key_make (attr->extra->transit));
+      if (extra->ecommunity)
+        MIX(ecommunity_hash_make (extra->ecommunity));
+      if (extra->cluster)
+        MIX(cluster_hash_key_make (extra->cluster));
+      if (extra->transit)
+        MIX(transit_hash_key_make (extra->transit));
 
 #ifdef HAVE_IPV6
-      MIX(attr->extra->mp_nexthop_len);
-      key = jhash(attr->extra->mp_nexthop_global.s6_addr, 16, key);
-      key = jhash(attr->extra->mp_nexthop_local.s6_addr, 16, key);
+      MIX(extra->mp_nexthop_len);
+      key = jhash(extra->mp_nexthop_global.s6_addr, 16, key);
+      key = jhash(extra->mp_nexthop_local.s6_addr, 16, key);
 #endif /* HAVE_IPV6 */
     }
 
@@ -559,10 +576,7 @@ bgp_attr_default_intern (u_char origin)
 {
   struct attr attr;
   struct attr *new;
-  
-  memset (&attr, 0, sizeof (struct attr));
-  bgp_attr_extra_get (&attr);
-  
+
   bgp_attr_default_set(&attr, origin);
 
   new = bgp_attr_intern (&attr);
@@ -579,11 +593,12 @@ bgp_attr_aggregate_intern (struct bgp *bgp, u_char origin,
 {
   struct attr attr;
   struct attr *new;
-  struct attr_extra *attre;
+  struct attr_extra attre;
 
   memset (&attr, 0, sizeof (struct attr));
-  attre = bgp_attr_extra_get (&attr);
-  
+  memset (&attre, 0, sizeof (struct attr_extra));
+  attr.extra = &attre;
+
   /* Origin attribute. */
   attr.origin = origin;
   attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_ORIGIN);
@@ -604,22 +619,21 @@ bgp_attr_aggregate_intern (struct bgp *bgp, u_char origin,
       attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_COMMUNITIES);
     }
 
-  attre->weight = BGP_ATTR_DEFAULT_WEIGHT;
+  attre.weight = BGP_ATTR_DEFAULT_WEIGHT;
 #ifdef HAVE_IPV6
-  attre->mp_nexthop_len = IPV6_MAX_BYTELEN;
+  attre.mp_nexthop_len = IPV6_MAX_BYTELEN;
 #endif
   if (! as_set)
     attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_ATOMIC_AGGREGATE);
   attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_AGGREGATOR);
   if (CHECK_FLAG (bgp->config, BGP_CONFIG_CONFEDERATION))
-    attre->aggregator_as = bgp->confed_id;
+    attre.aggregator_as = bgp->confed_id;
   else
-    attre->aggregator_as = bgp->as;
-  attre->aggregator_addr = bgp->router_id;
+    attre.aggregator_as = bgp->as;
+  attre.aggregator_addr = bgp->router_id;
 
   new = bgp_attr_intern (&attr);
-  bgp_attr_extra_free (&attr);
-  
+
   aspath_unintern (&new->aspath);
   return new;
 }
@@ -654,34 +668,35 @@ bgp_attr_unintern_sub (struct attr *attr)
 
 /* Free bgp attribute and aspath. */
 void
-bgp_attr_unintern (struct attr **attr)
+bgp_attr_unintern (struct attr **pattr)
 {
+  struct attr *attr = *pattr;
   struct attr *ret;
   struct attr tmp;
+  struct attr_extra tmp_extra;
   
   /* Decrement attribute reference. */
-  (*attr)->refcnt--;
+  attr->refcnt--;
   
-  tmp = *(*attr);
+  tmp = *attr;
   
-  if ((*attr)->extra)
+  if (attr->extra)
     {
-      tmp.extra = bgp_attr_extra_new ();
-      memcpy (tmp.extra, (*attr)->extra, sizeof (struct attr_extra));
+      tmp.extra = &tmp_extra;
+      memcpy (tmp.extra, attr->extra, sizeof (struct attr_extra));
     }
   
   /* If reference becomes zero then free attribute object. */
-  if ((*attr)->refcnt == 0)
-    {    
-      ret = hash_release (attrhash, *attr);
+  if (attr->refcnt == 0)
+    {
+      ret = hash_release (attrhash, attr);
       assert (ret != NULL);
-      bgp_attr_extra_free (*attr);
-      XFREE (MTYPE_ATTR, *attr);
-      *attr = NULL;
+      bgp_attr_extra_free (attr);
+      XFREE (MTYPE_ATTR, attr);
+      *pattr = NULL;
     }
 
   bgp_attr_unintern_sub (&tmp);
-  bgp_attr_extra_free (&tmp);
 }
 
 void
@@ -722,7 +737,7 @@ bgp_attr_malformed (struct bgp_attr_parser_args *args, u_char subcode,
   u_char *notify_datap = (length > 0 ? args->startp : NULL);
   
   /* Only relax error handling for eBGP peers */
-  if (peer_sort (peer) != BGP_PEER_EBGP)
+  if (peer->sort != BGP_PEER_EBGP)
     {
       bgp_notify_send_with_data (peer, BGP_NOTIFY_UPDATE_ERR, subcode,
                                  notify_datap, length);
@@ -996,11 +1011,9 @@ bgp_attr_aspath_check (struct peer *const peer, struct attr *const attr)
   struct bgp *bgp = peer->bgp;
   struct aspath *aspath;
 
-  bgp = peer->bgp;
-    
   /* Confederation sanity check. */
-  if ((peer_sort (peer) == BGP_PEER_CONFED && ! aspath_left_confed_check (attr->aspath)) ||
-     (peer_sort (peer) == BGP_PEER_EBGP && aspath_confed_check (attr->aspath)))
+  if ((peer->sort == BGP_PEER_CONFED && ! aspath_left_confed_check (attr->aspath)) ||
+     (peer->sort == BGP_PEER_EBGP && aspath_confed_check (attr->aspath)))
     {
       zlog (peer->log, LOG_ERR, "Malformed AS path from %s", peer->host);
       bgp_notify_send (peer, BGP_NOTIFY_UPDATE_ERR,
@@ -1011,7 +1024,7 @@ bgp_attr_aspath_check (struct peer *const peer, struct attr *const attr)
   /* First AS check for EBGP. */
   if (bgp != NULL && bgp_flag_check (bgp, BGP_FLAG_ENFORCE_FIRST_AS))
     {
-      if (peer_sort (peer) == BGP_PEER_EBGP 
+      if (peer->sort == BGP_PEER_EBGP
 	  && ! aspath_firstas_check (attr->aspath, peer->as))
  	{
  	  zlog (peer->log, LOG_ERR,
@@ -1155,7 +1168,7 @@ bgp_attr_local_pref (struct bgp_attr_parser_args *args)
   /* If it is contained in an UPDATE message that is received from an
      external peer, then this attribute MUST be ignored by the
      receiving speaker. */
-  if (peer_sort (peer) == BGP_PEER_EBGP)
+  if (peer->sort == BGP_PEER_EBGP)
     {
       stream_forward_getp (peer->ibuf, length);
       return BGP_ATTR_PARSE_PROCEED;
@@ -1347,6 +1360,9 @@ bgp_attr_munge_as4_attrs (struct peer *const peer,
   /* need to reconcile NEW_AS_PATH and AS_PATH */
   if (!ignore_as4_path && (attr->flag & (ATTR_FLAG_BIT( BGP_ATTR_AS4_PATH))))
     {
+       if (!attr->aspath)
+         return BGP_ATTR_PARSE_PROCEED;
+
        newpath = aspath_reconcile_as4 (attr->aspath, as4_path);
        aspath_unintern (&attr->aspath);
        attr->aspath = aspath_intern (newpath);
@@ -1709,7 +1725,7 @@ bgp_attr_unknown (struct bgp_attr_parser_args *args)
 }
 
 /* Read attribute of update packet.  This function is called from
-   bgp_update() in bgpd.c.  */
+   bgp_update_receive() in bgp_packet.c.  */
 bgp_attr_parse_ret_t
 bgp_attr_parse (struct peer *peer, struct attr *attr, bgp_size_t size,
 		struct bgp_nlri *mp_update, struct bgp_nlri *mp_withdraw)
@@ -2020,7 +2036,7 @@ bgp_attr_check (struct peer *peer, struct attr *attr)
   if (! CHECK_FLAG (attr->flag, ATTR_FLAG_BIT (BGP_ATTR_NEXT_HOP)))
     type = BGP_ATTR_NEXT_HOP;
 
-  if (peer_sort (peer) == BGP_PEER_IBGP
+  if (peer->sort == BGP_PEER_IBGP
       && ! CHECK_FLAG (attr->flag, ATTR_FLAG_BIT (BGP_ATTR_LOCAL_PREF)))
     type = BGP_ATTR_LOCAL_PREF;
 
@@ -2069,7 +2085,7 @@ bgp_packet_attribute (struct bgp *bgp, struct peer *peer,
   /* AS path attribute. */
 
   /* If remote-peer is EBGP */
-  if (peer_sort (peer) == BGP_PEER_EBGP
+  if (peer->sort == BGP_PEER_EBGP
       && (! CHECK_FLAG (peer->af_flags[afi][safi], PEER_FLAG_AS_PATH_UNCHANGED)
 	  || attr->aspath->segments == NULL)
       && (! CHECK_FLAG (peer->af_flags[afi][safi], PEER_FLAG_RSERVER_CLIENT)))
@@ -2085,12 +2101,19 @@ bgp_packet_attribute (struct bgp *bgp, struct peer *peer,
 	}
       else
 	{
-	  aspath = aspath_add_seq (aspath, peer->local_as);
-	  if (peer->change_local_as)
+	  if (peer->change_local_as) {
+            /* If replace-as is specified, we only use the change_local_as when
+               advertising routes. */
+            if( ! CHECK_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS) ) {
+              aspath = aspath_add_seq (aspath, peer->local_as);
+            }
 	    aspath = aspath_add_seq (aspath, peer->change_local_as);
+          } else {
+            aspath = aspath_add_seq (aspath, peer->local_as);
+          }
 	}
     }
-  else if (peer_sort (peer) == BGP_PEER_CONFED)
+  else if (peer->sort == BGP_PEER_CONFED)
     {
       /* A confed member, so we need to do the AS_CONFED_SEQUENCE thing */
       aspath = aspath_dup (attr->aspath);
@@ -2147,8 +2170,8 @@ bgp_packet_attribute (struct bgp *bgp, struct peer *peer,
     }
 
   /* Local preference. */
-  if (peer_sort (peer) == BGP_PEER_IBGP ||
-      peer_sort (peer) == BGP_PEER_CONFED)
+  if (peer->sort == BGP_PEER_IBGP ||
+      peer->sort == BGP_PEER_CONFED)
     {
       stream_putc (s, BGP_ATTR_FLAG_TRANS);
       stream_putc (s, BGP_ATTR_LOCAL_PREF);
@@ -2221,9 +2244,9 @@ bgp_packet_attribute (struct bgp *bgp, struct peer *peer,
     }
 
   /* Route Reflector. */
-  if (peer_sort (peer) == BGP_PEER_IBGP
+  if (peer->sort == BGP_PEER_IBGP
       && from
-      && peer_sort (from) == BGP_PEER_IBGP)
+      && from->sort == BGP_PEER_IBGP)
     {
       /* Originator ID. */
       stream_putc (s, BGP_ATTR_FLAG_OPTIONAL);
@@ -2359,8 +2382,8 @@ bgp_packet_attribute (struct bgp *bgp, struct peer *peer,
       
       assert (attre);
       
-      if (peer_sort (peer) == BGP_PEER_IBGP 
-          || peer_sort (peer) == BGP_PEER_CONFED)
+      if (peer->sort == BGP_PEER_IBGP
+          || peer->sort == BGP_PEER_CONFED)
 	{
 	  if (attre->ecommunity->size * 8 > 255)
 	    {

@@ -82,6 +82,7 @@ bgp_option_set (int flag)
     case BGP_OPT_NO_FIB:
     case BGP_OPT_MULTIPLE_INSTANCE:
     case BGP_OPT_CONFIG_CISCO:
+    case BGP_OPT_NO_LISTEN:
       SET_FLAG (bm->options, flag);
       break;
     default:
@@ -201,7 +202,7 @@ bgp_cluster_id_set (struct bgp *bgp, struct in_addr *cluster_id)
   /* Clear all IBGP peer. */
   for (ALL_LIST_ELEMENTS (bgp->peer, node, nnode, peer))
     {
-      if (peer_sort (peer) != BGP_PEER_IBGP)
+      if (peer->sort != BGP_PEER_IBGP)
 	continue;
 
       if (peer->status == Established)
@@ -229,7 +230,7 @@ bgp_cluster_id_unset (struct bgp *bgp)
   /* Clear all IBGP peer. */
   for (ALL_LIST_ELEMENTS (bgp->peer, node, nnode, peer))
     {
-      if (peer_sort (peer) != BGP_PEER_IBGP)
+      if (peer->sort != BGP_PEER_IBGP)
 	continue;
 
       if (peer->status == Established)
@@ -645,9 +646,9 @@ peer_global_config_reset (struct peer *peer)
   peer->v_connect = BGP_DEFAULT_CONNECT_RETRY;
 }
 
-/* Check peer's AS number and determin is this peer IBGP or EBGP */
-int
-peer_sort (struct peer *peer)
+/* Check peer's AS number and determines if this peer is IBGP or EBGP */
+static bgp_peer_sort_t
+peer_calc_sort (struct peer *peer)
 {
   struct bgp *bgp;
 
@@ -694,6 +695,14 @@ peer_sort (struct peer *peer)
 	      ? BGP_PEER_INTERNAL : peer->local_as == peer->as
 	      ? BGP_PEER_IBGP : BGP_PEER_EBGP);
     }
+}
+
+/* Calculate and cache the peer "sort" */
+bgp_peer_sort_t
+peer_sort (struct peer *peer)
+{
+  peer->sort = peer_calc_sort (peer);
+  return peer->sort;
 }
 
 static void
@@ -866,7 +875,7 @@ peer_create (union sockunion *su, struct bgp *bgp, as_t local_as,
   peer->readtime = peer->resettime = bgp_clock ();
 
   /* Default TTL set. */
-  peer->ttl = (peer_sort (peer) == BGP_PEER_IBGP ? 255 : 1);
+  peer->ttl = (peer->sort == BGP_PEER_IBGP) ? 255 : 1;
 
   /* Make peer's address string. */
   sockunion2str (su, buf, SU_ADDRSTRLEN);
@@ -897,7 +906,7 @@ peer_create_accept (struct bgp *bgp)
 static void
 peer_as_change (struct peer *peer, as_t as)
 {
-  int type;
+  bgp_peer_sort_t type;
 
   /* Stop peer. */
   if (! CHECK_FLAG (peer->sflags, PEER_STATUS_GROUP))
@@ -953,6 +962,7 @@ peer_as_change (struct peer *peer, as_t as)
     {
       peer->change_local_as = 0;
       UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND);
+      UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS);
     }
 }
 
@@ -1821,6 +1831,7 @@ peer_group_bind (struct bgp *bgp, union sockunion *su,
 	{
 	  group->conf->change_local_as = 0;
 	  UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND);
+	  UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS);
 	}
     }
 
@@ -2056,7 +2067,8 @@ bgp_get (struct bgp **bgp_val, as_t *as, const char *name)
   *bgp_val = bgp;
 
   /* Create BGP server socket, if first instance.  */
-  if (list_isempty(bm->bgp))
+  if (list_isempty(bm->bgp)
+      && !bgp_option_check (BGP_OPT_NO_LISTEN))
     {
       if (bgp_socket (bm->port, bm->address) < 0)
 	return BGP_ERR_INVALID_VALUE;
@@ -2673,7 +2685,7 @@ peer_ebgp_multihop_set (struct peer *peer, int ttl)
   struct listnode *node, *nnode;
   struct peer *peer1;
 
-  if (peer_sort (peer) == BGP_PEER_IBGP)
+  if (peer->sort == BGP_PEER_IBGP)
     return 0;
 
   /* see comment in peer_ttl_security_hops_set() */
@@ -2687,7 +2699,7 @@ peer_ebgp_multihop_set (struct peer *peer, int ttl)
 
           for (ALL_LIST_ELEMENTS (group->peer, node, nnode, peer1))
             {
-              if (peer_sort (peer1) == BGP_PEER_IBGP)
+              if (peer1->sort == BGP_PEER_IBGP)
                 continue;
 
               if (peer1->gtsm_hops != 0)
@@ -2705,7 +2717,7 @@ peer_ebgp_multihop_set (struct peer *peer, int ttl)
 
   if (! CHECK_FLAG (peer->sflags, PEER_STATUS_GROUP))
     {
-      if (peer->fd >= 0 && peer_sort (peer) != BGP_PEER_IBGP)
+      if (peer->fd >= 0 && peer->sort != BGP_PEER_IBGP)
 	sockopt_ttl (peer->su.sa.sa_family, peer->fd, peer->ttl);
     }
   else
@@ -2713,7 +2725,7 @@ peer_ebgp_multihop_set (struct peer *peer, int ttl)
       group = peer->group;
       for (ALL_LIST_ELEMENTS (group->peer, node, nnode, peer))
 	{
-	  if (peer_sort (peer) == BGP_PEER_IBGP)
+	  if (peer->sort == BGP_PEER_IBGP)
 	    continue;
 
 	  peer->ttl = group->conf->ttl;
@@ -2731,7 +2743,7 @@ peer_ebgp_multihop_unset (struct peer *peer)
   struct peer_group *group;
   struct listnode *node, *nnode;
 
-  if (peer_sort (peer) == BGP_PEER_IBGP)
+  if (peer->sort == BGP_PEER_IBGP)
     return 0;
 
   if (peer->gtsm_hops != 0 && peer->ttl != MAXTTL)
@@ -2744,7 +2756,7 @@ peer_ebgp_multihop_unset (struct peer *peer)
 
   if (! CHECK_FLAG (peer->sflags, PEER_STATUS_GROUP))
     {
-      if (peer->fd >= 0 && peer_sort (peer) != BGP_PEER_IBGP)
+      if (peer->fd >= 0 && peer->sort != BGP_PEER_IBGP)
 	sockopt_ttl (peer->su.sa.sa_family, peer->fd, peer->ttl);
     }
   else
@@ -2752,7 +2764,7 @@ peer_ebgp_multihop_unset (struct peer *peer)
       group = peer->group;
       for (ALL_LIST_ELEMENTS (group->peer, node, nnode, peer))
 	{
-	  if (peer_sort (peer) == BGP_PEER_IBGP)
+	  if (peer->sort == BGP_PEER_IBGP)
 	    continue;
 
 	  peer->ttl = 1;
@@ -3304,7 +3316,7 @@ peer_advertise_interval_unset (struct peer *peer)
   UNSET_FLAG (peer->config, PEER_CONFIG_ROUTEADV);
   peer->routeadv = 0;
 
-  if (peer_sort (peer) == BGP_PEER_IBGP)
+  if (peer->sort == BGP_PEER_IBGP)
     peer->v_routeadv = BGP_DEFAULT_IBGP_ROUTEADV;
   else
     peer->v_routeadv = BGP_DEFAULT_EBGP_ROUTEADV;
@@ -3395,7 +3407,7 @@ peer_allowas_in_unset (struct peer *peer, afi_t afi, safi_t safi)
 }
 
 int
-peer_local_as_set (struct peer *peer, as_t as, int no_prepend)
+peer_local_as_set (struct peer *peer, as_t as, int no_prepend, int replace_as)
 {
   struct bgp *bgp = peer->bgp;
   struct peer_group *group;
@@ -3411,9 +3423,14 @@ peer_local_as_set (struct peer *peer, as_t as, int no_prepend)
   if (peer_group_active (peer))
     return BGP_ERR_INVALID_FOR_PEER_GROUP_MEMBER;
 
+  if (peer->as == as)
+    return BGP_ERR_CANNOT_HAVE_LOCAL_AS_SAME_AS_REMOTE_AS;
+
   if (peer->change_local_as == as &&
       ((CHECK_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND) && no_prepend)
-       || (! CHECK_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND) && ! no_prepend)))
+       || (! CHECK_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND) && ! no_prepend)) &&
+      ((CHECK_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS) && replace_as)
+       || (! CHECK_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS) && ! replace_as)))
     return 0;
 
   peer->change_local_as = as;
@@ -3421,6 +3438,11 @@ peer_local_as_set (struct peer *peer, as_t as, int no_prepend)
     SET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND);
   else
     UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND);
+
+  if (replace_as)
+    SET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS);
+  else
+    UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS);
 
   if (! CHECK_FLAG (peer->sflags, PEER_STATUS_GROUP))
     {
@@ -3444,6 +3466,11 @@ peer_local_as_set (struct peer *peer, as_t as, int no_prepend)
 	SET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND);
       else
 	UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND);
+
+      if (replace_as)
+        SET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS);
+      else
+        UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS);
 
       if (peer->status == Established)
        {
@@ -3472,6 +3499,7 @@ peer_local_as_unset (struct peer *peer)
 
   peer->change_local_as = 0;
   UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND);
+  UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS);
 
   if (! CHECK_FLAG (peer->sflags, PEER_STATUS_GROUP))
     {
@@ -3492,6 +3520,7 @@ peer_local_as_unset (struct peer *peer)
     {
       peer->change_local_as = 0;
       UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND);
+      UNSET_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS);
 
       if (peer->status == Established)
        {
@@ -4379,7 +4408,7 @@ peer_ttl_security_hops_set (struct peer *peer, int gtsm_hops)
 
   zlog_debug ("peer_ttl_security_hops_set: set gtsm_hops to %d for %s", gtsm_hops, peer->host);
 
-  if (peer_sort (peer) == BGP_PEER_IBGP)
+  if (peer->sort == BGP_PEER_IBGP)
     return BGP_ERR_NO_IBGP_WITH_TTLHACK;
 
   /* We cannot configure ttl-security hops when ebgp-multihop is already
@@ -4399,7 +4428,7 @@ peer_ttl_security_hops_set (struct peer *peer, int gtsm_hops)
 
         for (ALL_LIST_ELEMENTS (group->peer, node, nnode, peer1))
           {
-            if (peer_sort (peer1) == BGP_PEER_IBGP)
+            if (peer1->sort == BGP_PEER_IBGP)
               continue;
 
             if (peer1->ttl != 1)
@@ -4421,7 +4450,7 @@ peer_ttl_security_hops_set (struct peer *peer, int gtsm_hops)
 
   if (! CHECK_FLAG (peer->sflags, PEER_STATUS_GROUP))
     {
-      if (peer->fd >= 0 && peer_sort (peer) != BGP_PEER_IBGP)
+      if (peer->fd >= 0 && peer->sort != BGP_PEER_IBGP)
 	sockopt_minttl (peer->su.sa.sa_family, peer->fd, MAXTTL + 1 - gtsm_hops);
     }
   else
@@ -4429,7 +4458,7 @@ peer_ttl_security_hops_set (struct peer *peer, int gtsm_hops)
       group = peer->group;
       for (ALL_LIST_ELEMENTS (group->peer, node, nnode, peer))
 	{
-	  if (peer_sort (peer) == BGP_PEER_IBGP)
+	  if (peer->sort == BGP_PEER_IBGP)
 	    continue;
 
 	  peer->gtsm_hops = group->conf->gtsm_hops;
@@ -4466,7 +4495,7 @@ peer_ttl_security_hops_unset (struct peer *peer)
 
   zlog_debug ("peer_ttl_security_hops_unset: set gtsm_hops to zero for %s", peer->host);
 
-  if (peer_sort (peer) == BGP_PEER_IBGP)
+  if (peer->sort == BGP_PEER_IBGP)
       return 0;
 
   /* if a peer-group member, then reset to peer-group default rather than 0 */
@@ -4478,7 +4507,7 @@ peer_ttl_security_hops_unset (struct peer *peer)
   opeer = peer;
   if (! CHECK_FLAG (peer->sflags, PEER_STATUS_GROUP))
     {
-      if (peer->fd >= 0 && peer_sort (peer) != BGP_PEER_IBGP)
+      if (peer->fd >= 0 && peer->sort != BGP_PEER_IBGP)
 	sockopt_minttl (peer->su.sa.sa_family, peer->fd, 0);
     }
   else
@@ -4486,7 +4515,7 @@ peer_ttl_security_hops_unset (struct peer *peer)
       group = peer->group;
       for (ALL_LIST_ELEMENTS (group->peer, node, nnode, peer))
 	{
-	  if (peer_sort (peer) == BGP_PEER_IBGP)
+	  if (peer->sort == BGP_PEER_IBGP)
 	    continue;
 
 	  peer->gtsm_hops = 0;
@@ -4760,10 +4789,12 @@ bgp_config_write_peer (struct vty *vty, struct bgp *bgp,
       /* local-as. */
       if (peer->change_local_as)
 	if (! peer_group_active (peer))
-	  vty_out (vty, " neighbor %s local-as %u%s%s", addr,
+	  vty_out (vty, " neighbor %s local-as %u%s%s%s", addr,
 		   peer->change_local_as,
 		   CHECK_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_NO_PREPEND) ?
-		   " no-prepend" : "", VTY_NEWLINE);
+		   " no-prepend" : "",
+		   CHECK_FLAG (peer->flags, PEER_FLAG_LOCAL_AS_REPLACE_AS) ?
+		   " replace-as" : "", VTY_NEWLINE);
 
       /* Description. */
       if (peer->desc)
@@ -4801,7 +4832,7 @@ bgp_config_write_peer (struct vty *vty, struct bgp *bgp,
 	  vty_out (vty, " neighbor %s passive%s", addr, VTY_NEWLINE);
 
       /* EBGP multihop.  */
-      if (peer_sort (peer) != BGP_PEER_IBGP && peer->ttl != 1 &&
+      if (peer->sort != BGP_PEER_IBGP && peer->ttl != 1 &&
                    !(peer->gtsm_hops != 0 && peer->ttl == MAXTTL))
         if (! peer_group_active (peer) ||
 	    g_peer->ttl != peer->ttl)
@@ -4809,7 +4840,7 @@ bgp_config_write_peer (struct vty *vty, struct bgp *bgp,
 		   VTY_NEWLINE);
 
      /* ttl-security hops */
-      if (peer_sort (peer) != BGP_PEER_IBGP && peer->gtsm_hops != 0)
+      if (peer->sort != BGP_PEER_IBGP && peer->gtsm_hops != 0)
         if (! peer_group_active (peer) || g_peer->gtsm_hops != peer->gtsm_hops)
           vty_out (vty, " neighbor %s ttl-security hops %d%s", addr,
                    peer->gtsm_hops, VTY_NEWLINE);
@@ -4884,7 +4915,7 @@ bgp_config_write_peer (struct vty *vty, struct bgp *bgp,
 	vty_out (vty, " neighbor %s strict-capability-match%s", addr,
 	     VTY_NEWLINE);
 
-      if (! peer_group_active (peer))
+      if (! peer->af_group[AFI_IP][SAFI_UNICAST])
 	{
 	  if (bgp_flag_check (bgp, BGP_FLAG_NO_DEFAULT_IPV4))
 	    {
@@ -5356,6 +5387,7 @@ bgp_init (void)
   bgp_dump_init ();
   bgp_route_init ();
   bgp_route_map_init ();
+  bgp_address_init ();
   bgp_scan_init ();
   bgp_mplsvpn_init ();
 

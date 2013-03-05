@@ -27,15 +27,20 @@
 #include "memory.h"
 #include "sockunion.h"
 
-void route_node_delete (struct route_node *);
-void route_table_free (struct route_table *);
+static void route_node_delete (struct route_node *);
+static void route_table_free (struct route_table *);
 
+
+/*
+ * route_table_init_with_delegate
+ */
 struct route_table *
-route_table_init (void)
+route_table_init_with_delegate (route_table_delegate_t *delegate)
 {
   struct route_table *rt;
 
   rt = XCALLOC (MTYPE_ROUTE_TABLE, sizeof (struct route_table));
+  rt->delegate = delegate;
   return rt;
 }
 
@@ -47,11 +52,9 @@ route_table_finish (struct route_table *rt)
 
 /* Allocate new route node. */
 static struct route_node *
-route_node_new (void)
+route_node_new (struct route_table *table)
 {
-  struct route_node *node;
-  node = XCALLOC (MTYPE_ROUTE_NODE, sizeof (struct route_node));
-  return node;
+  return table->delegate->create_node (table->delegate, table);
 }
 
 /* Allocate new route node with prefix set. */
@@ -60,7 +63,7 @@ route_node_set (struct route_table *table, struct prefix *prefix)
 {
   struct route_node *node;
   
-  node = route_node_new ();
+  node = route_node_new (table);
 
   prefix_copy (&node->p, prefix);
   node->table = table;
@@ -70,13 +73,13 @@ route_node_set (struct route_table *table, struct prefix *prefix)
 
 /* Free route node. */
 static void
-route_node_free (struct route_node *node)
+route_node_free (struct route_table *table, struct route_node *node)
 {
-  XFREE (MTYPE_ROUTE_NODE, node);
+  table->delegate->destroy_node (table->delegate, table, node);
 }
 
 /* Free route table. */
-void
+static void
 route_table_free (struct route_table *rt)
 {
   struct route_node *tmp_node;
@@ -87,6 +90,9 @@ route_table_free (struct route_table *rt)
 
   node = rt->top;
 
+  /* Bulk deletion of nodes remaining in this table.  This function is not
+     called until workers have completed their dependency on this table.
+     A final route_unlock_node() will not be called for these nodes. */
   while (node)
     {
       if (node->l_left)
@@ -104,22 +110,25 @@ route_table_free (struct route_table *rt)
       tmp_node = node;
       node = node->parent;
 
+      tmp_node->table->count--;
+      tmp_node->lock = 0;  /* to cause assert if unlocked after this */
+      route_node_free (rt, tmp_node);
+
       if (node != NULL)
 	{
 	  if (node->l_left == tmp_node)
 	    node->l_left = NULL;
 	  else
 	    node->l_right = NULL;
-
-	  route_node_free (tmp_node);
 	}
       else
 	{
-	  route_node_free (tmp_node);
 	  break;
 	}
     }
  
+  assert (rt->count == 0);
+
   XFREE (MTYPE_ROUTE_TABLE, rt);
   return;
 }
@@ -186,6 +195,7 @@ route_lock_node (struct route_node *node)
 void
 route_unlock_node (struct route_node *node)
 {
+  assert (node->lock > 0);
   node->lock--;
 
   if (node->lock == 0)
@@ -255,19 +265,21 @@ route_node_match_ipv6 (const struct route_table *table,
 
 /* Lookup same prefix node.  Return NULL when we can't find route. */
 struct route_node *
-route_node_lookup (struct route_table *table, struct prefix *p)
+route_node_lookup (const struct route_table *table, struct prefix *p)
 {
   struct route_node *node;
+  u_char prefixlen = p->prefixlen;
+  const u_char *prefix = &p->u.prefix;
 
   node = table->top;
 
-  while (node && node->p.prefixlen <= p->prefixlen && 
+  while (node && node->p.prefixlen <= prefixlen &&
 	 prefix_match (&node->p, p))
     {
-      if (node->p.prefixlen == p->prefixlen)
+      if (node->p.prefixlen == prefixlen)
         return node->info ? route_lock_node (node) : NULL;
 
-      node = node->link[prefix_bit(&p->u.prefix, node->p.prefixlen)];
+      node = node->link[prefix_bit(prefix, node->p.prefixlen)];
     }
 
   return NULL;
@@ -275,22 +287,24 @@ route_node_lookup (struct route_table *table, struct prefix *p)
 
 /* Add node to routing table. */
 struct route_node *
-route_node_get (struct route_table *table, struct prefix *p)
+route_node_get (struct route_table *const table, struct prefix *p)
 {
   struct route_node *new;
   struct route_node *node;
   struct route_node *match;
+  u_char prefixlen = p->prefixlen;
+  const u_char *prefix = &p->u.prefix;
 
   match = NULL;
   node = table->top;
-  while (node && node->p.prefixlen <= p->prefixlen && 
+  while (node && node->p.prefixlen <= prefixlen &&
 	 prefix_match (&node->p, p))
     {
-      if (node->p.prefixlen == p->prefixlen)
+      if (node->p.prefixlen == prefixlen)
         return route_lock_node (node);
-      
+
       match = node;
-      node = node->link[prefix_bit(&p->u.prefix, node->p.prefixlen)];
+      node = node->link[prefix_bit(prefix, node->p.prefixlen)];
     }
 
   if (node == NULL)
@@ -303,7 +317,7 @@ route_node_get (struct route_table *table, struct prefix *p)
     }
   else
     {
-      new = route_node_new ();
+      new = route_node_new (table);
       route_common (&node->p, p, &new->p);
       new->p.family = p->family;
       new->table = table;
@@ -319,15 +333,17 @@ route_node_get (struct route_table *table, struct prefix *p)
 	  match = new;
 	  new = route_node_set (table, p);
 	  set_link (match, new);
+	  table->count++;
 	}
     }
+  table->count++;
   route_lock_node (new);
   
   return new;
 }
 
 /* Delete node from the routing table. */
-void
+static void
 route_node_delete (struct route_node *node)
 {
   struct route_node *child;
@@ -359,7 +375,9 @@ route_node_delete (struct route_node *node)
   else
     node->table->top = child;
 
-  route_node_free (node);
+  node->table->count--;
+
+  route_node_free (node->table, node);
 
   /* If parent node is stub then delete it also. */
   if (parent && parent->lock == 0)
@@ -460,4 +478,335 @@ route_next_until (struct route_node *node, struct route_node *limit)
     }
   route_unlock_node (start);
   return NULL;
+}
+
+unsigned long
+route_table_count (const struct route_table *table)
+{
+  return table->count;
+}
+
+/**
+ * route_node_create
+ *
+ * Default function for creating a route node.
+ */
+static struct route_node *
+route_node_create (route_table_delegate_t *delegate,
+		   struct route_table *table)
+{
+  struct route_node *node;
+  node = XCALLOC (MTYPE_ROUTE_NODE, sizeof (struct route_node));
+  return node;
+}
+
+/**
+ * route_node_destroy
+ *
+ * Default function for destroying a route node.
+ */
+static void
+route_node_destroy (route_table_delegate_t *delegate,
+		    struct route_table *table, struct route_node *node)
+{
+  XFREE (MTYPE_ROUTE_NODE, node);
+}
+
+/*
+ * Default delegate.
+ */
+static route_table_delegate_t default_delegate = {
+  .create_node = route_node_create,
+  .destroy_node = route_node_destroy
+};
+
+/*
+ * route_table_init
+ */
+struct route_table *
+route_table_init (void)
+{
+  return route_table_init_with_delegate (&default_delegate);
+}
+
+/**
+ * route_table_prefix_iter_cmp
+ *
+ * Compare two prefixes according to the order in which they appear in
+ * an iteration over a tree.
+ * 
+ * @return -1 if p1 occurs before p2 (p1 < p2)
+ *          0 if the prefixes are identical (p1 == p2)
+ *         +1 if p1 occurs after p2 (p1 > p2)
+ */
+int
+route_table_prefix_iter_cmp (struct prefix *p1, struct prefix *p2)
+{
+  struct prefix common_space;
+  struct prefix *common = &common_space;
+
+  if (p1->prefixlen <= p2->prefixlen)
+    {
+      if (prefix_match (p1, p2))
+	{
+
+	  /*
+	   * p1 contains p2, or is equal to it.
+	   */
+	  return (p1->prefixlen == p2->prefixlen) ? 0 : -1;
+	}
+    }
+  else
+    {
+
+      /*
+       * Check if p2 contains p1.
+       */
+      if (prefix_match (p2, p1))
+	  return 1;
+    }
+
+  route_common (p1, p2, common);
+  assert (common->prefixlen < p1->prefixlen);
+  assert (common->prefixlen < p2->prefixlen);
+
+  /*
+   * Both prefixes are longer than the common prefix.
+   *
+   * We need to check the bit after the common prefixlen to determine
+   * which one comes later.
+   */
+  if (prefix_bit (&p1->u.prefix, common->prefixlen))
+    {
+
+      /*
+       * We branch to the right to get to p1 from the common prefix.
+       */
+      assert (!prefix_bit (&p2->u.prefix, common->prefixlen));
+      return 1;
+    }
+
+  /*
+   * We branch to the right to get to p2 from the common prefix.
+   */
+  assert (prefix_bit (&p2->u.prefix, common->prefixlen));
+  return -1;
+}
+
+/*
+ * route_get_subtree_next
+ *
+ * Helper function that returns the first node that follows the nodes
+ * in the sub-tree under 'node' in iteration order.
+ */
+static struct route_node *
+route_get_subtree_next (struct route_node *node)
+{
+  while (node->parent)
+    {
+      if (node->parent->l_left == node && node->parent->l_right)
+	return node->parent->l_right;
+
+      node = node->parent;
+    }
+
+  return NULL;
+}
+
+/**
+ * route_table_get_next_internal
+ *
+ * Helper function to find the node that occurs after the given prefix in
+ * order of iteration.
+ *
+ * @see route_table_get_next
+ */
+static struct route_node *
+route_table_get_next_internal (const struct route_table *table,
+			       struct prefix *p)
+{
+  struct route_node *node, *tmp_node;
+  u_char prefixlen;
+  int cmp;
+
+  prefixlen = p->prefixlen;
+
+  node = table->top;
+
+  while (node)
+    {
+      int match;
+
+      if (node->p.prefixlen < p->prefixlen)
+	match = prefix_match (&node->p, p);
+      else
+	match = prefix_match (p, &node->p);
+
+      if (match)
+	{
+	  if (node->p.prefixlen == p->prefixlen)
+	    {
+
+	      /*
+	       * The prefix p exists in the tree, just return the next
+	       * node.
+	       */
+	      route_lock_node (node);
+	      node = route_next (node);
+	      if (node)
+		route_unlock_node (node);
+
+	      return (node);
+	    }
+
+	  if (node->p.prefixlen > p->prefixlen)
+	    {
+
+	      /*
+	       * Node is in the subtree of p, and hence greater than p.
+	       */
+	      return node;
+	    }
+
+	  /*
+	   * p is in the sub-tree under node.
+	   */
+	  tmp_node = node->link[prefix_bit (&p->u.prefix, node->p.prefixlen)];
+
+	  if (tmp_node)
+	    {
+	      node = tmp_node;
+	      continue;
+	    }
+
+	  /*
+	   * There are no nodes in the direction where p should be. If
+	   * node has a right child, then it must be greater than p.
+	   */
+	  if (node->l_right)
+	    return node->l_right;
+
+	  /*
+	   * No more children to follow, go upwards looking for the next
+	   * node.
+	   */
+	  return route_get_subtree_next (node);
+	}
+
+      /*
+       * Neither node prefix nor 'p' contains the other.
+       */
+      cmp = route_table_prefix_iter_cmp (&node->p, p);
+      if (cmp > 0)
+	{
+
+	  /*
+	   * Node follows p in iteration order. Return it.
+	   */
+	  return node;
+	}
+
+      assert (cmp < 0);
+
+      /*
+       * Node and the subtree under it come before prefix p in
+       * iteration order. Prefix p and its sub-tree are not present in
+       * the tree. Go upwards and find the first node that follows the
+       * subtree. That node will also succeed p.
+       */
+      return route_get_subtree_next (node);
+    }
+
+  return NULL;
+}
+
+/**
+ * route_table_get_next
+ *
+ * Find the node that occurs after the given prefix in order of
+ * iteration.
+ */
+struct route_node *
+route_table_get_next (const struct route_table *table, struct prefix *p)
+{
+  struct route_node *node;
+
+  node = route_table_get_next_internal (table, p);
+  if (node)
+    {
+      assert (route_table_prefix_iter_cmp (&node->p, p) > 0);
+      route_lock_node (node);
+    }
+  return node;
+}
+
+/*
+ * route_table_iter_init
+ */
+void
+route_table_iter_init (route_table_iter_t * iter, struct route_table *table)
+{
+  memset (iter, 0, sizeof (*iter));
+  iter->state = RT_ITER_STATE_INIT;
+  iter->table = table;
+}
+
+/*
+ * route_table_iter_pause
+ *
+ * Pause an iteration over the table. This allows the iteration to be
+ * resumed point after arbitrary additions/deletions from the table.
+ * An iteration can be resumed by just calling route_table_iter_next()
+ * on the iterator.
+ */
+void
+route_table_iter_pause (route_table_iter_t * iter)
+{
+  switch (iter->state)
+    {
+
+    case RT_ITER_STATE_INIT:
+    case RT_ITER_STATE_PAUSED:
+    case RT_ITER_STATE_DONE:
+      return;
+
+    case RT_ITER_STATE_ITERATING:
+
+      /*
+       * Save the prefix that we are currently at. The next call to
+       * route_table_iter_next() will return the node after this prefix
+       * in the tree.
+       */
+      prefix_copy (&iter->pause_prefix, &iter->current->p);
+      route_unlock_node (iter->current);
+      iter->current = NULL;
+      iter->state = RT_ITER_STATE_PAUSED;
+      return;
+
+    default:
+      assert (0);
+    }
+
+}
+
+/*
+ * route_table_iter_cleanup
+ *
+ * Release any resources held by the iterator.
+ */
+void
+route_table_iter_cleanup (route_table_iter_t * iter)
+{
+  if (iter->state == RT_ITER_STATE_ITERATING)
+    {
+      route_unlock_node (iter->current);
+      iter->current = NULL;
+    }
+  assert (!iter->current);
+
+  /*
+   * Set the state to RT_ITER_STATE_DONE to make any
+   * route_table_iter_next() calls on this iterator return NULL.
+   */
+  iter->state = RT_ITER_STATE_DONE;
 }
