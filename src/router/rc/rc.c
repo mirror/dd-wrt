@@ -54,6 +54,19 @@ int redial_main(int argc, char **argv)
 	int num;
 
 	while (1) {
+#ifdef HAVE_UQMI
+		if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi") && count==1) {
+		int clientid=0;
+		FILE *fp = fopen("/tmp/qmi-clientid","rb");
+		if (fp) {
+			fscanf(fp,"%d",&clientid);
+			fclose(fp);
+			system("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-serving-system|grep registered|wc -l>/tmp/qmistatus",clientid);
+		}else{
+			sysprintf("echo 1 > /tmp/qmistatus");
+		}
+#endif
+
 
 #ifdef HAVE_LIBQMI
 		if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi") && count==1) {
@@ -63,12 +76,6 @@ int redial_main(int argc, char **argv)
 		sleep(atoi(argv[1]));
 		num = 0;
 		count++;
-
-#ifdef HAVE_LIBQMI
-		if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi")) {
-			sysprintf("qmi-network /dev/cdc-wdm0 status|grep disconnected|wc -l>/tmp/qmistatus");
-		}
-#endif
 
 		// fprintf(stderr, "check PPPoE %d\n", num);
 		if (!check_wan_link(num)) {
