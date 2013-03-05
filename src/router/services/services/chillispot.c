@@ -288,8 +288,8 @@ void chilli_config(void)
 		perror("/tmp/chilli/chilli.conf");
 		return;
 	}
-	fprintf(fp, "ipup /tmp/chilli/ip-up.sh");
-	fprintf(fp, "ipdown /tmp/chilli/ip-down.sh");
+	fprintf(fp, "ipup /tmp/chilli/ip-up.sh\n");
+	fprintf(fp, "ipdown /tmp/chilli/ip-down.sh\n");
 	fprintf(fp, "radiusserver1 %s\n", nvram_get("chilli_radius"));
 	fprintf(fp, "radiusserver2 %s\n", nvram_get("chilli_backup"));
 	fprintf(fp, "radiussecret %s\n", nvram_get("chilli_pass"));
@@ -412,8 +412,8 @@ void hotspotsys_config(void)
 		return;
 	}
 
-	fprintf(fp, "ipup /tmp/chilli/ip-up.sh");
-	fprintf(fp, "ipdown /tmp/chilli/ip-down.sh");
+	fprintf(fp, "ipup /tmp/chilli/ip-up.sh\n");
+	fprintf(fp, "ipdown /tmp/chilli/ip-down.sh\n");
 	fprintf(fp, "radiusserver1 radius.hotspotsystem.com\n");
 	fprintf(fp, "radiusserver2 radius2.hotspotsystem.com\n");
 	fprintf(fp, "radiussecret hotsys123\n");
