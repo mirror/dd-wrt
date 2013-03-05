@@ -3297,7 +3297,7 @@ void start_wan(int status)
 		if (fp) {
 			fscanf(fp,"%d",&clientid);
 			fclose(fp);
-			sysprintf("uqmi --set-client-id wds,%d --release-client-id",clientid);
+			sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --release-client-id wds",clientid);
 		}
 		clientid=0;
 		if (nvram_match("wan_conmode","6"))
@@ -3329,9 +3329,9 @@ void start_wan(int status)
 
 		fprintf(fp, "APN=%s",nvram_safe_get("wan_apn"));
 		if (strlen(nvram_safe_get("ppp_username")) > 0 && strlen(nvram_safe_get("ppp_passwd")) > 0) {
-			sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --username %s --password %s",clientid,nvram_safe_get("wan_apn"),nvram_safe_get("ppp_username"),nvram_safe_get("ppp_passwd"));
+			sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --username %s --password %s --keep-client-id wds",clientid,nvram_safe_get("wan_apn"),nvram_safe_get("ppp_username"),nvram_safe_get("ppp_passwd"));
 		} else {
-			sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both",clientid,nvram_safe_get("wan_apn"));
+			sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --keep-client-id wds",clientid,nvram_safe_get("wan_apn"));
 		}				
 		eval("ifconfig", "wwan0", "up");
 		start_dhcpc("wwan0", NULL, NULL, 1);
