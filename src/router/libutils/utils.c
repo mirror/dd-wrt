@@ -3322,9 +3322,15 @@ int check_wan_link(int num)
 			fscanf(fp, "%d", &value);
 			fclose(fp);
 		}
+		#ifdef HAVE_UQMI
+		if (value)
+			return 1;
+		return 0;
+		#else
 		if (value)
 			return 0;
 		return 1;
+		#endif
 	}
 #endif
 	else
