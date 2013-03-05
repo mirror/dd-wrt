@@ -763,43 +763,6 @@ static int wanactive(void)
 
 static void nat_postrouting(void)
 {
-	// MASQUERADE chilli/hotss
-	if (nvram_match("wan_proto", "disabled")) {
-		if (nvram_match("hotss_enable", "1")
-			&& strlen(nvram_safe_get("hotss_net")) > 0)
-				save2file
-					("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("hotss_net"),
-						nvram_safe_get("lan_ipaddr"));
-		else if (nvram_match("chilli_enable", "1")
-			&& strlen(nvram_safe_get("chilli_net")) > 0)
-				save2file
-					("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("chilli_net"),
-						nvram_safe_get("lan_ipaddr"));
-		else if (nvram_match("hotss_enable", "1") 
-			|| nvram_match("chilli_enable", "1"))
-				save2file
-					("-A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-						nvram_safe_get("lan_ipaddr"));
-		}
-	else {
-		if (nvram_match("hotss_enable", "1")
-			&& strlen(nvram_safe_get("hotss_net")) > 0)
-				save2file
-					("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("hotss_net"), wanaddr);
-		else if (nvram_match("chilli_enable", "1")
-				&& strlen(nvram_safe_get("chilli_net")) > 0)
-				save2file
-					("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
-						nvram_safe_get("chilli_net"), wanaddr);
-		else if (nvram_match("hotss_enable", "1") 
-			|| nvram_match("chilli_enable", "1"))
-				save2file
-					("-A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-						wanaddr);	
-		}
 #ifdef HAVE_PPPOESERVER
 	if (nvram_match("pppoeserver_enabled", "1")
 	    && wanactive())
@@ -877,13 +840,9 @@ static void nat_postrouting(void)
 					if (nvram_match(nat, "1")) {
 						save2file
 						    ("-A POSTROUTING -s %s0/%d -o %s -j SNAT --to-source %s\n",
-						     nvram_nget
-						     ("%s_ipaddr",
-						      var),
-						     getmask
-						     (nvram_nget
-						      ("%s_netmask",
-						       var)), wanface, wanaddr);
+						     nvram_nget("%s_ipaddr", var),
+						     getmask(nvram_nget("%s_netmask",var)), 
+						     wanface, wanaddr);
 					}
 
 				}
@@ -2727,26 +2686,6 @@ static void filter_table(void)
 		save2file("-A logbrute -j %s\n", log_drop);
 	}
 #endif
-	if (nvram_match("chilli_enable", "1") 
-		|| nvram_match("hotss_enable", "1")) {
-/*	if we have a gw traffic will go there.
-		but if we dont have any gw we might use chilli on a local network only 
-		also we need to allow traffic outgoing to chilli
-		since nat doesnt do connection tracking (mangle) "state NEW" isnt enough 
-		so lets do it like this 4 testing*/
-/*		if (has_gateway()) {
-			save2file
-			    ("-I INPUT -i tun0 -m state --state NEW -j %s\n",
-			     log_accept);
-			save2file
-			    ("-I FORWARD -i tun0 -m state --state NEW -j %s\n",
-			     log_accept);
-		} else {	*/
-			save2file("-I INPUT -i tun0 -j %s\n", log_accept);
-			save2file("-I FORWARD -i tun0 -j %s\n", log_accept);
-			save2file("-I FORWARD -o tun0 -j %s\n", log_accept);
-//		}
-	}
 
 	if (wanactive()) {
 		/*
@@ -2867,13 +2806,66 @@ static void filter_table(void)
 	     FLOOD_RATE, log_drop);
 #endif
 #ifdef HAVE_CHILLI
-	/*
-	 * DD-WRT BrainSlayer CHILLI Security Fix 
-	 */
-	if (nvram_match("chilli_enable", "1")) {
-		save2file("-A FORWARD -i br0 -j %s\n", log_drop);
-		save2file("-A FORWARD -o br0 -j %s\n", log_drop);
+	if (nvram_match("chilli_enable", "1") 
+		|| nvram_match("hotss_enable", "1")) {
+/*	if we have a gw traffic will go there.
+		but if we dont have any gw we might use chilli on a local network only 
+		also we need to allow traffic outgoing to chilli
+		since nat doesnt do connection tracking (mangle) "state NEW" isnt enough 
+		so lets do it like this 4 testing*/
+/*		if (has_gateway()) {
+			save2file
+			    ("-A INPUT -i tun0 -m state --state NEW -j %s\n",
+			     log_accept);
+			save2file
+			    ("-A FORWARD -i tun0 -m state --state NEW -j %s\n",
+			     log_accept);
+		} else {	*/
+			save2file("-A INPUT -i tun0 -j %s\n", log_accept);
+			save2file("-A FORWARD -i tun0 -j %s\n", log_accept);
+			save2file("-A FORWARD -o tun0 -j %s\n", log_accept);
+			// DD-WRT BrainSlayer CHILLI Security Fix 
+			save2file("-A FORWARD -i br0 -j %s\n", log_drop);
+			save2file("-A FORWARD -o br0 -j %s\n", log_drop);
+//		}
 	}
+		// MASQUERADE chilli/hotss
+	if (nvram_match("wan_proto", "disabled")) {
+		if (nvram_match("hotss_enable", "1")
+			&& strlen(nvram_safe_get("hotss_net")) > 0)
+				save2file
+					("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("hotss_net"),
+						nvram_safe_get("lan_ipaddr"));
+		else if (nvram_match("chilli_enable", "1")
+			&& strlen(nvram_safe_get("chilli_net")) > 0)
+				save2file
+					("-A POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("chilli_net"),
+						nvram_safe_get("lan_ipaddr"));
+		else if (nvram_match("hotss_enable", "1") 
+			|| nvram_match("chilli_enable", "1"))
+				save2file
+					("-A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+						nvram_safe_get("lan_ipaddr"));
+		}
+	else {
+		if (nvram_match("hotss_enable", "1")
+			&& strlen(nvram_safe_get("hotss_net")) > 0)
+				save2file
+					("-t nat -A POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("hotss_net"), wanaddr);
+		else if (nvram_match("chilli_enable", "1")
+				&& strlen(nvram_safe_get("chilli_net")) > 0)
+				save2file
+					("-t nat -A POSTROUTING -s %s -j SNAT --to-source=%s\n",
+						nvram_safe_get("chilli_net"), wanaddr);
+		else if (nvram_match("hotss_enable", "1") 
+			|| nvram_match("chilli_enable", "1"))
+				save2file
+					("-t nat -A POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+						wanaddr);	
+		}
 	/*
 	 * DD-WRT end 
 	 */
