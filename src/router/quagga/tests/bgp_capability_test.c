@@ -8,6 +8,7 @@
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_open.h"
 #include "bgpd/bgp_debug.h"
+#include "bgpd/bgp_packet.h"
 
 #define VT100_RESET "\x1b[0m"
 #define VT100_RED "\x1b[31m"
@@ -35,7 +36,7 @@ static struct test_segment {
 #define SHOULD_PARSE	0
 #define SHOULD_ERR	-1
   int parses; /* whether it should parse or not */
-  int peek_for; /* what peek_for_as4_capability should say */
+  as_t peek_for; /* what peek_for_as4_capability should say */
   
   /* AFI/SAFI validation */
   int validate_afi;
@@ -617,6 +618,7 @@ main (void)
   
   master = thread_master_create ();
   bgp_master_init ();
+  bgp_option_set (BGP_OPT_NO_LISTEN);
   
   if (fileno (stdout) >= 0) 
     tty = isatty (fileno (stdout));
@@ -625,7 +627,7 @@ main (void)
     return -1;
   
   peer = peer_create_accept (bgp);
-  peer->host = "foo";
+  peer->host = (char *) "foo";
   
   for (i = AFI_IP; i < AFI_MAX; i++)
     for (j = SAFI_UNICAST; j < SAFI_MAX; j++)

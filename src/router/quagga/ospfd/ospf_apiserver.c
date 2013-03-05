@@ -105,7 +105,7 @@ ospf_apiserver_if_lookup_by_ifp (struct interface *ifp)
   struct ospf_interface *oi;
   struct ospf *ospf;
 
-  if (!(ospf = ospf_lookup ()));
+  if (!(ospf = ospf_lookup ()))
     return NULL;
 
   for (ALL_LIST_ELEMENTS (ospf->oiflist, node, nnode, oi))
@@ -299,13 +299,10 @@ void
 ospf_apiserver_event (enum event event, int fd,
 		      struct ospf_apiserver *apiserv)
 {
-  struct thread *apiserver_serv_thread;
-
   switch (event)
     {
     case OSPF_APISERVER_ACCEPT:
-      apiserver_serv_thread =
-	thread_add_read (master, ospf_apiserver_accept, apiserv, fd);
+      (void)thread_add_read (master, ospf_apiserver_accept, apiserv, fd);
       break;
     case OSPF_APISERVER_SYNC_READ:
       apiserv->t_sync_read =

@@ -142,6 +142,10 @@ typedef int socklen_t;
 #include <sys/sockio.h>
 #endif /* HAVE_SYS_SOCKIO_H */
 
+#ifdef __APPLE__
+#define __APPLE_USE_RFC_3542
+#endif
+
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif /* HAVE_NETINET_IN_H */
@@ -357,6 +361,7 @@ struct in_pktinfo
  */
 #if defined(__NetBSD__) || defined(__FreeBSD__) \
    || (defined(__OpenBSD__) && (OpenBSD < 200311)) \
+   || (defined(__APPLE__)) \
    || (defined(SUNOS_5) && defined(WORDS_BIGENDIAN))
 #define HAVE_IP_HDRINCL_BSD_ORDER
 #endif
@@ -385,6 +390,8 @@ struct in_pktinfo
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
+
+#define ZEBRA_NUM_OF(x) (sizeof (x) / sizeof (x[0]))
 
 /* For old definition. */
 #ifndef IN6_ARE_ADDR_EQUAL

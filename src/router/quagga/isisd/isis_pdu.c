@@ -311,7 +311,7 @@ tlvs_to_adj_area_addrs (struct tlvs *tlvs, struct isis_adjacency *adj)
     }
 }
 
-static void
+static int
 tlvs_to_adj_nlpids (struct tlvs *tlvs, struct isis_adjacency *adj)
 {
   int i;
@@ -321,6 +321,8 @@ tlvs_to_adj_nlpids (struct tlvs *tlvs, struct isis_adjacency *adj)
     {
 
       tlv_nlpids = tlvs->nlpids;
+      if (tlv_nlpids->count > array_size (adj->nlpids.nlpids))
+        return 1;
 
       adj->nlpids.count = tlv_nlpids->count;
 
@@ -329,6 +331,7 @@ tlvs_to_adj_nlpids (struct tlvs *tlvs, struct isis_adjacency *adj)
 	  adj->nlpids.nlpids[i] = tlv_nlpids->nlpids[i];
 	}
     }
+  return 0;
 }
 
 static void
@@ -442,7 +445,8 @@ process_p2p_hello (struct isis_circuit *circuit)
   hdr = (struct isis_p2p_hello_hdr *) STREAM_PNT (circuit->rcv_stream);
   pdu_len = ntohs (hdr->pdu_len);
 
-  if (pdu_len > ISO_MTU(circuit) ||
+  if (pdu_len < (ISIS_FIXED_HDR_LEN + ISIS_P2PHELLO_HDRLEN) ||
+      pdu_len > ISO_MTU(circuit) ||
       pdu_len > stream_get_endp (circuit->rcv_stream))
     {
       zlog_warn ("ISIS-Adj (%s): Rcvd P2P IIH from (%s) with "
@@ -485,6 +489,13 @@ process_p2p_hello (struct isis_circuit *circuit)
   if (!(found & TLVFLAG_AREA_ADDRS))
     {
       zlog_warn ("No Area addresses TLV in P2P IS to IS hello");
+      free_tlvs (&tlvs);
+      return ISIS_WARNING;
+    }
+
+  if (!(found & TLVFLAG_NLPID))
+    {
+      zlog_warn ("No supported protocols TLV in P2P IS to IS hello");
       free_tlvs (&tlvs);
       return ISIS_WARNING;
     }
@@ -546,8 +557,11 @@ process_p2p_hello (struct isis_circuit *circuit)
   tlvs_to_adj_area_addrs (&tlvs, adj);
 
   /* which protocol are spoken ??? */
-  if (found & TLVFLAG_NLPID)
-    tlvs_to_adj_nlpids (&tlvs, adj);
+  if (tlvs_to_adj_nlpids (&tlvs, adj))
+    {
+      free_tlvs (&tlvs);
+      return ISIS_WARNING;
+    }
 
   /* we need to copy addresses to the adj */
   if (found & TLVFLAG_IPV4_ADDR)
@@ -909,7 +923,8 @@ process_lan_hello (int level, struct isis_circuit *circuit, u_char * ssnpa)
   hdr.prio = stream_getc (circuit->rcv_stream);
   stream_get (hdr.lan_id, circuit->rcv_stream, ISIS_SYS_ID_LEN + 1);
 
-  if (hdr.pdu_len > ISO_MTU(circuit) ||
+  if (hdr.pdu_len < (ISIS_FIXED_HDR_LEN + ISIS_LANHELLO_HDRLEN) ||
+      hdr.pdu_len > ISO_MTU(circuit) ||
       hdr.pdu_len > stream_get_endp (circuit->rcv_stream))
     {
       zlog_warn ("ISIS-Adj (%s): Rcvd LAN IIH from (%s) with "
@@ -967,6 +982,14 @@ process_lan_hello (int level, struct isis_circuit *circuit, u_char * ssnpa)
       goto out;
     }
 
+  if (!(found & TLVFLAG_NLPID))
+    {
+      zlog_warn ("No supported protocols TLV in Level %d LAN IS to IS hello",
+		 level);
+      retval = ISIS_WARNING;
+      goto out;
+    }
+
   /* Verify authentication, either cleartext of HMAC MD5 */
   if (circuit->passwd.type)
     {
@@ -980,6 +1003,13 @@ process_lan_hello (int level, struct isis_circuit *circuit, u_char * ssnpa)
           retval = ISIS_WARNING;
           goto out;
         }
+    }
+
+  if (!memcmp (hdr.source_id, isis->sysid, ISIS_SYS_ID_LEN))
+    {
+      zlog_warn ("ISIS-Adj (%s): duplicate system ID on interface %s",
+		 circuit->area->area_tag, circuit->interface->name);
+      return ISIS_WARNING;
     }
 
   /*
@@ -1090,8 +1120,11 @@ process_lan_hello (int level, struct isis_circuit *circuit, u_char * ssnpa)
   tlvs_to_adj_area_addrs (&tlvs, adj);
 
   /* which protocol are spoken ??? */
-  if (found & TLVFLAG_NLPID)
-    tlvs_to_adj_nlpids (&tlvs, adj);
+  if (tlvs_to_adj_nlpids (&tlvs, adj))
+    {
+      retval = ISIS_WARNING;
+      goto out;
+    }
 
   /* we need to copy addresses to the adj */
   if (found & TLVFLAG_IPV4_ADDR)
@@ -1202,7 +1235,7 @@ process_lsp (int level, struct isis_circuit *circuit, u_char * ssnpa)
   pdu_len = ntohs (hdr->pdu_len);
 
   /* lsp length check */
-  if (pdu_len < ISIS_LSP_HDR_LEN ||
+  if (pdu_len < (ISIS_FIXED_HDR_LEN + ISIS_LSP_HDR_LEN) ||
       pdu_len > ISO_MTU(circuit) ||
       pdu_len > stream_get_endp (circuit->rcv_stream))
     {
@@ -1545,7 +1578,7 @@ process_snp (int snp_type, int level, struct isis_circuit *circuit,
 	(struct isis_complete_seqnum_hdr *) STREAM_PNT (circuit->rcv_stream);
       stream_forward_getp (circuit->rcv_stream, ISIS_CSNP_HDRLEN);
       pdu_len = ntohs (chdr->pdu_len);
-      if (pdu_len < ISIS_CSNP_HDRLEN ||
+      if (pdu_len < (ISIS_FIXED_HDR_LEN + ISIS_CSNP_HDRLEN) ||
           pdu_len > ISO_MTU(circuit) ||
           pdu_len > stream_get_endp (circuit->rcv_stream))
 	{
@@ -1560,7 +1593,7 @@ process_snp (int snp_type, int level, struct isis_circuit *circuit,
 	(struct isis_partial_seqnum_hdr *) STREAM_PNT (circuit->rcv_stream);
       stream_forward_getp (circuit->rcv_stream, ISIS_PSNP_HDRLEN);
       pdu_len = ntohs (phdr->pdu_len);
-      if (pdu_len < ISIS_PSNP_HDRLEN ||
+      if (pdu_len < (ISIS_FIXED_HDR_LEN + ISIS_PSNP_HDRLEN) ||
           pdu_len > ISO_MTU(circuit) ||
           pdu_len > stream_get_endp (circuit->rcv_stream))
 	{
@@ -3031,7 +3064,19 @@ send_lsp (struct thread *thread)
     return retval;
   }
 
-  lsp = listgetdata ((node = listhead (circuit->lsp_queue)));
+  node = listhead (circuit->lsp_queue);
+
+  /*
+   * Handle case where there are no LSPs on the queue. This can
+   * happen, for instance, if an adjacency goes down before this
+   * thread gets a chance to run.
+   */
+  if (!node)
+    {
+      return retval;
+    }
+
+  lsp = listgetdata(node);
 
   /*
    * Do not send if levels do not match

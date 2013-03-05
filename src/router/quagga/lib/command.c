@@ -84,7 +84,7 @@ static const char *default_motd =
 "\r\n\
 Hello, this is " QUAGGA_PROGNAME " (version " QUAGGA_VERSION ").\r\n\
 " QUAGGA_COPYRIGHT "\r\n\
-\r\n";
+" GIT_INFO "\r\n";
 
 
 static const struct facility_map {
@@ -954,7 +954,12 @@ cmd_ipv6_prefix_match (const char *str)
 	      if (*(str + 1) == ':')
 		state = STATE_COLON;
 	      else if (*(str + 1) == '.')
-		state = STATE_DOT;
+		{
+		  if (colons || double_colon)
+		    state = STATE_DOT;
+		  else
+		    return no_match;
+		}
 	      else if (*(str + 1) == '/')
 		state = STATE_SLASH;
 	    }
@@ -2404,7 +2409,7 @@ DEFUN (show_version,
 {
   vty_out (vty, "Quagga %s (%s).%s", QUAGGA_VERSION, host.name?host.name:"",
 	   VTY_NEWLINE);
-  vty_out (vty, "%s%s", QUAGGA_COPYRIGHT, VTY_NEWLINE);
+  vty_out (vty, "%s%s%s", QUAGGA_COPYRIGHT, GIT_INFO, VTY_NEWLINE);
 
   return CMD_SUCCESS;
 }

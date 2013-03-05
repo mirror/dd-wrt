@@ -21,7 +21,6 @@ struct memory_list memory_list_lib[] =
   { MTYPE_THREAD,		"Thread"			},
   { MTYPE_THREAD_MASTER,	"Thread master"			},
   { MTYPE_THREAD_STATS,		"Thread stats"			},
-  { MTYPE_THREAD_FUNCNAME,	"Thread function name" 		},
   { MTYPE_VTY,			"VTY"				},
   { MTYPE_VTY_OUT_BUF,		"VTY output buffer"		},
   { MTYPE_VTY_HIST,		"VTY history"			},
@@ -83,6 +82,8 @@ struct memory_list memory_list_zebra[] =
   { MTYPE_RIB_QUEUE,		"RIB process work queue"	},
   { MTYPE_STATIC_IPV4,		"Static IPv4 route"		},
   { MTYPE_STATIC_IPV6,		"Static IPv6 route"		},
+  { MTYPE_RIB_DEST,		"RIB destination"		},
+  { MTYPE_RIB_TABLE_INFO,	"RIB table info"		},
   { -1, NULL },
 };
 
@@ -148,17 +149,9 @@ struct memory_list memory_list_bgp[] =
   { MTYPE_PEER_UPDATE_SOURCE,	"BGP peer update interface"	},
   { MTYPE_BGP_DAMP_INFO,	"Dampening info"		},
   { MTYPE_BGP_DAMP_ARRAY,	"BGP Dampening array"		},
-  { 0, NULL },
-  { MTYPE_BGP_PGBGP_ORIGIN,     "BGP PGBGP Origin AS Node"      },
-  { MTYPE_BGP_PGBGP_PREFIX,     "BGP PGBGP Prefix AS Node"      },
-  { MTYPE_BGP_PGBGP_EDGE,       "BGP PGBGP Edge Node"           },
-  { MTYPE_BGP_PGBGP_REUSE,      "BGP PGBGP Reuse Node"          },
-  { MTYPE_BGP_PGBGP_HIST,       "BGP PGBGP History Node"        },
-  { MTYPE_BGP_PGBGP_AVOID,      "BGP PGBGP Avoid Peer Node"     },
-  { MTYPE_BGP_PGBGP_PEER,       "BGP PGBGP Peer Timing"         },
-  { 0, NULL },
   { MTYPE_BGP_REGEXP,		"BGP regexp"			},
   { MTYPE_BGP_AGGREGATE,	"BGP aggregate"			},
+  { MTYPE_BGP_ADDR,		"BGP own address"		},
   { -1, NULL }
 };
 

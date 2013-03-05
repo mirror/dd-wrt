@@ -48,9 +48,15 @@ extern struct zebra_t zebrad;
  * XXX: why is ROUNDUP(0) sizeof(long)?  0 is an illegal sockaddr
  * length anyway (< sizeof (struct sockaddr)), so this shouldn't
  * matter.
+ * On OS X, both 32, 64bit syatems align on 4 byte boundary
  */
+#ifdef __APPLE__
+#define ROUNDUP(a) \
+  ((a) > 0 ? (1 + (((a) - 1) | (sizeof(int) - 1))) : sizeof(int))
+#else
 #define ROUNDUP(a) \
   ((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
+#endif
 
 /*
  * Given a pointer (sockaddr or void *), return the number of bytes
@@ -78,28 +84,41 @@ extern struct zebra_t zebrad;
            ROUNDUP(sizeof(struct sockaddr_dl)) : sizeof(struct sockaddr)))
 #endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
 
-/* We use an additional pointer in following, pdest, rather than (DEST)
- * directly, because gcc will warn if the macro is expanded and DEST is NULL,
- * complaining that memcpy is being passed a NULL value, despite the fact
- * the if (NULL) makes it impossible.
+/*
+ * We use a call to an inline function to copy (PNT) to (DEST)
+ * 1. Calculating the length of the copy requires an #ifdef to determine
+ *    if sa_len is a field and can't be used directly inside a #define
+ * 2. So the compiler doesn't complain when DEST is NULL, which is only true
+ *    when we are skipping the copy and incrementing to the next SA
  */
+static void inline
+rta_copy (union sockunion *dest, caddr_t src) {
+  int len;
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+  len = (((struct sockaddr *)src)->sa_len > sizeof (*dest)) ?
+            sizeof (*dest) : ((struct sockaddr *)src)->sa_len ;
+#else
+  len = (SAROUNDUP (src) > sizeof (*dest)) ?
+            sizeof (*dest) : SAROUNDUP (src) ;
+#endif
+  memcpy (dest, src, len);
+}
+
 #define RTA_ADDR_GET(DEST, RTA, RTMADDRS, PNT) \
   if ((RTMADDRS) & (RTA)) \
     { \
-      void *pdest = (DEST); \
       int len = SAROUNDUP ((PNT)); \
       if ( ((DEST) != NULL) && \
            af_check (((struct sockaddr *)(PNT))->sa_family)) \
-        memcpy (pdest, (PNT), len); \
+        rta_copy((DEST), (PNT)); \
       (PNT) += len; \
     }
 #define RTA_ATTR_GET(DEST, RTA, RTMADDRS, PNT) \
   if ((RTMADDRS) & (RTA)) \
     { \
-      void *pdest = (DEST); \
       int len = SAROUNDUP ((PNT)); \
       if ((DEST) != NULL) \
-        memcpy (pdest, (PNT), len); \
+        rta_copy((DEST), (PNT)); \
       (PNT) += len; \
     }
 
@@ -297,7 +316,7 @@ ifan_read (struct if_announcemsghdr *ifan)
 }
 #endif /* RTM_IFANNOUNCE */
 
-#ifdef HAVE_BSD_LINK_DETECT
+#ifdef HAVE_BSD_IFI_LINK_STATE
 /* BSD link detect translation */
 static void
 bsd_linkdetect_translate (struct if_msghdr *ifm)
@@ -308,7 +327,7 @@ bsd_linkdetect_translate (struct if_msghdr *ifm)
   else
     UNSET_FLAG(ifm->ifm_flags, IFF_RUNNING);
 }
-#endif /* HAVE_BSD_LINK_DETECT */
+#endif /* HAVE_BSD_IFI_LINK_STATE */
 
 /*
  * Handle struct if_msghdr obtained from reading routing socket or
@@ -322,7 +341,7 @@ ifm_read (struct if_msghdr *ifm)
   struct sockaddr_dl *sdl;
   char ifname[IFNAMSIZ];
   short ifnlen = 0;
-  caddr_t *cp;
+  caddr_t cp;
   
   /* terminate ifname at head (for strnlen) and tail (for safety) */
   ifname[IFNAMSIZ - 1] = '\0';
@@ -444,9 +463,9 @@ ifm_read (struct if_msghdr *ifm)
        */
       ifp->ifindex = ifm->ifm_index;
       
-#ifdef HAVE_BSD_LINK_DETECT /* translate BSD kernel msg for link-state */
+#ifdef HAVE_BSD_IFI_LINK_STATE /* translate BSD kernel msg for link-state */
       bsd_linkdetect_translate(ifm);
-#endif /* HAVE_BSD_LINK_DETECT */
+#endif /* HAVE_BSD_IFI_LINK_STATE */
 
       if_flags_update (ifp, ifm->ifm_flags);
 #if defined(__bsdi__)
@@ -458,13 +477,22 @@ ifm_read (struct if_msghdr *ifm)
 
       /*
        * XXX sockaddr_dl contents can be larger than the structure
-       * definition, so the user of the stored structure must be
-       * careful not to read off the end.
-       *
+       * definition.  There are 2 big families here:
+       *  - BSD has sdl_len + sdl_data[16] + overruns sdl_data
+       *    we MUST use sdl_len here or we'll truncate data.
+       *  - Solaris has no sdl_len, but sdl_data[244]
+       *    presumably, it's not going to run past that, so sizeof()
+       *    is fine here.
        * a nonzero ifnlen from RTA_NAME_GET() means sdl is valid
        */
       if (ifnlen)
+      {
+#ifdef HAVE_STRUCT_SOCKADDR_DL_SDL_LEN
+	memcpy (&ifp->sdl, sdl, sdl->sdl_len);
+#else
 	memcpy (&ifp->sdl, sdl, sizeof (struct sockaddr_dl));
+#endif /* HAVE_STRUCT_SOCKADDR_DL_SDL_LEN */
+      }
 
       if_add_update (ifp);
     }
@@ -485,9 +513,9 @@ ifm_read (struct if_msghdr *ifm)
           return -1;
         }
       
-#ifdef HAVE_BSD_LINK_DETECT /* translate BSD kernel msg for link-state */
+#ifdef HAVE_BSD_IFI_LINK_STATE /* translate BSD kernel msg for link-state */
       bsd_linkdetect_translate(ifm);
-#endif /* HAVE_BSD_LINK_DETECT */
+#endif /* HAVE_BSD_IFI_LINK_STATE */
 
       /* update flags and handle operative->inoperative transition, if any */
       if_flags_update (ifp, ifm->ifm_flags);

@@ -535,7 +535,7 @@ vty_show_ip_route_detail (struct vty *vty, struct route_node *rn)
   struct rib *rib;
   struct nexthop *nexthop;
 
-  for (rib = rn->info; rib; rib = rib->next)
+  RNODE_FOREACH_RIB (rn, rib)
     {
       vty_out (vty, "Routing entry for %s/%d%s", 
 	       inet_ntoa (rn->p.u.prefix4), rn->p.prefixlen,
@@ -828,7 +828,7 @@ DEFUN (show_ip_route,
 
   /* Show all IPv4 routes. */
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       {
 	if (first)
 	  {
@@ -869,7 +869,7 @@ DEFUN (show_ip_route_prefix_longer,
 
   /* Show matched type IPv4 routes. */
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       if (prefix_match (&p, &rn->p))
 	{
 	  if (first)
@@ -902,7 +902,7 @@ DEFUN (show_ip_route_supernets,
 
   /* Show matched type IPv4 routes. */
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       {
 	addr = ntohl (rn->p.u.prefix4.s_addr);
 
@@ -948,7 +948,7 @@ DEFUN (show_ip_route_protocol,
 
   /* Show matched type IPv4 routes. */
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       if (rib->type == type)
 	{
 	  if (first)
@@ -1052,7 +1052,7 @@ vty_show_ip_route_summary (struct vty *vty, struct route_table *table)
   memset (&rib_cnt, 0, sizeof(rib_cnt));
   memset (&fib_cnt, 0, sizeof(fib_cnt));
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       for (nexthop = rib->nexthop; nexthop; nexthop = nexthop->next)
         {
 	  rib_cnt[ZEBRA_ROUTE_TOTAL]++;
@@ -1225,7 +1225,7 @@ DEFUN (show_ip_mroute,
 
   /* Show all IPv4 routes. */
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       {
        if (first)
          {
@@ -1552,7 +1552,7 @@ vty_show_ipv6_route_detail (struct vty *vty, struct route_node *rn)
   struct nexthop *nexthop;
   char buf[BUFSIZ];
 
-  for (rib = rn->info; rib; rib = rib->next)
+  RNODE_FOREACH_RIB (rn, rib)
     {
       vty_out (vty, "Routing entry for %s/%d%s", 
 	       inet_ntop (AF_INET6, &rn->p.u.prefix6, buf, BUFSIZ),
@@ -1807,7 +1807,7 @@ DEFUN (show_ipv6_route,
 
   /* Show all IPv6 route. */
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       {
 	if (first)
 	  {
@@ -1848,7 +1848,7 @@ DEFUN (show_ipv6_route_prefix_longer,
 
   /* Show matched type IPv6 routes. */
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       if (prefix_match (&p, &rn->p))
 	{
 	  if (first)
@@ -1888,7 +1888,7 @@ DEFUN (show_ipv6_route_protocol,
 
   /* Show matched type IPv6 routes. */
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       if (rib->type == type)
 	{
 	  if (first)
@@ -2020,7 +2020,7 @@ DEFUN (show_ipv6_mroute,
 
   /* Show all IPv6 route. */
   for (rn = route_top (table); rn; rn = route_next (rn))
-    for (rib = rn->info; rib; rib = rib->next)
+    RNODE_FOREACH_RIB (rn, rib)
       {
        if (first)
          {

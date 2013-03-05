@@ -1,8 +1,3 @@
-/* this testcase is currently broken
- * -- 2012-05-01 David Lamparter <equinox@diac24.net>
- */
-int main() { return 0; }
-
 #include <zebra.h>
 
 #include "vty.h"
@@ -29,7 +24,6 @@ int main() { return 0; }
 struct zebra_privs_t *bgpd_privs = NULL;
 struct thread_master *master = NULL;
 
-#if 0
 static int failed = 0;
 static int tty = 0;
 
@@ -442,8 +436,17 @@ parse_test (struct peer *peer, struct test_segment *t, int type)
 {
   int ret;
   int oldfailed = failed;
-  struct attr attr;
-  struct bgp_nlri nlri;
+  struct attr attr = { };
+  struct bgp_nlri nlri = { };
+  struct bgp_attr_parser_args attr_args = {
+    .peer = peer,
+    .length = t->len,
+    .total = 1,
+    .attr = &attr,
+    .type = BGP_ATTR_MP_REACH_NLRI,
+    .flags = BGP_ATTR_FLAG_OPTIONAL, 
+    .startp = BGP_INPUT_PNT (peer),
+  };
 #define RANDOM_FUZZ 35
   
   stream_reset (peer->ibuf);
@@ -453,11 +456,12 @@ parse_test (struct peer *peer, struct test_segment *t, int type)
   stream_write (peer->ibuf, t->data, t->len);
   
   printf ("%s: %s\n", t->name, t->desc);
-
+  
+  
   if (type == BGP_ATTR_MP_REACH_NLRI)
-    ret = bgp_mp_reach_parse (peer, t->len, &attr, BGP_ATTR_FLAG_OPTIONAL, BGP_INPUT_PNT (peer), &nlri);
+    ret = bgp_mp_reach_parse (&attr_args, &nlri);
   else
-    ret = bgp_mp_unreach_parse (peer, t->len, BGP_ATTR_FLAG_OPTIONAL, BGP_INPUT_PNT (peer), &nlri);
+    ret = bgp_mp_unreach_parse (&attr_args, &nlri);
 
   if (!ret)
     {
@@ -511,6 +515,7 @@ main (void)
   
   master = thread_master_create ();
   bgp_master_init ();
+  bgp_option_set (BGP_OPT_NO_LISTEN);
   
   if (fileno (stdout) >= 0) 
     tty = isatty (fileno (stdout));
@@ -539,4 +544,3 @@ main (void)
   printf ("failures: %d\n", failed);
   return failed;
 }
-#endif /* #if 0 */
