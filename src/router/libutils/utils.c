@@ -3013,6 +3013,12 @@ int internal_getRouterBrand()
 		setRouter("Buffalo WBR-B11");
 		return ROUTER_BUFFALO_WBR54G;
 	}
+	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev","0x1100"))
+	{
+		retRouter("Asus RT-AC66U");
+		return ROUTER_ASUS_AC66U;	
+	}
+	
 	if (boardnum == 00 && nvram_match("boardtype", "0xf52e")
 	    && nvram_match("boardrev", "0x1204")) {
 		if (nvram_match("product", "WLI-H4-D1300")) {
@@ -3027,8 +3033,8 @@ int internal_getRouterBrand()
 #else
 			setRouter("Buffalo WZR-D1800H");
 #endif
+		return ROUTER_D1800H;	
 		}
-		return ROUTER_D1800H;
 	}
 #ifndef HAVE_BUFFALO
 	if (boardnum == 0 && nvram_match("boardtype", "0x048e") &&	// cfe sets boardnum="", strtoul -> 0

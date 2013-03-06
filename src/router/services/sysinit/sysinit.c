@@ -1858,6 +1858,7 @@ void start_restore_defaults(void)
 		linux_overrides = rt53nvlan;
 		break;
 #endif
+	case ROUTER_ASUS_AC66U:
 	case ROUTER_D1800H:
 		linux_overrides = wrt6102vlan;
 		break;
@@ -2115,6 +2116,17 @@ void start_restore_defaults(void)
 		}
 
 	} else if (brand == ROUTER_D1800H) {
+
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
+			nvram_set("vlan1ports", "1 2 3 4 8*");
+			nvram_set("vlan2ports", "0 8");
+		}
+		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "1 2 3 4 8*");
+			nvram_set("vlan2ports", "0 8");
+		}
+
+	} else if (brand == ROUTER_ASUS_AC66U) {
 
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 8*");
