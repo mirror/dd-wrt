@@ -1,7 +1,7 @@
 PKG_BUILD_DIR_UQMI=$(TOP)/uqmi
 STAGING_DIR=$(TOP)/_staging
 PKG_INSTALL:=1
-CMAKE_C_COMPILER:=mips-linux-uclibc-gcc
+CMAKE_C_COMPILER:=$(ARCH)-linux-uclibc-gcc
 
 MAKE_FLAGS+=VERBOSE=0
 EXTRA_CFLAGS:=-I$(TOP)/_staging/usr/include -L$(TOP)/_staging/usr/lib -DNEED_PRINTF
