@@ -2380,7 +2380,7 @@ int internal_getRouterBrand()
 	}
 
 	if (boardnum == 0 && nvram_match("boardtype", "0xF5B2")
-	    && nvram_match("boardrev", "0x1100")) {
+	    && nvram_match("boardrev", "0x1100")  && !nvram_match("pci/2/1/sb20in80and160hr5ghpo","0")) {
 		setRouter("Asus RT-N66U");
 		return ROUTER_ASUS_RTN66;
 	}
@@ -3013,7 +3013,7 @@ int internal_getRouterBrand()
 		setRouter("Buffalo WBR-B11");
 		return ROUTER_BUFFALO_WBR54G;
 	}
-	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev","0x1100"))
+	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev","0x1100") && nvram_match("pci/2/1/sb20in80and160hr5ghpo","0"))
 	{
 		setRouter("Asus RT-AC66U");
 		return ROUTER_ASUS_AC66U;	
