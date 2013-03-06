@@ -52,7 +52,7 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
 	write_nvram("/tmp/openvpn/cert.p12", "openvpn_pkcs12");
 	write_nvram("/tmp/openvpn/static.key", "openvpn_static");
-	chmod("/tmp/openvpn/key.pem", 0600)
+	chmod("/tmp/openvpn/key.pem", 0600);
 
 	//	use jffs for ccd if available
 	if (nvram_match("enable_jffs2", "1")
