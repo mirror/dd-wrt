@@ -3015,7 +3015,7 @@ int internal_getRouterBrand()
 	}
 	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev","0x1100"))
 	{
-		retRouter("Asus RT-AC66U");
+		setRouter("Asus RT-AC66U");
 		return ROUTER_ASUS_AC66U;	
 	}
 	
