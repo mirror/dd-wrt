@@ -24,7 +24,7 @@ ifneq ($(CONFIG_DIST),"micro-special")
 endif
 endif
 
-CFLAGS += -s $(COPTS) -I../shared -I$(SRCBASE)/include.bcm -I$(SRCBASE)/wl/exe -I$(LINUXDIR) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -s $(COPTS) -I../shared -I$(SRCBASE)/include.bcm -I$(SRCBASE)/wl/exe -I$(LINUXDIR) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(LINUXDIR)/brcm/shared/bcmwifi/include
 LDFLAGS += -L../nvram -L../shared -L../libutils -lutils -lnvram -lwireless -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifeq ($(CONFIG_ATH9K),y)
 LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
@@ -35,7 +35,7 @@ vpath %.c $(SRCBASE)/tools/misc
 
 vpath %.c $(SRCBASE)/et/freebsd
 ifeq ($(ARCHITECTURE),gateworx)
-UTILS += showmac setmac fischecksum
+UTILS += showmac setmac fischecksum nandwrite flash_erase
 endif
 
 
@@ -100,7 +100,7 @@ all: clean
 #	$(CC) -o jffs2root -I$(LINUXDIR)/include $(COPTS) jffs2root.c	
 else
 all: clean $(UTILS)
-	if test -e "src/Makefile"; then make -C src; fi
+	if test -e "src.new/Makefile"; then make -C src.new; fi
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
@@ -112,7 +112,7 @@ endif
 
 
 clean:
-	if test -e "src/Makefile"; then make -C src clean; fi
+	if test -e "src.new/Makefile"; then make -C src.new clean; fi
 ifeq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
 #	make -C wprobe clean
