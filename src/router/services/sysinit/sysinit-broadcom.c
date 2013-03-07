@@ -439,15 +439,14 @@ void start_sysinit(void)
 		eval("watchdog");	// system watchdog
 #endif
 #ifdef HAVE_80211AC
-	fprintf(stderr,"boardnum %s\n",nvram_safe_get("boardnum"));
-	fprintf(stderr,"boardtype %s\n",nvram_safe_get("boardtype"));
-	fprintf(stderr,"boardrev %s\n",nvram_safe_get("boardrev"));
-	if (nvram_get("bootflags")==NULL)
-	    {
-	    fprintf(stderr,"nvram invalid, erase\n");
-//	    eval("erase","nvram"); // ignore it for testbed
-//	    sys_reboot();
-	    }
+	fprintf(stderr, "boardnum %s\n", nvram_safe_get("boardnum"));
+	fprintf(stderr, "boardtype %s\n", nvram_safe_get("boardtype"));
+	fprintf(stderr, "boardrev %s\n", nvram_safe_get("boardrev"));
+	if (nvram_get("bootflags") == NULL) {
+		fprintf(stderr, "nvram invalid, erase\n");
+//          eval("erase","nvram"); // ignore it for testbed
+//          sys_reboot();
+	}
 #endif
 	/*
 	 * Setup console 
@@ -1136,10 +1135,138 @@ void start_sysinit(void)
 	case ROUTER_ASUS_AC66U:
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 		nvram_set("wan_ifname", "vlan2");
+		struct nvram_tuple bcm4360ac_defaults[] = {
+			{"pci/2/1/aa2g", "0", 0},
+			{"pci/2/1/aa5g", "7", 0},
+			{"pci/2/1/aga0", "71", 0},
+			{"pci/2/1/aga1", "71", 0},
+			{"pci/2/1/aga2", "71", 0},
+			{"pci/2/1/agbg0", "133", 0},
+			{"pci/2/1/agbg1", "133", 0},
+			{"pci/2/1/agbg2", "133", 0},
+			{"pci/2/1/antswitch", "0", 0},
+			{"pci/2/1/cckbw202gpo", "0", 0},
+			{"pci/2/1/cckbw20ul2gpo", "0", 0},
+			{"pci/2/1/dot11agofdmhrbw202gpo", "0", 0},
+			{"pci/2/1/femctrl", "3", 0},
+			{"pci/2/1/papdcap2g", "0", 0},
+			{"pci/2/1/tworangetssi2g", "0", 0},
+			{"pci/2/1/pdgain2g", "4", 0},
+			{"pci/2/1/epagain2g", "0", 0},
+			{"pci/2/1/tssiposslope2g", "1", 0},
+			{"pci/2/1/gainctrlsph", "0", 0},
+			{"pci/2/1/papdcap5g", "0", 0},
+			{"pci/2/1/tworangetssi5g", "0", 0},
+			{"pci/2/1/pdgain5g", "4", 0},
+			{"pci/2/1/epagain5g", "0", 0},
+			{"pci/2/1/tssiposslope5g", "1", 0},
+			{"pci/2/1/maxp2ga0", "76", 0},
+			{"pci/2/1/maxp2ga1", "76", 0},
+			{"pci/2/1/maxp2ga2", "76", 0},
+			{"pci/2/1/mcsbw202gpo", "0", 0},
+			{"pci/2/1/mcsbw402gpo", "0", 0},
+			{"pci/2/1/measpower", "0x7f", 0},
+			{"pci/2/1/measpower1", "0x7f", 0},
+			{"pci/2/1/measpower2", "0x7f", 0},
+			{"pci/2/1/noiselvl2ga0", "31", 0},
+			{"pci/2/1/noiselvl2ga1", "31", 0},
+			{"pci/2/1/noiselvl2ga2", "31", 0},
+			{"pci/2/1/noiselvl5gha0", "31", 0},
+			{"pci/2/1/noiselvl5gha1", "31", 0},
+			{"pci/2/1/noiselvl5gha2", "31", 0},
+			{"pci/2/1/noiselvl5gla0", "31", 0},
+			{"pci/2/1/noiselvl5gla1", "31", 0},
+			{"pci/2/1/noiselvl5gla2", "31", 0},
+			{"pci/2/1/noiselvl5gma0", "31", 0},
+			{"pci/2/1/noiselvl5gma1", "31", 0},
+			{"pci/2/1/noiselvl5gma2", "31", 0},
+			{"pci/2/1/noiselvl5gua0", "31", 0},
+			{"pci/2/1/noiselvl5gua1", "31", 0},
+			{"pci/2/1/noiselvl5gua2", "31", 0},
+			{"pci/2/1/ofdmlrbw202gpo", "0", 0},
+			{"pci/2/1/pa2ga0", "0xfe72,0x14c0,0xfac7", 0},
+			{"pci/2/1/pa2ga1", "0xfe80,0x1472,0xfabc", 0},
+			{"pci/2/1/pa2ga2", "0xfe82,0x14bf,0xfad9", 0},
+			{"pci/2/1/pcieingress_war", "15", 0},
+			{"pci/2/1/phycal_tempdelta", "255", 0},
+			{"pci/2/1/rawtempsense", "0x1ff", 0},
+			{"pci/2/1/rxchain", "7", 0},
+			{"pci/2/1/rxgainerr2g", "0xffff", 0},
+			{"pci/2/1/rxgainerr5g", "0xffff,0xffff,0xffff,0xffff",
+			 0},
+			{"pci/2/1/rxgains2gelnagaina0", "0", 0},
+			{"pci/2/1/rxgains2gelnagaina1", "0", 0},
+			{"pci/2/1/rxgains2gelnagaina2", "0", 0},
+			{"pci/2/1/rxgains2gtrelnabypa0", "0", 0},
+			{"pci/2/1/rxgains2gtrelnabypa1", "0", 0},
+			{"pci/2/1/rxgains2gtrelnabypa2", "0", 0},
+			{"pci/2/1/rxgains2gtrisoa0", "0", 0},
+			{"pci/2/1/rxgains2gtrisoa1", "0", 0},
+			{"pci/2/1/rxgains2gtrisoa2", "0", 0},
+			{"pci/2/1/sar2g", "18", 0},
+			{"pci/2/1/sar5g", "15", 0},
+			{"pci/2/1/sromrev", "11", 0},
+			{"pci/2/1/subband5gver", "0x4", 0},
+			{"pci/2/1/tempcorrx", "0x3f", 0},
+			{"pci/2/1/tempoffset", "255", 0},
+			{"pci/2/1/temps_hysteresis", "15", 0},
+			{"pci/2/1/temps_period", "15", 0},
+			{"pci/2/1/tempsense_option", "0x3", 0},
+			{"pci/2/1/tempsense_slope", "0xff", 0},
+			{"pci/2/1/tempthresh", "255", 0},
+			{"pci/2/1/txchain", "7", 0},
+			{"pci/2/1/ledbh0", "2", 0},
+			{"pci/2/1/ledbh1", "5", 0},
+			{"pci/2/1/ledbh2", "4", 0},
+			{"pci/2/1/ledbh3", "11", 0},
+			{"pci/2/1/ledbh10", "7", 0},
+
+			{0, 0, 0}
+		};
+
+		struct nvram_tuple *t;
+
+		/* Restore defaults */
+		for (t = bcm4360ac_defaults; t->name; t++) {
+			if (!nvram_get(t->name))
+				nvram_set(t->name, t->value);
+		}
+
+		nvram_set("pci/1/1/maxp2ga0", "0x70");
+		nvram_set("pci/1/1/maxp2ga1", "0x70");
+		nvram_set("pci/1/1/maxp2ga2", "0x70");
+		nvram_set("pci/1/1/regrev", "0");
+		nvram_set("pci/1/1/ccode", "ALL");
+		nvram_set("pci/1/1/cckbw202gpo", "0x5555");
+		nvram_set("pci/1/1/cckbw20ul2gpo", "0x5555");
+		nvram_set("pci/1/1/legofdmbw202gpo", "0x97555555");
+		nvram_set("pci/1/1/legofdmbw20ul2gpo", "0x97555555");
+		nvram_set("pci/1/1/mcsbw202gpo", "0xDA755555");
+		nvram_set("pci/1/1/mcsbw20ul2gpo", "0xDA755555");
+		nvram_set("pci/1/1/mcsbw402gpo", "0xFC965555");
+
+		nvram_set("pci/2/1/maxp5ga0", "104,104,104,104");
+		nvram_set("pci/2/1/maxp5ga1", "104,104,104,104");
+		nvram_set("pci/2/1/maxp5ga2", "104,104,104,104");
+
+		nvram_set("pci/2/1/mcsbw205glpo", "0xBB975311");
+		nvram_set("pci/2/1/mcsbw405glpo", "0xBB975311");
+		nvram_set("pci/2/1/mcsbw805glpo", "0xBB975311");
+		nvram_set("pci/2/1/mcsbw205gmpo", "0xBB975311");
+		nvram_set("pci/2/1/mcsbw405gmpo", "0xBB975311");
+		nvram_set("pci/2/1/mcsbw805gmpo", "0xBB975311");
+		nvram_set("pci/2/1/mcsbw205ghpo", "0xBB975311");
+		nvram_set("pci/2/1/mcsbw405ghpo", "0xBB975311");
+		nvram_set("pci/2/1/mcsbw805ghpo", "0xBB975311");
+
+		nvram_set("pci/2/1/regrev", "0");
+		nvram_set("pci/2/1/ccode", "ALL");
+
 		break;
-	
+
 	case ROUTER_D1800H:
-		if (nvram_get("ledbh0") == NULL || nvram_match("ledbh11","130")) {
+		if (nvram_get("ledbh0") == NULL
+		    || nvram_match("ledbh11", "130")) {
 			nvram_set("ledbh0", "11");
 			nvram_set("ledbh1", "11");
 			nvram_set("ledbh2", "11");
@@ -1165,17 +1292,38 @@ void start_sysinit(void)
 		nvram_unset("maxp5gha0");
 		nvram_unset("maxp5gha1");
 		nvram_unset("maxp5gha2");
-		nvram_set("pci/1/1/maxp2ga0", "0x64");
-		nvram_set("pci/1/1/maxp2ga1", "0x64");
-		nvram_set("pci/1/1/maxp2ga2", "0x64");
+		nvram_set("pci/1/1/maxp2ga0", "0x70");
+		nvram_set("pci/1/1/maxp2ga1", "0x70");
+		nvram_set("pci/1/1/maxp2ga2", "0x70");
 		nvram_set("pci/1/1/regrev", "0");
 		nvram_set("pci/1/1/ccode", "ALL");
-		nvram_set("pci/2/1/maxp5ga0", "0x5C");
-		nvram_set("pci/2/1/maxp5ga1", "0x5C");
-		nvram_set("pci/2/1/maxp5ga2", "0x5C");
-		nvram_set("pci/2/1/maxp5gha0", "0x5C");
-		nvram_set("pci/2/1/maxp5gha1", "0x5C");
-		nvram_set("pci/2/1/maxp5gha2", "0x5C");
+		nvram_set("pci/1/1/cckbw202gpo", "0x5555");
+		nvram_set("pci/1/1/cckbw20ul2gpo", "0x5555");
+		nvram_set("pci/1/1/legofdmbw202gpo", "0x97555555");
+		nvram_set("pci/1/1/legofdmbw20ul2gpo", "0x97555555");
+		nvram_set("pci/1/1/mcsbw202gpo", "0xFC955555");
+		nvram_set("pci/1/1/mcsbw20ul2gpo", "0xFC955555");
+		nvram_set("pci/1/1/mcsbw402gpo", "0xFFFF9999");
+		nvram_set("pci/1/1/mcs32po", "0x9999");
+		nvram_set("pci/1/1/legofdm40duppo", "0x4444");
+		nvram_set("pci/2/1/maxp5ga0", "0x6A");
+		nvram_set("pci/2/1/maxp5ga1", "0x6A");
+		nvram_set("pci/2/1/maxp5ga2", "0x6A");
+		nvram_set("pci/2/1/legofdmbw205gmpo", "0x77777777");
+		nvram_set("pci/2/1/legofdmbw20ul5gmpo", "0x77777777");
+		nvram_set("pci/2/1/mcsbw205gmpo", "0x77777777");
+		nvram_set("pci/2/1/mcsbw20ul5gmpo", "0x77777777");
+		nvram_set("pci/2/1/mcsbw405gmpo", "0x77777777");
+		nvram_set("pci/2/1/maxp5gha0", "0x6A");
+		nvram_set("pci/2/1/maxp5gha1", "0x6A");
+		nvram_set("pci/2/1/maxp5gha2", "0x6A");
+		nvram_set("pci/2/1/legofdmbw205ghpo", "0x77777777");
+		nvram_set("pci/2/1/legofdmbw20ul5ghpo", "0x77777777");
+		nvram_set("pci/2/1/mcsbw205ghpo", "0x77777777");
+		nvram_set("pci/2/1/mcsbw20ul5ghpo", "0x77777777");
+		nvram_set("pci/2/1/mcsbw405ghpo", "0x77777777");
+		nvram_set("pci/2/1/mcs32po", "0x7777");
+		nvram_set("pci/2/1/legofdm40duppo", "0x0000");
 		nvram_set("pci/2/1/regrev", "0");
 		nvram_set("pci/2/1/ccode", "ALL");
 		break;
@@ -2312,7 +2460,8 @@ int check_cfe_nv(void)
 #endif
 	}
 	if (ret) {
-		fprintf(stderr,"Some error found, we want to reboot!.....................\n");
+		fprintf(stderr,
+			"Some error found, we want to reboot!.....................\n");
 		nvram_commit();
 		sys_reboot();
 	}
@@ -2477,7 +2626,7 @@ void start_overclocking(void)
 			sprintf(clkfr, "%d,%d", clk, clk2);
 		nvram_set("clkfreq", clkfr);
 		nvram_commit();
-		fprintf(stderr,"Overclocking done, rebooting...\n");
+		fprintf(stderr, "Overclocking done, rebooting...\n");
 		sys_reboot();
 	}
 #endif

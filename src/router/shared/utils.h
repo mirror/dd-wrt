@@ -601,7 +601,7 @@
 
 #define ROUTER_BOARD_HAMEA15 0xbc10
 
-#define ROUTER_ASUS_AC66U 0xbd0f
+#define ROUTER_ASUS_AC66U 0xbd19
 
 #define NVROUTER "DD_BOARD"
 
