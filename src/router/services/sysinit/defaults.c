@@ -39,7 +39,9 @@
 #define HAVE_POWERNOC 1
 #endif
 
+
 #ifdef STORE_DEFAULTS
+
 
 struct nvram_tuple srouter_defaults[] = {
 	// {"default_init","1",0},
