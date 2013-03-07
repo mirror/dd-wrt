@@ -2519,6 +2519,7 @@ void start_drivers(void)
 		eval("rmmod", "ehci-platform");
 		eval("rmmod", "ehci-hcd");
 		eval("rmmod", "usbcore");
+		eval("rmmod", "usb-common");
 /* unload filesystems */
 /* xfs */
 		eval("rmmod", "xfs");
