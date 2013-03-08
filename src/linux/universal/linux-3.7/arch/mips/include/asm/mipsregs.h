@@ -603,6 +603,8 @@
 #define MIPS_CONF6_SYND		(_ULCAST_(1) << 13)
 
 #define MIPS_CONF7_WII		(_ULCAST_(1) << 31)
+#define MIPS_CONF7_AR		(_ULCAST_(1) << 16)
+#define MIPS_CONF7_IAR		(_ULCAST_(1) << 10)
 
 #define MIPS_CONF7_RPS		(_ULCAST_(1) << 2)
 

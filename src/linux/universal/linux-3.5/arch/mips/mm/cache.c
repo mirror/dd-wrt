@@ -20,6 +20,7 @@
 #include <asm/processor.h>
 #include <asm/cpu.h>
 #include <asm/cpu-features.h>
+#include <linux/highmem.h>
 
 /* Cache operations. */
 void (*flush_cache_all)(void);
@@ -82,12 +83,9 @@ SYSCALL_DEFINE3(cacheflush, unsigned long, addr, unsigned long, bytes,
 
 void __flush_dcache_page(struct page *page)
 {
-	struct address_space *mapping = page_mapping(page);
-	unsigned long addr;
+	void *addr;
 
-	if (PageHighMem(page))
-		return;
-	if (mapping && !mapping_mapped(mapping)) {
+	if (page_mapping(page) && !page_mapped(page)) {
 		SetPageDcacheDirty(page);
 		return;
 	}
@@ -97,25 +95,55 @@ void __flush_dcache_page(struct page *page)
 	 * case is for exec env/arg pages and those are %99 certainly going to
 	 * get faulted into the tlb (and thus flushed) anyways.
 	 */
-	addr = (unsigned long) page_address(page);
-	flush_data_cache_page(addr);
+	if (PageHighMem(page)) {
+		addr = kmap_atomic(page);
+		flush_data_cache_page((unsigned long)addr);
+		kunmap_atomic(addr);
+	} else {
+		addr = (void *) page_address(page);
+		flush_data_cache_page((unsigned long)addr);
+	}
+	ClearPageDcacheDirty(page);
 }
 
 EXPORT_SYMBOL(__flush_dcache_page);
 
 void __flush_anon_page(struct page *page, unsigned long vmaddr)
 {
-	unsigned long addr = (unsigned long) page_address(page);
+	if (!PageHighMem(page)) {
+		unsigned long addr = (unsigned long) page_address(page);
 
-	if (pages_do_alias(addr, vmaddr)) {
-		if (page_mapped(page) && !Page_dcache_dirty(page)) {
-			void *kaddr;
+		if (pages_do_alias(addr, vmaddr & PAGE_MASK)) {
+			if (page_mapped(page) && !Page_dcache_dirty(page)) {
+				void *kaddr;
 
-			kaddr = kmap_coherent(page, vmaddr);
-			flush_data_cache_page((unsigned long)kaddr);
-			kunmap_coherent();
-		} else
-			flush_data_cache_page(addr);
+				kaddr = kmap_coherent(page, vmaddr);
+				flush_data_cache_page((unsigned long)kaddr);
+				kunmap_coherent();
+			} else {
+				flush_data_cache_page(addr);
+				ClearPageDcacheDirty(page);
+			}
+		}
+	} else {
+		void *laddr = lowmem_page_address(page);
+
+		if (pages_do_alias((unsigned long)laddr, vmaddr & PAGE_MASK)) {
+			if (page_mapped(page) && !Page_dcache_dirty(page)) {
+				void *kaddr;
+
+				kaddr = kmap_coherent(page, vmaddr);
+				flush_data_cache_page((unsigned long)kaddr);
+				kunmap_coherent();
+			} else {
+				void *kaddr;
+
+				kaddr = kmap_atomic(page);
+				flush_data_cache_page((unsigned long)kaddr);
+				kunmap_atomic(kaddr);
+				ClearPageDcacheDirty(page);
+			}
+		}
 	}
 }
 
@@ -129,15 +157,28 @@ void __update_cache(struct vm_area_struct *vma, unsigned long address,
 	int exec = (vma->vm_flags & VM_EXEC) && !cpu_has_ic_fills_f_dc;
 
 	pfn = pte_pfn(pte);
-	if (unlikely(!pfn_valid(pfn)))
+	if (unlikely(!pfn_valid(pfn))) {
+		wmb();
 		return;
-	page = pfn_to_page(pfn);
-	if (page_mapping(page) && Page_dcache_dirty(page)) {
-		addr = (unsigned long) page_address(page);
-		if (exec || pages_do_alias(addr, address & PAGE_MASK))
-			flush_data_cache_page(addr);
-		ClearPageDcacheDirty(page);
 	}
+	page = pfn_to_page(pfn);
+	if (page_mapped(page) && Page_dcache_dirty(page)) {
+		void *kaddr = NULL;
+		if (PageHighMem(page)) {
+			addr = (unsigned long)kmap_atomic(page);
+			kaddr = (void *)addr;
+		} else
+			addr = (unsigned long) page_address(page);
+		if (exec || (cpu_has_dc_aliases &&
+		    pages_do_alias(addr, address & PAGE_MASK))) {
+			flush_data_cache_page(addr);
+			ClearPageDcacheDirty(page);
+		}
+
+		if (kaddr)
+			kunmap_atomic((void *)kaddr);
+	}
+	wmb();  /* finish any outstanding arch cache flushes before ret to user */
 }
 
 unsigned long _page_cachable_default;
@@ -181,6 +222,15 @@ static inline void setup_protection_map(void)
 		protection_map[13] = PAGE_READONLY;
 		protection_map[14] = PAGE_SHARED;
 		protection_map[15] = PAGE_SHARED;
+	}
+}
+
+void __init cpu_early_probe_cache(void)
+{
+	if (cpu_has_4k_cache) {
+		extern void __weak r4k_probe_cache(void);
+
+		return r4k_probe_cache();
 	}
 }
 
