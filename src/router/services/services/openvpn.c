@@ -293,6 +293,15 @@ void stop_openvpnserver(void)
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP");
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 -p IPv4 --ip-proto udp --ip-sport 67 --ip-dport 68 -j DROP");
 		system("/usr/sbin/ebtables -t nat -D PREROUTING -i tap2 -p IPv4 --ip-proto udp --ip-sport 68 --ip-dport 67 -j DROP");
+		unlink("/tmp/openvpn/ccd/DEFAULT");
+		unlink("/tmp/openvpn/dh.pem");
+		unlink("/tmp/openvpn/ca.crt");
+		unlink("/tmp/openvpn/cert.pem");
+		unlink("/tmp/openvpn/ca.crl");
+		unlink("/tmp/openvpn/key.pem");
+		unlink("/tmp/openvpn/ta.key");
+		unlink("/tmp/openvpn/cert.p12");
+		unlink("/tmp/openvpn/static.key");
 	}
 
 	return;
@@ -545,6 +554,12 @@ void stop_openvpn(void)
 	   }
 	   //remove ebtables rules on shutdown	
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP");
+		unlink("/tmp/openvpncl/ca.crt");
+		unlink("/tmp/openvpncl/client.crt");
+		unlink("/tmp/openvpncl/client.key");
+		unlink("/tmp/openvpncl/ta.key");
+		unlink("/tmp/openvpncl/cert.p12");
+		unlink("/tmp/openvpncl/static.key");
 	}
 }
 
@@ -560,6 +575,12 @@ void stop_openvpn_wandone(void)
 			}
 		//remove ebtables rules on shutdown	
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP");
+		unlink("/tmp/openvpncl/ca.crt");
+		unlink("/tmp/openvpncl/client.crt");
+		unlink("/tmp/openvpncl/client.key");
+		unlink("/tmp/openvpncl/ta.key");
+		unlink("/tmp/openvpncl/cert.p12");
+		unlink("/tmp/openvpncl/static.key");
 	}
 }
 
