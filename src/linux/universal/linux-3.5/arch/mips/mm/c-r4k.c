@@ -419,8 +419,11 @@ static inline void local_r4k_flush_cache_range(void * args)
 		return;
 
 	r4k_blast_dcache();
-	if (exec)
+	if (exec) {
+		if (!cpu_has_ic_fills_f_dc)
+			wmb();
 		r4k_blast_icache();
+	}
 }
 
 static void r4k_flush_cache_range(struct vm_area_struct *vma,
@@ -484,6 +487,7 @@ static inline void local_r4k_flush_cache_page(void *args)
 	pmd_t *pmdp;
 	pte_t *ptep;
 	void *vaddr;
+	int dontflash = 0;
 
 	/*
 	 * If ownes no valid ASID yet, cannot possibly have gotten
@@ -505,6 +509,10 @@ static inline void local_r4k_flush_cache_page(void *args)
 	if (!(pte_present(*ptep)))
 		return;
 
+	/*  accelerate it! See below, just skipping kmap_*()/kunmap_*() */
+	if ((!exec) && !cpu_has_dc_aliases)
+		return;
+
 	if ((mm == current->active_mm) && (pte_val(*ptep) & _PAGE_VALID))
 		vaddr = NULL;
 	else {
@@ -523,6 +531,8 @@ static inline void local_r4k_flush_cache_page(void *args)
 
 	if (cpu_has_dc_aliases || (exec && !cpu_has_ic_fills_f_dc)) {
 		r4k_blast_dcache_page(addr);
+		if (exec && !cpu_has_ic_fills_f_dc)
+			wmb();
 		if (exec && !cpu_icache_snoops_remote_store)
 			r4k_blast_scache_page(addr);
 	}
@@ -532,8 +542,10 @@ static inline void local_r4k_flush_cache_page(void *args)
 
 			if (cpu_context(cpu, mm) != 0)
 				drop_mmu_context(mm, cpu);
+			dontflash = 1;
 		} else
-			r4k_blast_icache_page(addr);
+			if (map_coherent || !cpu_has_ic_aliases)
+				r4k_blast_icache_page(addr);
 	}
 
 	if (vaddr) {
@@ -541,6 +553,13 @@ static inline void local_r4k_flush_cache_page(void *args)
 			kunmap_coherent();
 		else
 			kunmap_atomic(vaddr);
+	}
+
+	/*  in case of I-cache aliasing - blast it via coherent page */
+	if (exec && cpu_has_ic_aliases && (!dontflash) && !map_coherent) {
+		vaddr = kmap_coherent(page, addr);
+		r4k_blast_icache_page((unsigned long)vaddr);
+		kunmap_coherent();
 	}
 }
 
@@ -554,6 +573,8 @@ static void r4k_flush_cache_page(struct vm_area_struct *vma,
 	args.pfn = pfn;
 
 	r4k_on_each_cpu(local_r4k_flush_cache_page, &args);
+	if (cpu_has_dc_aliases)
+		ClearPageDcacheDirty(pfn_to_page(pfn));
 }
 
 static inline void local_r4k_flush_data_cache_page(void * addr)
@@ -584,6 +605,8 @@ static inline void local_r4k_flush_icache_range(unsigned long start, unsigned lo
 			protected_blast_dcache_range(start, end);
 		}
 	}
+
+	wmb();
 
 	if (end - start > icache_size)
 		r4k_blast_icache();
@@ -1069,7 +1092,11 @@ static void __cpuinit probe_pcache(void)
 	case CPU_34K:
 	case CPU_74K:
 	case CPU_1004K:
-		if ((read_c0_config7() & (1 << 16))) {
+		if (!(read_c0_config7() & MIPS_CONF7_IAR)) {
+			if (c->icache.waysize > PAGE_SIZE)
+				c->icache.flags |= MIPS_CACHE_ALIASES;
+		}
+		if (read_c0_config7() & MIPS_CONF7_AR) {
 			/* effectively physically indexed dcache,
 			   thus no virtual aliases. */
 			c->dcache.flags |= MIPS_CACHE_PINDEX;
@@ -1079,6 +1106,14 @@ static void __cpuinit probe_pcache(void)
 		if (c->dcache.waysize > PAGE_SIZE)
 			c->dcache.flags |= MIPS_CACHE_ALIASES;
 	}
+
+#ifdef  CONFIG_HIGHMEM
+	if (((c->dcache.flags & MIPS_CACHE_ALIASES) &&
+	     ((c->dcache.waysize / PAGE_SIZE) > FIX_N_COLOURS)) ||
+	     ((c->icache.flags & MIPS_CACHE_ALIASES) &&
+	     ((c->icache.waysize / PAGE_SIZE) > FIX_N_COLOURS)))
+	        panic("PAGE_SIZE*WAYS too small for L1 size, too many colors");
+#endif
 
 	switch (c->cputype) {
 	case CPU_20KC:
@@ -1102,10 +1137,12 @@ static void __cpuinit probe_pcache(void)
 	c->icache.ways = 1;
 #endif
 
-	printk("Primary instruction cache %ldkB, %s, %s, linesize %d bytes.\n",
-	       icache_size >> 10,
+	printk("Primary instruction cache %ldkB, %s, %s, %slinesize %d bytes.\n",
+	       icache_size >> 10, way_string[c->icache.ways],
 	       c->icache.flags & MIPS_CACHE_VTAG ? "VIVT" : "VIPT",
-	       way_string[c->icache.ways], c->icache.linesz);
+	       (c->icache.flags & MIPS_CACHE_ALIASES) ?
+			"I-cache aliases, " : "",
+	       c->icache.linesz);
 
 	printk("Primary data cache %ldkB, %s, %s, %s, linesize %d bytes\n",
 	       dcache_size >> 10, way_string[c->dcache.ways],
@@ -1113,6 +1150,30 @@ static void __cpuinit probe_pcache(void)
 	       (c->dcache.flags & MIPS_CACHE_ALIASES) ?
 			"cache aliases" : "no aliases",
 	       c->dcache.linesz);
+}
+
+void __init r4k_probe_cache(void)
+{
+	unsigned long config1 = read_c0_config1();
+	unsigned int lsize, ways, sets;
+
+	if ((lsize = ((config1 >> 10) & 7)))
+		lsize = 2 << lsize;
+
+	sets = 64 << ((config1 >> 13) & 7);
+	ways = 1 + ((config1 >> 7) & 7);
+
+	if (lsize) {
+                shm_align_mask = max_t( unsigned long,
+                                        sets * lsize - 1,
+                                        PAGE_SIZE - 1);
+
+                if (shm_align_mask != (PAGE_SIZE - 1))
+                        shm_align_shift = ffs((shm_align_mask + 1)) - 1;
+        } else
+                shm_align_mask = PAGE_SIZE-1;
+
+		
 }
 
 /*
@@ -1532,7 +1593,7 @@ void __cpuinit r4k_cache_init(void)
 {
 	extern void build_clear_page(void);
 	extern void build_copy_page(void);
-	struct cpuinfo_mips *c = &current_cpu_data;
+	struct cpuinfo_mips __maybe_unused *c = &current_cpu_data;
 
 #ifdef CONFIG_IFX_VPE_CACHE_SPLIT
 	/*
@@ -1633,13 +1694,16 @@ void __cpuinit r4k_cache_init(void)
 	 * This code supports virtually indexed processors and will be
 	 * unnecessarily inefficient on physically indexed processors.
 	 */
-	if (c->dcache.linesz)
+/*	if (c->dcache.linesz) {
 		shm_align_mask = max_t( unsigned long,
 					c->dcache.sets * c->dcache.linesz - 1,
 					PAGE_SIZE - 1);
-	else
+	
+                if (shm_align_mask != (PAGE_SIZE - 1))
+                        shm_align_shift = ffs((shm_align_mask + 1)) - 1;
+	}else
 		shm_align_mask = PAGE_SIZE-1;
-
+*/
 	__flush_cache_vmap	= r4k__flush_cache_vmap;
 	__flush_cache_vunmap	= r4k__flush_cache_vunmap;
 

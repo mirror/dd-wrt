@@ -220,6 +220,12 @@ if ((boardnum == 0) && nvram_match("boardtype", "0xf52e") && (nvram_match("board
 		gpios = 0;
 }
 
+if ((boardnum == 0) && nvram_match("boardtype", "0xF5B2") && (nvram_match("boardrev", "0x1100")))
+{
+		printk(KERN_EMERG "Asus-RT-AC66U init\n");
+		gpios = 0;
+}
+
 if ((boardnum == 42 || boardnum == 66)
 		&& nvram_match("boardtype", "0x04EF")
 		&& (nvram_match("boardrev", "0x1304") || nvram_match("boardrev", "0x1305") || nvram_match("boardrev", "0x1307")))

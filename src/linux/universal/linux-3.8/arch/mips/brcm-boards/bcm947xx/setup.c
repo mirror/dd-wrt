@@ -364,9 +364,11 @@ bus_error_init(void)
 {
 }
 
+void __init memory_setup(void);
 void __init
 plat_mem_setup(void)
 {
+	memory_setup();
 	brcm_setup();
 	return;
 }
