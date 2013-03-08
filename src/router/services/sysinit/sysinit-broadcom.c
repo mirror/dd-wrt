@@ -1261,7 +1261,9 @@ void start_sysinit(void)
 
 		nvram_set("pci/2/1/regrev", "0");
 		nvram_set("pci/2/1/ccode", "ALL");
-
+//		nvram_unset("pci/1/1/ledbh12");
+		nvram_set("pci/2/1/ledbh13", "136");
+		eval("gpio", "disable", "13");
 		break;
 
 	case ROUTER_D1800H:
