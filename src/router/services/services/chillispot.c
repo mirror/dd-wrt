@@ -126,6 +126,8 @@ void stop_chilli(void)
 	if (stop_process("chilli", "chilli daemon")) {
 		unlink("/tmp/chilli/chilli.conf");
 		unlink("/tmp/chilli/hotss.conf");
+		unlink("/tmp/chilli/ip-up.sh");
+		unlink("/tmp/chilli/ip-down.sh");
 	}
 	cprintf("done\n");
 	return;
@@ -143,7 +145,7 @@ void main_config(void)
 	log_level = atoi(nvram_safe_get("log_level"));
 	mkdir("/tmp/chilli", 0700);
 
-	FILE *fp = fopen("/tmp/chilli/ip-up.sh", "wb");
+	FILE *fp = fopen("/tmp/chilli/ip-up.sh", "w");
 	if (fp == NULL)
 		return;
 
@@ -167,9 +169,6 @@ void main_config(void)
 	fprintf(fp, "iptables -I INPUT -i tun0 -j %s\n",log_accept);
 	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n",log_accept);
 	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n",log_accept);
-	// clamp when fw clamping is off	
-	if (nvram_invmatch("filter", "on"))
-		fprintf(fp, "iptables -I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 	//	secure chilli interface
 	if (nvram_match("hotss_enable", "1")
 		&& nvram_invmatch("hotss_interface", "br0"))
@@ -184,6 +183,8 @@ void main_config(void)
 
 		// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
+		// clamp when fw clamping is off	
+		fprintf(fp, "iptables -I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 		if (nvram_match("hotss_enable", "1")
 			&& strlen(nvram_safe_get("hotss_net")) > 0)
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j MASQUERADE\n",
@@ -192,8 +193,7 @@ void main_config(void)
 			&& strlen(nvram_safe_get("chilli_net")) > 0)
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j MASQUERADE\n",
 						nvram_safe_get("chilli_net"));
-		else if (nvram_match("hotss_enable", "1") 
-			|| nvram_match("chilli_enable", "1"))
+		else 
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s 192.168.182.0/24 -j MASQUERADE\n");
 		}
 	else {
@@ -205,14 +205,13 @@ void main_config(void)
 				&& strlen(nvram_safe_get("chilli_net")) > 0)
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
 						nvram_safe_get("chilli_net"), get_wan_ipaddr());
-		else if (nvram_match("hotss_enable", "1") 
-			|| nvram_match("chilli_enable", "1"))
+		else
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 						get_wan_ipaddr());
-						}
+		}
 	fclose(fp);
 						
-	fp = fopen("/tmp/chilli/ip-down.sh", "wb");
+	fp = fopen("/tmp/chilli/ip-down.sh", "w");
 	if (fp == NULL)
 		return;
 
@@ -220,8 +219,6 @@ void main_config(void)
 	fprintf(fp, "iptables -D INPUT -i tun0 -j logaccept\n");
 	fprintf(fp, "iptables -D FORWARD -i tun0 -j logaccept\n");
 	fprintf(fp, "iptables -D FORWARD -o tun0 -j logaccept\n");
-	if (nvram_invmatch("filter", "on"))
-		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 	if (nvram_match("hotss_enable", "1")
 		&& nvram_invmatch("hotss_interface", "br0"))
 			fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", 
@@ -233,8 +230,8 @@ void main_config(void)
 				nvram_safe_get("chilli_interface"), 
 				nvram_safe_get("chilli_net"), log_drop);
 
-		// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
+		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 		if (nvram_match("hotss_enable", "1")
 			&& strlen(nvram_safe_get("hotss_net")) > 0)
 				fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j MASQUERADE\n",
@@ -243,8 +240,7 @@ void main_config(void)
 			&& strlen(nvram_safe_get("chilli_net")) > 0)
 				fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j MASQUERADE\n",
 						nvram_safe_get("chilli_net"));
-		else if (nvram_match("hotss_enable", "1") 
-			|| nvram_match("chilli_enable", "1"))
+		else
 				fprintf(fp, "iptables -t nat -D POSTROUTING -s 192.168.182.0/24 -j MASQUERADE\n");
 		}
 	else {
@@ -256,12 +252,37 @@ void main_config(void)
 				&& strlen(nvram_safe_get("chilli_net")) > 0)
 				fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j SNAT --to-source=%s\n",
 						nvram_safe_get("chilli_net"), get_wan_ipaddr());
-		else if (nvram_match("hotss_enable", "1") 
-			|| nvram_match("chilli_enable", "1"))
+		else
 				fprintf(fp, "iptables -t nat -D POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 						get_wan_ipaddr());
-						}
+		}
 	fclose(fp);
+/*	
+		//	use jffs for connection scripts if available
+	if (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1"))	{
+			mkdir("/jffs/etc", 0700);
+			mkdir("/jffs/etc/chilli", 0700);		
+		
+			if (!(fp = fopen("/jffs/etc/chilli/con-up.sh", "r")) {	//	dont overwrite
+					fp = fopen("/jffs/etc/chilli/con-up.sh", "w");
+					if (fp == NULL)
+						return;
+					fprintf(fp, "#!/bin/sh\n");
+					fclose(fp);
+					}
+			if (!(fp = fopen("/jffs/etc/chilli/con-down.sh", "r"))) {
+					fp = fopen("/jffs/etc/chilli/con-up.sh", "w");
+					if (fp == NULL)
+						return;	
+					fprintf(fp, "#!/bin/sh\n");
+					fclose(fp);
+					
+					chmod("/jffs/etc/chilli/con-up.sh", 0750);
+					chmod("/jffs/etc/chilli/con-down.sh", 0750);
+					}
+	} */
 	
 	chmod("/tmp/chilli/ip-up.sh", 0750);
 	chmod("/tmp/chilli/ip-down.sh", 0750);
@@ -305,10 +326,14 @@ void chilli_config(void)
 	fprintf(fp, "radiusserver1 %s\n", nvram_get("chilli_radius"));
 	fprintf(fp, "radiusserver2 %s\n", nvram_get("chilli_backup"));
 	fprintf(fp, "radiussecret %s\n", nvram_get("chilli_pass"));
-
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("chilli_interface"));
-
 	fprintf(fp, "uamserver %s\n", nvram_get("chilli_url"));
+/*	if (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1")) {
+			fprintf(fp,"conup /jffs/etc/chilli/con-up.sh\n");
+			fprintf(fp,"conup /jffs/etc/chilli/con-down.sh\n");
+			} */
 	if (nvram_invmatch("chilli_dns1", "0.0.0.0")
 	    && nvram_invmatch("chilli_dns1", "")) {
 		fprintf(fp, "dns1 %s\n", nvram_get("chilli_dns1"));
@@ -318,7 +343,6 @@ void chilli_config(void)
 	} else if (nvram_invmatch("sv_localdns", "0.0.0.0")
 		   && nvram_invmatch("sv_localdns", ""))
 		fprintf(fp, "dns1 %s\n", nvram_get("sv_localdns"));
-
 	if (nvram_invmatch("chilli_uamsecret", ""))
 		fprintf(fp, "uamsecret %s\n", nvram_get("chilli_uamsecret"));
 	if (nvram_invmatch("chilli_uamanydns", "0"))
@@ -423,13 +447,17 @@ void hotspotsys_config(void)
 		perror("/tmp/chilli/hotss.conf");
 		return;
 	}
-
+/*	if (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1")) {
+			fprintf(fp,"conup /jffs/etc/chilli/con-up.sh\n");
+			fprintf(fp,"conup /jffs/etc/chilli/con-down.sh\n");
+			} */
 	fprintf(fp, "ipup /tmp/chilli/ip-up.sh\n");
 	fprintf(fp, "ipdown /tmp/chilli/ip-down.sh\n");
 	fprintf(fp, "radiusserver1 radius.hotspotsystem.com\n");
 	fprintf(fp, "radiusserver2 radius2.hotspotsystem.com\n");
 	fprintf(fp, "radiussecret hotsys123\n");
-
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("hotss_interface"));
 	if (nvram_invmatch("hotss_net", ""))
 		fprintf(fp, "net %s\n", nvram_get("hotss_net"));
@@ -466,10 +494,8 @@ void hotspotsys_config(void)
 		   && nvram_invmatch("sv_localdns", "")) {
 		fprintf(fp, "dns1 %s\n", nvram_get("sv_localdns"));
 	}
-
 	fprintf(fp, "uamsecret hotsys123\n");
 	fprintf(fp, "uamanydns\n");
-
 	fprintf(fp, "radiusnasid %s_%s\n", nvram_get("hotss_operatorid"),
 		nvram_get("hotss_locationid"));
 	if (!nvram_match("hotss_loginonsplash", "1")) {
@@ -513,7 +539,6 @@ void hotspotsys_config(void)
 		"uamallowed a19.hotspotsystem.com,a20.hotspotsystem.com,a21.hotspotsystem.com,a22.hotspotsystem.com,a23.hotspotsystem.com,a24.hotspotsystem.com\n");
 	fprintf(fp,
 		"uamallowed a25.hotspotsystem.com,a26.hotspotsystem.com,a27.hotspotsystem.com,a28.hotspotsystem.com,a29.hotspotsystem.com,a30.hotspotsystem.com\n");
-
 	fprintf(fp, "interval 300\n");
 
 	fflush(fp);
