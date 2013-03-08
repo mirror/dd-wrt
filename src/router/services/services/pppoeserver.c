@@ -138,8 +138,8 @@ static void makeipup(void)
 				"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
 			);
 		fprintf(fp, 
- 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
-		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
+//		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
+//		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		"startservice set_routes\n"	// reinitialize
 		"addpppoeconnected $PPPD_PID $1 $5 $PEERNAME\n"
 		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
@@ -179,8 +179,9 @@ static void makeipup(void)
 		"SENT=$(($SENT+$BYTES_SENT))\n"
 		"RCVD=$(($RCVD+$BYTES_RCVD))\n"
 		"addpppoetime $PEERNAME $CONTIME $SENT $RCVD\n"
-		"iptables -D FORWARD -i $1 -j ACCEPT\n"
-		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");	
+//		"iptables -D FORWARD -i $1 -j ACCEPT\n"
+//		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
+	);	
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
 		fprintf(fp, "iptables -D INPUT -i $1 -j ACCEPT\n");
 	if (nvram_match("pppoeradius_enabled", "1"))
