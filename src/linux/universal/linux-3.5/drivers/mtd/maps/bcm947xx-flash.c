@@ -187,7 +187,7 @@ static struct mtd_partition bcm947xx_parts[] = {
 	{ name: "board_data", offset: 0, size: 0, },
 	{ name: NULL, },
 };
-
+extern int cfenvram;
 static struct mtd_partition nflash_parts[] = {
 	{ name: "cfe",	offset: 0, size: 0, },
 	{ name: "nvram", offset: 0, size: 0, },
@@ -521,10 +521,18 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	{
 	nflash_parts[0].offset = 0;
 	nflash_parts[0].size   = cfe_size;
+	if (cfenvram)
+	{
 	nflash_parts[1].offset = size - mtd->erasesize * 3;
 	nflash_parts[1].size   = mtd->erasesize;
 	nflash_parts[2].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	nflash_parts[2].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	}else{
+	nflash_parts[1].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	nflash_parts[1].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	nflash_parts[2].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	nflash_parts[2].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	}
 	return nflash_parts;
 	}
 	/* boot loader */

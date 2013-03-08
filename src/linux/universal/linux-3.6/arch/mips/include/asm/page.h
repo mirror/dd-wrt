@@ -64,6 +64,14 @@ extern void clear_page(void * page);
 extern void copy_page(void * to, void * from);
 
 extern unsigned long shm_align_mask;
+extern unsigned char shm_align_shift;
+
+#define VALIAS_PAGE_OFFSET_MASK	(shm_align_mask)
+#define VALIAS_PAGE_MASK	(~VALIAS_PAGE_OFFSET_MASK)
+#define VALIAS_PAGE_SHIFT	(shm_align_shift)
+#define VALIAS_SHIFT		(VALIAS_PAGE_SHIFT - PAGE_SHIFT)
+#define VALIAS_PAGE_SIZE	(1UL << VALIAS_PAGE_SHIFT)
+#define VALIAS_IDX(x)		((x) << VALIAS_SHIFT)
 
 static inline unsigned long pages_do_alias(unsigned long addr1,
 	unsigned long addr2)
@@ -79,10 +87,11 @@ static inline void clear_user_page(void *addr, unsigned long vaddr,
 	extern void (*flush_data_cache_page)(unsigned long addr);
 
 	clear_page(addr);
-	if (pages_do_alias((unsigned long) addr, vaddr & PAGE_MASK))
+	if (cpu_has_vtag_dcache || (cpu_has_dc_aliases &&
+	     pages_do_alias((unsigned long) addr, vaddr & PAGE_MASK)))
 		flush_data_cache_page((unsigned long)addr);
 }
-#ifndef CONFIG_BCM47XX
+#if !defined(CONFIG_BCM47XX)
 extern void copy_user_page(void *vto, void *vfrom, unsigned long vaddr,
 	struct page *to);
 struct vm_area_struct;
