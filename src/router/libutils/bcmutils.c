@@ -91,7 +91,7 @@ int getcpurev(void)
 			if (strstr(cpurev, "MIPS 74K V4.9"))	// BCM4716B0 (Broadcom BCMB83A chip rev 0)
 				return 49;	// BCM5356B0 (Broadcom BCM5356 chip rev 1) 
 			if (strstr(cpurev, "MIPS 74Kc V4.9"))	// BCM4716B0 (Broadcom BCMB83A chip rev 0) //newer kernels 
-				return 49;	// BCM5356B0 (Broadcom BCM5356 chip rev 1) 
+				return 50;	// BCM5356B0 (Broadcom BCM5356 chip rev 1) 
 			return -1;
 		}
 	}
@@ -130,7 +130,7 @@ int cpu_plltype(void)
 		return 0;
 	if (cpurev == 110)	// BCM4705
 		return 2;
-	if (cpurev == 49)	// BCM4706
+	if (cpurev == 50)	// BCM4706
 		return 8;
 
 	return 0;
