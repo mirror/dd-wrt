@@ -54,7 +54,7 @@ char __initdata ram_nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 static char nvram_buf_cfe[NVRAM_SPACE/2] __attribute__((aligned(PAGE_SIZE)));
 static bool nvram_inram = FALSE;
-static int cfenvram=0;
+int cfenvram=0;
 
 static int cfe_env;
 extern char *cfe_env_get(char *nv_buf, const char *name);
@@ -211,21 +211,31 @@ early_nvram_init(void)
 
 		off = FLASH_MIN;
 		while (off <= lim) {
-			printk(KERN_NOTICE "scan for nvram at %X\n",off);
+//			printk(KERN_NOTICE "scan for nvram at %X\n",off);
 			/* Windowed flash access */
 			header = (struct nvram_header *) KSEG1ADDR(base + off - NVRAM_SPACE);
 			if (header->magic == NVRAM_MAGIC)
 				if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
-					printk(KERN_NOTICE "found nvram at %X\n",off-NVRAM_SPACE);
+					printk(KERN_NOTICE "found nvram at %X\n",off - NVRAM_SPACE);
 					header_cfe = (struct nvram_header *)KSEG1ADDR(base + off + 0x20000 - (NVRAM_SPACE/2));
 					if (header_cfe->magic != NVRAM_MAGIC)
 					{
-					    printk(KERN_INFO "something wrong here\n");
+					    printk(KERN_INFO "something wrong here. do not remap\n");
+					    if ((off - NVRAM_SPACE) < 0x1f0000)
+					    {
+					    header_cfe = (struct nvram_header *)KSEG1ADDR(KSEG1ADDR(base + off + 0x20000 - NVRAM_SPACE));
+					    if (header_cfe->magic == NVRAM_MAGIC) {
+							printk(KERN_INFO "found nvram fuckup caused by a wrong firmware flash. try to deal with it\n");
+							header = header_cfe;
+					    }
+					    }
 					    header_cfe = NULL;
-					}
+					    goto found;
+					}else{
 					cfenvram=1;
 					printk(KERN_NOTICE "map cfe nvram at %X\n",off + 0x20000 - (NVRAM_SPACE/2));
 					goto found;
+					}
 				}
 			header = (struct nvram_header *) KSEG1ADDR(base + off - (NVRAM_SPACE/2));
 			if (header->magic == NVRAM_MAGIC)
@@ -958,7 +968,7 @@ dev_nvram_init(void)
 	}
 //	if (i >= MAX_MTD_DEVICES)
 //		nvram_mtd = NULL;
-	if (nvram_mtd_cfe != NULL)
+	if (nvram_mtd_cfe != NULL && cfenvram)
 	{
 	int len;
 	char *buf=kmalloc(65536,GFP_ATOMIC);
