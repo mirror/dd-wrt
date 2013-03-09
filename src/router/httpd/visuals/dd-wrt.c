@@ -56,6 +56,8 @@ static unsigned int type4_clocks[10] =
     { 192, 200, 216, 228, 240, 252, 264, 280, 300, 0 };
 static unsigned int type7_clocks[10] =
     { 183, 187, 198, 200, 216, 225, 233, 237, 250, 0 };
+static unsigned int type8_clocks[10] =
+    { 200, 300, 400, 500, 600, 632, 650, 662, 0 };
 #endif
 
 #ifdef HAVE_RT2880
@@ -121,6 +123,8 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 		c = type4_clocks;
 	else if (rev == 7)
 		c = type7_clocks;
+	else if (rev == 8)
+		c = type8_clocks;
 	else {
 		websWrite(wp,
 			  "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
