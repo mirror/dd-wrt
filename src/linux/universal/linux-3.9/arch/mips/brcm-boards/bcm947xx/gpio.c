@@ -149,6 +149,10 @@ static struct file_operations gpio_fops = {
 
 extern int iswrt350n;
 extern int iswrt300n11;
+int isd1800h=0;
+int isac66=0;
+EXPORT_SYMBOL(isd1800h);
+EXPORT_SYMBOL(isac66);
 static struct class *gpio_class = NULL;
 
 static int __init
@@ -218,6 +222,14 @@ if ((boardnum == 0) && nvram_match("boardtype", "0xf52e") && (nvram_match("board
 {
 		printk(KERN_EMERG "Buffalo D1800H init\n");
 		gpios = 0;
+		isd1800h = 1;
+}
+
+if ((boardnum == 0) && nvram_match("boardtype", "0xF5B2") && (nvram_match("boardrev", "0x1100")))
+{
+		printk(KERN_EMERG "Asus-RT-AC66U init\n");
+		gpios = 0;
+		isac66 = 1;
 }
 
 if ((boardnum == 42 || boardnum == 66)
