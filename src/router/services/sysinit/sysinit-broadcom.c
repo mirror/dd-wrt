@@ -2526,98 +2526,104 @@ void start_overclocking(void)
 	switch (clk) {
 	case 150:
 		clk2 = 75;
-		// nvram_set ("clkfreq", "150,75");
-//              clk2_1 = 75;
-//              clk2_2 = 33;
-//              // nvram_set ("clkfreq", "150,75,33");
 		break;
 	case 183:
 		clk2 = 92;
-		// nvram_set ("clkfreq", "183,92");
 		break;
 	case 187:
 		clk2 = 94;
-		// nvram_set ("clkfreq", "187,94");
 		break;
 	case 192:
 		clk2 = 96;
-		// nvram_set ("clkfreq", "192,96");
 		break;
 	case 198:
 		clk2 = 98;
-		// nvram_set ("clkfreq", "198,98");
 		break;
 	case 200:
 		clk2 = 100;
-		// nvram_set ("clkfreq", "200,100");
 		clk2_1 = 100;
-		clk2_2 = 33;
-		// nvram_set ("clkfreq", "200,100,33");
+		if (rev==8)
+		    clk2_2 = 50;
+		else
+		    clk2_2 = 33;
 		break;
 	case 216:
 		clk2 = 108;
-		// nvram_set ("clkfreq", "216,108");
 		break;
 	case 225:
 		clk2 = 113;
-		// nvram_set ("clkfreq", "225,113");
 		break;
 	case 228:
 		clk2 = 114;
-		// nvram_set ("clkfreq", "228,114");
 		break;
 	case 233:
 		clk2 = 116;
-		// nvram_set ("clkfreq", "233,116");
 		break;
 	case 237:
 		clk2 = 119;
-		// nvram_set ("clkfreq", "237,119");
 		break;
 	case 240:
 		clk2 = 120;
-		// nvram_set ("clkfreq", "240,120");
 		clk2_1 = 120;
 		clk2_2 = 33;
-		// nvram_set ("clkfreq", "240,120,33");
 		break;
 	case 250:
 		clk2 = 125;
-		// nvram_set ("clkfreq", "250,125");
 		break;
 	case 252:
 		clk2 = 126;
-		// nvram_set ("clkfreq", "252,126");
 		clk2_1 = 126;
 		clk2_2 = 33;
-		// nvram_set ("clkfreq", "252,126,33");
 		break;
 	case 264:
 		clk2 = 132;
-		// nvram_set ("clkfreq", "264,132");
 		clk2_1 = 132;
 		clk2_2 = 33;
-		// nvram_set ("clkfreq", "264,132,33");
 		break;
 	case 280:
 		clk2 = 120;
-		// nvram_set ("clkfreq", "280,120");
 		break;
-//      case 288:
-//              clk2_1 = 144;
-//              clk2_2 = 32;
-//              // nvram_set ("clkfreq", "288,144,32");
-//              break;
 	case 300:
 		clk2 = 120;
 		clk2_1 = 150;
-		clk2_2 = 37;
-		// nvram_set ("clkfreq", "300,150,37");
+		if (rev==8)
+		    clk2_2 = 75;
+		else
+		    clk2_2 = 37;
 		break;
 	case 330:
 		clk2_1 = 132;
 		clk2_2 = 33;
-		// nvram_set ("clkfreq", "330,132,33");
+		break;
+	case 400:
+		clk = 400;
+		clk2_1 = 200; 
+		clk2_2 = 100; 
+		break;
+	case 500:
+		clk = 500;
+		clk2_1 = 250; 
+		clk2_2 = 125; 
+		break;
+	case 600:
+		clk = 600;
+		clk2_1 = 300; 
+		clk2_2 = 150; 
+		break;
+	case 632:
+		clk = 632;
+		clk2_1 = 316; 
+		clk2_2 = 158; 
+		break;
+	case 650:
+		clk = 650;
+		clk2_1 = 325; 
+		clk2_2 = 162; 
+		break;
+	case 662:
+		clk = 662;
+		clk2_1 = 331; 
+		clk2_2 = 165; 
 		break;
 	default:
 		set = 0;
@@ -2628,7 +2634,7 @@ void start_overclocking(void)
 		cprintf
 		    ("clock frequency adjusted from %d to %d, reboot needed\n",
 		     cclk, clk);
-		if (rev == 2)
+		if (rev == 2 || rev == 8)
 			sprintf(clkfr, "%d,%d,%d", clk, clk2_1, clk2_2);
 		else
 			sprintf(clkfr, "%d,%d", clk, clk2);
