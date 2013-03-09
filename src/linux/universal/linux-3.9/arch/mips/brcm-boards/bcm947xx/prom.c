@@ -119,12 +119,13 @@ add_tmptlb_entry(unsigned long entrylo0, unsigned long entrylo1,
 }
 #endif  /* CONFIG_HIGHMEM */
 
+static unsigned long detectmem;
 extern char ram_nvram_buf[];
-
 void __init
 prom_init(void)
 {
-	unsigned long mem, extmem = 0, off, data;
+	unsigned long extmem = 0, off, data;
+	static unsigned long mem;
 	unsigned long off1, data1;
 	struct nvram_header *header;
 
@@ -145,15 +146,17 @@ prom_init(void)
 			(*(unsigned long *)(off1 + mem) == data1))
 			break;
 	}
-
-#ifdef  CONFIG_HIGHMEM
+	detectmem = mem;
+#if 0 //def  CONFIG_HIGHMEM
 	if (mem == 128 MB) {
+#if 0 // always false for BCM4706, needs CPU check
 		bool highmem_region = FALSE;
 		int idx;
 
 		sih = si_kattach(SI_OSH);
 		/* save current core index */
 		idx = si_coreidx(sih);
+		printk(KERN_INFO "core idx %d\n",idx);
 		if ((si_setcore(sih, DMEMC_CORE_ID, 0) != NULL) ||
 			(si_setcore(sih, DMEMS_CORE_ID, 0) != NULL)) {
 			uint32 addr, size;
@@ -161,8 +164,10 @@ prom_init(void)
 
 			do {
 				si_coreaddrspaceX(sih, asidx, &addr, &size);
+				printk(KERN_INFO "spaceX size %X,addr %X\n",size,addr);
 				if (size == 0)
 					break;
+				
 				if (addr == SI_SDRAM_R2) {
 					highmem_region = TRUE;
 					break;
@@ -174,15 +179,17 @@ prom_init(void)
 		si_setcoreidx(sih, idx);
 
 		if (highmem_region) {
+#endif
+//			tlb_init();
 			early_tlb_init();
 			/* Add one temporary TLB entries to map SDRAM Region 2.
 			*      Physical        Virtual
 			*      0x80000000      0xc0000000      (1st: 256MB)
 			*      0x90000000      0xd0000000      (2nd: 256MB)
 			*/
-			add_tmptlb_entry(ENTRYLO(SI_SDRAM_R2),
-					 ENTRYLO(SI_SDRAM_R2 + (256 MB)),
-					 EXTVBASE, PM_256M);
+		add_tmptlb_entry(ENTRYLO(SI_SDRAM_R2),
+				 ENTRYLO(SI_SDRAM_R2 + (256 MB)),
+				 EXTVBASE, PM_256M);
 
 			off = EXTVBASE + __pa(off);
 			for (extmem = (128 MB); extmem < (512 MB); extmem <<= 1) {
@@ -192,8 +199,12 @@ prom_init(void)
 
 			extmem -= mem;
 			/* Keep tlb entries back in consistent state */
+//			tlb_init();
 			early_tlb_init();
+#if 0
 		}
+#endif
+
 	}
 #endif  /* CONFIG_HIGHMEM */
 	/* Ignoring the last page when ddr size is 128M. Cached
@@ -223,7 +234,7 @@ prom_init(void)
 
 	add_memory_region(SI_SDRAM_BASE, mem, BOOT_MEM_RAM);
 
-#ifdef  CONFIG_HIGHMEM
+#if 0//def  CONFIG_HIGHMEM
 	if (extmem) {
 		/* We should deduct 0x1000 from the second memory
 		 * region, because of the fact that processor does prefetch.
@@ -243,4 +254,58 @@ prom_init(void)
 void __init
 prom_free_prom_memory(void)
 {
+}
+
+#include <asm/tlbmisc.h>
+unsigned long extended_ram=0;
+
+void __init memory_setup(void)
+{
+unsigned long extmem = 0, off, data;
+unsigned long off1, data1;
+off = (unsigned long)prom_init;
+data = *(unsigned long *)prom_init;
+off1 = off + 4;
+data1 = *(unsigned long *)off1;
+
+
+#ifdef  CONFIG_HIGHMEM
+extmem = 128 MB;
+#if 0
+	if (detectmem == 128 MB) {
+			/* Add one temporary TLB entries to map SDRAM Region 2.
+			*      Physical        Virtual
+			*      0x80000000      0xc0000000      (1st: 256MB)
+			*      0x90000000      0xd0000000      (2nd: 256MB)
+			*/
+//			add_wired_entry(ENTRYLO(SI_SDRAM_R2),
+//					 ENTRYLO(SI_SDRAM_R2 + (256 MB)),
+//					 EXTVBASE, PM_256M);
+
+			off = SI_SDRAM_R2;//EXTVBASE + __pa(off);
+			for (extmem = (128 MB); extmem < (512 MB); extmem <<= 1) {
+				if (*(unsigned long *)(off + extmem) == data)
+					break;
+			}
+
+			extmem -= detectmem;
+			/* Keep tlb entries back in consistent state */
+	}
+#endif
+	if (extmem) {
+		/* We should deduct 0x1000 from the second memory
+		 * region, because of the fact that processor does prefetch.
+		 * Now that we are deducting a page from second memory 
+		 * region, we could add the earlier deducted 4KB (from first bank)
+		 * to the second region (the fact that 0x80000000 -> 0x88000000
+		 * shadows 0x0 -> 0x8000000)
+		 */
+		if (MIPS74K(current_cpu_data.processor_id) && (detectmem == (128 MB)))
+			extmem -= 0x1000;
+		extended_ram = extmem;
+		add_memory_region(SI_SDRAM_R2 + (128 MB) - 0x1000, extmem, BOOT_MEM_RAM);
+	}
+#endif  /* CONFIG_HIGHMEM */
+
+
 }
