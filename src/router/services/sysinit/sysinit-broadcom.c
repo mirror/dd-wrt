@@ -1236,10 +1236,11 @@ void start_sysinit(void)
 		nvram_set("pci/1/1/maxp2ga1", "0x70");
 		nvram_set("pci/1/1/maxp2ga2", "0x70");
 
-		nvram_set("pci/1/1/regrev", "0");
-		nvram_set("pci/1/1/country_rev", "0");
+
+		nvram_set("wl0_country_code", "US");
+		nvram_set("wl0_country_rev", "0");
 		nvram_set("pci/1/1/ccode", "US");
-		nvram_set("pci/1/1/country_code", "US");
+		nvram_set("pci/1/1/regrev", "0");
 
 		nvram_set("pci/1/1/cckbw202gpo", "0x5555");
 		nvram_set("pci/1/1/cckbw20ul2gpo", "0x5555");
@@ -1263,11 +1264,11 @@ void start_sysinit(void)
 		nvram_set("pci/2/1/mcsbw405ghpo", "0xBB975311");
 		nvram_set("pci/2/1/mcsbw805ghpo", "0xBB975311");
 
-		nvram_set("pci/2/1/regrev", "0");
-		nvram_set("pci/2/1/country_rev", "0");
+		nvram_set("wl1_country_code", "US");
+		nvram_set("wl1_country_rev", "0");
 		nvram_set("pci/2/1/ccode", "US");
-		nvram_set("pci/2/1/country_code", "US");
-//		nvram_unset("pci/1/1/ledbh12");
+		nvram_set("pci/2/1/regrev", "0");
+
 		nvram_set("pci/2/1/ledbh13", "136");
 		eval("gpio", "disable", "13");
 		break;
