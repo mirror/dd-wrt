@@ -54,7 +54,7 @@
 #include <syslog.h>
 #include <services.h>
 
-#ifdef HAVE_CPUTEMP
+#if defined(HAVE_CPUTEMP) && !defined(HAVE_80211AC)
 #ifndef HAVE_LAGUNA
 
 #ifdef HAVE_GATEWORX

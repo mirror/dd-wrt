@@ -2465,6 +2465,7 @@ void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
+static int tempcount=0;
 
 #ifdef HAVE_CPUTEMP
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
@@ -2496,6 +2497,51 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	    fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
 #endif
 #endif
+#ifdef HAVE_80211AC
+
+	char buf[WLC_IOCTL_SMLEN];
+	char buf2[WLC_IOCTL_SMLEN];
+	int ret;
+	unsigned int *ret_int = NULL;
+	unsigned int *ret_int2 = NULL;
+	static double tempavg_24 = 0.000;
+	static double tempavg_50 = 0.000;
+	static double tempavg_max = 0.000;
+
+	strcpy(buf, "phy_tempsense");
+	strcpy(buf2, "phy_tempsense");
+
+	if ((ret = wl_ioctl("eth1", WLC_GET_VAR, buf, sizeof(buf))))
+	{
+		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
+		return;
+	}
+
+	if ((ret = wl_ioctl("eth2", WLC_GET_VAR, buf2, sizeof(buf2))))
+	{
+		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
+		return;
+	}
+
+	ret_int = (unsigned int *)buf;
+	ret_int2 = (unsigned int *)buf2;
+
+	if (count == -2)
+	{
+		count++;
+		tempavg_24 = *ret_int;
+		tempavg_50 = *ret_int2;
+	}
+	else
+	{
+		tempavg_24 = (tempavg_24 * 4 + *ret_int) / 5;
+		tempavg_50 = (tempavg_50 * 4 + *ret_int2) / 5;
+	}
+	tempavg_max = (tempavg_24 + tempavg_50) / 2;
+	websWrite(wp, "wl0 %4.2f &#176;C / wl1 %4.2f &#176;C", tempavg_24, tempavg_50);	
+#else
+
+
 
 	if (fp == NULL) {
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
@@ -2512,6 +2558,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	int low = (temp - (high * TEMP_MUL)) / (TEMP_MUL / 10);
 
 	websWrite(wp, "%d.%d &#176;C", high, low);	// no i2c lm75 found
+#endif
 }
 
 void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
