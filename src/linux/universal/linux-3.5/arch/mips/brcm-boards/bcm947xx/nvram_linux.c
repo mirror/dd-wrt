@@ -216,11 +216,19 @@ early_nvram_init(void)
 			header = (struct nvram_header *) KSEG1ADDR(base + off - NVRAM_SPACE);
 			if (header->magic == NVRAM_MAGIC)
 				if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
-					printk(KERN_NOTICE "found nvram at %X\n",off-NVRAM_SPACE);
+					printk(KERN_NOTICE "found nvram at %X\n",off - NVRAM_SPACE);
 					header_cfe = (struct nvram_header *)KSEG1ADDR(base + off + 0x20000 - (NVRAM_SPACE/2));
 					if (header_cfe->magic != NVRAM_MAGIC)
 					{
 					    printk(KERN_INFO "something wrong here. do not remap\n");
+					    if ((off - NVRAM_SPACE) < 0x1f0000)
+					    {
+					    header_cfe = (struct nvram_header *)KSEG1ADDR(KSEG1ADDR(base + off + 0x20000 - NVRAM_SPACE));
+					    if (header_cfe->magic == NVRAM_MAGIC) {
+							printk(KERN_INFO "found nvram fuckup caused by a wrong firmware flash. try to deal with it\n");
+							header = header_cfe;
+					    }
+					    }
 					    header_cfe = NULL;
 					    goto found;
 					}else{
