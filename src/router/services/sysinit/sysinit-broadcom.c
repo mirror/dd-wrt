@@ -414,6 +414,24 @@ static void setup_4712(void)
 
 }
 
+static void set_regulation(int card, char *code, char *rev)
+{
+char path[32];
+sprintf(path,"pci/%d/1/regrev",card+1);
+nvram_set(path,rev);	
+sprintf(path,"pci/%d/1/ccode",card+1);
+nvram_set(path,code);	
+sprintf(path,"wl%d_country_rev",card);
+nvram_set(path,rev);
+sprintf(path,"wl%d_country_code",card);
+nvram_set(path,code);
+if (!card) {
+    nvram_set("wl_country_rev",rev);
+    nvram_set("wl_country_code",code);
+}
+}
+
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -1237,10 +1255,6 @@ void start_sysinit(void)
 		nvram_set("pci/1/1/maxp2ga2", "0x70");
 
 
-		nvram_set("wl0_country_code", "US");
-		nvram_set("wl0_country_rev", "0");
-		nvram_set("pci/1/1/ccode", "US");
-		nvram_set("pci/1/1/regrev", "0");
 
 		nvram_set("pci/1/1/cckbw202gpo", "0x5555");
 		nvram_set("pci/1/1/cckbw20ul2gpo", "0x5555");
@@ -1263,11 +1277,33 @@ void start_sysinit(void)
 		nvram_set("pci/2/1/mcsbw205ghpo", "0xBB975311");
 		nvram_set("pci/2/1/mcsbw405ghpo", "0xBB975311");
 		nvram_set("pci/2/1/mcsbw805ghpo", "0xBB975311");
+		
+		if (nvram_match("regulation_domain","US"))
+		    set_regulation(0,"US","0");
+		else if (nvram_match("regulation_domain","Q2"))
+		    set_regulation(0,"US","0");
+		else if (nvram_match("regulation_domain","EU"))
+		    set_regulation(0,"EU","13");
+		else if (nvram_match("regulation_domain","TW"))
+		    set_regulation(0,"TW","13");
+		else if (nvram_match("regulation_domain","CN"))
+		    set_regulation(0,"CN","1");
+		else
+		    set_regulation(0,"US","0");
 
-		nvram_set("wl1_country_code", "US");
-		nvram_set("wl1_country_rev", "0");
-		nvram_set("pci/2/1/ccode", "US");
-		nvram_set("pci/2/1/regrev", "0");
+
+		if (nvram_match("regulation_domain_5G","US"))
+		    set_regulation(1,"US","0");
+		else if (nvram_match("regulation_domain_5G","Q2"))
+		    set_regulation(1,"US","0");
+		else if (nvram_match("regulation_domain_5G","EU"))
+		    set_regulation(1,"EU","13");
+		else if (nvram_match("regulation_domain_5G","TW"))
+		    set_regulation(1,"TW","13");
+		else if (nvram_match("regulation_domain_5G","CN"))
+		    set_regulation(1,"CN","1");
+		else
+		    set_regulation(1,"US","0");
 
 		nvram_set("pci/2/1/ledbh13", "136");
 		eval("gpio", "disable", "13");
