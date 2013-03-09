@@ -2465,7 +2465,6 @@ void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
-static int tempcount=0;
 
 #ifdef HAVE_CPUTEMP
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
@@ -2499,6 +2498,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifdef HAVE_80211AC
 
+	static int tempcount=0;
 	char buf[WLC_IOCTL_SMLEN];
 	char buf2[WLC_IOCTL_SMLEN];
 	int ret;
@@ -2526,9 +2526,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	ret_int = (unsigned int *)buf;
 	ret_int2 = (unsigned int *)buf2;
 
-	if (count == -2)
+	if (tempcount == -2)
 	{
-		count++;
+		tempcount++;
 		tempavg_24 = *ret_int;
 		tempavg_50 = *ret_int2;
 	}
