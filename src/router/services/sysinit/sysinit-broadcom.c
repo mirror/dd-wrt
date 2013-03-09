@@ -416,21 +416,20 @@ static void setup_4712(void)
 
 static void set_regulation(int card, char *code, char *rev)
 {
-char path[32];
-sprintf(path,"pci/%d/1/regrev",card+1);
-nvram_set(path,rev);	
-sprintf(path,"pci/%d/1/ccode",card+1);
-nvram_set(path,code);	
-sprintf(path,"wl%d_country_rev",card);
-nvram_set(path,rev);
-sprintf(path,"wl%d_country_code",card);
-nvram_set(path,code);
-if (!card) {
-    nvram_set("wl_country_rev",rev);
-    nvram_set("wl_country_code",code);
+	char path[32];
+	sprintf(path, "pci/%d/1/regrev", card + 1);
+	nvram_set(path, rev);
+	sprintf(path, "pci/%d/1/ccode", card + 1);
+	nvram_set(path, code);
+	sprintf(path, "wl%d_country_rev", card);
+	nvram_set(path, rev);
+	sprintf(path, "wl%d_country_code", card);
+	nvram_set(path, code);
+	if (!card) {
+		nvram_set("wl_country_rev", rev);
+		nvram_set("wl_country_code", code);
+	}
 }
-}
-
 
 void start_sysinit(void)
 {
@@ -1254,8 +1253,6 @@ void start_sysinit(void)
 		nvram_set("pci/1/1/maxp2ga1", "0x70");
 		nvram_set("pci/1/1/maxp2ga2", "0x70");
 
-
-
 		nvram_set("pci/1/1/cckbw202gpo", "0x5555");
 		nvram_set("pci/1/1/cckbw20ul2gpo", "0x5555");
 		nvram_set("pci/1/1/legofdmbw202gpo", "0x97555555");
@@ -1277,33 +1274,32 @@ void start_sysinit(void)
 		nvram_set("pci/2/1/mcsbw205ghpo", "0xBB975311");
 		nvram_set("pci/2/1/mcsbw405ghpo", "0xBB975311");
 		nvram_set("pci/2/1/mcsbw805ghpo", "0xBB975311");
-		
-		if (nvram_match("regulation_domain","US"))
-		    set_regulation(0,"US","0");
-		else if (nvram_match("regulation_domain","Q2"))
-		    set_regulation(0,"US","0");
-		else if (nvram_match("regulation_domain","EU"))
-		    set_regulation(0,"EU","13");
-		else if (nvram_match("regulation_domain","TW"))
-		    set_regulation(0,"TW","13");
-		else if (nvram_match("regulation_domain","CN"))
-		    set_regulation(0,"CN","1");
-		else
-		    set_regulation(0,"US","0");
 
-
-		if (nvram_match("regulation_domain_5G","US"))
-		    set_regulation(1,"US","0");
-		else if (nvram_match("regulation_domain_5G","Q2"))
-		    set_regulation(1,"US","0");
-		else if (nvram_match("regulation_domain_5G","EU"))
-		    set_regulation(1,"EU","13");
-		else if (nvram_match("regulation_domain_5G","TW"))
-		    set_regulation(1,"TW","13");
-		else if (nvram_match("regulation_domain_5G","CN"))
-		    set_regulation(1,"CN","1");
+		if (nvram_match("regulation_domain", "US"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("regulation_domain", "Q2"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("regulation_domain", "EU"))
+			set_regulation(0, "EU", "13");
+		else if (nvram_match("regulation_domain", "TW"))
+			set_regulation(0, "TW", "13");
+		else if (nvram_match("regulation_domain", "CN"))
+			set_regulation(0, "CN", "1");
 		else
-		    set_regulation(1,"US","0");
+			set_regulation(0, "US", "0");
+
+		if (nvram_match("regulation_domain_5G", "US"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("regulation_domain_5G", "Q2"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("regulation_domain_5G", "EU"))
+			set_regulation(1, "EU", "13");
+		else if (nvram_match("regulation_domain_5G", "TW"))
+			set_regulation(1, "TW", "13");
+		else if (nvram_match("regulation_domain_5G", "CN"))
+			set_regulation(1, "CN", "1");
+		else
+			set_regulation(1, "US", "0");
 
 		nvram_set("pci/2/1/ledbh13", "136");
 		eval("gpio", "disable", "13");
@@ -2579,10 +2575,10 @@ void start_overclocking(void)
 	case 200:
 		clk2 = 100;
 		clk2_1 = 100;
-		if (rev==8)
-		    clk2_2 = 50;
+		if (rev == 8)
+			clk2_2 = 50;
 		else
-		    clk2_2 = 33;
+			clk2_2 = 33;
 		break;
 	case 216:
 		clk2 = 108;
@@ -2623,10 +2619,10 @@ void start_overclocking(void)
 	case 300:
 		clk2 = 120;
 		clk2_1 = 150;
-		if (rev==8)
-		    clk2_2 = 75;
+		if (rev == 8)
+			clk2_2 = 75;
 		else
-		    clk2_2 = 37;
+			clk2_2 = 37;
 		break;
 	case 330:
 		clk2_1 = 132;
@@ -2634,33 +2630,33 @@ void start_overclocking(void)
 		break;
 	case 400:
 		clk = 400;
-		clk2_1 = 200; 
-		clk2_2 = 100; 
+		clk2_1 = 200;
+		clk2_2 = 100;
 		break;
 	case 500:
 		clk = 500;
-		clk2_1 = 250; 
-		clk2_2 = 125; 
+		clk2_1 = 250;
+		clk2_2 = 125;
 		break;
 	case 600:
 		clk = 600;
-		clk2_1 = 300; 
-		clk2_2 = 150; 
+		clk2_1 = 300;
+		clk2_2 = 150;
 		break;
 	case 632:
 		clk = 632;
-		clk2_1 = 316; 
-		clk2_2 = 158; 
+		clk2_1 = 316;
+		clk2_2 = 158;
 		break;
 	case 650:
 		clk = 650;
-		clk2_1 = 325; 
-		clk2_2 = 162; 
+		clk2_1 = 325;
+		clk2_2 = 162;
 		break;
 	case 662:
 		clk = 662;
-		clk2_1 = 331; 
-		clk2_2 = 165; 
+		clk2_1 = 331;
+		clk2_2 = 165;
 		break;
 	default:
 		set = 0;
