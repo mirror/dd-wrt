@@ -3113,15 +3113,15 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1"))
 #endif
 	{
-
 		sprintf(n, "%s_net_mode", prefix);
 		if (!nvram_match(n, websGetVar(wp, n, ""))) {
 			chanchanged = 1;
 			copytonv(wp, n);
+			char *value = websGetVar(wp, n, "");
 			if (!strcmp(prefix, "wl0"))
-				convert_wl_gmode(nvram_safe_get(n), "wl");
+				convert_wl_gmode(value, "wl");
 			else
-				convert_wl_gmode(nvram_safe_get(n), prefix);
+				convert_wl_gmode(value, prefix);
 		}
 	}
 #ifdef HAVE_MADWIFI
