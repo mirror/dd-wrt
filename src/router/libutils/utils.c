@@ -5727,8 +5727,7 @@ int writevaproc(char *value, char *fmt, ...)
 	va_start(args, (char *)fmt);
 	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
 	va_end(args);
-	return writeproc(varbuf, value);;
-
+	return writeproc(varbuf, value);
 }
 
 /* gartarp */
