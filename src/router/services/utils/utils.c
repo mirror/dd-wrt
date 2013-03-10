@@ -38,7 +38,6 @@
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
 
-
 void getLANMac(char *newmac)
 {
 	strcpy(newmac, nvram_safe_get("et0macaddr"));
@@ -59,7 +58,7 @@ void getLANMac(char *newmac)
 	return;
 }
 
-void getWirelessMac(char *newmac)
+void getWirelessMac(char *newmac, int instance)
 {
 #ifdef HAVE_BUFFALO
 #ifdef HAVE_BCMMODERN
@@ -68,6 +67,8 @@ void getWirelessMac(char *newmac)
 	strcpy(newmac, nvram_safe_get("il0macaddr"));
 #endif
 #else
+	if (instance < 0)
+		instance = 0;
 	// if (strlen(nvram_safe_get ("il0macaddr")) != 0)
 	// {
 	// strcpy (newmac, nvram_safe_get ("il0macaddr"));
@@ -90,9 +91,30 @@ void getWirelessMac(char *newmac)
 				MAC_ADD(newmac);
 			}
 		} else {
-			strcpy(newmac, nvram_safe_get("et0macaddr"));
-			MAC_ADD(newmac);	// et0macaddr +2
-			MAC_ADD(newmac);
+
+			if (getRouter() != ROUTER_ASUS_AC66U) {
+				strcpy(newmac, nvram_safe_get("et0macaddr"));
+				MAC_ADD(newmac);	// et0macaddr +2
+				MAC_ADD(newmac);
+				if (instance)
+					MAC_ADD(newmac);
+			} else {
+				switch (instance) {
+				case 0:
+					strcpy(newmac,
+					       nvram_safe_get
+					       ("pci/1/1/macaddr"));
+					break;
+				case 1:
+					strcpy(newmac,
+					       nvram_safe_get
+					       ("pci/2/1/macaddr"));
+					break;
+
+				}
+
+			}
+
 		}
 	}
 #endif
@@ -103,23 +125,25 @@ void getWANMac(char *newmac)
 {
 	strcpy(newmac, nvram_safe_get("et0macaddr"));
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_WZRG300NH) && !defined(HAVE_WHRHPGN)
-	if (nvram_invmatch("wan_proto", "disabled")) {
-		MAC_ADD(newmac);	// et0macaddr +1
+	if (getRouter() != ROUTER_ASUS_AC66U) {
+		if (nvram_invmatch("wan_proto", "disabled")) {
+			MAC_ADD(newmac);	// et0macaddr +1
 
-		if (nvram_match("port_swap", "1")) {
-			if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
-				// maybe
-				// et1macaddr 
-				// not there?
-			{
-				strcpy(newmac, nvram_safe_get("et1macaddr"));
-				MAC_ADD(newmac);	// et1macaddr +1 
-			} else {
-				MAC_ADD(newmac);	// et0macaddr +2
+			if (nvram_match("port_swap", "1")) {
+				if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
+					// maybe
+					// et1macaddr 
+					// not there?
+				{
+					strcpy(newmac,
+					       nvram_safe_get("et1macaddr"));
+					MAC_ADD(newmac);	// et1macaddr +1 
+				} else {
+					MAC_ADD(newmac);	// et0macaddr +2
+				}
 			}
 		}
 	}
 #endif
 	return;
 }
-
