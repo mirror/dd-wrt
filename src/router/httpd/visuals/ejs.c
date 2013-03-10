@@ -2507,20 +2507,18 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	static double tempavg_24 = 0.000;
 	static double tempavg_50 = 0.000;
 	static double tempavg_max = 0.000;
-
+	int no2=0,no5=0;
 	strcpy(buf, "phy_tempsense");
 	strcpy(buf2, "phy_tempsense");
 
 	if ((ret = wl_ioctl("eth1", WLC_GET_VAR, buf, sizeof(buf))))
 	{
-		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
-		return;
+		no2=1;
 	}
 
 	if ((ret = wl_ioctl("eth2", WLC_GET_VAR, buf2, sizeof(buf2))))
 	{
-		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
-		return;
+		no5=1;
 	}
 
 	ret_int = (unsigned int *)buf;
@@ -2543,7 +2541,15 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		tempavg_50 = (tempavg_50 * 4 + *ret_int2) / 5;
 	}
 	tempavg_max = (tempavg_24 + tempavg_50) / 2;
-	websWrite(wp, "wl0 %4.2f &#176;C / wl1 %4.2f &#176;C", tempavg_24, tempavg_50);	
+	if (no2 && no5)
+		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
+	else
+	if (no2)
+	    websWrite(wp, "wl1 %4.2f &#176;C", tempavg_50);	
+	else if (no5)
+	    websWrite(wp, "wl0 %4.2f &#176;C", tempavg_24);	
+	else 
+	    websWrite(wp, "wl0 %4.2f &#176;C / wl1 %4.2f &#176;C", tempavg_24, tempavg_50);	
 #else
 
 
