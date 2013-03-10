@@ -789,8 +789,8 @@ check_ld(){
     log check_ld "$@"
     type=$1
     shift 1
-    flags=$(filter_out '-l*' $@)
-    libs=$(filter '-l*' $@)
+    flags=$(filter_out '-l*|*.so' $@)
+    libs=$(filter '-l*|*.so' $@)
     check_$type $($cflags_filter $flags) || return
     flags=$($ldflags_filter $flags)
     libs=$($ldflags_filter $libs)
@@ -1343,6 +1343,8 @@ HAVE_LIST="
     asm_types_h
     attribute_may_alias
     attribute_packed
+    cdio_paranoia_h
+    cdio_paranoia_paranoia_h
     clock_gettime
     closesocket
     cmov
@@ -1464,6 +1466,7 @@ HAVE_LIST="
 CONFIG_EXTRA="
     aandcttables
     ac3dsp
+    audio_frame_queue
     error_resilience
     gcrypt
     golomb
@@ -1631,7 +1634,7 @@ mpegvideoenc_select="mpegvideo"
 
 # decoders / encoders
 aac_decoder_select="mdct sinewin"
-aac_encoder_select="mdct sinewin"
+aac_encoder_select="audio_frame_queue mdct sinewin"
 aac_latm_decoder_select="aac_decoder aac_latm_parser"
 ac3_decoder_select="mdct ac3dsp ac3_parser"
 ac3_encoder_select="mdct ac3dsp"
@@ -1716,13 +1719,13 @@ msmpeg4v3_decoder_select="h263_decoder"
 msmpeg4v3_encoder_select="h263_encoder"
 mss2_decoder_select="vc1_decoder"
 nellymoser_decoder_select="mdct sinewin"
-nellymoser_encoder_select="mdct sinewin"
+nellymoser_encoder_select="audio_frame_queue mdct sinewin"
 nuv_decoder_select="lzo"
 png_decoder_select="zlib"
 png_encoder_select="zlib"
 qcelp_decoder_select="lsp"
 qdm2_decoder_select="mdct rdft mpegaudiodsp"
-ra_144_encoder_select="lpc"
+ra_144_encoder_select="audio_frame_queue lpc"
 ralf_decoder_select="golomb"
 rv10_decoder_select="h263_decoder"
 rv10_encoder_select="h263_encoder"
@@ -1823,7 +1826,9 @@ vc1_parser_select="error_resilience mpegvideo"
 libaacplus_encoder_deps="libaacplus"
 libcelt_decoder_deps="libcelt"
 libfaac_encoder_deps="libfaac"
+libfaac_encoder_select="audio_frame_queue"
 libfdk_aac_encoder_deps="libfdk_aac"
+libfdk_aac_encoder_select="audio_frame_queue"
 libgsm_decoder_deps="libgsm"
 libgsm_encoder_deps="libgsm"
 libgsm_ms_decoder_deps="libgsm"
@@ -1832,24 +1837,30 @@ libilbc_decoder_deps="libilbc"
 libilbc_encoder_deps="libilbc"
 libmodplug_demuxer_deps="libmodplug"
 libmp3lame_encoder_deps="libmp3lame"
+libmp3lame_encoder_select="audio_frame_queue"
 libopencore_amrnb_decoder_deps="libopencore_amrnb"
 libopencore_amrnb_encoder_deps="libopencore_amrnb"
+libopencore_amrnb_encoder_select="audio_frame_queue"
 libopencore_amrwb_decoder_deps="libopencore_amrwb"
 libopenjpeg_decoder_deps="libopenjpeg"
 libopenjpeg_encoder_deps="libopenjpeg"
 libopus_decoder_deps="libopus"
 libopus_encoder_deps="libopus"
+libopus_encoder_select="audio_frame_queue"
 libschroedinger_decoder_deps="libschroedinger"
 libschroedinger_encoder_deps="libschroedinger"
 libspeex_decoder_deps="libspeex"
 libspeex_encoder_deps="libspeex"
+libspeex_encoder_select="audio_frame_queue"
 libstagefright_h264_decoder_deps="libstagefright_h264"
 libtheora_encoder_deps="libtheora"
 libtwolame_encoder_deps="libtwolame"
 libvo_aacenc_encoder_deps="libvo_aacenc"
+libvo_aacenc_encoder_select="audio_frame_queue"
 libvo_amrwbenc_encoder_deps="libvo_amrwbenc"
 libvorbis_decoder_deps="libvorbis"
 libvorbis_encoder_deps="libvorbis"
+libvorbis_encoder_select="audio_frame_queue"
 libvpx_decoder_deps="libvpx"
 libvpx_encoder_deps="libvpx"
 libx264_encoder_deps="libx264"
@@ -3076,7 +3087,7 @@ check_64bit(){
 }
 
 case "$arch" in
-    alpha|ia64)
+    aarch64|alpha|ia64)
         spic=$shared
     ;;
     mips)
@@ -3817,7 +3828,6 @@ enabled libiec61883 && require libiec61883 libiec61883/iec61883.h iec61883_cmp_c
 enabled libaacplus && require  "libaacplus >= 2.0.0" aacplus.h aacplusEncOpen -laacplus
 enabled libass     && require_pkg_config libass ass/ass.h ass_library_init
 enabled libbluray  && require libbluray libbluray/bluray.h bd_open -lbluray
-enabled libcdio    && require2 libcdio "cdio/cdda.h cdio/paranoia.h" cdio_cddap_open -lcdio_paranoia -lcdio_cdda -lcdio
 enabled libcelt    && require libcelt celt/celt.h celt_decode -lcelt0 &&
                       { check_lib celt/celt.h celt_decoder_create_custom -lcelt0 ||
                         die "ERROR: libcelt must be installed and version must be >= 0.11.0."; }
@@ -3916,7 +3926,7 @@ rsync --help 2> /dev/null | grep -q 'contimeout' && enable rsync_contimeout || d
 check_header linux/fb.h
 check_header linux/videodev.h
 check_header linux/videodev2.h
-check_struct linux/videodev2.h "struct v4l2_frmivalenum" discrete
+check_code cc linux/videodev2.h "struct v4l2_frmsizeenum vfse; vfse.discrete.width = 0;" && enable_safe struct_v4l2_frmivalenum_discrete
 
 check_header sys/videoio.h
 
@@ -3954,6 +3964,9 @@ enabled jack_indev && check_lib2 jack/jack.h jack_client_open -ljack && check_fu
 
 enabled_any sndio_indev sndio_outdev && check_lib2 sndio.h sio_open -lsndio
 
+if enabled libcdio; then
+    check_lib2 "cdio/cdda.h cdio/paranoia.h" cdio_cddap_open -lcdio_paranoia -lcdio_cdda -lcdio || check_lib2 "cdio/paranoia/cdda.h cdio/paranoia/paranoia.h" cdio_cddap_open -lcdio_paranoia -lcdio_cdda -lcdio
+fi
 
 enabled x11grab                                           &&
 require X11 X11/Xlib.h XOpenDisplay -lX11                 &&
@@ -4090,6 +4103,7 @@ elif enabled gcc; then
     check_optflags -fno-tree-vectorize
     check_cflags -Werror=implicit-function-declaration
     check_cflags -Werror=missing-prototypes
+    check_cflags -Werror=return-type
     check_cflags -Werror=vla
 elif enabled llvm_gcc; then
     check_cflags -mllvm -stack-alignment=16
@@ -4098,6 +4112,7 @@ elif enabled clang; then
     check_cflags -Qunused-arguments
     check_cflags -Werror=implicit-function-declaration
     check_cflags -Werror=missing-prototypes
+    check_cflags -Werror=return-type
 elif enabled armcc; then
     # 2523: use of inline assembler is deprecated
     add_cflags -W${armcc_opt},--diag_suppress=2523

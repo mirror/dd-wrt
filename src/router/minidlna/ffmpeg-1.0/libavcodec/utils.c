@@ -1018,6 +1018,9 @@ int attribute_align_arg avcodec_open2(AVCodecContext *avctx, const AVCodec *code
             && avctx->bit_rate>0 && avctx->bit_rate<1000) {
             av_log(avctx, AV_LOG_WARNING, "Bitrate %d is extreemly low, did you mean %dk\n", avctx->bit_rate, avctx->bit_rate);
         }
+
+        if (!avctx->rc_initial_buffer_occupancy)
+            avctx->rc_initial_buffer_occupancy = avctx->rc_buffer_size * 3 / 4;
     }
 
     avctx->pts_correction_num_faulty_pts =
@@ -1764,7 +1767,7 @@ int attribute_align_arg avcodec_decode_audio4(AVCodecContext *avctx,
             av_log(avctx, AV_LOG_DEBUG, "skip %d samples due to side data\n",
                    avctx->internal->skip_samples);
         }
-        if (avctx->internal->skip_samples) {
+        if (avctx->internal->skip_samples && *got_frame_ptr) {
             if(frame->nb_samples <= avctx->internal->skip_samples){
                 *got_frame_ptr = 0;
                 avctx->internal->skip_samples -= frame->nb_samples;
@@ -1806,7 +1809,7 @@ int attribute_align_arg avcodec_decode_audio4(AVCodecContext *avctx,
      * extended_data are doing it correctly */
     if (*got_frame_ptr) {
         planar   = av_sample_fmt_is_planar(frame->format);
-        channels = av_get_channel_layout_nb_channels(frame->channel_layout);
+        channels = frame->channels;
         if (!(planar && channels > AV_NUM_DATA_POINTERS))
             frame->extended_data = frame->data;
     } else {

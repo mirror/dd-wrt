@@ -145,6 +145,9 @@ static av_cold int encode_init(AVCodecContext *avctx)
 {
     MpegEncContext *s = avctx->priv_data;
 
+    if (avctx->codec_id == AV_CODEC_ID_MPEG1VIDEO && avctx->height > 2800)
+        avctx->thread_count = 1;
+
     if(ff_MPV_encode_init(avctx) < 0)
         return -1;
 
@@ -177,6 +180,19 @@ static av_cold int encode_init(AVCodecContext *avctx)
             if(avctx->width <= 720 && avctx->height <= 576) avctx->level = 8; /* Main */
             else if(avctx->width <= 1440)                   avctx->level = 6; /* High 1440 */
             else                                            avctx->level = 4; /* High */
+        }
+    }
+
+    if ((avctx->width & 0xFFF) == 0 && (avctx->height & 0xFFF) == 1) {
+        av_log(avctx, AV_LOG_ERROR, "Width / Height is invalid for MPEG2\n");
+        return AVERROR(EINVAL);
+    }
+
+    if (s->strict_std_compliance > FF_COMPLIANCE_UNOFFICIAL) {
+        if ((avctx->width & 0xFFF) == 0 || (avctx->height & 0xFFF) == 0) {
+            av_log(avctx, AV_LOG_ERROR, "Width or Height are not allowed to be multiplies of 4096\n"
+                                        "add '-strict %d' if you want to use them anyway.\n", FF_COMPLIANCE_UNOFFICIAL);
+            return AVERROR(EINVAL);
         }
     }
 
@@ -227,8 +243,8 @@ static void mpeg1_encode_sequence_header(MpegEncContext *s)
             /* mpeg1 header repeated every gop */
             put_header(s, SEQ_START_CODE);
 
-            put_sbits(&s->pb, 12, s->width );
-            put_sbits(&s->pb, 12, s->height);
+            put_sbits(&s->pb, 12, s->width  & 0xFFF);
+            put_sbits(&s->pb, 12, s->height & 0xFFF);
 
             for(i=1; i<15; i++){
                 float error= aspect_ratio;

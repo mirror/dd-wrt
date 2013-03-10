@@ -8,5 +8,5 @@ Description: FFmpeg utility library
 Version: 52.13.100
 Requires: 
 Conflicts:
-Libs: -L${libdir} -lavutil -lm
+Libs: -L${libdir} -lavutil 
 Cflags: -I${includedir}
