@@ -111,6 +111,10 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
 
+
+	writeproc("/proc/irq/163/smp_affinity","2");  
+	writeproc("/proc/irq/169/smp_affinity","2"); 
+
 	/*
 	 * Set a sane date 
 	 */
