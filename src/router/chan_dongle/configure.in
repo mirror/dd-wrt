@@ -20,7 +20,7 @@ AC_ARG_WITH(
 	[asterisk],
 	AS_HELP_STRING([--with-asterisk=path], [set asterisk headers location]),
 	[ if test "x$with_asterisk" = "xyes" -o "x$with_asterisk" = "xno" ; then  AC_MSG_ERROR([Invalid --with-asterisk=path value]); fi ],
-	[ with_asterisk="../include /usr/include /usr/local/include /opt/local/include" ]
+	[ with_asterisk="../include" ]
 )
 
 AC_ARG_ENABLE(
@@ -88,7 +88,7 @@ AC_DEFUN([AC_HEADER_FIND], [
 )
 
 AC_HEADER_FIND([asterisk.h], $with_asterisk)
-AC_HEADER_FIND([iconv.h], /usr/include /usr/local/include /opt/local/include)
+AC_HEADER_FIND([iconv.h], $with_asterisk )
 
 AC_DEFINE([ICONV_CONST],[], [Define to const if you has iconv() const declaration of input buffer])
 AC_MSG_CHECKING([for iconv use const inbuf])
@@ -198,7 +198,7 @@ if test "x$enable_debug" = "xyes" ; then
   CFLAGS="$CFLAGS -O0 -g"
   AC_DEFINE([__DEBUG__], [1], [Build with debugging])
 else
-  CFLAGS="$CFLAGS -O6"
+  CFLAGS="$CFLAGS"
 fi
 
 if test "x$enable_manager" = "xyes" ; then
