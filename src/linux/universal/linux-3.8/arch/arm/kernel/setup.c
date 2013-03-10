@@ -853,9 +853,6 @@ static int c_show(struct seq_file *m, void *v)
 	int i, j;
 	u32 cpuid;
 
-#ifdef CONFIG_MACH_GW2388
-	seq_printf(m, "CPUClock\t: %d\n",get_cns3xxx_cpu_clock());
-#endif
 
 	for_each_online_cpu(i) {
 		/*
@@ -863,10 +860,13 @@ static int c_show(struct seq_file *m, void *v)
 		 * online processors, looking for lines beginning with
 		 * "processor".  Give glibc what it expects.
 		 */
-		seq_printf(m, "processor\t: %d\n", i);
 		cpuid = is_smp() ? per_cpu(cpu_data, i).cpuid : read_cpuid_id();
 		seq_printf(m, "model name\t: %s rev %d (%s)\n",
 			   cpu_name, cpuid & 15, elf_platform);
+#ifdef CONFIG_MACH_GW2388
+	seq_printf(m, "CPUClock\t: %d\n",get_cns3xxx_cpu_clock());
+#endif
+		seq_printf(m, "processor\t: %d\n", i);
 
 #if defined(CONFIG_SMP)
 		seq_printf(m, "BogoMIPS\t: %lu.%02lu\n",
