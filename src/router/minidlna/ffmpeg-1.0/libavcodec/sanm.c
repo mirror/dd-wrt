@@ -26,6 +26,7 @@
 #include "bytestream.h"
 #include "internal.h"
 #include "libavutil/bswap.h"
+#include "libavutil/imgutils.h"
 #include "libavcodec/dsputil.h"
 #include "sanm_data.h"
 
@@ -415,6 +416,11 @@ static int old_codec37(SANMVideoContext *ctx, int top,
     flags        = bytestream2_get_byte(&ctx->gb);
     bytestream2_skip(&ctx->gb, 3);
 
+    if (decoded_size > ctx->height * stride - left - top * stride) {
+        decoded_size = ctx->height * stride - left - top * stride;
+        av_log(ctx->avctx, AV_LOG_WARNING, "decoded size is too large\n");
+    }
+
     ctx->rotate_code = 0;
 
     if (((seq & 1) || !(flags & 1)) && (compr && compr != 2))
@@ -638,6 +644,11 @@ static int old_codec47(SANMVideoContext *ctx, int top,
     decoded_size = bytestream2_get_le32(&ctx->gb);
     bytestream2_skip(&ctx->gb, 8);
 
+    if (decoded_size > ctx->height * stride - left - top * stride) {
+        decoded_size = ctx->height * stride - left - top * stride;
+        av_log(ctx->avctx, AV_LOG_WARNING, "decoded size is too large\n");
+    }
+
     if (skip & 1)
         bytestream2_skip(&ctx->gb, 0x8080);
     if (!seq) {
@@ -716,8 +727,11 @@ static int process_frame_obj(SANMVideoContext *ctx)
     h     = bytestream2_get_le16u(&ctx->gb);
 
     if (ctx->width < left + w || ctx->height < top + h) {
-        ctx->avctx->width  = FFMAX(left + w, ctx->width);
-        ctx->avctx->height = FFMAX(top + h, ctx->height);
+        if (av_image_check_size(FFMAX(left + w, ctx->width),
+                                FFMAX(top  + h, ctx->height), 0, ctx->avctx) < 0)
+            return AVERROR_INVALIDDATA;
+        avcodec_set_dimensions(ctx->avctx, FFMAX(left + w, ctx->width),
+                                           FFMAX(top  + h, ctx->height));
         init_sizes(ctx, left + w, top + h);
         if (init_buffers(ctx)) {
             av_log(ctx->avctx, AV_LOG_ERROR, "error resizing buffers\n");
