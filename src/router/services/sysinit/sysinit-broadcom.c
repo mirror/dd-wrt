@@ -1317,34 +1317,51 @@ void start_sysinit(void)
 		nvram_set("pci/2/1/maxp2ga0", "0x70");
 		nvram_set("pci/2/1/maxp2ga1", "0x70");
 		nvram_set("pci/2/1/maxp2ga2", "0x70");
+		nvram_set("pci/2/1/maxp5ga0", "0x6A");
+		nvram_set("pci/2/1/maxp5ga1", "0x6A");
+		nvram_set("pci/2/1/maxp5ga2", "0x6A");
+
 		nvram_set("pci/2/1/cckbw202gpo", "0x5555");
 		nvram_set("pci/2/1/cckbw20ul2gpo", "0x5555");
 		nvram_set("pci/2/1/legofdmbw202gpo", "0x97555555");
 		nvram_set("pci/2/1/legofdmbw20ul2gpo", "0x97555555");
-		nvram_set("pci/2/1/mcsbw202gpo", "0xFC955555");
-		nvram_set("pci/2/1/mcsbw20ul2gpo", "0xFC955555");
-		nvram_set("pci/2/1/mcsbw402gpo", "0xFFFF9999");
-		nvram_set("pci/2/1/mcs32po", "0x9999");
-		nvram_set("pci/2/1/legofdm40duppo", "0x4444");
+		nvram_set("pci/2/1/mcsbw202gpo", "0xDA755555");
+		nvram_set("pci/2/1/mcsbw20ul2gpo", "0xDA755555");
+		nvram_set("pci/2/1/mcsbw402gpo", "0xFC965555");
 
-		nvram_set("pci/1/1/maxp5ga0", "0x6A");
-		nvram_set("pci/1/1/maxp5ga1", "0x6A");
-		nvram_set("pci/1/1/maxp5ga2", "0x6A");
-		nvram_set("pci/1/1/legofdmbw205gmpo", "0x77777777");
-		nvram_set("pci/1/1/legofdmbw20ul5gmpo", "0x77777777");
-		nvram_set("pci/1/1/mcsbw205gmpo", "0x77777777");
-		nvram_set("pci/1/1/mcsbw20ul5gmpo", "0x77777777");
-		nvram_set("pci/1/1/mcsbw405gmpo", "0x77777777");
-		nvram_set("pci/1/1/maxp5gha0", "0x6A");
-		nvram_set("pci/1/1/maxp5gha1", "0x6A");
-		nvram_set("pci/1/1/maxp5gha2", "0x6A");
-		nvram_set("pci/1/1/legofdmbw205ghpo", "0x77777777");
-		nvram_set("pci/1/1/legofdmbw20ul5ghpo", "0x77777777");
-		nvram_set("pci/1/1/mcsbw205ghpo", "0x77777777");
-		nvram_set("pci/1/1/mcsbw20ul5ghpo", "0x77777777");
-		nvram_set("pci/1/1/mcsbw405ghpo", "0x77777777");
-		nvram_set("pci/1/1/mcs32po", "0x7777");
-		nvram_set("pci/1/1/legofdm40duppo", "0x0000");
+		nvram_set("pci/2/1/cckbw205gpo", "0x5555");
+		nvram_set("pci/2/1/cckbw20ul5gpo", "0x5555");
+		nvram_set("pci/2/1/legofdmbw205gpo", "0x97555555");
+		nvram_set("pci/2/1/legofdmbw20ul5gpo", "0x97555555");
+		nvram_set("pci/2/1/legofdmbw205gmpo", "0x77777777");
+		nvram_set("pci/2/1/legofdmbw20ul5gmpo", "0x77777777");
+		nvram_set("pci/2/1/legofdmbw205ghpo", "0x77777777");
+		nvram_set("pci/2/1/legofdmbw20ul5ghpo", "0x77777777");
+		nvram_set("pci/2/1/mcsbw205ghpo", "0x77777777");
+		nvram_set("pci/2/1/mcsbw20ul5ghpo", "0x77777777");
+		nvram_set("pci/2/1/mcsbw205gpo", "0xDA755555");
+		nvram_set("pci/2/1/mcsbw20ul5gpo", "0xDA755555");
+		nvram_set("pci/2/1/mcsbw405gpo", "0xFC965555");
+		nvram_set("pci/2/1/mcsbw405ghpo", "0x77777777");
+		nvram_set("pci/2/1/mcsbw405ghpo", "0x77777777");
+		nvram_set("pci/2/1/mcs32po", "0x7777");
+		nvram_set("pci/2/1/legofdm40duppo", "0x0000");
+
+
+		nvram_set("pci/1/1/maxp5ga0", "104,104,104,104");
+		nvram_set("pci/1/1/maxp5ga1", "104,104,104,104");
+		nvram_set("pci/1/1/maxp5ga2", "104,104,104,104");
+
+		nvram_set("pci/1/1/mcsbw205glpo", "0xBB975311");
+		nvram_set("pci/1/1/mcsbw405glpo", "0xBB975311");
+		nvram_set("pci/1/1/mcsbw805glpo", "0xBB975311");
+		nvram_set("pci/1/1/mcsbw205gmpo", "0xBB975311");
+		nvram_set("pci/1/1/mcsbw405gmpo", "0xBB975311");
+		nvram_set("pci/1/1/mcsbw805gmpo", "0xBB975311");
+		nvram_set("pci/1/1/mcsbw205ghpo", "0xBB975311");
+		nvram_set("pci/1/1/mcsbw405ghpo", "0xBB975311");
+		nvram_set("pci/1/1/mcsbw805ghpo", "0xBB975311");
+
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 		nvram_set("wan_ifname", "vlan2");
 		break;
