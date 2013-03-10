@@ -2305,6 +2305,9 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
+/* Define to 1 if you have the <sys/ucontext.h> header file. */
+#undef HAVE_SYS_UCONTEXT_H
+
 /* Define to 1 if you have the <sys/uio.h> header file. */
 #undef HAVE_SYS_UIO_H
 
@@ -2352,6 +2355,9 @@
 
 /* Whether crypt needs truncated salt */
 #undef HAVE_TRUNCATED_SALT
+
+/* Whether we have ucontext_t */
+#undef HAVE_UCONTEXT_T
 
 /* Whether uint16 typedef is included by rpc/rpc.h */
 #undef HAVE_UINT16_FROM_RPC_RPC_H
