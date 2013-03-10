@@ -1,0 +1,33 @@
+Known bugs
+
+	1) SMS sending charset problem
+		solved by PDU
+2) HW: Terminate (from both side) active call break voice on all held
+
+3) HW: Terminate held call locally break voice on all active
+
+4) HW: Issue AT+CHLD=1x command before receiving ^CONF:call_idx after successfull ATDnum; 
+kill device. Device not responding on commands but still sending ^BOOT: and ^RSSI: URCs
+
+5) HW: device hangup after entering long PDU
+
+6) white noise on x86_64
+
+7) Some characters wrong encoded for SMS
+	think iconv and localization trouble
+
+8) command removed from queue by timeout when response already in read buffer
+
+9) cpvt locking
+
+10) HW device reboot and chan_dongle crash on receive long SMS in TEXT UCS2 mode (>150 symbols)
+
+	11) DTMF not send ?
+
+	12) zombi calls
+
+13) HW: device still in sms prompt infinite (only 0x1B can help) if entered more 133 symbols in TEXT UCS-2 mode
+
+14) Sometimes device stops responding to commands
+
+	15) SIGSEGV on hangup
