@@ -1,0 +1,34 @@
+1) For build and install from svn sources
+    1.1) Goto package source directory
+
+    1.2) Run aclocal
+
+    1.3) Run autoconf
+    		autoconf
+    1.4) Install missing files
+    		automake -a
+    continue with step 2.3)
+
+2) For build and install from package
+    2.1) Unpack sources
+	   	tar xzvf package.tgz
+    2.2) Goto package source directory
+    2.3) Configure package
+	   simple
+		./configure
+	   explicite set install directory for module
+		DESTDIR="/usr/lib/asterisk/modules" ./configure
+	   turn off some parts
+		./configure --disable-manager --disable-apps
+	   explicite set path to asterisk headers
+		./configure --with-asterisk=/usr/src/asterisk-1.6.2.13/include
+	      		or
+		CFLAGS="-I /usr/src/asterisk-1.6.2.13/include" ./configure
+	   enable debugging
+		./configure --enable-debug
+    2.4) Build package
+		make
+    2.5) Install package
+		make install
+
+More documentation on http://wiki.e1550.mobi/
