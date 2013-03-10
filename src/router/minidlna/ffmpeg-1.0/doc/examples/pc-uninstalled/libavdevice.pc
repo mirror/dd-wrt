@@ -6,7 +6,7 @@ includedir=${pcfiledir}/../../..
 Name: libavdevice
 Description: FFmpeg device handling library
 Version: 54.3.102
-Requires: libavfilter = 3.32.100, libavformat = 54.59.106
+Requires: libavformat = 54.59.106
 Conflicts:
-Libs: -L${libdir} -lavdevice -ldl -lasound -lm -pthread -lbz2 -lz -lrt
+Libs: -L${libdir} -lavdevice 
 Cflags: -I${includedir}

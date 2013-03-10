@@ -102,6 +102,7 @@ static int ogg_restore(AVFormatContext *s, int discard)
             av_free(ogg->streams[i].buf);
 
         avio_seek(bc, ost->pos, SEEK_SET);
+        ogg->page_pos = -1;
         ogg->curidx   = ost->curidx;
         ogg->nstreams = ost->nstreams;
         ogg->streams  = av_realloc(ogg->streams,
@@ -146,6 +147,7 @@ static int ogg_reset(AVFormatContext *s)
         }
     }
 
+    ogg->page_pos = -1;
     ogg->curidx = -1;
 
     return 0;
@@ -182,6 +184,9 @@ static int ogg_replace_stream(AVFormatContext *s, uint32_t serial)
     }
 
     os = &ogg->streams[0];
+
+    os->serial  = serial;
+    return 0;
 
     buf     = os->buf;
     bufsize = os->bufsize;
@@ -297,6 +302,12 @@ static int ogg_read_page(AVFormatContext *s, int *sid)
             sync[(sp + 2) & 3] == 'g' && sync[(sp + 3) & 3] == 'S')
             break;
 
+        if(!i && bc->seekable && ogg->page_pos > 0) {
+            memset(sync, 0, 4);
+            avio_seek(bc, ogg->page_pos+4, SEEK_SET);
+            ogg->page_pos = -1;
+        }
+
         c = avio_r8(bc);
 
         if (url_feof(bc))
@@ -335,6 +346,7 @@ static int ogg_read_page(AVFormatContext *s, int *sid)
     }
 
     os = ogg->streams + idx;
+    ogg->page_pos =
     os->page_pos = avio_tell(bc) - 27;
 
     if (os->psize > 0)
@@ -559,6 +571,7 @@ static int ogg_get_length(AVFormatContext *s)
 
     ogg_save(s);
     avio_seek(s->pb, end, SEEK_SET);
+    ogg->page_pos = -1;
 
     while (!ogg_read_page(s, &i)) {
         if (ogg->streams[i].granule != -1 && ogg->streams[i].granule != 0 &&
@@ -596,6 +609,23 @@ static int ogg_get_length(AVFormatContext *s)
     }
     ogg_restore (s, 0);
 
+    return 0;
+}
+
+static int ogg_read_close(AVFormatContext *s)
+{
+    struct ogg *ogg = s->priv_data;
+    int i;
+
+    for (i = 0; i < ogg->nstreams; i++) {
+        av_free(ogg->streams[i].buf);
+        if (ogg->streams[i].codec &&
+            ogg->streams[i].codec->cleanup) {
+            ogg->streams[i].codec->cleanup(s, i);
+        }
+        av_free(ogg->streams[i].private);
+    }
+    av_free(ogg->streams);
     return 0;
 }
 
@@ -720,19 +750,6 @@ retry:
     pkt->pos      = fpos;
 
     return psize;
-}
-
-static int ogg_read_close(AVFormatContext *s)
-{
-    struct ogg *ogg = s->priv_data;
-    int i;
-
-    for (i = 0; i < ogg->nstreams; i++) {
-        av_free(ogg->streams[i].buf);
-        av_free(ogg->streams[i].private);
-    }
-    av_free(ogg->streams);
-    return 0;
 }
 
 static int64_t ogg_read_timestamp(AVFormatContext *s, int stream_index,
