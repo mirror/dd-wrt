@@ -1924,7 +1924,9 @@ void start_lan(void)
 			   ifr.ifr_hwaddr.sa_data);
 
 	} else {
-		getWirelessMac(mac);
+
+		int instance = get_wl_instance(wl_face);
+		getWirelessMac(mac,instance);
 
 		ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 
@@ -2070,10 +2072,10 @@ void start_lan(void)
 						   ifr.ifr_hwaddr.sa_data);
 
 				} else {
-					getWirelessMac(mac);
+					int instance = get_wl_instance(name);
+					getWirelessMac(mac,instance);
 
 					ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
-					int instance = get_wl_instance(name);
 
 					if (instance == -1)
 						continue;	// no wireless device
@@ -3152,7 +3154,12 @@ void start_wan(int status)
 
 		if (wlifname && (!strcmp(wan_ifname, wlifname) || nvram_match("wan_proto", "l2tp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp")))	// sta mode
 		{
-			getWirelessMac(mac);
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
+			int instance = get_wl_instance(wlifname);
+			getWirelessMac(mac,instance);
+#else
+			getWirelessMac(mac,0);
+#endif
 			ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 		} else {
 #ifdef HAVE_X86

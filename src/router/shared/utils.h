@@ -667,7 +667,7 @@ extern void decode(char *buf, int len);
 extern char *zencrypt(char *passwd);
 
 extern void getLANMac(char *newmac);
-extern void getWirelessMac(char *newmac);
+extern void getWirelessMac(char *newmac,int instance);
 extern void getWANMac(char *newmac);
 extern char *cpustring(void);
 extern int isap8x(void);
