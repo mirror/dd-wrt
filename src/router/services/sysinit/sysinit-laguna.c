@@ -144,6 +144,8 @@ void start_sysinit(void)
 	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2380") || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2380") )
 		sysprintf("gsp_updater -f /etc/gsc_2380_v35.txt");
 
+
+	writeproc("/proc/irq/51/smp_affinity","2");  //use second core for ethernet interrupts. this should increase performance a little bit
 	return;
 }
 
