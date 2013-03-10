@@ -39,8 +39,14 @@ asterisk-configure:
 	--without-dahdi \
 	--without-gnutls \
 	--without-iksemel; fi
+	
+	cd chan_dongle && ./configure  --host=$(ARCH)-linux-uclibc --libdir=/usr/lib --with-asterisk=$(TOP)/asterisk/include DESTDIR=$(INSTALLDIR)/asterisk/usr/lib/asterisk/modules CFLAGS="$(CFLAGS) -I$(TOP)/glib20/libiconv/include"
 
-asterisk: asterisk-configure
+asterisk-clean:
+	$(MAKE) -C asterisk clean
+	$(MAKE) -C chan_dongle clean
+
+asterisk:
 	$(MAKE) -C asterisk \
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
@@ -54,6 +60,7 @@ asterisk: asterisk-configure
 		OPTIMIZE="" \
 		all
 	make -C asterisk
+	make -C chan_dongle
 
 asterisk-install:
 	ASTCFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include" \
@@ -127,4 +134,5 @@ asterisk-install:
 	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
 	$(INSTALL_BIN) $(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk/usr/lib/asterisk/modules/res* $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
 	rm -rf $(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk
+	make -C chan_dongle install
 
