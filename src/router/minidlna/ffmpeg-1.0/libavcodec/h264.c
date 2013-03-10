@@ -309,10 +309,11 @@ static inline int get_lowest_part_list_y(H264Context *h, Picture *pic, int n,
                                          int height, int y_offset, int list)
 {
     int raw_my        = h->mv_cache[list][scan8[n]][1];
-    int filter_height = (raw_my & 3) ? 2 : 0;
+    int filter_height_up   = (raw_my & 3) ? 2 : 0;
+    int filter_height_down = (raw_my & 3) ? 3 : 0;
     int full_my       = (raw_my >> 2) + y_offset;
-    int top           = full_my - filter_height;
-    int bottom        = full_my + filter_height + height;
+    int top           = full_my - filter_height_up;
+    int bottom        = full_my + filter_height_down + height;
 
     return FFMAX(abs(top), bottom);
 }
@@ -2350,7 +2351,7 @@ static int field_end(H264Context *h, int in_setup)
      * past end by one (callers fault) and resync_mb_y != 0
      * causes problems for the first MB line, too.
      */
-    if (!FIELD_PICTURE)
+    if (!FIELD_PICTURE && h->current_slice && !h->sps.new)
         ff_er_frame_end(s);
 
     ff_MPV_frame_end(s);
@@ -2474,7 +2475,7 @@ static int h264_set_parameter_from_sps(H264Context *h)
     return 0;
 }
 
-static enum PixelFormat get_pixel_format(H264Context *h)
+static enum PixelFormat get_pixel_format(H264Context *h, int force_callback)
 {
     MpegEncContext *const s  = &h->s;
     switch (h->sps.bit_depth_luma) {
@@ -2536,11 +2537,17 @@ static enum PixelFormat get_pixel_format(H264Context *h)
             return s->avctx->color_range == AVCOL_RANGE_JPEG ? AV_PIX_FMT_YUVJ422P
                                                              : AV_PIX_FMT_YUV422P;
         } else {
-            return s->avctx->get_format(s->avctx, s->avctx->codec->pix_fmts ?
+            int i;
+            const enum AVPixelFormat * fmt = s->avctx->codec->pix_fmts ?
                                         s->avctx->codec->pix_fmts :
                                         s->avctx->color_range == AVCOL_RANGE_JPEG ?
                                         hwaccel_pixfmt_list_h264_jpeg_420 :
-                                        ff_hwaccel_pixfmt_list_420);
+                                        ff_hwaccel_pixfmt_list_420;
+
+            for (i=0; fmt[i] != AV_PIX_FMT_NONE; i++)
+                if (fmt[i] == s->avctx->pix_fmt && !force_callback)
+                    return fmt[i];
+            return s->avctx->get_format(s->avctx, fmt);
         }
         break;
     default:
@@ -2589,7 +2596,7 @@ static int h264_slice_header_init(H264Context *h, int reinit)
             return ret;
         }
     } else {
-        if ((ret = ff_MPV_common_init(s) < 0)) {
+        if ((ret = ff_MPV_common_init(s)) < 0) {
             av_log(h->s.avctx, AV_LOG_ERROR, "ff_MPV_common_init() failed.\n");
             return ret;
         }
@@ -2764,7 +2771,8 @@ static int decode_slice_header(H264Context *h, H264Context *h0)
                      || s->avctx->bits_per_raw_sample != h->sps.bit_depth_luma
                      || h->cur_chroma_format_idc != h->sps.chroma_format_idc
                      || av_cmp_q(h->sps.sar, s->avctx->sample_aspect_ratio)));
-
+    if (h0->s.avctx->pix_fmt != get_pixel_format(h0, 0))
+        must_reinit = 1;
 
     s->mb_width  = h->sps.mb_width;
     s->mb_height = h->sps.mb_height * (2 - h->sps.frame_mbs_only_flag);
@@ -2801,7 +2809,7 @@ static int decode_slice_header(H264Context *h, H264Context *h0)
 
         flush_change(h);
 
-        if ((ret = get_pixel_format(h)) < 0)
+        if ((ret = get_pixel_format(h, 1)) < 0)
             return ret;
         s->avctx->pix_fmt = ret;
 
@@ -2822,7 +2830,7 @@ static int decode_slice_header(H264Context *h, H264Context *h0)
             return -1;
         }
 
-        if ((ret = get_pixel_format(h)) < 0)
+        if ((ret = get_pixel_format(h, 1)) < 0)
             return ret;
         s->avctx->pix_fmt = ret;
 
@@ -2966,6 +2974,9 @@ static int decode_slice_header(H264Context *h, H264Context *h0)
             Picture *prev = h->short_ref_count ? h->short_ref[0] : NULL;
             av_log(h->s.avctx, AV_LOG_DEBUG, "Frame num gap %d %d\n",
                    h->frame_num, h->prev_frame_num);
+            if (!h->sps.gaps_in_frame_num_allowed_flag)
+                for(i=0; i<FF_ARRAY_ELEMS(h->last_pocs); i++)
+                    h->last_pocs[i] = INT_MIN;
             if (ff_h264_frame_start(h) < 0)
                 return -1;
             h->prev_frame_num++;
@@ -2973,7 +2984,9 @@ static int decode_slice_header(H264Context *h, H264Context *h0)
             s->current_picture_ptr->frame_num = h->prev_frame_num;
             ff_thread_report_progress(&s->current_picture_ptr->f, INT_MAX, 0);
             ff_thread_report_progress(&s->current_picture_ptr->f, INT_MAX, 1);
-            ff_generate_sliding_window_mmcos(h);
+            if ((ret = ff_generate_sliding_window_mmcos(h, 1)) < 0 &&
+                s->avctx->err_recognition & AV_EF_EXPLODE)
+                return ret;
             if (ff_h264_execute_ref_pic_marking(h, h->mmco, h->mmco_index) < 0 &&
                 (s->avctx->err_recognition & AV_EF_EXPLODE))
                 return AVERROR_INVALIDDATA;
@@ -3152,7 +3165,15 @@ static int decode_slice_header(H264Context *h, H264Context *h0)
         }
     }
 
-    if (h->nal_ref_idc && ff_h264_decode_ref_pic_marking(h0, &s->gb) < 0 &&
+    // If frame-mt is enabled, only update mmco tables for the first slice
+    // in a field. Subsequent slices can temporarily clobber h->mmco_index
+    // or h->mmco, which will cause ref list mix-ups and decoding errors
+    // further down the line. This may break decoding if the first slice is
+    // corrupt, thus we only do this if frame-mt is enabled.
+    if (h->nal_ref_idc &&
+        ff_h264_decode_ref_pic_marking(h0, &s->gb,
+                            !(s->avctx->active_thread_type & FF_THREAD_FRAME) ||
+                            h0->current_slice == 0) < 0 &&
         (s->avctx->err_recognition & AV_EF_EXPLODE))
         return AVERROR_INVALIDDATA;
 

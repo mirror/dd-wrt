@@ -1143,8 +1143,6 @@ static OutputStream *new_video_stream(OptionsContext *o, AVFormatContext *oc, in
             if (p) p++;
         }
         video_enc->rc_override_count = i;
-        if (!video_enc->rc_initial_buffer_occupancy)
-            video_enc->rc_initial_buffer_occupancy = video_enc->rc_buffer_size * 3 / 4;
         video_enc->intra_dc_precision = intra_dc_precision - 8;
 
         if (do_psnr)
@@ -1155,9 +1153,11 @@ static OutputStream *new_video_stream(OptionsContext *o, AVFormatContext *oc, in
         if (do_pass) {
             if (do_pass & 1) {
                 video_enc->flags |= CODEC_FLAG_PASS1;
+                av_dict_set(&ost->opts, "flags", "+pass1", AV_DICT_APPEND);
             }
             if (do_pass & 2) {
                 video_enc->flags |= CODEC_FLAG_PASS2;
+                av_dict_set(&ost->opts, "flags", "+pass2", AV_DICT_APPEND);
             }
         }
 
@@ -2150,7 +2150,7 @@ static int opt_channel_layout(void *optctx, const char *opt, const char *arg)
         return AVERROR(EINVAL);
     }
     snprintf(layout_str, sizeof(layout_str), "%"PRIu64, layout);
-    ret = opt_default(NULL, opt, layout_str);
+    ret = opt_default_new(o, opt, layout_str);
     if (ret < 0)
         return ret;
 

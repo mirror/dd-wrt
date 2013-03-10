@@ -195,37 +195,41 @@ static void vorbis_free(vorbis_context *vc)
     av_freep(&vc->channel_residues);
     av_freep(&vc->saved);
 
-    for (i = 0; i < vc->residue_count; i++)
-        av_free(vc->residues[i].classifs);
+    if (vc->residues)
+        for (i = 0; i < vc->residue_count; i++)
+            av_free(vc->residues[i].classifs);
     av_freep(&vc->residues);
     av_freep(&vc->modes);
 
     ff_mdct_end(&vc->mdct[0]);
     ff_mdct_end(&vc->mdct[1]);
 
-    for (i = 0; i < vc->codebook_count; ++i) {
-        av_free(vc->codebooks[i].codevectors);
-        ff_free_vlc(&vc->codebooks[i].vlc);
-    }
+    if (vc->codebooks)
+        for (i = 0; i < vc->codebook_count; ++i) {
+            av_free(vc->codebooks[i].codevectors);
+            ff_free_vlc(&vc->codebooks[i].vlc);
+        }
     av_freep(&vc->codebooks);
 
-    for (i = 0; i < vc->floor_count; ++i) {
-        if (vc->floors[i].floor_type == 0) {
-            av_free(vc->floors[i].data.t0.map[0]);
-            av_free(vc->floors[i].data.t0.map[1]);
-            av_free(vc->floors[i].data.t0.book_list);
-            av_free(vc->floors[i].data.t0.lsp);
-        } else {
-            av_free(vc->floors[i].data.t1.list);
+    if (vc->floors)
+        for (i = 0; i < vc->floor_count; ++i) {
+            if (vc->floors[i].floor_type == 0) {
+                av_free(vc->floors[i].data.t0.map[0]);
+                av_free(vc->floors[i].data.t0.map[1]);
+                av_free(vc->floors[i].data.t0.book_list);
+                av_free(vc->floors[i].data.t0.lsp);
+            } else {
+                av_free(vc->floors[i].data.t1.list);
+            }
         }
-    }
     av_freep(&vc->floors);
 
-    for (i = 0; i < vc->mapping_count; ++i) {
-        av_free(vc->mappings[i].magnitude);
-        av_free(vc->mappings[i].angle);
-        av_free(vc->mappings[i].mux);
-    }
+    if (vc->mappings)
+        for (i = 0; i < vc->mapping_count; ++i) {
+            av_free(vc->mappings[i].magnitude);
+            av_free(vc->mappings[i].angle);
+            av_free(vc->mappings[i].mux);
+        }
     av_freep(&vc->mappings);
 }
 
@@ -1650,6 +1654,45 @@ static int vorbis_decode_frame(AVCodecContext *avccontext, void *data,
     int i, len, ret;
 
     av_dlog(NULL, "packet length %d \n", buf_size);
+
+    if (*buf == 1 && buf_size > 7) {
+        init_get_bits(gb, buf+1, buf_size*8 - 8);
+        vorbis_free(vc);
+        if ((ret = vorbis_parse_id_hdr(vc))) {
+            av_log(avccontext, AV_LOG_ERROR, "Id header corrupt.\n");
+            vorbis_free(vc);
+            return ret;
+        }
+
+        if (vc->audio_channels > 8)
+            avccontext->channel_layout = 0;
+        else
+            avccontext->channel_layout = ff_vorbis_channel_layouts[vc->audio_channels - 1];
+
+        avccontext->channels    = vc->audio_channels;
+        avccontext->sample_rate = vc->audio_samplerate;
+        return buf_size;
+    }
+
+    if (*buf == 3 && buf_size > 7) {
+        av_log(avccontext, AV_LOG_DEBUG, "Ignoring comment header\n");
+        return buf_size;
+    }
+
+    if (*buf == 5 && buf_size > 7 && vc->channel_residues && !vc->modes) {
+        init_get_bits(gb, buf+1, buf_size*8 - 8);
+        if ((ret = vorbis_parse_setup_hdr(vc))) {
+            av_log(avccontext, AV_LOG_ERROR, "Setup header corrupt.\n");
+            vorbis_free(vc);
+            return ret;
+        }
+        return buf_size;
+    }
+
+    if (!vc->channel_residues || !vc->modes) {
+        av_log(avccontext, AV_LOG_ERROR, "Data packet before valid headers\n");
+        return AVERROR_INVALIDDATA;
+    }
 
     /* get output buffer */
     vc->frame.nb_samples = vc->blocksize[1] / 2;
