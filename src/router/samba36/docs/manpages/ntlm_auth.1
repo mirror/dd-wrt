@@ -2,12 +2,12 @@
 .\"     Title: ntlm_auth
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 12/06/2012
+.\"      Date: 01/18/2013
 .\"    Manual: User Commands
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "NTLM_AUTH" "1" "12/06/2012" "Samba 3\&.6" "User Commands"
+.TH "NTLM_AUTH" "1" "01/18/2013" "Samba 3\&.6" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -117,16 +117,26 @@ Username
 .RS 4
 The username, expected to be in Samba\'s
 \m[blue]\fBunix charset\fR\m[]\&.
-.PP \fBExample\ \&1.\ \&\fR Username: bob
-.PP \fBExample\ \&2.\ \&\fR Username:: Ym9i
+.PP
+Examples:
+.RS 4
+Username: bob
+.sp
+Username:: Ym9i
+.RE
 .RE
 .PP
 NT\-Domain
 .RS 4
 The user\'s domain, expected to be in Samba\'s
 \m[blue]\fBunix charset\fR\m[]\&.
-.PP \fBExample\ \&3.\ \&\fR NT\-Domain: WORKGROUP
-.PP \fBExample\ \&4.\ \&\fR NT\-Domain:: V09SS0dST1VQ
+.PP
+Examples:
+.RS 4
+NT\-Domain: WORKGROUP
+.sp
+NT\-Domain:: V09SS0dST1VQ
+.RE
 .RE
 .PP
 Full\-Username
@@ -135,8 +145,13 @@ The fully qualified username, expected to be in Samba\'s
 \m[blue]\fBunix charset\fR\m[]
 and qualified with the
 \m[blue]\fBwinbind separator\fR\m[]\&.
-.PP \fBExample\ \&5.\ \&\fR Full\-Username: WORKGROUP\ebob
-.PP \fBExample\ \&6.\ \&\fR Full\-Username:: V09SS0dST1VQYm9i
+.PP
+Examples:
+.RS 4
+Full\-Username: WORKGROUP\ebob
+.sp
+Full\-Username:: V09SS0dST1VQYm9i
+.RE
 .RE
 .PP
 LANMAN\-Challenge
@@ -144,7 +159,11 @@ LANMAN\-Challenge
 The 8 byte
 LANMAN Challenge
 value, generated randomly by the server, or (in cases such as MSCHAPv2) generated in some way by both the server and the client\&.
-.PP \fBExample\ \&7.\ \&\fR LANMAN\-Challenge: 0102030405060708
+.PP
+Examples:
+.RS 4
+LANMAN\-Challenge: 0102030405060708
+.RE
 .RE
 .PP
 LANMAN\-Response
@@ -153,7 +172,11 @@ The 24 byte
 LANMAN Response
 value, calculated from the user\'s password and the supplied
 LANMAN Challenge\&. Typically, this is provided over the network by a client wishing to authenticate\&.
-.PP \fBExample\ \&8.\ \&\fR LANMAN\-Response: 0102030405060708090A0B0C0D0E0F101112131415161718
+.PP
+Examples:
+.RS 4
+LANMAN\-Response: 0102030405060708090A0B0C0D0E0F101112131415161718
+.RE
 .RE
 .PP
 NT\-Response
@@ -162,27 +185,46 @@ The >= 24 byte
 NT Response
 calculated from the user\'s password and the supplied
 LANMAN Challenge\&. Typically, this is provided over the network by a client wishing to authenticate\&.
-.PP \fBExample\ \&9.\ \&\fR NT\-Response: 0102030405060708090A0B0C0D0E0F101112131415161718
+.PP
+Examples:
+.RS 4
+NT\-Response: 0102030405060708090A0B0C0D0E0F10111213141516171
+.RE
 .RE
 .PP
 Password
 .RS 4
 The user\'s password\&. This would be provided by a network client, if the helper is being used in a legacy situation that exposes plaintext passwords in this way\&.
-.PP \fBExample\ \&10.\ \&\fR Password: samba2
-.PP \fBExample\ \&11.\ \&\fR Password:: c2FtYmEy
+.PP
+Examples:
+.RS 4
+Password: samba2
+.sp
+Password:: c2FtYmEy
+.RE
 .RE
 .PP
 Request\-User\-Session\-Key
 .RS 4
 Upon successful authenticaiton, return the user session key associated with the login\&.
-.PP \fBExample\ \&12.\ \&\fR Request\-User\-Session\-Key: Yes
+.PP
+Examples:
+.RS 4
+Request\-User\-Session\-Key: Yes
+.RE
 .RE
 .PP
 Request\-LanMan\-Session\-Key
 .RS 4
 Upon successful authenticaiton, return the LANMAN session key associated with the login\&.
-.PP \fBExample\ \&13.\ \&\fR Request\-LanMan\-Session\-Key: Yes
+.PP
+Examples:
+.RS 4
+Request\-LanMan\-Session\-Key: Yes
 .RE
+.RE
+.RE
+.sp
 .if n \{\
 .sp
 .\}
@@ -195,11 +237,8 @@ Upon successful authenticaiton, return the LANMAN session key associated with th
 \fBWarning\fR
 .ps -1
 .br
-Implementers should take care to base64 encode
-		any data (such as usernames/passwords) that may contain malicous user data, such as
-		a newline\&.  They may also need to decode strings from
-		the helper, which likewise may have been base64 encoded\&..sp .5v
-.RE
+Implementers should take care to base64 encode any data (such as usernames/passwords) that may contain malicous user data, such as a newline\&. They may also need to decode strings from the helper, which likewise may have been base64 encoded\&.
+.sp .5v
 .RE
 .RE
 .PP
