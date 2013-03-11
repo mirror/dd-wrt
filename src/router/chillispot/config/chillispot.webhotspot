@@ -49,7 +49,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.allowuam"); %></div>
-			<input class="text" maxLength="500" size="25" name="chilli_uamallowed" value="<% nvram_get("chilli_uamallowed"); %>" />
+			<input class="text" maxLength="2000" cols="60" rows="10" name="chilli_uamallowed" value="<% nvram_get("chilli_uamallowed"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.macauth"); %></div>

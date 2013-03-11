@@ -169,17 +169,27 @@ void main_config(void)
 	fprintf(fp, "iptables -I INPUT -i tun0 -j %s\n",log_accept);
 	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n",log_accept);
 	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n",log_accept);
-	//	secure chilli interface
+	//	secure chilli interface, only usefull if ! br0
 	if (nvram_match("hotss_enable", "1")
-		&& nvram_invmatch("hotss_interface", "br0"))
-			fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", 
-				nvram_safe_get("hotss_interface"), 
-				nvram_safe_get("hotss_net"), log_drop);
+		&& nvram_invmatch("hotss_interface", "br0")) {
+			if (strlen(nvram_safe_get("hotss_net")) > 0)
+				fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", 
+					nvram_safe_get("hotss_interface"), 
+					nvram_safe_get("hotss_net"), log_drop);
+			else 
+				fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s 192.168.182.0/24 -j %s\n", 
+					nvram_safe_get("hotss_interface"), log_drop);
+	}
 	if (nvram_match("chilli_def_enable", "1")
-		&& nvram_invmatch("chilli_interface", "br0"))
-			fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", 
-				nvram_safe_get("chilli_interface"), 
-				nvram_safe_get("chilli_net"), log_drop);
+		&& nvram_invmatch("chilli_interface", "br0")) {
+			if (strlen(nvram_safe_get("hotss_net")) > 0)
+				fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", 
+					nvram_safe_get("chilli_interface"), 
+					nvram_safe_get("chilli_net"), log_drop);
+			else
+				fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s 192.168.182.0/24 -j %s\n", 
+					nvram_safe_get("chilli_interface"), log_drop);
+		}
 
 		// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
