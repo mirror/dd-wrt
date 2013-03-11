@@ -1255,6 +1255,7 @@ static struct file_system_type mtd_inodefs_type = {
        .mount = mtd_inodefs_mount,
        .kill_sb = kill_anon_super,
 };
+MODULE_ALIAS_FS("mtd_inodefs");
 
 static int __init init_mtdchar(void)
 {
