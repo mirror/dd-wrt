@@ -24,6 +24,7 @@
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 
+#include <asm/smp_plat.h>
 #include <asm/smp_twd.h>
 #include <asm/localtimer.h>
 
@@ -378,6 +379,9 @@ void __init twd_local_timer_of_register(void)
 {
 	struct device_node *np;
 	int err;
+
+	if (!is_smp() || !setup_max_cpus)
+		return;
 
 	np = of_find_matching_node(NULL, twd_of_match);
 	if (!np)
