@@ -37,10 +37,10 @@
 #include <services.h>
 
 #ifdef HAVE_CHILLI
-void main_config(void);
 #ifdef HAVE_HOTSPOT
 void hotspotsys_config(void);
 #endif
+void main_config(void);
 void chilli_config(void);
 void stop_chilli(void);
 
@@ -180,7 +180,8 @@ void main_config(void)
 				fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s 192.168.182.0/24 -j %s\n", 
 					nvram_safe_get("hotss_interface"), log_drop);
 	}
-	if (nvram_match("chilli_def_enable", "1")
+	if (nvram_match("chilli_enable", "1")
+		&& nvram_match("hotss_enable", "0") // caused by weirdo chilli_def_ stuff. see above
 		&& nvram_invmatch("chilli_interface", "br0")) {
 			if (strlen(nvram_safe_get("hotss_net")) > 0)
 				fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", 
@@ -199,7 +200,8 @@ void main_config(void)
 			&& strlen(nvram_safe_get("hotss_net")) > 0)
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j MASQUERADE\n",
 						nvram_safe_get("hotss_net"));
-		else if (nvram_match("chilli_def_enable", "1")
+		else if (nvram_match("chilli_enable", "1")
+			&& nvram_match("hotss_enable", "0")
 			&& strlen(nvram_safe_get("chilli_net")) > 0)
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j MASQUERADE\n",
 						nvram_safe_get("chilli_net"));
@@ -211,7 +213,8 @@ void main_config(void)
 			&& strlen(nvram_safe_get("hotss_net")) > 0)
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
 						nvram_safe_get("hotss_net"), get_wan_ipaddr());
-		else if (nvram_match("chilli_def_enable", "1")
+		else if (nvram_match("chilli_enable", "1")
+				&& nvram_match("hotss_enable", "0")
 				&& strlen(nvram_safe_get("chilli_net")) > 0)
 				fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
 						nvram_safe_get("chilli_net"), get_wan_ipaddr());
