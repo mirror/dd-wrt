@@ -35,7 +35,7 @@ vpath %.c $(SRCBASE)/tools/misc
 
 vpath %.c $(SRCBASE)/et/freebsd
 ifeq ($(ARCHITECTURE),gateworx)
-UTILS += showmac setmac fischecksum nandwrite flash_erase
+UTILS += showmac setmac fischecksum
 endif
 
 
