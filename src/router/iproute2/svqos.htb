@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# start: [up] [down] [wan_if] [mtu] [imq_wan] [imq_lan]
+# start: [up] [down] [wan_if] [mtu] [imq_wan] [aqd] [imq_lan] 
 # status: status [wan_if] [imq_wan] [imq_lan]
 # stop:	stop xx [wan_if] xx	[imq_wan] [imq_lan]
 
@@ -15,6 +15,8 @@ TQA="${TC} qdisc add dev "
 UL=$1
 DL=$2
 LL=1000000
+
+AQD=$6
 
 if [ "$1" = "status" ]
 then
@@ -39,10 +41,10 @@ then
 fi
 $TC qdisc del dev $3 root  2> /dev/null > /dev/null
 $TC qdisc del dev $5 root  2> /dev/null > /dev/null
-$TC qdisc del dev $6 root  2> /dev/null > /dev/null
+$TC qdisc del dev $7 root  2> /dev/null > /dev/null
 
 $IP link set $5 down
-$IP link set $6 down
+$IP link set $7 down
 if [ "$1" = "stop" ]
 then
 	exit
@@ -59,11 +61,21 @@ $TCA $3 parent 1:3 classid 1:10 htb rate $((25*${UL}/100))kbit ceil ${UL}kbit pr
 $TCA $3 parent 1:4 classid 1:20 htb rate $((10*${UL}/100))kbit ceil ${UL}kbit prio 2 quantum $((${4}+18))
 $TCA $3 parent 1:5 classid 1:30 htb rate $((5*${UL}/100))kbit ceil ${UL}kbit prio 5 quantum $((${4}+18))
 $TCA $3 parent 1:6 classid 1:40 htb rate $((1*${UL}/100))kbit ceil ${UL}kbit prio 7 quantum $((${4}+18))
-$TQA $3 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10
-$TQA $3 parent 1:10 handle 10: sfq quantum $((${4}+18)) perturb 10
-$TQA $3 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10
-$TQA $3 parent 1:30 handle 30: sfq quantum $((${4}+18)) perturb 10
-$TQA $3 parent 1:40 handle 40: sfq quantum $((${4}+18)) perturb 10
+if [ "$6" = "sfq" ]
+then
+	$TQA $3 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10
+	$TQA $3 parent 1:10 handle 10: sfq quantum $((${4}+18)) perturb 10
+	$TQA $3 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10
+	$TQA $3 parent 1:30 handle 30: sfq quantum $((${4}+18)) perturb 10
+	$TQA $3 parent 1:40 handle 40: sfq quantum $((${4}+18)) perturb 10
+elif [ "$6" = "fq_codel" ]
+then
+	$TQA $3 parent 1:100 handle 100: fq_codel
+	$TQA $3 parent 1:10 handle 10: fq_codel
+	$TQA $3 parent 1:20 handle 20: fq_codel
+	$TQA $3 parent 1:30 handle 30: fq_codel
+	$TQA $3 parent 1:40 handle 40: fq_codel
+fi
 $TFA $3 protocol ip pref 1 handle 0x64 fw classid 1:100
 $TFA $3 protocol ip pref 3 handle 0x0A fw classid 1:10
 $TFA $3 protocol ip pref 5 handle 0x14 fw classid 1:20
@@ -85,42 +97,62 @@ $TCA $5 parent 1:3 classid 1:10 htb rate $((25*${DL}/100))kbit ceil ${DL}kbit pr
 $TCA $5 parent 1:4 classid 1:20 htb rate $((10*${DL}/100))kbit ceil ${DL}kbit prio 2 quantum $((${4}+18))
 $TCA $5 parent 1:5 classid 1:30 htb rate $((5*${DL}/100))kbit ceil ${DL}kbit prio 5 quantum $((${4}+18))
 $TCA $5 parent 1:6 classid 1:40 htb rate $((1*${DL}/100))kbit ceil ${DL}kbit prio 7 quantum $((${4}+18))
-$TQA $5 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10
-$TQA $5 parent 1:10 handle 10: sfq quantum $((${4}+18)) perturb 10
-$TQA $5 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10
-$TQA $5 parent 1:30 handle 30: sfq quantum $((${4}+18)) perturb 10
-$TQA $5 parent 1:40 handle 40: sfq quantum $((${4}+18)) perturb 10
+if [ "$6" = "sfq" ]
+then
+	$TQA $5 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10
+	$TQA $5 parent 1:10 handle 10: sfq quantum $((${4}+18)) perturb 10
+	$TQA $5 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10
+	$TQA $5 parent 1:30 handle 30: sfq quantum $((${4}+18)) perturb 10
+	$TQA $5 parent 1:40 handle 40: sfq quantum $((${4}+18)) perturb 10
+elif [ "$6" = "fq_codel" ]
+then
+	$TQA $5 parent 1:100 handle 100: fq_codel
+	$TQA $5 parent 1:10 handle 10: fq_codel
+	$TQA $5 parent 1:20 handle 20: fq_codel
+	$TQA $5 parent 1:30 handle 30: fq_codel
+	$TQA $5 parent 1:40 handle 40: fq_codel
+fi
 $TFA $5 protocol ip pref 1 handle 0x64 fw classid 1:100        
 $TFA $5 protocol ip pref 3 handle 0x0A fw classid 1:10        
 $TFA $5 protocol ip pref 5 handle 0x14 fw classid 1:20        
 $TFA $5 protocol ip pref 8 handle 0x1E fw classid 1:30        
 $TFA $5 protocol ip pref 9 handle 0x28 fw classid 1:40
 
-if [ "$6" != "0" ] ; then
+if [ "$7" != "0" ] ; then
 $IP link set $6 up
 
-$TQA $6 root handle 1: htb default 30
-$TCA $6 parent 1: classid 1:1 htb rate ${LL}kbit prio 0 quantum $((${4}+18))
-$TCA $6 parent 1:1 classid 1:2 htb rate $((60*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
-$TCA $6 parent 1:1 classid 1:3 htb rate $((25*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
-$TCA $6 parent 1:1 classid 1:4 htb rate $((10*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
-$TCA $6 parent 1:1 classid 1:5 htb rate $((5*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
-$TCA $6 parent 1:1 classid 1:6 htb rate $((1*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
-$TCA $6 parent 1:2 classid 1:100 htb rate $((60*${LL}/100))kbit ceil ${LL}kbit prio 0 quantum $((${4}+18))
-$TCA $6 parent 1:3 classid 1:10 htb rate $((25*${LL}/100))kbit ceil ${LL}kbit prio 1 quantum $((${4}+18))
-$TCA $6 parent 1:4 classid 1:20 htb rate $((10*${LL}/100))kbit ceil ${LL}kbit prio 2 quantum $((${4}+18))
-$TCA $6 parent 1:5 classid 1:30 htb rate $((5*${LL}/100))kbit ceil ${LL}kbit prio 5 quantum $((${4}+18))
-$TCA $6 parent 1:6 classid 1:40 htb rate 10kbit ceil ${LL}kbit prio 7 quantum $((${4}+18))
-$TQA $6 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10
-$TQA $6 parent 1:10 handle 10: sfq quantum $((${4}+18)) perturb 10                                       
-$TQA $6 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10                                       
-$TQA $6 parent 1:30 handle 30: sfq quantum $((${4}+18)) perturb 10                                       
-$TQA $6 parent 1:40 handle 40: sfq quantum $((${4}+18)) perturb 10
-$TFA $6 protocol ip pref 1 handle 0x64 fw classid 1:100        
-$TFA $6 protocol ip pref 3 handle 0x0A fw classid 1:10        
-$TFA $6 protocol ip pref 5 handle 0x14 fw classid 1:20        
-$TFA $6 protocol ip pref 8 handle 0x1E fw classid 1:30        
-$TFA $6 protocol ip pref 9 handle 0x28 fw classid 1:40
+$TQA $7 root handle 1: htb default 30
+$TCA $7 parent 1: classid 1:1 htb rate ${LL}kbit prio 0 quantum $((${4}+18))
+$TCA $7 parent 1:1 classid 1:2 htb rate $((60*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
+$TCA $7 parent 1:1 classid 1:3 htb rate $((25*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
+$TCA $7 parent 1:1 classid 1:4 htb rate $((10*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
+$TCA $7 parent 1:1 classid 1:5 htb rate $((5*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
+$TCA $7 parent 1:1 classid 1:6 htb rate $((1*${LL}/100))kbit ceil ${LL}kbit quantum $((${4}+18))
+$TCA $7 parent 1:2 classid 1:100 htb rate $((60*${LL}/100))kbit ceil ${LL}kbit prio 0 quantum $((${4}+18))
+$TCA $7 parent 1:3 classid 1:10 htb rate $((25*${LL}/100))kbit ceil ${LL}kbit prio 1 quantum $((${4}+18))
+$TCA $7 parent 1:4 classid 1:20 htb rate $((10*${LL}/100))kbit ceil ${LL}kbit prio 2 quantum $((${4}+18))
+$TCA $7 parent 1:5 classid 1:30 htb rate $((5*${LL}/100))kbit ceil ${LL}kbit prio 5 quantum $((${4}+18))
+$TCA $7 parent 1:6 classid 1:40 htb rate 10kbit ceil ${LL}kbit prio 7 quantum $((${4}+18))
+if [ "$6" = "sfq" ]
+then
+	$TQA $7 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10
+	$TQA $7 parent 1:10 handle 10: sfq quantum $((${4}+18)) perturb 10                                       
+	$TQA $7 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10                                       
+	$TQA $7 parent 1:30 handle 30: sfq quantum $((${4}+18)) perturb 10                                       
+	$TQA $7 parent 1:40 handle 40: sfq quantum $((${4}+18)) perturb 10
+elif [ "$6" = "fq_codel" ]
+then
+	$TQA $7 parent 1:100 handle 100: fq_codel
+	$TQA $7 parent 1:10 handle 10: fq_codel
+	$TQA $7 parent 1:20 handle 20: fq_codel
+	$TQA $7 parent 1:30 handle 30: fq_codel
+	$TQA $7 parent 1:40 handle 40: fq_codel
+fi
+$TFA $7 protocol ip pref 1 handle 0x64 fw classid 1:100        
+$TFA $7 protocol ip pref 3 handle 0x0A fw classid 1:10        
+$TFA $7 protocol ip pref 5 handle 0x14 fw classid 1:20        
+$TFA $7 protocol ip pref 8 handle 0x1E fw classid 1:30        
+$TFA $7 protocol ip pref 9 handle 0x28 fw classid 1:40
 fi
     
 fi
