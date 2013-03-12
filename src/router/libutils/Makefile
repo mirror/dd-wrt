@@ -1039,6 +1039,10 @@ ifeq ($(CONFIG_SVQOS),y)
 CFLAGS += -DHAVE_SVQOS
 endif
 
+ifeq ($(CONFIG_CODEL),y)
+CFLAGS += -DHAVE_CODEL
+endif
+
 ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
 endif
