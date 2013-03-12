@@ -118,14 +118,6 @@ void delpppoeconnected_main(int argc,char *argv[])
 
 static void makeipup(void)
 {
-	int mss;
-
-	//WHY is this? we dont use the MSS?!
-	if (nvram_match("mtu_enable", "1"))
-		mss = atoi(nvram_safe_get("wan_mtu")) - 40 - 108;
-	else
-		mss = 1500 - 40 - 108;
-
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
 	fprintf(fp, "#!/bin/sh\n");
