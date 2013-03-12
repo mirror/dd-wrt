@@ -138,8 +138,8 @@ static void makeipup(void)
 				"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
 			);
 		fprintf(fp, 
-//		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
-//		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
+		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
+		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		"startservice set_routes\n"	// reinitialize
 		"addpppoeconnected $PPPD_PID $1 $5 $PEERNAME\n"
 		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
@@ -193,8 +193,10 @@ static void makeipup(void)
 	chmod("/tmp/pppoeserver/ip-down", 0744);
 
 	//	copy existing peer data to /tmp
-	if (nvram_match("sys_enable_jffs2", "1"))
-		system("/bin/cp /jffs/etc/pppoe_peer.db /tmp/");
+	if (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1"))
+			system("/bin/cp /jffs/etc/pppoeserver/pppoe_peer.db /tmp/");
 }
 
 static void do_pppoeconfig(FILE * fp)
@@ -448,10 +450,20 @@ void stop_pppoeserver(void)
 	if (stop_process("pppoe-server", "pppoe server")) {
 		del_pppoe_natrule();
 		unlink("/tmp/pppoe_connected");
+/*		unlink("/tmp/pppoeserver/radius/radiusclient.conf");
+		unlink("/tmp/pppoeserver/radius/servers");
+		unlink("/tmp/pppoeserver/ip-up");
+		unlink("/tmp/pppoeserver/ip-down");
+		unlink("/tmp/pppoeserver/pppoe-server-options"); */
 	//	unlink("/tmp/pppoeserver/calc-uptime.sh");
-	//	backup peer data
-		if (nvram_match("sys_enable_jffs2", "1"))
-		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/");
+	//	backup peer data to jffs if available
+		if (nvram_match("enable_jffs2", "1")
+			&& nvram_match("jffs_mounted", "1")
+			&& nvram_match("sys_enable_jffs2", "1"))	{
+				mkdir("/jffs/etc", 0700);
+				mkdir("/jffs/etc/pppoeserver", 0700);
+				system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/pppoeserver");
+			}		
 		//system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP");
 	}
 
