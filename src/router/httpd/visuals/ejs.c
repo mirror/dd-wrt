@@ -2540,16 +2540,15 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		tempavg_24 = (tempavg_24 * 4 + *ret_int) / 5;
 		tempavg_50 = (tempavg_50 * 4 + *ret_int2) / 5;
 	}
-	tempavg_max = (tempavg_24 + tempavg_50) / 2;
 	if (no2 && no5)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
 	else
 	if (no2)
-	    websWrite(wp, "wl1 %4.2f &#176;C", tempavg_50);	
+	    websWrite(wp, "wl1 %4.2f &#176;C", tempavg_50 * 0.5 + 20.0);	
 	else if (no5)
-	    websWrite(wp, "wl0 %4.2f &#176;C", tempavg_24);	
+	    websWrite(wp, "wl0 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0);	
 	else 
-	    websWrite(wp, "wl0 %4.2f &#176;C / wl1 %4.2f &#176;C", tempavg_24, tempavg_50);	
+	    websWrite(wp, "wl0 %4.2f &#176;C / wl1 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0, tempavg_50 * 0.5 + 20.0);	
 #else
 
 
