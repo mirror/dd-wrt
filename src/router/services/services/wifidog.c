@@ -35,8 +35,8 @@ void start_wifidog(void)
 		insmod("ipt_mac");
 		insmod("xt_mark");
 		insmod("xt_mac");
-		mkdir("/tmp/etc/", 0744);
-		FILE *fp = fopen("/tmp/etc/wifidog.conf", "wb");
+		mkdir("/tmp/wifidog/", 0744);
+		FILE *fp = fopen("/tmp/wifidog/wifidog.conf", "wb");
 
 		if (!strlen(nvram_safe_get("wd_gwid")))
 			fprintf(fp, "GatewayID default\n");
