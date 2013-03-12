@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# start: [up] [down] [wan_if] [mtu] [imq_wan] [imq_lan]
+# start: [up] [down] [wan_if] [mtu] [imq_wan] [aqd] [imq_lan]
 # status: status [wan_if] [imq_wan] [imq_lan]
 # stop:	stop xx [wan_if] xx	[imq_wan] [imq_lan]
 
@@ -14,6 +14,9 @@ TQA="${TC} qdisc add dev "
 
 UL=${1}
 DL=${2}
+LL=1000000
+
+AQD=$6
 
 if [ "$1" = "status" ]
 then
@@ -41,7 +44,7 @@ $TC qdisc del dev $5 root  2> /dev/null > /dev/null
 $TC qdisc del dev $6 root  2> /dev/null > /dev/null
 
 $IP link set $5 down
-$IP link set $6 down
+$IP link set $7 down
 if [ "$1" = "stop" ]
 then
 	exit
@@ -53,12 +56,22 @@ $TCA $3 parent 1:1 classid 1:10 hfsc rt rate $(((${UL}*30)/100))kbit ls rate $((
 $TCA $3 parent 1:1 classid 1:20 hfsc rt rate $(((${UL}*20)/100))kbit ls rate $(((${UL}*75)/100))kbit ul rate ${UL}kbit
 $TCA $3 parent 1:1 classid 1:30 hfsc rt rate $(((${UL}*10)/100))kbit ls rate $(((${UL}*55)/100))kbit ul rate ${UL}kbit
 $TCA $3 parent 1:1 classid 1:40 hfsc rt rate $(((${UL}*10)/100))kbit ls rate $(((${UL}*10)/100))kbit ul rate ${UL}kbit
-$TQA $3 parent 1:100 handle 100: sfq perturb 10 quantum $4
-$TQA $3 parent 1:10 handle 10: sfq perturb 10 quantum $4
-$TQA $3 parent 1:20 handle 20: sfq perturb 10 quantum $4
-$TQA $3 parent 1:30 handle 30: sfq perturb 10 quantum $4
-$TQA $3 parent 1:40 handle 40: sfq perturb 10 quantum $4
-$TFA $3 protocol ip pref 1 handle 0x64 fw classid 1:100        
+if [ "$6" = "sfq" ]
+then
+    $TQA $3 parent 1:100 handle 100: sfq perturb 10 quantum $4
+    $TQA $3 parent 1:10 handle 10: sfq perturb 10 quantum $4
+    $TQA $3 parent 1:20 handle 20: sfq perturb 10 quantum $4
+    $TQA $3 parent 1:30 handle 30: sfq perturb 10 quantum $4
+    $TQA $3 parent 1:40 handle 40: sfq perturb 10 quantum $4
+elif [ "$6" = "fq_codel" ]
+then
+    $TQA $3 parent 1:100 handle 100: fq_codel
+    $TQA $3 parent 1:10 handle 10: fq_codel
+    $TQA $3 parent 1:20 handle 20: fq_codel
+    $TQA $3 parent 1:30 handle 30: fq_codel
+    $TQA $3 parent 1:40 handle 40: fq_codel
+fi
+$TFA $3 protocol ip pref 1 handle 0x64 fw classid 1:100
 $TFA $3 protocol ip pref 3 handle 0x0A fw classid 1:10        
 $TFA $3 protocol ip pref 5 handle 0x14 fw classid 1:20        
 $TFA $3 protocol ip pref 8 handle 0x1E fw classid 1:30        
@@ -74,38 +87,58 @@ $TCA $5 parent 1:1 classid 1:10 hfsc rt rate $(((${DL}*30)/100))kbit ls rate $((
 $TCA $5 parent 1:1 classid 1:20 hfsc rt rate $(((${DL}*20)/100))kbit ls rate $(((${DL}*75)/100))kbit ul rate ${DL}kbit
 $TCA $5 parent 1:1 classid 1:30 hfsc rt rate $(((${DL}*10)/100))kbit ls rate $(((${DL}*55)/100))kbit ul rate ${DL}kbit
 $TCA $5 parent 1:1 classid 1:40 hfsc rt rate $(((${DL}*10)/100))kbit ls rate $(((${DL}*10)/100))kbit ul rate ${DL}kbit
-$TQA $5 parent 1:100 handle 100: sfq perturb 10 quantum $4
-$TQA $5 parent 1:10 handle 10: sfq perturb 10 quantum $4
-$TQA $5 parent 1:20 handle 20: sfq perturb 10 quantum $4
-$TQA $5 parent 1:30 handle 30: sfq perturb 10 quantum $4
-$TQA $5 parent 1:40 handle 40: sfq perturb 10 quantum $4
-$TFA $5 protocol ip pref 1 handle 0x64 fw classid 1:100        
+if [ "$6" = "sfq" ]
+then
+    $TQA $5 parent 1:100 handle 100: sfq perturb 10 quantum $4
+    $TQA $5 parent 1:10 handle 10: sfq perturb 10 quantum $4
+    $TQA $5 parent 1:20 handle 20: sfq perturb 10 quantum $4
+    $TQA $5 parent 1:30 handle 30: sfq perturb 10 quantum $4
+    $TQA $5 parent 1:40 handle 40: sfq perturb 10 quantum $4
+elif [ "$6" = "fq_codel" ]
+then
+    $TQA $5 parent 1:100 handle 100: fq_codel
+    $TQA $5 parent 1:10 handle 10: fq_codel
+    $TQA $5 parent 1:20 handle 20: fq_codel
+    $TQA $5 parent 1:30 handle 30: fq_codel
+    $TQA $5 parent 1:40 handle 40: fq_codel
+fi
+$TFA $5 protocol ip pref 1 handle 0x64 fw classid 1:100
 $TFA $5 protocol ip pref 3 handle 0x0A fw classid 1:10        
 $TFA $5 protocol ip pref 5 handle 0x14 fw classid 1:20        
 $TFA $5 protocol ip pref 8 handle 0x1E fw classid 1:30        
 $TFA $5 protocol ip pref 9 handle 0x28 fw classid 1:40 
 
-if [ "$6" != "0" ] ; then
-$IP link set $6 up
+if [ "$7" != "0" ] ; then
+$IP link set $7 up
 
-$TQA $6 root handle 1: hfsc default 30
-$TCA $6 parent 1: classid 1:1 hfsc ls rate 1000000kbit ul rate 1000000kbit
-$TCA $6 parent 1:1 classid 1:100 hfsc rt umax 1500b dmax 30ms rate 100kbit ls rate 1000000kbit ul rate 1000000kbit
-$TCA $6 parent 1:1 classid 1:10 hfsc rt rate $(((1000000*30)/100))kbit ls rate $(((1000000*75)/100))kbit ul rate 1000000kbit
-$TCA $6 parent 1:1 classid 1:20 hfsc rt rate $(((1000000*20)/100))kbit ls rate $(((1000000*75)/100))kbit ul rate 1000000kbit
-$TCA $6 parent 1:1 classid 1:30 hfsc rt rate $(((1000000*10)/100))kbit ls rate $(((1000000*55)/100))kbit ul rate 1000000kbit
-$TCA $6 parent 1:1 classid 1:40 hfsc rt rate $(((1000000*10)/100))kbit ls rate $(((1000000*10)/100))kbit ul rate 1000000kbit
-$TCA $6 parent 1:1 classid 1:2 hfsc ls rate 1000000kbit ul rate 1000000kbit
-$TQA $6 parent 1:100 handle 100: sfq perturb 10 quantum $4
-$TQA $6 parent 1:10 handle 10: sfq perturb 10 quantum $4
-$TQA $6 parent 1:20 handle 20: sfq perturb 10 quantum $4
-$TQA $6 parent 1:30 handle 30: sfq perturb 10 quantum $4
-$TQA $6 parent 1:40 handle 40: sfq perturb 10 quantum $4
-$TFA $6 protocol ip pref 1 handle 0x64 fw classid 1:100        
-$TFA $6 protocol ip pref 3 handle 0x0A fw classid 1:10        
-$TFA $6 protocol ip pref 5 handle 0x14 fw classid 1:20        
-$TFA $6 protocol ip pref 8 handle 0x1E fw classid 1:30        
-$TFA $6 protocol ip pref 9 handle 0x28 fw classid 1:40 
+$TQA $7 root handle 1: hfsc default 30
+$TCA $7 parent 1: classid 1:1 hfsc ls rate ${LL}kbit ul rate ${LL}kbit
+$TCA $7 parent 1:1 classid 1:100 hfsc rt umax 1500b dmax 30ms rate 100kbit ls rate ${LL}kbit ul rate ${LL}kbit
+$TCA $7 parent 1:1 classid 1:10 hfsc rt rate $((30*${LL}/100))kbit ls rate $((70*${LL}/100))kbitkbit ul rate ${LL}kbit
+$TCA $7 parent 1:1 classid 1:20 hfsc rt rate $((20*${LL}/100))kbit ls rate $((75*${LL}/100))kbit ul rate ${LL}kbit
+$TCA $7 parent 1:1 classid 1:30 hfsc rt rate $((10*${LL}/100))kbit ls rate $((55*${LL}/100))kbit ul rate ${LL}kbit
+$TCA $7 parent 1:1 classid 1:40 hfsc rt rate $((10*${LL}/100))kbit ls rate $((10*${LL}/100))kbit ul rate ${LL}kbit
+$TCA $7 parent 1:1 classid 1:2 hfsc ls rate ${LL}kbit ul rate ${LL}kbit
+if [ "$6" = "sfq" ]
+then
+    $TQA $7 parent 1:100 handle 100: sfq perturb 10 quantum $4
+    $TQA $7 parent 1:10 handle 10: sfq perturb 10 quantum $4
+    $TQA $7 parent 1:20 handle 20: sfq perturb 10 quantum $4
+    $TQA $7 parent 1:30 handle 30: sfq perturb 10 quantum $4
+    $TQA $7 parent 1:40 handle 40: sfq perturb 10 quantum $4
+elif [ "$6" = "fq_codel" ]
+then
+    $TQA $7 parent 1:100 handle 100: fq_codel
+    $TQA $7 parent 1:10 handle 10: fq_codel
+    $TQA $7 parent 1:20 handle 20: fq_codel
+    $TQA $7 parent 1:30 handle 30: fq_codel
+    $TQA $7 parent 1:40 handle 40: fq_codel
+fi
+$TFA $7 protocol ip pref 1 handle 0x64 fw classid 1:100
+$TFA $7 protocol ip pref 3 handle 0x0A fw classid 1:10
+$TFA $7 protocol ip pref 5 handle 0x14 fw classid 1:20
+$TFA $7 protocol ip pref 8 handle 0x1E fw classid 1:30
+$TFA $7 protocol ip pref 9 handle 0x28 fw classid 1:40
 fi
 
 fi

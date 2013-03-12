@@ -889,8 +889,9 @@ void start_wshaper(void)
 
 	char *wshaper_dev;
 	char *wan_dev;
-	char *script_name;
-
+	char *aqd;
+    char *script_name;
+    
 	wan_dev = get_wanface();
 	if (!wan_dev)
 		wan_dev = "xx";
@@ -918,17 +919,34 @@ void start_wshaper(void)
 	    atoi(ul_val) > 0)
 		return;
 	mtu_val = get_mtu_val();
-
+    
+    aqd = nvram_safe_get("svqos_aqd");
+    if (    strcmp(aqd, "sfq")
+        && strcmp(aqd, "fq_codel"))
+    {
+        aqd = "sfq";
+        nvram_set("svqos_aqd", "sfq");
+    }
+    
 #ifdef HAVE_SVQOS
 
 	insmod("imq");
 	insmod("ipt_IMQ");
 	insmod("xt_IMQ");
 
+    if(!strcmp(aqd, "fq_codel")) {
+#ifdef HAVE_CODEL
+        insmod("sch_fq_codel");
+#else
+        aqd = "sfq";
+        nvram_set("svqos_aqd", "sfq");
+#endif
+    }
+    
 	if (!strcmp(wshaper_dev, "WAN"))
-		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0");
+		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd);
 	else
-		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0",
+		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd,
 		     "imq1");
 
 	svqos_iptables();
@@ -1159,6 +1177,7 @@ void stop_wshaper(void)
 	rmmod("xt_IMQ");
 	rmmod("ipt_IMQ");
 	rmmod("imq");
+    rmmod("sch_fq_codel");
 //	rmmod("ebtables");
 
 	return;

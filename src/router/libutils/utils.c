@@ -590,6 +590,8 @@ void add_client_classes(unsigned int base, unsigned int level)
 	int lanrate = lanlimit;
 #endif
 
+	char *aqd = nvram_safe_get("svqos_aqd");
+
 	switch (level) {
 	case 100:
 		uprate = uplimit * 60 / 100;
@@ -838,55 +840,112 @@ void add_client_classes(unsigned int base, unsigned int level)
 #endif
 
 	// leaf qdiscs
-	sysprintf
-	    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-	     wan_dev, base + 1, base + 1, quantum);
-	sysprintf
-	    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-	     wan_dev, base + 2, base + 2, quantum);
-	sysprintf
-	    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-	     wan_dev, base + 3, base + 3, quantum);
-	sysprintf
-	    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-	     wan_dev, base + 4, base + 4, quantum);
-	sysprintf
-	    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-	     wan_dev, base + 5, base + 5, quantum);
+    if (!strcmp(aqd, "sfq"))
+    {
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+            wan_dev, base + 1, base + 1, quantum);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+            wan_dev, base + 2, base + 2, quantum);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+            wan_dev, base + 3, base + 3, quantum);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+            wan_dev, base + 4, base + 4, quantum);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+            wan_dev, base + 5, base + 5, quantum);
 
-	sysprintf
-	    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-	     "imq0", base + 1, base + 1, quantum);
-	sysprintf
-	    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-	     "imq0", base + 2, base + 2, quantum);
-	sysprintf
-	    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-	     "imq0", base + 3, base + 3, quantum);
-	sysprintf
-	    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-	     "imq0", base + 4, base + 4, quantum);
-	sysprintf
-	    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-	     "imq0", base + 5, base + 5, quantum);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+            "imq0", base + 1, base + 1, quantum);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+            "imq0", base + 2, base + 2, quantum);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+            "imq0", base + 3, base + 3, quantum);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+            "imq0", base + 4, base + 4, quantum);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+            "imq0", base + 5, base + 5, quantum);
 
-	if (nvram_match("wshaper_dev", "LAN")) {
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     "imq1", base + 1, base + 1, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     "imq1", base + 2, base + 2, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     "imq1", base + 3, base + 3, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     "imq1", base + 4, base + 4, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     "imq1", base + 5, base + 5, quantum);
-	}
+        if (nvram_match("wshaper_dev", "LAN")) {
+            sysprintf
+                ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+                "imq1", base + 1, base + 1, quantum);
+            sysprintf
+                ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+                "imq1", base + 2, base + 2, quantum);
+            sysprintf
+                ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+                "imq1", base + 3, base + 3, quantum);
+            sysprintf
+                ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+                "imq1", base + 4, base + 4, quantum);
+            sysprintf
+                ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+                "imq1", base + 5, base + 5, quantum);
+        }
+    }
+#ifdef HAVE_CODEL
+    if (!strcmp(aqd, "fq_codel"))
+    {
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+             wan_dev, base + 1, base + 1);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+             wan_dev, base + 2, base + 2);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+             wan_dev, base + 3, base + 3, quantum);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+             wan_dev, base + 4, base + 4);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+             wan_dev, base + 5, base + 5);
+
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+             "imq0", base + 1, base + 1);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+             "imq0", base + 2, base + 2);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+             "imq0", base + 3, base + 3);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+             "imq0", base + 4, base + 4);
+        sysprintf
+            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+             "imq0", base + 5, base + 5, quantum);
+
+        if (nvram_match("wshaper_dev", "LAN")) {
+            sysprintf
+                ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+                 "imq1", base + 1, base + 1);
+            sysprintf
+                ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+                 "imq1", base + 2, base + 2);
+            sysprintf
+                ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+                 "imq1", base + 3, base + 3);
+            sysprintf
+                ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+                 "imq1", base + 4, base + 4);
+            sysprintf
+                ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
+                 "imq1", base + 5, base + 5);
+        }
+    }
+#endif
 }
 
 #ifdef HAVE_AQOS
