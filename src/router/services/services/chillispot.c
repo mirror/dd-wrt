@@ -163,14 +163,14 @@ void main_config(void)
 	else
 		sprintf(log_reject, "%s", TARG_RST);
 
-	if (nvram_match("hotss_enable", "1") {
+	if (nvram_match("hotss_enable", "1")) {
 		if (strlen(nvram_safe_get("hotss_net")) > 0)
 			chillinet = nvram_safe_get("hotss_net");
 		else 
 			chillinet = "192.168.182.0/24";
 		}
 	if (nvram_match("chilli_enable", "1")
-		&& nvram_match("hotss_enable", "0") {
+		&& nvram_match("hotss_enable", "0")) {
 			if (strlen(nvram_safe_get("hotss_net")) > 0)
 				chillinet = nvram_safe_get("hotss_net");
 			else 
@@ -181,9 +181,9 @@ void main_config(void)
 		but if we dont have any gw we might use chilli on a local network only 
 		also we need to allow traffic in/outgoing to chilli*/
 	fprintf(fp, "#!/bin/sh\n");
-	fprintf(fp, "iptables -I INPUT -i tun0 -j %s\n",log_accept);
-	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n",log_accept);
-	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n",log_accept);
+	fprintf(fp, "iptables -I INPUT -i tun0 -j %s\n", log_accept);
+	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n", log_accept);
+	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n", log_accept);
 	//	secure chilli interface, only usefull if ! br0
 	if (nvram_match("hotss_enable", "1")
 		&& nvram_invmatch("hotss_interface", "br0"))
@@ -222,9 +222,9 @@ void main_config(void)
 		return;
 
 	fprintf(fp, "#!/bin/sh\n");
-	fprintf(fp, "iptables -D INPUT -i tun0 -j %s\n",log_accept);
-	fprintf(fp, "iptables -D FORWARD -i tun0 -j %s\n",log_accept);
-	fprintf(fp, "iptables -D FORWARD -o tun0 -j %s\n",log_accept);
+	fprintf(fp, "iptables -D INPUT -i tun0 -j %s\n", log_accept);
+	fprintf(fp, "iptables -D FORWARD -i tun0 -j %s\n", log_accept);
+	fprintf(fp, "iptables -D FORWARD -o tun0 -j %s\n", log_accept);
 	//	secure chilli interface, only usefull if ! br0
 	if (nvram_match("hotss_enable", "1")
 		&& nvram_invmatch("hotss_interface", "br0"))
