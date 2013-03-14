@@ -863,6 +863,7 @@ CONFIG_BLK_DEV=y
 # DRBD disabled because PROC_FS, INET or CONNECTOR not selected
 #
 # CONFIG_BLK_DEV_NBD is not set
+# CONFIG_BLK_DEV_UB is not set
 # CONFIG_BLK_DEV_RAM is not set
 # CONFIG_CDROM_PKTCDVD is not set
 # CONFIG_ATA_OVER_ETH is not set
@@ -1334,7 +1335,7 @@ CONFIG_USB_DYNAMIC_MINORS=y
 #
 # CONFIG_USB_ACM is not set
 CONFIG_USB_PRINTER=m
-# CONFIG_USB_WDM is not set
+CONFIG_USB_WDM=m
 # CONFIG_USB_TMC is not set
 
 #
