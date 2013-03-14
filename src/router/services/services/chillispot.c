@@ -227,7 +227,7 @@ void main_config(void)
 		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j MASQUERADE\n", chillinet);
 		}
-	else {
+	else
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j SNAT --to-source=%s\n",
 			chillinet, get_wan_ipaddr());
 	fclose(fp);
