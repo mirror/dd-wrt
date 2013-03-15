@@ -1160,6 +1160,10 @@ ifeq ($(CONFIG_CODEL),y)
 CFLAGS_EXTRA += -DHAVE_CODEL
 endif
 
+ifeq ($(CONFIG_FQ_CODEL),y)
+CFLAGS_EXTRA += -DHAVE_FQ_CODEL
+endif
+
 ifeq ($(CONFIG_SNMP),y)
 CFLAGS_EXTRA += -DHAVE_SNMP
 OBJS += snmp.o

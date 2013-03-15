@@ -892,57 +892,58 @@ void add_client_classes(unsigned int base, unsigned int level)
                 "imq1", base + 5, base + 5, quantum);
         }
     }
-#ifdef HAVE_CODEL
-    if (!strcmp(aqd, "fq_codel"))
+#ifdef HAVE_CODEL || HAVE_FQ_CODEL
+    if (    !strcmp(aqd, "codel")
+        || !strcmp(aqd, "fq_codel"))
     {
         sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-             wan_dev, base + 1, base + 1);
+            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+             wan_dev, base + 1, base + 1, aqd);
         sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-             wan_dev, base + 2, base + 2);
+            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+             wan_dev, base + 2, base + 2, aqd);
         sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-             wan_dev, base + 3, base + 3, quantum);
+            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+             wan_dev, base + 3, base + 3, aqd);
         sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-             wan_dev, base + 4, base + 4);
+            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+             wan_dev, base + 4, base + 4, aqd);
         sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-             wan_dev, base + 5, base + 5);
+            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+             wan_dev, base + 5, base + 5, aqd);
 
         sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-             "imq0", base + 1, base + 1);
+            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+             "imq0", base + 1, base + 1, aqd);
         sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-             "imq0", base + 2, base + 2);
+            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+             "imq0", base + 2, base + 2, aqd);
         sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-             "imq0", base + 3, base + 3);
+            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+             "imq0", base + 3, base + 3, aqd);
         sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-             "imq0", base + 4, base + 4);
+            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+             "imq0", base + 4, base + 4, aqd);
         sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-             "imq0", base + 5, base + 5, quantum);
+            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+             "imq0", base + 5, base + 5, aqd);
 
         if (nvram_match("wshaper_dev", "LAN")) {
             sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-                 "imq1", base + 1, base + 1);
+                ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+                 "imq1", base + 1, base + 1, aqd);
             sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-                 "imq1", base + 2, base + 2);
+                ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+                 "imq1", base + 2, base + 2, aqd);
             sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-                 "imq1", base + 3, base + 3);
+                ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+                 "imq1", base + 3, base + 3, aqd);
             sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-                 "imq1", base + 4, base + 4);
+                ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+                 "imq1", base + 4, base + 4, aqd);
             sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: fq_codel",
-                 "imq1", base + 5, base + 5);
+                ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+                 "imq1", base + 5, base + 5, aqd);
         }
     }
 #endif
