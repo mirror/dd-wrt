@@ -144,6 +144,7 @@ void main_config(void)
 {
 	char * chillinet;
 	int log_level = 0;
+	FILE *fp;
 	log_level = atoi(nvram_safe_get("log_level"));
 	mkdir("/tmp/chilli", 0700);
 
@@ -151,10 +152,6 @@ void main_config(void)
 		perror("/tmp/chilli/ip-up.sh");
 		return;
 	}
-
-	FILE *fp = fopen("/tmp/chilli/ip-up.sh", "w");
-	if (fp == NULL)
-		return;
 
 	if (log_level >= 1)
 		sprintf(log_drop, "%s", "logdrop");
@@ -211,10 +208,6 @@ void main_config(void)
 		return;
 	}
 						
-	fp = fopen("/tmp/chilli/ip-down.sh", "w");
-	if (fp == NULL)
-		return;
-
 	fprintf(fp, "#!/bin/sh\n");
 	fprintf(fp, "iptables -D INPUT -i tun0 -j %s\n", log_accept);
 	fprintf(fp, "iptables -D FORWARD -i tun0 -j %s\n", log_accept);
