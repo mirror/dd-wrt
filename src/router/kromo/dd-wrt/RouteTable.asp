@@ -10,6 +10,8 @@
 					<th><% tran("routetbl.th1"); %></th>
 					<th><% tran("share.subnet"); %></th>
 					<th><% tran("share.gateway"); %></th>
+					<th><% tran("route.flags"); %></th>
+					<th><% tran("route.metric"); %></th>
 					<th><% tran("share.intrface"); %></th>
 				</tr>
 				<script type="text/javascript">
@@ -20,12 +22,12 @@
 					if(table.length == 0) {
 						document.write("<tr><td align=\"center\" colspan=\"4\">- " + share.none + " -</td></tr>");
 					} else {
-						for(var i = 0; i < table.length; i = i+4) {
-							if(table[i+3] == "LAN")
-								table[i+3] = "LAN &amp; WLAN";
-							else if(table[i+3] == "WAN")
-								table[i+3] = "WAN";
-							document.write("<tr><td>"+table[i]+"</td><td>"+table[i+1]+"</td><td>"+table[i+2]+"</td><td>"+table[i+3]+"</td></tr>");
+						for(var i = 0; i < table.length; i = i+6) {
+							if(table[i+5] == "LAN")
+								table[i+5] = "LAN &amp; WLAN";
+							else if(table[i+5] == "WAN")
+								table[i+5] = "WAN";
+							document.write("<tr><td>"+table[i]+"</td><td>"+table[i+1]+"</td><td>"+table[i+2]+"</td><td>"+table[i+3]+"</td><td>"+table[i+4]+"</td><td>"+table[i+5]+"</td></tr>");
 						}
 					}
 				//]]>

@@ -1208,6 +1208,7 @@ var route=new Object();
 route.titl="Routing";
 route.h2="Advanced Routing";
 route.metric="Metric";
+route.flags="Flags";
 route.mod="Operating Mode";
 route.bgp_legend="BGP Settings";
 route.bgp_ip="Neighbor IP";
