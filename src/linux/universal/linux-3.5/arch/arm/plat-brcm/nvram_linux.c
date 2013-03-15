@@ -907,6 +907,19 @@ err:
 	return ret;
 }
 
+int nvram_match(char *name, char *match)
+{
+	const char *value = nvram_get(name);
+	return (value && !strcmp(value, match));
+}
+
+
+char *nvram_safe_get(const char *name)
+{
+	return nvram_get(name) ? : "";
+}
+
+
 /*
 * This is not a module, and is not unloadable.
 * Also, this module must not be initialized before

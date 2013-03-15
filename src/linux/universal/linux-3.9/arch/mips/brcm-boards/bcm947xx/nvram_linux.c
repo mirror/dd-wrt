@@ -1071,4 +1071,17 @@ err:
 	return ret;
 }
 
+int nvram_match(char *name, char *match)
+{
+	const char *value = nvram_get(name);
+	return (value && !strcmp(value, match));
+}
+
+
+char *nvram_safe_get(const char *name)
+{
+	return nvram_get(name) ? : "";
+}
+
+
 late_initcall(dev_nvram_init);
