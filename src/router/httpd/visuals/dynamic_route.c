@@ -102,12 +102,25 @@ void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 				ifname = "LAN";
 			if (!strcmp(ifname, nvram_safe_get("wan_ifname")))
 				ifname = "WAN";
+			char flags[32];
+			int fidx=0;
+			flags[fidx++]='U';
+			if (flgs & RTF_GATEWAY)
+			    flags[fidx++]='G';			
+			if (flgs & RTF_HOST)
+			    flags[fidx++]='H';			
+			if (flgs & RTF_REINSTATE)
+			    flags[fidx++]='R';			
+			if (flgs & RTF_DYNAMIC)
+			    flags[fidx++]='D';			
+			if (flgs & RTF_MODIFIED)
+			    flags[fidx++]='M';			
+			flags[fidx]=0;
 
-			websWrite(wp, "%s%c'%s','%s','%s','%s'\n",
+			websWrite(wp, "%s%c'%s','%s','%s','%s','%d','%s'\n",
 				  debug ? "//" : "",
 				  blank ? ' ' : ',',
-				  sdest, inet_ntop(AF_INET, &netmask_ip, client,
-						   16), sgw, ifname);
+				  sdest, inet_ntop(AF_INET, &netmask_ip, client,16), sgw,flags,metric, ifname);
 
 			if (debug && blank)
 				blank = 1;
