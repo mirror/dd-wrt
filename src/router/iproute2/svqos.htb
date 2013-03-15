@@ -68,13 +68,13 @@ then
 	$TQA $3 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10
 	$TQA $3 parent 1:30 handle 30: sfq quantum $((${4}+18)) perturb 10
 	$TQA $3 parent 1:40 handle 40: sfq quantum $((${4}+18)) perturb 10
-elif [ "$6" = "fq_codel" ]
+elif [ "$6" = "codel" ] || [ "$6" = "fq_codel" ]
 then
-	$TQA $3 parent 1:100 handle 100: fq_codel
-	$TQA $3 parent 1:10 handle 10: fq_codel
-	$TQA $3 parent 1:20 handle 20: fq_codel
-	$TQA $3 parent 1:30 handle 30: fq_codel
-	$TQA $3 parent 1:40 handle 40: fq_codel
+	$TQA $3 parent 1:100 handle 100: $6
+	$TQA $3 parent 1:10 handle 10: $6
+	$TQA $3 parent 1:20 handle 20: $6
+	$TQA $3 parent 1:30 handle 30: $6
+	$TQA $3 parent 1:40 handle 40: $6
 fi
 $TFA $3 protocol ip pref 1 handle 0x64 fw classid 1:100
 $TFA $3 protocol ip pref 3 handle 0x0A fw classid 1:10
@@ -104,13 +104,13 @@ then
 	$TQA $5 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10
 	$TQA $5 parent 1:30 handle 30: sfq quantum $((${4}+18)) perturb 10
 	$TQA $5 parent 1:40 handle 40: sfq quantum $((${4}+18)) perturb 10
-elif [ "$6" = "fq_codel" ]
+elif [ "$6" = "codel" ] || [ "$6" = "fq_codel" ]
 then
-	$TQA $5 parent 1:100 handle 100: fq_codel
-	$TQA $5 parent 1:10 handle 10: fq_codel
-	$TQA $5 parent 1:20 handle 20: fq_codel
-	$TQA $5 parent 1:30 handle 30: fq_codel
-	$TQA $5 parent 1:40 handle 40: fq_codel
+	$TQA $5 parent 1:100 handle 100: $6
+	$TQA $5 parent 1:10 handle 10: $6
+	$TQA $5 parent 1:20 handle 20: $6
+	$TQA $5 parent 1:30 handle 30: $6
+	$TQA $5 parent 1:40 handle 40: $6
 fi
 $TFA $5 protocol ip pref 1 handle 0x64 fw classid 1:100        
 $TFA $5 protocol ip pref 3 handle 0x0A fw classid 1:10        
@@ -119,7 +119,7 @@ $TFA $5 protocol ip pref 8 handle 0x1E fw classid 1:30
 $TFA $5 protocol ip pref 9 handle 0x28 fw classid 1:40
 
 if [ "$7" != "0" ] ; then
-$IP link set $6 up
+$IP link set $7 up
 
 $TQA $7 root handle 1: htb default 30
 $TCA $7 parent 1: classid 1:1 htb rate ${LL}kbit prio 0 quantum $((${4}+18))
@@ -140,13 +140,13 @@ then
 	$TQA $7 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10                                       
 	$TQA $7 parent 1:30 handle 30: sfq quantum $((${4}+18)) perturb 10                                       
 	$TQA $7 parent 1:40 handle 40: sfq quantum $((${4}+18)) perturb 10
-elif [ "$6" = "fq_codel" ]
+elif [ "$6" = "codel" ] || [ "$6" = "fq_codel" ]
 then
-	$TQA $7 parent 1:100 handle 100: fq_codel
-	$TQA $7 parent 1:10 handle 10: fq_codel
-	$TQA $7 parent 1:20 handle 20: fq_codel
-	$TQA $7 parent 1:30 handle 30: fq_codel
-	$TQA $7 parent 1:40 handle 40: fq_codel
+	$TQA $7 parent 1:100 handle 100: $6
+	$TQA $7 parent 1:10 handle 10: $6
+	$TQA $7 parent 1:20 handle 20: $6
+	$TQA $7 parent 1:30 handle 30: $6
+	$TQA $7 parent 1:40 handle 40: $6
 fi
 $TFA $7 protocol ip pref 1 handle 0x64 fw classid 1:100        
 $TFA $7 protocol ip pref 3 handle 0x0A fw classid 1:10        

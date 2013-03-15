@@ -1043,6 +1043,10 @@ ifeq ($(CONFIG_CODEL),y)
 CFLAGS += -DHAVE_CODEL
 endif
 
+ifeq ($(CONFIG_FQ_CODEL),y)
+CFLAGS += -DHAVE_FQ_CODEL
+endif
+
 ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
 endif

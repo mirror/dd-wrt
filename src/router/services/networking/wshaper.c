@@ -920,13 +920,7 @@ void start_wshaper(void)
 		return;
 	mtu_val = get_mtu_val();
     
-    aqd = nvram_safe_get("svqos_aqd");
-    if (    strcmp(aqd, "sfq")
-        && strcmp(aqd, "fq_codel"))
-    {
-        aqd = "sfq";
-        nvram_set("svqos_aqd", "sfq");
-    }
+    aqd = nvram_safe_get("svqos_aqd");    
     
 #ifdef HAVE_SVQOS
 
@@ -934,15 +928,16 @@ void start_wshaper(void)
 	insmod("ipt_IMQ");
 	insmod("xt_IMQ");
 
-    if(!strcmp(aqd, "fq_codel")) {
 #ifdef HAVE_CODEL
-        insmod("sch_fq_codel");
-#else
-        aqd = "sfq";
-        nvram_set("svqos_aqd", "sfq");
+    if (!strcmp(aqd, "codel"))
+        insmod("sch_codel");
 #endif
-    }
     
+#ifdef HAVE_FQ_CODEL
+    if (!strcmp(aqd, "fq_codel"))
+        insmod("sch_fq_codel"); 
+#endif
+
 	if (!strcmp(wshaper_dev, "WAN"))
 		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd);
 	else
@@ -1177,6 +1172,7 @@ void stop_wshaper(void)
 	rmmod("xt_IMQ");
 	rmmod("ipt_IMQ");
 	rmmod("imq");
+    rmmod("sch_codel");
     rmmod("sch_fq_codel");
 //	rmmod("ebtables");
 
