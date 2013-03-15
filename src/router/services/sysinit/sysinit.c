@@ -2817,6 +2817,23 @@ nvram_set("wan_iface", "");
 	}
 #endif
 	nvram_unset("lasthour");
+
+#ifdef HAVE_SVQOS
+		char *aqd = nvram_safe_get("svqos_aqd");
+#ifndef HAVE_CODEL
+	if(!strcmp(aqd, "codel"))
+		nvram_set("svqos_aqd", "sfq");
+#endif
+#ifndef HAVE_FQ_CODEL
+	if(!strcmp(aqd, "fq_codel"))
+		nvram_set("svqos_aqd", "sfq");
+#endif
+	if(	   strcmp(aqd, "codel")
+		&& strcmp(aqd, "fq_codel")
+		&& strcmp(aqd, "sfq"))
+		nvram_set("svqos_aqd", "sfq");
+#endif
+
 #ifdef HAVE_AQOS
 	//filter hostapd shaping rules
 
