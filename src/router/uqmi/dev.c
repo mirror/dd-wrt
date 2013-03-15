@@ -230,6 +230,8 @@ int qmi_service_connect(struct qmi_dev *qmi, QmiService svc, int client_id)
 			return req.req.ret;
 
 		client_id = req.cid;
+	} else {
+		qmi->service_keep_cid |= (1 << idx);
 	}
 
 	qmi->service_data[idx].connected = true;
