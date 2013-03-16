@@ -111,7 +111,7 @@ static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 
 static int freq_list(struct unl *unl, int phy)
 {
-	struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
+	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct frequency *f;
 	struct nl_msg *msg;
 	struct nlattr *band, *bands, *freqlist, *freq;
