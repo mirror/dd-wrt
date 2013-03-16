@@ -4244,7 +4244,6 @@ int getIfList(char *buffer, const char *ifprefix)
 			}
 		}
 	}
-
 	for (i = 0; i < count; i++) {
 		strcat(buffer, sort[i]);
 		strcat(buffer, " ");
