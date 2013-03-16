@@ -99,7 +99,7 @@ static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = { .type = NLA_U64 },
 };
 
-static int parse_survey(struct nl_msg *msg, struct nlattr **sinfo)
+int mac80211_parse_survey(struct nl_msg *msg, struct nlattr **sinfo)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
