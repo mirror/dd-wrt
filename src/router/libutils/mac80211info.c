@@ -680,7 +680,7 @@ int mac80211_check_valid_frequency(char *interface, char *country, int freq) {
 		if (chan != NULL) {
 			while (chan[i].freq != -1) {
 				if (freq == chan[i].freq) {
-					free(chain)
+					free(chan)
 					return freq;
 				}
 			i++;
