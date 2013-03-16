@@ -314,7 +314,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp,
 	fprintf(fp, "tx_queue_data0_cwmin=3\n");
 	fprintf(fp, "tx_queue_data0_cwmax=7\n");
 	fprintf(fp, "tx_queue_data0_burst=1.5\n");
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 	char *netmode = nvram_nget("%s_net_mode", prefix);
 	char *akm = nvram_nget("%s_akm", prefix);
 	char *crypto = nvram_nget("%s_crypto", prefix);
@@ -355,7 +354,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp,
 	} else {
 		sprintf(ht, "20");
 	}
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 	// fix for repeater mode as long as the driver is not able to do that
 	if (isrepeater) {
 		sprintf(ht, "20");
@@ -364,11 +362,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp,
 	char *country;
 	sprintf(regdomain, "%s_regdomain", prefix);
 	country = nvram_default_get(regdomain, "UNITED_STATES");
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 	// jumps to world if set here?!?
 	// fprintf(fp, "country_code=%s\n", getIsoName(country));
 	chan = mac80211_get_channels(prefix, getIsoName(country), 40, 0xff);
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 	if (isrepeater) {
 		// for ht40- take second channel otherwise hostapd is unhappy (and does not start)
 		if (iht == -1)
@@ -391,16 +387,14 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp,
 		// also we still should take care on the selected mode
 		sprintf(nfreq, "%s_channel", prefix);
 		freq = atoi(nvram_default_get(nfreq, "0"));
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
+
 		if (freq == 0) {
 			struct mac80211_ac *acs;
 			fprintf(stderr,
 				"call mac80211autochannel for interface: %s\n",
 				prefix);
 			sysprintf("ifconfig %s up", prefix);
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 			acs = mac80211autochannel(prefix, NULL, 2, 1, 0);
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 			if (acs != NULL) {
 				freq = acs->freq;
 				channel = ieee80211_mhz2ieee(freq);
@@ -422,9 +416,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp,
 						sprintf(ht, "20");
 					}
 				}
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 				free_mac80211_ac(acs);
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 			} else {
 				if (has_2ghz(prefix))
 					channel = 6;
@@ -432,14 +424,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp,
 					channel = 40;
 			}
 		} else {
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 			channel = ieee80211_mhz2ieee(freq);
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 		}
 	}
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 	caps = mac80211_get_caps(prefix);
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 	fprintf(fp, "ht_capab=[HT%s]%s\n", ht, caps);
 	free(caps);
 	if (chan)
@@ -459,12 +447,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp,
 		}
 
 	}
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 	fprintf(fp, "channel=%d\n", channel);
 	fprintf(fp, "\n");
 	fprintf(fp, "frequency=%d\n", freq);
 	fprintf(fp, "\n");
-	fprintf(stderr,"%d:%s\n",__LINE__,prefix);
 }
 
 static void setMacFilter(FILE * fp, char *iface)
