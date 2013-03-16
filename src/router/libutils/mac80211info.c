@@ -20,12 +20,14 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <glob.h>
+#include <bcmnvram.h>
 
 #include "unl.h"
 #include "mac80211regulatory.h"
 #include "linux/nl80211.h"
 
 #include "wlutils.h"
+#include <utils.h>
 
 // some defenitions from hostapd
 typedef uint16_t u16;
@@ -87,11 +89,7 @@ static int phy_lookup_by_number(int idx)
 }
 
 int mac80211_get_phyidx_by_vifname(char *vif) {
-	int phynum=0;
-    if (!sscanf(vif, "ath%d", &phynum)) {
-		return -1;
-		}
-	return(phy_lookup_by_number(get_ath9k_phy_idx(phynum)));
+	return(phy_lookup_by_number(get_ath9k_phy_name(vif)));
 	}
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {

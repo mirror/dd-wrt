@@ -1480,13 +1480,9 @@ int get_radiostate(char *ifname)
 		char debugstring[64];
 		FILE *fp;
 		int idx;
-		char index[8];
 		char state[11];
 		
-		strncpy(index, ifname + 3, 1);
-		idx = atoi(index);
-		
-		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag",get_ath9k_phy_idx(idx));
+		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag",get_ath9k_phy_ifname(ifname));
 		fp = fopen(debugstring, "r");
 		if (fp) {
 			fread(state, sizeof(state) - 1, 1, fp); 
@@ -2189,7 +2185,7 @@ int gettxantenna(char *ifname)
 		if (!registered_has_cap(20))
 			return (1);
 #endif
-		return (mac80211_get_avail_tx_antenna(ifname));
+		return (mac80211_get_avail_tx_antenna(get_ath9k_phy_ifname(ifname)));
 	} else
 #endif
 		return (7);
@@ -2203,7 +2199,7 @@ int getrxantenna(char *ifname)
 		if (!registered_has_cap(20))
 			return (1);
 #endif
-		return (mac80211_get_avail_rx_antenna(ifname));
+		return (mac80211_get_avail_rx_antenna(get_ath9k_phy_ifname(ifname)));
 	} else
 #endif
 		return (7);
