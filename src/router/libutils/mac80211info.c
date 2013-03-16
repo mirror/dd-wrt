@@ -658,7 +658,7 @@ int has_ht40(char *interface) {
 		country = nvram_default_get(regdomain, "UNITED_STATES");
 
 		chan = mac80211_get_channels(interface, getIsoName(country), 40, 0xff);
-		if (chan != NULL)
+		if (chan != NULL) {
 			while (chan[i].freq != -1) {
 				if (chan[i].ht40plus || chan[i].ht40minus) {
 					free(chan);
@@ -666,8 +666,8 @@ int has_ht40(char *interface) {
 				}
 			i++;
 			}
-		if (chan != NULL)
 			free(chan);
+		}
 		return 0;
 }
 
@@ -677,20 +677,17 @@ int mac80211_check_valid_frequency(char *interface, char *country, int freq) {
 		int found=0;
 		int i=0;
 		chan = mac80211_get_channels(interface, country, 40, 0xff);
-		if (chan != NULL)
+		if (chan != NULL) {
 			while (chan[i].freq != -1) {
 				if (freq == chan[i].freq) {
-					found=1;
-					break;
+					free(chain)
+					return freq;
 				}
 			i++;
 			}
-		if (chan != NULL)
 			free(chan);
-		if ( found )
-			return(freq);
-		else
-			return(0);
+		}
+		return(0);
 }
 
 static struct wifi_client_info *add_to_wifi_clients(struct wifi_client_info *list_root){
