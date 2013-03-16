@@ -171,27 +171,7 @@ nla_put_failure:
 }
 
 
-static int parse_survey(struct nl_msg *msg, struct nlattr **sinfo)
-{
-	struct nlattr *tb[NL80211_ATTR_MAX + 1];
-	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
-
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
-
-	if (!tb[NL80211_ATTR_SURVEY_INFO])
-		return -1;
-
-	if (nla_parse_nested(sinfo, NL80211_SURVEY_INFO_MAX,
-			     tb[NL80211_ATTR_SURVEY_INFO],
-			     survey_policy))
-		return -1;
-
-	if (!sinfo[NL80211_SURVEY_INFO_FREQUENCY])
-		return -1;
-
-	return 0;
-}
+int mac80211_parse_survey(struct nl_msg *msg, struct nlattr **sinfo);
 
 static struct frequency *get_freq(int freq)
 {
@@ -212,7 +192,7 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 	struct frequency *f;
 	int freq;
 
-	if (parse_survey(msg, sinfo))
+	if (mac80211_parse_survey(msg, sinfo))
 		goto out;
 
 	freq = nla_get_u32(sinfo[NL80211_SURVEY_INFO_FREQUENCY]);
