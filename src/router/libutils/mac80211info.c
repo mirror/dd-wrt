@@ -526,27 +526,34 @@ struct wifi_channels *mac80211_get_channels(char *interface,char *country,int ma
 	char sc[32];
 	int skip=1;
 	int rrdcount=0;
-
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 	phy = mac80211_get_phyidx_by_vifname(interface);
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 	if (phy == -1) return NULL;
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 
 #ifdef HAVE_SUPERCHANNEL
 	sprintf(sc, "%s_regulatory", interface);
 	if (issuperchannel() && atoi(nvram_default_get(sc, "1")) == 0) skip=0;
 #endif
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 
 
 	rd=mac80211_get_regdomain(country);
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 	// for now just leave 
 	if (rd == NULL) return list;
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
 		return NULL;
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 
 	for (run=0;run <2;run++) {
 		if (run == 1) {
@@ -635,14 +642,19 @@ struct wifi_channels *mac80211_get_channels(char *interface,char *country,int ma
 			}
 		}
 	}
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 	list[count].freq=-1;
 	if (rd) 
 		free(rd);
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 	nlmsg_free(msg);
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 	return list;
 out:
 nla_put_failure:
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 	nlmsg_free(msg);
+	fprintf(stderr,"%d:%s\n",__LINE__,interface);
 	return NULL;
 }
 
