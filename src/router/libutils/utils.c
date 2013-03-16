@@ -5686,6 +5686,15 @@ int get_ath9k_phy_idx(int idx)
 	return idx - getifcount("wifi");
 }
 
+int get_ath9k_phy_ifname(const char *ifname)
+{
+	int devnum;
+	if (!sscanf(ifname, "ath%d", &devnum))
+		return (0);
+	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
+	return get_ath9k_phy_idx(devnum);
+}
+
 int is_ath9k(const char *prefix)
 {
 	glob_t globbuf;
@@ -5698,10 +5707,8 @@ int is_ath9k(const char *prefix)
 	if (!nvram_match("mimo_driver", "ath9k"))
 		return (0);
 #endif
-	if (!sscanf(prefix, "ath%d", &devnum))
-		return (0);
 	// correct index if there are legacy cards arround
-	devnum = get_ath9k_phy_idx(devnum);
+	devnum = get_ath9k_phy_ifname(prefix);
 	sprintf(globstring, "/sys/class/ieee80211/phy%d", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	if (globresult == 0)
