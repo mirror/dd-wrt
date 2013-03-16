@@ -128,7 +128,7 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 	int freq;
 	struct mac80211_info *mac80211_info = data;
 
-	if (parse_survey(msg, sinfo))
+	if (mac80211_parse_survey(msg, sinfo))
 		goto out;
 
 	freq = nla_get_u32(sinfo[NL80211_SURVEY_INFO_FREQUENCY]);
