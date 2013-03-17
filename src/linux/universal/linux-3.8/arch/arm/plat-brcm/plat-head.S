@@ -11,11 +11,9 @@
 
 #include <asm/assembler.h>
 #include <asm/cp15.h>
-
 #include <asm/memory.h>
 #include <asm/mach-types.h>
-#include <plat/plat-bcm5301x.h> 
-
+#include <plat/plat-bcm5301x.h>
 
 #ifndef CONFIG_DEBUG_LL
 ENTRY(printch)
@@ -114,14 +112,16 @@ ENTRY(__mach_head_fixup)
 #endif	/* !CONFIG_XIP_KERNEL */
 
 szmem:
-	ldr	r3,=0x00000000
+	ldr	r3,=0x80000000
 	ldr	r2,=0xaa55beef
 	ldr	r1,=0x00000000
 	ldr	r6,[r3,#0x3c]			/* Save the value in r6 */
 	str	r1,[r3,#0x3c]
 	ldr	r0,=(1 << 20)
-	ldr	r5,=(128 << 20)
-1:	mov	r4,r0
+	ldr	r5,=(1 << 30)
+1:
+	ldr	r4,=0x80000000
+	add	r4,r4,r0
 	ldr	r7,[r4,#0x3c]			/* Save the value in r7 */
 	str	r2,[r4,#0x3c]
 	ldr	r1,[r4,#0x3c]			/* Read back to ensure completion */
