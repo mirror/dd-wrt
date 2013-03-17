@@ -349,6 +349,8 @@ static uint32 boot_partition_size(uint32 flash_phys) {
 	return bootsz;
 }
 
+size_t rootfssize=0;
+
 #if defined(BCMCONFMTD)
 #define MTD_PARTS 1
 #else
@@ -368,7 +370,6 @@ static uint32 boot_partition_size(uint32 flash_phys) {
 #define FLASH_PARTS_NUM	(6+MTD_PARTS+PLC_PARTS+FAILSAFE_PARTS)
 
 static struct mtd_partition bcm947xx_flash_parts[FLASH_PARTS_NUM] = {{0}};
-size_t rootfssize=0;
 static uint lookup_flash_rootfs_offset(struct mtd_info *mtd, int *trx_off, size_t size)
 {
 	struct romfs_super_block *romfsb;
@@ -625,7 +626,7 @@ EXPORT_SYMBOL(init_mtd_partitions);
 #endif /* CONFIG_MTD_PARTITIONS */
 
 #ifdef CONFIG_MTD_NFLASH
-#define NFLASH_PARTS_NUM	6
+#define NFLASH_PARTS_NUM 7
 static struct mtd_partition bcm947xx_nflash_parts[NFLASH_PARTS_NUM] = {{0}};
 
 static uint
@@ -635,9 +636,16 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 	struct cramfs_super *cramfsb;
 	struct squashfs_super_block *squashfsb;
 	struct trx_header *trx;
-	unsigned char buf[NFL_SECTOR_SIZE];
-	uint blocksize, mask, blk_offset, off, shift = 0;
+	unsigned char *buf;
+	uint blocksize, pagesize, mask, blk_offset, off, shift = 0;
 	int ret;
+
+	pagesize = nfl->pagesize;
+	buf = (unsigned char *)kmalloc(pagesize, GFP_KERNEL);
+	if (!buf) {
+		printk("lookup_nflash_rootfs_offset: kmalloc fail\n");
+		return 0;
+	}
 
 	romfsb = (struct romfs_super_block *) buf;
 	cramfsb = (struct cramfs_super *) buf;
@@ -647,13 +655,13 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 	/* Look at every block boundary till 16MB; higher space is reserved for application data. */
 	blocksize = mtd->erasesize;
 	printk("lookup_nflash_rootfs_offset: offset = 0x%x\n", offset);
-	for (off = offset; off < NFL_BOOT_OS_SIZE; off += blocksize) {
+	for (off = offset; off < offset + size; off += blocksize) {
 		mask = blocksize - 1;
 		blk_offset = off & ~mask;
 		if (hndnand_checkbadb(nfl, blk_offset) != 0)
 			continue;
-		memset(buf, 0xe5, sizeof(buf));
-		if ((ret = hndnand_read(nfl, off, sizeof(buf), buf)) != sizeof(buf)) {
+		memset(buf, 0xe5, pagesize);
+		if ((ret = hndnand_read(nfl, off, pagesize, buf)) != pagesize) {
 			printk(KERN_NOTICE
 			       "%s: nflash_read return %d\n", mtd->name, ret);
 			continue;
@@ -661,7 +669,7 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 
 		/* Try looking at TRX header for rootfs offset */
 		if (le32_to_cpu(trx->magic) == TRX_MAGIC) {
-			mask = NFL_SECTOR_SIZE - 1;
+			mask = pagesize - 1;
 			off = offset + (le32_to_cpu(trx->offsets[1]) & ~mask) - blocksize;
 			shift = (le32_to_cpu(trx->offsets[1]) & mask);
 			romfsb = (struct romfs_super_block *)((unsigned char *)romfsb + shift);
@@ -689,6 +697,7 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 		}
 
 		if (squashfsb->s_magic == SQUASHFS_MAGIC) {
+			rootfssize = squashfsb->bytes_used;
 			printk(KERN_NOTICE
 			       "%s: squash filesystem with lzma found at block %d\n",
 			       mtd->name, off / blocksize);
@@ -696,6 +705,10 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 		}
 
 	}
+
+	if (buf)
+		kfree(buf);
+
 	return shift + off;
 }
 
@@ -820,7 +833,17 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 #endif	/* CONFIG_FAILSAFE_UPGRADE */
 
 	}
-
+#if 0
+	if (rootfssize)
+	{
+	bcm947xx_nflash_parts[nparts].name = "ddwrt";
+	bcm947xx_nflash_parts[nparts].offset = bcm947xx_nflash_parts[3].offset + bcm947xx_nflash_parts[3].size;
+	bcm947xx_nflash_parts[nparts].offset += (mtd->erasesize - 1);
+	bcm947xx_nflash_parts[nparts].offset &= ~(mtd->erasesize - 1);
+	bcm947xx_nflash_parts[nparts].size = (size - bcm947xx_nflash_parts[nparts].offset) - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	nparts++;	
+	}
+#endif
 	return bcm947xx_nflash_parts;
 }
 
