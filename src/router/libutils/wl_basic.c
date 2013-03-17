@@ -7,7 +7,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <bcmnvram.h>
-#include <math.h>
+//#include <math.h>
 
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *get_wl_instance_name(int instance)

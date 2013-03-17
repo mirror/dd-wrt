@@ -112,6 +112,16 @@ int get_gpio(int gpio)
 #undef GPIOMAX
 }
 
+#elif HAVE_NORTHSTAR
+
+void set_gpio(int gpio, int value)
+{
+}
+
+int get_gpio(int gpio)
+{
+return 0;
+}
 #elif HAVE_XSCALE
 #define u8 unsigned char
 #define u32 unsigned long
