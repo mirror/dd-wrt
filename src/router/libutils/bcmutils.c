@@ -101,6 +101,9 @@ int getcpurev(void)
 
 int cpu_plltype(void)
 {
+#ifdef HAVE_NORTHSTAR
+	return 9;
+#endif
 #if defined(HAVE_BUFFALO) || defined(BUFFALO_JP)
 	if (nvram_match("DD_BOARD", "Buffalo WHR-G54S") ||	//
 	    nvram_match("DD_BOARD", "Buffalo WHR-HP-G54") ||	//

@@ -229,6 +229,65 @@ int check_pmon_nv(void)
 
 void start_overclocking(void)
 {
+#ifdef HAVE_OVERCLOCKING
+	cprintf("Overclocking started\n");
+
+	int rev = cpu_plltype();
+
+	if (rev == 0)
+		return;		// unsupported
+
+	char *ov = nvram_get("overclocking");
+
+	if (ov == NULL)
+		return;
+	int clk = atoi(ov);
+
+	if (nvram_get("clkfreq") == NULL)
+		return;		// unsupported
+
+	char *pclk = nvram_safe_get("clkfreq");
+	char dup[64];
+
+	strcpy(dup, pclk);
+	int i;
+
+	for (i = 0; i < strlen(dup); i++)
+		if (dup[i] == ',')
+			dup[i] = 0;
+	int cclk = atoi(dup);
+
+	if (clk == cclk) {
+		cprintf("clkfreq %d MHz identical with new setting\n", clk);
+		return;		// clock already set
+	}
+	int set=1;
+	char clkfr[16];
+	switch(clk) {
+	case 600:
+	case 800:
+	case 1000:
+	case 1200:
+	case 1400:
+	case 1600:
+	break;
+	default:
+	set = 0;
+	break;
+	}
+	
+	
+	if (set) {
+		cprintf
+		    ("clock frequency adjusted from %d to %d, reboot needed\n",
+		     cclk, clk);
+		sprintf(clkfr, "%d", clk);
+		nvram_set("clkfreq", clkfr);
+		nvram_commit();
+		fprintf(stderr, "Overclocking done, rebooting...\n");
+		sys_reboot();
+	}
+#endif
 }
 
 void enable_dtag_vlan(int enable)
