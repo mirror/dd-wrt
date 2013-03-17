@@ -55,6 +55,23 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
+static void set_regulation(int card, char *code, char *rev)
+{
+	char path[32];
+	sprintf(path, "%d:regrev", card);
+	nvram_set(path, rev);
+	sprintf(path, "%d:ccode", card);
+	nvram_set(path, code);
+	sprintf(path, "wl%d_country_rev", card);
+	nvram_set(path, rev);
+	sprintf(path, "wl%d_country_code", card);
+	nvram_set(path, code);
+	if (!card) {
+		nvram_set("wl_country_rev", rev);
+		nvram_set("wl_country_code", code);
+	}
+}
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -85,14 +102,6 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	insmod("wl");	
-	nvram_default_get("wl_country_code", "US");
-	nvram_default_get("wl0_country_code", "US");
-	nvram_default_get("wl1_country_code", "US");
-	nvram_default_get("wl_country_rev", "0");
-	nvram_default_get("wl0_country_rev", "0");
-	nvram_default_get("wl1_country_rev", "0");
-
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
 
@@ -106,14 +115,13 @@ void start_sysinit(void)
 				     eabuf));
 		close(s);
 	}
-	eval("ifconfig","eth0","up");
+	eval("ifconfig", "eth0", "up");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
 
-
-	writeproc("/proc/irq/163/smp_affinity","2");  
-	writeproc("/proc/irq/169/smp_affinity","2"); 
+	writeproc("/proc/irq/163/smp_affinity", "2");
+	writeproc("/proc/irq/169/smp_affinity", "2");
 
 	mkdir("/dev/gpio", 0700);
 	mknod("/dev/gpio/in", S_IFCHR | 0644, makedev(127, 0));
@@ -121,6 +129,84 @@ void start_sysinit(void)
 	mknod("/dev/gpio/outen", S_IFCHR | 0644, makedev(127, 2));
 	mknod("/dev/gpio/control", S_IFCHR | 0644, makedev(127, 3));
 
+	switch (getRouterBrand()) {
+	case ROUTER_ASUS_AC56U:
+		set_gpio(4, 0);	// enable all led's which are off by default
+		set_gpio(14, 1);	// usb led
+		set_gpio(1, 1);	// wan
+		set_gpio(2, 0);	// lan
+		set_gpio(3, 1);	// power
+		set_gpio(6, 0);	// wireless 5 ghz
+		set_gpio(0, 1);	// usb 3.0 led           
+		nvram_set("1:ledbh6", "136");	// fixup 5 ghz led
+		nvram_unset("1:ledbh10");	// fixup 5 ghz led
+
+		// tx power fixup
+		nvram_set("0:maxp2ga0", "0x68");
+		nvram_set("0:maxp2ga1", "0x68");
+		nvram_set("0:cck2gpo", "0x1111");
+		nvram_set("0:ofdm2gpo", "0x54333333");
+		nvram_set("0:mcs2gpo0", "0x3333");
+		nvram_set("0:mcs2gpo1", "0x9753");
+		nvram_set("0:mcs2gpo2", "0x3333");
+		nvram_set("0:mcs2gpo3", "0x9753");
+		nvram_set("0:mcs2gpo4", "0x5555");
+		nvram_set("0:mcs2gpo5", "0xB755");
+		nvram_set("0:mcs2gpo6", "0x5555");
+		nvram_set("0:mcs2gpo7", "0xB755");
+
+		nvram_set("1:maxp5ga0", "104,104,104,104");
+		nvram_set("1:maxp5ga1", "104,104,104,104");
+		nvram_set("1:mcsbw205glpo", "0xAA864433");
+		nvram_set("1:mcsbw405glpo", "0xAA864433");
+		nvram_set("1:mcsbw805glpo", "0xAA864433");
+		nvram_set("1:mcsbw205gmpo", "0xAA864433");
+		nvram_set("1:mcsbw405gmpo", "0xAA864433");
+		nvram_set("1:mcsbw805gmpo", "0xAA864433");
+		nvram_set("1:mcsbw205ghpo", "0xAA864433");
+		nvram_set("1:mcsbw405ghpo", "0xAA864433");
+		nvram_set("1:mcsbw805ghpo", "0xAA864433");
+		// regulatory setup
+
+		if (nvram_match("regulation_domain", "US"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("regulation_domain", "Q2"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("regulation_domain", "EU"))
+			set_regulation(0, "EU", "13");
+		else if (nvram_match("regulation_domain", "TW"))
+			set_regulation(0, "TW", "13");
+		else if (nvram_match("regulation_domain", "CN"))
+			set_regulation(0, "CN", "1");
+		else
+			set_regulation(0, "US", "0");
+
+		if (nvram_match("regulation_domain_5G", "US"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("regulation_domain_5G", "Q2"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("regulation_domain_5G", "EU"))
+			set_regulation(1, "EU", "13");
+		else if (nvram_match("regulation_domain_5G", "TW"))
+			set_regulation(1, "TW", "13");
+		else if (nvram_match("regulation_domain_5G", "CN"))
+			set_regulation(1, "CN", "1");
+		else
+			set_regulation(1, "US", "0");
+
+		break;
+	default:
+	nvram_default_get("wl_country_code", "US");
+	nvram_default_get("wl0_country_code", "US");
+	nvram_default_get("wl1_country_code", "US");
+	nvram_default_get("wl_country_rev", "0");
+	nvram_default_get("wl0_country_rev", "0");
+	nvram_default_get("wl1_country_rev", "0");
+
+
+	}
+
+	insmod("wl");
 	/*
 	 * Set a sane date 
 	 */
