@@ -56,12 +56,12 @@ static unsigned int type4_clocks[10] =
     { 192, 200, 216, 228, 240, 252, 264, 280, 300, 0 };
 static unsigned int type7_clocks[10] =
     { 183, 187, 198, 200, 216, 225, 233, 237, 250, 0 };
-static unsigned int type8_clocks[10] =
+static unsigned int type8_clocks[9] =
     { 200, 300, 400, 500, 600, 632, 650, 662, 0 };
 
 
-static unsigned int type9_clocks[10] =
-    { 600, 800, 1000, 1200, 1400, 1600 };
+static unsigned int type9_clocks[7] =
+    { 600, 800, 1000, 1200, 1400, 1600 , 0};
 #endif
 
 #ifdef HAVE_RT2880
