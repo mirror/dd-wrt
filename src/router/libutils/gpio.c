@@ -114,13 +114,44 @@ int get_gpio(int gpio)
 
 #elif HAVE_NORTHSTAR
 
-void set_gpio(int gpio, int value)
+
+
+void set_gpio(int pin, int value)
 {
+
+	int gpioouten = open("/dev/gpio/outen", O_RDWR);
+	int gpioout = open("/dev/gpio/out", O_RDWR);
+	unsigned int gpio;
+
+	read(gpioouten, &gpio, sizeof(gpio));
+	gpio |= 1 << pin;
+	write(gpioouten, &gpio, sizeof(gpio));
+
+	read(gpioout, &gpio, sizeof(gpio));
+	if (value) {
+		gpio |= (1 << pin);
+	} else {
+		gpio &= ~(1 << pin);
+	}
+	write(gpioout, &gpio, sizeof(gpio));
+	close(gpioout);
+	close(gpioouten);
 }
 
-int get_gpio(int gpio)
+int get_gpio(int pin)
 {
-return 0;
+	unsigned int gpio;
+	int gpioouten = open("/dev/gpio/outen", O_RDWR);
+	int gpioin = open("/dev/gpio/in", O_RDWR);
+
+	read(gpioouten, &gpio, sizeof(gpio));
+	gpio &= ~(1 << pin);
+	write(gpioouten, &gpio, sizeof(gpio));
+	read(gpioin, &gpio, sizeof(gpio));
+	gpio = (gpio & (1 << pin)) ? 1 : 0;
+	close(gpioin);
+	close(gpioouten);
+	return gpio;
 }
 #elif HAVE_XSCALE
 #define u8 unsigned char
