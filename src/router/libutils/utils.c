@@ -1272,6 +1272,13 @@ int internal_getRouterBrand()
 	setRouter("SuperGerry");
 	return ROUTER_SUPERGERRY;
 #elif HAVE_NORTHSTAR
+	unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
+
+	if (boardnum == 00 && nvram_match("boardtype", "0x0646") && nvram_match("boardrev","0x1100")) {	
+		setRouter("Asus RT-AC56U");
+		return ROUTER_ASUS_AC56U;
+	}
+
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
 #elif HAVE_LAGUNA
@@ -3075,11 +3082,6 @@ int internal_getRouterBrand()
 	if (nvram_match("boardtype", "bcm94710ap")) {
 		setRouter("Buffalo WBR-B11");
 		return ROUTER_BUFFALO_WBR54G;
-	}
-	if (boardnum == 00 && nvram_match("boardtype", "0x0646") && nvram_match("boardrev","0x1100")) {
-	
-		setRouter("Asus RT-AC56U");
-		return ROUTER_ASUS_AC56U;
 	}
 	
 	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev","0x1100") && nvram_match("pci/2/1/sb20in80and160hr5ghpo","0")) {
