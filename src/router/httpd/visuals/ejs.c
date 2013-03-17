@@ -2469,33 +2469,6 @@ void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_CPUTEMP
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
-#ifdef HAVE_GATEWORX
-	int TEMP_MUL = 100;
-
-	if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP)
-		TEMP_MUL = 200;
-
-	FILE *fp =
-	    fopen
-	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
-	     "rb");
-	if (!fp)
-		fp = fopen
-		    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input",
-		     "rb");
-#elif HAVE_LAGUNA
-	int TEMP_MUL = 10;
-	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
-#else
-#define TEMP_MUL 1000
-#ifdef HAVE_X86
-	FILE *fp =
-	    fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
-#else
-	FILE *fp =
-	    fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
-#endif
-#endif
 #ifdef HAVE_80211AC
 
 	static int tempcount=0;
@@ -2563,6 +2536,33 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	else 
 	    websWrite(wp, "wl0 %4.2f &#176;C / wl1 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0, tempavg_50 * 0.5 + 20.0);	
 #else
+#ifdef HAVE_GATEWORX
+	int TEMP_MUL = 100;
+
+	if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP)
+		TEMP_MUL = 200;
+
+	FILE *fp =
+	    fopen
+	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
+	     "rb");
+	if (!fp)
+		fp = fopen
+		    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input",
+		     "rb");
+#elif HAVE_LAGUNA
+	int TEMP_MUL = 10;
+	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
+#else
+#define TEMP_MUL 1000
+#ifdef HAVE_X86
+	FILE *fp =
+	    fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
+#else
+	FILE *fp =
+	    fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
+#endif
+#endif
 
 
 
