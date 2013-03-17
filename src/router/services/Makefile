@@ -21,7 +21,7 @@ CFLAGS += $(BCFLAGS)
 
 HCFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
 HCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
-HCFLAGS  += -fpic -I$(TOP)/services/include -I$(LINUXDIR)/brcm/shared/bcmwifi/include
+HCFLAGS  += -fpic -I$(TOP)/services/include -I$(LINUXDIR)/brcm/wl/bcmwifi/include -I$(LINUXDIR)/brcm/shared/bcmwifi/include
 
 
 OBJS = services.o network.o firewall.o mssid.o wshaper.o ddns.o devinit.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
@@ -159,6 +159,9 @@ CFLAGS_EXTRA += -DHAVE_USBIP
 endif
 ifeq ($(CONFIG_OLED),y)
 CFLAGS_EXTRA += -DHAVE_OLED
+endif
+ifeq ($(CONFIG_NORTHSTAR),y)
+CFLAGS_EXTRA += -DHAVE_NORTHSTAR
 endif
 ifeq ($(CONFIG_LAGUNA),y)
 CFLAGS_EXTRA += -DHAVE_LAGUNA

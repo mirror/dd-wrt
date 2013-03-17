@@ -115,6 +115,12 @@ void start_sysinit(void)
 	writeproc("/proc/irq/163/smp_affinity","2");  
 	writeproc("/proc/irq/169/smp_affinity","2"); 
 
+	mkdir("/dev/gpio", 0700);
+	mknod("/dev/gpio/in", S_IFCHR | 0644, makedev(127, 0));
+	mknod("/dev/gpio/out", S_IFCHR | 0644, makedev(127, 1));
+	mknod("/dev/gpio/outen", S_IFCHR | 0644, makedev(127, 2));
+	mknod("/dev/gpio/control", S_IFCHR | 0644, makedev(127, 3));
+
 	/*
 	 * Set a sane date 
 	 */
