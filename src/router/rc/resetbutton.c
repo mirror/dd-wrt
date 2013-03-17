@@ -964,6 +964,9 @@ void period_check(int sig)
 	case ROUTER_ASUS_AC66U:
 		sesgpio = 0x104;	// gpio 4, inversed
 		break;
+	case ROUTER_ASUS_AC56U:
+		sesgpio = 0x107;	// gpio 7, inversed
+		break;
 	case ROUTER_ASUS_WL500G_PRE:
 		sesgpio = 0x004;	// gpio 4, normal
 		break;
