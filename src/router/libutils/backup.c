@@ -57,8 +57,15 @@ static char *filter[] = { "lan_ifnames",
 	"xtalfreq",
 	"bootflags",
 	"et0mdcport",
+	"devpath0",
+	"devpath1",
 	"gpio4",
 	"gpio7",
+	"gpio9",
+	"gpio10",
+	"gpio12",
+	"gpio13",
+	"gpio15",
 	"landevs",
 	"wandevs",
 	"wl_pcie_mrrs",
@@ -146,7 +153,7 @@ void nvram_clear(void)
 		for (i = 0; i < len; i++)
 			if (p[i] == '=')
 				p[i] = 0;
-		if (strncmp(p,"pci/",4) && !nvram_critical(p))
+		if (strncmp(p,"pci/",4) && strncmp(p,":0",4) && strncmp(p,":1",4) && !nvram_critical(p))
 			nvram_immed_set(p, NULL);
 		p += len + 1;
 	}

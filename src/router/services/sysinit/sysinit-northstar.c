@@ -134,6 +134,10 @@ void start_sysinit(void)
 
 	switch (getRouterBrand()) {
 	case ROUTER_ASUS_AC56U:
+		if (nvram_get("productid")!=NULL) {
+		    nvram_clear(); // erase old stuff
+		    nvram_commit();
+		}
 		set_gpio(4, 0);	// enable all led's which are off by default
 		set_gpio(14, 1);	// usb led
 		set_gpio(1, 1);	// wan
