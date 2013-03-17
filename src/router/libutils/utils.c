@@ -5207,10 +5207,11 @@ int led_control(int type, int act)
 		ses2_gpio = 0x107;	// WLAN led green - inverse
 		break;
 	case ROUTER_ASUS_AC56U:
-		power_gpio = 0x10c;
+		power_gpio = 0x103;
 		usb_gpio = 0x10e;
-		diag_gpio = 0x10c;
+		diag_gpio = 0x103;
 		connected_gpio = 0x101;		
+		disconnected_gpio = 0x102;		
 		break;	
 	case ROUTER_ASUS_AC66U:
 		power_gpio = 0x10c;
