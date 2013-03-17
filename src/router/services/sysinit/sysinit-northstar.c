@@ -142,7 +142,7 @@ void start_sysinit(void)
 		set_gpio(14, 1);	// usb led
 		set_gpio(1, 1);	// wan
 		set_gpio(2, 0);	// lan
-		set_gpio(3, 1);	// power
+		set_gpio(3, 0);	// power
 		set_gpio(6, 0);	// wireless 5 ghz
 		set_gpio(0, 1);	// usb 3.0 led           
 		nvram_set("1:ledbh6", "136");	// fixup 5 ghz led
