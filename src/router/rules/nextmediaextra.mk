@@ -3,4 +3,4 @@ nextmediaextra-configure:
 nextmediaextra:
 	@true
 nextmediaextra-install:
-	-nextmediaextra/install.sh $(TOP) $(INSTALLDIR)
+	-nextmediaextra/install.sh $(TOP) $(INSTALLDIR) $(PLATFORM)
