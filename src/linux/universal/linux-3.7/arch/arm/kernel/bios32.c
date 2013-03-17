@@ -428,31 +428,38 @@ static int __init pcibios_init_resources(int busnr, struct pci_sys_data *sys)
 {
 	int ret;
 	struct pci_host_bridge_window *window;
-
+#ifdef CONFIG_PLAT_BCM5301X
 	if (list_empty(&sys->resources)) {
 		pci_add_resource_offset(&sys->resources,
-			 &iomem_resource, sys->mem_offset);
+			&ioport_resource, sys->io_offset);
+		pci_add_resource_offset(&sys->resources,
+			 &iomem_resource, sys->mem_offset);    
+	}
+#else
+	if (list_empty(&sys->resources)) {
+		pci_add_resource_offset(&sys->resources,
+			 &iomem_resource, sys->mem_offset);    
 	}
 
 	list_for_each_entry(window, &sys->resources, list) {
 		if (resource_type(window->res) == IORESOURCE_IO)
 			return 0;
 	}
-
 	sys->io_res.start = (busnr * SZ_64K) ?  : pcibios_min_io;
 	sys->io_res.end = (busnr + 1) * SZ_64K - 1;
 	sys->io_res.flags = IORESOURCE_IO;
 	sys->io_res.name = sys->io_res_name;
+	
 	sprintf(sys->io_res_name, "PCI%d I/O", busnr);
-	printk(KERN_INFO "request %x\n",sys->io_res.start);
+	printk(KERN_INFO "request %x:%x\n",sys->io_res.start,sys->io_res.end);
 	ret = request_resource(&ioport_resource, &sys->io_res);
 	if (ret) {
-		pr_err("PCI: unable to allocate I/O port region (%d) (%X)\n", ret,sys->io_res.start);
+		pr_err("PCI: unable to allocate I/O port region (%d) (%X:%X)\n", ret,sys->io_res.start,sys->io_res.end);
 		return ret;
 	}
 	pci_add_resource_offset(&sys->resources, &sys->io_res,
 				sys->io_offset);
-
+#endif
 	return 0;
 }
 
