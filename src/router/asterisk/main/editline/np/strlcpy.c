@@ -27,7 +27,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
+#include "../config.h"
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
 static char *rcsid = "$OpenBSD: strlcpy.c,v 1.4 1999/05/01 18:56:41 millert Exp $";
