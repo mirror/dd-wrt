@@ -2521,7 +2521,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (fp) {
 	    fscanf(fp,"%d",&cputemp);
 	    fclose(fp);
-	    websWrite(wp, "CPU %d &#176;C ",cputemp);
+	    websWrite(wp, "CPU %d &#176;C / ",cputemp);
 	    }
 #endif
 	if (no2 && no5 && cputemp)
@@ -2530,11 +2530,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 
 
 	if (no2)
-	    websWrite(wp, "wl1 %4.2f &#176;C", tempavg_50 * 0.5 + 20.0);	
+	    websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50 * 0.5 + 20.0);	
 	else if (no5)
-	    websWrite(wp, "wl0 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0);	
+	    websWrite(wp, "WL0 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0);	
 	else 
-	    websWrite(wp, "wl0 %4.2f &#176;C / wl1 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0, tempavg_50 * 0.5 + 20.0);	
+	    websWrite(wp, "WL0 %4.2f &#176;C / WL1 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0, tempavg_50 * 0.5 + 20.0);	
 #else
 #ifdef HAVE_GATEWORX
 	int TEMP_MUL = 100;
