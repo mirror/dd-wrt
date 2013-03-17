@@ -662,6 +662,9 @@ endif
 ifeq ($(CONFIG_FON),y)
 CFLAGS += -DHAVE_FON
 endif
+ifeq ($(CONFIG_NORTHSTAR),y)
+CFLAGS += -DHAVE_NORTHSTAR
+endif
 
 ifeq ($(CONFIG_OPENVPN),y)
 CFLAGS += -DHAVE_OPENVPN

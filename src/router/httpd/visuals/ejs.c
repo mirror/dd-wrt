@@ -2543,6 +2543,17 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (no2 && no5)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
 	else
+
+#ifdef HAVE_NORTHSTAR
+	FILE *fp=fopen("/proc/dmu/temperature","rb");
+	if (fp) {
+	    int cputemp;
+	    fscanf(fp,"%d",&cputemp);
+	    fclose(fp);
+	    websWrite(wp, "CPU %d &#176;C ",cputemp);
+	    }
+#endif
+
 	if (no2)
 	    websWrite(wp, "wl1 %4.2f &#176;C", tempavg_50 * 0.5 + 20.0);	
 	else if (no5)
