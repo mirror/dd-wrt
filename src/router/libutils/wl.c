@@ -20,7 +20,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <bcmnvram.h>
-#include <math.h>
+//#include <math.h>
 #ifdef HAVE_ATH9K
 #include <glob.h>
 #endif

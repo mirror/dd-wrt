@@ -158,6 +158,9 @@ endif
 ifeq ($(CONFIG_X86),y)
   CFLAGS += -DHAVE_X86
 endif
+ifeq ($(CONFIG_NORTHSTAR),y)
+  CFLAGS += -DHAVE_NORTHSTAR
+endif
 ifeq ($(CONFIG_MAGICBOX),y)
   CFLAGS += -DHAVE_MAGICBOX
 endif

@@ -132,6 +132,9 @@ endif
 ifeq ($(CONFIG_LAGUNA),y)
   CFLAGS += -DHAVE_LAGUNA
 endif
+ifeq ($(CONFIG_NORTHSTAR),y)
+  CFLAGS += -DHAVE_NORTHSTAR
+endif
 ifeq ($(CONFIG_NEXTMEDIA),y)
   CFLAGS += -DHAVE_NEXTMEDIA
 endif
