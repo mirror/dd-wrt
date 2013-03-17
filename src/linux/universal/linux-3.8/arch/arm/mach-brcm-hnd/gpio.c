@@ -146,6 +146,7 @@ static struct file_operations gpio_fops = {
 
 extern int iswrt350n;
 extern int iswrt300n11;
+int isac66;
 static struct class *gpio_class = NULL;
 
 static int __init
@@ -168,6 +169,19 @@ gpio_init(void)
 	for (i = 0; i < ARRAYSIZE(gpio_file); i++) {
 		device_create(gpio_class, NULL, MKDEV(127, i), NULL, gpio_file[i].name);		
 	}
+
+uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
+
+
+
+if ((boardnum == 0) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1100")))
+{
+		printk(KERN_EMERG "Asus-RT-AC56U init\n");
+		isac66 = 1;
+}
+
+
+
 gpio_init_flag=1;
 	return 0;
 }
