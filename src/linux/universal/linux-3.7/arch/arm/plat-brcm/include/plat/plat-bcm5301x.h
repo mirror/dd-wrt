@@ -34,3 +34,11 @@
 */
 #define	SOC_ROM_BASE_PA		0xffff0000
 #define	SOC_ROM_LUT_OFF		0x400
+
+/*
+ * DRAM begins at 0x8000000 and can be 128MiB, 512MiB or 1GiB continous,
+ * but first 128MiB is also aliased at address 0x0.
+ */
+#define	DRAM_LARGE_REGION_BASE	0x80000000
+#define	DRAM_MEMORY_REGION_BASE	0x00000000
+#define	DRAM_MEMORY_REGION_SIZE	SZ_128M

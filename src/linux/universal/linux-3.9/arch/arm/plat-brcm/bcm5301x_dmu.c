@@ -468,7 +468,7 @@ static int dmu_temperature_status(char * buffer, char **start,
 	}
 
 	pvtmon_status = readl(pvtmon_base + 0x8);
-	temperature = 418 - ((5556 * pvtmon_status) / 10000);
+	temperature = 4180 - ((5556 * pvtmon_status) / 1000);
 
 	len += sprintf(buffer + len, "%d\n",
 		temperature);
