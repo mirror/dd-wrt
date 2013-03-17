@@ -602,7 +602,7 @@
 
 #define ROUTER_ASUS_AC66U 0xbd19
 
-#define ROUTER_ASUS_AC56U 0xbe0f
+#define ROUTER_ASUS_AC56U 0xbe1b // BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
 
 #define ROUTER_BOARD_NORTHSTAR 0xbf0f
 
