@@ -2540,19 +2540,21 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		tempavg_24 = (tempavg_24 * 4 + *ret_int) / 5;
 		tempavg_50 = (tempavg_50 * 4 + *ret_int2) / 5;
 	}
-	if (no2 && no5)
-		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
-	else
-
+	
+	int cputemp=1;
 #ifdef HAVE_NORTHSTAR
+	cputemp = 0;
 	FILE *fp=fopen("/proc/dmu/temperature","rb");
 	if (fp) {
-	    int cputemp;
 	    fscanf(fp,"%d",&cputemp);
 	    fclose(fp);
 	    websWrite(wp, "CPU %d &#176;C ",cputemp);
 	    }
 #endif
+	if (no2 && no5 && cputemp)
+		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
+	else
+
 
 	if (no2)
 	    websWrite(wp, "wl1 %4.2f &#176;C", tempavg_50 * 0.5 + 20.0);	
