@@ -215,30 +215,30 @@ void __init board_fixup(struct tag *t, char **cmdline,struct meminfo *mi)
 {
         early_printk("board_fixup\n" );
         
+	u32 mem_size, lo_size ;
+        early_printk("board_fixup\n" );
+
 	/* Fuxup reference clock rate */
 //	if (desc->nr == MACH_TYPE_BRCM_NS_QT )
 //		clk_ref.rate = 17594;	/* Emulator ref clock rate */
 
-        t->hdr.tag = ATAG_CORE;
-        t->hdr.size = tag_size(tag_core);
-        t->u.core.flags = 0;
-        t->u.core.pagesize = PAGE_SIZE;
-        t->u.core.rootdev = 31 << 8 | 0;
-        t = tag_next(t);
 
-        t->hdr.tag = ATAG_MEM;
-        t->hdr.size = tag_size(tag_mem32);
-        t->u.mem.start = PHYS_OFFSET ;
-#if CONFIG_DRAM_SIZE
-	_memsize = CONFIG_DRAM_SIZE;
-#endif
-        early_printk("_memsize=%u\n", _memsize);
-        t->u.mem.size = _memsize;
+	mem_size = _memsize;
 
-        t = tag_next(t);
+	early_printk("board_fixup: mem=%uMiB\n", mem_size >> 20);
 
-        t->hdr.tag = ATAG_NONE;
-        t->hdr.size = 0;
+	lo_size = min(mem_size, DRAM_MEMORY_REGION_SIZE);
+
+	mi->bank[0].start = PHYS_OFFSET;
+	mi->bank[0].size = lo_size;
+	mi->nr_banks++;
+
+	if (lo_size == mem_size)
+		return;
+
+	mi->bank[1].start = DRAM_LARGE_REGION_BASE + lo_size;
+	mi->bank[1].size = mem_size - lo_size;
+	mi->nr_banks++;
 }
 
 static struct sys_timer board_timer = {
