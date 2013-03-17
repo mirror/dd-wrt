@@ -16,11 +16,16 @@
 #include <linux/io.h>
 #include <linux/ioport.h>
 #include <linux/delay.h>
+#include <linux/proc_fs.h>
 
 #include <asm/clkdev.h>
 #include <mach/clkdev.h>
 #include <mach/io_map.h>
 #include <plat/plat-bcm5301x.h>
+
+#ifdef CONFIG_PROC_FS
+#define DMU_PROC_NAME	"dmu"
+#endif /* CONFIG_PROC_FS */
 
 static struct resource dmu_regs = {
 	.name = "dmu_regs",
@@ -440,3 +445,68 @@ void soc_clocks_show( void )
 		}
 	printk( "DMU Clocks# %u\n", i );
 }
+
+#ifdef CONFIG_PROC_FS
+static int dmu_temperature_status(char * buffer, char **start,
+	off_t offset, int length, int * eof, void * data)
+{
+	int len;
+	off_t pos, begin;
+	void *__iomem pvtmon_base;
+	u32 pvtmon_control0, pvtmon_status;
+	int temperature;
+
+	len = 0;
+	pos = begin = 0;
+
+	pvtmon_base = (void *)(SOC_DMU_BASE_VA + 0x2c0);	/* PVTMON control0 */
+
+	pvtmon_control0 = readl(pvtmon_base);
+	if (pvtmon_control0 & 0xf) {
+		pvtmon_control0 &= ~0xf;
+		writel(pvtmon_control0, pvtmon_base);
+	}
+
+	pvtmon_status = readl(pvtmon_base + 0x8);
+	temperature = 418 - ((5556 * pvtmon_status) / 10000);
+
+	len += sprintf(buffer + len, "%d\n",
+		temperature);
+
+	pos = begin + len;
+
+	if (pos < offset) {
+		len = 0;
+		begin = pos;
+	}
+
+	*eof = 1;
+
+	*start = buffer + (offset - begin);
+	len -= (offset - begin);
+
+	if (len > length)
+		len = length;
+
+	return len;
+}
+
+static void __init dmu_proc_init(void)
+{
+	struct proc_dir_entry *dmu, *dmu_temp;
+
+	dmu = proc_mkdir(DMU_PROC_NAME, NULL);
+
+	if (!dmu) {
+		printk(KERN_ERR "DMU create proc directory failed.\n");
+		return;
+	}
+
+	dmu_temp = create_proc_read_entry(DMU_PROC_NAME "/temperature", 0, NULL,
+		dmu_temperature_status, NULL);
+
+	if (!dmu_temp)
+		printk(KERN_ERR "DMU create proc entry failed.\n");
+}
+fs_initcall(dmu_proc_init);
+#endif /* CONFIG_PROC_FS */

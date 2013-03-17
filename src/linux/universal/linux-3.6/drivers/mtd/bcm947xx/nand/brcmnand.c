@@ -997,7 +997,7 @@ brcmnand_command(struct mtd_info *mtd, unsigned int command, int column, int pag
 #ifdef CONFIG_MTD
 struct mtd_partition brcmnand_parts[] = {
 	{
-		.name = "brcmnand",
+		.name = "ddwrt",
 		.size = 0,
 		.offset = 0
 	},
@@ -1016,9 +1016,9 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 	struct nand_chip *chip = mtd->priv;
 	struct brcmnand_mtd *brcmnand = chip->priv;
 
-//	knldev = soc_knl_dev((void *)brcmnand->sih);
-//	if (knldev == SOC_KNLDEV_NANDFLASH)
-//		offset = NFL_BOOT_OS_SIZE;
+	knldev = soc_knl_dev((void *)brcmnand->sih);
+	if (knldev == SOC_KNLDEV_NANDFLASH)
+		offset = NFL_BOOT_OS_SIZE;
 
 	ASSERT(size > offset);
 

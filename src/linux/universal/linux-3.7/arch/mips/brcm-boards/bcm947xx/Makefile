@@ -37,7 +37,7 @@ endif
 
 ifeq ($(CONFIG_MTD_NFLASH),y)
 BCM947XX_OBJS += $(addprefix $(SHARED)/, hndnand.o)
-BCM947XX_OBJS += $(addprefix $(SHARED)/, nflash.o)
+BCM947XX_OBJS += $(addprefix $(SHARED)/, nflash_mips.o)
 endif
 
 ifeq ($(CONFIG_MTD_BCMCONF_PARTS),y)

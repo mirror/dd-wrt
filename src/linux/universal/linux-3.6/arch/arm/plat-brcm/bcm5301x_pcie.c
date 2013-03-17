@@ -389,6 +389,9 @@ static void __iomem * soc_pci_cfg_base(struct pci_bus *bus,
 		__raw_writel( where & 0xffc, base + SOC_PCIE_EXT_CFG_ADDR );
 		offset = SOC_PCIE_EXT_CFG_DATA;
 	} else {
+		/* WAR for function num > 1 */
+		if (fn > 1)
+			return NULL;
                 type = 1;
 		addr_reg = 	(busno & 0xff) << 20 |
 				(slot << 15) |
@@ -408,6 +411,13 @@ static int soc_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 {
         void __iomem *base;
 	u32 data_reg ;
+
+#ifdef BYPASS_PLX
+	if (bus->number > 2) {
+		*val = ~0UL;
+		return PCIBIOS_SUCCESSFUL;
+	}
+#endif /* BYPASS_PLX */
 
 	base = soc_pci_cfg_base(bus, devfn, where);
 
@@ -453,6 +463,12 @@ static int soc_pci_write_config(struct pci_bus *bus, unsigned int devfn,
         void __iomem *base;
 	u32  data_reg ;
 
+#ifdef BYPASS_PLX
+	if (bus->number > 2) {
+		return PCIBIOS_SUCCESSFUL;
+	}
+#endif /* BYPASS_PLX */
+
 	base = soc_pci_cfg_base(bus, devfn, where);
         if (base == NULL)
 		{
@@ -480,7 +496,7 @@ static int soc_pci_write_config(struct pci_bus *bus, unsigned int devfn,
 static int soc_pci_setup(int nr, struct pci_sys_data *sys)
 {
         struct soc_pcie_port *port = soc_pcie_sysdata2port(sys);
-	request_resource( &iomem_resource, port->owin_res );
+	int err = request_resource( &iomem_resource, port->owin_res );
 	pci_add_resource_offset(&sys->resources, port->owin_res, sys->mem_offset);
 	
 	sys->private_data = port;
@@ -491,11 +507,12 @@ static int soc_pci_setup(int nr, struct pci_sys_data *sys)
  * Check link status, return 0 if link is up in RC mode,
  * otherwise return non-zero
  */
-static int __init noinline soc_pcie_check_link(struct soc_pcie_port * port)
+static int __init noinline soc_pcie_check_link(struct soc_pcie_port * port, uint32 allow_gen2)
 {
         u32 devfn = 0;
 	u16 pos, tmp16;
 	u8 nlw, tmp8;
+	u32 tmp32;
 
         struct pci_sys_data sd = {
                 .domain = port->hw_pci.domain,
@@ -509,15 +526,15 @@ static int __init noinline soc_pcie_check_link(struct soc_pcie_port * port)
 	if (!port->enable)
 		return -EINVAL;
 
-	if (1) {
-		u32 tmp32;
 
-		/* force PCIE GEN1 */
-		pci_bus_read_config_dword(&bus, devfn, 0xdc, &tmp32);
-		tmp32 &= ~0xf;
+	pci_bus_read_config_dword(&bus, devfn, 0xdc, &tmp32);
+	tmp32 &= ~0xf;
+	if (allow_gen2) {
+		tmp32 |= 2;
+	} else {
 		tmp32 |= 1;
-		pci_bus_write_config_dword(&bus, devfn, 0xdc, tmp32);
 	}
+	pci_bus_write_config_dword(&bus, devfn, 0xdc, tmp32);
 
 	/* See if the port is in EP mode, indicated by header type 00 */
         pci_bus_read_config_byte(&bus, devfn, PCI_HEADER_TYPE, &tmp8);
@@ -559,6 +576,27 @@ static int __init noinline soc_pcie_check_link(struct soc_pcie_port * port)
  */
 static void __init soc_pcie_hw_init(struct soc_pcie_port * port)
 {
+	u32 devfn = 0;
+	u32 tmp32;
+	struct pci_sys_data sd = {
+		.domain = port->hw_pci.domain,
+	};
+	struct pci_bus bus = {
+		.number = 0,
+		.ops = &soc_pcie_ops,
+		.sysdata = &sd,
+	};
+
+	/* Change MPS and MRRS to 512 */
+	pci_bus_read_config_word(&bus, devfn, 0x4d4, &tmp32);
+	tmp32 &= ~7;
+	tmp32 |= 2;
+	pci_bus_write_config_word(&bus, devfn, 0x4d4, tmp32);
+	
+	pci_bus_read_config_dword(&bus, devfn, 0xb4, &tmp32);
+	tmp32 &= ~((7 << 12) | (7 << 5));
+	tmp32 |= (2 << 12) | (2 << 5);
+	pci_bus_write_config_dword(&bus, devfn, 0xb4, tmp32);
 	/* Turn-on Root-Complex (RC) mode, from reset defailt of EP */
 
 	/* The mode is set by straps, can be overwritten via DMU
@@ -786,18 +824,23 @@ bcm5301x_usb30_phy_init(void)
 	uint32 *ccb_mii_mng_ctrl_addr;
 	uint32 *ccb_mii_mng_cmd_data_addr;
 	uint32 *cru_rst_addr;
+	uint32 cru_straps_ctrl;
 
 	/* Check Chip ID */
 	if (CHIPID(sih->chip) != BCM4707_CHIP_ID)
 		return;
 
+	dmu_base = (uint32)REG_MAP(0x1800c000, 4096);
+	/* Check strapping of PCIE/USB3 SEL */
+	cru_straps_ctrl = readl((uint32 *)(dmu_base + 0x2a0));
+	if ((cru_straps_ctrl & 0x10) == 0)
+		goto out;
+	cru_rst_addr = (uint32 *)(dmu_base +  0x184);
+
 	/* Reg map */
 	ccb_mii_base = (uint32)REG_MAP(0x18003000, 4096);
 	ccb_mii_mng_ctrl_addr = (uint32 *)(ccb_mii_base + 0x0);
 	ccb_mii_mng_cmd_data_addr = (uint32 *)(ccb_mii_base + 0x4);
-
-	dmu_base = (uint32)REG_MAP(0x1800c000, 4096);
-	cru_rst_addr = (uint32 *)(dmu_base +  0x184);
 
 	/* MDIO setting. set MDC-> MDCDIV is 7'd8 */
 	writel(0x00000088, ccb_mii_mng_ctrl_addr);
@@ -818,15 +861,22 @@ bcm5301x_usb30_phy_init(void)
 	writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
 	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
 
-	/* To check PLL30 lock status */
-	writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
+	/* Adjust SSC modulation freq for USB3 runs at 5Gbps */
+	writel(0x587e8040, ccb_mii_mng_cmd_data_addr);
 	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
 
-	writel(0x68020000, ccb_mii_mng_cmd_data_addr);
+	writel(0x58061003, ccb_mii_mng_cmd_data_addr);
+	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+
+	writel(0x587e8040, ccb_mii_mng_cmd_data_addr);
+	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+
+	writel(0x580a21d3, ccb_mii_mng_cmd_data_addr);
 	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
 
 	/* Reg unmap */
 	REG_UNMAP(ccb_mii_base);
+out:
 	REG_UNMAP(dmu_base);
 }
 
@@ -904,8 +954,7 @@ plat_fixup_bus(struct pci_bus *b)
 	/* Fix up SB */
 	//if (b->number == 0) {
 	if (((struct pci_sys_data *)b->sysdata)->domain == 0) {
-		for (ln = b->devices.next; ln != &b->devices; ln = ln->next) {
-			d = pci_dev_b(ln);
+			list_for_each_entry(d, &b->devices, bus_list)	{
 			/* Fix up interrupt lines */
 			pci_read_config_byte(d, PCI_INTERRUPT_LINE, &irq);
 			d->irq = si_bus_map_irq(d);
@@ -917,11 +966,101 @@ plat_fixup_bus(struct pci_bus *b)
 	return FALSE;
 }
 
+static int __init allow_gen2_rc(struct soc_pcie_port *port)
+{
+	uint32 vendorid, devid, chipid, chiprev;
+	uint32 val, bar, base;
+	int allow = 1;
+
+	/* Read PCI vendor/device ID's */
+	__raw_writel(0x0, port->reg_base + SOC_PCIE_CFG_ADDR);
+	val = __raw_readl(port->reg_base + SOC_PCIE_CFG_DATA);
+	vendorid = val & 0xffff;
+	devid = val >> 16;
+	if (vendorid == VENDOR_BROADCOM &&
+	    (devid == BCM4360_CHIP_ID || devid == BCM4360_D11AC_ID ||
+	     devid == BCM4360_D11AC2G_ID || devid == BCM4360_D11AC5G_ID ||
+	     devid == BCM4352_D11AC_ID || devid == BCM4352_D11AC2G_ID ||
+	     devid == BCM4352_D11AC5G_ID)) {
+		/* Config BAR0 */
+		bar = port->owin_res->start;
+		__raw_writel(0x10, port->reg_base + SOC_PCIE_CFG_ADDR);
+		__raw_writel(bar, port->reg_base + SOC_PCIE_CFG_DATA);
+		/* Config BAR0 window to access chipc */
+		__raw_writel(0x80, port->reg_base + SOC_PCIE_CFG_ADDR);
+		__raw_writel(SI_ENUM_BASE, port->reg_base + SOC_PCIE_CFG_DATA);
+
+		/* Enable memory resource */
+		__raw_writel(0x4, port->reg_base + SOC_PCIE_CFG_ADDR);
+		val = __raw_readl(port->reg_base + SOC_PCIE_CFG_DATA);
+		val |= PCI_COMMAND_MEMORY;
+		__raw_writel(val, port->reg_base + SOC_PCIE_CFG_DATA);
+		/* Enable memory and bus master */
+		__raw_writel(0x6, port->reg_base + SOC_PCIE_HDR_OFF + 4);
+
+		/* Read CHIP ID */
+		base = (uint32)ioremap(bar, 0x1000);
+		val = __raw_readl(base);
+		iounmap((void *)base);
+		chipid = val & 0xffff;
+		chiprev = (val >> 16) & 0xf;
+		if ((chipid == BCM4360_CHIP_ID ||
+		     chipid == BCM43460_CHIP_ID ||
+		     chipid == BCM4352_CHIP_ID) && (chiprev < 3))
+			allow = 0;
+	}
+	return (allow);
+}
+
+static void __init
+bcm5301x_3rd_pcie_init(void)
+{
+	uint32 cru_straps_ctrl;
+	uint32 ccb_mii_base;
+	uint32 dmu_base;
+	uint32 *ccb_mii_mng_ctrl_addr;
+	uint32 *ccb_mii_mng_cmd_data_addr;
+
+	/* Check Chip ID */
+	if (CHIPID(sih->chip) != BCM4707_CHIP_ID ||
+	    (sih->chippkg != BCM4708_PKG_ID && sih->chippkg != BCM4709_PKG_ID))
+		return;
+
+	/* Reg map */
+	dmu_base = (uint32)REG_MAP(0x1800c000, 4096);
+
+	/* Check strapping of PCIE/USB3 SEL */
+	cru_straps_ctrl = readl((uint32 *)(dmu_base + 0x2a0));
+	/* PCIE mode is not selected */
+	if (cru_straps_ctrl & 0x10)
+		goto out;
+
+	/* Reg map */
+	ccb_mii_base = (uint32)REG_MAP(0x18003000, 4096);
+	ccb_mii_mng_ctrl_addr = (uint32 *)(ccb_mii_base + 0x0);
+	ccb_mii_mng_cmd_data_addr = (uint32 *)(ccb_mii_base + 0x4);
+
+	/* MDIO setting. set MDC-> MDCDIV is 7'd8 */
+	writel(0x00000088, ccb_mii_mng_ctrl_addr);
+	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+	/* PCIE PLL block register (base 0x8000) */
+	writel(0x57fe8000, ccb_mii_mng_cmd_data_addr);
+	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+	/* Check PCIE PLL lock status */
+	writel(0x67c60000, ccb_mii_mng_cmd_data_addr);
+	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+
+	/* Reg unmap */
+	REG_UNMAP((void *)ccb_mii_base);
+out:
+	REG_UNMAP((void *)dmu_base);
+}
 
 
 static int __init soc_pcie_init(void)
 {
-        unsigned i;
+	unsigned int i;
+	int allow_gen2, linkfail;
 
 
 	pcibios_min_io = 32;
@@ -953,6 +1092,7 @@ static int __init soc_pcie_init(void)
 
 //	pci_scan_bus(0, &pcibios_ops, &sys);
 //        pci_common_init( & soc_pcie_ports[0].hw_pci );
+	bcm5301x_3rd_pcie_init();
 
         for (i = 1; i < ARRAY_SIZE(soc_pcie_ports); i++)
 	{
@@ -962,22 +1102,42 @@ static int __init soc_pcie_init(void)
 		if( ! port->enable )
 			continue;
 		/* Setup PCIe controller registers */
-		BUG_ON( request_resource( &iomem_resource, port->regs_res ));
+
+
+//		pci_ioremap_io(SZ_64K * (i-1), port->regs_res->start);
+//		port->reg_base = PCI_IO_VIRT_BASE + SZ_64K * (i-1);
+
+
+		int err = request_resource( &iomem_resource, port->regs_res );
 		port->reg_base = ioremap( port->regs_res->start, resource_size(port->regs_res) );
-		BUG_ON( IS_ERR_OR_NULL(port->reg_base ));
+//		BUG_ON( IS_ERR_OR_NULL(port->reg_base ));
 
-                soc_pcie_hw_init( port );
-		soc_pcie_map_init( port );
+		for (allow_gen2 = 0; allow_gen2 <= 1; allow_gen2++) {
+			soc_pcie_hw_init(port);
+			soc_pcie_map_init(port);
 
+			/*
+			 * Skip inactive ports -
+			 * will need to change this for hot-plugging
+			 */
+			linkfail = soc_pcie_check_link(port, allow_gen2);
+			if (linkfail)
+				break;
+
+			soc_pcie_bridge_init(port);
+
+			if (allow_gen2 == 0) {
+				if (allow_gen2_rc(port) == 0)
+					break;
+				pr_info("PCIE%d switching to GEN2\n", port->hw_pci.domain);
+			}
+		}
 		/*
 		* Skip inactive ports -
 		* will need to change this for hot-plugging
 		*/
-                if( soc_pcie_check_link( port ) != 0 )
+		if (linkfail)
 			continue;
-
-                soc_pcie_bridge_init( port );
-		/* Announce this port to ARM/PCI common code */
 			
                 pci_common_init( & port->hw_pci );
 
