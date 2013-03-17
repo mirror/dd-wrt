@@ -55,6 +55,9 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
+#define sys_restart() eval("event","3","1","1")
+#define sys_reboot() eval("sync"); eval("event","3","1","15")
+
 static void set_regulation(int card, char *code, char *rev)
 {
 	char path[32];
