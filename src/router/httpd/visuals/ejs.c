@@ -2521,7 +2521,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (fp) {
 	    fscanf(fp,"%d",&cputemp);
 	    fclose(fp);
-	    websWrite(wp, "CPU %d &#176;C / ",cputemp);
+	    websWrite(wp, "CPU %d.%d &#176;C / ",cputemp / 10, cputemp % 10);
 	    }
 #endif
 	if (no2 && no5 && cputemp)
