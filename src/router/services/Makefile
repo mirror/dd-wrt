@@ -1,4 +1,4 @@
-
+-include $(LINUXDIR)/.config
 
 include $(TOP)/.config
 
@@ -1159,11 +1159,17 @@ ifeq ($(CONFIG_SVQOS),y)
 CFLAGS_EXTRA += -DHAVE_SVQOS
 endif
 
-ifeq ($(CONFIG_CODEL),y)
+ifeq ($(CONFIG_NET_SCH_CODEL),y)
+CFLAGS_EXTRA += -DHAVE_CODEL
+endif
+ifeq ($(CONFIG_NET_SCH_CODEL),m)
 CFLAGS_EXTRA += -DHAVE_CODEL
 endif
 
-ifeq ($(CONFIG_FQ_CODEL),y)
+ifeq ($(CONFIG_NET_SCH_FQ_CODEL),y)
+CFLAGS_EXTRA += -DHAVE_FQ_CODEL
+endif
+ifeq ($(CONFIG_NET_SCH_FQ_CODEL),m)
 CFLAGS_EXTRA += -DHAVE_FQ_CODEL
 endif
 
