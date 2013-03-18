@@ -1963,7 +1963,7 @@ void start_restore_defaults(void)
 		}
 	}
 	free_defaults();
-	if (strlen(nvram_safe_get("http_username")) == 0) {
+	if (strlen(nvram_safe_get("http_username")) == 0 || nvram_match("http_username","admin")) {
 		nvram_set("http_username", zencrypt("root"));
 		nvram_set("http_passwd", zencrypt("admin"));
 	}
