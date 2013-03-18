@@ -129,17 +129,20 @@ static void makeipup(void)
 				"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
 				"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
 			);
-		fprintf(fp, 
-		"iptables -I FORWARD -i $1 -j ACCEPT\n"
-		"iptables -I FORWARD -o $1 -j ACCEPT\n"
-		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
-		"startservice set_routes\n"	// reinitialize
-		"addpppoeconnected $PPPD_PID $1 $5 $PEERNAME\n"
-		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
-		//	just an uptime test
-		//"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
-		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
-		);
+	if (nvram_match("wan_proto", "pppoe")	//only when there is an ppp0 interface
+		|| nvram_match("wan_proto", "pptp"))
+			fprintf(fp, 
+			"iptables -I FORWARD -i $1 -j ACCEPT\n"
+			"iptables -I FORWARD -o $1 -j ACCEPT\n"
+			);
+	fprintf(fp, 
+//	"startservice set_routes\n"	// reinitialize
+	"addpppoeconnected $PPPD_PID $1 $5 $PEERNAME\n"
+	//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
+	//	just an uptime test
+	//"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
+	//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
+	);
 		//	per peer shaping
 	if (nvram_match("pppoeradius_enabled", "1")) {
 		fprintf(fp, "IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"
@@ -172,10 +175,13 @@ static void makeipup(void)
 		"SENT=$(($SENT+$BYTES_SENT))\n"
 		"RCVD=$(($RCVD+$BYTES_RCVD))\n"
 		"addpppoetime $PEERNAME $CONTIME $SENT $RCVD\n"
-		"iptables -D FORWARD -i $1 -j ACCEPT\n"
-		"iptables -D FORWARD -o $1 -j ACCEPT\n"
-		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
-	);	
+		);	
+	if (nvram_match("wan_proto", "pppoe")
+		|| nvram_match("wan_proto", "pptp"))
+			fprintf(fp, 
+				"iptables -D FORWARD -i $1 -j ACCEPT\n"
+				"iptables -D FORWARD -o $1 -j ACCEPT\n"
+				);	
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
 		fprintf(fp, "iptables -D INPUT -i $1 -j ACCEPT\n");
 	if (nvram_match("pppoeradius_enabled", "1"))
@@ -429,6 +435,16 @@ void start_pppoeserver(void)
 			fclose(fp);
 			makeipup();
 		}
+		
+		// clamp when fw clamping is off
+		if (nvram_match("wan_proto", "disabled"))
+			system("/usr/sbin/iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+
+		if (nvram_invmatch("wan_proto", "pppoe")	//if there is no ppp0 reduce rules
+			&& nvram_invmatch("wan_proto", "pptp")) {
+				system("/usr/sbin/iptables -I FORWARD -i ppp+ -j ACCEPT");
+				system("/usr/sbin/iptables -I FORWARD -o ppp+ -j ACCEPT");
+			}
 
 		eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), 
 			"-L", getifip(), "-i", "-x", nvram_safe_get("pppoeserver_sessionlimit"), 
@@ -450,6 +466,7 @@ void stop_pppoeserver(void)
 		unlink("/tmp/pppoeserver/ip-down");
 		unlink("/tmp/pppoeserver/pppoe-server-options"); */
 	//	unlink("/tmp/pppoeserver/calc-uptime.sh");
+
 	//	backup peer data to jffs if available
 		if (nvram_match("enable_jffs2", "1")
 			&& nvram_match("jffs_mounted", "1")
@@ -458,7 +475,16 @@ void stop_pppoeserver(void)
 				mkdir("/jffs/etc/pppoeserver", 0700);
 				system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/pppoeserver");
 			}		
+
+		if (nvram_match("wan_proto", "disabled"))
+			system("/usr/sbin/iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+			
 		//system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP");
+		if (nvram_invmatch("wan_proto", "pppoe")
+			&& nvram_invmatch("wan_proto", "pptp")) {
+				system("/usr/sbin/iptables -D FORWARD -i ppp+ -j ACCEPT");
+				system("/usr/sbin/iptables -D FORWARD -o ppp+ -j ACCEPT");
+			}
 	}
 
 }
