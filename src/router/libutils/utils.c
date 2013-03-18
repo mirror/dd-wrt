@@ -5209,7 +5209,7 @@ int led_control(int type, int act)
 	case ROUTER_ASUS_AC56U:
 		power_gpio = 0x103;
 		usb_gpio = 0x10e;
-		diag_gpio = 0x103;
+		diag_gpio = 0x003;
 		connected_gpio = 0x101;		
 		disconnected_gpio = 0x102;		
 		break;	
