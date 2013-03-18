@@ -195,7 +195,7 @@ void main_config(void)
 		// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
 		// clamp when fw clamping is off	
-		fprintf(fp, "iptables -I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+		fprintf(fp, "iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 		fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j MASQUERADE\n", chillinet);
 		}
 	else
