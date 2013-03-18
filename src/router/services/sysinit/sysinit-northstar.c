@@ -134,6 +134,8 @@ void start_sysinit(void)
 
 	switch (getRouterBrand()) {
 	case ROUTER_ASUS_AC56U:
+		nvram_set("boot_wait","on");
+		nvram_set("wait_time","3");
 		if (nvram_get("productid")!=NULL || nvram_match("http_username","admin")) {
 		    nvram_clear(); // erase old stuff
 		    nvram_commit();
