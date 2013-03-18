@@ -213,12 +213,12 @@ void start_openvpnserver(void)
 		&& nvram_match("openvpn_proxy", "0"))
 		fprintf(fp, "insmod ebtables\n" "insmod ebt_ip\n" 
 			"insmod ebtable_filter\n" "insmod ebtable_nat\n"
-/*			"ebtables -D INPUT -i tap2 --protocol ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"ebtables -D FORWARD -i tap2 --protocol ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"ebtables -D FORWARD -o tap2 --protocol ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"ebtables -I INPUT -i tap2 --protocol ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"ebtables -I FORWARD -i tap2 --protocol ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
-			"ebtables -I FORWARD -o tap2 --protocol ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"	*/
+/*			"ebtables -D INPUT -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			"ebtables -D FORWARD -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			"ebtables -D FORWARD -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			"ebtables -I INPUT -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			"ebtables -I FORWARD -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
+			"ebtables -I FORWARD -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"	*/
 			"ebtables -t nat -D PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
