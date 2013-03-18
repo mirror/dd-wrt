@@ -2503,9 +2503,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		tempavg_24 = *ret_int;
 		tempavg_50 = *ret_int2;
 		if (tempavg_24<0.0)
-		    tempacg_24=0.0;
+		    tempavg_24=0.0;
 		if (tempavg_50<0.0)
-		    tempacg_50=0.0;
+		    tempavg_50=0.0;
 	}
 	else
 	{
