@@ -139,6 +139,7 @@ void start_sysinit(void)
 		if (nvram_get("productid")!=NULL || nvram_match("http_username","admin")) {
 		    eval("erase","nvram");
 		    sys_reboot();
+		    exit(0);
 		}
 		set_gpio(4, 0);	// enable all led's which are off by default
 		set_gpio(14, 1);	// usb led
