@@ -1,3 +1,4 @@
+-include $(LINUXDIR)/.config
 #
 # Linux router shared code Makefile
 #
@@ -1042,11 +1043,17 @@ ifeq ($(CONFIG_SVQOS),y)
 CFLAGS += -DHAVE_SVQOS
 endif
 
-ifeq ($(CONFIG_CODEL),y)
+ifeq ($(CONFIG_NET_SCH_CODEL),y)
+CFLAGS += -DHAVE_CODEL
+endif
+ifeq ($(CONFIG_NET_SCH_CODEL),m)
 CFLAGS += -DHAVE_CODEL
 endif
 
-ifeq ($(CONFIG_FQ_CODEL),y)
+ifeq ($(CONFIG_NET_SCH_FQ_CODEL),y)
+CFLAGS += -DHAVE_FQ_CODEL
+endif
+ifeq ($(CONFIG_NET_SCH_FQ_CODEL),m)
 CFLAGS += -DHAVE_FQ_CODEL
 endif
 
