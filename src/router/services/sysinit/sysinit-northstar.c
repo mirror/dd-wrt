@@ -137,7 +137,7 @@ void start_sysinit(void)
 		nvram_set("boot_wait","on");
 		nvram_set("wait_time","3");
 		if (nvram_get("productid")!=NULL || nvram_match("http_username","admin")) {
-		    eval("erase","nvram");
+		    eval("/sbin/mtd", "erase", "nvram");
 		    sys_reboot();
 		    exit(0);
 		}
