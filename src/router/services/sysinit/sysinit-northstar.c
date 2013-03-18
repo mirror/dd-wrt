@@ -134,12 +134,27 @@ void start_sysinit(void)
 
 	switch (getRouterBrand()) {
 	case ROUTER_ASUS_AC56U:
-		nvram_set("boot_wait","on");
-		nvram_set("wait_time","3");
-		if (nvram_get("productid")!=NULL || nvram_match("http_username","admin")) {
-		    sysprintf("/sbin/erase nvram");
-		    sys_reboot();
-		    exit(0);
+		nvram_set("boot_wait", "on");
+		nvram_set("wait_time", "3");
+		if (nvram_get("productid") != NULL
+		    || nvram_match("http_username", "admin")) {
+			int deadcount = 10;
+			while (deadcount--) {
+				FILE *fp = fopen("/dev/mtdblock1", "rb");
+				if (fp == NULL) {
+					fprintf(stderr,
+						"waiting for mtd devices to get available %d\n",
+						deadcount);
+					sleep(1);
+					continue;
+				}
+				fclose(fp);
+				break;
+			}
+			sleep(1);
+			sysprintf("/sbin/erase nvram");
+			sys_reboot();
+			exit(0);
 		}
 		set_gpio(4, 0);	// enable all led's which are off by default
 		set_gpio(14, 1);	// usb led
@@ -206,13 +221,12 @@ void start_sysinit(void)
 
 		break;
 	default:
-	nvram_default_get("wl_country_code", "US");
-	nvram_default_get("wl0_country_code", "US");
-	nvram_default_get("wl1_country_code", "US");
-	nvram_default_get("wl_country_rev", "0");
-	nvram_default_get("wl0_country_rev", "0");
-	nvram_default_get("wl1_country_rev", "0");
-
+		nvram_default_get("wl_country_code", "US");
+		nvram_default_get("wl0_country_code", "US");
+		nvram_default_get("wl1_country_code", "US");
+		nvram_default_get("wl_country_rev", "0");
+		nvram_default_get("wl0_country_rev", "0");
+		nvram_default_get("wl1_country_rev", "0");
 
 	}
 
@@ -271,22 +285,21 @@ void start_overclocking(void)
 		cprintf("clkfreq %d MHz identical with new setting\n", clk);
 		return;		// clock already set
 	}
-	int set=1;
+	int set = 1;
 	char clkfr[16];
-	switch(clk) {
+	switch (clk) {
 	case 600:
 	case 800:
 	case 1000:
 	case 1200:
 	case 1400:
 	case 1600:
-	break;
+		break;
 	default:
-	set = 0;
-	break;
+		set = 0;
+		break;
 	}
-	
-	
+
 	if (set) {
 		cprintf
 		    ("clock frequency adjusted from %d to %d, reboot needed\n",
