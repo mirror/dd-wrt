@@ -137,8 +137,8 @@ void start_sysinit(void)
 		nvram_set("boot_wait","on");
 		nvram_set("wait_time","3");
 		if (nvram_get("productid")!=NULL || nvram_match("http_username","admin")) {
-		    nvram_clear(); // erase old stuff
-		    nvram_commit();
+		    eval("erase","nvram");
+		    sys_reboot();
 		}
 		set_gpio(4, 0);	// enable all led's which are off by default
 		set_gpio(14, 1);	// usb led
