@@ -1284,6 +1284,11 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC56U;	
 	}
 
+	if (nvram_match("productid","RT-AC67U")) {	
+		setRouter("Asus RT-AC67U");
+		return ROUTER_ASUS_AC56U;	
+	}
+
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
 #elif HAVE_LAGUNA
