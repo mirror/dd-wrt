@@ -131,11 +131,14 @@ void start_sysinit(void)
 	mknod("/dev/gpio/out", S_IFCHR | 0644, makedev(127, 1));
 	mknod("/dev/gpio/outen", S_IFCHR | 0644, makedev(127, 2));
 	mknod("/dev/gpio/control", S_IFCHR | 0644, makedev(127, 3));
+	if (nvram_invmatch("boot_wait","on") || nvram_match("wait_time","1")) {
+		nvram_set("boot_wait", "on");
+		nvram_set("wait_time", "3");
+		nvram_commit();
+	}
 
 	switch (getRouterBrand()) {
 	case ROUTER_ASUS_AC56U:
-		nvram_set("boot_wait", "on");
-		nvram_set("wait_time", "3");
 		if (nvram_get("productid") != NULL
 		    || nvram_match("http_username", "admin")) {
 			int deadcount = 10;
