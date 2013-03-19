@@ -156,7 +156,7 @@ void start_sysinit(void)
 			}
 			sleep(1);
 			sysprintf("/sbin/erase nvram");
-			nvram_set("flash_active","1");
+			nvram_set("flash_active","1"); // prevent recommit of value until reboot is done
 			sys_reboot();
 		}
 		set_gpio(4, 0);	// enable all led's which are off by default
