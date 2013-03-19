@@ -1279,7 +1279,7 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC56U;
 	}
 	
-	if (nvram_match("productid","RT-AC56U") {	
+	if (nvram_match("productid","RT-AC56U")) {	
 		setRouter("Asus RT-AC56U");
 		return ROUTER_ASUS_AC56U;	
 	}
