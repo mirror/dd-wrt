@@ -157,7 +157,8 @@ void start_sysinit(void)
 			sleep(1);
 			sysprintf("/sbin/erase nvram");
 			sys_reboot();
-			exit(0);
+			system("reboot");
+			system("killall -9 init");
 		}
 		set_gpio(4, 0);	// enable all led's which are off by default
 		set_gpio(14, 1);	// usb led
