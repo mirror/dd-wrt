@@ -11,6 +11,8 @@
 
 #include <uapi/asm/signal.h>
 
+#define ARCH_HAS_NO_SA_RESTORE_FIELD
+
 
 #ifdef CONFIG_TRAD_SIGNALS
 #define sig_uses_siginfo(ka)	((ka)->sa.sa_flags & SA_SIGINFO)
