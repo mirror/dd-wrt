@@ -13,6 +13,7 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     mkdir /mnt/smbshare
     chmod 777 /mnt/smbshare
     insmod nls_base
+    insmod fscache
     insmod cifs
     insmod md4
     insmod md5
