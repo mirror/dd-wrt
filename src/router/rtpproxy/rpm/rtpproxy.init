@@ -1,0 +1,70 @@
+#!/bin/bash
+#
+# Startup script for rtpproxy
+#
+# chkconfig: 345 85 15
+# description: A symmetric RTP proxy
+#
+# processname: rtpproxy
+# pidfile: /var/run/rtpproxy.pid
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+rtpproxy=/usr/bin/rtpproxy
+prog=rtpproxy
+RETVAL=0
+OPTIONS=
+
+start() {
+        echo -n $"Starting $prog: "
+        daemon $rtpproxy $OPTIONS
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && touch /var/lock/subsys/rtpproxy
+        return $RETVAL
+}
+
+stop() {
+	echo -n $"Stopping $prog: "
+	killproc $rtpproxy
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f /var/lock/subsys/rtpproxy /var/run/rtpproxy.pid
+}
+
+reload() {
+	echo -n $"Reloading $prog: "
+	killproc $rtpproxy -HUP
+	RETVAL=$?
+	echo
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+        status $rtpproxy
+	RETVAL=$?
+	;;
+  restart)
+	stop
+	start
+	;;
+  condrestart)
+	if [ -f /var/run/rtpproxy.pid ] ; then
+		stop
+		start
+	fi
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart|condrestart|status|help}"
+	exit 1
+esac
+
+exit $RETVAL

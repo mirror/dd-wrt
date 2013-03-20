@@ -24,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: main.c,v 1.87 2008/12/24 10:46:03 sobomax Exp $
+ * $Id: main.c,v 1.87.2.3 2009/10/06 10:26:17 sobomax Exp $
  *
  */
 
@@ -98,7 +98,7 @@ usage(void)
     fprintf(stderr, "usage: rtpproxy [-2fvFiPa] [-l addr1[/addr2]] "
       "[-6 addr1[/addr2]] [-s path]\n\t[-t tos] [-r rdir [-S sdir]] [-T ttl] "
       "[-L nfiles] [-m port_min]\n\t[-M port_max] [-u uname[:gname]] "
-      "[-n timeout_socket] [-d log_level]\n");
+      "[-n timeout_socket] [-d log_level[:log_facility]]\n");
     exit(1);
 }
 
@@ -137,7 +137,8 @@ init_config(struct cfg *cf, int argc, char **argv)
     cf->tos = TOS;
     cf->rrtcp = 1;
     cf->ttl_mode = TTL_UNIFIED;
-    cf->log_level = LOG_LEVEL;
+    cf->log_level = -1;
+    cf->log_facility = -1;
 
     cf->timeout_handler.socket_name = NULL;
     cf->timeout_handler.fd = -1;
@@ -188,6 +189,8 @@ init_config(struct cfg *cf, int argc, char **argv)
 
 	case 't':
 	    cf->tos = atoi(optarg);
+	    if (cf->tos > 255)
+		errx(1, "%d: TOS is too large", cf->tos);
 	    break;
 
 	case '2':
@@ -299,6 +302,13 @@ init_config(struct cfg *cf, int argc, char **argv)
 	    break;
 
 	case 'd':
+	    cp = strchr(optarg, ':');
+	    if (cp != NULL) {
+		cf->log_facility = rtpp_log_str2fac(cp + 1);
+		if (cf->log_facility == -1)
+		    errx(1, "%s: invalid log facility", cp + 1);
+		*cp = '\0';
+	    }
 	    cf->log_level = rtpp_log_str2lvl(optarg);
 	    if (cf->log_level == -1)
 		errx(1, "%s: invalid log level", optarg);
@@ -778,7 +788,7 @@ main(int argc, char **argv)
 
     i = open(pid_file, O_WRONLY | O_CREAT | O_TRUNC, DEFFILEMODE);
     if (i >= 0) {
-	len = sprintf(buf, "%u\n", getpid());
+	len = sprintf(buf, "%u\n", (unsigned int)getpid());
 	write(i, buf, len);
 	close(i);
     } else {

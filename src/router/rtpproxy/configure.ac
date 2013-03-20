@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.58)
-AC_INIT(rtpproxy, 1.2.beta.200901120, sobomax@sippysoft.com)
-AM_INIT_AUTOMAKE(rtpproxy, 1.2.beta.200901120)
+AC_INIT(rtpproxy, 1.2.1, sobomax@sippysoft.com)
+AM_INIT_AUTOMAKE(rtpproxy, 1.2.1)
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([main.c])
 AM_CONFIG_HEADER([config.h])
