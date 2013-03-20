@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# $Id: rtpproxy.in,v 1.3 2008/06/17 03:34:50 sobomax Exp $
+#
+
+# Add the following lines to /etc/rc.conf to enable RTPproxy:
+#
+# rtpproxy_enable="YES"
+
+# PROVIDE: rtpproxy
+# REQUIRE: DAEMON
+# BEFORE: ser openser
+
+prefix=%%PREFIX%%
+
+. %%RC_SUBR%%
+
+name=rtpproxy
+rcvar=`set_rcvar`
+
+command="${prefix}/bin/rtpproxy"
+pidfile="/var/run/rtpproxy.pid"
+
+load_rc_config ${name}
+
+rtpproxy_enable=${rtpproxy_enable:-"NO"}
+rtpproxy_laddr=${rtpproxy_laddr:-"0.0.0.0"}
+
+command_args="-l ${rtpproxy_laddr} -p /var/run/rtpproxy.pid"
+
+run_rc_command "${1}"
