@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.8.3 Kernel Configuration
+# Linux/arm 3.8.4-rc1 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -1148,6 +1148,7 @@ CONFIG_WL_ALL_PASSIVE_ON=y
 # CONFIG_DPSTA is not set
 # CONFIG_EMF is not set
 # CONFIG_PLC is not set
+# CONFIG_PROXYARP is not set
 # CONFIG_IFB is not set
 # CONFIG_NET_TEAM is not set
 # CONFIG_MACVLAN is not set
