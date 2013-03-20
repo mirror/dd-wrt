@@ -8,6 +8,7 @@ mkdir /tmp/mnt
 echo /mnt/smbshare
 umount /mnt/smbshare
 rmmod cifs
+rmmod fscache
 if [ "$(nvram get samba_mount)" = "1" ]; then     
     echo 4096 > /proc/sys/vm/min_free_kbytes
     mkdir /mnt/smbshare
