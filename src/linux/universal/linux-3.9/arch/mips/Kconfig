@@ -131,8 +131,7 @@ config AR7
 	  family: TNETD7100, 7200 and 7300.
 
 config ATHEROS
-	bool "Atheros SoC support (EXPERIMENTAL)"
-	depends on EXPERIMENTAL
+	bool "Atheros SoC support"
 	select DMA_NONCOHERENT
 	select BOOT_RAW
 	select CEVT_R4K

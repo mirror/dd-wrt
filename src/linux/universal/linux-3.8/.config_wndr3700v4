@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.8.2 Kernel Configuration
+# Linux/mips 3.8.4-rc1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -60,7 +60,7 @@ CONFIG_MACH_AR7240=y
 # CONFIG_DIR615E is not set
 # CONFIG_AR7240_EMULATION is not set
 CONFIG_WASP_SUPPORT=y
-# CONFIG_DIR615I is not set
+ 
 # CONFIG_RB2011 is not set
 # CONFIG_AR7100_USB_GPIO_LED is not set
 # CONFIG_NLM_XLP_BOARD is not set
@@ -848,8 +848,8 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_DOC2001PLUS is not set
 # CONFIG_MTD_DOCG3 is not set
 CONFIG_DIR825C1=y
-# CONFIG_WDR4300 is not set
-# CONFIG_WDR2543 is not set
+ 
+ 
 # CONFIG_WZRG450NH is not set
 # CONFIG_MTD_AR7240_SPI_FLASH is not set
 CONFIG_MTD_NAND_ECC=y

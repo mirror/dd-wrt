@@ -573,6 +573,10 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
+ifneq ($(CONFIG_PROXYARP),)
+KBUILD_CFLAGS += -DPROXYARP
+endif
+
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os -fno-caller-saves
 else
