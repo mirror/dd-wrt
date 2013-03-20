@@ -139,6 +139,7 @@ void start_sysinit(void)
 
 	switch (getRouterBrand()) {
 	case ROUTER_ASUS_AC56U:
+	case ROUTER_ASUS_AC67U:
 		if (nvram_get("productid") != NULL
 		    || nvram_match("http_username", "admin")) {
 			int deadcount = 10;
