@@ -72,6 +72,7 @@ obj-$(CONFIG_USB_IPHETH)        += usb/
 ifeq ($(CONFIG_BCM47XX),y)
 obj-$(CONFIG_HND) 		+= hnd/
 obj-$(CONFIG_WL) += wl/
+obj-$(CONFIG_PROXYARP) += proxyarp/
 obj-m += switch/
 endif
 obj-$(CONFIG_USB_CDC_PHONET)   += usb/
