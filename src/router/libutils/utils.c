@@ -1274,9 +1274,14 @@ int internal_getRouterBrand()
 #elif HAVE_NORTHSTAR
 	unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
-	if (boardnum == 00 && nvram_match("boardtype", "0x0646") && nvram_match("boardrev","0x1100")) {	
+	if (boardnum == 00 && nvram_match("boardtype", "0x0646") && nvram_match("boardrev","0x1100") && nvram_match("gpio15","wps_button")) {	
 		setRouter("Asus RT-AC56U");
 		return ROUTER_ASUS_AC56U;
+	}
+
+	if (boardnum == 00 && nvram_match("boardtype", "0x0646") && nvram_match("boardrev","0x1100") && nvram_match("gpio7","wps_button")) {	
+		setRouter("Asus RT-AC67U");
+		return ROUTER_ASUS_AC67U;	
 	}
 	
 	if (nvram_match("productid","RT-AC56U")) {	
@@ -1286,7 +1291,7 @@ int internal_getRouterBrand()
 
 	if (nvram_match("productid","RT-AC67U")) {	
 		setRouter("Asus RT-AC67U");
-		return ROUTER_ASUS_AC56U;	
+		return ROUTER_ASUS_AC67U;	
 	}
 
 	setRouter("Broadcom Northstar");
@@ -5216,6 +5221,7 @@ int led_control(int type, int act)
 		ses_gpio = 0x106;	// WPS led green - inverse
 		ses2_gpio = 0x107;	// WLAN led green - inverse
 		break;
+	case ROUTER_ASUS_AC67U:
 	case ROUTER_ASUS_AC56U:
 		power_gpio = 0x103;
 		usb_gpio = 0x10e;
