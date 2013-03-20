@@ -23,7 +23,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtpp_log.c,v 1.1 2008/09/17 01:11:20 sobomax Exp $
+ * $Id: rtpp_log.c,v 1.1.2.1 2009/10/06 09:51:28 sobomax Exp $
  *
  */
 
@@ -36,25 +36,30 @@
 
 #include "rtpp_defines.h"
 #include "rtpp_log.h"
+#include "rtpp_syslog_async.h"
 
-static int open_count = 0;
+static int syslog_async_opened = 0;
 
 struct cfg *
 _rtpp_log_open(struct cfg *cf, const char *app)
 {
+    int facility;
 
-    if (open_count == 0)
-	openlog(app, LOG_PID | LOG_CONS, LOG_DAEMON);
-    open_count++;
+    facility = cf->log_facility;
+    if (facility == -1)
+	facility = LOG_DAEMON;
+
+    if (cf->nodaemon == 0 && syslog_async_opened == 0) {
+	if (syslog_async_init(app, facility) == 0)
+	    syslog_async_opened = 1;
+    }
     return cf;
 }
 
 void
 _rtpp_log_close(void)
 {
-     open_count--;
-     if (open_count == 0)
-	closelog();
+    return;
 }
 
 static const char *
@@ -108,12 +113,25 @@ rtpp_log_str2lvl(const char *strl)
     return -1;
 }
 
+static int
+check_level(struct cfg *cf, int cf_level, int level)
+{
+
+    if (cf_level == -1) {
+	cf_level = (cf->nodaemon != 0) ? RTPP_LOG_DBUG : RTPP_LOG_WARN;
+    }
+    return (level <= cf_level);
+}
+
 void
 _rtpp_log_write(struct cfg *cf, int level, const char *function, const char *format, ...)
 {
     va_list ap;
     char rtpp_log_buff[2048];
     char *fmt;
+
+    if (check_level(cf, cf->log_level, level) == 0)
+	return;
 
     va_start(ap, format);
 
@@ -128,7 +146,7 @@ _rtpp_log_write(struct cfg *cf, int level, const char *function, const char *for
     if (cf->nodaemon != 0) {
 	vfprintf(stderr, rtpp_log_buff, ap);
     } else {
-	vsyslog(level, rtpp_log_buff, ap);
+	vsyslog_async(level, rtpp_log_buff, ap);
     }
 
     va_end(ap);
@@ -140,6 +158,9 @@ _rtpp_log_ewrite(struct cfg *cf, int level, const char *function, const char *fo
     va_list ap;
     char rtpp_log_buff[2048];
     char *fmt;
+
+    if (check_level(cf, cf->log_level, level) == 0)
+	return;
 
     va_start(ap, format);
 
@@ -155,8 +176,50 @@ _rtpp_log_ewrite(struct cfg *cf, int level, const char *function, const char *fo
     if (cf->nodaemon != 0) {
 	vfprintf(stderr, rtpp_log_buff, ap);
     } else {
-	vsyslog(level, rtpp_log_buff, ap);
+	vsyslog_async(level, rtpp_log_buff, ap);
     }
 
     va_end(ap);
+}
+
+static struct {
+    const char *str_fac;
+    int int_fac;
+} str2fac[] = {
+    {"LOG_AUTH",     LOG_AUTH},
+    {"LOG_CRON",     LOG_CRON},
+    {"LOG_DAEMON",   LOG_DAEMON},
+    {"LOG_KERN",     LOG_KERN},
+    {"LOG_LOCAL0",   LOG_LOCAL0},
+    {"LOG_LOCAL1",   LOG_LOCAL1},
+    {"LOG_LOCAL2",   LOG_LOCAL2},
+    {"LOG_LOCAL3",   LOG_LOCAL3},
+    {"LOG_LOCAL4",   LOG_LOCAL4},
+    {"LOG_LOCAL5",   LOG_LOCAL5},
+    {"LOG_LOCAL6",   LOG_LOCAL6},
+    {"LOG_LOCAL7",   LOG_LOCAL7},
+    {"LOG_LPR",      LOG_LPR},
+    {"LOG_MAIL",     LOG_MAIL},
+    {"LOG_NEWS",     LOG_NEWS},
+    {"LOG_USER",     LOG_USER},
+    {"LOG_UUCP",     LOG_UUCP},
+#if !defined(__solaris__) && !defined(__sun) && !defined(__svr4__)
+    {"LOG_AUTHPRIV", LOG_AUTHPRIV},
+    {"LOG_FTP",      LOG_FTP},
+    {"LOG_SYSLOG",   LOG_SYSLOG},
+#endif
+    {NULL,           0}
+};
+
+int
+rtpp_log_str2fac(const char *s)
+{
+    int i;
+
+    for (i=0; str2fac[i].str_fac != NULL; i++) {
+        if (strcasecmp(s, str2fac[i].str_fac) == 0 || \
+	  strcasecmp(s, str2fac[i].str_fac + 4) == 0)
+            return str2fac[i].int_fac;
+    }
+    return -1;
 }

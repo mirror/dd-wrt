@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2004-2006 Maxim Sobolev <sobomax@FreeBSD.org>
- * Copyright (c) 2006-2007 Sippy Software, Inc., http://www.sippysoft.com
+ * Copyright (c) 2009 Sippy Software, Inc., http://www.sippysoft.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,46 +23,16 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtpp_log.h,v 1.6.2.1 2009/10/06 09:51:28 sobomax Exp $
+ * $Id: rtpp_syslog_async.h,v 1.1.2.1 2009/10/06 09:51:28 sobomax Exp $
  *
  */
 
-#ifndef _RTPP_LOG_H_
-#define _RTPP_LOG_H_
+#ifndef _RTPP_SYSLOG_ASYNC_H_
+#define _RTPP_SYSLOG_ASYNC_H_
 
-#include <syslog.h>
 #include <stdarg.h>
 
-#define	rtpp_log_t	struct cfg *
-
-#include "rtpp_defines.h"
-
-#define	RTPP_LOG_DBUG	LOG_DEBUG
-#define	RTPP_LOG_INFO	LOG_INFO
-#define	RTPP_LOG_WARN	LOG_WARNING
-#define	RTPP_LOG_ERR	LOG_ERR
-#define	RTPP_LOG_CRIT	LOG_CRIT
-
-#define	rtpp_log_open(cf, app, call_id, flag) _rtpp_log_open(cf, app);
-#define	rtpp_log_write(level, handle, format, args...)			\
-	if (level <= handle->log_level) {				\
-		_rtpp_log_write(handle, level, __FUNCTION__, format,	\
-		    ## args);						\
-	};
-#define	rtpp_log_ewrite(level, handle, format, args...)			\
-	if (level <= handle->log_level) {				\
-		_rtpp_log_ewrite(handle, level, __FUNCTION__, format,	\
-		    ## args);						\
-	};
-#define	rtpp_log_close(handle) _rtpp_log_close();
-
-struct cfg;
-
-void _rtpp_log_write(struct cfg *, int, const char *, const char *, ...);
-void _rtpp_log_ewrite(struct cfg *, int, const char *, const char *, ...);
-struct cfg *_rtpp_log_open(struct cfg *, const char *);
-void _rtpp_log_close(void);
-int rtpp_log_str2lvl(const char *);
-int rtpp_log_str2fac(const char *);
+int syslog_async_init(const char *, int);
+void vsyslog_async(int, const char *, va_list);
 
 #endif

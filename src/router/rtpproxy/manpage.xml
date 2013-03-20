@@ -73,7 +73,7 @@
             <arg choice="opt"><option>-n</option> <replaceable>timeout_socket</replaceable></arg>
             <arg choice="opt"><option>-P</option></arg>
             <arg choice="opt"><option>-a</option></arg>
-            <arg choice="opt"><option>-d</option> <replaceable>log_level</replaceable></arg>
+            <arg choice="opt"><option>-d</option> <replaceable>log_level<optional>:log_facility</optional></replaceable></arg>
 	</cmdsynopsis>
     </refsynopsisdiv>
     <refsect1>
@@ -230,8 +230,10 @@
 		<term><option>-t</option> <replaceable>tos</replaceable></term>
 		<listitem>
 		    <para>
-			Set this ToS (Type of Service) in outgoing
-			packets. Default value is 0xB8.
+			Set ToS (Type of Service) in the outgoing UDP
+			packets to this value. Default value is 0xB8. Setting this
+                        parameter to -1 disables setting ToS resulting in operating
+			system default ToS being used instead.
 		    </para>
 		</listitem>
 	    </varlistentry>
@@ -381,7 +383,7 @@
                 </listitem>
             </varlistentry>
             <varlistentry>
-                <term><option>-d</option> <replaceable>log_level</replaceable></term>
+                <term><option>-d</option> <replaceable>log_level<optional>:log_facility</optional></replaceable></term>
                  <listitem>
                     <para>
                         This parameter configures the verbosity level of the log output.
@@ -390,10 +392,15 @@
                         ERR and CRIT.
                     </para>
                     <para>
-                        Example: -d WARN
+                        The optional <replaceable>log_facility</replaceable> parameter
+                        sets syslog(3) facility assigned to log messages.
                     </para>
                     <para>
-                        The default level is DBUG.
+                        Example: -d WARN:LOG_LOCAL5
+                    </para>
+                    <para>
+                        The default level in foreground mode is is DBUG, in background -
+                        WARN and facility is LOG_DAEMON.
                     </para>
                 </listitem>
             </varlistentry>

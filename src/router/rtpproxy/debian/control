@@ -1,5 +1,5 @@
 Source: rtpproxy
-Section: unknown
+Section: net
 Priority: optional
 Maintainer: Jan Janak <jan@iptel.org>
 Build-Depends: debhelper (>= 4.0.0), autotools-dev
