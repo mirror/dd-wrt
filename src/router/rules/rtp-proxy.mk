@@ -1,5 +1,5 @@
 rtpproxy-configure:
-	cd rtpproxy && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -Drpl_malloc=malloc"
+	cd rtpproxy && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -Drpl_malloc=malloc -DNEED_PRINTF"
 
 rtpproxy:
 	$(MAKE) -C rtpproxy
