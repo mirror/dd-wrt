@@ -7398,7 +7398,9 @@ void ej_show_qos_aqd(webs_t wp, int argc, char_t ** argv)
 
     websWrite(wp, "  </select>\n\
                    </div>\n");
-    
+
+#else
+    websWrite(wp, "<input type=\"hidden\" name=\"qos_aqd\" \>");
 #endif
 }
                       
