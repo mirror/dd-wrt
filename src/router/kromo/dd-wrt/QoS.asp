@@ -247,7 +247,8 @@ addEvent(window, "unload", function() {
 										<option value="1" <% nvram_selmatch("qos_type", "1", "selected"); %>>HFSC</option>
 									</select>
 								</div>
-								<div class="setting">
+                                <% show_qos_aqd(); %>
+                                <div class="setting">
 									<div class="label"><% tran("qos.uplink"); %></div>
 									<input type="text" size="5" class="num" name="wshaper_uplink" value="<% nvram_get("wshaper_uplink"); %>" />
 								</div>
