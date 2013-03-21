@@ -920,9 +920,9 @@ void start_wshaper(void)
 		return;
 	mtu_val = get_mtu_val();
     
-    aqd = nvram_safe_get("svqos_aqd");    
     
 #ifdef HAVE_SVQOS
+	aqd = nvram_safe_get("svqos_aqd");    
 
 	insmod("imq");
 	insmod("ipt_IMQ");
