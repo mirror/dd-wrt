@@ -110,7 +110,6 @@ function defaultlvl_grey(sw_disabled,F) {
 function qos_grey(num,F) {
 	var sw_disabled = (num == F.wshaper_enable[1].value) ? true : false;
 
-	F._enable_game.disabled = sw_disabled;
 	F.wshaper_uplink.disabled = sw_disabled;
 	F.wshaper_downlink.disabled = sw_disabled;
 	F.wshaper_dev.disabled = sw_disabled;
@@ -174,11 +173,6 @@ function submitcheck(F) {
 		F.default_lanlevel.disabled = false;
 	}
 
-	if (F._enable_game.checked == false){
-	    F.enable_game.value = 0;
-	}else{
-	    F.enable_game.value = 1;
-	}
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
@@ -230,8 +224,6 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
 							
-							<input type="hidden" name="enable_game" value="1" />
-							
 							<h2><% tran("qos.h2"); %></h2>
 							
 							<fieldset>
@@ -262,10 +254,6 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("qos.dnlink"); %></div>
 									<input type="text" size="5" class="num" name="wshaper_downlink" value="<% nvram_get("wshaper_downlink"); %>" />
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("qos.gaming"); %></div>
-									<input type="checkbox" name="_enable_game" value="1" <% nvram_checked("enable_game", "1"); %> />
 								</div>
 							</fieldset><br />
                             
