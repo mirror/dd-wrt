@@ -39,9 +39,7 @@
 #define HAVE_POWERNOC 1
 #endif
 
-
 #ifdef STORE_DEFAULTS
-
 
 struct nvram_tuple srouter_defaults[] = {
 	// {"default_init","1",0},
@@ -2497,23 +2495,18 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_SKYTRON
 	{"dhcp_dnsmasq", "1", 0},
-	{"enable_game", "1", 0},
 #elif HAVE_POWERNOC
 	{"dhcp_dnsmasq", "1", 0},
-	{"enable_game", "0", 0},
 #elif HAVE_FON
 	{"dhcp_dnsmasq", "0", 0},
-	{"enable_game", "0", 0},
 #elif HAVE_WTS
 	{"dhcp_dnsmasq", "1", 0},
-	{"enable_game", "0", 0},
 #elif HAVE_WRK54G
 	{"dhcp_dnsmasq", "0", 0},
 	// #elif HAVE_ADM5120
 	// {"dhcp_dnsmasq", "0", 0},
 #else
 	{"dhcp_dnsmasq", "1", 0},
-	{"enable_game", "0", 0},
 #endif
 	{"dns_dnsmasq", "1", 0},
 	{"auth_dnsmasq", "1", 0},
