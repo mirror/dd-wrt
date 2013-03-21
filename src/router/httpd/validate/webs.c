@@ -1437,7 +1437,7 @@ void qos_save(webs_t wp)
 	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev", NULL));
 	nvram_set("qos_type", websGetVar(wp, "qos_type", NULL));
 
-#ifdef HAVE_CODEL || HAVE_FQ_CODEL
+#if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
     nvram_set("svqos_aqd", websGetVar(wp, "qos_aqd", NULL));
 #endif
 
