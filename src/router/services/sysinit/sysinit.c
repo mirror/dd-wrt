@@ -2819,7 +2819,7 @@ nvram_set("wan_iface", "");
 	nvram_unset("lasthour");
 
 #ifdef HAVE_SVQOS
-		char *aqd = nvram_safe_get("svqos_aqd");
+	char *aqd = nvram_safe_get("svqos_aqd");
 #ifndef HAVE_CODEL
 	if(!strcmp(aqd, "codel"))
 		nvram_set("svqos_aqd", "sfq");
@@ -2829,8 +2829,7 @@ nvram_set("wan_iface", "");
 		nvram_set("svqos_aqd", "sfq");
 #endif
 	if(	   strcmp(aqd, "codel")
-		&& strcmp(aqd, "fq_codel")
-		&& strcmp(aqd, "sfq"))
+		&& strcmp(aqd, "fq_codel"))
 		nvram_set("svqos_aqd", "sfq");
 #endif
 
