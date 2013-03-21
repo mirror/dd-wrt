@@ -114,6 +114,7 @@ function qos_grey(num,F) {
 	F.wshaper_downlink.disabled = sw_disabled;
 	F.wshaper_dev.disabled = sw_disabled;
 	F.qos_type.disabled = sw_disabled;
+    F.qos_aqd.disabled = sw_disabled;
 	F.add_svc_button.disabled = sw_disabled;
 	F.edit_svc_button.disabled = sw_disabled;
 	<% nvram_match("portprio_support","0","/"); %><% nvram_match("portprio_support","0","/"); %>port_grey(sw_disabled, F);
