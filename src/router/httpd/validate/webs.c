@@ -1427,7 +1427,7 @@ void qos_save(webs_t wp)
 		return;
 	}
 
-	nvram_set("enable_game", websGetVar(wp, "enable_game", NULL));
+//	nvram_set("enable_game", websGetVar(wp, "enable_game", NULL));
 	nvram_set("svqos_defaults", websGetVar(wp, "svqos_defaults", NULL));
 	nvram_set("default_uplevel", websGetVar(wp, "default_uplevel", NULL));
 	nvram_set("default_downlevel",websGetVar(wp, "default_downlevel", NULL));
@@ -1436,6 +1436,10 @@ void qos_save(webs_t wp)
 	nvram_set("wshaper_uplink", websGetVar(wp, "wshaper_uplink", NULL));
 	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev", NULL));
 	nvram_set("qos_type", websGetVar(wp, "qos_type", NULL));
+
+#ifdef HAVE_CODEL || HAVE_FQ_CODEL
+    nvram_set("svqos_aqd", websGetVar(wp, "qos_aqd", NULL));
+#endif
 
 	// nvram_commit ();
 

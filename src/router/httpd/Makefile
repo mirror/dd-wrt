@@ -1,3 +1,4 @@
+-include $(LINUXDIR)/.config
 #
 # milli_httpd Makefile
 #
@@ -10,7 +11,6 @@
 #
 # $Id: Makefile,v 1.6 2005/11/30 11:55:05 seg Exp $
 #
-
 include $(TOP)/.config
 
 ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
@@ -728,6 +728,20 @@ endif
 
 ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
+endif
+
+ifeq ($(CONFIG_NET_SCH_CODEL),y)
+CFLAGS += -DHAVE_CODEL
+endif
+ifeq ($(CONFIG_NET_SCH_CODEL),m)
+CFLAGS += -DHAVE_CODEL
+endif
+
+ifeq ($(CONFIG_NET_SCH_FQ_CODEL),y)
+CFLAGS += -DHAVE_FQ_CODEL
+endif
+ifeq ($(CONFIG_NET_SCH_FQ_CODEL),m)
+CFLAGS += -DHAVE_FQ_CODEL
 endif
 
 ifeq ($(CONFIG_WTS),y)
