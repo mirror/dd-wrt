@@ -7375,17 +7375,43 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 /*
  * Note: VLAN #16 designates tagging.  There is no VLAN #16 (only 0-15) 
  */
+
+void ej_show_qos_aqd(webs_t wp, int argc, char_t ** argv)
+{
+#ifdef HAVE_CODEL || HAVE_FQ_CODEL
+    char *aqd = nvram_safe_get("svqos_aqd");
+    
+    websWrite(wp, "<div class=\"setting\">\n\
+                     <div class=\"label\"><script type=\"text/javascript\">Capture(qos.aqd)</script></div>\n\
+                     <select name=\"qos_aqd\">\n\
+                        <option value=\"sfq\" %s><script type=\"text/javascript\">Capture(qos.aqd_sfq)</script></option>\n",
+                strcmp(aqd, "sfq") == 0 ? "selected" : ""
+              );
+#ifdef HAVE_CODEL
+    websWrite(wp, "     <option value=\"codel\" %s><script type=\"text/javascript\">Capture(qos.aqd_codel)</script></option>\n",
+              strcmp(aqd, "codel") == 0 ? "selected" : "");
+#endif
+#ifdef HAVE_FQ_CODEL
+    websWrite(wp, "     <option value=\"fq_codel\" %s><script type=\"text/javascript\">Capture(qos.aqd_fqcodel)</script></option>\n",
+              strcmp(aqd, "fq_codel") == 0 ? "selected" : "");
+#endif
+
+    websWrite(wp, "  </select>\n\
+                   </div>\n");
+    
+#endif
+}
                       
 void ej_get_qospkts(webs_t wp, int argc, char_t ** argv)
 {
     char *qos_pkts = nvram_safe_get("svqos_pkts");
     char pkt_filter[4];
     
-    websWrite(wp, "<tr>\
-                    <td><input type=\"checkbox\" name=\"svqos_pktack\" value=\"ACK\" %s><script type=\"text/javascript\">Capture(qos.pktack)</script></input></td>\
-                    <td><input type=\"checkbox\" name=\"svqos_pktsyn\" value=\"SYN\" %s><script type=\"text/javascript\">Capture(qos.pktsyn)</script></input></td>\
-                    <td><input type=\"checkbox\" name=\"svqos_pktfin\" value=\"FIN\" %s><script type=\"text/javascript\">Capture(qos.pktfin)</script></input></td>\
-                    <td><input type=\"checkbox\" name=\"svqos_pktrst\" value=\"RST\" %s><script type=\"text/javascript\">Capture(qos.pktrst)</script></input></td>\
+    websWrite(wp, "<tr>\n\
+                    <td><input type=\"checkbox\" name=\"svqos_pktack\" value=\"ACK\" %s><script type=\"text/javascript\">Capture(qos.pktack)</script></input></td>\n\
+                    <td><input type=\"checkbox\" name=\"svqos_pktsyn\" value=\"SYN\" %s><script type=\"text/javascript\">Capture(qos.pktsyn)</script></input></td>\n\
+                    <td><input type=\"checkbox\" name=\"svqos_pktfin\" value=\"FIN\" %s><script type=\"text/javascript\">Capture(qos.pktfin)</script></input></td>\n\
+                    <td><input type=\"checkbox\" name=\"svqos_pktrst\" value=\"RST\" %s><script type=\"text/javascript\">Capture(qos.pktrst)</script></input></td>\n\
                   </tr>\n",
               strstr(qos_pkts, "ACK") ? "checked" : "",
               strstr(qos_pkts, "SYN") ? "checked" : "",
