@@ -286,7 +286,7 @@ abort:
 	kfree(conf->strip_zone);
 	kfree(conf->devlist);
 	kfree(conf);
-	*private_conf = NULL;
+	*private_conf = ERR_PTR(err);
 	return err;
 }
 
@@ -330,7 +330,8 @@ static sector_t raid0_size(struct mddev *mddev, sector_t sectors, int raid_disks
 		  "%s does not support generic reshape\n", __func__);
 
 	list_for_each_entry(rdev, &mddev->disks, same_set)
-		array_sectors += rdev->sectors;
+		array_sectors += (rdev->sectors &
+				  ~(sector_t)(mddev->chunk_sectors-1));
 
 	return array_sectors;
 }
