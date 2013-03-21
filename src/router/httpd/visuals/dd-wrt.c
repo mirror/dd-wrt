@@ -7378,7 +7378,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_qos_aqd(webs_t wp, int argc, char_t ** argv)
 {
-#ifdef HAVE_CODEL || HAVE_FQ_CODEL
+#if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
     char *aqd = nvram_safe_get("svqos_aqd");
     
     websWrite(wp, "<div class=\"setting\">\n\
