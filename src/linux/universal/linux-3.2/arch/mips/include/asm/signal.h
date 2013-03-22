@@ -11,6 +11,9 @@
 
 #include <linux/types.h>
 
+#define ARCH_HAS_NO_SA_RESTORER_FIELD
+
+
 #define _NSIG		128
 #define _NSIG_BPW	(sizeof(unsigned long) * 8)
 #define _NSIG_WORDS	(_NSIG / _NSIG_BPW)
