@@ -779,9 +779,9 @@ ifeq ($(CONFIG_WZR300HP),y)
 	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr300hp-firmware.tftp
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 	tools/bufenc/encryptRC4 WZR-300HP 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr_300hp-firmware.enc
-	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-300HP" "WZR-300HP" "1.82" "1.06" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr_300hp-firmware.enc $(ARCH)-uclibc/wzr_300hp-firmware_MULTI.enc
+	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-300HP" "WZR-300HP" "1.82" "1.06" "US-EU-AP-TW-KR-CH-RU-JP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr_300hp-firmware.enc $(ARCH)-uclibc/wzr_300hp-firmware_MULTI.enc
 	tools/bufenc/encryptRC4 WZR-HP-G302H 1.81 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr_g300nh2-firmware.enc
-	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.81" "1.06" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr_g300nh2-firmware.enc $(ARCH)-uclibc/wzr_hp_g300nh2_to_wzr_300hp-firmware_MULTI.enc
+	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.81" "1.06" "US-EU-AP-TW-KR-CH-RU-JP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr_g300nh2-firmware.enc $(ARCH)-uclibc/wzr_hp_g300nh2_to_wzr_300hp-firmware_MULTI.enc
 endif
 else
 	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.tftp
@@ -825,11 +825,11 @@ ifeq ($(CONFIG_WZR600DHP),y)
 	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr_600dhp-firmware.tftp
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 	tools/bufenc/encryptRC4 WZR-600DHP 1.78 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr_600dhp-firmware.enc
-	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-600DHP" "WZR-600DHP" "1.78" "3.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr_600dhp-firmware.enc $(ARCH)-uclibc/wzr_600dhp-firmware_MULTI.enc
+	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-600DHP" "WZR-600DHP" "1.78" "3.01" "US-EU-AP-TW-KR-CH-RU-JP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr_600dhp-firmware.enc $(ARCH)-uclibc/wzr_600dhp-firmware_MULTI.enc
 	#tools/bufenc/encryptRC4 WZR-600DHP 1.99 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr_600dhp-firmware_1.99.enc
-	#tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-600DHP" "WZR-600DHP" "1.99" "3.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr_600dhp-firmware_1.99.enc $(ARCH)-uclibc/wzr_600dhp-firmware_MULTI_1.99.enc
+	#tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-600DHP" "WZR-600DHP" "1.99" "3.01" "US-EU-AP-TW-KR-CH-RU-JP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr_600dhp-firmware_1.99.enc $(ARCH)-uclibc/wzr_600dhp-firmware_MULTI_1.99.enc
 	tools/bufenc/encryptRC4 WZR-HP-AG300H 1.77 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
-	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.77" "3.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzr_ag300h_to_wzr_600dhp-firmware_MULTI.enc
+	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.77" "3.01" "US-EU-AP-TW-KR-CH-RU-JP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzr_ag300h_to_wzr_600dhp-firmware_MULTI.enc
 endif
 else
 	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300nh-firmware.tftp
