@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//      Update (20649 based)               - DD-WRT V24 SP2 by mrc_torres 15/FEB/2013       //
+//      Update (21032 based)               - DD-WRT V24 SP2 by mrc_torres 22/MAR/2013       //
 //      Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006       //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -726,7 +726,7 @@ hotspot.dns="Endereço IP do DNS";
 hotspot.url="URL de Redirecionamento";
 hotspot.dhcp="Interface DHCP";
 hotspot.radnas="ID NAS do Radius";
-hotspot.net="Rede Remota";
+hotspot.net="Rede Hotspot";
 hotspot.uam="Segredo UAM";
 hotspot.uamserver="Servidor UAM";
 hotspot.uamport="Porta UAM";
@@ -1102,9 +1102,12 @@ qos.h2="Qualidade de Serviço (QoS)";
 qos.legend="Configurações de QoS";
 qos.srv="Iniciar QoS";
 qos.type="Agendador de Pacotes";
+qos.aqd="Disciplina de Enfileiramento"; 
+qos.aqd_sfq="SFQ"; 
+qos.aqd_codel="CODEL"; 
+qos.aqd_fqcodel="FQ_CODEL"; 
 qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
-qos.gaming="Otimizar para Jogos";
 qos.legend2="Prioridade dos Serviços";
 qos.prio_m="Manual";
 qos.prio_x="Isento";
@@ -1121,6 +1124,12 @@ qos.maxrate_o="Taxa Máxima";
 qos.legend4="Prioridade de MAC";
 qos.legend5="Prioridade de Porta Ethernet";
 qos.legend6="Nível de Banda Padrão";
+qos.legend7="Prioridade de Pacotes TCP";
+qos.pktdesc="Priorizar pacotes TCP pequenos com os seguintes sinais:";
+qos.pktack="ACK";
+qos.pktrst="RST";
+qos.pktsyn="SYN";
+qos.pktfin="FIN";
 qos.enabledefaultlvls="Habilitar Limite Padrão por Usuário";
 qos.bandwidth="Banda em kbits";
 
@@ -1145,6 +1154,7 @@ routetbl.th1="Endereço IP da LAN de Destino";
 route.titl="Roteamento";
 route.h2="Roteamento Avançado";
 route.metric="Métrica";
+route.flags="Marcas";
 route.mod="Modo de Operação";
 route.bgp_legend="Configurações BGP";
 route.bgp_ip="IP Vizinho";
