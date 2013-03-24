@@ -176,14 +176,18 @@ create_command_menu (void)
                         menu_entry_create (_("Record/Repeat &actions"), CK_RepeatStartStopRecord));
     entries = g_list_prepend (entries, menu_separator_create ());
 #ifdef HAVE_ASPELL
-    entries = g_list_prepend (entries, menu_entry_create (_("S&pell check"), CK_SpellCheck));
-    entries =
-        g_list_prepend (entries, menu_entry_create (_("C&heck word"), CK_SpellCheckCurrentWord));
-    entries =
-        g_list_prepend (entries,
-                        menu_entry_create (_("Change spelling &language..."),
-                                           CK_SpellCheckSelectLang));
-    entries = g_list_prepend (entries, menu_separator_create ());
+    if (strcmp (spell_language, "NONE") != 0)
+    {
+        entries = g_list_prepend (entries, menu_entry_create (_("S&pell check"), CK_SpellCheck));
+        entries =
+            g_list_prepend (entries,
+                            menu_entry_create (_("C&heck word"), CK_SpellCheckCurrentWord));
+        entries =
+            g_list_prepend (entries,
+                            menu_entry_create (_("Change spelling &language..."),
+                                               CK_SpellCheckSelectLang));
+        entries = g_list_prepend (entries, menu_separator_create ());
+    }
 #endif /* HAVE_ASPELL */
     entries = g_list_prepend (entries, menu_entry_create (_("&Mail..."), CK_Mail));
 
@@ -259,7 +263,7 @@ create_options_menu (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-edit_drop_menu_cmd (Dlg_head * h, int which)
+edit_drop_menu_cmd (WDialog * h, int which)
 {
     WMenuBar *menubar;
 
@@ -306,7 +310,7 @@ edit_init_menu (struct WMenuBar *menubar)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-edit_menu_cmd (Dlg_head * h)
+edit_menu_cmd (WDialog * h)
 {
     edit_drop_menu_cmd (h, -1);
 }
@@ -314,7 +318,7 @@ edit_menu_cmd (Dlg_head * h)
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-edit_drop_hotkey_menu (Dlg_head * h, int key)
+edit_drop_hotkey_menu (WDialog * h, int key)
 {
     int m = 0;
     switch (key)

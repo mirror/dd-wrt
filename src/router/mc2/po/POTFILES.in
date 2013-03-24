@@ -18,6 +18,7 @@ lib/vfs/utilvfs.c
 lib/widget/dialog-switch.c
 lib/widget/history.c
 lib/widget/listbox.c
+lib/widget/quick.h
 lib/widget/wtools.c
 src/args.c
 src/background.c

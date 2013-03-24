@@ -4,14 +4,15 @@
 #
 # Translators:
 # Oleksandr Natalenko <pfactum@gmail.com>, 2011, 2012.
+#   <pingvein@gmail.com>, 2012.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
-"Last-Translator: Oleksandr Natalenko <pfactum@gmail.com>\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
+"Last-Translator: peinguin <pingvein@gmail.com>\n"
 "Language-Team: Ukrainian (http://www.transifex.com/projects/p/mc/language/"
 "uk/)\n"
 "Language: uk\n"
@@ -534,14 +535,14 @@ msgstr "&Так"
 msgid "&No"
 msgstr "&Ні"
 
-msgid "Background process:"
-msgstr "Фоновий процес:"
+msgid "&OK"
+msgstr "Г&aразд"
 
 msgid "&Cancel"
 msgstr "&Cкасувати"
 
-msgid "&OK"
-msgstr "Г&aразд"
+msgid "Background process:"
+msgstr "Фоновий процес:"
 
 msgid "Error"
 msgstr "Помилка"
@@ -752,20 +753,20 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Закрити"
 
-msgid "&All charsets"
-msgstr "&Усі кодування"
-
-msgid "&Whole words"
-msgstr "&Цілі слова"
-
-msgid "&Backwards"
-msgstr "&Hазад"
+msgid "Enter search string:"
+msgstr "Введіть рядок для пошуку:"
 
 msgid "Cas&e sensitive"
 msgstr "Регістро&залежний"
 
-msgid "Enter search string:"
-msgstr "Введіть рядок для пошуку:"
+msgid "&Backwards"
+msgstr "&Hазад"
+
+msgid "&Whole words"
+msgstr "&Цілі слова"
+
+msgid "&All charsets"
+msgstr "&Усі кодування"
 
 msgid "Search"
 msgstr "Пошук"
@@ -805,26 +806,26 @@ msgstr "Н&айшвидший (приймати великі файли)"
 msgid "&Minimal (Find a smaller set of change)"
 msgstr "&Мінімальний (знайти менший набір змін)"
 
-msgid "Strip &trailing carriage return"
-msgstr "Прибирати н&овий рядок у кінці"
-
-msgid "Ignore all &whitespace"
-msgstr "Ігнорувати всі про&біли"
-
-msgid "Ignore &space change"
-msgstr "Ігнорувати &зміну пробілу"
-
-msgid "Ignore tab &expansion"
-msgstr "Ігнорувати роз&ширення табуляції"
-
-msgid "&Ignore case"
-msgstr "Ігнорувати ре&гістр"
+msgid "Diff algorithm"
+msgstr "Різницевий алогритм"
 
 msgid "Diff extra options"
 msgstr "Інші різницеві параметри"
 
-msgid "Diff algorithm"
-msgstr "Різницевий алогритм"
+msgid "&Ignore case"
+msgstr "Ігнорувати ре&гістр"
+
+msgid "Ignore tab &expansion"
+msgstr "Ігнорувати роз&ширення табуляції"
+
+msgid "Ignore &space change"
+msgstr "Ігнорувати &зміну пробілу"
+
+msgid "Ignore all &whitespace"
+msgstr "Ігнорувати всі про&біли"
+
+msgid "Strip &trailing carriage return"
+msgstr "Прибирати н&овий рядок у кінці"
 
 msgid "Diff Options"
 msgstr "Різницеві параметри"
@@ -869,12 +870,12 @@ msgid "Quit"
 msgstr "Вийти"
 
 msgid "File(s) was modified. Save with exit?"
-msgstr ""
+msgstr "Файл(и) було змінено. Вийти зі збереженням?"
 
 msgid ""
 "Midnight Commander is being shut down.\n"
 "Save modified file(s)?"
-msgstr ""
+msgstr "Midnight Commander закривається. Зберегти змінені файли?"
 
 msgid "Diff:"
 msgstr "Різниця:"
@@ -970,11 +971,11 @@ msgstr "Формат &Windows/DOS (CR LF)"
 msgid "&Macintosh format (CR)"
 msgstr "Формат &Macintosh (CR)"
 
-msgid "Change line breaks to:"
-msgstr "Замінити закінчення рядків на:"
-
 msgid "Enter file name:"
 msgstr "Введіть назву файлу:"
+
+msgid "Change line breaks to:"
+msgstr "Замінити закінчення рядків на:"
 
 msgid "Save As"
 msgstr "Зберегти як"
@@ -1154,17 +1155,17 @@ msgstr "Зовнішня команда"
 msgid "Cannot execute command"
 msgstr "Не вдалося виконати команду"
 
-msgid "Copies to"
-msgstr "Копії"
-
-msgid "Subject"
-msgstr "Тема"
+msgid "mail -s <subject> -c <cc> <to>"
+msgstr "mail -s <Тема> -c <Копії> <До>"
 
 msgid "To"
 msgstr "Кому"
 
-msgid "mail -s <subject> -c <cc> <to>"
-msgstr "mail -s <Тема> -c <Копії> <До>"
+msgid "Subject"
+msgstr "Тема"
+
+msgid "Copies to"
+msgstr "Копії"
 
 msgid "Mail"
 msgstr "Пошта"
@@ -1185,11 +1186,26 @@ msgstr ""
 msgid "In se&lection"
 msgstr "У вид&іленні"
 
+msgid "&Find all"
+msgstr "&Знайти все"
+
 msgid "Enter replacement string:"
 msgstr "Введіть рядок для заміни:"
 
-msgid "&Find all"
-msgstr "&Знайти все"
+msgid "Replace with:"
+msgstr "Замінити на:"
+
+msgid "&Replace"
+msgstr "&Замінити"
+
+msgid "A&ll"
+msgstr "&Усі"
+
+msgid "&Skip"
+msgstr "П&ропустити"
+
+msgid "Confirm replace"
+msgstr "Підтвердити заміну"
 
 msgid "Cancel"
 msgstr "Скасувати"
@@ -1200,21 +1216,6 @@ msgid ""
 msgstr ""
 "Поточний текст змінено і не збережено. \n"
 "Продовження операції призведе до втрати змін."
-
-msgid "&Skip"
-msgstr "П&ропустити"
-
-msgid "A&ll"
-msgstr "&Усі"
-
-msgid "&Replace"
-msgstr "&Замінити"
-
-msgid "Replace with:"
-msgstr "Замінити на:"
-
-msgid "Confirm replace"
-msgstr "Підтвердити заміну"
 
 msgid "NoName"
 msgstr "БезНазви"
@@ -1355,7 +1356,7 @@ msgid "C&heck word"
 msgstr "П&еревірити слово"
 
 msgid "Change spelling &language..."
-msgstr ""
+msgstr "Змінити мову перевірки правопису і вводу"
 
 msgid "&Mail..."
 msgstr "&Пошта…"
@@ -1438,76 +1439,82 @@ msgstr "&Вікно"
 msgid "&Options"
 msgstr "&Параметри "
 
-msgid "None"
-msgstr "Немає"
+msgid "&None"
+msgstr ""
 
-msgid "Dynamic paragraphing"
-msgstr "Динамічні абзаци"
+msgid "&Dynamic paragraphing"
+msgstr ""
 
-msgid "Type writer wrap"
-msgstr "Переносити під час введення"
-
-msgid "Word wrap line length:"
-msgstr "Переносити після досягнення довжини:"
-
-msgid "&Group undo"
-msgstr "&Групове повернення"
-
-msgid "Cursor beyond end of line"
-msgstr "Курсор за кінцем рядка"
-
-msgid "Pers&istent selection"
-msgstr "Пос&тійне виділення"
-
-msgid "Synta&x highlighting"
-msgstr "&Підсвітка синтаксису"
-
-msgid "Visible tabs"
-msgstr "Видима табуляція"
-
-msgid "Visible trailing spaces"
-msgstr "Видимі висячі пробіли"
-
-msgid "Save file &position"
-msgstr "Зберегти &позицію в файлі"
-
-msgid "Confir&m before saving"
-msgstr "Пит&ати перед збереженням"
-
-msgid "&Return does autoindent"
-msgstr "Автові&дступ"
-
-msgid "Tab spacing:"
-msgstr "Крок табуляції:"
-
-msgid "Fill tabs with &spaces"
-msgstr "Заміняти &табуляцію пробілами"
-
-msgid "&Backspace through tabs"
-msgstr "&Забій в обхід табуляції"
-
-msgid "&Fake half tabs"
-msgstr "&Симуляція напівтабуляції"
+msgid "Type &writer wrap"
+msgstr ""
 
 msgid "Wrap mode"
 msgstr "Режим перенесення"
 
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "&Симуляція напівтабуляції"
+
+msgid "&Backspace through tabs"
+msgstr "&Забій в обхід табуляції"
+
+msgid "Fill tabs with &spaces"
+msgstr "Заміняти &табуляцію пробілами"
+
+msgid "Tab spacing:"
+msgstr "Крок табуляції:"
+
+msgid "Other options"
+msgstr "Інші параметри"
+
+msgid "&Return does autoindent"
+msgstr "Автові&дступ"
+
+msgid "Confir&m before saving"
+msgstr "Пит&ати перед збереженням"
+
+msgid "Save file &position"
+msgstr "Зберегти &позицію в файлі"
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
+msgstr ""
+
+msgid "Synta&x highlighting"
+msgstr "&Підсвітка синтаксису"
+
+msgid "C&ursor after inserted block"
+msgstr ""
+
+msgid "Pers&istent selection"
+msgstr "Пос&тійне виділення"
+
+msgid "Cursor be&yond end of line"
+msgstr ""
+
+msgid "&Group undo"
+msgstr "&Групове повернення"
+
+msgid "Word wrap line length:"
+msgstr "Переносити після досягнення довжини:"
+
 msgid "Editor options"
 msgstr "Параметри редактора"
 
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
+msgstr ""
+
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
 msgid "About"
 msgstr "Про програму"
-
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
-"Copyright © 1996–2012 the Free Software Foundation\n"
-"\n"
-"            Текстовий редактор, дружній до користувача\n"
-"         створений для Midnight Commander"
 
 msgid "Open files"
 msgstr "Відкрити файли"
@@ -1534,22 +1541,22 @@ msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|Меню"
 
 msgid "&Add word"
-msgstr ""
+msgstr "&Додати слово"
 
 msgid "Language"
-msgstr ""
+msgstr "Мова"
 
 msgid "Misspelled"
-msgstr ""
+msgstr "Орфографічна помилка"
 
 msgid "Check word"
-msgstr ""
+msgstr "Перевірити слово"
 
 msgid "Suggest"
-msgstr ""
+msgstr "Запропонувати"
 
 msgid "Select language"
-msgstr ""
+msgstr "Вибрати мову"
 
 msgid "Load syntax file"
 msgstr "Завантажити файл синтаксису"
@@ -1587,14 +1594,14 @@ msgstr "Введіть «exit» для повернення в Midnight Commande
 msgid "Cannot fetch a local copy of %s"
 msgstr "Не вдалося отримати локальну копію %s"
 
-msgid "&Set"
-msgstr "Вст&aновити"
+msgid "Set &all"
+msgstr "Вст. &yсі"
 
 msgid "S&kip"
 msgstr "П&ропустити"
 
-msgid "Set &all"
-msgstr "Вст. &yсі"
+msgid "&Set"
+msgstr "Вст&aновити"
 
 msgid "owner"
 msgstr "власник"
@@ -1605,18 +1612,8 @@ msgstr "група"
 msgid "other"
 msgstr "інші"
 
-msgid "On"
-msgstr "На"
-
 msgid "Flag"
 msgstr "Мітка"
-
-msgid "Mode"
-msgstr "Режим"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d із %d"
 
 msgid "Chown advanced command"
 msgstr "Розширена зміна власника"
@@ -1637,14 +1634,14 @@ msgstr ""
 "Не вдалося змінити власника «%s» \n"
 "%s"
 
-msgid "&Stop"
-msgstr "&Зупинити"
+msgid "Other 8 bit"
+msgstr "Інше 8-розрядне"
 
-msgid "&Resume"
-msgstr "Пр&oдовжити"
+msgid "Running"
+msgstr "Виконується"
 
-msgid "&Kill"
-msgstr "&Завершити"
+msgid "Stopped"
+msgstr "Зупинено"
 
 msgid "&Full file list"
 msgstr "&Повний"
@@ -1658,14 +1655,57 @@ msgstr "&Розширений"
 msgid "&User defined:"
 msgstr "&Визначений користувачем:"
 
-msgid "Listing mode"
-msgstr "Формат списку файлів"
-
 msgid "User &mini status"
 msgstr "Рядок &міні-статусу у форматі користувача"
 
-msgid "Other 8 bit"
-msgstr "Інше 8-розрядне"
+msgid "Listing mode"
+msgstr "Формат списку файлів"
+
+msgid "Executable &first"
+msgstr "Виконувані &першими"
+
+msgid "&Reverse"
+msgstr "&Зворотній"
+
+msgid "Sort order"
+msgstr "Порядок сортування"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr "Confirmation|Ви&далення"
+
+msgid "Confirmation|O&verwrite"
+msgstr "Confirmation|&Перезаписування"
+
+msgid "Confirmation|&Execute"
+msgstr "Confirmation|Ви&конання"
+
+msgid "Confirmation|E&xit"
+msgstr "Confirmation|В&ихід"
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr "Confirmation|&Видалення гарячого списку каталогів"
+
+msgid "Confirmation|&History cleanup"
+msgstr "Confirmation|&Очищення історії"
+
+msgid "Confirmation"
+msgstr "Підтвердження"
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "Повний &8-розрядний ввід"
 
 msgid "Display bits"
 msgstr "Відображення символів"
@@ -1673,91 +1713,32 @@ msgstr "Відображення символів"
 msgid "Input / display codepage:"
 msgstr "Кодування вводу/показу:"
 
-msgid "F&ull 8 bits input"
-msgstr "Повний &8-розрядний ввід"
-
 msgid "&Select"
 msgstr "&Вибрати"
-
-msgid "Running"
-msgstr "Виконується"
-
-msgid "Stopped"
-msgstr "Зупинено"
-
-msgid "&Reverse"
-msgstr "&Зворотній"
-
-msgid "Case sensi&tive"
-msgstr "Врахування ре&гістру"
-
-msgid "Executable &first"
-msgstr "Виконувані &першими"
-
-msgid "Sort order"
-msgstr "Порядок сортування"
-
-msgid "Confirmation"
-msgstr "Підтвердження"
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr "Confirmation|&Очищення історії"
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr "Confirmation|&Видалення гарячого списку каталогів"
-
-msgid "Confirmation|E&xit"
-msgstr "Confirmation|В&ихід"
-
-msgid "Confirmation|&Execute"
-msgstr "Confirmation|Ви&конання"
-
-msgid "Confirmation|O&verwrite"
-msgstr "Confirmation|&Перезаписування"
-
-msgid "Confirmation|&Delete"
-msgstr "Confirmation|Ви&далення"
-
-msgid "UTF-8 output"
-msgstr "Вивід UTF-8"
-
-msgid "Full 8 bits output"
-msgstr "Повний 8-розрядний вивід"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7 розрядів"
 
 msgid "Directory tree"
 msgstr "Дерево каталогів"
 
-msgid "Use passive mode over pro&xy"
-msgstr "Використовувати пасивний режим про&ксі"
+msgid "Timeout for freeing VFSs (sec):"
+msgstr ""
 
-msgid "Use &passive mode"
-msgstr "Використовувати &пасивний режим"
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
+msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr "&Використовувати ~/.&netrc"
 
-msgid "&Always use ftp proxy"
-msgstr "&Завжди використовувати проксі для FTP"
+msgid "Use &passive mode"
+msgstr "Використовувати &пасивний режим"
 
-msgid "sec"
-msgstr "с"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "Звільняти кеш каталогів через:"
-
-msgid "ftp anonymous password:"
-msgstr "Пароль анонімного FTP:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "Звільняти VFS через:"
+msgid "Use passive mode over pro&xy"
+msgstr "Використовувати пасивний режим про&ксі"
 
 msgid "Virtual File System Setting"
 msgstr "Параметри віртуальної файлової системи"
@@ -1768,17 +1749,30 @@ msgstr "Перейти у"
 msgid "Quick cd"
 msgstr "Швидка зміна каталогу"
 
-msgid "Symbolic link filename:"
-msgstr "Назва символьного посилання:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr "Назва наявного файлу (для посилання на нього):"
+
+msgid "Symbolic link filename:"
+msgstr "Назва символьного посилання:"
 
 msgid "Symbolic link"
 msgstr "Символьне посилання"
 
-msgid "Background Jobs"
-msgstr "Фонові завдання"
+msgid "&Stop"
+msgstr "&Зупинити"
+
+msgid "&Resume"
+msgstr "Пр&oдовжити"
+
+msgid "&Kill"
+msgstr "&Завершити"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "Пароль для \\\\%s\\%s"
 
 msgid "Domain:"
 msgstr "Домен:"
@@ -1786,45 +1780,44 @@ msgstr "Домен:"
 msgid "Username:"
 msgstr "Ім’я користувача:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Пароль для \\\\%s\\%s"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "запуск/пошук для інших"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "запис для інших"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "читання для інших"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "запуск/пошук для групи"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "запис для групи"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "читання для групи"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "запуск/пошук для власника"
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "запис для власника"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "читання для власника"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "біт закріплення"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "уст. GID при виконанні"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "уст. UID при виконанні"
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr "Назва:"
@@ -1838,29 +1831,29 @@ msgstr "Ім’я власника:"
 msgid "Group name:"
 msgstr "Назва групи:"
 
-msgid "C&lear marked"
-msgstr "&Вим. поміч."
+msgid "&Marked all"
+msgstr "Вст. пом&iч."
 
 msgid "S&et marked"
 msgstr "Увім. п&oміч."
 
-msgid "&Marked all"
-msgstr "Вст. пом&iч."
+msgid "C&lear marked"
+msgstr "&Вим. поміч."
 
 msgid "Chmod command"
 msgstr "Команда chmod"
 
-msgid "File"
-msgstr "Файл"
-
 msgid "Permission"
 msgstr "Дозвіл"
 
-msgid "Set &users"
-msgstr "Вст. к&oрист."
+msgid "File"
+msgstr "Файл"
 
 msgid "Set &groups"
 msgstr "Вст. гр&yпу"
+
+msgid "Set &users"
+msgstr "Вст. к&oрист."
 
 msgid "Name"
 msgstr "Назва"
@@ -1877,14 +1870,14 @@ msgstr "Розмір"
 msgid "Chown command"
 msgstr "Команда chown"
 
+msgid "User name"
+msgstr "Ім’я користувача"
+
 msgid "<Unknown user>"
 msgstr "<Невідомий користувач>"
 
 msgid "<Unknown group>"
 msgstr "<Невідома група>"
-
-msgid "User name"
-msgstr "Ім’я користувача"
 
 msgid "Enter machine name (F1 for details):"
 msgstr "Введіть назву машини (F1 — подробиці):"
@@ -1901,14 +1894,14 @@ msgstr "Фільтр"
 msgid "Set expression for filtering filenames"
 msgstr "Задати вираз для відбору назв файлів"
 
+msgid "&Files only"
+msgstr "&Тільки файли"
+
 msgid "&Using shell patterns"
 msgstr "Використання &шаблону оболонки"
 
 msgid "&Case sensitive"
 msgstr "&Регістрозалежний"
-
-msgid "&Files only"
-msgstr "&Тільки файли"
 
 #, c-format
 msgid "Link %s to:"
@@ -2189,26 +2182,18 @@ msgstr "П&ропустити все"
 msgid "&Retry"
 msgstr "По&вторити"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Каталог не порожній.\n"
-"Видалити рекурсивно?"
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Фоновий процес: каталог не порожній.\n"
-"Видалити рекурсивно?"
-
-msgid "Delete:"
-msgstr "Видалити:"
 
 msgid "Non&e"
 msgstr "Ж&oдного"
@@ -2476,6 +2461,12 @@ msgstr "Не можна виконувати операції з «..»"
 msgid "Sorry, I could not put the job in background"
 msgstr "Не вдалося помістити цей процес у фон"
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "П&родовжити"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr "%d:%02d.%02d"
@@ -2500,30 +2491,30 @@ msgid "Target file already exists!"
 msgstr "Цільовий файл вже існує."
 
 #, c-format
-msgid "Source date: %s, size %llu"
-msgstr "Дата джерела: %s, розмір %llu"
+msgid "New     : %s, size %llu"
+msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
-msgstr "Дата цілі: %s, розмір %llu"
+msgid "Existing: %s, size %llu"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "Із різним &розміром"
-
-msgid "&Update"
-msgstr "&Оновити"
-
-msgid "Overwrite all targets?"
-msgstr "Замістити всі файли?"
-
-msgid "&Reget"
-msgstr "Пере&читати"
+msgid "Overwrite this target?"
+msgstr "Замістити цей файл?"
 
 msgid "A&ppend"
 msgstr "Дописати у &кінець"
 
-msgid "Overwrite this target?"
-msgstr "Замістити цей файл?"
+msgid "&Reget"
+msgstr "Пере&читати"
+
+msgid "Overwrite all targets?"
+msgstr "Замістити всі файли?"
+
+msgid "&Update"
+msgstr "&Оновити"
+
+msgid "If &size differs"
+msgstr "Із різним &розміром"
 
 msgid "File exists"
 msgstr "Файл існує"
@@ -2572,30 +2563,24 @@ msgstr "Ціль"
 msgid "Deleting"
 msgstr "Видалення"
 
-msgid "&Background"
-msgstr "На &фоні"
-
-msgid "&Stable Symlinks"
-msgstr "Зберігати симв&oльні посилання"
-
-msgid "Di&ve into subdir if exists"
-msgstr "Ус&eредину каталога, якщо існує"
+msgid "Follow &links"
+msgstr "&Iти за посиланнями"
 
 msgid "Preserve &attributes"
 msgstr "Зберігати атриб&yти"
 
-msgid "Follow &links"
-msgstr "&Iти за посиланнями"
+msgid "Di&ve into subdir if exists"
+msgstr "Ус&eредину каталога, якщо існує"
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "На &фоні"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr "Неправильний шаблон джерела «%s»"
-
-msgid "&Suspend"
-msgstr "При&зупинити"
-
-msgid "Con&tinue"
-msgstr "П&родовжити"
 
 msgid "&Chdir"
 msgstr "Пере&хід"
@@ -2619,11 +2604,17 @@ msgstr "Знайдено: %ld"
 msgid "Malformed regular expression"
 msgstr "Регулярний вираз сформовано неправильно"
 
+msgid "File name:"
+msgstr "Назва файлу:"
+
 msgid "&Find recursively"
 msgstr "&Шукати рекурсивно"
 
 msgid "S&kip hidden"
 msgstr "П&ропускати приховані"
+
+msgid "Content:"
+msgstr "Вміст:"
 
 msgid "Sea&rch for content"
 msgstr "Ш&укати за вмістом"
@@ -2631,11 +2622,11 @@ msgstr "Ш&укати за вмістом"
 msgid "Case sens&itive"
 msgstr "Регістро&залежний"
 
-msgid "Fir&st hit"
-msgstr "Пер&ший збіг"
-
 msgid "A&ll charsets"
 msgstr "&Усі кодування"
+
+msgid "Fir&st hit"
+msgstr "Пер&ший збіг"
 
 msgid "&Tree"
 msgstr "Д&eрево"
@@ -2643,17 +2634,11 @@ msgstr "Д&eрево"
 msgid "Find File"
 msgstr "Знайти файл"
 
-msgid "Content:"
-msgstr "Вміст:"
-
-msgid "File name:"
-msgstr "Назва файлу:"
+msgid "Start at:"
+msgstr "Почати з:"
 
 msgid "Ena&ble ignore directories:"
 msgstr "Іг&норувати каталоги:"
-
-msgid "Start at:"
-msgstr "Почати з:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2676,35 +2661,32 @@ msgstr "Виконується пошук %s"
 msgid "Searching"
 msgstr "Виконується пошук"
 
-msgid "&Remove"
-msgstr "Ви&далити"
+msgid "Change &to"
+msgstr "Змінити &на"
 
-msgid "&Append"
-msgstr "До&писати"
-
-msgid "&Insert"
-msgstr "&Вставити"
-
-msgid "New &entry"
-msgstr "Новий &запис"
-
-msgid "New &group"
-msgstr "Нова &група"
-
-msgid "&Up"
-msgstr "&Угору"
-
-msgid "&Add current"
-msgstr "Додати &поточний"
+msgid "&Free VFSs now"
+msgstr ""
 
 msgid "&Refresh"
 msgstr "&Оновити"
 
-msgid "Fr&ee VFSs now"
-msgstr "Зв&ільнити VFS зараз"
+msgid "&Add current"
+msgstr "Додати &поточний"
 
-msgid "Change &to"
-msgstr "Змінити &на"
+msgid "&Up"
+msgstr "&Угору"
+
+msgid "New &group"
+msgstr "Нова &група"
+
+msgid "New &entry"
+msgstr "Новий &запис"
+
+msgid "&Insert"
+msgstr "&Вставити"
+
+msgid "&Remove"
+msgstr "Ви&далити"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Підгрупа — для перегляду натисніть Enter"
@@ -2715,15 +2697,21 @@ msgstr "Активні каталоги ВФС"
 msgid "Directory hotlist"
 msgstr "Список каталогів"
 
+msgid "Top level group"
+msgstr "Група верхнього рівня"
+
 msgid "Directory path"
 msgstr "Шлях до каталогу"
-
-msgid "Directory label"
-msgstr "Мітка каталогу"
 
 #, c-format
 msgid "Moving %s"
 msgstr "Перенесення %s"
+
+msgid "Directory label"
+msgstr "Мітка каталогу"
+
+msgid "&Append"
+msgstr "До&писати"
 
 msgid "New hotlist entry"
 msgstr "Новий запис"
@@ -2751,9 +2739,6 @@ msgid ""
 msgstr ""
 "Група «%s» не пуста.\n"
 "Видалити її?"
-
-msgid "Top level group"
-msgstr "Група верхнього рівня"
 
 msgid "Hotlist Load"
 msgstr "Завантаження списку"
@@ -2856,35 +2841,32 @@ msgstr "Права:      %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Розташування:  %Xh:%Xh"
 
-msgid "Show free sp&ace"
-msgstr "Показувати вільне &місце"
+msgid "&Equal split"
+msgstr "&Рівні розміри"
 
-msgid "&XTerm window title"
-msgstr "Заголовок вікна &xterm"
-
-msgid "H&intbar visible"
-msgstr "Р&ядок порад"
-
-msgid "&Keybar visible"
-msgstr "Рядок &функц. клавіш"
+msgid "&Menubar visible"
+msgstr ""
 
 msgid "Command &prompt"
 msgstr "&Командний рядок"
 
-msgid "Menu&bar visible"
-msgstr "&Рядок меню"
+msgid "&Keybar visible"
+msgstr "Рядок &функц. клавіш"
 
-msgid "&Equal split"
-msgstr "&Рівні розміри"
+msgid "H&intbar visible"
+msgstr "Р&ядок порад"
+
+msgid "&XTerm window title"
+msgstr "Заголовок вікна &xterm"
+
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr "Розбиття панелей"
 
 msgid "Console output"
 msgstr "Консольний вивід"
-
-msgid "Other options"
-msgstr "Інші параметри"
 
 msgid "&Vertical"
 msgstr "&Вертикальне"
@@ -3118,65 +3100,65 @@ msgstr "На простих &терміналах"
 msgid "Alwa&ys"
 msgstr "&Завжди"
 
-msgid "A&uto save setup"
-msgstr "&Автозбереження параметрів"
-
-msgid "Sa&fe delete"
-msgstr "Безпечне &видалення"
-
-msgid "Cd follows lin&ks"
-msgstr "Зміна &каталогу за посиланнями"
-
-msgid "Rotating d&ash"
-msgstr "Обе&pтовий індикатор"
-
-msgid "Co&mplete: show all"
-msgstr "Доп&овнення: показувати усі"
-
-msgid "Shell &patterns"
-msgstr "Шаблони &oболонки"
-
-msgid "&Drop down menus"
-msgstr "Випада&ючі підменю"
-
-msgid "Auto m&enus"
-msgstr "Автоматичні &меню"
-
-msgid "Use internal vie&w"
-msgstr "Вбудова&ний переглядач"
-
-msgid "Use internal edi&t"
-msgstr "Вбудований &редактор"
-
-msgid "Pause after run"
-msgstr "Пауза після виконання"
-
-msgid "Timeout:"
-msgstr "Час очікування:"
-
-msgid "S&ingle press"
-msgstr "Одиничне натиснення"
-
-msgid "Esc key mode"
-msgstr "Режим клавіші Escape"
-
-msgid "Preallocate &space"
-msgstr "Зарезервувати &простір"
-
-msgid "Mkdi&r autoname"
-msgstr "Автоіменування нових каталогів"
-
-msgid "Classic pro&gressbar"
-msgstr "Класична панель прогресу"
-
-msgid "Compute tota&ls"
-msgstr "Підраховувати за&гальний розмір"
+msgid "File operations"
+msgstr ""
 
 msgid "&Verbose operation"
 msgstr "Подроби&ці операцій"
 
-msgid "File operation options"
-msgstr "Параметри файлових операцій"
+msgid "Compute tota&ls"
+msgstr "Підраховувати за&гальний розмір"
+
+msgid "Classic pro&gressbar"
+msgstr "Класична панель прогресу"
+
+msgid "Mkdi&r autoname"
+msgstr "Автоіменування нових каталогів"
+
+msgid "Preallocate &space"
+msgstr "Зарезервувати &простір"
+
+msgid "Esc key mode"
+msgstr "Режим клавіші Escape"
+
+msgid "S&ingle press"
+msgstr "Одиничне натиснення"
+
+msgid "Timeout:"
+msgstr "Час очікування:"
+
+msgid "Pause after run"
+msgstr "Пауза після виконання"
+
+msgid "Use internal edi&t"
+msgstr "Вбудований &редактор"
+
+msgid "Use internal vie&w"
+msgstr "Вбудова&ний переглядач"
+
+msgid "Auto m&enus"
+msgstr "Автоматичні &меню"
+
+msgid "&Drop down menus"
+msgstr "Випада&ючі підменю"
+
+msgid "Shell &patterns"
+msgstr "Шаблони &oболонки"
+
+msgid "Co&mplete: show all"
+msgstr "Доп&овнення: показувати усі"
+
+msgid "Rotating d&ash"
+msgstr "Обе&pтовий індикатор"
+
+msgid "Cd follows lin&ks"
+msgstr "Зміна &каталогу за посиланнями"
+
+msgid "Sa&fe delete"
+msgstr "Безпечне &видалення"
+
+msgid "A&uto save setup"
+msgstr "&Автозбереження параметрів"
 
 msgid "Configure options"
 msgstr "Параметри конфігурації"
@@ -3184,65 +3166,62 @@ msgstr "Параметри конфігурації"
 msgid "Case &insensitive"
 msgstr "Не враховувати регістр"
 
-msgid "Case s&ensitive"
-msgstr "В&раховувати регістр"
-
 msgid "Use panel sort mo&de"
 msgstr "Використовувати режи&м сортування панелі"
 
-msgid "Quick search"
-msgstr "Швидкий пошук"
-
-msgid "&Permissions"
-msgstr "&Права"
-
-msgid "File &types"
-msgstr "Типи &файлів"
-
-msgid "File highlight"
-msgstr "Підсвітка файлів…"
-
-msgid "&Mouse page scrolling"
-msgstr "&Гортання сторінки мишею"
-
-msgid "Pa&ge scrolling"
-msgstr "Гор&тання сторінки"
-
-msgid "L&ynx-like motion"
-msgstr "Навігація у стилі l&ynx"
-
-msgid "Navigation"
-msgstr "Навігація"
-
-msgid "A&uto save panels setup"
-msgstr "&Автозбереження параметрів панелей"
-
-msgid "Simple s&wap"
-msgstr "Простий о&бмін"
-
-msgid "Re&verse files only"
-msgstr "&Змінити порядок тільки файлів"
-
-msgid "Ma&rk moves down"
-msgstr "&Відмітка рухає курсор униз"
-
-msgid "&Fast dir reload"
-msgstr "&Швидке перевантаження каталога"
-
-msgid "Show &hidden files"
-msgstr "Показувати при&ховані файли"
-
-msgid "Show &backup files"
-msgstr "Показувати ре&зервні файли"
-
-msgid "Mi&x all files"
-msgstr "Змішати &усі файли"
+msgid "Show mi&ni-status"
+msgstr "Показати мі&ні-статус"
 
 msgid "Use SI si&ze units"
 msgstr "&Використовувати розміри системи СІ"
 
-msgid "Show mi&ni-status"
-msgstr "Показати мі&ні-статус"
+msgid "Mi&x all files"
+msgstr "Змішати &усі файли"
+
+msgid "Show &backup files"
+msgstr "Показувати ре&зервні файли"
+
+msgid "Show &hidden files"
+msgstr "Показувати при&ховані файли"
+
+msgid "&Fast dir reload"
+msgstr "&Швидке перевантаження каталога"
+
+msgid "Ma&rk moves down"
+msgstr "&Відмітка рухає курсор униз"
+
+msgid "Re&verse files only"
+msgstr "&Змінити порядок тільки файлів"
+
+msgid "Simple s&wap"
+msgstr "Простий о&бмін"
+
+msgid "A&uto save panels setup"
+msgstr "&Автозбереження параметрів панелей"
+
+msgid "Navigation"
+msgstr "Навігація"
+
+msgid "L&ynx-like motion"
+msgstr "Навігація у стилі l&ynx"
+
+msgid "Pa&ge scrolling"
+msgstr "Гор&тання сторінки"
+
+msgid "&Mouse page scrolling"
+msgstr "&Гортання сторінки мишею"
+
+msgid "File highlight"
+msgstr "Підсвітка файлів…"
+
+msgid "File &types"
+msgstr "Типи &файлів"
+
+msgid "&Permissions"
+msgstr "&Права"
+
+msgid "Quick search"
+msgstr "Швидкий пошук"
 
 msgid "Panel options"
 msgstr "Параметри панелі"
@@ -3286,8 +3265,8 @@ msgstr "&Версія"
 msgid "sort|e"
 msgstr "sort|e"
 
-msgid "&Extension"
-msgstr "За роз&ширенням"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3398,11 +3377,11 @@ msgstr "&Додати новий"
 msgid "External panelize"
 msgstr "Зовнішня панелізація"
 
-msgid "Command"
-msgstr "Команда"
-
 msgid "Other command"
 msgstr "Інша команда"
+
+msgid "Command"
+msgstr "Команда"
 
 msgid "Add to external panelize"
 msgstr "Додати до зовнішньої панелізації"
@@ -3607,15 +3586,11 @@ msgstr ""
 "Є повний опис терміналу.\n"
 "Всі клавіші працюють."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Натисніть всі перераховані вище клавіші. Після цього знайдіть"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
-msgstr "клавіші, які не мають мітки «OK». Натисніть пробіл на невизначеній"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
 msgstr ""
-"клавіші або клацніть її мишею. Для переміщення використовуйте клавішу Tab"
 
 #, c-format
 msgid ""
@@ -3738,6 +3713,9 @@ msgstr "Конфігураційний каталог:"
 msgid "Data directory:"
 msgstr "Каталог даних:"
 
+msgid "File extension handlers:"
+msgstr ""
+
 msgid "VFS plugins and scripts:"
 msgstr "Плагіни та скрипти VFS:"
 
@@ -3854,9 +3832,6 @@ msgstr "fish: запис %s: триває надсилання команди…
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: сталася помилка локального читання, надсилаються нулі"
-
-msgid "fish: storing zeros"
-msgstr "fish: триває зберігання нулів"
 
 msgid "fish: storing file"
 msgstr "fish: триває зберігання файлу"
@@ -3997,59 +3972,59 @@ msgstr ""
 
 #, c-format
 msgid "sftp: an error occured while reading %s: %s"
-msgstr ""
+msgstr "sftp: сталася помилка при читанні %s: %s"
 
 msgid "sftp: Unable to get current user name."
-msgstr ""
+msgstr "sftp: Неможливо отримати ім’я поточного користувача."
 
 msgid "sftp: Invalid host name."
-msgstr ""
+msgstr "sftp: Неправильне ім’я хоста."
 
 msgid "sftp: Invalid port value."
-msgstr ""
+msgstr "sftp: Неправильний порт."
 
 #, c-format
 msgid "sftp: %s"
-msgstr ""
+msgstr "sftp: %s"
 
 #, c-format
 msgid "sftp: making connection to %s"
-msgstr ""
+msgstr "sftp: з’єднання з %s"
 
 msgid "sftp: connection interrupted by user"
-msgstr ""
+msgstr "sftp: з’єднання перервано користувачем"
 
 #, c-format
 msgid "sftp: connection to server failed: %s"
-msgstr ""
+msgstr "sftp: з’єдання з сервером невдале: %s"
 
 #, c-format
 msgid "sftp: Enter passphrase for %s "
-msgstr ""
+msgstr "sftp: Введіть ключову фразу для %s "
 
 msgid "sftp: Passphrase is empty."
-msgstr ""
+msgstr "sftp: Ключова фраза порожня."
 
 #, c-format
 msgid "sftp: Enter password for %s "
-msgstr ""
+msgstr "sftp: Введіть пароль для %s "
 
 msgid "sftp: Password is empty."
-msgstr ""
+msgstr "sftp: Пароль порожній."
 
 #, c-format
 msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr ""
+msgstr "sftp: Невдача при встановленні SSH сессії: (%d)"
 
 msgid "sftp: No file handler data present for reading file"
-msgstr ""
+msgstr "sftp: Немає даних про  оброблювач для читання файлу"
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"
-msgstr ""
+msgstr "sftp: (Ctrl-G перервати) Створення списку... %s"
 
 msgid "sftp: Listing done."
-msgstr ""
+msgstr "sftp: Створення списку завершено."
 
 #, c-format
 msgid "reconnect to %s failed"

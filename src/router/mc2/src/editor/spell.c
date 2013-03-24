@@ -35,6 +35,8 @@
 #endif
 #include "lib/strutil.h"
 
+#include "src/setup.h"
+
 #include "edit-impl.h"
 #include "spell.h"
 
@@ -129,7 +131,7 @@ static struct
  * Found the language name by language code. For example: en_US -> American English.
  *
  * @param code Short name of the language (ru, en, pl, uk, etc...)
- * @returns the language name
+ * @return language name
  */
 
 static const char *
@@ -150,7 +152,7 @@ spell_decode_lang (const char *code)
 /**
  * Checks if aspell library and symbols are available.
  *
- * @returns FALSE or error
+ * @return FALSE or error
  */
 
 static gboolean
@@ -284,6 +286,9 @@ aspell_init (void)
 {
     AspellCanHaveError *error = NULL;
 
+    if (strcmp (spell_language, "NONE") == 0)
+        return;
+
     if (global_speller != NULL)
         return;
 
@@ -300,6 +305,13 @@ aspell_init (void)
 
     global_speller->config = mc_new_aspell_config ();
     global_speller->speller = NULL;
+
+    if (spell_language != NULL)
+    {
+        int res;
+
+        res = mc_aspell_config_replace (global_speller->config, "lang", spell_language);
+    }
 
     error = mc_new_aspell_speller (global_speller->config);
 
@@ -342,7 +354,7 @@ aspell_clean (void)
  * Get array of available languages.
  *
  * @param lang_list Array of languages. Must be cleared before use
- * @returns language list length
+ * @return language list length
  */
 
 unsigned int
@@ -406,7 +418,7 @@ aspell_array_clean (GArray * array)
 /**
  * Get the current language name.
  *
- * @returns Language name
+ * @return language name
  */
 
 const char *
@@ -423,7 +435,7 @@ aspell_get_lang (void)
  * Set the language.
  *
  * @param lang Language name
- * @returns FALSE or error
+ * @return FALSE or error
  */
 
 gboolean
@@ -434,6 +446,9 @@ aspell_set_lang (const char *lang)
         int res;
         AspellCanHaveError *error;
         const char *spell_codeset;
+
+        g_free (spell_language);
+        spell_language = g_strdup (lang);
 
 #ifdef HAVE_CHARSET
         if (mc_global.source_codepage > 0)
@@ -469,7 +484,7 @@ aspell_set_lang (const char *lang)
  *
  * @param word Word for spell check
  * @param word_size Word size (in bytes)
- * @returns FALSE if word is not in the dictionary
+ * @return FALSE if word is not in the dictionary
  */
 
 gboolean
@@ -490,7 +505,7 @@ aspell_check (const char *word, const int word_size)
  * @param suggest array of words to iterate through
  * @param word Word for spell check
  * @param word_size Word size (in bytes)
- * @returns count of suggests for the word
+ * @return count of suggests for the word
  */
 
 unsigned int
@@ -533,7 +548,7 @@ aspell_suggest (GArray * suggest, const char *word, const int word_size)
  *
  * @param word Word for spell check
  * @param word_size  Word size (in bytes)
- * @returns FALSE or error
+ * @return FALSE or error
  */
 gboolean
 aspell_add_to_dict (const char *word, int word_size)

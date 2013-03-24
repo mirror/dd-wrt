@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: Korean (http://www.transifex.com/projects/p/mc/language/ko/)\n"
 "Language: ko\n"
@@ -518,14 +518,14 @@ msgstr "예(&Y)"
 msgid "&No"
 msgstr "아니오(&N)"
 
-msgid "Background process:"
-msgstr "배경 프로세스:"
+msgid "&OK"
+msgstr "확인(&O)"
 
 msgid "&Cancel"
 msgstr "취소(&C)"
 
-msgid "&OK"
-msgstr "확인(&O)"
+msgid "Background process:"
+msgstr "배경 프로세스:"
 
 msgid "Error"
 msgstr "에러"
@@ -701,20 +701,20 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "취소(&D)"
 
-msgid "&All charsets"
-msgstr "모든 문자셋(&A)"
-
-msgid "&Whole words"
-msgstr "단어 단위로(&W)"
-
-msgid "&Backwards"
-msgstr "뒤로(&B)"
+msgid "Enter search string:"
+msgstr ""
 
 msgid "Cas&e sensitive"
 msgstr "대소문자 구분(&E)"
 
-msgid "Enter search string:"
-msgstr ""
+msgid "&Backwards"
+msgstr "뒤로(&B)"
+
+msgid "&Whole words"
+msgstr "단어 단위로(&W)"
+
+msgid "&All charsets"
+msgstr "모든 문자셋(&A)"
 
 msgid "Search"
 msgstr "검색"
@@ -747,26 +747,26 @@ msgstr "빠름 (큰파일 가정)(&F)"
 msgid "&Minimal (Find a smaller set of change)"
 msgstr "최소 (찾은 작은 셋트의 변경)"
 
-msgid "Strip &trailing carriage return"
-msgstr "Strip &trailing carriage return"
-
-msgid "Ignore all &whitespace"
-msgstr "빈공간 모두 무시(&W)"
-
-msgid "Ignore &space change"
-msgstr "공간 변경 무시(&S)"
-
-msgid "Ignore tab &expansion"
-msgstr "탭 확장 무시(&E)"
-
-msgid "&Ignore case"
-msgstr "잠금 무시(&I)"
+msgid "Diff algorithm"
+msgstr "Dif 알고리즘"
 
 msgid "Diff extra options"
 msgstr " 기타 선택항목 "
 
-msgid "Diff algorithm"
-msgstr "Dif 알고리즘"
+msgid "&Ignore case"
+msgstr "잠금 무시(&I)"
+
+msgid "Ignore tab &expansion"
+msgstr "탭 확장 무시(&E)"
+
+msgid "Ignore &space change"
+msgstr "공간 변경 무시(&S)"
+
+msgid "Ignore all &whitespace"
+msgstr "빈공간 모두 무시(&W)"
+
+msgid "Strip &trailing carriage return"
+msgstr "Strip &trailing carriage return"
 
 msgid "Diff Options"
 msgstr "DIff 설정 "
@@ -910,11 +910,11 @@ msgstr "MS 도스/윈도우즈 포맷(&W) (CR LF)"
 msgid "&Macintosh format (CR)"
 msgstr "매캔토시 포맷(&M) (CR)"
 
-msgid "Change line breaks to:"
-msgstr "깨진 라인 바꾸기:"
-
 msgid "Enter file name:"
 msgstr ""
+
+msgid "Change line breaks to:"
+msgstr "깨진 라인 바꾸기:"
 
 msgid "Save As"
 msgstr ""
@@ -1090,16 +1090,16 @@ msgstr "기타 명령어"
 msgid "Cannot execute command"
 msgstr "명령을 실행할 수 없습니다 "
 
-msgid "Copies to"
-msgstr ""
-
-msgid "Subject"
+msgid "mail -s <subject> -c <cc> <to>"
 msgstr ""
 
 msgid "To"
 msgstr ""
 
-msgid "mail -s <subject> -c <cc> <to>"
+msgid "Subject"
+msgstr ""
+
+msgid "Copies to"
 msgstr ""
 
 msgid "Mail"
@@ -1119,11 +1119,26 @@ msgstr ""
 msgid "In se&lection"
 msgstr "선택반전(&L)"
 
+msgid "&Find all"
+msgstr "파일 찾기(&F)"
+
 msgid "Enter replacement string:"
 msgstr ""
 
-msgid "&Find all"
-msgstr "파일 찾기(&F)"
+msgid "Replace with:"
+msgstr ""
+
+msgid "&Replace"
+msgstr "바꾸기(&R)"
+
+msgid "A&ll"
+msgstr "모두(&L)"
+
+msgid "&Skip"
+msgstr "건너뜀(&S)"
+
+msgid "Confirm replace"
+msgstr ""
 
 msgid "Cancel"
 msgstr "취소"
@@ -1131,21 +1146,6 @@ msgstr "취소"
 msgid ""
 "Current text was modified without a file save.\n"
 "Continue discards these changes."
-msgstr ""
-
-msgid "&Skip"
-msgstr "건너뜀(&S)"
-
-msgid "A&ll"
-msgstr "모두(&L)"
-
-msgid "&Replace"
-msgstr "바꾸기(&R)"
-
-msgid "Replace with:"
-msgstr ""
-
-msgid "Confirm replace"
 msgstr ""
 
 msgid "NoName"
@@ -1370,71 +1370,81 @@ msgstr ""
 msgid "&Options"
 msgstr "선택항목(&O) "
 
-msgid "None"
-msgstr "없음"
+msgid "&None"
+msgstr ""
 
-msgid "Dynamic paragraphing"
-msgstr "동적 단락 만들기"
+msgid "&Dynamic paragraphing"
+msgstr ""
 
-msgid "Type writer wrap"
-msgstr "랩 쓰기 유형"
+msgid "Type &writer wrap"
+msgstr ""
 
-msgid "Word wrap line length:"
+msgid "Wrap mode"
+msgstr "배치 방법"
+
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "가짜 반쪽 탭(&F)"
+
+msgid "&Backspace through tabs"
+msgstr "백스페이스에 탭간격 사용(&B)"
+
+msgid "Fill tabs with &spaces"
+msgstr "탭을 공백으로 채우기(&S)"
+
+msgid "Tab spacing:"
+msgstr ""
+
+msgid "Other options"
+msgstr ""
+
+msgid "&Return does autoindent"
+msgstr "반환에서는 자동으로 들여쓰기(&R)"
+
+msgid "Confir&m before saving"
+msgstr "저장 전 확인(&M)"
+
+msgid "Save file &position"
+msgstr "파일 위치 저장(&P)"
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
+msgstr ""
+
+msgid "Synta&x highlighting"
+msgstr "문법 강조(&X)"
+
+msgid "C&ursor after inserted block"
+msgstr ""
+
+msgid "Pers&istent selection"
+msgstr "선택 반전(&I)"
+
+msgid "Cursor be&yond end of line"
 msgstr ""
 
 msgid "&Group undo"
 msgstr ""
 
-msgid "Cursor beyond end of line"
-msgstr "끝을 넘은 커서의 선"
-
-msgid "Pers&istent selection"
-msgstr "선택 반전(&I)"
-
-msgid "Synta&x highlighting"
-msgstr "문법 강조(&X)"
-
-msgid "Visible tabs"
-msgstr "눈에 보이는 탭"
-
-msgid "Visible trailing spaces"
-msgstr "보이는 후행 공백"
-
-msgid "Save file &position"
-msgstr "파일 위치 저장(&P)"
-
-msgid "Confir&m before saving"
-msgstr "저장 전 확인(&M)"
-
-msgid "&Return does autoindent"
-msgstr "반환에서는 자동으로 들여쓰기(&R)"
-
-msgid "Tab spacing:"
+msgid "Word wrap line length:"
 msgstr ""
-
-msgid "Fill tabs with &spaces"
-msgstr "탭을 공백으로 채우기(&S)"
-
-msgid "&Backspace through tabs"
-msgstr "백스페이스에 탭간격 사용(&B)"
-
-msgid "&Fake half tabs"
-msgstr "가짜 반쪽 탭(&F)"
-
-msgid "Wrap mode"
-msgstr "배치 방법"
 
 msgid "Editor options"
 msgstr ""
 
-msgid "About"
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
 msgstr ""
 
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
+msgid "About"
 msgstr ""
 
 msgid "Open files"
@@ -1510,14 +1520,14 @@ msgstr "미드나잇 코맨더로 돌아가려면 'exit'을 입력하십시오"
 msgid "Cannot fetch a local copy of %s"
 msgstr ""
 
-msgid "&Set"
-msgstr "설정(&S)"
+msgid "Set &all"
+msgstr "모두 설정(&A)"
 
 msgid "S&kip"
 msgstr "건너뜀(&K)"
 
-msgid "Set &all"
-msgstr "모두 설정(&A)"
+msgid "&Set"
+msgstr "설정(&S)"
 
 msgid "owner"
 msgstr "소유자"
@@ -1528,18 +1538,8 @@ msgstr "집단"
 msgid "other"
 msgstr "기타"
 
-msgid "On"
-msgstr "On"
-
 msgid "Flag"
 msgstr "Flag"
-
-msgid "Mode"
-msgstr "모드"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d 의 %d"
 
 msgid "Chown advanced command"
 msgstr ""
@@ -1556,14 +1556,14 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "&Stop"
-msgstr "멈춤(&S)"
+msgid "Other 8 bit"
+msgstr "다른 8 비트"
 
-msgid "&Resume"
-msgstr "계속(&R)"
+msgid "Running"
+msgstr ""
 
-msgid "&Kill"
-msgstr "죽임(&K)"
+msgid "Stopped"
+msgstr "멈춤"
 
 msgid "&Full file list"
 msgstr "전체 보여주기(&F)"
@@ -1577,14 +1577,57 @@ msgstr "길게 보여주기(&L)"
 msgid "&User defined:"
 msgstr "사용자 정의(&U):"
 
-msgid "Listing mode"
-msgstr "목록보기 설정"
-
 msgid "User &mini status"
 msgstr ""
 
-msgid "Other 8 bit"
-msgstr "다른 8 비트"
+msgid "Listing mode"
+msgstr "목록보기 설정"
+
+msgid "Executable &first"
+msgstr "실행 처음(&F)"
+
+msgid "&Reverse"
+msgstr "반대로(&R)"
+
+msgid "Sort order"
+msgstr "정렬 순서"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr "Confirmation인|삭제(&D)"
+
+msgid "Confirmation|O&verwrite"
+msgstr "Confirmation|덮어쓰기(&V)"
+
+msgid "Confirmation|&Execute"
+msgstr "Confirmation|실행(&E) "
+
+msgid "Confirmation|E&xit"
+msgstr "Confirmation|끝내기(&X)"
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr ""
+
+msgid "Confirmation|&History cleanup"
+msgstr "Confirmation|기록청소(&H)"
+
+msgid "Confirmation"
+msgstr "확인"
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "8 비트 입력(&U)"
 
 msgid "Display bits"
 msgstr ""
@@ -1592,91 +1635,32 @@ msgstr ""
 msgid "Input / display codepage:"
 msgstr "입/출력 코드페이지:"
 
-msgid "F&ull 8 bits input"
-msgstr "8 비트 입력(&U)"
-
 msgid "&Select"
 msgstr "선택(&S)"
-
-msgid "Running"
-msgstr ""
-
-msgid "Stopped"
-msgstr "멈춤"
-
-msgid "&Reverse"
-msgstr "반대로(&R)"
-
-msgid "Case sensi&tive"
-msgstr "대소문자 구분(&T)"
-
-msgid "Executable &first"
-msgstr "실행 처음(&F)"
-
-msgid "Sort order"
-msgstr "정렬 순서"
-
-msgid "Confirmation"
-msgstr "확인"
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr "Confirmation|기록청소(&H)"
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr ""
-
-msgid "Confirmation|E&xit"
-msgstr "Confirmation|끝내기(&X)"
-
-msgid "Confirmation|&Execute"
-msgstr "Confirmation|실행(&E) "
-
-msgid "Confirmation|O&verwrite"
-msgstr "Confirmation|덮어쓰기(&V)"
-
-msgid "Confirmation|&Delete"
-msgstr "Confirmation인|삭제(&D)"
-
-msgid "UTF-8 output"
-msgstr "UTF-8 출력"
-
-msgid "Full 8 bits output"
-msgstr "8 bits 출력"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7 비트"
 
 msgid "Directory tree"
 msgstr ""
 
-msgid "Use passive mode over pro&xy"
-msgstr "프록시를 통한 passive 모드 사용(&X)..."
+msgid "Timeout for freeing VFSs (sec):"
+msgstr ""
 
-msgid "Use &passive mode"
-msgstr "passive 모드 사용(&P)..."
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
+msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr "~/.netrc 사용(&U)"
 
-msgid "&Always use ftp proxy"
-msgstr "항상 FTP proxy 사용(&A)"
+msgid "Use &passive mode"
+msgstr "passive 모드 사용(&P)..."
 
-msgid "sec"
-msgstr "초"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "ftpfs 캐쉬 타임아웃:"
-
-msgid "ftp anonymous password:"
-msgstr "ftp anonymous 암호:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "시간초과 for freeing VFSs:"
+msgid "Use passive mode over pro&xy"
+msgstr "프록시를 통한 passive 모드 사용(&X)..."
 
 msgid "Virtual File System Setting"
 msgstr ""
@@ -1687,17 +1671,30 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "빠른 cd"
 
-msgid "Symbolic link filename:"
-msgstr "심볼릭링크 파일 이름:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr "대상 파일 이름 (심볼릭링크 파일이 가리킬 파일):"
+
+msgid "Symbolic link filename:"
+msgstr "심볼릭링크 파일 이름:"
 
 msgid "Symbolic link"
 msgstr "심볼릭링크"
 
-msgid "Background Jobs"
-msgstr "배경 작업"
+msgid "&Stop"
+msgstr "멈춤(&S)"
+
+msgid "&Resume"
+msgstr "계속(&R)"
+
+msgid "&Kill"
+msgstr "죽임(&K)"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "\\\\%s\\%s의 암호"
 
 msgid "Domain:"
 msgstr "도메인:"
@@ -1705,45 +1702,44 @@ msgstr "도메인:"
 msgid "Username:"
 msgstr "사용자 이름:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "\\\\%s\\%s의 암호"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "다른 사용자의 실행/검색"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "다른 사용자의 쓰기"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "다른 사용자의 읽기"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "집단 구성원의 실행/검색"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "집단 구성원의 쓰기"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "집단 구성원의 읽기"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "소유자의 실행/검색"
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "소유자의 쓰기"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "소유자의 읽기"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "sticky 비트"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "실행시 집단 ID 설정"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "실행시 사용자 ID 설정"
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr ""
@@ -1757,29 +1753,29 @@ msgstr ""
 msgid "Group name:"
 msgstr ""
 
-msgid "C&lear marked"
-msgstr "선택 해제(&L)"
+msgid "&Marked all"
+msgstr "모두 선택(&M)"
 
 msgid "S&et marked"
 msgstr "선택(&E)"
 
-msgid "&Marked all"
-msgstr "모두 선택(&M)"
+msgid "C&lear marked"
+msgstr "선택 해제(&L)"
 
 msgid "Chmod command"
 msgstr "Chmod 명령"
 
-msgid "File"
-msgstr ""
-
 msgid "Permission"
 msgstr "권한"
 
-msgid "Set &users"
-msgstr "사용자 설정(&U)"
+msgid "File"
+msgstr ""
 
 msgid "Set &groups"
 msgstr "집단 설정(&G)"
+
+msgid "Set &users"
+msgstr "사용자 설정(&U)"
 
 msgid "Name"
 msgstr "이름"
@@ -1796,14 +1792,14 @@ msgstr ""
 msgid "Chown command"
 msgstr ""
 
+msgid "User name"
+msgstr ""
+
 msgid "<Unknown user>"
 msgstr "<모르는 사용자>"
 
 msgid "<Unknown group>"
 msgstr "<모르는 집단>"
-
-msgid "User name"
-msgstr ""
 
 msgid "Enter machine name (F1 for details):"
 msgstr ""
@@ -1820,14 +1816,14 @@ msgstr ""
 msgid "Set expression for filtering filenames"
 msgstr ""
 
+msgid "&Files only"
+msgstr "크기로만(&F)"
+
 msgid "&Using shell patterns"
 msgstr "명령해석기 패턴 사용(&U)"
 
 msgid "&Case sensitive"
 msgstr "대소문자 구분(&C)"
-
-msgid "&Files only"
-msgstr "크기로만(&F)"
 
 #, c-format
 msgid "Link %s to:"
@@ -2086,19 +2082,17 @@ msgstr ""
 msgid "&Retry"
 msgstr "재시도(&R)"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
-msgstr ""
-
-msgid "Delete:"
 msgstr ""
 
 msgid "Non&e"
@@ -2307,6 +2301,12 @@ msgstr ""
 msgid "Sorry, I could not put the job in background"
 msgstr ""
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "계속(&T)"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr "%d:%02d.%02d"
@@ -2331,30 +2331,30 @@ msgid "Target file already exists!"
 msgstr "대상 파일 \"%s\"이(가) 이미 있는데요!"
 
 #, c-format
-msgid "Source date: %s, size %llu"
-msgstr "원본 날짜: %s, 크기 %llu"
+msgid "New     : %s, size %llu"
+msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
-msgstr "대상 날짜: %s, 크기 %llu"
+msgid "Existing: %s, size %llu"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "크기가 틀리면(&S)"
-
-msgid "&Update"
-msgstr "업데이트(&U)"
-
-msgid "Overwrite all targets?"
-msgstr "모두 덮어쓸까요?"
-
-msgid "&Reget"
-msgstr "다시갖기(&R)"
+msgid "Overwrite this target?"
+msgstr "이 파일을 덮어쓸까요?"
 
 msgid "A&ppend"
 msgstr "덧붙임(&P)"
 
-msgid "Overwrite this target?"
-msgstr "이 파일을 덮어쓸까요?"
+msgid "&Reget"
+msgstr "다시갖기(&R)"
+
+msgid "Overwrite all targets?"
+msgstr "모두 덮어쓸까요?"
+
+msgid "&Update"
+msgstr "업데이트(&U)"
+
+msgid "If &size differs"
+msgstr "크기가 틀리면(&S)"
 
 msgid "File exists"
 msgstr ""
@@ -2403,30 +2403,24 @@ msgstr "대상"
 msgid "Deleting"
 msgstr "지우기"
 
-msgid "&Background"
-msgstr "배경(&B)"
-
-msgid "&Stable Symlinks"
-msgstr "안정 심볼릭링크(&S)"
-
-msgid "Di&ve into subdir if exists"
+msgid "Follow &links"
 msgstr ""
 
 msgid "Preserve &attributes"
 msgstr ""
 
-msgid "Follow &links"
+msgid "Di&ve into subdir if exists"
 msgstr ""
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "배경(&B)"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr "원본 패턴 `%s'이(가) 잘못되었습니다"
-
-msgid "&Suspend"
-msgstr "일시중지(&S)"
-
-msgid "Con&tinue"
-msgstr "계속(&T)"
 
 msgid "&Chdir"
 msgstr "디렉터리 이동(&C)"
@@ -2450,11 +2444,17 @@ msgstr "찾기: %ld"
 msgid "Malformed regular expression"
 msgstr ""
 
+msgid "File name:"
+msgstr "파일 이름:"
+
 msgid "&Find recursively"
 msgstr "재귀 찾기(&F)"
 
 msgid "S&kip hidden"
 msgstr "숨김 스킵(&K)"
+
+msgid "Content:"
+msgstr "내용:"
 
 msgid "Sea&rch for content"
 msgstr ""
@@ -2462,11 +2462,11 @@ msgstr ""
 msgid "Case sens&itive"
 msgstr "대소문자 구분(&I)"
 
-msgid "Fir&st hit"
-msgstr "먼저 하기(&S)"
-
 msgid "A&ll charsets"
 msgstr ""
+
+msgid "Fir&st hit"
+msgstr "먼저 하기(&S)"
 
 msgid "&Tree"
 msgstr "나무꼴(&T)"
@@ -2474,17 +2474,11 @@ msgstr "나무꼴(&T)"
 msgid "Find File"
 msgstr "파일 찾기"
 
-msgid "Content:"
-msgstr "내용:"
-
-msgid "File name:"
-msgstr "파일 이름:"
+msgid "Start at:"
+msgstr "시작위치:"
 
 msgid "Ena&ble ignore directories:"
 msgstr ""
-
-msgid "Start at:"
-msgstr "시작위치:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2505,35 +2499,32 @@ msgstr "%s 찾는 중"
 msgid "Searching"
 msgstr "찾는 중"
 
-msgid "&Remove"
-msgstr "제거(&R)"
-
-msgid "&Append"
-msgstr "추가(&A)"
-
-msgid "&Insert"
-msgstr "삽입(&I)"
-
-msgid "New &entry"
+msgid "Change &to"
 msgstr ""
 
-msgid "New &group"
+msgid "&Free VFSs now"
 msgstr ""
-
-msgid "&Up"
-msgstr "위로(&U)"
-
-msgid "&Add current"
-msgstr "현재 패널 더하기(&A)"
 
 msgid "&Refresh"
 msgstr "반대로(&R)"
 
-msgid "Fr&ee VFSs now"
-msgstr "VFS를 지금 해제(&E)"
+msgid "&Add current"
+msgstr "현재 패널 더하기(&A)"
 
-msgid "Change &to"
+msgid "&Up"
+msgstr "위로(&U)"
+
+msgid "New &group"
 msgstr ""
+
+msgid "New &entry"
+msgstr ""
+
+msgid "&Insert"
+msgstr "삽입(&I)"
+
+msgid "&Remove"
+msgstr "제거(&R)"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "하위집단 - 보려면 엔터키를 누르십시오"
@@ -2544,15 +2535,21 @@ msgstr "활성 VFS 디렉터리"
 msgid "Directory hotlist"
 msgstr "디렉터리 단축 목록"
 
+msgid "Top level group"
+msgstr ""
+
 msgid "Directory path"
 msgstr "디렉터리 경로"
-
-msgid "Directory label"
-msgstr "디렉터리 꼬리표"
 
 #, c-format
 msgid "Moving %s"
 msgstr "%s 이동"
+
+msgid "Directory label"
+msgstr "디렉터리 꼬리표"
+
+msgid "&Append"
+msgstr "추가(&A)"
 
 msgid "New hotlist entry"
 msgstr "새 단축목록 엔트리"
@@ -2577,9 +2574,6 @@ msgstr ""
 msgid ""
 "Group \"%s\" is not empty.\n"
 "Remove it?"
-msgstr ""
-
-msgid "Top level group"
 msgstr ""
 
 msgid "Hotlist Load"
@@ -2679,34 +2673,31 @@ msgstr "모드: %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "위치: %Xh:%Xh"
 
-msgid "Show free sp&ace"
+msgid "&Equal split"
+msgstr "같은 너비로(&E)"
+
+msgid "&Menubar visible"
 msgstr ""
 
-msgid "&XTerm window title"
-msgstr ""
-
-msgid "H&intbar visible"
+msgid "Command &prompt"
 msgstr ""
 
 msgid "&Keybar visible"
 msgstr "키바 보이기(&K)"
 
-msgid "Command &prompt"
+msgid "H&intbar visible"
 msgstr ""
 
-msgid "Menu&bar visible"
+msgid "&XTerm window title"
 msgstr ""
 
-msgid "&Equal split"
-msgstr "같은 너비로(&E)"
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr ""
 
 msgid "Console output"
-msgstr ""
-
-msgid "Other options"
 msgstr ""
 
 msgid "&Vertical"
@@ -2939,64 +2930,64 @@ msgstr ""
 msgid "Alwa&ys"
 msgstr "항상(&Y)"
 
-msgid "A&uto save setup"
-msgstr ""
-
-msgid "Sa&fe delete"
-msgstr ""
-
-msgid "Cd follows lin&ks"
-msgstr ""
-
-msgid "Rotating d&ash"
-msgstr ""
-
-msgid "Co&mplete: show all"
-msgstr ""
-
-msgid "Shell &patterns"
-msgstr ""
-
-msgid "&Drop down menus"
-msgstr "드롭다운 메뉴(&D)"
-
-msgid "Auto m&enus"
-msgstr ""
-
-msgid "Use internal vie&w"
-msgstr ""
-
-msgid "Use internal edi&t"
-msgstr ""
-
-msgid "Pause after run"
-msgstr ""
-
-msgid "Timeout:"
-msgstr ""
-
-msgid "S&ingle press"
-msgstr ""
-
-msgid "Esc key mode"
-msgstr ""
-
-msgid "Preallocate &space"
-msgstr ""
-
-msgid "Mkdi&r autoname"
-msgstr ""
-
-msgid "Classic pro&gressbar"
-msgstr ""
-
-msgid "Compute tota&ls"
+msgid "File operations"
 msgstr ""
 
 msgid "&Verbose operation"
 msgstr "동작할 때 말을 많이(&V)"
 
-msgid "File operation options"
+msgid "Compute tota&ls"
+msgstr ""
+
+msgid "Classic pro&gressbar"
+msgstr ""
+
+msgid "Mkdi&r autoname"
+msgstr ""
+
+msgid "Preallocate &space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr ""
+
+msgid "S&ingle press"
+msgstr ""
+
+msgid "Timeout:"
+msgstr ""
+
+msgid "Pause after run"
+msgstr ""
+
+msgid "Use internal edi&t"
+msgstr ""
+
+msgid "Use internal vie&w"
+msgstr ""
+
+msgid "Auto m&enus"
+msgstr ""
+
+msgid "&Drop down menus"
+msgstr "드롭다운 메뉴(&D)"
+
+msgid "Shell &patterns"
+msgstr ""
+
+msgid "Co&mplete: show all"
+msgstr ""
+
+msgid "Rotating d&ash"
+msgstr ""
+
+msgid "Cd follows lin&ks"
+msgstr ""
+
+msgid "Sa&fe delete"
+msgstr ""
+
+msgid "A&uto save setup"
 msgstr ""
 
 msgid "Configure options"
@@ -3005,64 +2996,61 @@ msgstr "환경설정 선택항목"
 msgid "Case &insensitive"
 msgstr ""
 
-msgid "Case s&ensitive"
-msgstr ""
-
 msgid "Use panel sort mo&de"
 msgstr ""
 
-msgid "Quick search"
-msgstr ""
-
-msgid "&Permissions"
-msgstr ""
-
-msgid "File &types"
-msgstr ""
-
-msgid "File highlight"
-msgstr ""
-
-msgid "&Mouse page scrolling"
-msgstr ""
-
-msgid "Pa&ge scrolling"
-msgstr ""
-
-msgid "L&ynx-like motion"
-msgstr "Lynx같은 동작(&Y)"
-
-msgid "Navigation"
-msgstr ""
-
-msgid "A&uto save panels setup"
-msgstr ""
-
-msgid "Simple s&wap"
-msgstr ""
-
-msgid "Re&verse files only"
-msgstr ""
-
-msgid "Ma&rk moves down"
-msgstr ""
-
-msgid "&Fast dir reload"
-msgstr "디렉터리 빨리 다시읽기(&F)"
-
-msgid "Show &hidden files"
-msgstr ""
-
-msgid "Show &backup files"
-msgstr ""
-
-msgid "Mi&x all files"
+msgid "Show mi&ni-status"
 msgstr ""
 
 msgid "Use SI si&ze units"
 msgstr "SI 크기 단위 사용(&Z)"
 
-msgid "Show mi&ni-status"
+msgid "Mi&x all files"
+msgstr ""
+
+msgid "Show &backup files"
+msgstr ""
+
+msgid "Show &hidden files"
+msgstr ""
+
+msgid "&Fast dir reload"
+msgstr "디렉터리 빨리 다시읽기(&F)"
+
+msgid "Ma&rk moves down"
+msgstr ""
+
+msgid "Re&verse files only"
+msgstr ""
+
+msgid "Simple s&wap"
+msgstr ""
+
+msgid "A&uto save panels setup"
+msgstr ""
+
+msgid "Navigation"
+msgstr ""
+
+msgid "L&ynx-like motion"
+msgstr "Lynx같은 동작(&Y)"
+
+msgid "Pa&ge scrolling"
+msgstr ""
+
+msgid "&Mouse page scrolling"
+msgstr ""
+
+msgid "File highlight"
+msgstr ""
+
+msgid "File &types"
+msgstr ""
+
+msgid "&Permissions"
+msgstr ""
+
+msgid "Quick search"
 msgstr ""
 
 msgid "Panel options"
@@ -3104,8 +3092,8 @@ msgstr "버전(&V)"
 msgid "sort|e"
 msgstr "sort|e"
 
-msgid "&Extension"
-msgstr "확장자(&E)"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3211,11 +3199,11 @@ msgstr "새명령 더하기(&A)"
 msgid "External panelize"
 msgstr "외부 패널화"
 
-msgid "Command"
-msgstr "명령어"
-
 msgid "Other command"
 msgstr "기타 명령어"
+
+msgid "Command"
+msgstr "명령어"
 
 msgid "Add to external panelize"
 msgstr ""
@@ -3416,14 +3404,11 @@ msgstr ""
 "훌륭해요! 당신은 단말창 데이터베이스를 완성했어요!\n"
 "이제 모든 키가 제대로 동작합니다."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "모든키가 언급되었습니다. 나중에 그것을 확인 할 수 있습니다."
-
-msgid "which keys are not marked with OK.  Press space on the missing"
-msgstr "키 확인이 표시되지 않습니다. 누락된 키는 스페이스키로 누르세요"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
-msgstr "키 혹은 마우스로 클릭한 후 키를 정의하십시오. 탭키로 이동하십시오."
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3541,6 +3526,9 @@ msgstr ""
 msgid "Data directory:"
 msgstr ""
 
+msgid "File extension handlers:"
+msgstr ""
+
 msgid "VFS plugins and scripts:"
 msgstr ""
 
@@ -3656,9 +3644,6 @@ msgstr "fish: %s : 명령을 보내는 중..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: 상태 읽기 실패, 전송 제로"
-
-msgid "fish: storing zeros"
-msgstr ""
 
 msgid "fish: storing file"
 msgstr ""

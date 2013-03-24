@@ -711,6 +711,8 @@ ENABLE_VFS_CPIO_FALSE
 ENABLE_VFS_CPIO_TRUE
 ENABLE_BACKGROUND_FALSE
 ENABLE_BACKGROUND_TRUE
+ENABLE_SUBSHELL_FALSE
+ENABLE_SUBSHELL_TRUE
 ENABLE_MCLIB_FALSE
 ENABLE_MCLIB_TRUE
 LIBMC_RELEASE
@@ -745,12 +747,14 @@ MSGFMT
 USE_NLS
 MKINSTALLDIRS
 LIBOBJS
+HAVE_TEXTMODE_X11_SUPPORT_FALSE
+HAVE_TEXTMODE_X11_SUPPORT_TRUE
 X_EXTRA_LIBS
 X_LIBS
 X_PRE_LIBS
 X_CFLAGS
 XMKMF
-PCRE_CFLAGS
+PCRE_CPPFLAGS
 PCRE_LIBS
 SLANG_LIBS
 SLANG_CFLAGS
@@ -760,6 +764,7 @@ GMODULE_LIBS
 GMODULE_CFLAGS
 GLIB_LIBS
 GLIB_CFLAGS
+TESTS_LDFLAGS
 HAVE_TESTS_FALSE
 HAVE_TESTS_TRUE
 CHECK_LIBS
@@ -769,6 +774,8 @@ HAVE_FILECMD
 MAN_FLAGS
 MANDOC
 HAVE_nroff
+RUBY
+PYTHON
 PERL
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
@@ -13968,6 +13975,88 @@ $as_echo "no" >&6; }
 fi
 
 
+# Extract the first word of "python", so it can be a program name with args.
+set dummy python; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PYTHON+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PYTHON in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PYTHON="$PYTHON" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PYTHON="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_PYTHON" && ac_cv_path_PYTHON="/usr/bin/python"
+  ;;
+esac
+fi
+PYTHON=$ac_cv_path_PYTHON
+if test -n "$PYTHON"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON" >&5
+$as_echo "$PYTHON" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "ruby", so it can be a program name with args.
+set dummy ruby; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_RUBY+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $RUBY in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_RUBY="$RUBY" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_RUBY="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_RUBY" && ac_cv_path_RUBY="/usr/bin/ruby"
+  ;;
+esac
+fi
+RUBY=$ac_cv_path_RUBY
+if test -n "$RUBY"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RUBY" >&5
+$as_echo "$RUBY" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
 
 # Extract the first word of "nroff", so it can be a program name with args.
 set dummy nroff; ac_word=$2
@@ -14294,12 +14383,12 @@ if test -n "$CHECK_CFLAGS"; then
     pkg_cv_CHECK_CFLAGS="$CHECK_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"check >= 0.9.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "check >= 0.9.0") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"check >= 0.9.8\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "check >= 0.9.8") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_CHECK_CFLAGS=`$PKG_CONFIG --cflags "check >= 0.9.0" 2>/dev/null`
+  pkg_cv_CHECK_CFLAGS=`$PKG_CONFIG --cflags "check >= 0.9.8" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -14310,12 +14399,12 @@ if test -n "$CHECK_LIBS"; then
     pkg_cv_CHECK_LIBS="$CHECK_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"check >= 0.9.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "check >= 0.9.0") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"check >= 0.9.8\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "check >= 0.9.8") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_CHECK_LIBS=`$PKG_CONFIG --libs "check >= 0.9.0" 2>/dev/null`
+  pkg_cv_CHECK_LIBS=`$PKG_CONFIG --libs "check >= 0.9.8" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -14335,9 +14424,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        CHECK_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "check >= 0.9.0" 2>&1`
+	        CHECK_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "check >= 0.9.8" 2>&1`
         else
-	        CHECK_PKG_ERRORS=`$PKG_CONFIG --print-errors "check >= 0.9.0" 2>&1`
+	        CHECK_PKG_ERRORS=`$PKG_CONFIG --print-errors "check >= 0.9.8" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$CHECK_PKG_ERRORS" >&5
@@ -14366,6 +14455,18 @@ else
 fi
 
 
+    # on cygwin, the linker does not accept the "-z" option
+    case $host_os in
+        cygwin*)
+            TESTS_LDFLAGS="-Wl,--allow-multiple-definition"
+            ;;
+        *)
+            TESTS_LDFLAGS="-Wl,-z,muldefs"
+            ;;
+    esac
+
+
+
 
 
 
@@ -14388,12 +14489,12 @@ if test -n "$GLIB_CFLAGS"; then
     pkg_cv_GLIB_CFLAGS="$GLIB_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.8\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.8") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.12\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.12") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GLIB_CFLAGS=`$PKG_CONFIG --cflags "glib-2.0 >= 2.8" 2>/dev/null`
+  pkg_cv_GLIB_CFLAGS=`$PKG_CONFIG --cflags "glib-2.0 >= 2.12" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -14404,12 +14505,12 @@ if test -n "$GLIB_LIBS"; then
     pkg_cv_GLIB_LIBS="$GLIB_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.8\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.8") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.12\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.12") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GLIB_LIBS=`$PKG_CONFIG --libs "glib-2.0 >= 2.8" 2>/dev/null`
+  pkg_cv_GLIB_LIBS=`$PKG_CONFIG --libs "glib-2.0 >= 2.12" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -14429,9 +14530,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "glib-2.0 >= 2.8" 2>&1`
+	        GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "glib-2.0 >= 2.12" 2>&1`
         else
-	        GLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "glib-2.0 >= 2.8" 2>&1`
+	        GLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "glib-2.0 >= 2.12" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GLIB_PKG_ERRORS" >&5
@@ -14449,7 +14550,7 @@ $as_echo "yes" >&6; }
 	glib_found=yes
 fi
     if test x"$glib_found" = xno; then
-        as_fn_error $? "glib-2.0 not found or version too old (must be >= 2.8)" "$LINENO" 5
+        as_fn_error $? "glib-2.0 not found or version too old (must be >= 2.12)" "$LINENO" 5
     fi
 
 
@@ -14467,12 +14568,12 @@ if test -n "$GMODULE_CFLAGS"; then
     pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.8\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.8") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.12\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.12") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-no-export-2.0 >= 2.8" 2>/dev/null`
+  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-no-export-2.0 >= 2.12" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -14483,12 +14584,12 @@ if test -n "$GMODULE_LIBS"; then
     pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.8\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.8") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.12\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.12") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-no-export-2.0 >= 2.8" 2>/dev/null`
+  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-no-export-2.0 >= 2.12" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -14508,9 +14609,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gmodule-no-export-2.0 >= 2.8" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gmodule-no-export-2.0 >= 2.12" 2>&1`
         else
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors "gmodule-no-export-2.0 >= 2.8" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors "gmodule-no-export-2.0 >= 2.12" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GMODULE_PKG_ERRORS" >&5
@@ -14539,12 +14640,12 @@ if test -n "$GMODULE_CFLAGS"; then
     pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.8\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.8") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.12\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.12") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-2.0 >= 2.8" 2>/dev/null`
+  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-2.0 >= 2.12" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -14555,12 +14656,12 @@ if test -n "$GMODULE_LIBS"; then
     pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.8\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.8") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.12\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.12") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-2.0 >= 2.8" 2>/dev/null`
+  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-2.0 >= 2.12" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -14580,9 +14681,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gmodule-2.0 >= 2.8" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gmodule-2.0 >= 2.12" 2>&1`
         else
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors "gmodule-2.0 >= 2.8" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors "gmodule-2.0 >= 2.12" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GMODULE_PKG_ERRORS" >&5
@@ -14709,12 +14810,11 @@ fi
         ac_slang_lib_path="-L"$param_slang_lib_path
     fi
 
-    saved_CFLAGS="$CFLAGS"
     saved_CPPFLAGS="$CPPFLAGS"
     saved_LDFLAGS="$LDFLAGS"
 
-    CFLAGS="$CFLAGS $ac_slang_inc_path $ac_slang_lib_path"
-    CPPFLAGS="$saved_CPPFLAGS $ac_slang_inc_path $ac_slang_lib_path"
+    CPPFLAGS="$saved_CPPFLAGS $ac_slang_inc_path"
+    LDFLAGS="$saved_LDFLAGS $ac_slang_lib_path"
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for slang.h" >&5
 $as_echo_n "checking for slang.h... " >&6; }
@@ -14795,7 +14895,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 		if test x"$ac_slang_lib_path" = x; then
 		    ac_slang_lib_path="-L/usr/lib"
 		fi
-		CFLAGS="-DHAVE_SLANG_SLANG_H $CFLAGS"
+		CPPFLAGS="-DHAVE_SLANG_SLANG_H $CPPFLAGS"
 	    fi
 
 fi
@@ -14947,7 +15047,7 @@ fi
     fi
 
         if test x"$mc_cv_slang_termcap"  = x"yes"; then
-	    saved_CPPFLAGS="-ltermcap $saved_CPPFLAGS "
+	    saved_CPPFLAGS="$saved_CPPFLAGS "
 	    saved_LDFLAGS="-ltermcap $saved_LDFLAGS"
         fi
 
@@ -15005,10 +15105,9 @@ fi
         screen_msg="S-Lang library"
 
         MCLIBS="$ac_slang_lib_path -lslang $MCLIBS"
-        CFLAGS="$ac_slang_inc_path $saved_CFLAGS"
-                        LDFLAGS="$saved_LDFLAGS"
+                        CPPFLAGS="$ac_slang_inc_path $saved_CPPFLAGS"
+        LDFLAGS="$saved_LDFLAGS"
     else
-        CFLAGS="$saved_CFLAGS"
         CPPFLAGS="$saved_CPPFLAGS"
         LDFLAGS="$saved_LDFLAGS"
     fi
@@ -15086,7 +15185,7 @@ $as_echo "yes" >&6; }
 fi
         if test x"$found_slang" = "xyes"; then
             MCLIBS="$pkg_cv_SLANG_LIBS $MCLIBS"
-            CFLAGS="$pkg_cv_SLANG_CFLAGS $CFLAGS"
+            CPPFLAGS="$pkg_cv_SLANG_CFLAGS $CPPFLAGS"
         fi
     fi
 
@@ -15109,12 +15208,11 @@ fi
         ac_slang_lib_path="-L"$param_slang_lib_path
     fi
 
-    saved_CFLAGS="$CFLAGS"
     saved_CPPFLAGS="$CPPFLAGS"
     saved_LDFLAGS="$LDFLAGS"
 
-    CFLAGS="$CFLAGS $ac_slang_inc_path $ac_slang_lib_path"
-    CPPFLAGS="$saved_CPPFLAGS $ac_slang_inc_path $ac_slang_lib_path"
+    CPPFLAGS="$saved_CPPFLAGS $ac_slang_inc_path"
+    LDFLAGS="$saved_LDFLAGS $ac_slang_lib_path"
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for slang.h" >&5
 $as_echo_n "checking for slang.h... " >&6; }
@@ -15195,7 +15293,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 		if test x"$ac_slang_lib_path" = x; then
 		    ac_slang_lib_path="-L/usr/lib"
 		fi
-		CFLAGS="-DHAVE_SLANG_SLANG_H $CFLAGS"
+		CPPFLAGS="-DHAVE_SLANG_SLANG_H $CPPFLAGS"
 	    fi
 
 fi
@@ -15347,7 +15445,7 @@ fi
     fi
 
         if test x"$mc_cv_slang_termcap"  = x"yes"; then
-	    saved_CPPFLAGS="-ltermcap $saved_CPPFLAGS "
+	    saved_CPPFLAGS="$saved_CPPFLAGS "
 	    saved_LDFLAGS="-ltermcap $saved_LDFLAGS"
         fi
 
@@ -15405,10 +15503,9 @@ fi
         screen_msg="S-Lang library"
 
         MCLIBS="$ac_slang_lib_path -lslang $MCLIBS"
-        CFLAGS="$ac_slang_inc_path $saved_CFLAGS"
-                        LDFLAGS="$saved_LDFLAGS"
+                        CPPFLAGS="$ac_slang_inc_path $saved_CPPFLAGS"
+        LDFLAGS="$saved_LDFLAGS"
     else
-        CFLAGS="$saved_CFLAGS"
         CPPFLAGS="$saved_CPPFLAGS"
         LDFLAGS="$saved_LDFLAGS"
     fi
@@ -15432,12 +15529,11 @@ fi
         ac_slang_lib_path="-L"$param_slang_lib_path
     fi
 
-    saved_CFLAGS="$CFLAGS"
     saved_CPPFLAGS="$CPPFLAGS"
     saved_LDFLAGS="$LDFLAGS"
 
-    CFLAGS="$CFLAGS $ac_slang_inc_path $ac_slang_lib_path"
-    CPPFLAGS="$saved_CPPFLAGS $ac_slang_inc_path $ac_slang_lib_path"
+    CPPFLAGS="$saved_CPPFLAGS $ac_slang_inc_path"
+    LDFLAGS="$saved_LDFLAGS $ac_slang_lib_path"
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for slang.h" >&5
 $as_echo_n "checking for slang.h... " >&6; }
@@ -15518,7 +15614,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 		if test x"$ac_slang_lib_path" = x; then
 		    ac_slang_lib_path="-L/usr/lib"
 		fi
-		CFLAGS="-DHAVE_SLANG_SLANG_H $CFLAGS"
+		CPPFLAGS="-DHAVE_SLANG_SLANG_H $CPPFLAGS"
 	    fi
 
 fi
@@ -15670,7 +15766,7 @@ fi
     fi
 
         if test x"$mc_cv_slang_termcap"  = x"yes"; then
-	    saved_CPPFLAGS="-ltermcap $saved_CPPFLAGS "
+	    saved_CPPFLAGS="$saved_CPPFLAGS "
 	    saved_LDFLAGS="-ltermcap $saved_LDFLAGS"
         fi
 
@@ -15728,10 +15824,9 @@ fi
         screen_msg="S-Lang library"
 
         MCLIBS="$ac_slang_lib_path -lslang $MCLIBS"
-        CFLAGS="$ac_slang_inc_path $saved_CFLAGS"
-                        LDFLAGS="$saved_LDFLAGS"
+                        CPPFLAGS="$ac_slang_inc_path $saved_CPPFLAGS"
+        LDFLAGS="$saved_LDFLAGS"
     else
-        CFLAGS="$saved_CFLAGS"
         CPPFLAGS="$saved_CPPFLAGS"
         LDFLAGS="$saved_LDFLAGS"
     fi
@@ -15822,7 +15917,9 @@ fi
     fi
 
     saved_CPPFLAGS="$CPPFLAGS"
+    saved_LDFLAGS="$LDFLAGS"
     CPPFLAGS="$CPPFLAGS $ac_ncurses_inc_path"
+    LDFLAGS="$LDFLAGS $ac_ncurses_lib_path"
 
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ncurses/ncurses.h and ncurses/term.h" >&5
 $as_echo_n "checking for ncurses/ncurses.h and ncurses/term.h... " >&6; }
@@ -15880,6 +15977,7 @@ $as_echo "#define HAVE_NCURSES 1" >>confdefs.h
         MCLIBS="$MCLIBS $ac_ncurses_lib_path"
     else
         CPPFLAGS="$saved_CPPFLAGS"
+        LDFLAGS="$saved_LDPFLAGS"
         as_fn_error $? "$error_msg_ncurses" "$LINENO" 5
     fi
 
@@ -16326,14 +16424,14 @@ else
 $as_echo "(testing)" >&6; }
 
   if test "x$with_pcre" = "xyes" ; then
-    PCRE_CFLAGS="`pcre-config --cflags`"
+    PCRE_CPPFLAGS="`pcre-config --cflags`"
     PCRE_LIBS="`pcre-config --libs`"
   else
     test_PCRE_LIBS="-L$with_pcre/lib"
-    test_PCRE_CFLAGS="-I$with_pcre/include"
+    test_PCRE_CPPFLAGS="-I$with_pcre/include"
 
      OLDLDFLAGS="$LDFLAGS" ; LDFLAGS="$LDFLAGS $test_PCRE_LIBS"
-     OLDCFLAGS="$CFLAGS" ; CFLAGS="$CFLAGS $test_PCRE_CFLAGS"
+     OLDCPPFLAGS="$CPPFLAGS" ; CPPFLAGS="$CPPFLAGS $test_PCRE_CPPFLAGS"
 
      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcre_compile in -lpcre" >&5
 $as_echo_n "checking for pcre_compile in -lpcre... " >&6; }
@@ -16386,7 +16484,7 @@ fi
 $as_echo "setting PCRE_LIBS -L$with_pcre/lib -lpcre" >&6; }
 
         PCRE_LIBS=$test_PCRE_LIBS
-        test_PCRE_CFLAGS=$test_PCRE_CFLAGS
+        PCRE_CPPFLAGS=$test_PCRE_CPPFLAGS
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking lib pcre" >&5
 $as_echo_n "checking lib pcre... " >&6; }
@@ -16401,7 +16499,7 @@ $as_echo "no, (WARNING)" >&6; }
 
      fi
 
-     CFLAGS="$OLDCFLAGS"
+     CPPFLAGS="$OLDCFPPLAGS"
      LDFLAGS="$OLDLDFLAGS"
 
   fi
@@ -16457,14 +16555,14 @@ else
 $as_echo "(testing)" >&6; }
 
   if test "x$with_pcre" = "xyes" ; then
-    PCRE_CFLAGS="`pcre-config --cflags`"
+    PCRE_CPPFLAGS="`pcre-config --cflags`"
     PCRE_LIBS="`pcre-config --libs`"
   else
     test_PCRE_LIBS="-L$with_pcre/lib"
-    test_PCRE_CFLAGS="-I$with_pcre/include"
+    test_PCRE_CPPFLAGS="-I$with_pcre/include"
 
      OLDLDFLAGS="$LDFLAGS" ; LDFLAGS="$LDFLAGS $test_PCRE_LIBS"
-     OLDCFLAGS="$CFLAGS" ; CFLAGS="$CFLAGS $test_PCRE_CFLAGS"
+     OLDCPPFLAGS="$CPPFLAGS" ; CPPFLAGS="$CPPFLAGS $test_PCRE_CPPFLAGS"
 
      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcre_compile in -lpcre" >&5
 $as_echo_n "checking for pcre_compile in -lpcre... " >&6; }
@@ -16517,7 +16615,7 @@ fi
 $as_echo "setting PCRE_LIBS -L$with_pcre/lib -lpcre" >&6; }
 
         PCRE_LIBS=$test_PCRE_LIBS
-        test_PCRE_CFLAGS=$test_PCRE_CFLAGS
+        PCRE_CPPFLAGS=$test_PCRE_CPPFLAGS
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking lib pcre" >&5
 $as_echo_n "checking lib pcre... " >&6; }
@@ -16532,7 +16630,7 @@ $as_echo "no, (WARNING)" >&6; }
 
      fi
 
-     CFLAGS="$OLDCFLAGS"
+     CPPFLAGS="$OLDCFPPLAGS"
      LDFLAGS="$OLDLDFLAGS"
 
   fi
@@ -17259,6 +17357,14 @@ $as_echo "#define HAVE_TEXTMODE_X11_SUPPORT 1" >>confdefs.h
             MCLIBS="$MCLIBS $X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
         fi
     fi
+
+     if test x"$textmode_x11_support" = x"yes"; then
+  HAVE_TEXTMODE_X11_SUPPORT_TRUE=
+  HAVE_TEXTMODE_X11_SUPPORT_FALSE='#'
+else
+  HAVE_TEXTMODE_X11_SUPPORT_TRUE='#'
+  HAVE_TEXTMODE_X11_SUPPORT_FALSE=
+fi
 
 
 
@@ -18105,8 +18211,72 @@ fi
 
 
 
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for sig_atomic_t in signal.h" >&5
+$as_echo_n "checking for sig_atomic_t in signal.h... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <signal.h>
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "sig_atomic_t" >/dev/null 2>&1; then :
+
+    ac_cv_type_sig_atomic_t=yes;
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <signal.h>
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "volatile.*sig_atomic_t" >/dev/null 2>&1; then :
+
+                        is_sig_atomic_t_volatile=yes;
+                        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, volatile" >&5
+$as_echo "yes, volatile" >&6; }
+
+else
+
+                        is_sig_atomic_t_volatile=no;
+                        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, non volatile" >&5
+$as_echo "yes, non volatile" >&6; }
+
+fi
+rm -f conftest*
+
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    ac_fn_c_check_type "$LINENO" "sig_atomic_t" "ac_cv_type_sig_atomic_t" "$ac_includes_default"
+if test "x$ac_cv_type_sig_atomic_t" = xyes; then :
+
+else
+
+cat >>confdefs.h <<_ACEOF
+#define sig_atomic_t int
+_ACEOF
+
+fi
+
+    is_sig_atomic_t_volatile=no
+
+fi
+rm -f conftest*
+
+if test $is_sig_atomic_t_volatile = 'yes'
+then
+    $as_echo "#define SIG_ATOMIC_VOLATILE_T sig_atomic_t" >>confdefs.h
+
+else
+    $as_echo "#define SIG_ATOMIC_VOLATILE_T volatile sig_atomic_t" >>confdefs.h
+
+fi
+
+
+
 for ac_func in \
-	atoll \
 	isascii \
 	statfs sysconf \
 	tcgetattr tcsetattr \
@@ -20038,14 +20208,6 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <sys/types.h>
-#if (defined __GLIBC__ || defined __UCLIBC__) && defined __linux__
-Do not use statvfs on systems with GNU libc on Linux, because that function
-stats all preceding entries in /proc/mounts, and that makes df hang if even
-one of the corresponding file systems is hard-mounted, but not available.
-statvfs in GNU libc on Hurd, BeOS, Haiku operates differently: it only makes
-a system call.
-#endif
-
 #ifdef __osf__
 "Do not use Tru64's statvfs implementation"
 #endif
@@ -20131,6 +20293,56 @@ $as_echo "#define STAT_STATVFS 1" >>confdefs.h
 
     fi
   fi
+fi
+
+# Check for this unconditionally so we have a
+# good fallback on glibc/Linux > 2.6 < 2.6.36
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for two-argument statfs with statfs.f_frsize member" >&5
+$as_echo_n "checking for two-argument statfs with statfs.f_frsize member... " >&6; }
+if ${fu_cv_sys_stat_statfs2_frsize+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  fu_cv_sys_stat_statfs2_frsize=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
+#ifdef HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+  int
+  main ()
+  {
+  struct statfs fsd;
+  fsd.f_frsize = 0;
+  return statfs (".", &fsd) != 0;
+  }
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  fu_cv_sys_stat_statfs2_frsize=yes
+else
+  fu_cv_sys_stat_statfs2_frsize=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $fu_cv_sys_stat_statfs2_frsize" >&5
+$as_echo "$fu_cv_sys_stat_statfs2_frsize" >&6; }
+if test $fu_cv_sys_stat_statfs2_frsize = yes; then
+    ac_fsusage_space=yes
+
+$as_echo "#define STAT_STATFS2_FRSIZE 1" >>confdefs.h
+
 fi
 
 if test $ac_fsusage_space = no; then
@@ -24440,36 +24652,50 @@ else
 	diff_msg="no"
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for subshell support" >&5
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for subshell support" >&5
 $as_echo_n "checking for subshell support... " >&6; }
 
 # Check whether --with-subshell was given.
 if test "${with_subshell+set}" = set; then :
-  withval=$with_subshell; result=no
-	if test x$withval = xoptional
-	then
+  withval=$with_subshell;
+                result=no
+                if test x$withval = xoptional; then
 
 $as_echo "#define SUBSHELL_OPTIONAL 1" >>confdefs.h
 
-		result="optional"
-	fi
-	if test x$withval = xyes
-        then
-		result="yes"
-	fi
+                    result="optional"
+                fi
+                if test x$withval = xyes; then
+                    result="yes"
+                fi
+
 else
-  	result="yes"
+
+                                result="yes"
 
 fi
 
-if test "x$result" != xno; then
 
-$as_echo "#define HAVE_SUBSHELL_SUPPORT 1" >>confdefs.h
+    if test "x$result" != xno; then
 
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $result" >&5
+$as_echo "#define ENABLE_SUBSHELL 1" >>confdefs.h
+
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $result" >&5
 $as_echo "$result" >&6; }
-subshell="$result"
+    subshell="$result"
+
+     if test "x$result" != xno; then
+  ENABLE_SUBSHELL_TRUE=
+  ENABLE_SUBSHELL_FALSE='#'
+else
+  ENABLE_SUBSHELL_TRUE='#'
+  ENABLE_SUBSHELL_FALSE=
+fi
+
 
 
     # Check whether --enable-background was given.
@@ -24499,7 +24725,6 @@ else
   ENABLE_BACKGROUND_TRUE='#'
   ENABLE_BACKGROUND_FALSE=
 fi
-
 
 
 
@@ -25389,12 +25614,13 @@ fi
 
 
 
-
-test "x$prefix" = "xNONE" && prefix=$ac_default_prefix
-test "x$exec_prefix" = "xNONE" && exec_prefix='${prefix}'
+test "x$prefix" = "xNONE" && prefix="$ac_default_prefix"
+test "x$exec_prefix" = "xNONE" && exec_prefix="${prefix}"
 
 if test x${libexecdir} = x'${exec_prefix}/libexec'; then
     EXTHELPERSDIR=${prefix}/libexec/${PACKAGE}/ext.d
+elif test x${libexecdir} = x'${exec_prefix}/lib'; then
+    EXTHELPERSDIR=${prefix}/lib/${PACKAGE}/ext.d
 else
     EXTHELPERSDIR=${libexecdir}/${PACKAGE}/ext.d
 fi
@@ -27439,14 +27665,13 @@ _ACEOF
 ac_config_files="$ac_config_files src/man2hlp/man2hlp"
 
 
-ac_config_files="$ac_config_files Makefile contrib/Makefile contrib/dist/Makefile contrib/dist/debian/Makefile contrib/dist/gentoo/Makefile contrib/dist/redhat/Makefile contrib/dist/redhat/mc.spec contrib/dist/pkginfo contrib/dist/prototype misc/Makefile misc/skins/Makefile misc/ext.d/Makefile misc/ext.d/doc.sh misc/ext.d/misc.sh misc/ext.d/text.sh misc/ext.d/web.sh misc/macros.d/Makefile misc/mc.ext src/Makefile src/consaver/Makefile src/editor/Makefile src/man2hlp/Makefile src/viewer/Makefile src/diffviewer/Makefile src/filemanager/Makefile src/vfs/Makefile src/vfs/cpio/Makefile src/vfs/extfs/Makefile src/vfs/extfs/helpers/Makefile src/vfs/extfs/helpers/a+ src/vfs/extfs/helpers/apt+ src/vfs/extfs/helpers/audio src/vfs/extfs/helpers/deb src/vfs/extfs/helpers/deba src/vfs/extfs/helpers/debd src/vfs/extfs/helpers/dpkg+ src/vfs/extfs/helpers/iso9660 src/vfs/extfs/helpers/hp48+ src/vfs/extfs/helpers/lslR src/vfs/extfs/helpers/mailfs src/vfs/extfs/helpers/patchfs src/vfs/extfs/helpers/rpms+ src/vfs/extfs/helpers/s3+ src/vfs/extfs/helpers/uace src/vfs/extfs/helpers/ualz src/vfs/extfs/helpers/uar src/vfs/extfs/helpers/uarc src/vfs/extfs/helpers/uarj src/vfs/extfs/helpers/ucab src/vfs/extfs/helpers/uha src/vfs/extfs/helpers/ulha src/vfs/extfs/helpers/ulib src/vfs/extfs/helpers/urar src/vfs/extfs/helpers/uzip src/vfs/extfs/helpers/uzoo src/vfs/fish/Makefile src/vfs/fish/helpers/Makefile src/vfs/ftpfs/Makefile src/vfs/sftpfs/Makefile src/vfs/local/Makefile src/vfs/sfs/Makefile src/vfs/smbfs/Makefile src/vfs/tar/Makefile src/vfs/undelfs/Makefile lib/Makefile lib/event/Makefile lib/filehighlight/Makefile lib/mcconfig/Makefile lib/search/Makefile lib/skin/Makefile lib/strutil/Makefile lib/tty/Makefile lib/vfs/Makefile lib/widget/Makefile misc/syntax/Makefile doc/Makefile doc/hints/Makefile doc/man/Makefile doc/man/es/Makefile doc/man/hu/Makefile doc/man/it/Makefile doc/man/pl/Makefile doc/man/ru/Makefile doc/man/sr/Makefile doc/hlp/Makefile doc/hlp/es/Makefile doc/hlp/hu/Makefile doc/hlp/it/Makefile doc/hlp/pl/Makefile doc/hlp/ru/Makefile doc/hlp/sr/Makefile intl/Makefile po/Makefile.in"
+ac_config_files="$ac_config_files Makefile contrib/Makefile contrib/dist/Makefile contrib/dist/gentoo/Makefile contrib/dist/redhat/Makefile contrib/dist/redhat/mc.spec contrib/dist/pkginfo contrib/dist/prototype misc/Makefile misc/skins/Makefile misc/ext.d/Makefile misc/ext.d/doc.sh misc/ext.d/misc.sh misc/ext.d/text.sh misc/ext.d/web.sh misc/macros.d/Makefile misc/mc.ext src/Makefile src/consaver/Makefile src/editor/Makefile src/man2hlp/Makefile src/viewer/Makefile src/diffviewer/Makefile src/filemanager/Makefile src/vfs/Makefile src/vfs/cpio/Makefile src/vfs/extfs/Makefile src/vfs/extfs/helpers/Makefile src/vfs/extfs/helpers/a+ src/vfs/extfs/helpers/apt+ src/vfs/extfs/helpers/audio src/vfs/extfs/helpers/deb src/vfs/extfs/helpers/deba src/vfs/extfs/helpers/debd src/vfs/extfs/helpers/dpkg+ src/vfs/extfs/helpers/iso9660 src/vfs/extfs/helpers/hp48+ src/vfs/extfs/helpers/lslR src/vfs/extfs/helpers/mailfs src/vfs/extfs/helpers/patchfs src/vfs/extfs/helpers/rpms+ src/vfs/extfs/helpers/s3+ src/vfs/extfs/helpers/uace src/vfs/extfs/helpers/ualz src/vfs/extfs/helpers/uar src/vfs/extfs/helpers/uarc src/vfs/extfs/helpers/uarj src/vfs/extfs/helpers/uc1541 src/vfs/extfs/helpers/ucab src/vfs/extfs/helpers/uha src/vfs/extfs/helpers/ulha src/vfs/extfs/helpers/ulib src/vfs/extfs/helpers/urar src/vfs/extfs/helpers/uzip src/vfs/extfs/helpers/uzoo src/vfs/fish/Makefile src/vfs/fish/helpers/Makefile src/vfs/ftpfs/Makefile src/vfs/sftpfs/Makefile src/vfs/local/Makefile src/vfs/sfs/Makefile src/vfs/smbfs/Makefile src/vfs/tar/Makefile src/vfs/undelfs/Makefile lib/Makefile lib/event/Makefile lib/filehighlight/Makefile lib/mcconfig/Makefile lib/search/Makefile lib/skin/Makefile lib/strutil/Makefile lib/tty/Makefile lib/vfs/Makefile lib/widget/Makefile misc/syntax/Makefile misc/syntax/Syntax doc/Makefile doc/hints/Makefile doc/man/Makefile doc/man/es/Makefile doc/man/hu/Makefile doc/man/it/Makefile doc/man/pl/Makefile doc/man/ru/Makefile doc/man/sr/Makefile doc/hlp/Makefile doc/hlp/es/Makefile doc/hlp/hu/Makefile doc/hlp/it/Makefile doc/hlp/pl/Makefile doc/hlp/ru/Makefile doc/hlp/sr/Makefile intl/Makefile po/Makefile.in"
 
 
 if test x$enable_tests != xno; then
     ac_config_files="$ac_config_files tests/Makefile tests/lib/Makefile tests/lib/mcconfig/Makefile tests/lib/search/Makefile tests/lib/vfs/Makefile tests/src/Makefile tests/src/filemanager/Makefile"
 
 fi
-
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -27585,8 +27810,16 @@ if test -z "${HAVE_GMODULE_TRUE}" && test -z "${HAVE_GMODULE_FALSE}"; then
   as_fn_error $? "conditional \"HAVE_GMODULE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${HAVE_TEXTMODE_X11_SUPPORT_TRUE}" && test -z "${HAVE_TEXTMODE_X11_SUPPORT_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_TEXTMODE_X11_SUPPORT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${ENABLE_MCLIB_TRUE}" && test -z "${ENABLE_MCLIB_FALSE}"; then
   as_fn_error $? "conditional \"ENABLE_MCLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${ENABLE_SUBSHELL_TRUE}" && test -z "${ENABLE_SUBSHELL_FALSE}"; then
+  as_fn_error $? "conditional \"ENABLE_SUBSHELL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ENABLE_BACKGROUND_TRUE}" && test -z "${ENABLE_BACKGROUND_FALSE}"; then
@@ -28657,7 +28890,6 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "contrib/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/Makefile" ;;
     "contrib/dist/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/dist/Makefile" ;;
-    "contrib/dist/debian/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/dist/debian/Makefile" ;;
     "contrib/dist/gentoo/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/dist/gentoo/Makefile" ;;
     "contrib/dist/redhat/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/dist/redhat/Makefile" ;;
     "contrib/dist/redhat/mc.spec") CONFIG_FILES="$CONFIG_FILES contrib/dist/redhat/mc.spec" ;;
@@ -28702,6 +28934,7 @@ do
     "src/vfs/extfs/helpers/uar") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/uar" ;;
     "src/vfs/extfs/helpers/uarc") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/uarc" ;;
     "src/vfs/extfs/helpers/uarj") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/uarj" ;;
+    "src/vfs/extfs/helpers/uc1541") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/uc1541" ;;
     "src/vfs/extfs/helpers/ucab") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/ucab" ;;
     "src/vfs/extfs/helpers/uha") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/uha" ;;
     "src/vfs/extfs/helpers/ulha") CONFIG_FILES="$CONFIG_FILES src/vfs/extfs/helpers/ulha" ;;
@@ -28729,6 +28962,7 @@ do
     "lib/vfs/Makefile") CONFIG_FILES="$CONFIG_FILES lib/vfs/Makefile" ;;
     "lib/widget/Makefile") CONFIG_FILES="$CONFIG_FILES lib/widget/Makefile" ;;
     "misc/syntax/Makefile") CONFIG_FILES="$CONFIG_FILES misc/syntax/Makefile" ;;
+    "misc/syntax/Syntax") CONFIG_FILES="$CONFIG_FILES misc/syntax/Syntax" ;;
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "doc/hints/Makefile") CONFIG_FILES="$CONFIG_FILES doc/hints/Makefile" ;;
     "doc/man/Makefile") CONFIG_FILES="$CONFIG_FILES doc/man/Makefile" ;;
@@ -30373,7 +30607,8 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-echo "
+{ $as_echo "$as_me:${as_lineno-$LINENO}:
+
 Configuration:
 
   Source code location:       ${srcdir}
@@ -30390,4 +30625,23 @@ Configuration:
   Diff viewer:                ${diff_msg}
   Support for charset:        ${charset_msg}
   Search type:                ${SEARCH_TYPE}
-"
+" >&5
+$as_echo "$as_me:
+
+Configuration:
+
+  Source code location:       ${srcdir}
+  Compiler:                   ${CC}
+  Compiler flags:             ${CFLAGS}
+  File system:                ${vfs_type}
+                              ${vfs_flags}
+  Screen library:             ${screen_msg}
+  Mouse support:              ${mouse_lib}
+  X11 events support:         ${textmode_x11_support}
+  With subshell support:      ${subshell}
+  With background operations: ${enable_background}
+  Internal editor:            ${edit_msg}
+  Diff viewer:                ${diff_msg}
+  Support for charset:        ${charset_msg}
+  Search type:                ${SEARCH_TYPE}
+" >&6;}

@@ -377,31 +377,31 @@ ftpfs_get_reply (struct vfs_class *me, int sock, char *string_buf, int string_le
     char answer[BUF_1K];
     int i;
 
-    for (;;)
+    while (TRUE)
     {
         if (!vfs_s_get_line (me, sock, answer, sizeof (answer), '\n'))
         {
-            if (string_buf)
-                *string_buf = 0;
+            if (string_buf != NULL)
+                *string_buf = '\0';
             code = 421;
             return 4;
         }
         switch (sscanf (answer, "%d", &code))
         {
         case 0:
-            if (string_buf)
+            if (string_buf != NULL)
                 g_strlcpy (string_buf, answer, string_len);
             code = 500;
             return 5;
         case 1:
             if (answer[3] == '-')
             {
-                while (1)
+                while (TRUE)
                 {
                     if (!vfs_s_get_line (me, sock, answer, sizeof (answer), '\n'))
                     {
-                        if (string_buf)
-                            *string_buf = 0;
+                        if (string_buf != NULL)
+                            *string_buf = '\0';
                         code = 421;
                         return 4;
                     }
@@ -409,7 +409,7 @@ ftpfs_get_reply (struct vfs_class *me, int sock, char *string_buf, int string_le
                         break;
                 }
             }
-            if (string_buf)
+            if (string_buf != NULL)
                 g_strlcpy (string_buf, answer, string_len);
             return code / 100;
         }
@@ -431,7 +431,6 @@ ftpfs_reconnect (struct vfs_class *me, struct vfs_s_super *super)
         close (SUP->sock);
         SUP->sock = sock;
         SUP->current_dir = NULL;
-
 
         if (ftpfs_login_server (me, super, super->path_element->password) != 0)
         {
@@ -1786,7 +1785,7 @@ ftpfs_dir_load (struct vfs_class *me, struct vfs_s_inode *dir, char *remote_path
 static int
 ftpfs_file_store (struct vfs_class *me, vfs_file_handler_t * fh, char *name, char *localname)
 {
-    int h, sock, n_read, n_written;
+    int h, sock;
     off_t n_stored;
 #ifdef HAVE_STRUCT_LINGER_L_LINGER
     struct linger li;
@@ -1822,20 +1821,20 @@ ftpfs_file_store (struct vfs_class *me, vfs_file_handler_t * fh, char *name, cha
     tty_enable_interrupt_key ();
     while (TRUE)
     {
+        ssize_t n_read, n_written;
+
         while ((n_read = read (h, lc_buffer, sizeof (lc_buffer))) == -1)
         {
-            if (errno == EINTR)
+            if (errno != EINTR)
             {
-                if (tty_got_interrupt ())
-                {
-                    ftpfs_errno = EINTR;
-                    goto error_return;
-                }
-                else
-                    continue;
+                ftpfs_errno = errno;
+                goto error_return;
             }
-            ftpfs_errno = errno;
-            goto error_return;
+            if (tty_got_interrupt ())
+            {
+                ftpfs_errno = EINTR;
+                goto error_return;
+            }
         }
         if (n_read == 0)
             break;
@@ -1846,9 +1845,8 @@ ftpfs_file_store (struct vfs_class *me, vfs_file_handler_t * fh, char *name, cha
             if (n_written == -1)
             {
                 if (errno == EINTR && !tty_got_interrupt ())
-                {
                     continue;
-                }
+
                 ftpfs_errno = errno;
                 goto error_return;
             }
@@ -1897,7 +1895,7 @@ ftpfs_linear_start (struct vfs_class *me, vfs_file_handler_t * fh, off_t offset)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static int
+static ssize_t
 ftpfs_linear_read (struct vfs_class *me, vfs_file_handler_t * fh, void *buf, size_t len)
 {
     ssize_t n;

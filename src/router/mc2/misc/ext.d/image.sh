@@ -6,6 +6,8 @@
 action=$1
 filetype=$2
 
+[ -n "${MC_XDG_OPEN}" ] || MC_XDG_OPEN="xdg-open"
+
 do_view_action() {
     filetype=$1
 
@@ -32,9 +34,14 @@ do_open_action() {
     xcf)
         (gimp "${MC_EXT_FILENAME}" &)
         ;;
+    svg)
+        (inkscape "${MC_EXT_FILENAME}" &)
+        ;;
     *)
         if [ -n "$DISPLAY" ]; then
             (gqview "${MC_EXT_FILENAME}" &)
+        elif see >/dev/null 2>&1; then
+            (see "${MC_EXT_FILENAME}" &)
         else
             zgv "${MC_EXT_FILENAME}"
         fi
@@ -47,7 +54,7 @@ view)
     do_view_action "${filetype}"
     ;;
 open)
-    xdg-open "${MC_EXT_FILENAME}" 2>/dev/null || \
+    "${MC_XDG_OPEN}" "${MC_EXT_FILENAME}" 2>/dev/null || \
         do_open_action "${filetype}"
     ;;
 *)
