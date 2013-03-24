@@ -57,6 +57,7 @@ extern si_t *bcm947xx_sih;
 #define ENTRYLO(x)      ((pte_val(pfn_pte((x) >> PAGE_SHIFT, PAGE_KERNEL_UNCACHED)) >> 6) | 1)
 #define UNIQUE_ENTRYHI(idx) (CKSEG0 + ((idx) << (PAGE_SHIFT + 1)))
 
+
 static unsigned long tmp_tlb_ent __initdata;
 
 #if defined(CONFIG_CFE) && defined(CONFIG_EARLY_PRINTK)
@@ -84,8 +85,8 @@ early_tlb_init(void)
 	* initialize entire TLB to uniqe virtual addresses
 	* but with the PAGE_VALID bit not set
 	*/
-	write_c0_wired(0);
 	write_c0_pagemask(PM_DEFAULT_MASK);
+	write_c0_wired(0);
 
 	write_c0_entrylo0(0);   /* not _PAGE_VALID */
 	write_c0_entrylo1(0);
@@ -109,6 +110,7 @@ add_tmptlb_entry(unsigned long entrylo0, unsigned long entrylo1,
 /* write one tlb entry */
 	--tmp_tlb_ent;
 	write_c0_index(tmp_tlb_ent);
+	tlbw_use_hazard();	/* What is the hazard here? */
 	write_c0_pagemask(pagemask);
 	write_c0_entryhi(entryhi);
 	write_c0_entrylo0(entrylo0);
