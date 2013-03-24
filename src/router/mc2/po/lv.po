@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: lv\n"
@@ -515,14 +515,14 @@ msgstr "&Jā"
 msgid "&No"
 msgstr "&Nē"
 
-msgid "Background process:"
-msgstr "Fona process:"
+msgid "&OK"
+msgstr "&Labi"
 
 msgid "&Cancel"
 msgstr "&Atsaukt"
 
-msgid "&OK"
-msgstr "&Labi"
+msgid "Background process:"
+msgstr "Fona process:"
 
 msgid "Error"
 msgstr "Kļūda"
@@ -698,19 +698,19 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Atcelt"
 
-msgid "&All charsets"
+msgid "Enter search string:"
 msgstr ""
 
-msgid "&Whole words"
+msgid "Cas&e sensitive"
 msgstr ""
 
 msgid "&Backwards"
 msgstr "at&Pakaļ"
 
-msgid "Cas&e sensitive"
+msgid "&Whole words"
 msgstr ""
 
-msgid "Enter search string:"
+msgid "&All charsets"
 msgstr ""
 
 msgid "Search"
@@ -744,25 +744,25 @@ msgstr ""
 msgid "&Minimal (Find a smaller set of change)"
 msgstr ""
 
-msgid "Strip &trailing carriage return"
-msgstr ""
-
-msgid "Ignore all &whitespace"
-msgstr ""
-
-msgid "Ignore &space change"
-msgstr ""
-
-msgid "Ignore tab &expansion"
-msgstr ""
-
-msgid "&Ignore case"
+msgid "Diff algorithm"
 msgstr ""
 
 msgid "Diff extra options"
 msgstr ""
 
-msgid "Diff algorithm"
+msgid "&Ignore case"
+msgstr ""
+
+msgid "Ignore tab &expansion"
+msgstr ""
+
+msgid "Ignore &space change"
+msgstr ""
+
+msgid "Ignore all &whitespace"
+msgstr ""
+
+msgid "Strip &trailing carriage return"
 msgstr ""
 
 msgid "Diff Options"
@@ -907,10 +907,10 @@ msgstr ""
 msgid "&Macintosh format (CR)"
 msgstr ""
 
-msgid "Change line breaks to:"
+msgid "Enter file name:"
 msgstr ""
 
-msgid "Enter file name:"
+msgid "Change line breaks to:"
 msgstr ""
 
 msgid "Save As"
@@ -1087,16 +1087,16 @@ msgstr ""
 msgid "Cannot execute command"
 msgstr ""
 
-msgid "Copies to"
-msgstr ""
-
-msgid "Subject"
+msgid "mail -s <subject> -c <cc> <to>"
 msgstr ""
 
 msgid "To"
 msgstr ""
 
-msgid "mail -s <subject> -c <cc> <to>"
+msgid "Subject"
+msgstr ""
+
+msgid "Copies to"
 msgstr ""
 
 msgid "Mail"
@@ -1116,10 +1116,25 @@ msgstr ""
 msgid "In se&lection"
 msgstr ""
 
+msgid "&Find all"
+msgstr ""
+
 msgid "Enter replacement string:"
 msgstr ""
 
-msgid "&Find all"
+msgid "Replace with:"
+msgstr ""
+
+msgid "&Replace"
+msgstr "&Aizvietot"
+
+msgid "A&ll"
+msgstr "vi&Si"
+
+msgid "&Skip"
+msgstr "&Izlaist"
+
+msgid "Confirm replace"
 msgstr ""
 
 msgid "Cancel"
@@ -1128,21 +1143,6 @@ msgstr "Atsaukt"
 msgid ""
 "Current text was modified without a file save.\n"
 "Continue discards these changes."
-msgstr ""
-
-msgid "&Skip"
-msgstr "&Izlaist"
-
-msgid "A&ll"
-msgstr "vi&Si"
-
-msgid "&Replace"
-msgstr "&Aizvietot"
-
-msgid "Replace with:"
-msgstr ""
-
-msgid "Confirm replace"
 msgstr ""
 
 msgid "NoName"
@@ -1367,71 +1367,81 @@ msgstr ""
 msgid "&Options"
 msgstr ""
 
-msgid "None"
-msgstr "Nekas"
-
-msgid "Dynamic paragraphing"
-msgstr "Dinamiska paragrāfošana"
-
-msgid "Type writer wrap"
-msgstr "Mašīnrakstīšanas iekļaušana"
-
-msgid "Word wrap line length:"
+msgid "&None"
 msgstr ""
 
-msgid "&Group undo"
+msgid "&Dynamic paragraphing"
 msgstr ""
 
-msgid "Cursor beyond end of line"
-msgstr ""
-
-msgid "Pers&istent selection"
-msgstr ""
-
-msgid "Synta&x highlighting"
-msgstr "sinta&Kses izgaismošana"
-
-msgid "Visible tabs"
-msgstr ""
-
-msgid "Visible trailing spaces"
-msgstr ""
-
-msgid "Save file &position"
-msgstr ""
-
-msgid "Confir&m before saving"
-msgstr "a&Pstiprināt pirms saglabāšanas"
-
-msgid "&Return does autoindent"
-msgstr "&Enter veido autom.atkāpi"
-
-msgid "Tab spacing:"
-msgstr ""
-
-msgid "Fill tabs with &spaces"
-msgstr "piepildīt tabulācijas ar at&Starpēm"
-
-msgid "&Backspace through tabs"
-msgstr ""
-
-msgid "&Fake half tabs"
+msgid "Type &writer wrap"
 msgstr ""
 
 msgid "Wrap mode"
 msgstr "Iekļaušanas režīms"
 
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr ""
+
+msgid "&Backspace through tabs"
+msgstr ""
+
+msgid "Fill tabs with &spaces"
+msgstr "piepildīt tabulācijas ar at&Starpēm"
+
+msgid "Tab spacing:"
+msgstr ""
+
+msgid "Other options"
+msgstr ""
+
+msgid "&Return does autoindent"
+msgstr "&Enter veido autom.atkāpi"
+
+msgid "Confir&m before saving"
+msgstr "a&Pstiprināt pirms saglabāšanas"
+
+msgid "Save file &position"
+msgstr ""
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
+msgstr ""
+
+msgid "Synta&x highlighting"
+msgstr "sinta&Kses izgaismošana"
+
+msgid "C&ursor after inserted block"
+msgstr ""
+
+msgid "Pers&istent selection"
+msgstr ""
+
+msgid "Cursor be&yond end of line"
+msgstr ""
+
+msgid "&Group undo"
+msgstr ""
+
+msgid "Word wrap line length:"
+msgstr ""
+
 msgid "Editor options"
 msgstr ""
 
-msgid "About"
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
 msgstr ""
 
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
+msgid "About"
 msgstr ""
 
 msgid "Open files"
@@ -1507,14 +1517,14 @@ msgstr "Ievadiet 'exit', lai atgrieztos Pusnakts Komandierī"
 msgid "Cannot fetch a local copy of %s"
 msgstr ""
 
-msgid "&Set"
-msgstr "&Uzstādīt"
+msgid "Set &all"
+msgstr "Uzstādīt &visus"
 
 msgid "S&kip"
 msgstr "Iz&laist"
 
-msgid "Set &all"
-msgstr "Uzstādīt &visus"
+msgid "&Set"
+msgstr "&Uzstādīt"
 
 msgid "owner"
 msgstr "īpašnieks"
@@ -1525,18 +1535,8 @@ msgstr "grupa"
 msgid "other"
 msgstr "citi"
 
-msgid "On"
-msgstr "Ieslēgts"
-
 msgid "Flag"
 msgstr "Karogs"
-
-msgid "Mode"
-msgstr "Režīms"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d no %d"
 
 msgid "Chown advanced command"
 msgstr ""
@@ -1553,14 +1553,14 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "&Stop"
-msgstr "&Stop"
+msgid "Other 8 bit"
+msgstr "Citi 8 bitu"
 
-msgid "&Resume"
-msgstr "&Rezumēt"
+msgid "Running"
+msgstr ""
 
-msgid "&Kill"
-msgstr "&Nokaut"
+msgid "Stopped"
+msgstr "Apstādīnāts"
 
 msgid "&Full file list"
 msgstr "Pi&lns failu saraksts"
@@ -1574,14 +1574,57 @@ msgstr "&Garšs failu saraksts"
 msgid "&User defined:"
 msgstr "Li&etotāja definēts:"
 
-msgid "Listing mode"
-msgstr "Saraksta režīms"
-
 msgid "User &mini status"
 msgstr ""
 
-msgid "Other 8 bit"
-msgstr "Citi 8 bitu"
+msgid "Listing mode"
+msgstr "Saraksta režīms"
+
+msgid "Executable &first"
+msgstr ""
+
+msgid "&Reverse"
+msgstr "&Pretēji"
+
+msgid "Sort order"
+msgstr "Kārtošanas secība"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr ""
+
+msgid "Confirmation|O&verwrite"
+msgstr ""
+
+msgid "Confirmation|&Execute"
+msgstr ""
+
+msgid "Confirmation|E&xit"
+msgstr ""
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr ""
+
+msgid "Confirmation|&History cleanup"
+msgstr ""
+
+msgid "Confirmation"
+msgstr ""
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "P&ilna 8 bitu ievade"
 
 msgid "Display bits"
 msgstr ""
@@ -1589,91 +1632,32 @@ msgstr ""
 msgid "Input / display codepage:"
 msgstr "Ievades / displeja kodu tabula:"
 
-msgid "F&ull 8 bits input"
-msgstr "P&ilna 8 bitu ievade"
-
 msgid "&Select"
 msgstr "a&tlasīt"
-
-msgid "Running"
-msgstr ""
-
-msgid "Stopped"
-msgstr "Apstādīnāts"
-
-msgid "&Reverse"
-msgstr "&Pretēji"
-
-msgid "Case sensi&tive"
-msgstr ""
-
-msgid "Executable &first"
-msgstr ""
-
-msgid "Sort order"
-msgstr "Kārtošanas secība"
-
-msgid "Confirmation"
-msgstr ""
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr ""
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr ""
-
-msgid "Confirmation|E&xit"
-msgstr ""
-
-msgid "Confirmation|&Execute"
-msgstr ""
-
-msgid "Confirmation|O&verwrite"
-msgstr ""
-
-msgid "Confirmation|&Delete"
-msgstr ""
-
-msgid "UTF-8 output"
-msgstr ""
-
-msgid "Full 8 bits output"
-msgstr "Pilna 8 bitu izvade"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7 biti"
 
 msgid "Directory tree"
 msgstr ""
 
-msgid "Use passive mode over pro&xy"
+msgid "Timeout for freeing VFSs (sec):"
 msgstr ""
 
-msgid "Use &passive mode"
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
 msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr ""
 
-msgid "&Always use ftp proxy"
-msgstr "&Vienmēr lietot ftp proxy"
+msgid "Use &passive mode"
+msgstr ""
 
-msgid "sec"
-msgstr "sek"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "ftpfs direktorija keša taimauts:"
-
-msgid "ftp anonymous password:"
-msgstr "anonīmā ftp parole:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "Taimauts atbrīvojot VFSas:"
+msgid "Use passive mode over pro&xy"
+msgstr ""
 
 msgid "Virtual File System Setting"
 msgstr ""
@@ -1684,18 +1668,31 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "Ātrs cd"
 
-msgid "Symbolic link filename:"
-msgstr "Simbolsaites faila nosaukums:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr ""
 "Eksistējošs faila nosaukums (faila nosaukums, uz kuru simbolsaite norādīs):"
 
+msgid "Symbolic link filename:"
+msgstr "Simbolsaites faila nosaukums:"
+
 msgid "Symbolic link"
 msgstr "Simbolsaite"
 
-msgid "Background Jobs"
-msgstr "Fona Darbi"
+msgid "&Stop"
+msgstr "&Stop"
+
+msgid "&Resume"
+msgstr "&Rezumēt"
+
+msgid "&Kill"
+msgstr "&Nokaut"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "\\\\%s\\%s Parole"
 
 msgid "Domain:"
 msgstr "Domēns:"
@@ -1703,45 +1700,44 @@ msgstr "Domēns:"
 msgid "Username:"
 msgstr "Lietotājvārds:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "\\\\%s\\%s Parole"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "palaist/meklēt citiem"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "rakstīt citiem"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "lasīt citiem"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "palaist/meklēt grupai"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "rakstīt grupai"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "lasīt grupai"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "palaist/meklēt īpašniekam"
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "rakstīt īpašniekam"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "lasīt īpašniekam"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "lipīgs"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "uzstād. grup. ID pie izpildes"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "uzstād. liet. ID pie izpildes"
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr ""
@@ -1755,29 +1751,29 @@ msgstr ""
 msgid "Group name:"
 msgstr ""
 
-msgid "C&lear marked"
-msgstr "A&ttīrīt izvēlēto"
+msgid "&Marked all"
+msgstr "&Izvēlēti visi"
 
 msgid "S&et marked"
 msgstr "U&zstādīt izvēlēto"
 
-msgid "&Marked all"
-msgstr "&Izvēlēti visi"
+msgid "C&lear marked"
+msgstr "A&ttīrīt izvēlēto"
 
 msgid "Chmod command"
 msgstr "Komanda chmod"
 
-msgid "File"
-msgstr "Fails"
-
 msgid "Permission"
 msgstr "Atļauja"
 
-msgid "Set &users"
-msgstr "Uzstādīt &lietotājus"
+msgid "File"
+msgstr "Fails"
 
 msgid "Set &groups"
 msgstr "Uzstādīt &grupas"
+
+msgid "Set &users"
+msgstr "Uzstādīt &lietotājus"
 
 msgid "Name"
 msgstr "Nosaukums"
@@ -1794,14 +1790,14 @@ msgstr "Lielums"
 msgid "Chown command"
 msgstr ""
 
+msgid "User name"
+msgstr ""
+
 msgid "<Unknown user>"
 msgstr "<Nezināms lietotājs>"
 
 msgid "<Unknown group>"
 msgstr "<Nezināma grupa>"
-
-msgid "User name"
-msgstr ""
 
 msgid "Enter machine name (F1 for details):"
 msgstr ""
@@ -1818,13 +1814,13 @@ msgstr ""
 msgid "Set expression for filtering filenames"
 msgstr ""
 
+msgid "&Files only"
+msgstr ""
+
 msgid "&Using shell patterns"
 msgstr "&Lietoj"
 
 msgid "&Case sensitive"
-msgstr ""
-
-msgid "&Files only"
 msgstr ""
 
 #, c-format
@@ -2084,19 +2080,17 @@ msgstr ""
 msgid "&Retry"
 msgstr "&Vēlreiz"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
-msgstr ""
-
-msgid "Delete:"
 msgstr ""
 
 msgid "Non&e"
@@ -2305,6 +2299,12 @@ msgstr ""
 msgid "Sorry, I could not put the job in background"
 msgstr ""
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "Tu&rpināt"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr ""
@@ -2329,30 +2329,30 @@ msgid "Target file already exists!"
 msgstr ""
 
 #, c-format
-msgid "Source date: %s, size %llu"
+msgid "New     : %s, size %llu"
 msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
+msgid "Existing: %s, size %llu"
 msgstr ""
 
-msgid "If &size differs"
-msgstr "ja i&Zmērs atšķiras"
-
-msgid "&Update"
-msgstr "&Atjaunināt"
-
-msgid "Overwrite all targets?"
-msgstr "Pārrakstīt visus mērļus?"
-
-msgid "&Reget"
-msgstr "&Pārdabūt"
+msgid "Overwrite this target?"
+msgstr "Pārrakstīt mērķi?"
 
 msgid "A&ppend"
 msgstr "pie&Vienot"
 
-msgid "Overwrite this target?"
-msgstr "Pārrakstīt mērķi?"
+msgid "&Reget"
+msgstr "&Pārdabūt"
+
+msgid "Overwrite all targets?"
+msgstr "Pārrakstīt visus mērļus?"
+
+msgid "&Update"
+msgstr "&Atjaunināt"
+
+msgid "If &size differs"
+msgstr "ja i&Zmērs atšķiras"
 
 msgid "File exists"
 msgstr ""
@@ -2401,30 +2401,24 @@ msgstr "Mērķis"
 msgid "Deleting"
 msgstr "Dzēšana"
 
-msgid "&Background"
-msgstr "&Fonā"
-
-msgid "&Stable Symlinks"
-msgstr "&Stabilas Simbolsaites"
-
-msgid "Di&ve into subdir if exists"
+msgid "Follow &links"
 msgstr ""
 
 msgid "Preserve &attributes"
 msgstr ""
 
-msgid "Follow &links"
+msgid "Di&ve into subdir if exists"
 msgstr ""
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "&Fonā"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr ""
-
-msgid "&Suspend"
-msgstr "At&likt"
-
-msgid "Con&tinue"
-msgstr "Tu&rpināt"
 
 msgid "&Chdir"
 msgstr "&Chdir"
@@ -2448,10 +2442,16 @@ msgstr ""
 msgid "Malformed regular expression"
 msgstr ""
 
+msgid "File name:"
+msgstr ""
+
 msgid "&Find recursively"
 msgstr ""
 
 msgid "S&kip hidden"
+msgstr ""
+
+msgid "Content:"
 msgstr ""
 
 msgid "Sea&rch for content"
@@ -2460,10 +2460,10 @@ msgstr ""
 msgid "Case sens&itive"
 msgstr ""
 
-msgid "Fir&st hit"
+msgid "A&ll charsets"
 msgstr ""
 
-msgid "A&ll charsets"
+msgid "Fir&st hit"
 msgstr ""
 
 msgid "&Tree"
@@ -2472,17 +2472,11 @@ msgstr "&Koks"
 msgid "Find File"
 msgstr "Atrast Failu"
 
-msgid "Content:"
-msgstr ""
-
-msgid "File name:"
-msgstr ""
+msgid "Start at:"
+msgstr "Sāknēt iekš:"
 
 msgid "Ena&ble ignore directories:"
 msgstr ""
-
-msgid "Start at:"
-msgstr "Sāknēt iekš:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2505,35 +2499,32 @@ msgstr "Meklēju %s"
 msgid "Searching"
 msgstr "Meklēju"
 
-msgid "&Remove"
-msgstr "&Izņemt"
-
-msgid "&Append"
-msgstr "pie&Likt"
-
-msgid "&Insert"
-msgstr "ie&Vietot"
-
-msgid "New &entry"
+msgid "Change &to"
 msgstr ""
 
-msgid "New &group"
+msgid "&Free VFSs now"
 msgstr ""
-
-msgid "&Up"
-msgstr "&Augšup"
-
-msgid "&Add current"
-msgstr "&Pievienot pašreizējo"
 
 msgid "&Refresh"
 msgstr ""
 
-msgid "Fr&ee VFSs now"
-msgstr "At&brīvot VFS tūlīt"
+msgid "&Add current"
+msgstr "&Pievienot pašreizējo"
 
-msgid "Change &to"
+msgid "&Up"
+msgstr "&Augšup"
+
+msgid "New &group"
 msgstr ""
+
+msgid "New &entry"
+msgstr ""
+
+msgid "&Insert"
+msgstr "ie&Vietot"
+
+msgid "&Remove"
+msgstr "&Izņemt"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Apakšgrupa - nospied ENTER, lai redzētu sarakstu"
@@ -2544,15 +2535,21 @@ msgstr "Aktīvie VFS direktoriji"
 msgid "Directory hotlist"
 msgstr "Direktoriju karstais saraksts"
 
+msgid "Top level group"
+msgstr ""
+
 msgid "Directory path"
 msgstr "Direktorija ceļš"
-
-msgid "Directory label"
-msgstr "Direktorija nosaukums"
 
 #, c-format
 msgid "Moving %s"
 msgstr "Pārvietoju %s"
+
+msgid "Directory label"
+msgstr "Direktorija nosaukums"
+
+msgid "&Append"
+msgstr "pie&Likt"
 
 msgid "New hotlist entry"
 msgstr "Jauna karstā saraksta ieraksts"
@@ -2577,9 +2574,6 @@ msgstr ""
 msgid ""
 "Group \"%s\" is not empty.\n"
 "Remove it?"
-msgstr ""
-
-msgid "Top level group"
 msgstr ""
 
 msgid "Hotlist Load"
@@ -2681,34 +2675,31 @@ msgstr "Režīms:      %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Vieta:  %Xh:%Xh"
 
-msgid "Show free sp&ace"
+msgid "&Equal split"
+msgstr "&Vienāds sadalījums"
+
+msgid "&Menubar visible"
 msgstr ""
 
-msgid "&XTerm window title"
-msgstr ""
-
-msgid "H&intbar visible"
+msgid "Command &prompt"
 msgstr ""
 
 msgid "&Keybar visible"
 msgstr "&Taustiņjosla redzama"
 
-msgid "Command &prompt"
+msgid "H&intbar visible"
 msgstr ""
 
-msgid "Menu&bar visible"
+msgid "&XTerm window title"
 msgstr ""
 
-msgid "&Equal split"
-msgstr "&Vienāds sadalījums"
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr ""
 
 msgid "Console output"
-msgstr ""
-
-msgid "Other options"
 msgstr ""
 
 msgid "&Vertical"
@@ -2943,64 +2934,64 @@ msgstr ""
 msgid "Alwa&ys"
 msgstr "vien&Mēr"
 
-msgid "A&uto save setup"
-msgstr ""
-
-msgid "Sa&fe delete"
-msgstr ""
-
-msgid "Cd follows lin&ks"
-msgstr ""
-
-msgid "Rotating d&ash"
-msgstr ""
-
-msgid "Co&mplete: show all"
-msgstr ""
-
-msgid "Shell &patterns"
-msgstr ""
-
-msgid "&Drop down menus"
-msgstr "&Krītošas izvēlnes"
-
-msgid "Auto m&enus"
-msgstr ""
-
-msgid "Use internal vie&w"
-msgstr ""
-
-msgid "Use internal edi&t"
-msgstr ""
-
-msgid "Pause after run"
-msgstr ""
-
-msgid "Timeout:"
-msgstr ""
-
-msgid "S&ingle press"
-msgstr ""
-
-msgid "Esc key mode"
-msgstr ""
-
-msgid "Preallocate &space"
-msgstr ""
-
-msgid "Mkdi&r autoname"
-msgstr ""
-
-msgid "Classic pro&gressbar"
-msgstr ""
-
-msgid "Compute tota&ls"
+msgid "File operations"
 msgstr ""
 
 msgid "&Verbose operation"
 msgstr "&Vārdiskas oprerācijās"
 
-msgid "File operation options"
+msgid "Compute tota&ls"
+msgstr ""
+
+msgid "Classic pro&gressbar"
+msgstr ""
+
+msgid "Mkdi&r autoname"
+msgstr ""
+
+msgid "Preallocate &space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr ""
+
+msgid "S&ingle press"
+msgstr ""
+
+msgid "Timeout:"
+msgstr ""
+
+msgid "Pause after run"
+msgstr ""
+
+msgid "Use internal edi&t"
+msgstr ""
+
+msgid "Use internal vie&w"
+msgstr ""
+
+msgid "Auto m&enus"
+msgstr ""
+
+msgid "&Drop down menus"
+msgstr "&Krītošas izvēlnes"
+
+msgid "Shell &patterns"
+msgstr ""
+
+msgid "Co&mplete: show all"
+msgstr ""
+
+msgid "Rotating d&ash"
+msgstr ""
+
+msgid "Cd follows lin&ks"
+msgstr ""
+
+msgid "Sa&fe delete"
+msgstr ""
+
+msgid "A&uto save setup"
 msgstr ""
 
 msgid "Configure options"
@@ -3009,64 +3000,61 @@ msgstr "Konfigurēt opcijas"
 msgid "Case &insensitive"
 msgstr ""
 
-msgid "Case s&ensitive"
-msgstr ""
-
 msgid "Use panel sort mo&de"
 msgstr ""
 
-msgid "Quick search"
-msgstr ""
-
-msgid "&Permissions"
-msgstr ""
-
-msgid "File &types"
-msgstr ""
-
-msgid "File highlight"
-msgstr ""
-
-msgid "&Mouse page scrolling"
-msgstr ""
-
-msgid "Pa&ge scrolling"
-msgstr ""
-
-msgid "L&ynx-like motion"
-msgstr "L&ynx-iska pārvietošanās"
-
-msgid "Navigation"
-msgstr ""
-
-msgid "A&uto save panels setup"
-msgstr ""
-
-msgid "Simple s&wap"
-msgstr ""
-
-msgid "Re&verse files only"
-msgstr ""
-
-msgid "Ma&rk moves down"
-msgstr ""
-
-msgid "&Fast dir reload"
-msgstr "ā&Tra direktoriju pārlāde"
-
-msgid "Show &hidden files"
-msgstr ""
-
-msgid "Show &backup files"
-msgstr ""
-
-msgid "Mi&x all files"
+msgid "Show mi&ni-status"
 msgstr ""
 
 msgid "Use SI si&ze units"
 msgstr ""
 
-msgid "Show mi&ni-status"
+msgid "Mi&x all files"
+msgstr ""
+
+msgid "Show &backup files"
+msgstr ""
+
+msgid "Show &hidden files"
+msgstr ""
+
+msgid "&Fast dir reload"
+msgstr "ā&Tra direktoriju pārlāde"
+
+msgid "Ma&rk moves down"
+msgstr ""
+
+msgid "Re&verse files only"
+msgstr ""
+
+msgid "Simple s&wap"
+msgstr ""
+
+msgid "A&uto save panels setup"
+msgstr ""
+
+msgid "Navigation"
+msgstr ""
+
+msgid "L&ynx-like motion"
+msgstr "L&ynx-iska pārvietošanās"
+
+msgid "Pa&ge scrolling"
+msgstr ""
+
+msgid "&Mouse page scrolling"
+msgstr ""
+
+msgid "File highlight"
+msgstr ""
+
+msgid "File &types"
+msgstr ""
+
+msgid "&Permissions"
+msgstr ""
+
+msgid "Quick search"
 msgstr ""
 
 msgid "Panel options"
@@ -3108,8 +3096,8 @@ msgstr ""
 msgid "sort|e"
 msgstr ""
 
-msgid "&Extension"
-msgstr "&Paplašinājums"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3220,11 +3208,11 @@ msgstr "&Pievienot jaunu"
 msgid "External panelize"
 msgstr "Ārējā panelēšana"
 
-msgid "Command"
-msgstr "Komanda"
-
 msgid "Other command"
 msgstr "Cita omanda"
+
+msgid "Command"
+msgstr "Komanda"
 
 msgid "Add to external panelize"
 msgstr ""
@@ -3425,17 +3413,11 @@ msgstr ""
 "Lieliski! Jums ir pilnīga termināļa datubāze!\n"
 "Visi jūsu taustiņi strādā labi."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Nospied visus šeit minētos taustiņus. Kad tas ir izdarīts, pārbaudi"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
 msgstr ""
-"kuri taustiņi nav atzīmēti kā OK. Nospiediet atstarpes taustiņu pie "
-"trūkstošajiem"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
-msgstr ""
-"taustiņu, vai klikšķini ar peli, lai to definētu. Kosties apkārt ar Tab."
 
 #, c-format
 msgid ""
@@ -3546,6 +3528,9 @@ msgid "Config directory:"
 msgstr ""
 
 msgid "Data directory:"
+msgstr ""
+
+msgid "File extension handlers:"
 msgstr ""
 
 msgid "VFS plugins and scripts:"
@@ -3665,9 +3650,6 @@ msgstr "fish: glabājam %s: sutām komandu..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: Lokālā lasīšana kļūdaina, sūtam nulles"
-
-msgid "fish: storing zeros"
-msgstr ""
 
 msgid "fish: storing file"
 msgstr ""

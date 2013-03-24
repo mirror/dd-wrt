@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: Czech (http://www.transifex.com/projects/p/mc/language/cs/)\n"
 "Language: cs\n"
@@ -521,14 +521,14 @@ msgstr "&Ano"
 msgid "&No"
 msgstr "&Ne"
 
-msgid "Background process:"
-msgstr "Procesy na pozadí:"
+msgid "&OK"
+msgstr "&OK"
 
 msgid "&Cancel"
 msgstr "&Zrušit"
 
-msgid "&OK"
-msgstr "&OK"
+msgid "Background process:"
+msgstr "Procesy na pozadí:"
 
 msgid "Error"
 msgstr "Chyba"
@@ -709,20 +709,20 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Odmítnout"
 
-msgid "&All charsets"
-msgstr "Všechny z&nakové sady"
-
-msgid "&Whole words"
-msgstr "Pouze &celá slova"
-
-msgid "&Backwards"
-msgstr "Po&zpátku"
+msgid "Enter search string:"
+msgstr "Zadejte hledaný text:"
 
 msgid "Cas&e sensitive"
 msgstr "Všímat si velikos&ti písmen"
 
-msgid "Enter search string:"
-msgstr "Zadejte hledaný text:"
+msgid "&Backwards"
+msgstr "Po&zpátku"
+
+msgid "&Whole words"
+msgstr "Pouze &celá slova"
+
+msgid "&All charsets"
+msgstr "Všechny z&nakové sady"
 
 msgid "Search"
 msgstr "Hledat"
@@ -762,26 +762,26 @@ msgstr "&Rychlý (Předpokládá velké soubory)"
 msgid "&Minimal (Find a smaller set of change)"
 msgstr "&Minimální (Pokusí se nalézt nejmenší sadu změn)"
 
-msgid "Strip &trailing carriage return"
-msgstr "Odstranit ukončovací znak CR na vstupu"
-
-msgid "Ignore all &whitespace"
-msgstr "Ignorovat všechny mezery"
-
-msgid "Ignore &space change"
-msgstr "Ignorovat změny v počtu mezer"
-
-msgid "Ignore tab &expansion"
-msgstr "Ignorovat změny v odsazení tabulátorem"
-
-msgid "&Ignore case"
-msgstr "&Ignorovat velikost písmen"
+msgid "Diff algorithm"
+msgstr "Algoritmus diffu"
 
 msgid "Diff extra options"
 msgstr "Další nastavení diffu"
 
-msgid "Diff algorithm"
-msgstr "Algoritmus diffu"
+msgid "&Ignore case"
+msgstr "&Ignorovat velikost písmen"
+
+msgid "Ignore tab &expansion"
+msgstr "Ignorovat změny v odsazení tabulátorem"
+
+msgid "Ignore &space change"
+msgstr "Ignorovat změny v počtu mezer"
+
+msgid "Ignore all &whitespace"
+msgstr "Ignorovat všechny mezery"
+
+msgid "Strip &trailing carriage return"
+msgstr "Odstranit ukončovací znak CR na vstupu"
 
 msgid "Diff Options"
 msgstr "Nastavení diffu"
@@ -927,11 +927,11 @@ msgstr "Formát &Windows/DOS (CR LF)"
 msgid "&Macintosh format (CR)"
 msgstr "Formát &Macintosh (CR)"
 
-msgid "Change line breaks to:"
-msgstr "Změnit konce řádků na:"
-
 msgid "Enter file name:"
 msgstr "Zadejte jméno souboru:"
+
+msgid "Change line breaks to:"
+msgstr "Změnit konce řádků na:"
 
 msgid "Save As"
 msgstr "Uložit jako"
@@ -1107,17 +1107,17 @@ msgstr "Externí příkaz"
 msgid "Cannot execute command"
 msgstr "Nemohu spustit příkaz"
 
-msgid "Copies to"
-msgstr "Kopie do"
-
-msgid "Subject"
-msgstr "Předmět"
+msgid "mail -s <subject> -c <cc> <to>"
+msgstr "mail -s <předmět> -c <kopie> <komu>"
 
 msgid "To"
 msgstr "Komu"
 
-msgid "mail -s <subject> -c <cc> <to>"
-msgstr "mail -s <předmět> -c <kopie> <komu>"
+msgid "Subject"
+msgstr "Předmět"
+
+msgid "Copies to"
+msgstr "Kopie do"
 
 msgid "Mail"
 msgstr "E-mail"
@@ -1138,11 +1138,26 @@ msgstr ""
 msgid "In se&lection"
 msgstr "&Ve výběru"
 
+msgid "&Find all"
+msgstr "&Najít všechny"
+
 msgid "Enter replacement string:"
 msgstr "Zadejte náhradní text:"
 
-msgid "&Find all"
-msgstr "&Najít všechny"
+msgid "Replace with:"
+msgstr "Nahradit textem:"
+
+msgid "&Replace"
+msgstr "&Nahradit"
+
+msgid "A&ll"
+msgstr "&Všechny"
+
+msgid "&Skip"
+msgstr "&Přeskočit"
+
+msgid "Confirm replace"
+msgstr "Potvrdit náhradu"
 
 msgid "Cancel"
 msgstr "Zrušit"
@@ -1153,21 +1168,6 @@ msgid ""
 msgstr ""
 "Tento text byl změněn, ale změny nebyly uloženy.\n"
 "Pokračováním se změny ztratí."
-
-msgid "&Skip"
-msgstr "&Přeskočit"
-
-msgid "A&ll"
-msgstr "&Všechny"
-
-msgid "&Replace"
-msgstr "&Nahradit"
-
-msgid "Replace with:"
-msgstr "Nahradit textem:"
-
-msgid "Confirm replace"
-msgstr "Potvrdit náhradu"
 
 msgid "NoName"
 msgstr ""
@@ -1391,72 +1391,82 @@ msgstr ""
 msgid "&Options"
 msgstr "&Nastavení"
 
-msgid "None"
-msgstr "Žádný"
-
-msgid "Dynamic paragraphing"
-msgstr "Dynamické odstavce"
-
-msgid "Type writer wrap"
-msgstr "Zalamování psacího stroje"
-
-msgid "Word wrap line length:"
-msgstr "Šířka řádku pro zlom:"
-
-msgid "&Group undo"
+msgid "&None"
 msgstr ""
 
-msgid "Cursor beyond end of line"
-msgstr "Kurzor za koncem řádku"
+msgid "&Dynamic paragraphing"
+msgstr ""
 
-msgid "Pers&istent selection"
-msgstr "&Trvalý výběr"
-
-msgid "Synta&x highlighting"
-msgstr "Zvýraznění synta&xe"
-
-msgid "Visible tabs"
-msgstr "Viditelné tabulátory"
-
-msgid "Visible trailing spaces"
-msgstr "Viditelné mezery na konci"
-
-msgid "Save file &position"
-msgstr "&Uložit pozici v souboru"
-
-msgid "Confir&m before saving"
-msgstr "&Potvrdit před uložením"
-
-msgid "&Return does autoindent"
-msgstr "&Return automaticky odsadí"
-
-msgid "Tab spacing:"
-msgstr "Velikost tabulátoru:"
-
-msgid "Fill tabs with &spaces"
-msgstr "Měnit tabulátory na &mezery"
-
-msgid "&Backspace through tabs"
-msgstr "&Backspace přes tabulátory"
-
-msgid "&Fake half tabs"
-msgstr "&Falešné poloviční tabulátory"
+msgid "Type &writer wrap"
+msgstr ""
 
 msgid "Wrap mode"
 msgstr "Režim zalamování"
 
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "&Falešné poloviční tabulátory"
+
+msgid "&Backspace through tabs"
+msgstr "&Backspace přes tabulátory"
+
+msgid "Fill tabs with &spaces"
+msgstr "Měnit tabulátory na &mezery"
+
+msgid "Tab spacing:"
+msgstr "Velikost tabulátoru:"
+
+msgid "Other options"
+msgstr "Další nastavení"
+
+msgid "&Return does autoindent"
+msgstr "&Return automaticky odsadí"
+
+msgid "Confir&m before saving"
+msgstr "&Potvrdit před uložením"
+
+msgid "Save file &position"
+msgstr "&Uložit pozici v souboru"
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
+msgstr ""
+
+msgid "Synta&x highlighting"
+msgstr "Zvýraznění synta&xe"
+
+msgid "C&ursor after inserted block"
+msgstr ""
+
+msgid "Pers&istent selection"
+msgstr "&Trvalý výběr"
+
+msgid "Cursor be&yond end of line"
+msgstr ""
+
+msgid "&Group undo"
+msgstr ""
+
+msgid "Word wrap line length:"
+msgstr "Šířka řádku pro zlom:"
+
 msgid "Editor options"
 msgstr "Nastavení editoru"
 
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
+msgstr ""
+
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
 msgid "About"
 msgstr "O programu"
-
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
 
 msgid "Open files"
 msgstr ""
@@ -1537,14 +1547,14 @@ msgstr "Napište „exit“ pro návrat do Midnight Commanderu"
 msgid "Cannot fetch a local copy of %s"
 msgstr "Nelze vyrobit lokální kopii souboru %s"
 
-msgid "&Set"
-msgstr "&Nastavit"
+msgid "Set &all"
+msgstr "Nastavit &vše"
 
 msgid "S&kip"
 msgstr "&Přeskočit"
 
-msgid "Set &all"
-msgstr "Nastavit &vše"
+msgid "&Set"
+msgstr "&Nastavit"
 
 msgid "owner"
 msgstr "vlastník"
@@ -1555,18 +1565,8 @@ msgstr " skupina"
 msgid "other"
 msgstr " ostatní"
 
-msgid "On"
-msgstr "Na"
-
 msgid "Flag"
 msgstr "Práva"
-
-msgid "Mode"
-msgstr "Práva"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d z %d"
 
 msgid "Chown advanced command"
 msgstr "Rozšířená změna vlastníka"
@@ -1587,14 +1587,14 @@ msgstr ""
 "Nelze změnit vlastníka souboru „%s“\n"
 "%s"
 
-msgid "&Stop"
-msgstr "Z&astavit"
+msgid "Other 8 bit"
+msgstr "Ostatní 8 bitů"
 
-msgid "&Resume"
-msgstr "&Pokračovat"
+msgid "Running"
+msgstr "Běží"
 
-msgid "&Kill"
-msgstr "&Ukončit"
+msgid "Stopped"
+msgstr "Zastaveno"
 
 msgid "&Full file list"
 msgstr "&Plný seznam souborů"
@@ -1608,14 +1608,57 @@ msgstr "&Dlouhý seznam souborů"
 msgid "&User defined:"
 msgstr "&Vlastní formát:"
 
-msgid "Listing mode"
-msgstr "Typ seznamu"
-
 msgid "User &mini status"
 msgstr "Vlastní &mini status"
 
-msgid "Other 8 bit"
-msgstr "Ostatní 8 bitů"
+msgid "Listing mode"
+msgstr "Typ seznamu"
+
+msgid "Executable &first"
+msgstr "Sp&ustitelné první"
+
+msgid "&Reverse"
+msgstr "Po&zpátku"
+
+msgid "Sort order"
+msgstr "Pořadí"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr "Confirmation|S&mazání"
+
+msgid "Confirmation|O&verwrite"
+msgstr "Confirmation|&Přepis"
+
+msgid "Confirmation|&Execute"
+msgstr "Confirmation|&Spuštění"
+
+msgid "Confirmation|E&xit"
+msgstr "Confirmation|&Ukončení"
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr "Confirmation|Smazání hotlistu &adresářů"
+
+msgid "Confirmation|&History cleanup"
+msgstr "Confirmation|Smazání &historie"
+
+msgid "Confirmation"
+msgstr "Potvrzování"
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "Vstup &plných 8 bitů"
 
 msgid "Display bits"
 msgstr "Zobrazení bitů"
@@ -1623,91 +1666,32 @@ msgstr "Zobrazení bitů"
 msgid "Input / display codepage:"
 msgstr "Vstupní/zobrazovací codepage:"
 
-msgid "F&ull 8 bits input"
-msgstr "Vstup &plných 8 bitů"
-
 msgid "&Select"
 msgstr "&Výběr"
-
-msgid "Running"
-msgstr "Běží"
-
-msgid "Stopped"
-msgstr "Zastaveno"
-
-msgid "&Reverse"
-msgstr "Po&zpátku"
-
-msgid "Case sensi&tive"
-msgstr "Všímat si velikos&ti písmen"
-
-msgid "Executable &first"
-msgstr "Sp&ustitelné první"
-
-msgid "Sort order"
-msgstr "Pořadí"
-
-msgid "Confirmation"
-msgstr "Potvrzování"
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr "Confirmation|Smazání &historie"
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr "Confirmation|Smazání hotlistu &adresářů"
-
-msgid "Confirmation|E&xit"
-msgstr "Confirmation|&Ukončení"
-
-msgid "Confirmation|&Execute"
-msgstr "Confirmation|&Spuštění"
-
-msgid "Confirmation|O&verwrite"
-msgstr "Confirmation|&Přepis"
-
-msgid "Confirmation|&Delete"
-msgstr "Confirmation|S&mazání"
-
-msgid "UTF-8 output"
-msgstr "UTF-8 výstup"
-
-msgid "Full 8 bits output"
-msgstr "Výstup plných 8 bitů"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7 bitů"
 
 msgid "Directory tree"
 msgstr "Strom adresářů"
 
-msgid "Use passive mode over pro&xy"
-msgstr "Používat pasivní režim přes pro&xy"
+msgid "Timeout for freeing VFSs (sec):"
+msgstr ""
 
-msgid "Use &passive mode"
-msgstr "Používat pasivní &režim"
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
+msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr "&Používat ~/.netrc"
 
-msgid "&Always use ftp proxy"
-msgstr "&Vždy použít ftp proxy"
+msgid "Use &passive mode"
+msgstr "Používat pasivní &režim"
 
-msgid "sec"
-msgstr "s"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "Vypršení obsahu ftpfs keše za:"
-
-msgid "ftp anonymous password:"
-msgstr "Heslo pro anonymní ftp:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "Čas pro uvolnění VFS:"
+msgid "Use passive mode over pro&xy"
+msgstr "Používat pasivní režim přes pro&xy"
 
 msgid "Virtual File System Setting"
 msgstr "Nastavení virtuálního systému souborů"
@@ -1718,17 +1702,30 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "Rychlá změna adresáře"
 
-msgid "Symbolic link filename:"
-msgstr "Jméno symbolického odkazu:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr "Existující název souboru (na který bude symlink ukazovat):"
+
+msgid "Symbolic link filename:"
+msgstr "Jméno symbolického odkazu:"
 
 msgid "Symbolic link"
 msgstr "Symbolický odkaz"
 
-msgid "Background Jobs"
-msgstr "Úlohy na pozadí"
+msgid "&Stop"
+msgstr "Z&astavit"
+
+msgid "&Resume"
+msgstr "&Pokračovat"
+
+msgid "&Kill"
+msgstr "&Ukončit"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "Heslo pro \\\\%s\\%s"
 
 msgid "Domain:"
 msgstr "Doména:"
@@ -1736,45 +1733,44 @@ msgstr "Doména:"
 msgid "Username:"
 msgstr "Jméno uživatele:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Heslo pro \\\\%s\\%s"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "spouštění ostatními"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "zápis ostatními"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "čtení ostatními"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "spouštění skupinou"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "zápis skupinou"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "čtení skupinou"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "spouštění vlastníkem"
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "zápis vlastníkem"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "čtení vlastníkem"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "bit „sticky“"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "nastavit GID při spuštění"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "nastavit UID při spuštění"
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr ""
@@ -1788,29 +1784,29 @@ msgstr ""
 msgid "Group name:"
 msgstr ""
 
-msgid "C&lear marked"
-msgstr "&Smazat označené"
+msgid "&Marked all"
+msgstr "&Nastavit vše na označených souborech"
 
 msgid "S&et marked"
 msgstr "&Nastavit označené"
 
-msgid "&Marked all"
-msgstr "&Nastavit vše na označených souborech"
+msgid "C&lear marked"
+msgstr "&Smazat označené"
 
 msgid "Chmod command"
 msgstr "Příkaz chmod"
 
-msgid "File"
-msgstr "Soubor"
-
 msgid "Permission"
 msgstr "Práva"
 
-msgid "Set &users"
-msgstr "Nastav &uživatele"
+msgid "File"
+msgstr "Soubor"
 
 msgid "Set &groups"
 msgstr "Nastav &skupiny"
+
+msgid "Set &users"
+msgstr "Nastav &uživatele"
 
 msgid "Name"
 msgstr "Jméno"
@@ -1827,14 +1823,14 @@ msgstr "Délka"
 msgid "Chown command"
 msgstr "Příkaz chown"
 
+msgid "User name"
+msgstr "Jméno uživatele"
+
 msgid "<Unknown user>"
 msgstr "<Neznámý uživatel>"
 
 msgid "<Unknown group>"
 msgstr "<Neznámá skupina>"
-
-msgid "User name"
-msgstr "Jméno uživatele"
 
 msgid "Enter machine name (F1 for details):"
 msgstr "Jméno počítače (nápověda F1):"
@@ -1851,14 +1847,14 @@ msgstr "Filtr"
 msgid "Set expression for filtering filenames"
 msgstr "Zadejte masku pro filtrování názvů souborů"
 
+msgid "&Files only"
+msgstr "&Pouze soubory"
+
 msgid "&Using shell patterns"
 msgstr "&Význam vzorů jako v shellu"
 
 msgid "&Case sensitive"
 msgstr "Rozliš. velikos&t"
-
-msgid "&Files only"
-msgstr "&Pouze soubory"
 
 #, c-format
 msgid "Link %s to:"
@@ -2136,26 +2132,18 @@ msgstr ""
 msgid "&Retry"
 msgstr "&Zkusit znovu"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Adresář není prázdný.\n"
-"Smazat rekurzivně?"
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Proces na pozadí: Adresář není prázdný.\n"
-"Smazat rekurzivně?"
-
-msgid "Delete:"
-msgstr "Smazat:"
 
 msgid "Non&e"
 msgstr "Žá&dné"
@@ -2423,6 +2411,12 @@ msgstr "Nelze pracovat s „..“!"
 msgid "Sorry, I could not put the job in background"
 msgstr "Bohužel, úlohu nelze přesunout na pozadí"
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "&Pokračovat"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr "%d:%02d.%02d"
@@ -2447,30 +2441,30 @@ msgid "Target file already exists!"
 msgstr "Cílový soubor už existuje!"
 
 #, c-format
-msgid "Source date: %s, size %llu"
-msgstr "Zdrojové datum: %s, velikost %llu"
+msgid "New     : %s, size %llu"
+msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
-msgstr "Cílové datum: %s, velikost %llu"
+msgid "Existing: %s, size %llu"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "Jestliže se velikost &liší"
-
-msgid "&Update"
-msgstr "Akt&ualizace"
-
-msgid "Overwrite all targets?"
-msgstr "Přepsat všechny soubory?"
-
-msgid "&Reget"
-msgstr "Naváza&t"
+msgid "Overwrite this target?"
+msgstr "Přepsat tento soubor?"
 
 msgid "A&ppend"
 msgstr "&Připojit"
 
-msgid "Overwrite this target?"
-msgstr "Přepsat tento soubor?"
+msgid "&Reget"
+msgstr "Naváza&t"
+
+msgid "Overwrite all targets?"
+msgstr "Přepsat všechny soubory?"
+
+msgid "&Update"
+msgstr "Akt&ualizace"
+
+msgid "If &size differs"
+msgstr "Jestliže se velikost &liší"
 
 msgid "File exists"
 msgstr "Soubor existuje"
@@ -2519,30 +2513,24 @@ msgstr "Cíl"
 msgid "Deleting"
 msgstr "Maže se"
 
-msgid "&Background"
-msgstr "&Na pozadí"
-
-msgid "&Stable Symlinks"
-msgstr "&Stabilní symlinky"
-
-msgid "Di&ve into subdir if exists"
-msgstr "&Ponořit se do existujících adresářů"
+msgid "Follow &links"
+msgstr "Nás&ledovat odkazy"
 
 msgid "Preserve &attributes"
 msgstr "Zachovat &atributy"
 
-msgid "Follow &links"
-msgstr "Nás&ledovat odkazy"
+msgid "Di&ve into subdir if exists"
+msgstr "&Ponořit se do existujících adresářů"
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "&Na pozadí"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr "Chybný vzor zdroje „%s“"
-
-msgid "&Suspend"
-msgstr "&Pozastavit"
-
-msgid "Con&tinue"
-msgstr "&Pokračovat"
 
 msgid "&Chdir"
 msgstr "&Chdir"
@@ -2566,11 +2554,17 @@ msgstr "Nalezeno: %ld"
 msgid "Malformed regular expression"
 msgstr "Chybně zadaný regulární výraz"
 
+msgid "File name:"
+msgstr "Jméno souboru:"
+
 msgid "&Find recursively"
 msgstr "Najít re&kurzivně"
 
 msgid "S&kip hidden"
 msgstr "Přeskočit skr&yté"
+
+msgid "Content:"
+msgstr "Obsah:"
 
 msgid "Sea&rch for content"
 msgstr "Hledat obsah"
@@ -2578,11 +2572,11 @@ msgstr "Hledat obsah"
 msgid "Case sens&itive"
 msgstr "Všímat si velikos&ti písmen"
 
-msgid "Fir&st hit"
-msgstr "&První výskyt"
-
 msgid "A&ll charsets"
 msgstr "Všechny znakové sady"
+
+msgid "Fir&st hit"
+msgstr "&První výskyt"
 
 msgid "&Tree"
 msgstr "&Strom"
@@ -2590,17 +2584,11 @@ msgstr "&Strom"
 msgid "Find File"
 msgstr "Najít soubor"
 
-msgid "Content:"
-msgstr "Obsah:"
-
-msgid "File name:"
-msgstr "Jméno souboru:"
+msgid "Start at:"
+msgstr "Začít v:"
 
 msgid "Ena&ble ignore directories:"
 msgstr ""
-
-msgid "Start at:"
-msgstr "Začít v:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2623,35 +2611,32 @@ msgstr "Hledá se %s"
 msgid "Searching"
 msgstr "Hledání"
 
-msgid "&Remove"
-msgstr "&Smazat"
+msgid "Change &to"
+msgstr "Z&měnit na"
 
-msgid "&Append"
-msgstr "&Přidat"
-
-msgid "&Insert"
-msgstr "&Vložit"
-
-msgid "New &entry"
-msgstr "&Nová položka"
-
-msgid "New &group"
-msgstr "Nová s&kupina"
-
-msgid "&Up"
-msgstr "Nahor&u"
-
-msgid "&Add current"
-msgstr "Přidat &tento"
+msgid "&Free VFSs now"
+msgstr ""
 
 msgid "&Refresh"
 msgstr "&Obnovit"
 
-msgid "Fr&ee VFSs now"
-msgstr "U&volnit VFS"
+msgid "&Add current"
+msgstr "Přidat &tento"
 
-msgid "Change &to"
-msgstr "Z&měnit na"
+msgid "&Up"
+msgstr "Nahor&u"
+
+msgid "New &group"
+msgstr "Nová s&kupina"
+
+msgid "New &entry"
+msgstr "&Nová položka"
+
+msgid "&Insert"
+msgstr "&Vložit"
+
+msgid "&Remove"
+msgstr "&Smazat"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Podskupina - pro seznam stiskněte ENTER"
@@ -2662,15 +2647,21 @@ msgstr "Aktivní adresáře VFS"
 msgid "Directory hotlist"
 msgstr "Rychlý přístup k adresářům"
 
+msgid "Top level group"
+msgstr "Hlavní skupina"
+
 msgid "Directory path"
 msgstr "Cesta k adresáři"
-
-msgid "Directory label"
-msgstr "Popis adresáře"
 
 #, c-format
 msgid "Moving %s"
 msgstr "Přesunuje se %s"
+
+msgid "Directory label"
+msgstr "Popis adresáře"
+
+msgid "&Append"
+msgstr "&Přidat"
 
 msgid "New hotlist entry"
 msgstr "Nová položka pro rychlý přístup"
@@ -2696,9 +2687,6 @@ msgid ""
 "Group \"%s\" is not empty.\n"
 "Remove it?"
 msgstr ""
-
-msgid "Top level group"
-msgstr "Hlavní skupina"
 
 msgid "Hotlist Load"
 msgstr "Čtení seznamu pro rychlý přístup"
@@ -2799,35 +2787,32 @@ msgstr "Práva:     %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Poloha:    %Xh:%Xh"
 
-msgid "Show free sp&ace"
-msgstr "Zo&braz volné místo"
+msgid "&Equal split"
+msgstr "Rozdělení na &poloviny"
 
-msgid "&XTerm window title"
-msgstr "Nadpis okna &xtermu"
-
-msgid "H&intbar visible"
-msgstr "Tip&y viditelné"
-
-msgid "&Keybar visible"
-msgstr "&Klávesy viditelné"
+msgid "&Menubar visible"
+msgstr ""
 
 msgid "Command &prompt"
 msgstr "Příkazová řá&dka"
 
-msgid "Menu&bar visible"
-msgstr "&Menu vždy viditelné"
+msgid "&Keybar visible"
+msgstr "&Klávesy viditelné"
 
-msgid "&Equal split"
-msgstr "Rozdělení na &poloviny"
+msgid "H&intbar visible"
+msgstr "Tip&y viditelné"
+
+msgid "&XTerm window title"
+msgstr "Nadpis okna &xtermu"
+
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr "Rozdělení panelů"
 
 msgid "Console output"
 msgstr "Výstup z konzole"
-
-msgid "Other options"
-msgstr "Další nastavení"
 
 msgid "&Vertical"
 msgstr "&Vertikální"
@@ -3061,65 +3046,65 @@ msgstr "Na neinteligentních term&inálech"
 msgid "Alwa&ys"
 msgstr "Vžd&y"
 
-msgid "A&uto save setup"
-msgstr "&Automatické ukládání parametrů"
-
-msgid "Sa&fe delete"
-msgstr "&Bezpečné mazání"
-
-msgid "Cd follows lin&ks"
-msgstr "&cd následuje odkazy"
-
-msgid "Rotating d&ash"
-msgstr "Rotující &/"
-
-msgid "Co&mplete: show all"
-msgstr "Doplňování: ukázat vše"
-
-msgid "Shell &patterns"
-msgstr "Vzory s&hellu"
-
-msgid "&Drop down menus"
-msgstr "Rolovat menu dolů"
-
-msgid "Auto m&enus"
-msgstr "Automatické &menu"
-
-msgid "Use internal vie&w"
-msgstr "Použít interní prohlíž&eč"
-
-msgid "Use internal edi&t"
-msgstr "Použít interní e&ditor"
-
-msgid "Pause after run"
-msgstr "Čekat po ukončení"
-
-msgid "Timeout:"
-msgstr "Timeout:"
-
-msgid "S&ingle press"
-msgstr "Jediný stisk"
-
-msgid "Esc key mode"
-msgstr "Mód Escape klávesy"
-
-msgid "Preallocate &space"
+msgid "File operations"
 msgstr ""
-
-msgid "Mkdi&r autoname"
-msgstr "Mkdir autonázev"
-
-msgid "Classic pro&gressbar"
-msgstr "Klasický progressbar"
-
-msgid "Compute tota&ls"
-msgstr "Počíta&t součty"
 
 msgid "&Verbose operation"
 msgstr "„Upovídaně&jší“ operace"
 
-msgid "File operation options"
-msgstr "Nastavení souborových operací"
+msgid "Compute tota&ls"
+msgstr "Počíta&t součty"
+
+msgid "Classic pro&gressbar"
+msgstr "Klasický progressbar"
+
+msgid "Mkdi&r autoname"
+msgstr "Mkdir autonázev"
+
+msgid "Preallocate &space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr "Mód Escape klávesy"
+
+msgid "S&ingle press"
+msgstr "Jediný stisk"
+
+msgid "Timeout:"
+msgstr "Timeout:"
+
+msgid "Pause after run"
+msgstr "Čekat po ukončení"
+
+msgid "Use internal edi&t"
+msgstr "Použít interní e&ditor"
+
+msgid "Use internal vie&w"
+msgstr "Použít interní prohlíž&eč"
+
+msgid "Auto m&enus"
+msgstr "Automatické &menu"
+
+msgid "&Drop down menus"
+msgstr "Rolovat menu dolů"
+
+msgid "Shell &patterns"
+msgstr "Vzory s&hellu"
+
+msgid "Co&mplete: show all"
+msgstr "Doplňování: ukázat vše"
+
+msgid "Rotating d&ash"
+msgstr "Rotující &/"
+
+msgid "Cd follows lin&ks"
+msgstr "&cd následuje odkazy"
+
+msgid "Sa&fe delete"
+msgstr "&Bezpečné mazání"
+
+msgid "A&uto save setup"
+msgstr "&Automatické ukládání parametrů"
 
 msgid "Configure options"
 msgstr "Změna nastavení"
@@ -3127,65 +3112,62 @@ msgstr "Změna nastavení"
 msgid "Case &insensitive"
 msgstr "Nevšímat si velikos&ti písmen"
 
-msgid "Case s&ensitive"
-msgstr "Všímat si velikos&ti písmen"
-
 msgid "Use panel sort mo&de"
 msgstr "Použít režim třídění panelu"
 
-msgid "Quick search"
-msgstr "Rychlé hledání"
-
-msgid "&Permissions"
-msgstr "Práva"
-
-msgid "File &types"
-msgstr "&Typy souborů"
-
-msgid "File highlight"
-msgstr "Zvýraznění"
-
-msgid "&Mouse page scrolling"
-msgstr "Posun stránky myší"
-
-msgid "Pa&ge scrolling"
-msgstr "Posun stránky"
-
-msgid "L&ynx-like motion"
-msgstr "Pohyb jako v lyn&xu"
-
-msgid "Navigation"
-msgstr "Navigace"
-
-msgid "A&uto save panels setup"
-msgstr "&Automatické ukládání nastavení panelů"
-
-msgid "Simple s&wap"
+msgid "Show mi&ni-status"
 msgstr ""
-
-msgid "Re&verse files only"
-msgstr "&Pozpátku pouze soubory"
-
-msgid "Ma&rk moves down"
-msgstr "Označení &posune dolů"
-
-msgid "&Fast dir reload"
-msgstr "&Rychlé načítání adresářů"
-
-msgid "Show &hidden files"
-msgstr "Ukázat s&kryté soubory"
-
-msgid "Show &backup files"
-msgstr "Zobrazovat zá&ložní soubory"
-
-msgid "Mi&x all files"
-msgstr "Míchat &všechny soubory"
 
 msgid "Use SI si&ze units"
 msgstr "Používat &SI jednotky velikosti"
 
-msgid "Show mi&ni-status"
+msgid "Mi&x all files"
+msgstr "Míchat &všechny soubory"
+
+msgid "Show &backup files"
+msgstr "Zobrazovat zá&ložní soubory"
+
+msgid "Show &hidden files"
+msgstr "Ukázat s&kryté soubory"
+
+msgid "&Fast dir reload"
+msgstr "&Rychlé načítání adresářů"
+
+msgid "Ma&rk moves down"
+msgstr "Označení &posune dolů"
+
+msgid "Re&verse files only"
+msgstr "&Pozpátku pouze soubory"
+
+msgid "Simple s&wap"
 msgstr ""
+
+msgid "A&uto save panels setup"
+msgstr "&Automatické ukládání nastavení panelů"
+
+msgid "Navigation"
+msgstr "Navigace"
+
+msgid "L&ynx-like motion"
+msgstr "Pohyb jako v lyn&xu"
+
+msgid "Pa&ge scrolling"
+msgstr "Posun stránky"
+
+msgid "&Mouse page scrolling"
+msgstr "Posun stránky myší"
+
+msgid "File highlight"
+msgstr "Zvýraznění"
+
+msgid "File &types"
+msgstr "&Typy souborů"
+
+msgid "&Permissions"
+msgstr "Práva"
+
+msgid "Quick search"
+msgstr "Rychlé hledání"
 
 msgid "Panel options"
 msgstr "Nastavení panelu"
@@ -3230,8 +3212,8 @@ msgstr "&Verze"
 msgid "sort|e"
 msgstr "sort|e"
 
-msgid "&Extension"
-msgstr "&Přípona"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3341,11 +3323,11 @@ msgstr "&Přidat nový"
 msgid "External panelize"
 msgstr "Externí panelizace"
 
-msgid "Command"
-msgstr "Příkaz"
-
 msgid "Other command"
 msgstr "Jiný příkaz"
+
+msgid "Command"
+msgstr "Příkaz"
 
 msgid "Add to external panelize"
 msgstr "Přidat do externí panelizace"
@@ -3551,14 +3533,11 @@ msgstr ""
 "Skvělé! Máte kompletní databázi terminálu.\n"
 "Všechny vaše klávesy budou funkční."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Stiskněte všechny klávesy zmiňované výše. Až to budete mít hotovo,"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
-msgstr "zkontrolujte klávesy, které nejsou označeny OK. Tam stiskněte mezerník"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
-msgstr "nebo klikněte myší. Po položkách se pohybujte pomocí tabulátoru."
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3674,6 +3653,9 @@ msgid "Config directory:"
 msgstr ""
 
 msgid "Data directory:"
+msgstr ""
+
+msgid "File extension handlers:"
 msgstr ""
 
 msgid "VFS plugins and scripts:"
@@ -3792,9 +3774,6 @@ msgstr "fish: ukládám %s: posílám příkaz..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: Selhalo čtení lokálního souboru, posílám nuly"
-
-msgid "fish: storing zeros"
-msgstr "fish: ukládám nuly"
 
 msgid "fish: storing file"
 msgstr "fish: ukládám soubor"

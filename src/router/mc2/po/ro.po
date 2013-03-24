@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: Romanian (http://www.transifex.com/projects/p/mc/language/"
 "ro/)\n"
@@ -516,14 +516,14 @@ msgstr "&Da"
 msgid "&No"
 msgstr "&Nu"
 
-msgid "Background process:"
-msgstr "Procese în fundal:"
+msgid "&OK"
+msgstr "&OK"
 
 msgid "&Cancel"
 msgstr "&Renunţă"
 
-msgid "&OK"
-msgstr "&OK"
+msgid "Background process:"
+msgstr "Procese în fundal:"
 
 msgid "Error"
 msgstr "Eroare"
@@ -699,19 +699,19 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Închide"
 
-msgid "&All charsets"
+msgid "Enter search string:"
 msgstr ""
 
-msgid "&Whole words"
+msgid "Cas&e sensitive"
 msgstr ""
 
 msgid "&Backwards"
 msgstr "în sens &Invers "
 
-msgid "Cas&e sensitive"
+msgid "&Whole words"
 msgstr ""
 
-msgid "Enter search string:"
+msgid "&All charsets"
 msgstr ""
 
 msgid "Search"
@@ -745,25 +745,25 @@ msgstr ""
 msgid "&Minimal (Find a smaller set of change)"
 msgstr ""
 
-msgid "Strip &trailing carriage return"
-msgstr ""
-
-msgid "Ignore all &whitespace"
-msgstr ""
-
-msgid "Ignore &space change"
-msgstr ""
-
-msgid "Ignore tab &expansion"
-msgstr ""
-
-msgid "&Ignore case"
+msgid "Diff algorithm"
 msgstr ""
 
 msgid "Diff extra options"
 msgstr ""
 
-msgid "Diff algorithm"
+msgid "&Ignore case"
+msgstr ""
+
+msgid "Ignore tab &expansion"
+msgstr ""
+
+msgid "Ignore &space change"
+msgstr ""
+
+msgid "Ignore all &whitespace"
+msgstr ""
+
+msgid "Strip &trailing carriage return"
 msgstr ""
 
 msgid "Diff Options"
@@ -908,10 +908,10 @@ msgstr ""
 msgid "&Macintosh format (CR)"
 msgstr ""
 
-msgid "Change line breaks to:"
+msgid "Enter file name:"
 msgstr ""
 
-msgid "Enter file name:"
+msgid "Change line breaks to:"
 msgstr ""
 
 msgid "Save As"
@@ -1088,16 +1088,16 @@ msgstr ""
 msgid "Cannot execute command"
 msgstr ""
 
-msgid "Copies to"
-msgstr ""
-
-msgid "Subject"
+msgid "mail -s <subject> -c <cc> <to>"
 msgstr ""
 
 msgid "To"
 msgstr ""
 
-msgid "mail -s <subject> -c <cc> <to>"
+msgid "Subject"
+msgstr ""
+
+msgid "Copies to"
 msgstr ""
 
 msgid "Mail"
@@ -1117,10 +1117,25 @@ msgstr ""
 msgid "In se&lection"
 msgstr ""
 
+msgid "&Find all"
+msgstr ""
+
 msgid "Enter replacement string:"
 msgstr ""
 
-msgid "&Find all"
+msgid "Replace with:"
+msgstr ""
+
+msgid "&Replace"
+msgstr "&Înlocuieşte"
+
+msgid "A&ll"
+msgstr "&Toate"
+
+msgid "&Skip"
+msgstr "&Sar"
+
+msgid "Confirm replace"
 msgstr ""
 
 msgid "Cancel"
@@ -1129,21 +1144,6 @@ msgstr "Renunţă"
 msgid ""
 "Current text was modified without a file save.\n"
 "Continue discards these changes."
-msgstr ""
-
-msgid "&Skip"
-msgstr "&Sar"
-
-msgid "A&ll"
-msgstr "&Toate"
-
-msgid "&Replace"
-msgstr "&Înlocuieşte"
-
-msgid "Replace with:"
-msgstr ""
-
-msgid "Confirm replace"
 msgstr ""
 
 msgid "NoName"
@@ -1368,71 +1368,81 @@ msgstr ""
 msgid "&Options"
 msgstr ""
 
-msgid "None"
-msgstr "Fără aranjare"
-
-msgid "Dynamic paragraphing"
-msgstr "Paragrafare automată"
-
-msgid "Type writer wrap"
-msgstr "Tip \"maşină de scris\""
-
-msgid "Word wrap line length:"
+msgid "&None"
 msgstr ""
 
-msgid "&Group undo"
+msgid "&Dynamic paragraphing"
 msgstr ""
 
-msgid "Cursor beyond end of line"
+msgid "Type &writer wrap"
 msgstr ""
 
-msgid "Pers&istent selection"
+msgid "Wrap mode"
+msgstr "Mod de aranjare"
+
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "&Simulează tab-urile 1/2"
+
+msgid "&Backspace through tabs"
+msgstr "şterge deodată &Tab-urile"
+
+msgid "Fill tabs with &spaces"
+msgstr "&Umple tab-urile cu spaţii"
+
+msgid "Tab spacing:"
+msgstr ""
+
+msgid "Other options"
+msgstr ""
+
+msgid "&Return does autoindent"
+msgstr "returul &Autoindentează"
+
+msgid "Confir&m before saving"
+msgstr "&Confirmă înainte de a salva"
+
+msgid "Save file &position"
+msgstr "Salvează fişierul şi &poziţia"
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
 msgstr ""
 
 msgid "Synta&x highlighting"
 msgstr "&Evidenţiere sintaxă"
 
-msgid "Visible tabs"
+msgid "C&ursor after inserted block"
 msgstr ""
 
-msgid "Visible trailing spaces"
+msgid "Pers&istent selection"
 msgstr ""
 
-msgid "Save file &position"
-msgstr "Salvează fişierul şi &poziţia"
-
-msgid "Confir&m before saving"
-msgstr "&Confirmă înainte de a salva"
-
-msgid "&Return does autoindent"
-msgstr "returul &Autoindentează"
-
-msgid "Tab spacing:"
+msgid "Cursor be&yond end of line"
 msgstr ""
 
-msgid "Fill tabs with &spaces"
-msgstr "&Umple tab-urile cu spaţii"
+msgid "&Group undo"
+msgstr ""
 
-msgid "&Backspace through tabs"
-msgstr "şterge deodată &Tab-urile"
-
-msgid "&Fake half tabs"
-msgstr "&Simulează tab-urile 1/2"
-
-msgid "Wrap mode"
-msgstr "Mod de aranjare"
+msgid "Word wrap line length:"
+msgstr ""
 
 msgid "Editor options"
 msgstr ""
 
-msgid "About"
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
 msgstr ""
 
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
+msgid "About"
 msgstr ""
 
 msgid "Open files"
@@ -1508,14 +1518,14 @@ msgstr "Tastaţi `exit' pentru a reveni în Midnight Commander"
 msgid "Cannot fetch a local copy of %s"
 msgstr ""
 
-msgid "&Set"
-msgstr "&Setez"
+msgid "Set &all"
+msgstr "Set. &tot"
 
 msgid "S&kip"
 msgstr "S&ar"
 
-msgid "Set &all"
-msgstr "Set. &tot"
+msgid "&Set"
+msgstr "&Setez"
 
 msgid "owner"
 msgstr "propr."
@@ -1526,18 +1536,8 @@ msgstr "grup"
 msgid "other"
 msgstr "alţii"
 
-msgid "On"
-msgstr "Pe"
-
 msgid "Flag"
 msgstr "Ind."
-
-msgid "Mode"
-msgstr "Mod"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d din %d"
 
 msgid "Chown advanced command"
 msgstr ""
@@ -1554,14 +1554,14 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "&Stop"
-msgstr "O&preşte"
+msgid "Other 8 bit"
+msgstr "8 biţi"
 
-msgid "&Resume"
-msgstr "&Reia"
+msgid "Running"
+msgstr ""
 
-msgid "&Kill"
-msgstr "&Omoară"
+msgid "Stopped"
+msgstr "Oprit"
 
 msgid "&Full file list"
 msgstr "listă de &Fişiere completă"
@@ -1575,14 +1575,57 @@ msgstr "listă &Lungă de fişiere"
 msgid "&User defined:"
 msgstr "definit de &Utilizator:"
 
-msgid "Listing mode"
-msgstr "Mod de listare"
-
 msgid "User &mini status"
 msgstr ""
 
-msgid "Other 8 bit"
-msgstr "8 biţi"
+msgid "Listing mode"
+msgstr "Mod de listare"
+
+msgid "Executable &first"
+msgstr ""
+
+msgid "&Reverse"
+msgstr "in&Vers"
+
+msgid "Sort order"
+msgstr "Ordinea de sortare"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr ""
+
+msgid "Confirmation|O&verwrite"
+msgstr ""
+
+msgid "Confirmation|&Execute"
+msgstr ""
+
+msgid "Confirmation|E&xit"
+msgstr ""
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr ""
+
+msgid "Confirmation|&History cleanup"
+msgstr ""
+
+msgid "Confirmation"
+msgstr ""
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "&Intrare pe 8 biţi"
 
 msgid "Display bits"
 msgstr ""
@@ -1590,91 +1633,32 @@ msgstr ""
 msgid "Input / display codepage:"
 msgstr "Intrare / cod de afişare:"
 
-msgid "F&ull 8 bits input"
-msgstr "&Intrare pe 8 biţi"
-
 msgid "&Select"
 msgstr "&Selectează "
-
-msgid "Running"
-msgstr ""
-
-msgid "Stopped"
-msgstr "Oprit"
-
-msgid "&Reverse"
-msgstr "in&Vers"
-
-msgid "Case sensi&tive"
-msgstr ""
-
-msgid "Executable &first"
-msgstr ""
-
-msgid "Sort order"
-msgstr "Ordinea de sortare"
-
-msgid "Confirmation"
-msgstr ""
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr ""
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr ""
-
-msgid "Confirmation|E&xit"
-msgstr ""
-
-msgid "Confirmation|&Execute"
-msgstr ""
-
-msgid "Confirmation|O&verwrite"
-msgstr ""
-
-msgid "Confirmation|&Delete"
-msgstr ""
-
-msgid "UTF-8 output"
-msgstr ""
-
-msgid "Full 8 bits output"
-msgstr "Ieşire pe 8 biţi"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7 biţi"
 
 msgid "Directory tree"
 msgstr ""
 
-msgid "Use passive mode over pro&xy"
+msgid "Timeout for freeing VFSs (sec):"
 msgstr ""
 
-msgid "Use &passive mode"
-msgstr "Utilizează modul _pasiv"
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
+msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr "&Utilizează ~/.netrc"
 
-msgid "&Always use ftp proxy"
-msgstr "&Utilizează ftp-ul proxy"
+msgid "Use &passive mode"
+msgstr "Utilizează modul _pasiv"
 
-msgid "sec"
-msgstr "sec"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "Cache-ul ftpfs expiră în:"
-
-msgid "ftp anonymous password:"
-msgstr "Parola pentru ftp anonim:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "VFS-urile expiră în:"
+msgid "Use passive mode over pro&xy"
+msgstr ""
 
 msgid "Virtual File System Setting"
 msgstr ""
@@ -1685,17 +1669,30 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "Schimbare rapidă de director"
 
-msgid "Symbolic link filename:"
-msgstr "Numele legăturii simbolice:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr "Fişier existent (către care va indica legătura):"
+
+msgid "Symbolic link filename:"
+msgstr "Numele legăturii simbolice:"
 
 msgid "Symbolic link"
 msgstr "Numele legăturii simbolice:"
 
-msgid "Background Jobs"
-msgstr "Sarcini de Fundal"
+msgid "&Stop"
+msgstr "O&preşte"
+
+msgid "&Resume"
+msgstr "&Reia"
+
+msgid "&Kill"
+msgstr "&Omoară"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "Parola pentru \\\\%s\\%s"
 
 msgid "Domain:"
 msgstr "Domeniu:"
@@ -1703,45 +1700,44 @@ msgstr "Domeniu:"
 msgid "Username:"
 msgstr "Nume proprietar:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Parola pentru \\\\%s\\%s"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "execuţie/căutare de alţii"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "scriere de alţii"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "citire de alţii"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "execuţie/căutare de grup"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "scriere de grup"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "citire de grup"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "execuţie/căutare de propr."
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "scriere de proprietar"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "citire de proprietar"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "bitul de ţintuire (sticky)"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "setez ID grup la execuţie"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "setez ID propr. la exec."
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr ""
@@ -1755,29 +1751,29 @@ msgstr ""
 msgid "Group name:"
 msgstr ""
 
-msgid "C&lear marked"
-msgstr "Şter&g marc."
+msgid "&Marked all"
+msgstr "&Tot marc."
 
 msgid "S&et marked"
 msgstr "Set. &marc."
 
-msgid "&Marked all"
-msgstr "&Tot marc."
+msgid "C&lear marked"
+msgstr "Şter&g marc."
 
 msgid "Chmod command"
 msgstr "Comanda chmod"
 
-msgid "File"
-msgstr " Fişier"
-
 msgid "Permission"
 msgstr "Drepturi"
 
-msgid "Set &users"
-msgstr "Setează &utilizatori"
+msgid "File"
+msgstr " Fişier"
 
 msgid "Set &groups"
 msgstr "Setează &grupuri"
+
+msgid "Set &users"
+msgstr "Setează &utilizatori"
 
 msgid "Name"
 msgstr "Nume"
@@ -1794,14 +1790,14 @@ msgstr "Mărime"
 msgid "Chown command"
 msgstr ""
 
+msgid "User name"
+msgstr ""
+
 msgid "<Unknown user>"
 msgstr "<Utiliz. necun.>"
 
 msgid "<Unknown group>"
 msgstr "<Grup necun.>"
-
-msgid "User name"
-msgstr ""
 
 msgid "Enter machine name (F1 for details):"
 msgstr ""
@@ -1818,13 +1814,13 @@ msgstr ""
 msgid "Set expression for filtering filenames"
 msgstr ""
 
+msgid "&Files only"
+msgstr ""
+
 msgid "&Using shell patterns"
 msgstr "&Utilizez \"shell patterns\""
 
 msgid "&Case sensitive"
-msgstr ""
-
-msgid "&Files only"
 msgstr ""
 
 #, c-format
@@ -2084,19 +2080,17 @@ msgstr ""
 msgid "&Retry"
 msgstr "&Reîncerc"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
-msgstr ""
-
-msgid "Delete:"
 msgstr ""
 
 msgid "Non&e"
@@ -2305,6 +2299,12 @@ msgstr ""
 msgid "Sorry, I could not put the job in background"
 msgstr ""
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "Con&tinuă"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr ""
@@ -2329,30 +2329,30 @@ msgid "Target file already exists!"
 msgstr ""
 
 #, c-format
-msgid "Source date: %s, size %llu"
+msgid "New     : %s, size %llu"
 msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
+msgid "Existing: %s, size %llu"
 msgstr ""
 
-msgid "If &size differs"
-msgstr "dacă mă&Rimea diferă"
-
-msgid "&Update"
-msgstr "cele &Vechi"
-
-msgid "Overwrite all targets?"
-msgstr "Suprascriu toate desinaţiile?"
-
-msgid "&Reget"
-msgstr "&Readuc"
+msgid "Overwrite this target?"
+msgstr "Suprascriu această ţintă?"
 
 msgid "A&ppend"
 msgstr "adau&G"
 
-msgid "Overwrite this target?"
-msgstr "Suprascriu această ţintă?"
+msgid "&Reget"
+msgstr "&Readuc"
+
+msgid "Overwrite all targets?"
+msgstr "Suprascriu toate desinaţiile?"
+
+msgid "&Update"
+msgstr "cele &Vechi"
+
+msgid "If &size differs"
+msgstr "dacă mă&Rimea diferă"
 
 msgid "File exists"
 msgstr ""
@@ -2401,30 +2401,24 @@ msgstr "Ţintă"
 msgid "Deleting"
 msgstr "Ştergere"
 
-msgid "&Background"
-msgstr "&Fundal"
-
-msgid "&Stable Symlinks"
-msgstr "Legături simbolice &Stabile"
-
-msgid "Di&ve into subdir if exists"
+msgid "Follow &links"
 msgstr ""
 
 msgid "Preserve &attributes"
 msgstr ""
 
-msgid "Follow &links"
+msgid "Di&ve into subdir if exists"
 msgstr ""
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "&Fundal"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr ""
-
-msgid "&Suspend"
-msgstr "&Suspendare"
-
-msgid "Con&tinue"
-msgstr "Con&tinuă"
 
 msgid "&Chdir"
 msgstr "&Chdir"
@@ -2448,10 +2442,16 @@ msgstr ""
 msgid "Malformed regular expression"
 msgstr ""
 
+msgid "File name:"
+msgstr ""
+
 msgid "&Find recursively"
 msgstr ""
 
 msgid "S&kip hidden"
+msgstr ""
+
+msgid "Content:"
 msgstr ""
 
 msgid "Sea&rch for content"
@@ -2460,10 +2460,10 @@ msgstr ""
 msgid "Case sens&itive"
 msgstr ""
 
-msgid "Fir&st hit"
+msgid "A&ll charsets"
 msgstr ""
 
-msgid "A&ll charsets"
+msgid "Fir&st hit"
 msgstr ""
 
 msgid "&Tree"
@@ -2472,17 +2472,11 @@ msgstr "&Arbore"
 msgid "Find File"
 msgstr "Caut fişier"
 
-msgid "Content:"
-msgstr ""
-
-msgid "File name:"
-msgstr ""
+msgid "Start at:"
+msgstr "Încep la:"
 
 msgid "Ena&ble ignore directories:"
 msgstr ""
-
-msgid "Start at:"
-msgstr "Încep la:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2505,35 +2499,32 @@ msgstr "Caut %s"
 msgid "Searching"
 msgstr "Caut"
 
-msgid "&Remove"
-msgstr "Ş&Terge"
-
-msgid "&Append"
-msgstr "&Adaugă"
-
-msgid "&Insert"
-msgstr "&Inserează"
-
-msgid "New &entry"
+msgid "Change &to"
 msgstr ""
 
-msgid "New &group"
+msgid "&Free VFSs now"
 msgstr ""
-
-msgid "&Up"
-msgstr "&Sus"
-
-msgid "&Add current"
-msgstr "&Adaugă pe cel curent"
 
 msgid "&Refresh"
 msgstr ""
 
-msgid "Fr&ee VFSs now"
-msgstr "&Goleşte VFS-urile"
+msgid "&Add current"
+msgstr "&Adaugă pe cel curent"
 
-msgid "Change &to"
+msgid "&Up"
+msgstr "&Sus"
+
+msgid "New &group"
 msgstr ""
+
+msgid "New &entry"
+msgstr ""
+
+msgid "&Insert"
+msgstr "&Inserează"
+
+msgid "&Remove"
+msgstr "Ş&Terge"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgrup - apăsaţi ENTER ca să vedeţi lista"
@@ -2544,15 +2535,21 @@ msgstr "Directoare VFS active"
 msgid "Directory hotlist"
 msgstr "Lista rapidă de directoare"
 
+msgid "Top level group"
+msgstr ""
+
 msgid "Directory path"
 msgstr "Calea directorului"
-
-msgid "Directory label"
-msgstr "Eticheta directorului"
 
 #, c-format
 msgid "Moving %s"
 msgstr "Mut %s"
+
+msgid "Directory label"
+msgstr "Eticheta directorului"
+
+msgid "&Append"
+msgstr "&Adaugă"
 
 msgid "New hotlist entry"
 msgstr "Intrare nouă în lista rapidă"
@@ -2577,9 +2574,6 @@ msgstr ""
 msgid ""
 "Group \"%s\" is not empty.\n"
 "Remove it?"
-msgstr ""
-
-msgid "Top level group"
 msgstr ""
 
 msgid "Hotlist Load"
@@ -2681,34 +2675,31 @@ msgstr "Mod:       %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Locaţie:   %Xh:%Xh"
 
-msgid "Show free sp&ace"
+msgid "&Equal split"
+msgstr "împărţire &Egală"
+
+msgid "&Menubar visible"
 msgstr ""
 
-msgid "&XTerm window title"
-msgstr ""
-
-msgid "H&intbar visible"
+msgid "Command &prompt"
 msgstr ""
 
 msgid "&Keybar visible"
 msgstr "bară taste &Vizibilă"
 
-msgid "Command &prompt"
+msgid "H&intbar visible"
 msgstr ""
 
-msgid "Menu&bar visible"
+msgid "&XTerm window title"
 msgstr ""
 
-msgid "&Equal split"
-msgstr "împărţire &Egală"
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr ""
 
 msgid "Console output"
-msgstr ""
-
-msgid "Other options"
 msgstr ""
 
 msgid "&Vertical"
@@ -2943,64 +2934,64 @@ msgstr ""
 msgid "Alwa&ys"
 msgstr "&Întotdeauna"
 
-msgid "A&uto save setup"
-msgstr ""
-
-msgid "Sa&fe delete"
-msgstr ""
-
-msgid "Cd follows lin&ks"
-msgstr ""
-
-msgid "Rotating d&ash"
-msgstr ""
-
-msgid "Co&mplete: show all"
-msgstr ""
-
-msgid "Shell &patterns"
-msgstr ""
-
-msgid "&Drop down menus"
-msgstr "&Desfăşoară meniurile"
-
-msgid "Auto m&enus"
-msgstr ""
-
-msgid "Use internal vie&w"
-msgstr ""
-
-msgid "Use internal edi&t"
-msgstr ""
-
-msgid "Pause after run"
-msgstr ""
-
-msgid "Timeout:"
-msgstr ""
-
-msgid "S&ingle press"
-msgstr ""
-
-msgid "Esc key mode"
-msgstr ""
-
-msgid "Preallocate &space"
-msgstr ""
-
-msgid "Mkdi&r autoname"
-msgstr ""
-
-msgid "Classic pro&gressbar"
-msgstr ""
-
-msgid "Compute tota&ls"
+msgid "File operations"
 msgstr ""
 
 msgid "&Verbose operation"
 msgstr "operaţii des&Criptive"
 
-msgid "File operation options"
+msgid "Compute tota&ls"
+msgstr ""
+
+msgid "Classic pro&gressbar"
+msgstr ""
+
+msgid "Mkdi&r autoname"
+msgstr ""
+
+msgid "Preallocate &space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr ""
+
+msgid "S&ingle press"
+msgstr ""
+
+msgid "Timeout:"
+msgstr ""
+
+msgid "Pause after run"
+msgstr ""
+
+msgid "Use internal edi&t"
+msgstr ""
+
+msgid "Use internal vie&w"
+msgstr ""
+
+msgid "Auto m&enus"
+msgstr ""
+
+msgid "&Drop down menus"
+msgstr "&Desfăşoară meniurile"
+
+msgid "Shell &patterns"
+msgstr ""
+
+msgid "Co&mplete: show all"
+msgstr ""
+
+msgid "Rotating d&ash"
+msgstr ""
+
+msgid "Cd follows lin&ks"
+msgstr ""
+
+msgid "Sa&fe delete"
+msgstr ""
+
+msgid "A&uto save setup"
 msgstr ""
 
 msgid "Configure options"
@@ -3009,64 +3000,61 @@ msgstr "Opţiuni de configurare"
 msgid "Case &insensitive"
 msgstr ""
 
-msgid "Case s&ensitive"
-msgstr ""
-
 msgid "Use panel sort mo&de"
 msgstr ""
 
-msgid "Quick search"
-msgstr ""
-
-msgid "&Permissions"
-msgstr ""
-
-msgid "File &types"
-msgstr ""
-
-msgid "File highlight"
-msgstr ""
-
-msgid "&Mouse page scrolling"
-msgstr ""
-
-msgid "Pa&ge scrolling"
-msgstr ""
-
-msgid "L&ynx-like motion"
-msgstr "navigare în stil L&ynx"
-
-msgid "Navigation"
-msgstr ""
-
-msgid "A&uto save panels setup"
-msgstr ""
-
-msgid "Simple s&wap"
-msgstr ""
-
-msgid "Re&verse files only"
-msgstr ""
-
-msgid "Ma&rk moves down"
-msgstr ""
-
-msgid "&Fast dir reload"
-msgstr "reîncarc&Ă dir. rapid"
-
-msgid "Show &hidden files"
-msgstr ""
-
-msgid "Show &backup files"
-msgstr ""
-
-msgid "Mi&x all files"
+msgid "Show mi&ni-status"
 msgstr ""
 
 msgid "Use SI si&ze units"
 msgstr ""
 
-msgid "Show mi&ni-status"
+msgid "Mi&x all files"
+msgstr ""
+
+msgid "Show &backup files"
+msgstr ""
+
+msgid "Show &hidden files"
+msgstr ""
+
+msgid "&Fast dir reload"
+msgstr "reîncarc&Ă dir. rapid"
+
+msgid "Ma&rk moves down"
+msgstr ""
+
+msgid "Re&verse files only"
+msgstr ""
+
+msgid "Simple s&wap"
+msgstr ""
+
+msgid "A&uto save panels setup"
+msgstr ""
+
+msgid "Navigation"
+msgstr ""
+
+msgid "L&ynx-like motion"
+msgstr "navigare în stil L&ynx"
+
+msgid "Pa&ge scrolling"
+msgstr ""
+
+msgid "&Mouse page scrolling"
+msgstr ""
+
+msgid "File highlight"
+msgstr ""
+
+msgid "File &types"
+msgstr ""
+
+msgid "&Permissions"
+msgstr ""
+
+msgid "Quick search"
 msgstr ""
 
 msgid "Panel options"
@@ -3108,8 +3096,8 @@ msgstr ""
 msgid "sort|e"
 msgstr ""
 
-msgid "&Extension"
-msgstr "&Extensie"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3219,11 +3207,11 @@ msgstr "&Adaugă nou"
 msgid "External panelize"
 msgstr "Panelare externă"
 
-msgid "Command"
-msgstr "Comandă"
-
 msgid "Other command"
 msgstr "Alte comenzi"
+
+msgid "Command"
+msgstr "Comandă"
 
 msgid "Add to external panelize"
 msgstr ""
@@ -3424,14 +3412,11 @@ msgstr ""
 "Excelent! Aveţi o bază de date terminal completă!\n"
 "Toate tastele dvs. funcţionează corect."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Apăsaţi toate tastele menţionate aici. După ce aţi făcut-o, veri-"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
-msgstr "ficaţi care nu sunt marcate cu OK. Apăsaţi SPAŢIU pe tasta lipsă,"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
-msgstr "sau daţi click cu mouse-ul pentru a o defini. Navigaţi cu Tab."
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3542,6 +3527,9 @@ msgid "Config directory:"
 msgstr ""
 
 msgid "Data directory:"
+msgstr ""
+
+msgid "File extension handlers:"
 msgstr ""
 
 msgid "VFS plugins and scripts:"
@@ -3659,9 +3647,6 @@ msgstr "fish: stochează %s: trimit comanda..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: Citirea locală a eşuat, trimit zerouri"
-
-msgid "fish: storing zeros"
-msgstr ""
 
 msgid "fish: storing file"
 msgstr ""

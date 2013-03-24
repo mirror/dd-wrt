@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: Slovenian (http://www.transifex.com/projects/p/mc/language/"
 "sl/)\n"
@@ -525,14 +525,14 @@ msgstr "&Da"
 msgid "&No"
 msgstr "&Ne"
 
-msgid "Background process:"
-msgstr "Proces v ozadju:"
+msgid "&OK"
+msgstr "&V redu"
 
 msgid "&Cancel"
 msgstr "&Prekliči"
 
-msgid "&OK"
-msgstr "&V redu"
+msgid "Background process:"
+msgstr "Proces v ozadju:"
 
 msgid "Error"
 msgstr "Napaka"
@@ -708,19 +708,19 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Opusti"
 
-msgid "&All charsets"
+msgid "Enter search string:"
 msgstr ""
 
-msgid "&Whole words"
+msgid "Cas&e sensitive"
 msgstr ""
 
 msgid "&Backwards"
 msgstr "&Nazaj"
 
-msgid "Cas&e sensitive"
+msgid "&Whole words"
 msgstr ""
 
-msgid "Enter search string:"
+msgid "&All charsets"
 msgstr ""
 
 msgid "Search"
@@ -754,25 +754,25 @@ msgstr ""
 msgid "&Minimal (Find a smaller set of change)"
 msgstr ""
 
-msgid "Strip &trailing carriage return"
-msgstr ""
-
-msgid "Ignore all &whitespace"
-msgstr ""
-
-msgid "Ignore &space change"
-msgstr ""
-
-msgid "Ignore tab &expansion"
-msgstr ""
-
-msgid "&Ignore case"
+msgid "Diff algorithm"
 msgstr ""
 
 msgid "Diff extra options"
 msgstr ""
 
-msgid "Diff algorithm"
+msgid "&Ignore case"
+msgstr ""
+
+msgid "Ignore tab &expansion"
+msgstr ""
+
+msgid "Ignore &space change"
+msgstr ""
+
+msgid "Ignore all &whitespace"
+msgstr ""
+
+msgid "Strip &trailing carriage return"
 msgstr ""
 
 msgid "Diff Options"
@@ -917,10 +917,10 @@ msgstr ""
 msgid "&Macintosh format (CR)"
 msgstr ""
 
-msgid "Change line breaks to:"
+msgid "Enter file name:"
 msgstr ""
 
-msgid "Enter file name:"
+msgid "Change line breaks to:"
 msgstr ""
 
 msgid "Save As"
@@ -1097,16 +1097,16 @@ msgstr ""
 msgid "Cannot execute command"
 msgstr ""
 
-msgid "Copies to"
-msgstr ""
-
-msgid "Subject"
+msgid "mail -s <subject> -c <cc> <to>"
 msgstr ""
 
 msgid "To"
 msgstr ""
 
-msgid "mail -s <subject> -c <cc> <to>"
+msgid "Subject"
+msgstr ""
+
+msgid "Copies to"
 msgstr ""
 
 msgid "Mail"
@@ -1126,10 +1126,25 @@ msgstr ""
 msgid "In se&lection"
 msgstr ""
 
+msgid "&Find all"
+msgstr ""
+
 msgid "Enter replacement string:"
 msgstr ""
 
-msgid "&Find all"
+msgid "Replace with:"
+msgstr ""
+
+msgid "&Replace"
+msgstr "&Zamenjaj"
+
+msgid "A&ll"
+msgstr "&Vse"
+
+msgid "&Skip"
+msgstr "Pre&skoči"
+
+msgid "Confirm replace"
 msgstr ""
 
 msgid "Cancel"
@@ -1138,21 +1153,6 @@ msgstr "Prekliči"
 msgid ""
 "Current text was modified without a file save.\n"
 "Continue discards these changes."
-msgstr ""
-
-msgid "&Skip"
-msgstr "Pre&skoči"
-
-msgid "A&ll"
-msgstr "&Vse"
-
-msgid "&Replace"
-msgstr "&Zamenjaj"
-
-msgid "Replace with:"
-msgstr ""
-
-msgid "Confirm replace"
 msgstr ""
 
 msgid "NoName"
@@ -1377,71 +1377,81 @@ msgstr ""
 msgid "&Options"
 msgstr ""
 
-msgid "None"
-msgstr "Brez"
-
-msgid "Dynamic paragraphing"
-msgstr "Dinamični odstavki"
-
-msgid "Type writer wrap"
-msgstr "Prevoj tipkalnega stroja"
-
-msgid "Word wrap line length:"
+msgid "&None"
 msgstr ""
 
-msgid "&Group undo"
+msgid "&Dynamic paragraphing"
 msgstr ""
 
-msgid "Cursor beyond end of line"
+msgid "Type &writer wrap"
 msgstr ""
 
-msgid "Pers&istent selection"
+msgid "Wrap mode"
+msgstr "Način zavijanja"
+
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "&Ponaredi polovične tabulatorje"
+
+msgid "&Backspace through tabs"
+msgstr "&Vračalka skozi tabulatorje"
+
+msgid "Fill tabs with &spaces"
+msgstr "Zapolni tabulatorje s pre&sledki"
+
+msgid "Tab spacing:"
+msgstr ""
+
+msgid "Other options"
+msgstr ""
+
+msgid "&Return does autoindent"
+msgstr "ente&R samodejno zamika"
+
+msgid "Confir&m before saving"
+msgstr "&Potrdi pred shranitvijo"
+
+msgid "Save file &position"
+msgstr " Shrani &mesto datoteke"
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
 msgstr ""
 
 msgid "Synta&x highlighting"
 msgstr "Osvetlitev &sintakse"
 
-msgid "Visible tabs"
+msgid "C&ursor after inserted block"
 msgstr ""
 
-msgid "Visible trailing spaces"
+msgid "Pers&istent selection"
 msgstr ""
 
-msgid "Save file &position"
-msgstr " Shrani &mesto datoteke"
-
-msgid "Confir&m before saving"
-msgstr "&Potrdi pred shranitvijo"
-
-msgid "&Return does autoindent"
-msgstr "ente&R samodejno zamika"
-
-msgid "Tab spacing:"
+msgid "Cursor be&yond end of line"
 msgstr ""
 
-msgid "Fill tabs with &spaces"
-msgstr "Zapolni tabulatorje s pre&sledki"
+msgid "&Group undo"
+msgstr ""
 
-msgid "&Backspace through tabs"
-msgstr "&Vračalka skozi tabulatorje"
-
-msgid "&Fake half tabs"
-msgstr "&Ponaredi polovične tabulatorje"
-
-msgid "Wrap mode"
-msgstr "Način zavijanja"
+msgid "Word wrap line length:"
+msgstr ""
 
 msgid "Editor options"
 msgstr ""
 
-msgid "About"
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
 msgstr ""
 
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
+msgid "About"
 msgstr ""
 
 msgid "Open files"
@@ -1517,14 +1527,14 @@ msgstr "Napišite `exit' za vrnitev v Polnočnega poveljnika"
 msgid "Cannot fetch a local copy of %s"
 msgstr ""
 
-msgid "&Set"
-msgstr "&Nastavi"
+msgid "Set &all"
+msgstr "Nastavi &vse"
 
 msgid "S&kip"
 msgstr "Pres&koči"
 
-msgid "Set &all"
-msgstr "Nastavi &vse"
+msgid "&Set"
+msgstr "&Nastavi"
 
 msgid "owner"
 msgstr "lastnik"
@@ -1535,18 +1545,8 @@ msgstr "skupina"
 msgid "other"
 msgstr "drugo"
 
-msgid "On"
-msgstr "Vklopljeno"
-
 msgid "Flag"
 msgstr "Zastavica"
-
-msgid "Mode"
-msgstr "Način"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d od %d"
 
 msgid "Chown advanced command"
 msgstr ""
@@ -1563,14 +1563,14 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "&Stop"
-msgstr "&Ustavi"
+msgid "Other 8 bit"
+msgstr "Drugo 8 bitno"
 
-msgid "&Resume"
-msgstr "&Nadaljuj"
+msgid "Running"
+msgstr ""
 
-msgid "&Kill"
-msgstr "&Ubij"
+msgid "Stopped"
+msgstr "Ustavljen"
 
 msgid "&Full file list"
 msgstr "&Polni seznam datotek"
@@ -1584,14 +1584,57 @@ msgstr "&Dolgi seznam datotek"
 msgid "&User defined:"
 msgstr "&Prikorjeno:"
 
-msgid "Listing mode"
-msgstr "Seznamski način"
-
 msgid "User &mini status"
 msgstr ""
 
-msgid "Other 8 bit"
-msgstr "Drugo 8 bitno"
+msgid "Listing mode"
+msgstr "Seznamski način"
+
+msgid "Executable &first"
+msgstr ""
+
+msgid "&Reverse"
+msgstr "&Obrnjeno"
+
+msgid "Sort order"
+msgstr "Vrstni red sortiranja"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr ""
+
+msgid "Confirmation|O&verwrite"
+msgstr ""
+
+msgid "Confirmation|&Execute"
+msgstr ""
+
+msgid "Confirmation|E&xit"
+msgstr ""
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr ""
+
+msgid "Confirmation|&History cleanup"
+msgstr ""
+
+msgid "Confirmation"
+msgstr ""
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "P&olni 8 bitni vhod"
 
 msgid "Display bits"
 msgstr ""
@@ -1599,91 +1642,32 @@ msgstr ""
 msgid "Input / display codepage:"
 msgstr "Vhodni / zaslonski nabor znakov:"
 
-msgid "F&ull 8 bits input"
-msgstr "P&olni 8 bitni vhod"
-
 msgid "&Select"
 msgstr "&Izberi"
-
-msgid "Running"
-msgstr ""
-
-msgid "Stopped"
-msgstr "Ustavljen"
-
-msgid "&Reverse"
-msgstr "&Obrnjeno"
-
-msgid "Case sensi&tive"
-msgstr ""
-
-msgid "Executable &first"
-msgstr ""
-
-msgid "Sort order"
-msgstr "Vrstni red sortiranja"
-
-msgid "Confirmation"
-msgstr ""
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr ""
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr ""
-
-msgid "Confirmation|E&xit"
-msgstr ""
-
-msgid "Confirmation|&Execute"
-msgstr ""
-
-msgid "Confirmation|O&verwrite"
-msgstr ""
-
-msgid "Confirmation|&Delete"
-msgstr ""
-
-msgid "UTF-8 output"
-msgstr ""
-
-msgid "Full 8 bits output"
-msgstr "Polni 8 bitni izhod"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7 bitni"
 
 msgid "Directory tree"
 msgstr ""
 
-msgid "Use passive mode over pro&xy"
+msgid "Timeout for freeing VFSs (sec):"
 msgstr ""
 
-msgid "Use &passive mode"
-msgstr "Uporabi &pasivni način..."
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
+msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr "&Uporabi ~/.netrc"
 
-msgid "&Always use ftp proxy"
-msgstr "&Vedno uporabi posrednika za FTP"
+msgid "Use &passive mode"
+msgstr "Uporabi &pasivni način..."
 
-msgid "sec"
-msgstr "sek"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "Časovna omejitev za predpomnilnik ftpfs imenikov:"
-
-msgid "ftp anonymous password:"
-msgstr "geslo za anonimni ftp:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "Časovna omejitev za sprostitev VFS-jev:"
+msgid "Use passive mode over pro&xy"
+msgstr ""
 
 msgid "Virtual File System Setting"
 msgstr ""
@@ -1694,17 +1678,30 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "Hitri cd"
 
-msgid "Symbolic link filename:"
-msgstr "Ime simbolične povezave:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr "Ime obstoječe datoteke (tja bo simbolična povezava kazala):"
+
+msgid "Symbolic link filename:"
+msgstr "Ime simbolične povezave:"
 
 msgid "Symbolic link"
 msgstr "Simbolična povezava"
 
-msgid "Background Jobs"
-msgstr "Posli v ozadju"
+msgid "&Stop"
+msgstr "&Ustavi"
+
+msgid "&Resume"
+msgstr "&Nadaljuj"
+
+msgid "&Kill"
+msgstr "&Ubij"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "Geslo za \\\\%s\\%s"
 
 msgid "Domain:"
 msgstr "Domena:"
@@ -1712,45 +1709,44 @@ msgstr "Domena:"
 msgid "Username:"
 msgstr "Uporabniško ime:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Geslo za \\\\%s\\%s"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "izvedljiv/iskljiv za ostale"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "pisljiv za ostale"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "berljiv za ostale"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "izvedi/iskljiv za skupino"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "pisljiv za skupino"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "berljiv za skupino"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "izvedljiv/iskljiv za lastnika"
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "pisljiv za lastnika"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "berljiv za lastnika"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "lepljiv bit"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "nastavi skupinski ID ob zagonu"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "nastavi uporabnikov ID ob zagonu"
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr ""
@@ -1764,29 +1760,29 @@ msgstr ""
 msgid "Group name:"
 msgstr ""
 
-msgid "C&lear marked"
-msgstr "&Počisti označeno"
+msgid "&Marked all"
+msgstr "&Označi vse"
 
 msgid "S&et marked"
 msgstr "&Nastavi oznako"
 
-msgid "&Marked all"
-msgstr "&Označi vse"
+msgid "C&lear marked"
+msgstr "&Počisti označeno"
 
 msgid "Chmod command"
 msgstr "Chmod ukaz"
 
-msgid "File"
-msgstr "Datoteka"
-
 msgid "Permission"
 msgstr "Dovoljenje"
 
-msgid "Set &users"
-msgstr "Nastavi &uporabnike"
+msgid "File"
+msgstr "Datoteka"
 
 msgid "Set &groups"
 msgstr "Nastavi &skupine"
+
+msgid "Set &users"
+msgstr "Nastavi &uporabnike"
 
 msgid "Name"
 msgstr "Imenu"
@@ -1803,14 +1799,14 @@ msgstr "Velikost"
 msgid "Chown command"
 msgstr ""
 
+msgid "User name"
+msgstr ""
+
 msgid "<Unknown user>"
 msgstr "<Neznan uporabnik>"
 
 msgid "<Unknown group>"
 msgstr "<Neznana skupina>"
-
-msgid "User name"
-msgstr ""
 
 msgid "Enter machine name (F1 for details):"
 msgstr ""
@@ -1827,13 +1823,13 @@ msgstr ""
 msgid "Set expression for filtering filenames"
 msgstr ""
 
+msgid "&Files only"
+msgstr ""
+
 msgid "&Using shell patterns"
 msgstr "&Uporabi vzorce lupine"
 
 msgid "&Case sensitive"
-msgstr ""
-
-msgid "&Files only"
 msgstr ""
 
 #, c-format
@@ -2093,19 +2089,17 @@ msgstr ""
 msgid "&Retry"
 msgstr "Poskusi &znova"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
-msgstr ""
-
-msgid "Delete:"
 msgstr ""
 
 msgid "Non&e"
@@ -2314,6 +2308,12 @@ msgstr ""
 msgid "Sorry, I could not put the job in background"
 msgstr ""
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "&Nadaljuj"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr ""
@@ -2338,30 +2338,30 @@ msgid "Target file already exists!"
 msgstr ""
 
 #, c-format
-msgid "Source date: %s, size %llu"
+msgid "New     : %s, size %llu"
 msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
+msgid "Existing: %s, size %llu"
 msgstr ""
 
-msgid "If &size differs"
-msgstr "Če se &velikost razlikuje"
-
-msgid "&Update"
-msgstr "&Osveži"
-
-msgid "Overwrite all targets?"
-msgstr "Prepiši vse cilje?"
-
-msgid "&Reget"
-msgstr "&Znova dobi"
+msgid "Overwrite this target?"
+msgstr "Prepiši ta cilj"
 
 msgid "A&ppend"
 msgstr "&Pripni"
 
-msgid "Overwrite this target?"
-msgstr "Prepiši ta cilj"
+msgid "&Reget"
+msgstr "&Znova dobi"
+
+msgid "Overwrite all targets?"
+msgstr "Prepiši vse cilje?"
+
+msgid "&Update"
+msgstr "&Osveži"
+
+msgid "If &size differs"
+msgstr "Če se &velikost razlikuje"
 
 msgid "File exists"
 msgstr ""
@@ -2410,30 +2410,24 @@ msgstr "Cilj"
 msgid "Deleting"
 msgstr "Brišem"
 
-msgid "&Background"
-msgstr "&Ozadje"
-
-msgid "&Stable Symlinks"
-msgstr "&Stabilne simbolične povezave"
-
-msgid "Di&ve into subdir if exists"
+msgid "Follow &links"
 msgstr ""
 
 msgid "Preserve &attributes"
 msgstr ""
 
-msgid "Follow &links"
+msgid "Di&ve into subdir if exists"
 msgstr ""
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "&Ozadje"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr ""
-
-msgid "&Suspend"
-msgstr "&Izključi"
-
-msgid "Con&tinue"
-msgstr "&Nadaljuj"
 
 msgid "&Chdir"
 msgstr "&Chdir"
@@ -2457,10 +2451,16 @@ msgstr ""
 msgid "Malformed regular expression"
 msgstr ""
 
+msgid "File name:"
+msgstr ""
+
 msgid "&Find recursively"
 msgstr ""
 
 msgid "S&kip hidden"
+msgstr ""
+
+msgid "Content:"
 msgstr ""
 
 msgid "Sea&rch for content"
@@ -2469,10 +2469,10 @@ msgstr ""
 msgid "Case sens&itive"
 msgstr ""
 
-msgid "Fir&st hit"
+msgid "A&ll charsets"
 msgstr ""
 
-msgid "A&ll charsets"
+msgid "Fir&st hit"
 msgstr ""
 
 msgid "&Tree"
@@ -2481,17 +2481,11 @@ msgstr "&Drevo"
 msgid "Find File"
 msgstr "Poišči datoteko"
 
-msgid "Content:"
-msgstr ""
-
-msgid "File name:"
-msgstr ""
+msgid "Start at:"
+msgstr "Začni pri:"
 
 msgid "Ena&ble ignore directories:"
 msgstr ""
-
-msgid "Start at:"
-msgstr "Začni pri:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2515,35 +2509,32 @@ msgstr "Iščem %s"
 msgid "Searching"
 msgstr "Iščem"
 
-msgid "&Remove"
-msgstr "&Odstrani"
-
-msgid "&Append"
-msgstr "&Pripni"
-
-msgid "&Insert"
-msgstr "&Vstavi"
-
-msgid "New &entry"
+msgid "Change &to"
 msgstr ""
 
-msgid "New &group"
+msgid "&Free VFSs now"
 msgstr ""
-
-msgid "&Up"
-msgstr "&Gor"
-
-msgid "&Add current"
-msgstr "&Dodaj trenutno"
 
 msgid "&Refresh"
 msgstr ""
 
-msgid "Fr&ee VFSs now"
-msgstr "&Takoj sprosti VFS-je"
+msgid "&Add current"
+msgstr "&Dodaj trenutno"
 
-msgid "Change &to"
+msgid "&Up"
+msgstr "&Gor"
+
+msgid "New &group"
 msgstr ""
+
+msgid "New &entry"
+msgstr ""
+
+msgid "&Insert"
+msgstr "&Vstavi"
+
+msgid "&Remove"
+msgstr "&Odstrani"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Podskupina - pritisnite ENTER za ogled seznama"
@@ -2554,15 +2545,21 @@ msgstr "Dejavni VFS imeniki"
 msgid "Directory hotlist"
 msgstr " Vroča lista imenikov"
 
+msgid "Top level group"
+msgstr ""
+
 msgid "Directory path"
 msgstr "Pot imenika"
-
-msgid "Directory label"
-msgstr "Oznaka imenika"
 
 #, c-format
 msgid "Moving %s"
 msgstr "Prestavljam %s"
+
+msgid "Directory label"
+msgstr "Oznaka imenika"
+
+msgid "&Append"
+msgstr "&Pripni"
 
 msgid "New hotlist entry"
 msgstr "Nov vpis v vroč seznam"
@@ -2587,9 +2584,6 @@ msgstr ""
 msgid ""
 "Group \"%s\" is not empty.\n"
 "Remove it?"
-msgstr ""
-
-msgid "Top level group"
 msgstr ""
 
 msgid "Hotlist Load"
@@ -2692,34 +2686,31 @@ msgstr "Način:     %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Lokacija:  %Xh:%Xh"
 
-msgid "Show free sp&ace"
+msgid "&Equal split"
+msgstr "&Enakomerni razrez"
+
+msgid "&Menubar visible"
 msgstr ""
 
-msgid "&XTerm window title"
-msgstr ""
-
-msgid "H&intbar visible"
+msgid "Command &prompt"
 msgstr ""
 
 msgid "&Keybar visible"
 msgstr "vidna vrstica s &Tipkami"
 
-msgid "Command &prompt"
+msgid "H&intbar visible"
 msgstr ""
 
-msgid "Menu&bar visible"
+msgid "&XTerm window title"
 msgstr ""
 
-msgid "&Equal split"
-msgstr "&Enakomerni razrez"
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr ""
 
 msgid "Console output"
-msgstr ""
-
-msgid "Other options"
 msgstr ""
 
 msgid "&Vertical"
@@ -2955,64 +2946,64 @@ msgstr ""
 msgid "Alwa&ys"
 msgstr "&Vedno"
 
-msgid "A&uto save setup"
-msgstr ""
-
-msgid "Sa&fe delete"
-msgstr ""
-
-msgid "Cd follows lin&ks"
-msgstr ""
-
-msgid "Rotating d&ash"
-msgstr ""
-
-msgid "Co&mplete: show all"
-msgstr ""
-
-msgid "Shell &patterns"
-msgstr ""
-
-msgid "&Drop down menus"
-msgstr "&Spustni menuji"
-
-msgid "Auto m&enus"
-msgstr ""
-
-msgid "Use internal vie&w"
-msgstr ""
-
-msgid "Use internal edi&t"
-msgstr ""
-
-msgid "Pause after run"
-msgstr ""
-
-msgid "Timeout:"
-msgstr ""
-
-msgid "S&ingle press"
-msgstr ""
-
-msgid "Esc key mode"
-msgstr ""
-
-msgid "Preallocate &space"
-msgstr ""
-
-msgid "Mkdi&r autoname"
-msgstr ""
-
-msgid "Classic pro&gressbar"
-msgstr ""
-
-msgid "Compute tota&ls"
+msgid "File operations"
 msgstr ""
 
 msgid "&Verbose operation"
 msgstr "&Podrobno obveščanje"
 
-msgid "File operation options"
+msgid "Compute tota&ls"
+msgstr ""
+
+msgid "Classic pro&gressbar"
+msgstr ""
+
+msgid "Mkdi&r autoname"
+msgstr ""
+
+msgid "Preallocate &space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr ""
+
+msgid "S&ingle press"
+msgstr ""
+
+msgid "Timeout:"
+msgstr ""
+
+msgid "Pause after run"
+msgstr ""
+
+msgid "Use internal edi&t"
+msgstr ""
+
+msgid "Use internal vie&w"
+msgstr ""
+
+msgid "Auto m&enus"
+msgstr ""
+
+msgid "&Drop down menus"
+msgstr "&Spustni menuji"
+
+msgid "Shell &patterns"
+msgstr ""
+
+msgid "Co&mplete: show all"
+msgstr ""
+
+msgid "Rotating d&ash"
+msgstr ""
+
+msgid "Cd follows lin&ks"
+msgstr ""
+
+msgid "Sa&fe delete"
+msgstr ""
+
+msgid "A&uto save setup"
 msgstr ""
 
 msgid "Configure options"
@@ -3021,64 +3012,61 @@ msgstr "Nastavi"
 msgid "Case &insensitive"
 msgstr ""
 
-msgid "Case s&ensitive"
-msgstr ""
-
 msgid "Use panel sort mo&de"
 msgstr ""
 
-msgid "Quick search"
-msgstr ""
-
-msgid "&Permissions"
-msgstr ""
-
-msgid "File &types"
-msgstr ""
-
-msgid "File highlight"
-msgstr ""
-
-msgid "&Mouse page scrolling"
-msgstr ""
-
-msgid "Pa&ge scrolling"
-msgstr ""
-
-msgid "L&ynx-like motion"
-msgstr "Premikanje kot v l&ynx-u"
-
-msgid "Navigation"
-msgstr ""
-
-msgid "A&uto save panels setup"
-msgstr ""
-
-msgid "Simple s&wap"
-msgstr ""
-
-msgid "Re&verse files only"
-msgstr ""
-
-msgid "Ma&rk moves down"
-msgstr ""
-
-msgid "&Fast dir reload"
-msgstr "&Hitro osveževanje imenikov"
-
-msgid "Show &hidden files"
-msgstr ""
-
-msgid "Show &backup files"
-msgstr ""
-
-msgid "Mi&x all files"
+msgid "Show mi&ni-status"
 msgstr ""
 
 msgid "Use SI si&ze units"
 msgstr ""
 
-msgid "Show mi&ni-status"
+msgid "Mi&x all files"
+msgstr ""
+
+msgid "Show &backup files"
+msgstr ""
+
+msgid "Show &hidden files"
+msgstr ""
+
+msgid "&Fast dir reload"
+msgstr "&Hitro osveževanje imenikov"
+
+msgid "Ma&rk moves down"
+msgstr ""
+
+msgid "Re&verse files only"
+msgstr ""
+
+msgid "Simple s&wap"
+msgstr ""
+
+msgid "A&uto save panels setup"
+msgstr ""
+
+msgid "Navigation"
+msgstr ""
+
+msgid "L&ynx-like motion"
+msgstr "Premikanje kot v l&ynx-u"
+
+msgid "Pa&ge scrolling"
+msgstr ""
+
+msgid "&Mouse page scrolling"
+msgstr ""
+
+msgid "File highlight"
+msgstr ""
+
+msgid "File &types"
+msgstr ""
+
+msgid "&Permissions"
+msgstr ""
+
+msgid "Quick search"
 msgstr ""
 
 msgid "Panel options"
@@ -3120,8 +3108,8 @@ msgstr ""
 msgid "sort|e"
 msgstr ""
 
-msgid "&Extension"
-msgstr "&Pripona"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3234,11 +3222,11 @@ msgstr "&Dodaj novo"
 msgid "External panelize"
 msgstr "V pult od zunaj"
 
-msgid "Command"
-msgstr "Ukaz"
-
 msgid "Other command"
 msgstr "Drug ukaz"
+
+msgid "Command"
+msgstr "Ukaz"
 
 msgid "Add to external panelize"
 msgstr ""
@@ -3439,16 +3427,11 @@ msgstr ""
 "Odlično! Imate popolno terminalsko zbirko podatkov\n"
 "Vse vaše tipke delujejo dobro."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Pritisnite vse tipke omenjene tu. Ko ste končali preverite"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
-msgstr "katere tipke niso označene z V redu. Pritisnite preslednico na"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
 msgstr ""
-"manjkajoči tipki ali jo kliknite z miško, da jo definirate. Okoli se "
-"premikate s Tabulatorjem."
 
 #, c-format
 msgid ""
@@ -3559,6 +3542,9 @@ msgid "Config directory:"
 msgstr ""
 
 msgid "Data directory:"
+msgstr ""
+
+msgid "File extension handlers:"
 msgstr ""
 
 msgid "VFS plugins and scripts:"
@@ -3678,9 +3664,6 @@ msgstr "fish: shranjujem %s: pošiljnam ukaz..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: Krajevno branje ni uspelo, pošiljam nule"
-
-msgid "fish: storing zeros"
-msgstr ""
 
 msgid "fish: storing file"
 msgstr ""

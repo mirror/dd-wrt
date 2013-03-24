@@ -8,18 +8,21 @@ if USE_DIFF
 SUBDIRS += diffviewer
 endif
 
+noinst_LTLIBRARIES = libinternal.la
+
 AM_CPPFLAGS = \
 	-DSYSCONFDIR=\""$(sysconfdir)/@PACKAGE@/"\" \
 	-DLIBEXECDIR=\""$(libexecdir)/@PACKAGE@/"\" \
 	-DDATADIR=\""$(pkgdatadir)/"\" \
-	-DLOCALEDIR=\""$(localedir)"\"
+	-DLOCALEDIR=\""$(localedir)"\" \
+	-DEXTHELPERSDIR=\""@EXTHELPERSDIR@/"\"
 
 if CONS_SAVER
 SUBDIRS += consaver
 AM_CPPFLAGS += -DSAVERDIR=\""$(pkglibexecdir)"\"
 endif
 
-AM_CFLAGS = -I$(top_srcdir) $(GLIB_CFLAGS) $(PCRE_CFLAGS)
+AM_CPPFLAGS += -I$(top_srcdir) $(GLIB_CFLAGS) $(PCRE_CPPFLAGS)
 
 localedir = $(datadir)/locale
 pkglibexecdir = $(libexecdir)/@PACKAGE@
@@ -34,11 +37,14 @@ if USE_DIFF
 DIFFLIB = diffviewer/libdiffviewer.la
 endif
 
-mc_LDADD = \
+libinternal_la_LIBADD = \
+	filemanager/libmcfilemanager.la \
 	vfs/libmc-vfs.la \
 	viewer/libmcviewer.la \
-	filemanager/libmcfilemanager.la \
-	$(DIFFLIB) $(EDITLIB) \
+	$(DIFFLIB) $(EDITLIB)
+
+mc_LDADD = \
+	libinternal.la \
 	$(top_builddir)/lib/libmc.la
 
 if ENABLE_VFS_SMB
@@ -50,6 +56,9 @@ SRC_mc_conssaver = \
 	cons.handler.c consaver/cons.saver.h
 
 mc_SOURCES = \
+	main.c
+
+libinternal_la_SOURCES = \
 	$(SRC_mc_conssaver) \
 	args.c args.h \
 	clipboard.c clipboard.h \
@@ -59,18 +68,20 @@ mc_SOURCES = \
 	history.h \
 	keybind-defaults.c keybind-defaults.h \
 	learn.c learn.h \
-	main.c main.h \
 	setup.c setup.h \
-	subshell.c subshell.h \
 	textconf.c textconf.h \
 	util.c util.h
 
 if CHARSET
-    mc_SOURCES += selcodepage.c selcodepage.h
+    libinternal_la_SOURCES += selcodepage.c selcodepage.h
+endif
+
+if ENABLE_SUBSHELL
+    libinternal_la_SOURCES += subshell.c subshell.h
 endif
 
 if ENABLE_BACKGROUND
-    mc_SOURCES += background.c background.h
+    libinternal_la_SOURCES += background.c background.h
 endif
 
 EXTRA_DIST = $(SRC_maintainer) $(SRC_charset)

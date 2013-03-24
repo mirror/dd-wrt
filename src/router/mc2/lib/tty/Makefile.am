@@ -17,20 +17,19 @@ TTY_SRC = \
 	key.c key.h keyxdef.c \
 	mouse.c mouse.h \
 	tty.c tty.h tty-internal.h \
-	win.c win.h \
-	x11conn.c x11conn.h
+	win.c win.h
+
+if HAVE_TEXTMODE_X11_SUPPORT
+TTY_SRC += x11conn.c x11conn.h
+endif
 
 libmctty_la_SOURCES = $(TTY_SRC) $(TTY_SCREEN_SRC)
 
-AM_CPPFLAGS = \
-	-DDATADIR=\""$(pkgdatadir)/"\" \
-	-DLOCALEDIR=\""$(localedir)"\"
-
-AM_CFLAGS = -I$(top_srcdir)
+AM_CPPFLAGS = -I$(top_srcdir)
 
 if HAVE_GMODULE
-AM_CFLAGS += $(GMODULE_CFLAGS)
+AM_CPPFLAGS += $(GMODULE_CFLAGS)
 else
-AM_CFLAGS += $(GLIB_CFLAGS)
+AM_CPPFLAGS += $(GLIB_CFLAGS)
 endif
 

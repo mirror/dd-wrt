@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 13:14+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 15:01+0000\n"
 "Last-Translator: Rezső Páder <rezso@rezso.net>\n"
 "Language-Team: Hungarian (http://www.transifex.com/projects/p/mc/language/"
 "hu/)\n"
@@ -532,14 +532,14 @@ msgstr "&Igen"
 msgid "&No"
 msgstr "&Nem"
 
-msgid "Background process:"
-msgstr "Háttérfolyamat:"
+msgid "&OK"
+msgstr "&OK"
 
 msgid "&Cancel"
 msgstr "&Mégsem"
 
-msgid "&OK"
-msgstr "&OK"
+msgid "Background process:"
+msgstr "Háttérfolyamat:"
 
 msgid "Error"
 msgstr "Hiba"
@@ -734,20 +734,20 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Tovább"
 
-msgid "&All charsets"
-msgstr "&Minden karakterkészlet"
-
-msgid "&Whole words"
-msgstr "Csak &teljes szót"
-
-msgid "&Backwards"
-msgstr "&Visszafelé"
+msgid "Enter search string:"
+msgstr "Keresendő szöveg:"
 
 msgid "Cas&e sensitive"
 msgstr "&Kis-/nagybetű számít"
 
-msgid "Enter search string:"
-msgstr "Keresendő szöveg:"
+msgid "&Backwards"
+msgstr "&Visszafelé"
+
+msgid "&Whole words"
+msgstr "Csak &teljes szót"
+
+msgid "&All charsets"
+msgstr "&Minden karakterkészlet"
 
 msgid "Search"
 msgstr "Keresés"
@@ -787,26 +787,26 @@ msgstr "&Gyors (nagy fájlokhoz)"
 msgid "&Minimal (Find a smaller set of change)"
 msgstr "&Minimális (kisebb változásokat keres)"
 
-msgid "Strip &trailing carriage return"
-msgstr "Sorvégi &CR eldobása"
-
-msgid "Ignore all &whitespace"
-msgstr "Szóköz/TAB/sor&vég mindegy"
-
-msgid "Ignore &space change"
-msgstr "&Szóköz mindegy"
-
-msgid "Ignore tab &expansion"
-msgstr "Szóköz/&TAB mindegy"
-
-msgid "&Ignore case"
-msgstr "&Kis/nagy betű mindegy"
+msgid "Diff algorithm"
+msgstr "Diff algoritmus"
 
 msgid "Diff extra options"
 msgstr "Diff további opciók"
 
-msgid "Diff algorithm"
-msgstr "Diff algoritmus"
+msgid "&Ignore case"
+msgstr "&Kis/nagy betű mindegy"
+
+msgid "Ignore tab &expansion"
+msgstr "Szóköz/&TAB mindegy"
+
+msgid "Ignore &space change"
+msgstr "&Szóköz mindegy"
+
+msgid "Ignore all &whitespace"
+msgstr "Szóköz/TAB/sor&vég mindegy"
+
+msgid "Strip &trailing carriage return"
+msgstr "Sorvégi &CR eldobása"
 
 msgid "Diff Options"
 msgstr "Diff beállítások"
@@ -952,11 +952,11 @@ msgstr "&Windows/DOS formátum (CR LF)"
 msgid "&Macintosh format (CR)"
 msgstr "&Macintosh formátum (CR)"
 
-msgid "Change line breaks to:"
-msgstr "Sortörés formátum:"
-
 msgid "Enter file name:"
 msgstr "Fájlnév:"
+
+msgid "Change line breaks to:"
+msgstr "Sortörés formátum:"
 
 msgid "Save As"
 msgstr "Mentés másként"
@@ -1136,17 +1136,17 @@ msgstr "Külső parancs"
 msgid "Cannot execute command"
 msgstr "A parancs nem hajtható végre"
 
-msgid "Copies to"
-msgstr "Másolat"
-
-msgid "Subject"
-msgstr "Tárgy"
+msgid "mail -s <subject> -c <cc> <to>"
+msgstr "mail -s <tárgy> -c <másolat> <címzett>"
 
 msgid "To"
 msgstr "Címzett"
 
-msgid "mail -s <subject> -c <cc> <to>"
-msgstr "mail -s <tárgy> -c <másolat> <címzett>"
+msgid "Subject"
+msgstr "Tárgy"
+
+msgid "Copies to"
+msgstr "Másolat"
 
 msgid "Mail"
 msgstr "E-mail"
@@ -1167,11 +1167,26 @@ msgstr ""
 msgid "In se&lection"
 msgstr "Kijelöltben"
 
+msgid "&Find all"
+msgstr "Min&det"
+
 msgid "Enter replacement string:"
 msgstr "Új szöveg:"
 
-msgid "&Find all"
+msgid "Replace with:"
+msgstr "Csere erre:"
+
+msgid "&Replace"
+msgstr "&Csere"
+
+msgid "A&ll"
 msgstr "Min&det"
+
+msgid "&Skip"
+msgstr "&Kihagyás"
+
+msgid "Confirm replace"
+msgstr "Csere megerősítése"
 
 msgid "Cancel"
 msgstr "Mégsem"
@@ -1182,21 +1197,6 @@ msgid ""
 msgstr ""
 "A szöveg módosult a legutóbbi mentés óta. \n"
 "Ha továbblép, ezek a változások elvesznek."
-
-msgid "&Skip"
-msgstr "&Kihagyás"
-
-msgid "A&ll"
-msgstr "Min&det"
-
-msgid "&Replace"
-msgstr "&Csere"
-
-msgid "Replace with:"
-msgstr "Csere erre:"
-
-msgid "Confirm replace"
-msgstr "Csere megerősítése"
 
 msgid "NoName"
 msgstr "Névtelen"
@@ -1420,76 +1420,82 @@ msgstr "&Ablak"
 msgid "&Options"
 msgstr "Beállítás&ok"
 
-msgid "None"
-msgstr "Nincs"
+msgid "&None"
+msgstr "&Nincs"
 
-msgid "Dynamic paragraphing"
-msgstr "Dinamikus bekezdések"
+msgid "&Dynamic paragraphing"
+msgstr ""
 
-msgid "Type writer wrap"
-msgstr "Sortörés"
-
-msgid "Word wrap line length:"
-msgstr "Sortörési pozíció:"
-
-msgid "&Group undo"
-msgstr "C&soportos visszavonás"
-
-msgid "Cursor beyond end of line"
-msgstr "Kurzor a sor vége mögött"
-
-msgid "Pers&istent selection"
-msgstr "Tartós kijelölés"
-
-msgid "Synta&x highlighting"
-msgstr "&Szintaktikus szövegkiemelés"
-
-msgid "Visible tabs"
-msgstr "Látható tabulátorok"
-
-msgid "Visible trailing spaces"
-msgstr "Látható sorvégi szóközök"
-
-msgid "Save file &position"
-msgstr "Fájlbeli &pozíció mentése"
-
-msgid "Confir&m before saving"
-msgstr "M&entés előtt megerősítés"
-
-msgid "&Return does autoindent"
-msgstr "Új sor &auto. behúzás"
-
-msgid "Tab spacing:"
-msgstr "Tabulátor méret:"
-
-msgid "Fill tabs with &spaces"
-msgstr "&Tabulálás szóközökkel"
-
-msgid "&Backspace through tabs"
-msgstr "&Backspace: tabokat egyszerre"
-
-msgid "&Fake half tabs"
-msgstr "Hamis &fél-tabulátorok"
+msgid "Type &writer wrap"
+msgstr ""
 
 msgid "Wrap mode"
 msgstr "Tördelés"
 
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "Hamis &fél-tabulátorok"
+
+msgid "&Backspace through tabs"
+msgstr "&Backspace: tabokat egyszerre"
+
+msgid "Fill tabs with &spaces"
+msgstr "&Tabulálás szóközökkel"
+
+msgid "Tab spacing:"
+msgstr "Tabulátor méret:"
+
+msgid "Other options"
+msgstr "További opciók"
+
+msgid "&Return does autoindent"
+msgstr "Új sor &auto. behúzás"
+
+msgid "Confir&m before saving"
+msgstr "M&entés előtt megerősítés"
+
+msgid "Save file &position"
+msgstr "Fájlbeli &pozíció mentése"
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
+msgstr ""
+
+msgid "Synta&x highlighting"
+msgstr "&Szintaktikus szövegkiemelés"
+
+msgid "C&ursor after inserted block"
+msgstr ""
+
+msgid "Pers&istent selection"
+msgstr "Tartós kijelölés"
+
+msgid "Cursor be&yond end of line"
+msgstr ""
+
+msgid "&Group undo"
+msgstr "C&soportos visszavonás"
+
+msgid "Word wrap line length:"
+msgstr "Sortörési pozíció:"
+
 msgid "Editor options"
 msgstr "A szövegszerkesztő beállításai"
 
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
+msgstr ""
+
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2012 the Free Software Foundation"
+
 msgid "About"
 msgstr "Névjegy"
-
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            Felhasználóbarát szövegszerkesztő\n"
-"           a Midnight Commander-hez készítve"
 
 msgid "Open files"
 msgstr "Nyitott fájlok"
@@ -1570,14 +1576,14 @@ msgstr "Írjon \"exit\"-et a Midnight Commanderbe való visszatéréshez."
 msgid "Cannot fetch a local copy of %s"
 msgstr "Nem sikerült behozni \"%s\" helyi másolatát"
 
-msgid "&Set"
-msgstr "&Beállít"
+msgid "Set &all"
+msgstr "Min&det"
 
 msgid "S&kip"
 msgstr "&Kihagy"
 
-msgid "Set &all"
-msgstr "Min&det"
+msgid "&Set"
+msgstr "&Beállít"
 
 msgid "owner"
 msgstr "Tulaj"
@@ -1588,18 +1594,8 @@ msgstr "Csoport"
 msgid "other"
 msgstr "Mások"
 
-msgid "On"
-msgstr "Be"
-
 msgid "Flag"
 msgstr "Jel"
-
-msgid "Mode"
-msgstr "Mód"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d / %d"
 
 msgid "Chown advanced command"
 msgstr "Chmod-Chown parancs"
@@ -1620,14 +1616,14 @@ msgstr ""
 "\"%s\" tulaja nem állítható\n"
 "%s"
 
-msgid "&Stop"
-msgstr "&Megállít"
+msgid "Other 8 bit"
+msgstr "Egyéb 8 bites"
 
-msgid "&Resume"
-msgstr "&Folytat"
+msgid "Running"
+msgstr "Futtatás:"
 
-msgid "&Kill"
-msgstr "&Töröl"
+msgid "Stopped"
+msgstr "Megállítva"
 
 msgid "&Full file list"
 msgstr "&Teljes"
@@ -1641,14 +1637,57 @@ msgstr "&Duplaszéles"
 msgid "&User defined:"
 msgstr "Sa&ját:"
 
-msgid "Listing mode"
-msgstr "Listázási mód"
-
 msgid "User &mini status"
 msgstr "Saját extra adat&sor"
 
-msgid "Other 8 bit"
-msgstr "Egyéb 8 bites"
+msgid "Listing mode"
+msgstr "Listázási mód"
+
+msgid "Executable &first"
+msgstr "Futtatható fent"
+
+msgid "&Reverse"
+msgstr "&Fordított sorrend"
+
+msgid "Sort order"
+msgstr "Rendezési mód"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr "Confirmation|Tö&rlés"
+
+msgid "Confirmation|O&verwrite"
+msgstr "Confirmation|Felül&írás"
+
+msgid "Confirmation|&Execute"
+msgstr "Confirmation|&Futtatás"
+
+msgid "Confirmation|E&xit"
+msgstr "Confirmation|&Kilépés"
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr "Confirmation|Könyvtár-&gyorslista törlés"
+
+msgid "Confirmation|&History cleanup"
+msgstr "Confirmation|&Történet törlés"
+
+msgid "Confirmation"
+msgstr "Rákérdezés"
+
+msgid "&UTF-8 output"
+msgstr "&UTF-8 kimenet"
+
+msgid "&Full 8 bits output"
+msgstr "&Teljes 8 bites kimenet"
+
+msgid "&ISO 8859-1"
+msgstr "&ISO 8859-1"
+
+msgid "7 &bits"
+msgstr "7 &bit"
+
+msgid "F&ull 8 bits input"
+msgstr "&8 bites bevitel"
 
 msgid "Display bits"
 msgstr "Kivitel és bevitel"
@@ -1656,91 +1695,32 @@ msgstr "Kivitel és bevitel"
 msgid "Input / display codepage:"
 msgstr "Beviteli/kijelzési kódlap:"
 
-msgid "F&ull 8 bits input"
-msgstr "&8 bites bevitel"
-
 msgid "&Select"
 msgstr "&Kiválaszt"
-
-msgid "Running"
-msgstr "Futtatás:"
-
-msgid "Stopped"
-msgstr "Megállítva"
-
-msgid "&Reverse"
-msgstr "&Fordított sorrend"
-
-msgid "Case sensi&tive"
-msgstr "&Kis/nagybetű számít"
-
-msgid "Executable &first"
-msgstr "Futtatható fent"
-
-msgid "Sort order"
-msgstr "Rendezési mód"
-
-msgid "Confirmation"
-msgstr "Rákérdezés"
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr "Confirmation|&Történet törlés"
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr "Confirmation|Könyvtár-&gyorslista törlés"
-
-msgid "Confirmation|E&xit"
-msgstr "Confirmation|&Kilépés"
-
-msgid "Confirmation|&Execute"
-msgstr "Confirmation|&Futtatás"
-
-msgid "Confirmation|O&verwrite"
-msgstr "Confirmation|Felül&írás"
-
-msgid "Confirmation|&Delete"
-msgstr "Confirmation|Tö&rlés"
-
-msgid "UTF-8 output"
-msgstr "UTF-8 kijelzés"
-
-msgid "Full 8 bits output"
-msgstr "8 bites kijelzés"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7 bites kijelzés"
 
 msgid "Directory tree"
 msgstr "Könyvtárfa"
 
-msgid "Use passive mode over pro&xy"
-msgstr "Passzív mód használata pro&xy-n"
+msgid "Timeout for freeing VFSs (sec):"
+msgstr ""
 
-msgid "Use &passive mode"
-msgstr "Passzí&v mód használata"
+msgid "FTP anonymous password:"
+msgstr "FTP anonymous jelszó:"
+
+msgid "FTP directory cache timeout (sec):"
+msgstr "FTP könyvtár gyorsítótár lejárata (mp):"
+
+msgid "&Always use ftp proxy:"
+msgstr "FTP proxy használata &mindig "
 
 msgid "&Use ~/.netrc"
 msgstr "~/.&netrc használata"
 
-msgid "&Always use ftp proxy"
-msgstr "FTP-&proxy állandó használata"
+msgid "Use &passive mode"
+msgstr "Passzí&v mód használata"
 
-msgid "sec"
-msgstr "s"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "Ftpfs-könyvtárgyorstár elévülése:"
-
-msgid "ftp anonymous password:"
-msgstr "Anonymous FTP jelszava:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "VFS-felszabadítási idő:"
+msgid "Use passive mode over pro&xy"
+msgstr "Passzív mód használata pro&xy-n"
 
 msgid "Virtual File System Setting"
 msgstr "Virtuális fájlrendszer (VFS) beállítások"
@@ -1751,17 +1731,30 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "Gyors könyvtárváltás (\"cd\")"
 
-msgid "Symbolic link filename:"
-msgstr "Szimbolikus link neve:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr "Létező fájlnév (amire a link mutatni fog):"
+
+msgid "Symbolic link filename:"
+msgstr "Szimbolikus link neve:"
 
 msgid "Symbolic link"
 msgstr "Szimbolikus link"
 
-msgid "Background Jobs"
+msgid "&Stop"
+msgstr "&Megállít"
+
+msgid "&Resume"
+msgstr "&Folytat"
+
+msgid "&Kill"
+msgstr "&Töröl"
+
+msgid "Background jobs"
 msgstr "Háttérfolyamatok"
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "\\\\%s\\%s jelszava:"
 
 msgid "Domain:"
 msgstr "Tartomány:"
@@ -1769,45 +1762,44 @@ msgstr "Tartomány:"
 msgid "Username:"
 msgstr "Felhasználónév:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "\\\\%s\\%s jelszava:"
+msgid "SMB authentication"
+msgstr "SMB hitelesítés"
 
-msgid "execute/search by others"
-msgstr "mások     : futtat/belép"
+msgid "set &user ID on execution"
+msgstr "&felhasználó-azonosító beállítása végrehajtáskor"
 
-msgid "write by others"
-msgstr "mások     : ír"
+msgid "set &group ID on execution"
+msgstr "&csoport-azonosító beállítása végrehajtáskor"
 
-msgid "read by others"
-msgstr "mások     : olvas"
+msgid "stick&y bit"
+msgstr "stick&y bit"
 
-msgid "execute/search by group"
-msgstr "csoport   : futtat/belép"
+msgid "&read by owner"
+msgstr "tulajdonos &olvashatja"
 
-msgid "write by group"
-msgstr "csoport   : ír"
+msgid "&write by owner"
+msgstr "tulajdonos í&rhatja"
 
-msgid "read by group"
-msgstr "csoport   : olvas"
+msgid "e&xecute/search by owner"
+msgstr "tulajdonos &futtathatja/keresheti"
 
-msgid "execute/search by owner"
-msgstr "tulajdonos: futtat/belép"
+msgid "rea&d by group"
+msgstr "csoport olvashatja"
 
-msgid "write by owner"
-msgstr "tulajdonos: ír"
+msgid "write by grou&p"
+msgstr "csoport írhatja"
 
-msgid "read by owner"
-msgstr "tulajdonos: olvas"
+msgid "execu&te/search by group"
+msgstr "csoport futtathatja/keresheti"
 
-msgid "sticky bit"
-msgstr "\"Sticky\"  bit (ragadós)"
+msgid "read &by others"
+msgstr "mások olvashatják"
 
-msgid "set group ID on execution"
-msgstr "\"Set-GID\" bit (más GID)"
+msgid "wr&ite by others"
+msgstr "mások írhatják"
 
-msgid "set user ID on execution"
-msgstr "\"Set-UID\" bit (más UID)"
+msgid "execute/searc&h by others"
+msgstr "mások futtathatják/kereshetik"
 
 msgid "Name:"
 msgstr "Név:"
@@ -1821,29 +1813,29 @@ msgstr "Tulajdonos:"
 msgid "Group name:"
 msgstr "Csoport:"
 
-msgid "C&lear marked"
-msgstr "Jel. &ki"
+msgid "&Marked all"
+msgstr "&Jelölteket"
 
 msgid "S&et marked"
 msgstr "Jel. b&e"
 
-msgid "&Marked all"
-msgstr "&Jelölteket"
+msgid "C&lear marked"
+msgstr "Jel. &ki"
 
 msgid "Chmod command"
 msgstr "Jogosultságok beállítása (Chmod)"
 
-msgid "File"
-msgstr "Fájl"
-
 msgid "Permission"
 msgstr "Jogok"
 
-msgid "Set &users"
-msgstr "&Tulajdonost"
+msgid "File"
+msgstr "Fájl"
 
 msgid "Set &groups"
 msgstr "&Csoportot"
+
+msgid "Set &users"
+msgstr "&Tulajdonost"
 
 msgid "Name"
 msgstr "Fájlnév"
@@ -1860,14 +1852,14 @@ msgstr "Méret"
 msgid "Chown command"
 msgstr "Chown parancs (Tulaj)"
 
+msgid "User name"
+msgstr "Tulajdonos"
+
 msgid "<Unknown user>"
 msgstr "<ismeretlen>"
 
 msgid "<Unknown group>"
 msgstr "<ismeretlen>"
-
-msgid "User name"
-msgstr "Tulajdonos"
 
 msgid "Enter machine name (F1 for details):"
 msgstr "Gépnév (részletek: F1 billentyű):"
@@ -1884,14 +1876,14 @@ msgstr "Szűrő"
 msgid "Set expression for filtering filenames"
 msgstr "Adja meg a fájlnevekre vonatkozó szűrőkifejezést"
 
+msgid "&Files only"
+msgstr "Csak &fájlokat"
+
 msgid "&Using shell patterns"
 msgstr "&Shell-minta"
 
 msgid "&Case sensitive"
 msgstr "&Kis-/nagybetű számít"
-
-msgid "&Files only"
-msgstr "Csak &fájlokat"
 
 #, c-format
 msgid "Link %s to:"
@@ -2172,26 +2164,18 @@ msgstr "Ö&sszes kihagyása"
 msgid "&Retry"
 msgstr "Új&ra"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Nem üres a könyvtár.   \n"
-"Törölni kívánja a tartalmával együtt?"
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Háttérfolyamat: nem üres a könyvtár. \n"
-"Törölni kívánja a tartalmával együtt?"
-
-msgid "Delete:"
-msgstr "Törlés:"
 
 msgid "Non&e"
 msgstr "&Egyiket sem"
@@ -2464,6 +2448,12 @@ msgstr "A \"..\" könyvtárral ez nem lehetséges!"
 msgid "Sorry, I could not put the job in background"
 msgstr "Nem tudtam a feladatot a háttérben végezni"
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "&Folytatás"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr "%d:%02d:%02d"
@@ -2488,30 +2478,30 @@ msgid "Target file already exists!"
 msgstr "A célfájl már létezik!"
 
 #, c-format
-msgid "Source date: %s, size %llu"
-msgstr "Forrásfájl dátuma: %s, mérete: %llu"
+msgid "New     : %s, size %llu"
+msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
-msgstr "Célfájl dátuma:    %s, mérete: %llu"
+msgid "Existing: %s, size %llu"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "Ha más a mére&te"
-
-msgid "&Update"
-msgstr "Ha &régebbi"
-
-msgid "Overwrite all targets?"
-msgstr "Minden célfájlt felülír?"
-
-msgid "&Reget"
-msgstr "&Kiegészítés"
+msgid "Overwrite this target?"
+msgstr "Felülírja ezt a fájlt?"
 
 msgid "A&ppend"
 msgstr "&Hozzáírás"
 
-msgid "Overwrite this target?"
-msgstr "Felülírja ezt a fájlt?"
+msgid "&Reget"
+msgstr "&Kiegészítés"
+
+msgid "Overwrite all targets?"
+msgstr "Minden célfájlt felülír?"
+
+msgid "&Update"
+msgstr "Ha &régebbi"
+
+msgid "If &size differs"
+msgstr "Ha más a mére&te"
 
 msgid "File exists"
 msgstr "A fájl már létezik"
@@ -2560,30 +2550,24 @@ msgstr "Cél"
 msgid "Deleting"
 msgstr "Törlés"
 
-msgid "&Background"
-msgstr "Háttér&ben"
-
-msgid "&Stable Symlinks"
-msgstr "S&tabil szimbolikus linkek"
-
-msgid "Di&ve into subdir if exists"
-msgstr "Lét&ező könyvtárba lemenni"
+msgid "Follow &links"
+msgstr "&Linkek követése"
 
 msgid "Preserve &attributes"
 msgstr "&Attribútumok megőrzése"
 
-msgid "Follow &links"
-msgstr "&Linkek követése"
+msgid "Di&ve into subdir if exists"
+msgstr "Lét&ező könyvtárba lemenni"
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "Háttér&ben"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr "Hibás forrás-minta: \"%s\""
-
-msgid "&Suspend"
-msgstr "F&elfüggesztés"
-
-msgid "Con&tinue"
-msgstr "&Folytatás"
 
 msgid "&Chdir"
 msgstr "&Belépés a könyvtárba"
@@ -2607,11 +2591,17 @@ msgstr "%ld találat"
 msgid "Malformed regular expression"
 msgstr "Hibás reguláris kifejezés"
 
+msgid "File name:"
+msgstr "Fájlnév:"
+
 msgid "&Find recursively"
 msgstr "Rek&urzív keresés"
 
 msgid "S&kip hidden"
 msgstr "&Rejtettek kihagyása"
+
+msgid "Content:"
+msgstr "Tartalom:"
 
 msgid "Sea&rch for content"
 msgstr "Keresés ta&rtalomra"
@@ -2619,11 +2609,11 @@ msgstr "Keresés ta&rtalomra"
 msgid "Case sens&itive"
 msgstr "&Kis-/nagybetű számít"
 
-msgid "Fir&st hit"
-msgstr "Első találat"
-
 msgid "A&ll charsets"
 msgstr "Összes kar.készlet"
+
+msgid "Fir&st hit"
+msgstr "Első találat"
 
 msgid "&Tree"
 msgstr "Köny&vtárfa"
@@ -2631,17 +2621,11 @@ msgstr "Köny&vtárfa"
 msgid "Find File"
 msgstr "Fájl keresése"
 
-msgid "Content:"
-msgstr "Tartalom:"
-
-msgid "File name:"
-msgstr "Fájlnév:"
+msgid "Start at:"
+msgstr "Kezdőkönyvtár:"
 
 msgid "Ena&ble ignore directories:"
 msgstr "Könyvtárak ki&hagyása"
-
-msgid "Start at:"
-msgstr "Kezdőkönyvtár:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2663,35 +2647,32 @@ msgstr "\"%s\" keresése"
 msgid "Searching"
 msgstr "Keresés"
 
-msgid "&Remove"
-msgstr "&Törlés"
+msgid "Change &to"
+msgstr "&Belépés"
 
-msgid "&Append"
-msgstr "Ho&zzáadás"
-
-msgid "&Insert"
-msgstr "Be&szúrás"
-
-msgid "New &entry"
-msgstr "Ú&j bejegyzés"
-
-msgid "New &group"
-msgstr "Új &csoport"
-
-msgid "&Up"
-msgstr "&Fel"
-
-msgid "&Add current"
-msgstr "Az &aktuális hozzáadása"
+msgid "&Free VFSs now"
+msgstr ""
 
 msgid "&Refresh"
 msgstr "F&rissítés"
 
-msgid "Fr&ee VFSs now"
-msgstr "VFS fels&zabadítása"
+msgid "&Add current"
+msgstr "Az &aktuális hozzáadása"
 
-msgid "Change &to"
-msgstr "&Belépés"
+msgid "&Up"
+msgstr "&Fel"
+
+msgid "New &group"
+msgstr "Új &csoport"
+
+msgid "New &entry"
+msgstr "Ú&j bejegyzés"
+
+msgid "&Insert"
+msgstr "Be&szúrás"
+
+msgid "&Remove"
+msgstr "&Törlés"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Alcsoport (listázás: \"Enter\" billentyű)"
@@ -2702,15 +2683,21 @@ msgstr "Aktív VFS-könyvtárak"
 msgid "Directory hotlist"
 msgstr "Könyvtár-gyorslista"
 
+msgid "Top level group"
+msgstr "Legfelső szintű csoport"
+
 msgid "Directory path"
 msgstr "Könyvtár-útvonal:"
-
-msgid "Directory label"
-msgstr "Könyvtárcímke:"
 
 #, c-format
 msgid "Moving %s"
 msgstr "%s áthelyezése"
+
+msgid "Directory label"
+msgstr "Könyvtárcímke:"
+
+msgid "&Append"
+msgstr "Ho&zzáadás"
 
 msgid "New hotlist entry"
 msgstr "Új gyorslista-bejegyzés"
@@ -2738,9 +2725,6 @@ msgid ""
 msgstr ""
 "\"%s\" csoport nem üres.\n"
 "Eltávolítsam?"
-
-msgid "Top level group"
-msgstr "Legfelső szintű csoport"
 
 msgid "Hotlist Load"
 msgstr "Gyorslista betöltése"
@@ -2842,35 +2826,32 @@ msgstr "Típus+jogok:  %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Hely:         %Xh:%Xh"
 
-msgid "Show free sp&ace"
-msgstr "&Szabad hely kijelzés"
+msgid "&Equal split"
+msgstr "S&zimmetrikus elosztás"
 
-msgid "&XTerm window title"
-msgstr "&Xterm-ablakcím"
-
-msgid "H&intbar visible"
-msgstr "&Tippek"
-
-msgid "&Keybar visible"
-msgstr "&Billentyűsor"
+msgid "&Menubar visible"
+msgstr "&Menüsor látható"
 
 msgid "Command &prompt"
 msgstr "&Parancssor aktív"
 
-msgid "Menu&bar visible"
-msgstr "Főme&nü"
+msgid "&Keybar visible"
+msgstr "&Billentyűsor"
 
-msgid "&Equal split"
-msgstr "S&zimmetrikus elosztás"
+msgid "H&intbar visible"
+msgstr "&Tippek"
+
+msgid "&XTerm window title"
+msgstr "&Xterm-ablakcím"
+
+msgid "&Show free space"
+msgstr "&Szabad hely mutatása"
 
 msgid "Panel split"
 msgstr "Panelosztás"
 
 msgid "Console output"
 msgstr "Konzol kimenet"
-
-msgid "Other options"
-msgstr "További opciók"
 
 msgid "&Vertical"
 msgstr "&Függőleges"
@@ -3103,65 +3084,65 @@ msgstr "Gagyi &terminálokon"
 msgid "Alwa&ys"
 msgstr "Min&dig"
 
-msgid "A&uto save setup"
-msgstr "Auto &Beállításmentés"
-
-msgid "Sa&fe delete"
-msgstr "\"Ó&vatos\" törlés"
-
-msgid "Cd follows lin&ks"
-msgstr "Li&nkkövető könyvtárváltás"
-
-msgid "Rotating d&ash"
-msgstr "Folyamatjelzés &pörgő vonallal"
-
-msgid "Co&mplete: show all"
-msgstr "Kie&gészítésnél teljes lista"
-
-msgid "Shell &patterns"
-msgstr "Shell-m&inták"
-
-msgid "&Drop down menus"
-msgstr "&Legördülő menük"
-
-msgid "Auto m&enus"
-msgstr "Men&ü indításkor"
-
-msgid "Use internal vie&w"
-msgstr "Saját &fájlmegjelenítő"
-
-msgid "Use internal edi&t"
-msgstr "Saját szövegszerkesz&tő"
-
-msgid "Pause after run"
-msgstr "Parancsok utáni várakozás"
-
-msgid "Timeout:"
-msgstr "Várakozási idő:"
-
-msgid "S&ingle press"
-msgstr "Egy&szer nyom"
-
-msgid "Esc key mode"
-msgstr "Escape Bill."
-
-msgid "Preallocate &space"
-msgstr "Üre&s hely lefoglalása"
-
-msgid "Mkdi&r autoname"
-msgstr "Mkdir auto-név"
-
-msgid "Classic pro&gressbar"
-msgstr "Klasszikus pro&gressbar"
-
-msgid "Compute tota&ls"
-msgstr "Ö&sszesítés"
+msgid "File operations"
+msgstr "Fájlműveletek"
 
 msgid "&Verbose operation"
 msgstr "Részletes ü&zenetek"
 
-msgid "File operation options"
-msgstr "Fájl művelet opciók"
+msgid "Compute tota&ls"
+msgstr "Ö&sszesítés"
+
+msgid "Classic pro&gressbar"
+msgstr "Klasszikus pro&gressbar"
+
+msgid "Mkdi&r autoname"
+msgstr "Mkdir auto-név"
+
+msgid "Preallocate &space"
+msgstr "Üre&s hely lefoglalása"
+
+msgid "Esc key mode"
+msgstr "Escape Bill."
+
+msgid "S&ingle press"
+msgstr "Egy&szer nyom"
+
+msgid "Timeout:"
+msgstr "Várakozási idő:"
+
+msgid "Pause after run"
+msgstr "Parancsok utáni várakozás"
+
+msgid "Use internal edi&t"
+msgstr "Saját szövegszerkesz&tő"
+
+msgid "Use internal vie&w"
+msgstr "Saját &fájlmegjelenítő"
+
+msgid "Auto m&enus"
+msgstr "Men&ü indításkor"
+
+msgid "&Drop down menus"
+msgstr "&Legördülő menük"
+
+msgid "Shell &patterns"
+msgstr "Shell-m&inták"
+
+msgid "Co&mplete: show all"
+msgstr "Kie&gészítésnél teljes lista"
+
+msgid "Rotating d&ash"
+msgstr "Folyamatjelzés &pörgő vonallal"
+
+msgid "Cd follows lin&ks"
+msgstr "Li&nkkövető könyvtárváltás"
+
+msgid "Sa&fe delete"
+msgstr "\"Ó&vatos\" törlés"
+
+msgid "A&uto save setup"
+msgstr "Auto &Beállításmentés"
 
 msgid "Configure options"
 msgstr "Alapbeállítások"
@@ -3169,65 +3150,62 @@ msgstr "Alapbeállítások"
 msgid "Case &insensitive"
 msgstr "&Kis-/nagybetű mindegy"
 
-msgid "Case s&ensitive"
-msgstr "&Kis-/nagybetű számít"
-
 msgid "Use panel sort mo&de"
 msgstr "Panel rendezési mó&d használata"
 
-msgid "Quick search"
-msgstr "Gyorskeresés"
-
-msgid "&Permissions"
-msgstr "&Jogok"
-
-msgid "File &types"
-msgstr "Fáj&ltípusok"
-
-msgid "File highlight"
-msgstr "Kiemelés"
-
-msgid "&Mouse page scrolling"
-msgstr "Oldalgörgetés &egérrel"
-
-msgid "Pa&ge scrolling"
-msgstr "Oldal&görgetés"
-
-msgid "L&ynx-like motion"
-msgstr "Lyn&x-szerű navigálás"
-
-msgid "Navigation"
-msgstr "Navigálás"
-
-msgid "A&uto save panels setup"
-msgstr "Panelek &autom. mentése"
-
-msgid "Simple s&wap"
-msgstr "Egyszerű &csere"
-
-msgid "Re&verse files only"
-msgstr "Csak &fájlok fordítva"
-
-msgid "Ma&rk moves down"
-msgstr "Ki&jelölés lefelé léptet"
-
-msgid "&Fast dir reload"
-msgstr "G&yors könyvtár-újraolvasás"
-
-msgid "Show &hidden files"
-msgstr "&Rejtett fájlok mutatása"
-
-msgid "Show &backup files"
-msgstr "Másol&atfájlok mutatása"
-
-msgid "Mi&x all files"
-msgstr "&Könyvtárak a fájlok között"
+msgid "Show mi&ni-status"
+msgstr "Extra adat&sor"
 
 msgid "Use SI si&ze units"
 msgstr "SI mértékegységek"
 
-msgid "Show mi&ni-status"
-msgstr "Extra adat&sor"
+msgid "Mi&x all files"
+msgstr "&Könyvtárak a fájlok között"
+
+msgid "Show &backup files"
+msgstr "Másol&atfájlok mutatása"
+
+msgid "Show &hidden files"
+msgstr "&Rejtett fájlok mutatása"
+
+msgid "&Fast dir reload"
+msgstr "G&yors könyvtár-újraolvasás"
+
+msgid "Ma&rk moves down"
+msgstr "Ki&jelölés lefelé léptet"
+
+msgid "Re&verse files only"
+msgstr "Csak &fájlok fordítva"
+
+msgid "Simple s&wap"
+msgstr "Egyszerű &csere"
+
+msgid "A&uto save panels setup"
+msgstr "Panelek &autom. mentése"
+
+msgid "Navigation"
+msgstr "Navigálás"
+
+msgid "L&ynx-like motion"
+msgstr "Lyn&x-szerű navigálás"
+
+msgid "Pa&ge scrolling"
+msgstr "Oldal&görgetés"
+
+msgid "&Mouse page scrolling"
+msgstr "Oldalgörgetés &egérrel"
+
+msgid "File highlight"
+msgstr "Kiemelés"
+
+msgid "File &types"
+msgstr "Fáj&ltípusok"
+
+msgid "&Permissions"
+msgstr "&Jogok"
+
+msgid "Quick search"
+msgstr "Gyorskeresés"
 
 msgid "Panel options"
 msgstr "Panelbeállítások"
@@ -3271,8 +3249,8 @@ msgstr "&Verzió"
 msgid "sort|e"
 msgstr "sort|k"
 
-msgid "&Extension"
-msgstr "&Kiterjesztés"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3380,11 +3358,11 @@ msgstr "Ú&j"
 msgid "External panelize"
 msgstr "Külső panel-parancs"
 
-msgid "Command"
-msgstr "Parancs:"
-
 msgid "Other command"
 msgstr "más parancs"
+
+msgid "Command"
+msgstr "Parancs:"
 
 msgid "Add to external panelize"
 msgstr "Külső panel-parancs hozzáadása"
@@ -3589,14 +3567,11 @@ msgstr ""
 "A terminál-adatbázis teljes.\n"
 "Az összes billentyű jól működik."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Nyomja meg egyenként a felsorolt billentyűket, majd nézze meg, hogy"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
-msgstr "melyek nem lettek \"OK\"-val megjelölve. Ezek beállításához használja"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
-msgstr "a Szóközt vagy kattintson a billentyűnévre. Ugrás: \"Tab\" billentyű."
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3719,6 +3694,9 @@ msgstr "Beállítások könyvtára:"
 msgid "Data directory:"
 msgstr "Adatok könyvtára:"
 
+msgid "File extension handlers:"
+msgstr ""
+
 msgid "VFS plugins and scripts:"
 msgstr "VFS pluginek és scriptek:"
 
@@ -3835,9 +3813,6 @@ msgstr "Fish: \"%s\" tárolása: parancs küldése..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "Fish: nem sikerült a helyi olvasás; nullák küldése..."
-
-msgid "fish: storing zeros"
-msgstr "fish: nullák tárolása"
 
 msgid "fish: storing file"
 msgstr "fish: fájl tárolása"

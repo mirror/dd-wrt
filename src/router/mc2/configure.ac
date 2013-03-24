@@ -56,6 +56,8 @@ PKG_PROG_PKG_CONFIG
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PATH_PROG([PERL], [perl], [/usr/bin/perl])
+AC_PATH_PROG([PYTHON], [python], [/usr/bin/python])
+AC_PATH_PROG([RUBY], [ruby], [/usr/bin/ruby])
 
 dnl Check nroff and the options it supports
 AC_CHECK_PROG(HAVE_nroff, nroff, true, false)
@@ -184,13 +186,46 @@ AC_TYPE_UID_T
 AC_STRUCT_ST_BLOCKS
 AC_CHECK_MEMBERS([struct stat.st_blksize, struct stat.st_rdev])
 
+AH_TEMPLATE([sig_atomic_t],
+            [/* Define to `int' if <signal.h> doesn't define.])
+AH_TEMPLATE([SIG_ATOMIC_VOLATILE_T],
+            [Some systems declare sig_atomic_t as volatile, some others -- no.
+             This define will have value `sig_atomic_t' or
+             `volatile sig_atomic_t' accordingly.])
+
+AC_MSG_CHECKING(for sig_atomic_t in signal.h)
+AC_EGREP_HEADER(sig_atomic_t,signal.h,
+  [
+    ac_cv_type_sig_atomic_t=yes;
+    AC_EGREP_HEADER(volatile.*sig_atomic_t,
+                    signal.h,
+                    [
+                        is_sig_atomic_t_volatile=yes;
+                        AC_MSG_RESULT([yes, volatile])
+                    ],
+                    [
+                        is_sig_atomic_t_volatile=no;
+                        AC_MSG_RESULT([yes, non volatile])
+                    ])
+  ],
+  [
+    AC_MSG_RESULT(no)
+    AC_CHECK_TYPE(sig_atomic_t, int)
+    is_sig_atomic_t_volatile=no
+  ])
+if test $is_sig_atomic_t_volatile = 'yes'
+then
+    AC_DEFINE(SIG_ATOMIC_VOLATILE_T, sig_atomic_t)
+else
+    AC_DEFINE(SIG_ATOMIC_VOLATILE_T, [volatile sig_atomic_t])
+fi
+
 
 dnl ############################################################################
 dnl Check for functions
 dnl ############################################################################
 
 AC_CHECK_FUNCS([\
-	atoll \
 	isascii \
 	statfs sysconf \
 	tcgetattr tcsetattr \
@@ -388,35 +423,9 @@ else
 	diff_msg="no"
 fi
 
-AC_MSG_CHECKING([for subshell support])
-AC_ARG_WITH(subshell,
-	[  --with-subshell          Compile in concurrent subshell [[yes]]
-  --with-subshell=optional Don't run concurrent shell by default [[no]]],
-	[result=no
-	if test x$withval = xoptional
-	then
-		AC_DEFINE(SUBSHELL_OPTIONAL, 1,
-			  [Define to make subshell support optional])
-		result="optional"
-	fi
-	if test x$withval = xyes
-        then
-		result="yes"
-	fi],
-	[dnl Default: enable the subshell support
-	result="yes"
-])
-if test "x$result" != xno; then
-	AC_DEFINE(HAVE_SUBSHELL_SUPPORT, 1,
-		  [Define to enable subshell support])
-fi
-AC_MSG_RESULT([$result])
-subshell="$result"
-
+MC_SUBSHELL
 MC_BACKGROUND
-
 AC_MC_VFS_CHECKS
-
 
 dnl ############################################################################
 dnl Directories
@@ -424,11 +433,13 @@ dnl ############################################################################
 
 dnl ${prefix} and ${exec_prefix} are undefined here if --prefix is not used in command line
 dnl Let define ${prefix} and ${exec_prefix}
-test "x$prefix" = "xNONE" && prefix=$ac_default_prefix
-test "x$exec_prefix" = "xNONE" && exec_prefix='${prefix}'
+test "x$prefix" = "xNONE" && prefix="$ac_default_prefix"
+test "x$exec_prefix" = "xNONE" && exec_prefix="${prefix}"
 
 if test x${libexecdir} = x'${exec_prefix}/libexec'; then
     EXTHELPERSDIR=${prefix}/libexec/${PACKAGE}/ext.d
+elif test x${libexecdir} = x'${exec_prefix}/lib'; then
+    EXTHELPERSDIR=${prefix}/lib/${PACKAGE}/ext.d
 else
     EXTHELPERSDIR=${libexecdir}/${PACKAGE}/ext.d
 fi
@@ -513,7 +524,6 @@ Makefile
 
 contrib/Makefile
 contrib/dist/Makefile
-contrib/dist/debian/Makefile
 contrib/dist/gentoo/Makefile
 contrib/dist/redhat/Makefile
 contrib/dist/redhat/mc.spec
@@ -563,6 +573,7 @@ src/vfs/extfs/helpers/ualz
 src/vfs/extfs/helpers/uar
 src/vfs/extfs/helpers/uarc
 src/vfs/extfs/helpers/uarj
+src/vfs/extfs/helpers/uc1541
 src/vfs/extfs/helpers/ucab
 src/vfs/extfs/helpers/uha
 src/vfs/extfs/helpers/ulha
@@ -602,6 +613,7 @@ lib/vfs/Makefile
 lib/widget/Makefile
 
 misc/syntax/Makefile
+misc/syntax/Syntax
 
 doc/Makefile
 doc/hints/Makefile
@@ -637,10 +649,10 @@ tests/src/filemanager/Makefile
 ])
 fi
 
-
 AC_OUTPUT
 
-echo "
+AC_MSG_NOTICE([
+
 Configuration:
 
   Source code location:       ${srcdir}
@@ -657,4 +669,4 @@ Configuration:
   Diff viewer:                ${diff_msg}
   Support for charset:        ${charset_msg}
   Search type:                ${SEARCH_TYPE}
-"
+])

@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: Turkish (http://www.transifex.com/projects/p/mc/language/"
 "tr/)\n"
@@ -515,14 +515,14 @@ msgstr "&Evet"
 msgid "&No"
 msgstr "&Hayır"
 
-msgid "Background process:"
-msgstr "Artalan işlemi:"
+msgid "&OK"
+msgstr "&Tamam"
 
 msgid "&Cancel"
 msgstr "&Vazgeç"
 
-msgid "&OK"
-msgstr "&Tamam"
+msgid "Background process:"
+msgstr "Artalan işlemi:"
 
 msgid "Error"
 msgstr "Hata"
@@ -698,19 +698,19 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Bırak"
 
-msgid "&All charsets"
+msgid "Enter search string:"
 msgstr ""
 
-msgid "&Whole words"
+msgid "Cas&e sensitive"
 msgstr ""
 
 msgid "&Backwards"
 msgstr "&Geriye doğru"
 
-msgid "Cas&e sensitive"
+msgid "&Whole words"
 msgstr ""
 
-msgid "Enter search string:"
+msgid "&All charsets"
 msgstr ""
 
 msgid "Search"
@@ -744,25 +744,25 @@ msgstr ""
 msgid "&Minimal (Find a smaller set of change)"
 msgstr ""
 
-msgid "Strip &trailing carriage return"
-msgstr ""
-
-msgid "Ignore all &whitespace"
-msgstr ""
-
-msgid "Ignore &space change"
-msgstr ""
-
-msgid "Ignore tab &expansion"
-msgstr ""
-
-msgid "&Ignore case"
+msgid "Diff algorithm"
 msgstr ""
 
 msgid "Diff extra options"
 msgstr ""
 
-msgid "Diff algorithm"
+msgid "&Ignore case"
+msgstr ""
+
+msgid "Ignore tab &expansion"
+msgstr ""
+
+msgid "Ignore &space change"
+msgstr ""
+
+msgid "Ignore all &whitespace"
+msgstr ""
+
+msgid "Strip &trailing carriage return"
 msgstr ""
 
 msgid "Diff Options"
@@ -907,10 +907,10 @@ msgstr ""
 msgid "&Macintosh format (CR)"
 msgstr ""
 
-msgid "Change line breaks to:"
+msgid "Enter file name:"
 msgstr ""
 
-msgid "Enter file name:"
+msgid "Change line breaks to:"
 msgstr ""
 
 msgid "Save As"
@@ -1087,16 +1087,16 @@ msgstr ""
 msgid "Cannot execute command"
 msgstr ""
 
-msgid "Copies to"
-msgstr ""
-
-msgid "Subject"
+msgid "mail -s <subject> -c <cc> <to>"
 msgstr ""
 
 msgid "To"
 msgstr ""
 
-msgid "mail -s <subject> -c <cc> <to>"
+msgid "Subject"
+msgstr ""
+
+msgid "Copies to"
 msgstr ""
 
 msgid "Mail"
@@ -1116,10 +1116,25 @@ msgstr ""
 msgid "In se&lection"
 msgstr ""
 
+msgid "&Find all"
+msgstr ""
+
 msgid "Enter replacement string:"
 msgstr ""
 
-msgid "&Find all"
+msgid "Replace with:"
+msgstr ""
+
+msgid "&Replace"
+msgstr "&Yerleştir"
+
+msgid "A&ll"
+msgstr "&Tümü"
+
+msgid "&Skip"
+msgstr "&Atla"
+
+msgid "Confirm replace"
 msgstr ""
 
 msgid "Cancel"
@@ -1128,21 +1143,6 @@ msgstr "Vazgeç"
 msgid ""
 "Current text was modified without a file save.\n"
 "Continue discards these changes."
-msgstr ""
-
-msgid "&Skip"
-msgstr "&Atla"
-
-msgid "A&ll"
-msgstr "&Tümü"
-
-msgid "&Replace"
-msgstr "&Yerleştir"
-
-msgid "Replace with:"
-msgstr ""
-
-msgid "Confirm replace"
 msgstr ""
 
 msgid "NoName"
@@ -1367,71 +1367,81 @@ msgstr ""
 msgid "&Options"
 msgstr ""
 
-msgid "None"
-msgstr "Hiçbiri"
-
-msgid "Dynamic paragraphing"
-msgstr "Dinamik paragraflama"
-
-msgid "Type writer wrap"
-msgstr "Daktilo sarmalaması"
-
-msgid "Word wrap line length:"
+msgid "&None"
 msgstr ""
 
-msgid "&Group undo"
+msgid "&Dynamic paragraphing"
 msgstr ""
 
-msgid "Cursor beyond end of line"
+msgid "Type &writer wrap"
 msgstr ""
 
-msgid "Pers&istent selection"
+msgid "Wrap mode"
+msgstr "Sarmalama kipi"
+
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "Sahte &Yarım sekmeler"
+
+msgid "&Backspace through tabs"
+msgstr "&Geri silme sekmeleri izler"
+
+msgid "Fill tabs with &spaces"
+msgstr "&Sekmeleri boşluklarla değiştir"
+
+msgid "Tab spacing:"
+msgstr ""
+
+msgid "Other options"
+msgstr ""
+
+msgid "&Return does autoindent"
+msgstr "&Return otogirintileme yapar"
+
+msgid "Confir&m before saving"
+msgstr "kaydet&Meden önce sor"
+
+msgid "Save file &position"
+msgstr ""
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
 msgstr ""
 
 msgid "Synta&x highlighting"
 msgstr "&Sözdizimi aydınlatma"
 
-msgid "Visible tabs"
+msgid "C&ursor after inserted block"
 msgstr ""
 
-msgid "Visible trailing spaces"
+msgid "Pers&istent selection"
 msgstr ""
 
-msgid "Save file &position"
+msgid "Cursor be&yond end of line"
 msgstr ""
 
-msgid "Confir&m before saving"
-msgstr "kaydet&Meden önce sor"
-
-msgid "&Return does autoindent"
-msgstr "&Return otogirintileme yapar"
-
-msgid "Tab spacing:"
+msgid "&Group undo"
 msgstr ""
 
-msgid "Fill tabs with &spaces"
-msgstr "&Sekmeleri boşluklarla değiştir"
-
-msgid "&Backspace through tabs"
-msgstr "&Geri silme sekmeleri izler"
-
-msgid "&Fake half tabs"
-msgstr "Sahte &Yarım sekmeler"
-
-msgid "Wrap mode"
-msgstr "Sarmalama kipi"
+msgid "Word wrap line length:"
+msgstr ""
 
 msgid "Editor options"
 msgstr ""
 
-msgid "About"
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
 msgstr ""
 
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
+msgid "About"
 msgstr ""
 
 msgid "Open files"
@@ -1507,14 +1517,14 @@ msgstr "Midnight Commander'a dönmek için `exit' yazınız"
 msgid "Cannot fetch a local copy of %s"
 msgstr ""
 
-msgid "&Set"
-msgstr "&Tamam"
+msgid "Set &all"
+msgstr "Tümünü &belirle"
 
 msgid "S&kip"
 msgstr "A&tla"
 
-msgid "Set &all"
-msgstr "Tümünü &belirle"
+msgid "&Set"
+msgstr "&Tamam"
 
 msgid "owner"
 msgstr "sahibi"
@@ -1525,18 +1535,8 @@ msgstr "grup"
 msgid "other"
 msgstr "diğer"
 
-msgid "On"
-msgstr " "
-
 msgid "Flag"
 msgstr "İm"
-
-msgid "Mode"
-msgstr "Kip"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d / %d"
 
 msgid "Chown advanced command"
 msgstr ""
@@ -1553,14 +1553,14 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "&Stop"
-msgstr "&Durdur"
+msgid "Other 8 bit"
+msgstr "Diğer 8 bit"
 
-msgid "&Resume"
-msgstr "Y&eniden devam et"
+msgid "Running"
+msgstr ""
 
-msgid "&Kill"
-msgstr "&Öldür"
+msgid "Stopped"
+msgstr "Durduruldu"
 
 msgid "&Full file list"
 msgstr "&Tam dosya listesi"
@@ -1574,14 +1574,57 @@ msgstr "&Uzun dosya listesi"
 msgid "&User defined:"
 msgstr "Ku&llanıcı tanımlı:"
 
-msgid "Listing mode"
-msgstr "Listeleme kipi"
-
 msgid "User &mini status"
 msgstr ""
 
-msgid "Other 8 bit"
-msgstr "Diğer 8 bit"
+msgid "Listing mode"
+msgstr "Listeleme kipi"
+
+msgid "Executable &first"
+msgstr ""
+
+msgid "&Reverse"
+msgstr "Te&rs"
+
+msgid "Sort order"
+msgstr "Sıralama türü"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr ""
+
+msgid "Confirmation|O&verwrite"
+msgstr ""
+
+msgid "Confirmation|&Execute"
+msgstr ""
+
+msgid "Confirmation|E&xit"
+msgstr ""
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr ""
+
+msgid "Confirmation|&History cleanup"
+msgstr ""
+
+msgid "Confirmation"
+msgstr ""
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "Ta&m 8-bitlik girdi"
 
 msgid "Display bits"
 msgstr ""
@@ -1589,91 +1632,32 @@ msgstr ""
 msgid "Input / display codepage:"
 msgstr "Girdi / gösterme karakter kümesi:"
 
-msgid "F&ull 8 bits input"
-msgstr "Ta&m 8-bitlik girdi"
-
 msgid "&Select"
 msgstr "&Seç"
-
-msgid "Running"
-msgstr ""
-
-msgid "Stopped"
-msgstr "Durduruldu"
-
-msgid "&Reverse"
-msgstr "Te&rs"
-
-msgid "Case sensi&tive"
-msgstr ""
-
-msgid "Executable &first"
-msgstr ""
-
-msgid "Sort order"
-msgstr "Sıralama türü"
-
-msgid "Confirmation"
-msgstr ""
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr ""
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr ""
-
-msgid "Confirmation|E&xit"
-msgstr ""
-
-msgid "Confirmation|&Execute"
-msgstr ""
-
-msgid "Confirmation|O&verwrite"
-msgstr ""
-
-msgid "Confirmation|&Delete"
-msgstr ""
-
-msgid "UTF-8 output"
-msgstr ""
-
-msgid "Full 8 bits output"
-msgstr "Tam 8-bitlik çıktı"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7 bit"
 
 msgid "Directory tree"
 msgstr ""
 
-msgid "Use passive mode over pro&xy"
+msgid "Timeout for freeing VFSs (sec):"
 msgstr ""
 
-msgid "Use &passive mode"
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
 msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr ""
 
-msgid "&Always use ftp proxy"
-msgstr "&Daima ftp vekili kullan"
+msgid "Use &passive mode"
+msgstr ""
 
-msgid "sec"
-msgstr "sn"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "ftpfs dizin arabelleğinde zamanaşımı:"
-
-msgid "ftp anonymous password:"
-msgstr "anonim ftp parolası:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "VFS'leri boşaltma zamanaşımı:"
+msgid "Use passive mode over pro&xy"
+msgstr ""
 
 msgid "Virtual File System Setting"
 msgstr ""
@@ -1684,17 +1668,30 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "Çabuk dizin değiştirme"
 
-msgid "Symbolic link filename:"
-msgstr "Sembolik bağ ismi:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr "Mevcut dosya (Sembolik bağın hedefi):"
+
+msgid "Symbolic link filename:"
+msgstr "Sembolik bağ ismi:"
 
 msgid "Symbolic link"
 msgstr "Sembolik bağ"
 
-msgid "Background Jobs"
-msgstr "Artalan İşleri"
+msgid "&Stop"
+msgstr "&Durdur"
+
+msgid "&Resume"
+msgstr "Y&eniden devam et"
+
+msgid "&Kill"
+msgstr "&Öldür"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "\\\\%s\\%s için parola"
 
 msgid "Domain:"
 msgstr "Alan adı: "
@@ -1702,45 +1699,44 @@ msgstr "Alan adı: "
 msgid "Username:"
 msgstr "Kullanıcı: "
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "\\\\%s\\%s için parola"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "başkaları çalıştırabilir"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "başkaları yazabilir"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "başkaları okuyabilir"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "gruptakiler çalıştırabilir"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "gruptakiler yazabilir"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "gruptakiler okuyabilir"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "sahibi çalıştırabilir"
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "sahibi yazabilir"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "sahibi okuyabilir"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "sabit bit"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "gruptakiler çalıştırabilir"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "kullanıcı çalıştırabilir"
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr ""
@@ -1754,29 +1750,29 @@ msgstr ""
 msgid "Group name:"
 msgstr ""
 
-msgid "C&lear marked"
-msgstr "İşa&retlenenleri Temizle"
+msgid "&Marked all"
+msgstr "Tü&münü seç"
 
 msgid "S&et marked"
 msgstr "S&eçimi başlat"
 
-msgid "&Marked all"
-msgstr "Tü&münü seç"
+msgid "C&lear marked"
+msgstr "İşa&retlenenleri Temizle"
 
 msgid "Chmod command"
 msgstr "Chmod komutu"
 
-msgid "File"
-msgstr "Dosya"
-
 msgid "Permission"
 msgstr "İzinler"
 
-msgid "Set &users"
-msgstr "K&ullanıcıları belirle"
+msgid "File"
+msgstr "Dosya"
 
 msgid "Set &groups"
 msgstr "&Grupları belirle"
+
+msgid "Set &users"
+msgstr "K&ullanıcıları belirle"
 
 msgid "Name"
 msgstr "İsim"
@@ -1793,14 +1789,14 @@ msgstr "Boyut"
 msgid "Chown command"
 msgstr ""
 
+msgid "User name"
+msgstr ""
+
 msgid "<Unknown user>"
 msgstr "<Bilinmeyen>"
 
 msgid "<Unknown group>"
 msgstr "<Bilinmeyen>"
-
-msgid "User name"
-msgstr ""
 
 msgid "Enter machine name (F1 for details):"
 msgstr ""
@@ -1817,13 +1813,13 @@ msgstr ""
 msgid "Set expression for filtering filenames"
 msgstr ""
 
+msgid "&Files only"
+msgstr ""
+
 msgid "&Using shell patterns"
 msgstr "&Kabuk masklarını kullanarak"
 
 msgid "&Case sensitive"
-msgstr ""
-
-msgid "&Files only"
 msgstr ""
 
 #, c-format
@@ -2083,19 +2079,17 @@ msgstr ""
 msgid "&Retry"
 msgstr "&Tekrar"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
-msgstr ""
-
-msgid "Delete:"
 msgstr ""
 
 msgid "Non&e"
@@ -2304,6 +2298,12 @@ msgstr ""
 msgid "Sorry, I could not put the job in background"
 msgstr ""
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "&Devam Et"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr ""
@@ -2328,30 +2328,30 @@ msgid "Target file already exists!"
 msgstr ""
 
 #, c-format
-msgid "Source date: %s, size %llu"
+msgid "New     : %s, size %llu"
 msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
+msgid "Existing: %s, size %llu"
 msgstr ""
 
-msgid "If &size differs"
-msgstr "Boyut &Farklıysa"
-
-msgid "&Update"
-msgstr "&Güncelle"
-
-msgid "Overwrite all targets?"
-msgstr "Tüm hedeflerin üstüne yazılsın mı?"
-
-msgid "&Reget"
-msgstr "&Reget"
+msgid "Overwrite this target?"
+msgstr "Üzerine yazılsın mı?"
 
 msgid "A&ppend"
 msgstr "Sonuna &Ekle"
 
-msgid "Overwrite this target?"
-msgstr "Üzerine yazılsın mı?"
+msgid "&Reget"
+msgstr "&Reget"
+
+msgid "Overwrite all targets?"
+msgstr "Tüm hedeflerin üstüne yazılsın mı?"
+
+msgid "&Update"
+msgstr "&Güncelle"
+
+msgid "If &size differs"
+msgstr "Boyut &Farklıysa"
 
 msgid "File exists"
 msgstr ""
@@ -2400,30 +2400,24 @@ msgstr "Hedef"
 msgid "Deleting"
 msgstr "Siliniyor"
 
-msgid "&Background"
-msgstr "A&rtalan"
-
-msgid "&Stable Symlinks"
-msgstr "Kararlı &Sembolik Bağlar"
-
-msgid "Di&ve into subdir if exists"
+msgid "Follow &links"
 msgstr ""
 
 msgid "Preserve &attributes"
 msgstr ""
 
-msgid "Follow &links"
+msgid "Di&ve into subdir if exists"
 msgstr ""
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "A&rtalan"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr ""
-
-msgid "&Suspend"
-msgstr "A&skıya Al"
-
-msgid "Con&tinue"
-msgstr "&Devam Et"
 
 msgid "&Chdir"
 msgstr "Di&zin değiştir"
@@ -2447,10 +2441,16 @@ msgstr ""
 msgid "Malformed regular expression"
 msgstr ""
 
+msgid "File name:"
+msgstr ""
+
 msgid "&Find recursively"
 msgstr ""
 
 msgid "S&kip hidden"
+msgstr ""
+
+msgid "Content:"
 msgstr ""
 
 msgid "Sea&rch for content"
@@ -2459,10 +2459,10 @@ msgstr ""
 msgid "Case sens&itive"
 msgstr ""
 
-msgid "Fir&st hit"
+msgid "A&ll charsets"
 msgstr ""
 
-msgid "A&ll charsets"
+msgid "Fir&st hit"
 msgstr ""
 
 msgid "&Tree"
@@ -2471,17 +2471,11 @@ msgstr "&Ağaç"
 msgid "Find File"
 msgstr "Dosyayı bul"
 
-msgid "Content:"
-msgstr ""
-
-msgid "File name:"
-msgstr ""
+msgid "Start at:"
+msgstr "Başlangıç:"
 
 msgid "Ena&ble ignore directories:"
 msgstr ""
-
-msgid "Start at:"
-msgstr "Başlangıç:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2502,35 +2496,32 @@ msgstr "%s aranıyor"
 msgid "Searching"
 msgstr "Aranıyor"
 
-msgid "&Remove"
-msgstr "Ka&ldır"
-
-msgid "&Append"
-msgstr "Sonuna &Ekle"
-
-msgid "&Insert"
-msgstr "A&raya ekle"
-
-msgid "New &entry"
+msgid "Change &to"
 msgstr ""
 
-msgid "New &group"
+msgid "&Free VFSs now"
 msgstr ""
-
-msgid "&Up"
-msgstr "&Yukarı"
-
-msgid "&Add current"
-msgstr "Mev&cudu ekle"
 
 msgid "&Refresh"
 msgstr ""
 
-msgid "Fr&ee VFSs now"
-msgstr "VFS'lerini şimdi b&oşalt"
+msgid "&Add current"
+msgstr "Mev&cudu ekle"
 
-msgid "Change &to"
+msgid "&Up"
+msgstr "&Yukarı"
+
+msgid "New &group"
 msgstr ""
+
+msgid "New &entry"
+msgstr ""
+
+msgid "&Insert"
+msgstr "A&raya ekle"
+
+msgid "&Remove"
+msgstr "Ka&ldır"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Altgrup - listeyi görmek için ENTER'a basın"
@@ -2541,15 +2532,21 @@ msgstr "Etkin VFS dizinleri"
 msgid "Directory hotlist"
 msgstr "Dizin listesi"
 
+msgid "Top level group"
+msgstr ""
+
 msgid "Directory path"
 msgstr "Dizin yolu"
-
-msgid "Directory label"
-msgstr "Dizin adı"
 
 #, c-format
 msgid "Moving %s"
 msgstr "%s taşınıyor"
+
+msgid "Directory label"
+msgstr "Dizin adı"
+
+msgid "&Append"
+msgstr "Sonuna &Ekle"
 
 msgid "New hotlist entry"
 msgstr "Yeni liste girdisi"
@@ -2574,9 +2571,6 @@ msgstr ""
 msgid ""
 "Group \"%s\" is not empty.\n"
 "Remove it?"
-msgstr ""
-
-msgid "Top level group"
 msgstr ""
 
 msgid "Hotlist Load"
@@ -2676,34 +2670,31 @@ msgstr "Kip:           %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Konum:         %Xh:%Xh"
 
-msgid "Show free sp&ace"
+msgid "&Equal split"
+msgstr "&Eşit böl"
+
+msgid "&Menubar visible"
 msgstr ""
 
-msgid "&XTerm window title"
-msgstr ""
-
-msgid "H&intbar visible"
+msgid "Command &prompt"
 msgstr ""
 
 msgid "&Keybar visible"
 msgstr "&Tuş komutlarını göster"
 
-msgid "Command &prompt"
+msgid "H&intbar visible"
 msgstr ""
 
-msgid "Menu&bar visible"
+msgid "&XTerm window title"
 msgstr ""
 
-msgid "&Equal split"
-msgstr "&Eşit böl"
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr ""
 
 msgid "Console output"
-msgstr ""
-
-msgid "Other options"
 msgstr ""
 
 msgid "&Vertical"
@@ -2936,64 +2927,64 @@ msgstr ""
 msgid "Alwa&ys"
 msgstr "&Daima"
 
-msgid "A&uto save setup"
-msgstr ""
-
-msgid "Sa&fe delete"
-msgstr ""
-
-msgid "Cd follows lin&ks"
-msgstr ""
-
-msgid "Rotating d&ash"
-msgstr ""
-
-msgid "Co&mplete: show all"
-msgstr ""
-
-msgid "Shell &patterns"
-msgstr ""
-
-msgid "&Drop down menus"
-msgstr "Aşağı açılan men&Üler"
-
-msgid "Auto m&enus"
-msgstr ""
-
-msgid "Use internal vie&w"
-msgstr ""
-
-msgid "Use internal edi&t"
-msgstr ""
-
-msgid "Pause after run"
-msgstr ""
-
-msgid "Timeout:"
-msgstr ""
-
-msgid "S&ingle press"
-msgstr ""
-
-msgid "Esc key mode"
-msgstr ""
-
-msgid "Preallocate &space"
-msgstr ""
-
-msgid "Mkdi&r autoname"
-msgstr ""
-
-msgid "Classic pro&gressbar"
-msgstr ""
-
-msgid "Compute tota&ls"
+msgid "File operations"
 msgstr ""
 
 msgid "&Verbose operation"
 msgstr "ayrıntı&Lı işlem"
 
-msgid "File operation options"
+msgid "Compute tota&ls"
+msgstr ""
+
+msgid "Classic pro&gressbar"
+msgstr ""
+
+msgid "Mkdi&r autoname"
+msgstr ""
+
+msgid "Preallocate &space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr ""
+
+msgid "S&ingle press"
+msgstr ""
+
+msgid "Timeout:"
+msgstr ""
+
+msgid "Pause after run"
+msgstr ""
+
+msgid "Use internal edi&t"
+msgstr ""
+
+msgid "Use internal vie&w"
+msgstr ""
+
+msgid "Auto m&enus"
+msgstr ""
+
+msgid "&Drop down menus"
+msgstr "Aşağı açılan men&Üler"
+
+msgid "Shell &patterns"
+msgstr ""
+
+msgid "Co&mplete: show all"
+msgstr ""
+
+msgid "Rotating d&ash"
+msgstr ""
+
+msgid "Cd follows lin&ks"
+msgstr ""
+
+msgid "Sa&fe delete"
+msgstr ""
+
+msgid "A&uto save setup"
 msgstr ""
 
 msgid "Configure options"
@@ -3002,64 +2993,61 @@ msgstr "Yapılandırma seçenekleri"
 msgid "Case &insensitive"
 msgstr ""
 
-msgid "Case s&ensitive"
-msgstr ""
-
 msgid "Use panel sort mo&de"
 msgstr ""
 
-msgid "Quick search"
-msgstr ""
-
-msgid "&Permissions"
-msgstr ""
-
-msgid "File &types"
-msgstr ""
-
-msgid "File highlight"
-msgstr ""
-
-msgid "&Mouse page scrolling"
-msgstr ""
-
-msgid "Pa&ge scrolling"
-msgstr ""
-
-msgid "L&ynx-like motion"
-msgstr "L&ynx benzeri hareket"
-
-msgid "Navigation"
-msgstr ""
-
-msgid "A&uto save panels setup"
-msgstr ""
-
-msgid "Simple s&wap"
-msgstr ""
-
-msgid "Re&verse files only"
-msgstr ""
-
-msgid "Ma&rk moves down"
-msgstr ""
-
-msgid "&Fast dir reload"
-msgstr "&Çabuk dizin tazeleme"
-
-msgid "Show &hidden files"
-msgstr ""
-
-msgid "Show &backup files"
-msgstr ""
-
-msgid "Mi&x all files"
+msgid "Show mi&ni-status"
 msgstr ""
 
 msgid "Use SI si&ze units"
 msgstr ""
 
-msgid "Show mi&ni-status"
+msgid "Mi&x all files"
+msgstr ""
+
+msgid "Show &backup files"
+msgstr ""
+
+msgid "Show &hidden files"
+msgstr ""
+
+msgid "&Fast dir reload"
+msgstr "&Çabuk dizin tazeleme"
+
+msgid "Ma&rk moves down"
+msgstr ""
+
+msgid "Re&verse files only"
+msgstr ""
+
+msgid "Simple s&wap"
+msgstr ""
+
+msgid "A&uto save panels setup"
+msgstr ""
+
+msgid "Navigation"
+msgstr ""
+
+msgid "L&ynx-like motion"
+msgstr "L&ynx benzeri hareket"
+
+msgid "Pa&ge scrolling"
+msgstr ""
+
+msgid "&Mouse page scrolling"
+msgstr ""
+
+msgid "File highlight"
+msgstr ""
+
+msgid "File &types"
+msgstr ""
+
+msgid "&Permissions"
+msgstr ""
+
+msgid "Quick search"
 msgstr ""
 
 msgid "Panel options"
@@ -3101,8 +3089,8 @@ msgstr ""
 msgid "sort|e"
 msgstr ""
 
-msgid "&Extension"
-msgstr "&Uzantısına göre"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3208,11 +3196,11 @@ msgstr "Yeni &Ekle"
 msgid "External panelize"
 msgstr "Dış panelleme"
 
-msgid "Command"
-msgstr "Komut"
-
 msgid "Other command"
 msgstr "Diğer komut"
+
+msgid "Command"
+msgstr "Komut"
 
 msgid "Add to external panelize"
 msgstr ""
@@ -3413,14 +3401,11 @@ msgstr ""
 "Tebrikler! Tam bir terminal veritabanınız var!\n"
 "Tüm tuşlarınız doğru çalışıyor."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Burada gösterilen tüm tuşlara basın. Bunu yaptıktan sonra OK ile"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
-msgstr "işaretlenmemiş tuşları kontrol edin. Tuşu atamak için boşluk"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
-msgstr "tuşuna basın ya da fareyle tıklayın. Tab ile dolaşabilirsiniz."
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3531,6 +3516,9 @@ msgid "Config directory:"
 msgstr ""
 
 msgid "Data directory:"
+msgstr ""
+
+msgid "File extension handlers:"
 msgstr ""
 
 msgid "VFS plugins and scripts:"
@@ -3650,9 +3638,6 @@ msgstr "fish: %s kaydet: komut gönderiliyor..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: Yerel okuma başarısız, sıfırlar gönderiliyor"
-
-msgid "fish: storing zeros"
-msgstr ""
 
 msgid "fish: storing file"
 msgstr ""
