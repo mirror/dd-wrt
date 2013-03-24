@@ -446,7 +446,7 @@ int spawn_command(void(*exec_fn)(void *user_data), void *exec_data,
 		return DROPBEAR_FAILURE;
 	}
 
-#ifdef __uClinux__
+#ifdef USE_VFORK
 	pid = vfork();
 #else
 	pid = fork();

@@ -48,7 +48,6 @@ static void send_msg_channel_data(struct Channel *channel, int isextended);
 static void send_msg_channel_eof(struct Channel *channel);
 static void send_msg_channel_close(struct Channel *channel);
 static void remove_channel(struct Channel *channel);
-static void delete_channel(struct Channel *channel);
 static void check_in_progress(struct Channel *channel);
 static unsigned int write_pending(struct Channel * channel);
 static void check_close(struct Channel *channel);
@@ -93,11 +92,20 @@ void chancleanup() {
 	TRACE(("leave chancleanup"))
 }
 
+static void
+chan_initwritebuf(struct Channel *channel)
+{
+	dropbear_assert(channel->writebuf->size == 0 && channel->recvwindow == 0);
+	cbuf_free(channel->writebuf);
+	channel->writebuf = cbuf_new(opts.recv_window);
+	channel->recvwindow = opts.recv_window;
+}
+
 /* Create a new channel entry, send a reply confirm or failure */
 /* If remotechan, transwindow and transmaxpacket are not know (for a new
  * outgoing connection, with them to be filled on confirmation), they should
  * all be set to 0 */
-struct Channel* newchannel(unsigned int remotechan, 
+static struct Channel* newchannel(unsigned int remotechan, 
 		const struct ChanType *type, 
 		unsigned int transwindow, unsigned int transmaxpacket) {
 
@@ -152,9 +160,10 @@ struct Channel* newchannel(unsigned int remotechan,
 	newchan->await_open = 0;
 	newchan->flushing = 0;
 
-	newchan->writebuf = cbuf_new(opts.recv_window);
+	newchan->writebuf = cbuf_new(0); /* resized later by chan_initwritebuf */
+	newchan->recvwindow = 0;
+
 	newchan->extrabuf = NULL; /* The user code can set it up */
-	newchan->recvwindow = opts.recv_window;
 	newchan->recvdonelen = 0;
 	newchan->recvmaxpacket = RECV_MAX_PAYLOAD_LEN;
 
@@ -268,7 +277,7 @@ static void check_close(struct Channel *channel) {
 				channel->writefd, channel->readfd,
 				channel->errfd, channel->sent_close, channel->recv_close))
 	TRACE(("writebuf size %d extrabuf size %d",
-				cbuf_getused(channel->writebuf),
+				channel->writebuf ? cbuf_getused(channel->writebuf) : 0,
 				channel->extrabuf ? cbuf_getused(channel->extrabuf) : 0))
 
 	if (!channel->flushing 
@@ -352,9 +361,10 @@ static void check_in_progress(struct Channel *channel) {
 		send_msg_channel_open_failure(channel->remotechan,
 				SSH_OPEN_CONNECT_FAILED, "", "");
 		close(channel->writefd);
-		delete_channel(channel);
+		remove_channel(channel);
 		TRACE(("leave check_in_progress: fail"))
 	} else {
+		chan_initwritebuf(channel);
 		send_msg_channel_open_confirmation(channel, channel->recvwindow,
 				channel->recvmaxpacket);
 		channel->readfd = channel->writefd;
@@ -474,13 +484,13 @@ void setchannelfds(fd_set *readfds, fd_set *writefds) {
 		}
 
 		/* Stuff from the wire */
-		if ((channel->writefd >= 0 && cbuf_getused(channel->writebuf) > 0 )
-				|| channel->initconn) {
+		if (channel->initconn
+			||(channel->writefd >= 0 && cbuf_getused(channel->writebuf) > 0)) {
 				FD_SET(channel->writefd, writefds);
 		}
 
 		if (ERRFD_IS_WRITE(channel) && channel->errfd >= 0 
-				&& cbuf_getused(channel->extrabuf) > 0 ) {
+				&& cbuf_getused(channel->extrabuf) > 0) {
 				FD_SET(channel->errfd, writefds);
 		}
 
@@ -553,20 +563,12 @@ static void remove_channel(struct Channel * channel) {
 
 	channel->typedata = NULL;
 
-	delete_channel(channel);
-
-	TRACE(("leave remove_channel"))
-}
-
-/* Remove a channel entry */
-static void delete_channel(struct Channel *channel) {
-
 	ses.channels[channel->index] = NULL;
 	m_free(channel);
 	ses.chancount--;
-	
-}
 
+	TRACE(("leave remove_channel"))
+}
 
 /* Handle channel specific requests, passing off to corresponding handlers
  * such as chansession or x11fwd */
@@ -653,6 +655,8 @@ static void send_msg_channel_data(struct Channel *channel, int isextended) {
 					len, errno, fd))
 		return;
 	}
+
+	TRACE(("send_msg_channel_data: len %d fd %d", len, fd))
 	buf_incrwritepos(ses.writepayload, len);
 	/* ... real size here */
 	buf_setpos(ses.writepayload, size_pos);
@@ -698,7 +702,7 @@ void common_recv_msg_channel_data(struct Channel *channel, int fd,
 		dropbear_exit("Received data after eof");
 	}
 
-	if (fd < 0) {
+	if (fd < 0 || !cbuf) {
 		/* If we have encountered failed write, the far side might still
 		 * be sending data without having yet received our close notification.
 		 * We just drop the data. */
@@ -836,11 +840,13 @@ void recv_msg_channel_open() {
 		}
 		if (ret > 0) {
 			errtype = ret;
-			delete_channel(channel);
+			remove_channel(channel);
 			TRACE(("inithandler returned failure %d", ret))
 			goto failure;
 		}
 	}
+
+	chan_initwritebuf(channel);
 
 	/* success */
 	send_msg_channel_open_confirmation(channel, channel->recvwindow,
@@ -979,6 +985,10 @@ int send_msg_channel_open_init(int fd, const struct ChanType *type) {
 		TRACE(("leave send_msg_channel_open_init() - FAILED in newchannel()"))
 		return DROPBEAR_FAILURE;
 	}
+
+	/* Outbound opened channels don't make use of in-progress connections,
+	 * we can set it up straight away */
+	chan_initwritebuf(chan);
 
 	/* set fd non-blocking */
 	setnonblocking(fd);
