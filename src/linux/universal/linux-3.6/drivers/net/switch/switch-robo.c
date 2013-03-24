@@ -88,8 +88,12 @@
 
 #define ETCROBORD	14
 #define ETCROBOWR	15
+#define ETCROBORD4	16
+#define ETCROBOWR4	17
 #define SIOCGETCROBORD		(SIOCDEVPRIVATE + ETCROBORD)
 #define SIOCSETCROBOWR		(SIOCDEVPRIVATE + ETCROBOWR)
+#define SIOCGETCROBORD4		(SIOCDEVPRIVATE + ETCROBORD4)
+#define SIOCSETCROBOWR4		(SIOCDEVPRIVATE + ETCROBOWR4)
 
 #ifdef CONFIG_MACH_BRCM_NS
 #define ROBO_SRAB
@@ -220,7 +224,7 @@ static __u32 robo_read32(__u8 page, __u8 reg)
 	robo.ifr.ifr_data = (caddr_t) vecarg;
 	vecarg[0] = (page) << 16;;
 	vecarg[0] |= reg & 0xffff;
-	do_ioctl(SIOCGETCROBORD);
+	do_ioctl(SIOCGETCROBORD4);
 	return vecarg[1];
 #else
 	__u32 ret;
@@ -258,7 +262,7 @@ static void robo_write32(__u8 page, __u8 reg, __u32 val32)
 	vecarg[0] = (page) << 16;;
 	vecarg[0] |= reg & 0xffff;
 	vecarg[1] = val32;
-	do_ioctl(SIOCSETCROBOWR);
+	do_ioctl(SIOCSETCROBOWR4);
 #else
 	/* write data */
 	mdio_write(ROBO_PHY_ADDR, REG_MII_DATA0, val32 & 0xFFFF);
