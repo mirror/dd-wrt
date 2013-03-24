@@ -49,13 +49,12 @@ static void add_netcat(const char *str);
 
 static void printhelp() {
 
-	fprintf(stderr, "Dropbear client v%s\n"
+	fprintf(stderr, "Dropbear SSH client v%s https://matt.ucc.asn.au/dropbear/dropbear.html\n"
 #ifdef ENABLE_CLI_MULTIHOP
 					"Usage: %s [options] [user@]host[/port][,[user@]host/port],...] [command]\n"
 #else
 					"Usage: %s [options] [user@]host[/port] [command]\n"
 #endif
-					"Options are:\n"
 					"-p <remoteport>\n"
 					"-l <username>\n"
 					"-t    Allocate a pty\n"
@@ -63,7 +62,7 @@ static void printhelp() {
 					"-N    Don't run a remote command\n"
 					"-f    Run in background after auth\n"
 					"-y    Always accept remote host key if unknown\n"
-					"-s    Request a subsystem (use for sftp)\n"
+					"-s    Request a subsystem (use by external sftp)\n"
 #ifdef ENABLE_CLI_PUBKEY_AUTH
 					"-i <identityfile>   (multiple allowed)\n"
 #endif
@@ -85,6 +84,10 @@ static void printhelp() {
 #endif				
 #ifdef ENABLE_CLI_PROXYCMD
 					"-J <proxy_program> Use program pipe rather than TCP connection\n"
+#endif
+#ifdef ENABLE_USER_ALGO_LIST
+					"-c <cipher list> Specify preferred ciphers ('-c help' to list options)\n"
+					"-m <MAC list> Specify preferred MACs for packet verification (or '-m help')\n"
 #endif
 #ifdef DEBUG_TRACE
 					"-v    verbose (compiled with DEBUG_TRACE)\n"
@@ -140,6 +143,7 @@ void cli_getopts(int argc, char ** argv) {
 #endif
 #ifdef ENABLE_CLI_AGENTFWD
 	cli_opts.agent_fwd = 0;
+	cli_opts.agent_fd = -1;
 	cli_opts.agent_keys_loaded = 0;
 #endif
 #ifdef ENABLE_CLI_PROXYCMD
@@ -147,6 +151,10 @@ void cli_getopts(int argc, char ** argv) {
 #endif
 #ifndef DISABLE_ZLIB
 	opts.enable_compress = 1;
+#endif
+#ifdef ENABLE_USER_ALGO_LIST
+	opts.cipher_list = NULL;
+	opts.mac_list = NULL;
 #endif
 	/* not yet
 	opts.ipv4 = 1;
@@ -282,6 +290,14 @@ void cli_getopts(int argc, char ** argv) {
 					cli_opts.agent_fwd = 1;
 					break;
 #endif
+#ifdef ENABLE_USER_ALGO_LIST
+				case 'c':
+					next = &opts.cipher_list;
+					break;
+				case 'm':
+					next = &opts.mac_list;
+					break;
+#endif
 #ifdef DEBUG_TRACE
 				case 'v':
 					debug_trace = 1;
@@ -289,8 +305,10 @@ void cli_getopts(int argc, char ** argv) {
 #endif
 				case 'F':
 				case 'e':
+#ifndef ENABLE_USER_ALGO_LIST
 				case 'c':
 				case 'm':
+#endif
 				case 'D':
 #ifndef ENABLE_CLI_REMOTETCPFWD
 				case 'R':
@@ -349,6 +367,10 @@ void cli_getopts(int argc, char ** argv) {
 	}
 
 	/* And now a few sanity checks and setup */
+
+#ifdef ENABLE_USER_ALGO_LIST
+	parse_ciphers_macs();
+#endif
 
 	if (host_arg == NULL) {
 		printhelp();

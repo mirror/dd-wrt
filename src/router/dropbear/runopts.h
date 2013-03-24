@@ -47,6 +47,10 @@ typedef struct runopts {
 	int enable_compress;
 #endif
 
+#ifdef ENABLE_USER_ALGO_LIST
+	char *cipher_list;
+	char *mac_list;
+#endif
 
 } runopts;
 
@@ -85,6 +89,7 @@ typedef struct svr_runopts {
 
 	int noauthpass;
 	int norootpass;
+	int allowblankpass;
 
 #ifdef ENABLE_SVR_REMOTETCPFWD
 	int noremotetcp;
@@ -147,5 +152,9 @@ typedef struct cli_runopts {
 
 extern cli_runopts cli_opts;
 void cli_getopts(int argc, char ** argv);
+
+#ifdef ENABLE_USER_ALGO_LIST
+void parse_ciphers_macs();
+#endif
 
 #endif /* _RUNOPTS_H_ */

@@ -118,6 +118,7 @@ void send_msg_kexinit() {
 	/* mac_algorithms_server_to_client */
 	buf_put_algolist(ses.writepayload, sshhashes);
 
+
 	/* compression_algorithms_client_to_server */
 	buf_put_algolist(ses.writepayload, ses.compress_algos);
 
@@ -248,26 +249,28 @@ static void kexinitialise() {
  * already initialised hash_state hs, which should already have processed
  * the dh_K and hash, since these are common. X is the letter 'A', 'B' etc.
  * out must have at least min(SHA1_HASH_SIZE, outlen) bytes allocated.
- * The output will only be expanded once, as we are assured that
- * outlen <= 2*SHA1_HASH_SIZE for all known hashes.
  *
  * See Section 7.2 of rfc4253 (ssh transport) for details */
 static void hashkeys(unsigned char *out, int outlen, 
 		const hash_state * hs, const unsigned char X) {
 
 	hash_state hs2;
-	unsigned char k2[SHA1_HASH_SIZE]; /* used to extending */
+	int offset;
 
 	memcpy(&hs2, hs, sizeof(hash_state));
 	sha1_process(&hs2, &X, 1);
 	sha1_process(&hs2, ses.session_id, SHA1_HASH_SIZE);
 	sha1_done(&hs2, out);
-	if (SHA1_HASH_SIZE < outlen) {
+	for (offset = SHA1_HASH_SIZE; 
+			offset < outlen; 
+			offset += SHA1_HASH_SIZE)
+	{
 		/* need to extend */
+		unsigned char k2[SHA1_HASH_SIZE];
 		memcpy(&hs2, hs, sizeof(hash_state));
-		sha1_process(&hs2, out, SHA1_HASH_SIZE);
+		sha1_process(&hs2, out, offset);
 		sha1_done(&hs2, k2);
-		memcpy(&out[SHA1_HASH_SIZE], k2, outlen - SHA1_HASH_SIZE);
+		memcpy(&out[offset], k2, MIN(outlen - offset, SHA1_HASH_SIZE));
 	}
 }
 
@@ -291,7 +294,6 @@ void gen_new_keys() {
 	hash_state hs;
 	unsigned int C2S_keysize, S2C_keysize;
 	char mactransletter, macrecvletter; /* Client or server specific */
-	int recv_cipher = 0, trans_cipher = 0;
 
 	TRACE(("enter gen_new_keys"))
 	/* the dh_K and hash are the start of all hashes, we make use of that */
@@ -328,33 +330,41 @@ void gen_new_keys() {
 	hashkeys(C2S_key, C2S_keysize, &hs, 'C');
 	hashkeys(S2C_key, S2C_keysize, &hs, 'D');
 
-	recv_cipher = find_cipher(ses.newkeys->recv.algo_crypt->cipherdesc->name);
-	if (recv_cipher < 0)
-	    dropbear_exit("Crypto error");
-	if (ses.newkeys->recv.crypt_mode->start(recv_cipher, 
-			recv_IV, recv_key, 
-			ses.newkeys->recv.algo_crypt->keysize, 0, 
-			&ses.newkeys->recv.cipher_state) != CRYPT_OK) {
-		dropbear_exit("Crypto error");
+	if (ses.newkeys->recv.algo_crypt->cipherdesc != NULL) {
+		int recv_cipher = find_cipher(ses.newkeys->recv.algo_crypt->cipherdesc->name);
+		if (recv_cipher < 0)
+			dropbear_exit("Crypto error");
+		if (ses.newkeys->recv.crypt_mode->start(recv_cipher, 
+				recv_IV, recv_key, 
+				ses.newkeys->recv.algo_crypt->keysize, 0, 
+				&ses.newkeys->recv.cipher_state) != CRYPT_OK) {
+			dropbear_exit("Crypto error");
+		}
 	}
 
-	trans_cipher = find_cipher(ses.newkeys->trans.algo_crypt->cipherdesc->name);
-	if (trans_cipher < 0)
-	    dropbear_exit("Crypto error");
-	if (ses.newkeys->trans.crypt_mode->start(trans_cipher, 
-			trans_IV, trans_key, 
-			ses.newkeys->trans.algo_crypt->keysize, 0, 
-			&ses.newkeys->trans.cipher_state) != CRYPT_OK) {
-		dropbear_exit("Crypto error");
+	if (ses.newkeys->trans.algo_crypt->cipherdesc != NULL) {
+		int trans_cipher = find_cipher(ses.newkeys->trans.algo_crypt->cipherdesc->name);
+		if (trans_cipher < 0)
+			dropbear_exit("Crypto error");
+		if (ses.newkeys->trans.crypt_mode->start(trans_cipher, 
+				trans_IV, trans_key, 
+				ses.newkeys->trans.algo_crypt->keysize, 0, 
+				&ses.newkeys->trans.cipher_state) != CRYPT_OK) {
+			dropbear_exit("Crypto error");
+		}
 	}
-	
-	/* MAC keys */
-	hashkeys(ses.newkeys->trans.mackey, 
-			ses.newkeys->trans.algo_mac->keysize, &hs, mactransletter);
-	hashkeys(ses.newkeys->recv.mackey, 
-			ses.newkeys->recv.algo_mac->keysize, &hs, macrecvletter);
-	ses.newkeys->trans.hash_index = find_hash(ses.newkeys->trans.algo_mac->hashdesc->name),
-	ses.newkeys->recv.hash_index = find_hash(ses.newkeys->recv.algo_mac->hashdesc->name),
+
+	if (ses.newkeys->trans.algo_mac->hashdesc != NULL) {
+		hashkeys(ses.newkeys->trans.mackey, 
+				ses.newkeys->trans.algo_mac->keysize, &hs, mactransletter);
+		ses.newkeys->trans.hash_index = find_hash(ses.newkeys->trans.algo_mac->hashdesc->name);
+	}
+
+	if (ses.newkeys->recv.algo_mac->hashdesc != NULL) {
+		hashkeys(ses.newkeys->recv.mackey, 
+				ses.newkeys->recv.algo_mac->keysize, &hs, macrecvletter);
+		ses.newkeys->recv.hash_index = find_hash(ses.newkeys->recv.algo_mac->hashdesc->name);
+	}
 
 #ifndef DISABLE_ZLIB
 	gen_new_zstreams();
