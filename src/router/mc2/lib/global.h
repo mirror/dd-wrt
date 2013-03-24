@@ -21,6 +21,9 @@
 #include <sys/param.h>
 #endif
 
+/* for sig_atomic_t */
+#include <signal.h>
+
 /*** typedefs(not structures) and defined constants **********************************************/
 
 /* The O_BINARY definition was taken from gettext */
@@ -114,6 +117,10 @@
 #define BUF_SMALL 128
 #define BUF_TINY 64
 
+/* ESC_CHAR is defined in /usr/include/langinfo.h in some systems */
+#ifdef ESC_CHAR
+#undef ESC_CHAR
+#endif
 /* AIX compiler doesn't understand '\e' */
 #define ESC_CHAR '\033'
 #define ESC_STR  "\033"
@@ -127,6 +134,10 @@
 #define get_default_editor() "vi"
 #define OS_SORT_CASE_SENSITIVE_DEFAULT 1
 #define UTF8_CHAR_LEN 6
+
+/* Used to distinguish between a normal MC termination and */
+/* one caused by typing `exit' or `logout' in the subshell */
+#define SUBSHELL_EXIT 128
 
 /* C++ style type casts */
 #define const_cast(m_type, m_expr) ((m_type) (m_expr))
@@ -228,10 +239,10 @@ typedef struct
 #endif                          /* !LINUX_CONS_SAVER_C */
         /* If using a subshell for evaluating commands this is true */
         gboolean use_subshell;
-#ifdef HAVE_SUBSHELL_SUPPORT
+#ifdef ENABLE_SUBSHELL
         /* File descriptors of the pseudoterminal used by the subshell */
         int subshell_pty;
-#endif                          /* !HAVE_SUBSHELL_SUPPORT */
+#endif                          /* !ENABLE_SUBSHELL */
 
         /* This flag is set by xterm detection routine in function main() */
         /* It is used by function view_other_cmd() */
@@ -258,7 +269,7 @@ typedef struct
         gboolean alternate_plus_minus;
 
         /* Set if the window has changed it's size */
-        gboolean winch_flag;
+        SIG_ATOMIC_VOLATILE_T winch_flag;
     } tty;
 
     struct

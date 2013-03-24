@@ -4,15 +4,16 @@
 #
 # Translators:
 #   <danicases@gmail.com>, 2011.
+# Daniel  <danicases@gmail.com>, 2012.
 # el_libre como el chaval <el.libre@gmail.com>, 2011.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
-"Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
+"Last-Translator: Daniel <danicases@gmail.com>\n"
 "Language-Team: Catalan (http://www.transifex.com/projects/p/mc/language/"
 "ca/)\n"
 "Language: ca\n"
@@ -25,7 +26,7 @@ msgid "Warning: cannot load codepages list"
 msgstr ""
 
 msgid "7-bit ASCII"
-msgstr ""
+msgstr "7-bit ASCII"
 
 #, c-format
 msgid "Cannot translate from %s to %s"
@@ -57,6 +58,9 @@ msgid ""
 "User: %s\n"
 "Process ID: %d"
 msgstr ""
+"Arxiu \"%s\" ja s'està editant.\n"
+"Usuari: %s\n"
+"ID del Procés: %d"
 
 msgid "File locked"
 msgstr "Arxiu bloquejat"
@@ -93,7 +97,7 @@ msgid ""
 msgstr ""
 
 msgid "Search string not found"
-msgstr ""
+msgstr "Cadena de cerca no trobada"
 
 msgid "Not implemented yet"
 msgstr "No s'ha implementat encara"
@@ -251,7 +255,7 @@ msgid "* on keypad"
 msgstr "* teclat numèric"
 
 msgid "Escape key"
-msgstr ""
+msgstr "Tecla Escape"
 
 msgid "Left arrow keypad"
 msgstr "Cursor esquerra teclat numèric"
@@ -287,22 +291,22 @@ msgid "Enter on keypad"
 msgstr "Tecla de retorn teclat numèric"
 
 msgid "Function key 21"
-msgstr ""
+msgstr "Tecla de Funció 21"
 
 msgid "Function key 22"
-msgstr ""
+msgstr "Tecla de Funció 22"
 
 msgid "Function key 23"
-msgstr ""
+msgstr "Tecla de Funció 23"
 
 msgid "Function key 24"
-msgstr ""
+msgstr "Tecla de Funció 24"
 
 msgid "A1 key"
-msgstr ""
+msgstr "Tecla A1"
 
 msgid "C1 key"
-msgstr ""
+msgstr "Tecla C1"
 
 msgid "Plus"
 msgstr "Més"
@@ -517,14 +521,14 @@ msgstr "&Sí"
 msgid "&No"
 msgstr "&No"
 
-msgid "Background process:"
-msgstr "Procés de fons:"
+msgid "&OK"
+msgstr "&D'acord"
 
 msgid "&Cancel"
 msgstr "&Cancel·la"
 
-msgid "&OK"
-msgstr "&D'acord"
+msgid "Background process:"
+msgstr "Procés de fons:"
 
 msgid "Error"
 msgstr "S'ha produït un error"
@@ -700,19 +704,19 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Ignora"
 
-msgid "&All charsets"
+msgid "Enter search string:"
 msgstr ""
 
-msgid "&Whole words"
+msgid "Cas&e sensitive"
 msgstr ""
 
 msgid "&Backwards"
 msgstr "Cap &Enrere"
 
-msgid "Cas&e sensitive"
+msgid "&Whole words"
 msgstr ""
 
-msgid "Enter search string:"
+msgid "&All charsets"
 msgstr ""
 
 msgid "Search"
@@ -746,25 +750,25 @@ msgstr ""
 msgid "&Minimal (Find a smaller set of change)"
 msgstr ""
 
-msgid "Strip &trailing carriage return"
+msgid "Diff algorithm"
 msgstr ""
 
-msgid "Ignore all &whitespace"
-msgstr ""
-
-msgid "Ignore &space change"
-msgstr ""
-
-msgid "Ignore tab &expansion"
+msgid "Diff extra options"
 msgstr ""
 
 msgid "&Ignore case"
 msgstr "&Ignora diferències de majúscules i minúscules"
 
-msgid "Diff extra options"
+msgid "Ignore tab &expansion"
 msgstr ""
 
-msgid "Diff algorithm"
+msgid "Ignore &space change"
+msgstr ""
+
+msgid "Ignore all &whitespace"
+msgstr ""
+
+msgid "Strip &trailing carriage return"
 msgstr ""
 
 msgid "Diff Options"
@@ -909,10 +913,10 @@ msgstr ""
 msgid "&Macintosh format (CR)"
 msgstr ""
 
-msgid "Change line breaks to:"
+msgid "Enter file name:"
 msgstr ""
 
-msgid "Enter file name:"
+msgid "Change line breaks to:"
 msgstr ""
 
 msgid "Save As"
@@ -1089,17 +1093,17 @@ msgstr ""
 msgid "Cannot execute command"
 msgstr "No es pot executar l'ordre"
 
-msgid "Copies to"
-msgstr "Còpies a"
-
-msgid "Subject"
-msgstr "Assumpte"
+msgid "mail -s <subject> -c <cc> <to>"
+msgstr ""
 
 msgid "To"
 msgstr "Per a"
 
-msgid "mail -s <subject> -c <cc> <to>"
-msgstr ""
+msgid "Subject"
+msgstr "Assumpte"
+
+msgid "Copies to"
+msgstr "Còpies a"
 
 msgid "Mail"
 msgstr "Correu"
@@ -1118,11 +1122,26 @@ msgstr ""
 msgid "In se&lection"
 msgstr ""
 
+msgid "&Find all"
+msgstr "Cer&ca'ls tots"
+
 msgid "Enter replacement string:"
 msgstr ""
 
-msgid "&Find all"
-msgstr "Cer&ca'ls tots"
+msgid "Replace with:"
+msgstr "Reemplaça amb:"
+
+msgid "&Replace"
+msgstr "&Reemplaça"
+
+msgid "A&ll"
+msgstr "&Tots"
+
+msgid "&Skip"
+msgstr "&Salta"
+
+msgid "Confirm replace"
+msgstr ""
 
 msgid "Cancel"
 msgstr "Cancel·la"
@@ -1130,21 +1149,6 @@ msgstr "Cancel·la"
 msgid ""
 "Current text was modified without a file save.\n"
 "Continue discards these changes."
-msgstr ""
-
-msgid "&Skip"
-msgstr "&Salta"
-
-msgid "A&ll"
-msgstr "&Tots"
-
-msgid "&Replace"
-msgstr "&Reemplaça"
-
-msgid "Replace with:"
-msgstr "Reemplaça amb:"
-
-msgid "Confirm replace"
 msgstr ""
 
 msgid "NoName"
@@ -1369,72 +1373,82 @@ msgstr ""
 msgid "&Options"
 msgstr "&Opcions"
 
-msgid "None"
-msgstr "Cap"
-
-msgid "Dynamic paragraphing"
-msgstr "Paràgrafs dinàmics"
-
-msgid "Type writer wrap"
-msgstr "Ajustament de màquina d'escriure"
-
-msgid "Word wrap line length:"
+msgid "&None"
 msgstr ""
 
-msgid "&Group undo"
+msgid "&Dynamic paragraphing"
 msgstr ""
 
-msgid "Cursor beyond end of line"
+msgid "Type &writer wrap"
 msgstr ""
 
-msgid "Pers&istent selection"
+msgid "Wrap mode"
+msgstr "Mode d'ajustament"
+
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "&Simula les mitges tabulacions"
+
+msgid "&Backspace through tabs"
+msgstr "es&Borra els tabuladors amb la tecla de retrocés"
+
+msgid "Fill tabs with &spaces"
+msgstr "omple els tabuladors amb e&Spais"
+
+msgid "Tab spacing:"
+msgstr ""
+
+msgid "Other options"
+msgstr "Altres opcions"
+
+msgid "&Return does autoindent"
+msgstr "Fes auto&Sagnat en prémer la tecla de retorn del carro"
+
+msgid "Confir&m before saving"
+msgstr "con&Firma en desar"
+
+msgid "Save file &position"
+msgstr ""
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
 msgstr ""
 
 msgid "Synta&x highlighting"
 msgstr "Ressaltament de la sinta&Xi"
 
-msgid "Visible tabs"
+msgid "C&ursor after inserted block"
 msgstr ""
 
-msgid "Visible trailing spaces"
+msgid "Pers&istent selection"
 msgstr ""
 
-msgid "Save file &position"
+msgid "Cursor be&yond end of line"
 msgstr ""
 
-msgid "Confir&m before saving"
-msgstr "con&Firma en desar"
-
-msgid "&Return does autoindent"
-msgstr "Fes auto&Sagnat en prémer la tecla de retorn del carro"
-
-msgid "Tab spacing:"
+msgid "&Group undo"
 msgstr ""
 
-msgid "Fill tabs with &spaces"
-msgstr "omple els tabuladors amb e&Spais"
-
-msgid "&Backspace through tabs"
-msgstr "es&Borra els tabuladors amb la tecla de retrocés"
-
-msgid "&Fake half tabs"
-msgstr "&Simula les mitges tabulacions"
-
-msgid "Wrap mode"
-msgstr "Mode d'ajustament"
+msgid "Word wrap line length:"
+msgstr ""
 
 msgid "Editor options"
 msgstr ""
 
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
+msgstr ""
+
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
 msgid "About"
 msgstr "Quant a"
-
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
 
 msgid "Open files"
 msgstr ""
@@ -1511,14 +1525,14 @@ msgstr "Teclegeu \"exit\" per retornar al Midnight Commander"
 msgid "Cannot fetch a local copy of %s"
 msgstr ""
 
-msgid "&Set"
-msgstr "&Estableix"
+msgid "Set &all"
+msgstr "Estableix a &tots"
 
 msgid "S&kip"
 msgstr "&Salta"
 
-msgid "Set &all"
-msgstr "Estableix a &tots"
+msgid "&Set"
+msgstr "&Estableix"
 
 msgid "owner"
 msgstr "propietari"
@@ -1529,18 +1543,8 @@ msgstr "grup"
 msgid "other"
 msgstr "altres"
 
-msgid "On"
-msgstr "Sobre"
-
 msgid "Flag"
 msgstr "Marca"
-
-msgid "Mode"
-msgstr "Mode"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d de %d"
 
 msgid "Chown advanced command"
 msgstr ""
@@ -1557,14 +1561,14 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "&Stop"
-msgstr "&Atura"
+msgid "Other 8 bit"
+msgstr "Altres 8 bits"
 
-msgid "&Resume"
-msgstr "&Reprèn"
+msgid "Running"
+msgstr "S'està executant"
 
-msgid "&Kill"
-msgstr "A&caba"
+msgid "Stopped"
+msgstr "Aturat"
 
 msgid "&Full file list"
 msgstr "llistat c&Omplet"
@@ -1578,14 +1582,57 @@ msgstr "llistat &Llarg"
 msgid "&User defined:"
 msgstr "definit per l'&Usuari:"
 
-msgid "Listing mode"
-msgstr "Mode de llistat"
-
 msgid "User &mini status"
 msgstr ""
 
-msgid "Other 8 bit"
-msgstr "Altres 8 bits"
+msgid "Listing mode"
+msgstr "Mode de llistat"
+
+msgid "Executable &first"
+msgstr ""
+
+msgid "&Reverse"
+msgstr "in&Verteix"
+
+msgid "Sort order"
+msgstr "Ordre de classificació"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr ""
+
+msgid "Confirmation|O&verwrite"
+msgstr ""
+
+msgid "Confirmation|&Execute"
+msgstr ""
+
+msgid "Confirmation|E&xit"
+msgstr ""
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr ""
+
+msgid "Confirmation|&History cleanup"
+msgstr ""
+
+msgid "Confirmation"
+msgstr "Confirmació"
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "ent&Rada de 8 bits"
 
 msgid "Display bits"
 msgstr ""
@@ -1593,91 +1640,32 @@ msgstr ""
 msgid "Input / display codepage:"
 msgstr "Pàgina de codis d'entrada / visualització:"
 
-msgid "F&ull 8 bits input"
-msgstr "ent&Rada de 8 bits"
-
 msgid "&Select"
 msgstr "&Seleccioneu"
-
-msgid "Running"
-msgstr "S'està executant"
-
-msgid "Stopped"
-msgstr "Aturat"
-
-msgid "&Reverse"
-msgstr "in&Verteix"
-
-msgid "Case sensi&tive"
-msgstr "Considera diferen&ts les majúscules i les minúscules"
-
-msgid "Executable &first"
-msgstr ""
-
-msgid "Sort order"
-msgstr "Ordre de classificació"
-
-msgid "Confirmation"
-msgstr "Confirmació"
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr ""
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr ""
-
-msgid "Confirmation|E&xit"
-msgstr ""
-
-msgid "Confirmation|&Execute"
-msgstr ""
-
-msgid "Confirmation|O&verwrite"
-msgstr ""
-
-msgid "Confirmation|&Delete"
-msgstr ""
-
-msgid "UTF-8 output"
-msgstr ""
-
-msgid "Full 8 bits output"
-msgstr "Mostra una sortida de 8 bits purs"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1 (Latin1)"
-
-msgid "7 bits"
-msgstr "7 bits"
 
 msgid "Directory tree"
 msgstr "Arbre de directoris"
 
-msgid "Use passive mode over pro&xy"
+msgid "Timeout for freeing VFSs (sec):"
 msgstr ""
 
-msgid "Use &passive mode"
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
 msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr ""
 
-msgid "&Always use ftp proxy"
-msgstr "usa sempre un servidor in&Termediari de ftp"
+msgid "Use &passive mode"
+msgstr ""
 
-msgid "sec"
-msgstr "seg"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "Temps d'espera de la memòria cau del directori ftpfs:"
-
-msgid "ftp anonymous password:"
-msgstr "Contrasenya de l'ftp anònim:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "Temps d'espera per alliberar VFSs:"
+msgid "Use passive mode over pro&xy"
+msgstr ""
 
 msgid "Virtual File System Setting"
 msgstr ""
@@ -1688,17 +1676,30 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "Canvi ràpid de directori"
 
-msgid "Symbolic link filename:"
-msgstr "Nom de fitxer de l'enllaç simbòlic:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr "Nom del fitxer existent (nom de fitxer on apuntarà l'enllaç):"
+
+msgid "Symbolic link filename:"
+msgstr "Nom de fitxer de l'enllaç simbòlic:"
 
 msgid "Symbolic link"
 msgstr "Enllaç simbòlic"
 
-msgid "Background Jobs"
-msgstr "Tasques de fons"
+msgid "&Stop"
+msgstr "&Atura"
+
+msgid "&Resume"
+msgstr "&Reprèn"
+
+msgid "&Kill"
+msgstr "A&caba"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "Contrasenya per a \\\\%s\\%s"
 
 msgid "Domain:"
 msgstr "Domini:"
@@ -1706,45 +1707,44 @@ msgstr "Domini:"
 msgid "Username:"
 msgstr "Nom d'usuari:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Contrasenya per a \\\\%s\\%s"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "executa/cerca per a altres"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "escriu per a altres"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "llegeix per a altres"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "executa/cerca per al grup"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "escriu per al grup"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "llegeix per al grup"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "executa/cerca per al propietari"
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "escriu per al propietari"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "llegeix per al propietari"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "bit de permanència"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "executa amb l'ID del grup"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "executa amb l'ID del propietari"
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr ""
@@ -1758,29 +1758,29 @@ msgstr ""
 msgid "Group name:"
 msgstr ""
 
-msgid "C&lear marked"
-msgstr "&Esborra els marcats"
+msgid "&Marked all"
+msgstr "&Marca'ls tots"
 
 msgid "S&et marked"
 msgstr "&Posa els marcats"
 
-msgid "&Marked all"
-msgstr "&Marca'ls tots"
+msgid "C&lear marked"
+msgstr "&Esborra els marcats"
 
 msgid "Chmod command"
 msgstr "Canvi de permisos"
 
-msgid "File"
-msgstr "Fitxer"
-
 msgid "Permission"
 msgstr "Permisos"
 
-msgid "Set &users"
-msgstr "Estableix els &usuaris"
+msgid "File"
+msgstr "Fitxer"
 
 msgid "Set &groups"
 msgstr "Estableix els &grups"
+
+msgid "Set &users"
+msgstr "Estableix els &usuaris"
 
 msgid "Name"
 msgstr "Nom"
@@ -1797,14 +1797,14 @@ msgstr "Mida"
 msgid "Chown command"
 msgstr ""
 
+msgid "User name"
+msgstr "Nom d'usuari/a"
+
 msgid "<Unknown user>"
 msgstr "<Usuari desconegut>"
 
 msgid "<Unknown group>"
 msgstr "<Grup desconegut>"
-
-msgid "User name"
-msgstr "Nom d'usuari/a"
 
 msgid "Enter machine name (F1 for details):"
 msgstr ""
@@ -1821,14 +1821,14 @@ msgstr "Filtre"
 msgid "Set expression for filtering filenames"
 msgstr ""
 
+msgid "&Files only"
+msgstr "Només &fitxers"
+
 msgid "&Using shell patterns"
 msgstr "amb patrons d'&Intèrpret"
 
 msgid "&Case sensitive"
 msgstr "Diferencia majús&cules"
-
-msgid "&Files only"
-msgstr "Només &fitxers"
 
 #, c-format
 msgid "Link %s to:"
@@ -2087,20 +2087,18 @@ msgstr ""
 msgid "&Retry"
 msgstr "&Reintenta"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-
-msgid "Delete:"
-msgstr "Suprimeix:"
 
 msgid "Non&e"
 msgstr "ca&P"
@@ -2312,6 +2310,12 @@ msgstr ""
 msgid "Sorry, I could not put the job in background"
 msgstr ""
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "&Continua"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr "%d:%02d.%02d"
@@ -2336,30 +2340,30 @@ msgid "Target file already exists!"
 msgstr "Ja existeix el fitxer de destinació"
 
 #, c-format
-msgid "Source date: %s, size %llu"
+msgid "New     : %s, size %llu"
 msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
+msgid "Existing: %s, size %llu"
 msgstr ""
 
-msgid "If &size differs"
-msgstr "si difereix la  &Mida"
-
-msgid "&Update"
-msgstr "actualit&Za"
-
-msgid "Overwrite all targets?"
-msgstr "Voleu sobreescriure'ls tots?"
-
-msgid "&Reget"
-msgstr "reprè&N"
+msgid "Overwrite this target?"
+msgstr "Voleu sobreescriure aquest destí?"
 
 msgid "A&ppend"
 msgstr "afe&Geix"
 
-msgid "Overwrite this target?"
-msgstr "Voleu sobreescriure aquest destí?"
+msgid "&Reget"
+msgstr "reprè&N"
+
+msgid "Overwrite all targets?"
+msgstr "Voleu sobreescriure'ls tots?"
+
+msgid "&Update"
+msgstr "actualit&Za"
+
+msgid "If &size differs"
+msgstr "si difereix la  &Mida"
 
 msgid "File exists"
 msgstr "Existeix el fitxer"
@@ -2408,30 +2412,24 @@ msgstr "Objectiu/Destí"
 msgid "Deleting"
 msgstr "Suprimint"
 
-msgid "&Background"
-msgstr "&Segon pla"
-
-msgid "&Stable Symlinks"
-msgstr "enllaços simbòlics &Estables"
-
-msgid "Di&ve into subdir if exists"
-msgstr ""
+msgid "Follow &links"
+msgstr "Segueix els enl&laços"
 
 msgid "Preserve &attributes"
 msgstr ""
 
-msgid "Follow &links"
-msgstr "Segueix els enl&laços"
+msgid "Di&ve into subdir if exists"
+msgstr ""
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "&Segon pla"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr ""
-
-msgid "&Suspend"
-msgstr "&Suspèn"
-
-msgid "Con&tinue"
-msgstr "&Continua"
 
 msgid "&Chdir"
 msgstr "Canvia de &dirextori"
@@ -2455,11 +2453,17 @@ msgstr ""
 msgid "Malformed regular expression"
 msgstr ""
 
+msgid "File name:"
+msgstr "Nom del fitxer:"
+
 msgid "&Find recursively"
 msgstr ""
 
 msgid "S&kip hidden"
 msgstr ""
+
+msgid "Content:"
+msgstr "Contingut:"
 
 msgid "Sea&rch for content"
 msgstr ""
@@ -2467,10 +2471,10 @@ msgstr ""
 msgid "Case sens&itive"
 msgstr ""
 
-msgid "Fir&st hit"
+msgid "A&ll charsets"
 msgstr ""
 
-msgid "A&ll charsets"
+msgid "Fir&st hit"
 msgstr ""
 
 msgid "&Tree"
@@ -2479,17 +2483,11 @@ msgstr "Ar&bre"
 msgid "Find File"
 msgstr "Cerca Fitxer"
 
-msgid "Content:"
-msgstr "Contingut:"
-
-msgid "File name:"
-msgstr "Nom del fitxer:"
+msgid "Start at:"
+msgstr "Comença a:"
 
 msgid "Ena&ble ignore directories:"
 msgstr ""
-
-msgid "Start at:"
-msgstr "Comença a:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2511,35 +2509,32 @@ msgstr "S'està cercant a %s"
 msgid "Searching"
 msgstr "Cercant"
 
-msgid "&Remove"
-msgstr "&Suprimeix"
+msgid "Change &to"
+msgstr "Can&via a"
 
-msgid "&Append"
-msgstr "A&fegeix"
-
-msgid "&Insert"
-msgstr "&Insereix"
-
-msgid "New &entry"
-msgstr "Entrada &nova"
-
-msgid "New &group"
-msgstr "Nou &grup"
-
-msgid "&Up"
-msgstr "A&munt"
-
-msgid "&Add current"
-msgstr "Afe&geix l'actual"
+msgid "&Free VFSs now"
+msgstr ""
 
 msgid "&Refresh"
 msgstr "&Actualitza"
 
-msgid "Fr&ee VFSs now"
-msgstr "Allib&era els VFSs ara"
+msgid "&Add current"
+msgstr "Afe&geix l'actual"
 
-msgid "Change &to"
-msgstr "Can&via a"
+msgid "&Up"
+msgstr "A&munt"
+
+msgid "New &group"
+msgstr "Nou &grup"
+
+msgid "New &entry"
+msgstr "Entrada &nova"
+
+msgid "&Insert"
+msgstr "&Insereix"
+
+msgid "&Remove"
+msgstr "&Suprimeix"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgrup - premeu RETORN per veure la llista"
@@ -2550,15 +2545,21 @@ msgstr "Directoris VFS actius"
 msgid "Directory hotlist"
 msgstr "Directori favorits"
 
+msgid "Top level group"
+msgstr ""
+
 msgid "Directory path"
 msgstr "Ruta del directori"
-
-msgid "Directory label"
-msgstr "Etiqueta del directori"
 
 #, c-format
 msgid "Moving %s"
 msgstr "S'està movent %s"
+
+msgid "Directory label"
+msgstr "Etiqueta del directori"
+
+msgid "&Append"
+msgstr "A&fegeix"
 
 msgid "New hotlist entry"
 msgstr "Nou registre als favorits"
@@ -2583,9 +2584,6 @@ msgstr ""
 msgid ""
 "Group \"%s\" is not empty.\n"
 "Remove it?"
-msgstr ""
-
-msgid "Top level group"
 msgstr ""
 
 msgid "Hotlist Load"
@@ -2686,35 +2684,32 @@ msgstr "Mode:       %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Ubicació:   %Xh:%Xh"
 
-msgid "Show free sp&ace"
+msgid "&Equal split"
+msgstr "divisió &Simètrica"
+
+msgid "&Menubar visible"
 msgstr ""
 
-msgid "&XTerm window title"
-msgstr ""
-
-msgid "H&intbar visible"
+msgid "Command &prompt"
 msgstr ""
 
 msgid "&Keybar visible"
 msgstr "Barra de &Tecles visible"
 
-msgid "Command &prompt"
+msgid "H&intbar visible"
 msgstr ""
 
-msgid "Menu&bar visible"
+msgid "&XTerm window title"
 msgstr ""
 
-msgid "&Equal split"
-msgstr "divisió &Simètrica"
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr ""
 
 msgid "Console output"
 msgstr ""
-
-msgid "Other options"
-msgstr "Altres opcions"
 
 msgid "&Vertical"
 msgstr "&Vertical"
@@ -2947,64 +2942,64 @@ msgstr ""
 msgid "Alwa&ys"
 msgstr "&Sempre"
 
-msgid "A&uto save setup"
-msgstr ""
-
-msgid "Sa&fe delete"
-msgstr ""
-
-msgid "Cd follows lin&ks"
-msgstr ""
-
-msgid "Rotating d&ash"
-msgstr ""
-
-msgid "Co&mplete: show all"
-msgstr ""
-
-msgid "Shell &patterns"
-msgstr ""
-
-msgid "&Drop down menus"
-msgstr "menús &Desplegables"
-
-msgid "Auto m&enus"
-msgstr ""
-
-msgid "Use internal vie&w"
-msgstr ""
-
-msgid "Use internal edi&t"
-msgstr ""
-
-msgid "Pause after run"
-msgstr ""
-
-msgid "Timeout:"
-msgstr "Temps d'espera:"
-
-msgid "S&ingle press"
-msgstr ""
-
-msgid "Esc key mode"
-msgstr ""
-
-msgid "Preallocate &space"
-msgstr ""
-
-msgid "Mkdi&r autoname"
-msgstr ""
-
-msgid "Classic pro&gressbar"
-msgstr ""
-
-msgid "Compute tota&ls"
+msgid "File operations"
 msgstr ""
 
 msgid "&Verbose operation"
 msgstr "detalla les &Operacions"
 
-msgid "File operation options"
+msgid "Compute tota&ls"
+msgstr ""
+
+msgid "Classic pro&gressbar"
+msgstr ""
+
+msgid "Mkdi&r autoname"
+msgstr ""
+
+msgid "Preallocate &space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr ""
+
+msgid "S&ingle press"
+msgstr ""
+
+msgid "Timeout:"
+msgstr "Temps d'espera:"
+
+msgid "Pause after run"
+msgstr ""
+
+msgid "Use internal edi&t"
+msgstr ""
+
+msgid "Use internal vie&w"
+msgstr ""
+
+msgid "Auto m&enus"
+msgstr ""
+
+msgid "&Drop down menus"
+msgstr "menús &Desplegables"
+
+msgid "Shell &patterns"
+msgstr ""
+
+msgid "Co&mplete: show all"
+msgstr ""
+
+msgid "Rotating d&ash"
+msgstr ""
+
+msgid "Cd follows lin&ks"
+msgstr ""
+
+msgid "Sa&fe delete"
+msgstr ""
+
+msgid "A&uto save setup"
 msgstr ""
 
 msgid "Configure options"
@@ -3013,65 +3008,62 @@ msgstr "Opcions de configuració"
 msgid "Case &insensitive"
 msgstr ""
 
-msgid "Case s&ensitive"
-msgstr ""
-
 msgid "Use panel sort mo&de"
 msgstr ""
 
-msgid "Quick search"
-msgstr "Cerca ràpida"
-
-msgid "&Permissions"
-msgstr "&Permisos"
-
-msgid "File &types"
-msgstr "&Tipus de fitxer"
-
-msgid "File highlight"
-msgstr ""
-
-msgid "&Mouse page scrolling"
-msgstr ""
-
-msgid "Pa&ge scrolling"
-msgstr ""
-
-msgid "L&ynx-like motion"
-msgstr "moviment com a la L&ynx"
-
-msgid "Navigation"
-msgstr "Navegació"
-
-msgid "A&uto save panels setup"
-msgstr ""
-
-msgid "Simple s&wap"
-msgstr ""
-
-msgid "Re&verse files only"
-msgstr ""
-
-msgid "Ma&rk moves down"
-msgstr ""
-
-msgid "&Fast dir reload"
-msgstr "recàrrega &Ràpida de directoris"
-
-msgid "Show &hidden files"
-msgstr "Mostra els fitxers &ocults"
-
-msgid "Show &backup files"
-msgstr "Mostra les &còpies de seguretat"
-
-msgid "Mi&x all files"
+msgid "Show mi&ni-status"
 msgstr ""
 
 msgid "Use SI si&ze units"
 msgstr ""
 
-msgid "Show mi&ni-status"
+msgid "Mi&x all files"
 msgstr ""
+
+msgid "Show &backup files"
+msgstr "Mostra les &còpies de seguretat"
+
+msgid "Show &hidden files"
+msgstr "Mostra els fitxers &ocults"
+
+msgid "&Fast dir reload"
+msgstr "recàrrega &Ràpida de directoris"
+
+msgid "Ma&rk moves down"
+msgstr ""
+
+msgid "Re&verse files only"
+msgstr ""
+
+msgid "Simple s&wap"
+msgstr ""
+
+msgid "A&uto save panels setup"
+msgstr ""
+
+msgid "Navigation"
+msgstr "Navegació"
+
+msgid "L&ynx-like motion"
+msgstr "moviment com a la L&ynx"
+
+msgid "Pa&ge scrolling"
+msgstr ""
+
+msgid "&Mouse page scrolling"
+msgstr ""
+
+msgid "File highlight"
+msgstr ""
+
+msgid "File &types"
+msgstr "&Tipus de fitxer"
+
+msgid "&Permissions"
+msgstr "&Permisos"
+
+msgid "Quick search"
+msgstr "Cerca ràpida"
 
 msgid "Panel options"
 msgstr ""
@@ -3112,8 +3104,8 @@ msgstr "&Versió"
 msgid "sort|e"
 msgstr "ordena|e"
 
-msgid "&Extension"
-msgstr "&Extensió"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3223,11 +3215,11 @@ msgstr "Afegeix un &nou"
 msgid "External panelize"
 msgstr "Quadre de recerca externa"
 
-msgid "Command"
-msgstr "Ordre"
-
 msgid "Other command"
 msgstr "Una altre ordre"
+
+msgid "Command"
+msgstr "Ordre"
 
 msgid "Add to external panelize"
 msgstr ""
@@ -3430,15 +3422,11 @@ msgstr ""
 "Genial! Teniu una base de dades de terminals\n"
 "completa! Totes les tecles funcionen."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Premeu totes les tecles esmentades. Quan ho hagueu fet, comproveu"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
 msgstr ""
-"a quina tecla no hi ha la marca \"D'acord\".  Per definir-la, premeu-hi"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
-msgstr "l'espai o feu-hi clic. Per desplaçar-vos, utilitzeu el tabulador."
 
 #, c-format
 msgid ""
@@ -3552,6 +3540,9 @@ msgid "Config directory:"
 msgstr ""
 
 msgid "Data directory:"
+msgstr ""
+
+msgid "File extension handlers:"
 msgstr ""
 
 msgid "VFS plugins and scripts:"
@@ -3670,9 +3661,6 @@ msgstr "fish: desa %s: està enviant l'ordre..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: Ha fallat la lectura local, s'està enviant zeros"
-
-msgid "fish: storing zeros"
-msgstr "fish: emmagatzemant zeros"
 
 msgid "fish: storing file"
 msgstr "fish: emmagatzemant arxiu"

@@ -580,25 +580,28 @@ real_do_file_error (enum OperationMode mode, const char *error)
 static FileProgressStatus
 real_query_recursive (FileOpContext * ctx, enum OperationMode mode, const char *s)
 {
-    gchar *text;
 
     if (ctx->recursive_result < RECURSIVE_ALWAYS)
     {
-        const char *msg = mode == Foreground
-            ? _("\nDirectory not empty.\nDelete it recursively?")
-            : _("\nBackground process: Directory not empty.\nDelete it recursively?");
-        text = g_strconcat (_("Delete:"), " ", path_trunc (s, 30), (char *) NULL);
+
+        const char *msg;
+        char *text;
+
+        msg = mode == Foreground
+            ? _("Directory \"%s\" not empty.\nDelete it recursively?")
+            : _("Background process:\nDirectory \"%s\" not empty.\nDelete it recursively?");
+        text = g_strdup_printf (msg, path_trunc (s, 30));
 
         if (safe_delete)
             query_set_sel (1);
 
         ctx->recursive_result =
-            (FileCopyMode) query_dialog (text, msg, D_ERROR, 5,
+            (FileCopyMode) query_dialog (op_names[OP_DELETE], text, D_ERROR, 5,
                                          _("&Yes"), _("&No"), _("A&ll"), _("Non&e"), _("&Abort"));
+        g_free (text);
 
         if (ctx->recursive_result != RECURSIVE_ABORT)
             do_refresh ();
-        g_free (text);
     }
 
     switch (ctx->recursive_result)
@@ -1341,8 +1344,18 @@ panel_operate_generate_prompt (const WPanel * panel, FileOperation operation,
             if (cp != NULL)
             {
                 sp += 2;
+
                 while (*cp != '\0')
                     *dp++ = *cp++;
+
+                /* form two-lines query prompt for file deletion */
+                if (operation == OP_DELETE && sp[-1] == 'f')
+                {
+                    *dp++ = '\n';
+
+                    while (isblank (*sp) != 0)
+                        sp++;
+                }
             }
             break;
         default:
@@ -1920,7 +1933,7 @@ copy_file_file (FileOpTotalContext * tctx, FileOpContext * ctx,
    function calls */
 
 FileProgressStatus
-copy_dir_dir (FileOpTotalContext * tctx, FileOpContext * ctx, const char *s, const char *_d,
+copy_dir_dir (FileOpTotalContext * tctx, FileOpContext * ctx, const char *s, const char *d,
               gboolean toplevel, gboolean move_over, gboolean do_delete, GSList * parent_dirs)
 {
     struct dirent *next;
@@ -1930,13 +1943,11 @@ copy_dir_dir (FileOpTotalContext * tctx, FileOpContext * ctx, const char *s, con
     FileProgressStatus return_status = FILE_CONT;
     struct utimbuf utb;
     struct link *lp;
-    char *d;
     vfs_path_t *src_vpath, *dst_vpath, *dest_dir_vpath = NULL;
-
-    d = g_strdup (_d);
+    gboolean do_mkdir = TRUE;
 
     src_vpath = vfs_path_from_str (s);
-    dst_vpath = vfs_path_from_str (_d);
+    dst_vpath = vfs_path_from_str (d);
 
     /* First get the mode of the source dir */
 
@@ -2017,8 +2028,7 @@ copy_dir_dir (FileOpTotalContext * tctx, FileOpContext * ctx, const char *s, con
                 goto ret;
             }
         }
-        dest_dir = d;
-        d = NULL;
+        dest_dir = g_strdup (d);
     }
     else
     {
@@ -2046,37 +2056,40 @@ copy_dir_dir (FileOpTotalContext * tctx, FileOpContext * ctx, const char *s, con
         }
         /* Dive into subdir if exists */
         if (toplevel && ctx->dive_into_subdirs)
-        {
             dest_dir = mc_build_filename (d, x_basename (s), NULL);
-        }
         else
         {
-            dest_dir = d;
-            d = NULL;
-            goto dont_mkdir;
+            dest_dir = g_strdup (d);
+            do_mkdir = FALSE;
         }
-    }
-    dest_dir_vpath = vfs_path_from_str (dest_dir);
-    while (my_mkdir (dest_dir_vpath, (cbuf.st_mode & ctx->umask_kill) | S_IRWXU) != 0)
-    {
-        if (ctx->skip_all)
-            return_status = FILE_SKIPALL;
-        else
-        {
-            return_status = file_error (_("Cannot create target directory \"%s\"\n%s"), dest_dir);
-            if (return_status == FILE_SKIPALL)
-                ctx->skip_all = TRUE;
-        }
-        if (return_status != FILE_RETRY)
-            goto ret;
     }
 
-    lp = g_new0 (struct link, 1);
-    mc_stat (dest_dir_vpath, &buf);
-    lp->vfs = vfs_path_get_by_index (dest_dir_vpath, -1)->class;
-    lp->ino = buf.st_ino;
-    lp->dev = buf.st_dev;
-    dest_dirs = g_slist_prepend (dest_dirs, lp);
+    dest_dir_vpath = vfs_path_from_str (dest_dir);
+
+    if (do_mkdir)
+    {
+        while (my_mkdir (dest_dir_vpath, (cbuf.st_mode & ctx->umask_kill) | S_IRWXU) != 0)
+        {
+            if (ctx->skip_all)
+                return_status = FILE_SKIPALL;
+            else
+            {
+                return_status =
+                    file_error (_("Cannot create target directory \"%s\"\n%s"), dest_dir);
+                if (return_status == FILE_SKIPALL)
+                    ctx->skip_all = TRUE;
+            }
+            if (return_status != FILE_RETRY)
+                goto ret;
+        }
+
+        lp = g_new0 (struct link, 1);
+        mc_stat (dest_dir_vpath, &buf);
+        lp->vfs = vfs_path_get_by_index (dest_dir_vpath, -1)->class;
+        lp->ino = buf.st_ino;
+        lp->dev = buf.st_dev;
+        dest_dirs = g_slist_prepend (dest_dirs, lp);
+    }
 
     if (ctx->preserve_uidgid)
     {
@@ -2096,7 +2109,6 @@ copy_dir_dir (FileOpTotalContext * tctx, FileOpContext * ctx, const char *s, con
         }
     }
 
-  dont_mkdir:
     /* open the source dir for reading */
     reading = mc_opendir (src_vpath);
     if (reading == NULL)
@@ -2182,7 +2194,6 @@ copy_dir_dir (FileOpTotalContext * tctx, FileOpContext * ctx, const char *s, con
     free_link (parent_dirs->data);
     g_slist_free_1 (parent_dirs);
   ret_fast:
-    g_free (d);
     vfs_path_free (src_vpath);
     vfs_path_free (dst_vpath);
     return return_status;
@@ -2414,14 +2425,14 @@ compute_dir_size_create_ui (void)
 
     ui = g_new (ComputeDirSizeUI, 1);
 
-    ui->dlg = create_dlg (TRUE, 0, 0, 8, COLS / 2, dialog_colors, NULL, NULL,
+    ui->dlg = create_dlg (TRUE, 0, 0, 7, COLS / 2, dialog_colors, NULL, NULL,
                           NULL, _("Directory scanning"), DLG_CENTER);
-    ui->dirname = label_new (3, 3, "");
+    ui->dirname = label_new (2, 3, "");
     add_widget (ui->dlg, ui->dirname);
-
-    add_widget (ui->dlg,
-                button_new (5, (ui->dlg->cols - strlen (b_name)) / 2,
-                            FILE_ABORT, NORMAL_BUTTON, b_name, NULL));
+    add_widget (ui->dlg, hline_new (3, -1, -1));
+    add_widget_autopos (ui->dlg,
+                        button_new (4, 2, FILE_ABORT, NORMAL_BUTTON, b_name, NULL),
+                        WPOS_KEEP_TOP | WPOS_CENTER_HORZ, NULL);
 
     /* We will manage the dialog without any help,
        that's why we have to call init_dlg */
@@ -2461,7 +2472,7 @@ compute_dir_size_update_ui (const void *ui, const vfs_path_t * dirname_vpath)
         return FILE_CONT;
 
     dirname = vfs_path_to_str (dirname_vpath);
-    label_set_text (this->dirname, str_trunc (dirname, this->dlg->cols - 6));
+    label_set_text (this->dirname, str_trunc (dirname, WIDGET (this->dlg)->cols - 6));
     g_free (dirname);
 
     event.x = -1;               /* Don't show the GPM cursor */
@@ -2617,7 +2628,7 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
     static gboolean i18n_flag = FALSE;
     if (!i18n_flag)
     {
-        for (i = sizeof (op_names1) / sizeof (op_names1[0]); i--;)
+        for (i = sizeof (op_names) / sizeof (op_names[0]); i--;)
             op_names[i] = Q_ (op_names[i]);
         i18n_flag = TRUE;
     }
@@ -2755,26 +2766,6 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
     tctx = file_op_total_context_new ();
     gettimeofday (&tctx->transfer_start, (struct timezone *) NULL);
 
-    {
-        filegui_dialog_type_t dialog_type;
-
-        if (operation == OP_DELETE)
-            dialog_type = FILEGUI_DIALOG_DELETE_ITEM;
-        else
-        {
-            dialog_type = !((operation != OP_COPY) || (single_entry) || (force_single))
-                ? FILEGUI_DIALOG_MULTI_ITEM : FILEGUI_DIALOG_ONE_ITEM;
-
-            if ((single_entry) && (operation == OP_COPY) && S_ISDIR (selection (panel)->st.st_mode))
-                dialog_type = FILEGUI_DIALOG_MULTI_ITEM;
-        }
-
-        /* Background also need ctx->ui, but not full */
-        if (do_bg)
-            file_op_context_create_ui_without_init (ctx, TRUE, dialog_type);
-        else
-            file_op_context_create_ui (ctx, TRUE, dialog_type);
-    }
 
 #ifdef ENABLE_BACKGROUND
     /* Did the user select to do a background operation? */
@@ -2801,17 +2792,35 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
             return FALSE;
         }
     }
+    else
 #endif /* ENABLE_BACKGROUND */
+    {
+        filegui_dialog_type_t dialog_type;
+
+        if (operation == OP_DELETE)
+            dialog_type = FILEGUI_DIALOG_DELETE_ITEM;
+        else
+        {
+            dialog_type = ((operation != OP_COPY) || single_entry || force_single)
+                ? FILEGUI_DIALOG_ONE_ITEM : FILEGUI_DIALOG_MULTI_ITEM;
+
+            if (single_entry && (operation == OP_COPY) && S_ISDIR (selection (panel)->st.st_mode))
+                dialog_type = FILEGUI_DIALOG_MULTI_ITEM;
+        }
+
+        file_op_context_create_ui (ctx, TRUE, dialog_type);
+    }
 
     /* Initialize things */
     /* We do not want to trash cache every time file is
        created/touched. However, this will make our cache contain
        invalid data. */
-    if ((dest != NULL) && (mc_setctl (dest_vpath, VFS_SETCTL_STALE_DATA, (void *) 1)))
+    if ((dest != NULL)
+        && (mc_setctl (dest_vpath, VFS_SETCTL_STALE_DATA, GUINT_TO_POINTER (1)) != 0))
         save_dest = g_strdup (dest);
 
     if ((vfs_path_tokens_count (panel->cwd_vpath) != 0)
-        && (mc_setctl (panel->cwd_vpath, VFS_SETCTL_STALE_DATA, (void *) 1)))
+        && (mc_setctl (panel->cwd_vpath, VFS_SETCTL_STALE_DATA, GUINT_TO_POINTER (1)) != 0))
         save_cwd = vfs_path_to_str (panel->cwd_vpath);
 
     /* Now, let's do the job */

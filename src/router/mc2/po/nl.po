@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
 "Last-Translator: bucovaina78 <wannessmet@gmail.com>\n"
 "Language-Team: Dutch (http://www.transifex.com/projects/p/mc/language/nl/)\n"
 "Language: nl\n"
@@ -531,14 +531,14 @@ msgstr "&Ja"
 msgid "&No"
 msgstr "&Nee"
 
-msgid "Background process:"
-msgstr "Achtergrondproces:"
+msgid "&OK"
+msgstr "&OK"
 
 msgid "&Cancel"
 msgstr "&Afbreken"
 
-msgid "&OK"
-msgstr "&OK"
+msgid "Background process:"
+msgstr "Achtergrondproces:"
 
 msgid "Error"
 msgstr "Fout"
@@ -728,20 +728,20 @@ msgstr "Het backgound proces stuurde meer data dan we konden verwerken"
 msgid "&Dismiss"
 msgstr "&Verwerp"
 
-msgid "&All charsets"
-msgstr "&Alle karaktersets"
-
-msgid "&Whole words"
-msgstr "Hele &woorden"
-
-msgid "&Backwards"
-msgstr "&Terug"
+msgid "Enter search string:"
+msgstr "Geef de zoektekst :"
 
 msgid "Cas&e sensitive"
 msgstr "Hoofd-/kleine le&tters"
 
-msgid "Enter search string:"
-msgstr "Geef de zoektekst :"
+msgid "&Backwards"
+msgstr "&Terug"
+
+msgid "&Whole words"
+msgstr "Hele &woorden"
+
+msgid "&All charsets"
+msgstr "&Alle karaktersets"
 
 msgid "Search"
 msgstr "Zoeken"
@@ -781,26 +781,26 @@ msgstr "&Snelste (uitgaan van grote bestanden)"
 msgid "&Minimal (Find a smaller set of change)"
 msgstr "&Minimaal (zoek een kleinere set van verandering)"
 
-msgid "Strip &trailing carriage return"
-msgstr "Strip &trailing carriage return"
-
-msgid "Ignore all &whitespace"
-msgstr "Negeer alle &witruimte"
-
-msgid "Ignore &space change"
-msgstr "Negeren &spatieverandering"
-
-msgid "Ignore tab &expansion"
-msgstr "Negeer tabbladuitbr&eiding"
-
-msgid "&Ignore case"
-msgstr "Hoofdletterongevoel&ig"
+msgid "Diff algorithm"
+msgstr "Diff-algoritme"
 
 msgid "Diff extra options"
 msgstr "Diff extra opties"
 
-msgid "Diff algorithm"
-msgstr "Diff-algoritme"
+msgid "&Ignore case"
+msgstr "Hoofdletterongevoel&ig"
+
+msgid "Ignore tab &expansion"
+msgstr "Negeer tabbladuitbr&eiding"
+
+msgid "Ignore &space change"
+msgstr "Negeren &spatieverandering"
+
+msgid "Ignore all &whitespace"
+msgstr "Negeer alle &witruimte"
+
+msgid "Strip &trailing carriage return"
+msgstr "Strip &trailing carriage return"
 
 msgid "Diff Options"
 msgstr "Opties diff"
@@ -946,11 +946,11 @@ msgstr "&Windows/DOS formaat (CR LF)"
 msgid "&Macintosh format (CR)"
 msgstr "&Macintosh formaat (CR)"
 
-msgid "Change line breaks to:"
-msgstr "Verander regeleindes naar:"
-
 msgid "Enter file name:"
 msgstr "Geef bestandsnaam:"
+
+msgid "Change line breaks to:"
+msgstr "Verander regeleindes naar:"
 
 msgid "Save As"
 msgstr "Opslaan Als"
@@ -1126,17 +1126,17 @@ msgstr "Externe opdracht"
 msgid "Cannot execute command"
 msgstr "Kan opdracht niet uitvoeren"
 
-msgid "Copies to"
-msgstr "Kopie naar"
-
-msgid "Subject"
-msgstr "Onderwerp"
+msgid "mail -s <subject> -c <cc> <to>"
+msgstr "mail -s <subject> -c <cc> <to>"
 
 msgid "To"
 msgstr "Naar"
 
-msgid "mail -s <subject> -c <cc> <to>"
-msgstr "mail -s <subject> -c <cc> <to>"
+msgid "Subject"
+msgstr "Onderwerp"
+
+msgid "Copies to"
+msgstr "Kopie naar"
 
 msgid "Mail"
 msgstr "Mail"
@@ -1157,11 +1157,26 @@ msgstr ""
 msgid "In se&lection"
 msgstr "In se&lectie"
 
+msgid "&Find all"
+msgstr "&Vind allemaal"
+
 msgid "Enter replacement string:"
 msgstr "Geef de vervangende string:"
 
-msgid "&Find all"
-msgstr "&Vind allemaal"
+msgid "Replace with:"
+msgstr "Vervang met:"
+
+msgid "&Replace"
+msgstr "Ve&rvangen"
+
+msgid "A&ll"
+msgstr "A&lle"
+
+msgid "&Skip"
+msgstr "Over&slaan"
+
+msgid "Confirm replace"
+msgstr "Vervangen bevestigen"
 
 msgid "Cancel"
 msgstr "Annuleren"
@@ -1172,21 +1187,6 @@ msgid ""
 msgstr ""
 "Deze tekst is veranderd zonder te zijn opgeslagen.\n"
 "Doorgaan gooit alle wijzigingen weg."
-
-msgid "&Skip"
-msgstr "Over&slaan"
-
-msgid "A&ll"
-msgstr "A&lle"
-
-msgid "&Replace"
-msgstr "Ve&rvangen"
-
-msgid "Replace with:"
-msgstr "Vervang met:"
-
-msgid "Confirm replace"
-msgstr "Vervangen bevestigen"
 
 msgid "NoName"
 msgstr ""
@@ -1410,72 +1410,82 @@ msgstr ""
 msgid "&Options"
 msgstr "&Opties"
 
-msgid "None"
-msgstr "Geen"
+msgid "&None"
+msgstr ""
 
-msgid "Dynamic paragraphing"
-msgstr "Dynamische regeluitvulling"
+msgid "&Dynamic paragraphing"
+msgstr ""
 
-msgid "Type writer wrap"
-msgstr "Typemachine-afbreking"
-
-msgid "Word wrap line length:"
-msgstr "Regellengte voor afbreken:"
-
-msgid "&Group undo"
-msgstr "&Groep ongedaanmaken"
-
-msgid "Cursor beyond end of line"
-msgstr "Cursor voorbij regeleinde"
-
-msgid "Pers&istent selection"
-msgstr "Vastliggende s&electie"
-
-msgid "Synta&x highlighting"
-msgstr "Synta&x oplichting"
-
-msgid "Visible tabs"
-msgstr "Zichtbare tabs"
-
-msgid "Visible trailing spaces"
-msgstr "Zichtbare spaties regeleinde"
-
-msgid "Save file &position"
-msgstr "&Positie van bestand opslaan"
-
-msgid "Confir&m before saving"
-msgstr "Be&vestigen voor opslaan"
-
-msgid "&Return does autoindent"
-msgstr "&Return springt automatisch in"
-
-msgid "Tab spacing:"
-msgstr "Tab afstand:"
-
-msgid "Fill tabs with &spaces"
-msgstr "Tabs met &spaties vullen"
-
-msgid "&Backspace through tabs"
-msgstr "&Backspace door Tabs"
-
-msgid "&Fake half tabs"
-msgstr "Simuleer &halve tabs"
+msgid "Type &writer wrap"
+msgstr ""
 
 msgid "Wrap mode"
 msgstr "Woordafbrekingsmodus"
 
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "Simuleer &halve tabs"
+
+msgid "&Backspace through tabs"
+msgstr "&Backspace door Tabs"
+
+msgid "Fill tabs with &spaces"
+msgstr "Tabs met &spaties vullen"
+
+msgid "Tab spacing:"
+msgstr "Tab afstand:"
+
+msgid "Other options"
+msgstr "Andere opties"
+
+msgid "&Return does autoindent"
+msgstr "&Return springt automatisch in"
+
+msgid "Confir&m before saving"
+msgstr "Be&vestigen voor opslaan"
+
+msgid "Save file &position"
+msgstr "&Positie van bestand opslaan"
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
+msgstr ""
+
+msgid "Synta&x highlighting"
+msgstr "Synta&x oplichting"
+
+msgid "C&ursor after inserted block"
+msgstr ""
+
+msgid "Pers&istent selection"
+msgstr "Vastliggende s&electie"
+
+msgid "Cursor be&yond end of line"
+msgstr ""
+
+msgid "&Group undo"
+msgstr "&Groep ongedaanmaken"
+
+msgid "Word wrap line length:"
+msgstr "Regellengte voor afbreken:"
+
 msgid "Editor options"
 msgstr "Editor opties"
 
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
+msgstr ""
+
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
 msgid "About"
 msgstr "Over"
-
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
 
 msgid "Open files"
 msgstr ""
@@ -1556,14 +1566,14 @@ msgstr "Type 'exit' om terug te keren naar MC"
 msgid "Cannot fetch a local copy of %s"
 msgstr "Er kan geen lokale kopie van %s worden opgehaald"
 
-msgid "&Set"
-msgstr "&Zetten"
+msgid "Set &all"
+msgstr "Zet &alles"
 
 msgid "S&kip"
 msgstr "&Overslaan"
 
-msgid "Set &all"
-msgstr "Zet &alles"
+msgid "&Set"
+msgstr "&Zetten"
 
 msgid "owner"
 msgstr "eigenaar"
@@ -1574,18 +1584,8 @@ msgstr "groep"
 msgid "other"
 msgstr "anderen"
 
-msgid "On"
-msgstr "Op"
-
 msgid "Flag"
 msgstr "Vlag"
-
-msgid "Mode"
-msgstr "Modus"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d van %d"
 
 msgid "Chown advanced command"
 msgstr "Uitgebreide opdracht 'chown'"
@@ -1606,14 +1606,14 @@ msgstr ""
 "chown voor \"%s\" mislukt \n"
 "%s"
 
-msgid "&Stop"
-msgstr "&Stop"
+msgid "Other 8 bit"
+msgstr "Andere 8 bits"
 
-msgid "&Resume"
-msgstr "&Doorgaan"
+msgid "Running"
+msgstr "Aan het draaien"
 
-msgid "&Kill"
-msgstr "&Kill"
+msgid "Stopped"
+msgstr "Angehalten"
 
 msgid "&Full file list"
 msgstr "&Complete bestandenlijst"
@@ -1627,14 +1627,57 @@ msgstr "&Lange bestandenlijst"
 msgid "&User defined:"
 msgstr "Aange&past:"
 
-msgid "Listing mode"
-msgstr "Lijstmodus"
-
 msgid "User &mini status"
 msgstr "&Ministatus gebruiker"
 
-msgid "Other 8 bit"
-msgstr "Andere 8 bits"
+msgid "Listing mode"
+msgstr "Lijstmodus"
+
+msgid "Executable &first"
+msgstr "&Uitvoerbare bestanden eerst"
+
+msgid "&Reverse"
+msgstr "Omd&raaien"
+
+msgid "Sort order"
+msgstr "Sortering"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr "Verwij&deren"
+
+msgid "Confirmation|O&verwrite"
+msgstr "O&verschrijven"
+
+msgid "Confirmation|&Execute"
+msgstr "Uitvo&eren"
+
+msgid "Confirmation|E&xit"
+msgstr "E&xit"
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr "Map hotlist ve&rwijderen"
+
+msgid "Confirmation|&History cleanup"
+msgstr "&Geschiedenis opschonen"
+
+msgid "Confirmation"
+msgstr "Bevestiging"
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "&Volledige 8-bit invoer"
 
 msgid "Display bits"
 msgstr "Weergave bits"
@@ -1642,91 +1685,32 @@ msgstr "Weergave bits"
 msgid "Input / display codepage:"
 msgstr "Invoer / weergave karakterset:"
 
-msgid "F&ull 8 bits input"
-msgstr "&Volledige 8-bit invoer"
-
 msgid "&Select"
 msgstr "&Selecteer"
-
-msgid "Running"
-msgstr "Aan het draaien"
-
-msgid "Stopped"
-msgstr "Angehalten"
-
-msgid "&Reverse"
-msgstr "Omd&raaien"
-
-msgid "Case sensi&tive"
-msgstr "Hoofd-/kleine le&tters"
-
-msgid "Executable &first"
-msgstr "&Uitvoerbare bestanden eerst"
-
-msgid "Sort order"
-msgstr "Sortering"
-
-msgid "Confirmation"
-msgstr "Bevestiging"
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr "&Geschiedenis opschonen"
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr "Map hotlist ve&rwijderen"
-
-msgid "Confirmation|E&xit"
-msgstr "E&xit"
-
-msgid "Confirmation|&Execute"
-msgstr "Uitvo&eren"
-
-msgid "Confirmation|O&verwrite"
-msgstr "O&verschrijven"
-
-msgid "Confirmation|&Delete"
-msgstr "Verwij&deren"
-
-msgid "UTF-8 output"
-msgstr "UTF-8 uitvoer"
-
-msgid "Full 8 bits output"
-msgstr "Volledige 8-bit uitvoer"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7-bit"
 
 msgid "Directory tree"
 msgstr "Maphiërarchie"
 
-msgid "Use passive mode over pro&xy"
-msgstr "Gebruik passieve modus over pro&xy"
+msgid "Timeout for freeing VFSs (sec):"
+msgstr ""
 
-msgid "Use &passive mode"
-msgstr "&Passieve modus gebruiken"
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
+msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr "&Gebruik ~/.netrc"
 
-msgid "&Always use ftp proxy"
-msgstr "Altijd &FTP-proxy gebruiken"
+msgid "Use &passive mode"
+msgstr "&Passieve modus gebruiken"
 
-msgid "sec"
-msgstr "sec"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "ftpfs map-cache timeout:"
-
-msgid "ftp anonymous password:"
-msgstr "Anonieme-ftp wachtwoord:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "Timeout bij vrijgegeven VFS'en:"
+msgid "Use passive mode over pro&xy"
+msgstr "Gebruik passieve modus over pro&xy"
 
 msgid "Virtual File System Setting"
 msgstr " Instellingen voor het Virtuele Bestandssysteem - VFS "
@@ -1737,17 +1721,30 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "Snelle cd"
 
-msgid "Symbolic link filename:"
-msgstr "Naam voor de symbolische link:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr "Bestaand bestand (Symbolische link moet wijzen naar):"
+
+msgid "Symbolic link filename:"
+msgstr "Naam voor de symbolische link:"
 
 msgid "Symbolic link"
 msgstr "Symbolische Link"
 
-msgid "Background Jobs"
-msgstr "Achtergrondtaken"
+msgid "&Stop"
+msgstr "&Stop"
+
+msgid "&Resume"
+msgstr "&Doorgaan"
+
+msgid "&Kill"
+msgstr "&Kill"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "Wachtwoord voor \\\\%s\\%s"
 
 msgid "Domain:"
 msgstr "Domein:"
@@ -1755,45 +1752,44 @@ msgstr "Domein:"
 msgid "Username:"
 msgstr " Gebruikersnaam:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Wachtwoord voor \\\\%s\\%s"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "uitvoeren/zoeken door anderen"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "schrijven door anderen"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "lezen door anderen"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "uitvoeren/lezen door eigen groep"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "schrijven door eigen groep"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "lezen door eigen groep"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "uitvoeren/zoeken door eigenaar"
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "schrijven door eigenaar"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "lezen door eigenaar"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "plak bit"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "zet groeps-ID(GID) bij uitvoering"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "zet gebruikers-ID(UID) bij uitvoering"
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr "Naam:"
@@ -1807,29 +1803,29 @@ msgstr "Naam eigenaar:"
 msgid "Group name:"
 msgstr "Groepsnaam:"
 
-msgid "C&lear marked"
-msgstr "Mar&kering opheffen"
+msgid "&Marked all"
+msgstr "Alle gemarkeerden"
 
 msgid "S&et marked"
 msgstr "Z&et de gemarkeerde"
 
-msgid "&Marked all"
-msgstr "Alle gemarkeerden"
+msgid "C&lear marked"
+msgstr "Mar&kering opheffen"
 
 msgid "Chmod command"
 msgstr "'chmod'-opdracht"
 
-msgid "File"
-msgstr "Bestand"
-
 msgid "Permission"
 msgstr "Rechten"
 
-msgid "Set &users"
-msgstr "Instellen gebruikers"
+msgid "File"
+msgstr "Bestand"
 
 msgid "Set &groups"
 msgstr "Instellen &Groepen"
+
+msgid "Set &users"
+msgstr "Instellen gebruikers"
 
 msgid "Name"
 msgstr "Naam"
@@ -1846,14 +1842,14 @@ msgstr "Grootte"
 msgid "Chown command"
 msgstr "Chown opdracht"
 
+msgid "User name"
+msgstr "Gebruikersnaam"
+
 msgid "<Unknown user>"
 msgstr "<onbekende gebruiker>"
 
 msgid "<Unknown group>"
 msgstr "<onbekende groep>"
-
-msgid "User name"
-msgstr "Gebruikersnaam"
 
 msgid "Enter machine name (F1 for details):"
 msgstr "Voer computernaam in (F1 voor details):"
@@ -1870,14 +1866,14 @@ msgstr "Filter"
 msgid "Set expression for filtering filenames"
 msgstr " Zet expressie voor het filteren van bestandsnamen"
 
+msgid "&Files only"
+msgstr "Alleen &bestanden"
+
 msgid "&Using shell patterns"
 msgstr "Shell Patroon gebr&uiken"
 
 msgid "&Case sensitive"
 msgstr "Hoofd-/kleine le&tters"
-
-msgid "&Files only"
-msgstr "Alleen &bestanden"
 
 #, c-format
 msgid "Link %s to:"
@@ -2160,26 +2156,18 @@ msgstr "Alles ove&rslaan"
 msgid "&Retry"
 msgstr "&Nogmaals"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Map is niet leeg.   \n"
-"Recursief verwijderen? "
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Achtergrondproces: Map is niet leeg \n"
-"Recursief verwijderen? "
-
-msgid "Delete:"
-msgstr "Verwijderen:"
 
 msgid "Non&e"
 msgstr "Ge&en"
@@ -2449,6 +2437,12 @@ msgstr "Opereren op \"..\" is niet mogelijk! "
 msgid "Sorry, I could not put the job in background"
 msgstr "Sorry, de taak kon niet in de achtergrond geplaatst worden"
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "&Doorgaan"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr "%d:%02d.%02d"
@@ -2473,30 +2467,30 @@ msgid "Target file already exists!"
 msgstr "Doelbestand  bestaat reeds!"
 
 #, c-format
-msgid "Source date: %s, size %llu"
-msgstr "Brondatum: %s, grootte %llu"
+msgid "New     : %s, size %llu"
+msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
-msgstr "Doeldatum: %s, grootte %llu"
+msgid "Existing: %s, size %llu"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "Indien grootte ver&schilt"
-
-msgid "&Update"
-msgstr "Verversen"
-
-msgid "Overwrite all targets?"
-msgstr "Alle doelen overschrijven?"
-
-msgid "&Reget"
-msgstr "&Reget"
+msgid "Overwrite this target?"
+msgstr "Dit doel overschrijven?"
 
 msgid "A&ppend"
 msgstr "&Toevoegen"
 
-msgid "Overwrite this target?"
-msgstr "Dit doel overschrijven?"
+msgid "&Reget"
+msgstr "&Reget"
+
+msgid "Overwrite all targets?"
+msgstr "Alle doelen overschrijven?"
+
+msgid "&Update"
+msgstr "Verversen"
+
+msgid "If &size differs"
+msgstr "Indien grootte ver&schilt"
 
 msgid "File exists"
 msgstr "Bestand bestaat"
@@ -2545,30 +2539,24 @@ msgstr "Doel"
 msgid "Deleting"
 msgstr "Aan het verwijderen"
 
-msgid "&Background"
-msgstr "Achter&grond"
-
-msgid "&Stable Symlinks"
-msgstr "&Stabiele symbolische links"
-
-msgid "Di&ve into subdir if exists"
-msgstr "Ga door submap, als de&ze bestaat"
+msgid "Follow &links"
+msgstr "Volg &links"
 
 msgid "Preserve &attributes"
 msgstr "&Attributen behouden"
 
-msgid "Follow &links"
-msgstr "Volg &links"
+msgid "Di&ve into subdir if exists"
+msgstr "Ga door submap, als de&ze bestaat"
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "Achter&grond"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr "Ongeldig bronpatroon `%s'"
-
-msgid "&Suspend"
-msgstr "&Opschorten"
-
-msgid "Con&tinue"
-msgstr "&Doorgaan"
 
 msgid "&Chdir"
 msgstr "&Chdir"
@@ -2592,11 +2580,17 @@ msgstr "Gevonden: %ld"
 msgid "Malformed regular expression"
 msgstr "Slecht geformuleerde reguliere expressie"
 
+msgid "File name:"
+msgstr "Bestandsnaam:"
+
 msgid "&Find recursively"
 msgstr "&Vind recursief"
 
 msgid "S&kip hidden"
 msgstr "S&la verborgen over"
+
+msgid "Content:"
+msgstr "Inhoud:"
 
 msgid "Sea&rch for content"
 msgstr "Zoe&k naar inhoud"
@@ -2604,11 +2598,11 @@ msgstr "Zoe&k naar inhoud"
 msgid "Case sens&itive"
 msgstr "Hoofd-/kleine le&tters"
 
-msgid "Fir&st hit"
-msgstr "Eer&ste hit"
-
 msgid "A&ll charsets"
 msgstr "A&lle karaktersets"
+
+msgid "Fir&st hit"
+msgstr "Eer&ste hit"
 
 msgid "&Tree"
 msgstr "&Boom"
@@ -2616,17 +2610,11 @@ msgstr "&Boom"
 msgid "Find File"
 msgstr "Bestand zoeken"
 
-msgid "Content:"
-msgstr "Inhoud:"
-
-msgid "File name:"
-msgstr "Bestandsnaam:"
+msgid "Start at:"
+msgstr "Beginnen bij:"
 
 msgid "Ena&ble ignore directories:"
 msgstr "Schakel directories ne&geren in"
-
-msgid "Start at:"
-msgstr "Beginnen bij:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2648,35 +2636,32 @@ msgstr "Zoeken naar %s"
 msgid "Searching"
 msgstr "Aan het zoeken"
 
-msgid "&Remove"
-msgstr "Ver&wijderen"
+msgid "Change &to"
+msgstr "Ver&ander in"
 
-msgid "&Append"
-msgstr "&Toevoegen"
-
-msgid "&Insert"
-msgstr "&Invoegen"
-
-msgid "New &entry"
-msgstr "Nieuw &Item"
-
-msgid "New &group"
-msgstr "Nieuwe &groep"
-
-msgid "&Up"
-msgstr "Naar &boven"
-
-msgid "&Add current"
-msgstr "&Huidige toevoegen"
+msgid "&Free VFSs now"
+msgstr ""
 
 msgid "&Refresh"
 msgstr "Ve&rversen"
 
-msgid "Fr&ee VFSs now"
-msgstr "&Maak VFS's nu vrij"
+msgid "&Add current"
+msgstr "&Huidige toevoegen"
 
-msgid "Change &to"
-msgstr "Ver&ander in"
+msgid "&Up"
+msgstr "Naar &boven"
+
+msgid "New &group"
+msgstr "Nieuwe &groep"
+
+msgid "New &entry"
+msgstr "Nieuw &Item"
+
+msgid "&Insert"
+msgstr "&Invoegen"
+
+msgid "&Remove"
+msgstr "Ver&wijderen"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgroep - druk ENTER om de lijst te zien"
@@ -2687,15 +2672,21 @@ msgstr "Aktieve VFS-directories"
 msgid "Directory hotlist"
 msgstr "Map favolijst"
 
+msgid "Top level group"
+msgstr "Startgroep"
+
 msgid "Directory path"
 msgstr "Map pad"
-
-msgid "Directory label"
-msgstr "Map label"
 
 #, c-format
 msgid "Moving %s"
 msgstr "%s wordt verplaatst"
+
+msgid "Directory label"
+msgstr "Map label"
+
+msgid "&Append"
+msgstr "&Toevoegen"
 
 msgid "New hotlist entry"
 msgstr "Nieuw favolijst item"
@@ -2723,9 +2714,6 @@ msgid ""
 msgstr ""
 "Groep \"%s\" is niet leeg.\n"
 "Toch verwijderen?"
-
-msgid "Top level group"
-msgstr "Startgroep"
 
 msgid "Hotlist Load"
 msgstr "Hotlist Laden"
@@ -2827,35 +2815,32 @@ msgstr "Modus:      %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Locatie:       %Xh:%Xh"
 
-msgid "Show free sp&ace"
-msgstr "&Geef vrije ruimte weer"
+msgid "&Equal split"
+msgstr "Gelijkmatig verd&elen"
 
-msgid "&XTerm window title"
-msgstr "&XTerm schermnaam"
-
-msgid "H&intbar visible"
-msgstr "H&intbalk zichtbaar"
-
-msgid "&Keybar visible"
-msgstr "&Toetsenbalk zichtbaar"
+msgid "&Menubar visible"
+msgstr ""
 
 msgid "Command &prompt"
 msgstr "Commando &prompt"
 
-msgid "Menu&bar visible"
-msgstr "Menu&balk zichtbaar"
+msgid "&Keybar visible"
+msgstr "&Toetsenbalk zichtbaar"
 
-msgid "&Equal split"
-msgstr "Gelijkmatig verd&elen"
+msgid "H&intbar visible"
+msgstr "H&intbalk zichtbaar"
+
+msgid "&XTerm window title"
+msgstr "&XTerm schermnaam"
+
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr "Venstersplitsing"
 
 msgid "Console output"
 msgstr "Console output"
-
-msgid "Other options"
-msgstr "Andere opties"
 
 msgid "&Vertical"
 msgstr "&Verticaal"
@@ -3088,65 +3073,65 @@ msgstr "Op d&omme terminals"
 msgid "Alwa&ys"
 msgstr "Al&tijd"
 
-msgid "A&uto save setup"
-msgstr "A&utomatisch instellingen opslaan"
-
-msgid "Sa&fe delete"
-msgstr "Veili&g verwijderen"
-
-msgid "Cd follows lin&ks"
-msgstr "cd volgt lin&ks"
-
-msgid "Rotating d&ash"
-msgstr "Roterend stree&pje"
-
-msgid "Co&mplete: show all"
-msgstr "Co&mpleet: Toon alles"
-
-msgid "Shell &patterns"
-msgstr "Shell&patronen"
-
-msgid "&Drop down menus"
-msgstr "Neer&Klapmenu's"
-
-msgid "Auto m&enus"
-msgstr "Autom&enus"
-
-msgid "Use internal vie&w"
-msgstr "Gebruik in&terne weergave"
-
-msgid "Use internal edi&t"
-msgstr "In&terne editor gebruiken"
-
-msgid "Pause after run"
-msgstr " Pauze na uitvoering"
-
-msgid "Timeout:"
-msgstr "Timeout:"
-
-msgid "S&ingle press"
-msgstr "S&ingle press"
-
-msgid "Esc key mode"
-msgstr "Esc-key modus"
-
-msgid "Preallocate &space"
-msgstr "Prealloceer &ruimte"
-
-msgid "Mkdi&r autoname"
-msgstr "Mkdi&r autonoemen"
-
-msgid "Classic pro&gressbar"
-msgstr "Klassieke pro&gressbar"
-
-msgid "Compute tota&ls"
-msgstr "Bereken tota&len"
+msgid "File operations"
+msgstr ""
 
 msgid "&Verbose operation"
 msgstr "Uitvoering met &weergave"
 
-msgid "File operation options"
-msgstr "Opties bestandsbewerking"
+msgid "Compute tota&ls"
+msgstr "Bereken tota&len"
+
+msgid "Classic pro&gressbar"
+msgstr "Klassieke pro&gressbar"
+
+msgid "Mkdi&r autoname"
+msgstr "Mkdi&r autonoemen"
+
+msgid "Preallocate &space"
+msgstr "Prealloceer &ruimte"
+
+msgid "Esc key mode"
+msgstr "Esc-key modus"
+
+msgid "S&ingle press"
+msgstr "S&ingle press"
+
+msgid "Timeout:"
+msgstr "Timeout:"
+
+msgid "Pause after run"
+msgstr " Pauze na uitvoering"
+
+msgid "Use internal edi&t"
+msgstr "In&terne editor gebruiken"
+
+msgid "Use internal vie&w"
+msgstr "Gebruik in&terne weergave"
+
+msgid "Auto m&enus"
+msgstr "Autom&enus"
+
+msgid "&Drop down menus"
+msgstr "Neer&Klapmenu's"
+
+msgid "Shell &patterns"
+msgstr "Shell&patronen"
+
+msgid "Co&mplete: show all"
+msgstr "Co&mpleet: Toon alles"
+
+msgid "Rotating d&ash"
+msgstr "Roterend stree&pje"
+
+msgid "Cd follows lin&ks"
+msgstr "cd volgt lin&ks"
+
+msgid "Sa&fe delete"
+msgstr "Veili&g verwijderen"
+
+msgid "A&uto save setup"
+msgstr "A&utomatisch instellingen opslaan"
 
 msgid "Configure options"
 msgstr "Instellingen"
@@ -3154,65 +3139,62 @@ msgstr "Instellingen"
 msgid "Case &insensitive"
 msgstr "Hoofdletter&ongevoelig"
 
-msgid "Case s&ensitive"
-msgstr "Hoofdletter&gevoelig"
-
 msgid "Use panel sort mo&de"
 msgstr "Gebruik venster-sorteermo&dus"
 
-msgid "Quick search"
-msgstr "Snel zoeken"
-
-msgid "&Permissions"
-msgstr "&Toegangsrechten"
-
-msgid "File &types"
-msgstr "Bestands&soorten"
-
-msgid "File highlight"
-msgstr "Bestand highlight"
-
-msgid "&Mouse page scrolling"
-msgstr "&Muis paginascrollen"
-
-msgid "Pa&ge scrolling"
-msgstr "Pa&ginascrollen"
-
-msgid "L&ynx-like motion"
-msgstr "'L&ynx'-achtige bewegingen"
-
-msgid "Navigation"
-msgstr "Navigatie"
-
-msgid "A&uto save panels setup"
-msgstr "A&utomatisch opslaan vensterinstellingen"
-
-msgid "Simple s&wap"
-msgstr "Simpel s&wap"
-
-msgid "Re&verse files only"
-msgstr "Alleen Re&verse-bestanden"
-
-msgid "Ma&rk moves down"
-msgstr "Ma&rkering naar beneden"
-
-msgid "&Fast dir reload"
-msgstr "Snel herle&zen"
-
-msgid "Show &hidden files"
-msgstr "Toon verbor&gen bestanden"
-
-msgid "Show &backup files"
-msgstr "Toon r&eservebestanden"
-
-msgid "Mi&x all files"
-msgstr "Meng alle &bestanden"
+msgid "Show mi&ni-status"
+msgstr "Toon mi&nistatus"
 
 msgid "Use SI si&ze units"
 msgstr "Gebruik SI grootte eenheden"
 
-msgid "Show mi&ni-status"
-msgstr "Toon mi&nistatus"
+msgid "Mi&x all files"
+msgstr "Meng alle &bestanden"
+
+msgid "Show &backup files"
+msgstr "Toon r&eservebestanden"
+
+msgid "Show &hidden files"
+msgstr "Toon verbor&gen bestanden"
+
+msgid "&Fast dir reload"
+msgstr "Snel herle&zen"
+
+msgid "Ma&rk moves down"
+msgstr "Ma&rkering naar beneden"
+
+msgid "Re&verse files only"
+msgstr "Alleen Re&verse-bestanden"
+
+msgid "Simple s&wap"
+msgstr "Simpel s&wap"
+
+msgid "A&uto save panels setup"
+msgstr "A&utomatisch opslaan vensterinstellingen"
+
+msgid "Navigation"
+msgstr "Navigatie"
+
+msgid "L&ynx-like motion"
+msgstr "'L&ynx'-achtige bewegingen"
+
+msgid "Pa&ge scrolling"
+msgstr "Pa&ginascrollen"
+
+msgid "&Mouse page scrolling"
+msgstr "&Muis paginascrollen"
+
+msgid "File highlight"
+msgstr "Bestand highlight"
+
+msgid "File &types"
+msgstr "Bestands&soorten"
+
+msgid "&Permissions"
+msgstr "&Toegangsrechten"
+
+msgid "Quick search"
+msgstr "Snel zoeken"
 
 msgid "Panel options"
 msgstr "Vensteropties "
@@ -3258,8 +3240,8 @@ msgstr "&Versie"
 msgid "sort|e"
 msgstr "e"
 
-msgid "&Extension"
-msgstr "&Extensie"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3368,11 +3350,11 @@ msgstr "Nieuw toevoegen"
 msgid "External panelize"
 msgstr "Plaats in extern venster"
 
-msgid "Command"
-msgstr "Opdracht"
-
 msgid "Other command"
 msgstr "Andere opdracht"
+
+msgid "Command"
+msgstr "Opdracht"
 
 msgid "Add to external panelize"
 msgstr "Toevoegen aan extern venster "
@@ -3578,14 +3560,11 @@ msgstr ""
 "Geweldig! U heeft een volledige terminal database!\n"
 "Alle toetsen werken goed."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Druk alle hier genoemde toetsen. Controleer daarna "
-
-msgid "which keys are not marked with OK.  Press space on the missing"
-msgstr "welke toetsen niet met 'OK' gemarkeerd zijn. Geef een spatie "
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
-msgstr "of klik met de muis om ze te definiëren. Navigeer met Tab."
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3708,6 +3687,9 @@ msgstr "Config directory:"
 msgid "Data directory:"
 msgstr "Data directory:"
 
+msgid "File extension handlers:"
+msgstr ""
+
 msgid "VFS plugins and scripts:"
 msgstr "VFS plugins en scripts:"
 
@@ -3824,9 +3806,6 @@ msgstr "fish: bewaar %s: opdracht verzenden..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fisch: Lokale leesopdracht mislukt, zend nullen"
-
-msgid "fish: storing zeros"
-msgstr "fish: opslaan nullen"
 
 msgid "fish: storing file"
 msgstr "fish: bestand opslaan"

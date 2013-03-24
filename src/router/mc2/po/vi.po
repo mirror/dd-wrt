@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: vi\n"
@@ -514,14 +514,14 @@ msgstr "&Có"
 msgid "&No"
 msgstr "&Không"
 
-msgid "Background process:"
-msgstr "Tiến trình nền sau:"
+msgid "&OK"
+msgstr "Đồng ý &="
 
 msgid "&Cancel"
 msgstr "Đóng hộp thoại &]"
 
-msgid "&OK"
-msgstr "Đồng ý &="
+msgid "Background process:"
+msgstr "Tiến trình nền sau:"
 
 msgid "Error"
 msgstr "Lỗi"
@@ -697,19 +697,19 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "Đó&ng"
 
-msgid "&All charsets"
+msgid "Enter search string:"
 msgstr ""
 
-msgid "&Whole words"
+msgid "Cas&e sensitive"
 msgstr ""
 
 msgid "&Backwards"
 msgstr "&Tìm ngược lại"
 
-msgid "Cas&e sensitive"
+msgid "&Whole words"
 msgstr ""
 
-msgid "Enter search string:"
+msgid "&All charsets"
 msgstr ""
 
 msgid "Search"
@@ -743,25 +743,25 @@ msgstr ""
 msgid "&Minimal (Find a smaller set of change)"
 msgstr ""
 
-msgid "Strip &trailing carriage return"
-msgstr ""
-
-msgid "Ignore all &whitespace"
-msgstr ""
-
-msgid "Ignore &space change"
-msgstr ""
-
-msgid "Ignore tab &expansion"
-msgstr ""
-
-msgid "&Ignore case"
+msgid "Diff algorithm"
 msgstr ""
 
 msgid "Diff extra options"
 msgstr ""
 
-msgid "Diff algorithm"
+msgid "&Ignore case"
+msgstr ""
+
+msgid "Ignore tab &expansion"
+msgstr ""
+
+msgid "Ignore &space change"
+msgstr ""
+
+msgid "Ignore all &whitespace"
+msgstr ""
+
+msgid "Strip &trailing carriage return"
 msgstr ""
 
 msgid "Diff Options"
@@ -906,10 +906,10 @@ msgstr ""
 msgid "&Macintosh format (CR)"
 msgstr ""
 
-msgid "Change line breaks to:"
+msgid "Enter file name:"
 msgstr ""
 
-msgid "Enter file name:"
+msgid "Change line breaks to:"
 msgstr ""
 
 msgid "Save As"
@@ -1086,16 +1086,16 @@ msgstr "Lệnh ngoại trú"
 msgid "Cannot execute command"
 msgstr "Không thực hiện được câu lệnh"
 
-msgid "Copies to"
-msgstr ""
-
-msgid "Subject"
+msgid "mail -s <subject> -c <cc> <to>"
 msgstr ""
 
 msgid "To"
 msgstr ""
 
-msgid "mail -s <subject> -c <cc> <to>"
+msgid "Subject"
+msgstr ""
+
+msgid "Copies to"
 msgstr ""
 
 msgid "Mail"
@@ -1115,10 +1115,25 @@ msgstr ""
 msgid "In se&lection"
 msgstr ""
 
+msgid "&Find all"
+msgstr ""
+
 msgid "Enter replacement string:"
 msgstr ""
 
-msgid "&Find all"
+msgid "Replace with:"
+msgstr ""
+
+msgid "&Replace"
+msgstr "&Thay thế"
+
+msgid "A&ll"
+msgstr "&Tất cả"
+
+msgid "&Skip"
+msgstr "&Bỏ qua"
+
+msgid "Confirm replace"
 msgstr ""
 
 msgid "Cancel"
@@ -1127,21 +1142,6 @@ msgstr "Hủy bỏ"
 msgid ""
 "Current text was modified without a file save.\n"
 "Continue discards these changes."
-msgstr ""
-
-msgid "&Skip"
-msgstr "&Bỏ qua"
-
-msgid "A&ll"
-msgstr "&Tất cả"
-
-msgid "&Replace"
-msgstr "&Thay thế"
-
-msgid "Replace with:"
-msgstr ""
-
-msgid "Confirm replace"
 msgstr ""
 
 msgid "NoName"
@@ -1366,71 +1366,81 @@ msgstr ""
 msgid "&Options"
 msgstr ""
 
-msgid "None"
-msgstr "&Không"
-
-msgid "Dynamic paragraphing"
-msgstr "Định &dạng đoạn văn động"
-
-msgid "Type writer wrap"
-msgstr "Tự độ&ng chuyển dòng"
-
-msgid "Word wrap line length:"
+msgid "&None"
 msgstr ""
 
-msgid "&Group undo"
+msgid "&Dynamic paragraphing"
 msgstr ""
 
-msgid "Cursor beyond end of line"
+msgid "Type &writer wrap"
 msgstr ""
 
-msgid "Pers&istent selection"
+msgid "Wrap mode"
+msgstr "Chế độ chuyển dòng"
+
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "&Tạo một nửa tab"
+
+msgid "&Backspace through tabs"
+msgstr "&Backpace xóa hết tab"
+
+msgid "Fill tabs with &spaces"
+msgstr "&Làm đầy tab bằng khoảng trắng"
+
+msgid "Tab spacing:"
+msgstr ""
+
+msgid "Other options"
+msgstr ""
+
+msgid "&Return does autoindent"
+msgstr "&Enter tự động thụt dòng"
+
+msgid "Confir&m before saving"
+msgstr "&Hỏi lại trước khi ghi nhớ"
+
+msgid "Save file &position"
+msgstr "&Ghi nhớ vị trí trong tập tin"
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
 msgstr ""
 
 msgid "Synta&x highlighting"
 msgstr "&Chiếu sáng cú pháp"
 
-msgid "Visible tabs"
+msgid "C&ursor after inserted block"
 msgstr ""
 
-msgid "Visible trailing spaces"
+msgid "Pers&istent selection"
 msgstr ""
 
-msgid "Save file &position"
-msgstr "&Ghi nhớ vị trí trong tập tin"
-
-msgid "Confir&m before saving"
-msgstr "&Hỏi lại trước khi ghi nhớ"
-
-msgid "&Return does autoindent"
-msgstr "&Enter tự động thụt dòng"
-
-msgid "Tab spacing:"
+msgid "Cursor be&yond end of line"
 msgstr ""
 
-msgid "Fill tabs with &spaces"
-msgstr "&Làm đầy tab bằng khoảng trắng"
+msgid "&Group undo"
+msgstr ""
 
-msgid "&Backspace through tabs"
-msgstr "&Backpace xóa hết tab"
-
-msgid "&Fake half tabs"
-msgstr "&Tạo một nửa tab"
-
-msgid "Wrap mode"
-msgstr "Chế độ chuyển dòng"
+msgid "Word wrap line length:"
+msgstr ""
 
 msgid "Editor options"
 msgstr ""
 
-msgid "About"
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
 msgstr ""
 
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
+msgid "About"
 msgstr ""
 
 msgid "Open files"
@@ -1506,14 +1516,14 @@ msgstr "Hãy gõ \"exit\" để quay trở lại Midnight Commander"
 msgid "Cannot fetch a local copy of %s"
 msgstr ""
 
-msgid "&Set"
-msgstr "Đồ&ng ý"
+msgid "Set &all"
+msgstr "Đặt &tất cả"
 
 msgid "S&kip"
 msgstr "&Bỏ qua"
 
-msgid "Set &all"
-msgstr "Đặt &tất cả"
+msgid "&Set"
+msgstr "Đồ&ng ý"
 
 msgid "owner"
 msgstr "sở hữu"
@@ -1524,18 +1534,8 @@ msgstr "nhóm"
 msgid "other"
 msgstr "khác"
 
-msgid "On"
-msgstr "Trên"
-
 msgid "Flag"
 msgstr "Cờ"
-
-msgid "Mode"
-msgstr "Chếđộ"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d của %d"
 
 msgid "Chown advanced command"
 msgstr ""
@@ -1552,14 +1552,14 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "&Stop"
-msgstr "&Dừng"
+msgid "Other 8 bit"
+msgstr "8 bit khác"
 
-msgid "&Resume"
-msgstr "&Phục hồi"
+msgid "Running"
+msgstr ""
 
-msgid "&Kill"
-msgstr "&Diệt"
+msgid "Stopped"
+msgstr "Đã dừng"
 
 msgid "&Full file list"
 msgstr "&Đầy đủ"
@@ -1573,14 +1573,57 @@ msgstr "&Mở rộng"
 msgid "&User defined:"
 msgstr "&Người dùng tự xác định:"
 
-msgid "Listing mode"
-msgstr "Dạng danh sách"
-
 msgid "User &mini status"
 msgstr ""
 
-msgid "Other 8 bit"
-msgstr "8 bit khác"
+msgid "Listing mode"
+msgstr "Dạng danh sách"
+
+msgid "Executable &first"
+msgstr ""
+
+msgid "&Reverse"
+msgstr "&Ngược lại"
+
+msgid "Sort order"
+msgstr "Thứ tự sắp xếp"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr ""
+
+msgid "Confirmation|O&verwrite"
+msgstr ""
+
+msgid "Confirmation|&Execute"
+msgstr ""
+
+msgid "Confirmation|E&xit"
+msgstr ""
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr ""
+
+msgid "Confirmation|&History cleanup"
+msgstr ""
+
+msgid "Confirmation"
+msgstr ""
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "Đầ&u vào 8 bit đầy đủ"
 
 msgid "Display bits"
 msgstr ""
@@ -1588,91 +1631,32 @@ msgstr ""
 msgid "Input / display codepage:"
 msgstr "Bảng mã đầu vào / hiển thị:"
 
-msgid "F&ull 8 bits input"
-msgstr "Đầ&u vào 8 bit đầy đủ"
-
 msgid "&Select"
 msgstr "&Lựa chọn"
-
-msgid "Running"
-msgstr ""
-
-msgid "Stopped"
-msgstr "Đã dừng"
-
-msgid "&Reverse"
-msgstr "&Ngược lại"
-
-msgid "Case sensi&tive"
-msgstr ""
-
-msgid "Executable &first"
-msgstr ""
-
-msgid "Sort order"
-msgstr "Thứ tự sắp xếp"
-
-msgid "Confirmation"
-msgstr ""
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr ""
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr ""
-
-msgid "Confirmation|E&xit"
-msgstr ""
-
-msgid "Confirmation|&Execute"
-msgstr ""
-
-msgid "Confirmation|O&verwrite"
-msgstr ""
-
-msgid "Confirmation|&Delete"
-msgstr ""
-
-msgid "UTF-8 output"
-msgstr ""
-
-msgid "Full 8 bits output"
-msgstr "Đầu ra 8 bit đầy đủ"
-
-msgid "ISO 8859-1"
-msgstr "ISO.8859-1"
-
-msgid "7 bits"
-msgstr "7 bit"
 
 msgid "Directory tree"
 msgstr ""
 
-msgid "Use passive mode over pro&xy"
-msgstr "Sử &dụng chế độ thụ động qua proxy"
+msgid "Timeout for freeing VFSs (sec):"
+msgstr ""
 
-msgid "Use &passive mode"
-msgstr "Sử &dụng chế độ thụ động"
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
+msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr "&Sử dụng ~/.netrc"
 
-msgid "&Always use ftp proxy"
-msgstr "&Luôn luôn sử dụng ftp proxy"
+msgid "Use &passive mode"
+msgstr "Sử &dụng chế độ thụ động"
 
-msgid "sec"
-msgstr "giây"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "Thời gian chờ của cache thư mục ftp:"
-
-msgid "ftp anonymous password:"
-msgstr "Mật khẩu ftp nặc danh:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "Thời gian chờ giải phóng VFS:"
+msgid "Use passive mode over pro&xy"
+msgstr "Sử &dụng chế độ thụ động qua proxy"
 
 msgid "Virtual File System Setting"
 msgstr ""
@@ -1683,17 +1667,30 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "cd nhanh"
 
-msgid "Symbolic link filename:"
-msgstr "Tên của liên kết mềm:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr "Tên tập tin đã có (liên kết mềm sẽ chỉ đến):"
+
+msgid "Symbolic link filename:"
+msgstr "Tên của liên kết mềm:"
 
 msgid "Symbolic link"
 msgstr "Liên kết mềm"
 
-msgid "Background Jobs"
-msgstr " Công việc nền sau"
+msgid "&Stop"
+msgstr "&Dừng"
+
+msgid "&Resume"
+msgstr "&Phục hồi"
+
+msgid "&Kill"
+msgstr "&Diệt"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "Mật khẩu cho \\\\%s\\%s"
 
 msgid "Domain:"
 msgstr "Miền (domain):"
@@ -1701,45 +1698,44 @@ msgstr "Miền (domain):"
 msgid "Username:"
 msgstr "Tên người dùng:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Mật khẩu cho \\\\%s\\%s"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "người khác có quyền chạy/tìm"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "người khác có quyền ghi nhớ"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "người khác có quyền đọc"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "nhóm có quyền chạy/tìm kiếm"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "nhóm có quyền ghi nhớ"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "nhóm có quyền đọc"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "chủ sở hữu có quyền chạy/tìm"
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "chủ sở hữu có quyền ghi nhớ"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "chủ sở hữu có quyền đọc"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "bit dính (sticky)"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "đặt ID nhóm khi chạy"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "đặt ID người dùng khi chạy"
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr ""
@@ -1753,29 +1749,29 @@ msgstr ""
 msgid "Group name:"
 msgstr ""
 
-msgid "C&lear marked"
-msgstr "&Xóa đánh dấu"
+msgid "&Marked all"
+msgstr "Đánh &dấu tất cả"
 
 msgid "S&et marked"
 msgstr "Đá&nh dấu"
 
-msgid "&Marked all"
-msgstr "Đánh &dấu tất cả"
+msgid "C&lear marked"
+msgstr "&Xóa đánh dấu"
 
 msgid "Chmod command"
 msgstr " Câu lệnh chmod "
 
-msgid "File"
-msgstr "Tập tin"
-
 msgid "Permission"
 msgstr "Quyền hạn"
 
-msgid "Set &users"
-msgstr "Đặt &người dùng"
+msgid "File"
+msgstr "Tập tin"
 
 msgid "Set &groups"
 msgstr "Đặt &nhóm"
+
+msgid "Set &users"
+msgstr "Đặt &người dùng"
 
 msgid "Name"
 msgstr "Tên"
@@ -1792,14 +1788,14 @@ msgstr "Kích cỡ"
 msgid "Chown command"
 msgstr ""
 
+msgid "User name"
+msgstr ""
+
 msgid "<Unknown user>"
 msgstr "<không rõ người dùng>"
 
 msgid "<Unknown group>"
 msgstr "<không rõ nhóm>"
-
-msgid "User name"
-msgstr ""
 
 msgid "Enter machine name (F1 for details):"
 msgstr ""
@@ -1816,13 +1812,13 @@ msgstr ""
 msgid "Set expression for filtering filenames"
 msgstr ""
 
+msgid "&Files only"
+msgstr ""
+
 msgid "&Using shell patterns"
 msgstr "&Sử dụng mẫu (pattern) của shell"
 
 msgid "&Case sensitive"
-msgstr ""
-
-msgid "&Files only"
 msgstr ""
 
 #, c-format
@@ -2082,19 +2078,17 @@ msgstr ""
 msgid "&Retry"
 msgstr "&Thử lại"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
-msgstr ""
-
-msgid "Delete:"
 msgstr ""
 
 msgid "Non&e"
@@ -2303,6 +2297,12 @@ msgstr ""
 msgid "Sorry, I could not put the job in background"
 msgstr ""
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "&Tiếp tục"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr ""
@@ -2327,30 +2327,30 @@ msgid "Target file already exists!"
 msgstr ""
 
 #, c-format
-msgid "Source date: %s, size %llu"
-msgstr "Ngày nguồn: %s, kích thước %llu"
+msgid "New     : %s, size %llu"
+msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
-msgstr "Ngày đích: %s, kích thước %llu"
+msgid "Existing: %s, size %llu"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "&Nếu kích thước khác nhau"
-
-msgid "&Update"
-msgstr "&Cập nhật"
-
-msgid "Overwrite all targets?"
-msgstr "Khi đè lên mọi tập tin đích?"
-
-msgid "&Reget"
-msgstr "&Lấy lại"
+msgid "Overwrite this target?"
+msgstr "Khi đè lên tập tin này?"
 
 msgid "A&ppend"
 msgstr "&Thêm vào cuối"
 
-msgid "Overwrite this target?"
-msgstr "Khi đè lên tập tin này?"
+msgid "&Reget"
+msgstr "&Lấy lại"
+
+msgid "Overwrite all targets?"
+msgstr "Khi đè lên mọi tập tin đích?"
+
+msgid "&Update"
+msgstr "&Cập nhật"
+
+msgid "If &size differs"
+msgstr "&Nếu kích thước khác nhau"
 
 msgid "File exists"
 msgstr ""
@@ -2399,30 +2399,24 @@ msgstr "Đích"
 msgid "Deleting"
 msgstr "Đang xóa"
 
-msgid "&Background"
-msgstr "Trong nền sa&u"
-
-msgid "&Stable Symlinks"
-msgstr "liên kết &Bền vững"
-
-msgid "Di&ve into subdir if exists"
+msgid "Follow &links"
 msgstr ""
 
 msgid "Preserve &attributes"
 msgstr ""
 
-msgid "Follow &links"
+msgid "Di&ve into subdir if exists"
 msgstr ""
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "Trong nền sa&u"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr ""
-
-msgid "&Suspend"
-msgstr "&Hoãn"
-
-msgid "Con&tinue"
-msgstr "&Tiếp tục"
 
 msgid "&Chdir"
 msgstr "&Chuyển thư mục"
@@ -2446,10 +2440,16 @@ msgstr ""
 msgid "Malformed regular expression"
 msgstr ""
 
+msgid "File name:"
+msgstr ""
+
 msgid "&Find recursively"
 msgstr ""
 
 msgid "S&kip hidden"
+msgstr ""
+
+msgid "Content:"
 msgstr ""
 
 msgid "Sea&rch for content"
@@ -2458,10 +2458,10 @@ msgstr ""
 msgid "Case sens&itive"
 msgstr ""
 
-msgid "Fir&st hit"
+msgid "A&ll charsets"
 msgstr ""
 
-msgid "A&ll charsets"
+msgid "Fir&st hit"
 msgstr ""
 
 msgid "&Tree"
@@ -2470,17 +2470,11 @@ msgstr "&Cây thư mục"
 msgid "Find File"
 msgstr "Tìm tập tin"
 
-msgid "Content:"
-msgstr ""
-
-msgid "File name:"
-msgstr ""
+msgid "Start at:"
+msgstr "Bắt đầu từ:"
 
 msgid "Ena&ble ignore directories:"
 msgstr ""
-
-msgid "Start at:"
-msgstr "Bắt đầu từ:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2501,35 +2495,32 @@ msgstr "Tìm %s"
 msgid "Searching"
 msgstr "Tìm"
 
-msgid "&Remove"
-msgstr "&Xóa"
-
-msgid "&Append"
-msgstr "&Thêm vào"
-
-msgid "&Insert"
-msgstr "c&Hèn"
-
-msgid "New &entry"
+msgid "Change &to"
 msgstr ""
 
-msgid "New &group"
+msgid "&Free VFSs now"
 msgstr ""
-
-msgid "&Up"
-msgstr "&Lên"
-
-msgid "&Add current"
-msgstr "&Thêm hiện thời"
 
 msgid "&Refresh"
 msgstr "&Làm mới"
 
-msgid "Fr&ee VFSs now"
-msgstr "&Giải phóng"
+msgid "&Add current"
+msgstr "&Thêm hiện thời"
 
-msgid "Change &to"
+msgid "&Up"
+msgstr "&Lên"
+
+msgid "New &group"
 msgstr ""
+
+msgid "New &entry"
+msgstr ""
+
+msgid "&Insert"
+msgstr "c&Hèn"
+
+msgid "&Remove"
+msgstr "&Xóa"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Nhóm con - nhấn ENTER để xem danh sách"
@@ -2540,15 +2531,21 @@ msgstr "Thư mục VFS hoạt động"
 msgid "Directory hotlist"
 msgstr "Danh sách thư mục thường dùng"
 
+msgid "Top level group"
+msgstr ""
+
 msgid "Directory path"
 msgstr " Đường dẫn tới thư mục"
-
-msgid "Directory label"
-msgstr " Tên nhãn thư mục"
 
 #, c-format
 msgid "Moving %s"
 msgstr "Di chuyển %s"
+
+msgid "Directory label"
+msgstr " Tên nhãn thư mục"
+
+msgid "&Append"
+msgstr "&Thêm vào"
 
 msgid "New hotlist entry"
 msgstr " Thêm bản ghi vào tra cứu"
@@ -2573,9 +2570,6 @@ msgstr ""
 msgid ""
 "Group \"%s\" is not empty.\n"
 "Remove it?"
-msgstr ""
-
-msgid "Top level group"
 msgstr ""
 
 msgid "Hotlist Load"
@@ -2675,34 +2669,31 @@ msgstr "Quyền hạn:    %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Vị trí:       %Xh:%Xh"
 
-msgid "Show free sp&ace"
+msgid "&Equal split"
+msgstr "&Kích thước bằng nhau"
+
+msgid "&Menubar visible"
 msgstr ""
 
-msgid "&XTerm window title"
-msgstr ""
-
-msgid "H&intbar visible"
+msgid "Command &prompt"
 msgstr ""
 
 msgid "&Keybar visible"
 msgstr "&Hiển thị thanh phím tắt"
 
-msgid "Command &prompt"
+msgid "H&intbar visible"
 msgstr ""
 
-msgid "Menu&bar visible"
+msgid "&XTerm window title"
 msgstr ""
 
-msgid "&Equal split"
-msgstr "&Kích thước bằng nhau"
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr ""
 
 msgid "Console output"
-msgstr ""
-
-msgid "Other options"
 msgstr ""
 
 msgid "&Vertical"
@@ -2935,64 +2926,64 @@ msgstr ""
 msgid "Alwa&ys"
 msgstr "&Luôn luôn"
 
-msgid "A&uto save setup"
-msgstr ""
-
-msgid "Sa&fe delete"
-msgstr ""
-
-msgid "Cd follows lin&ks"
-msgstr ""
-
-msgid "Rotating d&ash"
-msgstr ""
-
-msgid "Co&mplete: show all"
-msgstr ""
-
-msgid "Shell &patterns"
-msgstr ""
-
-msgid "&Drop down menus"
-msgstr "đẩy &Xuống trình đơn"
-
-msgid "Auto m&enus"
-msgstr ""
-
-msgid "Use internal vie&w"
-msgstr ""
-
-msgid "Use internal edi&t"
-msgstr ""
-
-msgid "Pause after run"
-msgstr ""
-
-msgid "Timeout:"
-msgstr ""
-
-msgid "S&ingle press"
-msgstr ""
-
-msgid "Esc key mode"
-msgstr ""
-
-msgid "Preallocate &space"
-msgstr ""
-
-msgid "Mkdi&r autoname"
-msgstr ""
-
-msgid "Classic pro&gressbar"
-msgstr ""
-
-msgid "Compute tota&ls"
+msgid "File operations"
 msgstr ""
 
 msgid "&Verbose operation"
 msgstr "thao tác với thông báo &Dài dòng"
 
-msgid "File operation options"
+msgid "Compute tota&ls"
+msgstr ""
+
+msgid "Classic pro&gressbar"
+msgstr ""
+
+msgid "Mkdi&r autoname"
+msgstr ""
+
+msgid "Preallocate &space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr ""
+
+msgid "S&ingle press"
+msgstr ""
+
+msgid "Timeout:"
+msgstr ""
+
+msgid "Pause after run"
+msgstr ""
+
+msgid "Use internal edi&t"
+msgstr ""
+
+msgid "Use internal vie&w"
+msgstr ""
+
+msgid "Auto m&enus"
+msgstr ""
+
+msgid "&Drop down menus"
+msgstr "đẩy &Xuống trình đơn"
+
+msgid "Shell &patterns"
+msgstr ""
+
+msgid "Co&mplete: show all"
+msgstr ""
+
+msgid "Rotating d&ash"
+msgstr ""
+
+msgid "Cd follows lin&ks"
+msgstr ""
+
+msgid "Sa&fe delete"
+msgstr ""
+
+msgid "A&uto save setup"
 msgstr ""
 
 msgid "Configure options"
@@ -3001,64 +2992,61 @@ msgstr "Tùy chọn cấu hình"
 msgid "Case &insensitive"
 msgstr ""
 
-msgid "Case s&ensitive"
-msgstr ""
-
 msgid "Use panel sort mo&de"
 msgstr ""
 
-msgid "Quick search"
-msgstr ""
-
-msgid "&Permissions"
-msgstr ""
-
-msgid "File &types"
-msgstr ""
-
-msgid "File highlight"
-msgstr ""
-
-msgid "&Mouse page scrolling"
-msgstr ""
-
-msgid "Pa&ge scrolling"
-msgstr ""
-
-msgid "L&ynx-like motion"
-msgstr "di chuyển giống trong l&Ynx"
-
-msgid "Navigation"
-msgstr ""
-
-msgid "A&uto save panels setup"
-msgstr ""
-
-msgid "Simple s&wap"
-msgstr ""
-
-msgid "Re&verse files only"
-msgstr ""
-
-msgid "Ma&rk moves down"
-msgstr ""
-
-msgid "&Fast dir reload"
-msgstr "nạ&P nhanh thư mục"
-
-msgid "Show &hidden files"
-msgstr ""
-
-msgid "Show &backup files"
-msgstr ""
-
-msgid "Mi&x all files"
+msgid "Show mi&ni-status"
 msgstr ""
 
 msgid "Use SI si&ze units"
 msgstr ""
 
-msgid "Show mi&ni-status"
+msgid "Mi&x all files"
+msgstr ""
+
+msgid "Show &backup files"
+msgstr ""
+
+msgid "Show &hidden files"
+msgstr ""
+
+msgid "&Fast dir reload"
+msgstr "nạ&P nhanh thư mục"
+
+msgid "Ma&rk moves down"
+msgstr ""
+
+msgid "Re&verse files only"
+msgstr ""
+
+msgid "Simple s&wap"
+msgstr ""
+
+msgid "A&uto save panels setup"
+msgstr ""
+
+msgid "Navigation"
+msgstr ""
+
+msgid "L&ynx-like motion"
+msgstr "di chuyển giống trong l&Ynx"
+
+msgid "Pa&ge scrolling"
+msgstr ""
+
+msgid "&Mouse page scrolling"
+msgstr ""
+
+msgid "File highlight"
+msgstr ""
+
+msgid "File &types"
+msgstr ""
+
+msgid "&Permissions"
+msgstr ""
+
+msgid "Quick search"
 msgstr ""
 
 msgid "Panel options"
@@ -3100,8 +3088,8 @@ msgstr ""
 msgid "sort|e"
 msgstr ""
 
-msgid "&Extension"
-msgstr "&Phần mở rộng"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3208,11 +3196,11 @@ msgstr "&Thêm mới"
 msgid "External panelize"
 msgstr "Bảng ngoài"
 
-msgid "Command"
-msgstr "Câu lệnh"
-
 msgid "Other command"
 msgstr "Lệnh khác"
+
+msgid "Command"
+msgstr "Câu lệnh"
 
 msgid "Add to external panelize"
 msgstr ""
@@ -3413,16 +3401,11 @@ msgstr ""
 "Tuyệt! Chúng ta có một cơ sở dữ liệu mô tả terminal đầy đủ!\n"
 "Tất cả các phím đều làm việc tốt."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
 msgstr ""
-"Hãy nhấn tất cả những phím liệt kê ở trên. Sau khi nhấn xong, hãy kiểm tra"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
-msgstr ""
-"xem những phím nào không có dấu hiệu \"OK\".  Nhấn phím space trên những"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
-msgstr "phím bị thiếu, hoặc nhấn chuột để xác định. Di chuyển bằng Tab."
 
 #, c-format
 msgid ""
@@ -3536,6 +3519,9 @@ msgid "Config directory:"
 msgstr ""
 
 msgid "Data directory:"
+msgstr ""
+
+msgid "File extension handlers:"
 msgstr ""
 
 msgid "VFS plugins and scripts:"
@@ -3654,9 +3640,6 @@ msgstr "fish: bản ghi %s: đang gửi câu lệnh..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: Lỗi đọc nội bộ, đang gửi các số không"
-
-msgid "fish: storing zeros"
-msgstr ""
 
 msgid "fish: storing file"
 msgstr ""

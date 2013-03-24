@@ -102,17 +102,17 @@ struct str_class
       /*I*/ void (*cprev_char_safe) (const char **);
       /*I*/ int (*cnext_noncomb_char) (const char **text);
       /*I*/ int (*cprev_noncomb_char) (const char **text, const char *begin);
-      /*I*/ int (*isspace) (const char *);
-      /*I*/ int (*ispunct) (const char *);
-      /*I*/ int (*isalnum) (const char *);
-      /*I*/ int (*isdigit) (const char *);
-      /*I*/ int (*isprint) (const char *);
-      /*I*/ int (*iscombiningmark) (const char *);
+      /*I*/ int (*char_isspace) (const char *);
+      /*I*/ int (*char_ispunct) (const char *);
+      /*I*/ int (*char_isalnum) (const char *);
+      /*I*/ int (*char_isdigit) (const char *);
+      /*I*/ int (*char_isprint) (const char *);
+      /*I*/ gboolean (*char_iscombiningmark) (const char *);
       /*I*/ int (*length) (const char *);
       /*I*/ int (*length2) (const char *, int);
       /*I*/ int (*length_noncomb) (const char *);
-      /*I*/ int (*toupper) (const char *, char **, size_t *);
-    int (*tolower) (const char *, char **, size_t *);
+      /*I*/ int (*char_toupper) (const char *, char **, size_t *);
+    int (*char_tolower) (const char *, char **, size_t *);
     void (*fix_string) (char *);
       /*I*/ const char *(*term_form) (const char *);
       /*I*/ const char *(*fit_to_term) (const char *, int, align_crt_t);
@@ -334,7 +334,7 @@ int str_isprint (const char *ch);
  * combining makrs are assumed to be zero width 
  * I
  */
-int str_iscombiningmark (const char *ch);
+gboolean str_iscombiningmark (const char *ch);
 
 /* write lower from of fisrt characters in ch into out
  * decrase remain by size of returned characters
@@ -533,7 +533,7 @@ void str_msg_term_size (const char *text, int *lines, int *columns);
  * @param needle pointer to string
  * @param skip_count skip first bytes
  *
- * @returns pointer to skip_count+1 needle (or NULL if not found).
+ * @return pointer to skip_count+1 needle (or NULL if not found).
  */
 
 char *strrstr_skip_count (const char *haystack, const char *needle, size_t skip_count);
@@ -564,7 +564,7 @@ str_replace (char *s, char from, char to)
  * @param dest pointer to string
  * @param src pointer to string
  *
- * @returns a newly allocated string
+ * @return newly allocated string
  *
  */
 

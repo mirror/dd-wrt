@@ -918,7 +918,7 @@ wipe_password (char *passwd)
  *
  * @param p pointer to string
  *
- * @returns a newly allocated string
+ * @return newly allocated string
  */
 
 char *
@@ -991,32 +991,32 @@ diff_two_paths (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
     {
         p = my_first;
         q = my_second;
-        for (;;)
+        while (TRUE)
         {
             r = strchr (p, PATH_SEP);
             s = strchr (q, PATH_SEP);
-            if (!r || !s)
+            if (r == NULL || s == NULL)
                 break;
-            *r = 0;
-            *s = 0;
-            if (strcmp (p, q))
+            *r = '\0';
+            *s = '\0';
+            if (strcmp (p, q) != 0)
             {
                 *r = PATH_SEP;
                 *s = PATH_SEP;
                 break;
             }
-            else
-            {
-                *r = PATH_SEP;
-                *s = PATH_SEP;
-            }
+
+            *r = PATH_SEP;
+            *s = PATH_SEP;
+
             p = r + 1;
             q = s + 1;
         }
         p--;
-        for (i = 0; (p = strchr (p + 1, PATH_SEP)) != NULL; i++);
+        for (i = 0; (p = strchr (p + 1, PATH_SEP)) != NULL; i++)
+            ;
         currlen = (i + 1) * 3 + strlen (q) + 1;
-        if (j)
+        if (j != 0)
         {
             if (currlen < prevlen)
                 g_free (buf);
@@ -1148,7 +1148,7 @@ load_file_position (const vfs_path_t * filename_vpath, long *line, long *column,
                 {
                     size_t i;
 
-                    *offset = strtoll (pos_tokens[2], NULL, 10);
+                    *offset = (off_t) g_ascii_strtoll (pos_tokens[2], NULL, 10);
 
                     for (i = 0; i < MAX_SAVED_BOOKMARKS && pos_tokens[3 + i] != NULL; i++)
                     {

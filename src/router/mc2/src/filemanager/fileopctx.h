@@ -58,7 +58,8 @@ typedef enum
     FILE_RETRY = 1,
     FILE_SKIP = 2,
     FILE_ABORT = 3,
-    FILE_SKIPALL = 4
+    FILE_SKIPALL = 4,
+    FILE_SUSPEND = 5
 } FileProgressStatus;
 
 /* First argument passed to real functions */
@@ -125,7 +126,7 @@ typedef struct FileOpContext
     /* Preserve the original files' owner, group, permissions, and
      * timestamps (owner, group only as root).
      */
-    int preserve;
+    gboolean preserve;
 
     /* If running as root, preserve the original uid/gid (we don't want to
      * try chown for non root) preserve_uidgid = preserve && uid == 0
@@ -142,7 +143,7 @@ typedef struct FileOpContext
     struct mc_search_struct *search_handle;
 
     /* Whether to dive into subdirectories for recursive operations */
-    int dive_into_subdirs;
+    gboolean dive_into_subdirs;
 
     /* When moving directories cross filesystem boundaries delete the
      * successfully copied files when all files below the directory and its
@@ -159,6 +160,9 @@ typedef struct FileOpContext
 
     /* toggle if all errors should be ignored */
     gboolean skip_all;
+
+    /* Whether the file operation is in pause */
+    gboolean suspended;
 
     /* User interface data goes here */
     void *ui;

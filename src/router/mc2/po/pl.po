@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 13:45+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 17:35+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish (http://www.transifex.com/projects/p/mc/language/pl/)\n"
 "Language: pl\n"
@@ -533,14 +533,14 @@ msgstr "&Tak"
 msgid "&No"
 msgstr "&Nie"
 
-msgid "Background process:"
-msgstr "Proces w tle:"
+msgid "&OK"
+msgstr "&OK"
 
 msgid "&Cancel"
 msgstr "&Anuluj"
 
-msgid "&OK"
-msgstr "&OK"
+msgid "Background process:"
+msgstr "Proces w tle:"
 
 msgid "Error"
 msgstr "Błąd"
@@ -752,20 +752,20 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Porzuć"
 
-msgid "&All charsets"
-msgstr "W&szystkie zestawy znaków"
-
-msgid "&Whole words"
-msgstr "&Całe słowa"
-
-msgid "&Backwards"
-msgstr "&Wstecz"
+msgid "Enter search string:"
+msgstr "Proszę podać wyszukiwany napis:"
 
 msgid "Cas&e sensitive"
 msgstr "Rozróżniani&e wielkości"
 
-msgid "Enter search string:"
-msgstr "Proszę podać wyszukiwany napis:"
+msgid "&Backwards"
+msgstr "&Wstecz"
+
+msgid "&Whole words"
+msgstr "&Całe słowa"
+
+msgid "&All charsets"
+msgstr "W&szystkie zestawy znaków"
 
 msgid "Search"
 msgstr "Wyszukiwanie"
@@ -805,26 +805,26 @@ msgstr "Naj&szybszy (przyjmuje duże pliki)"
 msgid "&Minimal (Find a smaller set of change)"
 msgstr "&Minimalny (wyszukuje mniejszy zestaw zmian"
 
-msgid "Strip &trailing carriage return"
-msgstr "Skracanie &kończących znaków CR"
-
-msgid "Ignore all &whitespace"
-msgstr "Ignorowanie &wszystkich spacji"
-
-msgid "Ignore &space change"
-msgstr "Ignorowanie zmian &spacji"
-
-msgid "Ignore tab &expansion"
-msgstr "Ignorowanie rozsz&erzeń tabulacji"
-
-msgid "&Ignore case"
-msgstr "&Ignorowanie wielkości znaków"
+msgid "Diff algorithm"
+msgstr "Algorytm różnicy"
 
 msgid "Diff extra options"
 msgstr "Dodatkowe opcje różnicy"
 
-msgid "Diff algorithm"
-msgstr "Algorytm różnicy"
+msgid "&Ignore case"
+msgstr "&Ignorowanie wielkości znaków"
+
+msgid "Ignore tab &expansion"
+msgstr "Ignorowanie rozsz&erzeń tabulacji"
+
+msgid "Ignore &space change"
+msgstr "Ignorowanie zmian &spacji"
+
+msgid "Ignore all &whitespace"
+msgstr "Ignorowanie &wszystkich spacji"
+
+msgid "Strip &trailing carriage return"
+msgstr "Skracanie &kończących znaków CR"
 
 msgid "Diff Options"
 msgstr "Opcje różnicy"
@@ -972,11 +972,11 @@ msgstr "Format &Windows/DOS (CR LF)"
 msgid "&Macintosh format (CR)"
 msgstr "Format &Macintosh (CR)"
 
-msgid "Change line breaks to:"
-msgstr "Zmień łamanie wierszy na:"
-
 msgid "Enter file name:"
 msgstr "Proszę podać nazwę pliku:"
+
+msgid "Change line breaks to:"
+msgstr "Zmień łamanie wierszy na:"
 
 msgid "Save As"
 msgstr "Zapisz jako"
@@ -1158,17 +1158,17 @@ msgstr "Zewnętrzne polecenie"
 msgid "Cannot execute command"
 msgstr "Nie można wykonać polecenia"
 
-msgid "Copies to"
-msgstr "Kopie do"
-
-msgid "Subject"
-msgstr "Tytuł"
+msgid "mail -s <subject> -c <cc> <to>"
+msgstr "mail -s <temat> -c <cc> <do>"
 
 msgid "To"
 msgstr "Do"
 
-msgid "mail -s <subject> -c <cc> <to>"
-msgstr "mail -s <temat> -c <cc> <do>"
+msgid "Subject"
+msgstr "Tytuł"
+
+msgid "Copies to"
+msgstr "Kopie do"
 
 msgid "Mail"
 msgstr "Poczta"
@@ -1189,11 +1189,26 @@ msgstr ""
 msgid "In se&lection"
 msgstr "W wy&branych"
 
+msgid "&Find all"
+msgstr "&Znajdź wszystkie"
+
 msgid "Enter replacement string:"
 msgstr "Proszę podać zastępujący napis:"
 
-msgid "&Find all"
-msgstr "&Znajdź wszystkie"
+msgid "Replace with:"
+msgstr "Zastąpienie napisem:"
+
+msgid "&Replace"
+msgstr "&Zastąp"
+
+msgid "A&ll"
+msgstr "&Wszystkie"
+
+msgid "&Skip"
+msgstr "&Pomiń"
+
+msgid "Confirm replace"
+msgstr "Potwierdź zastąpienie"
 
 msgid "Cancel"
 msgstr "Anuluj"
@@ -1204,21 +1219,6 @@ msgid ""
 msgstr ""
 "Bieżący tekst zmodyfikowano bez zapisania pliku.\n"
 "Kontynuacja spowoduje ich porzucenie."
-
-msgid "&Skip"
-msgstr "&Pomiń"
-
-msgid "A&ll"
-msgstr "&Wszystkie"
-
-msgid "&Replace"
-msgstr "&Zastąp"
-
-msgid "Replace with:"
-msgstr "Zastąpienie napisem:"
-
-msgid "Confirm replace"
-msgstr "Potwierdź zastąpienie"
 
 msgid "NoName"
 msgstr "BezNazwy"
@@ -1442,76 +1442,84 @@ msgstr "&Okno"
 msgid "&Options"
 msgstr "&Opcje"
 
-msgid "None"
-msgstr "Brak"
+msgid "&None"
+msgstr "&Brak"
 
-msgid "Dynamic paragraphing"
-msgstr "Dynamiczne akapity"
+msgid "&Dynamic paragraphing"
+msgstr "&Dynamiczne akapity"
 
-msgid "Type writer wrap"
-msgstr "Maszyna do pisania"
-
-msgid "Word wrap line length:"
-msgstr "Punkt łamania wiersza:"
-
-msgid "&Group undo"
-msgstr "&Grupowe cofnięcie"
-
-msgid "Cursor beyond end of line"
-msgstr "Kursor poza końcem wiersza"
-
-msgid "Pers&istent selection"
-msgstr "Trwałe zaznaczen&ie"
-
-msgid "Synta&x highlighting"
-msgstr "&Wyróżnianie elementów składni"
-
-msgid "Visible tabs"
-msgstr "Widoczne tabulacje"
-
-msgid "Visible trailing spaces"
-msgstr "Widoczne spacje kończące"
-
-msgid "Save file &position"
-msgstr "Zapisanie po&zycji pliku"
-
-msgid "Confir&m before saving"
-msgstr "Potwierdzenie przed zapisanie&m"
-
-msgid "&Return does autoindent"
-msgstr "A&utomatyczne wcięcia"
-
-msgid "Tab spacing:"
-msgstr "Rozmiar tabulacji:"
-
-msgid "Fill tabs with &spaces"
-msgstr "Wypełnianie tabulacji &spacjami"
-
-msgid "&Backspace through tabs"
-msgstr "&Backspace przez tabulacje"
-
-msgid "&Fake half tabs"
-msgstr "&Połówki tabulacji"
+msgid "Type &writer wrap"
+msgstr "&Maszyna do pisania"
 
 msgid "Wrap mode"
 msgstr "Tryb zawijania"
 
+msgid "Tabulation"
+msgstr "Tabulacja"
+
+msgid "&Fake half tabs"
+msgstr "&Połówki tabulacji"
+
+msgid "&Backspace through tabs"
+msgstr "&Backspace przez tabulacje"
+
+msgid "Fill tabs with &spaces"
+msgstr "Wypełnianie tabulacji &spacjami"
+
+msgid "Tab spacing:"
+msgstr "Rozmiar tabulacji:"
+
+msgid "Other options"
+msgstr "Inne opcje"
+
+msgid "&Return does autoindent"
+msgstr "A&utomatyczne wcięcia"
+
+msgid "Confir&m before saving"
+msgstr "Potwierdzenie przed zapisanie&m"
+
+msgid "Save file &position"
+msgstr "Zapisanie po&zycji pliku"
+
+msgid "&Visible trailing spaces"
+msgstr "&Widoczne spacje kończące"
+
+msgid "Visible &tabs"
+msgstr "Widoczne &tabulacje"
+
+msgid "Synta&x highlighting"
+msgstr "&Wyróżnianie elementów składni"
+
+msgid "C&ursor after inserted block"
+msgstr "K&ursor po wstawionym bloku"
+
+msgid "Pers&istent selection"
+msgstr "Trwałe zaznaczen&ie"
+
+msgid "Cursor be&yond end of line"
+msgstr "Kursor &poza końcem wiersza"
+
+msgid "&Group undo"
+msgstr "&Grupowe cofnięcie"
+
+msgid "Word wrap line length:"
+msgstr "Punkt łamania wiersza:"
+
 msgid "Editor options"
 msgstr "Opcje edytora"
 
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
+msgstr ""
+"Przyjazny dla użytkownika edytor tekstu,\n"
+"napisany dla programu Midnight Commander"
+
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2012 Free Software Foundation"
+
 msgid "About"
 msgstr "O programie"
-
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
-" Copyright (C) 1996-2012 Free Software Foundation\n"
-"\n"
-"    Przyjazny dla użytkownika edytor tekstu, napisany\n"
-"         dla programu Midnight Commander"
 
 msgid "Open files"
 msgstr "Otwarcie plików"
@@ -1591,14 +1599,14 @@ msgstr "Wpisanie \"exit\" powróci do programu Midnight Commander"
 msgid "Cannot fetch a local copy of %s"
 msgstr "Nie można pobrać lokalnej kopii %s"
 
-msgid "&Set"
-msgstr "U&staw"
+msgid "Set &all"
+msgstr "Ust&aw wszystkie"
 
 msgid "S&kip"
 msgstr "&Pomiń"
 
-msgid "Set &all"
-msgstr "Ust&aw wszystkie"
+msgid "&Set"
+msgstr "U&staw"
 
 msgid "owner"
 msgstr "właśc."
@@ -1609,18 +1617,8 @@ msgstr "grupa"
 msgid "other"
 msgstr "inni"
 
-msgid "On"
-msgstr "Na"
-
 msgid "Flag"
 msgstr "Flaga"
-
-msgid "Mode"
-msgstr "Tryb"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d z %d"
 
 msgid "Chown advanced command"
 msgstr "Zaawansowane polecenie chown"
@@ -1641,14 +1639,14 @@ msgstr ""
 "Nie można wykonać chown na \"%s\"\n"
 "%s"
 
-msgid "&Stop"
-msgstr "&Zatrzymaj"
+msgid "Other 8 bit"
+msgstr "Inne 8 bitowe"
 
-msgid "&Resume"
-msgstr "&Wznów"
+msgid "Running"
+msgstr "Wykonywanie"
 
-msgid "&Kill"
-msgstr "Za&bij"
+msgid "Stopped"
+msgstr "Zatrzymano"
 
 msgid "&Full file list"
 msgstr "&Pełna lista plików"
@@ -1662,14 +1660,57 @@ msgstr "&Długa lista plików"
 msgid "&User defined:"
 msgstr "Określony przez &użytkownika:"
 
-msgid "Listing mode"
-msgstr "Tryb wyświetlania"
-
 msgid "User &mini status"
 msgstr "&Krótki stan użytkownika"
 
-msgid "Other 8 bit"
-msgstr "Inne 8 bitowe"
+msgid "Listing mode"
+msgstr "Tryb wyświetlania"
+
+msgid "Executable &first"
+msgstr "Najpierw &pliki wykonywalne"
+
+msgid "&Reverse"
+msgstr "Od&wrócony"
+
+msgid "Sort order"
+msgstr "Porządek sortowania"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr "&Usunięcie"
+
+msgid "Confirmation|O&verwrite"
+msgstr "Za&stąpienie"
+
+msgid "Confirmation|&Execute"
+msgstr "Wykonani&e"
+
+msgid "Confirmation|E&xit"
+msgstr "&Zakończenie"
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr "Usunięcie listy po&dręcznych katalogów"
+
+msgid "Confirmation|&History cleanup"
+msgstr "Wyczyszczenie &historii"
+
+msgid "Confirmation"
+msgstr "Potwierdzenia"
+
+msgid "&UTF-8 output"
+msgstr "Wyjście &UTF-8"
+
+msgid "&Full 8 bits output"
+msgstr "&Pełne wyjście 8 bitowe"
+
+msgid "&ISO 8859-1"
+msgstr "&ISO 8859-1"
+
+msgid "7 &bits"
+msgstr "7 &bitowe"
+
+msgid "F&ull 8 bits input"
+msgstr "P&ełne wejście 8 bitowe"
 
 msgid "Display bits"
 msgstr "Wyświetlane bity"
@@ -1677,91 +1718,32 @@ msgstr "Wyświetlane bity"
 msgid "Input / display codepage:"
 msgstr "Strona kodowa wejściowa/wyjściowa:"
 
-msgid "F&ull 8 bits input"
-msgstr "P&ełne wejście 8 bitowe"
-
 msgid "&Select"
 msgstr "&Wybierz"
-
-msgid "Running"
-msgstr "Wykonywanie"
-
-msgid "Stopped"
-msgstr "Zatrzymano"
-
-msgid "&Reverse"
-msgstr "Od&wrócony"
-
-msgid "Case sensi&tive"
-msgstr "Rozróżnianie wielkości"
-
-msgid "Executable &first"
-msgstr "Najpierw &pliki wykonywalne"
-
-msgid "Sort order"
-msgstr "Porządek sortowania"
-
-msgid "Confirmation"
-msgstr "Potwierdzenia"
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr "Wyczyszczenie &historii"
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr "Usunięcie listy po&dręcznych katalogów"
-
-msgid "Confirmation|E&xit"
-msgstr "&Zakończenie"
-
-msgid "Confirmation|&Execute"
-msgstr "Wykonani&e"
-
-msgid "Confirmation|O&verwrite"
-msgstr "Za&stąpienie"
-
-msgid "Confirmation|&Delete"
-msgstr "&Usunięcie"
-
-msgid "UTF-8 output"
-msgstr "Wyjście UTF-8"
-
-msgid "Full 8 bits output"
-msgstr "Pełne wyjście 8 bitowe"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7 bitowe"
 
 msgid "Directory tree"
 msgstr "Drzewo katalogów"
 
-msgid "Use passive mode over pro&xy"
-msgstr "Użycie trybu pasywnego przez poś&rednika"
+msgid "Timeout for freeing VFSs (sec):"
+msgstr "Opóźnienie zwalniania VFS (w sekundach):"
 
-msgid "Use &passive mode"
-msgstr "Użycie trybu &pasywnego"
+msgid "FTP anonymous password:"
+msgstr "Hasło anonimowego FTP:"
+
+msgid "FTP directory cache timeout (sec):"
+msgstr "Czas oczekiwania pamięci podręcznej katalogu FTP (w sekundach):"
+
+msgid "&Always use ftp proxy:"
+msgstr "Z&awsze używanie pośrednika FTP:"
 
 msgid "&Use ~/.netrc"
 msgstr "&Użycie pliku ~/.netrc"
 
-msgid "&Always use ftp proxy"
-msgstr "Za&wsze używaj pośrednika FTP"
+msgid "Use &passive mode"
+msgstr "Użycie trybu &pasywnego"
 
-msgid "sec"
-msgstr "sek."
-
-msgid "ftpfs directory cache timeout:"
-msgstr "Czas katalogów w pamięci podręcznej:"
-
-msgid "ftp anonymous password:"
-msgstr "Hasło anonimowego FTP:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "Opóźnienie zwalniania VFS:"
+msgid "Use passive mode over pro&xy"
+msgstr "Użycie trybu pasywnego przez poś&rednika"
 
 msgid "Virtual File System Setting"
 msgstr "Ustawienia wirtualnego systemu plików"
@@ -1772,17 +1754,30 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "Szybka zmiana katalogu"
 
-msgid "Symbolic link filename:"
-msgstr "Nazwa dowiązania symbolicznego:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr "Istniejąca nazwa pliku (plik docelowy dowiązania):"
+
+msgid "Symbolic link filename:"
+msgstr "Nazwa dowiązania symbolicznego:"
 
 msgid "Symbolic link"
 msgstr "Dowiązanie symboliczne"
 
-msgid "Background Jobs"
+msgid "&Stop"
+msgstr "&Zatrzymaj"
+
+msgid "&Resume"
+msgstr "&Wznów"
+
+msgid "&Kill"
+msgstr "Za&bij"
+
+msgid "Background jobs"
 msgstr "Zadania w tle"
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "Hasło dla \\\\%s\\%s"
 
 msgid "Domain:"
 msgstr "Domena:"
@@ -1790,45 +1785,44 @@ msgstr "Domena:"
 msgid "Username:"
 msgstr "Nazwa użytkownika:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Hasło dla \\\\%s\\%s"
+msgid "SMB authentication"
+msgstr "Uwierzytelnianie SMB"
 
-msgid "execute/search by others"
-msgstr "wykonywanie przez innych"
+msgid "set &user ID on execution"
+msgstr "ustaw &UID przy wykonaniu"
 
-msgid "write by others"
-msgstr "zapisywanie przez innych"
+msgid "set &group ID on execution"
+msgstr "ustaw &GID przy wykonaniu"
 
-msgid "read by others"
-msgstr "odczytywanie przez innych"
+msgid "stick&y bit"
+msgstr "bit \"&lepkości\""
 
-msgid "execute/search by group"
-msgstr "wykonywanie przez grupę"
+msgid "&read by owner"
+msgstr "&odczytywanie przez właśc."
 
-msgid "write by group"
-msgstr "zapisywanie przez grupę"
+msgid "&write by owner"
+msgstr "&zapisywanie przez właśc."
 
-msgid "read by group"
-msgstr "odczytywanie przez grupę"
+msgid "e&xecute/search by owner"
+msgstr "w&ykonywanie/przeszukiwanie przez właśc."
 
-msgid "execute/search by owner"
-msgstr "wykonywanie przez właśc."
+msgid "rea&d by group"
+msgstr "o&dczytywanie przez grupę"
 
-msgid "write by owner"
-msgstr "zapisywanie przez właśc."
+msgid "write by grou&p"
+msgstr "za&pisywanie przez grupę"
 
-msgid "read by owner"
-msgstr "odczytywanie przez właśc."
+msgid "execu&te/search by group"
+msgstr "wy&konywanie/przeszukiwanie przez grupę"
 
-msgid "sticky bit"
-msgstr "bit \"lepkości\""
+msgid "read &by others"
+msgstr "od&czytywanie przez innych"
 
-msgid "set group ID on execution"
-msgstr "ustaw GID przy wykonaniu"
+msgid "wr&ite by others"
+msgstr "zap&isywanie przez innych"
 
-msgid "set user ID on execution"
-msgstr "ustaw UID przy wykonaniu"
+msgid "execute/searc&h by others"
+msgstr "wyko&nywanie/przeszukiwanie przez innych"
 
 msgid "Name:"
 msgstr "Nazwa:"
@@ -1842,29 +1836,29 @@ msgstr "Nazwa właściciela:"
 msgid "Group name:"
 msgstr "Nazwa grupy:"
 
-msgid "C&lear marked"
-msgstr "&Wyczyść zaznaczone"
+msgid "&Marked all"
+msgstr "Wszystkie zaz&naczone"
 
 msgid "S&et marked"
 msgstr "Ustaw zaznaczon&e"
 
-msgid "&Marked all"
-msgstr "Wszystkie zaz&naczone"
+msgid "C&lear marked"
+msgstr "&Wyczyść zaznaczone"
 
 msgid "Chmod command"
 msgstr "Polecenie chmod"
 
-msgid "File"
-msgstr "Plik"
-
 msgid "Permission"
 msgstr "Uprawnienia"
 
-msgid "Set &users"
-msgstr "Ustaw &użytkowników"
+msgid "File"
+msgstr "Plik"
 
 msgid "Set &groups"
 msgstr "Ustaw &grupy"
+
+msgid "Set &users"
+msgstr "Ustaw &użytkowników"
 
 msgid "Name"
 msgstr "Nazwa"
@@ -1881,14 +1875,14 @@ msgstr "Rozmiar"
 msgid "Chown command"
 msgstr "Polecenie chown"
 
+msgid "User name"
+msgstr "Nazwa użytkownika"
+
 msgid "<Unknown user>"
 msgstr "<Nieznany użytkownik>"
 
 msgid "<Unknown group>"
 msgstr "<Nieznana grupa>"
-
-msgid "User name"
-msgstr "Nazwa użytkownika"
 
 msgid "Enter machine name (F1 for details):"
 msgstr "Proszę podać nazwę komputera (F1, aby uzyskać szczegóły):"
@@ -1905,14 +1899,14 @@ msgstr "Filtr"
 msgid "Set expression for filtering filenames"
 msgstr "Proszę ustawić wyrażenie filtrujące nazwy plików"
 
+msgid "&Files only"
+msgstr "&Tylko pliki"
+
 msgid "&Using shell patterns"
 msgstr "&Użycie wzorców dopasowywania"
 
 msgid "&Case sensitive"
 msgstr "&Rozróż. wielkości"
-
-msgid "&Files only"
-msgstr "&Tylko pliki"
 
 #, c-format
 msgid "Link %s to:"
@@ -2193,26 +2187,23 @@ msgstr "&Pomiń wszystko"
 msgid "&Retry"
 msgstr "P&onów"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Katalog nie jest pusty.\n"
+"Katalog \"%s\" nie jest pusty.\n"
 "Usunąć go rekurencyjnie?"
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Proces w tle: katalog nie jest pusty.\n"
-"Usunąć go rekurencyjnie? "
-
-msgid "Delete:"
-msgstr "Usunięcie:"
+"Proces w tle:\n"
+"Katalog \"%s\" nie jest pusty.\n"
+"Usunąć go rekurencyjnie?"
 
 msgid "Non&e"
 msgstr "Br&ak"
@@ -2482,6 +2473,12 @@ msgstr "Nie można wykonać działania na \"..\"."
 msgid "Sorry, I could not put the job in background"
 msgstr "Nie można umieścić zadania w tle"
 
+msgid "S&uspend"
+msgstr "&Uśpij"
+
+msgid "Con&tinue"
+msgstr "Kon&tynuuj"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr "%d:%02d.%02d"
@@ -2506,30 +2503,30 @@ msgid "Target file already exists!"
 msgstr "Plik docelowy już istnieje."
 
 #, c-format
-msgid "Source date: %s, size %llu"
-msgstr "Data źródłowa: %s, rozmiar %llu"
+msgid "New     : %s, size %llu"
+msgstr "Nowy     : %s, rozmiar %llu"
 
 #, c-format
-msgid "Target date: %s, size %llu"
-msgstr "Data docelowa: %s, rozmiar %llu"
+msgid "Existing: %s, size %llu"
+msgstr "Istniejący: %s, rozmiar %llu"
 
-msgid "If &size differs"
-msgstr "Jeśli różni się &rozmiar"
-
-msgid "&Update"
-msgstr "Zakt&ualizuj"
-
-msgid "Overwrite all targets?"
-msgstr "Zastąpić wszystkie pliki docelowe?"
-
-msgid "&Reget"
-msgstr "&Wznów"
+msgid "Overwrite this target?"
+msgstr "Zastąpić ten plik docelowy?"
 
 msgid "A&ppend"
 msgstr "&Dołącz"
 
-msgid "Overwrite this target?"
-msgstr "Zastąpić ten plik docelowy?"
+msgid "&Reget"
+msgstr "&Wznów"
+
+msgid "Overwrite all targets?"
+msgstr "Zastąpić wszystkie pliki docelowe?"
+
+msgid "&Update"
+msgstr "Zakt&ualizuj"
+
+msgid "If &size differs"
+msgstr "Jeśli różni się &rozmiar"
 
 msgid "File exists"
 msgstr "Plik istnieje"
@@ -2578,30 +2575,24 @@ msgstr "Cel"
 msgid "Deleting"
 msgstr "Usuwanie"
 
-msgid "&Background"
-msgstr "&W tle"
-
-msgid "&Stable Symlinks"
-msgstr "Zachowanie dowiązań s&ymbolicznych"
-
-msgid "Di&ve into subdir if exists"
-msgstr "&Schodzenie do podkat., jeśli istnieją"
+msgid "Follow &links"
+msgstr "Podążanie za &dowiązaniami"
 
 msgid "Preserve &attributes"
 msgstr "&Zachowanie atrybutów"
 
-msgid "Follow &links"
-msgstr "Podążanie za &dowiązaniami"
+msgid "Di&ve into subdir if exists"
+msgstr "&Schodzenie do podkat., jeśli istnieją"
+
+msgid "&Stable symlinks"
+msgstr "&Stabilne dowiązania symboliczne"
+
+msgid "&Background"
+msgstr "&W tle"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr "Nieprawidłowy wzór źródłowy \"%s\""
-
-msgid "&Suspend"
-msgstr "W&strzymaj"
-
-msgid "Con&tinue"
-msgstr "Kon&tynuuj"
 
 msgid "&Chdir"
 msgstr "&Zmień katalog"
@@ -2625,11 +2616,17 @@ msgstr "Odnaleziono: %ld"
 msgid "Malformed regular expression"
 msgstr "Błędnie sformatowane wyrażenie regularne"
 
+msgid "File name:"
+msgstr "Nazwa pliku:"
+
 msgid "&Find recursively"
 msgstr "&Znajdź rekurencyjnie"
 
 msgid "S&kip hidden"
 msgstr "Pomiń u&kryte"
+
+msgid "Content:"
+msgstr "Zawartość:"
 
 msgid "Sea&rch for content"
 msgstr "Wyszukiwanie &treści"
@@ -2637,11 +2634,11 @@ msgstr "Wyszukiwanie &treści"
 msgid "Case sens&itive"
 msgstr "Rozróżn&ianie wielkości"
 
-msgid "Fir&st hit"
-msgstr "Pier&wsze trafienie"
-
 msgid "A&ll charsets"
 msgstr "Wszystkie &zest. znaków"
+
+msgid "Fir&st hit"
+msgstr "Pier&wsze trafienie"
 
 msgid "&Tree"
 msgstr "&Drzewo"
@@ -2649,17 +2646,11 @@ msgstr "&Drzewo"
 msgid "Find File"
 msgstr "Znajdź plik"
 
-msgid "Content:"
-msgstr "Zawartość:"
-
-msgid "File name:"
-msgstr "Nazwa pliku:"
+msgid "Start at:"
+msgstr "Rozpoczęcie w:"
 
 msgid "Ena&ble ignore directories:"
 msgstr "Włączenie i&gnorowania katalogów:"
-
-msgid "Start at:"
-msgstr "Rozpoczęcie w:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2682,35 +2673,32 @@ msgstr "Wyszukiwanie %s"
 msgid "Searching"
 msgstr "Wyszukiwanie"
 
-msgid "&Remove"
-msgstr "&Usuń"
+msgid "Change &to"
+msgstr "Zmień &na"
 
-msgid "&Append"
-msgstr "D&ołącz"
-
-msgid "&Insert"
-msgstr "&Wstaw"
-
-msgid "New &entry"
-msgstr "Nowy wpi&s"
-
-msgid "New &group"
-msgstr "Nowa &grupa"
-
-msgid "&Up"
-msgstr "&W górę"
-
-msgid "&Add current"
-msgstr "Doda&j bieżący"
+msgid "&Free VFSs now"
+msgstr "Z&wolnij VFS"
 
 msgid "&Refresh"
 msgstr "&Odśwież"
 
-msgid "Fr&ee VFSs now"
-msgstr "Zwolnij &VFS"
+msgid "&Add current"
+msgstr "Doda&j bieżący"
 
-msgid "Change &to"
-msgstr "Zmień &na"
+msgid "&Up"
+msgstr "&W górę"
+
+msgid "New &group"
+msgstr "Nowa &grupa"
+
+msgid "New &entry"
+msgstr "Nowy wpi&s"
+
+msgid "&Insert"
+msgstr "&Wstaw"
+
+msgid "&Remove"
+msgstr "&Usuń"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Podgrupa - ENTER wyświetla listę"
@@ -2721,15 +2709,21 @@ msgstr "Aktywne katalogi VFS"
 msgid "Directory hotlist"
 msgstr "Lista podręcznych katalogów"
 
+msgid "Top level group"
+msgstr "Grupa główna"
+
 msgid "Directory path"
 msgstr "Ścieżka katalogu"
-
-msgid "Directory label"
-msgstr "Etykieta katalogu"
 
 #, c-format
 msgid "Moving %s"
 msgstr "Przenoszenie %s"
+
+msgid "Directory label"
+msgstr "Etykieta katalogu"
+
+msgid "&Append"
+msgstr "D&ołącz"
 
 msgid "New hotlist entry"
 msgstr "Nowy wpis podręczny"
@@ -2757,9 +2751,6 @@ msgid ""
 msgstr ""
 "Grupa \"%s\" nie jest pusta.\n"
 "Usunąć ją?"
-
-msgid "Top level group"
-msgstr "Grupa główna"
 
 msgid "Hotlist Load"
 msgstr "Wczytaj listę podręcznych katalogów"
@@ -2863,35 +2854,32 @@ msgstr "Tryb:      %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Położenie:  %Xh:%Xh"
 
-msgid "Show free sp&ace"
-msgstr "Wyświetla&nie wolnego miejsca"
+msgid "&Equal split"
+msgstr "Równy &podział"
 
-msgid "&XTerm window title"
-msgstr "Tytuł okna &Xterm"
-
-msgid "H&intbar visible"
-msgstr "Pasek &porad"
-
-msgid "&Keybar visible"
-msgstr "Pasek &klawiszy"
+msgid "&Menubar visible"
+msgstr "Pasek &menu"
 
 msgid "Command &prompt"
 msgstr "&Znak zachęty"
 
-msgid "Menu&bar visible"
-msgstr "Pasek &menu"
+msgid "&Keybar visible"
+msgstr "Pasek &klawiszy"
 
-msgid "&Equal split"
-msgstr "Równy &podział"
+msgid "H&intbar visible"
+msgstr "Pasek &porad"
+
+msgid "&XTerm window title"
+msgstr "Tytuł okna &Xterm"
+
+msgid "&Show free space"
+msgstr "Wyświetla&nie wolnego miejsca"
 
 msgid "Panel split"
 msgstr "Podział na panele"
 
 msgid "Console output"
 msgstr "Wyjście konsoli"
-
-msgid "Other options"
-msgstr "Inne opcje"
 
 msgid "&Vertical"
 msgstr "P&ionowy"
@@ -3125,65 +3113,65 @@ msgstr "Na prostych &terminalach"
 msgid "Alwa&ys"
 msgstr "&Zawsze"
 
-msgid "A&uto save setup"
-msgstr "Auto&matyczny zapis ustawień"
-
-msgid "Sa&fe delete"
-msgstr "Bezpieczne &usuwanie"
-
-msgid "Cd follows lin&ks"
-msgstr "\"cd\" podąża za &dowiązaniami"
-
-msgid "Rotating d&ash"
-msgstr "O&bracająca się kreska"
-
-msgid "Co&mplete: show all"
-msgstr "Uzupełnianie: wyśw. wszystkic&h"
-
-msgid "Shell &patterns"
-msgstr "Wzorce &powłoki"
-
-msgid "&Drop down menus"
-msgstr "Rozwi&janie menu"
-
-msgid "Auto m&enus"
-msgstr "Automatyczne m&enu"
-
-msgid "Use internal vie&w"
-msgstr "Uży&cie wewnętrznej przeglądarki"
-
-msgid "Use internal edi&t"
-msgstr "Użyc&ie wewnętrznego edytora"
-
-msgid "Pause after run"
-msgstr "Wstrzymanie po uruchomieniu"
-
-msgid "Timeout:"
-msgstr "Czas oczekiwania:"
-
-msgid "S&ingle press"
-msgstr "Po&jedyncze naciśnięcie"
-
-msgid "Esc key mode"
-msgstr "Tryb klawisza Escape"
-
-msgid "Preallocate &space"
-msgstr "Przydzielanie &miejsca z wyprzedzeniem"
-
-msgid "Mkdi&r autoname"
-msgstr "Automatyczna nazwa przy \"mkdi&r\""
-
-msgid "Classic pro&gressbar"
-msgstr "&Klasyczny pasek postępu"
-
-msgid "Compute tota&ls"
-msgstr "Obliczanie &objętości"
+msgid "File operations"
+msgstr "Działania na plikach"
 
 msgid "&Verbose operation"
 msgstr "&Więcej informacje o działaniu"
 
-msgid "File operation options"
-msgstr "Opcje działań na plikach"
+msgid "Compute tota&ls"
+msgstr "Obliczanie &objętości"
+
+msgid "Classic pro&gressbar"
+msgstr "&Klasyczny pasek postępu"
+
+msgid "Mkdi&r autoname"
+msgstr "Automatyczna nazwa przy \"mkdi&r\""
+
+msgid "Preallocate &space"
+msgstr "Przydzielanie &miejsca z wyprzedzeniem"
+
+msgid "Esc key mode"
+msgstr "Tryb klawisza Escape"
+
+msgid "S&ingle press"
+msgstr "Po&jedyncze naciśnięcie"
+
+msgid "Timeout:"
+msgstr "Czas oczekiwania:"
+
+msgid "Pause after run"
+msgstr "Wstrzymanie po uruchomieniu"
+
+msgid "Use internal edi&t"
+msgstr "Użyc&ie wewnętrznego edytora"
+
+msgid "Use internal vie&w"
+msgstr "Uży&cie wewnętrznej przeglądarki"
+
+msgid "Auto m&enus"
+msgstr "Automatyczne m&enu"
+
+msgid "&Drop down menus"
+msgstr "Rozwi&janie menu"
+
+msgid "Shell &patterns"
+msgstr "Wzorce &powłoki"
+
+msgid "Co&mplete: show all"
+msgstr "Uzupełnianie: wyśw. wszystkic&h"
+
+msgid "Rotating d&ash"
+msgstr "O&bracająca się kreska"
+
+msgid "Cd follows lin&ks"
+msgstr "\"cd\" podąża za &dowiązaniami"
+
+msgid "Sa&fe delete"
+msgstr "Bezpieczne &usuwanie"
+
+msgid "A&uto save setup"
+msgstr "Auto&matyczny zapis ustawień"
 
 msgid "Configure options"
 msgstr "Konfiguracja opcji"
@@ -3191,65 +3179,62 @@ msgstr "Konfiguracja opcji"
 msgid "Case &insensitive"
 msgstr "Bez rozróżniania w&ielkości"
 
-msgid "Case s&ensitive"
-msgstr "Rozróżnianie wi&elkości"
-
 msgid "Use panel sort mo&de"
 msgstr "Użycie trybu sortowania &panelu"
 
-msgid "Quick search"
-msgstr "Szybkie wyszukiwanie"
-
-msgid "&Permissions"
-msgstr "&Uprawnienia"
-
-msgid "File &types"
-msgstr "Typy p&lików"
-
-msgid "File highlight"
-msgstr "Wyróżnianie plików"
-
-msgid "&Mouse page scrolling"
-msgstr "Przewijanie stron &myszą"
-
-msgid "Pa&ge scrolling"
-msgstr "Przewijanie &stron"
-
-msgid "L&ynx-like motion"
-msgstr "Obsługa w stylu programu L&ynx"
-
-msgid "Navigation"
-msgstr "Nawigacja"
-
-msgid "A&uto save panels setup"
-msgstr "Auto&matyczny zapis ustawień paneli"
-
-msgid "Simple s&wap"
-msgstr "Proste &przełączenie"
-
-msgid "Re&verse files only"
-msgstr "&Tylko odwrotne pliki"
-
-msgid "Ma&rk moves down"
-msgstr "Zaznaczenie p&rzesuwa w dół"
-
-msgid "&Fast dir reload"
-msgstr "Szy&bkie odświeżanie katalogów"
-
-msgid "Show &hidden files"
-msgstr "Wyświetlanie u&krytych plików"
-
-msgid "Show &backup files"
-msgstr "Wyświetlanie p&lików zapasowych"
-
-msgid "Mi&x all files"
-msgstr "&Mieszanie wszystkich plików"
+msgid "Show mi&ni-status"
+msgstr "Wyświetla&nie ministanu"
 
 msgid "Use SI si&ze units"
 msgstr "Użycie je&dnostek rozmiaru SI"
 
-msgid "Show mi&ni-status"
-msgstr "Wyświetla&nie ministanu"
+msgid "Mi&x all files"
+msgstr "&Mieszanie wszystkich plików"
+
+msgid "Show &backup files"
+msgstr "Wyświetlanie p&lików zapasowych"
+
+msgid "Show &hidden files"
+msgstr "Wyświetlanie u&krytych plików"
+
+msgid "&Fast dir reload"
+msgstr "Szy&bkie odświeżanie katalogów"
+
+msgid "Ma&rk moves down"
+msgstr "Zaznaczenie p&rzesuwa w dół"
+
+msgid "Re&verse files only"
+msgstr "&Tylko odwrotne pliki"
+
+msgid "Simple s&wap"
+msgstr "Proste &przełączenie"
+
+msgid "A&uto save panels setup"
+msgstr "Auto&matyczny zapis ustawień paneli"
+
+msgid "Navigation"
+msgstr "Nawigacja"
+
+msgid "L&ynx-like motion"
+msgstr "Obsługa w stylu programu L&ynx"
+
+msgid "Pa&ge scrolling"
+msgstr "Przewijanie &stron"
+
+msgid "&Mouse page scrolling"
+msgstr "Przewijanie stron &myszą"
+
+msgid "File highlight"
+msgstr "Wyróżnianie plików"
+
+msgid "File &types"
+msgstr "Typy p&lików"
+
+msgid "&Permissions"
+msgstr "&Uprawnienia"
+
+msgid "Quick search"
+msgstr "Szybkie wyszukiwanie"
 
 msgid "Panel options"
 msgstr "Opcje panelu"
@@ -3294,7 +3279,7 @@ msgstr "&Wersja"
 msgid "sort|e"
 msgstr "e"
 
-msgid "&Extension"
+msgid "E&xtension"
 msgstr "Rozsz&erzenie"
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
@@ -3405,11 +3390,11 @@ msgstr "Dod&aj nowy"
 msgid "External panelize"
 msgstr "Filtr zewnętrzny"
 
-msgid "Command"
-msgstr "Polecenie"
-
 msgid "Other command"
 msgstr "Inne polecenie"
+
+msgid "Command"
+msgstr "Polecenie"
 
 msgid "Add to external panelize"
 msgstr "Dodaj do filtrów zewnętrznych"
@@ -3614,14 +3599,15 @@ msgstr ""
 "Uzyskano pełną bazę danych terminali.\n"
 "Wszystkie klawisze działają właściwie."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Należy nacisnąć każdy z wypisanych tu klawiszy, a następnie sprawdzić,"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
-msgstr "które nie są oznaczone jako \"OK\". Naciśnięcie spacji na brakującym"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
-msgstr "klawiszu lub kliknięcie określi go. Poruszanie za pomocą klawisza Tab."
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
+msgstr ""
+"Proszę nacisnąć wszystkie wymienione tutaj klawisze. Po zrobieniu\n"
+"tego proszę sprawdzić, które klawisze nie są oznaczone jako OK.\n"
+"Proszę nacisnąć spację na brakującym klawiszu lub nacisnąć przycisk\n"
+"myszy, aby go określić. Można się przemieszczać za pomocą klawisza Tab."
 
 #, c-format
 msgid ""
@@ -3744,6 +3730,9 @@ msgstr "Katalog konfiguracji:"
 msgid "Data directory:"
 msgstr "Katalog danych:"
 
+msgid "File extension handlers:"
+msgstr "Obsługa rozszerzeń plików:"
+
 msgid "VFS plugins and scripts:"
 msgstr "Wtyczki i skrypty VFS:"
 
@@ -3860,9 +3849,6 @@ msgstr "fish: zapis %s: wysyłanie polecenia..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: lokalny odczyt się nie powiódł, wysyłanie zer"
-
-msgid "fish: storing zeros"
-msgstr "fish: wysyłanie zer"
 
 msgid "fish: storing file"
 msgstr "fish: wysyłanie pliku"
