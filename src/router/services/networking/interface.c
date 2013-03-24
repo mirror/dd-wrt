@@ -1,25 +1,24 @@
-/*
- * interface.c
- *
- * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- * $Id:
- */
-
+^				/*
+				 * interface.c
+				 *
+				 * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
+				 *
+				 * This program is free software; you can redistribute it and/or
+				 * modify it under the terms of the GNU General Public License
+				 * as published by the Free Software Foundation; either version 2
+				 * of the License.
+				 *
+				 * This program is distributed in the hope that it will be useful,
+				 * but WITHOUT ANY WARRANTY; without even the implied warranty of
+				 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+				 * GNU General Public License for more details.
+				 *
+				 * You should have received a copy of the GNU General Public License
+				 * along with this program; if not, write to the Free Software
+				 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+				 *
+				 * $Id:
+				 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -40,14 +39,11 @@
 #include <bcmnvram.h>
 #include <bcmutils.h>
 #include <rc.h>
-
 #include <cy_conf.h>
 #include <cymac.h>
 #include <services.h>
-
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
-
 int ifconfig(char *name, int flags, char *addr, char *netmask)
 {
 	// char *down="down";
@@ -230,7 +226,7 @@ void start_config_vlan(void)
 
 void start_setup_vlans(void)
 {
-#if defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_NORTHSTAR)
+#if defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC)
 	return;
 #else
 	/*
@@ -280,6 +276,20 @@ void start_setup_vlans(void)
 		} else		// nvram_match ("vlan0ports", "1 2 3 4 5*")
 			// nothing to do
 		{
+		}
+	} else if (nvram_match("vlan2ports", "0 5u")) {
+		vlanmap[0] = 0;
+		vlanmap[5] = 5;
+		if (nvram_match("vlan1ports", "4 3 2 1 5*")) {
+			vlanmap[1] = 4;
+			vlanmap[2] = 3;
+			vlanmap[3] = 2;
+			vlanmap[4] = 1;
+		} else if (nvram_match("vlan1ports", "4 1 2 3 5*")) {
+			vlanmap[1] = 4;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
 		}
 	} else if (nvram_match("vlan1ports", "4 5")) {
 		vlanmap[0] = 4;
@@ -349,6 +359,29 @@ void start_setup_vlans(void)
 			vlanmap[4] = 0;
 		}
 
+	} else if (nvram_match("vlan2ports", "4 5u")) {
+		vlanmap[0] = 4;
+		vlanmap[5] = 5;
+		if (nvram_match("vlan1ports", "0 1 2 3 5*")) {
+			vlanmap[1] = 0;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		} else		// nvram_match ("vlan1ports", "3 2 1 0 5*")
+		{
+			vlanmap[1] = 3;
+			vlanmap[2] = 2;
+			vlanmap[3] = 1;
+			vlanmap[4] = 0;
+		}
+	} else if (nvram_match("vlan2ports", "0 5u")) {
+		vlanmap[0] = 0;
+		vlanmap[5] = 5;
+
+		vlanmap[1] = 1;
+		vlanmap[2] = 2;
+		vlanmap[3] = 3;
+		vlanmap[4] = 4;
 	}
 	// else ....
 
@@ -384,12 +417,13 @@ void start_setup_vlans(void)
 					lastvlan = tmp;
 					if (i == 5) {
 						snprintf(buff, 9, "%d", tmp);
-						eval("vconfig", "set_name_type",
+						eval("vconfig",
+						     "set_name_type",
 						     "VLAN_PLUS_VID_NO_PAD");
-						eval("vconfig", "add", phy,
-						     buff);
-						snprintf(buff, 9, "vlan%d",
-							 tmp);
+						eval("vconfig", "add",
+						     phy, buff);
+						snprintf(buff, 9,
+							 "vlan%d", tmp);
 						if (strcmp
 						    (nvram_safe_get
 						     ("wan_ifname"), buff)) {
@@ -415,10 +449,10 @@ void start_setup_vlans(void)
 						}
 					}
 
-					sprintf((char *)&portsettings[tmp][0],
-						"%s %d",
-						(char *)&portsettings[tmp][0],
-						use);
+					sprintf((char *)
+						&portsettings[tmp][0],
+						"%s %d", (char *)
+						&portsettings[tmp][0], use);
 				} else {
 					if (tmp == 16)	// vlan tagged
 						tagged[use] = 1;
@@ -446,35 +480,41 @@ void start_setup_vlans(void)
 			}
 			if (use < 5) {
 				snprintf(buff, 69,
-					 "/proc/switch/%s/port/%d/media", phy,
-					 use);
+					 "/proc/switch/%s/port/%d/media",
+					 phy, use);
 				if ((fp = fopen(buff, "r+"))) {
 					if ((mask & 4) == 4) {
 						if (!(mask & 16)) {
 							if (mask & 2)
-								fputs("1000HD",
-								      fp);
+								fputs
+								    ("1000HD",
+								     fp);
 							else
-								fputs("1000FD",
-								      fp);
+								fputs
+								    ("1000FD",
+								     fp);
 
 						} else {
 							switch (mask & 3) {
 							case 0:
-								fputs("100FD",
-								      fp);
+								fputs
+								    ("100FD",
+								     fp);
 								break;
 							case 1:
-								fputs("10FD",
-								      fp);
+								fputs
+								    ("10FD",
+								     fp);
 								break;
 							case 2:
-								fputs("100HD",
-								      fp);
+								fputs
+								    ("100HD",
+								     fp);
 								break;
 							case 3:
-								fputs("10HD",
-								      fp);
+								fputs
+								    ("10HD",
+								     fp);
 								break;
 							}
 						}
@@ -524,8 +564,8 @@ void start_setup_vlans(void)
 	for (i = 0; i < 16; i++) {
 		fprintf(stderr, "configure vlan ports to %s\n",
 			portsettings[i]);
-		writevaproc(portsettings[i], "/proc/switch/%s/vlan/%d/ports",
-			    phy, i);
+		writevaproc(portsettings[i],
+			    "/proc/switch/%s/vlan/%d/ports", phy, i);
 	}
 	return;
 #endif
@@ -720,8 +760,8 @@ int flush_interfaces(void)
 			 nvram_safe_get("lan_ifnames"),
 			 nvram_safe_get("wan_ifnames"));
 	else
-		snprintf(all_ifnames, 255, "%s %s %s %s", "eth0", "eth1",
-			 nvram_safe_get("lan_ifnames"),
+		snprintf(all_ifnames, 255, "%s %s %s %s", "eth0",
+			 "eth1", nvram_safe_get("lan_ifnames"),
 			 nvram_safe_get("wan_ifnames"));
 #endif
 	// strcpy(all_ifnames, "eth0 ");
