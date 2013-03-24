@@ -319,7 +319,121 @@ void start_overclocking(void)
 #endif
 }
 
-void enable_dtag_vlan(int enable)
+char *enable_dtag_vlan(int enable)
 {
+	int donothing = 0;
 
+	nvram_set("fromvdsl", "1");
+	if (nvram_match("vdsl_state", "1") && enable)
+		donothing = 1;
+	if ((nvram_match("vdsl_state", "0")
+	     || nvram_match("vdsl_state", "")) && !enable)
+		donothing = 1;
+	if (enable)
+		nvram_set("vdsl_state", "1");
+	else
+		nvram_set("vdsl_state", "0");
+
+	char *eth = "eth0";
+	char *lan_vlan = nvram_safe_get("lan_ifnames");
+	char *wan_vlan = nvram_safe_get("wan_ifname");
+	char *vlan_lan_ports = NULL;
+	char *vlan_wan_ports = NULL;
+	int lan_vlan_num = 0;
+	int wan_vlan_num = 1;
+
+	if (startswith(lan_vlan, "vlan0")) {
+		lan_vlan_num = 0;
+	} else if (startswith(lan_vlan, "vlan1")) {
+		lan_vlan_num = 1;
+	} else if (startswith(lan_vlan, "vlan2")) {
+		lan_vlan_num = 2;
+	} else
+		return eth;
+
+	if (startswith(wan_vlan, "vlan0")) {
+		wan_vlan_num = 0;
+	} else if (startswith(wan_vlan, "vlan1")) {
+		wan_vlan_num = 1;
+	} else if (startswith(wan_vlan, "vlan2")) {
+		wan_vlan_num = 2;
+	} else
+		return eth;
+
+	if (wan_vlan_num == lan_vlan_num)
+		return eth;
+
+	vlan_lan_ports = nvram_nget("vlan%dports", lan_vlan_num);
+	vlan_wan_ports = nvram_nget("vlan%dports", wan_vlan_num);
+
+	char *vlan7ports = "4t 5";;
+
+	if (!strcmp(vlan_wan_ports, "4 5"))
+		vlan7ports = "4t 5";
+	else if (!strcmp(vlan_wan_ports, "4 5u"))
+		vlan7ports = "4t 5u";
+	else if (!strcmp(vlan_wan_ports, "0 5"))
+		vlan7ports = "0t 5";
+	else if (!strcmp(vlan_wan_ports, "0 5u"))
+		vlan7ports = "0t 5u";
+	else if (!strcmp(vlan_wan_ports, "1 5"))
+		vlan7ports = "1t 5";
+	else if (!strcmp(vlan_wan_ports, "4 8"))
+		vlan7ports = "4t 8";
+	else if (!strcmp(vlan_wan_ports, "0 8"))
+		vlan7ports = "0t 8";
+
+	if (!donothing) {
+		writevaproc("1", "/proc/switch/%s/reset", eth);
+		writevaproc("1", "/proc/switch/%s/enable_vlan", eth);
+		if (enable) {
+			fprintf(stderr, "enable vlan port mapping %s/%s\n",
+				vlan_lan_ports, vlan7ports);
+			if (!nvram_match("dtag_vlan8", "1")
+			    || nvram_match("wan_vdsl", "0")) {
+				writevaproc(vlan_lan_ports,
+					    "/proc/switch/%s/vlan/%d/ports",
+					    eth, lan_vlan_num);
+				start_setup_vlans();
+				writevaproc(" ",
+					    "/proc/switch/%s/vlan/%d/ports",
+					    eth, wan_vlan_num);
+				writevaproc(vlan7ports,
+					    "/proc/switch/%s/vlan/7/ports",
+					    eth);
+			} else {
+				writevaproc(vlan_lan_ports,
+					    "/proc/switch/%s/vlan/%d/ports",
+					    eth, lan_vlan_num);
+				start_setup_vlans();
+				writevaproc("", "/proc/switch/%s/vlan/%d/ports",
+					    eth, wan_vlan_num);
+				writevaproc(vlan7ports,
+					    "/proc/switch/%s/vlan/7/ports",
+					    eth);
+				writevaproc(vlan7ports,
+					    "/proc/switch/%s/vlan/8/ports",
+					    eth);
+			}
+		} else {
+			fprintf(stderr, "disable vlan port mapping %s/%s\n",
+				vlan_lan_ports, vlan_wan_ports);
+			writevaproc(" ", "/proc/switch/%s/vlan/7/ports", eth);
+			writevaproc(" ", "/proc/switch/%s/vlan/8/ports", eth);
+			writevaproc(vlan_lan_ports,
+				    "/proc/switch/%s/vlan/%d/ports", eth,
+				    lan_vlan_num);
+			writevaproc(vlan_wan_ports,
+				    "/proc/switch/%s/vlan/%d/ports", eth,
+				    wan_vlan_num);
+			start_setup_vlans();
+		}
+	}
+	nvram_set("fromvdsl", "0");
+	return eth;
+}
+
+void start_dtag(void)
+{
+	enable_dtag_vlan(1);
 }
