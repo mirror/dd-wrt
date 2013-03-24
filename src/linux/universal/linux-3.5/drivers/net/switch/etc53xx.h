@@ -82,6 +82,17 @@
 #define ROBO_PAGE_PAGE            0xff /* Page Registers */
 
 
+#define ROBO_REG_VERSION_ID		0x40
+#define ROBO_REG_CTRL_PORT0_GMIIPO	0x58	/* 53012: GMII Port0 Override register */
+#define ROBO_REG_CTRL_PORT1_GMIIPO	0x59	/* 53012: GMII Port1 Override register */
+#define ROBO_REG_CTRL_PORT2_GMIIPO	0x5a	/* 53012: GMII Port2 Override register */
+#define ROBO_REG_CTRL_PORT3_GMIIPO	0x5b	/* 53012: GMII Port3 Override register */
+#define ROBO_REG_CTRL_PORT4_GMIIPO	0x5c	/* 53012: GMII Port4 Override register */
+#define ROBO_REG_CTRL_PORT5_GMIIPO	0x5d	/* 53012: GMII Port5 Override register */
+#define ROBO_REG_CTRL_PORT7_GMIIPO	0x5f	/* 53012: GMII Port7 Override register */
+
+
+
 /* BCM5325m CONTROL PAGE (0x00) REGISTER MAP : 8bit (byte) registers */
 typedef struct _ROBO_PORT_CTRL_STRUC
 {

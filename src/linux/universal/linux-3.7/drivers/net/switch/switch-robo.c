@@ -316,10 +316,13 @@ static int robo_switch_enable(void)
 		}
 
 		/* No spanning tree for unmanaged mode */
-		last_port = (robo.devid == ROBO_DEVICE_ID_5398) ?
+		last_port = ((robo.devid == ROBO_DEVICE_ID_5398) || ROBO_IS_BCM5301X(robo.devid)) ?
 				ROBO_PORT7_CTRL : ROBO_PORT4_CTRL;
-		for (i = ROBO_PORT0_CTRL; i <= last_port; i++)
+		for (i = ROBO_PORT0_CTRL; i <= last_port; i++) {
+			if (ROBO_IS_BCM5301X(robo.devid) && i == ROBO_PORT6_CTRL)
+				continue;
 			robo_write16(ROBO_CTRL_PAGE, i, 0);
+		}
 
 		/* No spanning tree on IMP port too */
 		robo_write16(ROBO_CTRL_PAGE, ROBO_IM_PORT_CTRL, 0);
@@ -331,6 +334,15 @@ static int robo_switch_enable(void)
 		robo_write16(ROBO_CTRL_PAGE, ROBO_PORT_OVERRIDE_CTRL, val);
 		// TODO: init EEE feature
 	}
+
+#ifdef ROBO_SRAB
+	if (ROBO_IS_BCM5301X(robo.devid)) {
+		val = robo_read16(ROBO_CTRL_PAGE, ROBO_REG_CTRL_PORT5_GMIIPO);
+		/* (GMII_SPEED_UP_2G|SW_OVERRIDE|TXFLOW_CNTL|RXFLOW_CNTL|LINK_STS) */
+		val |= 0xf1;
+		robo_write16(ROBO_CTRL_PAGE, ROBO_REG_CTRL_PORT5_GMIIPO, val);
+	}
+#endif
 
 #ifdef CONFIG_BCM47XX
 	/* WAN port LED, except for Netgear WGT634U */
