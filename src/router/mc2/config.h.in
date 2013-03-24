@@ -15,6 +15,9 @@
    language is requested. */
 #undef ENABLE_NLS
 
+/* Define to enable subshell support */
+#undef ENABLE_SUBSHELL
+
 /* Define to enable VFS support */
 #undef ENABLE_VFS
 
@@ -69,9 +72,6 @@
 
 /* Define to 1 if you have the `asprintf' function. */
 #undef HAVE_ASPRINTF
-
-/* Define to 1 if you have the `atoll' function. */
-#undef HAVE_ATOLL
 
 /* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
    CoreFoundation framework. */
@@ -447,9 +447,6 @@
    `HAVE_STRUCT_STAT_ST_BLOCKS' instead. */
 #undef HAVE_ST_BLOCKS
 
-/* Define to enable subshell support */
-#undef HAVE_SUBSHELL_SUPPORT
-
 /* Define to 1 if you have the `sysconf' function. */
 #undef HAVE_SYSCONF
 
@@ -682,6 +679,11 @@
 /* Define to select 'pcre' search type */
 #undef SEARCH_TYPE_PCRE
 
+/* Some systems declare sig_atomic_t as volatile, some others -- no. This
+   define will have value `sig_atomic_t' or `volatile sig_atomic_t'
+   accordingly. */
+#undef SIG_ATOMIC_VOLATILE_T
+
 /* The size of `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
@@ -716,6 +718,10 @@
 /* Define if statfs takes 2 args and struct statfs has a field named f_bsize.
    (4.3BSD, SunOS 4, HP-UX, AIX PS/2) */
 #undef STAT_STATFS2_BSIZE
+
+/* Define if statfs takes 2 args and struct statfs has a field named f_frsize.
+   (glibc/Linux > 2.6) */
+#undef STAT_STATFS2_FRSIZE
 
 /* Define if statfs takes 2 args and struct statfs has a field named f_fsize.
    (4.4BSD, NetBSD) */
@@ -844,6 +850,9 @@
 /* Define as the type of the result of subtracting two pointers, if the system
    doesn't define it. */
 #undef ptrdiff_t
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef sig_atomic_t
 
 /* Define to empty if the C compiler doesn't support this keyword. */
 #undef signed

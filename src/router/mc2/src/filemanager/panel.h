@@ -11,8 +11,7 @@
 #include "lib/fs.h"             /* MC_MAXPATHLEN */
 #include "lib/strutil.h"
 #include "lib/widget.h"         /* Widget */
-
-#include "src/main.h"           /* cd_enum */
+#include "lib/filehighlight.h"
 
 #include "dir.h"                /* dir_list */
 
@@ -47,6 +46,14 @@ typedef enum
     UP_RELOAD = 1,
     UP_ONLY_CURRENT = 2
 } panel_update_flags_t;
+
+/* run mode and params */
+
+enum cd_enum
+{
+    cd_parse_command,
+    cd_exact
+};
 
 /*** structures declarations (and typedefs of structures)*****************************************/
 
@@ -140,6 +147,8 @@ extern panel_field_t panel_fields[];
 
 extern hook_t *select_file_hook;
 
+extern mc_fhl_t *mc_filehighlight;
+
 /*** declarations of public functions ************************************************************/
 
 WPanel *panel_new (const char *panel_name);
@@ -182,6 +191,7 @@ void panel_set_lwd (WPanel * panel, const char *path_str);
 
 void panel_init (void);
 void panel_deinit (void);
+gboolean do_cd (const vfs_path_t * new_dir_vpath, enum cd_enum cd_type);
 
 /*** inline functions ****************************************************************************/
 #endif /* MC__PANEL_H */

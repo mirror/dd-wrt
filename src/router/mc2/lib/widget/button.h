@@ -8,10 +8,12 @@
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
+#define BUTTON(x) ((WButton *)(x))
 
 struct WButton;
 
 /* button callback */
+/* return 0 to continue work with dialog, non-zero to close */
 typedef int (*bcback_fn) (struct WButton * button, int action);
 
 /*** enums ***************************************************************************************/

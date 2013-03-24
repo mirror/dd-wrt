@@ -32,23 +32,18 @@
 
 #include <config.h>
 
-/* If TIOCGWINSZ supported, make it available here, because window resizing code
- * depends on it... */
-#ifdef HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
-#endif
-#include <termios.h>
-
 #include "lib/global.h"
 #include "lib/tty/tty.h"        /* LINES, COLS */
-#include "lib/tty/win.h"        /* do_enter_ca_mode() */
 #include "lib/tty/color.h"      /* tty_set_normal_attrs() */
+#ifdef HAVE_SLANG
+#include "lib/tty/win.h"        /* do_enter_ca_mode() */
+#endif
 #include "lib/widget.h"
 #include "lib/event.h"
 
 /*** global variables ****************************************************************************/
 
-Dlg_head *midnight_dlg = NULL;
+WDialog *midnight_dlg = NULL;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -80,7 +75,7 @@ dialog_switch_suspend (void *data, void *user_data)
     (void) user_data;
 
     if (data != mc_current->data)
-        ((Dlg_head *) data)->state = DLG_SUSPENDED;
+        DIALOG (data)->state = DLG_SUSPENDED;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -90,7 +85,7 @@ dialog_switch_goto (GList * dlg)
 {
     if (mc_current != dlg)
     {
-        Dlg_head *old = (Dlg_head *) mc_current->data;
+        WDialog *old = DIALOG (mc_current->data);
 
         mc_current = dlg;
 
@@ -105,7 +100,7 @@ dialog_switch_goto (GList * dlg)
             /* switch from editor, viewer, etc to another dialog */
             old->state = DLG_SUSPENDED;
 
-            if ((Dlg_head *) dlg->data != midnight_dlg)
+            if (DIALOG (dlg->data) != midnight_dlg)
                 /* switch to another editor, viewer, etc */
                 /* return to panels before run the required dialog */
                 dialog_switch_pending = TRUE;
@@ -121,26 +116,24 @@ dialog_switch_goto (GList * dlg)
 
 /* --------------------------------------------------------------------------------------------- */
 
-#if defined TIOCGWINSZ
 static void
 dlg_resize_cb (void *data, void *user_data)
 {
-    Dlg_head *d = data;
+    WDialog *d = data;
 
     (void) user_data;
     if (d->state == DLG_ACTIVE)
-        d->callback (d, NULL, DLG_RESIZE, 0, NULL);
+        send_message (d, NULL, MSG_RESIZE, 0, NULL);
     else
         d->winch_pending = TRUE;
 }
-#endif
 
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
 void
-dialog_switch_add (Dlg_head * h)
+dialog_switch_add (WDialog * h)
 {
     GList *dlg;
 
@@ -161,11 +154,11 @@ dialog_switch_add (Dlg_head * h)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-dialog_switch_remove (Dlg_head * h)
+dialog_switch_remove (WDialog * h)
 {
     GList *this;
 
-    if ((Dlg_head *) mc_current->data == h)
+    if (DIALOG (mc_current->data) == h)
         this = mc_current;
     else
         this = g_list_find (mc_dialogs, h);
@@ -174,13 +167,13 @@ dialog_switch_remove (Dlg_head * h)
 
     /* adjust current dialog */
     if (top_dlg != NULL)
-        mc_current = g_list_find (mc_dialogs, (Dlg_head *) top_dlg->data);
+        mc_current = g_list_find (mc_dialogs, DIALOG (top_dlg->data));
     else
         mc_current = mc_dialogs;
 
     /* resume forced the current screen */
     if (mc_current != NULL)
-        ((Dlg_head *) mc_current->data)->state = DLG_ACTIVE;
+        DIALOG (mc_current->data)->state = DLG_ACTIVE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -247,13 +240,13 @@ dialog_switch_list (void)
 
     for (h = mc_dialogs; h != NULL; h = g_list_next (h))
     {
-        Dlg_head *dlg;
+        WDialog *dlg;
         char *title;
 
-        dlg = (Dlg_head *) h->data;
+        dlg = DIALOG (h->data);
 
         if ((dlg != NULL) && (dlg->get_title != NULL))
-            title = dlg->get_title (dlg, listbox->list->widget.cols - 2);       /* FIXME! */
+            title = dlg->get_title (dlg, WIDGET (listbox->list)->cols - 2);
         else
             title = g_strdup ("");
 
@@ -281,7 +274,7 @@ dialog_switch_process_pending (void)
 
     while (dialog_switch_pending)
     {
-        Dlg_head *h = (Dlg_head *) mc_current->data;
+        WDialog *h = DIALOG (mc_current->data);
 
         dialog_switch_pending = FALSE;
         h->state = DLG_SUSPENDED;
@@ -313,7 +306,7 @@ dialog_switch_got_winch (void)
 
     for (dlg = mc_dialogs; dlg != NULL; dlg = g_list_next (dlg))
         if (dlg != mc_current)
-            ((Dlg_head *) dlg->data)->winch_pending = TRUE;
+            DIALOG (dlg->data)->winch_pending = TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -323,7 +316,7 @@ dialog_switch_shutdown (void)
 {
     while (mc_dialogs != NULL)
     {
-        Dlg_head *dlg = (Dlg_head *) mc_dialogs->data;
+        WDialog *dlg = DIALOG (mc_dialogs->data);
 
         run_dlg (dlg);
         destroy_dlg (dlg);
@@ -358,7 +351,7 @@ mc_refresh (void)
     if (mc_global.we_are_background)
         return;
 #endif /* ENABLE_BACKGROUND */
-    if (!mc_global.tty.winch_flag)
+    if (mc_global.tty.winch_flag == 0)
         tty_refresh ();
     else
     {
@@ -373,23 +366,11 @@ mc_refresh (void)
 void
 dialog_change_screen_size (void)
 {
-    mc_global.tty.winch_flag = FALSE;
-#if defined(HAVE_SLANG) || NCURSES_VERSION_MAJOR >= 4
-#if defined TIOCGWINSZ
+    mc_global.tty.winch_flag = 0;
 
-#ifndef NCURSES_VERSION
-    tty_noraw_mode ();
-    tty_reset_screen ();
-#endif
     tty_change_screen_size ();
+
 #ifdef HAVE_SLANG
-    /* XSI Curses spec states that portable applications shall not invoke
-     * initscr() more than once.  This kludge could be done within the scope
-     * of the specification by using endwin followed by a refresh (in fact,
-     * more than one curses implementation does this); it is guaranteed to work
-     * only with slang.
-     */
-    SLsmg_init_smg ();
     do_enter_ca_mode ();
     tty_keypad (TRUE);
     tty_nodelay (FALSE);
@@ -402,9 +383,6 @@ dialog_change_screen_size (void)
 
     /* Now, force the redraw */
     repaint_screen ();
-
-#endif /* TIOCGWINSZ */
-#endif /* defined(HAVE_SLANG) || NCURSES_VERSION_MAJOR >= 4 */
 }
 
 /* --------------------------------------------------------------------------------------------- */

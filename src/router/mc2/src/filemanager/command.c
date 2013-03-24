@@ -42,8 +42,10 @@
 #include "lib/util.h"
 #include "lib/widget.h"
 
-#include "src/main.h"           /* do_cd */
-#include "src/subshell.h"       /* SUBSHELL_EXIT */
+#include "src/setup.h"          /* quit */
+#ifdef ENABLE_SUBSHELL
+#include "src/subshell.h"
+#endif
 #include "src/execute.h"        /* shell_execute */
 
 #include "midnight.h"           /* current_panel */
@@ -78,6 +80,9 @@ WInput *cmdline;
  * substituted.  Wildcards are not supported either.
  * Advanced users should be encouraged to use "\cd" instead of "cd" if
  * they want the behavior they are used to in the shell.
+ *
+ * @param _path string to examine
+ * @return newly allocated string
  */
 
 static char *
@@ -225,7 +230,12 @@ handle_cdpath (const char *path)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/** Handle Enter on the command line */
+
+/** Handle Enter on the command line
+ *
+ * @param lc_cmdline string for handling
+ * @return MSG_HANDLED on sucsess else MSG_NOT_HANDLED
+ */
 
 static cb_ret_t
 enter (WInput * lc_cmdline)
@@ -256,15 +266,15 @@ enter (WInput * lc_cmdline)
     }
     else
     {
-        char *command, *s;
-        size_t i, j, cmd_len;
+        GString *command;
+        size_t i;
 
         if (!vfs_current_is_local ())
         {
             message (D_ERROR, MSG_ERROR, _("Cannot execute commands on non-local filesystems"));
             return MSG_NOT_HANDLED;
         }
-#ifdef HAVE_SUBSHELL_SUPPORT
+#ifdef ENABLE_SUBSHELL
         /* Check this early before we clean command line
          * (will be checked again by shell_execute) */
         if (mc_global.tty.use_subshell && subshell_state != INACTIVE)
@@ -273,32 +283,27 @@ enter (WInput * lc_cmdline)
             return MSG_NOT_HANDLED;
         }
 #endif
-        cmd_len = strlen (cmd);
-        command = g_malloc (cmd_len + 1);
-        command[0] = 0;
-        for (i = j = 0; i < cmd_len; i++)
+        command = g_string_sized_new (32);
+
+        for (i = 0; cmd[i] != '\0'; i++)
         {
-            if (cmd[i] == '%')
-            {
-                i++;
-                s = expand_format (NULL, cmd[i], TRUE);
-                command = g_realloc (command, j + strlen (s) + cmd_len - i + 1);
-                strcpy (command + j, s);
-                g_free (s);
-                j = strlen (command);
-            }
+            if (cmd[i] != '%')
+                g_string_append_c (command, cmd[i]);
             else
             {
-                command[j] = cmd[i];
-                j++;
-            }
-            command[j] = 0;
-        }
-        input_clean (lc_cmdline);
-        shell_execute (command, 0);
-        g_free (command);
+                char *s;
 
-#ifdef HAVE_SUBSHELL_SUPPORT
+                s = expand_format (NULL, cmd[++i], TRUE);
+                g_string_append (command, s);
+                g_free (s);
+            }
+        }
+
+        input_clean (lc_cmdline);
+        shell_execute (command->str, 0);
+        g_string_free (command, TRUE);
+
+#ifdef ENABLE_SUBSHELL
         if ((quit & SUBSHELL_EXIT) != 0)
         {
             if (quiet_quit_cmd ())
@@ -319,27 +324,33 @@ enter (WInput * lc_cmdline)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static cb_ret_t
-command_callback (Widget * w, widget_msg_t msg, int parm)
-{
-    WInput *cmd = (WInput *) w;
+/**
+ * Default command line callback
+ *
+ * @param w Widget object
+ * @param msg message for handling
+ * @param parm extra parameter such as key code
+ *
+ * @return MSG_NOT_HANDLED on fail else MSG_HANDLED
+ */
 
+static cb_ret_t
+command_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
+{
     switch (msg)
     {
-    case WIDGET_FOCUS:
+    case MSG_FOCUS:
         /* Never accept focus, otherwise panels will be unselected */
         return MSG_NOT_HANDLED;
 
-    case WIDGET_KEY:
+    case MSG_KEY:
         /* Special case: we handle the enter key */
         if (parm == '\n')
-        {
-            return enter (cmd);
-        }
+            return enter (INPUT (w));
         /* fall through */
 
     default:
-        return input_callback (w, msg, parm);
+        return input_callback (w, sender, msg, parm, data);
     }
 }
 
@@ -347,8 +358,11 @@ command_callback (Widget * w, widget_msg_t msg, int parm)
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-/* --------------------------------------------------------------------------------------------- */
-/** Execute the cd command on the command line */
+/** Execute the cd command on the command line
+ *
+ * @param orig_cmd command for execution
+ */
+
 void
 do_cd_command (char *orig_cmd)
 {
@@ -466,7 +480,7 @@ command_new (int y, int x, int cols)
                      INPUT_COMPLETE_SHELL_ESC);
 
     /* Add our hooks */
-    cmd->widget.callback = command_callback;
+    WIDGET (cmd)->callback = command_callback;
 
     return cmd;
 }
@@ -475,6 +489,10 @@ command_new (int y, int x, int cols)
 /**
  * Insert quoted text in input line.  The function is meant for the
  * command line, so the percent sign is quoted as well.
+ *
+ * @param in WInput object
+ * @param text string for insertion
+ * @param insert_extra_space add extra space
  */
 
 void

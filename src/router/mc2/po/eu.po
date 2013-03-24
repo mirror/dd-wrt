@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: Basque (http://www.transifex.com/projects/p/mc/language/eu/)\n"
 "Language: eu\n"
@@ -531,14 +531,14 @@ msgstr "&Bai"
 msgid "&No"
 msgstr "E&z"
 
-msgid "Background process:"
-msgstr "Atzeko planoko prozesua:"
+msgid "&OK"
+msgstr "&Ados"
 
 msgid "&Cancel"
 msgstr "&Utzi"
 
-msgid "&OK"
-msgstr "&Ados"
+msgid "Background process:"
+msgstr "Atzeko planoko prozesua:"
 
 msgid "Error"
 msgstr "Errorea"
@@ -730,20 +730,20 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Itxi"
 
-msgid "&All charsets"
-msgstr "&Karaktere-multzo guztiak"
-
-msgid "&Whole words"
-msgstr "&Hitz osoak"
-
-msgid "&Backwards"
-msgstr "&Atzera"
+msgid "Enter search string:"
+msgstr "Sartu bilatzeko katea:"
 
 msgid "Cas&e sensitive"
 msgstr "Berei&zi maius/minus"
 
-msgid "Enter search string:"
-msgstr "Sartu bilatzeko katea:"
+msgid "&Backwards"
+msgstr "&Atzera"
+
+msgid "&Whole words"
+msgstr "&Hitz osoak"
+
+msgid "&All charsets"
+msgstr "&Karaktere-multzo guztiak"
 
 msgid "Search"
 msgstr "Bilatu"
@@ -783,26 +783,26 @@ msgstr "&Azkarrena (fitxategi haundiak suposatu)"
 msgid "&Minimal (Find a smaller set of change)"
 msgstr "&Gutxienekoa (bilatu aldaketa multzo txikiagoa)"
 
-msgid "Strip &trailing carriage return"
-msgstr "Kendu arras&te orga itzulera"
-
-msgid "Ignore all &whitespace"
-msgstr "Baztertu &zurigune guztiak"
-
-msgid "Ignore &space change"
-msgstr "Baztertu &zuriune aldaketa"
-
-msgid "Ignore tab &expansion"
-msgstr "Baztertu tab &hedapena"
-
-msgid "&Ignore case"
-msgstr "&Ez bereizi maius/minus"
+msgid "Diff algorithm"
+msgstr "Diff algoritmoa"
 
 msgid "Diff extra options"
 msgstr "Diff-en aparteko aukerak"
 
-msgid "Diff algorithm"
-msgstr "Diff algoritmoa"
+msgid "&Ignore case"
+msgstr "&Ez bereizi maius/minus"
+
+msgid "Ignore tab &expansion"
+msgstr "Baztertu tab &hedapena"
+
+msgid "Ignore &space change"
+msgstr "Baztertu &zuriune aldaketa"
+
+msgid "Ignore all &whitespace"
+msgstr "Baztertu &zurigune guztiak"
+
+msgid "Strip &trailing carriage return"
+msgstr "Kendu arras&te orga itzulera"
 
 msgid "Diff Options"
 msgstr "Diff-en aukerak"
@@ -948,11 +948,11 @@ msgstr "&Windows/DOS formatua (CR LF)"
 msgid "&Macintosh format (CR)"
 msgstr "&Macintosh formatua (CR)"
 
-msgid "Change line breaks to:"
-msgstr "Aldatu lerro hausturak hontara:"
-
 msgid "Enter file name:"
 msgstr "Sartu fitxategi izena:"
+
+msgid "Change line breaks to:"
+msgstr "Aldatu lerro hausturak hontara:"
 
 msgid "Save As"
 msgstr "Gorde honela"
@@ -1130,17 +1130,17 @@ msgstr "Kanpoko komandoa"
 msgid "Cannot execute command"
 msgstr "Komandoa ezin exekutatu"
 
-msgid "Copies to"
-msgstr "Kopiak hona"
-
-msgid "Subject"
-msgstr "Gaia"
+msgid "mail -s <subject> -c <cc> <to>"
+msgstr "posta -s <gaia> -c <kk> <nori>"
 
 msgid "To"
 msgstr "Nori"
 
-msgid "mail -s <subject> -c <cc> <to>"
-msgstr "posta -s <gaia> -c <kk> <nori>"
+msgid "Subject"
+msgstr "Gaia"
+
+msgid "Copies to"
+msgstr "Kopiak hona"
 
 msgid "Mail"
 msgstr "Posta"
@@ -1161,11 +1161,26 @@ msgstr ""
 msgid "In se&lection"
 msgstr "&Hautapenean"
 
+msgid "&Find all"
+msgstr "&Aurkitu dena"
+
 msgid "Enter replacement string:"
 msgstr "Sartu ordezko katea:"
 
-msgid "&Find all"
-msgstr "&Aurkitu dena"
+msgid "Replace with:"
+msgstr "Ordezkatu honekin:"
+
+msgid "&Replace"
+msgstr "&Ordeztu"
+
+msgid "A&ll"
+msgstr "&Guztia"
+
+msgid "&Skip"
+msgstr "&Saltatu"
+
+msgid "Confirm replace"
+msgstr "Berretsi ordezkapena"
 
 msgid "Cancel"
 msgstr "Utzi"
@@ -1176,21 +1191,6 @@ msgid ""
 msgstr ""
 "Uneko testuan aldaketak egin dira eta ez dira gorde.\n"
 "Jarraitzen baduzu aldaketa horiek baztertu egingo dira"
-
-msgid "&Skip"
-msgstr "&Saltatu"
-
-msgid "A&ll"
-msgstr "&Guztia"
-
-msgid "&Replace"
-msgstr "&Ordeztu"
-
-msgid "Replace with:"
-msgstr "Ordezkatu honekin:"
-
-msgid "Confirm replace"
-msgstr "Berretsi ordezkapena"
 
 msgid "NoName"
 msgstr ""
@@ -1414,72 +1414,82 @@ msgstr ""
 msgid "&Options"
 msgstr "&Aukerak"
 
-msgid "None"
-msgstr "Bat ere ez"
+msgid "&None"
+msgstr ""
 
-msgid "Dynamic paragraphing"
-msgstr "Paragrafo dinamikoa"
+msgid "&Dynamic paragraphing"
+msgstr ""
 
-msgid "Type writer wrap"
-msgstr "Idatzi idazlearen itzulbira"
-
-msgid "Word wrap line length:"
-msgstr "Itzulbiratutako lerroaren luzeera:"
-
-msgid "&Group undo"
-msgstr "&Taldeka desegin"
-
-msgid "Cursor beyond end of line"
-msgstr "Kurtsorea lerro amaieratik harantzago"
-
-msgid "Pers&istent selection"
-msgstr "&Hautaketa iraunkorra"
-
-msgid "Synta&x highlighting"
-msgstr "sinta&xia nabarmentzen"
-
-msgid "Visible tabs"
-msgstr "Tab ikusgarriak"
-
-msgid "Visible trailing spaces"
-msgstr "Arraste zuriune ikusgarriak"
-
-msgid "Save file &position"
-msgstr "Gorde fitxategi &kokapena"
-
-msgid "Confir&m before saving"
-msgstr "Be&rretsi gorde aurretik"
-
-msgid "&Return does autoindent"
-msgstr "&Itzulera teklak koska automatikoki jartzen du"
-
-msgid "Tab spacing:"
-msgstr "Tab tartea:"
-
-msgid "Fill tabs with &spaces"
-msgstr "bete tabulazioak &tarteekin"
-
-msgid "&Backspace through tabs"
-msgstr "&Atzera tabuladoreen bidez"
-
-msgid "&Fake half tabs"
-msgstr "&Itxuratu tabuladore erdiak "
+msgid "Type &writer wrap"
+msgstr ""
 
 msgid "Wrap mode"
 msgstr "Doipen-modua"
 
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "&Itxuratu tabuladore erdiak "
+
+msgid "&Backspace through tabs"
+msgstr "&Atzera tabuladoreen bidez"
+
+msgid "Fill tabs with &spaces"
+msgstr "bete tabulazioak &tarteekin"
+
+msgid "Tab spacing:"
+msgstr "Tab tartea:"
+
+msgid "Other options"
+msgstr "Beste aukera batzuk"
+
+msgid "&Return does autoindent"
+msgstr "&Itzulera teklak koska automatikoki jartzen du"
+
+msgid "Confir&m before saving"
+msgstr "Be&rretsi gorde aurretik"
+
+msgid "Save file &position"
+msgstr "Gorde fitxategi &kokapena"
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
+msgstr ""
+
+msgid "Synta&x highlighting"
+msgstr "sinta&xia nabarmentzen"
+
+msgid "C&ursor after inserted block"
+msgstr ""
+
+msgid "Pers&istent selection"
+msgstr "&Hautaketa iraunkorra"
+
+msgid "Cursor be&yond end of line"
+msgstr ""
+
+msgid "&Group undo"
+msgstr "&Taldeka desegin"
+
+msgid "Word wrap line length:"
+msgstr "Itzulbiratutako lerroaren luzeera:"
+
 msgid "Editor options"
 msgstr "Editorearen aukerak"
 
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
+msgstr ""
+
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
 msgid "About"
 msgstr "Honi buruz"
-
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
 
 msgid "Open files"
 msgstr ""
@@ -1560,14 +1570,14 @@ msgstr "Idatzi `irten' Midnight Commander-era itzultzeko"
 msgid "Cannot fetch a local copy of %s"
 msgstr "%s-ren bertako kopia bat ezin eskuratu"
 
-msgid "&Set"
-msgstr "&Ezarri"
+msgid "Set &all"
+msgstr "&Konfiguratu dena"
 
 msgid "S&kip"
 msgstr "&Saltatu"
 
-msgid "Set &all"
-msgstr "&Konfiguratu dena"
+msgid "&Set"
+msgstr "&Ezarri"
 
 msgid "owner"
 msgstr "jabea"
@@ -1578,18 +1588,8 @@ msgstr "taldea"
 msgid "other"
 msgstr "bestelakoa"
 
-msgid "On"
-msgstr "Non"
-
 msgid "Flag"
 msgstr "Bandera"
-
-msgid "Mode"
-msgstr "Modua"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d %d(e)tik  "
 
 msgid "Chown advanced command"
 msgstr "Chown komando aurreratua"
@@ -1610,14 +1610,14 @@ msgstr ""
 "\"%s\"-ren jabea ezin aldatu (\"chown\")\n"
 "%s"
 
-msgid "&Stop"
-msgstr "&Gelditu"
+msgid "Other 8 bit"
+msgstr "Beste 8 bit"
 
-msgid "&Resume"
-msgstr "&Berrekin"
+msgid "Running"
+msgstr "Martxan"
 
-msgid "&Kill"
-msgstr "&Hil"
+msgid "Stopped"
+msgstr "Geldituta"
 
 msgid "&Full file list"
 msgstr "Fitxategien zerrenda &osoa"
@@ -1631,14 +1631,57 @@ msgstr "Fitxategien zerrenda &luzea"
 msgid "&User defined:"
 msgstr "&Erabiltzaileak definitutakoa:"
 
-msgid "Listing mode"
-msgstr "Zerrendatzeko modua"
-
 msgid "User &mini status"
 msgstr "Erabiltzailearen &mini egoera"
 
-msgid "Other 8 bit"
-msgstr "Beste 8 bit"
+msgid "Listing mode"
+msgstr "Zerrendatzeko modua"
+
+msgid "Executable &first"
+msgstr "Exekutagarria &lehenengo"
+
+msgid "&Reverse"
+msgstr "&Alderantzikatu"
+
+msgid "Sort order"
+msgstr "Sailkatzeko ordena"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr "E&zabatu"
+
+msgid "Confirmation|O&verwrite"
+msgstr "Gai&nidatzi"
+
+msgid "Confirmation|&Execute"
+msgstr "&Exekutatu"
+
+msgid "Confirmation|E&xit"
+msgstr "&Irten"
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr "&Gogokoen direktorioa ezabatu"
+
+msgid "Confirmation|&History cleanup"
+msgstr "&Historia garbitu"
+
+msgid "Confirmation"
+msgstr "Berrespena"
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "8 bit-eko sarrera"
 
 msgid "Display bits"
 msgstr "Bistaratu bitak"
@@ -1646,91 +1689,32 @@ msgstr "Bistaratu bitak"
 msgid "Input / display codepage:"
 msgstr "Sartu / bistaratu kode-orrialdea:"
 
-msgid "F&ull 8 bits input"
-msgstr "8 bit-eko sarrera"
-
 msgid "&Select"
 msgstr "&Hautatu"
-
-msgid "Running"
-msgstr "Martxan"
-
-msgid "Stopped"
-msgstr "Geldituta"
-
-msgid "&Reverse"
-msgstr "&Alderantzikatu"
-
-msgid "Case sensi&tive"
-msgstr "Berei&zi maius/minus"
-
-msgid "Executable &first"
-msgstr "Exekutagarria &lehenengo"
-
-msgid "Sort order"
-msgstr "Sailkatzeko ordena"
-
-msgid "Confirmation"
-msgstr "Berrespena"
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr "&Historia garbitu"
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr "&Gogokoen direktorioa ezabatu"
-
-msgid "Confirmation|E&xit"
-msgstr "&Irten"
-
-msgid "Confirmation|&Execute"
-msgstr "&Exekutatu"
-
-msgid "Confirmation|O&verwrite"
-msgstr "Gai&nidatzi"
-
-msgid "Confirmation|&Delete"
-msgstr "E&zabatu"
-
-msgid "UTF-8 output"
-msgstr "UTF-8 irteera"
-
-msgid "Full 8 bits output"
-msgstr "8 biteko irteera"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7 bit"
 
 msgid "Directory tree"
 msgstr "Direktorio zuhaitza"
 
-msgid "Use passive mode over pro&xy"
-msgstr "Erabili modu pasiboa proxy-arekin"
+msgid "Timeout for freeing VFSs (sec):"
+msgstr ""
 
-msgid "Use &passive mode"
-msgstr "Erabili modu &pasiboa"
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
+msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr "&Erabili ~/.netrc"
 
-msgid "&Always use ftp proxy"
-msgstr "&Erabili beti ftp proxy-a"
+msgid "Use &passive mode"
+msgstr "Erabili modu &pasiboa"
 
-msgid "sec"
-msgstr "seg"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "ftpfs direktorioen cache-ko denbora-muga:"
-
-msgid "ftp anonymous password:"
-msgstr "ftp anonimoaren pasahitza:"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "VFSak askatzeko denbora-muga:"
+msgid "Use passive mode over pro&xy"
+msgstr "Erabili modu pasiboa proxy-arekin"
 
 msgid "Virtual File System Setting"
 msgstr "Alegiazko fitxategi sistemaren (VFS) ezarpena"
@@ -1741,19 +1725,32 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "cd bizkorra"
 
-msgid "Symbolic link filename:"
-msgstr "Esteka sinbolikoaren fitxategi izena:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr ""
 "Existitzen den fitxategi izena (esteka sinbolikoak erakutsiko duen fitxategi "
 "izena):"
 
+msgid "Symbolic link filename:"
+msgstr "Esteka sinbolikoaren fitxategi izena:"
+
 msgid "Symbolic link"
 msgstr "Esteka sinbolikoa"
 
-msgid "Background Jobs"
-msgstr "Hondoko lanak"
+msgid "&Stop"
+msgstr "&Gelditu"
+
+msgid "&Resume"
+msgstr "&Berrekin"
+
+msgid "&Kill"
+msgstr "&Hil"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "\\\\%s\\%s(r)entzako pasahitza"
 
 msgid "Domain:"
 msgstr "Domeinua:"
@@ -1761,45 +1758,44 @@ msgstr "Domeinua:"
 msgid "Username:"
 msgstr "Erabiltzaile izena:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "\\\\%s\\%s(r)entzako pasahitza"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "beste batzuek exekutatu/bilatu"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "beste batzuek idatzi"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "beste batzuek irakurri"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "taldeak exekutatu/bilatu"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "taldeak idatzi"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "taldeak irakurri"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "jabeak exekutatu/bilatu"
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "jabeak idatzi"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "jabeak irakurri"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "bit itsaskorra"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "ezarri taldearen ID-a exekutatzerakoan"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "ezarri erabiltzailearen ID-a exekutatzerakoan"
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr "Izena:"
@@ -1813,29 +1809,29 @@ msgstr "Jabearen izena:"
 msgid "Group name:"
 msgstr "Taldearen izena:"
 
-msgid "C&lear marked"
-msgstr "&Garbitu markatutakoa"
+msgid "&Marked all"
+msgstr "Guztiak &markatuta"
 
 msgid "S&et marked"
 msgstr "&Ezarri markatutakoa"
 
-msgid "&Marked all"
-msgstr "Guztiak &markatuta"
+msgid "C&lear marked"
+msgstr "&Garbitu markatutakoa"
 
 msgid "Chmod command"
 msgstr "Chmod komandoa"
 
-msgid "File"
-msgstr "Fitxategia"
-
 msgid "Permission"
 msgstr "Baimena"
 
-msgid "Set &users"
-msgstr "Ezarri &erabiltzaileak"
+msgid "File"
+msgstr "Fitxategia"
 
 msgid "Set &groups"
 msgstr "Ezarri &taldeak"
+
+msgid "Set &users"
+msgstr "Ezarri &erabiltzaileak"
 
 msgid "Name"
 msgstr "Izena"
@@ -1852,14 +1848,14 @@ msgstr "Neurria"
 msgid "Chown command"
 msgstr "Chown komandoa"
 
+msgid "User name"
+msgstr "Erabiltzaile izena"
+
 msgid "<Unknown user>"
 msgstr "<Erabiltzaile ezezaguna>"
 
 msgid "<Unknown group>"
 msgstr "<Talde ezezaguna>"
-
-msgid "User name"
-msgstr "Erabiltzaile izena"
 
 msgid "Enter machine name (F1 for details):"
 msgstr "Sartu makinaren izena (F1 xehetasunetarako):"
@@ -1876,14 +1872,14 @@ msgstr "Iragazi"
 msgid "Set expression for filtering filenames"
 msgstr "Ezarri fitxategi izenak iragazteko adierazpena"
 
+msgid "&Files only"
+msgstr "&Fitxategiak soilik"
+
 msgid "&Using shell patterns"
 msgstr "&Shell ereduak erabiltzen"
 
 msgid "&Case sensitive"
 msgstr "Berei&zi maius/minus"
-
-msgid "&Files only"
-msgstr "&Fitxategiak soilik"
 
 #, c-format
 msgid "Link %s to:"
@@ -2166,26 +2162,18 @@ msgstr "Sa&hiestu guztia"
 msgid "&Retry"
 msgstr "&Saiatu berriz"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Direktorioa ez dago hutsik.\n"
-"Errekurtsiboki ezabatu?"
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Hondoko prozesua: Direktorioa ez dago hutsik.\n"
-"Errekurtsiboki ezabatu?"
-
-msgid "Delete:"
-msgstr "Ezabatu:"
 
 msgid "Non&e"
 msgstr "&Bat ere ez"
@@ -2455,6 +2443,12 @@ msgstr "Ezin da \"..\" erabili!"
 msgid "Sorry, I could not put the job in background"
 msgstr "Barkatu, ezin izan dut lana hondoan ipini"
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "&Jarraitu"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr "%d:%02d.%02d"
@@ -2479,30 +2473,30 @@ msgid "Target file already exists!"
 msgstr "Helburu fitxategia dagoeneko existitzen da!"
 
 #, c-format
-msgid "Source date: %s, size %llu"
-msgstr "Iturburu data: %s, neurria %llu"
+msgid "New     : %s, size %llu"
+msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
-msgstr "Helburu data: %s, neurria %llu"
+msgid "Existing: %s, size %llu"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "&Neurria desberdina bada"
-
-msgid "&Update"
-msgstr "Eg&uneratu"
-
-msgid "Overwrite all targets?"
+msgid "Overwrite this target?"
 msgstr "Helburu guztiak gainidatzi?"
-
-msgid "&Reget"
-msgstr "&Beste saiakera bat"
 
 msgid "A&ppend"
 msgstr "era&nskina"
 
-msgid "Overwrite this target?"
+msgid "&Reget"
+msgstr "&Beste saiakera bat"
+
+msgid "Overwrite all targets?"
 msgstr "Helburu guztiak gainidatzi?"
+
+msgid "&Update"
+msgstr "Eg&uneratu"
+
+msgid "If &size differs"
+msgstr "&Neurria desberdina bada"
 
 msgid "File exists"
 msgstr "Fitxategia existitzen da"
@@ -2551,30 +2545,24 @@ msgstr "Helburua"
 msgid "Deleting"
 msgstr "Ezabatzen"
 
-msgid "&Background"
-msgstr "&Atzeko planoa"
-
-msgid "&Stable Symlinks"
-msgstr "Esteka sinboliko egon&korrak"
-
-msgid "Di&ve into subdir if exists"
-msgstr "Mur&gildu azpidirektorioan existitzen bada"
+msgid "Follow &links"
+msgstr "jarraitu &estekei"
 
 msgid "Preserve &attributes"
 msgstr "Mantendu &atributuak"
 
-msgid "Follow &links"
-msgstr "jarraitu &estekei"
+msgid "Di&ve into subdir if exists"
+msgstr "Mur&gildu azpidirektorioan existitzen bada"
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "&Atzeko planoa"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr "'%s' iturburu eredu baliogabea"
-
-msgid "&Suspend"
-msgstr "E&seki"
-
-msgid "Con&tinue"
-msgstr "&Jarraitu"
 
 msgid "&Chdir"
 msgstr "&Aldatu direktorioa"
@@ -2598,11 +2586,17 @@ msgstr "Aurkitu: %ld"
 msgid "Malformed regular expression"
 msgstr "Gaizki osatutako adierazpen erregularra"
 
+msgid "File name:"
+msgstr "Fitxategi izena:"
+
 msgid "&Find recursively"
 msgstr "&Bilatu errekurtsiboki"
 
 msgid "S&kip hidden"
 msgstr "B&aztertu ezkutukoak"
+
+msgid "Content:"
+msgstr "Edukia:"
 
 msgid "Sea&rch for content"
 msgstr "Bi&latu edukiaren arabera"
@@ -2610,11 +2604,11 @@ msgstr "Bi&latu edukiaren arabera"
 msgid "Case sens&itive"
 msgstr "Berei&zi maius/minus"
 
-msgid "Fir&st hit"
-msgstr "&Lehenengo agerraldia"
-
 msgid "A&ll charsets"
 msgstr "Karaktere-&multzo guztiak"
+
+msgid "Fir&st hit"
+msgstr "&Lehenengo agerraldia"
 
 msgid "&Tree"
 msgstr "Zu&haitza"
@@ -2622,17 +2616,11 @@ msgstr "Zu&haitza"
 msgid "Find File"
 msgstr "Bilatu fitxategia"
 
-msgid "Content:"
-msgstr "Edukia:"
-
-msgid "File name:"
-msgstr "Fitxategi izena:"
+msgid "Start at:"
+msgstr "Hemen hasi:"
 
 msgid "Ena&ble ignore directories:"
 msgstr "&Gaitu alboratu direktorioak:"
-
-msgid "Start at:"
-msgstr "Hemen hasi:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2654,35 +2642,32 @@ msgstr "%s bilatzen"
 msgid "Searching"
 msgstr "Bilatzen"
 
-msgid "&Remove"
-msgstr "Ke&ndu"
+msgid "Change &to"
+msgstr "Aldatu &hontara"
 
-msgid "&Append"
-msgstr "&Erantsi"
-
-msgid "&Insert"
-msgstr "T&xertatu"
-
-msgid "New &entry"
-msgstr "&Sarrera berria"
-
-msgid "New &group"
-msgstr "&Talde berria"
-
-msgid "&Up"
-msgstr "&Gorantz"
-
-msgid "&Add current"
-msgstr "&Gehitu unekoa"
+msgid "&Free VFSs now"
+msgstr ""
 
 msgid "&Refresh"
 msgstr "&Berritu"
 
-msgid "Fr&ee VFSs now"
-msgstr "Libratu &VFSak orain"
+msgid "&Add current"
+msgstr "&Gehitu unekoa"
 
-msgid "Change &to"
-msgstr "Aldatu &hontara"
+msgid "&Up"
+msgstr "&Gorantz"
+
+msgid "New &group"
+msgstr "&Talde berria"
+
+msgid "New &entry"
+msgstr "&Sarrera berria"
+
+msgid "&Insert"
+msgstr "T&xertatu"
+
+msgid "&Remove"
+msgstr "Ke&ndu"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Azpitaldea - sakatu SARTU zerrenda ikusteko"
@@ -2693,15 +2678,21 @@ msgstr "VFSko direktorio aktiboak"
 msgid "Directory hotlist"
 msgstr "Gogokoen direktorioa"
 
+msgid "Top level group"
+msgstr "Goi mailako taldea"
+
 msgid "Directory path"
 msgstr "Direktorioaren bide-izena"
-
-msgid "Directory label"
-msgstr "Direktorioaren etiketa"
 
 #, c-format
 msgid "Moving %s"
 msgstr "%s lekuz aldatzen"
+
+msgid "Directory label"
+msgstr "Direktorioaren etiketa"
+
+msgid "&Append"
+msgstr "&Erantsi"
 
 msgid "New hotlist entry"
 msgstr "Gogokoen sarrera berria"
@@ -2727,9 +2718,6 @@ msgid ""
 "Group \"%s\" is not empty.\n"
 "Remove it?"
 msgstr ""
-
-msgid "Top level group"
-msgstr "Goi mailako taldea"
 
 msgid "Hotlist Load"
 msgstr "Gogokoak zamatu"
@@ -2829,35 +2817,32 @@ msgstr "Modua:     %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Kokalekua:  %Xh:%Xh"
 
-msgid "Show free sp&ace"
-msgstr "Erakutsi leku &askea"
+msgid "&Equal split"
+msgstr "&zatiketa berdina"
 
-msgid "&XTerm window title"
-msgstr "&XTerm leihoaren izenburua"
-
-msgid "H&intbar visible"
-msgstr "&Iradokizun-barra ikusgai"
-
-msgid "&Keybar visible"
-msgstr "&Tekla-barra ikusgai"
+msgid "&Menubar visible"
+msgstr ""
 
 msgid "Command &prompt"
 msgstr "Komando &gonbita"
 
-msgid "Menu&bar visible"
-msgstr "Menu-&barra ikusgarri"
+msgid "&Keybar visible"
+msgstr "&Tekla-barra ikusgai"
 
-msgid "&Equal split"
-msgstr "&zatiketa berdina"
+msgid "H&intbar visible"
+msgstr "&Iradokizun-barra ikusgai"
+
+msgid "&XTerm window title"
+msgstr "&XTerm leihoaren izenburua"
+
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr "Panel zatiketa"
 
 msgid "Console output"
 msgstr "Kontsolaren irteera"
-
-msgid "Other options"
-msgstr "Beste aukera batzuk"
 
 msgid "&Vertical"
 msgstr "&Bertikalki"
@@ -3090,65 +3075,65 @@ msgstr "&Terminal tuntunetan"
 msgid "Alwa&ys"
 msgstr "&beti"
 
-msgid "A&uto save setup"
-msgstr "A&uto gorde ezarpena"
-
-msgid "Sa&fe delete"
-msgstr "E&zabaketa segurua"
-
-msgid "Cd follows lin&ks"
-msgstr "Cd-k este&kei jarraitzen die"
-
-msgid "Rotating d&ash"
-msgstr "Marrat&xo birakaria"
-
-msgid "Co&mplete: show all"
-msgstr "&Osoa: erakutsi guztia"
-
-msgid "Shell &patterns"
-msgstr "Shell &ereduak"
-
-msgid "&Drop down menus"
-msgstr "&Goitibeherako menuak "
-
-msgid "Auto m&enus"
-msgstr "Auto &menuak"
-
-msgid "Use internal vie&w"
-msgstr "Erabili barneko e&rakuslea"
-
-msgid "Use internal edi&t"
-msgstr "Erakutsi barneko edi&torea"
-
-msgid "Pause after run"
-msgstr "Eten exekutatu ondoren"
-
-msgid "Timeout:"
-msgstr "Denbora-muga:"
-
-msgid "S&ingle press"
-msgstr "Be&hin sakatu"
-
-msgid "Esc key mode"
-msgstr "Ihes (Esc) tekla modua"
-
-msgid "Preallocate &space"
+msgid "File operations"
 msgstr ""
-
-msgid "Mkdi&r autoname"
-msgstr "Mkdi&r autoizena"
-
-msgid "Classic pro&gressbar"
-msgstr "Aurrerapen-barra klasikoa"
-
-msgid "Compute tota&ls"
-msgstr "Kalkulatu &guztizkoak"
 
 msgid "&Verbose operation"
 msgstr "Eragiketa &xehetua"
 
-msgid "File operation options"
-msgstr "Fitxategi eragiketen aukerak"
+msgid "Compute tota&ls"
+msgstr "Kalkulatu &guztizkoak"
+
+msgid "Classic pro&gressbar"
+msgstr "Aurrerapen-barra klasikoa"
+
+msgid "Mkdi&r autoname"
+msgstr "Mkdi&r autoizena"
+
+msgid "Preallocate &space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr "Ihes (Esc) tekla modua"
+
+msgid "S&ingle press"
+msgstr "Be&hin sakatu"
+
+msgid "Timeout:"
+msgstr "Denbora-muga:"
+
+msgid "Pause after run"
+msgstr "Eten exekutatu ondoren"
+
+msgid "Use internal edi&t"
+msgstr "Erakutsi barneko edi&torea"
+
+msgid "Use internal vie&w"
+msgstr "Erabili barneko e&rakuslea"
+
+msgid "Auto m&enus"
+msgstr "Auto &menuak"
+
+msgid "&Drop down menus"
+msgstr "&Goitibeherako menuak "
+
+msgid "Shell &patterns"
+msgstr "Shell &ereduak"
+
+msgid "Co&mplete: show all"
+msgstr "&Osoa: erakutsi guztia"
+
+msgid "Rotating d&ash"
+msgstr "Marrat&xo birakaria"
+
+msgid "Cd follows lin&ks"
+msgstr "Cd-k este&kei jarraitzen die"
+
+msgid "Sa&fe delete"
+msgstr "E&zabaketa segurua"
+
+msgid "A&uto save setup"
+msgstr "A&uto gorde ezarpena"
 
 msgid "Configure options"
 msgstr "Konfiguratu aukerak"
@@ -3156,65 +3141,62 @@ msgstr "Konfiguratu aukerak"
 msgid "Case &insensitive"
 msgstr "&Ez bereizi maius/minus"
 
-msgid "Case s&ensitive"
-msgstr "Bereizi &maiuskulak/minuskulak"
-
 msgid "Use panel sort mo&de"
 msgstr "Erabili panela sailkatzeko mo&dua"
 
-msgid "Quick search"
-msgstr "Bilaketa azkarra"
-
-msgid "&Permissions"
-msgstr "&Baimenak"
-
-msgid "File &types"
-msgstr "Fitxategi &motak"
-
-msgid "File highlight"
-msgstr "Fitxategi nabarmentzea"
-
-msgid "&Mouse page scrolling"
-msgstr "&Saguarekin orri labainketa"
-
-msgid "Pa&ge scrolling"
-msgstr "Orri &labainketa"
-
-msgid "L&ynx-like motion"
-msgstr "L&ynx-en moduko mugimendua"
-
-msgid "Navigation"
-msgstr "Nabigazioa"
-
-msgid "A&uto save panels setup"
-msgstr "A&uto gorde panelen ezarpena"
-
-msgid "Simple s&wap"
-msgstr "&Trukaketa erraza"
-
-msgid "Re&verse files only"
-msgstr "&Alderantzikatu fitxategiak soilik"
-
-msgid "Ma&rk moves down"
-msgstr "Ma&rkatzean beheruntz mugitu"
-
-msgid "&Fast dir reload"
-msgstr "&Direktorio birzamaketa bizkorra"
-
-msgid "Show &hidden files"
-msgstr "Erakutsi &ezkutuko fitxategiak"
-
-msgid "Show &backup files"
-msgstr "Erakutsi &babeskopia fitxategiak"
-
-msgid "Mi&x all files"
-msgstr "Na&hastu fitxategi guztiak"
+msgid "Show mi&ni-status"
+msgstr "Erakutsi mi&ni-egoera"
 
 msgid "Use SI si&ze units"
 msgstr "Erabili SI ne&urri unitateak"
 
-msgid "Show mi&ni-status"
-msgstr "Erakutsi mi&ni-egoera"
+msgid "Mi&x all files"
+msgstr "Na&hastu fitxategi guztiak"
+
+msgid "Show &backup files"
+msgstr "Erakutsi &babeskopia fitxategiak"
+
+msgid "Show &hidden files"
+msgstr "Erakutsi &ezkutuko fitxategiak"
+
+msgid "&Fast dir reload"
+msgstr "&Direktorio birzamaketa bizkorra"
+
+msgid "Ma&rk moves down"
+msgstr "Ma&rkatzean beheruntz mugitu"
+
+msgid "Re&verse files only"
+msgstr "&Alderantzikatu fitxategiak soilik"
+
+msgid "Simple s&wap"
+msgstr "&Trukaketa erraza"
+
+msgid "A&uto save panels setup"
+msgstr "A&uto gorde panelen ezarpena"
+
+msgid "Navigation"
+msgstr "Nabigazioa"
+
+msgid "L&ynx-like motion"
+msgstr "L&ynx-en moduko mugimendua"
+
+msgid "Pa&ge scrolling"
+msgstr "Orri &labainketa"
+
+msgid "&Mouse page scrolling"
+msgstr "&Saguarekin orri labainketa"
+
+msgid "File highlight"
+msgstr "Fitxategi nabarmentzea"
+
+msgid "File &types"
+msgstr "Fitxategi &motak"
+
+msgid "&Permissions"
+msgstr "&Baimenak"
+
+msgid "Quick search"
+msgstr "Bilaketa azkarra"
 
 msgid "Panel options"
 msgstr "Panelek aukerak"
@@ -3259,8 +3241,8 @@ msgstr "&Bertsioa"
 msgid "sort|e"
 msgstr "l"
 
-msgid "&Extension"
-msgstr "&Luzapena"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3368,11 +3350,11 @@ msgstr "&Gehitu berria"
 msgid "External panelize"
 msgstr "Kanpoko panela"
 
-msgid "Command"
-msgstr "Komandoa"
-
 msgid "Other command"
 msgstr "Bestelako komandoa"
+
+msgid "Command"
+msgstr "Komandoa"
 
 msgid "Add to external panelize"
 msgstr "Erantsi kanpoko panelari"
@@ -3578,16 +3560,11 @@ msgstr ""
 "Oso ondo! Terminaleko datu-base osoa duzu!\n"
 "Tekla guztiak ongi dabiltza."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Sakatu hemen aipatutako tekla guztiak. Ondoren, egiaztatu"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
-msgstr "zer tekla ez dauden Adosez markatuta. Sakatu zuriune-barra "
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
 msgstr ""
-"tekla horietan edo egin klik saguaz definitzeko. Tabuladorearekin mugitu "
-"batetik bestera."
 
 #, c-format
 msgid ""
@@ -3710,6 +3687,9 @@ msgstr "Konfiguratu direktorioa:"
 msgid "Data directory:"
 msgstr "Datuen direktorioa:"
 
+msgid "File extension handlers:"
+msgstr ""
+
 msgid "VFS plugins and scripts:"
 msgstr "VFS pluginak eta script-ak:"
 
@@ -3827,9 +3807,6 @@ msgstr "fish: %s biltegiratu: komandoa bidaltzen..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: Irakurketa lokalak huts egin du, zeroak bidaltzen"
-
-msgid "fish: storing zeros"
-msgstr "fish: zeroak biltegiratzen"
 
 msgid "fish: storing file"
 msgstr "fish: fitxategia biltegiratzen"

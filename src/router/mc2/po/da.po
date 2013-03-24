@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-09-14 14:23+0300\n"
-"PO-Revision-Date: 2012-09-03 08:41+0000\n"
+"POT-Creation-Date: 2012-12-28 12:17+0300\n"
+"PO-Revision-Date: 2012-12-26 08:42+0000\n"
 "Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
 "Language-Team: Danish (http://www.transifex.com/projects/p/mc/language/da/)\n"
 "Language: da\n"
@@ -521,14 +521,14 @@ msgstr "&Ja"
 msgid "&No"
 msgstr "&Nej"
 
-msgid "Background process:"
-msgstr "Baggrundsproces:"
+msgid "&OK"
+msgstr "&O.k."
 
 msgid "&Cancel"
 msgstr "&Annuller"
 
-msgid "&OK"
-msgstr "&O.k."
+msgid "Background process:"
+msgstr "Baggrundsproces:"
 
 msgid "Error"
 msgstr "Fejl"
@@ -709,20 +709,20 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Forkast"
 
-msgid "&All charsets"
-msgstr "&Alle tegnsæt"
-
-msgid "&Whole words"
-msgstr "&Hele ord"
-
-msgid "&Backwards"
-msgstr "&Baglæns"
+msgid "Enter search string:"
+msgstr "Indtast søgestreng:"
 
 msgid "Cas&e sensitive"
 msgstr "&Store/små bogstaver"
 
-msgid "Enter search string:"
-msgstr "Indtast søgestreng:"
+msgid "&Backwards"
+msgstr "&Baglæns"
+
+msgid "&Whole words"
+msgstr "&Hele ord"
+
+msgid "&All charsets"
+msgstr "&Alle tegnsæt"
 
 msgid "Search"
 msgstr "Søg"
@@ -762,26 +762,26 @@ msgstr "&Hurtigst (Antag store filer)"
 msgid "&Minimal (Find a smaller set of change)"
 msgstr "&Minimal (Find et mindre sæt ændringer)"
 
-msgid "Strip &trailing carriage return"
-msgstr "Fjern &efterfølgende returtegn"
-
-msgid "Ignore all &whitespace"
-msgstr "Ignorer alle &blanktegn"
-
-msgid "Ignore &space change"
-msgstr "Ignorer &mellemrumsændring"
-
-msgid "Ignore tab &expansion"
-msgstr "Ignorer tab-&udvidelse"
-
-msgid "&Ignore case"
-msgstr "&Ignorer store/små bogstaver"
+msgid "Diff algorithm"
+msgstr "Diff-algoritme"
 
 msgid "Diff extra options"
 msgstr "Diff - ekstra indstillinger"
 
-msgid "Diff algorithm"
-msgstr "Diff-algoritme"
+msgid "&Ignore case"
+msgstr "&Ignorer store/små bogstaver"
+
+msgid "Ignore tab &expansion"
+msgstr "Ignorer tab-&udvidelse"
+
+msgid "Ignore &space change"
+msgstr "Ignorer &mellemrumsændring"
+
+msgid "Ignore all &whitespace"
+msgstr "Ignorer alle &blanktegn"
+
+msgid "Strip &trailing carriage return"
+msgstr "Fjern &efterfølgende returtegn"
 
 msgid "Diff Options"
 msgstr "Diff-indstillinger"
@@ -927,11 +927,11 @@ msgstr "&Windows/DOS-format (CR LF)"
 msgid "&Macintosh format (CR)"
 msgstr "&Macintosh-format (CR)"
 
-msgid "Change line breaks to:"
-msgstr "Ændre linjeskift til:"
-
 msgid "Enter file name:"
 msgstr "Indtast filnavn:"
+
+msgid "Change line breaks to:"
+msgstr "Ændre linjeskift til:"
 
 msgid "Save As"
 msgstr "Gem som"
@@ -1107,17 +1107,17 @@ msgstr "Ekstern kommando"
 msgid "Cannot execute command"
 msgstr "Kan ikke udføre kommando"
 
-msgid "Copies to"
-msgstr "Kopier til"
-
-msgid "Subject"
-msgstr "Emne"
+msgid "mail -s <subject> -c <cc> <to>"
+msgstr "post -s <emne> -c <cc> <til>"
 
 msgid "To"
 msgstr "Til"
 
-msgid "mail -s <subject> -c <cc> <to>"
-msgstr "post -s <emne> -c <cc> <til>"
+msgid "Subject"
+msgstr "Emne"
+
+msgid "Copies to"
+msgstr "Kopier til"
 
 msgid "Mail"
 msgstr "Post"
@@ -1138,11 +1138,26 @@ msgstr ""
 msgid "In se&lection"
 msgstr "I &markering"
 
+msgid "&Find all"
+msgstr "&Find alle"
+
 msgid "Enter replacement string:"
 msgstr "Indtast erstatningsstreng:"
 
-msgid "&Find all"
-msgstr "&Find alle"
+msgid "Replace with:"
+msgstr "Erstat med:"
+
+msgid "&Replace"
+msgstr "&Erstat"
+
+msgid "A&ll"
+msgstr "A&lle"
+
+msgid "&Skip"
+msgstr "&Spring over"
+
+msgid "Confirm replace"
+msgstr "Bekræft erstatning"
 
 msgid "Cancel"
 msgstr "Annuller"
@@ -1153,21 +1168,6 @@ msgid ""
 msgstr ""
 "Aktuel tekst blev ændret uden en filgemning.\n"
 "Fortsæt med at ændre disse ændringer"
-
-msgid "&Skip"
-msgstr "&Spring over"
-
-msgid "A&ll"
-msgstr "A&lle"
-
-msgid "&Replace"
-msgstr "&Erstat"
-
-msgid "Replace with:"
-msgstr "Erstat med:"
-
-msgid "Confirm replace"
-msgstr "Bekræft erstatning"
 
 msgid "NoName"
 msgstr ""
@@ -1391,72 +1391,82 @@ msgstr ""
 msgid "&Options"
 msgstr "&Indstillinger"
 
-msgid "None"
-msgstr "Ingen"
-
-msgid "Dynamic paragraphing"
-msgstr "Dynamiske paragraffer"
-
-msgid "Type writer wrap"
-msgstr "Skrivemaskineombrydning"
-
-msgid "Word wrap line length:"
-msgstr "Linjelængde for ordombrydning:"
-
-msgid "&Group undo"
+msgid "&None"
 msgstr ""
 
-msgid "Cursor beyond end of line"
-msgstr "Markør bag linjeafslutning"
+msgid "&Dynamic paragraphing"
+msgstr ""
 
-msgid "Pers&istent selection"
-msgstr "&Fast markering"
-
-msgid "Synta&x highlighting"
-msgstr "Synta&ksfremhævelse"
-
-msgid "Visible tabs"
-msgstr "Synlige tabulatorer"
-
-msgid "Visible trailing spaces"
-msgstr "Synlige efterfølgende mellemrum"
-
-msgid "Save file &position"
-msgstr "Gem fil&placering"
-
-msgid "Confir&m before saving"
-msgstr "&Bekræft før gemning"
-
-msgid "&Return does autoindent"
-msgstr "&Retur laver autoindryk"
-
-msgid "Tab spacing:"
-msgstr "Tabulatormellemrum:"
-
-msgid "Fill tabs with &spaces"
-msgstr "Fyld tabulatoreer med &mellemrum"
-
-msgid "&Backspace through tabs"
-msgstr "&Baglæns slet via tabulatorer"
-
-msgid "&Fake half tabs"
-msgstr "&Falske halve tabulatorer"
+msgid "Type &writer wrap"
+msgstr ""
 
 msgid "Wrap mode"
 msgstr "Ombrydningstilstand"
 
+msgid "Tabulation"
+msgstr ""
+
+msgid "&Fake half tabs"
+msgstr "&Falske halve tabulatorer"
+
+msgid "&Backspace through tabs"
+msgstr "&Baglæns slet via tabulatorer"
+
+msgid "Fill tabs with &spaces"
+msgstr "Fyld tabulatoreer med &mellemrum"
+
+msgid "Tab spacing:"
+msgstr "Tabulatormellemrum:"
+
+msgid "Other options"
+msgstr "Andre indstillinger"
+
+msgid "&Return does autoindent"
+msgstr "&Retur laver autoindryk"
+
+msgid "Confir&m before saving"
+msgstr "&Bekræft før gemning"
+
+msgid "Save file &position"
+msgstr "Gem fil&placering"
+
+msgid "&Visible trailing spaces"
+msgstr ""
+
+msgid "Visible &tabs"
+msgstr ""
+
+msgid "Synta&x highlighting"
+msgstr "Synta&ksfremhævelse"
+
+msgid "C&ursor after inserted block"
+msgstr ""
+
+msgid "Pers&istent selection"
+msgstr "&Fast markering"
+
+msgid "Cursor be&yond end of line"
+msgstr ""
+
+msgid "&Group undo"
+msgstr ""
+
+msgid "Word wrap line length:"
+msgstr "Linjelængde for ordombrydning:"
+
 msgid "Editor options"
 msgstr "Indstillinger for redigeringsprogram"
 
+msgid ""
+"A user friendly text editor\n"
+"written for the Midnight Commander."
+msgstr ""
+
+msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgstr ""
+
 msgid "About"
 msgstr "Om"
-
-msgid ""
-"Copyright (C) 1996-2012 the Free Software Foundation\n"
-"\n"
-"            A user friendly text editor\n"
-"         written for the Midnight Commander"
-msgstr ""
 
 msgid "Open files"
 msgstr ""
@@ -1537,14 +1547,14 @@ msgstr "Skriv »exit« for at returnere til Midnight Commander"
 msgid "Cannot fetch a local copy of %s"
 msgstr "Kan ikke hente en lokal kopi af %s"
 
-msgid "&Set"
-msgstr "&Angiv"
+msgid "Set &all"
+msgstr "&Sæt alle"
 
 msgid "S&kip"
 msgstr "S&pring over"
 
-msgid "Set &all"
-msgstr "&Sæt alle"
+msgid "&Set"
+msgstr "&Angiv"
 
 msgid "owner"
 msgstr "ejer"
@@ -1555,18 +1565,8 @@ msgstr "gruppe"
 msgid "other"
 msgstr "andre"
 
-msgid "On"
-msgstr "Til"
-
 msgid "Flag"
 msgstr "Flag"
-
-msgid "Mode"
-msgstr "Tilstand"
-
-#, c-format
-msgid "%6d of %d"
-msgstr "%6d af %d"
 
 msgid "Chown advanced command"
 msgstr "Avancerede kommando til chown"
@@ -1587,14 +1587,14 @@ msgstr ""
 "Kan ikke chown »%s«\n"
 "%s"
 
-msgid "&Stop"
-msgstr "&Stop"
+msgid "Other 8 bit"
+msgstr "Andre 8-bit"
 
-msgid "&Resume"
-msgstr "&Genoptag"
+msgid "Running"
+msgstr "Kører"
 
-msgid "&Kill"
-msgstr "&Dræb"
+msgid "Stopped"
+msgstr "Stoppet"
 
 msgid "&Full file list"
 msgstr "&Fuld filliste"
@@ -1608,14 +1608,57 @@ msgstr "&Lang filliste"
 msgid "&User defined:"
 msgstr "&Brugerdefineret:"
 
-msgid "Listing mode"
-msgstr "Listemåde"
-
 msgid "User &mini status"
 msgstr "&Ministatus for bruger"
 
-msgid "Other 8 bit"
-msgstr "Andre 8-bit"
+msgid "Listing mode"
+msgstr "Listemåde"
+
+msgid "Executable &first"
+msgstr "&Først kørbare"
+
+msgid "&Reverse"
+msgstr "&Omvendt"
+
+msgid "Sort order"
+msgstr "Sorteringsrækkefølge"
+
+#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
+msgid "Confirmation|&Delete"
+msgstr "&Slet"
+
+msgid "Confirmation|O&verwrite"
+msgstr "&Overskriv"
+
+msgid "Confirmation|&Execute"
+msgstr "&Kør"
+
+msgid "Confirmation|E&xit"
+msgstr "&Afslut"
+
+msgid "Confirmation|Di&rectory hotlist delete"
+msgstr "Slet hotlist-mappe"
+
+msgid "Confirmation|&History cleanup"
+msgstr "Historikoprydning"
+
+msgid "Confirmation"
+msgstr "Bekræftelse"
+
+msgid "&UTF-8 output"
+msgstr ""
+
+msgid "&Full 8 bits output"
+msgstr ""
+
+msgid "&ISO 8859-1"
+msgstr ""
+
+msgid "7 &bits"
+msgstr ""
+
+msgid "F&ull 8 bits input"
+msgstr "F&uld 8-bit inddata"
 
 msgid "Display bits"
 msgstr "Vis bit"
@@ -1623,91 +1666,32 @@ msgstr "Vis bit"
 msgid "Input / display codepage:"
 msgstr "Kodning for inddata/visning:"
 
-msgid "F&ull 8 bits input"
-msgstr "F&uld 8-bit inddata"
-
 msgid "&Select"
 msgstr "&Vælg"
-
-msgid "Running"
-msgstr "Kører"
-
-msgid "Stopped"
-msgstr "Stoppet"
-
-msgid "&Reverse"
-msgstr "&Omvendt"
-
-msgid "Case sensi&tive"
-msgstr "Store/små &bogstaver"
-
-msgid "Executable &first"
-msgstr "&Først kørbare"
-
-msgid "Sort order"
-msgstr "Sorteringsrækkefølge"
-
-msgid "Confirmation"
-msgstr "Bekræftelse"
-
-#. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
-#. 2
-msgid "Confirmation|&History cleanup"
-msgstr "Historikoprydning"
-
-msgid "Confirmation|Di&rectory hotlist delete"
-msgstr "Slet hotlist-mappe"
-
-msgid "Confirmation|E&xit"
-msgstr "&Afslut"
-
-msgid "Confirmation|&Execute"
-msgstr "&Kør"
-
-msgid "Confirmation|O&verwrite"
-msgstr "&Overskriv"
-
-msgid "Confirmation|&Delete"
-msgstr "&Slet"
-
-msgid "UTF-8 output"
-msgstr "UTF-8 uddata"
-
-msgid "Full 8 bits output"
-msgstr "Fuld 8-bit uddata"
-
-msgid "ISO 8859-1"
-msgstr "ISO 8859-1"
-
-msgid "7 bits"
-msgstr "7-bit"
 
 msgid "Directory tree"
 msgstr "Mappetræ"
 
-msgid "Use passive mode over pro&xy"
-msgstr "Brug passiv tilstand over pro&xy"
+msgid "Timeout for freeing VFSs (sec):"
+msgstr ""
 
-msgid "Use &passive mode"
-msgstr "Brug &passiv tilstand"
+msgid "FTP anonymous password:"
+msgstr ""
+
+msgid "FTP directory cache timeout (sec):"
+msgstr ""
+
+msgid "&Always use ftp proxy:"
+msgstr ""
 
 msgid "&Use ~/.netrc"
 msgstr "&Brug ~/.netrc"
 
-msgid "&Always use ftp proxy"
-msgstr "Brug &altid ftp-proxy"
+msgid "Use &passive mode"
+msgstr "Brug &passiv tilstand"
 
-msgid "sec"
-msgstr "sek"
-
-msgid "ftpfs directory cache timeout:"
-msgstr "Tidsudløb for ftpfs-mappens mellemlager:"
-
-msgid "ftp anonymous password:"
-msgstr "Anonym ftp-adgangskode"
-
-msgid "Timeout for freeing VFSs:"
-msgstr "Tidsudløb for frigørelse af VFS'er:"
+msgid "Use passive mode over pro&xy"
+msgstr "Brug passiv tilstand over pro&xy"
 
 msgid "Virtual File System Setting"
 msgstr "Opsætning af virtuelt filsystem"
@@ -1718,18 +1702,31 @@ msgstr "cd"
 msgid "Quick cd"
 msgstr "Hurtig mappeskift"
 
-msgid "Symbolic link filename:"
-msgstr "Filnavn for symbolsk henvisning:"
-
 msgid "Existing filename (filename symlink will point to):"
 msgstr ""
 "Eksisterende filnavn (filnavnet den symbolske henvisning skal pege på):"
 
+msgid "Symbolic link filename:"
+msgstr "Filnavn for symbolsk henvisning:"
+
 msgid "Symbolic link"
 msgstr "Symbolsk henvisning"
 
-msgid "Background Jobs"
-msgstr "Baggrundsjob"
+msgid "&Stop"
+msgstr "&Stop"
+
+msgid "&Resume"
+msgstr "&Genoptag"
+
+msgid "&Kill"
+msgstr "&Dræb"
+
+msgid "Background jobs"
+msgstr ""
+
+#, c-format
+msgid "Password for \\\\%s\\%s"
+msgstr "Adgangskode for \\\\%s\\%s"
 
 msgid "Domain:"
 msgstr "Domæne:"
@@ -1737,45 +1734,44 @@ msgstr "Domæne:"
 msgid "Username:"
 msgstr "Brugernavn:"
 
-#, c-format
-msgid "Password for \\\\%s\\%s"
-msgstr "Adgangskode for \\\\%s\\%s"
+msgid "SMB authentication"
+msgstr ""
 
-msgid "execute/search by others"
-msgstr "køre/søge af andre"
+msgid "set &user ID on execution"
+msgstr ""
 
-msgid "write by others"
-msgstr "skrive af andre"
+msgid "set &group ID on execution"
+msgstr ""
 
-msgid "read by others"
-msgstr "læse af andre"
+msgid "stick&y bit"
+msgstr ""
 
-msgid "execute/search by group"
-msgstr "køre/søge af gruppen"
+msgid "&read by owner"
+msgstr ""
 
-msgid "write by group"
-msgstr "skrive af gruppen"
+msgid "&write by owner"
+msgstr ""
 
-msgid "read by group"
-msgstr "læse af gruppen"
+msgid "e&xecute/search by owner"
+msgstr ""
 
-msgid "execute/search by owner"
-msgstr "køre/søge af ejer"
+msgid "rea&d by group"
+msgstr ""
 
-msgid "write by owner"
-msgstr "skrive af ejer"
+msgid "write by grou&p"
+msgstr ""
 
-msgid "read by owner"
-msgstr "læse af ejer"
+msgid "execu&te/search by group"
+msgstr ""
 
-msgid "sticky bit"
-msgstr "sticky bit"
+msgid "read &by others"
+msgstr ""
 
-msgid "set group ID on execution"
-msgstr "sæt gruppe-id ved kørsel"
+msgid "wr&ite by others"
+msgstr ""
 
-msgid "set user ID on execution"
-msgstr "sæt bruger-id ved kørsel"
+msgid "execute/searc&h by others"
+msgstr ""
 
 msgid "Name:"
 msgstr ""
@@ -1789,29 +1785,29 @@ msgstr ""
 msgid "Group name:"
 msgstr ""
 
-msgid "C&lear marked"
-msgstr "F&jern markerede"
+msgid "&Marked all"
+msgstr "&Marker alle"
 
 msgid "S&et marked"
 msgstr "Sæ&t markerede"
 
-msgid "&Marked all"
-msgstr "&Marker alle"
+msgid "C&lear marked"
+msgstr "F&jern markerede"
 
 msgid "Chmod command"
 msgstr "Chmod-kommando"
 
-msgid "File"
-msgstr "Fil"
-
 msgid "Permission"
 msgstr "Rettighed"
 
-msgid "Set &users"
-msgstr "Sæt br&ugere"
+msgid "File"
+msgstr "Fil"
 
 msgid "Set &groups"
 msgstr "Sæt &grupper"
+
+msgid "Set &users"
+msgstr "Sæt br&ugere"
 
 msgid "Name"
 msgstr "Navn"
@@ -1828,14 +1824,14 @@ msgstr "Størrelse"
 msgid "Chown command"
 msgstr "Chown-kommando"
 
+msgid "User name"
+msgstr "Brugernavn"
+
 msgid "<Unknown user>"
 msgstr "<Ukendt bruger>"
 
 msgid "<Unknown group>"
 msgstr "<Ukendt gruppe>"
-
-msgid "User name"
-msgstr "Brugernavn"
 
 msgid "Enter machine name (F1 for details):"
 msgstr "Indtast maskinenavn (F1 for detaljer):"
@@ -1852,14 +1848,14 @@ msgstr "Filter"
 msgid "Set expression for filtering filenames"
 msgstr "Angiv udtryk til filtrering af filnavne"
 
+msgid "&Files only"
+msgstr "&Kun filer"
+
 msgid "&Using shell patterns"
 msgstr "Br&uger skalmønstre"
 
 msgid "&Case sensitive"
 msgstr "%Store/små bogstaver"
-
-msgid "&Files only"
-msgstr "&Kun filer"
 
 #, c-format
 msgid "Link %s to:"
@@ -2138,26 +2134,18 @@ msgstr ""
 msgid "&Retry"
 msgstr "&Prøv igen"
 
+#, c-format
 msgid ""
-"\n"
-"Directory not empty.\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Mappe er ikke tom.\n"
-"Slet den rekursivt?"
 
+#, c-format
 msgid ""
-"\n"
-"Background process: Directory not empty.\n"
+"Background process:\n"
+"Directory \"%s\" not empty.\n"
 "Delete it recursively?"
 msgstr ""
-"\n"
-"Baggrundsproces: Mappe er ikke tom.\n"
-"Slet den rekursivt?"
-
-msgid "Delete:"
-msgstr "Slet:"
 
 msgid "Non&e"
 msgstr "Ing&en"
@@ -2425,6 +2413,12 @@ msgstr "Kan ikke fungere med »..«!"
 msgid "Sorry, I could not put the job in background"
 msgstr "Beklager. Jeg kunne ikke placere jobbet i baggrunden"
 
+msgid "S&uspend"
+msgstr ""
+
+msgid "Con&tinue"
+msgstr "For&tsæt"
+
 #, c-format
 msgid "%d:%02d.%02d"
 msgstr "%d:%02d.%02d"
@@ -2449,30 +2443,30 @@ msgid "Target file already exists!"
 msgstr "Målfil findes allerede!"
 
 #, c-format
-msgid "Source date: %s, size %llu"
-msgstr "Kildedato: %s, størrelse %llu"
+msgid "New     : %s, size %llu"
+msgstr ""
 
 #, c-format
-msgid "Target date: %s, size %llu"
-msgstr "Måldato: %s, størrelse %llu"
+msgid "Existing: %s, size %llu"
+msgstr ""
 
-msgid "If &size differs"
-msgstr "hvis &størrelsen er forskellig"
-
-msgid "&Update"
-msgstr "&Opdater"
-
-msgid "Overwrite all targets?"
-msgstr "Overskriv alle mål?"
-
-msgid "&Reget"
-msgstr "Fo&rtryd"
+msgid "Overwrite this target?"
+msgstr "Overskriv dette mål?"
 
 msgid "A&ppend"
 msgstr "&Tilføj"
 
-msgid "Overwrite this target?"
-msgstr "Overskriv dette mål?"
+msgid "&Reget"
+msgstr "Fo&rtryd"
+
+msgid "Overwrite all targets?"
+msgstr "Overskriv alle mål?"
+
+msgid "&Update"
+msgstr "&Opdater"
+
+msgid "If &size differs"
+msgstr "hvis &størrelsen er forskellig"
 
 msgid "File exists"
 msgstr "Fil findes"
@@ -2521,30 +2515,24 @@ msgstr "Mål"
 msgid "Deleting"
 msgstr "Sletter"
 
-msgid "&Background"
-msgstr "&Baggrund"
-
-msgid "&Stable Symlinks"
-msgstr "&Stabile symbolske henvisninger"
-
-msgid "Di&ve into subdir if exists"
-msgstr "D&yk ned i undermappe hvis den findes"
+msgid "Follow &links"
+msgstr "Følg %henvisninger"
 
 msgid "Preserve &attributes"
 msgstr "Bevar &attributter"
 
-msgid "Follow &links"
-msgstr "Følg %henvisninger"
+msgid "Di&ve into subdir if exists"
+msgstr "D&yk ned i undermappe hvis den findes"
+
+msgid "&Stable symlinks"
+msgstr ""
+
+msgid "&Background"
+msgstr "&Baggrund"
 
 #, c-format
 msgid "Invalid source pattern `%s'"
 msgstr "Ugyldigt kildemønster »%s«"
-
-msgid "&Suspend"
-msgstr "&Dvale"
-
-msgid "Con&tinue"
-msgstr "For&tsæt"
 
 msgid "&Chdir"
 msgstr "&Skift mappe"
@@ -2568,11 +2556,17 @@ msgstr "Fandt: %ld"
 msgid "Malformed regular expression"
 msgstr "Forkert udformet regulært udtryk"
 
+msgid "File name:"
+msgstr "Filnavn:"
+
 msgid "&Find recursively"
 msgstr "&Find rekursivt"
 
 msgid "S&kip hidden"
 msgstr "S&pring skjulte over"
+
+msgid "Content:"
+msgstr "Indhold:"
 
 msgid "Sea&rch for content"
 msgstr "S&øg efter indhold"
@@ -2580,11 +2574,11 @@ msgstr "S&øg efter indhold"
 msgid "Case sens&itive"
 msgstr "Store/små &bogstaver"
 
-msgid "Fir&st hit"
-msgstr "&Første resultat"
-
 msgid "A&ll charsets"
 msgstr "&Alle tegnsæt"
+
+msgid "Fir&st hit"
+msgstr "&Første resultat"
 
 msgid "&Tree"
 msgstr "&Træ"
@@ -2592,17 +2586,11 @@ msgstr "&Træ"
 msgid "Find File"
 msgstr "Find fil"
 
-msgid "Content:"
-msgstr "Indhold:"
-
-msgid "File name:"
-msgstr "Filnavn:"
+msgid "Start at:"
+msgstr "Start ved:"
 
 msgid "Ena&ble ignore directories:"
 msgstr ""
-
-msgid "Start at:"
-msgstr "Start ved:"
 
 #, c-format
 msgid "Grepping in %s"
@@ -2624,35 +2612,32 @@ msgstr "Søger i %s"
 msgid "Searching"
 msgstr "Søger"
 
-msgid "&Remove"
-msgstr "&Fjern"
+msgid "Change &to"
+msgstr "Ændr &til"
 
-msgid "&Append"
-msgstr "&Tilføj"
-
-msgid "&Insert"
-msgstr "&Indsæt"
-
-msgid "New &entry"
-msgstr "Ny &punkt"
-
-msgid "New &group"
-msgstr "Ny &gruppe"
-
-msgid "&Up"
-msgstr "&Op"
-
-msgid "&Add current"
-msgstr "&Tilføj nuværende"
+msgid "&Free VFSs now"
+msgstr ""
 
 msgid "&Refresh"
 msgstr "&Opdater"
 
-msgid "Fr&ee VFSs now"
-msgstr "L&edig VFS'er nu"
+msgid "&Add current"
+msgstr "&Tilføj nuværende"
 
-msgid "Change &to"
-msgstr "Ændr &til"
+msgid "&Up"
+msgstr "&Op"
+
+msgid "New &group"
+msgstr "Ny &gruppe"
+
+msgid "New &entry"
+msgstr "Ny &punkt"
+
+msgid "&Insert"
+msgstr "&Indsæt"
+
+msgid "&Remove"
+msgstr "&Fjern"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Undergruppe - tryk RETUR for at se listen"
@@ -2663,15 +2648,21 @@ msgstr "Aktive VFS-mapper"
 msgid "Directory hotlist"
 msgstr "Mappefavoritliste"
 
+msgid "Top level group"
+msgstr "Topniveaugruppe"
+
 msgid "Directory path"
 msgstr "Mappesti"
-
-msgid "Directory label"
-msgstr "Mappeetiket"
 
 #, c-format
 msgid "Moving %s"
 msgstr "Flytter %s"
+
+msgid "Directory label"
+msgstr "Mappeetiket"
+
+msgid "&Append"
+msgstr "&Tilføj"
 
 msgid "New hotlist entry"
 msgstr "Nyt punkt i favoritlisten"
@@ -2697,9 +2688,6 @@ msgid ""
 "Group \"%s\" is not empty.\n"
 "Remove it?"
 msgstr ""
-
-msgid "Top level group"
-msgstr "Topniveaugruppe"
 
 msgid "Hotlist Load"
 msgstr "Hotlistindlæsning"
@@ -2799,35 +2787,32 @@ msgstr "Tilstand:  %s (%04o)"
 msgid "Location:  %Xh:%Xh"
 msgstr "Sted:      %Xh:%Xh"
 
-msgid "Show free sp&ace"
-msgstr "Vis ledig &plads"
+msgid "&Equal split"
+msgstr "&Ens opdeling"
 
-msgid "&XTerm window title"
-msgstr "&XTerm-vinduestitel"
-
-msgid "H&intbar visible"
-msgstr "&Fifbjælke synlig"
-
-msgid "&Keybar visible"
-msgstr "&Tastbjælke synlig"
+msgid "&Menubar visible"
+msgstr ""
 
 msgid "Command &prompt"
 msgstr "Kommando&prompt"
 
-msgid "Menu&bar visible"
-msgstr "Menu&bjælke synlig"
+msgid "&Keybar visible"
+msgstr "&Tastbjælke synlig"
 
-msgid "&Equal split"
-msgstr "&Ens opdeling"
+msgid "H&intbar visible"
+msgstr "&Fifbjælke synlig"
+
+msgid "&XTerm window title"
+msgstr "&XTerm-vinduestitel"
+
+msgid "&Show free space"
+msgstr ""
 
 msgid "Panel split"
 msgstr "Panelopdeling"
 
 msgid "Console output"
 msgstr "Konsoluddata"
-
-msgid "Other options"
-msgstr "Andre indstillinger"
 
 msgid "&Vertical"
 msgstr "&Lodret"
@@ -3060,65 +3045,65 @@ msgstr "På &dumme terminaler"
 msgid "Alwa&ys"
 msgstr "&Altid"
 
-msgid "A&uto save setup"
-msgstr "Opsætning for a&utomatisk gemning"
-
-msgid "Sa&fe delete"
-msgstr "&Sikker sletning"
-
-msgid "Cd follows lin&ks"
-msgstr "Cd følger &henvisninger"
-
-msgid "Rotating d&ash"
-msgstr "Roterende &bindestreg"
-
-msgid "Co&mplete: show all"
-msgstr "&Færdig: Vis alle"
-
-msgid "Shell &patterns"
-msgstr "&Skalmønstre"
-
-msgid "&Drop down menus"
-msgstr "&Rullegardinmenuer"
-
-msgid "Auto m&enus"
-msgstr "Automatiske &menuer"
-
-msgid "Use internal vie&w"
-msgstr "Brug intern &visning"
-
-msgid "Use internal edi&t"
-msgstr "Brug intern &redigering"
-
-msgid "Pause after run"
-msgstr "Pause efter kørsel"
-
-msgid "Timeout:"
-msgstr "Tidsudløb:"
-
-msgid "S&ingle press"
-msgstr "&Et tryk"
-
-msgid "Esc key mode"
-msgstr "Tilstand for Esc-tast"
-
-msgid "Preallocate &space"
+msgid "File operations"
 msgstr ""
-
-msgid "Mkdi&r autoname"
-msgstr "&Mkdir autonavngiving"
-
-msgid "Classic pro&gressbar"
-msgstr "Klassisk &statuslinje"
-
-msgid "Compute tota&ls"
-msgstr "Beregn &totaler"
 
 msgid "&Verbose operation"
 msgstr "&Uddybende handling"
 
-msgid "File operation options"
-msgstr "Indstillinger for filhandling"
+msgid "Compute tota&ls"
+msgstr "Beregn &totaler"
+
+msgid "Classic pro&gressbar"
+msgstr "Klassisk &statuslinje"
+
+msgid "Mkdi&r autoname"
+msgstr "&Mkdir autonavngiving"
+
+msgid "Preallocate &space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr "Tilstand for Esc-tast"
+
+msgid "S&ingle press"
+msgstr "&Et tryk"
+
+msgid "Timeout:"
+msgstr "Tidsudløb:"
+
+msgid "Pause after run"
+msgstr "Pause efter kørsel"
+
+msgid "Use internal edi&t"
+msgstr "Brug intern &redigering"
+
+msgid "Use internal vie&w"
+msgstr "Brug intern &visning"
+
+msgid "Auto m&enus"
+msgstr "Automatiske &menuer"
+
+msgid "&Drop down menus"
+msgstr "&Rullegardinmenuer"
+
+msgid "Shell &patterns"
+msgstr "&Skalmønstre"
+
+msgid "Co&mplete: show all"
+msgstr "&Færdig: Vis alle"
+
+msgid "Rotating d&ash"
+msgstr "Roterende &bindestreg"
+
+msgid "Cd follows lin&ks"
+msgstr "Cd følger &henvisninger"
+
+msgid "Sa&fe delete"
+msgstr "&Sikker sletning"
+
+msgid "A&uto save setup"
+msgstr "Opsætning for a&utomatisk gemning"
 
 msgid "Configure options"
 msgstr "Konfigurer indstillinger"
@@ -3126,65 +3111,62 @@ msgstr "Konfigurer indstillinger"
 msgid "Case &insensitive"
 msgstr "Er ikke &versalfølsom"
 
-msgid "Case s&ensitive"
-msgstr "&Store/små bogstaver"
-
 msgid "Use panel sort mo&de"
 msgstr "Brug &panelsorteringstilstand"
 
-msgid "Quick search"
-msgstr "Hurtig søgning"
-
-msgid "&Permissions"
-msgstr "%Rettigheder"
-
-msgid "File &types"
-msgstr "Fil&typer"
-
-msgid "File highlight"
-msgstr "Filfremhævelse"
-
-msgid "&Mouse page scrolling"
-msgstr "Siderulning med &mus"
-
-msgid "Pa&ge scrolling"
-msgstr "&Siderulning"
-
-msgid "L&ynx-like motion"
-msgstr "L&ynx-lignende navigation"
-
-msgid "Navigation"
-msgstr "Navigation"
-
-msgid "A&uto save panels setup"
-msgstr "&Panelopsætning for automatisk gemning"
-
-msgid "Simple s&wap"
+msgid "Show mi&ni-status"
 msgstr ""
-
-msgid "Re&verse files only"
-msgstr "Kun &omvendte filer"
-
-msgid "Ma&rk moves down"
-msgstr "&Marker bevægelser ned"
-
-msgid "&Fast dir reload"
-msgstr "Hurtig &mappe-genindlæsning"
-
-msgid "Show &hidden files"
-msgstr "Vis &skjulte filer"
-
-msgid "Show &backup files"
-msgstr "Vis &sikkerhedskopifiler"
-
-msgid "Mi&x all files"
-msgstr "&Miks alle filer"
 
 msgid "Use SI si&ze units"
 msgstr "Brug SI &størrelsesenheder"
 
-msgid "Show mi&ni-status"
+msgid "Mi&x all files"
+msgstr "&Miks alle filer"
+
+msgid "Show &backup files"
+msgstr "Vis &sikkerhedskopifiler"
+
+msgid "Show &hidden files"
+msgstr "Vis &skjulte filer"
+
+msgid "&Fast dir reload"
+msgstr "Hurtig &mappe-genindlæsning"
+
+msgid "Ma&rk moves down"
+msgstr "&Marker bevægelser ned"
+
+msgid "Re&verse files only"
+msgstr "Kun &omvendte filer"
+
+msgid "Simple s&wap"
 msgstr ""
+
+msgid "A&uto save panels setup"
+msgstr "&Panelopsætning for automatisk gemning"
+
+msgid "Navigation"
+msgstr "Navigation"
+
+msgid "L&ynx-like motion"
+msgstr "L&ynx-lignende navigation"
+
+msgid "Pa&ge scrolling"
+msgstr "&Siderulning"
+
+msgid "&Mouse page scrolling"
+msgstr "Siderulning med &mus"
+
+msgid "File highlight"
+msgstr "Filfremhævelse"
+
+msgid "File &types"
+msgstr "Fil&typer"
+
+msgid "&Permissions"
+msgstr "%Rettigheder"
+
+msgid "Quick search"
+msgstr "Hurtig søgning"
 
 msgid "Panel options"
 msgstr "Panelindstillinger"
@@ -3229,8 +3211,8 @@ msgstr "&Version"
 msgid "sort|e"
 msgstr "u"
 
-msgid "&Extension"
-msgstr "&Udvidelse"
+msgid "E&xtension"
+msgstr ""
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3338,11 +3320,11 @@ msgstr "&Tilføj ny"
 msgid "External panelize"
 msgstr "Eksternt panelisering"
 
-msgid "Command"
-msgstr "Kommando"
-
 msgid "Other command"
 msgstr "Andre kommandoer"
+
+msgid "Command"
+msgstr "Kommando"
 
 msgid "Add to external panelize"
 msgstr "Tilføj til ekstern panelisering"
@@ -3547,15 +3529,11 @@ msgstr ""
 "Godt! Du har en komplet terminaldatabase!\n"
 "Alle tasterne virker fint."
 
-msgid "Press all the keys mentioned here. After you have done it, check"
-msgstr "Tryk alle de taster ned som vises her. Tjek siden når du er færdig"
-
-msgid "which keys are not marked with OK.  Press space on the missing"
+msgid ""
+"Press all the keys mentioned here. After you have done it, check\n"
+"which keys are not marked with OK. Press space on the missing\n"
+"key, or click with the mouse to define it. Move around with Tab."
 msgstr ""
-"hvilke taster som ikke er markeret med O.k. Tryk mellemrum på den manglende"
-
-msgid "key, or click with the mouse to define it. Move around with Tab."
-msgstr "tast, eller klik med musen for at definere den. Flyt med Tab."
 
 #, c-format
 msgid ""
@@ -3671,6 +3649,9 @@ msgid "Config directory:"
 msgstr ""
 
 msgid "Data directory:"
+msgstr ""
+
+msgid "File extension handlers:"
 msgstr ""
 
 msgid "VFS plugins and scripts:"
@@ -3789,9 +3770,6 @@ msgstr "fisk: gem %s: sender kommando..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fisk: Lokal læsning fejlede, sender nuller"
-
-msgid "fish: storing zeros"
-msgstr "fisk: gemmer nuller"
 
 msgid "fish: storing file"
 msgstr "fisk: gemmer fil"

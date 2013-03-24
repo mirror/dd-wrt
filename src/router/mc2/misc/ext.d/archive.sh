@@ -8,6 +8,8 @@ action=$1
 filetype=$2
 pager=$3
 
+[ -n "${MC_XDG_OPEN}" ] || MC_XDG_OPEN="xdg-open"
+
 do_view_action() {
     filetype=$1
 
@@ -59,7 +61,8 @@ do_view_action() {
         lha l "${MC_EXT_FILENAME}"
         ;;
     arj)
-        unarj l "${MC_EXT_FILENAME}"
+        arj l "${MC_EXT_FILENAME}" 2>/dev/null || \
+            unarj l "${MC_EXT_FILENAME}"
         ;;
     cab)
         cabextract -l "${MC_EXT_FILENAME}"
@@ -86,7 +89,9 @@ do_view_action() {
         cpio -itv < "${MC_EXT_FILENAME}" 2>/dev/null
         ;;
     7z)
-        7za l "${MC_EXT_FILENAME}" 2>/dev/null
+        7za l "${MC_EXT_FILENAME}" 2>/dev/null ||
+            7z l "${MC_EXT_FILENAME}"
+
         ;;
     ace)
         unace l "${MC_EXT_FILENAME}"
@@ -125,6 +130,9 @@ do_open_action() {
     xz)
         xz -dc "${MC_EXT_FILENAME}" | ${pager}
         ;;
+    par2)
+        par2 r "${MC_EXT_FILENAME}"
+        ;;
     *)
         ;;
     esac
@@ -135,7 +143,7 @@ view)
     do_view_action "${filetype}"
     ;;
 open)
-    xdg-open "${MC_EXT_FILENAME}" 2>/dev/null || \
+    "${MC_XDG_OPEN}" "${MC_EXT_FILENAME}" 2>/dev/null || \
         do_open_action "${filetype}" "${pager}"
     ;;
 *)
