@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.9.0-rc3 Kernel Configuration
+# Linux/mips 3.9.0-rc4 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1010,7 +1010,6 @@ CONFIG_AG7100_GE1_RGMII=y
 CONFIG_ATHRS16_PHY=y
 # CONFIG_PORT0_AS_SWITCH is not set
 # CONFIG_ATHR_VITESSE_PHY is not set
-# CONFIG_PHY_LAYER is not set
 # CONFIG_CAMEO_REALTEK_PHY is not set
 # CONFIG_VITESSE_8601_PHY is not set
 # CONFIG_VITESSE_8601_7395_PHY is not set
