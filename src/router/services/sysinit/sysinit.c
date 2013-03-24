@@ -744,7 +744,7 @@ void start_wanup(void)
 		runStartup("/jffs/etc/config", ".wanup");	// if available
 		runStartup("/mmc/etc/config", ".wanup");	// if available
 		runStartup("/tmp/etc/config", ".wanup");	// if available
-		runStartup("/sd/etc/config", ".wanup");		// if available
+		runStartup("/sd/etc/config", ".wanup");	// if available
 #endif
 	}
 	return;
@@ -1722,7 +1722,7 @@ void start_restore_defaults(void)
 #elif defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) \
     || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) \
     || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) \
-    || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8)    
+    || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8)
 	linux_overrides = generic;
 	int brand = getRouterBrand();
 
@@ -1923,7 +1923,7 @@ void start_restore_defaults(void)
 #if defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) \
     || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) \
     || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) \
-    || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8) || defined(HAVE_80211AC)   
+    || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8) || defined(HAVE_80211AC)
 	if (restore_defaults) {
 		nvram_clear();
 	}
@@ -1938,7 +1938,7 @@ void start_restore_defaults(void)
 	if (brand == ROUTER_LINKSYS_E2500 || brand == ROUTER_LINKSYS_E3200)	//dual radio, 2nd on usb-bus
 		icnt = 2;
 #endif
-#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)	
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
 	buffalo_defaults(restore_defaults);
 #endif
 	runStartup("/sd/etc/config", ".pf");
@@ -1963,7 +1963,8 @@ void start_restore_defaults(void)
 		}
 	}
 	free_defaults();
-	if (strlen(nvram_safe_get("http_username")) == 0 || nvram_match("http_username","admin")) {
+	if (strlen(nvram_safe_get("http_username")) == 0
+	    || nvram_match("http_username", "admin")) {
 		nvram_set("http_username", zencrypt("root"));
 		nvram_set("http_passwd", zencrypt("admin"));
 	}
@@ -2024,7 +2025,8 @@ void start_restore_defaults(void)
 		nvram_set("lan_ipaddr", "192.168.0.1");
 	}
 #endif
-	if (brand == ROUTER_WRT600N) {
+	switch (brand) {
+	case ROUTER_WRT600N:
 		if (nvram_match("switch_type", "BCM5395") && nvram_match("vlan0ports", "1 2 3 4 8*"))	// fix for WRT600N
 			// v1.1 (BCM5395 does 
 			// not suppport vid
@@ -2042,123 +2044,84 @@ void start_restore_defaults(void)
 			nvram_set("lan_ifnames", "vlan1 eth0 eth1");
 		} else {
 			if (!nvram_get("vlan0ports")
-			    || nvram_match("vlan0ports", "")) {
-				nvram_set("vlan0ports", "1 2 3 4 8*");
-				nvram_set("vlan2ports", "0 8*");
-			}
-			if (!nvram_get("vlan2ports")
+			    || nvram_match("vlan0ports", "")
+			    || !nvram_get("vlan2ports")
 			    || nvram_match("vlan2ports", "")) {
 				nvram_set("vlan0ports", "1 2 3 4 8*");
 				nvram_set("vlan2ports", "0 8*");
 			}
 		}
-	} else if (brand == ROUTER_WRT610N) {
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
-			nvram_set("vlan1ports", "1 2 3 4 8*");
-			nvram_set("vlan2ports", "0 8");
-		}
-		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
-			nvram_set("vlan1ports", "1 2 3 4 8*");
-			nvram_set("vlan2ports", "0 8");
-		}
-	} else if (brand == ROUTER_WRT610NV2) {
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
+		break;
+	case ROUTER_WRT610NV2:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "4 3 2 1 8*");
 			nvram_set("vlan2ports", "0 8");
 		}
-		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
-			nvram_set("vlan1ports", "4 3 2 1 8*");
-			nvram_set("vlan2ports", "0 8");
-		}
-
-	} else if (brand == ROUTER_WRT350N) {
-
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
+		break;
+	case ROUTER_WRT610N:
+	case ROUTER_WRT350N:
+	case ROUTER_WRT310N:
+	case ROUTER_D1800H:
+	case ROUTER_ASUS_AC66U:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 8*");
 			nvram_set("vlan2ports", "0 8");
 		}
-		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
-			nvram_set("vlan1ports", "1 2 3 4 8*");
-			nvram_set("vlan2ports", "0 8");
-		}
-
-	} else if (brand == ROUTER_WRT310N) {
-
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
-			nvram_set("vlan1ports", "1 2 3 4 8*");
-			nvram_set("vlan2ports", "0 8");
-		}
-		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
-			nvram_set("vlan1ports", "1 2 3 4 8*");
-			nvram_set("vlan2ports", "0 8");
-		}
-
-	} else if (brand == ROUTER_WRT300NV11) {
-
-		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")) {
+		break;
+	case ROUTER_WRT300NV11:
+		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")
+		    || !nvram_get("vlan1ports")
+		    || nvram_match("vlan1ports", "")) {
 			nvram_set("vlan0ports", "1 2 3 4 5*");
 			nvram_set("vlan1ports", "0 5");
 		}
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
-			nvram_set("vlan0ports", "1 2 3 4 5*");
-			nvram_set("vlan1ports", "0 5");
-		}
-
-	} else if (brand == ROUTER_ASUS_RTN66) {
-
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
+		break;
+	case ROUTER_ASUS_RTN66:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 8*");
 			nvram_set("vlan2ports", "0 8u");
 		}
-		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
-			nvram_set("vlan1ports", "1 2 3 4 8*");
-			nvram_set("vlan2ports", "0 8u");
+		break;
+	case ROUTER_ASUS_AC56U:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "0 1 2 3 5*");
+			nvram_set("vlan2ports", "4 5u");
 		}
-
-	} else if (brand == ROUTER_D1800H) {
-
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
-			nvram_set("vlan1ports", "1 2 3 4 8*");
-			nvram_set("vlan2ports", "0 8");
+		break;
+	case ROUTER_ASUS_AC67U:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "1 2 3 4 5*");
+			nvram_set("vlan2ports", "0 5u");
 		}
-		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
-			nvram_set("vlan1ports", "1 2 3 4 8*");
-			nvram_set("vlan2ports", "0 8");
-		}
-
-	} else if (brand == ROUTER_ASUS_AC66U) {
-
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
-			nvram_set("vlan1ports", "1 2 3 4 8*");
-			nvram_set("vlan2ports", "0 8");
-		}
-		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
-			nvram_set("vlan1ports", "1 2 3 4 8*");
-			nvram_set("vlan2ports", "0 8");
-		}
-
-	} else if (brand == ROUTER_ASUS_RTN53) {
-
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
+		break;
+	case ROUTER_ASUS_RTN53:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "0 5");
 			nvram_set("vlan2ports", "1 2 3 4 5*");
 		}
-		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
-			nvram_set("vlan1ports", "0 5");
-			nvram_set("vlan2ports", "1 2 3 4 5*");
-		}
-
-	} else if (brand == ROUTER_BUFFALO_WZRG144NH) {
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
+		break;
+	case ROUTER_BUFFALO_WZRG144NH:
+		if (!nvram_get("vlan1ports")
+		    || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "4 8");
 			nvram_set("vlan2ports", "0 1 2 3 8*");
 		}
-		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
-			nvram_set("vlan1ports", "4 8");
-			nvram_set("vlan2ports", "0 1 2 3 8*");
-		}
-
-	} else {
+		break;
+	default:
 		if (!nvram_get("vlan0hwname") || nvram_match("vlan0hwname", ""))
 			nvram_set("vlan0hwname", "et0");
 		if (!nvram_get("vlan1hwname") || nvram_match("vlan1hwname", ""))
@@ -2621,44 +2584,44 @@ void start_nvram(void)
 	 */
 #if 0
 // TEMP!!!!
-nvram_set("wl_bss_opmode_cap_reqd", "2");
-nvram_set("wl_channel", "52");
-nvram_set("wl_nband", "1");
-nvram_set("wl_nmode", "2");
-nvram_set("wl_nreqd", "1");
+	nvram_set("wl_bss_opmode_cap_reqd", "2");
+	nvram_set("wl_channel", "52");
+	nvram_set("wl_nband", "1");
+	nvram_set("wl_nmode", "2");
+	nvram_set("wl_nreqd", "1");
 
-nvram_set("wl0_authmode", "open");
-nvram_set("wl0_macmode1", "disabled");
-nvram_set("wl1_auth_mode", "none");
-nvram_set("wl1_authmode", "open");
-nvram_set("wl1_bss_opmode_cap_reqd", "2");
-nvram_set("wl1_vifs", "");
+	nvram_set("wl0_authmode", "open");
+	nvram_set("wl0_macmode1", "disabled");
+	nvram_set("wl1_auth_mode", "none");
+	nvram_set("wl1_authmode", "open");
+	nvram_set("wl1_bss_opmode_cap_reqd", "2");
+	nvram_set("wl1_vifs", "");
 
-nvram_set("af_dnathost", "0");
-nvram_set("af_dnatport", "0");
-nvram_set("af_registered", "0");
-nvram_set("af_serviceid", "0");
-nvram_set("br0_mtu", "1500");
-nvram_set("bridges", "br0>Off>32768>1500");
-nvram_set("bridges_count", "1");
-nvram_set("bridgesif", "");
-nvram_set("bridgesif_count", "0");
-nvram_set("browser_method", "USE_LAN");
-nvram_set("eth0_mtu", "1500");
-nvram_set("eth0_multicast", "0");
-nvram_set("eth0_nat", "1");
-nvram_set("eth1_mtu", "1500");
-nvram_set("eth2_mtu", "1500");
-nvram_set("vlan1_mtu", "1500");
-nvram_set("vlan1_multicast", "0");
-nvram_set("vlan1_nat", "1");
-nvram_set("vlan2_bridged", "1");
-nvram_set("vlan2_mtu", "1500");
-nvram_set("vlan2_multicast", "0");
-nvram_set("vlan2_nat", "1");
-nvram_set("vlan_tagcount", "0");
-nvram_set("vlan_tags", "");
-nvram_set("wan_iface", "");
+	nvram_set("af_dnathost", "0");
+	nvram_set("af_dnatport", "0");
+	nvram_set("af_registered", "0");
+	nvram_set("af_serviceid", "0");
+	nvram_set("br0_mtu", "1500");
+	nvram_set("bridges", "br0>Off>32768>1500");
+	nvram_set("bridges_count", "1");
+	nvram_set("bridgesif", "");
+	nvram_set("bridgesif_count", "0");
+	nvram_set("browser_method", "USE_LAN");
+	nvram_set("eth0_mtu", "1500");
+	nvram_set("eth0_multicast", "0");
+	nvram_set("eth0_nat", "1");
+	nvram_set("eth1_mtu", "1500");
+	nvram_set("eth2_mtu", "1500");
+	nvram_set("vlan1_mtu", "1500");
+	nvram_set("vlan1_multicast", "0");
+	nvram_set("vlan1_nat", "1");
+	nvram_set("vlan2_bridged", "1");
+	nvram_set("vlan2_mtu", "1500");
+	nvram_set("vlan2_multicast", "0");
+	nvram_set("vlan2_nat", "1");
+	nvram_set("vlan_tagcount", "0");
+	nvram_set("vlan_tags", "");
+	nvram_set("wan_iface", "");
 #endif
 	nvram_unset("wl0_hwaddr");	// When disbale wireless, we must get 
 	// 
@@ -2821,15 +2784,15 @@ nvram_set("wan_iface", "");
 #ifdef HAVE_SVQOS
 	char *aqd = nvram_safe_get("svqos_aqd");
 #ifndef HAVE_CODEL
-	if(!strcmp(aqd, "codel"))
+	if (!strcmp(aqd, "codel"))
 		nvram_set("svqos_aqd", "sfq");
 #endif
 #ifndef HAVE_FQ_CODEL
-	if(!strcmp(aqd, "fq_codel"))
+	if (!strcmp(aqd, "fq_codel"))
 		nvram_set("svqos_aqd", "sfq");
 #endif
-	if(	   strcmp(aqd, "codel")
-		&& strcmp(aqd, "fq_codel"))
+	if (strcmp(aqd, "codel")
+	    && strcmp(aqd, "fq_codel"))
 		nvram_set("svqos_aqd", "sfq");
 #endif
 
@@ -2842,12 +2805,13 @@ nvram_set("wan_iface", "");
 		char *newqos = malloc(strlen(qos_mac) + 254);
 		memset(newqos, 0, strlen(qos_mac) + 254);
 
-		char level[32], level2[32], data[32], type[32], level3[32], prio[32];
+		char level[32], level2[32], data[32], type[32], level3[32],
+		    prio[32];
 
 		do {
 			if (sscanf
-			    (qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level,
-			     level2, type, level3, prio) < 6)
+			    (qos_mac, "%31s %31s %31s %31s %31s %31s |", data,
+			     level, level2, type, level3, prio) < 6)
 				break;
 
 			if (!strcmp(level3, "|")) {
@@ -2859,7 +2823,8 @@ nvram_set("wan_iface", "");
 
 			if (strcmp(type, "hostapd") && strcmp(type, "pppd")) {
 				if (strlen(newqos) > 0)
-					sprintf(newqos, "%s %s %s %s %s %s %s |",
+					sprintf(newqos,
+						"%s %s %s %s %s %s %s |",
 						newqos, data, level, level2,
 						type, level3, prio);
 				else
@@ -2896,8 +2861,8 @@ nvram_set("wan_iface", "");
 				strcpy(prio, "0");
 
 			if (strlen(newip) > 0)
-				sprintf(newip, "%s %s %s %s %s %s |", newip, data,
-					level, level2, level3, prio);
+				sprintf(newip, "%s %s %s %s %s %s |", newip,
+					data, level, level2, level3, prio);
 			else
 				sprintf(newip, "%s %s %s %s %s |", data, level,
 					level2, level3, prio);
