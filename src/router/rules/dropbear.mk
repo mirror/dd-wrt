@@ -5,9 +5,9 @@ dropbear: zlib
 	$(MAKE) -j 4 -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1
 
 dropbear-install:
-	@true
-ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 	install -D dropbear/dropbearmulti $(INSTALLDIR)/dropbear/usr/sbin/dropbearmulti
 	install -D dropbear/config/sshd.webservices $(INSTALLDIR)/dropbear/etc/config/sshd.webservices
-endif
+	cd $(INSTALLDIR)/dropbear/usr/sbin && ln -sf /usr/sbin/dropbearmulti dropbearconvert && ln -sf /usr/sbin/dropbearmulti dropbearkey && ln -sf /usr/sbin/dropbearmulti dropbear
+	mkdir -p $(INSTALLDIR)/dropbear/usr/bin
+	cd $(INSTALLDIR)/dropbear/usr/bin && ln -sf /usr/sbin/dropbearmulti ssh && ln -sf /usr/sbin/dropbearmulti scp && ln -sf /usr/sbin/dropbearmulti dbclient 
 
