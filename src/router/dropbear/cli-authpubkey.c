@@ -134,10 +134,11 @@ void cli_buf_put_sign(buffer* buf, sign_key *key, int type,
 				sigblob->len);
 
 		buf_free(sigblob);
-	} else
-#endif
+	} else 
+#endif /* ENABLE_CLI_AGENTFWD */
+	{
 		buf_put_sign(buf, key, type, data, len);
-	
+	}
 }
 
 /* TODO: make it take an agent reference to use as well */

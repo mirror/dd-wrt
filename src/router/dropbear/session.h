@@ -63,9 +63,9 @@ void cleantext(unsigned char* dirtytext);
 
 /* crypto parameters that are stored individually for transmit and receive */
 struct key_context_directional {
-	const struct dropbear_cipher *algo_crypt; /* NULL for none */
+	const struct dropbear_cipher *algo_crypt;
 	const struct dropbear_cipher_mode *crypt_mode;
-	const struct dropbear_hash *algo_mac; /* NULL for none */
+	const struct dropbear_hash *algo_mac;
 	int hash_index; /* lookup for libtomcrypt */
 	char algo_comp; /* compression */
 #ifndef DISABLE_ZLIB
@@ -78,7 +78,7 @@ struct key_context_directional {
 		symmetric_CTR ctr;
 #endif
 	} cipher_state;
-	unsigned char mackey[MAX_MAC_KEY];
+	unsigned char mackey[MAX_MAC_LEN];
 };
 
 struct key_context {
@@ -218,7 +218,7 @@ struct serversession {
 	/* The resolved remote address, used for lastlog etc */
 	char *remotehost;
 
-#ifdef __uClinux__
+#ifdef USE_VFORK
 	pid_t server_pid;
 #endif
 
@@ -269,6 +269,9 @@ struct clientsession {
 	int interact_request_received; /* flag whether we've received an 
 									  info request from the server for
 									  interactive auth.*/
+
+	int cipher_none_after_auth; /* Set to 1 if the user requested "none"
+								   auth */
 #endif
 	sign_key *lastprivkey;
 
