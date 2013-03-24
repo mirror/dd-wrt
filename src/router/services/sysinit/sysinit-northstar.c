@@ -122,6 +122,8 @@ void start_sysinit(void)
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
+	insmod("switch-core");
+	insmod("switch-robo");
 
 	writeproc("/proc/irq/163/smp_affinity", "2");
 	writeproc("/proc/irq/169/smp_affinity", "2");

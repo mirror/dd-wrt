@@ -56,62 +56,39 @@
 
 void start_vpn_modules(void)
 {
-#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_RB600) || defined(HAVE_LAGUNA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_RT2880) || defined(HAVE_BCMMODERN) || defined(HAVE_LSX) || defined(HAVE_AP83) || defined(HAVE_AP96) || defined(HAVE_NORTHSTAR)
-
 	if ((nvram_match("pptp_pass", "1") || nvram_match("l2tp_pass", "1")
 	     || nvram_match("ipsec_pass", "1"))) {
 		insmod("nf_conntrack_proto_gre");
+		insmod("ip_conntrack_proto_gre");
 		dd_syslog(LOG_INFO,
 			  "vpn modules : nf_conntrack_proto_gre successfully loaded\n");
 		insmod("nf_nat_proto_gre");
+		insmod("ip_nat_proto_gre");
 		dd_syslog(LOG_INFO,
 			  "vpn modules : nf_nat_proto_gre successfully loaded\n");
 	}
 	if (nvram_match("pptp_pass", "1")) {
 		insmod("nf_conntrack_pptp");
+		insmod("ip_conntrack_pptp");
 		dd_syslog(LOG_INFO,
 			  "vpn modules : nf_conntrack_pptp successfully loaded\n");
 		insmod("nf_nat_pptp");
+		insmod("ip_nat_pptp");
 		dd_syslog(LOG_INFO,
 			  "vpn modules : nf_nat_pptp successfully loaded\n");
 	}
-#else
-	if ((nvram_match("pptp_pass", "1") || nvram_match("l2tp_pass", "1")
-	     || nvram_match("ipsec_pass", "1"))) {
-		insmod("ip_conntrack_proto_gre");
-		dd_syslog(LOG_INFO,
-			  "vpn modules : ip_conntrack_proto_gre successfully loaded\n");
-		insmod("ip_nat_proto_gre");
-		dd_syslog(LOG_INFO,
-			  "vpn modules : ip_nat_proto_gre successfully loaded\n");
-	}
-	if (nvram_match("pptp_pass", "1")) {
-		insmod("ip_conntrack_pptp");
-		dd_syslog(LOG_INFO,
-			  "vpn modules : ip_conntrack_pptp successfully loaded\n");
-		insmod("ip_nat_pptp");
-		dd_syslog(LOG_INFO,
-			  "vpn modules : ip_nat_pptp successfully loaded\n");
-	}
-#endif
 }
 
 void stop_vpn_modules(void)
 {
-#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_RB600) || defined(HAVE_LAGUNA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_RT2880) || defined(HAVE_BCMMODERN) || defined(HAVE_LSX) || defined(HAVE_AP83) || defined(HAVE_AP96) || defined(HAVE_NORTHSTAR)
 	rmmod("nf_nat_pptp");
 	rmmod("nf_conntrack_pptp");
 	rmmod("nf_nat_proto_gre");
 	rmmod("nf_conntrack_proto_gre");
-	dd_syslog(LOG_INFO,
-		  "vpn modules : vpn modules successfully unloaded\n");
-#else
 	rmmod("ip_nat_pptp");
 	rmmod("ip_nat_proto_gre");
 	rmmod("ip_conntrack_pptp");
 	rmmod("ip_conntrack_proto_gre");
 	dd_syslog(LOG_INFO,
 		  "vpn modules : vpn modules successfully unloaded\n");
-
-#endif
 }

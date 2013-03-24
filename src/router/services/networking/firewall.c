@@ -848,53 +848,8 @@ static void nat_postrouting(void)
 				}
 			}
 		}
-
-#ifndef HAVE_MAGICBOX
-#ifndef HAVE_RB600
-#ifndef HAVE_FONERA
-#ifndef HAVE_RT2880
-#ifndef HAVE_LS2
-#ifndef HAVE_SOLO51
-#ifndef HAVE_LS5
-#ifndef HAVE_PB42
-#ifndef HAVE_LSX
-#ifndef HAVE_DANUBE
-#ifndef HAVE_STORM
-#ifndef HAVE_OPENRISC
-#ifndef HAVE_ADM5120
-#ifndef HAVE_WHRAG108
-#ifndef HAVE_XSCALE
-#ifndef HAVE_LAGUNA
-#ifndef HAVE_NORTHSTAR
-#ifndef HAVE_X86
-#ifndef HAVE_CA8
-#ifndef HAVE_RB500
-#ifndef HAVE_TW6600
-#ifndef HAVE_BCMMODERN
 		if (nvram_match("block_loopback", "0"))
 			writeproc("/proc/sys/net/ipv4/conf/br0/loop", "1");
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
 
 	} else {
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
