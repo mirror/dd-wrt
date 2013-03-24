@@ -715,7 +715,6 @@ static int handle_vlan_port_read_new(switch_driver *d, char *buf, int nr)
 	robo_write16(ROBO_ARLIO_PAGE, vtbl_index, nr);
 	robo_write8(ROBO_ARLIO_PAGE, vtbl_access, (1 << 7) | (1 << 0));
 	val32 = robo_read32(ROBO_ARLIO_PAGE, vtbl_entry);
-	printk(KERN_INFO "port read returns %X\n",val32);
 	for (j = 0; j < d->ports; j++) {
 		if (val32 & (1 << j)) {
 			len += sprintf(buf + len, "%d", j);
@@ -856,7 +855,6 @@ static int handle_port_media_read(void *driver, char *buf, int nr)
 {
 	u16 bmcr = mdio_read(robo.port[nr], MII_BMCR);
 	int media, len;
-
 	if (bmcr & BMCR_ANENABLE)
 		media = SWITCH_MEDIA_AUTO;
 	else {
@@ -1074,7 +1072,6 @@ static int __init robo_init(void)
 				driver.cpuport = get_cpuport();
 #endif
 		}
-		printk(KERN_INFO "cpuport is %d\n",driver.cpuport);
 		if (robo.is_5365)
 			snprintf(driver.dev_name, SWITCH_NAME_BUFSZ, "BCM5365");
 		else
