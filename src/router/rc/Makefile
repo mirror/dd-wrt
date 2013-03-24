@@ -947,11 +947,6 @@ endif
 #ifeq ($(CONFIG_PPPD),y)
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox pppd
 #endif
-ifeq ($(CONFIG_DROPBEAR_SSHD),y)
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /usr/sbin/dropbearmulti dropbearconvert && ln -sf /usr/sbin/dropbearmulti dropbearkey && ln -sf /usr/sbin/dropbearmulti dbclient && ln -sf /usr/sbin/dropbearmulti dropbear
-	mkdir -p $(INSTALLDIR)/usr/bin
-	cd $(INSTALLDIR)/usr/bin && ln -sf /usr/sbin/dropbearmulti ssh && ln -sf /usr/sbin/dropbearmulti scp
-endif
 ifeq ($(CONFIG_PPTPD),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc poptop
 endif
