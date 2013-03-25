@@ -305,7 +305,7 @@ void stop_pptpd(void)
 	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
 		system("/bin/cp /tmp/pptp_peer.db /jffs/etc/");
 #ifdef HAVE_PPTP_ACCEL
-	eval("rmmod","pptp");
+	rmmod("pptp");
 #endif
 	return;
 }
