@@ -491,7 +491,7 @@ static int dmu_temperature_status(char * buffer, char **start,
 	return len;
 }
 
-static void __init dmu_proc_init(void)
+static int __init dmu_proc_init(void)
 {
 	struct proc_dir_entry *dmu, *dmu_temp;
 
@@ -499,7 +499,7 @@ static void __init dmu_proc_init(void)
 
 	if (!dmu) {
 		printk(KERN_ERR "DMU create proc directory failed.\n");
-		return;
+		return 0;
 	}
 
 	dmu_temp = create_proc_read_entry(DMU_PROC_NAME "/temperature", 0, NULL,
@@ -507,6 +507,7 @@ static void __init dmu_proc_init(void)
 
 	if (!dmu_temp)
 		printk(KERN_ERR "DMU create proc entry failed.\n");
+	return 0;
 }
 fs_initcall(dmu_proc_init);
 #endif /* CONFIG_PROC_FS */

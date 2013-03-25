@@ -1,7 +1,7 @@
 #ifndef __MACH_SMP_H
 #define __MACH_SMP_H
 
-#include <asm/hardware/gic.h>
+#include <linux/irqchip/arm-gic.h>
 
 
 /*
