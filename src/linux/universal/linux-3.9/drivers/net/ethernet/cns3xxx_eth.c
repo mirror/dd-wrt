@@ -1249,7 +1249,7 @@ static int eth_init_one(struct platform_device *pdev)
 		memcpy(dev->dev_addr, &plat->hwaddr[i], ETH_ALEN);
 
 		snprintf(phy_id, MII_BUS_ID_SIZE + 3, PHY_ID_FMT, "0", plat->phy[i]);
-		port->phydev = phy_connect(dev, phy_id, &cns3xxx_adjust_link, 0,
+		port->phydev = phy_connect(dev, phy_id, &cns3xxx_adjust_link,
 			PHY_INTERFACE_MODE_RGMII);
 		if ((err = IS_ERR(port->phydev))) {
 			switch_port_tab[port->id] = 0;

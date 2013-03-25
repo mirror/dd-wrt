@@ -8,7 +8,7 @@
 #ifndef __ASM_ARCH_SMP_H
 #define __ASM_ARCH_SMP_H __FILE__
 
-#include <asm/hardware/gic.h>
+#include <linux/irqchip/arm-gic.h>
 
 extern void platform_secondary_startup(void);
 

@@ -17,7 +17,7 @@
 #include <asm/mach/map.h>
 #include <asm/smp_twd.h>
 #include <asm/pgtable.h>
-#include <asm/hardware/gic.h>
+#include <linux/irqchip/arm-gic.h>
 
 #include <plat/mpcore.h>
 #include <mach/io_map.h>

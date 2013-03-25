@@ -9,7 +9,6 @@
 #include <asm/mach/arch.h>
 #include <asm/mach/time.h>
 #include <asm/clkdev.h>
-#include <asm/hardware/gic.h>
 
 #include <mach/clkdev.h>
 #include <mach/memory.h>
@@ -241,9 +240,6 @@ void __init board_fixup(struct tag *t, char **cmdline,struct meminfo *mi)
 	mi->nr_banks++;
 }
 
-static struct sys_timer board_timer = {
-   .init = board_init_timer,
-};
 
 //#if (( (IO_BASE_VA >>18) & 0xfffc) != 0x3c40)
 //#error IO_BASE_VA 
@@ -267,10 +263,9 @@ MACHINE_START(BRCM_NS, "Northstar Prototype")
    .fixup = board_fixup,			/* Opt. early setup_arch() */
    .map_io = board_map_io,			/* Opt. from setup_arch() */
    .init_irq = board_init_irq,			/* main.c after setup_arch() */
-   .timer  = &board_timer,			/* main.c after IRQs */
+   .init_time  = board_init_timer,			/* main.c after IRQs */
    .init_machine = board_init,			/* Late archinitcall */
    .atag_offset = CONFIG_BOARD_PARAMS_PHYS,
-    .handle_irq	= gic_handle_irq,
     .restart	= brcm_reset,
 
 MACHINE_END
@@ -284,10 +279,9 @@ MACHINE_START(BRCM_NS_QT, "Northstar Emulation Model")
    .fixup = board_fixup,			/* Opt. early setup_arch() */
    .map_io = board_map_io,			/* Opt. from setup_arch() */
    .init_irq = board_init_irq,			/* main.c after setup_arch() */
-   .timer  = &board_timer,			/* main.c after IRQs */
+   .init_time  = board_init_timer,			/* main.c after IRQs */
    .init_machine = board_init,			/* Late archinitcall */
    .atag_offset = CONFIG_BOARD_PARAMS_PHYS,
-    .handle_irq	= gic_handle_irq,
     .restart	= brcm_reset,
 MACHINE_END
 #endif
