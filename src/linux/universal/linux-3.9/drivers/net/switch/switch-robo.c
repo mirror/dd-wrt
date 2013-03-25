@@ -851,6 +851,71 @@ static int handle_port_enable_write(void *driver, char *buf, int nr)
 	return 0;
 }
 
+static int handle_port_status_read(void *driver, char *buf, int nr)
+{
+	u16 status = robo_read16(ROBO_STAT_PAGE, 0x4);
+	u16 mask;
+
+	if ((robo.devid == ROBO_DEVICE_ID_53115) ||
+	    (robo.devid == ROBO_DEVICE_ID_53125) || (ROBO_IS_BCM5301X(robo.devid))) {
+		mask = 0x3<<(robo.port[nr]*2);
+		status&= mask;
+		status>>= (robo.port[nr]*2);
+	}else{
+		mask = 0x1<<(robo.port[nr]);
+		status&= mask;
+		status>>= robo.port[nr];	
+	}
+
+	int media, len;
+	switch(status) {
+	case 0:
+		media = 0;
+	break;
+	case 1:
+		media = SWITCH_MEDIA_100;
+	break;
+	case 2:
+		media = SWITCH_MEDIA_1000;
+	break;
+	}	
+	media |= SWITCH_MEDIA_FD;
+
+	if (ROBO_IS_BCM5301X(robo.devid)) {  //special case for srab based devices like BCM4708
+		status = robo_read16(ROBO_STAT_PAGE, 0x0); // port status
+	} else {
+		status = mdio_read(robo.port[nr], MII_BMSR); // port status	
+		if ((status & 0x22) == 0x20) // negotiation in progress, read again
+			status = mdio_read(robo.port[nr], MII_BMSR); 	
+		if (status & (1<<2))
+			status = 0x1<<robo.port[nr];
+	}
+	mask = 0x1<<robo.port[nr];
+	status &= mask;
+	status >>= robo.port[nr];	
+	switch(status) {
+	case 0:
+		len = sprintf(buf,"disconnected\n");
+		return len;
+	break;	
+	case 1:
+		len = switch_print_media(buf, media);
+		return len + sprintf(buf + len, "\n");
+	break;	
+	}
+
+	len = switch_print_media(buf, media);
+}
+
+static int handle_port_status_write(void *driver, char *buf, int nr)
+{
+	return 0;
+}
+
+
+
+
+
 static int handle_port_media_read(void *driver, char *buf, int nr)
 {
 	u16 bmcr = mdio_read(robo.port[nr], MII_BMCR);
@@ -1043,6 +1108,10 @@ static int __init robo_init(void)
 				.name	= "media",
 				.read	= handle_port_media_read,
 				.write	= handle_port_media_write
+			}, {
+				.name	= "status",
+				.read	= handle_port_status_read,
+				.write	= handle_port_status_write
 			}, { NULL, },
 		};
 		static const switch_config vlan[] = {
