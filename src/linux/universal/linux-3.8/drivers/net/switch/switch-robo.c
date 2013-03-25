@@ -853,22 +853,28 @@ static int handle_port_enable_write(void *driver, char *buf, int nr)
 
 static int handle_port_status_read(void *driver, char *buf, int nr)
 {
-	u16 status = robo_read16(ROBO_STAT_PAGE, 0x4);
+	u16 speed_status = robo_read16(ROBO_STAT_PAGE, ROBO_SPEED_STAT_SUMMARY);
+	u16 duplex_status = robo_read16(ROBO_STAT_PAGE, ROBO_DUPLEX_STAT_SUMMARY);
+	int media, len;
 	u16 mask;
 
 	if ((robo.devid == ROBO_DEVICE_ID_53115) ||
 	    (robo.devid == ROBO_DEVICE_ID_53125) || (ROBO_IS_BCM5301X(robo.devid))) {
 		mask = 0x3<<(robo.port[nr]*2);
-		status&= mask;
-		status>>= (robo.port[nr]*2);
+		speed_status&= mask;
+		speed_status>>= (robo.port[nr]*2);	
 	}else{
 		mask = 0x1<<(robo.port[nr]);
-		status&= mask;
-		status>>= robo.port[nr];	
+		speed_status&= mask;
+		speed_status>>= robo.port[nr];	
 	}
 
-	int media, len;
-	switch(status) {
+	mask = 0x1<<(robo.port[nr]);
+	duplex_status&= mask;
+	duplex_status>>= robo.port[nr];	
+
+
+	switch(speed_status) {
 	case 0:
 		media = 0;
 	break;
@@ -878,33 +884,32 @@ static int handle_port_status_read(void *driver, char *buf, int nr)
 	case 2:
 		media = SWITCH_MEDIA_1000;
 	break;
-	}	
-	media |= SWITCH_MEDIA_FD;
+	}
+	if (duplex_status)	
+	    media |= SWITCH_MEDIA_FD;
 
 	if (ROBO_IS_BCM5301X(robo.devid)) {  //special case for srab based devices like BCM4708
-		status = robo_read16(ROBO_STAT_PAGE, 0x0); // port status
+		speed_status = robo_read16(ROBO_STAT_PAGE, ROBO_LINK_STAT_SUMMARY); // port status
 	} else {
-		status = mdio_read(robo.port[nr], MII_BMSR); // port status	
-		if ((status & 0x22) == 0x20) // negotiation in progress, read again
-			status = mdio_read(robo.port[nr], MII_BMSR); 	
-		if (status & (1<<2))
-			status = 0x1<<robo.port[nr];
+		speed_status = mdio_read(robo.port[nr], MII_BMSR); // port status	
+		if ((speed_status & 0x22) == 0x20) // negotiation in progress, read again
+			speed_status = mdio_read(robo.port[nr], MII_BMSR); 	
+		if (speed_status & (1<<2))
+			speed_status = 0x1<<robo.port[nr];
 	}
 	mask = 0x1<<robo.port[nr];
-	status &= mask;
-	status >>= robo.port[nr];	
-	switch(status) {
+	speed_status &= mask;
+	speed_status >>= robo.port[nr];	
+	switch(speed_status) {
 	case 0:
 		len = sprintf(buf,"disconnected\n");
 		return len;
 	break;	
-	case 1:
+	default:
 		len = switch_print_media(buf, media);
 		return len + sprintf(buf + len, "\n");
 	break;	
 	}
-
-	len = switch_print_media(buf, media);
 }
 
 static int handle_port_status_write(void *driver, char *buf, int nr)
@@ -1068,6 +1073,72 @@ static int handle_reset(void *driver, char *buf, int nr)
 
 	return 0;
 }
+
+
+static int handle_port_bandwidth_read(void *driver, char *buf, int nr)
+{
+	return sprintf(buf, "FULL\n");
+}
+
+static int handle_port_bandwidth_write(void *driver, char *buf, int nr)
+{
+	return 0;
+}
+
+static int handle_port_prio_enable_read(void *driver, char *buf, int nr)
+{
+	return sprintf(buf, "%d\n", ((robo_read16(ROBO_QOS_PAGE, ROBO_QOS_CTRL) & BIT(robo.port[nr])) ? 1 : 0));
+}
+
+static int handle_port_prio_enable_write(void *driver, char *buf, int nr)
+{
+	__u16 val16;
+	
+	val16 = robo_read16(ROBO_QOS_PAGE, ROBO_QOS_CTRL);
+
+	if (buf[0] == '0')
+		val16 &= ~(1 << robo.port[nr]);
+	else
+		val16 |= (1 << robo.port[nr]);
+
+	robo_write16(ROBO_QOS_PAGE, ROBO_QOS_CTRL, val16);
+
+	return 0;
+}
+
+static int handle_port_prio_read(void *driver, char *buf, int nr)
+{
+	return handle_port_prio_enable_read(driver, buf, nr);
+}
+
+static int handle_port_prio_write(void *driver, char *buf, int nr)
+{
+	return handle_port_prio_enable_write(driver, buf, nr);
+}
+
+static int handle_port_flow_enable_read(void *driver, char *buf, int nr)
+{
+	return sprintf(buf, "%d\n", ((robo_read16(ROBO_QOS_PAGE, ROBO_QOS_PAUSE_ENA) & BIT(robo.port[nr])) ? 1 : 0));
+}
+
+static int handle_port_flow_enable_write(void *driver, char *buf, int nr)
+{
+	__u16 val16;
+	
+	val16 = robo_read16(ROBO_QOS_PAGE, ROBO_QOS_PAUSE_ENA);
+
+	if (buf[0] == '0')
+		val16 &= ~(1 << robo.port[nr]);
+	else
+		val16 |= (1 << robo.port[nr]);
+
+	robo_write16(ROBO_QOS_PAGE, ROBO_QOS_PAUSE_ENA, val16);
+
+	return 0;
+}
+
+
+
 static int __init robo_init(void)
 {
 	int notfound = 1;
@@ -1112,6 +1183,20 @@ static int __init robo_init(void)
 				.name	= "status",
 				.read	= handle_port_status_read,
 				.write	= handle_port_status_write
+			}, {
+				.name	= "bandwidth",
+				.read	= handle_port_bandwidth_read,
+				.write	= handle_port_bandwidth_write
+			}, {
+				.name	= "prio-enable",
+				.read	= handle_port_prio_enable_read,
+				.write	= handle_port_prio_enable_write
+			}, {	.name	= "prio",
+				.read	= handle_port_prio_read,
+				.write	= handle_port_prio_write
+			}, {	.name	= "flow",
+				.read	= handle_port_flow_enable_read,
+				.write	= handle_port_flow_enable_write
 			}, { NULL, },
 		};
 		static const switch_config vlan[] = {
