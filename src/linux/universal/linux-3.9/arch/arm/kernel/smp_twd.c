@@ -339,7 +339,9 @@ static int __init twd_local_timer_common_register(struct device_node *np)
 	if (err)
 		goto out_irq;
 
+#ifndef CONFIG_ARCH_CNS3XXX
 	twd_get_clock(np);
+#endif
 
 	return 0;
 
