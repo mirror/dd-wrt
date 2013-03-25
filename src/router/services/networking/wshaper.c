@@ -345,10 +345,10 @@ void aqos_tables(void)
 
 int svqos_iptables(void)
 {
-    char *qos_pkts = nvram_safe_get("svqos_pkts");
+	char *qos_pkts = nvram_safe_get("svqos_pkts");
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
 	char name[32], type[32], data[32], level[32], pkt_filter[4];
-    
+
 	char *wshaper_dev = nvram_get("wshaper_dev");
 	char *wan_dev = get_wanface();
 
@@ -851,18 +851,20 @@ int svqos_iptables(void)
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 
-    // http://svn.dd-wrt.com:8000/ticket/2803 && http://svn.dd-wrt.com/ticket/2811   
-    do {
-        if (sscanf(qos_pkts, "%3s ", pkt_filter) < 1)
-            break;
-        sysprintf("iptables -t mangle -A FILTER_OUT -p tcp -m tcp --tcp-flags %s %s -m length --length :64 -j CLASSIFY --set-class 1:100", pkt_filter, pkt_filter);
-        
-    } while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
+	// http://svn.dd-wrt.com:8000/ticket/2803 && http://svn.dd-wrt.com/ticket/2811   
+	do {
+		if (sscanf(qos_pkts, "%3s ", pkt_filter) < 1)
+			break;
+		sysprintf
+		    ("iptables -t mangle -A FILTER_OUT -p tcp -m tcp --tcp-flags %s %s -m length --length :64 -j CLASSIFY --set-class 1:100",
+		     pkt_filter, pkt_filter);
+
+	} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
 
 // obsolete
-//	system2
-//	    ("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
-    
+//      system2
+//          ("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
+
 	system2("iptables -t mangle -A FILTER_OUT -j VPN_DSCP");
 	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --save");
 	system2("iptables -t mangle -A FILTER_OUT -j RETURN");
@@ -886,8 +888,8 @@ void start_wshaper(void)
 	char *wshaper_dev;
 	char *wan_dev;
 	char *aqd;
-    char *script_name;
-    
+	char *script_name;
+
 	wan_dev = get_wanface();
 	if (!wan_dev)
 		wan_dev = "xx";
@@ -915,27 +917,27 @@ void start_wshaper(void)
 	    atoi(ul_val) > 0)
 		return;
 	mtu_val = get_mtu_val();
-    
-    
+
 #ifdef HAVE_SVQOS
-	aqd = nvram_safe_get("svqos_aqd");    
+	aqd = nvram_safe_get("svqos_aqd");
 
 	insmod("imq");
 	insmod("ipt_IMQ");
 	insmod("xt_IMQ");
 
 #ifdef HAVE_CODEL
-    if (!strcmp(aqd, "codel"))
-        insmod("sch_codel");
+	if (!strcmp(aqd, "codel"))
+		insmod("sch_codel");
 #endif
-    
+
 #ifdef HAVE_FQ_CODEL
-    if (!strcmp(aqd, "fq_codel"))
-        insmod("sch_fq_codel"); 
+	if (!strcmp(aqd, "fq_codel"))
+		insmod("sch_fq_codel");
 #endif
 
 	if (!strcmp(wshaper_dev, "WAN"))
-		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd);
+		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0",
+		     aqd);
 	else
 		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd,
 		     "imq1");
@@ -1168,9 +1170,9 @@ void stop_wshaper(void)
 	rmmod("xt_IMQ");
 	rmmod("ipt_IMQ");
 	rmmod("imq");
-    rmmod("sch_codel");
-    rmmod("sch_fq_codel");
-//	rmmod("ebtables");
+	rmmod("sch_codel");
+	rmmod("sch_fq_codel");
+//      rmmod("ebtables");
 
 	return;
 }

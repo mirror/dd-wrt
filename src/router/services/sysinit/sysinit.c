@@ -2226,15 +2226,13 @@ void start_restore_defaults(void)
 
 	}
 
-	if (restore_defaults) {	//hack for VLAN page display for some routers: lan is on vlan1, wan is on vlan2
-		if (strlen(nvram_safe_get("vlan1ports")) == 10) {
+	if (nvram_get("vlan0ports")==NULL && nvram_get("vlan1ports") && nvram_get("vlan2ports")) {
 			nvram_set("port0vlans", "2");
 			nvram_set("port1vlans", "1");
 			nvram_set("port2vlans", "1");
 			nvram_set("port3vlans", "1");
 			nvram_set("port4vlans", "1");
-			nvram_set("port5vlans", "1 2 16");
-		}
+			nvram_set("port5vlans", "1 2 16");	
 	}
 
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
@@ -2466,50 +2464,50 @@ void start_drivers(void)
 		eval("stopservice", "ftpsrv");
 		sysprintf("umount /%s",
 			  nvram_default_get("usb_mntpoint", "mnt"));
-		eval("rmmod", "usblp");
-		eval("rmmod", "printer");
-		eval("rmmod", "usb-storage");
-		eval("rmmod", "sr_mod");
-		eval("rmmod", "cdrom");
-		eval("rmmod", "sd_mod");
-		eval("rmmod", "scsi_wait_scan");
-		eval("rmmod", "scsi_mod");
-		eval("rmmod", "usb-ohci");
-		eval("rmmod", "ohci-hcd");
-		eval("rmmod", "uhci-hcd");
-		eval("rmmod", "usb-uhci");
-		eval("rmmod", "ehci-pci");
-		eval("rmmod", "ehci-platform");
-		eval("rmmod", "ehci-hcd");
-		eval("rmmod", "usbcore");
-		eval("rmmod", "usb-common");
+		rmmod("usblp");
+		rmmod("printer");
+		rmmod("usb-storage");
+		rmmod("sr_mod");
+		rmmod("cdrom");
+		rmmod("sd_mod");
+		rmmod("scsi_wait_scan");
+		rmmod("scsi_mod");
+		rmmod("usb-ohci");
+		rmmod("ohci-hcd");
+		rmmod("uhci-hcd");
+		rmmod("usb-uhci");
+		rmmod("ehci-pci");
+		rmmod("ehci-platform");
+		rmmod("ehci-hcd");
+		rmmod("usbcore");
+		rmmod("usb-common");
 /* unload filesystems */
 /* xfs */
-		eval("rmmod", "xfs");
+		rmmod("xfs");
 /* fat */
-		eval("rmmod", "msdos");
-		eval("rmmod", "vfat");
-		eval("rmmod", "fat");
-		eval("rmmod", "nls_utf8");
-		eval("rmmod", "nls_iso8859-2");
-		eval("rmmod", "nls_iso8859-1");
-		eval("rmmod", "nls_cp437");
-		eval("rmmod", "nls_cp932");
-		eval("rmmod", "nls_cp936");
-		eval("rmmod", "nls_cp950");
-		eval("rmmod", "nls_base");
+		rmmod("msdos");
+		rmmod("vfat");
+		rmmod("fat");
+		rmmod("nls_utf8");
+		rmmod("nls_iso8859-2");
+		rmmod("nls_iso8859-1");
+		rmmod("nls_cp437");
+		rmmod("nls_cp932");
+		rmmod("nls_cp936");
+		rmmod("nls_cp950");
+		rmmod("nls_base");
 //
 /* ext3 */
 #ifdef HAVE_USB_ADVANCED
-		eval("rmmod", "ext3");
-		eval("rmmod", "jbd");
+		rmmod("ext3");
+		rmmod("jbd");
 #endif
 /* ext2 */
-		eval("rmmod", "ext2");
-		eval("rmmod", "mbcache");
+		rmmod("ext2");
+		rmmod("mbcache");
 /* ntfs-3g */
 #ifdef HAVE_NTFS3G
-		eval("rmmod", "fuse");
+		rmmod("fuse");
 #endif
 
 		led_control(USB_POWER, LED_OFF);
