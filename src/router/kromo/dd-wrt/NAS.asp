@@ -44,7 +44,6 @@ function checkDlnaShares() {
 		
 	for( i = 0; i < shares.length; i++ ) {
 		mp = '';
-		label = '';
 		
 		if( shares[i].id.substr( 0, sublabel.length ) == sublabel && shares[i].id.substr(shares[i].id.length - 9, 9) != '_template') {
 			index = shares[i].id.substr( sublabel.length, shares[i].id.length - sublabel.length );
@@ -55,10 +54,7 @@ function checkDlnaShares() {
 					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'dlnashare_mp' ) {
 						mp = element.value.replace(/^\s+|\s+$/g,"");
 						if(mp.length == 0) error = true;
-					} else if( element.name.substr(0, element.name.length - index.length - 1 ) == 'dlnashare_label' ) {
-						label = element.value.replace(/^\s+|\s+$/g,"");
-						if(label.length == 0) error = true;
-					}
+					} 
 				}
 				
 				// error handling
@@ -70,7 +66,7 @@ function checkDlnaShares() {
 			}
 			
 			// error handling
-			if( mp.length == 0 || label.length == 0) {
+			if( mp.length == 0) {
 				alert( 'Please select a mountpoint and enter a share label to proceed.' );
 				return false;
 			}
