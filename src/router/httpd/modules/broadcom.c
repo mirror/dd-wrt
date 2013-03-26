@@ -1075,6 +1075,9 @@ static struct gozila_action gozila_actions[] = {
 #ifdef HAVE_NAS_SERVER
 	{"NAS", "save", "nassrv", 1, REFRESH, "nassrv_save"},
 #endif
+#ifdef HAVE_MINIDLNA
+	{"NAS", "save", "nassrv", 1, REFRESH, "dlna_save"},
+#endif
 };
 
 struct gozila_action *handle_gozila_action(char *name, char *type)
