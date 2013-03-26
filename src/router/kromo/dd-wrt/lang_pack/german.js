@@ -1440,6 +1440,9 @@ service.samba3_users="Benutzer";
 service.samba3_username="Benutzer";
 service.samba3_password="Passwort";
 service.samba3_user_shares="Zugang zu Freigaben"; 
+service.dlna_type_video="Filme";
+service.dlna_type_audio="Musik";
+service.dlna_type_images="Bilder";
 
 // ******************************************* eop-tunnel.asp *******************************************//
 
