@@ -31,7 +31,7 @@ struct dlna_share *getdlnashares(void) {
 	char mp[64],types;
 
 	// first create dummy entry
-	list = getdlnashare("", "", 0);
+	list = getdlnashare("", 0);
 	current = list;
 	
 //	json = json_loads( "[{\"mp\":\"/jffs\",\"label\":\"testshare\",\"perms\":\"rw\",\"public\":0},{\"mp\":\"/mnt\",\"label\":\"othertest\",\"perms\":\"ro\",\"public\":1},{\"label\":\"blah\"}]", &error );
