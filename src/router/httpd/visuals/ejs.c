@@ -1280,7 +1280,9 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 	int idx;
 
 	for (idx = 0; idx < 3; idx++) {
+		fprintf(stderr,"open %s\n",directories[idx]);
 		directory = opendir(directories[idx]);
+		fprintf(stderr,"open returns %p\n",directory);
 		if (directory == NULL)
 			continue;
 		// list all files in this directory
@@ -3519,13 +3521,11 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp,
 		  "			<th><script type=\"text/javascript\">Capture(service.samba3_share_path)</script></th>\n");
 	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.samba3_share_label)</script></th>\n");
+		  "			<th><script type=\"text/javascript\">Capture(service.dlna_type_audio)</script></th>\n");
 	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.dlna_share_audio)</script></th>\n");
+		  "			<th><script type=\"text/javascript\">Capture(service.dlna_type_video)</script></th>\n");
 	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.dlna_share_video)</script></th>\n");
-	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.dlna_share_images)</script></th>\n");
+		  "			<th><script type=\"text/javascript\">Capture(service.dlna_type_images)</script></th>\n");
 	websWrite(wp,
 		  "			<th style=\"width: 50px;\">&nbsp;</th>\n");
 	websWrite(wp, "		</tr>\n");
@@ -3598,9 +3598,6 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 				  cs->mp, cs->mp);
 		}
 		websWrite(wp, "				</select></td>\n");
-		websWrite(wp,
-			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"dlnashare_label%s\" id=\"dlnashare_label%s\" value=\"%s\" style=\"width: 150px;\" onChange=\"updateDlnaUserShare(this);\" /></td>\n",
-			  number, number, cs->label);
 		websWrite(wp,
 			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_audio%s\" id=\"dlnashare_audio%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->types & TYPE_AUDIO ? "checked" : "");
