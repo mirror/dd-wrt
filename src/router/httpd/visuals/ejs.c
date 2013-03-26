@@ -1263,7 +1263,7 @@ void ej_show_languages(webs_t wp, int argc, char_t ** argv)
 
 static char *directories[] = {
 	"/jffs/etc/config",
-	"/mmc/etc/config"
+	"/mmc/etc/config",
 	"/etc/config",
 };
 
@@ -1280,9 +1280,7 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 	int idx;
 
 	for (idx = 0; idx < 3; idx++) {
-		fprintf(stderr,"open %s\n",directories[idx]);
 		directory = opendir(directories[idx]);
-		fprintf(stderr,"open returns %p\n",directory);
 		if (directory == NULL)
 			continue;
 		// list all files in this directory
