@@ -38,36 +38,37 @@
 
 void start_dlna(void)
 {
-	struct dlna_share *dlna_shares,*cs,*csnext;
+	struct dlna_share *dlna_shares, *cs, *csnext;
 	if (!nvram_match("dlna_enable", "1"))
 		return;
 	mkdir("/tmp/db", 0700);
 	FILE *fp = fopen("/tmp/minidlna.conf", "wb");
-	if (nvram_match("jffs_mounted","1")) {
-		mkdir("/jffs/minidlna",0700);
-		eval("rm","-f","/jffs/minidlna/files.db");	
+	if (nvram_match("jffs_mounted", "1")) {
+		mkdir("/jffs/minidlna", 0700);
+		eval("rm", "-f", "/jffs/minidlna/files.db");
 		fprintf(fp, "db_dir=/jffs/minidlna\n");
-	}else{
-	    mkdir("/tmp/db", 0700);
-	    eval("rm","-f","/tmp/db/files.db");	
+	} else {
+		mkdir("/tmp/db", 0700);
+		eval("rm", "-f", "/tmp/db/files.db");
 	}
 	fprintf(fp, "port=8200\n");
 	fprintf(fp, "network_interface=br0\n");
 	dlna_shares = getdlnashares();
 	for (cs = dlna_shares; cs; cs = csnext) {
 		if (strlen(cs->mp)) {
-		    if (cs->types & TYPE_VIDEO)
-    			fprintf(fp, "media_dir=V,%s\n",cs->mp);	// comma separted list
-		    if (cs->types & TYPE_AUDIO)
-    			fprintf(fp, "media_dir=A,%s\n",cs->mp);	// comma separted list
-		    if (cs->types & TYPE_IMAGES)
-    			fprintf(fp, "media_dir=P,%s\n",cs->mp);	// comma separted list
+			if (cs->types & TYPE_VIDEO)
+				fprintf(fp, "media_dir=V,%s\n", cs->mp);	// comma separted list
+			if (cs->types & TYPE_AUDIO)
+				fprintf(fp, "media_dir=A,%s\n", cs->mp);	// comma separted list
+			if (cs->types & TYPE_IMAGES)
+				fprintf(fp, "media_dir=P,%s\n", cs->mp);	// comma separted list
 		}
 		csnext = cs->next;
 		free(cs);
 	}
-	fprintf(fp, "friendly_name=%s:DLNA\n",nvram_safe_get("DD_BOARD")); //enter any name you want here, but should be unique within a network
-	fprintf(fp, "album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg\n");
+	fprintf(fp, "friendly_name=%s:DLNA\n", nvram_safe_get("DD_BOARD"));	//enter any name you want here, but should be unique within a network
+	fprintf(fp,
+		"album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg\n");
 	fprintf(fp, "inotify=yes\n");
 	fprintf(fp, "enable_tivo=no\n");
 	fprintf(fp, "strict_dlna=no\n");
