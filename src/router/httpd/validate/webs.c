@@ -3868,6 +3868,7 @@ void tf_upnp(webs_t wp)
 }
 
 #ifdef HAVE_MINIDLNA
+#include <dlna.h>
 void dlna_save(webs_t wp)
 {
 	int c, j;
