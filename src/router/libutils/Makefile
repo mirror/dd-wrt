@@ -169,6 +169,13 @@ ifeq ($(CONFIG_SAMBA3),y)
   CFLAGS += -DHAVE_SAMBA_SERVER
   OBJS += $(TOP)/jansson/src/.libs/libjansson.a
 endif
+ifeq ($(CONFIG_MINIDLNA),y)
+  OBJS +=  dlna.o
+  CFLAGS += -I$(TOP)/jansson/src
+  CFLAGS += -DHAVE_MINIDLNA
+  OBJS += $(TOP)/jansson/src/.libs/libjansson.a
+endif
+
 ifeq ($(CONFIG_TIEXTRA1),y)
   OBJS += $(TOP)/private/telkom/mchillispot.o
   CFLAGS += -I$(TOP)/jansson/src -I$(TOP)/private/telkom
