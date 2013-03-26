@@ -1262,9 +1262,9 @@ void ej_show_languages(webs_t wp, int argc, char_t ** argv)
 #endif
 
 static char *directories[] = {
-	"/etc/config",
 	"/jffs/etc/config",
 	"/mmc/etc/config"
+	"/etc/config",
 };
 
 void ej_show_modules(webs_t wp, int argc, char_t ** argv)
