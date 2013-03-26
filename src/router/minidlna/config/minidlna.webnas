@@ -7,13 +7,5 @@
 					<input class="spaceradio" type="radio" name="dlna_enable" value="0" <% nvram_checked("dlna_enable", "0"); %> onclick="show_layer_ext(this, 'dlnaen', false);" /><% tran("share.disable"); %>
 				</div>
 			<div id="dlnaen">
-				<div class="setting">
-				<div class="label"><% tran("nas.dlna_dir"); %></div>
-					<select name="dlna_dir">
-					<option value="mnt" <% nvram_selected("dlna_dir", "mnt"); %> >/mnt</option>
-					<option value="mmc" <% nvram_selected("dlna_dir", "mmc"); %> >/mmc</option>
-					<option value="jffs" <% nvram_selected("dlna_dir", "jffs"); %> >/jffs</option>
-					</select>
-				</div>
-			</div>
+				<% dlna_sharepaths(); %>
 			</fieldset><br />
