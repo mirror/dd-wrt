@@ -3868,7 +3868,7 @@ void tf_upnp(webs_t wp)
 }
 
 #ifdef HAVE_MINIDLNA
-void nassrv_save(webs_t wp)
+void dlna_save(webs_t wp)
 {
 	int c, j;
 	char var[128], val[128];
@@ -3882,47 +3882,22 @@ void nassrv_save(webs_t wp)
 		sprintf(var, "dlnashare_mp_%d", c);
 		json_object_set_new(entry, "mp",
 				    json_string(websGetVar(wp, var, "")));
-		sprintf(var, "dlnashare_type_%d", c);
-		json_object_set_new(entry, "public",
-				    json_integer(atoi
-						 (websGetVar(wp, var, "0"))));
-		sprintf(var, "smbshare_access_perms_%d", c);
-		sprintf(val, "%s", websGetVar(wp, var, "-"));
-		if (!strcmp(val, "-")) {
-			sprintf(var, "smbshare_access_perms_prev_%d", c);
-			sprintf(val, "%s", websGetVar(wp, var, "x"));
-		}
-		json_object_set_new(entry, "perms", json_string(val));
-		user_entries = json_array();
-		for (j = 1; j <= user_number; j++) {
-			sprintf(var, "smbshare_%d_user_%d", c, j);
-			if (!strcmp(websGetVar(wp, var, ""), "1")) {
-				sprintf(var, "smbuser_username_%d", j);
-				json_array_append(user_entries,
-						  json_string(websGetVar
-							      (wp, var, "")));
-			}
-		}
-		json_object_set_new(entry, "users", user_entries);
-		json_array_append(entries, entry);
+		int type=0;
+		sprintf(var, "dlnashare_audio_%d", c);
+		if (atoi(websGetVar(wp, var, "0")))
+		    type |= TYPE_AUDIO;
+		sprintf(var, "dlnashare_video_%d", c);
+		if (atoi(websGetVar(wp, var, "0")))
+		    type |= TYPE_VIDEO;
+		sprintf(var, "dlnashare_images_%d", c);
+		if (atoi(websGetVar(wp, var, "0")))
+		    type |= TYPE_IMAGES;
+
+		json_object_set_new(entry, "types",
+				    json_integer(type));
 	}
 	//fprintf(stderr, "[SAVE NAS] %s\n", json_dumps( entries, JSON_COMPACT ) );
-	nvram_set("samba3_shares", json_dumps(entries, JSON_COMPACT));
-	json_array_clear(entries);
-
-	entries = json_array();
-	for (c = 1; c <= user_number; c++) {
-		entry = json_object();
-		sprintf(var, "smbuser_username_%d", c);
-		json_object_set_new(entry, "user",
-				    json_string(websGetVar(wp, var, "")));
-		sprintf(var, "smbuser_password_%d", c);
-		json_object_set_new(entry, "pass",
-				    json_string(websGetVar(wp, var, "")));
-		json_array_append(entries, entry);
-	}
-	//fprintf(stderr, "[SAVE NAS USERS] %s\n", json_dumps( entries, JSON_COMPACT ) );
-	nvram_set("samba3_users", json_dumps(entries, JSON_COMPACT));
+	nvram_set("dlna_shares", json_dumps(entries, JSON_COMPACT));
 	json_array_clear(entries);
 	char *value = websGetVar(wp, "action", "");
 
