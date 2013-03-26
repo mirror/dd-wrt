@@ -3869,13 +3869,13 @@ void tf_upnp(webs_t wp)
 
 #ifdef HAVE_MINIDLNA
 #include <dlna.h>
-void dlna_save(webs_t wp)
+static void dlna_save(webs_t wp)
 {
 	int c, j;
 	char var[128], val[128];
 	json_t *entry = NULL;
 
-	// samba shares
+	// dlna shares
 	json_t *entries = json_array();
 	int share_number = atoi(websGetVar(wp, "dlna_shares_count", "0"));
 	for (c = 1; c <= share_number; c++) {
@@ -3893,21 +3893,12 @@ void dlna_save(webs_t wp)
 		sprintf(var, "dlnashare_images_%d", c);
 		if (atoi(websGetVar(wp, var, "0")))
 		    type |= TYPE_IMAGES;
-
 		json_object_set_new(entry, "types",
 				    json_integer(type));
+		json_array_append(entries, entry);
 	}
-	//fprintf(stderr, "[SAVE NAS] %s\n", json_dumps( entries, JSON_COMPACT ) );
 	nvram_set("dlna_shares", json_dumps(entries, JSON_COMPACT));
 	json_array_clear(entries);
-	char *value = websGetVar(wp, "action", "");
-
-	// all other vars
-	validate_cgi(wp);
-
-	addAction("nassrv");
-	nvram_set("nowebaction","1");
-	applytake(value);
 }
 #endif
 
@@ -3984,6 +3975,10 @@ void nassrv_save(webs_t wp)
 
 	addAction("nassrv");
 	nvram_set("nowebaction","1");
+#ifdef HAVE_MINIDLNA
+	dlna_save(wp);
+#endif
+
 	applytake(value);
 }
 #endif
