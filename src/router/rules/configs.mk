@@ -87,6 +87,7 @@ obj-$(CONFIG_RTPPROXY) += rtpproxy
 obj-$(CONFIG_SAMBA) += samba
 obj-$(CONFIG_SAMBA3) += samba3
 obj-$(CONFIG_SAMBA3) += jansson
+obj-$(CONFIG_MINIDLNA) += jansson
 obj-$(CONFIG_NTFS3G) += ntfs-3g
 obj-$(CONFIG_RADAUTH) += radauth
 ifneq ($(CONFIG_FONERA),y)
@@ -228,6 +229,7 @@ obj-$(CONFIG_MINIDLNA) += minidlna
 obj-$(CONFIG_NRPE) += nrpe
 obj-$(CONFIG_LINKS) += links
 obj-$(CONFIG_SOFTFLOWD) += softflowd
+obj-$(CONFIG_LIGHTTPD) += pcre lighttpd
 obj-$(CONFIG_NEXTMEDIAEXTRA) += nextmediaextra
 obj-$(CONFIG_LIBQMI) += glib20 libqmi
 obj-$(CONFIG_UQMI) += libubox uqmi

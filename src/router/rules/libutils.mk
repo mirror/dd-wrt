@@ -1,6 +1,9 @@
 ifeq ($(CONFIG_SAMBA3),y)
 	JANSSON=jansson
 endif
+ifeq ($(CONFIG_MINIDLNA),y)
+	JANSSON=jansson
+endif
 
 
 libutils-clean:
