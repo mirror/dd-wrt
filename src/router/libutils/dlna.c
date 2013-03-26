@@ -1,4 +1,6 @@
 #include <dlna.h>
+#include <bcmnvram.h>
+#include <string.h>
 
 #ifndef HAVE_SAMBA3
 void refjson(void)
@@ -30,7 +32,7 @@ struct dlna_share *getdlnashares(void) {
 	char mp[64],label[32],types;
 
 	// first create dummy entry
-	list = getdlnashare("", "", "", 0, NULL);
+	list = getdlnashare("", "", 0);
 	current = list;
 	
 //	json = json_loads( "[{\"mp\":\"/jffs\",\"label\":\"testshare\",\"perms\":\"rw\",\"public\":0},{\"mp\":\"/mnt\",\"label\":\"othertest\",\"perms\":\"ro\",\"public\":1},{\"label\":\"blah\"}]", &error );
@@ -62,7 +64,7 @@ struct dlna_share *getdlnashares(void) {
 				} 
 				iterator = json_object_iter_next(entry, iterator);
 			}
-			if( mp[0] != 0 && label != 0 && access_perms != 0 ) {
+			if( mp[0] != 0 && label != 0) {
 				current->next = getdlnashare(mp, label, types);
 				current = current->next;
 			}

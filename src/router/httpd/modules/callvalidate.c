@@ -69,6 +69,9 @@
 #define VISSERVICE_MODULE "/usr/lib/visuals.so"
 #endif
 
+#define SERVICEALT_MODULE "/jffs/usr/lib/validate.so"
+#define VISSERVICEALT_MODULE "/jffs/usr/lib/visuals.so"
+
 #define cprintf(fmt, args...)
 
 #ifndef cprintf
@@ -98,7 +101,9 @@ char *GOZILA_GET(webs_t wp, char *name)
 static void *load_visual_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+	void *handle = dlopen(VISSERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+	if (!handle)
+		handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
 
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
@@ -120,7 +125,9 @@ static void *load_visual_service(char *name)
 static void *load_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = dlopen(SERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+	void *handle = dlopen(SERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+	if (!handle)
+		handle = dlopen(SERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
 
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
