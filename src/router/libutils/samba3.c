@@ -1,4 +1,6 @@
 #include <samba3.h>
+#include <bcmnvram.h>
+#include <string.h>
 
 
 struct samba3_shareuser *getsamba3shareuser(const char *username) {
@@ -14,7 +16,7 @@ struct samba3_shareuser *getsamba3shareusers( json_t *users ) {
 
 	int count, entry_count;
 	const char *value;
-	struct samba3_shareuser *shareusers, *current;
+	struct samba3_shareuser *shareusers = NULL, *current;
 
 	entry_count = json_array_size( users );	
 	if(entry_count == 0) {
