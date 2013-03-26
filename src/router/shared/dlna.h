@@ -8,13 +8,12 @@
 
 struct dlna_share {
 	char mp[32];
-	char label[64];
 	int types;
 	struct dlna_share *next;
 };
 
 
 struct dlna_share *getdlnashares(void);
-struct dlna_share *getdlnashare(char *mp, char *label, int types);
+struct dlna_share *getdlnashare(char *mp, int types);
 
 #endif
