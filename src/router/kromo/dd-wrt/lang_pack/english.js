@@ -1549,6 +1549,9 @@ service.samba3_users="Users";
 service.samba3_username="Username";
 service.samba3_password="Password";
 service.samba3_user_shares="Access Shares";
+service.dlna_type_audio="Audio";
+service.dlna_type_video="Video";
+service.dlna_type_images="Images";
 
 // ** eop-tunnel.asp **//
 var eoip=new Object();

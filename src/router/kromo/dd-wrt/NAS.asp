@@ -2,6 +2,88 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
+function addDlnaShare() {	
+	addTableEntry('dlna_shares');
+}
+
+function removeDlnaShare( button ) {
+	
+	tableId = 'dlna_shares';
+	
+	// remove the share
+	removeTableEntry( tableId, button );
+}
+
+
+function verifyDlnaSettings() {
+	
+	var error = false;
+	
+	// get the share entries
+	var table = $('dlna_shares');
+	var section = table.childElements()[0];
+	var rows = section.childElements();
+	
+	// walk through the rows
+	for(i = 0; i < rows.length; i++) {
+		for(j = 0; j < rows[i].childElements().length; j++) {
+			//alert(rows[i].childElements(j));
+		}
+	}
+	return false;
+}
+
+function checkDlnaShares() {
+	
+	var shares = $('dlna_shares').childElements()[0].childElements();
+	var mp = '';
+	var label = '';
+	var sublabel = 'dlna_shares_row_';
+	var index = 0;
+	var error = false;
+		
+	for( i = 0; i < shares.length; i++ ) {
+		mp = '';
+		label = '';
+		
+		if( shares[i].id.substr( 0, sublabel.length ) == sublabel && shares[i].id.substr(shares[i].id.length - 9, 9) != '_template') {
+			index = shares[i].id.substr( sublabel.length, shares[i].id.length - sublabel.length );
+			for(j = 0; j < shares[i].childElements().length; j++) {
+				element = shares[i].childElements()[j].childElements()[0];
+				error = false;
+				if( element.name ) {
+					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'dlnashare_mp' ) {
+						mp = element.value.replace(/^\s+|\s+$/g,"");
+						if(mp.length == 0) error = true;
+					} else if( element.name.substr(0, element.name.length - index.length - 1 ) == 'dlnashare_label' ) {
+						label = element.value.replace(/^\s+|\s+$/g,"");
+						if(label.length == 0) error = true;
+					}
+				}
+				
+				// error handling
+				if(error) {
+					element.className = "value_error";
+				} else if( element.className == 'value_error') {
+					element.className = '';
+				}
+			}
+			
+			// error handling
+			if( mp.length == 0 || label.length == 0) {
+				alert( 'Please select a mountpoint and enter a share label to proceed.' );
+				return false;
+			}
+		}
+	}
+	
+	return true;
+}
+
+
+
+
+
 function addSambaShare() {
 	
 	var position = 0;
@@ -373,6 +455,11 @@ function to_submit(F) {
 		if(!checkSambaShares() || !checkSambaUsers())
 			return false;
 	}	
+
+	if($('dlna_shares')) {
+		if(!checkDlnaShares())
+			return false;
+	}	
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
@@ -381,6 +468,11 @@ function to_submit(F) {
 function to_apply(F) {
 	if($('samba_shares')) {
 		if(!checkSambaShares() || !checkSambaUsers())
+			return false;	
+	}
+	
+	if($('dlna_shares')) {
+		if(!checkDlnaShares())
 			return false;	
 	}
 	F.change_action.value="gozila_cgi";
