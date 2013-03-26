@@ -1616,13 +1616,13 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		    ("-A advgrp_%d -m layer7 --l7proto goboogy -j %s\n",
 		     seq, log_drop);	
 		save2file
-		    ("-A advgrp_%d -m layer7 --l7proto hotline -j %s\n",
+			("-A advgrp_%d -m layer7 --l7proto hotline -j %s\n",
 		     seq, log_drop);	     
 	 	save2file
 			("-A advgrp_%d -m layer7 --l7proto imesh -j %s\n",
 		     seq, log_drop);
 /*	 	save2file
-			("-A advgrp_%d -m layer7 --l7proto kugoo -j %s\n",
+			("-A advgrp_%d -m layer7 --l7proto kugoo -j %s\n", // xunlei, kugoo, winmx block websurfing
 		     seq, log_drop); */
 		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto mute -j %s\n",
@@ -1636,7 +1636,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s\n",
 		     seq, log_drop);
-			save2file
+		save2file
 		    ("-A advgrp_%d -p tcp -m layer7 --l7proto soulseek -j %s\n",
 		     seq, log_drop);
 		save2file
