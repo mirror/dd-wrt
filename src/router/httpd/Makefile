@@ -928,18 +928,14 @@ ifeq ($(CONFIG_JJAP93),y)
 CFLAGS += -DHAVE_JJAP93
 endif
 ifeq ($(CONFIG_TIEXTRA1),y)
-CFLAGS += -DHAVE_TIEXTRA1
+CFLAGS += -DHAVE_TIEXTRA1  -L$(TOP)/jansson/src/.libs -ljansson
 VISOBJS  += $(TOP)/private/telkom/mchillispotejs.o
-VISOBJS += $(TOP)/jansson/src/.libs/libjansson.a
 WEBSOBJS  += $(TOP)/private/telkom/mchillispotvalidate.o
-WEBSOBJS += $(TOP)/jansson/src/.libs/libjansson.a
 endif
 ifeq ($(CONFIG_TIEXTRA2),y)
-CFLAGS += -DHAVE_TIEXTRA2
+CFLAGS += -DHAVE_TIEXTRA2 -L$(TOP)/jansson/src/.libs -ljansson
 VISOBJS  += $(TOP)/private/telkom/mwifidogejs.o
-VISOBJS += $(TOP)/jansson/src/.libs/libjansson.a
 WEBSOBJS  += $(TOP)/private/telkom/mwifidogvalidate.o
-WEBSOBJS += $(TOP)/jansson/src/.libs/libjansson.a
 endif
 
 ifeq ($(SAMBA_SUPPORT),1)
