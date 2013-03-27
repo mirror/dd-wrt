@@ -16,9 +16,12 @@ struct samba3_share {
 	struct samba3_share *next;
 };
 
+#define SHARETYPE_SAMBA 0x1
+#define SHARETYPE_FTP 0x2
 struct samba3_user {
 	char username[64];
 	char password[64];
+	int sharetype;
 	struct samba3_user *next;
 }; 
 
