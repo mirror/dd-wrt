@@ -7240,8 +7240,28 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	
 	websWrite(wp, "              <tr>\n");
 	websWrite(wp, "<td><script type=\"text/javascript\">Capture(vlan.linkstatus)</script></td>\n");
+	
+	char *ifname = "eth0";
+	if (f_exists("/proc/switch/eth0/enable"))
+		ifname = "eth0";
+	if (f_exists("/proc/switch/eth1/enable"))
+		ifname = "eth1";
+	if (f_exists("/proc/switch/eth2/enable"))
+		ifname = "eth2";
+	char portstatus[32];
 	for (a = 0; a < 5; a++) {
-		sprintf(status, "red");	// add correct status here
+		sprintf(portstatus,"/proc/switch/%s/port/%d/status");
+		char cstatus[32];
+		FILE *fp = fopen(portstatus,"rb");
+		fgets(cstatus,31,fp);
+		fclose(fp);
+		if (!strcmp(cstatus,"disconnected"))
+		    sprintf(status, "red");
+		if (!strncmp(cstatus,"100",3))
+		    sprintf(status, "yellow");
+		if (!strncmp(cstatus,"1000",4))
+		    sprintf(status, "green");
+		    
 		websWrite(wp, "<td class=\"%s\">&nbsp;</td>\n", status);
 	}
 	websWrite(wp, "<td></td>\n");
