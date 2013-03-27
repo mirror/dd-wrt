@@ -30,6 +30,6 @@ struct samba3_share *getsamba3shares(void);
 struct samba3_share *getsamba3share(char *mp, char *label, char *access_perms, int public, struct samba3_shareuser *users);
 struct samba3_shareuser *getsamba3shareuser(const char *username);
 struct samba3_shareuser *getsamba3shareusers( json_t *users );
-struct samba3_user *getsamba3user(char *username, char *password);
+struct samba3_user *getsamba3user(char *username, char *password,int type);
 
 #endif

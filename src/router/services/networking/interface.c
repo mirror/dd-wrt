@@ -221,6 +221,7 @@ void start_config_vlan(void)
 	return;
 }
 
+
 /*
  * begin lonewolf mods 
  */
@@ -258,133 +259,9 @@ void start_setup_vlans(void)
 	s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 
-	int vlanmap[6] = { 0, 1, 2, 3, 4, 5 };	// 0=wan; 1,2,3,4=lan;
-	// 5=internal 
+	int vlanmap[6] = { 0, 1, 2, 3, 4, 5 };	// 0=wan; 1,2,3,4=lan; 5=internal 
 
-	if (nvram_match("vlan1ports", "0 5")) {
-		vlanmap[0] = 0;
-		vlanmap[5] = 5;
-		if (nvram_match("vlan0ports", "4 3 2 1 5*")) {
-			vlanmap[1] = 4;
-			vlanmap[2] = 3;
-			vlanmap[3] = 2;
-			vlanmap[4] = 1;
-		} else if (nvram_match("vlan0ports", "4 1 2 3 5*")) {
-			vlanmap[1] = 4;
-			vlanmap[2] = 1;
-			vlanmap[3] = 2;
-			vlanmap[4] = 3;
-		} else		// nvram_match ("vlan0ports", "1 2 3 4 5*")
-			// nothing to do
-		{
-		}
-	} else if (nvram_match("vlan2ports", "0 5u")) {
-		vlanmap[0] = 0;
-		vlanmap[5] = 5;
-		if (nvram_match("vlan1ports", "4 3 2 1 5*")) {
-			vlanmap[1] = 4;
-			vlanmap[2] = 3;
-			vlanmap[3] = 2;
-			vlanmap[4] = 1;
-		} else if (nvram_match("vlan1ports", "4 1 2 3 5*")) {
-			vlanmap[1] = 4;
-			vlanmap[2] = 1;
-			vlanmap[3] = 2;
-			vlanmap[4] = 3;
-		}
-	} else if (nvram_match("vlan1ports", "4 5")) {
-		vlanmap[0] = 4;
-		vlanmap[5] = 5;
-		if (nvram_match("vlan0ports", "0 1 2 3 5*")) {
-			vlanmap[1] = 0;
-			vlanmap[2] = 1;
-			vlanmap[3] = 2;
-			vlanmap[4] = 3;
-		} else		// nvram_match ("vlan0ports", "3 2 1 0 5*")
-		{
-			vlanmap[1] = 3;
-			vlanmap[2] = 2;
-			vlanmap[3] = 1;
-			vlanmap[4] = 0;
-		}
-	} else if (nvram_match("vlan1ports", "1 5")) {	// Linksys WTR54GS
-		vlanmap[5] = 5;
-		vlanmap[0] = 1;
-		vlanmap[1] = 0;
-	} else if (nvram_match("vlan2ports", "0 8")) {
-		vlanmap[0] = 0;
-		vlanmap[5] = 8;
-		if (nvram_match("vlan1ports", "4 3 2 1 8*")) {
-			vlanmap[1] = 4;
-			vlanmap[2] = 3;
-			vlanmap[3] = 2;
-			vlanmap[4] = 1;
-		}
-	} else if (nvram_match("vlan2ports", "4 8")) {
-		vlanmap[0] = 4;
-		vlanmap[5] = 8;
-		if (nvram_match("vlan1ports", "0 1 2 3 8*")) {
-			vlanmap[1] = 0;
-			vlanmap[2] = 1;
-			vlanmap[3] = 2;
-			vlanmap[4] = 3;
-		} else		// "3 2 1 0 8*"
-		{
-			vlanmap[1] = 3;
-			vlanmap[2] = 2;
-			vlanmap[3] = 1;
-			vlanmap[4] = 0;
-		}
-	} else if (nvram_match("vlan1ports", "4 8")) {
-		vlanmap[0] = 4;
-		vlanmap[5] = 8;
-		if (nvram_match("vlan2ports", "0 1 2 3 8*")) {
-			vlanmap[1] = 0;
-			vlanmap[2] = 1;
-			vlanmap[3] = 2;
-			vlanmap[4] = 3;
-		}
-	} else if (nvram_match("vlan2ports", "4 5")) {
-		vlanmap[0] = 4;
-		vlanmap[5] = 5;
-		if (nvram_match("vlan1ports", "0 1 2 3 5*")) {
-			vlanmap[1] = 0;
-			vlanmap[2] = 1;
-			vlanmap[3] = 2;
-			vlanmap[4] = 3;
-		} else		// nvram_match ("vlan1ports", "3 2 1 0 5*")
-		{
-			vlanmap[1] = 3;
-			vlanmap[2] = 2;
-			vlanmap[3] = 1;
-			vlanmap[4] = 0;
-		}
-
-	} else if (nvram_match("vlan2ports", "4 5u")) {
-		vlanmap[0] = 4;
-		vlanmap[5] = 5;
-		if (nvram_match("vlan1ports", "0 1 2 3 5*")) {
-			vlanmap[1] = 0;
-			vlanmap[2] = 1;
-			vlanmap[3] = 2;
-			vlanmap[4] = 3;
-		} else		// nvram_match ("vlan1ports", "3 2 1 0 5*")
-		{
-			vlanmap[1] = 3;
-			vlanmap[2] = 2;
-			vlanmap[3] = 1;
-			vlanmap[4] = 0;
-		}
-	} else if (nvram_match("vlan2ports", "0 5u")) {
-		vlanmap[0] = 0;
-		vlanmap[5] = 5;
-
-		vlanmap[1] = 1;
-		vlanmap[2] = 2;
-		vlanmap[3] = 3;
-		vlanmap[4] = 4;
-	}
-	// else ....
+	getPortMapping(vlanmap);
 
 	int ast = 0;
 	char *asttemp;
