@@ -34,9 +34,15 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <services.h>
+#include <samba3.h>
 
 void start_ftpsrv(void)
 {
+	struct samba3_share *cs, *csnext;
+	struct samba3_shareuser *csu, *csunext;
+	struct samba3_user *samba3users, *cu, *cunext;
+	struct samba3_share *samba3shares;
+
 	if (!nvram_match("proftpd_enable", "1"))
 		return;
 
@@ -49,28 +55,22 @@ void start_ftpsrv(void)
 	mkdir("/tmp/proftpd/etc", 0700);
 	mkdir("/tmp/proftpd/var", 0700);
 
-	if (nvram_invmatch("proftpd_passw", "")) {
-		nvram2file("proftpd_passw", "/tmp/proftpd/etc/passwd.tmp");
-		tmp = fopen("/tmp/proftpd/etc/passwd.tmp", "rb");
-		fp = fopen("/tmp/proftpd/etc/passwd", "wb");
+	fp = fopen("/tmp/proftpd/etc/passwd", "wb");
 
-		while (fgets(buf, sizeof(buf), tmp) != NULL) {
-			if (sscanf(buf, "%s %s", user, pass) == 2) {
-				if (strlen(pass) == 34)	//we assume pass is alredy encrypted
-					fprintf(fp,
-						"%s:%s:0:0:Ftp User,,,:/tmp/root:/bin/sh\n",
-						user, pass);
-				else
-					fprintf(fp,
-						"%s:%s:0:0:Ftp User,,,:/tmp/root:/bin/sh\n",
-						user, zencrypt(pass));
-			}
+	samba3users = getsamba3users();
+	for (cu = samba3users; cu; cu = cunext) {
+		if (strlen(cu->username)
+		    && cu->sharetype & SHARETYPE_FTP) {
+			fprintf(fp,
+				"%s:%s:0:0:Ftp User,,,:/tmp/root:/bin/sh\n",
+				cu->username, zencrypt(cu->password));
 		}
-		fclose(fp);
-		fclose(tmp);
-		unlink("/tmp/proftpd/etc/passwd.tmp");
-	} else
-		eval("cp", "/tmp/etc/passwd", "/tmp/proftpd/etc/passwd");
+		cunext = cu->next;
+		free(cu);
+
+	}
+
+	fclose(fp);
 
 	// add ftp user (for anonymous access) 
 	if (nvram_match("proftpd_anon", "1")) {
@@ -100,35 +100,83 @@ void start_ftpsrv(void)
 		"</Limit>\n"
 		"DelayEngine     off\n"
 		"WtmpLog         off\n"
-		"DefaultRoot     /%s\n"
-		"<Directory      /%s/*>\n"
-		"  AllowOverwrite  on\n"
-		"   <Limit WRITE>\n"
-		"%s"
-		"   </Limit>\n"
-		"</Directory>\n",
-		nvram_safe_get("lan_ipaddr"),
-		nvram_safe_get("proftpd_port"),
-		nvram_safe_get("proftpd_dir"),
-		nvram_safe_get("proftpd_dir"),
-		nvram_match("proftpd_writeen", "on") ? "" : "    DenyAll\n");
-		
-		if (nvram_match("proftpd_rad", "0"))
-			fprintf(fp,"AuthUserFile	/tmp/proftpd/etc/passwd\n");
-		else {
-			fprintf(fp,"AuthOrder mod_radius.c\n"
-				"RadiusEngine	on\n"
-				"RadiusAuthServer	%s:%s	%s 5\n"
-				"RadiusAcctServer	%s:%s	%s 5\n",
-				nvram_safe_get("proftpd_authserverip"),
-				nvram_safe_get("proftpd_authserverport"),
-				nvram_safe_get("proftpd_sharedkey"),
-				nvram_safe_get("proftpd_authserverip"),
-				nvram_safe_get("proftpd_acctserverport"),
-				nvram_safe_get("proftpd_sharedkey"));
-			fprintf(fp,"RadiusUserInfo 0 0 %s /bin/false\n",nvram_safe_get("proftpd_dir"));
+		"DefaultRoot     ~\n",
+		nvram_safe_get("lan_ipaddr"), nvram_safe_get("proftpd_port"));
+
+	samba3shares = getsamba3shares();
+	for (cs = samba3shares; cs; cs = csnext) {
+		int hasuser = 0;
+		for (csu = cs->users; csu; csu = csunext) {
+			samba3users = getsamba3users();
+			for (cu = samba3users; cu; cu = cunext) {
+				if (!strcmp(csu->username, cu->username)
+				    && (cu->sharetype & SHARETYPE_FTP))
+					hasuser = 1;
+				cunext = cu->next;
+				free(cu);
+			}
 		}
-			
+		if (!hasuser) {
+			for (csu = cs->users; csu; csu = csunext) {
+				csunext = csu->next;
+				free(csu);
+			}
+			free(cs->users);
+			goto nextshare;
+		}
+		fprintf(fp, "<Directory      /%s/*>\n", cs->mp);
+		fprintf(fp, "  AllowOverwrite  on\n");
+		fprintf(fp, "   <Limit WRITE>\n");
+		fprintf(fp, "%s",
+			!strcmp(cs->access_perms, "ro") ? "DenyAll" : "");
+		fprintf(fp, "   </Limit>\n");
+		fprintf(fp, "<Limit LOGIN>\n");
+
+		for (csu = cs->users; csu; csu = csunext) {
+			samba3users = getsamba3users();
+			for (cu = samba3users; cu; cu = cunext) {
+				if (!strcmp(csu->username, cu->username)
+				    && (cu->sharetype & SHARETYPE_FTP)) {
+					fprintf(fp, "AllowUser %s\n",
+						csu->username);
+				}
+				cunext = cu->next;
+				free(cu);
+			}
+			csunext = csu->next;
+			free(csu);
+		}
+
+		fprintf(fp, "DenyAll\n");
+		fprintf(fp, "</Limit>\n");
+		fprintf(fp, "</Directory>\n");
+
+		free(cs->users);
+	      nextshare:;
+		csnext = cs->next;
+		free(cs);
+	}
+	fprintf(fp, "AuthUserFile	/tmp/proftpd/etc/passwd\n");
+
+#if 0
+	if (nvram_match("proftpd_rad", "0"))
+		fprintf(fp, "AuthUserFile	/tmp/proftpd/etc/passwd\n");
+	else {
+		fprintf(fp, "AuthOrder mod_radius.c\n"
+			"RadiusEngine	on\n"
+			"RadiusAuthServer	%s:%s	%s 5\n"
+			"RadiusAcctServer	%s:%s	%s 5\n",
+			nvram_safe_get("proftpd_authserverip"),
+			nvram_safe_get("proftpd_authserverport"),
+			nvram_safe_get("proftpd_sharedkey"),
+			nvram_safe_get("proftpd_authserverip"),
+			nvram_safe_get("proftpd_acctserverport"),
+			nvram_safe_get("proftpd_sharedkey"));
+		fprintf(fp, "RadiusUserInfo 0 0 %s /bin/false\n",
+			nvram_safe_get("proftpd_dir"));
+	}
+#endif
+
 // Anonymous ftp - read only
 	if (nvram_match("proftpd_anon", "1")) {
 		fprintf(fp,
