@@ -615,11 +615,13 @@ ifeq ($(CONFIG_FTP),y)
 CFLAGS += -DHAVE_NAS_SERVER
 endif
 ifeq ($(CONFIG_SAMBA3),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
 CFLAGS += -DHAVE_NAS_SERVER
 CFLAGS += -DHAVE_SAMBA_SERVER
 endif
 
 ifeq ($(CONFIG_MINIDLNA),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
 CFLAGS += -DHAVE_MINIDLNA
 endif
 
@@ -929,11 +931,13 @@ CFLAGS += -DHAVE_JJAP93
 endif
 ifeq ($(CONFIG_TIEXTRA1),y)
 CFLAGS += -DHAVE_TIEXTRA1  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
 VISOBJS  += $(TOP)/private/telkom/mchillispotejs.o
 WEBSOBJS  += $(TOP)/private/telkom/mchillispotvalidate.o
 endif
 ifeq ($(CONFIG_TIEXTRA2),y)
 CFLAGS += -DHAVE_TIEXTRA2 -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
 VISOBJS  += $(TOP)/private/telkom/mwifidogejs.o
 WEBSOBJS  += $(TOP)/private/telkom/mwifidogvalidate.o
 endif
