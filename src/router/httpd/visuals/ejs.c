@@ -3996,12 +3996,21 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "			</td>\n");
 
 		//fprintf( stderr, "[USERS] %s:%s\n", cu->username, cu->password );
+		if (rows == 0) {
 		websWrite(wp,
 			  "			<td id=\"n_smbuser_shareaccess\" valign=\"top\">\n");
-		if (rows == 0) {
-			websWrite(wp,
+		websWrite(wp,
 				  "				<div id=\"n_smbuser_share\"><input type=\"checkbox\" value=\"1\">&nbsp;<span>&nbsp</span></div>\n");
+		websWrite(wp, "			</td>\n");
+		websWrite(wp, "			<td id=\"n_smbuser_samba\" valign=\"top\">\n");
+		websWrite(wp,"				        <div id=\"n_smbuser_samba\"><input type=\"checkbox\" value=\"1\">&nbsp;</div>\n");
+		websWrite(wp, "			</td>\n");
+		websWrite(wp, "			<td id=\"n_smbuser_samba\" valign=\"top\">\n");
+		websWrite(wp,"				        <div id=\"n_smbuser_ftp\"><input type=\"checkbox\" value=\"1\">&nbsp;</div>\n");
+		websWrite(wp, "			</td>\n");
 		} else {
+		websWrite(wp,
+			  "			<td id=\"n_smbuser_shareaccess\" valign=\"top\">\n");
 			usershares = 0;
 			for (cs = samba3shares; cs; cs = cs->next) {
 				buffer[0] = '\0';
@@ -4020,7 +4029,6 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 				}
 				usershares++;
 			}
-		}
 		websWrite(wp, "			</td>\n");
 		websWrite(wp, "			<td id=\"n_smbuser_samba\" valign=\"top\">\n");
 		websWrite(wp,"				<div id=\"n_smbuser_samba\"><input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\" %s>&nbsp;</div>\n",
@@ -4031,6 +4039,7 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,"				<div id=\"n_smbuser_ftp\"><input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\" %s>&nbsp;</div>\n",
 						  number, cu->sharetype & SHARETYPE_FTP ? "checked" : "");
 		websWrite(wp, "			</td>\n");
+		}
 
 		websWrite(wp,
 			  "			<td valign=\"top\" style=\"width: 50px; text-align: center;\">\n");
