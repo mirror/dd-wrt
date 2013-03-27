@@ -36,12 +36,13 @@ struct samba3_shareuser *getsamba3shareusers( json_t *users ) {
 	return shareusers;
 }
 
-struct samba3_user *getsamba3user(char *username, char *password) {
+struct samba3_user *getsamba3user(char *username, char *password, int type) {
 	
 	struct samba3_user *user = calloc(1, sizeof(struct samba3_user));
 	
 	strncpy(user->username, username,sizeof(user->username)-1);
 	strncpy(user->password, password,sizeof(user->password)-1);
+	user->sharetype = type;
 
 	return user;
 }
@@ -55,9 +56,10 @@ struct samba3_user *getsamba3users(void) {
 	const char *key;
 	json_t *iterator, *entry, *value;
 	char username[64],password[64];
+	int type;
 
 	// first create dummy entry
-	list = getsamba3user("", "");
+	list = getsamba3user("", "", 0);
 	current = list;
 	
 	//json = json_loads( "[{\"user\":\"peter\",\"pass\":\"test\"},{\"user\":\"chris\",\"pass\":\"test\"}]", &error );
@@ -83,11 +85,13 @@ struct samba3_user *getsamba3users(void) {
 					strncpy( username, json_string_value( value ),sizeof(username)-1);
 				} else if( !strcmp( key, "pass" ) ) {
 					strncpy( password, json_string_value( value ),sizeof(password)-1);
+				} else if( !strcmp( key, "type" ) ) {
+					type = json_integer_value( value );
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
 			if( username[0] != 0 ) {
-				current->next = getsamba3user(username, password);
+				current->next = getsamba3user(username, password, type);
 				current = current->next;
 			}
 		}

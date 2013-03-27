@@ -3906,6 +3906,7 @@ static void dlna_save(webs_t wp)
 
 
 #ifdef HAVE_NAS_SERVER
+#include <samba3.h>
 void nassrv_save(webs_t wp)
 {
 #ifdef HAVE_SAMBA_SERVER
@@ -3962,6 +3963,14 @@ void nassrv_save(webs_t wp)
 		sprintf(var, "smbuser_password_%d", c);
 		json_object_set_new(entry, "pass",
 				    json_string(websGetVar(wp, var, "")));
+		int type = 0;
+		sprintf(var, "smbuser_samba_%d", c);
+		if (atoi(websGetVar(wp, var, "0")))
+			type|=SHARETYPE_SAMBA;
+		sprintf(var, "smbuser_ftp_%d", c);
+		if (atoi(websGetVar(wp, var, "0")))
+			type|=SHARETYPE_FTP;
+		json_object_set_new(entry, "type",json_integer(type));
 		json_array_append(entries, entry);
 	}
 	//fprintf(stderr, "[SAVE NAS USERS] %s\n", json_dumps( entries, JSON_COMPACT ) );
