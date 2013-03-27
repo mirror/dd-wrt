@@ -3970,6 +3970,7 @@ void nassrv_save(webs_t wp)
 		sprintf(var, "smbuser_ftp_%d", c);
 		if (atoi(websGetVar(wp, var, "0")))
 			type|=SHARETYPE_FTP;
+		fprintf(stderr,"type %d\n",type);
 		json_object_set_new(entry, "type",json_integer(type));
 		json_array_append(entries, entry);
 	}
