@@ -49,14 +49,15 @@ void start_samba3(void)
 	start_mkfiles();
 	sysprintf
 	    ("echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
-	mkdir("/var/samba",0700);
-	eval("touch","/var/samba/smbpasswd");
+	mkdir("/var/samba", 0700);
+	eval("touch", "/var/samba/smbpasswd");
 	if (nvram_match("samba3_advanced", "1")) {
 		write_nvram("/tmp/smb.conf", "samba3_conf");
 	} else {
 		samba3users = getsamba3users();
 		for (cu = samba3users; cu; cu = cunext) {
-			if (strlen(cu->username) && cu->sharetype & SHARETYPE_SAMBA) {
+			if (strlen(cu->username)
+			    && cu->sharetype & SHARETYPE_SAMBA) {
 				sysprintf
 				    ("echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd",
 				     cu->username, uniqueuserid++,
@@ -108,15 +109,21 @@ void start_samba3(void)
 
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
-			int hasuser=0;
-			for (csu = cs->users; csu; csu = csunext) {
-				for (cu = samba3users; cu; cu = cunext) {
-					if (!strcmp(csu->username,cu->username) && (cu->sharetype & SHARETYPE_SAMBA))
-						hasuser=1;
+			int hasuser = 0;
+			if (!cs->public) {
+				for (csu = cs->users; csu; csu = csunext) {
+					for (cu = samba3users; cu; cu = cunext) {
+						if (!strcmp
+						    (csu->username,
+						     cu->username)
+						    && (cu->sharetype &
+							SHARETYPE_SAMBA))
+							hasuser = 1;
+					}
 				}
+				if (!hasuser)
+					continue;
 			}
-			if (!hasuser)
-			    continue;
 			if (strlen(cs->label)) {
 				fprintf(fp, "[%s]\n", cs->label);
 				fprintf(fp, "comment = %s\n", cs->label);
@@ -126,26 +133,32 @@ void start_samba3(void)
 						"ro") ? "Yes" : "No");
 				fprintf(fp, "guest ok = %s\n",
 					cs->public == 1 ? "Yes" : "No");
-				if (!cs->public)
+				if (!cs->public) {
 					fprintf(fp, "valid users =");
-				int first = 0;
-				for (csu = cs->users; csu; csu = csunext) {
-					hasuser=0;
-					for (cu = samba3users; cu; cu = cunext) {
-						if (!strcmp(csu->username,cu->username) && (cu->sharetype & SHARETYPE_SAMBA))
-							hasuser=1;
-					}
-					if (!hasuser)
-						continue;
+					int first = 0;
+					for (csu = cs->users; csu;
+					     csu = csunext) {
+						hasuser = 0;
+						for (cu = samba3users; cu;
+						     cu = cunext) {
+							if (!strcmp
+							    (csu->username,
+							     cu->username)
+							    && (cu->sharetype &
+								SHARETYPE_SAMBA))
+								hasuser = 1;
+						}
+						if (!hasuser)
+							continue;
 
-					if (first && !cs->public)
-						fprintf(fp, ",");
-					first = 1;
-					if (!cs->public)
+						if (first)
+							fprintf(fp, ",");
+						first = 1;
 						fprintf(fp, " %s",
 							csu->username);
-					csunext = csu->next;
-					free(csu);
+						csunext = csu->next;
+						free(csu);
+					}
 				}
 				free(cs->users);
 				fprintf(fp, "\n");
@@ -156,7 +169,7 @@ void start_samba3(void)
 		}
 		fclose(fp);
 	}
-	chmod("/jffs",0777);
+	chmod("/jffs", 0777);
 	eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
 	eval("/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
 	syslog(LOG_INFO, "Samba3 : samba started\n");
