@@ -44,3 +44,5 @@ else
 endif
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/share
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/man
+	-cd $(INSTALLDIR)/e2fsprogs/etc && ln -sf /proc/mounts mtab
+	true
