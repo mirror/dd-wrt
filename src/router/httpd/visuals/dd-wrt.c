@@ -7250,11 +7250,13 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		ifname = "eth2";
 	char portstatus[32];
 	for (a = 0; a < 5; a++) {
-		sprintf(portstatus,"/proc/switch/%s/port/%d/status");
+		sprintf(portstatus,"/proc/switch/%s/port/%d/status",ifname,a);
 		char cstatus[32];
 		FILE *fp = fopen(portstatus,"rb");
-		fgets(cstatus,31,fp);
-		fclose(fp);
+		if (fp) {
+		    fgets(cstatus,31,fp);
+		    fclose(fp);
+		}
 		if (!strcmp(cstatus,"disconnected"))
 		    sprintf(status, "red");
 		if (!strncmp(cstatus,"100",3))
