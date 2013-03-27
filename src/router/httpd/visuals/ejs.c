@@ -4022,20 +4022,14 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 			}
 		}
 		websWrite(wp, "			</td>\n");
-		buffer[0] = '\0';
-		if (cu->sharetype & SHARETYPE_SAMBA)
-			sprintf(buffer, " checked");
 		websWrite(wp, "			<td id=\"n_smbuser_samba\" valign=\"top\">\n");
-		websWrite(wp,"				<div id=\"n_smbuser_samba\"><input type=\"checkbox\" name=\"smbuser_samba%s\"%s value=\"1\">&nbsp;</div>\n",
-						  number, buffer);
+		websWrite(wp,"				<div id=\"n_smbuser_samba\"><input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\" %s>&nbsp;</div>\n",
+						  number, cu->sharetype & SHARETYPE_SAMBA ? "checked" : "");
 		websWrite(wp, "			</td>\n");
 
-		buffer[0] = '\0';
-		if (cu->sharetype & SHARETYPE_FTP)
-			sprintf(buffer, " checked");
 		websWrite(wp, "			<td id=\"n_smbuser_samba\" valign=\"top\">\n");
-		websWrite(wp,"				<div id=\"n_smbuser_ftp\"><input type=\"checkbox\" name=\"smbuser_ftp%s\"%s value=\"1\">&nbsp;</div>\n",
-						  number, buffer);
+		websWrite(wp,"				<div id=\"n_smbuser_ftp\"><input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\" %s>&nbsp;</div>\n",
+						  number, cu->sharetype & SHARETYPE_FTP ? "checked" : "");
 		websWrite(wp, "			</td>\n");
 
 		websWrite(wp,
