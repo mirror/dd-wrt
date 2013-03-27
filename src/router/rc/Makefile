@@ -610,10 +610,19 @@ endif
 ifeq ($(CONFIG_FTP),y)
 CFLAGS += -DHAVE_FTP
 endif
+
+ifeq ($(CONFIG_TIEXTRA1),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
 ifeq ($(CONFIG_SAMBA3),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
 CFLAGS += -DHAVE_SAMBA3
 endif
 ifeq ($(CONFIG_MINIDLNA),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
 CFLAGS += -DHAVE_MINIDLNA
 endif
 
@@ -975,10 +984,10 @@ endif
 #ifeq ($(CONFIG_LSX),y)
 #	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c $(TOP)/nvram/libnvram.a $(TOP)/libutils/libutils.a
 #else
-	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lutils
+	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lutils  $(LDFLAGS)
 #endif
 	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram  -L$(TOP)/libutils -lutils
+	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram  -L$(TOP)/libutils -lutils $(LDFLAGS)
 	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
 ifeq ($(CONFIG_WPS),y)
 	$(CC) $(CFLAGS) -o wpswatcher wpswatcher.c $(LDFLAGS)
