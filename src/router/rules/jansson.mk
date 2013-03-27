@@ -1,5 +1,5 @@
 jansson-configure:
-	cd jansson && ./configure --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC"
+	cd jansson && ./configure --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC" LDFLAGS="-lm"
 
 jansson:
 	$(MAKE) -C jansson
@@ -9,4 +9,8 @@ jansson-clean:
 	@true
 
 jansson-install:
-	@true
+	$(MAKE) -C jansson install DESTDIR=$(INSTALLDIR)/jansson
+	-rm -rf $(INSTALLDIR)/jansson/usr/include
+	-rm -rf $(INSTALLDIR)/jansson/usr/lib/pkgconfig
+	-rm -f $(INSTALLDIR)/jansson/usr/lib/*.a
+	-rm -f $(INSTALLDIR)/jansson/usr/lib/*.la
