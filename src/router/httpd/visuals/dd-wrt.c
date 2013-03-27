@@ -7249,20 +7249,25 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	if (f_exists("/proc/switch/eth2/enable"))
 		ifname = "eth2";
 	char portstatus[32];
+	int vlanmap[6] = { 0, 1, 2, 3, 4, 5 };	// 0=wan; 1,2,3,4=lan; 5=internal 
+	getPortMapping(vlanmap);
+
 	for (a = 0; a < 5; a++) {
-		sprintf(portstatus,"/proc/switch/%s/port/%d/status",ifname,a);
+		sprintf(portstatus,"/proc/switch/%s/port/%d/status",ifname,vlanmap[a]);
 		char cstatus[32];
 		FILE *fp = fopen(portstatus,"rb");
 		if (fp) {
 		    fgets(cstatus,31,fp);
 		    fclose(fp);
 		}
-		if (!strcmp(cstatus,"disconnected"))
-		    sprintf(status, "red");
+		if (!strncmp(cstatus,"disc",4))
+		    sprintf(status, "status_red");
+
 		if (!strncmp(cstatus,"100",3))
-		    sprintf(status, "yellow");
+		    sprintf(status, "status_yellow");
+
 		if (!strncmp(cstatus,"1000",4))
-		    sprintf(status, "green");
+		    sprintf(status, "status_green");
 		    
 		websWrite(wp, "<td class=\"%s\">&nbsp;</td>\n", status);
 	}
