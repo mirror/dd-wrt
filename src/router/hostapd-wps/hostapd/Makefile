@@ -12,6 +12,20 @@ CFLAGS += -I../src/utils
 -include .config
 -include $(if $(MULTICALL), ../wpa_supplicant/.config)
 
+
+ifeq ($(CONFIG_TIEXTRA1),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_SAMBA3),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_MINIDLNA),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+
 ifndef CONFIG_OS
 ifdef CONFIG_NATIVE_WINDOWS
 CONFIG_OS=win32
