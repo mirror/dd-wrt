@@ -1818,7 +1818,7 @@ vlan.tagged="Tagged";
 vlan.negociate="Auto-Negotiate";
 vlan.aggregation="Link Aggregation<br>on Ports 3 & 4";
 vlan.trunk="Trunk";
-
+vlan.linkstatus="Link Status";
 
 // ** WEP.asp **//
 var wep=new Object();
