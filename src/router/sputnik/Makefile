@@ -8,25 +8,46 @@ CC = $(ARCH)-linux-uclibc-gcc
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI
 endif
+ifeq ($(CONFIG_ATH9K),y)
+CFLAGS += -DHAVE_ATH9K
+endif
 
 CFLAGS += -I iksemel -fPIC
 CFLAGS += -I zlib 
 CFLAGS += -I ../../include.v23 -I../shared
 CFLAGS += -DIPTABLES=\"/usr/sbin/iptables\"
 ifeq ($(CONFIG_MAKSAT),y)
-CFLAGS += -DAPD_PLATFORM_WRT54GS -DAPD_PLATFORM=\"maksat\" -DAPD_PLATFORM_DDWRT -DDEFAULT_MGMTJID=\"sputnik@wifi.sputnik.com\" -DAPD_SNE_MGMTJID=\"express@express.sputnik.com\" -DAPD_VERSION=\"3.3.6.6.1\"
+CFLAGS += -DAPD_PLATFORM_WRT54GS -DAPD_PLATFORM=\"maksat\" -DAPD_PLATFORM_DDWRT -DDEFAULT_MGMTJID=\"sputnik@wifi.sputnik.com\" -DAPD_SNE_MGMTJID=\"express@express.sputnik.com\" -DAPD_VERSION=\"3.3.7.9\"
 else
-CFLAGS += -DAPD_PLATFORM_WRT54GS -DAPD_PLATFORM=\"dd-wrt\" -DAPD_PLATFORM_DDWRT -DDEFAULT_MGMTJID=\"sputnik@wifi.sputnik.com\" -DAPD_SNE_MGMTJID=\"express@express.sputnik.com\" -DAPD_VERSION=\"3.3.6.6.1\"
+CFLAGS += -DAPD_PLATFORM_WRT54GS -DAPD_PLATFORM=\"dd-wrt\" -DAPD_PLATFORM_DDWRT -DDEFAULT_MGMTJID=\"sputnik@wifi.sputnik.com\" -DAPD_SNE_MGMTJID=\"express@express.sputnik.com\" -DAPD_VERSION=\"3.3.7.9\"
 endif
 #CFLAGS += -DAPD_PLATFORM_WRT54GS -DAPD_PLATFORM=\"dd-wrt\" -DAPD_PLATFORM_DDWRT -DDEFAULT_MGMTJID=\"sputnik@wifi.sputnik.com\" -DAPD_SNE_MGMTJID=\"express@express.sputnik.com\" -DAPD_VERSION=\"3.3.6.6\"
 
 # LDFLAGS += -L$(INSTALLDIR)/nvram/usr/lib -lnvram -lshared
 LDFLAGS =-L../libutils -lwireless -lutils -L../nvram -lnvram -lcrypt
+ifeq ($(CONFIG_TIEXTRA1),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_SAMBA3),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_MINIDLNA),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+
+
 ifeq ($(CONFIG_MADWIFI),y)
+LDFLAGS += -lm
+endif
+ifeq ($(CONFIG_RT61),y)
 LDFLAGS += -lm
 endif
 ifeq ($(CONFIG_ATH9K),y)
 LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
+LDFLAGS += -lm
 endif
 
 OBJS := src/apd.o
