@@ -7234,6 +7234,19 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			}
 		}
 	}
+
+	// Status header
+	char status[8];
+	
+	websWrite(wp, "              <tr>\n");
+	websWrite(wp, "<td><script type=\"text/javascript\">Capture(vlan.linkstatus)</script></td>\n");
+	for (a = 0; a < 5; a++) {
+		sprintf(status, "red");	// add correct status here
+		websWrite(wp, "<td class=\"%s\">&nbsp;</td>\n", status);
+	}
+	websWrite(wp, "<td></td>\n");
+	websWrite(wp, "              </tr>\n");
+	
 	int hasgiga=1;
 	
 	for (a = 0; a < 21+hasgiga; a++) {
