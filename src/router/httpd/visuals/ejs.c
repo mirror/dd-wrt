@@ -3889,6 +3889,7 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "					<input type=\"hidden\" name=\"smbshare_access_perms_prev_%d\" value=\"%s\">\n",
 			  rows, cs->access_perms);
+		websWrite(wp, "				</td>\n");
 		websWrite(wp,
 			  "				<td style=\"width: 50px; text-align: center;\">\n");
 		websWrite(wp,
