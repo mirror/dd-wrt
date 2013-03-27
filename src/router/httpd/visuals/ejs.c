@@ -3947,7 +3947,7 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		  "	<table id=\"samba_users\" class=\"table center\" summary=\"samba user table\">\n");
 
 	websWrite(wp,
-		  "		<tr><th colspan=\"4\"><script type=\"text/javascript\">Capture(service.samba3_users)</script></th></tr>\n");
+		  "		<tr><th colspan=\"6\"><script type=\"text/javascript\">Capture(service.samba3_users)</script></th></tr>\n");
 	websWrite(wp, "		<tr>\n");
 	websWrite(wp, "			<th>username</th>\n");
 	websWrite(wp,
