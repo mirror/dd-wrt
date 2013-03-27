@@ -56,7 +56,7 @@ void start_samba3(void)
 	} else {
 		samba3users = getsamba3users();
 		for (cu = samba3users; cu; cu = cunext) {
-			if (strlen(cu->username)) {
+			if (strlen(cu->username) && cu->sharetype & SHARETYPE_SAMBA) {
 				sysprintf
 				    ("echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd",
 				     cu->username, uniqueuserid++,
@@ -108,6 +108,15 @@ void start_samba3(void)
 
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
+			int hasuser=0;
+			for (csu = cs->users; csu; csu = csunext) {
+				for (cu = samba3users; cu; cu = cunext) {
+					if (!strcmp(csu->username,cu->username) && cu->sharetype & SHARETYPE_SAMBA)
+						hasuser=1;
+				}
+			}
+			if (!hasuser)
+			    continue;
 			if (strlen(cs->label)) {
 				fprintf(fp, "[%s]\n", cs->label);
 				fprintf(fp, "comment = %s\n", cs->label);
@@ -121,6 +130,14 @@ void start_samba3(void)
 					fprintf(fp, "valid users =");
 				int first = 0;
 				for (csu = cs->users; csu; csu = csunext) {
+					hasuser=0;
+					for (cu = samba3users; cu; cu = cunext) {
+						if (!strcmp(csu->username,cu->username) && cu->sharetype & SHARETYPE_SAMBA)
+							hasuser=1;
+					}
+					if (!hasuser)
+						continue;
+
 					if (first && !cs->public)
 						fprintf(fp, ",");
 					first = 1;
