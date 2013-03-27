@@ -403,7 +403,16 @@ td.bulle {
 	padding:0.09em;
 	border:0em;
 }
-
+/* Status colors */
+.status_red {
+	background: #f00;
+}
+.status_green {
+	background: #0f0;
+}
+.status_yellow {
+	background: #ff0;
+}
 /* For Opera browsers only */
 @media all and (min-width: 0px) {
   fieldset {
