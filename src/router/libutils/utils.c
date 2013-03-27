@@ -186,7 +186,6 @@ char *getMTU(char *ifname)
 	return mtu;
 }
 
-
 char *getTXQ(char *ifname)
 {
 	if (!ifname)
@@ -195,17 +194,17 @@ char *getTXQ(char *ifname)
 	if (!txq || strlen(txq) == 0) {
 		int s;
 		struct ifreq ifr;
-		memset(&ifr,0,sizeof(ifr));
+		memset(&ifr, 0, sizeof(ifr));
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-		    return "0";
+			return "0";
 		strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 		ioctl(s, SIOCGIFTXQLEN, &ifr);
 		close(s);
 		static char rtxq[32];
-		sprintf(rtxq,"%d",ifr.ifr_qlen);
+		sprintf(rtxq, "%d", ifr.ifr_qlen);
 		// get default len from interface
 		return rtxq;
-	    }
+	}
 	return txq;
 }
 
@@ -565,8 +564,8 @@ add_client_classes(unsigned int base, unsigned int uprate,
 	unsigned int uplimit = atoi(nvram_get("wshaper_uplink"));
 	unsigned int downlimit = atoi(nvram_get("wshaper_downlink"));
 	unsigned long lanlimit = 1000000;
-    unsigned int prio;
-    unsigned int parent;
+	unsigned int prio;
+	unsigned int parent;
 
 	unsigned int quantum = atoi(get_mtu_val()) + 14;
 
@@ -581,8 +580,8 @@ void add_client_classes(unsigned int base, unsigned int level)
 	unsigned int uplimit = atoi(nvram_get("wshaper_uplink"));
 	unsigned int downlimit = atoi(nvram_get("wshaper_downlink"));
 	unsigned long lanlimit = 1000000;
-    unsigned int prio;
-    unsigned int parent;
+	unsigned int prio;
+	unsigned int parent;
 
 	unsigned int quantum = atoi(get_mtu_val()) + 14;
 
@@ -596,44 +595,44 @@ void add_client_classes(unsigned int base, unsigned int level)
 	case 100:
 		uprate = uplimit * 60 / 100;
 		downrate = downlimit * 60 / 100;
-        lanrate = lanlimit * 60 / 100;
-        prio = 2;
-        parent = 2;
+		lanrate = lanlimit * 60 / 100;
+		prio = 2;
+		parent = 2;
 		break;
 	case 10:
 		uprate = uplimit * 25 / 100;
 		downrate = downlimit * 25 / 100;
-        lanrate = lanlimit * 25 / 100;
-        prio = 3;
-        parent = 3;
+		lanrate = lanlimit * 25 / 100;
+		prio = 3;
+		parent = 3;
 		break;
 	case 20:
 		uprate = uplimit * 10 / 100;
 		downrate = downlimit * 10 / 100;
-        lanrate = lanlimit * 10 / 100;
-        prio = 4;
-        parent = 4;
+		lanrate = lanlimit * 10 / 100;
+		prio = 4;
+		parent = 4;
 		break;
 	case 30:
 		uprate = uplimit * 5 / 100;
 		downrate = downlimit * 5 / 100;
-        lanrate = lanlimit * 5 / 100;
-        prio = 5;
-        parent = 5;
+		lanrate = lanlimit * 5 / 100;
+		prio = 5;
+		parent = 5;
 		break;
 	case 40:
 		uprate = uprate * 1 / 100;
 		downrate = downlimit * 1 / 100;
-        lanrate = lanlimit * 1 / 100;
-        prio = 6;
-        parent = 6;
+		lanrate = lanlimit * 1 / 100;
+		prio = 6;
+		parent = 6;
 		break;
 	case 0:
 		uplimit = uprate;
 		downlimit = downrate;
-        lanlimit = lanrate;
-        prio = 3;
-        parent = 1;
+		lanlimit = lanrate;
+		prio = 3;
+		parent = 1;
 		break;
 	}
 
@@ -840,112 +839,110 @@ void add_client_classes(unsigned int base, unsigned int level)
 #endif
 
 	// leaf qdiscs
-    if (!strcmp(aqd, "sfq"))
-    {
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-            wan_dev, base + 1, base + 1, quantum);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-            wan_dev, base + 2, base + 2, quantum);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-            wan_dev, base + 3, base + 3, quantum);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-            wan_dev, base + 4, base + 4, quantum);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-            wan_dev, base + 5, base + 5, quantum);
+	if (!strcmp(aqd, "sfq")) {
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		     wan_dev, base + 1, base + 1, quantum);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		     wan_dev, base + 2, base + 2, quantum);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		     wan_dev, base + 3, base + 3, quantum);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		     wan_dev, base + 4, base + 4, quantum);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		     wan_dev, base + 5, base + 5, quantum);
 
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-            "imq0", base + 1, base + 1, quantum);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-            "imq0", base + 2, base + 2, quantum);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-            "imq0", base + 3, base + 3, quantum);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-            "imq0", base + 4, base + 4, quantum);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-            "imq0", base + 5, base + 5, quantum);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		     "imq0", base + 1, base + 1, quantum);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		     "imq0", base + 2, base + 2, quantum);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		     "imq0", base + 3, base + 3, quantum);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		     "imq0", base + 4, base + 4, quantum);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		     "imq0", base + 5, base + 5, quantum);
 
-        if (nvram_match("wshaper_dev", "LAN")) {
-            sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-                "imq1", base + 1, base + 1, quantum);
-            sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-                "imq1", base + 2, base + 2, quantum);
-            sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-                "imq1", base + 3, base + 3, quantum);
-            sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-                "imq1", base + 4, base + 4, quantum);
-            sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-                "imq1", base + 5, base + 5, quantum);
-        }
-    }
+		if (nvram_match("wshaper_dev", "LAN")) {
+			sysprintf
+			    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+			     "imq1", base + 1, base + 1, quantum);
+			sysprintf
+			    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+			     "imq1", base + 2, base + 2, quantum);
+			sysprintf
+			    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+			     "imq1", base + 3, base + 3, quantum);
+			sysprintf
+			    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+			     "imq1", base + 4, base + 4, quantum);
+			sysprintf
+			    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+			     "imq1", base + 5, base + 5, quantum);
+		}
+	}
 #if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
-    if (    !strcmp(aqd, "codel")
-        || !strcmp(aqd, "fq_codel"))
-    {
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-             wan_dev, base + 1, base + 1, aqd);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-             wan_dev, base + 2, base + 2, aqd);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-             wan_dev, base + 3, base + 3, aqd);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-             wan_dev, base + 4, base + 4, aqd);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-             wan_dev, base + 5, base + 5, aqd);
+	if (!strcmp(aqd, "codel")
+	    || !strcmp(aqd, "fq_codel")) {
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+		     wan_dev, base + 1, base + 1, aqd);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+		     wan_dev, base + 2, base + 2, aqd);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+		     wan_dev, base + 3, base + 3, aqd);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+		     wan_dev, base + 4, base + 4, aqd);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+		     wan_dev, base + 5, base + 5, aqd);
 
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-             "imq0", base + 1, base + 1, aqd);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-             "imq0", base + 2, base + 2, aqd);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-             "imq0", base + 3, base + 3, aqd);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-             "imq0", base + 4, base + 4, aqd);
-        sysprintf
-            ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-             "imq0", base + 5, base + 5, aqd);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+		     "imq0", base + 1, base + 1, aqd);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+		     "imq0", base + 2, base + 2, aqd);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+		     "imq0", base + 3, base + 3, aqd);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+		     "imq0", base + 4, base + 4, aqd);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+		     "imq0", base + 5, base + 5, aqd);
 
-        if (nvram_match("wshaper_dev", "LAN")) {
-            sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-                 "imq1", base + 1, base + 1, aqd);
-            sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-                 "imq1", base + 2, base + 2, aqd);
-            sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-                 "imq1", base + 3, base + 3, aqd);
-            sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-                 "imq1", base + 4, base + 4, aqd);
-            sysprintf
-                ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-                 "imq1", base + 5, base + 5, aqd);
-        }
-    }
+		if (nvram_match("wshaper_dev", "LAN")) {
+			sysprintf
+			    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+			     "imq1", base + 1, base + 1, aqd);
+			sysprintf
+			    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+			     "imq1", base + 2, base + 2, aqd);
+			sysprintf
+			    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+			     "imq1", base + 3, base + 3, aqd);
+			sysprintf
+			    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+			     "imq1", base + 4, base + 4, aqd);
+			sysprintf
+			    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
+			     "imq1", base + 5, base + 5, aqd);
+		}
+	}
 #endif
 }
 
@@ -1274,24 +1271,28 @@ int internal_getRouterBrand()
 #elif HAVE_NORTHSTAR
 	unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
-	if (boardnum == 00 && nvram_match("boardtype", "0x0646") && nvram_match("boardrev","0x1100") && nvram_match("gpio15","wps_button")) {	
+	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1100")
+	    && nvram_match("gpio15", "wps_button")) {
 		setRouter("Asus RT-AC56U");
 		return ROUTER_ASUS_AC56U;
 	}
 
-	if (boardnum == 00 && nvram_match("boardtype", "0x0646") && nvram_match("boardrev","0x1100") && nvram_match("gpio7","wps_button")) {	
+	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1100")
+	    && nvram_match("gpio7", "wps_button")) {
 		setRouter("Asus RT-AC67U");
-		return ROUTER_ASUS_AC67U;	
-	}
-	
-	if (nvram_match("productid","RT-AC56U")) {	
-		setRouter("Asus RT-AC56U");
-		return ROUTER_ASUS_AC56U;	
+		return ROUTER_ASUS_AC67U;
 	}
 
-	if (nvram_match("productid","RT-AC67U")) {	
+	if (nvram_match("productid", "RT-AC56U")) {
+		setRouter("Asus RT-AC56U");
+		return ROUTER_ASUS_AC56U;
+	}
+
+	if (nvram_match("productid", "RT-AC67U")) {
 		setRouter("Asus RT-AC67U");
-		return ROUTER_ASUS_AC67U;	
+		return ROUTER_ASUS_AC67U;
 	}
 
 	setRouter("Broadcom Northstar");
@@ -2465,7 +2466,8 @@ int internal_getRouterBrand()
 	}
 
 	if (boardnum == 0 && nvram_match("boardtype", "0xF5B2")
-	    && nvram_match("boardrev", "0x1100")  && !nvram_match("pci/2/1/sb20in80and160hr5ghpo","0")) {
+	    && nvram_match("boardrev", "0x1100")
+	    && !nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0")) {
 		setRouter("Asus RT-N66U");
 		return ROUTER_ASUS_RTN66;
 	}
@@ -3098,12 +3100,14 @@ int internal_getRouterBrand()
 		setRouter("Buffalo WBR-B11");
 		return ROUTER_BUFFALO_WBR54G;
 	}
-	
-	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev","0x1100") && nvram_match("pci/2/1/sb20in80and160hr5ghpo","0")) {
+
+	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2")
+	    && nvram_match("boardrev", "0x1100")
+	    && nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0")) {
 		setRouter("Asus RT-AC66U");
-		return ROUTER_ASUS_AC66U;	
+		return ROUTER_ASUS_AC66U;
 	}
-	
+
 	if (boardnum == 00 && nvram_match("boardtype", "0xf52e")
 	    && nvram_match("boardrev", "0x1204")) {
 		if (nvram_match("product", "WLI-H4-D1300")) {
@@ -3118,7 +3122,7 @@ int internal_getRouterBrand()
 #else
 			setRouter("Buffalo WZR-D1800H");
 #endif
-		return ROUTER_D1800H;	
+			return ROUTER_D1800H;
 		}
 	}
 #ifndef HAVE_BUFFALO
@@ -3369,7 +3373,8 @@ int check_wan_link(int num)
 	     || nvram_match("wan_proto", "pppoa")
 #endif
 #ifdef HAVE_3G
-	     || (nvram_match("wan_proto", "3g") && !nvram_match("3gdata", "hso") && !nvram_match("3gdata", "qmi"))
+	     || (nvram_match("wan_proto", "3g") && !nvram_match("3gdata", "hso")
+		 && !nvram_match("3gdata", "qmi"))
 #endif
 	     || nvram_match("wan_proto", "heartbeat"))
 	    ) {
@@ -3407,21 +3412,21 @@ int check_wan_link(int num)
 	}
 #if defined(HAVE_LIBQMI) || defined(HAVE_UQMI)
 	else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi")) {
-		FILE *fp = fopen("/tmp/qmistatus","rb");
+		FILE *fp = fopen("/tmp/qmistatus", "rb");
 		int value = 0;
 		if (fp) {
 			fscanf(fp, "%d", &value);
 			fclose(fp);
 		}
-		#ifdef HAVE_UQMI
+#ifdef HAVE_UQMI
 		if (value)
 			return 1;
 		return 0;
-		#else
+#else
 		if (value)
 			return 0;
 		return 1;
-		#endif
+#endif
 	}
 #endif
 	else
@@ -3442,8 +3447,8 @@ int check_wan_link(int num)
 					snprintf(ifr.ifr_name, IFNAMSIZ,
 						 "iph0");
 					ioctl(sock, SIOCGIFFLAGS, &ifr);
-					if ((ifr.
-					     ifr_flags & (IFF_RUNNING | IFF_UP))
+					if ((ifr.ifr_flags &
+					     (IFF_RUNNING | IFF_UP))
 					    == (IFF_RUNNING | IFF_UP))
 						wan_link = 1;
 					close(sock);
@@ -3989,17 +3994,16 @@ char *get_wan_face(void)
 				IFNAMSIZ);
 	}
 #ifdef HAVE_3G
-	else if(nvram_match("wan_proto", "3g")) {
-	    if (nvram_match("3gdata","qmi"))
-		{
+	else if (nvram_match("wan_proto", "3g")) {
+		if (nvram_match("3gdata", "qmi")) {
 			strncpy(localwanface, "wwan0", IFNAMSIZ);
-		}else
-		{
-		if (nvram_match("pppd_pppifname", ""))
-			strncpy(localwanface, "ppp0", IFNAMSIZ);
-		else
-			strncpy(localwanface, nvram_safe_get("pppd_pppifname"),
-				IFNAMSIZ);		
+		} else {
+			if (nvram_match("pppd_pppifname", ""))
+				strncpy(localwanface, "ppp0", IFNAMSIZ);
+			else
+				strncpy(localwanface,
+					nvram_safe_get("pppd_pppifname"),
+					IFNAMSIZ);
 		}
 
 	}
@@ -4861,9 +4865,9 @@ int led_control(int type, int act)
 		power_gpio = 0x100;
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x103;
-                usb_power = 0x020;
+		usb_power = 0x020;
 		usb_gpio = 0x10d;
-                ses_gpio = 0x110;
+		ses_gpio = 0x110;
 		break;
 #elif HAVE_DIR825C1
 	case ROUTER_BOARD_WHRHPGN:
@@ -5226,13 +5230,13 @@ int led_control(int type, int act)
 		power_gpio = 0x103;
 		usb_gpio = 0x10e;
 		diag_gpio = 0x003;
-		connected_gpio = 0x101;		
-		disconnected_gpio = 0x102;		
-		break;	
+		connected_gpio = 0x101;
+		disconnected_gpio = 0x102;
+		break;
 	case ROUTER_ASUS_AC66U:
 		power_gpio = 0x10c;
 		usb_gpio = 0x10f;
-		break;	
+		break;
 	case ROUTER_NETGEAR_WNR2000V2:
 
 		//power_gpio = ??;
@@ -6058,4 +6062,132 @@ char *get_NFServiceMark(char *service, uint32 mark)
 	}
 	return "0xffffffff/0xffffffff";
 #endif
+}
+
+void getPortMapping(int *vlanmap)
+{
+	if (nvram_match("vlan1ports", "0 5")) {
+		vlanmap[0] = 0;
+		vlanmap[5] = 5;
+		if (nvram_match("vlan0ports", "4 3 2 1 5*")) {
+			vlanmap[1] = 4;
+			vlanmap[2] = 3;
+			vlanmap[3] = 2;
+			vlanmap[4] = 1;
+		} else if (nvram_match("vlan0ports", "4 1 2 3 5*")) {
+			vlanmap[1] = 4;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		} else		// nvram_match ("vlan0ports", "1 2 3 4 5*")
+			// nothing to do
+		{
+		}
+	} else if (nvram_match("vlan2ports", "0 5u")) {
+		vlanmap[0] = 0;
+		vlanmap[5] = 5;
+		if (nvram_match("vlan1ports", "4 3 2 1 5*")) {
+			vlanmap[1] = 4;
+			vlanmap[2] = 3;
+			vlanmap[3] = 2;
+			vlanmap[4] = 1;
+		} else if (nvram_match("vlan1ports", "4 1 2 3 5*")) {
+			vlanmap[1] = 4;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		}
+	} else if (nvram_match("vlan1ports", "4 5")) {
+		vlanmap[0] = 4;
+		vlanmap[5] = 5;
+		if (nvram_match("vlan0ports", "0 1 2 3 5*")) {
+			vlanmap[1] = 0;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		} else		// nvram_match ("vlan0ports", "3 2 1 0 5*")
+		{
+			vlanmap[1] = 3;
+			vlanmap[2] = 2;
+			vlanmap[3] = 1;
+			vlanmap[4] = 0;
+		}
+	} else if (nvram_match("vlan1ports", "1 5")) {	// Linksys WTR54GS
+		vlanmap[5] = 5;
+		vlanmap[0] = 1;
+		vlanmap[1] = 0;
+	} else if (nvram_match("vlan2ports", "0 8")) {
+		vlanmap[0] = 0;
+		vlanmap[5] = 8;
+		if (nvram_match("vlan1ports", "4 3 2 1 8*")) {
+			vlanmap[1] = 4;
+			vlanmap[2] = 3;
+			vlanmap[3] = 2;
+			vlanmap[4] = 1;
+		}
+	} else if (nvram_match("vlan2ports", "4 8")) {
+		vlanmap[0] = 4;
+		vlanmap[5] = 8;
+		if (nvram_match("vlan1ports", "0 1 2 3 8*")) {
+			vlanmap[1] = 0;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		} else		// "3 2 1 0 8*"
+		{
+			vlanmap[1] = 3;
+			vlanmap[2] = 2;
+			vlanmap[3] = 1;
+			vlanmap[4] = 0;
+		}
+	} else if (nvram_match("vlan1ports", "4 8")) {
+		vlanmap[0] = 4;
+		vlanmap[5] = 8;
+		if (nvram_match("vlan2ports", "0 1 2 3 8*")) {
+			vlanmap[1] = 0;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		}
+	} else if (nvram_match("vlan2ports", "4 5")) {
+		vlanmap[0] = 4;
+		vlanmap[5] = 5;
+		if (nvram_match("vlan1ports", "0 1 2 3 5*")) {
+			vlanmap[1] = 0;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		} else		// nvram_match ("vlan1ports", "3 2 1 0 5*")
+		{
+			vlanmap[1] = 3;
+			vlanmap[2] = 2;
+			vlanmap[3] = 1;
+			vlanmap[4] = 0;
+		}
+
+	} else if (nvram_match("vlan2ports", "4 5u")) {
+		vlanmap[0] = 4;
+		vlanmap[5] = 5;
+		if (nvram_match("vlan1ports", "0 1 2 3 5*")) {
+			vlanmap[1] = 0;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		} else		// nvram_match ("vlan1ports", "3 2 1 0 5*")
+		{
+			vlanmap[1] = 3;
+			vlanmap[2] = 2;
+			vlanmap[3] = 1;
+			vlanmap[4] = 0;
+		}
+	} else if (nvram_match("vlan2ports", "0 5u")) {
+		vlanmap[0] = 0;
+		vlanmap[5] = 5;
+
+		vlanmap[1] = 1;
+		vlanmap[2] = 2;
+		vlanmap[3] = 3;
+		vlanmap[4] = 4;
+	}
+
 }
