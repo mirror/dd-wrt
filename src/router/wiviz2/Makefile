@@ -39,9 +39,21 @@ endif
 ifeq ($(CONFIG_RT61),y)
 CCOPTS+=-DHAVE_RT2880 
 endif
+ifeq ($(CONFIG_TIEXTRA1),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_SAMBA3),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_MINIDLNA),y)
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
 
 wiviz: clean ${OBJS}
-	${CC} ${CCOPTS} -I${INCLUDE} -o ${TARGET} ${OBJS} ${LIBS}
+	${CC} ${CCOPTS} -I${INCLUDE} -o ${TARGET} ${OBJS} ${LIBS} ${LDFLAGS}
 
 wiviz.o: wiviz.c
 	${CC} ${CCOPTS} -I${INCLUDE} -c ${SOURCES}
