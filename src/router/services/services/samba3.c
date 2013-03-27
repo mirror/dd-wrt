@@ -111,7 +111,7 @@ void start_samba3(void)
 			int hasuser=0;
 			for (csu = cs->users; csu; csu = csunext) {
 				for (cu = samba3users; cu; cu = cunext) {
-					if (!strcmp(csu->username,cu->username) && cu->sharetype & SHARETYPE_SAMBA)
+					if (!strcmp(csu->username,cu->username) && (cu->sharetype & SHARETYPE_SAMBA))
 						hasuser=1;
 				}
 			}
@@ -132,7 +132,7 @@ void start_samba3(void)
 				for (csu = cs->users; csu; csu = csunext) {
 					hasuser=0;
 					for (cu = samba3users; cu; cu = cunext) {
-						if (!strcmp(csu->username,cu->username) && cu->sharetype & SHARETYPE_SAMBA)
+						if (!strcmp(csu->username,cu->username) && (cu->sharetype & SHARETYPE_SAMBA))
 							hasuser=1;
 					}
 					if (!hasuser)
