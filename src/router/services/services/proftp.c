@@ -125,11 +125,11 @@ void start_ftpsrv(void)
 			free(cs->users);
 			goto nextshare;
 		}
-		fprintf(fp, "<Directory      /%s/*>\n", cs->mp);
+		fprintf(fp, "<Directory      %s/*>\n", cs->mp);
 		fprintf(fp, "  AllowOverwrite  on\n");
 		fprintf(fp, "   <Limit WRITE>\n");
 		fprintf(fp, "%s",
-			!strcmp(cs->access_perms, "ro") ? "DenyAll" : "");
+			!strcmp(cs->access_perms, "ro") ? "DenyAll\n" : "\n");
 		fprintf(fp, "   </Limit>\n");
 		fprintf(fp, "<Limit LOGIN>\n");
 
