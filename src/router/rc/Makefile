@@ -612,17 +612,17 @@ CFLAGS += -DHAVE_FTP
 endif
 
 ifeq ($(CONFIG_TIEXTRA1),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson -lm
 endif
 ifeq ($(CONFIG_TIEXTRA2),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson -lm
 endif
 ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson -lm
 CFLAGS += -DHAVE_SAMBA3
 endif
 ifeq ($(CONFIG_MINIDLNA),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson -lm
 CFLAGS += -DHAVE_MINIDLNA
 endif
 
