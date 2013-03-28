@@ -480,7 +480,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	toggle_layer_ext(document.setup.proftpd_rad, 'idftprad', 'idftplocal', <% nvram_else_match("proftpd_rad", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.proftpd_rad, 'idftprad', <% nvram_else_match("proftpd_rad", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.proftpd_enable, 'ftpen', <% nvram_else_match("proftpd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.proftpd_enable, 'ftpenext', <% nvram_else_match("proftpd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.proftpd_anon, 'ftpanon', <% nvram_else_match("proftpd_anon", "1", "1", "0"); %> == 1);
