@@ -115,6 +115,7 @@ void start_ftpsrv(void)
 				cunext = cu->next;
 				free(cu);
 			}
+			csunext = csu->next;
 		}
 		if (!hasuser) {
 			for (csu = cs->users; csu; csu = csunext) {
