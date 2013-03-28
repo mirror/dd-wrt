@@ -822,7 +822,7 @@ static int nfs_show_devname(struct seq_file *m, struct dentry *root)
 	int err = 0;
 	if (!page)
 		return -ENOMEM;
-	devname = nfs_path(&dummy, root, page, PAGE_SIZE);
+	devname = nfs_path(&dummy, root, page, PAGE_SIZE, 0);
 	if (IS_ERR(devname))
 		err = PTR_ERR(devname);
 	else
@@ -1148,7 +1148,7 @@ static int nfs_get_option_str(substring_t args[], char **option)
 {
 	kfree(*option);
 	*option = match_strdup(args);
-	return !option;
+	return !*option;
 }
 
 static int nfs_get_option_ul(substring_t args[], unsigned long *option)
@@ -2541,7 +2541,6 @@ nfs_xdev_mount_common(struct file_system_type *fs_type, int flags,
 	struct nfs_clone_mount *data = mount_info->cloned;
 	struct nfs_server *server;
 	struct dentry *mntroot = ERR_PTR(-ENOMEM);
-	int error;
 
 	dprintk("--> nfs_xdev_mount_common()\n");
 
@@ -2549,19 +2548,15 @@ nfs_xdev_mount_common(struct file_system_type *fs_type, int flags,
 
 	/* create a new volume representation */
 	server = nfs_clone_server(NFS_SB(data->sb), data->fh, data->fattr, data->authflavor);
-	if (IS_ERR(server)) {
-		error = PTR_ERR(server);
-		goto out_err;
-	}
+	if (IS_ERR(server))
+		mntroot = ERR_CAST(server);
+	else
+		mntroot = nfs_fs_mount_common(fs_type, server, flags,
+				dev_name, mount_info);
 
-	mntroot = nfs_fs_mount_common(fs_type, server, flags, dev_name, mount_info);
-	dprintk("<-- nfs_xdev_mount_common() = 0\n");
-out:
+	dprintk("<-- nfs_xdev_mount_common() = %ld\n",
+			IS_ERR(mntroot) ? PTR_ERR(mntroot) : 0L);
 	return mntroot;
-
-out_err:
-	dprintk("<-- nfs_xdev_mount_common() = %d [error]\n", error);
-	goto out;
 }
 
 /*

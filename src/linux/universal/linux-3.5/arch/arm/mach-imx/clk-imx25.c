@@ -241,6 +241,9 @@ int __init mx25_clocks_init(void)
 	clk_register_clkdev(clk[sdma_ahb], "ahb", "imx35-sdma");
 	clk_register_clkdev(clk[iim_ipg], "iim", NULL);
 
+	/* Clock source for gpt must be derived from AHB */
+	clk_set_parent(clk[per5_sel], clk[ahb]);
+
 	mxc_timer_init(MX25_IO_ADDRESS(MX25_GPT1_BASE_ADDR), 54);
 	return 0;
 }

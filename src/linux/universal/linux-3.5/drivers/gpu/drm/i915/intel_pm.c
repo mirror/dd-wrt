@@ -2397,7 +2397,7 @@ void gen6_enable_rps(struct drm_i915_private *dev_priv)
 	I915_WRITE(GEN6_RC_SLEEP, 0);
 	I915_WRITE(GEN6_RC1e_THRESHOLD, 1000);
 	I915_WRITE(GEN6_RC6_THRESHOLD, 50000);
-	I915_WRITE(GEN6_RC6p_THRESHOLD, 100000);
+	I915_WRITE(GEN6_RC6p_THRESHOLD, 150000);
 	I915_WRITE(GEN6_RC6pp_THRESHOLD, 64000); /* unused */
 
 	rc6_mode = intel_enable_rc6(dev_priv->dev);
@@ -3307,6 +3307,10 @@ static void gen6_init_clock_gating(struct drm_device *dev)
 		   I915_READ(ILK_DISPLAY_CHICKEN2) |
 		   ILK_ELPIN_409_SELECT);
 
+	/* WaDisableHiZPlanesWhenMSAAEnabled */
+	I915_WRITE(_3D_CHICKEN,
+		   _MASKED_BIT_ENABLE(_3D_CHICKEN_HIZ_PLANE_DISABLE_MSAA_4X_SNB));
+
 	I915_WRITE(WM3_LP_ILK, 0);
 	I915_WRITE(WM2_LP_ILK, 0);
 	I915_WRITE(WM1_LP_ILK, 0);
@@ -3334,8 +3338,8 @@ static void gen6_init_clock_gating(struct drm_device *dev)
 		   GEN6_RCCUNIT_CLOCK_GATE_DISABLE);
 
 	/* Bspec says we need to always set all mask bits. */
-	I915_WRITE(_3D_CHICKEN, (0xFFFF << 16) |
-		   _3D_CHICKEN_SF_DISABLE_FASTCLIP_CULL);
+	I915_WRITE(_3D_CHICKEN3, (0xFFFF << 16) |
+		   _3D_CHICKEN3_SF_DISABLE_FASTCLIP_CULL);
 
 	/*
 	 * According to the spec the following bits should be

@@ -358,7 +358,7 @@ static void purge_old_ps_buffers(struct ieee80211_local *local)
 			total += skb_queue_len(&sta->ps_tx_buf[ac]);
 			if (skb) {
 				purged++;
-				dev_kfree_skb(skb);
+				ieee80211_free_txskb(&local->hw, skb);
 				break;
 			}
 		}
@@ -478,7 +478,7 @@ ieee80211_tx_h_unicast_ps_buf(struct ieee80211_tx_data *tx)
 			net_dbg_ratelimited("%s: STA %pM TX buffer for AC %d full - dropping oldest frame\n",
 					    tx->sdata->name, sta->sta.addr, ac);
 #endif
-			dev_kfree_skb(old);
+			ieee80211_free_txskb(&local->hw, old);
 		} else
 			tx->local->total_ps_buffered++;
 
@@ -1112,7 +1112,7 @@ static bool ieee80211_tx_prep_agg(struct ieee80211_tx_data *tx,
 		spin_unlock(&tx->sta->lock);
 
 		if (purge_skb)
-			dev_kfree_skb(purge_skb);
+			ieee80211_free_txskb(&tx->local->hw, purge_skb);
 	}
 
 	/* reset session timer */
@@ -1223,7 +1223,7 @@ static bool ieee80211_tx_frags(struct ieee80211_local *local,
 #ifdef CONFIG_MAC80211_VERBOSE_DEBUG
 		if (WARN_ON_ONCE(q >= local->hw.queues)) {
 			__skb_unlink(skb, skbs);
-			dev_kfree_skb(skb);
+			ieee80211_free_txskb(&local->hw, skb);
 			continue;
 		}
 #endif
@@ -1368,9 +1368,9 @@ static int invoke_tx_handlers(struct ieee80211_tx_data *tx)
 	if (unlikely(res == TX_DROP)) {
 		I802_DEBUG_INC(tx->local->tx_handlers_drop);
 		if (tx->skb)
-			dev_kfree_skb(tx->skb);
+			ieee80211_free_txskb(&tx->local->hw, tx->skb);
 		else
-			__skb_queue_purge(&tx->skbs);
+			ieee80211_purge_tx_queue(&tx->local->hw, &tx->skbs);
 		return -1;
 	} else if (unlikely(res == TX_QUEUED)) {
 		I802_DEBUG_INC(tx->local->tx_handlers_queued);
@@ -1405,7 +1405,7 @@ static bool ieee80211_tx(struct ieee80211_sub_if_data *sdata,
 	res_prepare = ieee80211_tx_prepare(sdata, &tx, skb);
 
 	if (unlikely(res_prepare == TX_DROP)) {
-		dev_kfree_skb(skb);
+		ieee80211_free_txskb(&local->hw, skb);
 		goto out;
 	} else if (unlikely(res_prepare == TX_QUEUED)) {
 		goto out;
@@ -1478,7 +1478,7 @@ void ieee80211_xmit(struct ieee80211_sub_if_data *sdata, struct sk_buff *skb)
 	headroom = max_t(int, 0, headroom);
 
 	if (ieee80211_skb_resize(sdata, skb, headroom, may_encrypt)) {
-		dev_kfree_skb(skb);
+		ieee80211_free_txskb(&local->hw, skb);
 		rcu_read_unlock();
 		return;
 	}
@@ -2075,8 +2075,10 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 		head_need += IEEE80211_ENCRYPT_HEADROOM;
 		head_need += local->tx_headroom;
 		head_need = max_t(int, 0, head_need);
-		if (ieee80211_skb_resize(sdata, skb, head_need, true))
-			goto fail;
+		if (ieee80211_skb_resize(sdata, skb, head_need, true)) {
+			ieee80211_free_txskb(&local->hw, skb);
+			return NETDEV_TX_OK;
+		}
 	}
 
 	if (encaps_data) {
@@ -2145,10 +2147,13 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
  */
 void ieee80211_clear_tx_pending(struct ieee80211_local *local)
 {
+	struct sk_buff *skb;
 	int i;
 
-	for (i = 0; i < local->hw.queues; i++)
-		skb_queue_purge(&local->pending[i]);
+	for (i = 0; i < local->hw.queues; i++) {
+		while ((skb = skb_dequeue(&local->pending[i])) != NULL)
+			ieee80211_free_txskb(&local->hw, skb);
+	}
 }
 
 /*
@@ -2211,7 +2216,7 @@ void ieee80211_tx_pending(unsigned long data)
 			struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 
 			if (WARN_ON(!info->control.vif)) {
-				kfree_skb(skb);
+				ieee80211_free_txskb(&local->hw, skb);
 				continue;
 			}
 

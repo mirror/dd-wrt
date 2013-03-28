@@ -2961,7 +2961,7 @@ static unsigned int convert_to_spdif_status(unsigned short val)
 	if (val & AC_DIG1_PROFESSIONAL)
 		sbits |= IEC958_AES0_PROFESSIONAL;
 	if (sbits & IEC958_AES0_PROFESSIONAL) {
-		if (sbits & AC_DIG1_EMPHASIS)
+		if (val & AC_DIG1_EMPHASIS)
 			sbits |= IEC958_AES0_PRO_EMPHASIS_5015;
 	} else {
 		if (val & AC_DIG1_EMPHASIS)
@@ -3542,7 +3542,7 @@ static inline void hda_exec_init_verbs(struct hda_codec *codec) {}
 /*
  * call suspend and power-down; used both from PM and power-save
  */
-static void hda_call_codec_suspend(struct hda_codec *codec)
+static void hda_call_codec_suspend(struct hda_codec *codec, bool in_wq)
 {
 	if (codec->patch_ops.suspend)
 		codec->patch_ops.suspend(codec, PMSG_SUSPEND);
@@ -3551,7 +3551,9 @@ static void hda_call_codec_suspend(struct hda_codec *codec)
 			    codec->afg ? codec->afg : codec->mfg,
 			    AC_PWRST_D3);
 #ifdef CONFIG_SND_HDA_POWER_SAVE
-	cancel_delayed_work(&codec->power_work);
+	/* Cancel delayed work if we aren't currently running from it. */
+	if (!in_wq)
+		cancel_delayed_work_sync(&codec->power_work);
 	spin_lock(&codec->power_lock);
 	snd_hda_update_power_acct(codec);
 	trace_hda_power_down(codec);
@@ -4372,7 +4374,7 @@ static void hda_power_work(struct work_struct *work)
 	}
 	spin_unlock(&codec->power_lock);
 
-	hda_call_codec_suspend(codec);
+	hda_call_codec_suspend(codec, true);
 	if (bus->ops.pm_notify)
 		bus->ops.pm_notify(bus);
 }
@@ -5038,7 +5040,7 @@ int snd_hda_suspend(struct hda_bus *bus)
 
 	list_for_each_entry(codec, &bus->codec_list, list) {
 		if (hda_codec_is_power_on(codec))
-			hda_call_codec_suspend(codec);
+			hda_call_codec_suspend(codec, false);
 	}
 	return 0;
 }

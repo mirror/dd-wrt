@@ -1172,8 +1172,8 @@ int bla_init(struct bat_priv *bat_priv)
 
 /**
  * @bat_priv: the bat priv with all the soft interface information
- * @bcast_packet: originator mac address
- * @hdr_size: maximum length of the frame
+ * @bcast_packet: encapsulated broadcast frame plus batman header
+ * @bcast_packet_len: length of encapsulated broadcast frame plus batman header
  *
  * check if it is on our broadcast list. Another gateway might
  * have sent the same packet because it is connected to the same backbone,
@@ -1188,14 +1188,14 @@ int bla_init(struct bat_priv *bat_priv)
 
 int bla_check_bcast_duplist(struct bat_priv *bat_priv,
 			    struct bcast_packet *bcast_packet,
-			    int hdr_size)
+			    int bcast_packet_len)
 {
 	int i, length, curr;
 	uint8_t *content;
 	uint16_t crc;
 	struct bcast_duplist_entry *entry;
 
-	length = hdr_size - sizeof(*bcast_packet);
+	length = bcast_packet_len - sizeof(*bcast_packet);
 	content = (uint8_t *)bcast_packet;
 	content += sizeof(*bcast_packet);
 

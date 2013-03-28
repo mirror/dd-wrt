@@ -548,6 +548,7 @@ static int gpio_keys_get_devtree_pdata(struct device *dev,
 	struct device_node *node, *pp;
 	int i;
 	struct gpio_keys_button *buttons;
+	int error = -ENODEV;
 	u32 reg;
 
 	node = dev->of_node;
@@ -574,6 +575,7 @@ static int gpio_keys_get_devtree_pdata(struct device *dev,
 	pp = NULL;
 	i = 0;
 	while ((pp = of_get_next_child(node, pp))) {
+		int gpio;
 		enum of_gpio_flags flags;
 
 		if (!of_find_property(pp, "gpios", NULL)) {
@@ -581,7 +583,17 @@ static int gpio_keys_get_devtree_pdata(struct device *dev,
 			dev_warn(dev, "Found button without gpios\n");
 			continue;
 		}
-		buttons[i].gpio = of_get_gpio_flags(pp, 0, &flags);
+
+		gpio = of_get_gpio_flags(pp, 0, &flags);
+		if (gpio < 0) {
+			error = gpio;
+			dev_err(dev,
+				"Failed to get gpio flags, error: %d\n",
+				error);
+			goto out_fail;
+		}
+
+		buttons[i].gpio = gpio;
 		buttons[i].active_low = flags & OF_GPIO_ACTIVE_LOW;
 
 		if (of_property_read_u32(pp, "linux,code", &reg)) {
@@ -613,7 +625,7 @@ static int gpio_keys_get_devtree_pdata(struct device *dev,
 
 out_fail:
 	kfree(buttons);
-	return -ENODEV;
+	return error;
 }
 
 static struct of_device_id gpio_keys_of_match[] = {

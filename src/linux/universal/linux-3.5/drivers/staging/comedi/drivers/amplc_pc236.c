@@ -479,7 +479,7 @@ static int pc236_attach(struct comedi_device *dev, struct comedi_devconfig *it)
 
 static void pc236_detach(struct comedi_device *dev)
 {
-	if (devpriv)
+	if (dev->iobase)
 		pc236_intr_disable(dev);
 	if (dev->irq)
 		free_irq(dev->irq, dev);
