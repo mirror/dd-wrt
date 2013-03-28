@@ -145,15 +145,13 @@ int __ext4_handle_dirty_super(const char *where, unsigned int line,
 	int err = 0;
 
 	if (ext4_handle_valid(handle)) {
-		ext4_superblock_csum_set(sb,
-				(struct ext4_super_block *)bh->b_data);
+		ext4_superblock_csum_set(sb);
 		err = jbd2_journal_dirty_metadata(handle, bh);
 		if (err)
 			ext4_journal_abort_handle(where, line, __func__,
 						  bh, handle, err);
 	} else if (now) {
-		ext4_superblock_csum_set(sb,
-				(struct ext4_super_block *)bh->b_data);
+		ext4_superblock_csum_set(sb);
 		mark_buffer_dirty(bh);
 	} else
 		sb->s_dirt = 1;

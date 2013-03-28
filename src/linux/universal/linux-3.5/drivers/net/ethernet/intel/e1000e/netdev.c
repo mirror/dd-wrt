@@ -1671,6 +1671,23 @@ static irqreturn_t e1000_intr_msi(int irq, void *data)
 			mod_timer(&adapter->watchdog_timer, jiffies + 1);
 	}
 
+	/* Reset on uncorrectable ECC error */
+	if ((icr & E1000_ICR_ECCER) && (hw->mac.type == e1000_pch_lpt)) {
+		u32 pbeccsts = er32(PBECCSTS);
+
+		adapter->corr_errors +=
+		    pbeccsts & E1000_PBECCSTS_CORR_ERR_CNT_MASK;
+		adapter->uncorr_errors +=
+		    (pbeccsts & E1000_PBECCSTS_UNCORR_ERR_CNT_MASK) >>
+		    E1000_PBECCSTS_UNCORR_ERR_CNT_SHIFT;
+
+		/* Do the reset outside of interrupt context */
+		schedule_work(&adapter->reset_task);
+
+		/* return immediately since reset is imminent */
+		return IRQ_HANDLED;
+	}
+
 	if (napi_schedule_prep(&adapter->napi)) {
 		adapter->total_tx_bytes = 0;
 		adapter->total_tx_packets = 0;
@@ -1736,6 +1753,23 @@ static irqreturn_t e1000_intr(int irq, void *data)
 		/* guard against interrupt when we're going down */
 		if (!test_bit(__E1000_DOWN, &adapter->state))
 			mod_timer(&adapter->watchdog_timer, jiffies + 1);
+	}
+
+	/* Reset on uncorrectable ECC error */
+	if ((icr & E1000_ICR_ECCER) && (hw->mac.type == e1000_pch_lpt)) {
+		u32 pbeccsts = er32(PBECCSTS);
+
+		adapter->corr_errors +=
+		    pbeccsts & E1000_PBECCSTS_CORR_ERR_CNT_MASK;
+		adapter->uncorr_errors +=
+		    (pbeccsts & E1000_PBECCSTS_UNCORR_ERR_CNT_MASK) >>
+		    E1000_PBECCSTS_UNCORR_ERR_CNT_SHIFT;
+
+		/* Do the reset outside of interrupt context */
+		schedule_work(&adapter->reset_task);
+
+		/* return immediately since reset is imminent */
+		return IRQ_HANDLED;
 	}
 
 	if (napi_schedule_prep(&adapter->napi)) {
@@ -2101,6 +2135,8 @@ static void e1000_irq_enable(struct e1000_adapter *adapter)
 	if (adapter->msix_entries) {
 		ew32(EIAC_82574, adapter->eiac_mask & E1000_EIAC_MASK_82574);
 		ew32(IMS, adapter->eiac_mask | E1000_IMS_OTHER | E1000_IMS_LSC);
+	} else if (hw->mac.type == e1000_pch_lpt) {
+		ew32(IMS, IMS_ENABLE_MASK | E1000_IMS_ECCER);
 	} else {
 		ew32(IMS, IMS_ENABLE_MASK);
 	}
@@ -4249,6 +4285,16 @@ static void e1000e_update_stats(struct e1000_adapter *adapter)
 	adapter->stats.mgptc += er32(MGTPTC);
 	adapter->stats.mgprc += er32(MGTPRC);
 	adapter->stats.mgpdc += er32(MGTPDC);
+
+	/* Correctable ECC Errors */
+	if (hw->mac.type == e1000_pch_lpt) {
+		u32 pbeccsts = er32(PBECCSTS);
+		adapter->corr_errors +=
+		    pbeccsts & E1000_PBECCSTS_CORR_ERR_CNT_MASK;
+		adapter->uncorr_errors +=
+		    (pbeccsts & E1000_PBECCSTS_UNCORR_ERR_CNT_MASK) >>
+		    E1000_PBECCSTS_UNCORR_ERR_CNT_SHIFT;
+	}
 }
 
 /**
@@ -5514,7 +5560,7 @@ static int __e1000_shutdown(struct pci_dev *pdev, bool *enable_wake,
 	 */
 	e1000e_release_hw_control(adapter);
 
-	pci_disable_device(pdev);
+	pci_clear_master(pdev);
 
 	return 0;
 }
@@ -6519,6 +6565,8 @@ static DEFINE_PCI_DEVICE_TABLE(e1000_pci_tbl) = {
 
 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_PCH_LPT_I217_LM), board_pch_lpt },
 	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_PCH_LPT_I217_V), board_pch_lpt },
+	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_PCH_LPTLP_I218_LM), board_pch_lpt },
+	{ PCI_VDEVICE(INTEL, E1000_DEV_ID_PCH_LPTLP_I218_V), board_pch_lpt },
 
 	{ 0, 0, 0, 0, 0, 0, 0 }	/* terminate list */
 };

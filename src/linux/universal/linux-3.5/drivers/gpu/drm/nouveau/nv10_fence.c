@@ -155,6 +155,10 @@ nv10_fence_fini(struct drm_device *dev, int engine, bool suspend)
 static int
 nv10_fence_init(struct drm_device *dev, int engine)
 {
+	struct nv10_fence_priv *priv = nv_engine(dev, engine);
+
+	if (priv->bo)
+		nouveau_bo_wr32(priv->bo, 0, priv->sequence);
 	return 0;
 }
 

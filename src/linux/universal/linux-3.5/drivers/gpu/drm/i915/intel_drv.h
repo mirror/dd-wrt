@@ -176,6 +176,8 @@ struct intel_crtc {
 	struct intel_unpin_work *unpin_work;
 	int fdi_lanes;
 
+	atomic_t unpin_work_count;
+
 	struct drm_i915_gem_object *cursor_bo;
 	uint32_t cursor_addr;
 	int16_t cursor_x, cursor_y;
@@ -319,11 +321,14 @@ intel_get_crtc_for_plane(struct drm_device *dev, int plane)
 
 struct intel_unpin_work {
 	struct work_struct work;
-	struct drm_device *dev;
+	struct drm_crtc *crtc;
 	struct drm_i915_gem_object *old_fb_obj;
 	struct drm_i915_gem_object *pending_flip_obj;
 	struct drm_pending_vblank_event *event;
-	int pending;
+	atomic_t pending;
+#define INTEL_FLIP_INACTIVE	0
+#define INTEL_FLIP_PENDING	1
+#define INTEL_FLIP_COMPLETE	2
 	bool enable_stall_check;
 };
 

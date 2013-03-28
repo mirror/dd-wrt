@@ -41,7 +41,6 @@ static bool debug;
 
 void usb_wwan_dtr_rts(struct usb_serial_port *port, int on)
 {
-	struct usb_serial *serial = port->serial;
 	struct usb_wwan_port_private *portdata;
 	struct usb_wwan_intf_private *intfdata;
 
@@ -51,12 +50,11 @@ void usb_wwan_dtr_rts(struct usb_serial_port *port, int on)
 		return;
 
 	portdata = usb_get_serial_port_data(port);
-	mutex_lock(&serial->disc_mutex);
+	/* FIXME: locking */
 	portdata->rts_state = on;
 	portdata->dtr_state = on;
-	if (serial->dev)
-		intfdata->send_setup(port);
-	mutex_unlock(&serial->disc_mutex);
+
+	intfdata->send_setup(port);
 }
 EXPORT_SYMBOL(usb_wwan_dtr_rts);
 
@@ -453,9 +451,6 @@ static struct urb *usb_wwan_setup_urb(struct usb_serial *serial, int endpoint,
 {
 	struct urb *urb;
 
-	if (endpoint == -1)
-		return NULL;	/* endpoint not needed */
-
 	urb = usb_alloc_urb(0, GFP_KERNEL);	/* No ISO */
 	if (urb == NULL) {
 		dbg("%s: alloc for endpoint %d failed.", __func__, endpoint);
@@ -483,6 +478,9 @@ static void usb_wwan_setup_urbs(struct usb_serial *serial)
 
 		/* Do indat endpoints first */
 		for (j = 0; j < N_IN_URB; ++j) {
+			if (!port->bulk_in_size)
+				break;
+
 			portdata->in_urbs[j] = usb_wwan_setup_urb(serial,
 								  port->
 								  bulk_in_endpointAddress,
@@ -496,6 +494,9 @@ static void usb_wwan_setup_urbs(struct usb_serial *serial)
 
 		/* outdat endpoints */
 		for (j = 0; j < N_OUT_URB; ++j) {
+			if (!port->bulk_out_size)
+				break;
+
 			portdata->out_urbs[j] = usb_wwan_setup_urb(serial,
 								   port->
 								   bulk_out_endpointAddress,
@@ -529,6 +530,9 @@ int usb_wwan_startup(struct usb_serial *serial)
 		init_usb_anchor(&portdata->delayed);
 
 		for (j = 0; j < N_IN_URB; j++) {
+			if (!port->bulk_in_size)
+				break;
+
 			buffer = (u8 *) __get_free_page(GFP_KERNEL);
 			if (!buffer)
 				goto bail_out_error;
@@ -536,6 +540,9 @@ int usb_wwan_startup(struct usb_serial *serial)
 		}
 
 		for (j = 0; j < N_OUT_URB; j++) {
+			if (!port->bulk_out_size)
+				break;
+
 			buffer = kmalloc(OUT_BUFLEN, GFP_KERNEL);
 			if (!buffer)
 				goto bail_out_error2;

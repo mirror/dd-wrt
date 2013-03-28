@@ -434,6 +434,12 @@ static void qt2_close(struct usb_serial_port *port)
 	port_priv->urb_in_use = false;
 	spin_unlock_irqrestore(&port_priv->urb_lock, flags);
 
+	mutex_lock(&port->serial->disc_mutex);
+	if (port->serial->disconnected) {
+		mutex_unlock(&port->serial->disc_mutex);
+		return;
+	}
+
 	/* flush the port transmit buffer */
 	i = usb_control_msg(serial->dev,
 			    usb_rcvctrlpipe(serial->dev, 0),
@@ -465,6 +471,7 @@ static void qt2_close(struct usb_serial_port *port)
 		dev_err(&port->dev, "%s - close port failed %i\n",
 			__func__, i);
 
+	mutex_unlock(&port->serial->disc_mutex);
 }
 
 static void qt2_disconnect(struct usb_serial *serial)
@@ -829,6 +836,7 @@ static int qt2_setup_urbs(struct usb_serial *serial)
 	if (status != 0) {
 		dev_err(&serial->dev->dev,
 			"%s - submit read urb failed %i\n", __func__, status);
+		usb_free_urb(serial_priv->read_urb);
 		return status;
 	}
 
@@ -968,19 +976,17 @@ static void qt2_dtr_rts(struct usb_serial_port *port, int on)
 	struct usb_device *dev = port->serial->dev;
 	struct qt2_port_private *port_priv = usb_get_serial_port_data(port);
 
-	mutex_lock(&port->serial->disc_mutex);
-	if (!port->serial->disconnected) {
-		/* Disable flow control */
-		if (!on && qt2_setregister(dev, port_priv->device_port,
+	/* Disable flow control */
+	if (!on) {
+		if (qt2_setregister(dev, port_priv->device_port,
 					   UART_MCR, 0) < 0)
 			dev_warn(&port->dev, "error from flowcontrol urb\n");
-		/* drop RTS and DTR */
-		if (on)
-			update_mctrl(port_priv, TIOCM_DTR | TIOCM_RTS, 0);
-		else
-			update_mctrl(port_priv, 0, TIOCM_DTR | TIOCM_RTS);
 	}
-	mutex_unlock(&port->serial->disc_mutex);
+	/* drop RTS and DTR */
+	if (on)
+		update_mctrl(port_priv, TIOCM_DTR | TIOCM_RTS, 0);
+	else
+		update_mctrl(port_priv, 0, TIOCM_DTR | TIOCM_RTS);
 }
 
 static void qt2_update_msr(struct usb_serial_port *port, unsigned char *ch)

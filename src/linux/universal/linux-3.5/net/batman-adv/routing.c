@@ -1081,8 +1081,14 @@ int recv_bcast_packet(struct sk_buff *skb, struct hard_iface *recv_if)
 
 	spin_unlock_bh(&orig_node->bcast_seqno_lock);
 
+	/* keep skb linear for crc calculation */
+	if (skb_linearize(skb) < 0)
+		goto out;
+
+	bcast_packet = (struct bcast_packet *)skb->data;
+
 	/* check whether this has been sent by another originator before */
-	if (bla_check_bcast_duplist(bat_priv, bcast_packet, hdr_size))
+	if (bla_check_bcast_duplist(bat_priv, bcast_packet, skb->len))
 		goto out;
 
 	/* rebroadcast packet */
