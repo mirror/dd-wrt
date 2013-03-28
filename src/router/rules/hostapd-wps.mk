@@ -4,10 +4,23 @@ ATH9K_CFLAGS=-I$(TOP)/libnl-tiny/include\
 	-D_GNU_SOURCE
 ATH9K_LDFLAGS=-L$(TOP)/libnl-tiny/ -lm -lnl-tiny
 endif
+ifeq ($(CONFIG_TIEXTRA1),y)
+ATH9K_LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+ATH9K_LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_SAMBA3),y)
+ATH9K_LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
+ifeq ($(CONFIG_MINIDLNA),y)
+ATH9K_LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+endif
 
 ifndef $(HOSTAPDVERSION)
 HOSTAPDVERSION=20120910
 endif
+
 
 hostapd2: libnltiny
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd clean
