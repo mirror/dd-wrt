@@ -124,6 +124,7 @@ void start_samba3(void)
 						cunext = cu->next;
 						free(cu);
 					}
+					csunext = csu->next;
 				}
 				if (!hasuser) {
 					for (csu = cs->users; csu;
@@ -183,6 +184,11 @@ void start_samba3(void)
 				}
 				fprintf(fp, "\n");
 				fprintf(fp, "force user = root\n");
+			} else {
+				for (csu = cs->users; csu; csu = csunext) {
+					csunext = csu->next;
+					free(csu);
+				}
 			}
 			free(cs->users);
 		      nextshare:;
