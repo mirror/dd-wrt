@@ -4002,11 +4002,11 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 				  "				<div id=\"n_smbuser_share\"><input type=\"checkbox\" value=\"1\">&nbsp;<span>&nbsp</span></div>\n");
 		websWrite(wp, "			</td>\n");
-		websWrite(wp, "			<td id=\"n_smbuser_samba\" valign=\"top\">\n");
-		websWrite(wp,"				        <div id=\"n_smbuser_samba\"><input type=\"checkbox\" value=\"1\">&nbsp;</div>\n");
+		websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
+		websWrite(wp,"				        <input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\">\n",number);
 		websWrite(wp, "			</td>\n");
-		websWrite(wp, "			<td id=\"n_smbuser_samba\" valign=\"top\">\n");
-		websWrite(wp,"				        <div id=\"n_smbuser_ftp\"><input type=\"checkbox\" value=\"1\">&nbsp;</div>\n");
+		websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
+		websWrite(wp,"				        <input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\">\n",number);
 		websWrite(wp, "			</td>\n");
 		} else {
 		websWrite(wp,
@@ -4030,13 +4030,13 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 				usershares++;
 			}
 		websWrite(wp, "			</td>\n");
-		websWrite(wp, "			<td id=\"n_smbuser_samba\" valign=\"top\">\n");
-		websWrite(wp,"				<div id=\"n_smbuser_samba\"><input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\" %s>&nbsp;</div>\n",
+		websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
+		websWrite(wp,"				<input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\" %s>\n",
 						  number, cu->sharetype & SHARETYPE_SAMBA ? "checked" : "");
 		websWrite(wp, "			</td>\n");
 
-		websWrite(wp, "			<td id=\"n_smbuser_samba\" valign=\"top\">\n");
-		websWrite(wp,"				<div id=\"n_smbuser_ftp\"><input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\" %s>&nbsp;</div>\n",
+		websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
+		websWrite(wp,"				<input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\" %s>\n",
 						  number, cu->sharetype & SHARETYPE_FTP ? "checked" : "");
 		websWrite(wp, "			</td>\n");
 		}
