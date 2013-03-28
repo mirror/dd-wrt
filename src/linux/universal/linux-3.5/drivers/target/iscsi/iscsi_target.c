@@ -735,7 +735,7 @@ static void iscsit_ack_from_expstatsn(struct iscsi_conn *conn, u32 exp_statsn)
 	list_for_each_entry(cmd, &conn->conn_cmd_list, i_conn_node) {
 		spin_lock(&cmd->istate_lock);
 		if ((cmd->i_state == ISTATE_SENT_STATUS) &&
-		    (cmd->stat_sn < exp_statsn)) {
+		    iscsi_sna_lt(cmd->stat_sn, exp_statsn)) {
 			cmd->i_state = ISTATE_REMOVE;
 			spin_unlock(&cmd->istate_lock);
 			iscsit_add_cmd_to_immediate_queue(cmd, conn,
@@ -2382,7 +2382,7 @@ static void iscsit_build_conn_drop_async_message(struct iscsi_conn *conn)
 	if (!conn_p)
 		return;
 
-	cmd = iscsit_allocate_cmd(conn_p, GFP_KERNEL);
+	cmd = iscsit_allocate_cmd(conn_p, GFP_ATOMIC);
 	if (!cmd) {
 		iscsit_dec_conn_usage_count(conn_p);
 		return;
@@ -3269,7 +3269,6 @@ static int iscsit_build_sendtargets_response(struct iscsi_cmd *cmd)
 		len += 1;
 
 		if ((len + payload_len) > buffer_len) {
-			spin_unlock(&tiqn->tiqn_tpg_lock);
 			end_of_buf = 1;
 			goto eob;
 		}
@@ -3422,6 +3421,7 @@ static int iscsit_send_reject(
 	hdr->opcode		= ISCSI_OP_REJECT;
 	hdr->flags		|= ISCSI_FLAG_CMD_FINAL;
 	hton24(hdr->dlength, ISCSI_HDR_LEN);
+	hdr->ffffffff		= 0xffffffff;
 	cmd->stat_sn		= conn->stat_sn++;
 	hdr->statsn		= cpu_to_be32(cmd->stat_sn);
 	hdr->exp_cmdsn	= cpu_to_be32(conn->sess->exp_cmd_sn);
@@ -3608,6 +3608,10 @@ check_rsp_state:
 				spin_lock_bh(&cmd->istate_lock);
 				cmd->i_state = ISTATE_SENT_STATUS;
 				spin_unlock_bh(&cmd->istate_lock);
+
+				if (atomic_read(&conn->check_immediate_queue))
+					return 1;
+
 				continue;
 			} else if (ret == 2) {
 				/* Still must send status,
@@ -3697,7 +3701,7 @@ check_rsp_state:
 		}
 
 		if (atomic_read(&conn->check_immediate_queue))
-			break;
+			return 1;
 	}
 
 	return 0;
@@ -3733,18 +3737,23 @@ restart:
 		 */
 		iscsit_thread_check_cpumask(conn, current, 1);
 
-		schedule_timeout_interruptible(MAX_SCHEDULE_TIMEOUT);
+		wait_event_interruptible(conn->queues_wq,
+					 !iscsit_conn_all_queues_empty(conn) ||
+					 ts->status == ISCSI_THREAD_SET_RESET);
 
 		if ((ts->status == ISCSI_THREAD_SET_RESET) ||
 		     signal_pending(current))
 			goto transport_err;
 
+get_immediate:
 		ret = handle_immediate_queue(conn);
 		if (ret < 0)
 			goto transport_err;
 
 		ret = handle_response_queue(conn);
-		if (ret == -EAGAIN)
+		if (ret == 1)
+			goto get_immediate;
+		else if (ret == -EAGAIN)
 			goto restart;
 		else if (ret < 0)
 			goto transport_err;

@@ -328,6 +328,7 @@ static int __devinit ichx_gpio_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
+	spin_lock_init(&ichx_priv.lock);
 	res_base = platform_get_resource(pdev, IORESOURCE_IO, ICH_RES_GPIO);
 	if (!res_base || !res_base->start || !res_base->end)
 		return -ENODEV;

@@ -309,7 +309,6 @@ struct ath_rx {
 	u8 rxotherant;
 	u32 *rxlink;
 	unsigned int rxfilter;
-	spinlock_t rxbuflock;
 	struct list_head rxbuf;
 	struct ath_descdma rxdma;
 	struct ath_buf *rx_bufptr;
@@ -320,7 +319,6 @@ struct ath_rx {
 
 int ath_startrecv(struct ath_softc *sc);
 bool ath_stoprecv(struct ath_softc *sc);
-void ath_flushrecv(struct ath_softc *sc);
 u32 ath_calcrxfilter(struct ath_softc *sc);
 int ath_rx_init(struct ath_softc *sc, int nbufs);
 void ath_rx_cleanup(struct ath_softc *sc);
@@ -588,7 +586,6 @@ struct ath_ant_comb {
 #define SC_OP_INVALID                BIT(0)
 #define SC_OP_BEACONS                BIT(1)
 #define SC_OP_OFFCHANNEL             BIT(2)
-#define SC_OP_RXFLUSH                BIT(3)
 #define SC_OP_TSF_RESET              BIT(4)
 #define SC_OP_BT_PRIORITY_DETECTED   BIT(5)
 #define SC_OP_BT_SCAN                BIT(6)

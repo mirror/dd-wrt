@@ -1000,7 +1000,6 @@ static int pscsi_map_sg(struct se_cmd *cmd, struct scatterlist *sgl,
 				bio = NULL;
 			}
 
-			page++;
 			len -= bytes;
 			data_len -= bytes;
 			off = 0;

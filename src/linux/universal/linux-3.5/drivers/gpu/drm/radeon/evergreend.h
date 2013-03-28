@@ -45,6 +45,8 @@
 #define TURKS_GB_ADDR_CONFIG_GOLDEN          0x02010002
 #define CEDAR_GB_ADDR_CONFIG_GOLDEN          0x02010001
 #define CAICOS_GB_ADDR_CONFIG_GOLDEN         0x02010001
+#define SUMO_GB_ADDR_CONFIG_GOLDEN           0x02010002
+#define SUMO2_GB_ADDR_CONFIG_GOLDEN          0x02010002
 
 /* Registers */
 
@@ -87,6 +89,14 @@
 
 #define	CONFIG_MEMSIZE					0x5428
 
+#define	BIF_FB_EN						0x5490
+#define		FB_READ_EN					(1 << 0)
+#define		FB_WRITE_EN					(1 << 1)
+
+#define	CP_STRMOUT_CNTL					0x84FC
+
+#define	CP_COHER_CNTL					0x85F0
+#define	CP_COHER_SIZE					0x85F4
 #define	CP_COHER_BASE					0x85F8
 #define CP_ME_CNTL					0x86D8
 #define		CP_ME_HALT					(1 << 28)
@@ -426,6 +436,9 @@
 #define		NOOFCHAN_MASK					0x00003000
 #define MC_SHARED_CHREMAP					0x2008
 
+#define MC_SHARED_BLACKOUT_CNTL           		0x20ac
+#define		BLACKOUT_MODE_MASK			0x00000007
+
 #define	MC_ARB_RAMCFG					0x2760
 #define		NOOFBANK_SHIFT					0
 #define		NOOFBANK_MASK					0x00000003
@@ -636,6 +649,7 @@
 #define		PAGE_TABLE_DEPTH(x)				(((x) & 3) << 1)
 #define		RANGE_PROTECTION_FAULT_ENABLE_DEFAULT		(1 << 4)
 #define VM_CONTEXT1_CNTL				0x1414
+#define VM_CONTEXT1_CNTL2				0x1434
 #define	VM_CONTEXT0_PAGE_TABLE_BASE_ADDR		0x153C
 #define	VM_CONTEXT0_PAGE_TABLE_END_ADDR			0x157C
 #define	VM_CONTEXT0_PAGE_TABLE_START_ADDR		0x155C
@@ -657,6 +671,8 @@
 #define		CACHE_UPDATE_MODE(x)				((x) << 6)
 #define	VM_L2_STATUS					0x140C
 #define		L2_BUSY						(1 << 0)
+#define	VM_CONTEXT1_PROTECTION_FAULT_ADDR		0x14FC
+#define	VM_CONTEXT1_PROTECTION_FAULT_STATUS		0x14DC
 
 #define	WAIT_UNTIL					0x8040
 

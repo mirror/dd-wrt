@@ -141,16 +141,22 @@ static void g4x_write_infoframe(struct drm_encoder *encoder,
 
 	I915_WRITE(VIDEO_DIP_CTL, val);
 
+	mmiowb();
 	for (i = 0; i < len; i += 4) {
 		I915_WRITE(VIDEO_DIP_DATA, *data);
 		data++;
 	}
+	/* Write every possible data byte to force correct ECC calculation. */
+	for (; i < VIDEO_DIP_DATA_SIZE; i += 4)
+		I915_WRITE(VIDEO_DIP_DATA, 0);
+	mmiowb();
 
 	val |= g4x_infoframe_enable(frame);
 	val &= ~VIDEO_DIP_FREQ_MASK;
 	val |= VIDEO_DIP_FREQ_VSYNC;
 
 	I915_WRITE(VIDEO_DIP_CTL, val);
+	POSTING_READ(VIDEO_DIP_CTL);
 }
 
 static void ibx_write_infoframe(struct drm_encoder *encoder,
@@ -190,16 +196,22 @@ static void ibx_write_infoframe(struct drm_encoder *encoder,
 
 	I915_WRITE(reg, val);
 
+	mmiowb();
 	for (i = 0; i < len; i += 4) {
 		I915_WRITE(TVIDEO_DIP_DATA(intel_crtc->pipe), *data);
 		data++;
 	}
+	/* Write every possible data byte to force correct ECC calculation. */
+	for (; i < VIDEO_DIP_DATA_SIZE; i += 4)
+		I915_WRITE(TVIDEO_DIP_DATA(intel_crtc->pipe), 0);
+	mmiowb();
 
 	val |= g4x_infoframe_enable(frame);
 	val &= ~VIDEO_DIP_FREQ_MASK;
 	val |= VIDEO_DIP_FREQ_VSYNC;
 
 	I915_WRITE(reg, val);
+	POSTING_READ(reg);
 }
 
 static void cpt_write_infoframe(struct drm_encoder *encoder,
@@ -229,16 +241,22 @@ static void cpt_write_infoframe(struct drm_encoder *encoder,
 
 	I915_WRITE(reg, val);
 
+	mmiowb();
 	for (i = 0; i < len; i += 4) {
 		I915_WRITE(TVIDEO_DIP_DATA(intel_crtc->pipe), *data);
 		data++;
 	}
+	/* Write every possible data byte to force correct ECC calculation. */
+	for (; i < VIDEO_DIP_DATA_SIZE; i += 4)
+		I915_WRITE(TVIDEO_DIP_DATA(intel_crtc->pipe), 0);
+	mmiowb();
 
 	val |= g4x_infoframe_enable(frame);
 	val &= ~VIDEO_DIP_FREQ_MASK;
 	val |= VIDEO_DIP_FREQ_VSYNC;
 
 	I915_WRITE(reg, val);
+	POSTING_READ(reg);
 }
 
 static void vlv_write_infoframe(struct drm_encoder *encoder,
@@ -262,16 +280,22 @@ static void vlv_write_infoframe(struct drm_encoder *encoder,
 
 	I915_WRITE(reg, val);
 
+	mmiowb();
 	for (i = 0; i < len; i += 4) {
 		I915_WRITE(VLV_TVIDEO_DIP_DATA(intel_crtc->pipe), *data);
 		data++;
 	}
+	/* Write every possible data byte to force correct ECC calculation. */
+	for (; i < VIDEO_DIP_DATA_SIZE; i += 4)
+		I915_WRITE(VLV_TVIDEO_DIP_DATA(intel_crtc->pipe), 0);
+	mmiowb();
 
 	val |= g4x_infoframe_enable(frame);
 	val &= ~VIDEO_DIP_FREQ_MASK;
 	val |= VIDEO_DIP_FREQ_VSYNC;
 
 	I915_WRITE(reg, val);
+	POSTING_READ(reg);
 }
 
 static void hsw_write_infoframe(struct drm_encoder *encoder,
@@ -294,13 +318,19 @@ static void hsw_write_infoframe(struct drm_encoder *encoder,
 	val &= ~hsw_infoframe_enable(frame);
 	I915_WRITE(ctl_reg, val);
 
+	mmiowb();
 	for (i = 0; i < len; i += 4) {
 		I915_WRITE(data_reg + i, *data);
 		data++;
 	}
+	/* Write every possible data byte to force correct ECC calculation. */
+	for (; i < VIDEO_DIP_DATA_SIZE; i += 4)
+		I915_WRITE(data_reg + i, 0);
+	mmiowb();
 
 	val |= hsw_infoframe_enable(frame);
 	I915_WRITE(ctl_reg, val);
+	POSTING_READ(ctl_reg);
 }
 
 static void intel_set_infoframe(struct drm_encoder *encoder,
