@@ -316,7 +316,7 @@ function addSambaUserShare( userIndex, template, share ) {
 		element = template.childElements()[i];
 		if( element.tagName == 'SPAN' ) {
 			template.childElements()[i].innerHTML = label;
-		} else if( element.tagName == 'INPUT' ) {
+		} else if( element.tagName == 'INPUT') {
 			template.childElements()[i].name = 'smbshare_' + shareIndex + '_user_' + userIndex;
 		}
 	}
