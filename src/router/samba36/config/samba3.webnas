@@ -7,13 +7,7 @@
 		<input class="spaceradio" type="radio" name="samba3_enable" value="0" <% nvram_checked("samba3_enable", "0"); %> onclick="show_layer_ext(this, 'samba3config', false)"/><% tran("share.disable"); %>
 	</div>
 						
-	<div id="samba3config">
-		<div class="setting">
-			<div class="label"><% tran("service.samba3_custom"); %></div>
-			<input class="spaceradio" type="radio" name="samba3_advanced" value="1" <% nvram_checked("samba3_advanced", "1"); %> onclick="toggle_layer_ext(this, 'samba3advanced', true)"/><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="samba3_advanced" value="0" <% nvram_checked("samba3_advanced", "0"); %> onclick="toggle_layer_ext(this, 'samba3advanced', false)"/><% tran("share.disable");%>
-		</div>
-	
+	<div id="samba3config">	
 		<div class="setting">
 			<div class="label"><% tran("service.samba3_srvstr"); %></div>
 			<input maxlength="32" size="16" name="samba3_srvstr" value="<% nvram_get("samba3_srvstr"); %>" />
@@ -22,23 +16,11 @@
 			<div class="label"><% tran("service.samba3_workgrp"); %></div>
 			<input maxlength="32" size="16" name="samba3_workgrp" value="<% nvram_get("samba3_workgrp"); %>" />
 		</div>
+	</div>
 		
 		<% samba3_sharepaths(); %>
 		<br />
 		<% samba3_users(); %>
 		
 	
-	<div id="samba3advanced">
-		<div class="setting">
-			<div class="label"><% tran("service.samba3_config"); %></div><br />
-			<textarea cols="80" rows="12" id="samba3_conf" name="samba3_conf" style="width: 100%;"></textarea>
-		</div>
-		<script type="text/javascript">
-		//<![CDATA[
-		var samba3_conf = fix_cr( '<% nvram_get("samba3_conf"); %>' );
-		document.getElementById("samba3_conf").value = samba3_conf;
-		//]]>
-		</script>
-	</div>
-  </div>
 </fieldset><br />
