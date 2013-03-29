@@ -218,8 +218,8 @@
 
 #endif /* neither DROPBEAR_SERVER nor DROPBEAR_CLIENT */
 
-//#if !defined(HAVE_FORK) || defined(__uClinux__) 
+#ifndef HAVE_FORK
 #define USE_VFORK
-//#endif  /* don't HAVE_FORK */
+#endif  /* don't HAVE_FORK */
 
 /* no include guard for this file */
