@@ -706,6 +706,7 @@ CFLAGS_EXTRA += -DHAVE_ERC
 endif
 
 ifeq ($(CONFIG_FTP),y)
+CFLAGS_EXTRA += -I$(TOP)/jansson/src
 CFLAGS_EXTRA += -DHAVE_FTP
 OBJS += proftp.o
 endif
