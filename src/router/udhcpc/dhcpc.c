@@ -370,7 +370,7 @@ int main(int argc, char *argv[])
 						xid = random_xid();
 
 					/* send discover packet */
-					send_discover(xid, requested_ip); /* broadcast */
+					send_discover(xid, packet_num * 4, requested_ip); /* broadcast */
 
 					timeout = now + ((packet_num == 2) ? 8 : 4);
 					packet_num++;

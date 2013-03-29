@@ -98,12 +98,14 @@ static void add_requests(struct dhcpMessage *packet)
 
 
 /* Broadcast a DHCP discover packet to the network, with an optionally requested IP */
-int send_discover(unsigned long xid, unsigned long requested)
+int send_discover(unsigned long xid, unsigned long seconds_elapsed, unsigned long requested)
 {
 	struct dhcpMessage packet;
 
 	init_packet(&packet, DHCPDISCOVER);
 	packet.xid = xid;
+	packet.secs = seconds_elapsed;
+
 	if (requested)
 		add_simple_option(packet.options, DHCP_REQUESTED_IP, requested);
 
