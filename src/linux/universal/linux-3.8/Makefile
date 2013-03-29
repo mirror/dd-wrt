@@ -1,8 +1,8 @@
 VERSION = 3
 PATCHLEVEL = 8
 SUBLEVEL = 5
-EXTRAVERSION = -rc1
-NAME = Unicycling Gorilla
+EXTRAVERSION =
+NAME = Displaced Humerus Anterior
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
