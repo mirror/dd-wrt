@@ -3534,16 +3534,19 @@ struct fsentry *parsefsentry(char line[256])
 	while (token != NULL) {
 		// check for values
 		if (tokcount == 0) {
+			strcpy(entry->fs, token);
+		} else if (tokcount == 2) {
+			if (!strncmp(token, "/tmp/proftpd", 12)) {
+				return NULL; //skip it
+			}
 			if (!strncmp(token, "/tmp/mnt/", 9)) {
 				char newpath[64];
 				strcpy(newpath, token);
 				char *slash = strrchr(newpath, '/') + 1;
-				sprintf(entry->fs, "/mnt/%s", slash);	// convert symbolic link to absolute path
+				sprintf(entry->mp, "/mnt/%s", slash);	// convert symbolic link to absolute path
 			} else {
-				strcpy(entry->fs, token);
+				strcpy(entry->mp, token);
 			}
-		} else if (tokcount == 2) {
-			strcpy(entry->mp, token);
 		} else if (tokcount == 4) {
 			strcpy(entry->fstype, token);
 		} else if (tokcount == 5) {
@@ -3569,11 +3572,13 @@ struct fsentry *getfsentries()
 		//current = list;
 		while (fgets(line, sizeof(line), fp)) {
 			//fprintf(stderr, "[MOUNTS] %s\n", line);
+			list = parsefsentry(line);
+			if (!list)
+				continue;
 			if (count == 0) {
-				list = parsefsentry(line);
 				current = list;
 			} else {
-				current->next = parsefsentry(line);
+				current->next = list;
 				current = current->next;
 			}
 			count++;
