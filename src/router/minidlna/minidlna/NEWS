@@ -1,3 +1,16 @@
+1.1.0 - Released 00-Month-0000
+--------------------------------
+- Add support for other operating systems.
+- Switch to autoconf from our handcrafted genconfig.sh.
+- Add configuration option for UUID.
+- Add configuration option to specify the user to run as.
+- Add support for limiting a media dir to multiple media types.
+- Force a rescan if we detect a new or missing media_dir entry.
+- Fix crash caused by certain TiVo clients.
+- Fix crash bug on video files with some ffmpeg library versions.
+- Add support for TiVo MPEG-TS files.
+- Add some logging and forking tweaks to work better with systemd.
+
 1.0.25 - Released 13-July-2012
 --------------------------------
 - Fix a couple crash bugs on malformed WAV files.

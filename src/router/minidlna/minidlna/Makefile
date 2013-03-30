@@ -14,7 +14,7 @@
 #CFLAGS = -Wall -g -Os -D_GNU_SOURCE
 
 LDFLAGS+= -Wl,--gc-sections
-CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__ \
+CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__ -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVFORMAT_AVFORMAT_H \
          -I$(MINI_DLNA_PATH)/ffmpeg-1.0 \
          -I$(MINI_DLNA_PATH)/ffmpeg-1.0/libavcodec \
          -I$(MINI_DLNA_PATH)/ffmpeg-1.0/libavformat \
@@ -26,7 +26,7 @@ CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FI
          -I$(MINI_DLNA_PATH)/libvorbis-1.3.3/include/ \
          -I$(MINI_DLNA_PATH)/jpeg-8 \
          -I$(MINI_DLNA_PATH)/flac-1.2.1/include/ \
-         -L$(MINI_DLNA_PATH)/lib
+         -L$(MINI_DLNA_PATH)/lib \
 
 
 CC = ccache $(CROSS_COMPILE)gcc
@@ -39,7 +39,7 @@ SBININSTALLDIR = $(INSTALLPREFIX)/sbin
 ETCINSTALLDIR = $(DESTDIR)/etc
 
 BASEOBJS = minidlna.o upnphttp.o upnpdescgen.o upnpsoap.o \
-           upnpreplyparse.o minixml.o \
+           upnpreplyparse.o minixml.o clients.o \
            getifaddr.o daemonize.o upnpglobalvars.o \
            options.o minissdp.o uuid.o upnpevents.o \
            sql.o utils.o metadata.o scanner.o inotify.o \
@@ -104,8 +104,9 @@ upnpdescgen.o: config.h upnpdescgen.h minidlnapath.h upnpglobalvars.h
 upnpdescgen.o: minidlnatypes.h upnpdescstrings.h log.h
 upnpsoap.o: config.h upnpglobalvars.h minidlnatypes.h log.h utils.h sql.h
 upnpsoap.o: upnphttp.h upnpsoap.h upnpreplyparse.h getifaddr.h log.h
-upnpreplyparse.o: upnpreplyparse.h minixml.h log.h
+upnpreplyparse.o: upnpreplyparse.h minixml.h clients.h log.h
 minixml.o: minixml.h
+clients.o: clients.h
 getifaddr.o: getifaddr.h log.h
 daemonize.o: daemonize.h config.h log.h
 upnpglobalvars.o: config.h upnpglobalvars.h
