@@ -22,6 +22,7 @@
 /* Enable if the system iconv.h exists.  ID3 tag reading in various character sets will not work properly otherwise. */
 //#define HAVE_ICONV_H
 #define DEFAULT_LOG_PATH "/var/log"
+#define ICONV_CONST const
 /* Enable NETGEAR-specific tweaks. */
 // #define NETGEAR
 /* Enable ReadyNAS-specific tweaks. */
