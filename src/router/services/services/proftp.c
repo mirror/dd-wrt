@@ -61,9 +61,10 @@ void start_ftpsrv(void)
 	for (cu = samba3users; cu; cu = cunext) {
 		if (strlen(cu->username)
 		    && cu->sharetype & SHARETYPE_FTP) {
+			sysprintf("mkdir -p /tmp/proftpd/users/%s",cu->username);
 			fprintf(fp,
-				"%s:%s:0:0:Ftp User,,,:/tmp/root:/bin/sh\n",
-				cu->username, zencrypt(cu->password));
+				"%s:%s:0:0:Ftp User,,,:/tmp/proftpd/users/%s:/bin/sh\n",
+				cu->username, zencrypt(cu->password),cu->username);
 		}
 		cunext = cu->next;
 		free(cu);
@@ -140,6 +141,9 @@ void start_ftpsrv(void)
 				    && (cu->sharetype & SHARETYPE_FTP)) {
 					fprintf(fp, "AllowUser %s\n",
 						csu->username);
+					sysprintf("mkdir -p /tmp/proftpd/users/%s/%s",cu->username,cs->label);
+					sysprintf("mount --bind %s /tmp/proftpd/users/%s/%s",cs->mp,cu->username,cs->label);
+
 				}
 				cunext = cu->next;
 				free(cu);
