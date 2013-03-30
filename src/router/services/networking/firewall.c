@@ -2339,17 +2339,17 @@ static void filter_forward(void)
 	save2file("-A FORWARD -j lan2wan\n");
 
 	/*
+	 * Clamp TCP MSS to PMTU of WAN interface 
+	 */
+	save2file
+	    ("-A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+	    
+	/*
 	 * Accept those established/related connections 
 	 */
 	save2file
 	    ("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s\n",
 	     log_accept);
-
-	/*
-	 * Clamp TCP MSS to PMTU of WAN interface 
-	 */
-	save2file
-	    ("-A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 
 	/*
 	 * Accept the redirect, might be seen as INVALID, packets 
