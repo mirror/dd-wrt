@@ -3566,20 +3566,21 @@ struct fsentry *getfsentries()
 
 	char line[512];
 	FILE *fp;
-	struct fsentry *list, *current;
+	struct fsentry *list, *tmplist, *current;
 	int count = 0;
 
 	if ((fp = popen("mount", "r"))) {
 		//current = list;
 		while (fgets(line, sizeof(line), fp)) {
 			//fprintf(stderr, "[MOUNTS] %s\n", line);
-			list = parsefsentry(line);
-			if (!list)
+			tmplist = parsefsentry(line);
+			if (!tmplist)
 				continue;
 			if (count == 0) {
+				list = tmplist;
 				current = list;
 			} else {
-				current->next = list;
+				current->next = tmplist;
 				current = current->next;
 			}
 			count++;
