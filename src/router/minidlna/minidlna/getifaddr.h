@@ -46,7 +46,7 @@ int
 getifaddr(const char * ifname, char * buf, int len);
 
 int
-getsysaddrs(void);
+getsysaddr(char * buf, int len);
 
 int
 getsyshwaddr(char * buf, int len);
