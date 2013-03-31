@@ -14,7 +14,7 @@
 #CFLAGS = -Wall -g -Os -D_GNU_SOURCE
 
 LDFLAGS+= -Wl,--gc-sections
-CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__ -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVFORMAT_AVFORMAT_H -DNEED_PRINTF \
+CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__ -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVFORMAT_AVFORMAT_H \
          -I$(MINI_DLNA_PATH)/ffmpeg-1.2 \
          -I$(MINI_DLNA_PATH)/ffmpeg-1.2/libavcodec \
          -I$(MINI_DLNA_PATH)/ffmpeg-1.2/libavformat \
