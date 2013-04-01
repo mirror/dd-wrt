@@ -736,6 +736,7 @@ nas.proftpd_writeen="Allow Write";
 nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_subdir="Anonymous Home Sub-directory";
 nas.samba3_legend="File Sharing";
+nas.samba3="Samba Server";
 
 var hnas=new Object();
 hnas.right2="For the user password list, enter one password per line. Passwords can be plain text or MD5 crypt.";
