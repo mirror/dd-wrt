@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Unix authentication module for ProFTPD
- * $Id: mod_auth_unix.c,v 1.50 2011/05/23 21:11:56 castaglia Exp $
+ * $Id: mod_auth_unix.c,v 1.50.2.1 2012/11/16 17:38:45 castaglia Exp $
  */
 
 #include "conf.h"
@@ -502,6 +502,10 @@ static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
       *expire = SP_CVT_DAYS(sp->sp_expire);
     }
 #endif /* HAVE_SPWD_SP_EXPIRE */
+
+  } else {
+    pr_log_debug(DEBUG3, "mod_auth_unix: getspnam(3) for user '%s' error: %s",
+      u, strerror(errno));
   }
 
 #ifdef PR_USE_AUTO_SHADOW
@@ -538,6 +542,10 @@ static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
       if (expire != NULL) {
         *expire = (time_t) -1;
       }
+
+    } else {
+      pr_log_debug(DEBUG3, "mod_auth_unix: getpwnam(3) for user '%s' error: %s",
+        u, strerror(errno));
     }
 
   } else {

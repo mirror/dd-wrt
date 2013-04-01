@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_ban -- a module implementing ban lists using the Controls API
  *
- * Copyright (c) 2004-2012 TJ Saunders
+ * Copyright (c) 2004-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * This is mod_ban, contrib software for proftpd 1.2.x/1.3.x.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_ban.c,v 1.54.2.2 2012/02/22 01:56:39 castaglia Exp $
+ * $Id: mod_ban.c,v 1.54.2.5 2013/01/11 18:33:34 castaglia Exp $
  */
 
 #include "conf.h"
@@ -139,6 +139,12 @@ struct ban_data {
 
 static struct ban_data *ban_lists = NULL;
 static int ban_engine = -1;
+
+/* Track whether "BanEngine on" was EVER seen in the configuration; see
+ * Bug#3865.
+ */
+static int ban_engine_overall = -1;
+
 static int ban_logfd = -1;
 static char *ban_log = NULL;
 static char *ban_mesg = NULL;
@@ -1577,7 +1583,7 @@ static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
     return -1;
   }
 
-  if (ban_engine != TRUE) {
+  if (ban_engine_overall != TRUE) {
     pr_ctrls_add_response(ctrl, MOD_BAN_VERSION " not enabled");
     return -1;
   }
@@ -1779,8 +1785,8 @@ static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
     return ban_handle_info(ctrl, reqargc, reqargv);
 
   } else {
-    pr_ctrls_add_response(ctrl, "unknown ban type requested: '%s'",
-      reqargv[optind]);
+    pr_ctrls_add_response(ctrl, "unknown ban action requested: '%s'",
+      reqargv[0]);
     return -1;
   }
 
@@ -1809,7 +1815,7 @@ static int ban_handle_permit(pr_ctrls_t *ctrl, int reqargc,
     return -1;
   }
 
-  if (ban_engine != TRUE) {
+  if (ban_engine_overall != TRUE) {
     pr_ctrls_add_response(ctrl, MOD_BAN_VERSION " not enabled");
     return -1;
   }
@@ -2022,7 +2028,7 @@ static int ban_handle_permit(pr_ctrls_t *ctrl, int reqargc,
     ban_lock_shm(LOCK_UN);
  
   } else {
-    pr_ctrls_add_response(ctrl, "unknown ban type requested: '%s'",
+    pr_ctrls_add_response(ctrl, "unknown ban action requested: '%s'",
       reqargv[0]);
     return -1;
   }
@@ -2165,22 +2171,28 @@ MODRET set_banctrlsacls(cmd_rec *cmd) {
 
 /* usage: BanEngine on|off */
 MODRET set_banengine(cmd_rec *cmd) {
-  int bool = -1, ctxt_type;
+  int engine = -1, ctx_type;
   config_rec *c;
 
   CHECK_ARGS(cmd, 1);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  ctxt_type = (cmd->config && cmd->config->config_type != CONF_PARAM ?
+  if (engine == TRUE) {
+    /* If "BanEngine on" is configured anywhere, then set this flag. */
+    ban_engine_overall = engine;
+  }
+
+  ctx_type = (cmd->config && cmd->config->config_type != CONF_PARAM ?
      cmd->config->config_type : cmd->server->config_type ?
      cmd->server->config_type : CONF_ROOT);
 
-  if (ctxt_type == CONF_ROOT) {
+  if (ctx_type == CONF_ROOT) {
     /* If ban_engine has not been initialized yet, and this is the
      * "server config" section, we can do it here.  And even if the
      * previously initialized value is 0 ("BanEngine off"), if the
@@ -2190,17 +2202,17 @@ MODRET set_banengine(cmd_rec *cmd) {
      */
 
     if (ban_engine == -1) {
-      ban_engine = bool;
+      ban_engine = engine;
     }
 
-    if (bool == TRUE) {
-      ban_engine = bool;
+    if (engine == TRUE) {
+      ban_engine = engine;
     }
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = palloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }
@@ -2514,10 +2526,11 @@ static void ban_handle_event(unsigned int ev_type, int ban_type,
 
         end_session = TRUE;
 
-      } else
+      } else {
         (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
           "updated count for %s event entry: %u curr, %u max", event,
           bee->bee_count_curr, bee->bee_count_max);
+      }
     }
   }
 
@@ -2532,6 +2545,7 @@ static void ban_handle_event(unsigned int ev_type, int ban_type,
     pr_session_disconnect(&ban_module, PR_SESS_DISCONNECT_BANNED, NULL);
   }
 
+  destroy_pool(tmp_pool);
   return;
 }
 
@@ -2718,12 +2732,13 @@ static void ban_mod_unload_ev(const void *event_data, void *user_data) {
 static void ban_postparse_ev(const void *event_data, void *user_data) {
   struct ban_data *lists;
 
-  if (ban_engine != TRUE)
+  if (ban_engine_overall != TRUE) {
     return;
+  }
 
   /* Open the BanLog. */
   if (ban_log &&
-      strcasecmp(ban_log, "none") != 0) {
+      strncasecmp(ban_log, "none", 5) != 0) {
     int res;
 
     PRIVS_ROOT

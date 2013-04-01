@@ -1,4 +1,4 @@
-$Id: NEWS,v 1.1368.2.43 2012/07/31 17:13:21 castaglia Exp $
+$Id: NEWS,v 1.1368.2.76 2013/03/06 18:02:37 castaglia Exp $
 
 -----------------------------------------------------------------------------
   More details on the bugs listed below can be found by using the bug number
@@ -9,6 +9,56 @@ $Id: NEWS,v 1.1368.2.43 2012/07/31 17:13:21 castaglia Exp $
   where `N' is the bug number.
 -----------------------------------------------------------------------------
 
+1.3.4c - Released 06-Mar-2013
+--------------------------------
+- Bug 3795 - ProFTPD needs to use -pthread linker option if linking against
+  OpenSSL with thread support.
+- Bug 3816 - Installation of ftpasswd does not honor DESTDIR environment
+  variable.
+- Bug 3806 - Support reverse DNS resolution for IPv6 addresses when
+  gethostbyname2(3) is not available.
+- Bug 3828 - Certain sequences of FTP data transfer commands lead to NULL
+  pointer dereferences in mod_deflate.
+- Bug 3830 - MFF/MFMT command segfaults due to insufficient parameter checks.
+- Bug 3829 - RNFR without following RNTO can lead to NULL pointer dereference.
+- Bug 3719 - LIST -R can loop endlessly if bad directory symlink exists.
+- Bug 3831 - Sporadic "451 Insufficient memory or file locked" failure when
+  downloading.
+- Bug 3837 - mod_tls unable to read certificate files after SIGHUP.
+- Bug 3822 - Resolving %U/%u LogFormat variables inconsistent between
+  mod_log/mod_sql in certain cases.
+- Bug 3842 - Incorrect handling of REALPATH requests for symlink paths in
+  mod_sftp.
+- Bug 3845 - mod_sftp does not provide response codes for %s LogFormat variable
+  for AUTH ExtendedLog.
+- Bug 3851 - SFTPPassPhraseProvider fails due to incorrect pointer.
+- Bug 3841 - Possible symlink race when applying UserOwner to newly created
+  directory.
+- Bug 3855 - Restarting proftpd may cause Include files not to be parsed.
+- Bug 3859 - MLSD fails to show symlinks when ShowSymlinks is not configured.
+- Bug 3863 - mod_sftp does not handle MaxLoginAttempts properly.
+- Bug 3865 - BanEngine not set in "server config" results in "mod_ban not
+  enabled" ftpdctl error.
+- Bug 3866 - Issuing invalid 'ftpdctl ban' request causes segfault.
+- Bug 3867 - ftpasswd fails with "Permission denied" when adding subsequent
+  passwd/group entries.
+- Bug 3868 - Only first DH param in TLSDHParamFile is used, regardless of
+  requested keylength.
+- Bug 3870 - Handling of OPTS command can lead to crash.
+- Bug 3871 - REALPATH SFTP request not properly handled by <Limit DIRS>
+  configuration.
+- Bug 3878 - QuotaExcludeFilter not honored for uploads when 'hard' limits are
+  used.
+- Bug 3884 - Configure script not detecting MySQL make_scrambled_password
+  functions.
+- Bug 3887 - <Limit ALL> erroneously blocks the PROT command used for FTPS.
+- Bug 3819 - Second and subsequent LIST of directory with many files is very
+  slow.
+- Bug 3894 - ftptop doesn't work with --enable-nls.
+- Bug 3895 - Missing TransferLog entry under some out-of-space conditions.
+- Bug 3905 - Handle the Linux-specific PAM_RADIO_TYPE message properly.
+- Bug 3904 - scp downloads using glob pattern sometimes fails.
+
 1.3.4b - Released 31-Jul-2012
 --------------------------------
 - Bug 3713 - mod_tls cannot be compiled using Openssl 0.9.6.
@@ -16,7 +66,6 @@ $Id: NEWS,v 1.1368.2.43 2012/07/31 17:13:21 castaglia Exp $
   file name).
 - Bug 3715 - MLSD/MLST fail when "DirFakeUser off" or "DirFakeGroup off" used.
 - Bug 3717 - proftpd fails to run with "Abort trap" error message.
-- Bug 3719 - LIST -R can loop endlessly if bad directory symlink exists.
 - Bug 3723 - mod_memcache segfault on server restart.
 - Bug 3724 - Unloading mod_quotatab causes segfault.
 - Bug 3682 - Configure does not detect libiconv under Gentoo FreeBSD.
@@ -45,7 +94,7 @@ $Id: NEWS,v 1.1368.2.43 2012/07/31 17:13:21 castaglia Exp $
 - Bug 3751 - mod_ban does not close/reopen the BanLog/BanTable file descriptors
   on restart, causing a file descriptor leak.
 - Bug 3756 - mod_ctrls no longer listens on ControlsSocket after restart.
-- Bug 3748 - ProFTPD crashes when handling mod_gss authentication due to null
+- Bug 3758 - ProFTPD crashes when handling mod_gss authentication due to null
   pointer.
 - Bug 3761 - SSH2 key exchange fails if client sends certain SSH message before
   NEWKEYS.
@@ -61,8 +110,6 @@ $Id: NEWS,v 1.1368.2.43 2012/07/31 17:13:21 castaglia Exp $
 - Bug 3791 - Invalid handling of SCP control messages fragmented over multiple
   SSH packets.
 - Bug 3794 - Cygwin build failure in lib/tpl.c due to wrong include of mman.h.
-- Bug 3795 - ProFTPD needs to use -pthread linker option if linking against
-  OpenSSL with thread support.
 - Bug 3790 - Logfile timestamps change to GMT after MFMT command.
 - Bug 3798 - Downloading nonexistent file via SCP results in timeout rather
   than error.

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2011 The ProFTPD Project team
+ * Copyright (c) 2006-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Trace functions
- * $Id: trace.c,v 1.36 2011/09/05 19:19:55 castaglia Exp $
+ * $Id: trace.c,v 1.36.2.1 2013/02/22 03:21:19 castaglia Exp $
  */
 
 
@@ -493,6 +493,7 @@ int pr_trace_vmsg(const char *channel, int level, const char *fmt,
 
   if (discard == FALSE &&
       level > levels->max_level) {
+    discard = TRUE;
 
     if (pr_log_event_listening(PR_LOG_TYPE_TRACELOG) == FALSE) {
       return 0;

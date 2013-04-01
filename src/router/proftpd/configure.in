@@ -1653,7 +1653,7 @@ LDFLAGS=$old_LDFLAGS
 AC_PROG_GCC_TRADITIONAL
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(bcopy crypt fdatasync fgetgrent fgetpwent fgetspent flock fpathconf freeaddrinfo futimes getpgid getpgrp nl_langinfo)
+AC_CHECK_FUNCS(bcopy crypt fdatasync fgetgrent fgetpwent fgetspent flock fpathconf freeaddrinfo futimes getpgid getpgrp mkdtemp nl_langinfo)
 AC_CHECK_FUNC(gai_strerror,
   AC_DEFINE(HAVE_GAI_STRERROR, 1,
     [Define if you have the gai_strerror() function]),
@@ -2338,16 +2338,16 @@ if test x"$pr_use_mysql" = xyes; then
   saved_libs="$LIBS"
   saved_cppflags="$CPPFLAGS"
 
-  AC_MSG_CHECKING([for MySQL's make_scrambled_password_323])
-
-  # fiddle with CPPFLAGS, LDFLAGS
+  # Fiddle with CPPFLAGS, LDFLAGS
   CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
-  LDFLAGS="$LDFLAGS -lm -lmysqlclient -lz"
+  LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
 
   dnl Splice out -lsupp, since that library hasn't been built yet
   LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-  LIBS="$LIBS $ac_build_addl_libdirs"
+  LIBS="$LIBS -lm -lmysqlclient -lz"
 
+  # For Bug#3669, we need to check for make_scrambled_password_323.
+  AC_MSG_CHECKING([for MySQL's make_scrambled_password_323])
   AC_TRY_LINK(
     [
       #ifdef HAVE_STDLIB_H
@@ -2359,13 +2359,41 @@ if test x"$pr_use_mysql" = xyes; then
       #include <mysql.h>
     ],
     [
-      char input[32];
-      char *output = NULL;
-      (void) make_scrambled_password_323(input, output);
+      char output[32];
+      char *input = NULL;
+      (void) make_scrambled_password_323(output, input);
     ],
     [
       AC_MSG_RESULT(yes)
       AC_DEFINE(HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD_323, 1, [Define if you have MySQL's make_scrambled_password_323])
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ]
+  )
+
+  # For Bug#3669 in the RedHat case, we need to check for
+  # my_make_scrambled_password.
+  AC_MSG_CHECKING([for MySQL's my_make_scrambled_password])
+  AC_TRY_LINK(
+    [
+      #ifdef HAVE_STDLIB_H
+      # include <stdlib.h>
+      #endif
+      #ifdef HAVE_SYS_TYPES_H
+      # include <sys/types.h>
+      #endif
+      #include <mysql.h>
+    ],
+    [
+      char output[32];
+      char *input = NULL;
+      size_t inputlen = 0;
+      my_make_scrambled_password(output, input, inputlen);
+    ],
+    [
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(HAVE_MYSQL_MY_MAKE_SCRAMBLED_PASSWORD, 1, [Define if you have MySQL's my_make_scrambled_password function])
     ],
     [
       AC_MSG_RESULT(no)
@@ -2473,6 +2501,21 @@ if test x"$pr_use_openssl" = xyes; then
       )
     ]
   )
+
+  if test x"$openssl_cmdline" != xno; then
+    if `$openssl_cmdline version 2>/dev/null 1>&2`; then
+      openssl_cflags=`$openssl_cmdline version -f 2>/dev/null`
+      if test ! -z "$openssl_cflags"; then
+        # Look for the -pthread flag, indicating that this OpenSSL was built
+        # with threads support (see Bug#3795)
+        for openssl_cflag in $openssl_cflags; do
+          if test x"$openssl_cflag" = x"-pthread"; then
+            LIBS="$LIBS -pthread"
+          fi
+        done
+      fi
+    fi
+  fi
 fi
 
 if test x"$pr_use_postgres" = xyes; then
@@ -2485,11 +2528,11 @@ if test x"$pr_use_postgres" = xyes; then
 
   # fiddle with CPPFLAGS, LDFLAGS
   CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
-  LDFLAGS="$LDFLAGS -lm -lpq"
+  LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
 
   dnl Splice out -lsupp, since that library hasn't been built yet
   LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-  LIBS="$LIBS $ac_build_addl_libdirs"
+  LIBS="$LIBS -lm -lpq"
 
   AC_TRY_LINK(
     [
@@ -2521,21 +2564,6 @@ if test x"$pr_use_postgres" = xyes; then
   CPPFLAGS="$saved_cppflags"
   LDFLAGS="$saved_ldflags"
   LIBS="$saved_libs"
-
-  if test x"$openssl_cmdline" != xno; then
-    if `$openssl_cmdline version 2>/dev/null 1>&2`; then
-      openssl_cflags=`$openssl_cmdline version -f 2>/dev/null`
-      if test ! -z "$openssl_cflags"; then
-        # Look for the -pthread flag, indicating that this OpenSSL was built
-        # with threads support (see Bug#3795)
-        for openssl_cflag in $openssl_cflags; do 
-          if test x"$openssl_cflag" = x"-pthread"; then
-            LIBS="$LIBS -pthread"
-          fi
-        done
-      fi
-    fi
-  fi
 fi
 
 for module in $ac_shared_modules ; do

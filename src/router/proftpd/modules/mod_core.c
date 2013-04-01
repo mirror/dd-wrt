@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Core FTPD module
- * $Id: mod_core.c,v 1.413 2011/09/21 15:30:27 castaglia Exp $
+ * $Id: mod_core.c,v 1.413.2.5 2013/01/14 20:44:11 castaglia Exp $
  */
 
 #include "conf.h"
@@ -46,6 +46,9 @@ extern modret_t *site_dispatch(cmd_rec*);
 /* For bytes-retrieving directives */
 #define PR_BYTES_BAD_UNITS	-1
 #define PR_BYTES_BAD_FORMAT	-2
+
+/* Maximum number of parameters for OPTS commands (see Bug#3870). */
+#define PR_OPTS_MAX_PARAM_COUNT		8
 
 module core_module;
 char AddressCollisionCheck = TRUE;
@@ -3431,6 +3434,7 @@ MODRET regex_filters(cmd_rec *cmd) {
 
 MODRET core_pre_any(cmd_rec *cmd) {
   unsigned long cmd_delay = 0;
+  char *rnfr_path = NULL;
 
   /* Make sure any FS caches are clear before each command. */
   pr_fs_clear_cache();
@@ -3456,6 +3460,31 @@ MODRET core_pre_any(cmd_rec *cmd) {
     pr_signals_block();
     (void) select(0, NULL, NULL, NULL, &tv);
     pr_signals_unblock();
+  }
+
+  /* Make sure that any command immediately following an RNFR command which
+   * is NOT the RNTO command is rejected (see Bug#3829).
+   *
+   * Make exception for the following commands:
+   *
+   *  HELP
+   *  NOOP
+   *  QUIT
+   *  STAT
+   */
+  rnfr_path = pr_table_get(session.notes, "mod_core.rnfr-path", NULL);
+  if (rnfr_path != NULL) {
+    if (pr_cmd_cmp(cmd, PR_CMD_RNTO_ID) != 0 &&
+        pr_cmd_cmp(cmd, PR_CMD_HELP_ID) != 0 &&
+        pr_cmd_cmp(cmd, PR_CMD_NOOP_ID) != 0 &&
+        pr_cmd_cmp(cmd, PR_CMD_QUIT_ID) != 0 &&
+        pr_cmd_cmp(cmd, PR_CMD_STAT_ID) != 0) {
+      pr_log_debug(DEBUG3,
+        "RNFR followed immediately by %s rather than RNTO, rejecting command",
+        cmd->argv[0]);
+      pr_response_add_err(R_501, _("Bad sequence of commands"));
+      return PR_ERROR(cmd);
+    }
   }
 
   return PR_DECLINED(cmd);
@@ -4285,7 +4314,7 @@ int core_chgrp(cmd_rec *cmd, char *dir, uid_t uid, gid_t gid) {
   }
   cmd->argv[0] = cmd_name;
 
-  return pr_fsio_chown(dir, uid, gid);
+  return pr_fsio_lchown(dir, uid, gid);
 }
 
 int core_chmod(cmd_rec *cmd, char *dir, mode_t mode) {
@@ -4562,7 +4591,6 @@ MODRET core_rmd(cmd_rec *cmd) {
 MODRET core_mkd(cmd_rec *cmd) {
   int res;
   char *dir;
-  struct stat st;
 
   CHECK_CMD_MIN_ARGS(cmd, 2);
 
@@ -4617,7 +4645,8 @@ MODRET core_mkd(cmd_rec *cmd) {
     return PR_ERROR(cmd);
   }
 
-  if (pr_fsio_mkdir(dir, 0777) < 0) {
+  if (pr_fsio_smkdir(cmd->tmp_pool, dir, 0777, session.fsuid,
+      session.fsgid) < 0) {
     int xerrno = errno;
 
     (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %lu, GID %lu): "
@@ -4629,71 +4658,6 @@ MODRET core_mkd(cmd_rec *cmd) {
  
     errno = xerrno;
     return PR_ERROR(cmd);
-  }
-
-  /* Check to see if we need to change the ownership (user and/or group) of
-   * the newly created directory.
-   */
-  if (session.fsuid != (uid_t) -1) {
-    int err = 0, iserr = 0;
-
-    pr_fsio_stat(dir, &st);
-
-    PRIVS_ROOT
-    if (pr_fsio_chown(dir, session.fsuid, session.fsgid) == -1) {
-      iserr++;
-      err = errno;
-    }
-    PRIVS_RELINQUISH
-
-    if (iserr) {
-      pr_log_pri(PR_LOG_WARNING, "chown() as root failed: %s", strerror(err));
-
-    } else {
-      if (session.fsgid != (gid_t) -1) {
-        pr_log_debug(DEBUG2, "root chown(%s) to uid %lu, gid %lu successful",
-          dir, (unsigned long) session.fsuid, (unsigned long) session.fsgid);
-
-      } else {
-        pr_log_debug(DEBUG2, "root chown(%s) to uid %lu successful", dir,
-          (unsigned long) session.fsuid);
-      }
-    }
-
-  } else if (session.fsgid != (gid_t) -1) {
-    register unsigned int i;
-    int use_root_privs = TRUE;
-
-    pr_fsio_stat(dir, &st);
-
-    /* Check if session.fsgid is in session.gids.  If not, use root privs.  */
-    for (i = 0; i < session.gids->nelts; i++) {
-      gid_t *group_ids = session.gids->elts;
-
-      if (group_ids[i] == session.fsgid) {
-        use_root_privs = FALSE;
-        break;
-      }
-    }
-
-    if (use_root_privs) {
-      PRIVS_ROOT
-    }
-
-    res = pr_fsio_chown(dir, (uid_t) -1, session.fsgid);
-
-    if (use_root_privs) {
-      PRIVS_RELINQUISH
-    }
-
-    if (res == -1) {
-      pr_log_pri(PR_LOG_WARNING, "%schown() failed: %s",
-        use_root_privs ? "root " : "", strerror(errno));
-
-    } else { 
-      pr_log_debug(DEBUG2, "%schown(%s) to gid %lu successful",
-        use_root_privs ? "root " : "", dir, (unsigned long) session.fsgid);
-    }
   }
 
   pr_response_add(R_257, _("\"%s\" - Directory successfully created"),
@@ -5185,6 +5149,20 @@ MODRET core_opts(cmd_rec *cmd) {
   cmd_rec *subcmd;
 
   CHECK_CMD_MIN_ARGS(cmd, 2);
+
+  /* Impose a maximum number of allowed arguments, to prevent malicious
+   * clients from trying to do Bad Things(tm).  See Bug#3870.
+   */
+  if ((cmd->argc-1) > PR_OPTS_MAX_PARAM_COUNT) {
+    int xerrno = EINVAL;
+
+    pr_log_debug(DEBUG2,
+      "OPTS command with too many parameters (%d), rejecting", cmd->argc-1);
+    pr_response_add_err(R_550, "%s: %s", cmd->argv[0], strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
 
   subcmd = pr_cmd_alloc(cmd->tmp_pool, cmd->argc-1, NULL);
   subcmd->argv[0] = pstrcat(cmd->tmp_pool, "OPTS_", cmd->argv[1], NULL);

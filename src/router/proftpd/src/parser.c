@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2011 The ProFTPD Project team
+ * Copyright (c) 2004-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Configuration parser
- * $Id: parser.c,v 1.25 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: parser.c,v 1.25.2.1 2013/01/19 01:08:25 castaglia Exp $
  */
 
 #include "conf.h"
@@ -214,26 +214,31 @@ config_rec *pr_parser_config_ctxt_close(int *empty) {
    */
 
   if (parser_curr_config == (config_rec **) parser_confstack->elts) {
-    if (!c->subset || !c->subset->xas_list) {
+    if (c != NULL &&
+        (!c->subset || !c->subset->xas_list)) {
       xaset_remove(c->set, (xasetmember_t *) c);
       destroy_pool(c->pool);
 
-      if (empty)
+      if (empty) {
         *empty = TRUE;
+      }
     }
 
-    if (*parser_curr_config)
+    if (*parser_curr_config) {
       *parser_curr_config = NULL;
+    }
 
     return NULL;
   }
 
-  if (!c->subset || !c->subset->xas_list) {
+  if (c != NULL &&
+      (!c->subset || !c->subset->xas_list)) {
     xaset_remove(c->set, (xasetmember_t *) c);
     destroy_pool(c->pool);
 
-    if (empty)
+    if (empty) {
       *empty = TRUE;
+    }
   }
 
   parser_curr_config--;

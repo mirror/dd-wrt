@@ -23,7 +23,7 @@
  */
 
 /* Network address routines
- * $Id: netaddr.c,v 1.79 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: netaddr.c,v 1.79.2.1 2012/09/06 17:15:26 castaglia Exp $
  */
 
 #include "conf.h"
@@ -480,12 +480,225 @@ pr_netaddr_t *pr_netaddr_dup(pool *p, pr_netaddr_t *na) {
   return dup_na;
 }
 
-pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
+static pr_netaddr_t *get_addr_by_ip(pool *p, const char *name,
     array_header **addrs) {
-
   struct sockaddr_in v4;
   pr_netaddr_t *na = NULL;
   int res;
+
+#ifdef PR_USE_IPV6
+  if (use_ipv6) {
+    struct sockaddr_in6 v6;
+    memset(&v6, 0, sizeof(v6));
+    v6.sin6_family = AF_INET6;
+
+# ifdef SIN6_LEN
+    v6.sin6_len = sizeof(struct sockaddr_in6);
+# endif /* SIN6_LEN */
+
+    res = pr_inet_pton(AF_INET6, name, &v6.sin6_addr);
+    if (res > 0) {
+      na = (pr_netaddr_t *) pcalloc(p, sizeof(pr_netaddr_t));
+      pr_netaddr_set_family(na, AF_INET6);
+      pr_netaddr_set_sockaddr(na, (struct sockaddr *) &v6);
+      if (addrs) {
+        *addrs = NULL;
+      }
+
+      pr_trace_msg(trace_channel, 7, "'%s' resolved to IPv6 address %s", name,
+        pr_netaddr_get_ipstr(na));
+
+      netaddr_ipcache_set(name, na);
+      netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na);
+
+      return na;
+    }
+  }
+#endif /* PR_USE_IPV6 */
+
+  memset(&v4, 0, sizeof(v4));
+  v4.sin_family = AF_INET;
+
+# ifdef SIN_LEN
+  v4.sin_len = sizeof(struct sockaddr_in);
+# endif /* SIN_LEN */
+
+  res = pr_inet_pton(AF_INET, name, &v4.sin_addr);
+  if (res > 0) {
+    na = (pr_netaddr_t *) pcalloc(p, sizeof(pr_netaddr_t));
+    pr_netaddr_set_family(na, AF_INET);
+    pr_netaddr_set_sockaddr(na, (struct sockaddr *) &v4);
+    if (addrs) {
+      *addrs = NULL;
+    }
+
+    pr_trace_msg(trace_channel, 7, "'%s' resolved to IPv4 address %s", name,
+      pr_netaddr_get_ipstr(na));
+
+    netaddr_ipcache_set(name, na);
+    netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na);
+
+    return na;
+  }
+
+  return NULL;
+}
+
+static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
+    array_header **addrs) {
+  pr_netaddr_t *na = NULL;
+  int res;
+  struct addrinfo hints, *info = NULL;
+
+  memset(&hints, 0, sizeof(hints));
+
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_protocol = IPPROTO_TCP;
+
+  pr_trace_msg(trace_channel, 7,
+    "attempting to resolve '%s' to IPv4 address via DNS", name);
+  res = pr_getaddrinfo(name, NULL, &hints, &info);
+  if (res != 0) {
+    int xerrno = errno;
+
+    if (res != EAI_SYSTEM) {
+#ifdef PR_USE_IPV6
+      if (use_ipv6) {
+        pr_trace_msg(trace_channel, 7,
+          "unable to resolve '%s' to an IPv4 address: %s", name,
+          pr_gai_strerror(res));
+
+        info = NULL;
+
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET6;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_protocol = IPPROTO_TCP;
+
+        pr_trace_msg(trace_channel, 7,
+          "attempting to resolve '%s' to IPv6 address via DNS", name);
+        res = pr_getaddrinfo(name, NULL, &hints, &info);
+        if (res != 0) {
+          xerrno = errno;
+
+          if (res != EAI_SYSTEM) {
+            pr_trace_msg(trace_channel, 5,
+              "unable to resolve '%s' to an IPv6 address: %s", name,
+              pr_gai_strerror(res));
+
+          } else {
+            pr_trace_msg(trace_channel, 1,
+              "IPv6 getaddrinfo '%s' system error: [%d] %s", name,
+              xerrno, strerror(xerrno));
+          }
+        }
+
+      } else {
+        pr_trace_msg(trace_channel, 1, "IPv4 getaddrinfo '%s' error: %s",
+          name, pr_gai_strerror(res));
+      }
+#else
+      pr_trace_msg(trace_channel, 1, "IPv4 getaddrinfo '%s' error: %s",
+        name, pr_gai_strerror(res));
+#endif /* PR_USE_IPV6 */
+
+    } else {
+      pr_trace_msg(trace_channel, 1,
+        "IPv4 getaddrinfo '%s' system error: [%d] %s", name,
+        xerrno, strerror(xerrno));
+    }
+
+    if (res != 0) {
+      errno = xerrno;
+      return NULL;
+    }
+  }
+
+  if (info) {
+    na = (pr_netaddr_t *) pcalloc(p, sizeof(pr_netaddr_t));
+
+    /* Copy the first returned addr into na, as the return value. */
+    pr_netaddr_set_family(na, info->ai_family);
+    pr_netaddr_set_sockaddr(na, info->ai_addr);
+
+    pr_trace_msg(trace_channel, 7, "resolved '%s' to %s address %s", name,
+      info->ai_family == AF_INET ? "IPv4" : "IPv6",
+      pr_netaddr_get_ipstr(na));
+
+    netaddr_ipcache_set(name, na);
+    netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na);
+
+    pr_freeaddrinfo(info);
+  }
+
+#ifdef PR_USE_IPV6
+  if (use_ipv6 && addrs) {
+    /* Do the call again, this time for IPv6 addresses.
+     *
+     * We make two separate getaddrinfo(3) calls, rather than one
+     * with a hint of AF_UNSPEC, because of certain bugs where the use
+     * of AF_UNSPEC does not function as advertised.  (I suspect this
+     * bug was caused by proftpd's calling pattern, but as I could
+     * not track it down, and as there are reports of AF_UNSPEC not
+     * being as fast as AF_INET/AF_INET6, it just seemed easier to
+     * do it this way.)
+     */
+
+    memset(&hints, 0, sizeof(hints));
+
+    hints.ai_family = AF_INET6;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    pr_trace_msg(trace_channel, 7,
+      "attempting to resolve '%s' to IPv6 address via DNS", name);
+    res = pr_getaddrinfo(name, NULL, &hints, &info);
+    if (res != 0) {
+      int xerrno = errno;
+
+      if (res != EAI_SYSTEM) {
+        pr_trace_msg(trace_channel, 1, "IPv6 getaddrinfo '%s' error: %s",
+          name, pr_gai_strerror(res));
+
+      } else {
+        pr_trace_msg(trace_channel, 1, 
+          "IPv6 getaddrinfo '%s' system error: [%d] %s", name,
+          xerrno, strerror(xerrno));
+      }
+
+    } else {
+      /* We may have already looked up an IPv6 address as the first
+       * address; we don't want to have duplicate addresses in the
+       * returned list of additional addresses.
+       */
+      if (info &&
+          info->ai_family != pr_netaddr_get_family(na)) {
+        pr_netaddr_t **elt;
+
+        *addrs = make_array(p, 0, sizeof(pr_netaddr_t *));
+        elt = push_array(*addrs);
+
+        *elt = pcalloc(p, sizeof(pr_netaddr_t));
+        pr_netaddr_set_family(*elt, info->ai_family);
+        pr_netaddr_set_sockaddr(*elt, info->ai_addr);
+
+        pr_trace_msg(trace_channel, 7, "resolved '%s' to %s address %s", name,
+          info->ai_family == AF_INET ? "IPv4" : "IPv6",
+          pr_netaddr_get_ipstr(*elt));
+
+        pr_freeaddrinfo(info);
+      }
+    }
+#endif /* PR_USE_IPV6 */
+  }
+
+  return na;
+}
+
+pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
+    array_header **addrs) {
+  pr_netaddr_t *na = NULL;
 
   if (p == NULL ||
       name == NULL) {
@@ -520,175 +733,20 @@ pr_netaddr_t *pr_netaddr_get_addr(pool *p, const char *name,
    * assume that the given name is a DNS name, and we call pr_getaddrinfo().
    */
 
-  na = (pr_netaddr_t *) pcalloc(p, sizeof(pr_netaddr_t));
-
-#ifdef PR_USE_IPV6
-  if (use_ipv6) {
-    struct sockaddr_in6 v6;
-    memset(&v6, 0, sizeof(v6));
-    v6.sin6_family = AF_INET6;
-
-# ifdef SIN6_LEN
-    v6.sin6_len = sizeof(struct sockaddr_in6);
-# endif /* SIN6_LEN */
-
-    res = pr_inet_pton(AF_INET6, name, &v6.sin6_addr);
-    if (res > 0) {
-      int xerrno = errno;
-
-      pr_netaddr_set_family(na, AF_INET6);
-      pr_netaddr_set_sockaddr(na, (struct sockaddr *) &v6);
-      if (addrs)
-        *addrs = NULL;
-
-      pr_trace_msg(trace_channel, 7, "'%s' resolved to IPv6 address %s", name,
-        pr_netaddr_get_ipstr(na));
-
-      netaddr_ipcache_set(name, na);
-      netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na);
-
-      errno = xerrno;
-      return na;
-    }
-  }
-#endif /* PR_USE_IPV6 */
-
-  memset(&v4, 0, sizeof(v4));
-  v4.sin_family = AF_INET;
-
-# ifdef SIN_LEN
-  v4.sin_len = sizeof(struct sockaddr_in);
-# endif /* SIN_LEN */
-
-  res = pr_inet_pton(AF_INET, name, &v4.sin_addr);
-  if (res > 0) {
-    int xerrno = errno;
-
-    pr_netaddr_set_family(na, AF_INET);
-    pr_netaddr_set_sockaddr(na, (struct sockaddr *) &v4);
-    if (addrs)
-      *addrs = NULL;
-
-    pr_trace_msg(trace_channel, 7, "'%s' resolved to IPv4 address %s", name,
-      pr_netaddr_get_ipstr(na));
-
-    netaddr_ipcache_set(name, na);
-    netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na);
-
-    errno = xerrno;
+  na = get_addr_by_ip(p, name, addrs);
+  if (na != NULL) {
     return na;
+  }
 
-  } else if (res == 0) {
+  /* If get_addr_by_ip() returns NULL, it means that name does not represent a
+   * valid network address in the specified address family.  Usually,
+   * this means that name is actually a DNS name, not an IP address
+   * string.  So we treat it as a DNS name, and use getaddrinfo(3) to
+   * resolve that name to its IP address(es).
+   */
 
-    /* If pr_inet_pton() returns 0, it means that name does not represent a
-     * valid network address in the specified address family.  Usually,
-     * this means that name is actually a DNS name, not an IP address
-     * string.  So we treat it as a DNS name, and use getaddrinfo(3) to
-     * resolve that name to its IP address(es).
-     */
-
-    struct addrinfo hints, *info = NULL;
-    int gai_res = 0;
-
-    memset(&hints, 0, sizeof(hints));
-
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-
-    pr_trace_msg(trace_channel, 7,
-      "attempting to resolve '%s' to IPv4 address via DNS", name);
-    gai_res = pr_getaddrinfo(name, NULL, &hints, &info);
-    if (gai_res != 0) {
-      int xerrno = errno;
-
-      if (gai_res != EAI_SYSTEM) {
-        pr_trace_msg(trace_channel, 1, "IPv4 getaddrinfo '%s' error: %s",
-          name, pr_gai_strerror(gai_res));
-
-      } else {
-        pr_trace_msg(trace_channel, 1,
-          "IPv4 getaddrinfo '%s' system error: [%d] %s", name,
-          xerrno, strerror(xerrno));
-      }
-
-      errno = xerrno;
-      return NULL;
-    }
-
-    if (info) {
-      /* Copy the first returned addr into na, as the return value. */
-      pr_netaddr_set_family(na, info->ai_family);
-      pr_netaddr_set_sockaddr(na, info->ai_addr);
-
-      pr_trace_msg(trace_channel, 7, "resolved '%s' to %s address %s", name,
-        info->ai_family == AF_INET ? "IPv4" : "IPv6",
-        pr_netaddr_get_ipstr(na));
-
-      netaddr_ipcache_set(name, na);
-      netaddr_ipcache_set(pr_netaddr_get_ipstr(na), na);
-
-      pr_freeaddrinfo(info);
-    }
-
-#ifdef PR_USE_IPV6
-    if (use_ipv6 && addrs) {
-      /* Do the call again, this time for IPv6 addresses.
-       *
-       * We make two separate getaddrinfo(3) calls, rather than one
-       * with a hint of AF_UNSPEC, because of certain bugs where the use
-       * of AF_UNSPEC does not function as advertised.  (I suspect this
-       * bug was caused by proftpd's calling pattern, but as I could
-       * not track it down, and as there are reports of AF_UNSPEC not
-       * being as fast as AF_INET/AF_INET6, it just seemed easier to
-       * do it this way.)
-       */
-
-      memset(&hints, 0, sizeof(hints));
-
-      hints.ai_family = AF_INET6;
-      hints.ai_socktype = SOCK_STREAM;
-      hints.ai_protocol = IPPROTO_TCP;
-
-      pr_trace_msg(trace_channel, 7,
-        "attempting to resolve '%s' to IPv6 address via DNS", name);
-      gai_res = pr_getaddrinfo(name, NULL, &hints, &info);
-      if (gai_res != 0) {
-        int xerrno = errno;
-
-        if (gai_res != EAI_SYSTEM) {
-          pr_trace_msg(trace_channel, 1, "IPv6 getaddrinfo '%s' error: %s",
-            name, pr_gai_strerror(gai_res));
-
-        } else {
-          pr_trace_msg(trace_channel, 1, 
-            "IPv6 getaddrinfo '%s' system error: [%d] %s", name,
-            xerrno, strerror(xerrno));
-        }
-
-        errno = xerrno;
-        return na;
-      }
-
-      if (info) {
-        pr_netaddr_t **elt;
-
-        *addrs = make_array(p, 0, sizeof(pr_netaddr_t *));
-        elt = push_array(*addrs);
-
-        *elt = pcalloc(p, sizeof(pr_netaddr_t));
-        pr_netaddr_set_family(*elt, info->ai_family);
-        pr_netaddr_set_sockaddr(*elt, info->ai_addr);
-
-        pr_trace_msg(trace_channel, 7, "resolved '%s' to %s address %s", name,
-          info->ai_family == AF_INET ? "IPv4" : "IPv6",
-          pr_netaddr_get_ipstr(*elt));
-
-        pr_freeaddrinfo(info);
-      }
-    }
-#endif /* PR_USE_IPV6 */
-
+  na = get_addr_by_name(p, name, addrs);
+  if (na != NULL) {
     return na;
   }
 
@@ -1302,6 +1360,21 @@ const char *pr_netaddr_get_ipstr(pr_netaddr_t *na) {
     return NULL;
   }
 
+#ifdef PR_USE_IPV6
+  if (use_ipv6 &&
+      pr_netaddr_get_family(na) == AF_INET6) {
+    /* The getnameinfo(3) implementation might append the zone ID to an IPv6
+     * name; we need to trim it off.
+     */
+    char *ptr;
+
+    ptr = strrchr(buf, '%');
+    if (ptr != NULL) {
+      *ptr = '\0';
+    }
+  }
+#endif /* PR_USE_IPV6 */
+
   /* Copy the string into the pr_netaddr_t cache as well, so we only
    * have to do this once for this pr_netaddr_t.
    */
@@ -1312,16 +1385,237 @@ const char *pr_netaddr_get_ipstr(pr_netaddr_t *na) {
   return na->na_ipstr;
 }
 
+#if defined(HAVE_GETADDRINFO) && !defined(HAVE_GETHOSTBYNAME2)
+static int netaddr_get_dnsstr_getaddrinfo(pr_netaddr_t *na, const char *name) {
+  struct addrinfo hints, *info = NULL;
+  int family, flags = 0, res = 0, ok = FALSE;
+  void *inaddr = pr_netaddr_get_inaddr(na);
+
+  family = pr_netaddr_get_family(na);
+  if (pr_netaddr_is_v4mappedv6(na) == TRUE) {
+    family = AF_INET;
+    inaddr = get_v4inaddr(na);
+  }
+
+#ifdef AI_CANONNAME
+  flags |= AI_CANONNAME;
+#endif
+
+#ifdef AI_ALL
+  flags |= AI_ALL;
+#endif
+
+#ifdef AI_V4MAPPED
+  flags |= AI_V4MAPPED;
+#endif
+
+  memset(&hints, 0, sizeof(hints));
+
+  hints.ai_family = family;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_protocol = IPPROTO_TCP;
+  hints.ai_flags = flags;
+
+  res = pr_getaddrinfo(name, NULL, &hints, &info);
+  if (res != 0) {
+    int xerrno = errno;
+
+    if (res != EAI_SYSTEM) {
+      pr_trace_msg(trace_channel, 1, "%s getaddrinfo '%s' error: %s",
+        hints.ai_family == AF_INET ? "IPv4" : "IPv6", name,
+        pr_gai_strerror(res));
+
+    } else {
+      pr_trace_msg(trace_channel, 1,
+        "%s getaddrinfo '%s' system error: [%d] %s",
+        hints.ai_family == AF_INET ? "IPv4" : "IPv6", name, xerrno,
+        strerror(xerrno));
+    }
+
+    errno = xerrno;
+    return -1;
+  }
+
+  if (info != NULL) {
+#ifdef PR_USE_IPV6
+    char buf[INET6_ADDRSTRLEN];
+#else
+    char buf[INET_ADDRSTRLEN];
+#endif /* PR_USE_IPV6 */
+    struct addrinfo *ai;
+    int xerrno;
+
+    memset(buf, '\0', sizeof(buf));
+    res = pr_getnameinfo(info->ai_addr, info->ai_addrlen, buf, sizeof(buf),
+      NULL, 0, NI_NAMEREQD);
+    xerrno = errno;
+
+    if (res != 0) {
+      if (res != EAI_SYSTEM) {
+        pr_trace_msg(trace_channel, 1, "%s getnameinfo error: %s",
+          hints.ai_family == AF_INET ? "IPv4" : "IPv6", pr_gai_strerror(res));
+
+      } else {
+        pr_trace_msg(trace_channel, 1,
+          "%s getnameinfo system error: [%d] %s",
+          hints.ai_family == AF_INET ? "IPv4" : "IPv6", xerrno,
+          strerror(xerrno));
+      }
+
+      errno = xerrno;
+      return -1;
+    }
+
+    netaddr_dnscache_set(pr_netaddr_get_ipstr(na), buf);
+    ok = TRUE;
+
+    pr_trace_msg(trace_channel, 10,
+      "checking addresses associated with host '%s'", buf);
+
+    for (ai = info->ai_next; ai; ai = ai->ai_next) {
+#ifdef PR_USE_IPV6
+      char alias[INET6_ADDRSTRLEN];
+#else
+      char alias[INET_ADDRSTRLEN];
+#endif /* PR_USE_IPV6 */
+
+      switch (ai->ai_family) {
+        case AF_INET:
+          if (family == AF_INET) {
+            if (memcmp(ai->ai_addr, inaddr, ai->ai_addrlen) == 0) {
+              memset(alias, '\0', sizeof(alias));
+              res = pr_getnameinfo(ai->ai_addr, ai->ai_addrlen, alias,
+                sizeof(alias), NULL, 0, NI_NAMEREQD);
+              if (res == 0) {
+                pr_trace_msg(trace_channel, 10,
+                  "host '%s' has alias '%s'", buf, alias);
+                netaddr_ipcache_set(alias, na);
+                netaddr_dnscache_set(pr_netaddr_get_ipstr(na), alias);
+              }
+            }
+          }
+          break;
+
+#ifdef PR_USE_IPV6
+        case AF_INET6:
+          if (use_ipv6 && family == AF_INET6) {
+            if (memcmp(ai->ai_addr, inaddr, ai->ai_addrlen) == 0) {
+              memset(alias, '\0', sizeof(alias));
+              res = pr_getnameinfo(ai->ai_addr, ai->ai_addrlen, alias,
+                sizeof(alias), NULL, 0, NI_NAMEREQD);
+              if (res == 0) {
+                pr_trace_msg(trace_channel, 10,
+                  "host '%s' has alias '%s'", buf, alias);
+                netaddr_ipcache_set(alias, na);
+                netaddr_dnscache_set(pr_netaddr_get_ipstr(na), alias);
+              }
+            }
+          }
+          break;
+#endif /* PR_USE_IPV6 */
+      }
+    }
+
+    pr_freeaddrinfo(info);
+  }
+
+  return (ok ? 0 : -1);
+}
+#endif /* HAVE_GETADDRINFO and not HAVE_GETHOSTBYNAME2 */
+
+static int netaddr_get_dnsstr_gethostbyname(pr_netaddr_t *na,
+    const char *name) {
+  char **checkaddr;
+  struct hostent *hent = NULL;
+  int ok = FALSE;
+  int family = pr_netaddr_get_family(na);
+  void *inaddr = pr_netaddr_get_inaddr(na);
+    
+#ifdef HAVE_GETHOSTBYNAME2
+  if (pr_netaddr_is_v4mappedv6(na) == TRUE) {
+    family = AF_INET;
+    inaddr = get_v4inaddr(na);
+  }
+
+  hent = gethostbyname2(name, family);
+#else
+  hent = gethostbyname(name);
+#endif /* HAVE_GETHOSTBYNAME2 */
+
+  if (hent != NULL) {
+    if (hent->h_name != NULL) {
+      netaddr_dnscache_set(pr_netaddr_get_ipstr(na), hent->h_name);
+    }
+
+    pr_trace_msg(trace_channel, 10,
+      "checking addresses associated with host '%s'",
+      hent->h_name ? hent->h_name : "(null)");
+
+    switch (hent->h_addrtype) {
+      case AF_INET:
+        if (family == AF_INET) {
+          for (checkaddr = hent->h_addr_list; *checkaddr; ++checkaddr) {
+            if (memcmp(*checkaddr, inaddr, hent->h_length) == 0) {
+              char **alias;
+
+              for (alias = hent->h_aliases; *alias; ++alias) {
+                if (hent->h_name) {
+                  pr_trace_msg(trace_channel, 10,
+                    "host '%s' has alias '%s'", hent->h_name, *alias);
+                  netaddr_ipcache_set(*alias, na);
+                  netaddr_dnscache_set(pr_netaddr_get_ipstr(na), *alias);
+                }
+              }
+
+              ok = TRUE;
+              break;
+            }
+          }
+        } 
+        break;
+
+#ifdef PR_USE_IPV6
+      case AF_INET6:
+        if (use_ipv6 && family == AF_INET6) {
+          for (checkaddr = hent->h_addr_list; *checkaddr; ++checkaddr) {
+            if (memcmp(*checkaddr, inaddr, hent->h_length) == 0) {
+              char **alias;
+
+              for (alias = hent->h_aliases; *alias; ++alias) {
+                if (hent->h_name) {
+                  pr_trace_msg(trace_channel, 10,
+                    "host '%s' has alias '%s'", hent->h_name, *alias);
+                  netaddr_ipcache_set(*alias, na);
+                  netaddr_dnscache_set(pr_netaddr_get_ipstr(na), *alias);
+                }
+              }
+
+              ok = TRUE;
+              break;
+            }
+          }
+        } 
+        break;
+#endif /* PR_USE_IPV6 */
+    }
+
+  } else {
+    pr_log_debug(DEBUG1, "notice: unable to resolve '%s': %s", name,
+      hstrerror(h_errno));
+  }
+
+  return (ok ? 0 : -1);
+}
+
 /* This differs from pr_netaddr_get_ipstr() in that pr_netaddr_get_ipstr()
  * returns a string of the numeric form of the given network address, whereas
  * this function returns a string of the DNS name (if present).
  */
 const char *pr_netaddr_get_dnsstr(pr_netaddr_t *na) {
   char *name = NULL;
-  char buf[256];
   pr_netaddr_t *cache = NULL;
 
-  if (!na) {
+  if (na == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -1339,10 +1633,12 @@ const char *pr_netaddr_get_dnsstr(pr_netaddr_t *na) {
   /* If this pr_netaddr_t has already been resolved to an DNS string, return the
    * cached string.
    */
-  if (na->na_have_dnsstr)
+  if (na->na_have_dnsstr) {
     return na->na_dnsstr;
+  }
 
   if (reverse_dns) {
+    char buf[256];
     int res = 0;
 
     pr_trace_msg(trace_channel, 3,
@@ -1355,98 +1651,26 @@ const char *pr_netaddr_get_dnsstr(pr_netaddr_t *na) {
     buf[sizeof(buf)-1] = '\0';
 
     if (res == 0) {
-      char **checkaddr;
-      struct hostent *hent = NULL;
-      unsigned char ok = FALSE;
-      int family = pr_netaddr_get_family(na);
-      void *inaddr = pr_netaddr_get_inaddr(na);
-    
+      /* Some older glibc's getaddrinfo(3) does not appear to handle IPv6
+       * addresses properly; we thus prefer gethostbyname2(3) on systems
+       * which have it, for such older systems.
+       */
 #ifdef HAVE_GETHOSTBYNAME2
-      if (pr_netaddr_is_v4mappedv6(na) == TRUE) {
-        family = AF_INET;
-        inaddr = get_v4inaddr(na);
-      }
-
-      hent = gethostbyname2(buf, family);
+      res = netaddr_get_dnsstr_gethostbyname(na, buf);
 #else
-      hent = gethostbyname(buf);
+      res = netaddr_get_dnsstr_getaddrinfo(na, buf);
 #endif /* HAVE_GETHOSTBYNAME2 */
-
-      if (hent != NULL) {
-        if (hent->h_name != NULL) {
-          netaddr_dnscache_set(pr_netaddr_get_ipstr(na), hent->h_name);
-        }
-
-        pr_trace_msg(trace_channel, 10,
-          "checking addresses associated with host '%s'",
-          hent->h_name ? hent->h_name : "(null)");
-
-        switch (hent->h_addrtype) {
-          case AF_INET:
-            if (family == AF_INET) {
-
-              for (checkaddr = hent->h_addr_list; *checkaddr; ++checkaddr) {
-                if (memcmp(*checkaddr, inaddr, hent->h_length) == 0) {
-                  char **alias;
-
-                  for (alias = hent->h_aliases; *alias; ++alias) {
-                    if (hent->h_name) {
-                      pr_trace_msg(trace_channel, 10,
-                        "host '%s' has alias '%s'", hent->h_name, *alias);
-                      netaddr_ipcache_set(*alias, na);
-                      netaddr_dnscache_set(pr_netaddr_get_ipstr(na), *alias);
-                    }
-                  }
-
-                  ok = TRUE;
-                  break;
-                }
-              }
-            } 
-            break;
-
-#ifdef PR_USE_IPV6
-          case AF_INET6:
-            if (use_ipv6 && family == AF_INET6) {
-
-              for (checkaddr = hent->h_addr_list; *checkaddr; ++checkaddr) {
-                if (memcmp(*checkaddr, inaddr, hent->h_length) == 0) {
-                  char **alias;
-
-                  for (alias = hent->h_aliases; *alias; ++alias) {
-                    if (hent->h_name) {
-                      pr_trace_msg(trace_channel, 10,
-                        "host '%s' has alias '%s'", hent->h_name, *alias);
-                      netaddr_ipcache_set(*alias, na);
-                      netaddr_dnscache_set(pr_netaddr_get_ipstr(na), *alias);
-                    }
-                  }
-
-                  ok = TRUE;
-                  break;
-                }
-              }
-            } 
-            break;
-#endif /* PR_USE_IPV6 */
-        }
-
-        if (ok) {
-          name = buf;
-          pr_trace_msg(trace_channel, 8,
-            "using DNS name '%s' for IP address '%s'", name,
-            pr_netaddr_get_ipstr(na));
-
-        } else {
-          name = NULL;
-          pr_trace_msg(trace_channel, 8,
-            "unable to verify any DNS names for IP address '%s'",
-            pr_netaddr_get_ipstr(na));
-        }
+      if (res == 0) {
+        name = buf;
+        pr_trace_msg(trace_channel, 8,
+          "using DNS name '%s' for IP address '%s'", name,
+          pr_netaddr_get_ipstr(na));
 
       } else {
-        pr_log_debug(DEBUG1, "notice: unable to resolve '%s': %s", buf,
-          hstrerror(errno));
+        name = NULL;
+        pr_trace_msg(trace_channel, 8,
+          "unable to verify any DNS names for IP address '%s'",
+          pr_netaddr_get_ipstr(na));
       }
     }
 

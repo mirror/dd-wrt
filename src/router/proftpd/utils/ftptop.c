@@ -1,7 +1,7 @@
 /*
  * ProFTPD - ftptop: a utility for monitoring proftpd sessions
  * Copyright (c) 2000-2002 TJ Saunders <tj@castaglia.org>
- * Copyright (c) 2003-2011 The ProFTPD Project team
+ * Copyright (c) 2003-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 /* Shows who is online via proftpd, in a manner similar to top.  Uses the
  * scoreboard files.
  *
- * $Id: ftptop.c,v 1.42.2.1 2011/11/17 23:40:43 castaglia Exp $
+ * $Id: ftptop.c,v 1.42.2.2 2013/02/06 17:05:14 castaglia Exp $
  */
 
 #define FTPTOP_VERSION "ftptop/0.9"
@@ -45,8 +45,9 @@ static const char *program = "ftptop";
 
 /* ncurses is preferred...*/
 
-#if defined(HAVE_NCURSES_H) && defined(HAVE_LIBNCURSES) && \
-    defined(PR_USE_NCURSES)
+#if defined(HAVE_NCURSES_H) && \
+    ((defined(HAVE_LIBNCURSES) && defined(PR_USE_NCURSES) || \
+     (defined(HAVE_LIBNCURSESW) && defined(PR_USE_NCURSESW))))
 # define HAVE_NCURSES 1
 # include <ncurses.h>
 #elif defined(HAVE_CURSES_H) && defined(HAVE_LIBCURSES) && \

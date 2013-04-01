@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,10 +25,11 @@
  */
 
 /* Read configuration file(s), and manage server/configuration structures.
- * $Id: dirtree.c,v 1.260 2011/07/01 18:03:31 castaglia Exp $
+ * $Id: dirtree.c,v 1.260.2.2 2013/01/29 00:47:48 castaglia Exp $
  */
 
 #include "conf.h"
+#include "privs.h"
 
 #ifdef HAVE_ARPA_INET_H
 # include <arpa/inet.h>
@@ -1970,6 +1971,7 @@ int dir_check_full(pool *pp, cmd_rec *cmd, const char *group, const char *path,
         pr_cmd_cmp(cmd, PR_CMD_EPSV_ID) != 0 &&
         pr_cmd_cmp(cmd, PR_CMD_PASV_ID) != 0 &&
         pr_cmd_cmp(cmd, PR_CMD_PORT_ID) != 0 &&
+        pr_cmd_cmp(cmd, PR_CMD_PROT_ID) != 0 &&
         strncmp(cmd->argv[0], C_OPTS, 4) != 0) {
       res = dir_check_limits(cmd, c, "ALL", op_hidden || regex_hidden);
     }
@@ -2128,6 +2130,7 @@ int dir_check(pool *pp, cmd_rec *cmd, const char *group, const char *path,
         pr_cmd_cmp(cmd, PR_CMD_EPSV_ID) != 0 &&
         pr_cmd_cmp(cmd, PR_CMD_PASV_ID) != 0 &&
         pr_cmd_cmp(cmd, PR_CMD_PORT_ID) != 0 &&
+        pr_cmd_cmp(cmd, PR_CMD_PROT_ID) != 0 &&
         strncmp(cmd->argv[0], C_OPTS, 4) != 0) {
       res = dir_check_limits(cmd, c, "ALL", op_hidden || regex_hidden);
     }
@@ -3173,8 +3176,18 @@ int parse_config_path(pool *p, const char *path) {
         config_filename_cmp);
 
       for (i = 0; i < file_list->nelts; i++) {
-        char *file = ((char **) file_list->elts)[i];
+        char *file;
+
+        file = ((char **) file_list->elts)[i];
+
+        /* Make sure we always parse the files with root privs.  The
+         * previously parsed file might have had root privs relinquished
+         * (e.g. by its directive handlers), but when we first start up,
+         * we have root privs.  See Bug#3855.
+         */
+        PRIVS_ROOT
         pr_parser_parse_file(p, file, NULL, 0);
+        PRIVS_RELINQUISH
       }
     }
 

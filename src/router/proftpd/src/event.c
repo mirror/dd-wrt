@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2011 The ProFTPD Project team
+ * Copyright (c) 2003-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Event management code
- * $Id: event.c,v 1.23 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: event.c,v 1.23.2.3 2013/01/10 20:10:16 castaglia Exp $
  */
 
 #include "conf.h"
@@ -44,6 +44,7 @@ struct event_list {
   struct event_list *next;
   pool *pool;
   const char *event;
+  size_t event_len;
   struct event_handler *handlers;
 };
 
@@ -64,12 +65,13 @@ int pr_event_register(module *m, const char *event,
   struct event_list *evl;
   pool *evl_pool;
 
-  if (!event || !cb) {
+  if (event == NULL ||
+      cb == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-  if (!event_pool) {
+  if (event_pool == NULL) {
     event_pool = make_sub_pool(permanent_pool);
     pr_pool_tag(event_pool, "Event Pool");
   }
@@ -89,31 +91,59 @@ int pr_event_register(module *m, const char *event,
    */
 
   for (evl = events; evl; evl = evl->next) {
-    if (strcmp(evl->event, event) == 0) {
-      struct event_handler *evhi = evl->handlers;
+    if (strncmp(evl->event, event, evl->event_len + 1) == 0) {
+      struct event_handler *evhi, *evhl;
 
+      evhi = evl->handlers;
       if (evhi) {
-        /* Make sure this event handler is added to the end of the list,
-         * in order to preserve module load order handling of events.
+        /* Make sure this event handler is added to the START of the list,
+         * in order to preserve module load order handling of events (i.e.
+         * last module loaded, first module handled).  The exception to this
+         * rule are core callbacks (i.e. where m == NULL); these will always
+         * be invoked last.
+         *
+         * Before that, though, check for duplicate registration/subscription.
          */ 
         while (evhi) {
+          pr_signals_handle();
+
           if (evhi->cb == evh->cb) {
             /* Duplicate callback */
             errno = EEXIST;
             return -1;
           }
 
-          if (evhi->next == NULL)
+          evhl = evhi;
+
+          if (evhi->next == NULL) {
             break;
+          }
 
           evhi = evhi->next;
-       }
+        }
 
-        evh->prev = evhi;
-        evhi->next = evh;
+        if (evh->module != NULL) {
+          if (evl->handlers->next != NULL) {
+            evl->handlers->next->prev = evh;
+          }
 
-      } else
+          evh->next = evl->handlers;
+          evl->handlers = evh;
+
+        } else {
+          /* Core event listeners go at the end. */
+          if (evhl != NULL) {
+            evhl->next = evh;
+            evh->prev = evhl;
+
+          } else {
+            evl->handlers = evh;
+          }
+        }
+
+      } else {
         evl->handlers = evh;
+      }
 
       /* All done */
       return 0;
@@ -126,6 +156,7 @@ int pr_event_register(module *m, const char *event,
   evl = pcalloc(evl_pool, sizeof(struct event_list));
   evl->pool = evl_pool;
   evl->event = pstrdup(evl->pool, event);
+  evl->event_len = strlen(evl->event);
   evl->handlers = evh; 
   evl->next = events;
 
@@ -160,7 +191,8 @@ int pr_event_unregister(module *m, const char *event,
   for (evl = events; evl; evl = evl->next) {
     pr_signals_handle();
 
-    if (!event || strcmp(evl->event, event) == 0) {
+    if (event == NULL ||
+        strncmp(evl->event, event, evl->event_len + 1) == 0) {
       struct event_handler *evh;
 
       /* If there are no handlers for this event, there is nothing to
@@ -229,7 +261,7 @@ int pr_event_listening(const char *event) {
   /* Lookup callbacks for this event. */
   for (evl = events; evl; evl = evl->next) {
 
-    if (strcmp(evl->event, event) == 0) {
+    if (strncmp(evl->event, event, evl->event_len + 1) == 0) {
       struct event_handler *evh;
 
       /* If there are no registered callbacks for this event, be done. */
@@ -261,13 +293,14 @@ void pr_event_generate(const char *event, const void *event_data) {
 
   /* If there is a cached event, see if the given event matches. */
   if (curr_event &&
-      strcmp(curr_event, event) == 0)
+      strcmp(curr_event, event) == 0) {
     use_cache = TRUE;
+  }
 
   /* Lookup callbacks for this event. */
   for (evl = use_cache ? curr_evl : events; evl; evl = evl->next) {
 
-    if (strcmp(evl->event, event) == 0) {  
+    if (strncmp(evl->event, event, evl->event_len + 1) == 0) {  
       struct event_handler *evh;
 
       /* If there are no registered callbacks for this event, be done. */
@@ -289,12 +322,13 @@ void pr_event_generate(const char *event, const void *event_data) {
 
         if (evh->module) {
           pr_trace_msg(trace_channel, 8,
-            "dispatching event '%s' to mod_%s (at %p)", event,
-            evh->module->name, evh->cb);
+            "dispatching event '%s' to mod_%s (at %p, use cache = %s)", event,
+            evh->module->name, evh->cb, use_cache ? "true" : "false");
 
         } else {
           pr_trace_msg(trace_channel, 8,
-            "dispatching event '%s' to core (at %p)", event, evh->cb);
+            "dispatching event '%s' to core (at %p, use cache = %s)", event,
+            evh->cb, use_cache ? "true" : "false");
         }
 
         evh->cb(event_data, evh->user_data);

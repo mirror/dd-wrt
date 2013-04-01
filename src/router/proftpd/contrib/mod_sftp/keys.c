@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: keys.c,v 1.16.2.4 2012/04/24 20:09:04 castaglia Exp $
+ * $Id: keys.c,v 1.16.2.5 2012/12/18 22:03:38 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -1121,7 +1121,7 @@ int sftp_keys_get_hostkey(const char *path) {
   }
 
   if (server_pkey) {
-    pkey = PEM_read_PrivateKey(fp, NULL, pkey_cb, (void *) &server_pkey);
+    pkey = PEM_read_PrivateKey(fp, NULL, pkey_cb, (void *) server_pkey);
 
   } else {
     /* Assume that the key is not passphrase-protected. */

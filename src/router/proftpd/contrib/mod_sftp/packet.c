@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp packet IO
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: packet.c,v 1.32.2.2 2012/07/26 19:40:23 castaglia Exp $
+ * $Id: packet.c,v 1.32.2.4 2012/12/13 23:56:07 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -1430,6 +1430,7 @@ int sftp_ssh2_packet_handle(void) {
       sftp_sess_state &= ~SFTP_SESS_STATE_HAVE_KEX;
 
       if (sftp_kex_handle(pkt) < 0) {
+        pr_event_generate("mod_sftp.ssh2.kex.failed", NULL);
         SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
       }
 

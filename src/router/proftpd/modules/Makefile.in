@@ -24,7 +24,7 @@ Makefile: Makefile.in ../config.status
 	cd ../ && ./config.status
 
 # Special instructions for mod_dso, to include the libltdl headers
-mod_dso.o:
+mod_dso.o: mod_dso.c
 	$(CC) $(CPPFLAGS) $(LTDLINCL) $(CFLAGS) -c mod_dso.c
 
 .c.o:

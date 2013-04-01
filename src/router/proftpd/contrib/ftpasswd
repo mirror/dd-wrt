@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # ---------------------------------------------------------------------------
-# Copyright (C) 2000-2011 TJ Saunders <tj@castaglia.org>
+# Copyright (C) 2000-2013 TJ Saunders <tj@castaglia.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 # format, or AuthGroupFile, in group(5) format.  The idea is somewhat similar
 # to Apache's htpasswd program.
 #
-#  $Id: ftpasswd,v 1.13 2011/05/23 21:25:44 castaglia Exp $
+#  $Id: ftpasswd,v 1.13.2.1 2013/01/13 21:06:17 castaglia Exp $
 # ---------------------------------------------------------------------------
 
 use strict;
@@ -117,12 +117,6 @@ if ((exists($opts{'passwd'}) && exists($opts{'group'})) ||
 
   # check for and handle the --delete-user option.
   if (defined($opts{'delete-user'})) {
-
-    # make sure we can write/update the file first
-    unless (chmod 0644, $output_file) {
-      die "$program: unable to set permissions on $output_file to 0644: $!\n";
-    }
-
     open_output_file();
 
     my ($pass, $uid, $gid, $gecos, $home, $shell) = find_passwd_entry(name =>
@@ -205,12 +199,6 @@ if ((exists($opts{'passwd'}) && exists($opts{'group'})) ||
 
   # check for and handle the --delete-group option.
   if (defined($opts{'delete-group'})) {
-
-    # make sure we can write/update the file first
-    unless (chmod 0644, $output_file) {
-      die "$program: unable to set permissions on $output_file to 0644: $!\n";
-    }
-
     open_output_file();
 
     handle_group_entry(name => $opts{'name'},
@@ -722,6 +710,11 @@ sub open_output_file {
   # If the file already exists, slurp up its contents for later updating.
 
   if (-f $output_file) {
+    # make sure we can write/update the file first
+    unless (chmod 0644, $output_file) {
+      die "$program: unable to set permissions on $output_file to 0644: $!\n";
+    }
+
     open(INPUT, "< $output_file") or
       die "$program: unable to open $output_file: $!\n";
     chomp(@data = <INPUT>);
