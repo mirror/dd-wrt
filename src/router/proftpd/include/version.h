@@ -1,8 +1,8 @@
 #include "buildstamp.h"
 
 /* Application version (in various forms) */
-#define PROFTPD_VERSION_NUMBER		0x0001030406
-#define PROFTPD_VERSION_TEXT		"1.3.4b"
+#define PROFTPD_VERSION_NUMBER		0x0001030407
+#define PROFTPD_VERSION_TEXT		"1.3.4c"
 
 /* Module API version */
 #define PR_MODULE_API_VERSION		0x20

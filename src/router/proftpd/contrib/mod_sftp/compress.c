@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp compression
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: compress.c,v 1.6 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: compress.c,v 1.6.2.2 2012/12/13 23:56:07 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -205,6 +205,7 @@ int sftp_compress_init_read(int flags) {
         "error preparing decompression stream (%d)", zres);
     }
 
+    pr_event_generate("mod_sftp.ssh.client-compression", NULL);
     comp->stream_ready = TRUE;
   }
 
@@ -397,6 +398,7 @@ int sftp_compress_init_write(int flags) {
         "error preparing compression stream (%d)", zres);
     }
 
+    pr_event_generate("mod_sftp.ssh.server-compression", NULL);
     comp->stream_ready = TRUE;
   }
 

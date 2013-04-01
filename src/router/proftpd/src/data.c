@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Data connection management functions
- * $Id: data.c,v 1.138 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: data.c,v 1.138.2.3 2013/02/02 06:06:53 castaglia Exp $
  */
 
 #include "conf.h"
@@ -881,14 +881,14 @@ void pr_data_abort(int err, int quiet) {
 /* From response.c.  XXX Need to provide these symbols another way. */
 extern pr_response_t *resp_list, *resp_err_list;
 
-/* pr_data_xfer() actually transfers the data on the data connection ..
- * ASCII translation is performed if necessary.  direction set
- * when data connection was opened determine if the client buffer
- * is read from or written to.  return 0 if reading and data connection
- * closes, or -1 if error
+/* pr_data_xfer() actually transfers the data on the data connection.  ASCII
+ * translation is performed if necessary.  `direction' is set when the data
+ * connection was opened.
+ *
+ * We determine if the client buffer is read from or written to.  Returns 0 if
+ * reading and data connection closes, or -1 if error (with errno set).
  */
-
-int pr_data_xfer(char *cl_buf, int cl_size) {
+int pr_data_xfer(char *cl_buf, size_t cl_size) {
   int len = 0;
   int total = 0;
   int res = 0;
@@ -1086,8 +1086,24 @@ int pr_data_xfer(char *cl_buf, int cl_size) {
 
         len = pr_netio_read(session.d->instrm, buf + buflen,
           session.xfer.bufsize - buflen, 1);
-        if (len < 0)
+        while (len < 0) {
+          int xerrno = errno;
+ 
+          if (xerrno == EAGAIN) {
+            /* Since our socket is in non-blocking mode, read(2) can return
+             * EAGAIN if there is no data yet for us.  Handle this by
+             * delaying temporarily, then trying again.
+             */
+            errno = EINTR;
+            pr_signals_handle();
+            
+            len = pr_netio_read(session.d->instrm, buf + buflen,
+              session.xfer.bufsize - buflen, 1);
+            continue;
+          }
+
           return -1;
+        }
 
         /* Before we process the data read from the client, generate an event
          * for any listeners which may want to examine this data.
@@ -1129,9 +1145,11 @@ int pr_data_xfer(char *cl_buf, int cl_size) {
            * end of data, this is so that xfrm_ascii_read() won't sit
            * forever waiting for the next character after a final '\r'.
            */
-          if (len > 0 || buflen > 1)
+          if (len > 0 ||
+              buflen > 1) {
             xfrm_ascii_read(buf, &buflen, &adjlen);
-	
+          }
+
           /* Now copy everything we can into cl_buf */
           if (buflen > cl_size) {
             /* Because we have to cut our buffer short, make sure this
@@ -1150,8 +1168,9 @@ int pr_data_xfer(char *cl_buf, int cl_size) {
            * anything remains, copy it to the start of the buffer.
            */
 
-          if (adjlen > 0)
-            memcpy(buf, buf+buflen, adjlen);
+          if (adjlen > 0) {
+            memcpy(buf, buf + buflen, adjlen);
+          }
 
           /* Store everything back in session.xfer. */
           session.xfer.buflen = adjlen;
@@ -1168,31 +1187,50 @@ int pr_data_xfer(char *cl_buf, int cl_size) {
       /* Return how much data we actually copied into the client buffer. */
       len = buflen;
 
-    } else if ((len = pr_netio_read(session.d->instrm, cl_buf,
-        cl_size, 1)) > 0) {
+    } else {
+      len = pr_netio_read(session.d->instrm, cl_buf, cl_size, 1);
+      while (len < 0) {
+        int xerrno = errno;
 
-      /* Before we process the data read from the client, generate an event
-       * for any listeners which may want to examine this data.
-       */
+        if (xerrno == EAGAIN) {
+          /* Since our socket is in non-blocking mode, read(2) can return
+           * EAGAIN if there is no data yet for us.  Handle this by
+           * delaying temporarily, then trying again.
+           */
+          errno = EINTR;
+          pr_signals_handle();
+           
+          len = pr_netio_read(session.d->instrm, cl_buf, cl_size, 1);
+          continue;
+        }
 
-      pbuf = pcalloc(session.xfer.p, sizeof(pr_buffer_t));
-      pbuf->buf = buf;
-      pbuf->buflen = len;
-      pbuf->current = pbuf->buf;
-      pbuf->remaining = 0;
-
-      pr_event_generate("core.data-read", pbuf);
-
-      /* The event listeners may have changed the data to write out. */
-      buf = pbuf->buf;
-      len = pbuf->buflen - pbuf->remaining;
-
-      /* Non-ASCII mode doesn't need to use session.xfer.buf */
-      if (timeout_stalled) {
-        pr_timer_reset(PR_TIMER_STALLED, ANY_MODULE);
+        break;
       }
 
-      total += len;
+      if (len > 0) {
+        /* Before we process the data read from the client, generate an event
+         * for any listeners which may want to examine this data.
+         */
+
+        pbuf = pcalloc(session.xfer.p, sizeof(pr_buffer_t));
+        pbuf->buf = buf;
+        pbuf->buflen = len;
+        pbuf->current = pbuf->buf;
+        pbuf->remaining = 0;
+
+        pr_event_generate("core.data-read", pbuf);
+
+        /* The event listeners may have changed the data to write out. */
+        buf = pbuf->buf;
+        len = pbuf->buflen - pbuf->remaining;
+
+        /* Non-ASCII mode doesn't need to use session.xfer.buf */
+        if (timeout_stalled) {
+          pr_timer_reset(PR_TIMER_STALLED, ANY_MODULE);
+        }
+
+        total += len;
+      } 
     }
 
   } else { /* PR_NETIO_IO_WR */
@@ -1204,8 +1242,9 @@ int pr_data_xfer(char *cl_buf, int cl_size) {
 
       pr_signals_handle();
 
-      if (buflen > pr_config_get_server_xfer_bufsz(PR_NETIO_IO_WR))
+      if (buflen > pr_config_get_server_xfer_bufsz(PR_NETIO_IO_WR)) {
         buflen = pr_config_get_server_xfer_bufsz(PR_NETIO_IO_WR);
+      }
 
       xferbuflen = buflen;
 
@@ -1213,7 +1252,6 @@ int pr_data_xfer(char *cl_buf, int cl_size) {
       memcpy(session.xfer.buf, cl_buf, buflen);
 
       if (session.sf_flags & (SF_ASCII|SF_ASCII_OVERRIDE)) {
-
         /* Scan the internal buffer, looking for LFs with no preceding CRs.
          * Add CRs (and expand the internal buffer) as necessary. xferbuflen
          * will be adjusted so that it contains the length of data in
@@ -1223,9 +1261,24 @@ int pr_data_xfer(char *cl_buf, int cl_size) {
       }
 
       bwrote = pr_netio_write(session.d->outstrm, session.xfer.buf, xferbuflen);
+      while (bwrote < 0) {
+        int xerrno = errno;
 
-      if (bwrote < 0)
+        if (xerrno == EAGAIN) {
+          /* Since our socket is in non-blocking mode, write(2) can return
+           * EAGAIN if there is not enough from for our data yet.  Handle
+           * this by delaying temporarily, then trying again.
+           */
+          errno = EINTR;
+          pr_signals_handle();
+             
+          bwrote = pr_netio_write(session.d->outstrm, session.xfer.buf,
+            xferbuflen);
+          continue;
+        }
+
         return -1;
+      }
 
       if (bwrote > 0) {
         if (timeout_stalled) {

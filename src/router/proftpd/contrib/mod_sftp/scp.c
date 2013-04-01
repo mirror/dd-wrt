@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp SCP
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: scp.c,v 1.64.2.3 2012/07/26 22:36:20 castaglia Exp $
+ * $Id: scp.c,v 1.64.2.10 2013/02/27 17:38:00 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -485,7 +485,7 @@ static int recv_errors(pool *p, uint32_t channel_id, struct scp_path *sp,
 }
 
 static int recv_timeinfo(pool *p, uint32_t channel_id, struct scp_path *sp,
-    char *buf, uint32_t buflen) {
+    char *buf, uint32_t buflen, char **remain, uint32_t *remainlen) {
   register unsigned int i;
   char *data = NULL, *msg, *ptr = NULL, *tmp = NULL;
   uint32_t datalen = 0;
@@ -497,11 +497,12 @@ static int recv_timeinfo(pool *p, uint32_t channel_id, struct scp_path *sp,
   }
 
   if (data[0] != 'T') {
-    pr_trace_msg(trace_channel, 2, "expected T control message, got '%c'",
-      data[0]);
-    write_confirm(p, channel_id, 1,
-      pstrcat(p, sp->path, ": expected control message", NULL));
-    return 1;
+    /* Not a timeinfo message; let someone else process this. */
+    *remain = data;
+    *remainlen = datalen;
+
+    errno = EINVAL;
+    return -1;
   }
 
   for (i = 1; i < datalen; i++) {
@@ -820,7 +821,7 @@ static int recv_finfo(pool *p, uint32_t channel_id, struct scp_path *sp,
          * recursive directory uploads via SCP?
          */
 
-        if (pr_fsio_mkdir(sp->filename, 0777) < 0) {
+        if (pr_fsio_smkdir(p, sp->filename, 0777, (uid_t) -1, (gid_t) -1) < 0) {
           xerrno = errno;
 
           (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1062,7 +1063,7 @@ static int recv_data(pool *p, uint32_t channel_id, struct scp_path *sp,
 }
 
 static int recv_eod(pool *p, uint32_t channel_id, struct scp_path *sp,
-    char *buf, uint32_t buflen) {
+    char *buf, uint32_t buflen, char **remain, uint32_t *remainlen) {
   struct scp_path *parent_sp;
   int ok = TRUE, res;
   char *data = NULL;
@@ -1074,7 +1075,12 @@ static int recv_eod(pool *p, uint32_t channel_id, struct scp_path *sp,
   }
 
   if (data[0] != 'E') {
-    return 0;
+    /* Not an EOD message; let someone else process this. */
+    *remain = data;
+    *remainlen = datalen;
+
+    errno = EINVAL;
+    return -1;
   }
 
   pr_trace_msg(trace_channel, 5, "'%s' control message: E", sp->path);
@@ -1194,8 +1200,15 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
    */
   if (sp->parent_dir != NULL &&
       sp->recvd_finfo == FALSE &&
-      sp->recvlen == 0) {
-    res = recv_eod(p, channel_id, sp, data, datalen);
+      (sp->recvlen == 0 || sp->recvd_data)) {
+    char *remain = NULL;
+    uint32_t remainlen = 0;
+
+    res = recv_eod(p, channel_id, sp, data, datalen, &remain, &remainlen);
+    if (res == 0) {
+      return res;
+    }
+
     if (res == 1) {
       struct scp_path *parent_dir = NULL;
 
@@ -1215,11 +1228,30 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
        */
       return 1;
     }
+
+    data = remain;
+    datalen = remainlen;
   }
 
   if ((scp_opts & SFTP_SCP_OPT_PRESERVE) &&
-      !sp->recvd_timeinfo) {
-    return recv_timeinfo(p, channel_id, sp, data, datalen);
+      !sp->recvd_timeinfo &&
+      !sp->recvd_finfo) {
+    char *remain = NULL;
+    uint32_t remainlen = 0;
+
+    /* It possible that this is not a timeinfo message; we need to be
+     * prepared for this.  PuTTY, for example, when recursively uploading
+     * a directory with the -p (preserve time) option enabled, does NOT
+     * send the timeinfo message, whereas OpenSSH's scp(1) does.
+     */
+    res = recv_timeinfo(p, channel_id, sp, data, datalen, &remain, &remainlen);
+    if (res < 0) {
+      data = remain;
+      datalen = remainlen;
+
+    } else {
+      return res;
+    }
   }
 
   if (!sp->recvd_finfo) {
@@ -1568,7 +1600,7 @@ static int send_data(pool *p, uint32_t channel_id, struct scp_path *sp,
     }
 
     pr_trace_msg(trace_channel, 3, "sending '%s' data (%lu bytes)", sp->path,
-      (unsigned long) chunklen);
+      need_confirm ? (unsigned long) (chunklen - 1) : (unsigned long) chunklen);
 
     res = sftp_channel_write_data(p, channel_id, chunk, chunklen);
     if (res < 0) {
@@ -1755,7 +1787,7 @@ static int send_path(pool *p, uint32_t channel_id, struct scp_path *sp) {
     }
 
     if (strcmp(sp->path, cmd->arg) != 0) {
-      sp->path = cmd->arg;
+      sp->path = pstrdup(scp_session->pool, cmd->arg);
     }
   }
 
@@ -1978,19 +2010,28 @@ int sftp_scp_handle_packet(pool *p, void *ssh2, uint32_t channel_id,
   }
 
   if (scp_opts & SFTP_SCP_OPT_ISSRC) {
+    struct scp_path **paths;
+
     pr_proctitle_set("%s - %s: scp download", session.user,
       session.proc_prefix);
 
-    while (scp_session->path_idx < scp_session->paths->nelts) {
-      struct scp_path **paths;
+    if (scp_session->path_idx == scp_session->paths->nelts) {
+      /* Done sending our paths; need confirmation that the client received
+       * all of them.
+       */
+      return 1;
+    }
 
+    if (scp_session->path_idx < scp_session->paths->nelts) {
       pr_signals_handle();
 
       paths = scp_session->paths->elts;
 
       res = send_path(pkt->pool, channel_id, paths[scp_session->path_idx]);
-      if (res == 1) {
+      if (res < 0)
+        return -1;
 
+      if (res == 1) {
         /* If send_path() returns 1, it means we've finished that path,
          * and are ready for another.
          */
@@ -2001,27 +2042,8 @@ int sftp_scp_handle_packet(pool *p, void *ssh2, uint32_t channel_id,
           destroy_pool(session.xfer.p);
         }
         memset(&session.xfer, 0, sizeof(session.xfer));
-
-        continue;
       }
-
-      break;
     }
-
-    if (res < 0) {
-      if (scp_session->path_idx == scp_session->paths->nelts) {
-        /* If we've sent all the paths, and we're here, assume that everything
-         * is OK.  We may just have received the final "OK" ACK byte from the
-         * scp client, and have nothing more to do.
-         */
-        return 1;
-      }
-
-      return -1;
-    }
-
-    if (scp_session->path_idx != scp_session->paths->nelts)
-      return 0;
 
     /* We would normally return 1 here, to indicate that we are done with
      * the transfer.  However, doing so indicates to the channel-handling
@@ -2375,6 +2397,8 @@ int sftp_scp_open_session(uint32_t channel_id) {
     scp_sessions = sess;
   }
 
+  pr_event_generate("mod_sftp.scp.session-opened", NULL);
+
   pr_timer_remove(PR_TIMER_STALLED, ANY_MODULE);
 
   timeout_stalled = pr_data_get_timeout(PR_DATA_TIMEOUT_STALLED);
@@ -2492,6 +2516,8 @@ int sftp_scp_close_session(uint32_t channel_id) {
       destroy_pool(sess->pool);
 
       pr_session_set_protocol("ssh2");
+
+      pr_event_generate("mod_sftp.scp.session-closed", NULL);
       return 0;
     }
 

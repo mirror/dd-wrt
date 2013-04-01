@@ -25,7 +25,7 @@
  */
 
 /* Authentication module for ProFTPD
- * $Id: mod_auth.c,v 1.295.2.1 2012/03/01 23:51:57 castaglia Exp $
+ * $Id: mod_auth.c,v 1.295.2.2 2012/12/10 04:49:29 castaglia Exp $
  */
 
 #include "conf.h"
@@ -751,11 +751,15 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
 
   pw = pr_auth_getpwnam(p, user);
   if (pw == NULL) {
+    int auth_code = PR_AUTH_NOPWD;
+
     pr_log_auth(PR_LOG_NOTICE,
       "USER %s: no such user found from %s [%s] to %s:%i",
       user, session.c->remote_name,
       pr_netaddr_get_ipstr(session.c->remote_addr),
       pr_netaddr_get_ipstr(session.c->local_addr), session.c->local_port);
+    pr_event_generate("mod_auth.authentication-code", &auth_code);
+
     goto auth_failure;
   }
 

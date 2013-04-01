@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (C) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (C) 2001-2011 The ProFTPD Project
+ * Copyright (C) 2001-2013 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,10 +25,11 @@
  */
 
 /* ProFTPD virtual/modular file-system support
- * $Id: fsio.c,v 1.102 2011/05/27 00:38:45 castaglia Exp $
+ * $Id: fsio.c,v 1.102.2.8 2013/02/12 22:49:09 castaglia Exp $
  */
 
 #include "conf.h"
+#include "privs.h"
 
 #ifdef HAVE_SYS_STATVFS_H
 # include <sys/statvfs.h>
@@ -79,6 +80,13 @@ static unsigned char chk_fs_map = FALSE;
 /* Virtual working directory */
 static char vwd[PR_TUNABLE_PATH_MAX + 1] = "/";
 static char cwd[PR_TUNABLE_PATH_MAX + 1] = "/";
+
+/* Runtime enabling/disabling of mkdtemp(3) use. */
+#ifdef HAVE_MKDTEMP
+static int use_mkdtemp = TRUE;
+#else
+static int use_mkdtemp = FALSE;
+#endif /* HAVE_MKDTEMP */
 
 /* Runtime enabling/disabling of encoding of paths. */
 static int use_encoding = TRUE;
@@ -173,6 +181,10 @@ static int sys_chown(pr_fs_t *fs, const char *path, uid_t uid, gid_t gid) {
 
 static int sys_fchown(pr_fh_t *fh, int fd, uid_t uid, gid_t gid) {
   return fchown(fd, uid, gid);
+}
+
+static int sys_lchown(pr_fs_t *fs, const char *path, uid_t uid, gid_t gid) {
+  return lchown(path, uid, gid);
 }
 
 /* We provide our own equivalent of access(2) here, rather than using
@@ -2498,6 +2510,232 @@ int pr_fsio_mkdir(const char *path, mode_t mode) {
   return res;
 }
 
+int pr_fsio_set_use_mkdtemp(int value) {
+  int prev_value;
+
+  prev_value = use_mkdtemp;
+
+#ifdef HAVE_MKDTEMP
+  use_mkdtemp = value;
+#endif /* HAVE_MKDTEMP */
+
+  return prev_value;
+}
+
+/* "safe mkdir" variant of mkdir(2), uses mkdtemp(3), lchown(2), and
+ * rename(2) to create a directory which cannot be hijacked by a symlink
+ * race (hopefully) before the UserOwner/GroupOwner ownership changes are
+ * applied.
+ */
+int pr_fsio_smkdir(pool *p, const char *path, mode_t mode, uid_t uid,
+    gid_t gid) {
+  int res, parent_suid = FALSE, parent_sgid = FALSE, use_root_privs = TRUE,
+    xerrno = 0;
+  char *tmpl_path;
+  char *dst_dir, *tmpl;
+  size_t dst_dirlen, tmpl_len;
+
+  if (path == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+#ifdef HAVE_MKDTEMP
+  if (use_mkdtemp == TRUE) {
+    char *ptr;
+    struct stat st;
+
+    ptr = strrchr(path, '/');
+    if (ptr == NULL) {
+      errno = EINVAL;
+      return -1;
+    }
+
+    if (ptr != path) {
+      dst_dirlen = (ptr - path);
+      dst_dir = pstrndup(p, path, dst_dirlen);
+
+    } else {
+      dst_dirlen = 1;
+      dst_dir = "/";
+    }
+
+    res = lstat(dst_dir, &st);
+    if (res < 0) {
+      return -1;
+    }
+
+    if (!S_ISDIR(st.st_mode) &&
+        !S_ISLNK(st.st_mode)) {
+      errno = EPERM;
+      return -1;
+    }
+
+    if (st.st_mode & S_ISUID) {
+      parent_suid = TRUE;
+    }
+
+    if (st.st_mode & S_ISGID) {
+      parent_sgid = TRUE;
+    }
+
+    /* Allocate enough space for the temporary name: the length of the
+     * destination directory, a slash, 9 X's, 3 for the prefix, and 1 for the
+     * trailing NUL.
+     */
+    tmpl_len = dst_dirlen + 14;
+    tmpl = pcalloc(p, tmpl_len);
+    snprintf(tmpl, tmpl_len-1, "%s/dstXXXXXXXXX",
+      dst_dirlen > 1 ? dst_dir : "");
+
+    /* Use mkdtemp(3) to create the temporary directory (in the same destination
+     * directory as the target path).
+     */
+    tmpl_path = mkdtemp(tmpl);
+    if (tmpl_path == NULL) {
+      return -1;
+    }
+
+  } else {
+    res = pr_fsio_mkdir(path, mode);
+    if (res < 0) {
+      return -1;
+    }
+
+    tmpl_path = pstrdup(p, path);
+  }
+#else
+
+  res = pr_fsio_mkdir(path, mode);
+  if (res < 0) {
+    return -1;
+  }
+
+  tmpl_path = pstrdup(p, path);
+#endif /* HAVE_MKDTEMP */
+
+  if (uid != (uid_t) -1) {
+    PRIVS_ROOT
+    res = pr_fsio_lchown(tmpl_path, uid, gid);
+    xerrno = errno;
+    PRIVS_RELINQUISH
+
+    if (res < 0) {
+      pr_log_pri(PR_LOG_WARNING, "lchown(%s) as root failed: %s", tmpl_path,
+        strerror(xerrno));
+
+    } else {
+      if (gid != (gid_t) -1) {
+        pr_log_debug(DEBUG2, "root lchown(%s) to UID %lu, GID %lu successful",
+          tmpl_path, (unsigned long) uid, (unsigned long) gid);
+
+      } else {
+        pr_log_debug(DEBUG2, "root lchown(%s) to UID %lu successful",
+          tmpl_path, (unsigned long) uid);
+      }
+    }
+
+  } else if (gid != (gid_t) -1) {
+    register unsigned int i;
+
+    /* Check if session.fsgid is in session.gids.  If not, use root privs.  */
+    for (i = 0; i < session.gids->nelts; i++) {
+      gid_t *group_ids = session.gids->elts;
+
+      if (group_ids[i] == gid) {
+        use_root_privs = FALSE;
+        break;
+      }
+    }
+
+    if (use_root_privs) {
+      PRIVS_ROOT
+    }
+
+    res = pr_fsio_lchown(tmpl_path, (uid_t) -1, gid);
+    xerrno = errno;
+
+    if (use_root_privs) {
+      PRIVS_RELINQUISH
+    }
+
+    if (res < 0) {
+      pr_log_pri(PR_LOG_WARNING, "%slchown(%s) failed: %s",
+        use_root_privs ? "root " : "", tmpl_path, strerror(xerrno));
+
+    } else {
+      pr_log_debug(DEBUG2, "%slchown(%s) to GID %lu successful",
+        use_root_privs ? "root " : "", tmpl_path, (unsigned long) gid);
+    }
+  }
+
+  if (use_mkdtemp == TRUE) {
+    mode_t mask, *dir_umask, perms;
+
+    /* Use chmod(2) to set the permission that we want.
+     *
+     * mkdtemp(3) creates a directory with 0700 perms; we are given the
+     * target mode (modulo the configured Umask).
+     */
+    dir_umask = get_param_ptr(CURRENT_CONF, "DirUmask", FALSE);
+    if (dir_umask) {
+      mask = *dir_umask;
+
+    } else {
+      mask = (mode_t) 0022;
+    }
+
+    perms = (mode & ~mask);
+
+    if (parent_suid) {
+      perms |= S_ISUID;
+    }
+
+    if (parent_sgid) {
+      perms |= S_ISGID;
+    }
+
+    if (use_root_privs) {
+      PRIVS_ROOT
+    }
+
+    res = chmod(tmpl_path, perms);
+    xerrno = errno;
+
+    if (use_root_privs) {
+      PRIVS_RELINQUISH
+    }
+
+    if (res < 0) {
+      pr_log_pri(PR_LOG_WARNING, "%schmod(%s) failed: %s",
+        use_root_privs ? "root " : "", tmpl_path, strerror(xerrno));
+
+      (void) rmdir(tmpl_path);
+
+      errno = xerrno;
+      return -1;
+    }
+
+    /* Use rename(2) to move the temporary directory into place at the
+     * target path.
+     */
+    res = rename(tmpl_path, path);
+    if (res < 0) {
+      xerrno = errno;
+
+      pr_log_pri(PR_LOG_WARNING, "renaming '%s' to '%s' failed: %s", tmpl_path,
+        path, strerror(xerrno));
+
+      (void) rmdir(tmpl_path);
+    
+      errno = xerrno;
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
 int pr_fsio_rmdir(const char *path) {
   int res;
   pr_fs_t *fs;
@@ -3357,6 +3595,33 @@ int pr_fsio_fchown(pr_fh_t *fh, uid_t uid, gid_t gid) {
   return res;
 }
 
+int pr_fsio_lchown(const char *name, uid_t uid, gid_t gid) {
+  int res;
+  pr_fs_t *fs;
+
+  fs = lookup_file_fs(name, NULL, FSIO_FILE_CHOWN);
+  if (fs == NULL) {
+    return -1;
+  }
+
+  /* Find the first non-NULL custom lchown handler.  If there are none,
+   * use the system chown.
+   */
+  while (fs && fs->fs_next && !fs->lchown) {
+    fs = fs->fs_next;
+  }
+
+  pr_trace_msg(trace_channel, 8, "using %s lchown() for path '%s'",
+    fs->fs_name, name);
+  res = (fs->lchown)(fs, name, uid, gid);
+
+  if (res == 0) {
+    pr_fs_clear_cache();
+  }
+
+  return res;
+}
+
 int pr_fsio_access(const char *path, int mode, uid_t uid, gid_t gid,
     array_header *suppl_gids) {
   pr_fs_t *fs;
@@ -4015,6 +4280,7 @@ int init_fs(void) {
   root_fs->fchmod = sys_fchmod;
   root_fs->chown = sys_chown;
   root_fs->fchown = sys_fchown;
+  root_fs->lchown = sys_lchown;
   root_fs->access = sys_access;
   root_fs->faccess = sys_faccess;
   root_fs->utimes = sys_utimes;
@@ -4095,6 +4361,12 @@ static const char *get_fs_hooks_str(pool *p, pr_fs_t *fs) {
 
   if (fs->chown)
     hooks = pstrcat(p, hooks, *hooks ? ", " : "", "chown(2)", NULL);
+
+  if (fs->fchown)
+    hooks = pstrcat(p, hooks, *hooks ? ", " : "", "fchown(2)", NULL);
+
+  if (fs->lchown)
+    hooks = pstrcat(p, hooks, *hooks ? ", " : "", "lchown(2)", NULL);
 
   if (fs->access)
     hooks = pstrcat(p, hooks, *hooks ? ", " : "", "access(2)", NULL);
