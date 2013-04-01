@@ -1,4 +1,4 @@
-# $Id: proftpd.spec,v 1.79.2.5 2012/07/31 17:14:22 castaglia Exp $
+# $Id: proftpd.spec,v 1.79.2.6 2013/03/06 18:01:52 castaglia Exp $
 
 # Module List:
 #
@@ -43,7 +43,7 @@
 # RHEL5 and clones don't have suitably recent versions of pcre/libmemcached
 # so use --with rhel5 to inhibit those features when using --with everything
 
-%global proftpd_version           1.3.4b
+%global proftpd_version           1.3.4c
 
 # When doing a stable or maint release, this line is to be commented out.
 # When doing an RC, define it to be e.g. 'rc2'.
@@ -53,7 +53,7 @@
 #global release_cand_version     rc1
 
 %global usecvsversion             0%{?_with_cvs:1}
-%global proftpd_cvs_version_main  1.3.4b
+%global proftpd_cvs_version_main  1.3.4c
 %global proftpd_cvs_version_date  20110525
 
 # Handle optional functionality

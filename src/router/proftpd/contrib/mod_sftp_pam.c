@@ -2,7 +2,7 @@
  * ProFTPD: mod_sftp_pam -- a module which provides an SSH2
  *                          "keyboard-interactive" driver using PAM
  *
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * This is mod_sftp_pam, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_sftp_pam.c,v 1.10 2011/05/23 20:56:40 castaglia Exp $
+ * $Id: mod_sftp_pam.c,v 1.10.2.3 2013/02/26 23:14:19 castaglia Exp $
  * $Libraries: -lpam $
  */
 
@@ -38,7 +38,7 @@
 # error "mod_sftp_pam requires PAM support on your system"
 #endif
 
-#define MOD_SFTP_PAM_VERSION		"mod_sftp_pam/0.2"
+#define MOD_SFTP_PAM_VERSION		"mod_sftp_pam/0.3"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030202
@@ -89,6 +89,7 @@
 
 #define SFTP_PAM_OPT_NO_TTY		0x001
 #define SFTP_PAM_OPT_NO_INFO_MSGS	0x002
+#define SFTP_PAM_OPT_NO_RADIO_MSGS	0x004
 
 module sftp_pam_module;
 
@@ -156,6 +157,23 @@ static int sftppam_converse(int nmsgs, PR_PAM_CONST struct pam_message **msgs,
 
       continue;
 
+#ifdef PAM_RADIO_TYPE
+    } else if (SFTP_PAM_MSG_MEMBER(msgs, i, msg_style) == PAM_RADIO_TYPE) {
+      if (sftppam_opts & SFTP_PAM_OPT_NO_RADIO_MSGS) {
+        pr_trace_msg(trace_channel, 9,
+          "skipping sending of PAM_RADIO_TYPE '%s' to client",
+          SFTP_PAM_MSG_MEMBER(msgs, i, msg));
+
+      } else {
+        pr_trace_msg(trace_channel, 9, "sending PAM_RADIO_TYPE '%s' to client",
+          SFTP_PAM_MSG_MEMBER(msgs, i, msg));
+
+        sftp_auth_send_banner(SFTP_PAM_MSG_MEMBER(msgs, i, msg));
+      }
+
+      continue;
+#endif /* PAM_RADIO_TYPE */
+
     } else if (SFTP_PAM_MSG_MEMBER(msgs, i, msg_style) == PAM_ERROR_MSG) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_PAM_VERSION,
         "received PAM_ERROR_MSG '%s'", SFTP_PAM_MSG_MEMBER(msgs, i, msg));
@@ -220,12 +238,24 @@ static int sftppam_converse(int nmsgs, PR_PAM_CONST struct pam_message **msgs,
         break;
 
       case PAM_TEXT_INFO:
-      case PAM_ERROR_MSG:
-        pr_trace_msg(trace_channel, 9, "received %s message: %s",
-          msgs[i]->msg_style == PAM_TEXT_INFO ? "PAM_TEXT_INFO" :
-          "PAM_ERROR_MSG", SFTP_PAM_MSG_MEMBER(msgs, i, msg));
+        pr_trace_msg(trace_channel, 9, "received PAM_TEXT_INFO message: %s",
+          SFTP_PAM_MSG_MEMBER(msgs, i, msg));
         res[i].resp = NULL;
         break;
+
+      case PAM_ERROR_MSG:
+        pr_trace_msg(trace_channel, 9, "received PAM_ERROR_MSG message: %s",
+          SFTP_PAM_MSG_MEMBER(msgs, i, msg));
+        res[i].resp = NULL;
+        break;
+
+#ifdef PAM_RADIO_TYPE
+    case PAM_RADIO_TYPE:
+        pr_trace_msg(trace_channel, 9, "received PAM_RADIO_TYPE message: %s",
+          SFTP_PAM_MSG_MEMBER(msgs, i, msg));
+        res[i].resp = NULL;
+        break;
+#endif /* PAM_RADIO_TYPE */
 
       default:
         pr_trace_msg(trace_channel, 3,
@@ -364,9 +394,11 @@ static int sftppam_driver_open(sftp_kbdint_driver_t *driver, const char *user) {
   *((unsigned char *) c->argv[0]) = FALSE;
 
   if (pr_auth_remove_auth_only_module("mod_auth_pam.c") < 0) {
-    pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_PAM_VERSION
-      ": error removing 'mod_auth_pam.c' from the auth-only module list: %s",
-      strerror(errno));
+    if (errno != ENOENT) {
+      pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_PAM_VERSION
+        ": error removing 'mod_auth_pam.c' from the auth-only module list: %s",
+        strerror(errno));
+    }
   }
 
   if (pr_auth_add_auth_only_module("mod_sftp_pam.c") < 0) {
@@ -401,7 +433,7 @@ static int sftppam_driver_authenticate(sftp_kbdint_driver_t *driver,
         sftppam_auth_code = PR_AUTH_BADPWD;
     }
 
-    pr_trace_msg(trace_channel, 1,
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_PAM_VERSION,
       "PAM authentication error (%d) for user '%s': %s", res, user,
       pam_strerror(sftppam_pamh, res));
 
@@ -600,6 +632,9 @@ MODRET set_sftppamoptions(cmd_rec *cmd) {
 
     } else if (strcmp(cmd->argv[i], "NoInfoMsgs") == 0) {
       opts |= SFTP_PAM_OPT_NO_INFO_MSGS;
+
+    } else if (strcmp(cmd->argv[i], "NoRadioMsgs") == 0) {
+      opts |= SFTP_PAM_OPT_NO_RADIO_MSGS;
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown SFTPPAMOption: '",

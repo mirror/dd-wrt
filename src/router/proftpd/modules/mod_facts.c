@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_facts -- a module for handling "facts" [RFC3659]
  *
- * Copyright (c) 2007-2012 The ProFTPD Project
+ * Copyright (c) 2007-2013 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_facts.c,v 1.45.2.4 2012/07/13 18:22:46 castaglia Exp $
+ * $Id: mod_facts.c,v 1.45.2.9 2013/02/02 06:06:53 castaglia Exp $
  */
 
 #include "conf.h"
@@ -293,7 +293,7 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz) {
  * channel, wherease MLSD's output is sent via a data transfer, much like
  * LIST or NLST.
  */
-static char *mlinfo_buf = NULL;
+static char *mlinfo_buf = NULL, *mlinfo_bufptr = NULL;
 static size_t mlinfo_bufsz = 0;
 static size_t mlinfo_buflen = 0;
 
@@ -306,6 +306,7 @@ static void facts_mlinfobuf_init(void) {
   }
 
   memset(mlinfo_buf, '\0', mlinfo_bufsz);
+  mlinfo_bufptr = mlinfo_buf;
   mlinfo_buflen = 0;
 }
 
@@ -322,7 +323,8 @@ static void facts_mlinfobuf_add(struct mlinfo *info) {
     (void) facts_mlinfobuf_flush();
   }
 
-  sstrcat(mlinfo_buf, buf, mlinfo_bufsz);
+  sstrcat(mlinfo_bufptr, buf, mlinfo_bufsz - mlinfo_buflen);
+  mlinfo_bufptr += buflen;
   mlinfo_buflen += buflen;
 }
 
@@ -330,12 +332,20 @@ static void facts_mlinfobuf_flush(void) {
   if (mlinfo_buflen > 0) {
     int res;
 
+    /* Make sure the ASCII flags are cleared from the session flags,
+     * so that the pr_data_xfer() function does not try to perform
+     * ASCII translation on this data.
+     */
+    session.sf_flags &= ~SF_ASCII_OVERRIDE;
+
     res = pr_data_xfer(mlinfo_buf, mlinfo_buflen);
     if (res < 0 &&
         errno != 0) {
       pr_log_debug(DEBUG3, MOD_FACTS_VERSION
         ": error transferring data: [%d] %s", errno, strerror(errno));
     }
+
+    session.sf_flags |= SF_ASCII_OVERRIDE;
   }
 
   facts_mlinfobuf_init();
@@ -376,8 +386,12 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
       pr_fs_clear_cache();
       res = pr_fsio_stat(path, &target_st);
       if (res < 0) {
+        int xerrno = errno;
+
         pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": error stat'ing '%s': %s",
-          path, strerror(errno));
+          path, strerror(xerrno));
+
+        errno = xerrno;
         return -1;
       }
 
@@ -437,7 +451,12 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
         }
 
       } else {
-        info->type = "file";
+        if (S_ISDIR(target_st.st_mode)) {
+          info->type = "dir";
+
+        } else {
+          info->type = "file";
+        }
       }
 
     } else {
@@ -851,6 +870,11 @@ MODRET facts_mff(cmd_rec *cmd) {
    * find the FIRST space in cmd->arg; the path is everything past that space.
    */
   ptr = strchr(cmd->arg, ' ');
+  if (ptr == NULL) {
+    pr_response_add_err(R_501, _("Invalid command syntax"));
+    return PR_ERROR(cmd);
+  }
+
   path = pstrdup(cmd->tmp_pool, ptr + 1);
 
   decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
@@ -1003,6 +1027,11 @@ MODRET facts_mfmt(cmd_rec *cmd) {
    * find the FIRST space in cmd->arg; the path is everything past that space.
    */
   ptr = strchr(cmd->arg, ' ');
+  if (ptr == NULL) {
+    pr_response_add_err(R_501, _("Invalid command syntax"));
+    return PR_ERROR(cmd);
+  }
+
   path = pstrdup(cmd->tmp_pool, ptr + 1);
 
   decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
@@ -1123,8 +1152,17 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
   /* Determine whether to display symlinks as such. */
   ptr = get_param_ptr(TOPLEVEL_CONF, "ShowSymlinks", FALSE);
-  if (ptr &&
-      *ptr == TRUE) {
+  if (ptr != NULL) {
+    if (*ptr == TRUE) {
+      flags |= FACTS_MLINFO_FL_SHOW_SYMLINKS;
+
+      if (facts_mlinfo_opts & FACTS_MLINFO_FL_SHOW_SYMLINKS_USE_SLINK) {
+        flags |= FACTS_MLINFO_FL_SHOW_SYMLINKS_USE_SLINK;
+      }
+    }
+
+  } else {
+    /* ShowSymlinks is documented as being 'on' by default. */
     flags |= FACTS_MLINFO_FL_SHOW_SYMLINKS;
 
     if (facts_mlinfo_opts & FACTS_MLINFO_FL_SHOW_SYMLINKS_USE_SLINK) {

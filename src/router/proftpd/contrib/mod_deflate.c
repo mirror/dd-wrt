@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_deflate -- a module for supporting on-the-fly compression
  *
- * Copyright (c) 2004-2011 TJ Saunders
+ * Copyright (c) 2004-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * This is mod_deflate, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_deflate.c,v 1.8 2011/06/10 02:57:35 castaglia Exp $
+ * $Id: mod_deflate.c,v 1.8.2.1 2012/09/21 22:14:33 castaglia Exp $
  * $Libraries: -lz $
  */
 
@@ -34,7 +34,7 @@
 #include "conf.h"
 #include "privs.h"
 
-#define MOD_DEFLATE_VERSION		"mod_deflate/0.5.5"
+#define MOD_DEFLATE_VERSION		"mod_deflate/0.5.6"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030201
@@ -134,7 +134,12 @@ static int deflate_netio_close_cb(pr_netio_stream_t *nstrm) {
   int res;
 
   if (nstrm->strm_type == PR_NETIO_STRM_DATA) {
-    z_stream *zstrm = nstrm->strm_data;
+    z_stream *zstrm;
+
+    zstrm = nstrm->strm_data;
+    if (zstrm == NULL) {
+      return 0;
+    }
 
     if (nstrm->strm_mode == PR_NETIO_IO_WR) {
       if (zstrm->total_in > 0) {
@@ -293,6 +298,13 @@ static int deflate_netio_read_cb(pr_netio_stream_t *nstrm, char *buf,
     z_stream *zstrm;
 
     zstrm = nstrm->strm_data;
+    if (zstrm == NULL) {
+      pr_trace_msg(trace_channel, 2,
+        "no zstream found in stream data for reading");
+      errno = EIO;
+      return -1;
+    }
+
     res = 0;
 
     /* If we have data leftover in deflate_zbuf, start by copying all of that
@@ -499,7 +511,12 @@ static int deflate_netio_shutdown_cb(pr_netio_stream_t *nstrm, int how) {
 
   if (nstrm->strm_type == PR_NETIO_STRM_DATA) {
     int res = 0;
-    z_stream *zstrm = nstrm->strm_data;
+    z_stream *zstrm;
+
+    zstrm = nstrm->strm_data;
+    if (zstrm == NULL) {
+      return 0;
+    }
 
     if (nstrm->strm_mode == PR_NETIO_IO_WR) {
       zstrm->next_in = Z_NULL;
@@ -583,7 +600,15 @@ static int deflate_netio_write_cb(pr_netio_stream_t *nstrm, char *buf,
   if (nstrm->strm_type == PR_NETIO_STRM_DATA) {
     int res = 0, xerrno;
     size_t datalen, offset = 0;
-    z_stream *zstrm = nstrm->strm_data;
+    z_stream *zstrm;
+
+    zstrm = nstrm->strm_data;
+    if (zstrm == NULL) {
+      pr_trace_msg(trace_channel, 2,
+        "no zstream found in stream data for writing");
+      errno = EIO;
+      return -1;
+    }
 
     /* Deflate the data to be written out. */
     zstrm->next_in = (Bytef *) buf;

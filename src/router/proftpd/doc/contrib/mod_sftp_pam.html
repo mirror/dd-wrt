@@ -1,4 +1,4 @@
-<!-- $Id: mod_sftp_pam.html,v 1.3 2011/01/19 01:59:08 castaglia Exp $ -->
+<!-- $Id: mod_sftp_pam.html,v 1.3.2.1 2013/02/26 23:16:55 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_sftp_pam.html,v $ -->
 
 <html>
@@ -85,6 +85,15 @@ The currently supported options are:
     SSH client.  This option is usually used for compatibility with
     OpenSSH's behavior.
   </li>
+
+  <p>
+  <li><code>NoRadioMsgs</code>
+    <p>
+    Disables the sending of Linux-specific information messages from PAM
+    (usually from the <code>pam_winbind</code> PAM module) to the connecting
+    SSH client.  This option is usually used for compatibility with
+    OpenSSH's behavior.
+  </li>
 </ul>
 
 <p>
@@ -150,12 +159,12 @@ different PAM configurations for FTP versus SSH2 logins.
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011/01/19 01:59:08 $</i><br>
+Last Updated: <i>$Date: 2013/02/26 23:16:55 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2008-2011 TJ Saunders<br>
+&copy; Copyright 2008-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

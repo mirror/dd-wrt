@@ -4,7 +4,6 @@ top_builddir=@top_builddir@
 top_srcdir=@top_srcdir@
 srcdir=@srcdir@
 VPATH=@srcdir@
-DESTDIR=
 
 include ../Make.rules
 
