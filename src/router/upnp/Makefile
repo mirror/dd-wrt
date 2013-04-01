@@ -43,6 +43,19 @@ CFLAGS += -DHAVE_WHRHPGN
 endif
 endif
 
+ifeq ($(CONFIG_TIEXTRA1),y)
+ADDLIBS =  -L$(TOP)/jansson/src/.libs -ljansson -lm
+endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+ADDLIBS =  -L$(TOP)/jansson/src/.libs -ljansson -lm
+endif
+ifeq ($(CONFIG_SAMBA3),y)
+ADDLIBS =  -L$(TOP)/jansson/src/.libs -ljansson -lm
+endif
+ifeq ($(CONFIG_MINIDLNA),y)
+ADDLIBS =  -L$(TOP)/jansson/src/.libs -ljansson -lm
+endif
+
 all: upnp
 
 install: all
@@ -54,7 +67,7 @@ clean:
 	rm -f bcmupnp
 
 upnp: FORCE
-	$(MAKE) -C $(UPNP) DEBUG=$(DEBUG) SRCBASE=$(SRCBASE) TARGET_PREFIX=$(CROSS_COMPILE) CFG_BCMIGD=$(CFG_BCMIGD)
+	$(MAKE) -C $(UPNP) DEBUG=$(DEBUG) SRCBASE=$(SRCBASE) TARGET_PREFIX=$(CROSS_COMPILE) CFG_BCMIGD=$(CFG_BCMIGD) ADDLIBS="$(ADDLIBS)"
 	cp $(UPNP)/upnp ./bcmupnp
 
 FORCE:
