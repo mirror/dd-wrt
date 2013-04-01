@@ -28,7 +28,15 @@
  * But that is only a guess and I could be wrong here ;)
  */
 
+/* Important coding convention:
+ *   All functions that have dry_run argument must follow the
+ *   return value convention:
+ *      They should return true if state change detected during dry run.
+ *      Otherwise (!dry_run || !state_change) they return false.
+ */
+
 #include <string.h>
+#include <sys/time.h>
 #include <linux/if_bridge.h>
 #include <asm/byteorder.h>
 
@@ -36,7 +44,7 @@
 #include "log.h"
 
 static void PTSM_tick(port_t *prt);
-static void TCSM_run(per_tree_port_t *ptp);
+static bool TCSM_run(per_tree_port_t *ptp, bool dry_run);
 static void BDSM_begin(port_t *prt);
 static void br_state_machines_begin(bridge_t *br);
 static void prt_state_machines_begin(port_t *prt);
@@ -454,7 +462,7 @@ void MSTP_IN_all_fids_flushed(per_tree_port_t *ptp)
         return;
     if(!ptp->calledFromFlushRoutine)
     {
-        TCSM_run(ptp);
+        TCSM_run(ptp, false /* actual run */);
         br_state_machines_run(br);
     }
 }
@@ -1481,12 +1489,22 @@ static bool betterorsameInfo(per_tree_port_t *ptp, port_info_origin_t newInfoIs)
 }
 
 /* 13.26.2 clearAllRcvdMsgs */
-static void clearAllRcvdMsgs(port_t *prt)
+static bool clearAllRcvdMsgs(port_t *prt, bool dry_run)
 {
     per_tree_port_t *ptp;
 
+    if(dry_run)
+    {
+        FOREACH_PTP_IN_PORT(ptp, prt)
+            if(ptp->rcvdMsg)
+                return true;
+        return false;
+    }
+
     FOREACH_PTP_IN_PORT(ptp, prt)
         ptp->rcvdMsg = false;
+
+    return false;
 }
 
 /* 13.26.3 clearReselectTree */
@@ -2510,20 +2528,29 @@ static void PTSM_tick(port_t *prt)
 }
 
 /* 13.28  Port Receive state machine */
-#define PRSM_begin(prt) PRSM_to_DISCARD(prt)
-static void PRSM_to_DISCARD(port_t *prt/*, bool begin*/)
+#define PRSM_begin(prt) PRSM_to_DISCARD((prt), false)
+static bool PRSM_to_DISCARD(port_t *prt, bool dry_run)
 {
+    if(dry_run)
+    {
+        return (prt->PRSM_state != PRSM_DISCARD)
+               || prt->rcvdBpdu || prt->rcvdRSTP || prt->rcvdSTP
+               || (prt->edgeDelayWhile != prt->bridge->Migrate_Time)
+               || clearAllRcvdMsgs(prt, dry_run);
+    }
+
     prt->PRSM_state = PRSM_DISCARD;
 
     prt->rcvdBpdu = false;
     prt->rcvdRSTP = false;
     prt->rcvdSTP = false;
-    clearAllRcvdMsgs(prt);
+    clearAllRcvdMsgs(prt, false /* actual run */);
     assign(prt->edgeDelayWhile, prt->bridge->Migrate_Time);
 
     /* No need to run, no one condition will be met
      * if(!begin)
-     *     PRSM_run(prt); */
+     *     PRSM_run(prt, false); */
+    return false;
 }
 
 static void PRSM_to_RECEIVE(port_t *prt)
@@ -2538,10 +2565,10 @@ static void PRSM_to_RECEIVE(port_t *prt)
     assign(prt->edgeDelayWhile, prt->bridge->Migrate_Time);
 
     /* No need to run, no one condition will be met
-      PRSM_run(prt); */
+      PRSM_run(prt, false); */
 }
 
-static void PRSM_run(port_t *prt)
+static bool PRSM_run(port_t *prt, bool dry_run)
 {
     per_tree_port_t *ptp;
     bool rcvdAnyMsg;
@@ -2549,16 +2576,19 @@ static void PRSM_run(port_t *prt)
     if((prt->rcvdBpdu || (prt->edgeDelayWhile != prt->bridge->Migrate_Time))
        && !prt->portEnabled)
     {
-        PRSM_to_DISCARD(prt);
-        return;
+        return PRSM_to_DISCARD(prt, dry_run);
     }
 
     switch(prt->PRSM_state)
     {
         case PRSM_DISCARD:
             if(prt->rcvdBpdu && prt->portEnabled)
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PRSM_to_RECEIVE(prt);
-            return;
+            }
+            return false;
         case PRSM_RECEIVE:
             rcvdAnyMsg = false;
             FOREACH_PTP_IN_PORT(ptp, prt)
@@ -2570,14 +2600,18 @@ static void PRSM_run(port_t *prt)
                 }
             }
             if(prt->rcvdBpdu && prt->portEnabled && !rcvdAnyMsg)
+            {
+                if(dry_run) /* at least rcvdBpdu will change */
+                    return true;
                 PRSM_to_RECEIVE(prt);
-            return;
+            }
+            return false;
     }
 }
 
 /* 13.29  Port Protocol Migration state machine */
 
-static void PPMSM_run(port_t *prt);
+static bool PPMSM_run(port_t *prt, bool dry_run);
 #define PPMSM_begin(prt) PPMSM_to_CHECKING_RSTP(prt)
 
 static void PPMSM_to_CHECKING_RSTP(port_t *prt/*, bool begin*/)
@@ -2591,7 +2625,7 @@ static void PPMSM_to_CHECKING_RSTP(port_t *prt/*, bool begin*/)
 
     /* No need to run, no one condition will be met
      * if(!begin)
-     *     PPMSM_run(prt); */
+     *     PPMSM_run(prt, false); */
 }
 
 static void PPMSM_to_SELECTING_STP(port_t *prt)
@@ -2601,7 +2635,7 @@ static void PPMSM_to_SELECTING_STP(port_t *prt)
     prt->sendRSTP = false;
     assign(prt->mdelayWhile, prt->bridge->Migrate_Time);
 
-    PPMSM_run(prt);
+    PPMSM_run(prt, false /* actual run */);
 }
 
 static void PPMSM_to_SENSING(port_t *prt)
@@ -2611,10 +2645,10 @@ static void PPMSM_to_SENSING(port_t *prt)
     prt->rcvdRSTP = false;
     prt->rcvdSTP = false;
 
-    PPMSM_run(prt);
+    PPMSM_run(prt, false /* actual run */);
 }
 
-static void PPMSM_run(port_t *prt)
+static bool PPMSM_run(port_t *prt, bool dry_run)
 {
     bridge_t *br = prt->bridge;
 
@@ -2624,27 +2658,45 @@ static void PPMSM_run(port_t *prt)
             if((prt->mdelayWhile != br->Migrate_Time)
                && !prt->portEnabled)
             {
+                if(dry_run) /* at least mdelayWhile will change */
+                    return true;
                 PPMSM_to_CHECKING_RSTP(prt);
-                return;
+                return false;
             }
             if(0 == prt->mdelayWhile)
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PPMSM_to_SENSING(prt);
-            return;
+            }
+            return false;
         case PPMSM_SELECTING_STP:
             if(0 == prt->mdelayWhile || !prt->portEnabled || prt->mcheck)
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PPMSM_to_SENSING(prt);
-            return;
+            }
+            return false;
         case PPMSM_SENSING:
             if(!prt->portEnabled || prt->mcheck
                || (rstpVersion(br) && !prt->sendRSTP && prt->rcvdRSTP))
             {
+                if(dry_run) /* state change */
+                    return true;
                 PPMSM_to_CHECKING_RSTP(prt);
-                return;
+                return false;
             }
             if(prt->sendRSTP && prt->rcvdSTP)
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PPMSM_to_SELECTING_STP(prt);
-            return;
+            }
+            return false;
     }
+
+    return false;
 }
 
 /* 13.30  Bridge Detection state machine */
@@ -2656,7 +2708,7 @@ static void BDSM_to_EDGE(port_t *prt/*, bool begin*/)
 
     /* No need to run, no one condition will be met
      * if(!begin)
-     *     BDSM_run(prt); */
+     *     BDSM_run(prt, false); */
 }
 
 static void BDSM_to_NOT_EDGE(port_t *prt/*, bool begin*/)
@@ -2667,7 +2719,7 @@ static void BDSM_to_NOT_EDGE(port_t *prt/*, bool begin*/)
 
     /* No need to run, no one condition will be met
      * if(!begin)
-     *     BDSM_run(prt); */
+     *     BDSM_run(prt, false); */
 }
 
 static void BDSM_begin(port_t *prt/*, bool begin*/)
@@ -2678,7 +2730,7 @@ static void BDSM_begin(port_t *prt/*, bool begin*/)
         BDSM_to_NOT_EDGE(prt/*, begin*/);
 }
 
-static void BDSM_run(port_t *prt)
+static bool BDSM_run(port_t *prt, bool dry_run)
 {
     per_tree_port_t *cist;
 
@@ -2686,8 +2738,12 @@ static void BDSM_run(port_t *prt)
     {
         case BDSM_EDGE:
             if((!prt->portEnabled && !prt->AdminEdgePort) || !prt->operEdge)
+            {
+                if(dry_run) /* state change */
+                    return true;
                 BDSM_to_NOT_EDGE(prt);
-            return;
+            }
+            return false;
         case BDSM_NOT_EDGE:
              cist = GET_CIST_PTP_FROM_PORT(prt);
             /* NOTE: 802.1Q-2005 is not clear, which of the per-tree
@@ -2701,18 +2757,29 @@ static void BDSM_run(port_t *prt)
                || ((0 == prt->edgeDelayWhile) && prt->AutoEdge && prt->sendRSTP
                    && cist->proposing)
               )
+            {
+                if(dry_run) /* state change */
+                    return true;
                 BDSM_to_EDGE(prt);
-            return;
+            }
+            return false;
     }
 }
 
 /* 13.31  Port Transmit state machine */
 
-static void PTSM_run(port_t *prt);
-#define PTSM_begin(prt) PTSM_to_TRANSMIT_INIT((prt), true)
+static bool PTSM_run(port_t *prt, bool dry_run);
+#define PTSM_begin(prt) PTSM_to_TRANSMIT_INIT((prt), true, false)
 
-static void PTSM_to_TRANSMIT_INIT(port_t *prt, bool begin)
+static bool PTSM_to_TRANSMIT_INIT(port_t *prt, bool begin, bool dry_run)
 {
+    if(dry_run)
+    {
+        return (prt->PTSM_state != PTSM_TRANSMIT_INIT)
+               || (!prt->newInfo) || (!prt->newInfoMsti)
+               || (0 != prt->txCount);
+    }
+
     prt->PTSM_state = PTSM_TRANSMIT_INIT;
 
     prt->newInfo = true;
@@ -2720,7 +2787,8 @@ static void PTSM_to_TRANSMIT_INIT(port_t *prt, bool begin)
     assign(prt->txCount, 0u);
 
     if(!begin && prt->portEnabled) /* prevent infinite loop */
-        PTSM_run(prt);
+        PTSM_run(prt, false /* actual run */);
+    return false;
 }
 
 static void PTSM_to_TRANSMIT_CONFIG(port_t *prt)
@@ -2732,7 +2800,7 @@ static void PTSM_to_TRANSMIT_CONFIG(port_t *prt)
     ++(prt->txCount);
     prt->tcAck = false;
 
-    PTSM_run(prt);
+    PTSM_run(prt, false /* actual run */);
 }
 
 static void PTSM_to_TRANSMIT_TCN(port_t *prt)
@@ -2743,7 +2811,7 @@ static void PTSM_to_TRANSMIT_TCN(port_t *prt)
     txTcn(prt);
     ++(prt->txCount);
 
-    PTSM_run(prt);
+    PTSM_run(prt, false /* actual run */);
 }
 
 static void PTSM_to_TRANSMIT_RSTP(port_t *prt)
@@ -2756,7 +2824,7 @@ static void PTSM_to_TRANSMIT_RSTP(port_t *prt)
     ++(prt->txCount);
     prt->tcAck = false;
 
-    PTSM_run(prt);
+    PTSM_run(prt, false /* actual run */);
 }
 
 static void PTSM_to_TRANSMIT_PERIODIC(port_t *prt)
@@ -2785,7 +2853,7 @@ static void PTSM_to_TRANSMIT_PERIODIC(port_t *prt)
     prt->newInfoMsti = prt->newInfoMsti
                        || mstiDesignatedOrTCpropagatingRootPort;
 
-    PTSM_run(prt);
+    PTSM_run(prt, false /* actual run */);
 }
 
 static void PTSM_to_IDLE(port_t *prt)
@@ -2795,10 +2863,10 @@ static void PTSM_to_IDLE(port_t *prt)
     per_tree_port_t *cist = GET_CIST_PTP_FROM_PORT(prt);
     prt->helloWhen = cist->portTimes.Hello_Time;
 
-    PTSM_run(prt);
+    PTSM_run(prt, false /* actual run */);
 }
 
-static void PTSM_run(port_t *prt)
+static bool PTSM_run(port_t *prt, bool dry_run)
 {
    /* bool allTransmitReady; */
     per_tree_port_t *ptp;
@@ -2807,8 +2875,7 @@ static void PTSM_run(port_t *prt)
 
     if(!prt->portEnabled)
     {
-        PTSM_to_TRANSMIT_INIT(prt, false);
-        return;
+        return PTSM_to_TRANSMIT_INIT(prt, false, dry_run);
     }
 
     switch(prt->PTSM_state)
@@ -2822,15 +2889,17 @@ static void PTSM_run(port_t *prt)
         case PTSM_TRANSMIT_RSTP:
            /* return; */
         case PTSM_TRANSMIT_PERIODIC:
+            if(dry_run) /* state change */
+                return true;
             PTSM_to_IDLE(prt); /* UnConditional Transition */
-            return;
+            return false;
         case PTSM_IDLE:
             /* allTransmitReady = true; */
             ptp = GET_CIST_PTP_FROM_PORT(prt);
             if(!ptp->selected || ptp->updtInfo)
             {
                 /* allTransmitReady = false; */
-                return;
+                return false;
             }
             cistRole = ptp->role;
             mstiMasterPort = false;
@@ -2839,41 +2908,51 @@ static void PTSM_run(port_t *prt)
                 if(!ptp->selected || ptp->updtInfo)
                 {
                     /* allTransmitReady = false; */
-                    return;
+                    return false;
                 }
                 if(roleMaster == ptp->role)
                     mstiMasterPort = true;
             }
             if(0 == prt->helloWhen)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PTSM_to_TRANSMIT_PERIODIC(prt);
-                return;
+                return false;
             }
             if(!(prt->txCount < prt->bridge->Transmit_Hold_Count))
-                return;
+                return false;
             if(prt->sendRSTP)
             { /* implement MSTP */
                 if(prt->newInfo || (prt->newInfoMsti && !mstiMasterPort))
                 {
+                    if(dry_run) /* state change */
+                        return true;
                     PTSM_to_TRANSMIT_RSTP(prt);
-                    return;
+                    return false;
                 }
             }
             else
             { /* fallback to STP */
                 if(prt->newInfo && (roleDesignated == cistRole))
                 {
+                    if(dry_run) /* state change */
+                        return true;
                     PTSM_to_TRANSMIT_CONFIG(prt);
-                    return;
+                    return false;
                 }
                 if(prt->newInfo && (roleRoot == cistRole))
                 {
+                    if(dry_run) /* state change */
+                        return true;
                     PTSM_to_TRANSMIT_TCN(prt);
-                    return;
+                    return false;
                 }
             }
-            return;
+            return false;
     }
+
+    return false;
 }
 
 /* 13.32  Port Information state machine */
@@ -2884,7 +2963,7 @@ static void PTSM_run(port_t *prt)
 #define PISM_LOG(_fmt, _args...) {}
 #endif /* PISM_ENABLE_LOG */
 
-static void PISM_run(per_tree_port_t *ptp);
+static bool PISM_run(per_tree_port_t *ptp, bool dry_run);
 #define PISM_begin(ptp) PISM_to_DISABLED((ptp), true)
 
 static void PISM_to_DISABLED(per_tree_port_t *ptp, bool begin)
@@ -2903,7 +2982,7 @@ static void PISM_to_DISABLED(per_tree_port_t *ptp, bool begin)
     ptp->selected = false;
 
     if(!begin)
-        PISM_run(ptp);
+        PISM_run(ptp, false /* actual run */);
 }
 
 static void PISM_to_AGED(per_tree_port_t *ptp)
@@ -2915,7 +2994,7 @@ static void PISM_to_AGED(per_tree_port_t *ptp)
     ptp->reselect = true;
     ptp->selected = false;
 
-    PISM_run(ptp);
+    PISM_run(ptp, false /* actual run */);
 }
 
 static void PISM_to_UPDATE(per_tree_port_t *ptp)
@@ -2938,7 +3017,7 @@ static void PISM_to_UPDATE(per_tree_port_t *ptp)
     else
         prt->newInfoMsti = true;
 
-    PISM_run(ptp);
+    PISM_run(ptp, false /* actual run */);
 }
 
 static void PISM_to_SUPERIOR_DESIGNATED(per_tree_port_t *ptp)
@@ -2964,7 +3043,7 @@ static void PISM_to_SUPERIOR_DESIGNATED(per_tree_port_t *ptp)
     ptp->selected = false;
     ptp->rcvdMsg = false;
 
-    PISM_run(ptp);
+    PISM_run(ptp, false /* actual run */);
 }
 
 static void PISM_to_REPEATED_DESIGNATED(per_tree_port_t *ptp)
@@ -2981,7 +3060,7 @@ static void PISM_to_REPEATED_DESIGNATED(per_tree_port_t *ptp)
     updtRcvdInfoWhile(ptp);
     ptp->rcvdMsg = false;
 
-    PISM_run(ptp);
+    PISM_run(ptp, false /* actual run */);
 }
 
 static void PISM_to_INFERIOR_DESIGNATED(per_tree_port_t *ptp)
@@ -2992,7 +3071,7 @@ static void PISM_to_INFERIOR_DESIGNATED(per_tree_port_t *ptp)
     recordDispute(ptp);
     ptp->rcvdMsg = false;
 
-    PISM_run(ptp);
+    PISM_run(ptp, false /* actual run */);
 }
 
 static void PISM_to_NOT_DESIGNATED(per_tree_port_t *ptp)
@@ -3004,7 +3083,7 @@ static void PISM_to_NOT_DESIGNATED(per_tree_port_t *ptp)
     setTcFlags(ptp);
     ptp->rcvdMsg = false;
 
-    PISM_run(ptp);
+    PISM_run(ptp, false /* actual run */);
 }
 
 static void PISM_to_OTHER(per_tree_port_t *ptp)
@@ -3014,7 +3093,7 @@ static void PISM_to_OTHER(per_tree_port_t *ptp)
 
     ptp->rcvdMsg = false;
 
-    PISM_run(ptp);
+    PISM_run(ptp, false /* actual run */);
 }
 
 static void PISM_to_CURRENT(per_tree_port_t *ptp)
@@ -3022,7 +3101,7 @@ static void PISM_to_CURRENT(per_tree_port_t *ptp)
     PISM_LOG("");
     ptp->PISM_state = PISM_CURRENT;
 
-    PISM_run(ptp);
+    PISM_run(ptp, false /* actual run */);
 }
 
 static void PISM_to_RECEIVE(per_tree_port_t *ptp)
@@ -3033,18 +3112,20 @@ static void PISM_to_RECEIVE(per_tree_port_t *ptp)
     ptp->rcvdInfo = rcvInfo(ptp);
     recordMastered(ptp);
 
-    PISM_run(ptp);
+    PISM_run(ptp, false /* actual run */);
 }
 
-static void PISM_run(per_tree_port_t *ptp)
+static bool PISM_run(per_tree_port_t *ptp, bool dry_run)
 {
     bool rcvdXstMsg, updtXstInfo;
     port_t *prt = ptp->port;
 
     if((!prt->portEnabled) && (ioDisabled != ptp->infoIs))
     {
+        if(dry_run) /* at least infoIs will change */
+            return true;
         PISM_to_DISABLED(ptp, false);
-        return;
+        return false;
     }
 
     switch(ptp->PISM_state)
@@ -3052,16 +3133,26 @@ static void PISM_run(per_tree_port_t *ptp)
         case PISM_DISABLED:
             if(prt->portEnabled)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PISM_to_AGED(ptp);
-                return;
+                return false;
             }
             if(ptp->rcvdMsg)
+            {
+                if(dry_run) /* at least rcvdMsg will change */
+                    return true;
                 PISM_to_DISABLED(ptp, false);
-            return;
+            }
+            return false;
         case PISM_AGED:
             if(ptp->selected && ptp->updtInfo)
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PISM_to_UPDATE(ptp);
-            return;
+            }
+            return false;
         case PISM_UPDATE:
             /* return; */
         case PISM_SUPERIOR_DESIGNATED:
@@ -3073,8 +3164,10 @@ static void PISM_run(per_tree_port_t *ptp)
         case PISM_NOT_DESIGNATED:
             /* return; */
         case PISM_OTHER:
+            if(dry_run) /* state change */
+                return true;
             PISM_to_CURRENT(ptp);
-            return;
+            return false;
         case PISM_CURRENT:
             /*
              * Although 802.1Q-2005 does not define rcvdXstMsg and updtXstInfo
@@ -3097,44 +3190,64 @@ static void PISM_run(per_tree_port_t *ptp)
             }
             if(rcvdXstMsg && !updtXstInfo)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PISM_to_RECEIVE(ptp);
-                return;
+                return false;
             }
             if((ioReceived == ptp->infoIs) && (0 == ptp->rcvdInfoWhile)
                && !ptp->updtInfo && !rcvdXstMsg)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PISM_to_AGED(ptp);
-                return;
+                return false;
             }
             if(ptp->selected && ptp->updtInfo)
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PISM_to_UPDATE(ptp);
-            return;
+            }
+            return false;
         case PISM_RECEIVE:
             switch(ptp->rcvdInfo)
             {
                 case SuperiorDesignatedInfo:
+                    if(dry_run) /* state change */
+                        return true;
                     PISM_to_SUPERIOR_DESIGNATED(ptp);
-                    return;
+                    return false;
                 case RepeatedDesignatedInfo:
+                    if(dry_run) /* state change */
+                        return true;
                     PISM_to_REPEATED_DESIGNATED(ptp);
-                    return;
+                    return false;
                 case InferiorDesignatedInfo:
+                    if(dry_run) /* state change */
+                        return true;
                     PISM_to_INFERIOR_DESIGNATED(ptp);
-                    return;
+                    return false;
                 case InferiorRootAlternateInfo:
+                    if(dry_run) /* state change */
+                        return true;
                     PISM_to_NOT_DESIGNATED(ptp);
-                    return;
+                    return false;
                 case OtherInfo:
+                    if(dry_run) /* state change */
+                        return true;
                     PISM_to_OTHER(ptp);
-                    return;
+                    return false;
             }
-            return;
+            return false;
     }
+
+    return false;
 }
 
 /* 13.33  Port Role Selection state machine */
 
-static void PRSSM_run(tree_t *tree);
+static bool PRSSM_run(tree_t *tree, bool dry_run);
 #define PRSSM_begin(tree) PRSSM_to_INIT_TREE(tree)
 
 static void PRSSM_to_INIT_TREE(tree_t *tree/*, bool begin*/)
@@ -3147,7 +3260,7 @@ static void PRSSM_to_INIT_TREE(tree_t *tree/*, bool begin*/)
      * because transition to this state can be initiated only by BEGIN var.
      * In other words, this function is called via xxx_begin macro only.
      * if(!begin)
-     *     PRSSM_run(prt); */
+     *     PRSSM_run(prt, false); */
 }
 
 static void PRSSM_to_ROLE_SELECTION(tree_t *tree)
@@ -3159,27 +3272,33 @@ static void PRSSM_to_ROLE_SELECTION(tree_t *tree)
     setSelectedTree(tree);
 
     /* No need to run, no one condition will be met
-      PRSSM_run(tree); */
+      PRSSM_run(tree, false); */
 }
 
-static void PRSSM_run(tree_t *tree)
+static bool PRSSM_run(tree_t *tree, bool dry_run)
 {
     per_tree_port_t *ptp;
 
     switch(tree->PRSSM_state)
     {
         case PRSSM_INIT_TREE:
+            if(dry_run) /* state change */
+                return true;
             PRSSM_to_ROLE_SELECTION(tree);
-            return;
+            return false;
         case PRSSM_ROLE_SELECTION:
             FOREACH_PTP_IN_TREE(ptp, tree)
                 if(ptp->reselect)
                 {
+                    if(dry_run) /* at least reselect will change */
+                        return true;
                     PRSSM_to_ROLE_SELECTION(tree);
-                    return;
+                    return false;
                 }
-            return;
+            return false;
     }
+
+    return false;
 }
 
 /* 13.34  Port Role Transitions state machine */
@@ -3190,8 +3309,8 @@ static void PRSSM_run(tree_t *tree)
 #define PRTSM_LOG(_fmt, _args...) {}
 #endif /* PRTSM_ENABLE_LOG */
 
-static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call);
-#define PRTSM_run(ptp)   PRTSM_runr((ptp), false)
+static bool PRTSM_runr(per_tree_port_t *ptp, bool recursive_call, bool dry_run);
+#define PRTSM_run(ptp, dry_run) PRTSM_runr((ptp), false, (dry_run))
 #define PRTSM_begin(ptp) PRTSM_to_INIT_PORT(ptp)
 
  /* Disabled Port role transitions */
@@ -3222,7 +3341,7 @@ static void PRTSM_to_INIT_PORT(per_tree_port_t *ptp/*, bool begin*/)
      * because transition to this state can be initiated only by BEGIN var.
      * In other words, this function is called via xxx_begin macro only.
      * if(!begin)
-     *     PRTSM_runr(ptp, false); */
+     *     PRTSM_runr(ptp, false, false); */
 }
 
 static void PRTSM_to_DISABLE_PORT(per_tree_port_t *ptp)
@@ -3253,7 +3372,7 @@ static void PRTSM_to_DISABLE_PORT(per_tree_port_t *ptp)
     ptp->learn = false;
     ptp->forward = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_DISABLED_PORT(per_tree_port_t *ptp, unsigned int MaxAge)
@@ -3267,7 +3386,7 @@ static void PRTSM_to_DISABLED_PORT(per_tree_port_t *ptp, unsigned int MaxAge)
     ptp->sync = false;
     ptp->reRoot = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
  /* MasterPort role transitions */
@@ -3280,7 +3399,7 @@ static void PRTSM_to_MASTER_PROPOSED(per_tree_port_t *ptp)
     setSyncTree(ptp->tree);
     ptp->proposed = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_MASTER_AGREED(per_tree_port_t *ptp)
@@ -3292,7 +3411,7 @@ static void PRTSM_to_MASTER_AGREED(per_tree_port_t *ptp)
     ptp->sync = false;
     ptp->agree = true;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_MASTER_SYNCED(per_tree_port_t *ptp)
@@ -3304,7 +3423,7 @@ static void PRTSM_to_MASTER_SYNCED(per_tree_port_t *ptp)
     ptp->synced = true;
     ptp->sync = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_MASTER_RETIRED(per_tree_port_t *ptp)
@@ -3314,7 +3433,7 @@ static void PRTSM_to_MASTER_RETIRED(per_tree_port_t *ptp)
 
     ptp->reRoot = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_MASTER_FORWARD(per_tree_port_t *ptp)
@@ -3326,7 +3445,7 @@ static void PRTSM_to_MASTER_FORWARD(per_tree_port_t *ptp)
     assign(ptp->fdWhile, 0u);
     ptp->agreed = ptp->port->sendRSTP;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_MASTER_LEARN(per_tree_port_t *ptp, unsigned int forwardDelay)
@@ -3337,7 +3456,7 @@ static void PRTSM_to_MASTER_LEARN(per_tree_port_t *ptp, unsigned int forwardDela
     ptp->learn = true;
     assign(ptp->fdWhile, forwardDelay);
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_MASTER_DISCARD(per_tree_port_t *ptp, unsigned int forwardDelay)
@@ -3350,7 +3469,7 @@ static void PRTSM_to_MASTER_DISCARD(per_tree_port_t *ptp, unsigned int forwardDe
     ptp->disputed = false;
     assign(ptp->fdWhile, forwardDelay);
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_MASTER_PORT(per_tree_port_t *ptp)
@@ -3360,7 +3479,7 @@ static void PRTSM_to_MASTER_PORT(per_tree_port_t *ptp)
 
     ptp->role = roleMaster;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
  /* RootPort role transitions */
@@ -3373,7 +3492,7 @@ static void PRTSM_to_ROOT_PROPOSED(per_tree_port_t *ptp)
     setSyncTree(ptp->tree);
     ptp->proposed = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_ROOT_AGREED(per_tree_port_t *ptp)
@@ -3391,7 +3510,7 @@ static void PRTSM_to_ROOT_AGREED(per_tree_port_t *ptp)
     else
         prt->newInfoMsti = true;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_ROOT_SYNCED(per_tree_port_t *ptp)
@@ -3402,7 +3521,7 @@ static void PRTSM_to_ROOT_SYNCED(per_tree_port_t *ptp)
     ptp->synced = true;
     ptp->sync = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_REROOT(per_tree_port_t *ptp)
@@ -3412,7 +3531,7 @@ static void PRTSM_to_REROOT(per_tree_port_t *ptp)
 
     setReRootTree(ptp->tree);
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_ROOT_FORWARD(per_tree_port_t *ptp)
@@ -3423,7 +3542,7 @@ static void PRTSM_to_ROOT_FORWARD(per_tree_port_t *ptp)
     assign(ptp->fdWhile, 0u);
     ptp->forward = true;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_ROOT_LEARN(per_tree_port_t *ptp, unsigned int forwardDelay)
@@ -3434,7 +3553,7 @@ static void PRTSM_to_ROOT_LEARN(per_tree_port_t *ptp, unsigned int forwardDelay)
     assign(ptp->fdWhile, forwardDelay);
     ptp->learn = true;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_REROOTED(per_tree_port_t *ptp)
@@ -3444,7 +3563,7 @@ static void PRTSM_to_REROOTED(per_tree_port_t *ptp)
 
     ptp->reRoot = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_ROOT_PORT(per_tree_port_t *ptp, unsigned int FwdDelay)
@@ -3455,7 +3574,7 @@ static void PRTSM_to_ROOT_PORT(per_tree_port_t *ptp, unsigned int FwdDelay)
     ptp->role = roleRoot;
     assign(ptp->rrWhile, FwdDelay);
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
  /* DesignatedPort role transitions */
@@ -3483,7 +3602,7 @@ static void PRTSM_to_DESIGNATED_PROPOSE(per_tree_port_t *ptp)
     else
         prt->newInfoMsti = true;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_DESIGNATED_AGREED(per_tree_port_t *ptp)
@@ -3501,7 +3620,7 @@ static void PRTSM_to_DESIGNATED_AGREED(per_tree_port_t *ptp)
     else
         prt->newInfoMsti = true;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_DESIGNATED_SYNCED(per_tree_port_t *ptp)
@@ -3513,7 +3632,7 @@ static void PRTSM_to_DESIGNATED_SYNCED(per_tree_port_t *ptp)
     ptp->synced = true;
     ptp->sync = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_DESIGNATED_RETIRED(per_tree_port_t *ptp)
@@ -3523,7 +3642,7 @@ static void PRTSM_to_DESIGNATED_RETIRED(per_tree_port_t *ptp)
 
     ptp->reRoot = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_DESIGNATED_FORWARD(per_tree_port_t *ptp)
@@ -3535,7 +3654,7 @@ static void PRTSM_to_DESIGNATED_FORWARD(per_tree_port_t *ptp)
     assign(ptp->fdWhile, 0u);
     ptp->agreed = ptp->port->sendRSTP;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_DESIGNATED_LEARN(per_tree_port_t *ptp, unsigned int forwardDelay)
@@ -3546,7 +3665,7 @@ static void PRTSM_to_DESIGNATED_LEARN(per_tree_port_t *ptp, unsigned int forward
     ptp->learn = true;
     assign(ptp->fdWhile, forwardDelay);
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_DESIGNATED_DISCARD(per_tree_port_t *ptp, unsigned int forwardDelay)
@@ -3559,7 +3678,7 @@ static void PRTSM_to_DESIGNATED_DISCARD(per_tree_port_t *ptp, unsigned int forwa
     ptp->disputed = false;
     assign(ptp->fdWhile, forwardDelay);
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_DESIGNATED_PORT(per_tree_port_t *ptp)
@@ -3569,7 +3688,7 @@ static void PRTSM_to_DESIGNATED_PORT(per_tree_port_t *ptp)
 
     ptp->role = roleDesignated;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
  /* AlternatePort and BackupPort role transitions */
@@ -3583,7 +3702,7 @@ static void PRTSM_to_BLOCK_PORT(per_tree_port_t *ptp)
     ptp->learn = false;
     ptp->forward = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_BACKUP_PORT(per_tree_port_t *ptp, unsigned int HelloTime)
@@ -3593,7 +3712,7 @@ static void PRTSM_to_BACKUP_PORT(per_tree_port_t *ptp, unsigned int HelloTime)
 
     assign(ptp->rbWhile, 2 * HelloTime);
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_ALTERNATE_PROPOSED(per_tree_port_t *ptp)
@@ -3604,7 +3723,7 @@ static void PRTSM_to_ALTERNATE_PROPOSED(per_tree_port_t *ptp)
     setSyncTree(ptp->tree);
     ptp->proposed = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_ALTERNATE_AGREED(per_tree_port_t *ptp)
@@ -3621,7 +3740,7 @@ static void PRTSM_to_ALTERNATE_AGREED(per_tree_port_t *ptp)
     else
         prt->newInfoMsti = true;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
 static void PRTSM_to_ALTERNATE_PORT(per_tree_port_t *ptp, unsigned int forwardDelay)
@@ -3635,10 +3754,10 @@ static void PRTSM_to_ALTERNATE_PORT(per_tree_port_t *ptp, unsigned int forwardDe
     ptp->sync = false;
     ptp->reRoot = false;
 
-    PRTSM_runr(ptp, true);
+    PRTSM_runr(ptp, true, false /* actual run */);
 }
 
-static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
+static bool PRTSM_runr(per_tree_port_t *ptp, bool recursive_call, bool dry_run)
 {
     /* Following vars do not need recalculating on recursive calls */
     static unsigned int MaxAge, FwdDelay, forwardDelay, HelloTime;
@@ -3678,21 +3797,31 @@ static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
         switch(ptp->selectedRole)
         {
             case roleDisabled:
+                if(dry_run) /* at least role will change */
+                    return true;
                 PRTSM_to_DISABLE_PORT(ptp);
-                return;
+                return false;
             case roleMaster:
+                if(dry_run) /* at least role will change */
+                    return true;
                 PRTSM_to_MASTER_PORT(ptp);
-                return;
+                return false;
             case roleRoot:
+                if(dry_run) /* at least role will change */
+                    return true;
                 PRTSM_to_ROOT_PORT(ptp, FwdDelay);
-                return;
+                return false;
             case roleDesignated:
+                if(dry_run) /* at least role will change */
+                    return true;
                 PRTSM_to_DESIGNATED_PORT(ptp);
-                return;
+                return false;
             case roleAlternate:
             case roleBackup:
+                if(dry_run) /* at least role will change */
+                    return true;
                 PRTSM_to_BLOCK_PORT(ptp);
-                return;
+                return false;
         }
     }
 
@@ -3734,21 +3863,31 @@ static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
     {
      /* Disabled Port role transitions */
         case PRTSM_INIT_PORT:
+            if(dry_run) /* state change */
+                return true;
             PRTSM_to_DISABLE_PORT(ptp);
-            return;
+            return false;
         case PRTSM_DISABLE_PORT:
             if(ptp->selected && !ptp->updtInfo
                && !ptp->learning && !ptp->forwarding
               )
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_DISABLED_PORT(ptp, MaxAge);
-            return;
+            }
+            return false;
         case PRTSM_DISABLED_PORT:
             if(ptp->selected && !ptp->updtInfo
                && (ptp->sync || ptp->reRoot || !ptp->synced
                    || (ptp->fdWhile != MaxAge))
               )
+            {
+                if(dry_run) /* one of (sync,reRoot,synced,fdWhile) will change */
+                    return true;
                 PRTSM_to_DISABLED_PORT(ptp, MaxAge);
-            return;
+            }
+            return false;
      /* MasterPort role transitions */
         case PRTSM_MASTER_PROPOSED:
             /* return; */
@@ -3763,15 +3902,19 @@ static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
         case PRTSM_MASTER_LEARN:
             /* return; */
         case PRTSM_MASTER_DISCARD:
+            if(dry_run) /* state change */
+                return true;
             PRTSM_to_MASTER_PORT(ptp);
-            return;
+            return false;
         case PRTSM_MASTER_PORT:
             if(!(ptp->selected && !ptp->updtInfo))
-                return;
+                return false;
             if(ptp->reRoot && (0 == ptp->rrWhile))
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_MASTER_RETIRED(ptp);
-                return;
+                return false;
             }
             if((!ptp->learning && !ptp->forwarding && !ptp->synced)
                || (ptp->agreed && !ptp->synced)
@@ -3779,34 +3922,44 @@ static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
                || (ptp->sync && ptp->synced)
               )
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_MASTER_SYNCED(ptp);
-                return;
+                return false;
             }
             if((allSynced && !ptp->agree)
                || (ptp->proposed && ptp->agree)
               )
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_MASTER_AGREED(ptp);
-                return;
+                return false;
             }
             if(ptp->proposed && !ptp->agree)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_MASTER_PROPOSED(ptp);
-                return;
+                return false;
             }
             if(((0 == ptp->fdWhile) || allSynced)
                && ptp->learn && !ptp->forward
               )
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_MASTER_FORWARD(ptp);
-                return;
+                return false;
             }
             if(((0 == ptp->fdWhile) || allSynced)
                && !ptp->learn
               )
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_MASTER_LEARN(ptp, forwardDelay);
-                return;
+                return false;
             }
             if(((ptp->sync && !ptp->synced)
                 || (ptp->reRoot && (0 != ptp->rrWhile))
@@ -3815,10 +3968,12 @@ static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
                && !prt->operEdge && (ptp->learn || ptp->forward)
               )
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_MASTER_DISCARD(ptp, forwardDelay);
-                return;
+                return false;
             }
-            return;
+            return false;
      /* RootPort role transitions */
         case PRTSM_ROOT_PROPOSED:
             /* return; */
@@ -3833,30 +3988,40 @@ static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
         case PRTSM_ROOT_LEARN:
             /* return; */
         case PRTSM_REROOTED:
+            if(dry_run) /* state change */
+                return true;
             PRTSM_to_ROOT_PORT(ptp, FwdDelay);
-            return;
+            return false;
         case PRTSM_ROOT_PORT:
             if(!(ptp->selected && !ptp->updtInfo))
-                return;
+                return false;
             if(!ptp->forward && !ptp->reRoot)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_REROOT(ptp);
-                return;
+                return false;
             }
             if((ptp->agreed && !ptp->synced) || (ptp->sync && ptp->synced))
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_ROOT_SYNCED(ptp);
-                return;
+                return false;
             }
             if((allSynced && !ptp->agree) || (ptp->proposed && ptp->agree))
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_ROOT_AGREED(ptp);
-                return;
+                return false;
             }
             if(ptp->proposed && !ptp->agree)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_ROOT_PROPOSED(ptp);
-                return;
+                return false;
             }
             /* 17.20.10 of 802.1D : reRooted */
             reRooted = true;
@@ -3874,26 +4039,34 @@ static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
             {
                 if(!ptp->learn)
                 {
+                    if(dry_run) /* state change */
+                        return true;
                     PRTSM_to_ROOT_LEARN(ptp, forwardDelay);
-                    return;
+                    return false;
                 }
                 else if(!ptp->forward)
                 {
+                    if(dry_run) /* state change */
+                        return true;
                     PRTSM_to_ROOT_FORWARD(ptp);
-                    return;
+                    return false;
                 }
             }
             if(ptp->reRoot && ptp->forward)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_REROOTED(ptp);
-                return;
+                return false;
             }
             if(ptp->rrWhile != FwdDelay)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_ROOT_PORT(ptp, FwdDelay);
-                return;
+                return false;
             }
-            return;
+            return false;
      /* DesignatedPort role transitions */
         case PRTSM_DESIGNATED_PROPOSE:
             /* return; */
@@ -3908,15 +4081,19 @@ static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
         case PRTSM_DESIGNATED_LEARN:
             /* return; */
         case PRTSM_DESIGNATED_DISCARD:
+            if(dry_run) /* state change */
+                return true;
             PRTSM_to_DESIGNATED_PORT(ptp);
-            return;
+            return false;
         case PRTSM_DESIGNATED_PORT:
             if(!(ptp->selected && !ptp->updtInfo))
-                return;
+                return false;
             if(ptp->reRoot && (0 == ptp->rrWhile))
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_DESIGNATED_RETIRED(ptp);
-                return;
+                return false;
             }
             if((!ptp->learning && !ptp->forwarding && !ptp->synced)
                || (ptp->agreed && !ptp->synced)
@@ -3924,19 +4101,25 @@ static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
                || (ptp->sync && ptp->synced)
               )
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_DESIGNATED_SYNCED(ptp);
-                return;
+                return false;
             }
             if(allSynced && (ptp->proposed || !ptp->agree))
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_DESIGNATED_AGREED(ptp);
-                return;
+                return false;
             }
             if(!ptp->forward && !ptp->agreed && !ptp->proposing
                && !prt->operEdge)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_DESIGNATED_PROPOSE(ptp);
-                return;
+                return false;
             }
             if(((0 == ptp->fdWhile) || ptp->agreed || prt->operEdge)
                && ((0 == ptp->rrWhile) || !ptp->reRoot) && !ptp->sync
@@ -3944,13 +4127,17 @@ static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
             {
                 if(!ptp->learn)
                 {
+                    if(dry_run) /* state change */
+                        return true;
                     PRTSM_to_DESIGNATED_LEARN(ptp, forwardDelay);
-                    return;
+                    return false;
                 }
                 else if(!ptp->forward)
                 {
+                    if(dry_run) /* state change */
+                        return true;
                     PRTSM_to_DESIGNATED_FORWARD(ptp);
-                    return;
+                    return false;
                 }
             }
             if(((ptp->sync && !ptp->synced)
@@ -3960,55 +4147,73 @@ static void PRTSM_runr(per_tree_port_t *ptp, bool recursive_call)
                && !prt->operEdge && (ptp->learn || ptp->forward)
               )
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_DESIGNATED_DISCARD(ptp, forwardDelay);
-                return;
+                return false;
             }
-            return;
+            return false;
      /* AlternatePort and BackupPort role transitions */
         case PRTSM_BLOCK_PORT:
             if(ptp->selected && !ptp->updtInfo
                && !ptp->learning && !ptp->forwarding
               )
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_ALTERNATE_PORT(ptp, forwardDelay);
-            return;
+            }
+            return false;
         case PRTSM_BACKUP_PORT:
             /* return; */
         case PRTSM_ALTERNATE_PROPOSED:
             /* return; */
         case PRTSM_ALTERNATE_AGREED:
+            if(dry_run) /* state change */
+                return true;
             PRTSM_to_ALTERNATE_PORT(ptp, forwardDelay);
-            return;
+            return false;
         case PRTSM_ALTERNATE_PORT:
             if(!(ptp->selected && !ptp->updtInfo))
-                return;
+                return false;
             if((allSynced && !ptp->agree) || (ptp->proposed && ptp->agree))
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_ALTERNATE_AGREED(ptp);
-                return;
+                return false;
             }
             if(ptp->proposed && !ptp->agree)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_ALTERNATE_PROPOSED(ptp);
-                return;
+                return false;
             }
             if((ptp->rbWhile != 2 * HelloTime) && (roleBackup == ptp->role))
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_BACKUP_PORT(ptp, HelloTime);
-                return;
+                return false;
             }
             if((ptp->fdWhile != forwardDelay) || ptp->sync || ptp->reRoot
                || !ptp->synced)
             {
+                if(dry_run) /* state change */
+                    return true;
                 PRTSM_to_ALTERNATE_PORT(ptp, forwardDelay);
-                return;
+                return false;
             }
-            return;
+            return false;
     }
+
+    return false;
 }
 
 /* 13.35  Port State Transition state machine */
 
-static void PSTSM_run(per_tree_port_t *ptp);
+static bool PSTSM_run(per_tree_port_t *ptp, bool dry_run);
 #define PSTSM_begin(ptp) PSTSM_to_DISCARDING((ptp), true)
 
 static void PSTSM_to_DISCARDING(per_tree_port_t *ptp, bool begin)
@@ -4025,7 +4230,7 @@ static void PSTSM_to_DISCARDING(per_tree_port_t *ptp, bool begin)
     ptp->forwarding = false;
 
     if(!begin)
-        PSTSM_run(ptp);
+        PSTSM_run(ptp, false /* actual run */);
 }
 
 static void PSTSM_to_LEARNING(per_tree_port_t *ptp)
@@ -4037,7 +4242,7 @@ static void PSTSM_to_LEARNING(per_tree_port_t *ptp)
         MSTP_OUT_set_state(ptp, BR_STATE_LEARNING);
     ptp->learning = true;
 
-    PSTSM_run(ptp);
+    PSTSM_run(ptp, false /* actual run */);
 }
 
 static void PSTSM_to_FORWARDING(per_tree_port_t *ptp)
@@ -4050,28 +4255,46 @@ static void PSTSM_to_FORWARDING(per_tree_port_t *ptp)
     ptp->forwarding = true;
 
     /* No need to run, no one condition will be met
-      PSTSM_run(ptp); */
+      PSTSM_run(ptp, false); */
 }
 
-static void PSTSM_run(per_tree_port_t *ptp)
+static bool PSTSM_run(per_tree_port_t *ptp, bool dry_run)
 {
     switch(ptp->PSTSM_state)
     {
         case PSTSM_DISCARDING:
             if(ptp->learn)
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PSTSM_to_LEARNING(ptp);
-            return;
+            }
+            return false;
         case PSTSM_LEARNING:
             if(!ptp->learn)
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PSTSM_to_DISCARDING(ptp, false);
+            }
             else if(ptp->forward)
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PSTSM_to_FORWARDING(ptp);
-            return;
+            }
+            return false;
         case PSTSM_FORWARDING:
             if(!ptp->forward)
+            {
+                if(dry_run) /* state change */
+                    return true;
                 PSTSM_to_DISCARDING(ptp, false);
-            return;
+            }
+            return false;
     }
+
+    return false;
 }
 
 /* 13.36  Topology Change state machine */
@@ -4089,11 +4312,24 @@ static void TCSM_to_INACTIVE(per_tree_port_t *ptp, bool begin)
         ptp->port->tcAck = false;
 
     if(!begin)
-        TCSM_run(ptp);
+        TCSM_run(ptp, false /* actual run */);
 }
 
-static void TCSM_to_LEARNING(per_tree_port_t *ptp)
+static bool TCSM_to_LEARNING(per_tree_port_t *ptp, bool dry_run)
 {
+    if(dry_run)
+    {
+        if((ptp->TCSM_state != TCSM_LEARNING) || ptp->rcvdTc || ptp->tcProp)
+            return true;
+        if(0 == ptp->MSTID) /* CIST */
+        {
+            port_t *prt = ptp->port;
+            if(prt->rcvdTcn || prt->rcvdTcAck)
+                return true;
+        }
+        return false;
+    }
+
     ptp->TCSM_state = TCSM_LEARNING;
 
     if(0 == ptp->MSTID) /* CIST */
@@ -4105,7 +4341,8 @@ static void TCSM_to_LEARNING(per_tree_port_t *ptp)
     ptp->rcvdTc = false;
     ptp->tcProp = false;
 
-    TCSM_run(ptp);
+    TCSM_run(ptp, false /* actual run */);
+    return false;
 }
 
 static void TCSM_to_DETECTED(per_tree_port_t *ptp)
@@ -4121,7 +4358,7 @@ static void TCSM_to_DETECTED(per_tree_port_t *ptp)
     else
         prt->newInfoMsti = true;
 
-    TCSM_run(ptp);
+    TCSM_run(ptp, false /* actual run */);
 }
 
 static void TCSM_to_NOTIFIED_TCN(per_tree_port_t *ptp)
@@ -4130,7 +4367,7 @@ static void TCSM_to_NOTIFIED_TCN(per_tree_port_t *ptp)
 
     newTcWhile(ptp);
 
-    TCSM_run(ptp);
+    TCSM_run(ptp, false /* actual run */);
 }
 
 static void TCSM_to_NOTIFIED_TC(per_tree_port_t *ptp)
@@ -4147,7 +4384,7 @@ static void TCSM_to_NOTIFIED_TC(per_tree_port_t *ptp)
     }
     setTcPropTree(ptp);
 
-    TCSM_run(ptp);
+    TCSM_run(ptp, false /* actual run */);
 }
 
 static void TCSM_to_PROPAGATING(per_tree_port_t *ptp)
@@ -4158,7 +4395,7 @@ static void TCSM_to_PROPAGATING(per_tree_port_t *ptp)
     set_fdbFlush(ptp);
     ptp->tcProp = false;
 
-    TCSM_run(ptp);
+    TCSM_run(ptp, false /* actual run */);
 }
 
 static void TCSM_to_ACKNOWLEDGED(per_tree_port_t *ptp)
@@ -4169,17 +4406,17 @@ static void TCSM_to_ACKNOWLEDGED(per_tree_port_t *ptp)
     set_TopologyChange(ptp->tree, false);
     ptp->port->rcvdTcAck = false;
 
-    TCSM_run(ptp);
+    TCSM_run(ptp, false /* actual run */);
 }
 
 static void TCSM_to_ACTIVE(per_tree_port_t *ptp)
 {
     ptp->TCSM_state = TCSM_ACTIVE;
 
-    TCSM_run(ptp);
+    TCSM_run(ptp, false /* actual run */);
 }
 
-static void TCSM_run(per_tree_port_t *ptp)
+static bool TCSM_run(per_tree_port_t *ptp, bool dry_run)
 {
     bool active_port;
     port_t *prt = ptp->port;
@@ -4188,28 +4425,39 @@ static void TCSM_run(per_tree_port_t *ptp)
     {
         case TCSM_INACTIVE:
             if(ptp->learn && !ptp->fdbFlush)
-                TCSM_to_LEARNING(ptp);
-            return;
+            {
+                if(dry_run) /* state change */
+                    return true;
+                TCSM_to_LEARNING(ptp, false /* actual run */);
+            }
+            return false;
         case TCSM_LEARNING:
             active_port = (roleRoot == ptp->role)
                           || (roleDesignated == ptp->role)
                           || (roleMaster == ptp->role);
             if(active_port && ptp->forward && !prt->operEdge)
             {
+                if(dry_run) /* state change */
+                    return true;
                 TCSM_to_DETECTED(ptp);
-                return;
+                return false;
             }
             if(ptp->rcvdTc || prt->rcvdTcn || prt->rcvdTcAck || ptp->tcProp)
             {
-                TCSM_to_LEARNING(ptp);
-                return;
+                return TCSM_to_LEARNING(ptp, dry_run);
             }
             else if(!active_port && !(ptp->learn || ptp->learning))
+            {
+                if(dry_run) /* state change */
+                    return true;
                 TCSM_to_INACTIVE(ptp, false);
-            return;
+            }
+            return false;
         case TCSM_NOTIFIED_TCN:
+            if(dry_run) /* state change */
+                return true;
             TCSM_to_NOTIFIED_TC(ptp);
-            return;
+            return false;
         case TCSM_DETECTED:
             /* return; */
         case TCSM_NOTIFIED_TC:
@@ -4217,39 +4465,53 @@ static void TCSM_run(per_tree_port_t *ptp)
         case TCSM_PROPAGATING:
             /* return; */
         case TCSM_ACKNOWLEDGED:
+            if(dry_run) /* state change */
+                return true;
             TCSM_to_ACTIVE(ptp);
-            return;
+            return false;
         case TCSM_ACTIVE:
             active_port = (roleRoot == ptp->role)
                           || (roleDesignated == ptp->role)
                           || (roleMaster == ptp->role);
             if(!active_port || prt->operEdge)
             {
-                TCSM_to_LEARNING(ptp);
-                return;
+                if(dry_run) /* state change */
+                    return true;
+                TCSM_to_LEARNING(ptp, false /* actual run */);
+                return false;
             }
             if(prt->rcvdTcn)
             {
+                if(dry_run) /* state change */
+                    return true;
                 TCSM_to_NOTIFIED_TCN(ptp);
-                return;
+                return false;
             }
             if(ptp->rcvdTc)
             {
+                if(dry_run) /* state change */
+                    return true;
                 TCSM_to_NOTIFIED_TC(ptp);
-                return;
+                return false;
             }
             if(ptp->tcProp/* && !prt->operEdge */)
             {
+                if(dry_run) /* state change */
+                    return true;
                 TCSM_to_PROPAGATING(ptp);
-                return;
+                return false;
             }
             if(prt->rcvdTcAck)
             {
+                if(dry_run) /* state change */
+                    return true;
                 TCSM_to_ACKNOWLEDGED(ptp);
-                return;
+                return false;
             }
-            return;
+            return false;
     }
+
+    return false;
 }
 
 /* Execute BEGIN state. We do not define BEGIN variable
@@ -4315,7 +4577,7 @@ static void prt_state_machines_begin(port_t *prt)
 
     /* 13.33  Port Role Selection state machine */
     FOREACH_TREE_IN_BRIDGE(tree, br)
-        PRSSM_run(tree);
+        PRSSM_run(tree, false /* actual run */);
 
     /* 13.34  Port Role Transitions state machine */
     FOREACH_PTP_IN_PORT(ptp, prt)
@@ -4388,56 +4650,117 @@ static void br_state_machines_begin(bridge_t *br)
     br_state_machines_run(br);
 }
 
-/* Run each state machine */
-static void br_state_machines_run(bridge_t *br)
+/* Run each state machine.
+ * Return false iff all state machines in dry run indicate that
+ * state will not be changed. Otherwise return true.
+ */
+static bool __br_state_machines_run(bridge_t *br, bool dry_run)
 {
     port_t *prt;
     per_tree_port_t *ptp;
     tree_t *tree;
 
-    if(!br->bridgeEnabled)
-        return;
-
     /* 13.28  Port Receive state machine */
     FOREACH_PORT_IN_BRIDGE(prt, br)
-        PRSM_run(prt);
+    {
+        if(PRSM_run(prt, dry_run) && dry_run)
+            return true;
+    }
     /* 13.29  Port Protocol Migration state machine */
     FOREACH_PORT_IN_BRIDGE(prt, br)
-        PPMSM_run(prt);
+    {
+        if(PPMSM_run(prt, dry_run) && dry_run)
+            return true;
+    }
     /* 13.30  Bridge Detection state machine */
     FOREACH_PORT_IN_BRIDGE(prt, br)
-        BDSM_run(prt);
+    {
+        if(BDSM_run(prt, dry_run) && dry_run)
+            return true;
+    }
     /* 13.31  Port Transmit state machine */
     FOREACH_PORT_IN_BRIDGE(prt, br)
-        PTSM_run(prt);
+    {
+        if(PTSM_run(prt, dry_run) && dry_run)
+            return true;
+    }
 
     /* 13.32  Port Information state machine */
     FOREACH_PORT_IN_BRIDGE(prt, br)
     {
         FOREACH_PTP_IN_PORT(ptp, prt)
-            PISM_run(ptp);
+        {
+            if(PISM_run(ptp, dry_run) && dry_run)
+                return true;
+        }
     }
 
     /* 13.33  Port Role Selection state machine */
     FOREACH_TREE_IN_BRIDGE(tree, br)
-        PRSSM_run(tree);
+    {
+        if(PRSSM_run(tree, dry_run) && dry_run)
+            return true;
+    }
 
     /* 13.34  Port Role Transitions state machine */
     FOREACH_PORT_IN_BRIDGE(prt, br)
     {
         FOREACH_PTP_IN_PORT(ptp, prt)
-            PRTSM_run(ptp);
+        {
+            if(PRTSM_run(ptp, dry_run) && dry_run)
+                return true;
+        }
     }
     /* 13.35  Port State Transition state machine */
     FOREACH_PORT_IN_BRIDGE(prt, br)
     {
         FOREACH_PTP_IN_PORT(ptp, prt)
-            PSTSM_run(ptp);
+        {
+            if(PSTSM_run(ptp, dry_run) && dry_run)
+                return true;
+        }
     }
     /* 13.36  Topology Change state machine */
     FOREACH_PORT_IN_BRIDGE(prt, br)
     {
         FOREACH_PTP_IN_PORT(ptp, prt)
-            TCSM_run(ptp);
+        {
+            if(TCSM_run(ptp, dry_run) && dry_run)
+                return true;
+        }
     }
+
+    return false;
+}
+
+/* Run state machines until their state stabilizes.
+ * Do not consume more than 1 second.
+ */
+static void br_state_machines_run(bridge_t *br)
+{
+    struct timeval tv, tv_end;
+    signed long delta;
+
+    if(!br->bridgeEnabled)
+        return;
+
+    gettimeofday(&tv_end, NULL);
+    ++(tv_end.tv_sec);
+
+    do {
+        if(!__br_state_machines_run(br, true /* dry run */))
+            return;
+        __br_state_machines_run(br, false /* actual run */);
+
+        /* Check for the timeout */
+        gettimeofday(&tv, NULL);
+        if(0 < (delta = tv.tv_sec - tv_end.tv_sec))
+            return;
+        if(0 == delta)
+        {
+            delta = tv.tv_usec - tv_end.tv_usec;
+            if(0 < delta)
+                return;
+        }
+    } while(true);
 }
