@@ -26,7 +26,7 @@
 
 /* Data transfer module for ProFTPD
  *
- * $Id: mod_xfer.c,v 1.297 2011/09/24 19:54:23 castaglia Exp $
+ * $Id: mod_xfer.c,v 1.297.2.2 2013/02/13 17:48:53 castaglia Exp $
  */
 
 #include "conf.h"
@@ -866,27 +866,25 @@ static void stor_chown(void) {
    * requested via GroupOwner.
    */
   if ((session.fsuid != (uid_t) -1) && xfer_path) {
-    int err = 0, iserr = 0;
+    int res, xerrno = 0;
 
     PRIVS_ROOT
-    if (pr_fsio_chown(xfer_path, session.fsuid, session.fsgid) == -1) {
-      iserr++;
-      err = errno;
-    }
+    res = pr_fsio_lchown(xfer_path, session.fsuid, session.fsgid);
+    xerrno = errno;
     PRIVS_RELINQUISH
 
-    if (iserr) {
-      pr_log_pri(PR_LOG_WARNING, "chown(%s) as root failed: %s", xfer_path,
-        strerror(err));
+    if (res < 0) {
+      pr_log_pri(PR_LOG_WARNING, "lchown(%s) as root failed: %s", xfer_path,
+        strerror(xerrno));
 
     } else {
       if (session.fsgid != (gid_t) -1) {
-        pr_log_debug(DEBUG2, "root chown(%s) to uid %lu, gid %lu successful",
+        pr_log_debug(DEBUG2, "root lchown(%s) to uid %lu, gid %lu successful",
           xfer_path, (unsigned long) session.fsuid,
           (unsigned long) session.fsgid);
 
       } else {
-        pr_log_debug(DEBUG2, "root chown(%s) to uid %lu successful", xfer_path,
+        pr_log_debug(DEBUG2, "root lchown(%s) to uid %lu successful", xfer_path,
           (unsigned long) session.fsuid);
       }
 
@@ -902,16 +900,15 @@ static void stor_chown(void) {
        * root privs aren't used, the chmod() will fail because the old owner/
        * session user doesn't have the necessary privileges to do so).
        */
-      iserr = 0;
+      xerrno = 0;
       PRIVS_ROOT
-      if (pr_fsio_chmod(xfer_path, st.st_mode) < 0) {
-        iserr++;
-      }
+      res = pr_fsio_chmod(xfer_path, st.st_mode);
+      xerrno = errno;
       PRIVS_RELINQUISH
 
-      if (iserr) {
+      if (res < 0) {
         pr_log_debug(DEBUG0, "root chmod(%s) to %04o failed: %s", xfer_path,
-          (unsigned int) st.st_mode, strerror(errno));
+          (unsigned int) st.st_mode, strerror(xerrno));
 
       } else {
         pr_log_debug(DEBUG2, "root chmod(%s) to %04o successful", xfer_path,
@@ -921,7 +918,7 @@ static void stor_chown(void) {
 
   } else if ((session.fsgid != (gid_t) -1) && xfer_path) {
     register unsigned int i;
-    int res, use_root_privs = TRUE;
+    int res, use_root_privs = TRUE, xerrno;
 
     /* Check if session.fsgid is in session.gids.  If not, use root privs. */
     for (i = 0; i < session.gids->nelts; i++) {
@@ -937,18 +934,19 @@ static void stor_chown(void) {
       PRIVS_ROOT
     }
 
-    res = pr_fsio_chown(xfer_path, (uid_t) -1, session.fsgid);
+    res = pr_fsio_lchown(xfer_path, (uid_t) -1, session.fsgid);
+    xerrno = errno;
 
     if (use_root_privs) {
       PRIVS_RELINQUISH
     }
 
-    if (res == -1) {
-      pr_log_pri(PR_LOG_WARNING, "%schown(%s) failed: %s",
-        use_root_privs ? "root " : "", xfer_path, strerror(errno));
+    if (res < 0) {
+      pr_log_pri(PR_LOG_WARNING, "%slchown(%s) failed: %s",
+        use_root_privs ? "root " : "", xfer_path, strerror(xerrno));
 
     } else {
-      pr_log_debug(DEBUG2, "%schown(%s) to gid %lu successful",
+      pr_log_debug(DEBUG2, "%slchown(%s) to gid %lu successful",
         use_root_privs ? "root " : "", xfer_path,
         (unsigned long) session.fsgid);
 
@@ -960,6 +958,7 @@ static void stor_chown(void) {
       }
 
       res = pr_fsio_chmod(xfer_path, st.st_mode);
+      xerrno = errno;
 
       if (use_root_privs) {
         PRIVS_RELINQUISH
@@ -968,7 +967,7 @@ static void stor_chown(void) {
       if (res < 0) {
         pr_log_debug(DEBUG0, "%schmod(%s) to %04o failed: %s",
           use_root_privs ? "root " : "", xfer_path, (unsigned int) st.st_mode,
-          strerror(errno));
+          strerror(xerrno));
       }
     }
   }
@@ -1796,24 +1795,31 @@ MODRET xfer_stor(cmd_rec *cmd) {
     pr_throttle_pause(nbytes_stored, TRUE);
 
     if (stor_complete() < 0) {
+      int xerrno = errno;
+
+      _log_transfer('i', 'i');
+
       /* Check errno for EDQOUT (or the most appropriate alternative).
        * (I hate the fact that FTP has a special response code just for
        * this, and that clients actually expect it.  Special cases are
        * stupid.)
        */
 #if defined(EDQUOT)
-      if (errno == EDQUOT) {
-        pr_response_add_err(R_552, "%s: %s", cmd->arg, strerror(errno));
+      if (xerrno == EDQUOT) {
+        pr_response_add_err(R_552, "%s: %s", cmd->arg, strerror(xerrno));
+        errno = xerrno;
         return PR_ERROR(cmd);
       }
 #elif defined(EFBIG)
-      if (errno == EFBIG) {
-        pr_response_add_err(R_552, "%s: %s", cmd->arg, strerror(errno));
+      if (xerrno == EFBIG) {
+        pr_response_add_err(R_552, "%s: %s", cmd->arg, strerror(xerrno));
+        errno = xerrno;
         return PR_ERROR(cmd);
       }
 #endif
 
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -2411,7 +2417,6 @@ MODRET xfer_log_stor(cmd_rec *cmd) {
 }
 
 MODRET xfer_log_retr(cmd_rec *cmd) {
-
   _log_transfer('o', 'c');
 
   /* Increment the file counters. */

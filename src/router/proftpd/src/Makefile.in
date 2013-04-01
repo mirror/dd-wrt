@@ -180,7 +180,7 @@ dirtree.o: ../include/session.h ../include/event.h ../include/var.h
 dirtree.o: ../include/throttle.h ../include/trace.h ../include/encode.h
 dirtree.o: ../include/compat.h ../include/proctitle.h ../include/pidfile.h
 dirtree.o: ../include/env.h ../include/pr-syslog.h ../include/memcache.h
-dirtree.o: ../include/tpl.h
+dirtree.o: ../include/tpl.h ../include/privs.h
 display.o: ../include/conf.h ../include/version.h ../config.h
 display.o: ../include/default_paths.h ../include/options.h ../include/pool.h
 display.o: ../include/str.h ../include/table.h ../include/proftpd.h
@@ -332,7 +332,7 @@ fsio.o: ../include/session.h ../include/event.h ../include/var.h
 fsio.o: ../include/throttle.h ../include/trace.h ../include/encode.h
 fsio.o: ../include/compat.h ../include/proctitle.h ../include/pidfile.h
 fsio.o: ../include/env.h ../include/pr-syslog.h ../include/memcache.h
-fsio.o: ../include/tpl.h
+fsio.o: ../include/tpl.h ../include/privs.h
 ftpdctl.o: ../include/conf.h ../include/version.h ../config.h
 ftpdctl.o: ../include/default_paths.h ../include/options.h ../include/pool.h
 ftpdctl.o: ../include/str.h ../include/table.h ../include/proftpd.h

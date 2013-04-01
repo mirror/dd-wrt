@@ -2,7 +2,7 @@
  * ProFTPD: mod_auth_pam -- Support for PAM-style authentication.
  * Copyright (c) 1998, 1999, 2000 Habeeb J. Dihu aka
  *   MacGyver <macgyver@tos.net>, All Rights Reserved.
- * Copyright 2000-2011 The ProFTPD Project
+ * Copyright 2000-2013 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
  *
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -lpam$
- * $Id: mod_auth_pam.c,v 1.26 2011/05/23 21:11:56 castaglia Exp $
+ * $Id: mod_auth_pam.c,v 1.26.2.1 2013/02/26 23:14:19 castaglia Exp $
  */
 
 #include "conf.h"
@@ -43,7 +43,7 @@
 
 #ifdef HAVE_PAM
 
-#define MOD_AUTH_PAM_VERSION		"mod_auth_pam/1.1"
+#define MOD_AUTH_PAM_VERSION		"mod_auth_pam/1.2"
 
 #ifdef HAVE_SECURITY_PAM_APPL_H
 # ifdef HPUX11
@@ -130,13 +130,26 @@ static int pam_exchange(int num_msg, PR_PAM_CONST struct pam_message **msg,
 
     case PAM_TEXT_INFO:
     case PAM_ERROR_MSG:
+#ifdef PAM_RADIO_TYPE
+    case PAM_RADIO_TYPE:
+#endif /* PAM_RADIO_TYPE */
       pr_trace_msg(trace_channel, 9, "received %s response: %s",
-        msg[i]->msg_style == PAM_TEXT_INFO ? "PAM_TEXT_INFO" : "PAM_ERROR_MSG",
-        msg[i]->msg);
+        msg[i]->msg_style == PAM_TEXT_INFO ? "PAM_TEXT_INFO" :
+          msg[i]->msg_style == PAM_ERROR_MSG ? "PAM_ERROR_MSG" :
+          "PAM_RADIO_TYPE", msg[i]->msg);
 
       /* Ignore it, but pam still wants a NULL response... */
       response[i].resp = NULL;
       break;
+
+#ifdef PAM_BINARY_PROMPT
+    case PAM_BINARY_PROMPT:
+      pr_trace_msg(trace_channel, 9, "received PAM_BINARY_PROMPT response");
+
+      /* Ignore it, but pam still wants a NULL response... */
+      response[i].resp = NULL;
+      break;
+#endif /* PAM_BINARY_PROMPT */
 
     default:
       /* Must be an error of some sort... */

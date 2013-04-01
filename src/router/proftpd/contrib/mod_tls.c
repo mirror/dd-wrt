@@ -2,7 +2,7 @@
  * mod_tls - An RFC2228 SSL/TLS module for ProFTPD
  *
  * Copyright (c) 2000-2002 Peter 'Luna' Runestig <peter@runestig.com>
- * Copyright (c) 2002-2012 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2002-2013 TJ Saunders <tj@castaglia.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modifi-
@@ -470,7 +470,7 @@ static tls_sess_cache_t *tls_sess_cache = NULL;
 static SSL *ctrl_ssl = NULL;
 static SSL_CTX *ssl_ctx = NULL;
 static X509_STORE *tls_crl_store = NULL;
-static DH *tls_tmp_dh = NULL;
+static array_header *tls_tmp_dhs = NULL;
 static RSA *tls_tmp_rsa = NULL;
 
 /* SSL/TLS support functions */
@@ -2050,6 +2050,12 @@ static int tls_renegotiate_timeout_cb(CALLBACK_FRAME) {
 }
 
 static int tls_ctrl_renegotiate_cb(CALLBACK_FRAME) {
+
+  /* Guard against a timer firing as the SSL session is being torn down. */
+  if (ctrl_ssl == NULL) {
+    return 0;
+  }
+
   if (tls_flags & TLS_SESS_ON_CTRL) {
 
     if (TRUE
@@ -2083,58 +2089,60 @@ static int tls_ctrl_renegotiate_cb(CALLBACK_FRAME) {
 #endif
 
 static DH *tls_dh_cb(SSL *ssl, int is_export, int keylength) {
-  FILE *fp = NULL;
+  DH *dh = NULL;
 
-  if (tls_tmp_dh) {
-    return tls_tmp_dh;
-  }
+  if (tls_tmp_dhs != NULL &&
+      tls_tmp_dhs->nelts > 0) {
+    register unsigned int i;
+    DH **dhs;
 
-  if (tls_dhparam_file) {
-    fp = fopen(tls_dhparam_file, "r");
-    if (fp) {
-      tls_tmp_dh = PEM_read_DHparams(fp, NULL, NULL, NULL);
-      fclose(fp);
-
-      if (tls_tmp_dh) {
-        return tls_tmp_dh;
+    dhs = tls_tmp_dhs->elts;
+    for (i = 0; i < tls_tmp_dhs->nelts; i++) {
+      /* Note: the keylength argument is in BITS, but DH_size() returns
+       * the number of BYTES.
+       */
+      if (DH_size(dhs[i]) == (keylength / 8)) {
+        return dhs[i];
       }
-
-    } else {
-      pr_log_debug(DEBUG3, MOD_TLS_VERSION
-        ": unable to open TLSDHParamFile '%s': %s", tls_dhparam_file,
-          strerror(errno));
     }
   }
 
   switch (keylength) {
     case 512:
-      tls_tmp_dh = get_dh512();
+      dh = get_dh512();
       break;
 
     case 768:
-      tls_tmp_dh = get_dh768();
+      dh = get_dh768();
       break;
 
      case 1024:
-       tls_tmp_dh = get_dh1024();
+       dh = get_dh1024();
        break;
 
      case 1536:
-       tls_tmp_dh = get_dh1536();
+       dh = get_dh1536();
        break;
 
      case 2048:
-       tls_tmp_dh = get_dh2048();
+       dh = get_dh2048();
        break;
 
      default:
        tls_log("unsupported DH key length %d requested, returning 1024 bits",
          keylength);
-       tls_tmp_dh = get_dh1024();
+       dh = get_dh1024();
        break;
   }
 
-  return tls_tmp_dh;
+  /* Add this DH to the list, so that it can be freed properly later. */
+  if (tls_tmp_dhs == NULL) {
+    tls_tmp_dhs = make_array(session.pool, 1, sizeof(DH *));
+  }
+
+  *((DH **) push_array(tls_tmp_dhs)) = dh;
+
+  return dh;
 }
 
 /* Post 0.9.7a, RSA blinding is turned on by default, so there is no need to
@@ -2267,9 +2275,6 @@ static int tls_init_ctx(void) {
   SSL_CTX_set_options(ssl_ctx, ssl_opts);
 
   /* Set up session caching. */
-  SSL_CTX_set_session_id_context(ssl_ctx, (unsigned char *) MOD_TLS_VERSION,
-    strlen(MOD_TLS_VERSION));
-
   c = find_config(main_server->conf, CONF_PARAM, "TLSSessionCache", FALSE);
   if (c) {
     const char *provider;
@@ -3356,9 +3361,16 @@ static void tls_cleanup(int flags) {
     ssl_ctx = NULL;
   }
 
-  if (tls_tmp_dh) {
-    DH_free(tls_tmp_dh);
-    tls_tmp_dh = NULL;
+  if (tls_tmp_dhs) {
+    register unsigned int i;
+    DH **dhs;
+
+    dhs = tls_tmp_dhs->elts;
+    for (i = 0; i < tls_tmp_dhs->nelts; i++) {
+      DH_free(dhs[i]);
+    }
+
+    tls_tmp_dhs = NULL;
   }
 
   if (tls_tmp_rsa) {
@@ -6813,15 +6825,23 @@ MODRET tls_prot(cmd_rec *cmd) {
 
 /* usage: TLSCACertificateFile file */
 MODRET set_tlscacertfile(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (!file_exists(cmd->argv[1]))
+  PRIVS_ROOT
+  res = file_exists(cmd->argv[1]);
+  PRIVS_RELINQUISH
+
+  if (!res) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", cmd->argv[1],
       "' does not exist", NULL));
+  }
 
-  if (*cmd->argv[1] != '/')
+  if (*cmd->argv[1] != '/') {
     CONF_ERROR(cmd, "parameter must be an absolute path");
+  }
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -6829,14 +6849,22 @@ MODRET set_tlscacertfile(cmd_rec *cmd) {
 
 /* usage: TLSCACertificatePath path */
 MODRET set_tlscacertpath(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-   if (!dir_exists(cmd->argv[1]))
-    CONF_ERROR(cmd, "parameter must be a directory path");
+  PRIVS_ROOT
+  res = dir_exists(cmd->argv[1]);
+  PRIVS_RELINQUISH
 
-  if (*cmd->argv[1] != '/')
+  if (!res) {
+    CONF_ERROR(cmd, "parameter must be a directory path");
+  }
+
+  if (*cmd->argv[1] != '/') {
     CONF_ERROR(cmd, "parameter must be an absolute path");
+  }
  
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]); 
   return PR_HANDLED(cmd);
@@ -6844,15 +6872,23 @@ MODRET set_tlscacertpath(cmd_rec *cmd) {
 
 /* usage: TLSCARevocationFile file */
 MODRET set_tlscacrlfile(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (!file_exists(cmd->argv[1]))
+  PRIVS_ROOT
+  res = file_exists(cmd->argv[1]);
+  PRIVS_RELINQUISH
+
+  if (!res) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", cmd->argv[1],
       "' does not exist", NULL));
+  }
 
-  if (*cmd->argv[1] != '/')
+  if (*cmd->argv[1] != '/') {
     CONF_ERROR(cmd, "parameter must be an absolute path");
+  }
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -6860,14 +6896,22 @@ MODRET set_tlscacrlfile(cmd_rec *cmd) {
 
 /* usage: TLSCARevocationPath path */
 MODRET set_tlscacrlpath(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-   if (!dir_exists(cmd->argv[1]))
-    CONF_ERROR(cmd, "parameter must be a directory path");
+  PRIVS_ROOT
+  res = dir_exists(cmd->argv[1]);
+  PRIVS_RELINQUISH
 
-  if (*cmd->argv[1] != '/')
+  if (!res) {
+    CONF_ERROR(cmd, "parameter must be a directory path");
+  }
+
+  if (*cmd->argv[1] != '/') {
     CONF_ERROR(cmd, "parameter must be an absolute path");
+  }
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -6875,15 +6919,23 @@ MODRET set_tlscacrlpath(cmd_rec *cmd) {
 
 /* usage: TLSCertificateChainFile file */
 MODRET set_tlscertchain(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (!file_exists(cmd->argv[1]))
+  PRIVS_ROOT
+  res = file_exists(cmd->argv[1]);
+  PRIVS_RELINQUISH
+
+  if (!res) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", cmd->argv[1],
       "' does not exist", NULL));
+  }
 
-  if (*cmd->argv[1] != '/')
+  if (*cmd->argv[1] != '/') {
     CONF_ERROR(cmd, "parameter must be an absolute path");
+  }
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -6953,15 +7005,23 @@ MODRET set_tlscryptodevice(cmd_rec *cmd) {
 
 /* usage: TLSDHParamFile file */
 MODRET set_tlsdhparamfile(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (!file_exists(cmd->argv[1]))
+  PRIVS_ROOT
+  res = file_exists(cmd->argv[1]);
+  PRIVS_RELINQUISH
+
+  if (!res) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", cmd->argv[1],
       "' does not exist", NULL));
+  }
 
-  if (*cmd->argv[1] != '/')
+  if (*cmd->argv[1] != '/') {
     CONF_ERROR(cmd, "parameter must be an absolute path");
+  }
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -6969,16 +7029,23 @@ MODRET set_tlsdhparamfile(cmd_rec *cmd) {
 
 /* usage: TLSDSACertificateFile file */
 MODRET set_tlsdsacertfile(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (!file_exists(cmd->argv[1])) {
+  PRIVS_ROOT
+  res = file_exists(cmd->argv[1]);
+  PRIVS_RELINQUISH
+
+  if (!res) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", cmd->argv[1],
       "' does not exist", NULL));
   }
 
-  if (*cmd->argv[1] != '/')
+  if (*cmd->argv[1] != '/') {
     CONF_ERROR(cmd, "parameter must be an absolute path");
+  }
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -6986,16 +7053,23 @@ MODRET set_tlsdsacertfile(cmd_rec *cmd) {
 
 /* usage: TLSDSACertificateKeyFile file */
 MODRET set_tlsdsakeyfile(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (!file_exists(cmd->argv[1])) {
+  PRIVS_ROOT
+  res = file_exists(cmd->argv[1]);
+  PRIVS_RELINQUISH
+
+  if (!res) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", cmd->argv[1],
       "' does not exist", NULL));
   }
 
-  if (*cmd->argv[1] != '/')
+  if (*cmd->argv[1] != '/') {
     CONF_ERROR(cmd, "parameter must be an absolute path");
+  }
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -7129,16 +7203,23 @@ MODRET set_tlspassphraseprovider(cmd_rec *cmd) {
 
 /* usage: TLSPKCS12File file */
 MODRET set_tlspkcs12file(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (!file_exists(cmd->argv[1])) {
+  PRIVS_ROOT
+  res = file_exists(cmd->argv[1]);
+  PRIVS_RELINQUISH
+
+  if (!res) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", cmd->argv[1],
       "' does not exist", NULL));
   }
 
-  if (*cmd->argv[1] != '/')
+  if (*cmd->argv[1] != '/') {
     CONF_ERROR(cmd, "parameter must be an absolute path");
+  }
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -7348,16 +7429,23 @@ MODRET set_tlsrequired(cmd_rec *cmd) {
 
 /* usage: TLSRSACertificateFile file */
 MODRET set_tlsrsacertfile(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (!file_exists(cmd->argv[1])) {
+  PRIVS_ROOT
+  res = file_exists(cmd->argv[1]);
+  PRIVS_RELINQUISH
+
+  if (!res) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", cmd->argv[1],
       "' does not exist", NULL));
   }
 
-  if (*cmd->argv[1] != '/')
+  if (*cmd->argv[1] != '/') {
     CONF_ERROR(cmd, "parameter must be an absolute path");
+  }
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -7365,16 +7453,23 @@ MODRET set_tlsrsacertfile(cmd_rec *cmd) {
 
 /* usage: TLSRSACertificateKeyFile file */
 MODRET set_tlsrsakeyfile(cmd_rec *cmd) {
+  int res;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (!file_exists(cmd->argv[1])) {
+  PRIVS_ROOT
+  res = file_exists(cmd->argv[1]);
+  PRIVS_RELINQUISH
+
+  if (!res) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", cmd->argv[1],
       "' does not exist", NULL));
   }
 
-  if (*cmd->argv[1] != '/')
+  if (*cmd->argv[1] != '/') {
     CONF_ERROR(cmd, "parameter must be an absolute path");
+  }
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -8089,6 +8184,38 @@ static int tls_sess_init(void) {
   tls_crl_path = get_param_ptr(main_server->conf, "TLSCARevocationPath", FALSE);
 
   tls_dhparam_file = get_param_ptr(main_server->conf, "TLSDHParamFile", FALSE);
+  if (tls_dhparam_file != NULL) {
+    FILE *fp;
+    int xerrno;
+
+    /* Load the DH params from the file. */
+    PRIVS_ROOT
+    fp = fopen(tls_dhparam_file, "r");
+    xerrno = errno;
+    PRIVS_RELINQUISH
+
+    if (fp != NULL) {
+      DH *dh;
+
+      dh = PEM_read_DHparams(fp, NULL, NULL, NULL);
+      if (dh != NULL) {
+        tls_tmp_dhs = make_array(session.pool, 1, sizeof(DH *));
+      }
+
+      while (dh != NULL) {
+        pr_signals_handle();
+        *((DH **) push_array(tls_tmp_dhs)) = dh;
+        dh = PEM_read_DHparams(fp, NULL, NULL, NULL);
+      }
+
+      fclose(fp);
+
+    } else {
+      pr_log_debug(DEBUG3, MOD_TLS_VERSION
+        ": unable to open TLSDHParamFile '%s': %s", tls_dhparam_file,
+          strerror(xerrno));
+    }
+  }
 
   tls_dsa_cert_file = get_param_ptr(main_server->conf, "TLSDSACertificateFile",
     FALSE);
@@ -8222,17 +8349,8 @@ static int tls_sess_init(void) {
    * cache sessions from all vhosts together, and we need to keep them
    * separate.
    */
-  SSL_CTX_set_session_id_context(ssl_ctx, (unsigned char *) main_server,
-    sizeof(main_server));
-
-  /* Update the session ID context to use.  This is important; it ensures
-   * that the session IDs for this particular vhost will differ from those
-   * for another vhost.  An external SSL session cache will possibly
-   * cache sessions from all vhosts together, and we need to keep them
-   * separate.
-   */
-  SSL_CTX_set_session_id_context(ssl_ctx, (unsigned char *) main_server,
-    sizeof(main_server));
+  SSL_CTX_set_session_id_context(ssl_ctx,
+    (unsigned char *) &(main_server->sid), sizeof(main_server->sid));
 
   /* Install our data channel NetIO handlers. */
   tls_netio_install_data();

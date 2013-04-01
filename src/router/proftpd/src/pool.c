@@ -25,7 +25,7 @@
  */
 
 /* Resource allocation code
- * $Id: pool.c,v 1.58 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: pool.c,v 1.58.2.1 2013/01/30 22:39:03 castaglia Exp $
  */
 
 #include "conf.h"
@@ -142,6 +142,7 @@ static union block_hdr *malloc_block(int size) {
 static void chk_on_blk_list(union block_hdr *blok, union block_hdr *free_blk,
     const char *pool_tag) {
 
+#ifdef PR_USE_DEVEL
   /* Debug code */
 
   while (free_blk) {
@@ -154,6 +155,7 @@ static void chk_on_blk_list(union block_hdr *blok, union block_hdr *free_blk,
      "in pool '%s'", pool_tag ? pool_tag : "<unnamed>");
     exit(1);
   }
+#endif /* PR_USE_DEVEL */
 }
 
 /* Free a chain of blocks -- _must_ call with alarms blocked. */
