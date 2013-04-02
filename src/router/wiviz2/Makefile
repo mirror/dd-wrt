@@ -40,16 +40,16 @@ ifeq ($(CONFIG_RT61),y)
 CCOPTS+=-DHAVE_RT2880 
 endif
 ifeq ($(CONFIG_TIEXTRA1),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_TIEXTRA2),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_MINIDLNA),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 
 wiviz: clean ${OBJS}
