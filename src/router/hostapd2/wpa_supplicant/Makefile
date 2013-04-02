@@ -60,16 +60,16 @@ OBJS_c = wpa_cli.o ../src/common/wpa_ctrl.o
 -include .config
 
 ifeq ($(CONFIG_TIEXTRA1),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_TIEXTRA2),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_MINIDLNA),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 
 ifndef CONFIG_OS
