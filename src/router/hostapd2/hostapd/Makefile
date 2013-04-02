@@ -21,6 +21,19 @@ LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 -include ../../.config
 -include .config
 
+ifeq ($(CONFIG_TIEXTRA1),y)
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+endif
+ifeq ($(CONFIG_SAMBA3),y)
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+endif
+ifeq ($(CONFIG_MINIDLNA),y)
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+endif
+
 ifndef CONFIG_OS
 ifdef CONFIG_NATIVE_WINDOWS
 CONFIG_OS=win32
