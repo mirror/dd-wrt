@@ -44,16 +44,16 @@ endif
 endif
 
 ifeq ($(CONFIG_TIEXTRA1),y)
-ADDLIBS =  -L$(TOP)/jansson/src/.libs -ljansson -lm
+ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_TIEXTRA2),y)
-ADDLIBS =  -L$(TOP)/jansson/src/.libs -ljansson -lm
+ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_SAMBA3),y)
-ADDLIBS =  -L$(TOP)/jansson/src/.libs -ljansson -lm
+ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_MINIDLNA),y)
-ADDLIBS =  -L$(TOP)/jansson/src/.libs -ljansson -lm
+ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 
 all: upnp
