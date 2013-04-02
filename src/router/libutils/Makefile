@@ -168,24 +168,24 @@ ifeq ($(CONFIG_SAMBA),y)
 endif
 ifeq ($(CONFIG_SAMBA3),y)
   OBJS += samba3.o 
-  CFLAGS += -I$(TOP)/jansson/src -L$(TOP)/jansson/src/.libs -ljansson
+  CFLAGS += -I$(TOP)/jansson/src -L$(TOP)/jansson/src/.libs -ljansson -lm
   CFLAGS += -DHAVE_SAMBA3
   CFLAGS += -DHAVE_SAMBA_SERVER
 endif
 ifeq ($(CONFIG_MINIDLNA),y)
   OBJS +=  dlna.o
-  CFLAGS += -I$(TOP)/jansson/src -L$(TOP)/jansson/src/.libs -ljansson
+  CFLAGS += -I$(TOP)/jansson/src -L$(TOP)/jansson/src/.libs -ljansson -lm
   CFLAGS += -DHAVE_MINIDLNA
 endif
 
 ifeq ($(CONFIG_TIEXTRA1),y)
   OBJS += $(TOP)/private/telkom/mchillispot.o
-  CFLAGS += -I$(TOP)/jansson/src -I$(TOP)/private/telkom -L$(TOP)/jansson/src/.libs -ljansson
+  CFLAGS += -I$(TOP)/jansson/src -I$(TOP)/private/telkom -L$(TOP)/jansson/src/.libs -ljansson -lm
   CFLAGS += -DHAVE_TIEXTRA1
 endif
 ifeq ($(CONFIG_TIEXTRA2),y)
   OBJS += $(TOP)/private/telkom/mwifidog.o
-  CFLAGS += -I$(TOP)/jansson/src -I$(TOP)/private/telkom -L$(TOP)/jansson/src/.libs -ljansson
+  CFLAGS += -I$(TOP)/jansson/src -I$(TOP)/private/telkom -L$(TOP)/jansson/src/.libs -ljansson -lm
   CFLAGS += -DHAVE_TIEXTRA2
 endif
 ifeq ($(CONFIG_GEMTEK),y)
@@ -1134,7 +1134,6 @@ libutils.so: $(OBJS)
 
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c
 	$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) -c -o $@ $^
-
 
 libwireless.so: $(WOBJS)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
