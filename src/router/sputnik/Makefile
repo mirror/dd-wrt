@@ -25,20 +25,6 @@ endif
 
 # LDFLAGS += -L$(INSTALLDIR)/nvram/usr/lib -lnvram -lshared
 LDFLAGS =-L../libutils -lwireless -lutils -L../nvram -lnvram -lcrypt
-ifeq ($(CONFIG_TIEXTRA1),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
-endif
-ifeq ($(CONFIG_TIEXTRA2),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
-endif
-ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
-endif
-ifeq ($(CONFIG_MINIDLNA),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
-endif
-
-
 ifeq ($(CONFIG_MADWIFI),y)
 LDFLAGS += -lm
 endif
@@ -48,6 +34,19 @@ endif
 ifeq ($(CONFIG_ATH9K),y)
 LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 LDFLAGS += -lm
+endif
+
+ifeq ($(CONFIG_TIEXTRA1),y)
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+endif
+ifeq ($(CONFIG_SAMBA3),y)
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+endif
+ifeq ($(CONFIG_MINIDLNA),y)
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 
 OBJS := src/apd.o
