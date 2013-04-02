@@ -5,20 +5,21 @@ ATH9K_CFLAGS=-I$(TOP)/libnl-tiny/include\
 ATH9K_LDFLAGS=-L$(TOP)/libnl-tiny/ -lm -lnl-tiny
 endif
 ifeq ($(CONFIG_TIEXTRA1),y)
-ATH9K_LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+ATH9K_LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_TIEXTRA2),y)
-ATH9K_LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+ATH9K_LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_SAMBA3),y)
-ATH9K_LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+ATH9K_LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_MINIDLNA),y)
-ATH9K_LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
+ATH9K_LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 
 ifndef $(HOSTAPDVERSION)
 HOSTAPDVERSION=20120910
+#HOSTAPDVERSION=wps
 endif
 
 
