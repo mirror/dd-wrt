@@ -16,19 +16,6 @@ endif
 -include .config
 -include $(if $(MULTICALL),../hostapd/.config)
 
-ifeq ($(CONFIG_TIEXTRA1),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
-endif
-ifeq ($(CONFIG_TIEXTRA2),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
-endif
-ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
-endif
-ifeq ($(CONFIG_MINIDLNA),y)
-LDFLAGS +=  -L$(TOP)/jansson/src/.libs -ljansson
-endif
-
 BINALL=wpa_supplicant wpa_cli
 
 ifndef CONFIG_NO_WPA_PASSPHRASE
