@@ -3,6 +3,6 @@ timeout 0
 
 title   DD-WRT
 root    (hd0,0)
-kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd console=tty0,115200n8 reboot=bios vga=0x31a
+kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd console=tty0,115200n8 reboot=bios vga=normal
 boot
 
