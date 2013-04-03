@@ -38,7 +38,7 @@
 
 /** Defaults configuration values */
 //#ifndef SYSCONFDIR
-	#define DEFAULT_CONFIGFILE "/tmp/etc/wifidog.conf"
+	#define DEFAULT_CONFIGFILE "/tmp/wifidog/wifidog.conf"
 	#define DEFAULT_HTMLMSGFILE "/etc/wifidog-msg.html"
 /*#else
 	#define DEFAULT_CONFIGFILE SYSCONFDIR"/wifidog.conf"
@@ -54,8 +54,8 @@
 #define DEFAULT_CHECKINTERVAL 60
 #define DEFAULT_LOG_SYSLOG 0
 #define DEFAULT_SYSLOG_FACILITY LOG_DAEMON
-#define DEFAULT_WDCTL_SOCK "/tmp/wdctl.sock"
-#define DEFAULT_INTERNAL_SOCK "/tmp/wifidog.sock"
+#define DEFAULT_WDCTL_SOCK "/tmp/wifidog/wdctl.sock"
+#define DEFAULT_INTERNAL_SOCK "/tmp/wifidog/wifidog.sock"
 #define DEFAULT_AUTHSERVPORT 80
 #define DEFAULT_AUTHSERVSSLPORT 443
 /** Note that DEFAULT_AUTHSERVSSLAVAILABLE must be 0 or 1, even if the config file syntax is yes or no */
