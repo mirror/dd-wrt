@@ -327,7 +327,7 @@ open_db(sqlite3 **sq3)
 	sql_exec(db, "pragma page_size = 4096");
 	sql_exec(db, "pragma journal_mode = OFF");
 	sql_exec(db, "pragma synchronous = OFF;");
-	sql_exec(db, "pragma default_cache_size = 8192;");
+	sql_exec(db, "pragma default_cache_size = 256;");
 
 	return new_db;
 }
