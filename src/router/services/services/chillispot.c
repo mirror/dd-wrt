@@ -199,8 +199,8 @@ void main_config(void)
 		fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j MASQUERADE\n", chillinet);
 		}
 	else
-		fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-			chillinet, get_wan_ipaddr());
+		fprintf(fp, "iptables -t nat -I POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n",
+			nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
 	fclose(fp);
 
 	if (!(fp = fopen("/tmp/chilli/ip-down.sh", "w"))) {
@@ -221,8 +221,8 @@ void main_config(void)
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j MASQUERADE\n", chillinet);
 		}
 	else
-		fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j SNAT --to-source=%s\n",
-			chillinet, get_wan_ipaddr());
+		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n",
+			nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
 	fclose(fp);
 /*	
 		//	use jffs for connection scripts if available
