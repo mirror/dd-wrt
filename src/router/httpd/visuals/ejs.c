@@ -3512,7 +3512,7 @@ int tf_webWriteJS(webs_t wp, const char *s)
 	return r;
 }
 
-#if defined(HAVE_MINIDLNA) || defined(HAVE_SAMBA_SERVER)
+#if defined(HAVE_MINIDLNA) || defined(HAVE_NAS_SERVER)
 
 struct fsentry {
 	char fs[32];
