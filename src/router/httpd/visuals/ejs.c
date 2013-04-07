@@ -3754,7 +3754,7 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 #endif
 
-#ifdef HAVE_SAMBA_SERVER
+#ifdef HAVE_NAS_SERVER
 
 #include <samba3.h>
 
