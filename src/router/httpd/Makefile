@@ -616,6 +616,7 @@ ifeq ($(CONFIG_DLM101),y)
 endif
 
 ifeq ($(CONFIG_FTP),y)
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 CFLAGS += -DHAVE_NAS_SERVER
 endif
 
