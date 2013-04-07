@@ -418,7 +418,8 @@ function checkSambaUsers() {
 			for(j = 0; j < users[i].childElements().length; j++) {
 				element = users[i].childElements()[j].childElements()[0];
 				error = false
-				if( element.name ) {
+				
+				if(element && element.name ) {
 					if( element.name.substr(0, element.name.length - index.length - 1 ) == 'smbuser_username' ) {
 						username = element.value.replace(/^\s+|\s+$/g,"");
 						if(username.length == 0) error = true;
@@ -433,6 +434,9 @@ function checkSambaUsers() {
 					} else if( element.className == 'value_error') {
 						element.className = '';
 					}
+				} else {
+					alert( ' there is no share defined in one of your user entries!' );
+					return false;
 				}
 			}
 			
