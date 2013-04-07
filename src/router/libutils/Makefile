@@ -172,6 +172,10 @@ ifeq ($(CONFIG_SAMBA3),y)
   CFLAGS += -DHAVE_SAMBA3
   CFLAGS += -DHAVE_SAMBA_SERVER
 endif
+ifeq ($(CONFIG_FTP),y)
+  OBJS += samba3.o 
+  CFLAGS += -I$(TOP)/jansson/src -L$(TOP)/jansson/src/.libs -ljansson -lm
+endif
 ifeq ($(CONFIG_MINIDLNA),y)
   OBJS +=  dlna.o
   CFLAGS += -I$(TOP)/jansson/src -L$(TOP)/jansson/src/.libs -ljansson -lm
