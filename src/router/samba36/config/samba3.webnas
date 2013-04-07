@@ -18,11 +18,3 @@
 		</div>
 	</div>
 </fieldset><br />
-<h2><% tran("nas.samba3_legend"); %></h2>
-<fieldset>
-		<% samba3_sharepaths(); %>
-		<br />
-		<% samba3_users(); %>
-				
-</fieldset><br />
-	
