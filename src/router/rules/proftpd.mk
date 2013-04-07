@@ -9,10 +9,9 @@ proftpd-clean:
 
 proftpd-install:
 	install -D proftpd/proftpd $(INSTALLDIR)/proftpd/usr/sbin/proftpd
-#	install -D proftpd/proftpd.conf $(INSTALLDIR)/proftpd/etc/config/proftpd.conf
-#	install -D proftpd/proftpd.startup $(INSTALLDIR)/proftpd/etc/config/proftpd.startup
 	install -D proftpd/config/ftp.webnas $(INSTALLDIR)/proftpd/etc/config/ftp.webnas
 	install -D proftpd/config/proftpd.nvramconfig $(INSTALLDIR)/proftpd/etc/config/proftpd.nvramconfig
+	install -D filesharing/config/Zfilesharing.webnas $(INSTALLDIR)/proftpd/etc/config/Zfilesharing.webnas
 	$(STRIP) $(INSTALLDIR)/proftpd/usr/sbin/proftpd
 
 
