@@ -194,8 +194,7 @@ void main_config(void)
 
 		// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
-		// clamp when fw clamping is off	
-		fprintf(fp, "iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+		fprintf(fp, "iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"); // clamp when fw clamping is off	
 		fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j MASQUERADE\n", chillinet);
 		}
 	else
@@ -224,15 +223,23 @@ void main_config(void)
 		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n",
 			nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
 	fclose(fp);
-/*	
+	
+	chmod("/tmp/chilli/ip-up.sh", 0700);
+	chmod("/tmp/chilli/ip-down.sh", 0700);
+
 		//	use jffs for connection scripts if available
 	if (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1"))	{
+		&& nvram_match("sys_enable_jffs2", "1"))
+/*		|| (nvram_match("usb_enable", "1")
+		&& nvram_match("usb_storage", "1")
+		&& nvram_match("usb_automnt", "1")
+		&& nvram_match("usb_automnt", "1"))*/
+		 {
 			mkdir("/jffs/etc", 0700);
 			mkdir("/jffs/etc/chilli", 0700);		
 		
-			if (!(fp = fopen("/jffs/etc/chilli/con-up.sh", "r")) {	//	dont overwrite
+			if (!(fp = fopen("/jffs/etc/chilli/con-up.sh", "r"))) {	//	dont overwrite
 					fp = fopen("/jffs/etc/chilli/con-up.sh", "w");
 					if (fp == NULL)
 						return;
@@ -245,14 +252,10 @@ void main_config(void)
 						return;	
 					fprintf(fp, "#!/bin/sh\n");
 					fclose(fp);
-					
-					chmod("/jffs/etc/chilli/con-up.sh", 0750);
-					chmod("/jffs/etc/chilli/con-down.sh", 0750);
-					}
-	} */
-	
-	chmod("/tmp/chilli/ip-up.sh", 0750);
-	chmod("/tmp/chilli/ip-down.sh", 0750);
+					}	
+			chmod("/jffs/etc/chilli/con-up.sh", 0700);
+			chmod("/jffs/etc/chilli/con-down.sh", 0700);			
+	}
 }
 
 void chilli_config(void)
