@@ -609,10 +609,8 @@ endif
 
 ifeq ($(CONFIG_FTP),y)
 CFLAGS += -DHAVE_FTP
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
-
-ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
-
 ifeq ($(CONFIG_TIEXTRA1),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
