@@ -875,6 +875,7 @@ long do_msgrcv(int msqid, void __user *buf, size_t bufsz, long msgtyp,
 							goto out_unlock;
 						break;
 					}
+					msg = ERR_PTR(-EAGAIN);
 				} else
 					break;
 				msg_counter++;
