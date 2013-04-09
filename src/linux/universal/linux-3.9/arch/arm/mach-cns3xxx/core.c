@@ -26,9 +26,9 @@
 
 
 static struct map_desc cns3xxx_io_desc[] __initdata = {
- 	{
-		.virtual	= CNS3XXX_TC11MP_SCU_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_TC11MP_SCU_BASE),
+	{
+		.virtual	= CNS3XXX_TC11MP_TWD_BASE_VIRT,
+		.pfn		= __phys_to_pfn(CNS3XXX_TC11MP_TWD_BASE),
 		.length		= SZ_8K,
 		.type		= MT_DEVICE,
 	}, {
