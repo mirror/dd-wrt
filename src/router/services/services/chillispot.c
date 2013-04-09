@@ -305,7 +305,7 @@ void chilli_config(void)
 		&& nvram_match("sys_enable_jffs2", "1"))) {
 			fprintf(fp,"conup /jffs/etc/chilli/con-up.sh\n");
 			fprintf(fp,"condown /jffs/etc/chilli/con-down.sh\n");
-			} */
+			}
 	if (nvram_invmatch("chilli_dns1", "0.0.0.0")
 	    && nvram_invmatch("chilli_dns1", "")) {
 		fprintf(fp, "dns1 %s\n", nvram_get("chilli_dns1"));
