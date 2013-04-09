@@ -74,4 +74,14 @@ void batadv_free_rcu_dat_entry(struct rcu_head *rcu)
 }
 #endif
 
+#ifdef CONFIG_BATMAN_ADV_NC
+void batadv_free_rcu_nc_path(struct rcu_head *rcu)
+{
+	struct batadv_nc_path *nc_path;
+
+	nc_path = container_of(rcu, struct batadv_nc_path, rcu);
+	kfree(nc_path);
+}
+#endif
+
 #endif /* < KERNEL_VERSION(3, 0, 0) */

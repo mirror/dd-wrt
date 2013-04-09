@@ -25,6 +25,8 @@ export CONFIG_BATMAN_ADV_DEBUG=n
 export CONFIG_BATMAN_ADV_BLA=y
 # B.A.T.M.A.N. distributed ARP table:
 export CONFIG_BATMAN_ADV_DAT=y
+# B.A.T.M.A.N network coding (catwoman):
+export CONFIG_BATMAN_ADV_NC=n
 
 PWD:=$(shell pwd)
 KERNELPATH ?= /lib/modules/$(shell uname -r)/build
