@@ -106,14 +106,13 @@ static int __cpuinit brcm_boot_secondary(unsigned int cpu, struct task_struct *i
 	 * be already watching <pen_release>, or it could be
 	 * waiting in WFI, send it an IPI to be sure it wakes.
 	 */
-	arch_send_wakeup_ipi_mask(cpumask_of(cpu));
+	tick_broadcast(cpumask_of(cpu));
 
-#if 0
 	if( pen_release != -1 )
 		{
 		gic_raise_softirq(cpumask_of(cpu), 1);
 		}
-#endif
+
 	while (time_before(jiffies, timeout)) {
 		smp_rmb();
 		if (pen_release == -1)
@@ -142,9 +141,7 @@ static void __init brcm_smp_init_cpus(void)
 	for (i = 0; i < ncores; i++)
 		set_cpu_possible(i, true);
 
-#if 0
 	set_smp_cross_call(gic_raise_softirq);
-#endif
 
 }
 extern void platform_secondary_startup(void);
