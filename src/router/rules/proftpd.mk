@@ -11,7 +11,7 @@ proftpd-install:
 	install -D proftpd/proftpd $(INSTALLDIR)/proftpd/usr/sbin/proftpd
 	install -D proftpd/config/ftp.webnas $(INSTALLDIR)/proftpd/etc/config/ftp.webnas
 	install -D proftpd/config/proftpd.nvramconfig $(INSTALLDIR)/proftpd/etc/config/proftpd.nvramconfig
-	install -D filesharing/config/Zfilesharing.webnas $(INSTALLDIR)/proftpd/etc/config/Zfilesharing.webnas
+	install -D filesharing/config/zfilesharing.webnas $(INSTALLDIR)/proftpd/etc/config/zfilesharing.webnas
 	$(STRIP) $(INSTALLDIR)/proftpd/usr/sbin/proftpd
 
 
