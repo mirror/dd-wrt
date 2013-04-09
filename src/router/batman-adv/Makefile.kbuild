@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2011 B.A.T.M.A.N. contributors:
+# Copyright (C) 2007-2013 B.A.T.M.A.N. contributors:
 #
 # Marek Lindner, Simon Wunderlich
 #
@@ -18,24 +18,12 @@
 # 02110-1301, USA
 #
 
-
-
-# openwrt integration
-ifeq ($(MAKING_MODULES),1)
--include $(TOPDIR)/Rules.make
-endif
-
-EXTRA_CFLAGS += -DCONFIG_BATMAN_ADV_DEBUG
-
-ifneq ($(REVISION),)
-EXTRA_CFLAGS += -DREVISION_VERSION=\"$(REVISION)\"
-endif
-
-obj-m += batman-adv.o
-batman-adv-y += aggregation.o
-batman-adv-y += bat_debugfs.o
-batman-adv-y += bat_sysfs.o
+obj-$(CONFIG_BATMAN_ADV) += batman-adv.o
+batman-adv-y += bat_iv_ogm.o
 batman-adv-y += bitarray.o
+batman-adv-$(CONFIG_BATMAN_ADV_BLA) += bridge_loop_avoidance.o
+batman-adv-y += debugfs.o
+batman-adv-$(CONFIG_BATMAN_ADV_DAT) += distributed-arp-table.o
 batman-adv-y += gateway_client.o
 batman-adv-y += gateway_common.o
 batman-adv-y += hard-interface.o
@@ -47,7 +35,7 @@ batman-adv-y += ring_buffer.o
 batman-adv-y += routing.o
 batman-adv-y += send.o
 batman-adv-y += soft-interface.o
+batman-adv-y += sysfs.o
 batman-adv-y += translation-table.o
 batman-adv-y += unicast.o
 batman-adv-y += vis.o
-batman-adv-y += bat_printk.o
