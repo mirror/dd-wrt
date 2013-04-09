@@ -1,4 +1,4 @@
-/* Copyright (C) 2007-2013 B.A.T.M.A.N. contributors:
+/* Copyright (C) 2010-2013 B.A.T.M.A.N. contributors:
  *
  * Marek Lindner
  *
@@ -17,14 +17,14 @@
  * 02110-1301, USA
  */
 
-#ifndef _NET_BATMAN_ADV_ICMP_SOCKET_H_
-#define _NET_BATMAN_ADV_ICMP_SOCKET_H_
+#ifndef _NET_BATMAN_ADV_DEBUGFS_H_
+#define _NET_BATMAN_ADV_DEBUGFS_H_
 
-#define BATADV_ICMP_SOCKET "socket"
+#define BATADV_DEBUGFS_SUBDIR "batman_adv"
 
-void batadv_socket_init(void);
-int batadv_socket_setup(struct batadv_priv *bat_priv);
-void batadv_socket_receive_packet(struct batadv_icmp_packet_rr *icmp_packet,
-				  size_t icmp_len);
+void batadv_debugfs_init(void);
+void batadv_debugfs_destroy(void);
+int batadv_debugfs_add_meshif(struct net_device *dev);
+void batadv_debugfs_del_meshif(struct net_device *dev);
 
-#endif /* _NET_BATMAN_ADV_ICMP_SOCKET_H_ */
+#endif /* _NET_BATMAN_ADV_DEBUGFS_H_ */

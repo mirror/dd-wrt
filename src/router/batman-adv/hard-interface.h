@@ -1,5 +1,4 @@
-/*
- * Copyright (C) 2007-2011 B.A.T.M.A.N. contributors:
+/* Copyright (C) 2007-2013 B.A.T.M.A.N. contributors:
  *
  * Marek Lindner, Simon Wunderlich
  *
@@ -16,34 +15,56 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA
- *
  */
 
 #ifndef _NET_BATMAN_ADV_HARD_INTERFACE_H_
 #define _NET_BATMAN_ADV_HARD_INTERFACE_H_
 
-#define IF_NOT_IN_USE 0
-#define IF_TO_BE_REMOVED 1
-#define IF_INACTIVE 2
-#define IF_ACTIVE 3
-#define IF_TO_BE_ACTIVATED 4
-#define IF_I_WANT_YOU 5
+enum batadv_hard_if_state {
+	BATADV_IF_NOT_IN_USE,
+	BATADV_IF_TO_BE_REMOVED,
+	BATADV_IF_INACTIVE,
+	BATADV_IF_ACTIVE,
+	BATADV_IF_TO_BE_ACTIVATED,
+	BATADV_IF_I_WANT_YOU,
+};
 
-extern struct notifier_block hard_if_notifier;
+extern struct notifier_block batadv_hard_if_notifier;
 
-struct batman_if *get_batman_if_by_netdev(struct net_device *net_dev);
-int hardif_enable_interface(struct batman_if *batman_if, char *iface_name);
-void hardif_disable_interface(struct batman_if *batman_if);
-void hardif_remove_interfaces(void);
-int hardif_min_mtu(struct net_device *soft_iface);
-void update_min_mtu(struct net_device *soft_iface);
+struct batadv_hard_iface*
+batadv_hardif_get_by_netdev(const struct net_device *net_dev);
+int batadv_hardif_enable_interface(struct batadv_hard_iface *hard_iface,
+				   const char *iface_name);
+void batadv_hardif_disable_interface(struct batadv_hard_iface *hard_iface);
+void batadv_hardif_remove_interfaces(void);
+int batadv_hardif_min_mtu(struct net_device *soft_iface);
+void batadv_update_min_mtu(struct net_device *soft_iface);
+void batadv_hardif_free_rcu(struct rcu_head *rcu);
+bool batadv_is_wifi_iface(int ifindex);
 
-static inline void hardif_free_ref(struct kref *refcount)
+static inline void
+batadv_hardif_free_ref(struct batadv_hard_iface *hard_iface)
 {
-	struct batman_if *batman_if;
+	if (atomic_dec_and_test(&hard_iface->refcount))
+		call_rcu(&hard_iface->rcu, batadv_hardif_free_rcu);
+}
 
-	batman_if = container_of(refcount, struct batman_if, refcount);
-	kfree(batman_if);
+static inline struct batadv_hard_iface *
+batadv_primary_if_get_selected(struct batadv_priv *bat_priv)
+{
+	struct batadv_hard_iface *hard_iface;
+
+	rcu_read_lock();
+	hard_iface = rcu_dereference(bat_priv->primary_if);
+	if (!hard_iface)
+		goto out;
+
+	if (!atomic_inc_not_zero(&hard_iface->refcount))
+		hard_iface = NULL;
+
+out:
+	rcu_read_unlock();
+	return hard_iface;
 }
 
 #endif /* _NET_BATMAN_ADV_HARD_INTERFACE_H_ */
