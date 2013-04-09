@@ -27,6 +27,7 @@
 
 #include <plat/mpcore.h>
 #include <linux/irqchip/arm-gic.h>
+#include <linux/clockchips.h>
 //#include <mach/hardware.h>
 //#include <mach/smp.h>
 
@@ -110,7 +111,7 @@ static int __cpuinit brcm_boot_secondary(unsigned int cpu, struct task_struct *i
 
 	if( pen_release != -1 )
 		{
-		gic_raise_softirq(cpumask_of(cpu), 1);
+		tick_broadcast(cpumask_of(cpu));
 		}
 
 	while (time_before(jiffies, timeout)) {
@@ -141,7 +142,7 @@ static void __init brcm_smp_init_cpus(void)
 	for (i = 0; i < ncores; i++)
 		set_cpu_possible(i, true);
 
-	set_smp_cross_call(gic_raise_softirq);
+//	set_smp_cross_call(gic_raise_softirq);
 
 }
 extern void platform_secondary_startup(void);
