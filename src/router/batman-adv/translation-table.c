@@ -56,7 +56,6 @@ static struct batadv_tt_common_entry *
 batadv_tt_hash_find(struct batadv_hashtable *hash, const void *data)
 {
 	struct hlist_head *head;
-	struct hlist_node *node;
 	struct batadv_tt_common_entry *tt_common_entry;
 	struct batadv_tt_common_entry *tt_common_entry_tmp = NULL;
 	uint32_t index;
@@ -68,7 +67,7 @@ batadv_tt_hash_find(struct batadv_hashtable *hash, const void *data)
 	head = &hash->table[index];
 
 	rcu_read_lock();
-	bat_hlist_for_each_entry_rcu(tt_common_entry, node, head, hash_entry) {
+	hlist_for_each_entry_rcu(tt_common_entry, head, hash_entry) {
 		if (!batadv_compare_eth(tt_common_entry, data))
 			continue;
 
@@ -257,7 +256,6 @@ void batadv_tt_local_add(struct net_device *soft_iface, const uint8_t *addr,
 	struct batadv_tt_local_entry *tt_local;
 	struct batadv_tt_global_entry *tt_global;
 	struct hlist_head *head;
-	struct hlist_node *node;
 	struct batadv_tt_orig_list_entry *orig_entry;
 	int hash_added;
 	bool roamed_back = false;
@@ -339,7 +337,7 @@ check_roaming:
 		/* These node are probably going to update their tt table */
 		head = &tt_global->orig_list;
 		rcu_read_lock();
-		bat_hlist_for_each_entry_rcu(orig_entry, node, head, list) {
+		hlist_for_each_entry_rcu(orig_entry, head, list) {
 			batadv_send_roam_adv(bat_priv, tt_global->common.addr,
 					     orig_entry->orig_node);
 		}
@@ -387,10 +385,7 @@ static void batadv_tt_prepare_packet_buff(struct batadv_priv *bat_priv,
 					  int *packet_buff_len,
 					  int min_packet_len)
 {
-	struct batadv_hard_iface *primary_if;
 	int req_len;
-
-	primary_if = batadv_primary_if_get_selected(bat_priv);
 
 	req_len = min_packet_len;
 	req_len += batadv_tt_len(atomic_read(&bat_priv->tt.local_changes));
@@ -398,14 +393,11 @@ static void batadv_tt_prepare_packet_buff(struct batadv_priv *bat_priv,
 	/* if we have too many changes for one packet don't send any
 	 * and wait for the tt table request which will be fragmented
 	 */
-	if ((!primary_if) || (req_len > primary_if->soft_iface->mtu))
+	if (req_len > bat_priv->soft_iface->mtu)
 		req_len = min_packet_len;
 
 	batadv_tt_realloc_packet_buff(packet_buff, packet_buff_len,
 				      min_packet_len, req_len);
-
-	if (primary_if)
-		batadv_hardif_free_ref(primary_if);
 }
 
 static int batadv_tt_changes_fill_buff(struct batadv_priv *bat_priv,
@@ -470,7 +462,6 @@ int batadv_tt_local_seq_print_text(struct seq_file *seq, void *offset)
 	struct batadv_tt_common_entry *tt_common_entry;
 	struct batadv_tt_local_entry *tt_local;
 	struct batadv_hard_iface *primary_if;
-	struct hlist_node *node;
 	struct hlist_head *head;
 	uint32_t i;
 	int last_seen_secs;
@@ -494,7 +485,7 @@ int batadv_tt_local_seq_print_text(struct seq_file *seq, void *offset)
 		head = &hash->table[i];
 
 		rcu_read_lock();
-		bat_hlist_for_each_entry_rcu(tt_common_entry, node,
+		hlist_for_each_entry_rcu(tt_common_entry,
 					 head, hash_entry) {
 			tt_local = container_of(tt_common_entry,
 						struct batadv_tt_local_entry,
@@ -605,9 +596,9 @@ static void batadv_tt_local_purge_list(struct batadv_priv *bat_priv,
 {
 	struct batadv_tt_local_entry *tt_local_entry;
 	struct batadv_tt_common_entry *tt_common_entry;
-	struct hlist_node *node, *node_tmp;
+	struct hlist_node *node_tmp;
 
-	bat_hlist_for_each_entry_safe(tt_common_entry, node, node_tmp, head,
+	hlist_for_each_entry_safe(tt_common_entry, node_tmp, head,
 				  hash_entry) {
 		tt_local_entry = container_of(tt_common_entry,
 					      struct batadv_tt_local_entry,
@@ -651,7 +642,7 @@ static void batadv_tt_local_table_free(struct batadv_priv *bat_priv)
 	spinlock_t *list_lock; /* protects write access to the hash lists */
 	struct batadv_tt_common_entry *tt_common_entry;
 	struct batadv_tt_local_entry *tt_local;
-	struct hlist_node *node, *node_tmp;
+	struct hlist_node *node_tmp;
 	struct hlist_head *head;
 	uint32_t i;
 
@@ -665,9 +656,9 @@ static void batadv_tt_local_table_free(struct batadv_priv *bat_priv)
 		list_lock = &hash->list_locks[i];
 
 		spin_lock_bh(list_lock);
-		bat_hlist_for_each_entry_safe(tt_common_entry, node, node_tmp,
+		hlist_for_each_entry_safe(tt_common_entry, node_tmp,
 					  head, hash_entry) {
-			hlist_del_rcu(node);
+			hlist_del_rcu(&tt_common_entry->hash_entry);
 			tt_local = container_of(tt_common_entry,
 						struct batadv_tt_local_entry,
 						common);
@@ -724,11 +715,10 @@ batadv_tt_global_orig_entry_find(const struct batadv_tt_global_entry *entry,
 {
 	struct batadv_tt_orig_list_entry *tmp_orig_entry, *orig_entry = NULL;
 	const struct hlist_head *head;
-	struct hlist_node *node;
 
 	rcu_read_lock();
 	head = &entry->orig_list;
-	bat_hlist_for_each_entry_rcu(tmp_orig_entry, node, head, list) {
+	hlist_for_each_entry_rcu(tmp_orig_entry, head, list) {
 		if (tmp_orig_entry->orig_node != orig_node)
 			continue;
 		if (!atomic_inc_not_zero(&tmp_orig_entry->refcount))
@@ -912,7 +902,7 @@ out_remove:
 	/* remove address from local hash if present */
 	local_flags = batadv_tt_local_remove(bat_priv, tt_addr,
 					     "global tt received",
-					     !!(flags & BATADV_TT_CLIENT_ROAM));
+					     flags & BATADV_TT_CLIENT_ROAM);
 	tt_global_entry->common.flags |= local_flags & BATADV_TT_CLIENT_WIFI;
 
 	if (!(flags & BATADV_TT_CLIENT_ROAM))
@@ -940,12 +930,11 @@ batadv_transtable_best_orig(struct batadv_tt_global_entry *tt_global_entry)
 {
 	struct batadv_neigh_node *router = NULL;
 	struct hlist_head *head;
-	struct hlist_node *node;
 	struct batadv_tt_orig_list_entry *orig_entry, *best_entry = NULL;
 	int best_tq = 0;
 
 	head = &tt_global_entry->orig_list;
-	bat_hlist_for_each_entry_rcu(orig_entry, node, head, list) {
+	hlist_for_each_entry_rcu(orig_entry, head, list) {
 		router = batadv_orig_node_get_router(orig_entry->orig_node);
 		if (!router)
 			continue;
@@ -973,7 +962,6 @@ batadv_tt_global_print_entry(struct batadv_tt_global_entry *tt_global_entry,
 			     struct seq_file *seq)
 {
 	struct hlist_head *head;
-	struct hlist_node *node;
 	struct batadv_tt_orig_list_entry *orig_entry, *best_entry;
 	struct batadv_tt_common_entry *tt_common_entry;
 	uint16_t flags;
@@ -997,7 +985,7 @@ batadv_tt_global_print_entry(struct batadv_tt_global_entry *tt_global_entry,
 
 	head = &tt_global_entry->orig_list;
 
-	bat_hlist_for_each_entry_rcu(orig_entry, node, head, list) {
+	hlist_for_each_entry_rcu(orig_entry, head, list) {
 		if (best_entry == orig_entry)
 			continue;
 
@@ -1020,7 +1008,6 @@ int batadv_tt_global_seq_print_text(struct seq_file *seq, void *offset)
 	struct batadv_tt_common_entry *tt_common_entry;
 	struct batadv_tt_global_entry *tt_global;
 	struct batadv_hard_iface *primary_if;
-	struct hlist_node *node;
 	struct hlist_head *head;
 	uint32_t i;
 
@@ -1039,7 +1026,7 @@ int batadv_tt_global_seq_print_text(struct seq_file *seq, void *offset)
 		head = &hash->table[i];
 
 		rcu_read_lock();
-		bat_hlist_for_each_entry_rcu(tt_common_entry, node,
+		hlist_for_each_entry_rcu(tt_common_entry,
 					 head, hash_entry) {
 			tt_global = container_of(tt_common_entry,
 						 struct batadv_tt_global_entry,
@@ -1059,13 +1046,13 @@ static void
 batadv_tt_global_del_orig_list(struct batadv_tt_global_entry *tt_global_entry)
 {
 	struct hlist_head *head;
-	struct hlist_node *node, *safe;
+	struct hlist_node *safe;
 	struct batadv_tt_orig_list_entry *orig_entry;
 
 	spin_lock_bh(&tt_global_entry->list_lock);
 	head = &tt_global_entry->orig_list;
-	bat_hlist_for_each_entry_safe(orig_entry, node, safe, head, list) {
-		hlist_del_rcu(node);
+	hlist_for_each_entry_safe(orig_entry, safe, head, list) {
+		hlist_del_rcu(&orig_entry->list);
 		batadv_tt_orig_list_entry_free_ref(orig_entry);
 	}
 	spin_unlock_bh(&tt_global_entry->list_lock);
@@ -1078,18 +1065,18 @@ batadv_tt_global_del_orig_entry(struct batadv_priv *bat_priv,
 				const char *message)
 {
 	struct hlist_head *head;
-	struct hlist_node *node, *safe;
+	struct hlist_node *safe;
 	struct batadv_tt_orig_list_entry *orig_entry;
 
 	spin_lock_bh(&tt_global_entry->list_lock);
 	head = &tt_global_entry->orig_list;
-	bat_hlist_for_each_entry_safe(orig_entry, node, safe, head, list) {
+	hlist_for_each_entry_safe(orig_entry, safe, head, list) {
 		if (orig_entry->orig_node == orig_node) {
 			batadv_dbg(BATADV_DBG_TT, bat_priv,
 				   "Deleting %pM from global tt entry %pM: %s\n",
 				   orig_node->orig,
 				   tt_global_entry->common.addr, message);
-			hlist_del_rcu(node);
+			hlist_del_rcu(&orig_entry->list);
 			batadv_tt_orig_list_entry_free_ref(orig_entry);
 		}
 	}
@@ -1108,7 +1095,6 @@ batadv_tt_global_del_roaming(struct batadv_priv *bat_priv,
 {
 	bool last_entry = true;
 	struct hlist_head *head;
-	struct hlist_node *node;
 	struct batadv_tt_orig_list_entry *orig_entry;
 
 	/* no local entry exists, case 1:
@@ -1117,7 +1103,7 @@ batadv_tt_global_del_roaming(struct batadv_priv *bat_priv,
 
 	rcu_read_lock();
 	head = &tt_global_entry->orig_list;
-	bat_hlist_for_each_entry_rcu(orig_entry, node, head, list) {
+	hlist_for_each_entry_rcu(orig_entry, head, list) {
 		if (orig_entry->orig_node != orig_node) {
 			last_entry = false;
 			break;
@@ -1202,7 +1188,7 @@ void batadv_tt_global_del_orig(struct batadv_priv *bat_priv,
 	struct batadv_tt_common_entry *tt_common_entry;
 	uint32_t i;
 	struct batadv_hashtable *hash = bat_priv->tt.global_hash;
-	struct hlist_node *node, *safe;
+	struct hlist_node *safe;
 	struct hlist_head *head;
 	spinlock_t *list_lock; /* protects write access to the hash lists */
 
@@ -1214,7 +1200,7 @@ void batadv_tt_global_del_orig(struct batadv_priv *bat_priv,
 		list_lock = &hash->list_locks[i];
 
 		spin_lock_bh(list_lock);
-		bat_hlist_for_each_entry_safe(tt_common_entry, node, safe,
+		hlist_for_each_entry_safe(tt_common_entry, safe,
 					  head, hash_entry) {
 			tt_global = container_of(tt_common_entry,
 						 struct batadv_tt_global_entry,
@@ -1227,7 +1213,7 @@ void batadv_tt_global_del_orig(struct batadv_priv *bat_priv,
 				batadv_dbg(BATADV_DBG_TT, bat_priv,
 					   "Deleting global tt entry %pM: %s\n",
 					   tt_global->common.addr, message);
-				hlist_del_rcu(node);
+				hlist_del_rcu(&tt_common_entry->hash_entry);
 				batadv_tt_global_entry_free_ref(tt_global);
 			}
 		}
@@ -1262,7 +1248,7 @@ static void batadv_tt_global_purge(struct batadv_priv *bat_priv)
 {
 	struct batadv_hashtable *hash = bat_priv->tt.global_hash;
 	struct hlist_head *head;
-	struct hlist_node *node, *node_tmp;
+	struct hlist_node *node_tmp;
 	spinlock_t *list_lock; /* protects write access to the hash lists */
 	uint32_t i;
 	char *msg = NULL;
@@ -1274,7 +1260,7 @@ static void batadv_tt_global_purge(struct batadv_priv *bat_priv)
 		list_lock = &hash->list_locks[i];
 
 		spin_lock_bh(list_lock);
-		bat_hlist_for_each_entry_safe(tt_common, node, node_tmp, head,
+		hlist_for_each_entry_safe(tt_common, node_tmp, head,
 					  hash_entry) {
 			tt_global = container_of(tt_common,
 						 struct batadv_tt_global_entry,
@@ -1287,7 +1273,7 @@ static void batadv_tt_global_purge(struct batadv_priv *bat_priv)
 				   "Deleting global tt entry (%pM): %s\n",
 				   tt_global->common.addr, msg);
 
-			hlist_del_rcu(node);
+			hlist_del_rcu(&tt_common->hash_entry);
 
 			batadv_tt_global_entry_free_ref(tt_global);
 		}
@@ -1301,7 +1287,7 @@ static void batadv_tt_global_table_free(struct batadv_priv *bat_priv)
 	spinlock_t *list_lock; /* protects write access to the hash lists */
 	struct batadv_tt_common_entry *tt_common_entry;
 	struct batadv_tt_global_entry *tt_global;
-	struct hlist_node *node, *node_tmp;
+	struct hlist_node *node_tmp;
 	struct hlist_head *head;
 	uint32_t i;
 
@@ -1315,9 +1301,9 @@ static void batadv_tt_global_table_free(struct batadv_priv *bat_priv)
 		list_lock = &hash->list_locks[i];
 
 		spin_lock_bh(list_lock);
-		bat_hlist_for_each_entry_safe(tt_common_entry, node, node_tmp,
+		hlist_for_each_entry_safe(tt_common_entry, node_tmp,
 					  head, hash_entry) {
-			hlist_del_rcu(node);
+			hlist_del_rcu(&tt_common_entry->hash_entry);
 			tt_global = container_of(tt_common_entry,
 						 struct batadv_tt_global_entry,
 						 common);
@@ -1397,7 +1383,6 @@ static uint16_t batadv_tt_global_crc(struct batadv_priv *bat_priv,
 	struct batadv_hashtable *hash = bat_priv->tt.global_hash;
 	struct batadv_tt_common_entry *tt_common;
 	struct batadv_tt_global_entry *tt_global;
-	struct hlist_node *node;
 	struct hlist_head *head;
 	uint32_t i;
 	int j;
@@ -1406,7 +1391,7 @@ static uint16_t batadv_tt_global_crc(struct batadv_priv *bat_priv,
 		head = &hash->table[i];
 
 		rcu_read_lock();
-		bat_hlist_for_each_entry_rcu(tt_common, node, head, hash_entry) {
+		hlist_for_each_entry_rcu(tt_common, head, hash_entry) {
 			tt_global = container_of(tt_common,
 						 struct batadv_tt_global_entry,
 						 common);
@@ -1449,7 +1434,6 @@ static uint16_t batadv_tt_local_crc(struct batadv_priv *bat_priv)
 	uint16_t total = 0, total_one;
 	struct batadv_hashtable *hash = bat_priv->tt.local_hash;
 	struct batadv_tt_common_entry *tt_common;
-	struct hlist_node *node;
 	struct hlist_head *head;
 	uint32_t i;
 	int j;
@@ -1458,7 +1442,7 @@ static uint16_t batadv_tt_local_crc(struct batadv_priv *bat_priv)
 		head = &hash->table[i];
 
 		rcu_read_lock();
-		bat_hlist_for_each_entry_rcu(tt_common, node, head, hash_entry) {
+		hlist_for_each_entry_rcu(tt_common, head, hash_entry) {
 			/* not yet committed clients have not to be taken into
 			 * account while computing the CRC
 			 */
@@ -1590,14 +1574,13 @@ static int batadv_tt_global_valid(const void *entry_ptr,
 static struct sk_buff *
 batadv_tt_response_fill_table(uint16_t tt_len, uint8_t ttvn,
 			      struct batadv_hashtable *hash,
-			      struct batadv_hard_iface *primary_if,
+			      struct batadv_priv *bat_priv,
 			      int (*valid_cb)(const void *, const void *),
 			      void *cb_data)
 {
 	struct batadv_tt_common_entry *tt_common_entry;
 	struct batadv_tt_query_packet *tt_response;
 	struct batadv_tt_change *tt_change;
-	struct hlist_node *node;
 	struct hlist_head *head;
 	struct sk_buff *skb = NULL;
 	uint16_t tt_tot, tt_count;
@@ -1605,8 +1588,8 @@ batadv_tt_response_fill_table(uint16_t tt_len, uint8_t ttvn,
 	uint32_t i;
 	size_t len;
 
-	if (tt_query_size + tt_len > primary_if->soft_iface->mtu) {
-		tt_len = primary_if->soft_iface->mtu - tt_query_size;
+	if (tt_query_size + tt_len > bat_priv->soft_iface->mtu) {
+		tt_len = bat_priv->soft_iface->mtu - tt_query_size;
 		tt_len -= tt_len % sizeof(struct batadv_tt_change);
 	}
 	tt_tot = tt_len / sizeof(struct batadv_tt_change);
@@ -1627,7 +1610,7 @@ batadv_tt_response_fill_table(uint16_t tt_len, uint8_t ttvn,
 	for (i = 0; i < hash->size; i++) {
 		head = &hash->table[i];
 
-		bat_hlist_for_each_entry_rcu(tt_common_entry, node,
+		hlist_for_each_entry_rcu(tt_common_entry,
 					 head, hash_entry) {
 			if (tt_count == tt_tot)
 				break;
@@ -1726,7 +1709,6 @@ batadv_send_other_tt_response(struct batadv_priv *bat_priv,
 {
 	struct batadv_orig_node *req_dst_orig_node;
 	struct batadv_orig_node *res_dst_orig_node = NULL;
-	struct batadv_hard_iface *primary_if = NULL;
 	uint8_t orig_ttvn, req_ttvn, ttvn;
 	int ret = false;
 	unsigned char *tt_buff;
@@ -1749,10 +1731,6 @@ batadv_send_other_tt_response(struct batadv_priv *bat_priv,
 
 	res_dst_orig_node = batadv_orig_hash_find(bat_priv, tt_request->src);
 	if (!res_dst_orig_node)
-		goto out;
-
-	primary_if = batadv_primary_if_get_selected(bat_priv);
-	if (!primary_if)
 		goto out;
 
 	orig_ttvn = (uint8_t)atomic_read(&req_dst_orig_node->last_ttvn);
@@ -1802,7 +1780,7 @@ batadv_send_other_tt_response(struct batadv_priv *bat_priv,
 
 		skb = batadv_tt_response_fill_table(tt_len, ttvn,
 						    bat_priv->tt.global_hash,
-						    primary_if,
+						    bat_priv,
 						    batadv_tt_global_valid,
 						    req_dst_orig_node);
 		if (!skb)
@@ -1839,8 +1817,6 @@ out:
 		batadv_orig_node_free_ref(res_dst_orig_node);
 	if (req_dst_orig_node)
 		batadv_orig_node_free_ref(req_dst_orig_node);
-	if (primary_if)
-		batadv_hardif_free_ref(primary_if);
 	if (!ret)
 		kfree_skb(skb);
 	return ret;
@@ -1918,7 +1894,7 @@ batadv_send_my_tt_response(struct batadv_priv *bat_priv,
 
 		skb = batadv_tt_response_fill_table(tt_len, ttvn,
 						    bat_priv->tt.local_hash,
-						    primary_if,
+						    bat_priv,
 						    batadv_tt_local_valid_entry,
 						    NULL);
 		if (!skb)
@@ -2307,7 +2283,6 @@ static uint16_t batadv_tt_set_flags(struct batadv_hashtable *hash,
 	uint32_t i;
 	uint16_t changed_num = 0;
 	struct hlist_head *head;
-	struct hlist_node *node;
 	struct batadv_tt_common_entry *tt_common_entry;
 
 	if (!hash)
@@ -2317,7 +2292,7 @@ static uint16_t batadv_tt_set_flags(struct batadv_hashtable *hash,
 		head = &hash->table[i];
 
 		rcu_read_lock();
-		bat_hlist_for_each_entry_rcu(tt_common_entry, node,
+		hlist_for_each_entry_rcu(tt_common_entry,
 					 head, hash_entry) {
 			if (enable) {
 				if ((tt_common_entry->flags & flags) == flags)
@@ -2342,7 +2317,7 @@ static void batadv_tt_local_purge_pending_clients(struct batadv_priv *bat_priv)
 	struct batadv_hashtable *hash = bat_priv->tt.local_hash;
 	struct batadv_tt_common_entry *tt_common;
 	struct batadv_tt_local_entry *tt_local;
-	struct hlist_node *node, *node_tmp;
+	struct hlist_node *node_tmp;
 	struct hlist_head *head;
 	spinlock_t *list_lock; /* protects write access to the hash lists */
 	uint32_t i;
@@ -2355,7 +2330,7 @@ static void batadv_tt_local_purge_pending_clients(struct batadv_priv *bat_priv)
 		list_lock = &hash->list_locks[i];
 
 		spin_lock_bh(list_lock);
-		bat_hlist_for_each_entry_safe(tt_common, node, node_tmp, head,
+		hlist_for_each_entry_safe(tt_common, node_tmp, head,
 					  hash_entry) {
 			if (!(tt_common->flags & BATADV_TT_CLIENT_PENDING))
 				continue;
@@ -2365,7 +2340,7 @@ static void batadv_tt_local_purge_pending_clients(struct batadv_priv *bat_priv)
 				   tt_common->addr);
 
 			atomic_dec(&bat_priv->tt.local_entry_num);
-			hlist_del_rcu(node);
+			hlist_del_rcu(&tt_common->hash_entry);
 			tt_local = container_of(tt_common,
 						struct batadv_tt_local_entry,
 						common);
@@ -2540,7 +2515,7 @@ bool batadv_tt_global_client_is_roaming(struct batadv_priv *bat_priv,
 	if (!tt_global_entry)
 		goto out;
 
-	ret = !!(tt_global_entry->common.flags & BATADV_TT_CLIENT_ROAM);
+	ret = tt_global_entry->common.flags & BATADV_TT_CLIENT_ROAM;
 	batadv_tt_global_entry_free_ref(tt_global_entry);
 out:
 	return ret;

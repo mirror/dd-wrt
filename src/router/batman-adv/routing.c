@@ -29,6 +29,7 @@
 #include "unicast.h"
 #include "bridge_loop_avoidance.h"
 #include "distributed-arp-table.h"
+#include "network-coding.h"
 
 static int batadv_route_unicast_packet(struct sk_buff *skb,
 				       struct batadv_hard_iface *recv_if);
@@ -37,7 +38,6 @@ void batadv_slide_own_bcast_window(struct batadv_hard_iface *hard_iface)
 {
 	struct batadv_priv *bat_priv = netdev_priv(hard_iface->soft_iface);
 	struct batadv_hashtable *hash = bat_priv->orig_hash;
-	struct hlist_node *node;
 	struct hlist_head *head;
 	struct batadv_orig_node *orig_node;
 	unsigned long *word;
@@ -49,7 +49,7 @@ void batadv_slide_own_bcast_window(struct batadv_hard_iface *hard_iface)
 		head = &hash->table[i];
 
 		rcu_read_lock();
-		bat_hlist_for_each_entry_rcu(orig_node, node, head, hash_entry) {
+		hlist_for_each_entry_rcu(orig_node, head, hash_entry) {
 			spin_lock_bh(&orig_node->ogm_cnt_lock);
 			word_index = hard_iface->if_num * BATADV_NUM_WORDS;
 			word = &(orig_node->bcast_own[word_index]);
@@ -146,7 +146,6 @@ out:
 void batadv_bonding_candidate_add(struct batadv_orig_node *orig_node,
 				  struct batadv_neigh_node *neigh_node)
 {
-	struct hlist_node *node;
 	struct batadv_neigh_node *tmp_neigh_node, *router = NULL;
 	uint8_t interference_candidate = 0;
 
@@ -169,7 +168,7 @@ void batadv_bonding_candidate_add(struct batadv_orig_node *orig_node,
 	 * interface. If we do, we won't select this candidate because of
 	 * possible interference.
 	 */
-	bat_hlist_for_each_entry_rcu(tmp_neigh_node, node,
+	hlist_for_each_entry_rcu(tmp_neigh_node,
 				 &orig_node->neigh_list, list) {
 		if (tmp_neigh_node == neigh_node)
 			continue;
@@ -550,27 +549,37 @@ batadv_find_ifalter_router(struct batadv_orig_node *primary_orig,
 	return router;
 }
 
+/**
+ * batadv_check_unicast_packet - Check for malformed unicast packets
+ * @skb: packet to check
+ * @hdr_size: size of header to pull
+ *
+ * Check for short header and bad addresses in given packet. Returns negative
+ * value when check fails and 0 otherwise. The negative value depends on the
+ * reason: -ENODATA for bad header, -EBADR for broadcast destination or source,
+ * and -EREMOTE for non-local (other host) destination.
+ */
 static int batadv_check_unicast_packet(struct sk_buff *skb, int hdr_size)
 {
 	struct ethhdr *ethhdr;
 
 	/* drop packet if it has not necessary minimum size */
 	if (unlikely(!pskb_may_pull(skb, hdr_size)))
-		return -1;
+		return -ENODATA;
 
 	ethhdr = (struct ethhdr *)skb_mac_header(skb);
 
 	/* packet with unicast indication but broadcast recipient */
 	if (is_broadcast_ether_addr(ethhdr->h_dest))
-		return -1;
+		return -EBADR;
 
 	/* packet with broadcast sender address */
 	if (is_broadcast_ether_addr(ethhdr->h_source))
-		return -1;
+		return -EBADR;
 
 	/* not for me */
 	if (!batadv_is_my_mac(ethhdr->h_dest))
-		return -1;
+		return -EREMOTE;
 
 	return 0;
 }
@@ -852,14 +861,17 @@ static int batadv_route_unicast_packet(struct sk_buff *skb,
 	/* decrement ttl */
 	unicast_packet->header.ttl--;
 
-	/* Update stats counter */
-	batadv_inc_counter(bat_priv, BATADV_CNT_FORWARD);
-	batadv_add_counter(bat_priv, BATADV_CNT_FORWARD_BYTES,
-			   skb->len + ETH_HLEN);
-
-	/* route it */
-	if (batadv_send_skb_to_orig(skb, orig_node, recv_if))
+	/* network code packet if possible */
+	if (batadv_nc_skb_forward(skb, neigh_node, ethhdr)) {
 		ret = NET_RX_SUCCESS;
+	} else if (batadv_send_skb_to_orig(skb, orig_node, recv_if)) {
+		ret = NET_RX_SUCCESS;
+
+		/* Update stats counter */
+		batadv_inc_counter(bat_priv, BATADV_CNT_FORWARD);
+		batadv_add_counter(bat_priv, BATADV_CNT_FORWARD_BYTES,
+				   skb->len + ETH_HLEN);
+	}
 
 out:
 	if (neigh_node)
@@ -1035,7 +1047,7 @@ int batadv_recv_unicast_packet(struct sk_buff *skb,
 	struct batadv_unicast_4addr_packet *unicast_4addr_packet;
 	uint8_t *orig_addr;
 	struct batadv_orig_node *orig_node = NULL;
-	int hdr_size = sizeof(*unicast_packet);
+	int check, hdr_size = sizeof(*unicast_packet);
 	bool is4addr;
 
 	unicast_packet = (struct batadv_unicast_packet *)skb->data;
@@ -1046,7 +1058,16 @@ int batadv_recv_unicast_packet(struct sk_buff *skb,
 	if (is4addr)
 		hdr_size = sizeof(*unicast_4addr_packet);
 
-	if (batadv_check_unicast_packet(skb, hdr_size) < 0)
+	/* function returns -EREMOTE for promiscuous packets */
+	check = batadv_check_unicast_packet(skb, hdr_size);
+
+	/* Even though the packet is not for us, we might save it to use for
+	 * decoding a later received coded packet
+	 */
+	if (check == -EREMOTE)
+		batadv_nc_skb_store_sniffed_unicast(bat_priv, skb);
+
+	if (check < 0)
 		return NET_RX_DROP;
 
 	if (!batadv_check_unicast_ttvn(bat_priv, skb))
