@@ -227,18 +227,16 @@ void main_config(void)
 	chmod("/tmp/chilli/ip-up.sh", 0700);
 	chmod("/tmp/chilli/ip-down.sh", 0700);
 
-		//	use jffs for connection scripts if available
-	if (nvram_match("enable_jffs2", "1")
-		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1"))
-/*		|| (nvram_match("usb_enable", "1")
+		//	use usb/jffs for connection scripts if available
+	if ((nvram_match("usb_enable", "1")
 		&& nvram_match("usb_storage", "1")
 		&& nvram_match("usb_automnt", "1")
-		&& nvram_match("usb_automnt", "1"))*/
-		 {
+		&& nvram_match("usb_mntpoint", "jffs"))
+		|| (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1"))) {
 			mkdir("/jffs/etc", 0700);
 			mkdir("/jffs/etc/chilli", 0700);		
-		
 			if (!(fp = fopen("/jffs/etc/chilli/con-up.sh", "r"))) {	//	dont overwrite
 					fp = fopen("/jffs/etc/chilli/con-up.sh", "w");
 					if (fp == NULL)
@@ -298,11 +296,15 @@ void chilli_config(void)
 	fprintf(fp, "radiussecret %s\n", nvram_get("chilli_pass"));
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("chilli_interface"));
 	fprintf(fp, "uamserver %s\n", nvram_get("chilli_url"));
-/*	if (nvram_match("enable_jffs2", "1")
+	if ((nvram_match("usb_enable", "1")
+		&& nvram_match("usb_storage", "1")
+		&& nvram_match("usb_automnt", "1")
+		&& nvram_match("usb_mntpoint", "jffs"))
+		|| (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1")) {
+		&& nvram_match("sys_enable_jffs2", "1"))) {
 			fprintf(fp,"conup /jffs/etc/chilli/con-up.sh\n");
-			fprintf(fp,"conup /jffs/etc/chilli/con-down.sh\n");
+			fprintf(fp,"condown /jffs/etc/chilli/con-down.sh\n");
 			} */
 	if (nvram_invmatch("chilli_dns1", "0.0.0.0")
 	    && nvram_invmatch("chilli_dns1", "")) {
@@ -417,12 +419,16 @@ void hotspotsys_config(void)
 		perror("/tmp/chilli/hotss.conf");
 		return;
 	}
-/*	if (nvram_match("enable_jffs2", "1")
+	if ((nvram_match("usb_enable", "1")
+		&& nvram_match("usb_storage", "1")
+		&& nvram_match("usb_automnt", "1")
+		&& nvram_match("usb_mntpoint", "jffs"))
+		|| (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1")) {
+		&& nvram_match("sys_enable_jffs2", "1"))) {
 			fprintf(fp,"conup /jffs/etc/chilli/con-up.sh\n");
-			fprintf(fp,"conup /jffs/etc/chilli/con-down.sh\n");
-			} */
+			fprintf(fp,"condown /jffs/etc/chilli/con-down.sh\n");
+		}
 	fprintf(fp, "ipup /tmp/chilli/ip-up.sh\n");
 	fprintf(fp, "ipdown /tmp/chilli/ip-down.sh\n");
 	fprintf(fp, "radiusserver1 radius.hotspotsystem.com\n");
