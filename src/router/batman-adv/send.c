@@ -27,6 +27,7 @@
 #include "vis.h"
 #include "gateway_common.h"
 #include "originator.h"
+#include "network-coding.h"
 
 #include <linux/if_ether.h>
 
@@ -39,6 +40,7 @@ int batadv_send_skb_packet(struct sk_buff *skb,
 			   struct batadv_hard_iface *hard_iface,
 			   const uint8_t *dst_addr)
 {
+	struct batadv_priv *bat_priv = netdev_priv(hard_iface->soft_iface);
 	struct ethhdr *ethhdr;
 
 	if (hard_iface->if_status != BATADV_IF_ACTIVE)
@@ -69,6 +71,9 @@ int batadv_send_skb_packet(struct sk_buff *skb,
 	skb->protocol = __constant_htons(ETH_P_BATMAN);
 
 	skb->dev = hard_iface->net_dev;
+
+	/* Save a clone of the skb to use when decoding coded packets */
+	batadv_nc_skb_store_for_decoding(bat_priv, skb);
 
 	/* dev_queue_xmit() returns a negative result on error.	 However on
 	 * congestion and traffic shaping, it drops and returns NET_XMIT_DROP
@@ -255,6 +260,9 @@ static void batadv_send_outstanding_bcast_packet(struct work_struct *work)
 		if (hard_iface->soft_iface != soft_iface)
 			continue;
 
+		if (forw_packet->num_packets >= hard_iface->num_bcasts)
+			continue;
+
 		/* send a copy of the saved skb */
 		skb1 = skb_clone(forw_packet->skb, GFP_ATOMIC);
 		if (skb1)
@@ -266,7 +274,7 @@ static void batadv_send_outstanding_bcast_packet(struct work_struct *work)
 	forw_packet->num_packets++;
 
 	/* if we still have some more bcasts to send */
-	if (forw_packet->num_packets < 3) {
+	if (forw_packet->num_packets < BATADV_NUM_BCASTS_MAX) {
 		_batadv_add_bcast_packet_to_list(bat_priv, forw_packet,
 						 msecs_to_jiffies(5));
 		return;
@@ -316,7 +324,7 @@ batadv_purge_outstanding_packets(struct batadv_priv *bat_priv,
 				 const struct batadv_hard_iface *hard_iface)
 {
 	struct batadv_forw_packet *forw_packet;
-	struct hlist_node *tmp_node, *safe_tmp_node;
+	struct hlist_node *safe_tmp_node;
 	bool pending;
 
 	if (hard_iface)
@@ -329,7 +337,7 @@ batadv_purge_outstanding_packets(struct batadv_priv *bat_priv,
 
 	/* free bcast list */
 	spin_lock_bh(&bat_priv->forw_bcast_list_lock);
-	bat_hlist_for_each_entry_safe(forw_packet, tmp_node, safe_tmp_node,
+	hlist_for_each_entry_safe(forw_packet, safe_tmp_node,
 				  &bat_priv->forw_bcast_list, list) {
 		/* if purge_outstanding_packets() was called with an argument
 		 * we delete only packets belonging to the given interface
@@ -355,7 +363,7 @@ batadv_purge_outstanding_packets(struct batadv_priv *bat_priv,
 
 	/* free batman packet list */
 	spin_lock_bh(&bat_priv->forw_bat_list_lock);
-	bat_hlist_for_each_entry_safe(forw_packet, tmp_node, safe_tmp_node,
+	hlist_for_each_entry_safe(forw_packet, safe_tmp_node,
 				  &bat_priv->forw_bat_list, list) {
 		/* if purge_outstanding_packets() was called with an argument
 		 * we delete only packets belonging to the given interface

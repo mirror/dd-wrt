@@ -71,12 +71,21 @@ static inline void batadv_this_cpu_add(uint64_t *count_ptr, size_t count)
 	put_cpu();
 }
 
+#define batadv_softif_destroy_netlink(dev, head) batadv_softif_destroy_netlink(dev)
+#define unregister_netdevice_queue(dev, head) unregister_netdevice(dev)
+
 #endif /* < KERNEL_VERSION(2, 6, 33) */
 
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 34)
 
 #define rcu_dereference_protected(p, c) (p)
+
+#define rcu_dereference_raw(p)	({ \
+				 typeof(p) _________p1 = ACCESS_ONCE(p); \
+				 smp_read_barrier_depends(); \
+				 (_________p1); \
+				 })
 
 #endif /* < KERNEL_VERSION(2, 6, 34) */
 
@@ -126,11 +135,34 @@ static inline int batadv_param_set_copystring(const char *val,
 
 #endif /* < KERNEL_VERSION(2, 6, 36) */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
+
+#define hlist_first_rcu(head)	(*((struct hlist_node __rcu **)(&(head)->first)))
+#define hlist_next_rcu(node)	(*((struct hlist_node __rcu **)(&(node)->next)))
+
+#endif /* < KERNEL_VERSION(2, 6, 37) */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
 
 #define kstrtoul strict_strtoul
 #define kstrtol  strict_strtol
+
+/* Hack for removing ndo_add/del_slave at the end of net_device_ops.
+ * This is somewhat ugly because it requires that ndo_validate_addr
+ * is at the end of this struct in soft-interface.c.
+ */
+#define ndo_validate_addr \
+	ndo_validate_addr = eth_validate_addr, \
+}; \
+static const struct { \
+	void *ndo_validate_addr; \
+	void *ndo_add_slave; \
+	void *ndo_del_slave; \
+} __attribute__((unused)) __useless_ops1 = { \
+	.ndo_validate_addr
+
+#define ndo_del_slave          ndo_init
+#define ndo_init(x, y)         ndo_init - master->netdev_ops->ndo_init - EBUSY
 
 #endif /* < KERNEL_VERSION(2, 6, 39) */
 
@@ -145,6 +177,7 @@ void batadv_free_rcu_neigh_node(struct rcu_head *rcu);
 void batadv_free_rcu_tt_local_entry(struct rcu_head *rcu);
 void batadv_free_rcu_backbone_gw(struct rcu_head *rcu);
 void batadv_free_rcu_dat_entry(struct rcu_head *rcu);
+void batadv_free_rcu_nc_path(struct rcu_head *rcu);
 
 static inline void skb_reset_mac_len(struct sk_buff *skb)
 {
@@ -156,7 +189,9 @@ static inline void skb_reset_mac_len(struct sk_buff *skb)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0)
 
-static inline void eth_hw_addr_random(struct net_device *dev)
+#define eth_hw_addr_random(dev)	batadv_eth_hw_addr_random(dev)
+
+static inline void batadv_eth_hw_addr_random(struct net_device *dev)
 {
 	random_ether_addr(dev->dev_addr);
 }
@@ -211,15 +246,36 @@ static int batadv_interface_set_mac_addr(struct net_device *dev, void *p) \
 }\
 static int __batadv_interface_set_mac_addr(x, y)
 
-#define bat_hlist_for_each_entry(a,b,c,d) hlist_for_each_entry(a,b,c,d)
-#define bat_hlist_for_each_entry_rcu(a,b,c,d) hlist_for_each_entry_rcu(a,b,c,d)
-#define bat_hlist_for_each_entry_safe(a,b,c,d,e) hlist_for_each_entry_safe(a,b,c,d,e)
+#define netdev_master_upper_dev_link netdev_set_master
+#define netdev_upper_dev_unlink(slave, master) netdev_set_master(slave, NULL)
+#define netdev_master_upper_dev_get(dev) \
+({\
+	ASSERT_RTNL();\
+	dev->master;\
+})
+#define hlist_entry_safe(ptr, type, member) \
+	(ptr) ? hlist_entry(ptr, type, member) : NULL
 
-#else /* < KERNEL_VERSION(3, 9, 0) */
+#undef hlist_for_each_entry
+#define hlist_for_each_entry(pos, head, member) \
+	for (pos = hlist_entry_safe((head)->first, typeof(*(pos)), member);\
+	pos; \
+	pos = hlist_entry_safe((pos)->member.next, typeof(*(pos)), member))
 
-#define bat_hlist_for_each_entry(a,b,c,d) b=NULL; hlist_for_each_entry(a,c,d)
-#define bat_hlist_for_each_entry_rcu(a,b,c,d) b=NULL; hlist_for_each_entry_rcu(a,c,d)
-#define bat_hlist_for_each_entry_safe(a,b,c,d,e) b=NULL; hlist_for_each_entry_safe(a,c,d,e)
+#undef hlist_for_each_entry_rcu
+#define hlist_for_each_entry_rcu(pos, head, member) \
+	for (pos = hlist_entry_safe (rcu_dereference_raw(hlist_first_rcu(head)),\
+	typeof(*(pos)), member); \
+	pos; \
+	pos = hlist_entry_safe(rcu_dereference_raw(hlist_next_rcu(\
+	&(pos)->member)), typeof(*(pos)), member))
 
-#endif
+#undef hlist_for_each_entry_safe
+#define hlist_for_each_entry_safe(pos, n, head, member) \
+	for (pos = hlist_entry_safe((head)->first, typeof(*pos), member);\
+	pos && ({ n = pos->member.next; 1; }); \
+	pos = hlist_entry_safe(n, typeof(*pos), member))
+
+#endif /* < KERNEL_VERSION(3, 9, 0) */
+
 #endif /* _NET_BATMAN_ADV_COMPAT_H_ */
