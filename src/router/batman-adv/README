@@ -1,5 +1,3 @@
-[state: 27-01-2011]
-
 BATMAN-ADV
 ----------
 
@@ -17,22 +15,7 @@ are: IPv4, IPv6, DHCP, IPX.
 Batman advanced was implemented as a Linux kernel driver  to  re-
 duce the overhead to a minimum. It does not depend on any (other)
 network driver, and can be used on wifi as well as ethernet  lan,
-vpn,  etc ... (anything with ethernet-style layer 2). It compiles
-against and should work with Linux 2.6.21 -  2.6.38.   Supporting
-older versions is not planned, but it's probably easy to backport
-it.  If you work on a backport, feel free to contact us.  :-)
-
-
-COMPILE
--------
-
-To compile against your currently installed  kernel, just type:
-
-# make
-
-if you want to compile against some other kernel, use:
-
-# make KERNELPATH=/path/to/kernel
+vpn,  etc ... (anything with ethernet-style layer 2).
 
 
 CONFIGURATION
@@ -82,18 +65,20 @@ To deactivate an interface you have  to  write  "none"  into  its
 All  mesh  wide  settings  can be found in batman's own interface
 folder:
 
-#  ls  /sys/class/net/bat0/mesh/
-#  aggregated_ogms  gw_bandwidth  hop_penalty
-#  bonding          gw_mode       orig_interval
-#  fragmentation    gw_sel_class  vis_mode
+# ls /sys/class/net/bat0/mesh/
+# aggregated_ogms        gw_bandwidth           log_level
+# ap_isolation           gw_mode                orig_interval
+# bonding                gw_sel_class           routing_algo
+# bridge_loop_avoidance  hop_penalty            vis_mode
+# fragmentation
 
 
-There is a special folder for debugging informations:
+There is a special folder for debugging information:
 
-#  ls /sys/kernel/debug/batman_adv/bat0/
-#  gateways     socket        transtable_global  vis_data
-#  originators  softif_neigh  transtable_local
-
+# ls /sys/kernel/debug/batman_adv/bat0/
+# bla_backbone_table  log                 transtable_global
+# bla_claim_table     originators         transtable_local
+# gateways            socket              vis_data
 
 Some of the files contain all sort of status information  regard-
 ing  the  mesh  network.  For  example, you can view the table of
@@ -176,13 +161,13 @@ face.  Each  entry can/has to have the following values:
 -> "TQ mac  value"  -  src mac's link quality towards mac address
                        of a neighbor originator's interface which
                        is being used for routing
--> "HNA mac" - HNA announced by source mac
+-> "TT mac" - TT announced by source mac
 -> "PRIMARY" - this  is a primary interface
 -> "SEC mac" - secondary mac address of source
                (requires preceding PRIMARY)
 
 The TQ value has a range from 4 to 255 with 255 being  the  best.
-The HNA entries are showing which hosts are connected to the mesh
+The TT entries are showing which hosts are connected to the mesh
 via bat0 or being bridged into the mesh network.  The PRIMARY/SEC
 values are only applied on primary interfaces
 
@@ -203,11 +188,7 @@ When investigating problems with your mesh network  it  is  some-
 times  necessary  to see more detail debug messages. This must be
 enabled when compiling the batman-adv module. When building  bat-
 man-adv  as  part of kernel, use "make menuconfig" and enable the
-option "B.A.T.M.A.N. debugging". When compiling  outside  of  the
-kernel  tree it is necessary to edit the file Makefile.kbuild and
-uncomment the line
-
-#EXTRA_CFLAGS += -DCONFIG_BATMAN_ADV_DEBUG
+option "B.A.T.M.A.N. debugging".
 
 Those additional  debug messages can be accessed  using a special
 file in debugfs
@@ -219,15 +200,23 @@ abled  during run time. Following log_levels are defined:
 
 0 - All  debug  output  disabled
 1 - Enable messages related to routing / flooding / broadcasting
-2 - Enable route or hna added / changed / deleted
-3 - Enable all messages
+2 - Enable messages related to route added / changed / deleted
+4 - Enable messages related to translation table operations
+8 - Enable messages related to bridge loop avoidance
+16 - Enable messaged related to DAT, ARP snooping and parsing
+31 - Enable all messages
 
 The debug output can be changed at runtime  using  the  file
 /sys/class/net/bat0/mesh/log_level. e.g.
 
-# echo 2 > /sys/class/net/bat0/mesh/log_level
+# echo 6 > /sys/class/net/bat0/mesh/log_level
 
-will enable debug messages for when routes or HNAs change.
+will enable debug messages for when routes change.
+
+Counters for different types of packets entering and leaving the
+batman-adv module are available through ethtool:
+
+# ethtool --statistics bat0
 
 
 BATCTL

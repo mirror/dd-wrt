@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2011 B.A.T.M.A.N. contributors:
+# Copyright (C) 2007-2013 B.A.T.M.A.N. contributors:
 #
 # Marek Lindner, Simon Wunderlich
 #
@@ -18,7 +18,13 @@
 # 02110-1301, USA
 #
 
-
+# read README.external for more information about the configuration
+# B.A.T.M.A.N. debugging:
+export CONFIG_BATMAN_ADV_DEBUG=n
+# B.A.T.M.A.N. bridge loop avoidance:
+export CONFIG_BATMAN_ADV_BLA=y
+# B.A.T.M.A.N. distributed ARP table:
+export CONFIG_BATMAN_ADV_DAT=y
 
 PWD:=$(shell pwd)
 KERNELPATH ?= /lib/modules/$(shell uname -r)/build
@@ -28,33 +34,31 @@ $(warning $(KERNELPATH) is missing, please set KERNELPATH)
 endif
 
 export KERNELPATH
+RM ?= rm -f
 
-REVISION= $(shell	if [ -d .svn ]; then \
-				if which svn > /dev/null; then \
-					echo rv$$(svn info | grep "Rev:" | sed -e '1p' -n | awk '{print $$4}'); \
-				else \
-					echo "[unknown]"; \
-				fi; \
-			elif [ -d .git ]; then \
-				if which git > /dev/null; then \
-					echo $$(git describe --always --dirty 2> /dev/null); \
-				else \
-					echo "[unknown]"; \
-				fi; \
-			elif [ -d ~/.svk ]; then \
-				if which svk > /dev/null; then \
-					echo rv$$(svk info | grep "Mirrored From" | awk '{print $$5}'); \
-				else \
-					echo "[unknown]"; \
-				fi; \
+REVISION= $(shell	if [ -d "$(PWD)/.git" ]; then \
+				echo $$(git --git-dir="$(PWD)/.git" describe --always --dirty --match "v*" |sed 's/^v//' 2> /dev/null || echo "[unknown]"); \
 			fi)
 
-NUM_CPUS = $(shell nproc 2> /dev/null || echo 1)
-
+CONFIG_BATMAN_ADV=m
+batman-adv-y += compat.o
+ifneq ($(REVISION),)
+ccflags-y += -DBATADV_SOURCE_VERSION=\"$(REVISION)\"
+endif
 include $(PWD)/Makefile.kbuild
 
-all:
-	$(MAKE) -C $(KERNELPATH) REVISION=$(REVISION) M=$(PWD) PWD=$(PWD) -j $(NUM_CPUS) modules
+all: config
+	$(MAKE) -C $(KERNELPATH) M=$(PWD) PWD=$(PWD) modules
 
 clean:
+	$(RM) compat-autoconf.h*
 	$(MAKE) -C $(KERNELPATH) M=$(PWD) PWD=$(PWD) clean
+
+install: config
+	$(MAKE) -C $(KERNELPATH) M=$(PWD) PWD=$(PWD) INSTALL_MOD_DIR=updates/net/batman-adv/ modules_install
+	depmod -a
+
+config:
+	$(PWD)/gen-compat-autoconf.sh $(PWD)/compat-autoconf.h
+
+.PHONY: all clean install config

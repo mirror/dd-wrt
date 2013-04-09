@@ -1,5 +1,4 @@
-/*
- * Copyright (C) 2010-2011 B.A.T.M.A.N. contributors:
+/* Copyright (C) 2011-2013 B.A.T.M.A.N. contributors:
  *
  * Marek Lindner
  *
@@ -16,18 +15,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA
- *
  */
 
+#ifndef _NET_BATMAN_ADV_BAT_ALGO_H_
+#define _NET_BATMAN_ADV_BAT_ALGO_H_
 
-#ifndef _NET_BATMAN_ADV_DEBUGFS_H_
-#define _NET_BATMAN_ADV_DEBUGFS_H_
+int batadv_iv_init(void);
 
-#define DEBUGFS_BAT_SUBDIR "batman_adv"
-
-void debugfs_init(void);
-void debugfs_destroy(void);
-int debugfs_add_meshif(struct net_device *dev);
-void debugfs_del_meshif(struct net_device *dev);
-
-#endif /* _NET_BATMAN_ADV_DEBUGFS_H_ */
+#endif /* _NET_BATMAN_ADV_BAT_ALGO_H_ */
