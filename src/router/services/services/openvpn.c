@@ -55,9 +55,13 @@ void start_openvpnserver(void)
 	chmod("/tmp/openvpn/key.pem", 0600);
 
 	//	use jffs for ccd if available
-	if (nvram_match("enable_jffs2", "1")
+	if ((nvram_match("usb_enable", "1")
+		&& nvram_match("usb_storage", "1")
+		&& nvram_match("usb_automnt", "1")
+		&& nvram_match("usb_mntpoint", "jffs"))
+		|| (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1"))	{
+		&& nvram_match("sys_enable_jffs2", "1"))) {
 			mkdir("/jffs/etc", 0700);
 			mkdir("/jffs/etc/openvpn", 0700);
 			mkdir("/jffs/etc/openvpn/ccd", 0700);
@@ -101,9 +105,13 @@ void start_openvpnserver(void)
 			nvram_safe_get("openvpn_proto"),
 			nvram_safe_get("openvpn_cipher"),
 			nvram_safe_get("openvpn_auth"));
-	if (nvram_match("enable_jffs2", "1")	//	use jffs for ccd if available
+	if ((nvram_match("usb_enable", "1") //	use usb/jffs for ccd if available
+		&& nvram_match("usb_storage", "1")
+		&& nvram_match("usb_automnt", "1")
+		&& nvram_match("usb_mntpoint", "jffs"))
+		|| (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1"))
+		&& nvram_match("sys_enable_jffs2", "1")))
 			fprintf(fp,"client-config-dir /jffs/etc/openvpn/ccd\n");
 	else
 			fprintf(fp,"client-config-dir /tmp/openvpn/ccd\n");
