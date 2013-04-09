@@ -106,6 +106,56 @@ static void __iomem *scu_base_addr(void)
 
 static DEFINE_SPINLOCK(boot_lock);
 
+#define PMU_REG_VALUE(offset)	__raw_readl(CNS3XXX_PM_BASE_VIRT + offset)	
+#define PLL_HM_PD_CTRL_REG 	PMU_REG_VALUE(0x1C)
+#define PLL_LCD_CTRL_REG	PMU_REG_VALUE(0x18)
+
+#define CHIP_REVISION_REG	0xa54   //  0x76000A54
+#define EFUSE_CHIP_REVISION	0x48  //0x76000048
+
+
+static int FIQcompatible(void)
+{
+	void __iomem *efuse_base = (void __iomem *) (CNS3XXX_MISC_BASE_VIRT + EFUSE_CHIP_REVISION);
+	void __iomem *id_base = (void __iomem *) (CNS3XXX_MISC_BASE_VIRT + CHIP_REVISION_REG);
+	unsigned long rev_id;
+	unsigned long rev_id_from_efuse;
+
+	rev_id =__raw_readl(id_base);
+	rev_id >>= 28; 
+	rev_id_from_efuse = __raw_readl(efuse_base);
+	printk(KERN_INFO "Chip ID: efuse_rev_id=%lx,rev_id=%lx\n", rev_id_from_efuse,rev_id);
+	if( rev_id == 0x0 )
+	{
+		if( ((PLL_HM_PD_CTRL_REG & 0x00000020) >> 5 == 0x00) && 
+			( PLL_LCD_CTRL_REG & 0x00C00000 ) >>22 == 0x3 ) {
+			printk(KERN_INFO "Chip Version: b\n");
+			return 0;
+		} else {
+			printk(KERN_INFO "Chip Version: a\n");
+			return 0;
+		}
+	}
+	else if( rev_id_from_efuse == 0x0020) {
+		printk(KERN_INFO "Chip Version: c\n");
+		return 1;
+	}else if( rev_id_from_efuse == 0x0060) {
+		printk(KERN_INFO "chip Version: d\n");	
+		return 1;
+	}else if( rev_id == 0x2) {
+		printk(KERN_INFO "Chip Version: c\n");
+		return 1;
+	}else if( rev_id == 0x3) {
+		printk(KERN_INFO "Chip Version: d\n");
+		return 1;
+	}
+
+	return 0;
+
+
+}
+
+
 static void __cpuinit cns3xxx_secondary_init(unsigned int cpu)
 {
 	/*
@@ -125,10 +175,11 @@ static void __cpuinit cns3xxx_secondary_init(unsigned int cpu)
 	 * pen, then head off into the C entry point
 	 */
 	write_pen_release(-1);
-	
-	cpu_cache.dma_map_area = (void*)smp_dma_map_area;
-	cpu_cache.dma_unmap_area = (void*)smp_dma_unmap_area;
-	cpu_cache.dma_flush_range = (void*)smp_dma_flush_range;
+	if (FIQcompatible()) {
+		cpu_cache.dma_map_area = (void*)smp_dma_map_area;
+		cpu_cache.dma_unmap_area = (void*)smp_dma_unmap_area;
+		cpu_cache.dma_flush_range = (void*)smp_dma_flush_range;
+	}
 
 	/*
 	 * Synchronise with the boot thread.
