@@ -47,6 +47,7 @@ extern unsigned char cns3xxx_fiq_start, cns3xxx_fiq_end;
 extern unsigned int fiq_number[2];
 extern struct cpu_cache_fns cpu_cache;
 struct cpu_cache_fns cpu_cache_save;
+static int hasfiq = 0;
 
 static void __init cns3xxx_set_fiq_regs(void)
 {
@@ -165,21 +166,21 @@ static void __cpuinit cns3xxx_secondary_init(unsigned int cpu)
 	 */
 	gic_secondary_init(0);
 
-	/*
-	 * Setup Secondary Core FIQ regs
-	 */
-	cns3xxx_set_fiq_regs();
 
+	if (hasfiq) {
+		/*
+		 * Setup Secondary Core FIQ regs
+		 */
+		cns3xxx_set_fiq_regs();
+		cpu_cache.dma_map_area = (void*)smp_dma_map_area;
+		cpu_cache.dma_unmap_area = (void*)smp_dma_unmap_area;
+		cpu_cache.dma_flush_range = (void*)smp_dma_flush_range;
+	}
 	/*
 	 * let the primary processor know we're out of the
 	 * pen, then head off into the C entry point
 	 */
 	write_pen_release(-1);
-	if (FIQcompatible()) {
-		cpu_cache.dma_map_area = (void*)smp_dma_map_area;
-		cpu_cache.dma_unmap_area = (void*)smp_dma_unmap_area;
-		cpu_cache.dma_flush_range = (void*)smp_dma_flush_range;
-	}
 
 	/*
 	 * Synchronise with the boot thread.
@@ -265,6 +266,7 @@ static void __init cns3xxx_smp_init_cpus(void)
 static void __init cns3xxx_smp_prepare_cpus(unsigned int max_cpus)
 {
 	int i;
+	hasfiq = FIQcompatible();
 
 	/*
 	 * Initialise the present map, which describes the set of CPUs
@@ -287,8 +289,10 @@ static void __init cns3xxx_smp_prepare_cpus(unsigned int max_cpus)
 	/*
 	 * Setup FIQ's for main cpu
 	 */
-	cns3xxx_init_fiq();
-	cns3xxx_set_fiq_regs();
+	if (hasfiq) {
+		cns3xxx_init_fiq();
+		cns3xxx_set_fiq_regs();
+	}
 	memcpy((void*)&cpu_cache_save, (void*)&cpu_cache, sizeof(struct cpu_cache_fns));
 }
 
