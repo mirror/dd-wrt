@@ -1,0 +1,32 @@
+Building for a Coverity scan:
+
+
+Setting up you build tooling:
+=============================
+1. Go to http://scan.coverity.com/self-build/ and follow the 'Do once'
+   instructions.
+     1. Download and extract the tarball relevant to your system.
+     2. Add the (extracted) bin directory to your path
+
+
+Building:
+=========
+Make sure to be in the directory of the source tree (we assume a git checkout
+in this description), and run the following commands:
+     ccache -C
+     git clean -fdx
+     git reset --hard
+     cov-build --dir cov-int make DESTDIR="$(pwd)/dist" build_all install_all
+     tar czf "$(pwd)/dist/olsr.tgz" cov-int
+
+Lookup the following data:
+     1. the (Coverity) project USERNAME
+     2. the (Coverity) project PASSWORD
+     3. your EMAIL address on which you want to receive an analysis confirmation
+
+Now upload the build (you will need the project USERNAME and PASSWORD for this):
+     curl --form file="@$(pwd)/dist/olsr.tgz" \
+          --form project=USERNAME \
+          --form password=PASSWORD \
+          --form email=EMAIL \
+          http://scan5.coverity.com/cgi-bin/upload.py

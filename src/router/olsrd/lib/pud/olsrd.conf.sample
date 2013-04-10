@@ -1,0 +1,347 @@
+LoadPlugin "<olsrd plugin library path>/olsrd_pud.so.1.1.0"
+{
+    # nodeIdType is used to indicate the type of the nodeId field and is a
+    #            number in the range 0-255, with the following meaning:
+    #
+    #        0 : MAC address of sending interface
+    #            (nodeId is not relevant)
+    #        1 : an MSISDN number with 15 digits
+    #        2 : a Tetra number with 17 digits
+    #        3 : a DNS name
+    #        4 : IPv4 address (OLSR main address) of the sending node
+    #            (nodeId is not relevant)
+    #        6 : IPv6 address (OLSR main address) of the sending node
+    #            (nodeId is not relevant)
+    #        7 : an AIS MMSI number with 9 digits
+    #        8 : a URN number with 8 digits
+    #      192 : a 7 digit number conforming to 'Nationaal Nummerplan
+    #            Brandweer Nederland'
+    #      193 : a 6 digit number conforming to 'Nationaal Nummerplan
+    #            Ambulancezorg Nederland'
+    #      194 : a 4 digit number in the range [1, 8191]
+    #
+    #      other numbers are reserved 
+    #
+    # Note: setting 4 or 6 is the same for olsrd: both mean 'use the main
+    #       IP address, which is either an IPv4 or an IPv6 address, depending
+    #       on the IP version under which olsrd is run.
+    #
+    # Default: 4 or 6, depending on the IP version olsrd is using
+    #
+    #PlParam     "nodeIdType"                   "4"
+
+    # nodeId is the node identification with the meaning as indicated by the
+    #        nodeIdType parameter. When not set AND the nodeIdType is 3 (DNS
+    #        name) then the hostname is used.
+    #
+    # Note: Both the nodeIdType and nodeId fields are transported over
+    #       OLSR, so care must be taken to keep the size of the nodeId
+    #       parameter down.
+    #
+    # Default: none
+    #
+    #PlParam     "nodeId"                       ""
+
+
+    #
+    # RX Parameters
+    #
+
+    # rxNonOlsrIf is a network interface on the host on which the plugin will
+    #             listen for GPS multicasts. Multiple such interfaces can be
+    #             specified by specifying the parameter multiple times.
+    #
+    # Default: none
+    #
+    #PlParam     "rxNonOlsrIf"                  ""
+
+    # rxAllowedSourceIpAddress is an IP address from which the plugin is
+    #                          allowed to process/parse GPS sentences. When
+    #                          this parameter is not configured then GPS
+    #                          sentences from ALL IP addresses are processed.
+    #                          Multiple IP addresses can be specified by
+    #                          specifying the parameter multiple times.
+    #
+    # Default: none
+    #
+    #PlParam     "rxAllowedSourceIpAddress"     ""
+
+    # rxMcAddr is the multicast address on which the plugin will listen for GPS
+    #          multicasts.
+    #
+    # Default: 224.0.0.224 (IPv4) or FF02:0:0:0:0:0:0:1 (IPv6)
+    #
+    #PlParam     "rxMcAddr"                     "224.0.0.224"
+
+    # rxMcPort is the UDP port on which the plugin will listen for GPS
+    #          multicasts.
+    #
+    # Default: 2240
+    #
+    #PlParam     "rxMcPort"                     "2240"
+
+    # positionFile is the file that contains the position information that the
+    #              plugin should use. When this parameter is set then the
+    #              file is read during olsrd startup. An example file is
+    #              available in the doc directory of olsrd.
+    #
+    # Default: none
+    #
+    #PlParam "positionFile"                     ""
+
+    # Specifies the period in milliseconds on which to read the positionFile
+    # (if it changed) and activate its new setting for the position.
+    # This setting is only relevant if positionFile has been configured.
+    # A setting of zero disables dynamic updates, the positionFile is then only
+    # read during olsrd startup.
+    #
+    # Default: 0
+    #
+    #PlParam "positionFilePeriod" "0"
+
+
+    #
+    # TX Parameters
+    #
+
+    # txNonOlsrIf is a network interface on the host on which the plugin will
+    #             transmit GPS multicasts that were received through the OLSR
+    #             network. Multiple such interfaces can be specified by
+    #             specifying the parameter multiple times.
+    #
+    # Default: none
+    #
+    #PlParam     "txNonOlsrIf"                  ""
+
+    # txMcAddr is the multicast address on which the plugin will transmit GPS
+    #          multicasts that were received through the OLSR network.
+    #
+    # Default: 224.0.0.224 (IPv4) or FF02:0:0:0:0:0:0:1 (IPv6)
+    #
+    #PlParam     "txMcAddr"                     "224.0.0.224"
+
+    # txMcPort is the UDP port on which the plugin will transmit GPS multicasts
+    #          that were received through the OLSR network.
+    #
+    # Default: 2240
+    #
+    #PlParam     "txMcPort"                     "2240"
+
+    # txTtl is the TTL that is used when transmitting GPS multicasts that were
+    #       received through the OLSR network
+    #
+    # Default: 1
+    #
+    #PlParam     "txTtl"                        "1"
+
+    # txNmeaMessagePrefix is the NMEA message prefix of GPS multicasts that the
+    #                     plugin transmits. It must be exactly 4 characters
+    #                     long.
+    #
+    # Default: NBSX
+    #
+    #PlParam     "txNmeaMessagePrefix"          "NBSX"
+
+
+    #
+    # Uplink Parameters
+    #
+
+    # uplinkAddr is the IP address to which the plugin will transmit GPS
+    #            position updates. When not set, no uplink messages will be
+    #            sent.
+    #
+    # Default: none
+    #
+    #PlParam     "uplinkAddr"                   ""
+
+    # uplinkPort is the UDP port to which the plugin will transmit GPS position
+    #            updates. Can't be the same as the downlink port.
+    #
+    # Default: 2241
+    #
+    #PlParam     "uplinkPort"                   "2241"
+
+    # downlinkPort is the UDP port on which the plugin will receive GPS position
+    #              updates. Can't be the same as the uplink port.
+    #              The downlink is only active when a proper uplink has been
+    #              configured.
+    #
+    # Default: 2242
+    #
+    #PlParam     "downlinkPort"                 "2242"
+
+
+    #
+    # OLSR Parameters
+    #
+
+    # olsrTtl is the TTL that is used when sending messages over the OLSR
+    #         networks
+    #
+    # Default: 64
+    #
+    #PlParam     "olsrTtl"                      "64"
+
+
+    #
+    # Update Parameters
+    #
+
+    # updateIntervalStationary is the interval (in seconds) between position
+    #                          updates sent over the OLSR network when the
+    #                          node is stationary
+    #
+    # Default: 60
+    #
+    #PlParam     "updateIntervalStationary"     "60"
+
+    # updateIntervalMoving is the interval (in seconds) between position
+    #                      updates sent over the OLSR network when the
+    #                      node is moving
+    #
+    # Default: 5
+    #
+    #PlParam     "updateIntervalMoving"         "5"
+
+    # uplinkUpdateIntervalStationary is the interval (in seconds) between
+    #                                position updates sent over the uplink when
+    #                                the node is stationary
+    #
+    # Default: 180
+    #
+    #PlParam     "uplinkUpdateIntervalStationary"  "180"
+
+    # uplinkUpdateIntervalMoving is the interval (in seconds) between position
+    #                            updates sent over the OLSR network when the
+    #                            node is moving
+    #
+    # Default: 15
+    #
+    #PlParam     "uplinkUpdateIntervalMoving"      "15"
+
+    # gatewayDeterminationInterval is the interval (in seconds) on which
+    #                              determination of the best gateway is
+    #                              performed
+    #
+    # Default: 1
+    #
+    #PlParam     "gatewayDeterminationInterval"    "1"
+
+    # movingSpeedThreshold is the speed from which we consider the node is
+    #                      moving
+    #
+    # Default: 9
+    #
+    #PlParam     "movingSpeedThreshold"         "9"
+
+    # movingDistanceThreshold is the distance from the previous position from
+    #                         which we consider the node is moving
+    #
+    # Default: 50
+    #
+    #PlParam     "movingDistanceThreshold"      "50"
+
+    # dopMultiplier One of the situations that is seen as movement is when the
+    #               current position with its uncertainty circle no longer
+    #               overlaps the last transmitted position with its uncertainty
+    #               circle. This parameter is used to adjust the sizes of these
+    #               uncertainty circles: setting it to a value less than 1.0
+    #               will make both uncertainty circles smaller by this factor,
+    #               resulting in earlier movement detection. Setting it to a
+    #               value larger than 1.0 will detect movement later.
+    #
+    # Default: 2.5
+    #
+    #PlParam     "dopMultiplier"                "2.5"
+
+    # defaultHdop is the default value that is taken for HDOP (in meters) in
+    #             determining whether we are moving when there is a position
+    #             available but no HDOP.
+    #
+    # Default: 50
+    #
+    #PlParam     "defaultHdop"                  "50"
+
+    # defaultVdop is the default value that is taken for VDOP (in meters) in
+    #             determining whether we are moving when there is a position
+    #             available but no VDOP.
+    #
+    # Default: 50
+    #
+    #PlParam     "defaultVdop"                  "50"
+
+    # averageDepth is the depth of the position average list, or the number
+    #              of positions that are averaged to obtain the average
+    #              position
+    #
+    # Default: 5
+    #
+    #PlParam     "averageDepth"                 "5"
+
+    # hysteresisCountToStationary is the number of position updates that
+    #                             effectuate a state transition from moving to
+    #                             stationary that must be received before the
+    #                             actual transition is taken
+    #
+    # Default: 17
+    #
+    #PlParam     "hysteresisCountToStationary"  "17"
+
+    # hysteresisCountToMoving is the number of position updates that effectuate
+    #                         a state transition from stationary to moving that
+    #                         must be received before the actual transition is
+    #                         taken
+    #
+    # Default: 5
+    #
+    #PlParam     "hysteresisCountToMoving"      "5"
+
+    # gatewayHysteresisCountToStationary is the number of times the gateway
+    #                             must be the same that effectuate a state transition from
+    #                             moving to stationary that must be received
+    #                             before the actual transition is taken
+    #
+    # Default: 17
+    #
+    #PlParam     "gatewayHysteresisCountToStationary"  "17"
+
+    # gatewayHysteresisCountToMoving is the number of gateway updates that
+    #                         effectuate a state transition from stationary to
+    #                         moving that must be received before the actual
+    #                         transition is taken
+    #
+    # Default: 5
+    #
+    #PlParam     "gatewayHysteresisCountToMoving"      "5"
+
+
+    #
+    # Other Plugin Parameters
+    #
+
+    # useDeDup determines whether duplicate message detection is to be
+    #          performed. When 0 then no such detection is performed, when 1
+    #          then the detection is performed 
+    #
+    # Default: true
+    #
+    #PlParam     "useDeDup"                     "true"
+
+    # deDupDepth the number of messages that are tracked to detect duplucates
+    #            messages received from the OLSR network
+    #
+    # Default: 256
+    #
+    #PlParam     "deDupDepth"                   "256"
+
+    # useLoopback determines whether the message that is sent over the OLSR
+    #             network should be immediately looped back, thus pretending
+    #             that the message (that is sent by this node) is received from
+    #             the OLSR network. When 0 then no loopback is performed, when
+    #             1 then the loopback is performed
+    #
+    # Default: false
+    #
+    #PlParam     "useLoopback"                  "true"
+}
