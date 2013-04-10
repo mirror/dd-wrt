@@ -3038,8 +3038,8 @@ void start_firewall(void)
 #endif
 #ifdef HAVE_CHILLI
 	if (nvram_match("hotss_enable", "1")) {
-		stop_hotspot();
-		start_hotspot);
+		stop_chilli();
+		start_chilli();	
 	}
 	if (nvram_match("chilli_enable", "1")
 		&& nvram_match("hotss_enable", "0")) {
