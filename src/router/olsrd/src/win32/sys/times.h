@@ -1,4 +1,3 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
@@ -39,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #if !defined TL_SYS_TIMES_H_INCLUDED
 
 #define TL_SYS_TIMES_H_INCLUDED
@@ -49,7 +50,9 @@ struct tms {
 
 long times(struct tms *);
 
-#endif
+#endif /* !defined TL_SYS_TIMES_H_INCLUDED */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

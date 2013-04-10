@@ -83,6 +83,21 @@ setRxMcPort(const char *value, void *data, set_plugin_parameter_addon addon);
 char * getPositionFile(void);
 int setPositionFile(const char *value, void *data, set_plugin_parameter_addon addon);
 
+/** The name of the positionFilePeriod plugin parameter */
+#define PUD_POSFILEPERIOD_NAME    "positionFilePeriod"
+
+/** The default value of the positionFilePeriod plugin parameter */
+#define PUD_POSFILEPERIOD_DEFAULT ((unsigned long long)0)
+
+/** The minimal value of the positionFilePeriod plugin parameter */
+#define PUD_POSFILEPERIOD_MIN     ((unsigned long long)1000)
+
+/** The maximal value of the positionFilePeriod plugin parameter */
+#define PUD_POSFILEPERIOD_MAX     ((unsigned long long)320000000)
+
+unsigned long long getPositionFilePeriod(void);
+int setPositionFilePeriod(const char *value, void *data, set_plugin_parameter_addon addon);
+
 /*
  * TX Parameters
  */

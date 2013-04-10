@@ -380,7 +380,7 @@ int nmea_parse_GPGGA(const char *s, const int len, nmeaGPGGA *pack) {
 	pack->dgps_sid = 0;		/* ignored */
 
 	/* parse */
-	token_count = nmea_scanf(s, len, "$GPGGA,%s,%f,%C,%f,%C,%d,%d,%f,%f,%C,%f,%C,%f,%d*", &time_buff[0], &pack->lat,
+	token_count = nmea_scanf(s, len, "$GPGGA,%s,%f,%c,%f,%c,%d,%d,%f,%f,%c,%f,%c,%f,%d*", &time_buff[0], &pack->lat,
 			&pack->ns, &pack->lon, &pack->ew, &pack->sig, &pack->satinuse, &pack->HDOP, &pack->elv, &pack->elv_units,
 			&pack->diff, &pack->diff_units, &pack->dgps_age, &pack->dgps_sid);
 
@@ -479,7 +479,7 @@ int nmea_parse_GPGSA(const char *s, const int len, nmeaGPGSA *pack) {
 	pack->VDOP = NAN;
 
 	/* parse */
-	token_count = nmea_scanf(s, len, "$GPGSA,%C,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f*", &pack->fix_mode,
+	token_count = nmea_scanf(s, len, "$GPGSA,%c,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f*", &pack->fix_mode,
 			&pack->fix_type, &pack->sat_prn[0], &pack->sat_prn[1], &pack->sat_prn[2], &pack->sat_prn[3],
 			&pack->sat_prn[4], &pack->sat_prn[5], &pack->sat_prn[6], &pack->sat_prn[7], &pack->sat_prn[8],
 			&pack->sat_prn[9], &pack->sat_prn[10], &pack->sat_prn[11], &pack->PDOP, &pack->HDOP, &pack->VDOP);
@@ -648,7 +648,7 @@ int nmea_parse_GPRMC(const char *s, const int len, nmeaGPRMC *pack) {
 	pack->mode = 0;
 
 	/* parse */
-	token_count = nmea_scanf(s, len, "$GPRMC,%s,%C,%f,%C,%f,%C,%f,%f,%2d%2d%2d,%f,%C,%C*", &time_buff[0], &pack->status,
+	token_count = nmea_scanf(s, len, "$GPRMC,%s,%c,%f,%c,%f,%c,%f,%f,%2d%2d%2d,%f,%c,%c*", &time_buff[0], &pack->status,
 			&pack->lat, &pack->ns, &pack->lon, &pack->ew, &pack->speed, &pack->track, &pack->utc.day, &pack->utc.mon,
 			&pack->utc.year, &pack->magvar, &pack->magvar_ew, &pack->mode);
 
@@ -767,7 +767,7 @@ int nmea_parse_GPVTG(const char *s, const int len, nmeaGPVTG *pack) {
 	pack->spk_k = 0;
 
 	/* parse */
-	token_count = nmea_scanf(s, len, "$GPVTG,%f,%C,%f,%C,%f,%C,%f,%C*", &pack->track, &pack->track_t, &pack->mtrack,
+	token_count = nmea_scanf(s, len, "$GPVTG,%f,%c,%f,%c,%f,%c,%f,%c*", &pack->track, &pack->track_t, &pack->mtrack,
 			&pack->mtrack_m, &pack->spn, &pack->spn_n, &pack->spk, &pack->spk_k);
 
 	/* see that we have enough tokens */
@@ -781,7 +781,7 @@ int nmea_parse_GPVTG(const char *s, const int len, nmeaGPVTG *pack) {
 	if (!isnan(pack->track) && (pack->track_t)) {
 		pack->track_t = toupper(pack->track_t);
 		if (pack->track_t != 'T') {
-			nmea_error("GPVTG parse error: invalid track unit, got %C, expected T", pack->track_t);
+			nmea_error("GPVTG parse error: invalid track unit, got %c, expected T", pack->track_t);
 			return 0;
 		}
 
@@ -790,7 +790,7 @@ int nmea_parse_GPVTG(const char *s, const int len, nmeaGPVTG *pack) {
 	if (!isnan(pack->mtrack) && (pack->mtrack_m)) {
 		pack->mtrack_m = toupper(pack->mtrack_m);
 		if (pack->mtrack_m != 'M') {
-			nmea_error("GPVTG parse error: invalid mtrack unit, got %C, expected M", pack->mtrack_m);
+			nmea_error("GPVTG parse error: invalid mtrack unit, got %c, expected M", pack->mtrack_m);
 			return 0;
 		}
 
@@ -799,7 +799,7 @@ int nmea_parse_GPVTG(const char *s, const int len, nmeaGPVTG *pack) {
 	if (!isnan(pack->spn) && (pack->spn_n)) {
 		pack->spn_n = toupper(pack->spn_n);
 		if (pack->spn_n != 'N') {
-			nmea_error("GPVTG parse error: invalid knots speed unit, got %C, expected N", pack->spn_n);
+			nmea_error("GPVTG parse error: invalid knots speed unit, got %c, expected N", pack->spn_n);
 			return 0;
 		}
 
@@ -813,7 +813,7 @@ int nmea_parse_GPVTG(const char *s, const int len, nmeaGPVTG *pack) {
 	if (!isnan(pack->spk) && (pack->spk_k)) {
 		pack->spk_k = toupper(pack->spk_k);
 		if (pack->spk_k != 'K') {
-			nmea_error("GPVTG parse error: invalid kph speed unit, got %C, expected K", pack->spk_k);
+			nmea_error("GPVTG parse error: invalid kph speed unit, got %c, expected K", pack->spk_k);
 			return 0;
 		}
 

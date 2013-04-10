@@ -47,9 +47,9 @@
 #ifndef _OLSR_TYPES_H
 #define	 _OLSR_TYPES_H
 
-#if !defined linux && !defined __APPLE__ && !defined WIN32 && !defined __FreeBSD__ && !defined __FreeBSD_kernel__ && !defined __NetBSD__ && !defined __OpenBSD__
+#if !defined __linux__ && !defined __APPLE__ && !defined _WIN32 && !defined __FreeBSD__ && !defined __FreeBSD_kernel__ && !defined __NetBSD__ && !defined __OpenBSD__
 #       error "Unsupported system"
-#endif
+#endif /* !defined __linux__ && !defined __APPLE__ && !defined _WIN32 && !defined __FreeBSD__ && !defined __FreeBSD_kernel__ && !defined __NetBSD__ && !defined __OpenBSD__ */
 
 /* types */
 #ifdef _MSC_VER
@@ -59,9 +59,9 @@ typedef unsigned int uint32_t;
 typedef signed char int8_t;
 typedef signed short int16_t;
 typedef signed int int32_t;
-#else
+#else /* _MSC_VER */
 #include <inttypes.h>
-#endif
+#endif /* _MSC_VER */
 
 #if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
 
@@ -74,24 +74,24 @@ typedef signed int int32_t;
 #define true 1
 #define false 0
 #define __bool_true_false_are_defined 1
-#endif
+#endif /* defined __GNUC__ */
 
 /* add some safe-gaurds */
 #ifndef _MSC_VER
 #if !defined bool || !defined true || !defined false || !defined __bool_true_false_are_defined
 #error You have no C99-like boolean types. Please extend src/olsr_type.h!
-#endif
-#endif
+#endif /* !defined bool || !defined true || !defined false || !defined __bool_true_false_are_defined */
+#endif /* _MSC_VER */
 
 /* user defined cookies */
 typedef uint16_t olsr_cookie_t;
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
-#else
+#else /* _WIN32 */
 /* manpage says: fd_set is in sys/select.h with posix (at least with the Android-NDK) */
 #include <sys/select.h>
-#endif
+#endif /* _WIN32 */
 
 /* OpenBSD wants this here */
 #include <sys/types.h>
@@ -100,7 +100,7 @@ typedef uint16_t olsr_cookie_t;
 /* IPv6 address format in6_addr */
 #ifndef _MSC_VER
 #include <netinet/in.h>
-#endif
+#endif /* _MSC_VER */
 
 union olsr_sockaddr {
   struct sockaddr_storage storage;
@@ -121,7 +121,7 @@ struct olsr_ip_prefix {
 
 typedef uint32_t olsr_linkcost;
 
-#endif
+#endif /* _OLSR_TYPES_H */
 
 /*
  * Local Variables:

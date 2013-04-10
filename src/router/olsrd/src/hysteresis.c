@@ -152,11 +152,11 @@ update_hysteresis_incoming(union olsr_ip_addr *remote, struct interface *local, 
   if (lnk != NULL) {
 #ifdef DEBUG
     struct ipaddr_str buf;
-#endif
+#endif /* DEBUG */
     lnk->L_link_quality = olsr_hyst_calc_stability(lnk->L_link_quality);
 #ifdef DEBUG
     OLSR_PRINTF(3, "HYST[%s]: %f\n", olsr_ip_to_string(&buf, remote), (double)lnk->L_link_quality);
-#endif
+#endif /* DEBUG */
 
     /*
      * see how many packets we have missed and update the link quality
@@ -170,7 +170,7 @@ update_hysteresis_incoming(union olsr_ip_addr *remote, struct interface *local, 
         lnk->L_link_quality = olsr_hyst_calc_instability(lnk->L_link_quality);
 #ifdef DEBUG
         OLSR_PRINTF(5, "HYST[%s] PACKET LOSS! %f\n", olsr_ip_to_string(&buf, remote), (double)lnk->L_link_quality);
-#endif
+#endif /* DEBUG */
         if (lnk->L_link_quality < olsr_cnf->hysteresis_param.thr_low)
           break;
 

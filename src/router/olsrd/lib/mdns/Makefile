@@ -1,7 +1,7 @@
 
 OLSRD_PLUGIN =	true
 PLUGIN_NAME =	olsrd_mdns
-PLUGIN_VER =	1.0.0
+PLUGIN_VER =	1.0.1
 
 TOPDIR = ../..
 include $(TOPDIR)/Makefile.inc
@@ -21,8 +21,10 @@ else
 default_target: $(PLUGIN_FULLNAME)
 
 $(PLUGIN_FULLNAME): $(OBJS) version-script.txt
+ifeq ($(VERBOSE),0)
 		@echo "[LD] $@"
-		@$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
+endif
+		$(MAKECMDPREFIX)$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
 
 install:	$(PLUGIN_FULLNAME)
 		$(STRIP) $(PLUGIN_FULLNAME)

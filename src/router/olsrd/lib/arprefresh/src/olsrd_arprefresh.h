@@ -41,7 +41,7 @@ int olsrd_plugin_init(void);
 void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
 int olsrd_plugin_interface_version(void);
 
-#endif
+#endif /* _OLSRD_ARPREFRESH */
 
 /*
  * Local Variables:

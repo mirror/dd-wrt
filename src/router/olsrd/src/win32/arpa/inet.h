@@ -39,6 +39,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #if !defined TL_ARPA_INET_H_INCLUDED
 
 #define TL_ARPA_INET_H_INCLUDED
@@ -52,7 +54,9 @@ int inet_aton(const char *cp, struct in_addr *addr);
 int inet_pton(int af, const char *src, void *dst);
 char *inet_ntop(int af, const void *src, char *dst, int size);
 
-#endif
+#endif /* !defined TL_ARPA_INET_H_INCLUDED */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

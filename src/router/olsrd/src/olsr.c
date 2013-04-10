@@ -79,7 +79,7 @@ bool changes_force;
 
 #ifdef OLSR_COLLECT_STARTUP_SLEEP
 static int max_startup_sleep = 0;
-#endif
+#endif /* OLSR_COLLECT_STARTUP_SLEEP */
 static int sum_startup_sleep = 0;
 
 void olsr_startup_sleep(int s)
@@ -87,9 +87,9 @@ void olsr_startup_sleep(int s)
   sum_startup_sleep += s;
 #ifdef OLSR_COLLECT_STARTUP_SLEEP
   if (s > max_startup_sleep) max_startup_sleep=s;
-#else
+#else /* OLSR_COLLECT_STARTUP_SLEEP */
   sleep(s);
-#endif
+#endif /* OLSR_COLLECT_STARTUP_SLEEP */
 }
 
 void olsr_do_startup_sleep(void)
@@ -99,11 +99,11 @@ void olsr_do_startup_sleep(void)
     printf("OLSR encountered multiple problems on startup, which should delay startup by %i seconds.\nAs this is quite much time, OLSR will sleep only %i seconds.\nBUT YOU SHOULD FIX ABOVE PROBLEMS!\n",
            sum_startup_sleep,max_startup_sleep);
   sleep(max_startup_sleep);
-#else
+#else /* OLSR_COLLECT_STARTUP_SLEEP */
   if (sum_startup_sleep > 0) 
     printf("olsrd startup was delayed %i seconds due to various nasty error messages.\nYOU SHOULD REALLY FIX ABOVE PROBLEMS!\n",
            sum_startup_sleep);
-#endif
+#endif /* OLSR_COLLECT_STARTUP_SLEEP */
 }
 
 /**
@@ -187,7 +187,7 @@ olsr_process_changes(void)
     OLSR_PRINTF(3, "CHANGES IN TOPOLOGY\n");
   if (changes_hna)
     OLSR_PRINTF(3, "CHANGES IN HNA\n");
-#endif
+#endif /* DEBUG */
 
   if (!changes_neighborhood && !changes_topology && !changes_hna)
     return;
@@ -213,9 +213,9 @@ olsr_process_changes(void)
   if (olsr_cnf->debug_level > 0) {
     if (olsr_cnf->debug_level > 2) {
       olsr_print_mid_set();
-#ifdef linux
+#ifdef __linux__
     olsr_print_gateway_entries();
-#endif
+#endif /* __linux__ */
 
       if (olsr_cnf->debug_level > 3) {
         if (olsr_cnf->debug_level > 8) {
@@ -296,7 +296,7 @@ olsr_init_tables(void)
   /* Initialize duplicate handler */
 #ifndef NO_DUPLICATE_DETECTION_HANDLER
   olsr_duplicate_handler_init();
-#endif
+#endif /* NO_DUPLICATE_DETECTION_HANDLER */
 }
 
 /**
@@ -304,7 +304,8 @@ olsr_init_tables(void)
  *it if necessary.
  *
  *@param m the OLSR message to be forwarded
- *@param neighbour we received message from
+ *@param in_if the incoming interface
+ *@param from_addr neighbour we received message from
  *
  *@returns positive if forwarded
  */
@@ -347,7 +348,7 @@ olsr_forward_message(union olsr_message *m, struct interface *in_if, union olsr_
 #ifdef DEBUG
     struct ipaddr_str buf;
     OLSR_PRINTF(5, "Forward - sender %s not MPR selector\n", olsr_ip_to_string(&buf, src));
-#endif
+#endif /* DEBUG */
     return 0;
   }
 
@@ -549,6 +550,7 @@ olsr_status_to_string(uint8_t status)
  *that requires the daemon to terminate
  *
  *@param msg the message to write to the syslog and possibly stdout
+ *@param val the exit code
  */
 
 void
@@ -560,13 +562,16 @@ olsr_exit(const char *msg, int val)
   olsr_cnf->exit_value = val;
 
   raise(SIGTERM);
+
+  /* just to be sure */
+  exit(val);
 }
 
 /**
  * Wrapper for malloc(3) that does error-checking
  *
  * @param size the number of bytes to allocalte
- * @param caller a string identifying the caller for
+ * @param id a string identifying the caller for
  * use in error messaging
  *
  * @return a void pointer to the memory allocated
@@ -588,10 +593,6 @@ olsr_malloc(size_t size, const char *id)
     olsr_syslog(OLSR_LOG_ERR, "olsrd: out of memory!: %s\n", err_msg);
     olsr_exit(id, EXIT_FAILURE);
   }
-#if 0
-  /* useful for debugging */
-  olsr_printf(1, "MEMORY: alloc %s %p, %u bytes\n", id, ptr, size);
-#endif
 
   return ptr;
 }

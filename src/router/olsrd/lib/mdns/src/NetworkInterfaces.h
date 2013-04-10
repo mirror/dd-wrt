@@ -39,8 +39,8 @@
  */
 
 
-#ifndef _BMF_NETWORKINTERFACES_H
-#define _BMF_NETWORKINTERFACES_H
+#ifndef _MDNS_NETWORKINTERFACES_H
+#define _MDNS_NETWORKINTERFACES_H
 
 /* System includes */
 #include <netinet/in.h>         /* struct in_addr */
@@ -55,6 +55,7 @@
 
 /* Size of buffer in which packets are received */
 #define BMF_BUFFER_SIZE 2048
+#define HELLO_BUFFER_SIZE 2048
 
 struct TBmfInterface {
   /* File descriptor of raw packet socket, used for capturing multicast packets */
@@ -67,6 +68,17 @@ struct TBmfInterface {
   /* File descriptor of UDP packet socket, used for listening to encapsulation packets.
    * Used only when PlParam "BmfMechanism" is set to "UnicastPromiscuous". */
   int listeningSkfd;
+
+  /* File descriptor of UDP packet socket, used for listening router election hello
+   * packets */
+  int electionSkfd;
+
+  /* File descriptor of UDP packet socket, used for sending router election hello
+   * packets */
+  int helloSkfd;
+
+  /* Used to check if the router is master on the selected interface */
+  int isActive;
 
   unsigned char macAddr[IFHWADDRLEN];
 
@@ -104,6 +116,7 @@ struct TBmfInterface {
 extern struct TBmfInterface *BmfInterfaces;
 
 extern int my_MDNS_TTL;
+extern int my_TTL_Check;
 
 extern int HighestSkfd;
 extern fd_set InputSet;
@@ -145,13 +158,14 @@ int CreateBmfNetworkInterfaces(struct interface *skipThisIntf);
 void AddInterface(struct interface *newIntf);
 void CloseBmfNetworkInterfaces(void);
 int AddNonOlsrBmfIf(const char *ifName, void *data, set_plugin_parameter_addon addon);
+int set_TTL_Check(const char *TTL_Check, void *data, set_plugin_parameter_addon addon);
 int set_MDNS_TTL(const char *MDNS_TTL, void *data, set_plugin_parameter_addon addon);
 int IsNonOlsrBmfIf(const char *ifName);
 void CheckAndUpdateLocalBroadcast(unsigned char *ipPacket, union olsr_ip_addr *broadAddr);
 void AddMulticastRoute(void);
 void DeleteMulticastRoute(void);
 
-#endif /* _BMF_NETWORKINTERFACES_H */
+#endif /* _MDNS_NETWORKINTERFACES_H */
 
 /*
  * Local Variables:

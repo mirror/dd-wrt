@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "Frontend.h"
 #include "MyTabCtrl.h"
@@ -46,7 +48,7 @@
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
-#endif
+#endif /* _DEBUG */
 
 MyTabCtrl::MyTabCtrl()
 {
@@ -121,3 +123,5 @@ void MyTabCtrl::OnSelchange(NMHDR* pNMHDR, LRESULT* pResult)
 
 	*pResult = 0;
 }
+
+#endif /* _WIN32 */

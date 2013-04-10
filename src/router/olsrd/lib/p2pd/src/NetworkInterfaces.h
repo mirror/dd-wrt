@@ -39,8 +39,8 @@
  */
 
 
-#ifndef _NETWORKINTERFACES_H
-#define _NETWORKINTERFACES_H
+#ifndef _P2PD_NETWORKINTERFACES_H
+#define _P2PD_NETWORKINTERFACES_H
 
 /* System includes */
 #include <netinet/in.h>         /* struct in_addr */
@@ -149,7 +149,7 @@ void AddMulticastRoute(void);
 void DeleteMulticastRoute(void);
 int CreateCaptureSocket(const char *ifName);
 
-#endif /* _BMF_NETWORKINTERFACES_H */
+#endif /* _P2PD_NETWORKINTERFACES_H */
 
 /*
  * Local Variables:

@@ -22,7 +22,7 @@
 /* Zebra socket */
 #ifndef ZEBRA_SOCKPATH
 #define ZEBRA_SOCKPATH "/var/run/quagga/zserv.api"
-#endif
+#endif /* ZEBRA_SOCKPATH */
 
 /* Quagga plugin flags */
 

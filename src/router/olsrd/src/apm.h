@@ -68,7 +68,7 @@ void apm_printinfo(struct olsr_apm_info *);
 
 int apm_read(struct olsr_apm_info *);
 
-#endif
+#endif /* _OLSR_APM */
 
 /*
  * Local Variables:

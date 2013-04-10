@@ -58,7 +58,7 @@ void generate_tc(void *);
 
 void generate_stdout_pulse(void *);
 
-#endif
+#endif /* _OLSR_GEN_MSG */
 
 /*
  * Local Variables:

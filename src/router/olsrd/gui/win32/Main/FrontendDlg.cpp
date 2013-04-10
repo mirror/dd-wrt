@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "Frontend.h"
 #include "FrontendDlg.h"
@@ -49,7 +51,7 @@
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
-#endif
+#endif /* _DEBUG */
 
 CFrontendDlg::CFrontendDlg(CWnd* pParent)
 	: CDialog(CFrontendDlg::IDD, pParent)
@@ -1006,3 +1008,5 @@ void CFrontendDlg::OnExitButton()
 
 	DestroyWindow();
 }
+
+#endif /* _WIN32 */

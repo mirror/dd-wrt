@@ -15,7 +15,7 @@
 
 #ifdef __ANDROID_API__
 typedef __in_port_t in_port_t;
-#endif
+#endif /* __ANDROID_API__ */
 
 /**
  Get the port in an OLSR socket address

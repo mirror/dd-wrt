@@ -1,6 +1,8 @@
-// stdafx.h : Include-Datei für Standard-System-Include-Dateien,
-//  oder projektspezifische Include-Dateien, die häufig benutzt, aber
-//      in unregelmäßigen Abständen geändert werden.
+#ifdef _WIN32
+
+// stdafx.h : Include-Datei fï¿½r Standard-System-Include-Dateien,
+//  oder projektspezifische Include-Dateien, die hï¿½ufig benutzt, aber
+//      in unregelmï¿½ï¿½igen Abstï¿½nden geï¿½ndert werden.
 //
 
 #if !defined(AFX_STDAFX_H__D43BD17B_AEC0_43A5_9F3B_1DAA99152E38__INCLUDED_)
@@ -8,16 +10,16 @@
 
 #if defined _MSC_VER && _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
+#endif /* defined _MSC_VER && _MSC_VER > 1000 */
 
 #define VC_EXTRALEAN            // Selten verwendete Teile der Windows-Header nicht einbinden
 
 #include <afxwin.h>             // MFC-Kern- und -Standardkomponenten
 #include <afxext.h>             // MFC-Erweiterungen
-#include <afxdtctl.h>           // MFC-Unterstützung für allgemeine Steuerelemente von Internet Explorer 4
+#include <afxdtctl.h>           // MFC-Unterstï¿½tzung fï¿½r allgemeine Steuerelemente von Internet Explorer 4
 #ifndef _AFX_NO_AFXCMN_SUPPORT
-#include <afxcmn.h>             // MFC-Unterstützung für gängige Windows-Steuerelemente
-#endif // _AFX_NO_AFXCMN_SUPPORT
+#include <afxcmn.h>             // MFC-Unterstï¿½tzung fï¿½r gï¿½ngige Windows-Steuerelemente
+#endif /* _AFX_NO_AFXCMN_SUPPORT */
 
 #include <afxmt.h>
 #include <afxtempl.h>
@@ -25,9 +27,11 @@
 #include <iphlpapi.h>
 
 //{{AFX_INSERT_LOCATION}}
-// Microsoft Visual C++ fügt unmittelbar vor der vorhergehenden Zeile zusätzliche Deklarationen ein.
+// Microsoft Visual C++ fï¿½gt unmittelbar vor der vorhergehenden Zeile zusï¿½tzliche Deklarationen ein.
 
-#endif // !defined(AFX_STDAFX_H__D43BD17B_AEC0_43A5_9F3B_1DAA99152E38__INCLUDED_)
+#endif /* !defined(AFX_STDAFX_H__D43BD17B_AEC0_43A5_9F3B_1DAA99152E38__INCLUDED_) */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "NodeEntry.h"
 
@@ -130,3 +132,5 @@ void NodeEntry::AddHna(unsigned int NetAddr, unsigned int NetMask,
 		HnaList.AddTail(NewEntry);
 	}
 }
+
+#endif /* _WIN32 */

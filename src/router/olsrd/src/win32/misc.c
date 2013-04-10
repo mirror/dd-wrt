@@ -39,6 +39,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef interface
@@ -69,8 +71,10 @@ clear_console(void)
     return;
 
   SetConsoleCursorPosition(Hand, Home);
-#endif
+#endif /* !defined WINCE */
 }
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

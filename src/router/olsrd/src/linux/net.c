@@ -43,6 +43,7 @@
  * Linux specific code
  */
 
+#ifdef __linux__
 #define __BSD_SOURCE 1
 
 #include "../net_os.h"
@@ -67,7 +68,7 @@
  */
 #ifdef IPTOS_CLASS
 #undef IPTOS_CLASS
-#endif
+#endif /* IPTOS_CLASS */
 #define IPTOS_CLASS(class)    ((class) & IPTOS_CLASS_MASK)
 
 #define IPV6_ADDR_LOOPBACK      0x0010U
@@ -106,9 +107,6 @@ static char orig_fwd_state;
 static char orig_global_redirect_state;
 static char orig_global_rp_filter;
 static char orig_tunnel_rp_filter;
-#if 0 // should not be necessary for IPv6 */
-static char orig_tunnel6_rp_filter;
-#endif
 
 /**
  *Bind a socket to a device
@@ -140,25 +138,22 @@ static int writeToProc(const char *file, char *old, char value) {
 
   if (read(fd, &rv, 1) != 1) {
     OLSR_PRINTF(0, "Error, cannot read proc entry %s: %s (%d)\n", file, strerror(errno), errno);
-    return -1;
+    goto writeToProcError;
   }
 
   if (rv != value && value != 0) {
     if (lseek(fd, SEEK_SET, 0) == -1) {
       OLSR_PRINTF(0, "Error, cannot rewind proc entry %s: %s (%d)\n", file, strerror(errno), errno);
-      return -1;
+      goto writeToProcError;
     }
 
     if (write(fd, &value, 1) != 1) {
       OLSR_PRINTF(0, "Error, cannot write proc entry %s: %s (%d)\n", file, strerror(errno), errno);
-      return -1;
+      goto writeToProcError;
     }
   }
 
-  if (close(fd) != 0) {
-    OLSR_PRINTF(0, "Error while closing proc entry %s: %s (%d)\n", file, strerror(errno), errno);
-    return -1;
-  }
+  close(fd);
 
   if (old) {
     *old = rv;
@@ -168,6 +163,10 @@ static int writeToProc(const char *file, char *old, char value) {
     olsr_syslog(OLSR_LOG_INFO, "Writing '%c' (was %c) to %s", value, rv, file);
   }
   return 0;
+
+writeToProcError:
+  close (fd);
+  return -1;
 }
 
 /* write new value to proc file if current value is different*/
@@ -242,18 +241,6 @@ net_os_set_global_ifoptions(void) {
         olsr_startup_sleep(3);
       }
     }
-
-#if 0 // should not be necessary for IPv6
-    if (olsr_cnf->ip_version == AF_INET6) {
-      snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, TUNNEL_ENDPOINT_IF6);
-      if (writeToProc(procfile, &orig_tunnel6_rp_filter, OLSRD_SPOOF_VALUE)) {
-        OLSR_PRINTF(0, "WARNING! Could not disable the IP spoof filter for tunnel6!\n"
-            "you should manually ensure that IP spoof filtering is disabled!\n\n");
-
-        olsr_startup_sleep(3);
-      }
-    }
-#endif
   }
 
   if (olsr_cnf->ip_version == AF_INET) {
@@ -335,15 +322,6 @@ net_os_restore_ifoptions(void)
     if (restoreProc(procfile, orig_tunnel_rp_filter, OLSRD_SPOOF_VALUE)) {
       OLSR_PRINTF(0, "WARNING! Could not restore the IP spoof filter for tunnel!\n");
     }
-
-#if 0 // should not be necessary for IPv6
-    if (olsr_cnf->ip_version == AF_INET6) {
-      snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, TUNNEL_ENDPOINT_IF6);
-      if (restoreProc(procfile, orig_tunnel6_rp_filter, OLSRD_SPOOF_VALUE)) {
-        OLSR_PRINTF(0, "WARNING! Could not restore the IP spoof filter for tunnel6!\n");
-      }
-    }
-#endif
   }
 
   if (olsr_cnf->ip_version == AF_INET) {
@@ -381,7 +359,7 @@ net_os_restore_ifoptions(void)
 
 /**
  *Creates a blocking tcp socket for communication with switch daemon.
- *@param sa sockaddr struct. Used for bind(2).
+ *@param pin sockaddr struct. Used for bind(2).
  *@return the FD of the socket or -1 on error.
  */
 int
@@ -418,7 +396,8 @@ gethemusocket(struct sockaddr_in *pin)
 
 /**
  *Creates a nonblocking broadcast socket.
- *@param sa sockaddr struct. Used for bind(2).
+ *@param bufspace the number of bytes in the buffer
+ *@param ifp interface struct. Used for bind(2).
  *@return the FD of the socket or -1 on error.
  */
 int
@@ -441,7 +420,7 @@ getsocket(int bufspace, struct interface *ifp)
     close(sock);
     return -1;
   }
-#endif
+#endif /* SO_BROADCAST */
 
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
     perror("SO_REUSEADDR failed");
@@ -460,7 +439,7 @@ getsocket(int bufspace, struct interface *ifp)
       }
     }
   }
-#endif
+#endif /* SO_RCVBUF */
 
   /*
    * WHEN USING KERNEL 2.6 THIS MUST HAPPEN PRIOR TO THE PORT BINDING!!!!
@@ -502,7 +481,8 @@ getsocket(int bufspace, struct interface *ifp)
 
 /**
  *Creates a nonblocking IPv6 socket
- *@param sin sockaddr_in6 struct. Used for bind(2).
+ *@param bufspace the number of bytes in the buffer
+ *@param ifp interface struct. Used for bind(2).
  *@return the FD of the socket or -1 on error.
  */
 int
@@ -522,7 +502,7 @@ getsocket6(int bufspace, struct interface *ifp)
     perror("setsockopt(IPV6_V6ONLY)");
     syslog(LOG_ERR, "setsockopt(IPV6_V6ONLY): %m");
   }
-#endif
+#endif /* IPV6_V6ONLY */
 
   //#ifdef SO_BROADCAST
   /*
@@ -534,7 +514,7 @@ getsocket6(int bufspace, struct interface *ifp)
      return (-1);
      }
    */
-  //#endif
+  //#endif /* SO_BROADCAST */
 
 #ifdef SO_RCVBUF
   if(bufspace > 0) {
@@ -548,7 +528,7 @@ getsocket6(int bufspace, struct interface *ifp)
       }
     }
   }
-#endif
+#endif /* SO_RCVBUF */
 
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
     perror("SO_REUSEADDR failed");
@@ -609,27 +589,18 @@ join_mcast(struct interface *ifs, int sock)
   mcastreq.ipv6mr_multiaddr = ifs->int6_multaddr.sin6_addr;
   mcastreq.ipv6mr_interface = ifs->if_index;
 
-#if !defined __FreeBSD__ && !defined __FreeBSD_kernel__ && !defined __APPLE__ && !defined __NetBSD__
   OLSR_PRINTF(3, "Interface %s joining multicast %s...", ifs->int_name, ip6_to_string(&buf, &ifs->int6_multaddr.sin6_addr));
-  /* Send multicast */
-  if (setsockopt(sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (char *)&mcastreq, sizeof(struct ipv6_mreq)) < 0) {
-    perror("Join multicast");
-    return -1;
-  }
-#else
-#warning implement IPV6_ADD_MEMBERSHIP
-#endif
 
   /* Old libc fix */
 #ifdef IPV6_JOIN_GROUP
   /* Join receiver group */
   if (setsockopt(sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, (char *)&mcastreq, sizeof(struct ipv6_mreq)) < 0)
-#else
+#else /* IPV6_JOIN_GROUP */
   /* Join receiver group */
   if (setsockopt(sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (char *)&mcastreq, sizeof(struct ipv6_mreq)) < 0)
-#endif
+#endif /* IPV6_JOIN_GROUP */
   {
-    perror("Join multicast send");
+    perror("Join multicast group for receiving socket");
     return -1;
   }
 
@@ -657,7 +628,7 @@ get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, struct olsr_ip_prefi
 
   if ((f = fopen(PATH_PROCNET_IFINET6, "r")) != NULL) {
     while (fscanf
-           (f, "%4s%4s%4s%4s%4s%4s%4s%4s %x %02x %02x %02x %20s\n", addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
+           (f, "%4s%4s%4s%4s%4s%4s%4s%4s %x %02x %02x %02x %16s\n", addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
             addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope, &dad_status, devname) != EOF) {
       if (!strcmp(devname, ifname)) {
         bool isNetWide = false;
@@ -666,7 +637,9 @@ get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, struct olsr_ip_prefi
         OLSR_PRINTF(5, "\tinet6 addr: %s\n", addr6);
         OLSR_PRINTF(5, "\tScope: %d\n", scope);
 
-        inet_pton(AF_INET6, addr6, &tmp_ip.v6);
+        if (inet_pton(AF_INET6, addr6, &tmp_ip.v6) != 1) {
+          continue;
+        }
 
         isNetWide = (scope != IPV6_ADDR_LOOPBACK) && (scope != IPV6_ADDR_LINKLOCAL) && (scope != IPV6_ADDR_SITELOCAL);
 
@@ -724,142 +697,11 @@ check_wireless_interface(char *ifname)
   return (ioctl(olsr_cnf->ioctl_s, SIOCGIWNAME, &ifr) >= 0) ? 1 : 0;
 }
 
-#if 0
-
-#include <linux/sockios.h>
-#include <linux/types.h>
-
-/* This data structure is used for all the MII ioctl's */
-struct mii_data {
-  __u16 phy_id;
-  __u16 reg_num;
-  __u16 val_in;
-  __u16 val_out;
-};
-
-/* Basic Mode Control Register */
-#define MII_BMCR		0x00
-#define  MII_BMCR_RESET		0x8000
-#define  MII_BMCR_LOOPBACK	0x4000
-#define  MII_BMCR_100MBIT	0x2000
-#define  MII_BMCR_AN_ENA	0x1000
-#define  MII_BMCR_ISOLATE	0x0400
-#define  MII_BMCR_RESTART	0x0200
-#define  MII_BMCR_DUPLEX	0x0100
-#define  MII_BMCR_COLTEST	0x0080
-
-/* Basic Mode Status Register */
-#define MII_BMSR		0x01
-#define  MII_BMSR_CAP_MASK	0xf800
-#define  MII_BMSR_100BASET4	0x8000
-#define  MII_BMSR_100BASETX_FD	0x4000
-#define  MII_BMSR_100BASETX_HD	0x2000
-#define  MII_BMSR_10BASET_FD	0x1000
-#define  MII_BMSR_10BASET_HD	0x0800
-#define  MII_BMSR_NO_PREAMBLE	0x0040
-#define  MII_BMSR_AN_COMPLETE	0x0020
-#define  MII_BMSR_REMOTE_FAULT	0x0010
-#define  MII_BMSR_AN_ABLE	0x0008
-#define  MII_BMSR_LINK_VALID	0x0004
-#define  MII_BMSR_JABBER	0x0002
-#define  MII_BMSR_EXT_CAP	0x0001
-
-int
-calculate_if_metric(char *ifname)
-{
-  if (check_wireless_interface(ifname)) {
-    struct ifreq ifr;
-    strscpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-
-    /* Get bit rate */
-    if (ioctl(olsr_cnf->ioctl_s, SIOCGIWRATE, &ifr) < 0) {
-      OLSR_PRINTF(1, "Not able to find rate for WLAN interface %s\n", ifname);
-      return WEIGHT_WLAN_11MB;
-    }
-
-    OLSR_PRINTF(1, "Bitrate %d\n", ifr.ifr_ifru.ifru_ivalue);
-
-    //WEIGHT_WLAN_LOW,          /* <11Mb WLAN     */
-    //WEIGHT_WLAN_11MB,         /* 11Mb 802.11b   */
-    //WEIGHT_WLAN_54MB,         /* 54Mb 802.11g   */
-    return WEIGHT_WLAN_LOW;
-  } else {
-    /* Ethernet */
-    /* Mii wizardry */
-    struct ifreq ifr;
-    struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
-    int bmcr;
-    memset(&ifr, 0, sizeof(ifr));
-    strscpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-
-    if (ioctl(olsr_cnf->ioctl_s, SIOCGMIIPHY, &ifr) < 0) {
-      if (errno != ENODEV)
-        OLSR_PRINTF(1, "SIOCGMIIPHY on '%s' failed: %s\n", ifr.ifr_name, strerror(errno));
-      return WEIGHT_ETHERNET_DEFAULT;
-    }
-
-    mii->reg_num = MII_BMCR;
-    if (ioctl(olsr_cnf->ioctl_s, SIOCGMIIREG, &ifr) < 0) {
-      OLSR_PRINTF(1, "SIOCGMIIREG on %s failed: %s\n", ifr.ifr_name, strerror(errno));
-      return WEIGHT_ETHERNET_DEFAULT;
-    }
-    bmcr = mii->val_out;
-
-    OLSR_PRINTF(1, "%s: ", ifr.ifr_name);
-    OLSR_PRINTF(1, "%s Mbit, %s duplex\n", (bmcr & MII_BMCR_100MBIT) ? "100" : "10", (bmcr & MII_BMCR_DUPLEX) ? "full" : "half");
-
-    is_if_link_up(ifname);
-
-    if (mii->val_out & MII_BMCR_100MBIT)
-      return WEIGHT_ETHERNET_100MB;
-    else
-      return WEIGHT_ETHERNET_10MB;
-    //WEIGHT_ETHERNET_1GB,      /* Ethernet 1Gb   */
-
-  }
-}
-
-bool
-is_if_link_up(char *ifname)
-{
-  if (check_wireless_interface(ifname)) {
-    /* No link checking on wireless devices */
-    return true;
-  } else {
-    /* Mii wizardry */
-    struct ifreq ifr;
-    struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
-    int bmsr;
-    memset(&ifr, 0, sizeof(ifr));
-    strscpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-
-    if (ioctl(olsr_cnf->ioctl_s, SIOCGMIIPHY, &ifr) < 0) {
-      if (errno != ENODEV)
-        OLSR_PRINTF(1, "SIOCGMIIPHY on '%s' failed: %s\n", ifr.ifr_name, strerror(errno));
-      return WEIGHT_ETHERNET_DEFAULT;
-    }
-    mii->reg_num = MII_BMSR;
-    if (ioctl(olsr_cnf->ioctl_s, SIOCGMIIREG, &ifr) < 0) {
-      OLSR_PRINTF(1, "SIOCGMIIREG on %s failed: %s\n", ifr.ifr_name, strerror(errno));
-      return WEIGHT_ETHERNET_DEFAULT;
-    }
-    bmsr = mii->val_out;
-
-    OLSR_PRINTF(1, "%s: ", ifr.ifr_name);
-    OLSR_PRINTF(1, "%s\n", (bmsr & MII_BMSR_LINK_VALID) ? "link ok " : "no link ");
-
-    return (bmsr & MII_BMSR_LINK_VALID);
-
-  }
-}
-
-#else
 int
 calculate_if_metric(char *ifname)
 {
   return check_wireless_interface(ifname);
 }
-#endif
 
 bool olsr_if_isup(const char * dev)
 {
@@ -909,6 +751,7 @@ int olsr_if_set_state(const char *dev, bool up) {
   }
   return 0;
 }
+#endif /* __linux__ */
 
 /*
  * Local Variables:

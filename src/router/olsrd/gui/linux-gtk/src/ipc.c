@@ -26,19 +26,19 @@
 #include "packet.h"
 #include "routes.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #define close(x) closesocket(x)
 #undef errno
 #define errno WSAGetLastError()
 #undef strerror
 #define strerror(x) StrError(x)
 #define perror(x) WinSockPError(x)
-#endif
+#endif /* _WIN32 */
 
 int ipc_socket = 0;
 
 int
-ipc_close()
+ipc_close(void)
 {
 
   if (close(ipc_socket))
@@ -50,12 +50,12 @@ ipc_close()
 int
 ipc_connect(struct sockaddr_in *pin)
 {
-#ifdef WIN32
+#ifdef _WIN32
   int On = 1;
   unsigned long Len;
-#else
+#else /* _WIN32 */
   int flags;
-#endif
+#endif /* _WIN32 */
 
   connected = 0;
 
@@ -73,17 +73,17 @@ ipc_connect(struct sockaddr_in *pin)
     set_net_info_offline();
     printf("connection refused\n");
   } else {
-    set_net_info("Connected!", FALSE);
+    set_net_info((gchar *)"Connected!", FALSE);
     printf("Connected!!\n");
 
     /* Setting socket non-blocking */
 
-#ifdef WIN32
+#ifdef _WIN32
     if (WSAIoctl(ipc_socket, FIONBIO, &On, sizeof(On), NULL, 0, &Len, NULL, NULL) < 0) {
       fprintf(stderr, "Error while making socket non-blocking!\n");
       exit(1);
     }
-#else
+#else /* _WIN32 */
     if ((flags = fcntl(ipc_socket, F_GETFL, 0)) < 0) {
       fprintf(stderr, "Error getting socket flags!\n");
       exit(1);
@@ -93,7 +93,7 @@ ipc_connect(struct sockaddr_in *pin)
       fprintf(stderr, "Error setting socket flags!\n");
       exit(1);
     }
-#endif
+#endif /* _WIN32 */
     connected = 1;
 
     return 1;
@@ -104,7 +104,7 @@ ipc_connect(struct sockaddr_in *pin)
 }
 
 int
-ipc_read()
+ipc_read(void)
 {
   //int x, i;
   int bytes, tmp_len;
@@ -117,14 +117,14 @@ ipc_read()
   //char buf[BUFFSIZE+1];
 
   //printf(".");fflush(stdout);
-  memset(&inbuf, 0, sizeof(BUFFSIZE + 1));
+  memset(&inbuf, 0, sizeof(inbuf));
   //buf[0] = '\0';
 
   if (connected) {
     bytes = recv(ipc_socket, (char *)&inbuf, BUFFSIZE, 0);
     if (bytes == 0) {
       shutdown(ipc_socket, SHUT_RDWR);
-      set_net_info("Disconnected from server...", TRUE);
+      set_net_info((gchar *)"Disconnected from server...", TRUE);
       connected = 0;
       close(ipc_socket);
     }
@@ -197,7 +197,7 @@ ipc_read()
 }
 
 int
-ipc_send()
+ipc_send(void)
 {
 
   return 1;
@@ -225,7 +225,7 @@ ipc_evaluate_message(union olsr_message *olsr_in)
   case HELLO_MESSAGE:
     //printf("Received HELLO packet\n");
     if (!freeze_packets)
-      packet_list_add("HELLO", ip_to_string(originator), itoa_buf);
+      packet_list_add((char *)"HELLO", ip_to_string(originator), itoa_buf);
 
     if (ipversion == AF_INET) {
       process_hello(msgsize, vtime, originator, (union hello_message *)&olsr_in->v4.message.hello);
@@ -236,7 +236,7 @@ ipc_evaluate_message(union olsr_message *olsr_in)
 
   case TC_MESSAGE:
     if (!freeze_packets)
-      packet_list_add("TC", ip_to_string(originator), itoa_buf);
+      packet_list_add((char *)"TC", ip_to_string(originator), itoa_buf);
 
     if (ipversion == AF_INET) {
       process_tc(msgsize, vtime, originator, (union tc_message *)&olsr_in->v4.message.tc);
@@ -249,7 +249,7 @@ ipc_evaluate_message(union olsr_message *olsr_in)
 
   case MID_MESSAGE:
     if (!freeze_packets)
-      packet_list_add("MID", ip_to_string(originator), itoa_buf);
+      packet_list_add((char *)"MID", ip_to_string(originator), itoa_buf);
     if (ipversion == AF_INET) {
       process_mid(msgsize, vtime, originator, (union mid_message *)&olsr_in->v4.message.mid);
       //printf("Received MID packet from %s\n", ip_to_string(&m->olsr_mid->mid_origaddr));
@@ -263,7 +263,7 @@ ipc_evaluate_message(union olsr_message *olsr_in)
   case HNA_MESSAGE:
 
     if (!freeze_packets)
-      packet_list_add("HNA", ip_to_string(originator), itoa_buf);
+      packet_list_add((char *)"HNA", ip_to_string(originator), itoa_buf);
     if (ipversion == AF_INET) {
       process_hna(msgsize, vtime, originator, (union hna_message *)&olsr_in->v4.message.hna);
       //printf("Received HNA packet\n");
@@ -309,8 +309,8 @@ ipc_eval_net_info(struct netmsg *msg)
 
   /*
      printf("\tMain address: %s\n", ip_to_string(&msg->main_addr));
-     printf("\tMid adresses: %d\n", msg->mids);
-     printf("\tHna adresses: %d\n", msg->hnas);
+     printf("\tMid addresses: %d\n", msg->mids);
+     printf("\tHna addresses: %d\n", msg->hnas);
      printf("\tHELLO interval: %f\n", (float)(ntohs(msg->hello_int)));
      printf("\tHELLO LAN interval: %f\n", (float)(ntohs(msg->hello_lan_int)));
      printf("\tTC interval: %d\n", ntohs(msg->tc_int));
@@ -473,8 +473,8 @@ int
 process_tc(int size, olsr_u8_t vtime, union olsr_ip_addr *originator, union tc_message *m)
 {
 
-  struct neigh_info *mprsinfo;
-  struct neigh_info6 *mprsinfo6;
+  struct neigh_info *mprsinfo = NULL;
+  struct neigh_info6 *mprsinfo6 = NULL;
 
   printf("Processing TC from %s size = %d\n", ip_to_string(originator), size);
 
@@ -516,8 +516,8 @@ process_tc(int size, olsr_u8_t vtime, union olsr_ip_addr *originator, union tc_m
 int
 process_mid(int size, olsr_u8_t vtime, union olsr_ip_addr *originator, union mid_message *m)
 {
-  struct midaddr *midaddr;
-  struct midaddr6 *midaddr6;
+  struct midaddr *midaddr = NULL;
+  struct midaddr6 *midaddr6 = NULL;
 
   printf("Processing MID from %s size = %d\n", ip_to_string(originator), size);
 
@@ -551,10 +551,10 @@ process_mid(int size, olsr_u8_t vtime, union olsr_ip_addr *originator, union mid
 int
 process_hna(int size, olsr_u8_t vtime, union olsr_ip_addr *originator, union hna_message *m)
 {
+  struct hnapair *hnapairs = NULL;
+  struct hnapair6 *hnapairs6 = NULL;
 
   printf("Processing HNA size = %d\n", size);
-  struct hnapair *hnapairs;
-  struct hnapair6 *hnapairs6;
 
   /* Calculate size of the hnainfo */
   size = size - 4 - 4 - ipsize;
@@ -603,9 +603,9 @@ gui_itoa(int i, char *buf)
 {
   char tmp[10];
 
-  if (sprintf(buf, "%hd", i)) {
+  if (snprintf(buf, sizeof(tmp), "%hd", i)) {
     /* This shitty string needs to be converted to UTF-8 */
-    strcpy(tmp, g_locale_to_utf8(buf, -1, NULL, NULL, NULL));
+    snprintf(tmp, sizeof(tmp), "%s", g_locale_to_utf8(buf, -1, NULL, NULL, NULL));
     strcpy(buf, tmp);
     return 1;
     //return ret;

@@ -25,7 +25,7 @@
 
 #ifdef  __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 /* forward declaration */
 struct _nmeaGENERATOR;
@@ -100,6 +100,6 @@ void nmea_gen_add(nmeaGENERATOR *to, nmeaGENERATOR *gen);
 
 #ifdef  __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __NMEA_GENERATOR_H__ */

@@ -55,7 +55,7 @@
 /* #define JSONINFO_ALLOW_LOCALHOST */
 
 #define UUIDLEN 256
-extern char uuid[UUIDLEN];
+extern char uuid[UUIDLEN + 1];
 extern char uuidfile[FILENAME_MAX];
 
 extern union olsr_ip_addr jsoninfo_accept_ip;
@@ -68,7 +68,7 @@ int olsrd_plugin_init(void);
 void olsr_plugin_exit(void);
 void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
 
-#endif
+#endif /* _OLSRD_JSONINFO */
 
 /*
  * Local Variables:

@@ -25,24 +25,25 @@
 #include "main.h"
 #include "ipc.h"
 
+struct sockaddr_in pin;
+
 int
 main(int argc, char *argv[])
 {
   struct hostent *hp;
   struct in_addr in;
-  struct sockaddr_in pin;
 
-#ifdef WIN32
+#ifdef _WIN32
   WSADATA WsaData;
-#endif
+#endif /* _WIN32 */
   GtkWidget *main_window;
 
-#ifdef WIN32
+#ifdef _WIN32
   if (WSAStartup(0x0202, &WsaData)) {
     fprintf(stderr, "Could not initialize WinSock.\n");
     exit(1);
   }
-#endif
+#endif /* _WIN32 */
 
   /* Get IP */
   if ((hp = gethostbyname(argc > 1 ? argv[1] : "localhost")) == 0) {
@@ -98,7 +99,7 @@ main(int argc, char *argv[])
  */
 
 int
-add_timeouts()
+add_timeouts(void)
 {
 
   /*
@@ -117,15 +118,16 @@ add_timeouts()
 }
 
 gint
-ipc_timeout(gpointer data)
+ipc_timeout(gpointer data __attribute__((unused)))
 {
 
   ipc_read();
   return 1;
 }
 
+__attribute__((noreturn))
 void
-shutdown_(int signal)
+shutdown_(int sig)
 {
   printf("Cleaning up...\n");
 
@@ -133,7 +135,7 @@ shutdown_(int signal)
     printf("Could not close socket!\n");
 
   printf("BYE-BYE!\n");
-  exit(signal);
+  exit(sig);
 }
 
 /*

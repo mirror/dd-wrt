@@ -44,6 +44,8 @@
  * Acpi-Power Enlightenment epplet
  */
 
+#ifdef __linux__
+
 #include "apm.h"
 #include "defs.h"
 #include <stdio.h>
@@ -168,7 +170,7 @@ apm_read_apm(struct olsr_apm_info *ainfo)
   if (fgets(buffer, sizeof(buffer), apm_procfile) == NULL) {
     fclose(apm_procfile);
     /* Try re-opening the file */
-    if ((apm_procfile = fopen(APM_PROC, "r")) != NULL)
+    if ((apm_procfile = fopen(APM_PROC, "r")) == NULL)
       return 0;
 
     if (fgets(buffer, sizeof(buffer), apm_procfile) == NULL) {
@@ -183,7 +185,7 @@ apm_read_apm(struct olsr_apm_info *ainfo)
   //printf("READ: %s\n", buffer);
 
   /* Get the info */
-  sscanf(buffer, "%s %d.%d %x %x %x %x %d%% %d %s\n", lainfo.driver_version, &lainfo.apm_version_major, &lainfo.apm_version_minor,
+  sscanf(buffer, "%10s %d.%d %x %x %x %x %d%% %d %10s\n", lainfo.driver_version, &lainfo.apm_version_major, &lainfo.apm_version_minor,
          &lainfo.apm_flags, &lainfo.ac_line_status, &lainfo.battery_status, &lainfo.battery_flags, &lainfo.battery_percentage,
          &lainfo.battery_time, units);
 
@@ -218,7 +220,6 @@ apm_read_acpi(struct olsr_apm_info *ainfo)
   FILE *fd;
   int bat_max = 5000;                  /* Find some sane value */
   int bat_val = 0;
-  int result;
 
   /* reporbe in case ac status changed */
   fd_index = acpi_probe();
@@ -247,7 +248,7 @@ apm_read_acpi(struct olsr_apm_info *ainfo)
     if (fgets(inbuff, sizeof(inbuff), fd) == NULL)
       break;
 
-    sscanf(inbuff, "%s %s %s %s", s1, s2, s3, s4);
+    sscanf(inbuff, "%32s %32s %32s %32s", s1, s2, s3, s4);
     if (!strcasecmp(s2, "full"))
       bat_max = atoi(s4);
   }
@@ -261,7 +262,7 @@ apm_read_acpi(struct olsr_apm_info *ainfo)
     char s1[32], s2[32], s3[32], s4[32], inbuff[127];
     if (fgets(inbuff, sizeof(inbuff), fd) == NULL)
       break;
-    sscanf(inbuff, "%s %s %s %s", s1, s2, s3, s4);
+    sscanf(inbuff, "%32s %32s %32s %32s", s1, s2, s3, s4);
 
     /* find remaining juice */
     if (!strcasecmp(s1, "Remaining"))
@@ -271,9 +272,20 @@ apm_read_acpi(struct olsr_apm_info *ainfo)
 
   ainfo->ac_line_status = ac_power_on ? OLSR_AC_POWERED : OLSR_BATTERY_POWERED;
 
-  result = bat_val * 100 / bat_max;
+  /* sanitise ACPI battery data */
+  bat_max = abs(bat_max);
+  bat_val = abs(bat_val);
+  if (bat_val > bat_max) {
+    bat_val = bat_max;
+  }
 
-  ainfo->battery_percentage = result > 100 ? 100 : result;
+  if (bat_max == 0) {
+    /* protection against stupid acpi data */
+    ainfo->battery_percentage = 0;
+  }
+  else {
+    ainfo->battery_percentage = (bat_val >= bat_max) ? 100 : (bat_val * 100 / bat_max);
+  }
 
   return 1;
 }
@@ -296,7 +308,7 @@ acpi_probe(void)
       continue;
 
     /* Extract info */
-    rc = fscanf(fd, "%s %s", s1, s2);
+    rc = fscanf(fd, "%32s %32s", s1, s2);
 
     /* Close info entry */
     fclose(fd);
@@ -325,7 +337,7 @@ acpi_probe(void)
       continue;
 
     /* Extract info */
-    rc = fscanf(fd, "%s %s", s1, s2);
+    rc = fscanf(fd, "%32s %32s", s1, s2);
 
     /* Close info entry */
     fclose(fd);
@@ -348,6 +360,7 @@ acpi_probe(void)
   /* No battery found */
   return -1;
 }
+#endif /* __linux__ */
 
 /*
  * Local Variables:

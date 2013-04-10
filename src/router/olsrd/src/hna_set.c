@@ -96,7 +96,7 @@ olsr_cleanup_hna(union olsr_ip_addr *orig) {
  *
  * @param nets the network list to look in
  * @param net the network to look for
- * @param mask the netmask to look for
+ * @param prefixlen the prefix length
  *
  * @return the localized entry or NULL of not found
  */
@@ -128,9 +128,6 @@ olsr_lookup_hna_gw(const union olsr_ip_addr *gw)
   struct hna_entry *tmp_hna;
   uint32_t hash = olsr_ip_hashing(gw);
 
-#if 0
-  OLSR_PRINTF(5, "HNA: lookup entry\n");
-#endif
   /* Check for registered entry */
 
   for (tmp_hna = hna_set[hash].next; tmp_hna != &hna_set[hash]; tmp_hna = tmp_hna->next) {
@@ -180,8 +177,8 @@ olsr_add_hna_entry(const union olsr_ip_addr *addr)
  * Adds a network entry to a HNA gateway.
  *
  * @param hna_gw the gateway entry to add the network to
- * @param net the networkaddress to add
- * @param mask the netmask
+ * @param net the network address to add
+ * @param prefixlen the prefix length
  *
  * @return the newly created entry
  */
@@ -212,16 +209,16 @@ static bool
 olsr_delete_hna_net_entry(struct hna_net *net_to_delete) {
 #ifdef DEBUG
   struct ipaddr_str buf1, buf2;
-#endif
+#endif /* DEBUG */
   struct hna_entry *hna_gw;
   bool removed_entry = false;
 
-#ifdef linux
+#ifdef __linux__
   if (is_prefix_inetgw(&net_to_delete->hna_prefix)) {
     /* modify smart gateway entry if necessary */
-    olsr_delete_gateway_entry(&net_to_delete->hna_gw->A_gateway_addr, net_to_delete->hna_prefix.prefix_len);
+    olsr_delete_gateway_entry(&net_to_delete->hna_gw->A_gateway_addr, net_to_delete->hna_prefix.prefix_len, false);
   }
-#endif
+#endif /* __linux__ */
 
   olsr_stop_timer(net_to_delete->hna_net_timer);
   net_to_delete->hna_net_timer = NULL;  /* be pedandic */
@@ -231,7 +228,7 @@ olsr_delete_hna_net_entry(struct hna_net *net_to_delete) {
   OLSR_PRINTF(5, "HNA: timeout %s via hna-gw %s\n",
       olsr_ip_prefix_to_string(&net_to_delete->hna_prefix),
               olsr_ip_to_string(&buf2, &hna_gw->A_gateway_addr));
-#endif
+#endif /* DEBUG */
 
   /*
    * Delete the rt_path for the entry.
@@ -269,10 +266,8 @@ olsr_expire_hna_net_entry(void *context)
  *
  *@param gw address of the gateway
  *@param net address of the network
- *@param mask the netmask
+ *@param prefixlen the prefix length
  *@param vtime the validitytime of the entry
- *
- *@return nada
  */
 void
 olsr_update_hna_entry(const union olsr_ip_addr *gw, const union olsr_ip_addr *net, uint8_t prefixlen, olsr_reltime vtime)
@@ -313,12 +308,19 @@ olsr_update_hna_entry(const union olsr_ip_addr *gw, const union olsr_ip_addr *ne
  *
  *@return nada
  */
+#ifndef NODEBUG
 void
 olsr_print_hna_set(void)
 {
-#ifdef NODEBUG
   /* The whole function doesn't do anything else. */
   int idx;
+  struct tm * nowtm;
+  struct timeval now;
+  const int ipwidth = olsr_cnf->ip_version == AF_INET ? (INET_ADDRSTRLEN - 1) : (INET6_ADDRSTRLEN - 1);
+  const int ipwidthprefix = olsr_cnf->ip_version == AF_INET ? (INET_ADDRSTRLEN + 1 + INET_ADDRSTRLEN - 1) : (INET6_ADDRSTRLEN + 1 + 3 - 1);
+
+	(void)gettimeofday(&now, NULL);
+  nowtm = localtime((time_t *)&now.tv_sec);
 
   OLSR_PRINTF(1, "\n--- %02d:%02d:%02d.%02d ------------------------------------------------- HNA SET\n\n", nowtm->tm_hour,
               nowtm->tm_min, nowtm->tm_sec, (int)now.tv_usec / 10000);
@@ -336,30 +338,25 @@ olsr_print_hna_set(void)
       struct hna_net *tmp_net = tmp_hna->networks.next;
 
       while (tmp_net != &tmp_hna->networks) {
-        if (olsr_cnf->ip_version == AF_INET) {
-          struct ipaddr_str buf;
-          OLSR_PRINTF(1, "%-15s ", olsr_ip_to_string(&buf, &tmp_net->A_network_addr));
-          OLSR_PRINTF(1, "%-15d ", tmp_net->prefix_len);
-          OLSR_PRINTF(1, "%-15s\n", olsr_ip_to_string(&buf, &tmp_hna->A_gateway_addr));
-        } else {
-          struct ipaddr_str buf;
-          OLSR_PRINTF(1, "%-27s/%d", olsr_ip_to_string(&buf, &tmp_net->A_network_addr), tmp_net->A_netmask.v6);
-          OLSR_PRINTF(1, "%s\n", olsr_ip_to_string(&buf, &tmp_hna->A_gateway_addr));
-        }
+        struct ipaddr_str buf;
+        OLSR_PRINTF(1, "%-*s ", ipwidthprefix, olsr_ip_prefix_to_string(&tmp_net->hna_prefix));
+        OLSR_PRINTF(1, "%-*s\n", ipwidth, olsr_ip_to_string(&buf, &tmp_hna->A_gateway_addr));
 
         tmp_net = tmp_net->next;
       }
       tmp_hna = tmp_hna->next;
     }
   }
-#endif
 }
+#endif /* NODEBUG */
 
 /**
  *Process incoming HNA message.
  *Forwards the message if that is to be done.
  *
  *@param m the incoming OLSR message
+ *@param in_if the incoming interface
+ *@param from_addr the originator address
  *the OLSR message.
  *@return 1 on success
  */
@@ -381,7 +378,7 @@ olsr_input_hna(union olsr_message *m, struct interface *in_if __attribute__ ((un
   struct ipaddr_str buf;
 #ifdef DEBUG
   OLSR_PRINTF(5, "Processing HNA\n");
-#endif
+#endif /* DEBUG */
 
   /* Check if everyting is ok */
   if (!m) {
@@ -444,17 +441,17 @@ olsr_input_hna(union olsr_message *m, struct interface *in_if __attribute__ ((un
     pkt_get_ipaddress(&curr, &mask);
     prefix.prefix_len = olsr_netmask_to_prefix(&mask);
 
-#ifdef linux
+#ifdef __linux__
     if (olsr_cnf->smart_gw_active && olsr_is_smart_gateway(&prefix, &mask)) {
       olsr_update_gateway_entry(&originator, &mask, prefix.prefix_len, msg_seq_number);
     }
-#endif
+#endif /* __linux__ */
 
 #ifdef MAXIMUM_GATEWAY_PREFIX_LENGTH
     if (olsr_cnf->smart_gw_active && prefix.prefix_len > 0 && prefix.prefix_len <= MAXIMUM_GATEWAY_PREFIX_LENGTH) {
       continue;
     }
-#endif
+#endif /* MAXIMUM_GATEWAY_PREFIX_LENGTH */
 
 #ifndef NO_DUPLICATE_DETECTION_HANDLER
     for (ifs = ifnet; ifs != NULL; ifs = ifs->int_next) {
@@ -468,7 +465,7 @@ olsr_input_hna(union olsr_message *m, struct interface *in_if __attribute__ ((un
     if (stop) {
       continue;
     }
-#endif
+#endif /* NO_DUPLICATE_DETECTION_HANDLER */
     entry = ip_prefix_list_find(olsr_cnf->hna_entries, &prefix.prefix, prefix.prefix_len);
     if (entry == NULL) {
       /* only update if it's not from us */

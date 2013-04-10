@@ -39,9 +39,11 @@
  *
  */
 
+#ifdef _WIN32
+
 #if defined WINCE
 #include <sys/types.h>          // for time_t
-#endif
+#endif /* defined WINCE */
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -59,9 +61,9 @@
 
 #if defined WINCE
 #define WIDE_STRING(s) L##s
-#else
+#else /* defined WINCE */
 #define WIDE_STRING(s) TEXT(s)
-#endif
+#endif /* defined WINCE */
 
 void WinSockPError(const char *Str);
 void PError(const char *);
@@ -96,7 +98,7 @@ gethemusocket(struct sockaddr_in *pin)
 }
 
 int
-getsocket(int BuffSize, struct interface *ifp __attribute__ ((unused)))
+getsocket(int bufspace, struct interface *ifp __attribute__ ((unused)))
 {
   struct sockaddr_in Addr;
   int On = 1;
@@ -119,21 +121,21 @@ getsocket(int BuffSize, struct interface *ifp __attribute__ ((unused)))
     return -1;
   }
 
-  while (BuffSize > 8192) {
-    if (setsockopt(Sock, SOL_SOCKET, SO_RCVBUF, (char *)&BuffSize, sizeof(BuffSize)) == 0)
+  while (bufspace > 8192) {
+    if (setsockopt(Sock, SOL_SOCKET, SO_RCVBUF, (char *)&bufspace, sizeof(bufspace)) == 0)
       break;
 
-    BuffSize -= 1024;
+    bufspace -= 1024;
   }
 
-  if (BuffSize <= 8192) {
+  if (bufspace <= 8192) {
     OLSR_PRINTF(1, "Cannot set IPv4 socket receive buffer.\n");
   }
   memset(&Addr, 0, sizeof(Addr));
   Addr.sin_family = AF_INET;
   Addr.sin_port = htons(olsr_cnf->olsrport);
 
-  if(BuffSize <= 0) {
+  if(bufspace <= 0) {
     Addr.sin_addr.s_addr = ifp->int_addr.sin_addr.s_addr;
   }
 
@@ -153,7 +155,7 @@ getsocket(int BuffSize, struct interface *ifp __attribute__ ((unused)))
 }
 
 int
-getsocket6(int BuffSize, struct interface *ifp __attribute__ ((unused)))
+getsocket6(int bufspace, struct interface *ifp __attribute__ ((unused)))
 {
   struct sockaddr_in6 Addr6;
   int On = 1;
@@ -175,21 +177,21 @@ getsocket6(int BuffSize, struct interface *ifp __attribute__ ((unused)))
     return -1;
   }
 
-  while (BuffSize > 8192) {
-    if (setsockopt(Sock, SOL_SOCKET, SO_RCVBUF, (char *)&BuffSize, sizeof(BuffSize)) == 0)
+  while (bufspace > 8192) {
+    if (setsockopt(Sock, SOL_SOCKET, SO_RCVBUF, (char *)&bufspace, sizeof(bufspace)) == 0)
       break;
 
-    BuffSize -= 1024;
+    bufspace -= 1024;
   }
 
-  if (BuffSize <= 8192)
+  if (bufspace <= 8192)
     fprintf(stderr, "Cannot set IPv6 socket receive buffer.\n");
 
   memset(&Addr6, 0, sizeof(Addr6));
   Addr6.sin6_family = AF_INET6;
   Addr6.sin6_port = htons(olsr_cnf->olsrport);
 
-  if(BuffSize <= 0) {
+  if(bufspace <= 0) {
     memcpy(&Addr6.sin6_addr, &ifp->int6_addr.sin6_addr, sizeof(struct in6_addr));
   }
 
@@ -302,9 +304,9 @@ SetEnableRedirKey(unsigned long New)
 
   RegCloseKey(Key);
   return Old;
-#else
+#else /* !defined WINCE */
   return 0;
-#endif
+#endif /* !defined WINCE */
 }
 
 void
@@ -318,16 +320,6 @@ DisableIcmpRedirects(void)
     return;
 
   fprintf(stderr, "\n*** IMPORTANT *** IMPORTANT *** IMPORTANT *** IMPORTANT *** IMPORTANT ***\n\n");
-
-#if 0
-  if (Res < 0) {
-    fprintf(stderr, "Cannot disable ICMP redirect processing in the registry.\n");
-    fprintf(stderr, "Please disable it manually. Continuing in 3 seconds...\n");
-    Sleep(3000);
-
-    return;
-  }
-#endif
 
   fprintf(stderr, "I have disabled ICMP redirect processing in the registry for you.\n");
   fprintf(stderr, "REBOOT NOW, so that these changes take effect. Exiting...\n\n");
@@ -357,10 +349,10 @@ join_mcast(struct interface *Nic, int Sock)
 #ifdef IPV6_JOIN_GROUP
   /* Join receiver group */
   if (setsockopt(Sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, (char *)&McastReq, sizeof(struct ipv6_mreq)) < 0)
-#else
+#else /* IPV6_JOIN_GROUP */
   /* Join receiver group */
   if (setsockopt(Sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (char *)&McastReq, sizeof(struct ipv6_mreq)) < 0)
-#endif
+#endif /* IPV6_JOIN_GROUP */
   {
     perror("Join multicast send");
     return -1;
@@ -402,7 +394,7 @@ olsr_recvfrom(int s, void *buf, size_t len, int flags __attribute__ ((unused)), 
 int
 olsr_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * exceptfds, struct timeval *timeout)
 {
-#ifdef WIN32
+#ifdef _WIN32
   if (nfds == 0) {
     if (timeout) {
       Sleep(timeout->tv_sec * 1000 + timeout->tv_usec / 1000);
@@ -412,10 +404,12 @@ olsr_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * exceptfds, s
   else {
     return select(nfds, readfds, writefds, exceptfds, timeout);
   }
-#else
+#else /* _WIN32 */
   return select(nfds, readfds, writefds, exceptfds, timeout);
-#endif /*WIN32*/
+#endif /* _WIN32 */
 }
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

@@ -23,7 +23,7 @@
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
-#endif
+#endif /* HAVE_CONFIG_H */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -52,7 +52,7 @@ void fill_clist(GtkCList *);
 
 void selection_made(GtkWidget * clist, gint row, gint column, GdkEventButton * event, gpointer data);
 
-void set_net_info_connecting();
+void set_net_info_connecting(void);
 
 void column_clicked_callback(GtkWidget *, gint);
 

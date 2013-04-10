@@ -20,8 +20,14 @@ SHAREDIR =	$(DESTDIR)$(datarootdir)
 SRCS += 	$(wildcard src/linux/*.c src/unix/*.c)
 HDRS +=		$(wildcard src/linux/*.h src/unix/*.h)
 
-CPPFLAGS += 	-Dlinux
+CPPFLAGS +=
 LIBS +=		
+
+# Enable the FLAGS and LIBS below for nl80211-support in the LQ plugin 'lq_plugin_ffeth_nl80211'.
+# By default this is not enabled and the plugin will not incorporate the nl80211 data. This avoids
+# breaking builds on Linux systems that do not support it.
+# CPPFLAGS += 	-Dlinux -DLINUX_NETLINK_ROUTING -DLINUX_NL80211
+# LIBS +=		-lnl
 
 PLUGIN_SONAME ?= lib$(PLUGIN_NAME).so
 PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)

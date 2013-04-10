@@ -58,7 +58,7 @@ bool queue_mid(struct interface *);
 
 bool queue_hna(struct interface *);
 
-#endif
+#endif /* _BUILD_MSG_H */
 
 /*
  * Local Variables:

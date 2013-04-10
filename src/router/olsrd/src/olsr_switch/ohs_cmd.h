@@ -68,7 +68,7 @@ int ohs_cmd_log(const char *);
 
 int ohs_cmd_link(const char *);
 
-#endif
+#endif /* _OHS_CMD */
 
 /*
  * Local Variables:

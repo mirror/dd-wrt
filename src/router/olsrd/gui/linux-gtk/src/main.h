@@ -25,7 +25,7 @@
 
 int timeouts;
 
-int add_timeouts();
+int add_timeouts(void);
 
 gint ipc_timeout(gpointer);
 

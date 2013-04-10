@@ -192,13 +192,13 @@ olsr_message_is_duplicate(union olsr_message *m)
   return false;                 /* no duplicate */
 }
 
+#ifndef NODEBUG
 void
 olsr_print_duplicate_table(void)
 {
-#ifndef NODEBUG
   /* The whole function makes no sense without it. */
   struct dup_entry *entry;
-  const int ipwidth = olsr_cnf->ip_version == AF_INET ? 15 : 39;
+  const int ipwidth = olsr_cnf->ip_version == AF_INET ? (INET_ADDRSTRLEN - 1) : (INET6_ADDRSTRLEN - 1);
   struct ipaddr_str addrbuf;
 
   OLSR_PRINTF(1, "\n--- %s ------------------------------------------------- DUPLICATE SET\n\n" "%-*s %8s %s\n",
@@ -208,8 +208,8 @@ olsr_print_duplicate_table(void)
     OLSR_PRINTF(1, "%-*s %08x %s\n", ipwidth, olsr_ip_to_string(&addrbuf, (union olsr_ip_addr *)(entry->avl.key)),
                 entry->array, olsr_clock_string(entry->valid_until));
   } OLSR_FOR_ALL_DUP_ENTRIES_END(entry);
-#endif
 }
+#endif /* NODEBUG */
 
 /*
  * Local Variables:

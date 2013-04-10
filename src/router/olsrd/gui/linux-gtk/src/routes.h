@@ -53,13 +53,13 @@ olsr_u32_t route_count;
 
 /* Functions */
 
-int init_route_entries();
+int init_route_entries(void);
 
 int add_route_entry(struct route_entry *);
 
 int del_route_entry(struct route_entry *);
 
-#endif
+#endif /* _OLSRD_FRONTEND_ROUTE */
 
 /*
  * Local Variables:

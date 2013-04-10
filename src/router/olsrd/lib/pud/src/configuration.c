@@ -548,11 +548,6 @@ int setPositionFile(const char *value, void *data __attribute__ ((unused)),
 
 	assert(value != NULL);
 
-	if (!startPositionFile()) {
-		stopPositionFile();
-		return true;
-	}
-
 	valueLength = strlen(value);
 	if (valueLength > PATH_MAX) {
 		pudError(false, "Value of parameter %s is too long, maximum length is"
@@ -562,6 +557,58 @@ int setPositionFile(const char *value, void *data __attribute__ ((unused)),
 
 	strcpy((char *) &positionFile[0], value);
 	positionFileSet = true;
+
+	return false;
+}
+
+/*
+ * positionFilePeriod
+ */
+
+/** The positionFilePeriod value (milliseconds) */
+unsigned long long positionFilePeriod = PUD_POSFILEPERIOD_DEFAULT;
+
+/**
+ @return
+ The positionFilePeriod (in milliseconds)
+ */
+unsigned long long getPositionFilePeriod(void) {
+	return positionFilePeriod;
+}
+
+/**
+ Set the positionFilePeriod
+
+ @param value
+ The positionFilePeriod (a number in string representation)
+ @param data
+ Unused
+ @param addon
+ Unused
+
+ @return
+ - true when an error is detected
+ - false otherwise
+ */
+int setPositionFilePeriod(const char *value, void *data __attribute__ ((unused)),
+		set_plugin_parameter_addon addon __attribute__ ((unused))) {
+	static const char * valueName = PUD_POSFILEPERIOD_NAME;
+	unsigned long long positionFilePeriodNew;
+
+	assert(value != NULL);
+
+	if (!readULL(valueName, value, &positionFilePeriodNew)) {
+		return true;
+	}
+
+	if ((positionFilePeriodNew != 0)
+			&& ((positionFilePeriodNew < PUD_POSFILEPERIOD_MIN) || (positionFilePeriodNew > PUD_POSFILEPERIOD_MAX))) {
+		pudError(false, "Configured %s (%llu) is outside of"
+				" valid range %llu-%llu", valueName, positionFilePeriodNew, PUD_POSFILEPERIOD_MIN, PUD_POSFILEPERIOD_MAX);
+		return true;
+	}
+
+	positionFilePeriod = positionFilePeriodNew;
 
 	return false;
 }

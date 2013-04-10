@@ -51,9 +51,9 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#if !defined WIN32
+#if !defined _WIN32
 #include <sys/select.h>
-#endif
+#endif /* !defined _WIN32 */
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
@@ -83,9 +83,9 @@
 #include "olsrd_txtinfo.h"
 #include "olsrd_plugin.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #define close(x) closesocket(x)
-#endif
+#endif /* _WIN32 */
 
 static int ipc_socket;
 
@@ -178,13 +178,13 @@ plugin_ipc_init(void)
   if ((ipc_socket = socket(olsr_cnf->ip_version, SOCK_STREAM, 0)) == -1) {
 #ifndef NODEBUG
     olsr_printf(1, "(TXTINFO) socket()=%s\n", strerror(errno));
-#endif
+#endif /* NODEBUG */
     return 0;
   } else {
     if (setsockopt(ipc_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&yes, sizeof(yes)) < 0) {
 #ifndef NODEBUG
       olsr_printf(1, "(TXTINFO) setsockopt()=%s\n", strerror(errno));
-#endif
+#endif /* NODEBUG */
       return 0;
     }
 #if (defined __FreeBSD__ || defined __FreeBSD_kernel__) && defined SO_NOSIGPIPE
@@ -192,7 +192,7 @@ plugin_ipc_init(void)
       perror("SO_REUSEADDR failed");
       return 0;
     }
-#endif
+#endif /* (defined __FreeBSD__ || defined __FreeBSD_kernel__) && defined SO_NOSIGPIPE */
     /* Bind the socket */
 
     /* complete the socket structure */
@@ -202,7 +202,7 @@ plugin_ipc_init(void)
       addrlen = sizeof(struct sockaddr_in);
 #ifdef SIN6_LEN
       sst.in4.sin_len = addrlen;
-#endif
+#endif /* SIN6_LEN */
       sst.in4.sin_addr.s_addr = txtinfo_listen_ip.v4.s_addr;
       sst.in4.sin_port = htons(ipc_port);
     } else {
@@ -210,7 +210,7 @@ plugin_ipc_init(void)
       addrlen = sizeof(struct sockaddr_in6);
 #ifdef SIN6_LEN
       sst.in6.sin6_len = addrlen;
-#endif
+#endif /* SIN6_LEN */
       sst.in6.sin6_addr = txtinfo_listen_ip.v6;
       sst.in6.sin6_port = htons(ipc_port);
     }
@@ -219,7 +219,7 @@ plugin_ipc_init(void)
     if (bind(ipc_socket, &sst.in, addrlen) == -1) {
 #ifndef NODEBUG
       olsr_printf(1, "(TXTINFO) bind()=%s\n", strerror(errno));
-#endif
+#endif /* NODEBUG */
       return 0;
     }
 
@@ -227,7 +227,7 @@ plugin_ipc_init(void)
     if (listen(ipc_socket, 1) == -1) {
 #ifndef NODEBUG
       olsr_printf(1, "(TXTINFO) listen()=%s\n", strerror(errno));
-#endif
+#endif /* NODEBUG */
       return 0;
     }
 
@@ -236,7 +236,7 @@ plugin_ipc_init(void)
 
 #ifndef NODEBUG
     olsr_printf(2, "(TXTINFO) listening on port %d\n", ipc_port);
-#endif
+#endif /* NODEBUG */
   }
   return 1;
 }
@@ -257,7 +257,7 @@ ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
   if ((ipc_connection = accept(fd, &pin.in, &addrlen)) == -1) {
 #ifndef NODEBUG
     olsr_printf(1, "(TXTINFO) accept()=%s\n", strerror(errno));
-#endif
+#endif /* NODEBUG */
     return;
   }
 
@@ -268,13 +268,13 @@ ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
     if (!ip4equal(&pin.in4.sin_addr, &txtinfo_accept_ip.v4) && txtinfo_accept_ip.v4.s_addr != INADDR_ANY) {
 #ifdef TXTINFO_ALLOW_LOCALHOST
       if (pin.in4.sin_addr.s_addr != INADDR_LOOPBACK) {
-#endif
+#endif /* TXTINFO_ALLOW_LOCALHOST */
         olsr_printf(1, "(TXTINFO) From host(%s) not allowed!\n", addr);
         close(ipc_connection);
         return;
 #ifdef TXTINFO_ALLOW_LOCALHOST
       }
-#endif
+#endif /* TXTINFO_ALLOW_LOCALHOST */
     }
   } else {
     if (inet_ntop(olsr_cnf->ip_version, &pin.in6.sin6_addr, addr, INET6_ADDRSTRLEN) == NULL)
@@ -289,7 +289,7 @@ ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
 
 #ifndef NODEBUG
   olsr_printf(2, "(TXTINFO) Connect from %s\n", addr);
-#endif
+#endif /* NODEBUG */
 
   /* purge read buffer to prevent blocking on linux */
   FD_ZERO(&rfds);
@@ -369,9 +369,9 @@ ipc_print_link(struct autobuf *abuf)
 
 #ifdef ACTIVATE_VTIME_TXTINFO
   abuf_puts(abuf, "Table: Links\nLocal IP\tRemote IP\tVTime\tLQ\tNLQ\tCost\n");
-#else
+#else /* ACTIVATE_VTIME_TXTINFO */
   abuf_puts(abuf, "Table: Links\nLocal IP\tRemote IP\tHyst.\tLQ\tNLQ\tCost\n");
-#endif
+#endif /* ACTIVATE_VTIME_TXTINFO */
 
   /* Link set */
   OLSR_FOR_ALL_LINK_ENTRIES(my_link) {
@@ -383,12 +383,12 @@ ipc_print_link(struct autobuf *abuf)
               diff/1000, abs(diff%1000),
               get_link_entry_text(my_link, '\t', &lqbuffer1),
               get_linkcost_text(my_link->linkcost, false, &lqbuffer2));
-#else
+#else /* ACTIVATE_VTIME_TXTINFO */
     abuf_appendf(abuf, "%s\t%s\t0.00\t%s\t%s\t\n", olsr_ip_to_string(&buf1, &my_link->local_iface_addr),
               olsr_ip_to_string(&buf2, &my_link->neighbor_iface_addr),
               get_link_entry_text(my_link, '\t', &lqbuffer1),
               get_linkcost_text(my_link->linkcost, false, &lqbuffer2));
-#endif
+#endif /* ACTIVATE_VTIME_TXTINFO */
   } OLSR_FOR_ALL_LINK_ENTRIES_END(my_link);
 
   abuf_puts(abuf, "\n");
@@ -422,9 +422,9 @@ ipc_print_topology(struct autobuf *abuf)
 
 #ifdef ACTIVATE_VTIME_TXTINFO
   abuf_puts(abuf, "Table: Topology\nDest. IP\tLast hop IP\tLQ\tNLQ\tCost\tVTime\n");
-#else
+#else /* ACTIVATE_VTIME_TXTINFO */
   abuf_puts(abuf, "Table: Topology\nDest. IP\tLast hop IP\tLQ\tNLQ\tCost\n");
-#endif
+#endif /* ACTIVATE_VTIME_TXTINFO */
 
   /* Topology */
   OLSR_FOR_ALL_TC_ENTRIES(tc) {
@@ -441,10 +441,10 @@ ipc_print_topology(struct autobuf *abuf)
             get_tc_edge_entry_text(tc_edge, '\t', &lqbuffer1),
             get_linkcost_text(tc_edge->cost, false, &lqbuffer2),
             diff/1000, diff%1000);
-#else
+#else /* ACTIVATE_VTIME_TXTINFO */
         abuf_appendf(abuf, "%s\t%s\t%s\t%s\n", olsr_ip_to_string(&dstbuf, &tc_edge->T_dest_addr), olsr_ip_to_string(&addrbuf, &tc->addr),
                   get_tc_edge_entry_text(tc_edge, '\t', &lqbuffer1), get_linkcost_text(tc_edge->cost, false, &lqbuffer2));
-#endif
+#endif /* ACTIVATE_VTIME_TXTINFO */
       }
     } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
   } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
@@ -462,9 +462,9 @@ ipc_print_hna(struct autobuf *abuf)
 
 #ifdef ACTIVATE_VTIME_TXTINFO
   abuf_puts(abuf, "Table: HNA\nDestination\tGateway\tVTime\n");
-#else
+#else /* ACTIVATE_VTIME_TXTINFO */
   abuf_puts(abuf, "Table: HNA\nDestination\tGateway\n");
-#endif /*vtime txtinfo*/
+#endif /* ACTIVATE_VTIME_TXTINFO */
 
   /* Announced HNA entries */
   if (olsr_cnf->ip_version == AF_INET) {
@@ -490,10 +490,10 @@ ipc_print_hna(struct autobuf *abuf)
       abuf_appendf(abuf, "%s/%d\t%s\t\%d.%03d\n", olsr_ip_to_string(&buf, &tmp_net->hna_prefix.prefix),
           tmp_net->hna_prefix.prefix_len, olsr_ip_to_string(&mainaddrbuf, &tmp_hna->A_gateway_addr),
           diff/1000, abs(diff%1000));
-#else
+#else /* ACTIVATE_VTIME_TXTINFO */
       abuf_appendf(abuf, "%s/%d\t%s\n", olsr_ip_to_string(&buf, &tmp_net->hna_prefix.prefix),
           tmp_net->hna_prefix.prefix_len, olsr_ip_to_string(&mainaddrbuf, &tmp_hna->A_gateway_addr));
-#endif /*vtime txtinfo*/
+#endif /* ACTIVATE_VTIME_TXTINFO */
     }
   }
   OLSR_FOR_ALL_HNA_ENTRIES_END(tmp_hna);
@@ -510,9 +510,9 @@ ipc_print_mid(struct autobuf *abuf)
   struct mid_address *alias;
 #ifdef ACTIVATE_VTIME_TXTINFO
   abuf_puts(abuf, "Table: MID\nIP address\tAlias\tVTime\n");
-#else
+#else /* ACTIVATE_VTIME_TXTINFO */
   abuf_puts(abuf, "Table: MID\nIP address\tAliases\n");
-#endif /*vtime txtinfo*/
+#endif /* ACTIVATE_VTIME_TXTINFO */
 
   /* MID */
   for (idx = 0; idx < HASHSIZE; idx++) {
@@ -521,10 +521,10 @@ ipc_print_mid(struct autobuf *abuf)
     while (entry != &mid_set[idx]) {
 #ifdef ACTIVATE_VTIME_TXTINFO
       struct ipaddr_str buf, buf2;
-#else
+#else /* ACTIVATE_VTIME_TXTINFO */
       struct ipaddr_str buf;
       abuf_puts(abuf, olsr_ip_to_string(&buf, &entry->main_addr));
-#endif /*vtime txtinfo*/
+#endif /* ACTIVATE_VTIME_TXTINFO */
       alias = entry->aliases;
       is_first = 1;
 
@@ -537,16 +537,16 @@ ipc_print_mid(struct autobuf *abuf)
                      olsr_ip_to_string(&buf, &entry->main_addr), 
                      olsr_ip_to_string(&buf2, &alias->alias),
                      diff/1000, abs(diff%1000));
-#else
+#else /* ACTIVATE_VTIME_TXTINFO */
         abuf_appendf(abuf, "%s%s", (is_first ? "\t" : ";"), olsr_ip_to_string(&buf, &alias->alias));
-#endif /*vtime txtinfo*/
+#endif /* ACTIVATE_VTIME_TXTINFO */
         alias = alias->next_alias;
         is_first = 0;
       }
       entry = entry->next;
 #ifndef ACTIVATE_VTIME_TXTINFO
       abuf_puts(abuf,"\n");
-#endif /*vtime txtinfo*/
+#endif /* ACTIVATE_VTIME_TXTINFO */
     }
   }
   abuf_puts(abuf, "\n");
@@ -555,9 +555,9 @@ ipc_print_mid(struct autobuf *abuf)
 static void
 ipc_print_gateway(struct autobuf *abuf)
 {
-#ifndef linux
+#ifndef __linux__
   abuf_puts(abuf, "Gateway mode is only supported in linux\n");
-#else
+#else /* __linux__ */
   static const char IPV4[] = "ipv4";
   static const char IPV4_NAT[] = "ipv4(n)";
   static const char IPV6[] = "ipv6";
@@ -571,7 +571,6 @@ ipc_print_gateway(struct autobuf *abuf)
   abuf_puts(abuf, "Table: Gateways\nStatus\tGateway IP\tETX\tHopcnt\tUplink\tDownlnk\tIPv4\tIPv6\tPrefix\n");
   OLSR_FOR_ALL_GATEWAY_ENTRIES(gw) {
     char v4 = '-', v6 = '-';
-    bool autoV4 = false, autoV6 = false;
     const char *v4type = NONE, *v6type = NONE;
     struct tc_entry *tc;
 
@@ -579,16 +578,16 @@ ipc_print_gateway(struct autobuf *abuf)
       continue;
     }
 
-    if (gw == olsr_get_ipv4_inet_gateway(&autoV4)) {
-      v4 = autoV4 ? 'a' : 's';
+    if (gw == olsr_get_inet_gateway(false)) {
+      v4 = 's';
     }
     else if (gw->ipv4 && (olsr_cnf->ip_version == AF_INET || olsr_cnf->use_niit)
         && (olsr_cnf->smart_gw_allow_nat || !gw->ipv4nat)) {
       v4 = 'u';
     }
 
-    if (gw == olsr_get_ipv6_inet_gateway(&autoV6)) {
-      v6 = autoV6 ? 'a' : 's';
+    if (gw == olsr_get_inet_gateway(true)) {
+      v6 = 's';
     }
     else if (gw->ipv6 && olsr_cnf->ip_version == AF_INET6) {
       v6 = 'u';
@@ -607,7 +606,7 @@ ipc_print_gateway(struct autobuf *abuf)
         gw->uplink, gw->downlink, v4type, v6type,
         gw->external_prefix.prefix_len == 0 ? NONE : olsr_ip_prefix_to_string(&gw->external_prefix));
   } OLSR_FOR_ALL_GATEWAY_ENTRIES_END(gw)
-#endif
+#endif /* __linux__ */
 }
 
 static void

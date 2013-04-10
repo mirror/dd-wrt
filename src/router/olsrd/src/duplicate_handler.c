@@ -110,4 +110,4 @@ void olsr_handle_mid_collision(union olsr_ip_addr *mid, union olsr_ip_addr *orig
   }
 }
 
-#endif
+#endif /* NO_DUPLICATE_DETECTION_HANDLER */

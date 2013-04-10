@@ -60,7 +60,7 @@ struct default_lq_fpm {
 
 extern struct lq_handler lq_etx_fpm_handler;
 
-#endif /*LQ_ETX_FPM_ */
+#endif /* LQ_ETX_FPM_ */
 
 /*
  * Local Variables:

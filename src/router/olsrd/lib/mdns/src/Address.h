@@ -46,6 +46,8 @@
 #include "olsrd_plugin.h"             /* union set_plugin_parameter_addon */
 #include "interfaces.h"         /* struct interface */
 
+#include "list_backport.h"
+
 struct TBmfInterface;
 
 int IsMulticast(union olsr_ip_addr *ipAddress);

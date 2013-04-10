@@ -137,7 +137,7 @@ name_constructor(void)
 {
   int i;
 
-#ifdef WIN32
+#ifdef _WIN32
   int len;
 
   GetWindowsDirectory(my_hosts_file, MAX_FILE - 12);
@@ -164,13 +164,13 @@ name_constructor(void)
   if (my_resolv_file[len - 1] != '\\')
     strscat(my_resolv_file, "\\", sizeof(my_resolv_file));
   strscat(my_resolv_file, "resolvconf_olsr", sizeof(my_resolv_file));
-#else
+#else /* _WIN32 */
   strscpy(my_hosts_file, "/var/run/hosts_olsr", sizeof(my_hosts_file));
   strscpy(my_services_file, "/var/run/services_olsr", sizeof(my_services_file));
   strscpy(my_macs_file, "/var/run/macs_olsr", sizeof(my_macs_file));
   strscpy(my_resolv_file, "/var/run/resolvconf_olsr", sizeof(my_resolv_file));
   *my_sighup_pid_file = 0;
-#endif
+#endif /* _WIN32 */
 
   my_suffix[0] = '\0';
   my_add_hosts[0] = '\0';
@@ -536,9 +536,9 @@ olsr_expire_write_file_timer(void *context __attribute__ ((unused)))
   write_hosts_file();              /* if name_table_changed */
   write_services_file(false); /* if service_table_changed */
   write_services_file(true);  /* if mac_table_changed */
-#ifdef WIN32
+#ifdef _WIN32
   write_latlon_file();             /* if latlon_table_changed */
-#endif
+#endif /* _WIN32 */
 }
 
 /*
@@ -865,7 +865,7 @@ decap_namemsg(struct name *from_packet, struct name_entry **to, bool * this_tabl
   //if not yet known entry
   tmp = olsr_malloc(sizeof(struct name_entry), "new name_entry");
   tmp->type = ntohs(from_packet->type);
-  tmp->len = len_of_name > MAX_NAME ? MAX_NAME : ntohs(from_packet->len);
+  tmp->len = ntohs(from_packet->len);
   tmp->name = olsr_malloc(tmp->len + 1, "new name_entry name");
   tmp->ip = from_packet->ip;
   strscpy(tmp->name, name, tmp->len + 1);
@@ -996,7 +996,7 @@ insert_new_name_in_list(union olsr_ip_addr *originator, struct list_node *this_l
   }
 }
 
-#ifndef WIN32
+#ifndef _WIN32
 static void
 send_sighup_to_pidfile(char *pid_file)
 {
@@ -1010,7 +1010,7 @@ send_sighup_to_pidfile(char *pid_file)
   fd = open(pid_file, O_RDONLY);
   if (fd < 0) {
     OLSR_PRINTF(2, "NAME PLUGIN: can't open file %s\n", pid_file);
-    return;
+    goto out;
   }
 
   while (i < 19) {
@@ -1021,15 +1021,17 @@ send_sighup_to_pidfile(char *pid_file)
       i += result;
     } else if (errno != EINTR && errno != EAGAIN) {
       OLSR_PRINTF(2, "NAME PLUGIN: can't read file %s\n", pid_file);
-      return;
+      goto out;
     }
   }
   line[i] = 0;
   close(fd);
+  fd = -1;
+
   ipid = strtol(line, &endptr, 0);
   if (endptr == line) {
     OLSR_PRINTF(2, "NAME PLUGIN: invalid pid at file %s\n", pid_file);
-    return;
+    goto out;;
   }
 
   result = kill(ipid, SIGHUP);
@@ -1039,8 +1041,11 @@ send_sighup_to_pidfile(char *pid_file)
     OLSR_PRINTF(2, "NAME PLUGIN: failed to send SIGHUP to pid %i\n", ipid);
   }
 
+  out: if (fd >= 0) {
+    close(fd);
+  }
 }
-#endif
+#endif /* _WIN32 */
 
 /**
  * write names to a file in /etc/hosts compatible format
@@ -1059,7 +1064,7 @@ write_hosts_file(void)
 
 #ifdef MID_ENTRIES
   struct mid_address *alias;
-#endif
+#endif /* MID_ENTRIES */
 
   if (!name_table_changed)
     return;
@@ -1087,8 +1092,8 @@ write_hosts_file(void)
       fprintf(hosts, "### contents from '%s' ###\n\n", my_add_hosts);
       while ((c = getc(add_hosts)) != EOF)
         putc(c, hosts);
+      fclose(add_hosts);
     }
-    fclose(add_hosts);
     fprintf(hosts, "\n### olsr names ###\n\n");
   }
   // write own names
@@ -1132,7 +1137,7 @@ write_hosts_file(void)
             mid_num++;
           }
         }
-#endif
+#endif /* MID_ENTRIES */
       }
     }
   }
@@ -1143,10 +1148,10 @@ write_hosts_file(void)
 
   fclose(hosts);
 
-#ifndef WIN32
+#ifndef _WIN32
   if (*my_sighup_pid_file)
     send_sighup_to_pidfile(my_sighup_pid_file);
-#endif
+#endif /* _WIN32 */
   name_table_changed = false;
 
   // Executes my_name_change_script after writing the hosts file
@@ -1270,7 +1275,7 @@ select_best_nameserver(struct rt_entry **rt)
 #ifndef NODEBUG
       struct ipaddr_str strbuf;
       struct lqtextbuffer lqbuffer;
-#endif
+#endif /* NODEBUG */
       /*
        * first is better, swap the pointers.
        */
@@ -1316,7 +1321,7 @@ write_resolv_file(void)
 #ifndef NODEBUG
         struct ipaddr_str strbuf;
         struct lqtextbuffer lqbuffer;
-#endif
+#endif /* NODEBUG */
         route = olsr_lookup_routing_table(&name->ip);
 
         OLSR_PRINTF(6, "NAME PLUGIN: check route for nameserver %s %s", olsr_ip_to_string(&strbuf, &name->ip),
@@ -1600,7 +1605,7 @@ lookup_defhna_latlon(union olsr_ip_addr *ip)
   struct avl_node *rt_tree_node;
   struct olsr_ip_prefix prefix;
 
-  memset(ip, 0, sizeof(ip));
+  memset(ip, 0, sizeof(*ip));
   memset(&prefix, 0, sizeof(prefix));
 
   if (NULL != (rt_tree_node = avl_find(&routingtree, &prefix))) {
@@ -1635,7 +1640,7 @@ lookup_name_latlon(union olsr_ip_addr *ip)
   return "";
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 
 /**
  * write latlon positions to a javascript file
@@ -1659,7 +1664,7 @@ write_latlon_file(void)
   fclose(fmap);
   latlon_table_changed = false;
 }
-#endif
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

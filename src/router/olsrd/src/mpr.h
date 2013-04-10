@@ -44,9 +44,13 @@
 
 void olsr_calculate_mpr(void);
 
+#ifndef NODEBUG
 void olsr_print_mpr_set(void);
-
+#else
+#define olsr_print_mpr_set() do { } while(0)
 #endif
+
+#endif /* _OLSR_MPR */
 
 /*
  * Local Variables:

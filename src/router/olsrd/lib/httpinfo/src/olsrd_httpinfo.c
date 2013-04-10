@@ -48,11 +48,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-#ifdef WIN32
+#ifdef _WIN32
 #include <io.h>
-#else
+#else /* _WIN32 */
 #include <netdb.h>
-#endif
+#endif /* _WIN32 */
 
 #include "olsr.h"
 #include "olsr_cfg.h"
@@ -68,7 +68,7 @@
   #include <pud/src/pud.h>
   #include <nmea/info.h>
   #include <nmea/sentence.h>
-#endif
+#endif /* HTTPINFO_PUD */
 
 #include "olsrd_httpinfo.h"
 #include "admin_interface.h"
@@ -76,22 +76,22 @@
 
 #ifdef OS
 #undef OS
-#endif
+#endif /* OS */
 
-#ifdef WIN32
+#ifdef _WIN32
 #define close(x) closesocket(x)
 #define OS "Windows"
-#endif
-#ifdef linux
+#endif /* _WIN32 */
+#ifdef __linux__
 #define OS "GNU/Linux"
-#endif
+#endif /* __linux__ */
 #if defined __FreeBSD__ || defined __FreeBSD_kernel__
 #define OS "FreeBSD"
-#endif
+#endif /* defined __FreeBSD__ || defined __FreeBSD_kernel__ */
 
 #ifndef OS
 #define OS "Undefined"
-#endif
+#endif /* OS */
 
 static char copyright_string[] __attribute__ ((unused)) =
   "olsr.org HTTPINFO plugin Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org) All rights reserved.";
@@ -186,7 +186,7 @@ static void build_all_body(struct autobuf *);
 
 #ifdef HTTPINFO_PUD
 static void build_pud_body(struct autobuf *);
-#endif
+#endif /* HTTPINFO_PUD */
 
 static void build_about_body(struct autobuf *);
 
@@ -214,25 +214,17 @@ static int outbuffer_count;
 
 static struct timer_entry *writetimer_entry;
 
-#if 0
-int netsprintf(char *str, const char *format, ...) __attribute__ ((format(printf, 2, 3)));
-static int netsprintf_direct = 0;
-static int netsprintf_error = 0;
-#define sprintf netsprintf
-#define NETDIRECT
-#endif
-
 static const struct tab_entry tab_entries[] = {
   {"Configuration", "config", build_config_body, true},
   {"Routes", "routes", build_routes_body, true},
   {"Links/Topology", "nodes", build_nodes_body, true},
 #ifdef HTTPINFO_PUD
   {"Position", "position", build_pud_body, true},
-#endif
+#endif /* HTTPINFO_PUD */
   {"All", "all", build_all_body, true},
 #ifdef ADMIN_INTERFACE
   {"Admin", "admin", build_admin_body, true},
-#endif
+#endif /* ADMIN_INTERFACE */
   {"About", "about", build_about_body, true},
   {"FOO", "cfgfile", build_cfgfile_body, false},
   {NULL, NULL, NULL, false}
@@ -258,7 +250,7 @@ static const struct dynamic_file_entry dynamic_files[] = {
   {"set_values", process_set_values},
   {NULL, NULL}
 };
-#endif
+#endif /* ADMIN_INTERFACE */
 
 static int
 get_http_socket(int port)
@@ -345,9 +337,9 @@ parse_http_request(int fd, void *data __attribute__ ((unused)), unsigned int fla
   size_t header_length = 0;
   size_t c = 0;
   int r = 1;
-#ifdef linux
+#ifdef __linux__
   struct timeval timeout = { 0, 200 };
-#endif
+#endif /* __linux__ */
 
   if (outbuffer_count >= MAX_CLIENTS) {
     olsr_printf(1, "(HTTPINFO) maximum number of connection reached\n");
@@ -361,7 +353,7 @@ parse_http_request(int fd, void *data __attribute__ ((unused)), unsigned int fla
     goto close_connection;
   }
 
-#ifdef linux
+#ifdef __linux__
   if (setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
     olsr_printf(1, "(HTTPINFO)SO_RCVTIMEO failed %s\n", strerror(errno));
     goto close_connection;
@@ -371,7 +363,7 @@ parse_http_request(int fd, void *data __attribute__ ((unused)), unsigned int fla
     olsr_printf(1, "(HTTPINFO)SO_SNDTIMEO failed %s\n", strerror(errno));
     goto close_connection;
   }
-#endif
+#endif /* __linux__ */
   if (!check_allowed_ip(allowed_nets, (union olsr_ip_addr *)&pin.sin_addr.s_addr)) {
     struct ipaddr_str strbuf;
     olsr_printf(0, "HTTP request from non-allowed host %s!\n",
@@ -429,7 +421,7 @@ parse_http_request(int fd, void *data __attribute__ ((unused)), unsigned int fla
       }
       i++;
     }
-#endif
+#endif /* ADMIN_INTERFACE */
     /* We only support GET */
     abuf_puts(&body_abuf, HTTP_400_MSG);
     stats.ill_hits++;
@@ -485,7 +477,7 @@ parse_http_request(int fd, void *data __attribute__ ((unused)), unsigned int fla
       }
       netsprintf_error = 0;
       netsprintf_direct = 1;
-#endif
+#endif /* NETDIRECT */
       abuf_appendf(&body_abuf,
                  "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n" "<head>\n"
                  "<meta http-equiv=\"Content-type\" content=\"text/html; charset=ISO-8859-1\">\n"
@@ -512,10 +504,10 @@ parse_http_request(int fd, void *data __attribute__ ((unused)), unsigned int fla
 #ifdef NETDIRECT
       netsprintf_direct = 1;
       goto close_connection;
-#else
+#else /* NETDIRECT */
       header_length = build_http_header(HTTP_OK, true, body_abuf.len, header_buf, sizeof(header_buf));
       goto send_http_data;
-#endif
+#endif /* NETDIRECT */
     }
 
     stats.ill_hits++;
@@ -546,11 +538,17 @@ send_http_data:
     }
   }
   abuf_free(&body_abuf);
+  /*
+   * client_socket is stored in outbuffer_socket[outbuffer_count] and closed
+   * by the httpinfo_write_data timer callback, so don't close it here
+   */
   return;
 
 close_connection:
   abuf_free(&body_abuf);
-  close(client_socket);
+  if (client_socket >= 0) {
+    close(client_socket);
+  }
 }
 
 static void
@@ -742,10 +740,10 @@ build_ipaddr_link(struct autobuf *abuf, const bool want_link, const union olsr_i
 {
   struct ipaddr_str ipaddrstr;
   const struct hostent *const hp =
-#ifndef WIN32
+#ifndef _WIN32
     resolve_ip_addresses ? gethostbyaddr((const void *)ipaddr, olsr_cnf->ipsize,
                                          olsr_cnf->ip_version) :
-#endif
+#endif /* _WIN32 */
     NULL;
   /* Print the link only if there is no prefix_len and ip_version is AF_INET */
   const int print_link = want_link && (prefix_len == -1 || prefix_len == olsr_cnf->maxplen) && (olsr_cnf->ip_version == AF_INET);
@@ -1102,7 +1100,7 @@ build_all_body(struct autobuf *abuf)
   build_mid_body(abuf);
 #ifdef HTTPINFO_PUD
   build_pud_body(abuf);
-#endif
+#endif /* HTTPINFO_PUD */
 }
 
 #ifdef HTTPINFO_PUD
@@ -1119,6 +1117,8 @@ static inline bool nmea_INFO_has_field_local(uint32_t present, nmeaINFO_FIELD fi
 }
 
 static const char * NA_STRING = "N.A.";
+static const char * SAT_INUSE_COLOR = "lime";
+static const char * SAT_NOTINUSE_COLOR = "red";
 
 static void build_pud_body(struct autobuf *abuf) {
 	TransmitGpsInformation * txGpsInfo = olsr_cnf->pud_position;
@@ -1377,13 +1377,13 @@ static void build_pud_body(struct autobuf *abuf) {
 			for (satIndex = 0; satIndex < NMEA_MAXSAT; satIndex++) {
 				nmeaSATELLITE * sat = &txGpsInfo->txPosition.nmeaInfo.satinfo.sat[satIndex];
 				if (sat->id) {
+					bool inuse = false;
 					const char * inuseStr;
 
 					if (!nmea_INFO_has_field_local(txGpsInfo->txPosition.nmeaInfo.present, SATINUSE)) {
 						inuseStr = NA_STRING;
 					} else {
 						int inuseIndex;
-						bool inuse = false;
 						for (inuseIndex = 0; inuseIndex < NMEA_MAXSAT; inuseIndex++) {
 							if (txGpsInfo->txPosition.nmeaInfo.satinfo.in_use[inuseIndex] == sat->id) {
 								inuse = true;
@@ -1397,8 +1397,8 @@ static void build_pud_body(struct autobuf *abuf) {
 						}
 					}
 
-					abuf_appendf(abuf, "<tr><td>%02d</td><td>%s</td><td>%02d</td><td>%03d</td><td>%02d</td></tr>\n",
-							sat->id, inuseStr, sat->elv, sat->azimuth, sat->sig);
+					abuf_appendf(abuf, "<tr><td>%02d</td><td bgcolor=\"%s\">%s</td><td>%02d</td><td>%03d</td><td>%02d</td></tr>\n",
+							sat->id, inuse ? SAT_INUSE_COLOR : SAT_NOTINUSE_COLOR, inuseStr, sat->elv, sat->azimuth, sat->sig);
 					cnt++;
 				}
 			}
@@ -1443,7 +1443,7 @@ static void build_pud_body(struct autobuf *abuf) {
 		);
 	}
 }
-#endif
+#endif /* HTTPINFO_PUD */
 
 static void
 build_about_body(struct autobuf *abuf)
@@ -1453,7 +1453,7 @@ build_about_body(struct autobuf *abuf)
                   "Compiled "
 #ifdef ADMIN_INTERFACE
                   "<em>with experimental admin interface</em> "
-#endif
+#endif /* ADMIN_INTERFACE */
                   "%s at %s<hr/>\n" "This plugin implements a HTTP server that supplies\n"
                   "the client with various dynamic web pages representing\n"
                   "the current olsrd status.<br/>The different pages include:\n"
@@ -1478,7 +1478,7 @@ build_about_body(struct autobuf *abuf)
                   "the future possibilities of httpinfo. This is to be a interface to\n"
                   "changing olsrd settings in realtime. These settings include various\n"
                   "\"basic\" settings and local HNA settings.</li>\n"
-#endif
+#endif /* ADMIN_INTERFACE */
                   "<li><strong>About</strong> - this help page.</li>\n</ul>" "<hr/>\n" "Send questions or comments to\n"
                   "<a href=\"mailto:olsr-users@olsr.org\">olsr-users@olsr.org</a> or\n"
                   "<a href=\"mailto:andreto-at-olsr.org\">andreto-at-olsr.org</a><br/>\n"
@@ -1495,10 +1495,6 @@ build_cfgfile_body(struct autobuf *abuf)
   olsrd_write_cnf_autobuf(abuf, olsr_cnf);
 
   abuf_puts(abuf, "</pre>\n<hr/>\n");
-
-#if 0
-  printf("RETURNING %d\n", size);
-#endif
 }
 
 static int

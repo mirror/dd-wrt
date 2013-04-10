@@ -398,7 +398,7 @@ void nmea_info2pos(const nmeaINFO *info, nmeaPOS *pos) {
 	if (nmea_INFO_is_present(info->present, LON))
 		pos->lon = nmea_ndeg2radian(info->lon);
 	else
-		pos->lat = NMEA_DEF_LON;
+		pos->lon = NMEA_DEF_LON;
 }
 
 /**

@@ -36,7 +36,7 @@
 
 extern int debugMode;
 
-#endif
+#endif /* WLAN_DEBUG_H */
 
 /*
  * Local Variables:

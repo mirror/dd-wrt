@@ -54,7 +54,7 @@
 #include "mdns.h"               /* InitBmf(), CloseBmf() */
 #include "NetworkInterfaces.h"  /* AddNonOlsrBmfIf(), SetBmfInterfaceIp(), ... */
 #include "Address.h"            /* DoLocalBroadcast() */
-
+#include "RouterElection.h"
 static void __attribute__ ((constructor)) my_init(void);
 static void __attribute__ ((destructor)) my_fini(void);
 
@@ -125,6 +125,9 @@ olsr_plugin_exit(void)
 static const struct olsrd_plugin_parameters plugin_parameters[] = {
   {.name = "NonOlsrIf",.set_plugin_parameter = &AddNonOlsrBmfIf,.data = NULL},
   {.name = "MDNS_TTL", .set_plugin_parameter = &set_MDNS_TTL, .data = NULL },
+  {.name = "FilteredHost", .set_plugin_parameter = &AddFilteredHost, .data = NULL },
+  {.name = "TTL_Check", .set_plugin_parameter = &set_TTL_Check, .data = NULL},
+  {.name = "Network_ID", .set_plugin_parameter = &set_Network_ID, .data = NULL},
   //{ .name = "DoLocalBroadcast", .set_plugin_parameter = &DoLocalBroadcast, .data = NULL },
   //{ .name = "BmfInterface", .set_plugin_parameter = &SetBmfInterfaceName, .data = NULL },
   //{ .name = "BmfInterfaceIp", .set_plugin_parameter = &SetBmfInterfaceIp, .data = NULL },

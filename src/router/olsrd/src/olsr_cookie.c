@@ -213,7 +213,7 @@ olsr_cookie_malloc(struct olsr_cookie_info *ci)
 
 #ifdef OLSR_COOKIE_DEBUG
   bool reuse = false;
-#endif
+#endif /* OLSR_COOKIE_DEBUG */
 
   /*
    * Check first if we have reusable memory.
@@ -231,6 +231,7 @@ olsr_cookie_malloc(struct olsr_cookie_info *ci)
       olsr_syslog(OLSR_LOG_ERR, "olsrd: out of memory!: %s\n", err_msg);
       olsr_exit(ci->ci_name, EXIT_FAILURE);
     }
+    assert(ptr);
   } else {
 
     /*
@@ -244,7 +245,7 @@ olsr_cookie_malloc(struct olsr_cookie_info *ci)
     ci->ci_free_list_usage--;
 #ifdef OLSR_COOKIE_DEBUG
     reuse = true;
-#endif
+#endif /* OLSR_COOKIE_DEBUG */
   }
 
   /*
@@ -253,7 +254,7 @@ olsr_cookie_malloc(struct olsr_cookie_info *ci)
    * When the block is freed to detect corruption.
    */
   branding = (struct olsr_cookie_mem_brand *)ARM_NOWARN_ALIGN(((unsigned char *)ptr + ci->ci_size));
-  memcpy(&branding->cmb_sig, "cookie", 6);
+  memcpy(&branding->cmb_sig[0], "cookie", 6);
   branding->cmb_id = ci->ci_id;
 
   /* Stats keeping */
@@ -261,7 +262,7 @@ olsr_cookie_malloc(struct olsr_cookie_info *ci)
 
 #ifdef OLSR_COOKIE_DEBUG
   OLSR_PRINTF(1, "MEMORY: alloc %s, %p, %u bytes%s\n", ci->ci_name, ptr, ci->ci_size, reuse ? ", reuse" : "");
-#endif
+#endif /* OLSR_COOKIE_DEBUG */
 
   return ptr;
 }
@@ -278,7 +279,7 @@ olsr_cookie_free(struct olsr_cookie_info *ci, void *ptr)
 
 #ifdef OLSR_COOKIE_DEBUG
   bool reuse = false;
-#endif
+#endif /* OLSR_COOKIE_DEBUG */
 
   branding = (struct olsr_cookie_mem_brand *)ARM_NOWARN_ALIGN(((unsigned char *)ptr + ci->ci_size));
 
@@ -304,7 +305,7 @@ olsr_cookie_free(struct olsr_cookie_info *ci, void *ptr)
     ci->ci_free_list_usage++;
 #ifdef OLSR_COOKIE_DEBUG
     reuse = true;
-#endif
+#endif /* OLSR_COOKIE_DEBUG */
   } else {
 
     /*
@@ -318,7 +319,7 @@ olsr_cookie_free(struct olsr_cookie_info *ci, void *ptr)
 
 #ifdef OLSR_COOKIE_DEBUG
   OLSR_PRINTF(1, "MEMORY: free %s, %p, %u bytes%s\n", ci->ci_name, ptr, ci->ci_size, reuse ? ", reuse" : "");
-#endif
+#endif /* OLSR_COOKIE_DEBUG */
 
 }
 
