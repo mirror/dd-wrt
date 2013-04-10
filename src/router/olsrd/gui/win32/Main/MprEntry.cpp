@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "MprEntry.h"
 
@@ -53,3 +55,5 @@ BOOL MprEntry::operator==(const class MprEntry &Comp) const
 {
 	return Addr == Comp.Addr;
 }
+
+#endif /* _WIN32 */

@@ -2,7 +2,7 @@
 
 This README file is the main documentation source for the OLSR mdns plugin
 
-Last update 24/03/2009
+Last update 20/07/2012
 
 == Description ==
 
@@ -42,11 +42,15 @@ also in this topology mdns traffic between pc1 and pc2 is possible because r3 fo
 
 To enable the Plugin use the following syntax
 
-LoadPlugin "olsrd_mdns.so.1.0.0"
+LoadPlugin "olsrd_mdns.so.1.0.1"
 {
 PlParam     "NonOlsrIf"  "eth0"
 PlParam     "NonOlsrIf"  "eth1"
-PlParam     "MDNS_TTL"  "5"
+PlParam     "MDNS_TTL"   "5"
+PlParam     "TTL_Check"  "true"
+PlParam	    "Network_ID" "1"
+PlParam     "FilteredHost" "192.168.0.1"
+PlParam     "FilteredHost" "2001:1418::1"
 }
 
 Where eth0 and eth1 are the names of the interfaces where you want to capture traffic (and decapsulate incoming traffic).
@@ -57,6 +61,11 @@ This version of the plugin will not chech this stuff to be properly configured!
 MDNS_TTL is the time to live given to the MDNS OLSR messages. It makes no sense to announce your services to hosts that are too many hops away, because they will experience a very bad unicast connection.
 With this TTL setting we can tune how far we announce our services and we make the protocol scale much better
 
+TTL_Check enable or disable the rule that set TTL/HopLimit of generated mDns packet to 1 and discard capture of packets with TTL/HopLimit set to 1
+
+Network_ID is the network id value (default 1) that is used into router election for elect master router on the local hna, the plugin will elect master router the device with lower ip number on the same network id.
+
+FilteredHost is the ipv4 or ipv6 address of a mdns packets source that the router will discard.
 === References ===
 
  * Multicast DNS: [http://tools.ietf.org/html/draft-cheshire-dnsext-multicastdns-07 IETF draft-cheshire-dnsext-multicastdns-07]

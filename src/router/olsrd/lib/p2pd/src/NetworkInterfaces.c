@@ -196,7 +196,6 @@ CreateInterface(const char *ifName, struct interface *olsrIntf)
   if ((olsrIntf == NULL)) {
     capturingSkfd = CreateCaptureSocket(ifName);
     if (capturingSkfd < 0) {
-      close(encapsulatingSkfd);
       free(newIf);
       return 0;
     }
@@ -214,8 +213,9 @@ CreateInterface(const char *ifName, struct interface *olsrIntf)
   ifr.ifr_name[IFNAMSIZ - 1] = '\0';    /* Ensures null termination */
   if (ioctl(ioctlSkfd, SIOCGIFHWADDR, &ifr) < 0) {
     P2pdPError("ioctl(SIOCGIFHWADDR) error for interface \"%s\"", ifName);
-    close(capturingSkfd);
-    close(encapsulatingSkfd);
+    if (capturingSkfd >= 0) {
+      close(capturingSkfd);
+    }
     free(newIf);
     return 0;
   }

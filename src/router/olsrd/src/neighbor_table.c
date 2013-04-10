@@ -99,7 +99,7 @@ olsr_del_nbr2_list(struct neighbor_2_list_entry *nbr2_list)
  * Delete a two hop neighbor from a neighbors two hop neighbor list.
  *
  * @param neighbor the neighbor to delete the two hop neighbor from.
- * @param address the IP address of the two hop neighbor to delete.
+ * @param neigh2 the IP address of the two hop neighbor to delete.
  *
  * @return positive if entry deleted
  */
@@ -168,9 +168,9 @@ olsr_update_neighbor_main_addr(struct neighbor_entry *entry, const union olsr_ip
  *
  *Remember: Deleting a neighbor entry results
  *the deletion of its 2 hop neighbors list!!!
- *@param neighbor the neighbor entry to delete
+ *@param neighbor_addr the neighbor entry to delete
  *
- *@return nada
+ *@return always 1
  */
 
 int
@@ -378,15 +378,19 @@ olsr_expire_nbr2_list(void *context)
  *
  *@return nada
  */
+#ifndef NODEBUG
 void
 olsr_print_neighbor_table(void)
 {
-#ifdef NODEBUG
   /* The whole function doesn't do anything else. */
-#ifndef NODEBUG
-  const int iplen = olsr_cnf->ip_version == AF_INET ? 15 : 39;
-#endif
+  const int iplen = olsr_cnf->ip_version == AF_INET ? (INET_ADDRSTRLEN - 1) : (INET6_ADDRSTRLEN - 1);
   int idx;
+  struct tm * nowtm;
+  struct timeval now;
+
+	(void)gettimeofday(&now, NULL);
+  nowtm = localtime((time_t *)&now.tv_sec);
+
   OLSR_PRINTF(1,
               "\n--- %02d:%02d:%02d.%02d ------------------------------------------------ NEIGHBORS\n\n"
               "%*s  LQ     NLQ    SYM   MPR   MPRS  will\n", nowtm->tm_hour, nowtm->tm_min, nowtm->tm_sec, (int)now.tv_usec / 10000,
@@ -398,15 +402,15 @@ olsr_print_neighbor_table(void)
       struct link_entry *lnk = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
       if (lnk) {
         struct ipaddr_str buf;
-        OLSR_PRINTF(1, "%-*s  %5.3f  %5.3f  %s  %s  %s  %d\n", iplen, olsr_ip_to_string(&buf, &neigh->neighbor_main_addr),
-                    lnk->loss_link_quality, lnk->neigh_link_quality, neigh->status == SYM ? "YES " : "NO  ",
+        OLSR_PRINTF(1, "%-*s  %5.3f  %s  %s  %s  %d\n", iplen, olsr_ip_to_string(&buf, &neigh->neighbor_main_addr),
+                    (double)lnk->L_link_quality, neigh->status == SYM ? "YES " : "NO  ",
                     neigh->is_mpr ? "YES " : "NO  ", olsr_lookup_mprs_set(&neigh->neighbor_main_addr) == NULL ? "NO  " : "YES ",
                     neigh->willingness);
       }
     }
   }
-#endif
 }
+#endif /* NODEBUG */
 
 /*
  * Local Variables:

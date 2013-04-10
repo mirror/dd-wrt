@@ -39,6 +39,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #if !defined TL_DLFCN_H_INCLUDED
 
 #define TL_DLFCN_H_INCLUDED
@@ -50,7 +52,9 @@ int dlclose(void *Handle);
 void *dlsym(void *Handle, const char *Name);
 char *dlerror(void);
 
-#endif
+#endif /* !defined TL_DLFCN_H_INCLUDED */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

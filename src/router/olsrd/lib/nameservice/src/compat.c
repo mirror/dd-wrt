@@ -25,7 +25,7 @@ strndup(const char *ptr, size_t size)
   return ret;
 }
 
-#endif
+#endif /* !defined(__linux__) && !defined(__GLIBC__) */
 
 /*
  * Local Variables:

@@ -43,6 +43,7 @@
 #include "config.h"
 #include "debug.h"
 #include "network_tap.h"
+#include "kernel_tunnel.h"
 
 char macBroadcast[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
@@ -138,7 +139,7 @@ closeTap(int fd)
 int
 createTap(char *name, MacAddress * mac)
 {
-  static const char deviceName[] = "/dev/net/tun";
+  static const char * deviceName = OS_TUNNEL_PATH;
   int etfd;
   struct ifreq ifreq;
 

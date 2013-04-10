@@ -469,17 +469,6 @@ avl_local_min(struct avl_node *node)
   return node;
 }
 
-#if 0
-static struct avl_node *
-avl_local_max(struct avl_node *node)
-{
-  while (node->right != NULL)
-    node = node->right;
-
-  return node;
-}
-#endif
-
 static void
 avl_delete_worker(struct avl_tree *tree, struct avl_node *node)
 {
@@ -519,10 +508,8 @@ avl_delete_worker(struct avl_tree *tree, struct avl_node *node)
       avl_rotate_right(tree, parent->right);
       avl_rotate_left(tree, parent);
       avl_post_delete(tree, parent->parent);
-      return;
     }
-
-    if (parent->right == node) {
+    else {
       parent->right = NULL;
       parent->balance--;
 
@@ -548,8 +535,8 @@ avl_delete_worker(struct avl_tree *tree, struct avl_node *node)
       avl_rotate_left(tree, parent->left);
       avl_rotate_right(tree, parent);
       avl_post_delete(tree, parent->parent);
-      return;
     }
+    return;
   }
 
   if (node->left == NULL) {

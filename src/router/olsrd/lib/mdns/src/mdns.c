@@ -72,8 +72,34 @@
 #include "NetworkInterfaces.h"  /* TBmfInterface, CreateBmfNetworkInterfaces(), CloseBmfNetworkInterfaces() */
 #include "Address.h"            /* IsMulticast() */
 #include "Packet.h"             /* ENCAP_HDR_LEN, BMF_ENCAP_TYPE, BMF_ENCAP_LEN etc. */
+#include "list_backport.h"
+#include "RouterElection.h"
+#include "list_backport.h"
 
-int my_DNS_TTL=0;
+#define OLSR_FOR_ALL_FILTEREDNODES_ENTRIES(n, iterator) listbackport_for_each_element_safe(&ListOfFilteredHosts, n, list, iterator)
+
+#define IPH_HL(hdr) (((hdr)->ip_hl)*4)
+
+struct list_entity ListOfFilteredHosts;
+int FHListInit = 0;
+
+static uint16_t ip_checksum(char* data, int len)
+{
+    uint sum = 0;
+    if ((len & 1) == 0)
+        len = len >> 1;
+    else
+        len = (len >> 1) + 1;
+    while (len > 0) {
+        sum += *((ushort*)data);
+        data += sizeof(ushort);
+        len--;
+    }
+    sum = (sum >> 16) + (sum & 0xffff);
+    sum += (sum >> 16);
+    return(~sum);
+}
+
 
 /* -------------------------------------------------------------------------
  * Function   : PacketReceivedFromOLSR
@@ -92,6 +118,7 @@ PacketReceivedFromOLSR(unsigned char *encapsulationUdpData, int len)
   //union olsr_ip_addr mcDst;            /* Multicast destination of the encapsulated packet */
   struct TBmfInterface *walker;
   int stripped_len = 0;
+  uint16_t csum_ip;
   ipHeader = (struct ip *)ARM_NOWARN_ALIGN(encapsulationUdpData);
   ip6Header = (struct ip6_hdr *)ARM_NOWARN_ALIGN(encapsulationUdpData);
 
@@ -112,10 +139,19 @@ PacketReceivedFromOLSR(unsigned char *encapsulationUdpData, int len)
       if ((encapsulationUdpData[0] & 0xf0) == 0x40) {
         dest.sll_protocol = htons(ETH_P_IP);
 	stripped_len = ntohs(ipHeader->ip_len);
+	if(my_TTL_Check)
+		ipHeader->ip_ttl = (u_int8_t) 1; //setting up TTL to 1 to avoid mdns packets flood 
 	}
+	//Recalculate IP Checksum
+	ipHeader->ip_sum=0x0000;
+	csum_ip = ip_checksum((char*)ipHeader, IPH_HL(ipHeader));
+	ipHeader->ip_sum=csum_ip;
+
       if ((encapsulationUdpData[0] & 0xf0) == 0x60) {
         dest.sll_protocol = htons(ETH_P_IPV6);
         stripped_len = 40 + ntohs(ip6Header->ip6_plen); //IPv6 Header size (40) + payload_len 
+        if(my_TTL_Check)
+		ip6Header->ip6_hops = (uint8_t) 1; //setting up Hop Limit to 1 to avoid mdns packets flood
         }
       // Sven-Ola: Don't know how to handle the "stripped_len is uninitialized" condition, maybe exit(1) is better...?
       if (0 == stripped_len) return;
@@ -134,7 +170,11 @@ PacketReceivedFromOLSR(unsigned char *encapsulationUdpData, int len)
        * seem to matter when the destination MAC address is set to all-ones
        * in that case. */
       memset(dest.sll_addr, 0xFF, IFHWADDRLEN);
-
+      
+      if(walker->isActive == 0) {            //Don't forward packet if isn't master router
+       OLSR_PRINTF(1,"Not forwarding mDNS packet to interface %s because this router is not master\n",walker->ifName);
+       return;
+       }
       nBytesWritten = sendto(walker->capturingSkfd, encapsulationUdpData, stripped_len, 0, (struct sockaddr *)&dest, sizeof(dest));
       if (nBytesWritten != stripped_len) {
         BmfPError("sendto() error forwarding unpacked encapsulated pkt on \"%s\"", walker->ifName);
@@ -272,7 +312,7 @@ BmfPError(const char *format, ...)
 
 #if !defined REMOVE_LOG_DEBUG
   //char *stringErr = strerror(errno);
-#endif
+#endif /* !defined REMOVE_LOG_DEBUG */
   /* Rely on short-circuit boolean evaluation */
   if (format == NULL || *format == '\0') {
     //OLSR_DEBUG(LOG_PLUGINS, "%s: %s\n", PLUGIN_NAME, stringErr);
@@ -310,6 +350,72 @@ MainAddressOf(union olsr_ip_addr *ip)
   return result;
 }                               /* MainAddressOf */
 
+int
+AddFilteredHost(const char *FilteredHost, void *data __attribute__ ((unused)), 
+		set_plugin_parameter_addon addon __attribute__ ((unused))){
+
+  int res = 0;
+  struct FilteredHost *tmp;
+  tmp = (struct FilteredHost *) malloc(sizeof(struct FilteredHost));
+  listbackport_init_node(&tmp->list);
+
+  if(FHListInit == 0){
+    listbackport_init_head(&ListOfFilteredHosts);
+    FHListInit = 1;
+  }
+
+  if(olsr_cnf->ip_version == AF_INET){
+    res = inet_pton(AF_INET, FilteredHost, &tmp->host.v4);
+    if(res > 0){
+      listbackport_add_tail(&ListOfFilteredHosts, &tmp->list);
+    }
+    else
+      free(tmp);
+  }
+  else{
+    res = inet_pton(AF_INET6, FilteredHost, &tmp->host.v6);
+    if(res > 0)
+      listbackport_add_tail(&ListOfFilteredHosts, &tmp->list);
+    else
+      free(tmp);
+  }
+
+  return 0;
+}
+
+int
+isInFilteredList(union olsr_ip_addr *src){
+
+  struct FilteredHost *tmp, *iterator;
+  struct ipaddr_str buf1;
+  struct ipaddr_str buf2;
+  
+  if(FHListInit == 0){
+    listbackport_init_head(&ListOfFilteredHosts);
+    FHListInit = 1;
+  }
+
+
+  if(listbackport_is_empty(&ListOfFilteredHosts)) {
+    OLSR_PRINTF(2,"Accept packet captured because of filtered hosts ACL: List Empty\n");
+    return 0;
+  }
+
+  OLSR_FOR_ALL_FILTEREDNODES_ENTRIES(tmp, iterator){
+    OLSR_PRINTF(2, "Checking host: %s against list entry: %s\n", olsr_ip_to_string(&buf1, src), olsr_ip_to_string(&buf2, &tmp->host) );
+    if(olsr_cnf->ip_version == AF_INET){
+      if(memcmp(&tmp->host.v4, &src->v4, sizeof(struct in_addr)) == 0)
+        return 1;
+    }
+    else{
+      if(memcmp(&tmp->host.v6, &src->v6, sizeof(struct in6_addr)) == 0)
+        return 1;
+    }
+  }
+
+  OLSR_PRINTF(2,"Accept packet captured because of filtered hosts ACL: Did not find any match in list\n");
+  return 0;
+}
 
 /* -------------------------------------------------------------------------
  * Function   : BmfPacketCaptured
@@ -332,6 +438,7 @@ BmfPacketCaptured(
                    unsigned char *encapsulationUdpData, int nBytes)
 {
   union olsr_ip_addr dst;              /* Destination IP address in captured packet */
+  union olsr_ip_addr src;              
   struct ip *ipHeader;                 /* The IP header inside the captured IP packet */
   struct ip6_hdr *ipHeader6;           /* The IP header inside the captured IP packet */
   struct udphdr *udpHeader;
@@ -342,6 +449,7 @@ BmfPacketCaptured(
     ipHeader = (struct ip *)ARM_NOWARN_ALIGN(encapsulationUdpData);
 
     dst.v4 = ipHeader->ip_dst;
+    src.v4 = ipHeader->ip_src;
 
     /* Only forward multicast packets. If configured, also forward local broadcast packets */
     if (IsMulticast(&dst)) {
@@ -359,11 +467,26 @@ BmfPacketCaptured(
     if (destPort != 5353) {
       return;
     }
+    if(my_TTL_Check) {
+	if(((u_int8_t) ipHeader->ip_ttl) <= ((u_int8_t) 1)) {   // Discard mdns packet with TTL limit 1 or less
+	OLSR_PRINTF(1,"Discarding packet captured with TTL = 1\n");
+      	return;
+	}
+    }
+
+    if (isInFilteredList(&src)) {
+      OLSR_PRINTF(1,"Discarding packet captured because of filtered hosts ACL\n");
+      return;
+    }
+
   }                             //END IPV4
 
   else if ((encapsulationUdpData[0] & 0xf0) == 0x60) {  //IPv6
 
     ipHeader6 = (struct ip6_hdr *)ARM_NOWARN_ALIGN(encapsulationUdpData);
+
+    //TODO: mettere dentro src.v6 l'indirizzo IPv6
+
     if (ipHeader6->ip6_dst.s6_addr[0] == 0xff)  //Multicast
     {
       //Continua
@@ -380,6 +503,18 @@ BmfPacketCaptured(
     if (destPort != 5353) {
       return;
     }
+    if(my_TTL_Check) {
+    	if(((uint8_t) ipHeader6->ip6_hops) <= ((uint8_t) 1)) { // Discard mdns packet with hop limit 1 or less
+	OLSR_PRINTF(1,"Discarding packet captured with TTL = 1\n");
+    	return;
+	}
+	}
+  
+    if (isInFilteredList(&src)) {
+      OLSR_PRINTF(1,"Discarding packet captured because of filtered hosts ACL\n");
+      return;
+    }
+
   }                             //END IPV6
   else
     return;                     //Is not IP packet
@@ -409,6 +544,7 @@ DoMDNS(int skfd, void *data __attribute__ ((unused)), unsigned int flags __attri
     socklen_t addrLen = sizeof(pktAddr);
     int nBytes;
     unsigned char *ipPacket;
+    struct TBmfInterface *walker;
 
     /* Receive the captured Ethernet frame, leaving space for the BMF
      * encapsulation header */
@@ -438,6 +574,13 @@ DoMDNS(int skfd, void *data __attribute__ ((unused)), unsigned int flags __attri
       return;                   /* for */
     }
 
+    for(walker = BmfInterfaces; walker != NULL; walker = walker->next){	//if the router isn't the master for this interface
+      if(skfd == walker->capturingSkfd && walker->isActive == 0) {	//discard mdns packets
+         OLSR_PRINTF(1,"Not capturing mDNS packet from interface %s because this router is not master\n",walker->ifName);
+	 return;
+      }
+    }
+
     if (pktAddr.sll_pkttype == PACKET_OUTGOING ||
         pktAddr.sll_pkttype == PACKET_MULTICAST || pktAddr.sll_pkttype == PACKET_BROADCAST) {
       /* A multicast or broadcast packet was captured */
@@ -458,12 +601,11 @@ DoMDNS(int skfd, void *data __attribute__ ((unused)), unsigned int flags __attri
 int
 InitMDNS(struct interface *skipThisIntf)
 {
-
-
   //Tells OLSR to launch olsr_parser when the packets for this plugin arrive
   olsr_parser_add_function(&olsr_parser, PARSER_TYPE);
   //Creates captures sockets and register them to the OLSR scheduler
   CreateBmfNetworkInterfaces(skipThisIntf);
+  InitRouterList(NULL);
 
   return 1;
 }                               /* InitMDNS */
@@ -480,4 +622,69 @@ void
 CloseMDNS(void)
 {
   CloseBmfNetworkInterfaces();
+}
+
+void DoElection(int skfd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
+{
+  static const char * rxBufferPrefix = "$REP";
+  static const ssize_t rxBufferPrefixLength = 4;
+  unsigned char rxBuffer[HELLO_BUFFER_SIZE];
+  ssize_t rxCount;
+  union olsr_sockaddr sender;
+  socklen_t senderSize = sizeof(sender);
+  struct RtElHelloPkt *rcvPkt;
+  struct RouterListEntry *listEntry;
+  struct RouterListEntry6 *listEntry6;
+
+  OLSR_PRINTF(1,"Packet Received \n");
+
+  if (skfd >= 0) {
+    memset(&sender, 0, senderSize);
+    rxCount = recvfrom(skfd, &rxBuffer[0], (sizeof(rxBuffer) - 1), 0,
+		(struct sockaddr *)&sender, &senderSize);
+    if(rxCount < 0){
+      BmfPError("Receive error in %s, ignoring message.", __func__);
+      return;
+    }
+
+  /* make sure the string is null terminated */
+  rxBuffer[rxCount] = '\0';
+
+  /* do not process when this message doesn't start with $REP */
+  if ((rxCount < rxBufferPrefixLength) || (strncmp((char *) rxBuffer,
+		  rxBufferPrefix, rxBufferPrefixLength) != 0))
+    return;
+
+  if ( rxCount < (int)sizeof(struct RtElHelloPkt))
+    return;					// too small to be a hello pkt
+  else
+    rcvPkt = (struct RtElHelloPkt *)ARM_NOWARN_ALIGN(rxBuffer);
+
+  if (rcvPkt->ipFamily == AF_INET){
+    listEntry = (struct RouterListEntry *)malloc(sizeof(struct RouterListEntry));
+    if(ParseElectionPacket(rcvPkt, listEntry, skfd)){
+      OLSR_PRINTF(1,"processing ipv4 packet \n");
+      if(UpdateRouterList(listEntry))
+        free(listEntry);
+    }
+    else{
+      free(listEntry);
+      return;					//packet not valid
+    }
+  }
+  else{
+    listEntry6 = (struct RouterListEntry6 *)malloc(sizeof(struct RouterListEntry6));
+    if(ParseElectionPacket6(rcvPkt, listEntry6, skfd)){
+      OLSR_PRINTF(1,"processing ipv6 packet");
+      if(UpdateRouterList6(listEntry6))
+        free(listEntry6);
+    }
+    else{
+      free(listEntry6);
+      return;					//packet not valid
+    }
+  }
+  
+  }
+ return;
 }

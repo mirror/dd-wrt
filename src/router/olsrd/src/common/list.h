@@ -89,7 +89,7 @@ static inline structname * funcname (struct list_node *ptr)\
       NULL); \
 }
 
-#endif /* _LQ_LIST */
+#endif /* _LIST_H */
 
 /*
  * Local Variables:

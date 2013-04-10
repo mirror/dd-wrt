@@ -163,7 +163,16 @@ sockaddr4_to_string(struct ipaddr_str *const buf, const struct sockaddr *const a
 
 static INLINE bool
 is_prefix_niit_ipv6(const struct olsr_ip_prefix *p) {
-  return olsr_cnf->ip_version == AF_INET6 && IN6_IS_ADDR_V4MAPPED(&p->prefix.v6)
+#ifdef __ANDROID__
+  #define IN6_IS_ADDR_V4MAPPED_ANDROID_WORKAROUND(a) \
+	((((__const uint32_t *) (a))[0] == 0)				      \
+	 && (((__const uint32_t *) (a))[1] == 0)			      \
+	 && (((__const uint32_t *) (a))[2] == htonl (0xffff)))
+	bool v4mapped = IN6_IS_ADDR_V4MAPPED_ANDROID_WORKAROUND(&p->prefix.v6);
+#else
+	bool v4mapped = IN6_IS_ADDR_V4MAPPED(&p->prefix.v6);
+#endif
+  return olsr_cnf->ip_version == AF_INET6 && v4mapped
       && p->prefix_len >= ipv6_mappedv4_route.prefix_len;
 }
 
@@ -207,7 +216,7 @@ ip_prefix_is_v6_inetgw(const struct olsr_ip_prefix *prefix) {
 
 extern bool is_prefix_inetgw(const struct olsr_ip_prefix *prefix);
 
-#endif
+#endif /* _IPCALC */
 
 /*
  * Local Variables:

@@ -56,7 +56,7 @@ struct default_lq_float {
 
 extern struct lq_handler lq_etx_float_handler;
 
-#endif /*LQ_PLUGIN_DEFAULT_H_ */
+#endif /* LQ_PLUGIN_DEFAULT_H_ */
 
 /*
  * Local Variables:

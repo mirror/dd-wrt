@@ -32,7 +32,7 @@
 #include "routes.h"
 
 int
-init_route_entries()
+init_route_entries(void)
 {
   route_count = 0;
 
@@ -43,7 +43,7 @@ init_route_entries()
 }
 
 int
-add_route_entry(struct route_entry *entry)
+add_route_entry(struct route_entry *entry __attribute__((unused)))
 {
   struct route_entry *new_entry;
 
@@ -65,7 +65,7 @@ add_route_entry(struct route_entry *entry)
 }
 
 int
-del_route_entry(struct route_entry *entry)
+del_route_entry(struct route_entry *entry __attribute__((unused)))
 {
 
   route_count--;

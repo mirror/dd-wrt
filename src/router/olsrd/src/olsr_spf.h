@@ -44,7 +44,7 @@
 
 void olsr_calculate_routing_table(bool force);
 
-#endif
+#endif /* _OLSR_SPF_H */
 
 /*
  * Local Variables:

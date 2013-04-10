@@ -54,11 +54,11 @@
 #include "olsr_cookie.h"
 #include "olsr_niit.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 char *StrError(unsigned int ErrNo);
 #undef strerror
 #define strerror(x) StrError(x)
-#endif
+#endif /* _WIN32 */
 
 static struct list_node chg_kernel_list;
 
@@ -178,12 +178,12 @@ olsr_delete_kernel_route(struct rt_entry *rt)
       olsr_syslog(OLSR_LOG_ERR, "Delete route %s: %s", routestr, err_msg);
       return -1;
     }
-#ifdef linux
+#ifdef __linux__
     /* call NIIT handler (always)*/
     if (olsr_cnf->use_niit) {
       olsr_niit_handle_route(rt, false);
     }
-#endif
+#endif /* __linux__ */
   }
   return 0;
 }
@@ -219,12 +219,12 @@ olsr_add_kernel_route(struct rt_entry *rt)
       rt->rt_nexthop = rt->rt_best->rtp_nexthop;
       rt->rt_metric = rt->rt_best->rtp_metric;
 
-#ifdef linux
+#ifdef __linux__
       /* call NIIT handler */
       if (olsr_cnf->use_niit) {
         olsr_niit_handle_route(rt, true);
       }
-#endif
+#endif /* __linux__ */
     }
   }
 }
@@ -252,7 +252,7 @@ olsr_chg_kernel_routes(struct list_node *head_node)
   while (!list_is_empty(head_node)) {
     rt = changelist2rt(head_node->next);
 
-#ifdef linux
+#ifdef __linux__
     /*
     *   actively deleting routes is not necessary as we use (NLM_F_CREATE | NLM_F_REPLACE) with linux
     *        (i.e. new routes simply overwrite the old ones in kernel)
@@ -266,10 +266,10 @@ olsr_chg_kernel_routes(struct list_node *head_node)
         && (rt->rt_nexthop.iif_index > -1)) {
       olsr_delete_kernel_route(rt);
     }
-#else
+#else /* __linux__ */
     /*no rtnetlink we have to delete routes*/
     if (rt->rt_nexthop.iif_index > -1) olsr_delete_kernel_route(rt);
-#endif /* linux */
+#endif /* __linux__ */
 
     olsr_add_kernel_route(rt);
 
@@ -421,7 +421,7 @@ olsr_update_kernel_routes(void)
 
 #if defined DEBUG && DEBUG
   olsr_print_routing_table(&routingtree);
-#endif
+#endif /* defined DEBUG && DEBUG */
 }
 
 void

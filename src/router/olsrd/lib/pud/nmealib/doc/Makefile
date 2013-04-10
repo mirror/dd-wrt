@@ -3,16 +3,27 @@ include ../Makefile.inc
 .PHONY: all clean
 
 clean:
-	rm -fr html latex man nmealib.pdf
+	$(MAKECMDPREFIX)rm -fr html latex man nmealib.pdf
 
 all: clean nmea.doxygen
+ifeq ($(VERBOSE),0)
 	@echo "Updating version..."
-	@sed -r "s/^([[:space:]]*PROJECT_NUMBER[[:space:]]*=).*/\1 $(GITVERSION)/" nmea.doxygen > nmea.doxygen.temp
+endif
+	$(MAKECMDPREFIX)sed -r "s/^([[:space:]]*PROJECT_NUMBER[[:space:]]*=).*/\1 $(GITVERSION)/" nmea.doxygen > nmea.doxygen.temp
+ifeq ($(VERBOSE),0)
 	@echo "Generating HTML and man pages..."
-	@doxygen nmea.doxygen.temp
-	@rm nmea.doxygen.temp
+endif
+	$(MAKECMDPREFIX)doxygen nmea.doxygen.temp
+	$(MAKECMDPREFIX)rm nmea.doxygen.temp
+ifeq ($(VERBOSE),0)
 	@echo "Generating PDF..."
-	@make -C latex -s > /dev/null 2>&1
-	@mv latex/refman.pdf nmealib.pdf
-	@rm -fr latex
+	@$(MAKE) -C latex -s > /dev/null 2>&1
+else
+	$(MAKE) -C latex
+endif
+	$(MAKECMDPREFIX)mv latex/refman.pdf nmealib.pdf
+	$(MAKECMDPREFIX)rm -fr latex
+ifeq ($(VERBOSE),0)
 	@echo "Done"
+endif
+

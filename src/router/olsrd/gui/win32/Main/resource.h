@@ -1,3 +1,5 @@
+#ifdef _WIN32
+
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
 // Used by Frontend.rc
@@ -64,8 +66,10 @@
 #define _APS_NEXT_COMMAND_VALUE         32779
 #define _APS_NEXT_CONTROL_VALUE         1036
 #define _APS_NEXT_SYMED_VALUE           101
-#endif
-#endif
+#endif /* APSTUDIO_READONLY_SYMBOLS */
+#endif /* APSTUDIO_INVOKED */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

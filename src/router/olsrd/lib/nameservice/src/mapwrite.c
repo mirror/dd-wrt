@@ -189,11 +189,11 @@ mapwrite_work(FILE * fmap)
   OLSR_FOR_ALL_TC_ENTRIES_END(tc);
 }
 
-#ifndef WIN32
+#ifndef _WIN32
 
 /*
  * Windows doesn't know fifo's AFAIK. We better write
- * to a file (done in nameservice.c, see #ifdef WIN32)
+ * to a file (done in nameservice.c, see #ifdef _WIN32)
  */
 
 static const char *the_fifoname = 0;
@@ -209,17 +209,20 @@ mapwrite_poll(void *context __attribute__ ((unused)))
     int fd = open(the_fifoname, O_WRONLY | O_NONBLOCK);
     if (0 <= fd) {
       /*
-       * Change to blocking, otherwhise expect fprintf errors
+       * Change to blocking, otherwise expect fprintf errors
        */
-      fcntl(fd, F_SETFL, O_WRONLY);
-      fout = fdopen(fd, "w");
-      if (0 != fout) {
-        mapwrite_work(fout);
-        fclose(fout);
-        /* Give pipe reader cpu slot to detect EOF */
-        usleep(1);
-      } else {
+      if (fcntl(fd, F_SETFL, O_WRONLY) == -1) {
         close(fd);
+      } else {
+        fout = fdopen(fd, "w");
+        if (0 != fout) {
+          mapwrite_work(fout);
+          fclose(fout);
+          /* Give pipe reader cpu slot to detect EOF */
+          usleep(1);
+        } else {
+          close(fd);
+        }
       }
     }
   }
@@ -251,7 +254,7 @@ mapwrite_exit(void)
     the_fifoname = 0;
   }
 }
-#endif
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

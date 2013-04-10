@@ -26,7 +26,7 @@
 
 #ifdef  __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 int nmea_gsv_npack(int sat_count);
 
@@ -47,6 +47,6 @@ void nmea_info2GPVTG(const nmeaINFO *info, nmeaGPVTG *pack);
 
 #ifdef  __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __NMEA_CONVERSIONS_H__ */

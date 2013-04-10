@@ -94,11 +94,15 @@ struct hna_net *olsr_add_hna_net(struct hna_entry *, const union olsr_ip_addr *,
 
 void olsr_update_hna_entry(const union olsr_ip_addr *, const union olsr_ip_addr *, uint8_t, olsr_reltime);
 
+#ifndef NODEBUG
 void olsr_print_hna_set(void);
+#else
+#define olsr_print_hna_set() do { } while(0)
+#endif
 
 bool olsr_input_hna(union olsr_message *, struct interface *, union olsr_ip_addr *);
 
-#endif
+#endif /* _OLSR_HNA */
 
 /*
  * Local Variables:

@@ -39,6 +39,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "../log.h"
 
 void
@@ -50,6 +52,8 @@ void
 olsr_syslog(int Level __attribute__ ((unused)), const char *Format __attribute__ ((unused)),...)
 {
 }
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

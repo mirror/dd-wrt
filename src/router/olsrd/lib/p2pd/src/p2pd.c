@@ -102,7 +102,7 @@ char * get_ipv4_str(uint32_t address, char *s, size_t maxlen);
 char * get_ipv6_str(unsigned char* address, char *s, size_t maxlen);
 #ifdef INCLUDE_DEBUG_OUTPUT
 void dump_packet(unsigned char* packet, int length);
-#endif
+#endif /* INCLUDE_DEBUG_OUTPUT */
 bool check_and_mark_recent_packet(unsigned char *data, int len);
 
 /* -------------------------------------------------------------------------
@@ -217,7 +217,7 @@ PacketReceivedFromOLSR(unsigned char *encapsulationUdpData, int len)
                                      sizeof(tmp)),
                         destPort);
           }
-#endif
+#endif /* INCLUDE_DEBUG_OUTPUT */
         }
       } else /* (olsr_cnf->ip_version == AF_INET6) */ {
         if (ip6Header->ip6_nxt == SOL_UDP && !IsIpv6Fragment(ip6Header)) {
@@ -236,7 +236,7 @@ PacketReceivedFromOLSR(unsigned char *encapsulationUdpData, int len)
                                      sizeof(tmp)),
                         destPort);
           }
-#endif
+#endif /* INCLUDE_DEBUG_OUTPUT */
         }
       }
 
@@ -528,7 +528,7 @@ P2pdPError(const char *format, ...)
 
 #if !defined REMOVE_LOG_DEBUG
   char *stringErr = strerror(errno);
-#endif
+#endif /* !defined REMOVE_LOG_DEBUG */
 
   /* Rely on short-circuit boolean evaluation */
   if (format == NULL || *format == '\0') {
@@ -544,7 +544,7 @@ P2pdPError(const char *format, ...)
 
 #if !defined REMOVE_LOG_DEBUG
     OLSR_DEBUG(LOG_PLUGINS, "%s: %s\n", strDesc, stringErr);
-#endif
+#endif /* !defined REMOVE_LOG_DEBUG */
   }
 }                               /* P2pdPError */
 
@@ -635,7 +635,7 @@ P2pdPacketCaptured(unsigned char *encapsulationUdpData, int nBytes)
       /* Not UDP */
 #ifdef INCLUDE_DEBUG_OUTPUT
       OLSR_PRINTF(1,"%s: NON UDP PACKET\n", PLUGIN_NAME_SHORT);
-#endif
+#endif /* INCLUDE_DEBUG_OUTPUT */
       return;                   /* for */
     }
 
@@ -644,7 +644,7 @@ P2pdPacketCaptured(unsigned char *encapsulationUdpData, int nBytes)
     if (IsIpv4Fragment(ipHeader)) {
 #ifdef INCLUDE_DEBUG_OUTPUT
       OLSR_PRINTF(1, "%s: Is IPv4 fragment\n", PLUGIN_NAME_SHORT);
-#endif
+#endif /* INCLUDE_DEBUG_OUTPUT */
       return;
     }
 
@@ -660,7 +660,7 @@ P2pdPacketCaptured(unsigned char *encapsulationUdpData, int nBytes)
       char tmp[32];
       OLSR_PRINTF(1, "%s: Not in dest/port list: %s:%d\n", PLUGIN_NAME_SHORT,
                   get_ipv4_str(dst.v4.s_addr, tmp, sizeof(tmp)), destPort);
-#endif
+#endif /* INCLUDE_DEBUG_OUTPUT */
        return;
     }
   }                            //END IPV4
@@ -686,7 +686,7 @@ P2pdPacketCaptured(unsigned char *encapsulationUdpData, int nBytes)
     if (IsIpv6Fragment(ipHeader6)) {
 #ifdef INCLUDE_DEBUG_OUTPUT
       OLSR_PRINTF(1, "%s: Is IPv6 fragment\n", PLUGIN_NAME_SHORT);
-#endif
+#endif /* INCLUDE_DEBUG_OUTPUT */
       return;
     }
 
@@ -701,7 +701,7 @@ P2pdPacketCaptured(unsigned char *encapsulationUdpData, int nBytes)
       char tmp[64];
       OLSR_PRINTF(1, "%s: Not in dest/port list: %s:%d\n", PLUGIN_NAME_SHORT,
                   get_ipv6_str(dst.v6.s6_addr, tmp, sizeof(tmp)), destPort);
-#endif
+#endif /* INCLUDE_DEBUG_OUTPUT */
       return;
     }
   }                             //END IPV6
@@ -742,7 +742,7 @@ DoP2pd(int skfd,
                       0, (struct sockaddr *)&pktAddr, &addrLen);
 #ifdef INCLUDE_DEBUG_OUTPUT
     OLSR_PRINTF(1, "%s: Received %d bytes\n", PLUGIN_NAME_SHORT, nBytes);
-#endif
+#endif /* INCLUDE_DEBUG_OUTPUT */
 
     if (nBytes < 0) {
 
@@ -774,7 +774,7 @@ DoP2pd(int skfd,
       OLSR_PRINTF(1, "%s: Multicast or broadcast packet was captured.\n",
                   PLUGIN_NAME_SHORT);
       dump_packet(ipPacket, nBytes);
-#endif
+#endif /* INCLUDE_DEBUG_OUTPUT */
       /* A multicast or broadcast packet was captured */
       P2pdPacketCaptured(ipPacket, nBytes);
 
@@ -913,7 +913,6 @@ AddUdpDestPort(const char *value,
       return -1;
     }
     break;
-  case AF_INET:
   default:
     res = inet_pton(AF_INET, destAddr, &addr4.sin_addr);
     if (!is_broadcast(addr4) && !is_multicast(addr4)) {
@@ -942,7 +941,6 @@ AddUdpDestPort(const char *value,
            sizeof(addr6.sin6_addr.s6_addr));
     break;
   default:
-  case AF_INET:
     new->address.v4.s_addr = addr4.sin_addr.s_addr;
     break;
   }
@@ -1053,7 +1051,7 @@ dump_packet(unsigned char* packet, int length)
   }
   OLSR_PRINTF(1, "\n");
 }
-#endif
+#endif /* INCLUDE_DEBUG_OUTPUT */
 
 /* -------------------------------------------------------------------------
  * Function   : check_and_mark_recent_packet

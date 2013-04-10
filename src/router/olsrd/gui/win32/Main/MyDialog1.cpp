@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "Frontend.h"
 #include "MyDialog1.h"
@@ -46,7 +48,7 @@
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
-#endif
+#endif /* _DEBUG */
 
 MyDialog1::MyDialog1(CWnd* pParent)
 	: CDialog(MyDialog1::IDD, pParent)
@@ -271,3 +273,5 @@ void MyDialog1::OnSaveButton()
 
 	FileName.ReleaseBuffer();
 }
+
+#endif /* _WIN32 */

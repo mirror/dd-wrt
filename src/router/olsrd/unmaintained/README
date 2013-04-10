@@ -120,8 +120,6 @@ it with custom actions.
 
   Plugins that are part of this release(can be found in the lib/ directory):
 
-  - Tiny Application Server (TAS).
-
   - HttpInfo. This plugin implements a simple HTTP server that serves dynamic
     pages with lots of information about the running olsrd process.
 
@@ -241,7 +239,6 @@ nameservice	+/+	+/?	+/+	+/+	+/+	+/+
 pgraph		+/+	+/+	+/+	+/+	+/+	+/+
 quagga		+/+	-/-	+/+	+/+	+/+	?
 secure		+/+	+/+	+/+	+/+	+/+	+/+
-tas		+/+	-	-	-	-	?
 txtinfo		+/+	+/+	+/+	+/+	+/+	+/+
 ------------------------------------------------------------
 

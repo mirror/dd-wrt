@@ -46,7 +46,7 @@ extern set_plugin_parameter set_plugin_boolean;
 extern set_plugin_parameter set_plugin_int;
 extern set_plugin_parameter set_plugin_string;
 
-#endif
+#endif /* _OLSRD_PLUGIN_UTIL */
 
 /*
  * Local Variables:

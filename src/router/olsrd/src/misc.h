@@ -44,7 +44,7 @@
 
 void clear_console(void);
 
-#endif
+#endif /* _OLSR_MISC_H */
 
 /*
  * Local Variables:

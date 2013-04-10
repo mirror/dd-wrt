@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "Frontend.h"
 #include "MyDialog2.h"
@@ -46,7 +48,7 @@
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
-#endif
+#endif /* _DEBUG */
 
 #define MAXIF 100
 
@@ -695,3 +697,5 @@ void MyDialog2::OnEtxRadio2()
 {
 	m_EtxRadio1.SetCheck(FALSE);
 }
+
+#endif /* _WIN32 */

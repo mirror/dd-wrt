@@ -50,9 +50,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <netinet/in.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <arpa/nameser.h>
-#endif
+#endif /* _WIN32 */
 
 #include "olsrd_httpinfo.h"
 

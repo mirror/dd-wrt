@@ -39,6 +39,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "apm.h"
 #include "defs.h"
 #include <stdio.h>
@@ -85,10 +87,12 @@ apm_read(struct olsr_apm_info *ApmInfo)
   ApmInfo->battery_percentage = (PowerStat.BatteryLifePercent <= 100) ? PowerStat.BatteryLifePercent : 0;
 
   return 1;
-#else
+#else /* !defined WINCE */
   return 0;
-#endif
+#endif /* !defined WINCE */
 }
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

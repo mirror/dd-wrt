@@ -93,7 +93,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
 
 #ifdef DEBUG
   OLSR_PRINTF(3, "\tBuilding HELLO on interface \"%s\"\n", outif->int_name ? outif->int_name : "<null>");
-#endif
+#endif /* DEBUG */
 
   message->neighbors = NULL;
   message->packet_seq_number = 0;
@@ -105,7 +105,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
   message->willingness = olsr_cnf->willingness;
 #ifdef DEBUG
   OLSR_PRINTF(3, "Willingness: %d\n", olsr_cnf->willingness);
-#endif
+#endif /* DEBUG */
 
   /* Set TTL */
 
@@ -114,13 +114,13 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
 
 #ifdef DEBUG
   OLSR_PRINTF(5, "On link:\n");
-#endif
+#endif /* DEBUG */
 
   /* Walk all links of this interface */
   OLSR_FOR_ALL_LINK_ENTRIES(links) {
 #ifdef DEBUG
     struct ipaddr_str buf;
-#endif
+#endif /* DEBUG */
     int lnk = lookup_link_status(links);
     /* Update the status */
 
@@ -185,7 +185,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
     message_neighbor->main_address = links->neighbor->neighbor_main_addr;
 #ifdef DEBUG
     OLSR_PRINTF(5, "Added: %s -  status %d\n", olsr_ip_to_string(&buf, &message_neighbor->address), message_neighbor->status);
-#endif
+#endif /* DEBUG */
     message_neighbor->next = message->neighbors;
     message->neighbors = message_neighbor;
 
@@ -196,7 +196,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
 
 #ifdef DEBUG
   OLSR_PRINTF(5, "Not on link:\n");
-#endif
+#endif /* DEBUG */
 
   /* Add the rest of the neighbors if running on multiple interfaces */
 
@@ -205,7 +205,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
 
 #ifdef DEBUG
     struct ipaddr_str buf;
-#endif
+#endif /* DEBUG */
     /* Check that the neighbor is not added yet */
     tmp_neigh = message->neighbors;
     //printf("Checking that the neighbor is not yet added\n");
@@ -273,7 +273,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
     message_neighbor->main_address = neighbor->neighbor_main_addr;
 #ifdef DEBUG
     OLSR_PRINTF(5, "Added: %s -  status  %d\n", olsr_ip_to_string(&buf, &message_neighbor->address), message_neighbor->status);
-#endif
+#endif /* DEBUG */
     message_neighbor->next = message->neighbors;
     message->neighbors = message_neighbor;
 

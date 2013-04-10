@@ -52,10 +52,10 @@
 #include "log.h"
 #include "parser.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winbase.h>
 #define close(x) closesocket(x)
-#endif
+#endif /* _WIN32 */
 
 /* The interface linked-list */
 struct interface *ifnet;
@@ -166,9 +166,9 @@ if_ifwithaddr(const union olsr_ip_addr *addr)
 }
 
 /**
- *Find the interface with a given number.
+ *Find the interface with a given file descriptor/socket.
  *
- *@param nr the number of the interface to find.
+ *@param fd file descriptor/socket of the interface to find.
  *
  *@return return the interface struct representing the interface
  *that matched the number.
@@ -235,7 +235,7 @@ olsrif_ifwithname(const char *if_name)
 /**
  *Find the interface with a given interface index.
  *
- *@param iif_index of the interface to find.
+ *@param if_index index of the interface to find.
  *
  *@return return the interface struct representing the interface
  *that matched the iif_index.
@@ -256,7 +256,7 @@ if_ifwithindex(const int if_index)
 /**
  *Get an interface name for a given interface index
  *
- *@param iif_index of the interface to find.
+ *@param if_index index of the interface to find.
  *
  *@return "" or interface name.
  */
@@ -272,8 +272,9 @@ if_ifwithindex_name(const int if_index)
  *name and insert it into the interface list.
  *
  *@param name the name of the interface.
+ *@param hemu non-zero to indicate host emulation mode
  *
- *@return nada
+ *@return the new interf_name struct
  */
 struct olsr_if *
 olsr_create_olsrif(const char *name, int hemu)
@@ -316,9 +317,9 @@ olsr_create_olsrif(const char *name, int hemu)
  *Add an ifchange function. These functions are called on all (non-initial)
  *changes in the interface set.
  *
- *@param
+ *@param f a callback function
  *
- *@return
+ *@return always 1
  */
 int
 olsr_add_ifchange_handler(void (*f) (int if_index, struct interface *, enum olsr_ifchg_flag))
@@ -399,22 +400,6 @@ olsr_remove_interface(struct olsr_if * iface)
   /* Remove output buffer */
   net_remove_buffer(ifp);
 
-  /* Check main addr */
-  /* deactivated to prevent change of originator IP */
-#if 0
-  if (ipequal(&olsr_cnf->main_addr, &ifp->ip_addr)) {
-    if (ifnet == NULL) {
-      /* No more interfaces */
-      memset(&olsr_cnf->main_addr, 0, olsr_cnf->ipsize);
-      OLSR_PRINTF(1, "No more interfaces...\n");
-    } else {
-      struct ipaddr_str buf;
-      olsr_cnf->main_addr = ifnet->ip_addr;
-      OLSR_PRINTF(1, "New main address: %s\n", olsr_ip_to_string(&buf, &olsr_cnf->main_addr));
-      olsr_syslog(OLSR_LOG_INFO, "New main address: %s\n", olsr_ip_to_string(&buf, &olsr_cnf->main_addr));
-    }
-  }
-#endif
   /*
    * Deregister functions for periodic message generation
    */

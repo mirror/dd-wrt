@@ -212,7 +212,11 @@ uint8_t olsr_fib_metric(const struct rt_metric *);
 
 char *olsr_rt_to_string(const struct rt_entry *);
 char *olsr_rtp_to_string(const struct rt_path *);
+#ifndef NODEBUG
 void olsr_print_routing_table(struct avl_tree *);
+#else
+#define olsr_print_routing_table(x) do { } while(0)
+#endif
 
 const struct rt_nexthop *olsr_get_nh(const struct rt_entry *);
 
@@ -225,7 +229,7 @@ void olsr_delete_rt_path(struct rt_path *);
 
 struct rt_entry *olsr_lookup_routing_table(const union olsr_ip_addr *);
 
-#endif
+#endif /* _OLSR_ROUTING_TABLE */
 
 /*
  * Local Variables:

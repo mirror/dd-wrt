@@ -147,7 +147,7 @@ void olsr_relevant_linkcost_change(void);
 /* Externals. */
 extern struct lq_handler *active_lq_handler;
 
-#endif /*LQPLUGIN_H_ */
+#endif /* LQPLUGIN_H_ */
 
 /*
  * Local Variables:

@@ -45,18 +45,24 @@ all: default_target
 default_target: prepare $(LIBDIR_BUILD)/$(SONAME)
 
 $(LIBDIR_BUILD)/$(SONAME): $(OBJECTS_C)
+ifeq ($(VERBOSE),0)
 	@echo "[LD] $@"
-	@$(CC) -shared -Wl,-soname=$(SONAME) $(LIBRARIES) -o "$@" $(OBJECTS_C)
+endif
+	$(MAKECMDPREFIX)$(CC) -shared -Wl,-soname=$(SONAME) $(LIBRARIES) -o "$@" $(OBJECTS_C)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR_C)/%.c $(INC_DIR_C)/compiler.h
+ifeq ($(VERBOSE),0)
 	@echo "[CC] $<"
-	@$(CC) $(CFLAGS) $(CPPFLAGS) $(INCLUDES) -c -o "$@" "$<"
+endif
+	$(MAKECMDPREFIX)$(CC) $(CFLAGS) $(CPPFLAGS) $(INCLUDES) -c -o "$@" "$<"
 
 .gitignore:
+ifeq ($(VERBOSE),0)
 	@echo "[$@]"
-	@echo "/$(BUILD_DIR)/" > $@
-	@echo "/$(LIBDIR_BUILD)/" >> $@
-	@$(MAKE) -C doc $@
+endif
+	$(MAKECMDPREFIX)echo "/$(BUILD_DIR)/" > $@
+	$(MAKECMDPREFIX)echo "/$(LIBDIR_BUILD)/" >> $@
+	$(MAKECMDPREFIX)$(MAKE) -C doc $@
 
 
 #
@@ -64,17 +70,19 @@ $(BUILD_DIR)/%.o: $(SRC_DIR_C)/%.c $(INC_DIR_C)/compiler.h
 #
 
 prepare:
-	@mkdir -p "$(BUILD_DIR)" "$(LIBDIR_BUILD)"
+	$(MAKECMDPREFIX)mkdir -p "$(BUILD_DIR)" "$(LIBDIR_BUILD)"
 
 clean: doc-clean
+ifeq ($(VERBOSE),0)
 	@echo "[$@]"
-	@rm -fr "$(BUILD_DIR)" "$(LIBDIR_BUILD)" "$(SRC_DIR_C)/"*.d
+endif
+	$(MAKECMDPREFIX)rm -fr "$(BUILD_DIR)" "$(LIBDIR_BUILD)" "$(SRC_DIR_C)/"*.d
 
 doc:
-	@$(MAKE) -C doc all
+	$(MAKECMDPREFIX)$(MAKE) -C doc all
 
 doc-clean:
-	@$(MAKE) -C doc clean
+	$(MAKECMDPREFIX)$(MAKE) -C doc clean
 
 install: all
 	mkdir -v -p "$(LIBDIR)"

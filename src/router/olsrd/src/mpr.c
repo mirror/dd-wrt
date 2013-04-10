@@ -217,7 +217,7 @@ olsr_find_maximum_covered(int willingness)
 #if 0
     printf("[%s] nocov: %d mpr: %d will: %d max: %d\n\n", olsr_ip_to_string(&buf, &a_neighbor->neighbor_main_addr),
            a_neighbor->neighbor_2_nocov, a_neighbor->is_mpr, a_neighbor->willingness, maximum);
-#endif
+#endif /* 0 */
 
     if ((!a_neighbor->is_mpr) && (a_neighbor->willingness == willingness) && (maximum < a_neighbor->neighbor_2_nocov)) {
 
@@ -362,7 +362,7 @@ add_will_always_nodes(void)
 
 #if 0
   printf("\nAdding WILL ALWAYS nodes....\n");
-#endif
+#endif /* 0 */
 
   OLSR_FOR_ALL_NBR_ENTRIES(a_neighbor) {
     struct ipaddr_str buf;
@@ -378,7 +378,7 @@ add_will_always_nodes(void)
 
 #if 0
   OLSR_PRINTF(1, "Count: %d\n", count);
-#endif
+#endif /* 0 */
   return count;
 }
 
@@ -469,7 +469,7 @@ olsr_optimize_mpr_set(void)
 
 #if 0
   printf("\n**MPR OPTIMIZING**\n\n");
-#endif
+#endif /* 0 */
 
   for (i = WILL_NEVER + 1; i < WILL_ALWAYS; i++) {
 
@@ -507,10 +507,10 @@ olsr_optimize_mpr_set(void)
   }
 }
 
+#ifndef NODEBUG
 void
 olsr_print_mpr_set(void)
 {
-#ifndef NODEBUG
   /* The whole function makes no sense without it. */
   struct neighbor_entry *a_neighbor;
 
@@ -528,8 +528,8 @@ olsr_print_mpr_set(void)
   } OLSR_FOR_ALL_NBR_ENTRIES_END(a_neighbor);
 
   OLSR_PRINTF(1, "\n");
-#endif
 }
+#endif /* NODEBUG */
 
 /*
  * Local Variables:

@@ -46,6 +46,7 @@
 #include "olsrd_plugin.h"             /* union set_plugin_parameter_addon */
 #include "duplicate_set.h"
 #include "parser.h"
+#include "list_backport.h"
 
 #define MESSAGE_TYPE 132
 #define PARSER_TYPE		MESSAGE_TYPE
@@ -56,7 +57,7 @@
 /* BMF plugin data */
 #define PLUGIN_NAME "OLSRD MDNS plugin"
 #define PLUGIN_NAME_SHORT "OLSRD MDNS"
-#define PLUGIN_VERSION "1.0.0 (" __DATE__ " " __TIME__ ")"
+#define PLUGIN_VERSION "1.0.1 (" __DATE__ " " __TIME__ ")"
 #define PLUGIN_COPYRIGHT "  (C) Ninux.org"
 #define PLUGIN_AUTHOR "  Saverio Proto (zioproto@gmail.com)"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION "\n" PLUGIN_COPYRIGHT "\n" PLUGIN_AUTHOR
@@ -68,10 +69,17 @@
 /* Forward declaration of OLSR interface type */
 struct interface;
 
+struct FilteredHost{
+  union olsr_ip_addr host;
+
+  struct list_entity list;
+};
+
 //extern int FanOutLimit;
 //extern int BroadcastRetransmitCount;
 
 void DoMDNS(int sd, void *x, unsigned int y);
+void DoElection(int skfd, void *x, unsigned int y);
 void BmfPError(const char *format, ...) __attribute__ ((format(printf, 1, 2)));
 union olsr_ip_addr *MainAddressOf(union olsr_ip_addr *ip);
 //int InterfaceChange(struct interface* interf, int action);
@@ -80,11 +88,14 @@ union olsr_ip_addr *MainAddressOf(union olsr_ip_addr *ip);
 //void CloseBmf(void);
 int InitMDNS(struct interface *skipThisIntf);
 void CloseMDNS(void);
-
+int AddFilteredHost(const char *FilteredHost, void *data __attribute__ ((unused)),
+			 set_plugin_parameter_addon addon __attribute__ ((unused)));
+int isInFilteredList(union olsr_ip_addr *src);
 void olsr_mdns_gen(unsigned char *packet, int len);
 
 /* Parser function to register with the scheduler */
 bool olsr_parser(union olsr_message *, struct interface *, union olsr_ip_addr *);
+
 
 #endif /* _MDNS_MDNS_H */
 

@@ -46,7 +46,7 @@ int olsrd_plugin_init(void);
 
 int olsrd_plugin_interface_version(void);
 
-#endif
+#endif /* _OLSRD_PLUGIN_MINI */
 
 /*
  * Local Variables:

@@ -1,3 +1,5 @@
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "TrayIcon.h"
 
@@ -183,3 +185,5 @@ TrayIcon::~TrayIcon()
 	
 	Shell_NotifyIcon( NIM_DELETE, &notifyIconData );
 }
+
+#endif /* _WIN32 */

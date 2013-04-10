@@ -113,7 +113,7 @@ void olsr_reset_all_links(void) {
  * Get the status of a link. The status is based upon different
  * timeouts in the link entry.
  *
- * @param remote address of the remote interface
+ * @param entry link entry
  * @return the link status of the link
  */
 int
@@ -146,7 +146,7 @@ lookup_link_status(const struct link_entry *entry)
 #ifndef NODEBUG
       struct ipaddr_str buf;
       OLSR_PRINTF(3, "HYST[%s]: Setting to HIDE\n", olsr_ip_to_string(&buf, &entry->neighbor_iface_addr));
-#endif
+#endif /* NODEBUG */
       return HIDE_LINK;
     }
 
@@ -326,6 +326,7 @@ set_loss_link_multiplier(struct link_entry *entry)
       break;
     }
   }
+  assert(cfg_inter);
 
   /* create a null address for comparison */
   memset(&null_addr, 0, sizeof(union olsr_ip_addr));
@@ -543,7 +544,7 @@ add_link_entry(const union olsr_ip_addr *local, const union olsr_ip_addr *remote
     struct ipaddr_str localbuf, rembuf;
     OLSR_PRINTF(1, "Adding %s=>%s to link set\n", olsr_ip_to_string(&localbuf, local), olsr_ip_to_string(&rembuf, remote));
   }
-#endif
+#endif /* DEBUG */
 
   /* a new tuple is created with... */
   new_link = olsr_malloc_link_entry("new link entry");
@@ -609,7 +610,7 @@ add_link_entry(const union olsr_ip_addr *local, const union olsr_ip_addr *remote
 #ifdef DEBUG
     struct ipaddr_str buf;
     OLSR_PRINTF(3, "ADDING NEW NEIGHBOR ENTRY %s FROM LINK SET\n", olsr_ip_to_string(&buf, remote_main));
-#endif
+#endif /* DEBUG */
     neighbor = olsr_insert_neighbor_table(remote_main);
   }
 
@@ -719,7 +720,7 @@ update_link_entry(const union olsr_ip_addr *local, const union olsr_ip_addr *rem
   }
 
   /* L_time = max(L_time, L_ASYM_time) */
-  if (entry->link_timer && (entry->link_timer->timer_clock < entry->ASYM_time)) {
+  if (entry->link_timer == NULL || (entry->link_timer->timer_clock < entry->ASYM_time)) {
     olsr_set_link_timer(entry, TIME_DUE(entry->ASYM_time));
   }
 
@@ -738,8 +739,8 @@ update_link_entry(const union olsr_ip_addr *local, const union olsr_ip_addr *rem
  * one neighbor entry with another pointer
  * Used by MID updates.
  *
- * @old the pointer to replace
- * @new the pointer to use instead of "old"
+ * @param old the pointer to replace
+ * @param new the pointer to use instead of "old"
  * @return the number of entries updated
  */
 int
@@ -769,6 +770,7 @@ replace_neighbor_link_set(const struct neighbor_entry *old, struct neighbor_entr
  *looking in a received HELLO message.
  *
  *@param message the HELLO message to check
+ *@param in_if the incoming interface
  *
  *@return the link status
  */
@@ -798,13 +800,13 @@ check_link_status(const struct hello_message *message, const struct interface *i
   return ret;
 }
 
+#ifndef NODEBUG
 void
 olsr_print_link_set(void)
 {
-#ifndef NODEBUG
   /* The whole function makes no sense without it. */
   struct link_entry *walker;
-  const int addrsize = olsr_cnf->ip_version == AF_INET ? 15 : 39;
+  const int addrsize = olsr_cnf->ip_version == AF_INET ? (INET_ADDRSTRLEN - 1) : (INET6_ADDRSTRLEN - 1);
 
   OLSR_PRINTF(0, "\n--- %s ---------------------------------------------------- LINKS\n\n", olsr_wallclock_string());
   OLSR_PRINTF(1, "%-*s  %-6s %-14s %s\n", addrsize, "IP address", "hyst", "      LQ      ", "ETX");
@@ -817,8 +819,8 @@ olsr_print_link_set(void)
     		(double)walker->L_link_quality, get_link_entry_text(walker, '/', &lqbuffer1), get_linkcost_text(walker->linkcost,
                                                                                                         false, &lqbuffer2));
   } OLSR_FOR_ALL_LINK_ENTRIES_END(walker);
-#endif
 }
+#endif /* NODEBUG */
 
 /*
  * called for every LQ HELLO message.

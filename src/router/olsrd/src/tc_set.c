@@ -128,7 +128,7 @@ olsr_seq_inrange_high(int beg, int end, uint16_t seq)
 /**
  * Add a new tc_entry to the tc tree
  *
- * @param (last)adr address of the entry
+ * @param adr (last)adr address of the entry
  * @return a pointer to the created entry
  */
 static struct tc_entry *
@@ -136,7 +136,7 @@ olsr_add_tc_entry(union olsr_ip_addr *adr)
 {
 #ifdef DEBUG
   struct ipaddr_str buf;
-#endif
+#endif /* DEBUG */
   struct tc_entry *tc;
 
   /*
@@ -147,7 +147,7 @@ olsr_add_tc_entry(union olsr_ip_addr *adr)
   }
 #ifdef DEBUG
   OLSR_PRINTF(1, "TC: add entry %s\n", olsr_ip_to_string(&buf, adr));
-#endif
+#endif /* DEBUG */
 
   tc = olsr_cookie_malloc(tc_mem_cookie);
   if (!tc) {
@@ -272,23 +272,18 @@ olsr_unlock_tc_entry(struct tc_entry *tc)
 /**
  * Delete a TC entry.
  *
- * @param entry the TC entry to delete
- *
+ * @param tc the TC entry to delete
  */
 void
 olsr_delete_tc_entry(struct tc_entry *tc)
 {
   struct tc_edge_entry *tc_edge;
   struct rt_path *rtp;
-#if 0
-  struct ipaddr_str buf;
-  OLSR_PRINTF(1, "TC: del entry %s\n", olsr_ip_to_string(&buf, &tc->addr));
-#endif
 
   /* delete gateway if available */
-#ifdef linux
-  olsr_delete_gateway_entry(&tc->addr, FORCE_DELETE_GW_ENTRY);
-#endif
+#ifdef __linux__
+  olsr_delete_gateway_entry(&tc->addr, FORCE_DELETE_GW_ENTRY, false);
+#endif /* __linux__ */
   /*
    * Delete the rt_path for ourselves.
    */
@@ -323,10 +318,6 @@ struct tc_entry *
 olsr_lookup_tc_entry(union olsr_ip_addr *adr)
 {
   struct avl_node *node;
-
-#if 0
-  OLSR_PRINTF(1, "TC: lookup entry\n");
-#endif
 
   node = avl_find(&tc_tree, adr);
 
@@ -432,7 +423,9 @@ olsr_calc_tc_edge_entry_etx(struct tc_edge_entry *tc_edge)
 /**
  * Add a new tc_edge_entry to the tc_edge_tree
  *
- * @param (last)adr address of the entry
+ * @param tc the tc entry
+ * @param addr (last)adr address of the entry
+ * @param ansn ansn of this edge
  * @return a pointer to the created entry
  */
 struct tc_edge_entry *
@@ -440,7 +433,7 @@ olsr_add_tc_edge_entry(struct tc_entry *tc, union olsr_ip_addr *addr, uint16_t a
 {
 #ifdef DEBUG
   struct ipaddr_str buf;
-#endif
+#endif /* DEBUG */
   struct tc_entry *tc_neighbor;
   struct tc_edge_entry *tc_edge, *tc_edge_inv;
 
@@ -473,13 +466,13 @@ olsr_add_tc_edge_entry(struct tc_entry *tc, union olsr_ip_addr *addr, uint16_t a
   if (tc_neighbor) {
 #ifdef DEBUG
     OLSR_PRINTF(1, "TC:   found neighbor tc_entry %s\n", olsr_ip_to_string(&buf, &tc_neighbor->addr));
-#endif
+#endif /* DEBUG */
 
     tc_edge_inv = olsr_lookup_tc_edge(tc_neighbor, &tc->addr);
     if (tc_edge_inv) {
 #ifdef DEBUG
       OLSR_PRINTF(1, "TC:   found inverse edge for %s\n", olsr_ip_to_string(&buf, &tc_edge_inv->T_dest_addr));
-#endif
+#endif /* DEBUG */
 
       /*
        * Connect the edges mutually.
@@ -497,7 +490,7 @@ olsr_add_tc_edge_entry(struct tc_entry *tc, union olsr_ip_addr *addr, uint16_t a
 
 #ifdef DEBUG
   OLSR_PRINTF(1, "TC: add edge entry %s\n", olsr_tc_edge_to_string(tc_edge));
-#endif
+#endif /* DEBUG */
 
   return tc_edge;
 }
@@ -505,7 +498,6 @@ olsr_add_tc_edge_entry(struct tc_entry *tc, union olsr_ip_addr *addr, uint16_t a
 /**
  * Delete a TC edge entry.
  *
- * @param tc the TC entry
  * @param tc_edge the TC edge entry
  */
 void
@@ -516,7 +508,7 @@ olsr_delete_tc_edge_entry(struct tc_edge_entry *tc_edge)
 
 #ifdef DEBUG
   OLSR_PRINTF(1, "TC: del edge entry %s\n", olsr_tc_edge_to_string(tc_edge));
-#endif
+#endif /* DEBUG */
 
   tc = tc_edge->tc;
   avl_delete(&tc->edge_tree, &tc_edge->edge_node);
@@ -545,10 +537,6 @@ olsr_delete_outdated_tc_edges(struct tc_entry *tc)
   struct tc_edge_entry *tc_edge;
   bool retval = false;
 
-#if 0
-  OLSR_PRINTF(5, "TC: deleting outdated TC-edge entries\n");
-#endif
-
   OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
     if (SEQNO_GREATER_THAN(tc->ansn, tc_edge->ansn)) {
       olsr_delete_tc_edge_entry(tc_edge);
@@ -566,6 +554,8 @@ olsr_delete_outdated_tc_edges(struct tc_entry *tc)
  *
  * @param tc the entry to delete edges from
  * @param ansn the advertised neighbor set sequence number
+ * @param lower_border the lower border
+ * @param upper_border the upper border
  * @return 1 if any destinations were deleted 0 if not
  */
 static int
@@ -573,10 +563,6 @@ olsr_delete_revoked_tc_edges(struct tc_entry *tc, uint16_t ansn, union olsr_ip_a
 {
   struct tc_edge_entry *tc_edge;
   int retval = 0;
-
-#if 0
-  OLSR_PRINTF(5, "TC: deleting MPRS\n");
-#endif
 
   bool passedLowerBorder = false;
 
@@ -612,8 +598,10 @@ olsr_delete_revoked_tc_edges(struct tc_entry *tc, uint16_t ansn, union olsr_ip_a
  * Creates new edge-entries if not registered.
  * Bases update on a received TC message
  *
- * @param entry the TC entry to check
- * @pkt the TC edge entry in the packet
+ * @param tc the TC entry to check
+ * @param ansn the ansn of the edge
+ * @param curr pointer to the packet
+ * @param neighbor the neighbor of the edge
  * @return 1 if entries are added 0 if not
  */
 static int
@@ -671,7 +659,7 @@ olsr_tc_update_edge(struct tc_entry *tc, uint16_t ansn, const unsigned char **cu
     if (edge_change) {
       OLSR_PRINTF(1, "TC:   chg edge entry %s\n", olsr_tc_edge_to_string(tc_edge));
     }
-#endif
+#endif /* defined DEBUG && DEBUG */
 
   }
 
@@ -681,18 +669,14 @@ olsr_tc_update_edge(struct tc_entry *tc, uint16_t ansn, const unsigned char **cu
 /**
  * Lookup an edge hanging off a TC entry.
  *
- * @param entry the entry to check
- * @param dst_addr the destination address to check for
+ * @param tc the entry to check
+ * @param edge_addr the destination address to check for
  * @return a pointer to the tc_edge found - or NULL
  */
 struct tc_edge_entry *
 olsr_lookup_tc_edge(struct tc_entry *tc, union olsr_ip_addr *edge_addr)
 {
   struct avl_node *edge_node;
-
-#if 0
-  OLSR_PRINTF(1, "TC: lookup dst\n");
-#endif
 
   edge_node = avl_find(&tc->edge_tree, edge_addr);
 
@@ -702,13 +686,13 @@ olsr_lookup_tc_edge(struct tc_entry *tc, union olsr_ip_addr *edge_addr)
 /**
  * Print the topology table to stdout
  */
+#ifndef NODEBUG
 void
 olsr_print_tc_table(void)
 {
-#ifndef NODEBUG
   /* The whole function makes no sense without it. */
   struct tc_entry *tc;
-  const int ipwidth = olsr_cnf->ip_version == AF_INET ? 15 : 39;
+  const int ipwidth = olsr_cnf->ip_version == AF_INET ? (INET_ADDRSTRLEN - 1) : (INET6_ADDRSTRLEN - 1);
 
   OLSR_PRINTF(1, "\n--- %s ------------------------------------------------- TOPOLOGY\n\n" "%-*s %-*s %-14s  %s\n",
               olsr_wallclock_string(), ipwidth, "Source IP addr", ipwidth, "Dest IP addr", "      LQ      ", "ETX");
@@ -725,8 +709,8 @@ olsr_print_tc_table(void)
 
     } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
   } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
-#endif
 }
+#endif /* NODEBUG */
 
 /*
  * calculate the border IPs of a tc edge set according to the border flags
@@ -745,7 +729,7 @@ olsr_calculate_tc_border(uint8_t lower_border, union olsr_ip_addr *lower_border_
     return 0;
   }
   if (lower_border == 0xff) {
-    memset(lower_border_ip, 0, sizeof(lower_border_ip));
+    memset(lower_border_ip, 0, sizeof(*lower_border_ip));
   } else {
     int i;
 
@@ -758,7 +742,7 @@ olsr_calculate_tc_border(uint8_t lower_border, union olsr_ip_addr *lower_border_
   }
 
   if (upper_border == 0xff) {
-    memset(upper_border_ip, 0xff, sizeof(upper_border_ip));
+    memset(upper_border_ip, 0xff, sizeof(*upper_border_ip));
   } else {
     int i;
 

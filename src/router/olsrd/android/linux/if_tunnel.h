@@ -7,7 +7,7 @@
 #ifdef __KERNEL__
 #include <linux/ip.h>
 #include <linux/in6.h>
-#endif
+#endif /* __KERNEL__ */
 
 #define SIOCGETTUNNEL   (SIOCDEVPRIVATE + 0)
 #define SIOCADDTUNNEL   (SIOCDEVPRIVATE + 1)

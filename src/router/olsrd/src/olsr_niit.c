@@ -12,7 +12,7 @@
 
 #include <net/if.h>
 
-#ifdef linux
+#ifdef __linux__
 static void handle_niit_ifchange (int if_index, struct interface *iface, enum olsr_ifchg_flag);
 
 static bool niit4to6_active, niit6to4_active;
@@ -127,4 +127,4 @@ static void handle_niit_ifchange (int if_index, struct interface *iface __attrib
   }
 
 }
-#endif
+#endif /* __linux__ */

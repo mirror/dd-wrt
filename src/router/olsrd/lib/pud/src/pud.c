@@ -7,6 +7,7 @@
 #include "gpsConversion.h"
 #include "receiver.h"
 #include "state.h"
+#include "posFile.h"
 #include "compiler.h"
 
 /* OLSRD includes */
@@ -215,7 +216,7 @@ static void packetReceivedFromDownlink(int skfd, void *data __attribute__ ((unus
 			}
 
 			ipv6 = getUplinkMessageIPv6(&msg->header);
-			if (unlikely(ipv6 && (olsr_cnf->ip_version != AF_INET6))) {
+			if (unlikely(!ipv6 && (olsr_cnf->ip_version == AF_INET6)) || unlikely(ipv6 && (olsr_cnf->ip_version == AF_INET))) {
 				pudError(false, "Received wrong IPv6 status (%s) in %s,"
 						" ignoring message.", (ipv6 ? "true" : "false"),
 						__func__);
@@ -303,6 +304,20 @@ static void packetReceivedForOlsr(int skfd, void *data __attribute__ ((unused)),
 }
 
 /**
+ * Timer callback that reads the pud position file
+ */
+static void pud_read_position_file(void *context __attribute__ ((unused))) {
+	updatePositionFromFile();
+	return;
+}
+
+/** The timer cookie, used to trace back the originator in debug */
+static struct olsr_cookie_info *pud_position_file_timer_cookie = NULL;
+
+/** The timer */
+static struct timer_entry * pud_position_file_timer = NULL;
+
+/**
  Initialise the plugin: check the configuration, initialise the NMEA parser,
  create network interface sockets, hookup the plugin to OLSR and setup data
  that can be setup in advance.
@@ -312,6 +327,8 @@ static void packetReceivedForOlsr(int skfd, void *data __attribute__ ((unused)),
  - true otherwise
  */
 bool initPud(void) {
+	unsigned long long positionFilePeriod;
+
 	if (!checkConfig()) {
 		pudError(false, "Invalid configuration");
 		goto error;
@@ -321,6 +338,10 @@ bool initPud(void) {
 
 	if (!initDeDupList(&deDupList, getDeDupDepth())) {
 		pudError(false, "Could not initialise de-duplication list");
+		goto error;
+	}
+
+	if (!startPositionFile()) {
 		goto error;
 	}
 
@@ -353,6 +374,25 @@ bool initPud(void) {
 	/* switch to syslog logging, load was succesful */
 	pudErrorUseSysLog = !olsr_cnf->no_fork;
 
+	positionFilePeriod = getPositionFilePeriod();
+	if (getPositionFile() && positionFilePeriod) {
+		if (pud_position_file_timer_cookie == NULL) {
+			pud_position_file_timer_cookie = olsr_alloc_cookie("pud position file", OLSR_COOKIE_TYPE_TIMER);
+			if (pud_position_file_timer_cookie == NULL) {
+				pudError(false, "Could not allocate pud position file cookie");
+				return false;
+			}
+		}
+		if (pud_position_file_timer == NULL) {
+			pud_position_file_timer = olsr_start_timer(positionFilePeriod, 0, OLSR_TIMER_PERIODIC, &pud_read_position_file,
+					NULL, pud_position_file_timer_cookie);
+			if (pud_position_file_timer == NULL) {
+				pudError(false, "Could not start pud position file timer");
+				return false;
+			}
+		}
+	}
+
 	return true;
 
 	error: closePud();
@@ -364,6 +404,15 @@ bool initPud(void) {
  the NMEA parser.
  */
 void closePud(void) {
+	if (pud_position_file_timer != NULL) {
+		olsr_stop_timer(pud_position_file_timer);
+		pud_position_file_timer = NULL;
+	}
+	if (pud_position_file_timer_cookie != NULL) {
+		olsr_free_cookie(pud_position_file_timer_cookie);
+		pud_position_file_timer_cookie = NULL;
+	}
+	stopPositionFile();
 	closeNetworkInterfaces();
 	stopReceiver();
 	destroyDeDupList(&deDupList);

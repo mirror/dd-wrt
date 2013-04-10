@@ -8,9 +8,9 @@
 #ifndef GATEWAY_DEFAULT_HANDLER_H_
 #define GATEWAY_DEFAULT_HANDLER_H_
 
-#ifdef linux
+#ifdef __linux__
 
-void olsr_gw_default_init(void);
+extern struct olsr_gw_handler gw_def_handler;
 
-#endif /* linux */
+#endif /* __linux__ */
 #endif /* GATEWAY_DEFAULT_HANDLER_H_ */

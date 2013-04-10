@@ -39,6 +39,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include <windows.h>
 
 int
@@ -127,6 +129,8 @@ main(int argc, char *argv[])
 
   ExitProcess(0);
 }
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

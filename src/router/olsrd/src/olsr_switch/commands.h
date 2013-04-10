@@ -75,7 +75,7 @@ static const struct ohs_command ohs_commands[] = {
    NULL}
 };
 
-#endif
+#endif /* _COMMAND */
 
 /*
  * Local Variables:

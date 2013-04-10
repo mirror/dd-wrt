@@ -92,14 +92,14 @@ ohs_set_olsrd_path(const char *path)
   return 0;
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 int
 ohs_cmd_olsrd(const char *args __attribute__ ((unused)))
 {
   printf("olsrd command not available in windows version\nStart instances manually\n");
   return 0;
 }
-#else
+#else /* _WIN32 */
 int
 ohs_cmd_olsrd(const char *args)
 {
@@ -216,7 +216,7 @@ print_usage:
   printf("Usage: olsrd [start|stop|show|setb|seta] [IP|path|args]\n");
   return 0;
 }
-#endif
+#endif /* _WIN32 */
 
 int
 ohs_cmd_link(const char *args)
@@ -484,14 +484,14 @@ ohs_parse_command(void)
   char *args;
   char cmd_token[20];
   int i;
-#if defined WIN32
+#if defined _WIN32
   char c;
   unsigned long Read;
   INPUT_RECORD InRec;
   KEY_EVENT_RECORD *KeyEventRec;
-#endif
+#endif /* defined _WIN32 */
 
-#if defined WIN32
+#if defined _WIN32
   if (!ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), &InRec, sizeof(InRec), &Read)) {
     fprintf(stderr, "ReadConsoleInput failed: %s\n", strerror(GetLastError()));
     return;
@@ -529,13 +529,13 @@ ohs_parse_command(void)
     cmd_line[cmd_len++] = (char)c;
 
   else
-#else
+#else /* defined _WIN32 */
   if (fgets(cmd_line, sizeof(cmd_line), stdin) == NULL) {
     ohs_cmd_exit(NULL);
   }
 
   for (cmd_len = 0; cmd_line[cmd_len] != 0 && cmd_line[cmd_len] != '\n'; cmd_len++);
-#endif
+#endif /* defined _WIN32 */
 
   {
     cmd_line[cmd_len] = 0;

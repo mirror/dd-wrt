@@ -430,6 +430,13 @@ ifdblock: TOK_INTERFACE_DEFAULTS
 
   if (in->cnf == NULL || in->cnfi == NULL) {
     fprintf(stderr, "Out of memory(ADD DEFIFRULE)\n");
+    if (in->cnf) {
+      free(in->cnf);
+    }
+    if (in->cnfi) {
+      free(in->cnfi);
+    }
+    free(in);
     YYABORT;
   }
 
@@ -965,13 +972,16 @@ ifnick: TOK_STRING
     in->cnf = malloc(sizeof(*in->cnf));
     if (in->cnf == NULL) {
       fprintf(stderr, "Out of memory(ADD IFRULE)\n");
+      free(in);
       YYABORT;
     }
     memset(in->cnf, 0x00, sizeof(*in->cnf));
 
     in->cnfi = malloc(sizeof(*in->cnfi));
-    if (in->cnf == NULL) {
+    if (in->cnfi == NULL) {
       fprintf(stderr, "Out of memory(ADD IFRULE)\n");
+      free (in->cnf);
+      free(in);
       YYABORT;
     }
     memset(in->cnfi, 0xFF, sizeof(*in->cnfi));

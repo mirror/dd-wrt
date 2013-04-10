@@ -38,19 +38,25 @@ default_target: all-before lib/$(LIBNAMESTATIC) lib/$(LIBNAME)
 remake: clean all
 
 lib/$(LIBNAMESTATIC): $(OBJ)
+ifeq ($(VERBOSE),0)
 	@echo "[AR] $@"
-	@ar rcs "$@" $(OBJ)
+endif
+	$(MAKECMDPREFIX)ar rcs "$@" $(OBJ)
 
 lib/$(LIBNAME): $(OBJ)
+ifeq ($(VERBOSE),0)
 	@echo "[LD] $@"
-	@$(CC) -shared -Wl,-soname=$(LIBNAME) -o "$@" $(LIBRARIES) $(OBJ)
+endif
+	$(MAKECMDPREFIX)$(CC) -shared -Wl,-soname=$(LIBNAME) -o "$@" $(LIBRARIES) $(OBJ)
 
 build/%.o: src/%.c Makefile Makefile.inc
+ifeq ($(VERBOSE),0)
 	@echo "[CC] $<"
-	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+endif
+	$(MAKECMDPREFIX)$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 samples: all
-	@$(MAKE) -C samples all
+	$(MAKECMDPREFIX)$(MAKE) -C samples all
 
 
 #
@@ -60,35 +66,35 @@ samples: all
 .PHONY: all default_target all-before clean doc install install-headers uninstall uninstall-headers
 
 all-before:
-	@mkdir -p build lib
+	$(MAKECMDPREFIX)mkdir -p build lib
 
 clean:
-	@$(MAKE) -C doc clean
-	@$(MAKE) -C samples clean
-	@rm -frv build lib
+	$(MAKECMDPREFIX)$(MAKE) -C doc clean
+	$(MAKECMDPREFIX)$(MAKE) -C samples clean
+	$(MAKECMDPREFIX)rm -frv build lib
 
 doc:
-	@$(MAKE) -C doc all
+	$(MAKECMDPREFIX)$(MAKE) -C doc all
 
 doc-clean:
-	@$(MAKE) -C doc clean
+	$(MAKECMDPREFIX)$(MAKE) -C doc clean
 
 install: all
-	@mkdir -v -p "$(LIBDIR)"
-	@cp -v "lib/$(LIBNAME)" "$(LIBDIR)/$(LIBNAME).$(VERSION)"
-	@$(STRIP) "$(LIBDIR)/$(LIBNAME).$(VERSION)"
-	@/sbin/ldconfig -n "$(LIBDIR)"
+	$(MAKECMDPREFIX)mkdir -v -p "$(LIBDIR)"
+	$(MAKECMDPREFIX)cp -v "lib/$(LIBNAME)" "$(LIBDIR)/$(LIBNAME).$(VERSION)"
+	$(MAKECMDPREFIX)$(STRIP) "$(LIBDIR)/$(LIBNAME).$(VERSION)"
+	$(MAKECMDPREFIX)/sbin/ldconfig -n "$(LIBDIR)"
 
 install-headers: all
-	@mkdir -v -p "$(INCLUDEDIR)"
-	@rm -fr "$(INCLUDEDIR)/nmea"
-	@cp -rv include/nmea "$(INCLUDEDIR)"
+	$(MAKECMDPREFIX)mkdir -v -p "$(INCLUDEDIR)"
+	$(MAKECMDPREFIX)rm -fr "$(INCLUDEDIR)/nmea"
+	$(MAKECMDPREFIX)cp -rv include/nmea "$(INCLUDEDIR)"
 
 uninstall:
-	@rm -fv "$(LIBDIR)/$(LIBNAME)" "$(LIBDIR)/$(LIBNAME).$(VERSION)"
-	@/sbin/ldconfig -n "$(LIBDIR)"
-	@rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)"
+	$(MAKECMDPREFIX)rm -fv "$(LIBDIR)/$(LIBNAME)" "$(LIBDIR)/$(LIBNAME).$(VERSION)"
+	$(MAKECMDPREFIX)/sbin/ldconfig -n "$(LIBDIR)"
+	$(MAKECMDPREFIX)rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)"
 
 uninstall-headers:
-	@rm -frv "$(INCLUDEDIR)/nmea"
-	@rmdir -v -p --ignore-fail-on-non-empty "$(INCLUDEDIR)"
+	$(MAKECMDPREFIX)rm -frv "$(INCLUDEDIR)/nmea"
+	$(MAKECMDPREFIX)rmdir -v -p --ignore-fail-on-non-empty "$(INCLUDEDIR)"

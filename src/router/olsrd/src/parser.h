@@ -70,8 +70,6 @@ struct packetparser_function_entry {
   struct packetparser_function_entry *next;
 };
 
-void parser_set_disp_pack_in(bool);
-
 void olsr_init_parser(void);
 
 void olsr_destroy_parser(void);
@@ -94,4 +92,4 @@ int olsr_packetparser_remove_function(packetparser_function * function);
 
 void parse_packet(struct olsr *, int, struct interface *, union olsr_ip_addr *);
 
-#endif
+#endif /* _OLSR_MSG_PARSER */

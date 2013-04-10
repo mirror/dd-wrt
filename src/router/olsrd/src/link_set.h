@@ -138,9 +138,13 @@ int replace_neighbor_link_set(const struct neighbor_entry *, struct neighbor_ent
 int lookup_link_status(const struct link_entry *);
 void olsr_update_packet_loss_hello_int(struct link_entry *, olsr_reltime);
 void olsr_received_hello_handler(struct link_entry *entry);
+#ifndef NODEBUG
 void olsr_print_link_set(void);
-
+#else
+#define olsr_print_link_set() do { } while(0)
 #endif
+
+#endif /* _LINK_SET_H */
 
 /*
  * Local Variables:

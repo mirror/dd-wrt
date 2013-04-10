@@ -60,7 +60,7 @@ void getBestUplinkGateway(union olsr_ip_addr * bestGateway) {
 			continue;
 		}
 
-		if (gw == olsr_get_ipv4_inet_gateway(NULL)) {
+		if (gw == olsr_get_inet_gateway(false)) {
 			eval4 = true;
 		} else if (gw->ipv4
 				&& (olsr_cnf->ip_version == AF_INET || olsr_cnf->use_niit)
@@ -68,7 +68,7 @@ void getBestUplinkGateway(union olsr_ip_addr * bestGateway) {
 			eval4 = true;
 		}
 
-		if (gw == olsr_get_ipv6_inet_gateway(NULL)) {
+		if (gw == olsr_get_inet_gateway(true)) {
 			eval6 = true;
 		} else if (gw->ipv6 && olsr_cnf->ip_version == AF_INET6) {
 			eval6 = true;
@@ -76,7 +76,7 @@ void getBestUplinkGateway(union olsr_ip_addr * bestGateway) {
 
 		if (eval4 || eval6) {
 			unsigned long long gw_value = gw_speed(gw);
-			if (gw_value > gw_best_value) {
+			if (!gw_best || (gw_value > gw_best_value)) {
 				gw_best = gw;
 				gw_best_value = gw_value;
 			} else if (gw_value == gw_best_value) {

@@ -81,6 +81,7 @@ olsr_load_plugins(void)
  *the required information
  *
  *@param libname the name of the library(file)
+ *@param params plugin parameters
  *
  *@return negative on error
  */
@@ -89,7 +90,7 @@ olsr_load_dl(char *libname, struct plugin_param *params)
 {
 #if defined TESTLIB_PATH && TESTLIB_PATH
   char path[256] = "/usr/testlib/";
-#endif
+#endif /* defined TESTLIB_PATH && TESTLIB_PATH */
   struct olsr_plugin *plugin = olsr_malloc(sizeof(struct olsr_plugin), "Plugin entry");
   int rv;
 
@@ -98,9 +99,9 @@ olsr_load_dl(char *libname, struct plugin_param *params)
 #if defined TESTLIB_PATH && TESTLIB_PATH
   strcat(path, libname);
   plugin->dlhandle = dlopen(path, RTLD_NOW);
-#else
+#else /* defined TESTLIB_PATH && TESTLIB_PATH */
   plugin->dlhandle = dlopen(libname, RTLD_NOW);
-#endif
+#endif /* defined TESTLIB_PATH && TESTLIB_PATH */
   if (plugin->dlhandle == NULL) {
     const int save_errno = errno;
     OLSR_PRINTF(0, "DL loading failed: \"%s\"!\n", dlerror());
@@ -152,9 +153,9 @@ try_old_versions(const struct olsr_plugin *plugin)
   OLSR_PRINTF(0, "FAILED: \"%s\"\n", dlerror());
   return -1;
 }
-#else
+#else /* defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS */
 #define try_old_versions(plugin) -1
-#endif
+#endif /* defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS */
 
 static int
 olsr_add_dl(struct olsr_plugin *plugin)
@@ -186,9 +187,9 @@ olsr_add_dl(struct olsr_plugin *plugin)
 #if defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS
     OLSR_PRINTF(0, "WILL CONTINUE IN 5 SECONDS...\n\n");
     sleep(5);
-#else
+#else /* defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS */
     return -1;
-#endif
+#endif /* defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS */
   }
 #if defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS
   /* new plugin interface */
@@ -199,7 +200,7 @@ olsr_add_dl(struct olsr_plugin *plugin)
                 LAST_SUPPORTED_PLUGIN_INTERFACE_VERSION);
     sleep(5);
   }
-#endif
+#endif /* defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS */
 
   /* Fetch the init function */
   OLSR_PRINTF(1, "Trying to fetch plugin init function: ");
@@ -230,10 +231,10 @@ olsr_add_dl(struct olsr_plugin *plugin)
 
     plugin->plugin_parameters = NULL;
     plugin->plugin_parameters_size = 0;
-#else
+#else /* defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS */
     OLSR_PRINTF(0, "Old plugin interfaces are not supported\n");
     return -1;
-#endif
+#endif /* defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS */
   }
   return 0;
 }
@@ -292,7 +293,7 @@ init_olsr_plugin(struct olsr_plugin *entry)
         exit(EXIT_FAILURE);
       }
       OLSR_PRINTF(0, "%s\n", rc == 0 ? "FAILED" : "OK");
-#endif
+#endif /* defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS */
     } else {
       OLSR_PRINTF(0, "I don't know what to do with \"%s\"!\n", params->key);
       rv = -1;

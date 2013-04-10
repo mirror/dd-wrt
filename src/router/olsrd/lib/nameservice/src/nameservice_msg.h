@@ -69,7 +69,7 @@ struct namemsg {
    */
 };
 
-#endif
+#endif /* _NAMESEVICE_MSG */
 
 /*
  * Local Variables:

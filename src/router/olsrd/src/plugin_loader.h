@@ -56,7 +56,7 @@ typedef int (*get_interface_version_func) (void);
 
 /* version 4 */
 typedef int (*register_param_func) (char *, char *);
-#endif
+#endif /* defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS */
 
 /* version 5 */
 typedef void (*get_plugin_parameters_func) (const struct olsrd_plugin_parameters ** params, unsigned int *size);
@@ -71,7 +71,7 @@ struct olsr_plugin {
 #if defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS
   /* version 4 */
   register_param_func register_param;
-#endif
+#endif /* defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS */
   plugin_init_func plugin_init;
 
   /* version 5 */
@@ -87,8 +87,8 @@ void olsr_close_plugins(void);
 
 int olsr_plugin_io(int, void *, size_t);
 
-#endif
-#endif
+#endif /* OLSR_PLUGIN */
+#endif /* _OLSR_PLUGIN_LOADER */
 
 /*
  * Local Variables:

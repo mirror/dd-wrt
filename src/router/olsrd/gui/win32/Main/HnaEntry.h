@@ -1,4 +1,3 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
@@ -39,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #if !defined TL_HNAENTRY_H
 #define TL_HNAENTRY_H
 
@@ -52,7 +53,9 @@ public:
   BOOL HnaEntry::operator==(const class HnaEntry &) const;
 };
 
-#endif
+#endif /* !defined TL_HNAENTRY_H */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

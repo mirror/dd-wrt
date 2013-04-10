@@ -68,7 +68,7 @@ olsr_init_two_hop_table(void)
  *
  *@param two_hop_entry the two hop neighbor to remove the
  *one hop neighbor from
- *@param address the address of the one hop neighbor to remove
+ *@param neigh address the address of the one hop neighbor to remove
  *
  *@return nada
  */
@@ -133,10 +133,6 @@ void
 olsr_insert_two_hop_neighbor_table(struct neighbor_2_entry *two_hop_neighbor)
 {
   uint32_t hash = olsr_ip_hashing(&two_hop_neighbor->neighbor_2_addr);
-
-#if 0
-  printf("Adding 2 hop neighbor %s\n", olsr_ip_to_string(&buf, &two_hop_neighbor->neighbor_2_addr));
-#endif
 
   /* Queue */
   QUEUE_ELEM(two_hop_neighbortable[hash], two_hop_neighbor);
@@ -208,12 +204,13 @@ olsr_lookup_two_hop_neighbor_table_mid(const union olsr_ip_addr *dest)
  *
  *@return nada
  */
+#ifndef NODEBUG
 void
 olsr_print_two_hop_neighbor_table(void)
 {
-#ifndef NODEBUG
   /* The whole function makes no sense without it. */
   int i;
+  const int ipwidth = olsr_cnf->ip_version == AF_INET ? (INET_ADDRSTRLEN - 1) : (INET6_ADDRSTRLEN - 1);
 
   OLSR_PRINTF(1, "\n--- %s ----------------------- TWO-HOP NEIGHBORS\n\n" "IP addr (2-hop)  IP addr (1-hop)  Total cost\n",
               olsr_wallclock_string());
@@ -228,18 +225,18 @@ olsr_print_two_hop_neighbor_table(void)
         struct ipaddr_str buf;
         struct lqtextbuffer lqbuffer;
         if (first) {
-          OLSR_PRINTF(1, "%-15s  ", olsr_ip_to_string(&buf, &neigh2->neighbor_2_addr));
+          OLSR_PRINTF(1, "%-*s  ", ipwidth, olsr_ip_to_string(&buf, &neigh2->neighbor_2_addr));
           first = false;
         } else {
           OLSR_PRINTF(1, "                 ");
         }
-        OLSR_PRINTF(1, "%-15s  %s\n", olsr_ip_to_string(&buf, &entry->neighbor->neighbor_main_addr),
+        OLSR_PRINTF(1, "%-*s  %s\n", ipwidth, olsr_ip_to_string(&buf, &entry->neighbor->neighbor_main_addr),
                     get_linkcost_text(entry->path_linkcost, false, &lqbuffer));
       }
     }
   }
-#endif
 }
+#endif /* NODEBUG */
 
 /*
  * Local Variables:

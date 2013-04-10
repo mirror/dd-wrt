@@ -246,7 +246,7 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
  *
  *@param neighbor the 1-hop neighbor
  *@param two_hop_neighbor the 2-hop neighbor
- *@return nada
+ *@param vtime the validity time
  */
 static void
 linking_this_2_entries(struct neighbor_entry *neighbor, struct neighbor_2_entry *two_hop_neighbor, olsr_reltime vtime)
@@ -285,7 +285,7 @@ linking_this_2_entries(struct neighbor_entry *neighbor, struct neighbor_2_entry 
  * Check if a hello message states this node as a MPR.
  *
  * @param message the message to check
- * @param n_link the buffer to put the link status in
+ * @param in_if the incoming interface
  *
  *@return 1 if we are selected as MPR 0 if not
  */
@@ -427,7 +427,7 @@ olsr_hello_tap(struct hello_message *message, struct interface *in_if, const uni
       else
       {
         struct ipaddr_str srcbuf, origbuf;
-        olsr_syslog(OLSR_LOG_INFO, "got hello with invalid from and originator adress pair (%s, %s) Duplicate Ips?\n",
+        olsr_syslog(OLSR_LOG_INFO, "got hello with invalid from and originator address pair (%s, %s) Duplicate Ips?\n",
                     olsr_ip_to_string(&origbuf,&message->source_addr),
                     olsr_ip_to_string(&srcbuf,from_addr));
       }

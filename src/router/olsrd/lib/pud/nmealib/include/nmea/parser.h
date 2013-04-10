@@ -25,7 +25,7 @@
 
 #ifdef  __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 /**
  * Description of a parser node / packet
@@ -61,6 +61,6 @@ void nmea_parser_queue_clear(nmeaPARSER *parser);
 
 #ifdef  __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __NMEA_PARSER_H__ */

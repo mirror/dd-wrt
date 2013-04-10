@@ -36,8 +36,10 @@ all: default_target
 default_target: $(PLUGIN_FULLNAME)
 
 $(PLUGIN_FULLNAME): $(OBJS) version-script.txt
+ifeq ($(VERBOSE),0)
 	@echo "[LD] $@"
-	@$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
+endif
+	$(MAKECMDPREFIX)$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
 
 install: all
 	$(INSTALL_LIB)
@@ -51,14 +53,16 @@ uninstall:
 	rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)" "$(DOCDIR_OLSRD)"
 
 clean:
+ifeq ($(VERBOSE),0)
 	@echo "[$@]"
-	@rm -f $(OBJS) $(SRCS:%.c=%.d) "$(PLUGIN_FULLNAME)"
-	@$(MAKE) -C doc clean
+endif
+	$(MAKECMDPREFIX)rm -f $(OBJS) $(SRCS:%.c=%.d) "$(PLUGIN_FULLNAME)"
+	$(MAKECMDPREFIX)$(MAKE) -C doc clean
 
 doc:
-	@$(MAKE) -C doc all
+	$(MAKECMDPREFIX)$(MAKE) -C doc all
 
 doc-clean:
-	@$(MAKE) -C doc clean
+	$(MAKECMDPREFIX)$(MAKE) -C doc clean
 
 endif
