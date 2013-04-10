@@ -2,13 +2,13 @@
    Editor low level data handling and cursor fundamentals.
 
    Copyright (C) 1996, 1997, 1998, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007, 2008, 2009, 2010, 2011, 2012
+   2007, 2008, 2009, 2010, 2011, 2012, 2013
    The Free Software Foundation, Inc.
 
    Written by:
    Paul Sheer 1996, 1997
    Ilia Maslakov <il.smind@gmail.com> 2009, 2010, 2011
-   Andrew Borodin <aborodin@vmail.ru> 2012.
+   Andrew Borodin <aborodin@vmail.ru> 2012, 2013
 
    This file is part of the Midnight Commander.
 
@@ -652,7 +652,6 @@ edit_modification (WEdit * edit)
 
 /* --------------------------------------------------------------------------------------------- */
 
-#ifdef HAVE_CHARSET
 static char *
 edit_get_byte_ptr (const WEdit * edit, off_t byte_index)
 {
@@ -671,7 +670,6 @@ edit_get_byte_ptr (const WEdit * edit, off_t byte_index)
     return (char *) (edit->buffers1[byte_index >> S_EDIT_BUF_SIZE] +
                      (byte_index & M_EDIT_BUF_SIZE));
 }
-#endif
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -1509,11 +1507,14 @@ insert_spaces_tab (WEdit * edit, gboolean half)
     i = option_tab_spacing * space_width;
     if (half)
         i /= 2;
-    i = ((edit->curs_col / i) + 1) * i - edit->curs_col;
-    while (i > 0)
+    if (i != 0)
     {
-        edit_insert (edit, ' ');
-        i -= space_width;
+        i = ((edit->curs_col / i) + 1) * i - edit->curs_col;
+        while (i > 0)
+        {
+            edit_insert (edit, ' ');
+            i -= space_width;
+        }
     }
 }
 
@@ -1757,6 +1758,75 @@ edit_print_string (WEdit * e, const char *s)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+static off_t
+edit_insert_column_from_file (WEdit * edit, int file, off_t * start_pos, off_t * end_pos,
+                              long *col1, long *col2)
+{
+    off_t cursor;
+    int col;
+    off_t blocklen = -1, width = 0;
+    unsigned char *data;
+
+    cursor = edit->curs1;
+    col = edit_get_col (edit);
+    data = g_malloc0 (TEMP_BUF_LEN);
+
+    while ((blocklen = mc_read (file, (char *) data, TEMP_BUF_LEN)) > 0)
+    {
+        off_t i;
+        char *pn;
+
+        pn = strchr ((char *) data, '\n');
+        width = pn == NULL ? blocklen : pn - (char *) data;
+
+        for (i = 0; i < blocklen; i++)
+        {
+            if (data[i] != '\n')
+                edit_insert (edit, data[i]);
+            else
+            {                   /* fill in and move to next line */
+                long l;
+                off_t p;
+
+                if (edit_get_byte (edit, edit->curs1) != '\n')
+                    for (l = width - (edit_get_col (edit) - col); l > 0; l -= space_width)
+                        edit_insert (edit, ' ');
+
+                for (p = edit->curs1;; p++)
+                {
+                    if (p == edit->last_byte)
+                    {
+                        edit_cursor_move (edit, edit->last_byte - edit->curs1);
+                        edit_insert_ahead (edit, '\n');
+                        p++;
+                        break;
+                    }
+                    if (edit_get_byte (edit, p) == '\n')
+                    {
+                        p++;
+                        break;
+                    }
+                }
+
+                edit_cursor_move (edit, edit_move_forward3 (edit, p, col, 0) - edit->curs1);
+
+                for (l = col - edit_get_col (edit); l >= space_width; l -= space_width)
+                    edit_insert (edit, ' ');
+            }
+        }
+    }
+    *col1 = col;
+    *col2 = col + width;
+    *start_pos = cursor;
+    *end_pos = edit->curs1;
+    edit_cursor_move (edit, cursor - edit->curs1);
+    g_free (data);
+
+    return blocklen;
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -1808,7 +1878,7 @@ user_menu (WEdit * edit, const char *menu_file, int selected_entry)
 
     edit_cursor_move (edit, curs - edit->curs1);
     edit->force |= REDRAW_PAGE;
-    send_message (edit, NULL, MSG_DRAW, 0, NULL);
+    widget_redraw (WIDGET (edit));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1816,18 +1886,11 @@ user_menu (WEdit * edit, const char *menu_file, int selected_entry)
 int
 edit_get_byte (const WEdit * edit, off_t byte_index)
 {
-    off_t p;
+    char *p;
 
-    if (byte_index >= (edit->curs1 + edit->curs2) || byte_index < 0)
-        return '\n';
+    p = edit_get_byte_ptr (edit, byte_index);
 
-    if (byte_index >= edit->curs1)
-    {
-        p = edit->curs1 + edit->curs2 - byte_index - 1;
-        return edit->buffers2[p >> S_EDIT_BUF_SIZE][EDIT_BUF_SIZE - (p & M_EDIT_BUF_SIZE) - 1];
-    }
-
-    return edit->buffers1[byte_index >> S_EDIT_BUF_SIZE][byte_index & M_EDIT_BUF_SIZE];
+    return (p != NULL) ? *(unsigned char *) p : '\n';
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2033,7 +2096,6 @@ edit_get_word_from_pos (const WEdit * edit, off_t start_pos, off_t * start, gsiz
     off_t word_start;
     long cut_len = 0;
     GString *match_expr;
-    unsigned char *bufpos;
     int c1, c2;
 
     for (word_start = start_pos; word_start != 0; word_start--, cut_len++)
@@ -2045,7 +2107,6 @@ edit_get_word_from_pos (const WEdit * edit, off_t start_pos, off_t * start, gsiz
             break;
     }
 
-    bufpos = &edit->buffers1[word_start >> S_EDIT_BUF_SIZE][word_start & M_EDIT_BUF_SIZE];
     match_expr = g_string_sized_new (16);
 
     do
@@ -2139,7 +2200,7 @@ edit_insert_file (WEdit * edit, const vfs_path_t * filename_vpath)
             off_t mark1, mark2;
             long c1, c2;
 
-            blocklen = edit_insert_column_of_text_from_file (edit, file, &mark1, &mark2, &c1, &c2);
+            blocklen = edit_insert_column_from_file (edit, file, &mark1, &mark2, &c1, &c2);
             edit_set_markers (edit, edit->curs1, mark2, c1, c2);
 
             /* highlight inserted text then not persistent blocks */
@@ -2748,6 +2809,18 @@ edit_insert_ahead (WEdit * edit, int c)
     edit->curs2++;
 }
 
+/* --------------------------------------------------------------------------------------------- */
+
+void
+edit_insert_over (WEdit * edit)
+{
+    long i;
+
+    for (i = 0; i < edit->over_col; i++)
+        edit_insert (edit, ' ');
+
+    edit->over_col = 0;
+}
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -3258,13 +3331,17 @@ edit_move_to_prev_col (WEdit * edit, off_t p)
         edit->over_col = 0;
         if (option_fake_half_tabs && is_in_indent (edit))
         {
+            long fake_half_tabs;
+
             edit_update_curs_col (edit);
-            if (space_width != 0 && edit->curs_col % (HALF_TAB_SIZE * space_width) != 0)
+
+            fake_half_tabs = HALF_TAB_SIZE * space_width;
+            if (fake_half_tabs != 0 && edit->curs_col % fake_half_tabs != 0)
             {
                 int q;
 
                 q = edit->curs_col;
-                edit->curs_col -= (edit->curs_col % (HALF_TAB_SIZE * space_width));
+                edit->curs_col -= (edit->curs_col % fake_half_tabs);
                 p = edit_bol (edit, edit->curs1);
                 edit_cursor_move (edit,
                                   edit_move_forward3 (edit, p, edit->curs_col, 0) - edit->curs1);

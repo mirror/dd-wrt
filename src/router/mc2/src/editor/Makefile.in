@@ -109,7 +109,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4.include/mc-i18n.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -118,17 +118,16 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libedit_la_LIBADD =
-am__libedit_la_SOURCES_DIST = bookmark.c edit.c editcmd.c editwidget.c \
-	editwidget.h editdraw.c editkeys.c editmenu.c editoptions.c \
-	edit-impl.h edit.h syntax.c wordproc.c choosesyntax.c etags.c \
-	etags.h editcmd_dialogs.c editcmd_dialogs.h spell.c spell.h \
+am__libedit_la_SOURCES_DIST = bookmark.c choosesyntax.c edit.c edit.h \
+	edit-impl.h editcmd.c editcmd_dialogs.c editcmd_dialogs.h \
+	editdraw.c editmenu.c editoptions.c editwidget.c editwidget.h \
+	etags.c etags.h syntax.c wordproc.c spell.c spell.h \
 	spell_dialogs.c spell_dialogs.h
 @HAVE_GMODULE_TRUE@@USE_ASPELL_TRUE@am__objects_1 = spell.lo \
 @HAVE_GMODULE_TRUE@@USE_ASPELL_TRUE@	spell_dialogs.lo
-am_libedit_la_OBJECTS = bookmark.lo edit.lo editcmd.lo editwidget.lo \
-	editdraw.lo editkeys.lo editmenu.lo editoptions.lo syntax.lo \
-	wordproc.lo choosesyntax.lo etags.lo editcmd_dialogs.lo \
-	$(am__objects_1)
+am_libedit_la_OBJECTS = bookmark.lo choosesyntax.lo edit.lo editcmd.lo \
+	editcmd_dialogs.lo editdraw.lo editmenu.lo editoptions.lo \
+	editwidget.lo etags.lo syntax.lo wordproc.lo $(am__objects_1)
 libedit_la_OBJECTS = $(am_libedit_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -383,10 +382,10 @@ top_srcdir = @top_srcdir@
 EXTRA_DIST = 
 @USE_EDIT_FALSE@noinst_LTLIBRARIES = 
 @USE_EDIT_TRUE@noinst_LTLIBRARIES = libedit.la
-libedit_la_SOURCES = bookmark.c edit.c editcmd.c editwidget.c \
-	editwidget.h editdraw.c editkeys.c editmenu.c editoptions.c \
-	edit-impl.h edit.h syntax.c wordproc.c choosesyntax.c etags.c \
-	etags.h editcmd_dialogs.c editcmd_dialogs.h $(am__append_1)
+libedit_la_SOURCES = bookmark.c choosesyntax.c edit.c edit.h \
+	edit-impl.h editcmd.c editcmd_dialogs.c editcmd_dialogs.h \
+	editdraw.c editmenu.c editoptions.c editwidget.c editwidget.h \
+	etags.c etags.h syntax.c wordproc.c $(am__append_1)
 AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir) $(PCRE_CPPFLAGS)
 all: all-am
 
@@ -446,7 +445,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editcmd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editcmd_dialogs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editdraw.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editkeys.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editmenu.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editoptions.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editwidget.Plo@am__quote@

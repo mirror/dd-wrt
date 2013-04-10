@@ -478,6 +478,7 @@ ftpfs_command (struct vfs_class *me, struct vfs_s_super *super, int wait_reply, 
         {
             size_t ret;
             ret = fwrite (cmdstr, cmdlen, 1, MEDATA->logfile);
+            (void) ret;
         }
 
         fflush (MEDATA->logfile);
@@ -653,7 +654,8 @@ ftpfs_login_server (struct vfs_class *me, struct vfs_s_super *super, const char 
 
                 p = g_strdup_printf (_("FTP: Account required for user %s"),
                                      super->path_element->user);
-                op = input_dialog (p, _("Account:"), MC_HISTORY_FTPFS_ACCOUNT, "");
+                op = input_dialog (p, _("Account:"), MC_HISTORY_FTPFS_ACCOUNT, "",
+                                   INPUT_COMPLETE_USERNAMES);
                 g_free (p);
                 if (op == NULL)
                     ERRNOR (EPERM, 0);

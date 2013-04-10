@@ -101,8 +101,9 @@ editcmd_dialog_search_show (WEdit * edit)
     {
         quick_widget_t quick_widgets[] = {
             /* *INDENT-OFF* */
-            QUICK_LABELED_INPUT (N_("Enter search string:"), input_label_above,
-                                 INPUT_LAST_TEXT, 0, MC_HISTORY_SHARED_SEARCH, &search_text, NULL),
+            QUICK_LABELED_INPUT (N_("Enter search string:"), input_label_above, INPUT_LAST_TEXT, 
+                                 MC_HISTORY_SHARED_SEARCH, &search_text, NULL, FALSE, FALSE,
+                                 INPUT_COMPLETE_NONE),
             QUICK_SEPARATOR (TRUE),
             QUICK_START_COLUMNS,
                 QUICK_RADIO (num_of_types, (const char **) list_of_types,
@@ -191,10 +192,11 @@ editcmd_dialog_replace_show (WEdit * edit, const char *search_default, const cha
     {
         quick_widget_t quick_widgets[] = {
             /* *INDENT-OFF* */
-            QUICK_LABELED_INPUT (N_("Enter search string:"), input_label_above,
-                                 search_default, 0, MC_HISTORY_SHARED_SEARCH, search_text, NULL),
-            QUICK_LABELED_INPUT (N_("Enter replacement string:"), input_label_above,
-                                 replace_default, 0, "replace", replace_text, NULL),
+            QUICK_LABELED_INPUT (N_("Enter search string:"), input_label_above, search_default,
+                                 MC_HISTORY_SHARED_SEARCH, search_text, NULL, FALSE, FALSE,
+                                 INPUT_COMPLETE_NONE),
+            QUICK_LABELED_INPUT (N_("Enter replacement string:"), input_label_above, replace_default,
+                                 "replace", replace_text, NULL, FALSE, FALSE, INPUT_COMPLETE_NONE),
             QUICK_SEPARATOR (TRUE),
             QUICK_START_COLUMNS,
                 QUICK_RADIO (num_of_types, (const char **) list_of_types,
@@ -316,7 +318,7 @@ editcmd_dialog_raw_key_query (const char *heading, const char *query, gboolean c
 
     add_widget (raw_dlg, label_new (y, 3, query));
     add_widget (raw_dlg, input_new (y++, 3 + wq + 1, input_get_default_colors (),
-                                    w - (6 + wq + 1), "", 0, INPUT_COMPLETE_DEFAULT));
+                                    w - (6 + wq + 1), "", 0, INPUT_COMPLETE_NONE));
     if (cancel)
     {
         add_widget (raw_dlg, hline_new (y++, -1, -1));
@@ -334,11 +336,10 @@ editcmd_dialog_raw_key_query (const char *heading, const char *query, gboolean c
 /* --------------------------------------------------------------------------------------------- */
 /* let the user select its preferred completion */
 
-void
-editcmd_dialog_completion_show (WEdit * edit, int max_len, int word_len,
-                                struct selection *compl, int num_compl)
+char *
+editcmd_dialog_completion_show (const WEdit * edit, int max_len, GString ** compl, int num_compl)
 {
-
+    const Widget *we = WIDGET (edit);
     int start_x, start_y, offset, i;
     char *curr = NULL;
     WDialog *compl_dlg;
@@ -349,12 +350,14 @@ editcmd_dialog_completion_show (WEdit * edit, int max_len, int word_len,
     /* calculate the dialog metrics */
     compl_dlg_h = num_compl + 2;
     compl_dlg_w = max_len + 4;
-    start_x = edit->curs_col + edit->start_col - (compl_dlg_w / 2) +
-        EDIT_TEXT_HORIZONTAL_OFFSET + (edit->fullscreen ? 0 : 1) + option_line_state_width;
-    start_y = edit->curs_row + EDIT_TEXT_VERTICAL_OFFSET + (edit->fullscreen ? 0 : 1) + 1;
+    start_x = we->x + edit->curs_col + edit->start_col + EDIT_TEXT_HORIZONTAL_OFFSET +
+        (edit->fullscreen ? 0 : 1) + option_line_state_width;
+    start_y = we->y + edit->curs_row + EDIT_TEXT_VERTICAL_OFFSET + (edit->fullscreen ? 0 : 1) + 1;
 
     if (start_x < 0)
         start_x = 0;
+    if (start_x < we->x + 1)
+        start_x = we->x + 1 + option_line_state_width;
     if (compl_dlg_w > COLS)
         compl_dlg_w = COLS;
     if (compl_dlg_h > LINES - 2)
@@ -365,7 +368,7 @@ editcmd_dialog_completion_show (WEdit * edit, int max_len, int word_len,
         start_x -= offset;
     offset = start_y + compl_dlg_h - LINES;
     if (offset > 0)
-        start_y -= (offset + 1);
+        start_y -= offset;
 
     /* create the dialog */
     compl_dlg =
@@ -380,41 +383,19 @@ editcmd_dialog_completion_show (WEdit * edit, int max_len, int word_len,
 
     /* fill the listbox with the completions */
     for (i = num_compl - 1; i >= 0; i--)        /* reverse order */
-        listbox_add_item (compl_list, LISTBOX_APPEND_AT_END, 0, (char *) compl[i].text, NULL);
+        listbox_add_item (compl_list, LISTBOX_APPEND_AT_END, 0, (char *) compl[i]->str, NULL);
 
     /* pop up the dialog and apply the choosen completion */
     if (run_dlg (compl_dlg) == B_ENTER)
     {
         listbox_get_current (compl_list, &curr, NULL);
-        if (curr)
-        {
-#ifdef HAVE_CHARSET
-            GString *temp, *temp2;
-            temp = g_string_new ("");
-            for (curr += word_len; *curr; curr++)
-                g_string_append_c (temp, *curr);
-
-            temp2 = str_convert_to_input (temp->str);
-
-            if (temp2 && temp2->len)
-            {
-                g_string_free (temp, TRUE);
-                temp = temp2;
-            }
-            else
-                g_string_free (temp2, TRUE);
-            for (curr = temp->str; *curr; curr++)
-                edit_insert (edit, *curr);
-            g_string_free (temp, TRUE);
-#else
-            for (curr += word_len; *curr; curr++)
-                edit_insert (edit, *curr);
-#endif
-        }
+        curr = g_strdup (curr);
     }
 
     /* destroy dialog before return */
     destroy_dlg (compl_dlg);
+
+    return curr;
 }
 
 /* --------------------------------------------------------------------------------------------- */

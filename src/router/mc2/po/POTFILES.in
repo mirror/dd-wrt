@@ -54,7 +54,6 @@ src/filemanager/info.c
 src/filemanager/layout.c
 src/filemanager/midnight.c
 src/filemanager/mountlist.c
-src/filemanager/option.c
 src/filemanager/panel.c
 src/filemanager/panelize.c
 src/filemanager/tree.c
@@ -88,3 +87,5 @@ src/viewer/hex.c
 src/viewer/lib.c
 src/viewer/mcviewer.c
 src/viewer/search.c
+tests/src/execute__common.c
+tests/src/execute__execute_with_vfs_arg.c

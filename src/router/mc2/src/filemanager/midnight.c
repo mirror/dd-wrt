@@ -64,7 +64,6 @@
 #include "lib/keybind.h"
 #include "lib/event.h"
 
-#include "option.h"             /* configure_box() */
 #include "tree.h"
 #include "boxes.h"              /* sort_box(), tree_box() */
 #include "layout.h"
@@ -114,6 +113,9 @@ WLabel *the_prompt;
 WLabel *the_hint;
 /* The button bar */
 WButtonBar *the_bar;
+
+/* The prompt */
+const char *mc_prompt = NULL;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -896,6 +898,7 @@ setup_dummy_mc (void)
     setup_mc ();
     vpath = vfs_path_from_str (d);
     ret = mc_chdir (vpath);
+    (void) ret;
     vfs_path_free (vpath);
     g_free (d);
 }
@@ -1094,10 +1097,10 @@ static void
 update_dirty_panels (void)
 {
     if (get_current_type () == view_listing && current_panel->dirty)
-        send_message (current_panel, NULL, MSG_DRAW, 0, NULL);
+        widget_redraw (WIDGET (current_panel));
 
     if (get_other_type () == view_listing && other_panel->dirty)
-        send_message (other_panel, NULL, MSG_DRAW, 0, NULL);
+        widget_redraw (WIDGET (other_panel));
 }
 
 /* --------------------------------------------------------------------------------------------- */
