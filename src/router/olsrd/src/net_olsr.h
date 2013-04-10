@@ -51,8 +51,6 @@
 
 typedef int (*packet_transform_function) (uint8_t *, int *);
 
-void net_set_disp_pack_out(bool);
-
 void init_net(void);
 
 int net_add_buffer(struct interface *);
@@ -81,7 +79,7 @@ bool olsr_validate_address(const union olsr_ip_addr *);
 
 void olsr_add_invalid_address(const union olsr_ip_addr *);
 
-#endif
+#endif /* _NET_OLSR */
 
 /*
  * Local Variables:

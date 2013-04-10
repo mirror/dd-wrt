@@ -89,8 +89,10 @@ endif
 default_target: $(NAME)
 
 $(NAME):	$(OBJS)
+ifeq ($(VERBOSE),0)
 		@echo "[LD] $@"
-		@$(CC) $(LDFLAGS) -o "$@" $^ $(LIBS)
+endif
+		$(MAKECMDPREFIX)$(CC) $(LDFLAGS) -o "$@" $^ $(LIBS)
 
 install:
 		install -D -m 755 $(NAME) $(LIBDIR)/$(NAME)

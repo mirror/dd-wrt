@@ -1,4 +1,3 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
@@ -39,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #if !defined TL_MPRENTRY_H
 #define TL_MPRENTRY_H
 
@@ -51,7 +52,9 @@ public:
   BOOL MprEntry::operator==(const class MprEntry &) const;
 };
 
-#endif
+#endif /* !defined TL_MPRENTRY_H */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

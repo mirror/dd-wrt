@@ -46,9 +46,11 @@ OBJS += $(foreach file,olsrd_conf oparse oscan cfgfile_gen,$(C)$(file).o)
 HDRS += $(foreach file,olsrd_conf oparse,$(C)$(file).h)
 
 $(C)oscan.c: $(C)oscan.lex $(C)Makefile
+ifeq ($(VERBOSE),0)
 	@echo "[FLEX] $@"
-	@$(FLEX) -Cem -o"$@-tmp" "$<"
-	@sed	-e '/^static/s/yy_get_next_buffer[\(][\)]/yy_get_next_buffer(void)/' \
+endif
+	$(MAKECMDPREFIX)$(FLEX) -Cem -o"$@-tmp" "$<"
+	$(MAKECMDPREFIX)sed	-e '/^static/s/yy_get_next_buffer[\(][\)]/yy_get_next_buffer(void)/' \
 		-e '/^static/s/yy_get_previous_state[\(][\)]/yy_get_previous_state(void)/' \
 		-e '/^static/s/yygrowstack[\(][\)]/yygrowstack(void)/' \
 		-e '/^static/s/input[\(][\)]/input(void)/' \
@@ -56,7 +58,7 @@ $(C)oscan.c: $(C)oscan.lex $(C)Makefile
 		-e 's/register //' \
 		-e '/^#line/s/$(call quote,$@-tmp)/$(call quote,$@)/' \
 		< "$@-tmp" >"$@"
-	@$(RM) "$@-tmp"
+	$(MAKECMDPREFIX)$(RM) "$@-tmp"
 
 # we need a dependency to generate oparse before we compile oscan.c
 $(C)oscan.o: $(C)oparse.c
@@ -65,13 +67,15 @@ $(C)oscan.o: CFLAGS := $(filter-out -Wunreachable-code -Wsign-compare,$(CFLAGS))
 $(C)oscan.o: CPPFLAGS += $(if $(CFGDIR),-I$(CFGDIR)) -DYY_NO_INPUT
 
 $(C)oparse.c: $(C)oparse.y $(C)olsrd_conf.h $(C)Makefile
+ifeq ($(VERBOSE),0)
 	@echo "[BISON] $@"
-	@$(BISON) -d -o "$@-tmp" "$<"
-	@sed	-e 's/register //' \
+endif
+	$(MAKECMDPREFIX)$(BISON) -d -o "$@-tmp" "$<"
+	$(MAKECMDPREFIX)sed	-e 's/register //' \
 		-e '/^#line/s/$(call quote,$@-tmp)/$(call quote,$@)/' \
 		< "$@-tmp" >"$@"
-	@mv "$(subst .c,.h,$@-tmp)" "$(subst .c,.h,$@)"
-	@$(RM) "$@-tmp" "$(subst .c,.h,$@-tmp)"
+	$(MAKECMDPREFIX)mv "$(subst .c,.h,$@-tmp)" "$(subst .c,.h,$@)"
+	$(MAKECMDPREFIX)$(RM) "$@-tmp" "$(subst .c,.h,$@-tmp)"
 
 $(C)oparse.o: CFLAGS := $(filter-out -Wunreachable-code,$(CFLAGS))
 

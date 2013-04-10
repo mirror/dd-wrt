@@ -48,7 +48,7 @@
 #include <vxWorks.h>
 #include <sockLib.h>
 #include <wrn/coreip/netinet/in.h>
-#else
+#else /* _WRS_KERNEL */
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -62,7 +62,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdarg.h>
-#endif
+#endif /* _WRS_KERNEL */
 
 #include "olsr.h"
 #include "ipcalc.h"
@@ -80,15 +80,15 @@
 #include "olsrd_dot_draw.h"
 #include "olsrd_plugin.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #define close(x) closesocket(x)
-#endif
+#endif /* _WIN32 */
 
 #ifdef _WRS_KERNEL
 static int ipc_open;
 static int ipc_socket_up;
 #define DOT_DRAW_PORT 2004
-#endif
+#endif /* _WRS_KERNEL */
 
 static int ipc_socket = -1;
 
@@ -120,10 +120,10 @@ static void ipc_print_net(struct autobuf *abuf, const union olsr_ip_addr *, cons
 #ifdef _WRS_KERNEL
 int
 olsrd_dotdraw_init(void)
-#else
+#else /* _WRS_KERNEL */
 int
 olsrd_plugin_init(void)
-#endif
+#endif /* _WRS_KERNEL */
 {
   /* Initial IPC */
   plugin_ipc_init();
@@ -140,10 +140,10 @@ olsrd_plugin_init(void)
 #ifdef _WRS_KERNEL
 void
 olsrd_dotdraw_exit(void)
-#else
+#else /* _WRS_KERNEL */
 void
 olsr_plugin_exit(void)
-#endif
+#endif /* _WRS_KERNEL */
 {
   if (writetimer_entry) {
     close(outbuffer_socket);
@@ -214,7 +214,7 @@ plugin_ipc_init(void)
     CLOSE(ipc_socket);
     return 0;
   }
-#endif
+#endif /* (defined __FreeBSD__ || defined __FreeBSD_kernel__) && defined SO_NOSIGPIPE */
 
   /* Bind the socket */
 
@@ -239,9 +239,6 @@ plugin_ipc_init(void)
   }
 
   /* Register with olsrd */
-#if 0
-  printf("Adding socket with olsrd\n");
-#endif
   add_olsr_socket(ipc_socket, &ipc_action, NULL, NULL, SP_PR_READ);
 
   return 1;
@@ -271,7 +268,7 @@ ipc_action(int fd __attribute__ ((unused)), void *data __attribute__ ((unused)),
     CLOSE(ipc_connection);
     return;
   }
-#endif
+#endif /* _WRS_KERNEL */
   olsr_printf(1, "(DOT DRAW)IPC: Connection from %s\n", inet_ntoa(pin.sin_addr));
 
   abuf_init(&outbuffer, 4096);

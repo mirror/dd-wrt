@@ -55,7 +55,7 @@ struct mpr_selector {
 
 #if 0
 bool olsr_is_mpr(void);
-#endif
+#endif /* 0 */
 
 uint16_t get_local_ansn(void);
 
@@ -73,9 +73,9 @@ void olsr_time_out_mprs_set(void);
 
 #if 0
 void olsr_print_mprs_set(void);
-#endif
+#endif /* 0 */
 
-#endif
+#endif /* _OLSR_MPRS_SET */
 
 /*
  * Local Variables:

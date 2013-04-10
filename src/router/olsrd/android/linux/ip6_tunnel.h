@@ -29,4 +29,4 @@ struct ip6_tnl_parm {
 	struct in6_addr raddr;	/* remote tunnel end-point address */
 };
 
-#endif
+#endif /* _IP6_TUNNEL_H */

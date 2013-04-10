@@ -75,18 +75,18 @@ extern const char build_host[];
     OLSR_PRINTF(lvl, "%s (%s:%d): ", __func__, __FILE__, __LINE__);     \
     OLSR_PRINTF(lvl, (format), ##args);                                 \
   } while (0)
-#endif
+#endif /* DEBUG */
 
 extern FILE *debug_handle;
 
 #ifdef NODEBUG
 #define OLSR_PRINTF(lvl, format, args...) do { } while(0)
-#else
+#else /* NODEBUG */
 #define OLSR_PRINTF(lvl, format, args...) do {                    \
     if((olsr_cnf->debug_level >= (lvl)) && debug_handle)          \
       fprintf(debug_handle, (format), ##args);                    \
   } while (0)
-#endif
+#endif /* NODEBUG */
 
 /*
  * Provides a timestamp s1 milliseconds in the future according
@@ -102,13 +102,13 @@ extern FILE *debug_handle;
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(x)	(sizeof(x)/sizeof(*(x)))
-#endif
+#endif /* ARRAYSIZE */
 #ifndef MAX
 #define MAX(x,y)	((x) > (y) ? (x) : (y))
-#endif
+#endif /* MAX */
 #ifndef MIN
 #define MIN(x,y)	((x) < (y) ? (x) : (y))
-#endif
+#endif /* MIN */
 
 #define INLINE inline __attribute__((always_inline))
 
@@ -137,14 +137,17 @@ strscpy(char *dest, const char *src, size_t size)
     fprintf(stderr, "Warning: dest is NULL in strscpy!\n");
   if (NULL == src)
     fprintf(stderr, "Warning: src is NULL in strscpy!\n");
-#endif
-  if (NULL != dest && NULL != src) {
-    /* src does not need to be null terminated */
-    if (0 < size--)
-      while (l < size && 0 != src[l])
-        l++;
-    dest[l] = 0;
+#endif /* !defined(NODEBUG) && defined(DEBUG) */
+  if (!dest || !src) {
+    return NULL;
   }
+
+  /* src does not need to be null terminated */
+  if (0 < size--)
+    while (l < size && 0 != src[l])
+      l++;
+  dest[l] = 0;
+
   return strncpy(dest, src, l);
 }
 
@@ -184,10 +187,10 @@ extern struct olsrd_config *olsr_cnf;
 extern uint32_t now_times;              /* current idea of times(2) reported uptime */
 extern struct olsr_cookie_info *def_timer_ci;
 
-#if defined WIN32
+#if defined _WIN32
 extern bool olsr_win32_end_request;
 extern bool olsr_win32_end_flag;
-#endif
+#endif /* defined _WIN32 */
 
 /*
  *IPC functions
@@ -197,15 +200,11 @@ extern bool olsr_win32_end_flag;
 
 int ipc_init(void);
 
-#if 0
-int ipc_input(int);
-#endif
-
 int shutdown_ipc(void);
 
 int ipc_output(struct olsr *);
 
-#endif
+#endif /* _OLSR_DEFS */
 
 /*
  * Local Variables:

@@ -68,7 +68,11 @@ void olsr_cleanup_duplicates(union olsr_ip_addr *orig);
 struct dup_entry *olsr_create_duplicate_entry(void *ip, uint16_t seqnr);
 int olsr_seqno_diff(uint16_t seqno1, uint16_t seqno2);
 int olsr_message_is_duplicate(union olsr_message *m);
+#ifndef NODEBUG
 void olsr_print_duplicate_table(void);
+#else
+#define olsr_print_duplicate_table() do { } while(0)
+#endif
 
 #define OLSR_FOR_ALL_DUP_ENTRIES(dup) \
 { \
@@ -79,7 +83,7 @@ void olsr_print_duplicate_table(void);
     dup = duptree2dupentry(dup_tree_node);
 #define OLSR_FOR_ALL_DUP_ENTRIES_END(dup) }}
 
-#endif /*DUPLICATE_SET_2_H_ */
+#endif /* DUPLICATE_SET_2_H_ */
 
 /*
  * Local Variables:

@@ -412,7 +412,7 @@ static unsigned char grayline_gif[] = {
   0x00, 0x02, 0x02, 0x44, 0x01, 0x00, 0x3b
 };
 
-#endif
+#endif /* _GFX_H */
 
 /*
  * Local Variables:

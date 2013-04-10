@@ -24,6 +24,7 @@
 #include "common.h"
 #include "interface.h"
 #include "pixmaps.h"
+#include <stdio.h>
 
 /* Global widgets */
 
@@ -845,7 +846,7 @@ route_list_add(char *dest, char *gw, char *metric, char *dev)
  *Update the entyr with IP 'addr'
  */
 void
-route_list_update(char *addr)
+route_list_update(char *addr __attribute__((unused)))
 {
 
 }
@@ -910,13 +911,13 @@ update_nodes_list(struct node *node)
   char *ip;
   int found = 0;
   char *dest;
-  char *tmp[9] = { "", "", "", "", "", "", "", "", "" };
+  char *tmp[9] = { (char *)"", (char *)"", (char *)"", (char *)"", (char *)"", (char *)"", (char *)"", (char *)"", (char *)"" };
   char timer[20];
   struct tm *time_st;
   char itoa_buf[10];
 
   if (memcmp(&node->addr, &main_addr, ipsize) == 0)
-    dest = "local";
+    dest = (char *)"local";
   else
     dest = ip_to_string(&node->addr);
 
@@ -1030,13 +1031,11 @@ set_net_info(gchar * info, int disp_button)
 {
   gchar title[255];
 
-  memset(&title[0], 0, 255);
+  memset(&title[0], 0, sizeof(title));
   gtk_label_set_text((GtkLabel *) info_label, info);
   gtk_label_set_text((GtkLabel *) net_label, "Connected");
 
-  strcat(title, olsrd_version);
-  strcat(title, " - ");
-  strcat(title, ip_to_string(&main_addr));
+  snprintf(&title[0], sizeof(title), "%s - %s", olsrd_version, ip_to_string(&main_addr));
 
   gtk_window_set_title(GTK_WINDOW(main_window), title);
 
@@ -1047,14 +1046,14 @@ set_net_info(gchar * info, int disp_button)
 }
 
 void
-set_net_info_offline()
+set_net_info_offline(void)
 {
   gtk_label_set_text((GtkLabel *) net_label, "Connection refused...");
   gtk_widget_show(connect_button);
 }
 
 void
-set_net_info_connecting()
+set_net_info_connecting(void)
 {
   gtk_label_set_text((GtkLabel *) net_label, "Connecting...");
 }

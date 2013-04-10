@@ -60,7 +60,7 @@ uint8_t olsr_rt_flags(const struct rt_entry *, int add);
 void olsr_delete_interface_routes(int if_index);
 void olsr_force_kernelroutes_refresh(void);
 
-#endif
+#endif /* _OLSR_PROCESS_RT */
 
 /*
  * Local Variables:

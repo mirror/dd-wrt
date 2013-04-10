@@ -125,7 +125,7 @@ int olsr_build_tc_packet(struct tc_message *);
 
 void olsr_free_mid_packet(struct mid_message *);
 
-#endif
+#endif /* _OLSR_PACKET */
 
 /*
  * Local Variables:

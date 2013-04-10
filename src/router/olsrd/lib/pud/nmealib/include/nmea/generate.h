@@ -25,7 +25,7 @@
 
 #ifdef  __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 int nmea_gen_GPGGA(char *s, const int len, const nmeaGPGGA *pack);
 int nmea_gen_GPGSA(char *s, const int len, const nmeaGPGSA *pack);
@@ -37,6 +37,6 @@ int nmea_generate(char *s, const int len, const nmeaINFO *info, const int genera
 
 #ifdef  __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __NMEA_GENERATE_H__ */

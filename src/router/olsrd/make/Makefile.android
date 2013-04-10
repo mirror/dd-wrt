@@ -44,16 +44,6 @@ SHAREDIR = $(DESTDIR)$(datarootdir)
 SRCS += $(wildcard src/unix/*.c src/linux/*.c)
 HDRS += $(wildcard src/unix/*.h src/linux/*.h)
 
-# Android didn't add regex until android-8 so include this one
-REGEX_SRCS = \
-	android/regex/regcomp.c \
-	android/regex/regerror.c \
-	android/regex/regexec.c \
-	android/regex/regfree.c
-REGEX_OBJS = $(REGEX_SRCS:.c=.o)
-
-CPPFLAGS += 	-Dlinux
-
 CPPFLAGS +=	-DOLSRD_GLOBAL_CONF_FILE=\"$(CFGFILE)\"
 # bionic libc: missing declarations
 CPPFLAGS +=	-DINET_ADDRSTRLEN=16
@@ -102,14 +92,18 @@ INSTALL_LIB =	install -D -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME);
 UNINSTALL_LIB =	rm -f $(LIBDIR)/$(PLUGIN_FULLNAME); \
 		/sbin/ldconfig -n $(LIBDIR)
 
+# Android NDK setup
 HOST = arm-linux-androideabi
-NDK_BASE = /opt/android-ndk
-CURRENT_SYSTEM := $(shell uname -s | tr A-Z a-z)
-NDK_TOOLCHAIN_BASE = $(NDK_BASE)/toolchains/arm-linux-androideabi-4.4.3/prebuilt/$(CURRENT_SYSTEM)-x86
-
-NDK_PLATFORM_VERSION = 4
-NDK_SYSROOT = $(NDK_BASE)/platforms/android-$(NDK_PLATFORM_VERSION)/arch-arm
-CROSS_COMPILE = $(NDK_TOOLCHAIN_BASE)/bin/$(HOST)-
+NDK_BASE ?= /opt/android-ndk
+NDK_PLATFORM_LEVEL ?= 4
+NDK_ABI=arm
+NDK_SYSROOT=$(NDK_BASE)/platforms/android-$(NDK_PLATFORM_LEVEL)/arch-$(NDK_ABI)
+NDK_UNAME=$(shell uname -s | tr '[A-Z]' '[a-z]')
+# if you are using NDK older than r8, you must use 4.4.3:
+#NDK_COMPILER_VERSION=4.4.3
+NDK_COMPILER_VERSION=4.6
+NDK_TOOLCHAIN=$(NDK_BASE)/toolchains/$(NDK_ABI)-linux-androideabi-$(NDK_COMPILER_VERSION)/prebuilt/$(NDK_UNAME)-x86
+CROSS_COMPILE = $(NDK_TOOLCHAIN)/bin/$(HOST)-
 
 CC = $(CROSS_COMPILE)gcc --sysroot="$(NDK_SYSROOT)"
 LD = $(CROSS_COMPILE)ld
@@ -118,18 +112,20 @@ ifeq ($(DEBUG),0)
 STRIP = $(CROSS_COMPILE)strip
 endif
 
+# Android didn't add regex until android-8 so include this one
+REGEX_LIB = $(TOPDIR)/android/regex/libregex.a
+REGEX_CLEAN = regex_clean
+$(REGEX_LIB):
+	$(MAKECMDPREFIX)$(MAKE) MAKECMDPREFIX="$(MAKECMDPREFIX)" -C $(TOPDIR)/android/regex/ REGEX_LIB=$(REGEX_LIB) VERBOSE=$(VERBOSE) \
+		NDK_TOOLCHAIN_BASE="$(NDK_TOOLCHAIN_BASE)" \
+		NDK_PLATFORM_VERSION="$(NDK_PLATFORM_VERSION)" \
+		NDK_SYSROOT="$(NDK_SYSROOT)" \
+		CROSS_COMPILE="$(CROSS_COMPILE)" \
+		CC="$(CC)" LD="$(LD)" AR="$(AR)" STRIP="$(STRIP)" \
+		CPPFLAGS="$(CPPFLAGS)"
 
-# The Android NDK didn't add proper regex support until android-8
-# (2.2), so we include the Android files here, and build with
-# -DPOSIX_MISTAKE like Android does.
-$(REGEX_OBJS): $(REGEX_SRCS)
-	@echo "[CC] $<"
-	@$(CC) $(CFLAGS) $(CPPFLAGS) -DPOSIX_MISTAKE -c -o $@ $<
-
-regex: $(REGEX_OBJS)
-
-regex_clean:
-	rm -f $(REGEX_OBJS)
+$(REGEX_CLEAN):
+	$(MAKECMDPREFIX)$(MAKE) MAKECMDPREFIX="$(MAKECMDPREFIX)" -C $(TOPDIR)/android/regex/ clean REGEX_LIB=$(REGEX_LIB)
 
 # Local Variables:
 # mode: makefile

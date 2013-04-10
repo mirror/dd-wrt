@@ -52,12 +52,12 @@
 
 #define OHS_OUT_OF_MEMORY(s) do { printf("ohsd: out of memory \"%s\"!\n", s); ohs_close(0); } while (0)
 
-#ifdef WIN32
+#ifdef _WIN32
 #define close(x) closesocket(x)
 int __stdcall ohs_close(unsigned long signal) __attribute__ ((noreturn));
-#else
+#else /* _WIN32 */
 void ohs_close(int) __attribute__ ((noreturn));
-#endif
+#endif /* _WIN32 */
 
 struct ohs_ip_link {
   union olsr_ip_addr dst;
@@ -84,17 +84,17 @@ extern struct ohs_connection *ohs_conns;
 #define LOG_CONNECT 0x2
 #define LOG_LINK    0x4
 
-#ifdef WIN32
+#ifdef _WIN32
 int __stdcall SignalHandler(unsigned long);
-#else
+#else /* _WIN32 */
 void ohs_close(int);
-#endif
+#endif /* _WIN32 */
 
 struct ohs_connection *get_client_by_addr(const union olsr_ip_addr *);
 
 int ohs_delete_connection(struct ohs_connection *);
 
-#endif
+#endif /* _OLSR_HOST_SWITCH */
 
 /*
  * Local Variables:

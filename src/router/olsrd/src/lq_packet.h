@@ -285,7 +285,7 @@ void olsr_input_lq_hello(union olsr_message *ser, struct interface *inif, union 
 
 extern bool lq_tc_pending;
 
-#endif
+#endif /* _OLSR_LQ_PACKET_H */
 
 /*
  * Local Variables:

@@ -164,9 +164,8 @@ static int createRxSocket(TRxTxNetworkInterface * networkInterface,
 	errno = 0;
 	if (setsockopt(rxSocket, ipProtoSetting, ipMcLoopSetting, &mcLoopValue,
 			sizeof(mcLoopValue)) < 0) {
-		pudError(true, "Could not %s multicast loopback on the"
-			" receive socket for interface %s", mcLoopValue ? "enable"
-				: "disable", networkInterface->name);
+		pudError(true, "Could not enable multicast loopback on the"
+			" receive socket for interface %s", networkInterface->name);
 		goto bail;
 	}
 
@@ -390,9 +389,8 @@ static int createTxSocket(TRxTxNetworkInterface * networkInterface, union olsr_s
 	errno = 0;
 	if (setsockopt(txSocket, ipProtoSetting, ipMcLoopSetting, &mcLoopValue,
 			sizeof(mcLoopValue)) < 0) {
-		pudError(true, "Could not %s multicast loopback on the"
-			" transmit socket for interface %s", mcLoopValue ? "enable"
-				: "disable", networkInterface->name);
+		pudError(true, "Could not disable multicast loopback on the"
+			" transmit socket for interface %s", networkInterface->name);
 		goto bail;
 	}
 

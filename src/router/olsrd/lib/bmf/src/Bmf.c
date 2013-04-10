@@ -404,7 +404,7 @@ static void BmfPacketCaptured(
   struct TEncapHeader* encapHdr;
 #ifndef NODEBUG
   struct ipaddr_str srcBuf, dstBuf;
-#endif
+#endif /* NODEBUG */
   ipHeader = GetIpHeader(encapsulationUdpData);
 
   dst.v4 = ipHeader->ip_dst;
@@ -551,7 +551,7 @@ static void BmfPacketCaptured(
         {
 #ifndef NODEBUG
           struct ipaddr_str buf;
-#endif
+#endif /* NODEBUG */
           OLSR_PRINTF(
             8,
             "%s: --> not encap-forwarding on \"%s\": I am not selected as MPR by neighbor %s\n",
@@ -642,7 +642,7 @@ static void BmfEncapsulationPacketReceived(
   struct TBmfInterface* walker;
 #ifndef NODEBUG
   struct ipaddr_str mcSrcBuf, mcDstBuf, forwardedByBuf, forwardedToBuf;
-#endif
+#endif /* NODEBUG */
   /* Are we talking to ourselves? */
   if (if_ifwithaddr(forwardedBy) != NULL)
   {
@@ -777,7 +777,7 @@ static void BmfEncapsulationPacketReceived(
     {
 #ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
+#endif /*NODEBUG */
       /* 'walker' is an OLSR interface, but I am not selected as MPR. In that
        * case, don't forward. */
       OLSR_PRINTF(
@@ -814,7 +814,7 @@ static void BmfTunPacketCaptured(unsigned char* encapsulationUdpData)
   struct TEncapHeader* encapHdr;
 #ifndef NODEBUG
   struct ipaddr_str srcIpBuf, dstIpBuf;
-#endif
+#endif /* NODEBUG */
   ipPacket = GetIpPacket(encapsulationUdpData);
   ipPacketLen = GetIpTotalLength(ipPacket);
   ipHeader = GetIpHeader(encapsulationUdpData);
@@ -956,6 +956,7 @@ BMF_handle_listeningFd(int skfd, void *data, unsigned int flags __attribute__ ((
   int nBytes;
   int minimumLength;
   struct ip* ipHeader;
+  unsigned int headerLength;
   struct udphdr* udpHeader;
   u_int16_t destPort;
   union olsr_ip_addr forwardedBy;
@@ -994,14 +995,6 @@ BMF_handle_listeningFd(int skfd, void *data, unsigned int flags __attribute__ ((
     return;
   }
 
-  udpHeader = (struct udphdr*) ARM_NOWARN_ALIGN((rxBuffer + GetIpHeaderLength(rxBuffer)));
-  destPort = ntohs(udpHeader->dest);
-  if (destPort != BMF_ENCAP_PORT)
-  {
-    /* Not BMF */
-    return;
-  }
-
   /* Check if the number of received bytes is large enough for a minimal BMF
    * encapsulation packet, at least:
    * - the IP header of the encapsulation IP packet
@@ -1011,11 +1004,17 @@ BMF_handle_listeningFd(int skfd, void *data, unsigned int flags __attribute__ ((
    * Note: on a VLAN interface, the value returned by 'recvfrom' may (but need
    * not) be 4 (bytes) larger than the value returned on a non-VLAN interface, for
    * the same ethernet frame. */
+  headerLength = GetIpHeaderLength(rxBuffer);
   minimumLength =
-    GetIpHeaderLength(rxBuffer) +
+    headerLength +
     sizeof(struct udphdr) +
     ENCAP_HDR_LEN +
     sizeof(struct ip);
+  if (minimumLength > BMF_BUFFER_SIZE) {
+    olsr_printf(1, "%s: IP header length %u is too large\n",
+        PLUGIN_NAME, headerLength);
+    return;
+  }
   if (nBytes < minimumLength)
   {
     olsr_printf(
@@ -1028,13 +1027,21 @@ BMF_handle_listeningFd(int skfd, void *data, unsigned int flags __attribute__ ((
     return;
   }
 
+  udpHeader = (struct udphdr*) ARM_NOWARN_ALIGN((rxBuffer + headerLength));
+  destPort = ntohs(udpHeader->dest);
+  if (destPort != BMF_ENCAP_PORT)
+  {
+    /* Not BMF */
+    return;
+  }
+
   forwardedBy.v4 = ipHeader->ip_src;
   forwardedTo.v4 = ipHeader->ip_dst;
   BmfEncapsulationPacketReceived(
     walker,
     &forwardedBy,
     &forwardedTo,
-    rxBuffer + GetIpHeaderLength(rxBuffer) + sizeof(struct udphdr));
+    rxBuffer + headerLength + sizeof(struct udphdr));
 
 }
 

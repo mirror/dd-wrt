@@ -43,7 +43,7 @@
 #include <assert.h>
 #include "fpm.h"
 
-#ifdef USE_FPM
+#if 1 // def USE_FPM
 
 #ifndef NDEBUG
 
@@ -111,9 +111,14 @@ fpm
 fpmdiv(fpm a, fpm b)
 {
   fpm r;
-  long long tmp = ((long long)(sfpm) a << FPM_BIT);
-  assert(FPM_INT_MIN <= tmp);
-  assert(tmp <= FPM_INT_MAX);
+
+  /*
+   * The following two asserts are always true
+   *
+   * long long tmp = ((long long)(sfpm) a << FPM_BIT);
+   * assert(FPM_INT_MIN <= tmp);
+   * assert(tmp <= FPM_INT_MAX);
+   */
   r = (fpm) fpmdiv_def((sfpm) a, (sfpm) b);
   return r;
 }
@@ -146,27 +151,7 @@ fpmidiv(fpm a, int b)
   return r;
 }
 
-#if 0
-fpm
-fpmlmul(fpm a, fpm b)
-{
-  fpm r;
-  assert((0 < (sfpm) a) != (0 < (sfpm) b) || ((double)(sfpm) a * (double)(sfpm) b / FPM_NUM) <= (double)FPM_INT_MAX);
-  assert((0 < (sfpm) a) == (0 < (sfpm) b) || ((double)(sfpm) a * (double)(sfpm) b / FPM_NUM) >= (double)FPM_INT_MIN);
-  r = (fpm) fpmlmul_def((sfpm) a, (sfpm) b);
-  return r;
-}
-
-fpm
-fpmldiv(fpm a, fpm b)
-{
-  fpm r;
-  r = (fpm) fpmldiv_def((sfpm) a, (sfpm) b);
-  return r;
-}
-#endif
-
-#endif /* !NDEBUG */
+#endif /* NDEBUG */
 
 fpm
 atofpm(const char *s)

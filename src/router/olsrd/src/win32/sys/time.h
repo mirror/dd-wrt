@@ -1,4 +1,3 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
@@ -38,6 +37,8 @@
  * the copyright holders.
  *
  */
+
+#ifdef _WIN32
 
 #if !defined TL_SYS_TIME_H_INCLUDED
 
@@ -86,16 +87,18 @@ struct timespec {
   unsigned int tv_sec;
   unsigned int tv_nsec;
 };
-#endif
-#else
+#endif /* _TIMESPEC_DEFINED */
+#else /* !defined WINCE */
 #include <time.h>
-#endif
+#endif /* !defined WINCE */
 
 int nanosleep(struct timespec *Req, struct timespec *Rem);
 
 int gettimeofday(struct timeval *TVal, void *TZone);
 
-#endif
+#endif /* !defined TL_SYS_TIME_H_INCLUDED */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

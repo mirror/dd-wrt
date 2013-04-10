@@ -67,7 +67,7 @@ void net_os_set_global_ifoptions(void);
 int net_os_set_ifoptions(const char *if_name, struct interface *iface);
 int net_os_restore_ifoptions(void);
 
-int gethemusocket(struct sockaddr_in *);
+int gethemusocket(struct sockaddr_in *pin);
 
 int getsocket(int, struct interface *);
 
@@ -85,7 +85,7 @@ int join_mcast(struct interface *, int);
 
 bool olsr_if_isup(const char * dev);
 int olsr_if_set_state(const char *dev, bool up);
-#endif
+#endif /* _OLSR_NET_OS_H */
 
 /*
  * Local Variables:

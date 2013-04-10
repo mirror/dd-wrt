@@ -50,7 +50,7 @@
 
 #ifdef __ANDROID__
 #include <android/log.h>
-#endif
+#endif /* __ANDROID__ */
 
 void
 olsr_openlog(const char *ident __attribute__((unused)))
@@ -58,7 +58,7 @@ olsr_openlog(const char *ident __attribute__((unused)))
 #ifndef __ANDROID__
   openlog(ident, LOG_PID | LOG_ODELAY, LOG_DAEMON);
   setlogmask(LOG_UPTO(LOG_INFO));
-#endif
+#endif /* __ANDROID__ */
 
   return;
 }
@@ -71,13 +71,13 @@ void
 olsr_syslog_real(int level, const char *format, ...)
 {
 
-#else
+#else /* defined SYSLOG_NUMBERING && SYSLOG_NUMBERING */
 
 void 
 olsr_syslog(int level, const char *format, ...)
 {
 
-#endif
+#endif /* defined SYSLOG_NUMBERING && SYSLOG_NUMBERING */
 
   int linux_level;
   va_list arglist;
@@ -86,16 +86,16 @@ olsr_syslog(int level, const char *format, ...)
   case (OLSR_LOG_INFO):
 #ifdef __ANDROID__
     linux_level = ANDROID_LOG_INFO;
-#else
+#else /* __ANDROID__ */
     linux_level = LOG_INFO;
-#endif
+#endif /* __ANDROID__ */
     break;
   case (OLSR_LOG_ERR):
 #ifdef __ANDROID__
     linux_level = ANDROID_LOG_ERROR;
-#else
+#else /* __ANDROID__ */
     linux_level = LOG_ERR;
-#endif
+#endif /* __ANDROID__ */
     break;
   default:
     return;
@@ -104,9 +104,9 @@ olsr_syslog(int level, const char *format, ...)
   va_start(arglist, format);
 #ifdef __ANDROID__
   __android_log_vprint(linux_level, "olsrd", format, arglist);
-#else
+#else /* __ANDROID__ */
   vsyslog(linux_level, format, arglist);
-#endif
+#endif /* __ANDROID__ */
   va_end(arglist);
 
   return;

@@ -55,9 +55,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-#ifdef WIN32
+#ifdef _WIN32
 #define close(x) closesocket(x)
-#endif
+#endif /* _WIN32 */
 
 #define PLUGIN_NAME    "OLSRD pgraph plugin"
 #define PLUGIN_VERSION "0.1"
@@ -230,7 +230,7 @@ plugin_ipc_init(void)
       perror("SO_NOSIGPIPE failed");
       return 0;
     }
-#endif
+#endif /* defined __FreeBSD__ */
 
     /* Bind the socket */
 
@@ -386,9 +386,9 @@ ipc_send(const char *data, int size)
 
 #if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__ || defined __OpenBSD__
 #define FLAG 0
-#else
+#else /* defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__ || defined __OpenBSD__ */
 #define FLAG MSG_NOSIGNAL
-#endif
+#endif /* defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__ || defined __OpenBSD__ */
   if (send(ipc_connection, data, size, FLAG) < 0) {
     olsr_printf(1, "(DOT DRAW)IPC connection lost!\n");
     close(ipc_connection);

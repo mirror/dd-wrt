@@ -23,7 +23,7 @@
 
 #ifdef  __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 int nmea_calc_crc(const char *s, const int len);
 int nmea_atoi(const char *s, const int len, const int radix);
@@ -33,6 +33,6 @@ int nmea_scanf(const char *s, int len, const char *format, ...);
 
 #ifdef  __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __NMEA_TOK_H__ */

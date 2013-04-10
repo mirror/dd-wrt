@@ -44,7 +44,6 @@
 #include "log.h"
 #include "olsr.h"
 #include "net_os.h"
-#include "print_packet.h"
 #include "link_set.h"
 #include "lq_packet.h"
 
@@ -52,12 +51,10 @@
 #include <assert.h>
 #include <limits.h>
 
-static bool disp_pack_out = false;
-
-#ifdef WIN32
+#ifdef _WIN32
 #define perror(x) WinSockPError(x)
 void WinSockPError(const char *);
-#endif
+#endif /* _WIN32 */
 
 struct deny_address_entry {
   union olsr_ip_addr addr;
@@ -86,12 +83,6 @@ static const char *const deny_ipv6_defaults[] = {
   "0::1",
   NULL
 };
-
-void
-net_set_disp_pack_out(bool val)
-{
-  disp_pack_out = val;
-}
 
 /*
  * Converts each invalid IP-address from string to network byte order
@@ -380,21 +371,14 @@ net_output(struct interface *ifp)
     tmp_ptf_list->function(ifp->netbuf.buff, &ifp->netbuf.pending);
   }
 
-  /*
-   *if the -dispout option was given
-   *we print the content of the packets
-   */
-  if (disp_pack_out)
-    print_olsr_serialized_packet(stdout, (union olsr_packet *)ifp->netbuf.buff, ifp->netbuf.pending, &ifp->ip_addr);
-
   if (olsr_cnf->ip_version == AF_INET) {
     /* IP version 4 */
     if (olsr_sendto(ifp->send_socket, ifp->netbuf.buff, ifp->netbuf.pending, MSG_DONTROUTE, (struct sockaddr *)sin, sizeof(*sin)) <
         0) {
       perror("sendto(v4)");
-#ifndef WIN32
+#ifndef _WIN32
       olsr_syslog(OLSR_LOG_ERR, "OLSR: sendto IPv4 %m");
-#endif
+#endif /* _WIN32 */
       retval = -1;
     }
   } else {
@@ -403,9 +387,9 @@ net_output(struct interface *ifp)
         < 0) {
       struct ipaddr_str buf;
       perror("sendto(v6)");
-#ifndef WIN32
+#ifndef _WIN32
       olsr_syslog(OLSR_LOG_ERR, "OLSR: sendto IPv6 %m");
-#endif
+#endif /* _WIN32 */
       fprintf(stderr, "Socket: %d interface: %d\n", ifp->olsr_socket, ifp->if_index);
       fprintf(stderr, "To: %s (size: %u)\n", ip6_to_string(&buf, &sin6->sin6_addr), (unsigned int)sizeof(*sin6));
       fprintf(stderr, "Outputsize: %d\n", ifp->netbuf.pending);

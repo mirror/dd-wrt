@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "Frontend.h"
 #include "FrontendDlg.h"
@@ -47,7 +49,7 @@
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
-#endif
+#endif /* _DEBUG */
 
 BEGIN_MESSAGE_MAP(CFrontendApp, CWinApp)
 	//{{AFX_MSG_MAP(CFrontendApp)
@@ -289,3 +291,5 @@ int CFrontendApp::RedirectStdHandles(void)
 
 	return 0;
 }
+
+#endif /* _WIN32 */

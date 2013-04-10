@@ -45,13 +45,6 @@
 /****************************************************************************
  *                Functions that the plugin MUST provide                    *
  ****************************************************************************/
-#if 1
-
-/* We hide them from the compiler here to allow the plugins itself to declare them
- * as they also implement them if we activate -Wredundant-decls.
- * Normally we leave it seen so that we enforce a check by the compiler if they are
- * identical.
- */
 
 /**
  * Plugin interface version
@@ -94,9 +87,7 @@ struct olsrd_plugin_parameters {
  */
 void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
 
-#endif
-
-#endif
+#endif /* _OLSRD_PLUGIN */
 
 /*
  * Local Variables:

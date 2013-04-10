@@ -181,7 +181,7 @@ void name_destructor(void);
 
 int name_init(void);
 
-#endif
+#endif /* _NAMESERVICE_PLUGIN */
 
 /*
  * Local Variables:

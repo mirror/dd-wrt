@@ -49,7 +49,7 @@
 
 uint32_t olsr_ip_hashing(const union olsr_ip_addr *);
 
-#endif
+#endif /* _OLSR_HASHING */
 
 /*
  * Local Variables:

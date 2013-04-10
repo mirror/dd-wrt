@@ -67,7 +67,7 @@ struct default_lq_ffeth_hello {
 
 extern struct lq_handler lq_etx_ffeth_handler;
 
-#endif /*LQ_ETX_FFETH_ */
+#endif /* LQ_ETX_FFETH_ */
 
 /*
  * Local Variables:

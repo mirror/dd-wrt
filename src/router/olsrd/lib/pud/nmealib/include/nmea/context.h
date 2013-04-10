@@ -29,7 +29,7 @@
 
 #ifdef  __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 /**
  * Function type definition for tracing
@@ -58,6 +58,6 @@ void nmea_error(const char *str, ...) __attribute__ ((format(printf, 1, 2)));
 
 #ifdef  __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __NMEA_CONTEXT_H__ */

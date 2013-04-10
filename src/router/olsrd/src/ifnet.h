@@ -64,7 +64,7 @@ int chk_if_up(struct olsr_if *, int);
 
 int add_hemu_if(struct olsr_if *);
 
-#endif
+#endif /* _OLSR_IFNET */
 
 /*
  * Local Variables:

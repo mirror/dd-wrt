@@ -1,7 +1,40 @@
 #!/bin/sh
 
+
+#- globals --------------------------------------------------------------------#
+
+nmcli="/usr/bin/nmcli --mode tabular"
+
+#- functions ------------------------------------------------------------------#
+
+get_wlan_if()
+{
+    if [ -x /sbin/iwconfig ]; then
+        echo `/sbin/iwconfig 2>&1 | grep 'IEEE 802.11' | head -1 | awk '{print $1}'`
+    elif [ -x /usr/bin/nmcli ]; then
+        echo `$nmcli dev list | grep -B6 WIFI-PROPERTIES| head -1 | awk '{print $2}'`
+    else
+        # wild guess, why not...
+        echo "wlan0"
+    fi
+}
+
+get_current_bssid()
+{
+    if [ -x /sbin/iwgetid ]; then
+        iwgetid --ap --raw
+    fi
+}
+
+#- main -----------------------------------------------------------------------#
+
+if [ ! -x /sbin/iwconfig ]; then
+    echo "/sbin/iwconfig required! sudo apt-get install wireless-tools"
+    exit
+fi
+
 if [ -z "$1" ]; then
-    wlan=`/sbin/iwconfig 2>&1 | grep 'IEEE 802.11' | head -1 | cut -d ' ' -f 1`
+    wlan=$(get_wlan_if)
 else
     wlan=$1
 fi
@@ -24,18 +57,20 @@ else
 fi
 
 if [ -z "$4" ]; then
-    bssid=00:00:00:00:00:00
+    bssid=02:ca:ff:ee:ba:be
 else
     bssid="$4"
 fi
 
 echo "Setting mesh on '$wlan' to channel $channel:"
-echo "    attaching to '$essid' with BSSID '$bssid'"
+echo "Attaching to '$essid' with BSSID '$bssid'"
 
+# set NetworkManager to play nice
 if [ -x /usr/bin/nmcli ]; then
 	echo -n "Turning off NetworkManager wifi control: "
-    /usr/bin/nmcli dev disconnect iface $wlan
-    echo "done"
+    $nmcli nm sleep false   2> /dev/null
+    $nmcli nm wifi on   2> /dev/null
+    $nmcli dev disconnect iface $wlan   2> /dev/null
 fi
 
 echo -n "Setting up ad-hoc networking: "
@@ -90,4 +125,4 @@ ip=$net.$ip3.$ip4
 echo "done"
 
 echo "OLSR ad-hoc setup on $wlan using $essid on channel $channel with IP $ip"
-echo "    ad-hoc Cell BSSID: `iwgetid --ap --raw`"
+echo "    ad-hoc Cell BSSID: `get_current_bssid`"

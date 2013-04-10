@@ -61,7 +61,7 @@ struct conf_token {
 
 void set_default_cnf(struct olsrd_config *);
 
-#endif
+#endif /* _OLSRD_CONF_H */
 
 /*
  * Local Variables:

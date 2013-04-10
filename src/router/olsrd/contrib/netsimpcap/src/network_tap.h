@@ -30,7 +30,7 @@ int readMac(char *value, MacAddress * target);
 void closeTap(int fd);
 int createTap(char *name, MacAddress * mac);
 
-#endif /*NETWORK_H_ */
+#endif /* NETWORK_H_ */
 
 /*
  * Local Variables:

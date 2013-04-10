@@ -88,33 +88,8 @@ static const unsigned char PADDING[64] = {
     (a) += (b); \
   }
 
-#if 0
-
-/* Note: Replace "for loop" with standard memcpy if possible.
- */
-static void
-MD5_memcpy(POINTER output, POINTER input, unsigned int len)
-{
-  unsigned int i;
-
-  for (i = 0; i < len; i++)
-    output[i] = input[i];
-}
-
-/* Note: Replace "for loop" with standard memset if possible.
- */
-static void
-MD5_memset(POINTER output, int value, unsigned int len)
-{
-  unsigned int i;
-
-  for (i = 0; i < len; i++)
-    ((char *)output)[i] = (char)value;
-}
-#else
 #define MD5_memcpy(dst, src, len) memcpy((dst), (src), (len))
 #define MD5_memset(dst, val, len) memset((dst), (val), (len))
-#endif
 
 /* Encodes input (UINT4) into output (unsigned char). Assumes len is
      a multiple of 4.

@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "MidEntry.h"
 
@@ -53,3 +55,5 @@ BOOL MidEntry::operator==(const class MidEntry &Comp) const
 {
 	return Addr == Comp.Addr;
 }
+
+#endif /* _WIN32 */

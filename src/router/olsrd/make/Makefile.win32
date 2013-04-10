@@ -8,7 +8,7 @@ EXENAME = olsrd.exe
 SRCS +=		$(wildcard src/win32/*.c)
 HDRS +=		$(wildcard src/win32/*.h)
 
-CPPFLAGS +=	-DWIN32 -D_WIN32_WINNT=0x0600
+CPPFLAGS += 	-D_WIN32_WINNT=0x0600
 LIBS +=		-lws2_32 -liphlpapi
 CPPFLAGS += 	-I$(TOPDIR)/src/win32
 
@@ -96,7 +96,7 @@ gui/win32/Shim/Release/shim.obj: gui/win32/Shim/shim.c
 		test -d $(dir $@) || mkdir -p $(dir $@)
 		PATH=$(MSVCCYG)/VC98/Bin:$$PATH && CL.EXE \
 			/I"$(PSDKDIR)/Include" /I"$(MSVCDIR)/VC98/Include" \
-			/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" \
+			/nologo /ML /W3 /GX /O2 /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" \
 			/Fp"$(dir $@)/Shim.pch" /YX /Fo"$(dir $@)/" /Fd"$(dir $@)/" /FD /c "$<"
 
 gui/win32/Shim/Release/Shim.exe: gui/win32/Shim/Release/shim.obj
@@ -132,7 +132,7 @@ gui/win32/Main/Release/Switch.exe: gui/win32/Main/olsrd_cfgparser.lib gui/win32/
 		test -d $(dir $@) || mkdir -p $(dir $@)
 		PATH=$(MSVCCYG)/VC98/Bin:$$PATH && CL.EXE \
 			/I"$(PSDKDIR)/Include" /I"$(MSVCDIR)/VC98/Include" /I"$(MSVCDIR)/VC98/MFC/Include" /I"src" \
-			/nologo /MT /W4 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" \
+			/nologo /MT /W4 /GX /O2 /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" \
 			/Fp"$(dir $@)/Frontend.pch" /YX"stdafx.h" /Fo"$(dir $@)/" /Fd"$(dir $@)/" /FD /c \
 			$(WIN32CPPFILES)
 		PATH=$(MSVCCYG)/VC98/Bin:$$PATH && LINK.EXE \

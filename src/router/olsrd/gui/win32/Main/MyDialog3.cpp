@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "Frontend.h"
 #include "MyDialog3.h"
@@ -50,7 +52,7 @@
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
-#endif
+#endif /* _DEBUG */
 
 MyDialog3::MyDialog3(CWnd* pParent)
 	: CDialog(MyDialog3::IDD, pParent)
@@ -305,3 +307,5 @@ void MyDialog3::OnItemchangedNodeList(NMHDR* pNMHDR, LRESULT* pResult)
 	for (Idx = 0; Idx < Num; Idx++)
 		m_HnaList.InsertItem(Idx, Info[Item].HnaList.GetAt(Idx));
 }
+
+#endif /* _WIN32 */

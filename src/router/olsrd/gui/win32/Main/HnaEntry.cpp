@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "HnaEntry.h"
 
@@ -54,3 +56,5 @@ BOOL HnaEntry::operator==(const class HnaEntry &Comp) const
 {
 	return Addr == Comp.Addr && Mask == Comp.Mask;
 }
+
+#endif /* _WIN32 */

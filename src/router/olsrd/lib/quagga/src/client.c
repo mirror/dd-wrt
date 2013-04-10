@@ -160,7 +160,7 @@ zclient_read(ssize_t * size)
 
   /* save socket status and set non-blocking for read */
   sockstatus = fcntl(zebra.sock, F_GETFL);
-  fcntl(zebra.sock, F_SETFL, sockstatus|O_NONBLOCK);
+  (void)fcntl(zebra.sock, F_SETFL, sockstatus|O_NONBLOCK);
 
   /* read whole packages */
   do {
@@ -201,13 +201,13 @@ zclient_read(ssize_t * size)
     while (*size >= (ssize_t) (offset + sizeof length));
     /* set blocking socket on fragmented packet */
     if (*size != offset)
-      fcntl(zebra.sock, F_SETFL, sockstatus);
+      (void)fcntl(zebra.sock, F_SETFL, sockstatus);
 
   }
   while (*size != offset);
 
   /* restore socket status */
-  fcntl(zebra.sock, F_SETFL, sockstatus);
+  (void)fcntl(zebra.sock, F_SETFL, sockstatus);
 
   return buf;
 }
