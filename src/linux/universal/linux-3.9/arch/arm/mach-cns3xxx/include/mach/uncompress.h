@@ -20,7 +20,7 @@
  */
 static inline unsigned long get_uart_base(void)
 {
-	if (machine_is_cns3420vb() || machine_is_gw2388())
+	if (machine_is_cns3420vb())
 		return CNS3XXX_UART0_BASE;
 	else
 		return 0;

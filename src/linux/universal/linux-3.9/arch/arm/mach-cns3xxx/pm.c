@@ -150,7 +150,6 @@ int get_cns3xxx_cpu_clock(void)
 {
 #define CPU_BASE 300
     int cpu, pll_cpu, cpu_sel, div_sel, cpu_grade;
-    unsigned int mem_reg;
     u32 reg = __raw_readl(PM_CLK_CTRL_REG);
     u32 misc = __raw_readl(MISC_CHIP_CONFIG_REG);
     cpu_sel = (reg >> PM_CLK_CTRL_REG_OFFSET_PLL_CPU_SEL) & 0xf;
