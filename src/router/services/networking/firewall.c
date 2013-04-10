@@ -3036,6 +3036,17 @@ void start_firewall(void)
 	stop_wifidog();
 	start_wifidog();
 #endif
+#ifdef HAVE_CHILLI
+	if (nvram_match("hotss_enable", "1")) {
+		stop_hotspot();
+		start_hotspot);
+	}
+	if (nvram_match("chilli_enable", "1")
+		&& nvram_match("hotss_enable", "0")) {
+		stop_chilli();
+		start_chilli();	
+	}
+#endif
 #ifdef HAVE_GGEW
 	char *wordlist = nvram_safe_get("ral");
 	char var[256], *next;
