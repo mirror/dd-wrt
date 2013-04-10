@@ -52,9 +52,9 @@
 #include <unistd.h>
 #include <assert.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #define close(x) closesocket(x)
-#endif
+#endif /* _WIN32 */
 
 /* Timer data, global. Externed in scheduler.h */
 uint32_t now_times;                    /* relative time compared to startup (in milliseconds */
@@ -168,7 +168,10 @@ olsr_isTimedOut(uint32_t s)
  * in listen_loop
  *
  *@param fd the socket
- *@param pf the processing function
+ *@param pf_pr the processing function
+ *@param pf_imm the (immediate) processing function
+ *@param data the data pointer for the processing function
+ *@param flags the flags for the processing function
  */
 void
 add_olsr_socket(int fd, socket_handler_func pf_pr, socket_handler_func pf_imm, void *data, unsigned int flags)
@@ -200,7 +203,8 @@ add_olsr_socket(int fd, socket_handler_func pf_pr, socket_handler_func pf_imm, v
  * in listen_loop
  *
  *@param fd the socket
- *@param pf the processing function
+ *@param pf_pr the processing function
+ *@param pf_imm the (immediate) processing function
  */
 int
 remove_olsr_socket(int fd, socket_handler_func pf_pr, socket_handler_func pf_imm)
@@ -491,20 +495,20 @@ olsr_scheduler(void)
     /* Read incoming data and handle it immediiately */
     handle_fds(next_interval);
 
-#ifdef WIN32
+#ifdef _WIN32
     if (olsr_win32_end_request) {
       olsr_win32_end_flag = true;
     }
-#endif
+#endif /* _WIN32 */
   }
 }
 
 /**
  * Decrement a relative timer by a random number range.
  *
- * @param the relative timer expressed in units of milliseconds.
- * @param the jitter in percent
- * @param cached result of random() at system init.
+ * @param rel_time the relative timer expressed in units of milliseconds.
+ * @param jitter_pct the jitter in percent
+ * @param random_val cached result of random() at system init.
  * @return the absolute timer in system clock tick units
  */
 static uint32_t
@@ -750,7 +754,7 @@ olsr_wallclock_string(void)
  * May be called upto 4 times in a single printf() statement.
  * Displays millisecond resolution.
  *
- * @param absolute time expressed in clockticks
+ * @param clk absolute time expressed in clockticks
  * @return buffer to a formatted system time string.
  */
 const char *
@@ -772,10 +776,12 @@ olsr_clock_string(uint32_t clk)
 /**
  * Start a new timer.
  *
- * @param relative time expressed in milliseconds
- * @param jitter expressed in percent
- * @param timer callback function
- * @param context for the callback function
+ * @param rel_time relative time expressed in milliseconds
+ * @param jitter_pct jitter expressed in percent
+ * @param periodical true for a repeating timer, false for a one-shot timer
+ * @param cb_func timer callback function
+ * @param context context for the callback function
+ * @param ci timer cookie
  * @return a pointer to the created entry
  */
 struct timer_entry *
@@ -826,8 +832,7 @@ olsr_start_timer(unsigned int rel_time,
 /**
  * Delete a timer.
  *
- * @param the timer_entry that shall be removed
- * @return nada
+ * @param timer the timer_entry that shall be removed
  */
 void
 olsr_stop_timer(struct timer_entry *timer)
@@ -856,10 +861,10 @@ olsr_stop_timer(struct timer_entry *timer)
 /**
  * Change a timer_entry.
  *
- * @param timer_entry to be changed.
- * @param new relative time expressed in units of milliseconds.
- * @param new jitter expressed in percent.
- * @return nada
+ * @param timer timer_entry to be changed.
+ * @param rel_time new relative time expressed in units of milliseconds.
+ * @param jitter_pct new jitter expressed in percent.
+ * @param periodical true for a repeating timer, false for a one-shot timer
  */
 void
 olsr_change_timer(struct timer_entry *timer, unsigned int rel_time, uint8_t jitter_pct, bool periodical)

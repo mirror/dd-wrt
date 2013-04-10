@@ -59,37 +59,6 @@ static struct TDupEntry* PacketHistory[HISTORY_HASH_SIZE];
 
 #define CRC_UPTO_NBYTES 256
 
-#if 0
-/* -------------------------------------------------------------------------
- * Function   : CalcCrcCcitt
- * Description: Calculate 16-bits CRC according to CRC-CCITT specification
- * Input      : buffer - the bytes to calculate the CRC value over
- *              len - the number of bytes to calculate the CRC value over
- * Output     : none
- * Return     : CRC-16 value
- * Data Used  : none
- * ------------------------------------------------------------------------- */
-static u_int16_t CalcCrcCcitt(unsigned char* buffer, ssize_t len)
-{
-  /* Initial value of 0xFFFF should be 0x1D0F according to
-   * www.joegeluso.com/software/articles/ccitt.htm */
-  u_int16_t crc = 0xFFFF; 
-  int i;
-
-  assert(buffer != NULL);
-
-  for (i = 0; i < len; i++)
-  {
-    crc  = (unsigned char)(crc >> 8) | (crc << 8);
-    crc ^= buffer[i];
-    crc ^= (unsigned char)(crc & 0xff) >> 4;
-    crc ^= (crc << 8) << 4;
-    crc ^= ((crc & 0xff) << 4) << 1;
-  }
-  return crc;
-} /* CalcCrcCcitt */
-#endif
-
 /* -------------------------------------------------------------------------
  * Function   : GenerateCrc32Table
  * Description: Generate the table of CRC remainders for all possible bytes,

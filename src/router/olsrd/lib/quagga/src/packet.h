@@ -23,7 +23,7 @@
 /* Zebra header marker */
 #ifndef ZEBRA_HEADER_MARKER
 #define ZEBRA_HEADER_MARKER 255
-#endif
+#endif /* ZEBRA_HEADER_MARKER */
 
 /* Zebra message types */
 #define ZEBRA_IPV4_ROUTE_ADD		7

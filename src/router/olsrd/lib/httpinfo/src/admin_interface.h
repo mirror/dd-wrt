@@ -52,7 +52,7 @@ int process_set_values(char *, uint32_t, char *, uint32_t);
 
 int process_param(char *, char *);
 
-#endif
+#endif /* ADMIN_INTERFACE_H */
 
 /*
  * Local Variables:

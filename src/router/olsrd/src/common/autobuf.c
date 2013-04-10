@@ -88,11 +88,11 @@ autobuf_enlarge(struct autobuf *autobuf, int new_size)
     int roundUpSize = ROUND_UP_TO_POWER_OF_2(new_size, AUTOBUFCHUNK);
     p = realloc(autobuf->buf, roundUpSize);
     if (p == NULL) {
-#ifdef WIN32
+#ifdef _WIN32
       WSASetLastError(ENOMEM);
-#else
+#else /* _WIN32 */
       errno = ENOMEM;
-#endif
+#endif /* _WIN32 */
       return -1;
     }
     autobuf->buf = p;
@@ -116,6 +116,7 @@ abuf_vappendf(struct autobuf *autobuf, const char *format, va_list ap)
   if (min_size >= autobuf->size) {
     if (autobuf_enlarge(autobuf, min_size) < 0) {
       autobuf->buf[autobuf->len] = '\0';
+      va_end(ap2);
       return -1;
     }
     vsnprintf(autobuf->buf + autobuf->len, autobuf->size - autobuf->len, format, ap2);
@@ -203,11 +204,11 @@ abuf_pull(struct autobuf * autobuf, int len) {
   newsize = ROUND_UP_TO_POWER_OF_2(autobuf->len + 1, AUTOBUFCHUNK);
   p = realloc(autobuf->buf, newsize);
   if (p == NULL) {
-#ifdef WIN32
+#ifdef _WIN32
     WSASetLastError(ENOMEM);
-#else
+#else /* _WIN32 */
     errno = ENOMEM;
-#endif
+#endif /* _WIN32 */
     return -1;
   }
   autobuf->buf = p;

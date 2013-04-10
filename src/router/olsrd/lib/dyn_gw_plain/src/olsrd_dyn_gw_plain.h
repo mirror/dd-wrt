@@ -38,8 +38,8 @@
  * the copyright holders.
  */
 
-#ifndef _OLSRD_PLUGIN_TEST
-#define _OLSRD_PLUGIN_TEST
+#ifndef _OLSRD_DYNGWPLAIN_H
+#define _OLSRD_DYNGWPLAIN_H
 
 #include "olsrd_plugin.h"
 #include "olsr.h"
@@ -57,7 +57,7 @@ int check_gw(union olsr_ip_addr *net, union olsr_ip_addr *mask);
 /* Event function to register with the scheduler */
 void olsr_event(void *foo);
 
-#endif
+#endif /* _OLSRD_DYNGWPLAIN_H */
 
 /*
  * Local Variables:

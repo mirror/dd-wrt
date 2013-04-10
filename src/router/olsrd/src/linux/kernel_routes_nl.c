@@ -39,6 +39,8 @@
  *
  */
 
+#ifdef __linux__
+
 #include "kernel_routes.h"
 #include "ipc_frontend.h"
 #include "log.h"
@@ -101,6 +103,7 @@ int rtnetlink_register_socket(int rtnl_mgrp)
 
   if (bind(sock,(struct sockaddr *)&addr,sizeof(addr))<0) {
     OLSR_PRINTF(1,"could not bind rtnetlink socket! %s (%d)",strerror(errno), errno);
+    close (sock);
     return -1;
   }
 
@@ -513,17 +516,6 @@ static int olsr_os_process_rt_entry(int af_family, const struct rt_entry *rt, bo
   hostRoute = rt->rt_dst.prefix_len == olsr_cnf->ipsize * 8
       && ipequal(&nexthop->gateway, &rt->rt_dst.prefix);
 
-#if 0
-  {
-    struct ipaddr_str buf1, buf2;
-    olsr_syslog(OLSR_LOG_INFO, "hostroute (%s) = %d == %d && %s == %s",
-        hostRoute ? "true" : "false",
-        rt->rt_dst.prefix_len, (int)(olsr_cnf->ipsize * 8),
-        olsr_ip_to_string(&buf1, &nexthop->gateway),
-        olsr_ip_to_string(&buf2, &rt->rt_dst.prefix));
-  }
-#endif
-
   /* get src ip */
   if (olsr_cnf->use_src_ip_routes) {
     src = &olsr_cnf->unicast_src_ip;
@@ -588,7 +580,7 @@ static int olsr_os_process_rt_entry(int af_family, const struct rt_entry *rt, bo
     if (err == 0) {
       /* create this rule a second time if hostrule generation was successful */
       err = olsr_new_netlink_route(af_family, table, nexthop->iif_index, metric, olsr_cnf->rt_proto,
-          src, hostRoute ? NULL : &nexthop->gateway, &rt->rt_dst, set, false);
+          src, &nexthop->gateway, &rt->rt_dst, set, false);
     }
     olsr_syslog(OLSR_LOG_ERR, ". %s (%d)", err == 0 ? "successful" : "failed", err);
   }
@@ -599,7 +591,7 @@ static int olsr_os_process_rt_entry(int af_family, const struct rt_entry *rt, bo
 /**
  * Insert a route in the kernel routing table
  *
- * @param destination the route to add
+ * @param rt the route to add
  *
  * @return negative on error
  */
@@ -613,7 +605,7 @@ olsr_ioctl_add_route(const struct rt_entry *rt)
 /**
  *Insert a route in the kernel routing table
  *
- *@param destination the route to add
+ *@param rt the route to add
  *
  *@return negative on error
  */
@@ -627,7 +619,7 @@ olsr_ioctl_add_route6(const struct rt_entry *rt)
 /**
  *Remove a route from the kernel
  *
- *@param destination the route to remove
+ *@param rt the route to remove
  *
  *@return negative on error
  */
@@ -641,7 +633,7 @@ olsr_ioctl_del_route(const struct rt_entry *rt)
 /**
  *Remove a route from the kernel
  *
- *@param destination the route to remove
+ *@param rt the route to remove
  *
  *@return negative on error
  */
@@ -651,6 +643,7 @@ olsr_ioctl_del_route6(const struct rt_entry *rt)
   OLSR_PRINTF(2, "KERN: Deleting %s\n", olsr_rt_to_string(rt));
   return olsr_os_process_rt_entry(AF_INET6, rt, false);
 }
+#endif /* __linux__ */
 
 /*
  * Local Variables:

@@ -58,11 +58,11 @@ void olsr_syslog_real(int level, const char *format, ...) __attribute__ ((format
 
 extern unsigned int olsr_syslog_ctr;
 #define olsr_syslog(level, format, ...) olsr_syslog_real (level, "%02x: " format, olsr_syslog_ctr++ & 0xFF, ## __VA_ARGS__ )
-#else
+#else /* defined SYSLOG_NUMBERING && SYSLOG_NUMBERING */
 void olsr_syslog(int level, const char *format, ...) __attribute__ ((format(printf, 2, 3)));
-#endif
+#endif /* defined SYSLOG_NUMBERING && SYSLOG_NUMBERING */
 
-#endif
+#endif /* _OLSR_SYSLOG_H */
 
 /*
  * Local Variables:

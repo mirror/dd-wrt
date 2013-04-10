@@ -9,6 +9,8 @@
 
 /* System includes */
 #include <stddef.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <regex.h>
 #include <errno.h>
@@ -157,8 +159,9 @@ static char line[LINE_LENGTH];
  * @param fileName the filename
  */
 void readSpeedFile(char * fileName) {
+	int fd;
 	struct stat statBuf;
-	FILE * fd = NULL;
+	FILE * fp = NULL;
 	unsigned int lineNumber = 0;
 	char * name = NULL;
 	char * value = NULL;
@@ -167,7 +170,13 @@ void readSpeedFile(char * fileName) {
 	bool uplinkSet = false;
 	bool downlinkSet = false;
 
-	if (stat(fileName, &statBuf)) {
+	fd = open(fileName, O_RDONLY);
+	if (fd < 0) {
+		/* could not access the file */
+		goto out;
+	}
+
+	if (fstat(fd, &statBuf)) {
 		/* could not access the file */
 		goto out;
 	}
@@ -177,14 +186,14 @@ void readSpeedFile(char * fileName) {
 		goto out;
 	}
 
-	fd = fopen(fileName, "r");
-	if (!fd) {
+	fp = fdopen(fd, "r");
+	if (!fp) {
 		goto out;
 	}
 
 	memcpy(&cachedStat.timeStamp, &statBuf.st_mtime, sizeof(cachedStat.timeStamp));
 
-	while (fgets(line, LINE_LENGTH, fd)) {
+	while (fgets(line, LINE_LENGTH, fp)) {
 		regmatch_t pmatch[regexNameValuematchCount];
 
 		lineNumber++;
@@ -222,7 +231,8 @@ void readSpeedFile(char * fileName) {
 		}
 	}
 
-	fclose(fd);
+	fclose(fp);
+	fp = NULL;
 
 	if (uplinkSet) {
 		olsr_cnf->smart_gw_uplink = uplink;
@@ -234,5 +244,11 @@ void readSpeedFile(char * fileName) {
 	  refresh_smartgw_netmask();
 	}
 
-	out: return;
+	out: if (fp) {
+		fclose(fp);
+	}
+	if (fd >= 0) {
+		close(fd);
+	}
+	return;
 }

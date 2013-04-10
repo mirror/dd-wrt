@@ -1,4 +1,3 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
@@ -39,12 +38,14 @@
  *
  */
 
+#ifdef _WIN32
+
 #if !defined(AFX_FRONTENDDLG_H__7D68FBC0_7448_479B_81F0_3FBBDE291395__INCLUDED_)
 #define AFX_FRONTENDDLG_H__7D68FBC0_7448_479B_81F0_3FBBDE291395__INCLUDED_
 
 #if defined _MSC_VER && _MSC_VER > 1000
 #pragma once
-#endif
+#endif /* defined _MSC_VER && _MSC_VER > 1000 */
 
 #include "MyTabCtrl.h"
 #include "NodeEntry.h"
@@ -131,7 +132,9 @@ protected:
 
 //{{AFX_INSERT_LOCATION}}
 
-#endif
+#endif /* !defined(AFX_FRONTENDDLG_H__7D68FBC0_7448_479B_81F0_3FBBDE291395__INCLUDED_) */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

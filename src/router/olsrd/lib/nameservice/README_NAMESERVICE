@@ -7,7 +7,7 @@ a simple DNS replacement for OLSR networks
 
 this plugin distributes host name (DNS) information over OLSR. every 
 node which runs the olsr daemon can announce it's own name, names for
-other IP adresses it is associated with (HNAs) and if it is running
+other IP addresses it is associated with (HNAs) and if it is running
 a "real" nameserver which can resolve other (internet) names (upstream 
 dns server).
 
@@ -127,7 +127,7 @@ PlParam "services-change-script" "/path/to/script"
 PlParam "mac" "xx:xx:xx:xx:xx:xx[,0-255]"
         Add a new MAC addr to be spreaded in the mesh. This MAC addr
         may be used to fine control nerve-wreck-page solutions based
-        on MAC adresses. The optional dec. number designates a class.
+        on MAC addresses. The optional dec. number designates a class.
 
 PlParam "macs-file" "/path/to/macs_file"
 	File to write (default: /var/run/macs_olsr)
@@ -177,7 +177,7 @@ UNIX VARIANTS:
 
         to your nameservice plugin configuration.
 
-        This is especially usefull for infrastructure mesh networks that
+        This is especially useful for infrastructure mesh networks that
         can't afford to run olsrd on all the clients but wish to provide
         DNS to them. This is solved by running dnsmasq and olsrd with
         this setup on "edge" nodes that provide connectivity.

@@ -51,11 +51,10 @@
 #include "rebuild_packet.h"
 #include "net_os.h"
 #include "log.h"
-#include "print_packet.h"
 #include "net_olsr.h"
 #include "duplicate_handler.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #undef EWOULDBLOCK
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #undef errno
@@ -63,7 +62,7 @@
 char *StrError(unsigned int ErrNo);
 #undef strerror
 #define strerror(x) StrError(x)
-#endif
+#endif /* _WIN32 */
 
     /* Sven-Ola: On very slow devices used in huge networks
  * the amount of lq_tc messages is so high, that the
@@ -79,14 +78,6 @@ struct packetparser_function_entry *packetparser_functions;
 
 static uint32_t inbuf_aligned[MAXMESSAGESIZE/sizeof(uint32_t) + 1];
 static char *inbuf = (char *)inbuf_aligned;
-
-static bool disp_pack_in = false;
-
-void
-parser_set_disp_pack_in(bool val)
-{
-  disp_pack_in = val;
-}
 
 /**
  *Initialize the parser.
@@ -263,10 +254,10 @@ olsr_packetparser_remove_function(packetparser_function * function)
  *Process a newly received OLSR packet. Checks the type
  *and to the neccessary convertions and call the
  *corresponding functions to handle the information.
- *@param from the sockaddr struct describing the sender
  *@param olsr the olsr struct containing the message
  *@param size the size of the message
- *@return nada
+ *@param in_if the incoming interface
+ *@param from_addr the sockaddr struct describing the sender
  */
 
 void
@@ -292,10 +283,6 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
     olsr_syslog(OLSR_LOG_ERR, " packet length error in  packet received from %s!", olsr_ip_to_string(&buf, from_addr));
     return;
   }
-
-  /* Display packet */
-  if (disp_pack_in)
-    print_olsr_serialized_packet(stdout, (union olsr_packet *)olsr, size, from_addr);
 
   // translate sequence number to host order
   olsr->olsr_seqno = ntohs(olsr->olsr_seqno);
@@ -393,12 +380,12 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
       struct ipaddr_str buf;
       OLSR_PRINTF(3, "Not processing message originating from %s!\n",
                   olsr_ip_to_string(&buf, (union olsr_ip_addr *)&m->v4.originator));
-#endif
+#endif /* DEBUG */
 #ifndef NO_DUPLICATE_DETECTION_HANDLER
       if (validated) {
         olsr_test_originator_collision(m->v4.olsr_msgtype, seqno);
       }
-#endif
+#endif /* NO_DUPLICATE_DETECTION_HANDLER */
       continue;
     }
 
@@ -426,7 +413,8 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
  *and passes the packet on to parse_packet().
  *
  *@param fd the filedescriptor that data should be read from.
- *@return nada
+ *@param data unused
+ *@param flags unused
  */
 void
 olsr_input(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))
@@ -456,9 +444,9 @@ olsr_input(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
     if (cc <= 0) {
       if (cc < 0 && errno != EWOULDBLOCK) {
         OLSR_PRINTF(1, "error recvfrom: %s", strerror(errno));
-#ifndef WIN32
+#ifndef _WIN32
         olsr_syslog(OLSR_LOG_ERR, "error recvfrom: %m");
-#endif
+#endif /* _WIN32 */
       }
       break;
     }
@@ -475,7 +463,7 @@ olsr_input(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
 #ifdef DEBUG
     OLSR_PRINTF(5, "Received a packet from %s\n",
         olsr_ip_to_string(&buf, &from_addr));
-#endif
+#endif /* DEBUG */
 
     if ((olsr_cnf->ip_version == AF_INET) && (fromlen != sizeof(struct sockaddr_in)))
       break;
@@ -521,7 +509,8 @@ olsr_input(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
  *and passes the packet on to parse_packet().
  *
  *@param fd the filedescriptor that data should be read from.
- *@return nada
+ *@param data unused
+ *@param flags unused
  */
 void
 olsr_input_hostemu(int fd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused)))

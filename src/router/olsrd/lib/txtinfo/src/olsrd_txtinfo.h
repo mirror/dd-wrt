@@ -67,7 +67,7 @@ int olsrd_plugin_init(void);
 void olsr_plugin_exit(void);
 void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
 
-#endif
+#endif /* _OLSRD_TXTINFO */
 
 /*
  * Local Variables:

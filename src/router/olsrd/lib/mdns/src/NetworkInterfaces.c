@@ -52,14 +52,15 @@
 #include <assert.h>             /* assert() */
 #include <net/if.h>             /* socket(), ifreq, if_indextoname(), if_nametoindex() */
 #include <netinet/in.h>         /* htons() */
-#if defined linux
+#ifdef __linux__
 #include <linux/if_ether.h>     /* ETH_P_IP */
 #include <linux/if_packet.h>    /* packet_mreq, PACKET_MR_PROMISC, PACKET_ADD_MEMBERSHIP */
 #include <linux/if_tun.h>       /* IFF_TAP */
-#endif
+#endif /* __linux__ */
 #include <netinet/ip.h>         /* struct ip */
 #include <netinet/udp.h>        /* SOL_UDP */
 #include <stdlib.h>             /* atoi, malloc */
+#include <strings.h>    /* strcasecmp */
 
 /* OLSRD includes */
 #include "olsr.h"               /* OLSR_PRINTF() */
@@ -75,8 +76,10 @@
 #include "Packet.h"             /* IFHWADDRLEN */
 #include "mdns.h"               /* PLUGIN_NAME, MainAddressOf() */
 #include "Address.h"            /* IsMulticast() */
+#include "plugin_util.h"
 
 int my_MDNS_TTL = 0;
+int my_TTL_Check = 1;
 
 /* List of network interface objects used by BMF plugin */
 struct TBmfInterface *BmfInterfaces = NULL;
@@ -169,6 +172,264 @@ CreateCaptureSocket(const char *ifName)
   return skfd;
 }                               /* CreateCaptureSocket */
 
+
+/* -------------------------------------------------------------------------
+ * Function   : CreateRouterElectionSocket
+ * Description: Create socket for capturing router election hello packets
+ * Input      : ifname - network interface (e.g. "eth0")
+ * Output     : none
+ * Return     : the socket descriptor ( >= 0), or -1 if an error occurred
+ * Data Used  : none
+ * Notes      : The socket is a cooked IP packet socket, bound to the specified
+ *              network interface
+ * ------------------------------------------------------------------------- */
+static int
+CreateRouterElectionSocket(const char *ifName)
+{
+  	int ipFamilySetting;
+	int ipProtoSetting;
+	int ipMcLoopSetting;
+	int ipAddMembershipSetting;
+	short int ipPort = htons(5354);
+	struct in_addr ipv4_addr;
+	struct ifreq req;
+	int ifIndex = if_nametoindex(ifName);
+
+	void * addr;
+	size_t addrSize;
+	union olsr_sockaddr address;
+
+	int rxSocket = -1;
+
+	int socketReuseFlagValue = 1;
+	int mcLoopValue = 1;
+
+
+	memset(&address, 0, sizeof(address));
+	if (olsr_cnf->ip_version == AF_INET) {
+		ipFamilySetting = AF_INET;
+		ipProtoSetting = IPPROTO_IP;
+		ipMcLoopSetting = IP_MULTICAST_LOOP;
+		ipAddMembershipSetting = IP_ADD_MEMBERSHIP;
+
+		address.in4.sin_family = ipFamilySetting;
+		address.in4.sin_addr.s_addr = INADDR_ANY;
+		address.in4.sin_port = ipPort;
+		addr = &address.in4;
+		addrSize = sizeof(struct sockaddr_in);
+	} else {
+		ipFamilySetting = AF_INET6;
+		ipProtoSetting = IPPROTO_IPV6;
+		ipMcLoopSetting = IPV6_MULTICAST_LOOP;
+		ipAddMembershipSetting = IPV6_ADD_MEMBERSHIP;
+
+		address.in6.sin6_family = ipFamilySetting;
+		address.in6.sin6_addr = in6addr_any;
+		address.in6.sin6_port = ipPort;
+		addr = &address.in6;
+		addrSize = sizeof(struct sockaddr_in6);
+	}
+
+	/* Create a datagram socket on which to receive. */
+	errno = 0;
+	rxSocket = socket(ipFamilySetting, SOCK_DGRAM, 0);
+	if (rxSocket < 0) {
+		BmfPError("Could not create a receive socket for interface %s",
+				ifName);
+		goto bail;
+	}
+
+	/* Enable SO_REUSEADDR to allow multiple applications to receive the same
+	 * multicast messages */
+	errno = 0;
+	if (setsockopt(rxSocket, SOL_SOCKET, SO_REUSEADDR, &socketReuseFlagValue,
+			sizeof(socketReuseFlagValue)) < 0) {
+		BmfPError("Could not set the reuse flag on the receive socket for"
+			" interface %s", ifName);
+		goto bail;
+	}
+
+	/* Bind to the proper port number with the IP address INADDR_ANY
+	 * (INADDR_ANY is really required here, do not change it) */
+	errno = 0;
+	if (bind(rxSocket, addr, addrSize) < 0) {
+		BmfPError("Could not bind the receive socket for interface"
+			" %s to port %u", ifName, ntohs(ipPort));
+		goto bail;
+	}
+
+	/* Enable multicast local loopback */
+	errno = 0;
+	if (setsockopt(rxSocket, ipProtoSetting, ipMcLoopSetting, &mcLoopValue,
+			sizeof(mcLoopValue)) < 0) {
+		BmfPError("Could not enable multicast loopback on the"
+			" receive socket for interface %s", ifName);
+		goto bail;
+	}
+
+	/* Join the multicast group on the local interface. Note that this
+	 * ADD_MEMBERSHIP option must be called for each local interface over
+	 * which the multicast datagrams are to be received. */
+	if (ipFamilySetting == AF_INET) {
+		static const char * mc4Addr = "224.0.0.2";
+		struct ip_mreq mc_settings;
+		(void) memset(&mc_settings, 0, sizeof(mc_settings));
+		if (inet_pton(AF_INET, mc4Addr, &mc_settings.imr_multiaddr.s_addr) != 1) {
+			BmfPError("Could not convert ipv4 multicast address %s", mc4Addr);
+			goto bail;
+		}
+		(void) memset(&req, 0, sizeof(struct ifreq));
+		strncpy(req.ifr_name, ifName, IFNAMSIZ - 1);
+		req.ifr_name[IFNAMSIZ -1] = '\0';	/* Ensure null termination */
+		if(ioctl(rxSocket, SIOCGIFADDR, &req)){
+			BmfPError("Could not get ipv4 address of %s interface", ifName);
+			goto bail;
+		}
+		ipv4_addr = ((struct sockaddr_in *)&req.ifr_addr)->sin_addr;
+		mc_settings.imr_interface = ipv4_addr;
+		errno = 0;
+		if (setsockopt(rxSocket, ipProtoSetting, ipAddMembershipSetting,
+				&mc_settings, sizeof(mc_settings)) < 0) {
+			BmfPError("Could not subscribe interface %s to the configured"
+				" multicast group", ifName);
+			goto bail;
+		}
+	} else {
+		static const char * mc6Addr = "ff02::2";
+		struct ipv6_mreq mc6_settings;
+		(void) memset(&mc6_settings, 0, sizeof(mc6_settings));
+		if (inet_pton(AF_INET6, mc6Addr, &mc6_settings.ipv6mr_multiaddr.s6_addr) != 1) {
+			BmfPError("Could not convert ipv6 multicast address %s", mc6Addr);
+			goto bail;
+		}
+		mc6_settings.ipv6mr_interface = ifIndex;
+		errno = 0;
+		if (setsockopt(rxSocket, ipProtoSetting, ipAddMembershipSetting,
+				&mc6_settings, sizeof(mc6_settings)) < 0) {
+			BmfPError("Could not subscribe interface %s to the configured"
+				" multicast group", ifName);
+			goto bail;
+		}
+	}
+
+	add_olsr_socket(rxSocket, DoElection, NULL, NULL,
+			SP_PR_READ);
+
+	return rxSocket;
+
+	bail: if (rxSocket >= 0) {
+		close(rxSocket);
+	}
+	return -1;
+}                               /* CreateRouterElectionSocket */
+
+static int CreateHelloSocket(const char *ifName) {
+	int ipFamilySetting;
+	int ipProtoSetting;
+	int ipMcLoopSetting;
+	int ipMcIfSetting;
+	int ipTtlSetting;
+	short int ipPort = htons(5354);
+	struct in_addr ipv4_addr;
+	struct ifreq req;
+	int ifIndex = if_nametoindex(ifName);
+
+	void * addr;
+	size_t addrSize;
+	union olsr_sockaddr address;
+
+	int txSocket = -1;
+
+	int mcLoopValue = 0;
+	int txTtl = 2;
+
+	memset(&address, 0, sizeof(address));
+	if (olsr_cnf->ip_version == AF_INET) {
+		ipFamilySetting = AF_INET;
+		ipProtoSetting = IPPROTO_IP;
+		ipMcLoopSetting = IP_MULTICAST_LOOP;
+		ipMcIfSetting = IP_MULTICAST_IF;
+		ipTtlSetting = IP_MULTICAST_TTL;
+		ifIndex = if_nametoindex(ifName);
+	} else {
+		ipFamilySetting = AF_INET6;
+		ipProtoSetting = IPPROTO_IPV6;
+		ipMcLoopSetting = IPV6_MULTICAST_LOOP;
+		ipMcIfSetting = IPV6_MULTICAST_IF;
+		ipTtlSetting = IPV6_MULTICAST_HOPS;
+		ifIndex = if_nametoindex(ifName);
+
+		addr = &ifIndex;
+		addrSize = sizeof(ifIndex);
+	}
+
+	/*  Create a datagram socket on which to transmit */
+	errno = 0;
+	txSocket = socket(ipFamilySetting, SOCK_DGRAM, 0);
+	if (txSocket < 0) {
+		BmfPError("Could not create a transmit socket for interface %s",
+				ifName);
+		goto bail;
+	}
+
+	if (olsr_cnf->ip_version == AF_INET) {
+		(void) memset(&req, 0, sizeof(struct ifreq));
+		strncpy(req.ifr_name, ifName, IFNAMSIZ - 1);
+		req.ifr_name[IFNAMSIZ -1] = '\0';	/* Ensure null termination */
+		if(ioctl(txSocket, SIOCGIFADDR, &req)){
+			BmfPError("Could not get ipv4 address of %s interface", ifName);
+			goto bail;
+		}
+		ipv4_addr = ((struct sockaddr_in *)&req.ifr_addr)->sin_addr;
+		address.in4.sin_addr = ipv4_addr;
+		address.in4.sin_family = ipFamilySetting;
+		address.in4.sin_port = ipPort;
+		addr = &address.in4;
+		addrSize = sizeof(struct sockaddr_in);
+	}
+
+	/* Bind the socket to the desired interface */
+	errno = 0;
+	if (setsockopt(txSocket, ipProtoSetting, ipMcIfSetting, addr, addrSize) < 0) {
+		BmfPError("Could not set the multicast interface on the"
+			" transmit socket to interface %s", ifName);
+		goto bail;
+	}
+
+	/* Disable multicast local loopback */
+	errno = 0;
+	if (setsockopt(txSocket, ipProtoSetting, ipMcLoopSetting, &mcLoopValue,
+			sizeof(mcLoopValue)) < 0) {
+		BmfPError("Could not disable multicast loopback on the"
+			" transmit socket for interface %s", ifName);
+		goto bail;
+	}
+
+	/* Set the TTL on the socket */
+	errno = 0;
+	if (setsockopt(txSocket, ipProtoSetting, ipTtlSetting, &txTtl,
+			sizeof(txTtl)) < 0) {
+		BmfPError("Could not set TTL on the transmit socket"
+			" for interface %s", ifName);
+		goto bail;
+	}
+
+	/* Set the no delay option on the socket */
+	errno = 0;
+	if (fcntl(txSocket, F_SETFL, O_NDELAY) < 0) {
+		BmfPError("Could not set the no delay option on the"
+			" transmit socket for interface %s", ifName);
+		goto bail;
+	}
+
+	return txSocket;
+
+	bail: if (txSocket >= 0) {
+		close(txSocket);
+	}
+	return -1;
+}
+
 /* -------------------------------------------------------------------------
  * Function   : CreateInterface
  * Description: Create a new TBmfInterface object and adds it to the global
@@ -189,6 +450,8 @@ CreateInterface(const char *ifName, struct interface *olsrIntf)
   int capturingSkfd = -1;
   int encapsulatingSkfd = -1;
   int listeningSkfd = -1;
+  int electionSkfd = -1;
+  int helloSkfd = -1;
   int ioctlSkfd;
   struct ifreq ifr;
   int nOpened = 0;
@@ -206,8 +469,18 @@ CreateInterface(const char *ifName, struct interface *olsrIntf)
    * non-OLSR interfaces, and on OLSR-interfaces if configured. */
   if ((olsrIntf == NULL)) {
     capturingSkfd = CreateCaptureSocket(ifName);
-    if (capturingSkfd < 0) {
-      close(encapsulatingSkfd);
+    electionSkfd = CreateRouterElectionSocket(ifName);
+    helloSkfd = CreateHelloSocket(ifName);
+    if (capturingSkfd < 0 || electionSkfd < 0 || helloSkfd < 0) {
+      if (capturingSkfd >= 0) {
+        close(capturingSkfd);
+      }
+      if (electionSkfd >= 0) {
+        close(electionSkfd);
+      }
+      if (helloSkfd >= 0) {
+        close(helloSkfd);
+      }
       free(newIf);
       return 0;
     }
@@ -225,8 +498,15 @@ CreateInterface(const char *ifName, struct interface *olsrIntf)
   ifr.ifr_name[IFNAMSIZ - 1] = '\0';    /* Ensures null termination */
   if (ioctl(ioctlSkfd, SIOCGIFHWADDR, &ifr) < 0) {
     BmfPError("ioctl(SIOCGIFHWADDR) error for interface \"%s\"", ifName);
-    close(capturingSkfd);
-    close(encapsulatingSkfd);
+    if (capturingSkfd >= 0) {
+      close(capturingSkfd);
+    }
+    if (electionSkfd >= 0) {
+      close(electionSkfd);
+    }
+    if (helloSkfd >= 0) {
+      close(helloSkfd);
+    }
     free(newIf);
     return 0;
   }
@@ -235,9 +515,12 @@ CreateInterface(const char *ifName, struct interface *olsrIntf)
   newIf->capturingSkfd = capturingSkfd;
   newIf->encapsulatingSkfd = encapsulatingSkfd;
   newIf->listeningSkfd = listeningSkfd;
+  newIf->electionSkfd = electionSkfd;
+  newIf->helloSkfd = helloSkfd;
   memcpy(newIf->macAddr, ifr.ifr_hwaddr.sa_data, IFHWADDRLEN);
   memcpy(newIf->ifName, ifName, IFNAMSIZ);
   newIf->olsrIntf = olsrIntf;
+  newIf->isActive = 1; //as default the interface is active
   if (olsrIntf != NULL) {
     /* For an OLSR-interface, copy the interface address and broadcast
      * address from the OLSR interface object. Downcast to correct sockaddr
@@ -471,6 +754,14 @@ CloseBmfNetworkInterfaces(void)
       close(bmfIf->encapsulatingSkfd);
       nClosed++;
     }
+    if (bmfIf->electionSkfd >= 0) {
+      close(bmfIf->electionSkfd);
+      nClosed++;
+    }
+    if (bmfIf->helloSkfd >= 0) {
+      close(bmfIf->helloSkfd);
+      nClosed++;
+    }
     //OLSR_PRINTF(
     //  7,
     //  "%s: %s interface \"%s\": RX pkts %u (%u dups); TX pkts %u\n",
@@ -542,6 +833,14 @@ AddNonOlsrBmfIf(const char *ifName, void *data __attribute__ ((unused)), set_plu
   return 0;
 }                               /* AddNonOlsrBmfIf */
 
+
+int
+set_TTL_Check(const char *TTL_Check, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
+{
+assert(TTL_Check!= NULL);
+set_plugin_boolean(TTL_Check, &my_TTL_Check, addon);
+return 0;
+} /* Set TTL Check */
 
 int
 set_MDNS_TTL(const char *MDNS_TTL, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))

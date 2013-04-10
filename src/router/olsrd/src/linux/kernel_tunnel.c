@@ -39,6 +39,8 @@
  *
  */
 
+#ifdef __linux__
+
 #include "kernel_tunnel.h"
 #include "kernel_routes.h"
 #include "log.h"
@@ -58,19 +60,17 @@
 #include <linux/if_tunnel.h>
 #include <linux/version.h>
 
-#if defined linux
-  #if !defined LINUX_VERSION_CODE || !defined KERNEL_VERSION
-    #error "Both LINUX_VERSION_CODE and KERNEL_VERSION need to be defined"
-  #endif
-#endif
+#if !defined LINUX_VERSION_CODE || !defined KERNEL_VERSION
+  #error "Both LINUX_VERSION_CODE and KERNEL_VERSION need to be defined"
+#endif /* !defined LINUX_VERSION_CODE || !defined KERNEL_VERSION */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
   #define LINUX_IPV6_TUNNEL
-#endif
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24) */
 
 #ifdef LINUX_IPV6_TUNNEL
 #include <linux/ip6_tunnel.h>
-#endif
+#endif /* LINUX_IPV6_TUNNEL */
 
 //ifup includes
 #include <sys/socket.h>
@@ -130,10 +130,11 @@ static int os_ip_tunnel(const char *name, void *target) {
 	int err;
 	void * p;
 	char buffer[INET6_ADDRSTRLEN];
+	const char * tunName;
 	struct ip_tunnel_parm p4;
 #ifdef LINUX_IPV6_TUNNEL
 	struct ip6_tnl_parm p6;
-#endif
+#endif /* LINUX_IPV6_TUNNEL */
 
 	assert (name != NULL);
 
@@ -141,6 +142,7 @@ static int os_ip_tunnel(const char *name, void *target) {
 
 	if (olsr_cnf->ip_version == AF_INET) {
 		p = &p4;
+		tunName = TUNNEL_ENDPOINT_IF;
 
 		memset(&p4, 0, sizeof(p4));
 		p4.iph.version = 4;
@@ -150,23 +152,24 @@ static int os_ip_tunnel(const char *name, void *target) {
 		if (target) {
 			p4.iph.daddr = *((in_addr_t *) target);
 		}
-		strncpy(p4.name, name, IFNAMSIZ);
+		strscpy(p4.name, name, IFNAMSIZ);
 	} else {
 #ifdef LINUX_IPV6_TUNNEL
 		p = (void *) &p6;
+		tunName = TUNNEL_ENDPOINT_IF6;
 
 		memset(&p6, 0, sizeof(p6));
 		p6.proto = 0; /* any protocol */
 		if (target) {
 			p6.raddr = *((struct in6_addr *) target);
 		}
-		strncpy(p6.name, name, IFNAMSIZ);
-#else
+		strscpy(p6.name, name, IFNAMSIZ);
+#else /* LINUX_IPV6_TUNNEL */
 		return 0;
-#endif
+#endif /* LINUX_IPV6_TUNNEL */
 	}
 
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	strscpy(ifr.ifr_name, target != NULL ? tunName : name, IFNAMSIZ);
 	ifr.ifr_ifru.ifru_data = p;
 
 	if ((err = ioctl(olsr_cnf->ioctl_s, target != NULL ? SIOCADDTUNNEL : SIOCDELTUNNEL, &ifr))) {
@@ -234,7 +237,7 @@ struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target, 
     memcpy(&t->target, target, sizeof(*target));
     t->node.key = &t->target;
 
-    strncpy(t->if_name, name, IFNAMSIZ);
+    strscpy(t->if_name, name, IFNAMSIZ);
     t->if_index = if_idx;
 
     avl_insert(&tunnel_tree, &t->node, AVL_DUP_NO);
@@ -248,6 +251,7 @@ struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target, 
  * Release an olsr ipip tunnel. Tunnel will be deleted
  * if this was the last user
  * @param t pointer to olsr_iptunnel_entry
+ * @param cleanup true to free t's memory
  */
 static void internal_olsr_os_del_ipip_tunnel(struct olsr_iptunnel_entry *t, bool cleanup) {
   if (!cleanup) {
@@ -273,3 +277,4 @@ static void internal_olsr_os_del_ipip_tunnel(struct olsr_iptunnel_entry *t, bool
 void olsr_os_del_ipip_tunnel(struct olsr_iptunnel_entry *t) {
   internal_olsr_os_del_ipip_tunnel(t, false);
 }
+#endif /* __linux__ */

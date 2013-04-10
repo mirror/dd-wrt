@@ -1,4 +1,3 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
@@ -39,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #if !defined TL_NET_ROUTE_H_INCLUDED
 
 #define TL_NET_ROUTE_H_INCLUDED
@@ -47,7 +48,9 @@
 #define RTF_HOST 2
 #define RTF_GATEWAY 4
 
-#endif
+#endif /* !defined TL_NET_ROUTE_H_INCLUDED */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

@@ -42,30 +42,7 @@
 #ifndef _FPM_H
 #define _FPM_H
 
-#ifdef USE_FPM
-
-#if 0
-
-/*
- * Use this to find implicit number conversions when compiling
- * Note: comparing pointers is unsigned, so do not use to run.
- */
-typedef void *fpm;
-typedef signed long sfpm;
-typedef unsigned long ufpm;
-#define FPM_BIT 12
-
-#elif 0
-
-/*
- * Use this for extra long 64 bit calculations
- */
-typedef long long fpm;
-typedef signed long long sfpm;
-typedef unsigned long long ufpm;
-#define FPM_BIT 24
-
-#else
+#if 1 // def USE_FPM
 
 /*
  * The standard math should function with only 32 bits
@@ -74,8 +51,6 @@ typedef long fpm;
 typedef signed long sfpm;
 typedef unsigned long ufpm;
 #define FPM_BIT 10
-
-#endif
 
 #define FPM_NUM (1 << FPM_BIT)
 #define FPM_MSK (FPM_NUM - 1)
@@ -105,15 +80,6 @@ typedef unsigned long ufpm;
  */
 #define fpmidiv_def(a, b) (fpm)((sfpm)(a) / (int)(b))
 
-#if 0
-
-/*
- * Special: uses long long for larger numbers, currently unused
- */
-#define fpmlmul_def(a, b) (sfpm)(((long long)(a) * (b)) >> FPM_BIT)
-#define fpmldiv_def(a, b) (sfpm)(((long long)(a) << FPM_BIT) / (b))
-#endif
-
 #ifdef NDEBUG
 
 #define itofpm itofpm_def
@@ -129,11 +95,6 @@ typedef unsigned long ufpm;
 #define fpmmuli fpmmuli_def
 #define fpmidiv fpmidiv_def
 
-#if 0
-#define fpmlmul fpmlmul_def
-#define fpmldiv fpmldiv_def
-#endif
-
 #else /* NDEBUG */
 
 fpm itofpm(sfpm i);
@@ -148,11 +109,6 @@ fpm fpmdiv(fpm a, fpm b);
 fpm fpmimul(int a, fpm b);
 fpm fpmmuli(fpm a, int b);
 fpm fpmidiv(fpm a, int b);
-
-#if 0
-fpm fpmlmul(fpm a, fpm b);
-fpm fpmldiv(fpm a, fpm b);
-#endif
 
 #endif /* NDEBUG */
 
@@ -178,7 +134,7 @@ const char *fpmtoa(float);
 
 #endif /* USE_FPM */
 
-#endif
+#endif /* _FPM_H */
 
 /*
  * Local Variables:

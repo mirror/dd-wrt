@@ -4,7 +4,7 @@
  *  Created on: Jan 29, 2010
  *      Author: rogge
  */
-#ifdef linux
+#ifdef __linux__
 
 #include "gateway_default_handler.h"
 
@@ -19,6 +19,8 @@ static bool gw_def_finished_ipv6;
 static struct timer_entry *gw_def_timer;
 
 /* forward declarations */
+static void gw_default_init(void);
+static void gw_default_cleanup(void);
 static void gw_default_startup_handler(void);
 static void gw_default_choosegw_handler(bool ipv4, bool ipv6);
 static void gw_default_update_handler(struct gateway_entry *);
@@ -27,11 +29,13 @@ static void gw_default_delete_handler(struct gateway_entry *);
 /**
  * Callback list for the gateway (default) handler
  */
-static struct olsr_gw_handler gw_def_handler = {
-  &gw_default_startup_handler,
-  &gw_default_choosegw_handler,
-  &gw_default_update_handler,
-  &gw_default_delete_handler
+struct olsr_gw_handler gw_def_handler = {
+    &gw_default_init,
+    &gw_default_cleanup,
+    &gw_default_startup_handler,
+    &gw_default_choosegw_handler,
+    &gw_default_update_handler,
+    &gw_default_delete_handler
 };
 
 /*
@@ -50,7 +54,7 @@ static inline uint64_t gw_default_calc_threshold(uint64_t path_cost) {
   if (olsr_cnf->smart_gw_thresh == 0) {
     path_cost_times_threshold = path_cost;
   } else {
-    path_cost_times_threshold = (path_cost * (uint64_t)olsr_cnf->smart_gw_thresh + (uint64_t)50) / (uint64_t)100;
+    path_cost_times_threshold = (path_cost * (uint64_t) olsr_cnf->smart_gw_thresh + (uint64_t) 50) / (uint64_t) 100;
   }
 
   return path_cost_times_threshold;
@@ -71,79 +75,79 @@ static inline uint64_t gw_default_calc_threshold(uint64_t path_cost) {
  * @return the weighed path cost
  */
 static inline uint64_t gw_default_weigh_costs(uint64_t path_cost, uint32_t exitUk, uint32_t exitDk) {
-	uint8_t WexitU = olsr_cnf->smart_gw_weight_exitlink_up;
-	uint8_t WexitD = olsr_cnf->smart_gw_weight_exitlink_down;
-	uint8_t Wetx = olsr_cnf->smart_gw_weight_etx;
-	uint8_t Detx = olsr_cnf->smart_gw_divider_etx;
-	uint64_t costU;
-	uint64_t costD;
-	uint64_t costE;
+  uint8_t WexitU = olsr_cnf->smart_gw_weight_exitlink_up;
+  uint8_t WexitD = olsr_cnf->smart_gw_weight_exitlink_down;
+  uint8_t Wetx = olsr_cnf->smart_gw_weight_etx;
+  uint8_t Detx = olsr_cnf->smart_gw_divider_etx;
+  uint64_t costU;
+  uint64_t costD;
+  uint64_t costE;
 
-	if (!Detx) {
-		/* only consider path costs (classic behaviour) */
-		return path_cost;
-	}
+  if (!Detx) {
+    /* only consider path costs (classic behaviour) */
+    return path_cost;
+  }
 
-	if (!exitUk || !exitDk) {
-		/* zero bandwidth */
-		return UINT64_MAX;
-	}
+  if (!exitUk || !exitDk) {
+    /* zero bandwidth */
+    return UINT64_MAX;
+  }
 
-	/*
-	 * Weighing of the path costs:
-	 *
-	 * exitUm = the gateway exit link uplink   bandwidth, in Mbps
-	 * exitDm = the gateway exit link downlink bandwidth, in Mbps
-	 * WexitU = the gateway exit link uplink   bandwidth weight   (configured)
-	 * WexitD = the gateway exit link downlink bandwidth weight   (configured)
-	 * Wetx   = the ETX path cost weight                          (configured)
-	 * Detx   = the ETX path cost divider                         (configured)
-	 *
-	 *                      WexitU   WexitD   Wetx
-	 * path_cost_weighed =  ------ + ------ + ---- * path_cost
-	 *                      exitUm   exitDm   Detx
-	 *
-	 * Since the gateway exit link bandwidths are in Kbps, the following formula
-	 * is used to convert them to the desired Mbps:
-	 *
-	 *       bwK
-	 * bwM = ----       bwK = bandwidth in Kbps
-	 *       1000       bwM = bandwidth in Mbps
-	 *
-	 * exitUm = the gateway exit link uplink   bandwidth, in Kbps
-	 * exitDm = the gateway exit link downlink bandwidth, in Kbps
-	 *
-	 *                      1000 * WexitU   1000 * WexitD   Wetx
-	 * path_cost_weighed =  ------------- + ------------- + ---- * path_cost
-	 *                          exitUk          exitDk      Detx
-	 *
-	 *
-	 * Analysis of the required bit width of the result:
-	 *
-	 * exitUk    = 29 bits = [1,   320,000,000]
-	 * exitDk    = 29 bits = [1,   320,000,000]
-	 * WexitU    =  8 bits = [1,           255]
-	 * WexitD    =  8 bits = [1,           255]
-	 * Wetx      =  8 bits = [1,           255]
-	 * Detx      =  8 bits = [1,           255]
-	 * path_cost = 32 bits = [1, 4,294,967,295]
-	 *
-	 *                          1000 * 255   1000 * 255   255
-	 * path_cost_weighed(max) = ---------- + ---------- + --- * 4,294,967,295
-	 *                               1             1       1
-	 *
-	 * path_cost_weighed(max) = 0x3E418    + 0x3E418    + 0xFEFFFFFF01
-	 * path_cost_weighed(max) = 0xFF0007C731
-	 *
-	 * Because we can multiply 0xFF0007C731 by 2^24 without overflowing a
-	 * 64 bits number, we do this to increase accuracy.
-	 */
+  /*
+   * Weighing of the path costs:
+   *
+   * exitUm = the gateway exit link uplink   bandwidth, in Mbps
+   * exitDm = the gateway exit link downlink bandwidth, in Mbps
+   * WexitU = the gateway exit link uplink   bandwidth weight   (configured)
+   * WexitD = the gateway exit link downlink bandwidth weight   (configured)
+   * Wetx   = the ETX path cost weight                          (configured)
+   * Detx   = the ETX path cost divider                         (configured)
+   *
+   *                      WexitU   WexitD   Wetx
+   * path_cost_weighed =  ------ + ------ + ---- * path_cost
+   *                      exitUm   exitDm   Detx
+   *
+   * Since the gateway exit link bandwidths are in Kbps, the following formula
+   * is used to convert them to the desired Mbps:
+   *
+   *       bwK
+   * bwM = ----       bwK = bandwidth in Kbps
+   *       1000       bwM = bandwidth in Mbps
+   *
+   * exitUm = the gateway exit link uplink   bandwidth, in Kbps
+   * exitDm = the gateway exit link downlink bandwidth, in Kbps
+   *
+   *                      1000 * WexitU   1000 * WexitD   Wetx
+   * path_cost_weighed =  ------------- + ------------- + ---- * path_cost
+   *                          exitUk          exitDk      Detx
+   *
+   *
+   * Analysis of the required bit width of the result:
+   *
+   * exitUk    = 29 bits = [1,   320,000,000]
+   * exitDk    = 29 bits = [1,   320,000,000]
+   * WexitU    =  8 bits = [1,           255]
+   * WexitD    =  8 bits = [1,           255]
+   * Wetx      =  8 bits = [1,           255]
+   * Detx      =  8 bits = [1,           255]
+   * path_cost = 32 bits = [1, 4,294,967,295]
+   *
+   *                          1000 * 255   1000 * 255   255
+   * path_cost_weighed(max) = ---------- + ---------- + --- * 4,294,967,295
+   *                               1             1       1
+   *
+   * path_cost_weighed(max) = 0x3E418    + 0x3E418    + 0xFEFFFFFF01
+   * path_cost_weighed(max) = 0xFF0007C731
+   *
+   * Because we can multiply 0xFF0007C731 by 2^24 without overflowing a
+   * 64 bits number, we do this to increase accuracy.
+   */
 
-	costU = (((uint64_t)(1000 * WexitU   )) << 24) / exitUk;
-	costD = (((uint64_t)(1000 * WexitD   )) << 24) / exitDk;
-	costE = (((uint64_t)(Wetx * path_cost)) << 24) / Detx;
+  costU = (((uint64_t) (1000 * WexitU)) << 24) / exitUk;
+  costD = (((uint64_t) (1000 * WexitD)) << 24) / exitDk;
+  costE = (((uint64_t) (Wetx * path_cost)) << 24) / Detx;
 
-	return (costU + costD + costE);
+  return (costU + costD + costE);
 }
 
 /**
@@ -166,7 +170,7 @@ static void gw_default_choose_gateway(void) {
   if (olsr_cnf->smart_gw_thresh) {
     /* determine the path cost thresholds */
 
-    gw = olsr_get_ipv4_inet_gateway(NULL);
+    gw = olsr_get_inet_gateway(false);
     if (gw) {
       tc = olsr_lookup_tc_entry(&gw->originator);
       if (tc) {
@@ -175,7 +179,7 @@ static void gw_default_choose_gateway(void) {
         eval_cost_ipv4_threshold = true;
       }
     }
-    gw = olsr_get_ipv6_inet_gateway(NULL);
+    gw = olsr_get_inet_gateway(true);
     if (gw) {
       tc = olsr_lookup_tc_entry(&gw->originator);
       if (tc) {
@@ -191,7 +195,7 @@ static void gw_default_choose_gateway(void) {
     tc = olsr_lookup_tc_entry(&gw->originator);
 
     if (!tc) {
-	  /* gateways should not exist without tc entry */
+      /* gateways should not exist without tc entry */
       continue;
     }
 
@@ -208,13 +212,13 @@ static void gw_default_choose_gateway(void) {
     /* determine the path cost */
     path_cost = gw_default_weigh_costs(tc->path_cost, gw->uplink, gw->downlink);
 
-    if (!gw_def_finished_ipv4 && gw->ipv4 && gw->ipv4nat == olsr_cnf->smart_gw_allow_nat && path_cost < cost_ipv4 &&
-        (!eval_cost_ipv4_threshold || (path_cost < cost_ipv4_threshold))) {
+    if (!gw_def_finished_ipv4 && gw->ipv4 && gw->ipv4nat == olsr_cnf->smart_gw_allow_nat && path_cost < cost_ipv4
+        && (!eval_cost_ipv4_threshold || (path_cost < cost_ipv4_threshold))) {
       inet_ipv4 = gw;
       cost_ipv4 = path_cost;
     }
-    if (!gw_def_finished_ipv6 && gw->ipv6 && path_cost < cost_ipv6 &&
-        (!eval_cost_ipv6_threshold || (path_cost < cost_ipv6_threshold))) {
+    if (!gw_def_finished_ipv6 && gw->ipv6 && path_cost < cost_ipv6
+        && (!eval_cost_ipv6_threshold || (path_cost < cost_ipv6_threshold))) {
       inet_ipv6 = gw;
       cost_ipv6 = path_cost;
     }
@@ -228,12 +232,12 @@ static void gw_default_choose_gateway(void) {
   dual = (inet_ipv4 == inet_ipv6) && (inet_ipv4 != NULL);
 
   if (inet_ipv4) {
-	/* we are dealing with an IPv4 or dual stack gateway */
-    olsr_set_inet_gateway(&inet_ipv4->originator, true, dual, false);
+    /* we are dealing with an IPv4 or dual stack gateway */
+    olsr_set_inet_gateway(&inet_ipv4->originator, true, dual);
   }
   if (inet_ipv6 && !dual) {
     /* we are dealing with an IPv6-only gateway */
-    olsr_set_inet_gateway(&inet_ipv6->originator, false, true, false);
+    olsr_set_inet_gateway(&inet_ipv6->originator, false, true);
   }
 
   if ((olsr_cnf->smart_gw_thresh == 0) && gw_def_finished_ipv4 && gw_def_finished_ipv6) {
@@ -250,16 +254,17 @@ static void gw_default_choose_gateway(void) {
  */
 static void gw_default_timer(void *unused __attribute__ ((unused))) {
   /* accept a 10% increase/decrease in the number of gateway nodes without triggering a stablecount reset */
-  if (((tc_tree.count * 10) <= (gw_def_nodecount * 11)) ||
-      ((tc_tree.count * 10) >= (gw_def_nodecount *  9))) {
+  unsigned int tree100percent = tc_tree.count * 10;
+  uint32_t nodecount090percent = gw_def_nodecount * 9;
+  uint32_t nodecount110percent = gw_def_nodecount * 11;
+  if ((tree100percent >= nodecount090percent) && (tree100percent <= nodecount110percent)) {
     gw_def_nodecount = tc_tree.count;
   }
 
   if (tc_tree.count == gw_def_nodecount) {
     /* the number of gateway nodes is 'stable' */
     gw_def_stablecount++;
-  }
-  else {
+  } else {
     /* there was a significant change in the number of gateway nodes */
     gw_def_nodecount = tc_tree.count;
     gw_def_stablecount = 0;
@@ -277,7 +282,7 @@ static void gw_default_timer(void *unused __attribute__ ((unused))) {
  * @param ipv4 lookup new v4 gateway
  * @param ipv6 lookup new v6 gateway
  */
-static void olsr_gw_default_lookup_gateway(bool ipv4, bool ipv6) {
+static void gw_default_lookup_gateway(bool ipv4, bool ipv6) {
   if (ipv4) {
     /* get a new IPv4 gateway if we use OLSRv4 or NIIT */
     gw_def_finished_ipv4 = !(olsr_cnf->ip_version == AF_INET || olsr_cnf->use_niit);
@@ -296,24 +301,27 @@ static void olsr_gw_default_lookup_gateway(bool ipv4, bool ipv6) {
  * Exported functions
  */
 
+/*
+ * Handler functions
+ */
+
 /**
  * initialization of default gateway handler
  */
-void olsr_gw_default_init(void) {
+static void gw_default_init(void) {
   /* initialize values */
   gw_def_nodecount = 0;
   gw_def_stablecount = 0;
   gw_def_finished_ipv4 = false;
   gw_def_finished_ipv6 = false;
   gw_def_timer = NULL;
-
-  /* setup default handler */
-  olsr_set_inetgw_handler(&gw_def_handler);
 }
 
-/*
- * Handler functions
+/**
+ * Cleanup default gateway handler
  */
+static void gw_default_cleanup(void) {
+}
 
 /**
  * Handle gateway startup
@@ -344,7 +352,7 @@ static void gw_default_startup_handler(void) {
  * @param ipv6 lookup new v6 gateway
  */
 static void gw_default_choosegw_handler(bool ipv4, bool ipv6) {
-  olsr_gw_default_lookup_gateway(ipv4, ipv6);
+  gw_default_lookup_gateway(ipv4, ipv6);
 
   if (!(gw_def_finished_ipv4 && gw_def_finished_ipv6)) {
     gw_default_startup_handler();
@@ -357,12 +365,18 @@ static void gw_default_choosegw_handler(bool ipv4, bool ipv6) {
  * @param gw the gateway entry
  */
 static void gw_default_update_handler(struct gateway_entry *gw) {
-  bool v4changed = gw && (gw == olsr_get_ipv4_inet_gateway(NULL))
-      && (!gw->ipv4 || (gw->ipv4nat && !olsr_cnf->smart_gw_allow_nat));
-  bool v6changed = gw && (gw == olsr_get_ipv6_inet_gateway(NULL)) && !gw->ipv6;
+  if (olsr_cnf->smart_gw_thresh == 0) {
+    /* classical behaviour: stick with the chosen gateway unless it changes */
+    bool v4changed = gw && (gw == olsr_get_inet_gateway(false))
+        && (!gw->ipv4 || (gw->ipv4nat && !olsr_cnf->smart_gw_allow_nat));
+    bool v6changed = gw && (gw == olsr_get_inet_gateway(true)) && !gw->ipv6;
 
-  if (v4changed || v6changed) {
-    olsr_gw_default_lookup_gateway(v4changed, v6changed);
+    if (v4changed || v6changed) {
+      gw_default_lookup_gateway(v4changed, v6changed);
+    }
+  } else {
+    /* new behaviour: always pick a new gateway */
+    gw_default_lookup_gateway(true, true);
   }
 }
 
@@ -372,11 +386,11 @@ static void gw_default_update_handler(struct gateway_entry *gw) {
  * @param gw the gateway entry
  */
 static void gw_default_delete_handler(struct gateway_entry *gw) {
-  bool isv4 = gw && (gw == olsr_get_ipv4_inet_gateway(NULL));
-  bool isv6 = gw && (gw == olsr_get_ipv6_inet_gateway(NULL));
+  bool isv4 = gw && (gw == olsr_get_inet_gateway(false));
+  bool isv6 = gw && (gw == olsr_get_inet_gateway(true));
 
   if (isv4 || isv6) {
-    olsr_gw_default_lookup_gateway(isv4, isv6);
+    gw_default_lookup_gateway(isv4, isv6);
   }
 }
-#endif /* linux */
+#endif /* __linux__ */

@@ -39,6 +39,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #if !defined TL_UNISTD_H_INCLUDED
 
 #include <stddef.h>
@@ -52,14 +54,14 @@ unsigned int random(void);
 
 char *StrError(unsigned int ErrNo);
 
-int getpid(void);
-
 #define IPTOS_TOS(x) ((x) & 0x1e)
 #define IPTOS_PREC(x) ((x) & 0xe0)
 
 int isatty(int fd);
 
-#endif
+#endif /* !defined TL_UNISTD_H_INCLUDED */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

@@ -2,7 +2,7 @@
 #define _Included_org_olsr_plugin_pud_UplinkMessage
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #include <olsr_types.h>
 #include <jni.h>
@@ -91,5 +91,5 @@ static inline void constructIPAddress(JNIEnv * env, bool ipv4,
 
 #ifdef __cplusplus
 }
-#endif
-#endif
+#endif /* __cplusplus */
+#endif /* _Included_org_olsr_plugin_pud_UplinkMessage */

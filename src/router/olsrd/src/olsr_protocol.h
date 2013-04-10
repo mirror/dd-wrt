@@ -373,7 +373,7 @@ union olsr_packet {
   struct olsr6 v6;
 } __attribute__ ((packed));
 
-#endif
+#endif /* _PROTOCOLS_OLSR_H */
 
 /*
  * Local Variables:

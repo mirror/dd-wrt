@@ -94,7 +94,7 @@ void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, 
 
 int olsrd_plugin_interface_version(void);
 
-#endif
+#endif /* _OLSRD_PLUGIN_DEFS */
 
 /*
  * Local Variables:

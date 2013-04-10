@@ -1,4 +1,3 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
@@ -39,12 +38,14 @@
  *
  */
 
+#ifdef _WIN32
+
 #if !defined(AFX_MYTABCTRL_H__D443FF52_C52D_4C89_AB4B_19B09687EBAE__INCLUDED_)
 #define AFX_MYTABCTRL_H__D443FF52_C52D_4C89_AB4B_19B09687EBAE__INCLUDED_
 
 #if defined _MSC_VER && _MSC_VER > 1000
 #pragma once
-#endif
+#endif /* defined _MSC_VER && _MSC_VER > 1000 */
 
 #include "MyDialog1.h"
 #include "MyDialog2.h"
@@ -81,7 +82,9 @@ protected:
 
 //{{AFX_INSERT_LOCATION}}
 
-#endif
+#endif /* !defined(AFX_MYTABCTRL_H__D443FF52_C52D_4C89_AB4B_19B09687EBAE__INCLUDED_) */
+
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

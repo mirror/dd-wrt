@@ -68,9 +68,9 @@ extern char keyfile[FILENAME_MAX + 1];
 
 #ifdef USE_OPENSSL
 #define SIGSIZE   20
-#else
+#else /* USE_OPENSSL */
 #define SIGSIZE   16
-#endif
+#endif /* USE_OPENSSL */
 
 /****************************************************************************
  *                            PACKET SECTION                                *
@@ -191,7 +191,7 @@ struct s_olsr6 {
   struct s_olsrmsg6 olsr_msg[1];       /* variable messages */
 };
 
-#endif
+#endif /* _OLSRD_SECURE_MSG */
 
 /*
  * Local Variables:

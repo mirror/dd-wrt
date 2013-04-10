@@ -99,13 +99,13 @@ int nmea_gen_GPGSA(char *s, const int len, const nmeaGPGSA *pack) {
 	int i;
 	char sFixMode[2];
 	char sFixType[2];
-	char sSatPrn[64];
+	char sSatPrn[(NMEA_MAXSAT * 4) + 1];
 	char sPdop[16];
 	char sHdop[16];
 	char sVdop[16];
 
 	char * psSatPrn = &sSatPrn[0];
-	int ssSatPrn = sizeof(sSatPrn);
+	int ssSatPrn = sizeof(sSatPrn) - 1;
 
 	bool satinuse = nmea_INFO_is_present(pack->present, SATINUSE);
 
@@ -168,9 +168,9 @@ int nmea_gen_GPGSV(char *s, const int len, const nmeaGPGSV *pack) {
 	char sCount[2];
 	char sIndex[2];
 	char sSatCount[4];
-	char sSatInfo[64];
+	char sSatInfo[(NMEA_SATINPACK * 4) + 1];
 	char * psSatInfo = &sSatInfo[0];
-	int ssSatInfo = sizeof(sSatInfo);
+	int ssSatInfo = sizeof(sSatInfo) - 1;
 	bool satinview = nmea_INFO_is_present(pack->present, SATINVIEW);
 	int i;
 
@@ -269,7 +269,7 @@ int nmea_gen_GPRMC(char *s, const int len, const nmeaGPRMC *pack) {
 		sMagvar_ew[0] = pack->magvar_ew;
 	}
 
-	return nmea_printf(s, len, "$GPRMC,%s,%C,%s,%s,%s,%s,%s,%s,%s,%s,%s,%C", &sTime[0], pack->status, &sLat[0], &sNs[0],
+	return nmea_printf(s, len, "$GPRMC,%s,%c,%s,%s,%s,%s,%s,%s,%s,%s,%s,%c", &sTime[0], pack->status, &sLat[0], &sNs[0],
 			&sLon[0], &sEw[0], &sSpeed[0], &sTrack[0], &sDate[0], &sMagvar[0], &sMagvar_ew[0], pack->mode);
 }
 

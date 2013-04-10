@@ -60,7 +60,7 @@ union hna_message {
   struct hnamsg6 v6;
 };
 
-#endif
+#endif /* _PACKET_H */
 
 /*
  * Local Variables:

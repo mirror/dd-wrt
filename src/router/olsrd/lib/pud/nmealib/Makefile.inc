@@ -8,6 +8,15 @@
 DEBUG ?= 1
 
 
+# shows full compiler/linker calls if activated
+VERBOSE ?= 0
+
+ifeq ($(VERBOSE),0)
+MAKECMDPREFIX = @
+else
+MAKECMDPREFIX =
+endif
+
 ######################
 #
 # Lowlevel options and rules

@@ -90,7 +90,7 @@ olsr_is_mpr(void)
 {
   return ((mprs_list.next == &mprs_list) ? false : true);
 }
-#endif
+#endif /* 0 */
 
 /**
  * Wrapper for the timer callback.
@@ -100,7 +100,7 @@ olsr_expire_mpr_sel_entry(void *context)
 {
 #ifdef DEBUG
   struct ipaddr_str buf;
-#endif
+#endif /* DEBUG */
   struct mpr_selector *mpr_sel;
 
   mpr_sel = (struct mpr_selector *)context;
@@ -108,7 +108,7 @@ olsr_expire_mpr_sel_entry(void *context)
 
 #ifdef DEBUG
   OLSR_PRINTF(1, "MPRS: Timing out %st\n", olsr_ip_to_string(&buf, &mpr_sel->MS_main_addr));
-#endif
+#endif /* DEBUG */
 
   DEQUEUE_ELEM(mpr_sel);
 
@@ -133,7 +133,7 @@ olsr_set_mpr_sel_timer(struct mpr_selector *mpr_sel, olsr_reltime rel_timer)
 /**
  *Add a MPR selector to the MPR selector set
  *
- *@param add address of the MPR selector
+ *@param addr address of the MPR selector
  *@param vtime validity time for the new entry
  *
  *@return a pointer to the new entry
@@ -230,7 +230,7 @@ olsr_print_mprs_set(void)
   }
   OLSR_PRINTF(1, "\n");
 }
-#endif
+#endif /* 0 */
 
 /*
  * Local Variables:

@@ -25,7 +25,7 @@ int olsrd_plugin_init(void) {
 		olsr_printf(0, "%s\n", PUD_PLUGIN_NAME_LONG
 #ifdef GIT_SHA
 				" (" GIT_SHA ")"
-#endif
+#endif /* GIT_SHA */
 		);
 	}
 	return (retval ? 1 : 0);

@@ -95,20 +95,20 @@ add_packet_to_buffer(union olsr_message *p, int size)
  *Get the packet with index 'index'
  */
 union olsr_message *
-get_packet(int index)
+get_packet(int idx)
 {
   int i = 0;
   struct packnode *tmp;
 
-  if (index > MAXPACKS)
+  if (idx > MAXPACKS)
     return 0;
 
-  if (index == 0)
+  if (idx == 0)
     return packets->packet;
 
   tmp = packets;
 
-  while (i != index) {
+  while (i != idx) {
     tmp = tmp->next;
     i++;
   }

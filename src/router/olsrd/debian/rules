@@ -10,7 +10,7 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# plugins to be build (not build per default are: tas powerinfo pgraph mini quagga)
+# plugins to be build (not build per default are: powerinfo pgraph mini quagga)
 # 	(fixme?: if you add them here, they are build but their README is not 
 # 	copied to /usr/share/doc/olsrd-plugins/)
 #

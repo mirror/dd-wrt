@@ -76,7 +76,7 @@ struct netmsg {
  *Private functions
  */
 
-int ipc_get_socket();
+int ipc_get_socket(void);
 
 int ipc_evaluate_message(union olsr_message *);
 

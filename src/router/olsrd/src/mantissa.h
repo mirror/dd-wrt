@@ -64,7 +64,7 @@ olsr_reltime me_to_reltime(const uint8_t);
 
 uint8_t reltime_to_me(const olsr_reltime);
 
-#endif
+#endif /* _OLSR_MANTISSA */
 
 /*
  * Local Variables:

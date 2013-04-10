@@ -53,6 +53,10 @@
 #include "lq_plugin_default_ff.h"
 #include "lq_plugin_default_ffeth.h"
 
+#ifdef LINUX_NL80211
+#include "linux/lq_plugin_ffeth_nl80211.h"
+#endif
+
 #include <assert.h>
 
 struct avl_tree lq_handler_tree;
@@ -101,6 +105,9 @@ init_lq_handler_tree(void)
   register_lq_handler(&lq_etx_fpm_handler, LQ_ALGORITHM_ETX_FPM_NAME);
   register_lq_handler(&lq_etx_ff_handler, LQ_ALGORITHM_ETX_FF_NAME);
   register_lq_handler(&lq_etx_ffeth_handler, LQ_ALGORITHM_ETX_FFETH_NAME);
+#ifdef LINUX_NL80211
+  register_lq_handler(&lq_etx_ffeth_nl80211_handler, LQ_ALGORITHM_ETX_FFETH_NL80211_NAME);
+#endif
 
   if (olsr_cnf->lq_algorithm == NULL) {
     activate_lq_handler(DEF_LQ_ALGORITHM);
@@ -119,8 +126,8 @@ init_lq_handler_tree(void)
  * The name parameter is marked as "unused" to squelch a compiler warning if debug
  * output is not active
  *
- * @param pointer to lq_handler structure
- * @param name of the link quality handler for debug output
+ * @param handler pointer to lq_handler structure
+ * @param name name of the link quality handler for debug output
  */
 void
 register_lq_handler(struct lq_handler *handler, const char *name)
@@ -142,7 +149,7 @@ register_lq_handler(struct lq_handler *handler, const char *name)
  *
  * this function calculates the linkcost of a tc_edge_entry
  *
- * @param pointer to the tc_edge_entry
+ * @param tc_edge pointer to the tc_edge_entry
  * @return linkcost
  */
 olsr_linkcost
@@ -158,8 +165,8 @@ olsr_calc_tc_cost(const struct tc_edge_entry * tc_edge)
  * this function converts the lq information of a lq_hello_neighbor into binary package
  * format
  *
- * @param pointer to binary buffer to write into
- * @param pointer to lq_hello_neighbor
+ * @param buff pointer to binary buffer to write into
+ * @param neigh pointer to lq_hello_neighbor
  * @return number of bytes that have been written
  */
 int
@@ -175,8 +182,8 @@ olsr_serialize_hello_lq_pair(unsigned char *buff, struct lq_hello_neighbor *neig
  * this function reads the lq information of a binary package into a hello_neighbor
  * It also initialize the cost variable of the hello_neighbor
  *
- * @param pointer to the current buffer pointer
- * @param pointer to hello_neighbor
+ * @param curr pointer to the current buffer pointer
+ * @param neigh pointer to hello_neighbor
  */
 void
 olsr_deserialize_hello_lq_pair(const uint8_t ** curr, struct hello_neighbor *neigh)
@@ -192,8 +199,8 @@ olsr_deserialize_hello_lq_pair(const uint8_t ** curr, struct hello_neighbor *nei
  * this function converts the lq information of a olsr_serialize_tc_lq_pair
  * into binary package format
  *
- * @param pointer to binary buffer to write into
- * @param pointer to olsr_serialize_tc_lq_pair
+ * @param buff pointer to binary buffer to write into
+ * @param neigh pointer to olsr_serialize_tc_lq_pair
  * @return number of bytes that have been written
  */
 int
@@ -208,8 +215,8 @@ olsr_serialize_tc_lq_pair(unsigned char *buff, struct tc_mpr_addr *neigh)
  *
  * this function reads the lq information of a binary package into a tc_edge_entry
  *
- * @param pointer to the current buffer pointer
- * @param pointer to tc_edge_entry
+ * @param curr pointer to the current buffer pointer
+ * @param edge pointer to tc_edge_entry
  */
 void
 olsr_deserialize_tc_lq_pair(const uint8_t ** curr, struct tc_edge_entry *edge)
@@ -225,8 +232,8 @@ olsr_deserialize_tc_lq_pair(const uint8_t ** curr, struct tc_edge_entry *edge)
  * is lost (timeout) or received. This way the lq-plugin can update the links link
  * quality value.
  *
- * @param pointer to link_entry
- * @param true if hello package was lost
+ * @param entry pointer to link_entry
+ * @param lost true if hello package was lost
  */
 void
 olsr_update_packet_loss_worker(struct link_entry *entry, bool lost)
@@ -241,8 +248,8 @@ olsr_update_packet_loss_worker(struct link_entry *entry, bool lost)
  * this function is called to copy the link quality information from a received
  * hello package into a link_entry.
  *
- * @param pointer to link_entry
- * @param pointer to hello_neighbor, if NULL the neighbor link quality information
+ * @param local pointer to link_entry
+ * @param foreign pointer to hello_neighbor, if NULL the neighbor link quality information
  * of the link entry has to be reset to "zero"
  */
 void
@@ -264,8 +271,8 @@ olsr_memorize_foreign_hello_lq(struct link_entry *local, struct hello_neighbor *
  * It's not thread save and should not be called twice with the same println
  * value in the same context (a single printf command for example).
  *
- * @param pointer to link_entry
- * @param char separator between LQ and NLQ
+ * @param entry to link_entry
+ * @param separator separator between LQ and NLQ
  * @param buffer for output
  * @return pointer to a buffer with the text representation
  */
@@ -283,9 +290,9 @@ get_link_entry_text(struct link_entry *entry, char separator, struct lqtextbuffe
  * It's not thread save and should not be called twice with the same println
  * value in the same context (a single printf command for example).
  *
- * @param pointer to tc_edge_entry
- * @param char separator between LQ and NLQ
- * @param pointer to buffer
+ * @param entry pointer to tc_edge_entry
+ * @param separator separator between LQ and NLQ
+ * @param buffer pointer to buffer
  * @return pointer to the buffer with the text representation
  */
 const char *
@@ -301,9 +308,9 @@ get_tc_edge_entry_text(struct tc_edge_entry *entry, char separator, struct lqtex
  * This function transforms an olsr_linkcost value into it's text representation and copies
  * the result into a buffer.
  *
- * @param linkcost value
- * @param true to transform the cost of a route, false for a link
- * @param pointer to buffer
+ * @param cost link cost value
+ * @param route true to transform the cost of a route, false for a link
+ * @param buffer pointer to buffer
  * @return pointer to buffer filled with text
  */
 const char *
@@ -329,8 +336,8 @@ get_linkcost_text(olsr_linkcost cost, bool route, struct lqtextbuffer *buffer)
  * this function copies the link quality information from a link_entry to a
  * lq_hello_neighbor.
  *
- * @param pointer to target lq_hello_neighbor
- * @param pointer to source link_entry
+ * @param target pointer to target lq_hello_neighbor
+ * @param source pointer to source link_entry
  */
 void
 olsr_copy_hello_lq(struct lq_hello_neighbor *target, struct link_entry *source)
@@ -346,8 +353,8 @@ olsr_copy_hello_lq(struct lq_hello_neighbor *target, struct link_entry *source)
  * this function copies the link quality information from a link_entry to a
  * tc_mpr_addr.
  *
- * @param pointer to tc_mpr_addr
- * @param pointer to link_entry
+ * @param target pointer to tc_mpr_addr
+ * @param source pointer to link_entry
  */
 void
 olsr_copylq_link_entry_2_tc_mpr_addr(struct tc_mpr_addr *target, struct link_entry *source)
@@ -363,8 +370,8 @@ olsr_copylq_link_entry_2_tc_mpr_addr(struct tc_mpr_addr *target, struct link_ent
  * this function copies the link quality information from a link_entry to a
  * tc_edge_entry.
  *
- * @param pointer to tc_edge_entry
- * @param pointer to link_entry
+ * @param target pointer to tc_edge_entry
+ * @param source pointer to link_entry
  */
 void
 olsr_copylq_link_entry_2_tc_edge_entry(struct tc_edge_entry *target, struct link_entry *source)
@@ -384,7 +391,7 @@ void olsr_clear_hello_lq(struct link_entry *link) {
  *
  * this function resets the linkquality value of a tc_mpr_addr
  *
- * @param pointer to tc_mpr_addr
+ * @param target pointer to tc_mpr_addr
  */
 void
 olsr_clear_tc_lq(struct tc_mpr_addr *target)
@@ -492,9 +499,6 @@ size_t olsr_sizeof_tc_lqdata(void) {
 /**
  * This function should be called whenever the current linkcost
  * value changed in a relevant way.
- *
- * @param link pointer to current link
- * @param newcost new cost of this link
  */
 void olsr_relevant_linkcost_change(void) {
   changes_neighborhood = true;

@@ -44,7 +44,7 @@
 #include <net/if_arp.h>
 #ifndef __ANDROID__
 #include <net/ethernet.h>
-#endif
+#endif /* __ANDROID__ */
 #include <netinet/ip.h>
 #include <netinet/udp.h>
 #include <netpacket/packet.h>
@@ -142,7 +142,7 @@ olsr_arp_event(void *foo __attribute__ ((unused)))
                       i < (ssize_t) sizeof(buf.eth.h_source) - 1 ? ":" : "\n");
         }
       }
-#endif
+#endif /* ARPREFRESH_DEBUG */
       if (ioctl(arprefresh_sockfd, SIOCSARP, &req) < 0) {
         OLSR_PRINTF(1, "*** ARPREFRESH: SIOCSARP: %s\n", strerror(errno));
         close(arprefresh_sockfd);

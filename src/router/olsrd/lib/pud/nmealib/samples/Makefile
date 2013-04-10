@@ -23,12 +23,16 @@ remake: clean all
 samples: $(SMPLS)
 
 ../build/samples/%: %/main.o
+ifeq ($(VERBOSE),0)
 	@echo "[LD] $@"
-	@$(CC) $(CFLAGS) $< $(LIBRARIES) -o $@
+endif
+	$(MAKECMDPREFIX)$(CC) $(CFLAGS) $< $(LIBRARIES) -o $@
 
 %/main.o: %/main.c Makefile ../Makefile.inc
+ifeq ($(VERBOSE),0)
 	@echo "[CC] $<"
-	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+endif
+	$(MAKECMDPREFIX)$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 
 #
@@ -38,7 +42,7 @@ samples: $(SMPLS)
 .PHONY: all all-before clean samples
 
 all-before:
-	@mkdir -p ../build/samples
+	$(MAKECMDPREFIX)mkdir -p ../build/samples
 
 clean:
-	rm -f $(SMPLOBJ) $(SMPLS)
+	$(MAKECMDPREFIX)rm -f $(SMPLOBJ) $(SMPLS)

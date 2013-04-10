@@ -763,6 +763,16 @@ static void nmea_errors(const char *str, int str_size __attribute__((unused))) {
 }
 
 /**
+ * Helper function to read the position file into the transmit position
+ */
+void updatePositionFromFile(void) {
+  char * positionFile = getPositionFile();
+  if (positionFile) {
+    readPositionFile(positionFile, &transmitGpsInformation.txPosition.nmeaInfo);
+  }
+}
+
+/**
  Start the receiver
 
  @return
@@ -771,7 +781,6 @@ static void nmea_errors(const char *str, int str_size __attribute__((unused))) {
  */
 bool startReceiver(void) {
 	MovementState externalState;
-	char * positionFile = getPositionFile();
 
 	if (!nmea_parser_init(&nmeaParser)) {
 		pudError(false, "Could not initialise NMEA parser");
@@ -781,18 +790,16 @@ bool startReceiver(void) {
 	/* hook up the NMEA library error callback */
 	nmea_context_set_error_func(&nmea_errors);
 
-	if (positionFile) {
-		readPositionFile(positionFile, &transmitGpsInformation.txPosition.nmeaInfo);
-	} else {
-		nmea_zero_INFO(&transmitGpsInformation.txPosition.nmeaInfo);
-	}
+	nmea_zero_INFO(&transmitGpsInformation.txPosition.nmeaInfo);
+	updatePositionFromFile();
+
 	transmitGpsInformation.txGateway = olsr_cnf->main_addr;
 	transmitGpsInformation.positionUpdated = false;
 	transmitGpsInformation.nodeId = getNodeId();
 
 #ifdef HTTPINFO_PUD
 	olsr_cnf->pud_position = &transmitGpsInformation;
-#endif
+#endif /* HTTPINFO_PUD */
 	initPositionAverageList(&positionAverageList, getAverageDepth());
 
 	if (!initOlsrTxTimer()) {

@@ -54,7 +54,7 @@ void olsr_update_hysteresis_hello(struct link_entry *, olsr_reltime);
 
 void update_hysteresis_incoming(union olsr_ip_addr *, struct interface *, uint16_t);
 
-#endif
+#endif /* _OLSR_HYSTERESIS */
 
 /*
  * Local Variables:

@@ -52,7 +52,7 @@ void olsr_init_package_process(void);
 
 void olsr_hello_tap(struct hello_message *, struct interface *, const union olsr_ip_addr *);
 
-#endif
+#endif /* _OLSR_PROCESS_PACKAGE */
 
 /*
  * Local Variables:

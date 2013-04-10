@@ -64,6 +64,7 @@
 #include "tc_set.h" /* olsr_lookup_tc_entry(), olsr_lookup_tc_edge() */
 #include "net_olsr.h" /* ipequal */
 #include "lq_plugin.h"
+#include "kernel_tunnel.h"
 
 /* Plugin includes */
 #include "Packet.h" /* IFHWADDRLEN */
@@ -362,7 +363,7 @@ int DeactivateSpoofFilter(void)
     return 0;
   }
 
-  EthTapSpoofState = fgetc(procSpoof);
+  EthTapSpoofState = (char)fgetc(procSpoof);
   fclose(procSpoof);
 
   /* Open procfile for writing */
@@ -446,7 +447,7 @@ void FindNeighbors(
 {
 #ifndef NODEBUG
   struct ipaddr_str buf;
-#endif
+#endif /* NODEBUG */
   int i;
 
   /* Initialize */
@@ -702,7 +703,7 @@ void FindNeighbors(
 #ifndef NODEBUG
               struct ipaddr_str neighbor_iface_buf, forw_buf;
               olsr_ip_to_string(&neighbor_iface_buf, &walker->neighbor_iface_addr);
-#endif
+#endif /* NODEBUG */
               OLSR_PRINTF(
                 9,
                 "%s: ----> not forwarding to %s: I am not an MPR between %s and %s, direct link costs %5.2f\n",
@@ -855,13 +856,13 @@ void FindNeighbors(
 #ifndef NODEBUG
           struct interface* bestIntf = if_ifwithaddr(&bestLinkToNeighbor->local_iface_addr);
           struct lqtextbuffer lqbuffer;
-#endif
+#endif /* NODEBUG */
           OLSR_PRINTF(
             9,
             "%s: ----> not forwarding to %s: \"%s\" gives a better link to this neighbor, costing %s\n",
             PLUGIN_NAME_SHORT,
             olsr_ip_to_string(&buf, &walker->neighbor_iface_addr),
-            bestIntf->int_name,
+            bestIntf ? bestIntf->int_name : "NULL",
             get_linkcost_text(bestLinkToNeighbor->linkcost, false, &lqbuffer));
         }
 
@@ -873,7 +874,7 @@ void FindNeighbors(
 #ifndef NODEBUG
         struct ipaddr_str forwardedByBuf, niaBuf;
         struct lqtextbuffer lqbuffer;
-#endif
+#endif /* NODEBUG */
         OLSR_PRINTF(
           9,
           "%s: ----> 2-hop path from %s via me to %s will cost ETX %s\n",
@@ -906,7 +907,7 @@ void FindNeighbors(
               struct ipaddr_str neighbor_iface_buf, forw_buf;
               struct lqtextbuffer lqbuffer;
               olsr_ip_to_string(&neighbor_iface_buf, &walker->neighbor_iface_addr);
-#endif
+#endif /* NODEBUG */
               OLSR_PRINTF(
                 9,
                 "%s: ----> not forwarding to %s: I am not an MPR between %s and %s, direct link costs %s\n",
@@ -1201,7 +1202,7 @@ static int CreateEncapsulateSocket(const char* ifName)
  * ------------------------------------------------------------------------- */
 static int CreateLocalEtherTunTap(void)
 {
-  static const char deviceName[] = "/dev/net/tun";
+  static const char * deviceName = OS_TUNNEL_PATH;
   struct ifreq ifreq;
   int etfd;
   int ioctlSkfd;
@@ -1404,7 +1405,9 @@ static int CreateInterface(
     capturingSkfd = CreateCaptureSocket(ifName);
     if (capturingSkfd < 0)
     {
-      close(encapsulatingSkfd);
+      if (encapsulatingSkfd >= 0) {
+        close(encapsulatingSkfd);
+      }
       free(newIf);
       return 0;
     }
@@ -1419,8 +1422,9 @@ static int CreateInterface(
     listeningSkfd = CreateListeningSocket(ifName);
     if (listeningSkfd < 0)
     {
-      close(listeningSkfd);
-      close(encapsulatingSkfd); /* no problem if 'encapsulatingSkfd' is -1 */
+      if (encapsulatingSkfd >= 0) {
+        close(encapsulatingSkfd); /* no problem if 'encapsulatingSkfd' is -1 */
+      }
       free(newIf);
       return 0;
     }
@@ -1439,8 +1443,12 @@ static int CreateInterface(
   if (ioctl(ioctlSkfd, SIOCGIFHWADDR, &ifr) < 0)
   {
     BmfPError("ioctl(SIOCGIFHWADDR) error for interface \"%s\"", ifName);
-    close(capturingSkfd);
-    close(encapsulatingSkfd);
+    if (capturingSkfd >= 0) {
+      close(capturingSkfd);
+    }
+    if (encapsulatingSkfd >= 0) {
+      close(encapsulatingSkfd);
+    }
     free(newIf);
     return 0;
   }

@@ -58,15 +58,15 @@
 #include <unistd.h>
 #include <time.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #undef errno
 #define errno WSAGetLastError()
 #undef strerror
 #define strerror(x) StrError(x)
 #define close(x) closesocket(x)
-#else
+#else /* _WIN32 */
 #include <sys/wait.h>
-#endif
+#endif /* _WIN32 */
 
 static int srv_socket;
 
@@ -91,19 +91,19 @@ static int ohs_init_connect_sockets(void);
 
 static int ohs_configure(void);
 
-#if !defined WIN32
+#if !defined _WIN32
 static void ohs_listen_loop(void) __attribute__ ((noreturn));
-#else
+#else /* !defined _WIN32 */
 static void ohs_listen_loop(void);
-#endif
+#endif /* !defined _WIN32 */
 
-#ifdef WIN32
+#ifdef _WIN32
 int __stdcall
 ohs_close(unsigned long signo __attribute__ ((unused)))
-#else
+#else /* _WIN32 */
 void
 ohs_close(int signo __attribute__ ((unused)))
-#endif
+#endif /* _WIN32 */
 {
   printf("OHS: exit\n");
 
@@ -156,13 +156,14 @@ ohs_init_new_connection(int s)
     if (recv(oc->socket, (void *)addr, olsr_cnf->ipsize, 0) == (int)olsr_cnf->ipsize) {
       break;
     }
-#if defined WIN32
+#if defined _WIN32
     Sleep(100);
-#endif
+#endif /* defined _WIN32 */
   }
 
   if (i == 20) {
     printf("Failed to fetch IP address! (%s)\n", strerror(errno));
+    free(oc);
     return -1;
   }
 
@@ -352,7 +353,7 @@ read_handler(struct ohs_connection *con)
 static void
 ohs_listen_loop(void)
 {
-#if !defined WIN32
+#if !defined _WIN32
   int n;
   fd_set ibits;
   int fn_stdin = fileno(stdin);
@@ -415,7 +416,7 @@ ohs_listen_loop(void)
       stdin_handler();
 
   }
-#else
+#else /* !defined _WIN32 */
   HANDLE Objects[2];
   WSANETWORKEVENTS NetEvents;
   struct ohs_connection *Walker, *TmpWalker;
@@ -472,14 +473,14 @@ ohs_listen_loop(void)
     }
   }
 
-#endif
+#endif /* !defined _WIN32 */
 }
 
 int
 main(void)
 {
 
-#ifdef WIN32
+#ifdef _WIN32
   WSADATA WsaData;
 
   if (WSAStartup(0x0202, &WsaData)) {
@@ -489,13 +490,13 @@ main(void)
 
   SetConsoleCtrlHandler(ohs_close, true);
 
-#else
+#else /* _WIN32 */
   signal(SIGINT, ohs_close);
   signal(SIGTERM, ohs_close);
 
   /* Avoid zombie children */
   signal(SIGCHLD, SIG_IGN);
-#endif
+#endif /* _WIN32 */
 
   printf("olsrd host-switch daemon version %s starting\n", OHS_VERSION);
 

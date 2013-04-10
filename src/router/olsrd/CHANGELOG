@@ -1,5 +1,352 @@
-This file states changes as of version 0.2.4:
+0.6.5.2 -------------------------------------------------------------------
 
+Henning Rogge (2):
+      Update version after release of v0.6.5.1
+      Release v0.6.5.2
+
+Saverio Proto (1):
+      main: fix the check on inet_pton return value because it returns 1 on
+         success.
+
+Vasilis Tsiligiannis (1):
+      olsrd-quagga: Fix memory leak when adding and deleting routes
+
+0.6.5.1 -------------------------------------------------------------------
+
+Ferry Huberts (1):
+      release: use olsrd-version prefix for files in the tarballs
+
+Henning Rogge (2):
+      Update version after release of v0.6.5
+      Release v0.6.5.1
+
+0.6.5 -------------------------------------------------------------------
+
+Aaron Kaplan (1):
+      chose the proper #define in order to take the right #include
+
+Alessandro (4):
+      mDNS: Implemented Host Filtering for ipv4 and ipv6, writing in the config
+         file which hosts to ignore. The mDNS packets from the ignored hosts
+         will be ignored and not propagated in the network
+      mDNS: Updated README file for mDNS plugin
+      mDNS: Reworked logic of router Election. The election is now handled on
+         interface basis, because the router could have one interface where it
+         needs to be master and another interface where it needs to be
+         disabled. There was a logical bug in the earlier implementation.
+      mDNS: BUGFIX, mDNS plugin, hello message of router election not sent if
+         debug = 0
+
+Alessandro Gnagni (3):
+      mDNS: Fixing loops for mDNS packets when mDNS plugin is misconfigured
+      mDNS: review of Alessandro Gnagni patch, inserted a config value to
+         enable or disable TTL check and change, default is enabled.
+      mDNS: Implemented router election mechansim to have only 1 active mDNS
+         OLSR router in 1 LAN
+
+Andreas Tonnesen (1):
+      x86_64 patch from Bernd
+
+Bernd Petrovitsch (1):
+      * added -Wbad-function-cast
+
+Ferry Huberts (219):
+      gateway: clarify header with extra comments and ordering
+      gateway: reorder functions to reflect order in header
+      gateway: formatting
+      gateway: remove 'unused' v{4,6}gw_choosen_external
+      gateway: add asserts to validate gw_handler
+      gateway: clear gw_handler during cleanup
+      gateway: add init and cleanup hooks for gateway plugins
+      gateway: rename hooks
+      gateway: add comments to struct olsr_gw_handler function prototypes
+      gateway: inline olsr_find_gateway_entry function
+      gateway: inline olsr_trigger_inetgw_selection function
+      gateway: rename a function
+      gateway: simplify a condition
+      gateway: push an if condition into its nested if's
+      gateway: merge 2 code blocks
+      gateway: the gateway to set must be in the gateway tree
+      gateway: the gateway to set must either be an IPv4 or IPv6 gateway or
+         both
+      gateway: prevent 2 NULL dereferences
+      gateway: merge 2 code blocks
+      pud: force pending buffer out if not enough space for our message
+      pud: include nmealib v1.0.3
+      http_info: pud satellites in use are now green, not in use are red
+      ifdef: fix some include ifdefs
+      update comments on all ifdefs
+      olsrd_plugin: remove #if 1
+      gateway: rename 2 variables
+      remove most '#if 0' blocks
+      gateway: merge the olsr_get_ipv{4,6}_inet_gateway functions
+      mdns: fix compilation warnings
+      mdns: fix a compilation warning / copy-paste error
+      bsd: fixup comment
+      improve VERBOSE handling
+      common: fix varargs cleanup
+      pud: fix resource leak
+      pud: fix socket error
+      pud: fix socket error
+      pud: fix position file stat/use race
+      pud: fix getBestUplinkGateway
+      pud: nmealib: fix copy/paste error
+      pud: nmealib: fix buffer overrun
+      pud: nmealib: fix buffer overrun
+      pud: nmealib: fix invalid format string conversion
+      add a COVERITY instructions text file
+      pud: nmealib: fix invalid format string conversion
+      pud: nmealib: fix invalid format string conversion
+      pud: fix closing fd
+      pud: fix checking of downlink message IP version
+      sgwdynspeed: fix resource leak and file stat/use race
+      bmf: explicitly cast fgetc result into a char
+      bmf: do not close an 'error' socket return value
+      bmf: do not dereference NULL pointer
+      httpinfo: do not close an 'error' socket return value
+      httpdinfo: fix resource leak
+      secure: can only work for IPv4, so assert on it
+      secure: do not hard-code a sizeof()
+      secure: decrease a (stack allocated) buffer size
+      secure: use sizeof() of the fields being copied
+      secure: decrease a (stack allocated) buffer size
+      secure: initialise rrmsg correctly
+      secure: can only work for IPv4, so assert on it
+      secure: do not hard-code a sizeof()
+      secure: decrease a (stack allocated) buffer size
+      secure: use sizeof() of the fields being copied
+      secure: decrease a (stack allocated) buffer size
+      secure: initialise crmsg correctly
+      secure: can only work for IPv4, so assert on it
+      secure: do not hard-code a sizeof()
+      secure: decrease a (stack allocated) buffer size
+      secure: initialise cmsg correctly
+      nameservice: fix a resource leak
+      nameservice: fix wrong size argument
+      nameservice: check return value of fcntl
+      nameservice: do not close an fd that is not open
+      nameservice: remove some dead code
+      jsoninfo: fix a resource leak
+      jsoninfo: make sure that uuid is null-terminated
+      jsoninfo: remove some dead code
+      jsoninfo: remove pointless compare
+      mdns: suppress a Coverity warning
+      mdns: remove some dead code
+      mdns: do not close an fd that is not open
+      mdns: do not close an fd that is not open
+      mdns: check return value of inet_pton
+      mdns: check return value of sendto
+      p2pd: do not close an fd that is not open
+      p2pd: do not close an fd that is not open
+      p2pd: remove some dead code
+      bmf: do not close an fd that is not open
+      pud: remove some dead code
+      quagga: explicitly ignore return value of fcntl
+      tas: fix a memory leak
+      txtinfo: remove some dead code
+      main: fix an Out-of-bounds access
+      cfgparser: fix some memory leaks
+      cfgparser: fix a copy/paste error and resulting memory leak
+      cfgparser: fix dereference before assert
+      linux: apm: fix retry opening of apm proc file
+      olsr_switch: fix a memory leak
+      lq: make sure that info_head != NULL
+      lq: make sure last_ip != NULL
+      android: fix type punning warning
+      pud: fix alignment warning
+      gateway: initialise the handler before setting up the tunnel
+      gateway: cleanup: free the allocated memory cookie
+      gateway: ensure cleanup uses the reverse order of init
+      gateway: minor simplification in olsr_delete_gateway_entry
+      gateway: allow immediate removal of a gateway entry
+      gateway: split olsr_delete_gateway_entry
+      gateway: walk the gateway tree to properly cleanup
+      linux: sanitise ACPI battery data
+      defs: fix strscpy null pointer dereference
+      tas: lua: official source code for 5.0.2
+      tas: lua: run gnu-indent.sh script
+      cleanup, 1. step (to get some local changes away):
+      * added -Wcast-qual: this killed lots of unnecessary type-casts
+      Fix sytax errs and line break quirks for gnu-indent
+      ARM alignment warnings fixed
+      Patch ALIGN_NOWARN_ARM macro for better priority handling.
+      use the POSIX standard '__linux__' macro instead of 'linux'
+      tas: lua: run gnu-indent.sh script
+      tas: lua: sync up to official source code with fixes
+      Merge branch 'lua-official-502'
+      cookie: an array already is a pointer
+      cookie: add an assert
+      Revert "httpdinfo: fix resource leak"
+      httpinfo: add a comment about why the client socket is not closed
+      gateway: minor optimisation
+      gateway: improve cleanup
+      gateway: rename gw_mem_cookie to gateway_entry_mem_cookie
+      gateway: add a define for the tunnel name
+      gateway: stub out olsr_print_gateway_entries on #ifdef NODEBUG
+      duplicate_set: stub out olsr_print_duplicate_table on #ifdef NODEBUG
+      link_set: stub out olsr_print_link_set on #ifdef NODEBUG
+      mpr_set: stub out olsr_print_mpr_set on #ifdef NODEBUG
+      routing_table: stub out olsr_print_routing_table on #ifdef NODEBUG
+      tc_set: stub out olsr_print_tc_table on #ifdef NODEBUG
+      two_hop_neighbor_table: stub out olsr_print_two_hop_neighbor_table on
+         #ifdef NODEBUG
+      hna_set: stub out olsr_print_hna_set on #ifndef NODEBUG
+      hna_set: stub out olsr_print_hna_set on #ifdef NODEBUG and fix
+      neighbor_table: stub out olsr_print_neighbor_table on #ifndef NODEBUG
+      neighbor_table: stub out olsr_print_neighbor_table on #ifdef NODEBUG and
+         fix
+      use INET_ADDRSTRLEN and INET6_ADDRSTRLEN instead of magic constants
+      gateway: only remove a tunnel when there is one
+      gateway: rename a variable
+      gateway: minor improvement in NULL comparisons
+      hna_set: olsr_ip_prefix_to_string outputs a wider string
+      gateway: refactor olsr_set_inet_gateway
+      Merge tag 'v0.6.4'
+      win32: use #ifdef _WIN32
+      Makefile: fixup some forgotten make command prefixes
+      Makefile: add gui target
+      Makefile: always pass VERBOSE to the make command
+      gui: linux: minor Makefile fixup
+      gui: linux: clean and install are phony targets
+      gui: linux: add VERBOSE handling
+      gui: linux: fix some 'may be used uninitialized' compiler warnings
+      gui: linux: use toplevel make options
+      gui: linux: fix some 'noreturn' compiler warnings
+      gui: linux: fix some 'discards const qualifier' compiler warnings
+      gui: linux: fix some 'old-style function definition' compiler warnings
+      gui: linux: fix 'too few arguments to function ipc_connect' compiler
+         warning
+      gui: linux: fix a 'mixed declarations and code' compiler warning
+      gui: linux: fix some 'unused parameter' compiler warnings
+      Revert "gui: linux: fix some 'may be used uninitialized' compiler
+         warnings"
+      gui: linux: fix some 'may be used uninitialized' compiler warnings
+      gui: linux: fix some 'shadow' compiler warnings
+      gui: linux: fix inccorrect sizeof()
+      gui: linux: fix string buffer overflow
+      gui: linux: fix string buffer overflow
+      gui: linux: fix the string buffer overflow better
+      gateway: simplify stopping the cleanup timer
+      tas: remove plugin
+      main: do not seed the random number generator with the process id
+      win32: remove unused getpid() function
+      hna_set: explicitly cast to (time_t *) in calls to localtime()
+      neighbor_table: explicitly cast to (time_t *) in calls to localtime()
+      main: improve random number generator seed
+      bmf: do the minimum length check earlier
+      changelog: update to current state
+      print_packet: fix wrong use of sizeof()
+      main: remove -dispin and -dispout command line options
+      main: add release script
+      Update version after release of v0.6.4
+      Changelog: remove 0.6.5 preliminary changelog
+      Merge branch 'release-0.6.4'
+      bmf: check minimumLength against buffer size
+      sgwdynspeed: put plugin config in olsrd.conf.sample
+      pud: put plugin config in olsrd.conf.sample
+      cookie: raise the number of cookies
+      pud: enable dynamic polling of the position file
+      gateway: only check smart gateway configuration on linux
+      linux: put #ifdef __linux__ around code
+      doc: add doxygen documentation generation
+      doc: fix common documentation tags
+      doc: fix linux specific documentation tags
+      doc: fix unix specific documentation tags
+      doc: fix bsd specific documentation tags
+      doc: fix win32 specific documentation tags
+      doc: do not generate documentation for gui code
+      release: move the stringTrim function up a bit
+      release: make gitIsGitDirectory do the correct thing
+      release: fix usage of literal dot in regular expressions
+      release: move into the base directory earlier
+      release: convert some code into checkIsOlsrdGitCheckout function
+      release: convert some code into checkGitSigningKeyIsConfigured function
+      release: convert some code into getPrevRelTag function
+      release: the script can now also create a release branch
+      Merge branch 'release-0.6.4' into mmmm
+      Branch v0.6.5
+      pud: change java include path to generic java include path
+      pud: java make target is dependent on library make target
+      doc: clean up the latex directory if empty
+      Revert "linux: name is required to be non-null in
+         olsr_os_cleanup_iptunnel"
+      gateway: fix a revert problem
+      android: fix the path of the tunnel node in the /dev tree
+      gateway: fix stable count dampening in gw_default_timer
+      gateway: always select a new gateway when threshold != 0
+      main: add -pidfile command line option
+      main: fix pidfile compilation on windows
+
+Frank de Brabander (4):
+      New feature: support for Linux NL802.11 wireless link information in cost
+         calculation.
+      Merge branch with new lq plugin for NL80211 support
+      Incorporate fix by Ferry Hubert for float to double promotion
+      Fix optional compilation of the nl80211 lq plugin
+
+Hans-Christoph Steiner (9):
+      use the POSIX standard '__linux__' macro instead of 'linux'
+      use the Microsoft standard '_WIN32' macro instead of the self-defined
+         'WIN32'
+      olsrd-adhoc-setup: use static BSSID by default to assoc. with the right
+         mesh
+      olsrd-adhoc-setup: configure NetworkManager to be nice when adhoc is
+         manually setup
+      fix misspelling: 'adress' --> 'address'
+      fixed misspelling: usefull -> useful
+      add gcc hardening flags to linux-gtk GUI
+      android: update to use gcc 4.6, available starting with NDK r8
+      android: gcc 4.6 comes with NDK r8b and is not in NDK r8
+
+Henning Rogge (29):
+      Pud: Do not use the variable name strlen.
+      Fix buffer overflow in mdns plugin
+      Add -Werror=format-security
+      Add VERBOSE flag to makefile to display full gcc commands
+      Fix slightly insulting error message.
+      Moved regex library to a makefile of its own to solve the issues with
+         compiler warnings.
+      fix control flow if kill() command fails to end program
+      fix wrong sizeof() parameter
+      Convert allocated memory into temporary variable
+      Protect against stupid data from ACPI
+      Close socket if bind() fails.
+      Merge branch 'master' of http://olsr.org/git/olsrd
+      Use strscpy instead of strncpy.
+      Check inet_pton return value
+      Close file descriptor if error happens
+      Fix scanf() format vulnerabilities
+      Fix command line parsing macro
+      Fail in IPC initializationis always fatal.
+      fail of non-blocking netlink socket is not fatal
+      Declare olsr_exit() as noreturn
+      Interface will always be found.
+      no hostroute possible in this if() branch
+      reset link timer if not set
+      Remove dead codepath
+      Cleanup error handling in ipc_init()
+      Remove unnecessary asserts
+      Make sure calculated header length does not skip over buffer
+      Fix multicast join for IPv6
+      Release v0.6.5
+
+Saverio Proto (12):
+      mDNS: Skeleton code for new host filter feature in mDNS plugin
+      mDNS: Upgrading the container_of.h that was backported from src/common in
+         master
+      mDNS: Fix most of the warnings from the compiler
+      mDNS: Update checksum field of the IPv4 Header after altering TTL
+      mDNS: trivial debug print fix and code readibility improvement
+      mDNS: Change version of mdns plugin to 1.0.1 after GSoC 2012 work by
+         Alessandro Gnagni
+      mDNS: init ListOfFilteredHosts in the proper place and not at every
+         received packet
+      mDNS: trivial, removed TODO from code for something that was implemented
+      mDNS: better debug support for filtered hosts feature
+      mDNS: Fixed typo in README
+      Revert "mDNS: init ListOfFilteredHosts in the proper place and not at
+         every received packet"
+      Merge remote-tracking branch 'origin/mDNS-plugin-GSoC-2012'
 
 0.6.4 --------------------------------------------------------------------
 
@@ -182,7 +529,7 @@ OLSR network.
 - Add detection for vanishing interfaces to Linux netlink code
 - fix incorret route sorting on new neighbours. use only delete and add/change avl tree,
   instead of 3 trees
-- learn neighbours interface alias adress from received hellos
+- learn neighbours interface alias address from received hellos
 
 PATCHES from Hannes Gredler <hannes@gredler.at>:
 - add small valgrind howto
@@ -728,7 +1075,7 @@ saves a noteworthy amount of CPU time. To quote him:
 
    rather than tracking the previous node in olsr_relax()
    i have changed that model and pre-populate all one-hop neighbors
-   with their own IP adress as 'next-hop' and pull that
+   with their own IP address as 'next-hop' and pull that
    pointer up once new paths are explored.
 
    as a result no walker for counting hops and extracting next-hops

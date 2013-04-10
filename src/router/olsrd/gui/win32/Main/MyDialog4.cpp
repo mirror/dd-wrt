@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "Frontend.h"
 #include "MyDialog4.h"
@@ -46,7 +48,7 @@
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
-#endif
+#endif /* _DEBUG */
 
 MyDialog4::MyDialog4(CWnd* pParent)
 	: CDialog(MyDialog4::IDD, pParent)
@@ -152,3 +154,5 @@ void MyDialog4::ClearRoutes(void)
 {
 	m_RoutingTable.DeleteAllItems();
 }
+
+#endif /* _WIN32 */

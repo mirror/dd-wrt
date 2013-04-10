@@ -22,6 +22,7 @@ typedef struct _TransmitGpsInformation {
 bool startReceiver(void);
 void stopReceiver(void);
 
+void updatePositionFromFile(void);
 bool receiverUpdateGpsInformation(unsigned char * rxBuffer, size_t rxCount);
 
 #endif /* _PUD_RECEIVER_H_ */

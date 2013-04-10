@@ -55,11 +55,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#ifdef linux
+#ifdef __linux__
 #include <linux/types.h>
 #include <linux/rtnetlink.h>
 #include <linux/version.h>
-#endif
+#endif /* __linux__ */
 
 extern FILE *yyin;
 extern int yyparse(void);
@@ -120,11 +120,11 @@ main(int argc, char *argv[])
   return 0;
 }
 
-#else
+#else /* MAKEBIN */
 
 /* Build as part of olsrd */
 
-#endif
+#endif /* MAKEBIN */
 
 int
 olsrd_parse_cnf(const char *filename)
@@ -210,7 +210,7 @@ olsrd_print_interface_cnf(struct if_config_options *cnf, struct if_config_option
   printf("\tAutodetect changes       : %s%s\n", cnf->autodetect_chg ? "yes" : "no",DEFAULT_STR(autodetect_chg));
 }
 
-#ifdef linux
+#ifdef __linux__
 static int olsrd_sanity_check_rtpolicy(struct olsrd_config *cnf) {
   int prio;
 
@@ -346,7 +346,7 @@ static int olsrd_sanity_check_rtpolicy(struct olsrd_config *cnf) {
   return 0;
 }
 
-#endif
+#endif /* __linux__ */
 
 
 static 
@@ -521,24 +521,24 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
     return -1;
   }
 
-#if defined linux
+#ifdef __linux__
 #if !defined LINUX_VERSION_CODE || !defined KERNEL_VERSION
 #error "Both LINUX_VERSION_CODE and KERNEL_VERSION need to be defined"
-#else
+#else /* !defined LINUX_VERSION_CODE || !defined KERNEL_VERSION */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
   if (cnf->ip_version == AF_INET6 && cnf->smart_gw_active) {
     fprintf(stderr, "Smart gateways are not supported for linux kernel < 2.6.24 and ipv6\n");
     return -1;
   }
-#endif
-#endif
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24) */
+#endif /* !defined LINUX_VERSION_CODE || !defined KERNEL_VERSION */
 
   /* this rtpolicy settings are also currently only used in Linux */
   if (olsrd_sanity_check_rtpolicy(cnf)) {
     return -1;
   }
 
-#endif
+#endif /* __linux__ */
 
   if (in == NULL) {
     fprintf(stderr, "No interfaces configured!\n");
@@ -553,6 +553,7 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
 	  fprintf(stderr, "Warning, you are using the min_tc_vtime hack. We hope you know what you are doing... contact olsr.org otherwise.\n");
   }
 
+#ifdef __linux__
   if (cnf->smart_gw_period < MIN_SMARTGW_PERIOD || cnf->smart_gw_period > MAX_SMARTGW_PERIOD) {
     fprintf(stderr, "Error, bad gateway period: %d msec (should be %d-%d)\n",
         cnf->smart_gw_period, MIN_SMARTGW_PERIOD, MAX_SMARTGW_PERIOD);
@@ -590,6 +591,7 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
         cnf->smart_gw_uplink, MIN_SMARTGW_SPEED, MAX_SMARTGW_SPEED);
     return -1;
   }
+#endif /* __linux__ */
 
   if (cnf->interface_defaults == NULL) {
     /* get a default configuration if the user did not specify one */
@@ -602,6 +604,9 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
   /* Interfaces */
   while (in) {
     struct olsr_lq_mult *mult, *mult_orig;
+
+    assert(in->cnf);
+    assert(in->cnfi);
 
     io = in->cnf;
 
@@ -618,8 +623,6 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
       /*save interface specific lqmults, as they are merged togehter later*/
       mult_orig = io->lq_mult;
 
-      assert(in->cnf);
-      assert(in->cnfi);
       for (pos = 0; pos < sizeof(*in->cnf); pos++) {
         if (cnfptr[pos] != cnfiptr[pos]) {
           cnfptr[pos] = defptr[pos]; cnfiptr[pos]=0x00;
@@ -735,6 +738,7 @@ set_default_cnf(struct olsrd_config *cnf)
 
   cnf->debug_level = DEF_DEBUGLVL;
   cnf->no_fork = false;
+  cnf->pidfile = NULL;
   cnf->host_emul = false;
   cnf->ip_version = AF_INET;
   cnf->ipsize = sizeof(struct in_addr);
@@ -800,17 +804,17 @@ set_default_cnf(struct olsrd_config *cnf)
   cnf->use_src_ip_routes = DEF_USE_SRCIP_ROUTES;
   cnf->set_ip_forward = true;
 
-#ifdef linux
+#ifdef __linux__
   cnf->rtnl_s = 0;
-#endif
+#endif /* __linux__ */
 
 #if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__ || defined __NetBSD__ || defined __OpenBSD__
   cnf->rts = 0;
-#endif
+#endif /* defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__ || defined __NetBSD__ || defined __OpenBSD__ */
 
 #ifdef HTTPINFO_PUD
   cnf->pud_position = NULL;
-#endif
+#endif /* HTTPINFO_PUD */
 }
 
 struct if_config_options *
@@ -989,7 +993,7 @@ olsrd_print_cnf(struct olsrd_config *cnf)
   }
 }
 
-#if defined WIN32
+#if defined _WIN32
 struct ioinfo {
   unsigned int handle;
   unsigned char attr;
@@ -1032,7 +1036,7 @@ win32_olsrd_free(void *ptr)
 {
   free(ptr);
 }
-#endif
+#endif /* defined _WIN32 */
 
 static void update_has_gateway_fields(void) {
   struct ip_prefix_list *h;

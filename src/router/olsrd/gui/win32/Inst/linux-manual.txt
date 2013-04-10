@@ -7,7 +7,7 @@ NAME
 
 SYNOPSIS
        olsrd  [  -i   interface1  [interface2  ...]  ] [ -f  configfile ] [ -d
-       debuglevel ] [ -ipv6 ] [ -ipc ] [ -dispin ] [ -dispout ]  [  -tnl  ]  [
+       debuglevel ] [ -ipv6 ] [ -ipc ] [  -tnl  ]  [
        -bcast  broadcastaddress ] [ -delgw ] [ -hint  HELLO interval for wire-
        less interfaces ] [ -tcint  TC interval ] [ -midint  MID interval  ]  [
        -hnaint   HNA  interval  ] [ -hhold  HELLO validity time ] [ -thold  TC
@@ -53,16 +53,6 @@ OPTIONS
 
        -ipc        This option allows the GUI front-end created fro  olsrd  to
                    connect to olsrd at runtime.
-
-       -dispin     This option, when set, causes olsrd to display all incoming
-                   packet data on STDOUT. When using IPv4  the  data  is  dis-
-                   played  in decimal format, when using IPv6 the data is dis-
-                   played in hexadecimal format.
-
-       -dispout    This option, when set, causes olsrd to display all outgoing
-                   packet  data  on  STDOUT.  When using IPv4 the data is dis-
-                   played in decimal format, when using IPv6 the data is  dis-
-                   played in hexadecimal format.
 
        -tnl        When  this  option is set olsrd will use IP-in-IP tunneling
                    to Internet gateways. This is very experimental code and it

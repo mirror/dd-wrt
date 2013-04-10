@@ -55,8 +55,10 @@ ifdef ADMIN_INTERFACE
 endif
 
 $(PLUGIN_FULLNAME): $(OBJS) version-script.txt
+ifeq ($(VERBOSE),0)
 		@echo "[LD] $@"
-		@$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
+endif
+		$(MAKECMDPREFIX)$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
 
 install:	$(PLUGIN_FULLNAME)
 		$(STRIP) $(PLUGIN_FULLNAME)

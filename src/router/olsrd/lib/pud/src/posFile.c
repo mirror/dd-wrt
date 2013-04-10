@@ -8,6 +8,8 @@
 
 /* System includes */
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 #include <regex.h>
 #include <sys/stat.h>
@@ -116,14 +118,21 @@ static char line[LINE_LENGTH];
  */
 bool readPositionFile(char * fileName, nmeaINFO * nmeaInfo) {
 	bool retval = false;
+	int fd;
 	struct stat statBuf;
 	nmeaINFO result;
-	FILE * fd = NULL;
+	FILE * fp = NULL;
 	unsigned int lineNumber = 0;
 	char * name = NULL;
 	char * value = NULL;
 
-	if (stat(fileName, &statBuf)) {
+	fd = open(fileName, O_RDONLY);
+	if (fd < 0) {
+		/* could not access the file */
+		goto out;
+	}
+
+	if (fstat(fd, &statBuf)) {
 		/* could not access the file */
 		goto out;
 	}
@@ -133,8 +142,8 @@ bool readPositionFile(char * fileName, nmeaINFO * nmeaInfo) {
 		goto out;
 	}
 
-	fd = fopen(fileName, "r");
-	if (!fd) {
+	fp = fdopen(fd, "r");
+	if (!fp) {
 		goto out;
 	}
 
@@ -154,7 +163,7 @@ bool readPositionFile(char * fileName, nmeaINFO * nmeaInfo) {
 
 	memcpy(&cachedStat.timeStamp, &statBuf.st_mtime, sizeof(cachedStat.timeStamp));
 
-	while (fgets(line, LINE_LENGTH, fd)) {
+	while (fgets(line, LINE_LENGTH, fp)) {
 		regmatch_t pmatch[regexNameValuematchCount];
 
 		lineNumber++;
@@ -281,7 +290,8 @@ bool readPositionFile(char * fileName, nmeaINFO * nmeaInfo) {
 		}
 	}
 
-	fclose(fd);
+	fclose(fp);
+	fp = 0;
 
 	result.smask = POSFILE_DEFAULT_SMASK;
 	nmea_INFO_set_present(&result.present, SMASK);
@@ -292,5 +302,11 @@ bool readPositionFile(char * fileName, nmeaINFO * nmeaInfo) {
 	memcpy(nmeaInfo, &result, sizeof(result));
 	retval = true;
 
-	out: return retval;
+	out: if (fp) {
+		fclose(fp);
+	}
+	if (fd >= 0) {
+		close(fd);
+	}
+	return retval;
 }

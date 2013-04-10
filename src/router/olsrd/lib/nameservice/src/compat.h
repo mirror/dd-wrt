@@ -5,9 +5,9 @@
 
 #if !defined(__linux__) && !defined(__GLIBC__)
 char *strndup(const char *ptr, size_t size);
-#endif
+#endif /* !defined(__linux__) && !defined(__GLIBC__) */
 
-#endif
+#endif /* _NAMESERVICE_COMPAT */
 
 /*
  * Local Variables:

@@ -49,7 +49,7 @@ void MD5Init(MD5_CTX *);
 void MD5Update(MD5_CTX *, const unsigned char *, const unsigned int);
 void MD5Final(unsigned char[16], MD5_CTX *);
 
-#endif
+#endif /* _MD5_H_ */
 
 /*
  * Local Variables:

@@ -2,7 +2,7 @@
 #include "wireFormat.h"
 #ifndef GIT_SHA
   #define GIT_SHA ""
-#endif
+#endif /* GIT_SHA */
 
 package org.olsr.plugin.pud;
 

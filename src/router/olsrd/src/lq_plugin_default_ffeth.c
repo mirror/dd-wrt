@@ -117,12 +117,6 @@ default_lq_ffeth_handle_lqchange(void) {
     bool relevant = false;
     lq = (struct default_lq_ffeth_hello *)link->linkquality;
 
-#if 0
-  fprintf(stderr, "%s: old = %u/%u   new = %u/%u\n", olsr_ip_to_string(&buf, &link->neighbor_iface_addr),
-      lq->smoothed_lq.valueLq, lq->smoothed_lq.valueNlq,
-      lq->lq.valueLq, lq->lq.valueNlq);
-#endif
-
     if (lq->smoothed_lq.valueLq < lq->lq.valueLq) {
       if (lq->lq.valueLq >= 254 || lq->lq.valueLq - lq->smoothed_lq.valueLq > lq->smoothed_lq.valueLq/10) {
         relevant = true;

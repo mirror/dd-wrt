@@ -55,10 +55,10 @@
 #include <wrn/coreip/net/route.h>
 #include <m2Lib.h>
 #define OLSR_PID taskIdSelf ()
-#else
+#else /* _WRS_KERNEL */
 #include <ifaddrs.h>
 #define OLSR_PID getpid ()
-#endif
+#endif /* _WRS_KERNEL */
 
 static unsigned int seq = 0;
 
@@ -127,7 +127,7 @@ add_del_route(const struct rt_entry *rt, int add)
   ((struct sockaddr_rt *)(&sin4))->srt_proto = 0;
   OLSR_PRINTF(8, "\t- Setting TOS: 0\n");
   ((struct sockaddr_rt *)(&sin4))->srt_tos = 0;
-#endif
+#endif /* _WRS_KERNEL */
 
   sin4.sin_addr = rt->rt_dst.prefix.v4;
   memcpy(walker, &sin4, sizeof(sin4));
@@ -143,7 +143,7 @@ add_del_route(const struct rt_entry *rt, int add)
    * vxWorks: Route with no gateway is deleted
    */
   if (add) {
-#endif
+#endif /* _WRS_KERNEL */
     nexthop = olsr_get_nh(rt);
     if (0 != (rtm->rtm_flags & RTF_GATEWAY)) {
       sin4.sin_addr = nexthop->gateway.v4;
@@ -178,15 +178,15 @@ add_del_route(const struct rt_entry *rt, int add)
       rtm->rtm_addrs |= RTA_GATEWAY;
 #ifdef RTF_CLONING
       rtm->rtm_flags |= RTF_CLONING;
-#endif
+#endif /* RTF_CLONING */
 #ifndef _WRS_KERNEL
       rtm->rtm_flags &= ~RTF_HOST;
-#endif
+#endif /* _WRS_KERNEL */
       freeifaddrs(addrs);
     }
 #ifdef _WRS_KERNEL
   }
-#endif
+#endif /* _WRS_KERNEL */
 
   /**********************************************************************
    *                         SET  NETMASK
@@ -299,7 +299,7 @@ add_del_route6(const struct rt_entry *rt, int add)
 #ifdef __KAME__
     *(u_int16_t *) & sin6.sin6_addr.s6_addr[2] = htons(sin6.sin6_scope_id);
     sin6.sin6_scope_id = 0;
-#endif
+#endif /* __KAME__ */
     memcpy(walker, &sin6, sizeof(sin6));
     walker += sin_size;
     rtm->rtm_addrs |= RTA_GATEWAY;
@@ -317,7 +317,7 @@ add_del_route6(const struct rt_entry *rt, int add)
 #ifdef __KAME__
     *(u_int16_t *) & sin6.sin6_addr.s6_addr[2] = htons(sin6.sin6_scope_id);
     sin6.sin6_scope_id = 0;
-#endif
+#endif /* __KAME__ */
     memcpy(walker, &sin6, sizeof(sin6));
     walker += sin_size;
     rtm->rtm_addrs |= RTA_GATEWAY;

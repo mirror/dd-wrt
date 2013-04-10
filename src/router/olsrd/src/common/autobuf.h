@@ -66,7 +66,7 @@ int abuf_strftime (struct autobuf * autobuf, const char *format, const struct tm
 int abuf_memcpy (struct autobuf * autobuf, const void *p, const unsigned int len);
 int abuf_memcpy_prefix (struct autobuf *autobuf, const void *p, const unsigned int len);
 int abuf_pull (struct autobuf * autobuf, int len);
-#endif
+#endif /* _COMMON_AUTOBUF_H */
 
 /*
  * Local Variables:

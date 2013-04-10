@@ -26,7 +26,7 @@
 #include <math.h>
 
 void
-init_nodes()
+init_nodes(void)
 {
 
   nodes.next = &nodes;
@@ -159,6 +159,7 @@ update_timer_node(union olsr_ip_addr *node, olsr_u8_t vtime)
  *registered.
  *@param node the node that has chosen the MPR
  *@param mpr the MPR chosen by the node
+ *@param vtime the expiration time
  *@return 0 if node was added, 1 if not
  */
 int
@@ -338,6 +339,7 @@ add_hna_node(union olsr_ip_addr *node, union olsr_ip_addr *net, union olsr_ip_ad
  *
  *@param node the node that has chosen an MPR
  *@param mpr the MPR choosen by node
+ *@param tmp_timer the expiration time
  *@return negative if node already registered or node not found
  */
 int
@@ -511,7 +513,7 @@ find_node_t(union olsr_ip_addr *ip)
  *Remove timed out nodes
  */
 gint
-time_out_nodes(gpointer data)
+time_out_nodes(gpointer data __attribute__((unused)))
 {
   struct node *tmp_nodes;
   struct node *node_to_delete;

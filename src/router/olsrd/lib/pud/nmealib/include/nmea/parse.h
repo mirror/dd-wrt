@@ -28,7 +28,7 @@
 
 #ifdef  __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 bool nmea_parse_sentence_has_invalid_chars(const char * str, const size_t str_len, const char * strName, char * report,
 		const size_t reportSize);
@@ -44,6 +44,6 @@ int nmea_parse_GPVTG(const char *s, const int len, nmeaGPVTG *pack);
 
 #ifdef  __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __NMEA_PARSE_H__ */

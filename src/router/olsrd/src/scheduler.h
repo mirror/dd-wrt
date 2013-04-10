@@ -172,7 +172,7 @@ void disable_olsr_socket (int fd, socket_handler_func pf_pr, socket_handler_func
  */
 
 
-#endif
+#endif /* _OLSR_SCHEDULER */
 
 /*
  * Local Variables:

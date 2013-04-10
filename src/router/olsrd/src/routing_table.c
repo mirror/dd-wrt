@@ -517,6 +517,7 @@ olsr_rt_best(struct rt_entry *rt)
  *@param dst the destination
  *@param plen the prefix length
  *@param originator the originating router
+ *@param origin the origin of the route
  *
  *@return the new rt_path struct
  */
@@ -525,7 +526,7 @@ olsr_insert_routing_table(union olsr_ip_addr *dst, int plen, union olsr_ip_addr 
 {
 #ifdef DEBUG
   struct ipaddr_str dstbuf, origbuf;
-#endif
+#endif /* DEBUG */
   struct tc_entry *tc;
   struct rt_path *rtp;
   struct avl_node *node;
@@ -564,7 +565,7 @@ olsr_insert_routing_table(union olsr_ip_addr *dst, int plen, union olsr_ip_addr 
 #ifdef DEBUG
     OLSR_PRINTF(1, "RIB: add prefix %s/%u from %s\n", olsr_ip_to_string(&dstbuf, dst), plen,
                 olsr_ip_to_string(&origbuf, originator));
-#endif
+#endif /* DEBUG */
 
     /* overload the hna change bit for flagging a prefix change */
     changes_hna = true;
@@ -584,7 +585,7 @@ olsr_delete_routing_table(union olsr_ip_addr *dst, int plen, union olsr_ip_addr 
 {
 #ifdef DEBUG
   struct ipaddr_str dstbuf, origbuf;
-#endif
+#endif /* DEBUG */
 
   struct tc_entry *tc;
   struct rt_path *rtp;
@@ -618,7 +619,7 @@ olsr_delete_routing_table(union olsr_ip_addr *dst, int plen, union olsr_ip_addr 
 #ifdef DEBUG
     OLSR_PRINTF(1, "RIB: del prefix %s/%u from %s\n", olsr_ip_to_string(&dstbuf, dst), plen,
                 olsr_ip_to_string(&origbuf, originator));
-#endif
+#endif /* DEBUG */
 
     /* overload the hna change bit for flagging a prefix change */
     changes_hna = true;
@@ -664,10 +665,10 @@ olsr_rtp_to_string(const struct rt_path *rtp)
  * Print the routingtree to STDOUT
  *
  */
+#ifndef NODEBUG
 void
 olsr_print_routing_table(struct avl_tree *tree)
 {
-#ifndef NODEBUG
   /* The whole function makes no sense without it. */
   struct avl_node *rt_tree_node;
   struct lqtextbuffer lqbuffer;
@@ -694,9 +695,9 @@ olsr_print_routing_table(struct avl_tree *tree)
                   if_ifwithindex_name(rt->rt_nexthop.iif_index), rtp->rtp_version);
     }
   }
-#endif
   tree = NULL;                  /* squelch compiler warnings */
 }
+#endif /* NODEBUG */
 
 /*
  * Local Variables:

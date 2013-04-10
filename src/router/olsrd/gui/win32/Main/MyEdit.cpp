@@ -38,6 +38,8 @@
  *
  */
 
+#ifdef _WIN32
+
 #include "stdafx.h"
 #include "frontend.h"
 #include "MyEdit.h"
@@ -46,7 +48,7 @@
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
-#endif
+#endif /* _DEBUG */
 
 MyEdit::MyEdit()
 {
@@ -114,3 +116,5 @@ void MyEdit::OnKillFocus(CWnd* pNewWnd)
 
 	CEdit::OnKillFocus(pNewWnd);
 }
+
+#endif /* _WIN32 */

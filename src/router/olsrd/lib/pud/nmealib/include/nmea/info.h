@@ -81,7 +81,7 @@
 
 #ifdef  __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 /**
  * Date and time data
@@ -213,6 +213,6 @@ void nmea_INFO_unit_conversion(nmeaINFO * nmeaInfo);
 
 #ifdef  __cplusplus
 }
-#endif
+#endif /* __cplusplus */
 
 #endif /* __NMEA_INFO_H__ */

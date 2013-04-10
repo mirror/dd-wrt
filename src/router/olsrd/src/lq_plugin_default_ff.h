@@ -69,7 +69,7 @@ struct default_lq_ff_hello {
 
 extern struct lq_handler lq_etx_ff_handler;
 
-#endif /*LQ_ETX_FF_ */
+#endif /* LQ_ETX_FF_ */
 
 /*
  * Local Variables:

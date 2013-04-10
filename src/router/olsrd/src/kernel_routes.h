@@ -45,17 +45,17 @@
 #include "defs.h"
 #include "routing_table.h"
 
-int olsr_ioctl_add_route(const struct rt_entry *);
+int olsr_ioctl_add_route(const struct rt_entry *rt);
 
-int olsr_ioctl_add_route6(const struct rt_entry *);
+int olsr_ioctl_add_route6(const struct rt_entry *rt);
 
-int olsr_ioctl_del_route(const struct rt_entry *);
+int olsr_ioctl_del_route(const struct rt_entry *rt);
 
-int olsr_ioctl_del_route6(const struct rt_entry *);
+int olsr_ioctl_del_route6(const struct rt_entry *rt);
 
-#ifdef linux
+#ifdef __linux__
 int rtnetlink_register_socket(int);
-#endif
+#endif /* __linux__ */
 
 void olsr_os_niit_4to6_route(const struct olsr_ip_prefix *dst_v4, bool set);
 void olsr_os_niit_6to4_route(const struct olsr_ip_prefix *dst_v6, bool set);
@@ -65,7 +65,7 @@ int olsr_os_policy_rule(int family, int rttable, uint32_t priority, const char *
 int olsr_os_localhost_if(union olsr_ip_addr *ip, bool create);
 int olsr_os_ifip(int ifindex, union olsr_ip_addr *ip, bool create);
 
-#endif
+#endif /* _OLSR_KERNEL_RT */
 
 /*
  * Local Variables:

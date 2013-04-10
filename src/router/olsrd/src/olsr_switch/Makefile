@@ -11,8 +11,10 @@ endif
 default_target:	$(TOPDIR)/$(BINNAME)
 
 $(TOPDIR)/$(BINNAME):	$(OBJS)
+ifeq ($(VERBOSE),0)
 	@echo "[LD] $@"
-	@$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+endif
+	$(MAKECMDPREFIX)$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 ohs_cmd.o: CFLAGS += -Wno-cast-qual -DNO_OLDNAMES
 

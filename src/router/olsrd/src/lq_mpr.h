@@ -44,7 +44,7 @@
 
 void olsr_calculate_lq_mpr(void);
 
-#endif
+#endif /* _OLSR_LQ_MPR */
 
 /*
  * Local Variables:
