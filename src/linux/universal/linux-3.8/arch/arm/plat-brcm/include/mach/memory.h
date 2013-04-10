@@ -12,10 +12,11 @@
  * are defined from the board-level configuration file
  */
 
-//#ifndef PHYS_OFFSET
-//#define PHYS_OFFSET             UL(CONFIG_DRAM_BASE)
-//#endif
-
+#ifdef __ASSEMBLY__
+#ifndef PHYS_OFFSET
+#define PHYS_OFFSET             UL(CONFIG_DRAM_BASE)
+#endif
+#endif
 
 
 /*
