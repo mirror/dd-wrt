@@ -12,9 +12,9 @@
  * are defined from the board-level configuration file
  */
 
-#ifndef PHYS_OFFSET
-#define PHYS_OFFSET             UL(CONFIG_DRAM_BASE)
-#endif
+//#ifndef PHYS_OFFSET
+//#define PHYS_OFFSET             UL(CONFIG_DRAM_BASE)
+//#endif
 
 
 
