@@ -2,12 +2,12 @@
    Editor high level editing commands
 
    Copyright (C) 1996, 1997, 1998, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007, 2011, 2012
+   2007, 2011, 2012, 2013
    The Free Software Foundation, Inc.
 
    Written by:
    Paul Sheer, 1996, 1997
-   Andrew Borodin <aborodin@vmail.ru>, 2012
+   Andrew Borodin <aborodin@vmail.ru>, 2012, 2013
    Ilia Maslakov <il.smind@gmail.com>, 2012
 
    This file is part of the Midnight Commander.
@@ -462,8 +462,8 @@ edit_get_save_file_as (WEdit * edit)
     {
         quick_widget_t quick_widgets[] = {
             /* *INDENT-OFF* */
-            QUICK_LABELED_INPUT (N_("Enter file name:"), input_label_above,  filename, 0, "save-as",
-                                 &filename_res, NULL),
+            QUICK_LABELED_INPUT (N_("Enter file name:"), input_label_above,  filename, "save-as",
+                                 &filename_res, NULL, FALSE, FALSE, INPUT_COMPLETE_FILENAMES),
             QUICK_SEPARATOR (TRUE),
             QUICK_LABEL (N_("Change line breaks to:"), NULL),
             QUICK_RADIO (LB_NAMES, lb_names, (int *) &cur_lb, NULL),
@@ -1203,7 +1203,7 @@ edit_collect_completions_get_current_word (WEdit * edit, mc_search_t * srch, off
 
 static gsize
 edit_collect_completions (WEdit * edit, off_t word_start, gsize word_len,
-                          char *match_expr, struct selection *compl, gsize * num)
+                          char *match_expr, GString ** compl, gsize * num)
 {
     gsize len = 0;
     gsize max_len = 0;
@@ -1267,14 +1267,12 @@ edit_collect_completions (WEdit * edit, off_t word_start, gsize word_len,
         for (i = 0; i < *num; i++)
         {
             if (strncmp
-                ((char *) &compl[i].text[word_len],
-                 (char *) &temp->str[word_len], max (len, compl[i].len) - word_len) == 0)
+                ((char *) &compl[i]->str[word_len],
+                 (char *) &temp->str[word_len], max (len, compl[i]->len) - word_len) == 0)
             {
-                struct selection this = compl[i];
+                GString *this = compl[i];
                 for (++i; i < *num; i++)
-                {
                     compl[i - 1] = compl[i];
-                }
                 compl[*num - 1] = this;
                 skip = 1;
                 break;          /* skip it, already added */
@@ -1285,11 +1283,9 @@ edit_collect_completions (WEdit * edit, off_t word_start, gsize word_len,
 
         if (*num == MAX_WORD_COMPLETIONS)
         {
-            g_free (compl[0].text);
+            g_string_free (compl[0], TRUE);
             for (i = 1; i < *num; i++)
-            {
                 compl[i - 1] = compl[i];
-            }
             (*num)--;
         }
 #ifdef HAVE_CHARSET
@@ -1303,9 +1299,7 @@ edit_collect_completions (WEdit * edit, off_t word_start, gsize word_len,
             g_string_free (recoded, TRUE);
         }
 #endif
-        compl[*num].text = g_strndup (temp->str, temp->len);
-        compl[*num].len = temp->len;
-        (*num)++;
+        compl[(*num)++] = g_string_new_len (temp->str, temp->len);
         start += len;
 
         /* note the maximal length needed for the completion dialog */
@@ -1502,6 +1496,32 @@ edit_redraw_page_cb (void *data, void *user_data)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+/**
+ * Insert autocompleted word into editor.
+ *
+ * @param edit       editor object
+ * @param completion word for completion
+ * @param word_len   offset from begining for insert
+ */
+
+static void
+edit_complete_word_insert_recoded_completion (WEdit * edit, char *completion, gsize word_len)
+{
+#ifdef HAVE_CHARSET
+    GString *temp;
+
+    temp = str_convert_to_input (completion);
+
+    for (completion = temp->str + word_len; *completion != '\0'; completion++)
+        edit_insert (edit, *completion);
+    g_string_free (temp, TRUE);
+#else
+    for (completion += word_len; *completion != '\0'; completion++)
+        edit_insert (edit, *completion);
+#endif
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -1602,8 +1622,8 @@ edit_save_mode_cmd (void)
         quick_widget_t quick_widgets[] = {
             /* *INDENT-OFF* */
             QUICK_RADIO (3, str, &option_save_mode, &edit_save_mode_radio_id),
-            QUICK_INPUT (option_backup_ext, 0, "edit-backup-ext", &str_result,
-                         &edit_save_mode_input_id),
+            QUICK_INPUT (option_backup_ext, "edit-backup-ext", &str_result,
+                         &edit_save_mode_input_id, FALSE, FALSE, INPUT_COMPLETE_NONE),
             QUICK_SEPARATOR (TRUE),
             QUICK_CHECKBOX (N_("Check &POSIX new line"), &option_check_nl_at_eof, NULL),
             QUICK_BUTTONS_OK_CANCEL,
@@ -1663,7 +1683,7 @@ edit_save_as_cmd (WEdit * edit)
         {
             int rv;
 
-            if (vfs_path_cmp (edit->filename_vpath, exp_vpath) != 0)
+            if (!vfs_path_equal (edit->filename_vpath, exp_vpath))
             {
                 int file;
                 struct stat sb;
@@ -1897,7 +1917,8 @@ edit_repeat_macro_cmd (WEdit * edit)
     long count_repeat;
     char *error = NULL;
 
-    f = input_dialog (_("Repeat last commands"), _("Repeat times:"), MC_HISTORY_EDIT_REPEAT, NULL);
+    f = input_dialog (_("Repeat last commands"), _("Repeat times:"), MC_HISTORY_EDIT_REPEAT, NULL,
+                      INPUT_COMPLETE_NONE);
     if (f == NULL || *f == '\0')
     {
         g_free (f);
@@ -2063,7 +2084,8 @@ edit_load_cmd (WDialog * h)
     gboolean ret = TRUE;        /* possible cancel */
 
     exp = input_expand_dialog (_("Load"), _("Enter file name:"),
-                               MC_HISTORY_EDIT_LOAD, INPUT_LAST_TEXT);
+                               MC_HISTORY_EDIT_LOAD, INPUT_LAST_TEXT,
+                               INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_CD);
 
     if (exp != NULL && *exp != '\0')
     {
@@ -2294,95 +2316,6 @@ eval_marks (WEdit * edit, off_t * start_mark, off_t * end_mark)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-edit_insert_over (WEdit * edit)
-{
-    int i;
-
-    for (i = 0; i < edit->over_col; i++)
-    {
-        edit_insert (edit, ' ');
-    }
-    edit->over_col = 0;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-off_t
-edit_insert_column_of_text_from_file (WEdit * edit, int file,
-                                      off_t * start_pos, off_t * end_pos, long *col1, long *col2)
-{
-    off_t cursor;
-    int col;
-    off_t blocklen = -1, width = 0;
-    unsigned char *data;
-
-    cursor = edit->curs1;
-    col = edit_get_col (edit);
-    data = g_malloc0 (TEMP_BUF_LEN);
-
-    while ((blocklen = mc_read (file, (char *) data, TEMP_BUF_LEN)) > 0)
-    {
-        off_t i;
-        for (width = 0; width < blocklen; width++)
-        {
-            if (data[width] == '\n')
-                break;
-        }
-        for (i = 0; i < blocklen; i++)
-        {
-            if (data[i] == '\n')
-            {                   /* fill in and move to next line */
-                long l;
-                off_t p;
-                if (edit_get_byte (edit, edit->curs1) != '\n')
-                {
-                    l = width - (edit_get_col (edit) - col);
-                    while (l > 0)
-                    {
-                        edit_insert (edit, ' ');
-                        l -= space_width;
-                    }
-                }
-                for (p = edit->curs1;; p++)
-                {
-                    if (p == edit->last_byte)
-                    {
-                        edit_cursor_move (edit, edit->last_byte - edit->curs1);
-                        edit_insert_ahead (edit, '\n');
-                        p++;
-                        break;
-                    }
-                    if (edit_get_byte (edit, p) == '\n')
-                    {
-                        p++;
-                        break;
-                    }
-                }
-                edit_cursor_move (edit, edit_move_forward3 (edit, p, col, 0) - edit->curs1);
-                l = col - edit_get_col (edit);
-                while (l >= space_width)
-                {
-                    edit_insert (edit, ' ');
-                    l -= space_width;
-                }
-                continue;
-            }
-            edit_insert (edit, data[i]);
-        }
-    }
-    *col1 = col;
-    *col2 = col + width;
-    *start_pos = cursor;
-    *end_pos = edit->curs1;
-    edit_cursor_move (edit, cursor - edit->curs1);
-    g_free (data);
-
-    return blocklen;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
 edit_block_copy_cmd (WEdit * edit)
 {
     off_t start_mark, end_mark, current = edit->curs1;
@@ -2439,7 +2372,6 @@ edit_block_move_cmd (WEdit * edit)
     off_t current;
     unsigned char *copy_buf = NULL;
     off_t start_mark, end_mark;
-    long line;
 
     if (eval_marks (edit, &start_mark, &end_mark))
         return;
@@ -2447,7 +2379,6 @@ edit_block_move_cmd (WEdit * edit)
     if (!edit->column_highlight && edit->curs1 > start_mark && edit->curs1 < end_mark)
         return;
 
-    line = edit->curs_line;
     if (edit->mark2 < 0)
         edit_mark_cmd (edit, FALSE);
     edit_push_markers (edit);
@@ -3060,7 +2991,8 @@ edit_goto_cmd (WEdit * edit)
     char s[32];
 
     g_snprintf (s, sizeof (s), "%ld", line);
-    f = input_dialog (_("Goto line"), _("Enter line:"), MC_HISTORY_EDIT_GOTO_LINE, line ? s : "");
+    f = input_dialog (_("Goto line"), _("Enter line:"), MC_HISTORY_EDIT_GOTO_LINE, line ? s : "",
+                      INPUT_COMPLETE_NONE);
     if (!f)
         return;
 
@@ -3103,7 +3035,7 @@ edit_save_block_cmd (WEdit * edit)
     tmp = mc_config_get_full_path (EDIT_CLIP_FILE);
     exp =
         input_expand_dialog (_("Save block"), _("Enter file name:"),
-                             MC_HISTORY_EDIT_SAVE_BLOCK, tmp);
+                             MC_HISTORY_EDIT_SAVE_BLOCK, tmp, INPUT_COMPLETE_FILENAMES);
     g_free (tmp);
     edit_push_undo_action (edit, KEY_PRESS + edit->start_display);
 
@@ -3135,7 +3067,7 @@ edit_insert_file_cmd (WEdit * edit)
 
     tmp = mc_config_get_full_path (EDIT_CLIP_FILE);
     exp = input_expand_dialog (_("Insert file"), _("Enter file name:"),
-                               MC_HISTORY_EDIT_INSERT_FILE, tmp);
+                               MC_HISTORY_EDIT_INSERT_FILE, tmp, INPUT_COMPLETE_FILENAMES);
     g_free (tmp);
 
     edit_push_undo_action (edit, KEY_PRESS + edit->start_display);
@@ -3181,7 +3113,7 @@ edit_sort_cmd (WEdit * edit)
 
     exp = input_dialog (_("Run sort"),
                         _("Enter sort options (see manpage) separated by whitespace:"),
-                        MC_HISTORY_EDIT_SORT, (old != NULL) ? old : "");
+                        MC_HISTORY_EDIT_SORT, (old != NULL) ? old : "", INPUT_COMPLETE_NONE);
 
     if (!exp)
         return 1;
@@ -3243,7 +3175,10 @@ edit_ext_cmd (WEdit * edit)
 
     exp =
         input_dialog (_("Paste output of external command"),
-                      _("Enter shell command(s):"), MC_HISTORY_EDIT_PASTE_EXTCMD, NULL);
+                      _("Enter shell command(s):"), MC_HISTORY_EDIT_PASTE_EXTCMD, NULL,
+                      INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_VARIABLES | INPUT_COMPLETE_USERNAMES
+                      | INPUT_COMPLETE_HOSTNAMES | INPUT_COMPLETE_CD | INPUT_COMPLETE_COMMANDS |
+                      INPUT_COMPLETE_SHELL_ESC);
 
     if (!exp)
         return 1;
@@ -3310,14 +3245,14 @@ edit_mail_dialog (WEdit * edit)
         /* *INDENT-OFF* */
         QUICK_LABEL (N_("mail -s <subject> -c <cc> <to>"), NULL),
         QUICK_LABELED_INPUT (N_("To"), input_label_above,
-                             mail_to_last != NULL ? mail_to_last : "", 0,
-                             "mail-dlg-input-3", &tmail_to, NULL),
+                             mail_to_last != NULL ? mail_to_last : "", "mail-dlg-input-3",
+                             &tmail_to, NULL, FALSE, FALSE, INPUT_COMPLETE_USERNAMES),
         QUICK_LABELED_INPUT (N_("Subject"), input_label_above,
-                              mail_subject_last != NULL ? mail_subject_last : "", 0,
-                             "mail-dlg-input-2", &tmail_subject, NULL),
+                              mail_subject_last != NULL ? mail_subject_last : "", "mail-dlg-input-2",
+                              &tmail_subject, NULL, FALSE, FALSE, INPUT_COMPLETE_NONE),
         QUICK_LABELED_INPUT (N_("Copies to"), input_label_above,
-                             mail_cc_last != NULL ? mail_cc_last  : "", 0,
-                             "mail-dlg-input", &tmail_cc, NULL),
+                             mail_cc_last != NULL ? mail_cc_last  : "", "mail-dlg-input",
+                             &tmail_cc, NULL, FALSE, FALSE, INPUT_COMPLETE_USERNAMES),
         QUICK_BUTTONS_OK_CANCEL,
         QUICK_END
         /* *INDENT-ON* */
@@ -3357,55 +3292,58 @@ edit_complete_word_cmd (WEdit * edit)
 {
     gsize i, max_len, word_len = 0, num_compl = 0;
     off_t word_start = 0;
-    unsigned char *bufpos;
-    char *match_expr;
-    struct selection compl[MAX_WORD_COMPLETIONS];       /* completions */
+    GString *match_expr;
+    GString *compl[MAX_WORD_COMPLETIONS];       /* completions */
 
     /* search start of word to be completed */
     if (!edit_find_word_start (edit, &word_start, &word_len))
         return;
 
     /* prepare match expression */
-    bufpos = &edit->buffers1[word_start >> S_EDIT_BUF_SIZE][word_start & M_EDIT_BUF_SIZE];
-
     /* match_expr = g_strdup_printf ("\\b%.*s[a-zA-Z_0-9]+", word_len, bufpos); */
-    match_expr =
-        g_strdup_printf
-        ("(^|\\s+|\\b)%.*s[^\\s\\.=\\+\\[\\]\\(\\)\\,\\;\\:\\\"\\'\\-\\?\\/\\|\\\\\\{\\}\\*\\&\\^\\%%\\$#@\\!]+",
-         (int) word_len, bufpos);
+    match_expr = g_string_new ("(^|\\s+|\\b)");
+    for (i = 0; i < word_len; i++)
+        g_string_append_c (match_expr, edit_get_byte (edit, word_start + i));
+    g_string_append (match_expr,
+                     "[^\\s\\.=\\+\\[\\]\\(\\)\\,\\;\\:\\\"\\'\\-\\?\\/\\|\\\\\\{\\}\\*\\&\\^\\%%\\$#@\\!]+");
 
     /* collect the possible completions              */
     /* start search from begin to end of file */
     max_len =
-        edit_collect_completions (edit, word_start, word_len, match_expr,
-                                  (struct selection *) &compl, &num_compl);
+        edit_collect_completions (edit, word_start, word_len, match_expr->str, (GString **) & compl,
+                                  &num_compl);
 
     if (num_compl > 0)
     {
         /* insert completed word if there is only one match */
         if (num_compl == 1)
-        {
-            for (i = word_len; i < compl[0].len; i++)
-                edit_insert (edit, *(compl[0].text + i));
-        }
+            edit_complete_word_insert_recoded_completion (edit, compl[0]->str, word_len);
         /* more than one possible completion => ask the user */
         else
         {
+            char *curr_compl;
+
             /* !!! usually only a beep is expected and when <ALT-TAB> is !!! */
             /* !!! pressed again the selection dialog pops up, but that  !!! */
             /* !!! seems to require a further internal state             !!! */
             /*tty_beep (); */
 
             /* let the user select the preferred completion */
-            editcmd_dialog_completion_show (edit, max_len, word_len,
-                                            (struct selection *) &compl, num_compl);
+            curr_compl = editcmd_dialog_completion_show (edit, max_len,
+                                                         (GString **) & compl, num_compl);
+
+            if (curr_compl != NULL)
+            {
+                edit_complete_word_insert_recoded_completion (edit, curr_compl, word_len);
+                g_free (curr_compl);
+            }
         }
     }
 
-    g_free (match_expr);
+    g_string_free (match_expr, TRUE);
     /* release memory before return */
     for (i = 0; i < num_compl; i++)
-        g_free (compl[i].text);
+        g_string_free (compl[i], TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -3418,7 +3356,7 @@ edit_select_codepage_cmd (WEdit * edit)
         edit_set_codeset (edit);
 
     edit->force = REDRAW_PAGE;
-    send_message (edit, NULL, MSG_DRAW, 0, NULL);
+    widget_redraw (WIDGET (edit));
 }
 #endif
 
@@ -3523,10 +3461,9 @@ edit_get_match_keyword_cmd (WEdit * edit)
 {
     gsize word_len = 0, max_len = 0;
     int num_def = 0;
-    int i;
+    gsize i;
     off_t word_start = 0;
-    unsigned char *bufpos;
-    char *match_expr;
+    GString *match_expr;
     char *path = NULL;
     char *ptr = NULL;
     char *tagfile = NULL;
@@ -3543,8 +3480,9 @@ edit_get_match_keyword_cmd (WEdit * edit)
         return;
 
     /* prepare match expression */
-    bufpos = &edit->buffers1[word_start >> S_EDIT_BUF_SIZE][word_start & M_EDIT_BUF_SIZE];
-    match_expr = g_strdup_printf ("%.*s", (int) word_len, bufpos);
+    match_expr = g_string_sized_new (word_len);
+    for (i = 0; i < word_len; i++)
+        g_string_append_c (match_expr, edit_get_byte (edit, word_start + i));
 
     ptr = g_get_current_dir ();
     path = g_strconcat (ptr, G_DIR_SEPARATOR_S, (char *) NULL);
@@ -3566,7 +3504,7 @@ edit_get_match_keyword_cmd (WEdit * edit)
     if (tagfile)
     {
         num_def =
-            etags_set_definition_hash (tagfile, path, match_expr, (etags_hash_t *) & def_hash);
+            etags_set_definition_hash (tagfile, path, match_expr->str, (etags_hash_t *) & def_hash);
         g_free (tagfile);
     }
     g_free (path);
@@ -3575,10 +3513,10 @@ edit_get_match_keyword_cmd (WEdit * edit)
     word_len = 0;
     if (num_def > 0)
     {
-        editcmd_dialog_select_definition_show (edit, match_expr, max_len, word_len,
+        editcmd_dialog_select_definition_show (edit, match_expr->str, max_len, word_len,
                                                (etags_hash_t *) & def_hash, num_def);
     }
-    g_free (match_expr);
+    g_string_free (match_expr, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */

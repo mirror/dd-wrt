@@ -3,6 +3,7 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+#  <mbouzada@gmail.com>, 2013.
 #   <mbouzada@gmail.com>, 2011-2012.
 # mbouzada <mbouzada@gmail.com>, 2011.
 # Miguel Anxo Bouzada <mbouzada@gmail.com>, 2012.
@@ -11,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-12-28 12:17+0300\n"
-"PO-Revision-Date: 2012-12-26 08:42+0000\n"
+"POT-Creation-Date: 2013-04-02 12:41+0300\n"
+"PO-Revision-Date: 2013-03-26 10:28+0000\n"
 "Last-Translator: mbouzada <mbouzada@gmail.com>\n"
 "Language-Team: Galician (http://www.transifex.com/projects/p/mc/language/"
 "gl/)\n"
@@ -79,8 +80,8 @@ msgid "FATAL: not a directory:"
 msgstr "FATAL! Non é un directorio:"
 
 #, c-format
-msgid "An error occured while migrating user settings: %s"
-msgstr "Produciuse un erro na migración da configuración do usuario: %s"
+msgid "An error occurred while migrating user settings: %s"
+msgstr "Produciuse un erro ao migrar a configuración do usuario: %s"
 
 #, c-format
 msgid ""
@@ -644,6 +645,25 @@ msgid ""
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
+"--colors CONTEXTO={FRENTE},{FONDO},{ATRIBUTOS}:CONTEXTO2=...\n"
+"\n"
+"{FRENTE}, {FONDO} e {ATRIBUTOS} poden omitirse e utilizarase o el valor "
+"predeterminado\n"
+"\n"
+" Contextos:\n"
+"   Global:       errors, disabled, reverse, gauge, header\n"
+"                 input, inputmark, inputunchanged, commandlinemark\n"
+"                 bbarhotkey, bbarbutton, statusbar\n"
+"   Visor de ficheiros: normal, selected, marked, markselect\n"
+"   Diálogos:     dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
+"                 errdhotfocus\n"
+"   Menús:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
+"   Menús emerxentes: pmenunormal, pmenusel, pmenutitle\n"
+"   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
+"                 editlinestate, editbg, editframe, editframeactive\n"
+"                 editframedrag\n"
+"   Visor:        viewbold, viewunderline, viewselected\n"
+"   Axuda:        helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -1426,10 +1446,10 @@ msgid "&None"
 msgstr "&Ningún"
 
 msgid "&Dynamic paragraphing"
-msgstr ""
+msgstr "Paragrafado &Dinámico"
 
 msgid "Type &writer wrap"
-msgstr ""
+msgstr "Axuste de má&Quina de escribir"
 
 msgid "Wrap mode"
 msgstr "Axuste de parágrafo"
@@ -1462,7 +1482,7 @@ msgid "Save file &position"
 msgstr "Gardar &Posición no ficheiro"
 
 msgid "&Visible trailing spaces"
-msgstr ""
+msgstr "Espazos finais &Visíbeis"
 
 msgid "Visible &tabs"
 msgstr "&Lapelas visíbeis"
@@ -1471,7 +1491,7 @@ msgid "Synta&x highlighting"
 msgstr "Sinta&Xe coreada"
 
 msgid "C&ursor after inserted block"
-msgstr ""
+msgstr "C&ursor despois do bloque inserido"
 
 msgid "Pers&istent selection"
 msgstr "Selecció&N persistente"
@@ -1532,7 +1552,7 @@ msgid "Language"
 msgstr "Idioma"
 
 msgid "Misspelled"
-msgstr ""
+msgstr "Mal escrita"
 
 msgid "Check word"
 msgstr "Revisar palabra"
@@ -1569,16 +1589,16 @@ msgstr ""
 "Seica borrou vostede o directorio? ou deulle outros\n"
 "permisos coa orde «su»?"
 
+#, c-format
+msgid "Cannot fetch a local copy of %s"
+msgstr "Non é posíbel obter unha copia local de %s"
+
 msgid "The shell is already running a command"
 msgstr "O terminal xa esta executando unha orde"
 
 #, c-format
 msgid "Type `exit' to return to the Midnight Commander"
 msgstr "Escriba «exit» para volver ao Midnight Commander"
-
-#, c-format
-msgid "Cannot fetch a local copy of %s"
-msgstr "Non é posíbel obter unha copia local de %s"
 
 msgid "Set &all"
 msgstr "Aplicar &Todos"
@@ -1628,6 +1648,158 @@ msgstr "Executándose"
 
 msgid "Stopped"
 msgstr "Detido"
+
+msgid "&Never"
+msgstr "&Nunca"
+
+msgid "On dum&b terminals"
+msgstr "Só en terminais &Bobas"
+
+msgid "Alwa&ys"
+msgstr "&Sempre"
+
+msgid "File operations"
+msgstr "Operacións de ficheiro"
+
+msgid "&Verbose operation"
+msgstr "&Operación detallada"
+
+msgid "Compute tota&ls"
+msgstr "Calcular &Totais"
+
+msgid "Classic pro&gressbar"
+msgstr "Barra de pro&Greso clásica"
+
+msgid "Mkdi&r autoname"
+msgstr "Nomear automaticamente ao crear di&Rectorio"
+
+msgid "&Preallocate space"
+msgstr "&Preasignar espazo"
+
+msgid "Esc key mode"
+msgstr "Tecla «Escape»"
+
+msgid "S&ingle press"
+msgstr "Premer só &Unha vez"
+
+msgid "Timeout:"
+msgstr "Tempo de espera:"
+
+msgid "Pause after run"
+msgstr "Pausa logo de executar"
+
+msgid "Use internal edi&t"
+msgstr "Usar ed&Itor interno"
+
+msgid "Use internal vie&w"
+msgstr "&Usar visor interno"
+
+msgid "A&sk new file name"
+msgstr "Pre&Guntar polo novo nome de ficheiro"
+
+msgid "Auto m&enus"
+msgstr "Auto m&Enús"
+
+msgid "&Drop down menus"
+msgstr "Menús &Despregábeis"
+
+msgid "S&hell patterns"
+msgstr "Modelos de ter&Minal"
+
+msgid "Co&mplete: show all"
+msgstr "co&Mpletar: mostrar todos"
+
+msgid "Rotating d&ash"
+msgstr "Rotación do t&Aboleiro"
+
+msgid "Cd follows lin&ks"
+msgstr "Cd segue li&Gazóns"
+
+msgid "Sa&fe delete"
+msgstr "&Borrado seguro"
+
+msgid "A&uto save setup"
+msgstr "Configuración do &Auto-gardado"
+
+msgid "Configure options"
+msgstr "Configuración"
+
+msgid "Case &insensitive"
+msgstr "&Non distinguir maiúsculas"
+
+msgid "Use panel sort mo&de"
+msgstr "Usar o m&Odo de orden do panel"
+
+msgid "Show mi&ni-status"
+msgstr "Mostrar m&Ini-estado"
+
+msgid "Use SI si&ze units"
+msgstr "Tama&Ños en unidades SI"
+
+msgid "Mi&x all files"
+msgstr "me&Sturar todos os ficheiros"
+
+msgid "Show &backup files"
+msgstr "Mostrar ficheiros de co&Pia de seguranza"
+
+msgid "Show &hidden files"
+msgstr "Mostrar ficheiros agoc&Hados"
+
+msgid "&Fast dir reload"
+msgstr "Re&Carga rápida de directorios"
+
+msgid "Ma&rk moves down"
+msgstr "ma&Rcar e baixar"
+
+msgid "Re&verse files only"
+msgstr "in&Verter só ficheiros"
+
+msgid "Simple s&wap"
+msgstr "intercambio &Simple de paneis"
+
+msgid "A&uto save panels setup"
+msgstr "Configuración do &Auto-gardado"
+
+msgid "Navigation"
+msgstr "Navegación"
+
+msgid "L&ynx-like motion"
+msgstr "Navegación ao estilo L&Ynx"
+
+msgid "Pa&ge scrolling"
+msgstr "Avance de pá&Xina"
+
+msgid "&Mouse page scrolling"
+msgstr "Avance de páxina co &Rato"
+
+msgid "File highlight"
+msgstr "Resaltar ficheiro"
+
+msgid "File &types"
+msgstr "&Tipos de ficheiros"
+
+msgid "&Permissions"
+msgstr "&Permisos"
+
+msgid "Quick search"
+msgstr "Busca rápida"
+
+msgid "Panel options"
+msgstr "Opcións dos paneis"
+
+msgid "Information"
+msgstr "Información"
+
+msgid ""
+"Using the fast reload option may not reflect the exact\n"
+"directory contents. In this case you'll need to do a\n"
+"manual reload of the directory. See the man page for\n"
+"the details."
+msgstr ""
+"O uso do «cargado rápido» pode ocasionar que o contido\n"
+"do panel non sempre reflicta o contido do directorio. Nese\n"
+"caso terá que recargar manualmente o directorio.\n"
+"Vexa a páxina do manual para obter máis información."
 
 msgid "&Full file list"
 msgstr "Lista &Completa"
@@ -1706,13 +1878,13 @@ msgid "Directory tree"
 msgstr "Árbore de directorios"
 
 msgid "Timeout for freeing VFSs (sec):"
-msgstr ""
+msgstr "Atraso para a liberación de VFS (seg):"
 
 msgid "FTP anonymous password:"
-msgstr ""
+msgstr "Contrasinal do FTP anónimo:"
 
 msgid "FTP directory cache timeout (sec):"
-msgstr ""
+msgstr "Atraso da caché do directorio FTP (seg):"
 
 msgid "&Always use ftp proxy:"
 msgstr "Empregar &Sempre o proxy ftp:"
@@ -1774,37 +1946,37 @@ msgid "set &user ID on execution"
 msgstr "estabelecer o ID do &Ususrio na execución"
 
 msgid "set &group ID on execution"
-msgstr ""
+msgstr "estabelecer o ID do &Grupo na execución"
 
 msgid "stick&y bit"
 msgstr "bit pega&Ñento"
 
 msgid "&read by owner"
-msgstr ""
+msgstr "&Lido polo propietario"
 
 msgid "&write by owner"
-msgstr ""
+msgstr "esc&rito polo propietario"
 
 msgid "e&xecute/search by owner"
-msgstr ""
+msgstr "e&Xecutado/buscado polo propietario"
 
 msgid "rea&d by group"
-msgstr ""
+msgstr "li&Do polo grupo"
 
 msgid "write by grou&p"
-msgstr ""
+msgstr "escrito polo gru&Po"
 
 msgid "execu&te/search by group"
-msgstr ""
+msgstr "execu&Tado/buscado polo propietario"
 
 msgid "read &by others"
-msgstr ""
+msgstr "lido por o&Utros"
 
 msgid "wr&ite by others"
-msgstr ""
+msgstr "escr&Ito por outros"
 
 msgid "execute/searc&h by others"
-msgstr ""
+msgstr "executado/&Buscado por outros"
 
 msgid "Name:"
 msgstr "Nome:"
@@ -1921,6 +2093,9 @@ msgstr "Vista filtrada"
 msgid "Filter command and arguments:"
 msgstr "Orde de filtrado e argumentos:"
 
+msgid "Edit file"
+msgstr "Editar o ficheiro"
+
 msgid "Create a new Directory"
 msgstr "Crear un novo directorio"
 
@@ -2000,13 +2175,13 @@ msgid "FTP to machine"
 msgstr "Conexión por FTP"
 
 msgid "SFTP to machine"
-msgstr ""
+msgstr "SFTP á máquina"
 
 msgid "Shell link to machine"
-msgstr "Conexión por shell"
+msgstr "Ligazón á máquina do terminal"
 
 msgid "SMB link to machine"
-msgstr "Conexión por SMB"
+msgstr "Ligazón á máquina SMB"
 
 msgid "Undelete files on an ext2 file system"
 msgstr "Recuperar ficheiros dun sistema de ficheiros ext2"
@@ -2450,6 +2625,14 @@ msgstr ""
 msgid "Directory scanning"
 msgstr "Examinando directorio"
 
+#, c-format
+msgid ""
+"%s\n"
+"Directories: %zd, total size: %s"
+msgstr ""
+"%s\n"
+"Directorios: %zd, tamaño total: %s"
+
 msgid "Cannot operate on \"..\"!"
 msgstr "Non é posíbel operar sobre «..»!"
 
@@ -2457,7 +2640,7 @@ msgid "Sorry, I could not put the job in background"
 msgstr "Síntoo, non se puido pór a tarefa en 2º plano"
 
 msgid "S&uspend"
-msgstr ""
+msgstr "S&uspender"
 
 msgid "Con&tinue"
 msgstr "Con&Tinuar"
@@ -2486,12 +2669,12 @@ msgid "Target file already exists!"
 msgstr "O ficheiro destino xa existe!"
 
 #, c-format
-msgid "New     : %s, size %llu"
-msgstr "Novo     : %s, tamaño %llu"
+msgid "New     : %s, size %s"
+msgstr "Novo     : %s, tamaño %s"
 
 #, c-format
-msgid "Existing: %s, size %llu"
-msgstr "Existente: %s, tamaño %llu"
+msgid "Existing: %s, size %s"
+msgstr "Existente: %s, tamaño %s"
 
 msgid "Overwrite this target?"
 msgstr "Sobrescribir este ficheiro?"
@@ -2568,7 +2751,7 @@ msgid "Di&ve into subdir if exists"
 msgstr "Entrar en sub&Directorio se existe"
 
 msgid "&Stable symlinks"
-msgstr ""
+msgstr "Ligazóns simbólicas e&Stábeis"
 
 msgid "&Background"
 msgstr "En 2º &Plano"
@@ -2659,7 +2842,7 @@ msgid "Change &to"
 msgstr "&Cambiar a"
 
 msgid "&Free VFSs now"
-msgstr ""
+msgstr "Liberar os V&FS agora"
 
 msgid "&Refresh"
 msgstr "Actuali&Zar"
@@ -2751,9 +2934,6 @@ msgstr "Etiqueta para «%s»:"
 
 msgid "Add to hotlist"
 msgstr "Engadir a favoritos"
-
-msgid "Information"
-msgstr "Información"
 
 #, c-format
 msgid "Midnight Commander %s"
@@ -2901,7 +3081,7 @@ msgid "S&hell link..."
 msgstr "Conexión por &Terminal..."
 
 msgid "S&FTP link..."
-msgstr ""
+msgstr "Ligazón S&FTP..."
 
 msgid "SM&B link..."
 msgstr "Conexión por &SMB..."
@@ -3082,152 +3262,6 @@ msgstr "ButtonBar|Crear directorio"
 
 msgid "Memory exhausted!"
 msgstr "Memoria esgotada!"
-
-msgid "&Never"
-msgstr "&Nunca"
-
-msgid "On dum&b terminals"
-msgstr "Só en terminais &Bobas"
-
-msgid "Alwa&ys"
-msgstr "&Sempre"
-
-msgid "File operations"
-msgstr "Operacións de ficheiro"
-
-msgid "&Verbose operation"
-msgstr "&Operación detallada"
-
-msgid "Compute tota&ls"
-msgstr "Calcular &Totais"
-
-msgid "Classic pro&gressbar"
-msgstr "Barra de pro&Greso clásica"
-
-msgid "Mkdi&r autoname"
-msgstr "Nomear automaticamente ao crear di&Rectorio"
-
-msgid "Preallocate &space"
-msgstr "&Reservar espazo"
-
-msgid "Esc key mode"
-msgstr "Tecla «Escape»"
-
-msgid "S&ingle press"
-msgstr "Premer só &Unha vez"
-
-msgid "Timeout:"
-msgstr "Tempo de espera:"
-
-msgid "Pause after run"
-msgstr "Pausa logo de executar"
-
-msgid "Use internal edi&t"
-msgstr "Usar ed&Itor interno"
-
-msgid "Use internal vie&w"
-msgstr "&Usar visor interno"
-
-msgid "Auto m&enus"
-msgstr "Auto m&Enús"
-
-msgid "&Drop down menus"
-msgstr "Menús &Despregábeis"
-
-msgid "Shell &patterns"
-msgstr "Mode&Los da consola"
-
-msgid "Co&mplete: show all"
-msgstr "co&Mpletar: mostrar todos"
-
-msgid "Rotating d&ash"
-msgstr "Rotación do t&Aboleiro"
-
-msgid "Cd follows lin&ks"
-msgstr "Cd segue li&Gazóns"
-
-msgid "Sa&fe delete"
-msgstr "&Borrado seguro"
-
-msgid "A&uto save setup"
-msgstr "Configuración do &Auto-gardado"
-
-msgid "Configure options"
-msgstr "Configuración"
-
-msgid "Case &insensitive"
-msgstr "&Non distinguir maiúsculas"
-
-msgid "Use panel sort mo&de"
-msgstr "Usar o m&Odo de orden do panel"
-
-msgid "Show mi&ni-status"
-msgstr "Mostrar m&Ini-estado"
-
-msgid "Use SI si&ze units"
-msgstr "Tama&Ños en unidades SI"
-
-msgid "Mi&x all files"
-msgstr "me&Sturar todos os ficheiros"
-
-msgid "Show &backup files"
-msgstr "Mostrar ficheiros de co&Pia de seguranza"
-
-msgid "Show &hidden files"
-msgstr "Mostrar ficheiros agoc&Hados"
-
-msgid "&Fast dir reload"
-msgstr "Re&Carga rápida de directorios"
-
-msgid "Ma&rk moves down"
-msgstr "ma&Rcar e baixar"
-
-msgid "Re&verse files only"
-msgstr "in&Verter só ficheiros"
-
-msgid "Simple s&wap"
-msgstr "intercambio &Simple de paneis"
-
-msgid "A&uto save panels setup"
-msgstr "Configuración do &Auto-gardado"
-
-msgid "Navigation"
-msgstr "Navegación"
-
-msgid "L&ynx-like motion"
-msgstr "Navegación ao estilo L&Ynx"
-
-msgid "Pa&ge scrolling"
-msgstr "Avance de pá&Xina"
-
-msgid "&Mouse page scrolling"
-msgstr "Avance de páxina co &Rato"
-
-msgid "File highlight"
-msgstr "Resaltar ficheiro"
-
-msgid "File &types"
-msgstr "&Tipos de ficheiros"
-
-msgid "&Permissions"
-msgstr "&Permisos"
-
-msgid "Quick search"
-msgstr "Busca rápida"
-
-msgid "Panel options"
-msgstr "Opcións dos paneis"
-
-msgid ""
-"Using the fast reload option may not reflect the exact\n"
-"directory contents. In this case you'll need to do a\n"
-"manual reload of the directory. See the man page for\n"
-"the details."
-msgstr ""
-"O uso do «cargado rápido» pode ocasionar que o contido\n"
-"do panel non sempre reflicta o contido do directorio. Nese\n"
-"caso terá que recargar manualmente o directorio.\n"
-"Vexa a páxina do manual para obter máis información."
 
 #. TRANSLATORS: one single character to represent 'unsorted' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3581,6 +3615,9 @@ msgid ""
 "which keys are not marked with OK. Press space on the missing\n"
 "key, or click with the mouse to define it. Move around with Tab."
 msgstr ""
+"Prema todas as teclas mencionadas aquí. Una vez feito, comprobe\n"
+"que as teclas non están marcados con «Aceptar». Prema espazo na\n"
+"tecla que falte ou prema co rato para definila. Móvase coa tecla Tab."
 
 #, c-format
 msgid ""
@@ -3963,11 +4000,11 @@ msgstr ""
 "%s\n"
 
 #, c-format
-msgid "sftp: an error occured while reading %s: %s"
-msgstr ""
+msgid "sftp: an error occurred while reading %s: %s"
+msgstr "sftp: produciuse un erro ao ler %s: %s"
 
 msgid "sftp: Unable to get current user name."
-msgstr ""
+msgstr "sftp: Non é posíbel obter o nome do usuario actual."
 
 msgid "sftp: Invalid host name."
 msgstr "sftp: nome de máquina incorrecto."
@@ -4009,14 +4046,14 @@ msgid "sftp: Failure establishing SSH session: (%d)"
 msgstr "sftp: produciuse un fallo ao estabelecer a sesión SSH: (%d)"
 
 msgid "sftp: No file handler data present for reading file"
-msgstr ""
+msgstr "sftp: Sen datos del descritor do ficheiro para lelo."
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"
-msgstr ""
+msgstr "sftp: (Ctrl-G interrompe) Listado... %s"
 
 msgid "sftp: Listing done."
-msgstr ""
+msgstr "sftp: Feito o listado."
 
 #, c-format
 msgid "reconnect to %s failed"
@@ -4240,6 +4277,14 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Non é posíbel ver: non é un ficheiro regular"
 
+#, fuzzy, c-format
+msgid ""
+"Cannot open \"%s\" in magic mode\n"
+"%s"
+msgstr ""
+"Non é posíbel abrir «%s»\n"
+"%s"
+
 msgid "Seeking to search result"
 msgstr "Avanzando ao resultado da busca"
 
@@ -4248,3 +4293,6 @@ msgstr "Busca rematada"
 
 msgid "Continue from beginning?"
 msgstr "Continuar desde o principio?"
+
+msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
+msgstr "Non é posíbel obter unha copia local de /ftp://some.host/editme.txt"

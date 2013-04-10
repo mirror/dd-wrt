@@ -47,6 +47,7 @@
 #include "lib/event.h"
 #include "lib/tty/tty.h"
 #include "lib/tty/key.h"        /* For init_key() */
+#include "lib/tty/mouse.h"      /* init_mouse() */
 #include "lib/skin.h"
 #include "lib/filehighlight.h"
 #include "lib/fileloc.h"
@@ -129,17 +130,18 @@ OS_Setup (void)
     if ((shell_env == NULL) || (shell_env[0] == '\0'))
     {
         struct passwd *pwd;
+
         pwd = getpwuid (geteuid ());
         if (pwd != NULL)
-            shell = g_strdup (pwd->pw_shell);
+            mc_global.tty.shell = g_strdup (pwd->pw_shell);
     }
     else
-        shell = g_strdup (shell_env);
+        mc_global.tty.shell = g_strdup (shell_env);
 
-    if ((shell == NULL) || (shell[0] == '\0'))
+    if ((mc_global.tty.shell == NULL) || (mc_global.tty.shell[0] == '\0'))
     {
-        g_free (shell);
-        shell = g_strdup ("/bin/sh");
+        g_free (mc_global.tty.shell);
+        mc_global.tty.shell = g_strdup ("/bin/sh");
     }
 
     /* This is the directory, where MC was installed, on Unix this is DATADIR */
@@ -257,7 +259,7 @@ main (int argc, char *argv[])
       startup_exit_falure:
         fprintf (stderr, _("Failed to run:\n%s\n"), error->message);
         g_error_free (error);
-        g_free (shell);
+        g_free (mc_global.tty.shell);
       startup_exit_ok:
         str_uninit_strings ();
         return exit_code;
@@ -366,7 +368,6 @@ main (int argc, char *argv[])
     /* inherit the file descriptors opened below, etc */
     if (mc_global.tty.use_subshell)
         init_subshell ();
-
 #endif /* ENABLE_SUBSHELL */
 
     /* Also done after init_subshell, to save any shell init file messages */
@@ -376,16 +377,12 @@ main (int argc, char *argv[])
     if (mc_global.tty.alternate_plus_minus)
         application_keypad_mode ();
 
-#ifdef ENABLE_SUBSHELL
-    if (mc_global.tty.use_subshell)
-    {
-        mc_prompt = strip_ctrl_codes (subshell_prompt);
-        if (mc_prompt == NULL)
-            mc_prompt = (geteuid () == 0) ? "# " : "$ ";
-    }
-    else
-#endif /* ENABLE_SUBSHELL */
-        mc_prompt = (geteuid () == 0) ? "# " : "$ ";
+    /* Done after subshell initialization to allow select and paste text by mouse
+       w/o Shift button in subshell in the native console */
+    init_mouse ();
+
+    /* subshell_prompt is NULL here */
+    mc_prompt = (geteuid () == 0) ? "# " : "$ ";
 
     if (config_migrated)
     {
@@ -439,11 +436,13 @@ main (int argc, char *argv[])
             int ret2;
             ret1 = write (last_wd_fd, last_wd_string, strlen (last_wd_string));
             ret2 = close (last_wd_fd);
+            (void) ret1;
+            (void) ret2;
         }
     }
     g_free (last_wd_string);
 
-    g_free (shell);
+    g_free (mc_global.tty.shell);
 
     done_key ();
 

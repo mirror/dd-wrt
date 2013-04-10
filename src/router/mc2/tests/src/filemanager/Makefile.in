@@ -54,7 +54,8 @@ host_triplet = @host@
 # this is a hack for linking with own samba library in simple way
 @ENABLE_VFS_SMB_TRUE@am__append_1 = $(top_builddir)/src/vfs/smbfs/helpers/libsamba.a
 TESTS = do_cd_command$(EXEEXT) examine_cd$(EXEEXT) \
-	exec_get_export_variables_ext$(EXEEXT)
+	exec_get_export_variables_ext$(EXEEXT) \
+	cmd__get_random_hint$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests/src/filemanager
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -110,7 +111,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4.include/mc-i18n.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -118,13 +119,17 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = do_cd_command$(EXEEXT) examine_cd$(EXEEXT) \
-	exec_get_export_variables_ext$(EXEEXT)
-am_do_cd_command_OBJECTS = do_cd_command.$(OBJEXT)
-do_cd_command_OBJECTS = $(am_do_cd_command_OBJECTS)
-do_cd_command_LDADD = $(LDADD)
+	exec_get_export_variables_ext$(EXEEXT) \
+	cmd__get_random_hint$(EXEEXT)
+am_cmd__get_random_hint_OBJECTS = cmd__get_random_hint.$(OBJEXT)
+cmd__get_random_hint_OBJECTS = $(am_cmd__get_random_hint_OBJECTS)
+cmd__get_random_hint_LDADD = $(LDADD)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
+am_do_cd_command_OBJECTS = do_cd_command.$(OBJEXT)
+do_cd_command_OBJECTS = $(am_do_cd_command_OBJECTS)
+do_cd_command_LDADD = $(LDADD)
 am_examine_cd_OBJECTS = examine_cd.$(OBJEXT)
 examine_cd_OBJECTS = $(am_examine_cd_OBJECTS)
 examine_cd_LDADD = $(LDADD)
@@ -159,9 +164,10 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(do_cd_command_SOURCES) $(examine_cd_SOURCES) \
-	$(exec_get_export_variables_ext_SOURCES)
-DIST_SOURCES = $(do_cd_command_SOURCES) $(examine_cd_SOURCES) \
+SOURCES = $(cmd__get_random_hint_SOURCES) $(do_cd_command_SOURCES) \
+	$(examine_cd_SOURCES) $(exec_get_export_variables_ext_SOURCES)
+DIST_SOURCES = $(cmd__get_random_hint_SOURCES) \
+	$(do_cd_command_SOURCES) $(examine_cd_SOURCES) \
 	$(exec_get_export_variables_ext_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -388,9 +394,11 @@ AM_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/lib/vfs \
+	-DTEST_SHARE_DIR=\"$(abs_srcdir)\" \
 	@CHECK_CFLAGS@
 
 AM_LDFLAGS = @TESTS_LDFLAGS@
+EXTRA_DIST = hints/mc.hint
 do_cd_command_SOURCES = \
 	do_cd_command.c
 
@@ -399,6 +407,9 @@ examine_cd_SOURCES = \
 
 exec_get_export_variables_ext_SOURCES = \
 	exec_get_export_variables_ext.c
+
+cmd__get_random_hint_SOURCES = \
+	cmd__get_random_hint.c
 
 all: all-am
 
@@ -443,6 +454,9 @@ clean-checkPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+cmd__get_random_hint$(EXEEXT): $(cmd__get_random_hint_OBJECTS) $(cmd__get_random_hint_DEPENDENCIES) $(EXTRA_cmd__get_random_hint_DEPENDENCIES) 
+	@rm -f cmd__get_random_hint$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cmd__get_random_hint_OBJECTS) $(cmd__get_random_hint_LDADD) $(LIBS)
 do_cd_command$(EXEEXT): $(do_cd_command_OBJECTS) $(do_cd_command_DEPENDENCIES) $(EXTRA_do_cd_command_DEPENDENCIES) 
 	@rm -f do_cd_command$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(do_cd_command_OBJECTS) $(do_cd_command_LDADD) $(LIBS)
@@ -459,6 +473,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmd__get_random_hint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/do_cd_command.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/examine_cd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exec_get_export_variables_ext.Po@am__quote@

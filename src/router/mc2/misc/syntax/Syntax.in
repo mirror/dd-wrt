@@ -37,7 +37,7 @@ include diff.syntax
 file ..\*\\.lsm$ LSM\sFile
 include lsm.syntax
 
-file .\*(bash_completion|profile|\\.(sh|bash_login|bash_profile|bash_logout|bash_aliases|bash_exports|bash_history|bashrc|profile))$ Shell\sScript ^#!\s\*/(.\*/|usr/bin/env\s)([a-z]?|ba|pdk)sh
+file .\*(bash_completion|profile|\\.(sh|bash_login|bash_profile|bash_logout|bash_aliases|bash_exports|bash_history|bashrc|profile|zlogin|zlogout|zprofile|zshenv|zshrc))$ Shell\sScript ^#!\s\*/(.\*/|usr/bin/env\s)([a-z]?|ba|pdk)sh
 include sh.syntax
 
 file ..\*\\.(pl|PL|pm|PM|psgi|PSGI)$ Perl\sProgram ^#!.\*([\s/]perl|@PERL@)
@@ -64,7 +64,7 @@ include xml.syntax
 file ..\*\\.(tt|TT)$ Template::Toolkit\sFile
 include tt.syntax
 
-file (.\*[Mm]akefile[\\\.A-Za-z0-9]\*|..\*\\.mk|Kbuild)$ Makefile
+file (.\*[Mm]akefile[\\\.A-Za-z0-9]\*|..\*\\.mk|..\*\\.mak|Kbuild)$ Makefile
 include makefile.syntax
 
 file CMakeLists.txt$ CMake
@@ -249,6 +249,12 @@ include yxx.syntax
 
 file ..\*\\.dlink\\.sw$ D-Link\sSwitch\sCommands
 include dlink.syntax
+
+file ..\*\\.([jJ][aA][lL][tT]?)$ Jal\ssource
+include jal.syntax
+
+file ..\*\\.([lL][kK][rR])$ PIC\slinker\sscript\sfile
+include lkr.syntax
 
 file .\* unknown
 include unknown.syntax
