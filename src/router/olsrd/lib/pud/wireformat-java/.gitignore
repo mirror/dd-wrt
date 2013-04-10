@@ -1,0 +1,7 @@
+/build/
+/lib/
+/build.xml
+/src/main/c/org_olsr_plugin_pud_PositionUpdate.h
+/src/main/c/org_olsr_plugin_pud_ClusterLeader.h
+/src/main/c/org_olsr_plugin_pud_UplinkMessage.h
+/src/main/java/org/olsr/plugin/pud/WireFormatConstants.java
