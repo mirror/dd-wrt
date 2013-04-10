@@ -105,7 +105,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4.include/mc-i18n.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -114,7 +114,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libmcstrutil_la_LIBADD =
-am_libmcstrutil_la_OBJECTS = strescape.lo strutil8bit.lo \
+am_libmcstrutil_la_OBJECTS = replace.lo strescape.lo strutil8bit.lo \
 	strutilascii.lo strutil.lo strutilutf8.lo strverscmp.lo
 libmcstrutil_la_OBJECTS = $(am_libmcstrutil_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -368,6 +368,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libmcstrutil.la
 libmcstrutil_la_SOURCES = \
+	replace.c \
 	strescape.c \
 	strutil8bit.c \
 	strutilascii.c \
@@ -428,6 +429,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/replace.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strescape.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strutil.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strutil8bit.Plo@am__quote@

@@ -2,7 +2,7 @@
    External panelize
 
    Copyright (C) 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2007, 2009, 2011
+   2007, 2009, 2011, 2013
    The Free Software Foundation, Inc.
 
    Written by:
@@ -159,7 +159,9 @@ init_panelize (void)
     blen = i - 1;               /* gaps between buttons */
     while (i-- != 0)
     {
+#ifdef ENABLE_NLS
         panelize_but[i].text = _(panelize_but[i].text);
+#endif
         blen += str_term_width1 (panelize_but[i].text) + 3 + 1;
         if (panelize_but[i].flags == DEFPUSH_BUTTON)
             blen += 2;
@@ -186,8 +188,12 @@ init_panelize (void)
     add_widget (panelize_dlg, label_new (y++, UX, _("Command")));
     pname =
         input_new (y++, UX, input_get_default_colors (), panelize_cols - UX * 2, "", "in",
-                   INPUT_COMPLETE_DEFAULT);
+                   INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_HOSTNAMES | INPUT_COMPLETE_COMMANDS |
+                   INPUT_COMPLETE_VARIABLES | INPUT_COMPLETE_USERNAMES | INPUT_COMPLETE_CD |
+                   INPUT_COMPLETE_SHELL_ESC);
     add_widget (panelize_dlg, pname);
+
+
 
     add_widget (panelize_dlg, hline_new (y++, -1, -1));
 
@@ -258,7 +264,8 @@ add2panelize_cmd (void)
     if (pname->buffer && (*pname->buffer))
     {
         label = input_dialog (_("Add to external panelize"),
-                              _("Enter command label:"), MC_HISTORY_FM_PANELIZE_ADD, "");
+                              _("Enter command label:"), MC_HISTORY_FM_PANELIZE_ADD, "",
+                              INPUT_COMPLETE_NONE);
         if (!label)
             return;
         if (!*label)
@@ -373,6 +380,7 @@ do_external_panelize (char *command)
             int ret;
             panel_set_cwd (current_panel, PATH_SEP_STR);
             ret = chdir (PATH_SEP_STR);
+            (void) ret;
         }
     }
     else
@@ -412,7 +420,7 @@ do_panelize_cd (struct WPanel *panel)
     panel->count = panelized_panel.count;
     panel->is_panelized = TRUE;
 
-    panelized_same = (vfs_path_cmp (panelized_panel.root_vpath, panel->cwd_vpath) == 0);
+    panelized_same = (vfs_path_equal (panelized_panel.root_vpath, panel->cwd_vpath));
 
     for (i = 0; i < panelized_panel.count; i++)
     {
@@ -504,7 +512,7 @@ panelize_save_panel (struct WPanel *panel)
 void
 cd_panelize_cmd (void)
 {
-    if (get_display_type (MENU_PANEL_IDX) != view_listing)
+    if (!SELECTED_IS_PANEL)
         set_display_type (MENU_PANEL_IDX, view_listing);
 
     do_panelize_cd ((struct WPanel *) get_panel_widget (MENU_PANEL_IDX));

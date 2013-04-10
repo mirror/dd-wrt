@@ -5341,14 +5341,21 @@ fi
 
 
 
+    ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
     mc_configured_cflags=""
 
 case "$CC" in
   gcc*)
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -fdiagnostics-show-option" >&5
-$as_echo_n "checking whether gcc accepts -fdiagnostics-show-option... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -fdiagnostics-show-option" >&5
+$as_echo_n "checking whether ${CC} accepts -fdiagnostics-show-option... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-fdiagnostics-show-option"
@@ -5359,21 +5366,15 @@ $as_echo_n "checking whether gcc accepts -fdiagnostics-show-option... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5385,7 +5386,6 @@ $as_echo "$mc_check_one_cflag" >&6; }
     mc_configured_cflags="$mc_configured_cflags -fdiagnostics-show-option"
   fi
 
-
     ;;
   *)
     ;;
@@ -5393,8 +5393,8 @@ esac
 
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wcomment" >&5
-$as_echo_n "checking whether gcc accepts -Wcomment... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wcomment" >&5
+$as_echo_n "checking whether ${CC} accepts -Wcomment... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wcomment"
@@ -5405,21 +5405,15 @@ $as_echo_n "checking whether gcc accepts -Wcomment... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5433,9 +5427,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wdeclaration-after-statement" >&5
-$as_echo_n "checking whether gcc accepts -Wdeclaration-after-statement... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wdeclaration-after-statement" >&5
+$as_echo_n "checking whether ${CC} accepts -Wdeclaration-after-statement... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wdeclaration-after-statement"
@@ -5446,21 +5439,15 @@ $as_echo_n "checking whether gcc accepts -Wdeclaration-after-statement... " >&6;
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5474,9 +5461,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wfloat-equal" >&5
-$as_echo_n "checking whether gcc accepts -Wfloat-equal... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wfloat-equal" >&5
+$as_echo_n "checking whether ${CC} accepts -Wfloat-equal... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wfloat-equal"
@@ -5487,21 +5473,15 @@ $as_echo_n "checking whether gcc accepts -Wfloat-equal... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5515,9 +5495,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wformat" >&5
-$as_echo_n "checking whether gcc accepts -Wformat... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wformat" >&5
+$as_echo_n "checking whether ${CC} accepts -Wformat... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wformat"
@@ -5528,21 +5507,15 @@ $as_echo_n "checking whether gcc accepts -Wformat... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5556,9 +5529,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wformat-security" >&5
-$as_echo_n "checking whether gcc accepts -Wformat-security... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wformat-security" >&5
+$as_echo_n "checking whether ${CC} accepts -Wformat-security... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wformat-security"
@@ -5569,21 +5541,15 @@ $as_echo_n "checking whether gcc accepts -Wformat-security... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5597,9 +5563,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wimplicit" >&5
-$as_echo_n "checking whether gcc accepts -Wimplicit... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wimplicit" >&5
+$as_echo_n "checking whether ${CC} accepts -Wimplicit... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wimplicit"
@@ -5610,21 +5575,15 @@ $as_echo_n "checking whether gcc accepts -Wimplicit... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5638,9 +5597,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wignored-qualifiers" >&5
-$as_echo_n "checking whether gcc accepts -Wignored-qualifiers... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wignored-qualifiers" >&5
+$as_echo_n "checking whether ${CC} accepts -Wignored-qualifiers... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wignored-qualifiers"
@@ -5651,21 +5609,15 @@ $as_echo_n "checking whether gcc accepts -Wignored-qualifiers... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5679,9 +5631,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wmissing-braces" >&5
-$as_echo_n "checking whether gcc accepts -Wmissing-braces... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wmissing-braces" >&5
+$as_echo_n "checking whether ${CC} accepts -Wmissing-braces... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wmissing-braces"
@@ -5692,21 +5643,15 @@ $as_echo_n "checking whether gcc accepts -Wmissing-braces... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5720,9 +5665,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wmissing-declarations" >&5
-$as_echo_n "checking whether gcc accepts -Wmissing-declarations... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wmissing-declarations" >&5
+$as_echo_n "checking whether ${CC} accepts -Wmissing-declarations... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wmissing-declarations"
@@ -5733,21 +5677,15 @@ $as_echo_n "checking whether gcc accepts -Wmissing-declarations... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5761,9 +5699,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wmissing-parameter-type" >&5
-$as_echo_n "checking whether gcc accepts -Wmissing-parameter-type... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wmissing-parameter-type" >&5
+$as_echo_n "checking whether ${CC} accepts -Wmissing-parameter-type... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wmissing-parameter-type"
@@ -5774,21 +5711,15 @@ $as_echo_n "checking whether gcc accepts -Wmissing-parameter-type... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5802,9 +5733,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wmissing-prototypes" >&5
-$as_echo_n "checking whether gcc accepts -Wmissing-prototypes... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wmissing-prototypes" >&5
+$as_echo_n "checking whether ${CC} accepts -Wmissing-prototypes... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wmissing-prototypes"
@@ -5815,21 +5745,15 @@ $as_echo_n "checking whether gcc accepts -Wmissing-prototypes... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5843,9 +5767,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wnested-externs" >&5
-$as_echo_n "checking whether gcc accepts -Wnested-externs... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wnested-externs" >&5
+$as_echo_n "checking whether ${CC} accepts -Wnested-externs... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wnested-externs"
@@ -5856,21 +5779,15 @@ $as_echo_n "checking whether gcc accepts -Wnested-externs... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5884,9 +5801,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wno-long-long" >&5
-$as_echo_n "checking whether gcc accepts -Wno-long-long... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wno-long-long" >&5
+$as_echo_n "checking whether ${CC} accepts -Wno-long-long... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wno-long-long"
@@ -5897,21 +5813,15 @@ $as_echo_n "checking whether gcc accepts -Wno-long-long... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5925,9 +5835,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wno-unreachable-code" >&5
-$as_echo_n "checking whether gcc accepts -Wno-unreachable-code... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wno-unreachable-code" >&5
+$as_echo_n "checking whether ${CC} accepts -Wno-unreachable-code... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wno-unreachable-code"
@@ -5938,21 +5847,15 @@ $as_echo_n "checking whether gcc accepts -Wno-unreachable-code... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -5966,9 +5869,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wparentheses" >&5
-$as_echo_n "checking whether gcc accepts -Wparentheses... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wparentheses" >&5
+$as_echo_n "checking whether ${CC} accepts -Wparentheses... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wparentheses"
@@ -5979,21 +5881,15 @@ $as_echo_n "checking whether gcc accepts -Wparentheses... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6007,9 +5903,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wpointer-sign" >&5
-$as_echo_n "checking whether gcc accepts -Wpointer-sign... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wpointer-sign" >&5
+$as_echo_n "checking whether ${CC} accepts -Wpointer-sign... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wpointer-sign"
@@ -6020,21 +5915,15 @@ $as_echo_n "checking whether gcc accepts -Wpointer-sign... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6048,9 +5937,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wreturn-type" >&5
-$as_echo_n "checking whether gcc accepts -Wreturn-type... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wreturn-type" >&5
+$as_echo_n "checking whether ${CC} accepts -Wreturn-type... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wreturn-type"
@@ -6061,21 +5949,15 @@ $as_echo_n "checking whether gcc accepts -Wreturn-type... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6089,9 +5971,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wsequence-point" >&5
-$as_echo_n "checking whether gcc accepts -Wsequence-point... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wsequence-point" >&5
+$as_echo_n "checking whether ${CC} accepts -Wsequence-point... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wsequence-point"
@@ -6102,21 +5983,15 @@ $as_echo_n "checking whether gcc accepts -Wsequence-point... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6130,9 +6005,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wshadow" >&5
-$as_echo_n "checking whether gcc accepts -Wshadow... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wshadow" >&5
+$as_echo_n "checking whether ${CC} accepts -Wshadow... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wshadow"
@@ -6143,21 +6017,15 @@ $as_echo_n "checking whether gcc accepts -Wshadow... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6171,9 +6039,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wsign-compare" >&5
-$as_echo_n "checking whether gcc accepts -Wsign-compare... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wsign-compare" >&5
+$as_echo_n "checking whether ${CC} accepts -Wsign-compare... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wsign-compare"
@@ -6184,21 +6051,15 @@ $as_echo_n "checking whether gcc accepts -Wsign-compare... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6212,9 +6073,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wswitch" >&5
-$as_echo_n "checking whether gcc accepts -Wswitch... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wswitch" >&5
+$as_echo_n "checking whether ${CC} accepts -Wswitch... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wswitch"
@@ -6225,21 +6085,15 @@ $as_echo_n "checking whether gcc accepts -Wswitch... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6253,9 +6107,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wtype-limits" >&5
-$as_echo_n "checking whether gcc accepts -Wtype-limits... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wtype-limits" >&5
+$as_echo_n "checking whether ${CC} accepts -Wtype-limits... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wtype-limits"
@@ -6266,21 +6119,15 @@ $as_echo_n "checking whether gcc accepts -Wtype-limits... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6294,9 +6141,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wuninitialized" >&5
-$as_echo_n "checking whether gcc accepts -Wuninitialized... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wuninitialized" >&5
+$as_echo_n "checking whether ${CC} accepts -Wuninitialized... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wuninitialized"
@@ -6307,21 +6153,15 @@ $as_echo_n "checking whether gcc accepts -Wuninitialized... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6335,9 +6175,42 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wunused-but-set-variable" >&5
+$as_echo_n "checking whether ${CC} accepts -Wunused-but-set-variable... " >&6; }
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wunused-function" >&5
-$as_echo_n "checking whether gcc accepts -Wunused-function... " >&6; }
+  safe_CFLAGS=$CFLAGS
+  CFLAGS="-Wunused-but-set-variable"
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wunused-but-set-variable"
+  fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wunused-function" >&5
+$as_echo_n "checking whether ${CC} accepts -Wunused-function... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wunused-function"
@@ -6348,21 +6221,15 @@ $as_echo_n "checking whether gcc accepts -Wunused-function... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6376,9 +6243,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wunused-label" >&5
-$as_echo_n "checking whether gcc accepts -Wunused-label... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wunused-label" >&5
+$as_echo_n "checking whether ${CC} accepts -Wunused-label... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wunused-label"
@@ -6389,21 +6255,15 @@ $as_echo_n "checking whether gcc accepts -Wunused-label... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6417,9 +6277,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wunused-parameter" >&5
-$as_echo_n "checking whether gcc accepts -Wunused-parameter... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wunused-parameter" >&5
+$as_echo_n "checking whether ${CC} accepts -Wunused-parameter... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wunused-parameter"
@@ -6430,21 +6289,15 @@ $as_echo_n "checking whether gcc accepts -Wunused-parameter... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6458,9 +6311,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wunused-result" >&5
-$as_echo_n "checking whether gcc accepts -Wunused-result... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wunused-result" >&5
+$as_echo_n "checking whether ${CC} accepts -Wunused-result... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wunused-result"
@@ -6471,21 +6323,15 @@ $as_echo_n "checking whether gcc accepts -Wunused-result... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6499,9 +6345,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wunused-value" >&5
-$as_echo_n "checking whether gcc accepts -Wunused-value... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wunused-value" >&5
+$as_echo_n "checking whether ${CC} accepts -Wunused-value... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wunused-value"
@@ -6512,21 +6357,15 @@ $as_echo_n "checking whether gcc accepts -Wunused-value... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6540,9 +6379,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wunused-variable" >&5
-$as_echo_n "checking whether gcc accepts -Wunused-variable... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wunused-variable" >&5
+$as_echo_n "checking whether ${CC} accepts -Wunused-variable... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wunused-variable"
@@ -6553,21 +6391,15 @@ $as_echo_n "checking whether gcc accepts -Wunused-variable... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6581,9 +6413,8 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Wwrite-strings" >&5
-$as_echo_n "checking whether gcc accepts -Wwrite-strings... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wwrite-strings" >&5
+$as_echo_n "checking whether ${CC} accepts -Wwrite-strings... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Wwrite-strings"
@@ -6594,21 +6425,15 @@ $as_echo_n "checking whether gcc accepts -Wwrite-strings... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6620,6 +6445,12 @@ $as_echo "$mc_check_one_cflag" >&6; }
     mc_configured_cflags="$mc_configured_cflags -Wwrite-strings"
   fi
 
+
+    ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
@@ -6642,8 +6473,8 @@ fi
 if test "x$enable_werror" = xyes; then
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -Werror" >&5
-$as_echo_n "checking whether gcc accepts -Werror... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Werror" >&5
+$as_echo_n "checking whether ${CC} accepts -Werror... " >&6; }
 
   safe_CFLAGS=$CFLAGS
   CFLAGS="-Werror"
@@ -6654,21 +6485,15 @@ $as_echo_n "checking whether gcc accepts -Werror... " >&6; }
 int
 main ()
 {
-
-  return 0;
-
+return 0;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-
-    mc_check_one_cflag=yes
-
+  mc_check_one_cflag=yes
 else
-
-    mc_check_one_cflag=no
-
+  mc_check_one_cflag=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
@@ -6679,7 +6504,6 @@ $as_echo "$mc_check_one_cflag" >&6; }
   if test x$mc_check_one_cflag = xyes; then
     mc_configured_cflags="$mc_configured_cflags -Werror"
   fi
-
 
 fi
 
@@ -24319,24 +24143,26 @@ $as_echo "#define HAVE_DCGETTEXT 1" >>confdefs.h
 
 
 
-if test "x$USE_INCLUDED_LIBINTL" = xyes; then
-    CPPFLAGS="$CPPFLAGS -I\$(top_builddir)/intl -I\$(top_srcdir)/intl"
-fi
 
-# Check whether --enable-charset was given.
+
+    if test "x$USE_INCLUDED_LIBINTL" = xyes; then
+        CPPFLAGS="$CPPFLAGS -I\$(top_builddir)/intl -I\$(top_srcdir)/intl"
+    fi
+
+        # Check whether --enable-charset was given.
 if test "${enable_charset+set}" = set; then :
   enableval=$enable_charset;
 fi
 
-have_charset=
-charset_msg="no"
-if test "x$enable_charset" != "xno"; then
+    have_charset=
+    charset_msg="no"
+    if test "x$enable_charset" != "xno"; then
 
 $as_echo "#define HAVE_CHARSET 1" >>confdefs.h
 
-    have_charset=yes
-    charset_msg="yes"
-fi
+        have_charset=yes
+        charset_msg="yes"
+    fi
 
 
 
@@ -27665,11 +27491,11 @@ _ACEOF
 ac_config_files="$ac_config_files src/man2hlp/man2hlp"
 
 
-ac_config_files="$ac_config_files Makefile contrib/Makefile contrib/dist/Makefile contrib/dist/gentoo/Makefile contrib/dist/redhat/Makefile contrib/dist/redhat/mc.spec contrib/dist/pkginfo contrib/dist/prototype misc/Makefile misc/skins/Makefile misc/ext.d/Makefile misc/ext.d/doc.sh misc/ext.d/misc.sh misc/ext.d/text.sh misc/ext.d/web.sh misc/macros.d/Makefile misc/mc.ext src/Makefile src/consaver/Makefile src/editor/Makefile src/man2hlp/Makefile src/viewer/Makefile src/diffviewer/Makefile src/filemanager/Makefile src/vfs/Makefile src/vfs/cpio/Makefile src/vfs/extfs/Makefile src/vfs/extfs/helpers/Makefile src/vfs/extfs/helpers/a+ src/vfs/extfs/helpers/apt+ src/vfs/extfs/helpers/audio src/vfs/extfs/helpers/deb src/vfs/extfs/helpers/deba src/vfs/extfs/helpers/debd src/vfs/extfs/helpers/dpkg+ src/vfs/extfs/helpers/iso9660 src/vfs/extfs/helpers/hp48+ src/vfs/extfs/helpers/lslR src/vfs/extfs/helpers/mailfs src/vfs/extfs/helpers/patchfs src/vfs/extfs/helpers/rpms+ src/vfs/extfs/helpers/s3+ src/vfs/extfs/helpers/uace src/vfs/extfs/helpers/ualz src/vfs/extfs/helpers/uar src/vfs/extfs/helpers/uarc src/vfs/extfs/helpers/uarj src/vfs/extfs/helpers/uc1541 src/vfs/extfs/helpers/ucab src/vfs/extfs/helpers/uha src/vfs/extfs/helpers/ulha src/vfs/extfs/helpers/ulib src/vfs/extfs/helpers/urar src/vfs/extfs/helpers/uzip src/vfs/extfs/helpers/uzoo src/vfs/fish/Makefile src/vfs/fish/helpers/Makefile src/vfs/ftpfs/Makefile src/vfs/sftpfs/Makefile src/vfs/local/Makefile src/vfs/sfs/Makefile src/vfs/smbfs/Makefile src/vfs/tar/Makefile src/vfs/undelfs/Makefile lib/Makefile lib/event/Makefile lib/filehighlight/Makefile lib/mcconfig/Makefile lib/search/Makefile lib/skin/Makefile lib/strutil/Makefile lib/tty/Makefile lib/vfs/Makefile lib/widget/Makefile misc/syntax/Makefile misc/syntax/Syntax doc/Makefile doc/hints/Makefile doc/man/Makefile doc/man/es/Makefile doc/man/hu/Makefile doc/man/it/Makefile doc/man/pl/Makefile doc/man/ru/Makefile doc/man/sr/Makefile doc/hlp/Makefile doc/hlp/es/Makefile doc/hlp/hu/Makefile doc/hlp/it/Makefile doc/hlp/pl/Makefile doc/hlp/ru/Makefile doc/hlp/sr/Makefile intl/Makefile po/Makefile.in"
+ac_config_files="$ac_config_files Makefile contrib/Makefile contrib/dist/Makefile contrib/dist/gentoo/Makefile contrib/dist/redhat/Makefile contrib/dist/redhat/mc.spec contrib/dist/pkginfo contrib/dist/prototype misc/Makefile misc/skins/Makefile misc/ext.d/Makefile misc/ext.d/doc.sh misc/ext.d/misc.sh misc/ext.d/text.sh misc/ext.d/web.sh misc/macros.d/Makefile misc/mc.ext src/Makefile src/consaver/Makefile src/editor/Makefile src/man2hlp/Makefile src/viewer/Makefile src/diffviewer/Makefile src/filemanager/Makefile src/vfs/Makefile src/vfs/cpio/Makefile src/vfs/extfs/Makefile src/vfs/extfs/helpers/Makefile src/vfs/extfs/helpers/a+ src/vfs/extfs/helpers/apt+ src/vfs/extfs/helpers/audio src/vfs/extfs/helpers/deb src/vfs/extfs/helpers/deba src/vfs/extfs/helpers/debd src/vfs/extfs/helpers/dpkg+ src/vfs/extfs/helpers/iso9660 src/vfs/extfs/helpers/hp48+ src/vfs/extfs/helpers/lslR src/vfs/extfs/helpers/mailfs src/vfs/extfs/helpers/patchfs src/vfs/extfs/helpers/rpms+ src/vfs/extfs/helpers/s3+ src/vfs/extfs/helpers/uace src/vfs/extfs/helpers/ualz src/vfs/extfs/helpers/uar src/vfs/extfs/helpers/uarc src/vfs/extfs/helpers/uarj src/vfs/extfs/helpers/uc1541 src/vfs/extfs/helpers/ucab src/vfs/extfs/helpers/uha src/vfs/extfs/helpers/ulha src/vfs/extfs/helpers/ulib src/vfs/extfs/helpers/urar src/vfs/extfs/helpers/uzip src/vfs/extfs/helpers/uzoo src/vfs/fish/Makefile src/vfs/fish/helpers/Makefile src/vfs/ftpfs/Makefile src/vfs/sftpfs/Makefile src/vfs/local/Makefile src/vfs/sfs/Makefile src/vfs/smbfs/Makefile src/vfs/tar/Makefile src/vfs/undelfs/Makefile lib/Makefile lib/event/Makefile lib/filehighlight/Makefile lib/mcconfig/Makefile lib/search/Makefile lib/skin/Makefile lib/strutil/Makefile lib/tty/Makefile lib/vfs/Makefile lib/widget/Makefile misc/syntax/Makefile misc/syntax/Syntax doc/Makefile doc/hints/Makefile doc/hints/l10n/Makefile doc/man/Makefile doc/man/es/Makefile doc/man/hu/Makefile doc/man/it/Makefile doc/man/pl/Makefile doc/man/ru/Makefile doc/man/sr/Makefile doc/hlp/Makefile doc/hlp/es/Makefile doc/hlp/hu/Makefile doc/hlp/it/Makefile doc/hlp/pl/Makefile doc/hlp/ru/Makefile doc/hlp/sr/Makefile intl/Makefile po/Makefile.in"
 
 
 if test x$enable_tests != xno; then
-    ac_config_files="$ac_config_files tests/Makefile tests/lib/Makefile tests/lib/mcconfig/Makefile tests/lib/search/Makefile tests/lib/vfs/Makefile tests/src/Makefile tests/src/filemanager/Makefile"
+    ac_config_files="$ac_config_files tests/Makefile tests/lib/Makefile tests/lib/mcconfig/Makefile tests/lib/search/Makefile tests/lib/strutil/Makefile tests/lib/vfs/Makefile tests/lib/widget/Makefile tests/src/Makefile tests/src/filemanager/Makefile tests/src/editor/Makefile tests/src/editor/test-data.txt"
 
 fi
 
@@ -28965,6 +28791,7 @@ do
     "misc/syntax/Syntax") CONFIG_FILES="$CONFIG_FILES misc/syntax/Syntax" ;;
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "doc/hints/Makefile") CONFIG_FILES="$CONFIG_FILES doc/hints/Makefile" ;;
+    "doc/hints/l10n/Makefile") CONFIG_FILES="$CONFIG_FILES doc/hints/l10n/Makefile" ;;
     "doc/man/Makefile") CONFIG_FILES="$CONFIG_FILES doc/man/Makefile" ;;
     "doc/man/es/Makefile") CONFIG_FILES="$CONFIG_FILES doc/man/es/Makefile" ;;
     "doc/man/hu/Makefile") CONFIG_FILES="$CONFIG_FILES doc/man/hu/Makefile" ;;
@@ -28985,9 +28812,13 @@ do
     "tests/lib/Makefile") CONFIG_FILES="$CONFIG_FILES tests/lib/Makefile" ;;
     "tests/lib/mcconfig/Makefile") CONFIG_FILES="$CONFIG_FILES tests/lib/mcconfig/Makefile" ;;
     "tests/lib/search/Makefile") CONFIG_FILES="$CONFIG_FILES tests/lib/search/Makefile" ;;
+    "tests/lib/strutil/Makefile") CONFIG_FILES="$CONFIG_FILES tests/lib/strutil/Makefile" ;;
     "tests/lib/vfs/Makefile") CONFIG_FILES="$CONFIG_FILES tests/lib/vfs/Makefile" ;;
+    "tests/lib/widget/Makefile") CONFIG_FILES="$CONFIG_FILES tests/lib/widget/Makefile" ;;
     "tests/src/Makefile") CONFIG_FILES="$CONFIG_FILES tests/src/Makefile" ;;
     "tests/src/filemanager/Makefile") CONFIG_FILES="$CONFIG_FILES tests/src/filemanager/Makefile" ;;
+    "tests/src/editor/Makefile") CONFIG_FILES="$CONFIG_FILES tests/src/editor/Makefile" ;;
+    "tests/src/editor/test-data.txt") CONFIG_FILES="$CONFIG_FILES tests/src/editor/test-data.txt" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

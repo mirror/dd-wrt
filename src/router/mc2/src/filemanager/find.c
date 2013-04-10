@@ -609,7 +609,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
     add_widget (find_dlg, label_new (y1++, x1, _("Start at:")));
     in_start =
         input_new (y1, x1, input_get_default_colors (), cols - b0 - 7, in_start_dir, "start",
-                   INPUT_COMPLETE_DEFAULT);
+                   INPUT_COMPLETE_CD | INPUT_COMPLETE_FILENAMES);
     add_widget (find_dlg, in_start);
 
     add_widget (find_dlg, button_new (y1++, cols - b0 - 3, B_TREE, NORMAL_BUTTON, buts[0], NULL));
@@ -621,7 +621,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
     in_ignore =
         input_new (y1++, x1, input_get_default_colors (), cols - 6,
                    options.ignore_dirs != NULL ? options.ignore_dirs : "", "ignoredirs",
-                   INPUT_COMPLETE_DEFAULT);
+                   INPUT_COMPLETE_CD | INPUT_COMPLETE_FILENAMES);
     widget_disable (WIDGET (in_ignore), !options.ignore_dirs_enable);
     add_widget (find_dlg, in_ignore);
 
@@ -633,7 +633,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
     add_widget (find_dlg, label_new (y1++, x1, file_name_label));
     in_name =
         input_new (y1++, x1, input_get_default_colors (), cw, INPUT_LAST_TEXT, "name",
-                   INPUT_COMPLETE_DEFAULT);
+                   INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_CD);
     add_widget (find_dlg, in_name);
 
     /* Start 2nd column */
@@ -641,7 +641,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
     add_widget (find_dlg, content_label);
     in_with =
         input_new (y2++, x2, input_get_default_colors (), cw, INPUT_LAST_TEXT,
-                   MC_HISTORY_SHARED_SEARCH, INPUT_COMPLETE_DEFAULT);
+                   MC_HISTORY_SHARED_SEARCH, INPUT_COMPLETE_NONE);
     in_with->label = content_label;
     widget_disable (WIDGET (in_with), disable);
     add_widget (find_dlg, in_with);
@@ -922,7 +922,7 @@ find_add_match (const char *dir, const char *file)
     /* Don't scroll */
     if (matches == 0)
         listbox_select_first (find_list);
-    send_message (find_list, NULL, MSG_DRAW, 0, NULL);
+    widget_redraw (WIDGET (find_list));
 
     matches++;
     found_num_update ();
@@ -1559,14 +1559,15 @@ setup_gui (void)
     int lines, cols;
     int y;
 
-#ifdef ENABLE_NLS
     static gboolean i18n_flag = FALSE;
 
     if (!i18n_flag)
     {
         for (i = 0; i < fbuts_num; i++)
         {
+#ifdef ENABLE_NLS
             fbuts[i].text = _(fbuts[i].text);
+#endif /* ENABLE_NLS */
             fbuts[i].len = str_term_width1 (fbuts[i].text) + 3;
             if (fbuts[i].flags == DEFPUSH_BUTTON)
                 fbuts[i].len += 2;
@@ -1574,7 +1575,6 @@ setup_gui (void)
 
         i18n_flag = TRUE;
     }
-#endif /* ENABLE_NLS */
 
     lines = LINES - 4;
     cols = COLS - 16;
@@ -1785,6 +1785,7 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
                 vfs_path_free (current_panel->cwd_vpath);
                 current_panel->cwd_vpath = vfs_path_from_str (PATH_SEP_STR);
                 ret = chdir (PATH_SEP_STR);
+                (void) ret;
             }
             panelize_save_panel (current_panel);
         }

@@ -66,6 +66,7 @@
 #include "lib/strescape.h"
 #include "lib/unixcompat.h"
 #include "lib/fileloc.h"
+#include "lib/util.h"           /* my_exit() */
 #include "lib/mcconfig.h"
 
 #include "src/execute.h"        /* pre_exec, post_exec */
@@ -253,6 +254,7 @@ fish_command (struct vfs_class *me, struct vfs_s_super *super, int wait_reply, c
         size_t ret;
         ret = fwrite (str, strlen (str), 1, logfile);
         ret = fflush (logfile);
+        (void) ret;
     }
 
     tty_enable_interrupt_key ();
@@ -339,7 +341,7 @@ fish_pipeopen (struct vfs_s_super *super, const char *path, const char *argv[])
         close (fileset2[0]);
         close (fileset2[1]);
         execvp (path, const_cast (char **, argv));
-        _exit (3);
+        my_exit (3);
     }
 }
 

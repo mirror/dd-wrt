@@ -3,15 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Fabian Affolter <fab@fedoraproject.org>, 2012.
+# Fabian Affolter <fab@fedoraproject.org>, 2012-2013.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 # username <my.somewhat.lengthy.loginname@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-12-28 12:17+0300\n"
-"PO-Revision-Date: 2012-12-26 08:42+0000\n"
+"POT-Creation-Date: 2013-04-02 12:41+0300\n"
+"PO-Revision-Date: 2013-03-17 11:42+0000\n"
 "Last-Translator: Fabian Affolter <fab@fedoraproject.org>\n"
 "Language-Team: German (http://www.transifex.com/projects/p/mc/language/de/)\n"
 "Language: de\n"
@@ -77,7 +77,7 @@ msgid "FATAL: not a directory:"
 msgstr ""
 
 #, c-format
-msgid "An error occured while migrating user settings: %s"
+msgid "An error occurred while migrating user settings: %s"
 msgstr ""
 
 #, c-format
@@ -307,10 +307,10 @@ msgid "Function key 24"
 msgstr "Funktionstaste 24"
 
 msgid "A1 key"
-msgstr ""
+msgstr "A1-Taste"
 
 msgid "C1 key"
-msgstr ""
+msgstr "C1-Taste"
 
 msgid "Plus"
 msgstr "Plus"
@@ -1415,7 +1415,7 @@ msgid "&Options"
 msgstr "&Optionen"
 
 msgid "&None"
-msgstr ""
+msgstr "&Keine"
 
 msgid "&Dynamic paragraphing"
 msgstr ""
@@ -1457,7 +1457,7 @@ msgid "&Visible trailing spaces"
 msgstr ""
 
 msgid "Visible &tabs"
-msgstr ""
+msgstr "Sichtbare &Tabs"
 
 msgid "Synta&x highlighting"
 msgstr "Synta&xhervorhebung"
@@ -1559,16 +1559,16 @@ msgstr ""
 "Verzeichnis gelöscht oder zusätzliche Berechtigungen mittels\n"
 "\"su\"-Befehl gegeben?"
 
+#, c-format
+msgid "Cannot fetch a local copy of %s"
+msgstr "Kann keine lokale Kopie von %s anlegen"
+
 msgid "The shell is already running a command"
 msgstr "Die Shell führt bereits einen Befehl aus"
 
 #, c-format
 msgid "Type `exit' to return to the Midnight Commander"
 msgstr "Geben Sie 'exit' ein, um zu Midnight Commander zurückzukehren"
-
-#, c-format
-msgid "Cannot fetch a local copy of %s"
-msgstr "Kann keine lokale Kopie von %s anlegen"
 
 msgid "Set &all"
 msgstr "A&lle setzen"
@@ -1618,6 +1618,157 @@ msgstr "Läuft"
 
 msgid "Stopped"
 msgstr "Angehalten"
+
+msgid "&Never"
+msgstr "&Nie"
+
+msgid "On dum&b terminals"
+msgstr "au&f dummen Terminals"
+
+msgid "Alwa&ys"
+msgstr "&Immer"
+
+msgid "File operations"
+msgstr ""
+
+msgid "&Verbose operation"
+msgstr "Redselige &Vorgänge"
+
+msgid "Compute tota&ls"
+msgstr "Gesamt&summen berechnen"
+
+msgid "Classic pro&gressbar"
+msgstr "Klassische &Prozessleiste"
+
+msgid "Mkdi&r autoname"
+msgstr "Ver&zeichnis autom. benennen"
+
+msgid "&Preallocate space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr "Escape Taste Modus"
+
+msgid "S&ingle press"
+msgstr "Einzelner Tastend&ruck"
+
+msgid "Timeout:"
+msgstr "Timeout:"
+
+msgid "Pause after run"
+msgstr "Pause nach Aufruf"
+
+msgid "Use internal edi&t"
+msgstr "Internen Editor &benutzen"
+
+msgid "Use internal vie&w"
+msgstr "Internen Betrac&hter benutzen"
+
+msgid "A&sk new file name"
+msgstr ""
+
+msgid "Auto m&enus"
+msgstr "Autom&enüs"
+
+msgid "&Drop down menus"
+msgstr "&Dropdown-Menüs"
+
+msgid "S&hell patterns"
+msgstr ""
+
+msgid "Co&mplete: show all"
+msgstr "Vollständi&g: alle anzeigen"
+
+msgid "Rotating d&ash"
+msgstr "ro&tierender Strich"
+
+msgid "Cd follows lin&ks"
+msgstr "cd folgt Lin&ks"
+
+msgid "Sa&fe delete"
+msgstr "Sicheres &löschen"
+
+msgid "A&uto save setup"
+msgstr "Einstellungen auto&m. speichern"
+
+msgid "Configure options"
+msgstr "Einstellungen"
+
+msgid "Case &insensitive"
+msgstr "Groß-/&Kleinschreibung ignorieren"
+
+msgid "Use panel sort mo&de"
+msgstr "Panelsortierungsmod&us benutzen"
+
+msgid "Show mi&ni-status"
+msgstr "Mi&nistatus anzeigen"
+
+msgid "Use SI si&ze units"
+msgstr "SI-Größeneinheit ver&wenden"
+
+msgid "Mi&x all files"
+msgstr "Alle Dateien ge&mischt"
+
+msgid "Show &backup files"
+msgstr "Sicherheitsko&pien anzeigen"
+
+msgid "Show &hidden files"
+msgstr "&Verborgene Dateien anzeigen"
+
+msgid "&Fast dir reload"
+msgstr "S&chnelles Neulesen"
+
+msgid "Ma&rk moves down"
+msgstr "Ma&rkierung geht abwärts"
+
+msgid "Re&verse files only"
+msgstr "Nur &Dateien"
+
+msgid "Simple s&wap"
+msgstr "Ein&facher Tausch"
+
+msgid "A&uto save panels setup"
+msgstr "Panel&einstellung autom. speichern"
+
+msgid "Navigation"
+msgstr "Navigation"
+
+msgid "L&ynx-like motion"
+msgstr "L&ynx-artige Bewegungen"
+
+msgid "Pa&ge scrolling"
+msgstr "Seitenweise scro&llen"
+
+msgid "&Mouse page scrolling"
+msgstr "Seitenweise mit der Maus scrolle&n"
+
+msgid "File highlight"
+msgstr "Dateihervorhebung"
+
+msgid "File &types"
+msgstr "Datei&typen"
+
+msgid "&Permissions"
+msgstr "&Zugriffsrechte"
+
+msgid "Quick search"
+msgstr "Schnelles cd"
+
+msgid "Panel options"
+msgstr "Paneloptionen"
+
+msgid "Information"
+msgstr "Information"
+
+msgid ""
+"Using the fast reload option may not reflect the exact\n"
+"directory contents. In this case you'll need to do a\n"
+"manual reload of the directory. See the man page for\n"
+"the details."
+msgstr ""
+"Bei schnellem Neuladen wird der Verzeichnisinhalt manchmal nicht\n"
+"exakt dargestellt. In diesem Fall müssen Sie das Verzeichnis manuell\n"
+"neu einlesen. Für mehr Information lesen Sie die Man-Page."
 
 msgid "&Full file list"
 msgstr "&Komplette Dateiliste"
@@ -1909,6 +2060,9 @@ msgstr "Gefilterte Ansicht"
 
 msgid "Filter command and arguments:"
 msgstr "Filter Befehl samt Argumenten:"
+
+msgid "Edit file"
+msgstr ""
 
 msgid "Create a new Directory"
 msgstr "Legt ein neues Verzeichnis an"
@@ -2430,6 +2584,12 @@ msgstr ""
 msgid "Directory scanning"
 msgstr "Verzeichnis scannen"
 
+#, c-format
+msgid ""
+"%s\n"
+"Directories: %zd, total size: %s"
+msgstr ""
+
 msgid "Cannot operate on \"..\"!"
 msgstr "Kann nicht auf \"..\" agieren!"
 
@@ -2466,11 +2626,11 @@ msgid "Target file already exists!"
 msgstr "Zieldatei existiert bereits!"
 
 #, c-format
-msgid "New     : %s, size %llu"
+msgid "New     : %s, size %s"
 msgstr ""
 
 #, c-format
-msgid "Existing: %s, size %llu"
+msgid "Existing: %s, size %s"
 msgstr ""
 
 msgid "Overwrite this target?"
@@ -2727,9 +2887,6 @@ msgstr "Name für \"%s\":"
 
 msgid "Add to hotlist"
 msgstr "Zur Hotlist hinzufügen"
-
-msgid "Information"
-msgstr "Information"
 
 #, c-format
 msgid "Midnight Commander %s"
@@ -3058,151 +3215,6 @@ msgstr "ButtonBar|Mkdir"
 
 msgid "Memory exhausted!"
 msgstr ""
-
-msgid "&Never"
-msgstr "&Nie"
-
-msgid "On dum&b terminals"
-msgstr "au&f dummen Terminals"
-
-msgid "Alwa&ys"
-msgstr "&Immer"
-
-msgid "File operations"
-msgstr ""
-
-msgid "&Verbose operation"
-msgstr "Redselige &Vorgänge"
-
-msgid "Compute tota&ls"
-msgstr "Gesamt&summen berechnen"
-
-msgid "Classic pro&gressbar"
-msgstr "Klassische &Prozessleiste"
-
-msgid "Mkdi&r autoname"
-msgstr "Ver&zeichnis autom. benennen"
-
-msgid "Preallocate &space"
-msgstr ""
-
-msgid "Esc key mode"
-msgstr "Escape Taste Modus"
-
-msgid "S&ingle press"
-msgstr "Einzelner Tastend&ruck"
-
-msgid "Timeout:"
-msgstr "Timeout:"
-
-msgid "Pause after run"
-msgstr "Pause nach Aufruf"
-
-msgid "Use internal edi&t"
-msgstr "Internen Editor &benutzen"
-
-msgid "Use internal vie&w"
-msgstr "Internen Betrac&hter benutzen"
-
-msgid "Auto m&enus"
-msgstr "Autom&enüs"
-
-msgid "&Drop down menus"
-msgstr "&Dropdown-Menüs"
-
-msgid "Shell &patterns"
-msgstr "Shellm&uster"
-
-msgid "Co&mplete: show all"
-msgstr "Vollständi&g: alle anzeigen"
-
-msgid "Rotating d&ash"
-msgstr "ro&tierender Strich"
-
-msgid "Cd follows lin&ks"
-msgstr "cd folgt Lin&ks"
-
-msgid "Sa&fe delete"
-msgstr "Sicheres &löschen"
-
-msgid "A&uto save setup"
-msgstr "Einstellungen auto&m. speichern"
-
-msgid "Configure options"
-msgstr "Einstellungen"
-
-msgid "Case &insensitive"
-msgstr "Groß-/&Kleinschreibung ignorieren"
-
-msgid "Use panel sort mo&de"
-msgstr "Panelsortierungsmod&us benutzen"
-
-msgid "Show mi&ni-status"
-msgstr "Mi&nistatus anzeigen"
-
-msgid "Use SI si&ze units"
-msgstr "SI-Größeneinheit ver&wenden"
-
-msgid "Mi&x all files"
-msgstr "Alle Dateien ge&mischt"
-
-msgid "Show &backup files"
-msgstr "Sicherheitsko&pien anzeigen"
-
-msgid "Show &hidden files"
-msgstr "&Verborgene Dateien anzeigen"
-
-msgid "&Fast dir reload"
-msgstr "S&chnelles Neulesen"
-
-msgid "Ma&rk moves down"
-msgstr "Ma&rkierung geht abwärts"
-
-msgid "Re&verse files only"
-msgstr "Nur &Dateien"
-
-msgid "Simple s&wap"
-msgstr "Ein&facher Tausch"
-
-msgid "A&uto save panels setup"
-msgstr "Panel&einstellung autom. speichern"
-
-msgid "Navigation"
-msgstr "Navigation"
-
-msgid "L&ynx-like motion"
-msgstr "L&ynx-artige Bewegungen"
-
-msgid "Pa&ge scrolling"
-msgstr "Seitenweise scro&llen"
-
-msgid "&Mouse page scrolling"
-msgstr "Seitenweise mit der Maus scrolle&n"
-
-msgid "File highlight"
-msgstr "Dateihervorhebung"
-
-msgid "File &types"
-msgstr "Datei&typen"
-
-msgid "&Permissions"
-msgstr "&Zugriffsrechte"
-
-msgid "Quick search"
-msgstr "Schnelles cd"
-
-msgid "Panel options"
-msgstr "Paneloptionen"
-
-msgid ""
-"Using the fast reload option may not reflect the exact\n"
-"directory contents. In this case you'll need to do a\n"
-"manual reload of the directory. See the man page for\n"
-"the details."
-msgstr ""
-"Bei schnellem Neuladen wird der Verzeichnisinhalt manchmal nicht\n"
-"exakt dargestellt. In diesem Fall müssen Sie das Verzeichnis manuell\n"
-"neu einlesen. Für mehr Information lesen Sie die Man-Page."
 
 #. TRANSLATORS: one single character to represent 'unsorted' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3798,7 +3810,7 @@ msgid "fish: Local read failed, sending zeros"
 msgstr "fish: Lokales Lesen fehlgeschlagen, sende Nullen"
 
 msgid "fish: storing file"
-msgstr ""
+msgstr "fish: Datei speichern"
 
 msgid "Aborting transfer..."
 msgstr "Breche Transfer ab..."
@@ -3905,7 +3917,7 @@ msgid "ftpfs: failed; nowhere to fallback to"
 msgstr "ftpfs: fehlgeschlagen; alle Stricke gerissen"
 
 msgid "ftpfs: storing file"
-msgstr ""
+msgstr "ftpfs: Datei speichern"
 
 msgid ""
 "~/.netrc file has incorrect mode\n"
@@ -3935,7 +3947,7 @@ msgstr ""
 "%s\n"
 
 #, c-format
-msgid "sftp: an error occured while reading %s: %s"
+msgid "sftp: an error occurred while reading %s: %s"
 msgstr ""
 
 msgid "sftp: Unable to get current user name."
@@ -4212,6 +4224,14 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Kann es nicht anzeigen: Keine normale Datei"
 
+#, fuzzy, c-format
+msgid ""
+"Cannot open \"%s\" in magic mode\n"
+"%s"
+msgstr ""
+"Kann \"%s\" nicht öffnen\n"
+"%s"
+
 msgid "Seeking to search result"
 msgstr "Suchergebnis durchsuchen"
 
@@ -4219,4 +4239,7 @@ msgid "Search done"
 msgstr "Suche abgeschlossen"
 
 msgid "Continue from beginning?"
+msgstr ""
+
+msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""

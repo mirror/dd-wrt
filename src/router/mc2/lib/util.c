@@ -12,9 +12,6 @@
    Jakub Jelinek, 1994, 1995, 1996
    Mauricio Plaza, 1994, 1995, 1996
 
-   The file_date routine is mostly from GNU's fileutils package,
-   written by Richard Stallman and David MacKenzie.
-
    This file is part of the Midnight Commander.
 
    The Midnight Commander is free software: you can redistribute it
@@ -211,6 +208,7 @@ mc_util_write_backup_content (const char *from_file_name, const char *to_file_na
         int ret2;
         ret2 = fflush (backup_fd);
         ret2 = fclose (backup_fd);
+        (void) ret2;
     }
     g_free (contents);
     return ret1;
@@ -408,6 +406,7 @@ size_trunc_sep (uintmax_t size, gboolean use_si)
  *
  * Units: size units (filesystem sizes are 1K blocks)
  *    0=bytes, 1=Kbytes, 2=Mbytes, etc.
+ *    -1 means maximum possible unit for specified size
  */
 
 void
@@ -427,7 +426,7 @@ size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gbool
         10000000ULL,
         100000000ULL,
         1000000000ULL
-    /* maximmum value of uintmax_t (in case of 4 bytes) is
+    /* maximum value of uintmax_t (in case of 4 bytes) is
         4294967295
      */
 #if SIZEOF_UINTMAX_T == 8
@@ -442,7 +441,7 @@ size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gbool
         100000000000000000ULL,
         1000000000000000000ULL,
         10000000000000000000ULL
-    /* maximmum value of uintmax_t (in case of 8 bytes) is
+    /* maximum value of uintmax_t (in case of 8 bytes) is
         18447644073710439615
      */
 #endif
@@ -463,6 +462,16 @@ size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gbool
     else if (len > 9)
         len = 9;
 #endif
+
+    /* find maximum unit */
+    if (units < 0)
+    {
+        const unsigned int divider = use_si ? 1000 : 1024;
+        uintmax_t size_remain = size;
+
+        for (units = 0; size_remain >= divider; units++)
+            size_remain /= divider;
+    }
 
     /*
      * recalculate from 1024 base to 1000 base if units>0
@@ -1066,6 +1075,7 @@ list_append_unique (GList * list, char *text)
 
             g_free (lc_link->data);
             tmp = g_list_remove_link (list, lc_link);
+            (void) tmp;
             g_list_free_1 (lc_link);
         }
         lc_link = newlink;
@@ -1103,7 +1113,8 @@ load_file_position (const vfs_path_t * filename_vpath, long *line, long *column,
         return;
 
     /* prepare array for serialized bookmarks */
-    *bookmarks = g_array_sized_new (FALSE, FALSE, sizeof (size_t), MAX_SAVED_BOOKMARKS);
+    if (bookmarks != NULL)
+        *bookmarks = g_array_sized_new (FALSE, FALSE, sizeof (size_t), MAX_SAVED_BOOKMARKS);
     filename = vfs_path_to_str (filename_vpath);
 
     while (fgets (buf, sizeof (buf), f) != NULL)
@@ -1144,7 +1155,7 @@ load_file_position (const vfs_path_t * filename_vpath, long *line, long *column,
                 *column = strtol (pos_tokens[1], NULL, 10);
                 if (pos_tokens[2] == NULL)
                     *offset = 0;
-                else
+                else if (bookmarks != NULL)
                 {
                     size_t i;
 
