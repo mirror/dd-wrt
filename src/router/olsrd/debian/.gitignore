@@ -1,0 +1,10 @@
+/olsrd/
+/olsrd-plugins/
+/olsrd-plugins.debhelper.log
+/olsrd.debhelper.log
+/files
+/olsrd-plugins.substvars
+/olsrd.postinst.debhelper
+/olsrd.postrm.debhelper
+/olsrd.prerm.debhelper
+/olsrd.substvars
