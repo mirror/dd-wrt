@@ -3,8 +3,11 @@
    They normally operate on the current panel.
 
    Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2009, 2011
+   2005, 2006, 2007, 2009, 2011, 2013
    The Free Software Foundation, Inc.
+
+   Written by:
+   Andrew Borodin <aborodin@vmail.ru>, 2013
 
    This file is part of the Midnight Commander.
 
@@ -166,7 +169,17 @@ do_view_cmd (gboolean normal)
 static inline void
 do_edit (const vfs_path_t * what_vpath)
 {
-    do_edit_at_line (what_vpath, use_internal_edit, 0);
+    long line = 0;
+
+    if (!use_internal_edit)
+    {
+        long column;
+        off_t offset;
+
+        if (what_vpath != NULL && *(vfs_path_get_by_index (what_vpath, 0)->path) != '\0')
+            load_file_position (what_vpath, &line, &column, &offset, NULL);
+    }
+    do_edit_at_line (what_vpath, use_internal_edit, line);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -197,7 +210,8 @@ set_panel_filter (WPanel * p)
 
     reg_exp = input_dialog_help (_("Filter"),
                                  _("Set expression for filtering filenames"),
-                                 "[Filter...]", MC_HISTORY_FM_PANEL_FILTER, x, FALSE);
+                                 "[Filter...]", MC_HISTORY_FM_PANEL_FILTER, x, FALSE,
+                                 INPUT_COMPLETE_FILENAMES);
     if (!reg_exp)
         return;
     set_panel_filter_to (p, reg_exp);
@@ -218,7 +232,8 @@ select_unselect_cmd (const char *title, const char *history_name, gboolean do_se
 
     quick_widget_t quick_widgets[] = {
         /* *INDENT-OFF* */
-        QUICK_INPUT (INPUT_LAST_TEXT, 0, history_name, &reg_exp, NULL),
+        QUICK_INPUT (INPUT_LAST_TEXT, history_name, &reg_exp, NULL,
+                     FALSE, FALSE, INPUT_COMPLETE_FILENAMES),
         QUICK_START_COLUMNS,
             QUICK_CHECKBOX (N_("&Files only"), &files_only, NULL),
             QUICK_CHECKBOX (N_("&Using shell patterns"), &shell_patterns, NULL),
@@ -424,7 +439,8 @@ do_link (link_type_t link_type, const char *fname)
     if (link_type == LINK_HARDLINK)
     {
         src = g_strdup_printf (_("Link %s to:"), str_trunc (fname, 46));
-        dest = input_expand_dialog (_("Link"), src, MC_HISTORY_FM_LINK, "");
+        dest =
+            input_expand_dialog (_("Link"), src, MC_HISTORY_FM_LINK, "", INPUT_COMPLETE_FILENAMES);
         if (!dest || !*dest)
             goto cleanup;
         save_cwds_stat ();
@@ -494,7 +510,10 @@ nice_cd (const char *text, const char *xtext, const char *help,
     if (!SELECTED_IS_PANEL)
         return;
 
-    machine = input_dialog_help (text, xtext, help, history_name, "", strip_password);
+    machine =
+        input_dialog_help (text, xtext, help, history_name, "", strip_password,
+                           INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_CD | INPUT_COMPLETE_HOSTNAMES |
+                           INPUT_COMPLETE_USERNAMES);
     if (machine == NULL)
         return;
 
@@ -601,7 +620,7 @@ set_basic_panel_listing_to (int panel_index, int listing_mode)
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-view_file_at_line (const vfs_path_t * filename_vpath, int plain_view, int internal, int start_line)
+view_file_at_line (const vfs_path_t * filename_vpath, int plain_view, int internal, long start_line)
 {
     static const char *viewer = NULL;
     gboolean ret = TRUE;
@@ -641,7 +660,7 @@ view_file_at_line (const vfs_path_t * filename_vpath, int plain_view, int intern
         char view_entry[BUF_TINY];
 
         if (start_line != 0)
-            g_snprintf (view_entry, sizeof (view_entry), "View:%d", start_line);
+            g_snprintf (view_entry, sizeof (view_entry), "View:%ld", start_line);
         else
             strcpy (view_entry, "View");
 
@@ -663,7 +682,7 @@ view_file_at_line (const vfs_path_t * filename_vpath, int plain_view, int intern
                 viewer = "view";
         }
 
-        execute_with_vfs_arg (viewer, filename_vpath);
+        execute_external_editor_or_viewer (viewer, filename_vpath, start_line);
     }
 
     return ret;
@@ -682,7 +701,18 @@ view_file_at_line (const vfs_path_t * filename_vpath, int plain_view, int intern
 gboolean
 view_file (const vfs_path_t * filename_vpath, int plain_view, int internal)
 {
-    return view_file_at_line (filename_vpath, plain_view, internal, 0);
+    long line = 0;
+
+    if (!internal)
+    {
+        long column;
+        off_t offset;
+
+        if (filename_vpath != NULL && *(vfs_path_get_by_index (filename_vpath, 0)->path) != '\0')
+            load_file_position (filename_vpath, &line, &column, &offset, NULL);
+    }
+
+    return view_file_at_line (filename_vpath, plain_view, internal, line);
 }
 
 
@@ -706,7 +736,8 @@ view_file_cmd (void)
 
     filename =
         input_expand_dialog (_("View file"), _("Filename:"),
-                             MC_HISTORY_FM_VIEW_FILE, selection (current_panel)->fname);
+                             MC_HISTORY_FM_VIEW_FILE, selection (current_panel)->fname,
+                             INPUT_COMPLETE_FILENAMES);
     if (!filename)
         return;
 
@@ -740,7 +771,8 @@ view_filtered_cmd (void)
     command =
         input_dialog (_("Filtered view"),
                       _("Filter command and arguments:"),
-                      MC_HISTORY_FM_FILTERED_VIEW, initial_command);
+                      MC_HISTORY_FM_FILTERED_VIEW, initial_command,
+                      INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_COMMANDS);
 
     if (command != NULL)
     {
@@ -753,7 +785,7 @@ view_filtered_cmd (void)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-do_edit_at_line (const vfs_path_t * what_vpath, gboolean internal, int start_line)
+do_edit_at_line (const vfs_path_t * what_vpath, gboolean internal, long start_line)
 {
     static const char *editor = NULL;
 
@@ -761,8 +793,6 @@ do_edit_at_line (const vfs_path_t * what_vpath, gboolean internal, int start_lin
     if (internal)
         edit_file (what_vpath, start_line);
     else
-#else
-    (void) start_line;
 #endif /* USE_INTERNAL_EDIT */
     {
         if (editor == NULL)
@@ -771,7 +801,11 @@ do_edit_at_line (const vfs_path_t * what_vpath, gboolean internal, int start_lin
             if (editor == NULL)
                 editor = get_default_editor ();
         }
-        execute_with_vfs_arg (editor, what_vpath);
+
+        if (start_line < 1)
+            start_line = 1;
+
+        execute_external_editor_or_viewer (editor, what_vpath, start_line);
     }
 
     if (mc_global.mc_run_mode == MC_RUN_FULL)
@@ -818,10 +852,29 @@ edit_cmd_force_internal (void)
 void
 edit_cmd_new (void)
 {
+    vfs_path_t *fname_vpath = NULL;
+
+    if (editor_ask_filename_before_edit)
+    {
+        char *fname;
+
+        fname = input_expand_dialog (_("Edit file"), _("Enter file name:"),
+                                     MC_HISTORY_EDIT_LOAD, "", INPUT_COMPLETE_FILENAMES);
+        if (fname == NULL)
+            return;
+
+        if (*fname != '\0')
+            fname_vpath = vfs_path_from_str (fname);
+
+        g_free (fname);
+    }
+
 #ifdef HAVE_CHARSET
     mc_global.source_codepage = default_source_codepage;
 #endif
-    do_edit (NULL);
+    do_edit (fname_vpath);
+
+    vfs_path_free (fname_vpath);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -894,7 +947,8 @@ mkdir_cmd (void)
 
     dir =
         input_expand_dialog (_("Create a new Directory"),
-                             _("Enter directory name:"), MC_HISTORY_FM_MKDIR, name);
+                             _("Enter directory name:"), MC_HISTORY_FM_MKDIR, name,
+                             INPUT_COMPLETE_FILENAMES);
 
     if (dir != NULL && dir != '\0')
     {
@@ -990,7 +1044,7 @@ reread_cmd (void)
     panel_update_flags_t flag = UP_ONLY_CURRENT;
 
     if (get_current_type () == view_listing && get_other_type () == view_listing &&
-        vfs_path_cmp (current_panel->cwd_vpath, other_panel->cwd_vpath) == 0)
+        vfs_path_equal (current_panel->cwd_vpath, other_panel->cwd_vpath))
         flag = UP_OPTIMIZE;
 
     update_panels (UP_RELOAD | flag, UP_KEEPSEL);
@@ -1330,7 +1384,9 @@ edit_symlink_cmd (void)
         if (i > 0)
         {
             buffer[i] = 0;
-            dest = input_expand_dialog (_("Edit symlink"), q, MC_HISTORY_FM_EDIT_LINK, buffer);
+            dest =
+                input_expand_dialog (_("Edit symlink"), q, MC_HISTORY_FM_EDIT_LINK, buffer,
+                                     INPUT_COMPLETE_FILENAMES);
             if (dest)
             {
                 if (*dest && strcmp (buffer, dest))
@@ -1398,7 +1454,7 @@ user_file_menu_cmd (void)
 char *
 get_random_hint (int force)
 {
-    char *data, *result = NULL, *eol;
+    char *data, *result = NULL, *eop;
     int len;
     int start;
     static int last_sec;
@@ -1418,18 +1474,27 @@ get_random_hint (int force)
     /* get a random entry */
     srand (tv.tv_sec);
     len = strlen (data);
-    start = rand () % len;
+    start = rand () % (len - 1);
 
+    /* Search the start of paragraph */
     for (; start != 0; start--)
-        if (data[start] == '\n')
+        if (data[start] == '\n' && data[start + 1] == '\n')
         {
-            start++;
+            start += 2;
             break;
         }
 
-    eol = strchr (data + start, '\n');
-    if (eol != NULL)
-        *eol = '\0';
+    /* Search the end of paragraph */
+    for (eop = data + start; *eop != '\0'; eop++)
+    {
+        if (*eop == '\n' && *(eop + 1) == '\n')
+        {
+            *eop = '\0';
+            break;
+        }
+        if (*eop == '\n')
+            *eop = ' ';
+    }
 
     /* hint files are stored in utf-8 */
     /* try convert hint file from utf-8 to terminal encoding */
@@ -1445,6 +1510,8 @@ get_random_hint (int force)
             g_string_free (buffer, TRUE);
         str_close_conv (conv);
     }
+    else
+        result = g_strdup (&data[start]);
 
     g_free (data);
     return result;
@@ -1565,7 +1632,7 @@ single_dirsize_cmd (void)
         ComputeDirSizeUI *ui;
         vfs_path_t *p;
 
-        ui = compute_dir_size_create_ui ();
+        ui = compute_dir_size_create_ui (FALSE);
         p = vfs_path_from_str (entry->fname);
 
         if (compute_dir_size (p, ui, compute_dir_size_update_ui, &marked, &total, TRUE) ==
@@ -1599,7 +1666,7 @@ dirsizes_cmd (void)
     int i;
     ComputeDirSizeUI *ui;
 
-    ui = compute_dir_size_create_ui ();
+    ui = compute_dir_size_create_ui (FALSE);
 
     for (i = 0; i < panel->count; i++)
         if (S_ISDIR (panel->dir.list[i].st.st_mode)
@@ -1696,7 +1763,7 @@ change_listing_cmd (void)
     char *user, *status;
     WPanel *p = NULL;
 
-    if (get_display_type (MENU_PANEL_IDX) == view_listing)
+    if (SELECTED_IS_PANEL)
         p = MENU_PANEL_IDX == 0 ? left_panel : right_panel;
 
     list_type = panel_listing_box (p, &user, &status, &use_msformat, MENU_PANEL_IDX);

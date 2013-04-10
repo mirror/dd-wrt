@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-12-28 12:17+0300\n"
-"PO-Revision-Date: 2012-12-26 08:42+0000\n"
+"POT-Creation-Date: 2013-04-02 12:41+0300\n"
+"PO-Revision-Date: 2013-03-13 13:34+0000\n"
 "Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/projects/p/mc/language/"
 "eo/)\n"
@@ -76,8 +76,8 @@ msgid "FATAL: not a directory:"
 msgstr "PEREIGA: ne estas dosierujo:"
 
 #, c-format
-msgid "An error occured while migrating user settings: %s"
-msgstr "Eraro okazis dum migri uzanto-agordon: %s"
+msgid "An error occurred while migrating user settings: %s"
+msgstr "Eraro okazis dum migrigi uzanto-agordon: %s"
 
 #, c-format
 msgid ""
@@ -1262,7 +1262,7 @@ msgid "Mark &all"
 msgstr "Marki ĉ&ion"
 
 msgid "Unmar&k"
-msgstr "Malmar&ki"
+msgstr "Ma&lmarki"
 
 msgid "Cop&y"
 msgstr "&Kopii"
@@ -1313,7 +1313,7 @@ msgid "&Go to line..."
 msgstr "&Iri al linio..."
 
 msgid "&Toggle line state"
-msgstr "Inversigi linian s&taton"
+msgstr "Inversigi &linian staton"
 
 msgid "Go to matching &bracket"
 msgstr "Iri al kongrua &krampo"
@@ -1331,7 +1331,7 @@ msgid "For&ward to declaration"
 msgstr "A&ntaŭen al deklaro"
 
 msgid "Encod&ing..."
-msgstr "&Kodoprezento..."
+msgstr "Kodo&prezento..."
 
 msgid "&Refresh screen"
 msgstr "Refreŝigi &ekranon"
@@ -1427,7 +1427,7 @@ msgid "&Command"
 msgstr "&Komandoj"
 
 msgid "For&mat"
-msgstr "&Formati"
+msgstr "&Formato"
 
 msgid "&Window"
 msgstr "Fe&nestro"
@@ -1484,7 +1484,7 @@ msgid "Synta&x highlighting"
 msgstr "Sinta&ksa prilumado"
 
 msgid "C&ursor after inserted block"
-msgstr ""
+msgstr "K&ursoro post enmetita bloko"
 
 msgid "Pers&istent selection"
 msgstr "&Daŭra elektado"
@@ -1582,16 +1582,16 @@ msgstr ""
 "forigis vian labordosierujon, aŭ donis al vi\n"
 "aldonajn atingopermesojn per la komando \"su\"."
 
+#, c-format
+msgid "Cannot fetch a local copy of %s"
+msgstr "Ne eblas atingi lokan kopion de %s"
+
 msgid "The shell is already running a command"
 msgstr "La ŝelo jam plenumas komandon"
 
 #, c-format
 msgid "Type `exit' to return to the Midnight Commander"
 msgstr "Tajpu \"exit\" por reiri al Midnight Commander"
-
-#, c-format
-msgid "Cannot fetch a local copy of %s"
-msgstr "Ne eblas atingi lokan kopion de %s"
 
 msgid "Set &all"
 msgstr "Fari ĉ&ion"
@@ -1641,6 +1641,158 @@ msgstr "Plenumanta"
 
 msgid "Stopped"
 msgstr "Ĉesigita"
+
+msgid "&Never"
+msgstr "&Neniam"
+
+msgid "On dum&b terminals"
+msgstr "En sen&cerbaj terminaloj"
+
+msgid "Alwa&ys"
+msgstr "Ĉ&iam"
+
+msgid "File operations"
+msgstr "Dosieraj operacioj"
+
+msgid "&Verbose operation"
+msgstr "&Klariga funkciado"
+
+msgid "Compute tota&ls"
+msgstr "K&omputi kiomojn"
+
+msgid "Classic pro&gressbar"
+msgstr "Malnova pro&gesilo"
+
+msgid "Mkdi&r autoname"
+msgstr "&Aŭtomate nomi novan dosierujon"
+
+msgid "&Preallocate space"
+msgstr "Generi spacon antaŭ o&l fari ion"
+
+msgid "Esc key mode"
+msgstr "Eskapo-klava reĝimo"
+
+msgid "S&ingle press"
+msgstr "Unuopa &premo"
+
+msgid "Timeout:"
+msgstr "Valida periodo:"
+
+msgid "Pause after run"
+msgstr "Paŭzo post plenumo"
+
+msgid "Use internal edi&t"
+msgstr "Uzi internan &tekstoredaktilon"
+
+msgid "Use internal vie&w"
+msgstr "U&zi internan legilon"
+
+msgid "A&sk new file name"
+msgstr "&Peti novan dosiernomon"
+
+msgid "Auto m&enus"
+msgstr "Aŭtomataj m&enuoj"
+
+msgid "&Drop down menus"
+msgstr "Etendiĝantaj &menuoj"
+
+msgid "S&hell patterns"
+msgstr "Ŝelaj ŝablono&j"
+
+msgid "Co&mplete: show all"
+msgstr "Kompleta: mont&ri ĉion"
+
+msgid "Rotating d&ash"
+msgstr "Turniĝanta &streko"
+
+msgid "Cd follows lin&ks"
+msgstr "Dosieruja ŝanĝo sek&vas ligilojn"
+
+msgid "Sa&fe delete"
+msgstr "Sendanĝera &forigo"
+
+msgid "A&uto save setup"
+msgstr "Aŭtomate konservi agor&don"
+
+msgid "Configure options"
+msgstr "Agordaĵoj"
+
+msgid "Case &insensitive"
+msgstr "&Ignori usklecon"
+
+msgid "Use panel sort mo&de"
+msgstr "Uzi reĝimon de flanka or&digo"
+
+msgid "Show mi&ni-status"
+msgstr "Montri &miniaturan statlinion"
+
+msgid "Use SI si&ze units"
+msgstr "U&zi metrajn unuojn de grando"
+
+msgid "Mi&x all files"
+msgstr "Miksi ĉiujn d&osierojn"
+
+msgid "Show &backup files"
+msgstr "Montri &sekurkopiojn"
+
+msgid "Show &hidden files"
+msgstr "Montri kaŝita&jn dosierojn"
+
+msgid "&Fast dir reload"
+msgstr "Rapide reŝar&gi dosierujojn"
+
+msgid "Ma&rk moves down"
+msgstr "Mar&ko movas suben"
+
+msgid "Re&verse files only"
+msgstr "Nur in&versigi dosierojn"
+
+msgid "Simple s&wap"
+msgstr "Simpla i&nterŝanĝo"
+
+msgid "A&uto save panels setup"
+msgstr "&Aŭtomate konservi flankan agordon"
+
+msgid "Navigation"
+msgstr "Navigo"
+
+msgid "L&ynx-like motion"
+msgstr "&Linko-simila movo"
+
+msgid "Pa&ge scrolling"
+msgstr "Paĝa &rulumado"
+
+msgid "&Mouse page scrolling"
+msgstr "Per&musa paĝa rulumado"
+
+msgid "File highlight"
+msgstr "Dosiera prilumado"
+
+msgid "File &types"
+msgstr "Dosier&tipoj"
+
+msgid "&Permissions"
+msgstr "&Permesoj"
+
+msgid "Quick search"
+msgstr "Rapida serĉo"
+
+msgid "Panel options"
+msgstr "Flankaj agordaĵoj"
+
+msgid "Information"
+msgstr "Informoj"
+
+msgid ""
+"Using the fast reload option may not reflect the exact\n"
+"directory contents. In this case you'll need to do a\n"
+"manual reload of the directory. See the man page for\n"
+"the details."
+msgstr ""
+"Uzi la elekton Rapida Reŝargo eble ne spegulas la precizan\n"
+"dosierujan enhavon. Tiuokaze vi bezonos permane\n"
+"reŝargi la dosierujon. Vidu la man-paĝon por\n"
+"la detaloj."
 
 msgid "&Full file list"
 msgstr "&Kompleta dosierlisto"
@@ -1774,7 +1926,7 @@ msgid "Password for \\\\%s\\%s"
 msgstr "Pasvorto por \\\\%s\\%s"
 
 msgid "Domain:"
-msgstr "Domajno"
+msgstr "Domajno:"
 
 msgid "Username:"
 msgstr "Salutnomo:"
@@ -1932,6 +2084,9 @@ msgstr "Filtrita vido"
 
 msgid "Filter command and arguments:"
 msgstr "Filtraj komando kaj parametroj:"
+
+msgid "Edit file"
+msgstr "Redakti dosieron"
 
 msgid "Create a new Directory"
 msgstr "Krei novan dosierujon"
@@ -2461,14 +2616,22 @@ msgstr ""
 msgid "Directory scanning"
 msgstr "Dosieruja skanado"
 
+#, c-format
+msgid ""
+"%s\n"
+"Directories: %zd, total size: %s"
+msgstr ""
+"%s\n"
+"Dosierujoj: %zd, ĉioma grando: %s"
+
 msgid "Cannot operate on \"..\"!"
 msgstr "Ne eblas operacii je \"..\"!"
 
 msgid "Sorry, I could not put the job in background"
-msgstr "Bedaŭrinde mi ne povis meti la taskon en la fono"
+msgstr "Bedaŭrinde mi ne povis meti la taskon en la fonon"
 
 msgid "S&uspend"
-msgstr ""
+msgstr "&Paŭzigi"
 
 msgid "Con&tinue"
 msgstr "&Daŭrigi"
@@ -2497,12 +2660,12 @@ msgid "Target file already exists!"
 msgstr "Cela dosiero jam ekzistas!"
 
 #, c-format
-msgid "New     : %s, size %llu"
-msgstr "Nova    : %s, grando %llu"
+msgid "New     : %s, size %s"
+msgstr "Nova: %s, grando %s"
 
 #, c-format
-msgid "Existing: %s, size %llu"
-msgstr "Jama: %s, grando %llu"
+msgid "Existing: %s, size %s"
+msgstr "Jama: %s, grando %s"
 
 msgid "Overwrite this target?"
 msgstr "Ĉu anstataŭigi ĉi tiun celon?"
@@ -2511,7 +2674,7 @@ msgid "A&ppend"
 msgstr "Al&meti"
 
 msgid "&Reget"
-msgstr "&Ree akiri"
+msgstr "&Reakiri"
 
 msgid "Overwrite all targets?"
 msgstr "Ĉu anstataŭigi ĉiujn celojn?"
@@ -2667,7 +2830,7 @@ msgid "Searching"
 msgstr "Serĉanta"
 
 msgid "Change &to"
-msgstr "Ŝanĝi al"
+msgstr "Ŝanĝi &al"
 
 msgid "&Free VFSs now"
 msgstr "&Nun liberigi virtualajn dosiersistemojn"
@@ -2762,9 +2925,6 @@ msgstr "Etikedo por \"%s\":"
 
 msgid "Add to hotlist"
 msgstr "Aldoni al rapidolisto"
-
-msgid "Information"
-msgstr "Informoj"
 
 #, c-format
 msgid "Midnight Commander %s"
@@ -2912,13 +3072,13 @@ msgid "S&hell link..."
 msgstr "Ŝ&ela ligilo..."
 
 msgid "S&FTP link..."
-msgstr "S&FTP-ligilo"
+msgstr "&SFTP-ligilo..."
 
 msgid "SM&B link..."
 msgstr "SM&B-a ligilo..."
 
 msgid "Paneli&ze"
-msgstr "F&lankigi"
+msgstr "&Flankigi"
 
 msgid "&Rescan"
 msgstr "&Refreŝigi"
@@ -3093,152 +3253,6 @@ msgstr "ButtonBar|Mkdir"
 
 msgid "Memory exhausted!"
 msgstr "Memoro eluzita!"
-
-msgid "&Never"
-msgstr "&Neniam"
-
-msgid "On dum&b terminals"
-msgstr "En sen&cerbaj terminaloj"
-
-msgid "Alwa&ys"
-msgstr "Ĉ&iam"
-
-msgid "File operations"
-msgstr "Dosieraj operacioj"
-
-msgid "&Verbose operation"
-msgstr "&Klariga funkciado"
-
-msgid "Compute tota&ls"
-msgstr "K&omputi kiomojn"
-
-msgid "Classic pro&gressbar"
-msgstr "Malnova pro&gesilo"
-
-msgid "Mkdi&r autoname"
-msgstr "&Aŭtomate nomi novan dosierujon"
-
-msgid "Preallocate &space"
-msgstr "Generi spacon antaŭ o&l fari ion"
-
-msgid "Esc key mode"
-msgstr "Eskapo-klava reĝimo"
-
-msgid "S&ingle press"
-msgstr "Unuopa &premo"
-
-msgid "Timeout:"
-msgstr "Valida periodo:"
-
-msgid "Pause after run"
-msgstr "Paŭzo post plenumo"
-
-msgid "Use internal edi&t"
-msgstr "Uzi internan &tekstoredaktilon"
-
-msgid "Use internal vie&w"
-msgstr "U&zi internan legilon"
-
-msgid "Auto m&enus"
-msgstr "Aŭtomataj m&enuoj"
-
-msgid "&Drop down menus"
-msgstr "Etendiĝantaj &menuoj"
-
-msgid "Shell &patterns"
-msgstr "Ŝelaj ŝablono&j"
-
-msgid "Co&mplete: show all"
-msgstr "Kompleta: mont&ri ĉion"
-
-msgid "Rotating d&ash"
-msgstr "Turniĝanta &streko"
-
-msgid "Cd follows lin&ks"
-msgstr "Dosieruja ŝanĝo sek&vas ligilojn"
-
-msgid "Sa&fe delete"
-msgstr "Sendanĝera &forigo"
-
-msgid "A&uto save setup"
-msgstr "Aŭtomate konservi agor&don"
-
-msgid "Configure options"
-msgstr "Agordaĵoj"
-
-msgid "Case &insensitive"
-msgstr "&Ignori usklecon"
-
-msgid "Use panel sort mo&de"
-msgstr "Uzi reĝimon de flanka or&digo"
-
-msgid "Show mi&ni-status"
-msgstr "Montri &miniaturan statlinion"
-
-msgid "Use SI si&ze units"
-msgstr "U&zi metrajn unuojn de grando"
-
-msgid "Mi&x all files"
-msgstr "Miksi ĉiujn d&osierojn"
-
-msgid "Show &backup files"
-msgstr "Montri &sekurkopiojn"
-
-msgid "Show &hidden files"
-msgstr "Montri kaŝita&jn dosierojn"
-
-msgid "&Fast dir reload"
-msgstr "Rapide reŝar&gi dosierujojn"
-
-msgid "Ma&rk moves down"
-msgstr "Mar&ko movas suben"
-
-msgid "Re&verse files only"
-msgstr "Nur in&versigi dosierojn"
-
-msgid "Simple s&wap"
-msgstr "Simpla i&nterŝanĝo"
-
-msgid "A&uto save panels setup"
-msgstr "&Aŭtomate konservi flankan agordon"
-
-msgid "Navigation"
-msgstr "Navigo"
-
-msgid "L&ynx-like motion"
-msgstr "&Linko-simila movo"
-
-msgid "Pa&ge scrolling"
-msgstr "Paĝa &rulumado"
-
-msgid "&Mouse page scrolling"
-msgstr "Per&musa paĝa rulumado"
-
-msgid "File highlight"
-msgstr "Dosiera prilumado"
-
-msgid "File &types"
-msgstr "Dosier&tipoj"
-
-msgid "&Permissions"
-msgstr "&Permesoj"
-
-msgid "Quick search"
-msgstr "Rapida serĉo"
-
-msgid "Panel options"
-msgstr "Flankaj agordaĵoj"
-
-msgid ""
-"Using the fast reload option may not reflect the exact\n"
-"directory contents. In this case you'll need to do a\n"
-"manual reload of the directory. See the man page for\n"
-"the details."
-msgstr ""
-"Uzi la elekton Rapida Reŝargo eble ne spegulas la precizan\n"
-"dosierujan enhavon. Tiuokaze vi bezonos permane\n"
-"reŝargi la dosierujon. Vidu la man-paĝon por\n"
-"la detaloj."
 
 #. TRANSLATORS: one single character to represent 'unsorted' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3700,7 +3714,7 @@ msgstr "Muntita kun GLib %d.%d.%d\n"
 
 #, c-format
 msgid "Virtual File Systems:"
-msgstr "Virtuala dosiersistemoj:"
+msgstr "Virtualaj dosiersistemoj:"
 
 #, c-format
 msgid "Data types:"
@@ -3976,7 +3990,7 @@ msgstr ""
 "%s\n"
 
 #, c-format
-msgid "sftp: an error occured while reading %s: %s"
+msgid "sftp: an error occurred while reading %s: %s"
 msgstr "sftp: Eraro okazis dum lego de %s: %s"
 
 msgid "sftp: Unable to get current user name."
@@ -4227,7 +4241,7 @@ msgstr ""
 "%s"
 
 msgid "File was modified. Save with exit?"
-msgstr "Dosiero estis modifita. Ĉu konservi kun eliro?"
+msgstr "Dosiero estis modifita. Ĉu konservi dum eliro?"
 
 msgid "&Cancel quit"
 msgstr "Ne &eliri"
@@ -4253,6 +4267,14 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Ne eblas vidi: ne normala dosiero"
 
+#, fuzzy, c-format
+msgid ""
+"Cannot open \"%s\" in magic mode\n"
+"%s"
+msgstr ""
+"Ne eblas malfermi je \"%s\"\n"
+"%s"
+
 msgid "Seeking to search result"
 msgstr "Trovanta en serĉa rezulto"
 
@@ -4261,3 +4283,6 @@ msgstr "Serĉo finita"
 
 msgid "Continue from beginning?"
 msgstr "Ĉu deiri de la komenco?"
+
+msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
+msgstr "Ne eblas atingi lokan kopion de /ftp://some.host/editme.txt"

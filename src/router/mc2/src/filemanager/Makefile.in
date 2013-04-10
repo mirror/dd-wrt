@@ -105,7 +105,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4.include/mc-i18n.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -117,8 +117,8 @@ libmcfilemanager_la_DEPENDENCIES = ../../lib/libmc.la
 am_libmcfilemanager_la_OBJECTS = achown.lo boxes.lo chmod.lo chown.lo \
 	cmd.lo command.lo dir.lo ext.lo file.lo filegui.lo filenot.lo \
 	fileopctx.lo find.lo hotlist.lo info.lo layout.lo midnight.lo \
-	mountlist.lo option.lo panelize.lo panel.lo tree.lo \
-	treestore.lo usermenu.lo
+	mountlist.lo panelize.lo panel.lo tree.lo treestore.lo \
+	usermenu.lo
 libmcfilemanager_la_OBJECTS = $(am_libmcfilemanager_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -389,7 +389,6 @@ libmcfilemanager_la_SOURCES = \
 	layout.c layout.h \
 	midnight.h midnight.c \
 	mountlist.c mountlist.h \
-	option.c option.h \
 	panelize.c panelize.h \
 	panel.c panel.h \
 	tree.c tree.h \
@@ -471,7 +470,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/layout.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/midnight.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mountlist.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/option.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/panel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/panelize.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tree.Plo@am__quote@

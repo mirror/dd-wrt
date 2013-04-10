@@ -3,6 +3,7 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Enrico Nicoletto <enrico.BR@gmx.co.uk>, 2013.
 # Rafael Ferreira <rafael.f.f1@gmail.com>, 2012.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 # Van Der Fran <transifex@vanderland.com>, 2011.
@@ -10,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2012-12-28 12:17+0300\n"
-"PO-Revision-Date: 2012-12-26 08:42+0000\n"
-"Last-Translator: Rafael Ferreira <rafael.f.f1@gmail.com>\n"
+"POT-Creation-Date: 2013-04-02 12:41+0300\n"
+"PO-Revision-Date: 2013-03-13 08:51+0000\n"
+"Last-Translator: Enrico Nicoletto <enrico.BR@gmx.co.uk>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/projects/p/mc/"
 "language/pt_BR/)\n"
 "Language: pt_BR\n"
@@ -25,7 +26,7 @@ msgid "Warning: cannot load codepages list"
 msgstr "Aviso: Não pode carregar a lista de páginas de código"
 
 msgid "7-bit ASCII"
-msgstr "7-bit ASCII"
+msgstr "ASCII 7-bit"
 
 #, c-format
 msgid "Cannot translate from %s to %s"
@@ -78,7 +79,7 @@ msgid "FATAL: not a directory:"
 msgstr ""
 
 #, c-format
-msgid "An error occured while migrating user settings: %s"
+msgid "An error occurred while migrating user settings: %s"
 msgstr ""
 
 #, c-format
@@ -767,7 +768,7 @@ msgid "&Minimal (Find a smaller set of change)"
 msgstr ""
 
 msgid "Diff algorithm"
-msgstr ""
+msgstr "Algoritmo do Diff"
 
 msgid "Diff extra options"
 msgstr "Opções extras do diff"
@@ -915,19 +916,19 @@ msgid "The file you are saving is not finished with a newline"
 msgstr "O arquivo que você está salvando não termina com nova linha"
 
 msgid "C&ontinue"
-msgstr ""
+msgstr "C&ontinuar"
 
 msgid "&Do not change"
 msgstr ""
 
 msgid "&Unix format (LF)"
-msgstr ""
+msgstr "Formato &Unix (LF)"
 
 msgid "&Windows/DOS format (CR LF)"
-msgstr ""
+msgstr "Formato &Windows/DOS (CR LF)"
 
 msgid "&Macintosh format (CR)"
-msgstr ""
+msgstr "Formato &Macintosh (CR)"
 
 msgid "Enter file name:"
 msgstr "Insira nome do arquivo:"
@@ -951,7 +952,7 @@ msgid "&Do backups with following extension:"
 msgstr ""
 
 msgid "Check &POSIX new line"
-msgstr ""
+msgstr "Verificar nova linha &POSIX"
 
 msgid "Edit Save Mode"
 msgstr "Editar Modo de Salvar"
@@ -966,7 +967,7 @@ msgid "A file already exists with this name"
 msgstr "Um arquivo já existe com este nome de arquivo"
 
 msgid "&Overwrite"
-msgstr ""
+msgstr "&Sobrescrever"
 
 msgid "Cannot save file"
 msgstr "Não foi possível salvar arquivo"
@@ -1099,37 +1100,37 @@ msgid "Sort returned non-zero: %s"
 msgstr "Sort retornou não-zero: %s"
 
 msgid "Paste output of external command"
-msgstr ""
+msgstr "Colar saída de comando externo"
 
 msgid "Enter shell command(s):"
-msgstr ""
+msgstr "Digite comando(s) de shell:"
 
 msgid "External command"
-msgstr ""
+msgstr "Comando externo"
 
 msgid "Cannot execute command"
-msgstr ""
+msgstr "Nãi é possível executar comando"
 
 msgid "mail -s <subject> -c <cc> <to>"
 msgstr ""
 
 msgid "To"
-msgstr ""
+msgstr "Para"
 
 msgid "Subject"
-msgstr ""
+msgstr "Assunto"
 
 msgid "Copies to"
 msgstr ""
 
 msgid "Mail"
-msgstr ""
+msgstr " Correio"
 
 msgid "Insert literal"
 msgstr ""
 
 msgid "Press any key:"
-msgstr ""
+msgstr "Pressione qualquer tecla:"
 
 msgid ""
 "Current text was modified without a file save.\n"
@@ -1145,10 +1146,10 @@ msgid "&Find all"
 msgstr ""
 
 msgid "Enter replacement string:"
-msgstr ""
+msgstr "Informe a string de substituição:"
 
 msgid "Replace with:"
-msgstr ""
+msgstr "Substituir por:"
 
 msgid "&Replace"
 msgstr "&Substituir"
@@ -1160,7 +1161,7 @@ msgid "&Skip"
 msgstr "&Ignorar"
 
 msgid "Confirm replace"
-msgstr ""
+msgstr "Confirmar substituição"
 
 msgid "Cancel"
 msgstr "Cancelar"
@@ -1177,16 +1178,16 @@ msgid "&Open file..."
 msgstr ""
 
 msgid "&New"
-msgstr ""
+msgstr "&Novo"
 
 msgid "&Close"
 msgstr ""
 
 msgid "Save &as..."
-msgstr ""
+msgstr "Salvar &como..."
 
 msgid "&Insert file..."
-msgstr ""
+msgstr "&Inserir arquivo..."
 
 msgid "Cop&y to file..."
 msgstr ""
@@ -1195,7 +1196,7 @@ msgid "&User menu..."
 msgstr ""
 
 msgid "A&bout..."
-msgstr ""
+msgstr "S&obre"
 
 msgid "&Quit"
 msgstr "&Encerrar"
@@ -1216,10 +1217,10 @@ msgid "&Mark columns"
 msgstr ""
 
 msgid "Mark &all"
-msgstr ""
+msgstr "Marcar &todos"
 
 msgid "Unmar&k"
-msgstr ""
+msgstr "Descmar&car"
 
 msgid "Cop&y"
 msgstr ""
@@ -1246,13 +1247,13 @@ msgid "&End"
 msgstr ""
 
 msgid "&Search..."
-msgstr ""
+msgstr "&Pesquisar..."
 
 msgid "Search &again"
-msgstr ""
+msgstr "Pesquisar &novamente"
 
 msgid "&Replace..."
-msgstr ""
+msgstr "&Substituir..."
 
 msgid "&Toggle bookmark"
 msgstr ""
@@ -1288,7 +1289,7 @@ msgid "For&ward to declaration"
 msgstr ""
 
 msgid "Encod&ing..."
-msgstr ""
+msgstr "Cod&ificando..."
 
 msgid "&Refresh screen"
 msgstr ""
@@ -1360,7 +1361,7 @@ msgid "Learn &keys..."
 msgstr ""
 
 msgid "Syntax &highlighting..."
-msgstr ""
+msgstr "Realçar sinta&xe"
 
 msgid "S&yntax file"
 msgstr ""
@@ -1372,7 +1373,7 @@ msgid "&Save setup"
 msgstr "&Gravar configuração"
 
 msgid "&File"
-msgstr ""
+msgstr "&Arquivo"
 
 msgid "&Edit"
 msgstr ""
@@ -1420,7 +1421,7 @@ msgid "Tab spacing:"
 msgstr "Espaçamento de Tab"
 
 msgid "Other options"
-msgstr ""
+msgstr "Outras opções"
 
 msgid "&Return does autoindent"
 msgstr "&Return faz auto identação"
@@ -1537,16 +1538,16 @@ msgstr ""
 "diretório de trabalho, ou deu a você mesmo permissões\n"
 "de acesso extras com o comando \"su\"?"
 
+#, c-format
+msgid "Cannot fetch a local copy of %s"
+msgstr "Não foi possível adquirir uma cópia local de %s"
+
 msgid "The shell is already running a command"
 msgstr "A shell já está executando um comando"
 
 #, c-format
 msgid "Type `exit' to return to the Midnight Commander"
 msgstr "digite 'exit' para retornar ao Midnight commander "
-
-#, c-format
-msgid "Cannot fetch a local copy of %s"
-msgstr "Não foi possível adquirir uma cópia local de %s"
 
 msgid "Set &all"
 msgstr "Configurar &tudo"
@@ -1597,6 +1598,154 @@ msgstr "Em execução"
 msgid "Stopped"
 msgstr "Parado"
 
+msgid "&Never"
+msgstr "&Nunca"
+
+msgid "On dum&b terminals"
+msgstr ""
+
+msgid "Alwa&ys"
+msgstr "Sem&pre"
+
+msgid "File operations"
+msgstr ""
+
+msgid "&Verbose operation"
+msgstr "Mostrar P&rogresso"
+
+msgid "Compute tota&ls"
+msgstr ""
+
+msgid "Classic pro&gressbar"
+msgstr ""
+
+msgid "Mkdi&r autoname"
+msgstr ""
+
+msgid "&Preallocate space"
+msgstr ""
+
+msgid "Esc key mode"
+msgstr ""
+
+msgid "S&ingle press"
+msgstr ""
+
+msgid "Timeout:"
+msgstr ""
+
+msgid "Pause after run"
+msgstr ""
+
+msgid "Use internal edi&t"
+msgstr "Conteúdo:"
+
+msgid "Use internal vie&w"
+msgstr ""
+
+msgid "A&sk new file name"
+msgstr ""
+
+msgid "Auto m&enus"
+msgstr ""
+
+msgid "&Drop down menus"
+msgstr "Menus &Suspensos"
+
+msgid "S&hell patterns"
+msgstr ""
+
+msgid "Co&mplete: show all"
+msgstr ""
+
+msgid "Rotating d&ash"
+msgstr ""
+
+msgid "Cd follows lin&ks"
+msgstr ""
+
+msgid "Sa&fe delete"
+msgstr ""
+
+msgid "A&uto save setup"
+msgstr ""
+
+msgid "Configure options"
+msgstr "Configurar Opções"
+
+msgid "Case &insensitive"
+msgstr ""
+
+msgid "Use panel sort mo&de"
+msgstr ""
+
+msgid "Show mi&ni-status"
+msgstr ""
+
+msgid "Use SI si&ze units"
+msgstr ""
+
+msgid "Mi&x all files"
+msgstr ""
+
+msgid "Show &backup files"
+msgstr ""
+
+msgid "Show &hidden files"
+msgstr ""
+
+msgid "&Fast dir reload"
+msgstr "Atualização &Rápida de Diretório"
+
+msgid "Ma&rk moves down"
+msgstr ""
+
+msgid "Re&verse files only"
+msgstr ""
+
+msgid "Simple s&wap"
+msgstr ""
+
+msgid "A&uto save panels setup"
+msgstr ""
+
+msgid "Navigation"
+msgstr ""
+
+msgid "L&ynx-like motion"
+msgstr "Movimentação similar ao L&ynx"
+
+msgid "Pa&ge scrolling"
+msgstr ""
+
+msgid "&Mouse page scrolling"
+msgstr ""
+
+msgid "File highlight"
+msgstr "Realce de arquivo"
+
+msgid "File &types"
+msgstr ""
+
+msgid "&Permissions"
+msgstr ""
+
+msgid "Quick search"
+msgstr "Pesquisa rápida"
+
+msgid "Panel options"
+msgstr ""
+
+msgid "Information"
+msgstr ""
+
+msgid ""
+"Using the fast reload option may not reflect the exact\n"
+"directory contents. In this case you'll need to do a\n"
+"manual reload of the directory. See the man page for\n"
+"the details."
+msgstr ""
+
 msgid "&Full file list"
 msgstr "Lista &Completa"
 
@@ -1626,16 +1775,16 @@ msgstr "Parâmetros de ordenamento"
 
 #. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
 msgid "Confirmation|&Delete"
-msgstr ""
+msgstr "Confirmação|E&xcluir"
 
 msgid "Confirmation|O&verwrite"
-msgstr ""
+msgstr "Confirmação|Sobr&escrever"
 
 msgid "Confirmation|&Execute"
-msgstr ""
+msgstr "Confirmação|&Executar"
 
 msgid "Confirmation|E&xit"
-msgstr ""
+msgstr "Confirmação|S&air"
 
 msgid "Confirmation|Di&rectory hotlist delete"
 msgstr ""
@@ -1686,10 +1835,10 @@ msgid "&Always use ftp proxy:"
 msgstr ""
 
 msgid "&Use ~/.netrc"
-msgstr ""
+msgstr "&Usar ~/.netrc"
 
 msgid "Use &passive mode"
-msgstr ""
+msgstr "Usar modo &passivo"
 
 msgid "Use passive mode over pro&xy"
 msgstr ""
@@ -1851,7 +2000,7 @@ msgid "Set expression for filtering filenames"
 msgstr "Defina expressão para filtrar nome de arquivos"
 
 msgid "&Files only"
-msgstr ""
+msgstr "Apenas &arquivos"
 
 msgid "&Using shell patterns"
 msgstr "&Usando máscaras de ambiente de trabalho"
@@ -1889,6 +2038,9 @@ msgstr "Visualização filtrada"
 
 msgid "Filter command and arguments:"
 msgstr "comando e argumentos filtrados:"
+
+msgid "Edit file"
+msgstr ""
 
 msgid "Create a new Directory"
 msgstr "Criar um novo diretório"
@@ -1986,7 +2138,7 @@ msgid ""
 msgstr ""
 
 msgid "Setup"
-msgstr ""
+msgstr "Configuração"
 
 #, c-format
 msgid "Setup saved to %s"
@@ -2009,7 +2161,7 @@ msgid "Cannot read directory contents"
 msgstr ""
 
 msgid "Parameter"
-msgstr ""
+msgstr "Parâmetro"
 
 #, c-format
 msgid ""
@@ -2039,22 +2191,22 @@ msgid ""
 msgstr ""
 
 msgid "DialogTitle|Copy"
-msgstr ""
+msgstr "TítuloDiálogo|Copiar"
 
 msgid "DialogTitle|Move"
-msgstr ""
+msgstr "TítuloDiálogo|Mover"
 
 msgid "DialogTitle|Delete"
-msgstr ""
+msgstr "TítuloDiálogo|Excluír"
 
 msgid "FileOperation|Copy"
-msgstr ""
+msgstr "OperacaoArquivo|Copiar"
 
 msgid "FileOperation|Move"
-msgstr ""
+msgstr "OperacaoArquivo|Mover"
 
 msgid "FileOperation|Delete"
-msgstr ""
+msgstr "OperacaoArquivo|Excluír"
 
 #, no-c-format
 msgid "%o %f \"%s\"%m"
@@ -2401,6 +2553,12 @@ msgstr ""
 msgid "Directory scanning"
 msgstr "Escaneando diretório"
 
+#, c-format
+msgid ""
+"%s\n"
+"Directories: %zd, total size: %s"
+msgstr ""
+
 msgid "Cannot operate on \"..\"!"
 msgstr "Não foi possível operar em \"..\""
 
@@ -2437,11 +2595,11 @@ msgid "Target file already exists!"
 msgstr "O arquivo alvo já existe!"
 
 #, c-format
-msgid "New     : %s, size %llu"
+msgid "New     : %s, size %s"
 msgstr ""
 
 #, c-format
-msgid "Existing: %s, size %llu"
+msgid "Existing: %s, size %s"
 msgstr ""
 
 msgid "Overwrite this target?"
@@ -2553,7 +2711,7 @@ msgid "Malformed regular expression"
 msgstr "Expressão regular malformulada"
 
 msgid "File name:"
-msgstr ""
+msgstr "Nome de arquivo:"
 
 msgid "&Find recursively"
 msgstr ""
@@ -2701,9 +2859,6 @@ msgstr "Descrição para \"%s\": "
 msgid "Add to hotlist"
 msgstr ""
 
-msgid "Information"
-msgstr ""
-
 #, c-format
 msgid "Midnight Commander %s"
 msgstr "Midnight commander %s"
@@ -2790,7 +2945,7 @@ msgid "&Menubar visible"
 msgstr ""
 
 msgid "Command &prompt"
-msgstr ""
+msgstr "&Prompt de comando"
 
 msgid "&Keybar visible"
 msgstr "Barra de &Teclas visível"
@@ -3032,148 +3187,6 @@ msgstr "ButtonBar|Mkdir"
 msgid "Memory exhausted!"
 msgstr ""
 
-msgid "&Never"
-msgstr "&Nunca"
-
-msgid "On dum&b terminals"
-msgstr ""
-
-msgid "Alwa&ys"
-msgstr "Sem&pre"
-
-msgid "File operations"
-msgstr ""
-
-msgid "&Verbose operation"
-msgstr "Mostrar P&rogresso"
-
-msgid "Compute tota&ls"
-msgstr ""
-
-msgid "Classic pro&gressbar"
-msgstr ""
-
-msgid "Mkdi&r autoname"
-msgstr ""
-
-msgid "Preallocate &space"
-msgstr ""
-
-msgid "Esc key mode"
-msgstr ""
-
-msgid "S&ingle press"
-msgstr ""
-
-msgid "Timeout:"
-msgstr ""
-
-msgid "Pause after run"
-msgstr ""
-
-msgid "Use internal edi&t"
-msgstr "Conteúdo:"
-
-msgid "Use internal vie&w"
-msgstr ""
-
-msgid "Auto m&enus"
-msgstr ""
-
-msgid "&Drop down menus"
-msgstr "Menus &Suspensos"
-
-msgid "Shell &patterns"
-msgstr ""
-
-msgid "Co&mplete: show all"
-msgstr ""
-
-msgid "Rotating d&ash"
-msgstr ""
-
-msgid "Cd follows lin&ks"
-msgstr ""
-
-msgid "Sa&fe delete"
-msgstr ""
-
-msgid "A&uto save setup"
-msgstr ""
-
-msgid "Configure options"
-msgstr "Configurar Opções"
-
-msgid "Case &insensitive"
-msgstr ""
-
-msgid "Use panel sort mo&de"
-msgstr ""
-
-msgid "Show mi&ni-status"
-msgstr ""
-
-msgid "Use SI si&ze units"
-msgstr ""
-
-msgid "Mi&x all files"
-msgstr ""
-
-msgid "Show &backup files"
-msgstr ""
-
-msgid "Show &hidden files"
-msgstr ""
-
-msgid "&Fast dir reload"
-msgstr "Atualização &Rápida de Diretório"
-
-msgid "Ma&rk moves down"
-msgstr ""
-
-msgid "Re&verse files only"
-msgstr ""
-
-msgid "Simple s&wap"
-msgstr ""
-
-msgid "A&uto save panels setup"
-msgstr ""
-
-msgid "Navigation"
-msgstr ""
-
-msgid "L&ynx-like motion"
-msgstr "Movimentação similar ao L&ynx"
-
-msgid "Pa&ge scrolling"
-msgstr ""
-
-msgid "&Mouse page scrolling"
-msgstr ""
-
-msgid "File highlight"
-msgstr "Realce de arquivo"
-
-msgid "File &types"
-msgstr ""
-
-msgid "&Permissions"
-msgstr ""
-
-msgid "Quick search"
-msgstr "Pesquisa rápida"
-
-msgid "Panel options"
-msgstr ""
-
-msgid ""
-"Using the fast reload option may not reflect the exact\n"
-"directory contents. In this case you'll need to do a\n"
-"manual reload of the directory. See the man page for\n"
-"the details."
-msgstr ""
-
 #. TRANSLATORS: one single character to represent 'unsorted' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
 msgid "sort|u"
@@ -3408,7 +3421,7 @@ msgid "False:"
 msgstr ""
 
 msgid "Error calling program"
-msgstr ""
+msgstr "Erro ao chamar programa"
 
 msgid "Warning -- ignoring file"
 msgstr ""
@@ -3894,7 +3907,7 @@ msgstr ""
 "%s\n"
 
 #, c-format
-msgid "sftp: an error occured while reading %s: %s"
+msgid "sftp: an error occurred while reading %s: %s"
 msgstr ""
 
 msgid "sftp: Unable to get current user name."
@@ -4143,7 +4156,7 @@ msgid "File was modified. Save with exit?"
 msgstr "Arquivo foi modificado. Salvar e sair?"
 
 msgid "&Cancel quit"
-msgstr ""
+msgstr "&Cancelar saida"
 
 msgid ""
 "Midnight Commander is being shut down.\n"
@@ -4164,6 +4177,14 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr ""
 
+#, fuzzy, c-format
+msgid ""
+"Cannot open \"%s\" in magic mode\n"
+"%s"
+msgstr ""
+"Impossível abrir arquivo %s\n"
+"%s"
+
 msgid "Seeking to search result"
 msgstr ""
 
@@ -4171,4 +4192,7 @@ msgid "Search done"
 msgstr ""
 
 msgid "Continue from beginning?"
+msgstr ""
+
+msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""

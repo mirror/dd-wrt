@@ -51,7 +51,10 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 TESTS = library_independ$(EXEEXT) mc_build_filename$(EXEEXT) \
-	name_quote$(EXEEXT) serialize$(EXEEXT) x_basename$(EXEEXT)
+	name_quote$(EXEEXT) serialize$(EXEEXT) \
+	utilunix__my_system_fork_fail$(EXEEXT) \
+	utilunix__my_system_fork_child_shell$(EXEEXT) \
+	utilunix__my_system_fork_child$(EXEEXT) x_basename$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests/lib
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -107,7 +110,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4.include/mc-i18n.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -115,7 +118,10 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = library_independ$(EXEEXT) mc_build_filename$(EXEEXT) \
-	name_quote$(EXEEXT) serialize$(EXEEXT) x_basename$(EXEEXT)
+	name_quote$(EXEEXT) serialize$(EXEEXT) \
+	utilunix__my_system_fork_fail$(EXEEXT) \
+	utilunix__my_system_fork_child_shell$(EXEEXT) \
+	utilunix__my_system_fork_child$(EXEEXT) x_basename$(EXEEXT)
 am_library_independ_OBJECTS = library_independ.$(OBJEXT)
 library_independ_OBJECTS = $(am_library_independ_OBJECTS)
 library_independ_LDADD = $(LDADD)
@@ -131,6 +137,21 @@ name_quote_LDADD = $(LDADD)
 am_serialize_OBJECTS = serialize.$(OBJEXT)
 serialize_OBJECTS = $(am_serialize_OBJECTS)
 serialize_LDADD = $(LDADD)
+am_utilunix__my_system_fork_child_OBJECTS =  \
+	utilunix__my_system-fork_child.$(OBJEXT)
+utilunix__my_system_fork_child_OBJECTS =  \
+	$(am_utilunix__my_system_fork_child_OBJECTS)
+utilunix__my_system_fork_child_LDADD = $(LDADD)
+am_utilunix__my_system_fork_child_shell_OBJECTS =  \
+	utilunix__my_system-fork_child_shell.$(OBJEXT)
+utilunix__my_system_fork_child_shell_OBJECTS =  \
+	$(am_utilunix__my_system_fork_child_shell_OBJECTS)
+utilunix__my_system_fork_child_shell_LDADD = $(LDADD)
+am_utilunix__my_system_fork_fail_OBJECTS =  \
+	utilunix__my_system-fork_fail.$(OBJEXT)
+utilunix__my_system_fork_fail_OBJECTS =  \
+	$(am_utilunix__my_system_fork_fail_OBJECTS)
+utilunix__my_system_fork_fail_LDADD = $(LDADD)
 am_x_basename_OBJECTS = x_basename.$(OBJEXT)
 x_basename_OBJECTS = $(am_x_basename_OBJECTS)
 x_basename_LDADD = $(LDADD)
@@ -162,10 +183,14 @@ am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(library_independ_SOURCES) $(mc_build_filename_SOURCES) \
 	$(name_quote_SOURCES) $(serialize_SOURCES) \
-	$(x_basename_SOURCES)
+	$(utilunix__my_system_fork_child_SOURCES) \
+	$(utilunix__my_system_fork_child_shell_SOURCES) \
+	$(utilunix__my_system_fork_fail_SOURCES) $(x_basename_SOURCES)
 DIST_SOURCES = $(library_independ_SOURCES) \
 	$(mc_build_filename_SOURCES) $(name_quote_SOURCES) \
-	$(serialize_SOURCES) $(x_basename_SOURCES)
+	$(serialize_SOURCES) $(utilunix__my_system_fork_child_SOURCES) \
+	$(utilunix__my_system_fork_child_shell_SOURCES) \
+	$(utilunix__my_system_fork_fail_SOURCES) $(x_basename_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -424,8 +449,10 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = . mcconfig search vfs
+SUBDIRS = . mcconfig search strutil vfs widget
 AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir) @CHECK_CFLAGS@
+AM_LDFLAGS = @TESTS_LDFLAGS@
+EXTRA_DIST = utilunix__my_system-common.c
 library_independ_SOURCES = \
 	library_independ.c
 
@@ -437,6 +464,15 @@ name_quote_SOURCES = \
 
 serialize_SOURCES = \
 	serialize.c
+
+utilunix__my_system_fork_fail_SOURCES = \
+	utilunix__my_system-fork_fail.c
+
+utilunix__my_system_fork_child_shell_SOURCES = \
+	utilunix__my_system-fork_child_shell.c
+
+utilunix__my_system_fork_child_SOURCES = \
+	utilunix__my_system-fork_child.c
 
 x_basename_SOURCES = \
 	x_basename.c
@@ -496,6 +532,15 @@ name_quote$(EXEEXT): $(name_quote_OBJECTS) $(name_quote_DEPENDENCIES) $(EXTRA_na
 serialize$(EXEEXT): $(serialize_OBJECTS) $(serialize_DEPENDENCIES) $(EXTRA_serialize_DEPENDENCIES) 
 	@rm -f serialize$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(serialize_OBJECTS) $(serialize_LDADD) $(LIBS)
+utilunix__my_system_fork_child$(EXEEXT): $(utilunix__my_system_fork_child_OBJECTS) $(utilunix__my_system_fork_child_DEPENDENCIES) $(EXTRA_utilunix__my_system_fork_child_DEPENDENCIES) 
+	@rm -f utilunix__my_system_fork_child$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(utilunix__my_system_fork_child_OBJECTS) $(utilunix__my_system_fork_child_LDADD) $(LIBS)
+utilunix__my_system_fork_child_shell$(EXEEXT): $(utilunix__my_system_fork_child_shell_OBJECTS) $(utilunix__my_system_fork_child_shell_DEPENDENCIES) $(EXTRA_utilunix__my_system_fork_child_shell_DEPENDENCIES) 
+	@rm -f utilunix__my_system_fork_child_shell$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(utilunix__my_system_fork_child_shell_OBJECTS) $(utilunix__my_system_fork_child_shell_LDADD) $(LIBS)
+utilunix__my_system_fork_fail$(EXEEXT): $(utilunix__my_system_fork_fail_OBJECTS) $(utilunix__my_system_fork_fail_DEPENDENCIES) $(EXTRA_utilunix__my_system_fork_fail_DEPENDENCIES) 
+	@rm -f utilunix__my_system_fork_fail$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(utilunix__my_system_fork_fail_OBJECTS) $(utilunix__my_system_fork_fail_LDADD) $(LIBS)
 x_basename$(EXEEXT): $(x_basename_OBJECTS) $(x_basename_DEPENDENCIES) $(EXTRA_x_basename_DEPENDENCIES) 
 	@rm -f x_basename$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(x_basename_OBJECTS) $(x_basename_LDADD) $(LIBS)
@@ -510,6 +555,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mc_build_filename.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/name_quote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serialize.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utilunix__my_system-fork_child.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utilunix__my_system-fork_child_shell.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utilunix__my_system-fork_fail.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/x_basename.Po@am__quote@
 
 .c.o:

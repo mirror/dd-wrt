@@ -98,6 +98,7 @@ extern int auto_fill_mkdir_name;
 extern int output_starts_shell;
 extern int use_file_to_check_type;
 extern int file_op_compute_totals;
+extern int editor_ask_filename_before_edit;
 
 extern panels_options_t panels_options;
 
@@ -123,9 +124,6 @@ extern char *last_wd_string;
 extern int quit;
 /* Set to TRUE to suppress printing the last directory */
 extern gboolean print_last_revert;
-
-extern char *shell;
-extern const char *mc_prompt;
 
 /* index to record_macro_buf[], -1 if not recording a macro */
 extern int macro_index;

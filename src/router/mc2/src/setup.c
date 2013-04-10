@@ -115,6 +115,9 @@ int drop_menus = 0;
    are tagged files */
 int confirm_view_dir = 0;
 
+/* Ask file name before start the editor */
+int editor_ask_filename_before_edit = 0;
+
 panel_view_mode_t startup_left_mode;
 panel_view_mode_t startup_right_mode;
 
@@ -196,12 +199,6 @@ char *last_wd_string = NULL;
 
 /* Set when main loop should be terminated */
 int quit = 0;
-
-/* The user's shell */
-char *shell = NULL;
-
-/* The prompt */
-const char *mc_prompt = NULL;
 
 /* Set to TRUE to suppress printing the last directory */
 int print_last_revert = FALSE;
@@ -359,6 +356,7 @@ static const struct
     { "editor_show_right_margin", &show_right_margin },
     { "editor_group_undo", &option_group_undo },
 #endif /* USE_INTERNAL_EDIT */
+    { "editor_ask_filename_before_edit", &editor_ask_filename_before_edit },
     { "nice_rotating_dash", &nice_rotating_dash },
     { "mcview_remember_file_position", &mcview_remember_file_position },
     { "auto_fill_mkdir_name", &auto_fill_mkdir_name },
@@ -951,6 +949,10 @@ load_setup (void)
         *int_options[i].opt_addr =
             mc_config_get_int (mc_main_config, CONFIG_APP_SECTION, int_options[i].opt_name,
                                *int_options[i].opt_addr);
+#ifndef USE_INTERNAL_EDIT
+    /* reset forced in case of build without internal editor */
+    use_internal_edit = 0;
+#endif /* USE_INTERNAL_EDIT */
 
     if (option_tab_spacing <= 0)
         option_tab_spacing = DEFAULT_TAB_SPACING;
