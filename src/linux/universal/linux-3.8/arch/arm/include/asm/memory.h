@@ -278,8 +278,8 @@ static inline __deprecated void *bus_to_virt(unsigned long x)
 
 #else
 #ifdef CONFIG_PLAT_BCM5301X
-#define __virt_to_phys(x)	((x) - PAGE_OFFSET + PHYS_OFFSET)
-#define __phys_to_virt(x)	((x) - PHYS_OFFSET + PAGE_OFFSET)
+#define __virt_to_phys(x)	((x) - PAGE_OFFSET + CONFIG_DRAM_BASE)
+#define __phys_to_virt(x)	((x) - CONFIG_DRAM_BASE + PAGE_OFFSET)
 #endif
 #endif
 
