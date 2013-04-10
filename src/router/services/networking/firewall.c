@@ -3037,12 +3037,8 @@ void start_firewall(void)
 	start_wifidog();
 #endif
 #ifdef HAVE_CHILLI
-	if (nvram_match("hotss_enable", "1")) {
-		stop_chilli();
-		start_chilli();	
-	}
 	if (nvram_match("chilli_enable", "1")
-		&& nvram_match("hotss_enable", "0")) {
+		|| nvram_match("hotss_enable", "1")) {
 		stop_chilli();
 		start_chilli();	
 	}
