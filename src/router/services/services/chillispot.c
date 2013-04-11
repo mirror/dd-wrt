@@ -191,11 +191,22 @@ void main_config(void)
 	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n", log_accept);
 	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n", log_accept);
 		//	secure chilli interface, only usefull if ! br0
-	if (nvram_invmatch("hotss_interface", "br0"))
-		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", 
-			nvram_safe_get("hotss_interface"), chillinet, log_drop);
-		fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", 
-			nvram_safe_get("hotss_interface"), chillinet, log_drop);
+	if (nvram_match("chilli_enable", "1")
+		&& nvram_match("hotss_enable", "0")
+		&& nvram_invmatch("chilli_interface", "br0")) {
+			fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", 
+				nvram_safe_get("chilli_interface"), chillinet, log_drop);
+			fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", 
+				nvram_safe_get("chilli_interface"), chillinet, log_drop);
+		}
+	if (nvram_match("chilli_enable", "1")
+		&& nvram_match("hotss_enable", "1")
+		&& nvram_invmatch("hotss_interface", "br0")) {
+			fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", 
+				nvram_safe_get("hotss_interface"), chillinet, log_drop);
+			fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", 
+				nvram_safe_get("hotss_interface"), chillinet, log_drop);
+		}
 
 		// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
@@ -204,11 +215,12 @@ void main_config(void)
 		fprintf(fp, "iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"); // clamp when fw clamping is off	
 		fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j MASQUERADE\n", chillinet);
 		}
-	else
+	else {
 		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n",
 			nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
 		fprintf(fp, "iptables -t nat -I POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n",
 			nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
+		}
 	fclose(fp);
 
 	if (!(fp = fopen("/tmp/chilli/ip-down.sh", "w"))) {
