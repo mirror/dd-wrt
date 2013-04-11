@@ -698,10 +698,10 @@ static void __init noinline soc_pcie_bridge_init(struct soc_pcie_port * port)
 
 	/* MEM_BASE, MEM_LIM require 1MB alignment */
 	BUG_ON( (port->owin_res->start   >> 16) & 0xf );
-//#ifdef	DEBUG
+#ifdef	DEBUG
 	printk(KERN_DEBUG "%s: membase %#x memlimit %#x\n", __FUNCTION__,
 		port->owin_res->start, port->owin_res->end+1);
-//#endif
+#endif
         pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_BASE, port->owin_res->start   >> 16 );
 	BUG_ON(((port->owin_res->end+1) >> 16 ) & 0xf );
         pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_LIMIT, (port->owin_res->end+1) >> 16 );
