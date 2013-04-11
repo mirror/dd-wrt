@@ -233,13 +233,45 @@ distclean mrproper: $(obj-distclean) clean_target
 
 optimize-lib:
 	make -f Makefile.armbe lib.$(ARCH)-install
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-		"$(ARCH)-uclibc/target/lib/libc.so.0" \
-		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+
+ifneq ($(CONFIG_NOOPT),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+
+	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
+	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
+	-mkdir -p /tmp/$(ARCHITECTURE)/
+	find $(TARGETDIR) -type f -perm +100 -exec \
+		file -r -N -F '' {} + | \
+		awk ' /executable.*dynamically/ { print $$1 }' > /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	find $(TARGETDIR) -type f -name \*.so\* -exec \
+		file -r -N -F '' {} + | \
+		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-uClibc.so.0 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
+else
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libuClibc-0.99.33.2.so}  $(ARCH)-uclibc/target/lib/libc.so.0
+#	relink-lib.sh \
+#		"$(ARCH)-linux-" \
+#		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
+#		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
+#		"$(ARCH)-uclibc/target/lib/libc.so.0" \
+#		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
+#		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
 
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
@@ -265,32 +297,8 @@ optimize-lib:
 		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
 		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libpthread.so.0
-
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
-
-
-ifneq ($(CONFIG_NOOPT),y)
-	rm -rf $(ARCH)-uclibc/mklibs-out
-	rm -f $(ARCH)-uclibc/mklibs-progs
-	find $(TARGETDIR) -type f -perm +100 -exec \
-		file -r -N -F '' {} + | \
-		awk ' /executable.*dynamically/ { print $$1 }' > $(ARCH)-uclibc/mklibs-progs
-
-	find $(TARGETDIR) -type f -name \*.so\* -exec \
-		file -r -N -F '' {} + | \
-		awk ' /shared object/ { print $$1 }' >> $(ARCH)-uclibc/mklibs-progs
-
-	mkdir -p $(ARCH)-uclibc/mklibs-out
-	mklibs.py -D \
-		-d $(ARCH)-uclibc/mklibs-out \
-		--sysroot $(TARGETDIR) \
-		-L /lib \
-		-L /usr/lib \
-		--ldlib /lib/ld-uClibc.so.0 \
-		--target $(ARCH)-linux-uclibc \
-		`cat $(ARCH)-uclibc/mklibs-progs` 2>&1
-	cp $(ARCH)-uclibc/mklibs-out/* $(TARGETDIR)/lib
 endif
+
 	rm -f $(TARGETDIR)/lib/*.a
 	rm -f $(TARGETDIR)/lib/*.map
 #	cp lib.$(ARCH)/libresolv.so.0 $(TARGETDIR)/lib
