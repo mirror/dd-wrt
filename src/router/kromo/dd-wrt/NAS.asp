@@ -434,9 +434,6 @@ function checkSambaUsers() {
 					} else if( element.className == 'value_error') {
 						element.className = '';
 					}
-				} else {
-					alert( ' there is no share defined in one of your user entries!' );
-					return false;
 				}
 			}
 			
