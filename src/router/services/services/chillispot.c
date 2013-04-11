@@ -332,8 +332,13 @@ void chilli_config(void)
 		fprintf(fp, "uamallowed %s\n", nvram_get("chilli_uamallowed"));
 	if (nvram_invmatch("chilli_net", ""))
 		fprintf(fp, "net %s\n", nvram_get("chilli_net"));
-	if (nvram_match("chilli_macauth", "1"))
+	if (nvram_match("chilli_macauth", "1")) {
 		fprintf(fp, "macauth\n");
+		if (strlen(nvram_safe_get("chilli_macpasswd")) > 0)
+			fprintf(fp, "macpasswd %s\n", nvram_get("chilli_macpasswd));
+		else
+			fprintf(fp, "macpasswd password\n");
+		}
 	if (nvram_match("chilli_802.1Xauth", "1"))
 		fprintf(fp, "eapolenable\n");
 #ifndef HAVE_FON
