@@ -1857,6 +1857,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"chilli_uamanydns", "0", 0},
 	{"chilli_uamallowed", "", 0},
 	{"chilli_macauth", "0", 0},
+	{"chilli_macpasswd", "password", 0},
+	{"chilli_802.1Xauth", "0", 0},
 	{"chilli_additional", "", 0},
 #endif
 #ifdef HAVE_HOTSPOT
