@@ -181,8 +181,8 @@ void main_config(void)
 			}
 
 /*	if we have a gw traffic will go there.
-		but if we dont have any gw we might use chilli on a local network only 
-		also we need to allow traffic in/outgoing to chilli*/
+	but if we dont have any gw we might use chilli on a local network only 
+	also we need to allow traffic in/outgoing to chilli*/
 	fprintf(fp, "#!/bin/sh\n");
 	fprintf(fp, "iptables -D INPUT -i tun0 -j %s\n", log_accept);
 	fprintf(fp, "iptables -D FORWARD -i tun0 -j %s\n", log_accept);
@@ -232,10 +232,16 @@ void main_config(void)
 	fprintf(fp, "iptables -D INPUT -i tun0 -j %s\n", log_accept);
 	fprintf(fp, "iptables -D FORWARD -i tun0 -j %s\n", log_accept);
 	fprintf(fp, "iptables -D FORWARD -o tun0 -j %s\n", log_accept);
-	if (nvram_invmatch("hotss_interface", "br0"))
-		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", 
-			nvram_safe_get("hotss_interface"), chillinet, log_drop);
-
+	if (nvram_match("chilli_enable", "1")
+		&& nvram_match("hotss_enable", "0")
+		&& nvram_invmatch("chilli_interface", "br0"))
+			fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", 
+				nvram_safe_get("chilli_interface"), chillinet, log_drop);
+	if (nvram_match("chilli_enable", "1")
+		&& nvram_match("hotss_enable", "1")
+		&& nvram_invmatch("hotss_interface", "br0"))
+			fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", 
+				nvram_safe_get("hotss_interface"), chillinet, log_drop);
 	if (nvram_match("wan_proto", "disabled")) {
 		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j MASQUERADE\n", chillinet);
