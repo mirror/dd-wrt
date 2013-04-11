@@ -334,6 +334,8 @@ void chilli_config(void)
 		fprintf(fp, "net %s\n", nvram_get("chilli_net"));
 	if (nvram_match("chilli_macauth", "1"))
 		fprintf(fp, "macauth\n");
+	if (nvram_match("chilli_802.1Xauth", "1"))
+		fprintf(fp, "eapolenable\n");
 #ifndef HAVE_FON
 	if (nvram_match("fon_enable", "1")) {
 #endif
