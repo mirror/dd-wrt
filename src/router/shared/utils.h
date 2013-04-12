@@ -608,6 +608,9 @@
 
 #define ROUTER_ASUS_AC67U 0xc01b // BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
 
+#define ROUTER_ASUS_RTN10PLUSD1 0xc10f
+
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
