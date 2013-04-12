@@ -68,7 +68,7 @@
 			</div>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("hotspot.802.1Xauth"); %></div>
+			<div class="label"><% tran("hotspot.8021Xauth"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="chilli_802.1Xauth" <% nvram_selmatch("chilli_802.1Xauth","1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="chilli_802.1Xauth" <% nvram_selmatch("chilli_802.1Xauth","0", "checked"); %> /><% tran("share.disable"); %>
 		</div>
