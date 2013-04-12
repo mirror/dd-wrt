@@ -217,7 +217,7 @@ find_cfe_size(struct mtd_info *mtd, size_t size)
 	if (blocksize < 0x10000)
 		blocksize = 0x10000;
 //	printk(KERN_EMERG "blocksize is %d\n",blocksize);
-	for (off = 0; off < size; off += 1024) {
+	for (off = 0x10000; off < size; off += 1024) {
 		memset(buf, 0xe5, sizeof(buf));
 //		printk(KERN_EMERG "scan at 0x%08x\n",off);
 		/*
