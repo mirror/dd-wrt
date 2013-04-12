@@ -2599,7 +2599,7 @@ void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_CPUTEMP
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
-#ifdef HAVE_80211AC
+#ifdef HAVE_BCMMODERN
 
 	static int tempcount = 0;
 	char buf[WLC_IOCTL_SMLEN];
