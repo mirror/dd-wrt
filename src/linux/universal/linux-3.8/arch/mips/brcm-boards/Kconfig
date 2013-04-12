@@ -9,6 +9,10 @@ config BCM47XX
         bool "Support for Broadcom BCM47XX processors"
         depends on BCM947XX
 
+config BCM80211AC
+	bool "802.11AC wireless driver support"
+	depends on BCM47XX
+
 config BCMIPDSCP
         bool "Support for Using DSCP based IP forwarding"
         depends on BCM947XX
