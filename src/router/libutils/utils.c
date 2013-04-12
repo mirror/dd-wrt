@@ -1,5 +1,4 @@
-/*7
-
+/*
  * utils.c
  *
  * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
@@ -2457,6 +2456,12 @@ int internal_getRouterBrand()
 	    && nvram_match("boardrev", "0x1102")) {
 		setRouter("Asus RT-N10U");
 		return ROUTER_ASUS_RTN10U;
+	}
+
+	if (boardnum == 45 && nvram_match("boardtype", "0x058e")
+	    && nvram_match("boardrev", "0x1153")) {
+		setRouter("Asus RT-N10+ rev D1");
+		return ROUTER_ASUS_RTN10PLUSD1;
 	}
 
 	if (boardnum == 45 && nvram_match("boardtype", "0x0550")

@@ -2298,6 +2298,7 @@ void start_sysinit(void)
 				    "switch-core switch-robo pcmcia_core yenta_socket ds serial_cs usbcore usb-ohci usbserial sierra";
 				break;
 			case ROUTER_ASUS_RTN10:
+			case ROUTER_ASUS_RTN10PLUSD1:
 			case ROUTER_ASUS_RTN10U:
 			case ROUTER_ASUS_RTN53:
 			case ROUTER_NETCORE_NW715P:
@@ -2388,6 +2389,7 @@ void start_sysinit(void)
 				}
 				break;
 			case ROUTER_ASUS_RTN10:
+			case ROUTER_ASUS_RTN10PLUSD1:
 			case ROUTER_ASUS_RTN10U:
 			case ROUTER_ASUS_RTN53:
 			case ROUTER_NETCORE_NW715P:
