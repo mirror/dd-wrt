@@ -5270,6 +5270,11 @@ int led_control(int type, int act)
 	case ROUTER_ASUS_RTN12B:
 		connected_gpio = 0x105;
 		break;
+	case ROUTER_ASUS_RTN10PLUSD1:
+		ses_gpio = 0x007;
+		power_gpio = 0x106;
+		diag_gpio = 0x006;
+		break;
 	case ROUTER_ASUS_RTN10:
 	case ROUTER_ASUS_RTN16:
 	case ROUTER_NETCORE_NW618:
