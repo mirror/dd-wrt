@@ -1,10 +1,5 @@
 #!/bin/sh
 nv=/usr/sbin/nvram
-
-if [ `lsmod | grep etherip -c` -eq 0 ]
-then 
-	insmod etherip
-fi	
 		
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
@@ -18,6 +13,7 @@ do
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
+		insmod etherip
 		if [ `$nv get oet${i}_bridged` -eq 1 ]
 		then
 			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
