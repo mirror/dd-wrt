@@ -311,10 +311,10 @@ void setupSupplicant(char *prefix)
 		    && (nvram_match(wmode, "wdssta")
 			|| nvram_match(wmode, "wet")))
 			eval("wpa_supplicant", "-b",
-			     nvram_safe_get("lan_ifname"),"-d", "-B", "-Dwext", psk,
+			     nvram_safe_get("lan_ifname"), "-B", "-Dwext", psk,
 			     "-c", fstr);
 		else
-			eval("wpa_supplicant","-d", "-B", "-Dwext", psk, "-c", fstr);
+			eval("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
 	} else {
 		eval("iwconfig", prefix, "key", "off");
 		// eval ("iwpriv", prefix, "authmode", "0");
