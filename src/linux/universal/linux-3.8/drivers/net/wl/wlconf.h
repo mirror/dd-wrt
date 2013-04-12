@@ -20,6 +20,7 @@
  * wl driver tunables
  */
 
+#ifdef CONFIG_BCM80211AC
 #define D11CONF		0x77a7baa0	/* D11 Core Rev 5 (4306C0), 7 (4712), 9 (4318b0, 5352),
 					 * 11 (4321a1), 12 (4321b/c), 13 (5354), 15(4312),
 					 * 16 (4322), 17 (4716), 18 (43224a0), 21 (5356),
@@ -27,7 +28,12 @@
 					 * 28 (5357b0), 29 (4331B0), 30(43228).
 					 */
 #define D11CONF2	0x500		/* D11 Core Rev > 31, Rev 40(4360a0), 42(4360B0) */
+#else
+#define D11CONF		0x77a74000	/* D11 Core Rev 5 (4306C0), 7 (4712), 9 (4318b0, 5352), */
+#define D11CONF2	0x0		/* D11 Core Rev > 31, Rev 40(4360a0), 42(4360B0) */
+#endif
 
+#endif
 #define NRXBUFPOST	56	/* # rx buffers posted */
 #define RXBND		24	/* max # rx frames to process */
 #define PKTCBND		36	/* max # rx frames to chain */
