@@ -15,7 +15,7 @@
 # by the Free Software Foundation.
 #
 
-LOADADDR	:= 0x80002000
+LOADADDR	:= 0x80060000
 LZMA_TEXT_START	:= 0x80a00000
 LOADER_DATA	:= $(TOP)/$(ARCH)-uclibc/vmlinux.lzma
 CONFIG_BOARD	:=
