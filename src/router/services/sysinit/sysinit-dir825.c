@@ -138,11 +138,11 @@ void start_sysinit(void)
 	setWirelessLedPhy0(0);
 	setWirelessLedPhy1(0);
 
-	writeproc("/proc/sys/dev/wifi0/ledpin","0");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
-	writeproc("/proc/sys/dev/wifi1/ledpin","0");
-	writeproc("/proc/sys/dev/wifi1/softled","1");
-	
+	writeproc("/proc/sys/dev/wifi0/ledpin", "0");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeproc("/proc/sys/dev/wifi1/ledpin", "0");
+	writeproc("/proc/sys/dev/wifi1/softled", "1");
+
 #else
 
 #ifndef HAVE_WNDR3700

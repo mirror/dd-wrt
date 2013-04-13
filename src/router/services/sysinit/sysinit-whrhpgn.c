@@ -79,7 +79,7 @@ void start_sysinit(void)
 		fseek(fp, 0x03f120c, SEEK_SET);
 #else
 		if (fseek(fp, 0x07f0000, SEEK_SET))
-		    fseek(fp, 0x03f0000, SEEK_SET);
+			fseek(fp, 0x03f0000, SEEK_SET);
 #endif
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
@@ -96,10 +96,10 @@ void start_sysinit(void)
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 	}
 #ifdef HAVE_SWCONFIG
-		system("swconfig dev eth1 set reset 1");
-		system("swconfig dev eth1 set enable_vlan 0");
-		system("swconfig dev eth1 vlan 1 set ports \"0 1 2 3 4\"");
-		system("swconfig dev eth1 set apply");
+	system("swconfig dev eth1 set reset 1");
+	system("swconfig dev eth1 set enable_vlan 0");
+	system("swconfig dev eth1 vlan 1 set ports \"0 1 2 3 4\"");
+	system("swconfig dev eth1 set apply");
 #endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
@@ -131,15 +131,15 @@ void start_sysinit(void)
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
 #ifdef HAVE_WNR2200
-	set_gpio(38,1);
+	set_gpio(38, 1);
 	get_gpio(38);
 	setWirelessLedPhy0(0);
 #elif HAVE_WNR2000
-	set_gpio(40,1);
+	set_gpio(40, 1);
 	get_gpio(40);
 	setWirelessLedPhy0(1);
 #elif HAVE_WLAEAG300N
-	setWirelessLed(0,15);
+	setWirelessLed(0, 15);
 #else
 	setWirelessLedPhy0(1);
 #endif

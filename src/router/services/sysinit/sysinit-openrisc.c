@@ -73,7 +73,7 @@ static void install_sdcard(void)
 	}
 	fclose(fp);
 	fprintf(stderr, "installing firmware to internal SD Card\n");
-	mkdir("/tmp/install",0700);
+	mkdir("/tmp/install", 0700);
 	int check =
 	    mount("/dev/discs/disc1/disc", "/tmp/install", "ext2", MS_MGC_VAL,
 		  NULL);
@@ -108,10 +108,10 @@ static void install_sdcard(void)
 	eval("cp", "-r", "-d", "-f", "/var", "/tmp/install");
 	eval("mv", "-f", "/tmp/install/usr/local/nvram/nvram.bak",
 	     "/tmp/install/usr/local/nvram/nvram.bin");
-	mkdir("/tmp/install/dev",0700);
-	mkdir("/tmp/install/sys",0700);
-	mkdir("/tmp/install/proc",0700);
-	mkdir("/tmp/install/tmp",0700);
+	mkdir("/tmp/install/dev", 0700);
+	mkdir("/tmp/install/sys", 0700);
+	mkdir("/tmp/install/proc", 0700);
+	mkdir("/tmp/install/tmp", 0700);
 	sysprintf("echo \"blank\" > /tmp/install/boot/.installed");
 	sysprintf("echo \"mem=59M root=/dev/sda\" > /tmp/install/boot/kparam");
 	eval("umount", "/tmp/install");
@@ -128,9 +128,9 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	mknod("/dev/gpio",S_IFCHR|0644,makedev(127,0));
-	mkdir("/usr/local",0700);
-	mkdir("/usr/local/nvram",0700);
+	mknod("/dev/gpio", S_IFCHR | 0644, makedev(127, 0));
+	mkdir("/usr/local", 0700);
+	mkdir("/usr/local/nvram", 0700);
 
 	install_sdcard();
 	cprintf("sysinit() setup console\n");

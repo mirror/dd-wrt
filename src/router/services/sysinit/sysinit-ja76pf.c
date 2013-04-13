@@ -75,9 +75,9 @@ void start_sysinit(void)
 
 	FILE *fp = fopen("/dev/mtdblock/7", "r");
 	if (fp) {
-		fseek(fp,0,SEEK_END); //determine size
+		fseek(fp, 0, SEEK_END);	//determine size
 		int size = ftell(fp);
-		fseek(fp, size-0xf000, SEEK_SET);
+		fseek(fp, size - 0xf000, SEEK_SET);
 		unsigned char buf[20];
 		fread(&buf[0], 6, 1, fp);
 		char mac[20];
@@ -127,9 +127,9 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 #ifndef HAVE_ALFAAP94
-	setWirelessLed(0,5);
-	setWirelessLed(1,4);
-	setWirelessLed(2,3);
+	setWirelessLed(0, 5);
+	setWirelessLed(1, 4);
+	setWirelessLed(2, 3);
 #else
 	led_control(LED_POWER, LED_ON);
 

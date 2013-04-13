@@ -132,9 +132,9 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	mknod("/dev/gpio",S_IFCHR|0644,makedev(127,0));
-	mknod("/dev/rtc",S_IFCHR|0644,makedev(254,0));
-	mknod("/dev/crypto",S_IFCHR|0644,makedev(10,70));
+	mknod("/dev/gpio", S_IFCHR | 0644, makedev(127, 0));
+	mknod("/dev/rtc", S_IFCHR | 0644, makedev(254, 0));
+	mknod("/dev/crypto", S_IFCHR | 0644, makedev(10, 70));
 	eval("mount", "-o", "remount,rw", "/");
 
 	/*
@@ -247,12 +247,10 @@ void start_sysinit(void)
 												 */
 	fprintf(stderr, "Read MAC Addresses from EEPROM\n");
 	FILE *file = fopen(filename, "r");
-	if (!file)
-	{
-		    filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";	//for 2.6.34.6
-		    file = fopen(filename, "r");
+	if (!file) {
+		filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";	//for 2.6.34.6
+		file = fopen(filename, "r");
 	}
-
 
 	if (file) {
 		unsigned char buf[20];
@@ -293,7 +291,7 @@ void start_sysinit(void)
 			insmod("spi-ixp4xx");
 		insmod("ks8995m");
 		sleep(1);
-		writeproc("/proc/driver/KS8995M","R01=01");
+		writeproc("/proc/driver/KS8995M", "R01=01");
 	}
 
 	char filename2[64];
@@ -357,11 +355,11 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			nvram_set("et0macaddr",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -380,11 +378,11 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			nvram_set("et0macaddr",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -404,11 +402,11 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			nvram_set("et0macaddr",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -466,8 +464,8 @@ void start_sysinit(void)
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.
-					     ifr_hwaddr.sa_data, eabuf));
+				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
+					     sa_data, eabuf));
 			close(s);
 		}
 	}
@@ -477,21 +475,21 @@ void start_sysinit(void)
 	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4")) {
 		insmod("8250_gw2358");
-		writeproc("/proc/sys/dev/wifi0/ledpin","0");
-		writeproc("/proc/sys/dev/wifi0/softled","1");
-		writeproc("/proc/sys/dev/wifi1/ledpin","1");
-		writeproc("/proc/sys/dev/wifi1/softled","1");
-		writeproc("/proc/sys/dev/wifi2/ledpin","2");
-		writeproc("/proc/sys/dev/wifi2/softled","1");
-		writeproc("/proc/sys/dev/wifi3/ledpin","3");
-		writeproc("/proc/sys/dev/wifi3/softled","1");
+		writeproc("/proc/sys/dev/wifi0/ledpin", "0");
+		writeproc("/proc/sys/dev/wifi0/softled", "1");
+		writeproc("/proc/sys/dev/wifi1/ledpin", "1");
+		writeproc("/proc/sys/dev/wifi1/softled", "1");
+		writeproc("/proc/sys/dev/wifi2/ledpin", "2");
+		writeproc("/proc/sys/dev/wifi2/softled", "1");
+		writeproc("/proc/sys/dev/wifi3/ledpin", "3");
+		writeproc("/proc/sys/dev/wifi3/softled", "1");
 	}
 	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350")) {
 		insmod("8250_gw2350");
 	}
-	eval("gpio","disable","26");
-	eval("gpio","disable","27");
+	eval("gpio", "disable", "26");
+	eval("gpio", "disable", "27");
 	nvram_set("gpio26", "0");
 	nvram_set("gpio27", "0");
 #endif
@@ -541,11 +539,11 @@ void start_sysinit(void)
 		eval("/sbin/mtd", "erase", "nvram");
 		nvram_commit();
 	}
-	setWirelessLedGeneric(0,4);
-	setWirelessLedGeneric(1,5);
-	setWirelessLedGeneric(2,6);
-	setWirelessLedGeneric(3,7);
-return;
+	setWirelessLedGeneric(0, 4);
+	setWirelessLedGeneric(1, 5);
+	setWirelessLedGeneric(2, 6);
+	setWirelessLedGeneric(3, 7);
+	return;
 }
 
 int check_cfe_nv(void)

@@ -186,7 +186,6 @@ void start_sysinit(void)
 	insmod("eseqiv");
 	insmod("cryptomgr");
 
-
 	insmod("slhc");
 	insmod("ppp_generic");
 	insmod("ppp_async");
@@ -194,7 +193,6 @@ void start_sysinit(void)
 	insmod("ppp_mppe");
 	insmod("pppox");
 	insmod("pppoe");
-	
 
 	insmod("nf_conntrack_h323");
 	insmod("nf_nat_h323");
@@ -223,10 +221,10 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
-	writeproc("/proc/sys/dev/wifi0/ledpin","2");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
-	writeproc("/proc/sys/dev/wifi0/ledpin","3");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "2");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "3");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 
 	// eval ("ifconfig", "wifi0", "up");
 	// eval ("ifconfig", "wifi1", "up");

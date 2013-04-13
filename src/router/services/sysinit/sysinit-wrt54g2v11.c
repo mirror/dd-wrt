@@ -64,12 +64,11 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-
-	mknod("/dev/mmc",S_IFBLK|0660,makedev(126,0));
-	mknod("/dev/mmc0",S_IFBLK|0660,makedev(126,1));
-	mknod("/dev/mmc1",S_IFBLK|0660,makedev(126,2));
-	mknod("/dev/mmc2",S_IFBLK|0660,makedev(126,3));
-	mknod("/dev/mmc3",S_IFBLK|0660,makedev(126,4));
+	mknod("/dev/mmc", S_IFBLK | 0660, makedev(126, 0));
+	mknod("/dev/mmc0", S_IFBLK | 0660, makedev(126, 1));
+	mknod("/dev/mmc1", S_IFBLK | 0660, makedev(126, 2));
+	mknod("/dev/mmc2", S_IFBLK | 0660, makedev(126, 3));
+	mknod("/dev/mmc3", S_IFBLK | 0660, makedev(126, 4));
 
 	eval("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
 	FILE *in = fopen("/tmp/nvram/nvram.db", "rb");
@@ -145,11 +144,11 @@ void start_sysinit(void)
 	}
 	eval("gpio", "enable", "1");
 #ifdef HAVE_RTG32
-	writeproc("/proc/sys/dev/wifi0/ledpin","7");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "7");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 #else
-	writeproc("/proc/sys/dev/wifi0/ledpin","0");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "0");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 #endif
 	/*
 	 * Set a sane date 

@@ -1347,7 +1347,6 @@ void start_sysinit(void)
 		nvram_set("pci/2/1/mcs32po", "0x7777");
 		nvram_set("pci/2/1/legofdm40duppo", "0x0000");
 
-
 		nvram_set("pci/1/1/maxp5ga0", "104,104,104,104");
 		nvram_set("pci/1/1/maxp5ga1", "104,104,104,104");
 		nvram_set("pci/1/1/maxp5ga2", "104,104,104,104");
@@ -1438,7 +1437,6 @@ void start_sysinit(void)
 			set_regulation(1, "CN", "1");
 		else
 			set_regulation(1, "US", "0");
-
 
 		break;
 

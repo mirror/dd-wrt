@@ -62,10 +62,10 @@ void start_sysinit(void)
 	time_t tm = 0;
 
 	eval("mount", "-o", "remount,rw", "/dev/root");
-	eval("mount", "-o", "remount,rw", "/dev/sda1","/");
+	eval("mount", "-o", "remount,rw", "/dev/sda1", "/");
 	sleep(1);		//give some time for remount
-	mkdir("/usr/local",0700);
-	mkdir("/usr/local/nvram",0700);
+	mkdir("/usr/local", 0700);
+	mkdir("/usr/local/nvram", 0700);
 	/*
 	 * Setup console 
 	 */
@@ -124,7 +124,6 @@ void start_sysinit(void)
 				     eabuf));
 		close(s);
 	}
-
 	//recover nvram if available
 	char dev[64];
 	FILE *in = fopen64("/usr/local/nvram/nvram.bin", "rb");
@@ -134,7 +133,7 @@ void start_sysinit(void)
 		in = fopen(dev, "rb");
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftello(in);
-		fseeko(in, mtdlen-(65536*2), SEEK_SET);
+		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		unsigned char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
