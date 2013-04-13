@@ -87,6 +87,7 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
 //#ifndef HAVE_DIR632
+#ifndef HAVE_WR841V8
 	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
 	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
 	FILE *in = fopen("/dev/mtdblock/6", "rb");
@@ -146,6 +147,7 @@ void start_sysinit(void)
 		fclose(in);
 	}
 //#endif
+#endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 #ifdef HAVE_SWCONFIG
@@ -162,6 +164,13 @@ void start_sysinit(void)
 	setSwitchLED(15,0x8);
 	setSwitchLED(16,0x10);
 #endif
+#endif
+#ifdef HAVE_WR841V8
+	setEthLED(18,"eth0");
+	setSwitchLED(19,0x2);
+	setSwitchLED(20,0x4);
+	setSwitchLED(21,0x8);
+	setSwitchLED(12,0x10);
 #endif
 
 #endif

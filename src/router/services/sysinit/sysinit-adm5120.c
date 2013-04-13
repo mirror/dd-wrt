@@ -209,6 +209,7 @@ void start_sysinit(void)
 	insmod("ipt_TRIGGER");
 	insmod("ipt_iprange");
 	insmod("ipt_ipp2p");
+	insmod("xt_ipp2p");
 	insmod("ipt_layer7");
 	insmod("ipt_webstr");
 
