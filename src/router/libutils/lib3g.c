@@ -649,6 +649,7 @@ static struct DEVICES devicelist[] = {
 	{0x1410, 0x7031, "option", "0", "0", 2 | GENERIC, NULL, "Novatel USB679 (modem)"},	//
 	{0x1410, 0x7041, "option", "0", "0", 2 | GENERIC, NULL, "Novatel MF3470 (modem)"},	//
 	{0x1410, 0x7042, "option", "0", "0", 2, NULL, "Novatel Ovation MC545/MC547 (modem)"},	//
+	{0x1410, 0xb001, "option", "1", "0", 2 | QMI, NULL, "Novatel MC551/USB551L (modem)"},	//
 
 //AnyDATA
 	{0x16d5, 0x6202, "option", "2", "0", 2, NULL, "AnyData ADU-620UW"},	//
@@ -668,7 +669,7 @@ static struct DEVICES devicelist[] = {
 
 //ZTE WCDMA Technologies
 	{0x19d2, 0x0001, "option", "2", "0", 2, NULL, "ONDA MT505UP/ZTE (modem)"},	//
-	{0x19d2, 0x0002, "option", "3", "1", 2, NULL, "ZTE ET502HS/MT505UP/MF632"},	// qmi able
+	{0x19d2, 0x0002, "option", "2", "0", 2, NULL, "ZTE ET502HS/MT505UP/MF632"},	// qmi able
 	{0x19d2, 0x0003, "option", "0", "0", 2, &modeswitch_zte_2msg, "ZTE MU351 (cdrom)"},	//
 	{0x19d2, 0x0015, "option", "2", "0", 2, NULL, "ONDA MT505UP/ZTE (modem)"},	//
 	{0x19d2, 0x0016, "option", "1", "2", 2, NULL, "ONDA MF110/ZTE (modem)"},	//
@@ -788,6 +789,13 @@ static struct DEVICES devicelist[] = {
 	{0x1e0e, 0x9200, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU (modem)"},	//
 	{0x1e0e, 0xce16, "option", "1", "0", 3, NULL, "D-Link DWM-162-U5, Micromax MMX 300c (modem)"},	//
 	{0x1e0e, 0xf000, "option", "0", "0", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU (cdrom)"},	//
+
+
+// D-Link (3rd VID)
+	{0x2001, 0x7d00, "option", "1", "0", 2 | GENERIC, NULL, "D-Link DWM-156 A6 (modem)"},	//
+	{0x2001, 0x7d01, "option", "1", "0", 2, "D-Link DWM-156 A7 (modem)"},	//
+	{0x2001, 0xa706, "option", "0", "0", 2, &modeswitch_zte_1msg, "D-Link DWM-156 A7 (cdrom)"},	//
+	{0x2001, 0xa80b, "option", "0", "0", 2, &modeswitch_zte_1msg, "D-Link DWM-156 A6 (cdrom)"},	//
 
 //CELOT Corporation
 	{0x211f, 0x6801, "option", "2", "0", 2, NULL, "Celot K-3000/CT-650/CT-680 (modem)"},	//
