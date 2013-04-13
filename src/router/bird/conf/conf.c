@@ -21,9 +21,12 @@
  * There can exist up to four different configurations at one time: an active
  * one (pointed to by @config), configuration we are just switching from
  * (@old_config), one queued for the next reconfiguration (@future_config;
- * if it's non-%NULL and the user wants to reconfigure once again, we just
+ * if there is one and the user wants to reconfigure once again, we just
  * free the previous queued config and replace it with the new one) and
- * finally a config being parsed (@new_config).
+ * finally a config being parsed (@new_config). The stored @old_config 
+ * is also used for undo reconfiguration, which works in a similar way.
+ * Reconfiguration could also have timeout (using @config_timer) and undo
+ * is automatically called if the new configuration is not confirmed later.
  *
  * Loading of new configuration is very simple: just call config_alloc()
  * to get a new &config structure, then use config_parse() to parse a
@@ -55,10 +58,23 @@
 
 static jmp_buf conf_jmpbuf;
 
-struct config *config, *new_config, *old_config, *future_config;
-static event *config_event;
-int shutting_down, future_type;
-bird_clock_t boot_time;
+struct config *config, *new_config;
+
+static struct config *old_config;	/* Old configuration */
+static struct config *future_config;	/* New config held here if recon requested during recon */
+static int old_cftype;			/* Type of transition old_config -> config (RECONFIG_SOFT/HARD) */
+static int future_cftype;		/* Type of scheduled transition, may also be RECONFIG_UNDO */
+/* Note that when future_cftype is RECONFIG_UNDO, then future_config is NULL,
+   therefore proper check for future scheduled config checks future_cftype */
+
+static event *config_event;		/* Event for finalizing reconfiguration */
+static timer *config_timer;		/* Timer for scheduled configuration rollback */
+
+/* These are public just for cmd_show_status(), should not be accessed elsewhere */
+int shutting_down;			/* Shutdown requested, do not accept new config changes */
+int configuring;			/* Reconfiguration is running */
+int undo_available;			/* Undo was not requested from last reconfiguration */
+/* Note that both shutting_down and undo_available are related to requests, not processing */
 
 /**
  * config_alloc - allocate a new configuration
@@ -82,8 +98,6 @@ config_alloc(byte *name)
   c->load_time = now;
   c->tf_base.fmt1 = c->tf_log.fmt1 = "%d-%m-%Y %T";
 
-  if (!boot_time)
-    boot_time = now;
   return c;
 }
 
@@ -154,7 +168,8 @@ cli_parse(struct config *c)
 void
 config_free(struct config *c)
 {
-  rfree(c->pool);
+  if (c)
+    rfree(c->pool);
 }
 
 void
@@ -170,10 +185,7 @@ config_del_obstacle(struct config *c)
   DBG("+++ deleting obstacle %d\n", c->obstacle_count);
   c->obstacle_count--;
   if (!c->obstacle_count)
-    {
-      ASSERT(config_event);
-      ev_schedule(config_event);
-    }
+    ev_schedule(config_event);
 }
 
 static int
@@ -188,25 +200,50 @@ global_commit(struct config *new, struct config *old)
     log(L_WARN "Reconfiguration of BGP listening socket not implemented, please restart BIRD.");
 
   if (!new->router_id)
-    new->router_id = old->router_id;
-  if (new->router_id != old->router_id)
-    return 1;
+    {
+      new->router_id = old->router_id;
+
+      if (new->router_id_from)
+	{
+	  u32 id = if_choose_router_id(new->router_id_from, old->router_id);
+	  if (!id)
+	    log(L_WARN "Cannot determine router ID, using old one");
+	  else
+	    new->router_id = id;
+	}
+    }
+
   return 0;
 }
 
 static int
 config_do_commit(struct config *c, int type)
 {
-  int force_restart, nobs;
+  if (type == RECONFIG_UNDO)
+    {
+      c = old_config;
+      type = old_cftype;
+    }
+  else
+    config_free(old_config);
 
-  DBG("do_commit\n");
   old_config = config;
-  config = new_config = c;
+  old_cftype = type;
+  config = c;
+
+  configuring = 1;
+  if (old_config && !config->shutdown)
+    log(L_INFO "Reconfiguring");
+
+  /* This should not be necessary, but it seems there are some
+     functions that access new_config instead of config */
+  new_config = config;
+
   if (old_config)
     old_config->obstacle_count++;
 
   DBG("sysdep_commit\n");
-  force_restart = sysdep_commit(c, old_config);
+  int force_restart = sysdep_commit(c, old_config);
   DBG("global_commit\n");
   force_restart |= global_commit(c, old_config);
   DBG("rt_commit\n");
@@ -214,38 +251,38 @@ config_do_commit(struct config *c, int type)
   roa_commit(c, old_config);
   DBG("protos_commit\n");
   protos_commit(c, old_config, force_restart, type);
-  new_config = NULL;			/* Just to be sure nobody uses that now */
+
+  /* Just to be sure nobody uses that now */
+  new_config = NULL;
+
+  int obs = 0;
   if (old_config)
-    nobs = --old_config->obstacle_count;
-  else
-    nobs = 0;
-  DBG("do_commit finished with %d obstacles remaining\n", nobs);
-  return !nobs;
+    obs = --old_config->obstacle_count;
+
+  DBG("do_commit finished with %d obstacles remaining\n", obs);
+  return !obs;
 }
 
 static void
 config_done(void *unused UNUSED)
 {
-  struct config *c;
+  if (config->shutdown)
+    sysdep_shutdown_done();
 
-  DBG("config_done\n");
-  for(;;)
+  configuring = 0;
+  if (old_config)
+    log(L_INFO "Reconfigured");
+
+  if (future_cftype)
     {
-      if (config->shutdown)
-	sysdep_shutdown_done();
-      log(L_INFO "Reconfigured");
-      if (old_config)
-	{
-	  config_free(old_config);
-	  old_config = NULL;
-	}
-      if (!future_config)
-	break;
-      c = future_config;
+      int type = future_cftype;
+      struct config *conf = future_config;
+      future_cftype = RECONFIG_NONE;
       future_config = NULL;
+
       log(L_INFO "Reconfiguring to queued configuration");
-      if (!config_do_commit(c, future_type))
-	break;
+      if (config_do_commit(conf, type))
+	config_done(NULL);
     }
 }
 
@@ -253,6 +290,7 @@ config_done(void *unused UNUSED)
  * config_commit - commit a configuration
  * @c: new configuration
  * @type: type of reconfiguration (RECONFIG_SOFT or RECONFIG_HARD)
+ * @timeout: timeout for undo (or 0 for no timeout)
  *
  * When a configuration is parsed and prepared for use, the
  * config_commit() function starts the process of reconfiguration.
@@ -265,6 +303,10 @@ config_done(void *unused UNUSED)
  * using config_del_obstacle(), the old configuration is freed and
  * everything runs according to the new one.
  *
+ * When @timeout is nonzero, the undo timer is activated with given
+ * timeout. The timer is deactivated when config_commit(),
+ * config_confirm() or config_undo() is called.
+ *
  * Result: %CONF_DONE if the configuration has been accepted immediately,
  * %CONF_PROGRESS if it will take some time to switch to it, %CONF_QUEUED
  * if it's been queued due to another reconfiguration being in progress now
@@ -272,47 +314,145 @@ config_done(void *unused UNUSED)
  * are accepted.
  */
 int
-config_commit(struct config *c, int type)
+config_commit(struct config *c, int type, int timeout)
 {
-  if (!config)				/* First-time configuration */
+  if (shutting_down)
     {
-      config_do_commit(c, RECONFIG_HARD);
-      return CONF_DONE;
+      config_free(c);
+      return CONF_SHUTDOWN;
     }
-  if (old_config)			/* Reconfiguration already in progress */
+
+  undo_available = 1;
+  if (timeout > 0)
+    tm_start(config_timer, timeout);
+  else
+    tm_stop(config_timer);
+
+  if (configuring)
     {
-      if (shutting_down == 2)
-	{
-	  log(L_INFO "New configuration discarded due to shutdown");
-	  config_free(c);
-	  return CONF_SHUTDOWN;
-	}
-      if (future_config)
+      if (future_cftype)
 	{
 	  log(L_INFO "Queueing new configuration, ignoring the one already queued");
 	  config_free(future_config);
 	}
       else
-	log(L_INFO "Queued new configuration");
+	log(L_INFO "Queueing new configuration");
+
+      future_cftype = type;
       future_config = c;
-      future_type = type;
       return CONF_QUEUED;
     }
-
-  if (!shutting_down)
-    log(L_INFO "Reconfiguring");
 
   if (config_do_commit(c, type))
     {
       config_done(NULL);
       return CONF_DONE;
     }
-  if (!config_event)
+  return CONF_PROGRESS;
+}
+
+/**
+ * config_confirm - confirm a commited configuration
+ *
+ * When the undo timer is activated by config_commit() with nonzero timeout,
+ * this function can be used to deactivate it and therefore confirm
+ * the current configuration.
+ *
+ * Result: %CONF_CONFIRM when the current configuration is confirmed,
+ * %CONF_NONE when there is nothing to confirm (i.e. undo timer is not active).
+ */
+int
+config_confirm(void)
+{
+  if (config_timer->expires == 0)
+    return CONF_NOTHING;
+
+  tm_stop(config_timer);
+
+  return CONF_CONFIRM;
+}
+
+/**
+ * config_undo - undo a configuration
+ *
+ * Function config_undo() can be used to change the current
+ * configuration back to stored %old_config. If no reconfiguration is
+ * running, this stored configuration is commited in the same way as a
+ * new configuration in config_commit(). If there is already a
+ * reconfiguration in progress and no next reconfiguration is
+ * scheduled, then the undo is scheduled for later processing as
+ * usual, but if another reconfiguration is already scheduled, then
+ * such reconfiguration is removed instead (i.e. undo is applied on
+ * the last commit that scheduled it).
+ *
+ * Result: %CONF_DONE if the configuration has been accepted immediately,
+ * %CONF_PROGRESS if it will take some time to switch to it, %CONF_QUEUED
+ * if it's been queued due to another reconfiguration being in progress now,
+ * %CONF_UNQUEUED if a scheduled reconfiguration is removed, %CONF_NOTHING
+ * if there is no relevant configuration to undo (the previous config request
+ * was config_undo() too)  or %CONF_SHUTDOWN if BIRD is in shutdown mode and 
+ * no new configuration changes  are accepted.
+ */
+int
+config_undo(void)
+{
+  if (shutting_down)
+    return CONF_SHUTDOWN;
+
+  if (!undo_available || !old_config)
+    return CONF_NOTHING;
+
+  undo_available = 0;
+  tm_stop(config_timer);
+
+  if (configuring)
     {
-      config_event = ev_new(&root_pool);
-      config_event->hook = config_done;
+      if (future_cftype)
+	{
+	  config_free(future_config);
+	  future_config = NULL;
+
+	  log(L_INFO "Removing queued configuration");
+	  future_cftype = RECONFIG_NONE;
+	  return CONF_UNQUEUED;
+	}
+      else
+	{
+	  log(L_INFO "Queueing undo configuration");
+	  future_cftype = RECONFIG_UNDO;
+	  return CONF_QUEUED;
+	}
+    }
+
+  if (config_do_commit(NULL, RECONFIG_UNDO))
+    {
+      config_done(NULL);
+      return CONF_DONE;
     }
   return CONF_PROGRESS;
+}
+
+extern void cmd_reconfig_undo_notify(void);
+
+static void
+config_timeout(struct timer *t)
+{
+  log(L_INFO "Config timeout expired, starting undo");
+  cmd_reconfig_undo_notify();
+
+  int r = config_undo();
+  if (r < 0)
+    log(L_ERR "Undo request failed");
+}
+
+void
+config_init(void)
+{
+  config_event = ev_new(&root_pool);
+  config_event->hook = config_done;
+
+  config_timer = tm_new(&root_pool);
+  config_timer->hook = config_timeout;
 }
 
 /**
@@ -328,15 +468,16 @@ order_shutdown(void)
 
   if (shutting_down)
     return;
+
   log(L_INFO "Shutting down");
   c = lp_alloc(config->mem, sizeof(struct config));
   memcpy(c, config, sizeof(struct config));
   init_list(&c->protos);
   init_list(&c->tables);
   c->shutdown = 1;
+
+  config_commit(c, RECONFIG_HARD, 0);
   shutting_down = 1;
-  config_commit(c, RECONFIG_HARD);
-  shutting_down = 2;
 }
 
 /**

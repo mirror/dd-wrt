@@ -83,6 +83,9 @@ export filter of the protocol is skipped.
 <P>You can also select just routes added by a specific protocol.
 <CODE>protocol <I>p</I></CODE>.
 <P>
+<P>If BIRD is configured to keep filtered routes (see import keep filtered/
+option), you can show them instead of routes by using filtered/ switch.
+<P>
 <P>The <CODE>stats</CODE> switch requests showing of route statistics (the
 number of networks, number of routes before and after filtering). If
 you use <CODE>count</CODE> instead, only the statistics will be printed.
@@ -106,17 +109,41 @@ be deleted.
 <P>
 <DT><CODE>flush roa [table <I>t</I>>]</CODE><DD><P>Remove all dynamic ROA entries from a ROA table.
 <P>
-<DT><CODE>configure [soft] ["<I>config file</I>"]</CODE><DD><P>Reload configuration from a given file. BIRD will smoothly
+<DT><CODE>configure [soft] ["<I>config file</I>"] [timeout [<I>num</I>]]</CODE><DD><P>Reload configuration from a given file. BIRD will smoothly
 switch itself to the new configuration, protocols are
 reconfigured if possible, restarted otherwise. Changes in
-filters usually lead to restart of affected protocols. If
-<CODE>soft</CODE> option is used, changes in filters does not cause
+filters usually lead to restart of affected protocols.
+<P>If <CODE>soft</CODE> option is used, changes in filters does not cause
 BIRD to restart affected protocols, therefore already accepted
 routes (according to old filters) would be still propagated,
 but new routes would be processed according to the new
 filters.
+<P>If <CODE>timeout</CODE> option is used, config timer is activated. The
+new configuration could be either confirmed using
+<CODE>configure confirm</CODE> command, or it will be reverted to the
+old one when the config timer expires. This is useful for cases
+when reconfiguration breaks current routing and a router becames
+inaccessible for an administrator. The config timeout expiration is
+equivalent to <CODE>configure undo</CODE> command. The timeout duration
+could be specified, default is 300 s.
 <P>
-<DT><CODE>enable|disable|restart <I>name</I>|"<I>pattern</I>"|all</CODE><DD><P>Enable, disable or restart a given protocol instance, instances matching the <CODE><I>pattern</I></CODE> or <CODE>all</CODE> instances.
+<DT><CODE>configure confirm</CODE><DD><P>Deactivate the config undo timer and therefore confirm the current
+configuration.
+<P>
+<DT><CODE>configure undo</CODE><DD><P>Undo the last configuration change and smoothly switch back to
+the previous (stored) configuration. If the last configuration
+change was soft, the undo change is also soft. There is only
+one level of undo, but in some specific cases when several
+reconfiguration requests are given immediately in a row and
+the intermediate ones are skipped then the undo also skips them back.
+<P>
+<DT><CODE>configure check ["<I>config file</I>"]</CODE><DD><P>Read and parse given config file, but do not use it. useful
+for checking syntactic and some semantic validity of an config
+file.
+<P>
+<DT><CODE>enable|disable|restart <I>name</I>|"<I>pattern</I>"|all</CODE><DD><P>Enable, disable or restart a given protocol instance,
+instances matching the <CODE><I>pattern</I></CODE> or
+<CODE>all</CODE> instances.
 <P>
 <DT><CODE>reload [in|out] <I>name</I>|"<I>pattern</I>"|all</CODE><DD><P>Reload a given protocol instance, that means re-import routes
 from the protocol instance and re-export preferred routes to

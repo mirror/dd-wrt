@@ -1,3 +1,173 @@
+commit 13d4dd138d5dc6c884ded280f9244fac707c4f32
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Jan 11 14:53:20 2013 +0100
+
+    NEWS update.
+
+commit b662290f40ea0fa0b1a1ba283e50e833724f2050
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Jan 10 13:07:33 2013 +0100
+
+    Separate import and receive limits.
+    
+    They have different behavior w.r.t. filtered routes that are kept.
+
+commit 79b4e12e6032faf6bb1f3feac385bd36ee53019e
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Dec 27 12:56:23 2012 +0100
+
+    Implements interface masks for choosing router id.
+    
+    Router ID could be automatically determined based of subset of
+    ifaces/addresses specified by 'router id from' option. The patch also
+    does some minor changes related to router ID reconfiguration.
+    
+    Thanks to Alexander V. Chernikov for most of the work.
+
+commit a92cf57dd6ba021a495fe7268c86dc8e6aeecbb2
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Dec 26 12:40:48 2012 +0100
+
+    Implements undo command and optional timeout for configuration
+    
+    Several new configure command variants:
+    
+    configure undo - undo last reconfiguration
+    configure timeout - configure with scheduled undo if not confirmed in timeout
+    configure confirm - confirm last configuration
+    configure check - just parse and validate config file
+
+commit 80a9cadc76101157707aecc0b482ad88ad702fc3
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Nov 27 02:08:04 2012 +0100
+
+    Changes static route targets drop/reject to blackhole/unreachable.
+    
+    To be consistent with rest of BIRD and Linux. Old names are also
+    allowed for compatibility.
+
+commit b31774eeb01a2f63e4ce4dc83f36ffd17879593e
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Nov 27 01:30:09 2012 +0100
+
+    Removes some nonsense.
+
+commit 3e40f3e795e39f0b92445fd5295382220077c77f
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Nov 27 01:25:47 2012 +0100
+
+    Fixes setting of route attributes of type router id.
+
+commit c93c02088a026b83f452fbd260135ba4c8da7ecf
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Nov 16 13:30:54 2012 +0100
+
+    NEWS and version update.
+
+commit 70577529244d6d920b75d95e797156e05141db30
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Nov 16 13:29:16 2012 +0100
+
+    Fixes route tracing w.r.t. kept filtered routes.
+
+commit cf3a704b6a2263aba6bb6adb4c2c9dd93b72f470
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Nov 16 02:34:12 2012 +0100
+
+    Updates the documentation.
+
+commit 6cadbf325bfcf25a04d869778abb443f9e1b6119
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Nov 15 14:08:20 2012 +0100
+
+    Change unnamed ptp link description on OSPFv2.
+    
+    Although it is a slight deviation from the standard, it has no ill
+    consequences for OSPFv2 and the change fixes a compatibility issue
+    with some broken implementations.
+
+commit 15550957957f3c790f3bec3f6b8721559ea25969
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Nov 15 01:29:01 2012 +0100
+
+    Changes 'rejected' to 'filtered' in one of the last patches.
+
+commit e16469bc4d182428687a5ef5f2fb4707afa15abd
+Author: Ondrej Filip <feela@network.cz>
+Date:   Mon Nov 12 13:48:29 2012 +0100
+
+    AS# in bgp.agreggator was a signed integer - fixed.
+
+commit 227af52fb5be09c841fbd9f86e7bb3992b981a4a
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Nov 10 16:18:12 2012 +0100
+
+    Fixes OSPF reconfigure w.r.t. downed ifaces.
+
+commit a55a90faec5cce09cee65f484e3731207af00335
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Nov 10 14:54:35 2012 +0100
+
+    Peer address of stub iface should be announced in OSPF Router LSA.
+
+commit cf98be7b6743e45dde9e0458664cc0762bf08867
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Nov 10 14:26:13 2012 +0100
+
+    Allows rejected routes to be kept and examined.
+    
+    When 'import keep rejected' protocol option is activated, routes
+    rejected by the import filter are kept in the routing table, but they
+    are hidden and not propagated to other protocols. It is possible to
+    examine them using 'show route rejected'.
+
+commit dd4da6f640fb581cbd7d1ca537bf382558492b8e
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Oct 31 17:14:35 2012 +0100
+
+    Fixes another bug in OSPFv3 vlinks.
+
+commit 8249ad9b304ea88b29e3aea76ebe49bb50348aaa
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Oct 29 20:39:03 2012 +0100
+
+    Fixes sorting in OSPF show state.
+
+commit e4404cef0be10e639566986a2f8c1906c9f37de1
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Oct 29 20:29:31 2012 +0100
+
+    Fixes several bugs related to OSPFv3 vlinks.
+
+commit 0343d066dab077d1391640c53198199b16bef993
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Aug 29 12:42:49 2012 +0200
+
+    Fixes a bug in primary IP selection.
+
+commit 8ecbaf9c70b802a1200ad37f2bfd4bc64173c5fe
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Aug 16 13:09:26 2012 +0200
+
+    Fixes a bug with neighbor cache and overlapping IP prefixes.
+    
+    When there are overlapping IP prefixes and one disappears,
+    neighbors associated with it was removed even if there
+    is another covering IP prefix.
+
+commit d760229ab897fa1bf1fd0fe7019cc2431d21a1cc
+Author: Ondrej Filip <feela@network.cz>
+Date:   Wed Aug 8 14:10:31 2012 +0200
+
+    DragonFly support add - thanks to john@marino.st
+
+commit 60c412b9368fd7c3b0a8df2200f02140adcb0cf3
+Merge: 3fe1d9e 94e2f1c
+Author: Ondrej Filip <feela@network.cz>
+Date:   Tue Aug 7 11:15:23 2012 +0200
+
+    Merge branch 'master' of ssh://git.nic.cz/bird
+
 commit 94e2f1c111721d6213ea65cac5c53036e38e3973
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Tue Aug 7 11:06:57 2012 +0200
@@ -88,6 +258,13 @@ Date:   Sat Jul 7 10:40:00 2012 +0200
 
     Implements RDNSS and DNSSL support for RAdv.
 
+commit 3fe1d9e4a40663b93b59f5b6f9d61af9dc6a8ae6
+Merge: 72b2db8 95127cb
+Author: Ondrej Filip <feela@network.cz>
+Date:   Tue May 15 23:40:37 2012 +0200
+
+    Merge branch 'master' of ssh://git.nic.cz/bird
+
 commit 95127cbbb76e8870e029454a5313bc4b6ce69a4a
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Mon May 14 11:47:41 2012 +0200
@@ -111,6 +288,13 @@ Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Fri May 11 12:01:27 2012 +0200
 
     Fixes a bug in RA_ACCEPTED handling.
+
+commit 72b2db8db7534c52e928618410ec1f18787752c8
+Merge: 2795700 95616c8
+Author: Ondrej Filip <feela@network.cz>
+Date:   Fri May 11 00:01:29 2012 +0200
+
+    Merge branch 'master' of ssh://git.nic.cz/bird
 
 commit 95616c820248018f4999972cad315f2da60e4960
 Author: Ondrej Zajicek <santiago@crfreenet.org>
@@ -138,6 +322,13 @@ Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Thu May 3 12:25:15 2012 +0200
 
     Implements build options to specify socket dir and suffix.
+
+commit 2795700c3158fa52b6cf957e9d0b9ad4a27c67a5
+Merge: 1f85226 bf42207
+Author: Ondrej Filip <feela@network.cz>
+Date:   Wed May 2 11:10:40 2012 +0200
+
+    Merge branch 'master' of ssh://git.nic.cz/bird
 
 commit 7a2c48dafce9420a23fd57408c31eecfc20c4fe0
 Author: Ondrej Zajicek <santiago@crfreenet.org>
@@ -209,6 +400,13 @@ Date:   Fri Apr 27 00:04:51 2012 +0200
 
     Some minor fixes.
 
+commit 1f85226ecb76d3803b8fe37eb0891c45a6557dcd
+Merge: 92f8f7e d9b77cc
+Author: Ondrej Filip <feela@network.cz>
+Date:   Thu Apr 26 17:03:53 2012 +0200
+
+    Merge branch 'master' of ssh://git.nic.cz/bird
+
 commit d9b77cc28115e5c1ef64c69722c9d1fd1392dcd1
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Tue Apr 24 23:39:57 2012 +0200
@@ -223,6 +421,12 @@ Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Tue Apr 24 23:37:01 2012 +0200
 
     Merge commit 'origin/master'
+
+commit 92f8f7e3a3a5a42768c18c1f3d4d8f9f98150c61
+Author: Ondrej Filip <feela@network.cz>
+Date:   Tue Apr 24 16:31:17 2012 +0200
+
+    Small bug in detection of class-A networks.
 
 commit cca970666a90af02eaeb6848bbfc3d5a2222fa21
 Author: Ondrej Filip <feela@network.cz>

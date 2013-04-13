@@ -261,7 +261,7 @@ ospf_hello_send(struct ospf_iface *ifa, int kind, struct ospf_neighbor *dirn)
   pkt->priority = ifa->priority;
 
 #ifdef OSPFv3
-  pkt->iface_id = htonl(ifa->iface->index);
+  pkt->iface_id = htonl(ifa->iface_id);
 
   pkt->options3 = ifa->oa->options >> 16;
   pkt->options2 = ifa->oa->options >> 8;

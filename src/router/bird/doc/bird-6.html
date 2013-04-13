@@ -533,6 +533,15 @@ use cases that use the direct protocol (like abusing eBGP as an IGP
 routing protocol), in most cases it is not needed to have these device
 routes in BIRD routing table and to use the direct protocol.
 <P>
+<P>There is one notable case when you definitely want to use the
+direct protocol -- running BIRD on BSD systems. Having high priority
+device routes for directly connected networks from the direct protocol
+protects kernel device routes from being overwritten or removed by IGP
+routes during some transient network conditions, because a lower
+priority IGP route for the same network is not exported to the kernel
+routing table. This is an issue on BSD systems only, as on Linux
+systems BIRD cannot change non-BIRD route in the kernel routing table.
+<P>
 <P>The only configurable thing about direct is what interfaces it watches:
 <P>
 <P>
@@ -1324,12 +1333,12 @@ the receipt of RA) hosts may use the router as a default
 router. 0 means do not use as a default router. Default: 3 *
 <CODE>max ra interval</CODE>.
 <P>
-<DT><CODE>rdnss local <I>bool</I></CODE><DD><P>Use only local (interface-specific) RDNSS definitions for this
+<DT><CODE>rdnss local <I>switch</I></CODE><DD><P>Use only local (interface-specific) RDNSS definitions for this
 interface. Otherwise, both global and local definitions are
 used. Could also be used to disable RDNSS for given interface
 if no local definitons are specified. Default: no.
 <P>
-<DT><CODE>dnssl local <I>bool</I></CODE><DD><P>Use only local DNSSL definitions for this interface. See
+<DT><CODE>dnssl local <I>switch</I></CODE><DD><P>Use only local DNSSL definitions for this interface. See
 <CODE>rdnss local</CODE> option above. Default: no.
 </DL>
 <P>
@@ -1570,9 +1579,10 @@ with their weights.
 route through an interface to hosts on a directly connected network.
 <DT><CODE>route <I>prefix</I> recursive <I>ip</I></CODE><DD><P>Static recursive route,
 its nexthop depends on a route table lookup for given IP address.
-<DT><CODE>route <I>prefix</I> drop|reject|prohibit</CODE><DD><P>Special routes
-specifying to drop the packet, return it as unreachable or return
-it as administratively prohibited.
+<DT><CODE>route <I>prefix</I> blackhole|unreachable|prohibit</CODE><DD><P>Special routes
+specifying to silently drop the packet, return it as unreachable or return
+it as administratively prohibited. First two targets are also known
+as <CODE>drop</CODE> and <CODE>reject</CODE>.
 <P>
 <DT><CODE>check link <I>switch</I></CODE><DD><P>If set, hardware link states of network interfaces are taken
 into consideration.  When link disappears (e.g. ethernet cable
@@ -1599,7 +1609,7 @@ protocol static {
                 via 198.51.100.10 weight 2
                 via 198.51.100.20
                 via 192.0.2.1;
-        route 203.0.113.0/24 reject;     # Sink route
+        route 203.0.113.0/24 unreachable; # Sink route
         route 10.2.0.0/24 via "arc0";    # Secondary network
 }
 </PRE>

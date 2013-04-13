@@ -4362,6 +4362,10 @@ else
 				;;
 		ipv4:freebsd*)	sysdesc=bsd
 				;;
+		ipv6:dragonfly*)	sysdesc=bsd-v6
+				;;
+		ipv4:dragonfly*)	sysdesc=bsd
+				;;
 		ipv6:kfreebsd*) sysdesc=bsd-v6
 				;;
 		ipv4:kfreebsd*) sysdesc=bsd

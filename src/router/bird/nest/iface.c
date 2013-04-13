@@ -35,8 +35,6 @@
 
 static pool *if_pool;
 
-static void auto_router_id(void);
-
 list iface_list;
 
 /**
@@ -354,9 +352,6 @@ if_end_update(void)
   struct iface *i;
   struct ifa *a, *b;
 
-  if (!config->router_id)
-    auto_router_id();
-
   WALK_LIST(i, iface_list)
     {
       if (!(i->flags & IF_UPDATED))
@@ -583,24 +578,57 @@ ifa_delete(struct ifa *a)
       }
 }
 
-static void
-auto_router_id(void)
+u32
+if_choose_router_id(struct iface_patt *mask, u32 old_id)
 {
 #ifndef IPV6
-  struct iface *i, *j;
+  struct iface *i;
+  struct ifa *a, *b;
 
-  j = NULL;
+  b = NULL;
   WALK_LIST(i, iface_list)
-    if ((i->flags & IF_ADMIN_UP) &&
-	!(i->flags & (IF_IGNORE | IF_SHUTDOWN)) &&
-	i->addr &&
-	!(i->addr->flags & IA_PEER) &&
-	(!j || ipa_to_u32(i->addr->ip) < ipa_to_u32(j->addr->ip)))
-      j = i;
-  if (!j)
-    die("Cannot determine router ID (no suitable network interface found), please configure it manually");
-  log(L_INFO "Guessed router ID %I according to interface %s", j->addr->ip, j->name);
-  config->router_id = ipa_to_u32(j->addr->ip);
+    {
+      if (!(i->flags & IF_ADMIN_UP) ||
+	  (i->flags & (IF_IGNORE | IF_SHUTDOWN)))
+	continue;
+
+      WALK_LIST(a, i->addrs)
+	{
+	  if (a->flags & IA_SECONDARY)
+	    continue;
+
+	  if (a->scope <= SCOPE_LINK)
+	    continue;
+
+	  /* FIXME: This should go away */
+	  if (a->flags & IA_PEER)
+	    continue;
+
+	  /* FIXME: This should go away too */
+	  if (!mask && (a != i->addr))
+	    continue;
+
+	  /* Check pattern if specified */
+	  if (mask && !iface_patt_match(mask, i, a))
+	    continue;
+
+	  /* No pattern or pattern matched */
+	  if (!b || ipa_to_u32(a->ip) < ipa_to_u32(b->ip))
+	    b = a;
+	}
+    }
+
+  if (!b)
+    return 0;
+
+  u32 id = ipa_to_u32(b->ip);
+  if (id != old_id)
+    log(L_INFO "Chosen router ID %R according to interface %s", id, b->iface->name);
+
+  return id;
+
+#else
+  return 0;
 #endif
 }
 

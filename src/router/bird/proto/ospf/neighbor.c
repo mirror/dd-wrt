@@ -459,7 +459,7 @@ bdr_election(struct ospf_iface *ifa)
 #else /* OSPFv3 */
   me.dr = ifa->drid;
   me.bdr = ifa->bdrid;
-  me.iface_id = ifa->iface->index;
+  me.iface_id = ifa->iface_id;
 #endif
 
   add_tail(&ifa->neigh_list, NODE & me);
