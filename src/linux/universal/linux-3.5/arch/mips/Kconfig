@@ -960,6 +960,11 @@ config DIR615I
     depends on WASP_SUPPORT
     default n
 
+config WR841V8
+    bool "WR841V8 support?"
+    depends on WASP_SUPPORT
+    default n
+
 config RB2011
     bool "Mikrotik RB2011 support"
     depends on WASP_SUPPORT
