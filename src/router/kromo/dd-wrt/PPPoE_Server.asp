@@ -215,7 +215,7 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_auth"); %></div>
-				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="1" <% nvram_checked("pppoeradius_enabled", "1"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', true)" /><% tran("radius.legend"); %>
+				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="1" <% nvram_checked("pppoeradius_enabled", "1"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', true)" /><% tran("radius.legend"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="0" <% nvram_checked("pppoeradius_enabled", "0"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', false)" /><% tran("service.pppoesrv_chaps"); %>
 			</div>
 	</fieldset><br />
