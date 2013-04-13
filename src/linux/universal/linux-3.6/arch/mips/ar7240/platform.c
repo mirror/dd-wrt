@@ -151,6 +151,7 @@ static struct platform_device ar7240_uart = {
 
 };
 
+#ifdef CONFIG_MACH_HORNET
 
 static struct resource ar933x_uart_resources[] = {
 	{
@@ -205,6 +206,7 @@ static struct platform_device ath_uart = {
 	.resource = ath_uart_resources
 };
 
+#endif
 
 
 static struct platform_device *ar7241_platform_devices[] __initdata = {
@@ -215,11 +217,12 @@ static struct platform_device *ar7240_platform_devices[] __initdata = {
 	&ar7240_usb_ohci_device
 };
 
+#if defined(CONFIG_MTD_NAND_ATH)
 static struct platform_device ar9344_nand_device = {
 	.name	= "ar9344-nand",
 	.id	= -1,
 };
-
+#endif
 static struct platform_device *ar724x_platform_devices[] __initdata = {
 #ifdef CONFIG_MACH_HORNET
 	&ar933x_uart_device,
@@ -316,9 +319,10 @@ static struct mdio_board_info wdr4300_mdio0_info[] = {
 
 
 
-extern __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
+extern void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
 void ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
 
+#if !defined(CONFIG_MACH_HORNET) && !defined(CONFIG_WASP_SUPPORT)
 static void *getCalData(int slot)
 {
 #ifdef CONFIG_WDR2543
@@ -327,7 +331,7 @@ u8 *base = KSEG1ADDR(0x1fff1000);
 return base;
 #else
 u8 *base;
-for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1ffff000);base+=0x1000) {
+for (base=(u8 *) KSEG1ADDR(0x1f000000);base<(u8 *) KSEG1ADDR (0x1ffff000);base+=0x1000) {
 	u32 *cal = (u32 *)base;
 	if (*cal==0xa55a0000 || *cal==0x5aa50000) { //protection bit is always zero on inflash devices, so we can use for match it
 		if (slot) {
@@ -341,6 +345,7 @@ return NULL;
 #endif
 }
 
+#endif
 enum ar71xx_soc_type ar71xx_soc;
 EXPORT_SYMBOL_GPL(ar71xx_soc);
 
@@ -390,163 +395,193 @@ static void dir825b1_read_ascii_mac(u8 *dest, unsigned int src_addr)
 
 
 #endif
+static void enable_uart(void)
+{
+
+        if (is_ar7240() || is_ar7241() || is_ar7242())
+		ar71xx_gpio_function_enable(AR724X_GPIO_FUNC_UART_EN);
+	else if (is_ar933x())
+		ar71xx_gpio_function_enable(AR933X_GPIO_FUNC_UART_EN);
+
+        /* need to set clock appropriately */
+#ifdef CONFIG_MACH_HORNET
+	ath_uart_data[0].uartclk = ar71xx_ref_freq;
+	ar933x_uart_data.uartclk = ar71xx_ref_freq;
+#endif
+#ifdef CONFIG_WASP_SUPPORT
+	ar7240_uart_data[0].uartclk = ath_ref_clk_freq;
+#else
+	ar7240_uart_data[0].uartclk = ar7240_ahb_freq;
+#endif
+
+
+}
 
 
 int __init ar7240_platform_init(void)
 {
 	int ret;
 	void *ee;
-#if defined(CONFIG_WR741) || defined(CONFIG_WDR4300) || defined(CONFIG_WDR2543)
+#if defined(CONFIG_WR741) || defined(CONFIG_WDR4300) || defined(CONFIG_WDR2543) || defined(CONFIG_WR841V8)
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 #else
 	u8 *mac = NULL;//(u8 *) KSEG1ADDR(0x1fff0000);
 #endif
 
 #if defined(CONFIG_AR7242_RTL8309G_PHY) || defined(CONFIG_DIR615E)
-#ifdef CONFIG_DIR615E
-	const char *config = (char *) KSEG1ADDR(0x1f030000);
-#else
-	const char *config = (char *) KSEG1ADDR(0x1f040000);
+	#ifdef CONFIG_DIR615E
+		const char *config = (char *) KSEG1ADDR(0x1f030000);
+	#else
+		const char *config = (char *) KSEG1ADDR(0x1f040000);
+	#endif
+		u8 wlan_mac[6];
+		if (nvram_parse_mac_addr(config, 0x10000,"lan_mac=", wlan_mac) == 0) {
+			mac = wlan_mac;
+		}
 #endif
-	u8 wlan_mac[6];
-	if (nvram_parse_mac_addr(config, 0x10000,"lan_mac=", wlan_mac) == 0) {
-		mac = wlan_mac;
-	}
-#endif
+	enable_uart();
 
 
 
-        /* need to set clock appropriately */
-#ifdef CONFIG_MACH_HORNET
-	ar71xx_gpio_function_enable(AR933X_GPIO_FUNC_UART_EN);
 
-	ath_uart_data[0].uartclk = ar71xx_ref_freq;
-	ar933x_uart_data.uartclk = ar71xx_ref_freq;
-#else
-	ar71xx_gpio_function_enable(AR724X_GPIO_FUNC_UART_EN);
-
-#endif
-
-#ifdef CONFIG_WASP_SUPPORT
-	ar7240_uart_data[0].uartclk = ath_ref_clk_freq;
-#else
-	ar7240_uart_data[0].uartclk = ar7240_ahb_freq;
-#endif
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
 #define DB120_MAC1_OFFSET	6
-#ifdef CONFIG_DIR825C1
-	u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
-#else
-	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
-#endif
+	#ifdef CONFIG_DIR825C1
+		u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
+	#elif CONFIG_WR841V8
+//		u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
+	#else
+		u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
+	#endif
 	void __iomem *base;
 	u32 t;
 
 
-#ifndef CONFIG_WDR4300
-#ifdef CONFIG_DIR825C1
-	dir825b1_read_ascii_mac(mac0, DIR825C1_MAC_LOCATION_0);
-	dir825b1_read_ascii_mac(mac1, DIR825C1_MAC_LOCATION_1);
-#endif
-#else
-	ath79_init_mac(mac0, mac, -1);
-	ath79_init_mac(mac1, mac, 0);
-#endif
+	#ifndef CONFIG_WDR4300
+		#ifdef CONFIG_DIR825C1
+			dir825b1_read_ascii_mac(mac0, DIR825C1_MAC_LOCATION_0);
+			dir825b1_read_ascii_mac(mac1, DIR825C1_MAC_LOCATION_1);
+		#endif
 
-#ifndef CONFIG_DIR615I
-	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+	#else
+		ath79_init_mac(mac0, mac, -1);
+		ath79_init_mac(mac1, mac, 0);
+	#endif
 
 
-	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
-	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
-	       AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
-#ifdef CONFIG_WDR4300
-	t |= AR934X_ETH_CFG_RGMII_GMAC0;
-#else
-	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
-#endif
-	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+	#ifdef CONFIG_DIR615I
 
-
-	iounmap(base);
-#else
-	dir825b1_read_ascii_mac(mac0, DIR615I_MAC_LOCATION_0);
-	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+		dir825b1_read_ascii_mac(mac0, DIR615I_MAC_LOCATION_0);
+		base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
 	
-	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
-	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
-	       AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
-//	t |= AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
+		t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+		t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
+	    		AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
 
-	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+		__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+		iounmap(base);
+	#elif CONFIG_WR841V8
+	//swap phy
+		base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+		t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+		t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 |
+	    	    AR934X_ETH_CFG_MII_GMAC0 |
+	    	    AR934X_ETH_CFG_GMII_GMAC0 |
+	    	    AR934X_ETH_CFG_SW_ONLY_MODE |
+	    	    AR934X_ETH_CFG_SW_PHY_SWAP);
 
+		t |= AR934X_ETH_CFG_SW_PHY_SWAP;
 
-	iounmap(base);
+		__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+		/* flush write */
+		__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+		iounmap(base);
+	#else
+		base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+		t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+		t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
+	    	    AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
+		#ifdef CONFIG_WDR4300
+			t |= AR934X_ETH_CFG_RGMII_GMAC0;
+		#else
+			t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
+		#endif
+		__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+		iounmap(base);
+	#endif
 
-#endif
+	#ifdef CONFIG_DIR615I
+		ar71xx_add_device_mdio(1, 0x0);
+		ar71xx_add_device_mdio(0, 0x0);
+		ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
+		ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+		ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio1_device.dev;
+		ar71xx_eth0_data.phy_mask = BIT(4);
+		ar71xx_switch_data.phy4_mii_en = 1;
 
+		ar71xx_eth1_data.speed = SPEED_1000;
+		ar71xx_eth1_data.duplex = DUPLEX_FULL;
+		ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 
-#ifdef CONFIG_DIR615I
-	ar71xx_add_device_mdio(1, 0x0);
-	ar71xx_add_device_mdio(0, 0x0);
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio1_device.dev;
-	ar71xx_eth0_data.phy_mask = BIT(4);
-	ar71xx_switch_data.phy4_mii_en = 1;
+		ar71xx_add_device_eth(0);
+		ar71xx_add_device_eth(1);
+	#elif CONFIG_WR841V8
+		ar71xx_add_device_mdio(1, 0x0);
+		ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
+		ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
 
-	ar71xx_eth1_data.speed = SPEED_1000;
-	ar71xx_eth1_data.duplex = DUPLEX_FULL;
-	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	/* GMAC0 is connected to the PHY0 of the internal switch */
+		ar71xx_switch_data.phy4_mii_en = 1;
+		ar71xx_switch_data.phy_poll_mask = BIT(0);
+		ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+		ar71xx_eth0_data.phy_mask = BIT(0);
+		ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio1_device.dev;
+		ar71xx_add_device_eth(0);
 
-	ar71xx_add_device_eth(0);
-	ar71xx_add_device_eth(1);
-#else
-#ifndef CONFIG_WDR4300
-#ifndef CONFIG_DIR825C1
-	ar71xx_add_device_mdio(1, 0x0);
-#endif
-#endif
-	ar71xx_add_device_mdio(0, 0x0);
-
-#ifdef CONFIG_DIR825C1
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 0);
-#else
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
-#endif
-
-#ifdef CONFIG_WDR4300
-
-	mdiobus_register_board_info(wdr4300_mdio0_info,
-				    ARRAY_SIZE(wdr4300_mdio0_info));
-
-#else
-
-	mdiobus_register_board_info(db120_mdio0_info,
-				    ARRAY_SIZE(db120_mdio0_info));
-
-#endif
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ar71xx_eth0_data.phy_mask = BIT(0);
-	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
-	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
-
-	ar71xx_add_device_eth(0);
-
-#ifndef CONFIG_WDR4300
-#ifndef CONFIG_DIR825C1
 	/* GMAC1 is connected to the internal switch */
-	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, art + DB120_MAC1_OFFSET, 0);
-	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
-	ar71xx_eth1_data.speed = SPEED_1000;
-	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+		ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+		ar71xx_add_device_eth(1);
+	#else
+		#ifndef CONFIG_WDR4300
+		#ifndef CONFIG_DIR825C1
+			ar71xx_add_device_mdio(1, 0x0);
+		#endif
+		#endif
+		ar71xx_add_device_mdio(0, 0x0);
 
-	ar71xx_add_device_eth(1);
-#endif
-#endif
-#endif
+		#ifdef CONFIG_DIR825C1
+			ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 0);
+		#else
+			ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
+		#endif	
 
+		#ifdef CONFIG_WDR4300
+    			mdiobus_register_board_info(wdr4300_mdio0_info,
+				    ARRAY_SIZE(wdr4300_mdio0_info));
+		#else
+
+			mdiobus_register_board_info(db120_mdio0_info,
+				    ARRAY_SIZE(db120_mdio0_info));
+		#endif
+		ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+		ar71xx_eth0_data.phy_mask = BIT(0);
+		ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+		ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
+		ar71xx_add_device_eth(0);
+
+		#ifndef CONFIG_WDR4300
+		#ifndef CONFIG_DIR825C1
+			/* GMAC1 is connected to the internal switch */
+			ar71xx_init_mac(ar71xx_eth1_data.mac_addr, art + DB120_MAC1_OFFSET, 0);
+			ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+			ar71xx_eth1_data.speed = SPEED_1000;
+			ar71xx_eth1_data.duplex = DUPLEX_FULL;
+
+			ar71xx_add_device_eth(1);
+		#endif
+		#endif
+	#endif
 #endif
 
 
@@ -570,25 +605,24 @@ int __init ar7240_platform_init(void)
 	ee = (u8 *) KSEG1ADDR(0x1fff1000);
 	ar9xxx_add_device_wmac(ee, mac);
 #elif CONFIG_WASP_SUPPORT
-#ifndef CONFIG_MTD_NAND_ATH
-	ee = (u8 *) KSEG1ADDR(0x1fff1000);
+	#if !defined(CONFIG_MTD_NAND_ATH)
+		ee = (u8 *) KSEG1ADDR(0x1fff1000);
+		#if defined(CONFIG_DIR825C1)
+			ar9xxx_add_device_wmac(ee, mac0);
+		#elif defined(CONFIG_DIR615I)
+			ar9xxx_add_device_wmac(ee, mac0);
+		#elif defined(CONFIG_WR841V8)
+			ar9xxx_add_device_wmac(ee, mac);
+		#else
+			ar9xxx_add_device_wmac(ee, NULL);
+		#endif
 
-#ifdef CONFIG_DIR825C1
-	ar9xxx_add_device_wmac(ee, mac0);
-#elif CONFIG_DIR615I
-	ar9xxx_add_device_wmac(ee, mac0);
-#else
-	ar9xxx_add_device_wmac(ee, NULL);
-#endif
-
-#ifdef CONFIG_DIR825C1
-	ap91_pci_init(ee+0x4000, mac1);
-#else
-#ifndef CONFIG_DIR615I
-	ap91_pci_init(NULL, NULL);
-#endif
-#endif
-#endif
+		#if defined(CONFIG_DIR825C1)
+			ap91_pci_init(ee+0x4000, mac1);
+		#elif !defined(CONFIG_DIR615I) && !defined(CONFIG_WR841V8)
+			ap91_pci_init(NULL, NULL);
+		#endif
+	#endif
 #else // WASP_SUPPORT
 	ee = getCalData(0);
 	if (ee && !mac) {
@@ -606,7 +640,7 @@ int __init ar7240_platform_init(void)
 #endif
 return ret;
 }
-#ifdef CONFIG_MTD_NAND_ATH
+#if defined(CONFIG_MTD_NAND_ATH)
 void nand_postinit(struct mtd_info *mtd)
 {
 

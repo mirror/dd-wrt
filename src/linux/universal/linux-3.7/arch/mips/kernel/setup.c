@@ -604,7 +604,7 @@ void __init setup_arch(char **cmdline_p)
 #ifdef CONFIG_EARLY_PRINTK
 	setup_early_printk();
 #endif
-//	cpu_report();
+	cpu_report();
 	check_bugs_early();
 
 #if defined(CONFIG_VT)
