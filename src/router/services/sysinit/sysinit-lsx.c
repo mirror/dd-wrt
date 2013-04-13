@@ -193,16 +193,16 @@ void start_sysinit(void)
 	detect_wireless_devices();
 
 #ifdef HAVE_RS
-	setWirelessLed(0,2);
-	setWirelessLed(1,2);
-	setWirelessLed(2,2);
+	setWirelessLed(0, 2);
+	setWirelessLed(1, 2);
+	setWirelessLed(2, 2);
 #elif HAVE_WP546
-	setWirelessLed(0,5);
-	setWirelessLed(1,4);
+	setWirelessLed(0, 5);
+	setWirelessLed(1, 4);
 #elif HAVE_WP543
-	setWirelessLed(0,5);
+	setWirelessLed(0, 5);
 #else
-	setWirelessLed(0,2);
+	setWirelessLed(0, 2);
 #endif
 
 #ifdef HAVE_WP546

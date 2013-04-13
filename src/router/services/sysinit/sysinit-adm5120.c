@@ -138,27 +138,24 @@ void start_sysinit(void)
 	 * /proc 
 	 */
 
-	mknod("/dev/mmc",S_IFBLK|0660,makedev(126,0));
-	mknod("/dev/mmc0",S_IFBLK|0660,makedev(126,1));
-	mknod("/dev/mmc1",S_IFBLK|0660,makedev(126,2));
-	mknod("/dev/mmc2",S_IFBLK|0660,makedev(126,3));
-	mknod("/dev/mmc3",S_IFBLK|0660,makedev(126,4));
+	mknod("/dev/mmc", S_IFBLK | 0660, makedev(126, 0));
+	mknod("/dev/mmc0", S_IFBLK | 0660, makedev(126, 1));
+	mknod("/dev/mmc1", S_IFBLK | 0660, makedev(126, 2));
+	mknod("/dev/mmc2", S_IFBLK | 0660, makedev(126, 3));
+	mknod("/dev/mmc3", S_IFBLK | 0660, makedev(126, 4));
 
+	mkdir("/dev/mtd", 0700);
 
-	mkdir("/dev/mtd",0700);
-
-
-	mknod("/dev/mtd/0",S_IFCHR|0644,makedev(90,0));
-	mknod("/dev/mtd/0ro",S_IFCHR|0644,makedev(90,1));
-	mknod("/dev/mtd/1",S_IFCHR|0644,makedev(90,2));
-	mknod("/dev/mtd/1ro",S_IFCHR|0644,makedev(90,3));
-	mknod("/dev/mtd/2",S_IFCHR|0644,makedev(90,4));
-	mknod("/dev/mtd/2ro",S_IFCHR|0644,makedev(90,5));
-	mknod("/dev/mtd/3",S_IFCHR|0644,makedev(90,6));
-	mknod("/dev/mtd/3ro",S_IFCHR|0644,makedev(90,7));
-	mknod("/dev/mtd/4",S_IFCHR|0644,makedev(90,8));
-	mknod("/dev/mtd/4ro",S_IFCHR|0644,makedev(90,9));
-
+	mknod("/dev/mtd/0", S_IFCHR | 0644, makedev(90, 0));
+	mknod("/dev/mtd/0ro", S_IFCHR | 0644, makedev(90, 1));
+	mknod("/dev/mtd/1", S_IFCHR | 0644, makedev(90, 2));
+	mknod("/dev/mtd/1ro", S_IFCHR | 0644, makedev(90, 3));
+	mknod("/dev/mtd/2", S_IFCHR | 0644, makedev(90, 4));
+	mknod("/dev/mtd/2ro", S_IFCHR | 0644, makedev(90, 5));
+	mknod("/dev/mtd/3", S_IFCHR | 0644, makedev(90, 6));
+	mknod("/dev/mtd/3ro", S_IFCHR | 0644, makedev(90, 7));
+	mknod("/dev/mtd/4", S_IFCHR | 0644, makedev(90, 8));
+	mknod("/dev/mtd/4ro", S_IFCHR | 0644, makedev(90, 9));
 
 	cprintf("sysinit() setup console\n");
 	/*
@@ -274,8 +271,8 @@ void start_sysinit(void)
 				     socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.ifr_hwaddr.
-					       sa_data, mac, 6);
+					memcpy((unsigned char *)ifr.
+					       ifr_hwaddr.sa_data, mac, 6);
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
@@ -285,14 +282,12 @@ void start_sysinit(void)
 					ioctl(s, SIOCGIFHWADDR, &ifr);
 					nvram_set("et0macaddr_safe",
 						  ether_etoa((unsigned char *)
-							     ifr.
-							     ifr_hwaddr.sa_data,
-							     eabuf));
+							     ifr.ifr_hwaddr.
+							     sa_data, eabuf));
 					nvram_set("et0macaddr",
 						  ether_etoa((unsigned char *)
-							     ifr.
-							     ifr_hwaddr.sa_data,
-							     eabuf));
+							     ifr.ifr_hwaddr.
+							     sa_data, eabuf));
 					close(s);
 				}
 			}
@@ -327,11 +322,17 @@ void start_sysinit(void)
 						nvram_set("et0macaddr_safe",
 							  ether_etoa((unsigned
 								      char *)
-								     ifr.ifr_hwaddr.sa_data, eabuf));
+								     ifr.
+								     ifr_hwaddr.
+								     sa_data,
+								     eabuf));
 						nvram_set("et0macaddr",
 							  ether_etoa((unsigned
 								      char *)
-								     ifr.ifr_hwaddr.sa_data, eabuf));
+								     ifr.
+								     ifr_hwaddr.
+								     sa_data,
+								     eabuf));
 						close(s);
 					}
 				}
@@ -365,8 +366,9 @@ void start_sysinit(void)
 				     socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.ifr_hwaddr.
-					       sa_data, params.addr[0].mac, 6);
+					memcpy((unsigned char *)ifr.
+					       ifr_hwaddr.sa_data,
+					       params.addr[0].mac, 6);
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
@@ -374,8 +376,9 @@ void start_sysinit(void)
 				     socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.ifr_hwaddr.
-					       sa_data, params.addr[1].mac, 6);
+					memcpy((unsigned char *)ifr.
+					       ifr_hwaddr.sa_data,
+					       params.addr[1].mac, 6);
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
@@ -385,14 +388,12 @@ void start_sysinit(void)
 					ioctl(s, SIOCGIFHWADDR, &ifr);
 					nvram_set("et0macaddr_safe",
 						  ether_etoa((unsigned char *)
-							     ifr.
-							     ifr_hwaddr.sa_data,
-							     eabuf));
+							     ifr.ifr_hwaddr.
+							     sa_data, eabuf));
 					nvram_set("et0macaddr",
 						  ether_etoa((unsigned char *)
-							     ifr.
-							     ifr_hwaddr.sa_data,
-							     eabuf));
+							     ifr.ifr_hwaddr.
+							     sa_data, eabuf));
 					close(s);
 				}
 
@@ -408,8 +409,8 @@ void start_sysinit(void)
 		eval("watchdog");
 
 #ifdef HAVE_WP54G
-	writeproc("/proc/sys/dev/wifi0/ledpin","6");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "6");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 #endif
 	/*
 	 * Set a sane date 

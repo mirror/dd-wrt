@@ -2226,13 +2226,14 @@ void start_restore_defaults(void)
 
 	}
 
-	if (nvram_get("vlan0ports")==NULL && nvram_get("vlan1ports") && nvram_get("vlan2ports")) {
-			nvram_set("port0vlans", "2");
-			nvram_set("port1vlans", "1");
-			nvram_set("port2vlans", "1");
-			nvram_set("port3vlans", "1");
-			nvram_set("port4vlans", "1");
-			nvram_set("port5vlans", "1 2 16");	
+	if (nvram_get("vlan0ports") == NULL && nvram_get("vlan1ports")
+	    && nvram_get("vlan2ports")) {
+		nvram_set("port0vlans", "2");
+		nvram_set("port1vlans", "1");
+		nvram_set("port2vlans", "1");
+		nvram_set("port3vlans", "1");
+		nvram_set("port4vlans", "1");
+		nvram_set("port5vlans", "1 2 16");
 	}
 
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
@@ -2259,8 +2260,9 @@ void start_restore_defaults(void)
 
 	if (restore_defaults &&
 	    (brand == ROUTER_ASUS_RTN10 || brand == ROUTER_ASUS_RTN12
-	     || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN53 || brand == ROUTER_ASUS_RTN10PLUSD1
-	     || brand == ROUTER_ASUS_RTN12B || brand == ROUTER_ASUS_RTN16)) {
+	     || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN53
+	     || brand == ROUTER_ASUS_RTN10PLUSD1 || brand == ROUTER_ASUS_RTN12B
+	     || brand == ROUTER_ASUS_RTN16)) {
 		nvram_set("wl0_txpwr", "17");
 	}
 

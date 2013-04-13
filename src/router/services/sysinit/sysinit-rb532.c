@@ -78,7 +78,8 @@ void start_sysinit(void)
 #endif
 	{
 		// not created yet, create ext2 partition
-		eval("/sbin/mkfs.ext2", "-F", "-b", "1024", "/dev/cf/card0/part3");
+		eval("/sbin/mkfs.ext2", "-F", "-b", "1024",
+		     "/dev/cf/card0/part3");
 		// mount ext2 
 		mount("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL,
 		      NULL);

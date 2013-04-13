@@ -60,7 +60,6 @@ void start_sysinit(void)
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
 
-
 	/*
 	 * Setup console 
 	 */
@@ -134,13 +133,13 @@ void start_sysinit(void)
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
 #ifdef HAVE_WNDR3700V4
-	setWirelessLed(0,11);
-	setWirelessLed(1,14);
+	setWirelessLed(0, 11);
+	setWirelessLed(1, 14);
 #elif  HAVE_DIR825C1
-	setWirelessLed(0,13);
-	setWirelessLed(1,32);
+	setWirelessLed(0, 13);
+	setWirelessLed(1, 32);
 #else
-	setWirelessLed(0,0);
+	setWirelessLed(0, 0);
 #endif
 	/*
 	 * Set a sane date 

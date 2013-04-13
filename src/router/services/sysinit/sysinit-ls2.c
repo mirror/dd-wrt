@@ -63,11 +63,11 @@ void start_sysinit(void)
 	struct ifreq ifr;
 	int s;
 
-	mknod("/dev/mmc",S_IFBLK|0660,makedev(126,0));
-	mknod("/dev/mmc0",S_IFBLK|0660,makedev(126,1));
-	mknod("/dev/mmc1",S_IFBLK|0660,makedev(126,2));
-	mknod("/dev/mmc2",S_IFBLK|0660,makedev(126,3));
-	mknod("/dev/mmc3",S_IFBLK|0660,makedev(126,4));
+	mknod("/dev/mmc", S_IFBLK | 0660, makedev(126, 0));
+	mknod("/dev/mmc0", S_IFBLK | 0660, makedev(126, 1));
+	mknod("/dev/mmc1", S_IFBLK | 0660, makedev(126, 2));
+	mknod("/dev/mmc2", S_IFBLK | 0660, makedev(126, 3));
+	mknod("/dev/mmc3", S_IFBLK | 0660, makedev(126, 4));
 
 	eval("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
 	FILE *in = fopen("/tmp/nvram/nvram.db", "rb");
@@ -126,8 +126,8 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "2");
 #else
 	vlan_init(0xff);	// 4 lan + 1 wan
-	writeproc("/proc/sys/dev/wifi0/ledpin","7");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "7");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 #endif
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
@@ -165,12 +165,12 @@ void start_sysinit(void)
 		close(s);
 	}
 #if defined(HAVE_MS2)
-	writeproc("/proc/sys/dev/wifi0/ledpin","2");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "2");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 #endif
 #if defined(HAVE_BWRG1000)
-	writeproc("/proc/sys/dev/wifi0/ledpin","2");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "2");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 #endif
 
 	/*

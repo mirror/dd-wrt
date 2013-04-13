@@ -70,12 +70,12 @@ void start_sysinit(void)
 	eval("mount", "/etc/modules.fs", "/lib/modules", "-t", "squashfs", "-o",
 	     "loop");
 	eval("mount", "/etc/usr.fs", "/usr", "-t", "squashfs", "-o", "loop");
-	mkdir("/tmp/www",0700);
+	mkdir("/tmp/www", 0700);
 
 	eval("mount", "-o", "remount,rw", "/");
 	mkdir("/usr/local/nvram", 0777);
 	unlink("/tmp/nvram/.lock");
-	mkdir("/tmp/nvram",0700);
+	mkdir("/tmp/nvram", 0700);
 	eval("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
 	// eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 	cprintf("sysinit() var\n");

@@ -196,10 +196,10 @@ void start_sysinit(void)
 	detect_wireless_devices();
 	// eval ("ifconfig", "wifi0", "up");
 	eval("ifconfig", "eth0", "up");	// wan
-	writeproc("/proc/sys/dev/wifi0/ledpin","2");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "2");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 	if (getRouterBrand() == ROUTER_BOARD_FONERA2200) {
-//		eval("ifconfig", "eth0", "up", "promisc");	// required for vlan config
+//              eval("ifconfig", "eth0", "up", "promisc");      // required for vlan config
 		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("/sbin/vconfig", "add", "eth0", "0");
 		eval("/sbin/vconfig", "add", "eth0", "1");
@@ -214,8 +214,8 @@ void start_sysinit(void)
 			char macaddr[32];
 
 			strcpy(macaddr,
-			       ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					  sa_data, eabuf));
+			       ether_etoa((unsigned char *)ifr.
+					  ifr_hwaddr.sa_data, eabuf));
 			nvram_set("et0macaddr", macaddr);
 			nvram_set("et0macaddr_safe", macaddr);
 //          MAC_ADD( macaddr );
@@ -227,8 +227,8 @@ void start_sysinit(void)
 		}
 	} else {
 #ifdef HAVE_SWCONFIG
-    		system("swconfig dev eth0 set reset 1");
-    		system("swconfig dev eth0 set enable_vlan 1");
+		system("swconfig dev eth0 set reset 1");
+		system("swconfig dev eth0 set enable_vlan 1");
 		system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 5t\"");
 		system("swconfig dev eth0 vlan 2 set ports \"4 5t\"");
 		system("swconfig dev eth0 set apply");
@@ -250,8 +250,8 @@ void start_sysinit(void)
 			char macaddr[32];
 
 			strcpy(macaddr,
-			       ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					  sa_data, eabuf));
+			       ether_etoa((unsigned char *)ifr.
+					  ifr_hwaddr.sa_data, eabuf));
 			nvram_set("et0macaddr", macaddr);
 			nvram_set("et0macaddr_safe", macaddr);
 			// MAC_ADD (macaddr);

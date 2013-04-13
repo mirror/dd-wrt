@@ -74,7 +74,7 @@ void start_sysinit(void)
 #ifdef HAVE_WR1043
 	fprintf(stderr, "load RTL Switch Driver\n");
 	insmod("rtl8366rb_smi");
-//	insmod("swconfig");
+//      insmod("swconfig");
 	insmod("rtl8366_smi");
 	insmod("rtl8366rb");
 #endif
@@ -110,7 +110,8 @@ void start_sysinit(void)
 	if (fp) {
 		system("swconfig dev rtl8366rb set reset 1");
 		system("swconfig dev rtl8366rb set enable_vlan 1");
-		system("swconfig dev rtl8366rb vlan 1 set ports \"1 2 3 4 5t\"");
+		system
+		    ("swconfig dev rtl8366rb vlan 1 set ports \"1 2 3 4 5t\"");
 		system("swconfig dev rtl8366rb vlan 2 set ports \"0 5t\"");
 		system("swconfig dev rtl8366s set apply");
 		unsigned char buf2[256];
@@ -200,10 +201,10 @@ void start_sysinit(void)
 #endif
 		fseek(fp, firstoffset, SEEK_SET);
 		fread(buf2, 19, 1, fp);
-		if (buf2[0]==0xff)
-		    fseek(fp, secondoffset, SEEK_SET);
-		    fread(buf2, 19, 1, fp);
-		    
+		if (buf2[0] == 0xff)
+			fseek(fp, secondoffset, SEEK_SET);
+		fread(buf2, 19, 1, fp);
+
 		fclose(fp);
 		fprintf(stderr, "configure eth0 to %s\n", buf2);
 		eval("ifconfig", "eth0", "hw", "ether", buf2);
@@ -319,7 +320,7 @@ void start_sysinit(void)
 		fprintf(stderr, "configure wifi0 to %s\n", mac);
 		eval("ifconfig", "wifi0", "hw", "ether", mac);
 	}
-//	eval("gpio", "disable", "5");	// enable usb port
+//      eval("gpio", "disable", "5");   // enable usb port
 #endif
 #ifdef HAVE_WR1043
 	{
@@ -344,26 +345,26 @@ void start_sysinit(void)
 	led_control(LED_CONNECTED, LED_OFF);
 
 #ifdef HAVE_RS
-	setWirelessLed(0,2);
-	setWirelessLed(1,2);
-	setWirelessLed(2,2);
+	setWirelessLed(0, 2);
+	setWirelessLed(1, 2);
+	setWirelessLed(2, 2);
 #elif HAVE_WRT160NL
-	setWirelessLed(0,6);
-	writeproc("/proc/sys/dev/wifi0/ledpin","6");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	setWirelessLed(0, 6);
+	writeproc("/proc/sys/dev/wifi0/ledpin", "6");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set enable_vlan 1");
 	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4 5\"");
 #elif HAVE_WZRG300NH
-	setWirelessLed(0,6);
+	setWirelessLed(0, 6);
 #elif HAVE_TEW632BRP
-	setWirelessLed(0,6);
+	setWirelessLed(0, 6);
 #elif HAVE_WR941
-	setWirelessLed(0,9);
+	setWirelessLed(0, 9);
 #elif HAVE_WR1043
-	setWirelessLed(0,9);
+	setWirelessLed(0, 9);
 #else
-	setWirelessLed(0,2);
+	setWirelessLed(0, 2);
 #endif
 
 	/*

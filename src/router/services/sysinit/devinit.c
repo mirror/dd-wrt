@@ -59,7 +59,8 @@ static char *getdisc(void)	// works only for squashfs
 	static char ret[4];
 	unsigned char *disks[] =
 	    { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
-"sdi2" };
+		"sdi2"
+	};
 	int a;
 
 	for (a = 0; a < 10; a++) {
@@ -79,12 +80,13 @@ static char *getdisc(void)	// works only for squashfs
 			    && buf[3] == 't') {
 				fclose(in);
 				// filesystem detected
-				fprintf(stderr,"file system detected at %s\n",disks[i]);
+				fprintf(stderr, "file system detected at %s\n",
+					disks[i]);
 				strncpy(ret, disks[i], 3);
 				return ret;
 			}
 			fclose(in);
-			skip:;
+		      skip:;
 		}
 		sleep(1);
 	}
@@ -115,23 +117,23 @@ void start_devinit(void)
 	system("echo >/proc/sys/kernel/hotplug");
 	system("mount -t tmpfs none /dev -o size=512K");
 
-	mknod("/dev/console",S_IFCHR|0644,makedev(5,1));
-	mknod("/dev/null",S_IFCHR|0644,makedev(1,3));
-	mkdir("/dev/pts",0700);
+	mknod("/dev/console", S_IFCHR | 0644, makedev(5, 1));
+	mknod("/dev/null", S_IFCHR | 0644, makedev(1, 3));
+	mkdir("/dev/pts", 0700);
 #else
 	// fix for linux kernel 2.6
-	mknod("/dev/ppp",S_IFCHR|0644,makedev(108,0));
+	mknod("/dev/ppp", S_IFCHR | 0644, makedev(108, 0));
 #endif
 // fix me udevtrigger does not create that (yet) not registered?
-	mknod("/dev/nvram",S_IFCHR|0644,makedev(229,0));
-	mknod("/dev/watchdog",S_IFCHR|0644,makedev(10,130));
+	mknod("/dev/nvram", S_IFCHR | 0644, makedev(229, 0));
+	mknod("/dev/watchdog", S_IFCHR | 0644, makedev(10, 130));
 
 	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	mkdir("/tmp/www",0700);
+	mkdir("/tmp/www", 0700);
 
 	unlink("/tmp/nvram/.lock");
-	mkdir("/tmp/nvram",0700);
+	mkdir("/tmp/nvram", 0700);
 
 	/*
 	 * /var 
@@ -165,11 +167,11 @@ void start_devinit(void)
 		mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
 //              eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
 	}
-	mkdir("/usr/local",0700);
-	mkdir("/usr/local/nvram",0700);
+	mkdir("/usr/local", 0700);
+	mkdir("/usr/local/nvram", 0700);
 #endif
 #ifdef HAVE_MSTP
-	fprintf(stderr,"start MSTP Daemon\n");
+	fprintf(stderr, "start MSTP Daemon\n");
 	eval("/sbin/mstpd");
 #endif
 	fprintf(stderr, "done\n");
