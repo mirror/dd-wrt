@@ -60,7 +60,9 @@ static char *getdisc(void)	// works only for squashfs
 {
 	int i;
 	static char ret[4];
-	unsigned char *disks[]={"sda2","sdb2","sdc2","sdd2","sde2","sdf2","sdg2","sdh2","sdi2"};
+	unsigned char *disks[] =
+	    { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
+"sdi2" };
 	for (i = 0; i < 9; i++) {
 		char dev[64];
 
@@ -77,7 +79,7 @@ static char *getdisc(void)	// works only for squashfs
 		    && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
-			strncpy(ret,disks[i],3);
+			strncpy(ret, disks[i], 3);
 			return ret;
 		}
 		fclose(in);
@@ -103,7 +105,7 @@ void start_sysinit(void)
 
 	if (in != NULL) {
 		fclose(in);
-		mkdir("/tmp/nvram",0700);
+		mkdir("/tmp/nvram", 0700);
 		eval("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
 		eval("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 		eval("/usr/sbin/convertnvram");
@@ -115,11 +117,11 @@ void start_sysinit(void)
 	in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
 		fprintf(stderr, "recover broken nvram\n");
-		sprintf(dev,"/dev/%s",disk);
+		sprintf(dev, "/dev/%s", disk);
 		in = fopen(dev, "rb");
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftello(in);
-		fseeko(in, mtdlen-(65536*2), SEEK_SET);
+		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		unsigned char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
@@ -146,10 +148,10 @@ void start_sysinit(void)
 #ifdef HAVE_ERC
 	if (isregistered_real() && nvram_match("ree_resetme", "1")) {
 		fprintf(stderr, "Restoring REE default nvram\n");
-		eval("nvram","restore","/etc/defaults/x86ree.backup");
+		eval("nvram", "restore", "/etc/defaults/x86ree.backup");
 		eval("reboot");
 		eval("event", "5", "1", "15");
-		}
+	}
 #endif
 
 	cprintf("sysinit() setup console\n");
@@ -193,7 +195,7 @@ void start_sysinit(void)
 	}
 	detect_wireless_devices();
 
-	mknod("/dev/rtc",S_IFCHR|0644,makedev(253,0));
+	mknod("/dev/rtc", S_IFCHR | 0644, makedev(253, 0));
 #ifdef HAVE_CPUTEMP
 	// insmod("nsc_gpio");
 	// insmod("scx200_gpio");
@@ -203,7 +205,7 @@ void start_sysinit(void)
 #endif
 
 	nvram_set("wl0_ifname", "ath0");
-	mknod("/dev/crypto",S_IFCHR|0644,makedev(10,70));
+	mknod("/dev/crypto", S_IFCHR | 0644, makedev(10, 70));
 	/*
 	 * Set a sane date 
 	 */

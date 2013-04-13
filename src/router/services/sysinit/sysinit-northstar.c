@@ -133,7 +133,7 @@ void start_sysinit(void)
 	mknod("/dev/gpio/out", S_IFCHR | 0644, makedev(127, 1));
 	mknod("/dev/gpio/outen", S_IFCHR | 0644, makedev(127, 2));
 	mknod("/dev/gpio/control", S_IFCHR | 0644, makedev(127, 3));
-	if (nvram_invmatch("boot_wait","on") || nvram_match("wait_time","1")) {
+	if (nvram_invmatch("boot_wait", "on") || nvram_match("wait_time", "1")) {
 		nvram_set("boot_wait", "on");
 		nvram_set("wait_time", "3");
 		nvram_commit();
@@ -159,7 +159,7 @@ void start_sysinit(void)
 			}
 			sleep(1);
 			sysprintf("/sbin/erase nvram");
-			nvram_set("flash_active","1"); // prevent recommit of value until reboot is done
+			nvram_set("flash_active", "1");	// prevent recommit of value until reboot is done
 			sys_reboot();
 		}
 		set_gpio(4, 0);	// enable all led's which are off by default

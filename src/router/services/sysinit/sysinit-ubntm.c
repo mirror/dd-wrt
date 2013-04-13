@@ -80,8 +80,9 @@ void start_sysinit(void)
 		fseek(fp, 0x1f810, SEEK_SET);
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
-		if ((!memcmp(buf2,"\xff\xff\xff\xff\xff\xff",6) || !memcmp(buf2,"\x00\x00\x00\x00\x00\x00",6)))
-		    goto out;
+		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6)
+		     || !memcmp(buf2, "\x00\x00\x00\x00\x00\x00", 6)))
+			goto out;
 		char mac[32];
 		unsigned int copy[256];
 		int i;
@@ -96,11 +97,12 @@ void start_sysinit(void)
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 #else
 		if (fseek(fp, 0x07f0000, SEEK_SET))
-		    fseek(fp, 0x03f0000, SEEK_SET);
+			fseek(fp, 0x03f0000, SEEK_SET);
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
-		if ((!memcmp(buf2,"\xff\xff\xff\xff\xff\xff",6) || !memcmp(buf2,"\x00\x00\x00\x00\x00\x00",6)))
-		    goto out;
+		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6)
+		     || !memcmp(buf2, "\x00\x00\x00\x00\x00\x00", 6)))
+			goto out;
 		char mac[32];
 		unsigned int copy[256];
 		int i;
@@ -114,7 +116,7 @@ void start_sysinit(void)
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 #endif
 	}
-	out:;
+      out:;
 
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
@@ -135,25 +137,24 @@ void start_sysinit(void)
 		close(s);
 	}
 #ifdef HAVE_SWCONFIG
-		system("swconfig dev eth1 set reset 1");
-		system("swconfig dev eth1 set enable_vlan 0");
-		system("swconfig dev eth1 vlan 1 set ports \"0 1 2 3 4\"");
-		system("swconfig dev eth1 set apply");
+	system("swconfig dev eth1 set reset 1");
+	system("swconfig dev eth1 set enable_vlan 0");
+	system("swconfig dev eth1 vlan 1 set ports \"0 1 2 3 4\"");
+	system("swconfig dev eth1 set apply");
 #endif
 
 	detect_wireless_devices();
 
 	int brand = getRouterBrand();
 #ifdef HAVE_WPE72
-		sysprintf
-		    ("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
-
+	sysprintf
+	    ("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
 
 #else
 	if (brand == ROUTER_BOARD_UNIFI) {
 		setWirelessLed(0, 0);
 	} else {
-		writeproc("/proc/sys/dev/wifi0/softled","0");
+		writeproc("/proc/sys/dev/wifi0/softled", "0");
 		sysprintf
 		    ("/sbin/wlanled -l generic_0:-94 -l generic_1:-80 -l generic_11:-73 -l generic_7:-65");
 	}

@@ -133,7 +133,7 @@ void start_sysinit(void)
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		MAC_ADD(mac2);
-//		eval("gpio","enable","2");
+//              eval("gpio","enable","2");
 #elif HAVE_WZRG300NH2
 #ifndef HAVE_WZR300HP
 		sysprintf("startservice bootloader_check");
@@ -149,14 +149,17 @@ void start_sysinit(void)
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
-//		eval("gpio","enable","13");
+//              eval("gpio","enable","13");
 #ifdef HAVE_SWCONFIG
 		system("swconfig dev eth0 set reset 1");
 		system("swconfig dev eth0 set enable_vlan 1");
-		if(nvram_match("wan_proto", "disabled") && nvram_match("fullswitch", "1")) {
-			system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4 5\"");
+		if (nvram_match("wan_proto", "disabled")
+		    && nvram_match("fullswitch", "1")) {
+			system
+			    ("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4 5\"");
 		} else {
-			system("swconfig dev eth0 vlan 1 set ports \"0t 1 3 4 5\"");
+			system
+			    ("swconfig dev eth0 vlan 1 set ports \"0t 1 3 4 5\"");
 			system("swconfig dev eth0 vlan 2 set ports \"0t 2\"");
 		}
 		system("swconfig dev eth0 set apply");
@@ -173,7 +176,7 @@ void start_sysinit(void)
 		fprintf(stderr, "configure vlan2 to %s\n", mac2);
 		eval("ifconfig", "vlan2", "hw", "ether", mac2);
 #elif HAVE_WZRG450
-		fseek(fp, 0x51002, SEEK_SET); //osprey eeprom mac location
+		fseek(fp, 0x51002, SEEK_SET);	//osprey eeprom mac location
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
 		for (i = 0; i < 6; i++)
@@ -184,17 +187,21 @@ void start_sysinit(void)
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
-//		mac1[0] |= 0x02; // add private bit
-//		mac2[0] |= 0x02;
-//		eval("gpio","disable","16");
+//              mac1[0] |= 0x02; // add private bit
+//              mac2[0] |= 0x02;
+//              eval("gpio","disable","16");
 #ifdef HAVE_SWCONFIG
 		system("swconfig dev switch0 set reset 1");
 		system("swconfig dev switch0 set enable_vlan 1");
-		if(nvram_match("wan_proto", "disabled") && nvram_match("fullswitch", "1")) {
-			system("swconfig dev switch0 vlan 1 set ports \"0t 1 2 3 4 5\"");
+		if (nvram_match("wan_proto", "disabled")
+		    && nvram_match("fullswitch", "1")) {
+			system
+			    ("swconfig dev switch0 vlan 1 set ports \"0t 1 2 3 4 5\"");
 		} else {
-			system("swconfig dev switch0 vlan 1 set ports \"0t 2 3 4 5\"");
-			system("swconfig dev switch0 vlan 2 set ports \"0t 1\"");
+			system
+			    ("swconfig dev switch0 vlan 1 set ports \"0t 2 3 4 5\"");
+			system
+			    ("swconfig dev switch0 vlan 2 set ports \"0t 1\"");
 		}
 		system("swconfig dev switch0 set apply");
 #endif
@@ -262,7 +269,7 @@ void start_sysinit(void)
 	}
 	detect_wireless_devices();
 #ifdef HAVE_WZRHPAG300NH
-//	eval("ifconfig", "wifi1", "hw", "ether", wmac);
+//      eval("ifconfig", "wifi1", "hw", "ether", wmac);
 	setWirelessLedPhy0(1);
 	setWirelessLedPhy1(5);
 
@@ -273,8 +280,8 @@ void start_sysinit(void)
 	setWirelessLedPhy0(5);
 #else
 #ifndef HAVE_WZRG450
-	setWirelessLedGeneric(0,6);
-	setWirelessLedGeneric(1,6);
+	setWirelessLedGeneric(0, 6);
+	setWirelessLedGeneric(1, 6);
 #endif
 #endif
 #else
@@ -293,8 +300,8 @@ void start_sysinit(void)
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
-	
-	getRouterBrand(); // restore some default settings
+
+	getRouterBrand();	// restore some default settings
 
 	if (!nvram_get("ath0_rxantenna"))
 		nvram_set("ath0_rxantenna", "3");
