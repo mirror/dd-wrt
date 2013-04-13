@@ -25,7 +25,8 @@ var update;
 
 addEvent(window, "load", function() {
 
-		toggle_layer_ext(document.setup.pptpd_radius, 'idradius', 'idlocal', <% nvram_else_match("pptpd_radius", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_radius, 'idradius', <% nvram_else_match("pptpd_radius", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_radius, 'idlocal', <% nvram_else_match("pptpd_radius", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_enable, 'idpptpcred', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
