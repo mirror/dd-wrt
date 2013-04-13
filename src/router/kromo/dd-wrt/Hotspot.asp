@@ -78,16 +78,16 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.apd_enable, 'idsputnik', <% nvram_else_match("apd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.wd_enable, 'idwifidog', <% nvram_else_match("wd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.wd_sslavailable, 'idwifidogssl', <% nvram_else_match("wd_sslavailable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.wd_auth, 'idauth', <% nvram_else_match("wd_auth", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.chilli_enable, 'idchilli', <% nvram_else_match("chilli_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.chilli_nowifibridge, 'idchillidhcp', <% nvram_else_match("chilli_nowifibridge", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.chilli_macauth, 'idmacauth', <% nvram_else_match("chilli_macauth", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.http_redirect_enable, 'idhttpredirect', <% nvram_else_match("http_redirect_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.NC_enable, 'idnocat', <% nvram_else_match("NC_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.smtp_redirect_enable, 'smtpredirect', <% nvram_else_match("smtp_redirect_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.wd_auth, 'idauth', <% nvram_else_match("wd_auth", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.hotss_enable, 'idhotspotsys', <% nvram_else_match("hotss_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.hotss_uamenable, 'idhotssuam', <% nvram_else_match("hotss_uamenable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.hotss_nowifibridge, 'idhotssdhcp', <% nvram_else_match("hotss_nowifibridge", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.chilli_nowifibridge, 'idchillidhcp', <% nvram_else_match("chilli_nowifibridge", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.chilli_macauth, 'idmacauth', <% nvram_else_match("chilli_macauth", "1", "1", "0"); %> == 1);
 	setHotss("<% nvram_else_match("hotss_enable", "1", "1", "0"); %>");
 	if (document.setup.hotss_loginonsplash)
 		handle_hotss(document.setup, <% nvram_else_match("hotss_loginonsplash", "1", "1", "0"); %> == 1);
