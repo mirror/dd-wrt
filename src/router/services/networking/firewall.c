@@ -3034,17 +3034,6 @@ void start_firewall(void)
 	if (nvram_match("ipv6_enable", "1")) {
 		writeproc("/proc/sys/net/ipv6/conf/all/forwarding", "1");
 	}
-#ifdef HAVE_WIFIDOG
-	stop_wifidog();
-	start_wifidog();
-#endif
-#ifdef HAVE_CHILLI
-	if (nvram_match("chilli_enable", "1")
-		|| nvram_match("hotss_enable", "1")) {
-		stop_chilli();
-		start_chilli();	
-	}
-#endif
 #ifdef HAVE_GGEW
 	char *wordlist = nvram_safe_get("ral");
 	char var[256], *next;
@@ -3063,6 +3052,32 @@ void start_firewall(void)
 	set_gprules("ath1");
 #endif
 #endif
+
+/*
+ *	Services restart.
+ * 	Should be always at the end. 
+ */
+
+#ifdef HAVE_WIFIDOG
+	if (nvram_match("wd_enable", "1")) {
+		stop_wifidog();
+		start_wifidog();
+	}
+#endif
+#ifdef HAVE_CHILLI
+	if (nvram_match("chilli_enable", "1")
+		|| nvram_match("hotss_enable", "1")) {
+		stop_chilli();
+		start_chilli();	
+	}
+#endif
+#ifdef HAVE_PPPOESERVER
+	if (nvram_match("pppoeserver_enabled", "1")) {
+		stop_pppoeserver();
+		start_pppoeserver();	
+	}
+#endif
+
 	cprintf("ready");
 
 	cprintf("done\n");
