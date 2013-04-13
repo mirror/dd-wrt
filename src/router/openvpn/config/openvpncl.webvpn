@@ -91,8 +91,8 @@
 			<div id="idsec">
 				<div class="setting">
 					<div class="label"><% tran("firewall.legend"); %></div>
-					<input type="radio" name="openvpncl_sec" value="1" <% nvram_checked("openvpncl_sec", "1"); %> /><% tran("share.enable"); %>&nbsp;
-					<input type="radio" name="openvpncl_sec" value="0" <% nvram_checked("openvpncl_sec", "0"); %> /><% tran("share.disable"); %>
+					<input class="spaceradio" type="radio" name="openvpncl_sec" value="1" <% nvram_checked("openvpncl_sec", "1"); %> /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" name="openvpncl_sec" value="0" <% nvram_checked("openvpncl_sec", "0"); %> /><% tran("share.disable"); %>
 				</div>
 			</div>
 			<div id="idnat">
