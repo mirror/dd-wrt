@@ -167,10 +167,10 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_WR841V8
 	setEthLED(18,"eth0");
-	setSwitchLED(19,0x2);
-	setSwitchLED(20,0x4);
-	setSwitchLED(21,0x8);
-	setSwitchLED(12,0x10);
+	setSwitchLED(19,0x4);
+	setSwitchLED(20,0x8);
+	setSwitchLED(21,0x10);
+	setSwitchLED(12,0x02);
 #endif
 
 #endif
