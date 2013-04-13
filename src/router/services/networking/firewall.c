@@ -1467,6 +1467,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 				if (proto)	//avoid null pointer, if realname isnt matched
 				{
 					insmod("ipt_ipp2p");
+					insmod("xt_ipp2p");
 					save2file
 					    ("-A advgrp_%d -m ipp2p --%s -j %s\n",
 					     seq, proto, log_drop);
@@ -1510,6 +1511,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		insmod("ipt_layer7");
 		insmod("xt_layer7");
 		insmod("ipt_ipp2p");
+		insmod("xt_ipp2p");
 		save2file("-A advgrp_%d -m ipp2p --ipp2p -j %s\n", seq,
 			  log_drop);
 		/* p2p detection enhanced */
@@ -3096,6 +3098,7 @@ void stop_firewall(void)
 	rmmod("ipt_layer7");
 	rmmod("xt_layer7");
 	rmmod("ipt_ipp2p");
+	rmmod("xt_ipp2p");
 	if (nvram_invmatch("apd_enable", "0")) {
 		rmmod("ipt_mark");
 		rmmod("xt_mark");

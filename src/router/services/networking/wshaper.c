@@ -824,6 +824,7 @@ int svqos_iptables(void)
 				proto = "xdcc";
 			if (proto) {
 				insmod("ipt_ipp2p");
+				insmod("xt_ipp2p");
 				sysprintf
 				    ("iptables -t mangle -A SVQOS_SVCS -p tcp -m ipp2p --%s -j MARK --set-mark %s",
 				     proto, qos_nfmark(atol(level)));
