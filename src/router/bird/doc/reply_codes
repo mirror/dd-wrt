@@ -25,6 +25,12 @@ Reply codes of BIRD command-line interface
 0014	Route count
 0015	Reloading
 0016	Access restricted
+0017	Reconfiguration already in progress, removing queued config
+0018	Reconfiguration confirmed
+0019	Nothing to do (configure undo/confirm)
+0020	Configuration OK
+0021	Undo requested
+0022	Undo scheduled
 
 1000	BIRD version
 1001	Interface list

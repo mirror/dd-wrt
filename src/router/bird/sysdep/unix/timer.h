@@ -32,6 +32,7 @@ void tm_dump_all(void);
 
 extern bird_clock_t now; 		/* Relative, monotonic time in seconds */
 extern bird_clock_t now_real;		/* Time in seconds since fixed known epoch */
+extern bird_clock_t boot_time;
 
 static inline bird_clock_t
 tm_remains(timer *t)

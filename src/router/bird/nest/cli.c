@@ -122,6 +122,7 @@ cli_printf(cli *c, int code, char *msg, ...)
   va_list args;
   byte buf[CLI_LINE_SIZE];
   int cd = code;
+  int errcode;
   int size, cnt;
 
   if (cd < 0)
@@ -131,16 +132,26 @@ cli_printf(cli *c, int code, char *msg, ...)
 	size = bsprintf(buf, " ");
       else
 	size = bsprintf(buf, "%04d-", cd);
+      errcode = -8000;
+    }
+  else if (cd == CLI_ASYNC_CODE)
+    {
+      size = 1; buf[0] = '+'; 
+      errcode = cd;
     }
   else
-    size = bsprintf(buf, "%04d ", cd);
+    {
+      size = bsprintf(buf, "%04d ", cd);
+      errcode = 8000;
+    }
+
   c->last_reply = cd;
   va_start(args, msg);
   cnt = bvsnprintf(buf+size, sizeof(buf)-size-1, msg, args);
   va_end(args);
   if (cnt < 0)
     {
-      cli_printf(c, code < 0 ? -8000 : 8000, "<line overflow>");
+      cli_printf(c, errcode, "<line overflow>");
       return;
     }
   size += cnt;
@@ -385,12 +396,17 @@ cli_echo(unsigned int class, byte *msg)
     }
 }
 
+/* Hack for scheduled undo notification */
+extern cli *cmd_reconfig_stored_cli;
+
 void
 cli_free(cli *c)
 {
   cli_set_log_echo(c, 0, 0);
   if (c->cleanup)
     c->cleanup(c);
+  if (c == cmd_reconfig_stored_cli)
+    cmd_reconfig_stored_cli = NULL;
   rfree(c->pool);
 }
 

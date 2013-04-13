@@ -114,7 +114,7 @@ neighbor *
 neigh_find2(struct proto *p, ip_addr *a, struct iface *ifa, unsigned flags)
 {
   neighbor *n;
-  int class, scope = -1;       ;
+  int class, scope = -1;
   unsigned int h = neigh_hash(p, a);
   struct iface *i;
 
@@ -240,7 +240,21 @@ neigh_down(neighbor *n)
     n->proto->neigh_notify(n);
   rem_node(&n->n);
   if (n->flags & NEF_STICKY)
-    add_tail(&sticky_neigh_list, &n->n);
+    {
+      add_tail(&sticky_neigh_list, &n->n);
+
+      /* Respawn neighbor if there is another matching prefix */
+      struct iface *i;
+      int scope;
+
+      if (!n->iface)
+	WALK_LIST(i, iface_list)
+	  if ((scope = if_connected(&n->addr, i)) >= 0)
+	    {
+	      neigh_up(n, i, scope);
+	      return;
+	    }
+    }
   else
     sl_free(neigh_slab, n);
 }

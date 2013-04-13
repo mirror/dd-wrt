@@ -210,7 +210,7 @@ read_config(void)
       else
 	die("Unable to open configuration file %s: %m", config_name);
     }
-  config_commit(conf, RECONFIG_HARD);
+  config_commit(conf, RECONFIG_HARD, 0);
 }
 
 void
@@ -228,19 +228,17 @@ async_config(void)
       config_free(conf);
     }
   else
-    config_commit(conf, RECONFIG_HARD);
+    config_commit(conf, RECONFIG_HARD, 0);
 }
 
-void
-cmd_reconfig(char *name, int type)
+static struct config *
+cmd_read_config(char *name)
 {
   struct config *conf;
 
-  if (cli_access_restricted())
-    return;
-
   if (!name)
     name = config_name;
+
   cli_msg(-2, "Reading configuration from %s", name);
   if (!unix_read_config(&conf, name))
     {
@@ -249,24 +247,94 @@ cmd_reconfig(char *name, int type)
       else
 	cli_msg(8002, "%s: %m", name);
       config_free(conf);
+      conf = NULL;
     }
-  else
+
+  return conf;
+}
+
+void
+cmd_check_config(char *name)
+{
+  struct config *conf = cmd_read_config(name);
+  if (!conf)
+    return;
+
+  cli_msg(20, "Configuration OK");
+  config_free(conf);
+}
+
+static void
+cmd_reconfig_msg(int r)
+{
+  switch (r)
     {
-      switch (config_commit(conf, type))
-	{
-	case CONF_DONE:
-	  cli_msg(3, "Reconfigured.");
-	  break;
-	case CONF_PROGRESS:
-	  cli_msg(4, "Reconfiguration in progress.");
-	  break;
-	case CONF_SHUTDOWN:
-	  cli_msg(6, "Reconfiguration ignored, shutting down.");
-	  break;
-	default:
-	  cli_msg(5, "Reconfiguration already in progress, queueing new config");
-	}
+    case CONF_DONE:	cli_msg( 3, "Reconfigured"); break;
+    case CONF_PROGRESS: cli_msg( 4, "Reconfiguration in progress"); break;
+    case CONF_QUEUED:	cli_msg( 5, "Reconfiguration already in progress, queueing new config"); break;
+    case CONF_UNQUEUED:	cli_msg(17, "Reconfiguration already in progress, removing queued config"); break;
+    case CONF_CONFIRM:	cli_msg(18, "Reconfiguration confirmed"); break;
+    case CONF_SHUTDOWN:	cli_msg( 6, "Reconfiguration ignored, shutting down"); break;
+    case CONF_NOTHING:	cli_msg(19, "Nothing to do"); break;
+    default:		break;
     }
+}
+
+/* Hack for scheduled undo notification */
+cli *cmd_reconfig_stored_cli;
+
+void
+cmd_reconfig_undo_notify(void)
+{
+  if (cmd_reconfig_stored_cli)
+    {
+      cli *c = cmd_reconfig_stored_cli;
+      cli_printf(c, CLI_ASYNC_CODE, "Config timeout expired, starting undo");
+      cli_write_trigger(c);
+    }
+}
+
+void
+cmd_reconfig(char *name, int type, int timeout)
+{
+  if (cli_access_restricted())
+    return;
+
+  struct config *conf = cmd_read_config(name);
+  if (!conf)
+    return;
+
+  int r = config_commit(conf, type, timeout);
+
+  if ((r >= 0) && (timeout > 0))
+    {
+      cmd_reconfig_stored_cli = this_cli;
+      cli_msg(-22, "Undo scheduled in %d s", timeout);
+    }
+
+  cmd_reconfig_msg(r);
+}
+
+void
+cmd_reconfig_confirm(void)
+{
+  if (cli_access_restricted())
+    return;
+
+  int r = config_confirm();
+  cmd_reconfig_msg(r);
+}
+
+void
+cmd_reconfig_undo(void)
+{
+  if (cli_access_restricted())
+    return;
+
+  cli_msg(-21, "Undo requested");
+
+  int r = config_undo();
+  cmd_reconfig_msg(r);
 }
 
 /*
@@ -623,6 +691,7 @@ main(int argc, char **argv)
   rt_init();
   if_init();
   roa_init();
+  config_init();
 
   uid_t use_uid = get_uid(use_user);
   gid_t use_gid = get_gid(use_group);

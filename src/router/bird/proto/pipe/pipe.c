@@ -200,6 +200,11 @@ pipe_postconfig(struct proto_config *C)
     cf_error("Name of peer routing table not specified");
   if (c->peer == C->table)
     cf_error("Primary table and peer table must be different");
+
+  if (C->in_keep_filtered)
+    cf_error("Pipe protocol prohibits keeping filtered routes");
+  if (C->rx_limit)
+    cf_error("Pipe protocol does not support receive limits");
 }
 
 extern int proto_reconfig_type;

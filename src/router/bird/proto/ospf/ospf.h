@@ -189,7 +189,8 @@ struct ospf_iface
   u32 rxmtint;			/* number of seconds between LSA retransmissions */
   u32 pollint;			/* Poll interval */
   u32 deadint;			/* after "deadint" missing hellos is router dead */
-  u32 vid;			/* Id of peer of virtual link */
+  u32 iface_id;			/* Interface ID (iface->index or new value for vlinks) */
+  u32 vid;			/* ID of peer of virtual link */
   ip_addr vip;			/* IP of peer of virtual link */
   struct ospf_iface *vifa;	/* OSPF iface which the vlink goes through */
   struct ospf_area *voa;	/* OSPF area which the vlink goes through */
@@ -776,6 +777,7 @@ struct proto_ospf
   int lsab_size, lsab_used;
   linpool *nhpool;		/* Linpool used for next hops computed in SPF */
   u32 router_id;
+  u32 last_vlink_id;		/* Interface IDs for vlinks (starts at 0x80000000) */
 };
 
 struct ospf_iface_patt
