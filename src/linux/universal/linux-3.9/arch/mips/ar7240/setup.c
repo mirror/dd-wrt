@@ -127,6 +127,7 @@ ar7240_power_off(void)
 const char 
 *get_system_type(void)
 {
+
 char *chip;
 u32 id;
 u32 rev=0;
@@ -296,9 +297,6 @@ wasp_sys_frequency(void)
 
 	ath_ref_clk_freq = ref;
 	ar71xx_ref_freq = ref;
-
-	printk("%s: ", __func__);
-
 
 	clk_ctrl = ar7240_reg_rd(ATH_DDR_CLK_CTRL);
 
@@ -546,12 +544,14 @@ int is_ar9000;
 EXPORT_SYMBOL(is_ar9000);
 void __init plat_mem_setup(void)
 {
+
 u32 id;
 u32 t;
 u32 rev=0;
-id = ar7240_reg_rd(AR7240_REV_ID);
-
+	set_io_port_base(KSEG1);
     Uart16550Init();
+	id = ar7240_reg_rd(AR7240_REV_ID);
+
 	
         if (is_ar7240()) {
     		serial_print("AR7240\n");
@@ -587,10 +587,9 @@ id = ar7240_reg_rd(AR7240_REV_ID);
 		ar71xx_soc_rev = id & AR934X_REV_ID_REVISION_MASK;
         }else
         {
-            		serial_print("ARFOOO\n");
+//            		serial_print("ARFOOO\n");
 
         }
-
         
 	ar71xx_ddr_base = ioremap_nocache(AR71XX_DDR_CTRL_BASE,
 						AR71XX_DDR_CTRL_SIZE);
@@ -644,7 +643,7 @@ id = ar7240_reg_rd(AR7240_REV_ID);
     serial_print("Booting AR7240(Python)...\n");
 #endif
     is_ar9000=1;
-//    printk(KERN_INFO "sys id = %X %s\n",id,get_system_type());
+    printk(KERN_INFO "sys id = %X %s\n",id,get_system_type());
 //#if 0
 //    serial_setup();
 //#endif
