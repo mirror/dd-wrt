@@ -196,7 +196,7 @@ struct switch_dev {
 
 	char buf[128];
 
-#ifdef CONFIG_SWCONFIG_LEDS
+#ifdef CONFIG_LEDS_TRIGGERS
 	struct switch_led_trigger *led_trigger;
 #endif
 };
