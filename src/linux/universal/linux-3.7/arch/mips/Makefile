@@ -210,40 +210,18 @@ load-$(CONFIG_ATHEROS)		+= 0xffffffff80041000
 #load-$(CONFIG_ATHEROS)		+= 0xffffffff80000000
 
 #
-
-
-ifndef CONFIG_AR9100
-ifndef CONFIG_AR7100_LOW
 #
-#Atheros Ar7100
+# This is the AR9100 variant. Still dependant on MACH_AR7100
 #
 core-$(CONFIG_MACH_AR7100)		+=	arch/mips/ar7100/
 load-$(CONFIG_MACH_AR7100)		+=	0xffffffff80060000
 cflags-$(CONFIG_MACH_AR7100)	+= -I$(srctree)/arch/mips/include/asm/mach-ar7100
 #
-else
-#
-# This is the Low memory load variant.  For AP94 and others
-#
-core-$(CONFIG_MACH_AR7100)		+=	arch/mips/ar7100/
-load-$(CONFIG_MACH_AR7100)		+=	0xffffffff80002000
-cflags-$(CONFIG_MACH_AR7100)	+= -I$(srctree)/arch/mips/include/asm/mach-ar7100
-#
-endif
-else
-#
-# This is the AR9100 variant. Still dependant on MACH_AR7100
-#
-core-$(CONFIG_MACH_AR7100)		+=	arch/mips/ar7100/
-load-$(CONFIG_MACH_AR7100)		+=	0xffffffff80002000
-cflags-$(CONFIG_MACH_AR7100)	+= -I$(srctree)/arch/mips/include/asm/mach-ar7100
-#
-endif
 
 #Atheros Ar9330(Hornet)
 #
 core-$(CONFIG_MACH_HORNET)		+=	arch/mips/ar7240/
-load-$(CONFIG_MACH_HORNET)		+=	0xffffffff80002000
+load-$(CONFIG_MACH_HORNET)		+=	0xffffffff80060000
 cflags-$(CONFIG_MACH_HORNET)	+= -I$(srctree)/arch/mips/include/asm/mach-ar7240
 
 
