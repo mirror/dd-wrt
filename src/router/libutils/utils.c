@@ -2198,6 +2198,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "1");
 	setRouter("D-Link DIR-601-A1");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WR841V8
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	setRouter("TP-Link TL-WR841ND v8");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_DIR615I
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
@@ -4606,11 +4611,15 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x007;
 		ses_gpio = 0x100;
 #endif
-#ifdef HAVE_DIR615I
+#ifdef HAVE_WR841V8
+		diag_gpio = 0x10f;
+		connected_gpio = 0x10e;
+#elif HAVE_DIR615I
 		power_gpio = 0x00e;
 		diag_gpio = 0x10f;
 		connected_gpio = 0x10c;
 		disconnected_gpio = 0x016;
+
 #endif
 #ifdef HAVE_WRT400
 		power_gpio = 0x001;

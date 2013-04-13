@@ -229,7 +229,9 @@ endif
 ifeq ($(CONFIG_DIR615I),y)
   CFLAGS_EXTRA += -DHAVE_DIR615I
 endif
-
+ifeq ($(CONFIG_WR841V8),y)
+  CFLAGS_EXTRA += -DHAVE_WR841V8
+endif
 ifeq ($(CONFIG_DIR600),y)
   CFLAGS_EXTRA += -DHAVE_DIR600
 endif
