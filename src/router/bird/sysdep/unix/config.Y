@@ -14,9 +14,9 @@ CF_HDR
 CF_DECLS
 
 CF_KEYWORDS(LOG, SYSLOG, ALL, DEBUG, TRACE, INFO, REMOTE, WARNING, ERROR, AUTH, FATAL, BUG, STDERR, SOFT)
-CF_KEYWORDS(TIMEFORMAT, ISO, SHORT, LONG, BASE, NAME)
+CF_KEYWORDS(TIMEFORMAT, ISO, SHORT, LONG, BASE, NAME, CONFIRM, UNDO, CHECK, TIMEOUT)
 
-%type <i> log_mask log_mask_list log_cat
+%type <i> log_mask log_mask_list log_cat cfg_timeout
 %type <g> log_file
 %type <t> cfg_name
 %type <tf> timeformat_which
@@ -104,13 +104,26 @@ timeformat_base:
 
 /* Unix specific commands */
 
-CF_CLI_HELP(CONFIGURE, [soft] [\"<file>\"], [[Reload configuration]])
+CF_CLI_HELP(CONFIGURE, ..., [[Reload configuration]])
 
-CF_CLI(CONFIGURE, cfg_name, [\"<file>\"], [[Reload configuration]])
-{ cmd_reconfig($2, RECONFIG_HARD); } ;
+CF_CLI(CONFIGURE, cfg_name cfg_timeout, [\"<file>\"] [timeout [<sec>]], [[Reload configuration]])
+{ cmd_reconfig($2, RECONFIG_HARD, $3); } ;
 
-CF_CLI(CONFIGURE SOFT, cfg_name, [\"<file>\"], [[Reload configuration and ignore changes in filters]])
-{ cmd_reconfig($3, RECONFIG_SOFT); } ;
+CF_CLI(CONFIGURE SOFT, cfg_name cfg_timeout, [\"<file>\"] [timeout [<sec>]], [[Reload configuration and ignore changes in filters]])
+{ cmd_reconfig($3, RECONFIG_SOFT, $4); } ;
+
+/* Hack to get input completion for 'timeout' */
+CF_CLI_CMD(CONFIGURE TIMEOUT, [<sec>], [[Reload configuration with undo timeout]])
+CF_CLI_CMD(CONFIGURE SOFT TIMEOUT, [<sec>], [[Reload configuration with undo timeout]])
+
+CF_CLI(CONFIGURE CONFIRM,,, [[Confirm last configuration change - deactivate undo timeout]])
+{ cmd_reconfig_confirm(); } ;
+
+CF_CLI(CONFIGURE UNDO,,, [[Undo last configuration change]])
+{ cmd_reconfig_undo(); } ;
+
+CF_CLI(CONFIGURE CHECK, cfg_name, [\"<file>\"], [[Parse configuration and check its validity]])
+{ cmd_check_config($3); } ;
 
 CF_CLI(DOWN,,, [[Shut the daemon down]])
 { cmd_shutdown(); } ;
@@ -118,6 +131,12 @@ CF_CLI(DOWN,,, [[Shut the daemon down]])
 cfg_name:
    /* empty */ { $$ = NULL; }
  | TEXT
+ ;
+
+cfg_timeout:
+   /* empty */ { $$ = 0; }
+ | TIMEOUT { $$ = UNIX_DEFAULT_CONFIGURE_TIMEOUT; }
+ | TIMEOUT expr { $$ = $2; }
  ;
 
 CF_CODE

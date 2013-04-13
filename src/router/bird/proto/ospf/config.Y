@@ -92,6 +92,7 @@ ospf_proto_finish(void)
   if (cf->abr && !backbone)
   {
     struct ospf_area_config *ac = cfg_allocz(sizeof(struct ospf_area_config));
+    ac->type = OPT_E; /* Backbone is non-stub */
     add_head(&cf->area_list, NODE ac);
     init_list(&ac->patt_list);
     init_list(&ac->net_list);

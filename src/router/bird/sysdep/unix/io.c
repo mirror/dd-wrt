@@ -121,7 +121,7 @@ static list near_timers, far_timers;
 static bird_clock_t first_far_timer = TIME_INFINITY;
 
 /* now must be different from 0, because 0 is a special value in timer->expires */
-bird_clock_t now = 1, now_real;
+bird_clock_t now = 1, now_real, boot_time;
 
 static void
 update_times_plain(void)
@@ -1530,6 +1530,7 @@ io_init(void)
   krt_io_init();
   init_times();
   update_times();
+  boot_time = now;
   srandom((int) now_real);
 }
 
@@ -1557,7 +1558,7 @@ io_loop(void)
 	  tm_shot();
 	  continue;
 	}
-      timo.tv_sec = events ? 0 : tout - now;
+      timo.tv_sec = events ? 0 : MIN(tout - now, 3);
       timo.tv_usec = 0;
 
       if (sock_recalc_fdsets_p)

@@ -1,3 +1,12 @@
+Version 1.3.9 (2013-01-11)
+  o BIRD can be configured to keep and show filtered routes.
+  o Separate receive and import limits.
+  o Several new reconfiguration cmd options (undo, timeout, check).
+  o Configurable automatic router ID selection.
+  o Dragonfly BSD support.
+  o Fixed OSPFv3 vlinks.
+  o Several minor bugfixes.
+
 Version 1.3.8 (2012-08-07)
   o Generalized import and export route limits.
   o RDNSS and DNSSL support for RAdv.
@@ -11,7 +20,7 @@ Version 1.3.8 (2012-08-07)
 Version 1.3.7 (2012-03-22)
   o Route Origin Authorization basics.
   o RIPng working again.
-  o Extended clist operations in filters. 
+  o Extended clist operations in filters.
   o Fixes several bugs in BSD iface handling.
   o Several minor bugfixes and enhancements.
 

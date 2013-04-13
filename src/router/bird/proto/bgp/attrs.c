@@ -238,7 +238,7 @@ bgp_format_aggregator(eattr *a, byte *buf, int buflen UNUSED)
   as = get_u32(data);
   data += 4;
 
-  bsprintf(buf, "%d.%d.%d.%d AS%d", data[0], data[1], data[2], data[3], as);
+  bsprintf(buf, "%d.%d.%d.%d AS%u", data[0], data[1], data[2], data[3], as);
 }
 
 static int
@@ -1346,7 +1346,7 @@ bgp_rte_recalculate(rtable *table, net *net, rte *new, rte *old, rte *old_best)
 
   /* The default case - find a new best-in-group route */
   r = new; /* new may not be in the list */
-  for (s=net->routes; s; s=s->next)
+  for (s=net->routes; rte_is_valid(s); s=s->next)
     if (use_deterministic_med(s) && same_group(s, lpref, lasn))
       {
 	s->u.bgp.suppressed = 1;

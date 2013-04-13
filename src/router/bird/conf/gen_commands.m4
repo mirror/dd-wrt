@@ -10,6 +10,9 @@ m4_divert(-1)m4_dnl
 m4_define(CF_CLI, `m4_divert(0){ "m4_translit($1,A-Z,a-z)", "$3", "$4", 1 },
 m4_divert(-1)')
 
+m4_define(CF_CLI_CMD, `m4_divert(0){ "m4_translit($1,A-Z,a-z)", "$2", "$3", 1 },
+m4_divert(-1)')
+
 m4_define(CF_CLI_HELP, `m4_divert(0){ "m4_translit($1,A-Z,a-z)", "$2", "$3", 0 },
 m4_divert(-1)')
 
