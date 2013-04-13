@@ -101,6 +101,7 @@ struct iface *if_find_by_name(char *);
 struct iface *if_get_by_name(char *);
 void ifa_recalc_all_primary_addresses(void);
 
+
 /* The Neighbor Cache */
 
 typedef struct neighbor {
@@ -160,5 +161,8 @@ struct iface_patt {
 int iface_patt_match(struct iface_patt *ifp, struct iface *i, struct ifa *a);
 struct iface_patt *iface_patt_find(list *l, struct iface *i, struct ifa *a);
 int iface_patts_equal(list *, list *, int (*)(struct iface_patt *, struct iface_patt *));
+
+
+u32 if_choose_router_id(struct iface_patt *mask, u32 old_id);
 
 #endif

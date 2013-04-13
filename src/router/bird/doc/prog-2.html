@@ -1125,12 +1125,13 @@ when feeding is already running, in that case it is restarted.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>proto_notify_limit</B>
-(<I>struct announce_hook *</I> <B>ah</B>, <I>struct proto_limit *</I> <B>l</B>, <I>u32</I> <B>rt_count</B>)
+(<I>struct announce_hook *</I> <B>ah</B>, <I>struct proto_limit *</I> <B>l</B>, <I>int</I> <B>dir</B>, <I>u32</I> <B>rt_count</B>)
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>struct announce_hook *</I> <B>ah</B><DD><P>announce hook
 <DT><I>struct proto_limit *</I> <B>l</B><DD><P>limit being hit
+<DT><I>int</I> <B>dir</B><DD><P>limit direction (PLD_*)
 <DT><I>u32</I> <B>rt_count</B><DD><P>the number of routes 
 </DL>
 <H3>Description</H3>

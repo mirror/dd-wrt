@@ -18,7 +18,7 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 CF_DECLS
 
 CF_KEYWORDS(STATIC, ROUTE, VIA, DROP, REJECT, PROHIBIT, PREFERENCE, CHECK, LINK)
-CF_KEYWORDS(MULTIPATH, WEIGHT, RECURSIVE, IGP, TABLE)
+CF_KEYWORDS(MULTIPATH, WEIGHT, RECURSIVE, IGP, TABLE, BLACKHOLE, UNREACHABLE)
 
 
 CF_GRAMMAR
@@ -86,9 +86,12 @@ stat_route:
       this_srt->dest = RTDX_RECURSIVE;
       this_srt->via = $3;
    }
- | stat_route0 DROP { this_srt->dest = RTD_BLACKHOLE; }
- | stat_route0 REJECT { this_srt->dest = RTD_UNREACHABLE; }
- | stat_route0 PROHIBIT { this_srt->dest = RTD_PROHIBIT; }
+
+ | stat_route0 DROP		{ this_srt->dest = RTD_BLACKHOLE; }
+ | stat_route0 REJECT		{ this_srt->dest = RTD_UNREACHABLE; }
+ | stat_route0 BLACKHOLE	{ this_srt->dest = RTD_BLACKHOLE; }
+ | stat_route0 UNREACHABLE	{ this_srt->dest = RTD_UNREACHABLE; }
+ | stat_route0 PROHIBIT		{ this_srt->dest = RTD_PROHIBIT; }
  ;
 
 CF_CLI(SHOW STATIC, optsym, [<name>], [[Show details of static protocol]])

@@ -19,8 +19,13 @@ extern char *bird_name;
 void async_config(void);
 void async_dump(void);
 void async_shutdown(void);
-void cmd_reconfig(char *name, int type);
+void cmd_check_config(char *name);
+void cmd_reconfig(char *name, int type, int timeout);
+void cmd_reconfig_confirm(void);
+void cmd_reconfig_undo(void);
 void cmd_shutdown(void);
+
+#define UNIX_DEFAULT_CONFIGURE_TIMEOUT 300
 
 /* io.c */
 

@@ -232,6 +232,7 @@ ospf_start(struct proto *p)
   struct ospf_area_config *ac;
 
   po->router_id = proto_get_router_id(p->cf);
+  po->last_vlink_id = 0x80000000;
   po->rfc1583 = c->rfc1583;
   po->ebit = 0;
   po->ecmp = c->ecmp;
@@ -728,6 +729,9 @@ ospf_reconfigure(struct proto *p, struct proto_config *c)
   struct ospf_iface *ifa, *ifx;
   struct ospf_iface_patt *ip;
 
+  if (proto_get_router_id(c) != po->router_id)
+    return 0;
+
   if (po->rfc1583 != new->rfc1583)
     return 0;
 
@@ -953,8 +957,10 @@ lsa_compare_for_state(const void *p1, const void *p2)
   struct ospf_lsa_header *lsa1 = &(he1->lsa);
   struct ospf_lsa_header *lsa2 = &(he2->lsa);
 
-  if (he1->domain != he2->domain)
-    return he1->domain - he2->domain;
+  if (he1->domain < he2->domain)
+    return -1;
+  if (he1->domain > he2->domain)
+    return 1;
 
 #ifdef OSPFv3
   struct ospf_lsa_header lsatmp1, lsatmp2;
@@ -979,14 +985,18 @@ lsa_compare_for_state(const void *p1, const void *p2)
   {
 #ifdef OSPFv3
     /* In OSPFv3, neworks are named base on ID of DR */
-    if (lsa1->rt != lsa2->rt)
-      return lsa1->rt - lsa2->rt;
+    if (lsa1->rt < lsa2->rt)
+      return -1;
+    if (lsa1->rt > lsa2->rt)
+      return 1;
 #endif
 
     /* For OSPFv2, this is IP of the network,
        for OSPFv3, this is interface ID */
-    if (lsa1->id != lsa2->id)
-      return lsa1->id - lsa2->id;
+    if (lsa1->id < lsa2->id)
+      return -1;
+    if (lsa1->id > lsa2->id)
+      return 1;
 
 #ifdef OSPFv3
     if (px1 != px2)
@@ -997,14 +1007,20 @@ lsa_compare_for_state(const void *p1, const void *p2)
   }
   else 
   {
-    if (lsa1->rt != lsa2->rt)
-      return lsa1->rt - lsa2->rt;
+    if (lsa1->rt < lsa2->rt)
+      return -1;
+    if (lsa1->rt > lsa2->rt)
+      return 1;
 
-    if (lsa1->type != lsa2->type)
-      return lsa1->type - lsa2->type;
-  
-    if (lsa1->id != lsa2->id)
-      return lsa1->id - lsa2->id;
+    if (lsa1->type < lsa2->type)
+      return -1;
+    if (lsa1->type > lsa2->type)
+      return 1;
+
+    if (lsa1->id < lsa2->id)
+      return -1;
+    if (lsa1->id > lsa2->id)
+      return 1;
 
 #ifdef OSPFv3
     if (px1 != px2)
@@ -1023,12 +1039,16 @@ ext_compare_for_state(const void *p1, const void *p2)
   struct ospf_lsa_header *lsa1 = &(he1->lsa);
   struct ospf_lsa_header *lsa2 = &(he2->lsa);
 
-  if (lsa1->rt != lsa2->rt)
-    return lsa1->rt - lsa2->rt;
+  if (lsa1->rt < lsa2->rt)
+    return -1;
+  if (lsa1->rt > lsa2->rt)
+    return 1;
 
-  if (lsa1->id != lsa2->id)
-    return lsa1->id - lsa2->id;
- 
+  if (lsa1->id < lsa2->id)
+    return -1;
+  if (lsa1->id > lsa2->id)
+    return 1;
+
   return lsa1->sn - lsa2->sn;
 }
 

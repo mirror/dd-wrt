@@ -108,7 +108,17 @@ are not implemented for OSPF protocol.
 Besides, there are some predefined numeric constants based on /etc/iproute2/rt_* files.
 A list of defined constants can be seen (together with other symbols) using 'show symbols' command.
 <P>
-<DT><CODE>router id <I>IPv4 address</I></CODE><DD><P>Set BIRD's router ID. It's a world-wide unique identification of your router, usually one of router's IPv4 addresses. Default: in IPv4 version, the lowest IP address of a non-loopback interface. In IPv6 version, this option is mandatory. 
+<DT><CODE>router id <I>IPv4 address</I></CODE><DD><P>Set BIRD's router ID. It's a world-wide unique identification
+of your router, usually one of router's IPv4 addresses.
+Default: in IPv4 version, the lowest IP address of a
+non-loopback interface. In IPv6 version, this option is
+mandatory.
+<P>
+<DT><CODE>router id from [-] [ "<I>mask</I>" ] [ <I>prefix</I> ] [, ...]</CODE><DD><P>Set BIRD's router ID based on an IP address of an interface
+specified by an interface pattern. The option is applicable
+for IPv4 version only. See 
+<A HREF="#dsc-iface">interface</A>
+section for detailed description of interface patterns.
 <P>
 <DT><CODE>listen bgp [address <I>address</I>] [port <I>port</I>] [dual]</CODE><DD><P>This option allows to specify address and port where BGP
 protocol should listen. It is global option as listening
@@ -220,15 +230,32 @@ the protocol to the routing table. <CODE>all</CODE> is shorthand for
 works in the direction from the routing table to the protocol.
 Default: <CODE>none</CODE>.
 <P>
+<DT><CODE>import keep filtered <I>bool</I></CODE><DD><P>Usually, if an import filter rejects a route, the route is
+forgotten. When this option is active, these routes are
+kept in the routing table, but they are hidden and not
+propagated to other protocols. But it is possible to show them
+using <CODE>show route filtered</CODE>. Note that this option does not
+work for the pipe protocol. Default: off.
+<P>
 <DT><CODE>import limit <I>number</I> [action warn | block | restart | disable]</CODE><DD><P>Specify an import route limit (a maximum number of routes
 imported from the protocol) and optionally the action to be
 taken when the limit is hit. Warn action just prints warning
-log message. Block action ignores new routes coming from the
+log message. Block action discards new routes coming from the
 protocol. Restart and disable actions shut the protocol down
 like appropriate commands. Disable is the default action if an
 action is not explicitly specified. Note that limits are reset
-during protocol reconfigure, reload or restart.
-Default: <CODE>none</CODE>.
+during protocol reconfigure, reload or restart. Default: <CODE>none</CODE>.
+<P>
+<DT><CODE>receive limit <I>number</I> [action warn | block | restart | disable]</CODE><DD><P>Specify an receive route limit (a maximum number of routes
+received from the protocol and remembered). It works almost
+identically to <CODE>import limit</CODE> option, the only
+difference is that if <CODE>import keep filtered</CODE> option is
+active, filtered routes are counted towards the limit and
+blocked routes are forgotten, as the main purpose of the
+receive limit is to protect routing tables from
+overflow. Import limit, on the contrary, counts accepted
+routes only and routes blocked by the limit are handled like
+filtered routes. Default: <CODE>none</CODE>.
 <P>
 <DT><CODE>export limit <I>number</I> [action warn | block | restart | disable]</CODE><DD><P>Specify an export route limit, works similarly to
 the <CODE>import limit</CODE> option, but for the routes exported

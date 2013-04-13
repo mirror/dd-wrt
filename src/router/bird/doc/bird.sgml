@@ -337,7 +337,18 @@ protocol rip {
 	Besides, there are some predefined numeric constants based on /etc/iproute2/rt_* files.
 	A list of defined constants can be seen (together with other symbols) using 'show symbols' command.
 
-	<tag>router id <m/IPv4 address/</tag> Set BIRD's router ID. It's a world-wide unique identification of your router, usually one of router's IPv4 addresses. Default: in IPv4 version, the lowest IP address of a non-loopback interface. In IPv6 version, this option is mandatory. 
+	<tag>router id <m/IPv4 address/</tag>
+ 	Set BIRD's router ID. It's a world-wide unique identification
+	of your router, usually one of router's IPv4 addresses.
+	Default: in IPv4 version, the lowest IP address of a
+	non-loopback interface. In IPv6 version, this option is
+	mandatory.
+
+	<tag>router id from [-] [ "<m/mask/" ] [ <m/prefix/ ] [, ...]</tag>
+	Set BIRD's router ID based on an IP address of an interface
+	specified by an interface pattern. The option is applicable
+	for IPv4 version only. See <ref id="dsc-iface" name="interface">
+	section for detailed description of interface patterns.
 
 	<tag>listen bgp [address <m/address/] [port <m/port/] [dual]</tag>
 	This option allows to specify address and port where BGP
@@ -459,16 +470,35 @@ to zero to disable it. An empty <cf><m/switch/</cf> is equivalent to <cf/on/
 	works in the direction from the routing table to the protocol.
 	Default: <cf/none/.
 
+	<tag>import keep filtered <m/bool/</tag>
+	Usually, if an import filter rejects a route, the route is
+	forgotten. When this option is active, these routes are
+	kept in the routing table, but they are hidden and not
+	propagated to other protocols. But it is possible to show them
+	using <cf/show route filtered/. Note that this option does not
+	work for the pipe protocol. Default: off.
+
 	<tag>import limit <m/number/ [action warn | block | restart | disable]</tag>
 	Specify an import route limit (a maximum number of routes
 	imported from the protocol) and optionally the action to be
 	taken when the limit is hit. Warn action just prints warning
-	log message. Block action ignores new routes coming from the
+	log message. Block action discards new routes coming from the
 	protocol. Restart and disable actions shut the protocol down
 	like appropriate commands. Disable is the default action if an
 	action is not explicitly specified. Note that limits are reset
-	during protocol reconfigure, reload or restart.
-	Default: <cf/none/.
+	during protocol reconfigure, reload or restart. Default: <cf/none/.
+
+	<tag>receive limit <m/number/ [action warn | block | restart | disable]</tag>
+	Specify an receive route limit (a maximum number of routes
+	received from the protocol and remembered). It works almost
+	identically to <cf>import limit</cf> option, the only
+	difference is that if <cf/import keep filtered/ option is
+	active, filtered routes are counted towards the limit and
+	blocked routes are forgotten, as the main purpose of the
+	receive limit is to protect routing tables from
+	overflow. Import limit, on the contrary, counts accepted
+	routes only and routes blocked by the limit are handled like
+	filtered routes. Default: <cf/none/.
 
 	<tag>export limit <m/number/ [action warn | block | restart | disable]</tag>
 	Specify an export route limit, works similarly to
@@ -661,6 +691,9 @@ This argument can be omitted if there exists only a single instance.
 	<p>You can also select just routes added by a specific protocol.
 	<cf>protocol <m/p/</cf>.
 
+	<p>If BIRD is configured to keep filtered routes (see </cf/import keep filtered/
+	option), you can show them instead of routes by using </cf/filtered/ switch.
+
 	<p>The <cf/stats/ switch requests showing of route statistics (the
 	number of networks, number of routes before and after filtering). If
 	you use <cf/count/ instead, only the statistics will be printed.
@@ -688,19 +721,48 @@ This argument can be omitted if there exists only a single instance.
 	<tag>flush roa [table <m/t/>]</tag>
 	Remove all dynamic ROA entries from a ROA table.
 
-	<tag>configure [soft] ["<m/config file/"]</tag>
+	<tag>configure [soft] ["<m/config file/"] [timeout [<m/num/]]</tag>
 	Reload configuration from a given file. BIRD will smoothly
 	switch itself to the new configuration, protocols are
 	reconfigured if possible, restarted otherwise. Changes in
-	filters usually lead to restart of affected protocols. If
-	<cf/soft/ option is used, changes in filters does not cause
+	filters usually lead to restart of affected protocols.
+
+	If <cf/soft/ option is used, changes in filters does not cause
 	BIRD to restart affected protocols, therefore already accepted
 	routes (according to old filters) would be still propagated,
 	but new routes would be processed according to the new
 	filters.
 
+	If <cf/timeout/ option is used, config timer is activated. The
+	new configuration could be either confirmed using
+	<cf/configure confirm/ command, or it will be reverted to the
+	old one when the config timer expires. This is useful for cases
+	when reconfiguration breaks current routing and a router becames
+	inaccessible for an administrator. The config timeout expiration is
+	equivalent to <cf/configure undo/ command. The timeout duration
+	could be specified, default is 300 s.
+
+	<tag>configure confirm</tag>
+	Deactivate the config undo timer and therefore confirm the current
+	configuration.
+
+	<tag>configure undo</tag>
+	Undo the last configuration change and smoothly switch back to
+	the previous (stored) configuration. If the last configuration
+	change was soft, the undo change is also soft. There is only
+	one level of undo, but in some specific cases when several
+	reconfiguration requests are given immediately in a row and
+	the intermediate ones are skipped then the undo also skips them back.
+
+	<tag>configure check ["<m/config file/"]</tag>
+	Read and parse given config file, but do not use it. useful
+	for checking syntactic and some semantic validity of an config
+	file.
+
 	<tag>enable|disable|restart <m/name/|"<m/pattern/"|all</tag>
-	Enable, disable or restart a given protocol instance, instances matching the <cf><m/pattern/</cf> or <cf/all/ instances.
+	Enable, disable or restart a given protocol instance,
+	instances matching the <cf><m/pattern/</cf> or
+	<cf/all/ instances.
 
 	<tag>reload [in|out] <m/name/|"<m/pattern/"|all</tag>
 	
@@ -1640,6 +1702,15 @@ use cases that use the direct protocol (like abusing eBGP as an IGP
 routing protocol), in most cases it is not needed to have these device
 routes in BIRD routing table and to use the direct protocol.
 
+<p>There is one notable case when you definitely want to use the
+direct protocol -- running BIRD on BSD systems. Having high priority
+device routes for directly connected networks from the direct protocol
+protects kernel device routes from being overwritten or removed by IGP
+routes during some transient network conditions, because a lower
+priority IGP route for the same network is not exported to the kernel
+routing table. This is an issue on BSD systems only, as on Linux
+systems BIRD cannot change non-BIRD route in the kernel routing table.
+
 <p>The only configurable thing about direct is what interfaces it watches:
 
 <p><descrip>
@@ -2460,13 +2531,13 @@ interface definitions, prefix definitions and DNS definitions:
 	router. 0 means do not use as a default router. Default: 3 *
 	<cf/max ra interval/.
 
-	<tag>rdnss local <m/bool/</tag>
+	<tag>rdnss local <m/switch/</tag>
 	Use only local (interface-specific) RDNSS definitions for this
 	interface. Otherwise, both global and local definitions are
 	used. Could also be used to disable RDNSS for given interface
 	if no local definitons are specified. Default: no.
 
-	<tag>dnssl local <m/bool/</tag>
+	<tag>dnssl local <m/switch/</tag>
 	Use only local DNSSL definitions for this interface. See
 	<cf/rdnss local/ option above. Default: no.
 </descrip>
@@ -2710,9 +2781,10 @@ definition of the protocol contains mainly a list of static routes:
 	route through an interface to hosts on a directly connected network.
 	<tag>route <m/prefix/ recursive <m/ip/</tag> Static recursive route,
 	its nexthop depends on a route table lookup for given IP address.
-	<tag>route <m/prefix/ drop|reject|prohibit</tag> Special routes
-	specifying to drop the packet, return it as unreachable or return
-	it as administratively prohibited.
+	<tag>route <m/prefix/ blackhole|unreachable|prohibit</tag> Special routes
+	specifying to silently drop the packet, return it as unreachable or return
+	it as administratively prohibited. First two targets are also known
+	as <cf/drop/ and <cf/reject/.
 
 	<tag>check link <m/switch/</tag>
 	If set, hardware link states of network interfaces are taken
@@ -2738,7 +2810,7 @@ protocol static {
 		via 198.51.100.10 weight 2
 		via 198.51.100.20
 		via 192.0.2.1;
-	route 203.0.113.0/24 reject;	 # Sink route
+	route 203.0.113.0/24 unreachable; # Sink route
 	route 10.2.0.0/24 via "arc0";	 # Secondary network
 }
 </code>

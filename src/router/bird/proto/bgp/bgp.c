@@ -878,6 +878,7 @@ bgp_shutdown(struct proto *P)
       subcode = 4; // Errcode 6, 4 - administrative reset
       break;
 
+    case PDC_RX_LIMIT_HIT:
     case PDC_IN_LIMIT_HIT:
       subcode = 1; // Errcode 6, 1 - max number of prefixes reached
       /* log message for compatibility */
@@ -1008,6 +1009,9 @@ bgp_reconfigure(struct proto *P, struct proto_config *C)
   struct bgp_config *new = (struct bgp_config *) C;
   struct bgp_proto *p = (struct bgp_proto *) P;
   struct bgp_config *old = p->cf;
+
+  if (proto_get_router_id(C) != p->local_id)
+    return 0;
 
   int same = !memcmp(((byte *) old) + sizeof(struct proto_config),
 		     ((byte *) new) + sizeof(struct proto_config),
@@ -1188,7 +1192,7 @@ bgp_show_proto_info(struct proto *P)
       cli_msg(-1006, "    Source address:   %I", p->source_addr);
       if (P->cf->in_limit)
 	cli_msg(-1006, "    Route limit:      %d/%d",
-		p->p.stats.imp_routes, P->cf->in_limit->limit);
+		p->p.stats.imp_routes + p->p.stats.filt_routes, P->cf->in_limit->limit);
       cli_msg(-1006, "    Hold timer:       %d/%d",
 	      tm_remains(c->hold_timer), c->hold_time);
       cli_msg(-1006, "    Keepalive timer:  %d/%d",
