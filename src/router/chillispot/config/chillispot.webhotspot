@@ -49,7 +49,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.allowuam"); %></div>
-			<textarea maxLength="2000" cols="60" rows="10" name="chilli_uamallowed" id="chilli_uamallowed"><% nvram_get("chilli_uamallowed"); %></textarea>
+			<textarea maxLength="2000" cols="60" rows="6" name="chilli_uamallowed" id="chilli_uamallowed"><% nvram_get("chilli_uamallowed"); %></textarea>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.macauth"); %></div>

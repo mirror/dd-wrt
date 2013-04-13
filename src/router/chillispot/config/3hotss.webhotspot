@@ -50,7 +50,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspotsys.allowuam"); %></div>
-			<textarea maxLength="2000" cols="60" rows="10" name="hotss_uamallowed" id="hotss_uamallowed"><% nvram_get("hotss_uamallowed"); %></textarea>
+			<textarea maxLength="2000" cols="60" rows="6" name="hotss_uamallowed" id="hotss_uamallowed"><% nvram_get("hotss_uamallowed"); %></textarea>
 		</div>
 	</div>	
 	</div>
