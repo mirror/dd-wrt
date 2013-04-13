@@ -62,12 +62,11 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-
-	mknod("/dev/mmc",S_IFBLK|0660,makedev(126,0));
-	mknod("/dev/mmc0",S_IFBLK|0660,makedev(126,1));
-	mknod("/dev/mmc1",S_IFBLK|0660,makedev(126,2));
-	mknod("/dev/mmc2",S_IFBLK|0660,makedev(126,3));
-	mknod("/dev/mmc3",S_IFBLK|0660,makedev(126,4));
+	mknod("/dev/mmc", S_IFBLK | 0660, makedev(126, 0));
+	mknod("/dev/mmc0", S_IFBLK | 0660, makedev(126, 1));
+	mknod("/dev/mmc1", S_IFBLK | 0660, makedev(126, 2));
+	mknod("/dev/mmc2", S_IFBLK | 0660, makedev(126, 3));
+	mknod("/dev/mmc3", S_IFBLK | 0660, makedev(126, 4));
 
 	eval("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
 	FILE *in = fopen("/tmp/nvram/nvram.db", "rb");
@@ -101,20 +100,20 @@ void start_sysinit(void)
 	detect_wireless_devices();
 
 #if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_ECB3500) || defined(HAVE_EOC1650)
-	writeproc("/proc/sys/dev/wifi0/ledpin","2");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "2");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 #endif
 #ifdef HAVE_GWMF54G2
-	writeproc("/proc/sys/dev/wifi0/ledpin","4");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "4");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 #endif
 #ifdef HAVE_DLM101
-	writeproc("/proc/sys/dev/wifi0/ledpin","7");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "7");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 #endif
 #ifdef HAVE_MERAKI
-	writeproc("/proc/sys/dev/wifi0/ledpin","3");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "3");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 #endif
 	// eval ("ifconfig", "wifi0", "up");
 #ifdef HAVE_LS2
@@ -124,7 +123,7 @@ void start_sysinit(void)
 	int s;
 	struct ifreq ifr;
 	if (getRouterBrand() == ROUTER_BOARD_FONERA2200) {
-//		eval("ifconfig", "eth0", "up", "promisc");	// required for vlan config
+//              eval("ifconfig", "eth0", "up", "promisc");      // required for vlan config
 		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("/sbin/vconfig", "add", "eth0", "0");
 		eval("/sbin/vconfig", "add", "eth0", "1");
@@ -137,8 +136,8 @@ void start_sysinit(void)
 			char macaddr[32];
 
 			strcpy(macaddr,
-			       ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					  sa_data, eabuf));
+			       ether_etoa((unsigned char *)ifr.
+					  ifr_hwaddr.sa_data, eabuf));
 			nvram_set("et0macaddr", macaddr);
 //          MAC_ADD( macaddr );
 			ether_atoe(macaddr,

@@ -160,41 +160,43 @@ void start_sysinit(void)
 #endif
 		annex = nvram_default_get("annex", "a");
 	char *annexfw = "/usr/lib/firmware/annex_a.bin";
-	if (!strncmp(annex,"b",1))
-	    annexfw = "/usr/lib/firmware/annex_b.bin";
+	if (!strncmp(annex, "b", 1))
+		annexfw = "/usr/lib/firmware/annex_b.bin";
 	char *initcode = "";
-	if (!strcmp(annex,"b"))
+	if (!strcmp(annex, "b"))
 		initcode = "10_00_10_00_00_04_00_00";
-	if (!strcmp(annex,"bdmt"))
+	if (!strcmp(annex, "bdmt"))
 		initcode = "10_00_00_00_00_00_00_00";
-	if (!strcmp(annex,"badsl2"))
+	if (!strcmp(annex, "badsl2"))
 		initcode = "00_00_10_00_00_00_00_00";
-	if (!strcmp(annex,"badsl2+"))
+	if (!strcmp(annex, "badsl2+"))
 		initcode = "00_00_00_00_00_04_00_00";
 
-	if (!strcmp(annex,"a"))
+	if (!strcmp(annex, "a"))
 		initcode = "04_01_04_00_00_01_00_00";
-	if (!strcmp(annex,"at1"))
+	if (!strcmp(annex, "at1"))
 		initcode = "01_00_00_00_00_00_00_00";
-	if (!strcmp(annex,"alite"))
+	if (!strcmp(annex, "alite"))
 		initcode = "00_01_00_00_00_00_00_00";
-	if (!strcmp(annex,"admt"))
+	if (!strcmp(annex, "admt"))
 		initcode = "04_00_00_00_00_00_00_00";
-	if (!strcmp(annex,"aadsl2"))
+	if (!strcmp(annex, "aadsl2"))
 		initcode = "00_00_04_00_00_00_00_00";
-	if (!strcmp(annex,"aadsl2+"))
+	if (!strcmp(annex, "aadsl2+"))
 		initcode = "00_00_00_00_00_01_00_00";
-	if (!strcmp(annex,"l"))
+	if (!strcmp(annex, "l"))
 		initcode = "00_00_00_00_04_00_00_00";
 
-	if (!strcmp(annex,"m"))
+	if (!strcmp(annex, "m"))
 		initcode = "00_00_00_00_40_00_04_00";
-	if (!strcmp(annex,"madsl2"))
+	if (!strcmp(annex, "madsl2"))
 		initcode = "00_00_00_00_40_00_00_00";
-	if (!strcmp(annex,"madsl2+"))
+	if (!strcmp(annex, "madsl2+"))
 		initcode = "00_00_00_00_00_00_04_00";
 
-	sysprintf("/usr/sbin/dsl_cpe_control -i%s -f %s -n /usr/sbin/dsl_notification.sh &",initcode,annexfw);
+	sysprintf
+	    ("/usr/sbin/dsl_cpe_control -i%s -f %s -n /usr/sbin/dsl_notification.sh &",
+	     initcode, annexfw);
 
 	eval("ifconfig", "eth0", "up");
 	detect_wireless_devices();
@@ -235,8 +237,8 @@ void start_sysinit(void)
 	sysprintf
 	    ("echo phy0tpt > /sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger");
 #else
-	writeproc("/proc/sys/dev/wifi0/ledpin","15");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "15");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 
 #endif
 	led_control(LED_POWER, LED_ON);
@@ -260,8 +262,8 @@ void start_sysinit(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 	MAC_ADD(mac);
 	eval("ifconfig", "wifi0", "hw", "ether", mac);
-	writeproc("/proc/sys/dev/wifi0/ledpin","219");
-	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin", "219");
+	writeproc("/proc/sys/dev/wifi0/softled", "1");
 #endif
 
 	/*

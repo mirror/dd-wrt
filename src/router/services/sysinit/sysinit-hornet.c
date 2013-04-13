@@ -141,7 +141,6 @@ void start_sysinit(void)
 
 	}
 
-
 #endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");

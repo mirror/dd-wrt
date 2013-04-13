@@ -61,14 +61,12 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	mknod("/dev/mmc",S_IFBLK|0660,makedev(126,0));
-	mknod("/dev/mmc0",S_IFBLK|0660,makedev(126,1));
-	mknod("/dev/mmc1",S_IFBLK|0660,makedev(126,2));
-	mknod("/dev/mmc2",S_IFBLK|0660,makedev(126,3));
-	mknod("/dev/mmc3",S_IFBLK|0660,makedev(126,4));
-	mknod("/dev/gpio",S_IFCHR|0644,makedev(252,0));
-
-
+	mknod("/dev/mmc", S_IFBLK | 0660, makedev(126, 0));
+	mknod("/dev/mmc0", S_IFBLK | 0660, makedev(126, 1));
+	mknod("/dev/mmc1", S_IFBLK | 0660, makedev(126, 2));
+	mknod("/dev/mmc2", S_IFBLK | 0660, makedev(126, 3));
+	mknod("/dev/mmc3", S_IFBLK | 0660, makedev(126, 4));
+	mknod("/dev/gpio", S_IFCHR | 0644, makedev(252, 0));
 
 	/*
 	 * Setup console 
@@ -92,17 +90,17 @@ void start_sysinit(void)
 	insmod("rt2860v2_ap");
 	insmod("raeth");
 #ifdef HAVE_DIR600
-	writeproc("/proc/rt3052/mii/ctrl","write 0 0 0x3300");
-	writeproc("/proc/rt3052/mii/ctrl","write 1 0 0x3300");
-	writeproc("/proc/rt3052/mii/ctrl","write 2 0 0x3300");
-	writeproc("/proc/rt3052/mii/ctrl","write 3 0 0x3300");
+	writeproc("/proc/rt3052/mii/ctrl", "write 0 0 0x3300");
+	writeproc("/proc/rt3052/mii/ctrl", "write 1 0 0x3300");
+	writeproc("/proc/rt3052/mii/ctrl", "write 2 0 0x3300");
+	writeproc("/proc/rt3052/mii/ctrl", "write 3 0 0x3300");
 #endif
 #if defined(HAVE_RT10N) || defined(HAVE_F5D8235) || defined(HAVE_RT15N) || defined(HAVE_WCRGN) && !defined(HAVE_HAMEA15)
 	FILE *in = fopen("/dev/mtdblock/2", "rb");
 	unsigned char mac[32];
 	if (in != NULL) {
-		fseek(in,4,SEEK_SET);
-		fread(mac,6,1,in);
+		fseek(in, 4, SEEK_SET);
+		fread(mac, 6, 1, in);
 		fclose(in);
 		unsigned int copy[6];
 		int i;
@@ -110,12 +108,12 @@ void start_sysinit(void)
 			copy[i] = mac[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
 			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
-		if (!strcmp(mac,"ff:ff:ff:ff:ff:ff"))
-		    eval("ifconfig", "eth2", "hw", "ether", "00:11:22:33:44:55");
+		if (!strcmp(mac, "ff:ff:ff:ff:ff:ff"))
+			eval("ifconfig", "eth2", "hw", "ether",
+			     "00:11:22:33:44:55");
 		else
-		    eval("ifconfig", "eth2", "hw", "ether", mac);
+			eval("ifconfig", "eth2", "hw", "ether", mac);
 	}
-
 #endif
 #ifdef HAVE_HAMEA15
 	FILE *in = fopen("/dev/mtdblock/1", "rb");
@@ -140,8 +138,6 @@ void start_sysinit(void)
 		free(config);
 		fclose(in);
 	}
-
-
 
 #endif
 #if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) || defined(HAVE_AR690W)
@@ -337,8 +333,8 @@ void start_sysinit(void)
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
 #ifdef HAVE_WCRGN
-	sysprintf("gpio enable 0"); // ses fixup
-	sysprintf("gpio enable 10"); // reset fixup
+	sysprintf("gpio enable 0");	// ses fixup
+	sysprintf("gpio enable 10");	// reset fixup
 #endif
 	return;
 }
@@ -360,7 +356,8 @@ void start_overclocking(void)
 
 char *enable_dtag_vlan(int enable)
 {
-	if (getRouterBrand() != ROUTER_BOARD_ECB9750 && getRouterBrand() != ROUTER_BOARD_TECHNAXX3G) {
+	if (getRouterBrand() != ROUTER_BOARD_ECB9750
+	    && getRouterBrand() != ROUTER_BOARD_TECHNAXX3G) {
 		if (enable) {
 #if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
 			sysprintf("switch reg w 14 405555");
@@ -471,7 +468,7 @@ char *enable_dtag_vlan(int enable)
 			     "VLAN_PLUS_VID_NO_PAD");
 			eval("vconfig", "add", "eth2", "2");	//WAN
 			return "eth2";
-#endif		
+#endif
 		}
 	} else {
 		return "eth2";

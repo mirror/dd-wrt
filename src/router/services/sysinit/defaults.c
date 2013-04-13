@@ -161,7 +161,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"lan_ifnames", "", 0},	/* Enslaved LAN interfaces */
 	{"lan_hwnames", "", 0},	/* LAN driver names (e.g. et0) */
 	{"lan_hwaddr", "", 0},	/* LAN interface MAC address */
-#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 	{"wl0_ifname", "ath0", 0},	/* LAN interface MAC address */
 #else
 	{"wl0_ifname", "eth1", 0},	/* LAN interface MAC address */
@@ -200,7 +200,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_regdomain", "GERMANY_BFWA", 0},	/* LAN IP address */
 #elif defined(HAVE_NS2) || defined(HAVE_EOC2610)
 	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
-#elif defined(HAVE_WHRHPGN) 
+#elif defined(HAVE_WHRHPGN)
 	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
 #endif
 	{"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
@@ -225,9 +225,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath3_regdomain", "GERMANY", 0},	/* LAN IP address */
 #elif HAVE_CARLSONWIRELESS
 	{"lan_ipaddr", "192.168.2.20", 0},	/* LAN ip address */
-	{"ath0_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},		/* ath0 regulatory domain */
-	{"ath1_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},		/* ath0 regulatory domain */
-	{"ath2_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},		/* ath0 regulatory domain */
+	{"ath0_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},	/* ath0 regulatory domain */
+	{"ath1_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},	/* ath0 regulatory domain */
+	{"ath2_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},	/* ath0 regulatory domain */
 #elif HAVE_IPR
 	{"lan_ipaddr", "192.168.14.14", 0},	/* LAN ip address */
 #else
@@ -713,42 +713,42 @@ struct nvram_tuple srouter_defaults[] = {
 					 * change it to a radio appropriate default
 					 */
 #ifdef HAVE_BCMMODERN
-	{ "wl_rifs_advert", "auto", 0},		/* RIFS mode advertisement */
-	{ "wl0_rifs_advert", "auto", 0},		/* RIFS mode advertisement */
-	{ "wl1_rifs_advert", "auto", 0},		/* RIFS mode advertisement */
-	{ "wl_stbc_tx", "auto", 0 },		/* Default STBC TX setting */
-	{ "wl_stbc_rx", "1", 0 },		/* Default STBC RX setting */
-	{ "wl_ampdu", "auto", 0 },		/* Default AMPDU setting */
+	{"wl_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
+	{"wl0_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
+	{"wl1_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
+	{"wl_stbc_tx", "auto", 0},	/* Default STBC TX setting */
+	{"wl_stbc_rx", "1", 0},	/* Default STBC RX setting */
+	{"wl_ampdu", "auto", 0},	/* Default AMPDU setting */
 	/* Default AMPDU retry limit per-tid setting */
-	{ "wl_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0 },
+	{"wl_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0},
 	/* Default AMPDU regular rate retry limit per-tid setting */
-	{ "wl_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0 },
-	{ "wl_amsdu", "auto", 0 },		/* Default AMSDU setting */
-	{ "wl_obss_coex", "1", 0 },		/* Default OBSS Coexistence setting - OFF */
+	{"wl_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
+	{"wl_amsdu", "auto", 0},	/* Default AMSDU setting */
+	{"wl_obss_coex", "1", 0},	/* Default OBSS Coexistence setting - OFF */
 
-	{ "wl0_stbc_tx", "auto", 0 },		/* Default STBC TX setting */
-	{ "wl0_stbc_rx", "1", 0 },		/* Default STBC RX setting */
-	{ "wl0_ampdu", "auto", 0 },		/* Default AMPDU setting */
+	{"wl0_stbc_tx", "auto", 0},	/* Default STBC TX setting */
+	{"wl0_stbc_rx", "1", 0},	/* Default STBC RX setting */
+	{"wl0_ampdu", "auto", 0},	/* Default AMPDU setting */
 	/* Default AMPDU retry limit per-tid setting */
-	{ "wl0_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0 },
+	{"wl0_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0},
 	/* Default AMPDU regular rate retry limit per-tid setting */
-	{ "wl0_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0 },
-	{ "wl0_amsdu", "auto", 0 },		/* Default AMSDU setting */
-	{ "wl0_obss_coex", "1", 0 },		/* Default OBSS Coexistence setting - OFF */
-	{ "wl1_stbc_tx", "auto", 0 },		/* Default STBC TX setting */
-	{ "wl1_stbc_rx", "1", 0 },		/* Default STBC RX setting */
-	{ "wl1_ampdu", "auto", 0 },		/* Default AMPDU setting */
+	{"wl0_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
+	{"wl0_amsdu", "auto", 0},	/* Default AMSDU setting */
+	{"wl0_obss_coex", "1", 0},	/* Default OBSS Coexistence setting - OFF */
+	{"wl1_stbc_tx", "auto", 0},	/* Default STBC TX setting */
+	{"wl1_stbc_rx", "1", 0},	/* Default STBC RX setting */
+	{"wl1_ampdu", "auto", 0},	/* Default AMPDU setting */
 	/* Default AMPDU retry limit per-tid setting */
-	{ "wl1_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0 },
+	{"wl1_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0},
 	/* Default AMPDU regular rate retry limit per-tid setting */
-	{ "wl1_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0 },
-	{ "wl1_amsdu", "auto", 0 },		/* Default AMSDU setting */
-	{ "wl1_obss_coex", "1", 0 },		/* Default OBSS Coexistence setting - OFF */
+	{"wl1_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
+	{"wl1_amsdu", "auto", 0},	/* Default AMSDU setting */
+	{"wl1_obss_coex", "1", 0},	/* Default OBSS Coexistence setting - OFF */
 	/* Tx Beamforming */
-	{ "wl0_txbf_bfr_cap", "0", 0 },
-	{ "wl0_txbf_bfe_cap", "0", 0 },
-	{ "wl1_txbf_bfr_cap", "0", 0 },
-	{ "wl1_txbf_bfe_cap", "0", 0 },
+	{"wl0_txbf_bfr_cap", "0", 0},
+	{"wl0_txbf_bfe_cap", "0", 0},
+	{"wl1_txbf_bfr_cap", "0", 0},
+	{"wl1_txbf_bfe_cap", "0", 0},
 #endif
 
 	{"wl0_sta_retry_time", "5", 0},	/* 100% duty cycle for LED on router */
@@ -809,7 +809,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
 #else
 
-#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 #ifdef HAVE_MAKSAT
 	{"show_hidden", "1", 0},
 	{"ath0_regulatory", "0", 0},
@@ -835,13 +835,13 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_ssid", "nextmedia", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "nextmedia", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_CARLSONWIRELESS)
-	{"wl0_ifname", "ath0", 0},		/* Wireless interface name) */
-	{"wl0_ssid", "Carlson", 0},		/* Service set ID (network name) */
-	{"ath0_ssid", "Carlson", 0},		/* Service set ID (network name) */
-	{"ath0_nctrlsb", "upper", 0},		/* ath0 11n sub channel */
-	{"ath0_crypto", "aes", 0},		/* ath0 encryption type */
+	{"wl0_ifname", "ath0", 0},	/* Wireless interface name) */
+	{"wl0_ssid", "Carlson", 0},	/* Service set ID (network name) */
+	{"ath0_ssid", "Carlson", 0},	/* Service set ID (network name) */
+	{"ath0_nctrlsb", "upper", 0},	/* ath0 11n sub channel */
+	{"ath0_crypto", "aes", 0},	/* ath0 encryption type */
 	{"ath0_security_mode", "psk2", 0},	/* ath0 encryption type */
-	{"ath0_txpwrdbm", "19", 0},		/* ath0 transmit power */
+	{"ath0_txpwrdbm", "19", 0},	/* ath0 transmit power */
 #elif defined(HAVE_IMMERSIVE)
 	{"ath0_ssid", "imm", 0},
 	{"ath1_ssid", "imm_1", 0},
@@ -860,25 +860,25 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_TMK)
-	{"wl0_ssid", "KMT", 0},		/* Service set ID (network name) */
+	{"wl0_ssid", "KMT", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "KMT", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_BKM)
 	{"wl0_ssid", "BKM-HSDL", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "BKM-HSDL", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_ERC)
-	{"wl0_ssid", "ERC", 0},		/* Service set ID (network name) */
+	{"wl0_ssid", "ERC", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "ERC", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_IPR)
-	{"wl0_ssid", "IPR", 0},		/* Service set ID (network name) */
+	{"wl0_ssid", "IPR", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "IPR", 0},	/* Service set ID (network name) */
 	{"ath0_regulatory", "1", 0},
 	{"ath0_channel", "6000", 0},	/* 6000/chan 200 -ath0 frequency */
 	{"ath0_txpwrdbm", "6", 0},
-	{"ath0_crypto", "aes", 0},		/* ath0 encryption type */
+	{"ath0_crypto", "aes", 0},	/* ath0 encryption type */
 	{"ath0_security_mode", "psk2", 0},	/* ath0 encryption type */
 	{"ath0_wpa_psk", "marcomarco14", 0},	/* ath0 encryption key */
 #else
-#ifndef HAVE_BUFFALO		
+#ifndef HAVE_BUFFALO
 	{"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 #endif
@@ -901,7 +901,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0.2_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
 	{"ath0.3_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
 #else
-#ifndef HAVE_BUFFALO		
+#ifndef HAVE_BUFFALO
 	{"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"wl1_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
@@ -927,7 +927,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_NEWMEDIA
 	{"wl_radio", "1", 0},	/* Enable (1) or disable (0) radio */
 #else
-#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 	{"ath0_radio", "1", 0},	/* Enable (1) or disable (0) radio */
 	{"ath0_closed", "0", 0},	/* Closed (hidden) network */
 	{"ath1_radio", "1", 0},	/* Enable (1) or disable (0) radio */
@@ -971,7 +971,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_mode", "sta", 0},
 #else
 
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K)
 	{"wl_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 	{"wl0_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
@@ -1035,7 +1035,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath5_xr", "0", 0},	/* AP mode (ap|sta|wds) */
 #endif
 #endif
-#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 	{"ath0_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
 	{"ath1_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
 	{"ath2_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
@@ -1045,7 +1045,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 	{"wl_wds", "", 0},	/* xx:xx:xx:xx:xx:xx ... */
 	{"wl_wep", "disabled", 0},	/* Data encryption (off|wep|tkip|aes) */
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K)
 #ifndef HAVE_BUFFALO
 	{"wl_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
 	{"wl_auth", "0", 0},	/* Shared key authentication optional (0) or
@@ -1090,7 +1090,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_macmode", "disabled", 0},	/* "allow" only, "deny" only, or
 					 * "disabled" (allow all) */
 	{"wl_macmode1", "disabled", 0},	/* "disabled" or "other" for WEBB *//* Add */
-#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 #ifdef HAVE_CARLSONWIRELESS
 	{"ath0_channel", "5180", 0},	/* 5275ath0 frequency */
 	{"ath0_rxantenna", "3", 0},
@@ -1157,7 +1157,7 @@ struct nvram_tuple srouter_defaults[] = {
 					 * (mixed|g-only|b-only|disable) */
 #endif
 #elif HAVE_CARLSONWIRELESS
-	{"ath0_net_mode", "n5-only", 0},/* ath0 wireless mode */
+	{"ath0_net_mode", "n5-only", 0},	/* ath0 wireless mode */
 #else
 	{"wl_net_mode", "mixed", 0},	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
@@ -1209,10 +1209,10 @@ struct nvram_tuple srouter_defaults[] = {
 	 * Add 
 	 */
 	{"security_mode_last", "", 0},	/* Save last WPA mode *//* Add */
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K)
 	{"wl0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
-#ifndef HAVE_BUFFALO		
+#ifndef HAVE_BUFFALO
 	{"wl0_akm", "disabled", 0},
 	{"wl0_wpa_psk", "", 0},	/* WPA pre-shared key */
 #endif
@@ -1220,10 +1220,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_radius_port", "1812", 0},	/* RADIUS server UDP port */
 	{"wl0_radius_ipaddr", "", 0},	/* RADIUS server IP address */
 	{"wl0_radius_key", "", 0},	/* RADIUS shared secret */
-#ifndef HAVE_BUFFALO		
+#ifndef HAVE_BUFFALO
 	{"wl0_security_mode", "disabled", 0},	/* WPA mode */
 #endif
-
 
 	{"wl0.1_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
@@ -1254,7 +1253,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 #else
 	{"ath0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk)  */
-#ifndef HAVE_BUFFALO		
+#ifndef HAVE_BUFFALO
 #ifdef HAVE_CARLSONWIRELESS
 	{"ath0_akm", "psk2", 0},
 	{"ath0_wpa_psk", "7078227000", 0},	/* ath0 encryption key */
@@ -1272,7 +1271,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath1_radius_port", "1812", 0},	/* RADIUS server UDP port */
 	{"ath1_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
-#ifndef HAVE_BUFFALO		
+#ifndef HAVE_BUFFALO
 	{"ath1_akm", "disabled", 0},
 	{"ath1_wpa_psk", "", 0},	/* WPA pre-shared key */
 #endif
@@ -1402,7 +1401,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "RemoteEngineer", 0},
 	{"ree_resetme", "1", 0},
 #elif  HAVE_CARLSONWIRELESS
-	{"router_name", "CWT", 0},		/* Router name) */
+	{"router_name", "CWT", 0},	/* Router name) */
 #elif HAVE_IPR
 	{"router_name", "IPR", 0},
 #else
@@ -1431,7 +1430,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #ifndef HAVE_MICRO
-//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//      {"limit_http", "0", 0}, /* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
@@ -1452,7 +1451,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #ifndef HAVE_MICRO
-//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//      {"limit_http", "0", 0}, /* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
@@ -1472,7 +1471,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #ifndef HAVE_MICRO
-//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//      {"limit_http", "0", 0}, /* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
@@ -1491,7 +1490,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 #ifndef HAVE_MICRO
-//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//      {"limit_http", "0", 0}, /* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
@@ -1511,7 +1510,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "0", 0},	/* Remote Management [1|0] */
 #ifndef HAVE_MICRO
-//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//      {"limit_http", "0", 0}, /* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
@@ -1531,11 +1530,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 #ifndef HAVE_MICRO
-//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//      {"limit_http", "0", 0}, /* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
-#endif	
+#endif
 #ifdef HAVE_DDLAN
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_GGEW
@@ -1718,7 +1717,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"rc_firewall", "", 0},
 	{"rc_custom", "", 0},
 	{"rc_shutdown", "", 0},
-#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 #ifdef HAVE_XIOCOM
 	{"ath0_txpwrdbm", "17", 0},
 	{"ath1_txpwrdbm", "17", 0},
@@ -1949,7 +1948,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"telnet_wanport", "23", 0},	/* WAN port to listen on */
 	{"syslogd_enable", "0", 0},
 	{"syslogd_rem_ip", "", 0},
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K)
 	{"wl0_wds1_enable", "0", 0},
 	{"wl0_wds2_enable", "0", 0},
 	{"wl0_wds3_enable", "0", 0},
@@ -2090,7 +2089,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_br1_nat", "0", 0},
 	{"wl1_br1_enable", "0", 0},
 	{"wl1_br1_nat", "0", 0},
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K)
 
 	{"wl0_wds", "", 0},
 	{"wl0_wds0", "", 0},
@@ -2694,7 +2693,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wd_username", "", 0},
 	{"wd_password", "", 0},
 	{"wd_iface", "", 0},
- 	{"wd_extiface", "", 0},
+	{"wd_extiface", "", 0},
 #endif
 
 #ifdef HAVE_CHILLILOCAL
@@ -2912,7 +2911,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_RADLOCAL
 	{"iradius_enable", "0", 0},
 #endif
-#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) 
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 	{"wifi_display", "ath0", 0},
 #else
 	{"wifi_display", "wl0", 0},
@@ -2953,7 +2952,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pppoeserver_acctserverport_backup", "1813", 0},
 	{"pppoeserver_sharedkey", "", 0},
 	{"pppoeserver_sharedkey_backup", "", 0},
-	{"pppoeserver_pool", "192.168.1.100", 0}, 
+	{"pppoeserver_pool", "192.168.1.100", 0},
 	{"pppoeserver_clip", "local", 0},
 	{"pppoeserver_clcount", "64", 0},
 	{"pppoeserver_mtu", "1492", 0},
@@ -3029,14 +3028,14 @@ struct nvram_tuple srouter_defaults[] = {
 	{"proftpd_anon_subdir", "", 0},
 	{"proftpd_rad", "0", 0},
 	{"proftpd_authserverip", "", 0},
-	{"proftpd_authserverport", "1812", 0},		
-	{"proftpd_acctserverport", "1813", 0},	
+	{"proftpd_authserverport", "1812", 0},
+	{"proftpd_acctserverport", "1813", 0},
 	{"proftpd_sharedkey", "", 0},
 #endif
 #ifdef HAVE_SAMBA3
 	{"samba3_enable", "0", 0},
 	{"samba3_pub", "0", 0},
-	{"samba3_dirpath", "/jffs", 0},	
+	{"samba3_dirpath", "/jffs", 0},
 	{"samba3_pubacl", "1", 0},
 	{"samba3_advanced", "0", 0},
 #endif
