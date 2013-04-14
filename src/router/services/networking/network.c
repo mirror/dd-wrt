@@ -4313,7 +4313,8 @@ void start_wan_done(char *wan_ifname)
 		route_add(nvram_safe_get("wan_iface"), 0,
 			  nvram_safe_get("l2tp_get_ip"), NULL,
 			  "255.255.255.255");
-		route_add(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");	// fixed 
+		if (nvram_match("l2tp_use_dhcp","1"))
+			    route_add(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");	// fixed 
 	}
 
 	/*
