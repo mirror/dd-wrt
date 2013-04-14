@@ -1683,7 +1683,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"skip_amd_check", "0", 0},	/* 0:Disable 1:Enable */
 	{"skip_intel_check", "0", 0},	/* 0:Disable 1:Enable */
 
-	{"l2tp_use_dhcp", "0", 0},	/* pptp will use dhcp to obtain ip address, netmask and gateway */
+	{"l2tp_use_dhcp", "1", 0},	/* l2tp will use dhcp to obtain ip address, netmask and gateway */
 	{"l2tp_server_ip", "", 0},	/* L2TP auth server (IP Address) */
 	{"l2tp_server_name", "", 0},	/* L2TP auth server (IP Address) */
 	{"l2tp_get_ip", "", 0},	/* IP Address assigned by L2TP server */
@@ -2519,7 +2519,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptp_use_dhcp", "0", 0},	/* pptp will use dhcp to obtain ip address, netmask and gateway */
 	{"pptp_server_name", "", 0},
 #endif
-	{"l2tp_use_dhcp", "1", 0},	/* l2tp will use dhcp to obtain ip address, netmask and gateway */
 
 	{"forward_entries", "0", 0},
 	{"forwardspec_entries", "0", 0},
