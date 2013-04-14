@@ -288,7 +288,7 @@ if (boardnum == 45 && nvram_match("boardrev", "0x1153")
 		&& nvram_match("boardtype", "0x058e"))
 {
 		printk(KERN_EMERG "RT-N10+ D1 GPIO INIT\n");
-		gpios = 1 << 5;
+		gpios = 1 << 6 | 1 << 7 | 1 << 21 | 1 << 20;
 }
 
 if (boardnum == 1 && nvram_match("boardtype", "0xE4CD")
