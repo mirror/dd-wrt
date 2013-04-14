@@ -289,6 +289,7 @@
  "wl_ap_ssid"  "SSID of associating AP"  "NAME"  "32"  "TRUE" "0"
  "wl_ap_mac" "MAC Adress for ap" "NULL" "TRUE" "0"
  "wl_ap_ip"  "Default IP of associating AP"  "MERGEIPADDRS"  "TRUE" "0"
+ "l2tp_use_dhcp"  "L2TP use DHCP" "CHOICE" "2" "0" "1" "FALSE" "0"
  "l2tp_server_ip"  "L2TP Server"  "MERGEIPADDRS"  "FALSE" "0"
  "l2tp_server_name" "L2TP" "NULL" "FALSE" "0"
  "l2tp_use_dhcp"  "L2TP use DHCP" "CHOICE" "2" "0" "1" "FALSE" "0"
