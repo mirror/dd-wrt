@@ -7,6 +7,7 @@ var dhcp_win = null;
 
 function pptpUseDHCP(F, val) {
 	setElementsActive("wan_ipaddr_0", "wan_gateway_3", val==0)
+}
 
 function l2tpUseDHCP(F, val) {
 	setElementsActive("wan_ipaddr_0", "wan_gateway_3", val==0)
