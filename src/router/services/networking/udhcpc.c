@@ -189,10 +189,14 @@ static int bound(void)
 
 	if ((value = getenv("ip"))) {
 		chomp(value);
-		if (nvram_match("wan_proto", "pptp")
+		if (nvram_match("wan_proto", "pptp") 
 		    && nvram_match("pptp_use_dhcp", "1"))
 			strcpy(temp_wan_ipaddr, value);
-		else {
+		else if (nvram_match("wan_proto", "l2tp") 
+		    && nvram_match("l2tp_use_dhcp", "1"))
+			strcpy(temp_wan_ipaddr, value);
+		else		
+		 {
 			if (nvram_invmatch("wan_ipaddr", value))
 				changed = 1;
 		}
@@ -202,6 +206,9 @@ static int bound(void)
 		chomp(value);
 		if (nvram_match("wan_proto", "pptp")
 		    && nvram_match("pptp_use_dhcp", "1"))
+			strcpy(temp_wan_netmask, value);
+		else if (nvram_match("wan_proto", "l2tp") 
+		    && nvram_match("l2tp_use_dhcp", "1"))
 			strcpy(temp_wan_netmask, value);
 		else {
 			if (nvram_invmatch("wan_netmask", value))
@@ -247,6 +254,11 @@ static int bound(void)
 
 	if (nvram_match("wan_proto", "pptp")
 	    && nvram_match("pptp_use_dhcp", "1"))
+		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask",
+		     temp_wan_netmask, "up");
+	else
+	if (nvram_match("wan_proto", "l2tp")
+	    && nvram_match("l2tp_use_dhcp", "1"))
 		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask",
 		     temp_wan_netmask, "up");
 	else
@@ -334,7 +346,7 @@ static int bound(void)
 	}
 #endif
 #ifdef HAVE_L2TP
-	else if (nvram_match("wan_proto", "l2tp")) {
+	else if (nvram_match("wan_proto", "l2tp") && nvram_match("l2tp_use_dhcp","1")) {
 		char l2tpip[64];
 		struct dns_lists *dns_list = NULL;
 
