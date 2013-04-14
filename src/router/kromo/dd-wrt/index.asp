@@ -7,6 +7,9 @@ var dhcp_win = null;
 
 function pptpUseDHCP(F, val) {
 	setElementsActive("wan_ipaddr_0", "wan_gateway_3", val==0)
+
+function l2tpUseDHCP(F, val) {
+	setElementsActive("wan_ipaddr_0", "wan_gateway_3", val==0)
 }
 
 function valid_mtu(I) {
@@ -49,6 +52,7 @@ function valid_value(F) {
 					F.wan_ipaddr_2.value == "0" &&
 					F.wan_ipaddr_3.value == "0")
 						pptp_dhcp = "skip";
+
 			
 			if (!F.pptp_use_dhcp || F.pptp_use_dhcp.value == "0") {
 				if(pptp_dhcp != "skip" && F.wan_ipaddr && !valid_ip(F,"F.wan_ipaddr","IP",ZERO_NO|MASK_NO))
@@ -56,18 +60,16 @@ function valid_value(F) {
 	
 				if(pptp_dhcp != "skip" && F.wan_netmask && !valid_mask(F,"F.wan_netmask",ZERO_NO|BCST_NO))
 					return false;
-			}
+			}	
 	
+			if (!F.l2tp_use_dhcp || F.l2tp_use_dhcp.value == "0") {
+				if(l2tp_dhcp != "skip" && F.wan_ipaddr && !valid_ip(F,"F.wan_ipaddr","IP",ZERO_NO|MASK_NO))
+					return false;
 	
-			if(pptp_dhcp != "skip" && F.now_proto.value == "pptp") {
-				if (F.pptp_use_dhcp.value == "0") {
-					if(!valid_ip(F,"F.pptp_server_ip","Gateway",ZERO_NO|MASK_NO))
-						return false;
-					
-					if(!valid_ip_gw(F,"F.wan_ipaddr","F.wan_netmask","F.pptp_server_ip"))
-						return false;
-				}
-			}
+				if(l2tp_dhcp != "skip" && F.wan_netmask && !valid_mask(F,"F.wan_netmask",ZERO_NO|BCST_NO))
+					return false;
+			}	
+	
 		}
 	}
 	
@@ -91,9 +93,12 @@ function valid_value(F) {
 			return false;
 		}
 	if(document.setup)
-		if(document.setup.now_proto)
+		if(document.setup.now_proto) {
 			if(document.setup.now_proto.value == "pptp")
 				pptpUseDHCP(document.setup, '<% nvram_get("pptp_use_dhcp"); %>');
+			if(document.setup.now_proto.value == "l2tp")
+				l2tpUseDHCP(document.setup, '<% nvram_get("l2tp_use_dhcp"); %>');
+		}
 
 	return true;
 }
@@ -258,12 +263,16 @@ addEvent(window, "load", function() {
 			ppp_enable_disable(document.setup,'<% nvram_get("ppp_demand"); %>');
 	if (document.setup.now_proto.value == "pptp")
 	    pptpUseDHCP(document.setup, '<% nvram_get("pptp_use_dhcp"); %>')
+
+	if (document.setup.now_proto.value == "l2tp")
+	    l2tpUseDHCP(document.setup, '<% nvram_get("l2tp_use_dhcp"); %>')
 	    
 	dhcp_enable_disable(document.setup,'<% nvram_get("lan_proto"); %>');
 	setDNSMasq(document.setup);
 	
 	show_layer_ext(document.setup.ntp_enable, 'idntp', <% nvram_else_match("ntp_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.pptp_use_dhcp, 'idpptpdhcp', <% nvram_else_match("pptp_use_dhcp", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.l2tp_use_dhcp, 'idl2tpdhcp', <% nvram_else_match("l2tp_use_dhcp", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.reconnect_enable, 'idreconnect', <% nvram_else_match("reconnect_enable", "1", "1", "0"); %> == 1);
 	update = new StatusbarUpdate();
 	update.start();
