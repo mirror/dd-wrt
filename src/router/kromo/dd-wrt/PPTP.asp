@@ -2,6 +2,20 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
+function chap_user_add_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "add_chap_user";
+	checked(F);
+	F.submit();
+}
+
+function chap_user_remove_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "remove_chap_user";
+	checked(F);
+	F.submit();
+}
+
 function to_submit(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
@@ -26,7 +40,7 @@ var update;
 addEvent(window, "load", function() {
 
 		show_layer_ext(document.setup.pptpd_radius, 'idradius', <% nvram_else_match("pptpd_radius", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_radius, 'idlocal', <% nvram_else_match("pptpd_radius", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_radius, 'idlocal', <% nvram_else_match("pptpd_radius", "0", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_enable, 'idpptpcred', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
