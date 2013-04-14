@@ -272,8 +272,8 @@ addEvent(window, "load", function() {
 	setDNSMasq(document.setup);
 	
 	show_layer_ext(document.setup.ntp_enable, 'idntp', <% nvram_else_match("ntp_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.pptp_use_dhcp, 'idpptpdhcp', <% nvram_else_match("pptp_use_dhcp", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.l2tp_use_dhcp, 'idl2tpdhcp', <% nvram_else_match("l2tp_use_dhcp", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.pptp_use_dhcp, 'idpptpdhcp', <% nvram_else_match("pptp_use_dhcp", "1", "1", "0"); %> == 0);
+	show_layer_ext(document.setup.l2tp_use_dhcp, 'idl2tpdhcp', <% nvram_else_match("l2tp_use_dhcp", "1", "1", "0"); %> == 0);
 	show_layer_ext(document.setup.reconnect_enable, 'idreconnect', <% nvram_else_match("reconnect_enable", "1", "1", "0"); %> == 1);
 	update = new StatusbarUpdate();
 	update.start();
