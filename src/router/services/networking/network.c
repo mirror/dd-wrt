@@ -4103,13 +4103,7 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_L2TP
 	else if (strcmp(wan_proto, "l2tp") == 0) {
-		insmod("n_hdlc");
-		if (isClient()) {
-			wan_ifname = getSTA();
-		} else
-			wan_ifname = pppoe_wan_ifname;
-		nvram_set("wan_get_dns", "");
-		start_dhcpc(wan_ifname, NULL, NULL, 1);
+		start_l2tp(status);
 	}
 #endif
 #ifdef HAVE_HEARTBEAT
