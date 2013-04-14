@@ -63,6 +63,12 @@ void start_l2tp(int status)
 		NULL
 	};
 	char username[80], passwd[80];
+	char *wan_ifname = nvram_safe_get("wan_ifname");
+
+	if (isClient()) {
+		wan_ifname = getSTA();
+	}
+
 
 	// stop_dhcpc();
 #ifdef HAVE_PPPOE
@@ -72,6 +78,51 @@ void start_l2tp(int status)
 	stop_pptp();
 #endif
 	stop_l2tp();
+
+	insmod("n_hdlc");
+	if (nvram_match("l2tp_use_dhcp","1")) {
+		nvram_set("wan_get_dns", "");
+		start_dhcpc(wan_ifname, NULL, NULL, 1);
+	}else{
+	
+		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"),
+			 nvram_safe_get("wan_netmask"));
+		struct dns_lists *dns_list = NULL;
+		dns_to_resolv();
+		dns_list = get_dns_list();
+		int i = 0;
+
+		if (dns_list) {
+			for (i = 0; i < dns_list->num_servers; i++)
+				route_add(wan_ifname, 0,
+					  dns_list->dns_server[i],
+					  nvram_safe_get("l2tp_wan_gateway"),
+					  "255.255.255.255");
+		}
+		route_add(wan_ifname, 0, "0.0.0.0",
+			  nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
+		char pptpip[64];
+		getIPFromName(nvram_safe_get("l2tp_server_name"), pptpip);
+		route_del(wan_ifname, 0, "0.0.0.0",
+			  nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
+		if (dns_list) {
+			for (i = 0; i < dns_list->num_servers; i++)
+				route_del(wan_ifname, 0,
+					  dns_list->dns_server[i],
+					  nvram_safe_get("l2tp_wan_gateway"),
+					  "255.255.255.255");
+			free(dns_list);
+		}
+		
+		nvram_set("l2tp_server_ip", pptpip);
+		if (!nvram_match("l2tp_wan_gateway", "0.0.0.0"))
+			route_add(wan_ifname, 0,
+				  nvram_safe_get("l2tp_server_ip"),
+				  nvram_safe_get("l2tp_wan_gateway"),
+				  "255.255.255.255");
+	}
+
+
 
 	snprintf(username, sizeof(username), "%s",
 		 nvram_safe_get("ppp_username"));
