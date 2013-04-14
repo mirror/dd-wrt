@@ -56,7 +56,7 @@ var update;
 
 addEvent(window, "load", function() {
 
-		show_layer_ext(document.setup.pppoeradius_enabled, 'idpppoelocal', <% nvram_else_match("pppoeradius_enabled", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pppoeradius_enabled, 'idpppoelocal', <% nvram_else_match("pppoeradius_enabled", "0", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pppoeradius_enabled, 'idpppoerad', <% nvram_else_match("pppoeradius_enabled", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pppoeserver_clip, 'idpppoeiploc', <% nvram_else_match("pppoeserver_clip", "local", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pppoeserver_enabled, 'idpppoesrv', <% nvram_else_match("pppoeserver_enabled", "1", "1", "0"); %> == 1);
