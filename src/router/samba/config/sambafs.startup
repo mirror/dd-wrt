@@ -19,6 +19,7 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     insmod md4
     insmod md5
     insmod des_generic
+    insmod hmac
     insmod sha256_generic
     mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm
     if [ "$(nvram get samba_script)" != "" ]; then
