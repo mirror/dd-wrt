@@ -697,9 +697,10 @@ void validate_hwaddrs(webs_t wp, char *value, struct variable *v)
 void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
 	char wan_ipaddr[20], wan_netmask[20], wan_gateway[20],
-	    pptp_wan_gateway[20];
+	    pptp_wan_gateway[20],l2tp_wan_gateway[20];
 	char *wan_proto = websGetVar(wp, "wan_proto", NULL);
 	char *pptp_use_dhcp = websGetVar(wp, "pptp_use_dhcp", NULL);
+	char *l2tp_use_dhcp = websGetVar(wp, "l2tp_use_dhcp", NULL);
 
 	int pptp_skip_check = FALSE;
 
@@ -715,6 +716,7 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	get_merge_ipaddr(wp, "wan_netmask", wan_netmask);
 	get_merge_ipaddr(wp, "wan_gateway", wan_gateway);
 	get_merge_ipaddr(wp, "pptp_wan_gateway", pptp_wan_gateway);
+	get_merge_ipaddr(wp, "l2tp_wan_gateway", l2tp_wan_gateway);
 	if (!strcmp(wan_proto, "pptp")) {
 		nvram_set("pptp_pass", "0");	// disable pptp passthrough
 	}
@@ -743,10 +745,14 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 
 	nvram_set("wan_gateway", wan_gateway);
 
-	if (!strcmp(pptp_wan_gateway, "0.0.0.0"))
-		return;
-	nvram_set("pptp_wan_gateway", pptp_wan_gateway);
-}
+	if (strcmp(pptp_wan_gateway, "0.0.0.0")) {
+		nvram_set("pptp_wan_gateway", pptp_wan_gateway);
+	}
+	
+	if (strcmp(l2tp_wan_gateway, "0.0.0.0")) {
+		nvram_set("l2tp_wan_gateway", l2tp_wan_gateway);
+	}
+}	
 
 #ifdef HAVE_PORTSETUP
 void validate_portsetup(webs_t wp, char *value, struct variable *v)
