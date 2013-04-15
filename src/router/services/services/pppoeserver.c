@@ -107,10 +107,10 @@ void delpppoeconnected_main(int argc,char *argv[])
 	
 	lock=1;
 	sysprintf("grep -v %s /tmp/pppoe_connected > /tmp/pppoe_connected.tmp",argv[1]);
-	sysprintf("mv /tmp/pppoe_connected.tmp /tmp/pppoe_connected");
+	sysprintf("mv /tmp/pppoe_connected.tmp /tmp/pppoe_connected -f");
 		//	just an uptime test
 	sysprintf("grep -v %s /tmp/pppoe_uptime > /tmp/pppoe_uptime.tmp",argv[2]);
-	sysprintf("mv /tmp/pppoe_uptime.tmp /tmp/pppoe_uptime");
+	sysprintf("mv /tmp/pppoe_uptime.tmp /tmp/pppoe_uptime -f");
 	lock=0;
 
 
@@ -118,7 +118,7 @@ void delpppoeconnected_main(int argc,char *argv[])
 
 static void makeipup(void)
 {
-	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
+	FILE *fp = fopen("/tmp/pppoeserver/ip-up.sh", "w");
 
 	fprintf(fp, "#!/bin/sh\n");
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
@@ -161,7 +161,7 @@ static void makeipup(void)
 //eg: tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 10Mbit
 //burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
 	fclose(fp);
-	fp = fopen("/tmp/pppoeserver/ip-down", "w");	
+	fp = fopen("/tmp/pppoeserver/ip-down.sh", "w");	
 // must be finished
 //	if (nvram_match("pppoeserver_interface", "br0"))
 //		fprintf(fp,"arp -s $5 `nvram get lan_hwaddr` pub\n");
@@ -189,14 +189,14 @@ static void makeipup(void)
 			"tc qdisc del dev $1 ingress\n");
 	fclose(fp);
 
-	chmod("/tmp/pppoeserver/ip-up", 0744);
-	chmod("/tmp/pppoeserver/ip-down", 0744);
+	chmod("/tmp/pppoeserver/ip-up.sh", 0700);
+	chmod("/tmp/pppoeserver/ip-down.sh", 0700);
 
 	//	copy existing peer data to /tmp
 	if (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
 		&& nvram_match("sys_enable_jffs2", "1"))
-			system("/bin/cp /jffs/etc/pppoeserver/pppoe_peer.db /tmp/");
+			sysprintf("/bin/cp /jffs/etc/pppoeserver/pppoe_peer.db /tmp/");
 }
 
 static void do_pppoeconfig(FILE * fp)
@@ -246,8 +246,8 @@ static void do_pppoeconfig(FILE * fp)
 		"noipdefault\n"
 		"defaultroute\n"
 		"netmask 255.255.255.255\n"	//
-		"ip-up-script /tmp/pppoeserver/ip-up\n"	//
-		"ip-down-script /tmp/pppoeserver/ip-down\n"
+		"ip-up-script /tmp/pppoeserver/ip-up.sh\n"	//
+		"ip-down-script /tmp/pppoeserver/ip-down.sh\n"
 		//"lcp-echo-adaptive\n"
 		"lcp-echo-interval %s\n"
 		"lcp-echo-failure %s\n"
@@ -463,15 +463,19 @@ void stop_pppoeserver(void)
 		unlink("/tmp/pppoe_connected");
 /*		unlink("/tmp/pppoeserver/radius/radiusclient.conf");
 		unlink("/tmp/pppoeserver/radius/servers");
-		unlink("/tmp/pppoeserver/ip-up");
-		unlink("/tmp/pppoeserver/ip-down");
+		unlink("/tmp/pppoeserver/ip-up.sh");
+		unlink("/tmp/pppoeserver/ip-down.sh");
 		unlink("/tmp/pppoeserver/pppoe-server-options"); */
 	//	unlink("/tmp/pppoeserver/calc-uptime.sh");
 
-	//	backup peer data to jffs if available
-		if (nvram_match("enable_jffs2", "1")
-			&& nvram_match("jffs_mounted", "1")
-			&& nvram_match("sys_enable_jffs2", "1"))	{
+	//	backup peer data to jffs/usb if available
+	if ((nvram_match("usb_enable", "1")
+		&& nvram_match("usb_storage", "1")
+		&& nvram_match("usb_automnt", "1")
+		&& nvram_match("usb_mntpoint", "jffs"))
+		|| (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1"))) {
 				mkdir("/jffs/etc", 0700);
 				mkdir("/jffs/etc/pppoeserver", 0700);
 				system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/pppoeserver");
