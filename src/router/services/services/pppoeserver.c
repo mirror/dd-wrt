@@ -126,8 +126,8 @@ static void makeipup(void)
 	if (nvram_match("pppoeserver_clip", "local"))
 		if (nvram_match("pppoeserver_interface", "br0"))
 			fprintf(fp, //"arp -s $5 `nvram get lan_hwaddr` pub\n"	//prevent missing arp entries
-				"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
-				"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
+//				"echo 1 > /proc/sys/net/ipv4/conf/`nvram get pppoeserver_interface`/proxy_arp\n"		
+//				"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
 			);
 	if (nvram_match("wan_proto", "pppoe")	//only when there is an ppp0 interface
 		|| nvram_match("wan_proto", "pptp"))
