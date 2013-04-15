@@ -34,7 +34,7 @@
 	</div>
 </div>
 <div class="setting">
-	<div class="label"><% tran("idx_pptp.encrypt"); %></div>
+	<div class="label"><% tran("service.pptpd_encry"); %></div>
 	<input class="spaceradio" type="radio" name="pptp_encrypt" value="1" <% nvram_checked("pptp_encrypt","1"); %> /><% tran("share.enable"); %>&nbsp;
 	<input class="spaceradio" type="radio" name="pptp_encrypt" value="0" <% nvram_checked("pptp_encrypt","0"); %> /><% tran("share.disable"); %>
 </div>
