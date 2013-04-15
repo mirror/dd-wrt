@@ -59,7 +59,7 @@
 		<div id="idmacauth">
 			<div class="setting">
 				<div class="label"><% tran("hotspot.macpasswd"); %></div>
-				<input class="text" maxLength="100" size="25" name="chilli_macpasswd" value="<% nvram_get("chilli_pass"); %>" />
+				<input class="text" maxLength="100" size="25" name="chilli_macpasswd" value="<% nvram_get("chilli_macpasswd"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": password)");
