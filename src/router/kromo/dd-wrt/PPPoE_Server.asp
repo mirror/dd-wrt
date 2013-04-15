@@ -157,7 +157,7 @@ addEvent(window, "unload", function() {
 				<input type="checkbox" value="1" name="_pppoeserver_mppc" <% nvram_checked("pppoeserver_mppc", "1"); %> />
 			</div>
 			<div class="setting">
-				<div class="label">MPPE PPPoE <% tran("share.encrypt"); %></div>
+				<div class="label"><% tran("service.pptpd_encry"); %></div>
 				<input type="checkbox" value="1" name="_pppoeserver_encryption" <% nvram_checked("pppoeserver_encryption", "1"); %> />
 			</div>
 			<div class="setting">
