@@ -5,7 +5,7 @@
  "openvpn_gateway"  "OpenVPN Gateway"  "NULL"   "FALSE" "0"
  "openvpn_startip"  "OpenVPN pool start ip"  "NULL"   "FALSE" "0"
  "openvpn_endip"  "OpenVPN pool end ip"  "NULL"   "FALSE" "0"
- "openvpn_port"  "OpenVPN PORT"  "NULL"   "FALSE" "0"
+ "openvpn_port"  "OpenVPN PORT" "RANGE"  "1"  "65535"  "FALSE" "0"
  "openvpn_lzo"  "lzo compression enabled" "CHOICE" "4" "yes" "no" "adaptive" "0" "FALSE" "0"
  "openvpn_ca"  "OpenVPN CA Cert"  "NULL"   "FALSE" "0"
  "openvpn_crl"  "OpenVPN Certificate Revoke List"  "NULL"   "FALSE" "0"
