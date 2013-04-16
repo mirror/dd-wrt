@@ -175,6 +175,17 @@ config STX_GP3
 	select CPM2
 	select DEFAULT_UIMAGE
 
+config TL_WDR4900_V1
+	bool "TP-Link TL-WDR4900 v1"
+	select DEFAULT_UIMAGE
+	select ARCH_REQUIRE_GPIOLIB
+	select GPIO_MPC8XXX
+	help
+	  This option enables support for the TP-Link TL-WDR4900 v1 board.
+
+	  This board is a Concurrent Dual-Band wireless router with a
+	  Freescale P1014 SoC.
+
 config TQM8540
 	bool "TQ Components TQM8540"
 	help

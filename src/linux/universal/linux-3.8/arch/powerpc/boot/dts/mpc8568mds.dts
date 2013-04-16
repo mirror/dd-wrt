@@ -317,6 +317,9 @@
 			gpios = <&bcsr5 3 0>;
 		};
 	};
+	chosen {
+		linux,stdout-path = "/soc8568@e0000000/serial@4500";
+	};
 };
 
 /include/ "fsl/mpc8568si-post.dtsi"

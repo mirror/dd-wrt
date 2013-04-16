@@ -134,16 +134,7 @@
 
 	};
 
-	duart-sleep-nexus {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "simple-bus";
-		sleep = <&pmc 0x00000002>;
-		ranges;
-
 /include/ "pq3-duart-0.dtsi"
-
-	};
 
 	L2: l2-cache-controller@20000 {
 		compatible = "fsl,mpc8568-l2-cache-controller";
