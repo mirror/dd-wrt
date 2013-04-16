@@ -43,7 +43,7 @@
 			<option value="aes-128-cbc" <% nvram_selected("openvpncl_cipher","aes-128-cbc"); %>>AES-128 CBC</option>
 			<option value="bf-cbc" <% nvram_selected("openvpncl_cipher","bf-cbc"); %>>Blowfish CBC</option>	
 			<option value="none" <% nvram_selected("openvpncl_cipher","none"); %>>None</option>	
-		</select>
+			</select>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_auth"); %></div>
