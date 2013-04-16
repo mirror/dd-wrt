@@ -197,6 +197,10 @@ cuboot*)
     *-mpc85*|*-tqm85*|*-sbc85*)
         platformo=$object/cuboot-85xx.o
         ;;
+    *-tl-wdr4900-v1)
+        platformo=$object/cuboot-tl-wdr4900-v1.o
+	link_address='0x1000000'
+        ;;
     *-amigaone)
         link_address='0x800000'
         ;;

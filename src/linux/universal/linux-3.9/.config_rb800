@@ -284,6 +284,7 @@ CONFIG_RB800=y
 # CONFIG_KSI8560 is not set
 # CONFIG_XES_MPC85xx is not set
 # CONFIG_STX_GP3 is not set
+# CONFIG_TL_WDR4900_V1 is not set
 # CONFIG_TQM8540 is not set
 # CONFIG_TQM8541 is not set
 # CONFIG_TQM8548 is not set
