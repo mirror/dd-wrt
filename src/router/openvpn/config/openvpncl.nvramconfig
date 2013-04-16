@@ -1,6 +1,6 @@
  "openvpncl_enable"   "OpenVPN Enable"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "openvpncl_remoteip"  "OpenVPN IP"  "NULL"   "FALSE" "0"
- "openvpncl_remoteport"  "OpenVPN PORT"  "NULL"   "FALSE" "0"
+ "openvpncl_remoteport" "OpenVPN PORT" "RANGE"  "1"  "65535"  "FALSE" "0"
  "openvpncl_lzo"  "lzo compression enabled" "CHOICE" "4" "yes" "no" "adaptive" "0" "FALSE" "0"
  "openvpncl_ca"  "OpenVPN Public Key"  "NULL"   "FALSE" "0"
  "openvpncl_client"  "Client Public Key"  "NULL"   "FALSE" "0"
