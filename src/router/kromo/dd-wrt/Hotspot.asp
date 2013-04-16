@@ -79,6 +79,8 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.wd_enable, 'idwifidog', <% nvram_else_match("wd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.wd_sslavailable, 'idwifidogssl', <% nvram_else_match("wd_sslavailable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.wd_auth, 'idauth', <% nvram_else_match("wd_auth", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.wd_radius, 'idradius', <% nvram_else_match("wd_radius", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.wd_radius, 'idauthsrv', <% nvram_else_match("wd_radius", "0", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.chilli_enable, 'idchilli', <% nvram_else_match("chilli_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.chilli_nowifibridge, 'idchillidhcp', <% nvram_else_match("chilli_nowifibridge", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.chilli_macauth, 'idmacauth', <% nvram_else_match("chilli_macauth", "1", "1", "0"); %> == 1);
