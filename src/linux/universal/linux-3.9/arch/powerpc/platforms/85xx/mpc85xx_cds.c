@@ -247,14 +247,15 @@ static int mpc85xx_cds_8259_attach(void)
 		return -ENODEV;
 	}
 
-	cascade_irq = irq_of_parse_and_map(cascade_node, 0);
-	if (cascade_irq == NO_IRQ) {
-		printk(KERN_ERR "Failed to map cascade interrupt\n");
-		return -ENXIO;
-	}
-
 	i8259_init(cascade_node, 0);
 	of_node_put(cascade_node);
+
+	cascade_irq = irq_of_parse_and_map(cascade_node, 0);
+	if (cascade_irq == NO_IRQ) {
+		of_node_put(cascade_node);
+		printk(KERN_DEBUG "No interrupt for i8259 PIC\n");
+		return -ENXIO;
+	}
 
 	/*
 	 *  Hook the interrupt to make sure desc->action is never NULL.
