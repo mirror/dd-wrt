@@ -147,13 +147,6 @@ MODULE_AUTHOR("Freescale Semiconductor, Inc");
 MODULE_DESCRIPTION("Gianfar Ethernet Driver");
 MODULE_LICENSE("GPL");
 
-static int is_mpc83xx(void) {
-	unsigned version = mfspr(SPRN_PVR);
-
-	if ((version & 0xFFF00000) == 0x80300000) return 1;
-	return 0;
-}
-
 static void gfar_init_rxbdp(struct gfar_priv_rx_q *rx_queue, struct rxbd8 *bdp,
 			    dma_addr_t buf)
 {
@@ -342,21 +335,6 @@ static void gfar_init_tx_rx_base(struct gfar_private *priv)
 	}
 }
 
-void alter_atheros_debug_register(struct phy_device *phydev,
-				  unsigned reg, unsigned nand, unsigned or) {
-    phy_write(phydev, 0x1d, reg);
-    phy_write(phydev, 0x1e, (phy_read(phydev, 0x1e) & (~nand)) | or);
-}
-
-void setup_atheros_phy(struct phy_device *phydev) {
-int phyid = ((phy_read(phydev, 2) << 16) | phy_read(phydev, 3));
-    if (phyid == 0x004DD04E) {
-	printk("Hello AR8021\n");
-	alter_atheros_debug_register(phydev, 0, 0, (1 << 8)); // RX_delay
-	alter_atheros_debug_register(phydev, 5, 0, (1 << 8)); // TX_delay
-    }
- }
-
 static void gfar_init_mac(struct net_device *ndev)
 {
 	struct gfar_private *priv = netdev_priv(ndev);
@@ -444,11 +422,6 @@ static void gfar_init_mac(struct net_device *ndev)
 	gfar_write(&regs->fifo_tx_thr, priv->fifo_threshold);
 	gfar_write(&regs->fifo_tx_starve, priv->fifo_starve);
 	gfar_write(&regs->fifo_tx_starve_shutoff, priv->fifo_starve_off);
-
- 	/* Temporary mumbo jumbo */
-	setup_atheros_phy(priv->phydev);
-
-
 }
 
 static struct net_device_stats *gfar_get_stats(struct net_device *dev)
@@ -1002,13 +975,6 @@ static int gfar_probe(struct platform_device *ofdev)
 	u32 isrg = 0;
 	u32 __iomem *baddr;
 
-	if (is_mpc83xx()) {
-		char *xxx = ioremap(0xe0000000, 0x1000);
-		gfar_write(xxx + 0x110, (gfar_read(xxx + 0x110) & 0xFFFF0000) | 0x0707);
-		gfar_write(xxx + 0xa08, (gfar_read(xxx + 0xa08) & 0x0FFFFFFF) | 0x50000000);
-		gfar_write(xxx + 0x800, gfar_read(xxx + 0x800) | 0x30000);
-	}
-
 	err = gfar_of_init(ofdev, &dev);
 
 	if (err)
@@ -1039,15 +1005,8 @@ static int gfar_probe(struct platform_device *ofdev)
 	/* We need to delay at least 3 TX clocks */
 	udelay(2);
 
-	if (is_mpc83xx()) {
-		gfar_write(&regs->maccfg1,
-			   MACCFG1_RX_FLOW | MACCFG1_TX_FLOW);
-	}
-	else {
-		gfar_write(&regs->maccfg1, 0);
-	}
-//	tempval = (MACCFG1_TX_FLOW | MACCFG1_RX_FLOW);
-//	gfar_write(&regs->maccfg1, tempval);
+	tempval = (MACCFG1_TX_FLOW | MACCFG1_RX_FLOW);
+	gfar_write(&regs->maccfg1, tempval);
 
 	/* Initialize MACCFG2. */
 	tempval = MACCFG2_INIT_SETTINGS;
@@ -1189,15 +1148,13 @@ static int gfar_probe(struct platform_device *ofdev)
 	for (i = 0; i < priv->num_tx_queues; i++) {
 		priv->tx_queue[i]->tx_ring_size = DEFAULT_TX_RING_SIZE;
 		priv->tx_queue[i]->num_txbdfree = DEFAULT_TX_RING_SIZE;
-		priv->tx_queue[i]->txcoalescing = is_mpc83xx() ? DEFAULT_TX_COALESCE : 0;
-//		priv->tx_queue[i]->txcoalescing = DEFAULT_TX_COALESCE;
+		priv->tx_queue[i]->txcoalescing = DEFAULT_TX_COALESCE;
 		priv->tx_queue[i]->txic = DEFAULT_TXIC;
 	}
 
 	for (i = 0; i < priv->num_rx_queues; i++) {
 		priv->rx_queue[i]->rx_ring_size = DEFAULT_RX_RING_SIZE;
-		priv->rx_queue[i]->rxcoalescing = is_mpc83xx() ? DEFAULT_RX_COALESCE : 0;
-//		priv->rx_queue[i]->rxcoalescing = DEFAULT_RX_COALESCE;
+		priv->rx_queue[i]->rxcoalescing = DEFAULT_RX_COALESCE;
 		priv->rx_queue[i]->rxic = DEFAULT_RXIC;
 	}
 
@@ -1823,9 +1780,9 @@ void gfar_start(struct net_device *dev)
 	int i = 0;
 
 	/* Enable Rx and Tx in MACCFG1 */
-//	tempval = gfar_read(&regs->maccfg1);
-//	tempval |= (MACCFG1_RX_EN | MACCFG1_TX_EN);
-//	gfar_write(&regs->maccfg1, tempval);
+	tempval = gfar_read(&regs->maccfg1);
+	tempval |= (MACCFG1_RX_EN | MACCFG1_TX_EN);
+	gfar_write(&regs->maccfg1, tempval);
 
 	/* Initialize DMACTRL to have WWR and WOP */
 	tempval = gfar_read(&regs->dmactrl);
@@ -1845,27 +1802,6 @@ void gfar_start(struct net_device *dev)
 		/* Unmask the interrupts we look for */
 		gfar_write(&regs->imask, IMASK_DEFAULT);
 	}
-	u32	fifo_rx_pause;	/* 0x.050 - FIFO receive pause start threshold
-					register */
-	u32	fifo_rx_pause_shutoff;	/* x.054 - FIFO receive starve shutoff
-						register */
-	u32	fifo_rx_alarm;	/* 0x.058 - FIFO receive alarm start threshold
-						register */
-	u32	fifo_rx_alarm_shutoff;	/*0x.05c - FIFO receive alarm  starve
-						shutoff register */
-
-	if (is_mpc83xx()) {
-		// magic to prevent rx hang
-		gfar_write(&regs->fifo_rx_pause, 0x80);
-		gfar_write(&regs->fifo_rx_pause_shutoff, 0x40);
-		gfar_write(&regs->fifo_rx_alarm, 0x100);
-		gfar_write(&regs->fifo_rx_alarm_shutoff, 0x80);
-	}
-
-	/* Enable Rx and Tx in MACCFG1 */
-	tempval = gfar_read(&regs->maccfg1);
-	tempval |= (MACCFG1_RX_EN | MACCFG1_TX_EN);
-	gfar_write(&regs->maccfg1, tempval);
 
 	dev->trans_start = jiffies; /* prevent tx timeout */
 }

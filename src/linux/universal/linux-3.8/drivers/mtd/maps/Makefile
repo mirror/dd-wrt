@@ -74,7 +74,11 @@ obj-$(CONFIG_MACH_GW2388)	+= nvram_kernel.o
 obj-$(CONFIG_LANTIQ)		+= nvram_kernel.o
 obj-$(CONFIG_ARCH_IXP4XX)	+= nvram_kernel.o
 obj-$(CONFIG_X86)		+= nvram_kernel_x86.o
+ifeq ($(CONFIG_TL_WDR4900_V1),y)
+obj-$(CONFIG_PPC)		+= nvram_kernel.o
+else
 obj-$(CONFIG_PPC)		+= nvram_kernel_x86.o
+endif
 obj-$(CONFIG_RALINK_RT3052)	+= nvram_kernel.o
 obj-$(CONFIG_RALINK_RT3352)	+= nvram_kernel.o
 obj-$(CONFIG_RALINK_RT5350)	+= nvram_kernel.o

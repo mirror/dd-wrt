@@ -33,6 +33,8 @@
 #include <linux/lockdep.h>
 #include <linux/ar8216_platform.h>
 #include <linux/workqueue.h>
+#include <linux/of_device.h>
+
 #include "ar8216.h"
 
 /* size of the vlan table */
@@ -77,6 +79,11 @@ struct ar8xxx_chip {
 	unsigned num_mibs;
 };
 
+struct ar8327_data {
+	u32 port0_status;
+	u32 port6_status;
+};
+
 struct ar8xxx_priv {
 	struct switch_dev dev;
 	struct mii_bus *mii_bus;
@@ -89,6 +96,9 @@ struct ar8xxx_priv {
 	u8 chip_ver;
 	u8 chip_rev;
 	const struct ar8xxx_chip *chip;
+	union {
+		struct ar8327_data ar8327;
+	} chip_data;
 	bool initialized;
 	bool port4_phy;
 	char buf[2048];
@@ -1002,19 +1012,50 @@ ar8327_phy_fixup(struct ar8xxx_priv *priv, int phy)
 	}
 }
 
-static int
-ar8327_hw_init(struct ar8xxx_priv *priv)
+static u32
+ar8327_get_port_init_status(struct ar8327_port_cfg *cfg)
 {
-	struct ar8327_platform_data *pdata;
+	u32 t;
+
+	if (!cfg->force_link)
+		return AR8216_PORT_STATUS_LINK_AUTO;
+
+	t = AR8216_PORT_STATUS_TXMAC | AR8216_PORT_STATUS_RXMAC;
+	t |= cfg->duplex ? AR8216_PORT_STATUS_DUPLEX : 0;
+	t |= cfg->rxpause ? AR8216_PORT_STATUS_RXFLOW : 0;
+	t |= cfg->txpause ? AR8216_PORT_STATUS_TXFLOW : 0;
+
+	switch (cfg->speed) {
+	case AR8327_PORT_SPEED_10:
+		t |= AR8216_PORT_SPEED_10M;
+		break;
+	case AR8327_PORT_SPEED_100:
+		t |= AR8216_PORT_SPEED_100M;
+		break;
+	case AR8327_PORT_SPEED_1000:
+		t |= AR8216_PORT_SPEED_1000M;
+		break;
+	}
+
+	return t;
+}
+
+static int
+ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
+		       struct ar8327_platform_data *pdata)
+{
 	struct ar8327_led_cfg *led_cfg;
-	struct mii_bus *bus;
+	struct ar8327_data *data;
 	u32 pos, new_pos;
 	u32 t;
-	int i;
 
-	pdata = priv->phy->dev.platform_data;
 	if (!pdata)
 		return -EINVAL;
+
+	data = &priv->chip_data.ar8327;
+
+	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
+	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
 
 	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
 	priv->write(priv, AR8327_REG_PAD0_MODE, t);
@@ -1043,6 +1084,69 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 		new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
 		priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
 	}
+
+	return 0;
+}
+
+#ifdef CONFIG_OF
+static int
+ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
+{
+	const __be32 *paddr;
+	int len;
+	int i;
+
+	paddr = of_get_property(np, "qca,ar8327-initvals", &len);
+	if (!paddr || len < (2 * sizeof(*paddr)))
+		return -EINVAL;
+
+	len /= sizeof(*paddr);
+
+	for (i = 0; i < len - 1; i += 2) {
+		u32 reg;
+		u32 val;
+
+		reg = be32_to_cpup(paddr + i);
+		val = be32_to_cpup(paddr + i + 1);
+
+		switch (reg) {
+		case AR8327_REG_PORT_STATUS(0):
+			priv->chip_data.ar8327.port0_status = val;
+			break;
+		case AR8327_REG_PORT_STATUS(6):
+			priv->chip_data.ar8327.port6_status = val;
+			break;
+		default:
+			priv->write(priv, reg, val);
+			break;
+		}
+	}
+
+	return 0;
+}
+#else
+static inline int
+ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
+{
+	return -EINVAL;
+}
+#endif
+
+static int
+ar8327_hw_init(struct ar8xxx_priv *priv)
+{
+	struct mii_bus *bus;
+	int ret;
+	int i;
+
+	if (priv->phy->dev.of_node)
+		ret = ar8327_hw_config_of(priv, priv->phy->dev.of_node);
+	else
+		ret = ar8327_hw_config_pdata(priv,
+					     priv->phy->dev.platform_data);
+
+	if (ret)
+		return ret;
 
 	bus = priv->mii_bus;
 	for (i = 0; i < AR8327_NUM_PHYS; i++) {
@@ -1087,55 +1191,18 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 }
 
 static void
-ar8327_config_port(struct ar8xxx_priv *priv, unsigned int port,
-		    struct ar8327_port_cfg *cfg)
-{
-	u32 t;
-
-	if (!cfg || !cfg->force_link) {
-		priv->write(priv, AR8327_REG_PORT_STATUS(port),
-			    AR8216_PORT_STATUS_LINK_AUTO);
-		return;
-	}
-
-	t = AR8216_PORT_STATUS_TXMAC | AR8216_PORT_STATUS_RXMAC;
-	t |= cfg->duplex ? AR8216_PORT_STATUS_DUPLEX : 0;
-	t |= cfg->rxpause ? AR8216_PORT_STATUS_RXFLOW : 0;
-	t |= cfg->txpause ? AR8216_PORT_STATUS_TXFLOW : 0;
-
-	switch (cfg->speed) {
-	case AR8327_PORT_SPEED_10:
-		t |= AR8216_PORT_SPEED_10M;
-		break;
-	case AR8327_PORT_SPEED_100:
-		t |= AR8216_PORT_SPEED_100M;
-		break;
-	case AR8327_PORT_SPEED_1000:
-		t |= AR8216_PORT_SPEED_1000M;
-		break;
-	}
-
-	priv->write(priv, AR8327_REG_PORT_STATUS(port), t);
-}
-
-static void
 ar8327_init_port(struct ar8xxx_priv *priv, int port)
 {
-	struct ar8327_platform_data *pdata;
-	struct ar8327_port_cfg *cfg;
 	u32 t;
 
-	pdata = priv->phy->dev.platform_data;
-
-	if (pdata && port == AR8216_PORT_CPU)
-		cfg = &pdata->port0_cfg;
-	else if (pdata && port == 6)
-		cfg = &pdata->port6_cfg;
+	if (port == AR8216_PORT_CPU)
+		t = priv->chip_data.ar8327.port0_status;
+	else if (port == 6)
+		t = priv->chip_data.ar8327.port6_status;
 	else
-		cfg = NULL;
+		t = AR8216_PORT_STATUS_LINK_AUTO;
 
-	ar8327_config_port(priv, port, cfg);
-
+	priv->write(priv, AR8327_REG_PORT_STATUS(port), t);
 	priv->write(priv, AR8327_REG_PORT_HEADER(port), 0);
 
 	t = 1 << AR8327_PORT_VLAN0_DEF_SVID_S;
@@ -1847,6 +1914,28 @@ ar8xxx_probe_switch(struct ar8xxx_priv *priv)
 }
 
 static int
+ar8xxx_start(struct ar8xxx_priv *priv)
+{
+	int ret;
+
+	priv->init = true;
+
+	ret = priv->chip->hw_init(priv);
+	if (ret)
+		return ret;
+
+	ret = ar8xxx_sw_reset_switch(&priv->dev);
+	if (ret)
+		return ret;
+
+	priv->init = false;
+
+//	ar8xxx_mib_start(priv);
+
+	return 0;
+}
+
+static int
 ar8xxx_phy_config_init(struct phy_device *phydev)
 {
 	struct ar8xxx_priv *priv = phydev->priv;
@@ -1855,6 +1944,9 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 
 	if (WARN_ON(!priv))
 		return -ENODEV;
+
+	if (chip_is_ar8327(priv))
+		return 0;
 
 	priv->phy = phydev;
 
@@ -1871,13 +1963,7 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 		return 0;
 	}
 
-	priv->init = true;
-
-	ret = priv->chip->hw_init(priv);
-	if (ret)
-		return ret;
-
-	ret = ar8xxx_sw_reset_switch(&priv->dev);
+	ret = ar8xxx_start(priv);
 	if (ret)
 		return ret;
 
@@ -1889,10 +1975,6 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 		dev->eth_mangle_tx = ar8216_mangle_tx;
 	}
 
-	priv->init = false;
-
-//	ar8xxx_mib_start(priv);
-
 	return 0;
 }
 
@@ -1902,7 +1984,7 @@ ar8xxx_phy_read_status(struct phy_device *phydev)
 	struct ar8xxx_priv *priv = phydev->priv;
 	struct switch_port_link link;
 	int ret;
-	    
+
 	if (phydev->addr != 0)
 		return genphy_read_status(phydev);
 
@@ -2025,6 +2107,8 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 		swdev->devname, swdev->name, dev_name(&priv->mii_bus->dev));
 
 found:
+	priv->use_count++;
+
 	if (phydev->addr == 0) {
 		if (ar8xxx_has_gige(priv)) {
 			phydev->supported = SUPPORTED_1000baseT_Full;
@@ -2032,6 +2116,14 @@ found:
 		} else {
 			phydev->supported = SUPPORTED_100baseT_Full;
 			phydev->advertising = ADVERTISED_100baseT_Full;
+		}
+
+		if (chip_is_ar8327(priv)) {
+			priv->phy = phydev;
+
+			ret = ar8xxx_start(priv);
+			if (ret)
+				goto err_unregister_switch;
 		}
 	} else {
 		if (ar8xxx_has_gige(priv)) {
@@ -2041,13 +2133,18 @@ found:
 	}
 
 	phydev->priv = priv;
-	priv->use_count++;
 
 	list_add(&priv->list, &ar8xxx_dev_list);
 
 	mutex_unlock(&ar8xxx_dev_list_lock);
 
 	return 0;
+
+err_unregister_switch:
+	if (--priv->use_count)
+		goto unlock;
+
+	unregister_switch(&priv->dev);
 
 free_priv:
 	ar8xxx_free(priv);

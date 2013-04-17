@@ -14,6 +14,7 @@
 #include <linux/xattr.h>
 #include <linux/security.h>
 #include <linux/uaccess.h>
+#include <linux/sched.h>
 #include "overlayfs.h"
 
 #define OVL_COPY_UP_CHUNK_SIZE (1 << 20)
@@ -77,11 +78,11 @@ static int ovl_copy_up_data(struct path *old, struct path *new, loff_t len)
 	if (len == 0)
 		return 0;
 
-	old_file = vfs_open(old, O_RDONLY, current_cred());
+	old_file = ovl_path_open(old, O_RDONLY);
 	if (IS_ERR(old_file))
 		return PTR_ERR(old_file);
 
-	new_file = vfs_open(new, O_WRONLY, current_cred());
+	new_file = ovl_path_open(new, O_WRONLY);
 	if (IS_ERR(new_file)) {
 		error = PTR_ERR(new_file);
 		goto out_fput;
@@ -154,7 +155,8 @@ err:
 static int ovl_set_timestamps(struct dentry *upperdentry, struct kstat *stat)
 {
 	struct iattr attr = {
-		.ia_valid = ATTR_ATIME | ATTR_MTIME | ATTR_ATIME_SET | ATTR_MTIME_SET,
+		.ia_valid =
+		     ATTR_ATIME | ATTR_MTIME | ATTR_ATIME_SET | ATTR_MTIME_SET,
 		.ia_atime = stat->atime,
 		.ia_mtime = stat->mtime,
 	};

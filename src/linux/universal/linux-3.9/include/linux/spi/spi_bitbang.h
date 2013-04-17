@@ -50,4 +50,3 @@ extern int spi_bitbang_start(struct spi_bitbang *spi);
 extern int spi_bitbang_stop(struct spi_bitbang *spi);
 
 #endif	/* __SPI_BITBANG_H */
-
