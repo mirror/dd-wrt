@@ -643,4 +643,7 @@ config INPUT_GPIO_BUTTONS
 	  To compile this driver as a module, choose M here: the
 	  module will be called gpio-buttons.
 
+config BUTTON_HOTPLUG
+	tristate "Button Hotplug driver"
+
 endif
