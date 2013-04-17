@@ -441,10 +441,13 @@ ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+	cp $(LINUXDIR)/arch/powerpc/boot/cuImage.tl-wdr4900-v1 $(ARCH)-uclibc/cuImage.tl-wdr4900-v1
+	$(LINUXDIR)/scripts/dtc/dtc -I dts -O dtb $(LINUXDIR)/arch/powerpc/boot/dts/tl-wdr4900-v1.dts > $(ARCH)-uclibc/tl-wdr4900-v1.fdt
 
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
 	-./tools/tplink/mktplinkfw -B TL-WDR4900 -N DD-WRT -V 24 -k $(ARCH)-uclibc/cuImage.tl-wdr4900-v1 -r $(ARCH)-uclibc/root.fs -o powerpc-uclibc/tplink-wdr4900-firmware.bin
-	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/wdr4900-firmware.bin powerpc-uclibc/tplink-wdr4900-firmware.bin	
+	-./tools/tplink/mktplinkfw -B TL-WDR4900 -N DD-WRT -V 24 -t -k $(ARCH)-uclibc/cuImage.tl-wdr4900-v1 -r $(ARCH)-uclibc/root.fs -o powerpc-uclibc/tplink-wdr4900-firmware-t.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/wdr4900-firmware.bin powerpc-uclibc/tplink-wdr4900-firmware-t.bin	
 
 #
 # Configuration rules
