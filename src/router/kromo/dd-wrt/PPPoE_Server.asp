@@ -118,14 +118,14 @@ addEvent(window, "unload", function() {
 				<div class="label"><% tran("service.pppoesrv_interface"); %></div>
 				<% show_ifselect("pppoeserver_interface"); %>
 			</div>
-			<div id="idpppoerad">
+<!--			<div id="idpppoerad">
 				<div class="setting">
 					<div class="label"><% tran("share.ip"); %></div>
 					<input class="spaceradio" type="radio" name="pppoeserver_clip" value="radius" <% nvram_checked("pppoeserver_clip", "radius"); %> onclick="show_layer_ext(this, 'idpppoeiploc', false)" /><% tran("radius.legend"); %>
 					<input class="spaceradio" type="radio" name="pppoeserver_clip" value="local" <% nvram_checked("pppoeserver_clip", "local"); %> onclick="show_layer_ext(this, 'idpppoeiploc', true)" /><% tran("share.localip"); %>
 				</div>
 			</div>
-			<div id="idpppoeiploc">			
+			<div id="idpppoeiploc">		-->	
 				<div class="setting">
 					<div class="label"><% tran("filterIP.ip_range"); %></div>
 					<input size="15" maxlength="20" class="num" name="pppoeserver_pool" value="<% nvram_get("pppoeserver_pool"); %>" />
@@ -139,7 +139,7 @@ addEvent(window, "unload", function() {
 					//]]>
 					</script></span>
 				</div>
-			</div>
+<!--			</div> -->
 			<div class="setting">
 				<div class="label">Deflate <% tran("service.pppoesrv_compr"); %></div>
 				<input type="checkbox" value="1" name="_pppoeserver_deflate" <% nvram_checked("pppoeserver_deflate", "1"); %> />
@@ -250,8 +250,6 @@ addEvent(window, "unload", function() {
 				<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
 				<input size="20" maxlength="63" type="password" name="pppoeserver_sharedkey" value="d6nw5v1x2pc7st9m" />
 			</div>
-
-
 			<div class="setting">
 				<div class="label"><% tran("radius.label23"); %></div>
 				<input maxlength="15" size="20" name="pppoeserver_authserverip_backup" value="<% nvram_get("pppoeserver_authserverip_backup"); %>" />
