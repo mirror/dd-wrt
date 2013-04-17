@@ -90,7 +90,7 @@ void start_freeradius(void)
 		return;
 
 #ifndef HAVE_OPENRISC
-#ifndef HAVE_RB600
+#if !defined(HAVE_RB600) || defined(HAVE_WDR4900)
 #ifdef HAVE_X86
 	system("mount --bind /usr/local /jffs");
 #else

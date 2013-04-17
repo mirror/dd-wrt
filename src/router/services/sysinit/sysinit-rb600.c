@@ -61,11 +61,13 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
+#ifndef HAVE_WDR4900
 	eval("mount", "-o", "remount,rw", "/dev/root");
 	eval("mount", "-o", "remount,rw", "/dev/sda1", "/");
 	sleep(1);		//give some time for remount
 	mkdir("/usr/local", 0700);
 	mkdir("/usr/local/nvram", 0700);
+#endif
 	/*
 	 * Setup console 
 	 */
@@ -77,12 +79,14 @@ void start_sysinit(void)
 	int brand = getRouterBrand();
 
 	//for extension board
+#ifndef HAVE_WDR4900
 	insmod("fsl_pq_mdio");	//rb800 only as it seems
 	insmod("gianfar_driver");	//rb800 only as it seems
 	insmod("atl1c");	//rb800 only as it seems
 	insmod("via-velocity");
 	insmod("via-rhine");
 	insmod("tulip");
+#endif
 	struct ifreq ifr;
 	int s;
 
@@ -105,7 +109,60 @@ void start_sysinit(void)
 			MAC_ADD(macbase);
 		}
 	}
+#ifdef HAVE_WDR4900
+	eval("mkdir", "/tmp/firmware");
+	char mtdpath[64];
+	int mtd = getMTD("caldata");
+	sprintf(mtdpath, "/dev/mtdblock%d", mtd);
+	FILE *fp = fopen(mtdpath, "rb");
+	if (fp) {
+		mtd = getMTD("u-boot");
+		sprintf(mtdpath, "/dev/mtdblock%d", mtd);
 
+		FILE *macfp = fopen(mtdpath, "rb");
+		unsigned char wmac[6];
+		if (macfp) {
+			fseek(macfp, 326656, SEEK_SET);
+			int i;
+			for (i = 0; i < 6; i++)
+				wmac[i] = getc(macfp);
+			fclose(macfp);
+		}
+
+		fseek(fp, 4096, SEEK_SET);
+		FILE *out = fopen("/tmp/firmware/pci_wmac0.eeprom", "wb");
+		if (out) {
+			int i;
+			for (i = 0; i < 2048; i++) {
+				if (i > 1 && i < 8) {
+					putc(wmac[i - 2], out);
+					getc(fp);
+				} else
+					putc(getc(fp), out);
+			}
+			fclose(out);
+		}
+		fseek(fp, 20480, SEEK_SET);
+		out = fopen("/tmp/firmware/pci_wmac1.eeprom", "wb");
+		if (wmac[5] == 0) {
+			wmac[5] = 255;
+			wmac[4]--;
+		} else
+			wmac[5]--;
+
+		if (out) {
+			int i;
+			for (i = 0; i < 2048; i++)
+				if (i > 1 && i < 8) {
+					putc(wmac[i - 2], out);
+					getc(fp);
+				} else
+					putc(getc(fp), out);
+			fclose(out);
+		}
+		fclose(fp);
+	}
+#endif
 	/*
 	 * network drivers 
 	 */
@@ -124,6 +181,7 @@ void start_sysinit(void)
 				     eabuf));
 		close(s);
 	}
+#ifndef HAVE_WDR4900
 	//recover nvram if available
 	char dev[64];
 	FILE *in = fopen64("/usr/local/nvram/nvram.bin", "rb");
@@ -154,7 +212,48 @@ void start_sysinit(void)
 	} else {
 		fclose(in);
 	}
+#else
+	system("swconfig dev switch0 set reset 1");
+	system("swconfig dev switch0 set enable_vlan 1");
+	system("swconfig dev switch0 vlan 1 set ports \"0t 2 3 4 5\"");
+	system("swconfig dev switch0 vlan 2 set ports \"0t 1\"");
+	system("swconfig dev switch0 set apply");
 
+	eval("ifconfig", "eth0", "up");
+	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+	eval("vconfig", "add", "eth0", "1");
+	eval("vconfig", "add", "eth0", "2");
+
+	mtd = getMTD("u-boot");
+	sprintf(mtdpath, "/dev/mtdblock%d", mtd);
+
+	fp = fopen(mtdpath, "rb");
+	char mac[32];
+	if (fp) {
+		unsigned char buf2[256];
+		fseek(fp, 326656, SEEK_SET);
+		fread(buf2, 256, 1, fp);
+		fclose(fp);
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fprintf(stderr, "configure eth0 to %s\n", mac);
+		eval("ifconfig", "eth0", "hw", "ether", mac);
+		MAC_SUB(mac);
+		MAC_SUB(mac);
+		fprintf(stderr, "configure vlan1 to %s\n", mac);
+		eval("ifconfig", "vlan1", "hw", "ether", mac);
+		MAC_ADD(mac);
+		MAC_ADD(mac);
+		MAC_ADD(mac);
+		fprintf(stderr, "configure vlan2 to %s\n", mac);
+		eval("ifconfig", "vlan2", "hw", "ether", mac);
+	}
+
+#endif
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
 
