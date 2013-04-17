@@ -1589,6 +1589,9 @@ int internal_getRouterBrand()
 #elif HAVE_MAGICBOX
 	setRouter("OpenRB PowerPC Board");
 	return ROUTER_BOARD_MAGICBOX;
+#elif HAVE_WDR4900
+	setRouter("TP-Link WDR4900 V1");
+	return ROUTER_BOARD_RB600;
 #elif HAVE_RB1000
 	setRouter("Mikrotik RB1000");
 	return ROUTER_BOARD_RB600;
