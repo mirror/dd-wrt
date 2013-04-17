@@ -115,7 +115,7 @@ void start_openvpnserver(void)
 			fprintf(fp,"client-config-dir /jffs/etc/openvpn/ccd\n");
 	else
 			fprintf(fp,"client-config-dir /tmp/openvpn/ccd\n");
-	if (nvram_invmatch("openvpn_lzo", "0")) 
+	if (nvram_invmatch("openvpn_lzo", "off")) 
 		fprintf(fp, "comp-lzo %s\n",    //yes/no/adaptive/disable 
 		nvram_safe_get("openvpn_lzo"));
 		if (strlen(nvram_safe_get("openvpn_clcon")) > 0) {
@@ -392,7 +392,7 @@ void start_openvpn(void)
 	fprintf(fp, "remote %s %s\n",
 		nvram_safe_get("openvpncl_remoteip"),
 		nvram_safe_get("openvpncl_remoteport"));
-	if (nvram_invmatch("openvpncl_lzo", "0")) 
+	if (nvram_invmatch("openvpncl_lzo", "off")) 
 		fprintf(fp, "comp-lzo %s\n",    //yes/no/adaptive/disable 
 		nvram_safe_get("openvpncl_lzo"));
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy routing: we need redirect-gw so we get gw info
