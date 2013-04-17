@@ -475,6 +475,9 @@ int flush_interfaces(void)
 #elif HAVE_MAGICBOX
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+#elif HAVE_WDR4900
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
+		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_RB600
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1 eth2",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));

@@ -107,6 +107,9 @@ endif
 ifeq ($(CONFIG_EAD),y)
 CFLAGS_EXTRA += -DHAVE_EAD
 endif
+ifeq ($(CONFIG_WDR4900),y)
+CFLAGS_EXTRA += -DHAVE_WDR4900
+endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS_EXTRA += -DHAVE_ACK
 endif
