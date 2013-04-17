@@ -80,6 +80,9 @@ endif
 ifeq ($(CONFIG_NOWIFI),y)
 CFLAGS += -DHAVE_NOWIFI
 endif
+ifeq ($(CONFIG_WDR4900),y)
+CFLAGS += -DHAVE_WDR4900
+endif
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
 endif
