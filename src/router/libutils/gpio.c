@@ -40,7 +40,32 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#if defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
+#ifdef HAVE_WDR4900
+void set_gpio(int gpio, int value)
+{
+    switch(gpio)
+    {
+    case 0: // system
+	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\:blue\:system/brightness",value);
+    break;
+    case 1: // usb1
+	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\:green\:usb1/brightness",value);
+    break;
+    case 2: // usb2
+	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\:green\:usb2/brightness",value);    
+    break;
+    
+    }
+}
+
+int get_gpio(int gpio)
+{
+    return 0;
+}
+
+
+
+#elif defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
 
 void set_gpio(int gpio, int value)
 {
