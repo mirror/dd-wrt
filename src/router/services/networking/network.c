@@ -869,7 +869,29 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCSIFHWADDR, &ifr);
 #endif
-#ifdef HAVE_RB600
+#ifdef HAVE_WDR4900
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		nvram_setz(lan_ifnames,
+			   "vlan1 vlan2 ath0 ath1");
+		PORTSETUPWAN("");
+	} else {
+		nvram_setz(lan_ifnames,
+			   "vlan1 vlan2 ath0 ath1");
+		PORTSETUPWAN("vlan2");
+	}
+
+	strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr",
+			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
+	MAC_ADD(mac);
+	ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
+	ioctl(s, SIOCSIFHWADDR, &ifr);
+#elif HAVE_RB600
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		nvram_setz(lan_ifnames,
 			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
@@ -2838,6 +2860,10 @@ void start_wan(int status)
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
 	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+#elif HAVE_WDR4900
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ?
+	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_RB600
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
