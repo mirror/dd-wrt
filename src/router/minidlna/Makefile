@@ -173,7 +173,7 @@ libvorbis:
 	fi
 flac:
 	if [ ! -f ./flac-1.2.1/Makefile ];then \
-	cd flac-1.2.1 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc" \
+	cd flac-1.2.1 && (./configure --host=$(HOST) --disable-altivec  CC="ccache $(CROSS_COMPILE)gcc" \
 				CFLAGS="$(COPTS) -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 				LDFLAGS=-L$(MINI_DLNA_PATH)/libogg-1.3.0/src/.libs/ \
 				); \
