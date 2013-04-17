@@ -516,13 +516,6 @@ struct spi_transfer {
 	u32		speed_hz;
 
 	struct list_head transfer_list;
-
-#ifdef CONFIG_ARCH_CNS3XXX
-	unsigned	last_in_message_list;
-#ifdef CONFIG_SPI_CNS3XXX_2IOREAD
-	u8		dio_read;
-#endif
-#endif
 };
 
 /**

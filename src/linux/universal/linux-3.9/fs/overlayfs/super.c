@@ -15,12 +15,17 @@
 #include <linux/slab.h>
 #include <linux/parser.h>
 #include <linux/module.h>
+#include <linux/cred.h>
+#include <linux/sched.h>
+#include <linux/statfs.h>
 #include <linux/seq_file.h>
 #include "overlayfs.h"
 
 MODULE_AUTHOR("Miklos Szeredi <miklos@szeredi.hu>");
 MODULE_DESCRIPTION("Overlay filesystem");
 MODULE_LICENSE("GPL");
+
+#define OVERLAYFS_SUPER_MAGIC 0x794c764f
 
 struct ovl_config {
 	char *lowerdir;
@@ -31,6 +36,7 @@ struct ovl_config {
 struct ovl_fs {
 	struct vfsmount *upper_mnt;
 	struct vfsmount *lower_mnt;
+	long lower_namelen;
 	/* pathnames of lower and upper dirs, for show_options */
 	struct ovl_config config;
 };
@@ -248,7 +254,8 @@ static struct ovl_entry *ovl_alloc_entry(void)
 	return kzalloc(sizeof(struct ovl_entry), GFP_KERNEL);
 }
 
-static inline struct dentry *ovl_lookup_real(struct dentry *dir, struct qstr *name)
+static inline struct dentry *ovl_lookup_real(struct dentry *dir,
+					     struct qstr *name)
 {
 	struct dentry *dentry;
 
@@ -336,9 +343,11 @@ static int ovl_do_lookup(struct dentry *dentry)
 
 		realdentry = upperdentry ? upperdentry : lowerdentry;
 		err = -ENOMEM;
-		inode = ovl_new_inode(dentry->d_sb, realdentry->d_inode->i_mode, oe);
+		inode = ovl_new_inode(dentry->d_sb, realdentry->d_inode->i_mode,
+				      oe);
 		if (!inode)
 			goto out_dput;
+		ovl_copyattr(realdentry->d_inode, inode);
 	}
 
 	if (upperdentry)
@@ -364,7 +373,7 @@ out:
 }
 
 struct dentry *ovl_lookup(struct inode *dir, struct dentry *dentry,
-			  struct nameidata *nd)
+			  unsigned int flags)
 {
 	int err = ovl_do_lookup(dentry);
 
@@ -372,6 +381,12 @@ struct dentry *ovl_lookup(struct inode *dir, struct dentry *dentry,
 		return ERR_PTR(err);
 
 	return NULL;
+}
+
+struct file *ovl_path_open(struct path *path, int flags)
+{
+	path_get(path);
+	return dentry_open(path, flags, current_cred());
 }
 
 static void ovl_put_super(struct super_block *sb)
@@ -418,13 +433,20 @@ static int ovl_remount_fs(struct super_block *sb, int *flagsp, char *data)
  */
 static int ovl_statfs(struct dentry *dentry, struct kstatfs *buf)
 {
+	struct ovl_fs *ofs = dentry->d_sb->s_fs_info;
 	struct dentry *root_dentry = dentry->d_sb->s_root;
 	struct path path;
+	int err;
+
 	ovl_path_upper(root_dentry, &path);
 
-	if (!path.dentry->d_sb->s_op->statfs)
-		return -ENOSYS;
-	return path.dentry->d_sb->s_op->statfs(path.dentry, buf);
+	err = vfs_statfs(&path, buf);
+	if (!err) {
+		buf->f_namelen = max(buf->f_namelen, ofs->lower_namelen);
+		buf->f_type = OVERLAYFS_SUPER_MAGIC;
+	}
+
+	return err;
 }
 
 /**
@@ -433,9 +455,9 @@ static int ovl_statfs(struct dentry *dentry, struct kstatfs *buf)
  * Prints the mount options for a given superblock.
  * Returns zero; does not fail.
  */
-static int ovl_show_options(struct seq_file *m, struct vfsmount *mnt)
+static int ovl_show_options(struct seq_file *m, struct dentry *dentry)
 {
-	struct super_block *sb = mnt->mnt_sb;
+	struct super_block *sb = dentry->d_sb;
 	struct ovl_fs *ufs = sb->s_fs_info;
 
 	seq_printf(m, ",lowerdir=%s", ufs->config.lowerdir);
@@ -507,6 +529,7 @@ static int ovl_fill_super(struct super_block *sb, void *data, int silent)
 	struct dentry *root_dentry;
 	struct ovl_entry *oe;
 	struct ovl_fs *ufs;
+	struct kstatfs statfs;
 	int err;
 
 	err = -ENOMEM;
@@ -528,13 +551,9 @@ static int ovl_fill_super(struct super_block *sb, void *data, int silent)
 	if (oe == NULL)
 		goto out_free_config;
 
-	root_inode = ovl_new_inode(sb, S_IFDIR, oe);
-	if (!root_inode)
-		goto out_free_oe;
-
 	err = kern_path(ufs->config.upperdir, LOOKUP_FOLLOW, &upperpath);
 	if (err)
-		goto out_put_root;
+		goto out_free_oe;
 
 	err = kern_path(ufs->config.lowerdir, LOOKUP_FOLLOW, &lowerpath);
 	if (err)
@@ -544,6 +563,13 @@ static int ovl_fill_super(struct super_block *sb, void *data, int silent)
 	if (!S_ISDIR(upperpath.dentry->d_inode->i_mode) ||
 	    !S_ISDIR(lowerpath.dentry->d_inode->i_mode))
 		goto out_put_lowerpath;
+
+	err = vfs_statfs(&lowerpath, &statfs);
+	if (err) {
+		printk(KERN_ERR "overlayfs: statfs failed on lowerpath\n");
+		goto out_put_lowerpath;
+	}
+	ufs->lower_namelen = statfs.f_namelen;
 
 	sb->s_stack_depth = max(upperpath.mnt->mnt_sb->s_stack_depth,
 				lowerpath.mnt->mnt_sb->s_stack_depth) + 1;
@@ -586,7 +612,11 @@ static int ovl_fill_super(struct super_block *sb, void *data, int silent)
 	}
 
 	err = -ENOMEM;
-	root_dentry = d_alloc_root(root_inode);
+	root_inode = ovl_new_inode(sb, S_IFDIR, oe);
+	if (!root_inode)
+		goto out_drop_write;
+
+	root_dentry = d_make_root(root_inode);
 	if (!root_dentry)
 		goto out_drop_write;
 
@@ -599,6 +629,7 @@ static int ovl_fill_super(struct super_block *sb, void *data, int silent)
 	root_dentry->d_fsdata = oe;
 	root_dentry->d_op = &ovl_dentry_operations;
 
+	sb->s_magic = OVERLAYFS_SUPER_MAGIC;
 	sb->s_op = &ovl_super_operations;
 	sb->s_root = root_dentry;
 	sb->s_fs_info = ufs;
@@ -616,8 +647,6 @@ out_put_lowerpath:
 	path_put(&lowerpath);
 out_put_upperpath:
 	path_put(&upperpath);
-out_put_root:
-	iput(root_inode);
 out_free_oe:
 	kfree(oe);
 out_free_config:

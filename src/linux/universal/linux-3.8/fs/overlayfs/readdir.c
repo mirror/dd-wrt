@@ -14,6 +14,7 @@
 #include <linux/xattr.h>
 #include <linux/rbtree.h>
 #include <linux/security.h>
+#include <linux/cred.h>
 #include "overlayfs.h"
 
 struct ovl_cache_entry {
@@ -171,7 +172,7 @@ static inline int ovl_dir_read(struct path *realpath,
 	struct file *realfile;
 	int err;
 
-	realfile = vfs_open(realpath, O_RDONLY | O_DIRECTORY, current_cred());
+	realfile = ovl_path_open(realpath, O_RDONLY | O_DIRECTORY);
 	if (IS_ERR(realfile))
 		return PTR_ERR(realfile);
 
@@ -246,8 +247,9 @@ static int ovl_dir_mark_whiteouts(struct ovl_readdir_data *rdd)
 	return 0;
 }
 
-static inline int ovl_dir_read_merged(struct path *upperpath, struct path *lowerpath,
-			       struct ovl_readdir_data *rdd)
+static inline int ovl_dir_read_merged(struct path *upperpath,
+				      struct path *lowerpath,
+				      struct ovl_readdir_data *rdd)
 {
 	int err;
 	struct rb_root root = RB_ROOT;
@@ -335,7 +337,8 @@ static int ovl_readdir(struct file *file, void *buf, filldir_t filler)
 		p = list_entry(od->cursor.next, struct ovl_cache_entry, l_node);
 		off = file->f_pos;
 		if (!p->is_whiteout) {
-			over = filler(buf, p->name, p->len, off, p->ino, p->type);
+			over = filler(buf, p->name, p->len, off, p->ino,
+				      p->type);
 			if (over)
 				break;
 		}
@@ -396,7 +399,7 @@ static int ovl_dir_fsync(struct file *file, loff_t start, loff_t end,
 		struct path upperpath;
 
 		ovl_path_upper(file->f_path.dentry, &upperpath);
-		od->realfile = vfs_open(&upperpath, O_RDONLY, current_cred());
+		od->realfile = ovl_path_open(&upperpath, O_RDONLY);
 		if (IS_ERR(od->realfile))
 			return PTR_ERR(od->realfile);
 	}
@@ -429,7 +432,7 @@ static int ovl_dir_open(struct inode *inode, struct file *file)
 		return -ENOMEM;
 
 	type = ovl_path_real(file->f_path.dentry, &realpath);
-	realfile = vfs_open(&realpath, file->f_flags, current_cred());
+	realfile = ovl_path_open(&realpath, file->f_flags);
 	if (IS_ERR(realfile)) {
 		kfree(od);
 		return PTR_ERR(realfile);
@@ -527,13 +530,17 @@ static int ovl_remove_whiteouts(struct dentry *dir, struct list_head *list)
 
 		dentry = lookup_one_len(p->name, upperdir, p->len);
 		if (IS_ERR(dentry)) {
-			printk(KERN_WARNING "overlayfs: failed to lookup whiteout %.*s: %li\n", p->len, p->name, PTR_ERR(dentry));
+			printk(KERN_WARNING
+			    "overlayfs: failed to lookup whiteout %.*s: %li\n",
+			    p->len, p->name, PTR_ERR(dentry));
 			continue;
 		}
 		ret = vfs_unlink(upperdir->d_inode, dentry);
 		dput(dentry);
 		if (ret)
-			printk(KERN_WARNING "overlayfs: failed to unlink whiteout %.*s: %i\n", p->len, p->name, ret);
+			printk(KERN_WARNING
+			    "overlayfs: failed to unlink whiteout %.*s: %i\n",
+			    p->len, p->name, ret);
 	}
 	mutex_unlock(&upperdir->d_inode->i_mutex);
 
