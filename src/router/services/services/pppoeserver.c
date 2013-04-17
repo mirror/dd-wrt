@@ -123,9 +123,7 @@ static void makeipup(void)
 	fprintf(fp, "#!/bin/sh\n");
 	if (nvram_match("filter", "on")) // only needed if firewall is enabled
 		fprintf(fp, "iptables -I INPUT -i $1 -j ACCEPT\n");
-	if (nvram_match("pppoeserver_clip", "local"))
-		if (nvram_match("pppoeserver_interface", "br0"))
-			fprintf(fp, "arp -s $5 `nvram get lan_hwaddr` pub\n");
+//	if (nvram_match("pppoeserver_clip", "local")) //for radius ip's...to be worked on
 	if (nvram_match("wan_proto", "pppoe")	//only when there is an ppp0 interface
 		|| nvram_match("wan_proto", "pptp"))
 			fprintf(fp, 
