@@ -4493,6 +4493,13 @@ int led_control(int type, int act)
 //              power_gpio = 0x101;
 #endif
 		break;
+#ifdef HAVE_WDR4900
+	case ROUTER_BOARD_RB600
+		diag_gpio = 0x000;
+		usb_gpio = 0x001;
+		usb_gpio1 = 0x002;	
+		break;
+#endif
 	case ROUTER_BOARD_PB42:
 #ifdef HAVE_WA901
 		diag_gpio = 0x102;
