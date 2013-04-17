@@ -16,7 +16,7 @@
 	compatible = "tp-link,TL-WDR4900v1";
 
 	chosen {
-		bootargs = "console=ttyS0,115200";
+		bootargs = "console=ttyS0,115200 cache-sram-size=0x10000 cache-sram-offset=0xffff00000";
 /*
 		linux,stdout-path = "/soc@ffe00000/serial@4500";
 */
@@ -59,8 +59,13 @@
 				};
 
 				rootfs@300000 {
-					reg = <0x00300000 0x00ce0000>;
+					reg = <0x00300000 0x00cd0000>;
 					label = "rootfs";
+				};
+
+				config@fd0000 {
+					reg = <0x00fd0000 0x00010000>;
+					label = "nvram";
 				};
 
 				config@fe0000 {
@@ -76,8 +81,8 @@
 				};
 
 				firmware@60000 {
-					reg = <0x00060000 0x00f80000>;
-					label = "firmware";
+					reg = <0x00060000 0x00f70000>;
+					label = "linux";
 				};
 			};
 		};

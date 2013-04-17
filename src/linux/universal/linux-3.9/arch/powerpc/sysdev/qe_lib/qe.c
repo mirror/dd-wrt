@@ -345,7 +345,7 @@ static int qe_sdma_init(void)
 	/* allocate 2 internal temporary buffers (512 bytes size each) for
 	 * the SDMA */
 	if (IS_ERR_VALUE(sdma_buf_offset)) {
- 		sdma_buf_offset = qe_muram_alloc(512 * 2, 64);
+		sdma_buf_offset = qe_muram_alloc(512 * 2, 4096);
 		if (IS_ERR_VALUE(sdma_buf_offset))
 			return -ENOMEM;
 	}

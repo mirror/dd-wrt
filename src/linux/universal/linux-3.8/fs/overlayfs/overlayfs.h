@@ -34,7 +34,8 @@ void ovl_dentry_set_opaque(struct dentry *dentry, bool opaque);
 bool ovl_is_whiteout(struct dentry *dentry);
 void ovl_dentry_update(struct dentry *dentry, struct dentry *upperdentry);
 struct dentry *ovl_lookup(struct inode *dir, struct dentry *dentry,
-			  struct nameidata *nd);
+			  unsigned int flags);
+struct file *ovl_path_open(struct path *path, int flags);
 
 struct dentry *ovl_upper_create(struct dentry *upperdir, struct dentry *dentry,
 				struct kstat *stat, const char *link);
@@ -55,6 +56,12 @@ int ovl_removexattr(struct dentry *dentry, const char *name);
 
 struct inode *ovl_new_inode(struct super_block *sb, umode_t mode,
 			    struct ovl_entry *oe);
+static inline void ovl_copyattr(struct inode *from, struct inode *to)
+{
+	to->i_uid = from->i_uid;
+	to->i_gid = from->i_gid;
+}
+
 /* dir.c */
 extern const struct inode_operations ovl_dir_inode_operations;
 
