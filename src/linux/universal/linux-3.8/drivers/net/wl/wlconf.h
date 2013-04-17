@@ -29,11 +29,10 @@
 					 */
 #define D11CONF2	0x500		/* D11 Core Rev > 31, Rev 40(4360a0), 42(4360B0) */
 #else
-#define D11CONF		0x77a74000	/* D11 Core Rev 5 (4306C0), 7 (4712), 9 (4318b0, 5352), */
+#define D11CONF		0x77a70000	/* D11 Core Rev 5 (4306C0), 7 (4712), 9 (4318b0, 5352), */
 #define D11CONF2	0x0		/* D11 Core Rev > 31, Rev 40(4360a0), 42(4360B0) */
 #endif
 
-#endif
 #define NRXBUFPOST	56	/* # rx buffers posted */
 #define RXBND		24	/* max # rx frames to process */
 #define PKTCBND		36	/* max # rx frames to chain */
