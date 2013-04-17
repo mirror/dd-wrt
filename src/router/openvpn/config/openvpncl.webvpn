@@ -80,7 +80,7 @@
 				<option value="yes" <% nvram_selected("openvpncl_lzo","yes"); %>>Yes</option>
 				<option value="adaptive" <% nvram_selected("openvpncl_lzo","adaptive"); %>>Adaptive</option>
 				<option value="no" <% nvram_selected("openvpncl_lzo","no"); %>>No</option>
-				<option value="0" <% nvram_selected("openvpncl_lzo","0"); %>>Disabled</option>
+				<option value="off" <% nvram_selected("openvpncl_lzo","off"); %>>Disabled</option>
 				</select>
 			</div>
 			<div class="setting">
