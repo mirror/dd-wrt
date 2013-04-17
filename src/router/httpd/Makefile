@@ -216,6 +216,11 @@ ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
 OBJS += upgrade_rb500.o
 else
+ifeq ($(CONFIG_WDR4900),y)
+OBJS += upgrade.o
+else
+
+
 ifneq ($(CONFIG_X86),y)
 ifneq ($(CONFIG_RB600),y)
 ifeq ($(CONFIG_BUFFALO),y)
@@ -228,6 +233,7 @@ else
 OBJS += upgrade.o
 endif
 CFLAGS += -DHAVE_LOUD
+endif
 endif
 endif
 endif
@@ -398,7 +404,10 @@ OBJS += upgrade_x86.o
 endif
 ifeq ($(CONFIG_RB600),y)
 CFLAGS += -DHAVE_RB600
+
+ifneq ($(CONFIG_WDR4900),y)
 OBJS += upgrade_x86.o
+endif
 endif
 
 ifeq ($(CONFIG_MAGICBOX),y)
