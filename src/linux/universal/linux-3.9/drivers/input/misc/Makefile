@@ -60,4 +60,4 @@ obj-$(CONFIG_INPUT_WM831X_ON)		+= wm831x-on.o
 obj-$(CONFIG_INPUT_XEN_KBDDEV_FRONTEND)	+= xen-kbdfront.o
 obj-$(CONFIG_INPUT_YEALINK)		+= yealink.o
 obj-$(CONFIG_INPUT_GPIO_BUTTONS)	+= gpio_buttons.o
-
+obj-$(CONFIG_BUTTON_HOTPLUG)		+= button-hotplug.o
