@@ -1009,6 +1009,18 @@ void start_restore_defaults(void)
 		{"wan_default", "eth0", 0},
 		{0, 0, 0}
 	};
+#elif HAVE_WDR4900
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames",
+		 "vlan1 vlan2 ath0 ath1",
+		 0},
+		{"wan_ifname", "vlan2", 0},
+		{"wan_ifname2", "vlan2", 0},
+		{"wan_ifnames", "vlan2", 0},
+		{"wan_default", "vlan2", 0},
+		{0, 0, 0}
+	};
 #elif HAVE_RB600
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
@@ -2425,6 +2437,9 @@ void start_drivers(void)
 		insmod("xhci-hcd");
 		insmod("dwc_otg");	// usb
 		insmod("usb-libusual");
+		
+		insmod("fsl-mph-dr-of");
+		
 
 		if (nvram_match("usb_storage", "1")) {
 			cprintf("loading scsi_mod\n");
@@ -2481,6 +2496,7 @@ void start_drivers(void)
 		rmmod("ehci-pci");
 		rmmod("ehci-platform");
 		rmmod("ehci-hcd");
+		rmmod("fsl-mph-dr-of");
 		rmmod("usbcore");
 		rmmod("usb-common");
 /* unload filesystems */
