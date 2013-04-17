@@ -18,7 +18,7 @@
 "wd_username" "http username" "NULL" "TRUE" "0"
 "wd_password" "http password" "PASSWORD2" "63" "TRUE" "0"
 "wd_iface" "wifidog Interface" "NULL" "FALSE" "0"
-"wd_radius" "Radius or Gatway enabled" "CHOICE" "2" "0" "1" "FALSE" "0
+"wd_radius" "Radius or Gatway enabled" "CHOICE" "2" "0" "1" "FALSE" "0"
 "wd_radacct" "accounting port" "RANGE"  "1"  "65535"  "FALSE" "0"
 "wd_radauth" "auth port" "RANGE"  "1"  "65535"  "FALSE" "0"
 "wd_radenc" "radius encryption" "CHOICE" "3" "CHAP_MD5" "MSCHAPv1" "MSCHAPv2" "FALSE" "0"
