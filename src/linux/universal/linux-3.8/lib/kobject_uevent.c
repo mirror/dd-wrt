@@ -51,6 +51,18 @@ static const char *kobject_actions[] = {
 	[KOBJ_OFFLINE] =	"offline",
 };
 
+u64 uevent_next_seqnum(void)
+{
+	u64 seq;
+
+	mutex_lock(&uevent_sock_mutex);
+	seq = ++uevent_seqnum;
+	mutex_unlock(&uevent_sock_mutex);
+
+	return seq;
+}
+EXPORT_SYMBOL_GPL(uevent_next_seqnum);
+
 /**
  * kobject_action_type - translate action string to numeric type
  *
@@ -249,7 +261,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	retval = add_uevent_var(env, "SEQNUM=%llu", (unsigned long long)++uevent_seqnum);
 	if (retval) {
 		mutex_unlock(&uevent_sock_mutex);
- 		goto exit;
+		goto exit;
 	}
 
 #if defined(CONFIG_NET)
