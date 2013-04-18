@@ -1699,24 +1699,6 @@ static inline void pskb_trim_unique(struct sk_buff *skb, unsigned int len)
 	BUG_ON(err);
 }
 
-/*
- * Caller wants to reduce memory needs before queueing skb
- * The (expensive) copy should not be be done in fast path.
- */
-static inline struct sk_buff *skb_reduce_truesize(struct sk_buff *skb)
-{
-	if (skb->truesize > 2 * SKB_TRUESIZE(skb->len)) {
-		struct sk_buff *nskb;
-		nskb = skb_copy_expand(skb, skb_headroom(skb), 0,
-			GFP_ATOMIC | __GFP_NOWARN);
-		if (nskb) {
-			__kfree_skb(skb);
-			skb = nskb;
-		}
-	}
-	return skb;
-}
-
 /**
  *	skb_orphan - orphan a buffer
  *	@skb: buffer to orphan
