@@ -61,16 +61,7 @@ function valid_value(F) {
 	
 				if(pptp_dhcp != "skip" && F.wan_netmask && !valid_mask(F,"F.wan_netmask",ZERO_NO|BCST_NO))
 					return false;
-			}	
-	
-			if (!F.l2tp_use_dhcp || F.l2tp_use_dhcp.value == "0") {
-				if(l2tp_dhcp != "skip" && F.wan_ipaddr && !valid_ip(F,"F.wan_ipaddr","IP",ZERO_NO|MASK_NO))
-					return false;
-	
-				if(l2tp_dhcp != "skip" && F.wan_netmask && !valid_mask(F,"F.wan_netmask",ZERO_NO|BCST_NO))
-					return false;
-			}	
-	
+			}		
 		}
 	}
 	
