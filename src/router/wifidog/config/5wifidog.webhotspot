@@ -22,6 +22,7 @@
 			<div class="label"><% tran("hotspot.wifidog_httpdname"); %></div>
 			<input class="text" maxlength="100" size="39" name="wd_httpdname" value="<% nvram_get("wd_httpdname"); %>" />
 		</div>
+		
 		<div class="setting">
 			<div class="label"><% tran("hotspot.nocat_extifname"); %></div>
 			<% show_ifselect("wd_extiface"); %>
