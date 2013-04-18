@@ -51,7 +51,9 @@ ADDLIB+=ipx_ntop.o ipx_pton.o
 HOSTCC = $(CC) 
 #ipsel-linux-uclibc-gcc
 CCOPTS = -D_GNU_SOURCE $(COPTS) -Wstrict-prototypes -Wall
-CFLAGS = $(CCOPTS) -I$(KERNEL_INCLUDE) $(ASM_INCLUDE) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS = -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
+
+CFLAGS += $(CCOPTS) -I$(KERNEL_INCLUDE) $(ASM_INCLUDE) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
 #-ffunction-sections -fdata-sections -Wl,--gc-sections
 
 LDLIBS += -L../lib -lnetlink -lutil 
