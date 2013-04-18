@@ -635,8 +635,10 @@ int private_AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 	u32 temp;
 
 #ifdef ASMAES512
+#ifndef ASMNOKEY
 	if (bits<512)
 	    return asm_AES_set_encrypt_key(userKey,bits,key);
+#endif
 #endif
 
 	if (!userKey || !key)
@@ -802,8 +804,10 @@ int private_AES_set_decrypt_key(const unsigned char *userKey, const int bits,
 	u32 temp;
 
 #ifdef ASMAES512
+#ifndef ASMNOKEY
 	if (bits<512)
 	    return asm_AES_set_decrypt_key(userKey,bits,key);
+#endif
 #endif
 
 	/* first, start with an encryption schedule */
