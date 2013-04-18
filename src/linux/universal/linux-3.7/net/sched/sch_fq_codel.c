@@ -182,8 +182,6 @@ static int fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 		return ret;
 	}
 	idx--;
-	if (sch->q.qlen > 128)
-		skb = skb_reduce_truesize(skb);
 
 	codel_set_enqueue_time(skb);
 	flow = &q->flows[idx];
@@ -195,6 +193,7 @@ static int fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 		list_add_tail(&flow->flowchain, &q->new_flows);
 		q->new_flow_count++;
 		flow->deficit = q->quantum;
+		flow->dropped = 0;
 	}
 	if (++sch->q.qlen < sch->limit)
 		return NET_XMIT_SUCCESS;
@@ -388,9 +387,9 @@ static int fq_codel_init(struct Qdisc *sch, struct nlattr *opt)
 	struct fq_codel_sched_data *q = qdisc_priv(sch);
 	int i;
 
-	sch->limit = 1024;
+	sch->limit = 10*1024;
 	q->flows_cnt = 1024;
-	q->quantum = 300;
+	q->quantum = psched_mtu(qdisc_dev(sch));
 	q->perturbation = net_random();
 	INIT_LIST_HEAD(&q->new_flows);
 	INIT_LIST_HEAD(&q->old_flows);
