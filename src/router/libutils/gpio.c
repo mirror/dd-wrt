@@ -74,6 +74,16 @@ int value;
 		fclose(fp);
 	}
     break;
+    case 4:
+	fp = fopen("/tmp/.button_wifi","rb");
+	if (fp) {
+		value = getc(fp);
+		if (value==EOF)
+		    return 0;
+		return value;
+		fclose(fp);
+	}
+    break;
     }
     return 0;
 }
