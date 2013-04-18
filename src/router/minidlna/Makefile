@@ -78,6 +78,7 @@ ffmpeg:
 	--disable-stripping \
 	--enable-zlib \
 	--disable-ffmpeg \
+	--disable-asm \
 	--disable-ffplay \
 	--disable-ffprobe \
 	--disable-ffserver \
