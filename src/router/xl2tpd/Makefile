@@ -54,7 +54,7 @@ DFLAGS?= -DTRUST_PPPD_TO_DIE
 #
 #KERNELSRC=/lib/modules/`uname -r`/build/
 KERNELSRC?=./linux
-OSFLAGS?= -DLINUX -I$(LINUXDIR)/include/
+OSFLAGS?= -DLINUX  -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include/
 #
 # Uncomment the following to use the kernel interface under Linux
 # This requires the pppol2tp-linux-2.4.27.patch patch from contrib
