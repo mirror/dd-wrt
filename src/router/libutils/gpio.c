@@ -43,52 +43,47 @@
 #ifdef HAVE_WDR4900
 void set_gpio(int gpio, int value)
 {
-    switch(gpio)
-    {
-    case 0: // system
-	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\\:blue\\:system/brightness",value);
-    break;
-    case 1: // usb1
-	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\\:green\\:usb1/brightness",value);
-    break;
-    case 2: // usb2
-	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\\:green\\:usb2/brightness",value);    
-    break;
-    
-    }
+	switch (gpio) {
+	case 0:		// system
+		sysprintf
+		    ("echo %d > /sys/devices/leds.4/leds/tplink\\:blue\\:system/brightness",
+		     value);
+		break;
+	case 1:		// usb1
+		sysprintf
+		    ("echo %d > /sys/devices/leds.4/leds/tplink\\:green\\:usb1/brightness",
+		     value);
+		break;
+	case 2:		// usb2
+		sysprintf
+		    ("echo %d > /sys/devices/leds.4/leds/tplink\\:green\\:usb2/brightness",
+		     value);
+		break;
+
+	}
 }
 
 int get_gpio(int gpio)
 {
-FILE *fp;
-int value;
-    switch(gpio)
-    {
-    case 3:
-	fp = fopen("/tmp/.button_reset","rb");
+	FILE *fp = NULL;
+	int value;
+	switch (gpio) {
+	case 3:
+		fp = fopen("/tmp/.button_reset", "rb");
+		break;
+	case 4:
+		fp = fopen("/tmp/.button_wifi", "rb");
+		break;
+	}
 	if (fp) {
 		value = getc(fp);
-		if (value==EOF)
-		    return 0;
+		if (value == EOF)
+			return 0;
 		return value;
 		fclose(fp);
 	}
-    break;
-    case 4:
-	fp = fopen("/tmp/.button_wifi","rb");
-	if (fp) {
-		value = getc(fp);
-		if (value==EOF)
-		    return 0;
-		return value;
-		fclose(fp);
-	}
-    break;
-    }
-    return 0;
+	return 0;
 }
-
-
 
 #elif defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
 
@@ -163,8 +158,6 @@ int get_gpio(int gpio)
 }
 
 #elif HAVE_NORTHSTAR
-
-
 
 void set_gpio(int pin, int value)
 {
