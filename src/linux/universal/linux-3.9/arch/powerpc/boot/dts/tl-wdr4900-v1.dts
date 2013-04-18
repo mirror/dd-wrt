@@ -211,6 +211,12 @@
 			gpios = <&gpio0 5 1>; /* active low */
 			linux,code = <0x198>; /* KEY_RESTART */
 		};
+
+		wifi {
+			label = "Wifi button";
+			gpios = <&gpio0 11 1>; /* active low */
+			linux,code = <0x161>; /* KEY_RESTART */
+		};
 	};
 };
 
