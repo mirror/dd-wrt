@@ -1591,7 +1591,7 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_MAGICBOX;
 #elif HAVE_WDR4900
 	setRouter("TP-Link WDR4900 V1");
-	return ROUTER_BOARD_RB600;
+	return ROUTER_BOARD_WDR4900;
 #elif HAVE_RB1000
 	setRouter("Mikrotik RB1000");
 	return ROUTER_BOARD_RB600;
@@ -4426,7 +4426,7 @@ int led_control(int type, int act)
  * act: LED_ON, LED_OFF, LED_FLASH 
  */
 {
-#if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX)  || defined(HAVE_RB600) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5))  && (!defined(HAVE_DIR300) && !defined(HAVE_WRT54G2) && !defined(HAVE_RTG32) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000))
+#if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX)  || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5))  && (!defined(HAVE_DIR300) && !defined(HAVE_WRT54G2) && !defined(HAVE_RTG32) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000))
 	return 0;
 #else
 	int use_gpio = 0x0ff;
@@ -4494,7 +4494,7 @@ int led_control(int type, int act)
 #endif
 		break;
 #ifdef HAVE_WDR4900
-	case ROUTER_BOARD_RB600
+	case ROUTER_BOARD_WDR4900:
 		diag_gpio = 0x000;
 		usb_gpio = 0x001;
 		usb_gpio1 = 0x002;	
