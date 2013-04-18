@@ -1,6 +1,7 @@
-#CFLAGS = -Os -Wall -Werror -pedantic --std=gnu99
+#CFLAGS = -Os -Wall -Werror -pedantic --std=gnu99C
+CFLAGS+= -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 CFLAGS += $(COPTS)
-CPPFLAGS = -I. -I$(LINUXDIR)/include
+CPPFLAGS = $(CFLAGS) -I. -I$(LINUXDIR)/include
 LDFLAGS =
 
 all: relayd 
