@@ -46,13 +46,13 @@ void set_gpio(int gpio, int value)
     switch(gpio)
     {
     case 0: // system
-	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\:blue\:system/brightness",value);
+	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\\:blue\\:system/brightness",value);
     break;
     case 1: // usb1
-	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\:green\:usb1/brightness",value);
+	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\\:green\\:usb1/brightness",value);
     break;
     case 2: // usb2
-	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\:green\:usb2/brightness",value);    
+	sysprintf("echo %d > /sys/devices/leds.4/leds/tplink\\:green\\:usb2/brightness",value);    
     break;
     
     }
@@ -60,6 +60,21 @@ void set_gpio(int gpio, int value)
 
 int get_gpio(int gpio)
 {
+FILE *fp;
+int value;
+    switch(gpio)
+    {
+    case 3:
+	fp = fopen("/tmp/.button_reset","rb");
+	if (fp) {
+		value = getc(fp);
+		if (value==EOF)
+		    return 0;
+		return value;
+		fclose(fp);
+	}
+    break;
+    }
     return 0;
 }
 
