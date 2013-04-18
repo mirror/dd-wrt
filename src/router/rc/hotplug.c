@@ -43,6 +43,28 @@ int main(int argc, char **argv)
 
 			return 0;
 		}
+		if (!strcmp(argv[1], "button")) {
+			char *action;
+			if ((action = getenv("ACTION"))) {
+				char *button = getenv("BUTTON");
+				if (button) {
+					char name[32];
+					sprintf(name, "/tmp/.button_%s",
+						button);
+					FILE *fp = fopen(name, "wb");
+					if (fp) {
+						if (!strcmp(action, "pressed")) {
+							putc(1, fp);
+						} else {
+							putc(0, fp);
+						}
+
+						fclose(fp);
+					}
+
+				}
+			}
+		}
 #ifdef HAVE_USB
 #ifdef HAVE_HOTPLUG2
 		if (!strcmp(argv[1], "block")) {
@@ -61,7 +83,7 @@ int main(int argc, char **argv)
 			syslog(LOG_DEBUG,
 			       "hotplug: old style regulatory called\n");
 			int r = eval("/sbin/crda");
-			eval("rm","-f","/tmp/.crdalock");
+			eval("rm", "-f", "/tmp/.crdalock");
 			return r;
 		}
 		if (!strcmp(argv[1], "platform")) {
@@ -75,7 +97,7 @@ int main(int argc, char **argv)
 				syslog(LOG_DEBUG,
 				       "hotplug: new style regulatory called\n");
 				int r = eval("/sbin/crda");
-				eval("rm","-f","/tmp/.crdalock");
+				eval("rm", "-f", "/tmp/.crdalock");
 				return r;
 			}
 		}
@@ -89,5 +111,4 @@ int main(int argc, char **argv)
 		return EINVAL;
 	}
 	return 0;
-
 }
