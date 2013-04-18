@@ -38,9 +38,8 @@ void start_wifidog(void)
 		mkdir("/tmp/wifidog/", 0744);
 		FILE *fp = fopen("/tmp/wifidog/wifidog.conf", "wb");
 
-//		fprintf(fp, "NodeName %s\n", nvram_safe_get("wan_hostname"));
 		if (!strlen(nvram_safe_get("wd_gwid")))
-			fprintf(fp, "GatewayID default\n");
+			fprintf(fp, "GatewayID %s\n", nvram_safe_get("wan_hostname"));
 		else
 			fprintf(fp, "GatewayID %s\n",
 				nvram_safe_get("wd_gwid"));
