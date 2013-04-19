@@ -39,7 +39,7 @@ void start_wifidog(void)
 		FILE *fp = fopen("/tmp/wifidog/wifidog.conf", "wb");
 
 		if (!strlen(nvram_safe_get("wd_gwid")))
-			fprintf(fp, "GatewayID %s\n", nvram_safe_get("wan_hostname"));
+			fprintf(fp, "GatewayID %s\n", nvram_safe_get("router_name"));
 		else
 			fprintf(fp, "GatewayID %s\n",
 				nvram_safe_get("wd_gwid"));
