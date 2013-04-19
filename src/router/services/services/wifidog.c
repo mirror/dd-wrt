@@ -60,21 +60,11 @@ void start_wifidog(void)
 		fprintf(fp, "TrustedMACList %s\n",
 			nvram_safe_get("wd_maclist"));
 		fprintf(fp, "AuthServer {\n");
-		// Radius auth
-		if (nvram_match("wd_radius", "1")) {
-		fprintf(fp, "\'default-network\',\'%s\',%s,%s,\'%s\',\'%s\'\n",
-		nvram_safe_get("wd_radip"), nvram_safe_get("wd_radauth"),
-		nvram_safe_get("wd_radacct"), nvram_safe_get("wd_radpw"),
-		nvram_safe_get("wd_radenc"));	
-//		'default-network','localhost',1812,1813,'xxxxxx','CHAP_MD5'
-		}
-		else {
 		fprintf(fp, "Hostname %s\n", nvram_safe_get("wd_hostname"));
 		fprintf(fp, "SSLAvailable %s\n",
 			nvram_match("wd_sslavailable", "1") ? "yes" : "no");
 		fprintf(fp, "SSLPort %s\n", nvram_safe_get("wd_sslport"));
 		fprintf(fp, "HTTPPort %s\n", nvram_safe_get("wd_httpport"));
-		}
 		if (strlen(nvram_safe_get("wd_messagefile")) > 0) {
 			fprintf(fp, "HtmlMessageFile %s\n",
 				nvram_safe_get("wd_messagefile"));
