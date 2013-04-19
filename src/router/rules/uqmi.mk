@@ -18,4 +18,4 @@ uqmi-install:
 	install -D uqmi/uqmi $(INSTALLDIR)/uqmi/usr/sbin/uqmi
 
 uqmi-clean:
-	$(MAKE) -C libuqmi
+	$(MAKE) -C uqmi
