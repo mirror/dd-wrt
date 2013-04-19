@@ -208,15 +208,37 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-	make -f Makefile.northstar lib.$(ARCH)-install	
-
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+ifeq ($(CONFIG_LIBDL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+endif
+ifeq ($(CONFIG_LIBRT),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
+endif
+ifeq ($(CONFIG_LIBNSL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
+endif
+ifeq ($(CONFIG_LIBUTIL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+endif
+ifeq ($(CONFIG_LIBCPP),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+endif
+ifeq ($(CONFIG_LIBCRYPT),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+endif
+ifeq ($(CONFIG_LIBM),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+endif
+ifeq ($(CONFIG_LIBRESOLV),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
+endif
+ifeq ($(CONFIG_LIBPTHREAD),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+endif
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
 
 ifneq ($(CONFIG_NOOPT),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
 
 	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
 	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
@@ -240,10 +262,6 @@ ifneq ($(CONFIG_NOOPT),y)
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
 	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
 else
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
 
 #	relink-lib.sh \
 #		"$(ARCH)-linux-" \
@@ -359,10 +377,12 @@ endif
 	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
 	tools/lzma_4k e $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/vmlinuz.lzma
 	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
-	./tools/trx -m 30000000 -o $(ARCH)-uclibc/northstar-firmware-jffs2.bin $(ARCH)-uclibc/vmlinuz.lzma $(ARCH)-uclibc/dd-wrt.jffs2
-	./tools/trx -m 30000000 -o $(ARCH)-uclibc/northstar-firmware-squashfs.bin $(ARCH)-uclibc/vmlinuz.lzma $(ARCH)-uclibc/root.fs
+#	./tools/trx -m 32000000 -o $(ARCH)-uclibc/northstar-firmware-jffs2.bin $(ARCH)-uclibc/vmlinuz.lzma $(ARCH)-uclibc/dd-wrt.jffs2
+	./tools/trx -m 32000000 -o $(ARCH)-uclibc/northstar-firmware-squashfs.bin $(ARCH)-uclibc/vmlinuz.lzma $(ARCH)-uclibc/root.fs
 	./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC56U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac56u-firmware.trx
 	./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC67U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac67u-firmware.trx
+	cp $(ARCH)-uclibc/northstar-firmware-squashfs.bin $(ARCH)-uclibc/buffalo.trx
+	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh buffalo
 
 
 
