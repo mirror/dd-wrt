@@ -42,7 +42,7 @@ ENTRY(__mach_head_fixup)
 	bic	r0, #CR_C|CR_M
 	mcr	p15, 0, r0, c1, c0, 0		@ Write SCTLR
 	/* Clean up any residule in caches */
-	bl	v7_all_dcache_invalidate
+	bl	v7_flush_dcache_all
 	mov	r0, #'.'
 	bl	printch
 	mov	r0,#0
@@ -171,13 +171,17 @@ ENTRY(platform_secondary_startup)
 	/*
 	 * Get hardware CPU id of ours
 	 */
+
 	mrc	p15, 0, r0, c0, c0, 5
 	and	r0, r0, #15
 	/*
 	 * Wait on <pen_release> variable by physical address
 	 * to contain our hardware CPU id
 	 */
-	ldr	r6, =__virt_to_phys(pen_release)
+	adr	r4, 1f
+	ldmia	r4, {r5, r6}
+	sub	r4, r4, r5
+	add	r6, r6, r4
 pen:	ldr	r7, [r6]
 	cmp	r7, r0
 	bne	pen
@@ -186,13 +190,17 @@ pen:	ldr	r7, [r6]
 	 * In case L1 cache has unpredictable contents at power-up
 	 * clean its contents without flushing.
 	 */
-	bl	v7_l1_cache_invalidate
+	bl	v7_invalidate_l1
 	nop
 	/*
 	 * we've been released from the holding pen: secondary_stack
 	 * should now contain the SVC stack for this core
 	 */
 	b	secondary_startup
+
+	.align
+1:	.long 	.
+	.long	pen_release
 
 ENDPROC(platform_secondary_startup)
 	.ltorg
