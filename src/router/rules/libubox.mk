@@ -26,4 +26,3 @@ libubox-install:
 
 libubox-clean:
 	if [ -e "$(PKG_BUILD_DIR_LIBUBOX)/Makefile" ]; then $(MAKE) -C libubox clean ; fi
-	$(call CMakeClean,$(PKG_BUILD_DIR_LIBUBOX))
