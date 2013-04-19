@@ -5274,8 +5274,12 @@ int led_control(int type, int act)
 		ses2_gpio = 0x107;	// WLAN led green - inverse
 		break;
 	case ROUTER_BUFFALO_WZR1750:
+		usb_power = 0x009;     // USB 2.0 ehci port
+		usb_power1 = 0x10a;    // USB 3.0 xhci port
+		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
+		usb_power = 0x009;     // USB 2.0 ehci port
 		break;
 		
 	case ROUTER_ASUS_AC67U:
