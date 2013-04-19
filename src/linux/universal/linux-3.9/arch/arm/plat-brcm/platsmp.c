@@ -43,6 +43,7 @@ static DEFINE_SPINLOCK(boot_lock);
 
 static void __cpuinit brcm_secondary_init(unsigned int cpu)
 {
+
 	trace_hardirqs_off();
 
 	/*
@@ -69,8 +70,7 @@ static void __cpuinit brcm_secondary_init(unsigned int cpu)
 
 static int __cpuinit brcm_boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
-	unsigned long timeout;
-
+    	unsigned long timeout;
 	/*
 	 * set synchronisation state between this boot processor
 	 * and the secondary one
@@ -101,18 +101,13 @@ static int __cpuinit brcm_boot_secondary(unsigned int cpu, struct task_struct *i
 	timeout = jiffies + 128;
 
 	udelay(100);
-
 	/*
 	 * If the secondary CPU was waiting on WFE, it should
 	 * be already watching <pen_release>, or it could be
 	 * waiting in WFI, send it an IPI to be sure it wakes.
 	 */
-	tick_broadcast(cpumask_of(cpu));
-
-	if( pen_release != -1 )
-		{
+	if (pen_release != -1)
 		tick_broadcast(cpumask_of(cpu));
-		}
 
 	while (time_before(jiffies, timeout)) {
 		smp_rmb();
