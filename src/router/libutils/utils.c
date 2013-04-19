@@ -1294,6 +1294,30 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
+
+	if (boardnum == 00 && nvram_match("boardtype", "0xF646")
+	    && nvram_match("boardrev", "0x1100")
+	    && nvram_match("melco_id", "RD_BB12068")) {
+		setRouter("Buffalo WZR-1750DHP");
+		return ROUTER_BUFFALO_WZR1750;
+	}
+
+	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("0:rxchain", "7")) {
+		setRouter("Buffalo WZR-900DHP");
+		return ROUTER_BUFFALO_WZR900DHP;
+	}
+
+	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("0:rxchain", "3")) {
+		setRouter("Buffalo WZR-600DHP2");
+		return ROUTER_BUFFALO_WZR600DHP2;
+	}
+
+
+
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
 #elif HAVE_LAGUNA
@@ -5249,6 +5273,11 @@ int led_control(int type, int act)
 		ses_gpio = 0x106;	// WPS led green - inverse
 		ses2_gpio = 0x107;	// WLAN led green - inverse
 		break;
+	case ROUTER_BUFFALO_WZR1750:
+	case ROUTER_BUFFALO_WZR900DHP:
+	case ROUTER_BUFFALO_WZR600DHP2:
+		break;
+		
 	case ROUTER_ASUS_AC67U:
 	case ROUTER_ASUS_AC56U:
 		power_gpio = 0x103;
