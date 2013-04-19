@@ -612,6 +612,12 @@
 
 #define ROUTER_BOARD_WDR4900 0xc203
 
+#define ROUTER_BUFFALO_WZR1750 0xc30f // BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
+
+#define ROUTER_BUFFALO_WZR900DHP 0xc40f // BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
+
+#define ROUTER_BUFFALO_WZR600DHP2 0xc50f // BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
