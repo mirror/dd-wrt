@@ -5,7 +5,7 @@ endif
 include $(TOP)/.config
 
 OBJS := ifenslave.o
-CFLAGS := $(COPTS) -I$(LINUXDIR)/include 
+CFLAGS := $(COPTS) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include 
   
 all: ifenslave
 
