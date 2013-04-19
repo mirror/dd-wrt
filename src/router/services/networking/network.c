@@ -555,7 +555,6 @@ static int wlconf_up(char *name)
 			eval("wl", "-i", name, "noack", "0");
 			// wlc_noack (1);
 		}
-		
 
 		if (val) {
 			val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
@@ -871,12 +870,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_WDR4900
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames,
-			   "vlan1 vlan2 ath0 ath1");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames,
-			   "vlan1 vlan2 ath0 ath1");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
 		PORTSETUPWAN("vlan2");
 	}
 
@@ -1066,7 +1063,8 @@ void start_lan(void)
 #ifdef HAVE_SWCONFIG
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set enable_vlan 1");
-	if(nvram_match("wan_proto", "disabled") && nvram_match("fullswitch", "1")) {
+	if (nvram_match("wan_proto", "disabled")
+	    && nvram_match("fullswitch", "1")) {
 		system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4 5\"");
 	} else {
 #ifdef HAVE_WZRG300NH2
@@ -1543,12 +1541,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_NORTHSTAR
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames,
-			   "vlan1 vlan2 eth1 eth2");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 eth1 eth2");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames,
-			   "vlan1 vlan2 eth1 eth2");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 eth1 eth2");
 		PORTSETUPWAN("vlan2");
 	}
 	strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
@@ -1948,7 +1944,7 @@ void start_lan(void)
 	} else {
 
 		int instance = get_wl_instance(wl_face);
-		getWirelessMac(mac,instance);
+		getWirelessMac(mac, instance);
 
 		ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 
@@ -2045,7 +2041,8 @@ void start_lan(void)
 				eval("ifconfig", realname, "down");	//fixup for some ethernet drivers
 			}
 			eval("ifconfig", realname, "mtu", getMTU(realname));
-			eval("ifconfig", realname, "txqueuelen", getTXQ(realname));
+			eval("ifconfig", realname, "txqueuelen",
+			     getTXQ(realname));
 			if (strncmp(realname, "ath", 3) != 0) {	// this is not an ethernet driver
 				eval("ifconfig", realname, "up");	//fixup for some ethernet drivers
 			}
@@ -2057,8 +2054,12 @@ void start_lan(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 			strncpy(ifr.ifr_name, lan_ifname, IFNAMSIZ);
 			if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0 &&
-					    (memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN) == 0 ||
-					    (((ifr.ifr_hwaddr.sa_data[0] & 0x01) == 0) && ((ifr.ifr_hwaddr.sa_data[1] & 0x02) == 0x02)))
+			    (memcmp
+			     (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0",
+			      ETHER_ADDR_LEN) == 0
+			     || (((ifr.ifr_hwaddr.sa_data[0] & 0x01) == 0)
+				 && ((ifr.ifr_hwaddr.sa_data[1] & 0x02) ==
+				     0x02)))
 			    && strcmp(wl_face, realname) == 0) {
 				strncpy(ifr.ifr_name, realname, IFNAMSIZ);
 				if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
@@ -2095,7 +2096,7 @@ void start_lan(void)
 
 				} else {
 					int instance = get_wl_instance(name);
-					getWirelessMac(mac,instance);
+					getWirelessMac(mac, instance);
 
 					ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 
@@ -2167,8 +2168,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -2832,11 +2833,10 @@ void start_wan(int status)
 	eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
 
 	// wan test mode
-	if(nvram_match("wan_testmode", "1")) {
-		status = 0; // avoid redialing
+	if (nvram_match("wan_testmode", "1")) {
+		status = 0;	// avoid redialing
 		fprintf(stderr, "[SERVICE WAN] testmode\n");
 	}
-
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
@@ -3182,9 +3182,9 @@ void start_wan(int status)
 		{
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 			int instance = get_wl_instance(wlifname);
-			getWirelessMac(mac,instance);
+			getWirelessMac(mac, instance);
 #else
-			getWirelessMac(mac,0);
+			getWirelessMac(mac, 0);
 #endif
 			ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 		} else {
@@ -3254,7 +3254,7 @@ void start_wan(int status)
 	}
 	// fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
 	ioctl(s, SIOCSIFMTU, &ifr);
-	eval("ifconfig",wan_ifname,"txqueuelen",getTXQ(wan_ifname));
+	eval("ifconfig", wan_ifname, "txqueuelen", getTXQ(wan_ifname));
 
 	if (strcmp(wan_proto, "disabled") == 0) {
 		start_wan_done(wan_ifname);
@@ -3324,97 +3324,123 @@ void start_wan(int status)
 		int timeout = 5;
 #ifdef HAVE_UQMI
 		if (controldevice && !strcmp(controldevice, "qmi")) {
-		/* disconnect network */
-		int clientid=0;
-		FILE *fp = fopen("/tmp/qmi-clientid","rb");
-		if (fp) {
-			fscanf(fp,"%d",&clientid);
+			/* disconnect network */
+			int clientid = 0;
+			FILE *fp = fopen("/tmp/qmi-clientid", "rb");
+			if (fp) {
+				fscanf(fp, "%d", &clientid);
+				fclose(fp);
+				sysprintf
+				    ("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --release-client-id wds",
+				     clientid);
+			}
+			clientid = 0;
+			if (nvram_match("wan_conmode", "6"))
+				sysprintf
+				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes lte");
+//              if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
+//                  sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
+			if (nvram_match("wan_conmode", "4"))
+				sysprintf
+				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm,umts");
+			if (nvram_match("wan_conmode", "3"))
+				sysprintf
+				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes umts,gsm");
+			if (nvram_match("wan_conmode", "2"))
+				sysprintf
+				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm");
+			if (nvram_match("wan_conmode", "1"))
+				sysprintf
+				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes umts");
+			if (nvram_match("wan_conmode", "0"))
+				sysprintf
+				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes all");
+
+			//set pin
+			sysprintf("uqmi -d /dev/cdc-wdm0 --verify-pin1 %s",
+				  nvram_safe_get("wan_pin"));
+			//set apn and dial
+			fp = popen
+			    ("/usr/sbin/uqmi -d /dev/cdc-wdm0 --get-client-id wds",
+			     "rb");
+			fscanf(fp, "%d", &clientid);
 			fclose(fp);
-			sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --release-client-id wds",clientid);
-		}
-		clientid=0;
-		if (nvram_match("wan_conmode","6"))
-		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes lte");
-//		if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
-//		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
-		if (nvram_match("wan_conmode","4"))
-		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm,umts");
-		if (nvram_match("wan_conmode","3"))
-		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes umts,gsm");
-		if (nvram_match("wan_conmode","2"))
-		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm");
-		if (nvram_match("wan_conmode","1"))
-		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes umts");
-		if (nvram_match("wan_conmode","0"))
-		    sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes all");
-		
-		//set pin
-		sysprintf("uqmi -d /dev/cdc-wdm0 --verify-pin1 %s",nvram_safe_get("wan_pin"));
-		//set apn and dial
-		fp = popen("/usr/sbin/uqmi -d /dev/cdc-wdm0 --get-client-id wds","rb");
-		fscanf(fp,"%d",&clientid);
-		fclose(fp);
-		fp = fopen("/tmp/qmi-clientid","wb");
-		fprintf(fp,"%d",clientid);
-		fclose(fp);
+			fp = fopen("/tmp/qmi-clientid", "wb");
+			fprintf(fp, "%d", clientid);
+			fclose(fp);
 
+			fprintf(fp, "APN=%s", nvram_safe_get("wan_apn"));
+			if (strlen(nvram_safe_get("ppp_username")) > 0
+			    && strlen(nvram_safe_get("ppp_passwd")) > 0) {
+				sysprintf
+				    ("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --username %s --password %s --keep-client-id wds",
+				     clientid, nvram_safe_get("wan_apn"),
+				     nvram_safe_get("ppp_username"),
+				     nvram_safe_get("ppp_passwd"));
+			} else {
+				sysprintf
+				    ("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --keep-client-id wds",
+				     clientid, nvram_safe_get("wan_apn"));
+			}
+			eval("ifconfig", "wwan0", "up");
+			start_dhcpc("wwan0", NULL, NULL, 1);
+			if (status != REDIAL) {
+				start_redial();
+			}
 
-
-		fprintf(fp, "APN=%s",nvram_safe_get("wan_apn"));
-		if (strlen(nvram_safe_get("ppp_username")) > 0 && strlen(nvram_safe_get("ppp_passwd")) > 0) {
-			sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --username %s --password %s --keep-client-id wds",clientid,nvram_safe_get("wan_apn"),nvram_safe_get("ppp_username"),nvram_safe_get("ppp_passwd"));
-		} else {
-			sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --keep-client-id wds",clientid,nvram_safe_get("wan_apn"));
-		}				
-		eval("ifconfig", "wwan0", "up");
-		start_dhcpc("wwan0", NULL, NULL, 1);
-		if (status != REDIAL) {
-			start_redial();
-		}
-		
-		}else
-
+		} else
 #elif HAVE_LIBQMI
 		if (controldevice && !strcmp(controldevice, "qmi")) {
-		if (nvram_match("wan_conmode","6"))
-		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
-//		if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
-//		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
-		if (nvram_match("wan_conmode","4"))
-		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSMUMTS");
-		if (nvram_match("wan_conmode","3"))
-		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTSGSM");
-		if (nvram_match("wan_conmode","2"))
-		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSM");
-		if (nvram_match("wan_conmode","1"))
-		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTS");
-		if (nvram_match("wan_conmode","0"))
-		    sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=ANY");
-		
-		//set pin
-		sysprintf("qmicli -d /dev/cdc-wdm0 --dms-uim-verify-pin=PIN,%s",nvram_safe_get("wan_pin"));
-		//set apn and dial
-		FILE *fp = fopen("/tmp/qmi-network.conf","wb");
-		fprintf(fp, "APN=%s",nvram_safe_get("wan_apn"));
-		if (strlen(nvram_safe_get("ppp_username")) > 0 && strlen(nvram_safe_get("ppp_passwd")) > 0) {
-			fprintf(fp,",BOTH,%s,%s\n",nvram_safe_get("ppp_username"),nvram_safe_get("ppp_passwd"));
-		} else {
-			fprintf(fp,"\n");
-		}		
-		fclose(fp);
-		
-		eval("qmi-network","/dev/cdc-wdm0","stop"); //release it before
-		eval("qmi-network","/dev/cdc-wdm0","start");
-		eval("ifconfig", "wwan0", "up");
-		start_dhcpc("wwan0", NULL, NULL, 1);
-		if (status != REDIAL) {
-			start_redial();
-		}
-		
-		}else
+			if (nvram_match("wan_conmode", "6"))
+				sysprintf
+				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
+//              if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
+//                  sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
+			if (nvram_match("wan_conmode", "4"))
+				sysprintf
+				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSMUMTS");
+			if (nvram_match("wan_conmode", "3"))
+				sysprintf
+				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTSGSM");
+			if (nvram_match("wan_conmode", "2"))
+				sysprintf
+				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSM");
+			if (nvram_match("wan_conmode", "1"))
+				sysprintf
+				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTS");
+			if (nvram_match("wan_conmode", "0"))
+				sysprintf
+				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=ANY");
+
+			//set pin
+			sysprintf
+			    ("qmicli -d /dev/cdc-wdm0 --dms-uim-verify-pin=PIN,%s",
+			     nvram_safe_get("wan_pin"));
+			//set apn and dial
+			FILE *fp = fopen("/tmp/qmi-network.conf", "wb");
+			fprintf(fp, "APN=%s", nvram_safe_get("wan_apn"));
+			if (strlen(nvram_safe_get("ppp_username")) > 0
+			    && strlen(nvram_safe_get("ppp_passwd")) > 0) {
+				fprintf(fp, ",BOTH,%s,%s\n",
+					nvram_safe_get("ppp_username"),
+					nvram_safe_get("ppp_passwd"));
+			} else {
+				fprintf(fp, "\n");
+			}
+			fclose(fp);
+
+			eval("qmi-network", "/dev/cdc-wdm0", "stop");	//release it before
+			eval("qmi-network", "/dev/cdc-wdm0", "start");
+			eval("ifconfig", "wwan0", "up");
+			start_dhcpc("wwan0", NULL, NULL, 1);
+			if (status != REDIAL) {
+				start_redial();
+			}
+
+		} else
 #endif
-		 if (controldevice && !strcmp(controldevice, "hso")) {
-		    
+		if (controldevice && !strcmp(controldevice, "hso")) {
+
 		} else {
 
 			/* init PIN */
@@ -3503,7 +3529,8 @@ void start_wan(int status)
 			if (strlen(username) && strlen(passwd)) {
 				fprintf(fp,
 					"chap-secrets /tmp/ppp/chap-secrets\n");
-				fprintf(fp, "pap-secrets /tmp/ppp/pap-secrets\n");
+				fprintf(fp,
+					"pap-secrets /tmp/ppp/pap-secrets\n");
 			}
 
 			fprintf(fp, "defaultroute\n");
@@ -4129,7 +4156,13 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_L2TP
 	else if (strcmp(wan_proto, "l2tp") == 0) {
-		start_l2tp(status);
+
+		if (nvram_match("l2tp_use_dhcp", "1")) {
+			nvram_set("wan_get_dns", "");
+			start_dhcpc(wan_ifname, NULL, NULL, 1);
+		} else {
+			start_l2tp(status);
+		}
 	}
 #endif
 #ifdef HAVE_HEARTBEAT
@@ -4259,11 +4292,11 @@ void start_wan_service(void)
 
 void start_wan_done(char *wan_ifname)
 {
-	if(nvram_match("wan_testmode", "1")) {
+	if (nvram_match("wan_testmode", "1")) {
 		fprintf(stderr, "[WAN IF] testmode: skipping wan_done\n");
 		return;
 	}
-	
+
 	cprintf("%s %s\n", wan_ifname, nvram_safe_get("wan_proto"));
 
 	if (nvram_match("wan_proto", "l2tp")) {
@@ -4339,8 +4372,8 @@ void start_wan_done(char *wan_ifname)
 		route_add(nvram_safe_get("wan_iface"), 0,
 			  nvram_safe_get("l2tp_get_ip"), NULL,
 			  "255.255.255.255");
-		if (nvram_match("l2tp_use_dhcp","1"))
-			    route_add(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");	// fixed 
+		if (nvram_match("l2tp_use_dhcp", "1"))
+			route_add(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");	// fixed 
 	}
 
 	/*
@@ -4554,8 +4587,8 @@ void start_wan_done(char *wan_ifname)
 	start_igmp_proxy();
 #endif
 	cprintf("ready\n");
-//	start_anchorfree();
-//	start_anchorfreednat();
+//      start_anchorfree();
+//      start_anchorfreednat();
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_NOWIFI
 	start_duallink();
