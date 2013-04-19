@@ -2694,11 +2694,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wd_password", "", 0},
 	{"wd_iface", "", 0},
 	{"wd_extiface", "", 0},
-	{"wd_radius", "0", 0},
-	{"wd_radacct", "1813", 0},
-	{"wd_radauth", "1812", 0},
-	{"wd_radenc", "MSCHAPv2", 0},
-	{"wd_radip", "0.0.0.0", 0},
 #endif
 
 #ifdef HAVE_CHILLILOCAL

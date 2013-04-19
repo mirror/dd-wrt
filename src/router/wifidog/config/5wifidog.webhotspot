@@ -75,76 +75,35 @@
 			<input class="text" maxlength="200" size="39" name="wd_maclist" value="<% nvram_get("wd_maclist"); %>" />
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("radius.titl"); %></div>
-			<input class="spaceradio" type="radio" name="wd_radius" value="1" <% nvram_checked("wd_radius", "1"); %> onclick="toggle_layer_ext(this, 'idradius', 'idauthsrv', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="wd_radius" value="0" <% nvram_checked("wd_radius", "0"); %> onclick="toggle_layer_ext(this, 'idradius', 'idauthsrv', false)" /><% tran("share.disable"); %>
+			<div class="label"><% tran("hotspot.wifidog_authsrv"); %></div>
+			<input class="text" maxlength="100" size="39" name="wd_hostname" value="<% nvram_get("wd_hostname"); %>" />
 		</div>
-		<div id="idradius">
-			<div class="setting">   
-				<div class="label"><% tran("service.pppoesrv_radip"); %></div>
-				<input class="text" maxlength="100" size="39" name="wd_radip" value="<% nvram_get("wd_radip"); %>" />
-			</div>
-			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_radauthport"); %></div>
-				<input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,wd_radauth)" name="wd_radauth" value="<% nvram_get("wd_radauth"); %>" />
+		<div class="setting">	
+			<div class="label"><% tran("hotspot.wifidog_authsrvssl"); %></div>
+			<input class="spaceradio" type="radio" name="wd_sslavailable" value="1" <% nvram_checked("wd_sslavailable", "1"); %> onclick="show_layer_ext(this, 'idwifidogssl', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="wd_sslavailable" value="0" <% nvram_checked("wd_sslavailable", "0"); %> onclick="show_layer_ext(this, 'idwifidogssl', false)" /><% tran("share.disable"); %>
+		</div>
+		<div id="idwifidogssl">
+			<div class="setting">	
+				<div class="label"><% tran("hotspot.wifidog_authsrvsslport"); %></div>
+				<input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,wifidog_authsrvsslport)" name="wd_sslport" value="<% nvram_get("wd_sslport"); %>" />
 				<span class="default"><script type="text/javascript">
 					//<![CDATA[
-					document.write("(" + share.deflt + ": 1812, " + share.range + ": 1 - 65535)");
+					document.write("(" + share.deflt + ": 443, " + share.range + ": 1 - 65535)");
 					//]]>
 					</script>
 				</span>
 			</div>
-			<div class="setting">   
-				<div class="label"><% tran("service.pppoesrv_radaccport"); %></div>
-				<input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,wd_radacct)" name="wd_radacct" value="<% nvram_get("wd_radacct"); %>" />
-				<span class="default"><script type="text/javascript">
-					//<![CDATA[
-					document.write("(" + share.deflt + ": 1813, " + share.range + ": 1 - 65535)");
-					//]]>
+		</div>
+		<div class="setting">	
+			<div class="label"><% tran("hotspot.wifidog_authsrvhttpport"); %></div>
+			<input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,wifidog_authsrvhttpport)" name="wd_httpport" value="<% nvram_get("wd_httpport"); %>" />
+			<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 80, " + share.range + ": 1 - 65535)");
+				//]]>
 				</script>
-				</span>
-			</div>
-			<div class="setting">
-				<div class="label">Authentication <% tran("share.encrypt"); %></div>
-				<select name="wd_radenc">
-					<option value="MSCHAPv2" <% nvram_selected("wd_radenc","MSCHAPv2"); %>>MSCHAPv2</option>
-					<option value="MSCHAPv1" <% nvram_selected("wd_radenc","MSCHAPv1"); %>>MSCHAPv1</option>
-					<option value="CHAP_MD5" <% nvram_selected("wd_radenc","CHAP_MD5"); %>>CHAP_MD5</option>
-				</select>
-			</div>
-		</div>
-		<div id="idauthsrv">
-			<div class="setting">
-				<div class="label"><% tran("hotspot.wifidog_authsrv"); %></div>
-				<input class="text" maxlength="100" size="39" name="wd_hostname" value="<% nvram_get("wd_hostname"); %>" />
-			</div>
-			<div class="setting">	
-				<div class="label"><% tran("hotspot.wifidog_authsrvssl"); %></div>
-				<input class="spaceradio" type="radio" name="wd_sslavailable" value="1" <% nvram_checked("wd_sslavailable", "1"); %> onclick="show_layer_ext(this, 'idwifidogssl', true)" /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="wd_sslavailable" value="0" <% nvram_checked("wd_sslavailable", "0"); %> onclick="show_layer_ext(this, 'idwifidogssl', false)" /><% tran("share.disable"); %>
-			</div>
-			<div id="idwifidogssl">
-				<div class="setting">	
-					<div class="label"><% tran("hotspot.wifidog_authsrvsslport"); %></div>
-					<input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,wifidog_authsrvsslport)" name="wd_sslport" value="<% nvram_get("wd_sslport"); %>" />
-					<span class="default"><script type="text/javascript">
-						//<![CDATA[
-						document.write("(" + share.deflt + ": 443, " + share.range + ": 1 - 65535)");
-						//]]>
-						</script>
-					</span>
-				</div>
-			</div>
-			<div class="setting">	
-				<div class="label"><% tran("hotspot.wifidog_authsrvhttpport"); %></div>
-				<input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,wifidog_authsrvhttpport)" name="wd_httpport" value="<% nvram_get("wd_httpport"); %>" />
-				<span class="default"><script type="text/javascript">
-					//<![CDATA[
-					document.write("(" + share.deflt + ": 80, " + share.range + ": 1 - 65535)");
-					//]]>
-					</script>
-				</span>
-			</div>
+			</span>
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_authsrvpath"); %></div>
