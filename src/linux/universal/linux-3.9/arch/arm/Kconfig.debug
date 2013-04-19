@@ -598,6 +598,7 @@ endchoice
 config DEBUG_LL_INCLUDE
 	string
 	default "debug/cns3xxx.S" if DEBUG_CNS3XXX
+	default "debug/northstar.S" if DEBUG_BRCM_LL
 	default "debug/icedcc.S" if DEBUG_ICEDCC
 	default "debug/imx.S" if DEBUG_IMX1_UART || \
 				 DEBUG_IMX25_UART || \
