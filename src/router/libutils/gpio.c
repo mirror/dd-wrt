@@ -183,26 +183,31 @@ static void set_gpio_base(int pin, int value)
 
 void set_hc595(int pin, int value)
 {
-	static unsigned char current = 0;
 	int latch = 6;
 	int data = 4;
 	int clk = 7;
 	int reset = 8;
 	int oe = 5;
+	int current;
+
+	FILE *fp = fopen("/tmp/.hc595","rb");
+	if (fp) {
+		current = getc(fp);
+		fclose(fp);
+	}else
+		current=0;
 
 	set_gpio_base(reset,1); // low = reset
 	set_gpio_base(oe,0); // low = enable output
 
 	set_gpio_base(latch,0);
 	set_gpio_base(clk,0);
-
+	
 	int i;
 	if (value)
 		current |= (1 << pin);
 	else
 		current &= ~(1 << pin);
-
-	//iterate through the bits in each registers
 	for (i = 0; i < 8; i++) {
 		if (current & (1 << i))
 			set_gpio_base(data, 1);	// enable pin
@@ -212,6 +217,12 @@ void set_hc595(int pin, int value)
 		set_gpio_base(clk, 1);
 	}
 	set_gpio_base(latch, 1);
+
+	fp = fopen("/tmp/.hc595","wb");
+	if (fp) {
+		putc(current,fp);
+		fclose(fp);
+	}
 }
 
 void set_gpio(int pin, int value)
