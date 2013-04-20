@@ -151,6 +151,7 @@ static void __init  brcm_smp_prepare_cpus(unsigned int max_cpus)
 	unsigned int cpu = smp_processor_id();
 	int i;
 
+	
 	/* sanity check */
 	if (ncores == 0) {
 		printk(KERN_ERR
@@ -166,7 +167,7 @@ static void __init  brcm_smp_prepare_cpus(unsigned int max_cpus)
 		       ncores, NR_CPUS);
 		ncores = NR_CPUS;
 	}
-
+	printk(KERN_INFO "%d cores has been found\n",ncores);
 	/*
 	 * are we trying to boot more cores than exist?
 	 */
