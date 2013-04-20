@@ -159,7 +159,7 @@ int get_gpio(int gpio)
 
 #elif HAVE_NORTHSTAR
 
-void set_gpio(int pin, int value)
+static void set_gpio_base(int pin, int value)
 {
 
 	int gpioouten = open("/dev/gpio/outen", O_RDWR);
@@ -179,6 +179,43 @@ void set_gpio(int pin, int value)
 	write(gpioout, &gpio, sizeof(gpio));
 	close(gpioout);
 	close(gpioouten);
+}
+
+void set_hc595(int pin, int value)
+{
+	static unsigned char current = 0;
+	int latch = 6;
+	int data = 5;
+	int clk = 7;
+	set_gpio_base(latch, 0);
+	set_gpio_base(data, 0);
+	set_gpio_base(clk, 0);
+
+	int i;
+	if (value)
+		current |= (1 << pin);
+	else
+		current &= ~(1 << pin);
+	//iterate through the bits in each registers
+	for (i = 0; i < 8; i++) {
+		set_gpio_base(clk, 0);
+		if (current & (1 << i))
+			set_gpio_base(data, 1);	// enable pin
+		else
+			set_gpio_base(data, 0);	// enable pin
+		set_gpio_base(clk, 1);
+		set_gpio_base(data, 0);
+	}
+	set_gpio_base(latch, 1);
+}
+
+void set_gpio(int pin, int value)
+{
+	if (pin >= 40) {
+		set_hc595(pin - 40, value);
+		return;
+	}
+	set_gpio_base(pin, value);
 }
 
 int get_gpio(int pin)
