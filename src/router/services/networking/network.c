@@ -2168,8 +2168,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.
-							     ifr_hwaddr.sa_data,
+							     ifr.ifr_hwaddr.
+							     sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -4159,7 +4159,12 @@ void start_wan(int status)
 
 		if (nvram_match("l2tp_use_dhcp", "1")) {
 			nvram_set("wan_get_dns", "");
-			start_dhcpc(wan_ifname, NULL, NULL, 1);
+			char *l2tp_ifname = nvram_safe_get("wan_ifname");
+			if (isClient()) {
+				l2tp_ifname = getSTA();
+			}
+
+			start_dhcpc(l2tp_ifname, NULL, NULL, 1);
 		} else {
 			start_l2tp(status);
 		}
