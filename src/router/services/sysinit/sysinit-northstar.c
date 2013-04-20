@@ -81,6 +81,8 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
+
+	insmod("softdog");
 	if (!nvram_match("disable_watchdog", "1")) {
 		eval("watchdog");
 	}
