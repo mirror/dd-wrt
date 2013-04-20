@@ -83,9 +83,6 @@ void start_sysinit(void)
 
 
 	insmod("softdog");
-	if (!nvram_match("disable_watchdog", "1")) {
-		eval("watchdog");
-	}
 	/*
 	 * Setup console 
 	 */
@@ -253,6 +250,10 @@ void start_sysinit(void)
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
+
+	if (!nvram_match("disable_watchdog", "1")) {
+		eval("watchdog");
+	}
 
 	return;
 }
