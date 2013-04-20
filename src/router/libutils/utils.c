@@ -5275,6 +5275,22 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
+		usb_power = 0x009;     // USB 2.0 ehci port
+		usb_power1 = 0x10a;    // USB 3.0 xhci port
+		wlan0_gpio = 0x028; // wireless orange
+		wlan1_gpio = 0x029; // wireless blue
+		connected_gpio = 0x02a; // connected blue
+		sec0_gpio = 0x02b;
+		sec1_gpio = 0x02c;
+		// 0x2b strange led orange
+		// 0x2c strange led blue
+		power_gpio = 0x02e;
+		diag_gpio = 0x02d;		
+		diag_gpio_disabled = 0x02e;
+		usb_gpio = 0x02f;
+		break;
+
+
 	case ROUTER_BUFFALO_WZR1750:
 		usb_power = 0x009;     // USB 2.0 ehci port
 		usb_power1 = 0x10a;    // USB 3.0 xhci port
