@@ -127,11 +127,10 @@ static void makeipup(void)
 	if (nvram_match("wan_proto", "pppoe")	//only when there is an ppp0 interface
 		|| nvram_match("wan_proto", "pptp"))
 			fprintf(fp, 
-			"iptables -I FORWARD -i $1 -j ACCEPT\n"
-			"iptables -I FORWARD -o $1 -j ACCEPT\n"
+				"iptables -I FORWARD -i $1 -j ACCEPT\n"
+				"iptables -I FORWARD -o $1 -j ACCEPT\n"
 			);
 	fprintf(fp, 
-//	"startservice set_routes\n"	// reinitialize
 	"addpppoeconnected $PPPD_PID $1 $5 $PEERNAME\n"
 	//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
 	//	just an uptime test
@@ -157,9 +156,6 @@ static void makeipup(void)
 //burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down.sh", "w");	
-// must be finished
-//	if (nvram_match("pppoeserver_interface", "br0"))
-//		fprintf(fp,"arp -s $5 `nvram get lan_hwaddr` pub\n");
 	fprintf(fp, "#!/bin/sh\n"
 		"delpppoeconnected $PPPD_PID $PEERNAME\n"
 		//	calc connected time and volume per peer
@@ -188,9 +184,13 @@ static void makeipup(void)
 	chmod("/tmp/pppoeserver/ip-down.sh", 0700);
 
 	//	copy existing peer data to /tmp
-	if (nvram_match("enable_jffs2", "1")
+	if ((nvram_match("usb_enable", "1")
+		&& nvram_match("usb_storage", "1")
+		&& nvram_match("usb_automnt", "1")
+		&& nvram_match("usb_mntpoint", "jffs"))
+		|| (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1"))
+		&& nvram_match("sys_enable_jffs2", "1")))
 			sysprintf("/bin/cp /jffs/etc/pppoeserver/pppoe_peer.db /tmp/");
 }
 
@@ -437,9 +437,9 @@ void start_pppoeserver(void)
 			system("/usr/sbin/iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 
 		if (nvram_invmatch("wan_proto", "pppoe")	//if there is no ppp0, reduce rules
-			&& nvram_invmatch("wan_proto", "pptp")) {
-				system("/usr/sbin/iptables -I FORWARD -i ppp+ -j ACCEPT");
-				system("/usr/sbin/iptables -I FORWARD -o ppp+ -j ACCEPT");
+			|| nvram_invmatch("wan_proto", "pptp")) {
+				sysprintf("/usr/sbin/iptables -I FORWARD -i ppp+ -j ACCEPT");
+				sysprintf("/usr/sbin/iptables -I FORWARD -o ppp+ -j ACCEPT");
 			}
 
 		eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), 
@@ -456,11 +456,11 @@ void stop_pppoeserver(void)
 	if (stop_process("pppoe-server", "pppoe server")) {
 		del_pppoe_natrule();
 		unlink("/tmp/pppoe_connected");
-/*		unlink("/tmp/pppoeserver/radius/radiusclient.conf");
+		unlink("/tmp/pppoeserver/radius/radiusclient.conf");
 		unlink("/tmp/pppoeserver/radius/servers");
 		unlink("/tmp/pppoeserver/ip-up.sh");
 		unlink("/tmp/pppoeserver/ip-down.sh");
-		unlink("/tmp/pppoeserver/pppoe-server-options"); */
+		unlink("/tmp/pppoeserver/pppoe-server-options");
 	//	unlink("/tmp/pppoeserver/calc-uptime.sh");
 
 	//	backup peer data to jffs/usb if available
@@ -473,7 +473,7 @@ void stop_pppoeserver(void)
 		&& nvram_match("sys_enable_jffs2", "1"))) {
 				mkdir("/jffs/etc", 0700);
 				mkdir("/jffs/etc/pppoeserver", 0700);
-				system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/pppoeserver");
+				sysprintf("/bin/cp /tmp/pppoe_peer.db /jffs/etc/pppoeserver");
 			}		
 
 		if (nvram_match("wan_proto", "disabled"))
@@ -482,8 +482,8 @@ void stop_pppoeserver(void)
 		//system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP");
 		if (nvram_invmatch("wan_proto", "pppoe")
 			&& nvram_invmatch("wan_proto", "pptp")) {
-				system("/usr/sbin/iptables -D FORWARD -i ppp+ -j ACCEPT");
-				system("/usr/sbin/iptables -D FORWARD -o ppp+ -j ACCEPT");
+				sysprintf("/usr/sbin/iptables -D FORWARD -i ppp+ -j ACCEPT");
+				sysprintf("/usr/sbin/iptables -D FORWARD -o ppp+ -j ACCEPT");
 			}
 	}
 
