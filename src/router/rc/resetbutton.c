@@ -953,6 +953,11 @@ void period_check(int sig)
 	case ROUTER_ASUS_WL700GE:
 		sesgpio = 0x004;	// gpio 4, normal
 		break;
+	case ROUTER_BUFFALO_WZR600DHP2:
+	case ROUTER_BUFFALO_WZR900DHP:
+	case ROUTER_BUFFALO_WZR1750:
+		sesgpio = 0x10c;	// gpio 12, inversed
+		break;
 #ifndef HAVE_BUFFALO
 	case ROUTER_LINKSYS_WTR54GS:
 	case ROUTER_NETGEAR_WNDR4000:
@@ -979,6 +984,8 @@ void period_check(int sig)
 	case ROUTER_ASUS_AC67U:
 		sesgpio = 0x107;	// gpio 7, inversed
 		break;
+
+
 	case ROUTER_ASUS_WL500G_PRE:
 		sesgpio = 0x004;	// gpio 4, normal
 		break;
