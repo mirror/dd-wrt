@@ -77,7 +77,6 @@ CONFIG_BSD_PROCESS_ACCT=y
 #
 # RCU Subsystem
 #
-# CONFIG_TREE_RCU is not set
 CONFIG_TINY_RCU=y
 # CONFIG_PREEMPT_RCU is not set
 # CONFIG_TREE_RCU_TRACE is not set
