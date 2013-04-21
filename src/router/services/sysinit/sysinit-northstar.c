@@ -132,6 +132,7 @@ void start_sysinit(void)
 	mknod("/dev/gpio/out", S_IFCHR | 0644, makedev(127, 1));
 	mknod("/dev/gpio/outen", S_IFCHR | 0644, makedev(127, 2));
 	mknod("/dev/gpio/control", S_IFCHR | 0644, makedev(127, 3));
+	mknod("/dev/gpio/hc595", S_IFCHR | 0644, makedev(127, 4));
 	if (nvram_invmatch("boot_wait", "on") || nvram_match("wait_time", "1")) {
 		nvram_set("boot_wait", "on");
 		nvram_set("wait_time", "3");
