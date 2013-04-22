@@ -20,7 +20,8 @@
  * wl driver tunables
  */
 
-#ifdef CONFIG_BCM80211AC
+#if defined(CONFIG_BCM80211AC) || defined(CONFIG_PLAT_BCM5301X)
+
 #define D11CONF		0x77a7baa0	/* D11 Core Rev 5 (4306C0), 7 (4712), 9 (4318b0, 5352),
 					 * 11 (4321a1), 12 (4321b/c), 13 (5354), 15(4312),
 					 * 16 (4322), 17 (4716), 18 (43224a0), 21 (5356),
