@@ -30,7 +30,7 @@
  "openvpn_fragment" "UDP Fragment" "NULL" "FALSE" "0"
  "openvpn_mtu" "TUN MTU" "NULL" "FALSE" "0"
  "openvpn_adv"   "Advanced options"   "CHOICE" "2" "0" "1"  "FALSE" "0"
- "openvpn_tlscip"   "TLS Cipher" "CHOICE" "3" "0" "AES128-SHA" "AES256-SHA" "FALSE" "0"
+ "openvpn_tlscip"   "TLS Cipher" "CHOICE" "8"  "0" "TLS-RSA-WITH-RC4-128-MD5" "TLS-RSA-WITH-AES-128-CBC-SHA" "TLS-RSA-WITH-AES-256-CBC-SHA256" "TLS-RSA-WITH-AES-256-GCM-SHA384" "TLS-DHE-RSA-WITH-AES-128-CBC-SHA" "TLS-DHE-RSA-WITH-AES-256-CBC-SHA256" "TLS-DHE-RSA-WITH-AES-256-GCM-SHA384" "FALSE" "0"
  "openvpn_proxy"   "DHCP-Proxy mode" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpn_clcon"  "Client Connect Script"  "NULL"   "FALSE" "0"
  "openvpn_ccddef"  "OpenVPN ccd dir DEFAULT file"  "NULL"   "FALSE" "0"
