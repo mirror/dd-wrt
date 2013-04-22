@@ -33,7 +33,8 @@ static struct {
 	{ "in"},
 	{ "out"},
 	{ "outen"},
-	{ "control"}
+	{ "control"},
+	{ "hc595"}
 };
 
 static int gpio_init_flag = 0;
@@ -129,6 +130,9 @@ gpio_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 	case 3:
 		si_gpiocontrol(gpio_sih, ~0, val, GPIO_HI_PRIORITY);
 		break;
+	case 4:
+		set_hc595(gpio_sih,val>>4,val&0xf);
+		break;
 	default:
 		return -ENODEV;
 	}
@@ -147,6 +151,7 @@ static struct file_operations gpio_fops = {
 extern int iswrt350n;
 extern int iswrt300n11;
 int isac66;
+int isbuffalo=0;
 static struct class *gpio_class = NULL;
 
 static int __init
@@ -174,12 +179,39 @@ uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
 
 
 
+	if (boardnum == 00 && nvram_match("boardtype", "0xF646")
+	    && nvram_match("boardrev", "0x1100")
+	    && nvram_match("melco_id", "RD_BB12068")) {
+		printk(KERN_EMERG "Buffalo WZR-1750DHP\n");
+		isbuffalo=1;
+gpio_init_flag=1;
+	return 0;
+		
+	}
+
+	if (boardnum == 2013013101 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("0:rxchain", "7")) {
+		printk(KERN_EMERG "Buffalo WZR-900DHP\n");
+		isbuffalo=1;
+gpio_init_flag=1;
+	return 0;
+	}
+
+	if (boardnum == 2013012401 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("0:rxchain", "3")) {
+		printk(KERN_EMERG "Buffalo WZR-600DHP2\n");
+		isbuffalo=1;
+gpio_init_flag=1;
+	return 0;
+	}
+
 if ((boardnum == 0) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1100")))
 {
 		printk(KERN_EMERG "Asus-RT-AC56U init\n");
 		isac66 = 1;
 }
-
 
 
 gpio_init_flag=1;
