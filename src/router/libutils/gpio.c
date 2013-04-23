@@ -184,17 +184,10 @@ static void set_gpio_base(int pin, int value)
 void set_hc595(int pin, int value)
 {
 	int gpioout = open("/dev/gpio/hc595", O_RDWR);
-	int gpioouten = open("/dev/gpio/outen", O_RDWR);
-
 	unsigned int gpio;
-	// output enable
-	read(gpioouten, &gpio, sizeof(gpio));
-	gpio |= 1 << 6|1<<4|1<<7|1<<8|1<<5;
-	write(gpioouten, &gpio, sizeof(gpio));
 	gpio = pin<<4|value;
 	write(gpioout, &gpio, sizeof(gpio));
 	close(gpioout);
-	close(gpioouten);
 }
 
 void set_gpio(int pin, int value)
