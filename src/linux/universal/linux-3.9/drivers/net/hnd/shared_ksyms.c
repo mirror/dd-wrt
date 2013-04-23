@@ -269,6 +269,7 @@ extern void sb_setint; EXPORT_SYMBOL(sb_setint);
 extern void sb_size; EXPORT_SYMBOL(sb_size);
 extern void do_4360_pcie2_war; EXPORT_SYMBOL(do_4360_pcie2_war);
 extern void set_hc595; EXPORT_SYMBOL(set_hc595);
+extern void set_hc595_core; EXPORT_SYMBOL(set_hc595_core);
 extern void si_addrspace; EXPORT_SYMBOL(si_addrspace);
 extern void si_addrspacesize; EXPORT_SYMBOL(si_addrspacesize);
 extern void si_alp_clock; EXPORT_SYMBOL(si_alp_clock);

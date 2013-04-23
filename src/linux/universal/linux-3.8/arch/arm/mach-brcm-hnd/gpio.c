@@ -131,7 +131,7 @@ gpio_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 		si_gpiocontrol(gpio_sih, ~0, val, GPIO_HI_PRIORITY);
 		break;
 	case 4:
-		set_hc595(gpio_sih,val>>4,val&0xf);
+		set_hc595(val>>4,val&0xf);
 		break;
 	default:
 		return -ENODEV;
@@ -163,7 +163,7 @@ gpio_init(void)
 		return -ENODEV;
 
 	si_gpiosetcore(gpio_sih);
-
+	set_hc595_core(gpio_sih);
 	if ((gpio_major = register_chrdev(127, "gpio", &gpio_fops)) < 0)
 	{
 		return gpio_major;
