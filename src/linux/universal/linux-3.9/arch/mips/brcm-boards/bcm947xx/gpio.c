@@ -149,6 +149,7 @@ static struct file_operations gpio_fops = {
 
 extern int iswrt350n;
 extern int iswrt300n11;
+int isbuffalo=0;
 int isd1800h=0;
 int isac66=0;
 EXPORT_SYMBOL(isd1800h);
