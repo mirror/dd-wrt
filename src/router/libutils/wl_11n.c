@@ -125,6 +125,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			    && nvram_invmatch(wl_mode, "mixed")
 			    && nvram_invmatch(wl_mode, "b-only")
 			    && nvram_invmatch(wl_mode, "n2-only")
+			    && nvram_invmatch(wl_mode, "n-only")
 			    && nvram_invmatch(wl_mode, "bg-mixed")
 			    && nvram_invmatch(wl_mode, "ng-only")) {
 				fprintf(stderr, "%s:%d\n", __func__, __LINE__);
@@ -137,7 +138,8 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 				continue;
 #endif
 			if (nvram_match(wl_turbo, "40")
-			    && (nvram_match(wl_mode, "n2-only")
+			    && (nvram_match(wl_mode, "n2-only") 
+				|| nvram_match(wl_mode, "n-only")
 				|| nvram_match(wl_mode, "mixed")
 				|| nvram_match(wl_mode, "ng-only"))) {
 				if (up
