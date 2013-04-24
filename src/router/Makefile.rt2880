@@ -228,7 +228,7 @@ endif
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=mips ; \
 	fi
 	make mkimage
-	cp mipsel-uclibc/root.uimage /GruppenLW/releases/test.bin
+#	cp mipsel-uclibc/root.uimage /GruppenLW/releases/test.bin
 
 install_headers:
 # important step, required for new kernels
@@ -474,7 +474,7 @@ else
 	dd if=mipsel-uclibc/root.uimage of=mipsel-uclibc/aligned.uimage bs=4096 conv=sync
 	dd if=mipsel-uclibc/vmlinus.lzma of=mipsel-uclibc/vmlinus.aligned bs=4096 conv=sync
 endif
-	cp mipsel-uclibc/aligned.uimage /GruppenLW/releases/firmware.bin
+#	cp mipsel-uclibc/aligned.uimage /GruppenLW/releases/firmware.bin
 	./tools/trx_n -m 30000000 -a 1 -o mipsel-uclibc/rt2880-webflash.bin mipsel-uclibc/aligned.uimage
 	./tools/trx_n -m 30000000 -a 1 -o mipsel-uclibc/raw-webflash.bin mipsel-uclibc/vmlinus.aligned
 ifeq ($(CONFIG_DIR600),y)
