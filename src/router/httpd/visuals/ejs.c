@@ -4163,7 +4163,7 @@ void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp,
 		  "    <span id=\"dsl_datarate_ds\">%11.2f</span> MBit / <span id=\"dsl_datarate_us\">%11.2f</span> MBit\n",
 		  atof(nvram_safe_get("dsl_datarate_ds")),
-		  atof(nvram_safe_get("dsl_datarate_ds")));
+		  atof(nvram_safe_get("dsl_datarate_us")));
 	websWrite(wp, "  </div>\n");
 	websWrite(wp, "  <div class=\"setting\">\n");
 	websWrite(wp,
