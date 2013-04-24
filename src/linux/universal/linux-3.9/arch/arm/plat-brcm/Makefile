@@ -11,7 +11,7 @@ AFLAGS_plat-head.o        := -DTEXT_OFFSET=$(TEXT_OFFSET)
 obj-$(CONFIG_PLAT_MPCORE) += plat-head.o
 obj-$(CONFIG_PLAT_MPCORE) += mpcore_core.o
 obj-$(CONFIG_PLAT_MPCORE) += mpcore_gtimer.o
-#obj-$(CONFIG_PLAT_MPCORE) += mpcore_cache.o
+obj-$(CONFIG_PLAT_MPCORE) += mpcore_cache.o
 obj-$(CONFIG_PLAT_MPCORE) += clock.o clkdev.o
 obj-$(CONFIG_PLAT_MPCORE) += platsmp.o 
 obj-$(CONFIG_PLAT_IPROC) += iproc_cru.o
