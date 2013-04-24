@@ -160,9 +160,11 @@ void start_sysinit(void)
 #endif
 		annex = nvram_default_get("annex", "a");
 	char *annexfw = "/usr/lib/firmware/annex_a.bin";
-	if (!strncmp(annex, "b", 1))
+
+	if (!strncmp(annex, "b", 1) || !strncmp(annex, "j", 1))
 		annexfw = "/usr/lib/firmware/annex_b.bin";
 	char *initcode = "";
+
 	if (!strcmp(annex, "b"))
 		initcode = "10_00_10_00_00_04_00_00";
 	if (!strcmp(annex, "bdmt"))
@@ -171,6 +173,13 @@ void start_sysinit(void)
 		initcode = "00_00_10_00_00_00_00_00";
 	if (!strcmp(annex, "badsl2+"))
 		initcode = "00_00_00_00_00_04_00_00";
+
+	if (!strcmp(annex, "j"))
+		initcode = "00_00_00_40_00_00_01_00";
+	if (!strcmp(annex, "jadsl2"))
+		initcode = "00_00_00_40_00_00_00_00";
+	if (!strcmp(annex, "jadsl2+"))
+		initcode = "00_00_00_00_00_00_01_00";
 
 	if (!strcmp(annex, "a"))
 		initcode = "04_01_04_00_00_01_00_00";
