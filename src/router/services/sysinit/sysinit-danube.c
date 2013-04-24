@@ -173,14 +173,14 @@ void start_sysinit(void)
 		initcode = "00_00_10_00_00_00_00_00";
 	if (!strcmp(annex, "badsl2+"))
 		initcode = "00_00_00_00_00_04_00_00";
-
+	if (!strcmp(annex, "c"))
+		initcode = "42_04_00_00_00_00_00_00";
 	if (!strcmp(annex, "j"))
 		initcode = "00_00_00_40_00_00_01_00";
 	if (!strcmp(annex, "jadsl2"))
 		initcode = "00_00_00_40_00_00_00_00";
 	if (!strcmp(annex, "jadsl2+"))
 		initcode = "00_00_00_00_00_00_01_00";
-
 	if (!strcmp(annex, "a"))
 		initcode = "04_01_04_00_00_01_00_00";
 	if (!strcmp(annex, "at1"))
@@ -195,7 +195,6 @@ void start_sysinit(void)
 		initcode = "00_00_00_00_00_01_00_00";
 	if (!strcmp(annex, "l"))
 		initcode = "00_00_00_00_04_00_00_00";
-
 	if (!strcmp(annex, "m"))
 		initcode = "00_00_00_00_40_00_04_00";
 	if (!strcmp(annex, "madsl2"))
