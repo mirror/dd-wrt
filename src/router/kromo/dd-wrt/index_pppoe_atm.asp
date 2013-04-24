@@ -7,14 +7,15 @@
 		<option value="admt" <% nvram_selected("annex", "admt"); %>>Annex A DMT</option>
 		<option value="aadsl2" <% nvram_selected("annex", "aadsl2"); %>>Annex A ADSL2</option>
 		<option value="aadsl2+" <% nvram_selected("annex", "aadsl2+"); %>>Annex A ADSL2+</option>
-		<option value="l" <% nvram_selected("annex", "l"); %>>Annex L</option>
 		<option value="b" <% nvram_selected("annex", "b"); %>>Annex B</option>
 		<option value="bdmt" <% nvram_selected("annex", "bdmt"); %>>Annex B DMT</option>
 		<option value="badsl2" <% nvram_selected("annex", "badsl2"); %>>Annex B ADSL2</option>
 		<option value="badsl2+" <% nvram_selected("annex", "badsl2+"); %>>Annex B ADSL2+</option>
+		<option value="c" <% nvram_selected("annex", "c"); %>>Annex C</option>
 		<option value="j" <% nvram_selected("annex", "j"); %>>Annex J</option>
 		<option value="jadsl2" <% nvram_selected("annex", "jadsl2"); %>>Annex J ADSL2</option>
 		<option value="jadsl2+" <% nvram_selected("annex", "jadsl2+"); %>>Annex J ADSL2+</option>
+		<option value="l" <% nvram_selected("annex", "l"); %>>Annex L</option>
 		<option value="m" <% nvram_selected("annex", "m"); %>>Annex M</option>
 		<option value="madsl2" <% nvram_selected("annex", "madsl2"); %>>Annex M ADSL2</option>
 		<option value="madsl2+" <% nvram_selected("annex", "madsl2+"); %>>Annex M ADSL2+</option>
