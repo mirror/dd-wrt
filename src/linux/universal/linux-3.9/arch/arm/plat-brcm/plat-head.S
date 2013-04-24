@@ -42,7 +42,7 @@ ENTRY(__mach_head_fixup)
 	bic	r0, #CR_C|CR_M
 	mcr	p15, 0, r0, c1, c0, 0		@ Write SCTLR
 	/* Clean up any residule in caches */
-	bl	v7_flush_dcache_all
+	bl	v7_all_dcache_invalidate
 	mov	r0, #'.'
 	bl	printch
 	mov	r0,#0
@@ -190,7 +190,7 @@ pen:	ldr	r7, [r6]
 	 * In case L1 cache has unpredictable contents at power-up
 	 * clean its contents without flushing.
 	 */
-	bl	v7_invalidate_l1
+	bl	v7_l1_cache_invalidate
 	nop
 	/*
 	 * we've been released from the holding pen: secondary_stack
