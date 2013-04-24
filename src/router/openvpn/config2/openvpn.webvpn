@@ -116,7 +116,7 @@
 				<div class="label"><% tran("service.vpn_tlscip"); %></div>
 				<select name="openvpn_tlscip">
 				<option value="TLS-DHE-RSA-WITH-AES-256-GCM-SHA384" <% nvram_selected("openvpn_tlscip","TLS-DHE-RSA-WITH-AES-256-GCM-SHA384"); %>>TLS-DHE-RSA-WITH-AES-256-GCM-SHA384</option>
-				<option value="TLS-DHE-RSA-WITH-AES-256-CBC-SHA256" <% nvram_selected("openvpn_tlscip","TLS-DHE-RSA-WITH-AES-256-CBC-SHA256"); %>>ATLS-DHE-RSA-WITH-AES-256-CBC-SHA256</option>
+				<option value="TLS-DHE-RSA-WITH-AES-256-CBC-SHA256" <% nvram_selected("openvpn_tlscip","TLS-DHE-RSA-WITH-AES-256-CBC-SHA256"); %>>TLS-DHE-RSA-WITH-AES-256-CBC-SHA256</option>
 				<option value="TLS-DHE-RSA-WITH-AES-128-CBC-SHA" <% nvram_selected("openvpn_tlscip","TLS-DHE-RSA-WITH-AES-128-CBC-SHA"); %>>TLS-DHE-RSA-WITH-AES-128-CBC-SHA</option>
 				<option value="TLS-RSA-WITH-AES-256-GCM-SHA384" <% nvram_selected("openvpn_tlscip","TLS-RSA-WITH-AES-256-GCM-SHA384"); %>>TLS-RSA-WITH-AES-256-GCM-SHA384</option>
 				<option value="TLS-RSA-WITH-AES-256-CBC-SHA256" <% nvram_selected("openvpn_tlscip","TLS-RSA-WITH-AES-256-CBC-SHA256"); %>>TLS-RSA-WITH-AES-256-CBC-SHA256</option>
