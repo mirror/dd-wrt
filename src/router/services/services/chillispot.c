@@ -339,9 +339,14 @@ void chilli_config(void)
 		if (nvram_invmatch("sv_localdns", "0.0.0.0")
 		    && nvram_invmatch("sv_localdns", ""))
 			fprintf(fp, "dns2 %s\n", nvram_get("sv_localdns"));
-	} else if (nvram_invmatch("sv_localdns", "0.0.0.0")
-		   && nvram_invmatch("sv_localdns", ""))
-		fprintf(fp, "dns1 %s\n", nvram_get("sv_localdns"));
+	} else {
+		if (nvram_invmatch("sv_localdns", "0.0.0.0")
+			&& nvram_invmatch("sv_localdns", ""))
+			fprintf(fp, "dns1 %s\n", nvram_get("sv_localdns"));
+		if (nvram_invmatch("altdns1", "0.0.0.0")
+			&& nvram_invmatch("altdns1", ""))
+			fprintf(fp, "dns2 %s\n", nvram_get("altdns1"));
+		}
 	if (nvram_invmatch("chilli_uamsecret", ""))
 		fprintf(fp, "uamsecret %s\n", nvram_get("chilli_uamsecret"));
 	if (nvram_invmatch("chilli_uamanydns", "0"))
