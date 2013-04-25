@@ -22,14 +22,14 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     insmod hmac
     insmod sha256_generic
     mount.cifs $SAMBA_SHARE /mnt/smbshare -o user="$SAMBA_USER",pass="$SAMBA_PASSWORD",sec=ntlm
-    if [ "$(nvram get samba_script)" != "" ]; then
-	exec "/mnt/smbshare/$SAMBA_SCRIPT"
-    fi	
     stopservice dlna
     startservice dlna
     stopservice ftpsrv
     startservice ftpsrv
     stopservice samba3
     startservice samba3
+    if [ "$(nvram get samba_script)" != "" ]; then
+	exec "/mnt/smbshare/$SAMBA_SCRIPT"
+    fi	
 fi
 
