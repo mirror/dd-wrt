@@ -1621,7 +1621,7 @@ unsigned int pci_scan_child_bus(struct pci_bus *bus)
 	max += pci_iov_bus_range(bus);
 
 #ifdef CONFIG_BCM47XX
-	if (pci_domain_nr(bus))
+	if (pci_domain_nr(bus) && pci_is_root_bus(bus))
 		max += pci_domain_nr(bus) - 1;
 #endif
 

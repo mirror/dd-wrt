@@ -83,6 +83,9 @@ extern spinlock_t bcm947xx_sih_lock;
 
 extern int _memsize;
 
+#define PCI_MAX_BUS		4
+#define PLX_PRIM_SEC_BUS_NUM		(0x00000201 | (PCI_MAX_BUS << 16))
+
 #ifdef	CONFIG_PCI
 
 /*
@@ -222,6 +225,9 @@ static struct soc_pcie_port {
 
 	bool	enable;
 	bool	link;
+	bool isswitch;
+	bool port1active;
+	bool port2active;
 } soc_pcie_ports[4] = {
 	{
 	.irqs = {0, 0, 0, 0, 0, 0},
@@ -234,6 +240,9 @@ static struct soc_pcie_port {
 		.map_irq	= NULL,
 		},
 	.enable = 1,
+	.isswitch = 0,
+	.port1active = 0,
+	.port2active = 0,
 	},
 	{
 	.regs_res = & soc_pcie_regs[0],
@@ -248,6 +257,9 @@ static struct soc_pcie_port {
 		.map_irq 	= soc_pcie_map_irq,
 		},
 	.enable = 1,
+	.isswitch = 0,
+	.port1active = 0,
+	.port2active = 0,
 	},
 	{
 	.regs_res = & soc_pcie_regs[1],
@@ -262,6 +274,9 @@ static struct soc_pcie_port {
 		.map_irq 	= soc_pcie_map_irq,
 		},
 	.enable = 1,
+	.isswitch = 0,
+	.port1active = 0,
+	.port2active = 0,
 	},
 	{
 	.regs_res = & soc_pcie_regs[2],
@@ -276,6 +291,9 @@ static struct soc_pcie_port {
 		.map_irq 	= soc_pcie_map_irq,
 		},
 	.enable = 1,
+	.isswitch = 0,
+	.port1active = 0,
+	.port2active = 0,
 	}
 	};
 
@@ -406,91 +424,217 @@ static void __iomem * soc_pci_cfg_base(struct pci_bus *bus,
         return base + offset;
 }
 
-static int soc_pci_read_config(struct pci_bus *bus, unsigned int devfn,
-                                   int where, int size, u32 *val)
+static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 {
-        void __iomem *base;
-	u32 data_reg ;
+	struct soc_pcie_port *port = soc_pcie_bus2port(bus);
+	u32 dRead = 0;
+	u16 bm = 0;
+	int bus_inc = port->hw_pci.domain - 1;
 
-#ifdef BYPASS_PLX
-	if (bus->number > 2) {
+	soc_pci_read_config(bus, devfn, 0x100, 4, &dRead);
+	printk("PCIE: Doing PLX switch Init...Test Read = %08x\n", (unsigned int)dRead);
+
+	/* Debug control register. */
+	soc_pci_read_config(bus, devfn, 0x1dc, 4, &dRead);
+	dRead &= ~(1<<22);
+
+	soc_pci_write_config(bus, devfn, 0x1dc, 4, dRead);
+
+	/* Set GPIO enables. */
+	soc_pci_read_config(bus, devfn, 0x62c, 4, &dRead);
+
+	printk("PCIE: Doing PLX switch Init...GPIO Read = %08x\n", (unsigned int)dRead);
+
+	dRead &= ~((1 << 0) | (1 << 1) | (1 << 3));
+	dRead |= ((1 << 4) | (1 << 5) | (1 << 7));
+
+	soc_pci_write_config(bus, devfn, 0x62c, 4, dRead);
+
+	mdelay(50);
+	dRead |= ((1<<0)|(1<<1));
+	soc_pci_write_config(bus, devfn, 0x62c, 4, dRead);
+
+	soc_pci_read_config(bus, devfn, 0x4, 2, &bm);
+#if NS_PCI_DEBUG
+	printk("bus master: %08x\n", bm);
+#endif
+	bm |= 0x06;
+	soc_pci_write_config(bus, devfn, 0x4, 2, bm);
+	bm = 0;
+#if NS_PCI_DEBUG
+	soc_pci_read_config(bus, devfn, 0x4, 2, &bm);
+	printk("bus master after: %08x\n", bm);
+	bm = 0;
+#endif
+	/* Bus 1 if the upstream port of the switch.
+	 * Bus 2 has the two downstream ports, one on each device number.
+	 */
+	if (bus->number == (bus_inc + 1)) {
+		soc_pci_write_config(bus, devfn, 0x18, 4, PLX_PRIM_SEC_BUS_NUM);
+
+		/* TODO: We need to scan all outgoing windows,
+		 * to look for a base limit pair for this register.
+		 */
+		/* MEM_BASE, MEM_LIM require 1MB alignment */
+		BUG_ON((port->owin_res->start >> 16) & 0xf);
+		soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2,
+			port->owin_res->start >> 16);
+		BUG_ON(((port->owin_res->start + SZ_32M) >> 16) & 0xf);
+		soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2,
+			(port->owin_res->start + SZ_32M) >> 16);
+	} else if (bus->number == (bus_inc + 2)) {
+		/* TODO: I need to fix these hard coded addresses. */
+		if (devfn == 0x8) {
+			soc_pci_write_config(bus, devfn, 0x18, 4,
+				(0x00000000 | ((bus->number + 1) << 16) |
+				((bus->number + 1) << 8) | bus->number));
+			BUG_ON((port->owin_res->start + SZ_48M >> 16) & 0xf);
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2,
+				port->owin_res->start + SZ_48M >> 16);
+			BUG_ON(((port->owin_res->start + SZ_48M + SZ_32M) >> 16) & 0xf);
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2,
+				(port->owin_res->start + SZ_48M + SZ_32M) >> 16);
+			soc_pci_read_config(bus, devfn, 0x7A, 2, &bm);
+			if (bm & PCI_EXP_LNKSTA_DLLLA)
+				port->port1active = 1;
+			printk("bm = %04x\n devfn = = %08x, bus = %08x\n", bm, devfn, bus->number);
+		} else if (devfn == 0x10) {
+			soc_pci_write_config(bus, devfn, 0x18, 4,
+				(0x00000000 | ((bus->number + 2) << 16) |
+				((bus->number + 2) << 8) | bus->number));
+			BUG_ON((port->owin_res->start + (SZ_48M * 2) >> 16) & 0xf);
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_BASE, 2,
+				port->owin_res->start  + (SZ_48M * 2) >> 16);
+			BUG_ON(((port->owin_res->start + (SZ_48M * 2) + SZ_32M) >> 16) & 0xf);
+			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2,
+				(port->owin_res->start + (SZ_48M * 2) + SZ_32M) >> 16);
+			soc_pci_read_config(bus, devfn, 0x7A, 2, &bm);
+			if (bm & PCI_EXP_LNKSTA_DLLLA)
+				port->port2active = 1;
+			printk("bm = %04x\n devfn = = %08x, bus = %08x\n", bm, devfn, bus->number);
+		}
+	}
+}
+
+
+static int soc_pci_read_config(struct pci_bus *bus, unsigned int devfn,
+	int where, int size, u32 *val)
+{
+	void __iomem *base;
+	u32 data_reg;
+	struct soc_pcie_port *port = soc_pcie_bus2port(bus);
+	int bus_inc = port->hw_pci.domain - 1;
+
+	if ((bus->number > (bus_inc + 4))) {
 		*val = ~0UL;
 		return PCIBIOS_SUCCESSFUL;
 	}
-#endif /* BYPASS_PLX */
+
+	if (port->isswitch == 1) {
+		if (bus->number == (bus_inc + 2)) {
+			if (!((devfn == 0x8) || (devfn == 0x10))) {
+				*val = ~0UL;
+				return PCIBIOS_SUCCESSFUL;
+			}
+		} else if ((bus->number == (bus_inc + 3)) || (bus->number == (bus_inc + 4))) {
+			if (devfn != 0) {
+				*val = ~0UL;
+				return PCIBIOS_SUCCESSFUL;
+			} else if ((bus->number == (bus_inc + 3)) && (port->port1active == 0)) {
+				*val = ~0UL;
+				return PCIBIOS_SUCCESSFUL;
+			} else if ((bus->number == (bus_inc + 4)) && (port->port2active == 0)) {
+				*val = ~0UL;
+				return PCIBIOS_SUCCESSFUL;
+			}
+		}
+	}
 
 	base = soc_pci_cfg_base(bus, devfn, where);
+	if (base == NULL) {
+		*val = ~0UL;
+		return PCIBIOS_SUCCESSFUL;
+	}
 
-        if (base == NULL )
-		{
-                *val = ~0UL;
-                return PCIBIOS_SUCCESSFUL;
-		}
-
-	data_reg = __raw_readl( base );
+	data_reg = __raw_readl(base);
 
 	/* NS: CLASS field is R/O, and set to wrong 0x200 value */
-	if( bus->number == 0 && devfn == 0 ) {
-		if ( (where & 0xffc) == PCI_CLASS_REVISION) {
-                /*
-                 * RC's class is 0x0280, but Linux PCI driver needs 0x604
-                 * for a PCIe bridge. So we must fixup the class code
-                 * to 0x604 here.
-                 */
+	if (bus->number == 0 && devfn == 0) {
+		if ((where & 0xffc) == PCI_CLASS_REVISION) {
+		/*
+		 * RC's class is 0x0280, but Linux PCI driver needs 0x604
+		 * for a PCIe bridge. So we must fixup the class code
+		 * to 0x604 here.
+		 */
 			data_reg &= 0xff;
 			data_reg |= 0x604 << 16;
 		}
-        }
+	}
+
+	if ((bus->number == (bus_inc + 1)) && (port->isswitch == 0) &&
+		(where == 0) && (((data_reg >> 16) & 0x0000FFFF) == 0x00008603)) {
+		plx_pcie_switch_init(bus, devfn);
+		port->isswitch = 1;
+	}
+	if ((bus->number == (bus_inc + 2)) && (port->isswitch == 1) &&
+		(where == 0) && (((data_reg >> 16) & 0x0000FFFF) == 0x00008603))
+		plx_pcie_switch_init(bus, devfn);
+
 	/* HEADER_TYPE=00 indicates the port in EP mode */
 
-	if( size == 4 )
-		{
+	if (size == 4) {
 		*val = data_reg;
-		}
-	else if( size < 4 )
-		{
+	} else if (size < 4) {
 		u32 mask = (1 << (size * 8)) - 1;
 		int shift = (where % 4) * 8;
 		*val = (data_reg >> shift) & mask;
-		}
+	}
 
-        return PCIBIOS_SUCCESSFUL;
+	return PCIBIOS_SUCCESSFUL;
 }
 
 static int soc_pci_write_config(struct pci_bus *bus, unsigned int devfn,
                                     int where, int size, u32 val)
 {
-        void __iomem *base;
-	u32  data_reg ;
+	void __iomem *base;
+	u32 data_reg;
+	struct soc_pcie_port *port = soc_pcie_bus2port(bus);
+	int bus_inc = port->hw_pci.domain - 1;
 
-#ifdef BYPASS_PLX
-	if (bus->number > 2) {
+	if (bus->number > (bus_inc + 4))
 		return PCIBIOS_SUCCESSFUL;
+
+	if ((bus->number == (bus_inc + 2)) && (port->isswitch == 1)) {
+		if (!((devfn == 0x8) || (devfn == 0x10)))
+			return PCIBIOS_SUCCESSFUL;
 	}
-#endif /* BYPASS_PLX */
+	else if ((bus->number == (bus_inc + 3)) && (port->isswitch == 1)) {
+		if (devfn != 0)
+			return PCIBIOS_SUCCESSFUL;
+	}
+	else if ((bus->number == (bus_inc + 4)) && (port->isswitch == 1)) {
+		if (devfn != 0)
+			return PCIBIOS_SUCCESSFUL;
+	}
 
 	base = soc_pci_cfg_base(bus, devfn, where);
-        if (base == NULL)
-		{
-                return PCIBIOS_SUCCESSFUL;
-		}
+	if (base == NULL) {
+		return PCIBIOS_SUCCESSFUL;
+	}
 
-	if( size < 4 )
-		{
+	if (size < 4) {
 		u32 mask = (1 << (size * 8)) - 1;
 		int shift = (where % 4) * 8;
-		data_reg = __raw_readl( base );
+		data_reg = __raw_readl(base);
 		data_reg &= ~(mask << shift);
-		data_reg |=  (val & mask) << shift;
-		}
-	else
-		{
+		data_reg |= (val & mask) << shift;
+	} else {
 		data_reg = val;
-		}
+	}
 
-	__raw_writel( data_reg, base );
+	__raw_writel(data_reg, base);
 
-        return PCIBIOS_SUCCESSFUL;
+	return PCIBIOS_SUCCESSFUL;
 }
 
 static int soc_pci_setup(int nr, struct pci_sys_data *sys)
@@ -829,7 +973,7 @@ bcm5301x_usb30_phy_init(void)
 	uint32 *usb3_idm_idm_reset_ctrl_addr;
 
 	/* Check Chip ID */
-	if (CHIPID(sih->chip) != BCM4707_CHIP_ID)
+	if (!BCM4707_CHIP(CHIPID(sih->chip)))
 		return;
 
 	dmu_base = (uint32)REG_MAP(0x1800c000, 4096);
@@ -855,10 +999,10 @@ bcm5301x_usb30_phy_init(void)
 
 	/* PLL30 block */
 	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
- 	writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
+	writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
 
 	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
- 	writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
+	writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
 
 	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
 	writel(0x587e80e0, ccb_mii_mng_cmd_data_addr);
@@ -881,7 +1025,6 @@ bcm5301x_usb30_phy_init(void)
 
 	/* Deasserting USB3 system reset */
 	writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
- 
 
 	/* Reg unmap */
 	REG_UNMAP((void *)ccb_mii_base);
