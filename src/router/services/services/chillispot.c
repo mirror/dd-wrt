@@ -287,6 +287,7 @@ void chilli_config(void)
 {
 	FILE *fp;
 	int i;
+	char *dnslist;
 
 #ifdef HAVE_CHILLILOCAL
 
