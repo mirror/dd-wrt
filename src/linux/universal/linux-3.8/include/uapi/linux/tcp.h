@@ -54,7 +54,7 @@ struct tcphdr {
 	__be16	window;
 	__sum16	check;
 	__be16	urg_ptr;
-} __packed __attribute__((aligned(2)));
+} MIPS_NET_ALIGN;
 
 /*
  *	The union cast uses a gcc extension to avoid aliasing problems
@@ -64,7 +64,7 @@ struct tcphdr {
 union tcp_word_hdr { 
 	struct tcphdr hdr;
 	__be32 		  words[5];
-} __attribute__((packed, aligned(2)));
+} MIPS_NET_ALIGN;
 
 #define tcp_flag_word(tp) ( ((union tcp_word_hdr *)(tp))->words [3]) 
 

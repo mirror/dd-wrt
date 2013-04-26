@@ -3873,9 +3873,15 @@ static bool tcp_parse_aligned_timestamp(struct tcp_sock *tp, const struct tcphdr
 	    (TCPOPT_TIMESTAMP << 8) | TCPOLEN_TIMESTAMP)) {
 		tp->rx_opt.saw_tstamp = 1;
 		++ptr;
+#ifdef CONFIG_MIPS
 		tp->rx_opt.rcv_tsval = get_unaligned_be32(ptr);
 		++ptr;
 		tp->rx_opt.rcv_tsecr = get_unaligned_be32(ptr);
+#else
+		tp->rx_opt.rcv_tsval = ntohl(*ptr);
+		++ptr;
+		tp->rx_opt.rcv_tsecr = ntohl(*ptr);
+#endif
 		return true;
 	}
 	return false;
