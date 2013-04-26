@@ -142,6 +142,10 @@ addEvent(window, "unload", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div><br/>
+						<dl>
+							<dt class="term"><% tran("hotspot.legend"); %> <% tran("hotspotsys.legend"); %></dt>
+							<dd class="definition"><% tran("hstatus_hots.right1"); %></dd>
+						</dl><br />
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HHotspot.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
