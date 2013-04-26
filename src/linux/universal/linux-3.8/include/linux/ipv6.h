@@ -4,6 +4,7 @@
 #include <uapi/linux/ipv6.h>
 
 #define ipv6_optlen(p)  (((p)->hdrlen+1) << 3)
+
 /*
  * This structure contains configuration options per IPv6 link.
  */
@@ -79,7 +80,7 @@ static inline struct ipv6hdr *ipipv6_hdr(const struct sk_buff *skb)
 
 static inline __u8 ipv6_tclass(const struct ipv6hdr *iph)
 {
-	return (ntohl(*(__be32 *)iph) >> 20) & 0xff;
+	return (ntohl(net_hdr_word(iph)) >> 20) & 0xff;
 }
 
 /* 

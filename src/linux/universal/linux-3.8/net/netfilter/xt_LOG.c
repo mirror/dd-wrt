@@ -521,9 +521,9 @@ static void dump_ipv6_packet(struct sbuff *m,
 	/* Max length: 44 "LEN=65535 TC=255 HOPLIMIT=255 FLOWLBL=FFFFF " */
 	sb_add(m, "LEN=%Zu TC=%u HOPLIMIT=%u FLOWLBL=%u ",
 	       ntohs(ih->payload_len) + sizeof(struct ipv6hdr),
-	       (ntohl(*(__be32 *)ih) & 0x0ff00000) >> 20,
+	       (ntohl(net_hdr_word(ih)) & 0x0ff00000) >> 20,
 	       ih->hop_limit,
-	       (ntohl(*(__be32 *)ih) & 0x000fffff));
+	       (ntohl(net_hdr_word(ih)) & 0x000fffff));
 
 	fragment = 0;
 	ptr = ip6hoff + sizeof(struct ipv6hdr);

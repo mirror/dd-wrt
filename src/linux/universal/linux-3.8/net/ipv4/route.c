@@ -465,7 +465,7 @@ static struct neighbour *ipv4_neigh_lookup(const struct dst_entry *dst,
 	else if (skb)
 		pkey = &ip_hdr(skb)->daddr;
 
-	n = __ipv4_neigh_lookup(dev, *(__force u32 *)pkey);
+	n = __ipv4_neigh_lookup(dev, net_hdr_word(pkey));
 	if (n)
 		return n;
 	return neigh_create(&arp_tbl, pkey, dev);

@@ -107,7 +107,7 @@ struct frag_hdr {
 	__u8	reserved;
 	__be16	frag_off;
 	__be32	identification;
-};
+} __attribute__((packed, aligned(2)));
 
 #define	IP6_MF	0x0001
 
@@ -386,6 +386,8 @@ static inline bool __ipv6_prefix_equal(const __be32 *a1, const __be32 *a2,
 				       unsigned int prefixlen)
 {
 	unsigned int pdw, pbi;
+	/* Used for last <32-bit fraction of prefix */
+	u32 pbia1, pbia2;
 
 	/* check complete u32 in prefix */
 	pdw = prefixlen >> 5;
@@ -394,7 +396,9 @@ static inline bool __ipv6_prefix_equal(const __be32 *a1, const __be32 *a2,
 
 	/* check incomplete u32 in prefix */
 	pbi = prefixlen & 0x1f;
-	if (pbi && ((a1[pdw] ^ a2[pdw]) & htonl((0xffffffff) << (32 - pbi))))
+	pbia1 = net_hdr_word(&a1[pdw]);
+	pbia2 = net_hdr_word(&a2[pdw]);
+	if (pbi && ((pbia1 ^ pbia2) & htonl((0xffffffff) << (32 - pbi))))
 		return false;
 
 	return true;
@@ -521,13 +525,13 @@ static inline void ipv6_addr_set_v4mapped(const __be32 addr,
  */
 static inline int __ipv6_addr_diff(const void *token1, const void *token2, int addrlen)
 {
-	const __be32 *a1 = token1, *a2 = token2;
+	const struct in6_addr *a1 = token1, *a2 = token2;
 	int i;
 
 	addrlen >>= 2;
 
 	for (i = 0; i < addrlen; i++) {
-		__be32 xb = a1[i] ^ a2[i];
+		__be32 xb = a1->s6_addr32[i] ^ a2->s6_addr32[i];
 		if (xb)
 			return i * 32 + 31 - __fls(ntohl(xb));
 	}

@@ -64,7 +64,7 @@ struct tcphdr {
 union tcp_word_hdr { 
 	struct tcphdr hdr;
 	__be32 		  words[5];
-}; 
+} __attribute__((packed, aligned(2)));
 
 #define tcp_flag_word(tp) ( ((union tcp_word_hdr *)(tp))->words [3]) 
 

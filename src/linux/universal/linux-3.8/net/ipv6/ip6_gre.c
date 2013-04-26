@@ -430,7 +430,7 @@ static void ip6gre_err(struct sk_buff *skb, struct inet6_skb_parm *opt,
 
 	t = ip6gre_tunnel_lookup(skb->dev, &ipv6h->daddr, &ipv6h->saddr,
 				flags & GRE_KEY ?
-				*(((__be32 *)p) + (grehlen / 4) - 1) : 0,
+				net_hdr_word(((__be32 *)p) + (grehlen / 4) - 1) : 0,
 				p[1]);
 	if (t == NULL)
 		return;
@@ -522,11 +522,11 @@ static int ip6gre_rcv(struct sk_buff *skb)
 			offset += 4;
 		}
 		if (flags&GRE_KEY) {
-			key = *(__be32 *)(h + offset);
+			key = net_hdr_word(h + offset);
 			offset += 4;
 		}
 		if (flags&GRE_SEQ) {
-			seqno = ntohl(*(__be32 *)(h + offset));
+			seqno = ntohl(net_hdr_word(h + offset));
 			offset += 4;
 		}
 	}
@@ -772,7 +772,7 @@ static netdev_tx_t ip6gre_xmit2(struct sk_buff *skb,
 	 *	Push down and install the IP header.
 	 */
 	ipv6h = ipv6_hdr(skb);
-	*(__be32 *)ipv6h = fl6->flowlabel | htonl(0x60000000);
+	net_hdr_word(ipv6h) = fl6->flowlabel | htonl(0x60000000);
 	dsfield = INET_ECN_encapsulate(0, dsfield);
 	ipv6_change_dsfield(ipv6h, ~INET_ECN_MASK, dsfield);
 	ipv6h->hop_limit = tunnel->parms.hop_limit;
@@ -789,7 +789,7 @@ static netdev_tx_t ip6gre_xmit2(struct sk_buff *skb,
 
 		if (tunnel->parms.o_flags&GRE_SEQ) {
 			++tunnel->o_seqno;
-			*ptr = htonl(tunnel->o_seqno);
+			net_hdr_word(ptr) = htonl(tunnel->o_seqno);
 			ptr--;
 		}
 		if (tunnel->parms.o_flags&GRE_KEY) {
@@ -897,9 +897,9 @@ static inline int ip6gre_xmit_ipv6(struct sk_buff *skb, struct net_device *dev)
 
 	dsfield = ipv6_get_dsfield(ipv6h);
 	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)
-		fl6.flowlabel |= (*(__be32 *) ipv6h & IPV6_TCLASS_MASK);
+		fl6.flowlabel |= net_hdr_word(ipv6h) & IPV6_TCLASS_MASK;
 	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FLOWLABEL)
-		fl6.flowlabel |= (*(__be32 *) ipv6h & IPV6_FLOWLABEL_MASK);
+		fl6.flowlabel |= net_hdr_word(ipv6h) & IPV6_FLOWLABEL_MASK;
 	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FWMARK)
 		fl6.flowi6_mark = skb->mark;
 
@@ -1240,7 +1240,7 @@ static int ip6gre_header(struct sk_buff *skb, struct net_device *dev,
 	struct ipv6hdr *ipv6h = (struct ipv6hdr *)skb_push(skb, t->hlen);
 	__be16 *p = (__be16 *)(ipv6h+1);
 
-	*(__be32 *)ipv6h = t->fl.u.ip6.flowlabel | htonl(0x60000000);
+	net_hdr_word(ipv6h) = t->fl.u.ip6.flowlabel | htonl(0x60000000);
 	ipv6h->hop_limit = t->parms.hop_limit;
 	ipv6h->nexthdr = NEXTHDR_GRE;
 	ipv6h->saddr = t->parms.laddr;

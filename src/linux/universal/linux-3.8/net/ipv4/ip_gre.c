@@ -518,7 +518,7 @@ static void ipgre_err(struct sk_buff *skb, u32 info)
 		return;
 
 	if (flags & GRE_KEY)
-		key = *(((__be32 *)p) + (grehlen / 4) - 1);
+		key = net_hdr_word(((__be32 *)p) + (grehlen / 4) - 1);
 
 	switch (type) {
 	default:
