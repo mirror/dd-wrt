@@ -64,6 +64,7 @@
 #include <net/secure_seq.h>
 #include <net/tcp_memcontrol.h>
 
+#include <asm/unaligned.h>
 #include <asm/uaccess.h>
 
 #include <linux/proc_fs.h>
@@ -763,10 +764,10 @@ static void tcp_v6_send_response(struct sk_buff *skb, u32 seq, u32 ack, u32 win,
 	topt = (__be32 *)(t1 + 1);
 
 	if (ts) {
-		*topt++ = htonl((TCPOPT_NOP << 24) | (TCPOPT_NOP << 16) |
-				(TCPOPT_TIMESTAMP << 8) | TCPOLEN_TIMESTAMP);
-		*topt++ = htonl(tcp_time_stamp);
-		*topt++ = htonl(ts);
+		put_unaligned_be32((TCPOPT_NOP << 24) |	(TCPOPT_NOP << 16) |
+			(TCPOPT_TIMESTAMP << 8) | TCPOLEN_TIMESTAMP, topt++);
+		put_unaligned_be32(tcp_time_stamp, topt++);
+		put_unaligned_be32(ts, topt++);
 	}
 
 #ifdef CONFIG_TCP_MD5SIG

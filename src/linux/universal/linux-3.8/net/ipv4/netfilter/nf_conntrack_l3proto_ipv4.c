@@ -40,8 +40,8 @@ static bool ipv4_pkt_to_tuple(const struct sk_buff *skb, unsigned int nhoff,
 	if (ap == NULL)
 		return false;
 
-	tuple->src.u3.ip = __get_unaligned_cpu32(ap++);
-	tuple->dst.u3.ip = __get_unaligned_cpu32(ap);
+	tuple->src.u3.ip = net_hdr_word(ap++);
+	tuple->dst.u3.ip = net_hdr_word(ap);
 
 	return true;
 }

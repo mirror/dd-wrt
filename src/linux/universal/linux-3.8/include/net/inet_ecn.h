@@ -115,13 +115,13 @@ static inline int IP6_ECN_set_ce(struct ipv6hdr *iph)
 {
 	if (INET_ECN_is_not_ect(ipv6_get_dsfield(iph)))
 		return 0;
-	*(__be32*)iph |= htonl(INET_ECN_CE << 20);
+	net_hdr_word(iph) |= htonl(INET_ECN_CE << 20);
 	return 1;
 }
 
 static inline void IP6_ECN_clear(struct ipv6hdr *iph)
 {
-	*(__be32*)iph &= ~htonl(INET_ECN_MASK << 20);
+	net_hdr_word(iph) &= ~htonl(INET_ECN_MASK << 20);
 }
 
 static inline void ipv6_copy_dscp(unsigned int dscp, struct ipv6hdr *inner)

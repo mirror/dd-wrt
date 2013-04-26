@@ -2,6 +2,7 @@
 #define _NET_SECURE_SEQ
 
 #include <linux/types.h>
+#include <linux/in6.h>
 
 extern __u32 secure_ip_id(__be32 daddr);
 extern __u32 secure_ipv6_id(const __be32 daddr[4]);
