@@ -502,7 +502,9 @@ void start_openvpn(void)
 			fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
 		else
 			fprintf(fp, "ip route add default via $ifconfig_remote table 10\n");
-		fprintf(fp, "ip route flush cache\n");
+		fprintf(fp, "ip route flush cache\n"
+		"echo $ifconfig_remote >>/tmp/gateway.txt\n"
+		"echo $route_vpn_gateway >>/tmp/gateway.txt\n");
 	}
 	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
 		&& nvram_match("openvpncl_tuntap", "tap")
