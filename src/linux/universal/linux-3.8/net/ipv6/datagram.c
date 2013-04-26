@@ -360,12 +360,12 @@ int ipv6_recv_error(struct sock *sk, struct msghdr *msg, int len)
 				*(struct in6_addr *)(nh + serr->addr_offset);
 			if (np->sndflow)
 				sin->sin6_flowinfo =
-					(*(__be32 *)(nh + serr->addr_offset - 24) &
-					 IPV6_FLOWINFO_MASK);
+					net_hdr_word(nh + serr->addr_offset - 24) &
+					 IPV6_FLOWINFO_MASK;
 			if (ipv6_addr_type(&sin->sin6_addr) & IPV6_ADDR_LINKLOCAL)
 				sin->sin6_scope_id = IP6CB(skb)->iif;
 		} else {
-			ipv6_addr_set_v4mapped(*(__be32 *)(nh + serr->addr_offset),
+			ipv6_addr_set_v4mapped(net_hdr_word(nh + serr->addr_offset),
 					       &sin->sin6_addr);
 		}
 	}
@@ -493,9 +493,10 @@ int ip6_datagram_recv_ctl(struct sock *sk, struct msghdr *msg,
 		put_cmsg(msg, SOL_IPV6, IPV6_TCLASS, sizeof(tclass), &tclass);
 	}
 
-	if (np->rxopt.bits.rxflow && (*(__be32 *)nh & IPV6_FLOWINFO_MASK)) {
-		__be32 flowinfo = *(__be32 *)nh & IPV6_FLOWINFO_MASK;
-		put_cmsg(msg, SOL_IPV6, IPV6_FLOWINFO, sizeof(flowinfo), &flowinfo);
+	if (np->rxopt.bits.rxflow) {
+		__be32 flowinfo = net_hdr_word(nh) & IPV6_FLOWINFO_MASK;
+		if (flowinfo)
+			put_cmsg(msg, SOL_IPV6, IPV6_FLOWINFO, sizeof(flowinfo), &flowinfo);
 	}
 
 	/* HbH is allowed only once */
@@ -682,12 +683,12 @@ int ip6_datagram_send_ctl(struct net *net, struct sock *sk,
 			}
 
 			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
-				if ((fl6->flowlabel^*(__be32 *)CMSG_DATA(cmsg))&~IPV6_FLOWINFO_MASK) {
+				if ((fl6->flowlabel^net_hdr_word(CMSG_DATA(cmsg)))&~IPV6_FLOWINFO_MASK) {
 					err = -EINVAL;
 					goto exit_f;
 				}
 			}
-			fl6->flowlabel = IPV6_FLOWINFO_MASK & *(__be32 *)CMSG_DATA(cmsg);
+			fl6->flowlabel = IPV6_FLOWINFO_MASK & net_hdr_word(CMSG_DATA(cmsg));
 			break;
 
 		case IPV6_2292HOPOPTS:

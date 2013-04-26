@@ -200,7 +200,7 @@ static struct sk_buff **ipv6_gro_receive(struct sk_buff **head,
 			continue;
 
 		iph2 = ipv6_hdr(p);
-		first_word = *(__be32 *)iph ^ *(__be32 *)iph2 ;
+		first_word = net_hdr_word(iph) ^ net_hdr_word(iph2);
 
 		/* All fields must match except length and Traffic Class. */
 		if (nlen != skb_network_header_len(p) ||

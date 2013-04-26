@@ -137,7 +137,7 @@ ipv6:
 		nhoff += poff;
 		ports = skb_header_pointer(skb, nhoff, sizeof(_ports), &_ports);
 		if (ports)
-			flow->ports = *ports;
+			flow->ports = net_hdr_word(ports);
 	}
 
 	return true;

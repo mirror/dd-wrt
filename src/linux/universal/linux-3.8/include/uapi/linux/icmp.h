@@ -80,7 +80,7 @@ struct icmphdr {
 		__be16	mtu;
 	} frag;
   } un;
-};
+} __attribute__((packed, aligned(2)));
 
 
 /*

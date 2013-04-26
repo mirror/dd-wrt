@@ -76,7 +76,7 @@ struct ra_msg {
         struct icmp6hdr		icmph;
 	__be32			reachable_time;
 	__be32			retrans_timer;
-};
+} __attribute__((packed, aligned(2)));
 
 struct rd_msg {
 	struct icmp6hdr icmph;
@@ -142,10 +142,10 @@ static inline u32 ndisc_hashfn(const void *pkey, const struct net_device *dev, _
 {
 	const u32 *p32 = pkey;
 
-	return (((p32[0] ^ hash32_ptr(dev)) * hash_rnd[0]) +
-		(p32[1] * hash_rnd[1]) +
-		(p32[2] * hash_rnd[2]) +
-		(p32[3] * hash_rnd[3]));
+	return (((net_hdr_word(&p32[0]) ^ hash32_ptr(dev)) * hash_rnd[0]) +
+		(net_hdr_word(&p32[1]) * hash_rnd[1]) +
+		(net_hdr_word(&p32[2]) * hash_rnd[2]) +
+		(net_hdr_word(&p32[3]) * hash_rnd[3]));
 }
 
 static inline struct neighbour *__ipv6_neigh_lookup(struct neigh_table *tbl, struct net_device *dev, const void *pkey)
@@ -163,8 +163,10 @@ static inline struct neighbour *__ipv6_neigh_lookup(struct neigh_table *tbl, str
 	     n = rcu_dereference_bh(n->next)) {
 		u32 *n32 = (u32 *) n->primary_key;
 		if (n->dev == dev &&
-		    ((n32[0] ^ p32[0]) | (n32[1] ^ p32[1]) |
-		     (n32[2] ^ p32[2]) | (n32[3] ^ p32[3])) == 0) {
+		    ((n32[0] ^ net_hdr_word(&p32[0])) |
+		     (n32[1] ^ net_hdr_word(&p32[1])) |
+		     (n32[2] ^ net_hdr_word(&p32[2])) |
+		     (n32[3] ^ net_hdr_word(&p32[3]))) == 0) {
 			if (!atomic_inc_not_zero(&n->refcnt))
 				n = NULL;
 			break;

@@ -1404,8 +1404,8 @@ static struct sk_buff ** BCMFASTPATH_HOST inet_gro_receive(struct sk_buff **head
 	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
 		goto out_unlock;
 
-	id = ntohl(*(__be32 *)&iph->id);
-	flush = (u16)((ntohl(*(__be32 *)iph) ^ skb_gro_len(skb)) | (id ^ IP_DF));
+	id = ntohl(net_hdr_word(&iph->id));
+	flush = (u16)((ntohl(net_hdr_word(iph)) ^ skb_gro_len(skb)) | (id ^ IP_DF));
 	id >>= 16;
 
 	for (p = *head; p; p = p->next) {

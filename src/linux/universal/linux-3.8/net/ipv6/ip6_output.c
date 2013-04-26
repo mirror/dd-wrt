@@ -218,7 +218,7 @@ int ip6_xmit(struct sock *sk, struct sk_buff *skb, struct flowi6 *fl6,
 	if (hlimit < 0)
 		hlimit = ip6_dst_hoplimit(dst);
 
-	*(__be32 *)hdr = htonl(0x60000000 | (tclass << 20)) | fl6->flowlabel;
+	net_hdr_word(hdr) = htonl(0x60000000 | (tclass << 20)) | fl6->flowlabel;
 
 	hdr->payload_len = htons(seg_len);
 	hdr->nexthdr = proto;

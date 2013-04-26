@@ -27,6 +27,9 @@
 #include <asm/cacheflush.h>
 #include <asm/hardware/cache-l2x0.h>	/* Old register offsets */
 
+#include <typedefs.h>
+#include <bcmdefs.h>
+
 #define CACHE_LINE_SIZE		32
 
 static void __iomem *l2x0_base;
@@ -84,7 +87,7 @@ static void l2x0_cache_sync(void)
 	atomic_cache_sync( base );
 }
 
-static void l2x0_inv_range(unsigned long start, unsigned long end)
+static void BCMFASTPATH l2x0_inv_range(unsigned long start, unsigned long end)
 {
 	void __iomem *base = l2x0_base;
 
@@ -100,9 +103,10 @@ static void l2x0_inv_range(unsigned long start, unsigned long end)
 		atomic_inv_line(base, start);
 		start += CACHE_LINE_SIZE;
 	}
+	atomic_cache_sync(base);
 }
 
-static void l2x0_clean_range(unsigned long start, unsigned long end)
+static void BCMFASTPATH l2x0_clean_range(unsigned long start, unsigned long end)
 {
 	void __iomem *base = l2x0_base;
 
@@ -115,7 +119,7 @@ static void l2x0_clean_range(unsigned long start, unsigned long end)
 	atomic_cache_sync(base);
 }
 
-static void l2x0_flush_range(unsigned long start, unsigned long end)
+static void BCMFASTPATH l2x0_flush_range(unsigned long start, unsigned long end)
 {
 	void __iomem *base = l2x0_base;
 
