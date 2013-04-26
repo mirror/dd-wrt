@@ -13,7 +13,7 @@
 typedef union {
 	__be32		a4;
 	__be32		a6[4];
-} __attribute__((packed, aligned(2))) xfrm_address_t;
+} xfrm_address_t;
 
 /* Ident of a specific xfrm_state. It is used on input to lookup
  * the state by (spi,daddr,ah/esp) or to store information about

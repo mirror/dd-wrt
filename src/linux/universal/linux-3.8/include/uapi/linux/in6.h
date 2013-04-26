@@ -36,7 +36,7 @@ struct in6_addr {
 #define s6_addr			in6_u.u6_addr8
 #define s6_addr16		in6_u.u6_addr16
 #define s6_addr32		in6_u.u6_addr32
-} __attribute__((packed, aligned(2)));
+} MIPS_NET_ALIGN;
 
 /* IPv6 Wildcard Address (::) and Loopback Address (::1) defined in RFC2553
  * NOTE: Be aware the IN6ADDR_* constants and in6addr_* externals are defined

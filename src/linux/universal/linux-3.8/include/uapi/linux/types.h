@@ -52,5 +52,11 @@ typedef __u32 __bitwise __wsum;
 #define __aligned_be64 __be64 __attribute__((aligned(8)))
 #define __aligned_le64 __le64 __attribute__((aligned(8)))
 
+#ifdef CONFIG_MIPS
+#define MIPS_NET_ALIGN __attribute__((packed, aligned(2)))
+#else
+#define MIPS_NET_ALIGN
+#endif
+
 #endif /*  __ASSEMBLY__ */
 #endif /* _UAPI_LINUX_TYPES_H */
