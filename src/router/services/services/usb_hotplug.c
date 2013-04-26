@@ -99,12 +99,27 @@ void start_hotplug_usb(void)
 
 	return;
 }
+/* Optimize performance */
+#define READ_AHEAD_KB_BUF	1024
+#define READ_AHEAD_CONF	"/sys/block/%s/queue/read_ahead_kb"
+
+static void
+optimize_block_device(char *devname)
+{
+	char blkdev[8] = {0};
+	char read_ahead_conf[64] = {0};
+	int err;
+
+	memset(blkdev, 0, sizeof(blkdev));
+	strncpy(blkdev, devname, 3);
+	sprintf(read_ahead_conf, READ_AHEAD_CONF, blkdev);
+	sysprintf("echo %d > %s", READ_AHEAD_KB_BUF, read_ahead_conf);
+}
 
 void start_hotplug_block(void)
 {
 	char *devpath;
 	char *action;
-
 	if (!(nvram_match("usb_automnt", "1")))
 		return;
 
@@ -118,6 +133,7 @@ void start_hotplug_block(void)
 
 	char devname[64];
 	sprintf(devname, "/dev/%s", slash + 1);
+	optimize_block_device(slash + 1);
 	char sysdev[128];
 	sprintf(sysdev, "/sys%s/partition", devpath);
 	FILE *fp = fopen(sysdev, "rb");
