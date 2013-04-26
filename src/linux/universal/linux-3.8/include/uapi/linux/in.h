@@ -55,7 +55,7 @@ enum {
 /* Internet address. */
 struct in_addr {
 	__be32	s_addr;
-};
+} MIPS_NET_ALIGN;
 
 #define IP_TOS		1
 #define IP_TTL		2
