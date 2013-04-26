@@ -126,6 +126,7 @@ void start_sysinit(void)
 
 	writeproc("/proc/irq/163/smp_affinity", "2");
 	writeproc("/proc/irq/169/smp_affinity", "2");
+	writeproc("/proc/irq/112/smp_affinity", "2");
 
 	mkdir("/dev/gpio", 0700);
 	mknod("/dev/gpio/in", S_IFCHR | 0644, makedev(127, 0));
