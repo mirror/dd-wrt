@@ -373,6 +373,7 @@ ifeq ($(CONFIG_IMMERSIVE),y)
 	cp immersive/style.css $(INSTALLDIR)/www/style/immersive
 	cp immersive/images/* $(INSTALLDIR)/www/images
 	cp immersive/About.htm $(INSTALLDIR)/www
+	cp immersive/Status_Router.asp $(INSTALLDIR)/www
 	cp immersive/help/* $(INSTALLDIR)/www/help
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 endif
