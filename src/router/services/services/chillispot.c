@@ -333,13 +333,37 @@ void chilli_config(void)
 			fprintf(fp,"conup /jffs/etc/chilli/con-up.sh\n");
 			fprintf(fp,"condown /jffs/etc/chilli/con-down.sh\n");
 			}
+
 	if (nvram_invmatch("chilli_dns1", "0.0.0.0")
 	    && nvram_invmatch("chilli_dns1", "")) {
 		fprintf(fp, "dns1 %s\n", nvram_get("chilli_dns1"));
 		if (nvram_invmatch("sv_localdns", "0.0.0.0")
 		    && nvram_invmatch("sv_localdns", ""))
 			fprintf(fp, "dns2 %s\n", nvram_get("sv_localdns"));
-	} else {
+	} 
+	else if (nvram_invmatch("wan_get_dns", "0.0.0.0")
+	    && nvram_invmatch("wan_get_dns", "")) {
+		dnslist = nvram_safe_get("wan_get_dns");
+		i = 1;
+		foreach(var, dnslist, next) {
+			if (i > 2)
+				break;
+			fprintf(fp, "dns%d %s\n", i, var);
+			i++;
+		}
+	}
+	else if (nvram_invmatch("wan_dns", "0.0.0.0")
+		   && nvram_invmatch("wan_dns", "")) {
+		dnslist = nvram_safe_get("wan_dns");
+		i = 1;
+		foreach(var, dnslist, next) {
+			if (i > 2)
+				break;
+			fprintf(fp, "dns%d %s\n", i, var);
+			i++;
+		}
+	}
+	else {
 		if (nvram_invmatch("sv_localdns", "0.0.0.0")
 			&& nvram_invmatch("sv_localdns", ""))
 			fprintf(fp, "dns1 %s\n", nvram_get("sv_localdns"));
@@ -507,7 +531,10 @@ void hotspotsys_config(void)
 		}
 	} else if (nvram_invmatch("sv_localdns", "0.0.0.0")
 		   && nvram_invmatch("sv_localdns", "")) {
-		fprintf(fp, "dns1 %s\n", nvram_get("sv_localdns"));
+			fprintf(fp, "dns1 %s\n", nvram_get("sv_localdns"));
+			if (nvram_invmatch("altdns1", "0.0.0.0")
+				&& nvram_invmatch("altdns1", ""))
+				fprintf(fp, "dns2 %s\n", nvram_get("altdns1"));
 	}
 	fprintf(fp, "uamsecret hotsys123\n");
 	fprintf(fp, "uamanydns\n");

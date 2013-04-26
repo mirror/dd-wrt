@@ -10,7 +10,7 @@
 	<div id="idwifidog">
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_id"); %></div>
-			<input class="text" maxlength="100" size="18" name="wd_gwid" value="<% nvram_get("wd_gwid"); %>" />
+			<input class="text" maxlength="100" size="25" name="wd_gwid" value="<% nvram_get("wd_gwid"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 			document.write("(" + share.deflt + ": Router Name)");

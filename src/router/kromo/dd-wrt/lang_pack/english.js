@@ -829,6 +829,10 @@ hotspot.wifidog_username="HTTP Server Username";
 hotspot.wifidog_password="HTTP Server Password";
 hotspot.wifidog_auth="HTTP Server Authentication Support";
 
+//help container
+var hstatus_hots=new Object();
+hstatus_hots.right1="conup/condown:<br><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i>";
+
 // ** Hotspotsystem **//
 var hotspotsys=new Object();
 hotspotsys.legend="Hotspot System";
