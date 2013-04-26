@@ -35,7 +35,7 @@ void ej_compile_time(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 {
-#if defined(HAVE_ESPOD) || defined(HAVE_ONNET)
+#if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE)
 	char *p;
 	char string[32], date[16];
 	sprintf( string, CYBERTAN_VERSION );
@@ -83,6 +83,12 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #undef V
 #elif HAVE_CARLSONWIRELESS
 		websWrite(wp, "Carlson Wireless v5.3 (%s)", SVN_REVISION);
+#elif HAVE_IMMERSIVE
+	if( argc == 2) {
+		websWrite(wp, "Build date %s", date);
+	} else {
+		websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
+	}
 #elif HAVE_IPR
 		websWrite(wp, "IPR-CP v1.0 (%s)", SVN_REVISION);
 #elif HAVE_ONNET
@@ -141,6 +147,12 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #undef V
 #elif HAVE_CARLSONWIRELESS
 	websWrite(wp, "Carlson Wireless v1.0 (%s)", SVN_REVISION);
+#elif HAVE_IMMERSIVE
+	if( argc == 2) {
+		websWrite(wp, "Build date %s", date);
+	} else {
+		websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
+	}
 #else
 
 	websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
