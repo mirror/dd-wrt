@@ -245,6 +245,10 @@ obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
 obj-checkout := $(foreach obj,$(obj-y) $(obj-n),$(obj)-checkout)
 obj-update := $(foreach obj,$(obj-y) $(obj-n),$(obj)-update)
 
+ifneq ($(CONFIG_DIST),"micro")
+CONFIG_AQOS=y
+endif
+
 all:
 
 configs-checkout:
