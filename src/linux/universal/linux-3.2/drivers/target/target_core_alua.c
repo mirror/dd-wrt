@@ -393,8 +393,9 @@ static inline int core_alua_state_standby(
 	case REPORT_LUNS:
 	case RECEIVE_DIAGNOSTIC:
 	case SEND_DIAGNOSTIC:
+		return 0;
 	case MAINTENANCE_IN:
-		switch (cdb[1]) {
+		switch (cdb[1] & 0x1f) {
 		case MI_REPORT_TARGET_PGS:
 			return 0;
 		default:
@@ -435,8 +436,9 @@ static inline int core_alua_state_unavailable(
 	switch (cdb[0]) {
 	case INQUIRY:
 	case REPORT_LUNS:
+		return 0;
 	case MAINTENANCE_IN:
-		switch (cdb[1]) {
+		switch (cdb[1] & 0x1f) {
 		case MI_REPORT_TARGET_PGS:
 			return 0;
 		default:
@@ -475,8 +477,9 @@ static inline int core_alua_state_transition(
 	switch (cdb[0]) {
 	case INQUIRY:
 	case REPORT_LUNS:
+		return 0;
 	case MAINTENANCE_IN:
-		switch (cdb[1]) {
+		switch (cdb[1] & 0x1f) {
 		case MI_REPORT_TARGET_PGS:
 			return 0;
 		default:
