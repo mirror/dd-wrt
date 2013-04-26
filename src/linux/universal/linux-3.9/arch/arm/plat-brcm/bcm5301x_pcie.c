@@ -825,6 +825,8 @@ bcm5301x_usb30_phy_init(void)
 	uint32 *ccb_mii_mng_cmd_data_addr;
 	uint32 *cru_rst_addr;
 	uint32 cru_straps_ctrl;
+	uint32 usb3_idm_idm_base;
+	uint32 *usb3_idm_idm_reset_ctrl_addr;
 
 	/* Check Chip ID */
 	if (CHIPID(sih->chip) != BCM4707_CHIP_ID)
@@ -841,43 +843,52 @@ bcm5301x_usb30_phy_init(void)
 	ccb_mii_base = (uint32)REG_MAP(0x18003000, 4096);
 	ccb_mii_mng_ctrl_addr = (uint32 *)(ccb_mii_base + 0x0);
 	ccb_mii_mng_cmd_data_addr = (uint32 *)(ccb_mii_base + 0x4);
+	usb3_idm_idm_base = (uint32)REG_MAP(0x18105000, 4096);
+	usb3_idm_idm_reset_ctrl_addr = (uint32 *)(usb3_idm_idm_base + 0x800);
 
-	/* MDIO setting. set MDC-> MDCDIV is 7'd8 */
-	writel(0x00000088, ccb_mii_mng_ctrl_addr);
-	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+	/* Perform USB3 system soft reset */
+	writel(0x00000001, usb3_idm_idm_reset_ctrl_addr);
 
-	/* Combo PHY reset from DMU */
-	writel(0x00000033, cru_rst_addr);
-	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+	/* Enable MDIO. Setting MDCDIV as 26  */
+	writel(0x0000009a, ccb_mii_mng_ctrl_addr);
+	OSL_DELAY(2);
 
-	/* Combo PHY reset out from DMU */
-	writel(0x0000003b, cru_rst_addr);
-	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+	/* PLL30 block */
+	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+ 	writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
 
-	/* PLL30 block register (base 0x8000) */
-	writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
-	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+ 	writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
 
-	writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
-	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+	writel(0x587e80e0, ccb_mii_mng_cmd_data_addr);
 
-	/* Adjust SSC modulation freq for USB3 runs at 5Gbps */
+	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+	writel(0x580a009c, ccb_mii_mng_cmd_data_addr);
+
+	/* Enable SSC */
+	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
 	writel(0x587e8040, ccb_mii_mng_cmd_data_addr);
-	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
 
-	writel(0x58061003, ccb_mii_mng_cmd_data_addr);
-	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
-
-	writel(0x587e8040, ccb_mii_mng_cmd_data_addr);
-	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
-
+	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
 	writel(0x580a21d3, ccb_mii_mng_cmd_data_addr);
-	SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+
+	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+	writel(0x58061003, ccb_mii_mng_cmd_data_addr);
+
+	/* Waiting MII Mgt interface idle */
+	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+
+	/* Deasserting USB3 system reset */
+	writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
+ 
 
 	/* Reg unmap */
-	REG_UNMAP(ccb_mii_base);
+	REG_UNMAP((void *)ccb_mii_base);
+	REG_UNMAP((void *)usb3_idm_idm_base);
+
 out:
-	REG_UNMAP(dmu_base);
+	REG_UNMAP((void *)dmu_base);
 }
 
 static void 
