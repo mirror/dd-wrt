@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.8.8 Kernel Configuration
+# Linux/mips 3.8.10 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1628,8 +1628,6 @@ CONFIG_XFS_FS=m
 # CONFIG_XFS_DEBUG is not set
 # CONFIG_GFS2_FS is not set
 # CONFIG_BTRFS_FS is not set
-# CONFIG_BTRFS_FS_POSIX_ACL is not set
-# CONFIG_BTRFS_FS_CHECK_INTEGRITY is not set
 # CONFIG_NILFS2_FS is not set
 # CONFIG_FS_POSIX_ACL is not set
 CONFIG_EXPORTFS=m
@@ -1972,8 +1970,6 @@ CONFIG_LIBCRC32C=y
 # CONFIG_CRC8 is not set
 CONFIG_ZLIB_INFLATE=y
 CONFIG_ZLIB_DEFLATE=y
-CONFIG_LZO_COMPRESS=m
-CONFIG_LZO_DECOMPRESS=m
 # CONFIG_XZ_DEC is not set
 # CONFIG_XZ_DEC_BCJ is not set
 CONFIG_LZMA_COMPRESS=m
