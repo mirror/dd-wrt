@@ -994,8 +994,10 @@ static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 	if (robo.devid != ROBO_DEVICE_ID_5325)
 		return 0;
 
+//	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL4, disable ? 0 :
+//		(1 << 6) /* drop invalid VID frames */);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL4, disable ? 0 :
-		(1 << 6) /* drop invalid VID frames */);
+		(2 << 6) /* do not check */);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5, disable ? 0 :
 		(1 << 3) /* drop miss V table frames */);
 
