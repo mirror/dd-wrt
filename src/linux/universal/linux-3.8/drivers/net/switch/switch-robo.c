@@ -984,7 +984,7 @@ static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 
 	val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, disable ? 0 :
-		val16 | (1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
+	    val16 | (1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
 
 	val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL1);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL1, disable ? 0 :
@@ -1000,6 +1000,31 @@ static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 		(1 << 3) /* drop miss V table frames */);
 
 	return 0;
+}
+
+static int handle_enable_4095_write(void *driver, char *buf, int nr)
+{
+	__u16 val16;
+	int disable = ((buf[0] != '1') ? 1 : 0);
+
+	if (robo.devid == ROBO_DEVICE_ID_5325 || robo.is_5365)
+		return 0;
+	val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5);
+	if (disable)
+	    val16 &= 1<<2;
+	else	
+	    val16 |= 1<<2;
+
+	return 0;
+}
+
+static int handle_enable_4095_read(void *driver, char *buf, int nr)
+{
+	__u16 val16;
+	if (robo.devid == ROBO_DEVICE_ID_5325 || robo.is_5365)
+		return sprintf(buf, "%d\n", 0);
+
+	return sprintf(buf, "%d\n", (((robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5) & (1 << 2)) == (1 << 2)) ? 1 : 0));
 }
 
 static void handle_reset_old(switch_driver *d, char *buf, int nr)
@@ -1164,6 +1189,10 @@ static int __init robo_init(void)
 				.name	= "enable_vlan",
 				.read	= handle_enable_vlan_read,
 				.write	= handle_enable_vlan_write
+			}, {
+				.name	= "enable_4095",
+				.read	= handle_enable_4095,
+				.write	= handle_enable_4095
 			}, {
 				.name	= "reset",
 				.read	= NULL,
