@@ -1030,6 +1030,40 @@ static int handle_enable_4095_read(void *driver, char *buf, int nr)
 	return sprintf(buf, "%d\n", (((robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5) & (1 << 2)) == (1 << 2)) ? 1 : 0));
 }
 
+
+
+static int handle_enable_jumbo_write(void *driver, char *buf, int nr)
+{
+	__u16 val16;
+	u32 port_mask = 0;
+	u16 max_size = JMS_MIN_SIZE;
+	int disable = ((buf[0] != '1') ? 1 : 0);
+
+	if (robo.devid == ROBO_DEVICE_ID_5325 || robo.is_5365)
+		return 0;
+
+	if (!disable) {
+		port_mask = 0x1f;
+		if (robo.devid == ROBO_DEVICE_ID_5398)
+			port_mask = 0x7f;
+		max_size = JMS_MAX_SIZE;
+		port_mask |= JPM_10_100_JUMBO_EN;
+	}
+
+	robo_write32(B53_JUMBO_PAGE, B53_JUMBO_PORT_MASK, port_mask);
+	robo_write16(B53_JUMBO_PAGE, B53_JUMBO_MAX_SIZE, max_size);
+	return 0;
+}
+
+static int handle_enable_jumbo_read(void *driver, char *buf, int nr)
+{
+	__u16 val16;
+	if (robo.devid == ROBO_DEVICE_ID_5325 || robo.is_5365)
+		return sprintf(buf, "%d\n", 0);
+
+	return sprintf(buf, "%d\n", robo_read16(B53_JUMBO_PAGE, B53_JUMBO_MAX_SIZE));
+}
+
 static void handle_reset_old(switch_driver *d, char *buf, int nr)
 {
 	int j;
@@ -1196,6 +1230,10 @@ static int __init robo_init(void)
 				.name	= "enable_4095",
 				.read	= handle_enable_4095_read,
 				.write	= handle_enable_4095_write
+			}, {
+				.name	= "enable_jumbo",
+				.read	= handle_enable_jumbo_read,
+				.write	= handle_enable_jumbo_write
 			}, {
 				.name	= "reset",
 				.read	= NULL,
