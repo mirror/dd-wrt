@@ -628,6 +628,20 @@ typedef struct _ROBO_VLAN_READ_WRITE_STRUC_5350
 #define ROBO_JUMBO_CTRL                0x01 /* 32bit */
 #define ROBO_JUMBO_SIZE                0x05 /* 16bit */
 
+/* Jumbo Frame Registers */
+#define B53_JUMBO_PAGE			0x40
+/* Jumbo Enable Port Mask (bit i == port i enabled) (32 bit) */
+#define B53_JUMBO_PORT_MASK		0x01
+#define B53_JUMBO_PORT_MASK_63XX	0x04
+#define   JPM_10_100_JUMBO_EN		BIT(24) /* GigE always enabled */
+
+/* Good Frame Max Size without 802.1Q TAG (16 bit) */
+#define B53_JUMBO_MAX_SIZE		0x05
+#define B53_JUMBO_MAX_SIZE_63XX		0x08
+#define   JMS_MIN_SIZE			1518
+#define   JMS_MAX_SIZE			9724
+
+
 #ifndef _CFE_
 #pragma pack()
 #endif

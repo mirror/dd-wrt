@@ -984,7 +984,7 @@ static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 
 	val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, disable ? 0 :
-		val16 | (1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
+	    val16 | (1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
 
 	val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL1);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL1, disable ? 0 :
@@ -994,12 +994,74 @@ static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 	if (robo.devid != ROBO_DEVICE_ID_5325)
 		return 0;
 
+//	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL4, disable ? 0 :
+//		(1 << 6) /* drop invalid VID frames */);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL4, disable ? 0 :
-		(1 << 6) /* drop invalid VID frames */);
+		(2 << 6) /* do not check */);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5, disable ? 0 :
 		(1 << 3) /* drop miss V table frames */);
 
 	return 0;
+}
+
+static int handle_enable_4095_write(void *driver, char *buf, int nr)
+{
+	__u16 val16;
+	int disable = ((buf[0] != '1') ? 1 : 0);
+
+	if (robo.devid == ROBO_DEVICE_ID_5325 || robo.is_5365)
+		return 0;
+	val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5);
+	if (disable)
+	    val16 &= 1<<2;
+	else	
+	    val16 |= 1<<2;
+	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5, val16);
+
+	return 0;
+}
+
+static int handle_enable_4095_read(void *driver, char *buf, int nr)
+{
+	__u16 val16;
+	if (robo.devid == ROBO_DEVICE_ID_5325 || robo.is_5365)
+		return sprintf(buf, "%d\n", 0);
+
+	return sprintf(buf, "%d\n", (((robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5) & (1 << 2)) == (1 << 2)) ? 1 : 0));
+}
+
+
+
+static int handle_enable_jumbo_write(void *driver, char *buf, int nr)
+{
+	__u16 val16;
+	u32 port_mask = 0;
+	u16 max_size = JMS_MIN_SIZE;
+	int disable = ((buf[0] != '1') ? 1 : 0);
+
+	if (robo.devid == ROBO_DEVICE_ID_5325 || robo.is_5365)
+		return 0;
+
+	if (!disable) {
+		port_mask = 0x1f;
+		if (robo.devid == ROBO_DEVICE_ID_5398)
+			port_mask = 0x7f;
+		max_size = JMS_MAX_SIZE;
+		port_mask |= JPM_10_100_JUMBO_EN;
+	}
+
+	robo_write32(B53_JUMBO_PAGE, B53_JUMBO_PORT_MASK, port_mask);
+	robo_write16(B53_JUMBO_PAGE, B53_JUMBO_MAX_SIZE, max_size);
+	return 0;
+}
+
+static int handle_enable_jumbo_read(void *driver, char *buf, int nr)
+{
+	__u16 val16;
+	if (robo.devid == ROBO_DEVICE_ID_5325 || robo.is_5365)
+		return sprintf(buf, "%d\n", 0);
+
+	return sprintf(buf, "%d\n", robo_read16(B53_JUMBO_PAGE, B53_JUMBO_MAX_SIZE));
 }
 
 static void handle_reset_old(switch_driver *d, char *buf, int nr)
@@ -1164,6 +1226,14 @@ static int __init robo_init(void)
 				.name	= "enable_vlan",
 				.read	= handle_enable_vlan_read,
 				.write	= handle_enable_vlan_write
+			}, {
+				.name	= "enable_4095",
+				.read	= handle_enable_4095_read,
+				.write	= handle_enable_4095_write
+			}, {
+				.name	= "enable_jumbo",
+				.read	= handle_enable_jumbo_read,
+				.write	= handle_enable_jumbo_write
 			}, {
 				.name	= "reset",
 				.read	= NULL,
