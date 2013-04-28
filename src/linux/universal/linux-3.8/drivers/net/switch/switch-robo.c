@@ -1016,6 +1016,7 @@ static int handle_enable_4095_write(void *driver, char *buf, int nr)
 	    val16 &= 1<<2;
 	else	
 	    val16 |= 1<<2;
+	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5, val16);
 
 	return 0;
 }
@@ -1193,8 +1194,8 @@ static int __init robo_init(void)
 				.write	= handle_enable_vlan_write
 			}, {
 				.name	= "enable_4095",
-				.read	= handle_enable_4095,
-				.write	= handle_enable_4095
+				.read	= handle_enable_4095_read,
+				.write	= handle_enable_4095_write
 			}, {
 				.name	= "reset",
 				.read	= NULL,
