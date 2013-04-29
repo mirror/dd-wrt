@@ -257,7 +257,7 @@ static inline struct mii_bus *ag7100_mdiobus_setup(int unit,struct net_device *d
 
     if (phydev!=NULL)
     {
-    phydev = phy_connect(dev, dev_name(&phydev->dev), &ag7100_adjust_link, 0,PHY_INTERFACE_MODE_RMII);
+    phydev = phy_connect(dev, dev_name(&phydev->dev), &ag7100_adjust_link,PHY_INTERFACE_MODE_RMII);
     mac->rx = phydev->netif_receive_skb;
     phydev->supported &= PHY_BASIC_FEATURES;
     phydev->advertising = phydev->supported;

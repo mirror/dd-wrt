@@ -1284,7 +1284,7 @@ static int ar231x_mdiobus_probe (struct net_device *dev)
 	BUG_ON(!phydev);
 	BUG_ON(phydev->attached_dev);
 
-	phydev = phy_connect(dev, dev_name(&phydev->dev), &ar231x_adjust_link, 0,
+	phydev = phy_connect(dev, dev_name(&phydev->dev), &ar231x_adjust_link,
 		PHY_INTERFACE_MODE_MII);
 
 	if (IS_ERR(phydev)) {
