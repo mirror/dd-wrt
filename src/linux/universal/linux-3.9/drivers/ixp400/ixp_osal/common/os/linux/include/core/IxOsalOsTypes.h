@@ -56,6 +56,7 @@
 #if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
 
 #include <linux/sched.h>
+#include <linux/sched/rt.h>
 #include <linux/kthread.h>
 
 #endif /* KERNEL_VERSION_2.6 */
