@@ -113,8 +113,7 @@ int ar71xx_pci_be_handler(int is_fixup)
 static inline int ar71xx_pci_set_cfgaddr(struct pci_bus *bus,
 			unsigned int devfn, int where, int size, u32 cmd)
 {
-	struct ar71xx_pci_controller *apc = pci_bus_to_ar71xx_controller(bus);
-	void __iomem *base = apc->cfg_base;
+	void __iomem *base = ar71xx_pcicfg_base;
 	u32 addr;
 
 	addr = ar71xx_pci_bus_addr(bus, devfn, where);
@@ -172,7 +171,7 @@ retry:
 		}
 	}
 
-	spin_unlock_irqrestore(&apc->lock, flags);
+	spin_unlock_irqrestore(&ar71xx_pci_lock, flags);
 
 	DBG("PCI: read config: data=%08x raw=%08x\n",
 		(data >> (8 * (where & 3))) & mask[size & 7], data);
@@ -193,8 +192,7 @@ retry:
 static int ar71xx_pci_write_config(struct pci_bus *bus, unsigned int devfn,
 				   int where, int size, u32 value)
 {
-	struct ar71xx_pci_controller *apc = pci_bus_to_ar71xx_controller(bus);
-	void __iomem *base = apc->cfg_base;
+	void __iomem *base = ar71xx_pcicfg_base;
 	unsigned long flags;
 	int ret;
 
