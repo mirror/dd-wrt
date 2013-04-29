@@ -55,6 +55,9 @@ endif
 ifeq ($(CONFIG_MINIDLNA),y)
 ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
+ifeq ($(CONFIG_FTP),y)
+ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
+endif
 
 all: upnp
 
