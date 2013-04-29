@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 3.9.0-rc7 Kernel Configuration
+# Linux/i386 3.9.0 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -479,6 +479,7 @@ CONFIG_PCI_LABEL=y
 CONFIG_ISA_DMA_API=y
 # CONFIG_ISA is not set
 CONFIG_SCx200=y
+CONFIG_SCx200HR_TIMER=y
 CONFIG_OLPC=y
 CONFIG_ALIX=y
 CONFIG_NET5501=y
@@ -1719,6 +1720,7 @@ CONFIG_RTC=y
 # CONFIG_CARDMAN_4040 is not set
 CONFIG_IPWIRELESS=m
 # CONFIG_MWAVE is not set
+CONFIG_SCx200_GPIO=m
 CONFIG_PC8736x_GPIO=m
 CONFIG_NSC_GPIO=m
 # CONFIG_GPIO_DEVICE is not set
@@ -1800,6 +1802,7 @@ CONFIG_I2C_TAOS_EVM=m
 #
 # Other I2C/SMBus bus drivers
 #
+# CONFIG_SCx200_I2C is not set
 CONFIG_SCx200_ACB=m
 # CONFIG_I2C_STUB is not set
 # CONFIG_I2C_DEBUG_CORE is not set
@@ -2092,6 +2095,7 @@ CONFIG_SOFT_WATCHDOG=y
 # CONFIG_IT87_WDT is not set
 # CONFIG_HP_WATCHDOG is not set
 # CONFIG_SC1200_WDT is not set
+CONFIG_SCx200_WDT=m
 # CONFIG_PC87413_WDT is not set
 # CONFIG_NV_TCO is not set
 # CONFIG_RDC321X_WDT is not set
@@ -2583,6 +2587,8 @@ CONFIG_LEDS_CLASS=y
 #
 # CONFIG_LEDS_LM3530 is not set
 # CONFIG_LEDS_LM3642 is not set
+CONFIG_LEDS_NET48XX=m
+CONFIG_LEDS_WRAP=m
 # CONFIG_LEDS_PCA9532 is not set
 # CONFIG_LEDS_GPIO is not set
 # CONFIG_LEDS_LP3944 is not set
