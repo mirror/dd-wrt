@@ -123,7 +123,7 @@ MACHINE_START(WG302V1, "Netgear WG302 v1 / WAG302 v1")
 	.map_io		= ixp4xx_map_io,
 	.init_early	= ixp4xx_init_early,
 	.init_irq	= ixp4xx_init_irq,
-	.timer		= &ixp4xx_timer,
+	.init_time	= ixp4xx_timer_init,
 	.atag_offset	= 0x0100,
 	.init_machine	= wg302v1_init,
 #if defined(CONFIG_PCI)
