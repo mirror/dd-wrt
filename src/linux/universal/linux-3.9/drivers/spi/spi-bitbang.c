@@ -328,6 +328,12 @@ static void bitbang_work(struct work_struct *work)
 				 */
 				if (!m->is_dma_mapped)
 					t->rx_dma = t->tx_dma = 0;
+#ifdef CONFIG_SPI_CNS3XXX
+				if (t->transfer_list.next == &m->transfers)
+					t->last_in_message_list = 1;
+				else
+					t->last_in_message_list = 0;
+#endif
 				status = bitbang->txrx_bufs(spi, t);
 			}
 			if (status > 0)
