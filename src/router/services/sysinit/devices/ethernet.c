@@ -65,6 +65,10 @@ static int detect_ethernet_devices(void)
 		returncode = try_module("natsemi");
 	if (detect("DP83065"))
 		returncode = try_module("cassini");
+	if (detect("EG20T"))
+		returncode = try_module("pch_gbe");
+	if (detect("Rohm"))
+		returncode = try_module("pch_gbe");
 	if (detect("Cassini"))
 		returncode = try_module("cassini");
 	if (detect("PCnet32"))	// vmware?
