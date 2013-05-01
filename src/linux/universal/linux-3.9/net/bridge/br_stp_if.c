@@ -54,7 +54,7 @@ void br_stp_enable_bridge(struct net_bridge *br)
 	br_config_bpdu_generation(br);
 
 	list_for_each_entry(p, &br->port_list, list) {
-		if (netif_running(p->dev) && netif_oper_up(p->dev))
+		if ((p->dev->flags & IFF_UP) && netif_carrier_ok(p->dev))
 			br_stp_enable_port(p);
 
 	}
