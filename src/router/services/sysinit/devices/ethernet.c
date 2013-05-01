@@ -63,6 +63,10 @@ static int detect_ethernet_devices(void)
 
 	if (detect("DP8381"))
 		returncode = try_module("natsemi");
+	if (detect("DP83065"))
+		returncode = try_module("cassini");
+	if (detect("Cassini"))
+		returncode = try_module("cassini");
 	if (detect("PCnet32"))	// vmware?
 		returncode = try_module("pcnet32");
 	if (detect("Tigon3"))	// Broadcom 
