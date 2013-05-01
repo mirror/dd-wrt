@@ -67,8 +67,8 @@ void br_port_carrier_check(struct net_bridge_port *p)
 	struct net_device *dev = p->dev;
 	struct net_bridge *br = p->br;
 
-	if (!(p->flags & BR_ADMIN_COST) &&
-	if (netif_running(dev) && netif_carrier_ok(dev))
+	if (!(p->flags & BR_ADMIN_COST) && 
+		netif_running(dev) && netif_carrier_ok(dev))
 		p->path_cost = port_cost(dev);
 
 	if (!netif_running(br->dev))
