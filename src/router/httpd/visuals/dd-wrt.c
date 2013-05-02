@@ -1573,7 +1573,7 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "%s<br />", buff);
 		}
 		fclose(fp);
-		mounted=1:
+		mounted=1;
 	}
 	if ((fp = fopen("/tmp/parttype.dump", "r"))) {
 		while (fgets(buff, sizeof(buff), fp)) {
