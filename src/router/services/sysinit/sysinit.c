@@ -148,29 +148,24 @@ void runStartup(char *folder, char *extension)
 		if (endswith(entry[n]->d_name, extension)) {
 #ifdef HAVE_REGISTER
 			if (!isregistered_real()) {
-				if (endswith
-				    (entry[n]->d_name, "wdswatchdog.startup")) {
+				if (endswith(entry[n]->d_name, "wdswatchdog.startup")) {
 					free(entry[n]);
 					n++;
 					continue;
 				}
-				if (endswith
-				    (entry[n]->d_name, "schedulerb.startup")) {
+				if (endswith(entry[n]->d_name, "schedulerb.startup")) {
 					free(entry[n]);
 					n++;
 					continue;
 				}
-				if (endswith
-				    (entry[n]->d_name,
-				     "proxywatchdog.startup")) {
+				if (endswith(entry[n]->d_name, "proxywatchdog.startup")) {
 					free(entry[n]);
 					n++;
 					continue;
 				}
 			}
 #endif
-			sysprintf("%s/%s 2>&1 > /dev/null", folder,
-				  entry[n]->d_name);
+			sysprintf("%s/%s 2>&1 > /dev/null", folder, entry[n]->d_name);
 			// execute script 
 		}
 		free(entry[n]);
@@ -198,133 +193,86 @@ static void buffalo_defaults(int force)
 				&& strcmp(region, "KR")
 				&& strcmp(region, "CH"))) {
 			{
-				char *mode_ex =
-				    getUEnv
-				    ("DEF-p_wireless_eth1_11a-authmode_ex");
+				char *mode_ex = getUEnv("DEF-p_wireless_eth1_11a-authmode_ex");
 				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
-					char *mode =
-					    getUEnv
-					    ("DEF-p_wireless_eth1_11a-authmode");
+					char *mode = getUEnv("DEF-p_wireless_eth1_11a-authmode");
 					if (!mode) {
 						nvram_set("wl_akm", "disabled");
-						nvram_set("wl0_akm",
-							  "disabled");
-						nvram_set("wl_security_mode",
-							  "disabled");
-						nvram_set("wl0_security_mode",
-							  "disabled");
+						nvram_set("wl0_akm", "disabled");
+						nvram_set("wl_security_mode", "disabled");
+						nvram_set("wl0_security_mode", "disabled");
 					} else {
 						if (!strcmp(mode, "psk")) {
-							nvram_set("wl0_akm",
-								  "psk psk2");
-							nvram_set
-							    ("wl0_security_mode",
-							     "psk psk2");
-							nvram_set("wl_akm",
-								  "psk psk2");
-							nvram_set
-							    ("wl_security_mode",
-							     "psk psk2");
+							nvram_set("wl0_akm", "psk psk2");
+							nvram_set("wl0_security_mode", "psk psk2");
+							nvram_set("wl_akm", "psk psk2");
+							nvram_set("wl_security_mode", "psk psk2");
 						}
 						if (!strcmp(mode, "psk2")) {
-							nvram_set("wl0_akm",
-								  "psk psk2");
-							nvram_set
-							    ("wl0_security_mode",
-							     "psk psk2");
-							nvram_set("wl_akm",
-								  "psk psk2");
-							nvram_set
-							    ("wl_security_mode",
-							     "psk psk2");
+							nvram_set("wl0_akm", "psk psk2");
+							nvram_set("wl0_security_mode", "psk psk2");
+							nvram_set("wl_akm", "psk psk2");
+							nvram_set("wl_security_mode", "psk psk2");
 						}
 					}
 				} else {
-					char *mode =
-					    getUEnv
-					    ("DEF-p_wireless_eth1_11a-authmode");
+					char *mode = getUEnv("DEF-p_wireless_eth1_11a-authmode");
 					if (mode) {
 						nvram_set("wl0_akm", mode);
-						nvram_set("wl0_security_mode",
-							  mode);
+						nvram_set("wl0_security_mode", mode);
 						nvram_set("wl_akm", mode);
-						nvram_set("wl_security_mode",
-							  mode);
+						nvram_set("wl_security_mode", mode);
 					} else {
 						nvram_set("wl_akm", "disabled");
-						nvram_set("wl0_akm",
-							  "disabled");
-						nvram_set("wl_security_mode",
-							  "disabled");
-						nvram_set("wl0_security_mode",
-							  "disabled");
+						nvram_set("wl0_akm", "disabled");
+						nvram_set("wl_security_mode", "disabled");
+						nvram_set("wl0_security_mode", "disabled");
 					}
 				}
 
-				char *crypto =
-				    getUEnv("DEF-p_wireless_eth1_11a-crypto");
+				char *crypto = getUEnv("DEF-p_wireless_eth1_11a-crypto");
 				if (crypto) {
 					nvram_set("wl0_crypto", crypto);
 					nvram_set("wl_crypto", crypto);
 				}
-				char *wpapsk =
-				    getUEnv("DEF-p_wireless_eth1_11a-wpapsk");
+				char *wpapsk = getUEnv("DEF-p_wireless_eth1_11a-wpapsk");
 				if (wpapsk) {
 					nvram_set("wl_wpa_psk", wpapsk);
 					nvram_set("wl0_wpa_psk", wpapsk);
 				}
 			}
 			{
-				char *mode_ex =
-				    getUEnv
-				    ("DEF-p_wireless_eth2_11bg-authmode_ex");
+				char *mode_ex = getUEnv("DEF-p_wireless_eth2_11bg-authmode_ex");
 				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
-					char *mode =
-					    getUEnv
-					    ("DEF-p_wireless_eth2_11bg-authmode");
+					char *mode = getUEnv("DEF-p_wireless_eth2_11bg-authmode");
 					if (!mode) {
-						nvram_set("wl1_akm",
-							  "disabled");
-						nvram_set("wl1_security_mode",
-							  "disabled");
+						nvram_set("wl1_akm", "disabled");
+						nvram_set("wl1_security_mode", "disabled");
 					} else {
 						if (!strcmp(mode, "psk")) {
-							nvram_set("wl1_akm",
-								  "psk psk2");
-							nvram_set
-							    ("wl1_security_mode",
-							     "psk psk2");
+							nvram_set("wl1_akm", "psk psk2");
+							nvram_set("wl1_security_mode", "psk psk2");
 						}
 						if (!strcmp(mode, "psk2")) {
-							nvram_set("wl1_akm",
-								  "psk psk2");
-							nvram_set
-							    ("wl1_security_mode",
-							     "psk psk2");
+							nvram_set("wl1_akm", "psk psk2");
+							nvram_set("wl1_security_mode", "psk psk2");
 						}
 					}
 				} else {
-					char *mode =
-					    getUEnv
-					    ("DEF-p_wireless_eth2_11bg-authmode");
+					char *mode = getUEnv("DEF-p_wireless_eth2_11bg-authmode");
 					if (mode) {
 						nvram_set("wl1_akm", mode);
-						nvram_set("wl1_security_mode",
-							  mode);
+						nvram_set("wl1_security_mode", mode);
 					} else {
-						nvram_set("wl1_akm",
-							  "disabled");
-						nvram_set("wl1_security_mode",
-							  "disabled");
+						nvram_set("wl1_akm", "disabled");
+						nvram_set("wl1_security_mode", "disabled");
 					}
 				}
 
-				char *crypto =
-				    getUEnv("DEF-p_wireless_eth2_11bg-crypto");
+				char *crypto = getUEnv("DEF-p_wireless_eth2_11bg-crypto");
 				if (crypto)
 					nvram_set("wl1_crypto", crypto);
-				char *wpapsk =
-				    getUEnv("DEF-p_wireless_eth2_11bg-wpapsk");
+				char *wpapsk = getUEnv("DEF-p_wireless_eth2_11bg-wpapsk");
 				if (wpapsk)
 					nvram_set("wl1_wpa_psk", wpapsk);
 			}
@@ -338,16 +286,11 @@ static void buffalo_defaults(int force)
 			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			close(s);
-			unsigned char *edata =
-			    (unsigned char *)ifr.ifr_hwaddr.sa_data;
-			sprintf(eabuf, "BUFFALO-%02X%02X%02X_A",
-				edata[3] & 0xff, edata[4] & 0xff,
-				edata[5] & 0xff);
+			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
+			sprintf(eabuf, "BUFFALO-%02X%02X%02X_A", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 			nvram_set("wl_ssid", eabuf);
 			nvram_set("wl0_ssid", eabuf);
-			sprintf(eabuf, "BUFFALO-%02X%02X%02X_G",
-				edata[3] & 0xff, edata[4] & 0xff,
-				edata[5] & 0xff);
+			sprintf(eabuf, "BUFFALO-%02X%02X%02X_G", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 			nvram_set("wl1_ssid", eabuf);
 		}
 
@@ -438,151 +381,93 @@ static void buffalo_defaults(int force)
 				&& strcmp(region, "KR")
 				&& strcmp(region, "CH"))) {
 			{
-				char *mode_ex =
-				    getUEnv
-				    ("DEF-p_wireless_ath0_11bg-authmode_ex");
+				char *mode_ex = getUEnv("DEF-p_wireless_ath0_11bg-authmode_ex");
 				if (!mode_ex)
-					mode_ex =
-					    getUEnv
-					    ("DEF-p_wireless_ath00_11bg-authmode_ex");
+					mode_ex = getUEnv("DEF-p_wireless_ath00_11bg-authmode_ex");
 				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
-					char *mode =
-					    getUEnv
-					    ("DEF-p_wireless_ath0_11bg-authmode");
+					char *mode = getUEnv("DEF-p_wireless_ath0_11bg-authmode");
 					if (!mode)
-						mode =
-						    getUEnv
-						    ("DEF-p_wireless_ath00_11bg-authmode");
+						mode = getUEnv("DEF-p_wireless_ath00_11bg-authmode");
 					if (!mode) {
-						nvram_set("ath0_akm",
-							  "disabled");
-						nvram_set("ath0_security_mode",
-							  "disabled");
+						nvram_set("ath0_akm", "disabled");
+						nvram_set("ath0_security_mode", "disabled");
 					} else {
 						if (!strcmp(mode, "psk")) {
-							nvram_set("ath0_akm",
-								  "psk psk2");
-							nvram_set
-							    ("ath0_security_mode",
-							     "psk psk2");
+							nvram_set("ath0_akm", "psk psk2");
+							nvram_set("ath0_security_mode", "psk psk2");
 						}
 						if (!strcmp(mode, "psk2")) {
-							nvram_set("ath0_akm",
-								  "psk psk2");
-							nvram_set
-							    ("ath0_security_mode",
-							     "psk psk2");
+							nvram_set("ath0_akm", "psk psk2");
+							nvram_set("ath0_security_mode", "psk psk2");
 						}
 					}
 				} else {
-					char *mode =
-					    getUEnv
-					    ("DEF-p_wireless_ath0_11bg-authmode");
+					char *mode = getUEnv("DEF-p_wireless_ath0_11bg-authmode");
 					if (!mode)
-						mode =
-						    getUEnv
-						    ("DEF-p_wireless_ath00_11bg-authmode");
+						mode = getUEnv("DEF-p_wireless_ath00_11bg-authmode");
 					if (mode) {
 						nvram_set("ath0_akm", mode);
-						nvram_set("ath0_security_mode",
-							  mode);
+						nvram_set("ath0_security_mode", mode);
 					} else {
-						nvram_set("ath0_akm",
-							  "disabled");
-						nvram_set("ath0_security_mode",
-							  "disabled");
+						nvram_set("ath0_akm", "disabled");
+						nvram_set("ath0_security_mode", "disabled");
 					}
 				}
 
-				char *crypto =
-				    getUEnv("DEF-p_wireless_ath0_11bg-crypto");
+				char *crypto = getUEnv("DEF-p_wireless_ath0_11bg-crypto");
 				if (!crypto)
-					crypto =
-					    getUEnv
-					    ("DEF-p_wireless_ath00_11bg-crypto");
+					crypto = getUEnv("DEF-p_wireless_ath00_11bg-crypto");
 				if (crypto)
 					nvram_set("ath0_crypto", crypto);
-				char *wpapsk =
-				    getUEnv("DEF-p_wireless_ath0_11bg-wpapsk");
+				char *wpapsk = getUEnv("DEF-p_wireless_ath0_11bg-wpapsk");
 				if (!wpapsk)
-					wpapsk =
-					    getUEnv
-					    ("DEF-p_wireless_ath00_11bg-wpapsk");
+					wpapsk = getUEnv("DEF-p_wireless_ath00_11bg-wpapsk");
 				if (wpapsk)
 					nvram_set("ath0_wpa_psk", wpapsk);
 			}
 #ifdef HAVE_WZRHPAG300NH
 			{
-				char *mode_ex =
-				    getUEnv
-				    ("DEF-p_wireless_ath1_11a-authmode_ex");
+				char *mode_ex = getUEnv("DEF-p_wireless_ath1_11a-authmode_ex");
 				if (!mode_ex)
-					mode_ex =
-					    getUEnv
-					    ("DEF-p_wireless_ath10_11a-authmode_ex");
+					mode_ex = getUEnv("DEF-p_wireless_ath10_11a-authmode_ex");
 				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
-					char *mode =
-					    getUEnv
-					    ("DEF-p_wireless_ath1_11a-authmode");
+					char *mode = getUEnv("DEF-p_wireless_ath1_11a-authmode");
 					if (!mode)
-						mode =
-						    getUEnv
-						    ("DEF-p_wireless_ath10_11a-authmode");
+						mode = getUEnv("DEF-p_wireless_ath10_11a-authmode");
 					if (!mode) {
-						nvram_set("ath1_akm",
-							  "disabled");
-						nvram_set("ath1_security_mode",
-							  "disabled");
+						nvram_set("ath1_akm", "disabled");
+						nvram_set("ath1_security_mode", "disabled");
 					} else {
 						if (!strcmp(mode, "psk")) {
-							nvram_set("ath1_akm",
-								  "psk psk2");
-							nvram_set
-							    ("ath1_security_mode",
-							     "psk psk2");
+							nvram_set("ath1_akm", "psk psk2");
+							nvram_set("ath1_security_mode", "psk psk2");
 						}
 						if (!strcmp(mode, "psk2")) {
-							nvram_set("ath1_akm",
-								  "psk psk2");
-							nvram_set
-							    ("ath1_security_mode",
-							     "psk psk2");
+							nvram_set("ath1_akm", "psk psk2");
+							nvram_set("ath1_security_mode", "psk psk2");
 						}
 					}
 				} else {
-					char *mode =
-					    getUEnv
-					    ("DEF-p_wireless_ath1_11a-authmode");
+					char *mode = getUEnv("DEF-p_wireless_ath1_11a-authmode");
 					if (!mode)
-						mode =
-						    getUEnv
-						    ("DEF-p_wireless_ath10_11a-authmode");
+						mode = getUEnv("DEF-p_wireless_ath10_11a-authmode");
 					if (mode) {
 						nvram_set("ath1_akm", mode);
-						nvram_set("ath1_security_mode",
-							  mode);
+						nvram_set("ath1_security_mode", mode);
 					} else {
-						nvram_set("ath1_akm",
-							  "disabled");
-						nvram_set("ath1_security_mode",
-							  "disabled");
+						nvram_set("ath1_akm", "disabled");
+						nvram_set("ath1_security_mode", "disabled");
 					}
 				}
 
-				char *crypto =
-				    getUEnv("DEF-p_wireless_ath1_11a-crypto");
+				char *crypto = getUEnv("DEF-p_wireless_ath1_11a-crypto");
 				if (!crypto)
-					crypto =
-					    getUEnv
-					    ("DEF-p_wireless_ath10_11a-crypto");
+					crypto = getUEnv("DEF-p_wireless_ath10_11a-crypto");
 				if (crypto)
 					nvram_set("ath1_crypto", crypto);
-				char *wpapsk =
-				    getUEnv("DEF-p_wireless_ath1_11a-wpapsk");
+				char *wpapsk = getUEnv("DEF-p_wireless_ath1_11a-wpapsk");
 				if (!wpapsk)
-					wpapsk =
-					    getUEnv
-					    ("DEF-p_wireless_ath10_11a-wpapsk");
+					wpapsk = getUEnv("DEF-p_wireless_ath10_11a-wpapsk");
 				if (wpapsk)
 					nvram_set("ath1_wpa_psk", wpapsk);
 			}
@@ -596,15 +481,10 @@ static void buffalo_defaults(int force)
 			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			close(s);
-			unsigned char *edata =
-			    (unsigned char *)ifr.ifr_hwaddr.sa_data;
-			sprintf(eabuf, "BUFFALO-%02X%02X%02X_G",
-				edata[3] & 0xff, edata[4] & 0xff,
-				edata[5] & 0xff);
+			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
+			sprintf(eabuf, "BUFFALO-%02X%02X%02X_G", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 			nvram_set("ath0_ssid", eabuf);
-			sprintf(eabuf, "BUFFALO-%02X%02X%02X_A",
-				edata[3] & 0xff, edata[4] & 0xff,
-				edata[5] & 0xff);
+			sprintf(eabuf, "BUFFALO-%02X%02X%02X_A", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 			nvram_set("ath1_ssid", eabuf);
 		}
 #else
@@ -618,17 +498,11 @@ static void buffalo_defaults(int force)
 			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			close(s);
-			unsigned char *edata =
-			    (unsigned char *)ifr.ifr_hwaddr.sa_data;
+			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
 #if defined(HAVE_WZR300HP) || defined(HAVE_WHR300HP)
-			sprintf(eabuf, "BUFFALO-%02X%02X%02X",
-				edata[3] & 0xff, edata[4] & 0xff,
-				edata[5] & 0xff);
+			sprintf(eabuf, "BUFFALO-%02X%02X%02X", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 #else
-			sprintf(eabuf, "%02X%02X%02X%02X%02X%02X",
-				edata[0] & 0xff, edata[1] & 0xff,
-				edata[2] & 0xff, edata[3] & 0xff,
-				edata[4] & 0xff, edata[5] & 0xff);
+			sprintf(eabuf, "%02X%02X%02X%02X%02X%02X", edata[0] & 0xff, edata[1] & 0xff, edata[2] & 0xff, edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 #endif
 			nvram_set("ath0_ssid", eabuf);
 		}
@@ -1781,8 +1655,7 @@ void start_restore_defaults(void)
 			if (sscanf(line, "%*s %lu", &msize) == 1) {
 				if (msize > (8 * 1024 * 1024)) {
 					nvram_set("ip_conntrack_max", "4096");
-					nvram_set("ip_conntrack_tcp_timeouts",
-						  "3600");
+					nvram_set("ip_conntrack_tcp_timeouts", "3600");
 				}
 			}
 			fclose(fmem);
@@ -1975,8 +1848,7 @@ void start_restore_defaults(void)
 		}
 	}
 	free_defaults();
-	if (strlen(nvram_safe_get("http_username")) == 0
-	    || nvram_match("http_username", "admin")) {
+	if (strlen(nvram_safe_get("http_username")) == 0 || nvram_match("http_username", "admin")) {
 		nvram_set("http_username", zencrypt("root"));
 		nvram_set("http_passwd", zencrypt("admin"));
 	}
@@ -2192,8 +2064,7 @@ void start_restore_defaults(void)
 				break;
 			default:
 				if (nvram_match("bootnv_ver", "4")
-				    || nvram_match("boardnum",
-						   "WAP54GV3_8M_0614"))
+				    || nvram_match("boardnum", "WAP54GV3_8M_0614"))
 					nvram_set("vlan0ports", "3 2 1 0 5*");
 				else
 					nvram_set("vlan0ports", "1 2 3 4 5*");
@@ -2230,8 +2101,7 @@ void start_restore_defaults(void)
 				break;
 			default:
 				if (nvram_match("bootnv_ver", "4")
-				    || nvram_match("boardnum",
-						   "WAP54GV3_8M_0614"))
+				    || nvram_match("boardnum", "WAP54GV3_8M_0614"))
 					nvram_set("vlan1ports", "4 5");
 				else
 					nvram_set("vlan1ports", "0 5");
@@ -2251,8 +2121,7 @@ void start_restore_defaults(void)
 		nvram_set("port5vlans", "1 2 16");
 	}
 
-	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
-	    || brand == ROUTER_LINKSYS_WRT55AG) {
+	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG) {
 		if (!nvram_get("aa0"))
 			nvram_set("aa0", "3");
 		if (!nvram_get("ag0"))
@@ -2275,9 +2144,7 @@ void start_restore_defaults(void)
 
 	if (restore_defaults &&
 	    (brand == ROUTER_ASUS_RTN10 || brand == ROUTER_ASUS_RTN12
-	     || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN53
-	     || brand == ROUTER_ASUS_RTN10PLUSD1 || brand == ROUTER_ASUS_RTN12B
-	     || brand == ROUTER_ASUS_RTN16)) {
+	     || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN53 || brand == ROUTER_ASUS_RTN10PLUSD1 || brand == ROUTER_ASUS_RTN12B || brand == ROUTER_ASUS_RTN16)) {
 		nvram_set("wl0_txpwr", "17");
 	}
 
@@ -2286,8 +2153,7 @@ void start_restore_defaults(void)
 		nvram_set("wl1_txpwr", "100");
 	}
 #ifndef HAVE_BUFFALO
-	if (restore_defaults && brand == ROUTER_BUFFALO_WHRG54S
-	    && nvram_match("DD_BOARD", "Buffalo WHR-HP-G54")) {
+	if (restore_defaults && brand == ROUTER_BUFFALO_WHRG54S && nvram_match("DD_BOARD", "Buffalo WHR-HP-G54")) {
 		nvram_set("wl0_txpwr", "28");
 	}
 #endif
@@ -2440,9 +2306,8 @@ void start_drivers(void)
 		insmod("xhci-hcd");
 		insmod("dwc_otg");	// usb
 		insmod("usb-libusual");
-		
+
 		insmod("fsl-mph-dr-of");
-		
 
 		if (nvram_match("usb_storage", "1")) {
 			cprintf("loading scsi_mod\n");
@@ -2482,8 +2347,7 @@ void start_drivers(void)
 	} else {
 		eval("stopservice", "samba3");
 		eval("stopservice", "ftpsrv");
-		sysprintf("umount /%s",
-			  nvram_default_get("usb_mntpoint", "mnt"));
+		sysprintf("umount /%s", nvram_default_get("usb_mntpoint", "mnt"));
 		rmmod("usblp");
 		rmmod("printer");
 		rmmod("usb-storage");
@@ -2824,13 +2688,10 @@ void start_nvram(void)
 		char *newqos = malloc(strlen(qos_mac) + 254);
 		memset(newqos, 0, strlen(qos_mac) + 254);
 
-		char level[32], level2[32], data[32], type[32], level3[32],
-		    prio[32];
+		char level[32], level2[32], data[32], type[32], level3[32], prio[32];
 
 		do {
-			if (sscanf
-			    (qos_mac, "%31s %31s %31s %31s %31s %31s |", data,
-			     level, level2, type, level3, prio) < 6)
+			if (sscanf(qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level, level2, type, level3, prio) < 6)
 				break;
 
 			if (!strcmp(level3, "|")) {
@@ -2842,14 +2703,9 @@ void start_nvram(void)
 
 			if (strcmp(type, "hostapd") && strcmp(type, "pppd")) {
 				if (strlen(newqos) > 0)
-					sprintf(newqos,
-						"%s %s %s %s %s %s %s |",
-						newqos, data, level, level2,
-						type, level3, prio);
+					sprintf(newqos, "%s %s %s %s %s %s %s |", newqos, data, level, level2, type, level3, prio);
 				else
-					sprintf(newqos, "%s %s %s %s %s %s |",
-						data, level, level2, type,
-						level3, prio);
+					sprintf(newqos, "%s %s %s %s %s %s |", data, level, level2, type, level3, prio);
 
 			}
 		}
@@ -2867,9 +2723,7 @@ void start_nvram(void)
 		char data[32], level[32], level2[32], level3[32], prio[32];
 
 		do {
-			if (sscanf
-			    (qos_ip, "%31s %31s %31s %31s %31s |", data, level,
-			     level2, level3, prio) < 5)
+			if (sscanf(qos_ip, "%31s %31s %31s %31s %31s |", data, level, level2, level3, prio) < 5)
 				break;
 
 			if (!strcmp(level3, "|")) {
@@ -2880,11 +2734,9 @@ void start_nvram(void)
 				strcpy(prio, "0");
 
 			if (strlen(newip) > 0)
-				sprintf(newip, "%s %s %s %s %s %s |", newip,
-					data, level, level2, level3, prio);
+				sprintf(newip, "%s %s %s %s %s %s |", newip, data, level, level2, level3, prio);
 			else
-				sprintf(newip, "%s %s %s %s %s |", data, level,
-					level2, level3, prio);
+				sprintf(newip, "%s %s %s %s %s |", data, level, level2, level3, prio);
 		}
 		while ((qos_ip = strpbrk(++qos_ip, "|")) && qos_ip++);
 		nvram_set("svqos_ips", newip);

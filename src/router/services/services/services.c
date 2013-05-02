@@ -133,16 +133,14 @@ void start_ntpc(void)
 		return;
 
 	if (strlen(servers)) {
-		char *nas_argv[] =
-		    { "ntpclient", "-h", servers, "-i", "5", "-l", "-s", "-c",
+		char *nas_argv[] = { "ntpclient", "-h", servers, "-i", "5", "-l", "-s", "-c",
 			"2",
 			NULL
 		};
 		pid_t pid;
 
 		_evalpid(nas_argv, NULL, 0, &pid);
-		dd_syslog(LOG_INFO,
-			  "ntpclient : ntp client successfully started\n");
+		dd_syslog(LOG_INFO, "ntpclient : ntp client successfully started\n");
 	}
 
 	cprintf("done\n");
@@ -162,8 +160,7 @@ void start_resetbutton(void)
 	int ret = 0;
 
 	ret = eval("resetbutton");
-	dd_syslog(LOG_INFO,
-		  "reset button : resetbutton daemon successfully started\n");
+	dd_syslog(LOG_INFO, "reset button : resetbutton daemon successfully started\n");
 
 	cprintf("done\n");
 	return;
@@ -245,8 +242,7 @@ void stop_dhcpc(void)
 		int pid;
 		fscanf(fp, "%d", &pid);
 		fclose(fp);
-		dd_syslog(LOG_INFO,
-			  "udhcpc : udhcp client process successfully stopped\n");
+		dd_syslog(LOG_INFO, "udhcpc : udhcp client process successfully stopped\n");
 		kill(pid, SIGTERM);
 	}
 	cprintf("done\n");
@@ -276,8 +272,7 @@ void start_force_to_dial(void)
 #ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp")) {
 
-		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control",
-			  nvram_safe_get("l2tp_server_name"));
+		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control", nvram_safe_get("l2tp_server_name"));
 		return;
 	}
 #endif

@@ -32,17 +32,14 @@ int stop_process(char *name, char *desc)
 	if (!desc)
 		desc = name;
 	if (pidof(name) > 0) {
-		dd_syslog(LOG_INFO,
-			  "%s : %s successfully stopped\n", name, desc);
+		dd_syslog(LOG_INFO, "%s : %s successfully stopped\n", name, desc);
 		killall(name, SIGTERM);
 		int deadcounter = 20;
 		while (pidof(name) > 0 && deadcounter--) {
-			usleep(100*1000);
+			usleep(100 * 1000);
 		}
 		if (pidof(name) > 0) {
-			dd_syslog(LOG_INFO,
-				  "%s : %s hanging, send SIGKILL\n", name,
-				  desc);
+			dd_syslog(LOG_INFO, "%s : %s hanging, send SIGKILL\n", name, desc);
 			killall(name, SIGKILL);
 		}
 		return 1;

@@ -74,8 +74,8 @@ void start_milkfish_boot(void)
 	// Start the milkfish services
 	eval("milkfish_services", "start");
 	// dbtext module setup
-	mkdir("/var/openser",0700);
-	mkdir("/var/openser/dbtext",0700);
+	mkdir("/var/openser", 0700);
+	mkdir("/var/openser/dbtext", 0700);
 	eval("cp", "/etc/openser/dbtext/aliases", "/var/openser/dbtext/");
 	eval("cp", "/etc/openser/dbtext/location", "/var/openser/dbtext/");
 	eval("cp", "/etc/openser/dbtext/subscriber", "/var/openser/dbtext/");

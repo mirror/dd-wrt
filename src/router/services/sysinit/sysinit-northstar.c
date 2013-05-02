@@ -81,7 +81,6 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-
 	insmod("softdog");
 	/*
 	 * Setup console 
@@ -109,12 +108,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 	eval("ifconfig", "eth0", "up");
@@ -143,15 +138,12 @@ void start_sysinit(void)
 	switch (getRouterBrand()) {
 	case ROUTER_ASUS_AC56U:
 	case ROUTER_ASUS_AC67U:
-		if (nvram_get("productid") != NULL
-		    || nvram_match("http_username", "admin")) {
+		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
 			int deadcount = 10;
 			while (deadcount--) {
 				FILE *fp = fopen("/dev/mtdblock1", "rb");
 				if (fp == NULL) {
-					fprintf(stderr,
-						"waiting for mtd devices to get available %d\n",
-						deadcount);
+					fprintf(stderr, "waiting for mtd devices to get available %d\n", deadcount);
 					sleep(1);
 					continue;
 				}
@@ -321,9 +313,7 @@ void start_overclocking(void)
 	}
 
 	if (set) {
-		cprintf
-		    ("clock frequency adjusted from %d to %d, reboot needed\n",
-		     cclk, clk);
+		cprintf("clock frequency adjusted from %d to %d, reboot needed\n", cclk, clk);
 		sprintf(clkfr, "%d", clk);
 		nvram_set("clkfreq", clkfr);
 		nvram_commit();
@@ -401,45 +391,26 @@ char *enable_dtag_vlan(int enable)
 		writevaproc("1", "/proc/switch/%s/reset", eth);
 		writevaproc("1", "/proc/switch/%s/enable_vlan", eth);
 		if (enable) {
-			fprintf(stderr, "enable vlan port mapping %s/%s\n",
-				vlan_lan_ports, vlan7ports);
+			fprintf(stderr, "enable vlan port mapping %s/%s\n", vlan_lan_ports, vlan7ports);
 			if (!nvram_match("dtag_vlan8", "1")
 			    || nvram_match("wan_vdsl", "0")) {
-				writevaproc(vlan_lan_ports,
-					    "/proc/switch/%s/vlan/%d/ports",
-					    eth, lan_vlan_num);
+				writevaproc(vlan_lan_ports, "/proc/switch/%s/vlan/%d/ports", eth, lan_vlan_num);
 				start_setup_vlans();
-				writevaproc(" ",
-					    "/proc/switch/%s/vlan/%d/ports",
-					    eth, wan_vlan_num);
-				writevaproc(vlan7ports,
-					    "/proc/switch/%s/vlan/7/ports",
-					    eth);
+				writevaproc(" ", "/proc/switch/%s/vlan/%d/ports", eth, wan_vlan_num);
+				writevaproc(vlan7ports, "/proc/switch/%s/vlan/7/ports", eth);
 			} else {
-				writevaproc(vlan_lan_ports,
-					    "/proc/switch/%s/vlan/%d/ports",
-					    eth, lan_vlan_num);
+				writevaproc(vlan_lan_ports, "/proc/switch/%s/vlan/%d/ports", eth, lan_vlan_num);
 				start_setup_vlans();
-				writevaproc("", "/proc/switch/%s/vlan/%d/ports",
-					    eth, wan_vlan_num);
-				writevaproc(vlan7ports,
-					    "/proc/switch/%s/vlan/7/ports",
-					    eth);
-				writevaproc(vlan7ports,
-					    "/proc/switch/%s/vlan/8/ports",
-					    eth);
+				writevaproc("", "/proc/switch/%s/vlan/%d/ports", eth, wan_vlan_num);
+				writevaproc(vlan7ports, "/proc/switch/%s/vlan/7/ports", eth);
+				writevaproc(vlan7ports, "/proc/switch/%s/vlan/8/ports", eth);
 			}
 		} else {
-			fprintf(stderr, "disable vlan port mapping %s/%s\n",
-				vlan_lan_ports, vlan_wan_ports);
+			fprintf(stderr, "disable vlan port mapping %s/%s\n", vlan_lan_ports, vlan_wan_ports);
 			writevaproc(" ", "/proc/switch/%s/vlan/7/ports", eth);
 			writevaproc(" ", "/proc/switch/%s/vlan/8/ports", eth);
-			writevaproc(vlan_lan_ports,
-				    "/proc/switch/%s/vlan/%d/ports", eth,
-				    lan_vlan_num);
-			writevaproc(vlan_wan_ports,
-				    "/proc/switch/%s/vlan/%d/ports", eth,
-				    wan_vlan_num);
+			writevaproc(vlan_lan_ports, "/proc/switch/%s/vlan/%d/ports", eth, lan_vlan_num);
+			writevaproc(vlan_wan_ports, "/proc/switch/%s/vlan/%d/ports", eth, wan_vlan_num);
 			start_setup_vlans();
 		}
 	}

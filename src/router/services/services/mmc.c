@@ -42,8 +42,7 @@ void start_mmc(void)
 			if (mount("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL)) {
 				// device not formated
 				eval("mkfs.ext2", "-F", "-b", "1024", "/dev/mmc");
-				mount("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL,
-				      NULL);
+				mount("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL);
 			}
 		}
 #else
@@ -114,14 +113,10 @@ void start_mmc(void)
 			// device detected
 			insmod("ext2");
 
-			if (mount
-			    ("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL,
-			     NULL)) {
+			if (mount("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL, NULL)) {
 				// device not formated
-				eval("mkfs.ext2", "-F", "-b", "1024",
-				     "/dev/mmc/disc0/part1");
-				mount("/dev/mmc/disc0/part1", "/mmc", "ext2",
-				      MS_MGC_VAL, NULL);
+				eval("mkfs.ext2", "-F", "-b", "1024", "/dev/mmc/disc0/part1");
+				mount("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL, NULL);
 			}
 		}
 #endif

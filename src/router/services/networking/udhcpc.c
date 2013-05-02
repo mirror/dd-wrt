@@ -170,8 +170,7 @@ static int bound(void)
 	nvram_unset("dhcpc_done");
 	char *wan_ifname = safe_getenv("interface");
 	char *value;
-	static char temp_wan_ipaddr[16], temp_wan_netmask[16],
-	    temp_wan_gateway[16];
+	static char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
 	int changed = 0;
 	static char *cidr;
 	if (nvram_match("wan_proto", "iphone"))
@@ -180,23 +179,20 @@ static int bound(void)
 	cidr = getenv("cidrroute");
 	if (cidr && wan_ifname) {
 		char *callbuffer = malloc(strlen(cidr) + 128);
-		sprintf(callbuffer,
-			"export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh",
-			cidr, wan_ifname);
+		sprintf(callbuffer, "export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh", cidr, wan_ifname);
 		system(callbuffer);
 		free(callbuffer);
 	}
 
 	if ((value = getenv("ip"))) {
 		chomp(value);
-		if (nvram_match("wan_proto", "pptp") 
+		if (nvram_match("wan_proto", "pptp")
 		    && nvram_match("pptp_use_dhcp", "1"))
 			strcpy(temp_wan_ipaddr, value);
-		else if (nvram_match("wan_proto", "l2tp") 
-		    && nvram_match("l2tp_use_dhcp", "1"))
+		else if (nvram_match("wan_proto", "l2tp")
+			 && nvram_match("l2tp_use_dhcp", "1"))
 			strcpy(temp_wan_ipaddr, value);
-		else		
-		 {
+		else {
 			if (nvram_invmatch("wan_ipaddr", value))
 				changed = 1;
 		}
@@ -207,8 +203,8 @@ static int bound(void)
 		if (nvram_match("wan_proto", "pptp")
 		    && nvram_match("pptp_use_dhcp", "1"))
 			strcpy(temp_wan_netmask, value);
-		else if (nvram_match("wan_proto", "l2tp") 
-		    && nvram_match("l2tp_use_dhcp", "1"))
+		else if (nvram_match("wan_proto", "l2tp")
+			 && nvram_match("l2tp_use_dhcp", "1"))
 			strcpy(temp_wan_netmask, value);
 		else {
 			if (nvram_invmatch("wan_netmask", value))
@@ -249,21 +245,16 @@ static int bound(void)
 		return 0;
 	}
 	stop_firewall();
-	cprintf("configure to IF[%s] , IP[%s], MASK[%s]\n", wan_ifname,
-		nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
+	cprintf("configure to IF[%s] , IP[%s], MASK[%s]\n", wan_ifname, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 
 	if (nvram_match("wan_proto", "pptp")
 	    && nvram_match("pptp_use_dhcp", "1"))
-		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask",
-		     temp_wan_netmask, "up");
+		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask", temp_wan_netmask, "up");
+	else if (nvram_match("wan_proto", "l2tp")
+		 && nvram_match("l2tp_use_dhcp", "1"))
+		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask", temp_wan_netmask, "up");
 	else
-	if (nvram_match("wan_proto", "l2tp")
-	    && nvram_match("l2tp_use_dhcp", "1"))
-		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask",
-		     temp_wan_netmask, "up");
-	else
-		eval("ifconfig", wan_ifname, nvram_safe_get("wan_ipaddr"),
-		     "netmask", nvram_safe_get("wan_netmask"), "up");
+		eval("ifconfig", wan_ifname, nvram_safe_get("wan_ipaddr"), "netmask", nvram_safe_get("wan_netmask"), "up");
 
 	/*
 	 * We only want to exec bellow functions after dhcp get ip if the
@@ -276,14 +267,12 @@ static int bound(void)
 		/*
 		 * Delete all default routes 
 		 */
-		while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0
-		       || i++ < 10) ;
+		while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0 || i++ < 10) ;
 
 		/*
 		 * Set default route to gateway if specified 
 		 */
-		route_add(wan_ifname, 0, "0.0.0.0",
-			  nvram_safe_get("wan_gateway"), "0.0.0.0");
+		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("wan_gateway"), "0.0.0.0");
 
 		/*
 		 * save dns to resolv.conf 
@@ -315,14 +304,10 @@ static int bound(void)
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_add(wan_ifname, 0,
-					  dns_list->dns_server[i],
-					  nvram_safe_get("wan_gateway"),
-					  "255.255.255.255");
+				route_add(wan_ifname, 0, dns_list->dns_server[i], nvram_safe_get("wan_gateway"), "255.255.255.255");
 			free(dns_list);
 		}
-		route_add(wan_ifname, 0, "0.0.0.0",
-			  nvram_safe_get("wan_gateway"), "0.0.0.0");
+		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("wan_gateway"), "0.0.0.0");
 
 		nvram_set("wan_gateway_buf", nvram_get("wan_gateway"));
 
@@ -333,20 +318,14 @@ static int bound(void)
 		// client to reach it
 		if (nvram_match("wan_gateway", "0.0.0.0")
 		    || nvram_match("wan_netmask", "0.0.0.0"))
-			route_add(wan_ifname, 0,
-				  nvram_safe_get("pptp_server_ip"),
-				  nvram_safe_get("wan_gateway"),
-				  "255.255.255.255");
+			route_add(wan_ifname, 0, nvram_safe_get("pptp_server_ip"), nvram_safe_get("wan_gateway"), "255.255.255.255");
 		else
-			route_add(wan_ifname, 0,
-				  nvram_safe_get("pptp_server_ip"),
-				  nvram_safe_get("wan_gateway"),
-				  nvram_safe_get("wan_netmask"));
+			route_add(wan_ifname, 0, nvram_safe_get("pptp_server_ip"), nvram_safe_get("wan_gateway"), nvram_safe_get("wan_netmask"));
 
 	}
 #endif
 #ifdef HAVE_L2TP
-	else if (nvram_match("wan_proto", "l2tp") && nvram_match("l2tp_use_dhcp","1")) {
+	else if (nvram_match("wan_proto", "l2tp") && nvram_match("l2tp_use_dhcp", "1")) {
 		char l2tpip[64];
 		struct dns_lists *dns_list = NULL;
 
@@ -358,10 +337,7 @@ static int bound(void)
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_add(wan_ifname, 0,
-					  dns_list->dns_server[i],
-					  nvram_safe_get("wan_gateway"),
-					  "255.255.255.255");
+				route_add(wan_ifname, 0, dns_list->dns_server[i], nvram_safe_get("wan_gateway"), "255.255.255.255");
 			free(dns_list);
 		}
 
@@ -375,9 +351,7 @@ static int bound(void)
 
 		nvram_set("l2tp_server_ip", l2tpip);
 
-		route_add(wan_ifname, 0,
-			  nvram_safe_get("l2tp_server_ip"),
-			  nvram_safe_get("wan_gateway"), "255.255.255.255");
+		route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway"), "255.255.255.255");
 
 		start_firewall();
 		start_l2tp_boot();
@@ -441,14 +415,11 @@ static int bound_tv(void)
 		strcpy(bcast, ip);
 		get_broadcast(bcast, net);
 		nvram_set("tvnicaddr", ip);
-		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast,
-		     "multicast");
+		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast, "multicast");
 	}
 	if (cidr && ifname) {
 		char *callbuffer = malloc(strlen(cidr) + 128);
-		sprintf(callbuffer,
-			"export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh",
-			cidr, ifname);
+		sprintf(callbuffer, "export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh", cidr, ifname);
 		system(callbuffer);
 		free(callbuffer);
 	}

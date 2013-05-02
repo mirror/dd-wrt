@@ -89,8 +89,7 @@ int sameaddr(unsigned char *sin, unsigned char *ein)
 	return 1;
 }
 
-void
-getse(unsigned char *ip, unsigned char *nets, unsigned char *nete, int bitlen)
+void getse(unsigned char *ip, unsigned char *nets, unsigned char *nete, int bitlen)
 {
 	int i, j, len, remain;
 	unsigned char mask;
@@ -159,13 +158,11 @@ void subrange(unsigned char *sin, unsigned char *ein)
 	bitlen = count_bits(sin, ein);
 
 	if (bitlen == 32) {
-		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/32 ",
-			sin[0], sin[1], sin[2], sin[3]);
+		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/32 ", sin[0], sin[1], sin[2], sin[3]);
 		cprintf("%u.%u.%u.%u/32\n", sin[0], sin[1], sin[2], sin[3]);
 		return;
 	} else if (bitlen == 31) {
-		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/31 ",
-			sin[0], sin[1], sin[2], sin[3]);
+		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/31 ", sin[0], sin[1], sin[2], sin[3]);
 		cprintf("%u.%u.%u.%u/31\n", sin[0], sin[1], sin[2], sin[3]);
 		return;
 	}
@@ -175,38 +172,30 @@ void subrange(unsigned char *sin, unsigned char *ein)
 	getse(sin, nets, nete, bitlen);
 
 	if (sameaddr(sin, nets) && sameaddr(ein, nete)) {
-		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/%d ",
-			nets[0], nets[1], nets[2], nets[3], bitlen);
-		cprintf("%u.%u.%u.%u/%d\n", nets[0], nets[1], nets[2], nets[3],
-			bitlen);
+		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/%d ", nets[0], nets[1], nets[2], nets[3], bitlen);
+		cprintf("%u.%u.%u.%u/%d\n", nets[0], nets[1], nets[2], nets[3], bitlen);
 		return;
 	}
 
 	getse(sin, nets, nete, nextlen);
 
 	if (sameaddr(sin, nete)) {
-		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/32 ",
-			sin[0], sin[1], sin[2], sin[3]);
+		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/32 ", sin[0], sin[1], sin[2], sin[3]);
 		cprintf("%u.%u.%u.%u/32\n", sin[0], sin[1], sin[2], sin[3]);
 	} else if (sameaddr(sin, nets)) {
-		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/%d ",
-			nets[0], nets[1], nets[2], nets[3], nextlen);
-		cprintf("%u.%u.%u.%u/%d\n", nets[0], nets[1], nets[2], nets[3],
-			nextlen);
+		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/%d ", nets[0], nets[1], nets[2], nets[3], nextlen);
+		cprintf("%u.%u.%u.%u/%d\n", nets[0], nets[1], nets[2], nets[3], nextlen);
 	} else			// continue check
 		subrange(sin, nete);
 
 	getse(ein, nets, nete, nextlen);
 
 	if (sameaddr(ein, nets)) {
-		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/32 ",
-			ein[0], ein[1], ein[2], ein[3]);
+		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/32 ", ein[0], ein[1], ein[2], ein[3]);
 		cprintf("%u.%u.%u.%u/32\n", ein[0], ein[1], ein[2], ein[3]);
 	} else if (sameaddr(ein, nete)) {
-		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/%d ",
-			nets[0], nets[1], nets[2], nets[3], nextlen);
-		cprintf("%u.%u.%u.%u/%d\n", nets[0], nets[1], nets[2], nets[3],
-			nextlen);
+		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/%d ", nets[0], nets[1], nets[2], nets[3], nextlen);
+		cprintf("%u.%u.%u.%u/%d\n", nets[0], nets[1], nets[2], nets[3], nextlen);
 	} else			// continue check
 		subrange(nets, ein);
 
@@ -225,13 +214,9 @@ char *range(char *start, char *end)
 
 	strcpy(range_buf, "");
 
-	retcount =
-	    sscanf(start, "%u.%u.%u.%u", &startip[0], &startip[1], &startip[2],
-		   &startip[3]);
+	retcount = sscanf(start, "%u.%u.%u.%u", &startip[0], &startip[1], &startip[2], &startip[3]);
 
-	retcount +=
-	    sscanf(end, "%u.%u.%u.%u", &endip[0], &endip[1], &endip[2],
-		   &endip[3]);
+	retcount += sscanf(end, "%u.%u.%u.%u", &endip[0], &endip[1], &endip[2], &endip[3]);
 
 	if (retcount != 8) {
 		printf("Error ip address!\n");

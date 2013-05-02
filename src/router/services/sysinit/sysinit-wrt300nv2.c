@@ -106,8 +106,7 @@ void start_sysinit(void)
 		fread(&buf[0], 6, 1, file);
 		char mac[20];
 
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1],
-			buf[2], buf[3], buf[4], buf[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
 		fprintf(stderr, "configure primary mac %s\n", mac);
 		eval("ifconfig", "ixp0", "hw", "ether", mac);
 		eval("ifconfig", "wifi0", "hw", "ether", mac);

@@ -68,7 +68,6 @@ void start_l2tp(int status)
 	if (isClient()) {
 		wan_ifname = getSTA();
 	}
-
 	// stop_dhcpc();
 #ifdef HAVE_PPPOE
 	stop_pppoe();
@@ -80,8 +79,7 @@ void start_l2tp(int status)
 
 	insmod("n_hdlc");
 	if (nvram_match("l2tp_use_dhcp", "0")) {
-		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"),
-			 nvram_safe_get("wan_netmask"));
+		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 		struct dns_lists *dns_list = NULL;
 		dns_to_resolv();
 		dns_list = get_dns_list();
@@ -89,36 +87,24 @@ void start_l2tp(int status)
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_add(wan_ifname, 0,
-					  dns_list->dns_server[i],
-					  nvram_safe_get("l2tp_wan_gateway"),
-					  "255.255.255.255");
+				route_add(wan_ifname, 0, dns_list->dns_server[i], nvram_safe_get("l2tp_wan_gateway"), "255.255.255.255");
 		}
-		route_add(wan_ifname, 0, "0.0.0.0",
-			  nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
+		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
 		char pptpip[64];
 		getIPFromName(nvram_safe_get("l2tp_server_name"), pptpip);
-		route_del(wan_ifname, 0, "0.0.0.0",
-			  nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
+		route_del(wan_ifname, 0, "0.0.0.0", nvram_safe_get("l2tp_wan_gateway"), "0.0.0.0");
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_del(wan_ifname, 0,
-					  dns_list->dns_server[i],
-					  nvram_safe_get("l2tp_wan_gateway"),
-					  "255.255.255.255");
+				route_del(wan_ifname, 0, dns_list->dns_server[i], nvram_safe_get("l2tp_wan_gateway"), "255.255.255.255");
 			free(dns_list);
 		}
 
 		nvram_set("l2tp_server_ip", pptpip);
 		if (!nvram_match("l2tp_wan_gateway", "0.0.0.0"))
-			route_add(wan_ifname, 0,
-				  nvram_safe_get("l2tp_server_ip"),
-				  nvram_safe_get("l2tp_wan_gateway"),
-				  "255.255.255.255");
+			route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("l2tp_wan_gateway"), "255.255.255.255");
 	}
 
-	snprintf(username, sizeof(username), "%s",
-		 nvram_safe_get("ppp_username"));
+	snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 	if (status != REDIAL) {
@@ -160,14 +146,11 @@ length bit = yes
 		fprintf(fp, "port = 1701\n");	// Bind address
 		fprintf(fp, "[lac %s]\n", nvram_safe_get("l2tp_server_name"));
 		fprintf(fp, "lns = %s\n", nvram_safe_get("l2tp_server_name"));
-		fprintf(fp, "require chap = %s\n",
-			nvram_default_get("l2tp_req_chap", "yes"));
-		fprintf(fp, "refuse pap = %s\n",
-			nvram_default_get("l2tp_ref_pap", "yes"));
+		fprintf(fp, "require chap = %s\n", nvram_default_get("l2tp_req_chap", "yes"));
+		fprintf(fp, "refuse pap = %s\n", nvram_default_get("l2tp_ref_pap", "yes"));
 		fprintf(fp, "redial = yes\n");
 		fprintf(fp, "redial timeout = 15\n");
-		fprintf(fp, "require authentication = %s\n",
-			nvram_default_get("l2tp_req_auth", "yes"));
+		fprintf(fp, "require authentication = %s\n", nvram_default_get("l2tp_req_auth", "yes"));
 		fprintf(fp, "name = %s\n", username);
 		fprintf(fp, "pppoptfile = /tmp/ppp/options\n");
 		fprintf(fp, "length bit = yes\n");
@@ -183,10 +166,8 @@ length bit = yes
 
 		if (nvram_match("mtu_enable", "1")) {
 			if (atoi(nvram_safe_get("wan_mtu")) > 0) {
-				fprintf(fp, "mtu %s\n",
-					nvram_safe_get("wan_mtu"));
-				fprintf(fp, "mru %s\n",
-					nvram_safe_get("wan_mtu"));
+				fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
+				fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
 			}
 
 		}
@@ -204,10 +185,7 @@ length bit = yes
 		// terminated.
 
 		if (nvram_match("ppp_demand", "1")) {	// demand mode
-			fprintf(fp, "idle %d\n",
-				nvram_match("ppp_demand",
-					    "1") ?
-				atoi(nvram_safe_get("ppp_idletime")) * 60 : 0);
+			fprintf(fp, "idle %d\n", nvram_match("ppp_demand", "1") ? atoi(nvram_safe_get("ppp_idletime")) * 60 : 0);
 			// fprintf(fp, "demand\n"); // Dial on demand
 			// fprintf(fp, "persist\n"); // Do not exit after a connection is 
 			// terminated.
@@ -304,8 +282,7 @@ length bit = yes
 		else
 			eval("listen", nvram_safe_get("lan_ifname"));
 	} else {
-		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control",
-			  nvram_safe_get("l2tp_server_name"));
+		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control", nvram_safe_get("l2tp_server_name"));
 	}
 
 	cprintf("done\n");
@@ -324,8 +301,7 @@ void start_l2tp_boot(void)
 
 void stop_l2tp(void)
 {
-	route_del(nvram_safe_get("wan_ifname"), 0,
-		  nvram_safe_get("l2tp_server_ip"), NULL, NULL);
+	route_del(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), NULL, NULL);
 
 	unlink("/tmp/ppp/link");
 

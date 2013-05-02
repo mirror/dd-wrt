@@ -56,8 +56,7 @@ void start_jffs2(void)
 			char dev[64];
 
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
-			itworked +=
-			    mount(dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
+			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
 			if (itworked) {
 				nvram_set("jffs_mounted", "0");
 			} else {
@@ -75,8 +74,7 @@ void start_jffs2(void)
 			char dev[64];
 
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
-			itworked +=
-			    mount(dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
+			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
 			if (itworked) {
 				nvram_set("jffs_mounted", "0");
 			} else {

@@ -81,18 +81,15 @@ void start_olsrd(void)
 #ifdef HAVE_IPV6
 	}
 #endif
-	fprintf(fp, "LinkQualityFishEye\t%s\n",
-		nvram_safe_get("olsrd_lqfisheye"));
+	fprintf(fp, "LinkQualityFishEye\t%s\n", nvram_safe_get("olsrd_lqfisheye"));
 	fprintf(fp, "LinkQualityAging\t%s\n", nvram_safe_get("olsrd_lqaging"));
 	fprintf(fp, "LinkQualityAlgorithm    \"etx_ff\"\n");
 //      fprintf(fp, "LinkQualityDijkstraLimit\t%s %s\n",
 //              nvram_safe_get("olsrd_lqdijkstramin"),
 //              nvram_safe_get("olsrd_lqdijkstramax"));
-	fprintf(fp, "UseHysteresis\t%s\n",
-		nvram_match("olsrd_hysteresis", "1") ? "yes" : "no");
+	fprintf(fp, "UseHysteresis\t%s\n", nvram_match("olsrd_hysteresis", "1") ? "yes" : "no");
 	if (nvram_match("olsrd_hysteresis", "0"))
-		fprintf(fp, "LinkQualityLevel\t%s\n",
-			nvram_safe_get("olsrd_lqlevel"));
+		fprintf(fp, "LinkQualityLevel\t%s\n", nvram_safe_get("olsrd_lqlevel"));
 	else
 		fprintf(fp, "LinkQualityLevel\t0\n");
 	fprintf(fp, "LoadPlugin \"olsrd_dyn_gw_plain.so\"\n");

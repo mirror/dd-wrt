@@ -15,8 +15,7 @@ void show_usage(void)
 #ifndef CONFIG_RT2860V2_AP_MEMORY_OPTIMIZATION
 	printf("mii_mgr -g -p [phy number] -r [register number]\n");
 	printf("  Get: mii_mgr -g -p 3 -r 4\n\n");
-	printf
-	    ("mii_mgr -s -p [phy number] -r [register number] -v [0xvalue]\n");
+	printf("mii_mgr -s -p [phy number] -r [register number] -v [0xvalue]\n");
 	printf("  Set: mii_mgr -s -p 4 -r 1 -v 0xff11\n\n");
 #endif
 }
@@ -72,12 +71,10 @@ int main(int argc, char *argv[])
 	} else
 		switch (method) {
 		case RAETH_MII_READ:
-			printf("Get: phy[%d].reg[%d] = %04x\n",
-			       mii.phy_id, mii.reg_num, mii.val_out);
+			printf("Get: phy[%d].reg[%d] = %04x\n", mii.phy_id, mii.reg_num, mii.val_out);
 			break;
 		case RAETH_MII_WRITE:
-			printf("Set: phy[%d].reg[%d] = %04x\n",
-			       mii.phy_id, mii.reg_num, mii.val_in);
+			printf("Set: phy[%d].reg[%d] = %04x\n", mii.phy_id, mii.reg_num, mii.val_in);
 			break;
 		}
 

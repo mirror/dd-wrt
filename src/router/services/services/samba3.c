@@ -47,8 +47,7 @@ void start_samba3(void)
 	if (!nvram_match("samba3_enable", "1"))
 		return;
 	start_mkfiles();
-	sysprintf
-	    ("echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
+	sysprintf("echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
 	mkdir("/var/samba", 0700);
 	eval("touch", "/var/samba/smbpasswd");
 	if (nvram_match("samba3_advanced", "1")) {
@@ -58,12 +57,8 @@ void start_samba3(void)
 		for (cu = samba3users; cu; cu = cunext) {
 			if (strlen(cu->username)
 			    && cu->sharetype & SHARETYPE_SAMBA) {
-				sysprintf
-				    ("echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd",
-				     cu->username, uniqueuserid++,
-				     cu->username);
-				sysprintf("smbpasswd \"%s\" \"%s\"",
-					  cu->username, cu->password);
+				sysprintf("echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd", cu->username, uniqueuserid++, cu->username);
+				sysprintf("smbpasswd \"%s\" \"%s\"", cu->username, cu->password);
 			}
 			cunext = cu->next;
 			free(cu);
@@ -100,12 +95,7 @@ void start_samba3(void)
 			"dead time = 15\n"
 			"getwd cache = yes\n"
 			"lpq cache time = 30\n"
-			"printing = none\n"
-			"load printers = No\n"
-			"usershare allow guests = Yes\n",
-			nvram_safe_get("router_name"),
-			nvram_safe_get("samba3_srvstr"),
-			nvram_safe_get("samba3_workgrp"));
+			"printing = none\n" "load printers = No\n" "usershare allow guests = Yes\n", nvram_safe_get("router_name"), nvram_safe_get("samba3_srvstr"), nvram_safe_get("samba3_workgrp"));
 
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
@@ -115,11 +105,8 @@ void start_samba3(void)
 				for (csu = cs->users; csu; csu = csunext) {
 					samba3users = getsamba3users();
 					for (cu = samba3users; cu; cu = cunext) {
-						if (!strcmp
-						    (csu->username,
-						     cu->username)
-						    && (cu->sharetype &
-							SHARETYPE_SAMBA))
+						if (!strcmp(csu->username, cu->username)
+						    && (cu->sharetype & SHARETYPE_SAMBA))
 							hasuser = 1;
 						cunext = cu->next;
 						free(cu);
@@ -127,8 +114,7 @@ void start_samba3(void)
 					csunext = csu->next;
 				}
 				if (!hasuser) {
-					for (csu = cs->users; csu;
-					     csu = csunext) {
+					for (csu = cs->users; csu; csu = csunext) {
 						csunext = csu->next;
 						free(csu);
 					}
@@ -140,25 +126,17 @@ void start_samba3(void)
 				fprintf(fp, "[%s]\n", cs->label);
 				fprintf(fp, "comment = %s\n", cs->label);
 				fprintf(fp, "path = %s\n", cs->mp);
-				fprintf(fp, "read only = %s\n",
-					!strcmp(cs->access_perms,
-						"ro") ? "Yes" : "No");
-				fprintf(fp, "guest ok = %s\n",
-					cs->public == 1 ? "Yes" : "No");
+				fprintf(fp, "read only = %s\n", !strcmp(cs->access_perms, "ro") ? "Yes" : "No");
+				fprintf(fp, "guest ok = %s\n", cs->public == 1 ? "Yes" : "No");
 				if (!cs->public) {
 					fprintf(fp, "valid users =");
 					int first = 0;
-					for (csu = cs->users; csu;
-					     csu = csunext) {
+					for (csu = cs->users; csu; csu = csunext) {
 						hasuser = 0;
 						samba3users = getsamba3users();
-						for (cu = samba3users; cu;
-						     cu = cunext) {
-							if (!strcmp
-							    (csu->username,
-							     cu->username)
-							    && (cu->sharetype &
-								SHARETYPE_SAMBA))
+						for (cu = samba3users; cu; cu = cunext) {
+							if (!strcmp(csu->username, cu->username)
+							    && (cu->sharetype & SHARETYPE_SAMBA))
 								hasuser = 1;
 							cunext = cu->next;
 							free(cu);
@@ -169,15 +147,13 @@ void start_samba3(void)
 						if (first)
 							fprintf(fp, ",");
 						first = 1;
-						fprintf(fp, " %s",
-							csu->username);
+						fprintf(fp, " %s", csu->username);
 					      nextuser:;
 						csunext = csu->next;
 						free(csu);
 					}
 				} else {
-					for (csu = cs->users; csu;
-					     csu = csunext) {
+					for (csu = cs->users; csu; csu = csunext) {
 						csunext = csu->next;
 						free(csu);
 					}

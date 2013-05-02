@@ -74,9 +74,8 @@ static void install_sdcard(void)
 	fclose(fp);
 	fprintf(stderr, "installing firmware to internal SD Card\n");
 	mkdir("/tmp/install", 0700);
-	int check =
-	    mount("/dev/discs/disc1/disc", "/tmp/install", "ext2", MS_MGC_VAL,
-		  NULL);
+	int check = mount("/dev/discs/disc1/disc", "/tmp/install", "ext2", MS_MGC_VAL,
+			  NULL);
 	if (check != 0) {
 		fprintf(stderr, "device isnt formated, use EXT2\n");
 		fp = fopen("/dev/discs/disc1/disc", "rb");
@@ -86,14 +85,11 @@ static void install_sdcard(void)
 		size /= 4096;
 		char newsize[32];
 		sprintf(newsize, "%d", size);
-		eval("mkfs.ext2", "-b", "4096", "-N", "65536", "-L", "dd-wrt",
-		     "/dev/discs/disc1/disc", newsize);
-		mount("/dev/discs/disc1/disc", "/tmp/install", "ext2",
-		      MS_MGC_VAL, NULL);
+		eval("mkfs.ext2", "-b", "4096", "-N", "65536", "-L", "dd-wrt", "/dev/discs/disc1/disc", newsize);
+		mount("/dev/discs/disc1/disc", "/tmp/install", "ext2", MS_MGC_VAL, NULL);
 	}
 	fprintf(stderr, "copy files to SD Card\n");
-	eval("cp", "-f", "/tmp/install/usr/local/nvram/nvram.bin",
-	     "/tmp/install/usr/local/nvram/nvram.bak");
+	eval("cp", "-f", "/tmp/install/usr/local/nvram/nvram.bin", "/tmp/install/usr/local/nvram/nvram.bak");
 	eval("cp", "-r", "-d", "-f", "/boot", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/bin", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/etc", "/tmp/install");
@@ -106,8 +102,7 @@ static void install_sdcard(void)
 	eval("cp", "-r", "-d", "-f", "/usr", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/www", "/tmp/install");
 	eval("cp", "-r", "-d", "-f", "/var", "/tmp/install");
-	eval("mv", "-f", "/tmp/install/usr/local/nvram/nvram.bak",
-	     "/tmp/install/usr/local/nvram/nvram.bin");
+	eval("mv", "-f", "/tmp/install/usr/local/nvram/nvram.bak", "/tmp/install/usr/local/nvram/nvram.bin");
 	mkdir("/tmp/install/dev", 0700);
 	mkdir("/tmp/install/sys", 0700);
 	mkdir("/tmp/install/proc", 0700);
@@ -162,12 +157,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 
