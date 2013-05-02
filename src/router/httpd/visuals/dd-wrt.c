@@ -1563,7 +1563,7 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 {
 	char buff[512];
 	FILE *fp;
-
+	int mounted=0;
 	if (!nvram_match("usb_automnt", "1"))
 		return;
 
@@ -1573,7 +1573,18 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "%s<br />", buff);
 		}
 		fclose(fp);
-	} else
+		mounted=1:
+	}
+	if ((fp = fopen("/tmp/parttype.dump", "r"))) {
+		while (fgets(buff, sizeof(buff), fp)) {
+			if (strcmp(buff, "\n"))
+				websWrite(wp, "%s<br />", buff);
+		}
+		fclose(fp);
+		mounted=1;
+	}
+		
+	if (!mounted)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));
 
 	return;
