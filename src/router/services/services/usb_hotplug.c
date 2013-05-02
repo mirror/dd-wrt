@@ -29,8 +29,7 @@ static char *getdisc(void)	// works only for squashfs
 {
 	int i;
 	static char ret[4];
-	unsigned char *disks[] =
-	    { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
+	unsigned char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
 		"sdi2"
 	};
 	for (i = 0; i < 9; i++) {
@@ -45,8 +44,7 @@ static char *getdisc(void)	// works only for squashfs
 		char buf[4];
 
 		fread(buf, 4, 1, in);
-		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q'
-		    && buf[3] == 't') {
+		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
 			strncpy(ret, disks[i], 3);
@@ -212,8 +210,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 	if (nvram_match("usb_mntpoint", "mnt") && target)
 		sprintf(mount_point, "/mnt/%s", target);
 	else
-		sprintf(mount_point, "/%s",
-			nvram_default_get("usb_mntpoint", "mnt"));
+		sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs"))
 		insmod("fuse");
@@ -275,17 +272,14 @@ static int usb_process_path(char *path, char *fs, char *target)
 	} else
 #endif
 	if (!strcmp(fs, "vfat"))
-		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path,
-			   mount_point);
+		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
 	else
 		ret = eval("/bin/mount", "-t", fs, path, mount_point);
 
 	if (ret != 0) {		//give it another try
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
-			ret =
-			    eval("ntfs-3g", "-o", "compression", path,
-				 mount_point);
+			ret = eval("ntfs-3g", "-o", "compression", path, mount_point);
 		} else
 #endif
 			ret = eval("/bin/mount", path, mount_point);	//guess fs
@@ -299,49 +293,39 @@ static int usb_process_path(char *path, char *fs, char *target)
 
 static char *getfs(char *line)
 {
-	char *fs = NULL;
 	if (strstr(line, "file system")) {
 		fprintf(stderr, "[USB Device] file system: %s\n", line);
 		if (strstr(line, "FAT")) {
-			fs = "vfat";
-			return fs;
+			return "vfat";
 		} else if (strstr(line, "Ext2")) {
-			fs = "ext2";
-			return fs;
+			return "ext2";
 		} else if (strstr(line, "XFS")) {
-			fs = "xfs";
-			return fs;
+			return "xfs";
 		} else if (strstr(line, "UDF")) {
-			fs = "udf";
-			return fs;
+			return "udf";
 		} else if (strstr(line, "ISO9660")) {
-			fs = "iso9660";
-			return fs;
+			return "iso9660";
 		} else if (strstr(line, "Ext3")) {
 #ifdef HAVE_USB_ADVANCED
-			fs = "ext3";
+			return "ext3";
 #else
-			fs = "ext2";
+			return "ext2";
 #endif
-			return fs;
 		}
 #ifdef HAVE_USB_ADVANCED
 		else if (strstr(line, "Ext4")) {
-			fs = "ext4";
-			return fs;
+			return "ext4";
 		} else if (strstr(line, "Btrfs")) {
-			fs = "btrfs";
-			return fs;
+			return "btrfs";
 		}
 #endif
 #ifdef HAVE_NTFS3G
 		else if (strstr(line, "NTFS")) {
-			fs = "ntfs";
-			return fs;
+			return "ntfs";
 		}
 #endif
 	}
-	return fs;
+	return NULL;
 
 }
 
@@ -354,8 +338,7 @@ static void usb_unmount(char *path)
 	writeproc("/proc/sys/vm/drop_caches", "3");	// flush fs cache
 /* todo: how to unmount correct drive */
 	if (!path)
-		sprintf(mount_point, "/%s",
-			nvram_default_get("usb_mntpoint", "mnt"));
+		sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
 	else
 		strcpy(mount_point, path);
 	eval("/bin/umount", mount_point);
@@ -399,10 +382,7 @@ int usb_add_ufd(char *devpath)
 		for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
 			if ((dir = opendir("/dev/discs")) != NULL
 			    || (fp = fopen("/dev/sda", "rb")) != NULL
-			    || (fp = fopen("/dev/sdb", "rb")) != NULL
-			    || (fp = fopen("/dev/sdc", "rb")) != NULL
-			    || (fp = fopen("/dev/sr0", "rb")) != NULL
-			    || (fp = fopen("/dev/sr1", "rb")) != NULL
+			    || (fp = fopen("/dev/sdb", "rb")) != NULL || (fp = fopen("/dev/sdc", "rb")) != NULL || (fp = fopen("/dev/sr0", "rb")) != NULL || (fp = fopen("/dev/sr1", "rb")) != NULL
 			    || (fp = fopen("/dev/sdd", "rb")) != NULL) {
 				break;
 			} else {
@@ -430,6 +410,7 @@ int usb_add_ufd(char *devpath)
 			return EINVAL;
 		while ((entry = readdir(dir)) != NULL) {
 			int is_mounted = 0;
+			int is_partmounted = 0;
 			if (mounted[i])
 				continue;
 
@@ -437,9 +418,7 @@ int usb_add_ufd(char *devpath)
 			char check[32];
 			strcpy(check, getdisc());
 			if (!strncmp(entry->d_name, check, 5)) {
-				fprintf(stderr,
-					"skip %s, since its the system drive\n",
-					check);
+				fprintf(stderr, "skip %s, since its the system drive\n", check);
 				continue;
 			}
 #endif
@@ -471,27 +450,22 @@ int usb_add_ufd(char *devpath)
 			if (new) {
 				//everything else would cause a memory fault
 				if ((strncmp(entry->d_name, "mmcblk", 6))
-				    && usb_ufd_connected(entry->d_name) ==
-				    FALSE)
+				    && usb_ufd_connected(entry->d_name) == FALSE)
 					continue;
 			} else {
-				if (usb_ufd_connected(entry->d_name + 4) ==
-				    FALSE)
+				if (usb_ufd_connected(entry->d_name + 4) == FALSE)
 					continue;
 			}
 			if (new) {
 				//              sysprintf("echo test %s >> /tmp/hotplugs",entry->d_name);
-				if (strlen(entry->d_name) != 3
-				    && (strncmp(entry->d_name, "mmcblk", 6)))
+				if (strlen(entry->d_name) != 3 && (strncmp(entry->d_name, "mmcblk", 6)))
 					continue;
-				if (strlen(entry->d_name) != 7
-				    && !(strncmp(entry->d_name, "mmcblk", 6)))
+				if (strlen(entry->d_name) != 7 && !(strncmp(entry->d_name, "mmcblk", 6)))
 					continue;
 				//              sysprintf("echo test success %s >> /tmp/hotplugs",entry->d_name);
 				sprintf(path, "/dev/%s", entry->d_name);
 			} else {
-				sprintf(path, "/dev/discs/%s/disc",
-					entry->d_name);
+				sprintf(path, "/dev/discs/%s/disc", entry->d_name);
 			}
 			sysprintf("/usr/sbin/disktype %s > %s", path, DUMPFILE);
 			//set spindown time
@@ -506,50 +480,26 @@ int usb_add_ufd(char *devpath)
 				while (fgets(line, sizeof(line), fp) != NULL) {
 					if (strstr(line, "Partition"))
 						is_part = 1;
-					fprintf(stderr,
-						"[USB Device] partition: %s\n",
-						line);
+					fprintf(stderr, "[USB Device] partition: %s\n", line);
 
 					if (strstr(line, "EFI GPT")) {
 						partitions = "1 2 3 4 5 6";
 						foreach(part, partitions, next) {
-							sprintf(path,
-								"/dev/%s%s",
-								entry->d_name,
-								part);
-							if (stat
-							    (path, &tmp_stat))
+							sprintf(path, "/dev/%s%s", entry->d_name, part);
+							if (stat(path, &tmp_stat))
 								continue;
-							sysprintf
-							    ("/usr/sbin/disktype %s > %s",
-							     path,
-							     DUMPFILE_PART);
+							sysprintf("/usr/sbin/disktype %s > %s", path, DUMPFILE_PART);
 							FILE *fpp;
 							char line_part[256];
-							if ((fpp =
-							     fopen
-							     (DUMPFILE_PART,
-							      "r"))) {
-								while (fgets
-								       (line_part,
-									sizeof
-									(line_part),
-									fpp) !=
-								       NULL) {
-									char *fs
-									    =
-									    getfs
-									    (line_part);
+							if ((fpp = fopen(DUMPFILE_PART, "r"))) {
+								while (fgets(line_part, sizeof(line_part), fpp) != NULL) {
+									char *fs = getfs(line_part);
 									if (fs) {
-										sprintf
-										    (targetname,
-										     "%s_%s",
-										     entry->d_name,
-										     part);
-										usb_process_path
-										    (path,
-										     fs,
-										     targetname);
+										sprintf(targetname, "%s_%s", entry->d_name, part);
+										if (usb_process_path(path, fs, targetname) == 0) {
+											is_partmounted = 1;
+										}
+
 									}
 								}
 
@@ -573,19 +523,14 @@ int usb_add_ufd(char *devpath)
 				 * If it is partioned, mount first partition else raw disk 
 				 */
 				if (is_part && !new) {
-					partitions =
-					    "part1 part2 part3 part4 part5 part6";
+					partitions = "part1 part2 part3 part4 part5 part6";
 					foreach(part, partitions, next) {
-						sprintf(path,
-							"/dev/discs/%s/%s",
-							entry->d_name, part);
+						sprintf(path, "/dev/discs/%s/%s", entry->d_name, part);
 						if (stat(path, &tmp_stat))
 							continue;
-						sprintf(targetname, "%s_%s",
-							entry->d_name, part);
+						sprintf(targetname, "%s_%s", entry->d_name, part);
 
-						if (usb_process_path
-						    (path, fs, targetname)
+						if (usb_process_path(path, fs, targetname)
 						    == 0) {
 							is_mounted = 1;
 							break;
@@ -595,14 +540,11 @@ int usb_add_ufd(char *devpath)
 				if (is_part && new) {
 					partitions = "1 2 3 4 5 6";
 					foreach(part, partitions, next) {
-						sprintf(path, "/dev/%s%s",
-							entry->d_name, part);
+						sprintf(path, "/dev/%s%s", entry->d_name, part);
 						if (stat(path, &tmp_stat))
 							continue;
-						sprintf(targetname, "%s_part%s",
-							entry->d_name, part);
-						if (usb_process_path
-						    (path, fs, targetname)
+						sprintf(targetname, "%s_part%s", entry->d_name, part);
+						if (usb_process_path(path, fs, targetname)
 						    == 0) {
 							is_mounted = 1;
 							break;
@@ -610,13 +552,10 @@ int usb_add_ufd(char *devpath)
 					}
 				} else {
 					if (new)
-						sprintf(targetname, "disc%s",
-							entry->d_name);
+						sprintf(targetname, "disc%s", entry->d_name);
 					else
-						sprintf(targetname, "%s",
-							entry->d_name);
-					if (usb_process_path
-					    (path, fs, targetname) == 0)
+						sprintf(targetname, "%s", entry->d_name);
+					if (usb_process_path(path, fs, targetname) == 0)
 						is_mounted = 1;
 				}
 
@@ -624,30 +563,23 @@ int usb_add_ufd(char *devpath)
 
 			if ((fp = fopen(DUMPFILE, "a"))) {
 				if (fs && is_mounted) {
-					fprintf(fp,
-						"Status: <b>Mounted on /%s</b>\n",
-						nvram_safe_get("usb_mntpoint"));
+					fprintf(fp, "Status: <b>Mounted on /%s</b>\n", nvram_safe_get("usb_mntpoint"));
 					i = 16;
 				} else if (fs)
-					fprintf(fp,
-						"Status: <b>Not mounted</b>\n");
-				else
-					fprintf(fp,
-						"Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n");
+					fprintf(fp, "Status: <b>Not mounted</b>\n");
+				else if (!is_partmounted)
+					fprintf(fp, "Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n");
 				fclose(fp);
 			}
 
 			if (is_mounted && !nvram_match("usb_runonmount", "")) {
-				sprintf(path, "%s",
-					nvram_safe_get("usb_runonmount"));
+				sprintf(path, "%s", nvram_safe_get("usb_runonmount"));
 				if (stat(path, &tmp_stat) == 0)	//file exists
 				{
 					setenv("PATH",
 					       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin",
 					       1);
-					setenv("LD_LIBRARY_PATH",
-					       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
-					       1);
+					setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 
 					system(path);
 				}
