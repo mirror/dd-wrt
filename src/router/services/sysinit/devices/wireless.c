@@ -45,8 +45,7 @@ static void setWirelessLed(int phynum, int ledpin)
 #endif
 		sprintf(sysname, "wireless_generic_%d", ledpin - 32);
 	}
-	sysprintf("echo %s > /sys/devices/platform/leds-gpio/leds/%s/trigger",
-		  trigger, sysname);
+	sysprintf("echo %s > /sys/devices/platform/leds-gpio/leds/%s/trigger", trigger, sysname);
 #else
 #ifdef HAVE_MADWIFI_MIMO
 	if (ledpin >= 32) {
@@ -115,7 +114,7 @@ static void detect_wireless_devices(void)
 	loadlegacy = 0;
 	char path[32];
 	int i = 0;
-	char *bus[]={"0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"};
+	char *bus[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
 	for (i = 0; i < 16; i++) {
 		sprintf(path, "0%s.0", bus[i]);
 		if (!strcmp(has_device(path), "0x0023"))
@@ -199,8 +198,7 @@ static void detect_wireless_devices(void)
 		if (nvram_get("rate_control") != NULL) {
 			char rate[64];
 
-			sprintf(rate, "ratectl=%s",
-				nvram_safe_get("rate_control"));
+			sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
 			eval("insmod", "ath_pci", rate);
 			eval("insmod", "ath_ahb", rate);
 		} else {
@@ -241,8 +239,7 @@ static void detect_wireless_devices(void)
 			if (nvram_get("rate_control") != NULL) {
 				char rate[64];
 
-				sprintf(rate, "ratectl=%s",
-					nvram_safe_get("rate_control"));
+				sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
 				insmod("/lib/80211n/ath_mimo_pci.ko");
 				insmod("/lib/80211n/ath_mimo_ahb.ko");
 			} else {

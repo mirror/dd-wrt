@@ -88,8 +88,7 @@ void start_sysinit(void)
 		fread(&test, 4, 1, fp);
 		fprintf(stderr, "test pattern is %X\n", test);
 		if (test != 0xffffffff) {
-			fprintf(stderr,
-				"radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n");
+			fprintf(stderr, "radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n");
 			fseek(fp, 0, SEEK_SET);
 			char *block = (char *)malloc(65536);
 
@@ -163,8 +162,7 @@ void start_sysinit(void)
 				memcpy(block + 118, &in_addr[0], 6);	// wlan1 mac
 			}
 			if (changed) {
-				fprintf(stderr,
-					"radio config needs to be adjusted, system will reboot after flashing\n");
+				fprintf(stderr, "radio config needs to be adjusted, system will reboot after flashing\n");
 				fp = fopen("/tmp/radio", "wb");
 				fwrite(block, 65536, 1, fp);
 				fclose(fp);
@@ -177,8 +175,7 @@ void start_sysinit(void)
 				// reboots
 				eval("event", "5", "1", "15");
 			} else {
-				fprintf(stderr,
-					"no change required, radio config remains unchanged\n");
+				fprintf(stderr, "no change required, radio config remains unchanged\n");
 			}
 			free(block);
 		}
@@ -213,14 +210,11 @@ void start_sysinit(void)
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			char macaddr[32];
 
-			strcpy(macaddr,
-			       ether_etoa((unsigned char *)ifr.
-					  ifr_hwaddr.sa_data, eabuf));
+			strcpy(macaddr, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 			nvram_set("et0macaddr", macaddr);
 			nvram_set("et0macaddr_safe", macaddr);
 //          MAC_ADD( macaddr );
-			ether_atoe(macaddr,
-				   (unsigned char *)ifr.ifr_hwaddr.sa_data);
+			ether_atoe(macaddr, (unsigned char *)ifr.ifr_hwaddr.sa_data);
 			strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
 			ioctl(s, SIOCSIFHWADDR, &ifr);
 			close(s);
@@ -249,14 +243,11 @@ void start_sysinit(void)
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			char macaddr[32];
 
-			strcpy(macaddr,
-			       ether_etoa((unsigned char *)ifr.
-					  ifr_hwaddr.sa_data, eabuf));
+			strcpy(macaddr, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 			nvram_set("et0macaddr", macaddr);
 			nvram_set("et0macaddr_safe", macaddr);
 			// MAC_ADD (macaddr);
-			ether_atoe(macaddr,
-				   (unsigned char *)ifr.ifr_hwaddr.sa_data);
+			ether_atoe(macaddr, (unsigned char *)ifr.ifr_hwaddr.sa_data);
 			strncpy(ifr.ifr_name, "vlan2", IFNAMSIZ);
 			ioctl(s, SIOCSIFHWADDR, &ifr);
 			close(s);
@@ -308,8 +299,7 @@ void start_fixboard(void)
 		fread(&test, 4, 1, fp);
 		fprintf(stderr, "test pattern is %X\n", test);
 		if (test != 0xffffffff) {
-			fprintf(stderr,
-				"radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n");
+			fprintf(stderr, "radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n");
 			fseek(fp, 0, SEEK_SET);
 			char *block = (char *)malloc(65536);
 

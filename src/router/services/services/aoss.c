@@ -130,8 +130,7 @@ void start_aoss(void)
 			sysprintf("kill %d", pid);
 			sleep(2);
 		}
-		sysprintf
-		    ("hostapd -B -P /var/run/ath0_hostapd.pid /tmp/ath0_hostap.conf");
+		sysprintf("hostapd -B -P /var/run/ath0_hostapd.pid /tmp/ath0_hostap.conf");
 	}
 	if ((nvram_match("ath1_mode", "ap")
 	     || nvram_match("ath1_mode", "wdsap"))
@@ -157,8 +156,7 @@ void start_aoss(void)
 			sysprintf("kill %d", pid);
 			sleep(2);
 		}
-		sysprintf
-		    ("hostapd -B -P /var/run/ath1_hostapd.pid /tmp/ath1_hostap.conf");
+		sysprintf("hostapd -B -P /var/run/ath1_hostapd.pid /tmp/ath1_hostap.conf");
 
 	}
 #else
@@ -167,8 +165,7 @@ void start_aoss(void)
 	     || nvram_match("ath1_mode", "wdsap"))
 	    && !nvram_match("ath1_net_mode", "disabled")) {
 		hasaoss = 1;
-		sysprintf
-		    ("80211n_wlanconfig aossa create wlandev wifi1 wlanmode ap");
+		sysprintf("80211n_wlanconfig aossa create wlandev wifi1 wlanmode ap");
 		sysprintf("iwconfig aossa essid ESSID-AOSS-1");
 		sysprintf("iwpriv aossa authmode 4");
 		sysprintf("iwconfig aossa key [1] 4D454C434F");
@@ -179,8 +176,7 @@ void start_aoss(void)
 	     || nvram_match("ath0_mode", "wdsap"))
 	    && !nvram_match("ath0_net_mode", "disabled")) {
 		hasaoss = 1;
-		sysprintf
-		    ("80211n_wlanconfig aossg create wlandev wifi0 wlanmode ap");
+		sysprintf("80211n_wlanconfig aossg create wlandev wifi0 wlanmode ap");
 		sysprintf("iwconfig aossg essid ESSID-AOSS");
 		sysprintf("iwpriv aossg authmode 4");
 		sysprintf("iwconfig aossg key [1] 4D454C434F");
@@ -223,15 +219,13 @@ void start_aoss(void)
 				sysprintf("kill %d", pid);
 				sleep(2);
 			}
-			sysprintf
-			    ("hostapd -B -P /var/run/ath0_hostapd.pid /tmp/ath0_hostap.conf");
+			sysprintf("hostapd -B -P /var/run/ath0_hostapd.pid /tmp/ath0_hostap.conf");
 		} else
 #endif
 
 		{
 			hasaoss = 1;
-			sysprintf
-			    ("80211n_wlanconfig aoss create wlandev wifi0 wlanmode ap");
+			sysprintf("80211n_wlanconfig aoss create wlandev wifi0 wlanmode ap");
 			sysprintf("iwconfig aoss essid ESSID-AOSS");
 			sysprintf("iwpriv aoss authmode 4");
 			sysprintf("iwconfig aoss key [1] 4D454C434F");
@@ -244,11 +238,9 @@ void start_aoss(void)
 		sysprintf("iptables -I OUTPUT -o aoss -j ACCEPT");
 		sysprintf("iptables -I INPUT -i aoss -j ACCEPT");
 		ret = eval("aoss", "-i", "aoss", "-m", "ap");
-		dd_syslog(LOG_INFO,
-			  "aoss : aoss daemon successfully started\n");
+		dd_syslog(LOG_INFO, "aoss : aoss daemon successfully started\n");
 	} else
-		dd_syslog(LOG_INFO,
-			  "aoss : aoss daemon not started (operation mode is not AP or WDSAP)\n");
+		dd_syslog(LOG_INFO, "aoss : aoss daemon not started (operation mode is not AP or WDSAP)\n");
 
 	cprintf("done\n");
 	return;

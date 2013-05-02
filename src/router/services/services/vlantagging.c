@@ -93,9 +93,7 @@ void start_vlantagging(void)
 		if (nvram_default_match(var, "1", "1")) {
 			eval("ifconfig", vlan_name, "0.0.0.0", "up");
 		} else {
-			eval("ifconfig", vlan_name,
-			     nvram_nget("%s_ipaddr", vlan_name), "netmask",
-			     nvram_nget("%s_netmask", vlan_name), "up");
+			eval("ifconfig", vlan_name, nvram_nget("%s_ipaddr", vlan_name), "netmask", nvram_nget("%s_netmask", vlan_name), "up");
 		}
 	}
 	char eths[256];
@@ -183,8 +181,7 @@ void start_bridgesif(void)
 		return;
 	strncpy(ifr.ifr_name, nvram_safe_get("lan_ifname"), IFNAMSIZ);
 	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
-		nvram_set("lan_hwaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("lan_hwaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	}
 	close(s);
 }

@@ -39,8 +39,7 @@ static int detect(char *devicename)
 	char devcall[128];
 	int res;
 
-	sprintf(devcall, "cat /tmp/devices|/bin/grep \"%s\"|/usr/bin/wc -l",
-		devicename);
+	sprintf(devcall, "cat /tmp/devices|/bin/grep \"%s\"|/usr/bin/wc -l", devicename);
 	FILE *in = popen(devcall, "rb");
 
 	fscanf(in, "%d", &res);

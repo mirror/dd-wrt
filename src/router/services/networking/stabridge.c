@@ -58,14 +58,9 @@ void start_stabridge(void)
 		}
 		if (nvram_match(label, "0")) {
 			sprintf(label, "%s_relayd_gw_ipaddr", getWET());
-			sysprintf("relayd -I %s -I %s -G %s -L %s -D -B%s &",
-				  getBridge(getWET()), getWET(),
-				  nvram_safe_get(label),
-				  nvram_safe_get("lan_ipaddr"), debug_string);
+			sysprintf("relayd -I %s -I %s -G %s -L %s -D -B%s &", getBridge(getWET()), getWET(), nvram_safe_get(label), nvram_safe_get("lan_ipaddr"), debug_string);
 		} else {
-			sysprintf("relayd -I %s -I %s -L %s -D -B%s &",
-				  getBridge(getWET()), getWET(),
-				  nvram_safe_get("lan_ipaddr"), debug_string);
+			sysprintf("relayd -I %s -I %s -L %s -D -B%s &", getBridge(getWET()), getWET(), nvram_safe_get("lan_ipaddr"), debug_string);
 		}
 	}
 #else
@@ -82,14 +77,9 @@ void start_stabridge(void)
 		insmod("ebtable_broute");
 		insmod("ebt_arpnat");
 		insmod("ebt_broute");
-		eval("ebtables", "-t", "nat", "-A", "PREROUTING",
-		     "--in-interface", getWET(), "-j", "arpnat",
-		     "--arpnat-target", "ACCEPT");
-		eval("ebtables", "-t", "nat", "-A", "POSTROUTING",
-		     "--out-interface", getWET(), "-j", "arpnat",
-		     "--arpnat-target", "ACCEPT");
-		eval("ebtables", "-t", "broute", "-A", "BROUTING", "--protocol",
-		     "0x888e", "--in-interface", getWET(), "-j", "DROP");
+		eval("ebtables", "-t", "nat", "-A", "PREROUTING", "--in-interface", getWET(), "-j", "arpnat", "--arpnat-target", "ACCEPT");
+		eval("ebtables", "-t", "nat", "-A", "POSTROUTING", "--out-interface", getWET(), "-j", "arpnat", "--arpnat-target", "ACCEPT");
+		eval("ebtables", "-t", "broute", "-A", "BROUTING", "--protocol", "0x888e", "--in-interface", getWET(), "-j", "DROP");
 	}
 #endif
 }
@@ -100,14 +90,9 @@ void stop_stabridge(void)
 	stop_process("relayd", "Client Bridge Relay Daemon");
 #else
 	if (getWET()) {
-		eval("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol",
-		     "0x888e", "--in-interface", getWET(), "-j", "DROP");
-		eval("ebtables", "-t", "nat", "-D", "POSTROUTING",
-		     "--out-interface", getWET(), "-j", "arpnat",
-		     "--arpnat-target", "ACCEPT");
-		eval("ebtables", "-t", "nat", "-D", "PREROUTING",
-		     "--in-interface", getWET(), "-j", "arpnat",
-		     "--arpnat-target", "ACCEPT");
+		eval("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol", "0x888e", "--in-interface", getWET(), "-j", "DROP");
+		eval("ebtables", "-t", "nat", "-D", "POSTROUTING", "--out-interface", getWET(), "-j", "arpnat", "--arpnat-target", "ACCEPT");
+		eval("ebtables", "-t", "nat", "-D", "PREROUTING", "--in-interface", getWET(), "-j", "arpnat", "--arpnat-target", "ACCEPT");
 	}
 	// flush the tables, since getWET will not find the interface
 	// in the nvram (if changed from client-bridge to whatever)

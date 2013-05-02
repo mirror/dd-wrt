@@ -106,8 +106,7 @@ void start_tmp_ppp(int num)
 	timeout = 3;
 	while (ioctl(s, SIOCGIFADDR, &ifr) && timeout--) {
 		perror(nvram_safe_get(pppoeifname));
-		printf("Wait %s inteface to init (1) ...\n",
-		       nvram_safe_get(pppoeifname));
+		printf("Wait %s inteface to init (1) ...\n", nvram_safe_get(pppoeifname));
 		sleep(1);
 	};
 	nvram_set(wanip[num], inet_ntoa(sin_addr(&(ifr.ifr_addr))));
@@ -119,8 +118,7 @@ void start_tmp_ppp(int num)
 	timeout = 3;
 	while (ioctl(s, SIOCGIFDSTADDR, &ifr) && timeout--) {
 		perror(nvram_safe_get(pppoeifname));
-		printf("Wait %s inteface to init (2) ...\n",
-		       nvram_safe_get(pppoeifname));
+		printf("Wait %s inteface to init (2) ...\n", nvram_safe_get(pppoeifname));
 		sleep(1);
 	}
 	nvram_set(wangw[num], inet_ntoa(sin_addr(&(ifr.ifr_dstaddr))));
@@ -168,13 +166,10 @@ void start_pppoe(int pppoe_num)
 
 	cprintf("start session %d\n", pppoe_num);
 	sprintf(idletime, "%d", atoi(nvram_safe_get("ppp_idletime")) * 60);
-	snprintf(retry_num, sizeof(retry_num), "%d",
-		 (atoi(nvram_safe_get("ppp_redialperiod")) / 5) - 1);
+	snprintf(retry_num, sizeof(retry_num), "%d", (atoi(nvram_safe_get("ppp_redialperiod")) / 5) - 1);
 
-	snprintf(username, sizeof(username), "%s",
-		 nvram_safe_get(ppp_username[pppoe_num]));
-	snprintf(passwd, sizeof(passwd), "%s",
-		 nvram_safe_get(ppp_passwd[pppoe_num]));
+	snprintf(username, sizeof(username), "%s", nvram_safe_get(ppp_username[pppoe_num]));
+	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get(ppp_passwd[pppoe_num]));
 	sprintf(param, "%d", pppoe_num);
 	/*
 	 * add here 
@@ -183,14 +178,14 @@ void start_pppoe(int pppoe_num)
 		wan_ifname,
 		"-u", username,
 		"-p", passwd,
-		"-r", nvram_safe_get("wan_mtu"),  // del by honor, add by tallest.
+		"-r", nvram_safe_get("wan_mtu"),	// del by honor, add by tallest.
 		"-t", nvram_safe_get("wan_mtu"),
 		"-i", nvram_match(ppp_demand[pppoe_num], "1") ? idletime : "0",
 		"-I", "10",	// Send an LCP echo-request frame to the
-				// server every 10 seconds
+		// server every 10 seconds
 		"-T", "20",	// pppd will presume the server to be dead if 
-				// 20 LCP echo-requests are sent without
-				//-> timeout 1 min
+		// 20 LCP echo-requests are sent without
+		//-> timeout 1 min
 		// receiving a valid LCP echo-reply
 		"-P", param,	// PPPOE session number.
 		"-N", retry_num,	// To avoid kill pppd when pppd has been
@@ -304,8 +299,7 @@ void stop_single_pppoe(int pppoe_num)
 
 	sprintf(pppoe_pid, "pppoe_pid%d", pppoe_num);
 	sprintf(pppoe_ifname, "pppoe_ifname%d", pppoe_num);
-	dprintf("start! stop pppoe %d, pid %s \n", pppoe_num,
-		nvram_safe_get(pppoe_pid));
+	dprintf("start! stop pppoe %d, pid %s \n", pppoe_num, nvram_safe_get(pppoe_pid));
 
 	ret = eval("kill", nvram_safe_get(pppoe_pid));
 	unlink(ppp_unlink[pppoe_num]);

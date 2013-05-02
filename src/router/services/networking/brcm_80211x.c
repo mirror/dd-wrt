@@ -54,8 +54,7 @@ void setupSupplicant(char *prefix)
 		sprintf(bul, "[%s]", nvram_safe_get(key));
 		eval("iwconfig", prefix, "key", bul);
 		// eval ("iwpriv", prefix, "authmode", "2");
-	} else if (nvram_match(akm, "psk") ||
-		   nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
+	} else if (nvram_match(akm, "psk") || nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
 		char fstr[64];
 		char psk[16];
 
@@ -118,8 +117,7 @@ void setupSupplicant(char *prefix)
 			sprintf(psk, "-i%s", prefix);
 
 		if (nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
-			eval("wpa_supplicant", "-b", getBridge(prefix), "-B",
-			     "-Dwext", psk, "-c", fstr);
+			eval("wpa_supplicant", "-b", getBridge(prefix), "-B", "-Dwext", psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
 	} else if (nvram_match(akm, "8021X")) {
@@ -143,21 +141,20 @@ void setupSupplicant(char *prefix)
 // -> added habeIchVergessen
 			char *keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
 			char *wpaOpts[40];
-			if (strlen(keyExchng)==0)
-			    nvram_nset("wep","%s_tls8021xkeyxchng", prefix);
+			if (strlen(keyExchng) == 0)
+				nvram_nset("wep", "%s_tls8021xkeyxchng", prefix);
 			sprintf(wpaOpts, "");
 			keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
 			if (strcmp("wpa2", keyExchng) == 0)
 				sprintf(wpaOpts, "\tpairwise=CCMP\n\tgroup=CCMP\n");
 			if (strcmp("wpa2mixed", keyExchng) == 0)
-                         	sprintf(wpaOpts, "\tpairwise=CCMP TKIP\n\tgroup=CCMP TKIP\n");
+				sprintf(wpaOpts, "\tpairwise=CCMP TKIP\n\tgroup=CCMP TKIP\n");
 			if (strcmp("wpa", keyExchng) == 0)
-                        	sprintf(wpaOpts, "\tpairwise=TKIP\n\tgroup=TKIP\n");
+				sprintf(wpaOpts, "\tpairwise=TKIP\n\tgroup=TKIP\n");
 			fprintf(fp, "\tkey_mgmt=%s\n%s", (strlen(wpaOpts) == 0 ? "IEEE8021X" : "WPA-EAP"), wpaOpts);
 // <- added habeIchVergessen
 			fprintf(fp, "\teap=TLS\n");
-			fprintf(fp, "\tidentity=\"%s\"\n",
-				nvram_prefix_get("tls8021xuser", prefix));
+			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("tls8021xuser", prefix));
 			sprintf(psk, "/tmp/%s", prefix);
 			mkdir(psk, 0700);
 			sprintf(psk, "/tmp/%s/ca.pem", prefix);
@@ -173,17 +170,13 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix);
 			fprintf(fp, "\tclient_cert=/tmp/%s/user.pem\n", prefix);
 			fprintf(fp, "\tprivate_key=/tmp/%s/user.prv\n", prefix);
-			fprintf(fp, "\tprivate_key_passwd=\"%s\"\n",
-				nvram_prefix_get("tls8021xpasswd", prefix));
+			fprintf(fp, "\tprivate_key_passwd=\"%s\"\n", nvram_prefix_get("tls8021xpasswd", prefix));
 			fprintf(fp, "\teapol_flags=3\n");
 			if (strlen(nvram_nget("%s_tls8021xphase2", prefix)) > 0) {
-				fprintf(fp, "\tphase2=\"%s\"\n",
-					nvram_nget("%s_tls8021xphase2",
-						   prefix));
+				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_tls8021xphase2", prefix));
 			}
 			if (strlen(nvram_nget("%s_tls8021xanon", prefix)) > 0) {
-				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
-					nvram_nget("%s_tls8021xanon", prefix));
+				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_tls8021xanon", prefix));
 			}
 			if (strlen(nvram_nget("%s_tls8021xaddopt", prefix)) > 0) {
 				sprintf(ath, "%s_tls8021xaddopt", prefix);
@@ -198,31 +191,23 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\tpairwise=CCMP TKIP\n");
 			fprintf(fp, "\tgroup=CCMP TKIP\n");
 			fprintf(fp, "\tphase1=\"peapver=0\"\n");
-			fprintf(fp, "\tidentity=\"%s\"\n",
-				nvram_prefix_get("peap8021xuser", prefix));
-			fprintf(fp, "\tpassword=\"%s\"\n",
-				nvram_prefix_get("peap8021xpasswd", prefix));
+			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("peap8021xuser", prefix));
+			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("peap8021xpasswd", prefix));
 			sprintf(psk, "/tmp/%s", prefix);
 			mkdir(psk, 0700);
 			sprintf(psk, "/tmp/%s/ca.pem", prefix);
 			sprintf(ath, "%s_peap8021xca", prefix);
 			if (!nvram_match(ath, "")) {
 				write_nvram(psk, ath);
-				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n",
-					prefix);
+				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 			}
-			if (strlen(nvram_nget("%s_peap8021xphase2", prefix)) >
-			    0) {
-				fprintf(fp, "\tphase2=\"%s\"\n",
-					nvram_nget("%s_peap8021xphase2",
-						   prefix));
+			if (strlen(nvram_nget("%s_peap8021xphase2", prefix)) > 0) {
+				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_peap8021xphase2", prefix));
 			}
 			if (strlen(nvram_nget("%s_peap8021xanon", prefix)) > 0) {
-				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
-					nvram_nget("%s_peap8021xanon", prefix));
+				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_peap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix)) >
-			    0) {
+			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix)) > 0) {
 				sprintf(ath, "%s_peap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -234,31 +219,23 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\teap=TTLS\n");
 			fprintf(fp, "\tpairwise=CCMP TKIP\n");
 			fprintf(fp, "\tgroup=CCMP TKIP\n");
-			fprintf(fp, "\tidentity=\"%s\"\n",
-				nvram_prefix_get("ttls8021xuser", prefix));
-			fprintf(fp, "\tpassword=\"%s\"\n",
-				nvram_prefix_get("ttls8021xpasswd", prefix));
+			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("ttls8021xuser", prefix));
+			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("ttls8021xpasswd", prefix));
 			if (strlen(nvram_nget("%s_ttls8021xca", prefix)) > 0) {
 				sprintf(psk, "/tmp/%s", prefix);
 				mkdir(psk, 0700);
 				sprintf(psk, "/tmp/%s/ca.pem", prefix);
 				sprintf(ath, "%s_ttls8021xca", prefix);
 				write_nvram(psk, ath);
-				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n",
-					prefix);
+				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 			}
-			if (strlen(nvram_nget("%s_ttls8021xphase2", prefix)) >
-			    0) {
-				fprintf(fp, "\tphase2=\"%s\"\n",
-					nvram_nget("%s_ttls8021xphase2",
-						   prefix));
+			if (strlen(nvram_nget("%s_ttls8021xphase2", prefix)) > 0) {
+				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_ttls8021xphase2", prefix));
 			}
 			if (strlen(nvram_nget("%s_ttls8021xanon", prefix)) > 0) {
-				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
-					nvram_nget("%s_ttls8021xanon", prefix));
+				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_ttls8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix)) >
-			    0) {
+			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix)) > 0) {
 				sprintf(ath, "%s_ttls8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -272,22 +249,15 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\tproto=WPA RSN\n");
 			fprintf(fp, "\tpairwise=CCMP TKIP\n");
 			fprintf(fp, "\tgroup=CCMP TKIP\n");
-			fprintf(fp, "\tidentity=\"%s\"\n",
-				nvram_prefix_get("leap8021xuser", prefix));
-			fprintf(fp, "\tpassword=\"%s\"\n",
-				nvram_prefix_get("leap8021xpasswd", prefix));
-			if (strlen(nvram_nget("%s_leap8021xphase2", prefix)) >
-			    0) {
-				fprintf(fp, "\tphase2=\"%s\"\n",
-					nvram_nget("%s_leap8021xphase2",
-						   prefix));
+			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("leap8021xuser", prefix));
+			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("leap8021xpasswd", prefix));
+			if (strlen(nvram_nget("%s_leap8021xphase2", prefix)) > 0) {
+				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_leap8021xphase2", prefix));
 			}
 			if (strlen(nvram_nget("%s_leap8021xanon", prefix)) > 0) {
-				fprintf(fp, "\tanonymous_identity=\"%s\"\n",
-					nvram_nget("%s_leap8021xanon", prefix));
+				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_leap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix)) >
-			    0) {
+			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix)) > 0) {
 				sprintf(ath, "%s_leap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -310,9 +280,7 @@ void setupSupplicant(char *prefix)
 		if (nvram_match(bvar, "1")
 		    && (nvram_match(wmode, "wdssta")
 			|| nvram_match(wmode, "wet")))
-			eval("wpa_supplicant", "-b",
-			     nvram_safe_get("lan_ifname"), "-B", "-Dwext", psk,
-			     "-c", fstr);
+			eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), "-B", "-Dwext", psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
 	} else {

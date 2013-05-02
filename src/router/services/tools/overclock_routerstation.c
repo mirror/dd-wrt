@@ -83,8 +83,7 @@ void start_overclock(void)	// hidden feature. must be called with
 	if ((ret1 = memcmp(check, values, 8))
 	    && (ret2 = memcmp(check2, values, 8))
 	    && (ret3 = memcmp(check2, values2, 8))) {
-		fprintf(stderr,
-			"no compatible routerstation bootloader found\n");
+		fprintf(stderr, "no compatible routerstation bootloader found\n");
 		fclose(in);
 		return;
 	}
@@ -140,12 +139,10 @@ void start_overclock(void)	// hidden feature. must be called with
 	if (!ret) {
 		fprintf(stderr, "write new bootloader\n");
 		eval("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-		fprintf(stderr, "board now clocked to %sMhz\n",
-			nvram_safe_get("cpuclk"));
+		fprintf(stderr, "board now clocked to %sMhz\n", nvram_safe_get("cpuclk"));
 	}
 	if (ret == 1) {
-		fprintf(stderr,
-			"no clock defined, please adjust the \"cpuclk\" nvram parameter. in example \"nvram set cpuclk=800\"");
+		fprintf(stderr, "no clock defined, please adjust the \"cpuclk\" nvram parameter. in example \"nvram set cpuclk=800\"");
 	}
 }
 

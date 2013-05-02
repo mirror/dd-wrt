@@ -43,8 +43,7 @@ void start_httpd(void)
 			ret = eval("httpd", "-p", lan_port);
 		} else {
 			ret = eval("httpd");
-			dd_syslog(LOG_INFO,
-				  "httpd : http daemon successfully started\n");
+			dd_syslog(LOG_INFO, "httpd : http daemon successfully started\n");
 		}
 		chdir("/");
 	}

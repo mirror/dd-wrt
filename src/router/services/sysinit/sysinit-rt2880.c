@@ -106,11 +106,9 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 6; i++)
 			copy[i] = mac[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		if (!strcmp(mac, "ff:ff:ff:ff:ff:ff"))
-			eval("ifconfig", "eth2", "hw", "ether",
-			     "00:11:22:33:44:55");
+			eval("ifconfig", "eth2", "hw", "ether", "00:11:22:33:44:55");
 		else
 			eval("ifconfig", "eth2", "hw", "ether", mac);
 	}
@@ -138,7 +136,6 @@ void start_sysinit(void)
 		free(config);
 		fclose(in);
 	}
-
 #endif
 #if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) || defined(HAVE_AR690W)
 	FILE *in = fopen("/dev/mtdblock/1", "rb");
@@ -318,9 +315,7 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth2", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 
@@ -356,8 +351,7 @@ void start_overclocking(void)
 
 char *enable_dtag_vlan(int enable)
 {
-	if (getRouterBrand() != ROUTER_BOARD_ECB9750
-	    && getRouterBrand() != ROUTER_BOARD_TECHNAXX3G) {
+	if (getRouterBrand() != ROUTER_BOARD_ECB9750 && getRouterBrand() != ROUTER_BOARD_TECHNAXX3G) {
 		if (enable) {
 #if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
 			sysprintf("switch reg w 14 405555");
@@ -464,8 +458,7 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 48 1002");
 			sysprintf("switch reg w 70 ffff506f");
 #endif
-			eval("vconfig", "set_name_type",
-			     "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 			eval("vconfig", "add", "eth2", "2");	//WAN
 			return "eth2";
 #endif
