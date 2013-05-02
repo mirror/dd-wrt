@@ -49,17 +49,14 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	int i;
 
 	fprintf(stderr, "list channels for %s\n", ifname);
-	if (do80211priv
-	    (ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof(chans)) < 0) {
+	if (do80211priv(ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof(chans)) < 0) {
 		fprintf(stderr, "unable to get channel information\n");
 		return NULL;
 	}
 	if (!allchans) {
 		uint8_t active[64];
 
-		if (do80211priv
-		    (ifname, IEEE80211_IOCTL_GETCHANLIST, &active,
-		     sizeof(active)) < 0) {
+		if (do80211priv(ifname, IEEE80211_IOCTL_GETCHANLIST, &active, sizeof(active)) < 0) {
 			fprintf(stderr, "unable to get active channel list\n");
 			return NULL;
 		}
@@ -72,10 +69,8 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	} else
 		achans = chans;
 
-	struct wifi_channels *list =
-	    (struct wifi_channels *)safe_malloc(sizeof(struct wifi_channels) *
-					   (achans.ic_nchans + 1));
-	(void)memset(list, 0, (sizeof(struct wifi_channels)*((achans.ic_nchans + 1))));
+	struct wifi_channels *list = (struct wifi_channels *)safe_malloc(sizeof(struct wifi_channels) * (achans.ic_nchans + 1));
+	(void)memset(list, 0, (sizeof(struct wifi_channels) * ((achans.ic_nchans + 1))));
 
 	char wl_mode[16];
 	char wl_turbo[16];
@@ -91,8 +86,8 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 
 	for (i = 0; i < achans.ic_nchans; i++) {
 #ifdef HAVE_BUFFALO
-		if (achans.ic_chans[i].ic_flags & IEEE80211_CHAN_RADARFOUND) //filter channels with detected radar
-		    continue;
+		if (achans.ic_chans[i].ic_flags & IEEE80211_CHAN_RADARFOUND)	//filter channels with detected radar
+			continue;
 #endif
 		// filter out A channels if mode isnt A-Only or mixed
 		if (IEEE80211_IS_CHAN_5GHZ(&achans.ic_chans[i])) {
@@ -107,15 +102,9 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			    && (nvram_match(wl_mode, "n5-only")
 				|| nvram_match(wl_mode, "mixed")
 				|| nvram_match(wl_mode, "na-only"))) {
-				if (up
-				    &&
-				    !IEEE80211_IS_CHAN_11NA_HT40PLUS
-				    (&achans.ic_chans[i]))
+				if (up && !IEEE80211_IS_CHAN_11NA_HT40PLUS(&achans.ic_chans[i]))
 					continue;
-				if (!up
-				    &&
-				    !IEEE80211_IS_CHAN_11NA_HT40MINUS
-				    (&achans.ic_chans[i]))
+				if (!up && !IEEE80211_IS_CHAN_11NA_HT40MINUS(&achans.ic_chans[i]))
 					continue;
 			}
 		}
@@ -132,30 +121,22 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 				continue;
 			}
 #ifdef HAVE_BUFFALO_SA
-			if(nvram_default_match("region", "SA", "") 
-			   && (!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US"))
-			   && achans.ic_chans[i].ic_ieee > 11 && achans.ic_chans[i].ic_ieee <= 14)
+			if (nvram_default_match("region", "SA", "")
+			    && (!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US"))
+			    && achans.ic_chans[i].ic_ieee > 11 && achans.ic_chans[i].ic_ieee <= 14)
 				continue;
 #endif
 			if (nvram_match(wl_turbo, "40")
-			    && (nvram_match(wl_mode, "n2-only") 
+			    && (nvram_match(wl_mode, "n2-only")
 				|| nvram_match(wl_mode, "n-only")
 				|| nvram_match(wl_mode, "mixed")
 				|| nvram_match(wl_mode, "ng-only"))) {
-				if (up
-				    &&
-				    !IEEE80211_IS_CHAN_11NG_HT40PLUS
-				    (&achans.ic_chans[i])) {
-					fprintf(stderr, "%s:%d\n", __func__,
-						__LINE__);
+				if (up && !IEEE80211_IS_CHAN_11NG_HT40PLUS(&achans.ic_chans[i])) {
+					fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 					continue;
 				}
-				if (!up
-				    &&
-				    !IEEE80211_IS_CHAN_11NG_HT40MINUS
-				    (&achans.ic_chans[i])) {
-					fprintf(stderr, "%s:%d\n", __func__,
-						__LINE__);
+				if (!up && !IEEE80211_IS_CHAN_11NG_HT40MINUS(&achans.ic_chans[i])) {
+					fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 					continue;
 				}
 			}
@@ -261,8 +242,7 @@ int getassoclist_11n(char *ifname, unsigned char *list)
 
 		si = (struct ieee80211req_sta_info *)cp;
 		memcpy(l, &si->isi_macaddr[0], 6);
-		if (l[0] == 0 && l[1] == 0 && l[2] == 0 && l[3] == 0
-		    && l[4] == 0 && l[5] == 0)
+		if (l[0] == 0 && l[1] == 0 && l[2] == 0 && l[3] == 0 && l[4] == 0 && l[5] == 0)
 			break;
 		l += 6;
 		count[0]++;

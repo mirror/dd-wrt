@@ -73,8 +73,7 @@ void del_routes(char *route)
 		if (!strcmp(ipaddr, "0.0.0.0"))
 			eval("route", "del", "default", "gw", gateway);
 
-		eval("route", "del", "-net", ipaddr, "netmask", netmask, "gw",
-		     gateway);
+		eval("route", "del", "-net", ipaddr, "netmask", netmask, "gw", gateway);
 		// route_del (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
 	}
 }
@@ -192,7 +191,7 @@ int start_services_main(int argc, char **argv)
 	handle = start_service_nofree_f("spotpass", handle);
 #endif
 #ifdef HAVE_IAS
-	if(atoi(nvram_safe_get("ias_startup")) > 0) {
+	if (atoi(nvram_safe_get("ias_startup")) > 0) {
 		nvram_set("ias_startup", "3");
 		nvram_set("ias_dnsresp", "1");
 		system("/usr/sbin/dns_responder 192.168.11.1 55300 &");
@@ -395,7 +394,7 @@ static void handle_index(void)
 	// accept connection
 	// anymore on wan/lan 
 	// ip changes changes
-//	handle = start_service_nofree_f("anchorfreednat", handle);
+//      handle = start_service_nofree_f("anchorfreednat", handle);
 	handle = start_service_nofree("wan_boot", handle);
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
@@ -588,7 +587,7 @@ static void handle_services(void)
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
-//	handle = start_service_nofree_f("anchorfreednat", handle);
+//      handle = start_service_nofree_f("anchorfreednat", handle);
 //    if( handle )
 //      dlclose( handle );
 
@@ -666,7 +665,7 @@ static void handle_management(void)
 	handle = start_service_nofree("nas", handle);
 	handle = start_service_nofree("guest_nas", handle);
 #endif
-//	handle = start_service_nofree_f("anchorfreednat", handle);
+//      handle = start_service_nofree_f("anchorfreednat", handle);
 
 //    if( handle )
 //      dlclose( handle );
@@ -749,7 +748,7 @@ static void handle_filters(void)
 #ifdef HAVE_MULTICAST
 	handle = startstop_nofree_f("igmp_proxy", handle);
 #endif
-//	handle = start_service_nofree_f("anchorfreednat", handle);
+//      handle = start_service_nofree_f("anchorfreednat", handle);
 //    if( handle )
 //      dlclose( handle );
 }
@@ -772,7 +771,7 @@ static void handle_routing(void)
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
-//	handle = start_service_nofree_f("anchorfreednat", handle);
+//      handle = start_service_nofree_f("anchorfreednat", handle);
 //    if( handle )
 //      dlclose( handle );
 
@@ -811,7 +810,7 @@ static void handle_forward(void)
 #endif
 	handle = start_service_nofree_f("wshaper", handle);
 	handle = start_service_nofree_f("wland", handle);
-//	handle = start_service_nofree_f("anchorfreednat", handle);
+//      handle = start_service_nofree_f("anchorfreednat", handle);
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
@@ -830,10 +829,10 @@ static void handle_qos(void)
 	handle = startstop_nofree_f("splashd", handle);
 #endif
 #ifdef HAVE_OPENVPN
-    handle = stop_service_nofree("openvpnserver", handle);
-    handle = stop_service_nofree("openvpn", handle);
-    handle = start_service_nofree_f("openvpnserver", handle);
-    handle = start_service_nofree_f("openvpn", handle);
+	handle = stop_service_nofree("openvpnserver", handle);
+	handle = stop_service_nofree("openvpn", handle);
+	handle = start_service_nofree_f("openvpnserver", handle);
+	handle = start_service_nofree_f("openvpn", handle);
 #endif
 //    if( handle )
 //      dlclose( handle );
@@ -853,7 +852,7 @@ static void handle_forwardupnp(void)
 	handle = stop_service_nofree("wland", handle);
 	handle = startstop_nofree_f("wshaper", handle);
 	handle = start_service_nofree_f("wland", handle);
-//	handle = start_service_nofree_f("anchorfreednat", handle);
+//      handle = start_service_nofree_f("anchorfreednat", handle);
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
@@ -871,7 +870,7 @@ static void handle_routedel(void)
 #ifdef HAVE_SPOTPASS
 static void handle_spotpass(void)
 {
-        void *handle = NULL;
+	void *handle = NULL;
 	startstop("spotpass");
 }
 #endif
@@ -1154,7 +1153,7 @@ static struct SERVICES services_def[] = {
 	{"index", handle_index},
 	{"router", handle_router},
 	{"hotspot", handle_hotspot},
-//	{"anchorfree", handle_anchorfree},
+//      {"anchorfree", handle_anchorfree},
 	{"services", handle_services},
 #if defined(HAVE_FTP) || defined(HAVE_SAMBA3) || defined(HAVE_MINIDLNA)
 	{"nassrv", handle_nassrv},
@@ -1236,8 +1235,7 @@ int start_single_service_main(int argc, char **argv)
 		int servicecount = 0;
 
 		while (services_def[servicecount].servicename != NULL) {
-			if (!strcmp
-			    (services_def[servicecount].servicename, service))
+			if (!strcmp(services_def[servicecount].servicename, service))
 				services_def[servicecount].service();
 			servicecount++;
 		}

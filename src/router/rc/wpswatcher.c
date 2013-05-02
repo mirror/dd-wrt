@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 	while (timeout) {
 		FILE *fp = fopen("/tmp/.wpsdone", "rb");
 		if (fp) {
-			killall("ledtool",SIGKILL);
+			killall("ledtool", SIGKILL);
 			nvram_set("wps_status", "1");
 			nvram_commit();
 			sysprintf("rm -f /tmp/.wpsdone");
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 		sleep(1);
 	}
 	if (!timeout) {
-		killall("ledtool",SIGKILL);
+		killall("ledtool", SIGKILL);
 		nvram_set("wps_status", "1");
 		nvram_commit();
 		system("ledtool 1800 3");

@@ -30,8 +30,7 @@
 #define ROUNDUP(x, y) ((((unsigned int)(x)+((y)-1))/(y))*(y))
 #define OFFSET(p, field) ((unsigned int)(&((p)->field)) - (unsigned int)(p))
 
-extern int mtd_erase_sector(const char *mtd, unsigned long start,
-			    unsigned long end);
+extern int mtd_erase_sector(const char *mtd, unsigned long start, unsigned long end);
 
 /* 
  * Write pmon from user space, and erease first 128K of kernel Must check EST 
@@ -100,8 +99,7 @@ int write_boot(const char *path, const char *mtd)
 		ret++;
 		goto fail;
 	}
-	if (ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0 ||
-	    mtd_info.erasesize < sizeof(struct boot_header)) {
+	if (ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0 || mtd_info.erasesize < sizeof(struct boot_header)) {
 		perror(mtd);
 		ret++;
 		goto fail;
@@ -129,8 +127,7 @@ int write_boot(const char *path, const char *mtd)
 	/* 
 	 * Write file or URL to MTD device 
 	 */
-	for (erase_info.start = 0; erase_info.start < PMON_SIZE;
-	     erase_info.start += count) {
+	for (erase_info.start = 0; erase_info.start < PMON_SIZE; erase_info.start += count) {
 		len = MIN(erase_info.length, PMON_SIZE - erase_info.start);
 		if (erase_info.start == 0) {
 			count = sizeof(struct boot_header);
@@ -142,8 +139,7 @@ int write_boot(const char *path, const char *mtd)
 		if (fp)
 			count += fread(&buf[off], 1, len - off, fp);
 
-		printf("Read data size = [%ld]\n",
-		       count - sizeof(struct boot_header));
+		printf("Read data size = [%ld]\n", count - sizeof(struct boot_header));
 
 		if (count < 0) {
 			perror(path);
@@ -159,22 +155,17 @@ int write_boot(const char *path, const char *mtd)
 		 * update mac to new boot 
 		 */
 		lan_mac = nvram_get("et0macaddr");
-		printf("Restore mac [%s] to new boot, the location is 0x%x\n",
-		       lan_mac, MAC_START_ADDRESS);
+		printf("Restore mac [%s] to new boot, the location is 0x%x\n", lan_mac, MAC_START_ADDRESS);
 
 		for (i = 0; i < 17; i++)
 			buf[MAC_START_ADDRESS + i] = *(lan_mac + i);
 		buf[MAC_START_ADDRESS + 17] = '\0';
 
-		printf("Restore eou key to new boot, the location is 0x%x\n",
-		       CFE_EOU_KEY_START_ADDRESS);
+		printf("Restore eou key to new boot, the location is 0x%x\n", CFE_EOU_KEY_START_ADDRESS);
 		if (nvram_invmatch("eou_device_id", "")) {
-			memcpy(&buf[CFE_EOU_KEY_START_ADDRESS],
-			       nvram_safe_get("eou_device_id"), 8);
-			memcpy(&buf[CFE_EOU_KEY_START_ADDRESS + 8],
-			       nvram_safe_get("eou_private_key"), 256);
-			memcpy(&buf[CFE_EOU_KEY_START_ADDRESS + 8 + 256],
-			       nvram_safe_get("eou_public_key"), 258);
+			memcpy(&buf[CFE_EOU_KEY_START_ADDRESS], nvram_safe_get("eou_device_id"), 8);
+			memcpy(&buf[CFE_EOU_KEY_START_ADDRESS + 8], nvram_safe_get("eou_private_key"), 256);
+			memcpy(&buf[CFE_EOU_KEY_START_ADDRESS + 8 + 256], nvram_safe_get("eou_public_key"), 258);
 		}
 
 		/* 
@@ -281,8 +272,7 @@ int write_mac(const char *path)
 	// 
 	// leave this bit as 0)
 
-	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", buf[0], buf[1], buf[2],
-		buf[3], buf[4], buf[5]);
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
 	cprintf("Download mac=[%s]\n", mac);
 
 	snprintf(string, sizeof(string), "string=%s", mac);
@@ -363,8 +353,7 @@ int write_eou_key(const char *path)
 		printASC(public_key, 258);
 	}
 
-	snprintf(string, sizeof(string), "string=%s%s%s\0", device_id,
-		 private_key, public_key);
+	snprintf(string, sizeof(string), "string=%s%s%s\0", device_id, private_key, public_key);
 
 	// eval ("insmod", "writemac", "flag=set_eou_key", string);
 	// eval ("rmmod", "writemac");
@@ -408,8 +397,7 @@ int mtd_erase_sector(const char *mtd, unsigned long start, unsigned long end)
 
 	erase_info.length = mtd_info.erasesize;
 
-	for (erase_info.start = start;
-	     erase_info.start < end; erase_info.start += mtd_info.erasesize) {
+	for (erase_info.start = start; erase_info.start < end; erase_info.start += mtd_info.erasesize) {
 		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
 			perror(mtd);

@@ -116,8 +116,7 @@ int roaming_daemon(void)
 
 		for (i = 0; i < SITE_SURVEY_NUM; i++) {
 
-			if (site_survey_lists[i].BSSID[0] == 0 ||
-			    site_survey_lists[i].channel == 0)
+			if (site_survey_lists[i].BSSID[0] == 0 || site_survey_lists[i].channel == 0)
 				break;
 			if (site_survey_lists[i].SSID[0] == 0)	// empty ssid's or
 				// hidden ssid's are
@@ -126,18 +125,14 @@ int roaming_daemon(void)
 			if (regexec(comp, &site_survey_lists[i].SSID[0])) {
 				if (site_survey_lists[i].RSSI > bestrssi) {
 					bestrssi = site_survey_lists[i].RSSI;
-					bestssid =
-					    &site_survey_lists[i].SSID[0];
+					bestssid = &site_survey_lists[i].SSID[0];
 				}
 			}
 		}
 
-		fprintf(stderr, "best result %s with rssi %d for roaming\n",
-			bestssid, bestrssi);
+		fprintf(stderr, "best result %s with rssi %d for roaming\n", bestssid, bestrssi);
 		if (bestssid && !nvram_match("roaming_ssid", bestssid)) {
-			fprintf(stderr,
-				"selecting %s with rssi %d for roaming\n",
-				bestssid, bestrssi);
+			fprintf(stderr, "selecting %s with rssi %d for roaming\n", bestssid, bestrssi);
 			nvram_set("roaming_ssid", bestssid);
 			nvram_set("roaming_enable", "1");
 #ifdef HAVE_MADWIFI

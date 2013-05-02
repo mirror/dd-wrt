@@ -81,9 +81,7 @@ typedef struct {
 #define RSSI_CMD	"wl rssi"
 #define NOISE_CMD	"wl noise"
 
-int
-ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
-		      char *iface, char *visible, int cnt)
+int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *visible, int cnt)
 {
 	int rssi = 0, noise = 0;
 	FILE *fp2;
@@ -119,8 +117,7 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 		    && strcmp(mode, "apstawet"))
 			sysprintf("wl -i %s rssi > %s", iface, RSSI_TMP);
 		else
-			sysprintf("wl -i %s rssi \"%s\" > %s", iface, mac,
-				  RSSI_TMP);
+			sysprintf("wl -i %s rssi \"%s\" > %s", iface, mac, RSSI_TMP);
 
 		// get noise value if not ap mode
 		// if (strcmp (mode, "ap"))
@@ -183,12 +180,10 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 					int tx = staold->tx_rate;
 					int rx = staold->rx_rate;
 					if (tx > 0)
-						sprintf(txrate, "%dM",
-							tx / 1000);
+						sprintf(txrate, "%dM", tx / 1000);
 
 					if (rx > 0)
-						sprintf(rxrate, "%dM",
-							rx / 1000);
+						sprintf(rxrate, "%dM", rx / 1000);
 					strcpy(time, UPTIME(staold->in));
 				}
 			} else {	// sta->ver == 3
@@ -196,12 +191,10 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 					int tx = sta->tx_rate;
 					int rx = sta->rx_rate;
 					if (tx > 0)
-						sprintf(txrate, "%dM",
-							tx / 1000);
+						sprintf(txrate, "%dM", tx / 1000);
 
 					if (rx > 0)
-						sprintf(rxrate, "%dM",
-							rx / 1000);
+						sprintf(rxrate, "%dM", rx / 1000);
 					strcpy(time, UPTIME(sta->in));
 				}
 			}
@@ -213,9 +206,7 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 		 */
 		int qual = rssi * 124 + 11600;
 		qual /= 10;
-		websWrite(wp, "'%s','%s','%s','%s','%s','%d','%d','%d','%d'",
-			  mac, iface, time, txrate, rxrate, rssi, noise,
-			  rssi - noise, qual);
+		websWrite(wp, "'%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, iface, time, txrate, rxrate, rssi, noise, rssi - noise, qual);
 	}
 	unlink(RSSI_TMP);
 
@@ -232,9 +223,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 		char wlif[32];
 
 		sprintf(wlif, "wl%d", i);
-		cnt =
-		    ej_active_wireless_if(wp, argc, argv,
-					  get_wl_instance_name(i), wlif, cnt);
+		cnt = ej_active_wireless_if(wp, argc, argv, get_wl_instance_name(i), wlif, cnt);
 		char *next;
 		char var[80];
 		char *vifs = nvram_nget("wl%d_vifs", i);
@@ -243,9 +232,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			return;
 
 		foreach(var, vifs, next) {
-			cnt =
-			    ej_active_wireless_if(wp, argc, argv, var, var,
-						  cnt);
+			cnt = ej_active_wireless_if(wp, argc, argv, var, var, cnt);
 		}
 	}
 }
@@ -304,10 +291,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 			|| nvram_nmatch("wdsap", "%s_mode", prefix)
 			|| nvram_nmatch("infra", "%s_mode", prefix))) {
 			if (nvram_nmatch("40", "%s_nbw", prefix)) {
-				websWrite(wp, "%d + ",
-					  nvram_nmatch("upper", "%s_nctrlsb",
-						       prefix) ? ci.hw_channel +
-					  2 : ci.hw_channel - 2);
+				websWrite(wp, "%d + ", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? ci.hw_channel + 2 : ci.hw_channel - 2);
 			}
 			if (nvram_nmatch("80", "%s_nbw", prefix)) {
 				int channel = ci.hw_channel - 6;
@@ -331,8 +315,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 }
 
 #define WDS_RSSI_TMP	"/tmp/.rssi"
-int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv,
-			   int instance, int cnt);
+int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, int cnt);
 void ej_active_wds(webs_t wp, int argc, char_t ** argv)
 {
 	int cnt = 0;
@@ -344,9 +327,7 @@ void ej_active_wds(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-int
-ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance,
-		       int cnt)
+int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, int cnt)
 {
 	int rssi = 0, i;
 	FILE *fp2;
@@ -395,10 +376,8 @@ ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance,
 		for (i = 1; i <= 10; i++) {
 			snprintf(wdsvar, 30, "wl%d_wds%d_hwaddr", instance, i);
 			if (nvram_match(wdsvar, mac)) {
-				snprintf(wdsvar, 30, "wl%d_wds%d_desc",
-					 instance, i);
-				snprintf(desc, sizeof(desc), "%s",
-					 nvram_get(wdsvar));
+				snprintf(wdsvar, 30, "wl%d_wds%d_desc", instance, i);
+				snprintf(desc, sizeof(desc), "%s", nvram_get(wdsvar));
 				if (!strcmp(nvram_get(wdsvar), ""))
 					strcpy(desc, "&nbsp;");
 			}
@@ -429,15 +408,12 @@ ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance,
 		cnt++;
 		int noise = getNoise(iface, NULL);
 
-		websWrite(wp,
-			  "\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"",
-			  mac, iface, desc, rssi, noise, rssi - noise);
+		websWrite(wp, "\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"", mac, iface, desc, rssi, noise, rssi - noise);
 	}
 
 	unlink(WDS_RSSI_TMP);
 	return cnt;
 }
-
 
 static unsigned int bits_count(unsigned int n)
 {
@@ -453,8 +429,7 @@ static unsigned int bits_count(unsigned int n)
 }
 
 /* Writes "1" if Tx beamforming is supported. Otherwise, "0" */
-int 
-ej_wl_txbf_capable(webs_t wp, int argc, char_t **argv)
+int ej_wl_txbf_capable(webs_t wp, int argc, char_t ** argv)
 {
 	char *name = NULL;
 	char tmp[NVRAM_BUFSIZE], prefix[] = "wlXXXXXXXXXX_";

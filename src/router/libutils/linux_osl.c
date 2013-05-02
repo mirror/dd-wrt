@@ -55,9 +55,7 @@ struct in_addr *osl_ifaddr(const char *ifname, struct in_addr *inaddr)
 	if (ioctl(sockfd, SIOCGIFADDR, &ifreq) < 0) {
 		inaddr = NULL;
 	} else {
-		memcpy(inaddr,
-		       &(((struct sockaddr_in *)&ifreq.ifr_addr)->sin_addr),
-		       sizeof(struct in_addr));
+		memcpy(inaddr, &(((struct sockaddr_in *)&ifreq.ifr_addr)->sin_addr), sizeof(struct in_addr));
 	}
 	close(sockfd);
 	return inaddr;
@@ -83,7 +81,8 @@ short osl_ifflags(const char *ifname)
 	close(sockfd);
 	return flags;
 }
-#if 0 
+
+#if 0
 int osl_join_multicast(struct iface *pif, int fd, ulong ipaddr, ushort port)
 {
 	struct ip_mreqn mcreqn;
@@ -105,8 +104,7 @@ int osl_join_multicast(struct iface *pif, int fd, ulong ipaddr, ushort port)
 
 		// bind the socket to an address and port.
 		flag = 1;
-		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&flag,
-			   sizeof(flag));
+		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&flag, sizeof(flag));
 
 		memset(&mcaddr, 0, sizeof(mcaddr));
 		// memcpy(&mcaddr.sin_addr, &pif->inaddr, sizeof(mcaddr.sin_addr));
@@ -129,18 +127,14 @@ int osl_join_multicast(struct iface *pif, int fd, ulong ipaddr, ushort port)
 		// uncomment the next two
 		mcreqn.imr_address.s_addr = mcaddr.sin_addr.s_addr;
 		mcreqn.imr_ifindex = ifreq.ifr_ifindex;
-		if (setsockopt
-		    (fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mcreqn,
-		     sizeof(mcreqn)))
+		if (setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mcreqn, sizeof(mcreqn)))
 			break;
 
 		// restrict multicast messages sent on this socket 
 		// to only go out this interface and no other
 		// (doesn't say anything about multicast receives.)
 		// 
-		if (setsockopt
-		    (fd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&pif->inaddr,
-		     sizeof(pif->inaddr)))
+		if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&pif->inaddr, sizeof(pif->inaddr)))
 			break;
 
 		success = TRUE;

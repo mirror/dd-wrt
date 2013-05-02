@@ -51,15 +51,12 @@ static void check_qmi(void)
 	if (fp) {
 		fscanf(fp, "%d", &clientid);
 		fclose(fp);
-		sysprintf
-		    ("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-serving-system|grep registered|wc -l>/tmp/qmistatus",
-		     clientid);
+		sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-serving-system|grep registered|wc -l>/tmp/qmistatus", clientid);
 	} else {
 		sysprintf("echo 0 > /tmp/qmistatus");
 	}
 #else
-	sysprintf
-	    ("qmi-network /dev/cdc-wdm0 status|grep disconnected|wc -l>/tmp/qmistatus");
+	sysprintf("qmi-network /dev/cdc-wdm0 status|grep disconnected|wc -l>/tmp/qmistatus");
 #endif
 }
 #endif
@@ -174,8 +171,7 @@ int redial_main(int argc, char **argv)
 					if (is_running("bpalogin") == 0) {
 						stop_service("heartbeat");
 						sleep(1);
-						start_service
-						    ("heartbeat_redial");
+						start_service("heartbeat_redial");
 					}
 
 				}
@@ -212,11 +208,7 @@ int get_wanface(int argc, char **argv)
 int get_nfmark(int argc, char **argv)
 {
 	if (argc < 3) {
-		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n"
-			"	services: FORWARD\n"
-			"		  HOTSPOT\n"
-			"		  QOS\n\n"
-			"	eg: get_nfmark QOS 10\n");
+		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n" "	services: FORWARD\n" "		  HOTSPOT\n" "		  QOS\n\n" "	eg: get_nfmark QOS 10\n");
 		return 1;
 	}
 
@@ -348,8 +340,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < sizeof(maincalls) / sizeof(struct MAIN); i++) {
 		if (strstr(base, maincalls[i].callname)) {
 			if (maincalls[i].execname)
-				return start_main(maincalls[i].execname, argc,
-						  argv);
+				return start_main(maincalls[i].execname, argc, argv);
 			if (maincalls[i].exec)
 				return maincalls[i].exec(argc, argv);
 		}
@@ -408,8 +399,7 @@ int main(int argc, char **argv)
 			// defaults
 		{
 			if (argv[1] && strcmp(argv[1], "nvram")) {
-				fprintf(stderr,
-					"Sorry, erasing nvram will get this router unuseable\n");
+				fprintf(stderr, "Sorry, erasing nvram will get this router unuseable\n");
 				return 0;
 			}
 		} else {

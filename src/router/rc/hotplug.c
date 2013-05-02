@@ -49,8 +49,7 @@ int main(int argc, char **argv)
 				char *button = getenv("BUTTON");
 				if (button) {
 					char name[32];
-					sprintf(name, "/tmp/.button_%s",
-						button);
+					sprintf(name, "/tmp/.button_%s", button);
 					FILE *fp = fopen(name, "wb");
 					if (fp) {
 						if (!strcmp(action, "pressed")) {
@@ -80,8 +79,7 @@ int main(int argc, char **argv)
 #endif
 #ifdef HAVE_ATH9K
 		if (!strcmp(argv[1], "regulatory")) {
-			syslog(LOG_DEBUG,
-			       "hotplug: old style regulatory called\n");
+			syslog(LOG_DEBUG, "hotplug: old style regulatory called\n");
 			int r = eval("/sbin/crda");
 			eval("rm", "-f", "/tmp/.crdalock");
 			return r;
@@ -92,10 +90,8 @@ int main(int argc, char **argv)
 			if ((action = getenv("ACTION"))
 			    && (devicepath = getenv("DEVPATH"))
 			    && !strcmp(action, "change")
-			    && !strcmp(devicepath,
-				       "/devices/platform/regulatory.0")) {
-				syslog(LOG_DEBUG,
-				       "hotplug: new style regulatory called\n");
+			    && !strcmp(devicepath, "/devices/platform/regulatory.0")) {
+				syslog(LOG_DEBUG, "hotplug: new style regulatory called\n");
 				int r = eval("/sbin/crda");
 				eval("rm", "-f", "/tmp/.crdalock");
 				return r;

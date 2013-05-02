@@ -28,7 +28,6 @@
 #include <shutils.h>
 #include <bcmnvram.h>
 
-
 struct DEVICES {
 	int vendor;
 	int product;
@@ -46,8 +45,7 @@ static int scanFor(int Vendor, int Product)
 {
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	char grepstr[128];
-	sprintf(grepstr, "grep Vendor=%x ProdID=%x /tmp/usb/devices|wc -l",
-		Vendor, Product);
+	sprintf(grepstr, "grep Vendor=%x ProdID=%x /tmp/usb/devices|wc -l", Vendor, Product);
 	FILE *check = popen(grepstr, "rb");
 	if (check) {
 		int count = 0;
@@ -64,8 +62,7 @@ static int scanFor(int Vendor, int Product)
 	int hub = 1;
 	while (hub < 5) {
 		char sysfs[64];
-		sprintf(sysfs, "/sys/bus/usb/devices/%d-0:1.0/bInterfaceNumber",
-			count);
+		sprintf(sysfs, "/sys/bus/usb/devices/%d-0:1.0/bInterfaceNumber", count);
 		FILE *probe = fopen(sysfs, "rb");
 		if (!probe) {
 			count = 1;
@@ -74,8 +71,7 @@ static int scanFor(int Vendor, int Product)
 		}
 		fclose(probe);
 
-		sprintf(sysfs, "/sys/bus/usb/devices/%d-%d/idProduct", count,
-			hub);
+		sprintf(sysfs, "/sys/bus/usb/devices/%d-%d/idProduct", count, hub);
 		FILE *modem = fopen(sysfs, "rb");
 		if (!modem) {
 			count++;
@@ -85,8 +81,7 @@ static int scanFor(int Vendor, int Product)
 		int idVendor;
 		fscanf(modem, "%X", &idProduct);
 		fclose(modem);
-		sprintf(sysfs, "/sys/bus/usb/devices/%d-%d/idVendor", count,
-			hub);
+		sprintf(sysfs, "/sys/bus/usb/devices/%d-%d/idVendor", count, hub);
 		modem = fopen(sysfs, "rb");
 		if (!modem) {
 			count++;
@@ -147,11 +142,10 @@ static void hsoinit(int needreset, int devicecount)
 static void hsoinit_icon(int needreset, int devicecount)
 {
 	FILE *out;
-	out= fopen("/tmp/usb_modeswitch.conf", "wb");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
-	fprintf(out,
-		"MessageContent=\"55534243785634120100000080000601000000000000000000000000000000\"\n");
+	fprintf(out, "MessageContent=\"55534243785634120100000080000601000000000000000000000000000000\"\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 
@@ -161,14 +155,10 @@ static void hsoinit_icon(int needreset, int devicecount)
 
 static void modeswitch_pantech(int needreset, int devicecount)
 {
-	system
-	    ("usb_modeswitch -v 0x106c -p 0x3b03 -M 555342431234567824000000800008ff024445564348470000000000000000");
-	system
-	    ("usb_modeswitch -v 0x106c -p 0x3b05 -M 555342431234567824000000800008ff020000000000000000000000000000");
-	system
-	    ("usb_modeswitch -v 0x106c -p 0x3b06 -M 555342431234567824000000800008ff020000000000000000000000000000");
-	system
-	    ("usb_modeswitch -v 0x106c -p 0x3b11 -M 555342431234567824000000800008ff024445564348470000000000000000");
+	system("usb_modeswitch -v 0x106c -p 0x3b03 -M 555342431234567824000000800008ff024445564348470000000000000000");
+	system("usb_modeswitch -v 0x106c -p 0x3b05 -M 555342431234567824000000800008ff020000000000000000000000000000");
+	system("usb_modeswitch -v 0x106c -p 0x3b06 -M 555342431234567824000000800008ff020000000000000000000000000000");
+	system("usb_modeswitch -v 0x106c -p 0x3b11 -M 555342431234567824000000800008ff024445564348470000000000000000");
 
 	sleep(2);
 }
@@ -176,13 +166,13 @@ static void modeswitch_pantech(int needreset, int devicecount)
 static void modeswitch_sierra(int needreset, int devicecount)
 {
 	FILE *out;
-	out= fopen("/tmp/usb_modeswitch.conf", "wb");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out,
 		"TargetProductList=\"0017,0018,0019,0020,0021,0022,0024,0026,0027,0028,0112,0120,0218,0220,0224,6802,6803,6804,6805,6808,6809,6812,6813,6815,6816,6820,6821,6822,6832,6833,6834,6835,6838,6839,683a,683b,683c,683d,683e,6850,6851,6852,6853,6855,6856,6859,685a,6880,6890,6893,68a3,68aa,9011,9012\"\n");
-	fprintf(out,"SierraMode=1\n"); 
-	fprintf(out,"CheckSuccess=10\n");
+	fprintf(out, "SierraMode=1\n");
+	fprintf(out, "CheckSuccess=10\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 
@@ -192,7 +182,7 @@ static void modeswitch_sierra(int needreset, int devicecount)
 static void modeswitch_huawei_old(int needreset, int devicecount)
 {
 	FILE *out;
-	out= fopen("/tmp/usb_modeswitch.conf", "wb");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "HuaweiMode=1\n");
@@ -205,11 +195,10 @@ static void modeswitch_huawei_old(int needreset, int devicecount)
 static void modeswitch_huawei_std(int needreset, int devicecount)
 {
 	FILE *out;
-	out= fopen("/tmp/usb_modeswitch.conf", "wb");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
-	fprintf(out,
-		"MessageContent=\"55534243123456780000000000000011062000000100000000000000000000\"\n");
+	fprintf(out, "MessageContent=\"55534243123456780000000000000011062000000100000000000000000000\"\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 
@@ -217,16 +206,14 @@ static void modeswitch_huawei_std(int needreset, int devicecount)
 }
 
 static void modeswitch_huawei_other(int needreset, int devicecount)
-{	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x1031 -M 55534243123456780600000080010a11060000000000000000000000000000");
-	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x1f01 -M 55534243123456780000000000000011060000000000000000000000000000");	// switch HiLink to modem
-	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x1f11 -M 55534243123456780000000000000011060000000000000000000000000000");	// switch HiLink to modem
-//	system
-//	    ("usb_modeswitch -v 0x12d1 -p 0x1f01 -M 55534243123456780000000000000011062000000000000100000000000000");	// switch HiLink to eth
-//	system
-//	    ("usb_modeswitch -v 0x12d1 -p 0x1f11 -M 55534243123456780002000080000a11062000000000000100000000000000");	// switch HiLink to eth
+{
+	system("usb_modeswitch -v 0x12d1 -p 0x1031 -M 55534243123456780600000080010a11060000000000000000000000000000");
+	system("usb_modeswitch -v 0x12d1 -p 0x1f01 -M 55534243123456780000000000000011060000000000000000000000000000");	// switch HiLink to modem
+	system("usb_modeswitch -v 0x12d1 -p 0x1f11 -M 55534243123456780000000000000011060000000000000000000000000000");	// switch HiLink to modem
+//      system
+//          ("usb_modeswitch -v 0x12d1 -p 0x1f01 -M 55534243123456780000000000000011062000000000000100000000000000");   // switch HiLink to eth
+//      system
+//          ("usb_modeswitch -v 0x12d1 -p 0x1f11 -M 55534243123456780002000080000a11062000000000000100000000000000");   // switch HiLink to eth
 
 	sleep(2);
 }
@@ -237,37 +224,33 @@ static void modeswitch_cmotech(int needreset, int devicecount)
 	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
-	fprintf(out,
-		"MessageContent=\"555342431234567824000000800008ff524445564348473100000000000000\"\n");
+	fprintf(out, "MessageContent=\"555342431234567824000000800008ff524445564348473100000000000000\"\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 
 	sleep(2);
 }
 
-static void modeswitch_zte_1msg (int needreset, int devicecount)
+static void modeswitch_zte_1msg(int needreset, int devicecount)
 {
 	FILE *out;
-	out= fopen("/tmp/usb_modeswitch.conf", "wb");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
-	fprintf(out,
-		"MessageContent=\"5553424312345678000000000000061b000000020000000000000000000000\"\n");
+	fprintf(out, "MessageContent=\"5553424312345678000000000000061b000000020000000000000000000000\"\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 
 	sleep(2);
 }
 
-static void modeswitch_zte_2msg (int needreset, int devicecount)
+static void modeswitch_zte_2msg(int needreset, int devicecount)
 {
 	FILE *out;
-	out= fopen("/tmp/usb_modeswitch.conf", "wb");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
-	fprintf(out,
-		"MessageContent=\"5553424312345678000000000000061e000000000000000000000000000000\"\n"
-		"MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n");
+	fprintf(out, "MessageContent=\"5553424312345678000000000000061e000000000000000000000000000000\"\n" "MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 
@@ -282,9 +265,7 @@ static void modeswitch_zte_3msg(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out,
 		"MessageContent=\"5553424312345678000000000000061e000000000000000000000000000000\"\n"
-		"MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n"
-		"MessageContent3=\"55534243123456702000000080000c85010101180101010101000000000000\"\n"
-		"NeedResponse=1\n");
+		"MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n" "MessageContent3=\"55534243123456702000000080000c85010101180101010101000000000000\"\n" "NeedResponse=1\n");
 	fclose(out);
 	system("usb_modeswitch -I -c /tmp/usb_modeswitch.conf");
 
@@ -293,14 +274,10 @@ static void modeswitch_zte_3msg(int needreset, int devicecount)
 
 static void modeswitch_zte_other(int needreset, int devicecount)
 {
-	system
-	    ("usb_modeswitch -v 0x19d2 -p 0x0166 -M 55534243123456782400000080000685000000240000000000000000000000");
-	system
-	    ("usb_modeswitch -v 0x19d2 -p 0x0266 -M 55534243123456782400000080000685000000240000000000000000000000");
-	system
-	    ("usb_modeswitch -v 0x19d2 -p 0xfff5 -M 5553424312345678c00000008000069f030000000000000000000000000000");
-	system
-	    ("usb_modeswitch -v 0x19d2 -p 0xfff6 -M 5553424312345678c00000008000069f030000000000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x0166 -M 55534243123456782400000080000685000000240000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0x0266 -M 55534243123456782400000080000685000000240000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0xfff5 -M 5553424312345678c00000008000069f030000000000000000000000000000");
+	system("usb_modeswitch -v 0x19d2 -p 0xfff6 -M 5553424312345678c00000008000069f030000000000000000000000000000");
 
 	sleep(2);
 }
@@ -308,15 +285,13 @@ static void modeswitch_zte_other(int needreset, int devicecount)
 static void modeswitch_bandrich(int needreset, int devicecount)
 {
 	FILE *out;
-	out= fopen("/tmp/usb_modeswitch.conf", "wb");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "TargetVendor=0x1a8d\n");
 	fprintf(out, "TargetProductList=\"1002,1007,1009,100d,2006\"\n");
-	fprintf(out,
-		"MessageContent=\"5553424312345678000000000000061e000000000000000000000000000000\"\n");
-	fprintf(out,
-		"MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n");
+	fprintf(out, "MessageContent=\"5553424312345678000000000000061e000000000000000000000000000000\"\n");
+	fprintf(out, "MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n");
 	fprintf(out, "ReleaseDelay=4000\n");
 	fprintf(out, "NeedResponse=1\n");
 	fclose(out);
@@ -326,13 +301,12 @@ static void modeswitch_bandrich(int needreset, int devicecount)
 }
 
 static void modeswitch_alcatel(int needreset, int devicecount)
-{ 
+{
 	FILE *out;
-	out= fopen("/tmp/usb_modeswitch.conf", "wb");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
-	fprintf(out,
-		"MessageContent=\"55534243123456788000000080000606f50402527000000000000000000000\"\n");
+	fprintf(out, "MessageContent=\"55534243123456788000000080000606f50402527000000000000000000000\"\n");
 	fprintf(out, "CheckSuccess=20\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
@@ -348,8 +322,7 @@ static void modeswitch_4g_xsstick(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "TargetVendor=0x1c9e\n");
 	fprintf(out, "TargetProductList=0x6061,0x9000,0x9603,0x9605,0x9607\n");
-	fprintf(out,
-		"MessageContent=\"55534243123456788000000080000606f50402527000000000000000000000\"\n");
+	fprintf(out, "MessageContent=\"55534243123456788000000080000606f50402527000000000000000000000\"\n");
 	fprintf(out, "CheckSuccess=20\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
@@ -365,8 +338,7 @@ static void modeswitch_icon210(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0xf000\n");
 	fprintf(out, "TargetVendor=0x1e0e\n");
 	fprintf(out, "TargetProductList=\"9200,9000\"\n");
-	fprintf(out,
-		"MessageContent=\"555342431234567800000000000006bd000000020000000000000000000000\"\n");
+	fprintf(out, "MessageContent=\"555342431234567800000000000006bd000000020000000000000000000000\"\n");
 	fprintf(out, "NeedResponse=1\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
@@ -377,7 +349,7 @@ static void modeswitch_icon210(int needreset, int devicecount)
 static void modeswitch_linktop(int needreset, int devicecount)
 {
 	FILE *out;
-	out= fopen("/tmp/usb_modeswitch.conf", "wb");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "Configuration=3\n");
@@ -390,11 +362,11 @@ static void modeswitch_linktop(int needreset, int devicecount)
 	sleep(2);
 }
 
-#define QMI 0x80 // cdc_wdm + qmi_wwan
-#define ETH 0x40  // usbnet + cdc_ether or usbnet + cdc_ncm
-#define GENERIC 0x20 //
-#define ACM 0x10  //cdc_acm
-#define MBIM 0x08	//cdc_mbim
+#define QMI 0x80		// cdc_wdm + qmi_wwan
+#define ETH 0x40		// usbnet + cdc_ether or usbnet + cdc_ncm
+#define GENERIC 0x20		//
+#define ACM 0x10		//cdc_acm
+#define MBIM 0x08		//cdc_mbim
 // 0-7 is variant type
 // 0 =
 // 1 = Sierra
@@ -448,7 +420,7 @@ static struct DEVICES devicelist[] = {
 	{0x0af0, 0x7a05, NULL, "hso", "hso", 0, &hsoinit_icon, "Option ICON 461"},	//
 	{0x0af0, 0x8120, "option", "2", "2", 3, NULL, "Option GTM681W"},	//
 	{0x0af0, 0x8700, NULL, NULL, NULL, 0, &hsoinit_icon, "Option GI0643"},	//
-//	{0x0af0, 0x8701, NULL, NULL, NULL, 3 | ETH, NULL, "Option GI0643"},	//
+//      {0x0af0, 0x8701, NULL, NULL, NULL, 3 | ETH, NULL, "Option GI0643"},     //
 	{0x0af0, 0x8900, "option", "2", "2", 3, NULL, "Option GTM671W"},	//
 	{0x0af0, 0x9000, "option", "2", "2", 3, NULL, "Option GTM661W"},	//
 	{0x0af0, 0x9200, "option", "2", "2", 3, NULL, "Option GTM671WFS"},	//
@@ -558,7 +530,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x1413, "option", "2", "0", 2, NULL, "HUAWEI/Option EC168"},	//
 	{0x12d1, 0x1414, "option", "2", "0", 2, &modeswitch_huawei_old, "HUAWEI/Option E180"},	//
 	{0x12d1, 0x141b, "option", "1", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
-//	{0x12d1, 0x1432, "option", "0", "0", 2 | ETH, NULL, "HUAWEI E585"},
+//      {0x12d1, 0x1432, "option", "0", "0", 2 | ETH, NULL, "HUAWEI E585"},
 	{0x12d1, 0x1433, "option", "2", "0", 2, NULL, "HUAWEI/Option E1756C"},	//
 	{0x12d1, 0x1436, "option", "2", "0", 2, NULL, "HUAWEI/Option E1800"},	// ecm able
 	{0x12d1, 0x1444, "option", "0", "0", 2, NULL, "HUAWEI/Option E352-R1"},	//
@@ -576,7 +548,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x14b5, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E173"},	//
 	{0x12d1, 0x14b7, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei K4511"},	//
 	{0x12d1, 0x14ba, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E173/E177 (cdrom)"},	//
-//	{0x12d1, 0x14bc, "option", "0", "0", 2 | ETH, NULL,  "Huawei K3773 (net)"},	//
+//      {0x12d1, 0x14bc, "option", "0", "0", 2 | ETH, NULL,  "Huawei K3773 (net)"},     //
 	{0x12d1, 0x14c1, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei K4605"},	//
 	{0x12d1, 0x14c3, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei K5005"},	//
 	{0x12d1, 0x14c4, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei K3771"},	//
@@ -590,7 +562,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x14cf, "option", "2", "0", 2, NULL, "Huawei K3772 (modem)"},	// ncm able
 	{0x12d1, 0x14d1, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E182E"},	//
 	{0x12d1, 0x14d2, "option", "2", "0", 2, NULL, "Huawei E173/E177 (modem)"},	//
-//	{0x12d1, 0x14db, "option", "0", "0", 2 | ETH, NULL,  "Huawei E353 composite"},	//
+//      {0x12d1, 0x14db, "option", "0", "0", 2 | ETH, NULL,  "Huawei E353 composite"},  //
 	{0x12d1, 0x14fe, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E352,E353"},	//
 	{0x12d1, 0x1505, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E398"},	//
 	{0x12d1, 0x1506, "option", "2", "0", 2, NULL, "Huawei E367/E398 (modem)"},	//  qmi able
@@ -611,8 +583,8 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x1c10, "option", "2", "0", 2, NULL, "Huawei E173 (modem)"},	//
 	{0x12d1, 0x1c12, "option", "2", "0", 2, NULL, "Huawei E173 (modem)"},	//
 	{0x12d1, 0x1c1b, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E398 (cdrom)"},	//
-//	{0x12d1, 0x1c1e, "option", "2", "0", 2 | NCM, NULL, "Huawei E586 (net)"},	//
-//	{0x12d1, 0x1c1f, "option", "0", "0", 2 | NCM, NULL, "Huawei E587 (net)"},	//
+//      {0x12d1, 0x1c1e, "option", "2", "0", 2 | NCM, NULL, "Huawei E586 (net)"},       //
+//      {0x12d1, 0x1c1f, "option", "0", "0", 2 | NCM, NULL, "Huawei E587 (net)"},       //
 	{0x12d1, 0x1c23, "option", "0", "2", 2 | GENERIC, NULL, "Huawei E173 (modem)"},	//
 	{0x12d1, 0x1c24, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E173 (cdrom)"},	//
 	{0x12d1, 0x1f01, "option", "0", "0", 2, &modeswitch_huawei_other, "Huawei E353 (cdrom)"},	//
@@ -751,7 +723,7 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0xffff, "option", "1", "0", 2, NULL, "ZTE generic (modem)"},	//
 
 //Infomark
-//	{0x19f2, 0x1700, "option", "0", "0", 0 | ETH, NULL, "Clear Spot Voyager mifi"},	//
+//      {0x19f2, 0x1700, "option", "0", "0", 0 | ETH, NULL, "Clear Spot Voyager mifi"}, //
 
 //Bandrich
 	{0x1a8d, 0x1000, "option", "0", "0", 2, &modeswitch_bandrich, "Bandrich C-100/C-120/C-170/C-180/C-270/C-320/C321 (cdrom)"},	//
@@ -790,7 +762,6 @@ static struct DEVICES devicelist[] = {
 	{0x1e0e, 0xce16, "option", "1", "0", 3, NULL, "D-Link DWM-162-U5, Micromax MMX 300c (modem)"},	//
 	{0x1e0e, 0xf000, "option", "0", "0", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU (cdrom)"},	//
 
-
 // D-Link (3rd VID)
 	{0x2001, 0x7d00, "option", "1", "0", 2 | GENERIC, NULL, "D-Link DWM-156 A6 (modem)"},	//
 	{0x2001, 0x7d01, "option", "1", "0", 2, "D-Link DWM-156 A7 (modem)"},	//
@@ -801,8 +772,8 @@ static struct DEVICES devicelist[] = {
 	{0x211f, 0x6801, "option", "2", "0", 2, NULL, "Celot K-3000/CT-650/CT-680 (modem)"},	//
 
 //Linktop
-	{0x230d, 0x0001, "option", "0", "1", 0 | ACM, &modeswitch_linktop, "Linktop LW27x (BSNL 3G)"},  // 
-	{0x230d, 0x0007, "option", "0", "1", 0 | ACM, &modeswitch_linktop, "Linktop LW27x (Visiontek 3G)"},  //
+	{0x230d, 0x0001, "option", "0", "1", 0 | ACM, &modeswitch_linktop, "Linktop LW27x (BSNL 3G)"},	// 
+	{0x230d, 0x0007, "option", "0", "1", 0 | ACM, &modeswitch_linktop, "Linktop LW27x (Visiontek 3G)"},	//
 
 //TP-Link
 	{0x2357, 0x0200, "option", "0", "0", 2, &modeswitch_zte_1msg, "TP-Link MA180 (cdrom)"},	//
@@ -813,16 +784,15 @@ static struct DEVICES devicelist[] = {
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
 
-char *get3GDeviceVendor(void) {
+char *get3GDeviceVendor(void)
+{
 
 	char *vendor = "unknown";
 	int devicecount = 0;
 	while (devicelist[devicecount].vendor != 0xffff) {
-		if (scanFor
-		    (devicelist[devicecount].vendor,
-		     devicelist[devicecount].product)) {
+		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product)) {
 			return devicelist[devicecount].name;
-			
+
 		}
 		devicecount++;
 	}
@@ -834,7 +804,7 @@ char *get3GControlDevice(void)
 	static char control[32];
 	static char data[32];
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
-	mkdir("/tmp/usb",0700);
+	mkdir("/tmp/usb", 0700);
 	eval("mount", "-t", "usbfs", "usb", "/tmp/usb");
 //insmod("sierra");  //further investigation required (compass problem)
 #endif
@@ -882,15 +852,12 @@ char *get3GControlDevice(void)
 	}
 #endif
 	nvram_unset("3gnmvariant");
-//	nvram_set("3gdata", "/dev/usb/tts/0");	/ crap
+//      nvram_set("3gdata", "/dev/usb/tts/0");  / crap
 
 	int devicecount = 0;
 	while (devicelist[devicecount].vendor != 0xffff) {
-		if (scanFor
-		    (devicelist[devicecount].vendor,
-		     devicelist[devicecount].product)) {
-			fprintf(stderr, "%s detected\n",
-				devicelist[devicecount].name);
+		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product)) {
+			fprintf(stderr, "%s detected\n", devicelist[devicecount].name);
 
 			if ((devicelist[devicecount].modeswitch & QMI)) {
 				insmod("cdc-wdm");
@@ -906,7 +873,6 @@ char *get3GControlDevice(void)
 				return control;
 			}
 
-
 			if (devicelist[devicecount].driver) {
 				insmod("usbserial");
 				insmod("usb_wwan");
@@ -916,46 +882,28 @@ char *get3GControlDevice(void)
 				insmod(devicelist[devicecount].driver);
 			}
 			if (devicelist[devicecount].datadevice) {
-				if (!strcmp
-				    (devicelist[devicecount].datadevice, "hso"))
+				if (!strcmp(devicelist[devicecount].datadevice, "hso"))
 					sprintf(data, "hso");
 				else {
-					if ((devicelist[devicecount].modeswitch
-					     & ACM)) {
+					if ((devicelist[devicecount].modeswitch & ACM)) {
 						insmod("cdc-acm");
-						sprintf(data, "/dev/ttyACM%s",
-							devicelist
-							[devicecount].datadevice);
-					} else
-					    if ((devicelist
-						 [devicecount].modeswitch &
-						 GENERIC)) {
-						sysprintf
-						    ("insmod usbserial vendor=0x%04X product=0x%04X",
-						     devicelist
-						     [devicecount].vendor,
-						     devicelist
-						     [devicecount].product);
+						sprintf(data, "/dev/ttyACM%s", devicelist[devicecount].datadevice);
+					} else if ((devicelist[devicecount].modeswitch & GENERIC)) {
+						sysprintf("insmod usbserial vendor=0x%04X product=0x%04X", devicelist[devicecount].vendor, devicelist[devicecount].product);
 						insmod("usb_wwan");
 						insmod("cdc-wdm");
 						insmod("usbnet");
 						insmod("qmi_wwan");
-						sprintf(data, "/dev/usb/tts/%s",
-							devicelist
-							[devicecount].datadevice);
+						sprintf(data, "/dev/usb/tts/%s", devicelist[devicecount].datadevice);
 					} else
-						sprintf(data, "/dev/usb/tts/%s",
-							devicelist
-							[devicecount].datadevice);
+						sprintf(data, "/dev/usb/tts/%s", devicelist[devicecount].datadevice);
 
 				}
 				nvram_set("3gdata", data);
 			}
 			if (devicelist[devicecount].modeswitch & 0x07) {
 				char variant[32];
-				sprintf(variant, "%d",
-					devicelist[devicecount].modeswitch &
-					0xf);
+				sprintf(variant, "%d", devicelist[devicecount].modeswitch & 0xf);
 				nvram_set("3gnmvariant", variant);
 			}
 			//start custom setup, if defined
@@ -963,33 +911,21 @@ char *get3GControlDevice(void)
 				fprintf(stderr, "customsetup\n");
 				devicelist[devicecount].customsetup(needreset, devicecount);
 			}
-			if (!strcmp
-			    (devicelist[devicecount].controldevice, "hso"))
+			if (!strcmp(devicelist[devicecount].controldevice, "hso"))
 				sprintf(control, "hso");
 			else {
 				if ((devicelist[devicecount].modeswitch & ACM)) {
 					insmod("cdc-acm");
-					sprintf(control, "/dev/ttyACM%s",
-						devicelist
-						[devicecount].controldevice);
-				} else
-				    if ((devicelist[devicecount].modeswitch &
-					 GENERIC)) {
-					sysprintf
-					    ("insmod usbserial vendor=0x%04X product=0x%04X",
-					     devicelist[devicecount].vendor,
-					     devicelist[devicecount].product);
+					sprintf(control, "/dev/ttyACM%s", devicelist[devicecount].controldevice);
+				} else if ((devicelist[devicecount].modeswitch & GENERIC)) {
+					sysprintf("insmod usbserial vendor=0x%04X product=0x%04X", devicelist[devicecount].vendor, devicelist[devicecount].product);
 					insmod("usb_wwan");
 					insmod("cdc-wdm");
 					insmod("usbnet");
 					insmod("qmi_wwan");
-					sprintf(control, "/dev/usb/tts/%s",
-						devicelist
-						[devicecount].controldevice);
+					sprintf(control, "/dev/usb/tts/%s", devicelist[devicecount].controldevice);
 				} else
-					sprintf(control, "/dev/usb/tts/%s",
-						devicelist
-						[devicecount].controldevice);
+					sprintf(control, "/dev/usb/tts/%s", devicelist[devicecount].controldevice);
 			}
 			return control;
 		}

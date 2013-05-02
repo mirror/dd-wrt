@@ -45,10 +45,7 @@ static char *unqstrstr(char *haystack, char *needle)
 	int q;
 	int needlelen = strlen(needle);
 	int haylen = strlen(haystack);
-	for (cur = haystack, q = 0;
-	     cur < &haystack[haylen] && !(!q
-					  && !strncmp(needle, cur, needlelen));
-	     cur++) {
+	for (cur = haystack, q = 0; cur < &haystack[haylen] && !(!q && !strncmp(needle, cur, needlelen)); cur++) {
 		if (*cur == '"')
 			q ? q-- : q++;
 	}
@@ -148,23 +145,23 @@ static int s_filelen;
 
 static int buffer_get(void)
 {
-    unsigned char c;
-    c=s_filebuffer[s_filecount++];
-    if (!c)
-	return EOF;
-    return c;
+	unsigned char c;
+	c = s_filebuffer[s_filecount++];
+	if (!c)
+		return EOF;
+	return c;
 }
 
 static int file_get(void)
 {
-    if (s_filecount>=s_filelen)
-	return EOF;
-    s_filecount++;
-    return getc(s_fp);
+	if (s_filecount >= s_filelen)
+		return EOF;
+	s_filecount++;
+	return getc(s_fp);
 }
 
-static void *global_handle=NULL;
-static void do_ej_s(int (*get)(void), webs_t stream)	// jimmy, https, 8/4/2003
+static void *global_handle = NULL;
+static void do_ej_s(int (*get) (void), webs_t stream)	// jimmy, https, 8/4/2003
 {
 	int c, ret;
 	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
@@ -174,8 +171,7 @@ static void do_ej_s(int (*get)(void), webs_t stream)	// jimmy, https, 8/4/2003
 	int backup_filecount = s_filecount;
 	unsigned char *backup_filebuffer = s_filebuffer;
 	unsigned int backup_filelen = s_filelen;
-	
-	
+
 	pattern = (char *)safe_malloc(PATTERN_BUFFER + 1);
 	while ((c = get()) != EOF) {
 		/* Add to pattern space */
@@ -204,8 +200,7 @@ static void do_ej_s(int (*get)(void), webs_t stream)	// jimmy, https, 8/4/2003
 			}
 		} else {
 			if (unqstrstr(asp, "%>")) {
-				for (func = asp; func < &pattern[len];
-				     func = end) {
+				for (func = asp; func < &pattern[len]; func = end) {
 					/* Skip initial whitespace */
 					for (; isspace((int)*func); func++) ;
 					if (!(end = uqstrchr(func, ';')))
@@ -235,25 +230,25 @@ static void do_ej_s(int (*get)(void), webs_t stream)	// jimmy, https, 8/4/2003
 #ifndef MEMLEAK_OVERRIDE
 	if (global_handle)
 		dlclose(global_handle);
-	global_handle=NULL
+	global_handle = NULL
 #endif
-	free(pattern);
+	    free(pattern);
 	memdebug_leave();
 }
 
 void do_ej_buffer(char *buffer, webs_t stream)
 {
-    s_filecount = 0;
-    s_filebuffer = (unsigned char*)buffer;
-    do_ej_s(&buffer_get,stream);
+	s_filecount = 0;
+	s_filebuffer = (unsigned char *)buffer;
+	do_ej_s(&buffer_get, stream);
 }
 
-void do_ej_file(FILE *fp,int len, webs_t stream)
+void do_ej_file(FILE * fp, int len, webs_t stream)
 {
-    s_fp = fp;
-    s_filecount = 0;
-    s_filelen = len;
-    do_ej_s(&file_get,stream);
+	s_fp = fp;
+	s_filecount = 0;
+	s_filelen = len;
+	do_ej_s(&file_get, stream);
 }
 
 #define WEBS_PAGE_ROM
@@ -263,12 +258,12 @@ void do_ej_file(FILE *fp,int len, webs_t stream)
 
 FILE *getWebsFile(char *path)
 {
-static FILE *web = NULL;
+	static FILE *web = NULL;
 	cprintf("opening %s\n", path);
 	int i = 0;
-	unsigned int curoffset=0;
+	unsigned int curoffset = 0;
 	while (websRomPageIndex[i].path != NULL) {
-		
+
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			/* to prevent stack overwrite problems */
 			web = fopen("/etc/www", "rb");
@@ -278,7 +273,7 @@ static FILE *web = NULL;
 			cprintf("found %s\n", path);
 			return web;
 		}
-		curoffset+=(websRomPageIndex[i].size-WEBSOFFSET);
+		curoffset += (websRomPageIndex[i].size - WEBSOFFSET);
 		i++;
 	}
 	cprintf("not found %s\n", path);
@@ -292,7 +287,7 @@ int getWebsFileLen(char *path)
 	int i = 0;
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
-			len = websRomPageIndex[i].size-WEBSOFFSET;
+			len = websRomPageIndex[i].size - WEBSOFFSET;
 			break;
 		}
 		i++;
@@ -309,17 +304,17 @@ void do_ej(struct mime_handler *handler, char *path, webs_t stream, char *query)
 
 	i = 0;
 	len = 0;
-	unsigned int curoffset=0;
+	unsigned int curoffset = 0;
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			fp = fopen("/etc/www", "rb");
 			if (fp == NULL)
-			    return;
+				return;
 			fseek(fp, curoffset, SEEK_SET);
-			len = websRomPageIndex[i].size-WEBSOFFSET;
+			len = websRomPageIndex[i].size - WEBSOFFSET;
 			break;
 		}
-		curoffset+=websRomPageIndex[i].size-WEBSOFFSET;
+		curoffset += websRomPageIndex[i].size - WEBSOFFSET;
 		i++;
 	}
 	if (fp == NULL) {

@@ -68,13 +68,11 @@ static bool match_ifname(const char *ifname)
 		return true;
 
 	list_for_each_entry(iface, &interfaces, list) {
-		if (!strncmp(ifname, iface->name, strlen(iface->name) +
-				 !iface->partial))
+		if (!strncmp(ifname, iface->name, strlen(iface->name) + !iface->partial))
 			return true;
 	}
 	return false;
 }
-
 
 static void add_interface(const char *ifname)
 {
@@ -140,8 +138,7 @@ static int interface_cb(struct nl_msg *msg, void *arg)
 	static struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (!tb[NL80211_ATTR_IFNAME] || !tb[NL80211_ATTR_IFINDEX])
 		goto out;
@@ -167,8 +164,7 @@ static int station_cb(struct nl_msg *msg, void *arg)
 	struct nlattr *cur;
 	int8_t signal;
 
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	cur = tb[NL80211_ATTR_STA_INFO];
 	if (!cur)
@@ -242,7 +238,7 @@ static void run_loop(void)
 		usleep(poll_delay * 1000);
 		continue;
 
-nla_put_failure:
+	      nla_put_failure:
 		nlmsg_free(msg);
 	}
 	free(list);
@@ -255,8 +251,7 @@ static int usage(const char *progname)
 		"Options:\n"
 		"  -i <pattern>			Pattern for interfaces (if not specified, use all interfaces)\n"
 		"  -l <name>:<thresh>		Add a led with name <name> and minimum signal strength <thresh>\n"
-		"  -d <delay>			Set polling delay (default: %d)\n"
-		"\n", progname, DEFAULT_POLL_DELAY);
+		"  -d <delay>			Set polling delay (default: %d)\n" "\n", progname, DEFAULT_POLL_DELAY);
 	return 1;
 }
 
@@ -280,7 +275,7 @@ int main(int argc, char **argv)
 	int ch;
 
 	while ((ch = getopt(argc, argv, "i:l:")) != -1) {
-		switch(ch) {
+		switch (ch) {
 		case 'i':
 			add_interface(optarg);
 			break;
@@ -310,7 +305,7 @@ int main(int argc, char **argv)
 		break;
 	case 0:
 		(void)setsid();
-	break;
+		break;
 	default:
 		_exit(0);
 	}

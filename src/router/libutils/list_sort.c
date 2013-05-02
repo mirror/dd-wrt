@@ -19,16 +19,13 @@
  * to chaining of merge() calls: null-terminated, no reserved or
  * sentinel head node, "prev" links not maintained.
  */
-static struct list_head *merge(void *priv,
-				int (*cmp)(void *priv, struct list_head *a,
-					struct list_head *b),
-				struct list_head *a, struct list_head *b)
+static struct list_head *merge(void *priv, int (*cmp) (void *priv, struct list_head * a, struct list_head * b), struct list_head *a, struct list_head *b)
 {
 	struct list_head head, *tail = &head;
 
 	while (a && b) {
 		/* if equal, take 'a' -- important for sort stability */
-		if ((*cmp)(priv, a, b) <= 0) {
+		if ((*cmp) (priv, a, b) <= 0) {
 			tail->next = a;
 			a = a->next;
 		} else {
@@ -37,7 +34,7 @@ static struct list_head *merge(void *priv,
 		}
 		tail = tail->next;
 	}
-	tail->next = a?:b;
+	tail->next = a ? : b;
 	return head.next;
 }
 
@@ -48,17 +45,13 @@ static struct list_head *merge(void *priv,
  * prev-link restoration pass, or maintaining the prev links
  * throughout.
  */
-static void merge_and_restore_back_links(void *priv,
-				int (*cmp)(void *priv, struct list_head *a,
-					struct list_head *b),
-				struct list_head *head,
-				struct list_head *a, struct list_head *b)
+static void merge_and_restore_back_links(void *priv, int (*cmp) (void *priv, struct list_head * a, struct list_head * b), struct list_head *head, struct list_head *a, struct list_head *b)
 {
 	struct list_head *tail = head;
 
 	while (a && b) {
 		/* if equal, take 'a' -- important for sort stability */
-		if ((*cmp)(priv, a, b) <= 0) {
+		if ((*cmp) (priv, a, b) <= 0) {
 			tail->next = a;
 			a->prev = tail;
 			a = a->next;
@@ -78,7 +71,7 @@ static void merge_and_restore_back_links(void *priv,
 		 * element comparison is needed, so the client's cmp()
 		 * routine can invoke cond_resched() periodically.
 		 */
-		(*cmp)(priv, tail->next, tail->next);
+		(*cmp) (priv, tail->next, tail->next);
 
 		tail->next->prev = tail;
 		tail = tail->next;
@@ -102,13 +95,11 @@ static void merge_and_restore_back_links(void *priv,
  * @b. If @a and @b are equivalent, and their original relative
  * ordering is to be preserved, @cmp must return 0.
  */
-void list_sort(void *priv, struct list_head *head,
-		int (*cmp)(void *priv, struct list_head *a,
-			struct list_head *b))
+void list_sort(void *priv, struct list_head *head, int (*cmp) (void *priv, struct list_head * a, struct list_head * b))
 {
-	struct list_head *part[MAX_LIST_LENGTH_BITS+1]; /* sorted partial lists
-						-- last slot is a sentinel */
-	int lev;  /* index into part[] */
+	struct list_head *part[MAX_LIST_LENGTH_BITS + 1];	/* sorted partial lists
+								   -- last slot is a sentinel */
+	int lev;		/* index into part[] */
 	int max_lev = 0;
 	struct list_head *list;
 
@@ -130,10 +121,8 @@ void list_sort(void *priv, struct list_head *head,
 			part[lev] = NULL;
 		}
 		if (lev > max_lev) {
-			if (unlikely(lev >= ARRAY_SIZE(part)-1)) {
-				fprintf(stderr, "list passed to"
-					" list_sort() too long for"
-					" efficiency\n");
+			if (unlikely(lev >= ARRAY_SIZE(part) - 1)) {
+				fprintf(stderr, "list passed to" " list_sort() too long for" " efficiency\n");
 				lev--;
 			}
 			max_lev = lev;

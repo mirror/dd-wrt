@@ -110,9 +110,7 @@ static int image_check_bcom(int imagefd, const char *mtd)
 
 	buflen = read(imagefd, buf, 32);
 	if (buflen < 32) {
-		fprintf(stdout,
-			"Could not get image header, file too small (%d bytes)\n",
-			buflen);
+		fprintf(stdout, "Could not get image header, file too small (%d bytes)\n", buflen);
 		return 0;
 	}
 
@@ -131,10 +129,7 @@ static int image_check_bcom(int imagefd, const char *mtd)
 
 	if (trx->magic != TRX_MAGIC || trx->len < sizeof(struct trx_header)) {
 		fprintf(stderr, "Bad trx header\n");
-		fprintf(stderr,
-			"If this is a firmware in bin format, like some of the\n"
-			"original firmware files are, use following command to convert to trx:\n"
-			"dd if=firmware.bin of=firmware.trx bs=32 skip=1\n");
+		fprintf(stderr, "If this is a firmware in bin format, like some of the\n" "original firmware files are, use following command to convert to trx:\n" "dd if=firmware.bin of=firmware.trx bs=32 skip=1\n");
 		return 0;
 	}
 
@@ -259,14 +254,11 @@ static int mtd_erase(const char *mtd)
 
 	mtdEraseInfo.length = mtdInfo.erasesize;
 
-	for (mtdEraseInfo.start = 0;
-	     mtdEraseInfo.start < mtdInfo.size;
-	     mtdEraseInfo.start += mtdInfo.erasesize) {
+	for (mtdEraseInfo.start = 0; mtdEraseInfo.start < mtdInfo.size; mtdEraseInfo.start += mtdInfo.erasesize) {
 
 		ioctl(fd, MEMUNLOCK, &mtdEraseInfo);
 		if (ioctl(fd, MEMERASE, &mtdEraseInfo)) {
-			fprintf(stderr, "Could not erase MTD device: %s\n",
-				mtd);
+			fprintf(stderr, "Could not erase MTD device: %s\n", mtd);
 			close(fd);
 			exit(1);
 		}
@@ -328,8 +320,7 @@ static int mtd_write(int imagefd, const char *mtd, int quiet)
 			 * erase the chunk 
 			 */
 			if (ioctl(fd, MEMERASE, &mtdEraseInfo) < 0) {
-				fprintf(stderr, "Erasing mtd failed: %s\n",
-					mtd);
+				fprintf(stderr, "Erasing mtd failed: %s\n", mtd);
 				exit(1);
 			}
 			e += mtdInfo.erasesize;
@@ -372,8 +363,7 @@ static void usage(void)
 		"        -r                      reboot after successful command\n"
 		"        -f                      force write without trx checks\n"
 		"        -e <device>             erase <device> before executing the command\n\n"
-		"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n"
-		"         mtd -r write linux.trx linux\n\n");
+		"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n" "         mtd -r write linux.trx linux\n\n");
 	exit(1);
 }
 
@@ -439,9 +429,7 @@ int mtd_main(int argc, char **argv)
 		} else {
 			imagefile = argv[1];
 			if ((imagefd = open(argv[1], O_RDONLY)) < 0) {
-				fprintf(stderr,
-					"Couldn't open image file: %s!\n",
-					imagefile);
+				fprintf(stderr, "Couldn't open image file: %s!\n", imagefile);
 				exit(1);
 			}
 		}
@@ -456,8 +444,7 @@ int mtd_main(int argc, char **argv)
 				exit(1);
 		} else {
 			if (!mtd_check(device)) {
-				fprintf(stderr,
-					"Can't open device for writing!\n");
+				fprintf(stderr, "Can't open device for writing!\n");
 				exit(1);
 			}
 		}
@@ -497,8 +484,7 @@ int mtd_main(int argc, char **argv)
 		break;
 	case CMD_WRITE:
 		if (quiet < 2)
-			fprintf(stderr, "Writing from %s to %s ... ", imagefile,
-				device);
+			fprintf(stderr, "Writing from %s to %s ... ", imagefile, device);
 		mtd_write(imagefd, device, quiet);
 		if (quiet < 2)
 			fprintf(stderr, "\n");
