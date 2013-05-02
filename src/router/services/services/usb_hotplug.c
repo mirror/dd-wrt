@@ -23,7 +23,7 @@ static void usb_unmount(char *dev);
 int usb_add_ufd(char *dev);
 
 #define DUMPFILE	"/tmp/disktype.dump"
-
+#define DUMPFILE_PART	"/tmp/parttype.dump"
 #ifdef HAVE_X86
 static char *getdisc(void)	// works only for squashfs 
 {
@@ -99,15 +99,15 @@ void start_hotplug_usb(void)
 
 	return;
 }
+
 /* Optimize performance */
 #define READ_AHEAD_KB_BUF	1024
 #define READ_AHEAD_CONF	"/sys/block/%s/queue/read_ahead_kb"
 
-static void
-optimize_block_device(char *devname)
+static void optimize_block_device(char *devname)
 {
-	char blkdev[8] = {0};
-	char read_ahead_conf[64] = {0};
+	char blkdev[8] = { 0 };
+	char read_ahead_conf[64] = { 0 };
 	int err;
 
 	memset(blkdev, 0, sizeof(blkdev));
@@ -268,31 +268,81 @@ static int usb_process_path(char *path, char *fs, char *target)
 	if (target)
 		sysprintf("mkdir -p /tmp/mnt/%s", target);
 	else
-		mkdir("/tmp/mnt",0700);
+		mkdir("/tmp/mnt", 0700);
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
-		ret = eval("ntfs-3g","-o","compression", path, mount_point);
+		ret = eval("ntfs-3g", "-o", "compression", path, mount_point);
 	} else
 #endif
-		if (!strcmp(fs, "vfat"))
-			ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path,
-			 mount_point);
-		else
-		   ret = eval("/bin/mount", "-t", fs, path, mount_point);
+	if (!strcmp(fs, "vfat"))
+		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path,
+			   mount_point);
+	else
+		ret = eval("/bin/mount", "-t", fs, path, mount_point);
 
 	if (ret != 0) {		//give it another try
 #ifdef HAVE_NTFS3G
 		if (!strcmp(fs, "ntfs")) {
-			ret = eval("ntfs-3g","-o","compression", path, mount_point);
+			ret =
+			    eval("ntfs-3g", "-o", "compression", path,
+				 mount_point);
 		} else
 #endif
 			ret = eval("/bin/mount", path, mount_point);	//guess fs
 	}
-	writeproc("/proc/sys/vm/min_free_kbytes","4096"); // avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram to 4096. everything else can be used for fs cache
+	writeproc("/proc/sys/vm/min_free_kbytes", "4096");	// avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram to 4096. everything else can be used for fs cache
 	eval("startservice", "samba3");
 	eval("startservice", "ftpsrv");
 	eval("startservice", "dlna");
 	return ret;
+}
+
+static char *getfs(char *line)
+{
+	char *fs = NULL;
+	if (strstr(line, "file system")) {
+		fprintf(stderr, "[USB Device] file system: %s\n", line);
+		if (strstr(line, "FAT")) {
+			fs = "vfat";
+			return fs;
+		} else if (strstr(line, "Ext2")) {
+			fs = "ext2";
+			return fs;
+		} else if (strstr(line, "XFS")) {
+			fs = "xfs";
+			return fs;
+		} else if (strstr(line, "UDF")) {
+			fs = "udf";
+			return fs;
+		} else if (strstr(line, "ISO9660")) {
+			fs = "iso9660";
+			return fs;
+		} else if (strstr(line, "Ext3")) {
+#ifdef HAVE_USB_ADVANCED
+			fs = "ext3";
+#else
+			fs = "ext2";
+#endif
+			return fs;
+		}
+#ifdef HAVE_USB_ADVANCED
+		else if (strstr(line, "Ext4")) {
+			fs = "ext4";
+			return fs;
+		} else if (strstr(line, "Btrfs")) {
+			fs = "btrfs";
+			return fs;
+		}
+#endif
+#ifdef HAVE_NTFS3G
+		else if (strstr(line, "NTFS")) {
+			fs = "ntfs";
+			return fs;
+		}
+#endif
+	}
+	return fs;
+
 }
 
 static void usb_unmount(char *path)
@@ -301,7 +351,7 @@ static void usb_unmount(char *path)
 	eval("stopservice", "dlna");
 	eval("stopservice", "samba3");
 	eval("stopservice", "ftpsrv");
-	writeproc("/proc/sys/vm/drop_caches","3");	// flush fs cache
+	writeproc("/proc/sys/vm/drop_caches", "3");	// flush fs cache
 /* todo: how to unmount correct drive */
 	if (!path)
 		sprintf(mount_point, "/%s",
@@ -450,6 +500,7 @@ int usb_add_ufd(char *devpath)
 			/* 
 			 * Check if it has file system 
 			 */
+			char targetname[64];
 			fs = NULL;
 			if ((fp = fopen(DUMPFILE, "r"))) {
 				while (fgets(line, sizeof(line), fp) != NULL) {
@@ -459,58 +510,64 @@ int usb_add_ufd(char *devpath)
 						"[USB Device] partition: %s\n",
 						line);
 
-					if (strstr(line, "file system")) {
-						fprintf(stderr,
-							"[USB Device] file system: %s\n",
-							line);
-						if (strstr(line, "FAT")) {
-							fs = "vfat";
-							break;
-						} else if (strstr(line, "Ext2")) {
-							fs = "ext2";
-							break;
-						} else if (strstr(line, "XFS")) {
-							fs = "xfs";
-							break;
-						} else if (strstr(line, "UDF")) {
-							fs = "udf";
-							break;
-						} else
-						    if (strstr(line, "ISO9660"))
-						{
-							fs = "iso9660";
-							break;
-						} else if (strstr(line, "Ext3")) {
-#ifdef HAVE_USB_ADVANCED
-							fs = "ext3";
-#else
-							fs = "ext2";
-#endif
-							break;
+					if (strstr(line, "EFI GPT")) {
+						partitions = "1 2 3 4 5 6";
+						foreach(part, partitions, next) {
+							sprintf(path,
+								"/dev/%s%s",
+								entry->d_name,
+								part);
+							if (stat
+							    (path, &tmp_stat))
+								continue;
+							sysprintf
+							    ("/usr/sbin/disktype %s > %s",
+							     path,
+							     DUMPFILE_PART);
+							FILE *fpp;
+							char line_part[256];
+							if ((fpp =
+							     fopen
+							     (DUMPFILE_PART,
+							      "r"))) {
+								while (fgets
+								       (line_part,
+									sizeof
+									(line_part),
+									fpp) !=
+								       NULL) {
+									char *fs
+									    =
+									    getfs
+									    (line_part);
+									if (fs) {
+										sprintf
+										    (targetname,
+										     "%s_%s",
+										     entry->d_name,
+										     part);
+										usb_process_path
+										    (path,
+										     fs,
+										     targetname);
+									}
+								}
+
+								fclose(fpp);
+							}
+
 						}
-#ifdef HAVE_USB_ADVANCED
-						else if (strstr(line, "Ext4")) {
-							fs = "ext4";
-							break;
-						} else
-						    if (strstr(line, "Btrfs")) {
-							fs = "btrfs";
-							break;
-						}
-#endif
-#ifdef HAVE_NTFS3G
-						else if (strstr(line, "NTFS")) {
-							fs = "ntfs";
-							break;
-						}
-#endif
+
 					}
+					char *tfs;
+					tfs = getfs(line);
+					if (tfs)
+						fs = tfs;
 
 				}
 				fclose(fp);
 			}
 
-			char targetname[64];
 			if (fs) {
 				/* 
 				 * If it is partioned, mount first partition else raw disk 
