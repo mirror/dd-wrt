@@ -45,19 +45,13 @@ void set_gpio(int gpio, int value)
 {
 	switch (gpio) {
 	case 0:		// system
-		sysprintf
-		    ("echo %d > /sys/devices/leds.4/leds/tp-link\\:blue\\:system/brightness",
-		     value);
+		sysprintf("echo %d > /sys/devices/leds.4/leds/tp-link\\:blue\\:system/brightness", value);
 		break;
 	case 1:		// usb1
-		sysprintf
-		    ("echo %d > /sys/devices/leds.4/leds/tp-link\\:green\\:usb1/brightness",
-		     value);
+		sysprintf("echo %d > /sys/devices/leds.4/leds/tp-link\\:green\\:usb1/brightness", value);
 		break;
 	case 2:		// usb2
-		sysprintf
-		    ("echo %d > /sys/devices/leds.4/leds/tp-link\\:green\\:usb2/brightness",
-		     value);
+		sysprintf("echo %d > /sys/devices/leds.4/leds/tp-link\\:green\\:usb2/brightness", value);
 		break;
 
 	}
@@ -185,7 +179,7 @@ void set_hc595(int pin, int value)
 {
 	int gpioout = open("/dev/gpio/hc595", O_RDWR);
 	unsigned int gpio;
-	gpio = pin<<4|value;
+	gpio = pin << 4 | value;
 	write(gpioout, &gpio, sizeof(gpio));
 	close(gpioout);
 }
@@ -245,8 +239,7 @@ void set_gpio(int gpio, int value)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: could not open %s (%d)\n", filename,
-			errno);
+		fprintf(stderr, "Error: could not open %s (%d)\n", filename, errno);
 		return;
 	}
 
@@ -259,8 +252,7 @@ void set_gpio(int gpio, int value)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
-			strerror(errno), errno);
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n", strerror(errno), errno);
 		close(file);
 		return;
 	}
@@ -273,8 +265,7 @@ void set_gpio(int gpio, int value)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
-			strerror(errno), errno);
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n", strerror(errno), errno);
 	}
 //      fprintf(stderr,"done\n");
 
@@ -294,8 +285,7 @@ int get_gpio(int gpio)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
-			strerror(errno), errno);
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n", strerror(errno), errno);
 		return 1;
 	}
 
@@ -308,8 +298,7 @@ int get_gpio(int gpio)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
-			strerror(errno), errno);
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n", strerror(errno), errno);
 		close(file);
 		return 1;
 	}
@@ -322,8 +311,7 @@ int get_gpio(int gpio)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
-			strerror(errno), errno);
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n", strerror(errno), errno);
 		close(file);
 		return 1;
 	}
@@ -370,8 +358,7 @@ void set_gpio(int gpio, int value)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: could not open %s (%d)\n", filename,
-			errno);
+		fprintf(stderr, "Error: could not open %s (%d)\n", filename, errno);
 		return;
 	}
 
@@ -384,8 +371,7 @@ void set_gpio(int gpio, int value)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
-			strerror(errno), errno);
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n", strerror(errno), errno);
 		close(file);
 		return;
 	}
@@ -399,8 +385,7 @@ void set_gpio(int gpio, int value)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
-			strerror(errno), errno);
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n", strerror(errno), errno);
 	}
 
 	close(file);
@@ -419,8 +404,7 @@ int get_gpio(int gpio)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: could not open %s (%d)\n", filename,
-			errno);
+		fprintf(stderr, "Error: could not open %s (%d)\n", filename, errno);
 		return 1;
 	}
 
@@ -433,8 +417,7 @@ int get_gpio(int gpio)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
-			strerror(errno), errno);
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n", strerror(errno), errno);
 		close(file);
 		return 1;
 	}
@@ -447,8 +430,7 @@ int get_gpio(int gpio)
 		/*
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
-		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
-			strerror(errno), errno);
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n", strerror(errno), errno);
 		close(file);
 		return 1;
 	}
@@ -826,9 +808,7 @@ void set_gpio(int pin, int value)
 	int fd;
 	switch (pin) {
 	case 16:		// main LED
-		sysprintf
-		    ("echo %d > /sys/devices/platform/leds-gpio/leds/user1/brightness",
-		     value);
+		sysprintf("echo %d > /sys/devices/platform/leds-gpio/leds/user1/brightness", value);
 		break;
 	default:
 		if ((fd = open("/dev/misc/gpio", O_RDWR)) < 0) {
@@ -893,8 +873,7 @@ int get_gpio(int pin)
 #define WNDR4000_GPIO_LED_WPS                    (6)
 #define WNDR4000_GPIO_LED_WLAN                   (7)
 
-void ext_output_value(unsigned int led_status, int clk, int data,
-		      int max_shifts)
+void ext_output_value(unsigned int led_status, int clk, int data, int max_shifts)
 {
 	int i;
 
@@ -913,8 +892,7 @@ void ext_output_value(unsigned int led_status, int clk, int data,
 
 }
 
-void gpio_control_clk_data(int pin, int value, int clk, int data,
-			   int max_shifts)
+void gpio_control_clk_data(int pin, int value, int clk, int data, int max_shifts)
 {
 	int old = 0;
 	int ext_led_new;
@@ -970,9 +948,7 @@ void set_gpio_normal(int pin, int value)
 void set_gpio(int pin, int value)
 {
 	if (getRouterBrand() == ROUTER_NETGEAR_WNDR4000) {
-		gpio_control_clk_data(pin, value, WNDR4000_GPIO_EXT_CTRL_CLK,
-				      WNDR4000_GPIO_EXT_CTRL_DATA,
-				      WNDR4000_EXT_LED_MAX_SHIFTS);
+		gpio_control_clk_data(pin, value, WNDR4000_GPIO_EXT_CTRL_CLK, WNDR4000_GPIO_EXT_CTRL_DATA, WNDR4000_EXT_LED_MAX_SHIFTS);
 	} else {
 		set_gpio_normal(pin, value);
 	}
@@ -1005,8 +981,7 @@ int main(int argc, char **argv)
 	unsigned int pin;
 
 	if (argc != 3) {
-		fprintf(stderr, "%s <poll | enable | disable> <pin>\n",
-			argv[0]);
+		fprintf(stderr, "%s <poll | enable | disable> <pin>\n", argv[0]);
 		exit(1);
 	}
 

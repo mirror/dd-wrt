@@ -19,7 +19,7 @@ void ej_show_index_setting(webs_t wp, int argc, char_t ** argv)
 	do_ej(NULL, "index_atm.asp", wp, NULL);
 #endif
 	char ejname[32];
-	snprintf(ejname,31,"index_%s.asp",type);
+	snprintf(ejname, 31, "index_%s.asp", type);
 	do_ej(NULL, ejname, wp, NULL);
 }
 
@@ -89,10 +89,11 @@ void macclone_onload(webs_t wp, char *arg)
 	return;
 }
 
-void ej_atmsettings(webs_t wp, int argc, char_t ** argv) {
+void ej_atmsettings(webs_t wp, int argc, char_t ** argv)
+{
 #ifdef HAVE_DSL_CPE_CONTROL
 	char ejname[32];
-        snprintf(ejname,31,"index_%s_atm.asp",argv[0]);
-        do_ej(NULL, ejname, wp, NULL);
+	snprintf(ejname, 31, "index_%s_atm.asp", argv[0]);
+	do_ej(NULL, ejname, wp, NULL);
 #endif
 }

@@ -81,8 +81,7 @@ static void set_term(int fd)
 	/* 
 	 * local modes 
 	 */
-	tty.c_lflag =
-	    ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
+	tty.c_lflag = ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
 
 	tcsetattr(fd, TCSANOW, &tty);
 }
@@ -221,16 +220,16 @@ void shutdown_system(void)
 	 */
 	diag_led(DIAG, START_LED);
 	led_control(LED_DIAG, LED_ON);
-	start_service("run_rc_shutdown"); 
+	start_service("run_rc_shutdown");
 #ifdef HAVE_LAGUNA
 	start_service("deconfigurewifi");
 #endif
-	fprintf(stderr,"Sending SIGTERM to all processes\n");
+	fprintf(stderr, "Sending SIGTERM to all processes\n");
 	kill(-1, SIGTERM);
 	sync();
 	sleep(5);
 
-	fprintf(stderr,"Sending SIGKILL to all processes\n");
+	fprintf(stderr, "Sending SIGKILL to all processes\n");
 	kill(-1, SIGKILL);
 	sync();
 	sleep(1);
@@ -298,9 +297,7 @@ void fatal_signal(int sig)
 	if (message)
 		cprintf("%s....................................\n", message);
 	else
-		cprintf
-		    ("Caught signal %d.......................................\n",
-		     sig);
+		cprintf("Caught signal %d.......................................\n", sig);
 
 	shutdown_system();
 	sleep(2);
@@ -391,10 +388,9 @@ static void set_tcp_params(void)
 {
 	system("/etc/preinit");	// sets default values for ip_conntrack
 
-	FILE *fp =
-	    fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
+	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
 	if (fp == NULL) {
-		char  *vegas = "1";
+		char *vegas = "1";
 		char *westwood = "0";
 		char *bic = "0";
 		if (nvram_match("tcp_congestion_control", "westwood")) {
@@ -405,14 +401,14 @@ static void set_tcp_params(void)
 			bic = "1";
 			vegas = "0";
 		}
-		writeproc("/proc/sys/net/ipv4/tcp_westwood",westwood);
-		writeproc("/proc/sys/net/ipv4/tcp_vegas_cong_avoid",vegas);
-		writeproc("/proc/sys/net/ipv4/tcp_bic",bic);
-		writeproc("/proc/sys/net/ipv4/tcp_vegas_alpha","3");
-		writeproc("/proc/sys/net/ipv4/tcp_vegas_beta","3");
+		writeproc("/proc/sys/net/ipv4/tcp_westwood", westwood);
+		writeproc("/proc/sys/net/ipv4/tcp_vegas_cong_avoid", vegas);
+		writeproc("/proc/sys/net/ipv4/tcp_bic", bic);
+		writeproc("/proc/sys/net/ipv4/tcp_vegas_alpha", "3");
+		writeproc("/proc/sys/net/ipv4/tcp_vegas_beta", "3");
 	} else {
 		fclose(fp);
-		writeproc("/proc/sys/net/ipv4/tcp_congestion_control",nvram_default_get("tcp_congestion_control", "vegas"));
+		writeproc("/proc/sys/net/ipv4/tcp_congestion_control", nvram_default_get("tcp_congestion_control", "vegas"));
 	}
 
 }
@@ -551,23 +547,15 @@ int main(int argc, char **argv)
 #ifndef HAVE_ERC
 #ifndef HAVE_CORENET
 #ifdef HAVE_TMK
-	fprintf(fp,
-		"KMT-WAS %s (c) 2013 KMT GmbH\nRelease: "
-		BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "KMT-WAS %s (c) 2013 KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #else
 #ifdef DIST
 	if (strlen(DIST) > 0)
-		fprintf(fp,
-			"DD-WRT v24-sp2 %s (c) 2013 NewMedia-NET GmbH\nRelease: "
-			BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+		fprintf(fp, "DD-WRT v24-sp2 %s (c) 2013 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 	else
-		fprintf(fp,
-			"DD-WRT v24-sp2 custom (c) 2013 NewMedia-NET GmbH\nRelease: "
-			BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
+		fprintf(fp, "DD-WRT v24-sp2 custom (c) 2013 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #else
-	fprintf(fp,
-		"DD-WRT v24-sp2 custom (c) 2013 NewMedia-NET GmbH\nRelease: "
-		BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
+	fprintf(fp, "DD-WRT v24-sp2 custom (c) 2013 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #endif
 #endif
 #endif
@@ -612,15 +600,13 @@ int main(int argc, char **argv)
 			start_service("overclocking");
 #endif
 			cprintf("RESET NVRAM VARS\n");
-			nvram_set("wl0_lazy_wds",
-				  nvram_safe_get("wl_lazy_wds"));
+			nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
 
 			cprintf("RESTART\n");
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 			for (c = 0; c < cnt; c++) {
-				sysprintf("wlconf %s down",
-					  get_wl_instance_name(c));
+				sysprintf("wlconf %s down", get_wl_instance_name(c));
 				char *next;
 				char var[80];
 				char *vifs = nvram_nget("wl%d_vifs", c);
@@ -638,7 +624,7 @@ int main(int argc, char **argv)
 		case STOP:
 			if (state == STOP && check_action() != ACT_IDLE) {
 				state = IDLE;
-				break; //force reboot on upgrade
+				break;	//force reboot on upgrade
 			}
 #ifdef HAVE_REGISTER
 			if (isregistered_real())
@@ -655,12 +641,8 @@ int main(int argc, char **argv)
 			lcdmessage("STOPPING SERVICES");
 			cprintf("STOP\n");
 			killall("udhcpc", SIGKILL);
-			setenv("PATH",
-			       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin",
-			       1);
-			setenv("LD_LIBRARY_PATH",
-			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
-			       1);
+			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin", 1);
+			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 			cprintf("STOP SERVICES\n");
 
 			stop_services();
@@ -707,15 +689,10 @@ int main(int argc, char **argv)
 		case START:
 			set_tcp_params();
 			lcdmessage("START SERVICES");
-			nvram_set("wl0_lazy_wds",
-				  nvram_safe_get("wl_lazy_wds"));
+			nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
 			cprintf("START\n");
-			setenv("PATH",
-			       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/sbin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/sbin",
-			       1);
-			setenv("LD_LIBRARY_PATH",
-			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
-			       1);
+			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/sbin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/sbin", 1);
+			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 #ifdef HAVE_IPV6
 			start_service_f("ipv6");
 #endif
@@ -756,7 +733,6 @@ int main(int argc, char **argv)
 			cprintf("set led release wan control\n");
 			SET_LED(RELEASE_WAN_CONTROL);
 
-
 #ifndef HAVE_ERC
 #ifdef HAVE_RADIOOFF
 			if (nvram_match("radiooff_button", "1")
@@ -790,8 +766,7 @@ int main(int argc, char **argv)
 					// custom
 					// script
 				{
-					nvram2file("rc_custom",
-						   "/tmp/custom.sh");
+					nvram2file("rc_custom", "/tmp/custom.sh");
 					chmod("/tmp/custom.sh", 0700);
 				}
 			}
@@ -835,8 +810,7 @@ int main(int argc, char **argv)
 			 * Wait for user input or state change 
 			 */
 			while (signalled == -1) {
-				if (!noconsole
-				    && (!shell_pid || kill(shell_pid, 0) != 0))
+				if (!noconsole && (!shell_pid || kill(shell_pid, 0) != 0))
 					shell_pid = ddrun_shell(0, 1);
 				else
 					sigsuspend(&sigset);

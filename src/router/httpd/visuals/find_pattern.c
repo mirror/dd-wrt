@@ -16,10 +16,7 @@
 /*
  * Return 1 for match, 0 for accept, -1 for partial. 
  */
-int
-find_pattern(const char *data, size_t dlen,
-	     const char *pattern, size_t plen,
-	     char term, unsigned int *numoff, unsigned int *numlen)
+int find_pattern(const char *data, size_t dlen, const char *pattern, size_t plen, char term, unsigned int *numoff, unsigned int *numlen)
 {
 	size_t i, j, k;
 
@@ -61,16 +58,12 @@ find_pattern(const char *data, size_t dlen,
  * data, "$NAME", ""); produces : ret = 1, name = 111 find_match_pattern(ip, 
  * strlen(ip), data, "$IP", "0.0.0.0"); produces : ret = 0, ip = 0.0.0.0 
  */
-int
-find_match_pattern(char *name, size_t mlen,
-		   const char *data, const char *pattern, char *def)
+int find_match_pattern(char *name, size_t mlen, const char *data, const char *pattern, char *def)
 {
 	int ret = 0;
 	unsigned int offset, len, length;
 
-	ret =
-	    find_pattern(data, strlen(data), pattern, strlen(pattern), '$',
-			 &offset, &len);
+	ret = find_pattern(data, strlen(data), pattern, strlen(pattern), '$', &offset, &len);
 	// printf("ret=[%d] offset=[%d] len=[%d]\n", ret, offset,len);
 
 	if (ret == 1 && len > 0) {
@@ -91,8 +84,7 @@ find_match_pattern(char *name, size_t mlen,
  * produces : ret = 1, name = "google.com" find_each(name, sizeof(name),
  * data, "<&nbsp;>", 2, "No find!"); produces : ret = 0, name = "No Find!" 
  */
-int
-find_each(char *name, int len, char *data, char *token, int which, char *def)
+int find_each(char *name, int len, char *data, char *token, int which, char *def)
 {
 	int i;
 	int maxlen;

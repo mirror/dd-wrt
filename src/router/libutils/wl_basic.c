@@ -53,8 +53,7 @@ char *get_wl_instance_name(int instance)
 		return "eth0";
 	if (get_wl_instance("eth3") == instance)
 		return "eth3";
-	fprintf(stderr, "get_wl_instance doesnt return the right value %d\n",
-		instance);
+	fprintf(stderr, "get_wl_instance doesnt return the right value %d\n", instance);
 	return nvram_safe_get("wl0_ifname");	// dirty for debugging
 }
 

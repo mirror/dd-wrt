@@ -34,8 +34,7 @@
 #endif
 
 void (*do_ej_buffer) (char *buffer, webs_t stream) = NULL;
-int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
-			  int type) = NULL;
+int (*httpd_filter_name) (char *old_name, char *new_name, size_t size, int type) = NULL;
 char *(*websGetVar) (webs_t wp, char *var, char *d) = NULL;
 int (*websWrite) (webs_t wp, char *fmt, ...) = NULL;
 struct wl_client_mac *wl_client_macs = NULL;
@@ -120,8 +119,7 @@ void ej_onload(webs_t wp, int argc, char_t ** argv)
 void ej_no_cache(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<meta http-equiv=\"expires\" content=\"0\">\n");
-	websWrite(wp,
-		  "<meta http-equiv=\"cache-control\" content=\"no-cache\">\n");
+	websWrite(wp, "<meta http-equiv=\"cache-control\" content=\"no-cache\">\n");
 	websWrite(wp, "<meta http-equiv=\"pragma\" content=\"no-cache\">\n");
 
 	return;
@@ -130,13 +128,9 @@ void ej_no_cache(webs_t wp, int argc, char_t ** argv)
 void prefix_ip_get(char *name, char *buf, int type)
 {
 	if (type == 1)
-		sprintf(buf, "%d.%d.%d.",
-			get_single_ip(nvram_safe_get(name), 0),
-			get_single_ip(nvram_safe_get(name), 1),
-			get_single_ip(nvram_safe_get(name), 2));
+		sprintf(buf, "%d.%d.%d.", get_single_ip(nvram_safe_get(name), 0), get_single_ip(nvram_safe_get(name), 1), get_single_ip(nvram_safe_get(name), 2));
 	if (type == 2)
-		sprintf(buf, "%d.%d.", get_single_ip(nvram_safe_get(name), 0),
-			get_single_ip(nvram_safe_get(name), 1));
+		sprintf(buf, "%d.%d.", get_single_ip(nvram_safe_get(name), 0), get_single_ip(nvram_safe_get(name), 1));
 }
 
 /*
@@ -159,13 +153,9 @@ void ej_prefix_ip_get(webs_t wp, int argc, char_t ** argv)
 	type = atoi(argv[1]);
 
 	if (type == 1)
-		websWrite(wp, "%d.%d.%d.",
-			  get_single_ip(nvram_safe_get(name), 0),
-			  get_single_ip(nvram_safe_get(name), 1),
-			  get_single_ip(nvram_safe_get(name), 2));
+		websWrite(wp, "%d.%d.%d.", get_single_ip(nvram_safe_get(name), 0), get_single_ip(nvram_safe_get(name), 1), get_single_ip(nvram_safe_get(name), 2));
 	if (type == 2)
-		websWrite(wp, "%d.%d.", get_single_ip(nvram_safe_get(name), 0),
-			  get_single_ip(nvram_safe_get(name), 1));
+		websWrite(wp, "%d.%d.", get_single_ip(nvram_safe_get(name), 0), get_single_ip(nvram_safe_get(name), 1));
 
 	return;
 }
@@ -378,9 +368,7 @@ int get_single_mac(char *macaddr, int which)
 	int mac[6] = { 0, 0, 0, 0, 0, 0 };
 	int ret;
 
-	ret =
-	    sscanf(macaddr, "%2X:%2X:%2X:%2X:%2X:%2X", &mac[0], &mac[1],
-		   &mac[2], &mac[3], &mac[4], &mac[5]);
+	ret = sscanf(macaddr, "%2X:%2X:%2X:%2X:%2X:%2X", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 	return mac[which];
 }
 
@@ -993,27 +981,20 @@ void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
 		// return -1; botho 07/03/06 add "- None -" if empty
 		websWrite(wp, "<tr>\n");
-		websWrite(wp,
-			  "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		websWrite(wp, "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
 		websWrite(wp, "</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		websWrite(wp, "<tr><td>\n");
-		websWrite(wp,
-			  "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-			  i);
+		websWrite(wp, "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		port_forward_table(wp, "name", i);
 		websWrite(wp, "\" /></td>\n");
 		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-			  i);
+		websWrite(wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_forward_table(wp, "from", i);
 		websWrite(wp, "\" /></td>\n");
 		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-			  i);
+		websWrite(wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_forward_table(wp, "to", i);
 		websWrite(wp, "\"/></td>\n");
 		websWrite(wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
@@ -1030,15 +1011,11 @@ void ej_show_forward(webs_t wp, int argc, char_t ** argv)
       	\n//]]>\n</script>\n");
 		websWrite(wp, "</select></td>\n");
 		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
-			  i);
+		websWrite(wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"", i);
 		port_forward_table(wp, "ip", i);
 		websWrite(wp, "\" /></td>\n");
 		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",
-			  i);
+		websWrite(wp, "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_forward_table(wp, "enable", i);
 		websWrite(wp, " /></td>\n");
 		websWrite(wp, "</tr>\n");
@@ -1059,16 +1036,13 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 		// return -1; botho 07/03/06 add "- None -" if empty
 		// websWrite (wp, "<tr></tr><tr></tr>\n");
 		websWrite(wp, "<tr>\n");
-		websWrite(wp,
-			  "<td colspan=\"7\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		websWrite(wp, "<td colspan=\"7\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
 		websWrite(wp, "</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		//name
 		websWrite(wp, "<tr><td>\n");
-		websWrite(wp,
-			  "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-			  i);
+		websWrite(wp, "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		port_forward_spec(wp, "name", i);
 		websWrite(wp, "\" /></td>\n");
 
@@ -1089,41 +1063,31 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 
 		//src net
 		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"src%d\" value=\"",
-			  i);
+		websWrite(wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"src%d\" value=\"", i);
 		port_forward_spec(wp, "src", i);
 		websWrite(wp, "\" /></td>\n");
 
 		//from
 		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-			  i);
+		websWrite(wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_forward_spec(wp, "from", i);
 		websWrite(wp, "\" /></td>\n");
 
 		//dest ip
 		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
-			  i);
+		websWrite(wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"", i);
 		port_forward_spec(wp, "ip", i);
 		websWrite(wp, "\" /></td>\n");
 
 		//port to
 		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-			  i);
+		websWrite(wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_forward_spec(wp, "to", i);
 		websWrite(wp, "\" /></td>\n");
 
 		//checkbox
 		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",
-			  i);
+		websWrite(wp, "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_forward_spec(wp, "enable", i);
 		websWrite(wp, " /></td>\n");
 
@@ -1142,25 +1106,18 @@ void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 	count = nvram_safe_get("trigger_entries");
 	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
 		websWrite(wp, "<tr>\n");
-		websWrite(wp,
-			  "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		websWrite(wp, "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
 		websWrite(wp, "</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		websWrite(wp, "<tr>\n");
-		websWrite(wp,
-			  "<td><input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-			  i);
+		websWrite(wp, "<td><input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		port_trigger_table(wp, "name", i);
 		websWrite(wp, "\" /></td>\n");
-		websWrite(wp,
-			  "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-			  i);
+		websWrite(wp, "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_trigger_table(wp, "i_from", i);
 		websWrite(wp, "\" /></td>\n");
-		websWrite(wp,
-			  "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-			  i);
+		websWrite(wp, "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_trigger_table(wp, "i_to", i);
 		websWrite(wp, "\" /></td>\n");
 		websWrite(wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
@@ -1176,19 +1133,13 @@ void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, " >\" + share.both + \"</option>\");\n\
       		\n//]]>\n</script>\n");
 		websWrite(wp, "</select></td>\n");
-		websWrite(wp,
-			  "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-			  i);
+		websWrite(wp, "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_trigger_table(wp, "o_from", i);
 		websWrite(wp, "\" /></td>\n");
-		websWrite(wp,
-			  "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-			  i);
+		websWrite(wp, "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_trigger_table(wp, "o_to", i);
 		websWrite(wp, "\" /></td>\n");
-		websWrite(wp,
-			  "<td><input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",
-			  i);
+		websWrite(wp, "<td><input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_trigger_table(wp, "enable", i);
 		websWrite(wp, " /></td>\n");
 		websWrite(wp, "</tr>\n");
@@ -1218,10 +1169,7 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 		}
 		fclose(web);
 
-		websWrite(wp, "<option value=\"%s\" %s>%s</option>\n",
-			  entry->d_name, nvram_match("router_style",
-						     entry->d_name) ?
-			  "selected=\"selected\"" : "", entry->d_name);
+		websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", entry->d_name, nvram_match("router_style", entry->d_name) ? "selected=\"selected\"" : "", entry->d_name);
 	}
 	closedir(directory);
 	return;
@@ -1238,9 +1186,7 @@ void ej_show_languages(webs_t wp, int argc, char_t ** argv)
 
 	while (PwebsRomPageIndex[i].path != NULL) {
 		cprintf("checking %s\n", PwebsRomPageIndex[i].path);
-		if (!strncmp
-		    (PwebsRomPageIndex[i].path, "lang_pack/",
-		     strlen("lang_pack/"))) {
+		if (!strncmp(PwebsRomPageIndex[i].path, "lang_pack/", strlen("lang_pack/"))) {
 			cprintf("found language\n");
 			if (strlen(PwebsRomPageIndex[i].path) < 14)
 				continue;
@@ -1248,11 +1194,7 @@ void ej_show_languages(webs_t wp, int argc, char_t ** argv)
 			char *mybuf = &buf[strlen("lang_pack/")];
 
 			mybuf[strlen(mybuf) - 3] = 0;	// strip .js
-			websWrite(wp,
-				  "document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n",
-				  mybuf, nvram_match("language",
-						     mybuf) ?
-				  "selected=\\\"selected\\\"" : "", mybuf);
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n", mybuf, nvram_match("language", mybuf) ? "selected=\\\"selected\\\"" : "", mybuf);
 		}
 		i++;
 	}
@@ -1322,23 +1264,17 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 						continue;
 					}
 #endif
-					sprintf(buf, "%s/%s", directories[idx],
-						entry->d_name);
-					result[resultcount] =
-					    malloc(strlen(entry->d_name) + 1);
-					strcpy(result[resultcount],
-					       entry->d_name);
+					sprintf(buf, "%s/%s", directories[idx], entry->d_name);
+					result[resultcount] = malloc(strlen(entry->d_name) + 1);
+					strcpy(result[resultcount], entry->d_name);
 					resultcount++;
 					result[resultcount] = NULL;
 				}
 			} else {
 				if (endswith(entry->d_name, ".webconfig")) {
-					sprintf(buf, "%s/%s", directories[idx],
-						entry->d_name);
-					result[resultcount] =
-					    malloc(strlen(entry->d_name) + 1);
-					strcpy(result[resultcount],
-					       entry->d_name);
+					sprintf(buf, "%s/%s", directories[idx], entry->d_name);
+					result[resultcount] = malloc(strlen(entry->d_name) + 1);
+					strcpy(result[resultcount], entry->d_name);
 					resultcount++;
 					result[resultcount] = NULL;
 				}
@@ -1419,8 +1355,7 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 {
 	struct utsname name;
 	uname(&name);
-	websWrite(wp, "%s %s %s %s", name.sysname, name.release, name.version,
-		  name.machine);
+	websWrite(wp, "%s %s %s %s", name.sysname, name.release, name.version, name.machine);
 } void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
@@ -1444,8 +1379,7 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 	if (nvram_match("ttraff_iface", "") || !nvram_get("ttraff_iface"))
 		strncpy(wanface, get_wan_face(), sizeof(wanface));
 	else
-		strncpy(wanface, nvram_safe_get("ttraff_iface"),
-			sizeof(wanface));
+		strncpy(wanface, nvram_safe_get("ttraff_iface"), sizeof(wanface));
 	strcat(wanface, ":");
 
 	in = fopen("/proc/net/dev", "rb");
@@ -1463,9 +1397,7 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 				ifl++;
 			line[ifl] = 0;
 
-			sscanf(line + ifl + 1,
-			       "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld",
-			       &rcvd, &sent);
+			sscanf(line + ifl + 1, "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld", &rcvd, &sent);
 		}
 	}
 
@@ -1492,12 +1424,9 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 
 void show_bwif(webs_t wp, char *ifname, char *name)
 {
-	websWrite(wp, "<h2>%s - %s</h2>\n", live_translate("status_band.h2"),
-		  name);
+	websWrite(wp, "<h2>%s - %s</h2>\n", live_translate("status_band.h2"), name);
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp,
-		  "<iframe src=\"/graph_if.svg?%s\" width=\"555\" height=\"275\" frameborder=\"0\" type=\"image/svg+xml\">\n",
-		  ifname);
+	websWrite(wp, "<iframe src=\"/graph_if.svg?%s\" width=\"555\" height=\"275\" frameborder=\"0\" type=\"image/svg+xml\">\n", ifname);
 	websWrite(wp, "</iframe>\n");
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<br />\n");
@@ -1553,8 +1482,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 	if (!nvram_match("wan_proto", "disabled")) {
 #ifdef HAVE_MADWIFI
 		if (getSTA()) {
-			sprintf(name, "%s WAN",
-				live_translate("share.wireless"));
+			sprintf(name, "%s WAN", live_translate("share.wireless"));
 			show_bwif(wp, get_wan_face(), name);
 		} else
 			show_bwif(wp, get_wan_face(), "WAN");
@@ -1564,8 +1492,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 #endif
 
 		if (nvram_match("dtag_vlan8", "1")) {
-			if (getRouterBrand() == ROUTER_WRT600N
-			    || getRouterBrand() == ROUTER_WRT610N)
+			if (getRouterBrand() == ROUTER_WRT600N || getRouterBrand() == ROUTER_WRT610N)
 				show_bwif(wp, "eth2.0008", "IPTV");
 			else
 				show_bwif(wp, "eth0.0008", "IPTV");
@@ -1588,8 +1515,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 		if (vifs == NULL)
 			continue;
 		foreach(var, vifs, next) {
-			sprintf(name, "%s (%s)",
-				live_translate("share.wireless"), var);
+			sprintf(name, "%s (%s)", live_translate("share.wireless"), var);
 			show_bwif(wp, var, name);
 		}
 		int s;
@@ -1602,28 +1528,20 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 				continue;
 			if (nvram_nmatch("0", "%s_wds%d_enable", dev, s))
 				continue;
-			sprintf(name, "%s (%s)",
-				live_translate("share.wireless"), wdsdev);
+			sprintf(name, "%s (%s)", live_translate("share.wireless"), wdsdev);
 			show_bwif(wp, wdsdev, name);
 		}
 #ifdef HAVE_ATH9K
 		if (is_ath9k(dev)) {
-			sprintf(globstring,
-				"/sys/class/ieee80211/phy*/device/net/%s.sta*",
-				dev);
-			globresult =
-			    glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+			sprintf(globstring, "/sys/class/ieee80211/phy*/device/net/%s.sta*", dev);
+			globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 			int awdscount;
-			for (awdscount = 0; awdscount < globbuf.gl_pathc;
-			     awdscount++) {
+			for (awdscount = 0; awdscount < globbuf.gl_pathc; awdscount++) {
 				char *ifname;
-				ifname =
-				    strrchr(globbuf.gl_pathv[awdscount], '/');
+				ifname = strrchr(globbuf.gl_pathv[awdscount], '/');
 				if (!ifname)
 					continue;
-				sprintf(name, "%s (%s)",
-					live_translate("share.wireless"),
-					ifname);
+				sprintf(name, "%s (%s)", live_translate("share.wireless"), ifname);
 				show_bwif(wp, ifname, name);
 			}
 			globfree(&globbuf);
@@ -1961,20 +1879,14 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		int a;
 
 		for (a = 0; a < ifcount; a++) {
-			sprintf(&menu[1][a * 2 + 7][0],
-				"Wireless_Advanced-wl%d.asp", a);
-			sprintf(&menu[1][a * 2 + 8][0], "Wireless_WDS-wl%d.asp",
-				a);
+			sprintf(&menu[1][a * 2 + 7][0], "Wireless_Advanced-wl%d.asp", a);
+			sprintf(&menu[1][a * 2 + 8][0], "Wireless_WDS-wl%d.asp", a);
 			if (ifcount == 1) {
-				sprintf(&menuname[1][a * 2 + 8][0],
-					"wirelessAdvanced");
-				sprintf(&menuname[1][a * 2 + 9][0],
-					"wirelessWds");
+				sprintf(&menuname[1][a * 2 + 8][0], "wirelessAdvanced");
+				sprintf(&menuname[1][a * 2 + 9][0], "wirelessWds");
 			} else {
-				sprintf(&menuname[1][a * 2 + 8][0],
-					"wirelessAdvancedwl%d", a);
-				sprintf(&menuname[1][a * 2 + 9][0],
-					"wirelessWdswl%d", a);
+				sprintf(&menuname[1][a * 2 + 8][0], "wirelessAdvancedwl%d", a);
+				sprintf(&menuname[1][a * 2 + 9][0], "wirelessWdswl%d", a);
 			}
 		}
 #ifdef HAVE_ERC
@@ -1995,8 +1907,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		if (strlen(menu[i][0]) == 0)
 			continue;
 #ifdef HAVE_MADWIFI
-		if (!wifi && !wimaxwifi
-		    && !strcmp(menu[i][0], "Wireless_Basic.asp"))
+		if (!wifi && !wimaxwifi && !strcmp(menu[i][0], "Wireless_Basic.asp"))
 			i++;
 #endif
 #ifdef HAVE_CORENET
@@ -2007,23 +1918,17 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 //fprintf(stderr,"generate menu %s\n",menu[i][0]);
 		if (!strcmp(menu[i][0], mainmenu)) {
 #ifdef HAVE_MADWIFI
-			if (!wifi && wimaxwifi
-			    && !strcmp(menu[i][0], "Wireless_Basic.asp"))
-				websWrite(wp,
-					  "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span>\n");
+			if (!wifi && wimaxwifi && !strcmp(menu[i][0], "Wireless_Basic.asp"))
+				websWrite(wp, "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span>\n");
 			else
 #endif
-				websWrite(wp,
-					  "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span>\n",
-					  menuname[i][0]);
+				websWrite(wp, "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span>\n", menuname[i][0]);
 			websWrite(wp, "    <div id=\"menuSub\">\n");
 			websWrite(wp, "     <ul id=\"menuSubList\">\n");
 
 			for (j = 0; j < 12; j++) {
 #ifdef HAVE_MADWIFI
-				if (!wifi
-				    && !strncmp(menu[i][j],
-						"Wireless_Basic.asp", 8))
+				if (!wifi && !strncmp(menu[i][j], "Wireless_Basic.asp", 8))
 					j++;
 #ifndef HAVE_SUPERCHANNEL
 				if (!strcmp(menu[i][j], "SuperChannel.asp"))	// jump over
@@ -2077,19 +1982,14 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					j++;
 				if (!strcmp(menu[i][j], "Wireless_radauth.asp"))
 					j++;
-				if (!wifi
-				    && !strncmp(menu[i][j], "Wireless_MAC.asp",
-						8))
+				if (!wifi && !strncmp(menu[i][j], "Wireless_MAC.asp", 8))
 					j++;
-				if (!strncmp
-				    (menu[i][j], "Wireless_Advanced", 17))
+				if (!strncmp(menu[i][j], "Wireless_Advanced", 17))
 					j++;
 				if ((!wifi || cpeonly)
 				    && !strncmp(menu[i][j], "Wireless_WDS", 12))
 					j++;
-				if (!wifi
-				    && !strcmp(menu[i][j],
-					       "Status_Wireless.asp"))
+				if (!wifi && !strcmp(menu[i][j], "Status_Wireless.asp"))
 					j++;
 
 #endif
@@ -2187,50 +2087,37 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_MADWIFI
 				if (!strcmp(menu[i][j], submenu)
 				    && (strlen(menu[i][j])
-					&& !strcmp(menu[i][j],
-						   "Wireless_Basic.asp")
+					&& !strcmp(menu[i][j], "Wireless_Basic.asp")
 					&& !wifi && wimaxwifi)) {
-					websWrite(wp,
-						  "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span></li>\n");
+					websWrite(wp, "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span></li>\n");
 				}
 #endif
 				else if (!strcmp(menu[i][j], submenu)
 					 && (strlen(menu[i][j]))) {
-					websWrite(wp,
-						  "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span></li>\n",
-						  menuname[i][j + 1]);
+					websWrite(wp, "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span></li>\n", menuname[i][j + 1]);
 				}
 #ifdef HAVE_HTTPS		// until https will allow upgrade and backup
 #ifdef HAVE_MATRIXSSL
 				else if ((strlen(menu[i][j]) != 0) && (do_ssl)
 					 && ((!strcmp(menu[i][j], "Upgrade.asp")
-					      ||
-					      (!strcmp
-					       (menu[i][j], "config.asp"))))) {
-					websWrite(wp,
-						  "      <script type=\"text/javascript\">\n//<![CDATA[\n");
+					      || (!strcmp(menu[i][j], "config.asp"))))) {
+					websWrite(wp, "      <script type=\"text/javascript\">\n//<![CDATA[\n");
 					websWrite(wp,
 						  "      document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + bmenu.%s + \"</em></a></li>\");\n",
 						  menuname[i][j + 1]);
-					websWrite(wp,
-						  "      \n//]]>\n</script>\n");
+					websWrite(wp, "      \n//]]>\n</script>\n");
 				}
 #endif
 #endif
 #ifdef HAVE_MADWIFI
 				else if (strlen(menu[i][j])
-					 && !strcmp(menu[i][j],
-						    "Wireless_Basic.asp")
+					 && !strcmp(menu[i][j], "Wireless_Basic.asp")
 					 && !wifi && wimaxwifi) {
-					websWrite(wp,
-						  "      <li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
+					websWrite(wp, "      <li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
 				}
 #endif
 				else if (strlen(menu[i][j])) {
-					websWrite(wp,
-						  "      <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n",
-						  menu[i][j],
-						  menuname[i][j + 1]);
+					websWrite(wp, "      <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", menu[i][j], menuname[i][j + 1]);
 				}
 			}
 			websWrite(wp, "     </ul>\n");
@@ -2238,16 +2125,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "    </li>\n");
 		}
 #ifdef HAVE_MADWIFI
-		else if (!strcmp(menu[i][0], "Wireless_Basic.asp") && !wifi
-			 && wimaxwifi) {
-			websWrite(wp,
-				  "      <li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
+		else if (!strcmp(menu[i][0], "Wireless_Basic.asp") && !wifi && wimaxwifi) {
+			websWrite(wp, "      <li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
 		}
 #endif
 		else {
-			websWrite(wp,
-				  "   <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n",
-				  menu[i][0], menuname[i][0]);
+			websWrite(wp, "   <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", menu[i][0], menuname[i][0]);
 		}
 	}
 	websWrite(wp, "  </ul>\n");
@@ -2274,51 +2157,33 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		      "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
 	websWrite(wp, "<html>\n");
 	websWrite(wp, "\t<head>\n");
-	websWrite(wp,
-		  "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
-		  live_translate("lang_charset.set"));
+	websWrite(wp, "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate("lang_charset.set"));
 #ifndef HAVE_MICRO
-	websWrite(wp,
-		  "\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
-	websWrite(wp,
-		  "\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
+	websWrite(wp, "\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
+	websWrite(wp, "\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
 #endif
-	websWrite(wp,
-		  "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
-	websWrite(wp,
-		  "\t\t<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
 #ifdef HAVE_LANGUAGE
-	websWrite(wp,
-		  "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
 #endif
-	websWrite(wp,
-		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n",
-		  style);
-	websWrite(wp,
-		  "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n",
-		  style);
+	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n", style);
+	websWrite(wp, "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n", style);
 
 #ifdef HAVE_PWC
-	websWrite(wp,
-		  "\t\t<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n");
-	websWrite(wp,
-		  "\t\t<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n");
-	websWrite(wp,
-		  "\t\t<script type=\"text/javascript\" src=\"js/window.js\"></script>\n");
-	websWrite(wp,
-		  "\t\t<script type=\"text/javascript\" src=\"js/window_effects.js\"></script>\n");
-	websWrite(wp,
-		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n");
-	websWrite(wp,
-		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n");
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n");
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"js/window.js\"></script>\n");
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"js/window_effects.js\"></script>\n");
+	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n");
+	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
 #ifdef HAVE_WIKINGS
 	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");
 #elif HAVE_ESPOD
 	websWrite(wp, "\t\t<title>ESPOD Technologies");
 #else
-	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"),
-		  SVN_REVISION);
+	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"), SVN_REVISION);
 #endif
 	if (strlen(argv[0]) != 0) {
 		websWrite(wp, " - %s", live_translate(argv[0]));
@@ -2339,27 +2204,19 @@ void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		return;
 	}
 #endif
-	websWrite(wp,
-		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
+	websWrite(wp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
 	if (!strcmp(htitle, "doctype_only"))
 		return;		// stop here, for About.htm
 	websWrite(wp, "<html>\n");
 	websWrite(wp, "\t<head>\n");
-	websWrite(wp,
-		  "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
-		  live_translate("lang_charset.set"));
-	websWrite(wp,
-		  "\t\t<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
-	websWrite(wp,
-		  "\t\t<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
+	websWrite(wp, "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate("lang_charset.set"));
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
 #ifdef HAVE_LANGUAGE
-	websWrite(wp,
-		  "\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
 #endif
-	websWrite(wp,
-		  "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
-	websWrite(wp, "\t\t<title>%s (build %s)", live_translate("share.help"),
-		  SVN_REVISION);
+	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
+	websWrite(wp, "\t\t<title>%s (build %s)", live_translate("share.help"), SVN_REVISION);
 	websWrite(wp, " - %s</title>\n", live_translate(htitle));
 	websWrite(wp, "\t</head>\n");
 
@@ -2393,11 +2250,7 @@ void ej_show_timeoptions(webs_t wp, int argc, char_t ** argv)	// Eko
 	int i;
 
 	for (i = 0; i < 39; i++) {
-		websWrite(wp,
-			  "<option value=\"%s\" %s>UTC%s</option>\n",
-			  timediffs[i], nvram_match("time_zone",
-						    timediffs[i]) ?
-			  "selected=\"selected\"" : "", timezones[i]);
+		websWrite(wp, "<option value=\"%s\" %s>UTC%s</option>\n", timediffs[i], nvram_match("time_zone", timediffs[i]) ? "selected=\"selected\"" : "", timezones[i]);
 
 	}
 
@@ -2417,9 +2270,7 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 	wan_link = check_wan_link(0);
 	char *wan_proto = nvram_safe_get("wan_proto");
 	if (!strcmp(wan_proto, "pptp")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("pptp_get_ip") :
-		    nvram_safe_get("wan_ipaddr");
+		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_ipaddr");
 	} else if (!strcmp(wan_proto, "pppoe")
 #ifdef HAVE_PPPOATM
 		   || !strcmp(wan_proto, "pppoa")
@@ -2431,13 +2282,10 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 		   || !strcmp(wan_proto, "iphone")
 #endif
 	    ) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
 #ifdef HAVE_L2TP
 	} else if (nvram_match("wan_proto", "l2tp")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("l2tp_get_ip") :
-		    nvram_safe_get("wan_ipaddr");
+		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") : nvram_safe_get("wan_ipaddr");
 #endif
 	} else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
@@ -2529,8 +2377,7 @@ void ej_getrebootflags(webs_t wp, int argc, char_t ** argv)
 	if (argc != 1)
 		return;
 #endif
-	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>",
-		  argv[0]);
+	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>", argv[0]);
 	return;
 }
 
@@ -2588,9 +2435,7 @@ void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 
 	for (i = st; i <= en; i++) {
 		sprintf(ic, "%d", i);
-		websWrite(wp, "<option value=\"%d\" %s >%02d</option>\n", i,
-			  nvram_match(argv[0],
-				      ic) ? "selected=\"selected\"" : "", i);
+		websWrite(wp, "<option value=\"%d\" %s >%02d</option>\n", i, nvram_match(argv[0], ic) ? "selected=\"selected\"" : "", i);
 	}
 
 	return;
@@ -2650,20 +2495,17 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (fp) {
 		fscanf(fp, "%d", &cputemp);
 		fclose(fp);
-		websWrite(wp, "CPU %d.%d &#176;C / ", cputemp / 10,
-			  cputemp % 10);
+		websWrite(wp, "CPU %d.%d &#176;C / ", cputemp / 10, cputemp % 10);
 	}
 #endif
 	if (no2 && no5 && cputemp)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
-	else
-	 if (no2)
+	else if (no2)
 		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50 * 0.5 + 20.0);
 	else if (no5)
 		websWrite(wp, "WL0 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0);
 	else
-		websWrite(wp, "WL0 %4.2f &#176;C / WL1 %4.2f &#176;C",
-			  tempavg_24 * 0.5 + 20.0, tempavg_50 * 0.5 + 20.0);
+		websWrite(wp, "WL0 %4.2f &#176;C / WL1 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0, tempavg_50 * 0.5 + 20.0);
 #else
 #ifdef HAVE_GATEWORX
 	int TEMP_MUL = 100;
@@ -2671,25 +2513,19 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP)
 		TEMP_MUL = 200;
 
-	FILE *fp =
-	    fopen
-	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
-	     "rb");
+	FILE *fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
+			 "rb");
 	if (!fp)
-		fp = fopen
-		    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input",
-		     "rb");
+		fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input", "rb");
 #elif HAVE_LAGUNA
 	int TEMP_MUL = 10;
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
 #else
 #define TEMP_MUL 1000
 #ifdef HAVE_X86
-	FILE *fp =
-	    fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
+	FILE *fp = fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
 #else
-	FILE *fp =
-	    fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
+	FILE *fp = fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
 #endif
 #endif
 
@@ -2714,8 +2550,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(status_router.cputemp)</script></div>\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_router.cputemp)</script></div>\n");
 	websWrite(wp, "<span id=\"cpu_temp\">");
 	ej_get_cputemp(wp, argc, argv);
 	websWrite(wp, "</span>&nbsp;\n");
@@ -2728,14 +2563,10 @@ void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_LAGUNA
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/in0_input", "rb");
 #else
-	FILE *fp =
-	    fopen
-	    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt",
-	     "rb");
+	FILE *fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt",
+			 "rb");
 	if (!fp)
-		fp = fopen
-		    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/in1_input",
-		     "rb");
+		fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/in1_input", "rb");
 #endif
 	if (fp == NULL) {
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
@@ -2758,8 +2589,7 @@ void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
 void ej_show_voltage(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(status_router.inpvolt)</script></div>\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_router.inpvolt)</script></div>\n");
 	websWrite(wp, "<span id=\"voltage\">");
 	ej_get_voltage(wp, argc, argv);
 	websWrite(wp, "</span>&nbsp;\n");
@@ -2772,9 +2602,7 @@ static void showencstatus(webs_t wp, char *prefix)
 
 	sprintf(akm, "%s_akm", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;-&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n",
-		  prefix);
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;-&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n", prefix);
 	websWrite(wp, "<script type=\"text/javascript\">");
 	if (nvram_match(akm, "disabled")) {
 		websWrite(wp, "Capture(share.disabled)");
@@ -2869,13 +2697,11 @@ void ej_getencryptionstatus(webs_t wp, int argc, char_t ** argv)
 	}
 
 	if (showcli)
-		websWrite(wp,
-			  "<script type=\"text/javascript\">Capture(info.ap)</script>");
+		websWrite(wp, "<script type=\"text/javascript\">Capture(info.ap)</script>");
 	if (showcli && showap)
 		websWrite(wp, " & ");
 	if (showap)
-		websWrite(wp,
-			  "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
+		websWrite(wp, "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
 
 }
 
@@ -2952,8 +2778,7 @@ void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 {
-	websWrite(wp,
-		  "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
+	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
 
 	system2("/etc/openvpnstate.sh > /tmp/.temp");
 	FILE *in = fopen("/tmp/.temp", "r");
@@ -2966,8 +2791,7 @@ void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 	}
 	fclose(in);
 	websWrite(wp, "</fieldset><br />");
-	websWrite(wp,
-		  "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.statu)</script></legend>\n");
+	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.statu)</script></legend>\n");
 	system2("/etc/openvpnstatus.sh > /tmp/.temp");
 	in = fopen("/tmp/.temp", "r");
 	while (!feof(in)) {
@@ -2978,8 +2802,7 @@ void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 	}
 	fclose(in);
 	websWrite(wp, "</fieldset><br />");
-	websWrite(wp,
-		  "<fieldset>\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
+	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
 	system2("/etc/openvpnlog.sh > /tmp/.temp");
 	in = fopen("/tmp/.temp", "r");
 	while (!feof(in)) {
@@ -3057,16 +2880,14 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 
 		switch (state) {
 		case 1:
-			websWrite(wp, "%s",
-				  live_translate("wl_basic.radio_on"));
+			websWrite(wp, "%s", live_translate("wl_basic.radio_on"));
 			break;
 		case -1:
 			websWrite(wp, "%s", live_translate("share.unknown"));
 			break;
 		default:	// 1: software disabled, 2: hardware
 			// disabled, 3: both are disabled
-			websWrite(wp, "%s",
-				  live_translate("wl_basic.radio_off"));
+			websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
 			break;
 		}
 	} else {
@@ -3128,9 +2949,7 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 
 	if ((f = fopen("/proc/net/arp", "r")) != NULL) {
 		while (fgets(buf, sizeof(buf), f)) {
-			if (sscanf
-			    (buf, "%15s %*s %*s %17s %*s %s", ip, mac,
-			     landev) != 3)
+			if (sscanf(buf, "%15s %*s %*s %17s %*s %s", ip, mac, landev) != 3)
 				continue;
 			if ((strlen(mac) != 17)
 			    || (strcmp(mac, "00:00:00:00:00:00") == 0))
@@ -3142,8 +2961,7 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			/*
 			 * count open connections per IP 
 			 */
-			if ((conn =
-			     fopen("/proc/net/ip_conntrack", "r")) != NULL) {
+			if ((conn = fopen("/proc/net/ip_conntrack", "r")) != NULL) {
 				strcpy(ip2, ip);
 				strcat(ip2, " ");
 
@@ -3175,14 +2993,12 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			/*
 			 * look into hosts file for hostnames (static leases) 
 			 */
-			if ((host = fopen("/tmp/hosts", "r")) != NULL
-			    && !strcmp(hostname, "*")) {
+			if ((host = fopen("/tmp/hosts", "r")) != NULL && !strcmp(hostname, "*")) {
 				while (fgets(buf, sizeof(buf), host)) {
 					sscanf(buf, "%15s %*s", fullip);
 
 					if (!strcmp(ip, fullip)) {
-						sscanf(buf, "%*15s %s",
-						       hostname);
+						sscanf(buf, "%*15s %s", hostname);
 					}
 				}
 				fclose(host);
@@ -3200,19 +3016,15 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			    && nvram_match("dhcp_dnsmasq", "1")
 			    && nvram_match("dhcpd_usenvram", "0")) {
 				if (!(host = fopen("/tmp/dnsmasq.leases", "r")))
-					host =
-					    fopen("/jffs/dnsmasq.leases", "r");
+					host = fopen("/jffs/dnsmasq.leases", "r");
 
 				if (host) {
 
 					while (fgets(buf, sizeof(buf), host)) {
-						sscanf(buf, "%*s %*s %15s %*s",
-						       fullip);
+						sscanf(buf, "%*s %*s %15s %*s", fullip);
 
 						if (strcmp(ip, fullip) == 0) {
-							sscanf(buf,
-							       "%*s %*s %*s %s",
-							       hostname);
+							sscanf(buf, "%*s %*s %*s %s", hostname);
 						}
 					}
 					fclose(host);
@@ -3230,16 +3042,13 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			if (!strcmp(hostname, "*")
 			    && nvram_match("dhcp_dnsmasq", "1")
 			    && nvram_match("dhcpd_usenvram", "1")) {
-				sscanf(nvram_nget("dnsmasq_lease_%s", ip),
-				       "%*s %*s %*s %s", hostname);
+				sscanf(nvram_nget("dnsmasq_lease_%s", ip), "%*s %*s %*s %s", hostname);
 			}
 			/*
 			 * end nvram check 
 			 */
 
-			websWrite(wp, "%c'%s','%s','%s','%d'",
-				  (count ? ',' : ' '), hostname, ip, mac,
-				  conn_count);
+			websWrite(wp, "%c'%s','%s','%s','%d'", (count ? ',' : ' '), hostname, ip, mac, conn_count);
 			++count;
 			conn_count = 0;
 		}
@@ -3261,8 +3070,7 @@ void ej_dumppppoe(webs_t wp, int argc, char_t ** argv)
 	char peer[64];
 	int count = 0;
 	while (fscanf(in, "%s %s %s %s", pid, ifname, local, peer) == 4) {
-		websWrite(wp, "%c\"%s\",\"%s\",\"%s\",\"%s\"",
-			  count ? ',' : ' ', ifname, peer, local, pid);
+		websWrite(wp, "%c\"%s\",\"%s\",\"%s\",\"%s\"", count ? ',' : ' ', ifname, peer, local, pid);
 		count++;
 		if (feof(in))
 			break;
@@ -3284,38 +3092,25 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	for (tun = 1; tun < 11; tun++) {
 
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp,
-			  "<legend><script type=\"text/javascript\">Capture(eoip.tunnel)</script> %d</legend>\n",
-			  tun);
+		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(eoip.tunnel)</script> %d</legend>\n", tun);
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp,
-			  "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.srv)</script></div>\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.srv)</script></div>\n");
 		sprintf(temp, "oet%d_en", tun);
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-			  temp,
-			  (nvram_match(temp, "1") ? "checked=\"checked\"" : ""),
-			  tun);
+			  temp, (nvram_match(temp, "1") ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-			  temp,
-			  (nvram_match(temp, "0") ? "checked=\"checked\"" : ""),
-			  tun);
+			  temp, (nvram_match(temp, "0") ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"idoet%d\">\n", tun);
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp,
-			  "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.remoteIP)</script></div>\n");
-		websWrite(wp,
-			  "<input type=\"hidden\" name=\"oet%d_rem\" value=\"0.0.0.0\"/>\n",
-			  tun);
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.remoteIP)</script></div>\n");
+		websWrite(wp, "<input type=\"hidden\" name=\"oet%d_rem\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf(temp, "oet%d_rem", tun);
 		websWrite(wp,
 			  "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,eoip.remoteIP)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,eoip.tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,eoip.tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,eoip.tunnelID)\" value=\"%d\" />\n",
-			  temp, get_single_ip(nvram_safe_get(temp), 0), temp,
-			  get_single_ip(nvram_safe_get(temp), 1), temp,
-			  get_single_ip(nvram_safe_get(temp), 2), temp,
-			  get_single_ip(nvram_safe_get(temp), 3));
+			  temp, get_single_ip(nvram_safe_get(temp), 0), temp, get_single_ip(nvram_safe_get(temp), 1), temp, get_single_ip(nvram_safe_get(temp), 2), temp, get_single_ip(nvram_safe_get(temp), 3));
 		websWrite(wp, "</div>\n");
 /*
 	websWrite( wp, "<div class=\"setting\">\n" );
@@ -3390,48 +3185,31 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	websWrite( wp, "</div>\n" );
 */
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp,
-			  "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.bridging)</script></div>\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.bridging)</script></div>\n");
 		sprintf(temp, "oet%d_bridged", tun);
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idbridged%d', false)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-			  temp,
-			  (nvram_match(temp, "1") ? "checked=\"checked\"" : ""),
-			  tun);
+			  temp, (nvram_match(temp, "1") ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp,
 			  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idbridged%d', true)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-			  temp,
-			  (nvram_match(temp, "0") ? "checked=\"checked\"" : ""),
-			  tun);
+			  temp, (nvram_match(temp, "0") ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"idbridged%d\">\n", tun);
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp,
-			  "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
-		websWrite(wp,
-			  "<input type=\"hidden\" name=\"oet%d_ipaddr\" value=\"0.0.0.0\"/>\n",
-			  tun);
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
+		websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ipaddr\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf(temp, "oet%d_ipaddr", tun);
 		websWrite(wp,
 			  "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,share.ip)\" value=\"%d\" />\n",
-			  temp, get_single_ip(nvram_safe_get(temp), 0), temp,
-			  get_single_ip(nvram_safe_get(temp), 1), temp,
-			  get_single_ip(nvram_safe_get(temp), 2), temp,
-			  get_single_ip(nvram_safe_get(temp), 3));
+			  temp, get_single_ip(nvram_safe_get(temp), 0), temp, get_single_ip(nvram_safe_get(temp), 1), temp, get_single_ip(nvram_safe_get(temp), 2), temp, get_single_ip(nvram_safe_get(temp), 3));
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp,
-			  "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
-		websWrite(wp,
-			  "<input type=\"hidden\" name=\"oet%d_netmask\" value=\"0.0.0.0\"/>\n",
-			  tun);
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
+		websWrite(wp, "<input type=\"hidden\" name=\"oet%d_netmask\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf(temp, "oet%d_netmask", tun);
 		websWrite(wp,
 			  "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,0,254,share.subnet)\" value=\"%d\" />\n",
-			  temp, get_single_ip(nvram_safe_get(temp), 0), temp,
-			  get_single_ip(nvram_safe_get(temp), 1), temp,
-			  get_single_ip(nvram_safe_get(temp), 2), temp,
-			  get_single_ip(nvram_safe_get(temp), 3));
+			  temp, get_single_ip(nvram_safe_get(temp), 0), temp, get_single_ip(nvram_safe_get(temp), 1), temp, get_single_ip(nvram_safe_get(temp), 2), temp, get_single_ip(nvram_safe_get(temp), 3));
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
@@ -3538,7 +3316,7 @@ struct fsentry *parsefsentry(char line[256])
 		} else if (tokcount == 2) {
 			if (!strncmp(token, "/tmp/proftpd", 12)) {
 				free(entry);
-				return NULL; //skip it
+				return NULL;	//skip it
 			}
 			if (!strncmp(token, "/tmp/mnt/", 9)) {
 				char newpath[64];
@@ -3618,40 +3396,28 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 		rows++;
 	}
 	rows--;
-	websWrite(wp,
-		  "	<input type=\"hidden\" name=\"dlna_shares_count\" id=\"dlna_shares_count\" value=\"%d\">\n",
-		  rows);
+	websWrite(wp, "	<input type=\"hidden\" name=\"dlna_shares_count\" id=\"dlna_shares_count\" value=\"%d\">\n", rows);
 	rows = 5;
 
-	websWrite(wp,
-		  "	<input type=\"hidden\" name=\"dlna_shares_count_limit\" id=\"dlna_shares_count_limit\" value=\"%d\">\n",
-		  rows);
+	websWrite(wp, "	<input type=\"hidden\" name=\"dlna_shares_count_limit\" id=\"dlna_shares_count_limit\" value=\"%d\">\n", rows);
 	rows = 0;
 
 	// table header
-	websWrite(wp,
-		  "	<table id=\"dlna_shares\" class=\"table center\" summary=\"dlna share table\">\n");
-	websWrite(wp,
-		  "		<tr><th colspan=\"5\"><script type=\"text/javascript\">Capture(service.samba3_shares)</script></th></tr>\n");
+	websWrite(wp, "	<table id=\"dlna_shares\" class=\"table center\" summary=\"dlna share table\">\n");
+	websWrite(wp, "		<tr><th colspan=\"5\"><script type=\"text/javascript\">Capture(service.samba3_shares)</script></th></tr>\n");
 	websWrite(wp, "		<tr>\n");
-	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.samba3_share_path)</script></th>\n");
-	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.dlna_type_audio)</script></th>\n");
-	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.dlna_type_video)</script></th>\n");
-	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.dlna_type_images)</script></th>\n");
-	websWrite(wp,
-		  "			<th style=\"width: 50px;\">&nbsp;</th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_path)</script></th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.dlna_type_audio)</script></th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.dlna_type_video)</script></th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.dlna_type_images)</script></th>\n");
+	websWrite(wp, "			<th style=\"width: 50px;\">&nbsp;</th>\n");
 	websWrite(wp, "		</tr>\n");
 
 	for (cs = dlnashares; cs; cs = csnext) {
 
 		if (rows == 0) {
 			// dummy entry
-			sprintf(buffer, "%s",
-				"id=\"dlna_shares_row_template\" style=\"display: none;\"");
+			sprintf(buffer, "%s", "id=\"dlna_shares_row_template\" style=\"display: none;\"");
 			//sprintf(number, '\0');
 			number[0] = '\0';
 		} else {
@@ -3668,8 +3434,7 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "			<td id=\"n_dlna_mp%s\" style=\"width: 17.816em;\"><select name=\"dlnashare_mp%s\" id=\"dlnashare_mp%s\" style=\"width: 100%%;\" onchange=\"setDlnaShareAccessOptions(this);\">\n",
 			  number, number, number);
-		websWrite(wp,
-			  "				<option value=\"\" rel=\"\">-</option>\n");
+		websWrite(wp, "				<option value=\"\" rel=\"\">-</option>\n");
 		//fprintf(stderr, "[SAMBA] FS %s:%s public:%d\n", cs->label, cs->mp, cs->public );
 		for (current = fs; current; current = current->next) {
 			if (strcmp(current->fstype, "squashfs")
@@ -3698,40 +3463,26 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 				websWrite(wp,
 					  "				<option value=\"%s\" rel='{\"fstype\":\"%s\",\"perms\":[%s],\"avail\":1}' %s>%s</option>\n",
-					  current->mp,
-					  current->fstype,
-					  buffer,
-					  strcmp
-					  (current->mp,
-					   cs->mp) ? "" :
-					  "selected=\"selected\"", current->mp);
+					  current->mp, current->fstype, buffer, strcmp(current->mp, cs->mp) ? "" : "selected=\"selected\"", current->mp);
 			}
 		}
 		// fs not available -> add stored entry for display
 		if (found == 0 && rows > 0) {
-			websWrite(wp,
-				  "				<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>[not available!]</option>\n",
-				  cs->mp, cs->mp);
+			websWrite(wp, "				<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>[not available!]</option>\n", cs->mp, cs->mp);
 		}
 		websWrite(wp, "				</select></td>\n");
 		websWrite(wp,
 			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_audio%s\" id=\"dlnashare_audio%s\" value=\"1\" %s></td>\n",
-			  number, number,
-			  cs->types & TYPE_AUDIO ? "checked" : "");
+			  number, number, cs->types & TYPE_AUDIO ? "checked" : "");
 		websWrite(wp,
 			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_video%s\" id=\"dlnashare_video%s\" value=\"1\" %s></td>\n",
-			  number, number,
-			  cs->types & TYPE_VIDEO ? "checked" : "");
+			  number, number, cs->types & TYPE_VIDEO ? "checked" : "");
 		websWrite(wp,
 			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_images%s\" id=\"dlnashare_images%s\" value=\"1\" %s></td>\n",
-			  number, number,
-			  cs->types & TYPE_IMAGES ? "checked" : "");
+			  number, number, cs->types & TYPE_IMAGES ? "checked" : "");
 
-		websWrite(wp,
-			  "				<td style=\"width: 50px; text-align: center;\">\n");
-		websWrite(wp,
-			  "					<input type=\"button\" class=\"button\" name=\"dlnashare_del%s\" value=\"Remove\"  style=\"width: 100%%;\" onclick=\"removeDlnaShare(this);\">\n",
-			  number);
+		websWrite(wp, "				<td style=\"width: 50px; text-align: center;\">\n");
+		websWrite(wp, "					<input type=\"button\" class=\"button\" name=\"dlnashare_del%s\" value=\"Remove\"  style=\"width: 100%%;\" onclick=\"removeDlnaShare(this);\">\n", number);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "			</tr>\n");
 
@@ -3743,8 +3494,7 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		</table>\n");
 
 	// add button
-	websWrite(wp,
-		  "<div id=\"dlna_shares_add\" style=\"text-align: center;\"><input type=\"button\" class=\"button\" name=\"share_add\" value=\"Add Share\" onclick=\"addDlnaShare();\" /></div>");
+	websWrite(wp, "<div id=\"dlna_shares_add\" style=\"text-align: center;\"><input type=\"button\" class=\"button\" name=\"share_add\" value=\"Add Share\" onclick=\"addDlnaShare();\" /></div>");
 
 	for (current = fs; fs; current = fs) {
 		fs = current->next;
@@ -3774,40 +3524,28 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 		rows++;
 	}
 	rows--;
-	websWrite(wp,
-		  "	<input type=\"hidden\" name=\"samba_shares_count\" id=\"samba_shares_count\" value=\"%d\">\n",
-		  rows);
+	websWrite(wp, "	<input type=\"hidden\" name=\"samba_shares_count\" id=\"samba_shares_count\" value=\"%d\">\n", rows);
 	rows = 5;
 
-	websWrite(wp,
-		  "	<input type=\"hidden\" name=\"samba_shares_count_limit\" id=\"samba_shares_count_limit\" value=\"%d\">\n",
-		  rows);
+	websWrite(wp, "	<input type=\"hidden\" name=\"samba_shares_count_limit\" id=\"samba_shares_count_limit\" value=\"%d\">\n", rows);
 	rows = 0;
 
 	// table header
-	websWrite(wp,
-		  "	<table id=\"samba_shares\" class=\"table center\" summary=\"samba share table\">\n");
-	websWrite(wp,
-		  "		<tr><th colspan=\"5\"><script type=\"text/javascript\">Capture(service.samba3_shares)</script></th></tr>\n");
+	websWrite(wp, "	<table id=\"samba_shares\" class=\"table center\" summary=\"samba share table\">\n");
+	websWrite(wp, "		<tr><th colspan=\"5\"><script type=\"text/javascript\">Capture(service.samba3_shares)</script></th></tr>\n");
 	websWrite(wp, "		<tr>\n");
-	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.samba3_share_path)</script></th>\n");
-	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.samba3_share_label)</script></th>\n");
-	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.samba3_share_public)</script></th>\n");
-	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.samba3_share_access)</script></th>\n");
-	websWrite(wp,
-		  "			<th style=\"width: 50px;\">&nbsp;</th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_path)</script></th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_label)</script></th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_public)</script></th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_access)</script></th>\n");
+	websWrite(wp, "			<th style=\"width: 50px;\">&nbsp;</th>\n");
 	websWrite(wp, "		</tr>\n");
 
 	for (cs = samba3shares; cs; cs = csnext) {
 
 		if (rows == 0) {
 			// dummy entry
-			sprintf(buffer, "%s",
-				"id=\"samba_shares_row_template\" style=\"display: none;\"");
+			sprintf(buffer, "%s", "id=\"samba_shares_row_template\" style=\"display: none;\"");
 			//sprintf(number, '\0');
 			number[0] = '\0';
 		} else {
@@ -3824,8 +3562,7 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "			<td id=\"n_share_mp%s\" style=\"width: 17.816em;\"><select name=\"smbshare_mp%s\" id=\"smbshare_mp%s\" style=\"width: 100%%;\" onchange=\"setSambaShareAccessOptions(this);\">\n",
 			  number, number, number);
-		websWrite(wp,
-			  "				<option value=\"\" rel=\"\">-</option>\n");
+		websWrite(wp, "				<option value=\"\" rel=\"\">-</option>\n");
 		//fprintf(stderr, "[SAMBA] FS %s:%s public:%d\n", cs->label, cs->mp, cs->public );
 		for (current = fs; current; current = current->next) {
 			if (strcmp(current->fstype, "squashfs")
@@ -3854,20 +3591,12 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 				websWrite(wp,
 					  "				<option value=\"%s\" rel='{\"fstype\":\"%s\",\"perms\":[%s],\"avail\":1}' %s>%s</option>\n",
-					  current->mp,
-					  current->fstype,
-					  buffer,
-					  strcmp
-					  (current->mp,
-					   cs->mp) ? "" :
-					  "selected=\"selected\"", current->mp);
+					  current->mp, current->fstype, buffer, strcmp(current->mp, cs->mp) ? "" : "selected=\"selected\"", current->mp);
 			}
 		}
 		// fs not available -> add stored entry for display
 		if (found == 0 && rows > 0) {
-			websWrite(wp,
-				  "				<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>%s [not available!]</option>\n",
-				  cs->mp, cs->access_perms, cs->mp);
+			websWrite(wp, "				<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>%s [not available!]</option>\n", cs->mp, cs->access_perms, cs->mp);
 			sprintf(perms, "%s", cs->access_perms);
 		}
 		websWrite(wp, "				</select></td>\n");
@@ -3880,28 +3609,16 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "				<td>\n");
 		websWrite(wp,
 			  "					<select name=\"smbshare_access_perms%s\" id=\"smbshare_access_perms%s\" style=\"width: 100%%;\"%s>\n",
-			  number, number,
-			  !strcmp(perms, "") ? " disabled" : "");
+			  number, number, !strcmp(perms, "") ? " disabled" : "");
 		if (rows == 0 || strcmp(perms, "")) {
-			websWrite(wp,
-				  "						<option value=\"rw\"%s>Read/Write</option>\n",
-				  !strcmp
-				  (cs->access_perms, "rw") ? " selected" : "");
-			websWrite(wp,
-				  "						<option value=\"ro\"%s>Read Only</option>\n",
-				  !strcmp
-				  (cs->access_perms, "ro") ? " selected" : "");
+			websWrite(wp, "						<option value=\"rw\"%s>Read/Write</option>\n", !strcmp(cs->access_perms, "rw") ? " selected" : "");
+			websWrite(wp, "						<option value=\"ro\"%s>Read Only</option>\n", !strcmp(cs->access_perms, "ro") ? " selected" : "");
 		}
 		websWrite(wp, "					</select>\n");
-		websWrite(wp,
-			  "					<input type=\"hidden\" name=\"smbshare_access_perms_prev_%d\" value=\"%s\">\n",
-			  rows, cs->access_perms);
+		websWrite(wp, "					<input type=\"hidden\" name=\"smbshare_access_perms_prev_%d\" value=\"%s\">\n", rows, cs->access_perms);
 		websWrite(wp, "				</td>\n");
-		websWrite(wp,
-			  "				<td style=\"width: 50px; text-align: center;\">\n");
-		websWrite(wp,
-			  "					<input type=\"button\" class=\"button\" name=\"smbshare_del%s\" value=\"Remove\"  style=\"width: 100%%;\" onclick=\"removeSambaShare(this);\">\n",
-			  number);
+		websWrite(wp, "				<td style=\"width: 50px; text-align: center;\">\n");
+		websWrite(wp, "					<input type=\"button\" class=\"button\" name=\"smbshare_del%s\" value=\"Remove\"  style=\"width: 100%%;\" onclick=\"removeSambaShare(this);\">\n", number);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "			</tr>\n");
 
@@ -3913,8 +3630,7 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		</table>\n");
 
 	// add button
-	websWrite(wp,
-		  "<div id=\"samba_shares_add\" style=\"text-align: center;\"><input type=\"button\" class=\"button\" name=\"share_add\" value=\"Add Share\" onclick=\"addSambaShare();\" /></div>");
+	websWrite(wp, "<div id=\"samba_shares_add\" style=\"text-align: center;\"><input type=\"button\" class=\"button\" name=\"share_add\" value=\"Add Share\" onclick=\"addSambaShare();\" /></div>");
 
 	for (current = fs; fs; current = fs) {
 		fs = current->next;
@@ -3939,41 +3655,31 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		rows++;
 	}
 	rows--;
-	websWrite(wp,
-		  "	<input type=\"hidden\" name=\"samba_users_count\" id=\"samba_users_count\" value=\"%d\">\n",
-		  rows);
+	websWrite(wp, "	<input type=\"hidden\" name=\"samba_users_count\" id=\"samba_users_count\" value=\"%d\">\n", rows);
 	rows = 10;
 
-	websWrite(wp,
-		  "	<input type=\"hidden\" name=\"samba_users_count_limit\" id=\"samba_users_count_limit\" value=\"%d\">\n",
-		  rows);
+	websWrite(wp, "	<input type=\"hidden\" name=\"samba_users_count_limit\" id=\"samba_users_count_limit\" value=\"%d\">\n", rows);
 	rows = 0;
 
 	// table header
-	websWrite(wp,
-		  "	<table id=\"samba_users\" class=\"table center\" summary=\"samba user table\">\n");
+	websWrite(wp, "	<table id=\"samba_users\" class=\"table center\" summary=\"samba user table\">\n");
 
-	websWrite(wp,
-		  "		<tr><th colspan=\"6\"><script type=\"text/javascript\">Capture(service.samba3_users)</script></th></tr>\n");
+	websWrite(wp, "		<tr><th colspan=\"6\"><script type=\"text/javascript\">Capture(service.samba3_users)</script></th></tr>\n");
 	websWrite(wp, "		<tr>\n");
 	websWrite(wp, "			<th>username</th>\n");
-	websWrite(wp,
-		  "			<th style=\"width:180px;\">password</th>\n");
-	websWrite(wp,
-		  "			<th><script type=\"text/javascript\">Capture(service.samba3_user_shares)</script></th>\n");
+	websWrite(wp, "			<th style=\"width:180px;\">password</th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_user_shares)</script></th>\n");
 	websWrite(wp, "			<th>samba</th>\n");
 	websWrite(wp, "			<th>ftp</th>\n");
 
-	websWrite(wp,
-		  "			<th style=\"width:50px;\">&nbsp;</th>\n");
+	websWrite(wp, "			<th style=\"width:50px;\">&nbsp;</th>\n");
 	websWrite(wp, "		</tr>\n");
 
 	for (cu = samba3users; cu; cu = cunext) {
 
 		if (rows == 0) {
 			// dummy entry
-			sprintf(buffer, "%s",
-				"id=\"n_smbuser_template\" style=\"display: none;\"");
+			sprintf(buffer, "%s", "id=\"n_smbuser_template\" style=\"display: none;\"");
 			//sprintf(number, '\0');
 			number[0] = '\0';
 		} else {
@@ -3983,18 +3689,12 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "		<tr %s>\n", buffer);
 
-		websWrite(wp,
-			  "			<td id=\"n_smbuser_user\" valign=\"top\" width=\"1%%\" align=\"center\">\n");
-		websWrite(wp,
-			  "				<input type=\"text\" name=\"smbuser_username%s\" value=\"%s\" size=\"20\">\n",
-			  number, cu->username);
+		websWrite(wp, "			<td id=\"n_smbuser_user\" valign=\"top\" width=\"1%%\" align=\"center\">\n");
+		websWrite(wp, "				<input type=\"text\" name=\"smbuser_username%s\" value=\"%s\" size=\"20\">\n", number, cu->username);
 		websWrite(wp, "			</td>\n");
 
-		websWrite(wp,
-			  "			<td id=\"n_smbuser_pass\" valign=\"top\" align=\"left\">\n");
-		websWrite(wp,
-			  "				<input type=\"password\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"12\">&nbsp;\n",
-			  number, number, cu->password);
+		websWrite(wp, "			<td id=\"n_smbuser_pass\" valign=\"top\" align=\"left\">\n");
+		websWrite(wp, "				<input type=\"password\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"12\">&nbsp;\n", number, number, cu->password);
 		//websWrite(wp, "                               <div style=\"float: left;padding-top: 2px;\">\n");
 		websWrite(wp,
 			  "					<input type=\"checkbox\" name=\"smbuser_password_unmask%s\" value=\"0\" onclick=\"setElementMask('smbuser_password' + this.name.substr(23, this.name.length - 23), this.checked);\" />Unmask\n",
@@ -4004,26 +3704,22 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 
 		//fprintf( stderr, "[USERS] %s:%s\n", cu->username, cu->password );
 		if (rows == 0) {
-		websWrite(wp,
-			  "			<td id=\"n_smbuser_shareaccess\" valign=\"top\">\n");
-		websWrite(wp,
-				  "				<div id=\"n_smbuser_share\"><input type=\"checkbox\" value=\"1\">&nbsp;<span>&nbsp</span></div>\n");
-		websWrite(wp, "			</td>\n");
-		websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
-		websWrite(wp,"				        <input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\">\n",number);
-		websWrite(wp, "			</td>\n");
-		websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
-		websWrite(wp,"				        <input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\">\n",number);
-		websWrite(wp, "			</td>\n");
+			websWrite(wp, "			<td id=\"n_smbuser_shareaccess\" valign=\"top\">\n");
+			websWrite(wp, "				<div id=\"n_smbuser_share\"><input type=\"checkbox\" value=\"1\">&nbsp;<span>&nbsp</span></div>\n");
+			websWrite(wp, "			</td>\n");
+			websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
+			websWrite(wp, "				        <input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\">\n", number);
+			websWrite(wp, "			</td>\n");
+			websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
+			websWrite(wp, "				        <input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\">\n", number);
+			websWrite(wp, "			</td>\n");
 		} else {
-		websWrite(wp,
-			  "			<td id=\"n_smbuser_shareaccess\" valign=\"top\">\n");
+			websWrite(wp, "			<td id=\"n_smbuser_shareaccess\" valign=\"top\">\n");
 			usershares = 0;
 			for (cs = samba3shares; cs; cs = cs->next) {
 				buffer[0] = '\0';
 				for (csu = cs->users; csu; csu = csu->next) {
-					if (!strcmp
-					    (csu->username, cu->username)) {
+					if (!strcmp(csu->username, cu->username)) {
 						//fprintf( stderr, "[USERSHARES] %s: %s\n", cs->label, csu->username );
 						sprintf(buffer, " checked");
 					}
@@ -4031,25 +3727,21 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 				if (usershares > 0) {
 					websWrite(wp,
 						  "				<div id=\"n_smbuser_share\"><input type=\"checkbox\" name=\"smbshare_%d_user_%d\"%s value=\"1\">&nbsp;<span>%s</span></div>\n",
-						  usershares,
-						  rows, buffer, cs->label);
+						  usershares, rows, buffer, cs->label);
 				}
 				usershares++;
 			}
-		websWrite(wp, "			</td>\n");
-		websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
-		websWrite(wp,"				<input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\" %s>\n",
-						  number, cu->sharetype & SHARETYPE_SAMBA ? "checked" : "");
-		websWrite(wp, "			</td>\n");
+			websWrite(wp, "			</td>\n");
+			websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
+			websWrite(wp, "				<input type=\"checkbox\" name=\"smbuser_samba%s\" value=\"1\" %s>\n", number, cu->sharetype & SHARETYPE_SAMBA ? "checked" : "");
+			websWrite(wp, "			</td>\n");
 
-		websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
-		websWrite(wp,"				<input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\" %s>\n",
-						  number, cu->sharetype & SHARETYPE_FTP ? "checked" : "");
-		websWrite(wp, "			</td>\n");
+			websWrite(wp, "			<td style=\"width: 25px; text-align: center;\">\n");
+			websWrite(wp, "				<input type=\"checkbox\" name=\"smbuser_ftp%s\" value=\"1\" %s>\n", number, cu->sharetype & SHARETYPE_FTP ? "checked" : "");
+			websWrite(wp, "			</td>\n");
 		}
 
-		websWrite(wp,
-			  "			<td valign=\"top\" style=\"width: 50px; text-align: center;\">\n");
+		websWrite(wp, "			<td valign=\"top\" style=\"width: 50px; text-align: center;\">\n");
 		websWrite(wp,
 			  "				<input type=\"button\" class=\"button\" name=\"smbuser_del%s\" value=\"Remove\" style=\"width: 100%%;\" onclick=\"removeTableEntry('samba_users', this);\">\n",
 			  number);
@@ -4073,8 +3765,7 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		</table>\n");
 
 	// add button
-	websWrite(wp,
-		  "<div id=\"samba_users_add\" style=\"text-align: center;\"><input type=\"button\" class=\"button\" name=\"user_add\" value=\"Add User\" onclick=\"addSambaUser();\" /></div>");
+	websWrite(wp, "<div id=\"samba_users_add\" style=\"text-align: center;\"><input type=\"button\" class=\"button\" name=\"user_add\" value=\"Add User\" onclick=\"addSambaUser();\" /></div>");
 
 	// free memory
 
@@ -4147,31 +3838,20 @@ void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "  <legend>DSL Status</legend>\n");
 	websWrite(wp, "  <div class=\"setting\">\n");
-	websWrite(wp,
-		  "    <div class=\"label\"><script type=\"text/javascript\">Capture(dsl.annex)</script></div>\n");
+	websWrite(wp, "    <div class=\"label\"><script type=\"text/javascript\">Capture(dsl.annex)</script></div>\n");
 	websWrite(wp, "    <span>%c</span>\n", toupper(annex[0]));
 	websWrite(wp, "  </div>\n");
 	websWrite(wp, "  <div class=\"setting\">\n");
-	websWrite(wp,
-		  "    <div class=\"label\"><script type=\"text/javascript\">Capture(dsl.iface_status)</script></div>\n");
-	websWrite(wp, "    <span id=\"dsl_iface_status\">%s</span>\n",
-		  nvram_safe_get("dsl_iface_status"));
+	websWrite(wp, "    <div class=\"label\"><script type=\"text/javascript\">Capture(dsl.iface_status)</script></div>\n");
+	websWrite(wp, "    <span id=\"dsl_iface_status\">%s</span>\n", nvram_safe_get("dsl_iface_status"));
 	websWrite(wp, "  </div>\n");
 	websWrite(wp, "  <div class=\"setting\">\n");
-	websWrite(wp,
-		  "    <div class=\"label\"><script type=\"text/javascript\">Capture(dsl.datarate)</script></div>\n");
-	websWrite(wp,
-		  "    <span id=\"dsl_datarate_ds\">%11.2f</span> MBit / <span id=\"dsl_datarate_us\">%11.2f</span> MBit\n",
-		  atof(nvram_safe_get("dsl_datarate_ds")),
-		  atof(nvram_safe_get("dsl_datarate_us")));
+	websWrite(wp, "    <div class=\"label\"><script type=\"text/javascript\">Capture(dsl.datarate)</script></div>\n");
+	websWrite(wp, "    <span id=\"dsl_datarate_ds\">%11.2f</span> MBit / <span id=\"dsl_datarate_us\">%11.2f</span> MBit\n", atof(nvram_safe_get("dsl_datarate_ds")), atof(nvram_safe_get("dsl_datarate_us")));
 	websWrite(wp, "  </div>\n");
 	websWrite(wp, "  <div class=\"setting\">\n");
-	websWrite(wp,
-		  "    <div class=\"label\"><script type=\"text/javascript\">Capture(dsl.snr)</script></div>\n");
-	websWrite(wp,
-		  "    <span id=\"dsl_snr_up\">%d</span> dB / <span id=\"dsl_snr_down\">%d</span> dB\n",
-		  atoi(nvram_safe_get("dsl_snr_up")),
-		  atoi(nvram_safe_get("dsl_snr_down")));
+	websWrite(wp, "    <div class=\"label\"><script type=\"text/javascript\">Capture(dsl.snr)</script></div>\n");
+	websWrite(wp, "    <span id=\"dsl_snr_up\">%d</span> dB / <span id=\"dsl_snr_down\">%d</span> dB\n", atoi(nvram_safe_get("dsl_snr_up")), atoi(nvram_safe_get("dsl_snr_down")));
 	websWrite(wp, "  </div>\n");
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<br />\n");
@@ -4191,14 +3871,9 @@ void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv)
 	strcpy(serverlist, nvram_get("spotpass_servers"));
 	ptr = strtok(serverlist, "|");
 	while (ptr != NULL) {
-		if (sscanf
-		    (ptr, "%s %s %s %s %d %d", &dummy1, &url, &proto, &dummy2,
-		     &port1, &port2) == 6) {
+		if (sscanf(ptr, "%s %s %s %s %d %d", &dummy1, &url, &proto, &dummy2, &port1, &port2) == 6) {
 			websWrite(wp, "%s %s %d,%d", url, proto, port1, port2);
-		} else
-		    if (sscanf
-			(ptr, "%s %s %s %d %d", &dummy1, &url, &proto, &port1,
-			 &port2) == 5) {
+		} else if (sscanf(ptr, "%s %s %s %d %d", &dummy1, &url, &proto, &port1, &port2) == 5) {
 			websWrite(wp, "%s %s %d,%d", url, proto, port1, port2);
 		} else if (sscanf(ptr, "%s %s %s", &url, &proto, &ports) == 3) {
 			websWrite(wp, "%s %s %s", url, proto, ports);
@@ -4230,29 +3905,13 @@ void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
 				rgpio = nvram_nget("gpio%s", var);
 				gpio_name = nvram_nget("gpio%s_name", var);
 				// enable
-				websWrite(wp,
-					  "<div class=\"label\">%s (%s)</div>",
-					  nvgpio, gpio_name);
-				websWrite(wp,
-					  "<input type=text maxlength=\"17\" size=\"17\" id=\"%s\" name=\"%s\" value=\"%s\">",
-					  gpio_new_name, gpio_new_name,
-					  gpio_name);
-				websWrite(wp,
-					  "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"1\" %s />\n",
-					  nvgpio, nvram_match(nvgpio,
-							      "1") ?
-					  "checked=\"checked\"" : "");
-				websWrite(wp,
-					  "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;");
+				websWrite(wp, "<div class=\"label\">%s (%s)</div>", nvgpio, gpio_name);
+				websWrite(wp, "<input type=text maxlength=\"17\" size=\"17\" id=\"%s\" name=\"%s\" value=\"%s\">", gpio_new_name, gpio_new_name, gpio_name);
+				websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"1\" %s />\n", nvgpio, nvram_match(nvgpio, "1") ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;");
 				//disable 
-				websWrite(wp,
-					  "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" %s />\n",
-					  nvgpio,
-					  nvram_match(nvgpio,
-						      "0") ?
-					  "checked=\"checked\"" : "");
-				websWrite(wp,
-					  "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
+				websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" %s />\n", nvgpio, nvram_match(nvgpio, "0") ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
 			}
 		}
 		free(var);
@@ -4274,29 +3933,14 @@ void ej_show_status_gpio_input(webs_t wp, int argc, char_t ** argv)
 				sprintf(gpio_new_name, "gpio%s_name", var);
 
 				// enable
-				websWrite(wp,
-					  "<div class=\"label\">%s</div>",
-					  nvgpio);
-				websWrite(wp,
-					  "<input maxlength=\"17\" size=\"17\" id=\"%s\" name=\"%s\" value=\"%s\">",
-					  gpio_new_name, gpio_new_name,
-					  gpio_name);
+				websWrite(wp, "<div class=\"label\">%s</div>", nvgpio);
+				websWrite(wp, "<input maxlength=\"17\" size=\"17\" id=\"%s\" name=\"%s\" value=\"%s\">", gpio_new_name, gpio_new_name, gpio_name);
 
-				websWrite(wp,
-					  "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"1\" disabled=\"true\" %s />\n",
-					  nvgpio,
-					  !get_gpio(atoi(var)) ?
-					  "checked=\"checked\"" : "");
-				websWrite(wp,
-					  "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;");
+				websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"1\" disabled=\"true\" %s />\n", nvgpio, !get_gpio(atoi(var)) ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;");
 				//Disable
-				websWrite(wp,
-					  "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" disabled=\"true\" %s />\n",
-					  nvgpio,
-					  get_gpio(atoi(var)) ?
-					  "checked=\"checked\"" : "");
-				websWrite(wp,
-					  "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
+				websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" disabled=\"true\" %s />\n", nvgpio, get_gpio(atoi(var)) ? "checked=\"checked\"" : "");
+				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
 			}
 		}
 		free(var);

@@ -58,8 +58,7 @@ void init_gpio()
 		exit(1);
 	}
 
-	page = mmap(start, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
-		    (off_t) GPIO0_BASE);
+	page = mmap(start, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t) GPIO0_BASE);
 	if (page == MAP_FAILED) {
 		// dd_syslog(LOG_ERR, "Can't mmap GPIO memory space: %s",
 		// strerror(errno));
@@ -788,8 +787,8 @@ void period_check(int sig)
 	sesgpio = 0x100;
 	val |= get_gpio(0);	//aoss pushbutton
 #elif defined(HAVE_HAMEA15)
-//	sesgpio = 0x100;
-//	val |= get_gpio(0);	//aoss pushbutton
+//      sesgpio = 0x100;
+//      val |= get_gpio(0);     //aoss pushbutton
 #elif defined(HAVE_WCRGN)
 	sesgpio = 0x100;
 	val |= get_gpio(0);	//aoss pushbutton
@@ -815,11 +814,11 @@ void period_check(int sig)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton
 #elif defined(HAVE_RB2011)
-//	sesgpio = 0x110;
-//	val |= get_gpio(16) << 16;	//aoss pushbutton
+//      sesgpio = 0x110;
+//      val |= get_gpio(16) << 16;      //aoss pushbutton
 #elif defined(HAVE_WDR4300)
-//	sesgpio = 0x110;
-//	val |= get_gpio(16) << 16;	//aoss pushbutton
+//      sesgpio = 0x110;
+//      val |= get_gpio(16) << 16;      //aoss pushbutton
 #elif defined(HAVE_WNDR3700V4)
 	sesgpio = 0x10f;
 	val |= get_gpio(15) << 15;	//aoss pushbutton
@@ -830,8 +829,8 @@ void period_check(int sig)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton
 #elif defined(HAVE_WNR2200)
-//	sesgpio = 0x00b; //not yet supported
-//	val |= get_gpio(37) << 37;	//aoss pushbutton
+//      sesgpio = 0x00b; //not yet supported
+//      val |= get_gpio(37) << 37;      //aoss pushbutton
 #elif defined(HAVE_WNR2000)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton
@@ -985,7 +984,6 @@ void period_check(int sig)
 		sesgpio = 0x107;	// gpio 7, inversed
 		break;
 
-
 	case ROUTER_ASUS_WL500G_PRE:
 		sesgpio = 0x004;	// gpio 4, normal
 		break;
@@ -1071,16 +1069,13 @@ void period_check(int sig)
 		{		/* Whenever it is pushed steady */
 			if (++count > RESET_WAIT_COUNT) {
 				if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
-					fprintf(stderr,
-						"resetbutton: nothing to do...\n");
+					fprintf(stderr, "resetbutton: nothing to do...\n");
 					alarmtimer(0, 0);	/* Stop the timer alarm */
 					return;
 				}
 				if ((brand & 0x000f) != 0x000f) {
-					printf
-					    ("resetbutton: factory default.\n");
-					dd_syslog(LOG_DEBUG,
-						  "Reset button: restoring factory defaults now!\n");
+					printf("resetbutton: factory default.\n");
+					dd_syslog(LOG_DEBUG, "Reset button: restoring factory defaults now!\n");
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_SOLO51)
 					led_control(LED_DIAG, LED_ON);
 #elif defined(HAVE_WHRHPGN)  || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
@@ -1089,8 +1084,7 @@ void period_check(int sig)
 					ACTION("ACT_HW_RESTORE");
 					alarmtimer(0, 0);	/* Stop the timer alarm */
 #ifdef HAVE_X86
-					eval("mount", "/usr/local", "-o",
-					     "remount,rw");
+					eval("mount", "/usr/local", "-o", "remount,rw");
 					eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
 					// database
 					eval("rm", "-f", "/tmp/nvram/.lock");	// delete
@@ -1099,8 +1093,7 @@ void period_check(int sig)
 					eval("rm", "-f", "/usr/local/nvram/*");	// delete
 					// nvram
 					// database
-					eval("mount", "/usr/local", "-o",
-					     "remount,ro");
+					eval("mount", "/usr/local", "-o", "remount,ro");
 #elif HAVE_RB500
 					eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
 					// database
@@ -1119,7 +1112,7 @@ void period_check(int sig)
 #else
 #ifdef HAVE_BUFFALO_SA
 					int region_sa = 0;
-					if(nvram_default_match("region", "SA", ""))
+					if (nvram_default_match("region", "SA", ""))
 						region_sa = 1;
 #endif
 					nvram_set("sv_restore_defaults", "1");
@@ -1139,7 +1132,7 @@ void period_check(int sig)
 					eval("erase", "nvram");
 #ifdef HAVE_BUFFALO_SA
 					nvram_set("sv_restore_defaults", "1");
-					if(region_sa)
+					if (region_sa)
 						nvram_set("region", "SA");
 					nvram_commit();
 #endif
@@ -1165,11 +1158,9 @@ void period_check(int sig)
 				// SES (AOSS) led
 #ifdef HAVE_RADIOOFF
 #ifndef HAVE_BUFFALO
-				dd_syslog(LOG_DEBUG,
-					  "SES / AOSS / EZ-setup button: turning radio(s) on\n");
+				dd_syslog(LOG_DEBUG, "SES / AOSS / EZ-setup button: turning radio(s) on\n");
 #else
-				dd_syslog(LOG_DEBUG,
-					  "AOSS button: turning radio(s) on\n");
+				dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) on\n");
 #endif
 #ifndef HAVE_ERC
 				sysprintf("startservice radio_on");
@@ -1182,11 +1173,9 @@ void period_check(int sig)
 				// (AOSS) led
 #ifdef HAVE_RADIOOFF
 #ifndef HAVE_BUFFALO
-				dd_syslog(LOG_DEBUG,
-					  "SES / AOSS / EZ-setup button: turning radio(s) off\n");
+				dd_syslog(LOG_DEBUG, "SES / AOSS / EZ-setup button: turning radio(s) off\n");
 #else
-				dd_syslog(LOG_DEBUG,
-					  "AOSS button: turning radio(s) off\n");
+				dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) off\n");
 #endif
 #ifndef HAVE_ERC
 				sysprintf("startservice radio_off");
@@ -1210,8 +1199,7 @@ void period_check(int sig)
 		 */
 		if (mode == 1) {
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
-				fprintf(stderr,
-					"resetbutton: nothing to do...\n");
+				fprintf(stderr, "resetbutton: nothing to do...\n");
 				alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}

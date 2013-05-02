@@ -88,8 +88,7 @@ int do_ntp(void)		// called from ntp_main and
 
 	if (((servers = nvram_get("ntp_server")) == NULL)
 	    || (*servers == 0))
-		servers =
-		    "209.81.9.7 207.46.130.100 192.36.144.23 pool.ntp.org";
+		servers = "209.81.9.7 207.46.130.100 192.36.144.23 pool.ntp.org";
 
 	char *argv[] = { "ntpclient", servers, NULL };
 	if (_evalpid(argv, NULL, 20, NULL) != 0) {
@@ -112,10 +111,7 @@ int do_ntp(void)		// called from ntp_main and
 		int dbeg = dstEntry[dst].startDay[yi];
 		int dend = dstEntry[dst].endDay[yi];
 
-		if (((mon == mbeg) && (day >= dbeg)) ||
-		    ((mon == mend) && (day <= dend)) ||
-		    ((mbeg < mend) && (mon > mbeg) && (mon < mend)) ||
-		    ((mbeg > mend) && ((mon > mbeg) || (mon < mend)))) {
+		if (((mon == mbeg) && (day >= dbeg)) || ((mon == mend) && (day <= dend)) || ((mbeg < mend) && (mon > mbeg) && (mon < mend)) || ((mbeg > mend) && ((mon > mbeg) || (mon < mend)))) {
 			if ((mon != mend) || (day != dend)
 			    || (tm->tm_hour <= 1))
 				tv.tv_sec += dstEntry[dst].dstBias;

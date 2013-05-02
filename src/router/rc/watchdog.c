@@ -19,19 +19,17 @@ static void watchdog(void)
 	int radioledinitcount = 0;
 	int fd = open("/dev/misc/watchdog", O_WRONLY);
 	if (fd == -1)
-	    fd = open("/dev/watchdog", O_WRONLY);
+		fd = open("/dev/watchdog", O_WRONLY);
 
 	if (fd == -1) {
 		return;
 	}
-	
 #ifdef HAVE_MADWIFI
 	int cnt = getdevicecount();
 #else
 	int cnt = get_wl_instances();
 #endif
-	
-	
+
 	while (1) {
 		write(fd, "\0", 1);
 		fsync(fd);
@@ -52,7 +50,6 @@ static void watchdog(void)
 			oldstate0 = -1;
 			oldstate1 = -1;
 		}
-		 
 #ifdef HAVE_MADWIFI
 		if (!nvram_match("flash_active", "1")) {
 			radiostate0 = get_radiostate("ath0");
@@ -89,7 +86,7 @@ static void watchdog(void)
 					led_control(LED_POWER, LED_ON);
 #endif
 			}
-			
+
 			oldstate0 = radiostate0;
 		}
 

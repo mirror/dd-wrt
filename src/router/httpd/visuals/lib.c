@@ -38,24 +38,22 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE)
 	char *p;
 	char string[32], date[16];
-	sprintf( string, CYBERTAN_VERSION );
-	p = strtok( string, "(" );
-	if( p != NULL ) {
-		p = strtok( NULL, ")" );
-		if( p != NULL ) {
-			sprintf( date, "%s", p);
+	sprintf(string, CYBERTAN_VERSION);
+	p = strtok(string, "(");
+	if (p != NULL) {
+		p = strtok(NULL, ")");
+		if (p != NULL) {
+			sprintf(date, "%s", p);
 		}
 	}
 #endif
 #ifdef HAVE_BUFFALO
-	websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
-		  nvram_safe_get("dist_type"), DIST_OPT);
+	websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #else
 
 #ifdef HAVE_REGISTER
 	if (isregistered() && !isregistered_real()) {
-		websWrite(wp, "Click here to ACTIVATE %d Hour Trial",
-			  getTrialCount());
+		websWrite(wp, "Click here to ACTIVATE %d Hour Trial", getTrialCount());
 	} else {
 #ifdef HAVE_WIKINGS
 #ifdef HAVE_SUB3
@@ -75,48 +73,47 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #else
 #define V "MIMO"
 #endif
-	if( argc == 2 ) {
-		websWrite(wp, "ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
-	} else {
-		websWrite(wp, "ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>", date, V);
-	}
+		if (argc == 2) {
+			websWrite(wp, "ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
+		} else {
+			websWrite(wp, "ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>", date, V);
+		}
 #undef V
 #elif HAVE_CARLSONWIRELESS
 		websWrite(wp, "Carlson Wireless v5.3 (%s)", SVN_REVISION);
 #elif HAVE_IMMERSIVE
-	if( argc == 2) {
-		websWrite(wp, "Build date %s", date);
-	} else {
-		websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
-	}
+		if (argc == 2) {
+			websWrite(wp, "Build date %s", date);
+		} else {
+			websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
+		}
 #elif HAVE_IPR
 		websWrite(wp, "IPR-CP v1.0 (%s)", SVN_REVISION);
 #elif HAVE_ONNET
-	if(nvram_match("DD_BOARD", "Atheros Hornet")) {
-		websWrite(wp, "OTAi 9331 (%s)", date);
-	} else if(nvram_match("DD_BOARD", "Compex WPE72")) {
-		websWrite(wp, "OTAi 724 (%s)", date);
-	} else if(nvram_match("DD_BOARD", "ACCTON AC622")) {
-		if(iscpe()) {
+		if (nvram_match("DD_BOARD", "Atheros Hornet")) {
+			websWrite(wp, "OTAi 9331 (%s)", date);
+		} else if (nvram_match("DD_BOARD", "Compex WPE72")) {
+			websWrite(wp, "OTAi 724 (%s)", date);
+		} else if (nvram_match("DD_BOARD", "ACCTON AC622")) {
+			if (iscpe()) {
+				websWrite(wp, "OTAi 724S (%s)", date);
+			} else {
+				websWrite(wp, "OTAi 724AP (%s)", date);
+			}
+		} else if (nvram_match("DD_BOARD", "ACCTON AC722")) {
+			if (iscpe()) {
+				websWrite(wp, "OTAi 724S (%s)", date);
+			} else {
+				websWrite(wp, "OTAi 724AP (%s)", date);
+			}
+		} else if (nvram_match("DD_BOARD", "Compex WP546")) {
 			websWrite(wp, "OTAi 724S (%s)", date);
 		} else {
-			websWrite(wp, "OTAi 724AP (%s)", date);
+			websWrite(wp, "OTAi %s (%s)", nvram_get("DD_BOARD"), date);
 		}
-	} else if(nvram_match("DD_BOARD", "ACCTON AC722")) {
-		if(iscpe()) {
-			websWrite(wp, "OTAi 724S (%s)", date);
-		} else {
-			websWrite(wp, "OTAi 724AP (%s)", date);
-		}
-	} else if(nvram_match("DD_BOARD", "Compex WP546")) {
-		websWrite(wp, "OTAi 724S (%s)", date);
-	} else {
-		websWrite(wp, "OTAi %s (%s)", nvram_get("DD_BOARD"), date);
-	}
 #else
 
-		websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
-			  nvram_safe_get("dist_type"), DIST_OPT);
+		websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
 	}
 
@@ -139,7 +136,7 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #else
 #define V "MIMO"
 #endif
-	if( argc == 2 ) {
+	if (argc == 2) {
 		websWrite(wp, "ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
 	} else {
 		websWrite(wp, "ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>", date, V);
@@ -148,15 +145,14 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_CARLSONWIRELESS
 	websWrite(wp, "Carlson Wireless v1.0 (%s)", SVN_REVISION);
 #elif HAVE_IMMERSIVE
-	if( argc == 2) {
+	if (argc == 2) {
 		websWrite(wp, "Build date %s", date);
 	} else {
 		websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
 	}
 #else
 
-	websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
-		  nvram_safe_get("dist_type"), DIST_OPT);
+	websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
 #endif
 #endif

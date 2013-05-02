@@ -48,15 +48,12 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 	static char a[32];
 	int i;
 
-	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x",
-		     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return (i < 17 ? NULL : a);
 }
 
 extern unsigned char madbuf[24 * 1024];
-int
-ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
-			  char *ifname, int cnt, int turbo, int macmask)
+int ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask)
 {
 
 	unsigned char *cp;
@@ -129,11 +126,9 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 		int rxrate = si->isi_rxrateKbps / 1000;
 		int txrate = si->isi_txrateKbps / 1000;
 		if (!rxrate)
-			rxrate =
-			    si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL;
+			rxrate = si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL;
 		if (!txrate)
-			txrate =
-			    si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL;
+			txrate = si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL;
 
 		char rx[32];
 		char tx[32];
@@ -145,19 +140,13 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 			sprintf(tx, "%3dM", txrate);
 		else
 			sprintf(tx, "N/A");
-		websWrite(wp,
-			  "'%s','%s','%s','%s','%s','%d','%d','%d','%d'",
-			  mac, ifname, UPTIME(si->isi_uptime),
-			  tx, rx,
-			  si->isi_noise + si->isi_rssi + bias,
-			  si->isi_noise + bias, si->isi_rssi, qual);
+		websWrite(wp, "'%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, ifname, UPTIME(si->isi_uptime), tx, rx, si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias, si->isi_rssi, qual);
 		bufcount += si->isi_len;
 		cp += si->isi_len;
 		len -= si->isi_len;
 	}
 	while (len >= sizeof(struct ieee80211req_sta_info)
-	       && bufcount <
-	       (sizeof(madbuf) - sizeof(struct ieee80211req_sta_info)));
+	       && bufcount < (sizeof(madbuf) - sizeof(struct ieee80211req_sta_info)));
 
 	closesocket();
 

@@ -93,9 +93,7 @@ char *websGetVar(webs_t wp, char *var, char *d)
 
 char *GOZILA_GET(webs_t wp, char *name)
 {
-	return nvram_match("gozila_action", "1") ? websGetVar(wp, name,
-							      NULL) :
-	    nvram_safe_get(name);
+	return nvram_match("gozila_action", "1") ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
 }
 
 static void *load_visual_service(char *name)
@@ -262,8 +260,7 @@ int start_validator(char *name, webs_t wp, char *value, struct variable *v)
 	return ret;
 }
 
-void *start_validator_nofree(char *name, void *handle, webs_t wp,
-			     char *value, struct variable *v)
+void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v)
 {
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_service_nofree %s\n", name);
@@ -337,8 +334,7 @@ void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 		memdebug_leave_info("initweb");
 	}
 	cprintf("resolving %s\n", service);
-	fptr = (void (*)(webs_t wp, int argc, char_t ** argv))dlsym(handle,
-								    service);
+	fptr = (void (*)(webs_t wp, int argc, char_t ** argv))dlsym(handle, service);
 	cprintf("found. pointer is %p\n", fptr);
 	{
 		memdebug_enter();

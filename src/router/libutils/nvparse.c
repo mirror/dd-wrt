@@ -41,8 +41,7 @@ bool valid_autofw_port(const netconf_app_t * app)
 	/*
 	 * Check outbound protocol 
 	 */
-	if (app->match.ipproto != IPPROTO_TCP
-	    && app->match.ipproto != IPPROTO_UDP)
+	if (app->match.ipproto != IPPROTO_TCP && app->match.ipproto != IPPROTO_UDP)
 		return FALSE;
 
 	/*
@@ -72,8 +71,7 @@ bool valid_autofw_port(const netconf_app_t * app)
 	/*
 	 * Check port range size 
 	 */
-	if ((ntohs(app->dport[1]) - ntohs(app->dport[0])) !=
-	    (ntohs(app->to[1]) - ntohs(app->to[0])))
+	if ((ntohs(app->dport[1]) - ntohs(app->dport[0])) != (ntohs(app->to[1]) - ntohs(app->to[0])))
 		return FALSE;
 
 	return TRUE;
@@ -82,8 +80,7 @@ bool valid_autofw_port(const netconf_app_t * app)
 bool get_autofw_port(int which, netconf_app_t * app)
 {
 	char name[] = "autofw_portXXXXXXXXXX", value[1000];
-	char *out_proto, *out_start, *out_end, *in_proto, *in_start, *in_end,
-	    *to_start, *to_end;
+	char *out_proto, *out_start, *out_end, *in_proto, *in_start, *in_end, *to_start, *to_end;
 	char *enable, *desc;
 
 	memset(app, 0, sizeof(netconf_app_t));
@@ -337,8 +334,7 @@ bool valid_forward_port(const netconf_nat_t * nat)
 	/*
 	 * Check protocol 
 	 */
-	if (nat->match.ipproto != IPPROTO_TCP
-	    && nat->match.ipproto != IPPROTO_UDP)
+	if (nat->match.ipproto != IPPROTO_TCP && nat->match.ipproto != IPPROTO_UDP)
 		return FALSE;
 
 	/*
@@ -356,9 +352,7 @@ bool valid_forward_port(const netconf_nat_t * nat)
 	/*
 	 * Check port range size 
 	 */
-	if ((ntohs(nat->match.dst.ports[1]) -
-	     ntohs(nat->match.dst.ports[0])) !=
-	    (ntohs(nat->ports[1]) - ntohs(nat->ports[0])))
+	if ((ntohs(nat->match.dst.ports[1]) - ntohs(nat->match.dst.ports[0])) != (ntohs(nat->ports[1]) - ntohs(nat->ports[0])))
 		return FALSE;
 
 	return TRUE;
@@ -367,8 +361,7 @@ bool valid_forward_port(const netconf_nat_t * nat)
 bool get_forward_port(int which, netconf_nat_t * nat)
 {
 	char name[] = "forward_portXXXXXXXXXX", value[1000];
-	char *wan_port0, *wan_port1, *lan_ipaddr, *lan_port0, *lan_port1,
-	    *proto;
+	char *wan_port0, *wan_port1, *lan_ipaddr, *lan_port0, *lan_port1, *proto;
 	char *enable, *desc;
 
 	memset(nat, 0, sizeof(netconf_nat_t));
@@ -448,14 +441,9 @@ bool get_forward_port(int which, netconf_nat_t * nat)
 	/*
 	 * Check IP, add by honor 
 	 */
-	if (get_single_ip(lan_ipaddr, 0) !=
-	    get_single_ip(nvram_safe_get("lan_ipaddr"), 0)
-	    || get_single_ip(lan_ipaddr,
-			     1) !=
-	    get_single_ip(nvram_safe_get("lan_ipaddr"), 1)
-	    || get_single_ip(lan_ipaddr,
-			     2) !=
-	    get_single_ip(nvram_safe_get("lan_ipaddr"), 2)) {
+	if (get_single_ip(lan_ipaddr, 0) != get_single_ip(nvram_safe_get("lan_ipaddr"), 0)
+	    || get_single_ip(lan_ipaddr, 1) != get_single_ip(nvram_safe_get("lan_ipaddr"), 1)
+	    || get_single_ip(lan_ipaddr, 2) != get_single_ip(nvram_safe_get("lan_ipaddr"), 2)) {
 		/*
 		 * Lan IP Address have been changed, so we must to adjust IP 
 		 */
@@ -466,9 +454,7 @@ bool get_forward_port(int which, netconf_nat_t * nat)
 		snprintf(ip3, sizeof(ip3), "%d", get_single_ip(lan_ipaddr, 3));
 		ip = get_complete_lan_ip(ip3);
 		(void)inet_aton(ip, &nat->ipaddr);
-		snprintf(buf, sizeof(buf), "%s-%s>%s:%s-%s,%s,%s,%s", wan_port0,
-			 wan_port1, ip, lan_port0, lan_port1, proto, enable,
-			 desc);
+		snprintf(buf, sizeof(buf), "%s-%s>%s:%s-%s,%s,%s,%s", wan_port0, wan_port1, ip, lan_port0, lan_port1, proto, enable, desc);
 		nvram_set(name, buf);
 	} else
 		(void)inet_aton(lan_ipaddr, &nat->ipaddr);
@@ -542,9 +528,7 @@ bool set_forward_port(const netconf_nat_t * nat)
 	 */
 	cur = safe_snprintf(cur, &len, ">");
 	char client[32];
-	cur =
-	    safe_snprintf(cur, &len,
-			  inet_ntop(AF_INET, &nat->ipaddr, client, 16));
+	cur = safe_snprintf(cur, &len, inet_ntop(AF_INET, &nat->ipaddr, client, 16));
 
 	/*
 	 * Set LAN destination port range 
@@ -580,8 +564,7 @@ bool set_forward_port(const netconf_nat_t * nat)
 		cur = safe_snprintf(cur, &len, nat->desc);
 	}
 
-	ct_logger(LOG_INFO, "upnp[%d]: Set \"%s\" to \"%s\"", getpid(), value,
-		  name);
+	ct_logger(LOG_INFO, "upnp[%d]: Set \"%s\" to \"%s\"", getpid(), value, name);
 
 	/*
 	 * Do it 
@@ -624,9 +607,7 @@ bool del_forward_port(const netconf_nat_t * nat)
 	 */
 	cur = safe_snprintf(cur, &len, ">");
 	char client[32];
-	cur =
-	    safe_snprintf(cur, &len,
-			  inet_ntop(AF_INET, &nat->ipaddr, client, 16));
+	cur = safe_snprintf(cur, &len, inet_ntop(AF_INET, &nat->ipaddr, client, 16));
 
 	/*
 	 * Set LAN destination port range 
@@ -670,8 +651,7 @@ bool del_forward_port(const netconf_nat_t * nat)
 			int a;
 			nvram_unset(val);
 			for (a = i + 1; a < which; a++) {
-				nvram_nset(nvram_nget("forward_port%d", a),
-					   "forward_port%d", a - 1);
+				nvram_nset(nvram_nget("forward_port%d", a), "forward_port%d", a - 1);
 			}
 			which--;
 			sprintf(val, "forward_port%d", which);
@@ -694,9 +674,7 @@ bool del_forward_port(const netconf_nat_t * nat)
  * when auth is "psk":
  *      wl_wds<N>=mac,role,crypto,auth,ssid,passphrase
  */
-bool
-get_wds_wsec(int unit, int which, char *mac, char *role,
-	     char *crypto, char *auth, ...)
+bool get_wds_wsec(int unit, int which, char *mac, char *role, char *crypto, char *auth, ...)
 {
 	char name[] = "wlXXXXXXX_wdsXXXXXXX", value[1000], *next;
 
@@ -760,9 +738,7 @@ get_wds_wsec(int unit, int which, char *mac, char *role,
 	return FALSE;
 }
 
-bool
-set_wds_wsec(int unit, int which, char *mac, char *role,
-	     char *crypto, char *auth, ...)
+bool set_wds_wsec(int unit, int which, char *mac, char *role, char *crypto, char *auth, ...)
 {
 	char name[] = "wlXXXXXXX_wdsXXXXXXX", value[10000];
 
@@ -775,8 +751,7 @@ set_wds_wsec(int unit, int which, char *mac, char *role,
 
 		va_start(va, auth);
 		offset = strlen(value);
-		snprintf(&value[offset], sizeof(value) - offset, ",%s,%s",
-			 va_arg(va, char *), va_arg(va, char *));
+		snprintf(&value[offset], sizeof(value) - offset, ",%s,%s", va_arg(va, char *), va_arg(va, char *));
 		va_end(va);
 
 		if (nvram_set(name, value))

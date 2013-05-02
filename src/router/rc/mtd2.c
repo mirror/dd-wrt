@@ -88,9 +88,7 @@ int mtd_erase(const char *mtd)
 
 	erase_info.length = mtd_info.erasesize;
 
-	for (erase_info.start = 0;
-	     erase_info.start < mtd_info.size;
-	     erase_info.start += mtd_info.erasesize) {
+	for (erase_info.start = 0; erase_info.start < mtd_info.size; erase_info.start += mtd_info.erasesize) {
 		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
 			perror(mtd);
@@ -145,15 +143,12 @@ int mtd_write(const char *path, const char *mtd)
 	if ((fp = fopen(path, "r")))
 		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
 	else
-		count =
-		    http_get(path, (char *)&trx, sizeof(struct trx_header), 0);
+		count = http_get(path, (char *)&trx, sizeof(struct trx_header), 0);
 	if (count < sizeof(struct trx_header)) {
-		fprintf(stderr, "%s: File is too small (%ld bytes)\n", path,
-			count);
+		fprintf(stderr, "%s: File is too small (%ld bytes)\n", path, count);
 		goto fail;
 	}
-	if (trx.magic != TRX_MAGIC ||
-	    trx.len > support_max_len || trx.len < sizeof(struct trx_header)) {
+	if (trx.magic != TRX_MAGIC || trx.len > support_max_len || trx.len < sizeof(struct trx_header)) {
 		fprintf(stderr, "%s: Bad trx header\n", path);
 		goto fail;
 	}
@@ -161,9 +156,7 @@ int mtd_write(const char *path, const char *mtd)
 	/* 
 	 * Open MTD device and get sector size 
 	 */
-	if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0 ||
-	    ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0 ||
-	    mtd_info.erasesize < sizeof(struct trx_header)) {
+	if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0 || ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0 || mtd_info.erasesize < sizeof(struct trx_header)) {
 		perror(mtd);
 		goto fail;
 	}
@@ -172,11 +165,9 @@ int mtd_write(const char *path, const char *mtd)
 	 * See if we have enough memory to store the whole file 
 	 */
 	sysinfo(&info);
-	fprintf(stderr, "freeram=[%ld] bufferram=[%ld]\n", info.freeram,
-		info.bufferram);
+	fprintf(stderr, "freeram=[%ld] bufferram=[%ld]\n", info.freeram, info.bufferram);
 	if (info.freeram >= (trx.len + 1 * 1024 * 1024)) {
-		fprintf(stderr,
-			"The free memory is enough, writing image once.\n");
+		fprintf(stderr, "The free memory is enough, writing image once.\n");
 		/* 
 		 * Begin to write image after all image be downloaded by web upgrade.
 		 * In order to avoid upgrade fail if user unplug the ethernet cable
@@ -189,9 +180,7 @@ int mtd_write(const char *path, const char *mtd)
 		// erase_info.length = mtd_info.erasesize; 
 	} else {
 		erase_info.length = mtd_info.erasesize;
-		fprintf(stderr,
-			"The free memory is not enough, writing image per %d bytes.\n",
-			erase_info.length);
+		fprintf(stderr, "The free memory is not enough, writing image per %d bytes.\n", erase_info.length);
 	}
 
 	/* 
@@ -205,10 +194,7 @@ int mtd_write(const char *path, const char *mtd)
 	/* 
 	 * Calculate CRC over header 
 	 */
-	crc = crc32((uint8 *) & trx.flag_version,
-		    sizeof(struct trx_header) - OFFSETOF(struct trx_header,
-							 flag_version),
-		    CRC32_INIT_VALUE);
+	crc = crc32((uint8 *) & trx.flag_version, sizeof(struct trx_header) - OFFSETOF(struct trx_header, flag_version), CRC32_INIT_VALUE);
 
 	if (trx.flag_version & TRX_NO_HEADER)
 		trx.len -= sizeof(struct trx_header);
@@ -216,8 +202,7 @@ int mtd_write(const char *path, const char *mtd)
 	/* 
 	 * Write file or URL to MTD device 
 	 */
-	for (erase_info.start = 0; erase_info.start < trx.len;
-	     erase_info.start += count) {
+	for (erase_info.start = 0; erase_info.start < trx.len; erase_info.start += count) {
 		len = MIN(erase_info.length, trx.len - erase_info.start);
 		if ((trx.flag_version & TRX_NO_HEADER) || erase_info.start)
 			count = off = 0;
@@ -228,9 +213,7 @@ int mtd_write(const char *path, const char *mtd)
 		if (fp)
 			count += safe_fread(&buf[off], 1, len - off, fp);
 		else
-			count +=
-			    http_get(path, &buf[off], len - off,
-				     erase_info.start + off);
+			count += http_get(path, &buf[off], len - off, erase_info.start + off);
 
 		/* 
 		 * for debug 
@@ -239,9 +222,7 @@ int mtd_write(const char *path, const char *mtd)
 		fprintf(stderr, "sum=[%ld]\n", sum);
 
 		if (count < len) {
-			fprintf(stderr,
-				"%s: Truncated file (actual %ld expect %ld)\n",
-				path, count - off, len - off);
+			fprintf(stderr, "%s: Truncated file (actual %ld expect %ld)\n", path, count - off, len - off);
 			goto fail;
 		}
 		/* 
@@ -257,16 +238,14 @@ int mtd_write(const char *path, const char *mtd)
 				goto fail;
 			} else {
 				fprintf(stderr, "%s: CRC OK\n", mtd);
-				fprintf(stderr,
-					"Writing image to flash, waiting a moment...\n");
+				fprintf(stderr, "Writing image to flash, waiting a moment...\n");
 			}
 		}
 		/* 
 		 * Do it 
 		 */
 		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0 ||
-		    write(mtd_fd, buf, count) != count) {
+		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0 || write(mtd_fd, buf, count) != count) {
 			perror(mtd);
 			goto fail;
 		}
@@ -312,8 +291,7 @@ int nvram_restore(const char *path, char *mtd)
 		count = safe_fread(&buf, 1, sizeof(buf), fp);
 
 	if (count < sizeof(struct nvram_header)) {
-		fprintf(stderr, "%s: File is too small (%ld bytes)\n", path,
-			count);
+		fprintf(stderr, "%s: File is too small (%ld bytes)\n", path, count);
 		goto fail;
 	}
 
@@ -321,9 +299,7 @@ int nvram_restore(const char *path, char *mtd)
 
 	memcpy(&header, buf, sizeof(struct nvram_header));
 
-	fprintf(stderr,
-		"count=[%ld] header.len=[%d] header.magic[%x] header.crc[%x]\n",
-		count, header.len, header.magic, header.crc_ver_init);
+	fprintf(stderr, "count=[%ld] header.len=[%d] header.magic[%x] header.crc[%x]\n", count, header.len, header.magic, header.crc_ver_init);
 	if (count < header.len || header.magic != NVRAM_MAGIC) {
 		fprintf(stderr, "Invalid nvram header\n");
 		return EINVAL;
@@ -343,8 +319,7 @@ int nvram_restore(const char *path, char *mtd)
 	/* 
 	 * Open MTD device and get sector size 
 	 */
-	if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0 ||
-	    ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0) {
+	if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0 || ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0) {
 		printf("fail1\n");
 		perror(mtd);
 		goto fail;

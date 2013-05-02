@@ -23,8 +23,7 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 
 	time_t tm;
 	char *verdict, *src, *dst, *proto, *spt, *dpt, *in, *out;
-	char src_old[10] = "", dpt_old[10] = "", dst_old[10] =
-	    "", proto_old[10] = "";
+	char src_old[10] = "", dpt_old[10] = "", dst_old[10] = "", proto_old[10] = "";
 
 	int _dport, _sport;
 	char *_proto = NULL;
@@ -120,21 +119,15 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 
 				websWrite(wp, "<tr height=\"1\">\n");
 				websWrite(wp, "<td>%s</td>\n", src);
-				websWrite(wp, "<td align=\"center\">%s</td>\n",
-					  proto);
-				websWrite(wp, "<td align=\"center\">%s</td>\n",
-					  servp ? servp->s_name : dpt);
-				websWrite(wp, "<td align=\"center\">%s</td>\n",
-					  verdict);
+				websWrite(wp, "<td align=\"center\">%s</td>\n", proto);
+				websWrite(wp, "<td align=\"center\">%s</td>\n", servp ? servp->s_name : dpt);
+				websWrite(wp, "<td align=\"center\">%s</td>\n", verdict);
 				websWrite(wp, "</tr>\n");
 			}
 		} else if (!strcmp(type, "outgoing")) {
 			if (!strncmp(in, lan_if, 3) && ((!strncmp(out, "ppp", 3)
-							 && !strncmp(out,
-								     wan_if, 3))
-							||
-							(!strcmp(out, wan_if))))
-			{
+							 && !strncmp(out, wan_if, 3))
+							|| (!strcmp(out, wan_if)))) {
 				if (_dport == 53) {
 					continue;	// skip DNS
 				}
@@ -154,12 +147,9 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<tr height=\"1\">\n");
 				websWrite(wp, "<td>%s</td>\n", src);
 				websWrite(wp, "<td>%s</td>\n", dst);
-				websWrite(wp, "<td align=\"center\">%s</td>\n",
-					  proto);
-				websWrite(wp, "<td>%s</td>\n",
-					  servp ? servp->s_name : dpt);
-				websWrite(wp, "<td align=\"center\">%s</td>\n",
-					  verdict);
+				websWrite(wp, "<td align=\"center\">%s</td>\n", proto);
+				websWrite(wp, "<td>%s</td>\n", servp ? servp->s_name : dpt);
+				websWrite(wp, "<td align=\"center\">%s</td>\n", verdict);
 				websWrite(wp, "</tr>\n");
 			}
 		} else if (!strcmp(type, "all")) {
@@ -185,9 +175,7 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 				strcpy(dst_old, dst);
 			}
 
-			websWrite(wp, "%c'%s','%s','%s','%s','%d'\n",
-				  count ? ',' : ' ', proto, src, dst,
-				  servp ? servp->s_name : dpt, dir);
+			websWrite(wp, "%c'%s','%s','%s','%s','%d'\n", count ? ',' : ' ', proto, src, dst, servp ? servp->s_name : dpt, dir);
 			count++;
 		}
 		// if(s_service) free(s_service);

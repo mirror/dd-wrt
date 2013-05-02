@@ -71,8 +71,7 @@ static char *filter[] = { "lan_ifnames",
 	"wl_pcie_mrrs",
 	"wl_dmatxctl",
 	"wl_dmarxctl",
-	"nvram_version"
-	"product",
+	"nvram_version" "product",
 	"custom_id",
 	"hw_rev",
 	"boardflags",
@@ -125,10 +124,9 @@ static char *filter[] = { "lan_ifnames",
 int nvram_critical(char *name)
 {
 	int a = 0;
-	if (name[0]=='@')
-	{
-	    fprintf(stderr,"ommit %s\n",name);
-	    return 1;
+	if (name[0] == '@') {
+		fprintf(stderr, "ommit %s\n", name);
+		return 1;
 	}
 	while (filter[a] != NULL) {
 		if (!strcmp(name, filter[a++])) {
@@ -153,7 +151,7 @@ void nvram_clear(void)
 		for (i = 0; i < len; i++)
 			if (p[i] == '=')
 				p[i] = 0;
-		if (strncmp(p,"pci/",4) && strncmp(p,":0",4) && strncmp(p,":1",4) && !nvram_critical(p))
+		if (strncmp(p, "pci/", 4) && strncmp(p, ":0", 4) && strncmp(p, ":1", 4) && !nvram_critical(p))
 			nvram_immed_set(p, NULL);
 		p += len + 1;
 	}
@@ -253,15 +251,11 @@ int nvram_restore(char *filename)
 	}
 
 	if (nvram_ver == NULL) {
-		nvram_set("http_passwd",
-			  zencrypt(nvram_safe_get("http_passwd")));
-		nvram_set("http_username",
-			  zencrypt(nvram_safe_get("http_username")));
+		nvram_set("http_passwd", zencrypt(nvram_safe_get("http_passwd")));
+		nvram_set("http_username", zencrypt(nvram_safe_get("http_username")));
 		if (nvram_get("newhttp_passwd") != NULL) {
-			nvram_set("newhttp_passwd",
-				  zencrypt(nvram_safe_get("newhttp_passwd")));
-			nvram_set("newhttp_username",
-				  zencrypt(nvram_safe_get("newhttp_username")));
+			nvram_set("newhttp_passwd", zencrypt(nvram_safe_get("newhttp_passwd")));
+			nvram_set("newhttp_username", zencrypt(nvram_safe_get("newhttp_username")));
 		}
 	}
 	nvram_commit();
@@ -311,13 +305,12 @@ int nvram_backup(char *filename)
 	return 0;
 }
 
-
 #ifdef TEST
-int main(int argc,char *argv[])
+int main(int argc, char *argv[])
 {
 
-nvram_backup("/tmp/fixup.bin");
-nvram_restore("/tmp/fixup.bin");
+	nvram_backup("/tmp/fixup.bin");
+	nvram_restore("/tmp/fixup.bin");
 }
 
 #endif
