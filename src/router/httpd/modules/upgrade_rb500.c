@@ -133,8 +133,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	{
 		wfread(&buf[0], 1, 5, stream);
 		*total -= 5;
-		if (buf[0] != 'R' || buf[1] != 'B' || buf[2] != '5'
-		    || buf[3] != '0' || buf[4] != '0') {
+		if (buf[0] != 'R' || buf[1] != 'B' || buf[2] != '5' || buf[3] != '0' || buf[4] != '0') {
 			ret = -1;
 			goto err;
 		}
@@ -238,14 +237,11 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 			if (strstr(buf, "name=\"erase\"")) {
 				while (len > 0 && strcmp(buf, "\n")
 				       && strcmp(buf, "\r\n")) {
-					if (!wfgets
-					    (buf, MIN(len + 1, sizeof(buf)),
-					     stream))
+					if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
 						return;
 					len -= strlen(buf);
 				}
-				if (!wfgets
-				    (buf, MIN(len + 1, sizeof(buf)), stream))
+				if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
 					return;
 				len -= strlen(buf);
 				buf[1] = '\0';	// we only want the 1st digit

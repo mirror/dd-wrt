@@ -75,9 +75,7 @@ void ej_show_certificate_status(webs_t wp, int argc, char_t ** argv)
 	if (percent == 100) {
 		websWrite(wp, "certicate generation done<br />\n");
 	} else {
-		websWrite(wp,
-			  "generating %d%%, this may take a long time<br />\n",
-			  percent);
+		websWrite(wp, "generating %d%%, this may take a long time<br />\n", percent);
 	}
 }
 
@@ -124,30 +122,16 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<tr>\n");
 			char vlan_name[32];
 			sprintf(vlan_name, "username%d", i);
-			websWrite(wp,
-				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
-				  vlan_name, (db->users[i].user != NULL
-					      && db->users[i].
-					      usersize) ? db->users[i].
-				  user : "");
+			websWrite(wp, "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n", vlan_name, (db->users[i].user != NULL && db->users[i].usersize) ? db->users[i].user : "");
 
 			sprintf(vlan_name, "password%d", i);
-			websWrite(wp,
-				  "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n",
-				  vlan_name, (db->users[i].passwd != NULL
-					      && db->
-					      users[i].passwordsize) ? db->
-				  users[i].passwd : "");
+			websWrite(wp, "<td><input name=\"%s\" size=\"8\" value=\"%s\" /></td>\n", vlan_name, (db->users[i].passwd != NULL && db->users[i].passwordsize) ? db->users[i].passwd : "");
 
 			sprintf(vlan_name, "downstream%d", i);
-			websWrite(wp,
-				  "<td><input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" /></td>\n",
-				  vlan_name, db->users[i].downstream);
+			websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" /></td>\n", vlan_name, db->users[i].downstream);
 
 			sprintf(vlan_name, "upstream%d", i);
-			websWrite(wp,
-				  "<td><input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" /></td>\n",
-				  vlan_name, db->users[i].upstream);
+			websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"5\" value=\"%d\" /></td>\n", vlan_name, db->users[i].upstream);
 
 			sprintf(vlan_name, "expiration%d", i);
 			long expiration = 0;	//never
@@ -155,20 +139,14 @@ void ej_show_radius_users(webs_t wp, int argc, char_t ** argv)
 				long curtime = ((tm / 60) / 60) / 24;	//in days
 				expiration = db->users[i].expiration - curtime;
 			}
-			websWrite(wp,
-				  "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" /></td>\n",
-				  vlan_name, expiration);
+			websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"3\" value=\"%d\" /></td>\n", vlan_name, expiration);
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + freeradius.cert + \"\\\" onclick=\\\"openWindow('FreeRadiusCert-%d.asp', 630, 430,'Certificate');\\\" />\");\n//]]>\n</script></td>\n",
 				  i);
 
 			sprintf(vlan_name, "enabled%d", i);
-			websWrite(wp,
-				  "<td><input type=\"checkbox\" name=\"%s\" value=\"1\" %s/></td>\n",
-				  vlan_name,
-				  db->users[i].
-				  enabled ? "checked=\"checked\"" : "");
+			websWrite(wp, "<td><input type=\"checkbox\" name=\"%s\" value=\"1\" %s/></td>\n", vlan_name, db->users[i].enabled ? "checked=\"checked\"" : "");
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"user_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td>",
@@ -200,20 +178,10 @@ void ej_show_radius_clients(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<tr>\n");
 			char vlan_name[32];
 			sprintf(vlan_name, "client%d", i);
-			websWrite(wp,
-				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
-				  vlan_name, (db->users[i].client != NULL
-					      && db->users[i].
-					      clientsize) ? db->users[i].
-				  client : "");
+			websWrite(wp, "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n", vlan_name, (db->users[i].client != NULL && db->users[i].clientsize) ? db->users[i].client : "");
 
 			sprintf(vlan_name, "shared%d", i);
-			websWrite(wp,
-				  "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n",
-				  vlan_name, (db->users[i].passwd != NULL
-					      && db->
-					      users[i].passwordsize) ? db->
-				  users[i].passwd : "");
+			websWrite(wp, "<td><input name=\"%s\" size=\"20\" value=\"%s\" /></td>\n", vlan_name, (db->users[i].passwd != NULL && db->users[i].passwordsize) ? db->users[i].passwd : "");
 
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"client_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td>\n",

@@ -22,9 +22,7 @@ char *dhcp_reltime(char *buf, time_t t)
 	int days = t / 86400;
 	int min = t / 60;
 
-	sprintf(buf, "%d day%s %02d:%02d:%02d", days,
-		((days == 1) ? "" : "s"), ((min / 60) % 24),
-		(min % 60), (int)(t % 60));
+	sprintf(buf, "%d day%s %02d:%02d:%02d", days, ((days == 1) ? "" : "s"), ((min / 60) % 24), (min % 60), (int)(t % 60));
 	return buf;
 }
 
@@ -76,23 +74,17 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 
 			if (fp) {
 				while (fgets(buf, sizeof(buf), fp)) {
-					cprintf("entry dumpleases:%d\n",
-						__LINE__);
-					if (sscanf
-					    (buf, "%lu %17s %15s %255s",
-					     &expires, mac, ip, hostname) != 4)
+					cprintf("entry dumpleases:%d\n", __LINE__);
+					if (sscanf(buf, "%lu %17s %15s %255s", &expires, mac, ip, hostname) != 4)
 						continue;
 					p = mac;
-					cprintf("entry dumpleases:%d\n",
-						__LINE__);
+					cprintf("entry dumpleases:%d\n", __LINE__);
 					while ((*p = toupper(*p)) != 0)
 						++p;
-					cprintf("entry dumpleases:%d\n",
-						__LINE__);
+					cprintf("entry dumpleases:%d\n", __LINE__);
 					if ((p = strrchr(ip, '.')) == NULL)
 						continue;
-					cprintf("entry dumpleases:%d\n",
-						__LINE__);
+					cprintf("entry dumpleases:%d\n", __LINE__);
 					if (nvram_match("maskmac", "1")
 					    && macmask) {
 						mac[0] = 'x';
@@ -104,22 +96,11 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 						mac[9] = 'x';
 						mac[10] = 'x';
 					}
-					cprintf("entry dumpleases:%d\n",
-						__LINE__);
+					cprintf("entry dumpleases:%d\n", __LINE__);
 					websWrite(wp,
-						  "%c'%s','%s','%s','%s','%s'",
-						  (count ? ',' : ' '),
-						  (hostname[0] ? hostname :
-						   live_translate
-						   ("share.unknown")), ip, mac,
-						  ((expires ==
-						    0) ?
-						   live_translate("share.sttic")
-						   : dhcp_reltime(buf,
-								  expires)),
-						  p + 1);
-					cprintf("entry dumpleases:%d\n",
-						__LINE__);
+						  "%c'%s','%s','%s','%s','%s'", (count ? ',' : ' '), (hostname[0] ? hostname : live_translate("share.unknown")), ip, mac, ((expires == 0) ? live_translate("share.sttic")
+																					   : dhcp_reltime(buf, expires)), p + 1);
+					cprintf("entry dumpleases:%d\n", __LINE__);
 					++count;
 				}
 				fclose(fp);
@@ -128,19 +109,12 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 		} else {
 			for (i = 0; i < DHCP_MAX_COUNT; ++i) {
 				sprintf(buf, "dnsmasq_lease_%d.%d.%d.%d",
-					get_single_ip(nvram_safe_get
-						      ("lan_ipaddr"), 0),
-					get_single_ip(nvram_safe_get
-						      ("lan_ipaddr"), 1),
-					get_single_ip(nvram_safe_get
-						      ("lan_ipaddr"), 2), i);
+					get_single_ip(nvram_safe_get("lan_ipaddr"), 0), get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), i);
 
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				buff = nvram_safe_get(buf);
 				cprintf("entry dumpleases:%d\n", __LINE__);
-				if (sscanf
-				    (buff, "%lu %17s %15s %255s", &expires, mac,
-				     ip, hostname) != 4)
+				if (sscanf(buff, "%lu %17s %15s %255s", &expires, mac, ip, hostname) != 4)
 					continue;
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				p = mac;
@@ -162,13 +136,7 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				}
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				websWrite(wp, "%c'%s','%s','%s','%s','%s'",
-					  (count ? ',' : ' '),
-					  (hostname[0] ? hostname :
-					   live_translate("share.unknown")), ip,
-					  mac,
-					  ((expires ==
-					    0) ? live_translate("share.sttic") :
-					   dhcp_reltime(buf, expires)), p + 1);
+					  (count ? ',' : ' '), (hostname[0] ? hostname : live_translate("share.unknown")), ip, mac, ((expires == 0) ? live_translate("share.sttic") : dhcp_reltime(buf, expires)), p + 1);
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				++count;
 			}
@@ -198,8 +166,7 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				cprintf("entry dumpleases:%d\n", __LINE__);
 
 				for (i = 0; i < 6; i++) {
-					sprintf(mac + strlen(mac), "%02X",
-						lease.chaddr[i]);
+					sprintf(mac + strlen(mac), "%02X", lease.chaddr[i]);
 					if (i != 5)
 						sprintf(mac + strlen(mac), ":");
 				}
@@ -222,9 +189,7 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				addr.s_addr = lease.yiaddr;
 
 				char client[32];
-				ipaddr =
-				    (char *)inet_ntop(AF_INET, &addr, client,
-						      16);
+				ipaddr = (char *)inet_ntop(AF_INET, &addr, client, 16);
 
 				expires = ntohl(lease.expires);
 
@@ -233,11 +198,9 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				if (!expires) {
 					continue;
-					strcpy(expires_time,
-					       live_translate("share.expired"));
+					strcpy(expires_time, live_translate("share.expired"));
 				} else if (expires == (long)EXPIRES_NEVER) {
-					strcpy(expires_time,
-					       live_translate("share.never"));
+					strcpy(expires_time, live_translate("share.never"));
 				} else {
 					if (expires > 86400)	// 60 * 60 * 24
 					{
@@ -266,17 +229,10 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 
 					sprintf(expires_time + strlen(expires_time), "%02ld:", expires);	// seconds
 
-					expires_time[strlen(expires_time) - 1] =
-					    '\0';
+					expires_time[strlen(expires_time) - 1] = '\0';
 				}
 				cprintf("entry dumpleases:%d\n", __LINE__);
-				websWrite(wp,
-					  "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\"",
-					  count ? ',' : ' ',
-					  !*lease.
-					  hostname ? "&nbsp;" : lease.hostname,
-					  ipaddr, mac, expires_time,
-					  get_single_ip(ipaddr, 3));
+				websWrite(wp, "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\"", count ? ',' : ' ', !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr, mac, expires_time, get_single_ip(ipaddr, 3));
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				count++;
 			}

@@ -123,9 +123,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #ifdef HAVE_HTTPS
 	if (!do_ssl) {
 #endif
-		if ((flags = fcntl(fileno(stream->fp), F_GETFL)) < 0 ||
-		    fcntl(fileno(stream->fp), F_SETFL, flags | O_NONBLOCK) < 0)
-		{
+		if ((flags = fcntl(fileno(stream->fp), F_GETFL)) < 0 || fcntl(fileno(stream->fp), F_SETFL, flags | O_NONBLOCK) < 0) {
 			ret = errno;
 			goto err;
 		}
@@ -183,10 +181,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				write_argv_buf[1] = upload_fifo;
 				write_argv_buf[2] = NULL;
 
-				if (!mktemp(upload_fifo) ||
-				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-				    (ret =
-				     _evalpid(write_argv_buf, NULL, 0, &pid))
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
 				    || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
 						ret = errno;
@@ -194,9 +189,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				}
 				goto write_data;
 			} else {
-				if (!mktemp(upload_fifo) ||
-				    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-				    (ret = _evalpid(write_argv, NULL, 0, &pid))
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv, NULL, 0, &pid))
 				    || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
 						ret = errno;
@@ -209,10 +202,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			/*
 			 * Feed write from a temporary FIFO 
 			 */
-			if (!mktemp(upload_fifo) ||
-			    mkfifo(upload_fifo, S_IRWXU) < 0 ||
-			    (ret = _evalpid(write_argv, NULL, 0, &pid)) ||
-			    !(fifo = fopen(upload_fifo, "w"))) {
+			if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv, NULL, 0, &pid)) || !(fifo = fopen(upload_fifo, "w"))) {
 				if (!ret)
 					ret = errno;
 				goto err;
@@ -222,15 +212,12 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			char ver[40];
 			long ver1, ver2, ver3;
 
-			snprintf(ver, sizeof(ver), "v%d.%d.%d", buf[11],
-				 buf[12], buf[13]);
+			snprintf(ver, sizeof(ver), "v%d.%d.%d", buf[11], buf[12], buf[13]);
 			ver1 = convert_ver(ver);
 			ver2 = convert_ver(INTEL_FLASH_SUPPORT_VERSION_FROM);
 			ver3 = convert_ver(BCM4712_CHIP_SUPPORT_VERSION_FROM);
 
-			fprintf(stderr,
-				"upgrade_ver[%s] upgrade_ver[%ld] intel_ver[%ld] 4712_ver[%ld]\n",
-				ver, ver1, ver2, ver3);
+			fprintf(stderr, "upgrade_ver[%s] upgrade_ver[%ld] intel_ver[%ld] 4712_ver[%ld]\n", ver, ver1, ver2, ver3);
 #if defined(HAVE_WIKINGS) || defined(HAVE_ESPOD)
 
 #ifdef HAVE_WIKINGS
@@ -270,12 +257,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			}
 #else
 
-			if (brand == ROUTER_LINKSYS_E1550
-				||(brand == ROUTER_WRT320N && nvram_match("boardrev", "0x1307"))	//E2000
-			    || brand == ROUTER_LINKSYS_E2500
-			    || (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300"))	//E3000
-			    || brand == ROUTER_LINKSYS_E3200
-			    || brand == ROUTER_LINKSYS_E4200) {
+			if (brand == ROUTER_LINKSYS_E1550 || (brand == ROUTER_WRT320N && nvram_match("boardrev", "0x1307"))	//E2000
+			    || brand == ROUTER_LINKSYS_E2500 || (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300"))	//E3000
+			    || brand == ROUTER_LINKSYS_E3200 || brand == ROUTER_LINKSYS_E4200) {
 				if (memcmp(&buf[0], &CODE_PATTERN_E1550, 4)
 				    && memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
 				    && memcmp(&buf[0], &CODE_PATTERN_E2500, 4)
@@ -283,28 +267,21 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				    && memcmp(&buf[0], &CODE_PATTERN_E3200, 4)
 				    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
 				    && memcmp(&buf[0], &CODE_PATTERN_NV60K, 4)) {
-					cprintf
-					    ("image not compatible with nv60k router!\n");
+					cprintf("image not compatible with nv60k router!\n");
 					goto err;	// must be there, otherwise fail here
 				}
-			} else if (brand == ROUTER_NETGEAR_WNDR4000
-				   || brand == ROUTER_NETGEAR_WNDR3400
-				   || brand == ROUTER_LINKSYS_E900
-				   || brand == ROUTER_LINKSYS_E1500) {
+			} else if (brand == ROUTER_NETGEAR_WNDR4000 || brand == ROUTER_NETGEAR_WNDR3400 || brand == ROUTER_LINKSYS_E900 || brand == ROUTER_LINKSYS_E1500) {
 				if (memcmp(&buf[0], &CODE_PATTERN_E900, 4)
-					&& memcmp(&buf[0], &CODE_PATTERN_E1200V1, 4)
-					&& memcmp(&buf[0], &CODE_PATTERN_E1200V2, 4)
-					&& memcmp(&buf[0], &CODE_PATTERN_E1500, 4)
-					&& memcmp(&buf[0], &CODE_PATTERN_NV64K, 4)) {
-					cprintf
-					    ("image not compatible with nv64k router!\n");
+				    && memcmp(&buf[0], &CODE_PATTERN_E1200V1, 4)
+				    && memcmp(&buf[0], &CODE_PATTERN_E1200V2, 4)
+				    && memcmp(&buf[0], &CODE_PATTERN_E1500, 4)
+				    && memcmp(&buf[0], &CODE_PATTERN_NV64K, 4)) {
+					cprintf("image not compatible with nv64k router!\n");
 					goto err;	// must be there, otherwise fail here
 				}
 			} else {
-				if (memcmp(&buf[0], &CODE_PATTERN_NV60K, 4) == 0
-					|| memcmp(&buf[0], &CODE_PATTERN_NV64K, 4) == 0) {
-					cprintf
-					    ("image not compatible with your router!\n");
+				if (memcmp(&buf[0], &CODE_PATTERN_NV60K, 4) == 0 || memcmp(&buf[0], &CODE_PATTERN_NV64K, 4) == 0) {
+					cprintf("image not compatible with your router!\n");
 					goto err;	// fail here                            
 				}
 			}
@@ -346,11 +323,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #endif
 
 			if (check_hw_type() == BCM4712_CHIP && ver1 < ver3) {
-				fprintf(stderr,
-					"The old firmware version can't support bcm4712 chipset\n");
-				fprintf(stderr,
-					"Can't downgrade to this old firmware version (%s), must be above %s(included)\n",
-					ver, BCM4712_CHIP_SUPPORT_VERSION_FROM);
+				fprintf(stderr, "The old firmware version can't support bcm4712 chipset\n");
+				fprintf(stderr, "Can't downgrade to this old firmware version (%s), must be above %s(included)\n", ver, BCM4712_CHIP_SUPPORT_VERSION_FROM);
 				goto write_data;
 			}
 
@@ -359,8 +333,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #ifdef HAVE_WRT160NL
 			safe_fwrite(buf, 1, count, fifo);	// we have to write the whole header to flash too
 #else
-			safe_fwrite(&buf[sizeof(struct code_header)], 1,
-				    count - sizeof(struct code_header), fifo);
+			safe_fwrite(&buf[sizeof(struct code_header)], 1, count - sizeof(struct code_header), fifo);
 #endif
 			i++;
 			continue;
@@ -440,15 +413,12 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 			if (strstr(buf, "name=\"erase\"")) {
 				while (len > 0 && strcmp(buf, "\n")
 				       && strcmp(buf, "\r\n")) {
-					if (!wfgets
-					    (buf, MIN(len + 1, sizeof(buf)),
-					     stream))
+					if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
 						return;
 
 					len -= strlen(buf);
 				}
-				if (!wfgets
-				    (buf, MIN(len + 1, sizeof(buf)), stream))
+				if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
 					return;
 				len -= strlen(buf);
 				buf[1] = '\0';	// we only want the 1st digit
@@ -481,19 +451,19 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	 */
 #ifdef HAVE_BUFFALO_SA
 	int region_sa = 0;
-	if(nvram_default_match("region", "SA", ""))
+	if (nvram_default_match("region", "SA", ""))
 		region_sa = 1;
 #endif
 	if (nvram_match("sv_restore_defaults", "1")) {
 		eval("erase", "nvram");
 #ifdef HAVE_BUFFALO_SA
 		nvram_set("sv_restore_defaults", "1");
-		if(region_sa)
+		if (region_sa)
 			nvram_set("region", "SA");
 #endif
 	}
 	sys_commit();
-	
+
 	// #ifdef HAVE_WRK54G
 	// sys_reboot();
 	// #endif

@@ -107,8 +107,7 @@ struct radiusdb *loadradiusdb(void)
 		curlen += 4;
 		if (db->users[i].passwordsize) {
 			db->users[i].passwd = safe_malloc(db->users[i].passwordsize);
-			fread(db->users[i].passwd, db->users[i].passwordsize, 1,
-			      fp);
+			fread(db->users[i].passwd, db->users[i].passwordsize, 1, fp);
 			curlen += db->users[i].passwordsize;
 		} else
 			db->users[i].passwd = NULL;
@@ -124,7 +123,7 @@ struct radiusdb *loadradiusdb(void)
 
 		if (curlen < db->users[i].fieldlen) {
 			db->users[i].enabled = readword(fp);
-			curlen += 4;		
+			curlen += 4;
 		} else
 			db->users[i].enabled = 1;
 
@@ -150,14 +149,11 @@ void writeradiusdb(struct radiusdb *db)
 			db->users[i].usersize = 0;
 
 		if (db->users[i].passwd)
-			db->users[i].passwordsize =
-			    strlen(db->users[i].passwd) + 1;
+			db->users[i].passwordsize = strlen(db->users[i].passwd) + 1;
 		else
 			db->users[i].passwordsize = 0;
 
-		db->users[i].fieldlen =
-		    sizeof(struct radiususer) + db->users[i].usersize +
-		    db->users[i].passwordsize - 8;
+		db->users[i].fieldlen = sizeof(struct radiususer) + db->users[i].usersize + db->users[i].passwordsize - 8;
 
 		writeword(db->users[i].fieldlen, fp);
 		writeword(db->users[i].usersize, fp);
@@ -165,8 +161,7 @@ void writeradiusdb(struct radiusdb *db)
 			fwrite(db->users[i].user, db->users[i].usersize, 1, fp);
 		writeword(db->users[i].passwordsize, fp);
 		if (db->users[i].passwordsize)
-			fwrite(db->users[i].passwd, db->users[i].passwordsize,
-			       1, fp);
+			fwrite(db->users[i].passwd, db->users[i].passwordsize, 1, fp);
 		writeword(db->users[i].downstream, fp);
 		writeword(db->users[i].upstream, fp);
 		writeword(db->users[i].expiration, fp);
@@ -211,8 +206,7 @@ struct radiusclientdb *loadradiusclientdb(void)
 		curlen += 8;
 		if (db->users[i].clientsize) {
 			db->users[i].client = safe_malloc(db->users[i].clientsize);
-			fread(db->users[i].client, db->users[i].clientsize, 1,
-			      fp);
+			fread(db->users[i].client, db->users[i].clientsize, 1, fp);
 			curlen += db->users[i].clientsize;
 		} else
 			db->users[i].client = NULL;
@@ -221,8 +215,7 @@ struct radiusclientdb *loadradiusclientdb(void)
 		curlen += 4;
 		if (db->users[i].passwordsize) {
 			db->users[i].passwd = safe_malloc(db->users[i].passwordsize);
-			fread(db->users[i].passwd, db->users[i].passwordsize, 1,
-			      fp);
+			fread(db->users[i].passwd, db->users[i].passwordsize, 1, fp);
 			curlen += db->users[i].passwordsize;
 		} else
 			db->users[i].passwd = NULL;
@@ -244,30 +237,24 @@ void writeradiusclientdb(struct radiusclientdb *db)
 	unsigned int i;
 	for (i = 0; i < db->usercount; i++) {
 		if (db->users[i].client)
-			db->users[i].clientsize =
-			    strlen(db->users[i].client) + 1;
+			db->users[i].clientsize = strlen(db->users[i].client) + 1;
 		else
 			db->users[i].clientsize = 0;
 
 		if (db->users[i].passwd)
-			db->users[i].passwordsize =
-			    strlen(db->users[i].passwd) + 1;
+			db->users[i].passwordsize = strlen(db->users[i].passwd) + 1;
 		else
 			db->users[i].passwordsize = 0;
 
-		db->users[i].fieldlen =
-		    sizeof(struct radiusclient) + db->users[i].clientsize +
-		    db->users[i].passwordsize - 8;
+		db->users[i].fieldlen = sizeof(struct radiusclient) + db->users[i].clientsize + db->users[i].passwordsize - 8;
 
 		writeword(db->users[i].fieldlen, fp);
 		writeword(db->users[i].clientsize, fp);
 		if (db->users[i].clientsize)
-			fwrite(db->users[i].client, db->users[i].clientsize, 1,
-			       fp);
+			fwrite(db->users[i].client, db->users[i].clientsize, 1, fp);
 		writeword(db->users[i].passwordsize, fp);
 		if (db->users[i].passwordsize)
-			fwrite(db->users[i].passwd, db->users[i].passwordsize,
-			       1, fp);
+			fwrite(db->users[i].passwd, db->users[i].passwordsize, 1, fp);
 	}
 	fclose(fp);
 }
@@ -294,29 +281,20 @@ void gen_cert(char *name, int type, char *common, char *pass)
 	fprintf(fp, "[ ca ]\n"
 		"default_ca		= CA_default\n"
 		"\n"
-		"[ CA_default ]\n"
-		"dir			= ./\n"
-		"certs			= $dir\n"
-		"crl_dir			= $dir/crl\n"
-		"database		= $dir/index.txt\n"
-		"new_certs_dir		= $dir\n");
+		"[ CA_default ]\n" "dir			= ./\n" "certs			= $dir\n" "crl_dir			= $dir/crl\n" "database		= $dir/index.txt\n" "new_certs_dir		= $dir\n");
 	if (type == TYPE_CA)
 		fprintf(fp, "certificate		= $dir/ca.pem\n");
 	else
 		fprintf(fp, "certificate		= $dir/server.pem\n");
 
-	fprintf(fp, "serial			= $dir/serial\n"
-		"crl			= $dir/crl.pem\n");
+	fprintf(fp, "serial			= $dir/serial\n" "crl			= $dir/crl.pem\n");
 	if (type == TYPE_CA)
 		fprintf(fp, "private_key		= $dir/ca.key\n");
 	else
 		fprintf(fp, "private_key		= $dir/server.key\n");
 
-	fprintf(fp, "RANDFILE		= $dir/.rand\n"
-		"name_opt		= ca_default\n"
-		"cert_opt		= ca_default\n");
-	fprintf(fp, "default_days		= %s\n",
-		nvram_default_get("radius_expiration", "365"));
+	fprintf(fp, "RANDFILE		= $dir/.rand\n" "name_opt		= ca_default\n" "cert_opt		= ca_default\n");
+	fprintf(fp, "default_days		= %s\n", nvram_default_get("radius_expiration", "365"));
 	fprintf(fp,
 		"default_crl_days	= 30\n"
 		"default_md		= md5\n"
@@ -335,10 +313,7 @@ void gen_cert(char *name, int type, char *common, char *pass)
 		"stateOrProvinceName	= optional\n"
 		"localityName		= optional\n"
 		"organizationName	= optional\n"
-		"organizationalUnitName	= optional\n"
-		"commonName		= supplied\n"
-		"emailAddress		= optional\n"
-		"\n" "[ req ]\n" "prompt			= no\n");
+		"organizationalUnitName	= optional\n" "commonName		= supplied\n" "emailAddress		= optional\n" "\n" "[ req ]\n" "prompt			= no\n");
 	if (type == TYPE_CA)
 		fprintf(fp, "distinguished_name	= certificate_authority\n");
 	else if (type == TYPE_CLIENT)
@@ -346,10 +321,7 @@ void gen_cert(char *name, int type, char *common, char *pass)
 	else
 		fprintf(fp, "distinguished_name	= server\n");
 
-	fprintf(fp, "default_bits		= 2048\n"
-		"input_password		= %s\n"
-		"output_password		= %s\n",
-		nvram_default_get("radius_passphrase", "whatever"), pass);
+	fprintf(fp, "default_bits		= 2048\n" "input_password		= %s\n" "output_password		= %s\n", nvram_default_get("radius_passphrase", "whatever"), pass);
 	if (type == TYPE_CA) {
 		fprintf(fp, "x509_extensions		= v3_ca\n");
 		fprintf(fp, "\n" "[certificate_authority]\n");
@@ -360,28 +332,20 @@ void gen_cert(char *name, int type, char *common, char *pass)
 	}
 
 	if (!nvram_match("radius_country", ""))
-		fprintf(fp, "countryName		= %s\n",
-			nvram_get("radius_country"));
+		fprintf(fp, "countryName		= %s\n", nvram_get("radius_country"));
 	if (!nvram_match("radius_state", ""))
-		fprintf(fp, "stateOrProvinceName	= %s\n",
-			nvram_get("radius_state"));
+		fprintf(fp, "stateOrProvinceName	= %s\n", nvram_get("radius_state"));
 	if (!nvram_match("radius_locality", ""))
-		fprintf(fp, "localityName		= %s\n",
-			nvram_get("radius_locality"));
+		fprintf(fp, "localityName		= %s\n", nvram_get("radius_locality"));
 	if (!nvram_match("radius_organisation", ""))
-		fprintf(fp, "organizationName	= %s\n",
-			nvram_get("radius_organisation"));
+		fprintf(fp, "organizationName	= %s\n", nvram_get("radius_organisation"));
 	if (!nvram_match("radius_email", ""))
-		fprintf(fp, "emailAddress		= %s\n",
-			nvram_get("radius_email"));
+		fprintf(fp, "emailAddress		= %s\n", nvram_get("radius_email"));
 
 	fprintf(fp, "commonName		= \"%s\"\n", common);
 
 	if (type == TYPE_CA)
-		fprintf(fp, "\n[v3_ca]\n"
-			"subjectKeyIdentifier	= hash\n"
-			"authorityKeyIdentifier	= keyid:always,issuer:always\n"
-			"basicConstraints	= CA:true\n");
+		fprintf(fp, "\n[v3_ca]\n" "subjectKeyIdentifier	= hash\n" "authorityKeyIdentifier	= keyid:always,issuer:always\n" "basicConstraints	= CA:true\n");
 
 	fclose(fp);
 

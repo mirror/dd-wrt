@@ -75,24 +75,21 @@ void unl_free(struct unl *unl)
 	memset(unl, 0, sizeof(*unl));
 }
 
-static int
-ack_handler(struct nl_msg *msg, void *arg)
+static int ack_handler(struct nl_msg *msg, void *arg)
 {
 	int *err = arg;
 	*err = 0;
 	return NL_STOP;
 }
 
-static int
-finish_handler(struct nl_msg *msg, void *arg)
+static int finish_handler(struct nl_msg *msg, void *arg)
 {
 	int *err = arg;
 	*err = 0;
 	return NL_SKIP;
 }
 
-static int
-error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
+static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 {
 	int *ret = arg;
 	*ret = err->error;
@@ -111,8 +108,7 @@ struct nl_msg *unl_genl_msg(struct unl *unl, int cmd, bool dump)
 	if (dump)
 		flags |= NLM_F_DUMP;
 
-	genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ,
-		    genl_family_get_id(unl->family), 0, flags, cmd, 0);
+	genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, genl_family_get_id(unl->family), 0, flags, cmd, 0);
 
 out:
 	return msg;
@@ -211,11 +207,9 @@ static int unl_genl_multicast_id(struct unl *unl, const char *name)
 	nla_for_each_nested(group, groups, rem) {
 		const char *gn;
 
-		nla_parse(tb, CTRL_ATTR_MCAST_GRP_MAX, nla_data(group),
-			  nla_len(group), NULL);
+		nla_parse(tb, CTRL_ATTR_MCAST_GRP_MAX, nla_data(group), nla_len(group), NULL);
 
-		if (!tb[CTRL_ATTR_MCAST_GRP_NAME] ||
-		    !tb[CTRL_ATTR_MCAST_GRP_ID])
+		if (!tb[CTRL_ATTR_MCAST_GRP_NAME] || !tb[CTRL_ATTR_MCAST_GRP_ID])
 			continue;
 
 		gn = nla_data(tb[CTRL_ATTR_MCAST_GRP_NAME]);
@@ -298,5 +292,3 @@ nla_put_failure:
 	nlmsg_free(msg);
 	return ret;
 }
-
-

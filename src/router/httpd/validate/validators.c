@@ -47,8 +47,7 @@ extern FILE *debout;
 #endif
 
 void (*do_ej_buffer) (char *buffer, webs_t stream);
-int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
-			  int type);
+int (*httpd_filter_name) (char *old_name, char *new_name, size_t size, int type);
 char *(*websGetVar) (webs_t wp, char *var, char *d);
 int (*websWrite) (webs_t wp, char *fmt, ...);
 struct wl_client_mac *wl_client_macs;
@@ -126,9 +125,7 @@ int legal_hwaddr(char *value)
 	if (!tag || i != 17 || count != 5)	/* must have 17's characters and 5's
 						 * ':' */
 		tag = FALSE;
-	else if (sscanf(value, "%x:%x:%x:%x:%x:%x",
-			&hwaddr[0], &hwaddr[1], &hwaddr[2],
-			&hwaddr[3], &hwaddr[4], &hwaddr[5]) != 6) {
+	else if (sscanf(value, "%x:%x:%x:%x:%x:%x", &hwaddr[0], &hwaddr[1], &hwaddr[2], &hwaddr[3], &hwaddr[4], &hwaddr[5]) != 6) {
 		// (hwaddr[0] & 1) || // the bit 7 is 1
 		// (hwaddr[0] & hwaddr[1] & hwaddr[2] & hwaddr[3] & hwaddr[4] &
 		// hwaddr[5]) == 0xff ){ // FF:FF:FF:FF:FF:FF
@@ -207,9 +204,7 @@ int valid_wep_key(webs_t wp, char *value, struct variable *v)
 			if (isascii(*(value + i))) {
 				continue;
 			} else {
-				websDebugWrite(wp,
-					       "Invalid <b>%s</b> %s: must be ascii code<br>",
-					       v->longname, value);
+				websDebugWrite(wp, "Invalid <b>%s</b> %s: must be ascii code<br>", v->longname, value);
 				return FALSE;
 			}
 		}
@@ -221,18 +216,14 @@ int valid_wep_key(webs_t wp, char *value, struct variable *v)
 							 * C D E F */
 				continue;
 			} else {
-				websDebugWrite(wp,
-					       "Invalid <b>%s</b> %s: must be hexadecimal digits<br>",
-					       v->longname, value);
+				websDebugWrite(wp, "Invalid <b>%s</b> %s: must be hexadecimal digits<br>", v->longname, value);
 				return FALSE;
 			}
 		}
 		break;
 
 	default:
-		websDebugWrite(wp,
-			       "Invalid <b>%s</b>: must be 5 or 13 ASCII characters or 10 or 26 hexadecimal digits<br>",
-			       v->longname);
+		websDebugWrite(wp, "Invalid <b>%s</b>: must be 5 or 13 ASCII characters or 10 or 26 hexadecimal digits<br>", v->longname);
 		return FALSE;
 
 	}
@@ -252,9 +243,7 @@ void validate_statics(webs_t wp, char *value, struct variable *v)
 {
 
 	if (!sv_valid_statics(value)) {
-		websDebugWrite(wp,
-			       "Invalid <b>%s</b> %s: not a legal statics entry<br>",
-			       v->longname, value);
+		websDebugWrite(wp, "Invalid <b>%s</b> %s: not a legal statics entry<br>", v->longname, value);
 		return;
 	}
 
@@ -265,9 +254,7 @@ int valid_netmask(webs_t wp, char *value, struct variable *v)
 {
 
 	if (!legal_netmask(value)) {
-		websDebugWrite(wp,
-			       "Invalid <b>%s</b> %s: not a legal netmask<br>",
-			       v->longname, value);
+		websDebugWrite(wp, "Invalid <b>%s</b> %s: not a legal netmask<br>", v->longname, value);
 		return FALSE;
 	}
 
@@ -308,9 +295,7 @@ void validate_merge_netmask(webs_t wp, char *value, struct variable *v)
 // char webs_buf[5000];
 // int webs_buf_offset = 0;
 
-void
-validate_list(webs_t wp, char *value, struct variable *v,
-	      int (*valid) (webs_t, char *, struct variable *))
+void validate_list(webs_t wp, char *value, struct variable *v, int (*valid) (webs_t, char *, struct variable *))
 {
 	int n, i;
 	char name[100];
@@ -326,8 +311,7 @@ validate_list(webs_t wp, char *value, struct variable *v,
 			continue;
 		if (!valid(wp, value, v))
 			continue;
-		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
-				cur == buf ? "" : " ", value);
+		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s", cur == buf ? "" : " ", value);
 	}
 	nvram_set(v->name, buf);
 
@@ -338,19 +322,14 @@ int valid_ipaddr(webs_t wp, char *value, struct variable *v)
 	struct in_addr netaddr, netmask;
 
 	if (!legal_ipaddr(value)) {
-		websDebugWrite(wp,
-			       "Invalid <b>%s</b> %s: not an IP address<br>",
-			       v->longname, value);
+		websDebugWrite(wp, "Invalid <b>%s</b> %s: not an IP address<br>", v->longname, value);
 		return FALSE;
 	}
 
 	if (v->argv) {
 		if (!strcmp(v->argv[0], "lan")) {
-			if (*(value + strlen(value) - 2) == '.'
-			    && *(value + strlen(value) - 1) == '0') {
-				websDebugWrite(wp,
-					       "Invalid <b>%s</b> %s: not an IP address<br>",
-					       v->longname, value);
+			if (*(value + strlen(value) - 2) == '.' && *(value + strlen(value) - 1) == '0') {
+				websDebugWrite(wp, "Invalid <b>%s</b> %s: not an IP address<br>", v->longname, value);
 				return FALSE;
 			}
 		}
@@ -381,16 +360,11 @@ int valid_merge_ip_4(webs_t wp, char *value, struct variable *v)
 	char ipaddr[20];
 
 	if (atoi(value) == 255) {
-		websDebugWrite(wp,
-			       "Invalid <b>%s</b> %s: out of range 0 - 254 <br>",
-			       v->longname, value);
+		websDebugWrite(wp, "Invalid <b>%s</b> %s: out of range 0 - 254 <br>", v->longname, value);
 		return FALSE;
 	}
 
-	sprintf(ipaddr, "%d.%d.%d.%s",
-		get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
-		get_single_ip(nvram_safe_get("lan_ipaddr"), 1),
-		get_single_ip(nvram_safe_get("lan_ipaddr"), 2), value);
+	sprintf(ipaddr, "%d.%d.%d.%s", get_single_ip(nvram_safe_get("lan_ipaddr"), 0), get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), value);
 
 	if (!valid_ipaddr(wp, ipaddr, v)) {
 		return FALSE;
@@ -510,8 +484,7 @@ void validate_dns(webs_t wp, char *value, struct variable *v)
 	for (j = 0; j < 3; j++) {
 		strcpy(ipaddr, "");
 		for (i = 0; i < 4; i++) {
-			snprintf(ipname, sizeof(ipname), "%s%d_%d", v->name, j,
-				 i);
+			snprintf(ipname, sizeof(ipname), "%s%d_%d", v->name, j, i);
 			ip = websGetVar(wp, ipname, NULL);
 			if (ip) {
 				strcat(ipaddr, ip);
@@ -525,8 +498,7 @@ void validate_dns(webs_t wp, char *value, struct variable *v)
 			continue;
 		if (!valid_ipaddr(wp, ipaddr, v))
 			continue;
-		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
-				cur == buf ? "" : " ", ipaddr);
+		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s", cur == buf ? "" : " ", ipaddr);
 	}
 	nvram_set(v->name, buf);
 
@@ -542,11 +514,9 @@ int valid_choice(webs_t wp, char *value, struct variable *v)
 			return TRUE;
 	}
 
-	websDebugWrite(wp, "Invalid <b>%s</b> %s: not one of ", v->longname,
-		       value);
+	websDebugWrite(wp, "Invalid <b>%s</b> %s: not one of ", v->longname, value);
 	for (choice = v->argv; *choice; choice++)
-		websDebugWrite(wp, "%s%s", choice == v->argv ? "" : "/",
-			       *choice);
+		websDebugWrite(wp, "%s%s", choice == v->argv ? "" : "/", *choice);
 	websDebugWrite(wp, "<br>");
 	return FALSE;
 }
@@ -581,9 +551,7 @@ int valid_range(webs_t wp, char *value, struct variable *v)
 	end = atoi(v->argv[1]);
 
 	if (!ISDIGIT(value, 1) || n < start || n > end) {
-		websDebugWrite(wp,
-			       "Invalid <b>%s</b> %s: out of range %d-%d<br>",
-			       v->longname, value, start, end);
+		websDebugWrite(wp, "Invalid <b>%s</b> %s: out of range %d-%d<br>", v->longname, value, start, end);
 		return FALSE;
 	}
 
@@ -640,10 +608,10 @@ void validate_reboot(webs_t wp, char *value, struct variable *v)
 void validate_password(webs_t wp, char *value, struct variable *v)
 {
 #ifdef HAVE_IAS
-	if(!strcmp(value, "http_username")) {
+	if (!strcmp(value, "http_username")) {
 		nvram_set("http_userpln", value);
 		fprintf(stderr, "[SET USERNAME] %s\n", value);
-	} else if(!strcmp(value, "http_passwd")){
+	} else if (!strcmp(value, "http_passwd")) {
 		nvram_set("http_pwdpln", value);
 		fprintf(stderr, "[SET PASSWORD] %s\n", value);
 	}
@@ -674,9 +642,7 @@ int valid_hwaddr(webs_t wp, char *value, struct variable *v)
 	 * Check for bad, multicast, broadcast, or null address 
 	 */
 	if (!legal_hwaddr(value)) {
-		websDebugWrite(wp,
-			       "Invalid <b>%s</b> %s: not a legal MAC address<br>",
-			       v->longname, value);
+		websDebugWrite(wp, "Invalid <b>%s</b> %s: not a legal MAC address<br>", v->longname, value);
 		return FALSE;
 	}
 
@@ -696,8 +662,7 @@ void validate_hwaddrs(webs_t wp, char *value, struct variable *v)
 
 void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
-	char wan_ipaddr[20], wan_netmask[20], wan_gateway[20],
-	    pptp_wan_gateway[20],l2tp_wan_gateway[20];
+	char wan_ipaddr[20], wan_netmask[20], wan_gateway[20], pptp_wan_gateway[20], l2tp_wan_gateway[20];
 	char *wan_proto = websGetVar(wp, "wan_proto", NULL);
 	char *pptp_use_dhcp = websGetVar(wp, "pptp_use_dhcp", NULL);
 	char *l2tp_use_dhcp = websGetVar(wp, "l2tp_use_dhcp", NULL);
@@ -727,15 +692,13 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	} else
 		nvram_set("pptp_use_dhcp", "0");
 
-	if (FALSE == pptp_skip_check
-	    && !valid_ipaddr(wp, wan_ipaddr, &which[0]))
+	if (FALSE == pptp_skip_check && !valid_ipaddr(wp, wan_ipaddr, &which[0]))
 		return;
 
 	nvram_set("wan_ipaddr_buf", nvram_safe_get("wan_ipaddr"));
 	nvram_set("wan_ipaddr", wan_ipaddr);
 
-	if (FALSE == pptp_skip_check
-	    && !valid_netmask(wp, wan_netmask, &which[1]))
+	if (FALSE == pptp_skip_check && !valid_netmask(wp, wan_netmask, &which[1]))
 		return;
 
 	nvram_set("wan_netmask", wan_netmask);
@@ -748,11 +711,11 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	if (strcmp(pptp_wan_gateway, "0.0.0.0")) {
 		nvram_set("pptp_wan_gateway", pptp_wan_gateway);
 	}
-	
+
 	if (strcmp(l2tp_wan_gateway, "0.0.0.0")) {
 		nvram_set("l2tp_wan_gateway", l2tp_wan_gateway);
 	}
-}	
+}
 
 #ifdef HAVE_PORTSETUP
 void validate_portsetup(webs_t wp, char *value, struct variable *v)
@@ -863,8 +826,7 @@ void validate_lan_ipaddr(webs_t wp, char *value, struct variable *v)
 		unlink("/jffs/dnsmasq.leases");
 	}
 
-	if (strcmp(lan_ipaddr, nvram_safe_get("lan_ipaddr")) ||
-	    strcmp(lan_netmask, nvram_safe_get("lan_netmask")))
+	if (strcmp(lan_ipaddr, nvram_safe_get("lan_ipaddr")) || strcmp(lan_netmask, nvram_safe_get("lan_netmask")))
 		lan_ip_changed = 1;
 	else
 		lan_ip_changed = 0;
@@ -898,9 +860,7 @@ void validate_remote_ip(webs_t wp, char *value, struct variable *v)
 #define LRL_VALID(v)        (((v) > 0) && ((v) <= 15))
 #define LFBL_VALID(v)       (((v) > 0) && ((v) <= 15))
 
-void
-validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v,
-			  char *varname)
+void validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v, char *varname)
 {
 	int srl = 0, sfbl = 0, lrl = 0, lfbl = 0, max_rate = 0, nmode = 0;
 	char *s, *errmsg;
@@ -926,8 +886,7 @@ validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v,
 	s = nvram_get(v->name);
 
 	if (s != NULL)
-		sscanf(s, "%d %d %d %d %d", &srl, &sfbl, &lrl, &lfbl,
-		       &max_rate);
+		sscanf(s, "%d %d %d %d %d", &srl, &sfbl, &lrl, &lfbl, &max_rate);
 
 	if ((value = websGetVar(wp, strcat_r(v->name, "0", tmp), NULL)) != NULL)
 		srl = atoi(value);
@@ -1027,37 +986,24 @@ void validate_wl_wme_params(webs_t wp, char *value, struct variable *v)
 		else if (i == 1) {
 			cwmax = atoi(value);
 			if (cwmax < cwmin) {
-				websDebugWrite(wp,
-					       "Invalid <b>%s</b> %d: greater than <b>%s</b> %d<br>",
-					       field_attrib[0].name, cwmin,
-					       field_attrib[i].name, cwmax);
+				websDebugWrite(wp, "Invalid <b>%s</b> %d: greater than <b>%s</b> %d<br>", field_attrib[0].name, cwmin, field_attrib[i].name, cwmax);
 				return;
 			}
 		}
 		if (field_attrib[i].range) {
 			if (atoi(value) < atoi(field_attrib[i].arg1)
 			    || atoi(value) > atoi(field_attrib[i].arg2)) {
-				websDebugWrite(wp,
-					       "Invalid <b>%s</b> %d: should be in range %s to %s<br>",
-					       field_attrib[i].name,
-					       atoi(value),
-					       field_attrib[i].arg1,
-					       field_attrib[i].arg2);
+				websDebugWrite(wp, "Invalid <b>%s</b> %d: should be in range %s to %s<br>", field_attrib[i].name, atoi(value), field_attrib[i].arg1, field_attrib[i].arg2);
 				return;
 			}
 		} else {
 			if (strcmp(value, field_attrib[i].arg1)
 			    && strcmp(value, field_attrib[i].arg2)) {
-				websDebugWrite(wp,
-					       "Invalid <b>%s</b> %s: should be %s or %s<br>",
-					       field_attrib[i].name, value,
-					       field_attrib[i].arg1,
-					       field_attrib[i].arg2);
+				websDebugWrite(wp, "Invalid <b>%s</b> %s: should be %s or %s<br>", field_attrib[i].name, value, field_attrib[i].arg1, field_attrib[i].arg2);
 			}
 		}
 
-		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
-				cur == buf ? "" : " ", value);
+		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s", cur == buf ? "" : " ", value);
 	}
 
 	nvram_set(v->name, buf);
@@ -1075,17 +1021,13 @@ void validate_wl_key(webs_t wp, char *value, struct variable *v)
 	case 26:
 		for (c = value; *c; c++) {
 			if (!isxdigit(*c)) {
-				websDebugWrite(wp,
-					       "Invalid <b>%s</b>: character %c is not a hexadecimal digit<br>",
-					       v->longname, *c);
+				websDebugWrite(wp, "Invalid <b>%s</b>: character %c is not a hexadecimal digit<br>", v->longname, *c);
 				return;
 			}
 		}
 		break;
 	default:
-		websDebugWrite(wp,
-			       "Invalid <b>%s</b>: must be 5 or 13 ASCII characters or 10 or 26 hexadecimal digits<br>",
-			       v->longname);
+		websDebugWrite(wp, "Invalid <b>%s</b>: must be 5 or 13 ASCII characters or 10 or 26 hexadecimal digits<br>", v->longname);
 		return;
 	}
 
@@ -1103,9 +1045,7 @@ void validate_wl_wep(webs_t wp, char *value, struct variable *v)
 #ifdef ABURN_WSEC_CHECK
 	if (strcmp(value, "off")
 	    && atoi(nvram_safe_get("wl_gmode")) == GMODE_AFTERBURNER) {
-		websDebugWrite(wp,
-			       "<br>Invalid <b>%s</b>: must be set to <b>Off</b> when 54g Mode is AfterBurner.",
-			       v->longname);
+		websDebugWrite(wp, "<br>Invalid <b>%s</b>: must be set to <b>Off</b> when 54g Mode is AfterBurner.", v->longname);
 		return;
 	}
 #endif
@@ -1127,16 +1067,12 @@ void validate_wpa_psk(webs_t wp, char *value, struct variable *v)
 	if (len == 64) {
 		for (c = value; *c; c++) {
 			if (!isxdigit((int)*c)) {
-				websDebugWrite(wp,
-					       "Invalid <b>%s</b>: character %c is not a hexadecimal digit<br>",
-					       v->longname, *c);
+				websDebugWrite(wp, "Invalid <b>%s</b>: character %c is not a hexadecimal digit<br>", v->longname, *c);
 				return;
 			}
 		}
 	} else if (len < 8 || len > 63) {
-		websDebugWrite(wp,
-			       "Invalid <b>%s</b>: must be between 8 and 63 ASCII characters or 64 hexadecimal digits<br>",
-			       v->longname);
+		websDebugWrite(wp, "Invalid <b>%s</b>: must be between 8 and 63 ASCII characters or 64 hexadecimal digits<br>", v->longname);
 		return;
 	}
 
@@ -1156,11 +1092,8 @@ void validate_wl_wep_key(webs_t wp, char *value, struct variable *v)
 	      {argv:ARGV("1", "4")},
 	}, *which;
 
-	char *wep_bit = "", *wep_passphrase = "", *wep_key1 = "", *wep_key2 =
-	    "", *wep_key3 = "", *wep_key4 = "", *wep_tx = "";
-	char new_wep_passphrase[50] = "", new_wep_key1[30] =
-	    "", new_wep_key2[30] = "", new_wep_key3[30] = "", new_wep_key4[30] =
-	    "";
+	char *wep_bit = "", *wep_passphrase = "", *wep_key1 = "", *wep_key2 = "", *wep_key3 = "", *wep_key4 = "", *wep_tx = "";
+	char new_wep_passphrase[50] = "", new_wep_key1[30] = "", new_wep_key2[30] = "", new_wep_key3[30] = "", new_wep_key4[30] = "";
 	int index;
 
 	which = &wl_wep_variables[0];
@@ -1179,8 +1112,7 @@ void validate_wl_wep_key(webs_t wp, char *value, struct variable *v)
 		if (!valid_name(wp, wep_passphrase, &which[0])) {
 			error_value = 1;
 		} else {
-			httpd_filter_name(wep_passphrase, new_wep_passphrase,
-					  sizeof(new_wep_passphrase), SET);
+			httpd_filter_name(wep_passphrase, new_wep_passphrase, sizeof(new_wep_passphrase), SET);
 		}
 	}
 
@@ -1201,8 +1133,7 @@ void validate_wl_wep_key(webs_t wp, char *value, struct variable *v)
 		if (!valid_wep_key(wp, wep_key1, &which[index])) {
 			error_value = 1;
 		} else {
-			httpd_filter_name(wep_key1, new_wep_key1,
-					  sizeof(new_wep_key1), SET);
+			httpd_filter_name(wep_key1, new_wep_key1, sizeof(new_wep_key1), SET);
 		}
 
 	}
@@ -1210,31 +1141,26 @@ void validate_wl_wep_key(webs_t wp, char *value, struct variable *v)
 		if (!valid_wep_key(wp, wep_key2, &which[index])) {
 			error_value = 1;
 		} else {
-			httpd_filter_name(wep_key2, new_wep_key2,
-					  sizeof(new_wep_key2), SET);
+			httpd_filter_name(wep_key2, new_wep_key2, sizeof(new_wep_key2), SET);
 		}
 	}
 	if (strcmp(wep_key3, "")) {
 		if (!valid_wep_key(wp, wep_key3, &which[index])) {
 			error_value = 1;
 		} else {
-			httpd_filter_name(wep_key3, new_wep_key3,
-					  sizeof(new_wep_key3), SET);
+			httpd_filter_name(wep_key3, new_wep_key3, sizeof(new_wep_key3), SET);
 		}
 	}
 	if (strcmp(wep_key4, "")) {
 		if (!valid_wep_key(wp, wep_key4, &which[index])) {
 			error_value = 1;
 		} else {
-			httpd_filter_name(wep_key4, new_wep_key4,
-					  sizeof(new_wep_key4), SET);
+			httpd_filter_name(wep_key4, new_wep_key4, sizeof(new_wep_key4), SET);
 		}
 	}
 
 	if (!error_value) {
-		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s",
-			 new_wep_passphrase, new_wep_key1, new_wep_key2,
-			 new_wep_key3, new_wep_key4, wep_tx);
+		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", new_wep_passphrase, new_wep_key1, new_wep_key2, new_wep_key3, new_wep_key4, wep_tx);
 		nvram_set("wl_wep_bit", wep_bit);
 		nvram_set("wl_wep_buf", buf);
 
@@ -1279,8 +1205,7 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 {
 	int i;
 	int error_value = 0;
-	char *buf =
-	    safe_malloc((19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) + 1);
+	char *buf = safe_malloc((19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) + 1);
 	if (buf == NULL)
 		return;		//out of memory
 	char *cur = buf;
@@ -1302,8 +1227,7 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 		char *mac = NULL;
 		char mac1[21];
 
-		snprintf(filter_mac, sizeof(filter_mac), "%s%s%d", ifname2,
-			 "_mac", i);
+		snprintf(filter_mac, sizeof(filter_mac), "%s%s%d", ifname2, "_mac", i);
 
 		mac = websGetVar(wp, filter_mac, NULL);
 
@@ -1339,15 +1263,11 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 		}
 #endif
 		if (strlen(mac) == 12) {
-			sscanf(mac, "%02X%02X%02X%02X%02X%02X", &m[0],
-			       &m[1], &m[2], &m[3], &m[4], &m[5]);
-			sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0],
-				m[1], m[2], m[3], m[4], m[5]);
+			sscanf(mac, "%02X%02X%02X%02X%02X%02X", &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]);
+			sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3], m[4], m[5]);
 		} else if (strlen(mac) == 17) {
-			sscanf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", &m[0],
-			       &m[1], &m[2], &m[3], &m[4], &m[5]);
-			sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0],
-				m[1], m[2], m[3], m[4], m[5]);
+			sscanf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]);
+			sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3], m[4], m[5]);
 		} else {
 			mac1[0] = 0;
 		}
@@ -1361,12 +1281,7 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 			sprintf(mac1, "%s\/%d", mac1, wildcard * 4);
 		}
 #endif
-		cur +=
-		    snprintf(cur,
-			     buf +
-			     ((strlen(mac1) +
-			       1) * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) -
-			     cur, "%s%s", cur == buf ? "" : " ", mac1);
+		cur += snprintf(cur, buf + ((strlen(mac1) + 1) * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) - cur, "%s%s", cur == buf ? "" : " ", mac1);
 
 	}
 
@@ -1417,9 +1332,7 @@ void validate_forward_proto(webs_t wp, char *value, struct variable *v)
 		char forward_udp[] = "udpXXX";	// for checkbox
 		char forward_pro[] = "proXXX";	// for select, cisco style UI
 		char forward_enable[] = "enableXXX";
-		char *name = "", new_name[200] = "", *from = "", *to = "", *ip =
-		    "", *tcp = "", *udp = "", *enable = "", proto[10], *pro =
-		    "";
+		char *name = "", new_name[200] = "", *from = "", *to = "", *ip = "", *tcp = "", *udp = "", *enable = "", proto[10], *pro = "";
 
 		snprintf(forward_name, sizeof(forward_name), "name%d", i);
 		snprintf(forward_from, sizeof(forward_from), "from%d", i);
@@ -1445,9 +1358,7 @@ void validate_forward_proto(webs_t wp, char *value, struct variable *v)
 			continue;
 		if (!strcmp(ip, "0") || !strcmp(ip, ""))
 			continue;
-		if ((!strcmp(from, "0") || !strcmp(from, "")) &&
-		    (!strcmp(to, "0") || !strcmp(to, "")) &&
-		    (!strcmp(ip, "0") || !strcmp(ip, ""))) {
+		if ((!strcmp(from, "0") || !strcmp(from, "")) && (!strcmp(to, "0") || !strcmp(to, "")) && (!strcmp(ip, "0") || !strcmp(ip, ""))) {
 			continue;
 		}
 
@@ -1458,8 +1369,7 @@ void validate_forward_proto(webs_t wp, char *value, struct variable *v)
 			if (!valid_name(wp, name, &which[0])) {
 				continue;
 			} else {
-				httpd_filter_name(name, new_name,
-						  sizeof(new_name), SET);
+				httpd_filter_name(name, new_name, sizeof(new_name), SET);
 			}
 		}
 
@@ -1502,11 +1412,7 @@ void validate_forward_proto(webs_t wp, char *value, struct variable *v)
 		 * Sveasoft add - new format allows full IP address 
 		 */
 		if (sv_valid_ipaddr(ip)) {
-			cur +=
-			    snprintf(cur, buf + sof - cur,
-				     "%s%s:%s:%s:%d:%d>%s",
-				     cur == buf ? "" : " ", new_name, enable,
-				     proto, atoi(from), atoi(to), ip);
+			cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%d:%d>%s", cur == buf ? "" : " ", new_name, enable, proto, atoi(from), atoi(to), ip);
 		}
 		/*
 		 * Sveasoft - for backwords compatability allow single number 
@@ -1515,15 +1421,9 @@ void validate_forward_proto(webs_t wp, char *value, struct variable *v)
 			char fullip[16] = { 0 };
 			int f_ip[4];
 
-			sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d.%d",
-			       &f_ip[0], &f_ip[1], &f_ip[2], &f_ip[3]);
-			snprintf(fullip, 15, "%d.%d.%d.%d", f_ip[0], f_ip[1],
-				 f_ip[2], atoi(ip));
-			cur +=
-			    snprintf(cur, buf + sof - cur,
-				     "%s%s:%s:%s:%d:%d>%s",
-				     cur == buf ? "" : " ", new_name, enable,
-				     proto, atoi(from), atoi(to), fullip);
+			sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d.%d", &f_ip[0], &f_ip[1], &f_ip[2], &f_ip[3]);
+			snprintf(fullip, 15, "%d.%d.%d.%d", f_ip[0], f_ip[1], f_ip[2], atoi(ip));
+			cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%d:%d>%s", cur == buf ? "" : " ", new_name, enable, proto, atoi(from), atoi(to), fullip);
 
 		} else {
 			error = 1;
@@ -1571,9 +1471,7 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		char forward_udp[] = "udpXXX";	// for checkbox
 		char forward_pro[] = "proXXX";	// for select, cisco style UI
 		char forward_enable[] = "enableXXX";
-		char *name = "", new_name[200] = "", *from = "", *to = "", *ip =
-		    "", *tcp = "", *udp = "", *enable = "", proto[10], *pro =
-		    "", *src = "";
+		char *name = "", new_name[200] = "", *from = "", *to = "", *ip = "", *tcp = "", *udp = "", *enable = "", proto[10], *pro = "", *src = "";
 
 		snprintf(forward_name, sizeof(forward_name), "name%d", i);
 		snprintf(forward_from, sizeof(forward_from), "from%d", i);
@@ -1601,9 +1499,7 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 			continue;
 		if (!strcmp(ip, "0") || !strcmp(ip, ""))
 			continue;
-		if ((!strcmp(from, "0") || !strcmp(from, "")) &&
-		    (!strcmp(to, "0") || !strcmp(to, "")) &&
-		    (!strcmp(ip, "0") || !strcmp(ip, ""))) {
+		if ((!strcmp(from, "0") || !strcmp(from, "")) && (!strcmp(to, "0") || !strcmp(to, "")) && (!strcmp(ip, "0") || !strcmp(ip, ""))) {
 			continue;
 		}
 
@@ -1614,8 +1510,7 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 			if (!valid_name(wp, name, &which[0])) {
 				continue;
 			} else {
-				httpd_filter_name(name, new_name,
-						  sizeof(new_name), SET);
+				httpd_filter_name(name, new_name, sizeof(new_name), SET);
 			}
 		}
 
@@ -1659,19 +1554,9 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		 */
 		if (sv_valid_ipaddr(ip)) {
 			if (!src || strlen(src) == 0)
-				cur +=
-				    snprintf(cur, buf + sof - cur,
-					     "%s%s:%s:%s:%d>%s:%d",
-					     cur == buf ? "" : " ", new_name,
-					     enable, proto, atoi(from), ip,
-					     atoi(to));
+				cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%d>%s:%d", cur == buf ? "" : " ", new_name, enable, proto, atoi(from), ip, atoi(to));
 			else
-				cur +=
-				    snprintf(cur, buf + sof - cur,
-					     "%s%s:%s:%s:%d>%s:%d<%s",
-					     cur == buf ? "" : " ", new_name,
-					     enable, proto, atoi(from), ip,
-					     atoi(to), src);
+				cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%d>%s:%d<%s", cur == buf ? "" : " ", new_name, enable, proto, atoi(from), ip, atoi(to), src);
 
 		} else {
 			error = 1;
@@ -1778,8 +1663,7 @@ void validate_wl_gmode(webs_t wp, char *value, struct variable *v)
 #ifdef ABURN_WSEC_CHECK
 		    nvram_invmatch("wl0_wep", "off") ||
 #endif
-		    nvram_invmatch("wl0_mode", "ap") ||
-		    nvram_invmatch("wl0_lazywds", "0")
+		    nvram_invmatch("wl0_mode", "ap") || nvram_invmatch("wl0_lazywds", "0")
 		    || nvram_invmatch("wl0_wds", "")) {
 			/*
 			 * notify the user 
@@ -1974,8 +1858,7 @@ void validate_chaps(webs_t wp, char *value, struct variable *v)
 		char chap_pass[] = "passXXX";
 		char chap_ip[] = "ipXXX";
 		char chap_enable[] = "enableXXX";
-		char *user = "", new_user[200] = "", *pass = "", new_pass[200] =
-		    "", *ip = "", *enable = "";
+		char *user = "", new_user[200] = "", *pass = "", new_pass[200] = "", *ip = "", *enable = "";
 
 		snprintf(chap_user, sizeof(chap_user), "user%d", i);
 		snprintf(chap_pass, sizeof(chap_pass), "pass%d", i);
@@ -2001,8 +1884,7 @@ void validate_chaps(webs_t wp, char *value, struct variable *v)
 			if (!valid_name(wp, user, &which[0])) {
 				continue;
 			} else {
-				httpd_filter_name(user, new_user,
-						  sizeof(new_user), SET);
+				httpd_filter_name(user, new_user, sizeof(new_user), SET);
 			}
 		}
 
@@ -2010,8 +1892,7 @@ void validate_chaps(webs_t wp, char *value, struct variable *v)
 			if (!valid_name(wp, pass, &which[1])) {
 				continue;
 			} else {
-				httpd_filter_name(pass, new_pass,
-						  sizeof(new_pass), SET);
+				httpd_filter_name(pass, new_pass, sizeof(new_pass), SET);
 			}
 		}
 
@@ -2026,9 +1907,7 @@ void validate_chaps(webs_t wp, char *value, struct variable *v)
 		}
 
 		if (sv_valid_ipaddr(ip)) {
-			cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%s",
-					cur == buf ? "" : " ", new_user,
-					new_pass, ip, enable);
+			cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%s", cur == buf ? "" : " ", new_user, new_pass, ip, enable);
 		} else {
 			error = 1;
 			continue;
@@ -2066,8 +1945,7 @@ void validate_aliases(webs_t wp, char *value, struct variable *v)
 
 		char alias_user[] = "userXXX";
 		char alias_pass[] = "passXXX";
-		char *user = "", new_user[200] = "", *pass = "", new_pass[200] =
-		    "";
+		char *user = "", new_user[200] = "", *pass = "", new_pass[200] = "";
 
 		snprintf(alias_user, sizeof(alias_user), "user%d", i);
 		snprintf(alias_pass, sizeof(alias_pass), "pass%d", i);
@@ -2080,8 +1958,7 @@ void validate_aliases(webs_t wp, char *value, struct variable *v)
 			if (!valid_name(wp, user, &which[0])) {
 				continue;
 			} else {
-				httpd_filter_name(user, new_user,
-						  sizeof(new_user), SET);
+				httpd_filter_name(user, new_user, sizeof(new_user), SET);
 			}
 		}
 
@@ -2089,12 +1966,10 @@ void validate_aliases(webs_t wp, char *value, struct variable *v)
 			if (!valid_name(wp, pass, &which[1])) {
 				continue;
 			} else {
-				httpd_filter_name(pass, new_pass,
-						  sizeof(new_pass), SET);
+				httpd_filter_name(pass, new_pass, sizeof(new_pass), SET);
 			}
 		}
-		cur += snprintf(cur, buf + sof - cur, "%s%s:%s",
-				cur == buf ? "" : " ", new_user, new_pass);
+		cur += snprintf(cur, buf + sof - cur, "%s%s:%s", cur == buf ? "" : " ", new_user, new_pass);
 
 	}
 	if (!error)
@@ -2127,8 +2002,7 @@ void validate_subscribers(webs_t wp, char *value, struct variable *v)
 
 		char subscriber_user[] = "userXXX";
 		char subscriber_pass[] = "passXXX";
-		char *user = "", new_user[200] = "", *pass = "", new_pass[200] =
-		    "";
+		char *user = "", new_user[200] = "", *pass = "", new_pass[200] = "";
 
 		snprintf(subscriber_user, sizeof(subscriber_user), "user%d", i);
 		snprintf(subscriber_pass, sizeof(subscriber_pass), "pass%d", i);
@@ -2141,8 +2015,7 @@ void validate_subscribers(webs_t wp, char *value, struct variable *v)
 			if (!valid_name(wp, user, &which[0])) {
 				continue;
 			} else {
-				httpd_filter_name(user, new_user,
-						  sizeof(new_user), SET);
+				httpd_filter_name(user, new_user, sizeof(new_user), SET);
 			}
 		}
 
@@ -2150,12 +2023,10 @@ void validate_subscribers(webs_t wp, char *value, struct variable *v)
 			if (!valid_name(wp, pass, &which[1])) {
 				continue;
 			} else {
-				httpd_filter_name(pass, new_pass,
-						  sizeof(new_pass), SET);
+				httpd_filter_name(pass, new_pass, sizeof(new_pass), SET);
 			}
 		}
-		cur += snprintf(cur, buf + sof - cur, "%s%s:%s",
-				cur == buf ? "" : " ", new_user, new_pass);
+		cur += snprintf(cur, buf + sof - cur, "%s%s:%s", cur == buf ? "" : " ", new_user, new_pass);
 
 	}
 	if (!error)
@@ -2347,8 +2218,7 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 
 		if (mac == NULL) {
 			free(leases);
-			websError(wp, 400, "%s is not a valid mac adress\n",
-				  hwaddr);
+			websError(wp, 400, "%s is not a valid mac adress\n", hwaddr);
 			return;
 		}
 		strcat(leases, mac);
@@ -2362,8 +2232,7 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 		snprintf(lease_time, 31, "lease%d_time", i);
 		char *time = websGetVar(wp, lease_time, "");
 
-		if (hostname == NULL || strlen(hostname) == 0 || ip == NULL
-		    || strlen(ip) == 0)
+		if (hostname == NULL || strlen(hostname) == 0 || ip == NULL || strlen(ip) == 0)
 			break;
 		strcat(leases, "=");
 		strcat(leases, hostname);
@@ -2459,8 +2328,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 				break;
 		}
 
-		if (!valid_ipaddr(wp, ipaddr, &wds_variables[1]) ||
-		    !valid_netmask(wp, netmask, &wds_variables[2]))
+		if (!valid_ipaddr(wp, ipaddr, &wds_variables[1]) || !valid_netmask(wp, netmask, &wds_variables[2]))
 			return;
 
 		snprintf(ipaddr_var, 31, "%s_%s", wds, "ipaddr");
@@ -2536,8 +2404,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 			// subnet params validation
 			for (i = 0; i < 4; i++) {
 
-				snprintf(ipaddr_var, 31, "%s_%s%d", wds,
-					 "ipaddr", i);
+				snprintf(ipaddr_var, 31, "%s_%s%d", wds, "ipaddr", i);
 				val = websGetVar(wp, ipaddr_var, NULL);
 				if (val) {
 					strcat(ipaddr, val);
@@ -2546,8 +2413,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 				} else
 					break;
 
-				snprintf(netmask_var, 31, "%s_%s%d", wds,
-					 "netmask", i);
+				snprintf(netmask_var, 31, "%s_%s%d", wds, "netmask", i);
 				val = websGetVar(wp, netmask_var, NULL);
 				if (val) {
 					strcat(netmask, val);
@@ -2558,8 +2424,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 					break;
 			}
 
-			if (!valid_ipaddr(wp, ipaddr, &wds_variables[1]) ||
-			    !valid_netmask(wp, netmask, &wds_variables[2])) {
+			if (!valid_ipaddr(wp, ipaddr, &wds_variables[1]) || !valid_netmask(wp, netmask, &wds_variables[2])) {
 				continue;
 			}
 
@@ -2577,8 +2442,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 		snprintf(wdsif_var, 31, "%s_if", wds);
 		if (!nvram_match(enabled_var, "0")) {
 #ifdef HAVE_MADWIFI
-			snprintf(wds_if, 31, "%s.wds%d", interface,
-				 (devcount++));
+			snprintf(wds_if, 31, "%s.wds%d", interface, (devcount++));
 #else
 			// quick and dirty
 			if (!strcmp(interface, "wl0"))
@@ -2586,9 +2450,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 			else if (!strcmp(interface, "wl1"))
 				snprintf(wds_if, 31, "wds1.%d", (devcount++));
 			else
-				snprintf(wds_if, 31, "wds%d.%d",
-					 get_wl_instance(interface),
-					 (devcount++));
+				snprintf(wds_if, 31, "wds%d.%d", get_wl_instance(interface), (devcount++));
 #endif
 			nvram_set(wdsif_var, wds_if);
 		} else
@@ -2607,17 +2469,7 @@ void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
 	char *ip0, *ip1, *ip2, *ip3, *ip4, *ip5;
 	char *ip_range0_0,
 	    *ip_range0_1,
-	    *ip_range0_2,
-	    *ip_range0_3,
-	    *ip_range0_4,
-	    *ip_range0_5,
-	    *ip_range0_6,
-	    *ip_range0_7,
-	    *ip_range1_0,
-	    *ip_range1_1,
-	    *ip_range1_2,
-	    *ip_range1_3,
-	    *ip_range1_4, *ip_range1_5, *ip_range1_6, *ip_range1_7;
+	    *ip_range0_2, *ip_range0_3, *ip_range0_4, *ip_range0_5, *ip_range0_6, *ip_range0_7, *ip_range1_0, *ip_range1_1, *ip_range1_2, *ip_range1_3, *ip_range1_4, *ip_range1_5, *ip_range1_6, *ip_range1_7;
 	unsigned char ip[10] = { 0, 0, 0, 0, 0, 0, 0 };
 	struct variable filter_ip_variables[] = {
 	      {argv:ARGV("0", "255")},
@@ -2670,10 +2522,7 @@ void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
 	    !valid_range(wp, ip_range1_1, &which[0]) ||
 	    !valid_range(wp, ip_range1_2, &which[0]) ||
 	    !valid_range(wp, ip_range1_3, &which[0]) ||
-	    !valid_range(wp, ip_range1_4, &which[0]) ||
-	    !valid_range(wp, ip_range1_5, &which[0]) ||
-	    !valid_range(wp, ip_range1_6, &which[0]) ||
-	    !valid_range(wp, ip_range1_7, &which[0])
+	    !valid_range(wp, ip_range1_4, &which[0]) || !valid_range(wp, ip_range1_5, &which[0]) || !valid_range(wp, ip_range1_6, &which[0]) || !valid_range(wp, ip_range1_7, &which[0])
 	    ) {
 		D("invalid range, return");
 		return;
@@ -2701,13 +2550,9 @@ void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
 	sprintf(buf,
 		"%d %d %d %d %d %d %s.%s.%s.%s-%s.%s.%s.%s %s.%s.%s.%s-%s.%s.%s.%s",
 		ip[0], ip[1], ip[2], ip[3], ip[4], ip[5], ip_range0_0,
-		ip_range0_1, ip_range0_2, ip_range0_3, ip_range0_4, ip_range0_5,
-		ip_range0_6, ip_range0_7, ip_range1_0, ip_range1_1, ip_range1_2,
-		ip_range1_3, ip_range1_4, ip_range1_5, ip_range1_6,
-		ip_range1_7);
+		ip_range0_1, ip_range0_2, ip_range0_3, ip_range0_4, ip_range0_5, ip_range0_6, ip_range0_7, ip_range1_0, ip_range1_1, ip_range1_2, ip_range1_3, ip_range1_4, ip_range1_5, ip_range1_6, ip_range1_7);
 
-	snprintf(_filter_ip, sizeof(_filter_ip), "filter_ip_grp%s",
-		 nvram_safe_get("filter_id"));
+	snprintf(_filter_ip, sizeof(_filter_ip), "filter_ip_grp%s", nvram_safe_get("filter_id"));
 	nvram_set(_filter_ip, buf);
 
 	// snprintf(_filter_rule, sizeof(_filter_rule), "filter_rule%s",
@@ -2747,8 +2592,7 @@ void validate_filter_port(webs_t wp, char *value, struct variable *v)
 		char *temp;
 
 		snprintf(filter_port, sizeof(filter_port), "proto%d", i);
-		snprintf(filter_port_start, sizeof(filter_port_start),
-			 "start%d", i);
+		snprintf(filter_port_start, sizeof(filter_port_start), "start%d", i);
 		snprintf(filter_port_end, sizeof(filter_port_end), "end%d", i);
 		port = websGetVar(wp, filter_port, NULL);
 		start = websGetVar(wp, filter_port_start, NULL);
@@ -2760,8 +2604,7 @@ void validate_filter_port(webs_t wp, char *value, struct variable *v)
 		if (!*start && !*end)
 			continue;
 
-		if ((!strcmp(start, "0") || !strcmp(start, "")) &&
-		    (!strcmp(end, "0") || !strcmp(end, "")))
+		if ((!strcmp(start, "0") || !strcmp(start, "")) && (!strcmp(end, "0") || !strcmp(end, "")))
 			continue;
 
 		if (!*start || !*end) {
@@ -2778,9 +2621,7 @@ void validate_filter_port(webs_t wp, char *value, struct variable *v)
 			start = end;
 			end = temp;
 		}
-		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s:%d-%d",
-				cur == buf ? "" : " ", port, atoi(start),
-				atoi(end));
+		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s:%d-%d", cur == buf ? "" : " ", port, atoi(start), atoi(end));
 	}
 
 	nvram_set(v->name, buf);
@@ -2812,8 +2653,7 @@ void validate_filter_dport_grp(webs_t wp, char *value, struct variable *v)
 		char *temp;
 
 		snprintf(filter_port, sizeof(filter_port), "proto%d", i);
-		snprintf(filter_port_start, sizeof(filter_port_start),
-			 "start%d", i);
+		snprintf(filter_port_start, sizeof(filter_port_start), "start%d", i);
 		snprintf(filter_port_end, sizeof(filter_port_end), "end%d", i);
 		port = websGetVar(wp, filter_port, NULL);
 		start = websGetVar(wp, filter_port_start, NULL);
@@ -2825,8 +2665,7 @@ void validate_filter_dport_grp(webs_t wp, char *value, struct variable *v)
 		if (!*start && !*end)
 			continue;
 
-		if ((!strcmp(start, "0") || !strcmp(start, "")) &&
-		    (!strcmp(end, "0") || !strcmp(end, "")))
+		if ((!strcmp(start, "0") || !strcmp(start, "")) && (!strcmp(end, "0") || !strcmp(end, "")))
 			continue;
 
 		if (!*start || !*end) {
@@ -2843,13 +2682,10 @@ void validate_filter_dport_grp(webs_t wp, char *value, struct variable *v)
 			start = end;
 			end = temp;
 		}
-		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s:%d-%d",
-				cur == buf ? "" : " ", port, atoi(start),
-				atoi(end));
+		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s:%d-%d", cur == buf ? "" : " ", port, atoi(start), atoi(end));
 	}
 
-	snprintf(_filter_port, sizeof(_filter_port), "filter_dport_grp%s",
-		 nvram_safe_get("filter_id"));
+	snprintf(_filter_port, sizeof(_filter_port), "filter_dport_grp%s", nvram_safe_get("filter_id"));
 	nvram_set(_filter_port, buf);
 
 	// snprintf(_filter_rule, sizeof(_filter_rule), "filter_rule%s",
@@ -2896,11 +2732,9 @@ void validate_filter_mac_grp(webs_t wp, char *value, struct variable *v)
 
 				while (*mac) {
 					strncpy(hex, mac, 2);
-					h = (unsigned char)strtoul(hex, NULL,
-								   16);
+					h = (unsigned char)strtoul(hex, NULL, 16);
 					if (strlen(mac1))
-						sprintf(mac1 + strlen(mac1),
-							":");
+						sprintf(mac1 + strlen(mac1), ":");
 					sprintf(mac1 + strlen(mac1), "%02X", h);
 					mac += 2;
 				}
@@ -2914,12 +2748,10 @@ void validate_filter_mac_grp(webs_t wp, char *value, struct variable *v)
 		} else {
 			continue;
 		}
-		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
-				cur == buf ? "" : " ", mac1);
+		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s", cur == buf ? "" : " ", mac1);
 	}
 
-	snprintf(_filter_mac, sizeof(_filter_mac), "filter_mac_grp%s",
-		 nvram_safe_get("filter_id"));
+	snprintf(_filter_mac, sizeof(_filter_mac), "filter_mac_grp%s", nvram_safe_get("filter_id"));
 	nvram_set(_filter_mac, buf);
 
 	// snprintf(_filter_rule, sizeof(_filter_rule), "filter_rule%s",
@@ -2961,15 +2793,13 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
 
 		if (startswith(host, "http://"))
 			offset = 7;
-		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
-				cur == buf ? "" : "<&nbsp;>", &host[offset]);
+		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s", cur == buf ? "" : "<&nbsp;>", &host[offset]);
 	}
 
 	if (strcmp(buf, ""))
 		strcat(buf, "<&nbsp;>");
 
-	snprintf(filter_host, sizeof(filter_host), "filter_web_host%s",
-		 nvram_safe_get("filter_id"));
+	snprintf(filter_host, sizeof(filter_host), "filter_web_host%s", nvram_safe_get("filter_id"));
 	nvram_set(filter_host, buf);
 
 	/*
@@ -2985,14 +2815,12 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
 		if (!strcmp(url, ""))
 			continue;
 
-		cur1 += snprintf(cur1, buf1 + sizeof(buf1) - cur1, "%s%s",
-				 cur1 == buf1 ? "" : "<&nbsp;>", url);
+		cur1 += snprintf(cur1, buf1 + sizeof(buf1) - cur1, "%s%s", cur1 == buf1 ? "" : "<&nbsp;>", url);
 	}
 	if (strcmp(buf1, ""))
 		strcat(buf1, "<&nbsp;>");
 
-	snprintf(filter_url, sizeof(filter_url), "filter_web_url%s",
-		 nvram_safe_get("filter_id"));
+	snprintf(filter_url, sizeof(filter_url), "filter_web_url%s", nvram_safe_get("filter_id"));
 	nvram_set(filter_url, buf1);
 	D("everything okay");
 }
@@ -3032,8 +2860,7 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 		char trigger_o_from[] = "o_fromXXX";
 		char trigger_o_to[] = "o_toXXX";
 		char trigger_proto[] = "proXXX";
-		char *name = "", *enable, new_name[200] = "", *i_from =
-		    "", *i_to = "", *o_from = "", *o_to = "", *proto = "both";
+		char *name = "", *enable, new_name[200] = "", *i_from = "", *i_to = "", *o_from = "", *o_to = "", *proto = "both";
 
 		snprintf(trigger_name, sizeof(trigger_name), "name%d", i);
 		snprintf(trigger_enable, sizeof(trigger_enable), "enable%d", i);
@@ -3055,10 +2882,7 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 		if (!i_from || !i_to || !o_from || !o_to)
 			continue;
 
-		if ((!strcmp(i_from, "0") || !strcmp(i_from, "")) &&
-		    (!strcmp(i_to, "0") || !strcmp(i_to, "")) &&
-		    (!strcmp(o_from, "0") || !strcmp(o_from, "")) &&
-		    (!strcmp(o_to, "0") || !strcmp(o_to, "")))
+		if ((!strcmp(i_from, "0") || !strcmp(i_from, "")) && (!strcmp(i_to, "0") || !strcmp(i_to, "")) && (!strcmp(o_from, "0") || !strcmp(o_from, "")) && (!strcmp(o_to, "0") || !strcmp(o_to, "")))
 			continue;
 
 		if (!strcmp(i_from, "0") || !strcmp(i_from, ""))
@@ -3081,8 +2905,7 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 				error = 1;
 				continue;
 			} else {
-				httpd_filter_name(name, new_name,
-						  sizeof(new_name), SET);
+				httpd_filter_name(name, new_name, sizeof(new_name), SET);
 			}
 		}
 
@@ -3107,9 +2930,7 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 			len++;
 		}
 		entry = (char *)safe_malloc(len);
-		sprintf(entry, "%s%s:%s:%s:%s-%s>%s-%s",
-			strlen(buf) > 0 ? " " : "", new_name, enable, proto,
-			i_from, i_to, o_from, o_to);
+		sprintf(entry, "%s%s:%s:%s:%s-%s>%s-%s", strlen(buf) > 0 ? " " : "", new_name, enable, proto, i_from, i_to, o_from, o_to);
 
 		/*cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%s-%s>%s-%s",
 		   cur == buf ? "" : " ", new_name, enable, proto,
@@ -3122,10 +2943,9 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 		buf = newbuf;
 	}
 
-	if (!error)
-		{
+	if (!error) {
 		nvram_set(v->name, buf);
-		}
+	}
 	free(buf);
 }
 
@@ -3140,20 +2960,16 @@ void validate_blocked_service(webs_t wp, char *value, struct variable *v)
 		char blocked_service[] = "blocked_serviceXXX";
 		char *service;
 
-		snprintf(blocked_service, sizeof(blocked_service),
-			 "blocked_service%d", i);
+		snprintf(blocked_service, sizeof(blocked_service), "blocked_service%d", i);
 		service = websGetVar(wp, blocked_service, NULL);
 		if (!service || !strcmp(service, "None"))
 			continue;
 
-		cur +=
-		    snprintf(cur, buf + sizeof(buf) - cur, "%s%s", service,
-			     "<&nbsp;>");
+		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s", service, "<&nbsp;>");
 		// cur == buf ? "" : "<&nbsp;>", service);
 	}
 
-	snprintf(port_grp, sizeof(port_grp), "filter_port_grp%s",
-		 nvram_safe_get("filter_id"));
+	snprintf(port_grp, sizeof(port_grp), "filter_port_grp%s", nvram_safe_get("filter_id"));
 	nvram_set(port_grp, buf);
 	D("right");
 }
@@ -3168,8 +2984,7 @@ void validate_catchall(webs_t wp, char *value, struct variable *v)
 
 	p2p = websGetVar(wp, "filter_p2p", NULL);
 	if (p2p) {
-		snprintf(port_grp, sizeof(port_grp), "filter_p2p_grp%s",
-			 nvram_safe_get("filter_id"));
+		snprintf(port_grp, sizeof(port_grp), "filter_p2p_grp%s", nvram_safe_get("filter_id"));
 		nvram_set(port_grp, p2p);
 	}
 
@@ -3202,8 +3017,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	char *cur;
 	char *cur_name;
 
-	char *name, ipaddr[20], netmask[20], gateway[20], *metric, *ifname,
-	    *page;
+	char *name, ipaddr[20], netmask[20], gateway[20], *metric, *ifname, *page;
 	char new_name[80];
 	char temp[60], *val = NULL;
 
@@ -3304,9 +3118,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 		tmp = 1;
 		goto write_nvram;
 	}
-	if ((!strcmp(ipaddr, "0.0.0.0") || !strcmp(ipaddr, "")) &&
-	    (!strcmp(netmask, "0.0.0.0") || !strcmp(netmask, "")) &&
-	    (!strcmp(gateway, "0.0.0.0") || !strcmp(gateway, ""))) {
+	if ((!strcmp(ipaddr, "0.0.0.0") || !strcmp(ipaddr, "")) && (!strcmp(netmask, "0.0.0.0") || !strcmp(netmask, "")) && (!strcmp(gateway, "0.0.0.0") || !strcmp(gateway, ""))) {
 		tmp = 0;
 		goto write_nvram;
 	}
@@ -3320,9 +3132,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	// }
 
 	if (!*ipaddr) {
-		websDebugWrite(wp,
-			       "Invalid <b>%s</b>: must specify an IP Address<br>",
-			       v->longname);
+		websDebugWrite(wp, "Invalid <b>%s</b>: must specify an IP Address<br>", v->longname);
 		// free (gateway);
 		// free (netmask);
 		// free (ipaddr);
@@ -3334,9 +3144,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 		return;
 	}
 	if (!*netmask) {
-		websDebugWrite(wp,
-			       "Invalid <b>%s</b>: must specify a Subnet Mask<br>",
-			       v->longname);
+		websDebugWrite(wp, "Invalid <b>%s</b>: must specify a Subnet Mask<br>", v->longname);
 		// free (gateway);
 		// free (netmask);
 		// free (ipaddr);
@@ -3347,9 +3155,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 
 		return;
 	}
-	if (!valid_ipaddr(wp, ipaddr, &static_route_variables[0]) ||
-	    !valid_netmask(wp, netmask, &static_route_variables[1]) ||
-	    !valid_ipaddr(wp, gateway, &static_route_variables[2])) {
+	if (!valid_ipaddr(wp, ipaddr, &static_route_variables[0]) || !valid_netmask(wp, netmask, &static_route_variables[1]) || !valid_ipaddr(wp, gateway, &static_route_variables[2])) {
 		// free (gateway);
 		// free (netmask);
 		// free (ipaddr);
@@ -3393,22 +3199,19 @@ write_nvram:
 	}
 
 	strcpy(backuproute, &old[atoi(page) * STATIC_ROUTE_PAGE]);
-	
+
 	if (!tmp) {
 		if (strlen(backuproute) > 0) {
 			addDeletion(backuproute);
 			memset(backuproute, 0, strlen(backuproute));
 		}
-		
+
 		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s", "");
 		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s", "");
 	} else {
-		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60,
-			 "%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric,
-			 ifname);
+		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname);
 		httpd_filter_name(name, new_name, sizeof(new_name), SET);
-		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60,
-			 "$NAME:%s$$", new_name);
+		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "$NAME:%s$$", new_name);
 	}
 	if (strcmp(backuproute, &old[atoi(page) * STATIC_ROUTE_PAGE])) {
 		if (strlen(backuproute) > 0) {
@@ -3423,19 +3226,14 @@ write_nvram:
 		//      cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
 		//                      cur == buf ? "" : " ", old[i]);
 		if (strcmp(&old_name[i * STATIC_ROUTE_PAGE], "")) {
-			cur += snprintf(cur, buf + 2500 - cur, "%s%s",
-					cur == buf ? "" : " ",
-					&old[i * STATIC_ROUTE_PAGE]);
-			cur_name +=
-			    snprintf(cur_name, buf_name + 2500 - cur_name,
-				     "%s%s", cur_name == buf_name ? "" : " ",
-				     &old_name[i * STATIC_ROUTE_PAGE]);
+			cur += snprintf(cur, buf + 2500 - cur, "%s%s", cur == buf ? "" : " ", &old[i * STATIC_ROUTE_PAGE]);
+			cur_name += snprintf(cur_name, buf_name + 2500 - cur_name, "%s%s", cur_name == buf_name ? "" : " ", &old_name[i * STATIC_ROUTE_PAGE]);
 		}
 	}
 
 	if (!strcmp(websGetVar(wp, "action", ""), "ApplyTake"))
 		delete_old_routes();
-	
+
 	nvram_set(v->name, buf);
 	nvram_set("static_route_name", buf_name);
 	nvram_commit();

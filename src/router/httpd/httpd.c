@@ -126,11 +126,7 @@ int my_ciphers[] = {
 char *dhm_P =
     "E4004C1F94182000103D883A448B3F80"
     "2CE4B44A83301270002C20D0321CFD00"
-    "11CCEF784C26A400F43DFB901BCA7538"
-    "F2C6B176001CF5A0FD16D2C48B1D0C1C"
-    "F6AC8E1DA6BCC3B4E1F96B0564965300"
-    "FFA1D0B601EB2800F489AA512C4B248C"
-    "01F76949A60BB7F00A40B1EAB64BDD48" "E8A700D60B7F1200FA8E77B0A979DABF";
+    "11CCEF784C26A400F43DFB901BCA7538" "F2C6B176001CF5A0FD16D2C48B1D0C1C" "F6AC8E1DA6BCC3B4E1F96B0564965300" "FFA1D0B601EB2800F489AA512C4B248C" "01F76949A60BB7F00A40B1EAB64BDD48" "E8A700D60B7F1200FA8E77B0A979DABF";
 
 char *dhm_G = "4";
 unsigned char session_table[SSL_SESSION_TBL_LEN];
@@ -174,11 +170,9 @@ extern char *get_mac_from_ip(char *ip);
 
 /* Forwards. */
 static int initialize_listen_socket(usockaddr * usaP);
-static int auth_check(char *user, char *pass, char *dirname,
-		      char *authorization);
+static int auth_check(char *user, char *pass, char *dirname, char *authorization);
 static void send_error(int status, char *title, char *extra_header, char *text);
-static void send_headers(int status, char *title, char *extra_header,
-			 char *mime_type, long length, char *attach_file);
+static void send_headers(int status, char *title, char *extra_header, char *mime_type, long length, char *attach_file);
 static int b64_decode(const char *str, unsigned char *space, int size);
 static int match(const char *pattern, const char *string);
 static int match_one(const char *pattern, int patternlen, const char *string);
@@ -201,8 +195,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 	}
 	(void)fcntl(listen_fd, F_SETFD, 1);
 	i = 1;
-	if (setsockopt
-	    (listen_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&i, sizeof(i)) < 0) {
+	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&i, sizeof(i)) < 0) {
 		perror("setsockopt");
 		return -1;
 	}
@@ -217,8 +210,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 	return listen_fd;
 }
 
-static int auth_check(char *user, char *pass, char *dirname,
-		      char *authorization)
+static int auth_check(char *user, char *pass, char *dirname, char *authorization)
 {
 	unsigned char authinfo[500];
 	unsigned char *authpass;
@@ -256,7 +248,7 @@ static int auth_check(char *user, char *pass, char *dirname,
 	char buf2[36];
 	char *enc1;
 	char *enc2;
-memdebug_enter();
+	memdebug_enter();
 	enc1 = crypt(authinfo, (unsigned char *)user);
 
 	if (strcmp(enc1, user)) {
@@ -267,7 +259,7 @@ memdebug_enter();
 	if (strcmp(enc2, pass)) {
 		return 0;
 	}
-memdebug_leave();
+	memdebug_leave();
 
 	if (strcmp(enc1, user) == 0 && strcmp(enc2, pass) == 0) {
 		return 1;
@@ -284,8 +276,7 @@ void send_authenticate(char *realm)
 {
 	char header[10000];
 
-	(void)snprintf(header, sizeof(header),
-		       "WWW-Authenticate: Basic realm=\"%s\"", realm);
+	(void)snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", realm);
 	send_error(401, "Unauthorized", header,
 #if defined(HAVE_BUFFALO) && defined(HAVE_IAS)
 		   "Authorization required. please note that the default username is \"admin\" in all newer releases");
@@ -299,17 +290,13 @@ static void send_error(int status, char *title, char *extra_header, char *text)
 
 	// jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
 	send_headers(status, title, extra_header, "text/html", 0, NULL);
-	(void)wfprintf(conn_fp,
-		       "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n",
-		       status, title, status, title);
+	(void)wfprintf(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
 	(void)wfprintf(conn_fp, "%s\n", text);
 	(void)wfprintf(conn_fp, "</BODY></HTML>\n");
 	(void)wfflush(conn_fp);
 }
 
-static void
-send_headers(int status, char *title, char *extra_header, char *mime_type,
-	     long length, char *attach_file)
+static void send_headers(int status, char *title, char *extra_header, char *mime_type, long length, char *attach_file)
 {
 	time_t now;
 	char timebuf[100];
@@ -323,14 +310,11 @@ send_headers(int status, char *title, char *extra_header, char *mime_type,
 	strftime(timebuf, sizeof(timebuf), RFC1123FMT, gmtime(&now));
 	wfprintf(conn_fp, "Date: %s\r\n", timebuf);
 	wfprintf(conn_fp, "Connection: close\r\n");
-	wfprintf(conn_fp,
-		 "Cache-Control: no-store, no-cache, must-revalidate\r\n");
+	wfprintf(conn_fp, "Cache-Control: no-store, no-cache, must-revalidate\r\n");
 	wfprintf(conn_fp, "Cache-Control: post-check=0, pre-check=0\r\n");
 	wfprintf(conn_fp, "Pragma: no-cache\r\n");
 	if (attach_file)
-		wfprintf(conn_fp,
-			 "Content-Disposition: attachment; filename=%s\r\n",
-			 attach_file);
+		wfprintf(conn_fp, "Content-Disposition: attachment; filename=%s\r\n", attach_file);
 	if (extra_header != (char *)0 && *extra_header)
 		wfprintf(conn_fp, "%s\r\n", extra_header);
 	if (length != 0)
@@ -476,8 +460,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 			return;
 		fseek(fp, 0, SEEK_END);
 		if (!handler->send_headers)
-			send_headers(200, "Ok", handler->extra_header,
-				     handler->mime_type, ftell(fp), attach);
+			send_headers(200, "Ok", handler->extra_header, handler->mime_type, ftell(fp), attach);
 		fseek(fp, 0, SEEK_SET);
 		while ((c = getc(fp)) != EOF)
 			wfputc(c, stream);	// jimmy, https, 8/4/2003
@@ -486,8 +469,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 		int len = getWebsFileLen(path);
 
 		if (!handler->send_headers)
-			send_headers(200, "Ok", handler->extra_header,
-				     handler->mime_type, len, attach);
+			send_headers(200, "Ok", handler->extra_header, handler->mime_type, len, attach);
 		int a;
 		char buf[128];
 		int tot = 0;
@@ -567,8 +549,7 @@ static int check_connect_type(void)
 		wlmac = get_wl_assoc_mac(j, &count_wl);
 
 		for (i = 0; i < count_wl; i++) {
-			if (!strcmp
-			    (wlmac[i].mac, nvram_safe_get("http_client_mac"))) {
+			if (!strcmp(wlmac[i].mac, nvram_safe_get("http_client_mac"))) {
 				cprintf("Can't accept wireless access\n");
 				ret = -1;
 			}
@@ -606,7 +587,7 @@ int containsstring(char *source, char *cmp)
 static char *last_log_ip = NULL;
 static int registered = -1;
 static int registered_real = -1;
-char *request_url=NULL;
+char *request_url = NULL;
 #ifdef HAVE_IAS
 char ias_sid[20];
 char ias_http_client_mac[20];
@@ -620,10 +601,9 @@ static void handle_request(void)
 {
 	char *query;
 	char *cur;
-	char *method, *path, *protocol, *authorization, *boundary, *referer,
-	    *host, *useragent;
+	char *method, *path, *protocol, *authorization, *boundary, *referer, *host, *useragent;
 	char *cp;
-	char *file=NULL;
+	char *file = NULL;
 	FILE *exec;
 	int len;
 	struct mime_handler *handler;
@@ -648,8 +628,7 @@ static void handle_request(void)
 	method = path = line;
 	strsep(&path, " ");
 	if (!path) {		// Avoid http server crash, added by honor 2003-12-08
-		send_error(400, "Bad Request", (char *)0,
-			   "Can't parse request.");
+		send_error(400, "Bad Request", (char *)0, "Can't parse request.");
 		return;
 	}
 	while (*path == ' ')
@@ -657,8 +636,7 @@ static void handle_request(void)
 	protocol = path;
 	strsep(&protocol, " ");
 	if (!protocol) {	// Avoid http server crash, added by honor 2003-12-08
-		send_error(400, "Bad Request", (char *)0,
-			   "Can't parse request.");
+		send_error(400, "Bad Request", (char *)0, "Can't parse request.");
 		return;
 	}
 	while (*protocol == ' ')
@@ -694,8 +672,7 @@ static void handle_request(void)
 
 		} else if ((cp = strstr(cur, "boundary="))) {
 			boundary = &cp[9];
-			for (cp = cp + 9; *cp && *cp != '\r' && *cp != '\n';
-			     cp++) ;
+			for (cp = cp + 9; *cp && *cp != '\r' && *cp != '\n'; cp++) ;
 			*cp = '\0';
 			cur = ++cp;
 		} else if (strncasecmp(cur, "User-Agent:", 11) == 0) {
@@ -707,8 +684,7 @@ static void handle_request(void)
 	}
 
 	if (strcasecmp(method, "get") != 0 && strcasecmp(method, "post") != 0) {
-		send_error(501, "Not Implemented", (char *)0,
-			   "That method is not implemented.");
+		send_error(501, "Not Implemented", (char *)0, "That method is not implemented.");
 		return;
 	}
 	if (path[0] != '/') {
@@ -717,17 +693,14 @@ static void handle_request(void)
 	}
 	file = &(path[1]);
 	len = strlen(file);
-	if (file[0] == '/' || strcmp(file, "..") == 0
-	    || strncmp(file, "../", 3) == 0
-	    || strstr(file, "/../") != (char *)0
-	    || strcmp(&(file[len - 3]), "/..") == 0) {
+	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != (char *)0 || strcmp(&(file[len - 3]), "/..") == 0) {
 		send_error(400, "Bad Request", (char *)0, "Illegal filename.");
 		return;
 	}
 	int nodetect = 0;
 	if (nvram_match("status_auth", "0") && endswith(file, "Info.htm"))
 		nodetect = 1;
-	if (nvram_match("no_crossdetect","1"))
+	if (nvram_match("no_crossdetect", "1"))
 		nodetect = 1;
 #ifdef HAVE_IAS
 	if (nvram_match("ias_startup", "3") || nvram_match("ias_startup", "2"))
@@ -752,21 +725,16 @@ static void handle_request(void)
 			int c = 0;
 
 			for (a = 0; a < hlen; a++)
-				if (host[a] == ' ' || host[a] == '\r'
-				    || host[a] == '\n' || host[a] == '\t')
+				if (host[a] == ' ' || host[a] == '\r' || host[a] == '\n' || host[a] == '\t')
 					host[a] = 0;
 			hlen = strlen(host);
 			for (a = i; a < rlen; a++) {
 				if (referer[a] == '/') {
-					send_error(400, "Bad Request",
-						   (char *)0,
-						   "Cross Site Action detected!");
+					send_error(400, "Bad Request", (char *)0, "Cross Site Action detected!");
 					return;
 				}
 				if (host[c++] != referer[a]) {
-					send_error(400, "Bad Request",
-						   (char *)0,
-						   "Cross Site Action detected!");
+					send_error(400, "Bad Request", (char *)0, "Cross Site Action detected!");
 					return;
 				}
 				if (c == hlen) {
@@ -775,8 +743,7 @@ static void handle_request(void)
 				}
 			}
 			if (c != hlen || referer[a] != '/') {
-				send_error(400, "Bad Request", (char *)0,
-					   "Cross Site Action detected!");
+				send_error(400, "Bad Request", (char *)0, "Cross Site Action detected!");
 				return;
 			}
 		}
@@ -794,9 +761,9 @@ static void handle_request(void)
 #endif
 
 	// save the originally requested url
-	if (request_url) // ahm, we should check for null
-	    free(request_url);
-	request_url = safe_malloc(len+1);
+	if (request_url)	// ahm, we should check for null
+		free(request_url);
+	request_url = safe_malloc(len + 1);
 	strcpy(request_url, file);
 
 #ifdef HAVE_SKYTRON
@@ -809,57 +776,53 @@ static void handle_request(void)
 	int ias_startup = atoi(nvram_safe_get("ias_startup"));
 	int ias_detected = 0;
 
-	if(ias_startup > 1) {
-	
-		if(endswith(file, "?ias_detect")) {
+	if (ias_startup > 1) {
+
+		if (endswith(file, "?ias_detect")) {
 			ias_detected = 1;
 			fprintf(stderr, "[HTTP PATH] %s detected (%d)\n", file, ias_startup);
 		}
 
 		if (!endswith(file, ".js") && !endswith(file, "detect.asp")
-		     && ias_detected == 0
-		     && nvram_match("ias_startup", "3")) {
-		
+		    && ias_detected == 0 && nvram_match("ias_startup", "3")) {
+
 			fprintf(stderr, "[HTTP PATH] %s redirect\n", file);
 			send_headers(302, "Found", "Location: http://192.168.11.1/detect.asp", "", 0, NULL);
 			return;
-			
-		} else if(ias_detected == 1) {
+
+		} else if (ias_detected == 1) {
 			fprintf(stderr, "[HTTP PATH] %s redirected\n", file);
 			nvram_set("ias_startup", "2");
-		}	
+		}
 	}
-	
-	if(!ias_sid_valid()
-	   && (endswith(file, "InternetAtStart.asp") || endswith(file, "detect.asp") || endswith(file, "?ias_detect")) 
-           && strstr(useragent, "Android"))
+
+	if (!ias_sid_valid()
+	    && (endswith(file, "InternetAtStart.asp") || endswith(file, "detect.asp") || endswith(file, "?ias_detect"))
+	    && strstr(useragent, "Android"))
 		ias_sid_set();
-	
+
 	char hostname[32];
-	if(strlen(host) < 32
-	   && ias_detected == 1
-	   && (nvram_match("ias_dnsresp", "1"))) {
+	if (strlen(host) < 32 && ias_detected == 1 && (nvram_match("ias_dnsresp", "1"))) {
 		strncpy(hostname, host, strspn(host, "123456789.:"));
-		if(!strcmp(hostname, nvram_get("lan_ipaddr"))) {
-			
-			nvram_unset("ias_dnsresp");	
-			
-			sysprintf("iptables -t nat -D PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:55300",
-				  nvram_get("lan_ipaddr"));
-		
+		if (!strcmp(hostname, nvram_get("lan_ipaddr"))) {
+
+			nvram_unset("ias_dnsresp");
+
+			sysprintf("iptables -t nat -D PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:55300", nvram_get("lan_ipaddr"));
+
 			char buf[128];
 			char call[64];
 			int pid;
 			char *statusfile = "/tmp/.ias_status";
 			FILE *fp;
-			
+
 			sprintf(call, "ps | grep \"dns_responder\" > %s", statusfile);
 			system(call);
 			fp = fopen(statusfile, "r");
-			if(fp) {
+			if (fp) {
 				while (fgets(buf, sizeof(buf), fp)) {
-					if(strstr(buf, nvram_get("lan_ipaddr"))) {
-						if(sscanf(buf, "%d ", &pid)) {
+					if (strstr(buf, nvram_get("lan_ipaddr"))) {
+						if (sscanf(buf, "%d ", &pid)) {
 							sprintf(call, "kill %d", pid);
 							system(call);
 						}
@@ -869,7 +832,7 @@ static void handle_request(void)
 				fclose(fp);
 				unlink(statusfile);
 			}
-		
+
 		}
 	}
 #endif
@@ -904,14 +867,11 @@ static void handle_request(void)
 	if (containsstring(file, "cgi-bin")) {
 
 		auth_fail = 0;
-		if (!do_auth
-		    (conn_fp, auth_userid, auth_passwd, auth_realm,
-		     authorization, auth_check))
+		if (!do_auth(conn_fp, auth_userid, auth_passwd, auth_realm, authorization, auth_check))
 			auth_fail = 1;
 		query = NULL;
 		if (check_connect_type() < 0) {
-			send_error(401, "Bad Request", (char *)0,
-				   "Can't use wireless interface to access GUI.");
+			send_error(401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
 			return;
 		}
 		if (auth_fail == 1) {
@@ -930,20 +890,14 @@ static void handle_request(void)
 			}
 #if defined(linux)
 #ifdef HAVE_HTTPS
-			if (!do_ssl
-			    && (flags =
-				fcntl(fileno(conn_fp->fp), F_GETFL)) != -1
-			    && fcntl(fileno(conn_fp->fp), F_SETFL,
-				     flags | O_NONBLOCK) != -1) {
+			if (!do_ssl && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
 				/* Read up to two more characters */
 				if (fgetc(conn_fp->fp) != EOF)
 					(void)fgetc(conn_fp->fp);
 				fcntl(fileno(conn_fp->fp), F_SETFL, flags);
 			}
 #else
-			if ((flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1
-			    && fcntl(fileno(conn_fp->fp), F_SETFL,
-				     flags | O_NONBLOCK) != -1) {
+			if ((flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
 				/* Read up to two more characters */
 				if (fgetc(conn_fp->fp) != EOF)
 					(void)fgetc(conn_fp->fp);
@@ -956,11 +910,9 @@ static void handle_request(void)
 		exec = fopen("/tmp/exec.tmp", "wb");
 		fprintf(exec, "export REQUEST_METHOD=\"%s\"\n", method);
 		if (query)
-			fprintf(exec, "/bin/sh %s/%s</tmp/exec.query\n",
-				server_dir != NULL ? server_dir : "/www", file);
+			fprintf(exec, "/bin/sh %s/%s</tmp/exec.query\n", server_dir != NULL ? server_dir : "/www", file);
 		else
-			fprintf(exec, "/%s/%s\n",
-				server_dir != NULL ? server_dir : "/www", file);
+			fprintf(exec, "/%s/%s\n", server_dir != NULL ? server_dir : "/www", file);
 		fclose(exec);
 
 		if (query) {
@@ -970,7 +922,7 @@ static void handle_request(void)
 			fclose(exec);
 		}
 
-		chmod("/tmp/exec.tmp",0700);
+		chmod("/tmp/exec.tmp", 0700);
 		system2("/tmp/exec.tmp>/tmp/shellout.asp");
 
 		do_ej(NULL, "/tmp/shellout.asp", conn_fp, "");
@@ -1018,7 +970,8 @@ static void handle_request(void)
 				else if (endswith(file, ".html"))
 					file = "changepass.asp";
 			} else {
-				if (endswith(file, "changepass.asp")) { if (nvram_invmatch("status_auth", "0"))
+				if (endswith(file, "changepass.asp")) {
+					if (nvram_invmatch("status_auth", "0"))
 						file = "Info.htm";
 					else
 						file = "index.asp";
@@ -1033,127 +986,105 @@ static void handle_request(void)
 #ifdef HAVE_REGISTER
 				if (registered)
 #endif
-{
-memdebug_enter();
+				{
+					memdebug_enter();
 					if (!changepassword && handler->auth) {
-						int result =
-						    handler->auth(conn_fp,
-								  auth_userid,
-								  auth_passwd,
-								  auth_realm,
-								  authorization,
-								  auth_check);
+						int result = handler->auth(conn_fp,
+									   auth_userid,
+									   auth_passwd,
+									   auth_realm,
+									   authorization,
+									   auth_check);
 
 #ifdef HAVE_IAS
-						if (!result 
-						    && !((!strcmp(file, "apply.cgi") || !strcmp(file,"InternetAtStart.ajax.asp"))
-						    && strstr(useragent, "Android")
-						    && ias_sid_valid())) {
-fprintf(stderr, "[AUTH FAIL]: %s", useragent);
+						if (!result && !((!strcmp(file, "apply.cgi") || !strcmp(file, "InternetAtStart.ajax.asp"))
+								 && strstr(useragent, "Android")
+								 && ias_sid_valid())) {
+							fprintf(stderr, "[AUTH FAIL]: %s", useragent);
 #else
 						if (!result) {
 #endif
 							auth_fail = 0;
-							send_authenticate
-							    (auth_realm);
+							send_authenticate(auth_realm);
 							return;
 						}
 					}
-memdebug_leave_info("auth");
-}
+					memdebug_leave_info("auth");
+				}
 				post = 0;
 				if (strcasecmp(method, "post") == 0) {
 					post = 1;
 				}
-{
-memdebug_enter();
-				if (handler->input)
-					handler->input(file, conn_fp, cl,
-						       boundary);
-memdebug_leave_info("input");
-}
+				{
+					memdebug_enter();
+					if (handler->input)
+						handler->input(file, conn_fp, cl, boundary);
+					memdebug_leave_info("input");
+				}
 #if defined(linux)
 #ifdef HAVE_HTTPS
-				if (!do_ssl
-				    && (flags =
-					fcntl(fileno(conn_fp->fp),
-					      F_GETFL)) != -1
-				    && fcntl(fileno(conn_fp->fp), F_SETFL,
-					     flags | O_NONBLOCK) != -1) {
+				if (!do_ssl && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
 					/* Read up to two more characters */
 					if (fgetc(conn_fp->fp) != EOF)
 						(void)fgetc(conn_fp->fp);
-					fcntl(fileno(conn_fp->fp), F_SETFL,
-					      flags);
+					fcntl(fileno(conn_fp->fp), F_SETFL, flags);
 				}
 #else
-				if ((flags =
-				     fcntl(fileno(conn_fp->fp), F_GETFL)) != -1
-				    && fcntl(fileno(conn_fp->fp), F_SETFL,
-					     flags | O_NONBLOCK) != -1) {
+				if ((flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
 					/* Read up to two more characters */
 					if (fgetc(conn_fp->fp) != EOF)
 						(void)fgetc(conn_fp->fp);
-					fcntl(fileno(conn_fp->fp), F_SETFL,
-					      flags);
+					fcntl(fileno(conn_fp->fp), F_SETFL, flags);
 				}
 #endif
 #endif
-{
-memdebug_enter();
-				if (check_connect_type() < 0) {
-					send_error(401, "Bad Request",
-						   (char *)0,
-						   "Can't use wireless interface to access GUI.");
-					return;
+				{
+					memdebug_enter();
+					if (check_connect_type() < 0) {
+						send_error(401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
+						return;
+					}
+					memdebug_leave_info("connect");
 				}
-memdebug_leave_info("connect");
-}
-{
-memdebug_enter();
-				if (auth_fail == 1) {
-					send_authenticate(auth_realm);
-					auth_fail = 0;
-					return;
-				} else {
-					if(handler->output != do_file)
-						if (handler->send_headers)
-							send_headers(200, "Ok",
-								     handler->extra_header,
-								     handler->mime_type,
-								     0, NULL);
+				{
+					memdebug_enter();
+					if (auth_fail == 1) {
+						send_authenticate(auth_realm);
+						auth_fail = 0;
+						return;
+					} else {
+						if (handler->output != do_file)
+							if (handler->send_headers)
+								send_headers(200, "Ok", handler->extra_header, handler->mime_type, 0, NULL);
+					}
+					memdebug_leave_info("auth_output");
 				}
-memdebug_leave_info("auth_output");
-}
 
-{
-memdebug_enter();
-				// check for do_file handler and check if file exists
-				file_found = 1;
-				if(handler->output == do_file) {
-					if(getWebsFileLen(file) == 0) {
-						if (!(fp = fopen(file, "rb"))) {
-							file_found = 0;
-						} else {
-							fclose(fp);
+				{
+					memdebug_enter();
+					// check for do_file handler and check if file exists
+					file_found = 1;
+					if (handler->output == do_file) {
+						if (getWebsFileLen(file) == 0) {
+							if (!(fp = fopen(file, "rb"))) {
+								file_found = 0;
+							} else {
+								fclose(fp);
+							}
 						}
 					}
-				} 
-				if (handler->output && file_found) {
-					handler->output(handler, file, conn_fp,
-							query);
-				} else {
-					send_error(404, "Not Found", (char *)0,
-						   "File not found.");
+					if (handler->output && file_found) {
+						handler->output(handler, file, conn_fp, query);
+					} else {
+						send_error(404, "Not Found", (char *)0, "File not found.");
+					}
+					break;
+					memdebug_leave_info("output");
 				}
-				break;
-memdebug_leave_info("output");
-}
 			}
 
 			if (!handler->pattern)
-				send_error(404, "Not Found", (char *)0,
-					   "File not found.");
+				send_error(404, "Not Found", (char *)0, "File not found.");
 		}
 	}
 }
@@ -1180,8 +1111,7 @@ get_client_ip_mac(int conn_fp)
 static void handle_server_sig_int(int sig)
 {
 #ifdef HAVE_HTTPS
-	ct_syslog(LOG_INFO, httpd_level, "httpd server %sshutdown",
-		  do_ssl ? "(ssl support) " : "");
+	ct_syslog(LOG_INFO, httpd_level, "httpd server %sshutdown", do_ssl ? "(ssl support) " : "");
 #else
 	ct_syslog(LOG_INFO, httpd_level, "httpd server shutdown");
 #endif
@@ -1200,9 +1130,9 @@ void settimeouts(int sock, int secs)
 		perror("setsockopt(SO_RCVTIMEO)");
 }
 
-static void sigchld (int sig)
+static void sigchld(int sig)
 {
-	while (waitpid(-1, NULL, WNOHANG) > 0);
+	while (waitpid(-1, NULL, WNOHANG) > 0) ;
 }
 
 static void set_sigchld_handler(void)
@@ -1281,11 +1211,9 @@ int main(int argc, char **argv)
 #ifdef HAVE_HTTPS
 				"	-S : Support https (port 443)\n"
 #endif
-				"	-p port : Which port to listen?\n"
-				"	-t secs : How many seconds to wait before timing out?\n"
+				"	-p port : Which port to listen?\n" "	-t secs : How many seconds to wait before timing out?\n"
 #ifdef DEBUG_CIPHER
-				"	-s ciphers: set cipher lists\n"
-				"	-g: get cipher lists\n"
+				"	-s ciphers: set cipher lists\n" "	-g: get cipher lists\n"
 #endif
 				"	-h: home directory: use directory\n", argv[0]);
 			exit(0);
@@ -1294,14 +1222,11 @@ int main(int argc, char **argv)
 			break;
 		}
 
-	httpd_level =
-	    ct_openlog("httpd", LOG_PID | LOG_NDELAY, LOG_DAEMON, "LOG_HTTPD");
+	httpd_level = ct_openlog("httpd", LOG_PID | LOG_NDELAY, LOG_DAEMON, "LOG_HTTPD");
 #ifdef HAVE_HTTPS
-	ct_syslog(LOG_INFO, httpd_level, "httpd server %sstarted at port %d\n",
-		  do_ssl ? "(ssl support) " : "", server_port);
+	ct_syslog(LOG_INFO, httpd_level, "httpd server %sstarted at port %d\n", do_ssl ? "(ssl support) " : "", server_port);
 #else
-	ct_syslog(LOG_INFO, httpd_level, "httpd server started at port %d\n",
-		  server_port);
+	ct_syslog(LOG_INFO, httpd_level, "httpd server started at port %d\n", server_port);
 #endif
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
@@ -1317,8 +1242,7 @@ int main(int argc, char **argv)
 		SSLeay_add_ssl_algorithms();
 		SSL_load_error_strings();
 		ctx = SSL_CTX_new(SSLv23_server_method());
-		if (SSL_CTX_use_certificate_file
-		    (ctx, CERT_FILE, SSL_FILETYPE_PEM)
+		if (SSL_CTX_use_certificate_file(ctx, CERT_FILE, SSL_FILETYPE_PEM)
 		    == 0) {
 			cprintf("Can't read %s\n", CERT_FILE);
 			ERR_print_errors_fp(stderr);
@@ -1355,10 +1279,8 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_MATRIXSSL
 		matrixssl_init();
-		if (0 !=
-		    matrixSslReadKeys(&keys, CERT_FILE, KEY_FILE, NULL, NULL)) {
-			fprintf(stderr, "Error reading or parsing %s.\n",
-				KEY_FILE);
+		if (0 != matrixSslReadKeys(&keys, CERT_FILE, KEY_FILE, NULL, NULL)) {
+			fprintf(stderr, "Error reading or parsing %s.\n", KEY_FILE);
 			exit(0);
 		}
 #endif
@@ -1399,10 +1321,8 @@ int main(int argc, char **argv)
 		settimeouts(conn_fd, timeout);
 		fcntl(conn_fd, F_SETFD, fcntl(conn_fd, F_GETFD) | FD_CLOEXEC);
 
-
 		if (check_action() == ACT_TFTP_UPGRADE ||	// We don't want user to use web during tftp upgrade.
-		    check_action() == ACT_SW_RESTORE ||
-		    check_action() == ACT_HW_RESTORE) {
+		    check_action() == ACT_SW_RESTORE || check_action() == ACT_HW_RESTORE) {
 			fprintf(stderr, "http(s)d: nothing to do...\n");
 			return -1;
 		}
@@ -1420,8 +1340,7 @@ int main(int argc, char **argv)
 
 			if ((r = SSL_accept(ssl) <= 0)) {
 				//berr_exit("SSL accept error");
-				ct_syslog(LOG_ERR, httpd_level,
-					  "SSL accept error");
+				ct_syslog(LOG_ERR, httpd_level, "SSL accept error");
 				close(conn_fd);
 				continue;
 			}
@@ -1478,18 +1397,18 @@ int main(int argc, char **argv)
 				return errno;
 			}
 		}
-{
-memdebug_enter();
-		get_client_ip_mac(conn_fd);
-memdebug_leave_info("get_client_ip_mac");
-}
-{
-memdebug_enter();
+		{
+			memdebug_enter();
+			get_client_ip_mac(conn_fd);
+			memdebug_leave_info("get_client_ip_mac");
+		}
+		{
+			memdebug_enter();
 
-		handle_request();
+			handle_request();
 
-memdebug_leave_info("handle_request");
-}
+			memdebug_leave_info("handle_request");
+		}
 		wfflush(conn_fp);	// jimmy, https, 8/4/2003
 #ifdef HAVE_HTTPS
 #ifdef XYSSL_SUPPORT
@@ -1523,8 +1442,7 @@ char *wfgets(char *buf, int len, webs_t wp)
 	else
 #elif defined(HAVE_XYSSL)
 	if (do_ssl)
-		return (char *)ssl_read_line((ssl_context *) fp,
-					     (unsigned char *)buf, &len);
+		return (char *)ssl_read_line((ssl_context *) fp, (unsigned char *)buf, &len);
 	else
 #endif
 #endif
@@ -1567,8 +1485,7 @@ int wfputs(char *buf, webs_t wp)
 	else
 #elif defined(HAVE_XYSSL)
 	if (do_ssl)
-		return ssl_write((ssl_context *) fp, (unsigned char *)buf,
-				 strlen(buf));
+		return ssl_write((ssl_context *) fp, (unsigned char *)buf, strlen(buf));
 	else
 #endif
 #endif
@@ -1651,8 +1568,7 @@ size_t wfwrite(char *buf, int size, int n, webs_t wp)
 	else
 #elif defined(HAVE_XYSSL)
 	if (do_ssl)
-		return ssl_write((ssl_context *) fp, (unsigned char *)buf,
-				 n * size);
+		return ssl_write((ssl_context *) fp, (unsigned char *)buf, n * size);
 	else
 #endif
 #endif
@@ -1739,18 +1655,20 @@ int wfclose(webs_t wp)
 #endif
 #endif
 	{
-	    int ret = fclose(fp);
-	    wp->fp = NULL;
-	    return ret;
+		int ret = fclose(fp);
+		wp->fp = NULL;
+		return ret;
 	}
 }
+
 #ifdef HAVE_IAS
-void ias_sid_set() {
-	
+void ias_sid_set()
+{
+
 	struct sysinfo sinfo;
-	
+
 	sysinfo(&sinfo);
-	if(strlen(ias_http_client_mac)) {
+	if (strlen(ias_http_client_mac)) {
 		ias_sid_timeout = sinfo.uptime + 300;
 		sprintf(ias_sid, "%s", ias_http_client_mac);
 		fprintf(stderr, "[IAS SID SET] %d %s\n", ias_sid_timeout, ias_sid);
@@ -1758,23 +1676,24 @@ void ias_sid_set() {
 	return;
 }
 
-int ias_sid_valid() {
-	
+int ias_sid_valid()
+{
+
 	struct sysinfo sinfo;
 	char *mac;
-	
-	if(!ias_sid_timeout && (!ias_sid || !strcmp(ias_sid, "")))
+
+	if (!ias_sid_timeout && (!ias_sid || !strcmp(ias_sid, "")))
 		return 0;
-		
+
 	sysinfo(&sinfo);
 	mac = ias_http_client_mac;
-	if(sinfo.uptime > ias_sid_timeout || (strcmp(mac, ias_sid) && strlen(mac))) {
+	if (sinfo.uptime > ias_sid_timeout || (strcmp(mac, ias_sid) && strlen(mac))) {
 		fprintf(stderr, "[IAS SID RESET] %d<>%d %s<>%s\n", sinfo.uptime, ias_sid_timeout, mac, ias_sid);
 		ias_sid_timeout = 0;
 		sprintf(ias_sid, "");
 		return 0;
 	} else
 		ias_sid_timeout = sinfo.uptime + 300;
-		return 1;
+	return 1;
 }
 #endif

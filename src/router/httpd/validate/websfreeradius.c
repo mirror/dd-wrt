@@ -48,12 +48,9 @@ void radius_generate_certificate(webs_t wp)
 	nvram_set("radius_country", websGetVar(wp, "radius_country", ""));
 	nvram_set("radius_state", websGetVar(wp, "radius_state", ""));
 	nvram_set("radius_locality", websGetVar(wp, "radius_locality", ""));
-	nvram_set("radius_expiration",
-		  websGetVar(wp, "radius_expiration", "365"));
-	nvram_set("radius_passphrase",
-		  websGetVar(wp, "radius_passphrase", "whatever"));
-	nvram_set("radius_organisation",
-		  websGetVar(wp, "radius_organisation", ""));
+	nvram_set("radius_expiration", websGetVar(wp, "radius_expiration", "365"));
+	nvram_set("radius_passphrase", websGetVar(wp, "radius_passphrase", "whatever"));
+	nvram_set("radius_organisation", websGetVar(wp, "radius_organisation", ""));
 	nvram_set("radius_email", websGetVar(wp, "radius_email", ""));
 	nvram_set("radius_common", websGetVar(wp, "radius_common", ""));
 
@@ -98,9 +95,7 @@ void add_radius_user(webs_t wp)
 		db->usercount = 0;
 		db->users = safe_malloc(sizeof(struct radiususer));
 	} else {
-		db->users =
-		    realloc(db->users,
-			    sizeof(struct radiususer) * (db->usercount + 1));
+		db->users = realloc(db->users, sizeof(struct radiususer) * (db->usercount + 1));
 	}
 	db->users[db->usercount].fieldlen = sizeof(struct radiususer) - 8;
 	db->users[db->usercount].usersize = 0;
@@ -129,14 +124,10 @@ void del_radius_user(webs_t wp)
 	if (db->usercount == 0)
 		return;
 	if (db->usercount > 1)
-		memcpy(&db->users[todel], &db->users[todel + 1],
-		       sizeof(struct radiususer) * ((db->usercount - 1) -
-						    todel));
+		memcpy(&db->users[todel], &db->users[todel + 1], sizeof(struct radiususer) * ((db->usercount - 1) - todel));
 	db->usercount--;
 	if (db->usercount > 0)
-		db->users =
-		    realloc(db->users,
-			    sizeof(struct radiususer) * (db->usercount));
+		db->users = realloc(db->users, sizeof(struct radiususer) * (db->usercount));
 	else {
 		free(db->users);
 		db->users = NULL;
@@ -154,9 +145,7 @@ void add_radius_client(webs_t wp)
 		db->usercount = 0;
 		db->users = safe_malloc(sizeof(struct radiusclient));
 	} else {
-		db->users =
-		    realloc(db->users,
-			    sizeof(struct radiusclient) * (db->usercount + 1));
+		db->users = realloc(db->users, sizeof(struct radiusclient) * (db->usercount + 1));
 	}
 	db->users[db->usercount].fieldlen = sizeof(struct radiususer) - 8;
 	db->users[db->usercount].clientsize = 0;
@@ -181,14 +170,10 @@ void del_radius_client(webs_t wp)
 	if (db->usercount == 0)
 		return;
 	if (db->usercount > 1)
-		memcpy(&db->users[todel], &db->users[todel + 1],
-		       sizeof(struct radiusclient) * ((db->usercount - 1) -
-						      todel));
+		memcpy(&db->users[todel], &db->users[todel + 1], sizeof(struct radiusclient) * ((db->usercount - 1) - todel));
 	db->usercount--;
 	if (db->usercount > 0)
-		db->users =
-		    realloc(db->users,
-			    sizeof(struct radiusclient) * (db->usercount));
+		db->users = realloc(db->users, sizeof(struct radiusclient) * (db->usercount));
 	else {
 		free(db->users);
 		db->users = NULL;
@@ -214,9 +199,7 @@ static void save_radius_clients(webs_t wp)
 		if (!p)
 			break;
 
-		db->users =
-		    realloc(db->users,
-			    sizeof(struct radiusclient) * (db->usercount + 1));
+		db->users = realloc(db->users, sizeof(struct radiusclient) * (db->usercount + 1));
 
 		db->users[db->usercount].client = safe_malloc(strlen(u) + 1);
 		strcpy(db->users[db->usercount].client, u);
@@ -255,8 +238,7 @@ static void save_radius_users(webs_t wp)
 		char *u = websGetVar(wp, user, NULL);
 		if (!u)
 			break;
-		sprintf(filename,
-			"/jffs/etc/freeradius/certs/clients/%s-cert.pem", u);
+		sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.pem", u);
 		sysprintf("rm -f %s", filename);
 		char *p = websGetVar(wp, passwd, NULL);
 		if (!p)
@@ -274,12 +256,10 @@ static void save_radius_users(webs_t wp)
 		if (!e)
 			break;
 
-		char *en = websGetVar(wp, enabled, "0"); // returns NULL if not set
+		char *en = websGetVar(wp, enabled, "0");	// returns NULL if not set
 		if (!en)
 			break;
-		db->users =
-		    realloc(db->users,
-			    sizeof(struct radiususer) * (db->usercount + 1));
+		db->users = realloc(db->users, sizeof(struct radiususer) * (db->usercount + 1));
 
 		db->users[db->usercount].user = safe_malloc(strlen(u) + 1);
 		strcpy(db->users[db->usercount].user, u);
@@ -312,9 +292,8 @@ void save_radius_user(webs_t wp)
 
 	char *value = websGetVar(wp, "action", "");
 	addAction("freeradius");
-	nvram_set("nowebaction","1");
+	nvram_set("nowebaction", "1");
 	applytake(value);
 }
 
 #endif
-

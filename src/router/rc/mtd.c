@@ -140,21 +140,17 @@ int mtd_erase(const char *mtd)
 
 	erase_info.length = mtd_info.erasesize;
 #if defined(HAVE_80211AC) && !defined(HAVE_NORTHSTAR)
-	for (erase_info.start = 0;
-	     erase_info.start < mtd_info.size;
-	     erase_info.start += mtd_info.erasesize) {
+	for (erase_info.start = 0; erase_info.start < mtd_info.size; erase_info.start += mtd_info.erasesize) {
 		fprintf(stderr, "erase[%d]\r", erase_info.start);
 		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-			fprintf(stderr,"\nerror on sector %d, skip\n",erase_info.start);
+			fprintf(stderr, "\nerror on sector %d, skip\n", erase_info.start);
 			continue;
 		}
 	}
 #else
 
-	for (erase_info.start = 0;
-	     erase_info.start < mtd_info.size;
-	     erase_info.start += mtd_info.erasesize) {
+	for (erase_info.start = 0; erase_info.start < mtd_info.size; erase_info.start += mtd_info.erasesize) {
 		fprintf(stderr, "erase[%d]\r", erase_info.start);
 		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
@@ -237,8 +233,7 @@ int mtd_write(const char *path, const char *mtd)
 	 */
 	if (brand == ROUTER_NETGEAR_WGR614L) {
 		if ((fp = fopen("/dev/mtdblock/1", "rb")))
-			count =
-			    safe_fread(&trx, 1, sizeof(struct trx_header), fp);
+			count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
 		else
 			return -1;
 
@@ -250,10 +245,7 @@ int mtd_write(const char *path, const char *mtd)
 #ifdef HAVE_BCMMODERN
 	unsigned long trxhd = STORE32_LE(TRX_MAGIC);
 
-	if (brand == ROUTER_BELKIN_F7D3301
-	    || brand == ROUTER_BELKIN_F7D3302
-	    || brand == ROUTER_BELKIN_F7D4302
-	    || brand == ROUTER_BELKIN_F5D8235V3) {
+	if (brand == ROUTER_BELKIN_F7D3301 || brand == ROUTER_BELKIN_F7D3302 || brand == ROUTER_BELKIN_F7D4302 || brand == ROUTER_BELKIN_F5D8235V3) {
 		if ((fp = fopen("/dev/mtdblock/1", "rb"))) {
 			fread(&trxhd, 4, 1, fp);
 			fclose(fp);
@@ -268,8 +260,7 @@ int mtd_write(const char *path, const char *mtd)
 	 * Examine TRX header 
 	 */
 #ifdef HAVE_WRT160NL
-	fprintf(stderr, "size of ETRX header = %d\n",
-		sizeof(struct etrx_header));
+	fprintf(stderr, "size of ETRX header = %d\n", sizeof(struct etrx_header));
 	if ((fp = fopen(path, "r")))
 		count = safe_fread(&etrx, 1, sizeof(struct etrx_header), fp);
 	else
@@ -284,8 +275,7 @@ int mtd_write(const char *path, const char *mtd)
 #endif
 	// count = http_get (path, (char *) &trx, sizeof (struct trx_header), 0);
 	if (count < sizeof(struct trx_header)) {
-		fprintf(stderr, "%s: File is too small (%ld bytes)\n", path,
-			count);
+		fprintf(stderr, "%s: File is too small (%ld bytes)\n", path, count);
 		goto fail;
 	}
 	sysinfo(&info);
@@ -373,9 +363,7 @@ int mtd_write(const char *path, const char *mtd)
 	/* 
 	 * Open MTD device and get sector size 
 	 */
-	if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0 ||
-	    ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0 ||
-	    mtd_info.erasesize < sizeof(struct trx_header)) {
+	if ((mtd_fd = mtd_open(mtd, O_RDWR)) < 0 || ioctl(mtd_fd, MEMGETINFO, &mtd_info) != 0 || mtd_info.erasesize < sizeof(struct trx_header)) {
 		perror(mtd);
 		goto fail;
 	}
@@ -393,14 +381,12 @@ int mtd_write(const char *path, const char *mtd)
 	/* 
 	 * See if we have enough memory to store the whole file 
 	 */
-	fprintf(stderr, "freeram=[%ld] bufferram=[%ld]\n", info.freeram,
-		info.bufferram);
+	fprintf(stderr, "freeram=[%ld] bufferram=[%ld]\n", info.freeram, info.bufferram);
 	int mul = 1;		// temporarily use 1 instead of 4 until we
 
 	// found a a solution
 	if ((info.freeram + info.bufferram) >= (trx.len + 4 * 1024 * 1024)) {
-		fprintf(stderr,
-			"The free memory is enough, writing image once.\n");
+		fprintf(stderr, "The free memory is enough, writing image once.\n");
 		/* 
 		 * Begin to write image after all image be downloaded by web upgrade.
 		 * In order to avoid upgrade fail if user unplug the ethernet cable
@@ -411,9 +397,7 @@ int mtd_write(const char *path, const char *mtd)
 		erase_info.length = ROUNDUP(trx.len, mtd_info.erasesize);
 	} else {
 		erase_info.length = mtd_info.erasesize * mul;
-		fprintf(stderr,
-			"The free memory is not enough, writing image per %d bytes.\n",
-			erase_info.length);
+		fprintf(stderr, "The free memory is not enough, writing image per %d bytes.\n", erase_info.length);
 	}
 
 	/* 
@@ -422,9 +406,7 @@ int mtd_write(const char *path, const char *mtd)
 	if (!(buf = malloc(erase_info.length))) {
 		mul = 1;
 		erase_info.length = mtd_info.erasesize * mul;
-		fprintf(stderr,
-			"The free memory is not enough, writing image per %d bytes.\n",
-			erase_info.length);
+		fprintf(stderr, "The free memory is not enough, writing image per %d bytes.\n", erase_info.length);
 		if (!(buf = malloc(erase_info.length))) {
 			perror("malloc");
 			goto fail;
@@ -434,10 +416,7 @@ int mtd_write(const char *path, const char *mtd)
 	/* 
 	 * Calculate CRC over header 
 	 */
-	crc = crc32((uint8 *) & trx.flag_version,
-		    sizeof(struct trx_header) - OFFSETOF(struct trx_header,
-							 flag_version),
-		    CRC32_INIT_VALUE);
+	crc = crc32((uint8 *) & trx.flag_version, sizeof(struct trx_header) - OFFSETOF(struct trx_header, flag_version), CRC32_INIT_VALUE);
 	crc_data = 0;
 #ifndef NETGEAR_CRC_FAKE
 	calculate_checksum(0, NULL, 0);	// init
@@ -445,8 +424,7 @@ int mtd_write(const char *path, const char *mtd)
 	/* 
 	 * Write file or URL to MTD device 
 	 */
-	for (erase_info.start = 0; erase_info.start < trx.len;
-	     erase_info.start += count) {
+	for (erase_info.start = 0; erase_info.start < trx.len; erase_info.start += count) {
 		len = MIN(erase_info.length, trx.len - erase_info.start);
 		if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER)
 		    || erase_info.start)
@@ -475,9 +453,7 @@ int mtd_write(const char *path, const char *mtd)
 		if (((count < len)
 		     && (len - off) > (mtd_info.erasesize * mul))
 		    || (count == 0)) {
-			fprintf(stderr,
-				"%s: Truncated file (actual %ld expect %ld)\n",
-				path, count - off, len - off);
+			fprintf(stderr, "%s: Truncated file (actual %ld expect %ld)\n", path, count - off, len - off);
 			goto fail;
 		}
 		/* 
@@ -490,8 +466,7 @@ int mtd_write(const char *path, const char *mtd)
 
 		if (!squashfound) {
 			for (i = 0; i < (count - off); i++) {
-				unsigned int *sq =
-				    (unsigned int *)&buf[off + i];
+				unsigned int *sq = (unsigned int *)&buf[off + i];
 
 				if (*sq == SQUASHFS_MAGIC) {
 					squashfound = 1;
@@ -514,8 +489,7 @@ int mtd_write(const char *path, const char *mtd)
 				goto fail;
 			} else {
 				fprintf(stderr, "%s: CRC OK\n", mtd);
-				fprintf(stderr,
-					"Writing image to flash, waiting a moment...\n");
+				fprintf(stderr, "Writing image to flash, waiting a moment...\n");
 			}
 		}
 		erase_info.length = mtd_info.erasesize;
@@ -524,48 +498,36 @@ int mtd_write(const char *path, const char *mtd)
 		int base = erase_info.start;
 #if defined(HAVE_80211AC) && !defined(HAVE_NORTHSTAR)
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
-			int redo=0;
+			int redo = 0;
 		      again:;
-			fprintf(stderr,
-				"write block [%ld] at [0x%08X]        \n",
-				i * mtd_info.erasesize,
-				base + ((i + skipoffset) * mtd_info.erasesize));
-			erase_info.start =
-			    base + ((i + skipoffset) * mtd_info.erasesize);
+			fprintf(stderr, "write block [%ld] at [0x%08X]        \n", i * mtd_info.erasesize, base + ((i + skipoffset) * mtd_info.erasesize));
+			erase_info.start = base + ((i + skipoffset) * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-				fprintf(stderr,
-					"erase/write failed, skip block\n");
+				fprintf(stderr, "erase/write failed, skip block\n");
 				skipoffset++;
 				goto again;
 			}
 			lseek(mtd_fd, (i + skipoffset) * mtd_info.erasesize, SEEK_SET);
-			
-			if (write(mtd_fd,buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
-				fprintf(stderr,"try again %d\n",redo++);
-				if (redo<10)
-				    goto again;
+
+			if (write(mtd_fd, buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
+				fprintf(stderr, "try again %d\n", redo++);
+				if (redo < 10)
+					goto again;
 				goto fail;
 			}
 
 		}
 #else
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
-			fprintf(stderr,
-				"write block [%ld] at [0x%08X]        \n",
-				i * mtd_info.erasesize,
-				base + (i * mtd_info.erasesize));
+			fprintf(stderr, "write block [%ld] at [0x%08X]        \n", i * mtd_info.erasesize, base + (i * mtd_info.erasesize));
 			erase_info.start = base + (i * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0
-			    || write(mtd_fd, buf + (i * mtd_info.erasesize),
-				     mtd_info.erasesize) !=
-			    mtd_info.erasesize) {
+			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0 || write(mtd_fd, buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
 				perror(mtd);
 				goto fail;
 			}
 		}
-
 
 #endif
 	}
@@ -574,10 +536,7 @@ int mtd_write(const char *path, const char *mtd)
 	 */
 	int sector_start;
 	char *tmp;
-	if (brand == ROUTER_NETGEAR_WGR614L
-	    || brand == ROUTER_NETGEAR_WNR834B
-	    || brand == ROUTER_NETGEAR_WNR834BV2
-	    || brand == ROUTER_NETGEAR_WNDR3300
+	if (brand == ROUTER_NETGEAR_WGR614L || brand == ROUTER_NETGEAR_WNR834B || brand == ROUTER_NETGEAR_WNR834BV2 || brand == ROUTER_NETGEAR_WNDR3300
 //          || brand == ROUTER_NETGEAR_WNDR4000
 	    || brand == ROUTER_NETGEAR_WNR3500L) {
 #ifndef NETGEAR_CRC_FAKE
@@ -607,9 +566,7 @@ int mtd_write(const char *path, const char *mtd)
 #endif
 		memcpy(&imageInfo[0], (char *)&trx.len, 4);
 		memcpy(&imageInfo[4], (char *)&cal_chksum, 4);
-		sector_start =
-		    ((flash_len_chk_addr -
-		      cfe_size) / mtd_info.erasesize) * mtd_info.erasesize;
+		sector_start = ((flash_len_chk_addr - cfe_size) / mtd_info.erasesize) * mtd_info.erasesize;
 		if (lseek(mtd_fd, sector_start, SEEK_SET) < 0) {
 			//fprintf( stderr, "Error seeking the file descriptor\n" );
 			goto fail;
@@ -640,32 +597,24 @@ int mtd_write(const char *path, const char *mtd)
 			goto fail;
 		}
 
-		tmp =
-		    buf +
-		    ((flash_len_chk_addr - cfe_size) % mtd_info.erasesize);
+		tmp = buf + ((flash_len_chk_addr - cfe_size) % mtd_info.erasesize);
 		memcpy(tmp, imageInfo, sizeof(imageInfo));
-		if (write(mtd_fd, buf, mtd_info.erasesize) !=
-		    mtd_info.erasesize) {
+		if (write(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error writing chksum to MTD device\n" );
 			goto fail;
 		}
 		//fprintf( stderr, "TRX LEN = %x , CHECKSUM = %x\n", trx.len, cal_chksum );
 #ifndef NETGEAR_CRC_FAKE
-		fprintf(stderr,
-			"Write len/chksum @ 0x%X ...done.\n",
-			flash_len_chk_addr);
+		fprintf(stderr, "Write len/chksum @ 0x%X ...done.\n", flash_len_chk_addr);
 #else
-		fprintf(stderr,
-			"Write fake len/chksum @ 0x%X ...done.\n",
-			flash_len_chk_addr);
+		fprintf(stderr, "Write fake len/chksum @ 0x%X ...done.\n", flash_len_chk_addr);
 #endif
 	}
 
 	/* Write old lzma loader */
 	if (brand == ROUTER_NETGEAR_WGR614L) {
 		int offset = trx.offsets[0];
-		sector_start =
-		    (offset / mtd_info.erasesize) * mtd_info.erasesize;
+		sector_start = (offset / mtd_info.erasesize) * mtd_info.erasesize;
 		if (lseek(mtd_fd, sector_start, SEEK_SET) < 0) {
 			//fprintf( stderr, "Error seeking the file descriptor\n" );
 			goto fail;
@@ -704,8 +653,7 @@ int mtd_write(const char *path, const char *mtd)
 			memset(buf, 0, mtd_info.erasesize);	//destroy 1st block, which puts router into tftp mode to allow recover
 			//fprintf( stderr, "LZMA loader size too large, space=%d needed=%d\n", trx.offsets[1] - trx.offsets[0], WGR614_LZMA_LOADER_SIZE );
 		}
-		if (write(mtd_fd, buf, mtd_info.erasesize) !=
-		    mtd_info.erasesize) {
+		if (write(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error writing LZMA loader to MTD device\n" );
 			goto fail;
 		}
@@ -715,10 +663,7 @@ int mtd_write(const char *path, const char *mtd)
 
 #ifdef HAVE_BCMMODERN
 	/* Write Belkin magic */
-	if (brand == ROUTER_BELKIN_F7D3301
-	    || brand == ROUTER_BELKIN_F7D3302
-	    || brand == ROUTER_BELKIN_F7D4302
-	    || brand == ROUTER_BELKIN_F5D8235V3) {
+	if (brand == ROUTER_BELKIN_F7D3301 || brand == ROUTER_BELKIN_F7D3302 || brand == ROUTER_BELKIN_F7D4302 || brand == ROUTER_BELKIN_F5D8235V3) {
 
 		sector_start = 0;
 		unsigned long be_magic = STORE32_LE(trxhd);
@@ -755,8 +700,7 @@ int mtd_write(const char *path, const char *mtd)
 		}
 
 		memcpy(buf, be_trx, 4);
-		if (write(mtd_fd, buf, mtd_info.erasesize) !=
-		    mtd_info.erasesize) {
+		if (write(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error writing Belkin magic to MTD device\n" );
 			goto fail;
 		}

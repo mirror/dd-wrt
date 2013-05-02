@@ -29,13 +29,13 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #endif
 
-
 static struct unl unl;
-static void __attribute__((constructor)) mac80211_init(void) {
+static void __attribute__((constructor)) mac80211_init(void)
+{
 	static bool bunl;
 	if (!bunl) {
 		unl_genl_init(&unl, "nl80211");
-		bunl=1;
+		bunl = 1;
 	}
 }
 
@@ -58,10 +58,10 @@ struct frequency {
 static LIST_HEAD(frequencies);
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
-	[NL80211_SURVEY_INFO_FREQUENCY] = { .type = NLA_U32 },
-	[NL80211_SURVEY_INFO_NOISE] = { .type = NLA_U8 },
-	[NL80211_SURVEY_INFO_CHANNEL_TIME] = { .type = NLA_U64 },
-	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = { .type = NLA_U64 },
+	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32},
+	[NL80211_SURVEY_INFO_NOISE] = {.type = NLA_U8},
+	[NL80211_SURVEY_INFO_CHANNEL_TIME] = {.type = NLA_U64},
+	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = {.type = NLA_U64},
 };
 
 #ifdef HAVE_BUFFALO
@@ -106,7 +106,7 @@ static bool in_range(unsigned long freq)
 }
 
 static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
-	[NL80211_FREQUENCY_ATTR_FREQ] = { .type = NLA_U32 },
+	[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32},
 };
 
 static int freq_list(struct unl *unl, int phy)
@@ -116,7 +116,7 @@ static int freq_list(struct unl *unl, int phy)
 	struct nl_msg *msg;
 	struct nlattr *band, *bands, *freqlist, *freq;
 	int rem, rem2, freq_mhz, chan;
-	
+
 	msg = unl_genl_msg(unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(unl, msg, &msg) < 0)
@@ -127,14 +127,12 @@ static int freq_list(struct unl *unl, int phy)
 		goto out;
 
 	nla_for_each_nested(band, bands, rem) {
-		freqlist = nla_find(nla_data(band), nla_len(band),
-				    NL80211_BAND_ATTR_FREQS);
+		freqlist = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_FREQS);
 		if (!freqlist)
 			continue;
 
 		nla_for_each_nested(freq, freqlist, rem2) {
-			nla_parse_nested(tb, NL80211_FREQUENCY_ATTR_MAX,
-					 freq, freq_policy);
+			nla_parse_nested(tb, NL80211_FREQUENCY_ATTR_MAX, freq, freq_policy);
 			if (!tb[NL80211_FREQUENCY_ATTR_FREQ])
 				continue;
 
@@ -145,11 +143,10 @@ static int freq_list(struct unl *unl, int phy)
 			if (!in_range(freq_mhz))
 				continue;
 #if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
-			if( (!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US")) 
-			     && ieee80211_mhz2ieee(freq_mhz) > 11 && ieee80211_mhz2ieee(freq_mhz) < 14
-			     && nvram_default_match("region", "SA", ""))
+			if ((!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US"))
+			    && ieee80211_mhz2ieee(freq_mhz) > 11 && ieee80211_mhz2ieee(freq_mhz) < 14 && nvram_default_match("region", "SA", ""))
 				continue;
-#endif 
+#endif
 #if defined(HAVE_BUFFALO) && defined(HAVE_WZRHPAG300NH)
 			if (tb[NL80211_FREQUENCY_ATTR_RADAR])
 				continue;
@@ -169,7 +166,6 @@ nla_put_failure:
 	nlmsg_free(msg);
 	return NL_SKIP;
 }
-
 
 int mac80211_parse_survey(struct nl_msg *msg, struct nlattr **sinfo);
 
@@ -200,8 +196,7 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 	if (!f)
 		goto out;
 
-	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] &&
-	    sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
+	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] && sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
 		uint64_t time, busy;
 
 		time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
@@ -299,7 +294,7 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 	idx = (f->freq - 2412) / 5;
 
 	/* strongly discourage the use of channels other than 1,6,11 */
-	if (f->freq >= 2412 && f->freq <=2484 && idx < ARRAY_SIZE(bias_2g))
+	if (f->freq >= 2412 && f->freq <= 2484 && idx < ARRAY_SIZE(bias_2g))
 		c = (c * bias_2g[idx]) / 100;
 
 	/* subtract 2 * the number of db that the noise value is over the
@@ -324,9 +319,10 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 }
 
 // leave space for enhencements with more cards and already chosen channels...
-struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive) {
+struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive)
+{
 	struct mac80211_ac *acs = NULL;
-	struct frequency *f,*ftmp;
+	struct frequency *f, *ftmp;
 	int verbose = 0;
 	int i, ch;
 	struct sort_data sdata;
@@ -334,7 +330,8 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 
 	unsigned int count = ammount;
 
-	if (scans==0) scans=2;
+	if (scans == 0)
+		scans = 2;
 
 	wdev = if_nametoindex(interface);
 	if (wdev < 0) {
@@ -382,13 +379,13 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 
 		if (count-- == 0)
 			break;
-		acs=add_to_mac80211_ac(acs);
-		acs->freq=f->freq;
-		acs->quality=f->quality;
-		acs->noise=f->noise;
+		acs = add_to_mac80211_ac(acs);
+		acs->freq = f->freq;
+		acs->quality = f->quality;
+		acs->noise = f->noise;
 	}
 
-	list_for_each_entry_safe(f,ftmp, &frequencies, list) {
+	list_for_each_entry_safe(f, ftmp, &frequencies, list) {
 		list_del(&f->list);
 		free(f);
 	}
@@ -398,23 +395,23 @@ out:
 }
 
 // thats wrong order
-static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root){
-		struct mac80211_ac *new = calloc(1, sizeof(struct mac80211_ac));
-		if (new == NULL) {
-			fprintf(stderr, "mac80211_autochannel add_to_mac80211_ac: Out of memory!\n");
-			return(NULL);
-			}
-		else
-			{
-			 new->next =  list_root;
-			 return(new);
-			}
-		}
+static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root)
+{
+	struct mac80211_ac *new = calloc(1, sizeof(struct mac80211_ac));
+	if (new == NULL) {
+		fprintf(stderr, "mac80211_autochannel add_to_mac80211_ac: Out of memory!\n");
+		return (NULL);
+	} else {
+		new->next = list_root;
+		return (new);
+	}
+}
 
-void free_mac80211_ac(struct mac80211_ac *acs) {
+void free_mac80211_ac(struct mac80211_ac *acs)
+{
 	while (acs) {
 		struct mac80211_ac *next = acs->next;
 		free(acs);
 		acs = next;
-		}
 	}
+}

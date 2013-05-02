@@ -87,11 +87,7 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 				       &info.rx_bytes, &info.rx_pks,
 				       &info.rx_errs, &info.rx_drops,
 				       &info.rx_fifo, &info.rx_frame,
-				       &info.rx_com, &info.rx_mcast,
-				       &info.tx_bytes, &info.tx_pks,
-				       &info.tx_errs, &info.tx_drops,
-				       &info.tx_fifo, &info.tx_colls,
-				       &info.tx_carr, &info.tx_com);
+				       &info.rx_com, &info.rx_mcast, &info.tx_bytes, &info.tx_pks, &info.tx_errs, &info.tx_drops, &info.tx_fifo, &info.tx_colls, &info.tx_carr, &info.tx_com);
 			}
 
 		}
@@ -102,8 +98,7 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "SWRXerrorPacket=%ld;", info.rx_errs + info.rx_drops);
 
 	websWrite(wp, "SWTXgoodPacket=%ld;", info.tx_pks);
-	websWrite(wp, "SWTXerrorPacket=%ld;",
-		  info.tx_errs + info.tx_drops + info.tx_colls);
+	websWrite(wp, "SWTXerrorPacket=%ld;", info.tx_errs + info.tx_drops + info.tx_colls);
 
 	return;
 }
@@ -146,10 +141,7 @@ int StartContinueTx(webs_t wp, char *value)
 	dprintf
 	    ("gmode=[%s](%d), channel=[%s](%d), rate=[%s](%d), rates=(%f), txant=[%s](%d)\n",
 	     tx_gmode ? tx_gmode : "NULL", tx_gmode ? gmode : -1,
-	     tx_channel ? tx_channel : "NULL", tx_channel ? channel : -1,
-	     tx_rate ? tx_rate : "NULL", tx_rate ? rate : -1,
-	     tx_rate ? rates : -1, tx_ant ? tx_ant : "NULL",
-	     tx_ant ? txant : -1);
+	     tx_channel ? tx_channel : "NULL", tx_channel ? channel : -1, tx_rate ? tx_rate : "NULL", tx_rate ? rate : -1, tx_rate ? rates : -1, tx_ant ? tx_ant : "NULL", tx_ant ? txant : -1);
 
 	printf("value=[%d]\n", atoi(value));
 	switch (atoi(value)) {
@@ -205,15 +197,10 @@ int StartContinueTx(webs_t wp, char *value)
 
 				sscanf(line, "%27c%s", string, value);
 				if (!memcmp(string, patt1, strlen(patt1))) {
-					cprintf
-					    ("Set [%s] to \"wl_cck_result\"\n",
-					     value);
+					cprintf("Set [%s] to \"wl_cck_result\"\n", value);
 					nvram_set("wl_cck_result", value);
-				} else
-				    if (!memcmp(string, patt2, strlen(patt2))) {
-					cprintf
-					    ("Set [%s] to \"wl_ofdm_result\"\n",
-					     value);
+				} else if (!memcmp(string, patt2, strlen(patt2))) {
+					cprintf("Set [%s] to \"wl_ofdm_result\"\n", value);
 					nvram_set("wl_ofdm_result", value);
 				}
 			}
@@ -317,8 +304,7 @@ int Check_TSSI(webs_t wp, char *value)
 	idelay = atoi(nvram_safe_get("wl_delay"));
 	// tssi_check=atoi(nvram_safe_get("wl_tssi_check"));
 
-	dprintf("wl_atten_bb=[%s], wl_atten_radio=[%s], wl_atten_ctl=[%s]\n",
-		wl_atten_bb, wl_atten_radio, wl_atten_ctl);
+	dprintf("wl_atten_bb=[%s], wl_atten_radio=[%s], wl_atten_ctl=[%s]\n", wl_atten_bb, wl_atten_radio, wl_atten_ctl);
 
 	memset(buf, 0, sizeof(buf));
 	sprintf(buf, "wl atten %s %s %s", value, wl_atten_radio, wl_atten_ctl);
@@ -475,8 +461,7 @@ int StartContinueTx_4702(webs_t wp, char *value)
 	tx_channel = websGetVar(wp, "wl_channel", NULL);
 	tx_rate = websGetVar(wp, "wl_rate", NULL);
 
-	printf("\ngmode=%s,channel=%s,rate=%s\n", tx_gmode, tx_channel,
-	       tx_rate);
+	printf("\ngmode=%s,channel=%s,rate=%s\n", tx_gmode, tx_channel, tx_rate);
 	channel = atoi(tx_channel);
 	rate = atoi(tx_rate);
 	gmode = atoi(tx_gmode);

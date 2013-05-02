@@ -64,8 +64,7 @@ int http_stats(const char *url)
 	 */
 	for (cur = files; *cur; cur++) {
 		if ((contents = file2str(*cur))) {
-			s += snprintf(s, buf + BUFSPACE - s, "%s=%s&", *cur,
-				      contents);
+			s += snprintf(s, buf + BUFSPACE - s, "%s=%s&", *cur, contents);
 			free(contents);
 		}
 	}
@@ -73,8 +72,7 @@ int http_stats(const char *url)
 	/*
 	 * Report uptime 
 	 */
-	s += snprintf(s, buf + BUFSPACE - s, "uptime=%lu&",
-		      (unsigned long)time(NULL));
+	s += snprintf(s, buf + BUFSPACE - s, "uptime=%lu&", (unsigned long)time(NULL));
 
 	/*
 	 * Save 

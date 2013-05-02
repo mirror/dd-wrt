@@ -105,15 +105,9 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 	if (!strcmp(wan_proto, "pptp")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("pptp_get_ip") :
-		    nvram_safe_get("wan_ipaddr");
-		wan_netmask =
-		    wan_link ? nvram_safe_get("wan_netmask") :
-		    nvram_safe_get("wan_netmask");
-			wan_gateway =
-			    wan_link ? nvram_safe_get("wan_gateway") :
-			    nvram_safe_get("pptp_server_ip");
+		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_ipaddr");
+		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") : nvram_safe_get("wan_netmask");
+		wan_gateway = wan_link ? nvram_safe_get("wan_gateway") : nvram_safe_get("pptp_server_ip");
 	} else if (!strcmp(wan_proto, "pppoe")
 #ifdef HAVE_PPPOATM
 		   || !strcmp(wan_proto, "pppoa")
@@ -125,24 +119,15 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		   || !strcmp(wan_proto, "iphone")
 #endif
 	    ) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
-		wan_netmask =
-		    wan_link ? nvram_safe_get("wan_netmask") : "0.0.0.0";
-		wan_gateway =
-		    wan_link ? nvram_safe_get("wan_gateway") : "0.0.0.0";
+		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") : "0.0.0.0";
+		wan_gateway = wan_link ? nvram_safe_get("wan_gateway") : "0.0.0.0";
 	}
 #ifdef HAVE_L2TP
 	else if (!strcmp(wan_proto, "l2tp")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("l2tp_get_ip") :
-		    nvram_safe_get("wan_ipaddr");
-		wan_netmask =
-		    wan_link ? nvram_safe_get("wan_netmask") :
-		    nvram_safe_get("wan_netmask");
-		wan_gateway =
-		    wan_link ? nvram_safe_get("wan_gateway") :
-		    nvram_safe_get("wan_gateway");
+		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") : nvram_safe_get("wan_ipaddr");
+		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") : nvram_safe_get("wan_netmask");
+		wan_gateway = wan_link ? nvram_safe_get("wan_gateway") : nvram_safe_get("wan_gateway");
 	}
 #endif
 	else {
@@ -254,13 +239,13 @@ void ej_show_status(webs_t wp, int argc, char_t ** argv)
 	char buf[254];
 
 #ifdef HAVE_DSL_CPE_CONTROL
-	if( argc > 0 ) {
-		if( !strcmp(argv[0], "adsl") ) {
+	if (argc > 0) {
+		if (!strcmp(argv[0], "adsl")) {
 			websWrite(wp, "{dsl_iface_status::%s}\n", nvram_get("dsl_iface_status"));
-			websWrite(wp, "{dsl_datarate_ds::%11.2f}\n",atof(nvram_get("dsl_datarate_ds")));
-			websWrite(wp, "{dsl_datarate_us::%11.2f}\n",atof(nvram_get("dsl_datarate_us")));
-			websWrite(wp, "{dsl_snr_down::%d}\n",atoi(nvram_get("dsl_snr_down")));
-			websWrite(wp, "{dsl_snr_up::%d}\n",atoi(nvram_get("dsl_snr_up")));
+			websWrite(wp, "{dsl_datarate_ds::%11.2f}\n", atof(nvram_get("dsl_datarate_ds")));
+			websWrite(wp, "{dsl_datarate_us::%11.2f}\n", atof(nvram_get("dsl_datarate_us")));
+			websWrite(wp, "{dsl_snr_down::%d}\n", atoi(nvram_get("dsl_snr_down")));
+			websWrite(wp, "{dsl_snr_up::%d}\n", atoi(nvram_get("dsl_snr_up")));
 		}
 	}
 #endif
@@ -321,9 +306,7 @@ void ej_show_status(webs_t wp, int argc, char_t ** argv)
 				// refresh
 				retry_count = -1;
 
-			refresh_time =
-			    (retry_count <=
-			     0) ? STATUS_REFRESH_TIME2 : STATUS_REFRESH_TIME1;
+			refresh_time = (retry_count <= 0) ? STATUS_REFRESH_TIME2 : STATUS_REFRESH_TIME1;
 
 		} else if (!strcmp(type, "refresh_time")) {
 
@@ -333,8 +316,7 @@ void ej_show_status(webs_t wp, int argc, char_t ** argv)
 				// disconnect, show Alert message.
 				websWrite(wp, "ShowAlert(\"TIMEOUT\");");
 				retry_count = -1;
-			} else
-			    if (file_to_buf("/tmp/ppp/log", buf, sizeof(buf))) {
+			} else if (file_to_buf("/tmp/ppp/log", buf, sizeof(buf))) {
 				websWrite(wp, "ShowAlert(\"%s\");", buf);
 				retry_count = -1;
 				unlink("/tmp/ppp/log");

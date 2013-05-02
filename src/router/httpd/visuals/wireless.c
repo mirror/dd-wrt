@@ -90,19 +90,19 @@ char *wl_filter_mac_get(char *ifname2, char *type, int which)
 		if (which-- == 0) {
 #ifdef HAVE_SPOTPASS
 			//rep( word, '/', ' ');
-			if( sscanf(word, "%17s/%i", &mac, &wildcard) != 0) {
+			if (sscanf(word, "%17s/%i", &mac, &wildcard) != 0) {
 				wildcard = wildcard / 4;
-				for( count = strlen(mac) - 1; wildcard > 0; count-- ) {
-					if(mac[count] != ':') {
+				for (count = strlen(mac) - 1; wildcard > 0; count--) {
+					if (mac[count] != ':') {
 						mac[count] = '*';
 						wildcard--;
 					}
 				}
 				return mac;
-			
+
 			} else
 #endif
-			return word;
+				return word;
 		}
 	}
 	return "";
@@ -159,8 +159,7 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 #else
 				  "<div class=\"setting\"><div class=\"label\" style=\"width: 17%%\">%s %03d : </div><input maxlength=\"17\" style=\"float: left; width: 30%%;\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>",
 #endif
-				  mac_mess, item, BOX_LEN, ifname, item - 1,
-				  wl_filter_mac_get(ifname, "mac", item - 1));
+				  mac_mess, item, BOX_LEN, ifname, item - 1, wl_filter_mac_get(ifname, "mac", item - 1));
 
 			websWrite(wp,
 #ifdef HAVE_SPOTPASS
@@ -168,13 +167,7 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 #else
 				  "<div class=\"label\" style=\"width: 17%%; margin-left: 7px;\">%s %03d : </div><input style=\"width: 30%%;\" maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
 #endif
-				  mac_mess, item + (WL_FILTER_MAC_NUM / 2),
-				  BOX_LEN, ifname,
-				  item + (WL_FILTER_MAC_NUM / 2) - 1,
-				  wl_filter_mac_get(ifname, "mac",
-						    item +
-						    (WL_FILTER_MAC_NUM / 2) -
-						    1));
+				  mac_mess, item + (WL_FILTER_MAC_NUM / 2), BOX_LEN, ifname, item + (WL_FILTER_MAC_NUM / 2) - 1, wl_filter_mac_get(ifname, "mac", item + (WL_FILTER_MAC_NUM / 2) - 1));
 
 		}
 
@@ -188,18 +181,11 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 
 			websWrite(wp,
 				  "<div class=\"setting\"><div class=\"label\" style=\"width: 17%%\">%s %03d : </div><input maxlength=\"17\" style=\"float: left; width: 30%%;\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>",
-				  mac_mess, item, BOX_LEN, ifname, item - 1,
-				  wl_filter_mac_get(ifname, "mac", item - 1));
+				  mac_mess, item, BOX_LEN, ifname, item - 1, wl_filter_mac_get(ifname, "mac", item - 1));
 
 			websWrite(wp,
 				  "<div class=\"label\" style=\"width: 17%%; margin-left: 7px;\">%s %03d : </div><input style=\"width: 30%%;\" maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
-				  mac_mess, item + (WL_FILTER_MAC_NUM / 2),
-				  BOX_LEN, ifname,
-				  item + (WL_FILTER_MAC_NUM / 2) - 1,
-				  wl_filter_mac_get(ifname, "mac",
-						    item +
-						    (WL_FILTER_MAC_NUM / 2) -
-						    1));
+				  mac_mess, item + (WL_FILTER_MAC_NUM / 2), BOX_LEN, ifname, item + (WL_FILTER_MAC_NUM / 2) - 1, wl_filter_mac_get(ifname, "mac", item + (WL_FILTER_MAC_NUM / 2) - 1));
 
 		}
 
@@ -232,15 +218,12 @@ int dhcp_lease_table_init(void)
 			// Parse leases file
 			if ((fp = fopen("/tmp/dnsmasq.leases", "r")) != NULL) {
 				while (fgets(buf, sizeof(buf), fp)) {
-					if (sscanf
-					    (buf, "%lu %17s %15s %255s",
-					     &expires, mac, ip, hostname) != 4)
+					if (sscanf(buf, "%lu %17s %15s %255s", &expires, mac, ip, hostname) != 4)
 						continue;
 					p = mac;
 					while ((*p = toupper(*p)) != 0)
 						++p;
-					fprintf(fp_w, "%s %s %s\n", mac, ip,
-						hostname);
+					fprintf(fp_w, "%s %s %s\n", mac, ip, hostname);
 					++count;
 				}
 				fclose(fp);
@@ -258,20 +241,14 @@ int dhcp_lease_table_init(void)
 		// Parse leases file 
 		if ((fp = fopen("/tmp/udhcpd.leases", "r"))) {
 			while (fread(&lease, sizeof(lease), 1, fp)) {
-				snprintf(mac, sizeof(mac),
-					 "%02X:%02X:%02X:%02X:%02X:%02X",
-					 lease.chaddr[0], lease.chaddr[1],
-					 lease.chaddr[2], lease.chaddr[3],
-					 lease.chaddr[4], lease.chaddr[5]);
+				snprintf(mac, sizeof(mac), "%02X:%02X:%02X:%02X:%02X:%02X", lease.chaddr[0], lease.chaddr[1], lease.chaddr[2], lease.chaddr[3], lease.chaddr[4], lease.chaddr[5]);
 				if (!strcmp("00:00:00:00:00:00", mac))
 					continue;
 				addr.s_addr = lease.yiaddr;
 				char client[32];
-				char *peer =
-				    (char *)inet_ntop(AF_INET, &addr, client,
-						      16);
-				fprintf(fp_w, "%s %s %s\n", mac, peer,
-					lease.hostname);
+				char *peer = (char *)inet_ntop(AF_INET, &addr, client,
+							       16);
+				fprintf(fp_w, "%s %s %s\n", mac, peer, lease.hostname);
 				count++;
 			}
 			fclose(fp);
@@ -297,21 +274,12 @@ void get_hostname_ip(char *type, char *filename)
 			strcpy(leases[1], "");
 			strcpy(leases[2], "");
 			// 00:11:22:33:44:55 192.168.1.100 honor
-			if (sscanf
-			    (line, "%s %s %s", leases[0], leases[1],
-			     leases[2]) != 3)
+			if (sscanf(line, "%s %s %s", leases[0], leases[1], leases[2]) != 3)
 				continue;
 			for (i = 0; i < MAX_LEASES; i++) {
-				if (!strcmp
-				    (leases[0], wl_client_macs[i].hwaddr)) {
-					snprintf(wl_client_macs[i].ipaddr,
-						 sizeof(wl_client_macs
-							[i].ipaddr), "%s",
-						 leases[1]);
-					snprintf(wl_client_macs[i].hostname,
-						 sizeof(wl_client_macs
-							[i].hostname), "%s",
-						 leases[2]);
+				if (!strcmp(leases[0], wl_client_macs[i].hwaddr)) {
+					snprintf(wl_client_macs[i].ipaddr, sizeof(wl_client_macs[i].ipaddr), "%s", leases[1]);
+					snprintf(wl_client_macs[i].hostname, sizeof(wl_client_macs[i].hostname), "%s", leases[2]);
 					break;
 				}
 			}
@@ -346,17 +314,11 @@ void save_hostname_ip(void)
 			strcpy(leases[0], "");
 			strcpy(leases[1], "");
 			strcpy(leases[2], "");
-			if (sscanf
-			    (line, "%s %s %s", leases[0], leases[1],
-			     leases[2]) != 3)
+			if (sscanf(line, "%s %s %s", leases[0], leases[1], leases[2]) != 3)
 				continue;
-			snprintf(wl_clients[i].hwaddr,
-				 sizeof(wl_clients[i].hwaddr), "%s", leases[0]);
-			snprintf(wl_clients[i].ipaddr,
-				 sizeof(wl_clients[i].ipaddr), "%s", leases[1]);
-			snprintf(wl_clients[i].hostname,
-				 sizeof(wl_clients[i].hostname), "%s",
-				 leases[2]);
+			snprintf(wl_clients[i].hwaddr, sizeof(wl_clients[i].hwaddr), "%s", leases[0]);
+			snprintf(wl_clients[i].ipaddr, sizeof(wl_clients[i].ipaddr), "%s", leases[1]);
+			snprintf(wl_clients[i].hostname, sizeof(wl_clients[i].hostname), "%s", leases[2]);
 			i++;
 		}
 		fclose(fp);
@@ -367,32 +329,18 @@ void save_hostname_ip(void)
 		if (wl_client_macs[i].status == 1 && strcmp(wl_client_macs[i].ipaddr, "")) {	// online && have ip address
 			for (j = 0; j < MAX_LEASES; j++) {
 				match = 0;
-				if (!strcmp
-				    (wl_clients[j].hwaddr,
-				     wl_client_macs[i].hwaddr)) {
-					snprintf(wl_clients[j].ipaddr,
-						 sizeof(wl_clients[j].ipaddr),
-						 "%s",
-						 wl_client_macs[i].ipaddr);
-					snprintf(wl_clients[j].hostname,
-						 sizeof(wl_clients[j].hostname),
-						 "%s",
-						 wl_client_macs[i].hostname);
+				if (!strcmp(wl_clients[j].hwaddr, wl_client_macs[i].hwaddr)) {
+					snprintf(wl_clients[j].ipaddr, sizeof(wl_clients[j].ipaddr), "%s", wl_client_macs[i].ipaddr);
+					snprintf(wl_clients[j].hostname, sizeof(wl_clients[j].hostname), "%s", wl_client_macs[i].hostname);
 					match = 1;
 					break;
 				}
 
 			}
 			if (match == 0) {
-				snprintf(wl_clients[count].hwaddr,
-					 sizeof(wl_clients[i].hwaddr), "%s",
-					 wl_client_macs[i].hwaddr);
-				snprintf(wl_clients[count].ipaddr,
-					 sizeof(wl_clients[i].ipaddr), "%s",
-					 wl_client_macs[i].ipaddr);
-				snprintf(wl_clients[count].hostname,
-					 sizeof(wl_clients[i].hostname), "%s",
-					 wl_client_macs[i].hostname);
+				snprintf(wl_clients[count].hwaddr, sizeof(wl_clients[i].hwaddr), "%s", wl_client_macs[i].hwaddr);
+				snprintf(wl_clients[count].ipaddr, sizeof(wl_clients[i].ipaddr), "%s", wl_client_macs[i].ipaddr);
+				snprintf(wl_clients[count].hostname, sizeof(wl_clients[i].hostname), "%s", wl_client_macs[i].hostname);
 				count++;
 			}
 		}
@@ -401,10 +349,7 @@ void save_hostname_ip(void)
 	if ((fp_w = fopen(OLD_NAME_IP, "w"))) {
 		for (i = 0; i < MAX_LEASES; i++) {
 			if (strcmp(wl_clients[i].hwaddr, ""))
-				fprintf(fp_w, "%s %s %s\n",
-					wl_clients[i].hwaddr,
-					wl_clients[i].ipaddr,
-					wl_clients[i].hostname);
+				fprintf(fp_w, "%s %s %s\n", wl_clients[i].hwaddr, wl_clients[i].ipaddr, wl_clients[i].hostname);
 		}
 		fclose(fp_w);
 	}
@@ -444,9 +389,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		char *maclist = nvram_safe_get(var);
 
 		foreach(word, maclist, next) {
-			snprintf(wl_client_macs[nv_count].hwaddr,
-				 sizeof(wl_client_macs[nv_count].hwaddr), "%s",
-				 word);
+			snprintf(wl_client_macs[nv_count].hwaddr, sizeof(wl_client_macs[nv_count].hwaddr), "%s", word);
 			wl_client_macs[nv_count].status = 0;	// offline (default)
 			wl_client_macs[nv_count].check = 1;	// checked
 			nv_count++;
@@ -460,12 +403,10 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_MADWIFI*/
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
 		iface = ifname;
-		sysprintf("wl_atheros -i %s %s > %s", iface, ASSOCLIST_CMD,
-			  ASSOCLIST_TMP);
+		sysprintf("wl_atheros -i %s %s > %s", iface, ASSOCLIST_CMD, ASSOCLIST_TMP);
 #elif HAVE_RT2880
 		iface = nvram_safe_get("wl0_ifname");
-		sysprintf("wl_rt2880 -i %s %s > %s", iface, ASSOCLIST_CMD,
-			  ASSOCLIST_TMP);
+		sysprintf("wl_rt2880 -i %s %s > %s", iface, ASSOCLIST_CMD, ASSOCLIST_TMP);
 #else
 		if (!strcmp(ifname, "wl0"))
 			iface = get_wl_instance_name(0);
@@ -473,8 +414,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 			iface = get_wl_instance_name(1);
 		else
 			iface = nvram_safe_get("wl0_ifname");
-		sysprintf("wl -i %s %s > %s", iface, ASSOCLIST_CMD,
-			  ASSOCLIST_TMP);
+		sysprintf("wl -i %s %s > %s", iface, ASSOCLIST_CMD, ASSOCLIST_TMP);
 #endif
 
 		if ((fp = fopen(ASSOCLIST_TMP, "r"))) {
@@ -489,9 +429,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 				if (strcmp(list[0], "assoclist"))
 					continue;
 				for (i = 0; i < nv_count; i++) {
-					if (!strcmp
-					    (wl_client_macs[i].hwaddr,
-					     list[1])) {
+					if (!strcmp(wl_client_macs[i].hwaddr, list[1])) {
 						wl_client_macs[i].status = 1;	// online
 						wl_client_macs[i].check = 1;	// checked
 						match = 1;
@@ -500,11 +438,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 					}
 				}
 				if (match == 0) {
-					snprintf(wl_client_macs
-						 [nv_count].hwaddr,
-						 sizeof(wl_client_macs
-							[nv_count].hwaddr),
-						 "%s", list[1]);
+					snprintf(wl_client_macs[nv_count].hwaddr, sizeof(wl_client_macs[nv_count].hwaddr), "%s", list[1]);
 					wl_client_macs[nv_count].status = 1;	// online
 					wl_client_macs[nv_count].check = 0;	// no checked
 					nv_count++;
@@ -623,31 +557,22 @@ char *get_wep_value(char *temp, char *type, char *_bit, char *prefix)
 	if (!strcmp(type, "passphrase")) {
 		if (wordlist[0] == ':')
 			return "";
-		substring(0, pos_nthoccurence(wordlist, ':', cnt - 4), wordlist,
-			  temp);
+		substring(0, pos_nthoccurence(wordlist, ':', cnt - 4), wordlist, temp);
 		return temp;
 	} else if (!strcmp(type, "key1")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 4) + 1,
-			  pos_nthoccurence(wordlist, ':', cnt - 3), wordlist,
-			  temp);
+		substring(pos_nthoccurence(wordlist, ':', cnt - 4) + 1, pos_nthoccurence(wordlist, ':', cnt - 3), wordlist, temp);
 		return temp;
 	} else if (!strcmp(type, "key2")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 3) + 1,
-			  pos_nthoccurence(wordlist, ':', cnt - 2), wordlist,
-			  temp);
+		substring(pos_nthoccurence(wordlist, ':', cnt - 3) + 1, pos_nthoccurence(wordlist, ':', cnt - 2), wordlist, temp);
 		return temp;
 	} else if (!strcmp(type, "key3")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 2) + 1,
-			  pos_nthoccurence(wordlist, ':', cnt - 1), wordlist,
-			  temp);
+		substring(pos_nthoccurence(wordlist, ':', cnt - 2) + 1, pos_nthoccurence(wordlist, ':', cnt - 1), wordlist, temp);
 		return temp;
 	} else if (!strcmp(type, "key4")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt - 1) + 1,
-			  pos_nthoccurence(wordlist, ':', cnt), wordlist, temp);
+		substring(pos_nthoccurence(wordlist, ':', cnt - 1) + 1, pos_nthoccurence(wordlist, ':', cnt), wordlist, temp);
 		return temp;
 	} else if (!strcmp(type, "tx")) {
-		substring(pos_nthoccurence(wordlist, ':', cnt) + 1,
-			  strlen(wordlist), wordlist, temp);
+		substring(pos_nthoccurence(wordlist, ':', cnt) + 1, strlen(wordlist), wordlist, temp);
 		return temp;
 	}
 
@@ -865,9 +790,7 @@ void ej_wl_ioctl(webs_t wp, int argc, char_t ** argv)
 
 	if (strcmp(op, "get") == 0) {
 		if (strcmp(type, "int") == 0) {
-			websWrite(wp, "%u",
-				  wl_iovar_getint(name, var,
-						  &val) == 0 ? val : 0);
+			websWrite(wp, "%u", wl_iovar_getint(name, var, &val) == 0 ? val : 0);
 			return;
 		}
 	}
@@ -915,27 +838,15 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 #endif
 
 	if (showrate) {
-		websWrite(wp,
-			  "<h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n");
+		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n");
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp,
-			  "      <legend><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></legend>\n");
+		websWrite(wp, "      <legend><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></legend>\n");
 		websWrite(wp, "     	<div class=\"setting\">\n");
-		websWrite(wp,
-			  "           <div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></div>\n");
+		websWrite(wp, "           <div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rate_control);</script></div>\n");
 		websWrite(wp, "             <select name=\"rate_control\">\n");
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp,
-			  "document.write(\"<option value=\\\"minstrel\\\" %s >Minstrel EWMA</option>\");\n",
-			  nvram_match("rate_control",
-				      "minstrel") ? "selected=\\\"selected\\\""
-			  : "");
-		websWrite(wp,
-			  "document.write(\"<option value=\\\"sample\\\" %s >Sample</option>\");\n",
-			  nvram_match("rate_control",
-				      "sample") ? "selected=\\\"selected\\\""
-			  : "");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"minstrel\\\" %s >Minstrel EWMA</option>\");\n", nvram_match("rate_control", "minstrel") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"sample\\\" %s >Sample</option>\");\n", nvram_match("rate_control", "sample") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</fieldset>\n");

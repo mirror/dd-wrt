@@ -52,8 +52,7 @@ static void *crda_get_file_ptr(__u8 *db, int dblen, int structlen, __be32 ptr)
 	return (void *)(db + p);
 }
 
-static void reg_rule2rd(__u8 *db, int dblen,
-	__be32 ruleptr, struct ieee80211_reg_rule *rd_reg_rule)
+static void reg_rule2rd(__u8 *db, int dblen, __be32 ruleptr, struct ieee80211_reg_rule *rd_reg_rule)
 {
 	struct regdb_file_reg_rule *rule;
 	struct regdb_file_freq_range *freq;
@@ -62,8 +61,8 @@ static void reg_rule2rd(__u8 *db, int dblen,
 	struct ieee80211_freq_range *rd_freq_range = &rd_reg_rule->freq_range;
 	struct ieee80211_power_rule *rd_power_rule = &rd_reg_rule->power_rule;
 
-	rule  = crda_get_file_ptr(db, dblen, sizeof(*rule), ruleptr);
-	freq  = crda_get_file_ptr(db, dblen, sizeof(*freq), rule->freq_range_ptr);
+	rule = crda_get_file_ptr(db, dblen, sizeof(*rule), ruleptr);
+	freq = crda_get_file_ptr(db, dblen, sizeof(*freq), rule->freq_range_ptr);
 	power = crda_get_file_ptr(db, dblen, sizeof(*power), rule->power_rule_ptr);
 
 	rd_freq_range->start_freq_khz = ntohl(freq->start_freq);
@@ -77,23 +76,18 @@ static void reg_rule2rd(__u8 *db, int dblen,
 }
 
 /* Converts a file regdomain to ieee80211_regdomain, easier to manage */
-struct ieee80211_regdomain *country2rd(__u8 *db, int dblen,
-	struct regdb_file_reg_country *country)
+struct ieee80211_regdomain *country2rd(__u8 *db, int dblen, struct regdb_file_reg_country *country)
 {
 	struct regdb_file_reg_rules_collection *rcoll;
 	struct ieee80211_regdomain *rd;
 	int i, num_rules, size_of_rd;
 
-	rcoll = crda_get_file_ptr(db, dblen, sizeof(*rcoll),
-				country->reg_collection_ptr);
+	rcoll = crda_get_file_ptr(db, dblen, sizeof(*rcoll), country->reg_collection_ptr);
 	num_rules = ntohl(rcoll->reg_rule_num);
 	/* re-get pointer with sanity checking for num_rules */
-	rcoll = crda_get_file_ptr(db, dblen,
-			sizeof(*rcoll) + num_rules * sizeof(__be32),
-			country->reg_collection_ptr);
+	rcoll = crda_get_file_ptr(db, dblen, sizeof(*rcoll) + num_rules * sizeof(__be32), country->reg_collection_ptr);
 
-	size_of_rd = sizeof(struct ieee80211_regdomain) +
-		num_rules * sizeof(struct ieee80211_reg_rule);
+	size_of_rd = sizeof(struct ieee80211_regdomain) + num_rules * sizeof(struct ieee80211_reg_rule);
 
 	rd = malloc(size_of_rd);
 	if (!rd)
@@ -106,14 +100,14 @@ struct ieee80211_regdomain *country2rd(__u8 *db, int dblen,
 	rd->n_reg_rules = num_rules;
 
 	for (i = 0; i < num_rules; i++) {
-		reg_rule2rd(db, dblen, rcoll->reg_rule_ptrs[i],
-			&rd->reg_rules[i]);
+		reg_rule2rd(db, dblen, rcoll->reg_rule_ptrs[i], &rd->reg_rules[i]);
 	}
 
 	return rd;
 }
 
-struct ieee80211_regdomain *mac80211_get_regdomain (char *varcountry) {
+struct ieee80211_regdomain *mac80211_get_regdomain(char *varcountry)
+{
 	int fd = -1;
 	struct stat stat;
 	__u8 *db;
@@ -140,8 +134,7 @@ struct ieee80211_regdomain *mac80211_get_regdomain (char *varcountry) {
 	}
 
 	if (!is_valid_regdom(varcountry)) {
-		fprintf(stderr, "COUNTRY environment variable must be an "
-			"ISO ISO 3166-1-alpha-2 (uppercase) or 00\n");
+		fprintf(stderr, "COUNTRY environment variable must be an " "ISO ISO 3166-1-alpha-2 (uppercase) or 00\n");
 		return rd;
 	}
 
@@ -168,7 +161,8 @@ struct ieee80211_regdomain *mac80211_get_regdomain (char *varcountry) {
 	db = mmap(NULL, dblen, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (db == MAP_FAILED) {
 		perror("failed to mmap db file");
-		if (fd) close(fd);
+		if (fd)
+			close(fd);
 		return rd;
 	}
 
@@ -195,9 +189,7 @@ struct ieee80211_regdomain *mac80211_get_regdomain (char *varcountry) {
 	}
 
 	num_countries = ntohl(header->reg_country_num);
-	countries = crda_get_file_ptr(db, dblen,
-			sizeof(struct regdb_file_reg_country) * num_countries,
-			header->reg_country_ptr);
+	countries = crda_get_file_ptr(db, dblen, sizeof(struct regdb_file_reg_country) * num_countries, header->reg_country_ptr);
 
 	for (i = 0; i < num_countries; i++) {
 		country = countries + i;
@@ -213,9 +205,10 @@ struct ieee80211_regdomain *mac80211_get_regdomain (char *varcountry) {
 	}
 	rd = country2rd(db, dblen, country);
 out:
-	if (munmap(db, dblen+siglen) == -1) {
+	if (munmap(db, dblen + siglen) == -1) {
 		fprintf(stderr, "mac80211regulatory failed to munmap crda database\n");
-		}
-	if (fd) close(fd);
+	}
+	if (fd)
+		close(fd);
 	return rd;
 }

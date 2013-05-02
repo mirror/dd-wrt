@@ -98,9 +98,7 @@ static void inline getBoardMAC(char *mac)
 		return;
 	fread(data, 256, 1, in);
 	fclose(in);
-	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", data[102] & 0xff,
-		data[103] & 0xff, data[104] & 0xff, data[105] & 0xff,
-		data[106] & 0xff, data[107] & 0xff);
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", data[102] & 0xff, data[103] & 0xff, data[104] & 0xff, data[105] & 0xff, data[106] & 0xff, data[107] & 0xff);
 }
 #endif
 
@@ -141,11 +139,10 @@ int count_processes(char *pidName)
  */
 unsigned int daysformonth(unsigned int month, unsigned int year)
 {
-	return (30 + (((month & 9) == 8) || ((month & 9) == 1)) -
-		(month == 2) - (!(((year % 4) == 0)
-				  && (((year % 100) != 0)
-				      || ((year % 400) == 0)))
-				&& (month == 2)));
+	return (30 + (((month & 9) == 8) || ((month & 9) == 1)) - (month == 2) - (!(((year % 4) == 0)
+										    && (((year % 100) != 0)
+											|| ((year % 400) == 0)))
+										  && (month == 2)));
 }
 
 char *getBridgeMTU(char *ifname)
@@ -232,9 +229,7 @@ char
 		return getBridgeMTU(get_wshaper_dev());
 }
 
-void
-add_client_mac_srvfilter(char *name, char *type, char *data, char *level,
-			 int base, char *client)
+void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client)
 {
 	int idx = atoi(level) / 10;
 
@@ -242,33 +237,21 @@ add_client_mac_srvfilter(char *name, char *type, char *data, char *level,
 		idx = 0;
 
 	if (strstr(type, "udp") || strstr(type, "both")) {
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --dport %s -m mac --mac-source %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --sport %s -m mac --mac-source %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --dport %s -m mac --mac-source %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --sport %s -m mac --mac-source %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "tcp") || strstr(type, "both")) {
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --dport %s -m mac --mac-source %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --sport %s -m mac --mac-source %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --dport %s -m mac --mac-source %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --sport %s -m mac --mac-source %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "l7")) {
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto %s -m mac --mac-source %s -j MARK --set-mark %s",
-		     name, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto %s -m mac --mac-source %s -j MARK --set-mark %s", name, client, qos_nfmark(base + idx));
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -m mac --mac-source %s -m ndpi --%s -j MARK --set-mark %s",
-		     client, name, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -m mac --mac-source %s -m ndpi --%s -j MARK --set-mark %s", client, name, qos_nfmark(base + idx));
 	}
 #endif
 
@@ -305,35 +288,23 @@ add_client_mac_srvfilter(char *name, char *type, char *data, char *level,
 		if (proto) {
 			insmod("ipt_ipp2p");
 
-			sysprintf
-			    ("iptables -t mangle -I FILTER_IN 3 -p tcp -m ipp2p --%s -m mac --mac-source %s -j MARK --set-mark %s",
-			     proto, client, qos_nfmark(base + idx));
+			sysprintf("iptables -t mangle -I FILTER_IN 3 -p tcp -m ipp2p --%s -m mac --mac-source %s -j MARK --set-mark %s", proto, client, qos_nfmark(base + idx));
 
 			if (!strcmp(proto, "bit")) {
 				// bittorrent detection enhanced 
 #ifdef HAVE_MICRO
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt -m mac --mac-source %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt -m mac --mac-source %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
 #else
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m length --length 0:550 -m layer7 --l7proto bt -m mac --mac-source %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m length --length 0:550 -m layer7 --l7proto bt -m mac --mac-source %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
 #endif
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt1 -m mac --mac-source %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt2 -m mac --mac-source %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt1 -m mac --mac-source %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt2 -m mac --mac-source %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
 			}
 		}
 	}
 }
 
-void
-add_client_ip_srvfilter(char *name, char *type, char *data, char *level,
-			int base, char *client)
+void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client)
 {
 	int idx = atoi(level) / 10;
 
@@ -341,87 +312,39 @@ add_client_ip_srvfilter(char *name, char *type, char *data, char *level,
 		idx = 0;
 
 	if (strstr(type, "udp") || strstr(type, "both")) {
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --dport %s -s %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --sport %s -s %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --dport %s -d %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --sport %s -d %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --dport %s -s %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --sport %s -s %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --dport %s -d %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --sport %s -d %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --dport %s -s %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --sport %s -s %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --dport %s -d %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --sport %s -d %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --dport %s -s %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --sport %s -s %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --dport %s -d %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p udp -m udp --sport %s -d %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "tcp") || strstr(type, "both")) {
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --dport %s -s %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --sport %s -s %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --dport %s -d %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --sport %s -d %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --dport %s -s %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --sport %s -s %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --dport %s -d %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --sport %s -d %s -j MARK --set-mark %s",
-		     data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --dport %s -s %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --sport %s -s %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --dport %s -d %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --sport %s -d %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --dport %s -s %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --sport %s -s %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --dport %s -d %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -p tcp -m tcp --sport %s -d %s -j MARK --set-mark %s", data, client, qos_nfmark(base + idx));
 	}
 
 	if (strstr(type, "l7")) {
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto %s -s %s -j MARK --set-mark %s",
-		     name, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto %s -d %s -j MARK --set-mark %s",
-		     name, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto %s -s %s -j MARK --set-mark %s",
-		     name, client, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto %s -d %s -j MARK --set-mark %s",
-		     name, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto %s -s %s -j MARK --set-mark %s", name, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto %s -d %s -j MARK --set-mark %s", name, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto %s -s %s -j MARK --set-mark %s", name, client, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto %s -d %s -j MARK --set-mark %s", name, client, qos_nfmark(base + idx));
 	}
 #ifdef HAVE_OPENDPI
 	if (strstr(type, "dpi")) {
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -s %s -m ndpi --%s -j MARK --set-mark %s",
-		     client, name, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_OUT 3 -d %s -m ndpi --%s -j MARK --set-mark %s",
-		     client, name, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -s %s -m ndpi --%s -j MARK --set-mark %s",
-		     client, name, qos_nfmark(base + idx));
-		sysprintf
-		    ("iptables -t mangle -I FILTER_IN 3 -d %s -m ndpi --%s -j MARK --set-mark %s",
-		     client, name, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -s %s -m ndpi --%s -j MARK --set-mark %s", client, name, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_OUT 3 -d %s -m ndpi --%s -j MARK --set-mark %s", client, name, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -s %s -m ndpi --%s -j MARK --set-mark %s", client, name, qos_nfmark(base + idx));
+		sysprintf("iptables -t mangle -I FILTER_IN 3 -d %s -m ndpi --%s -j MARK --set-mark %s", client, name, qos_nfmark(base + idx));
 	}
 #endif
 
@@ -458,72 +381,32 @@ add_client_ip_srvfilter(char *name, char *type, char *data, char *level,
 		if (proto) {
 			insmod("ipt_ipp2p");
 
-			sysprintf
-			    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m ipp2p --%s -s %s -j MARK --set-mark %s",
-			     proto, client, qos_nfmark(base + idx));
-			sysprintf
-			    ("iptables -t mangle -I FILTER_OUT 3 -p tcp -m ipp2p --%s -d %s -j MARK --set-mark %s",
-			     proto, client, qos_nfmark(base + idx));
-			sysprintf
-			    ("iptables -t mangle -I FILTER_IN 3 -p tcp -m ipp2p --%s -s %s -j MARK --set-mark %s",
-			     proto, client, qos_nfmark(base + idx));
-			sysprintf
-			    ("iptables -t mangle -I FILTER_IN 3 -p tcp -m ipp2p --%s -d %s -j MARK --set-mark %s",
-			     proto, client, qos_nfmark(base + idx));
+			sysprintf("iptables -t mangle -I FILTER_OUT 3 -p tcp -m ipp2p --%s -s %s -j MARK --set-mark %s", proto, client, qos_nfmark(base + idx));
+			sysprintf("iptables -t mangle -I FILTER_OUT 3 -p tcp -m ipp2p --%s -d %s -j MARK --set-mark %s", proto, client, qos_nfmark(base + idx));
+			sysprintf("iptables -t mangle -I FILTER_IN 3 -p tcp -m ipp2p --%s -s %s -j MARK --set-mark %s", proto, client, qos_nfmark(base + idx));
+			sysprintf("iptables -t mangle -I FILTER_IN 3 -p tcp -m ipp2p --%s -d %s -j MARK --set-mark %s", proto, client, qos_nfmark(base + idx));
 
 			if (!strcmp(proto, "bit")) {
 				// bittorrent detection enhanced 
 #ifdef HAVE_MICRO
-				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
 #else
-				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m length --length 0:550 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m length --length 0:550 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m length --length 0:550 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m length --length 0:550 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_OUT 3 -m length --length 0:550 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_OUT 3 -m length --length 0:550 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m length --length 0:550 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m length --length 0:550 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
 #endif
-				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt1 -s %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt1 -d %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt1 -s %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt1 -d %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt2 -s %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt2 -d %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt2 -s %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
-				sysprintf
-				    ("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt2 -d %s -j MARK --set-mark %s",
-				     client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt1 -s %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt1 -d %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt1 -s %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt1 -d %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt2 -s %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt2 -d %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt2 -s %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
+				sysprintf("iptables -t mangle -I FILTER_IN 3 -m layer7 --l7proto bt2 -d %s -j MARK --set-mark %s", client, qos_nfmark(base + idx));
 			}
 		}
 	}
@@ -553,10 +436,7 @@ char *get_tcfmark(uint32 mark)
 #endif
 
 #ifdef HAVE_AQOS
-void
-add_client_classes(unsigned int base, unsigned int uprate,
-		   unsigned int downrate, unsigned long lanrate,
-		   unsigned int level)
+void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate, unsigned int level)
 {
 	char *wan_dev = get_wan_face();
 
@@ -690,265 +570,116 @@ void add_client_classes(unsigned int base, unsigned int level)
 		sysprintf	// bulk
 		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 5, 1, uplimit);
 
-		sysprintf
-		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-		     "imq0", 1, base, downrate, downlimit);
-		sysprintf
-		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc rt umax 1500b dmax 30ms rate 100kbit ls rate %d ul rate %d",
-		     "imq0", base, base + 1, downrate, downlimit);
-		sysprintf
-		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-		     "imq0", base, base + 2, downrate * 75 / 100, downlimit);
-		sysprintf
-		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-		     "imq0", base, base + 3, downrate * 15 / 100, downlimit);
-		sysprintf
-		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-		     "imq0", base, base + 4, downrate * 10 / 100, downlimit);
-		sysprintf
-		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-		     "imq0", base, base + 5, 1, downlimit);
+		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq0", 1, base, downrate, downlimit);
+		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc rt umax 1500b dmax 30ms rate 100kbit ls rate %d ul rate %d", "imq0", base, base + 1, downrate, downlimit);
+		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq0", base, base + 2, downrate * 75 / 100, downlimit);
+		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq0", base, base + 3, downrate * 15 / 100, downlimit);
+		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq0", base, base + 4, downrate * 10 / 100, downlimit);
+		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq0", base, base + 5, 1, downlimit);
 
 		if (nvram_match("wshaper_dev", "LAN")) {
-			sysprintf
-			    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			     "imq1", 1, base, lanlimit, lanlimit);
-			sysprintf
-			    ("tc class add dev %s parent 1:%d classid 1:%d hfsc rt umax 1500b dmax 30ms rate 100kbit ls rate %d ul rate %d",
-			     "imq1", base, base + 1, lanlimit, lanlimit);
-			sysprintf
-			    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			     "imq1", base, base + 2, lanlimit * 75 / 100,
-			     lanlimit);
-			sysprintf
-			    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			     "imq1", base, base + 3, lanlimit * 15 / 100,
-			     lanlimit);
-			sysprintf
-			    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			     "imq1", base, base + 4, lanlimit * 10 / 100,
-			     lanlimit);
-			sysprintf
-			    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			     "imq1", base, base + 5, 1, lanlimit);
+			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", 1, base, lanlimit, lanlimit);
+			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc rt umax 1500b dmax 30ms rate 100kbit ls rate %d ul rate %d", "imq1", base, base + 1, lanlimit, lanlimit);
+			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", base, base + 2, lanlimit * 75 / 100, lanlimit);
+			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", base, base + 3, lanlimit * 15 / 100, lanlimit);
+			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", base, base + 4, lanlimit * 10 / 100, lanlimit);
+			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", base, base + 5, 1, lanlimit);
 		}
 	}
 
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	// filter rules
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d",
-	     wan_dev, base, base + 1);
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d",
-	     wan_dev, base + 1, base + 2);
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-	     wan_dev, base + 2, base + 3);
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d",
-	     wan_dev, base + 3, base + 4);
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d",
-	     wan_dev, base + 4, base + 5);
+	sysprintf("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d", wan_dev, base, base + 1);
+	sysprintf("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d", wan_dev, base + 1, base + 2);
+	sysprintf("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d", wan_dev, base + 2, base + 3);
+	sysprintf("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d", wan_dev, base + 3, base + 4);
+	sysprintf("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d", wan_dev, base + 4, base + 5);
 
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d",
-	     "imq0", base, base + 1);
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d",
-	     "imq0", base + 1, base + 2);
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-	     "imq0", base + 2, base + 3);
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d",
-	     "imq0", base + 3, base + 4);
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d",
-	     "imq0", base + 4, base + 5);
+	sysprintf("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d", "imq0", base, base + 1);
+	sysprintf("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d", "imq0", base + 1, base + 2);
+	sysprintf("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d", "imq0", base + 2, base + 3);
+	sysprintf("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d", "imq0", base + 3, base + 4);
+	sysprintf("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d", "imq0", base + 4, base + 5);
 
 	if (nvram_match("wshaper_dev", "LAN")) {
-		sysprintf
-		    ("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d",
-		     "imq1", base, base + 1);
-		sysprintf
-		    ("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d",
-		     "imq1", base + 1, base + 2);
-		sysprintf
-		    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-		     "imq1", base + 2, base + 3);
-		sysprintf
-		    ("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d",
-		     "imq1", base + 3, base + 4);
-		sysprintf
-		    ("tc filter add dev %s protocol ip pref 9 handle 0x%x‚	 fw classid 1:%d",
-		     "imq1", base + 4, base + 5);
+		sysprintf("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d", "imq1", base, base + 1);
+		sysprintf("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d", "imq1", base + 1, base + 2);
+		sysprintf("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d", "imq1", base + 2, base + 3);
+		sysprintf("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d", "imq1", base + 3, base + 4);
+		sysprintf("tc filter add dev %s protocol ip pref 9 handle 0x%x‚	 fw classid 1:%d", "imq1", base + 4, base + 5);
 	}
 #else
-	sysprintf
-	    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-	     wan_dev, get_tcfmark(base), base + 1);
-	sysprintf
-	    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-	     wan_dev, get_tcfmark(base + 1), base + 2);
-	sysprintf
-	    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-	     wan_dev, get_tcfmark(base + 2), base + 3);
-	sysprintf
-	    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-	     wan_dev, get_tcfmark(base + 3), base + 4);
-	sysprintf
-	    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-	     wan_dev, get_tcfmark(base + 4), base + 5);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(base), base + 1);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(base + 1), base + 2);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(base + 2), base + 3);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(base + 3), base + 4);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(base + 4), base + 5);
 
-	sysprintf
-	    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-	     "imq0", get_tcfmark(base), base + 1);
-	sysprintf
-	    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-	     "imq0", get_tcfmark(base + 1), base + 2);
-	sysprintf
-	    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-	     "imq0", get_tcfmark(base + 2), base + 3);
-	sysprintf
-	    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-	     "imq0", get_tcfmark(base + 3), base + 4);
-	sysprintf
-	    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-	     "imq0", get_tcfmark(base + 4), base + 5);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(base), base + 1);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(base + 1), base + 2);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(base + 2), base + 3);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(base + 3), base + 4);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(base + 4), base + 5);
 
 	if (nvram_match("wshaper_dev", "LAN")) {
-		sysprintf
-		    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-		     "imq1", get_tcfmark(base), base + 1);
-		sysprintf
-		    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-		     "imq1", get_tcfmark(base + 1), base + 2);
-		sysprintf
-		    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-		     "imq1", get_tcfmark(base + 2), base + 3);
-		sysprintf
-		    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-		     "imq1", get_tcfmark(base + 3), base + 4);
-		sysprintf
-		    ("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d",
-		     "imq1", get_tcfmark(base + 4), base + 5);
+		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(base), base + 1);
+		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(base + 1), base + 2);
+		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(base + 2), base + 3);
+		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(base + 3), base + 4);
+		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(base + 4), base + 5);
 	}
 #endif
 
 	// leaf qdiscs
 	if (!strcmp(aqd, "sfq")) {
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     wan_dev, base + 1, base + 1, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     wan_dev, base + 2, base + 2, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     wan_dev, base + 3, base + 3, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     wan_dev, base + 4, base + 4, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     wan_dev, base + 5, base + 5, quantum);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", wan_dev, base + 1, base + 1, quantum);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", wan_dev, base + 2, base + 2, quantum);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", wan_dev, base + 3, base + 3, quantum);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", wan_dev, base + 4, base + 4, quantum);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", wan_dev, base + 5, base + 5, quantum);
 
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     "imq0", base + 1, base + 1, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     "imq0", base + 2, base + 2, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     "imq0", base + 3, base + 3, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     "imq0", base + 4, base + 4, quantum);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-		     "imq0", base + 5, base + 5, quantum);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq0", base + 1, base + 1, quantum);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq0", base + 2, base + 2, quantum);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq0", base + 3, base + 3, quantum);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq0", base + 4, base + 4, quantum);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq0", base + 5, base + 5, quantum);
 
 		if (nvram_match("wshaper_dev", "LAN")) {
-			sysprintf
-			    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-			     "imq1", base + 1, base + 1, quantum);
-			sysprintf
-			    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-			     "imq1", base + 2, base + 2, quantum);
-			sysprintf
-			    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-			     "imq1", base + 3, base + 3, quantum);
-			sysprintf
-			    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-			     "imq1", base + 4, base + 4, quantum);
-			sysprintf
-			    ("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
-			     "imq1", base + 5, base + 5, quantum);
+			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq1", base + 1, base + 1, quantum);
+			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq1", base + 2, base + 2, quantum);
+			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq1", base + 3, base + 3, quantum);
+			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq1", base + 4, base + 4, quantum);
+			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq1", base + 5, base + 5, quantum);
 		}
 	}
 #if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
 	if (!strcmp(aqd, "codel")
 	    || !strcmp(aqd, "fq_codel")) {
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-		     wan_dev, base + 1, base + 1, aqd);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-		     wan_dev, base + 2, base + 2, aqd);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-		     wan_dev, base + 3, base + 3, aqd);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-		     wan_dev, base + 4, base + 4, aqd);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-		     wan_dev, base + 5, base + 5, aqd);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 1, base + 1, aqd);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 2, base + 2, aqd);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 3, base + 3, aqd);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 4, base + 4, aqd);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 5, base + 5, aqd);
 
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-		     "imq0", base + 1, base + 1, aqd);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-		     "imq0", base + 2, base + 2, aqd);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-		     "imq0", base + 3, base + 3, aqd);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-		     "imq0", base + 4, base + 4, aqd);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-		     "imq0", base + 5, base + 5, aqd);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 1, base + 1, aqd);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 2, base + 2, aqd);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 3, base + 3, aqd);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 4, base + 4, aqd);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 5, base + 5, aqd);
 
 		if (nvram_match("wshaper_dev", "LAN")) {
-			sysprintf
-			    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-			     "imq1", base + 1, base + 1, aqd);
-			sysprintf
-			    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-			     "imq1", base + 2, base + 2, aqd);
-			sysprintf
-			    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-			     "imq1", base + 3, base + 3, aqd);
-			sysprintf
-			    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-			     "imq1", base + 4, base + 4, aqd);
-			sysprintf
-			    ("tc qdisc add dev %s parent 1:%d handle %d: %s",
-			     "imq1", base + 5, base + 5, aqd);
+			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq1", base + 1, base + 1, aqd);
+			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq1", base + 2, base + 2, aqd);
+			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq1", base + 3, base + 3, aqd);
+			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq1", base + 4, base + 4, aqd);
+			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq1", base + 5, base + 5, aqd);
 		}
 	}
 #endif
 }
 
 #ifdef HAVE_AQOS
-void
-add_usermac(char *mac, int base, char *upstream, char *downstream,
-	    char *lanstream)
+void add_usermac(char *mac, int base, char *upstream, char *downstream, char *lanstream)
 {
 	unsigned int uprate = atoi(upstream);
 	unsigned int downrate = atoi(downstream);
@@ -970,18 +701,13 @@ add_usermac(char *mac, int base, char *upstream, char *downstream,
 	add_client_classes(base, uprate, downrate, lanrate, 0);
 
 	do {
-		if (sscanf
-		    (qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype,
-		     srvdata, srvlevel) < 4)
+		if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
 			break;
 
-		add_client_mac_srvfilter(srvname, srvtype, srvdata, srvlevel,
-					 base, mac);
+		add_client_mac_srvfilter(srvname, srvtype, srvdata, srvlevel, base, mac);
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
-	sysprintf
-	    ("iptables -t mangle -A FILTER_IN -m mac --mac-source %s -m mark --mark %s -j MARK --set-mark %s",
-	     mac, nullmask, qos_nfmark(base));
+	sysprintf("iptables -t mangle -A FILTER_IN -m mac --mac-source %s -m mark --mark %s -j MARK --set-mark %s", mac, nullmask, qos_nfmark(base));
 
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
 // http://svn.dd-wrt.com/ticket/2737 (default bandwidth level)
@@ -991,9 +717,7 @@ add_usermac(char *mac, int base, char *upstream, char *downstream,
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 }
 
-void
-add_userip(char *ip, int base, char *upstream, char *downstream,
-	   char *lanstream)
+void add_userip(char *ip, int base, char *upstream, char *downstream, char *lanstream)
 {
 	unsigned int uprate = atoi(upstream);
 	unsigned int downrate = atoi(downstream);
@@ -1013,10 +737,8 @@ add_userip(char *ip, int base, char *upstream, char *downstream,
 //               qos_nfmark(0x64));
 	system2("iptables -t mangle -D FILTER_IN -j RETURN");
 
-	system2
-	    ("iptables -t mangle -D FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");
-	system2
-	    ("iptables -t mangle -D FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
+	system2("iptables -t mangle -D FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");
+	system2("iptables -t mangle -D FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
 	system2("iptables -t mangle -D FILTER_OUT -j VPN_DSCP");
 	system2("iptables -t mangle -D FILTER_OUT -j CONNMARK --save");
 	system2("iptables -t mangle -D FILTER_OUT -j RETURN");
@@ -1024,27 +746,16 @@ add_userip(char *ip, int base, char *upstream, char *downstream,
 	add_client_classes(base, uprate, downrate, lanrate, 0);
 
 	do {
-		if (sscanf
-		    (qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype,
-		     srvdata, srvlevel) < 4)
+		if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
 			break;
 
-		add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel,
-					base, ip);
+		add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, ip);
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
 
-	sysprintf
-	    ("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark %s -j MARK --set-mark %s",
-	     ip, nullmask, qos_nfmark(base));
-	sysprintf
-	    ("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark %s -j MARK --set-mark %s",
-	     ip, nullmask, qos_nfmark(base));
-	sysprintf
-	    ("iptables -t mangle -A FILTER_IN -s %s -m mark --mark %s -j MARK --set-mark %s",
-	     ip, nullmask, qos_nfmark(base));
-	sysprintf
-	    ("iptables -t mangle -A FILTER_IN -d %s -m mark --mark %s -j MARK --set-mark %s",
-	     ip, nullmask, qos_nfmark(base));
+	sysprintf("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark %s -j MARK --set-mark %s", ip, nullmask, qos_nfmark(base));
+	sysprintf("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark %s -j MARK --set-mark %s", ip, nullmask, qos_nfmark(base));
+	sysprintf("iptables -t mangle -A FILTER_IN -s %s -m mark --mark %s -j MARK --set-mark %s", ip, nullmask, qos_nfmark(base));
+	sysprintf("iptables -t mangle -A FILTER_IN -d %s -m mark --mark %s -j MARK --set-mark %s", ip, nullmask, qos_nfmark(base));
 
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
 // http://svn.dd-wrt.com/ticket/2737 (default bandwidth level)
@@ -1053,10 +764,8 @@ add_userip(char *ip, int base, char *upstream, char *downstream,
 //               qos_nfmark(0x64));
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 
-	system2
-	    ("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");
-	system2
-	    ("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
+	system2("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");
+	system2("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
 	system2("iptables -t mangle -A FILTER_OUT -j VPN_DSCP");
 	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --save");
 	system2("iptables -t mangle -A FILTER_OUT -j RETURN");
@@ -1096,12 +805,10 @@ int check_action(void)
 			fprintf(stderr, "Upgrading from web (http) now ...\n");
 			return ACT_WEB_UPGRADE;
 		} else if (!strcmp(buf, "ACT_SW_RESTORE")) {
-			fprintf(stderr,
-				"Receiving restore command from web ...\n");
+			fprintf(stderr, "Receiving restore command from web ...\n");
 			return ACT_SW_RESTORE;
 		} else if (!strcmp(buf, "ACT_HW_RESTORE")) {
-			fprintf(stderr,
-				"Receiving restore command from resetbutton ...\n");
+			fprintf(stderr, "Receiving restore command from resetbutton ...\n");
 			return ACT_HW_RESTORE;
 		} else if (!strcmp(buf, "ACT_NVRAM_COMMIT")) {
 			fprintf(stderr, "Committing nvram now ...\n");
@@ -1149,8 +856,7 @@ int check_vlan_support(void)
 		break;
 	}
 
-	unsigned long boardflags =
-	    strtoul(nvram_safe_get("boardflags"), NULL, 0);
+	unsigned long boardflags = strtoul(nvram_safe_get("boardflags"), NULL, 0);
 
 	if (boardflags & BFL_ENETVLAN)
 		return 1;
@@ -1294,7 +1000,6 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
-
 	if (boardnum == 00 && nvram_match("boardtype", "0xF646")
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("melco_id", "RD_BB12068")) {
@@ -1315,8 +1020,6 @@ int internal_getRouterBrand()
 		setRouter("Buffalo WZR-600DHP2");
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
-
-
 
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
@@ -2003,8 +1706,7 @@ int internal_getRouterBrand()
 #undef M10
 
 #if 0
-	FILE *fp =
-	    fopen("/sys/bus/pci/devices/0000:00:00.0/subsystem_device", "rb");
+	FILE *fp = fopen("/sys/bus/pci/devices/0000:00:00.0/subsystem_device", "rb");
 	if (fp == NULL)
 		return ROUTER_BOARD_PB42;
 	int device;
@@ -2034,10 +1736,8 @@ int internal_getRouterBrand()
 	int devcnt = 0;
 	while (dev[devcnt].devicename != NULL) {
 		if (dev[devcnt].devid == device) {
-			nvram_default_get("ath0_rxantenna",
-					  dev[devcnt].rxchain);
-			nvram_default_get("ath0_txantenna",
-					  dev[devcnt].txchain);
+			nvram_default_get("ath0_rxantenna", dev[devcnt].rxchain);
+			nvram_default_get("ath0_txantenna", dev[devcnt].txchain);
 			if (dev[devcnt].offset) {
 				char foff[32];
 				sprintf(foff, "%d", dev[devcnt].offset);
@@ -2432,14 +2132,12 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WBR54G;
 	}
 #ifndef HAVE_BUFFALO
-	if (nvram_match("boardnum", "mn700") &&
-	    nvram_match("boardtype", "bcm94710ap")) {
+	if (nvram_match("boardnum", "mn700") && nvram_match("boardtype", "bcm94710ap")) {
 		setRouter("Microsoft MN-700");
 		return ROUTER_MICROSOFT_MN700;
 	}
 
-	if (nvram_match("boardnum", "asusX") &&
-	    nvram_match("boardtype", "bcm94710dev")) {
+	if (nvram_match("boardnum", "asusX") && nvram_match("boardtype", "bcm94710dev")) {
 		setRouter("Asus WL-300g / WL-500g");
 		return ROUTER_ASUS_WL500G;
 	}
@@ -2582,14 +2280,12 @@ int internal_getRouterBrand()
 		setRouter("Buffalo WLA2-G54C / WLI3-TX1-G54");
 		return ROUTER_BUFFALO_WLA2G54C;
 	}
-	if (boardnum == 0 && melco_id == 29090
-	    && nvram_match("boardrev", "0x10")) {
+	if (boardnum == 0 && melco_id == 29090 && nvram_match("boardrev", "0x10")) {
 		setRouter("Buffalo WLAH-G54");
 		return ROUTER_BUFFALO_WLAH_G54;
 
 	}
-	if (boardnum == 0 && melco_id == 31070
-	    && nvram_match("boardflags", "0x2288")
+	if (boardnum == 0 && melco_id == 31070 && nvram_match("boardflags", "0x2288")
 	    && nvram_match("boardrev", "0x10")) {
 		setRouter("Buffalo WAPM-HP-AM54G54");
 		return ROUTER_BUFFALO_WAPM_HP_AM54G54;
@@ -2684,8 +2380,7 @@ int internal_getRouterBrand()
 			setRouter("Buffalo WVR-G54-NF");
 			return ROUTER_BUFFALO_WZRRSG54;
 		}
-		if (nvram_match("product_name", "WZR-G108") || melco_id == 31095
-		    || melco_id == 30153) {
+		if (nvram_match("product_name", "WZR-G108") || melco_id == 31095 || melco_id == 30153) {
 			setRouter("Buffalo WZR-G108");
 			return ROUTER_BRCM4702_GENERIC;
 		}
@@ -2737,9 +2432,7 @@ int internal_getRouterBrand()
 			setRouter("Belkin F5D7230-4 v1000");
 			return ROUTER_RT210W;
 		}
-		if (startswith(et0, "00:01:E3") ||
-		    startswith(et0, "00:01:e3") || startswith(et0, "00:90:96"))
-		{
+		if (startswith(et0, "00:01:E3") || startswith(et0, "00:01:e3") || startswith(et0, "00:90:96")) {
 			setRouter("Siemens SE505 v1");
 			return ROUTER_RT210W;
 		} else {
@@ -2756,9 +2449,7 @@ int internal_getRouterBrand()
 
 	if (boardnum == 0 && nvram_match("boardtype", "0x0100")
 	    && nvram_match("boardrev", "0x10")) {
-		if (startswith(et0, "00:11:50") ||
-		    startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd"))
-		{
+		if (startswith(et0, "00:11:50") || startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd")) {
 			setRouter("Askey board RT2205(6)D-D56");
 		} else {
 			setRouter("Belkin board F5D8230");
@@ -2767,9 +2458,7 @@ int internal_getRouterBrand()
 	}
 
 	if (nvram_match("boardtype", "0x0101")) {
-		if (startswith(et0, "00:11:50") ||
-		    startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd"))
-		{
+		if (startswith(et0, "00:11:50") || startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd")) {
 			if (nvram_match("Belkin_ver", "2000")) {
 				setRouter("Belkin F5D7230-4 v2000");
 				return ROUTER_BELKIN_F5D7230_V2000;
@@ -2778,9 +2467,7 @@ int internal_getRouterBrand()
 				return ROUTER_RT480W;
 			}
 		}
-		if (startswith(et0, "00:01:E3") ||
-		    startswith(et0, "00:01:e3") || startswith(et0, "00:90:96"))
-		{
+		if (startswith(et0, "00:01:E3") || startswith(et0, "00:01:e3") || startswith(et0, "00:90:96")) {
 			setRouter("Siemens SE505 v2");
 			return ROUTER_RT480W;
 		}
@@ -2805,9 +2492,7 @@ int internal_getRouterBrand()
 	}
 
 	if (nvram_match("boardtype", "0x467")) {
-		if (startswith(et0, "00:11:50") ||
-		    startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd"))
-		{
+		if (startswith(et0, "00:11:50") || startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd")) {
 			setRouter("Belkin F5D7231-4 v2000");
 			return ROUTER_BELKIN_F5D7231;
 		}
@@ -2826,18 +2511,12 @@ int internal_getRouterBrand()
 
 	if (boardnum == 2 && (gemteknum == 10 || gemteknum == 11) &&
 	    (startswith(et0, "00:0C:E5") ||
-	     startswith(et0, "00:0c:e5") ||
-	     startswith(et0, "00:11:22") ||
-	     startswith(et0, "00:0C:10") ||
-	     startswith(et0, "00:0c:10") ||
-	     startswith(et0, "00:0C:11") || startswith(et0, "00:0c:11"))) {
+	     startswith(et0, "00:0c:e5") || startswith(et0, "00:11:22") || startswith(et0, "00:0C:10") || startswith(et0, "00:0c:10") || startswith(et0, "00:0C:11") || startswith(et0, "00:0c:11"))) {
 		setRouter("Motorola WE800G v1");
 		return ROUTER_MOTOROLA_WE800G;
 	}
 
-	if (boardnum == 2
-	    && (startswith(gemtek, "RC") || gemteknum == 1 || gemteknum == 10))
-	{
+	if (boardnum == 2 && (startswith(gemtek, "RC") || gemteknum == 1 || gemteknum == 10)) {
 		setRouter("Linksys WAP54G v1.x");
 		return ROUTER_WAP54G_V1;
 	}
@@ -2847,8 +2526,7 @@ int internal_getRouterBrand()
 		return ROUTER_SITECOM_WL105B;
 	}
 
-	if (boardnum == 2 && gemteknum == 7
-	    && nvram_match("boardtype", "bcm94710dev")) {
+	if (boardnum == 2 && gemteknum == 7 && nvram_match("boardtype", "bcm94710dev")) {
 		setRouter("Sitecom WL-111");
 		return ROUTER_SITECOM_WL111;
 	}
@@ -2859,12 +2537,7 @@ int internal_getRouterBrand()
 		if (startswith(et0, "00:0C:E5") ||
 		    startswith(et0, "00:0c:e5") ||
 		    startswith(et0, "00:0C:10") ||
-		    startswith(et0, "00:0c:10") ||
-		    startswith(et0, "00:0C:11") ||
-		    startswith(et0, "00:0c:11") ||
-		    startswith(et0, "00:11:22") ||
-		    startswith(et0, "00:0C:90") || startswith(et0, "00:0c:90"))
-		{
+		    startswith(et0, "00:0c:10") || startswith(et0, "00:0C:11") || startswith(et0, "00:0c:11") || startswith(et0, "00:11:22") || startswith(et0, "00:0C:90") || startswith(et0, "00:0c:90")) {
 			if (!strlen(nvram_safe_get("phyid_num"))) {
 				insmod("switch-core");	// get phy type
 				insmod("switch-robo");
@@ -3012,14 +2685,12 @@ int internal_getRouterBrand()
 		return ROUTER_WRT300N;
 	}
 
-	if (boardnum == 42 &&
-	    nvram_match("boardtype", "0x478") && nvram_match("cardbus", "1")) {
+	if (boardnum == 42 && nvram_match("boardtype", "0x478") && nvram_match("cardbus", "1")) {
 		setRouter("Linksys WRT350N");
 		return ROUTER_WRT350N;
 	}
 
-	if (nvram_match("boardnum", "20070615") &&
-	    nvram_match("boardtype", "0x478") && nvram_match("cardbus", "0")) {
+	if (nvram_match("boardnum", "20070615") && nvram_match("boardtype", "0x478") && nvram_match("cardbus", "0")) {
 		if (nvram_match("switch_type", "BCM5395")) {
 			setRouter("Linksys WRT600N v1.1");
 			return ROUTER_WRT600N;
@@ -3173,8 +2844,7 @@ int internal_getRouterBrand()
 		}
 		return ROUTER_DLINK_DIR320;
 	}
-	if (nvram_match("model_name", "DIR-330") &&
-	    nvram_match("boardrev", "0x10")) {
+	if (nvram_match("model_name", "DIR-330") && nvram_match("boardrev", "0x10")) {
 		setRouter("D-Link DIR-330");
 		nvram_set("wan_ifnames", "eth0");	// quirk
 		nvram_set("wan_ifname", "eth0");
@@ -3439,8 +3109,7 @@ int check_wan_link(int num)
 			    !strncmp(name, "bpalogin", 8))	// for HeartBeat
 				wan_link = 1;	// connect
 			else {
-				printf("The %s had been died, remove %s\n",
-				       nvram_safe_get("wan_proto"), filename);
+				printf("The %s had been died, remove %s\n", nvram_safe_get("wan_proto"), filename);
 				wan_link = 0;	// For some reason, the pppoed had been died, 
 				// by link file still exist.
 				unlink(filename);
@@ -3476,16 +3145,12 @@ int check_wan_link(int num)
 				if (strstr(line, "iph0")) {
 					int sock;
 					struct ifreq ifr;
-					if ((sock =
-					     socket(AF_INET, SOCK_RAW,
-						    IPPROTO_RAW)) < 0)
+					if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 						break;
 					memset(&ifr, 0, sizeof(struct ifreq));
-					snprintf(ifr.ifr_name, IFNAMSIZ,
-						 "iph0");
+					snprintf(ifr.ifr_name, IFNAMSIZ, "iph0");
 					ioctl(sock, SIOCGIFFLAGS, &ifr);
-					if ((ifr.ifr_flags &
-					     (IFF_RUNNING | IFF_UP))
+					if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP))
 					    == (IFF_RUNNING | IFF_UP))
 						wan_link = 1;
 					close(sock);
@@ -3557,9 +3222,7 @@ char *get_wan_ipaddr(void)
 	int wan_link = check_wan_link(0);
 
 	if (!strcmp(wan_proto, "pptp")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("pptp_get_ip") :
-		    nvram_safe_get("wan_ipaddr");
+		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_ipaddr");
 	} else if (!strcmp(wan_proto, "pppoe")
 #ifdef HAVE_PPPOATM
 		   || !strcmp(wan_proto, "pppoa")
@@ -3568,13 +3231,10 @@ char *get_wan_ipaddr(void)
 		   || !strcmp(wan_proto, "3g")
 #endif
 	    ) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
 #ifdef HAVE_L2TP
 	} else if (!strcmp(wan_proto, "l2tp")) {
-		wan_ipaddr =
-		    wan_link ? nvram_safe_get("l2tp_get_ip") :
-		    nvram_safe_get("wan_ipaddr");
+		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") : nvram_safe_get("wan_ipaddr");
 #endif
 	} else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
@@ -3800,14 +3460,11 @@ int diag_led(int type, int act)
 {
 	int brand = getRouterBrand();
 
-	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G3G
-	    || brand == ROUTER_WRT300NV11)
+	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G3G || brand == ROUTER_WRT300NV11)
 		return diag_led_4712(type, act);
 	else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
 		return diag_led_4702(type, act);
-	else if ((brand == ROUTER_WRTSL54GS
-		  || brand == ROUTER_WRT310N || brand == ROUTER_WRT350N
-		  || brand == ROUTER_BUFFALO_WZRG144NH) && type == DIAG)
+	else if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT310N || brand == ROUTER_WRT350N || brand == ROUTER_BUFFALO_WZRG144NH) && type == DIAG)
 		return diag_led_4704(type, act);
 	else {
 		if (type == DMZ) {
@@ -3988,8 +3645,7 @@ void get_broadcast(char *ipaddr, char *netmask)
 		return;
 
 	sscanf(ipaddr, "%d.%d.%d.%d", &ip2[0], &ip2[1], &ip2[2], &ip2[3]);
-	sscanf(netmask, "%d.%d.%d.%d", &mask2[0], &mask2[1], &mask2[2],
-	       &mask2[3]);
+	sscanf(netmask, "%d.%d.%d.%d", &mask2[0], &mask2[1], &mask2[2], &mask2[3]);
 	int i = 0;
 
 	for (i = 0; i < 4; i++) {
@@ -4027,8 +3683,7 @@ char *get_wan_face(void)
 		if (nvram_match("pppd_pppifname", ""))
 			strncpy(localwanface, "ppp0", IFNAMSIZ);
 		else
-			strncpy(localwanface, nvram_safe_get("pppd_pppifname"),
-				IFNAMSIZ);
+			strncpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
 	}
 #ifdef HAVE_3G
 	else if (nvram_match("wan_proto", "3g")) {
@@ -4038,9 +3693,7 @@ char *get_wan_face(void)
 			if (nvram_match("pppd_pppifname", ""))
 				strncpy(localwanface, "ppp0", IFNAMSIZ);
 			else
-				strncpy(localwanface,
-					nvram_safe_get("pppd_pppifname"),
-					IFNAMSIZ);
+				strncpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
 		}
 
 	}
@@ -4088,10 +3741,7 @@ static int _pidof(const char *name, pid_t ** pids)
 			if (*e != 0)
 				continue;
 			if (strcmp(name, psname(i, buf, sizeof(buf))) == 0) {
-				if ((*pids =
-				     realloc(*pids,
-					     sizeof(pid_t) * (count + 1))) ==
-				    NULL) {
+				if ((*pids = realloc(*pids, sizeof(pid_t) * (count + 1))) == NULL) {
 					return -1;
 				}
 				(*pids)[count++] = i;
@@ -4280,10 +3930,7 @@ int getIfList(char *buffer, const char *ifprefix)
 				if (!sort) {
 					sort = malloc(sizeof(char *));
 				} else {
-					sort =
-					    realloc(sort,
-						    sizeof(char *) * (count +
-								      1));
+					sort = realloc(sort, sizeof(char *) * (count + 1));
 				}
 				sort[count] = malloc(strlen(ifname) + 1);
 				strcpy(sort[count], ifname);
@@ -4355,9 +4002,7 @@ int sv_valid_hwaddr(char *value)
 	if (!tag || i != 17 || count != 5)	/* must have 17's characters and 5's
 						 * ':' */
 		tag = FALSE;
-	else if (sscanf(value, "%x:%x:%x:%x:%x:%x",
-			&hwaddr[0], &hwaddr[1], &hwaddr[2],
-			&hwaddr[3], &hwaddr[4], &hwaddr[5]) != 6) {
+	else if (sscanf(value, "%x:%x:%x:%x:%x:%x", &hwaddr[0], &hwaddr[1], &hwaddr[2], &hwaddr[3], &hwaddr[4], &hwaddr[5]) != 6) {
 		tag = FALSE;
 	} else
 		tag = TRUE;
@@ -4521,7 +4166,7 @@ int led_control(int type, int act)
 	case ROUTER_BOARD_WDR4900:
 		diag_gpio = 0x000;
 		usb_gpio = 0x001;
-		usb_gpio1 = 0x002;	
+		usb_gpio1 = 0x002;
 		break;
 #endif
 	case ROUTER_BOARD_PB42:
@@ -4695,8 +4340,7 @@ int led_control(int type, int act)
 		    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350"))
 			connected_gpio = 0x105;
 		else if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
-			 || nvram_match("DD_BOARD2",
-					"Gateworks Cambria GW2358-4"))
+			 || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4"))
 			connected_gpio = 0x118;
 		else
 			connected_gpio = 0x003;
@@ -5275,34 +4919,33 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
-		usb_power = 0x009;     // USB 2.0 ehci port
-		usb_power1 = 0x10a;    // USB 3.0 xhci port
-//		wlan0_gpio = 0x028; // wireless orange
-//		wlan1_gpio = 0x029; // wireless blue
-		connected_gpio = 0x02a; // connected blue
+		usb_power = 0x009;	// USB 2.0 ehci port
+		usb_power1 = 0x10a;	// USB 3.0 xhci port
+//              wlan0_gpio = 0x028; // wireless orange
+//              wlan1_gpio = 0x029; // wireless blue
+		connected_gpio = 0x02a;	// connected blue
 		sec0_gpio = 0x02b;
 		sec1_gpio = 0x02c;
 		// 0x2b strange led orange
 		// 0x2c strange led blue
 		power_gpio = 0x02e;
-		diag_gpio = 0x02d;		
+		diag_gpio = 0x02d;
 		diag_gpio_disabled = 0x02e;
 		usb_gpio = 0x02f;
 		break;
 
-
 	case ROUTER_BUFFALO_WZR1750:
-		usb_power = 0x009;     // USB 2.0 ehci port
-		usb_power1 = 0x10a;    // USB 3.0 xhci port
-//		wlan0_gpio = 0x028; // wireless orange
-//		wlan1_gpio = 0x029; // wireless blue
-		connected_gpio = 0x02a; // connected blue
+		usb_power = 0x009;	// USB 2.0 ehci port
+		usb_power1 = 0x10a;	// USB 3.0 xhci port
+//              wlan0_gpio = 0x028; // wireless orange
+//              wlan1_gpio = 0x029; // wireless blue
+		connected_gpio = 0x02a;	// connected blue
 		sec0_gpio = 0x02b;
 		sec1_gpio = 0x02c;
 		// 0x2b strange led orange
 		// 0x2c strange led blue
 		power_gpio = 0x02d;
-		diag_gpio = 0x02e;		
+		diag_gpio = 0x02e;
 		diag_gpio_disabled = 0x02d;
 		usb_gpio = 0x02f;
 		break;
@@ -5533,8 +5176,7 @@ void initlcd()
 
 void lcdmessage(char *message)
 {
-	eval("oled-print", "DD-WRT v24 sp2", "build:" SVN_REVISION,
-	     "3G/UMTS Router", message);
+	eval("oled-print", "DD-WRT v24 sp2", "build:" SVN_REVISION, "3G/UMTS Router", message);
 }
 
 void lcdmessaged(char *dual, char *message)
@@ -5792,9 +5434,7 @@ int getath9kdevicecount(void)
 #else
 	if (nvram_match("mimo_driver", "ath9k")) {
 #endif
-		globresult =
-		    glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL,
-			 &globbuf);
+		globresult = glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL, &globbuf);
 		if (globresult == 0)
 			count = (int)globbuf.gl_pathc;
 		globfree(&globbuf);
@@ -5842,8 +5482,7 @@ int is_ath9k(const char *prefix)
 
 double HTTxRate20_800(unsigned int index)
 {
-	static const double vHTTxRate20_800[24] =
-	    { 6.5, 13.0, 19.5, 26.0, 39.0, 52.0, 58.5, 65.0, 13.0, 26.0, 39.0,
+	static const double vHTTxRate20_800[24] = { 6.5, 13.0, 19.5, 26.0, 39.0, 52.0, 58.5, 65.0, 13.0, 26.0, 39.0,
 		52.0, 78.0, 104.0, 117.0, 130.0,
 		19.5, 39.0, 58.5, 78.0, 117.0, 156.0, 175.5, 195.0
 	};
@@ -5856,8 +5495,7 @@ double HTTxRate20_800(unsigned int index)
 
 double HTTxRate20_400(unsigned int index)
 {
-	static const double vHTTxRate20_400[24] =
-	    { 7.2, 14.4, 21.7, 28.9, 43.3, 57.8, 65.0, 72.2, 14.444, 28.889,
+	static const double vHTTxRate20_400[24] = { 7.2, 14.4, 21.7, 28.9, 43.3, 57.8, 65.0, 72.2, 14.444, 28.889,
 		43.333, 57.778, 86.667, 115.556, 130.000, 144.444,
 		21.7, 43.3, 65.0, 86.7, 130.0, 173.3, 195.0, 216.7
 	};
@@ -5870,8 +5508,7 @@ double HTTxRate20_400(unsigned int index)
 
 double HTTxRate40_800(unsigned int index)
 {
-	static const double vHTTxRate40_800[25] =
-	    { 13.5, 27.0, 40.5, 54.0, 81.0, 108.0, 121.5, 135.0, 27.0, 54.0,
+	static const double vHTTxRate40_800[25] = { 13.5, 27.0, 40.5, 54.0, 81.0, 108.0, 121.5, 135.0, 27.0, 54.0,
 		81.0, 108.0, 162.0, 216.0, 243.0, 270.0,
 		40.5, 81.0, 121.5, 162.0, 243.0, 324.0, 364.5, 405.0, 6.0
 	};
@@ -5884,8 +5521,7 @@ double HTTxRate40_800(unsigned int index)
 
 double HTTxRate40_400(unsigned int index)
 {
-	static const double vHTTxRate40_400[25] =
-	    { 15.0, 30.0, 45.0, 60.0, 90.0, 120.0, 135.0, 150.0, 30.0, 60.0,
+	static const double vHTTxRate40_400[25] = { 15.0, 30.0, 45.0, 60.0, 90.0, 120.0, 135.0, 150.0, 30.0, 60.0,
 		90.0, 120.0, 180.0, 240.0, 270.0, 300.0,
 		45.0, 90.0, 135.0, 180.0, 270.0, 360.0, 405.0, 450.0, 6.7
 	};
@@ -5994,8 +5630,7 @@ static inline void setup_garp_broadcast(struct arph *arp, char *paddr)
 	memcpy(arp->dest_ip, paddr, IP_ALEN);
 }
 
-static inline void setup_garp_reply(struct arph *arp, char *hw_addr,
-				    char *paddr)
+static inline void setup_garp_reply(struct arph *arp, char *hw_addr, char *paddr)
 {
 	arp->opcode = htons(ARPOP_REPLY);
 
@@ -6051,11 +5686,7 @@ static int send_garp(char *iface)
 
 	while (n_garps--) {
 		setup_garp_broadcast(arp, iface_paddr);
-		rc = sendto(sk,
-			    pkt,
-			    ARP_HLEN,
-			    0, (struct sockaddr *)&link,
-			    sizeof(struct sockaddr_ll)
+		rc = sendto(sk, pkt, ARP_HLEN, 0, (struct sockaddr *)&link, sizeof(struct sockaddr_ll)
 		    );
 		if (unlikely(rc == -1)) {
 			perror("sendto");
@@ -6063,11 +5694,7 @@ static int send_garp(char *iface)
 		}
 
 		setup_garp_reply(arp, iface_hw, iface_paddr);
-		rc = sendto(sk,
-			    pkt,
-			    ARP_HLEN,
-			    0, (struct sockaddr *)&link,
-			    sizeof(struct sockaddr_ll)
+		rc = sendto(sk, pkt, ARP_HLEN, 0, (struct sockaddr *)&link, sizeof(struct sockaddr_ll)
 		    );
 		if (unlikely(rc == -1)) {
 			perror("sendto");
