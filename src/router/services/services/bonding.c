@@ -52,14 +52,12 @@ void start_bonding(void)
 
 	stop_bonding();
 
-	sprintf(mode, "mode=%s",
-		nvram_default_get("bonding_type", "balance-rr"));
-	sprintf(count, "max_bonds=%s",
-		nvram_default_get("bonding_number", "1"));
+	sprintf(mode, "mode=%s", nvram_default_get("bonding_type", "balance-rr"));
+	sprintf(count, "max_bonds=%s", nvram_default_get("bonding_number", "1"));
 
 	static char word[256];
 	char *next, *wordlist;
-	int first=0;
+	int first = 0;
 	wordlist = nvram_safe_get("bondings");
 	foreach(word, wordlist, next) {
 		char *port = word;
@@ -74,9 +72,9 @@ void start_bonding(void)
 			sysprintf("iwpriv %s wdssep 0", port);
 			sysprintf("ifconfig %s up", port);
 		}
-		if (!first){
-		    eval("insmod", "bonding", "miimon=100", "downdelay=200", "updelay=200",mode, count);
-		    first=1;
+		if (!first) {
+			eval("insmod", "bonding", "miimon=100", "downdelay=200", "updelay=200", mode, count);
+			first = 1;
 		}
 		eval("ifconfig", tag, "0.0.0.0", "up");
 		eval("ifenslave", tag, port);

@@ -1328,9 +1328,7 @@ struct nvram_tuple srouter_defaults[] = {
 	 "CME3aus+ZgRw6nrgWZSX8Zu1B4ZRpGD0I10UAgrjlkNHNVqiBkCxQd8MZDUsnzd+\n"
 	 "i4fZfYBqHliJUE4tCLWbBzMLiZTfuSb6TRaGhCnesXWQ6iIgjI/LJk274Wtq+zc8\n"
 	 "ENGTIghlKJH/AgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAe7Q6yWGdMX5f6GDAbFVR\n"
-	 "xEZSLgIM6TIazKARcgoV1fD5ymfb9bkWHt2/gXp9EGKVH97nwlkxvR4oYCCVQ9Cp\n"
-	 "hyMc/KTqX9P9M6ZTxwIBN+bkgIIbmArzkHRMrONYOgxAW1oGV+mnHPmgo3rF7fuI\n"
-	 "kSlc2ZFwN5KCX2+3TdcNnVk=\n" "-----END CERTIFICATE-----\n", 0},
+	 "xEZSLgIM6TIazKARcgoV1fD5ymfb9bkWHt2/gXp9EGKVH97nwlkxvR4oYCCVQ9Cp\n" "hyMc/KTqX9P9M6ZTxwIBN+bkgIIbmArzkHRMrONYOgxAW1oGV+mnHPmgo3rF7fuI\n" "kSlc2ZFwN5KCX2+3TdcNnVk=\n" "-----END CERTIFICATE-----\n", 0},
 #else
 	{"ath0_8021xtype", "peap", 0},
 #endif
@@ -3084,9 +3082,7 @@ void load_defaults(void)
 	defaultnum |= (unsigned int)getc(in) << 24;
 	//fread(&defaultnum, 4, 1, in);
 	int i;
-	srouter_defaults =
-	    (struct nvram_tuple *)malloc(sizeof(struct nvram_tuple) *
-					 defaultnum);
+	srouter_defaults = (struct nvram_tuple *)malloc(sizeof(struct nvram_tuple) * defaultnum);
 	for (i = 0; i < defaultnum; i++) {
 		unsigned int vl = (unsigned int)getc(in);
 		if (vl) {

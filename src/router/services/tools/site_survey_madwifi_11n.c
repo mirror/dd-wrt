@@ -44,8 +44,7 @@
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
 
-static int
-copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t essid_len)
+static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t essid_len)
 {
 	const u_int8_t *p;
 	int maxlen;
@@ -108,26 +107,22 @@ static struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
 
 static __inline int iswpaoui(const unsigned char *frm)
 {
-	return frm[1] > 3
-	    && LE_READ_4(frm + 2) == ((WPA_OUI_TYPE << 24) | WPA_OUI);
+	return frm[1] > 3 && LE_READ_4(frm + 2) == ((WPA_OUI_TYPE << 24) | WPA_OUI);
 }
 
 static __inline int isrsnoui(const unsigned char *frm)
 {
-	return frm[1] > 3
-	    && LE_READ_4(frm + 2) == ((WPA_OUI_TYPE << 24) | RSN_OUI);
+	return frm[1] > 3 && LE_READ_4(frm + 2) == ((WPA_OUI_TYPE << 24) | RSN_OUI);
 }
 
 static __inline int iswmeoui(const unsigned char *frm)
 {
-	return frm[1] > 3
-	    && LE_READ_4(frm + 2) == ((WME_OUI_TYPE << 24) | WME_OUI);
+	return frm[1] > 3 && LE_READ_4(frm + 2) == ((WME_OUI_TYPE << 24) | WME_OUI);
 }
 
 static __inline int isatherosoui(const unsigned char *frm)
 {
-	return frm[1] > 3
-	    && LE_READ_4(frm + 2) == ((ATH_OUI_TYPE << 24) | ATH_OUI);
+	return frm[1] > 3 && LE_READ_4(frm + 2) == ((ATH_OUI_TYPE << 24) | ATH_OUI);
 }
 
 static int __inline ismtikoui(const unsigned char *frm)
@@ -144,8 +139,7 @@ __inline static int ishtinfo(const u_int8_t *frm)
 {
 	int isht = frm[1] > 3 && BE_READ_4(frm + 2) == ((0x00904c << 8) | 52);
 	if (!isht)
-		isht = frm[1] > 3
-		    && BE_READ_4(frm + 2) == ((0x00904c << 8) | 61);
+		isht = frm[1] > 3 && BE_READ_4(frm + 2) == ((0x00904c << 8) | 61);
 	return isht;
 }
 
@@ -162,8 +156,7 @@ __inline static int ishtinfo(const u_int8_t *frm)
 __inline static int isht20(const u_int8_t *frm)
 {
 	if (ishtcap(frm)) {
-		struct ieee80211_ie_htcap_cmn *htcap =
-		    (struct ieee80211_ie_htcap_cmn *)frm + 6;
+		struct ieee80211_ie_htcap_cmn *htcap = (struct ieee80211_ie_htcap_cmn *)frm + 6;
 		u_int16_t cap = le16toh(htcap->hc_cap);
 		if (!(cap & IEEE80211_HTCAP_C_CHWIDTH40))
 			return 1;
@@ -225,8 +218,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 	static char a[18];
 	int i;
 
-	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x",
-		     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return (i < 17 ? NULL : a);
 }
 
@@ -272,8 +264,7 @@ int site_survey_main_11n(int argc, char *argv[])
 			if (strlen(site_survey_lists[c].SSID) == sr->isr_ssid_len &&	//
 			    !strncmp(site_survey_lists[c].SSID, vp, sr->isr_ssid_len) &&	// 
 			    !strcmp(site_survey_lists[c].BSSID, ieee80211_ntoa(sr->isr_bssid)) &&	// 
-			    site_survey_lists[c].channel ==
-			    ieee80211_mhz2ieee(sr->isr_freq)) {
+			    site_survey_lists[c].channel == ieee80211_mhz2ieee(sr->isr_freq)) {
 				// entry already exists, skip
 				cp += sr->isr_len;
 				len -= sr->isr_len;
@@ -281,8 +272,7 @@ int site_survey_main_11n(int argc, char *argv[])
 			}
 		}
 		strncpy(site_survey_lists[i].SSID, vp, sr->isr_ssid_len);
-		strcpy(site_survey_lists[i].BSSID,
-		       ieee80211_ntoa(sr->isr_bssid));
+		strcpy(site_survey_lists[i].BSSID, ieee80211_ntoa(sr->isr_bssid));
 		site_survey_lists[i].channel = ieee80211_mhz2ieee(sr->isr_freq);
 		site_survey_lists[i].frequency = sr->isr_freq;
 		int noise = 256;
@@ -291,8 +281,7 @@ int site_survey_main_11n(int argc, char *argv[])
 		if (sr->isr_noise == 0) {
 			site_survey_lists[i].phy_noise = -95;
 		}
-		site_survey_lists[i].RSSI =
-		    (int)site_survey_lists[i].phy_noise + (int)sr->isr_rssi;
+		site_survey_lists[i].RSSI = (int)site_survey_lists[i].phy_noise + (int)sr->isr_rssi;
 		site_survey_lists[i].capability = sr->isr_capinfo;
 		// site_survey_lists[i].athcaps = sr->isr_athflags;
 		site_survey_lists[i].rate_count = sr->isr_nrates;
@@ -324,11 +313,7 @@ int site_survey_main_11n(int argc, char *argv[])
 			site_survey_lists[i].frequency,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
-			site_survey_lists[i].beacon_period,
-			site_survey_lists[i].capability,
-			site_survey_lists[i].dtim_period,
-			site_survey_lists[i].rate_count,
-			site_survey_lists[i].ENCINFO);
+			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
 	}
 
 	return 0;

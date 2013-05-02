@@ -34,9 +34,7 @@
 /* 
  * Only used if sysfs is not available.
  */
-static int old_foreach_port(const char *brname,
-			    int (*iterator) (const char *br, const char *port,
-					     void *arg), void *arg)
+static int old_foreach_port(const char *brname, int (*iterator) (const char *br, const char *port, void *arg), void *arg)
 {
 	int i, err, count;
 	struct ifreq ifr;
@@ -52,8 +50,7 @@ static int old_foreach_port(const char *brname,
 
 	err = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
 	if (err < 0) {
-		dprintf("list ports for bridge:'%s' failed: %s\n",
-			brname, strerror(errno));
+		dprintf("list ports for bridge:'%s' failed: %s\n", brname, strerror(errno));
 		return -errno;
 	}
 
@@ -63,8 +60,7 @@ static int old_foreach_port(const char *brname,
 			continue;
 
 		if (!if_indextoname(ifindices[i], ifname)) {
-			dprintf("can't find name for ifindex:%d\n",
-				ifindices[i]);
+			dprintf("can't find name for ifindex:%d\n", ifindices[i]);
 			continue;
 		}
 
@@ -79,9 +75,7 @@ static int old_foreach_port(const char *brname,
 /*
  * Iterate over all ports in bridge (using sysfs).
  */
-static int br_foreach_port(const char *brname,
-			   int (*iterator) (const char *br, const char *port,
-					    void *arg), void *arg)
+static int br_foreach_port(const char *brname, int (*iterator) (const char *br, const char *port, void *arg), void *arg)
 {
 #ifdef HAVE_LIBSYSFS
 	struct sysfs_class_device *dev;
@@ -90,12 +84,10 @@ static int br_foreach_port(const char *brname,
 	int err = 0;
 	char path[SYSFS_PATH_MAX];
 
-	if (!br_class_net ||
-	    !(dev = sysfs_get_class_device(br_class_net, (char *)brname)))
+	if (!br_class_net || !(dev = sysfs_get_class_device(br_class_net, (char *)brname)))
 		goto old;
 
-	snprintf(path, sizeof(path), "%s/%s",
-		 dev->path, SYSFS_BRIDGE_PORT_SUBDIR);
+	snprintf(path, sizeof(path), "%s/%s", dev->path, SYSFS_BRIDGE_PORT_SUBDIR);
 
 	dir = opendir(path);
 	if (!dir) {
@@ -151,9 +143,7 @@ int br_add_bridge(const char *brname)
 	if (nvram_get(ipaddr) && nvram_get(netmask)
 	    && !nvram_match(ipaddr, "0.0.0.0")
 	    && !nvram_match(netmask, "0.0.0.0")) {
-		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask",
-		     nvram_safe_get(netmask), "mtu", getBridgeMTU(brname),
-		     "up");
+		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(brname), "up");
 	} else
 		eval("ifconfig", brname, "mtu", getBridgeMTU(brname));
 
@@ -199,8 +189,7 @@ int br_add_interface(const char *bridge, const char *dev)
 	if (nvram_get(ipaddr) && nvram_get(netmask)
 	    && !nvram_match(ipaddr, "0.0.0.0")
 	    && !nvram_match(netmask, "0.0.0.0")) {
-		eval("ifconfig", dev, nvram_safe_get(ipaddr), "netmask",
-		     nvram_safe_get(netmask), "mtu", getBridgeMTU(bridge));
+		eval("ifconfig", dev, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(bridge));
 	} else
 		eval("ifconfig", dev, "mtu", getBridgeMTU(bridge));
 
@@ -260,9 +249,7 @@ int br_del_interface(const char *bridge, const char *dev)
 	return err < 0 ? errno : 0;
 }
 
-static int
-br_set(const char *bridge, const char *name,
-       unsigned long value, unsigned long oldcode)
+static int br_set(const char *bridge, const char *name, unsigned long value, unsigned long oldcode)
 {
 	int ret = -1;
 
@@ -307,8 +294,7 @@ int br_set_bridge_forward_delay(const char *br, int sec)
 	tv.tv_sec = sec;
 	tv.tv_usec = 0;
 
-	return br_set(br, "forward_delay", __tv_to_jiffies(&tv),
-		      BRCTL_SET_BRIDGE_FORWARD_DELAY);
+	return br_set(br, "forward_delay", __tv_to_jiffies(&tv), BRCTL_SET_BRIDGE_FORWARD_DELAY);
 }
 
 int br_set_stp_state(const char *br, int stp_state)
@@ -349,8 +335,7 @@ static int get_portno(const char *brname, const char *ifname)
 	ifr.ifr_data = (char *)&args;
 
 	if (ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr) < 0) {
-		dprintf("get_portno: get ports of %s failed: %s\n",
-			brname, strerror(errno));
+		dprintf("get_portno: get ports of %s failed: %s\n", brname, strerror(errno));
 		goto error;
 	}
 
@@ -364,9 +349,7 @@ error:
 	return -1;
 }
 
-static int port_set(const char *bridge, const char *ifname,
-		    const char *name, unsigned long value,
-		    unsigned long oldcode)
+static int port_set(const char *bridge, const char *ifname, const char *name, unsigned long value, unsigned long oldcode)
 {
 	int ret = -1;
 #ifdef HAVE_LIBSYSFS
@@ -411,14 +394,12 @@ int br_set_port_prio(const char *bridge, char *port, char *prio)
 {
 	if (!ifexists(bridge))
 		return -1;
-	return port_set(bridge, port, "priority", atoi(prio),
-			BRCTL_SET_PORT_PRIORITY);
+	return port_set(bridge, port, "priority", atoi(prio), BRCTL_SET_PORT_PRIORITY);
 }
 
 static void br_dump_bridge_id(const unsigned char *x)
 {
-	fprintf(stdout, "%.2x%.2x.%.2x%.2x%.2x%.2x%.2x%.2x", x[0], x[1], x[2],
-		x[3], x[4], x[5], x[6], x[7]);
+	fprintf(stdout, "%.2x%.2x.%.2x%.2x%.2x%.2x%.2x%.2x", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
 }
 
 static int first;
@@ -482,8 +463,7 @@ static int old_get_bridge_info(const char *bridge, struct bridge_info *info)
 	__jiffies_to_tv(&info->ageing_time, i.ageing_time);
 	__jiffies_to_tv(&info->hello_timer_value, i.hello_timer_value);
 	__jiffies_to_tv(&info->tcn_timer_value, i.tcn_timer_value);
-	__jiffies_to_tv(&info->topology_change_timer_value,
-			i.topology_change_timer_value);
+	__jiffies_to_tv(&info->topology_change_timer_value, i.topology_change_timer_value);
 	__jiffies_to_tv(&info->gc_timer_value, i.gc_timer_value);
 
 	return 0;
@@ -528,16 +508,13 @@ static int br_get_bridge_info(const char *bridge, struct bridge_info *info)
 	fetch_tv(dev, BRIDGEATTR("ageing_time"), &info->ageing_time);
 	fetch_tv(dev, BRIDGEATTR("hello_timer"), &info->hello_timer_value);
 	fetch_tv(dev, BRIDGEATTR("tcn_timer"), &info->tcn_timer_value);
-	fetch_tv(dev, BRIDGEATTR("topology_change_timer"),
-		 &info->topology_change_timer_value);;
+	fetch_tv(dev, BRIDGEATTR("topology_change_timer"), &info->topology_change_timer_value);;
 	fetch_tv(dev, BRIDGEATTR("gc_timer"), &info->gc_timer_value);
 
 	info->root_port = fetch_int(dev, BRIDGEATTR("root_port"));
 	info->stp_enabled = fetch_int(dev, BRIDGEATTR("stp_state"));
 	info->topology_change = fetch_int(dev, BRIDGEATTR("topology_change"));
-	info->topology_change_detected = fetch_int(dev,
-						   BRIDGEATTR
-						   ("topology_change_detected"));
+	info->topology_change_detected = fetch_int(dev, BRIDGEATTR("topology_change_detected"));
 	sysfs_close_class_device(dev);
 
 	return 0;
@@ -579,8 +556,7 @@ static int isbridge(const struct sysfs_class_device *dev)
 /*
  * New interface uses sysfs to find bridges
  */
-static int new_foreach_bridge(int (*iterator) (const char *name, void *),
-			      void *arg)
+static int new_foreach_bridge(int (*iterator) (const char *name, void *), void *arg)
 {
 	struct sysfs_class_device *dev;
 	struct dlist *devlist;
@@ -612,8 +588,7 @@ static int new_foreach_bridge(int (*iterator) (const char *name, void *),
 /*
  * Old interface uses ioctl
  */
-static int old_foreach_bridge(int (*iterator) (const char *, void *),
-			      void *iarg)
+static int old_foreach_bridge(int (*iterator) (const char *, void *), void *iarg)
 {
 	int i, ret = 0, num;
 	char ifname[IFNAMSIZ];

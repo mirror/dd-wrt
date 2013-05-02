@@ -107,7 +107,6 @@ int reg_write(int offset, int value)
 	return 0;
 }
 
-
 #if defined (HAVE_RT3352) || defined (CONFIG_RALINK_RT5350)
 
 int ingress_rate_set(int on_off, int port, int bw)
@@ -153,7 +152,7 @@ void table_dump(void)
 	int vid[16];
 
 	for (i = 0; i < 8; i++) {
-		reg_read(REG_ESW_VLAN_ID_BASE + 4*i, &value);
+		reg_read(REG_ESW_VLAN_ID_BASE + 4 * i, &value);
 		vid[2 * i] = value & 0xfff;
 		vid[2 * i + 1] = (value & 0xfff000) >> 12;
 	}
@@ -161,43 +160,42 @@ void table_dump(void)
 	reg_write(REG_ESW_TABLE_SEARCH, 0x1);
 	printf("hash  port(0:6)  vidx   vid  age   mac-address\n");
 	for (i = 0; i < 0x400; i++) {
-		while(1) {
+		while (1) {
 			reg_read(REG_ESW_TABLE_STATUS0, &value);
-			if (value & 0x1) { //search_rdy
+			if (value & 0x1) {	//search_rdy
 				if ((value & 0x70) == 0) {
 					printf("found an unused entry (age = 3'b000), please check!\n");
 					return;
 				}
-				printf("%03x:   ", (value >> 22) & 0x3ff); //hash_addr_lu
-				j = (value >> 12) & 0x7f; //r_port_map
-				printf("%c", (j & 0x01)? '1':'-');
-				printf("%c", (j & 0x02)? '1':'-');
-				printf("%c", (j & 0x04)? '1':'-');
-				printf("%c", (j & 0x08)? '1':'-');
-				printf("%c ", (j & 0x10)? '1':'-');
-				printf("%c", (j & 0x20)? '1':'-');
-				printf("%c", (j & 0x40)? '1':'-');
-				printf("   %2d", (value >> 7) & 0xf); //r_vid
+				printf("%03x:   ", (value >> 22) & 0x3ff);	//hash_addr_lu
+				j = (value >> 12) & 0x7f;	//r_port_map
+				printf("%c", (j & 0x01) ? '1' : '-');
+				printf("%c", (j & 0x02) ? '1' : '-');
+				printf("%c", (j & 0x04) ? '1' : '-');
+				printf("%c", (j & 0x08) ? '1' : '-');
+				printf("%c ", (j & 0x10) ? '1' : '-');
+				printf("%c", (j & 0x20) ? '1' : '-');
+				printf("%c", (j & 0x40) ? '1' : '-');
+				printf("   %2d", (value >> 7) & 0xf);	//r_vid
 				printf("  %4d", vid[(value >> 7) & 0xf]);
-				printf("    %1d", (value >> 4) & 0x7); //r_age_field
+				printf("    %1d", (value >> 4) & 0x7);	//r_age_field
 				reg_read(REG_ESW_TABLE_STATUS2, &mac);
 				printf("  %08x", mac);
 				reg_read(REG_ESW_TABLE_STATUS1, &mac);
 				printf("%04x", (mac & 0xffff));
-				printf("     %c\n", (value & 0x8)? 'y':'-');
+				printf("     %c\n", (value & 0x8) ? 'y' : '-');
 				if (value & 0x2) {
 					printf("end of table %d\n", i);
 					return;
 				}
 				break;
-			}
-			else if (value & 0x2) { //at_table_end
+			} else if (value & 0x2) {	//at_table_end
 				printf("found the last entry %d (not ready)\n", i);
 				return;
 			}
 			usleep(5000);
 		}
-		reg_write(REG_ESW_TABLE_SEARCH, 0x2); //search for next address
+		reg_write(REG_ESW_TABLE_SEARCH, 0x2);	//search for next address
 	}
 }
 
@@ -206,7 +204,7 @@ void table_add(int argc, char *argv[])
 	int i, j, value, is_filter;
 	char tmpstr[9];
 
-	is_filter = (argv[1][0] == 'f')? 1 : 0;
+	is_filter = (argv[1][0] == 'f') ? 1 : 0;
 	if (!argv[2] || strlen(argv[2]) != 12) {
 		printf("MAC address format error, should be of length 12\n");
 		return;
@@ -216,7 +214,7 @@ void table_add(int argc, char *argv[])
 	value = strtoul(tmpstr, NULL, 16);
 	reg_write(REG_ESW_WT_MAC_AD2, value);
 
-	strncpy(tmpstr, argv[2]+8, 4);
+	strncpy(tmpstr, argv[2] + 8, 4);
 	tmpstr[4] = '\0';
 	value = strtoul(tmpstr, NULL, 16);
 	reg_write(REG_ESW_WT_MAC_AD1, value);
@@ -237,7 +235,7 @@ void table_add(int argc, char *argv[])
 		}
 		j += (argv[3][i] - '0') * (1 << i);
 	}
-	value = j << 12; //w_port_map
+	value = j << 12;	//w_port_map
 
 	if (argc > 4) {
 		j = strtoul(argv[4], NULL, 0);
@@ -245,7 +243,7 @@ void table_add(int argc, char *argv[])
 			printf("wrong member index range, should be within 0~15\n");
 			return;
 		}
-		value += (j << 7); //w_index
+		value += (j << 7);	//w_index
 	}
 
 	if (argc > 5) {
@@ -254,20 +252,19 @@ void table_add(int argc, char *argv[])
 			printf("wrong age range, should be within 1~7\n");
 			return;
 		}
-		value += (j << 4); //w_age_field
-	}
-	else
-		value += (7 << 4); //w_age_field
+		value += (j << 4);	//w_age_field
+	} else
+		value += (7 << 4);	//w_age_field
 
 	if (is_filter)
-		value |= (1 << 3); //sa_filter
+		value |= (1 << 3);	//sa_filter
 
-	value += 1; //w_mac_cmd
+	value += 1;		//w_mac_cmd
 	reg_write(REG_ESW_WT_MAC_AD0, value);
 
 	for (i = 0; i < 20; i++) {
 		reg_read(REG_ESW_WT_MAC_AD0, &value);
-		if (value & 0x2) { //w_mac_done
+		if (value & 0x2) {	//w_mac_done
 			printf("done.\n");
 			return;
 		}
@@ -291,7 +288,7 @@ void table_del(int argc, char *argv[])
 	value = strtoul(tmpstr, NULL, 16);
 	reg_write(REG_ESW_WT_MAC_AD2, value);
 
-	strncpy(tmpstr, argv[2]+8, 4);
+	strncpy(tmpstr, argv[2] + 8, 4);
 	tmpstr[4] = '\0';
 	value = strtoul(tmpstr, NULL, 16);
 	reg_write(REG_ESW_WT_MAC_AD1, value);
@@ -303,15 +300,15 @@ void table_del(int argc, char *argv[])
 			printf("wrong member index range, should be within 0~15\n");
 			return;
 		}
-		value += (j << 7); //w_index
+		value += (j << 7);	//w_index
 	}
 
-	value += 1; //w_mac_cmd
+	value += 1;		//w_mac_cmd
 	reg_write(REG_ESW_WT_MAC_AD0, value);
 
 	for (i = 0; i < 20; i++) {
 		reg_read(REG_ESW_WT_MAC_AD0, &value);
-		if (value & 0x2) { //w_mac_done
+		if (value & 0x2) {	//w_mac_done
 			if (argv[1] != NULL)
 				printf("done.\n");
 			return;
@@ -333,9 +330,9 @@ void table_clear(void)
 
 	reg_write(REG_ESW_TABLE_SEARCH, 0x1);
 	for (i = 0; i < 0x400; i++) {
-		while(1) {
+		while (1) {
 			reg_read(REG_ESW_TABLE_STATUS0, &value);
-			if (value & 0x1) { //search_rdy
+			if (value & 0x1) {	//search_rdy
 				if ((value & 0x70) == 0) {
 					return;
 				}
@@ -343,7 +340,7 @@ void table_clear(void)
 				reg_read(REG_ESW_TABLE_STATUS2, &mac);
 				sprintf(v[0], "%08x", mac);
 				reg_read(REG_ESW_TABLE_STATUS1, &mac);
-				sprintf(v[0]+8, "%04x", (mac & 0xffff));
+				sprintf(v[0] + 8, "%04x", (mac & 0xffff));
 				argv[2] = v[0];
 				argv[3] = v[1];
 				table_del(4, argv);
@@ -351,13 +348,12 @@ void table_clear(void)
 					return;
 				}
 				break;
-			}
-			else if (value & 0x2) { //at_table_end
+			} else if (value & 0x2) {	//at_table_end
 				return;
 			}
 			usleep(5000);
 		}
-		reg_write(REG_ESW_TABLE_SEARCH, 0x2); //search for next address
+		reg_write(REG_ESW_TABLE_SEARCH, 0x2);	//search for next address
 	}
 }
 
@@ -367,45 +363,43 @@ void vlan_dump(void)
 
 	printf("idx   vid  portmap\n");
 	for (i = 0; i < 8; i++) {
-		reg_read(REG_ESW_VLAN_ID_BASE + 4*i, &vid);
-		reg_read(REG_ESW_VLAN_MEMB_BASE + 4*(i/2), &value);
-		printf(" %2d  %4d  ", 2*i, vid & 0xfff);
-		if (i%2 == 0) {
-			printf("%c", (value & 0x00000001)? '1':'-');
-			printf("%c", (value & 0x00000002)? '1':'-');
-			printf("%c", (value & 0x00000004)? '1':'-');
-			printf("%c", (value & 0x00000008)? '1':'-');
-			printf("%c", (value & 0x00000010)? '1':'-');
-			printf("%c", (value & 0x00000020)? '1':'-');
-			printf("%c\n", (value & 0x00000040)? '1':'-');
+		reg_read(REG_ESW_VLAN_ID_BASE + 4 * i, &vid);
+		reg_read(REG_ESW_VLAN_MEMB_BASE + 4 * (i / 2), &value);
+		printf(" %2d  %4d  ", 2 * i, vid & 0xfff);
+		if (i % 2 == 0) {
+			printf("%c", (value & 0x00000001) ? '1' : '-');
+			printf("%c", (value & 0x00000002) ? '1' : '-');
+			printf("%c", (value & 0x00000004) ? '1' : '-');
+			printf("%c", (value & 0x00000008) ? '1' : '-');
+			printf("%c", (value & 0x00000010) ? '1' : '-');
+			printf("%c", (value & 0x00000020) ? '1' : '-');
+			printf("%c\n", (value & 0x00000040) ? '1' : '-');
+		} else {
+			printf("%c", (value & 0x00010000) ? '1' : '-');
+			printf("%c", (value & 0x00020000) ? '1' : '-');
+			printf("%c", (value & 0x00040000) ? '1' : '-');
+			printf("%c", (value & 0x00080000) ? '1' : '-');
+			printf("%c", (value & 0x00100000) ? '1' : '-');
+			printf("%c", (value & 0x00200000) ? '1' : '-');
+			printf("%c\n", (value & 0x00400000) ? '1' : '-');
 		}
-		else {
-			printf("%c", (value & 0x00010000)? '1':'-');
-			printf("%c", (value & 0x00020000)? '1':'-');
-			printf("%c", (value & 0x00040000)? '1':'-');
-			printf("%c", (value & 0x00080000)? '1':'-');
-			printf("%c", (value & 0x00100000)? '1':'-');
-			printf("%c", (value & 0x00200000)? '1':'-');
-			printf("%c\n", (value & 0x00400000)? '1':'-');
-		}
-		printf(" %2d  %4d  ", 2*i+1, ((vid & 0xfff000) >> 12));
-		if (i%2 == 0) {
-			printf("%c", (value & 0x00000100)? '1':'-');
-			printf("%c", (value & 0x00000200)? '1':'-');
-			printf("%c", (value & 0x00000400)? '1':'-');
-			printf("%c", (value & 0x00000800)? '1':'-');
-			printf("%c", (value & 0x00001000)? '1':'-');
-			printf("%c", (value & 0x00002000)? '1':'-');
-			printf("%c\n", (value & 0x00004000)? '1':'-');
-		}
-		else {
-			printf("%c", (value & 0x01000000)? '1':'-');
-			printf("%c", (value & 0x02000000)? '1':'-');
-			printf("%c", (value & 0x04000000)? '1':'-');
-			printf("%c", (value & 0x08000000)? '1':'-');
-			printf("%c", (value & 0x10000000)? '1':'-');
-			printf("%c", (value & 0x20000000)? '1':'-');
-			printf("%c\n", (value & 0x40000000)? '1':'-');
+		printf(" %2d  %4d  ", 2 * i + 1, ((vid & 0xfff000) >> 12));
+		if (i % 2 == 0) {
+			printf("%c", (value & 0x00000100) ? '1' : '-');
+			printf("%c", (value & 0x00000200) ? '1' : '-');
+			printf("%c", (value & 0x00000400) ? '1' : '-');
+			printf("%c", (value & 0x00000800) ? '1' : '-');
+			printf("%c", (value & 0x00001000) ? '1' : '-');
+			printf("%c", (value & 0x00002000) ? '1' : '-');
+			printf("%c\n", (value & 0x00004000) ? '1' : '-');
+		} else {
+			printf("%c", (value & 0x01000000) ? '1' : '-');
+			printf("%c", (value & 0x02000000) ? '1' : '-');
+			printf("%c", (value & 0x04000000) ? '1' : '-');
+			printf("%c", (value & 0x08000000) ? '1' : '-');
+			printf("%c", (value & 0x10000000) ? '1' : '-');
+			printf("%c", (value & 0x20000000) ? '1' : '-');
+			printf("%c\n", (value & 0x40000000) ? '1' : '-');
 		}
 	}
 }
@@ -443,54 +437,47 @@ void vlan_set(int argc, char *argv[])
 	}
 
 	//set vlan identifier
-	reg_read(REG_ESW_VLAN_ID_BASE + 4*(idx/2), &value);
+	reg_read(REG_ESW_VLAN_ID_BASE + 4 * (idx / 2), &value);
 	if (idx % 2 == 0) {
 		value &= 0xfff000;
 		value |= vid;
-	}
-	else {
+	} else {
 		value &= 0xfff;
 		value |= (vid << 12);
 	}
-	reg_write(REG_ESW_VLAN_ID_BASE + 4*(idx/2), value);
+	reg_write(REG_ESW_VLAN_ID_BASE + 4 * (idx / 2), value);
 
 	//set vlan member
-	reg_read(REG_ESW_VLAN_MEMB_BASE + 4*(idx/4), &value);
+	reg_read(REG_ESW_VLAN_MEMB_BASE + 4 * (idx / 4), &value);
 	if (idx % 4 == 0) {
 		value &= 0xffffff00;
 		value |= j;
-	}
-	else if (idx % 4 == 1) {
+	} else if (idx % 4 == 1) {
 		value &= 0xffff00ff;
 		value |= (j << 8);
-	}
-	else if (idx % 4 == 2) {
+	} else if (idx % 4 == 2) {
 		value &= 0xff00ffff;
 		value |= (j << 16);
-	}
-	else {
+	} else {
 		value &= 0x00ffffff;
 		value |= (j << 24);
 	}
-	reg_write(REG_ESW_VLAN_MEMB_BASE + 4*(idx/4), value);
+	reg_write(REG_ESW_VLAN_MEMB_BASE + 4 * (idx / 4), value);
 
 	reg_read(0x40, &value);
 
-	for (i=0;i<5;i++)
-	{
-	    if ((1<<i) & j)
-		{
-		reg_read(0x40+(4*(i/2)), &value);
-		if (i%2)
-		    {
-		    value&=0x00ff;
-		    value|=vid<<12;
-		    }else{
-		    value&=0xff00;
-		    value|=vid;		    
-		    }
-		reg_write(0x40+(4*(i/2)), value);
-		
+	for (i = 0; i < 5; i++) {
+		if ((1 << i) & j) {
+			reg_read(0x40 + (4 * (i / 2)), &value);
+			if (i % 2) {
+				value &= 0x00ff;
+				value |= vid << 12;
+			} else {
+				value &= 0xff00;
+				value |= vid;
+			}
+			reg_write(0x40 + (4 * (i / 2)), value);
+
 		}
 	}
 }
@@ -509,11 +496,9 @@ int main(int argc, char *argv[])
 		else if (!strncmp(argv[1], "clear", 6)) {
 			table_clear();
 			printf("done.\n");
-		}
-		else
+		} else
 			usage(argv[0]);
-	}
-	else if (!strncmp(argv[1], "add", 4))
+	} else if (!strncmp(argv[1], "add", 4))
 		table_add(argc, argv);
 	else if (!strncmp(argv[1], "filt", 5))
 		table_add(argc, argv);
@@ -531,62 +516,55 @@ int main(int argc, char *argv[])
 	}
 #endif
 	else if (!strncmp(argv[1], "reg", 4)) {
-		int off, val=0;
+		int off, val = 0;
 		if (argc < 4)
 			usage(argv[0]);
 		if (argv[2][0] == 'r') {
 			off = strtoul(argv[3], NULL, 16);
 			reg_read(off, &val);
 			printf("switch reg read offset=%x, value=%x\n", off, val);
-		}
-		else if (argv[2][0] == 'w') {
+		} else if (argv[2][0] == 'w') {
 			if (argc != 5)
 				usage(argv[0]);
 			off = strtoul(argv[3], NULL, 16);
 			val = strtoul(argv[4], NULL, 16);
 			printf("switch reg write offset=%x, value=%x\n", off, val);
 			reg_write(off, val);
-		}
-		else
+		} else
 			usage(argv[0]);
 	}
 #if defined (HAVE_RT3352) || defined (CONFIG_RALINK_RT5350)
 	else if (!strncmp(argv[1], "ingress-rate", 6)) {
-		int port=0, bw=0;
+		int port = 0, bw = 0;
 
 		if (argv[2][1] == 'n') {
 			port = strtoul(argv[3], NULL, 16);
 			bw = strtoul(argv[4], NULL, 16);
 			ingress_rate_set(1, port, bw);
 			printf("switch port=%d, bw=%d\n", port, bw);
-		}
-		else if (argv[2][1] == 'f') {
+		} else if (argv[2][1] == 'f') {
 			if (argc != 4)
 				usage(argv[0]);
 			port = strtoul(argv[3], NULL, 16);
 			ingress_rate_set(0, port, bw);
 			printf("switch port=%d ingress rate limit off\n", port);
-		}
-		else
+		} else
 			usage(argv[0]);
-	}
-	else if (!strncmp(argv[1], "egress-rate", 6)) {
-		int port=0, bw=0;
-		
+	} else if (!strncmp(argv[1], "egress-rate", 6)) {
+		int port = 0, bw = 0;
+
 		if (argv[2][1] == 'n') {
 			port = strtoul(argv[3], NULL, 16);
 			bw = strtoul(argv[4], NULL, 16);
 			egress_rate_set(1, port, bw);
 			printf("switch port=%d, bw=%d\n", port, bw);
-		}
-		else if (argv[2][1] == 'f') {
+		} else if (argv[2][1] == 'f') {
 			if (argc != 4)
 				usage(argv[0]);
 			port = strtoul(argv[3], NULL, 16);
 			egress_rate_set(0, port, bw);
 			printf("switch port=%d egress rate limit off\n", port);
-		}
-		else
+		} else
 			usage(argv[0]);
 	}
 #endif
@@ -596,4 +574,3 @@ int main(int argc, char *argv[])
 	switch_fini();
 	return 0;
 }
-

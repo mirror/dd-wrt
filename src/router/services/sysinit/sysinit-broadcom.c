@@ -326,9 +326,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 
 			sprintf(bf, "0x%04X", boardflags);
 			boardflags |= BFL_AFTERBURNER;
-			fprintf(stderr,
-				"enable Afterburner, boardflags are 0x%04X\n",
-				boardflags);
+			fprintf(stderr, "enable Afterburner, boardflags are 0x%04X\n", boardflags);
 			char ab[16];
 
 			sprintf(ab, "0x%04X", boardflags);
@@ -367,9 +365,7 @@ static void setup_4712(void)
 {
 	uint boardflags = strtoul(nvram_safe_get("boardflags"), NULL, 0);
 
-	if (nvram_match("cpu_type", BCM4712_CPUTYPE) ||
-	    nvram_match("cpu_type", "BCM3302") ||
-	    nvram_match("cpu_type", "BCM4712")) {
+	if (nvram_match("cpu_type", BCM4712_CPUTYPE) || nvram_match("cpu_type", "BCM3302") || nvram_match("cpu_type", "BCM4712")) {
 		if (boardflags & BFL_ENETVLAN) {
 			cprintf("setup_4712(): Enable VLAN\n");
 			// nvram_set("setup_4712","1");
@@ -392,21 +388,18 @@ static void setup_4712(void)
 		}		// VLAN enabled
 		else {
 			// nvram_set("setup_4712","2");
-			cprintf
-			    ("setup_4712(): Disable VLAN, it must be in bridge mode\n");
+			cprintf("setup_4712(): Disable VLAN, it must be in bridge mode\n");
 			nvram_set("lan_ifnames", "eth0 eth1");
 			strcpy(wlifname, "eth1");
 			nvram_set("wl0_ifname", "eth1");
 		}
 	} else {		// 4702, 4704
-		cprintf
-		    ("setup_4712(): It's a 4702 or 4704 hardware, VLAN can't be used in these 2 boards\n");
+		cprintf("setup_4712(): It's a 4702 or 4704 hardware, VLAN can't be used in these 2 boards\n");
 		strcpy(wanifname, "eth1");
 		strcpy(wlifname, "eth2");
 		nvram_set("wl0_ifname", "eth2");
 		if (!strcmp(nvram_safe_get("wan_ifname"), ""))
-			nvram_set("lan_ifnames",
-				  "eth0 eth1 eth2 wlanb0 wlana0");
+			nvram_set("lan_ifnames", "eth0 eth1 eth2 wlanb0 wlana0");
 		else
 			nvram_set("lan_ifnames", "eth0 eth2");
 	}
@@ -568,8 +561,7 @@ void start_sysinit(void)
 	case ROUTER_ASKEY_RT220XD:
 		basic_params = generic1;
 
-		if (nvram_get("et0macaddr") == NULL
-		    || nvram_get("et0macaddr") == "") {
+		if (nvram_get("et0macaddr") == NULL || nvram_get("et0macaddr") == "") {
 			nvram_set("et0macaddr", "00:16:E3:00:00:10");	// fix for
 			// missing
 			// cfe
@@ -578,8 +570,7 @@ void start_sysinit(void)
 			// ports.
 			need_reboot = 1;
 		}
-		if (nvram_get("et1macaddr") == NULL
-		    || nvram_get("et1macaddr") == "") {
+		if (nvram_get("et1macaddr") == NULL || nvram_get("et1macaddr") == "") {
 			nvram_set("et1macaddr", "00:16:E3:00:00:11");
 			need_reboot = 1;
 		}
@@ -588,8 +579,7 @@ void start_sysinit(void)
 	case ROUTER_BRCM4702_GENERIC:
 		basic_params = generic1;
 
-		if (nvram_get("et0macaddr") == NULL
-		    || nvram_get("et0macaddr") == "") {
+		if (nvram_get("et0macaddr") == NULL || nvram_get("et0macaddr") == "") {
 			nvram_set("et0macaddr", "00:11:22:00:00:10");	// fix for
 			// missing
 			// cfe
@@ -598,8 +588,7 @@ void start_sysinit(void)
 			// ports.
 			need_reboot = 1;
 		}
-		if (nvram_get("et1macaddr") == NULL
-		    || nvram_get("et1macaddr") == "") {
+		if (nvram_get("et1macaddr") == NULL || nvram_get("et1macaddr") == "") {
 			nvram_set("et1macaddr", "00:11:22:00:00:11");
 			need_reboot = 1;
 		}
@@ -608,8 +597,7 @@ void start_sysinit(void)
 	case ROUTER_ASUS_WL500G:
 		basic_params = generic1;
 
-		if (nvram_get("et0macaddr") == NULL
-		    || nvram_get("et0macaddr") == "") {
+		if (nvram_get("et0macaddr") == NULL || nvram_get("et0macaddr") == "") {
 			nvram_set("et0macaddr", "00:0C:6E:00:00:10");	// fix for
 			// missing
 			// cfe
@@ -618,8 +606,7 @@ void start_sysinit(void)
 			// ports.
 			need_reboot = 1;
 		}
-		if (nvram_get("et1macaddr") == NULL
-		    || nvram_get("et1macaddr") == "") {
+		if (nvram_get("et1macaddr") == NULL || nvram_get("et1macaddr") == "") {
 			nvram_set("et1macaddr", "00:0C:6E:00:00:10");
 			need_reboot = 1;
 		}
@@ -675,8 +662,7 @@ void start_sysinit(void)
 		}
 
 		if (nvram_get("pci/1/1/macaddr") == NULL) {
-			nvram_set("pci/1/1/macaddr",
-				  nvram_safe_get("et0macaddr"));
+			nvram_set("pci/1/1/macaddr", nvram_safe_get("et0macaddr"));
 			need_reboot = 1;
 		}
 		//params taken from firmware ver. 2.1.13 multi-region
@@ -735,8 +721,7 @@ void start_sysinit(void)
 		 */
 		extra_params = wnr834bv2_pci_1_1_params;
 		while (extra_params->name) {
-			nvram_nset(extra_params->value, "pci/1/1/%s",
-				   extra_params->name);
+			nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
 			extra_params++;
 		}
 		break;
@@ -868,8 +853,7 @@ void start_sysinit(void)
 		 */
 		extra_params = wndr3400_sb_1_params;
 		while (extra_params->name) {
-			nvram_nset(extra_params->value, "sb/1/%s",
-				   extra_params->name);
+			nvram_nset(extra_params->value, "sb/1/%s", extra_params->name);
 			extra_params++;
 		}
 
@@ -968,8 +952,7 @@ void start_sysinit(void)
 		 */
 		extra_params = wndr3400_pci_1_1_params;
 		while (extra_params->name) {
-			nvram_nset(extra_params->value, "pci/1/1/%s",
-				   extra_params->name);
+			nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
 			extra_params++;
 		}
 		break;
@@ -1028,8 +1011,7 @@ void start_sysinit(void)
 		 */
 		extra_params = wndr4000_sb_1_params;
 		while (extra_params->name) {
-			nvram_nset(extra_params->value, "sb/1/%s",
-				   extra_params->name);
+			nvram_nset(extra_params->value, "sb/1/%s", extra_params->name);
 			extra_params++;
 		}
 
@@ -1116,8 +1098,7 @@ void start_sysinit(void)
 		 */
 		extra_params = wndr4000_pci_1_1_params;
 		while (extra_params->name) {
-			nvram_nset(extra_params->value, "pci/1/1/%s",
-				   extra_params->name);
+			nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
 			extra_params++;
 		}
 		break;
@@ -1306,8 +1287,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_D1800H:
-		if (nvram_get("ledbh0") == NULL
-		    || nvram_match("ledbh11", "130")) {
+		if (nvram_get("ledbh0") == NULL || nvram_match("ledbh11", "130")) {
 			nvram_set("ledbh0", "11");
 			nvram_set("ledbh1", "11");
 			nvram_set("ledbh2", "11");
@@ -1543,8 +1523,7 @@ void start_sysinit(void)
 		 */
 		extra_params = e4200_pci_1_1_params;
 		while (extra_params->name) {
-			nvram_nset(extra_params->value, "pci/1/1/%s",
-				   extra_params->name);
+			nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
 			extra_params++;
 		}
 		break;
@@ -1565,8 +1544,7 @@ void start_sysinit(void)
 		nvram_set("wl1_ifname", "eth3");
 		eval("gpio", "disable", "7");
 
-		if (nvram_get("pci/1/1/macaddr") == NULL
-		    || nvram_get("pci/1/3/macaddr") == NULL) {
+		if (nvram_get("pci/1/1/macaddr") == NULL || nvram_get("pci/1/3/macaddr") == NULL) {
 			unsigned char mac[20];
 
 			strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1710,8 +1688,7 @@ void start_sysinit(void)
 		 */
 		extra_params = wndr3300_pci_1_1_params;
 		while (extra_params->name) {
-			nvram_nset(extra_params->value, "pci/1/1/%s",
-				   extra_params->name);
+			nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
 			extra_params++;
 		}
 
@@ -1739,8 +1716,7 @@ void start_sysinit(void)
 		 */
 		extra_params = wndr3300_pci_1_3_params;
 		while (extra_params->name) {
-			nvram_nset(extra_params->value, "pci/1/3/%s",
-				   extra_params->name);
+			nvram_nset(extra_params->value, "pci/1/3/%s", extra_params->name);
 			extra_params++;
 		}
 		break;
@@ -1820,10 +1796,8 @@ void start_sysinit(void)
 		nvram_set("pci/1/2/boardflags2", "0x0602");
 
 		if (!nvram_match("bootnv_ver", "6")) {
-			if (startswith
-			    (nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
-			    || startswith(nvram_safe_get("pci/1/2/macaddr"),
-					  "00:90:4C")) {
+			if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+			    || startswith(nvram_safe_get("pci/1/2/macaddr"), "00:90:4C")) {
 				unsigned char mac[20];
 				strcpy(mac, nvram_safe_get("et0macaddr"));
 				MAC_ADD(mac);
@@ -1845,8 +1819,7 @@ void start_sysinit(void)
 		if (nvram_match("vlan1ports", "1 2 3 4 8*"))
 			nvram_set("vlan1ports", "4 3 2 1 8*");
 		if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
-		    || startswith(nvram_safe_get("pci/1/1/macaddr"),
-				  "00:90:4c")) {
+		    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4c")) {
 			unsigned char mac[20];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
@@ -2052,10 +2025,7 @@ void start_sysinit(void)
 				fclose(in);
 				char macstr[32];
 
-				sprintf(macstr, "%02X:%02X:%02X:%02X:%02X:%02X",
-					(int)mac[0] & 0xff, (int)mac[1] & 0xff,
-					(int)mac[2] & 0xff, (int)mac[3] & 0xff,
-					(int)mac[4] & 0xff, (int)mac[5] & 0xff);
+				sprintf(macstr, "%02X:%02X:%02X:%02X:%02X:%02X", (int)mac[0] & 0xff, (int)mac[1] & 0xff, (int)mac[2] & 0xff, (int)mac[3] & 0xff, (int)mac[4] & 0xff, (int)mac[5] & 0xff);
 				nvram_set("et0macaddr", macstr);
 				eval("ifconfig", "eth0", "hw", "ether", macstr);
 			}
@@ -2249,10 +2219,7 @@ void start_sysinit(void)
 			case ROUTER_MOTOROLA:
 			case ROUTER_BUFFALO_WBR2G54S:
 			case ROUTER_DELL_TRUEMOBILE_2300_V2:
-				modules =
-				    nvram_invmatch("ct_modules",
-						   "") ?
-				    nvram_safe_get("ct_modules")
+				modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules")
 				    : "switch-core switch-adm";
 				break;
 
@@ -2261,10 +2228,7 @@ void start_sysinit(void)
 			case ROUTER_LINKSYS_WRH54G:
 			case ROUTER_ASUS_WL520G:
 			case ROUTER_ASUS_WL520GUGC:
-				modules =
-				    nvram_invmatch("ct_modules",
-						   "") ?
-				    nvram_safe_get("ct_modules")
+				modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules")
 				    : "switch-core switch-robo";
 				break;
 
@@ -2277,10 +2241,7 @@ void start_sysinit(void)
 
 			case ROUTER_RT480W:
 			case ROUTER_BUFFALO_WLI2_TX1_G54:
-				modules =
-				    nvram_invmatch("ct_modules",
-						   "") ?
-				    nvram_safe_get("ct_modules")
+				modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules")
 				    : "";
 				insmod("switch-core");
 				if (insmod("switch-robo"))
@@ -2288,12 +2249,8 @@ void start_sysinit(void)
 				break;
 
 			case ROUTER_WRT54G3G:
-				modules =
-				    nvram_invmatch("ct_modules",
-						   "") ?
-				    nvram_safe_get("ct_modules")
-				    :
-				    "switch-core switch-robo pcmcia_core yenta_socket ds serial_cs usbcore usb-ohci usbserial sierra";
+				modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules")
+				    : "switch-core switch-robo pcmcia_core yenta_socket ds serial_cs usbcore usb-ohci usbserial sierra";
 				break;
 			case ROUTER_ASUS_RTN10:
 			case ROUTER_ASUS_RTN10PLUSD1:
@@ -2310,10 +2267,7 @@ void start_sysinit(void)
 				modules = "";
 				break;
 			default:
-				modules =
-				    nvram_invmatch("ct_modules",
-						   "") ?
-				    nvram_safe_get("ct_modules")
+				modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules")
 				    : "switch-core switch-robo";
 				break;
 			}
@@ -2346,44 +2300,27 @@ void start_sysinit(void)
 				modules = "et switch-core switch-robo";
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
-				modules =
-				    nvram_invmatch("ct_modules",
-						   "") ?
-				    nvram_safe_get("ct_modules")
+				modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules")
 				    : "switch-core switch-adm";
 
 				break;
 			case ROUTER_ASUS_WL500GD:
 			case ROUTER_ASUS_WL550GE:
-				modules =
-				    nvram_invmatch("ct_modules",
-						   "") ?
-				    nvram_safe_get("ct_modules")
+				modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules")
 				    : "switch-core switch-robo";
 				break;
 			case ROUTER_BUFFALO_WZRRSG54:
 				nvram_set("portprio_support", "0");
-				modules =
-				    nvram_invmatch("ct_modules",
-						   "") ?
-				    nvram_safe_get("ct_modules")
+				modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules")
 				    : "";
 				break;
 			case ROUTER_WRT54G3G:
 				if (check_vlan_support())
-					modules =
-					    nvram_invmatch("ct_modules",
-							   "") ?
-					    nvram_safe_get("ct_modules") :
-					    "switch-core switch-robo pcmcia_core yenta_socket ds";
+					modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules") : "switch-core switch-robo pcmcia_core yenta_socket ds";
 				else {
 					nvram_set("portprio_support", "0");
 
-					modules =
-					    nvram_invmatch("ct_modules",
-							   "") ?
-					    nvram_safe_get("ct_modules") :
-					    "pcmcia_core yenta_socket ds";
+					modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules") : "pcmcia_core yenta_socket ds";
 				}
 				break;
 			case ROUTER_ASUS_RTN10:
@@ -2404,20 +2341,12 @@ void start_sysinit(void)
 			default:
 #ifndef HAVE_BCMMODERN
 				if (check_vlan_support())
-					modules =
-					    nvram_invmatch("ct_modules",
-							   "") ?
-					    nvram_safe_get("ct_modules") :
-					    "switch-core switch-robo";
+					modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules") : "switch-core switch-robo";
 				else
 #endif
 				{
 					nvram_set("portprio_support", "0");
-					modules =
-					    nvram_invmatch("ct_modules",
-							   "") ?
-					    nvram_safe_get("ct_modules") :
-					    "switch-core switch-robo";
+					modules = nvram_invmatch("ct_modules", "") ? nvram_safe_get("ct_modules") : "switch-core switch-robo";
 				}
 				break;
 			}
@@ -2477,8 +2406,7 @@ static int check_nv(char *name, char *value)
 		nvram_set(name, value);
 		ret++;
 	} else if (nvram_invmatch(name, value)) {
-		cprintf("ERR: The %s is %s, not %s !.................\n", name,
-			nvram_safe_get(name), value);
+		cprintf("ERR: The %s is %s, not %s !.................\n", name, nvram_safe_get(name), value);
 		nvram_set(name, value);
 		ret++;
 	}
@@ -2574,8 +2502,7 @@ int check_cfe_nv(void)
 #endif
 	}
 	if (ret) {
-		fprintf(stderr,
-			"Some error found, we want to reboot!.....................\n");
+		fprintf(stderr, "Some error found, we want to reboot!.....................\n");
 		nvram_commit();
 		sys_reboot();
 	}
@@ -2737,9 +2664,7 @@ void start_overclocking(void)
 	}
 
 	if (set) {
-		cprintf
-		    ("clock frequency adjusted from %d to %d, reboot needed\n",
-		     cclk, clk);
+		cprintf("clock frequency adjusted from %d to %d, reboot needed\n", cclk, clk);
 		if (rev == 2 || rev == 8)
 			sprintf(clkfr, "%d,%d,%d", clk, clk2_1, clk2_2);
 		else
@@ -2845,45 +2770,26 @@ char *enable_dtag_vlan(int enable)
 		writevaproc("1", "/proc/switch/%s/reset", eth);
 		writevaproc("1", "/proc/switch/%s/enable_vlan", eth);
 		if (enable) {
-			fprintf(stderr, "enable vlan port mapping %s/%s\n",
-				vlan_lan_ports, vlan7ports);
+			fprintf(stderr, "enable vlan port mapping %s/%s\n", vlan_lan_ports, vlan7ports);
 			if (!nvram_match("dtag_vlan8", "1")
 			    || nvram_match("wan_vdsl", "0")) {
-				writevaproc(vlan_lan_ports,
-					    "/proc/switch/%s/vlan/%d/ports",
-					    eth, lan_vlan_num);
+				writevaproc(vlan_lan_ports, "/proc/switch/%s/vlan/%d/ports", eth, lan_vlan_num);
 				start_setup_vlans();
-				writevaproc(" ",
-					    "/proc/switch/%s/vlan/%d/ports",
-					    eth, wan_vlan_num);
-				writevaproc(vlan7ports,
-					    "/proc/switch/%s/vlan/7/ports",
-					    eth);
+				writevaproc(" ", "/proc/switch/%s/vlan/%d/ports", eth, wan_vlan_num);
+				writevaproc(vlan7ports, "/proc/switch/%s/vlan/7/ports", eth);
 			} else {
-				writevaproc(vlan_lan_ports,
-					    "/proc/switch/%s/vlan/%d/ports",
-					    eth, lan_vlan_num);
+				writevaproc(vlan_lan_ports, "/proc/switch/%s/vlan/%d/ports", eth, lan_vlan_num);
 				start_setup_vlans();
-				writevaproc("", "/proc/switch/%s/vlan/%d/ports",
-					    eth, wan_vlan_num);
-				writevaproc(vlan7ports,
-					    "/proc/switch/%s/vlan/7/ports",
-					    eth);
-				writevaproc(vlan7ports,
-					    "/proc/switch/%s/vlan/8/ports",
-					    eth);
+				writevaproc("", "/proc/switch/%s/vlan/%d/ports", eth, wan_vlan_num);
+				writevaproc(vlan7ports, "/proc/switch/%s/vlan/7/ports", eth);
+				writevaproc(vlan7ports, "/proc/switch/%s/vlan/8/ports", eth);
 			}
 		} else {
-			fprintf(stderr, "disable vlan port mapping %s/%s\n",
-				vlan_lan_ports, vlan_wan_ports);
+			fprintf(stderr, "disable vlan port mapping %s/%s\n", vlan_lan_ports, vlan_wan_ports);
 			writevaproc(" ", "/proc/switch/%s/vlan/7/ports", eth);
 			writevaproc(" ", "/proc/switch/%s/vlan/8/ports", eth);
-			writevaproc(vlan_lan_ports,
-				    "/proc/switch/%s/vlan/%d/ports", eth,
-				    lan_vlan_num);
-			writevaproc(vlan_wan_ports,
-				    "/proc/switch/%s/vlan/%d/ports", eth,
-				    wan_vlan_num);
+			writevaproc(vlan_lan_ports, "/proc/switch/%s/vlan/%d/ports", eth, lan_vlan_num);
+			writevaproc(vlan_wan_ports, "/proc/switch/%s/vlan/%d/ports", eth, wan_vlan_num);
 			start_setup_vlans();
 		}
 	}

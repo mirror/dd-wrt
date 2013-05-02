@@ -60,9 +60,9 @@ static char *getdisc(void)	// works only for squashfs
 {
 	int i;
 	static char ret[4];
-	unsigned char *disks[] =
-	    { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
-"sdi2" };
+	unsigned char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
+		"sdi2"
+	};
 	for (i = 0; i < 9; i++) {
 		char dev[64];
 
@@ -75,8 +75,7 @@ static char *getdisc(void)	// works only for squashfs
 		char buf[4];
 
 		fread(buf, 4, 1, in);
-		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q'
-		    && buf[3] == 't') {
+		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
 			strncpy(ret, disks[i], 3);
@@ -95,8 +94,7 @@ void start_sysinit(void)
 	char *disk = getdisc();
 
 	if (disk == NULL) {
-		fprintf(stderr,
-			"no valid dd-wrt partition found, calling shell");
+		fprintf(stderr, "no valid dd-wrt partition found, calling shell");
 		eval("/bin/sh");
 		exit(0);
 	}
@@ -125,8 +123,7 @@ void start_sysinit(void)
 		unsigned char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
-		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53
-		    && mem[3] == 0x48) {
+		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
 			fprintf(stderr, "found recovery\n");
 			in = fopen("/usr/local/nvram/nvram.bin", "wb");
 			if (in != NULL) {
@@ -185,12 +182,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
-		nvram_set("et0macaddr",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 	detect_wireless_devices();

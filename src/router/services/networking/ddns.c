@@ -76,8 +76,7 @@ int init_ddns(void)
 		snprintf(_username, sizeof(_username), "%s", "ddns_username");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
-		snprintf(_dyndnstype, sizeof(_dyndnstype), "%s",
-			 "ddns_dyndnstype");
+		snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype");
 		snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard");
 		break;
 
@@ -121,8 +120,7 @@ int init_ddns(void)
 		snprintf(_username, sizeof(_username), "%s", "ddns_username_6");
 		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_6");
 		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_6");
-		snprintf(_dyndnstype, sizeof(_dyndnstype), "%s",
-			 "ddns_dyndnstype_6");
+		snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype_6");
 		snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard_6");
 		break;
 
@@ -172,8 +170,7 @@ void start_ddns(void)
 	/*
 	 * We don't want to update, if user don't input below field 
 	 */
-	if (nvram_match(_username, "") ||
-	    nvram_match(_passwd, "") || nvram_match(_hostname, ""))
+	if (nvram_match(_username, "") || nvram_match(_passwd, "") || nvram_match(_hostname, ""))
 		return;
 
 	mkdir("/tmp/ddns", 0744);
@@ -202,8 +199,7 @@ void start_ddns(void)
 	    strcmp(nvram_safe_get("ddns_conf_buf"), nvram_safe_get(_conf)) ||	// ddns 
 	    // conf 
 	    // change
-	    strcmp(nvram_safe_get("ddns_custom_5_buf"),
-		   nvram_safe_get("ddns_custom_5"))) {
+	    strcmp(nvram_safe_get("ddns_custom_5_buf"), nvram_safe_get("ddns_custom_5"))) {
 		/*
 		 * If the user changed anything in the GUI, delete all cache and log 
 		 */
@@ -249,11 +245,9 @@ void start_ddns(void)
 		fprintf(fp, " --cache_dir %s", "/tmp/ddns");	// cache dir
 		fprintf(fp, " --exec %s", "ddns_success");	// run after update
 		if (nvram_match("ddns_enable", "5")) {
-			fprintf(fp, " --dyndns_server_name %s",
-				nvram_safe_get("ddns_custom_5"));
+			fprintf(fp, " --dyndns_server_name %s", nvram_safe_get("ddns_custom_5"));
 			if (nvram_invmatch(_url, ""))
-				fprintf(fp, " --dyndns_server_url %s",
-					nvram_safe_get(_url));
+				fprintf(fp, " --dyndns_server_url %s", nvram_safe_get(_url));
 			if (nvram_invmatch(_conf, ""))
 				fprintf(fp, " %s", nvram_safe_get(_conf));
 		}
@@ -274,10 +268,7 @@ void start_ddns(void)
 	}
 	// call uname and pass directly, otherwise complex usernames (with # i.e.) does not work
 	// we are on a single user system.
-	ret =
-	    sysprintf
-	    ("inadyn -u \'%s\' -p \'%s\' --input_file /tmp/ddns/inadyn.conf",
-	     nvram_safe_get(_username), nvram_safe_get(_passwd));
+	ret = sysprintf("inadyn -u \'%s\' -p \'%s\' --input_file /tmp/ddns/inadyn.conf", nvram_safe_get(_username), nvram_safe_get(_passwd));
 	dd_syslog(LOG_INFO, "DDNS : inadyn daemon successfully started\n");
 
 	cprintf("done\n");

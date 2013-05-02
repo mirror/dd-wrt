@@ -85,8 +85,7 @@ void deconfigure_single_11n(int count)
 	sprintf(dev, "ath%d", count);
 	char vifs[128];
 
-	sprintf(vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev,
-		dev, dev, dev, dev, dev, dev, dev);
+	sprintf(vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev, dev, dev, dev, dev, dev, dev, dev);
 	int s;
 
 	for (s = 1; s <= 10; s++) {
@@ -125,8 +124,7 @@ static int getMaxPower(char *ifname)
 {
 	char buf[128];
 
-	sprintf(buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",
-		ifname);
+	sprintf(buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power", ifname);
 	system2(buf);
 	FILE *in = fopen("/tmp/.power", "rb");
 
@@ -192,22 +190,17 @@ static void set_rate(char *dev, char *priv)
 #endif
 
 	if (nvram_match(bw, "20") && nvram_match(xr, "0"))
-		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f
-		    || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f
-		    || atof(r) == 13.5f) {
+		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f || atof(r) == 13.5f) {
 			nvram_set(rate, "0");
 			r = "0";
 		}
 	if (nvram_match(bw, "40"))
-		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f
-		    || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f
-		    || atof(r) == 13.5f) {
+		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f || atof(r) == 13.5f) {
 			nvram_set(rate, "0");
 			r = "0";
 		}
 	if (nvram_match(bw, "10"))
-		if (atof(r) > 27.0f || atof(r) == 1.5f || atof(r) == 2.0f
-		    || atof(r) == 13.5f) {
+		if (atof(r) > 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 13.5f) {
 			nvram_set(rate, "0");
 			r = "0";
 		}
@@ -451,24 +444,17 @@ static void set_netmode(char *wif, char *dev, char *use)
 		}
 	}
 
-	sysprintf
-	    ("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
+	sysprintf("test -f /proc/sys/dev/ath/htdupieenable && echo 1 > /proc/sys/dev/ath/htdupieenable");
 	sysprintf("iwpriv %s ampdu 1", use);
 	sysprintf("iwpriv %s ampdulimit 50000", use);
 #if defined(HAVE_WHRHPGN) || defined(HAVE_DIR615E) || defined(HAVE_WNR2000)
-	sysprintf("iwpriv %s rx_chainmask %s", use,
-		  nvram_default_get(rxantenna, "3"));
-	sysprintf("iwpriv %s tx_chainmask %s", use,
-		  nvram_default_get(txantenna, "3"));
-	sysprintf("iwpriv %s tx_cm_legacy %s", use,
-		  nvram_default_get(txantenna, "3"));
+	sysprintf("iwpriv %s rx_chainmask %s", use, nvram_default_get(rxantenna, "3"));
+	sysprintf("iwpriv %s tx_chainmask %s", use, nvram_default_get(txantenna, "3"));
+	sysprintf("iwpriv %s tx_cm_legacy %s", use, nvram_default_get(txantenna, "3"));
 #else
-	sysprintf("iwpriv %s rx_chainmask %s", use,
-		  nvram_default_get(rxantenna, "7"));
-	sysprintf("iwpriv %s tx_chainmask %s", use,
-		  nvram_default_get(txantenna, "5"));
-	sysprintf("iwpriv %s tx_cm_legacy %s", use,
-		  nvram_default_get(txantenna, "5"));
+	sysprintf("iwpriv %s rx_chainmask %s", use, nvram_default_get(rxantenna, "7"));
+	sysprintf("iwpriv %s tx_chainmask %s", use, nvram_default_get(txantenna, "5"));
+	sysprintf("iwpriv %s tx_cm_legacy %s", use, nvram_default_get(txantenna, "5"));
 #endif
 }
 
@@ -486,8 +472,7 @@ static void setRTS(char *use)
 	nvram_default_get(rts, "2346");
 
 	if (nvram_nmatch("1", "%s_rts", use)) {
-		sysprintf("iwconfig %s rts %s", use,
-			  nvram_nget("%s_rtsvalue", use));
+		sysprintf("iwconfig %s rts %s", use, nvram_nget("%s_rtsvalue", use));
 	} else {
 		sysprintf("iwconfig %s rts off", use);
 	}
@@ -629,9 +614,7 @@ void configure_single_11n(int count)
 
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
 
-		sysprintf
-		    ("80211n_wlanconfig %s create wlandev %s wlanmode ap",
-		     dev, wif);
+		sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode ap", dev, wif);
 
 		strcpy(primary, dev);
 	}
@@ -644,17 +627,11 @@ void configure_single_11n(int count)
 		if (strlen(mode) > 0) {
 			if (!strcmp(vapm, "wet") || !strcmp(vapm, "sta")
 			    || !strcmp(vapm, "wdssta"))
-				sysprintf
-				    ("80211n_wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
-				     var, wif);
+				sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode sta nosbeacon", var, wif);
 			else if (!strcmp(vapm, "ap") || !strcmp(vapm, "wdsap"))
-				sysprintf
-				    ("80211n_wlanconfig %s create wlandev %s wlanmode ap",
-				     var, wif);
+				sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode ap", var, wif);
 			else
-				sysprintf
-				    ("80211n_wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
-				     var, wif);
+				sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon", var, wif);
 			vif = 1;
 			if (strlen(primary) == 0)
 				strcpy(primary, var);
@@ -676,22 +653,14 @@ void configure_single_11n(int count)
 		if (!strcmp(apm, "wet") || !strcmp(apm, "wdssta")
 		    || !strcmp(apm, "sta")) {
 			if (vif)
-				sysprintf
-				    ("80211n_wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
-				     dev, wif);
+				sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode sta nosbeacon", dev, wif);
 			else
-				sysprintf
-				    ("80211n_wlanconfig %s create wlandev %s wlanmode sta",
-				     dev, wif);
+				sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode sta", dev, wif);
 
 		} else if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap"))
-			sysprintf
-			    ("80211n_wlanconfig %s create wlandev %s wlanmode ap",
-			     dev, wif);
+			sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode ap", dev, wif);
 		else
-			sysprintf
-			    ("80211n_wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon",
-			     dev, wif);
+			sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon", dev, wif);
 
 		if (strlen(primary) == 0)
 			strcpy(primary, dev);
@@ -780,8 +749,7 @@ void configure_single_11n(int count)
 	if (level < 0)
 		level = 4;
 	setsysctrl(wif, "noise_immunity", level);
-	setsysctrl(wif, "ofdm_weak_det",
-		   atoi(nvram_default_get(wl_ofdm_weak_det, "1")));
+	setsysctrl(wif, "ofdm_weak_det", atoi(nvram_default_get(wl_ofdm_weak_det, "1")));
 #endif
 
 	if (isEMP(dev))		//check this only if the current installed card is usually a emp card. this is made to prevent card destruction
@@ -798,8 +766,7 @@ void configure_single_11n(int count)
 	char *chanshift = nvram_default_get(chanshift_s, "0");
 
 	sprintf(maxassoc, "%s_maxassoc", dev);
-	sysprintf("iwpriv %s maxassoc %s", dev,
-		  nvram_default_get(maxassoc, "256"));
+	sysprintf("iwpriv %s maxassoc %s", dev, nvram_default_get(maxassoc, "256"));
 
 	switch (atoi(chanshift)) {
 	case 15:
@@ -845,8 +812,7 @@ void configure_single_11n(int count)
 		sprintf(ssid, "%s_ssid", var);
 		sprintf(mode, "%s_mode", var);
 		sprintf(maxassoc, "%s_maxassoc", var);
-		sysprintf("iwpriv %s maxassoc %s", var,
-			  nvram_default_get(maxassoc, "256"));
+		sysprintf("iwpriv %s maxassoc %s", var, nvram_default_get(maxassoc, "256"));
 		switch (atoi(chanshift)) {
 		case 15:
 			sysprintf("iwpriv %s channelshift -3", var);
@@ -893,43 +859,33 @@ void configure_single_11n(int count)
 		sysprintf("iwpriv %s bgscan 0", var);
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "default_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "default_vap"));
 #else
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "maksat_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "maksat_vap"));
 #endif
 #elif defined(HAVE_TRIMAX)
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "trimax_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "trimax_vap"));
 #elif defined(HAVE_WIKINGS)
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "Excel Networks_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "Excel Networks_vap"));
 #elif defined(HAVE_ESPOD)
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "ESPOD Technologies_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "ESPOD Technologies_vap"));
 #elif defined(HAVE_NEXTMEDIA)
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "nextmedia_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "nextmedia_vap"));
 #elif defined(HAVE_TMK)
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "KMT_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "KMT_vap"));
 #elif defined(HAVE_CORENET)
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "corenet.ap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "corenet.ap"));
 #else
 #ifdef HAVE_REGISTER
 		if (!isregistered())
 			sysprintf("iwconfig %s essid -- need_activation", var);
 		else
 #endif
-			sysprintf("iwconfig %s essid -- \"%s\"", var,
-				  nvram_default_get(ssid, "dd-wrt_vap"));
+			sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "dd-wrt_vap"));
 #endif
 		cprintf("set broadcast flag vif %s\n", var);	// hide ssid
 		sprintf(broadcast, "%s_closed", var);
-		sysprintf("iwpriv %s hide_ssid %s", var,
-			  nvram_default_get(broadcast, "0"));
+		sysprintf("iwpriv %s hide_ssid %s", var, nvram_default_get(broadcast, "0"));
 		sysprintf("iwpriv %s wmm 1", var);
 		char isolate[32];
 
@@ -976,42 +932,32 @@ void configure_single_11n(int count)
 	cprintf("set ssid\n");
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
-	sysprintf("iwconfig %s essid -- \"%s\"", dev,
-		  nvram_default_get(ssid, "default"));
+	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "default"));
 #else
-	sysprintf("iwconfig %s essid -- \"%s\"", dev,
-		  nvram_default_get(ssid, "maksat"));
+	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "maksat"));
 #endif
 #elif defined(HAVE_TRIMAX)
-	sysprintf("iwconfig %s essid -- \"%s\"", dev,
-		  nvram_default_get(ssid, "trimax"));
+	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "trimax"));
 #elif defined(HAVE_WIKINGS)
-	sysprintf("iwconfig %s essid -- \"%s\"", dev,
-		  nvram_default_get(ssid, "Excel Networks"));
+	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "Excel Networks"));
 #elif defined(HAVE_ESPOD)
-	sysprintf("iwconfig %s essid -- \"%s\"", dev,
-		  nvram_default_get(ssid, "ESPOD Technologies"));
+	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "ESPOD Technologies"));
 #elif defined(HAVE_NEXTMEDIA)
-	sysprintf("iwconfig %s essid -- \"%s\"", dev,
-		  nvram_default_get(ssid, "nextmedia"));
+	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "nextmedia"));
 #elif defined(HAVE_TMK)
-	sysprintf("iwconfig %s essid -- \"%s\"", dev,
-		  nvram_default_get(ssid, "KMT"));
+	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "KMT"));
 #elif defined(HAVE_CORENET)
-	sysprintf("iwconfig %s essid -- \"%s\"", dev,
-		  nvram_default_get(ssid, "corenet.ap"));
+	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "corenet.ap"));
 #else
 #ifdef HAVE_REGISTER
 	if (!isregistered())
 		sysprintf("iwconfig %s essid -- need_activation", dev);
 	else
 #endif
-		sysprintf("iwconfig %s essid -- \"%s\"", dev,
-			  nvram_default_get(ssid, "dd-wrt"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "dd-wrt"));
 #endif
 	cprintf("set broadcast flag\n");	// hide ssid
-	sysprintf("iwpriv %s hide_ssid %s", dev,
-		  nvram_default_get(broadcast, "0"));
+	sysprintf("iwpriv %s hide_ssid %s", dev, nvram_default_get(broadcast, "0"));
 	sysprintf("iwpriv %s bgscan 0", dev);
 	apm = nvram_default_get(wl, "ap");
 
@@ -1025,38 +971,28 @@ void configure_single_11n(int count)
 			sysprintf("iwpriv %s shpreamble 0", dev);
 	}
 
-	if (strcmp(apm, "sta") == 0 || strcmp(apm, "infra") == 0
-	    || strcmp(apm, "wet") == 0 || strcmp(apm, "wdssta") == 0) {
+	if (strcmp(apm, "sta") == 0 || strcmp(apm, "infra") == 0 || strcmp(apm, "wet") == 0 || strcmp(apm, "wdssta") == 0) {
 		cprintf("set ssid\n");
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
-		sysprintf("iwconfig %s essid -- \"%s\"", dev,
-			  nvram_default_get(ssid, "default"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "default"));
 #else
-		sysprintf("iwconfig %s essid -- \"%s\"", dev,
-			  nvram_default_get(ssid, "maksat"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "maksat"));
 #endif
 #elif defined(HAVE_TRIMAX)
-		sysprintf("iwconfig %s essid -- \"%s\"", dev,
-			  nvram_default_get(ssid, "trimax"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "trimax"));
 #elif defined(HAVE_WIKINGS)
-		sysprintf("iwconfig %s essid -- \"%s\"", dev,
-			  nvram_default_get(ssid, "Excel Networks"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "Excel Networks"));
 #elif defined(HAVE_ESPOD)
-		sysprintf("iwconfig %s essid -- \"%s\"", dev,
-			  nvram_default_get(ssid, "ESPOD Technologies"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "ESPOD Technologies"));
 #elif defined(HAVE_NEXTMEDIA)
-		sysprintf("iwconfig %s essid -- \"%s\"", dev,
-			  nvram_default_get(ssid, "nextmedia"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "nextmedia"));
 #elif defined(HAVE_TMK)
-		sysprintf("iwconfig %s essid -- \"%s\"", dev,
-			  nvram_default_get(ssid, "KMT"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "KMT"));
 #elif defined(HAVE_CORENET)
-		sysprintf("iwconfig %s essid -- \"%s\"", dev,
-			  nvram_default_get(ssid, "corenet.ap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "corenet.ap"));
 #else
-		sysprintf("iwconfig %s essid -- \"%s\"", dev,
-			  nvram_default_get(ssid, "dd-wrt"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "dd-wrt"));
 #endif
 	}
 
@@ -1118,7 +1054,6 @@ void configure_single_11n(int count)
 		else
 			setupSupplicant(var, NULL);
 		}
-
 #ifdef HAVE_RELAYD
 	if (strcmp(apm, "sta") && strcmp(apm, "wet")) {
 #else
@@ -1134,9 +1069,7 @@ void configure_single_11n(int count)
 		} else {
 			sysprintf("ifconfig %s mtu %s", dev, getMTU(dev));
 			sysprintf("ifconfig %s txqueuelen %s", dev, getTXQ(dev));
-			sysprintf("ifconfig %s %s netmask %s up", dev,
-				  nvram_nget("%s_ipaddr", dev),
-				  nvram_nget("%s_netmask", dev));
+			sysprintf("ifconfig %s %s netmask %s up", dev, nvram_nget("%s_ipaddr", dev), nvram_nget("%s_netmask", dev));
 		}
 	} else {
 #ifdef HAVE_RELAYD
@@ -1152,9 +1085,7 @@ void configure_single_11n(int count)
 		if (nvram_default_match(bridged, "0", "1")) {
 			sysprintf("ifconfig %s mtu %s", dev, getMTU(dev));
 			sysprintf("ifconfig %s txqueuelen %s", dev, getTXQ(dev));
-			sysprintf("ifconfig %s %s netmask %s up", dev,
-				  nvram_nget("%s_ipaddr", dev),
-				  nvram_nget("%s_netmask", dev));
+			sysprintf("ifconfig %s %s netmask %s up", dev, nvram_nget("%s_ipaddr", dev), nvram_nget("%s_netmask", dev));
 		}
 
 	}
@@ -1171,8 +1102,7 @@ void configure_single_11n(int count)
 
 				sprintf(bridged, "%s_bridged", var);
 				if (nvram_default_match(bridged, "1", "1")) {
-					sysprintf("ifconfig %s 0.0.0.0 up",
-						  var);
+					sysprintf("ifconfig %s 0.0.0.0 up", var);
 					br_add_interface(getBridge(var), var);
 				} else {
 					char ip[32];
@@ -1180,13 +1110,9 @@ void configure_single_11n(int count)
 
 					sprintf(ip, "%s_ipaddr", var);
 					sprintf(mask, "%s_netmask", var);
-					sysprintf("ifconfig %s mtu %s", var,
-						  getMTU(var));
+					sysprintf("ifconfig %s mtu %s", var, getMTU(var));
 					sysprintf("ifconfig %s txqueuelen %s", var, getTXQ(var));
-					sysprintf
-					    ("ifconfig %s %s netmask %s up",
-					     var, nvram_safe_get(ip),
-					     nvram_safe_get(mask));
+					sysprintf("ifconfig %s %s netmask %s up", var, nvram_safe_get(ip), nvram_safe_get(mask));
 				}
 			}
 		}
@@ -1215,9 +1141,7 @@ void configure_single_11n(int count)
 				if (!hasnawds)
 					sleep(10);
 				hasnawds = 1;
-				sysprintf
-				    ("80211n_wlanconfig %s nawdslist set 1 %s",
-				     primary, hwaddr);
+				sysprintf("80211n_wlanconfig %s nawdslist set 1 %s", primary, hwaddr);
 			}
 		}
 		if (hasnawds) {

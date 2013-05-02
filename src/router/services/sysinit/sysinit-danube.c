@@ -202,9 +202,7 @@ void start_sysinit(void)
 	if (!strcmp(annex, "madsl2+"))
 		initcode = "00_00_00_00_00_00_04_00";
 
-	sysprintf
-	    ("/usr/sbin/dsl_cpe_control -i%s -f %s -n /usr/sbin/dsl_notification.sh &",
-	     initcode, annexfw);
+	sysprintf("/usr/sbin/dsl_cpe_control -i%s -f %s -n /usr/sbin/dsl_notification.sh &", initcode, annexfw);
 
 	eval("ifconfig", "eth0", "up");
 	detect_wireless_devices();
@@ -216,12 +214,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 #ifdef HAVE_WMBR_G300NH
@@ -237,13 +231,11 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		eval("ifconfig", "wifi0", "hw", "ether", mac1);
 	}
 #ifdef HAVE_ATH9K
-	sysprintf
-	    ("echo phy0tpt > /sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger");
+	sysprintf("echo phy0tpt > /sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger");
 #else
 	writeproc("/proc/sys/dev/wifi0/ledpin", "15");
 	writeproc("/proc/sys/dev/wifi0/softled", "1");

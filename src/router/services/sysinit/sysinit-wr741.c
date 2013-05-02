@@ -56,17 +56,14 @@
 static void setSwitchLED(int gpio, int portmask)
 {
 	sysprintf("echo switch0 > /sys/class/leds/generic_%d/trigger", gpio);
-	sysprintf("echo 0x%x > /sys/class/leds/generic_%d/port_mask", portmask,
-		  gpio);
+	sysprintf("echo 0x%x > /sys/class/leds/generic_%d/port_mask", portmask, gpio);
 }
 
 static void setEthLED(int gpio, char *eth)
 {
 	sysprintf("echo netdev > /sys/class/leds/generic_%d/trigger", gpio);
-	sysprintf("echo %s > /sys/class/leds/generic_%d/device_name", eth,
-		  gpio);
-	sysprintf("echo \"link tx rx\" > /sys/class/leds/generic_%d/mode",
-		  gpio);
+	sysprintf("echo %s > /sys/class/leds/generic_%d/device_name", eth, gpio);
+	sysprintf("echo \"link tx rx\" > /sys/class/leds/generic_%d/mode", gpio);
 }
 
 void start_sysinit(void)
@@ -101,8 +98,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		MAC_SUB(mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
@@ -152,12 +148,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 	detect_wireless_devices();

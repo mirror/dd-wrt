@@ -95,8 +95,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
@@ -110,8 +109,7 @@ void start_sysinit(void)
 	if (fp) {
 		system("swconfig dev rtl8366rb set reset 1");
 		system("swconfig dev rtl8366rb set enable_vlan 1");
-		system
-		    ("swconfig dev rtl8366rb vlan 1 set ports \"1 2 3 4 5t\"");
+		system("swconfig dev rtl8366rb vlan 1 set ports \"1 2 3 4 5t\"");
 		system("swconfig dev rtl8366rb vlan 2 set ports \"0 5t\"");
 		system("swconfig dev rtl8366s set apply");
 		unsigned char buf2[256];
@@ -122,8 +120,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		eval("ifconfig", "eth0", "up");
@@ -150,8 +147,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		eval("ifconfig", "eth0", "up");
@@ -169,8 +165,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		eval("ifconfig", "eth0", "up");
@@ -227,8 +222,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 6; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		MAC_ADD(mac);
@@ -293,12 +287,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 	detect_wireless_devices();

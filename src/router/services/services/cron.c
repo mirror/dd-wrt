@@ -77,17 +77,15 @@ void start_cron(void)
 	}
 	mkdir("/tmp/cron.d", 0700);
 
-	buf_to_file("/tmp/cron.d/check_ps","*/2 * * * * root /sbin/check_ps\n");
+	buf_to_file("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
 	/*
 	 * pppoe reconnect 
 	 */
-	unlink("/tmp/cron.d/pppoe_reconnect"); // may change, so we reconnect
+	unlink("/tmp/cron.d/pppoe_reconnect");	// may change, so we reconnect
 	if (nvram_match("reconnect_enable", "1")) {
 
 		fp = fopen("/tmp/cron.d/pppoe_reconnect", "w");
-		fprintf(fp, "%s %s * * * root /sbin/stopservice wan; /sbin/startservice wan\n",
-			nvram_safe_get("reconnect_minutes"),
-			nvram_safe_get("reconnect_hours"));
+		fprintf(fp, "%s %s * * * root /sbin/stopservice wan; /sbin/startservice wan\n", nvram_safe_get("reconnect_minutes"), nvram_safe_get("reconnect_hours"));
 		fclose(fp);
 	}
 	/*
@@ -98,20 +96,16 @@ void start_cron(void)
 	    && nvram_match("schedule_hour_time", "2")) {
 
 		fp = fopen("/tmp/cron.d/check_schedules", "w");
-		fprintf(fp,
-			"%s %s * * %s root startservice run_rc_shutdown; /sbin/reboot\n",
-			nvram_safe_get("schedule_minutes"),
-			nvram_safe_get("schedule_hours"),
-			nvram_safe_get("schedule_weekdays"));
+		fprintf(fp, "%s %s * * %s root startservice run_rc_shutdown; /sbin/reboot\n", nvram_safe_get("schedule_minutes"), nvram_safe_get("schedule_hours"), nvram_safe_get("schedule_weekdays"));
 		fclose(fp);
 	}
 	/*
 	 * ppp_peer.db backup
 	 */
-	unlink("/tmp/cron.d/ppp_peer_backup"); // 
-	if (nvram_default_match("sys_enable_jffs2", "1", "0")){
+	unlink("/tmp/cron.d/ppp_peer_backup");	// 
+	if (nvram_default_match("sys_enable_jffs2", "1", "0")) {
 		fp = fopen("/tmp/cron.d/ppp_peer_backup", "w");
-		if (nvram_match("pppoeserver_enabled", "1"))	
+		if (nvram_match("pppoeserver_enabled", "1"))
 			fprintf(fp, "1 0,12 * * * root /bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/\n");
 		if (nvram_match("pptpd_enable", "1"))
 			fprintf(fp, "1 0,12 * * * root /bin/cp /tmp/pptp_peer.db /jffs/etc/freeradius/\n");
@@ -145,9 +139,7 @@ void start_cron(void)
 
 		fprintf(fp,
 			"%d * * * * root /usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=`nvram get wl0_hwaddr|sed s/:/-/g`\\&nasid=%s_%s\\&os_date=`nvram get os_date|sed s/\" \"/-/g`\\&install=2\\&uptime=`uptime|sed s/\" \"/\\%%20/g|sed s/:/\\%%3A/g|sed s/,/\\%%2C/g`  -O /tmp/lastup.html\n",
-			(currtime->tm_min + 3) % 60,
-			nvram_get("hotss_operatorid"),
-			nvram_get("hotss_locationid"));
+			(currtime->tm_min + 3) % 60, nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"));
 
 		fclose(fp);
 	}

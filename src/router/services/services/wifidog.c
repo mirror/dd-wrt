@@ -41,42 +41,32 @@ void start_wifidog(void)
 		if (!strlen(nvram_safe_get("wd_gwid")))
 			fprintf(fp, "GatewayID %s\n", nvram_safe_get("router_name"));
 		else
-			fprintf(fp, "GatewayID %s\n",
-				nvram_safe_get("wd_gwid"));
-		if (nvram_invmatch("wan_proto", "disabled")) //WIP
+			fprintf(fp, "GatewayID %s\n", nvram_safe_get("wd_gwid"));
+		if (nvram_invmatch("wan_proto", "disabled"))	//WIP
 			fprintf(fp, "ExternalInterface %s\n", get_wan_face());
-		else 
-			fprintf(fp, "ExternalInterface %s\n", 
-				nvram_safe_get("wd_extiface"));
-		fprintf(fp, "GatewayInterface %s\n",
-			nvram_safe_get("wd_iface"));
+		else
+			fprintf(fp, "ExternalInterface %s\n", nvram_safe_get("wd_extiface"));
+		fprintf(fp, "GatewayInterface %s\n", nvram_safe_get("wd_iface"));
 		// fprintf (fp, "Portal %s\n", nvram_safe_get ("wd_url"));
 		fprintf(fp, "GatewayPort %s\n", nvram_safe_get("wd_gwport"));
 		fprintf(fp, "HTTPDMaxConn %s\n", nvram_safe_get("wd_httpdcon"));
 		fprintf(fp, "HTTPDName %s\n", nvram_safe_get("wd_httpdname"));
-		fprintf(fp, "CheckInterval %s\n",
-			nvram_safe_get("wd_interval"));
+		fprintf(fp, "CheckInterval %s\n", nvram_safe_get("wd_interval"));
 		fprintf(fp, "ClientTimeout %s\n", nvram_safe_get("wd_timeout"));
-		fprintf(fp, "TrustedMACList %s\n",
-			nvram_safe_get("wd_maclist"));
+		fprintf(fp, "TrustedMACList %s\n", nvram_safe_get("wd_maclist"));
 		fprintf(fp, "AuthServer {\n");
 		fprintf(fp, "Hostname %s\n", nvram_safe_get("wd_hostname"));
-		fprintf(fp, "SSLAvailable %s\n",
-			nvram_match("wd_sslavailable", "1") ? "yes" : "no");
+		fprintf(fp, "SSLAvailable %s\n", nvram_match("wd_sslavailable", "1") ? "yes" : "no");
 		fprintf(fp, "SSLPort %s\n", nvram_safe_get("wd_sslport"));
 		fprintf(fp, "HTTPPort %s\n", nvram_safe_get("wd_httpport"));
 		if (strlen(nvram_safe_get("wd_messagefile")) > 0) {
-			fprintf(fp, "HtmlMessageFile %s\n",
-				nvram_safe_get("wd_messagefile"));
+			fprintf(fp, "HtmlMessageFile %s\n", nvram_safe_get("wd_messagefile"));
 		}
 		if (nvram_match("wd_auth", "1")) {
 			if (strlen(nvram_safe_get("wd_realm")) > 0)
-				fprintf(fp, "HTTPDRealm %s\n",
-					nvram_safe_get("wd_realm"));
-			fprintf(fp, "HTTPDUserName %s\n",
-				nvram_safe_get("wd_username"));
-			fprintf(fp, "HTTPDPassword %s\n",
-				nvram_safe_get("wd_password"));
+				fprintf(fp, "HTTPDRealm %s\n", nvram_safe_get("wd_realm"));
+			fprintf(fp, "HTTPDUserName %s\n", nvram_safe_get("wd_username"));
+			fprintf(fp, "HTTPDPassword %s\n", nvram_safe_get("wd_password"));
 		}
 		fprintf(fp, "Path %s\n", nvram_safe_get("wd_path"));
 		fprintf(fp, "}\n");
@@ -102,8 +92,8 @@ void start_wifidog(void)
 		fclose(fp);
 		eval("wifidog");
 		dd_syslog(LOG_INFO, "wifidog successfully started\n");
-		eval("iptables", "-D", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j", "ACCEPT" );
-		eval("iptables", "-I", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j", "ACCEPT" );
+		eval("iptables", "-D", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j", "ACCEPT");
+		eval("iptables", "-I", "FORWARD", "-i", nvram_safe_get("wd_iface"), "-d", nvram_safe_get("wd_hostname"), "-j", "ACCEPT");
 	}
 #ifdef HAVE_TIEXTRA2
 	start_mwifidog();

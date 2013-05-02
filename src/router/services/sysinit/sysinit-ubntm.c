@@ -88,8 +88,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		MAC_ADD(mac);
@@ -108,8 +107,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
@@ -128,12 +126,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 #ifdef HAVE_SWCONFIG
@@ -147,16 +141,14 @@ void start_sysinit(void)
 
 	int brand = getRouterBrand();
 #ifdef HAVE_WPE72
-	sysprintf
-	    ("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
+	sysprintf("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
 
 #else
 	if (brand == ROUTER_BOARD_UNIFI) {
 		setWirelessLed(0, 0);
 	} else {
 		writeproc("/proc/sys/dev/wifi0/softled", "0");
-		sysprintf
-		    ("/sbin/wlanled -l generic_0:-94 -l generic_1:-80 -l generic_11:-73 -l generic_7:-65");
+		sysprintf("/sbin/wlanled -l generic_0:-94 -l generic_1:-80 -l generic_11:-73 -l generic_7:-65");
 	}
 #endif
 	/* ubnt has a hardware fault as it seems, so the power bridge feature can break the hardware which causes endless reboot loops. we keep it disabled here. devices which are already broken will work again then */

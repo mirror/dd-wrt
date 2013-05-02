@@ -143,7 +143,7 @@
 #define ADM_REV_NUM_MASK                           0x000f
 #define ADM_REV_NUM_SHIFT                               0
 
-#if defined(HAVE_ADMTEKNESTEDVLAN) 
+#if defined(HAVE_ADMTEKNESTEDVLAN)
 #define ADM_SW_SIZE_SEL		(3 << 7)
 #endif
 
@@ -444,27 +444,21 @@ void config_vlan(void)
 	 * Set up the port memberships for the VLAN Groups 1 and 2 
 	 */
 
-	phyAddr =
-	    (ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN) / ADM_PHY_BASE_REG_NUM;
-	setPhy(phyAddr, (ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN),
-	       ADM_SW_LAN_MAP_TAB);
+	phyAddr = (ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN) / ADM_PHY_BASE_REG_NUM;
+	setPhy(phyAddr, (ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN), ADM_SW_LAN_MAP_TAB);
 
-	phyAddr =
-	    (ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN) / ADM_PHY_BASE_REG_NUM;
-	setPhy(phyAddr, (ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN),
-	       ADM_SW_WAN_MAP_TAB);
+	phyAddr = (ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN) / ADM_PHY_BASE_REG_NUM;
+	setPhy(phyAddr, (ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN), ADM_SW_WAN_MAP_TAB);
 
 	/*
 	 * Put the chip in 802.1q mode 
 	 */
 	phyAddr = ADM_SW_VLAN_MODE_REG / ADM_PHY_BASE_REG_NUM;
 
-#if defined(HAVE_ADMTEKNESTEDVLAN) 
-	setPhy(phyAddr, ADM_SW_VLAN_MODE_REG,
-	       (ADM_SW_MAC_CLONE_EN | ADM_SW_SIZE_SEL));
+#if defined(HAVE_ADMTEKNESTEDVLAN)
+	setPhy(phyAddr, ADM_SW_VLAN_MODE_REG, (ADM_SW_MAC_CLONE_EN | ADM_SW_SIZE_SEL));
 #else
-	setPhy(phyAddr, ADM_SW_VLAN_MODE_REG,
-	       (ADM_SW_MAC_CLONE_EN | ADM_SW_VLAN_MODE_SEL));
+	setPhy(phyAddr, ADM_SW_VLAN_MODE_REG, (ADM_SW_MAC_CLONE_EN | ADM_SW_VLAN_MODE_SEL));
 #endif
 
 }
@@ -479,13 +473,9 @@ static void adm_verifyReady(int ethUnit)
 	phyID2 = getPhy(0x5, 0x1);
 	if (((phyID1 & 0xfff0) == ADM_CHIP_ID1_EXPECTATION)
 	    && (phyID2 == ADM_CHIP_ID2_EXPECTATION)) {
-		fprintf(stderr,
-			"Found ADM6996FC! PHYID1 is 0x%x, PHYID2 is 0x%x\n",
-			phyID1, phyID2);
+		fprintf(stderr, "Found ADM6996FC! PHYID1 is 0x%x, PHYID2 is 0x%x\n", phyID1, phyID2);
 	} else {
-		fprintf(stderr,
-			"Couldn't find ADM6996FC!\n, PHYID1 is 0x%x, PHYID2 is 0x%x\n",
-			phyID1, phyID2);
+		fprintf(stderr, "Couldn't find ADM6996FC!\n, PHYID1 is 0x%x, PHYID2 is 0x%x\n", phyID1, phyID2);
 	}
 }
 
@@ -582,9 +572,7 @@ void vlan_init(int numports)
 
 		setPhy(phyAddr, ADM_AUTONEG_ADVERT, ADM_ADVERTISE_ALL);
 
-		setPhy(phyAddr, ADM_PHY_CONTROL,
-		       ADM_CTRL_AUTONEGOTIATION_ENABLE |
-		       ADM_CTRL_START_AUTONEGOTIATION);
+		setPhy(phyAddr, ADM_PHY_CONTROL, ADM_CTRL_AUTONEGOTIATION_ENABLE | ADM_CTRL_START_AUTONEGOTIATION);
 	}
 
 	/*
@@ -604,21 +592,15 @@ void vlan_init(int numports)
 			phyHwStatus = getPhy(phyAddr, ADM_PHY_STATUS);
 
 			if (ADM_AUTONEG_DONE(phyHwStatus)) {
-				fprintf(stderr,
-					"Port %d, Negotiation Success\n",
-					phyUnit);
+				fprintf(stderr, "Port %d, Negotiation Success\n", phyUnit);
 				break;
 			}
 			if (timeout == 0) {
-				fprintf(stderr,
-					"Port %d, Negotiation timeout\n",
-					phyUnit);
+				fprintf(stderr, "Port %d, Negotiation timeout\n", phyUnit);
 				break;
 			}
 			if (--timeout == 0) {
-				fprintf(stderr,
-					"Port %d, Negotiation timeout\n",
-					phyUnit);
+				fprintf(stderr, "Port %d, Negotiation timeout\n", phyUnit);
 				break;
 			}
 
@@ -644,9 +626,7 @@ void vlan_init(int numports)
 			ADM_IS_PHY_ALIVE(phyUnit) = FALSE;
 		}
 
-		fprintf(stderr, "adm_phySetup: eth%d phy%d: Phy Status=%4.4x\n",
-			0, phyUnit, getPhy(ADM_PHYADDR(phyUnit),
-					   ADM_PHY_STATUS));
+		fprintf(stderr, "adm_phySetup: eth%d phy%d: Phy Status=%4.4x\n", 0, phyUnit, getPhy(ADM_PHYADDR(phyUnit), ADM_PHY_STATUS));
 	}
 
 	config_vlan();
@@ -663,9 +643,7 @@ void vlan_init(int numports)
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 		char macaddr[32];
 
-		strcpy(macaddr,
-		       ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				  eabuf));
+		strcpy(macaddr, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		nvram_set("et0macaddr", macaddr);
 		MAC_ADD(macaddr);
 		ether_atoe(macaddr, (unsigned char *)ifr.ifr_hwaddr.sa_data);

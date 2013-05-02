@@ -99,9 +99,7 @@ static int serrGPIOOpen( /*IP*/ unsigned char *pc01DevName)
 	return (0);
 }
 
-static int
-serrGPIOIssue( /*IP*/ int sintCommand,
-	      /*IP*/ int sintGPIONumber, /*IP*/ int sintGPIOPattern)
+static int serrGPIOIssue( /*IP*/ int sintCommand, /*IP*/ int sintGPIONumber, /*IP*/ int sintGPIOPattern)
 /*******************************************************
 *  Issue an IOCTL command:
 *  Return 0: Interface is opened successfully for IOCTL.
@@ -205,8 +203,7 @@ int led_ctrl(int on)
 
 		serrCode = serrGPIOOpen(ac01DeviceBCM47xxGPIO);
 		if (serrCode) {
-			printf("\nError in opening interface [%s]: Code %d\n",
-			       ac01DeviceBCM47xxGPIO, serrCode);
+			printf("\nError in opening interface [%s]: Code %d\n", ac01DeviceBCM47xxGPIO, serrCode);
 			// usleep(INTERVAL/10);
 			return -1;
 		} else
@@ -222,15 +219,12 @@ int led_ctrl(int on)
 	if (on) {
 		if ((rc = serrTurnOnLED(wan_gpio)) < 0)
 			printf("led_ctl():Can not ioctl!\n");
-		printf("led_ctl(): WAN is  connected, turn LED2(GPIO %d) on!\n",
-		       wan_gpio);
+		printf("led_ctl(): WAN is  connected, turn LED2(GPIO %d) on!\n", wan_gpio);
 	}			// turn on ACT
 	else {
 		if ((rc = serrTurnOffLED(wan_gpio)) < 0)
 			printf("led_ctl():Can not ioctl!\n");
-		printf
-		    ("led_ctl(): WAN is  disconnected, turn LED2(GPIO %d) off!\n",
-		     wan_gpio);
+		printf("led_ctl(): WAN is  disconnected, turn LED2(GPIO %d) off!\n", wan_gpio);
 	}			// turn on ACT
 	serrGPIOClose();
 	return 0;
@@ -250,8 +244,7 @@ int powerled_ctrl(int on)
 
 		serrCode = serrGPIOOpen(ac01DeviceBCM47xxGPIO);
 		if (serrCode) {
-			printf("\nError in opening interface [%s]: Code %d\n",
-			       ac01DeviceBCM47xxGPIO, serrCode);
+			printf("\nError in opening interface [%s]: Code %d\n", ac01DeviceBCM47xxGPIO, serrCode);
 			// usleep(INTERVAL/10);
 			return -1;
 		} else
@@ -261,16 +254,12 @@ int powerled_ctrl(int on)
 	if (on) {
 		if ((rc = serrTurnOnLED(power_gpio)) < 0)
 			printf("powerled_ctl():Can not ioctl!\n");
-		printf
-		    ("powerled_ctl(): WAN is  connected, turn power LED(GPIO %d) on!\n",
-		     power_gpio);
+		printf("powerled_ctl(): WAN is  connected, turn power LED(GPIO %d) on!\n", power_gpio);
 	}			// turn on ACT
 	else {
 		if ((rc = serrTurnOffLED(power_gpio)) < 0)
 			printf("powerled_ctl():Can not ioctl!\n");
-		printf
-		    ("powerled_ctl(): WAN is  disconnected, turn power LED(GPIO %d) off!\n",
-		     power_gpio);
+		printf("powerled_ctl(): WAN is  disconnected, turn power LED(GPIO %d) off!\n", power_gpio);
 	}			// turn on ACT
 	serrGPIOClose();
 	return 0;

@@ -57,8 +57,7 @@ static char *getdisc(void)	// works only for squashfs
 {
 	int i;
 	static char ret[4];
-	unsigned char *disks[] =
-	    { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
+	unsigned char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
 		"sdi2"
 	};
 	int a;
@@ -76,12 +75,10 @@ static char *getdisc(void)	// works only for squashfs
 			char buf[4];
 
 			fread(buf, 4, 1, in);
-			if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q'
-			    && buf[3] == 't') {
+			if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't') {
 				fclose(in);
 				// filesystem detected
-				fprintf(stderr, "file system detected at %s\n",
-					disks[i]);
+				fprintf(stderr, "file system detected at %s\n", disks[i]);
 				strncpy(ret, disks[i], 3);
 				return ret;
 			}
@@ -154,8 +151,7 @@ void start_devinit(void)
 	char *disc = getdisc();
 
 	if (disc == NULL) {
-		fprintf(stderr,
-			"no valid dd-wrt partition found, calling shell\n");
+		fprintf(stderr, "no valid dd-wrt partition found, calling shell\n");
 		eval("/bin/sh");
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);

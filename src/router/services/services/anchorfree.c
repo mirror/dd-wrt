@@ -71,8 +71,7 @@ void deviceID(char *output)
 	// fprintf (stderr, "generate hash\n");
 	doHash(&MD, "/dev/mtdblock/0");
 	doHash(&MD, "/dev/mtdblock0");
-	doHash(&MD,
-	       "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom");
+	doHash(&MD, "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom");
 	doHash(&MD, "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom");
 	doHash(&MD, "/dev/discs/disc0/part4");
 	md5_end((unsigned char *)key, &MD);
@@ -155,8 +154,7 @@ void start_anchorfree(void)
 			nvram_set("mdhcpd", "wl0.1>On>100>50>3600");
 #else
 			nvram_set("ath0_vifs", "ath0.1");
-			nvram_set("ath0.1_ssid",
-				  nvram_safe_get("af_ssid_name"));
+			nvram_set("ath0.1_ssid", nvram_safe_get("af_ssid_name"));
 			nvram_set("ath0.1_bridged", "0");
 			nvram_set("ath0.1_ipaddr", "172.45.0.1");
 			nvram_set("ath0.1_netmask", "255.255.255.0");
@@ -203,15 +201,11 @@ void start_anchorfree(void)
 			}
 		} else if (nvram_match("af_ssid_created", "1")) {
 #ifndef HAVE_MADWIFI
-			if (!nvram_match
-			    ("af_ssid_name", nvram_safe_get("wl0.1_ssid"))) {
-				nvram_set("wl0.1_ssid",
-					  nvram_safe_get("af_ssid_name"));
+			if (!nvram_match("af_ssid_name", nvram_safe_get("wl0.1_ssid"))) {
+				nvram_set("wl0.1_ssid", nvram_safe_get("af_ssid_name"));
 #else
-			if (!nvram_match
-			    ("af_ssid_name", nvram_safe_get("ath0.1_ssid"))) {
-				nvram_set("ath0.1_ssid",
-					  nvram_safe_get("af_ssid_name"));
+			if (!nvram_match("af_ssid_name", nvram_safe_get("ath0.1_ssid"))) {
+				nvram_set("ath0.1_ssid", nvram_safe_get("af_ssid_name"));
 
 #endif
 				need_commit = 1;
@@ -256,18 +250,13 @@ void start_anchorfree(void)
 		sprintf(callbuffer,
 			"wget -q -O /tmp/.anchorfree \"http://afhrp.anchorfree.com/register.php?"
 			"pid=0001&" "uid=%s&" "email=%s&" "ssid=%s&" "addr=%s&"
-			"addr2=%s&" "city=%s&" "zip=%s&" "state=%s&"
-			"country=%s&" "cat=%s&" "publish=%s\"", devid, email,
-			ssid, addr, addr2, city, zip, state, country, cat,
-			nvram_safe_get("af_publish"));
+			"addr2=%s&" "city=%s&" "zip=%s&" "state=%s&" "country=%s&" "cat=%s&" "publish=%s\"", devid, email, ssid, addr, addr2, city, zip, state, country, cat, nvram_safe_get("af_publish"));
 		system(callbuffer);
 		FILE *response = fopen("/tmp/.anchorfree", "rb");
 
 		if (response == NULL) {
-			fprintf(stderr,
-				"error while registration (cannot reach registration site)!\n");
-			nvram_set("af_servicestatus",
-				  "cannot reach registration site!");
+			fprintf(stderr, "error while registration (cannot reach registration site)!\n");
+			nvram_set("af_servicestatus", "cannot reach registration site!");
 			nvram_set("af_registered", "0");
 			nvram_commit();
 			return;
@@ -277,8 +266,7 @@ void start_anchorfree(void)
 
 		if (r != 1) {
 			fprintf(stderr, "registration failed (bad status)\n");
-			nvram_set("af_servicestatus",
-				  "registration failed (bad status)");
+			nvram_set("af_servicestatus", "registration failed (bad status)");
 			fclose(response);
 			nvram_set("af_registered", "0");
 			nvram_commit();
@@ -297,8 +285,7 @@ void start_anchorfree(void)
 		fscanf(response, "sid: %s\n", status);
 		if (r != 1) {
 			fprintf(stderr, "registration failed (bad sid)\n");
-			nvram_set("af_servicestatus",
-				  "registration failed (bad sid)");
+			nvram_set("af_servicestatus", "registration failed (bad sid)");
 			fclose(response);
 			nvram_set("af_registered", "0");
 			nvram_commit();
@@ -349,8 +336,7 @@ void start_anchorfreednat(void)
 
 		getIPFromName(nvram_safe_get("af_dnathost"), host);
 		if (!strcmp(host, "0.0.0.0")) {
-			fprintf(stderr, "cannot resolve %s\n",
-				nvram_safe_get("af_dnathost"));
+			fprintf(stderr, "cannot resolve %s\n", nvram_safe_get("af_dnathost"));
 			return;
 		}
 		sprintf(dest, "%s:%s", host, nvram_safe_get("af_dnatport"));
@@ -358,37 +344,22 @@ void start_anchorfreednat(void)
 		// getmask (nvram_safe_get ("lan_netmask")));
 		sprintf(source, "0.0.0.0/0");
 		if (nvram_match("af_ssid", "1"))
-			sprintf(source, "%s/%d",
-				nvram_safe_get(IFPREFIX "0.1_ipaddr"),
-				getmask(nvram_safe_get
-					(IFPREFIX "0.1_netmask")));
+			sprintf(source, "%s/%d", nvram_safe_get(IFPREFIX "0.1_ipaddr"), getmask(nvram_safe_get(IFPREFIX "0.1_netmask")));
 
 		if (nvram_match("af_ssid", "1")) {
-			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DROP");
+			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d", nvram_safe_get("lan_ipaddr"), "-j", "DROP");
 		} else {
-			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to",
-			     nvram_safe_get("lan_ipaddr"));
+			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d", nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to", nvram_safe_get("lan_ipaddr"));
 		}
 
-		eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source,
-		     "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
+		eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
 		if (nvram_match("af_ssid", "1")) {
-			eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DROP");
+			eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p", "tcp", "-d", nvram_safe_get("lan_ipaddr"), "-j", "DROP");
 		} else {
-			eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to",
-			     nvram_safe_get("lan_ipaddr"));
+			eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p", "tcp", "-d", nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to", nvram_safe_get("lan_ipaddr"));
 		}
 
-		eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source,
-		     "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
+		eval("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
 	}
 }
 
@@ -398,10 +369,7 @@ void stop_anchorfree_unregister(void)
 	eval("rm", "-f", "/tmp/.anchorfree");
 	char callbuffer[512];
 
-	sprintf(callbuffer,
-		"wget -q -O- \"http://afhrp.anchorfree.com/unregister.php?"
-		"uid=%s&" "sid=%s\"", nvram_safe_get("af_hash"),
-		nvram_safe_get("af_serviceid"));
+	sprintf(callbuffer, "wget -q -O- \"http://afhrp.anchorfree.com/unregister.php?" "uid=%s&" "sid=%s\"", nvram_safe_get("af_hash"), nvram_safe_get("af_serviceid"));
 	system(callbuffer);
 }
 
@@ -422,23 +390,14 @@ void stop_anchorfree(void)
 		// getmask (nvram_safe_get ("lan_netmask")));
 		sprintf(source, "0.0.0.0/0");
 		if (nvram_match("af_ssid", "1"))
-			sprintf(source, "%s/%d",
-				nvram_safe_get(IFPREFIX "0.1_ipaddr"),
-				getmask(nvram_safe_get
-					(IFPREFIX "0.1_netmask")));
+			sprintf(source, "%s/%d", nvram_safe_get(IFPREFIX "0.1_ipaddr"), getmask(nvram_safe_get(IFPREFIX "0.1_netmask")));
 
-		eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source,
-		     "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
+		eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
 
 		if (nvram_match("af_ssid", "1")) {
-			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DROP");
+			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d", nvram_safe_get("lan_ipaddr"), "-j", "DROP");
 		} else {
-			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s",
-			     source, "-p", "tcp", "-d",
-			     nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to",
-			     nvram_safe_get("lan_ipaddr"));
+			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p", "tcp", "-d", nvram_safe_get("lan_ipaddr"), "-j", "DNAT", "--to", nvram_safe_get("lan_ipaddr"));
 
 		}
 

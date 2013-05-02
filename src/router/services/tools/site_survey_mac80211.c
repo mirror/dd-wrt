@@ -81,26 +81,19 @@ struct ie_print {
 	uint8_t flags;
 };
 static void print_ssid(const uint8_t type, uint8_t len, const uint8_t * data);
-static void print_supprates(const uint8_t type, uint8_t len,
-			    const uint8_t * data);
+static void print_supprates(const uint8_t type, uint8_t len, const uint8_t * data);
 static void print_ds(const uint8_t type, uint8_t len, const uint8_t * data);
 static void print_tim(const uint8_t type, uint8_t len, const uint8_t * data);
-static void print_country(const uint8_t type, uint8_t len,
-			  const uint8_t * data);
-static void print_powerconstraint(const uint8_t type, uint8_t len,
-				  const uint8_t * data);
+static void print_country(const uint8_t type, uint8_t len, const uint8_t * data);
+static void print_powerconstraint(const uint8_t type, uint8_t len, const uint8_t * data);
 static void print_rsn(const uint8_t type, uint8_t len, const uint8_t * data);
 static void print_erp(const uint8_t type, uint8_t len, const uint8_t * data);
-static void print_ht_capa(const uint8_t type, uint8_t len,
-			  const uint8_t * data);
+static void print_ht_capa(const uint8_t type, uint8_t len, const uint8_t * data);
 static void print_ht_op(const uint8_t type, uint8_t len, const uint8_t * data);
-static void print_capabilities(const uint8_t type, uint8_t len,
-			       const uint8_t * data);
+static void print_capabilities(const uint8_t type, uint8_t len, const uint8_t * data);
 static int print_bss_handler(struct nl_msg *msg, void *arg);
-static void print_rsn_ie(const char *defcipher, const char *defauth,
-			 uint8_t len, const uint8_t * data);
-static void print_ies(unsigned char *ie, int ielen, bool unknown,
-		      enum print_ie_type ptype);
+static void print_rsn_ie(const char *defcipher, const char *defauth, uint8_t len, const uint8_t * data);
+static void print_ies(unsigned char *ie, int ielen, bool unknown, enum print_ie_type ptype);
 
 static void tab_on_first(bool * first);
 
@@ -110,18 +103,15 @@ static const struct ie_print ieprinters[] = {
 	[3] = {"DS Parameter set", print_ds, 1, 1, BIT(PRINT_SCAN),},
 	[5] = {"TIM", print_tim, 4, 255, BIT(PRINT_SCAN),},
 	[7] = {"Country", print_country, 3, 255, BIT(PRINT_SCAN),},
-	[32] =
-	    {"Power constraint", print_powerconstraint, 1, 1, BIT(PRINT_SCAN),},
+	[32] = {"Power constraint", print_powerconstraint, 1, 1, BIT(PRINT_SCAN),},
 	[42] = {"ERP", print_erp, 1, 255, BIT(PRINT_SCAN),},
 	[45] = {"HT capabilities", print_ht_capa, 26, 26, BIT(PRINT_SCAN),},
 	[61] = {"HT operation", print_ht_op, 22, 22, BIT(PRINT_SCAN),},
 	[48] = {"RSN", print_rsn, 2, 255, BIT(PRINT_SCAN),},
-	[50] =
-	    {"Extended supported rates", print_supprates, 0, 255,
-	     BIT(PRINT_SCAN),},
-	[127] =
-	    {"Extended capabilities", print_capabilities, 0, 255,
-	     BIT(PRINT_SCAN),},
+	[50] = {"Extended supported rates", print_supprates, 0, 255,
+		BIT(PRINT_SCAN),},
+	[127] = {"Extended capabilities", print_capabilities, 0, 255,
+		 BIT(PRINT_SCAN),},
 };
 
 static void fillENC(const char *text, const char *space)
@@ -144,14 +134,12 @@ static int parse_survey(struct nl_msg *msg, struct nlattr **sinfo)
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (!tb[NL80211_ATTR_SURVEY_INFO])
 		return -1;
 
-	if (nla_parse_nested(sinfo, NL80211_SURVEY_INFO_MAX,
-			     tb[NL80211_ATTR_SURVEY_INFO], survey_policy))
+	if (nla_parse_nested(sinfo, NL80211_SURVEY_INFO_MAX, tb[NL80211_ATTR_SURVEY_INFO], survey_policy))
 		return -1;
 
 	if (!sinfo[NL80211_SURVEY_INFO_FREQUENCY])
@@ -241,19 +229,15 @@ void print_ampdu_length(__u8 exponent)
 	max_ampdu_length = compute_ampdu_length(exponent);
 
 	if (max_ampdu_length) {
-		printf
-		    ("\t\tMaximum RX AMPDU length %d bytes (exponent: 0x0%02x)\n",
-		     max_ampdu_length, exponent);
+		printf("\t\tMaximum RX AMPDU length %d bytes (exponent: 0x0%02x)\n", max_ampdu_length, exponent);
 	} else {
-		printf("\t\tMaximum RX AMPDU length: unrecognized bytes "
-		       "(exponent: %d)\n", exponent);
+		printf("\t\tMaximum RX AMPDU length: unrecognized bytes " "(exponent: %d)\n", exponent);
 	}
 }
 
 void print_ampdu_spacing(__u8 spacing)
 {
-	printf("\t\tMinimum RX AMPDU time spacing: %s (0x%02x)\n",
-	       print_ampdu_space(spacing), spacing);
+	printf("\t\tMinimum RX AMPDU time spacing: %s (0x%02x)\n", print_ampdu_space(spacing), spacing);
 }
 
 static void print_mcs_index(const __u8 *mcs)
@@ -310,8 +294,7 @@ static void print_ht_mcs(const __u8 *mcs)
 	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
 
 	if (max_rx_supp_data_rate)
-		printf("\t\tHT Max RX data rate: %d Mbps\n",
-		       max_rx_supp_data_rate);
+		printf("\t\tHT Max RX data rate: %d Mbps\n", max_rx_supp_data_rate);
 	/* XXX: else see 9.6.0e.5.3 how to get this I think */
 
 	if (tx_mcs_set_defined) {
@@ -325,14 +308,11 @@ static void print_ht_mcs(const __u8 *mcs)
 			if (tx_unequal_modulation)
 				printf("\t\tTX unequal modulation supported\n");
 			else
-				printf
-				    ("\t\tTX unequal modulation not supported\n");
+				printf("\t\tTX unequal modulation not supported\n");
 
-			printf("\t\tHT TX Max spatial streams: %d\n",
-			       tx_max_num_spatial_streams);
+			printf("\t\tHT TX Max spatial streams: %d\n", tx_max_num_spatial_streams);
 
-			printf
-			    ("\t\tHT TX MCS rate indexes supported may differ\n");
+			printf("\t\tHT TX MCS rate indexes supported may differ\n");
 		}
 	} else {
 		printf("\t\tHT RX MCS rate indexes supported:");
@@ -341,8 +321,7 @@ static void print_ht_mcs(const __u8 *mcs)
 	}
 }
 
-static void print_wifi_wpa(const uint8_t type, uint8_t len,
-			   const uint8_t * data)
+static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t * data)
 {
 	fillENC("WPA", " ");
 	print_rsn_ie("TKIP", "IEEE 802.1X", len, data);
@@ -374,12 +353,10 @@ static bool print_wifi_wmm_param(const uint8_t * data, uint8_t len)
 		printf("\n\t\t * %s:", aci_tbl[(data[0] >> 5) & 3]);
 		if (data[4] & 0x10)
 			printf(" acm");
-		printf(" CW %d-%d", (1 << (data[1] & 0xf)) - 1,
-		       (1 << (data[1] >> 4)) - 1);
+		printf(" CW %d-%d", (1 << (data[1] & 0xf)) - 1, (1 << (data[1] >> 4)) - 1);
 		printf(", AIFSN %d", data[0] & 0xf);
 		if (data[2] | data[3])
-			printf(", TXOP %d usec",
-			       (data[2] + (data[3] << 8)) * 32);
+			printf(", TXOP %d usec", (data[2] + (data[3] << 8)) * 32);
 		data += 4;
 	}
 
@@ -391,8 +368,7 @@ invalid:
 	return false;
 }
 
-static void print_wifi_wmm(const uint8_t type, uint8_t len,
-			   const uint8_t * data)
+static void print_wifi_wmm(const uint8_t type, uint8_t len, const uint8_t * data)
 {
 	int i;
 
@@ -434,8 +410,7 @@ static const char *wifi_wps_dev_passwd_id(uint16_t id)
 	}
 }
 
-static void print_wifi_wps(const uint8_t type, uint8_t len,
-			   const uint8_t * data)
+static void print_wifi_wps(const uint8_t type, uint8_t len, const uint8_t * data)
 {
 	bool first = true;
 	__u16 subtype, sublen;
@@ -449,8 +424,7 @@ static void print_wifi_wps(const uint8_t type, uint8_t len,
 		switch (subtype) {
 		case 0x104a:
 			tab_on_first(&first);
-			printf("\t * Version: %d.%d\n", data[4] >> 4,
-			       data[4] & 0xF);
+			printf("\t * Version: %d.%d\n", data[4] >> 4, data[4] & 0xF);
 			break;
 		case 0x1011:
 			tab_on_first(&first);
@@ -460,14 +434,11 @@ static void print_wifi_wps(const uint8_t type, uint8_t len,
 				uint16_t id;
 				tab_on_first(&first);
 				if (sublen != 2) {
-					printf
-					    ("\t * Device Password ID: (invalid "
-					     "length %d)\n", sublen);
+					printf("\t * Device Password ID: (invalid " "length %d)\n", sublen);
 					break;
 				}
 				id = data[4] << 8 | data[5];
-				printf("\t * Device Password ID: %u (%s)\n",
-				       id, wifi_wps_dev_passwd_id(id));
+				printf("\t * Device Password ID: %u (%s)\n", id, wifi_wps_dev_passwd_id(id));
 				break;
 			}
 		case 0x1021:
@@ -485,8 +456,7 @@ static void print_wifi_wps(const uint8_t type, uint8_t len,
 		case 0x103b:{
 				__u8 val = data[4];
 				tab_on_first(&first);
-				printf("\t * Response Type: %d%s\n",
-				       val, val == 3 ? " (AP)" : "");
+				printf("\t * Response Type: %d%s\n", val, val == 3 ? " (AP)" : "");
 				break;
 			}
 		case 0x103c:{
@@ -508,25 +478,16 @@ static void print_wifi_wps(const uint8_t type, uint8_t len,
 		case 0x1044:{
 				__u8 val = data[4];
 				tab_on_first(&first);
-				printf
-				    ("\t * Wi-Fi Protected Setup State: %d%s%s\n",
-				     val, val == 1 ? " (Unconfigured)" : "",
-				     val == 2 ? " (Configured)" : "");
+				printf("\t * Wi-Fi Protected Setup State: %d%s%s\n", val, val == 1 ? " (Unconfigured)" : "", val == 2 ? " (Configured)" : "");
 				break;
 			}
 		case 0x1054:{
 				tab_on_first(&first);
 				if (sublen != 8) {
-					printf
-					    ("\t * Primary Device Type: (invalid "
-					     "length %d)\n", sublen);
+					printf("\t * Primary Device Type: (invalid " "length %d)\n", sublen);
 					break;
 				}
-				printf("\t * Primary Device Type: "
-				       "%u-%02x%02x%02x%02x-%u\n",
-				       data[4] << 8 | data[5],
-				       data[6], data[7], data[8], data[9],
-				       data[10] << 8 | data[11]);
+				printf("\t * Primary Device Type: " "%u-%02x%02x%02x%02x-%u\n", data[4] << 8 | data[5], data[6], data[7], data[8], data[9], data[10] << 8 | data[11]);
 				break;
 			}
 		case 0x1057:{
@@ -540,9 +501,7 @@ static void print_wifi_wps(const uint8_t type, uint8_t len,
 				__u16 meth = (data[4] << 8) + data[5];
 				bool comma = false;
 				tab_on_first(&first);
-				printf("\t * %sConfig methods:",
-				       subtype ==
-				       0x1053 ? "Selected Registrar " : "");
+				printf("\t * %sConfig methods:", subtype == 0x1053 ? "Selected Registrar " : "");
 #define T(bit, name) do {		\
 	if (meth & (1<<bit)) {		\
 		if (comma)		\
@@ -568,8 +527,7 @@ static void print_wifi_wps(const uint8_t type, uint8_t len,
 				__u16 tmplen = sublen;
 
 				tab_on_first(&first);
-				printf("\t * Unknown TLV (%#.4x, %d bytes):",
-				       subtype, tmplen);
+				printf("\t * Unknown TLV (%#.4x, %d bytes):", subtype, tmplen);
 				while (tmplen) {
 					printf(" %.2x", *subdata);
 					subdata++;
@@ -632,15 +590,13 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 	memset(site_survey_lists[sscount].ENCINFO, 0, 128);
 	int show = params->show_both_ie_sets ? 2 : 1;
 
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-		  genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (!tb[NL80211_ATTR_BSS]) {
 		fprintf(stderr, "bss info missing!\n");
 		return NL_SKIP;
 	}
-	if (nla_parse_nested(bss, NL80211_BSS_MAX,
-			     tb[NL80211_ATTR_BSS], bss_policy)) {
+	if (nla_parse_nested(bss, NL80211_BSS_MAX, tb[NL80211_ATTR_BSS], bss_policy)) {
 		fprintf(stderr, "failed to parse nested attributes!\n");
 		return NL_SKIP;
 	}
@@ -664,8 +620,7 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 			printf(" -- joined");
 			break;
 		default:
-			printf(" -- unknown status: %d",
-			       nla_get_u32(bss[NL80211_BSS_STATUS]));
+			printf(" -- unknown status: %d", nla_get_u32(bss[NL80211_BSS_STATUS]));
 			break;
 		}
 	}
@@ -674,21 +629,15 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 	if (bss[NL80211_BSS_TSF]) {
 		unsigned long long tsf;
 		tsf = (unsigned long long)nla_get_u64(bss[NL80211_BSS_TSF]);
-		printf("\tTSF: %llu usec (%llud, %.2lld:%.2llu:%.2llu)\n",
-		       tsf, tsf / 1000 / 1000 / 60 / 60 / 24,
-		       (tsf / 1000 / 1000 / 60 / 60) % 24,
-		       (tsf / 1000 / 1000 / 60) % 60, (tsf / 1000 / 1000) % 60);
+		printf("\tTSF: %llu usec (%llud, %.2lld:%.2llu:%.2llu)\n", tsf, tsf / 1000 / 1000 / 60 / 60 / 24, (tsf / 1000 / 1000 / 60 / 60) % 24, (tsf / 1000 / 1000 / 60) % 60, (tsf / 1000 / 1000) % 60);
 	}
 	if (bss[NL80211_BSS_FREQUENCY]) {
 		printf("\tfreq: %d\n", nla_get_u32(bss[NL80211_BSS_FREQUENCY]));
-		site_survey_lists[sscount].frequency =
-		    nla_get_u32(bss[NL80211_BSS_FREQUENCY]);
+		site_survey_lists[sscount].frequency = nla_get_u32(bss[NL80211_BSS_FREQUENCY]);
 	}
 	if (bss[NL80211_BSS_BEACON_INTERVAL]) {
-		printf("\tbeacon interval: %d\n",
-		       nla_get_u16(bss[NL80211_BSS_BEACON_INTERVAL]));
-		site_survey_lists[sscount].beacon_period =
-		    nla_get_u16(bss[NL80211_BSS_BEACON_INTERVAL]);
+		printf("\tbeacon interval: %d\n", nla_get_u16(bss[NL80211_BSS_BEACON_INTERVAL]));
+		site_survey_lists[sscount].beacon_period = nla_get_u16(bss[NL80211_BSS_BEACON_INTERVAL]);
 	}
 	if (bss[NL80211_BSS_CAPABILITY]) {
 		__u16 capa = nla_get_u16(bss[NL80211_BSS_CAPABILITY]);
@@ -734,24 +683,18 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 
 	if (bss[NL80211_BSS_INFORMATION_ELEMENTS] && show--) {
 		if (bss[NL80211_BSS_BEACON_IES])
-			printf("\tInformation elements from Probe Response "
-			       "frame:\n");
-		print_ies(nla_data(bss[NL80211_BSS_INFORMATION_ELEMENTS]),
-			  nla_len(bss[NL80211_BSS_INFORMATION_ELEMENTS]),
-			  params->unknown, params->type);
+			printf("\tInformation elements from Probe Response " "frame:\n");
+		print_ies(nla_data(bss[NL80211_BSS_INFORMATION_ELEMENTS]), nla_len(bss[NL80211_BSS_INFORMATION_ELEMENTS]), params->unknown, params->type);
 	}
 	if (bss[NL80211_BSS_BEACON_IES] && show--) {
 		printf("\tInformation elements from Beacon frame:\n");
-		print_ies(nla_data(bss[NL80211_BSS_BEACON_IES]),
-			  nla_len(bss[NL80211_BSS_BEACON_IES]),
-			  params->unknown, params->type);
+		print_ies(nla_data(bss[NL80211_BSS_BEACON_IES]), nla_len(bss[NL80211_BSS_BEACON_IES]), params->unknown, params->type);
 	}
 	site_survey_lists[sscount].rate_count = rate_count;
 	int freq = site_survey_lists[sscount].frequency;
 	site_survey_lists[sscount].phy_noise = noise[freq];
 	if (site_survey_lists[sscount].channel == 0) {
-		site_survey_lists[sscount].channel =
-		    ieee80211_mhz2ieee(site_survey_lists[sscount].frequency);
+		site_survey_lists[sscount].channel = ieee80211_mhz2ieee(site_survey_lists[sscount].frequency);
 	}
 	sscount++;
 
@@ -772,8 +715,7 @@ static const char *country_env_str(char environment)
 	}
 }
 
-static void print_ie(const struct ie_print *p, const uint8_t type,
-		     uint8_t len, const uint8_t * data)
+static void print_ie(const struct ie_print *p, const uint8_t type, uint8_t len, const uint8_t * data)
 {
 	int i;
 
@@ -803,8 +745,7 @@ static const struct ie_print wifiprinters[] = {
 	[4] = {"WPS", print_wifi_wps, 0, 255, BIT(PRINT_SCAN),},
 };
 
-static void print_vendor(unsigned char len, unsigned char *data,
-			 bool unknown, enum print_ie_type ptype)
+static void print_vendor(unsigned char len, unsigned char *data, bool unknown, enum print_ie_type ptype)
 {
 	int i;
 
@@ -817,11 +758,8 @@ static void print_vendor(unsigned char len, unsigned char *data,
 	}
 
 	if (len >= 4 && memcmp(data, wifi_oui, 3) == 0) {
-		if (data[3] < ARRAY_SIZE(wifiprinters) &&
-		    wifiprinters[data[3]].name &&
-		    wifiprinters[data[3]].flags & BIT(ptype)) {
-			print_ie(&wifiprinters[data[3]], data[3], len - 4,
-				 data + 4);
+		if (data[3] < ARRAY_SIZE(wifiprinters) && wifiprinters[data[3]].name && wifiprinters[data[3]].flags & BIT(ptype)) {
+			print_ie(&wifiprinters[data[3]], data[3], len - 4, data + 4);
 			return;
 		}
 		if (!unknown)
@@ -836,20 +774,16 @@ static void print_vendor(unsigned char len, unsigned char *data,
 	if (!unknown)
 		return;
 
-	printf("\tVendor specific: OUI %.2x:%.2x:%.2x, data:",
-	       data[0], data[1], data[2]);
+	printf("\tVendor specific: OUI %.2x:%.2x:%.2x, data:", data[0], data[1], data[2]);
 	for (i = 3; i < len; i++)
 		printf(" %.2x", data[i]);
 	printf("\n");
 }
 
-static void print_ies(unsigned char *ie, int ielen, bool unknown,
-		      enum print_ie_type ptype)
+static void print_ies(unsigned char *ie, int ielen, bool unknown, enum print_ie_type ptype)
 {
 	while (ielen >= 2 && ielen >= ie[1]) {
-		if (ie[0] < ARRAY_SIZE(ieprinters) &&
-		    ieprinters[ie[0]].name &&
-		    ieprinters[ie[0]].flags & BIT(ptype)) {
+		if (ie[0] < ARRAY_SIZE(ieprinters) && ieprinters[ie[0]].name && ieprinters[ie[0]].flags & BIT(ptype)) {
 			print_ie(&ieprinters[ie[0]], ie[0], ie[1], ie + 2);
 		} else if (ie[0] == 221 /* vendor */ ) {
 			print_vendor(ie[1], ie + 2, unknown, ptype);
@@ -866,8 +800,7 @@ static void print_ies(unsigned char *ie, int ielen, bool unknown,
 	}
 }
 
-static void print_supprates(const uint8_t type, uint8_t len,
-			    const uint8_t * data)
+static void print_supprates(const uint8_t type, uint8_t len, const uint8_t * data)
 {
 	int i;
 
@@ -875,8 +808,7 @@ static void print_supprates(const uint8_t type, uint8_t len,
 
 	for (i = 0; i < len; i++) {
 		int r = data[i] & 0x7f;
-		printf("%d.%d%s _%d_", r / 2, 5 * (r & 1),
-		       data[i] & 0x80 ? "*" : "", rate_count);
+		printf("%d.%d%s _%d_", r / 2, 5 * (r & 1), data[i] & 0x80 ? "*" : "", rate_count);
 		rate_count++;
 	}
 	printf("\n");
@@ -890,8 +822,7 @@ static void print_ds(const uint8_t type, uint8_t len, const uint8_t * data)
 
 static void print_tim(const uint8_t type, uint8_t len, const uint8_t * data)
 {
-	printf(" DTIM Count %u DTIM Period %u Bitmap Control 0x%x "
-	       "Bitmap[0] 0x%x", data[0], data[1], data[2], data[3]);
+	printf(" DTIM Count %u DTIM Period %u Bitmap Control 0x%x " "Bitmap[0] 0x%x", data[0], data[1], data[2], data[3]);
 	if (len - 4)
 		printf(" (+ %u octet%s)", len - 4, len - 4 == 1 ? "" : "s");
 	printf("\n");
@@ -915,14 +846,10 @@ static void print_country(const uint8_t type, uint8_t len, const uint8_t * data)
 		int end_channel;
 		union ieee80211_country_ie_triplet *triplet = (void *)data;
 
-		if (triplet->ext.reg_extension_id >=
-		    IEEE80211_COUNTRY_EXTENSION_ID) {
+		if (triplet->ext.reg_extension_id >= IEEE80211_COUNTRY_EXTENSION_ID) {
 			printf
 			    ("\t\tExtension ID: %d Regulatory Class: %d Coverage class: %d (up to %dm)\n",
-			     triplet->ext.reg_extension_id,
-			     triplet->ext.reg_class,
-			     triplet->ext.coverage_class,
-			     triplet->ext.coverage_class * 450);
+			     triplet->ext.reg_extension_id, triplet->ext.reg_class, triplet->ext.coverage_class, triplet->ext.coverage_class * 450);
 
 			data += 3;
 			len -= 3;
@@ -931,17 +858,11 @@ static void print_country(const uint8_t type, uint8_t len, const uint8_t * data)
 
 		/* 2 GHz */
 		if (triplet->chans.first_channel <= 14)
-			end_channel =
-			    triplet->chans.first_channel +
-			    (triplet->chans.num_channels - 1);
+			end_channel = triplet->chans.first_channel + (triplet->chans.num_channels - 1);
 		else
-			end_channel =
-			    triplet->chans.first_channel +
-			    (4 * (triplet->chans.num_channels - 1));
+			end_channel = triplet->chans.first_channel + (4 * (triplet->chans.num_channels - 1));
 
-		printf("\t\tChannels [%d - %d] @ %d dBm\n",
-		       triplet->chans.first_channel, end_channel,
-		       triplet->chans.max_power);
+		printf("\t\tChannels [%d - %d] @ %d dBm\n", triplet->chans.first_channel, end_channel, triplet->chans.max_power);
 
 		data += 3;
 		len -= 3;
@@ -950,8 +871,7 @@ static void print_country(const uint8_t type, uint8_t len, const uint8_t * data)
 	return;
 }
 
-static void print_powerconstraint(const uint8_t type, uint8_t len,
-				  const uint8_t * data)
+static void print_powerconstraint(const uint8_t type, uint8_t len, const uint8_t * data)
 {
 	printf(" %d dB\n", data[0]);
 }
@@ -993,8 +913,7 @@ static void print_cipher(const uint8_t * data)
 			fillENC("WEP-104", " ");
 			break;
 		default:
-			printf("%.02x-%.02x-%.02x:%d",
-			       data[0], data[1], data[2], data[3]);
+			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
 			break;
 		}
 	} else if (memcmp(data, ieee80211_oui, 3) == 0) {
@@ -1023,13 +942,11 @@ static void print_cipher(const uint8_t * data)
 			fillENC("AES-128-CMAC", " ");
 			break;
 		default:
-			printf("%.02x-%.02x-%.02x:%d",
-			       data[0], data[1], data[2], data[3]);
+			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
 			break;
 		}
 	} else
-		printf("%.02x-%.02x-%.02x:%d",
-		       data[0], data[1], data[2], data[3]);
+		printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
 }
 
 static void print_auth(const uint8_t * data)
@@ -1045,8 +962,7 @@ static void print_auth(const uint8_t * data)
 			fillENC("PSK", " ");
 			break;
 		default:
-			printf("%.02x-%.02x-%.02x:%d",
-			       data[0], data[1], data[2], data[3]);
+			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
 			break;
 		}
 	} else if (memcmp(data, ieee80211_oui, 3) == 0) {
@@ -1076,17 +992,14 @@ static void print_auth(const uint8_t * data)
 			fillENC("PSK/SHA-256", " ");
 			break;
 		default:
-			printf("%.02x-%.02x-%.02x:%d",
-			       data[0], data[1], data[2], data[3]);
+			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
 			break;
 		}
 	} else
-		printf("%.02x-%.02x-%.02x:%d",
-		       data[0], data[1], data[2], data[3]);
+		printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
 }
 
-static void print_rsn_ie(const char *defcipher, const char *defauth,
-			 uint8_t len, const uint8_t * data)
+static void print_rsn_ie(const char *defcipher, const char *defauth, uint8_t len, const uint8_t * data)
 {
 	bool first = true;
 	__u16 version, count, capa;
@@ -1332,8 +1245,7 @@ static void print_ht_op(const uint8_t type, uint8_t len, const uint8_t * data)
 	printf("\n");
 	printf("\t\t * primary channel: %d\n", data[0]);
 	printf("\t\t * secondary channel offset: %s\n", offset[data[1] & 0x3]);
-	printf("\t\t * STA channel width: %s\n",
-	       sta_chan_width[(data[1] & 0x4) >> 2]);
+	printf("\t\t * STA channel width: %s\n", sta_chan_width[(data[1] & 0x4) >> 2]);
 	printf("\t\t * RIFS: %d\n", (data[1] & 0x8) >> 3);
 	printf("\t\t * HT protection: %s\n", protection[data[2] & 0x3]);
 	printf("\t\t * non-GF present: %d\n", (data[2] & 0x4) >> 2);
@@ -1346,8 +1258,7 @@ static void print_ht_op(const uint8_t type, uint8_t len, const uint8_t * data)
 	printf("\t\t * PCO phase: %d\n", (data[5] & 0x8) >> 3);
 }
 
-static void print_capabilities(const uint8_t type, uint8_t len,
-			       const uint8_t * data)
+static void print_capabilities(const uint8_t type, uint8_t len, const uint8_t * data)
 {
 	int i, base, bit;
 	bool first = true;
@@ -1429,8 +1340,7 @@ void mac80211_site_survey(char *interface)
 	mac80211_scan(interface);
 	write_site_survey();
 	open_site_survey();
-	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0];
-	     i++) {
+	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0]; i++) {
 
 		if (site_survey_lists[i].SSID[0] == 0) {
 			strcpy(site_survey_lists[i].SSID, "hidden");
@@ -1444,11 +1354,7 @@ void mac80211_site_survey(char *interface)
 			site_survey_lists[i].frequency,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
-			site_survey_lists[i].beacon_period,
-			site_survey_lists[i].capability,
-			site_survey_lists[i].dtim_period,
-			site_survey_lists[i].rate_count,
-			site_survey_lists[i].ENCINFO);
+			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
 	}
 
 }
