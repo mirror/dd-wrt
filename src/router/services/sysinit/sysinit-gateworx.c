@@ -224,8 +224,7 @@ void start_sysinit(void)
 
 		for (i = 0; i < 6; i++)
 			copy[i] = buf[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
-			copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure IXP0 to %s\n", mac);
 		nvram_set("et0macaddr_safe", mac);
 		nvram_set("et0macaddr", mac);
@@ -234,8 +233,7 @@ void start_sysinit(void)
 		fread(&buf[6], 6, 1, file);
 		for (i = 0; i < 12; i++)
 			copy[i] = buf[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7],
-			copy[8], copy[9], copy[10], copy[11]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
 		fprintf(stderr, "configure IXP1 to %s\n", mac);
 		eval("ifconfig", "ixp1", "hw", "ether", mac);
 		fclose(file);
@@ -263,13 +261,11 @@ void start_sysinit(void)
 
 		for (i = 0; i < 12; i++)
 			copy[i] = buf[i] & 0xff;
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1],
-			copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		nvram_set("et0macaddr_safe", mac);
 		nvram_set("et0macaddr", mac);
 		eval("ifconfig", "ixp0", "hw", "ether", mac);
-		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7],
-			copy[8], copy[9], copy[10], copy[11]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
 		eval("ifconfig", "ixp1", "hw", "ether", mac);
 
 		fclose(file);
@@ -320,8 +316,7 @@ void start_sysinit(void)
 			for (i = 0; i < 12; i++)
 				copy[i] = buf[i] & 0xff;
 
-			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-				copy[1], copy[2], copy[3], copy[4], copy[5]);
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 			fprintf(stderr, "configure IXP0 to %s\n", mac);
 			nvram_set("et0macaddr_safe", mac);
 			nvram_set("et0macaddr", mac);
@@ -330,8 +325,7 @@ void start_sysinit(void)
 			fread(&buf[6], 6, 1, file);
 			for (i = 0; i < 12; i++)
 				copy[i] = buf[i] & 0xff;
-			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6],
-				copy[7], copy[8], copy[9], copy[10], copy[11]);
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
 			fprintf(stderr, "configure IXP1 to %s\n", mac);
 			eval("ifconfig", "ixp1", "hw", "ether", mac);
 			eval("ifconfig", "ixp0", "0.0.0.0", "up");
@@ -342,10 +336,8 @@ void start_sysinit(void)
 	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro")
 	    || nvram_match("DD_BOARD", "ADI Engineering Pronghorn Metro")) {
 		fprintf(stderr, "Pronghorn Metro detected\n");
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0",
-		     "-r", "npe_eth0_esa");
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1",
-		     "-r", "npe_eth1_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1", "-r", "npe_eth1_esa");
 		struct ifreq ifr;
 		int s;
 
@@ -354,21 +346,15 @@ void start_sysinit(void)
 
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
-			nvram_set("et0macaddr",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
+			nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+			nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
 #ifdef HAVE_MI424WR
 	{
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0",
-		     "-r", "npe_eth0_esa");
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1",
-		     "-r", "npe_eth1_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1", "-r", "npe_eth1_esa");
 		struct ifreq ifr;
 		int s;
 
@@ -377,22 +363,16 @@ void start_sysinit(void)
 
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
-			nvram_set("et0macaddr",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
+			nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+			nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
 #endif
 #ifdef HAVE_USR8200
 	{
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0",
-		     "-r", "npe_eth0_esa");
-		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1",
-		     "-r", "npe_eth1_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
+		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1", "-r", "npe_eth1_esa");
 		struct ifreq ifr;
 		int s;
 
@@ -401,20 +381,15 @@ void start_sysinit(void)
 
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
-			nvram_set("et0macaddr",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
+			nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+			nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}
 #endif
 
 #ifdef HAVE_WG302V1
-	eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r",
-	     "zcom_npe_esa");
+	eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "zcom_npe_esa");
 	struct ifreq ifr;
 	int s;
 
@@ -423,18 +398,13 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
-		nvram_set("et0macaddr",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 #else
 #ifdef HAVE_WG302
-	eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r",
-	     "npe_eth0_esa");
+	eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
 	struct ifreq ifr;
 	int s;
 
@@ -443,12 +413,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
-		nvram_set("et0macaddr",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 #endif
@@ -463,9 +429,7 @@ void start_sysinit(void)
 
 			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			nvram_set("et0macaddr_safe",
-				  ether_etoa((unsigned char *)ifr.ifr_hwaddr.
-					     sa_data, eabuf));
+			nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
 	}

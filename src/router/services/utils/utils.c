@@ -101,14 +101,10 @@ void getWirelessMac(char *newmac, int instance)
 			} else {
 				switch (instance) {
 				case 0:
-					strcpy(newmac,
-					       nvram_safe_get
-					       ("pci/1/1/macaddr"));
+					strcpy(newmac, nvram_safe_get("pci/1/1/macaddr"));
 					break;
 				case 1:
-					strcpy(newmac,
-					       nvram_safe_get
-					       ("pci/2/1/macaddr"));
+					strcpy(newmac, nvram_safe_get("pci/2/1/macaddr"));
 					break;
 
 				}
@@ -135,8 +131,7 @@ void getWANMac(char *newmac)
 					// et1macaddr 
 					// not there?
 				{
-					strcpy(newmac,
-					       nvram_safe_get("et1macaddr"));
+					strcpy(newmac, nvram_safe_get("et1macaddr"));
 					MAC_ADD(newmac);	// et1macaddr +1 
 				} else {
 					MAC_ADD(newmac);	// et0macaddr +2

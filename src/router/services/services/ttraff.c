@@ -69,8 +69,7 @@ void start_ttraff(void)
 	char *argv[] = { "ttraff", NULL };
 	int ret = _evalpid(argv, NULL, 0, &pid);
 
-	dd_syslog(LOG_INFO,
-		  "ttraff : traffic counter daemon successfully started\n");
+	dd_syslog(LOG_INFO, "ttraff : traffic counter daemon successfully started\n");
 
 	cprintf("done");
 

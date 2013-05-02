@@ -99,23 +99,20 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fread(mactmp, 6, 1, fp);
 		for (i = 0; i < 6; i++)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
 		for (i = 0; i < 6; i++)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(wmac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(wmac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 #elif HAVE_WZRHPAG300NH
 		system("swconfig dev eth0 set reset 1");
 		system("swconfig dev eth0 set enable_vlan 0");
@@ -128,10 +125,8 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		MAC_ADD(mac2);
 //              eval("gpio","enable","2");
 #elif HAVE_WZRG300NH2
@@ -145,21 +140,17 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 //              eval("gpio","enable","13");
 #ifdef HAVE_SWCONFIG
 		system("swconfig dev eth0 set reset 1");
 		system("swconfig dev eth0 set enable_vlan 1");
 		if (nvram_match("wan_proto", "disabled")
 		    && nvram_match("fullswitch", "1")) {
-			system
-			    ("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4 5\"");
+			system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4 5\"");
 		} else {
-			system
-			    ("swconfig dev eth0 vlan 1 set ports \"0t 1 3 4 5\"");
+			system("swconfig dev eth0 vlan 1 set ports \"0t 1 3 4 5\"");
 			system("swconfig dev eth0 vlan 2 set ports \"0t 2\"");
 		}
 		system("swconfig dev eth0 set apply");
@@ -183,10 +174,8 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 //              mac1[0] |= 0x02; // add private bit
 //              mac2[0] |= 0x02;
 //              eval("gpio","disable","16");
@@ -195,13 +184,10 @@ void start_sysinit(void)
 		system("swconfig dev switch0 set enable_vlan 1");
 		if (nvram_match("wan_proto", "disabled")
 		    && nvram_match("fullswitch", "1")) {
-			system
-			    ("swconfig dev switch0 vlan 1 set ports \"0t 1 2 3 4 5\"");
+			system("swconfig dev switch0 vlan 1 set ports \"0t 1 2 3 4 5\"");
 		} else {
-			system
-			    ("swconfig dev switch0 vlan 1 set ports \"0t 2 3 4 5\"");
-			system
-			    ("swconfig dev switch0 vlan 2 set ports \"0t 1\"");
+			system("swconfig dev switch0 vlan 1 set ports \"0t 2 3 4 5\"");
+			system("swconfig dev switch0 vlan 2 set ports \"0t 1\"");
 		}
 		system("swconfig dev switch0 set apply");
 #endif
@@ -231,10 +217,8 @@ void start_sysinit(void)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
-		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
-		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
-			copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		MAC_ADD(mac2);
 #endif
 
@@ -259,12 +243,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 	detect_wireless_devices();

@@ -36,8 +36,7 @@
 #include <shutils.h>
 #include <wlutils.h>
 
-static int
-copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t essid_len)
+static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t essid_len)
 {
 	const u_int8_t *p;
 	int maxlen;
@@ -109,8 +108,7 @@ int site_survey_main(int argc, char *argv[])
 #define DOT11_CAP_IBSS				0x0002
 #define DOT11_CAP_PRIVACY			0x0010	/* d11 cap. privacy */
 
-	unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32],
-	    ext[32];
+	unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32], ext[32];
 	int i = 0;
 
 	unlink(SITE_SURVEY_DB);
@@ -164,8 +162,7 @@ int site_survey_main(int argc, char *argv[])
 		else
 			strncpy(b7, ext, 31);
 		site_survey_lists[i].channel = atoi(b1);	// channel
-		site_survey_lists[i].frequency =
-		    ieee80211_ieee2mhz(site_survey_lists[i].channel);
+		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel);
 		strcpy(site_survey_lists[i].SSID, b2);	//SSID
 		strcpy(site_survey_lists[i].BSSID, b3);	//BSSID
 		site_survey_lists[i].phy_noise = -95;	// no way
@@ -205,11 +202,7 @@ int site_survey_main(int argc, char *argv[])
 			site_survey_lists[i].frequency,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
-			site_survey_lists[i].beacon_period,
-			site_survey_lists[i].capability,
-			site_survey_lists[i].dtim_period,
-			site_survey_lists[i].rate_count,
-			site_survey_lists[i].ENCINFO);
+			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
 	}
 
 	return 0;

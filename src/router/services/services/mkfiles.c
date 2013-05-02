@@ -57,11 +57,9 @@ void setPassword(char *passwd)
 	}
 #ifdef HAVE_ERC
 	// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
-	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-		nvram_safe_get("newhttp_passwd"));
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
 #elif HAVE_IPR
-	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-		nvram_safe_get("newhttp_passwd"));
+	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
 #else
 	fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
 #endif
@@ -117,21 +115,14 @@ void start_mkfiles(void)
 #ifdef HAVE_ERC
 		// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
 		//      http_passwd);
-		fprintf(fp,
-			"SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-			nvram_safe_get("newhttp_passwd"));
+		fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
 #elif HAVE_WIKINGS
 		// default username and password for Excel Networks
-		fprintf(fp,
-			"ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
+		fprintf(fp, "ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_IPR
-		fprintf(fp,
-			"SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-			nvram_safe_get("newhttp_passwd"));
+		fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
 #else
-		fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n"
-			"reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",
-			http_passwd, http_passwd);
+		fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n" "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n", http_passwd, http_passwd);
 #endif
 		fclose(fp);
 	}
@@ -146,25 +137,25 @@ void start_mkfiles(void)
 	cprintf("%s:%d", __func__, __LINE__);
 	fprintf(fp, "root:x:0:\n");
 	fclose(fp);
-	
-	mkdir("/var/spool",0700);
 
-	mkdir("/var/spool/cron",0700);
-	mkdir("/var/lock",0700);
-	mkdir("/var/lock/subsys",0700);
-	mkdir("/var/spool/cron/crontabs",0700);
-	eval("touch","/var/spool/cron/crontabs/root");
-	mkdir("/var/lib",0700);
-	mkdir("/var/lib/misc",0700);
-	mkdir("/var/tmp",0700);
-	mkdir("/var/log",0700);	
-	eval("touch","/var/log/messages");
+	mkdir("/var/spool", 0700);
+
+	mkdir("/var/spool/cron", 0700);
+	mkdir("/var/lock", 0700);
+	mkdir("/var/lock/subsys", 0700);
+	mkdir("/var/spool/cron/crontabs", 0700);
+	eval("touch", "/var/spool/cron/crontabs/root");
+	mkdir("/var/lib", 0700);
+	mkdir("/var/lib/misc", 0700);
+	mkdir("/var/tmp", 0700);
+	mkdir("/var/log", 0700);
+	eval("touch", "/var/log/messages");
 	cprintf("%s:%d", __func__, __LINE__);
 
 #ifdef HAVE_SNMP
-	mkdir("/var/snmp",0700);
+	mkdir("/var/snmp", 0700);
 #endif
-	chmod("/tmp",0777);
+	chmod("/tmp", 0777);
 	cprintf("%s:%d", __func__, __LINE__);
 
 	dns_to_resolv();

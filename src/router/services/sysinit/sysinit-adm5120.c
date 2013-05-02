@@ -94,8 +94,7 @@ void start_change_mac(void)
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
 	fp = fopen(mtdpath, "rb");
       nexttry:;
-	fprintf(stdout,
-		"MAC Invalid. Please enter new MAC Address: (format xx:xx:xx:xx:xx:xx)\n-->");
+	fprintf(stdout, "MAC Invalid. Please enter new MAC Address: (format xx:xx:xx:xx:xx:xx)\n-->");
 	char maddr[64];
 
 	fscanf(stdin, "%s", maddr);
@@ -109,9 +108,7 @@ void start_change_mac(void)
 	}
 	//valid;
 	for (i = 0; i < 6; i++)
-		sprintf(os, "%02x%02x%02x%02x%02x%02x", newmac[0] & 0xff,
-			newmac[1] & 0xff, newmac[2] & 0xff, newmac[3] & 0xff,
-			newmac[4] & 0xff, newmac[5] & 0xff);
+		sprintf(os, "%02x%02x%02x%02x%02x%02x", newmac[0] & 0xff, newmac[1] & 0xff, newmac[2] & 0xff, newmac[3] & 0xff, newmac[4] & 0xff, newmac[5] & 0xff);
 	fprintf(stderr, "new mac will be %s\n", os);
 	FILE *tmp = fopen("/tmp/boot.bin", "w+b");
 
@@ -224,8 +221,7 @@ void start_sysinit(void)
 	insmod("adm5120_wdt");
 	insmod("adm5120sw");
 
-	if (getRouterBrand() != ROUTER_BOARD_WP54G
-	    && getRouterBrand() != ROUTER_BOARD_NP28G) {
+	if (getRouterBrand() != ROUTER_BOARD_WP54G && getRouterBrand() != ROUTER_BOARD_NP28G) {
 
 		unsigned char mac[6];
 		char eabuf[32];
@@ -267,27 +263,20 @@ void start_sysinit(void)
 				struct ifreq ifr;
 				int s;
 
-				if ((s =
-				     socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.
-					       ifr_hwaddr.sa_data, mac, 6);
+					memcpy((unsigned char *)ifr.ifr_hwaddr.sa_data, mac, 6);
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
-				if ((s =
-				     socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					nvram_set("et0macaddr_safe",
-						  ether_etoa((unsigned char *)
-							     ifr.ifr_hwaddr.
-							     sa_data, eabuf));
-					nvram_set("et0macaddr",
-						  ether_etoa((unsigned char *)
-							     ifr.ifr_hwaddr.
-							     sa_data, eabuf));
+					nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)
+										ifr.ifr_hwaddr.sa_data, eabuf));
+					nvram_set("et0macaddr", ether_etoa((unsigned char *)
+									   ifr.ifr_hwaddr.sa_data, eabuf));
 					close(s);
 				}
 			}
@@ -301,46 +290,28 @@ void start_sysinit(void)
 
 					foundmac = 1;
 					fprintf(stderr, "found Tonze-AP120\n");
-					if ((s =
-					     socket(AF_INET, SOCK_RAW,
-						    IPPROTO_RAW))) {
-						strncpy(ifr.ifr_name, "eth0",
-							IFNAMSIZ);
+					if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+						strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 						ioctl(s, SIOCGIFHWADDR, &ifr);
 						memcpy((unsigned char *)
-						       ifr.ifr_hwaddr.sa_data,
-						       mac, 6);
+						       ifr.ifr_hwaddr.sa_data, mac, 6);
 						ioctl(s, SIOCSIFHWADDR, &ifr);
 						close(s);
 					}
-					if ((s =
-					     socket(AF_INET, SOCK_RAW,
-						    IPPROTO_RAW))) {
-						strncpy(ifr.ifr_name, "eth0",
-							IFNAMSIZ);
+					if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+						strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 						ioctl(s, SIOCGIFHWADDR, &ifr);
-						nvram_set("et0macaddr_safe",
-							  ether_etoa((unsigned
-								      char *)
-								     ifr.
-								     ifr_hwaddr.
-								     sa_data,
-								     eabuf));
-						nvram_set("et0macaddr",
-							  ether_etoa((unsigned
-								      char *)
-								     ifr.
-								     ifr_hwaddr.
-								     sa_data,
-								     eabuf));
+						nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)
+											ifr.ifr_hwaddr.sa_data, eabuf));
+						nvram_set("et0macaddr", ether_etoa((unsigned char *)
+										   ifr.ifr_hwaddr.sa_data, eabuf));
 						close(s);
 					}
 				}
 			}
 
 			if (foundmac == 0) {
-				fprintf(stderr,
-					"error: no valid mac address found for eth0\n");
+				fprintf(stderr, "error: no valid mac address found for eth0\n");
 			}
 			fclose(fp);
 		}
@@ -362,38 +333,27 @@ void start_sysinit(void)
 			fclose(fp);
 			if (params.magic == 0x20021103) {
 				fprintf(stderr, "Found compex board magic!\n");
-				if ((s =
-				     socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.
-					       ifr_hwaddr.sa_data,
-					       params.addr[0].mac, 6);
+					memcpy((unsigned char *)ifr.ifr_hwaddr.sa_data, params.addr[0].mac, 6);
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
-				if ((s =
-				     socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.
-					       ifr_hwaddr.sa_data,
-					       params.addr[1].mac, 6);
+					memcpy((unsigned char *)ifr.ifr_hwaddr.sa_data, params.addr[1].mac, 6);
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
-				if ((s =
-				     socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					nvram_set("et0macaddr_safe",
-						  ether_etoa((unsigned char *)
-							     ifr.ifr_hwaddr.
-							     sa_data, eabuf));
-					nvram_set("et0macaddr",
-						  ether_etoa((unsigned char *)
-							     ifr.ifr_hwaddr.
-							     sa_data, eabuf));
+					nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)
+										ifr.ifr_hwaddr.sa_data, eabuf));
+					nvram_set("et0macaddr", ether_etoa((unsigned char *)
+									   ifr.ifr_hwaddr.sa_data, eabuf));
 					close(s);
 				}
 

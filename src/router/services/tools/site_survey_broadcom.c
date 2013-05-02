@@ -79,8 +79,7 @@ static bool wlu_is_wpa_ie(uint8 ** wpaie, uint8 ** tlvs, uint * tlvs_len)
 	return FALSE;
 }
 
-static int
-wl_rsn_ie_parse_info(uint8 * rsn_buf, uint len, rsn_parse_info_t * rsn)
+static int wl_rsn_ie_parse_info(uint8 * rsn_buf, uint len, rsn_parse_info_t * rsn)
 {
 	uint16 count;
 
@@ -159,10 +158,7 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 		rsn = FALSE;
 		memcpy(std_oui, WPA_OUI, WPA_OUI_LEN);
 		wpa = (wpa_ie_fixed_t *) ie;
-		err =
-		    wl_rsn_ie_parse_info((uint8 *) & wpa->version,
-					 wpa->length - WPA_IE_OUITYPE_LEN,
-					 &rsn_info);
+		err = wl_rsn_ie_parse_info((uint8 *) & wpa->version, wpa->length - WPA_IE_OUITYPE_LEN, &rsn_info);
 	}
 	if (err || rsn_info.version != WPA_VERSION) {
 		strcat(sum, "WEP ");
@@ -191,16 +187,11 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 				strcat(sum, "Group-AES-CCMP ");
 				break;
 			default:
-				sprintf(sum, "Unknown-%s(#%d) ",
-					rsn ? "WPA2" : "WPA",
-					rsn_info.mcast->type);
+				sprintf(sum, "Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA", rsn_info.mcast->type);
 				break;
 			}
 		} else {
-			sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ",
-				sum, rsn_info.mcast->oui[0],
-				rsn_info.mcast->oui[1], rsn_info.mcast->oui[2],
-				rsn_info.mcast->type);
+			sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ", sum, rsn_info.mcast->oui[0], rsn_info.mcast->oui[1], rsn_info.mcast->oui[2], rsn_info.mcast->type);
 		}
 	}
 
@@ -230,15 +221,11 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 					strcat(sum, "Pair-AES-CCMP ");
 					break;
 				default:
-					sprintf(sum, "WPA-Unknown-%s(#%d) ",
-						rsn ? "WPA2" : "WPA",
-						suite->type);
+					sprintf(sum, "WPA-Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA", suite->type);
 					break;
 				}
 			} else {
-				sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ",
-					sum, suite->oui[0], suite->oui[1],
-					suite->oui[2], suite->type);
+				sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ", sum, suite->oui[0], suite->oui[1], suite->oui[2], suite->type);
 			}
 		}
 		printf("\n");
@@ -266,15 +253,11 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 						strcat(sum, "WPA-PSK ");
 					break;
 				default:
-					sprintf(sum, "Unknown-%s(#%d)  ",
-						rsn ? "WPA2" : "WPA",
-						suite->type);
+					sprintf(sum, "Unknown-%s(#%d)  ", rsn ? "WPA2" : "WPA", suite->type);
 					break;
 				}
 			} else {
-				sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d)  ",
-					sum, suite->oui[0], suite->oui[1],
-					suite->oui[2], suite->type);
+				sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d)  ", sum, suite->oui[0], suite->oui[1], suite->oui[2], suite->type);
 			}
 		}
 	}
@@ -335,10 +318,7 @@ static char *getEncInfo(wl_bss_info_t * bi)
 {
 	if (bi->capability & DOT11_CAP_PRIVACY) {
 		if (bi->ie_length)
-			return
-			    wl_dump_wpa_rsn_ies((uint8 *) (((uint8 *) bi) +
-							   bi->ie_offset),
-						bi->ie_length);
+			return wl_dump_wpa_rsn_ies((uint8 *) (((uint8 *) bi) + bi->ie_offset), bi->ie_length);
 		else
 			return "WEP";
 	} else
@@ -454,8 +434,7 @@ int site_survey_main(int argc, char *argv[])
 		fprintf(stderr, "scan failed with errorcode %d\n", ret);
 	}
 
-	fprintf(stderr, "buflen=[%d] version=[%d] count=[%d]\n",
-		scan_res->buflen, scan_res->version, scan_res->count);
+	fprintf(stderr, "buflen=[%d] version=[%d] count=[%d]\n", scan_res->buflen, scan_res->version, scan_res->count);
 
 	if (scan_res->count == 0) {
 		cprintf("Can't find any wireless device\n");
@@ -465,13 +444,11 @@ int site_survey_main(int argc, char *argv[])
 	bss_info = &scan_res->bss_info[0];
 	for (i = 0; i < scan_res->count; i++) {
 		strcpy(site_survey_lists[i].SSID, bss_info->SSID);
-		strcpy(site_survey_lists[i].BSSID,
-		       ether_etoa(bss_info->BSSID.octet, mac));
+		strcpy(site_survey_lists[i].BSSID, ether_etoa(bss_info->BSSID.octet, mac));
 #ifndef HAVE_RB500
 		site_survey_lists[i].channel = bss_info->chanspec & 0xff;
 #endif
-		site_survey_lists[i].frequency =
-		    ieee80211_ieee2mhz(site_survey_lists[i].channel);
+		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel);
 #ifdef WL_CHANSPEC_BW_80
 		switch (bss_info->chanspec & 0x3800) {
 		case WL_CHANSPEC_BW_80:
@@ -490,18 +467,14 @@ int site_survey_main(int argc, char *argv[])
 		site_survey_lists[i].phy_noise = bss_info->phy_noise;
 		site_survey_lists[i].beacon_period = bss_info->beacon_period;
 		site_survey_lists[i].capability = bss_info->capability;
-		site_survey_lists[i].rate_count =
-		    get_mcs_max(bss_info->basic_mcs);
+		site_survey_lists[i].rate_count = get_mcs_max(bss_info->basic_mcs);
 		if (!site_survey_lists[i].rate_count)
-			site_survey_lists[i].rate_count =
-			    get_legacy(bss_info->rateset.rates,
-				       bss_info->rateset.count);
+			site_survey_lists[i].rate_count = get_legacy(bss_info->rateset.rates, bss_info->rateset.count);
 
 		site_survey_lists[i].dtim_period = bss_info->dtim_period;
 		strcpy(site_survey_lists[i].ENCINFO, getEncInfo(bss_info));
 
-		bss_info =
-		    (wl_bss_info_t *) ((uint32) bss_info + bss_info->length);
+		bss_info = (wl_bss_info_t *) ((uint32) bss_info + bss_info->length);
 	}
 	write_site_survey();
 	open_site_survey();
@@ -518,11 +491,7 @@ int site_survey_main(int argc, char *argv[])
 			site_survey_lists[i].frequency,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
-			site_survey_lists[i].beacon_period,
-			site_survey_lists[i].capability,
-			site_survey_lists[i].dtim_period,
-			site_survey_lists[i].rate_count,
-			site_survey_lists[i].ENCINFO);
+			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
 	}
 
 endss:

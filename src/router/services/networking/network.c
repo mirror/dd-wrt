@@ -140,8 +140,7 @@ char *getMacAddr(char *ifname, char *mac)
 
 	if (i < 0)
 		return NULL;
-	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1],
-		hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
 	return mac;
 }
 
@@ -433,8 +432,7 @@ static int enable_dhcprelay(char *ifname)
 			    || nvram_match(mode, "apstawet")) {
 				uint32 ip;
 
-				inet_aton(nvram_safe_get("lan_ipaddr"),
-					  (struct in_addr *)&ip);
+				inet_aton(nvram_safe_get("lan_ipaddr"), (struct in_addr *)&ip);
 				if (wl_iovar_setint(name, "wet_host_ipv4", ip))
 					perror("wet_host_ipv4");
 				break;
@@ -576,8 +574,7 @@ static int wlconf_up(char *name)
 
 	if (nvram_nmatch("infra", "wl%d_mode", instance)) {
 		eval("wl", "-i", name, "infra", "0");
-		eval("wl", "-i", name, "ssid",
-		     nvram_nget("wl%d_ssid", instance));
+		eval("wl", "-i", name, "ssid", nvram_nget("wl%d_ssid", instance));
 	}
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	eval("wl", "-i", name, "vlan_mode", "0");
@@ -614,8 +611,7 @@ void start_wlconf(void)
 	for (c = 0; c < cnt; c++) {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 		if (cnt > 1)
-			eval("wl", "-i", get_wl_instance_name(c),
-			     "interference", "0");
+			eval("wl", "-i", get_wl_instance_name(c), "interference", "0");
 #endif
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", c))
 			wlconf_up(get_wl_instance_name(c));
@@ -638,8 +634,7 @@ static void do_portsetup(char *lan, char *ifname)
 	if (nvram_default_match(var, "1", "1")) {
 		br_add_interface(getBridge(IFMAP(ifname)), IFMAP(ifname));
 	} else {
-		ifconfig(ifname, IFUP, nvram_nget("%s_ipaddr", IFMAP(ifname)),
-			 nvram_nget("%s_netmask", ifname));
+		ifconfig(ifname, IFUP, nvram_nget("%s_ipaddr", IFMAP(ifname)), nvram_nget("%s_netmask", ifname));
 		sysprintf("/sbin/gratarp %s", ifname);
 	}
 
@@ -671,8 +666,7 @@ void reset_hwaddr(char *ifname)
 
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
-		nvram_set("lan_hwaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("lan_hwaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 		if (getRouterBrand() == ROUTER_DLINK_DIR320) {
 			if (strlen(nvram_safe_get("et0macaddr")) == 12) {
 				char wlmac[32];
@@ -808,17 +802,13 @@ void start_lan(void)
 				nvram_set("lan_default", lan_ifnames);
 				nvram_set("fullswitch_set", "1");
 			}
-			sprintf(lan_ifnames, "%s %s",
-				nvram_safe_get("lan_default"),
-				nvram_safe_get("wan_default"));
+			sprintf(lan_ifnames, "%s %s", nvram_safe_get("lan_default"), nvram_safe_get("wan_default"));
 			strcpy(wan_ifname, "");
 		} else {
 			if (nvram_match("fullswitch_set", "1")) {
-				strcpy(lan_ifnames,
-				       nvram_safe_get("lan_default"));
+				strcpy(lan_ifnames, nvram_safe_get("lan_default"));
 				nvram_unset("lan_default");
-				strcpy(wan_ifname,
-				       nvram_safe_get("wan_default"));
+				strcpy(wan_ifname, nvram_safe_get("wan_default"));
 				nvram_unset("fullswitch_set");
 			}
 		}
@@ -831,20 +821,17 @@ void start_lan(void)
 	nvram_setz(lan_ifname, "br0");
 #ifdef HAVE_RB500
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames,
-			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames,
-			   "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
+		nvram_setz(lan_ifnames, "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
 		PORTSETUPWAN("eth0");
 	}
 
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 #endif
 
 #ifdef HAVE_MAGICBOX
@@ -859,8 +846,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 	MAC_ADD(mac);
 	ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
@@ -880,8 +866,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 	MAC_ADD(mac);
 	ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
@@ -890,20 +875,17 @@ void start_lan(void)
 	ioctl(s, SIOCSIFHWADDR, &ifr);
 #elif HAVE_RB600
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames,
-			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames,
-			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7");
 		PORTSETUPWAN("eth0");
 	}
 
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 	MAC_ADD(mac);
 	ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
@@ -933,8 +915,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_WRT54G2
@@ -948,8 +929,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_RTG32
@@ -963,8 +943,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_DIR300
@@ -978,8 +957,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_RS
@@ -993,8 +971,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WA901
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1007,8 +984,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WR941
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1021,8 +997,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "vlan0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WR1043
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1035,8 +1010,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_AP83
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1049,8 +1023,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WZRG450
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1080,8 +1053,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WZRHPAG300NH
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1094,8 +1066,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_DIR632
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1108,8 +1079,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_AP94
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1122,8 +1092,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_HORNET
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1140,8 +1109,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WNR2000
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1154,8 +1122,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WASP
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1168,8 +1135,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WDR2543
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1182,8 +1148,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WHRHPGN
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1196,8 +1161,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif CONFIG_JJAP93
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1210,8 +1174,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_JJAP005
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1224,8 +1187,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_JJAP501
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1238,8 +1200,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_AC722
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1252,8 +1213,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_AC622
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1266,8 +1226,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_JA76PF
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1280,8 +1239,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_ALFAAP94
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1294,8 +1252,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_JWAP003
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1308,8 +1265,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_DIR615E
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1322,8 +1278,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WA901v1
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1336,8 +1291,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WR703
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1350,8 +1304,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WA7510
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1364,8 +1317,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WR741
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1378,8 +1330,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_UBNTM
 	int brand = getRouterBrand();
@@ -1417,8 +1368,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WP546
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1431,8 +1381,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_LSX
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1445,8 +1394,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_DANUBE
@@ -1462,8 +1410,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_RT2880
@@ -1491,8 +1438,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth2", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_WBD222
@@ -1506,8 +1452,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_STORM
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1520,8 +1465,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_OPENRISC
@@ -1535,8 +1479,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_NORTHSTAR
@@ -1550,31 +1493,26 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_LAGUNA
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames,
-			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames,
-			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3");
 		PORTSETUPWAN("eth0");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_ADM5120
 
-	if (getRouterBrand() == ROUTER_BOARD_WP54G
-	    || getRouterBrand() == ROUTER_BOARD_NP28G) {
+	if (getRouterBrand() == ROUTER_BOARD_WP54G || getRouterBrand() == ROUTER_BOARD_NP28G) {
 		if (getSTA() || getWET()
 		    || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
@@ -1598,8 +1536,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_MR3202A
@@ -1613,8 +1550,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 
@@ -1645,8 +1581,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_LS5
@@ -1661,8 +1596,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_TW6600
@@ -1677,8 +1611,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_PB42
@@ -1693,8 +1626,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_WHRAG108
@@ -1709,8 +1641,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_CA8
@@ -1747,82 +1678,65 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_GATEWORX
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP) {
 			if (nvram_match("intel_eth", "1"))
-				nvram_setz(lan_ifnames,
-					   "ixp0 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "ixp0 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_setz(lan_ifnames,
-					   "ixp0 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "ixp0 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("");
 		} else if (getRouterBrand() == ROUTER_BOARD_GATEWORX_GW2345) {
 			if (nvram_match("intel_eth", "1"))
-				nvram_setz(lan_ifnames,
-					   "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_setz(lan_ifnames,
-					   "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("");
 		} else {
 			if (nvram_match("intel_eth", "1"))
-				nvram_setz(lan_ifnames,
-					   "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_setz(lan_ifnames,
-					   "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("");
 		}
 	} else {
 		if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP) {
 			if (nvram_match("intel_eth", "1"))
-				nvram_setz(lan_ifnames,
-					   "eth0 eth1 ixp0 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "eth0 eth1 ixp0 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_setz(lan_ifnames,
-					   "ixp0 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "ixp0 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("ixp0");
 		} else if (getRouterBrand() == ROUTER_BOARD_GATEWORX_GW2345) {
 #ifdef HAVE_MI424WR
 			if (nvram_match("intel_eth", "1"))
-				nvram_setz(lan_ifnames,
-					   "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_setz(lan_ifnames,
-					   "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("ixp0");
 #else
 			if (nvram_match("intel_eth", "1"))
-				nvram_setz(lan_ifnames,
-					   "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_setz(lan_ifnames,
-					   "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			PORTSETUPWAN("ixp1");
 #endif
 		} else {
 #ifdef HAVE_XIOCOM
 			if (nvram_match("intel_eth", "1"))
-				nvram_setz(lan_ifnames,
-					   "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_setz(lan_ifnames,
-					   "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 
 			PORTSETUPWAN("ixp0");
 
 #else
 			if (nvram_match("intel_eth", "1"))
-				nvram_setz(lan_ifnames,
-					   "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 			else
-				nvram_setz(lan_ifnames,
-					   "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
+				nvram_setz(lan_ifnames, "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 
 			PORTSETUPWAN("ixp1");
 #endif
@@ -1834,48 +1748,38 @@ void start_lan(void)
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 	}
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 #endif
 #ifdef HAVE_X86
 	if (getSTA() || getWET()) {
 #ifdef HAVE_NOWIFI
-		nvram_setz(lan_ifnames,
-			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
 		if (nvram_match("wifi_bonding", "1"))
-			nvram_setz(lan_ifnames,
-				   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
+			nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
 		else
-			nvram_setz(lan_ifnames,
-				   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
+			nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 
 #endif
 		PORTSETUPWAN("");
 	} else if (CANBRIDGE()) {
 #ifdef HAVE_NOWIFI
-		nvram_setz(lan_ifnames,
-			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
 		if (nvram_match("wifi_bonding", "1"))
-			nvram_setz(lan_ifnames,
-				   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
+			nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
 		else
-			nvram_setz(lan_ifnames,
-				   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
+			nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 #endif
 		PORTSETUPWAN("");
 	} else {
 #ifdef HAVE_NOWIFI
-		nvram_setz(lan_ifnames,
-			   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
 		if (nvram_match("wifi_bonding", "1"))
-			nvram_setz(lan_ifnames,
-				   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
+			nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
 		else
-			nvram_setz(lan_ifnames,
-				   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
+			nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 #endif
 #ifdef HAVE_GW700
 		PORTSETUPWAN("eth1");
@@ -1888,8 +1792,7 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
 	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr",
-			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 #endif
 
 	if (!nvram_match("lan_ifname", lan_ifname)
@@ -1935,11 +1838,8 @@ void start_lan(void)
 	ifconfig(wl_face, 0, 0, 0);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 
-	if (nvram_match("mac_clone_enable", "1") &&
-	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
-	    nvram_invmatch("def_whwaddr", "")) {
-		ether_atoe(nvram_safe_get("def_whwaddr"),
-			   ifr.ifr_hwaddr.sa_data);
+	if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
+		ether_atoe(nvram_safe_get("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
 
 	} else {
 
@@ -2014,8 +1914,7 @@ void start_lan(void)
 #else
 			if (wl_probe(name))
 #endif
-				sprintf(eadline, "%s%s %s ", eadline, "-d",
-					name);
+				sprintf(eadline, "%s%s %s ", eadline, "-d", name);
 #endif
 			if (nvram_match("wan_ifname", name))
 				continue;
@@ -2026,8 +1925,7 @@ void start_lan(void)
 #endif
 				strcpy(realname, name);
 
-			cprintf("name=[%s] lan_ifname=[%s]\n", realname,
-				lan_ifname);
+			cprintf("name=[%s] lan_ifname=[%s]\n", realname, lan_ifname);
 
 			/*
 			 * Bring up interface 
@@ -2041,8 +1939,7 @@ void start_lan(void)
 				eval("ifconfig", realname, "down");	//fixup for some ethernet drivers
 			}
 			eval("ifconfig", realname, "mtu", getMTU(realname));
-			eval("ifconfig", realname, "txqueuelen",
-			     getTXQ(realname));
+			eval("ifconfig", realname, "txqueuelen", getTXQ(realname));
 			if (strncmp(realname, "ath", 3) != 0) {	// this is not an ethernet driver
 				eval("ifconfig", realname, "up");	//fixup for some ethernet drivers
 			}
@@ -2053,22 +1950,15 @@ void start_lan(void)
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 			strncpy(ifr.ifr_name, lan_ifname, IFNAMSIZ);
-			if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0 &&
-			    (memcmp
-			     (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0",
-			      ETHER_ADDR_LEN) == 0
-			     || (((ifr.ifr_hwaddr.sa_data[0] & 0x01) == 0)
-				 && ((ifr.ifr_hwaddr.sa_data[1] & 0x02) ==
-				     0x02)))
+			if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0 && (memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN) == 0 || (((ifr.ifr_hwaddr.sa_data[0] & 0x01) == 0)
+																	   && ((ifr.ifr_hwaddr.sa_data[1] & 0x02) == 0x02)))
 			    && strcmp(wl_face, realname) == 0) {
 				strncpy(ifr.ifr_name, realname, IFNAMSIZ);
 				if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
-					strncpy(ifr.ifr_name, lan_ifname,
-						IFNAMSIZ);
+					strncpy(ifr.ifr_name, lan_ifname, IFNAMSIZ);
 					ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 					ioctl(s, SIOCSIFHWADDR, &ifr);
-					cprintf("=====> set %s hwaddr to %s\n",
-						lan_ifname, realname);
+					cprintf("=====> set %s hwaddr to %s\n", lan_ifname, realname);
 				} else
 					perror(lan_ifname);
 			} else
@@ -2086,13 +1976,9 @@ void start_lan(void)
 				// #endif
 			} else {
 
-				if (nvram_match("mac_clone_enable", "1") &&
-				    nvram_invmatch("def_whwaddr",
-						   "00:00:00:00:00:00")
+				if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
 				    && nvram_invmatch("def_whwaddr", "")) {
-					ether_atoe(nvram_safe_get
-						   ("def_whwaddr"),
-						   ifr.ifr_hwaddr.sa_data);
+					ether_atoe(nvram_safe_get("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
 
 				} else {
 					int instance = get_wl_instance(name);
@@ -2102,27 +1988,18 @@ void start_lan(void)
 
 					if (instance == -1)
 						continue;	// no wireless device
-					if (nvram_nmatch
-					    ("", "wl%d_hwaddr", instance)
-					    || !nvram_nget("wl%d_hwaddr",
-							   instance)) {
-						nvram_nset(mac, "wl%d_hwaddr",
-							   instance);
+					if (nvram_nmatch("", "wl%d_hwaddr", instance)
+					    || !nvram_nget("wl%d_hwaddr", instance)) {
+						nvram_nset(mac, "wl%d_hwaddr", instance);
 						nvram_commit();
-						ifr.ifr_hwaddr.sa_family =
-						    ARPHRD_ETHER;
-						strncpy(ifr.ifr_name, name,
-							IFNAMSIZ);
+						ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+						strncpy(ifr.ifr_name, name, IFNAMSIZ);
 
 						eval("wl", "-i", name, "down");
-						if (ioctl
-						    (s, SIOCSIFHWADDR,
-						     &ifr) == -1)
-							perror
-							    ("Write wireless mac fail : ");
+						if (ioctl(s, SIOCSIFHWADDR, &ifr) == -1)
+							perror("Write wireless mac fail : ");
 						else
-							cprintf
-							    ("Write wireless mac successfully\n");
+							cprintf("Write wireless mac successfully\n");
 						eval("wl", "-i", name, "up");
 						start_config_macs(name);
 					}
@@ -2146,11 +2023,9 @@ void start_lan(void)
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 				unit = 0;
 #else
-				wl_ioctl(name, WLC_GET_INSTANCE, &unit,
-					 sizeof(unit));
+				wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
 #endif
-				snprintf(wl_name, sizeof(wl_name), "wl%d_mode",
-					 unit);
+				snprintf(wl_name, sizeof(wl_name), "wl%d_mode", unit);
 				/*
 				 * Do not attach the main wl i/f if in wds or client/adhoc 
 				 */
@@ -2160,17 +2035,12 @@ void start_lan(void)
 				    || nvram_match(wl_name, "apstawet")) {
 					ifconfig(name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from 
 					// up
-					br_add_interface(getBridge(IFMAP(name)),
-							 name);
+					br_add_interface(getBridge(IFMAP(name)), name);
 					led_control(LED_BRIDGE, LED_ON);
 					/* Enable host DHCP relay */
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 					if (nvram_match("lan_dhcp", "1")) {
-						wl_iovar_set(name,
-							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
-							     ETHER_ADDR_LEN);
+						wl_iovar_set(name, "wet_host_mac", ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
 					if (nvram_match("dhcp_relay", "1"))	// seems to fix some dhcp problems, also Netgear does it this way
@@ -2184,8 +2054,7 @@ void start_lan(void)
 				if (nvram_match(wl_name, "bridge")) {
 					ifconfig(name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from 
 					// up
-					br_add_interface(getBridge(IFMAP(name)),
-							 name);
+					br_add_interface(getBridge(IFMAP(name)), name);
 					led_control(LED_BRIDGE, LED_ON);
 				}
 #endif
@@ -2203,20 +2072,16 @@ void start_lan(void)
 					eval("wl", "-i", name, "ap", "0");
 					// eval ("wl", "infra", "1");
 					eval("wl", "-i", name, "infra", "1");
-					wl_ioctl(wl_name, WLC_SCAN, svbuf,
-						 sizeof(svbuf));
+					wl_ioctl(wl_name, WLC_SCAN, svbuf, sizeof(svbuf));
 					wlconf_up(name);
 #endif
 					// eval("wlconf", name, "up");
-					ifconfig(name, IFUP | IFF_ALLMULTI,
-						 NULL, NULL);
+					ifconfig(name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 					// eval ("wl", "ap", "0");
 					eval("wl", "-i", name, "ap", "0");
 					// eval ("wl", "ssid", nvram_get ("wl0_ssid"));
-					eval("wl", "-i", name, "ssid",
-					     nvram_nget("wl%d_ssid",
-							get_wl_instance(name)));
+					eval("wl", "-i", name, "ssid", nvram_nget("wl%d_ssid", get_wl_instance(name)));
 					// eval ("brctl", "addif", lan_ifname, name);
 #ifndef HAVE_FON
 					if (nvram_match("fon_enable", "0"))
@@ -2234,18 +2099,14 @@ void start_lan(void)
 					eval("wl", "-i", name, "ap", "0");
 					// eval ("wl", "infra", "0");
 					eval("wl", "-i", name, "infra", "0");
-					wl_ioctl(wl_name, WLC_SCAN, svbuf,
-						 sizeof(svbuf));
+					wl_ioctl(wl_name, WLC_SCAN, svbuf, sizeof(svbuf));
 					wlconf_up(name);
 #endif
 					// eval ("wl", "infra", "0");
 					eval("wl", "-i", name, "infra", "0");
 					// eval ("wl", "ssid", nvram_safe_get ("wl0_ssid"));
-					ifconfig(name, IFUP | IFF_ALLMULTI,
-						 NULL, NULL);
-					eval("wl", "-i", name, "ssid",
-					     nvram_nget("wl%d_ssid",
-							get_wl_instance(name)));
+					ifconfig(name, IFUP | IFF_ALLMULTI, NULL, NULL);
+					eval("wl", "-i", name, "ssid", nvram_nget("wl%d_ssid", get_wl_instance(name)));
 					do_portsetup(lan_ifname, name);
 				}
 
@@ -2256,19 +2117,15 @@ void start_lan(void)
 					// eval ("wl", "infra", "1");
 					eval("wl", "-i", name, "infra", "1");
 					wlconf_up(name);
-					wl_ioctl(name, WLC_SCAN, svbuf,
-						 sizeof(svbuf));
+					wl_ioctl(name, WLC_SCAN, svbuf, sizeof(svbuf));
 #endif
 					// eval("wlconf", name, "up");
-					ifconfig(name, IFUP | IFF_ALLMULTI,
-						 NULL, NULL);
+					ifconfig(name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 					// eval ("wl", "ap", "0");
 					eval("wl", "-i", name, "ap", "0");
 					// eval ("wl", "ssid", nvram_get ("wl0_ssid"));
-					eval("wl", "-i", name, "ssid",
-					     nvram_nget("wl%d_ssid",
-							get_wl_instance(name)));
+					eval("wl", "-i", name, "ssid", nvram_nget("wl%d_ssid", get_wl_instance(name)));
 #endif
 				}
 #ifdef HAVE_WAVESAT
@@ -2309,18 +2166,15 @@ void start_lan(void)
 			/*
 			 * get the instance number of the wl i/f 
 			 */
-			wl_ioctl(lan_ifname, WLC_GET_INSTANCE, &unit,
-				 sizeof(unit));
+			wl_ioctl(lan_ifname, WLC_GET_INSTANCE, &unit, sizeof(unit));
 			snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 			/*
 			 * Receive all multicast frames in WET mode 
 			 */
 			if (nvram_match(strcat_r(prefix, "mode", tmp), "sta"))
-				ifconfig(lan_ifname, IFUP | IFF_ALLMULTI, NULL,
-					 NULL);
+				ifconfig(lan_ifname, IFUP | IFF_ALLMULTI, NULL, NULL);
 			if (nvram_match(strcat_r(prefix, "mode", tmp), "apsta"))
-				ifconfig(lan_ifname, IFUP | IFF_ALLMULTI, NULL,
-					 NULL);
+				ifconfig(lan_ifname, IFUP | IFF_ALLMULTI, NULL, NULL);
 
 		}
 #endif
@@ -2331,17 +2185,14 @@ void start_lan(void)
 	 * Bring up and configure LAN interface 
 	 */
 	reset_hwaddr(lan_ifname);
-	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"),
-		 nvram_safe_get("lan_netmask"));
+	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 	sysprintf("/sbin/gratarp %s", lan_ifname);
 
 	char staticlan[32];
 
 	sprintf(staticlan, "%s:0", lan_ifname);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
-	if (getRouterBrand() != ROUTER_BOARD_FONERA2200
-	    && getRouterBrand() != ROUTER_BOARD_CA8PRO
-	    && getRouterBrand() != ROUTER_BOARD_RCAA01)
+	if (getRouterBrand() != ROUTER_BOARD_FONERA2200 && getRouterBrand() != ROUTER_BOARD_CA8PRO && getRouterBrand() != ROUTER_BOARD_RCAA01)
 		if (nvram_match("ath0_mode", "sta")
 		    || nvram_match("ath0_mode", "wdssta")
 		    || nvram_match("ath0_mode", "wet")
@@ -2350,8 +2201,7 @@ void start_lan(void)
 
 			eval("ifconfig", "eth0:0", "down");
 			// add fallback ip
-			eval("ifconfig", staticlan, "169.254.255.1", "netmask",
-			     "255.255.0.0");
+			eval("ifconfig", staticlan, "169.254.255.1", "netmask", "255.255.0.0");
 
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
 		} else
@@ -2366,30 +2216,24 @@ void start_lan(void)
 #define getWDSSTA() NULL
 #endif
 #ifndef HAVE_NOWIFI
-	if (nvram_match("mac_clone_enable", "1") &&
-	    nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") &&
-	    nvram_invmatch("def_hwaddr", "")) {
+	if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_hwaddr", "")) {
 #ifdef HAVE_MADWIFI
 		char *wifi = "wifi0";
 #else
 		char *wifi = "ra0";
 #endif
 		eval("ifconfig", wifi, "down");
-		eval("ifconfig", wifi, "hw", "ether",
-		     nvram_safe_get("def_whwaddr"));
+		eval("ifconfig", wifi, "hw", "ether", nvram_safe_get("def_whwaddr"));
 //              eval("ifconfig", wifi, "up");
 	}
-	if (nvram_match("mac_clone_enable", "1") &&
-	    nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") &&
-	    nvram_invmatch("def_whwaddr", "")) {
+	if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 #ifdef HAVE_MADWIFI
 		char *wifi = "wifi0";
 #else
 		char *wifi = "ra0";
 #endif
 		eval("ifconfig", wifi, "down");
-		eval("ifconfig", wifi, "hw", "ether",
-		     nvram_safe_get("def_whwaddr"));
+		eval("ifconfig", wifi, "hw", "ether", nvram_safe_get("def_whwaddr"));
 //              eval("ifconfig", wifi, "up");
 	}
 	configure_wifi();
@@ -2399,8 +2243,7 @@ void start_lan(void)
 	configure_wimax();
 #endif
 
-	cprintf("%s %s\n",
-		nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+	cprintf("%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_RT2880
@@ -2451,8 +2294,7 @@ void start_lan(void)
 			 * Bring up and configure br1 interface 
 			 */
 			if (nvram_invmatch(br1ipaddr, "0.0.0.0")) {
-				ifconfig("br1", IFUP, nvram_safe_get(br1ipaddr),
-					 nvram_safe_get(br1netmask));
+				ifconfig("br1", IFUP, nvram_safe_get(br1ipaddr), nvram_safe_get(br1netmask));
 
 				if (nvram_match("lan_stp", "0"))
 					br_set_stp_state("br1", 0);	// eval ("brctl",
@@ -2530,8 +2372,7 @@ void start_lan(void)
 
 				snprintf(wdsbc, 31, "%s", wdsip);
 				get_broadcast(wdsbc, wdsnm);
-				eval("ifconfig", dev, wdsip, "broadcast",
-				     wdsbc, "netmask", wdsnm, "up");
+				eval("ifconfig", dev, wdsip, "broadcast", wdsbc, "netmask", wdsnm, "up");
 			} else if (nvram_match(wdsvarname, "2")
 				   && nvram_match(br1enable, "1")) {
 				eval("ifconfig", dev, "up");
@@ -2652,8 +2493,7 @@ void start_lan(void)
 	 * Sveasoft - set default IP gateway defined 
 	 */
 	if (strcmp(nvram_safe_get("lan_gateway"), "0.0.0.0"))
-		eval("ip", "route", "add", "default", "via",
-		     nvram_safe_get("lan_gateway"), "dev", "br0");
+		eval("ip", "route", "add", "default", "via", nvram_safe_get("lan_gateway"), "dev", "br0");
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	for (c = 0; c < cnt; c++) {
@@ -2671,9 +2511,7 @@ void start_lan(void)
 	start_set_routes();
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	for (c = 0; c < cnt; c++) {
-		eval("wl", "-i", get_wl_instance_name(c), "radio",
-		     nvram_nmatch("disabled", "wl%d_net_mode",
-				  c) ? "off" : "on");
+		eval("wl", "-i", get_wl_instance_name(c), "radio", nvram_nmatch("disabled", "wl%d_net_mode", c) ? "off" : "on");
 	}
 #endif
 	/*
@@ -2699,11 +2537,9 @@ void start_lan(void)
 	// eval ("rm", "/tmp/hosts");
 	addHost("localhost", "127.0.0.1");
 	if (strlen(nvram_safe_get("wan_hostname")) > 0)
-		addHost(nvram_safe_get("wan_hostname"),
-			nvram_safe_get("lan_ipaddr"));
+		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"));
 	else if (strlen(nvram_safe_get("router_name")) > 0)
-		addHost(nvram_safe_get("router_name"),
-			nvram_safe_get("lan_ipaddr"));
+		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"));
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
@@ -2840,255 +2676,190 @@ void start_wan(int status)
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
+						"") ? nvram_safe_get("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
 #else
 
 #ifdef HAVE_XSCALE
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "ixp1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "ixp1";
 #elif HAVE_MAGICBOX
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_NORTHSTAR
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_LAGUNA
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WDR4900
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_RB600
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WRT54G2
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan1";
 #elif HAVE_RTG32
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan1";
 #elif HAVE_DIR300
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_BWRG1000
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_ECB9750
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth2";
 #elif HAVE_TECHNAXX3G
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth2";
 #elif HAVE_EAP9550
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth2";
 #elif HAVE_RT2880
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_MR3202A
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_FONERA
 	char *pppoe_wan_ifname = NULL;
 
 	if (getRouterBrand() == ROUTER_BOARD_FONERA2200)
-		pppoe_wan_ifname =
-		    nvram_invmatch("pppoe_wan_ifname",
-				   "") ? nvram_safe_get("pppoe_wan_ifname") :
-		    "vlan1";
+		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "vlan1";
 	else
-		pppoe_wan_ifname =
-		    nvram_invmatch("pppoe_wan_ifname",
-				   "") ? nvram_safe_get("pppoe_wan_ifname") :
-		    "eth0";
+		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_NS2
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_BS2
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_PICO2
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_PICO2HP
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_MS2
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_BS2HP
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_LC2
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_LS2
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
+						"") ? nvram_safe_get("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
 #elif HAVE_SOLO51
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
+						"") ? nvram_safe_get("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
 #elif HAVE_WDR2543
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_WA901
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WR941
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan1";
 #elif HAVE_WA901v1
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_WR703
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_WA7510
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_WR741
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WR1043
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_WZRG450
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_DIR632
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_AP83
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_AP94
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_WNR2000
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WASP
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_WHRHPGN
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_JA76PF
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_ALFAAP94
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_JWAP003
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_WP546
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_LSX
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_DANUBE
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "nas0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "nas0";
 #elif HAVE_STORM
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_OPENRISC
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_ADM5120
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_LS5
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WHRAG108
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_PB42
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_TW6600
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_RDAT81
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_RCAA01
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan1";
 #elif HAVE_CA8PRO
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan1";
 #elif HAVE_CA8
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_X86
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
+						"") ? nvram_safe_get("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
 #else
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ?
-	    nvram_safe_get("pppoe_wan_ifname") : "vlan1";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan1";
 #endif
 #ifdef HAVE_MULTICAST
 	if (!nvram_match("dtag_vlan8", "1") || nvram_match("wan_vdsl", "0"))
@@ -3145,8 +2916,7 @@ void start_wan(int status)
 
 	ifconfig(wan_ifname, 0, NULL, NULL);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
-	if (getRouterBrand() != ROUTER_BOARD_FONERA2200
-	    && getRouterBrand() != ROUTER_BOARD_CA8PRO) {
+	if (getRouterBrand() != ROUTER_BOARD_FONERA2200 && getRouterBrand() != ROUTER_BOARD_CA8PRO) {
 		char staticlan[32];
 
 		sprintf(staticlan, "%s:0", wan_ifname);
@@ -3155,8 +2925,7 @@ void start_wan(int status)
 		    && !nvram_match("ath0_mode", "wet")
 		    && !CANBRIDGE()) {
 			eval("ifconfig", "br0:0", "down");
-			eval("ifconfig", staticlan, "169.254.255.1", "netmask",
-			     "255.255.0.0");
+			eval("ifconfig", staticlan, "169.254.255.1", "netmask", "255.255.0.0");
 		} else
 			eval("ifconfig", staticlan, "0.0.0.0", "down");
 	}
@@ -3171,11 +2940,8 @@ void start_wan(int status)
 
 	unsigned char mac[20];
 
-	if (nvram_match("mac_clone_enable", "1") &&
-	    nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") &&
-	    nvram_invmatch("def_hwaddr", "")) {
-		ether_atoe(nvram_safe_get("def_hwaddr"),
-			   ifr.ifr_hwaddr.sa_data);
+	if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_hwaddr", "")) {
+		ether_atoe(nvram_safe_get("def_hwaddr"), ifr.ifr_hwaddr.sa_data);
 	} else {
 
 		if (wlifname && (!strcmp(wan_ifname, wlifname) || nvram_match("wan_proto", "l2tp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp")))	// sta mode
@@ -3330,39 +3096,28 @@ void start_wan(int status)
 			if (fp) {
 				fscanf(fp, "%d", &clientid);
 				fclose(fp);
-				sysprintf
-				    ("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --release-client-id wds",
-				     clientid);
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --release-client-id wds", clientid);
 			}
 			clientid = 0;
 			if (nvram_match("wan_conmode", "6"))
-				sysprintf
-				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes lte");
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes lte");
 //              if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
 //                  sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
 			if (nvram_match("wan_conmode", "4"))
-				sysprintf
-				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm,umts");
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm,umts");
 			if (nvram_match("wan_conmode", "3"))
-				sysprintf
-				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes umts,gsm");
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes umts,gsm");
 			if (nvram_match("wan_conmode", "2"))
-				sysprintf
-				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm");
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm");
 			if (nvram_match("wan_conmode", "1"))
-				sysprintf
-				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes umts");
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes umts");
 			if (nvram_match("wan_conmode", "0"))
-				sysprintf
-				    ("uqmi -d /dev/cdc-wdm0 --set-network-modes all");
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes all");
 
 			//set pin
-			sysprintf("uqmi -d /dev/cdc-wdm0 --verify-pin1 %s",
-				  nvram_safe_get("wan_pin"));
+			sysprintf("uqmi -d /dev/cdc-wdm0 --verify-pin1 %s", nvram_safe_get("wan_pin"));
 			//set apn and dial
-			fp = popen
-			    ("/usr/sbin/uqmi -d /dev/cdc-wdm0 --get-client-id wds",
-			     "rb");
+			fp = popen("/usr/sbin/uqmi -d /dev/cdc-wdm0 --get-client-id wds", "rb");
 			fscanf(fp, "%d", &clientid);
 			fclose(fp);
 			fp = fopen("/tmp/qmi-clientid", "wb");
@@ -3370,17 +3125,12 @@ void start_wan(int status)
 			fclose(fp);
 
 			fprintf(fp, "APN=%s", nvram_safe_get("wan_apn"));
-			if (strlen(nvram_safe_get("ppp_username")) > 0
-			    && strlen(nvram_safe_get("ppp_passwd")) > 0) {
+			if (strlen(nvram_safe_get("ppp_username")) > 0 && strlen(nvram_safe_get("ppp_passwd")) > 0) {
 				sysprintf
 				    ("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --username %s --password %s --keep-client-id wds",
-				     clientid, nvram_safe_get("wan_apn"),
-				     nvram_safe_get("ppp_username"),
-				     nvram_safe_get("ppp_passwd"));
+				     clientid, nvram_safe_get("wan_apn"), nvram_safe_get("ppp_username"), nvram_safe_get("ppp_passwd"));
 			} else {
-				sysprintf
-				    ("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --keep-client-id wds",
-				     clientid, nvram_safe_get("wan_apn"));
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --keep-client-id wds", clientid, nvram_safe_get("wan_apn"));
 			}
 			eval("ifconfig", "wwan0", "up");
 			start_dhcpc("wwan0", NULL, NULL, 1);
@@ -3392,38 +3142,27 @@ void start_wan(int status)
 #elif HAVE_LIBQMI
 		if (controldevice && !strcmp(controldevice, "qmi")) {
 			if (nvram_match("wan_conmode", "6"))
-				sysprintf
-				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
+				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
 //              if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
 //                  sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
 			if (nvram_match("wan_conmode", "4"))
-				sysprintf
-				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSMUMTS");
+				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSMUMTS");
 			if (nvram_match("wan_conmode", "3"))
-				sysprintf
-				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTSGSM");
+				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTSGSM");
 			if (nvram_match("wan_conmode", "2"))
-				sysprintf
-				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSM");
+				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSM");
 			if (nvram_match("wan_conmode", "1"))
-				sysprintf
-				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTS");
+				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTS");
 			if (nvram_match("wan_conmode", "0"))
-				sysprintf
-				    ("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=ANY");
+				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=ANY");
 
 			//set pin
-			sysprintf
-			    ("qmicli -d /dev/cdc-wdm0 --dms-uim-verify-pin=PIN,%s",
-			     nvram_safe_get("wan_pin"));
+			sysprintf("qmicli -d /dev/cdc-wdm0 --dms-uim-verify-pin=PIN,%s", nvram_safe_get("wan_pin"));
 			//set apn and dial
 			FILE *fp = fopen("/tmp/qmi-network.conf", "wb");
 			fprintf(fp, "APN=%s", nvram_safe_get("wan_apn"));
-			if (strlen(nvram_safe_get("ppp_username")) > 0
-			    && strlen(nvram_safe_get("ppp_passwd")) > 0) {
-				fprintf(fp, ",BOTH,%s,%s\n",
-					nvram_safe_get("ppp_username"),
-					nvram_safe_get("ppp_passwd"));
+			if (strlen(nvram_safe_get("ppp_username")) > 0 && strlen(nvram_safe_get("ppp_passwd")) > 0) {
+				fprintf(fp, ",BOTH,%s,%s\n", nvram_safe_get("ppp_username"), nvram_safe_get("ppp_passwd"));
 			} else {
 				fprintf(fp, "\n");
 			}
@@ -3445,56 +3184,37 @@ void start_wan(int status)
 
 			/* init PIN */
 			if (strlen(nvram_safe_get("wan_pin")))
-				sysprintf
-				    ("export COMGTPIN=%s;comgt PIN -d %s",
-				     nvram_safe_get("wan_pin"), controldevice);
+				sysprintf("export COMGTPIN=%s;comgt PIN -d %s", nvram_safe_get("wan_pin"), controldevice);
 			// set netmode, even if it is auto, should be set every time, the stick might save it
 			// some sticks, don't save it ;-)
 			if (strlen(nvram_safe_get("3gnmvariant"))) {
 				int netmode;
 				int netmodetoggle;
-				netmode =
-				    atoi(nvram_default_get("wan_conmode", "0"));
+				netmode = atoi(nvram_default_get("wan_conmode", "0"));
 				if (netmode == 5) {
-					if (strlen
-					    (nvram_safe_get("3gnetmodetoggle")))
-					{
-						netmodetoggle =
-						    atoi(nvram_safe_get
-							 ("3gnetmodetoggle"));
+					if (strlen(nvram_safe_get("3gnetmodetoggle"))) {
+						netmodetoggle = atoi(nvram_safe_get("3gnetmodetoggle"));
 						if (netmodetoggle == 1) {
 							// 2g
 							netmode = 2;
-							nvram_set
-							    ("3gnetmodetoggle",
-							     "0");
+							nvram_set("3gnetmodetoggle", "0");
 						} else {
 							// auto
 							netmode = 0;
-							nvram_set
-							    ("3gnetmodetoggle",
-							     "1");
+							nvram_set("3gnetmodetoggle", "1");
 						}
 					} else {
 						// auto
 						netmode = 0;
-						nvram_set("3gnetmodetoggle",
-							  "1");
+						nvram_set("3gnetmodetoggle", "1");
 					}
 				}
-				sysprintf
-				    ("export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out",
-				     nvram_safe_get("3gnmvariant"), netmode,
-				     controldevice);
-				printf
-				    ("3g setting netmode with variant %s to mode %d\n",
-				     nvram_safe_get("3gnmvariant"), netmode);
+				sysprintf("export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out", nvram_safe_get("3gnmvariant"), netmode, controldevice);
+				printf("3g setting netmode with variant %s to mode %d\n", nvram_safe_get("3gnmvariant"), netmode);
 			}
 			// Wait for device to attach to the provider network
 			int retcgatt = 0;
-			retcgatt = sysprintf
-			    ("comgt CGATT -d %s >/tmp/comgt-cgatt.out 2>&1",
-			     controldevice);
+			retcgatt = sysprintf("comgt CGATT -d %s >/tmp/comgt-cgatt.out 2>&1", controldevice);
 			// if (retcgatt == 0) 
 			// {
 			// nvram_set("3g_fastdial", "1");
@@ -3502,24 +3222,19 @@ void start_wan(int status)
 			// }
 			if (strlen(nvram_safe_get("wan_apn")))
 				if (!nvram_match("wan_dial", "2"))
-					sysprintf
-					    ("export COMGTAPN=\"%s\";comgt APN -d %s",
-					     nvram_safe_get("wan_apn"),
-					     controldevice);
+					sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s", nvram_safe_get("wan_apn"), controldevice);
 			// Lets open option file and enter all the parameters.
 			char *username = nvram_safe_get("ppp_username");
 			char *passwd = nvram_safe_get("ppp_passwd");
 			if (strlen(username) && strlen(passwd)) {
 				if ((fp = fopen("/tmp/ppp/chap-secrets", "w"))) {
-					fprintf(fp, "\"%s\" * \"%s\" *\n",
-						username, passwd);
+					fprintf(fp, "\"%s\" * \"%s\" *\n", username, passwd);
 					fclose(fp);
 					chmod("/tmp/ppp/chap-secrets", 0600);
 				}
 
 				if ((fp = fopen("/tmp/ppp/pap-secrets", "w"))) {
-					fprintf(fp, "\"%s\" * \"%s\" *\n",
-						username, passwd);
+					fprintf(fp, "\"%s\" * \"%s\" *\n", username, passwd);
 					fclose(fp);
 					chmod("/tmp/ppp/pap-secrets", 0600);
 				}
@@ -3527,10 +3242,8 @@ void start_wan(int status)
 
 			fp = fopen("/tmp/ppp/options.pppoe", "w");
 			if (strlen(username) && strlen(passwd)) {
-				fprintf(fp,
-					"chap-secrets /tmp/ppp/chap-secrets\n");
-				fprintf(fp,
-					"pap-secrets /tmp/ppp/pap-secrets\n");
+				fprintf(fp, "chap-secrets /tmp/ppp/chap-secrets\n");
+				fprintf(fp, "pap-secrets /tmp/ppp/pap-secrets\n");
 			}
 
 			fprintf(fp, "defaultroute\n");
@@ -3540,10 +3253,8 @@ void start_wan(int status)
 			fprintf(fp, "ipcp-max-failure 30\n");
 			if (nvram_match("mtu_enable", "1")) {
 				if (atoi(nvram_safe_get("wan_mtu")) > 0) {
-					fprintf(fp, "mtu %s\n",
-						nvram_safe_get("wan_mtu"));
-					fprintf(fp, "mru %s\n",
-						nvram_safe_get("wan_mtu"));
+					fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
+					fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
 				}
 
 			}
@@ -3563,9 +3274,7 @@ void start_wan(int status)
 				dial = "ATD*99***2#";
 			if (nvram_match("wan_dial", "5"))
 				dial = "ATD*99***4#";
-			fprintf(fp,
-				"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n",
-				dial, nvram_safe_get("3gdata"));
+			fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n", dial, nvram_safe_get("3gdata"));
 			if (strlen(username))
 				fprintf(fp, "user '%s'\n", username);
 			if (strlen(passwd))
@@ -3594,16 +3303,12 @@ void start_wan(int status)
 				timeout = 3;
 				while (ioctl(s, SIOCGIFADDR, &ifr) && timeout--) {
 					perror("ppp0");
-					printf
-					    ("Wait ppp inteface to init (1) ...\n");
+					printf("Wait ppp inteface to init (1) ...\n");
 					sleep(1);
 				};
 				char client[32];
 
-				nvram_set("wan_ipaddr",
-					  inet_ntop(AF_INET,
-						    &sin_addr(&ifr.ifr_addr),
-						    client, 16));
+				nvram_set("wan_ipaddr", inet_ntop(AF_INET, &sin_addr(&ifr.ifr_addr), client, 16));
 				nvram_set("wan_netmask", "255.255.255.255");
 
 				/*
@@ -3613,13 +3318,11 @@ void start_wan(int status)
 				while (ioctl(s, SIOCGIFDSTADDR, &ifr)
 				       && timeout--) {
 					perror("ppp0");
-					printf
-					    ("Wait ppp inteface to init (2) ...\n");
+					printf("Wait ppp inteface to init (2) ...\n");
 					sleep(1);
 				}
 				char *peer = inet_ntop(AF_INET,
-						       &sin_addr
-						       (&ifr.ifr_dstaddr),
+						       &sin_addr(&ifr.ifr_dstaddr),
 						       client,
 						       16);
 
@@ -3647,15 +3350,11 @@ void start_wan(int status)
 		char username[80], passwd[80];
 		char idletime[20], retry_num[20];
 
-		snprintf(idletime, sizeof(idletime), "%d",
-			 atoi(nvram_safe_get("ppp_idletime")) * 60);
-		snprintf(retry_num, sizeof(retry_num), "%d",
-			 (atoi(nvram_safe_get("ppp_redialperiod")) / 5) - 1);
+		snprintf(idletime, sizeof(idletime), "%d", atoi(nvram_safe_get("ppp_idletime")) * 60);
+		snprintf(retry_num, sizeof(retry_num), "%d", (atoi(nvram_safe_get("ppp_redialperiod")) / 5) - 1);
 
-		snprintf(username, sizeof(username), "%s",
-			 nvram_safe_get("ppp_username"));
-		snprintf(passwd, sizeof(passwd), "%s",
-			 nvram_safe_get("ppp_passwd"));
+		snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
+		snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 		mkdir("/tmp/ppp", 0777);
 		int timeout = 5;
@@ -3669,8 +3368,7 @@ void start_wan(int status)
 		fprintf(fp, "plugin /usr/lib/rp-pppoe.so\n");
 #endif
 		if (nvram_invmatch("pppoe_service", ""))
-			fprintf(fp, " rp_pppoe_service %s",
-				nvram_safe_get("pppoe_service"));
+			fprintf(fp, " rp_pppoe_service %s", nvram_safe_get("pppoe_service"));
 		fprintf(fp, "\n");
 		char vlannic[32];
 		char tvnic[32];
@@ -3682,22 +3380,17 @@ void start_wan(int status)
 				if (nvram_match("dtag_vlan8", "1")) {
 					sprintf(vlannic, "%s.0008", ifn);
 					if (!ifexists(vlannic)) {
-						eval("vconfig", "set_name_type",
-						     "DEV_PLUS_VID");
-						eval("vconfig", "add", ifn,
-						     "8");
+						eval("vconfig", "set_name_type", "DEV_PLUS_VID");
+						eval("vconfig", "add", ifn, "8");
 						eval("ifconfig", vlannic, "up");
 					}
 					nvram_set("tvnicfrom", vlannic);
 					symlink("/sbin/rc", "/tmp/udhcpc_tv");
-					start_dhcpc(vlannic,
-						    "/var/run/udhcpc_tv.pid",
-						    "/tmp/udhcpc_tv", 1);
+					start_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1);
 				}
 				sprintf(vlannic, "%s.0007", ifn);
 				if (!ifexists(vlannic)) {
-					eval("vconfig", "set_name_type",
-					     "DEV_PLUS_VID");
+					eval("vconfig", "set_name_type", "DEV_PLUS_VID");
 					eval("vconfig", "add", ifn, "7");
 					eval("ifconfig", vlannic, "up");
 				}
@@ -3721,27 +3414,20 @@ void start_wan(int status)
 				// VDSL2 Vlan 7 Tag
 			{
 				if (nvram_match("dtag_vlan8", "1")) {
-					sprintf(vlannic, "%s.0008",
-						pppoe_wan_ifname);
+					sprintf(vlannic, "%s.0008", pppoe_wan_ifname);
 					if (!ifexists(vlannic)) {
-						eval("vconfig", "set_name_type",
-						     "DEV_PLUS_VID");
-						eval("vconfig", "add",
-						     pppoe_wan_ifname, "8");
+						eval("vconfig", "set_name_type", "DEV_PLUS_VID");
+						eval("vconfig", "add", pppoe_wan_ifname, "8");
 						eval("ifconfig", vlannic, "up");
 					}
 					nvram_set("tvnicfrom", vlannic);
 					symlink("/sbin/rc", "/tmp/udhcpc_tv");
-					start_dhcpc(vlannic,
-						    "/var/run/udhcpc_tv.pid",
-						    "/tmp/udhcpc_tv", 1);
+					start_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1);
 				}
 				sprintf(vlannic, "%s.0007", pppoe_wan_ifname);
 				if (!ifexists(vlannic)) {
-					eval("vconfig", "set_name_type",
-					     "DEV_PLUS_VID");
-					eval("vconfig", "add", pppoe_wan_ifname,
-					     "7");
+					eval("vconfig", "set_name_type", "DEV_PLUS_VID");
+					eval("vconfig", "add", pppoe_wan_ifname, "7");
 					eval("ifconfig", vlannic, "up");
 				}
 				fprintf(fp, "nic-%s\n", vlannic);
@@ -3766,10 +3452,7 @@ void start_wan(int status)
 			fprintf(fp, "noccp\n");
 			fprintf(fp, "nomppc\n");
 		}
-		fprintf(fp, "noipdefault\n"
-			"noauth\n"
-			"defaultroute\n" "noaccomp\n" "nobsdcomp\n"
-			"nodeflate\n"
+		fprintf(fp, "noipdefault\n" "noauth\n" "defaultroute\n" "noaccomp\n" "nobsdcomp\n" "nodeflate\n"
 			// "debug\n"
 			// "maxfail 0\n"
 			// "nocrtscts\n"
@@ -3790,8 +3473,7 @@ void start_wan(int status)
 			fprintf(fp, "nomppe\n");
 		if (nvram_match("ppp_mlppp", "1"))
 			fprintf(fp, "mp\n");
-		fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n",
-			username, passwd);
+		fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n", username, passwd);
 
 		// This is a tricky one. When used it could improve speed of PPPoE
 		// but not all ISP's can support it.
@@ -3818,10 +3500,8 @@ void start_wan(int status)
 		// theuser on web page
 		if (nvram_match("mtu_enable", "1")) {
 			if (atoi(nvram_safe_get("wan_mtu")) > 0) {
-				fprintf(fp, "mtu %s\n",
-					nvram_safe_get("wan_mtu"));
-				fprintf(fp, "mru %s\n",
-					nvram_safe_get("wan_mtu"));
+				fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
+				fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
 			}
 
 		} else {
@@ -3829,14 +3509,10 @@ void start_wan(int status)
 			// expirienced users
 			if (nvram_invmatch("pppoe_ppp_mtu", ""))
 				if (atoi(nvram_safe_get("pppoe_ppp_mtu")) > 0)
-					fprintf(fp, "mtu %s\n",
-						nvram_safe_get
-						("pppoe_ppp_mtu"));
+					fprintf(fp, "mtu %s\n", nvram_safe_get("pppoe_ppp_mtu"));
 			if (nvram_invmatch("pppoe_ppp_mru", ""))
 				if (atoi(nvram_safe_get("pppoe_ppp_mru")) > 0)
-					fprintf(fp, "mru %s\n",
-						nvram_safe_get
-						("pppoe_ppp_mru"));
+					fprintf(fp, "mru %s\n", nvram_safe_get("pppoe_ppp_mru"));
 		}
 
 		// Allow runtime debugging
@@ -3855,17 +3531,9 @@ void start_wan(int status)
 		if (nvram_match("ppp_demand", "1"))
 			fprintf(fp, "demand\n"
 				"idle %s\n"
-				"10.112.112.112:10.112.112.113\n"
-				"lcp-echo-interval %d\n"
-				"lcp-echo-failure 10\n"
-				"ipcp-accept-remote\n"
-				"ipcp-accept-local\n"
-				"connect true\n" "ktune\n", idletime,
-				atoi(idletime) * 2);
+				"10.112.112.112:10.112.112.113\n" "lcp-echo-interval %d\n" "lcp-echo-failure 10\n" "ipcp-accept-remote\n" "ipcp-accept-local\n" "connect true\n" "ktune\n", idletime, atoi(idletime) * 2);
 		else
-			fprintf(fp, "persist\n"
-				"lcp-echo-interval 3\n"
-				"lcp-echo-failure 20\n");
+			fprintf(fp, "persist\n" "lcp-echo-interval 3\n" "lcp-echo-failure 20\n");
 
 		fclose(fp);
 
@@ -3909,9 +3577,7 @@ void start_wan(int status)
 			};
 			char client[32];
 
-			nvram_set("wan_ipaddr",
-				  inet_ntop(AF_INET, &sin_addr(&ifr.ifr_addr),
-					    client, 16));
+			nvram_set("wan_ipaddr", inet_ntop(AF_INET, &sin_addr(&ifr.ifr_addr), client, 16));
 			nvram_set("wan_netmask", "255.255.255.255");
 
 			/*
@@ -3923,10 +3589,9 @@ void start_wan(int status)
 				printf("Wait ppp inteface to init (2) ...\n");
 				sleep(1);
 			}
-			char *peer =
-			    inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
-				      client,
-				      16);
+			char *peer = inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
+					       client,
+					       16);
 
 			nvram_set("wan_gateway", peer);
 
@@ -3960,15 +3625,11 @@ void start_wan(int status)
 		stop_atm();
 		start_atm();
 
-		snprintf(idletime, sizeof(idletime), "%d",
-			 atoi(nvram_safe_get("ppp_idletime")) * 60);
-		snprintf(retry_num, sizeof(retry_num), "%d",
-			 (atoi(nvram_safe_get("ppp_redialperiod")) / 5) - 1);
+		snprintf(idletime, sizeof(idletime), "%d", atoi(nvram_safe_get("ppp_idletime")) * 60);
+		snprintf(retry_num, sizeof(retry_num), "%d", (atoi(nvram_safe_get("ppp_redialperiod")) / 5) - 1);
 
-		snprintf(username, sizeof(username), "%s",
-			 nvram_safe_get("ppp_username"));
-		snprintf(passwd, sizeof(passwd), "%s",
-			 nvram_safe_get("ppp_passwd"));
+		snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
+		snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 		mkdir("/tmp/ppp", 0777);
 		int timeout = 5;
@@ -3976,11 +3637,7 @@ void start_wan(int status)
 		// Lets open option file and enter all the parameters.
 		fp = fopen("/tmp/ppp/options.pppoa", "w");
 
-		fprintf(fp, "plugin /usr/lib/pppoatm.so %s.%s %s",
-			nvram_safe_get("vpi"),
-			nvram_safe_get("vci"),
-			nvram_match("atm_encaps",
-				    "0") ? "llc-encaps" : "vc-encaps");
+		fprintf(fp, "plugin /usr/lib/pppoatm.so %s.%s %s", nvram_safe_get("vpi"), nvram_safe_get("vci"), nvram_match("atm_encaps", "0") ? "llc-encaps" : "vc-encaps");
 		fprintf(fp, "\n");
 
 		// Those are default options we use + user/passwd
@@ -3992,18 +3649,14 @@ void start_wan(int status)
 			fprintf(fp, "noccp\n");
 			fprintf(fp, "nomppc\n");
 		}
-		fprintf(fp, "noipdefault\n"
-			"noauth\n"
-			"defaultroute\n" "noaccomp\n" "nobsdcomp\n"
-			"nodeflate\n" "nopcomp\n");
+		fprintf(fp, "noipdefault\n" "noauth\n" "defaultroute\n" "noaccomp\n" "nobsdcomp\n" "nodeflate\n" "nopcomp\n");
 		if (nvram_invmatch("ppp_mppe", ""))
 			fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
 		else
 			fprintf(fp, "nomppe\n");
 		if (nvram_match("ppp_mlppp", "1"))
 			fprintf(fp, "mp\n");
-		fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n",
-			username, passwd);
+		fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n", username, passwd);
 
 		if (nvram_match("ppp_asyncmap", "1"))
 			fprintf(fp, "asyncmap 0\n");
@@ -4012,10 +3665,8 @@ void start_wan(int status)
 
 		if (nvram_match("mtu_enable", "1")) {
 			if (atoi(nvram_safe_get("wan_mtu")) > 0) {
-				fprintf(fp, "mtu %s\n",
-					nvram_safe_get("wan_mtu"));
-				fprintf(fp, "mru %s\n",
-					nvram_safe_get("wan_mtu"));
+				fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
+				fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
 			}
 
 		} else {
@@ -4023,14 +3674,10 @@ void start_wan(int status)
 			// expirienced users
 			if (nvram_invmatch("pppoe_ppp_mtu", ""))
 				if (atoi(nvram_safe_get("pppoe_ppp_mtu")) > 0)
-					fprintf(fp, "mtu %s\n",
-						nvram_safe_get
-						("pppoe_ppp_mtu"));
+					fprintf(fp, "mtu %s\n", nvram_safe_get("pppoe_ppp_mtu"));
 			if (nvram_invmatch("pppoe_ppp_mru", ""))
 				if (atoi(nvram_safe_get("pppoe_ppp_mru")) > 0)
-					fprintf(fp, "mru %s\n",
-						nvram_safe_get
-						("pppoe_ppp_mru"));
+					fprintf(fp, "mru %s\n", nvram_safe_get("pppoe_ppp_mru"));
 		}
 
 		if (nvram_match("ppp_debug", "1"))
@@ -4039,17 +3686,9 @@ void start_wan(int status)
 		if (nvram_match("ppp_demand", "1"))
 			fprintf(fp, "demand\n"
 				"idle %s\n"
-				"10.112.112.112:10.112.112.113\n"
-				"lcp-echo-interval %d\n"
-				"lcp-echo-failure 10\n"
-				"ipcp-accept-remote\n"
-				"ipcp-accept-local\n"
-				"connect true\n" "ktune\n", idletime,
-				atoi(idletime) * 2);
+				"10.112.112.112:10.112.112.113\n" "lcp-echo-interval %d\n" "lcp-echo-failure 10\n" "ipcp-accept-remote\n" "ipcp-accept-local\n" "connect true\n" "ktune\n", idletime, atoi(idletime) * 2);
 		else
-			fprintf(fp, "persist\n"
-				"lcp-echo-interval 3\n"
-				"lcp-echo-failure 20\n");
+			fprintf(fp, "persist\n" "lcp-echo-interval 3\n" "lcp-echo-failure 20\n");
 
 		fclose(fp);
 
@@ -4090,9 +3729,7 @@ void start_wan(int status)
 			};
 			char client[32];
 
-			nvram_set("wan_ipaddr",
-				  inet_ntop(AF_INET, &sin_addr(&ifr.ifr_addr),
-					    client, 16));
+			nvram_set("wan_ipaddr", inet_ntop(AF_INET, &sin_addr(&ifr.ifr_addr), client, 16));
 			nvram_set("wan_netmask", "255.255.255.255");
 
 			/*
@@ -4104,10 +3741,9 @@ void start_wan(int status)
 				printf("Wait ppp inteface to init (2) ...\n");
 				sleep(1);
 			}
-			char *peer =
-			    inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
-				      client,
-				      16);
+			char *peer = inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
+					       client,
+					       16);
 
 			nvram_set("wan_gateway", peer);
 
@@ -4176,9 +3812,7 @@ void start_wan(int status)
 	}
 #endif
 	else {
-		ifconfig(wan_ifname, IFUP,
-			 nvram_safe_get("wan_ipaddr"),
-			 nvram_safe_get("wan_netmask"));
+		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 		start_wan_done(wan_ifname);
 		sysprintf("/sbin/gratarp %s", wan_ifname);
 	}
@@ -4196,8 +3830,7 @@ void start_wan(int status)
 		if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
 			char eabuf[32];
 
-			nvram_set("wan_hwaddr",
-				  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+			nvram_set("wan_hwaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 			// fprintf(stderr,"write wan addr
 			// %s\n",nvram_safe_get("wan_hwaddr"));
 		}
@@ -4238,8 +3871,7 @@ void start_wan(int status)
 	else
 		diag_led(DMZ, STOP_LED);
 
-	cprintf("%s %s\n", nvram_safe_get("wan_ipaddr"),
-		nvram_safe_get("wan_netmask"));
+	cprintf("%s %s\n", nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 
 	if (nvram_match("wan_proto", "l2tp")) {
 		/*
@@ -4308,9 +3940,7 @@ void start_wan_done(char *wan_ifname)
 		/*
 		 * Delete all default routes 
 		 */
-		while (route_del
-		       (nvram_safe_get("wan_ifname"), 0, NULL, NULL,
-			NULL) == 0) ;
+		while (route_del(nvram_safe_get("wan_ifname"), 0, NULL, NULL, NULL) == 0) ;
 	}
 
 	/*
@@ -4319,15 +3949,11 @@ void start_wan_done(char *wan_ifname)
 	while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0) ;
 
 	if ((nvram_match("wan_proto", "pppoe")) && check_wan_link(1)) {
-		while (route_del
-		       (nvram_safe_get("wan_ifname_1"), 0, NULL, NULL,
-			NULL) == 0) ;
+		while (route_del(nvram_safe_get("wan_ifname_1"), 0, NULL, NULL, NULL) == 0) ;
 	}
 #ifdef HAVE_PPPOATM
 	if ((nvram_match("wan_proto", "pppoa")) && check_wan_link(1)) {
-		while (route_del
-		       (nvram_safe_get("wan_ifname_1"), 0, NULL, NULL,
-			NULL) == 0) ;
+		while (route_del(nvram_safe_get("wan_ifname_1"), 0, NULL, NULL, NULL) == 0) ;
 	}
 #endif
 
@@ -4338,20 +3964,16 @@ void start_wan_done(char *wan_ifname)
 		 * Set default route to gateway if specified 
 		 */
 		char *gateway = nvram_match("wan_proto",
-					    "pptp") ?
-		    nvram_safe_get("pptp_get_ip") :
-		    nvram_safe_get("wan_gateway");
+					    "pptp") ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_gateway");
 		if (strcmp(gateway, "0.0.0.0")) {
 //                      route_add(wan_ifname, 0, gateway, NULL,"255.255.255.255");
 
-			while (route_add
-			       (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
+			while (route_add(wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
 			       && timeout--) {
 				if ((nvram_match("wan_proto", "pppoe")
 				     || nvram_match("wan_proto", "pppoa"))
 				    && nvram_match("ppp_demand", "1")) {
-					printf
-					    ("Wait ppp interface to init (3) ...\n");
+					printf("Wait ppp interface to init (3) ...\n");
 					sleep(1);
 				} else
 					break;
@@ -4361,22 +3983,12 @@ void start_wan_done(char *wan_ifname)
 	}
 
 	if (nvram_match("wan_proto", "pptp")) {
-		route_del(nvram_safe_get("wan_iface"), 0,
-			  nvram_safe_get("wan_gateway"), NULL,
-			  "255.255.255.255");
-		route_del(nvram_safe_get("wan_iface"), 0,
-			  nvram_safe_get("pptp_server_ip"), NULL,
-			  "255.255.255.255");
-		route_add(nvram_safe_get("wan_iface"), 0,
-			  nvram_safe_get("pptp_get_ip"), NULL,
-			  "255.255.255.255");
+		route_del(nvram_safe_get("wan_iface"), 0, nvram_safe_get("wan_gateway"), NULL, "255.255.255.255");
+		route_del(nvram_safe_get("wan_iface"), 0, nvram_safe_get("pptp_server_ip"), NULL, "255.255.255.255");
+		route_add(nvram_safe_get("wan_iface"), 0, nvram_safe_get("pptp_get_ip"), NULL, "255.255.255.255");
 	} else if (nvram_match("wan_proto", "l2tp")) {
-		route_del(nvram_safe_get("wan_iface"), 0,
-			  nvram_safe_get("wan_gateway"), NULL,
-			  "255.255.255.255");
-		route_add(nvram_safe_get("wan_iface"), 0,
-			  nvram_safe_get("l2tp_get_ip"), NULL,
-			  "255.255.255.255");
+		route_del(nvram_safe_get("wan_iface"), 0, nvram_safe_get("wan_gateway"), NULL, "255.255.255.255");
+		route_add(nvram_safe_get("wan_iface"), 0, nvram_safe_get("l2tp_get_ip"), NULL, "255.255.255.255");
 		if (nvram_match("l2tp_use_dhcp", "1"))
 			route_add(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");	// fixed 
 	}
@@ -4458,8 +4070,7 @@ void start_wan_done(char *wan_ifname)
 			mkdir("/tmp/ppp", 0700);
 
 			// Create our custom pptp ipup script and change its attributes
-			writenvram("pptp_customipup",
-				   "/tmp/ppp/sh_pptp_customipup");
+			writenvram("pptp_customipup", "/tmp/ppp/sh_pptp_customipup");
 			chmod("/tmp/ppp/sh_pptp_customipup", 0744);
 
 			// Execute our custom ipup script
@@ -4670,8 +4281,7 @@ void start_set_routes(void)
 
 	if (!nvram_match("lan_gateway", "0.0.0.0")) {
 		eval("route", "del", "default");
-		eval("route", "add", "default", "gw",
-		     nvram_safe_get("lan_gateway"));
+		eval("route", "add", "default", "gw", nvram_safe_get("lan_gateway"));
 	}
 	char *defgateway;
 
@@ -4709,11 +4319,9 @@ void start_set_routes(void)
 			eval("route", "del", "default");
 			eval("route", "add", "default", "gw", gateway);
 		} else if (!strcmp(ifname, "any")) {
-			eval("route", "add", "-net", ipaddr, "netmask", netmask,
-			     "gw", gateway, "metric", metric);
+			eval("route", "add", "-net", ipaddr, "netmask", netmask, "gw", gateway, "metric", metric);
 		} else
-			route_add(ifname, atoi(metric) + 1, ipaddr, gateway,
-				  netmask);
+			route_add(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
 	}
 	if (f_exists("/tmp/tvrouting"))
 		system("sh /tmp/tvrouting");
@@ -4743,8 +4351,7 @@ static int notify_nas(char *type, char *ifname, char *action)
 	 */
 	wl_ioctl(ifname, WLC_GET_INSTANCE, &unit, sizeof(unit));
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
-	if (nvram_match(strcat_r(prefix, "akm", tmp), "") &&
-	    nvram_match(strcat_r(prefix, "auth_mode", tmp), "none"))
+	if (nvram_match(strcat_r(prefix, "akm", tmp), "") && nvram_match(strcat_r(prefix, "auth_mode", tmp), "none"))
 		return 0;
 
 	while (retries-- > 0 && !(str = file2str("/tmp/nas.wl0lan.pid")))

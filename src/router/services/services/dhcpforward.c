@@ -64,13 +64,7 @@ void start_dhcpfwd(void)
 			"pidfile		/var/run/dhcp-fwd.pid\n"
 			"ulimit core	0\n"
 			"ulimit stack	64K\n"
-			"ulimit data	32K\n"
-			"ulimit rss	200K\n"
-			"ulimit nproc	0\n"
-			"ulimit nofile	0\n"
-			"ulimit as	0\n"
-			"if	%s	true	false	true\n",
-			nvram_safe_get("lan_ifname"));
+			"ulimit data	32K\n" "ulimit rss	200K\n" "ulimit nproc	0\n" "ulimit nofile	0\n" "ulimit as	0\n" "if	%s	true	false	true\n", nvram_safe_get("lan_ifname"));
 
 		char *wan_proto = nvram_safe_get("wan_proto");
 		char *wan_ifname = nvram_safe_get("wan_ifname");
@@ -89,16 +83,13 @@ void start_dhcpfwd(void)
 #endif
 		else if (getWET()) {
 			// nothing
-		} else if (strcmp(wan_proto, "dhcp") == 0
-			   || strcmp(wan_proto, "static") == 0) {
-			fprintf(fp, "if	%s	false	true	true\n",
-				wan_ifname);
+		} else if (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) {
+			fprintf(fp, "if	%s	false	true	true\n", wan_ifname);
 		}
 #ifdef HAVE_3G
-		else if (strcmp(wan_proto, "3g") == 0 && nvram_match("3gdata","qmi")) {
+		else if (strcmp(wan_proto, "3g") == 0 && nvram_match("3gdata", "qmi")) {
 			fprintf(fp, "if	wwan0	false	true	true\n");
-		}
-		else if (strcmp(wan_proto, "3g") == 0) {
+		} else if (strcmp(wan_proto, "3g") == 0) {
 			fprintf(fp, "if	ppp0	false	true	true\n");
 		}
 #endif
@@ -123,27 +114,20 @@ void start_dhcpfwd(void)
 		}
 #endif
 		else {
-			fprintf(fp, "if	%s	false	true	true\n",
-				wan_ifname);
+			fprintf(fp, "if	%s	false	true	true\n", wan_ifname);
 		}
 
-		fprintf(fp, "name	%s	ws-c\n"
-			"server	ip	%s\n",
-			nvram_safe_get("lan_ifname"),
-			nvram_safe_get("dhcpfwd_ip"));
+		fprintf(fp, "name	%s	ws-c\n" "server	ip	%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("dhcpfwd_ip"));
 		fclose(fp);
 		eval("dhcpfwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf");
-		syslog(LOG_INFO,
-		       "dhcpfwd : dhcp forwarder daemon successfully started\n");
+		syslog(LOG_INFO, "dhcpfwd : dhcp forwarder daemon successfully started\n");
 		return;
 	}
 #endif
 #ifdef HAVE_DHCPRELAY
 	if (nvram_match("dhcpfwd_enable", "1")) {
-		eval("dhcrelay", "-i", nvram_safe_get("lan_ifname"),
-		     nvram_safe_get("dhcpfwd_ip"));
-		syslog(LOG_INFO,
-		       "dhcrelay : dhcp relay successfully started\n");
+		eval("dhcrelay", "-i", nvram_safe_get("lan_ifname"), nvram_safe_get("dhcpfwd_ip"));
+		syslog(LOG_INFO, "dhcrelay : dhcp relay successfully started\n");
 	}
 #endif
 	return;

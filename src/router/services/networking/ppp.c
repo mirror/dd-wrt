@@ -160,8 +160,7 @@ int ipup_main(int argc, char **argv)
 	if (getenv("DNS1"))
 		sprintf(buf, "%s", getenvs("DNS1"));
 	if (getenv("DNS2"))
-		sprintf(buf + strlen(buf), "%s%s", strlen(buf) ? " " : "",
-			getenvs("DNS2"));
+		sprintf(buf + strlen(buf), "%s%s", strlen(buf) ? " " : "", getenvs("DNS2"));
 	nvram_set("wan_get_dns", buf);
 
 	if ((value = getenv("AC_NAME")))
@@ -208,9 +207,7 @@ int ipdown_main(int argc, char **argv)
 		dns_to_resolv();
 
 		// todo
-		route_del(nvram_safe_get("wan_ifname"), 0,
-			  nvram_safe_get("l2tp_server_ip"),
-			  nvram_safe_get("wan_gateway_buf"), "255.255.255.255");
+		route_del(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");
 		/*
 		 * Restore the default gateway for WAN interface 
 		 */
@@ -219,17 +216,13 @@ int ipdown_main(int argc, char **argv)
 		/*
 		 * Set default route to gateway if specified 
 		 */
-		route_add(nvram_safe_get("wan_ifname"), 0, "0.0.0.0",
-			  nvram_safe_get("wan_gateway"), "0.0.0.0");
+		route_add(nvram_safe_get("wan_ifname"), 0, "0.0.0.0", nvram_safe_get("wan_gateway"), "0.0.0.0");
 	}
 	if (nvram_match("wan_proto", "pptp")) {
 		eval("route", "del", "default");
 		nvram_set("wan_gateway", nvram_safe_get("wan_gateway_buf"));
-		eval("route", "add", "default", "gw",
-		     nvram_safe_get("wan_gateway"));
-		sysprintf
-		    ("iptables -t nat -A POSTROUTING -o %s -j MASQUERADE\n",
-		     nvram_safe_get("pptp_ifname"));
+		eval("route", "add", "default", "gw", nvram_safe_get("wan_gateway"));
+		sysprintf("iptables -t nat -A POSTROUTING -o %s -j MASQUERADE\n", nvram_safe_get("pptp_ifname"));
 	}
 #ifdef HAVE_3G
 #if defined(HAVE_TMK) || defined(HAVE_BKM)

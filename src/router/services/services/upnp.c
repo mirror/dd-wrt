@@ -53,8 +53,7 @@ void start_upnp(void)
 		    "-I", nvram_safe_get( "upnp_ssdp_interval" ),
 		    "-A", nvram_safe_get( "upnp_max_age" ) );*/
 		ret = eval("upnp", "-D", "-W", wan_ifname);
-		dd_syslog(LOG_INFO,
-			  "upnp : upnp daemon successfully started\n");
+		dd_syslog(LOG_INFO, "upnp : upnp daemon successfully started\n");
 	}
 
 	cprintf("done\n");

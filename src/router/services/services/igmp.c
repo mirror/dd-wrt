@@ -41,23 +41,16 @@ void start_igmp_proxy(void)
 	FILE *fp = fopen("/tmp/igmpproxy.conf", "wb");
 
 	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
-		fprintf(fp,
-			"quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",
-			nvram_safe_get("tvnicfrom"));
+		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
 		fprintf(fp, "phyint %s disabled\n", get_wan_face());
 	} else {
-		fprintf(fp,
-			"quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",
-			get_wan_face());
+		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", get_wan_face());
 	}
 	if (nvram_match("block_multicast", "0")) {
-		fprintf(fp, "phyint %s downstream  ratelimit 0  threshold 1\n",
-			nvram_safe_get("lan_ifname"));
+		fprintf(fp, "phyint %s downstream  ratelimit 0  threshold 1\n", nvram_safe_get("lan_ifname"));
 		ifcount++;
 	} else {
-		fprintf(fp, "phyint %s disabled\n"
-			"phyint %s:0 disabled\n", nvram_safe_get("lan_ifname"),
-			nvram_safe_get("lan_ifname"));
+		fprintf(fp, "phyint %s disabled\n" "phyint %s:0 disabled\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ifname"));
 	}
 	char ifnames[256];
 
@@ -68,9 +61,7 @@ void start_igmp_proxy(void)
 		    && strcmp(nvram_safe_get("tvnicfrom"), name)) {
 			if (nvram_nmatch("0", "%s_bridged", name)
 			    && nvram_nmatch("1", "%s_multicast", name)) {
-				fprintf(fp,
-					"phyint %s downstream  ratelimit 0  threshold 1\n",
-					name);
+				fprintf(fp, "phyint %s downstream  ratelimit 0  threshold 1\n", name);
 				ifcount++;
 			} else
 				fprintf(fp, "phyint %s disabled\n", name);
@@ -87,8 +78,7 @@ void start_igmp_proxy(void)
 		if (ifcount) {
 			if (pidof("igmprt") < 1)
 				ret = _evalpid(argv, NULL, 0, &pid);
-			dd_syslog(LOG_INFO,
-				  "igmprt : multicast daemon successfully started\n");
+			dd_syslog(LOG_INFO, "igmprt : multicast daemon successfully started\n");
 		}
 	}
 

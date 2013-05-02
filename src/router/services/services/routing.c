@@ -63,7 +63,7 @@ int zebra_init(void)
 			strcat(daemons, " ripd");
 		}
 	}
-	dd_syslog(LOG_INFO, "zebra : zebra (%s) successfully initiated\n",daemons);
+	dd_syslog(LOG_INFO, "zebra : zebra (%s) successfully initiated\n", daemons);
 	system(daemons);
 	return 0;
 }
@@ -232,34 +232,23 @@ int zebra_ospf_init(void)
 					char wdsdevospf[32] = { 0 };
 					char *dev;
 
-					sprintf(wdsdevospf, "wl%d_wds%d_ospf",
-						c, s);
+					sprintf(wdsdevospf, "wl%d_wds%d_ospf", c, s);
 					dev = nvram_nget("wl%d_wds%d_if", c, s);
 
-					if (nvram_nmatch
-					    ("1", "wl%d_wds%d_enable", c, s)) {
-						fprintf(fp, "!\n! WDS: %s\n",
-							nvram_nget
-							("wl%d_wds%d_desc", c,
-							 s));
-						fprintf(fp, "interface %s\n",
-							dev);
+					if (nvram_nmatch("1", "wl%d_wds%d_enable", c, s)) {
+						fprintf(fp, "!\n! WDS: %s\n", nvram_nget("wl%d_wds%d_desc", c, s));
+						fprintf(fp, "interface %s\n", dev);
 
-						if (atoi
-						    (nvram_safe_get(wdsdevospf))
+						if (atoi(nvram_safe_get(wdsdevospf))
 						    > 0)
-							fprintf(fp,
-								" ip ospf cost %s\n",
-								nvram_safe_get
-								(wdsdevospf));
+							fprintf(fp, " ip ospf cost %s\n", nvram_safe_get(wdsdevospf));
 					}
 				}
 			fprintf(fp, "!\n");
 		}
 		fprintf(fp, "router ospf\n");
 		fprintf(fp, " passive-interface lo\n");
-		fprintf(fp, " ospf router-id %s\n",
-			nvram_safe_get("lan_ipaddr"));
+		fprintf(fp, " ospf router-id %s\n", nvram_safe_get("lan_ipaddr"));
 		fprintf(fp, " redistribute kernel\n");
 		fprintf(fp, " redistribute connected\n");
 		fprintf(fp, " redistribute static\n");
@@ -271,8 +260,7 @@ int zebra_ospf_init(void)
 			sprintf(wdsdevospf, "wl_wds%d_ospf", s);
 
 			if (atoi(nvram_safe_get(wdsdevospf)) < 0)
-				fprintf(fp, " passive-interface %s\n",
-					nvram_nget("wl_wds%d_if", s));
+				fprintf(fp, " passive-interface %s\n", nvram_nget("wl_wds%d_if", s));
 		}
 
 		if (nvram_match("zebra_log", "1")) {
@@ -355,26 +343,16 @@ int zebra_ospf6_init(void)
 					char wdsdevospf[32] = { 0 };
 					char *dev;
 
-					sprintf(wdsdevospf, "wl%d_wds%d_ospf",
-						c, s);
+					sprintf(wdsdevospf, "wl%d_wds%d_ospf", c, s);
 					dev = nvram_nget("wl%d_wds%d_if", c, s);
 
-					if (nvram_nmatch
-					    ("1", "wl%d_wds%d_enable", c, s)) {
-						fprintf(fp, "!\n! WDS: %s\n",
-							nvram_nget
-							("wl%d_wds%d_desc", c,
-							 s));
-						fprintf(fp, "interface %s\n",
-							dev);
+					if (nvram_nmatch("1", "wl%d_wds%d_enable", c, s)) {
+						fprintf(fp, "!\n! WDS: %s\n", nvram_nget("wl%d_wds%d_desc", c, s));
+						fprintf(fp, "interface %s\n", dev);
 
-						if (atoi
-						    (nvram_safe_get(wdsdevospf))
+						if (atoi(nvram_safe_get(wdsdevospf))
 						    > 0)
-							fprintf(fp,
-								" ip ospf cost %s\n",
-								nvram_safe_get
-								(wdsdevospf));
+							fprintf(fp, " ip ospf cost %s\n", nvram_safe_get(wdsdevospf));
 					}
 				}
 			fprintf(fp, "!\n");
@@ -382,11 +360,11 @@ int zebra_ospf6_init(void)
 		fprintf(fp, "router osp6f\n");
 		// fprintf(fp, " passive-interface lo\n");
 		// fprintf(fp, " ospf router-id %s\n",
-			// nvram_safe_get("lan_ipaddr"));
+		// nvram_safe_get("lan_ipaddr"));
 		fprintf(fp, " redistribute kernel\n");
 		fprintf(fp, " redistribute connected\n");
 		fprintf(fp, " redistribute static\n");
-		// fprintf(fp, " network 0.0.0.0/0 area 0\n");	// handle all routing
+		// fprintf(fp, " network 0.0.0.0/0 area 0\n");  // handle all routing
 		// fprintf(fp, " default-information originate\n");
 
 		for (s = 1; s <= MAX_WDS_DEVS; s++) {
@@ -394,8 +372,7 @@ int zebra_ospf6_init(void)
 			sprintf(wdsdevospf, "wl_wds%d_ospf", s);
 
 			if (atoi(nvram_safe_get(wdsdevospf)) < 0)
-				fprintf(fp, " passive-interface %s\n",
-					nvram_nget("wl_wds%d_if", s));
+				fprintf(fp, " passive-interface %s\n", nvram_nget("wl_wds%d_if", s));
 		}
 
 		if (nvram_match("zebra_log", "1")) {
@@ -410,7 +387,7 @@ int zebra_ospf6_init(void)
 	fclose(fp);
 
 	// if (nvram_match("dyn_default", "1"))
-		// while (!eval("ip", "route", "del", "default")) ;
+	// while (!eval("ip", "route", "del", "default")) ;
 
 	// ret1 = eval("zebra", "-d", "-r", "-f", "/tmp/zebra.conf");
 	// ret2 = eval("ospf6d", "-d", "-f", "/tmp/ospf6d.conf");
@@ -433,8 +410,7 @@ int zebra_ripd_init(void)
 	int ret1, ret2;
 
 	// printf("Start zebra\n");
-	if (!strcmp(lt, "0") && !strcmp(lr, "0") &&
-	    !strcmp(wt, "0") && !strcmp(wr, "0")
+	if (!strcmp(lt, "0") && !strcmp(lr, "0") && !strcmp(wt, "0") && !strcmp(wr, "0")
 	    && !nvram_match("zebra_copt", "1")) {
 		fprintf(stderr, "zebra disabled.\n");
 		return 0;
@@ -497,13 +473,9 @@ int zebra_ripd_init(void)
 			fprintf(fp, "  distribute-list private in  %s\n", lf);
 		if (wf && strlen(wf) > 0) {
 			if (strcmp(wt, "0") == 0)
-				fprintf(fp,
-					"  distribute-list private out %s\n",
-					wf);
+				fprintf(fp, "  distribute-list private out %s\n", wf);
 			if (strcmp(wr, "0") == 0)
-				fprintf(fp,
-					"  distribute-list private in  %s\n",
-					wf);
+				fprintf(fp, "  distribute-list private in  %s\n", wf);
 		}
 		fprintf(fp, "access-list private deny any\n");
 
@@ -532,8 +504,7 @@ int zebra_bgp_init(void)
 	FILE *fp;
 	int ret1, ret2;
 
-	if (!strcmp(lt, "0") && !strcmp(lr, "0") &&
-	    !strcmp(wt, "0") && !strcmp(wr, "0")
+	if (!strcmp(lt, "0") && !strcmp(lr, "0") && !strcmp(wt, "0") && !strcmp(wr, "0")
 	    && !nvram_match("zebra_copt", "1")) {
 		return 0;
 	}
@@ -565,31 +536,23 @@ int zebra_bgp_init(void)
 	if (nvram_match("bgpd_copt", "1")) {
 		fwritenvram("bgpd_conf", fp);
 	} else {
-		fprintf(fp, "router bgp %s\n",
-			nvram_safe_get("routing_bgp_as"));
-		fprintf(fp, "  network %s/%d\n", nvram_safe_get("lan_ipaddr"),
-			get_net(nvram_safe_get("lan_netmask")));
+		fprintf(fp, "router bgp %s\n", nvram_safe_get("routing_bgp_as"));
+		fprintf(fp, "  network %s/%d\n", nvram_safe_get("lan_ipaddr"), get_net(nvram_safe_get("lan_netmask")));
 		if (wf && strlen(wf) > 0 && strcmp(get_wan_ipaddr(), "0.0.0.0"))
-			fprintf(fp, "  network %s/%s\n",
-				get_wan_ipaddr(),
-				nvram_safe_get("wan_netmask"));
-		fprintf(fp, "neighbor %s local-as %s\n", lf,
-			nvram_safe_get("routing_bgp_as"));
+			fprintf(fp, "  network %s/%s\n", get_wan_ipaddr(), nvram_safe_get("wan_netmask"));
+		fprintf(fp, "neighbor %s local-as %s\n", lf, nvram_safe_get("routing_bgp_as"));
 		if (wf && strlen(wf) > 0)
-			fprintf(fp, "neighbor %s local-as %s\n", wf,
-				nvram_safe_get("routing_bgp_as"));
-		fprintf(fp, "neighbor %s remote-as %s\n",
-			nvram_safe_get("routing_bgp_neighbor_ip"),
-			nvram_safe_get("routing_bgp_neighbor_as"));
+			fprintf(fp, "neighbor %s local-as %s\n", wf, nvram_safe_get("routing_bgp_as"));
+		fprintf(fp, "neighbor %s remote-as %s\n", nvram_safe_get("routing_bgp_neighbor_ip"), nvram_safe_get("routing_bgp_neighbor_as"));
 		fprintf(fp, "access-list all permit any\n");
 
 		fflush(fp);
 	}
 	fclose(fp);
 
-//	ret1 = eval("zebra", "-d", "-f", "/tmp/zebra.conf");
-//	ret2 = eval("bgpd", "-d", "-f", "/tmp/bgpd.conf");
-//	return ret1 + ret2;
+//      ret1 = eval("zebra", "-d", "-f", "/tmp/zebra.conf");
+//      ret2 = eval("bgpd", "-d", "-f", "/tmp/bgpd.conf");
+//      return ret1 + ret2;
 	return 1;
 }
 
@@ -634,8 +597,7 @@ int bird_init(void)
 		nvram_set("routing_lan", "off");
 	}
 	// DD-WRT bird support 
-	if (nvram_match("routing_rip2", "on") ||
-	    nvram_match("routing_ospf", "on")
+	if (nvram_match("routing_rip2", "on") || nvram_match("routing_ospf", "on")
 	    || nvram_match("routing_bgp", "on")) {
 		mkdir("/tmp/bird", 0744);
 		if (!(fp = fopen("/tmp/bird/bird.conf", "w"))) {
@@ -643,8 +605,7 @@ int bird_init(void)
 			return errno;
 		}
 		fprintf(fp, "router id %s;\n", nvram_safe_get("lan_ipaddr"));
-		fprintf(fp,
-			"protocol kernel { learn; persist; scan time 10; import all; export all; }\n");
+		fprintf(fp, "protocol kernel { learn; persist; scan time 10; import all; export all; }\n");
 		fprintf(fp, "protocol device { scan time 10; } \n");
 		fprintf(fp, "protocol direct { interface \"*\";}\n");
 
@@ -652,24 +613,17 @@ int bird_init(void)
 
 			fprintf(fp, "protocol rip WRT54G_rip {\n");
 			if (nvram_match("routing_lan", "on"))
-				fprintf(fp, "	interface \"%s\" { };\n",
-					nvram_safe_get("lan_ifname"));
+				fprintf(fp, "	interface \"%s\" { };\n", nvram_safe_get("lan_ifname"));
 			if (nvram_match("routing_wan", "on")) {
 				if (getSTA())
-					fprintf(fp,
-						"	interface \"%s\" { };\n",
-						getSTA());
+					fprintf(fp, "	interface \"%s\" { };\n", getSTA());
 				else
-					fprintf(fp,
-						"	interface \"%s\" { };\n",
-						nvram_safe_get("wan_ifname"));
+					fprintf(fp, "	interface \"%s\" { };\n", nvram_safe_get("wan_ifname"));
 
 			}
 			fprintf(fp, "	honor always;\n");
-			fprintf(fp,
-				"	import filter { print \"importing\"; accept; };\n");
-			fprintf(fp,
-				"	export filter { print \"exporting\"; accept; };\n");
+			fprintf(fp, "	import filter { print \"importing\"; accept; };\n");
+			fprintf(fp, "	export filter { print \"exporting\"; accept; };\n");
 			fprintf(fp, "}\n");
 
 		}
@@ -677,25 +631,16 @@ int bird_init(void)
 			fprintf(fp, "protocol ospf WRT54G_ospf {\n");
 			fprintf(fp, "area 0 {\n");
 			if (nvram_match("routing_wan", "on"))
-				fprintf(fp,
-					"interface \"%s\" { cost 1; authentication simple; password \"%s\"; };\n",
-					nvram_safe_get("wan_ifname"),
-					nvram_safe_get("http_passwd"));
+				fprintf(fp, "interface \"%s\" { cost 1; authentication simple; password \"%s\"; };\n", nvram_safe_get("wan_ifname"), nvram_safe_get("http_passwd"));
 			if (nvram_match("routing_lan", "on"))
-				fprintf(fp,
-					"interface \"%s\" { cost 1; authentication simple; password \"%s\"; };\n",
-					nvram_safe_get("lan_ifname"),
-					nvram_safe_get("http_passwd"));
+				fprintf(fp, "interface \"%s\" { cost 1; authentication simple; password \"%s\"; };\n", nvram_safe_get("lan_ifname"), nvram_safe_get("http_passwd"));
 			fprintf(fp, "};\n}\n");
 		}		// if wk_mode = ospf
 
 		if (nvram_match("routing_bgp", "on")) {
 			fprintf(fp, "protocol bgp {\n");
-			fprintf(fp, "local as %s;\n",
-				nvram_safe_get("routing_bgp_as"));
-			fprintf(fp, "neighbor %s as %s;\n",
-				nvram_safe_get("routing_bgp_neighbor_ip"),
-				nvram_safe_get("routing_bgp_neighbor_as"));
+			fprintf(fp, "local as %s;\n", nvram_safe_get("routing_bgp_as"));
+			fprintf(fp, "neighbor %s as %s;\n", nvram_safe_get("routing_bgp_neighbor_ip"), nvram_safe_get("routing_bgp_neighbor_as"));
 			fprintf(fp, "export all;\n");
 			fprintf(fp, "import all;\n");
 			fprintf(fp, "}\n");
@@ -704,8 +649,7 @@ int bird_init(void)
 		fclose(fp);
 
 		ret1 = eval("bird", "-c", "/tmp/bird/bird.conf");
-		dd_syslog(LOG_INFO,
-			  "bird : bird daemon successfully started\n");
+		dd_syslog(LOG_INFO, "bird : bird daemon successfully started\n");
 	}
 	return 0;
 

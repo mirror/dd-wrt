@@ -96,9 +96,7 @@ void start_sysinit(void)
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 		char macbase[32];
-		sprintf(macbase, "%s",
-			ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				   eabuf));
+		sprintf(macbase, "%s", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 		MAC_ADD(macbase);
 		int i;
@@ -173,12 +171,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr_safe",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
-		nvram_set("et0macaddr",
-			  ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
-				     eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 #ifndef HAVE_WDR4900
@@ -195,8 +189,7 @@ void start_sysinit(void)
 		unsigned char *mem = malloc(65536);
 		fread(mem, 65536, 1, in);
 		fclose(in);
-		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53
-		    && mem[3] == 0x48) {
+		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
 			fprintf(stderr, "found recovery\n");
 			in = fopen("/usr/local/nvram/nvram.bin", "wb");
 			if (in != NULL) {
@@ -238,8 +231,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 		MAC_SUB(mac);
@@ -252,7 +244,6 @@ void start_sysinit(void)
 		fprintf(stderr, "configure vlan2 to %s\n", mac);
 		eval("ifconfig", "vlan2", "hw", "ether", mac);
 	}
-
 #endif
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");

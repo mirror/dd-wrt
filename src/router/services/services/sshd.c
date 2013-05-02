@@ -77,8 +77,7 @@ void start_sshd(void)
 		changed = 1;
 	}
 	cprintf("convert key\n");
-	eval("dropbearconvert", "openssh", "dropbear", RSA_HOST_KEY_FILE,
-	     RSA_HOST_KEY_FILE);
+	eval("dropbearconvert", "openssh", "dropbear", RSA_HOST_KEY_FILE, RSA_HOST_KEY_FILE);
 	cprintf("write dss key\n");
 	if (write_key_file(NVRAM_DSS_KEY_NAME, DSS_HOST_KEY_FILE, 0600) == -1) {
 		generate_dropbear_dss_host_key();
@@ -88,8 +87,7 @@ void start_sshd(void)
 	cprintf("convert dss key\n");
 	if (changed)
 		nvram_commit();
-	eval("dropbearconvert", "openssh", "dropbear", DSS_HOST_KEY_FILE,
-	     DSS_HOST_KEY_FILE);
+	eval("dropbearconvert", "openssh", "dropbear", DSS_HOST_KEY_FILE, DSS_HOST_KEY_FILE);
 	cprintf("write authorized keys\n");
 	write_key_file("sshd_authorized_keys", AUTHORIZED_KEYS_FILE, 0600);
 	// cprintf("start sshd %s\n",sshd_argv);
@@ -103,12 +101,9 @@ void start_sshd(void)
 	char *forwarding_ok = nvram_match("sshd_forwarding", "1") ? "-a" : "";
 
 #ifdef HAVE_MAKSAT
-	ret = eval("dropbear", "-r", RSA_HOST_KEY_FILE, "-d",
-		   DSS_HOST_KEY_FILE, "-p", port, passwd_ok);
+	ret = eval("dropbear", "-r", RSA_HOST_KEY_FILE, "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok);
 #else
-	ret =
-	    eval("dropbear", "-b", "/tmp/loginprompt", "-r", RSA_HOST_KEY_FILE,
-		 "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok, forwarding_ok);
+	ret = eval("dropbear", "-b", "/tmp/loginprompt", "-r", RSA_HOST_KEY_FILE, "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok, forwarding_ok);
 #endif
 	dd_syslog(LOG_INFO, "dropbear : ssh daemon successfully started\n");
 	// ret = _eval (sshd_argv, NULL, 0, &pid);
@@ -179,8 +174,7 @@ static int generate_dropbear_rsa_host_key(void)
 
 	eval("dropbearkey", "-t", "rsa", "-f", RSA_HOST_KEY_FILE);
 
-	eval("dropbearconvert", "dropbear", "openssh", RSA_HOST_KEY_FILE,
-	     TMP_HOST_KEY_FILE);
+	eval("dropbearconvert", "dropbear", "openssh", RSA_HOST_KEY_FILE, TMP_HOST_KEY_FILE);
 
 	fp = fopen(TMP_HOST_KEY_FILE, "r");
 
@@ -209,8 +203,7 @@ static int generate_dropbear_dss_host_key(void)
 
 	eval("dropbearkey", "-t", "dss", "-f", DSS_HOST_KEY_FILE);
 
-	eval("dropbearconvert", "dropbear", "openssh", DSS_HOST_KEY_FILE,
-	     TMP_HOST_KEY_FILE);
+	eval("dropbearconvert", "dropbear", "openssh", DSS_HOST_KEY_FILE, TMP_HOST_KEY_FILE);
 
 	fp = fopen(TMP_HOST_KEY_FILE, "r");
 

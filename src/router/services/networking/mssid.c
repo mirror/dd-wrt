@@ -52,10 +52,8 @@ void start_config_macs(char *wlifname)	// reconfigure macs which
 		if (vifs != NULL)
 			foreach(var, vifs, next) {
 			eval("ifconfig", "%s", "down", var);
-			eval("wl", "-i", var, "cur_etheraddr",
-			     nvram_nget("%s_hwaddr", var));
-			eval("wl", "-i", var, "bssid",
-			     nvram_nget("%s_hwaddr", var));
+			eval("wl", "-i", var, "cur_etheraddr", nvram_nget("%s_hwaddr", var));
+			eval("wl", "-i", var, "bssid", nvram_nget("%s_hwaddr", var));
 			eval("ifconfig", "%s", "up", var);
 			}
 	}
@@ -74,8 +72,7 @@ void do_mssid(char *wlifname)
 		return;
 	if (vifs != NULL)
 		foreach(var, vifs, next) {
-		ether_atoe(nvram_nget("%s_hwaddr", var),
-			   ifr.ifr_hwaddr.sa_data);
+		ether_atoe(nvram_nget("%s_hwaddr", var), ifr.ifr_hwaddr.sa_data);
 		strncpy(ifr.ifr_name, var, IFNAMSIZ);
 		ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 		if (!nvram_nmatch("0", "%s_bridged", var)) {
@@ -88,8 +85,7 @@ void do_mssid(char *wlifname)
 			eval("ifconfig", var, "down");
 			ioctl(s, SIOCSIFHWADDR, &ifr);
 			eval("ifconfig", var, "up");
-			ifconfig(var, IFUP, nvram_nget("%s_ipaddr", var),
-				 nvram_nget("%s_netmask", var));
+			ifconfig(var, IFUP, nvram_nget("%s_ipaddr", var), nvram_nget("%s_netmask", var));
 		}
 		}
 	close(s);

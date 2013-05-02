@@ -69,8 +69,7 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 	struct ifreq ifr;
 	struct in_addr in_addr, in_netmask, in_broadaddr;
 
-	cprintf("ifconfig(): name=[%s] flags=[%s] addr=[%s] netmask=[%s]\n",
-		name, flags == IFUP ? "IFUP" : "0", addr, netmask);
+	cprintf("ifconfig(): name=[%s] flags=[%s] addr=[%s] netmask=[%s]\n", name, flags == IFUP ? "IFUP" : "0", addr, netmask);
 
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		goto err;
@@ -100,8 +99,7 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 		if (ioctl(s, SIOCSIFNETMASK, &ifr) < 0)
 			goto err;
 
-		in_broadaddr.s_addr =
-		    (in_addr.s_addr & in_netmask.s_addr) | ~in_netmask.s_addr;
+		in_broadaddr.s_addr = (in_addr.s_addr & in_netmask.s_addr) | ~in_netmask.s_addr;
 		sin_addr(&ifr.ifr_broadaddr).s_addr = in_broadaddr.s_addr;
 		ifr.ifr_broadaddr.sa_family = AF_INET;
 		if (ioctl(s, SIOCSIFBRDADDR, &ifr) < 0)
@@ -160,8 +158,7 @@ void start_config_vlan(void)
 		sprintf(vlanb, "vlan%dports", i);
 		if (nvram_get(vlanb) == NULL || nvram_match(vlanb, ""))
 			continue;
-		writevaproc(nvram_safe_get(vlanb),
-			    "/proc/switch/%s/vlan/%d/ports", phy, i);
+		writevaproc(nvram_safe_get(vlanb), "/proc/switch/%s/vlan/%d/ports", phy, i);
 	}
 
 	/*
@@ -220,7 +217,6 @@ void start_config_vlan(void)
 
 	return;
 }
-
 
 /*
  * begin lonewolf mods 
@@ -295,41 +291,19 @@ void start_setup_vlans(void)
 					lastvlan = tmp;
 					if (i == 5) {
 						snprintf(buff, 9, "%d", tmp);
-						eval("vconfig",
-						     "set_name_type",
-						     "VLAN_PLUS_VID_NO_PAD");
-						eval("vconfig", "add",
-						     phy, buff);
-						snprintf(buff, 9,
-							 "vlan%d", tmp);
-						if (strcmp
-						    (nvram_safe_get
-						     ("wan_ifname"), buff)) {
-							if (strlen
-							    (nvram_nget
-							     ("%s_ipaddr",
-							      buff)) > 0)
-								eval("ifconfig",
-								     buff,
-								     nvram_nget
-								     ("%s_ipaddr",
-								      buff),
-								     "netmask",
-								     nvram_nget
-								     ("%s_netmask",
-								      buff),
-								     "up");
+						eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+						eval("vconfig", "add", phy, buff);
+						snprintf(buff, 9, "vlan%d", tmp);
+						if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
+							if (strlen(nvram_nget("%s_ipaddr", buff)) > 0)
+								eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
 							else
-								eval("ifconfig",
-								     buff,
-								     "0.0.0.0",
-								     "up");
+								eval("ifconfig", buff, "0.0.0.0", "up");
 						}
 					}
 
 					sprintf((char *)
-						&portsettings[tmp][0],
-						"%s %d", (char *)
+						&portsettings[tmp][0], "%s %d", (char *)
 						&portsettings[tmp][0], use);
 				} else {
 					if (tmp == 16)	// vlan tagged
@@ -348,58 +322,38 @@ void start_setup_vlans(void)
 				}
 			}
 			if (mask & 8 && use < 5) {
-				writevaproc("0",
-					    "/proc/switch/%s/port/%d/enable",
-					    phy, use);
+				writevaproc("0", "/proc/switch/%s/port/%d/enable", phy, use);
 			} else {
-				writevaproc("1",
-					    "/proc/switch/%s/port/%d/enable",
-					    phy, use);
+				writevaproc("1", "/proc/switch/%s/port/%d/enable", phy, use);
 			}
 			if (use < 5) {
-				snprintf(buff, 69,
-					 "/proc/switch/%s/port/%d/media",
-					 phy, use);
+				snprintf(buff, 69, "/proc/switch/%s/port/%d/media", phy, use);
 				if ((fp = fopen(buff, "r+"))) {
 					if ((mask & 4) == 4) {
 						if (!(mask & 16)) {
 							if (mask & 2)
-								fputs
-								    ("1000HD",
-								     fp);
+								fputs("1000HD", fp);
 							else
-								fputs
-								    ("1000FD",
-								     fp);
+								fputs("1000FD", fp);
 
 						} else {
 							switch (mask & 3) {
 							case 0:
-								fputs
-								    ("100FD",
-								     fp);
+								fputs("100FD", fp);
 								break;
 							case 1:
-								fputs
-								    ("10FD",
-								     fp);
+								fputs("10FD", fp);
 								break;
 							case 2:
-								fputs
-								    ("100HD",
-								     fp);
+								fputs("100HD", fp);
 								break;
 							case 3:
-								fputs
-								    ("10HD",
-								     fp);
+								fputs("10HD", fp);
 								break;
 							}
 						}
 					} else {
-						fprintf(stderr,
-							"set port %d to AUTO\n",
-							use);
+						fprintf(stderr, "set port %d to AUTO\n", use);
 						fputs("AUTO", fp);
 					}
 					fclose(fp);
@@ -419,31 +373,24 @@ void start_setup_vlans(void)
 		strcpy(port, &portsettings[i][0]);
 		memset(&portsettings[i][0], 0, 64);
 		foreach(vlan, port, next) {
-			if (atoi(vlan) < 5 && atoi(vlan) >= 0
-			    && tagged[atoi(vlan)])
-				sprintf(&portsettings[i][0], "%s %st",
-					&portsettings[i][0], vlan);
+			if (atoi(vlan) < 5 && atoi(vlan) >= 0 && tagged[atoi(vlan)])
+				sprintf(&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
 			else if ((atoi(vlan) == 5 || atoi(vlan) == 8)
 				 && tagged[atoi(vlan)] && !ast)
-				sprintf(&portsettings[i][0], "%s %st",
-					&portsettings[i][0], vlan);
+				sprintf(&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
 			else if ((atoi(vlan) == 5 || atoi(vlan) == 8)
 				 && tagged[atoi(vlan)] && ast)
-				sprintf(&portsettings[i][0], "%s %s*",
-					&portsettings[i][0], vlan);
+				sprintf(&portsettings[i][0], "%s %s*", &portsettings[i][0], vlan);
 			else
-				sprintf(&portsettings[i][0], "%s %s",
-					&portsettings[i][0], vlan);
+				sprintf(&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
 		}
 	}
 	for (i = 0; i < 16; i++) {
 		writevaproc(" ", "/proc/switch/%s/vlan/%d/ports", phy, i);
 	}
 	for (i = 0; i < 16; i++) {
-		fprintf(stderr, "configure vlan ports to %s\n",
-			portsettings[i]);
-		writevaproc(portsettings[i],
-			    "/proc/switch/%s/vlan/%d/ports", phy, i);
+		fprintf(stderr, "configure vlan ports to %s\n", portsettings[i]);
+		writevaproc(portsettings[i], "/proc/switch/%s/vlan/%d/ports", phy, i);
 	}
 	return;
 #endif
@@ -455,195 +402,131 @@ int flush_interfaces(void)
 
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_GATEWORX
-	snprintf(all_ifnames, 255, "%s %s %s", "ixp0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "ixp0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_NORTHSTAR
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_LAGUNA
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_X86
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_EAP9550
-	snprintf(all_ifnames, 255, "%s %s %s", "eth2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_RT2880
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_MAGICBOX
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WDR4900
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_RB600
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1 eth2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1 eth2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WRT54G2
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_RTG32
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_DIR300
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_MR3202A
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_LS2
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan0 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan0 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_SOLO51
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan0 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan0 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_LS5
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_FONERA
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan0 vlan1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 vlan0 vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WHRAG108
-	snprintf(all_ifnames, 255, "%s %s %s", "eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WNR2000
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WASP
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WDR2543
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WHRHPGN
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_DIR615E
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WA901v1
-	snprintf(all_ifnames, 255, "%s %s %s", "eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WR703
-	snprintf(all_ifnames, 255, "%s %s %s", "eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WA7510
-	snprintf(all_ifnames, 255, "%s %s %s", "eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WR741
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_UBNTM
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_PB42
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif CONFIG_JJAP93
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_JJAP005
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_JJAP501
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_AC722
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_HORNET
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_AC622
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_RS
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_JA76PF
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_ALFAAP94
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_JWAP003
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WA901
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WR941
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan0 vlan1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan0 vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WR1043
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WZRG450
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_DIR632
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_AP83
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_AP94
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WP546
-	snprintf(all_ifnames, 255, "%s %s %s", "eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_LSX
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_DANUBE
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WBD222
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1 eth2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1 eth2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_STORM
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_OPENRISC
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1 eth2 eth3",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1 eth2 eth3", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_ADM5120
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_TW6600
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_RDAT81
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_RCAA01
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan0 vlan1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan0 vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_CA8PRO
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan0 vlan1",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan0 vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_CA8
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #else
-	snprintf(all_ifnames, 255, "%s %s %s", "ixp0",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "ixp0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #endif
 #elif HAVE_RT2880
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #else
 	if (wl_probe("eth2"))
-		snprintf(all_ifnames, 255, "%s %s %s", "eth0",
-			 nvram_safe_get("lan_ifnames"),
-			 nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else
-		snprintf(all_ifnames, 255, "%s %s %s %s", "eth0",
-			 "eth1", nvram_safe_get("lan_ifnames"),
-			 nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s %s", "eth0", "eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #endif
 	// strcpy(all_ifnames, "eth0 ");
 	// strcpy(all_ifnames, "eth0 eth1 "); //James, note: eth1 is the wireless 

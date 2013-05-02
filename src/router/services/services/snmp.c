@@ -54,19 +54,15 @@ void start_snmp(void)
 		return;
 
 	if (strlen(nvram_safe_get("snmpd_syslocation")) > 0)
-		fprintf(fp, "syslocation %s\n",
-			nvram_safe_get("snmpd_syslocation"));
+		fprintf(fp, "syslocation %s\n", nvram_safe_get("snmpd_syslocation"));
 	if (strlen(nvram_safe_get("snmpd_syscontact")) > 0)
-		fprintf(fp, "syscontact %s\n",
-			nvram_safe_get("snmpd_syscontact"));
+		fprintf(fp, "syscontact %s\n", nvram_safe_get("snmpd_syscontact"));
 	if (strlen(nvram_safe_get("snmpd_sysname")) > 0)
 		fprintf(fp, "sysname %s\n", nvram_safe_get("snmpd_sysname"));
 	if (strlen(nvram_safe_get("snmpd_rocommunity")) > 0)
-		fprintf(fp, "rocommunity %s\n",
-			nvram_safe_get("snmpd_rocommunity"));
+		fprintf(fp, "rocommunity %s\n", nvram_safe_get("snmpd_rocommunity"));
 	if (strlen(nvram_safe_get("snmpd_rwcommunity")) > 0)
-		fprintf(fp, "rwcommunity %s\n",
-			nvram_safe_get("snmpd_rwcommunity"));
+		fprintf(fp, "rwcommunity %s\n", nvram_safe_get("snmpd_rwcommunity"));
 	fprintf(fp, "sysservices 9\n");
 	fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
 

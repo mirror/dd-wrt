@@ -28,10 +28,11 @@
 #include <utils.h>
 #include <wlutils.h>
 
-int ledtracking_main(int argc, char **argv) {
-    int toggle = 0;
+int ledtracking_main(int argc, char **argv)
+{
+	int toggle = 0;
 	int testsnr = 0;
-	int rssi, noise,snr_min,snr_max,polarity,delay,snr,gpio;
+	int rssi, noise, snr_min, snr_max, polarity, delay, snr, gpio;
 	unsigned char assoclist[1024];
 
 	if (argc <= 4) {
@@ -40,18 +41,17 @@ int ledtracking_main(int argc, char **argv) {
 	}
 	gpio = atoi(argv[2]);
 	polarity = atoi(argv[3]);
-    snr_max = atoi(argv[4]);
-	snr_min = snr_max/6;
+	snr_max = atoi(argv[4]);
+	snr_min = snr_max / 6;
 	if (argc == 6) {
-		testsnr=atoi(argv[5]);
-		fprintf(stderr, "use testsnr %d\n",testsnr);
-		}
+		testsnr = atoi(argv[5]);
+		fprintf(stderr, "use testsnr %d\n", testsnr);
+	}
 
-    while (1) {
+	while (1) {
 		if (testsnr) {
-			snr=testsnr;
-			}
-		else {
+			snr = testsnr;
+		} else {
 			int cnt = getassoclist(argv[1], assoclist);
 
 			if (cnt == -1) {
@@ -68,29 +68,29 @@ int ledtracking_main(int argc, char **argv) {
 			rssi = getRssi(argv[1], pos);
 			noise = getNoise(argv[1], pos);
 			snr = rssi - noise;
-			}
+		}
 
 		if (snr < 0) {
 			fprintf(stderr, "snr is %d, invalid\n", snr);
 			continue;
 		}
 
-        snr -= snr_min;
-        if (snr < 0) 
-            snr = 0;
+		snr -= snr_min;
+		if (snr < 0)
+			snr = 0;
 
-        if (snr >= snr_max - snr_min) {
-			fprintf(stderr,"snr >= snr_max - snr_min\n", gpio, toggle);
-            toggle = polarity;
-            delay = 100;
-        } else {
-			fprintf(stderr,"else\n", gpio, toggle);
-            toggle = !toggle;
-            delay = 1000 - snr * (1000 - 125) / (snr_max - snr_min);
-        }
+		if (snr >= snr_max - snr_min) {
+			fprintf(stderr, "snr >= snr_max - snr_min\n", gpio, toggle);
+			toggle = polarity;
+			delay = 100;
+		} else {
+			fprintf(stderr, "else\n", gpio, toggle);
+			toggle = !toggle;
+			delay = 1000 - snr * (1000 - 125) / (snr_max - snr_min);
+		}
 
-        usleep (1000 * delay / 2);
+		usleep(1000 * delay / 2);
 		set_gpio(gpio, 0 + toggle);
-        fprintf(stderr,"%d,%d\n", gpio, toggle);
-    }
+		fprintf(stderr, "%d,%d\n", gpio, toggle);
+	}
 }
