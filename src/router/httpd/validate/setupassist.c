@@ -52,11 +52,11 @@ void setupassistant_save(webs_t wp)
 
 	// security
 	security_save(wp);
-	
+
 	// aoss
 	fprintf(stderr, "[SetupAssistant Save] AOSS\n");
 	aoss_save(wp);
-	
+
 	// all other vars
 	validate_cgi(wp);
 }

@@ -46,8 +46,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 				continue;
 
 			if (!strcmp(type, "name")) {
-				httpd_filter_name(name, new_name,
-						  sizeof(new_name), GET);
+				httpd_filter_name(name, new_name, sizeof(new_name), GET);
 				websWrite(wp, "%s", new_name);
 			} else if (!strcmp(type, "from"))
 				websWrite(wp, "%s", from);
@@ -75,8 +74,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 					websWrite(wp, "selected=\"selected\"");
 			} else if (!strcmp(type, "sel_both")) {	// use select
 				if (!strcmp(proto, "both"))
-					websWrite(wp,
-						  "selected=\\\"selected\\\"");
+					websWrite(wp, "selected=\\\"selected\\\"");
 				else
 					websWrite(wp, "");
 			} else if (!strcmp(type, "ip"))
@@ -140,8 +138,7 @@ void port_forward_spec(webs_t wp, char *type, int which)
 				src = NULL;
 			}
 			if (!strcmp(type, "name")) {
-				httpd_filter_name(name, new_name,
-						  sizeof(new_name), GET);
+				httpd_filter_name(name, new_name, sizeof(new_name), GET);
 				websWrite(wp, "%s", new_name);
 			} else if (!strcmp(type, "from"))
 				websWrite(wp, "%s", from);
@@ -173,8 +170,7 @@ void port_forward_spec(webs_t wp, char *type, int which)
 					websWrite(wp, "selected=\"selected\"");
 			} else if (!strcmp(type, "sel_both")) {	// use select
 				if (!strcmp(proto, "both"))
-					websWrite(wp,
-						  "selected=\\\"selected\\\"");
+					websWrite(wp, "selected=\\\"selected\\\"");
 				else
 					websWrite(wp, "");
 			} else if (!strcmp(type, "ip"))
@@ -211,8 +207,7 @@ void port_trigger_table(webs_t wp, char *type, int which)
 
 	static char word[256];
 	char *next, *wordlist;
-	char *name = NULL, *enable = NULL, *proto = NULL, *i_from =
-	    NULL, *i_to = NULL, *o_from = NULL, *o_to = NULL;
+	char *name = NULL, *enable = NULL, *proto = NULL, *i_from = NULL, *i_to = NULL, *o_from = NULL, *o_to = NULL;
 	static char new_name[200];
 	int temp;
 
@@ -248,15 +243,12 @@ void port_trigger_table(webs_t wp, char *type, int which)
 
 			if (!strcmp(type, "name")) {
 				if (strcmp(name, "")) {
-					httpd_filter_name(name, new_name,
-							  sizeof(new_name),
-							  GET);
+					httpd_filter_name(name, new_name, sizeof(new_name), GET);
 					websWrite(wp, "%s", new_name);
 				}
 			} else if (!strcmp(type, "enable")) {
 				if (!strcmp(enable, "on"))
-					websWrite(wp,
-						  "checked=\\\"checked\\\"");
+					websWrite(wp, "checked=\\\"checked\\\"");
 				else
 					websWrite(wp, "");
 			} else if (!strcmp(type, "sel_tcp")) {	// use select
@@ -273,8 +265,7 @@ void port_trigger_table(webs_t wp, char *type, int which)
 					websWrite(wp, "selected=\"selected\"");
 			} else if (!strcmp(type, "sel_both")) {	// use select
 				if (!strcmp(proto, "both"))
-					websWrite(wp,
-						  "selected=\\\"selected\\\"");
+					websWrite(wp, "selected=\\\"selected\\\"");
 				else
 					websWrite(wp, "");
 			} else if (!strcmp(type, "i_from"))

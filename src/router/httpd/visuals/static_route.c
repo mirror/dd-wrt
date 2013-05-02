@@ -16,8 +16,7 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char *next = NULL, *page = NULL;
-	char *ipaddr = NULL, *netmask = NULL, *gateway = NULL, *metric =
-	    NULL, *ifname = NULL;
+	char *ipaddr = NULL, *netmask = NULL, *gateway = NULL, *metric = NULL, *ifname = NULL;
 	static char ifnamecopy[32];
 	static char bufferif[512];
 
@@ -53,15 +52,9 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 	strcpy(ifnamecopy, ifname);
 	memset(bufferif, 0, 512);
 	getIfList(bufferif, NULL);
-	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n",
-		  nvram_match("lan_ifname",
-			      ifname) ? "selected=\"selected\"" : "");
-	websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n",
-		  nvram_match("wan_ifname",
-			      ifname) ? "selected=\"selected\"" : "");
-	websWrite(wp, "<option value=\"any\" %s >ANY</option>\n",
-		  strcmp("any",
-			 ifnamecopy) == 0 ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", ifname) ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", ifname) ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", ifnamecopy) == 0 ? "selected=\"selected\"" : "");
 	memset(word, 0, 256);
 	next = NULL;
 	foreach(word, bufferif, next) {
@@ -69,10 +62,7 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 			continue;
 		if (nvram_match("wan_ifname", word))
 			continue;
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word,
-			  strcmp(word,
-				 ifnamecopy) ==
-			  0 ? "selected=\"selected\"" : "", word);
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, strcmp(word, ifnamecopy) == 0 ? "selected=\"selected\"" : "", word);
 	}
 }
 
@@ -103,7 +93,7 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	page = websGetVar(wp, "route_page", NULL);
 	if (!page)
 		page = "0";
-	
+
 	which = atoi(page);
 
 	temp = which;
@@ -112,15 +102,9 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 		char *sroutename = nvram_safe_get("static_route_name");
 
 		foreach(word, sroutename, next) {
-			if (which-- == 0
-			    || (next == NULL
-				&& !strcmp("",
-					   websGetVar(wp, "change_action",
-						      "-")))) {
-				find_match_pattern(name, sizeof(name), word,
-						   "$NAME:", "");
-				httpd_filter_name(name, new_name,
-						  sizeof(new_name), GET);
+			if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
+				find_match_pattern(name, sizeof(name), word, "$NAME:", "");
+				httpd_filter_name(name, new_name, sizeof(new_name), GET);
 				websWrite(wp, new_name);
 				return;
 			}
@@ -131,9 +115,7 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 
 	foreach(word, sroute, next) {
 		//if (which-- == 0) {
-		if (which-- == 0
-		    || (next == NULL
-			&& !strcmp("", websGetVar(wp, "change_action", "-")))) {
+		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
 			netmask = word;
 			ipaddr = strsep(&netmask, ":");
 			if (!ipaddr || !netmask)
@@ -151,16 +133,13 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			if (!metric || !ifname)
 				continue;
 			if (!strcmp(arg, "ipaddr")) {
-				websWrite(wp, "%d",
-					  get_single_ip(ipaddr, count));
+				websWrite(wp, "%d", get_single_ip(ipaddr, count));
 				return;
 			} else if (!strcmp(arg, "netmask")) {
-				websWrite(wp, "%d",
-					  get_single_ip(netmask, count));
+				websWrite(wp, "%d", get_single_ip(netmask, count));
 				return;
 			} else if (!strcmp(arg, "gateway")) {
-				websWrite(wp, "%d",
-					  get_single_ip(gateway, count));
+				websWrite(wp, "%d", get_single_ip(gateway, count));
 				return;
 			} else if (!strcmp(arg, "metric")) {
 				websWrite(wp, metric);
@@ -187,7 +166,7 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 
 void ej_static_route_table(webs_t wp, int argc, char_t ** argv)
 {
-	int i, page, tmp=0;
+	int i, page, tmp = 0;
 	int which;
 	char *type;
 	char word[256], *next;
@@ -208,28 +187,19 @@ void ej_static_route_table(webs_t wp, int argc, char_t ** argv)
 			which = i;
 			foreach(word, sroutename, next) {
 				if (which-- == 0) {
-					find_match_pattern(name, sizeof(name),
-							   word, "$NAME:", " ");
-					httpd_filter_name(name, new_name,
-							  sizeof(new_name),
-							  GET);
-					if (next == NULL
-					    && !strcmp("",
-						       websGetVar(wp,
-								  "change_action",
-								  "-"))) {
+					find_match_pattern(name, sizeof(name), word, "$NAME:", " ");
+					httpd_filter_name(name, new_name, sizeof(new_name), GET);
+					if (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-"))) {
 						page = i;
 					}
 				}
 			}
 			snprintf(buf, sizeof(buf), "(%s)", new_name);
-			
-			websWrite(wp,
-			  	"\t\t<option value=\"%d\" %s> %d %s</option>\n",
-			  	i, ((i == page) && !tmp) ? "selected=\"selected\"" : "",
-			  	i + 1, buf);
 
-			if (i == page) tmp = 1;
+			websWrite(wp, "\t\t<option value=\"%d\" %s> %d %s</option>\n", i, ((i == page) && !tmp) ? "selected=\"selected\"" : "", i + 1, buf);
+
+			if (i == page)
+				tmp = 1;
 		}
 	}
 

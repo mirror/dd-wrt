@@ -16,8 +16,7 @@
 
 static char *base64enc(const char *p, char *buf, int len)
 {
-	char al[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	    "0123456789+/";
+	char al[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" "0123456789+/";
 	char *s = buf;
 
 	while (*p) {
@@ -43,8 +42,7 @@ enum {
 	METHOD_POST
 };
 
-static int
-wget(int method, const char *server, char *buf, size_t count, off_t offset)
+static int wget(int method, const char *server, char *buf, size_t count, off_t offset)
 {
 	char url[PATH_MAX] = { 0 }, *s;
 	char *host = url, *path = "", auth[128] = { 0 }, line[512];
@@ -91,9 +89,7 @@ wget(int method, const char *server, char *buf, size_t count, off_t offset)
 	sin.sin_port = htons(port);
 
 	fprintf(stderr, "Connecting to %s:%u...\n", host, port);
-	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ||
-	    connect(fd, (struct sockaddr *)&sin, sizeof(sin)) < 0 ||
-	    !(fp = fdopen(fd, "r+"))) {
+	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 || connect(fd, (struct sockaddr *)&sin, sizeof(sin)) < 0 || !(fp = fdopen(fd, "r+"))) {
 		perror(host);
 		if (fd >= 0)
 			close(fd);
@@ -104,8 +100,7 @@ wget(int method, const char *server, char *buf, size_t count, off_t offset)
 	/* 
 	 * Send HTTP request 
 	 */
-	fprintf(fp, "%s /%s HTTP/1.1\r\n",
-		method == METHOD_POST ? "POST" : "GET", path);
+	fprintf(fp, "%s /%s HTTP/1.1\r\n", method == METHOD_POST ? "POST" : "GET", path);
 	fprintf(fp, "Host: %s\r\n", host);
 	fprintf(fp, "User-Agent: wget\r\n");
 	if (strlen(auth))
@@ -113,8 +108,7 @@ wget(int method, const char *server, char *buf, size_t count, off_t offset)
 	if (offset)
 		fprintf(fp, "Range: bytes=%ld-\r\n", offset);
 	if (method == METHOD_POST) {
-		fprintf(fp,
-			"Content-Type: application/x-www-form-urlencoded\r\n");
+		fprintf(fp, "Content-Type: application/x-www-form-urlencoded\r\n");
 		fprintf(fp, "Content-Length: %d\r\n\r\n", (int)strlen(buf));
 		fputs(buf, fp);
 	} else

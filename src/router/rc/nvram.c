@@ -8,8 +8,7 @@
 
 static void usage(void)
 {
-	fprintf(stderr,
-		"usage: nvram [get name] [set name=value] [unset name] [show] [backup filename] [restore filename]\n");
+	fprintf(stderr, "usage: nvram [get name] [set name=value] [unset name] [show] [backup filename] [restore filename]\n");
 	exit(0);
 }
 
@@ -55,28 +54,23 @@ int main(int argc, char **argv)
 			nvram_getall(buf, sizeof(buf));
 			for (name = buf; *name; name += strlen(name) + 1)
 				puts(name);
-			size =
-			    sizeof(struct nvram_header) + (int)name - (int)buf;
-			fprintf(stderr, "size: %d bytes (%d left)\n", size,
-				NVRAM_SPACE - size);
+			size = sizeof(struct nvram_header) + (int)name - (int)buf;
+			fprintf(stderr, "size: %d bytes (%d left)\n", size, NVRAM_SPACE - size);
 		} else if (!strncmp(*argv, "backup", 6)) {
 			if (*++argv) {
 				int ret = nvram_backup(*argv);
 				if (ret < 0) {
-					fprintf(stderr, "can't write %s\n",
-						*argv);
+					fprintf(stderr, "can't write %s\n", *argv);
 				}
 			}
 		} else if (!strncmp(*argv, "restore", 7)) {
 			if (*++argv) {
 				int ret = nvram_restore(*argv);
 				if (ret == -1) {
-					fprintf(stderr, "can't write %s\n",
-						*argv);
+					fprintf(stderr, "can't write %s\n", *argv);
 				}
 				if (ret == -2) {
-					fprintf(stderr, "file %s broken\n",
-						*argv);
+					fprintf(stderr, "file %s broken\n", *argv);
 				}
 			}
 		}

@@ -80,8 +80,7 @@ int get_data(struct table *v, int write_to_nv)
 	char buf[1024];
 	int index;
 
-	cprintf("%s(): cmd=0x%02x count=%d len=%d\n", __FUNCTION__, v->cmd,
-		v->count, v->len);
+	cprintf("%s(): cmd=0x%02x count=%d len=%d\n", __FUNCTION__, v->cmd, v->count, v->len);
 
 	if ((fp = open(DEV_MISC, O_RDWR, 0))) {
 		if ((ret = ioctl(fp, v->cmd, &mydatas)) < 0) {
@@ -151,15 +150,12 @@ int set_data(char *string, int len, struct table *v)
 		cprintf("%s(): Illegal %s value\n", __FUNCTION__, v->desc);
 		break;
 	case ERR:
-		cprintf("%s(): Cann't write %s to flash\n", __FUNCTION__,
-			v->desc);
+		cprintf("%s(): Cann't write %s to flash\n", __FUNCTION__, v->desc);
 	default:
 		if (ret >= 0 && ret < v->count)
-			cprintf("%s(): Save %s to location %d\n", __FUNCTION__,
-				v->desc, ret);
+			cprintf("%s(): Save %s to location %d\n", __FUNCTION__, v->desc, ret);
 		else
-			cprintf("%s(): Something error, return code is %d\n",
-				__FUNCTION__, ret);
+			cprintf("%s(): Something error, return code is %d\n", __FUNCTION__, ret);
 
 		break;
 	}
@@ -175,8 +171,7 @@ int get_flash_type(struct table *v, int write_to_nv)
 	int ret;
 	char buf[1024];
 
-	cprintf("%s(): cmd=0x%02x count=%d len=%d\n", __FUNCTION__, v->cmd,
-		v->count, v->len);
+	cprintf("%s(): cmd=0x%02x count=%d len=%d\n", __FUNCTION__, v->cmd, v->count, v->len);
 
 	memset(&buf, 0, sizeof(buf));
 
@@ -212,13 +207,7 @@ static void usage(char *cmd)
 	cprintf("Usage: %s [OPTIONS]\n"
 		"\t-t\n"
 		"\t\tWhich action do you want to do ? [get_mac|set_mac|get_eou|set_eou|get_sn|set_sn|get_flash_type]\n"
-		"\t-s\n"
-		"\t\tWrite the string to assgined address\n"
-		"\t-h, --help\n"
-		"\t\tDisplay the help\n"
-		"\n\tExample:\n"
-		"\n\t%s -t get_mac\n"
-		"\t%s -t set_mac -s 00:11:22:33:44:55\n", cmd, cmd, cmd);
+		"\t-s\n" "\t\tWrite the string to assgined address\n" "\t-h, --help\n" "\t\tDisplay the help\n" "\n\tExample:\n" "\n\t%s -t get_mac\n" "\t%s -t set_mac -s 00:11:22:33:44:55\n", cmd, cmd, cmd);
 }
 
 int misc_main(int argc, char **argv)

@@ -83,9 +83,7 @@ int do_mon(void)
 					if (!check_wan_link(0))
 						continue;
 
-				cprintf
-				    ("Maybe %s had died, we need to re-exec it\n",
-				     v->name);
+				cprintf("Maybe %s had died, we need to re-exec it\n", v->name);
 				if (v->stop)
 					v->stop();
 				sleep(1);

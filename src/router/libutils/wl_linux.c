@@ -46,10 +46,10 @@ int getsocket(void)
 
 void closesocket(void)
 {
-    if (s_socket >= 0) {
-	close(s_socket);
-	s_socket = -1;
-    }
+	if (s_socket >= 0) {
+		close(s_socket);
+		s_socket = -1;
+	}
 }
 
 int wl_ioctl(char *name, int cmd, void *buf, int len)

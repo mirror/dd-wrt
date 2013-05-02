@@ -44,9 +44,7 @@ void ej_list_fbn(webs_t wp, int argc, char_t ** argv)
 	open_site_survey();
 	for (i = 0; i < SITE_SURVEY_NUM; i++) {
 
-		if (site_survey_lists[i].SSID[0] == 0 ||
-		    site_survey_lists[i].BSSID[0] == 0 ||
-		    (site_survey_lists[i].channel&0xff) == 0)
+		if (site_survey_lists[i].SSID[0] == 0 || site_survey_lists[i].BSSID[0] == 0 || (site_survey_lists[i].channel & 0xff) == 0)
 			break;
 
 		if (startswith(site_survey_lists[i].SSID, "www.fbn-dd.de")) {
@@ -79,14 +77,11 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 
 	for (i = 0; i < SITE_SURVEY_NUM; i++) {
 
-		if (site_survey_lists[i].BSSID[0] == 0 ||
-		    (site_survey_lists[i].channel&0xff) == 0)
+		if (site_survey_lists[i].BSSID[0] == 0 || (site_survey_lists[i].channel & 0xff) == 0)
 			break;
 
 		// fix for " in SSID
-		char *tssid =
-		    (site_survey_lists[i].SSID[0] ==
-		     0) ? "hidden" : &site_survey_lists[i].SSID[0];
+		char *tssid = (site_survey_lists[i].SSID[0] == 0) ? "hidden" : &site_survey_lists[i].SSID[0];
 		int pos = 0;
 		int tpos;
 		int ssidlen = strlen(tssid);
@@ -111,7 +106,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			//0x100 = 8080 mhz
 			//0x200 = 160 mhz
 			int speed = site_survey_lists[i].rate_count;
-			
+
 			switch (cbw) {
 			case 0:
 				if (speed == 150)
@@ -153,9 +148,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 					rates = "150(b/g/n)";
 				else {
 					rates = buf;
-					snprintf(rates, 9, "%d",
-						 site_survey_lists[i].
-						 rate_count);
+					snprintf(rates, 9, "%d", site_survey_lists[i].rate_count);
 				}
 			} else {
 				if (site_survey_lists[i].rate_count == 4)
@@ -172,9 +165,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 					rates = "150(a/n)";
 				else {
 					rates = buf;
-					snprintf(rates, 9, "%d",
-						 site_survey_lists[i].
-						 rate_count);
+					snprintf(rates, 9, "%d", site_survey_lists[i].rate_count);
 				}
 
 			}
@@ -190,9 +181,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		 */
 
 		char open[32];
-		strncpy(open,
-			(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ?
-			live_translate("share.no")
+		strncpy(open, (site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate("share.no")
 			: live_translate("share.yes"), 31);
 
 		char *netmode;
@@ -212,13 +201,9 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "\",\"%s\",\"%s\",\"%d (%d MHz)\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%s\"\n",
 			  net, site_survey_lists[i].BSSID,
-			  site_survey_lists[i].channel&0xff,
+			  site_survey_lists[i].channel & 0xff,
 			  site_survey_lists[i].frequency,
-			  site_survey_lists[i].RSSI,
-			  site_survey_lists[i].phy_noise,
-			  site_survey_lists[i].beacon_period, open,
-			  site_survey_lists[i].ENCINFO,
-			  site_survey_lists[i].dtim_period, rates);
+			  site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, site_survey_lists[i].beacon_period, open, site_survey_lists[i].ENCINFO, site_survey_lists[i].dtim_period, rates);
 
 	}
 
@@ -246,14 +231,11 @@ void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv)	// Eko, for
 	} else			// dummy data - to prevent first time js
 		// error
 	{
-		websWrite(wp,
-			  "top.hosts = new Array();\nvar hnum = 0;\nvar h;\n");
-		websWrite(wp,
-			  "var wiviz_cfg = new Object();\n wiviz_cfg.channel = 6\n");
+		websWrite(wp, "top.hosts = new Array();\nvar hnum = 0;\nvar h;\n");
+		websWrite(wp, "var wiviz_cfg = new Object();\n wiviz_cfg.channel = 6\n");
 		websWrite(wp, "top.wiviz_callback(top.hosts, wiviz_cfg);\n");
 		websWrite(wp, "function wiviz_callback(one, two) {\n");
-		websWrite(wp,
-			  "alert(\'This asp is intended to run inside Wi-Viz.  You will now be redirected there.\');\n");
+		websWrite(wp, "alert(\'This asp is intended to run inside Wi-Viz.  You will now be redirected there.\');\n");
 		websWrite(wp, "location.replace('Wiviz_Survey.asp');\n}\n");
 	}
 }

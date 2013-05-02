@@ -338,6 +338,7 @@ int has_mimo(char *prefix)
 {
 	return 1;
 }
+
 int has_ac(char *prefix)
 {
 	return 0;
@@ -388,9 +389,7 @@ char *get_mac_from_ip(char *ip)
 		// IP address HW type Flags HW address Mask Device
 		// 192.168.1.1 0x1 0x2 00:90:4C:21:00:2A * eth0
 		for (; fgets(line, sizeof(line), fp);) {
-			if (sscanf
-			    (line, "%s 0x%x 0x%x %100s %100s %100s\n", ipa,
-			     &type, &flags, hwa, mask, dev) != 6)
+			if (sscanf(line, "%s 0x%x 0x%x %100s %100s %100s\n", ipa, &type, &flags, hwa, mask, dev) != 6)
 				continue;
 			// cprintf("ip1=[%s] ip2=[%s] mac=[%s] (flags & ATF_COM)=%d\n",
 			// ip, ipa, hwa, (flags & ATF_COM));
@@ -425,9 +424,7 @@ struct dns_lists *get_dns_list(void)
 	// nvram_safe_get("wan_get_dns") ==> Get from DHCP, PPPoE or PPTP
 	// The nvram_safe_get("wan_dns") priority is higher than
 	// nvram_safe_get("wan_get_dns")
-	snprintf(list, sizeof(list), "%s %s %s",
-		 nvram_safe_get("sv_localdns"), nvram_safe_get("wan_dns"),
-		 nvram_safe_get("wan_get_dns"));
+	snprintf(list, sizeof(list), "%s %s %s", nvram_safe_get("sv_localdns"), nvram_safe_get("wan_dns"), nvram_safe_get("wan_get_dns"));
 	foreach(word, list, next) {
 		if (strcmp(word, "0.0.0.0") && strcmp(word, "")) {
 			match = 0;
@@ -436,11 +433,7 @@ struct dns_lists *get_dns_list(void)
 					match = 1;
 			}
 			if (!match) {
-				snprintf(dns_list->dns_server
-					 [dns_list->num_servers],
-					 sizeof(dns_list->dns_server
-						[dns_list->num_servers]), "%s",
-					 word);
+				snprintf(dns_list->dns_server[dns_list->num_servers], sizeof(dns_list->dns_server[dns_list->num_servers]), "%s", word);
 				dns_list->num_servers++;
 			}
 		}
@@ -459,10 +452,7 @@ struct dns_lists *get_dns_list(void)
 		snprintf(altdnsvar, 31, "altdns%d", altdns_index);
 
 		if (strlen(nvram_safe_get(altdnsvar)) > 0) {
-			snprintf(dns_list->dns_server[dns_list->num_servers],
-				 sizeof(dns_list->dns_server
-					[dns_list->num_servers]), "%s",
-				 nvram_safe_get(altdnsvar));
+			snprintf(dns_list->dns_server[dns_list->num_servers], sizeof(dns_list->dns_server[dns_list->num_servers]), "%s", nvram_safe_get(altdnsvar));
 			dns_list->num_servers++;
 		}
 		altdns_index++;
@@ -569,9 +559,7 @@ char *get_complete_lan_ip(char *ip)
 
 	int i[4];
 
-	if (sscanf
-	    (nvram_safe_get("lan_ipaddr"), "%d.%d.%d.%d", &i[0], &i[1], &i[2],
-	     &i[3]) != 4)
+	if (sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d.%d", &i[0], &i[1], &i[2], &i[3]) != 4)
 		return "0.0.0.0";
 
 	snprintf(ipaddr, sizeof(ipaddr), "%d.%d.%d.%s", i[0], i[1], i[2], ip);
@@ -696,8 +684,7 @@ int *find_all_pid_by_ps(char *pidName)
 			if (strstr(line, pidName)) {
 				sscanf(line, "%d", &pid);
 				cprintf("%s pid is %d\n", pidName, pid);
-				pidList =
-				    realloc(pidList, sizeof(int) * (i + 2));
+				pidList = realloc(pidList, sizeof(int) * (i + 2));
 				pidList[i++] = pid;
 			}
 		}
@@ -947,19 +934,12 @@ static int sockets_open(int domain, int type, int protocol)
 	return fd;
 }
 
-int
-sys_netdev_ioctl(int family, int socket, char *if_name, int cmd,
-		 struct ifreq *ifr)
+int sys_netdev_ioctl(int family, int socket, char *if_name, int cmd, struct ifreq *ifr)
 {
 	int rc, s;
 
 	if ((s = socket) < 0) {
-		if ((s =
-		     sockets_open(family,
-				  family ==
-				  AF_PACKET ? SOCK_PACKET : SOCK_DGRAM,
-				  family == AF_PACKET ? htons(ETH_P_ALL) : 0)) <
-		    0) {
+		if ((s = sockets_open(family, family == AF_PACKET ? SOCK_PACKET : SOCK_DGRAM, family == AF_PACKET ? htons(ETH_P_ALL) : 0)) < 0) {
 			cprintf("sys_netdev_ioctl: failed\n");
 			return -1;
 		}
@@ -981,8 +961,7 @@ int set_register_value(unsigned short port_addr, unsigned short option_content)
 
 	ifr.ifr_data = (void *)&stats;
 
-	if (sys_netdev_ioctl
-	    (AF_INET, -1, get_device_name(), SIOCSMIIREG, &ifr) < 0)
+	if (sys_netdev_ioctl(AF_INET, -1, get_device_name(), SIOCSMIIREG, &ifr) < 0)
 		return -1;
 
 	return 0;
@@ -1046,15 +1025,10 @@ struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
 				if (strcmp(list[0], "assoclist"))
 					continue;
 
-				wlmac =
-				    realloc(wlmac,
-					    sizeof(struct wl_assoc_mac) *
-					    (count + 1));
+				wlmac = realloc(wlmac, sizeof(struct wl_assoc_mac) * (count + 1));
 
-				memset(&wlmac[count], 0,
-				       sizeof(struct wl_assoc_mac));
-				strncpy(wlmac[count].mac, list[1],
-					sizeof(wlmac[0].mac));
+				memset(&wlmac[count], 0, sizeof(struct wl_assoc_mac));
+				strncpy(wlmac[count].mac, list[1], sizeof(wlmac[0].mac));
 				count++;
 			}
 
@@ -1197,8 +1171,7 @@ int wds_dev_config(int dev, int up)
 	snprintf(wds_var, 31, "wl_wds%d", dev);
 	snprintf(wds_enable_var, 31, "%s_enable", wds_var);
 
-	if ((wds = nvram_safe_get(wds_enable_var)) == NULL ||
-	    strcmp(wds, "0") == 0)
+	if ((wds = nvram_safe_get(wds_enable_var)) == NULL || strcmp(wds, "0") == 0)
 		return -1;
 	snprintf(wds_dev, 31, "wds0.%d", dev + 1);
 	snprintf(ifr.ifr_name, IFNAMSIZ, wds_dev);
@@ -1384,9 +1357,7 @@ int get_net(char *netmask)
  * note: copied from Broadcom code and put in shared via this file 
  */
 
-int
-route_manip(int cmd, char *name, int metric, char *dst, char *gateway,
-	    char *genmask)
+int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask)
 {
 	int s;
 	struct rtentry rt;
@@ -1439,16 +1410,14 @@ route_manip(int cmd, char *name, int metric, char *dst, char *gateway,
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask)
 {
 	if (nvram_match("console_debug", "1"))
-		fprintf(stderr, "route_add: if:%s dst:%s gw: %s mask: %s \n",
-			name, dst, gateway, genmask);
+		fprintf(stderr, "route_add: if:%s dst:%s gw: %s mask: %s \n", name, dst, gateway, genmask);
 	return route_manip(SIOCADDRT, name, metric, dst, gateway, genmask);
 }
 
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask)
 {
 	if (nvram_match("console_debug", "1"))
-		fprintf(stderr, "route_del: if:%s dst:%s gw: %s mask: %s \n",
-			name, dst, gateway, genmask);
+		fprintf(stderr, "route_del: if:%s dst:%s gw: %s mask: %s \n", name, dst, gateway, genmask);
 	return route_manip(SIOCDELRT, name, metric, dst, gateway, genmask);
 }
 
@@ -1631,13 +1600,11 @@ static int sockaddr_to_dotted(struct sockaddr *saddr, char *buf)
 {
 	buf[0] = '\0';
 	if (saddr->sa_family == AF_INET) {
-		inet_ntop(AF_INET, &((struct sockaddr_in *)saddr)->sin_addr,
-			  buf, 128);
+		inet_ntop(AF_INET, &((struct sockaddr_in *)saddr)->sin_addr, buf, 128);
 		return 0;
 	}
 	if (saddr->sa_family == AF_INET6) {
-		inet_ntop(AF_INET6, &((struct sockaddr_in6 *)saddr)->sin6_addr,
-			  buf, 128);
+		inet_ntop(AF_INET6, &((struct sockaddr_in6 *)saddr)->sin6_addr, buf, 128);
 		return 0;
 	}
 	return -1;
@@ -1762,32 +1729,21 @@ char *get_filter_services(void)
 
 	while (filters->name)	// add l7 and p2p filters
 	{
-		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
-			strlen(filters->name), filters->name,
-			filters->protocol == 0 ? 2 : 3,
-			proto[filters->protocol]);
+		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name, filters->protocol == 0 ? 2 : 3, proto[filters->protocol]);
 		if (!services) {
 			services = malloc(strlen(temp) + 1);
 			services[0] = 0;
 		} else
-			services =
-			    realloc(services,
-				    strlen(services) + strlen(temp) + 1);
+			services = realloc(services, strlen(services) + strlen(temp) + 1);
 		strcat(services, temp);
 		filters++;
 	}
-	services =
-	    realloc(services,
-		    strlen(services) +
-		    strlen(nvram_safe_get("filter_services")) + 1);
+	services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services")) + 1);
 	strcat(services, nvram_safe_get("filter_services"));	// this is
 	// user
 	// defined
 	// filters
-	services =
-	    realloc(services,
-		    strlen(services) +
-		    strlen(nvram_safe_get("filter_services_1")) + 1);
+	services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services_1")) + 1);
 	strcat(services, nvram_safe_get("filter_services_1"));
 
 	return services;
@@ -1844,8 +1800,7 @@ void addAction(char *action)
 		}
 	}
 	if (strlen(services) > 0) {
-		actionstack =
-		    safe_malloc(strlen(services) + strlen(action) + 2);
+		actionstack = safe_malloc(strlen(services) + strlen(action) + 2);
 		memset(actionstack, 0, strlen(services) + strlen(action) + 2);
 		strcpy(actionstack, action);
 		strcat(actionstack, " ");

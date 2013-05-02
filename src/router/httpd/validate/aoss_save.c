@@ -71,13 +71,12 @@ void aoss_save(webs_t wp)
 		nvram_unset("aossa_vifs");
 		nvram_commit();
 	}
-	char *registrar = websGetVar(wp,"wps_registrar",NULL);
-	if (registrar && nvram_invmatch("wps_registrar",registrar))
-	{
-	    nvram_set("wps_registrar",registrar);
-	    addAction("wireless");
-	    nvram_set("nowebaction","1");
-	    service_restart();
+	char *registrar = websGetVar(wp, "wps_registrar", NULL);
+	if (registrar && nvram_invmatch("wps_registrar", registrar)) {
+		nvram_set("wps_registrar", registrar);
+		addAction("wireless");
+		nvram_set("nowebaction", "1");
+		service_restart();
 	}
 	// all other vars
 	//validate_cgi(wp);

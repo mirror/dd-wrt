@@ -86,8 +86,7 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 	chdir("/www");
 }
 
-void sr_config_cgi(struct mime_handler *handler, char *path, webs_t wp,
-		   char *query)
+void sr_config_cgi(struct mime_handler *handler, char *path, webs_t wp, char *query)
 {
 	if (restore_ret != 0)
 		do_ej(handler, "Fail.asp", wp, NULL);
@@ -106,8 +105,7 @@ void sr_config_cgi(struct mime_handler *handler, char *path, webs_t wp,
 	}
 }
 
-void nv_file_out(struct mime_handler *handler, char *path, webs_t wp,
-		 char *query)
+void nv_file_out(struct mime_handler *handler, char *path, webs_t wp, char *query)
 {
 
 #ifdef HAVE_REGISTER
@@ -188,8 +186,7 @@ void td_file_in(char *url, webs_t wp, int len, char *boundary)	//load and set tr
 	nvram_commit();
 }
 
-void td_config_cgi(struct mime_handler *handler, char *path, webs_t wp,
-		   char *query)
+void td_config_cgi(struct mime_handler *handler, char *path, webs_t wp, char *query)
 {
 	do_ej(handler, "Traff_admin.asp", wp, NULL);
 	websDone(wp, 200);

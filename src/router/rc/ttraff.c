@@ -17,9 +17,7 @@
 #include <syslog.h>
 #include <utils.h>
 
-
-void
-remove_oldest_entry(int cur_month, int cur_year)
+void remove_oldest_entry(int cur_month, int cur_year)
 {
 	char old[32];
 	int month, year;
@@ -33,20 +31,17 @@ remove_oldest_entry(int cur_month, int cur_year)
 			sprintf(old, "traff-%02u-%u", month, year);
 			len = strlen(nvram_safe_get(old));
 			if (len > 0) {
-				dd_syslog(LOG_DEBUG, 
-					"ttraff: old data for %d-%d removed, freeing %d bytes of nvram\n", month, year, len + 15);
+				dd_syslog(LOG_DEBUG, "ttraff: old data for %d-%d removed, freeing %d bytes of nvram\n", month, year, len + 15);
 				nvram_unset(old);
 				return;
-			}		
+			}
 		}
 	}
 
 	return;
 }
 
-void
-write_to_nvram(int day, int month, int year, unsigned long rcvd,
-	       unsigned long sent)
+void write_to_nvram(int day, int month, int year, unsigned long rcvd, unsigned long sent)
 {
 	char *next;
 	char var[80];
@@ -60,51 +55,48 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 	unsigned long old_rcvd;
 	unsigned long old_sent;
 	char *tdata;
-	
+
 	buffer = (char *)malloc(2048);
 	memset(buffer, 0, 2048);
 	sprintf(tq, "traff-%02u-%u", month, year);
 
-	/* keep some nvram free by removing oldest traf data */		
+	/* keep some nvram free by removing oldest traf data */
 	int space = 0;
 	int used = nvram_used(&space);
-	if ((space - used) < 2048) { /* 2048 bytes to be on a safe side */
+	if ((space - used) < 2048) {	/* 2048 bytes to be on a safe side */
 		remove_oldest_entry(month, year);
 	}
-	
+
 	tdata = nvram_safe_get(tq);
-	
+
 	if (strlen(tdata) == 0) {
 		for (d = 1; d <= days; d++) {
 			strcat(sbuff, "0:0 ");
 		}
 		strcat(sbuff, "[0:0]");
 		nvram_set(tq, sbuff);
-		nvram_commit(); // invalidate them
+		nvram_commit();	// invalidate them
 		tdata = nvram_safe_get(tq);
 	}
 
 	foreach(var, tdata, next) {
 		if (i == day) {
-			if (strstr(var, "[")) { //check and correct faulty entries
+			if (strstr(var, "[")) {	//check and correct faulty entries
 				sprintf(temp, "%lu:%lu ", rcvd, sent);
-			}
-			else {  //value OK
+			} else {	//value OK
 				sscanf(var, "%lu:%lu", &old_rcvd, &old_sent);
-				sprintf(temp, "%lu:%lu ", old_rcvd + rcvd,
-					old_sent + sent);
+				sprintf(temp, "%lu:%lu ", old_rcvd + rcvd, old_sent + sent);
 			}
 			strcat(buffer, temp);
 		} else if (i == (days + 1))	//make new monthly total
 		{
 			sscanf(var, "[%lu:%lu]", &old_rcvd, &old_sent);
-			sprintf(temp, "[%lu:%lu] ", old_rcvd + rcvd,
-				old_sent + sent);
+			sprintf(temp, "[%lu:%lu] ", old_rcvd + rcvd, old_sent + sent);
 			strcat(buffer, temp);
 			i++;
 			break;
 		} else {
-			if(strchr(var, ':') != NULL) {
+			if (strchr(var, ':') != NULL) {
 				strcat(buffer, var);
 				strcat(buffer, " ");
 			}
@@ -124,7 +116,6 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 	free(buffer);
 	return;
 }
-
 
 int main(int argc, char **argv)
 {
@@ -167,8 +158,7 @@ int main(int argc, char **argv)
 	if (nvram_match("ttraff_iface", "") || !nvram_get("ttraff_iface"))
 		strncpy(wanface, get_wan_face(), sizeof(wanface));
 	else
-		strncpy(wanface, nvram_safe_get("ttraff_iface"),
-			sizeof(wanface));
+		strncpy(wanface, nvram_safe_get("ttraff_iface"), sizeof(wanface));
 	strcat(wanface, ":");
 	/* 
 	 * now we can loop and collect data 
@@ -186,7 +176,7 @@ int main(int argc, char **argv)
 		if ((in = fopen("/proc/net/dev", "rb")) != NULL) {
 			/* eat first two lines */
 			fgets(line, sizeof(line), in);
-	    	fgets(line, sizeof(line), in);
+			fgets(line, sizeof(line), in);
 
 			while (fgets(line, sizeof(line), in) != NULL) {
 				ifl = 0;
@@ -195,10 +185,8 @@ int main(int argc, char **argv)
 					while (line[ifl] != ':')
 						ifl++;
 					line[ifl] = 0;
-				
-					sscanf(line + ifl + 1,
-					       "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld",
-					       &in_dev, &out_dev);
+
+					sscanf(line + ifl + 1, "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld", &in_dev, &out_dev);
 				}
 			}
 
@@ -274,16 +262,14 @@ int main(int argc, char **argv)
 				fclose(in);
 			}
 			in = fopen("/tmp/.megc", "w");
-			sprintf(line, "%lu:%lu", megcounti + megi,
-				megcounto + mego);
+			sprintf(line, "%lu:%lu", megcounti + megi, megcounto + mego);
 			fputs(line, in);
 			fclose(in);
 			megi = 0;
 			mego = 0;
 		}
 
-		if (currtime->tm_hour == 23 && currtime->tm_min == 59
-		    && commited == 0) {
+		if (currtime->tm_hour == 23 && currtime->tm_min == 59 && commited == 0) {
 			needcommit = 1;
 		} else {
 			commited = 0;
@@ -294,9 +280,7 @@ int main(int argc, char **argv)
 			nvram_commit();
 			commited = 1;
 			needcommit = 0;
-			dd_syslog(LOG_DEBUG,
-				  "ttraff: data for %d-%d-%d commited to nvram\n",
-				  day, month, year);
+			dd_syslog(LOG_DEBUG, "ttraff: data for %d-%d-%d commited to nvram\n", day, month, year);
 		}
 
 		sleep(58);

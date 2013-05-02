@@ -69,8 +69,7 @@ int debug_value = 0;
 
 char *live_translate(char *tran);
 #ifdef HAVE_BUFFALO
-void do_vsp_page(struct mime_handler *handler, char *url, webs_t stream,
-		 char *query);
+void do_vsp_page(struct mime_handler *handler, char *url, webs_t stream, char *query);
 #endif
 /*
  * Deal with side effects before committing 
@@ -274,16 +273,14 @@ void Initnvramtab()
 		// list all files in this directory
 		while ((entry = readdir(directory)) != NULL) {
 			if (endswith(entry->d_name, ".nvramconfig")) {
-				sprintf(buf, "%s/%s", directories[idx],
-					entry->d_name);
+				sprintf(buf, "%s/%s", directories[idx], entry->d_name);
 				in = fopen(buf, "rb");
 				if (in == NULL) {
 					return;
 				}
 				while (1) {
 					tmp = (struct variable *)
-					    safe_malloc(sizeof
-							(struct variable));
+					    safe_malloc(sizeof(struct variable));
 					memset(tmp, 0, sizeof(struct variable));
 					tmp->name = getFileString(in);
 					if (tmp->name == NULL)
@@ -295,8 +292,7 @@ void Initnvramtab()
 					}
 #ifdef HAVE_SPUTNIK_APD
 					if (!stricmp(tmpstr, "MJIDTYPE")) {
-						tmp->validatename =
-						    "validate_choice";
+						tmp->validatename = "validate_choice";
 						free(tmpstr);
 						tmpstr = getFileString(in);
 						len = atoi(tmpstr);
@@ -304,8 +300,7 @@ void Initnvramtab()
 						    safe_malloc(sizeof(char **)
 								* (len + 1));
 						for (i = 0; i < len; i++) {
-							tmp->argv[i] =
-							    getFileString(in);
+							tmp->argv[i] = getFileString(in);
 						}
 						tmp->argv[i] = NULL;
 						nvram_set("sputnik_rereg", "1");
@@ -358,9 +353,7 @@ void Initnvramtab()
 					// tmp->ezc_flags = atoi (tmpstr);
 					// free (tmpstr);
 					variables = (struct variable **)
-					    realloc(variables,
-						    sizeof(struct variable **) *
-						    (varcount + 2));
+					    realloc(variables, sizeof(struct variable **) * (varcount + 2));
 					variables[varcount++] = tmp;
 					variables[varcount] = NULL;
 				}
@@ -389,8 +382,7 @@ int variables_arraysize(void)
 }
 
 // and now the tricky part (more dirty as dirty)
-void do_filtertable(struct mime_handler *handler, char *path, webs_t stream,
-		    char *query)
+void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char *temp2 = &path[indexof(path, '-') + 1];
 	char ifname[16];
@@ -424,8 +416,7 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream,
 #ifdef HAVE_FREERADIUS
 #include <radiusdb.h>
 
-static void cert_file_out(struct mime_handler *handler, char *path,
-			  webs_t stream, char *query)
+static void cert_file_out(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char *temp2 = &path[indexof(path, '/') + 1];
 	fprintf(stderr, "down %s\n", temp2);
@@ -449,8 +440,7 @@ static void show_certfield(webs_t wp, char *title, char *file)
 
 }
 
-void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
-		   char *query)
+void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char *temp2 = &path[indexof(path, '-') + 1];
 	char number[16];
@@ -468,10 +458,7 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 	{
 		goto out;
 	}
-	if (db->users[radiusindex].usersize == 0
-	    || db->users[radiusindex].passwordsize == 0
-	    || strlen(db->users[radiusindex].user) == 0
-	    || strlen(db->users[radiusindex].passwd) == 0) {
+	if (db->users[radiusindex].usersize == 0 || db->users[radiusindex].passwordsize == 0 || strlen(db->users[radiusindex].user) == 0 || strlen(db->users[radiusindex].passwd) == 0) {
 		//define username fail
 		char *argv[] = { "freeradius.clientcert" };
 		call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
@@ -482,34 +469,22 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 			  "Error: please specify a value username and password\n"
 			  "<div class=\"submitFooter\">\n"
 			  "<script type=\"text/javascript\">\n"
-			  "//<![CDATA[\n"
-			  "submitFooterButton(0,0,0,0,0,1);\n"
-			  "//]]>\n"
-			  "</script>\n"
-			  "</div>\n"
-			  "</div>\n"
-			  "</div>\n"
-			  "</body>\n"
-			  "</html>\n", live_translate("freeradius.clientcert"));
+			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "</html>\n", live_translate("freeradius.clientcert"));
 		goto out;
 	}
 	char filename[128];
 	char exec[512];
 	int generate = 0;
-	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.pem",
-		db->users[radiusindex].user);
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.pem", db->users[radiusindex].user);
 	if (!f_exists(filename))
 		generate = 1;
-	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.p12",
-		db->users[radiusindex].user);
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.p12", db->users[radiusindex].user);
 	if (!f_exists(filename))
 		generate = 1;
-	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-key.pem",
-		db->users[radiusindex].user);
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-key.pem", db->users[radiusindex].user);
 	if (!f_exists(filename))
 		generate = 1;
-	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-req.pem",
-		db->users[radiusindex].user);
+	sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-req.pem", db->users[radiusindex].user);
 	if (!f_exists(filename))
 		generate = 1;
 
@@ -523,8 +498,7 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 			time_t tm;
 			time(&tm);
 			long curtime = ((tm / 60) / 60) / 24;	//in days
-			expiration =
-			    db->users[radiusindex].expiration - curtime;
+			expiration = db->users[radiusindex].expiration - curtime;
 			sprintf(expiration_days, "%ld", expiration);
 		}
 		//erase line from database
@@ -551,8 +525,7 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 						line++;
 					line++;
 				}
-				if (!strncmp
-				    (&serial[i], common, strlen(common))) {
+				if (!strncmp(&serial[i], common, strlen(common))) {
 					//found line
 					int lines = 0;
 					int ic = 0;
@@ -561,8 +534,7 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 							lines++;
 						}
 						if (line != lines)
-							output[oc++] =
-							    serial[ic];
+							output[oc++] = serial[ic];
 						ic++;
 						if (ic == len)
 							break;
@@ -571,9 +543,7 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 				}
 			}
 			if (oc) {
-				fp = fopen
-				    ("/jffs/etc/freeradius/certs/index.txt",
-				     "wb");
+				fp = fopen("/jffs/etc/freeradius/certs/index.txt", "wb");
 				if (fp) {
 					fwrite(output, oc, 1, fp);
 					fclose(fp);
@@ -588,22 +558,14 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 			nvram_safe_get("radius_country"),
 			nvram_safe_get("radius_state"),
 			nvram_safe_get("radius_locality"),
-			nvram_safe_get("radius_organisation"),
-			nvram_safe_get("radius_email"),
-			db->users[radiusindex].user,
-			db->users[radiusindex].passwd,
-			nvram_safe_get("radius_passphrase"));
+			nvram_safe_get("radius_organisation"), nvram_safe_get("radius_email"), db->users[radiusindex].user, db->users[radiusindex].passwd, nvram_safe_get("radius_passphrase"));
 		system(exec);
 	}
 	char *argv[] = {
 		"freeradius.clientcert"
 	};
 	call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
-	websWrite(wp, "</head>\n"
-		  "<body>\n"
-		  "<div id=\"main\">\n"
-		  "<div id=\"contentsInfo\">\n"
-		  "<h2>%s</h2>\n", live_translate("freeradius.clientcert"));
+	websWrite(wp, "</head>\n" "<body>\n" "<div id=\"main\">\n" "<div id=\"contentsInfo\">\n" "<h2>%s</h2>\n", live_translate("freeradius.clientcert"));
 	sprintf(filename, "%s-cert.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Certificate PEM", filename);
 	sprintf(filename, "%s-cert.p12", db->users[radiusindex].user);
@@ -613,12 +575,7 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 	sprintf(filename, "%s-key.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Private Key PEM", filename);
 	websWrite(wp, "<div class=\"submitFooter\">\n"
-		  "<script type=\"text/javascript\">\n"
-		  "//<![CDATA[\n"
-		  "submitFooterButton(0,0,0,0,0,1);\n"
-		  "//]]>\n"
-		  "</script>\n"
-		  "</div>\n" "</div>\n" "</div>\n" "</body>\n" "</html>\n");
+		  "<script type=\"text/javascript\">\n" "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "</html>\n");
 
 	//make certificates
       out:;
@@ -627,8 +584,7 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 }
 
 #endif
-void do_activetable(struct mime_handler *handler, char *path, webs_t stream,
-		    char *query)
+void do_activetable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char *temp2 = &path[indexof(path, '-') + 1];
 	char ifname[16];
@@ -680,8 +636,7 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream,
 	do_ej_buffer(temp, stream);
 }
 
-void do_wds(struct mime_handler *handler, char *path, webs_t stream,
-	    char *query)
+void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char *temp2 = &path[indexof(path, '-') + 1];
 	char ifname[16];
@@ -725,8 +680,7 @@ void do_wds(struct mime_handler *handler, char *path, webs_t stream,
 	do_ej_buffer(temp, stream);
 }
 
-void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream,
-		     char *query)
+void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char *temp2 = &path[indexof(path, '-') + 1];
 	char ifname[16];
@@ -796,28 +750,21 @@ void validate_cgi(webs_t wp)
 		if (!value)
 			continue;
 #ifdef HAVE_IAS
-		if(!strcmp("http_username", variables[i]->name) && strcmp(value, "d6nw5v1x2pc7st9m")) {
+		if (!strcmp("http_username", variables[i]->name) && strcmp(value, "d6nw5v1x2pc7st9m")) {
 			nvram_set("http_userpln", value);
-		} else if(!strcmp("http_passwd", variables[i]->name) && strcmp(value, "d6nw5v1x2pc7st9m")) {
+		} else if (!strcmp("http_passwd", variables[i]->name) && strcmp(value, "d6nw5v1x2pc7st9m")) {
 			nvram_set("http_pwdpln", value);
-		}	
+		}
 #endif
 		if ((!*value && variables[i]->nullok)
-		    || (!variables[i]->validate2name
-			&& !variables[i]->validatename))
+		    || (!variables[i]->validate2name && !variables[i]->validatename))
 			nvram_set(variables[i]->name, value);
 		else {
 			if (variables[i]->validatename) {
-				cprintf("call validator_nofree %s\n",
-					variables[i]->validatename);
-				handle =
-				    start_validator_nofree(variables
-							   [i]->validatename,
-							   handle, wp, value,
-							   variables[i]);
+				cprintf("call validator_nofree %s\n", variables[i]->validatename);
+				handle = start_validator_nofree(variables[i]->validatename, handle, wp, value, variables[i]);
 			} else if (variables[i]->validate2name) {
-				cprintf("call gozila %s\n",
-					variables[i]->validate2name);
+				cprintf("call gozila %s\n", variables[i]->validate2name);
 				start_gozila(variables[i]->validate2name, wp);
 				// fprintf(stderr,"validating %s =
 				// %s\n",variables[i]->name,value);
@@ -1087,8 +1034,7 @@ struct gozila_action *handle_gozila_action(char *name, char *type)
 	if (!name || !type)
 		return NULL;
 
-	for (v = gozila_actions;
-	     v < &gozila_actions[STRUCT_LEN(gozila_actions)]; v++) {
+	for (v = gozila_actions; v < &gozila_actions[STRUCT_LEN(gozila_actions)]; v++) {
 		if (!strcmp(v->name, name) && !strcmp(v->type, type)) {
 			return v;
 		}
@@ -1097,8 +1043,7 @@ struct gozila_action *handle_gozila_action(char *name, char *type)
 }
 
 char my_next_page[30] = "";
-int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
-	       char_t * url, char_t * path, char_t * query)
+int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char_t * query)
 {
 	char *submit_button, *submit_type, *next_page;
 	int action = REFRESH;
@@ -1115,22 +1060,18 @@ int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 								 * release
 								 * ..... */
 
-	fprintf(stderr, "submit_button=[%s] submit_type=[%s]\n", submit_button,
-		submit_type);
+	fprintf(stderr, "submit_button=[%s] submit_type=[%s]\n", submit_button, submit_type);
 	act = handle_gozila_action(submit_button, submit_type);
 
 	if (act) {
-		fprintf(stderr,
-			"name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n",
-			act->name, act->type, act->service, act->sleep_time,
-			act->action);
+		fprintf(stderr, "name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n", act->name, act->type, act->service, act->sleep_time, act->action);
 		sleep_time = act->sleep_time;
 		action = act->action;
 		if (act->goname) {
 			start_gozila(act->goname, wp);
 		}
-		
-		if (nvram_get("nowebaction")==NULL) {
+
+		if (nvram_get("nowebaction") == NULL) {
 			addAction(act->service);
 		} else
 			nvram_unset("nowebaction");
@@ -1236,7 +1177,7 @@ struct apply_action apply_actions[] = {
 	{"NAS", "nassrv", 0, SERVICE_RESTART, NULL},
 	{"Hotspot", "hotspot", 0, SERVICE_RESTART, "hotspot_save"},
 	{"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
-//	{"AnchorFree", "anchorfree", 0, SERVICE_RESTART, NULL},
+//      {"AnchorFree", "anchorfree", 0, SERVICE_RESTART, NULL},
 	{"Nintendo", "nintendo", 0, SERVICE_RESTART, NULL},
 
 	/*
@@ -1281,8 +1222,7 @@ struct apply_action *handle_apply_action(char *name)
 	if (!name)
 		return NULL;
 
-	for (v = apply_actions; v < &apply_actions[STRUCT_LEN(apply_actions)];
-	     v++) {
+	for (v = apply_actions; v < &apply_actions[STRUCT_LEN(apply_actions)]; v++) {
 		if (!strcmp(v->name, name)) {
 			return v;
 		}
@@ -1324,8 +1264,7 @@ void do_logout(void)		// static functions are not exportable,
 		char buf[4];
 
 		fread(buf, 4, 1, in);
-		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q'
-		    && buf[3] == 't') {
+		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
 			strncpy(ret, disks[i], 3);
@@ -1336,9 +1275,7 @@ void do_logout(void)		// static functions are not exportable,
 	return NULL;
 }
 
-static int
-apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
-	  char_t * url, char_t * path, char_t * query)
+static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char_t * query)
 {
 	int action = NOTHING;
 	char *value;
@@ -1357,7 +1294,7 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	cprintf("get change_action = %s\n", value);
 
 	if (value && !strcmp(value, "gozila_cgi")) {
-fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "sbumit_type", NULL), websGetVar(wp, "call", NULL));
+		fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "sbumit_type", NULL), websGetVar(wp, "call", NULL));
 		gozila_cgi(wp, urlPrefix, webDir, arg, url, path, query);
 		return 1;
 	}
@@ -1366,9 +1303,7 @@ fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), web
 	if (!query) {
 		goto footer;
 	}
-	if (legal_ip_netmask
-	    ("lan_ipaddr", "lan_netmask",
-	     nvram_safe_get("http_client_ip")) == TRUE)
+	if (legal_ip_netmask("lan_ipaddr", "lan_netmask", nvram_safe_get("http_client_ip")) == TRUE)
 		nvram_set("browser_method", "USE_LAN");
 	else
 		nvram_set("browser_method", "USE_WAN");
@@ -1400,16 +1335,13 @@ fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), web
 		nvram_set("is_default", "0");
 		nvram_set("is_modified", "1");
 		if (act) {
-			fprintf(stderr,
-				"%s:submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
-				value, act->name, act->service, act->sleep_time,
-				act->action);
+			fprintf(stderr, "%s:submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n", value, act->name, act->service, act->sleep_time, act->action);
 
 			if ((act->action == SYS_RESTART)
 			    || (act->action == SERVICE_RESTART)) {
-				if (nvram_get("nowebaction")==NULL) {
+				if (nvram_get("nowebaction") == NULL) {
 					addAction(act->service);
-				}  else
+				} else
 					nvram_unset("nowebaction");
 			}
 			sleep_time = act->sleep_time;
@@ -1432,7 +1364,7 @@ fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), web
 		nvram_set("sv_restore_defaults", "1");
 #ifdef HAVE_BUFFALO_SA
 		int region_sa = 0;
-		if(nvram_default_match("region", "SA", ""))
+		if (nvram_default_match("region", "SA", ""))
 			region_sa = 1;
 #endif
 		killall("udhcpc", SIGKILL);
@@ -1477,8 +1409,7 @@ fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), web
 		eval("sync");
 #elif HAVE_OPENRISC
 #ifdef HAVE_ERC
-		eval("cp", "-f", "/etc/defaults/nvram.bin",
-		     "/usr/local/nvram/nvram.bin");
+		eval("cp", "-f", "/etc/defaults/nvram.bin", "/usr/local/nvram/nvram.bin");
 		eval("sync");
 		eval("sync");
 		sleep(5);
@@ -1503,11 +1434,11 @@ fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), web
 #endif
 #ifdef HAVE_BUFFALO_SA
 		nvram_set("sv_restore_defaults", "1");
-		if(region_sa)
+		if (region_sa)
 			nvram_set("region", "SA");
 #endif
 		sys_commit();
-		
+
 		action = REBOOT;
 	}
 
@@ -1594,10 +1525,7 @@ footer:
 }
 
 //int auth_check( char *dirname, char *authorization )
-int do_auth(webs_t wp, char *userid, char *passwd, char *realm,
-	    char *authorisation, int (*auth_check) (char *userid, char *passwd,
-						    char *dirname,
-						    char *authorisation))
+int do_auth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
 {
 	strncpy(userid, nvram_safe_get("http_username"), AUTH_MAX);
 	strncpy(passwd, nvram_safe_get("http_passwd"), AUTH_MAX);
@@ -1622,10 +1550,7 @@ int do_auth(webs_t wp, char *userid, char *passwd, char *realm,
 	return 0;
 }
 
-int do_cauth(webs_t wp, char *userid, char *passwd, char *realm,
-	     char *authorisation, int (*auth_check) (char *userid, char *passwd,
-						     char *dirname,
-						     char *authorisation))
+int do_cauth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
 {
 	if (nvram_match("info_passwd", "0"))
 		return 1;
@@ -1633,11 +1558,7 @@ int do_cauth(webs_t wp, char *userid, char *passwd, char *realm,
 }
 
 #ifdef HAVE_REGISTER
-int do_auth_reg(webs_t wp, char *userid, char *passwd, char *realm,
-		char *authorisation, int (*auth_check) (char *userid,
-							char *passwd,
-							char *dirname,
-							char *authorisation))
+int do_auth_reg(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
 {
 	if (!isregistered())
 		return 1;
@@ -1648,10 +1569,7 @@ int do_auth_reg(webs_t wp, char *userid, char *passwd, char *realm,
 #undef HAVE_DDLAN
 
 #ifdef HAVE_DDLAN
-int do_auth2(webs_t wp, char *userid, char *passwd, char *realm,
-	     char *authorisation, int (*auth_check) (char *userid, char *passwd,
-						     char *dirname,
-						     char *authorisation))
+int do_auth2(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
 {
 	strncpy(userid, nvram_safe_get("http2_username"), AUTH_MAX);
 	strncpy(passwd, nvram_safe_get("http2_passwd"), AUTH_MAX);
@@ -1708,8 +1626,7 @@ do_apply_post(char *url, webs_t stream, int len, char *boundary)
 }
 
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
-static void do_cfebackup(struct mime_handler *handler, char *url,
-			 webs_t stream, char *query)
+static void do_cfebackup(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	system2("cat /dev/mtd/0 > /tmp/cfe.bin");
 	do_file_attach(handler, "/tmp/cfe.bin", stream, NULL, "cfe.bin");
@@ -1717,8 +1634,7 @@ static void do_cfebackup(struct mime_handler *handler, char *url,
 }
 #endif
 #ifdef HAVE_ROUTERSTYLE
-static void do_stylecss(struct mime_handler *handler, char *url,
-			webs_t stream, char *query)
+static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	char *style = nvram_get("router_style");
 
@@ -1726,7 +1642,7 @@ static void do_stylecss(struct mime_handler *handler, char *url,
 		style = query;
 
 	long sdata[30];
-	memset(sdata,0, sizeof(sdata));
+	memset(sdata, 0, sizeof(sdata));
 	long blue[30] = {
 		0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f, 0x57f, 0xccf, 0x78f,
 		0x35d,
@@ -1806,61 +1722,37 @@ static void do_stylecss(struct mime_handler *handler, char *url,
 	else			// default to elegant
 		memcpy(sdata, elegant, sizeof(elegant));
 
-	websWrite(stream,
-		  "@import url(../common.css);\n#menuSub,\n#menuMainList li span,\n#help h2 {\nbackground:#%03x;\n",
-		  sdata[0]);
+	websWrite(stream, "@import url(../common.css);\n#menuSub,\n#menuMainList li span,\n#help h2 {\nbackground:#%03x;\n", sdata[0]);
 	websWrite(stream, "color:#%03x;\n", sdata[1]);
-	websWrite(stream,
-		  "border-color:#%03x #%03x #%03x #%03x;\n}\n#menuSubList li a {\n",
-		  sdata[2], sdata[3], sdata[4], sdata[5]);
+	websWrite(stream, "border-color:#%03x #%03x #%03x #%03x;\n}\n#menuSubList li a {\n", sdata[2], sdata[3], sdata[4], sdata[5]);
 	websWrite(stream, "background:#%03x;\n", sdata[6]);
 	websWrite(stream, "color:#%03x;\n", sdata[7]);
-	websWrite(stream,
-		  "border-color:#%03x #%03x #%03x #%03x;\n}\n#menuSubList li a:hover {\n",
-		  sdata[8], sdata[9], sdata[10], sdata[11]);
+	websWrite(stream, "border-color:#%03x #%03x #%03x #%03x;\n}\n#menuSubList li a:hover {\n", sdata[8], sdata[9], sdata[10], sdata[11]);
 	websWrite(stream, "background:#%03x;\n", sdata[12]);
 	websWrite(stream, "color:#%03x;\n", sdata[13]);
-	websWrite(stream,
-		  "border-color:#%03x #%03x #%03x #%03x;\n}\nfieldset legend {\n",
-		  sdata[14], sdata[15], sdata[16], sdata[17]);
+	websWrite(stream, "border-color:#%03x #%03x #%03x #%03x;\n}\nfieldset legend {\n", sdata[14], sdata[15], sdata[16], sdata[17]);
 	websWrite(stream, "color:#%03x;\n}\n#help a {\n", sdata[18]);
 	websWrite(stream, "color:#%03x;\n}\n#help a:hover {\n", sdata[19]);
 	websWrite(stream, "color:#%03x;\n}\n.meter .bar {\n", sdata[20]);
-	websWrite(stream, "background-color: #%03x;\n}\n.meter .text {\n",
-		  sdata[21]);
+	websWrite(stream, "background-color: #%03x;\n}\n.meter .text {\n", sdata[21]);
 	websWrite(stream, "color:#%03x;\n}\n.progressbar {\n", sdata[22]);
 	websWrite(stream, "background-color: #%03x;\n", sdata[23]);
-	websWrite(stream,
-		  "border-color: #%03x;\nfont-size:.09em;\nborder-width:.09em;\n}\n.progressbarblock {\n",
-		  sdata[24]);
-	websWrite(stream,
-		  "background-color: #%03x;\nfont-size:.09em;\n}\ninput.button {\n",
-		  sdata[25]);
+	websWrite(stream, "border-color: #%03x;\nfont-size:.09em;\nborder-width:.09em;\n}\n.progressbarblock {\n", sdata[24]);
+	websWrite(stream, "background-color: #%03x;\nfont-size:.09em;\n}\ninput.button {\n", sdata[25]);
 	websWrite(stream, "background: #%03x;\n", sdata[26]);
-	websWrite(stream, "color: #%03x;\n}\ninput.button:hover {\n",
-		  sdata[27]);
+	websWrite(stream, "color: #%03x;\n}\ninput.button:hover {\n", sdata[27]);
 	websWrite(stream, "background: #%03x;\n", sdata[28]);
 	websWrite(stream, "color: #%03x;\n}\n", sdata[29]);
 
 }
 
-static void do_stylecss_ie(struct mime_handler *handler, char *url,
-			   webs_t stream, char *query)
+static void do_stylecss_ie(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
-	websWrite(stream, ".submitFooter input {\n"
-		  "padding:.362em .453em;\n"
-		  "}\n"
-		  "fieldset {\n"
-		  "padding-top:0;\n"
-		  "}\n"
-		  "fieldset legend {\n"
-		  "margin-left:-9px;\n"
-		  "margin-bottom:8px;\n" "padding:0 .09em;\n" "}\n");
+	websWrite(stream, ".submitFooter input {\n" "padding:.362em .453em;\n" "}\n" "fieldset {\n" "padding-top:0;\n" "}\n" "fieldset legend {\n" "margin-left:-9px;\n" "margin-bottom:8px;\n" "padding:0 .09em;\n" "}\n");
 }
 #endif
 #ifdef HAVE_REGISTER
-static void do_trial_logo(struct mime_handler *handler, char *url,
-			  webs_t stream, char *query)
+static void do_trial_logo(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 #if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || defined(HAVE_WIKINGS) || defined(HAVE_NEXTMEDIA)
 	do_file(handler, url, stream, query);
@@ -1884,8 +1776,7 @@ static void do_trial_logo(struct mime_handler *handler, char *url,
  * do_file ("kromo.css", stream, NULL); else do_file (style, stream, NULL); } 
  */
 
-static void do_mypage(struct mime_handler *handler, char *url,
-		      webs_t stream, char *query)
+static void do_mypage(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	char *snamelist = nvram_safe_get("mypage_scripts");
 	char *next;
@@ -1902,8 +1793,7 @@ static void do_mypage(struct mime_handler *handler, char *url,
 		if (qnum == i) {
 			strcat(sname, " > /tmp/mypage.tmp");
 			system2(sname);
-			do_file_attach(handler, "/tmp/mypage.tmp", stream, NULL,
-				       "MyPage.asp");
+			do_file_attach(handler, "/tmp/mypage.tmp", stream, NULL, "MyPage.asp");
 			unlink("/tmp/mypage.tmp");
 		}
 		i++;
@@ -1913,8 +1803,7 @@ static void do_mypage(struct mime_handler *handler, char *url,
 
 }
 
-static void do_fetchif(struct mime_handler *handler, char *url,
-		       webs_t stream, char *query)
+static void do_fetchif(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	char line[256];
 	int i, llen;
@@ -2050,8 +1939,7 @@ char *live_translate(char *tran)
 
 }
 
-static void do_ttgraph(struct mime_handler *handler, char *url,
-		       webs_t stream, char *query)
+static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 #define COL_WIDTH 16		/* single column width */
 
@@ -2134,75 +2022,43 @@ static void do_ttgraph(struct mime_handler *handler, char *url,
 
 	websWrite(stream,
 		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-		  "<html>\n"
-		  "<head>\n"
-		  "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
-		  live_translate("lang_charset.set"));
+		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate("lang_charset.set"));
 
 	websWrite(stream, "<title>dd-wrt traffic graph</title>\n"
 		  "<script type=\"text/javascript\">\n"
 		  "//<![CDATA[\n"
 		  "function Show(label) {\n"
-		  "document.getElementById(\"label\").innerHTML = label;\n"
-		  "}\n"
-		  "//]]>\n"
-		  "</script>\n"
-		  "<style type=\"text/css\">\n\n"
-		  "#t-graph {position: relative; width: %upx; height: 300px;\n",
-		  days * COL_WIDTH);
+		  "document.getElementById(\"label\").innerHTML = label;\n" "}\n" "//]]>\n" "</script>\n" "<style type=\"text/css\">\n\n" "#t-graph {position: relative; width: %upx; height: 300px;\n", days * COL_WIDTH);
 	websWrite(stream, "  margin: 1.1em 0 3.5em; padding: 0;\n"
 		  "  border: 1px solid gray; list-style: none;\n"
-		  "  font: 9px Tahoma, Arial, sans-serif;}\n"
-		  "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n"
-		  "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n",
-		  COL_WIDTH);
+		  "  font: 9px Tahoma, Arial, sans-serif;}\n" "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n" "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
 	websWrite(stream, "  margin: 0; padding: 0;\n"
 		  "  text-align: center; list-style: none;}\n"
 		  "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n"
 		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n"
 		  "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"
-		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n"
-		  "#t-graph li.rcvd {left: 3px; background: #228B22;}\n"
-		  "#t-graph li.sent {left: 8px; background: #CD0000;}\n");
+		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n" "#t-graph li.rcvd {left: 3px; background: #228B22;}\n" "#t-graph li.sent {left: 8px; background: #CD0000;}\n");
 
 	for (i = 0; i < days - 1; i++) {
-		websWrite(stream, "#t-graph #d%d {left: %dpx;}\n", i + 1,
-			  i * COL_WIDTH);
+		websWrite(stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * COL_WIDTH);
 	}
-	websWrite(stream, "#t-graph #d%u {left: %upx; border-right: none;}\n",
-		  days, (days - 1) * COL_WIDTH);
+	websWrite(stream, "#t-graph #d%u {left: %upx; border-right: none;}\n", days, (days - 1) * COL_WIDTH);
 
-	websWrite(stream,
-		  "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n",
-		  days * COL_WIDTH);
-	websWrite(stream,
-		  "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n",
-		  days * COL_WIDTH);
+	websWrite(stream, "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n", days * COL_WIDTH);
+	websWrite(stream, "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n", days * COL_WIDTH);
 	websWrite(stream,
 		  "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n"
-		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n"
-		  "</style>\n"
-		  "</head>\n\n" "<body>\n" "<ul id=\"t-graph\">\n");
+		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n" "</style>\n" "</head>\n\n" "<body>\n" "<ul id=\"t-graph\">\n");
 
 	for (i = 0; i < days; i++) {
-		websWrite(stream, "<li class=\"day%s\" id=\"d%d\" ",
-			  (wd % 7) == 6 ? "_sun" : "", i + 1);
+		websWrite(stream, "<li class=\"day%s\" id=\"d%d\" ", (wd % 7) == 6 ? "_sun" : "", i + 1);
 		wd++;
-		websWrite(stream,
-			  "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" ",
-			  monthname, i + 1, year, incom, rcvd[i], outcom,
-			  sent[i]);
-		websWrite(stream,
-			  "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\"",
-			  monthname, year, incom, totin, outcom, totout);
+		websWrite(stream, "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" ", monthname, i + 1, year, incom, rcvd[i], outcom, sent[i]);
+		websWrite(stream, "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\"", monthname, year, incom, totin, outcom, totout);
 		websWrite(stream, ">%d\n", i + 1);
 		websWrite(stream, "<ul>\n");
-		websWrite(stream,
-			  "<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n",
-			  rcvd[i] * 300 / smax);
-		websWrite(stream,
-			  "<li class=\"sent bar\" style=\"height: %lupx;\"><p></p></li>\n",
-			  sent[i] * 300 / smax);
+		websWrite(stream, "<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n", rcvd[i] * 300 / smax);
+		websWrite(stream, "<li class=\"sent bar\" style=\"height: %lupx;\"><p></p></li>\n", sent[i] * 300 / smax);
 		websWrite(stream, "</ul>\n");
 		websWrite(stream, "</li>\n");
 	}
@@ -2210,29 +2066,23 @@ static void do_ttgraph(struct mime_handler *handler, char *url,
 	websWrite(stream, "<li id=\"ticks\">\n");
 	for (i = 5; i; i--)	// scale
 	{
-		websWrite(stream,
-			  "<div class=\"tick\" style=\"height: 59px;\"><p>%d%sMB</p></div>\n",
-			  smax * i / 5, (smax > 10000) ? " " : "&nbsp;");
+		websWrite(stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d%sMB</p></div>\n", smax * i / 5, (smax > 10000) ? " " : "&nbsp;");
 	}
 	websWrite(stream, "</li>\n\n");
 
 	websWrite(stream, "<li id=\"label\">\n");
-	websWrite(stream, "%s %d (%s: %lu MB / %s: %lu MB)\n", monthname, year,
-		  incom, totin, outcom, totout);
+	websWrite(stream, "%s %d (%s: %lu MB / %s: %lu MB)\n", monthname, year, incom, totin, outcom, totout);
 	websWrite(stream, "</li>\n" "</ul>\n\n" "</body>\n" "</html>\n");
 
 }
 
-static void ttraff_backup(struct mime_handler *handler, char *url,
-			  webs_t stream, char *query)
+static void ttraff_backup(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	system2("echo TRAFF-DATA > /tmp/traffdata.bak");
 	system2("nvram show | grep traff- >> /tmp/traffdata.bak");
-	do_file_attach(handler, "/tmp/traffdata.bak", stream, NULL,
-		       "traffdata.bak");
+	do_file_attach(handler, "/tmp/traffdata.bak", stream, NULL, "traffdata.bak");
 	unlink("/tmp/traffdata.bak");
-} static void do_apply_cgi(struct mime_handler *handler, char *url,
-			   webs_t stream, char *q)
+} static void do_apply_cgi(struct mime_handler *handler, char *url, webs_t stream, char *q)
 {
 	char *path, *query;
 
@@ -2263,15 +2113,15 @@ static void do_language(struct mime_handler *handler, char *path, webs_t stream,
 {
 	char *langname = getLanguageName();
 	char *prefix, *lang;
-	
+
 	prefix = safe_malloc(strlen(path) - strlen("lang_pack/language.js") + 1);
 	memset(prefix, 0, strlen(path) - strlen("lang_pack/language.js") + 1);
 	strncpy(prefix, path, strlen(path) - strlen("lang_pack/language.js"));
-	
+
 	lang = safe_malloc(strlen(prefix) + strlen(langname) + 1);
 	sprintf(lang, "%s%s", prefix, langname);
 	do_file(handler, lang, stream, NULL);
-	
+
 	free(prefix);
 	free(lang);
 	free(langname);
@@ -2280,8 +2130,7 @@ static void do_language(struct mime_handler *handler, char *path, webs_t stream,
 #endif
 extern int issuperchannel(void);
 
-static char no_cache[] =
-    "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
+static char no_cache[] = "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 
 struct mime_handler mime_handlers[] = {
 	// { "ezconfig.asp", "text/html", ezc_version, do_apply_ezconfig_post,
@@ -2515,18 +2364,14 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 	case SET:
 		for (i = 0; *(old_name + i); i++) {
 			match = 0;
-			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)];
-			     v++) {
+			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)]; v++) {
 				if (*(old_name + i) == v->ch) {
 					if (strlen(new_name) + strlen(v->string) > size) {	// avoid overflow
-						cprintf("%s(): overflow\n",
-							__FUNCTION__);
-						new_name[strlen(new_name)] =
-						    '\0';
+						cprintf("%s(): overflow\n", __FUNCTION__);
+						new_name[strlen(new_name)] = '\0';
 						return 1;
 					}
-					sprintf(new_name + strlen(new_name),
-						"%s", v->string);
+					sprintf(new_name + strlen(new_name), "%s", v->string);
 					match = 1;
 					break;
 				}
@@ -2538,8 +2383,7 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 					new_name[strlen(new_name)] = '\0';
 					return 1;
 				}
-				sprintf(new_name + strlen(new_name), "%c",
-					*(old_name + i));
+				sprintf(new_name + strlen(new_name), "%c", *(old_name + i));
 			}
 		}
 
@@ -2547,11 +2391,8 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 	case GET:
 		for (i = 0, j = 0; *(old_name + j); j++) {
 			match = 0;
-			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)];
-			     v++) {
-				if (!memcmp
-				    (old_name + j, v->string,
-				     strlen(v->string))) {
+			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)]; v++) {
+				if (!memcmp(old_name + j, v->string, strlen(v->string))) {
 					*(new_name + i) = v->ch;
 					j = j + strlen(v->string) - 1;
 					match = 1;
@@ -2575,8 +2416,7 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 }
 
 #ifdef HAVE_BUFFALO
-void do_vsp_page(struct mime_handler *handler, char *url,
-		 webs_t stream, char *query)
+void do_vsp_page(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 /*
 #ifdef HAVE_MADWIFI
@@ -2639,8 +2479,7 @@ void do_vsp_page(struct mime_handler *handler, char *url,
 
 	websWrite(stream, "DEVICE_VSP_VERSION=0.1\n");
 	websWrite(stream, "DEVICE_VENDOR=BUFFALO INC.\n");
-	websWrite(stream, "DEVICE_MODEL=%s DDWRT\n",
-		  nvram_safe_get("DD_BOARD"));
+	websWrite(stream, "DEVICE_MODEL=%s DDWRT\n", nvram_safe_get("DD_BOARD"));
 	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00\n");
 	char *reg = getUEnv("region");
 	if (!reg)

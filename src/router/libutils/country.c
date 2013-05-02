@@ -92,20 +92,20 @@ enum EnumRd {
 	APL7_FCCA = 0x5C,	/* Taiwan 5.47 Band */
 	APL8_WORLD = 0x5D,	/* Malaysia 5GHz */
 	APL9_WORLD = 0x5E,	/* Korea 5GHz */
-	APL11_WORLD	= 0x5A,		/* India */
+	APL11_WORLD = 0x5A,	/* India */
 
-	APL6_FCCA	= 0xaB,		/* Singapore */
-	APL8_FCCA       = 0xaD,     /* Malaysia 5GHz */
-	NULL1_FCCA	= 0xa3,		/* For 11b-only countries (no 11a allowed) */
-	APL11_FCCA	= 0xaA,		/* India */
+	APL6_FCCA = 0xaB,	/* Singapore */
+	APL8_FCCA = 0xaD,	/* Malaysia 5GHz */
+	NULL1_FCCA = 0xa3,	/* For 11b-only countries (no 11a allowed) */
+	APL11_FCCA = 0xaA,	/* India */
 	APL9_FCCA = 0xae,	/* Korea 5GHz */
 
-	RAI_WORLD	= 0xa0,
-	RAIIT_WORLD	= 0xa1,
-	IT_WORLD	= 0xa2,
-	RAI 		= 0x01a0,
-	RAIIT		= 0x01a1,
-	IT		= 0x01a2,
+	RAI_WORLD = 0xa0,
+	RAIIT_WORLD = 0xa1,
+	IT_WORLD = 0xa2,
+	RAI = 0x01a0,
+	RAIIT = 0x01a1,
+	IT = 0x01a2,
 
 	/*
 	 * World mode SKUs
@@ -278,7 +278,7 @@ enum CountryCode {
 	CTRY_HUNGARY = 348,	/* Hungary */
 	CTRY_ICELAND = 352,	/* Iceland */
 	CTRY_INDIA = 356,	/* India */
-	CTRY_INDIA_BFWA = 357,	/* India BFWA*/
+	CTRY_INDIA_BFWA = 357,	/* India BFWA */
 	CTRY_INDONESIA = 360,	/* Indonesia */
 	CTRY_IRAN = 364,	/* Iran */
 	CTRY_IRAQ = 368,	/* Iraq */
@@ -286,7 +286,7 @@ enum CountryCode {
 	CTRY_ISRAEL = 376,	/* Israel */
 	CTRY_ITALY = 380,	/* Italy */
 	CTRY_ITALYRAI = 381,	/* Italy */
-	CTRY_RAI = 382,	/* Italy */
+	CTRY_RAI = 382,		/* Italy */
 	CTRY_JAMAICA = 388,	/* Jamaica */
 	CTRY_JAPAN = 392,	/* Japan */
 	CTRY_JORDAN = 400,	/* Jordan */
@@ -458,9 +458,9 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_ARMENIA, ETSI4_WORLD, "AM", "ARMENIA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "AW", "ARUBA", YES, NO, YES, 7000},
 //#ifdef HAVE_BUFFALO
-//	{CTRY_AUSTRALIA, FCC2_FCCA, "AU", "AUSTRALIA", YES, YES, YES, 7000},
+//      {CTRY_AUSTRALIA, FCC2_FCCA, "AU", "AUSTRALIA", YES, YES, YES, 7000},
 //#else
-//	{CTRY_AUSTRALIA, FCC2_WORLD, "AU", "AUSTRALIA", YES, YES, YES, 7000},
+//      {CTRY_AUSTRALIA, FCC2_WORLD, "AU", "AUSTRALIA", YES, YES, YES, 7000},
 //#endif
 	{CTRY_AUSTRALIA, FCC2_WORLD, "AU", "AUSTRALIA", YES, YES, YES, 7000},
 	{CTRY_AUSTRIA, ETSI1_WORLD, "AT", "AUSTRIA", YES, NO, YES, 7000},
@@ -481,7 +481,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_CANADA, FCC2_FCCA, "CA", "CANADA", YES, YES, YES, 7000},
 	{CTRY_CHILE, APL6_WORLD, "CL", "CHILE", YES, YES, YES, 7000},
 //#ifdef HAVE_BUFFALO
-//	{CTRY_CHINA, APL1_FCCA, "CN", "CHINA", YES, YES, YES, 7000},
+//      {CTRY_CHINA, APL1_FCCA, "CN", "CHINA", YES, YES, YES, 7000},
 //#else
 	{CTRY_CHINA, APL1_WORLD, "CN", "CHINA", YES, YES, YES, 7000},
 //#endif
@@ -515,14 +515,14 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_HAITI, ETSI1_WORLD, "HT", "HAITI", YES, NO, YES, 7000},
 	{CTRY_HONDURAS, NULL1_WORLD, "HN", "HONDURAS", YES, NO, YES, 7000},
 //#ifdef HAVE_BUFFALO
-//	{CTRY_HONG_KONG, FCC2_FCCA, "HK", "HONG_KONG", YES, YES, YES, 7000},
+//      {CTRY_HONG_KONG, FCC2_FCCA, "HK", "HONG_KONG", YES, YES, YES, 7000},
 //#else
 	{CTRY_HONG_KONG, FCC2_WORLD, "HK", "HONG_KONG", YES, YES, YES, 7000},
-//#endif	
+//#endif        
 	{CTRY_HUNGARY, ETSI1_WORLD, "HU", "HUNGARY", YES, NO, YES, 7000},
 	{CTRY_ICELAND, ETSI1_WORLD, "IS", "ICELAND", YES, NO, YES, 7000},
 //#ifdef HAVE_BUFFALO
-//	{CTRY_INDIA, APL11_FCCA, "IN", "INDIA", YES, YES, YES, 5825},
+//      {CTRY_INDIA, APL11_FCCA, "IN", "INDIA", YES, YES, YES, 5825},
 //#else
 	{CTRY_INDIA, APL11_WORLD, "IN", "INDIA", YES, YES, YES, 5825},
 	{CTRY_INDIA_BFWA, APL11_WORLD, "97", "INDIA_BFWA", YES, YES, YES, 5875},
@@ -543,7 +543,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_KAZAKHSTAN, NULL1_WORLD, "KZ", "KAZAKHSTAN", YES, NO, YES, 7000},
 	{CTRY_KENYA, APL1_WORLD, "KE", "KENYA", YES, NO, YES, 7000},
 //#ifdef HAVE_BUFFALO
-//	{CTRY_KOREA_ROC3, APL9_FCCA, "KR", "KOREA_REPUBLIC", YES, NO, NO, 7000},
+//      {CTRY_KOREA_ROC3, APL9_FCCA, "KR", "KOREA_REPUBLIC", YES, NO, NO, 7000},
 //#else
 	{CTRY_KOREA_ROC3, APL9_WORLD, "KR", "KOREA_REPUBLIC", YES, NO, NO, 7000},
 //#endif
@@ -557,7 +557,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_MACAU, FCC2_WORLD, "MO", "MACAU", YES, YES, YES, 7000},
 	{CTRY_MACEDONIA, NULL1_WORLD, "MK", "MACEDONIA", YES, NO, YES, 7000},
 //#ifdef HAVE_BUFFALO
-//	{CTRY_MALAYSIA, APL8_FCCA, "MY", "MALAYSIA", YES, NO, NO, 7000},
+//      {CTRY_MALAYSIA, APL8_FCCA, "MY", "MALAYSIA", YES, NO, NO, 7000},
 //#else
 	{CTRY_MALAYSIA, APL8_WORLD, "MY", "MALAYSIA", YES, NO, NO, 7000},
 //#endif
@@ -582,8 +582,8 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_PANAMA, FCC1_FCCA, "PA", "PANAMA", YES, YES, YES, 7000},
 	{CTRY_PERU, APL1_WORLD, "PE", "PERU", YES, NO, YES, 7000},
 //#ifdef HAVE_BUFFALO
-//	{CTRY_PHILIPPINES, FCC3_FCCA, "PH", "PHILIPPINES", YES, YES, YES,
-//	 7000},
+//      {CTRY_PHILIPPINES, FCC3_FCCA, "PH", "PHILIPPINES", YES, YES, YES,
+//       7000},
 //#else
 	{CTRY_PHILIPPINES, FCC3_WORLD, "PH", "PHILIPPINES", YES, YES, YES,
 	 7000},
@@ -597,7 +597,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_SAUDI_ARABIA, NULL1_WORLD, "SA", "SAUDI_ARABIA", YES, NO, YES,
 	 7000},
 //#ifdef HAVE_BUFFALO
-//	{CTRY_SINGAPORE, APL6_FCCA, "SG", "SINGAPORE", YES, YES, YES, 7000},
+//      {CTRY_SINGAPORE, APL6_FCCA, "SG", "SINGAPORE", YES, YES, YES, 7000},
 //#else
 	{CTRY_SINGAPORE, APL6_WORLD, "SG", "SINGAPORE", YES, YES, YES, 7000},
 //#endif
@@ -613,7 +613,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_SYRIA, NULL1_WORLD, "SY", "SYRIA", YES, NO, YES, 7000},
 	{CTRY_TAIWAN, APL3_FCCA, "TW", "TAIWAN", YES, YES, YES, 7000},
 //#ifdef HAVE_BUFFALO
-//	{CTRY_THAILAND, NULL1_FCCA, "TH", "THAILAND", YES, NO, YES, 7000},
+//      {CTRY_THAILAND, NULL1_FCCA, "TH", "THAILAND", YES, NO, YES, 7000},
 //#else
 	{CTRY_THAILAND, NULL1_WORLD, "TH", "THAILAND", YES, NO, YES, 7000},
 //#endif
@@ -642,18 +642,19 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_YEMEN, NULL1_WORLD, "YE", "YEMEN", YES, NO, YES, 7000},
 	{CTRY_ZIMBABWE, NULL1_WORLD, "ZW", "ZIMBABWE", YES, NO, YES, 7000}
 };
+
 #ifdef HAVE_BUFFALO
 static char regionCountryCodes[10][31][3] = {
-	{"EU", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "F2", "DE", "GR","HU", "IE", "IT", "LV", "LI", "LT", "LU", "MK", "NL", "NO", "PL", "PT","RO", "SK", "SI", "ES", "SE", "CH", "GB"},
+	{"EU", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "F2", "DE", "GR", "HU", "IE", "IT", "LV", "LI", "LT", "LU", "MK", "NL", "NO", "PL", "PT", "RO", "SK", "SI", "ES", "SE", "CH", "GB"},
 	{"US", "US", "CA", "MX", "GT", "HN", "SV", "CR", "PA", "VE", "EC", "CO", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-	{"JP", "JP", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-	{"TW", "TW", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-	{"KR", "KR", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-	{"CH", "CN", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"JP", "JP", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"TW", "TW", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"KR", "KR", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"CH", "CN", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
 	{"AP", "AU", "SG", "HK", "PH", "IN", "TH", "MY", "BR", "PU", "AR", "PA", "VE", "EC", "GT", "CR", "HN", "SV", "CO", "", "", "", "", "", "", "", "", "", "", "", ""},
-	{"RU", "RU", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", ""},
-	{"DE", "DE", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-	{"_D", ""  , "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", "", "", "", "", "", "", "", "", "", "", "", "", ""}
+	{"RU", "RU", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"DE", "DE", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+	{"_D", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}
 };
 #endif
 unsigned int getRegDomain(const char *country)
@@ -746,7 +747,7 @@ char *getCountryList(void)
 #endif
 				strcat(countries, allCountries[i].name);
 				strcat(countries, " ");
-				
+
 #ifdef HAVE_BUFFALO
 			}
 #endif

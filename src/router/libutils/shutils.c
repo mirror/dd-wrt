@@ -345,9 +345,7 @@ int safe_fread(void *ptr, size_t size, size_t nmemb, FILE * stream)
 
 	do {
 		clearerr(stream);
-		ret +=
-		    fread((char *)ptr + (ret * size), size, nmemb - ret,
-			  stream);
+		ret += fread((char *)ptr + (ret * size), size, nmemb - ret, stream);
 	}
 	while (ret < nmemb && ferror(stream) && errno == EINTR);
 
@@ -368,9 +366,7 @@ int safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE * stream)
 
 	do {
 		clearerr(stream);
-		ret +=
-		    fwrite((char *)ptr + (ret * size), size, nmemb - ret,
-			   stream);
+		ret += fwrite((char *)ptr + (ret * size), size, nmemb - ret, stream);
 	}
 	while (ret < nmemb && ferror(stream) && errno == EINTR);
 
@@ -546,9 +542,7 @@ int get_ifname_unit(const char *ifname, int *unit, int *subunit)
 	 @param osifname_buf storage for the converted osifname
 	 @param osifname_buf_len length of storage for osifname_buf
 */
-int
-nvifname_to_osifname(const char *nvifname, char *osifname_buf,
-		     int osifname_buf_len)
+int nvifname_to_osifname(const char *nvifname, char *osifname_buf, int osifname_buf_len)
 {
 	char varname[NVRAM_MAX_PARAM_LEN];
 	char *ptr;
@@ -595,9 +589,7 @@ nvifname_to_osifname(const char *nvifname, char *osifname_buf,
  * for nvifname_buf 
  */
 
-int
-osifname_to_nvifname(const char *osifname, char *nvifname_buf,
-		     int nvifname_buf_len)
+int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_buf_len)
 {
 	char varname[NVRAM_MAX_PARAM_LEN];
 	int pri, sec;
@@ -633,11 +625,9 @@ osifname_to_nvifname(const char *osifname, char *nvifname_buf,
 	 */
 	for (pri = 0; pri < MAX_NVPARSE; pri++)
 		for (sec = 0; sec < MAX_NVPARSE; sec++) {
-			snprintf(varname, sizeof(varname), "wl%d.%d_ifname",
-				 pri, sec);
+			snprintf(varname, sizeof(varname), "wl%d.%d_ifname", pri, sec);
 			if (nvram_match(varname, (char *)osifname)) {
-				snprintf(nvifname_buf, nvifname_buf_len,
-					 "wl%d.%d", pri, sec);
+				snprintf(nvifname_buf, nvifname_buf_len, "wl%d.%d", pri, sec);
 				return 0;
 			}
 		}
@@ -806,8 +796,7 @@ void showmemdebugstat(void)
 	int i;
 	for (i = 0; i < MEMDEBUGSIZE; i++) {
 		if (mementry[i].dirty) {
-			fprintf(stderr, "%s leaks %d bytes\n", mementry[i].func,
-				mementry[i].size);
+			fprintf(stderr, "%s leaks %d bytes\n", mementry[i].func, mementry[i].size);
 			mementry[i].dirty = 0;
 		}
 	}

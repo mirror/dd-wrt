@@ -35,7 +35,7 @@ static char *getdisc(void)	// works only for squashfs
 {
 	int i;
 	static char ret[4];
-	unsigned char *disks[]={"sda2","sdb2","sdc2","sdd2","sde2","sdf2","sdg2","sdh2","sdi2"};
+	unsigned char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2", "sdi2" };
 	for (i = 0; i < 9; i++) {
 		char dev[64];
 
@@ -48,11 +48,10 @@ static char *getdisc(void)	// works only for squashfs
 		char buf[4];
 
 		fread(buf, 4, 1, in);
-		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q'
-		    && buf[3] == 't') {
+		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
-			strncpy(ret,disks[i],3);
+			strncpy(ret, disks[i], 3);
 			return ret;
 		}
 		fclose(in);
@@ -97,7 +96,6 @@ do_upgrade_cgi(struct mime_handler *handler, char *url, webs_t stream, char *que
 			(((unsigned int )(x) & (unsigned int )0x0000ff00UL) <<  8) | \
 			(((unsigned int )(x) & (unsigned int )0x00ff0000UL) >>  8) | \
 			(((unsigned int )(x) & (unsigned int )0xff000000UL) >> 24) ))
-
 
 #endif
 
@@ -174,8 +172,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	{
 		wfread(&buf[0], 1, 5, stream);
 		*total -= 5;
-		if (buf[0] != 'W' || buf[1] != 'R' || buf[2] != 'A'
-		    || buf[3] != 'P' || buf[4] != '1') {
+		if (buf[0] != 'W' || buf[1] != 'R' || buf[2] != 'A' || buf[3] != 'P' || buf[4] != '1') {
 			ret = -1;
 			goto err;
 		}
@@ -185,7 +182,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		*total -= 4;
 		safe_fwrite(&linuxsize, 1, 4, fifo);
 #ifdef HAVE_RB600
-		linuxsize=swap(linuxsize);
+		linuxsize = swap(linuxsize);
 #endif
 		for (i = 0; i < linuxsize / MIN_BUF_SIZE; i++) {
 			wfread(&buf[0], 1, MIN_BUF_SIZE, stream);
@@ -213,9 +210,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #ifdef HAVE_RB600
 	sprintf(drive, "/dev/sda");
 #else
-	sprintf(drive, "/dev/%s",getdisc());
+	sprintf(drive, "/dev/%s", getdisc());
 #endif
-	fprintf (stderr, "Write Linux %d to %s\n", linuxsize,dev);
+	fprintf(stderr, "Write Linux %d to %s\n", linuxsize, dev);
 	//backup nvram
 	fprintf(stderr, "backup nvram\n");
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
@@ -253,7 +250,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	fprintf(stderr, "sync system\n");
 	sysprintf("sync");
 	sysprintf("sync");
-	writeproc("/proc/sys/vm/drop_caches","3");
+	writeproc("/proc/sys/vm/drop_caches", "3");
 	//reread for validation
 	fprintf(stderr, "check system for validation\n");
 	in = fopen(drive, "rb");
@@ -313,14 +310,11 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 			if (strstr(buf, "name=\"erase\"")) {
 				while (len > 0 && strcmp(buf, "\n")
 				       && strcmp(buf, "\r\n")) {
-					if (!wfgets
-					    (buf, MIN(len + 1, sizeof(buf)),
-					     stream))
+					if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
 						return;
 					len -= strlen(buf);
 				}
-				if (!wfgets
-				    (buf, MIN(len + 1, sizeof(buf)), stream))
+				if (!wfgets(buf, MIN(len + 1, sizeof(buf)), stream))
 					return;
 				len -= strlen(buf);
 				buf[1] = '\0';	// we only want the 1st digit
@@ -354,9 +348,9 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 		system2("rm -f /usr/local/nvram/nvram.bin");
 		char drive[64];
 #ifdef HAVE_RB600
-	sprintf(drive, "/dev/sda");
+		sprintf(drive, "/dev/sda");
 #else
-	sprintf(drive, "/dev/%s",getdisc());
+		sprintf(drive, "/dev/%s", getdisc());
 #endif
 		FILE *in = fopen(drive, "r+b");
 		fseeko(in, 0, SEEK_END);

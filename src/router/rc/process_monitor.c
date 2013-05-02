@@ -25,8 +25,7 @@ extern void do_redial(timer_t t, int arg);
 extern int do_ntp(void);
 extern void check_udhcpd(timer_t t, int arg);
 extern void init_event_queue(int n);
-extern int timer_connect(timer_t timerid, void (*routine) (timer_t, int),
-			 int arg);
+extern int timer_connect(timer_t timerid, void (*routine) (timer_t, int), int arg);
 
 #define NTP_M_TIMER 3600
 #define NTP_N_TIMER 30
@@ -66,19 +65,16 @@ int main(int argc, char **argv)
 		gettimeofday(&now, NULL);
 
 		if (do_ntp() != 0) {
-			dd_syslog(LOG_ERR,
-				  "Last update failed, we need to re-update after %d seconds\n",
-				  NTP_N_TIMER);
+			dd_syslog(LOG_ERR, "Last update failed, we need to re-update after %d seconds\n", NTP_N_TIMER);
 			time = NTP_N_TIMER;
 
 			memset(&t4, 0, sizeof(t4));
 			t4.it_interval.tv_sec = time;
 			t4.it_value.tv_sec = time;
-			dd_timer_create(CLOCK_REALTIME, NULL,
-					(timer_t *) & ntp1_id);
+			dd_timer_create(CLOCK_REALTIME, NULL, (timer_t *) & ntp1_id);
 			dd_timer_connect(ntp1_id, ntp_main, FIRST);
 			dd_timer_settime(ntp1_id, 0, &t4, NULL);
-		} 
+		}
 
 		struct timeval then;
 
@@ -121,8 +117,7 @@ int main(int argc, char **argv)
 			sysprintf("startservice_f wifidog");
 		}
 #endif
-		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n",
-			  NTP_M_TIMER);
+		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n", NTP_M_TIMER);
 
 		time = NTP_M_TIMER;
 

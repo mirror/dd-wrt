@@ -71,7 +71,7 @@ void wps_forcerelease(webs_t wp)
 {
 	nvram_set("wps_forcerelease", "1");
 	addAction("wireless");
-	nvram_set("nowebaction","1");
+	nvram_set("nowebaction", "1");
 	service_restart();
 }
 
@@ -79,7 +79,7 @@ void wps_configure(webs_t wp)
 {
 	nvram_set("wps_status", "1");
 	addAction("wireless");
-	nvram_set("nowebaction","1");
+	nvram_set("nowebaction", "1");
 	service_restart();
 }
 #endif

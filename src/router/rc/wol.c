@@ -30,10 +30,7 @@ int wol_run(void)
 	while (nvram_match("wol_enable", "1")) {
 		int interval = 0;
 
-		interval =
-		    atoi(nvram_safe_get("wol_interval")) >
-		    WOL_INTERVAL ? atoi(nvram_safe_get("wol_interval")) :
-		    WOL_INTERVAL;
+		interval = atoi(nvram_safe_get("wol_interval")) > WOL_INTERVAL ? atoi(nvram_safe_get("wol_interval")) : WOL_INTERVAL;
 
 		if (strlen(nvram_get("wol_passwd")) <= 0)
 			passwd_param[0] = 0;
@@ -49,9 +46,7 @@ int wol_run(void)
 		hostname = nvram_safe_get("wol_hostname");
 		macs = nvram_safe_get("wol_macs");
 
-		ret =
-		    eval("/usr/sbin/wol", passwd_param, passwd, hostname_param,
-			 hostname, macs);
+		ret = eval("/usr/sbin/wol", passwd_param, passwd, hostname_param, hostname, macs);
 
 		sleep(interval);
 	}

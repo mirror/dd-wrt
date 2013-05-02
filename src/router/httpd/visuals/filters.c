@@ -43,11 +43,9 @@ extern FILE *debout;
  */
 
 int filter_id = 1;
-int day_all = 0, week0 = 0, week1 = 0, week2 = 0, week3 = 0, week4 =
-    0, week5 = 0, week6 = 0;
+int day_all = 0, week0 = 0, week1 = 0, week2 = 0, week3 = 0, week4 = 0, week5 = 0, week6 = 0;
 int start_week = 0, end_week = 0;
-int time_all = 0, start_hour = 0, start_min = 0, start_time = 0, end_hour =
-    0, end_min = 0, end_time = 0;
+int time_all = 0, start_hour = 0, start_min = 0, start_time = 0, end_hour = 0, end_min = 0, end_time = 0;
 int tod_data_null = 0;
 
 /*
@@ -63,8 +61,7 @@ char *filter_ip_get(char *type, int which)
 	char filter_ip[] = "filter_ip_grpXXX";
 
 	D("filter_ip_get");
-	snprintf(filter_ip, sizeof(filter_ip), "filter_ip_grp%s",
-		 nvram_safe_get("filter_id"));
+	snprintf(filter_ip, sizeof(filter_ip), "filter_ip_grp%s", nvram_safe_get("filter_id"));
 
 	wordlist = nvram_safe_get(filter_ip);
 	if (!wordlist)
@@ -79,15 +76,10 @@ char *filter_ip_get(char *type, int which)
 				start = strsep(&end, "-");
 				static char sip1[4], sip2[4], sip3[4], sip4[4];
 				int isip1, isip2, isip3, isip4;
-				if (sscanf
-				    (start, "%d.%d.%d.%d", &isip1, &isip2,
-				     &isip3, &isip4) != 4) {
+				if (sscanf(start, "%d.%d.%d.%d", &isip1, &isip2, &isip3, &isip4) != 4) {
 					sscanf(start, "%d", &isip4);
 					if (isip4 != 0)
-						sscanf(nvram_safe_get
-						       ("lan_ipaddr"),
-						       "%d.%d.%d", &isip1,
-						       &isip2, &isip3);
+						sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d", &isip1, &isip2, &isip3);
 					else {
 						isip1 = 0;
 						isip2 = 0;
@@ -100,15 +92,10 @@ char *filter_ip_get(char *type, int which)
 				sprintf(sip4, "%d", isip4);
 				static char eip1[4], eip2[4], eip3[4], eip4[4];
 				int ieip1, ieip2, ieip3, ieip4;
-				if (sscanf
-				    (end, "%d.%d.%d.%d", &ieip1, &ieip2, &ieip3,
-				     &ieip4) != 4) {
+				if (sscanf(end, "%d.%d.%d.%d", &ieip1, &ieip2, &ieip3, &ieip4) != 4) {
 					sscanf(start, "%d", &ieip4);
 					if (ieip4 != 0)
-						sscanf(nvram_safe_get
-						       ("lan_ipaddr"),
-						       "%d.%d.%d", &ieip1,
-						       &ieip2, &ieip3);
+						sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d", &ieip1, &ieip2, &ieip3);
 					else {
 						ieip1 = 0;
 						ieip2 = 0;
@@ -143,15 +130,10 @@ char *filter_ip_get(char *type, int which)
 
 				static char sip1[4], sip2[4], sip3[4], sip4[4];
 				int isip1, isip2, isip3, isip4;
-				if (sscanf
-				    (start, "%d.%d.%d.%d", &isip1, &isip2,
-				     &isip3, &isip4) != 4) {
+				if (sscanf(start, "%d.%d.%d.%d", &isip1, &isip2, &isip3, &isip4) != 4) {
 					sscanf(start, "%d", &isip4);
 					if (isip4 != 0)
-						sscanf(nvram_safe_get
-						       ("lan_ipaddr"),
-						       "%d.%d.%d", &isip1,
-						       &isip2, &isip3);
+						sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d", &isip1, &isip2, &isip3);
 					else {
 						isip1 = 0;
 						isip2 = 0;
@@ -164,15 +146,10 @@ char *filter_ip_get(char *type, int which)
 				sprintf(sip4, "%d", isip4);
 				static char eip1[4], eip2[4], eip3[4], eip4[4];
 				int ieip1, ieip2, ieip3, ieip4;
-				if (sscanf
-				    (end, "%d.%d.%d.%d", &ieip1, &ieip2, &ieip3,
-				     &ieip4) != 4) {
+				if (sscanf(end, "%d.%d.%d.%d", &ieip1, &ieip2, &ieip3, &ieip4) != 4) {
 					sscanf(start, "%d", &ieip4);
 					if (ieip4 != 0)
-						sscanf(nvram_safe_get
-						       ("lan_ipaddr"),
-						       "%d.%d.%d", &ieip1,
-						       &ieip2, &ieip3);
+						sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d", &ieip1, &ieip2, &ieip3);
 					else {
 						ieip1 = 0;
 						ieip2 = 0;
@@ -375,8 +352,7 @@ char *filter_mac_get(int which)
 	char filter_mac[] = "filter_mac_grpXXX";
 
 	D("filter mac get");
-	snprintf(filter_mac, sizeof(filter_mac), "filter_mac_grp%s",
-		 nvram_safe_get("filter_id"));
+	snprintf(filter_mac, sizeof(filter_mac), "filter_mac_grp%s", nvram_safe_get("filter_id"));
 
 	wordlist = nvram_safe_get(filter_mac);
 	if (!wordlist)
@@ -448,10 +424,7 @@ void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
 			// name 
 			// value
 		}
-		websWrite(wp, "<option value=%d %s>%d ( %s ) </option>\n",
-			  i,
-			  (atoi(nvram_safe_get("filter_id")) ==
-			   i ? "selected=\"selected\" " : ""), i, name);
+		websWrite(wp, "<option value=%d %s>%d ( %s ) </option>\n", i, (atoi(nvram_safe_get("filter_id")) == i ? "selected=\"selected\" " : ""), i, name);
 	}
 	D("okay");
 	return;
@@ -475,8 +448,7 @@ void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
 		char filter[] = "filter_ruleXXX";
 		char *data = "";
 
-		snprintf(filter, sizeof(filter), "filter_rule%s",
-			 nvram_safe_get("filter_id"));
+		snprintf(filter, sizeof(filter), "filter_rule%s", nvram_safe_get("filter_id"));
 		data = nvram_safe_get(filter);
 		if (strcmp(data, "")) {
 			find_match_pattern(name, sizeof(name), data, "$NAME:", "");	// get 
@@ -489,8 +461,7 @@ void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
 		char filter[] = "filter_ruleXXX";
 		char *data = "";
 
-		snprintf(filter, sizeof(filter), "filter_rule%s",
-			 nvram_safe_get("filter_id"));
+		snprintf(filter, sizeof(filter), "filter_rule%s", nvram_safe_get("filter_id"));
 		data = nvram_safe_get(filter);
 		if (strcmp(data, "")) {	// have data
 			find_match_pattern(status, sizeof(status), data, "$STAT:", "1");	// get 
@@ -568,13 +539,11 @@ int filter_tod_init(int which)
 
 	tod_data_null = 0;
 	day_all = week0 = week1 = week2 = week3 = week4 = week5 = week6 = 0;
-	time_all = start_hour = start_min = start_time = end_hour = end_min =
-	    end_time = 0;
+	time_all = start_hour = start_min = start_time = end_hour = end_min = end_time = 0;
 	start_week = end_week = 0;
 	D("filter tod init");
 	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%d", which);
-	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d",
-		 which);
+	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d", which);
 
 	/*
 	 * Parse filter_tod{1...10} 
@@ -614,8 +583,7 @@ int filter_tod_init(int which)
 		if (!strcmp(tod_buf_data, "7")) {
 			day_all = 1;
 		} else if (strcmp(tod_buf_data, "")) {
-			sscanf(tod_buf_data, "%d %d %d %d %d %d %d", &week0,
-			       &week1, &week2, &week3, &week4, &week5, &week6);
+			sscanf(tod_buf_data, "%d %d %d %d %d %d %d", &week0, &week1, &week2, &week3, &week4, &week5, &week6);
 			day_all = 0;
 		}
 	}
@@ -667,44 +635,30 @@ void ej_filter_tod_get(webs_t wp, int argc, char_t ** argv)
 	} else if (!strcmp(type, "week6")) {	// Sat
 		websWrite(wp, "%s", week6 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "time_all_en")) {	// for linksys
-		websWrite(wp, "%s",
-			  time_all == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", time_all == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "time_all_dis")) {	// for linksys
-		websWrite(wp, "%s",
-			  time_all == 0 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", time_all == 0 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "time_all")) {
-		websWrite(wp, "%s",
-			  time_all == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", time_all == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "start_hour_24")) {	// 00 -> 23
 		for (i = 0; i < 24; i++) {
 
-			websWrite(wp, "<option value=%d %s>%d</option>\n", i,
-				  i ==
-				  start_hour ? "selected=\"selected\" " : "",
-				  i);
+			websWrite(wp, "<option value=%d %s>%d</option>\n", i, i == start_hour ? "selected=\"selected\" " : "", i);
 		}
 	} else if (!strcmp(type, "start_min_1")) {	// 0 1 2 3 4 .... -> 58 59
 		for (i = 0; i < 60; i++) {
 
-			websWrite(wp, "<option value=%02d %s>%02d</option>\n",
-				  i,
-				  i ==
-				  start_min ? "selected=\"selected\" " : "", i);
+			websWrite(wp, "<option value=%02d %s>%02d</option>\n", i, i == start_min ? "selected=\"selected\" " : "", i);
 		}
 	} else if (!strcmp(type, "end_hour_24")) {	// 00 ->23
 		for (i = 0; i < 24; i++) {
 
-			websWrite(wp, "<option value=%d %s>%d</option>\n", i,
-				  i == end_hour ? "selected=\"selected\" " : "",
-				  i);
+			websWrite(wp, "<option value=%d %s>%d</option>\n", i, i == end_hour ? "selected=\"selected\" " : "", i);
 		}
 	} else if (!strcmp(type, "end_min_1")) {	// 0 1 2 3 4 .... -> 58 59
 		for (i = 0; i < 60; i++) {
 
-			websWrite(wp, "<option value=%02d %s>%02d</option>\n",
-				  i,
-				  i == end_min ? "selected=\"selected\" " : "",
-				  i);
+			websWrite(wp, "<option value=%02d %s>%02d</option>\n", i, i == end_min ? "selected=\"selected\" " : "", i);
 		}
 	}
 	/*
@@ -761,8 +715,7 @@ void ej_filter_web_get(webs_t wp, int argc, char_t ** argv)
 		char *host_data, filter_host[] = "filter_web_hostXXX";;
 		char host[80];
 
-		snprintf(filter_host, sizeof(filter_host), "filter_web_host%s",
-			 nvram_safe_get("filter_id"));
+		snprintf(filter_host, sizeof(filter_host), "filter_web_host%s", nvram_safe_get("filter_id"));
 		host_data = nvram_safe_get(filter_host);
 		if (!strcmp(host_data, ""))
 			return;	// no data
@@ -772,8 +725,7 @@ void ej_filter_web_get(webs_t wp, int argc, char_t ** argv)
 		char *url_data, filter_url[] = "filter_web_urlXXX";
 		char url[80];
 
-		snprintf(filter_url, sizeof(filter_url), "filter_web_url%s",
-			 nvram_safe_get("filter_id"));
+		snprintf(filter_url, sizeof(filter_url), "filter_web_url%s", nvram_safe_get("filter_id"));
 		url_data = nvram_safe_get(filter_url);
 		if (!strcmp(url_data, ""))
 			return;	// no data
@@ -794,8 +746,7 @@ void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 	char pm[] = "ŒßŒã";
 	char _24h[] = "24 ŽžŠÔ";
 #else
-	char w[7][15] =
-	    { "share.sun_s1", "share.mon_s1", "share.tue_s1", "share.wed_s1",
+	char w[7][15] = { "share.sun_s1", "share.mon_s1", "share.tue_s1", "share.wed_s1",
 		"share.thu_s1", "share.fri_s1", "share.sat_s1"
 	};
 	// char am[] = "AM";
@@ -847,10 +798,7 @@ void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 			if (time_all == 1)
 				strcpy(time_buf, _24h);
 			else {
-				snprintf(time_buf, sizeof(time_buf),
-					 "%02d:%02d - %02d:%02d",
-					 start_hour, start_min, end_hour,
-					 end_min);
+				snprintf(time_buf, sizeof(time_buf), "%02d:%02d - %02d:%02d", start_hour, start_min, end_hour, end_min);
 			}
 		}
 		websWrite(wp, " \
@@ -893,7 +841,6 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 
 	char *services;
 
-
 	// get_filter_services (services);
 
 	if (!strcmp(type, "all_list") || !strcmp(type, "user_list")) {
@@ -901,8 +848,9 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 			services = get_filter_services();
 		else		// user_list only
 		{
-			int servicelen=strlen(nvram_safe_get("filter_services")) + strlen(nvram_safe_get("filter_services_1"));
-			if (servicelen == 0) return;
+			int servicelen = strlen(nvram_safe_get("filter_services")) + strlen(nvram_safe_get("filter_services_1"));
+			if (servicelen == 0)
+				return;
 			services = malloc(servicelen + 1);
 			(void)memset(services, 0, servicelen + 1);
 			strcat(services, nvram_safe_get("filter_services"));	// this 
@@ -928,9 +876,7 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 
 			// int proto;
 
-			if ((name = strstr(word, "$NAME:")) == NULL ||
-			    (prot = strstr(word, "$PROT:")) == NULL ||
-			    (port = strstr(word, "$PORT:")) == NULL)
+			if ((name = strstr(word, "$NAME:")) == NULL || (prot = strstr(word, "$PROT:")) == NULL || (port = strstr(word, "$PORT:")) == NULL)
 				continue;
 
 			/*
@@ -962,10 +908,7 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 			// cprintf("match:: name=%s, protocol=%s, ports=%s\n", 
 			// word, protocol, ports);
 
-			websWrite(wp,
-				  "services[%d]=new service(%d, \"%s\", %d, %d, %d);\n",
-				  count, count, name, from, to,
-				  protocol_to_num(protocol));
+			websWrite(wp, "services[%d]=new service(%d, \"%s\", %d, %d, %d);\n", count, count, name, from, to, protocol_to_num(protocol));
 			count++;
 
 		}
@@ -976,8 +919,7 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 		char *port_data, filter_port[] = "filter_port_grpXXX";
 		char name[80];
 
-		snprintf(filter_port, sizeof(filter_port), "filter_port_grp%s",
-			 nvram_safe_get("filter_id"));
+		snprintf(filter_port, sizeof(filter_port), "filter_port_grp%s", nvram_safe_get("filter_id"));
 		port_data = nvram_safe_get(filter_port);
 		if (!strcmp(port_data, ""))
 			return;	// no data
@@ -987,8 +929,7 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 	} else if (!strcmp(type, "p2p")) {
 		char *port_data, filter_port[] = "filter_p2p_grpXXX";
 
-		snprintf(filter_port, sizeof(filter_port), "filter_p2p_grp%s",
-			 nvram_safe_get("filter_id"));
+		snprintf(filter_port, sizeof(filter_port), "filter_p2p_grp%s", nvram_safe_get("filter_id"));
 		port_data = nvram_safe_get(filter_port);
 		if (!strcmp(port_data, ""))
 			return;	// no data
