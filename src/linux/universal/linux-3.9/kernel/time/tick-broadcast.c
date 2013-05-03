@@ -146,10 +146,20 @@ int tick_device_uses_broadcast(struct clock_event_device *dev, int cpu)
 }
 
 #ifdef CONFIG_GENERIC_CLOCKEVENTS_BROADCAST
+
+#ifdef CONFIG_BCM47XX
+extern void soc_watchdog(void);
+#endif
+
+
 int tick_receive_broadcast(void)
 {
 	struct tick_device *td = this_cpu_ptr(&tick_cpu_device);
 	struct clock_event_device *evt = td->evtdev;
+
+#ifdef CONFIG_BCM47XX
+	int cpu = smp_processor_id();
+#endif
 
 	if (!evt)
 		return -ENODEV;
@@ -158,6 +168,11 @@ int tick_receive_broadcast(void)
 		return -EINVAL;
 
 	evt->event_handler(evt);
+
+#ifdef CONFIG_BCM47XX
+	if (cpu == 0)
+		soc_watchdog();
+#endif
 	return 0;
 }
 #endif
