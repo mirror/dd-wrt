@@ -515,6 +515,7 @@ static struct net_protocol etherip_protocol = {
 	.handler      = etherip_rcv,
 	.err_handler  = 0,
 	.no_policy    = 0,
+	.netns_ok     = 1,
 };
 
 /* module init function
