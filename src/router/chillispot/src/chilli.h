@@ -67,7 +67,7 @@
 #define USERNAMESIZE 256 /* Max length of username */
 #define CHALLENGESIZE 24 /* From chap.h MAX_CHALLENGE_LENGTH */
 #define USERURLSIZE 256  /* Max length of URL requested by user */
-
+#define NO_LEAKY_BUCKET 1
 #define BUCKET_SIZE  300000 /* Size of leaky bucket (~200 packets) */
 
 /* Time length of leaky bucket in milliseconds */
