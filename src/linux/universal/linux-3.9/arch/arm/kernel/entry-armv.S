@@ -83,9 +83,9 @@
 	.section	.kprobes.text,"ax",%progbits
 #else
 	.text
-#ifdef CONFIG_BCM47XX
-	.section .text.fastpath, "a"
-#endif
+//#ifdef CONFIG_BCM47XX
+//	.section .text.fastpath, "a"
+//#endif
 #endif
 
 /*
