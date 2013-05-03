@@ -17,4 +17,19 @@ ntfs-3g-clean:
 	$(MAKE) -C ntfs-3g clean
 
 ntfs-3g-configure:
-	cd ntfs-3g && ./configure --prefix=/usr --with-fuse=internal --target=$(ARCH)-linux --host=$(ARCH) CC="$(CC)" CXXFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections"  CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	cd ntfs-3g/fuse && ./configure --prefix=/usr \
+			--target=$(ARCH)-linux \
+			--host=$(ARCH) \
+			CC="$(CC)" \
+			CXXFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
+			CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			LDFLAGS="$(COPTS) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	make -C ntfs-3g/fuse
+	cd ntfs-3g && ./configure --prefix=/usr \
+			--with-fuse=external \
+			--target=$(ARCH)-linux \
+			--host=$(ARCH) \
+			CC="$(CC)" \
+			CXXFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
+			CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+			LDFLAGS="$(COPTS) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/ntfs-3g/fuse/lib/.libs"
