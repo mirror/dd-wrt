@@ -2459,11 +2459,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	strcpy(buf, "phy_tempsense");
 	strcpy(buf2, "phy_tempsense");
 
-	if ((ret = wl_ioctl("eth1", WLC_GET_VAR, buf, sizeof(buf)))) {
+	if (nvram_match("wl0_net_mode", "disabled") || (ret = wl_ioctl("eth1", WLC_GET_VAR, buf, sizeof(buf)))) {
 		no2 = 1;
 	}
 
-	if ((ret = wl_ioctl("eth2", WLC_GET_VAR, buf2, sizeof(buf2)))) {
+	if (nvram_match("wl1_net_mode", "disabled") || (ret = wl_ioctl("eth2", WLC_GET_VAR, buf2, sizeof(buf2)))) {
 		no5 = 1;
 	}
 
