@@ -22,8 +22,16 @@
 #include <asm/uaccess.h>
 #include "br_private.h"
 
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH
+#define BCMFASTPATH_HOST
+#endif
+
 /* net device transmit always called with BH disabled */
-netdev_tx_t br_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+netdev_tx_t  BCMFASTPATH_HOST br_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct net_bridge *br = netdev_priv(dev);
 	const unsigned char *dest = skb->data;

@@ -7,13 +7,13 @@
 #include <linux/dma-debug.h>
 #include <linux/dma-attrs.h>
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
+//#ifdef CONFIG_BCM47XX
+//#include <typedefs.h>
+//#include <bcmdefs.h>
+//#else
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
-#endif
+//#endif
 
 static inline dma_addr_t BCMFASTPATH dma_map_single_attrs(struct device *dev, void *ptr,
 					      size_t size,

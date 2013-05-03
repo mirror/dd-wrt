@@ -53,9 +53,9 @@
 	.endm
 
 	.text
-#ifdef CONFIG_BCM47XX
-	.section .text.fastpath, "a"
-#endif
+//#ifdef CONFIG_BCM47XX
+//	.section .text.fastpath, "a"
+//#endif
 
 /* Prototype: void *memcpy(void *dest, const void *src, size_t n); */
 

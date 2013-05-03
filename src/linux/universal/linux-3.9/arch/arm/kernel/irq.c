@@ -41,13 +41,13 @@
 #include <asm/mach/irq.h>
 #include <asm/mach/time.h>
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
+//#ifdef CONFIG_BCM47XX
+//#include <typedefs.h>
+//#include <bcmdefs.h>
+//#else
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
-#endif
+//#endif
 
 unsigned long irq_err_count;
 
@@ -94,11 +94,11 @@ void handle_IRQ(unsigned int irq, struct pt_regs *regs)
 /*
  * asm_do_IRQ is the interface to be used from assembly code.
  */
-#ifdef CONFIG_BCM47XX
-asmlinkage void BCMFASTPATH
-#else
+//#ifdef CONFIG_BCM47XX
+//asmlinkage void BCMFASTPATH
+//#else
 asmlinkage void __exception_irq_entry
-#endif
+//#endif
 asm_do_IRQ(unsigned int irq, struct pt_regs *regs)
 {
 	handle_IRQ(irq, regs);
