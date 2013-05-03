@@ -402,6 +402,7 @@ int usb_add_ufd(char *devpath)
 	 * Scan through entries in the directories 
 	 */
 
+	int is_partmounted = 0;
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs/discs%d is created
 		if (new) {
 			dir = opendir("/dev");
@@ -410,7 +411,6 @@ int usb_add_ufd(char *devpath)
 			return EINVAL;
 		while ((entry = readdir(dir)) != NULL) {
 			int is_mounted = 0;
-			int is_partmounted = 0;
 			if (mounted[i])
 				continue;
 
