@@ -129,8 +129,14 @@ void start_hotplug_block(void)
 	//sysprintf("echo action %s devpath %s >> /tmp/hotplugs", action,
 	//        devpath);
 
+	char *name = slash + 1;
+	if (strncmp(name, "disc", 4) && (strncmp(name, "sd", 2))
+	    && (strncmp(name, "sr", 2))
+	    && (strncmp(name, "mmcblk", 6)))
+		return;		//skip
+
 	char devname[64];
-	sprintf(devname, "/dev/%s", slash + 1);
+	sprintf(devname, "/dev/%s", name);
 	optimize_block_device(slash + 1);
 	char sysdev[128];
 	sprintf(sysdev, "/sys%s/partition", devpath);
