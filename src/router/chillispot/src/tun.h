@@ -31,7 +31,7 @@ struct tun_packet_t {
   unsigned int check:16;
   unsigned int src:32;
   unsigned int dst:32;
-};
+} __attribute__((packed));
 
 
 /* ***********************************************************
