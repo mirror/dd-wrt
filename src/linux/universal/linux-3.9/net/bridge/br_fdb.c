@@ -25,6 +25,13 @@
 #include <asm/unaligned.h>
 #include <linux/if_vlan.h>
 #include "br_private.h"
+#ifdef CONFIG_BCM47XX
+#include <typedefs.h>
+#include <bcmdefs.h>
+#else
+#define BCMFASTPATH
+#define BCMFASTPATH_HOST
+#endif
 
 static struct kmem_cache *br_fdb_cache __read_mostly;
 static int fdb_insert(struct net_bridge *br, struct net_bridge_port *source,
@@ -262,7 +269,7 @@ void br_fdb_delete_by_port(struct net_bridge *br,
 }
 
 /* No locking or refcounting, assumes caller has rcu_read_lock */
-struct net_bridge_fdb_entry *__br_fdb_get(struct net_bridge *br,
+struct net_bridge_fdb_entry * BCMFASTPATH_HOST __br_fdb_get(struct net_bridge *br,
 					  const unsigned char *addr,
 					  __u16 vid)
 {
@@ -448,7 +455,7 @@ int br_fdb_insert(struct net_bridge *br, struct net_bridge_port *source,
 	return ret;
 }
 
-void br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
+void  BCMFASTPATH_HOST br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
 		   const unsigned char *addr, u16 vid)
 {
 	struct hlist_head *head = &br->hash[br_mac_hash(addr, vid)];

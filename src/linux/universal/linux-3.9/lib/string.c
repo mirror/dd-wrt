@@ -27,12 +27,13 @@
 #include <linux/bug.h>
 #include <linux/errno.h>
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
+//#ifdef CONFIG_BCM47XX
+//#include <typedefs.h>
+//#include <bcmdefs.h>
+//#else
 #define BCMFASTPATH
-#endif
+#define BCMFASTPATH_HOST
+//#endif
 
 #ifndef __HAVE_ARCH_STRNICMP
 /**
