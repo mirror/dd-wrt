@@ -268,7 +268,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 		mkdir("/tmp/mnt", 0700);
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
-		ret = eval("ntfs-3g", "-o", "compression,direct_io", path, mount_point);
+		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 	} else
 #endif
 	if (!strcmp(fs, "vfat"))
