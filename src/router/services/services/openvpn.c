@@ -203,7 +203,8 @@ void start_openvpnserver(void)
 #endif
 	//bring up tap interface when choosen
 	if (nvram_match("openvpn_tuntap", "tap")) {
-		fprintf(fp, "brctl addif br0 tap2\n" "ifconfig tap2 0.0.0.0 promisc up\n" "stopservice wshaper\n" "startservice wshaper\n");
+		fprintf(fp, "brctl addif br0 tap2\n"
+			"ifconfig tap2 0.0.0.0 up\n"); //non promisc for performance reasons
 	}
 	if (nvram_match("block_multicast", "0")	//block multicast on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap"))
@@ -212,7 +213,8 @@ void start_openvpnserver(void)
 			"ebtables -D OUTPUT -o tap2 --pkttype-type multicast -j DROP\n"
 			"ebtables -A FORWARD -o tap2 --pkttype-type multicast -j DROP\n"
 			"ebtables -A OUTPUT -o tap2 --pkttype-type multicast -j DROP\n");	*/
-			"ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n");
+			"ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n" 
+			"ebtables -t nat -I POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n");
 
 	if (nvram_match("openvpn_dhcpbl", "1")	//block dhcp on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap")
@@ -228,7 +230,9 @@ void start_openvpnserver(void)
 			"ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
-	fprintf(fp, "startservice set_routes\n");
+	fprintf(fp, "startservice set_routes\n" 
+			"stopservice wshaper\n"
+			"startservice wshaper\n");
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
@@ -419,9 +423,8 @@ void start_openvpn(void)
 	if (nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_nat", "0")) {
-		fprintf(fp, "brctl addif br0 tap1\n" "ifconfig tap1 0.0.0.0 promisc up\n");
-		if (nvram_match("wshaper_enable", "1"))
-			fprintf(fp, "stopservice wshaper\n" "startservice wshaper\n");
+		fprintf(fp, "brctl addif br0 tap1\n"
+			"ifconfig tap1 0.0.0.0 up\n"); //non promisc for performance reasons
 	} else {
 		if (nvram_match("openvpncl_tuntap", "tap")
 		    && strlen(nvram_safe_get("openvpncl_ip")) > 0)
@@ -456,6 +459,9 @@ void start_openvpn(void)
 //                      "ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
 			"ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o tap1 --pkttype-type multicast -j DROP\n");
 	}
+	if (nvram_match("wshaper_enable", "1"))		
+		fprintf(fp, "stopservice wshaper\n"
+			"startservice wshaper\n");
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
