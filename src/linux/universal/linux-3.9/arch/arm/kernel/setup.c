@@ -883,9 +883,9 @@ static int c_show(struct seq_file *m, void *v)
 #ifdef CONFIG_MACH_GW2388
 	seq_printf(m, "CPUClock\t: %d\n",get_cns3xxx_cpu_clock());
 #endif
-		seq_printf(m, "processor\t: %d\n", i);
 
 #if defined(CONFIG_SMP)
+		seq_printf(m, "processor\t: %d\n", i);
 		seq_printf(m, "BogoMIPS\t: %lu.%02lu\n",
 			   per_cpu(cpu_data, i).loops_per_jiffy / (500000UL/HZ),
 			   (per_cpu(cpu_data, i).loops_per_jiffy / (5000UL/HZ)) % 100);
