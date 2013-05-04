@@ -188,10 +188,10 @@ void main_config(void)
 	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n", log_accept);
 	// enable Reverse Path Filtering to prevent double outgoing packages
 	if (nvram_match("chilli_enable", "1") && nvram_match("hotss_enable", "0")) {
-		fprintf(fp, "echo 1 > proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("chilli_interface"));
+		fprintf(fp, "echo 1 > /proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("chilli_interface"));
 	}
 	if (nvram_match("chilli_enable", "1") && nvram_match("hotss_enable", "1")) {
-		fprintf(fp, "echo 1 > proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("hotss_interface"));
+		fprintf(fp, "echo 1 > /proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("hotss_interface"));
 	}
 	//      secure chilli interface, only usefull if ! br0
 	if (nvram_match("chilli_enable", "1")
