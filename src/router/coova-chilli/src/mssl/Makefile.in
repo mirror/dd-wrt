@@ -209,7 +209,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CFLAGS = -D_GNU_SOURCE -O2 -pipe 
+AM_CFLAGS = -D_GNU_SOURCE -pipe 
 capc_SOURCES = httpsClient.c  sslSocket.c sslSocket.h
 LDADD = -lmatrixssl
 all: all-am

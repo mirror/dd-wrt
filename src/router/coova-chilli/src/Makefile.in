@@ -438,8 +438,8 @@ libchilli_la_SOURCES = chilli.c tun.c ippool.c radius.c md5.c redir.c \
 	$(am__append_16) $(am__append_19) $(am__append_20) \
 	$(am__append_21) $(am__append_23) $(am__append_25) \
 	$(am__append_27) $(am__append_40) $(am__append_41)
-AM_CFLAGS = -D_GNU_SOURCE -Wall -fno-builtin -fno-strict-aliasing -O2 \
-	-fomit-frame-pointer -funroll-loops -pipe \
+AM_CFLAGS = -D_GNU_SOURCE -Wall -fno-builtin -fno-strict-aliasing \
+	-fomit-frame-pointer -pipe \
 	-I$(top_builddir)/bstring \
 	-DDEFCHILLICONF='"$(sysconfdir)/chilli.conf"' \
 	-DDEFPIDFILE='"$(localstatedir)/run/chilli.pid"' \
