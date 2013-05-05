@@ -396,7 +396,7 @@ static int chilli_communicate(int s,
   return 0;
 }
 
-int main(int argc, char **argv) {
+int mquery_main(int argc, char **argv) {
   /*
    *   chilli_query [ -s <unix-socket> ] <command> [<argument>]
    *   (or maybe this should get the unix-socket from the config file)

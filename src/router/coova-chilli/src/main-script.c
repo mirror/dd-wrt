@@ -35,7 +35,7 @@ static void usage(char *prog) {
   exit(-1);
 }
 
-int main(int argc, char **argv) {
+int mscript_main(int argc, char **argv) {
   struct stat statbuf;
   uid_t uid = getuid();
   uid_t gid = getgid();
