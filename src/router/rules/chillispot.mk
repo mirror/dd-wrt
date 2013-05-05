@@ -1,6 +1,5 @@
-ifeq ($(CONFIG_COOVA_CHILLI),y)
-CHILLIDIR=coova-chilli
-CHILLIEXTRAFLAGS=--enable-uamdomainfile \
+CHILLICOOVADIR=coova-chilli
+CHILLICOOVAEXTRAFLAGS=--enable-uamdomainfile \
 	--prefix=/usr \
 	--datadir=/usr/share \
 	--localstatedir=/var \
@@ -11,12 +10,16 @@ CHILLIEXTRAFLAGS=--enable-uamdomainfile \
 	--disable-static \
 	--disable-debug \
 	--enable-binstatusfile 
+ifeq ($(CONFIG_COOVA_CHILLI),y)
+CHILLIDIR=$(CHILLICOOVADIR)
+CHILLIEXTRAFLAGS=$(CHILLICOOVAEXTRAFLAGS)
 else
 CHILLIDIR=chillispot
 endif
 
 chillispot-configure:
 	cd $(CHILLIDIR) && ./configure $(CHILLIEXTRAFLAGS) --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	cd $(CHILLICOOVADIR) && ./configure $(CHILLICOOVAEXTRAFLAGS) --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 chillispot:
 	$(MAKE) -j 4 -C $(CHILLIDIR)
