@@ -1,0 +1,24 @@
+
+<fieldset>
+	<legend>MAC Userlist</legend>
+	<input type="hidden" name="iradius" value="13" />
+	<table class="table center">
+		<tr>
+			<th colspan="2">MACS</th>
+		</tr>
+		<tr>
+			<th>MAC Address</th>
+			<th>Active</th>
+			<th>Leasetime</th>
+			<th>Delete</th>
+		</tr>
+		<% show_iradius(); %>
+		<tr>
+			<td colspan="2">
+				<div class="center">
+					<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"iradius_add_submit(this.form)\" />")</script>
+				</div>
+			</td>
+		</tr>
+	</table>
+</fieldset><br />
