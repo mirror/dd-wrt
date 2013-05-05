@@ -18,9 +18,7 @@ int main(int argc, char **argv)
 	const char *prog = argv[0];
 
 restart:
-	if (strstr(prog, "chilli"))
-		return mchilli_main(argc, argv);
-	else if (strstr(prog, "chilli_opt"))
+	if (strstr(prog, "chilli_opt"))
 		return mopt_main(argc, argv);
 	else if (strstr(prog, "chilli_query"))
 		return mquery_main(argc, argv);
@@ -49,6 +47,8 @@ restart:
 	else if (strstr(prog, "chilli_script"))
 		return mscript_main(argc, argv);
 	#endif
+	else if (strstr(prog, "chilli"))
+		return mchilli_main(argc, argv);
 	if (!restart && argc > 1) {
 		argv++;
 		argc--;
