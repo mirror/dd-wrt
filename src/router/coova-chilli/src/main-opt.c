@@ -237,7 +237,7 @@ options_print_help (void) {
 
 #endif
 
-int main(int argc, char **argv) {
+int mopt_main(int argc, char **argv) {
   struct gengetopt_args_info args_info;
   struct hostent *host;
   char hostname[USERURLSIZE];

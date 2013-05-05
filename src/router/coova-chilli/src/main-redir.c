@@ -802,7 +802,7 @@ int redir_accept2(struct redir_t *redir, int idx) {
   return 0;
 }
 
-int main(int argc, char **argv) {
+int mredir_main(int argc, char **argv) {
   int status;
   int idx;
   int active_last = 0;

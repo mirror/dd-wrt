@@ -164,7 +164,7 @@ static int cb_radius_auth_conf(struct radius_t *radius,
   return 0;
 }
 
-int main(int argc, char **argv) {
+int mradsec_main(int argc, char **argv) {
   struct radius_packet_t radius_pack;
   struct in_addr radiuslisten;
 

@@ -49,7 +49,7 @@ static int proc_route(struct rtmon_t *rtmon,
   return 0;
 }
 
-int main(int argc, char *argv[]) {
+int mrtmon_main(int argc, char *argv[]) {
   int keep_going = 1;
   int reload_config = 1;
   int i;
