@@ -544,8 +544,17 @@ void hotspotsys_config(void)
 	fprintf(fp, "uamallowed 88.221.136.146,195.228.254.149,195.228.254.152,203.211.140.157,203.211.150.204\n");
 	fprintf(fp, "uamallowed 82.199.90.0/24,91.212.42.0/24\n");
 	fprintf(fp, "uamallowed live.adyen.com\n");
+#ifdef HAVE_COOVA_CHILLI
+	fprintf(fp, "uamdomain paypal.com\n");
+	fprintf(fp, "uamdomain paypalobjects.com\n");
+	fprintf(fp, "uamdomain paypal-metrics.com\n");
+	fprintf(fp, "uamdomain mediaplex.com\n");
+	fprintf(fp, "uamdomain worldpay.com\n");
+	fprintf(fp, "uamdomain hotspotsystem.com\n");
+#else
 	fprintf(fp, "uamallowed www.paypal.com,www.paypalobjects.com\n");
 	fprintf(fp, "uamallowed www.worldpay.com,select.worldpay.com,secure.ims.worldpay.com,www.rbsworldpay.com,secure.wp3.rbsworldpay.com\n");
+#endif
 	fprintf(fp, "uamallowed a1.hotspotsystem.com,a2.hotspotsystem.com,a3.hotspotsystem.com,a4.hotspotsystem.com,a5.hotspotsystem.com,a6.hotspotsystem.com\n");
 	fprintf(fp, "uamallowed a7.hotspotsystem.com,a8.hotspotsystem.com,a9.hotspotsystem.com,a10.hotspotsystem.com,a11.hotspotsystem.com,a12.hotspotsystem.com\n");
 	fprintf(fp, "uamallowed a13.hotspotsystem.com,a14.hotspotsystem.com,a15.hotspotsystem.com,a16.hotspotsystem.com,a17.hotspotsystem.com,a18.hotspotsystem.com\n");
