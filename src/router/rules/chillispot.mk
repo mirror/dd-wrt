@@ -9,7 +9,7 @@ CHILLICOOVAEXTRAFLAGS=--enable-uamdomainfile \
 	--enable-shared \
 	--disable-static \
 	--disable-debug \
-	--enable-binstatusfile 
+	--disable-binstatusfile 
 ifeq ($(CONFIG_COOVA_CHILLI),y)
 CHILLIDIR=$(CHILLICOOVADIR)
 CHILLIEXTRAFLAGS=$(CHILLICOOVAEXTRAFLAGS)
