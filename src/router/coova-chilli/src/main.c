@@ -70,7 +70,7 @@ enum {
 #endif
 #endif
 
-int main(int argc, char **argv)
+int mchilli_main(int argc, char **argv)
 {
   int ret;
 #if defined(__linux__)

@@ -15,8 +15,7 @@ pkt.h conn.h lookup.h chilli_limits.h cmdline.h debug.h \
 radius_pkt.h ../bstring/bstrlib.h ../config.h system.h 
 
 lib_LTLIBRARIES = libchilli.la
-sbin_PROGRAMS = \
-chilli chilli_response chilli_radconfig chilli_opt 
+sbin_PROGRAMS = chilli_multicall
 
 suid_programs =
 
@@ -32,19 +31,16 @@ AM_CFLAGS = -D_GNU_SOURCE -Wall -fno-builtin -fno-strict-aliasing \
  -DDEFSTATEDIR='"$(localstatedir)/run"'\
  -DSBINDIR='"$(sbindir)"' 
 
-chilli_SOURCES= main.c
-chilli_radconfig_SOURCES = main-radconfig.c 
-chilli_response_SOURCES = main-response.c 
-chilli_query_SOURCES = main-query.c 
-chilli_opt_SOURCES = main-opt.c 
+chilli_multicall_SOURCES = multicall.c main.c main-radconfig.c main-response.c main-query.c main-opt.c
 
 libchilli_la_LIBADD = $(top_builddir)/bstring/libbstring.la 
 LDADD = libchilli.la ${LIBRT} $(top_builddir)/bstring/libbstring.la 
+chilli_multicall_LDADD = $(LDADD)
 
 if WITH_MINICONFIG
-chilli_opt_SOURCES += cmdline.mini.c
+chilli_multicall_SOURCES += cmdline.mini.c
 else
-chilli_opt_SOURCES += cmdline.c 
+chilli_multicall_SOURCES += cmdline.c 
 endif
 
 if WITH_PATRICIA
@@ -116,45 +112,39 @@ LDADD += ${LIBPCAP}
 endif
 
 if WITH_MULTIROUTE
-sbin_PROGRAMS += chilli_rtmon
-chilli_rtmon_SOURCES = main-rtmon.c 
 libchilli_la_SOURCES += rtmon.c rtmon.h
+chilli_multicall_SOURCES += main-rtmon.c
 endif
 
 if WITH_CHILLIQUERY
-sbin_PROGRAMS += chilli_query
 libchilli_la_SOURCES += cmdsock.c
 chilliinclude_HEADERS += cmdsock.h
 endif
 
 if WITH_CHILLIPROXY
-sbin_PROGRAMS += chilli_proxy
-chilli_proxy_SOURCES = main-proxy.c 
-chilli_proxy_LDADD = ${LDADD}
+chilli_multicall_LDADD += ${LDADD}
 if WITH_CURL
-chilli_proxy_LDADD += -lcurl -lz 
+chilli_multicall_LDADD += -lcurl -lz 
 endif
+chilli_multicall_SOURCES += main-rtmon.c main-proxy.c 
+
 endif
 
 if WITH_CHILLIRADSEC
-sbin_PROGRAMS += chilli_radsec
-chilli_radsec_SOURCES = main-radsec.c 
-chilli_radsec_LDADD = ${LDADD}
+chilli_multicall_LDADD += ${LDADD}
+chilli_multicall_SOURCES += main-radsec.c
 endif
 
 if WITH_CHILLISCRIPT
-sbin_PROGRAMS += chilli_script
-suid_programs += chilli_script
-chilli_script_SOURCES = main-script.c 
-chilli_script_LDADD = ${LDADD}
+chilli_multicall_SOURCES += main-script.c 
+chilli_multicall_LDADD += ${LDADD}
 endif
 
 if WITH_CHILLIREDIR
-sbin_PROGRAMS += chilli_redir
-chilli_redir_SOURCES = main-redir.c 
-chilli_redir_LDADD = ${LDADD}
+chilli_multicall_SOURCES += main-redir.c 
+chilli_multicall_LDADD += ${LDADD}
 if WITH_CURL
-chilli_redir_LDADD += -lcurl -lz 
+chilli_multicall_LDADD += -lcurl -lz 
 endif
 endif
 
