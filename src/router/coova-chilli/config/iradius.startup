@@ -1,0 +1,8 @@
+#!/bin/sh
+
+IFNAME=$(nvram get wl0_ifname)
+killall -q -9 wrt-radauth
+if [ "$(nvram get wl_mode)" = "ap" ]; then
+	sleep 10 
+	wrt-radauth -t $IFNAME &
+fi
