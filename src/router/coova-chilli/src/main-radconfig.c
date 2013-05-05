@@ -156,7 +156,7 @@ int static chilliauth() {
   return ret;
 }
 
-int main(int argc, char **argv)
+int mradconfig_main(int argc, char **argv)
 {
   int ret;
   options_init();

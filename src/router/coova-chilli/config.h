@@ -44,7 +44,7 @@
 /* #undef ENABLE_CONFIG */
 
 /* Define to enable debugging */
-#define ENABLE_DEBUG 1
+/* #undef ENABLE_DEBUG */
 
 /* Define to enable verbose debugging */
 /* #undef ENABLE_DEBUG2 */
@@ -170,7 +170,7 @@
 #define ENABLE_UAMANYIP 1
 
 /* Define to support loading of uamdomains (with regex) from file */
-/* #undef ENABLE_UAMDOMAINFILE */
+#define ENABLE_UAMDOMAINFILE 1
 
 /* Define to enable uamuiport */
 #define ENABLE_UAMUIPORT 1

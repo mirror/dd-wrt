@@ -65,7 +65,7 @@ static int chartohex(unsigned char *src, char *dst, int len) {
   return 0;
 }
 
-int main(int argc, char **argv) {
+int mresponse_main(int argc, char **argv) {
   uint8_t chap_ident = 0;
   uint8_t challenge[32];
   char buffer[512];

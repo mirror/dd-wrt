@@ -1059,7 +1059,7 @@ static void process_radius(struct radius_t *radius, struct radius_packet_t *pack
   bdestroy(tmp2);
 }
 
-int main(int argc, char **argv) {
+int mproxy_main(int argc, char **argv) {
   struct radius_packet_t radius_pack;
   struct radius_t *radius_auth;
   struct radius_t *radius_acct;
