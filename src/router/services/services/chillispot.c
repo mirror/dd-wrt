@@ -385,6 +385,14 @@ void chilli_config(void)
 		fprintf(fp, "uamanydns\n");
 	if (nvram_invmatch("chilli_uamallowed", ""))
 		fprintf(fp, "uamallowed %s\n", nvram_get("chilli_uamallowed"));
+#ifdef HAVE_COOVA_CHILLI
+	if (nvram_invmatch("chilli_uamdomain", "")) {
+		dnslist = nvram_safe_get("hotss_uamdomain");
+		foreach(var, dnslist, next) {
+			fprintf(fp, "uamdomain %s\n", var);
+		}
+	}
+#endif
 	if (nvram_invmatch("chilli_net", ""))
 		fprintf(fp, "net %s\n", nvram_get("chilli_net"));
 	if (nvram_match("chilli_macauth", "1")) {
@@ -553,6 +561,15 @@ void hotspotsys_config(void)
 	if (nvram_invmatch("hotss_uamallowed", "")
 	    && nvram_match("hotss_uamenable", "1"))
 		fprintf(fp, "uamallowed %s\n", nvram_get("hotss_uamallowed"));
+#ifdef HAVE_COOVA_CHILLI
+	if (nvram_invmatch("hotss_uamdomain", "")
+	    && nvram_match("hotss_uamenable", "1")) {
+		dnslist = nvram_safe_get("hotss_uamdomain");
+		foreach(var, dnslist, next) {
+			fprintf(fp, "uamdomain %s\n", var);
+		}
+	}
+#endif
 
 	fprintf(fp, "uamallowed hotspotsystem.com,%s,www.hotspotsystem.com,tech.hotspotsystem.com\n", uamdomain);
 	fprintf(fp, "uamallowed 66.211.128.0/17,216.113.128.0/17\n");
