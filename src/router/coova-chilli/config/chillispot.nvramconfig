@@ -10,6 +10,7 @@
  "chilli_uamanydns" " " "NULL" "TRUE" "0"
  "chilli_net" " " "NULL" "TRUE" "0"
  "chilli_uamallowed" " " "NULL" "TRUE" "0"
+ "chilli_uamdomain" " " "NULL" "TRUE" "0"
  "chilli_macauth" "Radius Mac Auth" "CHOICE" "2" "0" "1" "TRUE" "0"
  "chilli_macpasswd" "MAC PW send to radius" "NULL" "TRUE" "0"
  "chilli_additional" "Chillispot Ad Options" "NULL" "FALSE" "0"

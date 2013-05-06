@@ -52,6 +52,10 @@
 			<textarea maxLength="2000" cols="60" rows="6" name="chilli_uamallowed" id="chilli_uamallowed"><% nvram_get("chilli_uamallowed"); %></textarea>
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("hotspot.allowuad"); %></div>
+			<textarea maxLength="2000" cols="60" rows="6" name="chilli_uamdomain" id="chilli_uamdomain"><% nvram_get("chilli_uamdomain"); %></textarea>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("hotspot.macauth"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="chilli_macauth" <% nvram_selmatch("chilli_macauth","1", "checked"); %> onclick="show_layer_ext(this, 'idmacauth', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="chilli_macauth" <% nvram_selmatch("chilli_macauth","0", "checked"); %> onclick="show_layer_ext(this, 'idmacauth', false)" /><% tran("share.disable"); %>
