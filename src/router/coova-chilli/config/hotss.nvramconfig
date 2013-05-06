@@ -1,6 +1,7 @@
  "hotss_enable"  "Enable hotspotsys"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
  "hotss_uamenable" "UAM enable" "CHOICE"  "2" "0" "1"  "TRUE" "0"
  "hotss_uamallowed" "UAM Allowed" "NULL" "TRUE" "0"
+ "hotss_uamdomain" "UAM Domains" "NULL" "TRUE" "0"
  "hotss_customuam" "white label domain" "NULL" "TRUE" "0"
  "hotss_customuamproto" "white label domain proto" "CHOICE" "2" "http" "https" "FALSE" "0"
  "hotss_operatorid" "oper id" "NULL" "TRUE" "0"
