@@ -249,10 +249,6 @@ ifneq ($(CONFIG_DIST),"micro")
 CONFIG_AQOS=y
 endif
 
-ifeq ($(CONFIG_CHILLI),y)
-CONFIG_COOVA_CHILLI=y
-endif
-
 all:
 
 configs-checkout:
