@@ -1,3 +1,4 @@
+export ac_cv_lib_rt_clock_gettime=no
 CHILLICOOVADIR=coova-chilli
 CHILLICOOVAEXTRAFLAGS=--enable-uamdomainfile \
 	--prefix=/usr \
