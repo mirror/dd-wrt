@@ -408,6 +408,7 @@ void chilli_signals(int *with_term, int *with_hup) {
 }
 
 int chilli_binconfig(char *file, size_t flen, pid_t pid) {
+  char *env=NULL;
   if (pid == 0) {
     char * bc = _options.binconfig;
     if (bc) {
@@ -419,7 +420,14 @@ int chilli_binconfig(char *file, size_t flen, pid_t pid) {
 	pid = getpid();
     }
   }
-  safe_snprintf(file, flen, DEFSTATEDIR "/chilli.%d.cfg.bin", pid);
+  // hack the _opt programm does not use --statedir....
+  env=getenv("CHILLISTATEDIR");
+  if (env)
+  	safe_snprintf(file, flen, "%s/chilli.%d.cfg.bin",env, pid);
+  else if (_options.statedir)
+  	safe_snprintf(file, flen, "%s/chilli.%d.cfg.bin",_options.statedir, pid);
+  else
+	safe_snprintf(file, flen, DEFSTATEDIR "/chilli.%d.cfg.bin", pid);
   return 0;
 }
 
