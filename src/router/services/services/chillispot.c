@@ -110,10 +110,26 @@ void start_chilli(void)
 	ret = killall("chilli", SIGTERM);
 	ret = killall("chilli", SIGKILL);
 	if (f_exists("/tmp/chilli/hotss.conf")) {
+#ifdef HAVE_COOVA_CHILLI
+		putenv("CHILLISTATEDIR=/var/run/chilli1");
+		mkdir("/var/run/chilli1", 0700);
+		ret = eval("chilli", "--statedir=/var/run/chilli1",
+			"--pidfile=/var/run/chilli1/chilli.pid",
+			"-c", "/tmp/chilli/hotss.conf");
+#else
 		ret = eval("chilli", "-c", "/tmp/chilli/hotss.conf");
+#endif
 		dd_syslog(LOG_INFO, "hotspotsystem : chilli daemon successfully started\n");
 	} else {
+#ifdef HAVE_COOVA_CHILLI
+		putenv("CHILLISTATEDIR=/var/run/chilli1");
+		mkdir("/var/run/chilli1", 0700);
+		ret = eval("chilli", "--statedir=/var/run/chilli1",
+			"--pidfile=/var/run/chilli1/chilli.pid",
+			"-c", "/tmp/chilli/chilli.conf");
+#else
 		ret = eval("chilli", "-c", "/tmp/chilli/chilli.conf");
+#endif
 		dd_syslog(LOG_INFO, "chilli : chilli daemon successfully started\n");
 	}
 #ifdef HAVE_TIEXTRA1
@@ -131,6 +147,7 @@ void stop_chilli(void)
 		unlink("/tmp/chilli/hotss.conf");
 		unlink("/tmp/chilli/ip-up.sh");
 		unlink("/tmp/chilli/ip-down.sh");
+		system("rm -rf /var/run/chilli1");
 	}
 	cprintf("done\n");
 	return;
