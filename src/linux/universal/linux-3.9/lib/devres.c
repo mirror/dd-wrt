@@ -140,6 +140,7 @@ void __iomem *devm_ioremap_resource(struct device *dev, struct resource *res)
 }
 EXPORT_SYMBOL(devm_ioremap_resource);
 
+
 /**
  * devm_request_and_ioremap() - Check, request region, and ioremap resource
  * @dev: Generic device to handle the resource for
