@@ -9,6 +9,7 @@ CHILLICOOVAEXTRAFLAGS=--enable-uamdomainfile \
 	--sbindir=/usr/sbin \
 	--enable-shared \
 	--disable-static \
+	--enable-miniconfig \
 	--disable-debug \
 	--disable-binstatusfile 
 ifeq ($(CONFIG_COOVA_CHILLI),y)
