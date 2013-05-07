@@ -13,6 +13,11 @@ CHILLICOOVAEXTRAFLAGS=--enable-uamdomainfile \
 	--disable-debug \
 	--disable-binstatusfile 
 ifeq ($(CONFIG_COOVA_CHILLI),y)
+ifeq ($(ARCHITECTURE),broadcom)
+ifneq ($(CONFIG_BCMMODERN),y)
+CHILLICOOVAEXTRAFLAGS+=--without-ipv6
+endif
+endif
 CHILLIDIR=$(CHILLICOOVADIR)
 CHILLIEXTRAFLAGS=$(CHILLICOOVAEXTRAFLAGS)
 else
