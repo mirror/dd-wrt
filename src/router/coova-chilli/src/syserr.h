@@ -23,9 +23,11 @@
 
 #define SYSERR_MSGSIZE 256
 
+#ifdef NEED_PRINTF
 void sys_err(int pri, char *filename, int line, int en, const char *fmt, ...);
 void sys_errpack(int pri, char *fn, int ln, int en, struct sockaddr_in *peer,
 		 void *pack, unsigned len, char *fmt, ...);
+
 
 #define log(p,fmt,args...)      sys_err(p,           __FILE__,__LINE__,0,fmt,## args)
 #define log_dbg(fmt,args...)    if (_options.debug) {\
@@ -33,5 +35,13 @@ void sys_errpack(int pri, char *fn, int ln, int en, struct sockaddr_in *peer,
 #define log_warn(e,fmt,args...) sys_err(LOG_WARNING, __FILE__,__LINE__,e,fmt,## args)
 #define log_info(fmt,args...)   sys_err(LOG_NOTICE,  __FILE__,__LINE__,0,fmt,## args)
 #define log_err(e,fmt,args...)  sys_err(LOG_ERR,     __FILE__,__LINE__,e,fmt,## args)
+#else
+#define log(p,fmt,args...)      do { } while(0) 
+#define log_dbg(fmt,args...)    do { } while(0)
+#define log_warn(e,fmt,args...) do { } while(0)
+#define log_info(fmt,args...)   do { } while(0)
+#define log_err(e,fmt,args...)  do { } while(0)
 
+
+#endif
 #endif	/* !_SYSERR_H */
