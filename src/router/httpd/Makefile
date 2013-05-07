@@ -626,17 +626,26 @@ endif
 
 ifeq ($(CONFIG_FTP),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
 CFLAGS += -DHAVE_NAS_SERVER
 endif
 
 ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs 
+ifeq ($(ARCHITECTURE),openrisc)
+LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
 CFLAGS += -DHAVE_NAS_SERVER
 CFLAGS += -DHAVE_SAMBA_SERVER
 endif
 
 ifeq ($(CONFIG_MINIDLNA),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
 CFLAGS += -DHAVE_MINIDLNA
 endif
 
