@@ -41,18 +41,33 @@ CCOPTS+=-DHAVE_RT2880
 endif
 ifeq ($(CONFIG_TIEXTRA1),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
 endif
 ifeq ($(CONFIG_TIEXTRA2),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
 endif
 ifeq ($(CONFIG_SAMBA3),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
 endif
 ifeq ($(CONFIG_FTP),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
 endif
 ifeq ($(CONFIG_MINIDLNA),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
 endif
 
 wiviz: clean ${OBJS}
