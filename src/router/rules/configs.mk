@@ -249,7 +249,7 @@ ifneq ($(CONFIG_DIST),"micro")
 CONFIG_AQOS=y
 endif
 
-ifeq ($(CONFIG_CHILLI),y)
+ifeq ($(CONFIG_CHILLISPOT),y)
 CONFIG_COOVA_CHILLI=y
 endif
 
