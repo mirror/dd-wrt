@@ -208,6 +208,7 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 ifeq ($(CONFIG_LIBDL),y)
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
@@ -261,54 +262,7 @@ ifneq ($(CONFIG_NOOPT),y)
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
 	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
-else
-
-#	relink-lib.sh \
-#		"$(ARCH)-linux-" \
-#		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-#		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-#		"$(ARCH)-uclibc/target/lib/libc.so.0" \
-#		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
-#		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
-#
-#	relink-lib.sh \
-#		"$(ARCH)-linux-" \
-#		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so}" \
-#		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt_pic.a}" \
-#		"$(ARCH)-uclibc/target/lib/libcrypt.so.0" \
-#		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-#		-Wl,-soname=libcrypt.so.0
-#
-#	relink-lib.sh \
-#		"$(ARCH)-linux-" \
-#		"${shell $(ARCH)-linux-gcc -print-file-name=libm.so}" \
-#		"${shell $(ARCH)-linux-gcc -print-file-name=libm_pic.a}" \
-#		"$(ARCH)-uclibc/target/lib/libm.so.0" \
-#		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-#		-Wl,-soname=libm.so.0 
-#
-#	relink-lib.sh \
-#		"$(ARCH)-linux-" \
-#		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0}" \
-#		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread_so.a}" \
-#		"$(ARCH)-uclibc/target/lib/libpthread.so.0" \
-#		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
-#		-ldl -lc ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-#		-Wl,-soname=libpthread.so.0
-#
-#	relink-lib.sh \
-#		"$(ARCH)-linux-" \
-#		"${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}" \
-#		"${shell $(ARCH)-linux-gcc -print-file-name=libgcc_pic.a}" \
-#		"$(ARCH)-uclibc/target/lib/libgcc_s.so.1" \
-#		-Wl,--version-script=${shell $(ARCH)-linux-gcc -print-file-name=libgcc.map} -Wl,-soname=libgcc_s.so.1 
-
-
 endif
-#	rm -f $(TARGETDIR)/lib/*.a
-#	rm -f $(TARGETDIR)/lib/*.map
-#	cp lib.$(ARCH)/libresolv.so.0 $(TARGETDIR)/lib
-#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
@@ -330,7 +284,7 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb
 	# optimize the crypto library by removing unneeded symbols
 	# Install (and possibly optimize) C library
-	$(MAKE) -f Makefile.northstar lib.$(ARCH)-install
+#	$(MAKE) -f Makefile.northstar lib.$(ARCH)-install
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) -f Makefile.northstar optimize-lib
 	# Install modules into filesystem
