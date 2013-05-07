@@ -20,6 +20,8 @@
 
 #include "chilli.h"
 
+#ifdef NEED_PRINTF
+
 void sys_err(int pri, char *fn, int ln, int en, const char *fmt, ...) {
   if (pri==LOG_DEBUG && !_options.debug) return;
   {
@@ -76,3 +78,4 @@ void sys_errpack(int pri, char *fn, int ln, int en, struct sockaddr_in *peer,
   bdestroy(bt);
   bdestroy(bt2);
 }
+#endif
