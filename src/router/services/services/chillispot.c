@@ -203,15 +203,8 @@ void main_config(void)
 	fprintf(fp, "iptables -I INPUT -i tun0 -j %s\n", log_accept);
 	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n", log_accept);
 	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n", log_accept);
-	// enable Reverse Path Filtering to prevent double outgoing packages
-	if (nvram_match("chilli_enable", "1") && nvram_match("hotss_enable", "0")) {
-		fprintf(fp, "echo 1 > /proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("chilli_interface"));
-	}
-	if (nvram_match("chilli_enable", "1") && nvram_match("hotss_enable", "1")) {
-		fprintf(fp, "echo 1 > /proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("hotss_interface"));
-	}
 	//      secure chilli interface, only usefull if ! br0
-	if (nvram_match("chilli_enable", "1")
+/*	if (nvram_match("chilli_enable", "1")
 	    && nvram_match("hotss_enable", "0")
 	    && nvram_invmatch("chilli_interface", "br0")) {
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("chilli_interface"), chillinet, log_drop);
@@ -222,7 +215,7 @@ void main_config(void)
 	    && nvram_invmatch("hotss_interface", "br0")) {
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("hotss_interface"), chillinet, log_drop);
 		fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("hotss_interface"), chillinet, log_drop);
-	}
+	} */
 	// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
 		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
@@ -232,6 +225,15 @@ void main_config(void)
 	} else {
 		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n", nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
 		fprintf(fp, "iptables -t nat -I POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n", nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
+	}
+	// enable Reverse Path Filtering to prevent double outgoing packages
+	if (nvram_match("chilli_enable", "1")
+		&& nvram_match("hotss_enable", "0")) {
+		fprintf(fp, "echo 1 > /proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("chilli_interface"));
+	}
+	if (nvram_match("chilli_enable", "1")
+		&& nvram_match("hotss_enable", "1")) {
+		fprintf(fp, "echo 1 > /proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("hotss_interface"));
 	}
 	fclose(fp);
 
@@ -262,7 +264,7 @@ void main_config(void)
 	chmod("/tmp/chilli/ip-up.sh", 0700);
 	chmod("/tmp/chilli/ip-down.sh", 0700);
 
-	//      use usb/jffs for connection scripts if available
+	//  use usb/jffs for connection scripts if available
 	if ((nvram_match("usb_enable", "1")
 	     && nvram_match("usb_storage", "1")
 	     && nvram_match("usb_automnt", "1")
@@ -272,7 +274,7 @@ void main_config(void)
 		&& nvram_match("sys_enable_jffs2", "1"))) {
 		mkdir("/jffs/etc", 0700);
 		mkdir("/jffs/etc/chilli", 0700);
-		if (!(fp = fopen("/jffs/etc/chilli/con-up.sh", "r"))) {	//      dont overwrite
+		if (!(fp = fopen("/jffs/etc/chilli/con-up.sh", "r"))) {	// dont overwrite
 			fp = fopen("/jffs/etc/chilli/con-up.sh", "w");
 			if (fp == NULL)
 				return;
@@ -570,30 +572,30 @@ void hotspotsys_config(void)
 		}
 	}
 #endif
-
-	fprintf(fp, "uamallowed hotspotsystem.com,%s,www.hotspotsystem.com,tech.hotspotsystem.com\n", uamdomain);
+	fprintf(fp, "uamallowed live.adyen.com,,%s\n", uamdomain);
 	fprintf(fp, "uamallowed 66.211.128.0/17,216.113.128.0/17\n");
 	fprintf(fp, "uamallowed 70.42.128.0/17,128.242.125.0/24\n");
 	fprintf(fp, "uamallowed 62.249.232.74,155.136.68.77,155.136.66.34,66.4.128.0/17,66.211.128.0/17,66.235.128.0/17\n");
 	fprintf(fp, "uamallowed 88.221.136.146,195.228.254.149,195.228.254.152,203.211.140.157,203.211.150.204\n");
 	fprintf(fp, "uamallowed 82.199.90.0/24,91.212.42.0/24\n");
-	fprintf(fp, "uamallowed live.adyen.com\n");
 #ifdef HAVE_COOVA_CHILLI
 	fprintf(fp, "uamdomain paypal.com\n");
 	fprintf(fp, "uamdomain paypalobjects.com\n");
 	fprintf(fp, "uamdomain paypal-metrics.com\n");
 	fprintf(fp, "uamdomain mediaplex.com\n");
 	fprintf(fp, "uamdomain worldpay.com\n");
+	fprintf(fp, "uamdomain rbsworldpay.com\n");
 	fprintf(fp, "uamdomain hotspotsystem.com\n");
 #else
 	fprintf(fp, "uamallowed www.paypal.com,www.paypalobjects.com\n");
 	fprintf(fp, "uamallowed www.worldpay.com,select.worldpay.com,secure.ims.worldpay.com,www.rbsworldpay.com,secure.wp3.rbsworldpay.com\n");
-#endif
+	fprintf(fp, "uamallowed hotspotsystem.com,www.hotspotsystem.com,tech.hotspotsystem.com\n");
 	fprintf(fp, "uamallowed a1.hotspotsystem.com,a2.hotspotsystem.com,a3.hotspotsystem.com,a4.hotspotsystem.com,a5.hotspotsystem.com,a6.hotspotsystem.com\n");
 	fprintf(fp, "uamallowed a7.hotspotsystem.com,a8.hotspotsystem.com,a9.hotspotsystem.com,a10.hotspotsystem.com,a11.hotspotsystem.com,a12.hotspotsystem.com\n");
 	fprintf(fp, "uamallowed a13.hotspotsystem.com,a14.hotspotsystem.com,a15.hotspotsystem.com,a16.hotspotsystem.com,a17.hotspotsystem.com,a18.hotspotsystem.com\n");
 	fprintf(fp, "uamallowed a19.hotspotsystem.com,a20.hotspotsystem.com,a21.hotspotsystem.com,a22.hotspotsystem.com,a23.hotspotsystem.com,a24.hotspotsystem.com\n");
 	fprintf(fp, "uamallowed a25.hotspotsystem.com,a26.hotspotsystem.com,a27.hotspotsystem.com,a28.hotspotsystem.com,a29.hotspotsystem.com,a30.hotspotsystem.com\n");
+#endif
 	fprintf(fp, "interval 300\n");
 
 	fflush(fp);
