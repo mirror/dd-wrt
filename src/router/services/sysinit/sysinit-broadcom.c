@@ -268,6 +268,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT610NV2:
 	case ROUTER_DYNEX_DX_NRUTER:
 	case ROUTER_LINKSYS_E900:
+	case ROUTER_LINKSYS_E800:
 	case ROUTER_LINKSYS_E1000V2:
 	case ROUTER_LINKSYS_E1500:
 	case ROUTER_LINKSYS_E1550:
@@ -1437,6 +1438,7 @@ void start_sysinit(void)
 		}
 		break;
 
+	case ROUTER_LINKSYS_E800:
 	case ROUTER_LINKSYS_E900:
 	case ROUTER_LINKSYS_E1000V2:
 	case ROUTER_LINKSYS_E1500:
@@ -2259,6 +2261,7 @@ void start_sysinit(void)
 			case ROUTER_NETCORE_NW715P:
 			case ROUTER_ASUS_RTN12B:
 			case ROUTER_LINKSYS_E1000V2:
+			case ROUTER_LINKSYS_E800:
 			case ROUTER_LINKSYS_E900:
 			case ROUTER_LINKSYS_E1500:
 			case ROUTER_LINKSYS_E1550:
@@ -2330,6 +2333,7 @@ void start_sysinit(void)
 			case ROUTER_NETCORE_NW715P:
 			case ROUTER_ASUS_RTN12B:
 			case ROUTER_LINKSYS_E1000V2:
+			case ROUTER_LINKSYS_E800:
 			case ROUTER_LINKSYS_E900:
 			case ROUTER_LINKSYS_E1500:
 			case ROUTER_LINKSYS_E1550:
