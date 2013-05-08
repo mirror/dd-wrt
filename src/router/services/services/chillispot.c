@@ -204,7 +204,7 @@ void main_config(void)
 	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n", log_accept);
 	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n", log_accept);
 	//      secure chilli interface, only usefull if ! br0
-/*	if (nvram_match("chilli_enable", "1")
+	if (nvram_match("chilli_enable", "1")
 	    && nvram_match("hotss_enable", "0")
 	    && nvram_invmatch("chilli_interface", "br0")) {
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("chilli_interface"), chillinet, log_drop);
@@ -215,7 +215,7 @@ void main_config(void)
 	    && nvram_invmatch("hotss_interface", "br0")) {
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("hotss_interface"), chillinet, log_drop);
 		fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("hotss_interface"), chillinet, log_drop);
-	} */
+	} 
 	// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
 		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
@@ -572,7 +572,7 @@ void hotspotsys_config(void)
 		}
 	}
 #endif
-	fprintf(fp, "uamallowed live.adyen.com,,%s\n", uamdomain);
+	fprintf(fp, "uamallowed live.adyen.com,%s\n", uamdomain);
 	fprintf(fp, "uamallowed 66.211.128.0/17,216.113.128.0/17\n");
 	fprintf(fp, "uamallowed 70.42.128.0/17,128.242.125.0/24\n");
 	fprintf(fp, "uamallowed 62.249.232.74,155.136.68.77,155.136.66.34,66.4.128.0/17,66.211.128.0/17,66.235.128.0/17\n");
