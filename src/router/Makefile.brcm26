@@ -70,7 +70,7 @@ endif
 
 export ARCH:= mipsel
 export ARCHITECTURE:= broadcom
-export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -fno-caller-saves
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -fno-caller-saves  -mno-branch-likely
 export CC := ccache $(CROSS_COMPILE)gcc
 export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
@@ -81,7 +81,7 @@ export RANLIB := $(CROSS_COMPILE)ranlib
 export STRIP := @true
 export SIZE := $(CROSS_COMPILE)size
 
-export CFLAGS :=$(BASEOPT) -pipe -mips32 -mtune=mips32 -fno-caller-saves
+export CFLAGS :=$(BASEOPT) -pipe -mips32 -mtune=mips32 -fno-caller-saves  -mno-branch-likely
 export LDFLAGS := 
 
 #
@@ -159,6 +159,9 @@ else
 	echo "# CONFIG_NVRAM_60K" is not set >> $(LINUXDIR)/.config
 	echo "# CONFIG_NVRAM_64K" is not set >> $(LINUXDIR)/.config
 endif
+endif
+ifeq ($(CONFIG_IPETH),y)
+	sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config
 endif
 #ifeq ($(CONFIG_REGISTER),y)
 #	cp $(LINUXDIR)/.config_register $(LINUXDIR)/.config
@@ -416,6 +419,7 @@ install package: clean_target $(filter-out lib.mipsel-install,$(obj-install)) $(
 #endif
 #endif
 ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/serial
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/class
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/core
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/host
@@ -423,18 +427,18 @@ ifneq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/storage
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2
-#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat
-#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/msdos
-	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/vfat
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/vfat
 #	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mbcache.ko
 endif
 ifneq ($(CONFIG_USB_ADVANCED),y)
-	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/serial
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
-	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd	
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd
 endif
 ifneq ($(CONFIG_NTFS3G),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fuse
@@ -693,6 +697,7 @@ ifeq ($(CONFIG_NVRAM_60K),y)
 
 endif
 ifeq ($(CONFIG_NVRAM_64K),y)
+	../../opt/tools/addpattern -4 -p E800 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e800.bin -g
 	../../opt/tools/addpattern -4 -p E900 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e900.bin -g
 	../../opt/tools/addpattern -4 -p E120 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1200v1.bin -g
 	../../opt/tools/addpattern -4 -p E122 -r 2.0.0.0 -v v1.1.1 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1200v2.bin -g
