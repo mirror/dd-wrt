@@ -14,10 +14,7 @@ extern int mradsec_main(int argc, char **argv);
 
 int main(int argc, char **argv)
 {
-	bool restart = false;
 	const char *prog = argv[0];
-
-restart:
 	if (strstr(prog, "chilli_opt"))
 		return mopt_main(argc, argv);
 	else if (strstr(prog, "chilli_query"))
@@ -49,13 +46,7 @@ restart:
 	#endif
 	else if (strstr(prog, "chilli"))
 		return mchilli_main(argc, argv);
-	if (!restart && argc > 1) {
-		argv++;
-		argc--;
-		restart = true;
-		goto restart;
-	}
 
-	fprintf(stderr, "Invalid command.\nUsage: %s wpa_supplicant|hostapd [<arguments>]\n", prog);
+	fprintf(stderr, "Bad programm %s\n", prog);
 	return 255;
 }
