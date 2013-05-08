@@ -618,6 +618,8 @@
 
 #define ROUTER_BUFFALO_WZR600DHP2 0xc51b // BCM4707 Single Core 800 Mhz 128 MB Nand Flash, 256 MB Ram
 
+#define ROUTER_LINKSYS_E800 0xc61a
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)

@@ -2624,6 +2624,10 @@ int internal_getRouterBrand()
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys E1000 v1");	// renamed wrt160nv3
 			return ROUTER_WRT160NV3;
+		} else if (nvram_match("boot_hw_model", "E800")
+			   && nvram_match("boot_hw_ver", "1.0")) {
+			setRouter("Linksys E800");
+			return ROUTER_LINKSYS_E800;
 		} else if (nvram_match("boot_hw_model", "E900")
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys E900");
@@ -4800,6 +4804,7 @@ int led_control(int type, int act)
 		connected_gpio = 0x102;	// ses orange
 		ses_gpio = 0x104;	// ses blue
 		break;
+	case ROUTER_LINKSYS_E800:
 	case ROUTER_LINKSYS_E900:
 	case ROUTER_LINKSYS_E1500:
 	case ROUTER_LINKSYS_E1550:
