@@ -54,6 +54,8 @@ extern struct mtd_partition *
 init_mtd_partitions(hndsflash_t *sfl, struct mtd_info *mtd, size_t size);
 #endif
 
+extern struct mtd_partition cfe_nvrampart;
+
 extern void *partitions_lock_init(void);
 #define	BCMSFLASH_LOCK(lock)		if (lock) spin_lock(lock)
 #define	BCMSFLASH_UNLOCK(lock)	if (lock) spin_unlock(lock)
@@ -268,6 +270,8 @@ bcmsflash_mtd_init(void)
 			goto fail;
 		}
 	}
+	if (cfe_nvrampart.name)
+		add_mtd_partitions(&bcmsflash.mtd, &cfe_nvrampart, 1);
 #endif
 
 	return 0;

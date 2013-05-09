@@ -187,11 +187,18 @@ static struct mtd_partition bcm947xx_parts[] = {
 	{ name: "board_data", offset: 0, size: 0, },
 	{ name: NULL, },
 };
+struct mtd_partition cfe_nvrampart = {
+	name: NULL, 
+	offset: 0, 
+	size: 0
+};
+
+
 extern int cfenvram;
+
 static struct mtd_partition nflash_parts[] = {
 	{ name: "cfe",	offset: 0, size: 0, },
 	{ name: "nvram", offset: 0, size: 0, },
-	{ name: "nvram_cfe", offset: 0, size: 0, },
 	{ name: NULL, },
 };
 
@@ -525,13 +532,12 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	{
 	nflash_parts[1].offset = size - mtd->erasesize * 3;
 	nflash_parts[1].size   = mtd->erasesize;
-	nflash_parts[2].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
-	nflash_parts[2].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	cfe_nvrampart.name = "cfe_nvram";
+	cfe_nvrampart.offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	cfe_nvrampart.size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	}else{
 	nflash_parts[1].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	nflash_parts[1].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
-	nflash_parts[2].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
-	nflash_parts[2].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	}
 	return nflash_parts;
 	}
@@ -542,8 +548,16 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 
 	/* nvram */
 	if (cfe_size != 384 * 1024) {
+		if (cfenvram) {
+		bcm947xx_parts[3].offset = size - mtd->erasesize * 2;
+		bcm947xx_parts[3].size   = mtd->erasesize;
+		cfe_nvrampart.name = "cfe_nvram";
+		cfe_nvrampart.offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		cfe_nvrampart.size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		}else{
 		bcm947xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 		bcm947xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		}
 	} else {
 		/* nvram (old 128kb config partition on netgear wgt634u) */
 		bcm947xx_parts[3].offset = bcm947xx_parts[0].size;
@@ -680,6 +694,9 @@ init_bcm947xx_map(void)
 		printk(KERN_ERR "pflash: add_mtd_partitions failed\n");
 		goto fail;
 	}
+	if (cfe_nvrampart.name)
+		add_mtd_partitions(bcm947xx_mtd, &cfe_nvrampart, 1);
+	
 #endif
 
 	return 0;
