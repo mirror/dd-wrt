@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.9.1-rc1 Kernel Configuration
+# Linux/mips 3.9.1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1562,7 +1562,7 @@ CONFIG_CRYPTO_AUTHENC=m
 CONFIG_CRYPTO_CBC=m
 # CONFIG_CRYPTO_CTR is not set
 # CONFIG_CRYPTO_CTS is not set
-CONFIG_CRYPTO_ECB=m
+CONFIG_CRYPTO_ECB=y
 # CONFIG_CRYPTO_LRW is not set
 # CONFIG_CRYPTO_PCBC is not set
 # CONFIG_CRYPTO_XTS is not set
