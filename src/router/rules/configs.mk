@@ -263,6 +263,7 @@ configs-checkout:
 
 configs-update:
 #	svn commit -m "faster hand optimized mksquashfs-lzma tool" $(LINUXDIR)
+	rm $(LINUXDIR)/brcm
 	svn update $(LINUXDIR)
 	svn update $(LINUXDIR)/../linux-3.2
 	svn update $(LINUXDIR)/../linux-3.3
