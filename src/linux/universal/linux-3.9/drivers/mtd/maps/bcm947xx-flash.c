@@ -532,7 +532,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	{
 	nflash_parts[1].offset = size - mtd->erasesize * 3;
 	nflash_parts[1].size   = mtd->erasesize;
-	cfe_nvrampart.name = "cfe_nvram";
+	cfe_nvrampart.name = "nvram_cfe";
 	cfe_nvrampart.offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	cfe_nvrampart.size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	}else{
