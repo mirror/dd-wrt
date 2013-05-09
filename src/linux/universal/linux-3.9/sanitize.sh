@@ -39,12 +39,16 @@ do
 	    echo CONFIG_WDR4300=y >> .config
 	    echo CONFIG_WDR2543=y >> .config
 	    echo CONFIG_WR841V8=y >> .config
+	    echo CONFIG_NVRAM_64K=y >> .config
+	    echo CONFIG_NVRAM_60K=y >> .config
 	    make oldconfig ARCH=mips
 	    sed -i 's/\CONFIG_WR841V8=y/ /g' .config	    
 	    sed -i 's/\CONFIG_DIR615I=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WA901=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WDR4300=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WDR2543=y/ /g' .config	    
+	    sed -i 's/\CONFIG_NVRAM_64K=y/ /g' .config	    
+	    sed -i 's/\CONFIG_NVRAM_60K=y/ /g' .config	    
 	    cp .config $i
     fi
 done
