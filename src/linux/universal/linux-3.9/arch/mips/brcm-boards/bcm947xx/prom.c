@@ -294,7 +294,7 @@ extmem = 128 MB;
 			/* Keep tlb entries back in consistent state */
 	}
 #endif
-	if (extmem) {
+	if (extmem && detectmem == 128 MB) {
 		/* We should deduct 0x1000 from the second memory
 		 * region, because of the fact that processor does prefetch.
 		 * Now that we are deducting a page from second memory 
