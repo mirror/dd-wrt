@@ -9,6 +9,14 @@ config BCM47XX
         bool "Support for Broadcom BCM47XX processors"
         depends on BCM947XX
 
+config NVRAM_60K
+	bool "Nvram size 60k"
+	depends on BCM947XX
+	
+config NVRAM_64K
+	bool "Nvram size 64k"
+	depends on BCM947XX
+
 config BCM80211AC
 	bool "802.11AC wireless driver support"
 	depends on BCM47XX
