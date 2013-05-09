@@ -49,6 +49,7 @@
 #include <hndsflash.h>
 
 #ifdef CONFIG_MIPS_BRCM
+extern struct mtd_partition cfe_nvrampart;
 extern struct mtd_partition *
 init_mtd_partitions(struct mtd_info *mtd, size_t size);
 #else
@@ -269,6 +270,11 @@ bcmsflash_mtd_init(void)
 			goto fail;
 		}
 	}
+
+#ifdef CONFIG_MIPS_BRCM
+	if (cfe_nvrampart.name)
+		add_mtd_partitions(&bcmsflash.mtd, &cfe_nvrampart, 1);
+#endif
 
 	return 0;
 

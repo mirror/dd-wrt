@@ -971,20 +971,20 @@ dev_nvram_init(void)
 	if (nvram_mtd_cfe != NULL && cfenvram)
 	{
 	int len;
-	char *buf=kmalloc(65536,GFP_ATOMIC);
+	char *buf=kmalloc(NVRAM_SPACE,GFP_ATOMIC);
 	if (buf==NULL)
 	    {
 	    printk(KERN_ERR "mem allocation error");
 	    goto done_nofree;
 	    }
-	mtd_read(nvram_mtd, 0, nvram_mtd->erasesize, &len, buf);
+	mtd_read(nvram_mtd, nvram_mtd->erasesize - NVRAM_SPACE, NVRAM_SPACE, &len, buf);
 	header = (struct nvram_header *)buf;
 	len=0;	
 	if (header->magic!=NVRAM_MAGIC)
 	{
 	printk(KERN_EMERG "copy cfe nvram to base nvram\n");
 	len=0;	
-	mtd_read(nvram_mtd_cfe, 0x8000, 0x8000, &len, buf);
+	mtd_read(nvram_mtd_cfe,nvram_mtd->erasesize - 0x8000, 0x8000, &len, buf + nvram_mtd->erasesize - NVRAM_SPACE);
 	put_mtd_device(nvram_mtd_cfe);
 	mtd_unlock(nvram_mtd, 0, nvram_mtd->erasesize);
 	init_waitqueue_head(&wait_q);
