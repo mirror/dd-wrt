@@ -38,12 +38,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-ifeq ($(PLATFORM),mipsel-uclibc)
-COPTS += -minterlink-mips16 -mips16
-endif
-ifeq ($(PLATFORM),mips-uclibc)
-COPTS += -minterlink-mips16 -mips16
-endif
+COPTS += $(MIPS16_OPT) 
 
 BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE
 ifeq ($(CONFIG_MSSID),y)
