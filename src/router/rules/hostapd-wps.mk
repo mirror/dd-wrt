@@ -25,13 +25,7 @@ HOSTAPDVERSION=20120910
 #HOSTAPDVERSION=wps
 endif
 
-ifeq ($(PLATFORM),mipsel-uclibc)
-ATH9K_CFLAGS += -minterlink-mips16 -mips16
-endif
-ifeq ($(PLATFORM),mips-uclibc)
-ATH9K_CFLAGS += -minterlink-mips16 -mips16
-endif
-
+ATH9K_CFLAGS += $(MIPS16_OPT) 
 
 hostapd2: libnltiny
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd clean
