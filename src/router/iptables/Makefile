@@ -32,13 +32,7 @@ RELEASE_DIR:=/tmp
 #ifeq ($(shell [ -f /usr/include/netinet/ip6.h ] && echo YES), YES)
 #DO_IPV6:=1
 #endif
-ifeq ($(PLATFORM),mipsel-uclibc)
-COPTS += -minterlink-mips16 -mips16
-endif
-ifeq ($(PLATFORM),mips-uclibc)
-COPTS += -minterlink-mips16 -mips16
-endif
-
+COPTS += $(MIPS16_OPT) 
 COPT_FLAGS:=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC
 #ifneq ($(CONFIG_DIST),"micro")
 #ifneq ($(CONFIG_DIST),"micro-special")
@@ -69,6 +63,8 @@ endif
 
 
 CFLAGS:=$(COPT_FLAGS) -Wall -Wunused -I$(KERNEL_DIR)/include -Iinclude/ -DIPTABLES_VERSION=\"$(IPTABLES_VERSION)\" #-g -DDEBUG #-pg # -DIPTC_DEBUG
+
+CFLAGS += -DARCH_$(ARCHITECTURE)
 
 ifeq ($(CONFIG_HOTPLUG2),y)
 CFLAGS += -DNEW_KERNEL
