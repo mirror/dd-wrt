@@ -27,12 +27,7 @@ endif
 ifeq ($(ARCHITECTURE),adm5120)
 CHILLICOOVAEXTRAFLAGS+=--without-ipv6
 endif
-ifeq ($(PLATFORM),mipsel-uclibc)
-CHILLIEXTRA_CFLAGS = -minterlink-mips16 -mips16
-endif
-ifeq ($(PLATFORM),mips-uclibc)
-CHILLIEXTRA_CFLAGS = -minterlink-mips16 -mips16
-endif
+CHILLIEXTRA_CFLAGS = $(MIPS16_OPT) 
 CHILLIDIR=$(CHILLICOOVADIR)
 CHILLIEXTRAFLAGS=$(CHILLICOOVAEXTRAFLAGS)
 else
