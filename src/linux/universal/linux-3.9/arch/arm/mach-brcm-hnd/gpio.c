@@ -152,6 +152,7 @@ extern int iswrt350n;
 extern int iswrt300n11;
 int isac66;
 int isbuffalo=0;
+int isdefault=0;
 static struct class *gpio_class = NULL;
 
 static int __init
