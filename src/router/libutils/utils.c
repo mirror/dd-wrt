@@ -4962,6 +4962,7 @@ int led_control(int type, int act)
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x102;
 		break;
+	case ROUTER_ASUS_RTN66:
 	case ROUTER_ASUS_AC66U:
 		power_gpio = 0x10c;
 		usb_gpio = 0x10f;
