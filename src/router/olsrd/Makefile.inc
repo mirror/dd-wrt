@@ -11,7 +11,8 @@ DEBUG ?= 0
 NO_DEBUG_MESSAGES ?= 1
 
 # the optimize option to be set for gcc
-OPTIMIZE ?= $(COPTS) 
+OPTIMIZE ?= $(COPTS) $(MIPS16_OPT)
+
 #-ffunction-sections -fdata-sections -Wl,--gc-sections
 #CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 # enable mudflap with 1 or deactivate with 0
