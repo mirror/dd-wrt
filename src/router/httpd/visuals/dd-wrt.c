@@ -58,6 +58,9 @@ static unsigned int type8_clocks[9] = { 200, 300, 400, 500, 600, 632, 650, 662, 
 
 static unsigned int type9_clocks[7] =	// 1200 seem to be the last value which works stable
 { 600, 800, 1000, 1200, 1400, 1600, 0 };
+
+static unsigned int type10_clocks[7] = { 300, 333, 400, 480, 500, 533, 0};
+
 #endif
 
 #ifdef HAVE_RT2880
@@ -109,6 +112,8 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 		c = type8_clocks;
 	else if (rev == 9)
 		c = type9_clocks;
+	else if (rev == 10)
+		c = type10_clocks;
 	else {
 		websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
 		return;
