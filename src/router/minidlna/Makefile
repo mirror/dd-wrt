@@ -31,6 +31,15 @@ MINI_DLNA_PATH=$(shell pwd)
 
 CFLAGS += $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
+ifeq ($(PLATFORM),mipsel)
+CFLAGS += -minterlink-mips16 -mips16
+COPTS += -minterlink-mips16 -mips16
+endif
+ifeq ($(PLATFORM),mips)
+CFLAGS += -minterlink-mips16 -mips16
+COPTS += -minterlink-mips16 -mips16
+endif
+
 # [FIXME] added by Michael Jiang.
 # The below variables  should be modified when you use different platform.
 HOST=$(ARCH)-linux-linux
