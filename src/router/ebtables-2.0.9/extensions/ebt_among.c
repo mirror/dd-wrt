@@ -489,7 +489,7 @@ static struct ebt_u_match among_match = {
 	.extra_ops 	= opts,
 };
 
-void _init(void)
+void _among_among_among_init(void)
 {
 	ebt_register_match(&among_match);
 }

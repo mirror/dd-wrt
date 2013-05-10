@@ -133,7 +133,7 @@ static struct ebt_u_target arpreply_target =
 	.extra_ops	= opts,
 };
 
-void _init(void)
+void _arpreply_arpreply_arpreply_init(void)
 {
 	ebt_register_target(&arpreply_target);
 }
