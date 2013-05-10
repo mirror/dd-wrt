@@ -164,13 +164,7 @@ endif
 CFLAGS += -DNEED_PRINTF
 CFLAGS += $(COPTS)
 
-ifeq ($(PLATFORM),mipsel)
-CFLAGS += -minterlink-mips16 -mips16
-endif
-ifeq ($(PLATFORM),mips)
-CFLAGS += -minterlink-mips16 -mips16
-endif
-
+CFLAGS += $(MIPS16_OPT) 
 # If a flat binary should be built, CFLAGS_busybox="-elf2flt"
 # env var should be set for make invocation.
 # Here we check whether CFLAGS_busybox indeed contains that flag.
