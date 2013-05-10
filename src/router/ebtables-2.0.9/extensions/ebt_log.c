@@ -217,7 +217,7 @@ static struct ebt_u_watcher log_watcher =
 	.extra_ops	= opts,
 };
 
-void _init(void)
+void _log_log_log_init(void)
 {
 	ebt_register_watcher(&log_watcher);
 }
