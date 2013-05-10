@@ -241,6 +241,8 @@ early_nvram_init(void)
 			if (header->magic == NVRAM_MAGIC)
 				if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
 					printk(KERN_NOTICE "found small nvram at %X\n",off-NVRAM_SPACE);
+					cfenvram=1;				
+					header_cfe = header;	
 					goto found;
 				}
 			off += 65536;

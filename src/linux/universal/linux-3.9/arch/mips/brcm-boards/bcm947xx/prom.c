@@ -149,64 +149,28 @@ prom_init(void)
 			break;
 	}
 	detectmem = mem;
-#if 0 //def  CONFIG_HIGHMEM
+#if 0// defined(CONFIG_HIGHMEM) && !defined(CONFIG_BCM80211AC)
 	if (mem == 128 MB) {
-#if 0 // always false for BCM4706, needs CPU check
-		bool highmem_region = FALSE;
-		int idx;
 
-		sih = si_kattach(SI_OSH);
-		/* save current core index */
-		idx = si_coreidx(sih);
-		printk(KERN_INFO "core idx %d\n",idx);
-		if ((si_setcore(sih, DMEMC_CORE_ID, 0) != NULL) ||
-			(si_setcore(sih, DMEMS_CORE_ID, 0) != NULL)) {
-			uint32 addr, size;
-			uint asidx = 0;
-
-			do {
-				si_coreaddrspaceX(sih, asidx, &addr, &size);
-				printk(KERN_INFO "spaceX size %X,addr %X\n",size,addr);
-				if (size == 0)
-					break;
-				
-				if (addr == SI_SDRAM_R2) {
-					highmem_region = TRUE;
-					break;
-				}
-				asidx++;
-			} while (1);
-		}
-		/* switch back to previous core */
-		si_setcoreidx(sih, idx);
-
-		if (highmem_region) {
-#endif
-//			tlb_init();
-			early_tlb_init();
-			/* Add one temporary TLB entries to map SDRAM Region 2.
-			*      Physical        Virtual
-			*      0x80000000      0xc0000000      (1st: 256MB)
-			*      0x90000000      0xd0000000      (2nd: 256MB)
-			*/
+		early_tlb_init();
+		/* Add one temporary TLB entries to map SDRAM Region 2.
+		*      Physical        Virtual
+		*      0x80000000      0xc0000000      (1st: 256MB)
+		*      0x90000000      0xd0000000      (2nd: 256MB)
+		*/
 		add_tmptlb_entry(ENTRYLO(SI_SDRAM_R2),
 				 ENTRYLO(SI_SDRAM_R2 + (256 MB)),
 				 EXTVBASE, PM_256M);
 
-			off = EXTVBASE + __pa(off);
-			for (extmem = (128 MB); extmem < (512 MB); extmem <<= 1) {
-				if (*(unsigned long *)(off + extmem) == data)
-					break;
-			}
-
-			extmem -= mem;
-			/* Keep tlb entries back in consistent state */
-//			tlb_init();
-			early_tlb_init();
-#if 0
+		off = EXTVBASE + __pa(off);
+		for (extmem = (128 MB); extmem < (512 MB); extmem <<= 1) {
+			if (*(unsigned long *)(off + extmem) == data)
+				break;
 		}
-#endif
 
+		extmem -= mem;
+		/* Keep tlb entries back in consistent state */
+		early_tlb_init();
 	}
 #endif  /* CONFIG_HIGHMEM */
 	/* Ignoring the last page when ddr size is 128M. Cached
@@ -236,7 +200,7 @@ prom_init(void)
 
 	add_memory_region(SI_SDRAM_BASE, mem, BOOT_MEM_RAM);
 
-#if 0//def  CONFIG_HIGHMEM
+#if 0// defined(CONFIG_HIGHMEM) && !defined(CONFIG_BCM80211AC)
 	if (extmem) {
 		/* We should deduct 0x1000 from the second memory
 		 * region, because of the fact that processor does prefetch.
@@ -247,7 +211,6 @@ prom_init(void)
 		 */
 		if (MIPS74K(current_cpu_data.processor_id) && (mem == (128 MB)))
 			extmem -= 0x1000;
-
 		add_memory_region(SI_SDRAM_R2 + (128 MB) - 0x1000, extmem, BOOT_MEM_RAM);
 	}
 #endif  /* CONFIG_HIGHMEM */
@@ -261,40 +224,38 @@ prom_free_prom_memory(void)
 #include <asm/tlbmisc.h>
 unsigned long extended_ram=0;
 
+extern si_t *bcm947xx_sih;
+
 void __init memory_setup(void)
 {
+#if  defined(CONFIG_HIGHMEM)
 unsigned long extmem = 0, off, data;
 unsigned long off1, data1;
 off = (unsigned long)prom_init;
 data = *(unsigned long *)prom_init;
 off1 = off + 4;
 data1 = *(unsigned long *)off1;
-
-
-#ifdef  CONFIG_HIGHMEM
 extmem = 128 MB;
-#if 0
-	if (detectmem == 128 MB) {
-			/* Add one temporary TLB entries to map SDRAM Region 2.
-			*      Physical        Virtual
-			*      0x80000000      0xc0000000      (1st: 256MB)
-			*      0x90000000      0xd0000000      (2nd: 256MB)
-			*/
-//			add_wired_entry(ENTRYLO(SI_SDRAM_R2),
-//					 ENTRYLO(SI_SDRAM_R2 + (256 MB)),
-//					 EXTVBASE, PM_256M);
+int highmemsupport=0;
+uint boardnum;
 
-			off = SI_SDRAM_R2;//EXTVBASE + __pa(off);
-			for (extmem = (128 MB); extmem < (512 MB); extmem <<= 1) {
-				if (*(unsigned long *)(off + extmem) == data)
-					break;
-			}
+	/* Get global SB handle */
+bcm947xx_sih = si_kattach(SI_OSH);
+boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
 
-			extmem -= detectmem;
-			/* Keep tlb entries back in consistent state */
-	}
-#endif
-	if (extmem && detectmem == 128 MB) {
+	if (boardnum == 0 && nvram_match("boardtype", "0xF5B2")
+	    && nvram_match("boardrev", "0x1100")
+	    && !nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0"))
+		highmemsupport = 1;
+
+	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2")
+	    && nvram_match("boardrev", "0x1100")
+	    && nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0")) 
+		highmemsupport = 1;
+
+
+
+	if (extmem && detectmem == 128 MB && highmemsupport) {
 		/* We should deduct 0x1000 from the second memory
 		 * region, because of the fact that processor does prefetch.
 		 * Now that we are deducting a page from second memory 
