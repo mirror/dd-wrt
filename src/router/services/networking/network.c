@@ -3518,10 +3518,6 @@ void start_wan(int status)
 		// Allow runtime debugging
 		if (nvram_match("ppp_debug", "1"))
 			fprintf(fp, "debug\n");
-#ifdef HAVE_IPV6
-		if (nvram_match("ipv6_enable", "1"))
-		    	fprintf(fp,"ipv6\n");
-#endif			
 
 		// Demand dial.. This is not pretty.
 		// The first problems i see is that if connection is lost it would
@@ -3538,6 +3534,10 @@ void start_wan(int status)
 				"10.112.112.112:10.112.112.113\n" "lcp-echo-interval %d\n" "lcp-echo-failure 10\n" "ipcp-accept-remote\n" "ipcp-accept-local\n" "connect true\n" "ktune\n", idletime, atoi(idletime) * 2);
 		else
 			fprintf(fp, "persist\n" "lcp-echo-interval 3\n" "lcp-echo-failure 20\n");
+#ifdef HAVE_IPV6
+		if (nvram_match("ipv6_enable", "1"))
+		    	fprintf(fp,"ipv6\n");
+#endif			
 
 		fclose(fp);
 
