@@ -1,5 +1,13 @@
+ifeq ($(PLATFORM),mipsel-uclibc)
+DROPBEAR_OPTS = -minterlink-mips16 -mips16
+endif
+ifeq ($(PLATFORM),mips-uclibc)
+DROPBEAR_OPTS = -minterlink-mips16 -mips16
+endif
+
+
 dropbear-configure: zlib
-	cd dropbear && ./configure --host=$(ARCH)-linux --disable-lastlog --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-libutil CC="$(CC)" CFLAGS="-I../zlib $(COPTS) -L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" host_alias=$(ARCH)-linux
+	cd dropbear && ./configure --host=$(ARCH)-linux --disable-lastlog --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-libutil CC="$(CC)" CFLAGS="-DNEED_PRINTF -I../zlib $(COPTS) $(DROPBEAR_OPTS) -L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" host_alias=$(ARCH)-linux
 
 dropbear: zlib
 	$(MAKE) -j 4 -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1
