@@ -3536,7 +3536,7 @@ void start_wan(int status)
 			fprintf(fp, "persist\n" "lcp-echo-interval 3\n" "lcp-echo-failure 20\n");
 #ifdef HAVE_IPV6
 		if (nvram_match("ipv6_enable", "1"))
-		    	fprintf(fp,"ipv6 ipv6cp-use-ipaddr\n");
+		    	fprintf(fp,"ipv6 ,\n");
 #endif			
 
 		fclose(fp);
