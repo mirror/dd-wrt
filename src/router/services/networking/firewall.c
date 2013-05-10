@@ -676,8 +676,7 @@ static void nat_prerouting(void)
 
 static int wanactive(void)
 {
-	return (!nvram_match("wan_proto", "disabled")
-		&& strcmp(wanaddr, "0.0.0.0"));
+	return (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr, "0.0.0.0") && check_wan_link(0));
 }
 
 static void nat_postrouting(void)
