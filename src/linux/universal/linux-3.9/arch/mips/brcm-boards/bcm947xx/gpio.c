@@ -233,6 +233,13 @@ if ((boardnum == 0) && nvram_match("boardtype", "0xF5B2") && nvram_match("boardr
 		isac66 = 1;
 }
 
+if ((boardnum == 0) && nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev", "0x1100") && !nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0"))
+{
+		printk(KERN_EMERG "Asus-RT-N66U init\n");
+		gpios = 0;
+		isac66 = 1;
+}
+
 if ((boardnum == 42 || boardnum == 66)
 		&& nvram_match("boardtype", "0x04EF")
 		&& (nvram_match("boardrev", "0x1304") || nvram_match("boardrev", "0x1305") || nvram_match("boardrev", "0x1307")))
