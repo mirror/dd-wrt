@@ -19,12 +19,7 @@ CFLAGS += -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS = -ffunction-sections -fdata-sections -Wl,--gc-sections
 include $(TOP)/.config
 
-ifeq ($(PLATFORM),mipsel)
-CFLAGS += -minterlink-mips16 -mips16
-endif
-ifeq ($(PLATFORM),mips)
-CFLAGS += -minterlink-mips16 -mips16
-endif
+CFLAGS += $(MIPS16_OPT) 
 
 CFLAGS_SH_LIB:=-fPIC
 
