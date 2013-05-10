@@ -30,6 +30,7 @@ CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 #CFLAGS += -fomit-frame-pointer 
 #endif
 endif
+CFLAGS += $(MIPS16_OPT) 
 
 cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
