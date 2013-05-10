@@ -89,7 +89,9 @@ int getcpurev(void)
 			if (strstr(cpurev, "MIPS 74K V4.0"))	// BCM4718 (Broadcom BCM4716 chip rev 1)
 				return 40;
 			if (strstr(cpurev, "MIPS 74K V4.9"))	// BCM4716B0 (Broadcom BCMB83A chip rev 0)
-				return 49;	// BCM5356B0 (Broadcom BCM5356 chip rev 1) 
+				return 50;	// BCM5356B0 (Broadcom BCM5356 chip rev 1) 
+			if (strstr(cpurev, "MIPS 74K V4.0"))	// BCM4716B0 (Broadcom BCMB83A chip rev 0)
+				return 51;	// BCM5356B0 (Broadcom BCM5356 chip rev 1) 
 			if (strstr(cpurev, "MIPS 74Kc V4.9"))	// BCM4716B0 (Broadcom BCMB83A chip rev 0) //newer kernels 
 				return 50;	// BCM5356B0 (Broadcom BCM5356 chip rev 1) 
 			if (strstr(cpurev, "MIPS 74Kc V4.0"))	// BCM4716B0 (Broadcom BCMB83A chip rev 0) //newer kernels 
