@@ -84,7 +84,7 @@ static struct ebt_u_target standard =
 	.extra_ops	= opts,
 };
 
-void _init(void)
+void _standard_standard_standard_init(void)
 {
 	ebt_register_target(&standard);
 }

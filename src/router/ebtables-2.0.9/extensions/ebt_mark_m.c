@@ -121,7 +121,7 @@ static struct ebt_u_match mark_match =
 	.extra_ops	= opts,
 };
 
-void _init(void)
+void _mark_m_mark_m_mark_m_init(void)
 {
 	ebt_register_match(&mark_match);
 }

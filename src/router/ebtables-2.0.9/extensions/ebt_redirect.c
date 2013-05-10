@@ -108,7 +108,7 @@ static struct ebt_u_target redirect_target =
 	.extra_ops	= opts,
 };
 
-void _init(void)
+void _redirect_redirect_redirect_init(void)
 {
 	ebt_register_target(&redirect_target);
 }

@@ -29,7 +29,7 @@ static struct ebt_u_table table =
 //	.help		= print_help,
 };
 
-void _init(void)
+void _t_filter_t_filter_t_filter_init(void)
 {
 	ebt_register_table(&table);
 }

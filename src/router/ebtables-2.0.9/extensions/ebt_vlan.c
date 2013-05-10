@@ -181,7 +181,7 @@ static struct ebt_u_match vlan_match = {
 	.extra_ops	= opts,
 };
 
-void _init(void)
+void _vlan_vlan_vlan_init(void)
 {
 	ebt_register_match(&vlan_match);
 }

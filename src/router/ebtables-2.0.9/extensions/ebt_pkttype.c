@@ -125,7 +125,7 @@ static struct ebt_u_match pkttype_match =
 	.extra_ops	= opts,
 };
 
-void _init(void)
+void _pkttype_pkttype_pkttype_init(void)
 {
 	ebt_register_match(&pkttype_match);
 }
