@@ -152,6 +152,7 @@ extern int iswrt300n11;
 int isbuffalo=0;
 int isd1800h=0;
 int isac66=0;
+int isdefault=1;
 EXPORT_SYMBOL(isd1800h);
 EXPORT_SYMBOL(isac66);
 static struct class *gpio_class = NULL;
@@ -224,6 +225,7 @@ if ((boardnum == 0) && nvram_match("boardtype", "0xf52e") && (nvram_match("board
 		printk(KERN_EMERG "Buffalo D1800H init\n");
 		gpios = 0;
 		isd1800h = 1;
+		isdefault = 0;
 }
 
 if ((boardnum == 0) && nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev", "0x1100") && nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0"))
@@ -231,6 +233,7 @@ if ((boardnum == 0) && nvram_match("boardtype", "0xF5B2") && nvram_match("boardr
 		printk(KERN_EMERG "Asus-RT-AC66U init\n");
 		gpios = 0;
 		isac66 = 1;
+		isdefault = 0;
 }
 
 if ((boardnum == 0) && nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev", "0x1100") && !nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0"))
@@ -238,6 +241,7 @@ if ((boardnum == 0) && nvram_match("boardtype", "0xF5B2") && nvram_match("boardr
 		printk(KERN_EMERG "Asus-RT-N66U init\n");
 		gpios = 0;
 		isac66 = 1;
+		isdefault = 0;
 }
 
 if ((boardnum == 42 || boardnum == 66)
