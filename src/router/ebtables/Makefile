@@ -24,6 +24,14 @@ override SYSCONFIGDIR:=$(DESTDIR)$(SYSCONFIGDIR)
 
 CFLAGS += -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS = -ffunction-sections -fdata-sections -Wl,--gc-sections
+ifeq ($(PLATFORM),mipsel-uclibc)
+CFLAGS += -minterlink-mips16 -mips16
+endif
+ifeq ($(PLATFORM),mips-uclibc)
+CFLAGS += -minterlink-mips16 -mips16
+endif
+
+
 #CC:=gcc
 #LD:=ld
 
