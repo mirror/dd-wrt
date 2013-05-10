@@ -75,6 +75,13 @@ ifeq ($(CONFIG_MINIDLNA),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 
+ifeq ($(PLATFORM),mipsel)
+CFLAGS += -minterlink-mips16 -mips16
+endif
+ifeq ($(PLATFORM),mips)
+CFLAGS += -minterlink-mips16 -mips16
+endif
+
 ifndef CONFIG_OS
 ifdef CONFIG_NATIVE_WINDOWS
 CONFIG_OS=win32
