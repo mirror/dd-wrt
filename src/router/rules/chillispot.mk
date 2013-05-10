@@ -27,6 +27,12 @@ endif
 ifeq ($(ARCHITECTURE),adm5120)
 CHILLICOOVAEXTRAFLAGS+=--without-ipv6
 endif
+ifeq ($(PLATFORM),mipsel-uclibc)
+CHILLIEXTRA_CFLAGS = -minterlink-mips16 -mips16
+endif
+ifeq ($(PLATFORM),mips-uclibc)
+CHILLIEXTRA_CFLAGS = -minterlink-mips16 -mips16
+endif
 CHILLIDIR=$(CHILLICOOVADIR)
 CHILLIEXTRAFLAGS=$(CHILLICOOVAEXTRAFLAGS)
 else
@@ -34,8 +40,8 @@ CHILLIDIR=chillispot
 endif
 
 chillispot-configure:
-	cd $(CHILLIDIR) && ./configure $(CHILLIEXTRAFLAGS) --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections"
-	cd $(CHILLICOOVADIR) && ./configure $(CHILLICOOVAEXTRAFLAGS) --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	cd $(CHILLIDIR) && ./configure $(CHILLIEXTRAFLAGS) --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) $(CHILLIEXTRA_CFLAGS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	cd $(CHILLICOOVADIR) && ./configure $(CHILLICOOVAEXTRAFLAGS) --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) $(CHILLIEXTRA_CFLAGS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 chillispot:
 	$(MAKE) -j 4 -C $(CHILLIDIR)
