@@ -2621,44 +2621,54 @@ void start_overclocking(void)
 		clk2 = 120;
 		break;
 	case 300:
-		clk2 = 120;
-		clk2_1 = 150;
-		if (rev == 8)
-			clk2_2 = 75;
-		else
-			clk2_2 = 37;
+		if (rev == 10) {
+			clk2_1 = 200;
+			clk2_2 = 100;
+		} else {
+			clk2 = 120;
+			clk2_1 = 150;
+			if (rev == 8)
+				clk2_2 = 75;
+			else
+				clk2_2 = 37;
+		}
 		break;
 	case 330:
 		clk2_1 = 132;
 		clk2_2 = 33;
 		break;
+	case 333:
+		clk2_1 = 166;
+		clk2_2 = 166;
+		break;
 	case 400:
-		clk = 400;
 		clk2_1 = 200;
 		clk2_2 = 100;
 		break;
+	case 480:
+		clk2_1 = 240;
+		clk2_2 = 120;
+		break;
 	case 500:
-		clk = 500;
 		clk2_1 = 250;
 		clk2_2 = 125;
 		break;
+	case 533:
+		clk2_1 = 266 clk2_2 = 133;
+		break;
 	case 600:
-		clk = 600;
 		clk2_1 = 300;
 		clk2_2 = 150;
 		break;
 	case 632:
-		clk = 632;
 		clk2_1 = 316;
 		clk2_2 = 158;
 		break;
 	case 650:
-		clk = 650;
 		clk2_1 = 325;
 		clk2_2 = 162;
 		break;
 	case 662:
-		clk = 662;
 		clk2_1 = 331;
 		clk2_2 = 165;
 		break;
@@ -2669,7 +2679,7 @@ void start_overclocking(void)
 
 	if (set) {
 		cprintf("clock frequency adjusted from %d to %d, reboot needed\n", cclk, clk);
-		if (rev == 2 || rev == 8)
+		if (rev == 2 || rev == 8 || rev == 10)
 			sprintf(clkfr, "%d,%d,%d", clk, clk2_1, clk2_2);
 		else
 			sprintf(clkfr, "%d,%d", clk, clk2);
