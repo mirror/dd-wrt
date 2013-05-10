@@ -110,6 +110,7 @@ export NM := $(CROSS_COMPILE)nm
 export RANLIB := $(CROSS_COMPILE)ranlib
 export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
+export MIPS16_OPT:= -minterlink-mips16 -mips16
 
 export CFLAGS := $(COPTS)
 

@@ -80,6 +80,8 @@ export NM := $(CROSS_COMPILE)nm
 export RANLIB := $(CROSS_COMPILE)ranlib
 export STRIP := @true
 export SIZE := $(CROSS_COMPILE)size
+export MIPS16_OPT:= -minterlink-mips16 -mips16
+
 
 export CFLAGS :=$(BASEOPT) -pipe -mips32 -mtune=mips32 -fno-caller-saves  -mno-branch-likely
 export LDFLAGS := 
