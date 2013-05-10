@@ -30,7 +30,7 @@ ebt_u_table table =
 //	.help		= print_help,
 };
 
-void _init(void)
+void _t_nat_t_nat_t_nat_init(void)
 {
 	ebt_register_table(&table);
 }

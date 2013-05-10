@@ -338,7 +338,7 @@ static struct ebt_u_match ip_match =
 	.extra_ops	= opts,
 };
 
-void _init(void)
+void _ip_ip_ip_init(void)
 {
 	ebt_register_match(&ip_match);
 }

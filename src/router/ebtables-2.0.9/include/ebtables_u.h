@@ -20,7 +20,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-#define __packed			__attribute__((packed))
 
 #ifndef EBTABLES_U_H
 #define EBTABLES_U_H
@@ -100,7 +99,7 @@ struct ebt_u_table
 {
 	char name[EBT_TABLE_MAXNAMELEN];
 	void (*check)(struct ebt_u_replace *repl);
-//	void (*help)(const char **);
+	void (*help)(const char **);
 	struct ebt_u_table *next;
 };
 
@@ -147,7 +146,7 @@ struct ebt_u_match
 	char name[EBT_FUNCTION_MAXNAMELEN];
 	/* size of the real match data */
 	unsigned int size;
-//	void (*help)(void);
+	void (*help)(void);
 	void (*init)(struct ebt_entry_match *m);
 	int (*parse)(int c, char **argv, int argc,
 	        const struct ebt_u_entry *entry, unsigned int *flags,
@@ -179,7 +178,7 @@ struct ebt_u_watcher
 {
 	char name[EBT_FUNCTION_MAXNAMELEN];
 	unsigned int size;
-//	void (*help)(void);
+	void (*help)(void);
 	void (*init)(struct ebt_entry_watcher *w);
 	int (*parse)(int c, char **argv, int argc,
 	   const struct ebt_u_entry *entry, unsigned int *flags,
@@ -203,7 +202,7 @@ struct ebt_u_target
 {
 	char name[EBT_FUNCTION_MAXNAMELEN];
 	unsigned int size;
-//	void (*help)(void);
+	void (*help)(void);
 	void (*init)(struct ebt_entry_target *t);
 	int (*parse)(int c, char **argv, int argc,
 	   const struct ebt_u_entry *entry, unsigned int *flags,
@@ -229,6 +228,8 @@ extern struct ebt_u_table *ebt_tables;
 extern struct ebt_u_match *ebt_matches;
 extern struct ebt_u_watcher *ebt_watchers;
 extern struct ebt_u_target *ebt_targets;
+
+extern int use_lockfd;
 
 void ebt_register_table(struct ebt_u_table *);
 void ebt_register_match(struct ebt_u_match *);
@@ -377,4 +378,84 @@ extern int ebt_printstyle_mac;
 #define PROC_SYS_MODPROBE "/proc/sys/kernel/modprobe"
 #endif
 #define ATOMIC_ENV_VARIABLE "EBTABLES_ATOMIC_FILE"
+
+#ifndef ARRAY_SIZE
+# define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
+#endif
 #endif /* EBTABLES_U_H */
+extern void _802_3_init();
+extern void _nat_init();
+extern void _arp_init();
+extern void _arpreply_init();
+extern void _ip_init();
+extern void _standard_init();
+extern void _log_init();
+extern void _redirect_init();
+extern void _vlan_init();
+extern void _mark_m_init();
+extern void _mark_init();
+extern void _pkttype_init();
+extern void _stp_init();
+extern void _among_init();
+extern void _limit_init();
+extern void _ulog_init();
+extern void _t_filter_init();
+extern void _t_nat_init();
+extern void _t_broute_init();
+extern void _802_3_init();
+extern void _nat_init();
+extern void _arp_init();
+extern void _arpreply_init();
+extern void _ip_init();
+extern void _standard_init();
+extern void _log_init();
+extern void _redirect_init();
+extern void _vlan_init();
+extern void _mark_m_init();
+extern void _mark_init();
+extern void _pkttype_init();
+extern void _stp_init();
+extern void _among_init();
+extern void _limit_init();
+extern void _ulog_init();
+extern void _t_filter_init();
+extern void _t_nat_init();
+extern void _t_broute_init();
+extern void _802_3_init();
+extern void _nat_init();
+extern void _arp_init();
+extern void _arpreply_init();
+extern void _ip_init();
+extern void _standard_init();
+extern void _log_init();
+extern void _redirect_init();
+extern void _vlan_init();
+extern void _mark_m_init();
+extern void _mark_init();
+extern void _pkttype_init();
+extern void _stp_init();
+extern void _among_init();
+extern void _limit_init();
+extern void _ulog_init();
+extern void _t_filter_init();
+extern void _t_nat_init();
+extern void _t_broute_init();
+extern void _802_3_init();
+extern void _nat_init();
+extern void _arp_init();
+extern void _arpreply_init();
+extern void _ip_init();
+extern void _standard_init();
+extern void _log_init();
+extern void _redirect_init();
+extern void _vlan_init();
+extern void _mark_m_init();
+extern void _mark_init();
+extern void _pkttype_init();
+extern void _stp_init();
+extern void _among_init();
+extern void _limit_init();
+extern void _ulog_init();
+extern void _t_filter_init();
+extern void _t_nat_init();
+extern void _t_broute_init();
