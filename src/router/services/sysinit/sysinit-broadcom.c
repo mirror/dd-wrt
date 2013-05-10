@@ -2198,13 +2198,11 @@ void start_sysinit(void)
 			case ROUTER_WRT300NV11:
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
-			case ROUTER_ASUS_RTN16:
 			case ROUTER_BELKIN_F7D3301:
 			case ROUTER_BELKIN_F7D4301:
 			case ROUTER_BELKIN_F5D8235V3:
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
-			case ROUTER_ASUS_RTN66:
 			case ROUTER_NETGEAR_WNDR4000:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
@@ -2213,6 +2211,8 @@ void start_sysinit(void)
 				modules = "bcm57xxlsys switch-core switch-robo";
 #endif
 				break;
+			case ROUTER_ASUS_RTN16:
+			case ROUTER_ASUS_RTN66:
 			case ROUTER_ASUS_AC66U:
 			case ROUTER_D1800H:
 				modules = "et switch-core switch-robo";
@@ -2286,8 +2286,6 @@ void start_sysinit(void)
 			case ROUTER_WRT300NV11:
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
-			case ROUTER_ASUS_RTN16:
-			case ROUTER_ASUS_RTN66:
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
 			case ROUTER_NETGEAR_WNDR4000:
@@ -2299,6 +2297,8 @@ void start_sysinit(void)
 #endif
 				break;
 			case ROUTER_ASUS_AC66U:
+			case ROUTER_ASUS_RTN16:
+			case ROUTER_ASUS_RTN66:
 			case ROUTER_D1800H:
 				modules = "et switch-core switch-robo";
 				break;
