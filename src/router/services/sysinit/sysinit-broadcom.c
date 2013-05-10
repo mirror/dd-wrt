@@ -1997,18 +1997,21 @@ void start_sysinit(void)
 	/*
 	 * ifnames 
 	 */
-	strcpy(wanifname, nvram_safe_get("wan_ifname"));
+	if (!nvram_match("wan_ifname", "")) {
+		strcpy(wanifname, nvram_safe_get("wan_ifname"));
+		nvram_set("wan_ifname", wanifname);
+		nvram_set("wan_ifname2", wanifname);
+		nvram_set("wan_ifnames", wanifname);
+		nvram_set("wan_default", wanifname);
+		nvram_set("pppoe_wan_ifname", wanifname);
+		nvram_set("pppoe_ifname", wanifnameOA);
+	}
+
 	strcpy(wlifname, nvram_safe_get("wl0_ifname"));
 
 	/*
 	 * set wan_ifnames, pppoe_wan_ifname and pppoe_ifname 
 	 */
-	nvram_set("wan_ifname", wanifname);
-	nvram_set("wan_ifname2", wanifname);
-	nvram_set("wan_ifnames", wanifname);
-	nvram_set("wan_default", wanifname);
-	nvram_set("pppoe_wan_ifname", wanifname);
-	nvram_set("pppoe_ifname", wanifname);
 
 	/*
 	 * MAC address sdjustments 
