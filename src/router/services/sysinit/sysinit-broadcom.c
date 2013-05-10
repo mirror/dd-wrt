@@ -733,6 +733,8 @@ void start_sysinit(void)
 	case ROUTER_ASUS_RTN16:
 		basic_params = vlan_1_2;
 		nvram_set("vlan2hwname", "et0");
+		nvram_set("lan_ifnames", "vlan1 eth1");
+		nvram_set("wan_ifname", "vlan2");
 		if (nvram_match("vlan1ports", "1 2 3 4 8*")
 		    || nvram_match("vlan2ports", "0 8u")) {
 			nvram_set("vlan1ports", "4 3 2 1 8*");
