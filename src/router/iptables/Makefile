@@ -32,6 +32,12 @@ RELEASE_DIR:=/tmp
 #ifeq ($(shell [ -f /usr/include/netinet/ip6.h ] && echo YES), YES)
 #DO_IPV6:=1
 #endif
+ifeq ($(PLATFORM),mipsel-uclibc)
+COPTS += -minterlink-mips16 -mips16
+endif
+ifeq ($(PLATFORM),mips-uclibc)
+COPTS += -minterlink-mips16 -mips16
+endif
 
 COPT_FLAGS:=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC
 #ifneq ($(CONFIG_DIST),"micro")
