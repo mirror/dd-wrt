@@ -31,14 +31,8 @@ MINI_DLNA_PATH=$(shell pwd)
 
 CFLAGS += $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-ifeq ($(PLATFORM),mipsel)
-CFLAGS += -minterlink-mips16 -mips16
-COPTS += -minterlink-mips16 -mips16
-endif
-ifeq ($(PLATFORM),mips)
-CFLAGS += -minterlink-mips16 -mips16
-COPTS += -minterlink-mips16 -mips16
-endif
+CFLAGS += $(MIPS16_OPT) 
+COPTS += $(MIPS16_OPT) 
 
 # [FIXME] added by Michael Jiang.
 # The below variables  should be modified when you use different platform.
