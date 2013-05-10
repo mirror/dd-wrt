@@ -2654,7 +2654,8 @@ void start_overclocking(void)
 		clk2_2 = 125;
 		break;
 	case 533:
-		clk2_1 = 266 clk2_2 = 133;
+		clk2_1 = 266;
+		clk2_2 = 133;
 		break;
 	case 600:
 		clk2_1 = 300;
