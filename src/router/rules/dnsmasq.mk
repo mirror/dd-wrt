@@ -1,12 +1,8 @@
 ifneq ($(CONFIG_IPV6),y)
 export DNSMASQ_MAKEFLAGS:=-DNO_IPV6
 endif
-ifeq ($(PLATFORM),mipsel-uclibc)
-DNSMASQ_COPTS += -minterlink-mips16 -mips16
-endif
-ifeq ($(PLATFORM),mips-uclibc)
-DNSMASQ_COPTS += -minterlink-mips16 -mips16
-endif
+
+DNSMASQ_COPTS += $(MIPS16_OPT) 
 
 dnsmasq-clean:
 	$(MAKE) -j 4 -C dnsmasq CFLAGS="$(COPTS)" clean
