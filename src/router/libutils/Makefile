@@ -50,6 +50,9 @@ CFLAGS	= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBA
 endif
 
 CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/shared/bcmwifi/include
+CFLAGS += $(MIPS16_OPT) 
+
+
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
 REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
@@ -1143,14 +1146,14 @@ libutils.so: $(OBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram
 
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c
-	$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) -c -o $@ $^
+	$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) -c -o $@ $^
 
 libwireless.so: $(WOBJS)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-	$(CC) -shared -c $(NCFLAGS) $(NFILES)
+	$(CC) -shared -c $(NCFLAGS) $(MIPS16_OPT) $(NFILES)
 endif
 ifeq ($(CONFIG_ATH9K),y)
-	$(CC) -shared -c $(ATH9KCFLAGS) $(ATH9KFILES)
+	$(CC) -shared -c $(ATH9KCFLAGS) $(MIPS16_OPT) $(ATH9KFILES) 
 endif
 	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram  $(WLDFLAGS) $(ATH9KLDFLAGS)
 
