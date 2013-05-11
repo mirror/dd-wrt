@@ -80,6 +80,11 @@ extern spinlock_t bcm947xx_sih_lock;
 #define	MAX_MTD_DEVICES	32
 #endif
 
+#define NVRAM_SPACE_32K 0x8000
+#define NVRAM_SPACE_60K 0xF000
+
+static int NVRAMSIZE = NVRAM_SPACE;
+
 #ifdef NFLASH_SUPPORT
 static unsigned char nflash_nvh[NVRAM_SPACE];
 
@@ -118,6 +123,7 @@ early_nvram_init(void)
 {
 	struct nvram_header *header;
 	struct nvram_header *header_cfe = NULL;
+	struct nvram_header *header_cfe2 = NULL;
 	chipcregs_t *cc;
 	int i;
 	uint32 base, off, lim;
@@ -217,8 +223,9 @@ early_nvram_init(void)
 			if (header->magic == NVRAM_MAGIC)
 				if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
 					printk(KERN_NOTICE "found nvram at %X\n",off - NVRAM_SPACE);
-					header_cfe = (struct nvram_header *)KSEG1ADDR(base + off + 0x20000 - (NVRAM_SPACE/2));
-					if (header_cfe->magic != NVRAM_MAGIC)
+					header_cfe = (struct nvram_header *)KSEG1ADDR(base + off + 0x20000 - (NVRAM_SPACE_32K));
+					header_cfe2 = (struct nvram_header *)KSEG1ADDR(base + off + 0x20000 - (NVRAM_SPACE_60K));
+					if (header_cfe->magic != NVRAM_MAGIC && header_cfe2->magic != NVRAM_MAGIC)
 					{
 					    printk(KERN_INFO "something wrong here. do not remap\n");
 					    if ((off - NVRAM_SPACE) < 0x1f0000)
@@ -233,15 +240,34 @@ early_nvram_init(void)
 					    goto found;
 					}else{
 					cfenvram=1;
-					printk(KERN_NOTICE "map cfe nvram at %X\n",off + 0x20000 - (NVRAM_SPACE/2));
+					if (header_cfe->magic == NVRAM_MAGIC) {
+						printk(KERN_NOTICE "map 32K cfe nvram at %X\n",off + 0x20000 - (NVRAM_SPACE_32K));
+						NVRAMSIZE = NVRAM_SPACE_32K;
+						}
+					else if (header_cfe2->magic == NVRAM_MAGIC) {
+						printk(KERN_NOTICE "map 60K cfe nvram at %X\n",off + 0x20000 - (NVRAM_SPACE_60K));
+						NVRAMSIZE = NVRAM_SPACE_60K;
+						header_cfe = header_cfe2;
+						}
 					goto found;
 					}
 				}
-			header = (struct nvram_header *) KSEG1ADDR(base + off - (NVRAM_SPACE/2));
+			header = (struct nvram_header *) KSEG1ADDR(base + off - (NVRAM_SPACE_32K));
 			if (header->magic == NVRAM_MAGIC)
 				if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
-					printk(KERN_NOTICE "found small nvram at %X\n",off-NVRAM_SPACE);
+					printk(KERN_NOTICE "found 32K small nvram at %X\n",off-NVRAM_SPACE_32K);
 					cfenvram=1;				
+					NVRAMSIZE = NVRAM_SPACE_32K;
+					header_cfe = header;	
+					goto found;
+				}
+
+			header = (struct nvram_header *) KSEG1ADDR(base + off - (NVRAM_SPACE_60K));
+			if (header->magic == NVRAM_MAGIC)
+				if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
+					printk(KERN_NOTICE "found 60K small nvram at %X\n",off-NVRAM_SPACE_60K);
+					cfenvram=1;				
+					NVRAMSIZE = NVRAM_SPACE_60K;
 					header_cfe = header;	
 					goto found;
 				}
@@ -279,7 +305,7 @@ found:
 	dst = (u32 *) nvram_buf_cfe;
 	for (i = 0; i < sizeof(struct nvram_header); i += 4)
 		*dst++ = *src++;
-	for (; i < header->len && i < NVRAM_SPACE/2; i += 4)
+	for (; i < header->len && i < NVRAM_SPACE_32K; i += 4)
 		*dst++ = ltoh32(*src++);
 	}
 
@@ -986,7 +1012,7 @@ dev_nvram_init(void)
 	{
 	printk(KERN_EMERG "copy cfe nvram to base nvram\n");
 	len=0;	
-	mtd_read(nvram_mtd_cfe,nvram_mtd->erasesize - 0x8000, 0x8000, &len, buf + nvram_mtd->erasesize - NVRAM_SPACE);
+	mtd_read(nvram_mtd_cfe,nvram_mtd->erasesize - NVRAMSIZE, NVRAMSIZE, &len, buf + nvram_mtd->erasesize - NVRAM_SPACE);
 	put_mtd_device(nvram_mtd_cfe);
 	mtd_unlock(nvram_mtd, 0, nvram_mtd->erasesize);
 	init_waitqueue_head(&wait_q);
