@@ -2004,7 +2004,7 @@ void start_sysinit(void)
 		nvram_set("wan_ifnames", wanifname);
 		nvram_set("wan_default", wanifname);
 		nvram_set("pppoe_wan_ifname", wanifname);
-		nvram_set("pppoe_ifname", wanifnameOA);
+		nvram_set("pppoe_ifname", wanifname);
 	}
 
 	strcpy(wlifname, nvram_safe_get("wl0_ifname"));
