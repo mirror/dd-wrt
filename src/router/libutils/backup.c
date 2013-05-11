@@ -59,6 +59,7 @@ static char *filter[] = { "lan_ifnames",
 	"et0mdcport",
 	"devpath0",
 	"devpath1",
+	"gpio2",
 	"gpio4",
 	"gpio7",
 	"gpio9",
@@ -113,7 +114,14 @@ static char *filter[] = { "lan_ifnames",
 	"watchdog",
 	"serial_no",
 	"secret_code",
+	"boot_ver",
+	"mfg_wait",
+	"bootnv_ver",
 	"ntype",
+	"cthwver",
+	"boot_hw_model",
+	"wl_country",
+	"boot_hw_ver",
 	"hw_version",
 	"regulation_domain",
 	"regulation_domain_5G",
@@ -151,7 +159,7 @@ void nvram_clear(void)
 		for (i = 0; i < len; i++)
 			if (p[i] == '=')
 				p[i] = 0;
-		if (strncmp(p, "pci/", 4) && strncmp(p, ":0", 4) && strncmp(p, ":1", 4) && !nvram_critical(p))
+		if (strncmp(p, "sb/", 4) && strncmp(p, "pci/", 4) && strncmp(p, ":0", 4) && strncmp(p, ":1", 4) && !nvram_critical(p))
 			nvram_immed_set(p, NULL);
 		p += len + 1;
 	}
