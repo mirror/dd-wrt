@@ -409,7 +409,7 @@ early_nvram_getall(char *buf, int count)
 	end[0] = end[1] = '\0';
 	for (; *var; var += strlen(var) + 1) {
 		if ((count - len) <= (strlen(var) + 1))
-			break;
+			break;	
 		len += sprintf(buf + len, "%s", var) + 1;
 	}
 
@@ -951,6 +951,8 @@ dev_nvram_exit(void)
 
 	_nvram_exit();
 }
+void bcm947xx_machine_restart(char *command);
+
 
 static int
 dev_nvram_init(void)
@@ -965,6 +967,7 @@ dev_nvram_init(void)
 	wait_queue_head_t wait_q;
 	struct erase_info erase;
 	struct nvram_header *header;	
+	u32 *src, *dst;
 	printk(KERN_INFO "startup nvram driver\n");
 	/* Allocate and reserve memory to mmap() */
 	while ((PAGE_SIZE << order) < NVRAM_SPACE)
@@ -998,7 +1001,7 @@ dev_nvram_init(void)
 //		nvram_mtd = NULL;
 	if (nvram_mtd_cfe != NULL && cfenvram)
 	{
-	printk(KERN_INFO "check if nvram copy is required\n");
+	printk(KERN_INFO "check if nvram copy is required CFE Size is %d\n",NVRAMSIZE);
 	int len;
 	char *buf=kmalloc(NVRAM_SPACE,GFP_ATOMIC);
 	if (buf==NULL)
@@ -1014,6 +1017,7 @@ dev_nvram_init(void)
 	{
 	printk(KERN_EMERG "copy cfe nvram to base nvram\n");
 	len=0;	
+	memset(buf,0,NVRAM_SPACE);
 	mtd_read(nvram_mtd_cfe,nvram_mtd_cfe->erasesize - NVRAMSIZE, NVRAMSIZE, &len, buf + nvram_mtd->erasesize - NVRAM_SPACE);
 	put_mtd_device(nvram_mtd_cfe);
 	mtd_unlock(nvram_mtd, 0, nvram_mtd->erasesize);
@@ -1035,7 +1039,19 @@ dev_nvram_init(void)
 	schedule();
 	remove_wait_queue(&wait_q, &wait);
 	len=0;	
-	mtd_write(nvram_mtd, 0, nvram_mtd->erasesize,&len, buf);
+	printk(KERN_INFO "remap nvram %d\n",header->len);
+
+	src = (u32 *) buf + nvram_mtd->erasesize - NVRAM_SPACE;
+	dst = (u32 *) nvram_buf;
+	for (i = 0; i < sizeof(struct nvram_header); i += 4)
+		*dst++ = *src++;
+	for (; i < header->len && i < NVRAMSIZE; i += 4)
+		*dst++ = ltoh32(*src++);
+
+	mtd_write(nvram_mtd, nvram_mtd->erasesize - NVRAM_SPACE, NVRAM_SPACE,&len, buf);
+//	bcm947xx_machine_restart(NULL);
+
+
 	done:;
 	kfree(buf);
 	done_nofree:;
