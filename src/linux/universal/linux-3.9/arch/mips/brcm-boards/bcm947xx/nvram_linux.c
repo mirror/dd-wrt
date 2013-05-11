@@ -52,7 +52,6 @@ char __initdata ram_nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
 static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
-static char nvram_buf_cfe[NVRAM_SPACE/2] __attribute__((aligned(PAGE_SIZE)));
 static bool nvram_inram = FALSE;
 int cfenvram=0;
 
@@ -83,6 +82,7 @@ extern spinlock_t bcm947xx_sih_lock;
 #define NVRAM_SPACE_32K 0x8000
 #define NVRAM_SPACE_60K 0xF000
 
+static char nvram_buf_cfe[NVRAM_SPACE_60K] __attribute__((aligned(PAGE_SIZE)));
 static int NVRAMSIZE = NVRAM_SPACE;
 
 #ifdef NFLASH_SUPPORT
@@ -305,7 +305,7 @@ found:
 	dst = (u32 *) nvram_buf_cfe;
 	for (i = 0; i < sizeof(struct nvram_header); i += 4)
 		*dst++ = *src++;
-	for (; i < header->len && i < NVRAM_SPACE_32K; i += 4)
+	for (; i < header->len && i < NVRAMSIZE; i += 4)
 		*dst++ = ltoh32(*src++);
 	}
 
@@ -998,6 +998,7 @@ dev_nvram_init(void)
 //		nvram_mtd = NULL;
 	if (nvram_mtd_cfe != NULL && cfenvram)
 	{
+	printk(KERN_INFO "check if nvram copy is required\n");
 	int len;
 	char *buf=kmalloc(NVRAM_SPACE,GFP_ATOMIC);
 	if (buf==NULL)
@@ -1008,11 +1009,12 @@ dev_nvram_init(void)
 	mtd_read(nvram_mtd, nvram_mtd->erasesize - NVRAM_SPACE, NVRAM_SPACE, &len, buf);
 	header = (struct nvram_header *)buf;
 	len=0;	
+	printk(KERN_INFO "nvram copy magic is %X\n",header->magic);
 	if (header->magic!=NVRAM_MAGIC)
 	{
 	printk(KERN_EMERG "copy cfe nvram to base nvram\n");
 	len=0;	
-	mtd_read(nvram_mtd_cfe,nvram_mtd->erasesize - NVRAMSIZE, NVRAMSIZE, &len, buf + nvram_mtd->erasesize - NVRAM_SPACE);
+	mtd_read(nvram_mtd_cfe,nvram_mtd_cfe->erasesize - NVRAMSIZE, NVRAMSIZE, &len, buf + nvram_mtd->erasesize - NVRAM_SPACE);
 	put_mtd_device(nvram_mtd_cfe);
 	mtd_unlock(nvram_mtd, 0, nvram_mtd->erasesize);
 	init_waitqueue_head(&wait_q);
