@@ -1,5 +1,5 @@
 openser:
-	$(MAKE) -j 4 -C openser all utils/gen_ha1/gen_ha1 CFLAGS="$(COPTS)" extra_defs="-DNEED_PRINTF -DUSE_PTHREAD_MUTEX -fPIC " prefix=/ ARCH=$(ARCH)
+	$(MAKE) -j 4 -C openser all utils/gen_ha1/gen_ha1 CFLAGS="$(COPTS) $(MIPS16_OPT)" extra_defs="-DNEED_PRINTF -DUSE_PTHREAD_MUTEX -fPIC " prefix=/ ARCH=$(ARCH)
 
 openser-install:
 	install -D openser/openser $(INSTALLDIR)/openser/usr/sbin/openser
