@@ -39,7 +39,7 @@ hostapd2: libnltiny
 
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd CFLAGS="$$(cat hostapd-$(HOSTAPDVERSION)/.cflags) $(ATH9K_CFLAGS)" CONFIG_ATH9K=$(CONFIG_ATH9K) MULTICALL=1 hostapd_cli hostapd_multi.a
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/wpa_supplicant CFLAGS="$$(cat hostapd-$(HOSTAPDVERSION)/.cflags) $(ATH9K_CFLAGS)" CONFIG_ATH9K=$(CONFIG_ATH9K) MULTICALL=1 wpa_cli wpa_supplicant_multi.a
-	$(CC) $(COPTS) -L$(TOP)/nvram  -L$(TOP)/libutils -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections -o hostapd-$(HOSTAPDVERSION)/wpad hostapd-$(HOSTAPDVERSION)/multicall/multicall.c \
+	$(CC) $(COPTS) $(MIPS16_OPT)  -L$(TOP)/nvram  -L$(TOP)/libutils -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections -o hostapd-$(HOSTAPDVERSION)/wpad hostapd-$(HOSTAPDVERSION)/multicall/multicall.c \
 		hostapd-$(HOSTAPDVERSION)/hostapd/hostapd_multi.a \
 		hostapd-$(HOSTAPDVERSION)/wpa_supplicant/wpa_supplicant_multi.a \
 		$(ATH9K_LDFLAGS) -lutils -lnvram
