@@ -1,6 +1,6 @@
 
 ipeth-configure: 
-	cd $(TOP)/ipeth/libxml2 && ./configure  --host=$(ARCH)-linux CFLAGS="$(COPTS) -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" --without-python \
+	cd $(TOP)/ipeth/libxml2 && ./configure  --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" --without-python \
 	--enable-shared \
 	--enable-static \
 	--with-c14n \
@@ -36,8 +36,8 @@ ipeth-configure:
 	
 	rm -f $(TOP)/ipeth/libplist/CMakeCache.txt
 	(cd  $(TOP)/ipeth/libplist; \
-		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libplist/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		cmake \
 			-DCMAKE_SYSTEM_NAME=Linux \
 			-DCMAKE_SYSTEM_VERSION=1 \
@@ -66,8 +66,8 @@ ipeth-configure:
 
 	rm -f $(TOP)/ipeth/libusbmuxd/CMakeCache.txt
 	(cd  $(TOP)/ipeth/libusbmuxd; \
-		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libusbmuxd/include  -ffunction-sections -fdata-sections -Wl,--gc-sections " \
-		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libusbmuxd  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libusbmuxd/include  -ffunction-sections -fdata-sections -Wl,--gc-sections " \
+		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libusbmuxd  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		cmake \
 			-DCMAKE_SYSTEM_NAME=Linux \
 			-DCMAKE_SYSTEM_VERSION=1 \
@@ -94,7 +94,7 @@ ipeth-configure:
 	)
 	cd $(TOP)/ipeth/libusbmuxd && make
 
-	cd $(TOP)/ipeth/libimobiledevice && ./configure --without-cython --host=$(ARCH)-linux CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libplist/src/ -L$(TOP)/ipeth/libusbmuxd/libusbmuxd -L$(TOP)/zlib" 
+	cd $(TOP)/ipeth/libimobiledevice && ./configure --without-cython --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libplist/src/ -L$(TOP)/ipeth/libusbmuxd/libusbmuxd -L$(TOP)/zlib" 
 	cd $(TOP)/ipeth/libimobiledevice && make
 
 
