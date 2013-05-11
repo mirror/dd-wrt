@@ -44,7 +44,7 @@ endif
 endif
 
 CFLAGS += $(MIPS16_OPT)
-
+LDFLAGS += $(MIPS16_OPT)
 ifeq ($(CONFIG_TIEXTRA1),y)
 ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
 ifeq ($(ARCHITECTURE),openrisc)

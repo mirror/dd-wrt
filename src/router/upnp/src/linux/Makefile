@@ -116,7 +116,7 @@ $(UPNPBASE)/libupnp.a : FORCE
 	$(MAKE) -C $(UPNPBASE) DEBUG=$(DEBUG) PLATFORM=x86 CC=$(CC) LD=$(LD) VENDOR=$(VENDOR)
 
 $(TARGET) :: $(UPNPBASE)/libupnp.a  $(SOURCES.OBJ)
-	$(CC) -o $(TARGET) $(SOURCES.OBJ) $(LIBS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SOURCES.OBJ) $(LIBS)
 	$(SIZE)  $(TARGET)
 
 clean: 
