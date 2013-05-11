@@ -4828,8 +4828,8 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_LINKSYS_E4200:
 		power_gpio = 0x105;	// white LED1
-		diag_gpio = 0x005;	// power led blink / off to indicate fac.def. 
-		connected_gpio = 0x103;	// white LED2
+		diag_gpio = 0x103;	// power led blink / off to indicate fac.def. 
+//		connected_gpio = 0x103;	// white LED2
 		break;
 	case ROUTER_ASUS_WL500G:
 		power_gpio = 0x100;
