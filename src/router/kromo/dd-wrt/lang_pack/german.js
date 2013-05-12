@@ -1029,6 +1029,7 @@ management.lang_italian="Italienisch";
 management.lang_brazilian="Portugiesisch (Brasil.)";
 management.lang_russian="Russisch";
 management.lang_romanian="Rumänisch";
+management.lang_serbian="Serbisch";
 management.lang_slovenian="Slowenisch";
 management.lang_spanish="Spanisch";
 management.lang_swedish="Schwedisch";
