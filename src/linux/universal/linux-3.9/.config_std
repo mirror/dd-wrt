@@ -1860,7 +1860,7 @@ CONFIG_TRACING_SUPPORT=y
 CONFIG_HAVE_ARCH_KGDB=y
 # CONFIG_TEST_KSTRTOX is not set
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="console=ttyS0,115200 root=1f06 rootfstype=squashfs noinitrd init=/bin/sh"
+CONFIG_CMDLINE="console=ttyS0,115200 root=1f05 rootfstype=squashfs noinitrd init=/bin/sh"
 CONFIG_CMDLINE_OVERRIDE=y
 # CONFIG_SPINLOCK_TEST is not set
 
