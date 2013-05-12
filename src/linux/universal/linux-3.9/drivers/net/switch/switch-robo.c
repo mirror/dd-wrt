@@ -888,7 +888,7 @@ static int handle_port_status_read(void *driver, char *buf, int nr)
 	if (duplex_status)	
 	    media |= SWITCH_MEDIA_FD;
 
-	if (ROBO_IS_BCM5301X(robo.devid) || robo.devid == ROBO_DEVICE_ID_53125) {  //special case for srab based devices like BCM4708
+	if (ROBO_IS_BCM5301X(robo.devid) || robo.devid == ROBO_DEVICE_ID_53125 || robo.devid == ROBO_DEVICE_ID_53115) {  //special case for srab based devices like BCM4708
 		speed_status = robo_read16(ROBO_STAT_PAGE, ROBO_LINK_STAT_SUMMARY); // port status
 	} else {
 		speed_status = mdio_read(robo.port[nr], MII_BMSR); // port status	
