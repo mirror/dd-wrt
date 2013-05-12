@@ -5750,7 +5750,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	}
 
 	// Status header
-	char status[8];
+	char status[32];
 
 	websWrite(wp, "              <tr>\n");
 	websWrite(wp, "<td><script type=\"text/javascript\">Capture(vlan.linkstatus)</script></td>\n");
@@ -5762,13 +5762,14 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		ifname = "eth1";
 	if (f_exists("/proc/switch/eth2/enable"))
 		ifname = "eth2";
-	char portstatus[32];
+	char portstatus[64];
 	int vlanmap[6] = { 0, 1, 2, 3, 4, 5 };	// 0=wan; 1,2,3,4=lan; 5=internal 
 	getPortMapping(vlanmap);
 
 	for (a = 0; a < 5; a++) {
-		sprintf(portstatus, "/proc/switch/%s/port/%d/status", ifname, vlanmap[a]);
+		snprintf(portstatus,sizeof(portstatus), "/proc/switch/%s/port/%d/status", ifname, vlanmap[a]);
 		char cstatus[32];
+		memset(cstatus,0,32);
 		FILE *fp = fopen(portstatus, "rb");
 		if (fp) {
 			fgets(cstatus, 31, fp);
