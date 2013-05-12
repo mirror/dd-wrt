@@ -1102,6 +1102,7 @@ management.lang_russian="Russian";
 management.lang_romanian="Romanian";
 management.lang_slovenian="Slovenian";
 management.lang_spanish="Spanish";
+management.lang_serbian="Serbian";
 management.lang_swedish="Swedish";
 management.lang_japanese="Japanese";
 management.lang_hungarian="Hungarian";
