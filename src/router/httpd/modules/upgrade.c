@@ -257,6 +257,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			}
 #else
 
+#ifndef HAVE_80211AC
 			if (brand == ROUTER_LINKSYS_E1550 || (brand == ROUTER_WRT320N && nvram_match("boardrev", "0x1307"))	//E2000
 			    || brand == ROUTER_LINKSYS_E2500 || (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300"))	//E3000
 			    || brand == ROUTER_LINKSYS_E3200 || brand == ROUTER_LINKSYS_E4200) {
@@ -286,7 +287,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 					goto err;	// fail here                            
 				}
 			}
-
+#endif
 			if (memcmp(&buf[0], &CODE_PATTERN_WRT54G, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_WRT54GS, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_WRH54G, 4)
