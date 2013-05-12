@@ -357,7 +357,9 @@
 #define AVIVO_D1CRTC_FRAME_COUNT                                0x60a4
 #define AVIVO_D1CRTC_STEREO_CONTROL                             0x60c4
 
+#define AVIVO_D1MODE_MASTER_UPDATE_LOCK                         0x60e0
 #define AVIVO_D1MODE_MASTER_UPDATE_MODE                         0x60e4
+#define AVIVO_D1CRTC_UPDATE_LOCK                                0x60e8
 
 /* master controls */
 #define AVIVO_DC_CRTC_MASTER_EN                                 0x60f8
