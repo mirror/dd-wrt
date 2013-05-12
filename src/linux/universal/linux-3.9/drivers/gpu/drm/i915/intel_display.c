@@ -7589,22 +7589,25 @@ intel_modeset_affected_pipes(struct drm_crtc *crtc, unsigned *modeset_pipes,
 	if (crtc->enabled)
 		*prepare_pipes |= 1 << intel_crtc->pipe;
 
-	/* We only support modeset on one single crtc, hence we need to do that
-	 * only for the passed in crtc iff we change anything else than just
-	 * disable crtcs.
-	 *
-	 * This is actually not true, to be fully compatible with the old crtc
-	 * helper we automatically disable _any_ output (i.e. doesn't need to be
-	 * connected to the crtc we're modesetting on) if it's disconnected.
-	 * Which is a rather nutty api (since changed the output configuration
-	 * without userspace's explicit request can lead to confusion), but
-	 * alas. Hence we currently need to modeset on all pipes we prepare. */
+	/*
+	 * For simplicity do a full modeset on any pipe where the output routing
+	 * changed. We could be more clever, but that would require us to be
+	 * more careful with calling the relevant encoder->mode_set functions.
+	 */
 	if (*prepare_pipes)
 		*modeset_pipes = *prepare_pipes;
 
 	/* ... and mask these out. */
 	*modeset_pipes &= ~(*disable_pipes);
 	*prepare_pipes &= ~(*disable_pipes);
+
+	/*
+	 * HACK: We don't (yet) fully support global modesets. intel_set_config
+	 * obies this rule, but the modeset restore mode of
+	 * intel_modeset_setup_hw_state does not.
+	 */
+	*modeset_pipes &= 1 << intel_crtc->pipe;
+	*prepare_pipes &= 1 << intel_crtc->pipe;
 }
 
 static bool intel_crtc_in_use(struct drm_crtc *crtc)
@@ -7771,9 +7774,9 @@ intel_modeset_check_state(struct drm_device *dev)
 	}
 }
 
-int intel_set_mode(struct drm_crtc *crtc,
-		   struct drm_display_mode *mode,
-		   int x, int y, struct drm_framebuffer *fb)
+static int __intel_set_mode(struct drm_crtc *crtc,
+			    struct drm_display_mode *mode,
+			    int x, int y, struct drm_framebuffer *fb)
 {
 	struct drm_device *dev = crtc->dev;
 	drm_i915_private_t *dev_priv = dev->dev_private;
@@ -7863,12 +7866,24 @@ done:
 	if (ret && crtc->enabled) {
 		crtc->hwmode = *saved_hwmode;
 		crtc->mode = *saved_mode;
-	} else {
-		intel_modeset_check_state(dev);
 	}
 
 out:
 	kfree(saved_mode);
+	return ret;
+}
+
+int intel_set_mode(struct drm_crtc *crtc,
+		     struct drm_display_mode *mode,
+		     int x, int y, struct drm_framebuffer *fb)
+{
+	int ret;
+
+	ret = __intel_set_mode(crtc, mode, x, y, fb);
+
+	if (ret == 0)
+		intel_modeset_check_state(crtc->dev);
+
 	return ret;
 }
 
@@ -8314,7 +8329,7 @@ static void intel_setup_outputs(struct drm_device *dev)
 		I915_WRITE(PFIT_CONTROL, 0);
 	}
 
-	if (!(HAS_DDI(dev) && (I915_READ(DDI_BUF_CTL(PORT_A)) & DDI_A_4_LANES)))
+	if (!IS_ULT(dev))
 		intel_crt_init(dev);
 
 	if (HAS_DDI(dev)) {
@@ -9172,8 +9187,16 @@ void intel_modeset_setup_hw_state(struct drm_device *dev,
 	}
 
 	if (force_restore) {
+		/*
+		 * We need to use raw interfaces for restoring state to avoid
+		 * checking (bogus) intermediate states.
+		 */
 		for_each_pipe(pipe) {
-			intel_crtc_restore_mode(dev_priv->pipe_to_crtc_mapping[pipe]);
+ 			struct drm_crtc *crtc =
+ 				dev_priv->pipe_to_crtc_mapping[pipe];
+
+			__intel_set_mode(crtc, &crtc->mode, crtc->x, crtc->y,
+					 crtc->fb);
 		}
 
 		i915_redisable_vga(dev);
@@ -9235,6 +9258,9 @@ void intel_modeset_cleanup(struct drm_device *dev)
 
 	/* flush any delayed tasks or pending work */
 	flush_scheduled_work();
+
+	/* destroy backlight, if any, before the connectors */
+	intel_panel_destroy_backlight(dev);
 
 	drm_mode_config_cleanup(dev);
 
