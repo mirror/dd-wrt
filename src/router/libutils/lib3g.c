@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <shutils.h>
+#include <utils.h>
 #include <bcmnvram.h>
 
 struct DEVICES {
@@ -764,7 +765,7 @@ static struct DEVICES devicelist[] = {
 
 // D-Link (3rd VID)
 	{0x2001, 0x7d00, "option", "1", "0", 2 | GENERIC, NULL, "D-Link DWM-156 A6 (modem)"},	//
-	{0x2001, 0x7d01, "option", "1", "0", 2, "D-Link DWM-156 A7 (modem)"},	//
+	{0x2001, 0x7d01, "option", "1", "0", 2, NULL, "D-Link DWM-156 A7 (modem)"},	//
 	{0x2001, 0xa706, "option", "0", "0", 2, &modeswitch_zte_1msg, "D-Link DWM-156 A7 (cdrom)"},	//
 	{0x2001, 0xa80b, "option", "0", "0", 2, &modeswitch_zte_1msg, "D-Link DWM-156 A6 (cdrom)"},	//
 
