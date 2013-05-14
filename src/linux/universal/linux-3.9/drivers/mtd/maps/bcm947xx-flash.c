@@ -549,7 +549,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	/* nvram */
 	if (cfe_size != 384 * 1024) {
 		if (cfenvram) {
-		bcm947xx_parts[3].offset = size - mtd->erasesize * 2;
+		bcm947xx_parts[3].offset = (size - mtd->erasesize * 2) - board_data_size;
 		bcm947xx_parts[3].size   = mtd->erasesize;
 		cfe_nvrampart.name = "nvram_cfe";
 		cfe_nvrampart.offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
@@ -570,6 +570,9 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	} else {
 		bcm947xx_parts[5].name = NULL;	
 	}
+	
+	if (cfenvram)
+		board_data_size = 0;
 
 	/* linux (kernel and rootfs) */
 	if (cfe_size != 384 * 1024) {
