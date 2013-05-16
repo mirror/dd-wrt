@@ -57,7 +57,7 @@
 #include "devices/wireless.c"
 
 #define sys_restart() eval("event","3","1","1")
-#define sys_reboot() eval("sync"); eval("event","3","1","15")
+#define sys_reboot() eval("kill -15 -1"); eval("sleep 3"); eval("kill -9 -1"); eval("umount -a -r"); eval("sync"); eval("event","3","1","15")
 
 static void check_brcm_cpu_type(void)
 {
@@ -262,6 +262,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_WNR834BV2:
 	case ROUTER_NETGEAR_WNDR3300:
 	case ROUTER_NETGEAR_WNDR3400:
+	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNR3500L:
 	case ROUTER_NETGEAR_WNR2000V2:
 	case ROUTER_ASUS_WL500W:
@@ -741,6 +742,13 @@ void start_sysinit(void)
 			nvram_set("vlan2ports", "0 8");
 			need_reboot = 1;
 		}
+		break;
+	case ROUTER_NETGEAR_WNDR4500:
+		basic_params = vlan_1_2;
+		nvram_set("vlan1hwname", "et0");
+		nvram_set("vlan2hwname", "et0");
+		nvram_set("vlan1ports", "0 1 2 3 8*");
+		nvram_set("vlan2ports", "4 8");
 		break;
 	case ROUTER_NETCORE_NW715P:
 		basic_params = vlan_1_2;

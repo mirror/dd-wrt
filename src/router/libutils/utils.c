@@ -2976,7 +2976,7 @@ int internal_getRouterBrand()
 	    && nvram_match("boardtype", "0x04CF")
 	    && (nvram_match("boardrev", "0x1213")
 		|| nvram_match("boardrev", "02"))) {
-		setRouter("Netgear WNR3500v2/U/L");
+		setRouter("Netgear WNR3500 v2/U/L v1");
 		return ROUTER_NETGEAR_WNR3500L;
 	}
 
@@ -3011,9 +3011,24 @@ int internal_getRouterBrand()
 	if (nvram_match("boardnum", "4536")
 	    && nvram_match("boardtype", "0xf52e")
 	    && nvram_match("boardrev", "0x1102")) {
-		setRouter("Netgear WNDR4500");
-		return ROUTER_NETGEAR_WNDR4500;
-	}
+		int mtd = getMTD("board_data");
+		char devname[32];
+		sprintf(devname, "/dev/mtdblock/%d", mtd);
+		FILE *model = fopen(devname, "rb");
+		if (model) {
+#define R6300 "U12H218T00_NETGEAR"
+			char modelstr[32];
+			fread(modelstr, 1, strlen(R6300), model);
+			if (!strncmp(modelstr, R6300, strlen(R6300))) {
+				fclose(model);
+				setRouter("Netgear R6300");
+				return ROUTER_NETGEAR_WNDR4500;
+			}
+			fclose(model);
+		}
+ 		setRouter("Netgear WNDR4500");
+ 		return ROUTER_NETGEAR_WNDR4500;
+ 	}
 
 	if ((boardnum == 42 || boardnum == 66)
 	    && nvram_match("boardtype", "0x04EF")
@@ -4961,6 +4976,13 @@ int led_control(int type, int act)
 		diag_gpio = 0x003;
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x102;
+		break;
+	case ROUTER_NETGEAR_WNDR4500:
+		usb_gpio = 0x108;
+		connected_gpio = 0x107;
+		power_gpio = 0x102;
+		diag_gpio = 0x001;
+		diag_gpio_disabled=0x009;
 		break;
 	case ROUTER_ASUS_RTN66:
 	case ROUTER_ASUS_AC66U:
