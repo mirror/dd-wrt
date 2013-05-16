@@ -262,7 +262,6 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_WNR834BV2:
 	case ROUTER_NETGEAR_WNDR3300:
 	case ROUTER_NETGEAR_WNDR3400:
-	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNR3500L:
 	case ROUTER_NETGEAR_WNR2000V2:
 	case ROUTER_ASUS_WL500W:
@@ -280,6 +279,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_ASUS_RTN66:
 	case ROUTER_NETCORE_NW715P:
 		break;
+	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_ASUS_AC66U:
 	case ROUTER_D1800H:
 		insmod("wl");	// load module
@@ -2227,6 +2227,7 @@ void start_sysinit(void)
 			case ROUTER_ASUS_RTN16:
 			case ROUTER_ASUS_RTN66:
 			case ROUTER_ASUS_AC66U:
+			case ROUTER_NETGEAR_WNDR4500:
 			case ROUTER_D1800H:
 				modules = "et switch-core switch-robo";
 				break;
@@ -2312,6 +2313,7 @@ void start_sysinit(void)
 			case ROUTER_ASUS_AC66U:
 			case ROUTER_ASUS_RTN16:
 			case ROUTER_ASUS_RTN66:
+			case ROUTER_NETGEAR_WNDR4500:
 			case ROUTER_D1800H:
 				modules = "et switch-core switch-robo";
 				break;
