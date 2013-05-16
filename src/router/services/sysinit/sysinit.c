@@ -172,6 +172,11 @@ void runStartup(char *folder, char *extension)
 		n++;
 	}
 	free(entry);
+	
+//	sysprintf("/usr/sbin/wl interference_override 4");
+//	sysprintf("/usr/sbin/wl -i eth1 interference 3");
+//	sysprintf("/usr/sbin/wl -i eth2 interference 3");
+	
 	return;
 }
 
@@ -1483,7 +1488,7 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2", 0},
 		{0, 0, 0}
 	};
-
+	
 	struct nvram_tuple wrt320vlan[] = {
 		{"lan_ifname", "br0", 0},
 		{"lan_ifnames", "vlan1 eth1", 0},
@@ -1737,6 +1742,7 @@ void start_restore_defaults(void)
 	case ROUTER_LINKSYS_E3200:
 	case ROUTER_LINKSYS_E4200:
 	case ROUTER_NETGEAR_WNDR4000:
+	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_ASUS_RTN66:
 		linux_overrides = wrt6102vlan;
 		break;
@@ -2030,6 +2036,7 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")) {
 			switch (brand) {
 			case ROUTER_NETGEAR_WNR3500L:
+			case ROUTER_NETGEAR_WNDR4500:
 			case ROUTER_WRT320N:
 				nvram_unset("vlan0hwname");
 				break;
@@ -2076,6 +2083,9 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
 			switch (brand) {
 			case ROUTER_NETGEAR_WNR3500L:
+			case ROUTER_NETGEAR_WNDR4500:
+				nvram_set("vlan2ports", "4 8");
+				break;
 			case ROUTER_WRT320N:
 				nvram_set("vlan2ports", "0 8");
 				break;
