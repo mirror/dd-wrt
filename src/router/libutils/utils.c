@@ -4979,6 +4979,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_NETGEAR_WNDR4500:
 		usb_gpio = 0x108;
+		usb_power = 0x000;
 		connected_gpio = 0x107;
 		power_gpio = 0x102;
 		diag_gpio = 0x001;
