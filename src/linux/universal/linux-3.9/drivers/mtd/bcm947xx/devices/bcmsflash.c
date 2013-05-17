@@ -69,6 +69,13 @@ struct bcmsflash_mtd {
 
 /* Private global state */
 static struct bcmsflash_mtd bcmsflash;
+extern struct mtd_partition cfe_boardpart;
+
+void add_netgear_boarddata_sflash(void)
+{
+	if (bcmsflash.mtd.name && cfe_boardpart.name)
+		add_mtd_partitions(&bcmsflash.mtd, &cfe_boardpart, 1);
+}
 
 static int
 bcmsflash_mtd_poll(hndsflash_t *sfl, unsigned int offset, int timeout)

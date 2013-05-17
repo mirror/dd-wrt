@@ -142,10 +142,11 @@ static int get_router(void)
 		return ROUTER_BELKIN_F7D3301_3302_4302;	//Belkin F7D3301v1 /F7D3302v1 / F7D4302v1
 	}
 
-	if (nvram_match("boardnum", "4536")
+	if (boardnum == 4536 
 	    && nvram_match("boardtype", "0xf52e")
 	    && nvram_match("boardrev", "0x1102")) {
-		return ROUTER_NETGEAR_WNDR4000;	//Netgear WNDR4500                 
+		printk(KERN_INFO "found WNDR4500 / R6300\n");
+		return ROUTER_NETGEAR_WNDR4500;	//Netgear WNDR4500                 
 	}
 
 	return 0;
