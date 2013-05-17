@@ -528,6 +528,7 @@ struct mtd_partition *__init init_mtd_partitions(struct mtd_info *mtd, size_t si
 		}
 		if (board_data_size) {
 			cfe_boardpart.name = "board_data";
+			cfe_boardpart.size = board_data_size;
 			if (cfe_nvrampart.name)
 				cfe_boardpart.offset = cfe_nvrampart.offset - board_data_size;
 			else
