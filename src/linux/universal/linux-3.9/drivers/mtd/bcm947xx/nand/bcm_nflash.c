@@ -487,6 +487,8 @@ done:
 #define nflash_mtd_exit cleanup_module
 #endif
 
+extern void add_netgear_boarddata(void);
+
 static int __init
 nflash_mtd_init(void)
 {
@@ -572,6 +574,7 @@ nflash_mtd_init(void)
 		goto fail;
 	}
 	nflash_parts = parts;
+	add_netgear_boarddata();
 #endif
 	return 0;
 
