@@ -488,6 +488,7 @@ done:
 #endif
 
 extern void add_netgear_boarddata(void);
+extern void add_netgear_boarddata_sflash(void);
 
 static int __init
 nflash_mtd_init(void)
@@ -574,7 +575,10 @@ nflash_mtd_init(void)
 		goto fail;
 	}
 	nflash_parts = parts;
+	printk(KERN_INFO "add netgear bosrddata for pflash if exists\n");
 	add_netgear_boarddata();
+	printk(KERN_INFO "add netgear bosrddata for sflash if exists\n");
+	add_netgear_boarddata_sflash();
 #endif
 	return 0;
 
