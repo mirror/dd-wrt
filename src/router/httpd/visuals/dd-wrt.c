@@ -3305,9 +3305,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	sprintf(wl_ssid, "%s_ssid", prefix);
-
 	// check the frequency capabilities;
-	if (has_5ghz(prefix) && has_2ghz(prefix)) {
+	if (has_2ghz(prefix) && has_5ghz(prefix) && has_ac(prefix)) {
+		sprintf(frequencies, " [2.4 GHz/5 GHz/802.11ac]");
+	} else if (has_5ghz(prefix) && has_ac(prefix)) {
+		sprintf(frequencies, " [5 GHz/802.11ac]");
+	} else if (has_5ghz(prefix) && has_2ghz(prefix)) {
 		sprintf(frequencies, " [2.4/5 GHz]");
 	} else if (has_5ghz(prefix)) {
 		sprintf(frequencies, " [5 GHz]");
