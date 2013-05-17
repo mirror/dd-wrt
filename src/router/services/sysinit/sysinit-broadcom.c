@@ -749,6 +749,33 @@ void start_sysinit(void)
 		nvram_set("vlan2hwname", "et0");
 		nvram_set("vlan1ports", "0 1 2 3 8*");
 		nvram_set("vlan2ports", "4 8");
+
+		/* now it goes evil */
+		FILE *fp = fopen("/dev/mtdblock0", "rb");
+		if (!fp) {
+			fprintf(stderr, "something wrong here, boarddata cannot be opened\n");
+			break;
+		}
+		fseek(fp, 0x1e010b, SEEK_SET);	//special nvram config
+		char *nvram = malloc(4096);
+		fread(nvram, 0, 4096, fp);
+		char *nvstr = nvram;
+
+		while (nvstr[0] != 0) {
+			char *nvvar = nvstr;
+			char *nvval = strstr(nvvar, "=");
+			if (!nvval)
+				goto out;
+			*nvval = 0;
+			nvval++;
+			fprintf(stderr, "hack: set %s=%s\n", nvvar, nvval);
+			nvram_set(nvvar, nvval);
+			nvstr = nvval + strlen(nvval) + 1;
+		}
+	      out:;
+		free(nvram);
+		fclose(fp);
+
 		break;
 	case ROUTER_NETCORE_NW715P:
 		basic_params = vlan_1_2;
