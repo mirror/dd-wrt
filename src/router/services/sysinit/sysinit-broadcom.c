@@ -749,14 +749,24 @@ void start_sysinit(void)
 		nvram_set("vlan2hwname", "et0");
 		nvram_set("vlan1ports", "0 1 2 3 8*");
 		nvram_set("vlan2ports", "4 8");
+		if (nvram_match("pci/1/1/boardvendor", "0x14e4"))	//already configured?
+			break;
 
 		/* now it goes evil */
-		FILE *fp = fopen("/dev/mtdblock0", "rb");
+		int mtd = getMTD("board_data");
+		char devname[32];
+		sprintf(devname, "/dev/mtdblock/%d", mtd);
+		FILE *fp = fopen(devname, "rb");
 		if (!fp) {
 			fprintf(stderr, "something wrong here, boarddata cannot be opened\n");
 			break;
 		}
-		fseek(fp, 0x1e010b, SEEK_SET);	//special nvram config
+		fseek(fp, 0x40, SEEK_SET);
+		unsigned char mac[6];
+		char macaddr[20];
+		sprintf(macaddr, "0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X", mac[0] & 0xff, mac[1] & 0xff, mac[2] & 0xff, mac[3] & 0xff, mac[4] & 0xff, mac[5] & 0xff);
+		fread(mac, 6, 1, fp);
+		fseek(fp, 0x10b, SEEK_SET);	//special nvram config
 		char *nvram = malloc(4096);
 		fread(nvram, 0, 4096, fp);
 		char *nvstr = nvram;
@@ -775,6 +785,258 @@ void start_sysinit(void)
 	      out:;
 		free(nvram);
 		fclose(fp);
+		int isr6300 = 0;
+		mtd = getMTD("board_data");
+		sprintf(devname, "/dev/mtdblock/%d", mtd);
+		FILE *model = fopen(devname, "rb");
+		if (model) {
+#define R6300 "U12H218T00_NETGEAR"
+			char modelstr[32];
+			fread(modelstr, 1, strlen(R6300), model);
+			if (!strncmp(modelstr, R6300, strlen(R6300))) {
+				fclose(model);
+				isr6300 = 1;
+			}
+			fclose(model);
+		}
+		struct nvram_tuple r6300_defaults[] = {
+			{"pci/1/1/pa2gw1a0", "0x1D7C", 0},
+			{"pci/1/1/pa2gw1a1", "0x1F79", 0},
+			{"pci/1/1/pa2gw1a2", "0x1D58", 0},
+			{"pci/1/1/ledbh12", "11", 0},
+			{"pci/1/1/legofdmbw202gpo", "0x88000000", 0},
+			{"pci/1/1/ag0", "0", 0},
+			{"pci/1/1/ag1", "0", 0},
+			{"pci/1/1/ag2", "0", 0},
+			{"pci/1/1/legofdmbw20ul2gpo", "0x88000000", 0},
+			{"pci/1/1/rxchain", "7", 0},
+			{"pci/1/1/cckbw202gpo", "0x0000", 0},
+			{"pci/1/1/mcsbw20ul2gpo", "0x88800000", 0},
+			{"pci/1/1/pa2gw0a0", "0xFE56", 0},
+			{"pci/1/1/pa2gw0a1", "0xFEB3", 0},
+			{"pci/1/1/pa2gw0a2", "0xFE6A", 0},
+			{"pci/1/1/boardflags", "0x80003200", 0},
+			{"pci/1/1/tempoffset", "0", 0},
+			{"pci/1/1/boardvendor", "0x14e4", 0},
+			{"pci/1/1/triso2g", "3", 0},
+			{"pci/1/1/sromrev", "9", 0},
+			{"pci/1/1/extpagain2g", "3", 0},
+			{"pci/1/1/venid", "0x14e4", 0},
+			{"pci/1/1/maxp2ga0", "0x62", 0},
+			{"pci/1/1/maxp2ga1", "0x62", 0},
+			{"pci/1/1/maxp2ga2", "0x62", 0},
+			{"pci/1/1/boardtype", "0x59b", 0},
+			{"pci/1/1/boardflags2", "0x4000000", 0},
+			{"pci/1/1/tssipos2g", "1", 0},
+			{"pci/1/1/ledbh0", "11", 0},
+			{"pci/1/1/ledbh1", "11", 0},
+			{"pci/1/1/ledbh2", "11", 0},
+			{"pci/1/1/ledbh3", "11", 0},
+			{"pci/1/1/mcs32po", "0xA", 0},
+			{"pci/1/1/legofdm40duppo", "0x0", 0},
+			{"pci/1/1/antswctl2g", "0", 0},
+			{"pci/1/1/txchain", "7", 0},
+			{"pci/1/1/elna2g", "2", 0},
+			{"pci/1/1/aa2g", "7", 0},
+			{"pci/1/1/antswitch", "0", 0},
+			{"pci/1/1/cckbw20ul2gpo", "0x0000", 0},
+			{"pci/1/1/leddc", "0xFFFF", 0},
+			{"pci/1/1/pa2gw2a0", "0xF8A1", 0},
+			{"pci/1/1/pa2gw2a1", "0xF8BF", 0},
+			{"pci/1/1/pa2gw2a2", "0xF8DA", 0},
+			{"pci/1/1/ccode", "EU", 0},
+			{"pci/1/1/pdetrange2g", "3", 0},
+			{"pci/1/1/regrev", "22", 0},
+			{"pci/1/1/devid", "0x4332", 0},
+			{"pci/1/1/tempthresh", "120", 0},
+			{"pci/1/1/mcsbw402gpo", "0x0x88800000", 0},
+			{"pci/1/1/mcsbw202gpo", "0x88800000", 0},
+			{"pci/2/1/rxgains5ghtrisoa0", "5", 0},
+			{"pci/2/1/rxgains5ghtrisoa1", "4", 0},
+			{"pci/2/1/rxgains5ghtrisoa2", "4", 0},
+			{"pci/2/1/mcslr5gmpo", "0", 0},
+			{"pci/2/1/txchain", "7", 0},
+			{"pci/2/1/phycal_tempdelta", "255", 0},
+			{"pci/2/1/pdgain5g", "4", 0},
+			{"pci/2/1/subband5gver", "0x4", 0},
+			{"pci/2/1/maxp5gb3a0", "0x64", 0},
+			{"pci/2/1/maxp5gb3a1", "0x64", 0},
+			{"pci/2/1/maxp5gb3a2", "0x64", 0},
+			{"pci/2/1/ccode", "Q1", 0},
+			{"pci/2/1/boardflags", "0x10000000", 0},
+			{"pci/2/1/tworangetssi5g", "0", 0},
+			{"pci/2/1/rxgainerr5g", "0xffff,0xffff,0xffff,0xffff", 0},
+			{"pci/2/1/rxgains5gtrisoa0", "7", 0},
+			{"pci/2/1/rxgains5gtrisoa1", "6", 0},
+			{"pci/2/1/tempoffset", "255", 0},
+			{"pci/2/1/rxgains5gtrisoa2", "5", 0},
+			{"pci/2/1/mcsbw205gmpo", "4001780768", 0},
+			{"pci/2/1/xtalfreq", "40000", 0},
+			{"pci/2/1/tempsense_option", "0x3", 0},
+			{"pci/2/1/devid", "0x43a0", 0},
+			{"pci/2/1/femctrl", "3", 0},
+			{"pci/2/1/epagain2g", "0", 0},
+			{"pci/2/1/aa5g", "7", 0},
+			{"pci/2/1/rxgains2gelnagaina0", "0", 0},
+			{"pci/2/1/rxgains2gelnagaina1", "0", 0},
+			{"pci/2/1/rxgains2gelnagaina2", "0", 0},
+			{"pci/2/1/papdcap5g", "0", 0},
+			{"pci/2/1/cckbw20ul2gpo", "0", 0},
+			{"pci/2/1/tssiposslope5g", "1", 0},
+			{"pci/2/1/tempcorrx", "0x3f", 0},
+			{"pci/2/1/noiselvl5gua0", "31", 0},
+			{"pci/2/1/noiselvl5gua1", "31", 0},
+			{"pci/2/1/noiselvl5gua2", "31", 0},
+			{"pci/2/1/mcsbw402gpo", "0", 0},
+			{"pci/2/1/mcslr5glpo", "0", 0},
+			{"pci/2/1/sar5g", "15", 0},
+			{"pci/2/1/pa5ga0", "0xff39,0x1a55,0xfcc7,0xff38,0x1a7f,0xfcc3,0xff33,0x1a66,0xfcc4,0xff36,0x1a7b,0xfcc2", 0},
+			{"pci/2/1/pa5ga1", "0xff3a,0x1a0b,0xfcd3,0xff38,0x1a37,0xfccd,0xff37,0x1aa1,0xfcc0,0xff37,0x1a6f,0xfcc4", 0},
+			{"pci/2/1/rxgains5gmelnagaina0", "2", 0},
+			{"pci/2/1/pa5ga2", "0xff3a,0x1a28,0xfccd,0xff38,0x1a2a,0xfcce,0xff35,0x1a93,0xfcc1,0xff38,0x1aab,0xfcbe", 0},
+			{"pci/2/1/rxgains5gmelnagaina1", "2", 0},
+			{"pci/2/1/rxgains5gmelnagaina2", "3", 0},
+			{"pci/2/1/mcslr5ghpo", "0", 0},
+			{"pci/2/1/mcsbw202gpo", "0", 0},
+			{"pci/2/1/maxp5gb2a0", "0x64", 0},
+			{"pci/2/1/rxgains2gtrisoa0", "0", 0},
+			{"pci/2/1/maxp5gb2a1", "0x64", 0},
+			{"pci/2/1/pcieingress_war", "15", 0},
+			{"pci/2/1/noiselvl5gma0", "31", 0},
+			{"pci/2/1/rxgains2gtrisoa1", "0", 0},
+			{"pci/2/1/maxp5gb2a2", "0x64", 0},
+			{"pci/2/1/noiselvl5gma1", "31", 0},
+			{"pci/2/1/rxgains2gtrisoa2", "0", 0},
+			{"pci/2/1/noiselvl5gma2", "31", 0},
+			{"pci/2/1/sb40and80lr5gmpo", "0", 0},
+			{"pci/2/1/rxgains5gelnagaina0", "1", 0},
+			{"pci/2/1/noiselvl2ga0", "31", 0},
+			{"pci/2/1/rxgains5gelnagaina1", "1", 0},
+			{"pci/2/1/noiselvl2ga1", "31", 0},
+			{"pci/2/1/rxgains5gelnagaina2", "1", 0},
+			{"pci/2/1/agbg0", "71", 0},
+			{"pci/2/1/noiselvl2ga2", "31", 0},
+			{"pci/2/1/agbg1", "71", 0},
+			{"pci/2/1/mcsbw205glpo", "3999687200", 0},
+			{"pci/2/1/agbg2", "133", 0},
+			{"pci/2/1/measpower1", "0x7f", 0},
+			{"pci/2/1/measpower2", "0x7f", 0},
+			{"pci/2/1/sb20in80and160lr5gmpo", "0", 0},
+			{"pci/2/1/temps_period", "15", 0},
+			{"pci/2/1/mcsbw805gmpo", "4001780768", 0},
+			{"pci/2/1/dot11agduplrpo", "0", 0},
+			{"pci/2/1/mcsbw205ghpo", "3429122848", 0},
+			{"pci/2/1/measpower", "0x7f", 0},
+			{"pci/2/1/ofdmlrbw202gpo", "0", 0},
+			{"pci/2/1/rxgains5ghelnagaina0", "2", 0},
+			{"pci/2/1/rxgains5ghelnagaina1", "2", 0},
+			{"pci/2/1/rxgains5ghelnagaina2", "3", 0},
+			{"pci/2/1/gainctrlsph", "0", 0},
+			{"pci/2/1/sb40and80hr5gmpo", "0", 0},
+			{"pci/2/1/mcsbw1605gmpo", "0", 0},
+			{"pci/2/1/sb20in80and160hr5gmpo", "0", 0},
+			{"pci/2/1/pa2ga0", "0xfe72,0x14c0,0xfac7", 0},
+			{"pci/2/1/pa2ga1", "0xfe80,0x1472,0xfabc", 0},
+			{"pci/2/1/epagain5g", "0", 0},
+			{"pci/2/1/pa2ga2", "0xfe82,0x14bf,0xfad9", 0},
+			{"pci/2/1/mcsbw405gmpo", "4001780768", 0},
+			{"pci/2/1/boardtype", "0x621", 0},
+			{"pci/2/1/cckbw202gpo", "0", 0},
+			{"pci/2/1/rxchain", "7", 0},
+			{"pci/2/1/maxp5gb1a0", "0x64", 0},
+			{"pci/2/1/maxp5gb1a1", "0x64", 0},
+			{"pci/2/1/noiselvl5gla0", "31", 0},
+			{"pci/2/1/maxp5gb1a2", "0x64", 0},
+			{"pci/2/1/noiselvl5gla1", "31", 0},
+			{"pci/2/1/noiselvl5gla2", "31", 0},
+			{"pci/2/1/sb40and80lr5glpo", "0", 0},
+			{"pci/2/1/maxp5ga0", "92,96,96,96", 0},
+			{"pci/2/1/maxp5ga1", "92,96,96,96", 0},
+			{"pci/2/1/maxp5ga2", "92,96,96,96", 0},
+			{"pci/2/1/noiselvl5gha0", "31", 0},
+			{"pci/2/1/noiselvl5gha1", "31", 0},
+			{"pci/2/1/noiselvl5gha2", "31", 0},
+			{"pci/2/1/sb20in80and160lr5glpo", "0", 0},
+			{"pci/2/1/sb40and80lr5ghpo", "0", 0},
+			{"pci/2/1/venid", "0x14e4", 0},
+			{"pci/2/1/pdgain2g", "4", 0},
+			{"pci/2/1/mcsbw805glpo", "3999687200", 0},
+			{"pci/2/1/sar", "0x0F12", 0},
+			{"pci/2/1/boardvendor", "0x14e4", 0},
+			{"pci/2/1/tempsense_slope", "0xff", 0},
+			{"pci/2/1/sb20in80and160lr5ghpo", "0", 0},
+			{"pci/2/1/antswitch", "0", 0},
+			{"pci/2/1/mcsbw805ghpo", "3429122848", 0},
+			{"pci/2/1/aga0", "71", 0},
+			{"pci/2/1/aga1", "133", 0},
+			{"pci/2/1/aga2", "133", 0},
+			{"pci/2/1/rawtempsense", "0x1ff", 0},
+			{"pci/2/1/tempthresh", "255", 0},
+			{"pci/2/1/tworangetssi2g", "0", 0},
+			{"pci/2/1/rxgainerr2g", "0xffff", 0},
+			{"pci/2/1/dot11agduphrpo", "0", 0},
+			{"pci/2/1/sb40and80hr5glpo", "0", 0},
+			{"pci/2/1/sromrev", "11", 0},
+			{"pci/2/1/boardnum", "21059", 0},
+			{"pci/2/1/sb20in40lrpo", "0", 0},
+			{"pci/2/1/rxgains2gtrelnabypa0", "0", 0},
+			{"pci/2/1/mcsbw1605glpo", "0", 0},
+			{"pci/2/1/sb20in80and160hr5glpo", "0", 0},
+			{"pci/2/1/rxgains2gtrelnabypa1", "0", 0},
+			{"pci/2/1/rxgains2gtrelnabypa2", "0", 0},
+			{"pci/2/1/sb40and80hr5ghpo", "0", 0},
+			{"pci/2/1/mcsbw405glpo", "3999687200", 0},
+			{"pci/2/1/dot11agofdmhrbw202gpo", "0", 0},
+			{"pci/2/1/boardrev", "0x1307", 0},
+			{"pci/2/1/aa2g", "0", 0},
+			{"pci/2/1/mcsbw1605ghpo", "0", 0},
+			{"pci/2/1/sb20in80and160hr5ghpo", "0", 0},
+			{"pci/2/1/rxgains5gmtrisoa0", "5", 0},
+			{"pci/2/1/rxgains5gmtrisoa1", "4", 0},
+			{"pci/2/1/ag0", "0", 0},
+			{"pci/2/1/rxgains5gmtrisoa2", "4", 0},
+			{"pci/2/1/ag1", "0", 0},
+			{"pci/2/1/papdcap2g", "0", 0},
+			{"pci/2/1/ag2", "0", 0},
+			{"pci/2/1/rxgains5gmtrelnabypa0", "1", 0},
+			{"pci/2/1/maxp5gb0a0", "0x60", 0},
+			{"pci/2/1/rxgains5gmtrelnabypa1", "1", 0},
+			{"pci/2/1/maxp5gb0a1", "0x60", 0},
+			{"pci/2/1/mcsbw405ghpo", "3429122848", 0},
+			{"pci/2/1/rxgains5gmtrelnabypa2", "1", 0},
+			{"pci/2/1/maxp5gb0a2", "0x60", 0},
+			{"pci/2/1/tssiposslope2g", "1", 0},
+			{"pci/2/1/maxp2ga0", "76", 0},
+			{"pci/2/1/maxp2ga1", "76", 0},
+			{"pci/2/1/boardflags2", "0x300002", 0},
+			{"pci/2/1/maxp2ga2", "76", 0},
+			{"pci/2/1/boardflags3", "0x300030", 0},
+			{"pci/2/1/rxgains5ghtrelnabypa0", "1", 0},
+			{"pci/2/1/rxgains5ghtrelnabypa1", "1", 0},
+			{"pci/2/1/regrev", "27", 0},
+			{"pci/2/1/rxgains5ghtrelnabypa2", "1", 0},
+			{"pci/2/1/sar2g", "18", 0},
+			{"pci/2/1/sb20in40hrrpo", "0", 0},
+			{"pci/2/1/temps_hysteresis", "15", 0},
+			{"pci/2/1/rxgains5gtrelnabypa0", "1", 0},
+			{"pci/2/1/rxgains5gtrelnabypa1", "1", 0},
+			{"pci/2/1/rxgains5gtrelnabypa2", "1", 0},
+			{0, 0, 0}
+		};
+		if (isr6300) {
+
+			struct nvram_tuple *t;
+
+			/* Restore defaults */
+			for (t = r6300_defaults; t->name; t++) {
+				if (!nvram_get(t->name))
+					nvram_set(t->name, t->value);
+			}
+			nvram_set("et0macaddr", macaddr);
+			nvram_set("pci/1/1/macaddr", macaddr);
+			MAC_SUB(macaddr);
+			nvram_set("pci/2/1/macaddr", macaddr);
+		}
 
 		break;
 	case ROUTER_NETCORE_NW715P:
