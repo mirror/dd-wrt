@@ -18,7 +18,8 @@ get_interface_names() {
 	}
 
 	for(ifp = ifap; ifp; ifp = ifp->ifa_next) {
-		if(ifp->ifa_addr->sa_family != AF_INET)
+		if(ifp->ifa_addr == 0
+		|| ifp->ifa_addr->sa_family != AF_INET)
 			continue;
 		if(sadd(sl, ifp->ifa_name) == -1) {
 			sfree(sl);
@@ -65,9 +66,9 @@ get_interface_names() {
 
 #else /* ! HAVE_PCAP_XALLDEVS */
 
-#error	Your libpcap(3) library is too old, please upgrade.
-#error	pcap_findalldevs() and pcap_freealldevs() functions are required
-#error	to provide support for dynamic interfaces.
+#warning Your libpcap(3) library is too old, please upgrade.
+#warning pcap_findalldevs() and pcap_freealldevs() functions are required
+#warning to provide support for dynamic interfaces.
 
 slist *
 get_interface_names() {

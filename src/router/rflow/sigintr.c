@@ -25,7 +25,7 @@
    calls be restarted after signal SIG.  */
 int siginterrupt (int sig, int interrupt)
 {
-#ifdef	SA_RESTART
+#if	0//SA_RESTART
     extern sigset_t _sigintr;	/* Defined in signal.c.  */
     struct sigaction action;
 

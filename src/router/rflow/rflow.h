@@ -3,6 +3,7 @@
 
 #include "headers.h"
 #include "psrc.h"
+#include "psrc-pcap.h"
 
 #define RFLOW_VERSION_STRING "1.00"
 #define RFLOW_COPYRIGHT " Copyright by Nikki Chumakov\nbased on ipcapd code by Lev Walkin vlm@lionet.info"

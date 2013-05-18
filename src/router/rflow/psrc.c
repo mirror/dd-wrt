@@ -2,7 +2,7 @@
 // #include "sf_lite.h"
 #include "opt.h"
 #include "psrc.h"
-#include "psrc-ring.h"
+#include "psrc-pcap.h"
 
 static int ifIndexes;	/* Ever-increasing interface name */
 
@@ -54,21 +54,17 @@ create_packet_source(char *ifname, int iflags, char *filter) {
   else 
 #endif
   {
-		ps->process_ptr = process_ring;
-		ps->print_stats = print_stats_ring;
-		
-    		ps->iface_type = IFACE_RING;
-		ps->iface.ring.dev = NULL;
-		if(pthread_mutex_init(&ps->iface.ring.dev_mutex, NULL) == -1)
+		ps->process_ptr = process_pcap;
+		ps->print_stats = print_stats_pcap;
+
+    		ps->iface_type = IFACE_PCAP;
+		ps->iface.pcap.dev = NULL;
+		if(pthread_mutex_init(&ps->iface.pcap.dev_mutex, NULL) == -1)
 			goto failure;
+		
 	}
 
-	switch(ps->iface_type) {
-	case IFACE_DYNAMIC:
-		break;
-	default:
-		ps->ifIndex = ++ifIndexes;
-	}
+	ps->ifIndex = ++ifIndexes;
 
 	return ps;
 
@@ -81,14 +77,7 @@ failure:
 int
 init_packet_source(packet_source_t *ps, int retry_mode) {
 
-	switch(ps->iface_type) {
-#if 0
-	case IFACE_DYNAMIC:
-		return init_packet_source_dynamic(ps);
-#endif
-	default:
-		return init_packet_source_ring(ps);
-	}
+	return init_packet_source_pcap(ps);
 }
 
 void
@@ -101,20 +90,9 @@ destroy_packet_source(packet_source_t *ps) {
 	if(ps->fd != -1)
 		close(ps->fd);
 
-	switch(ps->iface_type) {
-#if 0
-	case IFACE_DYNAMIC:
-		genhash_destroy(ps->iface.dynamic.already_got);
-		break;
-#endif
-	case IFACE_RING:
-		if(ps->iface.ring.dev)
-			ring_close(ps->iface.ring.dev);
-		pthread_mutex_destroy(&ps->iface.ring.dev_mutex);
-		break;
-	default:
-		break;
-	}
+	if(ps->iface.pcap.dev)
+		pcap_close(ps->iface.pcap.dev);
+	pthread_mutex_destroy(&ps->iface.pcap.dev_mutex);
 
 	free(ps);
 }

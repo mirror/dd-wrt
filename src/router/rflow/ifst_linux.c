@@ -1,6 +1,6 @@
 #include "rflow.h"
 #include "disp.h"
-// #include "sf_lite.h"
+#include "sf_lite.h"
 #include "opt.h"
 
 #include <sys/types.h>
@@ -269,7 +269,6 @@ finish:
 	return -1;
 }
 
-#if 0
 #ifndef	IPCAD_IFLIST_USE_GETIFADDRS
 
 slist *
@@ -314,7 +313,6 @@ get_interface_names() {
 }
 
 #endif	/* IPCAD_IFLIST_USE_GETIFADDRS */
-#endif
 
 #ifndef	_PATH_PROCNET_DEV
 #define	_PATH_PROCNET_DEV	"/proc/net/dev"

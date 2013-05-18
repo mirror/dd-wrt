@@ -8,12 +8,13 @@ datadir= ${prefix}/share
 #CC=mipsel-linux-uclibc-gcc -pipe
 #CC= gcc -pipe
 LDFLAGS+=-s -ffunction-sections -fdata-sections -Wl,--gc-sections
-LIBS+= -lpthread
+LIBS+= -lpthread -L$(TOP)/libpcap_noring -lpcap
 CFLAGS+= $(COPTS) -I$(LINUXDIR)  -DHAVE_CONFIG_H -W -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections 
 CPPFLAGS+=-DIPCAD_VERSION=\"3.6.2\"
 CPPFLAGS+=-DCONFIG_FILE=\"${sysconfdir}/ipcad.conf\"
-CPPFLAGS+=-DHAVE_CONFIG_H -D_REENTRANT -D_THREAD_SAFE
-CPPFLAGS+=-DIFST_linux
+CPPFLAGS+=-DHAVE_CONFIG_H -D_REENTRANT -D_THREAD_SAFE -I$(TOP)/libpcap_noring
+CPPFLAGS+=-DIFST_linux -DPSRC_pcap 
+#-DIPCAD_IFLIST_USE_GETIFADDRS
 
 YACC=bison -y
 LEX=flex
@@ -30,13 +31,13 @@ TARGETS=rflow
 VERSION=3.6.2
 
 IPCAD_OBJS= main.o nflow.o servers.o opt.o pidfile.o storage.o pps.o
-IPCAD_OBJS+= cfgvar.o disp.o usage.o ifst_linux.o process.o
+IPCAD_OBJS+= cfgvar.o disp.o usage.o ifst_linux.o process.o sf_lite.o
 #IPCAD_OBJS+= ifst_linux.o		# Interface statistics
-#IPCAD_OBJS+= ifs_list.o			# Interface statistics
-IPCAD_OBJS+= loop-ring.o		# Method of capturing
-#IPCAD_OBJS+= loop-dynamic.o		# Method of capturing
-IPCAD_OBJS+= psrc.o psrc-ring.o	# Initialize capturers
-IPCAD_OBJS+= ring.o	# Initialize capturers
+IPCAD_OBJS+= ifs_list.o			# Interface statistics
+#IPCAD_OBJS+= loop-ring.o		# Method of capturing
+IPCAD_OBJS+= loop-pcap.o		# Method of capturing
+IPCAD_OBJS+= psrc.o psrc-pcap.o	# Initialize capturers
+#IPCAD_OBJS+= ring.o	# Initialize capturers
 #IPCAD_OBJS+= psrc-dynamic.o		# Initialize capturers
 #IPCAD_OBJS+= wrap_oclose.o		# Special file descriptors cache
 IPCAD_OBJS+= genhash.o			# General hashing
