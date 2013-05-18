@@ -13,8 +13,8 @@ typedef struct packet_source_s {
 
 	enum {
 		IFACE_UNKNOWN,
-    IFACE_DYNAMIC,
-    IFACE_RING,
+	        IFACE_DYNAMIC,
+	        IFACE_PCAP,
 	} iface_type;
 		
 	enum {
@@ -47,11 +47,12 @@ typedef struct packet_source_s {
 	 */
 
 	union {
+#ifdef	PSRC_pcap
 		struct {
-			// ring_t *dev;
-      void* dev;
+			pcap_t *dev;
 			pthread_mutex_t dev_mutex;
-		} ring;
+		} pcap;
+#endif
     
 		struct {
 			genhash_t		*already_got;
