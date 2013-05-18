@@ -2121,8 +2121,8 @@ void start_restore_defaults(void)
 		}
 
 	}
-
-	if (nvram_get("vlan0ports") == NULL && nvram_get("vlan1ports")
+	
+	if (restore_defaults && nvram_get("vlan0ports") == NULL && nvram_get("vlan1ports")
 	    && nvram_get("vlan2ports")) {
 		nvram_set("port0vlans", "2");
 		nvram_set("port1vlans", "1");
@@ -2131,6 +2131,7 @@ void start_restore_defaults(void)
 		nvram_set("port4vlans", "1");
 		nvram_set("port5vlans", "1 2 16");
 	}
+	
 
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG) {
 		if (!nvram_get("aa0"))
