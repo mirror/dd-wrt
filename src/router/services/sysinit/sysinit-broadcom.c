@@ -766,7 +766,6 @@ void start_sysinit(void)
 		char macaddr[20];
 		fread(mac, 6, 1, fp);
 		sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", (int)mac[0] & 0xff, (int)mac[1] & 0xff, (int)mac[2] & 0xff, (int)mac[3] & 0xff, (int)mac[4] & 0xff, (int)mac[5] & 0xff);
-		fprintf(stderr,"board mac is %s\n",macaddr);
 		fseek(fp, 0x10b, SEEK_SET);	//special nvram config
 		char *nvram = malloc(4096);
 		fread(nvram, 0, 4096, fp);
@@ -1030,7 +1029,6 @@ void start_sysinit(void)
 
 			/* Restore defaults */
 			for (t = r6300_defaults; t->name; t++) {
-				fprintf(stderr,"check and set %s\n,",t->name);
 				if (!nvram_get(t->name))
 					nvram_set(t->name, t->value);
 			}
