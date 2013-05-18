@@ -764,7 +764,7 @@ void start_sysinit(void)
 		fseek(fp, 0x40, SEEK_SET);
 		unsigned char mac[6];
 		char macaddr[20];
-		sprintf(macaddr, "0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X", mac[0] & 0xff, mac[1] & 0xff, mac[2] & 0xff, mac[3] & 0xff, mac[4] & 0xff, mac[5] & 0xff);
+		sprintf(macaddr, "0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X", (int)mac[0] & 0xff, (int)mac[1] & 0xff, (int)mac[2] & 0xff, (int)mac[3] & 0xff, (int)mac[4] & 0xff, (int)mac[5] & 0xff);
 		fread(mac, 6, 1, fp);
 		fseek(fp, 0x10b, SEEK_SET);	//special nvram config
 		char *nvram = malloc(4096);
