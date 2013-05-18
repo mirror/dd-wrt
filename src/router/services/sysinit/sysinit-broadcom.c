@@ -795,7 +795,6 @@ void start_sysinit(void)
 			char modelstr[32];
 			fread(modelstr, 1, strlen(R6300), model);
 			if (!strncmp(modelstr, R6300, strlen(R6300))) {
-				fclose(model);
 				fprintf(stderr,"r6300 needs special nvram recover\n");
 				isr6300 = 1;
 			}
