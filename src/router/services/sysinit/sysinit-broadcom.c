@@ -755,7 +755,7 @@ void start_sysinit(void)
 		/* now it goes evil */
 		int mtd = getMTD("board_data");
 		char devname[32];
-		sprintf(devname, "/dev/mtdblock/%d", mtd);
+		sprintf(devname, "/dev/mtdblock%d", mtd);
 		FILE *fp = fopen(devname, "rb");
 		if (!fp) {
 			fprintf(stderr, "something wrong here, boarddata cannot be opened\n");
@@ -764,8 +764,9 @@ void start_sysinit(void)
 		fseek(fp, 0x40, SEEK_SET);
 		unsigned char mac[6];
 		char macaddr[20];
-		sprintf(macaddr, "0x%02X:0x%02X:0x%02X:0x%02X:0x%02X:0x%02X", (int)mac[0] & 0xff, (int)mac[1] & 0xff, (int)mac[2] & 0xff, (int)mac[3] & 0xff, (int)mac[4] & 0xff, (int)mac[5] & 0xff);
 		fread(mac, 6, 1, fp);
+		sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", (int)mac[0] & 0xff, (int)mac[1] & 0xff, (int)mac[2] & 0xff, (int)mac[3] & 0xff, (int)mac[4] & 0xff, (int)mac[5] & 0xff);
+		fprintf(stderr,"board mac is %s\n",macaddr);
 		fseek(fp, 0x10b, SEEK_SET);	//special nvram config
 		char *nvram = malloc(4096);
 		fread(nvram, 0, 4096, fp);
@@ -787,7 +788,7 @@ void start_sysinit(void)
 		fclose(fp);
 		int isr6300 = 0;
 		mtd = getMTD("board_data");
-		sprintf(devname, "/dev/mtdblock/%d", mtd);
+		sprintf(devname, "/dev/mtdblock%d", mtd);
 		FILE *model = fopen(devname, "rb");
 		if (model) {
 #define R6300 "U12H218T00_NETGEAR"
@@ -795,6 +796,7 @@ void start_sysinit(void)
 			fread(modelstr, 1, strlen(R6300), model);
 			if (!strncmp(modelstr, R6300, strlen(R6300))) {
 				fclose(model);
+				fprintf(stderr,"r6300 needs special nvram recover\n");
 				isr6300 = 1;
 			}
 			fclose(model);
@@ -1029,6 +1031,7 @@ void start_sysinit(void)
 
 			/* Restore defaults */
 			for (t = r6300_defaults; t->name; t++) {
+				fprintf(stderr,"check and set %s\n,",t->name);
 				if (!nvram_get(t->name))
 					nvram_set(t->name, t->value);
 			}
