@@ -153,6 +153,8 @@
 #define IPCAD_IFLIST_USE_GETIFADDRS
 #endif
 
+#include <pcap.h>
+
 #ifndef HAVE_SOCKLEN_T
 typedef size_t  socklen_t;
 #endif
