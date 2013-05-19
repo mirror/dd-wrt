@@ -1139,15 +1139,16 @@ void start_sysinit(void)
 			{0, 0, 0}
 		};
 
-		struct nvram_tuple *t;
 
 		/* Restore defaults */
 		if (isr6300) {
+			struct nvram_tuple *t;
 			for (t = r6300_defaults; t->name; t++) {
 				if (!nvram_get(t->name))
 					nvram_set(t->name, t->value);
 			}
 		} else {
+			struct nvram_tuple *t;
 			for (t = wdr4500_defaults; t->name; t++) {
 				if (!nvram_get(t->name))
 					nvram_set(t->name, t->value);
