@@ -3300,7 +3300,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_mode[16];
 	char wl_macaddr[16];
 	char wl_ssid[16];
-	char frequencies[16];
+	char frequencies[32];
 
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
