@@ -575,10 +575,12 @@ nflash_mtd_init(void)
 		goto fail;
 	}
 	nflash_parts = parts;
+#ifdef CONFIG_MIPS
 	printk(KERN_INFO "add netgear bosrddata for pflash if exists\n");
 	add_netgear_boarddata();
 	printk(KERN_INFO "add netgear bosrddata for sflash if exists\n");
 	add_netgear_boarddata_sflash();
+#endif
 #endif
 	return 0;
 
