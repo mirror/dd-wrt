@@ -435,7 +435,7 @@ static int robo_switch_enable(void)
 		robo_write16(ROBO_CTRL_PAGE, ROBO_IM_PORT_CTRL, 0);
 	}
 
-	if (robo.devid == ROBO_DEVICE_ID_53125 || (robo->devid == ROBO_DEVICE_ID_53115) || ROBO_IS_BCM5301X(robo.devid)) {
+	if (robo.devid == ROBO_DEVICE_ID_53125 || (robo.devid == ROBO_DEVICE_ID_53115) || ROBO_IS_BCM5301X(robo.devid)) {
 		/* Make IM port status link by default */
 		val = robo_read16(ROBO_CTRL_PAGE, ROBO_PORT_OVERRIDE_CTRL) | 0xb1;
 		robo_write16(ROBO_CTRL_PAGE, ROBO_PORT_OVERRIDE_CTRL, val);
@@ -594,8 +594,16 @@ static int robo_probe(char *devname)
 	if (boothwmodel != NULL && !strcmp(boothwmodel, "WRT610N")
 	    && boothwver != NULL && !strcmp(boothwver, "1.0")) {
 		if (phyid == 0xffff) {
-			miiwr(h, ROBO_PHY_ADDR, 16, 1);
-			phyid = miird(h, ROBO_PHY_ADDR, 2);
+
+			mii->phy_id = ROBO_PHY_ADDR;
+			mii->reg_num = 16;
+			mii->val_in = 1;
+			err = do_ioctl(SIOCSMIIREG);
+
+			mii->phy_id = ROBO_PHY_ADDR;
+			mii->reg_num = 0x2;
+			err = do_ioctl(SIOCGMIIREG);
+			phyid = mii->val_out;
 		}
 	}
 
