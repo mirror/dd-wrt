@@ -279,6 +279,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_ASUS_RTN66:
 	case ROUTER_NETCORE_NW715P:
 		break;
+	case ROUTER_LINKSYS_EA2700:
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_ASUS_AC66U:
 	case ROUTER_D1800H:
@@ -747,7 +748,7 @@ void start_sysinit(void)
 		basic_params = vlan_1_2;
 		nvram_set("vlan1hwname", "et0");
 		nvram_set("vlan2hwname", "et0");
-		nvram_set("vlan1ports", "3 2 1 0 8*");
+		nvram_set("vlan1ports", "0 1 2 3 8*");
 		nvram_set("vlan2ports", "4 8u");
 		if (nvram_match("pci/1/1/boardvendor", "0x14e4"))	//already configured?
 			break;
@@ -2638,6 +2639,7 @@ void start_sysinit(void)
 			case ROUTER_ASUS_RTN16:
 			case ROUTER_ASUS_RTN66:
 			case ROUTER_ASUS_AC66U:
+			case ROUTER_LINKSYS_EA2700:
 			case ROUTER_NETGEAR_WNDR4500:
 			case ROUTER_D1800H:
 				modules = "et switch-core switch-robo";
@@ -2724,6 +2726,7 @@ void start_sysinit(void)
 			case ROUTER_ASUS_AC66U:
 			case ROUTER_ASUS_RTN16:
 			case ROUTER_ASUS_RTN66:
+			case ROUTER_LINKSYS_EA2700:
 			case ROUTER_NETGEAR_WNDR4500:
 			case ROUTER_D1800H:
 				modules = "et switch-core switch-robo";
