@@ -3204,6 +3204,8 @@ char *enable_dtag_vlan(int enable)
 		vlan7ports = "1t 5";
 	else if (!strcmp(vlan_wan_ports, "4 8"))
 		vlan7ports = "4t 8";
+	else if (!strcmp(vlan_wan_ports, "4 8u"))
+		vlan7ports = "4t 8";
 	else if (!strcmp(vlan_wan_ports, "0 8"))
 		vlan7ports = "0t 8";
 
