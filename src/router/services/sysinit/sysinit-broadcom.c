@@ -747,8 +747,8 @@ void start_sysinit(void)
 		basic_params = vlan_1_2;
 		nvram_set("vlan1hwname", "et0");
 		nvram_set("vlan2hwname", "et0");
-		nvram_set("vlan1ports", "0 1 2 3 8*");
-		nvram_set("vlan2ports", "4 8");
+		nvram_set("vlan1ports", "3 2 1 0 8*");
+		nvram_set("vlan2ports", "4 8u");
 		if (nvram_match("pci/1/1/boardvendor", "0x14e4"))	//already configured?
 			break;
 
