@@ -2721,6 +2721,12 @@ int internal_getRouterBrand()
 		setRouter("Linksys E3000");	// renamed wrt610nv2
 		return ROUTER_WRT610NV2;
 	}
+
+	if (boardnum == 1 && nvram_match("boardtype", "0x052b")
+	    && nvram_match("boardrev", "0x1204")) {
+		setRouter("Linksys EA2700");	// renamed wrt610nv2
+		return ROUTER_LINKSYS_EA2700;
+	}
 #endif
 
 	if (boardnum == 42 && nvram_match("boardtype", "bcm94710dev")) {
