@@ -5882,6 +5882,21 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
 		}
+	} else if (nvram_match("vlan2ports", "4 8u")) {
+		vlanmap[0] = 4;
+		vlanmap[5] = 8;
+		if (nvram_match("vlan1ports", "0 1 2 3 8*")) {
+			vlanmap[1] = 0;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		} else		// "3 2 1 0 8*"
+		{
+			vlanmap[1] = 3;
+			vlanmap[2] = 2;
+			vlanmap[3] = 1;
+			vlanmap[4] = 0;
+		}
 	} else if (nvram_match("vlan1ports", "4 8")) {
 		vlanmap[0] = 4;
 		vlanmap[5] = 8;
