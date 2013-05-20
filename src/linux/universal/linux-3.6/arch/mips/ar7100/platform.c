@@ -162,8 +162,17 @@ static struct platform_device tl_wr1043nd_rtl8366_smi_device = {
 #endif
 
 #ifdef CONFIG_AR9100
+static int ar913x_wmac_reset(void)
+{
+	ar7100_reset(RESET_MODULE_AMBA2WMAC);
+	return 0;
+}
+
+
+
 static struct ath9k_platform_data ath9k_pdata = {
 	.macaddr = (u8 *) ath9k_pdata.eeprom_data + 0x20c,
+	.external_reset = ar913x_wmac_reset,
 };
 
 static struct resource ath9k_wmac_res[] = {
