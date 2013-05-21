@@ -977,15 +977,15 @@ void removeLineBreak(char *startup)
 void ping_startup(webs_t wp)
 {
 	char *startup = websGetVar(wp, "ping_ip", NULL);
+	if (startup) {
+		// filter Windows <cr>ud
+		removeLineBreak(startup);
 
-	// filter Windows <cr>ud
-	removeLineBreak(startup);
-
-	nvram_set("rc_startup", startup);
-	nvram_commit();
-	nvram2file("rc_startup", "/tmp/.rc_startup");
-	chmod("/tmp/.rc_startup", 0700);
-
+		nvram_set("rc_startup", startup);
+		nvram_commit();
+		nvram2file("rc_startup", "/tmp/.rc_startup");
+		chmod("/tmp/.rc_startup", 0700);
+	}
 	return;
 
 }
@@ -993,15 +993,15 @@ void ping_startup(webs_t wp)
 void ping_shutdown(webs_t wp)
 {
 	char *shutdown = websGetVar(wp, "ping_ip", NULL);
+	if (shutdown) {
+		// filter Windows <cr>ud
+		removeLineBreak(shutdown);
 
-	// filter Windows <cr>ud
-	removeLineBreak(shutdown);
-
-	nvram_set("rc_shutdown", shutdown);
-	nvram_commit();
-	nvram2file("rc_shutdown", "/tmp/.rc_shutdown");
-	chmod("/tmp/.rc_shutdown", 0700);
-
+		nvram_set("rc_shutdown", shutdown);
+		nvram_commit();
+		nvram2file("rc_shutdown", "/tmp/.rc_shutdown");
+		chmod("/tmp/.rc_shutdown", 0700);
+	}
 	return;
 
 }
@@ -1009,29 +1009,30 @@ void ping_shutdown(webs_t wp)
 void ping_firewall(webs_t wp)
 {
 	char *firewall = websGetVar(wp, "ping_ip", NULL);
-
-	// filter Windows <cr>ud
-	removeLineBreak(firewall);
-	nvram_set("rc_firewall", firewall);
-	nvram_commit();
-	nvram2file("rc_firewall", "/tmp/.rc_firewall");
-	chmod("/tmp/.rc_firewall", 0700);
-
+	if (firewall) {
+		// filter Windows <cr>ud
+		removeLineBreak(firewall);
+		nvram_set("rc_firewall", firewall);
+		nvram_commit();
+		nvram2file("rc_firewall", "/tmp/.rc_firewall");
+		chmod("/tmp/.rc_firewall", 0700);
+	}
 	return;
 }
 
 void ping_custom(webs_t wp)
 {
 	char *custom = websGetVar(wp, "ping_ip", NULL);
-
-	// filter Windows <cr>ud
-	unlink("/tmp/custom.sh");
-	removeLineBreak(custom);
-	nvram_set("rc_custom", custom);
-	nvram_commit();
-	if (nvram_invmatch("rc_custom", "")) {
-		nvram2file("rc_custom", "/tmp/custom.sh");
-		chmod("/tmp/custom.sh", 0700);
+	if (custom) {
+		// filter Windows <cr>ud
+		unlink("/tmp/custom.sh");
+		removeLineBreak(custom);
+		nvram_set("rc_custom", custom);
+		nvram_commit();
+		if (nvram_invmatch("rc_custom", "")) {
+			nvram2file("rc_custom", "/tmp/custom.sh");
+			chmod("/tmp/custom.sh", 0700);
+		}
 	}
 
 	return;
