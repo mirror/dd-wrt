@@ -276,7 +276,7 @@ int nvram_commit(void)
 	sync();
 	return ret;
 }
-
+#if 0
 int file2nvram(char *filename, char *varname)
 {
 	FILE *fp;
@@ -315,46 +315,29 @@ int file2nvram(char *filename, char *varname)
 	return 0;
 
 }
-
+#endif
 int nvram2file(char *varname, char *filename)
 {
 	FILE *fp;
 	int c, tmp;
-	int i = 0, j = 0;
+	int i = 0;
 	char *buf;
-	char mem[10000];
 
 	if (!(fp = fopen(filename, "wb")))
 		return 0;
 
-	buf = strdup(nvram_safe_get(varname));
+	buf = nvram_safe_get(varname);
 	//fprintf(stderr,"=================> nvram2file %s = [%s] \n",varname,buf);
-	while (buf[i] && j < sizeof(mem) - 3) {
-/*        if (buf[i] == '\\')  {
-                i++;
-                tmp=buf[i+2];
-                buf[i+2]=0;
-                sscanf(buf+i,"%02X",&c);
-                buf[i+2]=tmp;
-                i+=2;
-                mem[j]=c;j++;
-        } else */
+	while (buf[i]) {
 		if (buf[i] == '~') {
-			mem[j] = 0;
-			j++;
-			i++;
+			putc(0,fp);
 		} else {
-			mem[j] = buf[i];
-			j++;
-			i++;
+			putc(buf[i],fp);
 		}
+		i++;
 	}
-	if (j <= 0)
-		return j;
-	j = fwrite(mem, 1, j, fp);
 	fclose(fp);
-	free(buf);
-	return j;
+	return i;
 }
 
 #include "nvram_generics.h"
