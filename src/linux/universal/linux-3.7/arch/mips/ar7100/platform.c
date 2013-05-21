@@ -162,6 +162,9 @@ static struct platform_device tl_wr1043nd_rtl8366_smi_device = {
 #endif
 
 #ifdef CONFIG_AR9100
+#define RESET_MODULE_AMBA2WMAC		BIT(22)
+
+
 static int ar913x_wmac_reset(void)
 {
 	ar7100_reset(RESET_MODULE_AMBA2WMAC);
