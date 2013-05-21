@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.9.1 Kernel Configuration
+# Linux/powerpc 3.9.3 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -95,7 +95,6 @@ CONFIG_IRQ_DOMAIN=y
 # CONFIG_IRQ_DOMAIN_DEBUG is not set
 CONFIG_IRQ_FORCED_THREADING=y
 CONFIG_SPARSE_IRQ=y
-# CONFIG_ALWAYS_USE_PERSISTENT_CLOCK is not set
 CONFIG_GENERIC_TIME_VSYSCALL_OLD=y
 CONFIG_GENERIC_CLOCKEVENTS=y
 CONFIG_GENERIC_CLOCKEVENTS_BUILD=y
