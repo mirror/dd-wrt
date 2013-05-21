@@ -68,15 +68,15 @@ static struct file_operations switch_proc_fops = {
 
 static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 {
-	struct proc_dir_entry *dent = PDE(file->f_dentry->d_inode);
 	char *page;
 	int len = 0;
+	void *data =  PDE_DATA(file->f_dentry->d_inode);
 
 	if ((page = kmalloc(SWITCH_MAX_BUFSZ, GFP_KERNEL)) == NULL)
 		return -ENOBUFS;
 
-	if (dent->data != NULL) {
-		switch_proc_handler *handler = (switch_proc_handler *) dent->data;
+	if (data != NULL) {
+		switch_proc_handler *handler = (switch_proc_handler *) data;
 		if (handler->handler.read != NULL)
 			len += handler->handler.read(handler->driver, page + len, handler->nr);
 	}
@@ -100,7 +100,7 @@ static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff
 
 static ssize_t switch_proc_write(struct file *file, const char *buf, size_t count, void *data)
 {
-	struct proc_dir_entry *dent = PDE(file->f_dentry->d_inode);
+	void *proc_data = PDE_DATA(file->f_dentry->d_inode);
 	char *page;
 	int ret = -EINVAL;
 
@@ -113,8 +113,8 @@ static ssize_t switch_proc_write(struct file *file, const char *buf, size_t coun
 	}
 	page[count] = 0;
 
-	if (dent->data != NULL) {
-		switch_proc_handler *handler = (switch_proc_handler *) dent->data;
+	if (proc_data != NULL) {
+		switch_proc_handler *handler = (switch_proc_handler *) proc_data;
 		if (handler->handler.write != NULL) {
 			if ((ret = handler->handler.write(handler->driver, page, handler->nr)) >= 0)
 				ret = count;
@@ -165,7 +165,6 @@ static int handle_driver_dev_name(void *driver, char *buf, int nr)
 static void add_handler(switch_driver *driver, const switch_config *handler, struct proc_dir_entry *parent, int nr)
 {
 	switch_priv *priv = (switch_priv *) driver->data;
-	struct proc_dir_entry *p;
 	int mode;
 
 	switch_proc_handler *tmp;
@@ -183,10 +182,7 @@ static void add_handler(switch_driver *driver, const switch_config *handler, str
 	if (handler->read != NULL) mode |= S_IRUSR;
 	if (handler->write != NULL) mode |= S_IWUSR;
 
-	if ((p = create_proc_entry(handler->name, mode, parent)) != NULL) {
-		p->data = (void *) tmp;
-		p->proc_fops = &switch_proc_fops;
-	}
+	proc_create_data(handler->name, mode, parent, &switch_proc_fops, (void *) tmp);
 }
 
 static inline void add_handlers(switch_driver *driver, const switch_config *handlers, struct proc_dir_entry *parent, int nr)

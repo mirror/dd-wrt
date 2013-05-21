@@ -327,18 +327,18 @@ brcmnand_options_print(unsigned opts)
 //				n = "NO_AUTOINCR"; break;
 			case NAND_BUSWIDTH_16:
 				n = "BUSWIDTH_16"; break;
-			case NAND_NO_PADDING:
-				n = "NO_PADDING"; break;
+//			case NAND_NO_PADDING:
+//				n = "NO_PADDING"; break;
 			case NAND_CACHEPRG:
 				n = "CACHEPRG"; break;
-			case NAND_COPYBACK:
-				n = "COPYBACK"; break;
-			case NAND_IS_AND:
-				n = "IS_AND"; break;
-			case NAND_4PAGE_ARRAY:
-				n = "4PAGE_ARRAY"; break;
-			case BBT_AUTO_REFRESH:
-				n = "AUTO_REFRESH"; break;
+//			case NAND_COPYBACK:
+//				n = "COPYBACK"; break;
+//			case NAND_IS_AND:
+//				n = "IS_AND"; break;
+//			case NAND_4PAGE_ARRAY:
+//				n = "4PAGE_ARRAY"; break;
+//			case BBT_AUTO_REFRESH:
+//				n = "AUTO_REFRESH"; break;
 //			case NAND_NO_READRDY:
 //				n = "NO_READRDY"; break;
 			case NAND_NO_SUBPAGE_WRITE:

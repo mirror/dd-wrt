@@ -447,15 +447,15 @@ void soc_clocks_show( void )
 }
 
 #ifdef CONFIG_PROC_FS
-static int dmu_temperature_status(char * buffer, char **start,
-	off_t offset, int length, int * eof, void * data)
+static ssize_t dmu_temperature_status(struct file *file, char __user *buf,
+			  size_t count, loff_t *ppos)
 {
 	int len;
 	off_t pos, begin;
 	void *__iomem pvtmon_base;
 	u32 pvtmon_control0, pvtmon_status;
 	int temperature;
-
+	char buffer[256];
 	len = 0;
 	pos = begin = 0;
 
@@ -469,27 +469,20 @@ static int dmu_temperature_status(char * buffer, char **start,
 
 	pvtmon_status = readl(pvtmon_base + 0x8);
 	temperature = 4180 - ((5556 * pvtmon_status) / 1000);
-
-	len += sprintf(buffer + len, "%d\n",
+	
+	len = sprintf(buffer, "%d\n",
 		temperature);
 
-	pos = begin + len;
-
-	if (pos < offset) {
-		len = 0;
-		begin = pos;
-	}
-
-	*eof = 1;
-
-	*start = buffer + (offset - begin);
-	len -= (offset - begin);
-
-	if (len > length)
-		len = length;
+	return simple_read_from_buffer(buf, count, ppos, buffer, len);
 
 	return len;
 }
+
+static const struct file_operations dmu_fops = {
+	.read = dmu_temperature_status,
+	.llseek = default_llseek,
+};
+
 
 static int __init dmu_proc_init(void)
 {
@@ -502,8 +495,7 @@ static int __init dmu_proc_init(void)
 		return 0;
 	}
 
-	dmu_temp = create_proc_read_entry(DMU_PROC_NAME "/temperature", 0, NULL,
-		dmu_temperature_status, NULL);
+	dmu_temp = proc_create_data(DMU_PROC_NAME "/temperature", 0, NULL, &dmu_fops, NULL);
 
 	if (!dmu_temp)
 		printk(KERN_ERR "DMU create proc entry failed.\n");

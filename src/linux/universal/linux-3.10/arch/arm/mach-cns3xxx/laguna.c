@@ -1027,6 +1027,7 @@ late_initcall(laguna_model_setup);
 
 MACHINE_START(GW2388, "Gateworks Corporation Laguna Platform")
 	.atag_offset	= 0x100,
+	.nr_irqs	= NR_IRQS_CNS3XXX,
 	.smp		= smp_ops(cns3xxx_smp_ops),
 	.map_io		= laguna_map_io,
 	.init_irq	= cns3xxx_init_irq,

@@ -126,5 +126,5 @@ void __init mpcore_init_timer( unsigned long perphclk_freq )
 void __cpuinit mpcore_cpu_init(void)
 {
 	/* Initialize the GIC CPU interface for the next processor */
-	gic_secondary_init(0);
+//	gic_secondary_init(0);
 }

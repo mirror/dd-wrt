@@ -3,6 +3,7 @@
 
 #include <linux/version.h>
 #include <linux/list.h>
+#include <linux/slab.h>
 #define SWITCH_MAX_BUFSZ	4096
 #define SWITCH_NAME_BUFSZ	16
 
