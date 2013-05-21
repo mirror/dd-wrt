@@ -14,21 +14,21 @@
 @	compiled by GNU C version 4.7.1 20120723 [gcc-4_7-branch revision 189773], GMP version 5.1.1, MPFR version 3.1.1, MPC version 0.9
 @ GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
 @ options passed:  -nostdinc
-@ -I /home/seg/DEV/northstar/src/linux/universal/linux-3.9/arch/arm/include
+@ -I /home/seg/DEV/northstar/src/linux/universal/linux-3.10/arch/arm/include
 @ -I arch/arm/include/generated -I include
-@ -I /home/seg/DEV/northstar/src/linux/universal/linux-3.9/arch/arm/include/uapi
+@ -I /home/seg/DEV/northstar/src/linux/universal/linux-3.10/arch/arm/include/uapi
 @ -I arch/arm/include/generated/uapi
-@ -I /home/seg/DEV/northstar/src/linux/universal/linux-3.9/include/uapi
+@ -I /home/seg/DEV/northstar/src/linux/universal/linux-3.10/include/uapi
 @ -I include/generated/uapi -I arch/arm/mach-brcm-hnd/include
 @ -I arch/arm/plat-brcm/include
-@ -I /home/seg/DEV/northstar/src/linux/universal/linux-3.9/brcm/include
+@ -I /home/seg/DEV/northstar/src/linux/universal/linux-3.10/brcm/include
 @ -iprefix /home/xfs/toolchains/toolchain-arm_v7-a_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.8.1/
 @ -D __KERNEL__ -D BCMDRIVER -D linux -D __LINUX_ARM_ARCH__=7 -U arm
 @ -D CC_HAVE_ASM_GOTO -D KBUILD_STR(s)=#s
 @ -D KBUILD_BASENAME=KBUILD_STR(devicetable_offsets)
 @ -D KBUILD_MODNAME=KBUILD_STR(devicetable_offsets)
 @ -isystem /home/xfs/toolchains/toolchain-arm_v7-a_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.8.1/include
-@ -include /home/seg/DEV/northstar/src/linux/universal/linux-3.9/include/linux/kconfig.h
+@ -include /home/seg/DEV/northstar/src/linux/universal/linux-3.10/include/linux/kconfig.h
 @ -MD scripts/mod/.devicetable-offsets.s.d
 @ scripts/mod/devicetable-offsets.c -mlittle-endian -mapcs
 @ -mno-sched-prolog -mabi=aapcs-linux -mno-thumb-interwork -marm
@@ -626,6 +626,14 @@ main:
 @ 175 "scripts/mod/devicetable-offsets.c" 1
 	
 ->OFF_x86_cpu_id_vendor #0 offsetof(struct x86_cpu_id, vendor)	@
+@ 0 "" 2
+@ 177 "scripts/mod/devicetable-offsets.c" 1
+	
+->SIZE_mei_cl_device_id #36 sizeof(struct mei_cl_device_id)	@
+@ 0 "" 2
+@ 178 "scripts/mod/devicetable-offsets.c" 1
+	
+->OFF_mei_cl_device_id_name #0 offsetof(struct mei_cl_device_id, name)	@
 @ 0 "" 2
 	mov	r0, #0	@,
 	ldmfd	sp, {fp, sp, pc}	@
