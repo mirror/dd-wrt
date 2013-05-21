@@ -2152,8 +2152,15 @@ static int __init debugfs_fpuemu(void)
 __initcall(debugfs_fpuemu);
 #endif /* CONFIG_DEBUGFS */
 #else
-int fpu_emulator_cop1Handler(struct pt_regs *xcp, struct mips_fpu_struct *ctx,
-        int has_fpu)
+int fpu_emulator_cop1Handler(struct pt_regs *xcp,
+				    struct mips_fpu_struct *ctx, int has_fpu,
+				    void *__user *fault_addr)
+{
+	return 0;
+}
+
+int mm_isBranchInstr(struct pt_regs *regs, struct mm_decoded_insn dec_insn,
+		     unsigned long *contpc)
 {
 	return 0;
 }

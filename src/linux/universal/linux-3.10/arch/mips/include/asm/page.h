@@ -11,6 +11,7 @@
 
 #include <spaces.h>
 #include <linux/const.h>
+#include <asm/cpu-features.h>
 
 /*
  * PAGE_SHIFT determines the page size
