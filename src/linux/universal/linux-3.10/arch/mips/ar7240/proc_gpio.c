@@ -39,11 +39,15 @@ static void cleanup_proc(void);
 static char procfs_buffer[PROCFS_MAX_SIZE];
 static unsigned long procfs_buffer_size = 0;
 
-static int
-gpio_proc_read(char *buf, char **start, off_t offset,
-	       int len, int *eof, void *data)
+
+static ssize_t
+gpio_proc_read(struct file *file, char __user *buffer,
+		  size_t size, loff_t *ppos)
 {
+	unsigned int *data = PDE_DATA(file_inode(file));
+
 	u32 reg = 0;
+	char buf[2];
 	if ((unsigned int)data & GPIO_IN)
 		reg = ar7240_reg_rd(AR7240_GPIO_IN);
 	if ((unsigned int)data & GPIO_OUT)
@@ -70,29 +74,29 @@ gpio_proc_read(char *buf, char **start, off_t offset,
 		buf[0] = '0';
 #endif
 	buf[1] = 0;
-
-	*eof = 1;
-
-	return (2);
-
+	return simple_read_from_buffer(buffer, size, ppos, buf,
+					sizeof(buf));
 }
 
-static int
-gpio_proc_info_read(char *buf, char **start, off_t offset,
-		    int len, int *eof, void *data)
+static ssize_t
+gpio_proc_info_read(struct file *file, char __user *buffer,
+		  size_t size, loff_t *ppos)
 {
-	*eof = 1;
-	return (sprintf
+	char buf[128];
+	sprintf
 		(buf, "GPIO_IN   %#08X \nGPIO_OUT  %#08X \nGPIO_DIR  %#08X \n",
 		 ar7240_reg_rd(AR7240_GPIO_IN), ar7240_reg_rd(AR7240_GPIO_OUT),
-		 ar7240_reg_rd(AR7240_GPIO_OE)));
+		 ar7240_reg_rd(AR7240_GPIO_OE));
+		return simple_read_from_buffer(buffer, size, ppos, buf, strlen(buf));
+
 }
 
-static int
-gpio_proc_write(struct file *file, const char *buffer, unsigned long count,
-		void *data)
+static ssize_t gpio_proc_write(struct file* file, const char __user * buffer,
+                             size_t count, loff_t *ppos)
+
 {
 	u32 reg = 0;
+	unsigned int *data = PDE_DATA(file_inode(file));
 
 	/* get buffer size */
 	procfs_buffer_size = count;
@@ -334,6 +338,18 @@ EXPORT_SYMBOL(ap_usb_led_off);
 
 void __init ar71xx_gpio_init(void);
 
+static const struct file_operations fops_data = {
+	.read = gpio_proc_read,
+	.write = gpio_proc_write,
+	.llseek = default_llseek,
+};
+
+static const struct file_operations fops_info = {
+	.read = gpio_proc_info_read,
+	.llseek = default_llseek,
+};
+
+
 static __init int register_proc(void)
 {
 	unsigned char i, flag = 0;
@@ -361,21 +377,11 @@ static __init int register_proc(void)
 			sprintf(proc_name, "%i_dir", i % gpiocount);
 		}
 
-		proc_gpio = create_proc_entry(proc_name, S_IRUGO, gpio_dir);
-		if (proc_gpio) {
-			proc_gpio->read_proc = gpio_proc_read;
-			proc_gpio->write_proc = gpio_proc_write;
-			proc_gpio->data = ((i % gpiocount) | flag);
-		} else
-			goto fault;
+		proc_gpio = proc_create_data(proc_name, S_IRUGO, gpio_dir,&fops_data, ((i % gpiocount) | flag));
 
 	}
 
-	proc_gpio = create_proc_entry("info", S_IRUGO, gpio_dir);
-	if (proc_gpio) {
-		proc_gpio->read_proc = gpio_proc_info_read;
-	} else
-		goto fault;
+	proc_gpio = proc_create("info", S_IRUGO, gpio_dir,&fops_info);
 
 	printk(KERN_NOTICE
 	       "gpio_proc: module loaded and /proc/gpio/ created\n");

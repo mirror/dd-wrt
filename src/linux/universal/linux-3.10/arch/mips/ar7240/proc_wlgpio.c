@@ -47,11 +47,13 @@ static unsigned long procfs_buffer_size = 0;
 
 
 
-static int
-gpio_proc_read (char *buf, char **start, off_t offset,
-		int len, int *eof, void *data)
+static ssize_t
+gpio_proc_read(struct file *file, char __user *buffer,
+		  size_t size, loff_t *ppos)
 {
   u32 reg = 0;
+   unsigned int *data = PDE_DATA(file_inode(file));
+   char buf[2];
 #ifdef CONFIG_WASP_SUPPORT
   if (((unsigned int)data)>=16)
 	reg = get_wmac_gpio((unsigned int)data-16);
@@ -65,17 +67,16 @@ gpio_proc_read (char *buf, char **start, off_t offset,
     buf[0] = '0';
   buf[1] = 0;
 
-  *eof = 1;
-
-  return (2);
+     return simple_read_from_buffer(buffer, size, ppos, buf,
+					sizeof(buf));
 
 }
 
-static int
-gpio_proc_write (struct file *file, const char *buffer, unsigned long count,
-		 void *data)
+static ssize_t gpio_proc_write(struct file* file, const char __user * buffer,
+                             size_t count, loff_t *ppos)
 {
   u32 reg = 0;
+    unsigned int *data = PDE_DATA(file_inode(file));
 
   /* get buffer size */
   procfs_buffer_size = count;
@@ -108,6 +109,11 @@ gpio_proc_write (struct file *file, const char *buffer, unsigned long count,
 
 
 
+static const struct file_operations fops_data = {
+	.read = gpio_proc_read,
+	.write = gpio_proc_write,
+	.llseek = default_llseek,
+};
 
 
 static __init int
@@ -128,15 +134,7 @@ register_proc (void)
   for (i = 0; i < gpiocount; i++)	//create for every GPIO "x_in"," x_out" and "x_dir"
     {
       sprintf (proc_name, "%i_out", i);
-      proc_gpio = create_proc_entry (proc_name, S_IRUGO, gpio_dir);
-      if (proc_gpio)
-	{
-	  proc_gpio->read_proc = gpio_proc_read;
-	  proc_gpio->write_proc = gpio_proc_write;
-	  proc_gpio->data = i;
-	}
-      else
-	goto fault;
+      proc_gpio = proc_create_data(proc_name, S_IRUGO, gpio_dir,&fops_data, i);
     }
 
   printk (KERN_NOTICE "wl0gpio_proc: module loaded and /proc/wl0gpio/ created\n");
