@@ -1,4 +1,4 @@
-	.arch armv7-a
+	.arch armv6k
 	.fpu softvfp
 	.eabi_attribute 20, 1	@ Tag_ABI_FP_denormal
 	.eabi_attribute 21, 1	@ Tag_ABI_FP_exceptions
@@ -19,20 +19,17 @@
 @ -I /home/seg/DEV/northstar/src/linux/universal/linux-3.10/arch/arm/include/uapi
 @ -I arch/arm/include/generated/uapi
 @ -I /home/seg/DEV/northstar/src/linux/universal/linux-3.10/include/uapi
-@ -I include/generated/uapi -I arch/arm/mach-brcm-hnd/include
-@ -I arch/arm/plat-brcm/include
-@ -I /home/seg/DEV/northstar/src/linux/universal/linux-3.10/brcm/include
+@ -I include/generated/uapi -I arch/arm/mach-cns3xxx/include
 @ -iprefix /home/xfs/toolchains/toolchain-arm_v7-a_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.8.1/
-@ -D __KERNEL__ -D BCMDRIVER -D linux -D __LINUX_ARM_ARCH__=7 -U arm
-@ -D CC_HAVE_ASM_GOTO -D KBUILD_STR(s)=#s
-@ -D KBUILD_BASENAME=KBUILD_STR(devicetable_offsets)
+@ -D __KERNEL__ -D __LINUX_ARM_ARCH__=6 -U arm -D CC_HAVE_ASM_GOTO
+@ -D KBUILD_STR(s)=#s -D KBUILD_BASENAME=KBUILD_STR(devicetable_offsets)
 @ -D KBUILD_MODNAME=KBUILD_STR(devicetable_offsets)
 @ -isystem /home/xfs/toolchains/toolchain-arm_v7-a_gcc-4.8-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.8.1/include
 @ -include /home/seg/DEV/northstar/src/linux/universal/linux-3.10/include/linux/kconfig.h
 @ -MD scripts/mod/.devicetable-offsets.s.d
 @ scripts/mod/devicetable-offsets.c -mlittle-endian -mapcs
 @ -mno-sched-prolog -mabi=aapcs-linux -mno-thumb-interwork -marm
-@ -march=armv7-a -mfloat-abi=soft -mtls-dialect=gnu
+@ -march=armv6k -mtune=arm1136j-s -mfloat-abi=soft -mtls-dialect=gnu
 @ -auxbase-strip scripts/mod/devicetable-offsets.s -O2 -Wall -Wundef
 @ -Wstrict-prototypes -Wno-trigraphs -Werror=implicit-function-declaration
 @ -Wno-format-security -Wframe-larger-than=1024
