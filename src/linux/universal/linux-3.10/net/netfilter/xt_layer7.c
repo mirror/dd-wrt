@@ -383,8 +383,8 @@ layer7_read_proc(struct file *file, char __user *buf,
 }
 
 /* Read in num_packets from userland */
-static ssize_t layer7_write_proc(struct file* file, const char* buffer,
-                             unsigned long count, loff_t *ppos)
+static ssize_t layer7_write_proc(struct file* file, const char __user * buffer,
+                             size_t count, loff_t *ppos)
 {
 	char * foo = kmalloc(count, GFP_ATOMIC);
 
