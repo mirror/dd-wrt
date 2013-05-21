@@ -1333,6 +1333,7 @@ int brcmnand_default_bbt(struct mtd_info *mtd)
 	 * this information in a good / bad table during
 	 * startup
 	 */
+#if 0
 	if (this->options & NAND_IS_AND) {
 		/* Use the default pattern descriptors */
 		if (!this->bbt_td) {
@@ -1344,7 +1345,7 @@ int brcmnand_default_bbt(struct mtd_info *mtd)
 		put_mtd_device(mtd);
 		return ret;
 	}
-
+#endif
 	/* Is a flash based bad block table requested ? */
 	if (this->bbt_options & NAND_BBT_USE_FLASH) {
 		if (this->ecc.bytes == 3) {

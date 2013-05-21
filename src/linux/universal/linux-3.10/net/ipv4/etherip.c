@@ -32,7 +32,7 @@
 #include <net/ip.h>
 #include <net/protocol.h>
 #include <net/route.h>
-#include <net/ipip.h>
+#include <net/ip_tunnels.h>
 #include <net/xfrm.h>
 #include <net/inet_ecn.h>
 

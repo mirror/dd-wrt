@@ -116,6 +116,7 @@ EXPORT_SYMBOL_GPL(nf_queue_entry_get_refs);
  * Any packet that leaves via this function must come back
  * through nf_reinject().
  */
+
 int nf_queue(struct sk_buff *skb,
 		      struct nf_hook_ops *elem,
 		      u_int8_t pf, unsigned int hook,
@@ -237,7 +238,7 @@ void nf_reinject(struct nf_queue_entry *entry, unsigned int verdict)
 	case NF_IMQ_QUEUE:
 		err = nf_queue(skb, elem, entry->pf, entry->hook,
 				entry->indev, entry->outdev, entry->okfn,
-				verdict >> NF_VERDICT_QBITS);
+				verdict >> NF_VERDICT_QBITS, verdict & NF_VERDICT_MASK);
 		if (err < 0) {
 			if (err == -ECANCELED)
 				goto next_hook;

@@ -165,7 +165,7 @@ static void __cpuinit cns3xxx_secondary_init(unsigned int cpu)
 	 * core (e.g. timer irq), then they will not have been enabled
 	 * for us: do so
 	 */
-	gic_secondary_init(0);
+//	gic_secondary_init(0);
 
 
 	if (hasfiq) {
