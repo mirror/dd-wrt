@@ -368,6 +368,7 @@ config ARCH_CNS3XXX
 	select NEED_MACH_GPIO_H	
 	select COMMON_CLKDEV
 	select HAVE_ARM_SCU if SMP
+	select HAVE_ARM_TWD
 	select GENERIC_TIME
 	select GENERIC_CLOCKEVENTS
 	select ARM_GIC
