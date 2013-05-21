@@ -1,123 +1,204 @@
 /*
- *  linux/arch/arm/lib/memset.S
+ * This file is subject to the terms and conditions of the GNU General Public
+ * License.  See the file "COPYING" in the main directory of this archive
+ * for more details.
  *
- *  Copyright (C) 1995-2000 Russell King
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- *  ASM optimised string functions
+ * Copyright (C) 1998, 1999, 2000 by Ralf Baechle
+ * Copyright (C) 1999, 2000 Silicon Graphics, Inc.
+ * Copyright (C) 2007 by Maciej W. Rozycki
+ * Copyright (C) 2011, 2012 MIPS Technologies, Inc.
  */
-#include <linux/linkage.h>
-#include <asm/assembler.h>
+#include <asm/asm.h>
+#include <asm/asm-offsets.h>
+#include <asm/regdef.h>
 
-	.text
-	.align	5
-
-ENTRY(memset)
-	ands	r3, r0, #3		@ 1 unaligned?
-	mov	ip, r0			@ preserve r0 as return value
-	bne	6f			@ 1
-/*
- * we know that the pointer in ip is aligned to a word boundary.
- */
-1:	orr	r1, r1, r1, lsl #8
-	orr	r1, r1, r1, lsl #16
-	mov	r3, r1
-	cmp	r2, #16
-	blt	4f
-
-#if ! CALGN(1)+0
-
-/*
- * We need 2 extra registers for this loop - use r8 and the LR
- */
-	stmfd	sp!, {r8, lr}
-	mov	r8, r1
-	mov	lr, r1
-
-2:	subs	r2, r2, #64
-	stmgeia	ip!, {r1, r3, r8, lr}	@ 64 bytes at a time.
-	stmgeia	ip!, {r1, r3, r8, lr}
-	stmgeia	ip!, {r1, r3, r8, lr}
-	stmgeia	ip!, {r1, r3, r8, lr}
-	bgt	2b
-	ldmeqfd	sp!, {r8, pc}		@ Now <64 bytes to go.
-/*
- * No need to correct the count; we're only testing bits from now on
- */
-	tst	r2, #32
-	stmneia	ip!, {r1, r3, r8, lr}
-	stmneia	ip!, {r1, r3, r8, lr}
-	tst	r2, #16
-	stmneia	ip!, {r1, r3, r8, lr}
-	ldmfd	sp!, {r8, lr}
-
+#if LONGSIZE == 4
+#define LONG_S_L swl
+#define LONG_S_R swr
 #else
-
-/*
- * This version aligns the destination pointer in order to write
- * whole cache lines at once.
- */
-
-	stmfd	sp!, {r4-r8, lr}
-	mov	r4, r1
-	mov	r5, r1
-	mov	r6, r1
-	mov	r7, r1
-	mov	r8, r1
-	mov	lr, r1
-
-	cmp	r2, #96
-	tstgt	ip, #31
-	ble	3f
-
-	and	r8, ip, #31
-	rsb	r8, r8, #32
-	sub	r2, r2, r8
-	movs	r8, r8, lsl #(32 - 4)
-	stmcsia	ip!, {r4, r5, r6, r7}
-	stmmiia	ip!, {r4, r5}
-	tst	r8, #(1 << 30)
-	mov	r8, r1
-	strne	r1, [ip], #4
-
-3:	subs	r2, r2, #64
-	stmgeia	ip!, {r1, r3-r8, lr}
-	stmgeia	ip!, {r1, r3-r8, lr}
-	bgt	3b
-	ldmeqfd	sp!, {r4-r8, pc}
-
-	tst	r2, #32
-	stmneia	ip!, {r1, r3-r8, lr}
-	tst	r2, #16
-	stmneia	ip!, {r4-r7}
-	ldmfd	sp!, {r4-r8, lr}
-
+#define LONG_S_L sdl
+#define LONG_S_R sdr
 #endif
 
-4:	tst	r2, #8
-	stmneia	ip!, {r1, r3}
-	tst	r2, #4
-	strne	r1, [ip], #4
-/*
- * When we get here, we've got less than 4 bytes to zero.  We
- * may have an unaligned pointer as well.
- */
-5:	tst	r2, #2
-	strneb	r1, [ip], #1
-	strneb	r1, [ip], #1
-	tst	r2, #1
-	strneb	r1, [ip], #1
-	mov	pc, lr
+#ifdef CONFIG_CPU_MICROMIPS
+#define STORSIZE (LONGSIZE * 2)
+#define STORMASK (STORSIZE - 1)
+#define FILL64RG t8
+#define FILLPTRG t7
+#undef  LONG_S
+#define LONG_S LONG_SP
+#else
+#define STORSIZE LONGSIZE
+#define STORMASK LONGMASK
+#define FILL64RG a1
+#define FILLPTRG t0
+#endif
 
-6:	subs	r2, r2, #4		@ 1 do we have enough
-	blt	5b			@ 1 bytes to align with?
-	cmp	r3, #2			@ 1
-	strltb	r1, [ip], #1		@ 1
-	strleb	r1, [ip], #1		@ 1
-	strb	r1, [ip], #1		@ 1
-	add	r2, r2, r3		@ 1 (r2 = r2 - (4 - r3))
-	b	1b
-ENDPROC(memset)
+#define EX(insn,reg,addr,handler)			\
+9:	insn	reg, addr;				\
+	.section __ex_table,"a";			\
+	PTR	9b, handler;				\
+	.previous
+
+	.macro	f_fill64 dst, offset, val, fixup
+	EX(LONG_S, \val, (\offset +  0 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset +  1 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset +  2 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset +  3 * STORSIZE)(\dst), \fixup)
+#if ((defined(CONFIG_CPU_MICROMIPS) && (LONGSIZE == 4)) || !defined(CONFIG_CPU_MICROMIPS))
+	EX(LONG_S, \val, (\offset +  4 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset +  5 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset +  6 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset +  7 * STORSIZE)(\dst), \fixup)
+#endif
+#if (!defined(CONFIG_CPU_MICROMIPS) && (LONGSIZE == 4))
+	EX(LONG_S, \val, (\offset +  8 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset +  9 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset + 10 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset + 11 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset + 12 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset + 13 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset + 14 * STORSIZE)(\dst), \fixup)
+	EX(LONG_S, \val, (\offset + 15 * STORSIZE)(\dst), \fixup)
+#endif
+	.endm
+
+/*
+ * memset(void *s, int c, size_t n)
+ *
+ * a0: start of area to clear
+ * a1: char to fill with
+ * a2: size of area to clear
+ */
+	.set	noreorder
+	.align	5
+LEAF(memset)
+	beqz		a1, 1f
+	 move		v0, a0			/* result */
+
+	andi		a1, 0xff		/* spread fillword */
+	LONG_SLL		t1, a1, 8
+	or		a1, t1
+	LONG_SLL		t1, a1, 16
+#if LONGSIZE == 8
+	or		a1, t1
+	LONG_SLL		t1, a1, 32
+#endif
+	or		a1, t1
+1:
+
+FEXPORT(__bzero)
+	sltiu		t0, a2, STORSIZE	/* very small region? */
+	bnez		t0, .Lsmall_memset
+	 andi		t0, a0, STORMASK	/* aligned? */
+
+#ifdef CONFIG_CPU_MICROMIPS
+	move		t8, a1			/* used by 'swp' instruction */
+	move		t9, a1
+#endif
+#ifndef CONFIG_CPU_DADDI_WORKAROUNDS
+	beqz		t0, 1f
+	 PTR_SUBU	t0, STORSIZE		/* alignment in bytes */
+#else
+	.set		noat
+	li		AT, STORSIZE
+	beqz		t0, 1f
+	 PTR_SUBU	t0, AT			/* alignment in bytes */
+	.set		at
+#endif
+
+	R10KCBARRIER(0(ra))
+#ifdef __MIPSEB__
+	EX(LONG_S_L, a1, (a0), .Lfirst_fixup)	/* make word/dword aligned */
+#endif
+#ifdef __MIPSEL__
+	EX(LONG_S_R, a1, (a0), .Lfirst_fixup)	/* make word/dword aligned */
+#endif
+	PTR_SUBU	a0, t0			/* long align ptr */
+	PTR_ADDU	a2, t0			/* correct size */
+
+1:	ori		t1, a2, 0x3f		/* # of full blocks */
+	xori		t1, 0x3f
+	beqz		t1, .Lmemset_partial	/* no block to fill */
+	 andi		t0, a2, 0x40-STORSIZE
+
+	PTR_ADDU	t1, a0			/* end address */
+	.set		reorder
+1:	PTR_ADDIU	a0, 64
+	R10KCBARRIER(0(ra))
+	f_fill64 a0, -64, FILL64RG, .Lfwd_fixup
+	bne		t1, a0, 1b
+	.set		noreorder
+
+.Lmemset_partial:
+	R10KCBARRIER(0(ra))
+	PTR_LA		t1, 2f			/* where to start */
+#ifdef CONFIG_CPU_MICROMIPS
+	LONG_SRL	t7, t0, 1
+#endif
+#if LONGSIZE == 4
+	PTR_SUBU	t1, FILLPTRG
+#else
+	.set		noat
+	LONG_SRL	AT, FILLPTRG, 1
+	PTR_SUBU	t1, AT
+	.set		at
+#endif
+	jr		t1
+	 PTR_ADDU	a0, t0			/* dest ptr */
+
+	.set		push
+	.set		noreorder
+	.set		nomacro
+	f_fill64 a0, -64, FILL64RG, .Lpartial_fixup	/* ... but first do longs ... */
+2:	.set		pop
+	andi		a2, STORMASK		/* At most one long to go */
+
+	beqz		a2, 1f
+	 PTR_ADDU	a0, a2			/* What's left */
+	R10KCBARRIER(0(ra))
+#ifdef __MIPSEB__
+	EX(LONG_S_R, a1, -1(a0), .Llast_fixup)
+#endif
+#ifdef __MIPSEL__
+	EX(LONG_S_L, a1, -1(a0), .Llast_fixup)
+#endif
+1:	jr		ra
+	 move		a2, zero
+
+.Lsmall_memset:
+	beqz		a2, 2f
+	 PTR_ADDU	t1, a0, a2
+
+1:	PTR_ADDIU	a0, 1			/* fill bytewise */
+	R10KCBARRIER(0(ra))
+	bne		t1, a0, 1b
+	 sb		a1, -1(a0)
+
+2:	jr		ra			/* done */
+	 move		a2, zero
+	END(memset)
+
+.Lfirst_fixup:
+	jr	ra
+	 nop
+
+.Lfwd_fixup:
+	PTR_L		t0, TI_TASK($28)
+	andi		a2, 0x3f
+	LONG_L		t0, THREAD_BUADDR(t0)
+	LONG_ADDU	a2, t1
+	jr		ra
+	 LONG_SUBU	a2, t0
+
+.Lpartial_fixup:
+	PTR_L		t0, TI_TASK($28)
+	andi		a2, STORMASK
+	LONG_L		t0, THREAD_BUADDR(t0)
+	LONG_ADDU	a2, t1
+	jr		ra
+	 LONG_SUBU	a2, t0
+
+.Llast_fixup:
+	jr		ra
+	 andi		v1, a2, STORMASK
