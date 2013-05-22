@@ -573,7 +573,7 @@
 
 // Netgear WNDRR6300(dual radio, BCM53115 giga switch, BCM4706 @ 600MHz cpu, 2MB serial + 128MB NAND flash / 128MB ram, fccid: Netgear PY312100188) >_64K nvram_<
 // Netgear WNDR4500 (dual radio, BCM53115 giga switch, BCM4706 @ 600MHz cpu, 2MB serial + 128MB NAND flash / 128MB ram, fccid: Netgear PY311200162) >_64K nvram_<
-#define ROUTER_NETGEAR_WNDR4500 0xb216
+#define ROUTER_NETGEAR_R6300 0xb216
 
 #define ROUTER_BOARD_WCRGN 0xb31a
 
@@ -622,6 +622,11 @@
 #define ROUTER_LINKSYS_E800 0xc61a
 
 #define ROUTER_LINKSYS_EA2700 0xc715
+
+
+#define ROUTER_NETGEAR_WNDR4500 0xc816
+
+#define ROUTER_NETGEAR_WNDR4500V2 0xc916
 
 #define NVROUTER "DD_BOARD"
 
