@@ -780,7 +780,7 @@ void start_sysinit(void)
 		if (!strncmp(modelstr, R6300, strlen(R6300))) {
 			isr6300 = 1;
 		}
-		if (!strncmp(modelstr, NWDR4500V2, strlen(WNDR4500V2))) {
+		if (!strncmp(modelstr, WNDR4500V2, strlen(WNDR4500V2))) {
 			iswndr4500v2 = 1;
 		}
 		fclose(fp);
