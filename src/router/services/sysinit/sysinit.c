@@ -1744,6 +1744,8 @@ void start_restore_defaults(void)
 	case ROUTER_LINKSYS_EA2700:
 	case ROUTER_NETGEAR_WNDR4000:
 	case ROUTER_NETGEAR_WNDR4500:
+	case ROUTER_NETGEAR_WNDR4500V2:
+	case ROUTER_NETGEAR_R6300:
 	case ROUTER_ASUS_RTN66:
 		linux_overrides = wrt6102vlan;
 		break;
@@ -2037,8 +2039,10 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")) {
 			switch (brand) {
 			case ROUTER_NETGEAR_WNR3500L:
-			case ROUTER_NETGEAR_WNDR4500:
 			case ROUTER_WRT320N:
+			case ROUTER_NETGEAR_WNDR4500:
+			case ROUTER_NETGEAR_WNDR4500V2:
+			case ROUTER_NETGEAR_R6300:
 				nvram_unset("vlan0hwname");
 				break;
 			case ROUTER_LINKSYS_WTR54GS:
@@ -2085,6 +2089,8 @@ void start_restore_defaults(void)
 			switch (brand) {
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_NETGEAR_WNDR4500:
+			case ROUTER_NETGEAR_WNDR4500V2:
+			case ROUTER_NETGEAR_R6300:
 				nvram_set("vlan2ports", "4 8");
 				break;
 			case ROUTER_WRT320N:
