@@ -3023,12 +3023,19 @@ int internal_getRouterBrand()
 		FILE *model = fopen(devname, "rb");
 		if (model) {
 #define R6300 "U12H218T00_NETGEAR"
+#define WNDR4500V2 "U12H224T00_NETGEAR"
 			char modelstr[32];
 			fread(modelstr, 1, strlen(R6300), model);
 			if (!strncmp(modelstr, R6300, strlen(R6300))) {
 				fclose(model);
 				setRouter("Netgear R6300");
-				return ROUTER_NETGEAR_WNDR4500;
+				return ROUTER_NETGEAR_R6300;
+			}
+			fread(modelstr, 1, strlen(R6300), model);
+			if (!strncmp(modelstr, WNDR4500V2, strlen(WNDR4500V2))) {
+				fclose(model);
+				setRouter("Netgear WNDR4500V2");
+				return ROUTER_NETGEAR_WNDR4500V2;
 			}
 			fclose(model);
 		}
@@ -4983,13 +4990,23 @@ int led_control(int type, int act)
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x102;
 		break;
-	case ROUTER_NETGEAR_WNDR4500:
+	case ROUTER_NETGEAR_WNDR6300:
 		usb_gpio = 0x108;
 		usb_power = 0x000;
 		connected_gpio = 0x107;
 		power_gpio = 0x102;
 		diag_gpio = 0x001;
 		diag_gpio_disabled=0x009;
+		wlan0_gpio = 0x10b;	// radio led blue
+	case ROUTER_NETGEAR_WNDR4500:
+	case ROUTER_NETGEAR_WNDR4500V2:
+		power_gpio = 0x102;	//power led green
+		diag_gpio = 0x103;	// power led amber
+		connected_gpio = 0x10f;	//wan led green
+		wlan0_gpio = 0x109;	//radio 0 led green
+		wlan1_gpio = 0x10b;	// radio 1 led blue
+		usb_gpio = 0x108;	//usb led green
+		usb_gpio1 = 0x10e;	//usb1 led green
 		break;
 	case ROUTER_ASUS_RTN66:
 	case ROUTER_ASUS_AC66U:
