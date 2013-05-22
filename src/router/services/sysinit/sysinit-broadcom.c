@@ -1336,8 +1336,7 @@ void start_sysinit(void)
 				t++;
 			}
 
-		}
-		if (iswndr4500v2) {
+		} else if (iswndr4500v2) {
 			struct nvram_tuple *t;
 			t = wndr4500v2_pci_1_1_params;
 			while (t->name) {
