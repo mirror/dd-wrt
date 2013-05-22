@@ -4990,7 +4990,7 @@ int led_control(int type, int act)
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x102;
 		break;
-	case ROUTER_NETGEAR_WNDR6300:
+	case ROUTER_NETGEAR_R6300:
 		usb_gpio = 0x108;
 		usb_power = 0x000;
 		connected_gpio = 0x107;
