@@ -4998,6 +4998,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x001;
 		diag_gpio_disabled=0x009;
 		wlan0_gpio = 0x10b;	// radio led blue
+		break;
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
 		power_gpio = 0x102;	//power led green
