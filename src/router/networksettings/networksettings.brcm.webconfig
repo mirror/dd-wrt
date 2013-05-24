@@ -7,7 +7,7 @@
 		<input class="num" size="5" maxlength="5" name="ip_conntrack_max" onblur="valid_range(this,256,65536,management.net_port)" value="<% nvram_get("ip_conntrack_max"); %>" />&nbsp;
 		<span class="default"><script type="text/javascript">
 		//<![CDATA[
-		document.write("(" + share.deflt + ": 4096, " + share.range + ": 256 - 4096)");
+		document.write("(" + share.deflt + ": 4096, " + share.range + ": 256 - 65536)");
 		//]]>
 		</script></span>
 	</div>
