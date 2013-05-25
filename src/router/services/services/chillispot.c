@@ -348,7 +348,7 @@ void chilli_config(void)
 //	if (strlen(nvram_safe_get("chilli_localusers")) > 0)
 //		localusers /tmp/chilli/localusers.db
 	if (strlen(nvram_safe_get("fon_userlist")) > 0) //only reuse it for testing. will be changed for better integration
-		localusers /tmp/chilli/fonusers.local
+		fprintf(fp, "localusers /tmp/chilli/fonusers.local\n");
 	if (nvram_invmatch("chilli_dns1", "0.0.0.0")
 	    && nvram_invmatch("chilli_dns1", "")) {
 		fprintf(fp, "dns1 %s\n", nvram_get("chilli_dns1"));
