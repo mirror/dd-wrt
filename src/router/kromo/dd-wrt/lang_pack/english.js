@@ -832,7 +832,7 @@ hotspot.wifidog_auth="HTTP Server Authentication Support";
 
 //help container
 var hstatus_hots=new Object();
-hstatus_hots.right1="conup/condown:<br><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i>";
+hstatus_hots.right1="conup/condown:<br><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i><br>Local Users:<br><i>When only local users are used set primary radius to 127.0.0.1</i>";
 
 // ** Hotspotsystem **//
 var hotspotsys=new Object();
