@@ -20,7 +20,7 @@ all-dirs:=$(static-dirs) $(dynamic-dirs) $(client-dirs) $(doc-dirs)
 clean-dirs:=$(all-dirs) proto sysdep
 
 CPPFLAGS=-I$(root-rel) -I$(srcdir) 
-CFLAGS=$(CPPFLAGS) $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS=$(CPPFLAGS) $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS=-ffunction-sections -fdata-sections -Wl,--gc-sections
 LIBS=
 CLIENT_LIBS=
