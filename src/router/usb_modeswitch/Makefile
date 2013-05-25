@@ -2,7 +2,7 @@ PROG        = usb_modeswitch
 VERS        = 1.2.4
 #STRIP	    = strip
 #CC          = gcc
-CCFLAGS     = $(COPTS) -DNEED_PRINTF -Ilibusb-compat/libusb
+CCFLAGS     = $(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -Ilibusb-compat/libusb
 RM          = /bin/rm -f
 OBJS        = usb_modeswitch.c
 PREFIX	    = $(INSTALLDIR)/usr
@@ -19,9 +19,9 @@ $(PROG):    $(OBJS)
 
 
 configure:
-	cd libusb && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" CXXFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" CPPFLAGS="$(COPTS) -DNEED_PRINTF -fPIC"
+	cd libusb && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC"
 	make -C libusb
-	cd libusb-compat && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" CXXFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" CPPFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" LIBUSB_1_0_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a" LIBUSB_1_0_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb"
+	cd libusb-compat && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC" CPPFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" LIBUSB_1_0_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a" LIBUSB_1_0_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb"
 
 clean:
 	    	cd libusb && make clean
