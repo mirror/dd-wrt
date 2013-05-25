@@ -33,7 +33,7 @@ SCRIPTSRC = ./scripts/
 BIN     = $(CPROG) 
 MANP	= comgt.1 sigmon.1
 
-CFLAGS  = -c -DNEED_PRINTF
+CFLAGS  = -c -DNEED_PRINTF $(COPTS) $(MIPS16_OPT)
 CFLAGS += -DARCH_$(ARCHITECTURE)
 LDFLAGS =
 
