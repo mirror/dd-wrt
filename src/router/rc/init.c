@@ -754,7 +754,11 @@ int main(int argc, char **argv)
 #endif
 			{
 				start_service_f("run_rc_startup");
-				system("/etc/init.d/rcS");	// start openwrt
+// start init scripts				
+				system("/etc/init.d/rcS");	
+				system("/opt/etc/init.d/rcS");	
+				system("/jffs/etc/init.d/rcS");	
+				system("/mmc/etc/init.d/rcS");
 				// startup script
 				// (siPath impl)
 				cprintf("start modules\n");
