@@ -161,6 +161,8 @@ static void makeipup(void)
 	    || (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
 		&& nvram_match("sys_enable_jffs2", "1")))
+		mkdir("/jffs/etc", 0700);
+		mkdir("/jffs/etc/pppoeserver", 0700);
 		sysprintf("/bin/cp /jffs/etc/pppoeserver/pppoe_peer.db /tmp/");
 }
 

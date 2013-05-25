@@ -302,7 +302,6 @@ void chilli_config(void)
 	char var[64];
 
 #ifdef HAVE_CHILLILOCAL
-
 	if (!(fp = fopen("/tmp/chilli/fonusers.local", "w"))) {
 		perror("/tmp/chilli/fonusers.local");
 		return;
@@ -316,7 +315,7 @@ void chilli_config(void)
 
 	while (sep != NULL) {
 		fprintf(fp, "%s ", sep);
-		char *pass = strsep(&u, " ");
+		char *pass = strsep(&u, ":");
 
 		fprintf(fp, "%s \n", pass != NULL ? pass : "");
 		sep = strsep(&u, "=");
@@ -346,7 +345,10 @@ void chilli_config(void)
 		fprintf(fp, "conup /jffs/etc/chilli/con-up.sh\n");
 		fprintf(fp, "condown /jffs/etc/chilli/con-down.sh\n");
 	}
-
+//	if (strlen(nvram_safe_get("chilli_localusers")) > 0)
+//		localusers /tmp/chilli/localusers.db
+	if (strlen(nvram_safe_get("fon_userlist")) > 0) //only reuse it for testing. will be changed for better integration
+		localusers /tmp/chilli/fonusers.local
 	if (nvram_invmatch("chilli_dns1", "0.0.0.0")
 	    && nvram_invmatch("chilli_dns1", "")) {
 		fprintf(fp, "dns1 %s\n", nvram_get("chilli_dns1"));
@@ -406,9 +408,11 @@ void chilli_config(void)
 	}
 	if (nvram_match("chilli_802.1Xauth", "1"))
 		fprintf(fp, "eapolenable\n");
-#ifndef HAVE_FON
+
+/*#ifndef HAVE_FON
 	if (nvram_match("fon_enable", "1")) {
-#endif
+#endif	*/
+
 		char hyp[32];
 
 		strcpy(hyp, nvram_safe_get("wl0_hwaddr"));
@@ -419,12 +423,13 @@ void chilli_config(void)
 			fprintf(fp, "radiusnasid %s\n", hyp);
 		nvram_set("chilli_radiusnasid", hyp);
 		fprintf(fp, "interval 300\n");
-#ifndef HAVE_FON
+
+/*#ifndef HAVE_FON
 	} else {
 		if (nvram_invmatch("chilli_radiusnasid", ""))
 			fprintf(fp, "radiusnasid %s\n", nvram_get("chilli_radiusnasid"));
 	}
-#endif
+#endif	*/
 
 	if (nvram_invmatch("chilli_additional", "")) {
 		char *add = nvram_safe_get("chilli_additional");
