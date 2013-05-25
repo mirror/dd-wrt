@@ -412,6 +412,27 @@ static void setup_4712(void)
 
 }
 
+static int check_nv(char *name, char *value)
+{
+	int ret = 0;
+
+	if (nvram_match("manual_boot_nv", "1"))
+		return 0;
+
+	if (!nvram_get(name)) {
+		cprintf("ERR: Cann't find %s !.......................\n", name);
+		nvram_set(name, value);
+		ret++;
+	} else if (nvram_invmatch(name, value)) {
+		cprintf("ERR: The %s is %s, not %s !.................\n", name, nvram_safe_get(name), value);
+		nvram_set(name, value);
+		ret++;
+	}
+
+	return ret;
+}
+
+
 static void set_regulation(int card, char *code, char *rev)
 {
 	char path[32];
@@ -749,7 +770,8 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
 	case ROUTER_NETGEAR_R6300:
-		check_nv("clkfreq","600");
+		if (nvram_get("clkfreq")) //set it only if it doesnt exist
+			nvram_set("clkfreq","600");
 		nvram_set("vlan1hwname", "et0");
 		nvram_set("vlan2hwname", "et0");
 		nvram_set("vlan1ports", "0 1 2 3 8*");
@@ -3038,25 +3060,6 @@ void start_sysinit(void)
 
 }
 
-static int check_nv(char *name, char *value)
-{
-	int ret = 0;
-
-	if (nvram_match("manual_boot_nv", "1"))
-		return 0;
-
-	if (!nvram_get(name)) {
-		cprintf("ERR: Cann't find %s !.......................\n", name);
-		nvram_set(name, value);
-		ret++;
-	} else if (nvram_invmatch(name, value)) {
-		cprintf("ERR: The %s is %s, not %s !.................\n", name, nvram_safe_get(name), value);
-		nvram_set(name, value);
-		ret++;
-	}
-
-	return ret;
-}
 
 int check_cfe_nv(void)
 {
