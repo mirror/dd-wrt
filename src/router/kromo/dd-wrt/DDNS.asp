@@ -159,16 +159,16 @@ addEvent(window, "unload", function() {
 					<% nvram_selmatch("ddns_enable","9","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
-									<input name="ddns_username" size="30" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username"); %>" />
+									<input name="ddns_username" size="35" maxlength="64" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username"); %>" />
 								</div>
 								<div class="setting">
 		  							<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" id="ddns_passwd" name="ddns_passwd" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="password" id="ddns_passwd" name="ddns_passwd" size="35" maxlength="64" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 									<input type="checkbox" name="ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 								</div>			
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname"); %>" />
+									<input name="ddns_hostname" size="35" maxlength="99" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.typ"); %></div>
