@@ -273,9 +273,9 @@ static long gpio_ioctl(struct file *file,
                      unsigned int cmd, unsigned long arg);
 
 /* /proc/driver/gpio */
-static int gpio_read_proc(char *page, char **start, off_t off,
-                         int count, int *eof, void *data);
-
+static ssize_t gpio_read_proc(struct file *file, char __user *buffer,
+		  size_t size, loff_t *ppos);
+		  
 static unsigned char gpio_status;        /* bitmapped status byte.       */
 
 #define ERROR   (-1)
@@ -486,19 +486,19 @@ static int gpio_get_status(char *buf)
 }
 
 
-/* /proc/driver/gpio read op 
- */
-static int gpio_read_proc(char *page, char **start, off_t off,
-                             int count, int *eof, void *data)
+static ssize_t gpio_read_proc(struct file *file, char __user *buffer,
+		  size_t size, loff_t *ppos)
 {
-        int len = gpio_get_status (page);
-        if (len <= off+count) *eof = 1;
-        *start = page + off;
-        len -= off;
-        if (len>count) len = count;
-        if (len<0) len = 0;
-        return len;
+	char buf[128];
+	gpio_get_status (buf);
+	return simple_read_from_buffer(buffer, size, ppos, buf, strlen(buf));
 }
+
+
+static const struct file_operations fops_info = {
+	.read = gpio_read_proc,
+	.llseek = default_llseek,
+};
 #endif /* CONFIG_PROC_FS */
 
 
@@ -523,10 +523,10 @@ static int __init gpio_init_module(void)
 		return -ENOMEM;
 	}
         /* register /proc/driver/gpio */
-	res = create_proc_entry("info", 644, dir);
-	if (res) {
-		res->read_proc= gpio_read_proc;
-	} else {
+	res = proc_create("info", 644, dir,&fops_info);
+
+//	res = create_proc_entry("info", 644, dir);
+	if (!res) {
 		misc_deregister(&gpio_dev);
 		return -ENOMEM;
 	}
