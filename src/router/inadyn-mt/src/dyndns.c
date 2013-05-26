@@ -2096,7 +2096,7 @@ static RC_TYPE do_handle_bad_config(DYN_DNS_CLIENT *p_self,int i)
 					"fatal dyndns server update error for "\
 					"alias, %s.\nThis client should be stopped and corrected for "\
 					"configuration errors, and restarted...\n" \
-					ERROR_FLAG,p_self->alias_info.names[i]));
+					ERROR_FLAG,p_self->alias_info.names[i].name));
 	else
 
 		DBG_PRINTF((LOG_ERR,"E:" MODULE_TAG "\n"\
@@ -3384,21 +3384,21 @@ RC_TYPE init_update_loop(DYN_DNS_CLIENT *p_dyndns,int argc, char* argv[],void **
 	if (p_dyndns->lang_hard_coded) {
 
 		/*use hard coded defaults -- don't use default locale file*/
-//		dealloc_lang_strings();
+		dealloc_lang_strings();
 
 		DBG_PRINTF((LOG_INFO, "I:" MODULE_TAG "Empty --lang_file parameter.  Deallocated language strings, using hard coded english defaults...\n"));
 	}
-//	else {
-//
-//		/*if opt around default language strings, use that*/
-//		if (p_dyndns->lang_file) {
-//
-//			if (!(re_init_lang_strings(p_dyndns->lang_file)==RC_OK)) {
-//
-//				DBG_PRINTF((LOG_WARNING, "W:" MODULE_TAG "Failed using default override language strings file, %s...\n",p_dyndns->lang_file));
-//			}
-//		}
-//	}
+	else {
+
+		/*if opt around default language strings, use that*/
+		if (p_dyndns->lang_file) {
+
+			if (!(re_init_lang_strings(p_dyndns->lang_file)==RC_OK)) {
+
+				DBG_PRINTF((LOG_WARNING, "W:" MODULE_TAG "Failed using default override language strings file, %s...\n",p_dyndns->lang_file));
+			}
+		}
+	}
 
 	/*if logfile provided, redirect output to log file*/
 	if (p_dyndns->dbg.p_logfilename)
