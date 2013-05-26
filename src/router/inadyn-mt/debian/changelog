@@ -1,4 +1,6 @@
-inadyn-mt (02.24.36-1) unstable; urgency=low
+inadyn-mt (02.24.38-1) unstable; urgency=low
+
+  * fatal configuration selector fault fixed
 
   * fixed debug output out of bounds array index bug
   
