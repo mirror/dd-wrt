@@ -250,6 +250,9 @@ include rules/links.mk
 include rules/softflowd.mk
 include rules/nextmediaextra.mk
 include rules/libqmi.mk
+include rules/strongswan.mk
+include rules/gmp.mk
+include rules/sqlite.mk
 
 #
 # Generic rules
