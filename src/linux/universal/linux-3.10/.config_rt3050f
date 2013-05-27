@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.0-rc2 Kernel Configuration
+# Linux/mips 3.10.0-rc3 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1738,6 +1738,3 @@ CONFIG_ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE=y
 # CONFIG_DDR is not set
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_HYPERVISOR_GUEST is not set
-# CONFIG_INTEL_MEI_ME is not set
-# CONFIG_QLCNIC_SRIOV is not set
