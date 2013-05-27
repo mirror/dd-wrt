@@ -1,0 +1,295 @@
+.TH IPSEC 8 "2012-06-19" "5.0.4" "strongSwan"
+.SH NAME
+ipsec \- invoke IPsec utilities
+.SH SYNOPSIS
+.B ipsec
+\fIcommand\fP [ \fIarguments\fP ] [ \fIoptions\fP ]
+.PP
+.SH DESCRIPTION
+The
+.B ipsec
+utility invokes any of several utilities involved in controlling and monitoring
+the IPsec encryption/authentication system, running the specified \fIcommand\fP
+with the specified \fIarguments\fP and \fIoptions\fP as if it had been invoked
+directly. This largely eliminates possible name collisions with other software,
+and also permits some centralized services.
+.PP
+All the commands described in this manual page are built-in and are used to
+control and monitor IPsec connections as well as the IKE daemons.
+.PP
+For other commands
+.I ipsec
+supplies the invoked
+.I command
+with a suitable PATH environment variable,
+and also provides IPSEC_DIR,
+IPSEC_CONFS, and IPSEC_VERSION environment variables,
+containing respectively
+the full pathname of the directory where the IPsec utilities are stored,
+the full pathname of the directory where the configuration files live,
+and the IPsec version number.
+.PP
+.SS CONTROL COMMANDS
+.TP
+.B "start [ starter options ]"
+calls
+.BR "starter"
+which in turn parses \fIipsec.conf\fR and starts the IKEv1/IKEv2 daemon
+\fIcharon\fR.
+.PP
+.TP
+.B "update"
+sends a \fIHUP\fR signal to
+.BR "starter"
+which in turn determines any changes in \fIipsec.conf\fR
+and updates the configuration on the running IKE daemon \fIcharon\fR.
+.PP
+.TP
+.B "reload"
+sends a \fIUSR1\fR signal to
+.BR "starter"
+which in turn reloads the whole configuration on the running IKE daemon
+\fIcharon\fR based on the actual \fIipsec.conf\fR.
+.PP
+.TP
+.B "restart"
+is equivalent to
+.B "stop"
+followed by
+.B "start"
+after a guard of 2 seconds.
+.PP
+.TP
+.B "stop"
+terminates all IPsec connections and stops the IKE daemon \fIcharon\fR
+by sending a \fITERM\fR signal to
+.BR "starter".
+.PP
+.TP
+.B "up \fIname\fP"
+tells the IKE daemon to start up connection \fIname\fP.
+.PP
+.TP
+.B "down \fIname\fP"
+tells the IKE daemon to terminate connection \fIname\fP.
+.PP
+.TP
+.B "down \fIname{n}\fP"
+terminates IKEv1 Quick Mode and IKEv2 CHILD SA instance \fIn\fP of
+connection \fIname\fP.
+.PP
+.TP
+.B "down \fIname{*}\fP"
+terminates all IKEv1 Quick Mode and  IKEv2 CHILD SA instances of connection
+\fIname\fP.
+.PP
+.TP
+.B "down \fIname[n]\fP"
+terminates IKE SA instance \fIn\fP of connection \fIname\fP.
+.PP
+.TP
+.B "down \fIname[*]\fP"
+terminates all IKE SA instances of connection \fIname\fP.
+.PP
+.TP
+.B "route \fIname\fP"
+tells the IKE daemon to insert an IPsec policy in the kernel
+for connection \fIname\fP. The first payload packet matching the IPsec policy
+will automatically trigger an IKE connection setup.
+.PP
+.TP
+.B "unroute \fIname\fP"
+remove the IPsec policy in the kernel for connection \fIname\fP.
+.PP
+.TP
+.B "status [ \fIname\fP ]"
+returns concise status information either on connection
+\fIname\fP or if the argument is lacking, on all connections.
+.PP
+.TP
+.B "statusall [ \fIname\fP ]"
+returns detailed status information either on connection
+\fIname\fP or if the argument is lacking, on all connections.
+.PP
+.SS LIST COMMANDS
+.TP
+.B "listalgs"
+returns a list supported cryptographic algorithms usable for IKE, and their
+corresponding plugin.
+.PP
+.TP
+.B "listpubkeys [ --utc ]"
+returns a list of RSA public keys that were either loaded in raw key format
+or extracted from X.509 and|or OpenPGP certificates.
+.PP
+.TP
+.B "listcerts [ --utc ]"
+returns a list of X.509 and|or OpenPGP certificates that were either loaded
+locally by the IKE daemon or received via the IKE protocol.
+.PP
+.TP
+.B "listcacerts [ --utc ]"
+returns a list of X.509 Certification Authority (CA) certificates that were
+loaded locally by the IKE daemon from the \fI/etc/ipsec.d/cacerts/\fP
+directory or received via the IKE protocol.
+.PP
+.TP
+.B "listaacerts [ --utc ]"
+returns a list of X.509 Authorization Authority (AA) certificates that were
+loaded locally by the IKE daemon from the \fI/etc/ipsec.d/aacerts/\fP
+directory.
+.PP
+.TP
+.B "listocspcerts [ --utc ]"
+returns a list of X.509 OCSP Signer certificates that were either loaded
+locally by the IKE daemon from the \fI/etc/ipsec.d/ocspcerts/\fP
+directory or were sent by an OCSP server.
+.PP
+.TP
+.B "listacerts [ --utc ]"
+returns a list of X.509 Attribute certificates that were loaded locally by
+the IKE daemon from the \fI/etc/ipsec.d/acerts/\fP directory.
+.PP
+.TP
+.B "listgroups [ --utc ]"
+returns a list of groups that are used to define user authorization profiles.
+.PP
+.TP
+.B "listcainfos [ --utc ]"
+returns certification authority information (CRL distribution points, OCSP URIs,
+LDAP servers) that were defined by
+.BR ca
+sections in \fIipsec.conf\fP.
+.PP
+.TP
+.B "listcrls [ --utc ]"
+returns a list of Certificate Revocation Lists (CRLs) that were either loaded
+by the IKE daemon from the \fI/etc/ipsec.d/crls\fP directory or fetched from
+an HTTP- or LDAP-based CRL distribution point.
+.PP
+.TP
+.B "listocsp [ --utc ]"
+returns revocation information fetched from OCSP servers.
+.PP
+.TP
+.B "listcounters"
+show IKE counter values collected since daemon startup.
+.PP
+.TP
+.B "listall [ --utc ]"
+returns all information generated by the list commands above. Each list command
+can be called with the
+\fB\-\-utc\fP
+option which displays all dates in UTC instead of local time.
+.PP
+.SS REREAD COMMANDS
+.TP
+.B "rereadsecrets"
+flushes and rereads all secrets defined in \fIipsec.secrets\fP.
+.PP
+.TP
+.B "rereadcacerts"
+reads all certificate files contained in the \fI/etc/ipsec.d/cacerts\fP
+directory and adds them to the list of Certification Authority (CA)
+certificates.
+.PP
+.TP
+.B "rereadaacerts"
+reads all certificate files contained in the \fI/etc/ipsec.d/aacerts\fP
+directory and adds them to the list of Authorization Authority (AA)
+certificates.
+.PP
+.TP
+.B "rereadocspcerts"
+reads all certificate files contained in the \fI/etc/ipsec.d/ocspcerts/\fP
+directory and adds them to the list of OCSP signer certificates.
+.PP
+.TP
+.B "rereadacerts"
+reads all certificate files contained in the  \fI/etc/ipsec.d/acerts/\fP
+directory and adds them to the list of attribute certificates.
+.PP
+.TP
+.B "rereadcrls"
+reads  all Certificate  Revocation Lists (CRLs) contained in the
+\fI/etc/ipsec.d/crls/\fP directory and adds them to the list of CRLs.
+.PP
+.TP
+.B "rereadall"
+executes all reread commands listed above.
+.PP
+.SS PURGE COMMANDS
+.TP
+.B "purgeike"
+purges IKE SAs that don't have a Quick Mode or CHILD SA.
+.PP
+.TP
+.B "purgeocsp"
+purges all cached OCSP information records.
+.PP
+.SS INFO COMMANDS
+.TP
+.B "\-\-help"
+returns the usage information for the
+.B ipsec
+command.
+.PP
+.TP
+.B "\-\-version"
+returns the version in the form of
+.B Linux strongSwan U<strongSwan userland version>/K<Linux kernel version>
+if strongSwan uses the native NETKEY IPsec stack of the Linux kernel it is
+running on.
+.PP
+.TP
+.B "\-\-versioncode"
+returns the version number in the form of
+.B U<strongSwan userland version>/K<Linux kernel version>
+if strongSwan uses the native NETKEY IPsec stack of the Linux kernel it is
+running on.
+.PP
+.TP
+.B "\-\-copyright"
+returns the copyright information.
+.PP
+.TP
+.B "\-\-directory"
+returns the \fILIBEXECDIR\fP directory as defined by the configure options.
+.PP
+.TP
+.B "\-\-confdir"
+returns the \fISYSCONFDIR\fP directory as defined by the configure options.
+.SH FILES
+/usr/local/lib/ipsec	usual utilities directory
+.SH ENVIRONMENT
+.PP
+The following environment variables control where strongSwan finds its
+components.
+The
+.B ipsec
+command sets them if they are not already set.
+.nf
+.na
+
+IPSEC_DIR               directory containing ipsec programs and utilities
+IPSEC_SBINDIR           directory containing \fBipsec\fP command
+IPSEC_CONFDIR           directory containing configuration files
+IPSEC_PIDDIR            directory containing PID files
+IPSEC_SCRIPT            name of the ipsec script
+IPSEC_NAME              name of ipsec distribution
+IPSEC_VERSION           version numer of ipsec userland and kernel
+IPSEC_STARTER_PID       PID file for ipsec starter
+IPSEC_CHARON_PID        PID file for IKE keying daemon
+.ad
+.fi
+.SH SEE ALSO
+.hy 0
+.na
+ipsec.conf(5), ipsec.secrets(5)
+.ad
+.hy
+.PP
+.SH HISTORY
+Originally written for the FreeS/WAN project by Henry Spencer.
+Updated and extended for the strongSwan project <http://www.strongswan.org> by
+Tobias Brunner and Andreas Steffen.
