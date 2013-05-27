@@ -4273,6 +4273,7 @@ int led_control(int type, int act)
 		connected_gpio = 0x10b;
 		disconnected_gpio = 0x106;
 		ses_gpio = 0x104;
+		usb_gpio = 0x100;
 #endif
 #ifdef HAVE_WNDR3700
 		power_gpio = 0x102;
