@@ -775,7 +775,7 @@ void start_sysinit(void)
 		nvram_set("vlan1hwname", "et0");
 		nvram_set("vlan2hwname", "et0");
 		nvram_set("vlan1ports", "0 1 2 3 8*");
-		nvram_set("vlan2ports", "4 8u");
+		nvram_set("vlan2ports", "4 8");
 
 		/* now it goes evil */
 		int mtd = getMTD("board_data");
