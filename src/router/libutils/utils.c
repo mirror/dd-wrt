@@ -4992,12 +4992,14 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x102;
 		break;
 	case ROUTER_NETGEAR_R6300:
-		usb_gpio = 0x108;
-		usb_power = 0x000;
-		connected_gpio = 0x107;
-		power_gpio = 0x102;
-		diag_gpio = 0x001;
-		diag_gpio_disabled=0x009;
+		usb_gpio = 0x108;	//usb led
+		usb_power = 0x000;	//usb power on/off
+		connected_gpio = 0x10f;	//green led
+		power_gpio = 0x102;	//power orange led
+		diag_gpio = 0x103;	//power led orange
+		//diag_gpio_disabled=0x009;//netgear logo led r
+		//emblem0_gpio = 0x101;   // NETGEAR Emblem l     
+		//emblem1_gpio = 0x109;   // NETGEAR Emblem r
 		wlan0_gpio = 0x10b;	// radio led blue
 		break;
 	case ROUTER_NETGEAR_WNDR4500:
