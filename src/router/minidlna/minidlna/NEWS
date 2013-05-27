@@ -1,4 +1,4 @@
-1.1.0 - Released 00-Month-0000
+1.1.0 - Released 04-April-2013
 --------------------------------
 - Add support for other operating systems.
 - Switch to autoconf from our handcrafted genconfig.sh.
@@ -10,6 +10,8 @@
 - Fix crash bug on video files with some ffmpeg library versions.
 - Add support for TiVo MPEG-TS files.
 - Add some logging and forking tweaks to work better with systemd.
+- Validate or escape user input to prevent SQL injection.
+- Add forced sorting support for Panasonic devices.
 
 1.0.25 - Released 13-July-2012
 --------------------------------

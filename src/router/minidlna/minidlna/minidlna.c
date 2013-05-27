@@ -923,14 +923,8 @@ init(int argc, char **argv)
 	/* If no IP was specified, try to detect one */
 	if (n_lan_addr < 1)
 	{
-		if ((getsysaddr(ip_addr, sizeof(ip_addr)) < 0) &&
-		    (getifaddr("eth0", ip_addr, sizeof(ip_addr)) < 0) &&
-		    (getifaddr("eth1", ip_addr, sizeof(ip_addr)) < 0))
-		{
-			DPRINTF(E_OFF, L_GENERAL, "No IP address automatically detected\n");
-		}
-		if (*ip_addr && parselanaddr(&lan_addr[n_lan_addr], ip_addr) == 0)
-			n_lan_addr++;
+		if (getsysaddrs() <= 0)
+			DPRINTF(E_FATAL, L_GENERAL, "No IP address automatically detected!\n");
 	}
 
 	if (!n_lan_addr || runtime_vars.port <= 0)
@@ -1093,6 +1087,12 @@ main(int argc, char **argv)
 			DPRINTF(E_FATAL, L_GENERAL, "ERROR: pthread_create() failed for start_inotify. EXITING\n");
 	}
 #endif
+	for (i = 0; i < n_lan_addr; i++)
+	{
+		DPRINTF(E_INFO, L_GENERAL, "Enabled interface %s/%s\n",
+			lan_addr[i].str, inet_ntoa(lan_addr[i].mask));
+	}
+
 	sudp = OpenAndConfSSDPReceiveSocket();
 	if (sudp < 0)
 	{
