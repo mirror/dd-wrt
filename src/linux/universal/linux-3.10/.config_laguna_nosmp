@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.0-rc2 Kernel Configuration
+# Linux/arm 3.10.0-rc3 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -322,6 +322,7 @@ CONFIG_PCI_SYSCALL=y
 #
 CONFIG_HAVE_SMP=y
 # CONFIG_SMP is not set
+CONFIG_HAVE_ARM_TWD=y
 # CONFIG_VMSPLIT_3G is not set
 CONFIG_VMSPLIT_2G=y
 # CONFIG_VMSPLIT_1G is not set
@@ -2745,11 +2746,3 @@ CONFIG_AVERAGE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_RCU_FAST_NO_HZ is not set
-# CONFIG_REGMAP is not set
-# CONFIG_REGMAP_I2C is not set
-# CONFIG_POWERNV_MSI is not set
-# CONFIG_GPIO_GRGPIO is not set
-# CONFIG_HYPERVISOR_GUEST is not set
-# CONFIG_INTEL_MEI_ME is not set
-# CONFIG_QLCNIC_SRIOV is not set
