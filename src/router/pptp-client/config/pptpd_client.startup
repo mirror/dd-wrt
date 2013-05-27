@@ -2,7 +2,7 @@
 if [ -z "$(nvram get pptpd_client_enable)" ]; then
     nvram set pptpd_client_enable=0
     nvram set pptpd_client_srvuser="DOMAIN\\\\Username"
-    nvram set pptpd_client_srvsec="require-mppe"
+    nvram set pptpd_client_srvsec="mppe required"
     nvram set pptpd_client_srvmtu="1436"
     nvram set pptpd_client_srvmru="1436"
     nvram set pptpd_client_nat="1"  
