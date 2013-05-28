@@ -14,7 +14,13 @@ mc-configure: ncurses
 	make -C mc2/slang clean
 	make -C mc2/slang
 
-	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/mc2/slang/src" LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -L$(TOP)/glib20/libglib/glib/.libs -L$(TOP)/glib20/libglib/gmodule/.libs -lncurses" \
+	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux CC="ccache $(CC)" \
+		CFLAGS="$(COPTS) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/mc2/slang/src" \
+		LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -lncurses" \
+		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
+		GLIB_LIBS="-L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0" \
+		GMODULE_CFLAGS="-pthread -I$(TOP)/glib20/libglib/gmodule " \
+		GMODULE_LIBS="-pthread -L$(TOP)/glib20/libglib/gmodule/.libs -lrt -lglib-2.0" \
 	--with-included-gettext \
 	--with-ncurses \
 	--without-sco \
