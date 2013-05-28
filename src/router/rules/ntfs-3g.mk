@@ -30,6 +30,8 @@ ntfs-3g-configure:
 			--target=$(ARCH)-linux \
 			--host=$(ARCH) \
 			CC="$(CC)" \
+			FUSE_MODULE_CFLAGS="-D_FILE_OFFSET_BITS=64 -I$(TOP)/ntfs-3g/fuse/include" \
+			FUSE_MODULE_LIBS="-pthread -L$(TOP)/ntfs-3g/fuse/lib/.libs -lfuse -lrt -ldl" \
 			CXXFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
 			CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			LDFLAGS="$(COPTS) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/ntfs-3g/fuse/lib/.libs"
+			LDFLAGS="$(COPTS) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections"
