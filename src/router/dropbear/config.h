@@ -8,7 +8,7 @@
 /* #undef BROKEN_GETADDRINFO */
 
 /* Use bundled libtom */
-#define BUNDLED_LIBTOM 
+#define BUNDLED_LIBTOM /**/
 
 /* lastlog file location */
 /* #undef CONF_LASTLOG_FILE */
@@ -26,10 +26,10 @@
 /* #undef CONF_WTMP_FILE */
 
 /* Disable use of lastlog() */
-#define DISABLE_LASTLOG 
+#define DISABLE_LASTLOG /**/
 
 /* Use PAM */
-#define DISABLE_PAM 
+#define DISABLE_PAM /**/
 
 /* Disable use of pututline() */
 /* #undef DISABLE_PUTUTLINE */
@@ -41,13 +41,13 @@
 /* #undef DISABLE_SYSLOG */
 
 /* Disable use of utmp */
-#define DISABLE_UTMP 
+#define DISABLE_UTMP /**/
 
 /* Disable use of utmpx */
 #define DISABLE_UTMPX 1
 
 /* Disable use of wtmp */
-#define DISABLE_WTMP 
+#define DISABLE_WTMP /**/
 
 /* Disable use of wtmpx */
 #define DISABLE_WTMPX 1
@@ -84,6 +84,9 @@
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
+
+/* Define to 1 if you have the `fork' function. */
+#define HAVE_FORK 1
 
 /* Define to 1 if you have the `freeaddrinfo' function. */
 #define HAVE_FREEADDRINFO 1
@@ -245,69 +248,69 @@
 /* #undef HAVE_STROPTS_H */
 
 /* Have struct addrinfo */
-#define HAVE_STRUCT_ADDRINFO 
+#define HAVE_STRUCT_ADDRINFO /**/
 
 /* Have struct in6_addr */
-#define HAVE_STRUCT_IN6_ADDR 
+#define HAVE_STRUCT_IN6_ADDR /**/
 
 /* Have struct sockaddr_in6 */
-#define HAVE_STRUCT_SOCKADDR_IN6 
+#define HAVE_STRUCT_SOCKADDR_IN6 /**/
 
 /* Define to 1 if the system has the type `struct sockaddr_storage'. */
 #define HAVE_STRUCT_SOCKADDR_STORAGE 1
 
-/* Define to 1 if `ss_family' is member of `struct sockaddr_storage'. */
+/* Define to 1 if `ss_family' is a member of `struct sockaddr_storage'. */
 #define HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY 1
 
-/* Define to 1 if `ut_addr' is member of `struct utmpx'. */
+/* Define to 1 if `ut_addr' is a member of `struct utmpx'. */
 /* #undef HAVE_STRUCT_UTMPX_UT_ADDR */
 
-/* Define to 1 if `ut_addr_v6' is member of `struct utmpx'. */
+/* Define to 1 if `ut_addr_v6' is a member of `struct utmpx'. */
 /* #undef HAVE_STRUCT_UTMPX_UT_ADDR_V6 */
 
-/* Define to 1 if `ut_host' is member of `struct utmpx'. */
+/* Define to 1 if `ut_host' is a member of `struct utmpx'. */
 /* #undef HAVE_STRUCT_UTMPX_UT_HOST */
 
-/* Define to 1 if `ut_id' is member of `struct utmpx'. */
+/* Define to 1 if `ut_id' is a member of `struct utmpx'. */
 /* #undef HAVE_STRUCT_UTMPX_UT_ID */
 
-/* Define to 1 if `ut_syslen' is member of `struct utmpx'. */
+/* Define to 1 if `ut_syslen' is a member of `struct utmpx'. */
 /* #undef HAVE_STRUCT_UTMPX_UT_SYSLEN */
 
-/* Define to 1 if `ut_time' is member of `struct utmpx'. */
+/* Define to 1 if `ut_time' is a member of `struct utmpx'. */
 /* #undef HAVE_STRUCT_UTMPX_UT_TIME */
 
-/* Define to 1 if `ut_tv' is member of `struct utmpx'. */
+/* Define to 1 if `ut_tv' is a member of `struct utmpx'. */
 /* #undef HAVE_STRUCT_UTMPX_UT_TV */
 
-/* Define to 1 if `ut_type' is member of `struct utmpx'. */
+/* Define to 1 if `ut_type' is a member of `struct utmpx'. */
 /* #undef HAVE_STRUCT_UTMPX_UT_TYPE */
 
-/* Define to 1 if `ut_addr' is member of `struct utmp'. */
+/* Define to 1 if `ut_addr' is a member of `struct utmp'. */
 #define HAVE_STRUCT_UTMP_UT_ADDR 1
 
-/* Define to 1 if `ut_addr_v6' is member of `struct utmp'. */
+/* Define to 1 if `ut_addr_v6' is a member of `struct utmp'. */
 #define HAVE_STRUCT_UTMP_UT_ADDR_V6 1
 
-/* Define to 1 if `ut_exit' is member of `struct utmp'. */
+/* Define to 1 if `ut_exit' is a member of `struct utmp'. */
 #define HAVE_STRUCT_UTMP_UT_EXIT 1
 
-/* Define to 1 if `ut_host' is member of `struct utmp'. */
+/* Define to 1 if `ut_host' is a member of `struct utmp'. */
 #define HAVE_STRUCT_UTMP_UT_HOST 1
 
-/* Define to 1 if `ut_id' is member of `struct utmp'. */
+/* Define to 1 if `ut_id' is a member of `struct utmp'. */
 #define HAVE_STRUCT_UTMP_UT_ID 1
 
-/* Define to 1 if `ut_pid' is member of `struct utmp'. */
+/* Define to 1 if `ut_pid' is a member of `struct utmp'. */
 #define HAVE_STRUCT_UTMP_UT_PID 1
 
-/* Define to 1 if `ut_time' is member of `struct utmp'. */
+/* Define to 1 if `ut_time' is a member of `struct utmp'. */
 #define HAVE_STRUCT_UTMP_UT_TIME 1
 
-/* Define to 1 if `ut_tv' is member of `struct utmp'. */
+/* Define to 1 if `ut_tv' is a member of `struct utmp'. */
 #define HAVE_STRUCT_UTMP_UT_TV 1
 
-/* Define to 1 if `ut_type' is member of `struct utmp'. */
+/* Define to 1 if `ut_type' is a member of `struct utmp'. */
 #define HAVE_STRUCT_UTMP_UT_TYPE 1
 
 /* Define to 1 if you have the <sys/select.h> header file. */
@@ -373,6 +376,9 @@
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME ""
 
+/* Define to the home page for this package. */
+#define PACKAGE_URL ""
+
 /* Define to the version of this package. */
 #define PACKAGE_VERSION ""
 
@@ -396,6 +402,11 @@
 
 /* Use /dev/ptmx */
 /* #undef USE_DEV_PTMX */
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #define _FILE_OFFSET_BITS 64

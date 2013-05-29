@@ -1,4 +1,4 @@
-/* config.h.in.  Generated from configure.in by autoheader.  */
+/* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Using AIX */
 #undef AIX
@@ -174,8 +174,8 @@
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
 
-/* Define to 1 if you have the <netinet/in_systm.h> header file. */
-#undef HAVE_NETINET_IN_SYSTM_H
+/* Define to 1 if you have the <netinet/in_systm.h,> header file. */
+#undef HAVE_NETINET_IN_SYSTM_H_
 
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #undef HAVE_NETINET_TCP_H
@@ -327,6 +327,9 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
+/* Define to 1 if you have the <sys/uio.h> header file. */
+#undef HAVE_SYS_UIO_H
+
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
 #undef HAVE_SYS_WAIT_H
 
@@ -359,6 +362,9 @@
 
 /* Define to 1 if the system has the type `u_int16_t'. */
 #undef HAVE_U_INT16_T
+
+/* Define to 1 if you have the `writev' function. */
+#undef HAVE_WRITEV
 
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
