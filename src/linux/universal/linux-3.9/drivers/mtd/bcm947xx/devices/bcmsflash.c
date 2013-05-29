@@ -77,6 +77,11 @@ void add_netgear_boarddata_sflash(void)
 	if (bcmsflash.mtd.name && cfe_boardpart.name)
 		add_mtd_partitions(&bcmsflash.mtd, &cfe_boardpart, 1);
 }
+void add_cfenvram(void)
+{
+	if (cfe_nvrampart.name)
+		add_mtd_partitions(&bcmsflash.mtd, &cfe_nvrampart, 1);
+}
 #endif
 static int
 bcmsflash_mtd_poll(hndsflash_t *sfl, unsigned int offset, int timeout)
@@ -215,6 +220,7 @@ bcmsflash_mtd_erase(struct mtd_info *mtd, struct erase_info *erase)
 	return ret;
 }
 
+extern void add_cfenvram(void);
 static int __init
 bcmsflash_mtd_init(void)
 {
@@ -280,8 +286,9 @@ bcmsflash_mtd_init(void)
 	}
 
 #ifdef CONFIG_MIPS_BRCM
-	if (cfe_nvrampart.name)
-		add_mtd_partitions(&bcmsflash.mtd, &cfe_nvrampart, 1);
+#ifndef CONFIG_MTD_NFLASH	
+	add_cfenvram();
+#endif
 #endif
 
 	return 0;
