@@ -4,7 +4,7 @@
  *******************************************************************/
 
 #ifndef DROPBEAR_VERSION
-#define DROPBEAR_VERSION "2013.56"
+#define DROPBEAR_VERSION "2013.58"
 #endif
 
 #define LOCAL_IDENT "SSH-2.0-dropbear_" DROPBEAR_VERSION
@@ -22,6 +22,15 @@
 #ifndef AUTH_TIMEOUT
 #define AUTH_TIMEOUT 300 /* we choose 5 minutes */
 #endif
+
+/* A client should try and send an initial key exchange packet guessing
+ * the algorithm that will match - saves a round trip connecting, has little
+ * overhead if the guess was "wrong". */
+#define USE_KEX_FIRST_FOLLOWS
+/* Use protocol extension to allow "first follows" to succeed more frequently.
+ * This is currently Dropbear-specific but will gracefully fallback when connecting
+ * to other implementations. */
+#define USE_KEXGUESS2
 
 /* Minimum key sizes for DSS and RSA */
 #ifndef MIN_DSS_KEYLEN
@@ -54,13 +63,16 @@
 
 #define _PATH_CP "/bin/cp"
 
+#define DROPBEAR_ESCAPE_CHAR '~'
+
 /* success/failure defines */
 #define DROPBEAR_SUCCESS 0
 #define DROPBEAR_FAILURE -1
 
 /* various algorithm identifiers */
-#define DROPBEAR_KEX_DH_GROUP1 0
-#define DROPBEAR_KEX_DH_GROUP14 1
+#define DROPBEAR_KEX_NONE 0
+#define DROPBEAR_KEX_DH_GROUP1 1
+#define DROPBEAR_KEX_DH_GROUP14 2
 
 #define DROPBEAR_SIGNKEY_ANY 0
 #define DROPBEAR_SIGNKEY_RSA 1
