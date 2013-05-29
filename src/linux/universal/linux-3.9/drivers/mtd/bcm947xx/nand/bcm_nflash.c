@@ -489,6 +489,7 @@ done:
 
 extern void add_netgear_boarddata(void);
 extern void add_netgear_boarddata_sflash(void);
+extern void add_cfenvram(void);
 
 static int __init
 nflash_mtd_init(void)
@@ -506,6 +507,9 @@ nflash_mtd_init(void)
 	if (!(nflash.sih = si_kattach(SI_OSH))) {
 		printk(KERN_ERR "nflash: error attaching to backplane\n");
 		ret = -EIO;
+#ifdef CONFIG_MIPS
+	add_cfenvram();
+#endif
 		goto fail;
 	}
 
@@ -513,6 +517,9 @@ nflash_mtd_init(void)
 	if (!(info = hndnand_init(nflash.sih))) {
 		printk(KERN_ERR "nflash: found no supported devices\n");
 		ret = -ENODEV;
+#ifdef CONFIG_MIPS
+		add_cfenvram();
+#endif
 		goto fail;
 	}
 	nflash.nfl = info;
@@ -580,6 +587,7 @@ nflash_mtd_init(void)
 	add_netgear_boarddata();
 	printk(KERN_INFO "add netgear bosrddata for sflash if exists\n");
 	add_netgear_boarddata_sflash();
+	add_cfenvram();
 #endif
 #endif
 	return 0;
