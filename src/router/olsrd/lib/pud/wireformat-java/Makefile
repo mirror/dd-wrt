@@ -43,7 +43,32 @@ LIBDIR_BUILD = lib
 INC_DIR_WIREFORMAT = ../wireformat/include
 INC_DIR_WIREFORMAT_FULL = $(INC_DIR_WIREFORMAT)/$(WIREFORMAT_PROJECT)
 
-INC_DIR_JVM = /usr/lib/jvm/java/include
+ifneq ($(wildcard /usr/lib/jvm/java),)
+  INC_DIR_JVM = /usr/lib/jvm/java/include
+else
+  ifneq ($(wildcard /usr/lib/jvm/default-java),)
+    INC_DIR_JVM = /usr/lib/jvm/default-java/include
+  else
+    ifneq ($(wildcard /usr/lib/jvm/java-1.7.0-openjdk$(ARCH)),)
+      INC_DIR_JVM = /usr/lib/jvm/java-1.7.0-openjdk$(ARCH)/include
+    else
+      ifneq ($(wildcard /usr/lib/jvm/java-1.7.0-openjdk),)
+        INC_DIR_JVM = /usr/lib/jvm/java-1.7.0-openjdk/include
+      else
+        ifneq ($(wildcard /usr/lib/jvm/java-1.6.0-openjdk$(ARCH)),)
+          INC_DIR_JVM = /usr/lib/jvm/java-1.6.0-openjdk$(ARCH)/include
+        else
+          ifneq ($(wildcard /usr/lib/jvm/java-1.6.0-openjdk),)
+            INC_DIR_JVM = /usr/lib/jvm/java-1.6.0-openjdk/include
+          else
+            $(error No java detected)
+          endif
+        endif
+      endif
+    endif
+  endif
+endif
+
 INC_DIR_JVM_OS = $(INC_DIR_JVM)/$(OS)
 
 
