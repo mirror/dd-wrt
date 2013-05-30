@@ -124,6 +124,7 @@ early_nvram_init(void)
 	struct nvram_header *header;
 	struct nvram_header *header_cfe = NULL;
 	struct nvram_header *header_cfe2 = NULL;
+	struct nvram_header *header_cfe3 = NULL;
 	chipcregs_t *cc;
 	int i;
 	uint32 base, off, lim;
@@ -225,7 +226,8 @@ early_nvram_init(void)
 					printk(KERN_NOTICE "found nvram at %X\n",off - NVRAM_SPACE);
 					header_cfe = (struct nvram_header *)KSEG1ADDR(base + off + 0x20000 - (NVRAM_SPACE_32K));
 					header_cfe2 = (struct nvram_header *)KSEG1ADDR(base + off + 0x20000 - (NVRAM_SPACE_60K));
-					if (header_cfe->magic != NVRAM_MAGIC && header_cfe2->magic != NVRAM_MAGIC)
+					header_cfe3 = (struct nvram_header *)KSEG1ADDR(base + off + 0x50000 - (NVRAM_SPACE_32K));
+					if (header_cfe->magic != NVRAM_MAGIC && header_cfe2->magic != NVRAM_MAGIC && header_cfe3->magic != NVRAM_MAGIC)
 					{
 					    printk(KERN_INFO "something wrong here. do not remap\n");
 					    if ((off - NVRAM_SPACE) < 0x1f0000)
@@ -248,6 +250,11 @@ early_nvram_init(void)
 						printk(KERN_NOTICE "map 60K cfe nvram at %X\n",off + 0x20000 - (NVRAM_SPACE_60K));
 						NVRAMSIZE = NVRAM_SPACE_60K;
 						header_cfe = header_cfe2;
+						}
+					else if (header_cfe3->magic == NVRAM_MAGIC) {
+						printk(KERN_NOTICE "map 32K netgear cfe nvram at %X\n",off + 0x50000 - (NVRAM_SPACE_32K));
+						NVRAMSIZE = NVRAM_SPACE_32K;
+						header_cfe = header_cfe3;
 						}
 					goto found;
 					}
