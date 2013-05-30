@@ -60,8 +60,15 @@ endif
     EXTRA_CFLAGS    += -DWL_ALL_PASSIVE
     endif
     endif
+
+ifeq ($(CONFIG_MIPS),y)
     EXTRA_CFLAGS += -DDMA $(WLFLAGS) -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
-		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/shared/bcmwifi/include -I$(srctree)/brcm/wl/clm/include -I$(srctree)/brcm/wl/lwip/include -I$(srctree)/brcm/dpsta  -I$(srctree)/brcm/wl/sys  -I$(srctree)/brcm/wl/phy -I$(srctree)/brcm/wl/ppr/include
+		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/clm/include -I$(srctree)/brcm/mipsel/wl/lwip/include -I$(srctree)/brcm/mipsel/dpsta  -I$(srctree)/brcm/mipsel/wl/sys  -I$(srctree)/brcm/mipsel/wl/phy -I$(srctree)/brcm/mipsel/wl/ppr/include
+else
+    EXTRA_CFLAGS += -DDMA $(WLFLAGS) -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
+		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/arm/shared/bcmwifi/include -I$(srctree)/brcm/arm/wl/clm/include -I$(srctree)/brcm/arm/wl/lwip/include -I$(srctree)/brcm/arm/dpsta  -I$(srctree)/brcm/arm/wl/sys  -I$(srctree)/brcm/arm/wl/phy -I$(srctree)/brcm/arm/wl/ppr/include
+endif
+
 
 
     ifneq ("$(CONFIG_CC_OPTIMIZE_FOR_SIZE)","y")
@@ -183,11 +190,29 @@ endif
     endif
 
     ifeq ($(CONFIG_BCM80211AC),y)
+
+ifeq ($(CONFIG_MIPS),y)
+
     EXTRA_CFLAGS += -DDMA $(WLFLAGS) -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
-		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/shared/bcmwifi/include -I$(srctree)/brcm/wl/clm/include -I$(srctree)/brcm/wl/lwip/include -I$(srctree)/brcm/dpsta  -I$(srctree)/brcm/wl/sys  -I$(srctree)/brcm/wl/phy -I$(srctree)/brcm/wl/ppr/include
+		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/clm/include -I$(srctree)/brcm/mipsel/wl/lwip/include -I$(srctree)/brcm/mipsel/dpsta  -I$(srctree)/brcm/mipsel/wl/sys  -I$(srctree)/brcm/mipsel/wl/phy -I$(srctree)/brcm/mipsel/wl/ppr/include
+
+else
+    EXTRA_CFLAGS += -DDMA $(WLFLAGS) -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
+		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/arm/shared/bcmwifi/include -I$(srctree)/brcm/arm/wl/clm/include -I$(srctree)/brcm/arm/wl/lwip/include -I$(srctree)/brcm/arm/dpsta  -I$(srctree)/brcm/arm/wl/sys  -I$(srctree)/brcm/arm/wl/phy -I$(srctree)/brcm/arm/wl/ppr/include
+
+endif
+
     else
-    EXTRA_CFLAGS += -DDMA $(WLFLAGS) -Os -finline-limit=0 -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
-		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/shared/bcmwifi/include -I$(srctree)/brcm/wl/clm/include -I$(srctree)/brcm/wl/lwip/include -I$(srctree)/brcm/dpsta  -I$(srctree)/brcm/wl/sys  -I$(srctree)/brcm/wl/phy -I$(srctree)/brcm/wl/ppr/include
+
+ifeq ($(CONFIG_MIPS),y)
+    EXTRA_CFLAGS += -DDMA $(WLFLAGS) -Os -finline-limit=0  -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
+		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/clm/include -I$(srctree)/brcm/mipsel/wl/lwip/include -I$(srctree)/brcm/mipsel/dpsta  -I$(srctree)/brcm/mipsel/wl/sys  -I$(srctree)/brcm/mipsel/wl/phy -I$(srctree)/brcm/mipsel/wl/ppr/include
+
+else
+    EXTRA_CFLAGS += -DDMA $(WLFLAGS) -Os -finline-limit=0  -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
+		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/arm/shared/bcmwifi/include -I$(srctree)/brcm/arm/wl/clm/include -I$(srctree)/brcm/arm/wl/lwip/include -I$(srctree)/brcm/arm/dpsta  -I$(srctree)/brcm/arm/wl/sys  -I$(srctree)/brcm/arm/wl/phy -I$(srctree)/brcm/arm/wl/ppr/include
+
+endif
     endif
     ifneq ("$(CONFIG_CC_OPTIMIZE_FOR_SIZE)","y")
          EXTRA_CFLAGS += -finline-limit=2048
@@ -306,9 +331,16 @@ endif
     EXTRA_CFLAGS    += -DWL_ALL_PASSIVE
     endif
     endif
-    EXTRA_CFLAGS += -DDMA $(WLFLAGS) -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
-		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/shared/bcmwifi/include -I$(srctree)/brcm/wl/clm/include -I$(srctree)/brcm/wl/lwip/include -I$(srctree)/brcm/dpsta  -I$(srctree)/brcm/wl/sys  -I$(srctree)/brcm/wl/phy -I$(srctree)/brcm/wl/ppr/include
 
+ifeq ($(CONFIG_MIPS),y)
+
+    EXTRA_CFLAGS += -DDMA $(WLFLAGS) -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
+		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/clm/include -I$(srctree)/brcm/mipsel/wl/lwip/include -I$(srctree)/brcm/mipsel/dpsta  -I$(srctree)/brcm/mipsel/wl/sys  -I$(srctree)/brcm/mipsel/wl/phy -I$(srctree)/brcm/mipsel/wl/ppr/include
+else
+    EXTRA_CFLAGS += -DDMA $(WLFLAGS) -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
+		    -I$(SRCBASE)/wl/sys $(WLAN_ComponentIncPath) -I$(srctree)/brcm/arm/shared/bcmwifi/include -I$(srctree)/brcm/arm/wl/clm/include -I$(srctree)/brcm/arm/wl/lwip/include -I$(srctree)/brcm/arm/dpsta  -I$(srctree)/brcm/arm/wl/sys  -I$(srctree)/brcm/arm/wl/phy -I$(srctree)/brcm/arm/wl/ppr/include
+
+endif
 
     ifneq ("$(CONFIG_CC_OPTIMIZE_FOR_SIZE)","y")
          EXTRA_CFLAGS += -finline-limit=2048
