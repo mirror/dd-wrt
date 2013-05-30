@@ -17,15 +17,23 @@
 #
 # $Id: Makefile,v 1.5 2008-05-02 22:49:54 $
 #
-EXTRA_CFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
-EXTRA_AFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+ifeq ($(CONFIG_MIPS),y)
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+SHARED   := ../../../brcm/mipsel/shared
+WLCFGDIR := $(src)/../../../brcm/mipsel/wl/config
+WLSYSDIR := $(src)/../../../brcm/mipsel/wl/sys
+else
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+SHARED   := ../../../brcm/arm/shared
+WLCFGDIR := $(src)/../../../brcm/arm/wl/config
+WLSYSDIR := $(src)/../../../brcm/arm/wl/sys
+endif
 
-SHARED   := ../../../brcm/shared
 ROUTER   := ../../../../../../../src/router
 SRC      := ../../../../../../../src
 WLSHARED := wlconfig_lx_shared
-WLCFGDIR := $(src)/../../../brcm/wl/config
-WLSYSDIR := $(src)/../../../brcm/wl/sys
 
 ifneq ($(wildcard $(WLCFGDIR)),)
 include $(WLCFGDIR)/$(WLSHARED)
