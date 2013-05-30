@@ -139,10 +139,11 @@ int count_processes(char *pidName)
  */
 unsigned int daysformonth(unsigned int month, unsigned int year)
 {
-	return (30 + (((month & 9) == 8) || ((month & 9) == 1)) - (month == 2) - (!(((year % 4) == 0)
-										    && (((year % 100) != 0)
-											|| ((year % 400) == 0)))
-										  && (month == 2)));
+	return (30 + (((month & 9) == 8) 
+		|| ((month & 9) == 1)) - (month == 2) - (!(((year % 4) == 0)
+		&& (((year % 100) != 0)
+		|| ((year % 400) == 0)))
+		&& (month == 2)));
 }
 
 char *getBridgeMTU(char *ifname)
@@ -4316,6 +4317,9 @@ int led_control(int type, int act)
 		ses2_gpio = 0x131;	// card 2 gpio 5
 		usb_power = 0x002;
 #endif
+#ifdef HAVE_DIR615C1
+
+#endif
 #ifdef HAVE_DIR615E
 		power_gpio = 0x006;
 		diag_gpio = 0x001;
@@ -4331,7 +4335,6 @@ int led_control(int type, int act)
 		diag_gpio = 0x10f;
 		connected_gpio = 0x10c;
 		disconnected_gpio = 0x016;
-
 #endif
 #ifdef HAVE_WRT400
 		power_gpio = 0x001;
@@ -4540,7 +4543,8 @@ int led_control(int type, int act)
 		diag_gpio = 0x121;
 		connected_gpio = 0x107;
 		usb_power = 0x024;	// enable usb port 
-//              ses_gpio = 0x104;
+        ses_gpio = 0x105;	//correct state missing
+        usb_gpio = 0x008;	//correct state missing
 //              sec0_gpio = 0x104;
 		break;
 #elif HAVE_WNR2000
