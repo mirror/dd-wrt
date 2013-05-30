@@ -1,0 +1,773 @@
+# Broadcom Linux Router Makefile
+#
+# Copyright 2001-2003, Broadcom Corporation
+# All Rights Reserved.
+#
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+#
+# $Id: Makefile,v 1.2 2005/09/26 11:06:58 seg Exp $
+#
+
+include .config
+ifneq ($(wildcard ../cy_conf.mak),)
+  include ../cy_conf.mak
+endif
+
+#
+# Paths
+#
+OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
+OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
+
+# Source bases
+export PLATFORM LINUXDIR LIBDIR USRLIBDIR
+export TOP := $(shell pwd)
+export SRCBASE := $(shell (cd $(TOP)/.. && pwd -P))
+#
+# Cross-compile environment variables
+#
+
+# Build platform
+export BUILD := i386-pc-linux-gnu
+export HOSTCC := gcc
+
+# uClibc wrapper
+ifeq ($(CONFIG_UCLIBC),y)
+export PLATFORM := $(PLATFORM)-uclibc
+endif
+
+export LINUXVER = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
+
+export KERNELRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
+
+
+ifeq ($(PLATFORM),mipsel)
+export CROSS_COMPILE := mipsel-linux-
+export CONFIGURE := ./configure mipsel-linux --build=$(BUILD)
+export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/../mipsel-linux && pwd -P)
+endif
+
+ifeq ($(PLATFORM),mipsel-uclibc)
+export CROSS_COMPILE := mipsel-linux-uclibc-
+export CONFIGURE := ./configure mipsel-linux --build=$(BUILD)
+export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && pwd -P)
+endif
+
+ifeq ($(CONFIG_BCMWPA2),y)
+export CFLAGS += -DBCMWPA2 
+endif
+
+ifeq ($(CONFIG_BRANDING),y)
+export CFLAGS += -DCONFIG_BRANDING 
+endif
+#ifeq ($(CONFIG_SPEED),y)
+export BASEOPT:=-Os
+#else
+#export BASEOPT:=-Os
+#endif
+
+
+export ARCH:= mipsel
+export ARCHITECTURE:= broadcom
+export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves  -msoft-float  -mno-branch-likely
+export CC := ccache $(CROSS_COMPILE)gcc
+export CXX := ccache $(CROSS_COMPILE)g++
+export AR := $(CROSS_COMPILE)ar
+export AS := $(CROSS_COMPILE)as
+export LD := $(CROSS_COMPILE)ld
+export NM := $(CROSS_COMPILE)nm
+export RANLIB := $(CROSS_COMPILE)ranlib
+export STRIP := @true
+export SIZE := $(CROSS_COMPILE)size
+export MIPS16_OPT:= -minterlink-mips16 -mips16
+
+export CFLAGS :=$(BASEOPT) -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves  -msoft-float  -mno-branch-likely 
+export LDFLAGS := 
+
+#
+# Install and target directories
+#
+
+export PLATFORMDIR := $(TOP)/$(PLATFORM)
+export INSTALLDIR := $(PLATFORMDIR)/install
+export TARGETDIR := $(PLATFORMDIR)/target
+
+
+#obj-y += libcrypto
+#
+# Configuration
+#
+CONFIG_IPTABLES=y
+#CONFIG_WLC=y
+include rules/configs.mk
+
+obj-clean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-clean)
+obj-install := $(foreach obj,$(obj-y),$(obj)-install)
+obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
+
+
+build_date:
+	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+
+drop-sections	= .comment
+strip-flags	= $(addprefix --remove-section=,$(drop-sections))
+
+#
+# Basic rules
+#
+
+all: install_headers build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
+
+
+kernel:
+	# Also build kernel
+ifeq ($(CONFIG_DIST),"micro")
+	cp $(LINUXDIR)/.config_micro $(LINUXDIR)/.config
+#	cd $(LINUXDIR) && make clean
+else
+ifeq ($(CONFIG_DIST),"micro-special")
+	cp $(LINUXDIR)/.config_micro $(LINUXDIR)/.config
+#	cd $(LINUXDIR) && make clean
+else
+ifeq ($(CONFIG_MADWIFI),y)
+	cp $(LINUXDIR)/.config_atheros $(LINUXDIR)/.config
+#	cd $(LINUXDIR) && make clean
+else
+	cp $(LINUXDIR)/.config_std $(LINUXDIR)/.config
+#	cd $(LINUXDIR) && make clean
+endif
+endif
+endif
+ifeq ($(CONFIG_HIGHMEM),y)
+	cp $(LINUXDIR)/.config_std_highmem $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_NOAC),y)
+	cp $(LINUXDIR)/.config_std_noac $(LINUXDIR)/.config
+endif
+
+ifeq ($(CONFIG_EOP_TUNNEL),y)
+	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_NET_ETHERIP" is not set >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_V25),y)
+	echo CONFIG_V25=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_V25" is not set >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_NVRAM_60K),y)
+	echo CONFIG_NVRAM_60K=y >> $(LINUXDIR)/.config
+	echo "# CONFIG_NVRAM_64K" is not set >> $(LINUXDIR)/.config	
+else
+ifeq ($(CONFIG_NVRAM_64K),y)
+	echo "# CONFIG_NVRAM_60K" is not set >> $(LINUXDIR)/.config
+	echo CONFIG_NVRAM_64K=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_NVRAM_60K" is not set >> $(LINUXDIR)/.config
+	echo "# CONFIG_NVRAM_64K" is not set >> $(LINUXDIR)/.config
+endif
+endif
+ifeq ($(CONFIG_IPETH),y)
+	sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config
+endif
+#ifeq ($(CONFIG_REGISTER),y)
+#	cp $(LINUXDIR)/.config_register $(LINUXDIR)/.config
+#endif
+	$(MAKE) -C $(LINUXDIR) oldconfig	
+	$(MAKE) -j 4 -C $(LINUXDIR) vmlinux  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(ARCH)-linux-objcopy -O binary $(strip-flags) -g $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d25 > lzma-loader/broadcom/vmlinux.lzma
+	gzip -9 -c $(ARCH)-uclibc/vmlinus > $(ARCH)-uclibc/vmlinus.gzip
+	make -C lzma-loader/broadcom clean
+	make -C lzma-loader/broadcom 
+	dd if=lzma-loader/broadcom/lzma.elf of=$(ARCH)-uclibc/lzma_vmlinux bs=65536 conv=sync
+	$(ARCH)-linux-objcopy -O binary $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinus 
+
+install_headers:
+# important step, required for new kernels
+	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
+	$(MAKE) -C $(LINUXDIR) headers_install ARCH=mips INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
+
+
+bootloader:
+	$(MAKE) -C $(LINUXDIR) oldconfig	
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) zImage ; \
+	fi
+	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules ; \
+	fi
+	/opt/3.3.4/bin/$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d25 > lzma-loader/broadcom/vmlinux.lzma
+	make -C lzma-loader/broadcom clean
+	make -C lzma-loader/broadcom 
+	cp lzma-loader/broadcom/lzma.elf $(ARCH)-uclibc/lzma_vmlinux
+	$(ARCH)-linux-objcopy -O binary $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinus 
+
+compress:
+	$(MAKE) -C compressed clean
+	$(MAKE) -C compressed
+
+realclean: $(obj-clean)
+	rm -f .config.old .config.cmd
+	#umount $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+	rm -rf $(TARGETDIR)
+	rm -f $(TARGETDIR)/*
+	-rm -f $(ARCH)-uclibc/*
+
+	
+clean: rc-clean httpd-clean services-clean shared-clean libutils-clean nvram-clean madwifi-clean madwifi_mimo-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean
+	rm -f .config.old .config.cmd
+	#umount $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+	rm -rf $(TARGETDIR)
+	rm -f $(TARGETDIR)/*
+	-rm -f $(ARCH)-uclibc/*
+
+clean_target:
+	rm -rf $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+	rm -f $(PLATFORMDIR)/linux.trx $(PLATFORMDIR)/vmlinuz $(PLATFORMDIR)/target.squashfs
+
+distclean mrproper: $(obj-distclean) clean_target
+	rm -rf $(INSTALLDIR)
+	$(MAKE) -C $(LINUXDIR) distclean
+	$(MAKE) -C $(LINUXDIR)/arch/mips/bcm947xx/compressed clean
+	#rm -f $(PLATFORMDIR)/zImage $(PLATFORMDIR)/linux.bin
+	$(MAKE) -C config clean
+	rm -f .config $(LINUXDIR)/.config
+	rm -f .config.old .config.cmd
+
+optimize-lib:
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+ifeq ($(CONFIG_LIBDL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+endif
+ifeq ($(CONFIG_LIBRT),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
+endif
+ifeq ($(CONFIG_LIBNSL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
+endif
+ifeq ($(CONFIG_LIBUTIL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+endif
+ifeq ($(CONFIG_LIBCPP),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+endif
+ifeq ($(CONFIG_LIBCRYPT),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+endif
+ifeq ($(CONFIG_LIBM),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+endif
+ifeq ($(CONFIG_LIBRESOLV),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
+endif
+ifeq ($(CONFIG_LIBPTHREAD),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+endif
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+
+ifneq ($(CONFIG_NOOPT),y)
+
+	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
+	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
+	-mkdir -p /tmp/$(ARCHITECTURE)/
+	find $(TARGETDIR) -type f -perm +100 -exec \
+		file -r -N -F '' {} + | \
+		awk ' /executable.*dynamically/ { print $$1 }' > /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	find $(TARGETDIR) -type f -name \*.so\* -exec \
+		file -r -N -F '' {} + | \
+		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-uClibc.so.0 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
+endif
+
+
+install package: clean_target $(filter-out lib.mipsel-install,$(obj-install)) $(LINUXDIR)/.config
+	install -d $(TARGETDIR)
+	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	done
+	# optimize the crypto library by removing unneeded symbols
+	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
+	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
+	# Install (and possibly optimize) C library
+#	$(MAKE) -f Makefile.brcm26 lib.mipsel-install
+	# optimize the others library by removing unneeded symbols
+	$(MAKE) -f Makefile.brcm26 optimize-lib
+	# Install modules into filesystem
+	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
+	fi
+#ifeq ($(CONFIG_MADWIFI),y)
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wl
+#endif
+#	mkdir -p $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
+#	cp ../wl/ctmisc/ctmisc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
+	
+#	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
+	# quick n dirty - stuff Nikki's module where it belongs
+	#mkdir $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996
+#if [ "$(CONFIG_MMC)" = "y" ] ; then \
+#mkdir -p $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mmc ; \
+#cp mmc/mmc.o $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mmc ; \
+#fi ; 
+#ifeq ($(CONFIG_MSSID),y)
+#	cp adm6996.v24/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
+#else	
+#	cp adm6996/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
+#endif
+
+	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/build
+	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/source
+	if test -d "$(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/diag"; then mv $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/diag/* $(TARGETDIR)/lib/modules/$(LINUXVER); fi
+#	mv $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/diag/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#ifneq ($(CONFIG_DIST),"micro")
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/led/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#endif
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/switch/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#ifeq ($(CONFIG_MSSID),y)
+#	cp ../wl/wl/wl_v24.o $(TARGETDIR)/lib/modules/2.4.33-rc1/wl.o
+#else
+#	if test -d "$(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wl"; then mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/$(LINUXVER); fi              
+#ifeq ($(CONFIG_VXOVER),y)
+#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/wl.o
+#endif
+
+#ifneq ($(CONFIG_DIST),"micro")
+#ifneq ($(CONFIG_DIST),"micro-special")
+#	if test -d "$(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wireless"; then mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wireless/* $(TARGETDIR)/lib/modules/$(LINUXVER); fi
+#endif
+#endif
+#ifeq ($(CONFIG_MSSID),y)
+#ifneq ($(CONFIG_BCM5354),y)
+#ifneq ($(CONFIG_DIST),"micro")
+#ifneq ($(CONFIG_DIST),"micro-special")
+#	cp bcm57xx/bcm57xx.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xxlsys.o
+#	cp bcm57xx/bcm57xx300.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xx300.o
+#endif
+#endif
+#endif
+#endif
+#endif
+#	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre3
+#ifneq ($(CONFIG_DIST),"micro")
+#ifneq ($(CONFIG_DIST),"micro-special")
+#	if test -d "$(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2"; then mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/$(LINUXVER); fi
+#ifeq ($(CONFIG_SAMBA),y)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/cifs/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#endif
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#endif
+#endif
+#ifneq ($(CONFIG_E2FSPROGS),y)
+#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/ext2*
+#endif
+#ifeq ($(CONFIG_DIST),"mini")
+#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/cifs*
+#endif
+#	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/2.4.33-prc1re3
+#ifneq ($(CONFIG_DIST),"micro")
+#ifneq ($(CONFIG_DIST),"micro-special")
+#ifneq ($(CONFIG_MSSID),y)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/lib/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#endif
+#endif
+#endif
+#ifneq ($(CONFIG_DIST),"micro")
+#ifneq ($(CONFIG_DIST),"micro-special")
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/bridge/netfilter/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#endif
+#endif
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv4/netfilter/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv4/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#ifneq ($(CONFIG_DIST),"micro")
+#ifneq ($(CONFIG_DIST),"micro-special")
+#ifeq ($(CONFIG_IPV6),y)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#endif
+#endif
+#endif
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/imq.o $(TARGETDIR)/lib/modules/$(LINUXVER)
+#ifeq ($(CONFIG_MSSID),y)
+#ifeq ($(CONFIG_USB),y)
+#ifeq ($(CONFIG_USB_ADVANCED),y)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#endif
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/cdrom/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/ide/pci/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/ide/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/host/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/storage/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/host
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pci
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/storage
+#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/sr_mod.o
+#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/ide-scsi.o 
+#endif
+#endif
+ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/cdrom
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/staging
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/storage
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/msdos
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/vfat
+#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mbcache.ko
+endif
+ifneq ($(CONFIG_USB_ADVANCED),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext4
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/hfsplus
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/btrfs
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd	
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd2	
+endif
+ifneq ($(CONFIG_NTFS3G),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fuse
+endif
+ifneq ($(CONFIG_USB),y)
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/nls
+endif
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6
+endif
+ifneq ($(CONFIG_3G),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/usb
+endif
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/cifs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2
+endif
+#ifneq ($(CONFIG_ADM6996),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/switch/switch-adm.ko
+#endif
+
+#ifeq ($(CONFIG_PCMCIA),y)
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pcmcia
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/pcmcia/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/char/pcmcia/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/char/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/host/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/serial/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/host
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/serial
+#endif
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pcmcia
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/netfilter
+#ifneq ($(CONFIG_JFFS2),y)
+#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/jffs2.o
+#endif
+	rm -f $(TARGETDIR)/usr/lib/libpcap.so
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi/*.ko	
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/bridge/netfilter/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv4/netfilter/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6/netfilter/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/netfilter/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2/*.ko	
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/msdos/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/vfat/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/nls/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/cifs/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/driver/net/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/driver/net/usb/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/driver/net/switch/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/bcm57xx/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/class/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/host/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/core/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/storage/*.ko
+	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/serial/*.ko
+#ifeq ($(CONFIG_MMC),y)	
+#	cp ./mmc/mmc.o $(TARGETDIR)/lib/modules/$(LINUXVER)
+#endif
+#	tar -cvf $(TARGETDIR)/lib/modules/modules.tar $(TARGETDIR)/lib/modules/$(LINUXVER)/* 
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)
+
+        # Prepare filesystem
+ifeq ($(CONFIG_DIST),"micro")
+	cd $(TARGETDIR) && $(TOP)/misc/rootprep_micro.sh
+else
+ifeq ($(CONFIG_DIST),"micro-special")
+	cd $(TARGETDIR) && $(TOP)/misc/rootprep_micro.sh
+else
+	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
+endif
+endif
+        # Make sure mksquashfs-2.0 is used
+#	$(MAKE) -C $(LINUXDIR)/scripts/squashfs mksquashfs
+	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
+	cd $(TARGETDIR)  &&  find . -iname ".svn" | xargs rm -rf
+ifeq ($(CONFIG_OPENSSL),y)
+ifneq ($(CONFIG_FREERADIUS),y)
+	rm -f $(TARGETDIR)/usr/sbin/openssl
+endif
+endif
+ifeq ($(CONFIG_KAID),y)
+	make -C kaid/src
+	cp kaid/kaid $(TARGETDIR)/usr/sbin
+endif
+	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin 
+	../../opt/loader-0.02/lzma e -lc3 -lp2 -pb2 -d25 mipsel-uclibc/vmlinux.bin mipsel-uclibc/vmlinuz
+	cp ../../opt/etc/preinit mipsel-uclibc/target/etc
+	cp ../../opt/etc/postinit mipsel-uclibc/target/etc
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
+	cp ../../opt/bin/ipkg mipsel-uclibc/target/bin
+	cp ../../opt/etc/ipkg.conf mipsel-uclibc/target/etc
+endif
+endif
+	cp ../../opt/etc/config/* mipsel-uclibc/target/etc/config
+	../../tools/process_nvramconfigfile mipsel-uclibc/target/etc/config/*.nvramconfig
+	-./strip_libs.sh $(ARCH)
+	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/rootfs.squashfs -noappend -root-owned -le
+	$(MAKE) -C compressed clean
+	$(MAKE) -C compressed
+	gzip -c9 compressed/zImage > compressed/zImage.gzip
+	gzip -c9 mipsel-uclibc/lzma_vmlinus > mipsel-uclibc/lzma_vmlinuz
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26-nandboot.trx $(ARCH)-uclibc/lzma_vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+#	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26.trx $(ARCH)-uclibc/vmlinus.gzip  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+ifeq ($(CONFIG_NOAC),y)
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+
+#	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz $(ARCH)-uclibc/rootfs.squashfs
+#	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz $(ARCH)-uclibc/rootfs.squashfs
+
+
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.6 RT-N16 1.00 1.05 $(ARCH)-uclibc/vmlinuz
+	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N16.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N16
+# Asus RT-N53
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.6 RT-N53 1.00 1.05 $(ARCH)-uclibc/vmlinuz
+	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N53.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N53
+# Asus RT-N12
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.6 RT-N12 1.00 1.05 $(ARCH)-uclibc/vmlinuz
+	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N12.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N12
+# Asus RT-N12B1
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 1.6 RT-N12B1 1.00 1.00 $(ARCH)-uclibc/vmlinuz
+	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N12B1.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N12B1
+# Asus RT-N12C1
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 1.6 RT-N12C1 1.00 1.00 $(ARCH)-uclibc/vmlinuz
+	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N12C1.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N12C1
+# Asus RT-N10
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.8 RT-N10 1.00 1.05 $(ARCH)-uclibc/vmlinuz
+	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N10.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N10
+# Asus RT-N10U
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.8 RT-N10U 1.00 1.05 $(ARCH)-uclibc/vmlinuz
+	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N10U.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N10U
+# Asus RT-N10+ D1
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 2.1 1.1 RT-N10+ 1.00 1.00 $(ARCH)-uclibc/vmlinuz
+	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N10PLUSD1.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N10+ D1
+# Asus RT-N66
+#	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+#	../../opt/asus/addver $(ARCH)-uclibc/asusver 3.0 0.1 RT-N66U 0.00 0.00 $(ARCH)-uclibc/vmlinuz
+#	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N66
+
+# Belkin f7d3301-7301 / f7d3302-7302 / f7d4302-8302  / f5d8235v3
+	dd if=$(ARCH)-uclibc/dd-wrt.v24-K26.trx of=$(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd bs=4 count=10000000 skip=1 conv=notrunc
+	printf '\x22\x03\x10\x20' > $(ARCH)-uclibc/f7d3301.hdr
+	cat $(ARCH)-uclibc/f7d3301.hdr $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K26_f7d3301.bin
+	rm -rf $(ARCH)-uclibc/f7d3301.hdr
+	printf '\x28\x09\x09\x20' > $(ARCH)-uclibc/f7d3302.hdr
+	cat $(ARCH)-uclibc/f7d3302.hdr $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K26_f7d3302.bin
+	rm -rf $(ARCH)-uclibc/f7d3302.hdr
+	printf '\x06\x10\x09\x20' > $(ARCH)-uclibc/f7d4302.hdr	
+	cat $(ARCH)-uclibc/f7d4302.hdr $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K26_f7d4302.bin
+	rm -rf $(ARCH)-uclibc/f5d4302.hdr
+	printf '\x16\x71\x01\x00' > $(ARCH)-uclibc/f5d8235v3.hdr	
+	cat $(ARCH)-uclibc/f5d8235v3.hdr $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K26_f5d8235v3.bin
+	rm -rf $(ARCH)-uclibc/f5d8235v3.hdr
+	rm -rf $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd
+# end Belkin  f7d3301 / f7d3302 / f7d4302 / f5d8235v3
+	../../opt/asus/asustrx-rt66u -p RT-N66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N66U.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz $(ARCH)-uclibc/rootfs.squashfs
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+
+# Netgear
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2_VC.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2_VC.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500L.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500L.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500U.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500U.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr2000v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr2000v2.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR2000v2.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wndr3400.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr3400.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR3400.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wndr3700v3.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr3700v3.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR3700v3.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wndr3400cvna.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr3400.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR3400_CVNA.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wndr4000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4000.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR4000.chk
+# end Netgear
+
+# Linksys
+	../../opt/tools/addpattern -4 -p 320N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt320n.bin -g
+	../../opt/tools/addpattern -0 -p N150 -v v3.0.02 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt160nv3.bin -g
+	../../opt/tools/addpattern -4 -p 610N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt610n.bin -g
+	../../opt/tools/addpattern -4 -p 310N -v v2.0.00 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt310n.bin -g
+	../../opt/tools/addpattern -4 -p M010 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_m10.bin -g
+	../../opt/tools/addpattern -4 -p M020 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_m20.bin -g
+	../../opt/tools/addpattern -4 -p E100 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1000v1.bin -g
+	../../opt/tools/addpattern -4 -p E100 -r 2.0.0.0 -v v1.1.1 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1000v2.bin -g
+	../../opt/tools/addpattern -4 -p 1550 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1550.bin -g
+	../../opt/tools/addpattern -4 -p 32XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e2000.bin -g
+	../../opt/tools/addpattern -4 -p E25X -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e2500.bin -g 
+	../../opt/tools/addpattern -4 -p 61XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e3000.bin -g
+	../../opt/tools/addpattern -4 -p 3200 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e3200.bin -g
+	../../opt/tools/addpattern -4 -p 4200 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e4200.bin -g
+	../../opt/tools/addpattern -4 -p E800 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e800.bin -g
+	../../opt/tools/addpattern -4 -p E900 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e900.bin -g
+	../../opt/tools/addpattern -4 -p E120 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1200v1.bin -g
+	../../opt/tools/addpattern -4 -p E122 -r 2.0.0.0 -v v1.1.1 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1200v2.bin -g
+	../../opt/tools/addpattern -4 -p E150 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1500.bin -g
+
+# end Linksys
+
+# special
+#ifeq ($(CONFIG_NVRAM_60K),y)
+	../../opt/tools/addpattern -4 -p NV60 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_nv60k.bin -g
+#endif
+#ifeq ($(CONFIG_NVRAM_64K),y)
+	../../opt/tools/addpattern -4 -p NV64 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_nv64k.bin -g
+#endif
+endif
+	./netgear/lzma e  $(ARCH)-uclibc/vmlinux.bin  $(ARCH)-uclibc/vmlinux_netgear.lzma
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_R6300.trx $(ARCH)-uclibc/vmlinux_netgear.lzma  -a 4096 $(ARCH)-uclibc/rootfs.squashfs
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26_R6300.trx -f netgear/emptyfile -b netgear/comp-r6300.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6300.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_R6300.chk 
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR4500.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR4500V2.chk
+
+
+	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh dd-wrt.v24-K26-nandboot
+# end special
+
+#&& rm -f kernel_image.chk rootfs_image.chk dd-wrt.bin.chk
+
+
+
+#	./tools/kernelopt/kernelopt.sh $(LINUXDIR) $(ARCH)-uclibc/target $(ARCH)-linux-uclibc-
+#	make -C $(LINUXDIR) vmlinux_optimize
+	
+#	objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUXDIR)/vmlinux_opt mipsel-uclibc/vmlinux
+#	objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUXDIR)/vmlinux mipsel-uclibc/vmlinux2
+#	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d25 mipsel-uclibc/vmlinux2 mipsel-uclibc/vmlinuz2
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/target.squashfs -noappend -root-owned -le
+#endif
+#
+# Configuration rules
+#
+include rules/all.mk
+#
+# Generic rules
+#
+
+%:
+	[ ! -d $* ] || $(MAKE) -C $* 
+
+%-distclean:
+	[ ! -d $* ] || $(MAKE) -C $* clean
+
+%-clean:
+	[ ! -d $* ] || $(MAKE) -C $* clean
+
+%-install:
+	[ ! -d $* ] || $(MAKE) -C $* install INSTALLDIR=$(INSTALLDIR)/$*
+
+$(obj-y) $(obj-n) $(obj-clean) $(obj-install): dummy
+
+.PHONY: all clean distclean mrproper install package
+.PHONY: conf mconf oldconf kconf kmconf config menuconfig oldconfig
+.PHONY: dummy fixkc libnet libpcap
+
+
+
