@@ -584,8 +584,13 @@ KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
 endif
 
 ifdef CONFIG_BCM47XX
-KBUILD_CFLAGS += -I$(srctree)/brcm/include -DBCMDRIVER -Dlinux
-KBUILD_AFLAGS += -I$(srctree)/brcm/include -DBCMDRIVER -Dlinux
+ifeq ($(CONFIG_MIPS),y)
+KBUILD_CFLAGS += -I$(srctree)/brcm/mipsel/include -DBCMDRIVER -Dlinux
+KBUILD_AFLAGS += -I$(srctree)/brcm/mipsel/include -DBCMDRIVER -Dlinux
+else
+KBUILD_CFLAGS += -I$(srctree)/brcm/$(ARCH)/include -DBCMDRIVER -Dlinux
+KBUILD_AFLAGS += -I$(srctree)/brcm/$(ARCH)/include -DBCMDRIVER -Dlinux
+endif
 endif
 
 
