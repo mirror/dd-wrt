@@ -48,6 +48,7 @@ static bool _nmea_parse_time(const char *s, const int len, nmeaTIME *t) {
 	assert(t);
 
 	if (len == (sizeof("hhmmss") - 1)) {
+		t->hsec = 0;
 		return (3 == nmea_scanf(s, len, "%2d%2d%2d", &t->hour, &t->min, &t->sec));
 	}
 

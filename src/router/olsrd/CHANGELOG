@@ -1,3 +1,38 @@
+0.6.5.4 -------------------------------------------------------------------
+
+Ferry Huberts (11):
+      Remove mercurial ignore file; we use git
+      build: ignore builddata.c when hashing sources
+      release: fix the list of generated files
+      release: update some comments
+      release: refactor the checkVersionIncrementing function
+      release: do not update the version on master when it's already higher
+      release: only report that master changed when it was actually changed
+      release: checkVersionIncrementing: optionally allow equal versions
+      release: also check against the Makefile version when branching
+      txtinfo: prevent buffer overflow
+      pud: nmealib: _nmea_parse_time not parsing hsec when given "hhmmss" format
+
+Henning Rogge (2):
+      Update version after release of v0.6.5.3
+      Release v0.6.5.4
+
+0.6.5.3 -------------------------------------------------------------------
+
+Ferry Huberts (5):
+      pud: detect the java include directory
+      pud: better detection of java jdk
+      gateway: work around kernel IPIP module initialisation bug
+      main: use /dev/urandom by default
+      pud: set local loopback for multicast tx
+
+Henning Rogge (2):
+      Update version after release of v0.6.5.2
+      Release v0.6.5.3
+
+Ronald in 't Velt (1):
+      Fix setsockopt for setting Traffic Class in IPv6
+
 0.6.5.2 -------------------------------------------------------------------
 
 Henning Rogge (2):
