@@ -312,7 +312,7 @@ install package: clean_target $(filter-out lib.mipsel-install,$(obj-install)) $(
 	# Install (and possibly optimize) C library
 #	$(MAKE) -f Makefile.brcm26 lib.mipsel-install
 	# optimize the others library by removing unneeded symbols
-	$(MAKE) -f Makefile.brcm26 optimize-lib
+	$(MAKE) -f Makefile.brcm3x optimize-lib
 	# Install modules into filesystem
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
