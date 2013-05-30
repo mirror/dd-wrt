@@ -64,6 +64,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "ipcalc.h"
 #include "olsr.h"
@@ -137,7 +138,7 @@ static char *outbuffer[MAX_CLIENTS];
 static size_t outbuffer_size[MAX_CLIENTS];
 static size_t outbuffer_written[MAX_CLIENTS];
 static int outbuffer_socket[MAX_CLIENTS];
-static int outbuffer_count;
+static int outbuffer_count = 0;
 
 static struct timer_entry *writetimer_entry;
 
@@ -253,6 +254,10 @@ ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
   int ipc_connection;
 
   socklen_t addrlen = sizeof(pin);
+
+  if (outbuffer_count >= MAX_CLIENTS) {
+    return;
+  }
 
   if ((ipc_connection = accept(fd, &pin.in, &addrlen)) == -1) {
 #ifndef NODEBUG
@@ -737,6 +742,8 @@ send_info(unsigned int send_what, int the_socket)
   if ((send_what & SIW_2HOP) == SIW_2HOP) ipc_print_neigh(&abuf,true);
   /* version */
   if ((send_what & SIW_VERSION) == SIW_VERSION) ipc_print_version(&abuf);
+
+  assert(outbuffer_count < MAX_CLIENTS);
 
   outbuffer[outbuffer_count] = olsr_malloc(abuf.len, "txt output buffer");
   outbuffer_size[outbuffer_count] = abuf.len;

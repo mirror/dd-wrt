@@ -270,10 +270,15 @@ function adjustBranchName() {
 #
 # 1=last version
 # 2=new version
+# 3= 0 to disallow equal versions as ok
+# return (in checkVersionIncrementingResult) = 0 when new version > last version,
+#                                              1 otherwise
+declare -i checkVersionIncrementingResult=0
 function checkVersionIncrementing() {
+  checkVersionIncrementingResult=0
   local lastVersion="$(stringTrim "${1}")"
   local newVersion="$(stringTrim "${2}")"
-  local errorstr="* The new version ${newVersion} is not greater than the previous version ${lastVersion}"
+  local -i allowEqualVersions=${3}
 
   local -a lastVersionDigits=( ${lastVersion//\./ } )
   local -a newVersionDigits=( ${newVersion//\./ } )
@@ -290,8 +295,8 @@ function checkVersionIncrementing() {
 
   # major
   if [[ ${newVersionDigits[0]} -lt ${lastVersionDigits[0]} ]]; then
-    echo "${errorstr}"
-    exit 1
+    checkVersionIncrementingResult=1
+    return
   fi
   if [[ ${newVersionDigits[0]} -gt ${lastVersionDigits[0]} ]]; then
     return
@@ -299,8 +304,8 @@ function checkVersionIncrementing() {
 
   # minor
   if [[ ${newVersionDigits[1]} -lt ${lastVersionDigits[1]} ]]; then
-    echo "${errorstr}"
-    exit 1
+    checkVersionIncrementingResult=1
+    return
   fi
   if [[ ${newVersionDigits[1]} -gt ${lastVersionDigits[1]} ]]; then
     return
@@ -308,8 +313,8 @@ function checkVersionIncrementing() {
 
   # micro
   if [[ ${newVersionDigits[2]} -lt ${lastVersionDigits[2]} ]]; then
-    echo "${errorstr}"
-    exit 1
+    checkVersionIncrementingResult=1
+    return
   fi
   if [[ ${newVersionDigits[2]} -gt ${lastVersionDigits[2]} ]]; then
     return
@@ -317,16 +322,18 @@ function checkVersionIncrementing() {
 
   # patch level
   if [[ ${newVersionDigits[3]} -lt ${lastVersionDigits[3]} ]]; then
-    echo "${errorstr}"
-    exit 1
+    checkVersionIncrementingResult=1
+    return
   fi
   if [[ ${newVersionDigits[3]} -gt ${lastVersionDigits[3]} ]]; then
     return
   fi
 
   # everything is equal
-  echo "${errorstr}"
-  exit 1
+  if [[ ${allowEqualVersions} -eq 0 ]]; then
+    checkVersionIncrementingResult=1
+  fi
+  return
 }
 
 
@@ -334,7 +341,8 @@ function checkVersionIncrementing() {
 # Commit the current changes, allow an empty commit, or amend (when the commit
 # message is the same as that of the last commit)
 #
-# 1=commit message
+# 1=non-zero to allow an empty commit
+# 2=commit message
 function commitChanges() {
   local -i allowEmpty=${1}
   local msg="$(stringTrim "${2}")"
@@ -351,6 +359,16 @@ function commitChanges() {
   set +e
   git commit -s -q ${extra} -m "${msg}" &> /dev/null
   set -e
+}
+
+
+#
+# Get the version from the Makefile
+#
+function getVersionFromMakefile() {
+  local src="Makefile"
+  local regex="([[:space:]]*VERS[[:space:]]*=[[:space:]]*)${versionRegexSources}[[:space:]]*"
+  grep -E "^${regex}\$" "${src}" | sed -r "s/^${regex}\$/\3/"
 }
 
 
@@ -432,6 +450,7 @@ declare baseDir="$(dirname "${scriptDir}")"
 
 cd "${baseDir}"
 
+declare -i masterWasUpdated=0
 
 #
 # Check the number of arguments
@@ -556,11 +575,29 @@ declare relBranchVersionDigitsNextPatchLevel="$(getNextVersionDigitsPatchLevel "
 #
 # Check that the version is incrementing
 #
-checkVersionIncrementing "${prevTagVersionDigits}" "${relBranchVersionDigits}"
+checkVersionIncrementing "${prevTagVersionDigits}" "${relBranchVersionDigits}" 0
+if [[ ${checkVersionIncrementingResult} -ne 0 ]]; then
+  echo "* The new version ${relBranchVersionDigits} is not greater than the previous version ${prevTagVersionDigits}"
+  exit 1
+fi
 
 
 #
-# Confirm the release
+# When branching, check that the version is incrementing (allow equal versions),
+# w.r.t. the version in the Makefile
+#
+if [[ "${mode}" == "${MODE_BRANCH}" ]]; then
+  declare currentMasterVersion="$(getVersionFromMakefile)"
+  checkVersionIncrementing "${currentMasterVersion}" "${relBranchVersionDigits}" 1
+  if [[ ${checkVersionIncrementingResult} -ne 0 ]]; then
+    echo "* The new version ${relBranchVersionDigits} is not greater than the current version ${currentMasterVersion}"
+    exit 1
+  fi
+fi
+
+
+#
+# Confirm the branch/release
 #
 cat >&1 << EOF
 
@@ -593,6 +630,7 @@ if [[ "${mode}" == "${MODE_BRANCH}" ]]; then
   echo "Updating the version to pre-${relBranchVersionDigits}..."
   updateVersions "pre-${relBranchVersionDigits}"
   commitChanges 1 "${MODE_TXT} ${relTagVersion}"
+  masterWasUpdated=1
 
   # create release branch
   echo "Creating the release branch ${relBranch}..."
@@ -659,8 +697,19 @@ EOF
   git checkout -q master
   git clean -fdq
   git reset -q --hard
-  updateVersions "pre-${relBranchVersionDigitsNextMicro}"
-  commitChanges 0 "Update version after ${MODE_TXT_LOWER} of ${relTagVersion}"
+
+  declare oldMasterVersion="$(getVersionFromMakefile)"
+  declare newMasterVersion="${relBranchVersionDigitsNextMicro}"
+  checkVersionIncrementing "${oldMasterVersion}" "${newMasterVersion}" 0
+  if [[ ${checkVersionIncrementingResult} -ne 0 ]]; then
+    echo "* Skipped updating the version on the master branch:"
+    echo "  The new version ${newMasterVersion} is not greater than the previous version ${oldMasterVersion}"
+  else
+    updateVersions "pre-${relBranchVersionDigitsNextMicro}"
+    commitChanges 0 "Update version after ${MODE_TXT_LOWER} of ${relTagVersion}"
+    masterWasUpdated=1
+  fi
+
   git checkout -q "${relBranch}"
   git clean -fdq
   git reset -q --hard
@@ -696,7 +745,9 @@ echo ""
 echo "==================="
 echo "=   Git Updates   ="
 echo "==================="
-echo "Branch : master"
+if [[ ${masterWasUpdated} -ne 0 ]]; then
+  echo "Branch : master"
+fi
 echo "Branch : ${relBranch}"
 if [[ "${mode}" == "${MODE_RELEASE}" ]]; then
   echo "Tag    : ${relTagVersion}"
@@ -709,7 +760,7 @@ if [[ "${mode}" == "${MODE_RELEASE}" ]]; then
   echo "==================="
   cat >&1 << EOF
 ${tarGzFile}
-${tarGzFile}
+${tarBz2File}
 ${md5File}
 ${sha256File}"
 EOF
@@ -723,18 +774,34 @@ echo "= Manual Actions  ="
 echo "==================="
 if [[ "${mode}" == "${MODE_RELEASE}" ]]; then
   echo "1. Check that everything is in order. For example, run:"
-  echo "     gitk master ${relBranch} ${relTagVersion}"
+  if [[ ${masterWasUpdated} -ne 0 ]]; then
+    echo "     gitk master ${relBranch} ${relTagVersion}"
+  else
+    echo "     gitk ${relBranch} ${relTagVersion}"
+  fi
   echo "2. Push. For example, run:"
-  echo "     git push origin master ${relBranch} ${relTagVersion}"
+  if [[ ${masterWasUpdated} -ne 0 ]]; then
+    echo "     git push origin master ${relBranch} ${relTagVersion}"
+  else
+    echo "     git push origin ${relBranch} ${relTagVersion}"
+  fi
   echo "3. Upload the generated files to"
   echo "     http://www.olsr.org/releases/${relBranchVersionDigits}"
   echo "4. Add a release article on olsr.org."
   echo ""
 else
   echo "1. Check that everything is in order. For example, run:"
-  echo "     gitk master ${relBranch}"
+  if [[ ${masterWasUpdated} -ne 0 ]]; then
+    echo "     gitk master ${relBranch}"
+  else
+    echo "     gitk ${relBranch}"
+  fi
   echo "2. Push. For example, run:"
-  echo "     git push origin master ${relBranch}"
+  if [[ ${masterWasUpdated} -ne 0 ]]; then
+    echo "     git push origin master ${relBranch}"
+  else
+    echo "     git push origin ${relBranch}"
+  fi
   echo "3. Send a 'release branch created' email to olsr-dev@lists.olsr.org."
   echo ""
 fi

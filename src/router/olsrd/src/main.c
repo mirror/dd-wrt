@@ -287,9 +287,9 @@ static void initRandom(void) {
 #ifndef _WIN32
   int randomFile;
 
-  randomFile = open("/dev/random", O_RDONLY);
+  randomFile = open("/dev/urandom", O_RDONLY);
   if (randomFile == -1) {
-    randomFile = open("/dev/urandom", O_RDONLY);
+    randomFile = open("/dev/random", O_RDONLY);
   }
 
   if (randomFile != -1) {
