@@ -18,7 +18,7 @@ CONFIGURE_VARS += \
 	samba_cv_have_setreuid=yes \
 	samba_cv_have_setresuid=yes
 
-CONFIGURE_ARGS += \
+CONFIGURE_ARGS_SMB += \
 	--host=$(ARCH)-linux \
 	--exec-prefix=/usr \
 	--prefix=/ \
@@ -54,7 +54,7 @@ CONFIGURE_ARGS += \
 	--with-shared-modules=pdb_tdbsam,pdb_wbc_sam,idmap_nss,nss_info_template,auth_winbind,auth_wbc,auth_domain
 
 samba3-preconfigure:
-	if ! test -e "samba36/source3/Makefile"; then	cd samba36/source3 && ./configure $(CONFIGURE_VARS) $(CONFIGURE_ARGS) CFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" LDFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)"; fi
+	if ! test -e "samba36/source3/Makefile"; then	cd samba36/source3 && ./configure $(CONFIGURE_VARS) $(CONFIGURE_ARGS_SMB) CFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" LDFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)"; fi
 
 samba3-configure: samba3-delete samba3-preconfigure
 	
