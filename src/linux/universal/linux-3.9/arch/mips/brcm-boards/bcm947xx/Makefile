@@ -18,8 +18,8 @@
 # $Id: Makefile,v 1.8 2010-09-17 04:51:19 $
 #
 
-SHARED := ../../../../brcm/shared
-EXTRA_CFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+SHARED := ../../../../brcm/mipsel/shared
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 
 ifeq ($(CONFIG_MTD_NFLASH),y)
 EXTRA_CFLAGS += -DNFLASH_SUPPORT
