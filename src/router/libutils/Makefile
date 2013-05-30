@@ -50,6 +50,7 @@ CFLAGS	= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBA
 endif
 
 CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/shared/bcmwifi/include
+CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 CFLAGS += $(MIPS16_OPT) 
 
 
