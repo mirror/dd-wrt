@@ -789,9 +789,17 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
     perror("setsockopt(SO_PRIORITY)");
     olsr_syslog(OLSR_LOG_ERR, "OLSRD: setsockopt(SO_PRIORITY) error %m");
   }
-  if (setsockopt(ifp->send_socket, IPPROTO_IP, IP_TOS, (char *)&tos_bits, sizeof(tos_bits)) < 0) {
-    perror("setsockopt(IP_TOS)");
-    olsr_syslog(OLSR_LOG_ERR, "setsockopt(IP_TOS) error %m");
+  if (olsr_cnf->ip_version == AF_INET) {
+    if (setsockopt(ifp->send_socket, IPPROTO_IP, IP_TOS, (char *)&tos_bits, sizeof(tos_bits)) < 0) {
+      perror("setsockopt(IP_TOS)");
+      olsr_syslog(OLSR_LOG_ERR, "setsockopt(IP_TOS) error %m");
+    }
+  } else {
+    /* IP version 6 */
+    if (setsockopt(ifp->send_socket, IPPROTO_IPV6, IPV6_TCLASS, (char *)&tos_bits, sizeof(tos_bits)) < 0) {
+      perror("setsockopt(IPV6_TCLASS)");
+      olsr_syslog(OLSR_LOG_ERR, "setsockopt(IPV6_TCLASS) error %m");
+    }
   }
 #endif /* __linux__ */
 

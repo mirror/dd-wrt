@@ -324,7 +324,7 @@ static int createTxSocket(TRxTxNetworkInterface * networkInterface, union olsr_s
 
 	int txSocket = -1;
 
-	int mcLoopValue = 0;
+	int mcLoopValue = 1;
 	int txTtl = getTxTtl();
 
 	assert(networkInterface != NULL);

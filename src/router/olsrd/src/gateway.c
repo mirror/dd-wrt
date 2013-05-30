@@ -157,6 +157,8 @@ static void cleanup_gateway_handler(void *ptr) {
  * Initialize gateway system
  */
 int olsr_init_gateways(void) {
+  int retries = 5;
+
   gateway_entry_mem_cookie = olsr_alloc_cookie("gateway_entry_mem_cookie", OLSR_COOKIE_TYPE_MEMORY);
   olsr_cookie_set_memory_size(gateway_entry_mem_cookie, sizeof(struct gateway_entry));
 
@@ -176,7 +178,21 @@ int olsr_init_gateways(void) {
   gw_handler = &gw_def_handler;
   gw_handler->init();
 
-  if (olsr_os_init_iptunnel(TUNNEL_NAME)) {
+  /*
+   * There appears to be a kernel bug in some kernels (at least in the 3.0
+   * Debian Squeeze kernel, but not in the Fedora 17 kernels) around
+   * initialising the IPIP server tunnel (loading the IPIP module), so we retry
+   * a few times before giving up
+   */
+  while (retries-- > 0) {
+    if (!olsr_os_init_iptunnel(TUNNEL_NAME)) {
+      retries = 5;
+      break;
+    }
+
+    olsr_printf(0, "Could not initialise the IPIP server tunnel, retrying %d more times\n", retries);
+  }
+  if (retries <= 0) {
     return 1;
   }
 
