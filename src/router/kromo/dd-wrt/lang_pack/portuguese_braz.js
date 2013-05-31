@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//      Update (21032 based)               - DD-WRT V24 SP2 by mrc_torres 22/MAR/2013       //
+//      Update (21665 based)               - DD-WRT V24 SP2 by mrc_torres 30/MAY/2013       //
 //      Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006       //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -706,6 +706,7 @@ nas.proftpd_writeen="Permitir Gravação";
 nas.proftpd_anon="Login Anônimo (Somente-Leitura)";
 nas.proftpd_anon_subdir="Sub-diretório Home Anônimo";
 nas.samba3_legend="Compartilhamento de Arquivos";
+nas.samba3="Servidor Samba"; 
 
 hnas.right2="Na lista de senhas de usuários entre com uma senha de usuário por linha. A senha pode ser em texto plano ou em criptografia MD5.";
 
@@ -722,7 +723,7 @@ hotspot.nowifibridge="c";
 hotspot.hotspot="Chillispot";
 hotspot.pserver="IP/DNS do Servidor Radius Primário";
 hotspot.bserver="IP/DNS do Servidor Radius Backup";
-hotspot.dns="Endereço IP do DNS";
+hotspot.dns="Endereço IP do Servidor DNS";
 hotspot.url="URL de Redirecionamento";
 hotspot.dhcp="Interface DHCP";
 hotspot.radnas="ID NAS do Radius";
@@ -731,8 +732,11 @@ hotspot.uam="Segredo UAM";
 hotspot.uamserver="Servidor UAM";
 hotspot.uamport="Porta UAM";
 hotspot.uamdns="Qualquer DNS UAM";
-hotspot.allowuam="UAM Permitido";
-hotspot.macauth="MACauth";
+hotspot.allowuam="UAM Permitidos (separados por vírgula)";
+hotspot.allowuad="Domínios UAM (separados por espaço)"; 
+hotspot.macauth="Autenticação MAC";
+hotspot.macpasswd="Senha MAC"; 
+hotspot.sec8021Xauth="Autenticação 802.1X (EAP)"; 
 hotspot.option="Opções Adicionais do Chillispot";
 hotspot.fon_chilli="Gerenciamento de Usuário Local Chillispot";
 hotspot.fon_user="Lista de Usuários";
@@ -773,7 +777,7 @@ hotspot.sputnik_express="Usar SputnikNet Express";
 hotspot.sputnik_about="sobre o Sputnik";
 hotspot.sputnik_learn="Saiba mais";
 hotspot.wifidog_legend="Wifidog";
-hotspot.wifidog_srv="Wifidog daemon";
+hotspot.wifidog_srv="Gateway Wifidog";
 hotspot.wifidog_id="Gateway ID";
 hotspot.wifidog_url="URL do Portal";
 hotspot.wifidog_port="Porta";
@@ -794,12 +798,16 @@ hotspot.wifidog_username="Nome de Usuário do Servidor HTTP";
 hotspot.wifidog_password="Senha do Servidor HTTP";
 hotspot.wifidog_auth="Suporte Autenticação Servidor HTTP";
 
+//help container 
+hstatus_hots.right1="conup/condown:<br><i>Quando USB ou JFFS são montados em /jffs, scripts de conexão podem ser utilizados em /jffs/etc/chilli/</i><br>Usuários Locais:<br><i>Quando somente usuáios locais forem utilizados configure o IP do Radius primário para 127.0.0.1</i>";
+
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="Separar Wi-Fi da Bridge LAN";
 hotspotsys.uamenable="Configurações Especiais";
 hotspotsys.loginonsplash="Login na Splash Page";
 hotspotsys.allowuam="UAM Permitido";
+hotspotsys.allowuad="Domínios UAM (separados por espaço)"; 
 hotspotsys.whitelabelproto="Protocolo White Label";
 hotspotsys.whitelabel="Domínio White Label";
 hotspotsys.operatorid="Nome do Usuário Operador";
@@ -875,7 +883,7 @@ idx_pppoe.use_rp="Usar RP PPPoE";
 idx_pptp.srv="Usar DHCP";
 idx_pptp.wan_ip="Endereço IP para Internet";
 idx_pptp.gateway="Gateway (Servidor PPTP)";
-idx_pptp.encrypt="Criptografia PPTP";
+//idx_pptp.encrypt="Criptografia PPTP"; //should be needed anymore. del soon 
 idx_pptp.reorder="Reordenamento de Pacotes";
 idx_pptp.addopt="Opções PPTP Adicionais";
 
@@ -1044,6 +1052,7 @@ management.lang_russian="Russo";
 management.lang_romanian="Romeno";
 management.lang_slovenian="Esloveno";
 management.lang_spanish="Espanhol";
+management.lang_serbian="Sérvio";
 management.lang_swedish="Sueco";
 management.lang_japanese="Japonês";
 management.lang_hungarian="Húngaro";
@@ -1125,7 +1134,7 @@ qos.legend4="Prioridade de MAC";
 qos.legend5="Prioridade de Porta Ethernet";
 qos.legend6="Nível de Banda Padrão";
 qos.legend7="Prioridade de Pacotes TCP";
-qos.pktdesc="Priorizar pacotes TCP pequenos com os seguintes sinais:";
+qos.pktdesc="Priorizar pacotes TCP pequenos com as seguintes marcações:";
 qos.pktack="ACK";
 qos.pktrst="RST";
 qos.pktsyn="SYN";
@@ -1360,7 +1369,7 @@ service.vpn_route="Roteamento Baseado em Políticas";
 
 //help container
 hstatus_vpn.right1="Roteamento Baseado em Políticas:<br><i>Adicione IPs/Redes no formato 0.0.0.0/0 para forçar clientes a usar o tunel como gateway padrão. Uma linha por IP/REDE.</i><br>Endereço IP/Máscara de Sub-Rede:<br><i>Deve ser configurado quando se está utilizando o modo DHCP-Proxy e TAP local NÃO está em modo bridged.</i>";
-hstatus_vpn.right2="Configurações Adicionais:<br><i>Para entregar rotas a clientes adicione \'push \"route IP mask gateway\"\', para entregar DNS/WINS adicione \'push \"dhcp-option DNS (ou WINS) IP\"\' à configuração.</i>";
+hstatus_vpn.right2="Configurações Adicionais:<br><i>Para entregar rotas a clientes adicione \'push \"route IP mask gateway\"\', para entregar DNS/WINS adicione \'push \"dhcp-option DNS (ou WINS) IP\"\' à configuração.</i><br>diretório de conexão do cliente:<br><i>Quando USB ou JFFS são montados em /jffs, scripts serão chamados de /jffs/etc/openvpn/ccd/</i>";
 hstatus_vpn.right3="Geral:<br><i>3 métodos de autenticação são suportados: pkcs12 (+dh no servidor), estático e certificados padrão. Habilitar o MSS em apenas um dos lados do link irá fragmentar em ambos.</i>";
 
 //vnc.repeater
@@ -1487,6 +1496,9 @@ service.samba3_users="Usuários";
 service.samba3_username="Nome de Usuário";
 service.samba3_password="Senha";
 service.samba3_user_shares="Acessos Compartilhados";
+service.dlna_type_audio="Áudio"; 
+service.dlna_type_video="Vídeo"; 
+service.dlna_type_images="Imagens";
 
 // ** eop-tunnel.asp **//
 eoip.titl="Túnel EoIP";
@@ -1727,7 +1739,7 @@ vlan.tagged="Rotular";
 vlan.negociate="Auto-Negociação";
 vlan.aggregation="Agregar Link<br>nas Portas 3 & 4";
 vlan.trunk="Tronco";
-
+vlan.linkstatus="Status do Link"; 
 
 // ** WEP.asp **//
 wep.defkey="Chave Padrão de Transmissão";
