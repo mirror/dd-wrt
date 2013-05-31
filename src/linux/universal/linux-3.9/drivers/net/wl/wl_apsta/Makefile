@@ -1,3 +1,15 @@
+ifeq ($(CONFIG_MIPS),y)
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux  -DCONFIG_NOPRINTK=1
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/mipsel
+SRCBASE_OFFSET := ../../../../brcm/mipsel
+else
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux  -DCONFIG_NOPRINTK=1
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/arm
+SRCBASE_OFFSET := ../../../../brcm/arm
+endif
+
 #
 # Makefile for the Broadcom wl driver
 #
@@ -18,7 +30,6 @@
 # $Id: Makefile,v 1.2 2007-11-17 01:37:38 $
 #
 
-SRCBASE_OFFSET := ../../../../brcm
 
 ifeq ($(CONFIG_WL_APSTA),)
 CONFIG_WL_APSTA := "wlconfig_lx_router_apsta"
