@@ -704,7 +704,7 @@ static void nat_postrouting(void)
 		}
 		if (strlen(wanface) > 0 && wanactive()
 		    && !nvram_match("br0_nat", "0"))
-			save2file("-A POSTROUTING -s %s0/%d -o %s -j SNAT --to-source %s\n", lan_cclass, loopmask, wanface, wanaddr);
+			save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s\n", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
 
 		char *wan_ifname_tun = nvram_safe_get("wan_ifname");
 		if (isClient()) {
