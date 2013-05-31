@@ -4319,7 +4319,8 @@ int led_control(int type, int act)
 		usb_power = 0x002;
 #endif
 #ifdef HAVE_DIR615C1
-
+		power_gpio = 0x104;
+		wlan0_gpio = 0x10f;
 #endif
 #ifdef HAVE_DIR615E
 		power_gpio = 0x006;
@@ -4812,6 +4813,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_WRT300NV11:
 		ses_gpio = 0x105;
+		sec0_gpio = 0x103;
 		// diag_gpio = 0x11; //power led blink / off to indicate fac.def.
 		break;
 	case ROUTER_WRT310N:
