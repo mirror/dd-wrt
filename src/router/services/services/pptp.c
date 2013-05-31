@@ -32,7 +32,7 @@
 
 void start_pptpd(void)
 {
-	int ret = 0, mss = 0;
+	int ret = 0, mss = 0, jffs = 0;
 	char *lpTemp;
 	FILE *fp;
 
@@ -43,12 +43,24 @@ void start_pptpd(void)
 #ifdef HAVE_PPTP_ACCEL
 	insmod("pptp");
 #endif
+
+	if ((nvram_match("usb_enable", "1")
+	     && nvram_match("usb_storage", "1")
+	     && nvram_match("usb_automnt", "1")
+	     && nvram_match("usb_mntpoint", "jffs"))
+	    || (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1")))
+		jffs = 1
+		
 	// cprintf("stop vpn modules\n");
 	// stop_vpn_modules ();
 
 	//      copy existing peer data to /tmp
-	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
-		system("/bin/cp /jffs/etc/pptp_peer.db /tmp/");
+	mkdir("/jffs/etc", 0700);
+	mkdir("/jffs/etc/pptpd", 0700);
+	if (jffs == 1)
+		system("/bin/cp /jffs/etc/pptpd/pptp_peer.db /tmp/");
 
 	// Create directory for use by pptpd daemon and its supporting files
 	mkdir("/tmp/pptpd", 0744);
@@ -128,14 +140,50 @@ void start_pptpd(void)
 	if (strlen(nvram_safe_get("pptpd_dns2"))) {
 		fprintf(fp, "ms-dns %s\n", nvram_safe_get("pptpd_dns2"));
 	}
+	//      use jffs/usb for con scripts if available
+	if (jffs == 1) {	
+		if (strlen(nvram_safe_get("openvpn_ccddef")) > 0) {
+			fprintf(fp, "connect /jffs/etc/pptpd/con.sh\n");
+			fprintf(fp, "disconnect /jffs/etc/pptpd/discon.sh\n");
+			if ((fp = fopen("/jffs/etc/pptpd/con.sh", "r")) == NULL) {
+				fclose(fp);
+				fp = fopen("/jffs/etc/pptpd/con.sh", "w");
+					fprintf(fp, "#!/bin/sh\n");
+				fclose(fp);
+				chmod("/jffs/etc/pptpd/con.sh", 0700);
+				}
+			if ((fp = fopen("/jffs/etc/pptpd/discon.sh", "r")) == NULL) {
+				fclose(fp);		
+				fp = fopen("/jffs/etc/pptpd/discon.sh", "w");
+					fprintf(fp, "#!/bin/sh\n");
+				fclose(fp);
+				chmod("/jffs/etc/pptpd/discon.sh", 0700);
+			}
+		}
+	}
+	else {
+		fprintf(fp, "connect /tmp/pptpd/con.sh\n");
+		fprintf(fp, "disconnect /tmp/pptpd/discon.sh\n");
+		fp = fopen("/jffs/etc/pptpd/con.sh", "w");
+			fprintf(fp, "#!/bin/sh\n");
+		fclose(fp);
+		fp = fopen("/jffs/etc/pptpd/discon.sh", "w");
+			fprintf(fp, "#!/bin/sh\n");
+		fclose(fp);
+		chmod("/tmp/pptpd/con.sh", 0700);
+		chmod("/tmp/pptpd/discon.sh", 0700);
+		}
+
 	// Following is all crude and need to be revisited once testing confirms
 	// that it does work
 	// Should be enough for testing..
 	if (nvram_match("pptpd_radius", "1")) {
 		if (nvram_get("pptpd_radserver") != NULL && nvram_get("pptpd_radpass") != NULL) {
-
 			fclose(fp);
 
+//			if (nvram_match("pptpd_radip"), "1")	//use radius for ip's // nvarm var missing :-)
+//				fprintf(fp, "delegate\n");
+				
 			mkdir("/tmp/pptpd/radius", 0744);
 
 			fp = fopen("/tmp/pptpd/radius/radiusclient.conf", "w");
