@@ -786,13 +786,24 @@ void start_sysinit(void)
 			fprintf(stderr, "something wrong here, boarddata cannot be opened\n");
 			break;
 		}
-		fseek(fp, 0x40, SEEK_SET);
-		unsigned char mac[6];
-		char macaddr[20];
-		fread(mac, 6, 1, fp);
-		sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", (int)mac[0] & 0xff, (int)mac[1] & 0xff, (int)mac[2] & 0xff, (int)mac[3] & 0xff, (int)mac[4] & 0xff, (int)mac[5] & 0xff);
+		
+		if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
+		    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+		    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
+		    || startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
+			unsigned char mac[20];
+			strcpy(mac, nvram_safe_get("et0macaddr"));
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("pci/1/1/macaddr", mac);
+			MAC_ADD(mac);
+			nvram_set("pci/2/1/macaddr", mac);
+			need_reboot = 1;
+		}
+
 		int isr6300 = 0;
 		int iswndr4500v2 = 0;
+		
 #define R6300 "U12H218T00_NETGEAR"
 #define WNDR4500V2 "U12H224T00_NETGEAR"
 
@@ -1385,10 +1396,6 @@ void start_sysinit(void)
 			}
 
 		}
-		nvram_set("et0macaddr", macaddr);
-		nvram_set("pci/1/1/macaddr", macaddr);
-		MAC_SUB(macaddr);
-		nvram_set("pci/2/1/macaddr", macaddr);
 
 		break;
 	case ROUTER_NETCORE_NW715P:
