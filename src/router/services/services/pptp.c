@@ -51,7 +51,7 @@ void start_pptpd(void)
 	    || (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
 		&& nvram_match("sys_enable_jffs2", "1")))
-		jffs = 1
+		jffs = 1;
 		
 	// cprintf("stop vpn modules\n");
 	// stop_vpn_modules ();
