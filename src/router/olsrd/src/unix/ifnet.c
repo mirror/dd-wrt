@@ -796,10 +796,12 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
     }
   } else {
     /* IP version 6 */
+#ifdef IPV6_TCLASS
     if (setsockopt(ifp->send_socket, IPPROTO_IPV6, IPV6_TCLASS, (char *)&tos_bits, sizeof(tos_bits)) < 0) {
       perror("setsockopt(IPV6_TCLASS)");
       olsr_syslog(OLSR_LOG_ERR, "setsockopt(IPV6_TCLASS) error %m");
     }
+#endif
   }
 #endif /* __linux__ */
 
