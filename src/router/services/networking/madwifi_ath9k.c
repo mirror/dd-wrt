@@ -481,7 +481,7 @@ static int ieee80211_aton(char *str, unsigned char mac[6])
 		mac[i] = addr[i] & 0xff;
 	return 0;
 }
-
+extern char *hostapd_eap_get_types(void);
 extern void addWPS(FILE * fp, char *prefix, int configured);
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 {
