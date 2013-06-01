@@ -837,7 +837,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		if (nvram_prefix_match("8021xtype", prefix, "tls")) {
 // -> added habeIchVergessen
 			char *keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
-			char *wpaOpts[40];
+			char wpaOpts[40];
 			if (strlen(keyExchng) == 0)
 				nvram_nset("wep", "%s_tls8021xkeyxchng", prefix);
 			sprintf(wpaOpts, "");
