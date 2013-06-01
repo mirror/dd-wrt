@@ -158,6 +158,7 @@ void __init ks8695_init_irq(void)
 			case KS8695_IRQ_UART_RX:
 			case KS8695_IRQ_COMM_TX:
 			case KS8695_IRQ_COMM_RX:
+			case KS8695_IRQ_EXTERN0:
 				irq_set_chip_and_handler(irq,
 							 &ks8695_irq_level_chip,
 							 handle_level_irq);

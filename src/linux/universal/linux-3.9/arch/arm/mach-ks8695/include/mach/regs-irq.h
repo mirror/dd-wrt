@@ -37,5 +37,12 @@
 #define KS8695_INTHPF		(0x30)		/* Interrupt Pending Highest Priority (FIQ) */
 #define KS8695_INTHPI		(0x34)		/* Interrupt Pending Highest Priority (IRQ) */
 
+#ifdef CONFIG_ARCH_KS8695_VSOPENRISC
+#define KS8695_INTEPLD_IDE	(0x03)		/* KS8695_INT_EXT_INT1 */
+#define KS8695_INTEPLD_GPIO	(0x04)		/* KS8695_INT_EXT_INT2 */
+#define KS8695_INTEPLD_UARTS	(0x05)		/* KS8695_INT_EXT_INT3 */
+#define KS8695_INTEPLD_CAN	(0x05)		/* KS8695_INT_EXT_INT3 */
+#endif
+
 
 #endif

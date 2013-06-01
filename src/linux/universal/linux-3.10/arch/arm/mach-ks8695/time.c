@@ -31,6 +31,7 @@
 #include <asm/system_misc.h>
 
 #include <mach/regs-irq.h>
+#include <mach/regs-gpio.h>
 
 #include "generic.h"
 
@@ -128,13 +129,17 @@ static struct irqaction ks8695_timer_irq = {
 
 static void ks8695_timer_setup(void)
 {
-	unsigned long tmcon;
+	unsigned long tmcon, val;
 
 	/* Disable timer 0 and 1 */
 	tmcon = readl_relaxed(KS8695_TMR_VA + KS8695_TMCON);
 	tmcon &= ~TMCON_T0EN;
 	tmcon &= ~TMCON_T1EN;
 	writel_relaxed(tmcon, KS8695_TMR_VA + KS8695_TMCON);
+
+	/* enable the timer output on GPIO5 */
+	val = __raw_readl(KS8695_GPIO_VA + KS8695_IOPC);
+	__raw_writel(val | 0x20000, KS8695_GPIO_VA + KS8695_IOPC);
 
 	/*
 	 * Use timer 1 to fire IRQs on the timeline, minimum 2 cycles
