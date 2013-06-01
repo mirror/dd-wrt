@@ -197,9 +197,12 @@ if (!is_ath9k(nvram_safe_get("wifi_display")))
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
   s = openMonitorSocket(get_monitor()); // for testing we use ath0
 #else
-  s = openMonitorSocket("prism0");
+    if (nvram_match("wifi_display","wl1"))
+	s = openMonitorSocket("prism1");
+  else
+	s = openMonitorSocket("prism0");
 #endif
-  if (s == -1) return;
+      if (s == -1) return;
   one = 1;
   ioctl(s, FIONBIO, (char *)&one);
   
