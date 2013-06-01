@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 			}
 #else
 			oldMonitor = 0;
-y			wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
+			wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
 #endif
 			return 0;
 		}
