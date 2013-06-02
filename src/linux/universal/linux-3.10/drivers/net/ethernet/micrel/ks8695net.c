@@ -38,18 +38,35 @@
 
 #include <mach/regs-switch.h>
 #include <mach/regs-misc.h>
+
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI)
 #include <asm/mach/irq.h>
 #include <mach/regs-irq.h>
+#endif
 
 #include "ks8695net.h"
 
 #define MODULENAME	"ks8695_ether"
 #define MODULEVERSION	"1.02"
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_OPENNETCOM)
+char redboot_mac[16];
+
+static int __init vs_mac(char *str)
+{
+	sprintf(redboot_mac, "%s", str);
+	return 1;
+}
+__setup("mac=", vs_mac);
+#endif
+
 /*
  * Transmit and device reset timeout, default 5 seconds.
  */
 static int watchdog = 5000;
+
+int wan_init = 0;
+int lan_init = 0;
 
 /* Hardware structures */
 
@@ -100,8 +117,10 @@ struct ks8695_skbuff {
 #define MAX_RX_DESC 16
 #define MAX_RX_DESC_MASK 0xf
 
-/*napi_weight have better more than rx DMA buffers*/
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI)
+/* napi_weight have better more than rx DMA buffers */
 #define NAPI_WEIGHT   64
+#endif
 
 #define MAX_RXBUF_SIZE 0x700
 
@@ -162,7 +181,9 @@ struct ks8695_priv {
 	enum ks8695_dtype dtype;
 	void __iomem *io_regs;
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI)
 	struct napi_struct	napi;
+#endif
 
 	const char *rx_irq_name, *tx_irq_name, *link_irq_name;
 	int rx_irq, tx_irq, link_irq;
@@ -184,7 +205,9 @@ struct ks8695_priv {
 	dma_addr_t rx_ring_dma;
 	struct ks8695_skbuff rx_buffers[MAX_RX_DESC];
 	int next_rx_desc_read;
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI)
 	spinlock_t rx_lock;
+#endif
 
 	int msg_enable;
 };
@@ -403,6 +426,7 @@ ks8695_tx_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI)
 /**
  *	ks8695_get_rx_enable_bit - Get rx interrupt enable/status bit
  *	@ksp: Private data for the KS8695 Ethernet
@@ -421,7 +445,9 @@ static inline u32 ks8695_get_rx_enable_bit(struct ks8695_priv *ksp)
 {
 	return ksp->rx_irq;
 }
+#endif
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI)
 /**
  *	ks8695_rx_irq - Receive IRQ handler
  *	@irq: The IRQ which went off (ignored)
@@ -579,6 +605,115 @@ static int ks8695_poll(struct napi_struct *napi, int budget)
 	}
 	return work_done;
 }
+#else
+/**
+ *	ks8695_rx_irq - Receive IRQ handler
+ *	@irq: The IRQ which went off (ignored)
+ *	@dev_id: The net_device for the interrupt
+ *
+ *     Process the RX ring, passing any received packets up to the
+ *     host.  If we received anything other than errors, we then
+ *     refill the ring.
+ */
+
+static irqreturn_t
+ks8695_rx_irq(int irq, void *dev_id)
+{
+	struct net_device *ndev = (struct net_device *)dev_id;
+	struct ks8695_priv *ksp = netdev_priv(ndev);
+	struct sk_buff *skb;
+	int buff_n;
+	u32 flags;
+	int pktlen;
+
+	buff_n = ksp->next_rx_desc_read;
+	do {
+		if (ksp->rx_buffers[buff_n].skb &&
+				!(ksp->rx_ring[buff_n].status & cpu_to_le32(RDES_OWN))) {
+			rmb();
+			flags = le32_to_cpu(ksp->rx_ring[buff_n].status);
+
+			/* Found an SKB which we own, this means we
+			 * received a packet
+			 */
+			if ((flags & (RDES_FS | RDES_LS)) !=
+			    (RDES_FS | RDES_LS)) {
+				/* This packet is not the first and
+				 * the last segment.  Therefore it is
+				 * a "spanning" packet and we can't
+				 * handle it
+				 */
+				goto rx_failure;
+			}
+
+			if (flags & (RDES_ES | RDES_RE)) {
+				/* It's an error packet */
+				ndev->stats.rx_errors++;
+				if (flags & RDES_TL)
+					ndev->stats.rx_length_errors++;
+				if (flags & RDES_RF)
+					ndev->stats.rx_length_errors++;
+				if (flags & RDES_CE)
+					ndev->stats.rx_crc_errors++;
+				if (flags & RDES_RE)
+					ndev->stats.rx_missed_errors++;
+
+				goto rx_failure;
+			}
+
+			pktlen = flags & RDES_FLEN;
+			pktlen -= 4; /* Drop the CRC */
+
+			/* Retrieve the sk_buff */
+			skb = ksp->rx_buffers[buff_n].skb;
+
+			/* Clear it from the ring */
+			ksp->rx_buffers[buff_n].skb = NULL;
+			ksp->rx_ring[buff_n].data_ptr = 0;
+
+			/* Unmap the SKB */
+			dma_unmap_single(ksp->dev,
+					 ksp->rx_buffers[buff_n].dma_ptr,
+					 ksp->rx_buffers[buff_n].length,
+					 DMA_FROM_DEVICE);
+
+			/* Relinquish the SKB to the network layer */
+			skb_put(skb, pktlen);
+			skb->protocol = eth_type_trans(skb, ndev);
+
+			netif_rx(skb);
+
+			/* Record stats */
+			ndev->stats.rx_packets++;
+			ndev->stats.rx_bytes += pktlen;
+			goto rx_finished;
+
+rx_failure:
+			/* This ring entry is an error, but we can
+			 * re-use the skb
+			 */
+			/* Give the ring entry back to the hardware */
+			ksp->rx_ring[buff_n].status = cpu_to_le32(RDES_OWN);
+rx_finished:
+		buff_n = (buff_n + 1) & MAX_RX_DESC_MASK;
+		} else {
+			/* Ran out of things to process, stop now */
+			break;
+		}
+	} while	(buff_n != ksp->next_rx_desc_read);
+
+	/* And note which RX descriptor we last did */
+	ksp->next_rx_desc_read = buff_n;
+
+	/* And refill the buffers */
+	ks8695_refill_rxbuffers(ksp);
+
+	/* Kick the RX DMA engine, in case it became suspended */
+	ks8695_writereg(ksp, KS8695_DRSC, 0);
+
+	return IRQ_HANDLED;
+}
+#endif
 
 /**
  *	ks8695_link_irq - Link change IRQ handler
@@ -1111,7 +1246,11 @@ ks8695_set_multicast(struct net_device *ndev)
 		ctrl |= DRXC_RM;
 	} else {
 		/* enable specific multicasts */
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_MULTICAST_WORKAROUND)
+ 		ctrl |= DRXC_RM;
+#else
 		ctrl &= ~DRXC_RM;
+#endif
 		ks8695_init_partial_multicast(ksp, ndev);
 	}
 
@@ -1228,9 +1367,11 @@ ks8695_stop(struct net_device *ndev)
 	struct ks8695_priv *ksp = netdev_priv(ndev);
 
 	netif_stop_queue(ndev);
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI)
 	napi_disable(&ksp->napi);
+#endif
 
-	ks8695_shutdown(ksp);
+	//ks8695_shutdown(ksp);
 
 	return 0;
 }
@@ -1249,17 +1390,49 @@ ks8695_open(struct net_device *ndev)
 	struct ks8695_priv *ksp = netdev_priv(ndev);
 	int ret;
 
-	ks8695_reset(ksp);
+ 	if(ksp->rx_irq == KS8695_IRQ_WAN_RX_STATUS) {
+ 		/* WAN */
+ 		if(!wan_init) {
+ 			ks8695_reset(ksp);
+ 		}
+ 	}
+ 	else {
+ 		/* LAN */
+ 		if(!lan_init) {
+ 			ks8695_reset(ksp);
+ 		}
+ 	}
 
 	ks8695_update_mac(ksp);
 
-	ret = ks8695_init_net(ksp);
-	if (ret) {
-		ks8695_shutdown(ksp);
-		return ret;
-	}
+ 	if(ksp->rx_irq == KS8695_IRQ_WAN_RX_STATUS) {
+ 		/* WAN */
+ 		if(!wan_init) {
+ 			ret = ks8695_init_net(ksp);
+ 			if (ret) {
+ 				ks8695_shutdown(ksp);
+ 				return ret;
+ 			}
+ 		}
 
+ 		wan_init = 1;
+ 	}
+ 	else {
+ 		/* LAN */
+ 		if(!lan_init) {
+ 			ret = ks8695_init_net(ksp);
+ 			if (ret) {
+ 				ks8695_shutdown(ksp);
+ 				return ret;
+ 			}
+ 		}
+
+ 		lan_init = 1;
+ 	}
+
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI)
 	napi_enable(&ksp->napi);
+#endif
 	netif_start_queue(ndev);
 
 	return 0;
@@ -1284,7 +1457,7 @@ ks8695_init_switch(struct ks8695_priv *ksp)
 
 	/* LED0 = Speed	 LED1 = Link/Activity */
 	ctrl &= ~(SEC0_LLED1S | SEC0_LLED0S);
-	ctrl |= (LLED0S_LINK | LLED1S_LINK_ACTIVITY);
+	ctrl |= (LLED0S_SPEED | LLED1S_LINK_ACTIVITY);
 
 	/* Enable Switch */
 	ctrl |= SEC0_ENABLE;
@@ -1310,9 +1483,13 @@ ks8695_init_wan_phy(struct ks8695_priv *ksp)
 	/* Support auto-negotiation */
 	ctrl = (WMC_WANAP | WMC_WANA100F | WMC_WANA100H |
 		WMC_WANA10F | WMC_WANA10H);
-
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
+	/* LED0 = Speed , LED1 = Link/Activity */
+	ctrl |= (WLED0S_SPEED | WLED1S_LINK_ACTIVITY);
+#else
 	/* LED0 = Activity , LED1 = Link */
 	ctrl |= (WLED0S_ACTIVITY | WLED1S_LINK);
+#endif
 
 	/* Restart Auto-negotiation */
 	ctrl |= WMC_WANR;
@@ -1356,6 +1533,13 @@ ks8695_probe(struct platform_device *pdev)
 	int ret = 0;
 	int buff_n;
 	u32 machigh, maclow;
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_OPENNETCOM)
+	int i;
+	char tmp_mac[3], *redboot_mac_ptr;
+#endif
+
+ 	wan_init = 0;
+ 	lan_init = 0;
 
 	/* Initialise a net_device */
 	ndev = alloc_etherdev(sizeof(struct ks8695_priv));
@@ -1441,7 +1625,9 @@ ks8695_probe(struct platform_device *pdev)
 	ndev->netdev_ops = &ks8695_netdev_ops;
 	ndev->watchdog_timeo	 = msecs_to_jiffies(watchdog);
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI)
 	netif_napi_add(ndev, &ksp->napi, ks8695_poll, NAPI_WEIGHT);
+#endif
 
 	/* Retrieve the default MAC addr from the chip. */
 	/* The bootloader should have left it in there for us. */
@@ -1449,12 +1635,22 @@ ks8695_probe(struct platform_device *pdev)
 	machigh = ks8695_readreg(ksp, KS8695_MAH);
 	maclow = ks8695_readreg(ksp, KS8695_MAL);
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_OPENNETCOM)
+	redboot_mac_ptr	= redboot_mac;
+	for(i = 0; i < 6; i++)
+	{
+		strncpy(tmp_mac, redboot_mac_ptr, 2);
+		redboot_mac_ptr += 3;
+		ndev->dev_addr[i] = simple_strtol(tmp_mac, NULL, 16) & 0xff;
+	}
+#else
 	ndev->dev_addr[0] = (machigh >> 8) & 0xFF;
 	ndev->dev_addr[1] = machigh & 0xFF;
 	ndev->dev_addr[2] = (maclow >> 24) & 0xFF;
 	ndev->dev_addr[3] = (maclow >> 16) & 0xFF;
 	ndev->dev_addr[4] = (maclow >> 8) & 0xFF;
 	ndev->dev_addr[5] = maclow & 0xFF;
+#endif
 
 	if (!is_valid_ether_addr(ndev->dev_addr))
 		dev_warn(ksp->dev, "%s: Invalid ethernet MAC address. Please "
@@ -1476,7 +1672,9 @@ ks8695_probe(struct platform_device *pdev)
 
 	/* And initialise the queue's lock */
 	spin_lock_init(&ksp->txq_lock);
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI)
 	spin_lock_init(&ksp->rx_lock);
+#endif
 
 	/* Specify the RX DMA ring buffer */
 	ksp->rx_ring = ksp->ring_base + TX_RING_DMA_SIZE;
@@ -1601,7 +1799,9 @@ ks8695_drv_remove(struct platform_device *pdev)
 	struct ks8695_priv *ksp = netdev_priv(ndev);
 
 	platform_set_drvdata(pdev, NULL);
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI)
 	netif_napi_del(&ksp->napi);
+#endif
 
 	unregister_netdev(ndev);
 	ks8695_release_device(ksp);

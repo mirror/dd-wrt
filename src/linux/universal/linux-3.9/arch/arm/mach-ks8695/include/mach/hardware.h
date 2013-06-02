@@ -42,7 +42,7 @@
 #define KS8695_PCIIO_PA		0x80000000
 #define KS8695_PCIIO_SIZE	SZ_64K
 
-#ifdef CONFIG_ARCH_KS8695_VSOPENRISC 
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC 
 /* 
  * memory layout for the VScom OpenRISC 
  * 
