@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <malloc.h>
 
 
@@ -11,7 +12,7 @@ main (int argc, char *argv[])
   int i;
   char *m;
   int a;
-//fprintf(stderr,"argc = %d\n",argc);
+
   if (argc == 1)
     return 0;
   for (a = 1; a < argc; a++)
@@ -20,16 +21,16 @@ main (int argc, char *argv[])
       FILE *in = fopen (argv[a], "rb");
       if (in == NULL)
 	return 0;
+      
       fseek (in, 0, SEEK_END);
       int len = ftell (in);
       m = (char *) malloc (len);
       fseek (in, 0, SEEK_SET);
+      
       for (i = 0; i < len; i++)
 	m[i] = getc (in);
 
-
       fclose (in);
-
 
       len = filter (m, "<input type=", "{i}", len);
       len = filter (m, "<input class=", "{c}", len);
@@ -61,10 +62,15 @@ filter (char *m, char *source, char *dest, int len)
 {
   int i;
   int disable = 0;
-  if (strlen(source)>len)
+  int len_src = strlen (source);
+  int len_dest =  strlen (dest);
+  char *tmp = (char *) malloc (len);
+  
+  
+  if (len_src > len)
     return len;
-//printf("filter %s to %s\n",source,dest);
-  for (i = 0; i < len - strlen (source); i++)
+
+  for (i = 0; i < len - len_src; i++)
     {
       if (disable == 1)
 	{
@@ -77,17 +83,18 @@ filter (char *m, char *source, char *dest, int len)
 	    disable = 1;
 	}
       if (!disable)
-	if (strncmp ((char *) &m[i], source, strlen (source)) == 0)
-	  {
-	    memcpy (&m[i], dest, strlen (dest));
-	    int delta = strlen (source) - strlen (dest);
-//      printf("len = %d\n",len);
-	    memcpy (&m[i + strlen (dest)], &m[i + strlen (source)],
-		    len - (i + strlen (source)));
+	if (strncmp ((char *) &m[i], source, len_src) == 0)
+	  {	    
+	    memcpy (&m[i], dest, len_dest);
+	    memcpy(tmp, m , len);
+	    
+	    int delta = len_src - len_dest;	    
+	    memcpy (&m[i + len_dest], &tmp[i + len_src], len - (i + len_src));
 	    len -= delta;
-	    i += strlen (dest);
+	    i += len_dest;
 	  }
     }
+    free(tmp);
 //  m[len] = 0;
   return len;
 }
