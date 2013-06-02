@@ -9,7 +9,7 @@ config MACH_KS8695
 	  Say 'Y' here if you want your kernel to run on the original
 	  Kendin-Micrel KS8695 development board.
 
-config ARCH_KS8695_VSOPENRISC
+config MACH_KS8695_VSOPENRISC
 	bool "VScom OpenRISC platform"
 	select MIGHT_HAVE_PCI
 	select ISA

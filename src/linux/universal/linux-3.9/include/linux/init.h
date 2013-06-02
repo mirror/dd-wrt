@@ -131,6 +131,11 @@
 #define __REFDATA        .section       ".ref.data", "aw"
 #define __REFCONST       .section       ".ref.rodata", "a"
 
+/* define kernel paramter variable for VS OpenRISC system ID */
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC) && !defined(__ASSEMBLY__)
+extern int vs_sysid;
+#endif 
+
 #ifndef __ASSEMBLY__
 /*
  * Used for initialization calls..

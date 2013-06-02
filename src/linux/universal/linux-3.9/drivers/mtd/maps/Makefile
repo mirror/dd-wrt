@@ -74,6 +74,7 @@ obj-$(CONFIG_MACH_GW2388)	+= nvram_kernel.o
 obj-$(CONFIG_LANTIQ)		+= nvram_kernel.o
 obj-$(CONFIG_ARCH_IXP4XX)	+= nvram_kernel.o
 obj-$(CONFIG_X86)		+= nvram_kernel_x86.o
+obj-$(CONFIG_MACH_KS8695_VSOPENRISC) += nvram_kernel_x86.o
 ifeq ($(CONFIG_TL_WDR4900_V1),y)
 obj-$(CONFIG_PPC)		+= nvram_kernel.o
 else

@@ -28,6 +28,21 @@ config ARM_KS8695_ETHER
 	  If you wish to compile a kernel for the KS8695 and want to
 	  use the internal ethernet then you should answer Y to this.
 
+config MACH_KS8695_VSOPENRISC_NET_ENABLE_NAPI
+  	bool "Enable NAPI"
+  	depends on MACH_KS8695_VSOPENRISC
+  	help
+  	  Enable NAPI
+  	  
+config MACH_KS8695_VSOPENRISC_NET_MULTICAST_WORKAROUND
+	bool "Enable Multicast Workaround"
+	depends on MACH_KS8695_VSOPENRISC
+	help
+	  Receive all multicast if specific multicast is requested.
+
+
+
+
 config KS8842
 	tristate "Micrel KSZ8841/42 with generic bus interface"
 	depends on HAS_IOMEM && DMA_ENGINE

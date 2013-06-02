@@ -17,6 +17,11 @@
 #include <linux/i2c-algo-pca.h>
 #include <linux/semaphore.h>
 //#include <linux/i2c-pca-platform.h>
+#include <linux/ata_platform.h>
+
+#include <linux/i2c.h>
+#include <linux/i2c-algo-pca.h>
+#include <linux/i2c-pca-platform.h>
 
 #include <asm/mach-types.h>
 
@@ -28,10 +33,48 @@
 #include <mach/hardware.h>
 #include <mach/devices.h>
 #include <mach/regs-mem.h>
+#include <mach/regs-irq.h>
 
 #include <mach/vsopenrisc.h>
 
 #include "generic.h"
+
+/*****************************************************************************
+ * IDE
+ ****************************************************************************/
+static struct resource ide_resources[] = {
+	[0] = {
+		 .start	= VSOPENRISC_EPLD_IDE_DATA,
+		 .end	= VSOPENRISC_EPLD_IDE_DATA + 0x400 - 1,
+		 .flags	= IORESOURCE_MEM | IORESOURCE_MEM_8BIT,
+   	},
+	[1] = {
+		 .start	= VSOPENRISC_EPLD_IDE_CTRL,
+		 .end	= VSOPENRISC_EPLD_IDE_CTRL + 0x100 - 1,
+		 .flags	= IORESOURCE_MEM | IORESOURCE_MEM_8BIT,
+   	},
+	[2] = {
+		.start	= KS8695_INTEPLD_IDE,
+		.end	= 0,
+		.flags	= IORESOURCE_IRQ | IRQF_SHARED,
+	},
+};
+static struct pata_platform_info __initdata ide_data = {
+	.ioport_shift = 2,
+	.irq_flags = IRQF_SHARED,
+};
+
+static struct platform_device vsopenrisc_ide_device = {
+	.name		= "pata_platform",
+	.id		= -1,
+	.dev		= {
+			    .platform_data	= &ide_data,
+			},
+	.resource	= ide_resources,
+	.num_resources	= ARRAY_SIZE(ide_resources),
+};
+
+
 
 
 /*****************************************************************************
@@ -40,17 +83,17 @@
 static struct i2c_board_info __initdata vsopenrisc_i2c_rtc = {
 		I2C_BOARD_INFO("ds1337", 0x68),
 };
-/*static struct i2c_pca9564_pf_platform_data  __initdata pca_data ={
+static struct i2c_pca9564_pf_platform_data  __initdata pca_data ={
 	    .gpio = -1,
 	    .i2c_clock_speed = I2C_PCA_CON_59kHz,
-	    .timeout = 1,
+	    .timeout = HZ,
 };
-*/
+
 static struct resource pca_resources[] = {
 	[0] = {
 		 .start	= VSOPENRISC_PA_I2C_BASE,
 		 .end	= VSOPENRISC_PA_I2C_BASE + 0x400 - 1,
-		 .flags	= IORESOURCE_MEM | IORESOURCE_MEM_8BIT,
+		 .flags	= IORESOURCE_MEM | IORESOURCE_MEM_32BIT,
    	},
 	[1] = {
 		.start	= 0,
@@ -58,7 +101,7 @@ static struct resource pca_resources[] = {
 		.flags	= IORESOURCE_IRQ,
 	},
 };
-/*
+
 static struct platform_device vsopenrisc_pca_device = {
 	.name		= "i2c-pca-platform",
 	.id		= -1,
@@ -68,7 +111,6 @@ static struct platform_device vsopenrisc_pca_device = {
 	.resource	= pca_resources,
 	.num_resources	= ARRAY_SIZE(pca_resources),
 };
-*/
 
 static struct platform_device gpio_vsopenrisc_device = {
 	.name		= "gpio_vsopenrisc",
@@ -186,10 +228,16 @@ static void __init vsopenrisc_init(void)
 	/* Add devices */
 	ks8695_add_device_wan();	/* eth0 = WAN */
 	ks8695_add_device_lan();	/* eth1 = LAN */
-//	ks8695_add_device_hpna();	/* eth2 = HPNA */
 
-//	i2c_register_board_info(0, &vsopenrisc_i2c_rtc, 1);
-//	platform_device_register(&vsopenrisc_pca_device);
+	/* add I2C controller and RTC */
+	i2c_register_board_info(0, &vsopenrisc_i2c_rtc, 1);
+	platform_device_register(&vsopenrisc_pca_device);
+
+	/* add IDE */
+	platform_device_register(&vsopenrisc_ide_device);
+
+
+
 	ks8695_add_device_gpio_vsopenrisc();
 }
 

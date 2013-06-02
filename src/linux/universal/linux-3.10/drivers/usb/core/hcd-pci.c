@@ -243,7 +243,12 @@ int usb_hcd_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 			hcd->rsrc_len = pci_resource_len(dev, region);
 			if (request_region(hcd->rsrc_start, hcd->rsrc_len,
 					driver->description))
+			{
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
+				hcd->rsrc_start = ioremap(hcd->rsrc_start, hcd->rsrc_len);
+#endif
 				break;
+			}
 		}
 		if (region == PCI_ROM_RESOURCE) {
 			dev_dbg(&dev->dev, "no i/o regions available\n");
@@ -287,8 +292,12 @@ unmap_registers:
 		iounmap(hcd->regs);
 release_mem_region:
 		release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
-	} else
+	} else{
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
+		iounmap(hcd->rsrc_start);
+#endif
 		release_region(hcd->rsrc_start, hcd->rsrc_len);
+	}
 put_hcd:
 	usb_put_hcd(hcd);
 disable_pci:
