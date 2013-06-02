@@ -65,7 +65,7 @@
 </div>
 	
 <script>
-//<![CDATA
+//<![CDATA[
 	show_layer_ext(document.setup.wan_vdsl, 'pppoe_advanced', <% else_selmatch("pppoeadv", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.wan_vdsl, 'idvlan8', <% else_selmatch("wan_vdsl", "1", "1", "0"); %> == 1);
 //]]>
