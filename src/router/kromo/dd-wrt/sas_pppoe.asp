@@ -29,7 +29,7 @@
 	</div>
 </div>
 <script>
-//<![CDATA
+//<![CDATA[
 	show_layer_ext(document.setupassistant.wan_vdsl, 'idvlan8', <% sas_nvram_else_match("wan_vdsl", "1", "1", "0"); %> == 1);
 //]]>
 </script>
