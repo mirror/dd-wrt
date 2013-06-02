@@ -7,7 +7,7 @@ SSL_DEP=polarssl
 SSL_ADDOPT=--with-pkcs11-helper-headers=$(TOP)/pkcs11-helper/include \
 	   --with-pkcs11-helper-lib=$(TOP)/pkcs11-helper/lib/.libs \
            POLARSSL_CFLAGS="-I$(SSLPATH)/include"  \
-           POLARSSL_LIBS="-L$(SSL_LIB_PATH)"
+           POLARSSL_LIBS="-L$(SSL_LIB_PATH) -lpolarssl"
 else
 OVPN=openvpn
 SSLPATH=$(TOP)/openssl
