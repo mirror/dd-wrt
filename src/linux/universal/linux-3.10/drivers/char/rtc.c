@@ -102,7 +102,7 @@ static int rtc_irq;
 #endif
 
 #ifdef RTC_IRQ
-#ifdef CONFIG_ARCH_KS8695_VSOPENRISC
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
 static int rtc_has_irq = 0;
 #else
 static int rtc_has_irq = 1;

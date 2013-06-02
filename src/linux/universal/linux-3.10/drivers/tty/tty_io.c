@@ -1942,7 +1942,7 @@ static struct tty_driver *tty_lookup_driver(dev_t device, struct file *filp,
 			if (driver) {
 				/* Don't let /dev/console block */
 				filp->f_flags |= O_NONBLOCK;
-#ifdef CONFIG_ARCH_KS8695_VSOPENRISC
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
 				*noctty = 0;
 #else
 				*noctty = 1;

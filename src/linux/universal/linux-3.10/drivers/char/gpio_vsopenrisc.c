@@ -6,7 +6,7 @@
 #include <linux/timer.h>
 #include <linux/delay.h>
 #include <linux/miscdevice.h>
-#include <linux/vsopenrisc.h>
+#include <mach/vsopenrisc.h>
 #include <linux/proc_fs.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -15,9 +15,9 @@
 #include <linux/interrupt.h>
 #include <linux/kthread.h>
 #include <linux/delay.h>
-#include <asm/semaphore.h>
-#include <asm/arch/regs-mem.h>
-#include <asm/arch/regs-irq.h>
+#include <linux/semaphore.h>
+#include <mach/regs-mem.h>
+#include <mach/regs-irq.h>
 
 #if LINUX_VERSION_CODE < 0x020300
 #include <linux/malloc.h>
@@ -77,14 +77,17 @@ struct proc_dir_entry *proc_init(char *name, read_proc_t *read_proc,
 
 /****************************************************************************/
 
-static int  gpio_ioctl(struct inode * inode, struct file * file,
-								unsigned int cmd, unsigned long arg);
+
+static long
+gpio_ioctl(struct file * file, unsigned int cmd,
+	   unsigned long arg);
+
 unsigned int gpio_poll(struct file *filp, poll_table *wait);
 /****************************************************************************/
 
 
-struct file_operations gpio_fops = {
-	ioctl: gpio_ioctl,	// gpio_ioctl
+static struct file_operations gpio_fops = {
+	unlocked_ioctl: gpio_ioctl,	// gpio_ioctl
 	poll: gpio_poll,	// gpio_poll 
 };
 
@@ -92,7 +95,7 @@ struct file_operations gpio_fops = {
 wait_queue_head_t gpio_queue; // poll wait queue
 int poll_flag = 0;	      // interrupt occurrence flag
 
-#include <asm/hardware.h>
+#include <mach/hardware.h>
 #include <asm/io.h>
 
 #define GPIO_DATA_INIT		(BTN_RST_MASK|LED_POWER_MASK|LED_BTN_WLAN_MASK)	// reset high & power led on & blue led on
@@ -144,6 +147,8 @@ static unsigned long gpio_last_changed = 0;
 						 	((v & LED_GREEN_MASK)?LED_GREEN:0x00) |\
 						 	((v & LED_BTN_WLAN_MASK)?0x00:LED_BTN_WLAN))
 
+#define VSOPENRISC_GPIO_MAJOR   	125
+
 #define DO_RESET() \
 	do { GPIO_MODE |= BTN_RST_MASK; \
 		GPIO_DATA &= ~BTN_RST_MASK; \
@@ -176,12 +181,13 @@ gpio_set(unsigned long mask, unsigned long value)
 
 	mask &= GPIO_OUTPUTS;
 	
-	save_flags(flags); cli();
+	local_save_flags(flags); 
+	local_irq_disable();
 	val = GPIO_DATA;
 	val &= ~mask;
 	val |= (value & mask);
 	GPIO_DATA = val;
-	restore_flags(flags);
+	local_irq_restore(flags);
 }
 unsigned long
 gpio_get(void)
@@ -219,12 +225,13 @@ gpio_ext_set(unsigned long mask, unsigned long value)
 	unsigned long flags;
 	unsigned long val;
 
-	save_flags(flags); cli();
+	local_save_flags(flags); 
+	local_irq_disable();
 	val = GPIO_EXT_DATA;
 	val &= ~mask;
 	val |= (value & mask);
 	GPIO_EXT_DATA = val;
-	restore_flags(flags);
+	local_irq_restore(flags);
 }
 
 static unsigned long
@@ -242,12 +249,13 @@ gpio_ext_set_mode(unsigned long mask, unsigned long value)
 	unsigned long flags;
 	unsigned long val;
 
-	save_flags(flags); cli();
+	local_save_flags(flags); 
+	local_irq_disable();
 	val = GPIO_EXT_MODE;
 	val &= ~mask;
 	val |= (value & mask);
 	GPIO_EXT_MODE = val;
-	restore_flags(flags);
+	local_irq_restore(flags);
 }
 	
 static unsigned long
@@ -265,12 +273,13 @@ gpio_ext_set_irqmask(unsigned long mask, unsigned long value)
 	unsigned long flags;
 	unsigned long val;
 
-	save_flags(flags); cli();
+	local_save_flags(flags); 
+	local_irq_disable();
 	val = GPIO_EXT_IRQMASK;
 	val &= ~mask;
 	val |= (value & mask);
 	GPIO_EXT_IRQMASK = val;
-	restore_flags(flags);
+	local_irq_restore(flags);
 }
 	
 static unsigned long
@@ -298,12 +307,10 @@ gpio_ext_get_change(void)
 	return value;
 }
 
-static int
-gpio_ioctl(
-	struct inode * inode,
-	struct file * file,
-	unsigned int cmd,
-	unsigned long arg)
+static long
+gpio_ioctl(struct file * file, unsigned int cmd,
+	   unsigned long arg)
+
 {
 	unsigned long val;
 
@@ -887,7 +894,7 @@ struct proc_dir_entry *proc_init(char *name, read_proc_t *read_proc,
 	{
 		proc_entry->read_proc = read_proc;
 		proc_entry->write_proc = write_proc;
-		proc_entry->owner = THIS_MODULE;
+//		proc_entry->owner = THIS_MODULE;
 		proc_entry->mode = S_IFREG | S_IRUGO;
 		proc_entry->uid = 0;
 		proc_entry->gid = 0;
@@ -978,7 +985,7 @@ static struct platform_driver gpio_vsopenrisc_driver = {
 	.resume		= gpio_vsopenrisc_resume,
 	.driver		= {
 		.name	= "gpio_vsopenrisc",
-		.owner	= THIS_MODULE,
+//		.owner	= THIS_MODULE,
 	},
 };
 

@@ -21,6 +21,46 @@
 #include <linux/platform_device.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
+#include <mach/vsopenrisc.h>
+
+static void vsopenrisc_set_pio(ide_hwif_t *hwif, ide_drive_t *drive)
+{
+	unsigned long flags, addr;
+
+	spin_lock_irqsave(&hwif->lock, flags);
+
+	// FIXME: we should identify the supported PIO from the devices
+	// and setting the EPLD to the minimum value of them both.
+
+	outb(0x03, hwif->io_ports.data_addr + 4/*IDE_FEATURE_REG*/);
+	if ((drive->pio_mode - XFER_PIO_0) >= 3)
+		outb(0x0b, hwif->io_ports.data_addr + (2*4)/*IDE_NSECTOR_REG*/);
+	else
+		outb(0x08, hwif->io_ports.data_addr + (2*4)/*IDE_NSECTOR_REG*/);
+	// FIXME: didn't find a field, which shows the state of the device
+	if (drive->name[2] == 'a')	// master
+		outb(0x00, hwif->io_ports.data_addr + (6*4)/*IDE_SELECT_REG*/);
+	else
+		outb(0x10, hwif->io_ports.data_addr + (6*4)/*IDE_SELECT_REG*/);
+	outb(0xef, hwif->io_ports.data_addr + (7*4)/*IDE_COMMAND_REG*/);
+
+	// configure the "controller" (EPLD)
+	addr = VSOPENRISC_VA_EPLD_IDE_BASE;
+
+	if ((drive->pio_mode - XFER_PIO_0) >= 3)
+		outb(0x03, addr);
+	else
+		outb(0x00, addr);
+
+	spin_unlock_irqrestore(&hwif->lock, flags);
+}
+
+static const struct ide_port_ops vsopenrisc_port_ops = {
+	.set_pio_mode		= vsopenrisc_set_pio,
+};
+
+#endif
 
 static void plat_ide_setup_ports(struct ide_hw *hw, void __iomem *base,
 				 void __iomem *ctrl,
@@ -42,8 +82,14 @@ static void plat_ide_setup_ports(struct ide_hw *hw, void __iomem *base,
 }
 
 static const struct ide_port_info platform_ide_port_info = {
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
+	.port_ops		= &vsopenrisc_port_ops,
+#endif
 	.host_flags		= IDE_HFLAG_NO_DMA,
 	.chipset		= ide_generic,
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
+	.pio_mask		= ATA_PIO4,
+#endif
 };
 
 static int plat_ide_probe(struct platform_device *pdev)

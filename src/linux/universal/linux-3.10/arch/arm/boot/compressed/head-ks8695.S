@@ -6,8 +6,8 @@
  */
 
 #include <asm/mach-types.h>
-#include <asm/arch/regs-mem.h>
-#include <asm/arch/hardware.h>
+#include <mach/regs-mem.h>
+#include <mach/hardware.h>
 
 #ifndef CONFIG_ARCH_KS8695
 #error What am I doing here...
@@ -17,7 +17,7 @@
 
 __KS8695_start:
 
-#ifdef CONFIG_ARCH_KS8695_VSOPENRISC
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
 
         mov r7, #MACH_TYPE_KS8695 @ normaly r1, but it was saved in r7 from head.S
                                   @ we override this, because our bootloader set it to a wrong value
