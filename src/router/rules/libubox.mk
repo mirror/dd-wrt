@@ -11,7 +11,7 @@ LDFLAGS+=-L$(TOP)/_staging/usr/lib
 libubox-configure: 
 	-$(call CMakeConfigure,$(PKG_BUILD_DIR_LIBUBOX),$(STAGING_DIR),$(CMAKE_OPTIONS) -DBUILD_LUA=OFF CMAKE_C_COMPILER=$(ARCH)-linux-uclibc-gcc)
 
-libubox: libubox-configure
+libubox:
 	$(MAKE) -C libubox
 	-mkdir -p $(TOP)/_staging
 	-mkdir -p $(STAGING_DIR)/usr/include/libubox
