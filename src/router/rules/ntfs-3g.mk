@@ -5,6 +5,7 @@ ntfs-3g:
 	CPPFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CXXFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	$(MAKE) -C ntfs-3g/fuse
 	$(MAKE) -C ntfs-3g all
 
 ntfs-3g-install:
@@ -14,6 +15,7 @@ ntfs-3g-install:
 #	$(STRIP) $(INSTALLDIR)/ntfs-3g/usr/sbin/ntfs-3g.probe
 
 ntfs-3g-clean:
+	$(MAKE) -C ntfs-3g/fuse clean
 	$(MAKE) -C ntfs-3g clean
 
 ntfs-3g-configure:
