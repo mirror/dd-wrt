@@ -19,8 +19,8 @@ mc-configure: ncurses
 		LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -lncurses" \
 		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
 		GLIB_LIBS="-L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0" \
-		GMODULE_CFLAGS="-pthread -I$(TOP)/glib20/libglib/gmodule " \
-		GMODULE_LIBS="-pthread -L$(TOP)/glib20/libglib/gmodule/.libs -lrt -lglib-2.0" \
+		GMODULE_CFLAGS="-pthread -I$(TOP)/glib20/libglib/gmodule -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
+		GMODULE_LIBS="-pthread -L$(TOP)/glib20/libglib/gmodule/.libs -L$(TOP)/glib20/libglib/glib/.libs -lrt -lglib-2.0" \
 	--with-included-gettext \
 	--with-ncurses \
 	--without-sco \
