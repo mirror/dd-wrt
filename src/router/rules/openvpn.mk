@@ -5,21 +5,26 @@ SSL_LIB_PATH=$(SSLPATH)/library
 SSL_TYPE=polarssl
 SSL_DEP=polarssl
 SSL_ADDOPT=--with-pkcs11-helper-headers=$(TOP)/pkcs11-helper/include \
-	   --with-pkcs11-helper-lib=$(TOP)/pkcs11-helper/lib/.libs
+	   --with-pkcs11-helper-lib=$(TOP)/pkcs11-helper/lib/.libs \
+           POLARSSL_CFLAGS="-I$(SSLPATH)/include"  \
+           POLARSSL_LIBS="-L$(SSL_LIB_PATH) -lpolarssl"
 else
 OVPN=openvpn
 SSLPATH=$(TOP)/openssl
-SSL_LIB_PATH=$(TOP)/openssl
+SSL_LIB_PATH=$(SSLPATH)
 SSL_TYPE=openssl
 SSL_DEP=openssl
+SSL_ADDOPT=OPENSSL_CRYPTO_CFLAGS="-I$(SSLPATH)/include" \
+	OPENSSL_SSL_CFLAGS="-I$(SSLPATH)/include" \
+	OPENSSL_CRYPTO_LIBS="-L$(SSL_LIB_PATH) -lcrypto" \
+	OPENSSL_SSL_LIBS="-L$(SSL_LIB_PATH) -lssl"
 endif
 
 
 
 CONFIGURE_ARGS_OVPN += \
 	--host=$(ARCH)-linux \
-	CPPFLAGS="-I$(TOP)/lzo/include -I$(SSLPATH)/include -L$(TOP)/lzo -L$(SSL_LIB_PATH) -L$(TOP)/lzo/src/.libs" \
-	--enable-pthread \
+	CPPFLAGS="-I$(TOP)/lzo/include -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs" \
 	--disable-plugins \
 	--enable-debug \
 	--enable-password-save \
@@ -27,12 +32,10 @@ CONFIGURE_ARGS_OVPN += \
 	--enable-lzo \
 	--enable-server \
 	--enable-multihome \
-	--with-ssl-headers=$(SSLPATH)/include \
-	--with-ssl-lib=$(SSL_LIB_PATH) \
-	--with-ssl-type=$(SSL_TYPE) \
+	--with-crypto-library=$(SSL_TYPE) \
 	$(SSL_ADDOPT) \
 	CFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl" \
 	ac_cv_func_epoll_create=yes
 
 openvpn-conf-prep:
