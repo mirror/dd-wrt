@@ -23,6 +23,7 @@
 #include <linux/io.h>
 #ifdef CONFIG_MACH_KS8695_VSOPENRISC
 #include <mach/vsopenrisc.h>
+#include <mach/regs-mem.h>
 
 static void vsopenrisc_set_pio(ide_hwif_t *hwif, ide_drive_t *drive)
 {
