@@ -34,6 +34,7 @@
 #include <mach/devices.h>
 #include <mach/regs-mem.h>
 #include <mach/regs-irq.h>
+#include <mach/gpio-ks8695.h>
 
 #include <mach/vsopenrisc.h>
 
@@ -130,7 +131,6 @@ static int micrel_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 }
 
 static struct ks8695_pci_cfg __initdata micrel_pci = {
-	//.mode		= KS8695_MODE_MINIPCI,
 	.mode		= KS8695_MODE_PCI,
 	.map_irq	= micrel_pci_map_irq,
 };
@@ -201,6 +201,28 @@ static int __init vssysid(char *str)
 }
 __setup("vssysid=", vssysid);
 
+
+#define VS_WDT_TIME 171
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC_WDT_ENABLE
+static void enable_wdt(int time)
+{
+	unsigned long tmcon;
+	unsigned long tval = time * CLOCK_TICK_RATE;
+
+	/* disable timer0 */
+	tmcon = __raw_readl(KS8695_TMR_VA + KS8695_TMCON);
+	__raw_writel(tmcon & ~TMCON_T0EN, KS8695_TMR_VA + KS8695_TMCON);
+
+	/* program timer0 */
+	__raw_writel(tval | T0TC_WATCHDOG, KS8695_TMR_VA + KS8695_T0TC);
+
+	/* re-enable timer0 */
+	tmcon = __raw_readl(KS8695_TMR_VA + KS8695_TMCON);
+	__raw_writel(tmcon | TMCON_T0EN, KS8695_TMR_VA + KS8695_TMCON);
+
+}
+#endif
+
 static void __init vsopenrisc_init(void)
 {
 	switch(vs_sysid)
@@ -217,7 +239,19 @@ static void __init vsopenrisc_init(void)
 
 	sema_init(&ser_can_sync_sem,1);
 
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC_WDT_ENABLE
+	printk(KERN_INFO "Starting watchdog timer (%d seconds)\n", VS_WDT_TIME);
+	enable_wdt(VS_WDT_TIME);
+#endif
+
+	/* setup interrupt sources attached to GPIO controller */
+	ks8695_gpio_interrupt(KS8695_GPIO_1, IRQ_TYPE_LEVEL_LOW);
+	ks8695_gpio_interrupt(KS8695_GPIO_2, IRQ_TYPE_LEVEL_LOW);
+	ks8695_gpio_interrupt(KS8695_GPIO_3, IRQ_TYPE_LEVEL_HIGH);
+
 #ifdef CONFIG_PCI
+	/* activating the EXT0 interrupt */
+	ks8695_gpio_interrupt(KS8695_GPIO_0, IRQ_TYPE_LEVEL_LOW);
 	ks8695_init_pci(&micrel_pci);
 #endif
 
