@@ -16,18 +16,56 @@ include $(TOP)/.config
 #ifeq ($(CONFIG_BUFFALO),y)
 #CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/
 #else
-CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
+CFLAGS	+= -I. -I$(TOP)/shared -I$(LINUXDIR)/brcm/include  -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall -I$(SRCBASE)/ -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 #endif
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -DBCMWPA2 -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS	+= -s -DBCMWPA2 -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS	+= -L$(TOP)/nvram -lnvram -lwireless -L$(TOP)/libutils -lutils -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DBUFFALO_COUNTRY="\"$(CONFIG_COUNTRY)\""
 endif
+CFLAGS += $(MIPS16_OPT)
+LDFLAGS += $(MIPS16_OPT)
+ifeq ($(CONFIG_TIEXTRA1),y)
+ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+ADDLIBS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
+endif
+ifeq ($(CONFIG_TIEXTRA2),y)
+ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+ADDLIBS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
+endif
+ifeq ($(CONFIG_SAMBA3),y)
+ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+ADDLIBS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
+endif
+ifeq ($(CONFIG_MINIDLNA),y)
+ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+ADDLIBS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
+endif
+ifeq ($(CONFIG_FTP),y)
+ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
+ifeq ($(ARCHITECTURE),openrisc)
+ADDLIBS +=-L$(TOP)/jansson/src/.libs -ljansson
+endif
+endif
+
+
+
 ifneq ($(CONFIG_BCM5354),y)
 CFLAGS += -DHAVE_VINT
 endif
 
+ifeq ($(CONFIG_80211AC),y)
+OBJS := wlconf_3.x.o 
+else
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
 OBJS := wlconf.o 
@@ -37,6 +75,8 @@ OBJS := wlconf.o
 endif
 else
 OBJS := 
+endif
+
 endif
 all: wlconf
 
@@ -54,7 +94,7 @@ endif
 
 wlconf: $(OBJS)
 ifeq ($(CONFIG_MSSID),y)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) $(ADDLIBS)
 else
 	@true
 endif
