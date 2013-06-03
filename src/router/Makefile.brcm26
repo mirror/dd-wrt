@@ -222,6 +222,7 @@ distclean mrproper: $(obj-distclean) clean_target
 	$(MAKE) -C $(LINUXDIR)/arch/mips/bcm947xx/compressed clean
 	#rm -f $(PLATFORMDIR)/zImage $(PLATFORMDIR)/linux.bin
 	$(MAKE) -C config clean
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0	#ticket 2926
 	rm -f .config $(LINUXDIR)/.config
 	rm -f .config.old .config.cmd
 
