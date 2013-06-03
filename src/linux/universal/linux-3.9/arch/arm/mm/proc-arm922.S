@@ -95,11 +95,11 @@ ENTRY(cpu_arm922_reset)
 #ifdef CONFIG_MMU
 	mcr	p15, 0, ip, c8, c7, 0		@ invalidate I & D TLBs
 #endif
+	mov	pc, r0
 	mrc	p15, 0, ip, c1, c0, 0		@ ctrl register
 	bic	ip, ip, #0x000f			@ ............wcam
 	bic	ip, ip, #0x1100			@ ...i...s........
 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
-	mov	pc, r0
 ENDPROC(cpu_arm922_reset)
 	.popsection
 

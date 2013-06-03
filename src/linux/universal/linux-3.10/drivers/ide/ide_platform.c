@@ -145,8 +145,10 @@ static int plat_ide_probe(struct platform_device *pdev)
 	if (res_irq->flags & IORESOURCE_IRQ_SHAREABLE)
 		d.irq_flags |= IRQF_SHARED;
 
+#ifndef CONFIG_MACH_KS8695_VSOPENRISC
 	if (mmio)
 		d.host_flags |= IDE_HFLAG_MMIO;
+#endif
 
 	ret = ide_host_add(&d, hws, 1, &host);
 	if (ret)
