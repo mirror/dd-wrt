@@ -14,9 +14,7 @@
 include $(TOP)/.config
 
 #ifeq ($(CONFIG_BUFFALO),y)
-#CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/
 #else
-CFLAGS	+= -I. -I$(TOP)/shared -I$(LINUXDIR)/brcm/include  -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall -I$(SRCBASE)/ -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 #endif
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s -DBCMWPA2 -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
@@ -65,7 +63,11 @@ endif
 
 ifeq ($(CONFIG_80211AC),y)
 OBJS := wlconf_3.x.o 
+CFLAGS +=  -I$(LINUXDIR)/brcm/$(ARCH)/include  -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 else
+CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
+CFLAGS	+= -I. -I$(TOP)/shared -I$(LINUXDIR)/brcm/include -Wall -I$(SRCBASE)/ -I$(LINUXDIR)/brcm/shared/bcmwifi/include
+
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
 OBJS := wlconf.o 
