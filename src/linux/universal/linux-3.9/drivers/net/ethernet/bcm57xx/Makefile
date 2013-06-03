@@ -3,11 +3,26 @@
 #
 # $Id: Makefile,v 1.3 2008-05-02 22:49:54 $
 #
+ifeq ($(CONFIG_MIPS),y)
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+
+B57SRCDIR := ../../../../brcm/mipsel/bcm57xx
+SHAREDSRCDIR := ../../../../brcm/mipsel/shared
+
+else
+EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+
+B57SRCDIR := ../../../../brcm/arm/bcm57xx
+SHAREDSRCDIR := ../../../../brcm/arm/shared
+endif
+
+
+
 EXTRA_CFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 EXTRA_AFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 
-B57SRCDIR := ../../../../brcm/bcm57xx
-SHAREDSRCDIR := ../../../../brcm/shared
 
 obj-$(CONFIG_BCM57XX) := bcm57xx.o
 
