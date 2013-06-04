@@ -157,6 +157,16 @@ void main_config(void)
 {
 	char *chillinet;
 	int log_level = 0;
+	
+	if ((nvram_match("usb_enable", "1")
+		&& nvram_match("usb_storage", "1")
+		&& nvram_match("usb_automnt", "1")
+		&& nvram_match("usb_mntpoint", "jffs"))
+	    || (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1")))
+			jffs = 1;
+	
 	FILE *fp;
 	log_level = atoi(nvram_safe_get("log_level"));
 	mkdir("/tmp/chilli", 0700);
@@ -265,13 +275,7 @@ void main_config(void)
 	chmod("/tmp/chilli/ip-down.sh", 0700);
 
 	//  use usb/jffs for connection scripts if available
-	if ((nvram_match("usb_enable", "1")
-	     && nvram_match("usb_storage", "1")
-	     && nvram_match("usb_automnt", "1")
-	     && nvram_match("usb_mntpoint", "jffs"))
-	    || (nvram_match("enable_jffs2", "1")
-		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1"))) {
+	if (jffs == 1) {
 		mkdir("/jffs/etc", 0700);
 		mkdir("/jffs/etc/chilli", 0700);
 		if (!(fp = fopen("/jffs/etc/chilli/con-up.sh", "r"))) {	// dont overwrite
@@ -335,13 +339,7 @@ void chilli_config(void)
 	fprintf(fp, "radiussecret %s\n", nvram_get("chilli_pass"));
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("chilli_interface"));
 	fprintf(fp, "uamserver %s\n", nvram_get("chilli_url"));
-	if ((nvram_match("usb_enable", "1")
-	     && nvram_match("usb_storage", "1")
-	     && nvram_match("usb_automnt", "1")
-	     && nvram_match("usb_mntpoint", "jffs"))
-	    || (nvram_match("enable_jffs2", "1")
-		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1"))) {
+	if (jffs == 1) {
 		fprintf(fp, "conup /jffs/etc/chilli/con-up.sh\n");
 		fprintf(fp, "condown /jffs/etc/chilli/con-down.sh\n");
 	}
@@ -501,13 +499,7 @@ void hotspotsys_config(void)
 		perror("/tmp/chilli/hotss.conf");
 		return;
 	}
-	if ((nvram_match("usb_enable", "1")
-	     && nvram_match("usb_storage", "1")
-	     && nvram_match("usb_automnt", "1")
-	     && nvram_match("usb_mntpoint", "jffs"))
-	    || (nvram_match("enable_jffs2", "1")
-		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1"))) {
+	if (jffs == 1) {
 		fprintf(fp, "conup /jffs/etc/chilli/con-up.sh\n");
 		fprintf(fp, "condown /jffs/etc/chilli/con-down.sh\n");
 	}
@@ -584,13 +576,9 @@ void hotspotsys_config(void)
 	fprintf(fp, "uamallowed 88.221.136.146,195.228.254.149,195.228.254.152,203.211.140.157,203.211.150.204\n");
 	fprintf(fp, "uamallowed 82.199.90.0/24,91.212.42.0/24\n");
 #ifdef HAVE_COOVA_CHILLI
-	fprintf(fp, "uamdomain paypal.com\n");
-	fprintf(fp, "uamdomain paypalobjects.com\n");
-	fprintf(fp, "uamdomain paypal-metrics.com\n");
-	fprintf(fp, "uamdomain mediaplex.com\n");
-	fprintf(fp, "uamdomain worldpay.com\n");
-	fprintf(fp, "uamdomain rbsworldpay.com\n");
-	fprintf(fp, "uamdomain hotspotsystem.com\n");
+	fprintf(fp, "uamdomain paypal.com,paypalobjects.com,paypal-metrics.com\n");
+	fprintf(fp, "uamdomain worldpay.com,rbsworldpay.com\n");
+	fprintf(fp, "uamdomain mediaplex.com,hotspotsystem.com\n");
 #else
 	fprintf(fp, "uamallowed www.paypal.com,www.paypalobjects.com\n");
 	fprintf(fp, "uamallowed www.worldpay.com,select.worldpay.com,secure.ims.worldpay.com,www.rbsworldpay.com,secure.wp3.rbsworldpay.com\n");
