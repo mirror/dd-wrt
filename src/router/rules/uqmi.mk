@@ -1,21 +1,25 @@
-PKG_BUILD_DIR_UQMI=$(TOP)/uqmi
-STAGING_DIR=$(TOP)/_staging
 PKG_INSTALL:=1
-CMAKE_C_COMPILER:=$(ARCH)-linux-uclibc-gcc
 
 MAKE_FLAGS+=VERBOSE=0
-EXTRA_CFLAGS:=-I$(TOP)/_staging/usr/include -L$(TOP)/_staging/usr/lib -DNEED_PRINTF
-LDFLAGS+=-L$(TOP)/_staging/usr/lib
 
+UQMI_PKG_BUILD_DIR=$(TOP)/uqmi
+UQMI_CMAKE_OPTIONS=
+UQMI_STAGING_DIR=$(TOP)/_staging
+UQMI_EXTRA_CFLAGS=-I$(TOP)/_staging/usr/include -DNEED_PRINTF
+UQMI_EXTRA_LDFLAGS=-L$(TOP)/_staging/usr/lib
+
+UQMI_CMAKE_OPTIONS=
 
 uqmi-configure: 
-	$(call CMakeConfigure,$(PKG_BUILD_DIR_UQMI),$(STAGING_DIR),$(CMAKE_OPTIONS))
+	$(call CMakeClean,$(UQMI_PKG_BUILD_DIR))
+	$(call CMakeConfigure,$(UQMI_PKG_BUILD_DIR),$(UQMI_STAGING_DIR),$(UQMI_CMAKE_OPTIONS),$(UQMI_EXTRA_CFLAGS),$(UQMI_EXTRA_LDFLAGS)) 
 
-uqmi: 
+uqmi: uqmi-configure
 	$(MAKE) -C uqmi
 
 uqmi-install:
 	install -D uqmi/uqmi $(INSTALLDIR)/uqmi/usr/sbin/uqmi
 
 uqmi-clean:
-	$(MAKE) -C uqmi
+	if [ -e "$(UQMI_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C uqmi clean ; fi
+	$(call CMakeClean,$(UQMI_PKG_BUILD_DIR))
