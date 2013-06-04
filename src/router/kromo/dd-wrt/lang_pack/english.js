@@ -532,7 +532,7 @@ ddns.statu="DDNS Status";
 ddns.system="DYNDNS Server";
 ddns.options="Additional DDNS Options";
 ddns.forceupd="Force Update Interval";
-ddns.wanip="Use external ip check";
+ddns.wanip="Do not use external ip check";
 
 var ddnsm=new Object();
 ddnsm.all_closed="DDNS server is currently closed";
