@@ -156,7 +156,7 @@ void stop_chilli(void)
 void main_config(void)
 {
 	char *chillinet;
-	int log_level = 0;
+	int log_level = 0, jffs = 0;
 	
 	if ((nvram_match("usb_enable", "1")
 		&& nvram_match("usb_storage", "1")
