@@ -37,6 +37,7 @@
 
 void start_openvpnserver(void)
 {
+	int jffs = 0;
 
 	if (nvram_invmatch("openvpn_enable", "1"))
 		return;

@@ -68,9 +68,11 @@ void start_pptpd(void)
 	// Create options file that will be unique to pptpd to avoid interference 
 	// with pppoe and pptp
 	fp = fopen("/tmp/pptpd/options.pptpd", "w");
-	cprintf("adding radius plugin\n");
-	if (nvram_match("pptpd_radius", "1"))
-		fprintf(fp, "plugin radius.so\nplugin radattr.so\n" "radius-config-file /tmp/pptpd/radius/radiusclient.conf\n");
+	if (nvram_match("pptpd_radius", "1")) {
+		cprintf("adding radius plugin\n");
+		fprintf(fp, "plugin radius.so\nplugin radattr.so\n" 
+			"radius-config-file /tmp/pptpd/radius/radiusclient.conf\n");
+	}
 	cprintf("check if wan_wins = zero\n");
 	int nowins = 0;
 
@@ -82,7 +84,9 @@ void start_pptpd(void)
 		nowins = 1;
 
 	cprintf("write config\n");
-	fprintf(fp, "lock\n" "name *\n" "nobsdcomp\n" "nodeflate\n" "auth\n" "refuse-pap\n" "refuse-eap\n" "refuse-chap\n" "refuse-mschap\n" "require-mschap-v2\n");
+	fprintf(fp, "lock\n" "name *\n" "nobsdcomp\n" "nodeflate\n" "auth\n" 
+		"refuse-pap\n" "refuse-eap\n" "refuse-chap\n" "refuse-mschap\n" 
+		"require-mschap-v2\n");
 	if (nvram_match("pptpd_forcemppe", "1"))
 		fprintf(fp, "mppe required,stateless,no40,no56\n");
 	else
@@ -91,7 +95,9 @@ void start_pptpd(void)
 		"debug\n" "logfd 2\n"
 		"ms-ignore-domain\n"
 		"chap-secrets /tmp/pptpd/chap-secrets\n"
-		"ip-up-script /tmp/pptpd/ip-up\n" "ip-down-script /tmp/pptpd/ip-down\n" "proxyarp\n" "ipcp-accept-local\n" "ipcp-accept-remote\n" "lcp-echo-failure 15\n" "lcp-echo-interval 4\n"
+		"ip-up-script /tmp/pptpd/ip-up\n" "ip-down-script /tmp/pptpd/ip-down\n" 
+		"proxyarp\n" "ipcp-accept-local\n" "ipcp-accept-remote\n" 
+		"lcp-echo-failure 15\n" "lcp-echo-interval 4\n"
 //              "lcp-echo-adaptive"     //disable interval
 		"mtu %s\n" "mru %s\n", nvram_safe_get("pptpd_mtu"), nvram_safe_get("pptpd_mru"));
 	if (!nowins) {
@@ -140,38 +146,38 @@ void start_pptpd(void)
 	if (strlen(nvram_safe_get("pptpd_dns2"))) {
 		fprintf(fp, "ms-dns %s\n", nvram_safe_get("pptpd_dns2"));
 	}
-	//      use jffs/usb for con scripts if available
+	//	use jffs/usb for auth scripts if available
 	if (jffs == 1) {	
-		if (strlen(nvram_safe_get("openvpn_ccddef")) > 0) {
-			fprintf(fp, "connect /jffs/etc/pptpd/con.sh\n");
-			fprintf(fp, "disconnect /jffs/etc/pptpd/discon.sh\n");
-			if ((fp = fopen("/jffs/etc/pptpd/con.sh", "r")) == NULL) {
+//		if (strlen(nvram_safe_get("openvpn_ccddef")) > 0) {	//
+			fprintf(fp, "auth-up /jffs/etc/pptpd/auth-up.sh\n");
+			fprintf(fp, "auth-down /jffs/etc/pptpd/auth-down.sh\n");
+			if ((fp = fopen("/jffs/etc/pptpd/auth-up.sh", "r")) == NULL) {
 				fclose(fp);
-				fp = fopen("/jffs/etc/pptpd/con.sh", "w");
+				fp = fopen("/jffs/etc/pptpd/auth-up.sh", "w");
 					fprintf(fp, "#!/bin/sh\n");
 				fclose(fp);
-				chmod("/jffs/etc/pptpd/con.sh", 0700);
+				chmod("/jffs/etc/pptpd/auth-up.sh", 0700);
 				}
-			if ((fp = fopen("/jffs/etc/pptpd/discon.sh", "r")) == NULL) {
+			if ((fp = fopen("/jffs/etc/pptpd/auth-down.sh", "r")) == NULL) {
 				fclose(fp);		
-				fp = fopen("/jffs/etc/pptpd/discon.sh", "w");
+				fp = fopen("/jffs/etc/pptpd/auth-down.sh", "w");
 					fprintf(fp, "#!/bin/sh\n");
 				fclose(fp);
-				chmod("/jffs/etc/pptpd/discon.sh", 0700);
+				chmod("/jffs/etc/pptpd/auth-down.sh", 0700);
 			}
 		}
-	}
+//	}
 	else {
-		fprintf(fp, "connect /tmp/pptpd/con.sh\n");
-		fprintf(fp, "disconnect /tmp/pptpd/discon.sh\n");
-		fp = fopen("/jffs/etc/pptpd/con.sh", "w");
+/*		fprintf(fp, "connect /tmp/pptpd/auth-up.sh\n");
+		fprintf(fp, "disconnect /tmp/pptpd/auth-down.sh\n");
+		fp = fopen("/jffs/etc/pptpd/auth-up.sh", "w");
 			fprintf(fp, "#!/bin/sh\n");
 		fclose(fp);
-		fp = fopen("/jffs/etc/pptpd/discon.sh", "w");
+		fp = fopen("/jffs/etc/pptpd/auth-down.sh", "w");
 			fprintf(fp, "#!/bin/sh\n");
 		fclose(fp);
-		chmod("/tmp/pptpd/con.sh", 0700);
-		chmod("/tmp/pptpd/discon.sh", 0700);
+		chmod("/tmp/pptpd/auth-up.sh", 0700);
+		chmod("/tmp/pptpd/auth-down.sh", 0700);	*/
 		}
 
 	// Following is all crude and need to be revisited once testing confirms
@@ -280,11 +286,12 @@ void stop_pptpd(void)
 	stop_process("pptpd", "pptp server");
 	stop_process("bcrelay", "pptp broadcast relay");
 	unlink("/tmp/pptp_connected");
-	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
-		system("/bin/cp /tmp/pptp_peer.db /jffs/etc/");
+	if (jffs == 1)
+		system("/bin/cp /tmp/pptp_peer.db /jffs/etc/pptpd/");
 #ifdef HAVE_PPTP_ACCEL
 	rmmod("pptp");
 #endif
+	dd_syslog(LOG_INFO, "pptpd : pptp daemon successfully stoped\n");
 	return;
 }
 #endif
