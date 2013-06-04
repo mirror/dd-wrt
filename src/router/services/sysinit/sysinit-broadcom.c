@@ -770,7 +770,7 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
 	case ROUTER_NETGEAR_R6300:
-		if (nvram_get("clkfreq")) //set it only if it doesnt exist
+		if (nvram_get("clkfreq")==NULL) //set it only if it doesnt exist
 			nvram_set("clkfreq","600");
 		nvram_set("vlan1hwname", "et0");
 		nvram_set("vlan2hwname", "et0");
