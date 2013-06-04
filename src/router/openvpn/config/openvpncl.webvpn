@@ -57,10 +57,6 @@
 		</select>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("service.vpn_certtype"); %></div>
-			<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_certtype" <% nvram_checked("openvpncl_certtype","1"); %> />
-		</div>
-		<div class="setting">
 			<div class="label"><% tran("service.vpn_adv"); %></div>
 			<input class="spaceradio" type="radio" name="openvpncl_adv" value="1" <% nvram_checked("openvpncl_adv", "1"); %> onclick="show_layer_ext(this, 'idmtucl', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="openvpncl_adv" value="0" <% nvram_checked("openvpncl_adv", "0"); %> onclick="show_layer_ext(this, 'idmtucl', false)" /><% tran("share.disable"); %>
@@ -120,7 +116,7 @@
 				<input size="5" maxlength="5" class="num" name="openvpncl_mtu" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("openvpncl_mtu"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 1500)");
+				document.write("(" + share.deflt + ": 1400)");
 				//]]>
 				</script></span>
 			</div>
@@ -137,6 +133,10 @@
 				<div class="label"><% tran("service.vpn_mss"); %></div>
 				<input class="spaceradio" type="radio" name="openvpncl_mssfix" value="1" <% nvram_checked("openvpncl_mssfix", "1"); %> /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="openvpncl_mssfix" value="0" <% nvram_checked("openvpncl_mssfix", "0"); %> /><% tran("share.disable"); %>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_certtype"); %></div>
+				<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_certtype" <% nvram_checked("openvpncl_certtype","1"); %> />
 			</div>
 			<div class="setting">		
 				<div class="label"><% tran("service.vpnd_tlsauth"); %></div>
