@@ -1,17 +1,19 @@
-PKG_BUILD_DIR_LIBUBOX=$(TOP)/libubox
 STAGING_DIR=$(TOP)/_staging
 PKG_INSTALL:=1
 
+UBOX_PKG_BUILD_DIR=$(TOP)/libubox
+UBOX_CMAKE_OPTIONS=-DBUILD_LUA=off
+UBOX_STAGING_DIR=$(TOP)/_staging
+UBOX_EXTRA_CFLAGS=-I$(TOP)/_staging/usr/include -g
+UBOX_EXTRA_LDFLAGS=-L$(TOP)/_staging/usr/lib
 
 MAKE_FLAGS+=VERBOSE=0
-EXTRA_CFLAGS:=-I$(TOP)/_staging/usr/include
-LDFLAGS+=-L$(TOP)/_staging/usr/lib
-
 
 libubox-configure: 
-	-$(call CMakeConfigure,$(PKG_BUILD_DIR_LIBUBOX),$(STAGING_DIR),$(CMAKE_OPTIONS) -DBUILD_LUA=OFF CMAKE_C_COMPILER=$(ARCH)-linux-uclibc-gcc)
+	$(call CMakeClean,$(UBOX_PKG_BUILD_DIR))
+	$(call CMakeConfigure,$(UBOX_PKG_BUILD_DIR),$(UBOX_STAGING_DIR),$(UBOX_CMAKE_OPTIONS),$(UBOX_EXTRA_CFLAGS),$(UBOX_EXTRA_LDFLAGS)) 
 
-libubox:
+libubox: libubox-configure 
 	$(MAKE) -C libubox
 	-mkdir -p $(TOP)/_staging
 	-mkdir -p $(STAGING_DIR)/usr/include/libubox
@@ -25,5 +27,5 @@ libubox-install:
 #	install -D libubox/libblobmsg_json.so $(INSTALLDIR)/libubox/usr/lib/libblobmsg_json.so 
 
 libubox-clean:
-	if [ -e "$(PKG_BUILD_DIR_LIBUBOX)/Makefile" ]; then $(MAKE) -C libubox clean ; fi
-	-$(call CMakeClean,$(PKG_BUILD_DIR_LIBUBOX))
+	if [ -e "$(UBOX_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C libubox clean ; fi
+	$(call CMakeClean,$(UBOX_PKG_BUILD_DIR))
