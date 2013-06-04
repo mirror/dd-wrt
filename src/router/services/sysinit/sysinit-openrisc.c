@@ -135,6 +135,8 @@ void start_sysinit(void)
 	/*
 	 * Setup console 
 	 */
+	cprintf("sysinit() load 8250 driver\n");
+	eval("insmod","8250.ko");
 
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
