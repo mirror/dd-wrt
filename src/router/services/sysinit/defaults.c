@@ -1,4 +1,5 @@
 /*
+/*
  * defaults.c
  *
  * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
@@ -1626,7 +1627,7 @@ struct nvram_tuple srouter_defaults[] = {
 	// for dyndns
 	{"ddns_enable", "0", 0},	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit
 					 * 4:no-ip 5:custom 6:3322.org */
-	{"ddns_wan_ip", "1", 0},
+	{"ddns_wan_ip", "0", 0},
 	{"ddns_username", "", 0},
 	{"ddns_passwd", "", 0},
 	{"ddns_hostname", "", 0},
@@ -2561,7 +2562,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpncl_pkcs12", "", 0},
 	{"openvpncl_lzo", "adaptive", 0},
 	{"openvpncl_proto", "udp", 0},
-	{"openvpncl_mtu", "1500", 0},
+	{"openvpncl_mtu", "1400", 0},
 	{"openvpncl_mssfix", "0", 0},
 	{"openvpncl_fragment", "", 0},
 	{"openvpncl_certtype", "0", 0},
@@ -2595,7 +2596,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_pkcs12", "", 0},
 	{"openvpn_lzo", "adaptive", 0},
 	{"openvpn_proto", "udp", 0},
-	{"openvpn_mtu", "1500", 0},
+	{"openvpn_mtu", "1400", 0},
 	{"openvpn_mssfix", "0", 0},
 	{"openvpn_fragment", "", 0},
 	{"openvpn_config", "", 0},

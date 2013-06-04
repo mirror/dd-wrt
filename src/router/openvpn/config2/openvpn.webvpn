@@ -154,7 +154,7 @@
 				<input size="5" maxlength="5" class="num" name="openvpn_mtu" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("openvpn_mtu"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 1500)");
+				document.write("(" + share.deflt + ": 1400)");
 				//]]>
 				</script></span>
 			</div>
