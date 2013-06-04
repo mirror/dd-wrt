@@ -40,6 +40,16 @@ void start_openvpnserver(void)
 
 	if (nvram_invmatch("openvpn_enable", "1"))
 		return;
+		
+	if ((nvram_match("usb_enable", "1")
+		&& nvram_match("usb_storage", "1")
+		&& nvram_match("usb_automnt", "1")
+		&& nvram_match("usb_mntpoint", "jffs"))
+	    || (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1")))
+			jffs = 1;
+		
 	dd_syslog(LOG_INFO, "openvpn : OpenVPN daemon (Server) starting/restarting...\n");
 	mkdir("/tmp/openvpn", 0700);
 	mkdir("/tmp/openvpn/ccd", 0700);
@@ -53,24 +63,19 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/static.key", "openvpn_static");
 	chmod("/tmp/openvpn/key.pem", 0600);
 
-	//      use jffs for ccd if available
-	if ((nvram_match("usb_enable", "1")
-	     && nvram_match("usb_storage", "1")
-	     && nvram_match("usb_automnt", "1")
-	     && nvram_match("usb_mntpoint", "jffs"))
-	    || (nvram_match("enable_jffs2", "1")
-		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1"))) {
+	//	use jffs for ccd if available
+	if (jffs == 1) {
 		mkdir("/jffs/etc", 0700);
 		mkdir("/jffs/etc/openvpn", 0700);
 		mkdir("/jffs/etc/openvpn/ccd", 0700);
-		if (strlen(nvram_safe_get("openvpn_ccddef")) > 0)	//      reduces writes
+		if (strlen(nvram_safe_get("openvpn_ccddef")) > 0) {
 			write_nvram("/jffs/etc/openvpn/ccd/DEFAULT", "openvpn_ccddef");
+			chmod("/jffs/etc/openvpn/ccd/DEFAULT", 0700);
+			}
 //                      if (strlen(nvram_safe_get("openvpn_clcon")) > 0) 
 //                              write_nvram("/jffs/etc/openvpn/clcon.sh", "openvpn_clcon");
 //                      if (strlen(nvram_safe_get("openvpn_cldiscon")) > 0) 
 //                              write_nvram("/jffs/etc/openvpn/cldiscon.sh", "openvpn_cldiscon");
-		chmod("/jffs/etc/openvpn/ccd/DEFAULT", 0700);
 	} else {
 		write_nvram("/tmp/openvpn/ccd/DEFAULT", "openvpn_ccddef");
 //              write_nvram("/tmp/openvpn/clcon.sh", "openvpn_clcon");
@@ -122,13 +127,7 @@ void start_openvpnserver(void)
 			"topology subnet\n"
 			"script-security 2\n"
 			"port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), nvram_safe_get("openvpn_proto"), nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
-		if ((nvram_match("usb_enable", "1")	//  use usb/jffs for ccd if available
-		     && nvram_match("usb_storage", "1")
-		     && nvram_match("usb_automnt", "1")
-		     && nvram_match("usb_mntpoint", "jffs"))
-		    || (nvram_match("enable_jffs2", "1")
-			&& nvram_match("jffs_mounted", "1")
-			&& nvram_match("sys_enable_jffs2", "1"))) {
+		if (jffs == 1) {	//  use usb/jffs for ccd if available
 			fprintf(fp, "client-config-dir /jffs/etc/openvpn/ccd\n");
 //                              fprintf(fp, "client-connect /jffs/etc/openvpn/clcon.sh\n");
 //                              fprintf(fp, "client-disconnect /jffs/etc/openvpn/cldiscon.sh\n");
@@ -144,8 +143,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "tls-server\n");
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
-		//keep peer ip persistant for x sec. works only when dupcn=off & no proxy mode
-		if (nvram_match("openvpn_dupcn", "0")
+		if (nvram_match("openvpn_dupcn", "0")	//keep peer ip persistant for x sec. works only when dupcn=off & no proxy mode
 		    && nvram_match("openvpn_proxy", "0"))
 			fprintf(fp, "ifconfig-pool-persist /tmp/openvpn/ip-pool 86400\n");
 		if (nvram_match("openvpn_cl2cl", "1"))
@@ -295,7 +293,7 @@ void stop_openvpnserver(void)
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP");
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP");
 		system("/usr/sbin/ebtables -t nat -D PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP");
-//              unlink("/tmp/openvpn/ccd/DEFAULT");
+        unlink("/tmp/openvpn/ccd/DEFAULT");
 		unlink("/tmp/openvpn/dh.pem");
 		unlink("/tmp/openvpn/ca.crt");
 		unlink("/tmp/openvpn/cert.pem");
@@ -371,7 +369,10 @@ void start_openvpn(void)
 	}
 	fprintf(fp,
 		"management 127.0.0.1 16\n"
-		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "persist-key\n" "persist-tun\n" "script-security 2\n");
+		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" 
+		"writepid /var/run/openvpncl.pid\n" "client\n" 
+		"resolv-retry infinite\n" "nobind\n" "persist-key\n" 
+		"persist-tun\n" "script-security 2\n");
 	fprintf(fp, "dev %s1\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
