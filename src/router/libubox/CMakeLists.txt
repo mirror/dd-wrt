@@ -5,7 +5,7 @@ INCLUDE(CheckFunctionExists)
 PROJECT(ubox C)
 ADD_DEFINITIONS(-Os -Wall -Werror --std=gnu99 -g3 -Wmissing-declarations)
 
-OPTION(BUILD_LUA "build Lua plugin" OFF)
+OPTION(BUILD_LUA "build Lua plugin" ON)
 
 IF(APPLE)
   INCLUDE_DIRECTORIES(/opt/local/include)
