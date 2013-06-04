@@ -400,6 +400,20 @@ if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xF52C")
 		printk(KERN_EMERG "WNDR4000 GPIO Init\n");
 		gpios = 1 << 0 | 1 << 6 | 1 << 7;
 }
+if (nvram_match("boardnum", "4536") && nvram_match("boardtype", "0xf52e")
+	    && nvram_match("boardrev", "0x1102")) {
+		
+	if( nvram_match("pci/1/1/pa2gw1a0", "0x1DFC") ){
+	        printk(KERN_EMERG "WNDR4500 GPIO Init\n");
+		gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11 | 1<<14 | 1<<15;
+	}else if ( nvram_match("pci/1/1/pa2gw1a0", "0x1791") ){
+		printk(KERN_EMERG "WNDR4500V2 GPIO Init\n");
+		gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11 | 1<< 4 | 1<<15;
+	}else{
+		printk(KERN_EMERG "R6300 GPIO Init\n");
+                gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11 | 1<<15;
+	}
+}
 
 /*if (iswrt300n11)
 {
