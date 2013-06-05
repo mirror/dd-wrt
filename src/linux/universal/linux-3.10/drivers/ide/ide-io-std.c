@@ -78,7 +78,6 @@ void ide_dev_select(ide_drive_t *drive)
 {
 	ide_hwif_t *hwif = drive->hwif;
 	u8 select = drive->select | ATA_DEVICE_OBS;
-
 	if (hwif->host_flags & IDE_HFLAG_MMIO)
 		writeb(select, (void __iomem *)hwif->io_ports.device_addr);
 	else
