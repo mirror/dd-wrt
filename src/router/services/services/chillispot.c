@@ -39,14 +39,6 @@
 
 int  jffs = 0;
 
-if ((nvram_match("usb_enable", "1")
-	&& nvram_match("usb_storage", "1")
-	&& nvram_match("usb_automnt", "1")
-	&& nvram_match("usb_mntpoint", "jffs"))
-	|| (nvram_match("enable_jffs2", "1")
-	&& nvram_match("jffs_mounted", "1")
-	&& nvram_match("sys_enable_jffs2", "1")))
-		jffs = 1;
 
 #ifdef HAVE_CHILLI
 #ifdef HAVE_HOTSPOT
@@ -66,6 +58,15 @@ void start_chilli(void)
 {
 	int ret = 0;
 	char ssid[128];
+
+if ((nvram_match("usb_enable", "1")
+	&& nvram_match("usb_storage", "1")
+	&& nvram_match("usb_automnt", "1")
+	&& nvram_match("usb_mntpoint", "jffs"))
+	|| (nvram_match("enable_jffs2", "1")
+	&& nvram_match("jffs_mounted", "1")
+	&& nvram_match("sys_enable_jffs2", "1")))
+		jffs = 1;
 
 	stop_chilli();		//ensure that its stopped
 
