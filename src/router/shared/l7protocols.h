@@ -842,6 +842,8 @@ l7filters filters_list[] = {
 	 "yahoo_login", 0},
 	{
 	 "yahoo_voice", 0},
+	{
+	 "youtube", 0},
 #ifdef HAVE_OPENDPI
 	{
 	 "zattoo", 2},
