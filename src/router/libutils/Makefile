@@ -51,7 +51,7 @@ endif
 
 ifeq ($(CONFIG_80211AC),y)
 CFLAGS	= -I. -I$(TOP)/shared -I../httpd -Wall -I$(SRCBASE)/
-CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/shared/bcmwifi/include
+CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/include
 CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 endif
 
