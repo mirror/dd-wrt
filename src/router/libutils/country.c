@@ -731,9 +731,15 @@ char *getCountryList(void)
 #ifdef HAVE_BUFFALO
 			sprintf(country, "%s", allCountries[i].isoName);
 			if (isValidCountry(region, country)) {
+#elif HAVE_WIKINGS
+			if (nvram_safe_get("wkregdomain") == NULL 
+			    || !strcmp(nvram_safe_get("wkregdomain"), allCountries[i].isoName)
+			    || !strcmp(nvram_safe_get("wkregdomain"), "")) {
 #endif
 				count += strlen(allCountries[i].name) + 1;
 #ifdef HAVE_BUFFALO
+			}
+#elif HAVE_WIKINGS
 			}
 #endif
 		}
@@ -744,11 +750,17 @@ char *getCountryList(void)
 #ifdef HAVE_BUFFALO
 			sprintf(country, "%s", allCountries[i].isoName);
 			if (isValidCountry(region, country)) {
+#elif HAVE_WIKINGS
+			if (nvram_safe_get("wkregdomain") == NULL 
+			    || !strcmp(nvram_safe_get("wkregdomain"), allCountries[i].isoName)
+			    || !strcmp(nvram_safe_get("wkregdomain"), "")) {
 #endif
 				strcat(countries, allCountries[i].name);
 				strcat(countries, " ");
 
 #ifdef HAVE_BUFFALO
+			}
+#elif HAVE_WIKINGS
 			}
 #endif
 		}
