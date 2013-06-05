@@ -47,9 +47,8 @@ WEXT_HEADER = wireless.$(WE_VERSION).h
 
 # Targets to build
 STATIC=libiw.a
-DYNAMIC=libiw.so.$(WT_VERSION)
-PROGS= iwconfig iwlist iwpriv 
-#iwevent
+DYNAMIC=libiw.so
+PROGS= iwconfig iwlist iwpriv iwspy iwgetid iwevent ifrename
 MANPAGES8=iwconfig.8 iwlist.8 iwpriv.8 iwspy.8 iwgetid.8 iwevent.8 ifrename.8
 MANPAGES7=wireless.7
 MANPAGES5=iftab.5
@@ -74,8 +73,8 @@ DYNAMIC_LINK= libiw.so
 # Install directories
 INSTALL_DIR= $(PREFIX)/sbin/
 INSTALL_LIB= $(PREFIX)/lib/
-INSTALL_INC= $(PREFIX)/include/
-INSTALL_MAN= $(PREFIX)/man/
+INSTALL_INC= $(PREFIX)/usr/include/
+INSTALL_MAN= $(PREFIX)/usr/share/man/
 
 # Various commands
 RM = rm -f
@@ -103,11 +102,11 @@ ifdef BUILD_WE_ESSENTIAL
 endif
 
 # Other flags
-CFLAGS=$(COPTS) -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow -DNEED_PRINTF \
+#CFLAGS=-Os -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow \
 	-Wpointer-arith -Wcast-qual -Winline -I.
-#CFLAGS=-O2 -W -Wall -Wstrict-prototypes -I.
+CFLAGS=-O2 -W -Wall -Wstrict-prototypes -I.
 DEPFLAGS=-MMD
-XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG) $(WEDEF_FLAG) -DNEED_PRINTF
+XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG) $(WEDEF_FLAG)
 PICFLAG=-fPIC
 
 # Standard compilation targets
@@ -145,7 +144,7 @@ wireless.h:
 
 # Compilation of the dynamic library
 $(DYNAMIC): $(OBJS:.o=.so)
-	$(CC) -shared -o $@ -Wl,-soname,$@ $(STRIPFLAGS) $(LIBS) -lc $^
+	$(CC) $(CFLAGS) -shared -o $@ $(LIBS) -lc $^
 
 # Compilation of the static library
 $(STATIC): $(OBJS:.o=.so)
@@ -161,7 +160,7 @@ install:: $(IWLIB_INSTALL) install-bin install-hdr install-man
 install-dynamic:: $(DYNAMIC)
 	install -m 755 -d $(INSTALL_LIB)
 	install -m 755 $(DYNAMIC) $(INSTALL_LIB)
-	ln -sfn $(DYNAMIC) $(INSTALL_LIB)/$(DYNAMIC_LINK)
+#	ln -sfn $(DYNAMIC) $(INSTALL_LIB)/$(DYNAMIC_LINK)
 	@echo "*** Don't forget to add $(INSTALL_LIB) to /etc/ld.so.conf, and run ldconfig as root. ***"
 	@$(LDCONFIG) || echo "*** Could not run ldconfig ! ***"
 
