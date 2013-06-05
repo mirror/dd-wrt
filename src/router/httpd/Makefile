@@ -768,7 +768,7 @@ CFLAGS += -DHAVE_MADWIFI -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../mad
 VISOBJS += wireless_madwifi.o
 endif
 
-OBJS += ../wireless-tools/libiw.so.29
+#OBJS += ../wireless-tools/libiw.so.29
 endif
 
 ifeq ($(CONFIG_CDEBUG),y)
