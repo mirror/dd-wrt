@@ -34,25 +34,25 @@ static void vsopenrisc_set_pio(ide_hwif_t *hwif, ide_drive_t *drive)
 	// FIXME: we should identify the supported PIO from the devices
 	// and setting the EPLD to the minimum value of them both.
 
-	outb(0x03, hwif->io_ports.data_addr + 4/*IDE_FEATURE_REG*/);
+	writeb(0x03,  (void __iomem *)hwif->io_ports.data_addr + 4/*IDE_FEATURE_REG*/);
 	if ((drive->pio_mode - XFER_PIO_0) >= 3)
-		outb(0x0b, hwif->io_ports.data_addr + (2*4)/*IDE_NSECTOR_REG*/);
+		writeb(0x0b,  (void __iomem *)hwif->io_ports.data_addr + (2*4)/*IDE_NSECTOR_REG*/);
 	else
-		outb(0x08, hwif->io_ports.data_addr + (2*4)/*IDE_NSECTOR_REG*/);
+		writeb(0x08,  (void __iomem *)hwif->io_ports.data_addr + (2*4)/*IDE_NSECTOR_REG*/);
 	// FIXME: didn't find a field, which shows the state of the device
 	if (drive->name[2] == 'a')	// master
-		outb(0x00, hwif->io_ports.data_addr + (6*4)/*IDE_SELECT_REG*/);
+		writeb(0x00,  (void __iomem *)hwif->io_ports.data_addr + (6*4)/*IDE_SELECT_REG*/);
 	else
-		outb(0x10, hwif->io_ports.data_addr + (6*4)/*IDE_SELECT_REG*/);
-	outb(0xef, hwif->io_ports.data_addr + (7*4)/*IDE_COMMAND_REG*/);
+		writeb(0x10,  (void __iomem *)hwif->io_ports.data_addr + (6*4)/*IDE_SELECT_REG*/);
+	writeb(0xef,  (void __iomem *)hwif->io_ports.data_addr + (7*4)/*IDE_COMMAND_REG*/);
 
 	// configure the "controller" (EPLD)
 	addr = VSOPENRISC_VA_EPLD_IDE_BASE;
 
 	if ((drive->pio_mode - XFER_PIO_0) >= 3)
-		outb(0x03, addr);
+		writeb(0x03, (void __iomem *)addr);
 	else
-		outb(0x00, addr);
+		writeb(0x00, (void __iomem *)addr);
 
 	spin_unlock_irqrestore(&hwif->lock, flags);
 }
@@ -126,15 +126,24 @@ static int plat_ide_probe(struct platform_device *pdev)
 	}
 
 	if (mmio) {
+		printk(KERN_EMERG "base addr %p\n",res_base->start);
 		base = devm_ioremap(&pdev->dev,
 			res_base->start, resource_size(res_base));
+		printk(KERN_EMERG "ctrl addr %p\n",res_alt->start);
 		alt_base = devm_ioremap(&pdev->dev,
 			res_alt->start, resource_size(res_alt));
+		printk(KERN_EMERG "map base %p\n",base);
+		printk(KERN_EMERG "map ctrl %p\n",alt_base);
 	} else {
 		base = devm_ioport_map(&pdev->dev,
 			res_base->start, resource_size(res_base));
 		alt_base = devm_ioport_map(&pdev->dev,
 			res_alt->start, resource_size(res_alt));
+
+		printk(KERN_EMERG "base addr %p\n",res_base->start);
+		printk(KERN_EMERG "ctrl addr %p\n",res_alt->start);
+		printk(KERN_EMERG "map base %p\n",base);
+		printk(KERN_EMERG "map ctrl %p\n",alt_base);
 	}
 
 	memset(&hw, 0, sizeof(hw));
@@ -142,13 +151,14 @@ static int plat_ide_probe(struct platform_device *pdev)
 	hw.dev = &pdev->dev;
 
 	d.irq_flags = res_irq->flags & IRQF_TRIGGER_MASK;
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
+		d.irq_flags |= IRQF_SHARED;
+#else
 	if (res_irq->flags & IORESOURCE_IRQ_SHAREABLE)
 		d.irq_flags |= IRQF_SHARED;
-
-#ifndef CONFIG_MACH_KS8695_VSOPENRISC
+#endif
 	if (mmio)
 		d.host_flags |= IDE_HFLAG_MMIO;
-#endif
 
 	ret = ide_host_add(&d, hws, 1, &host);
 	if (ret)
