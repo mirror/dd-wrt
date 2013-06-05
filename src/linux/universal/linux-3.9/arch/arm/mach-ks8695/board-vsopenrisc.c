@@ -12,6 +12,8 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
+#include <linux/mtd/physmap.h>
 #include <linux/mtd/cfi.h>
 #include <linux/i2c.h>
 #include <linux/i2c-algo-pca.h>
@@ -45,13 +47,13 @@
  ****************************************************************************/
 static struct resource ide_resources[] = {
 	[0] = {
-		 .start	= VSOPENRISC_EPLD_IDE_DATA,
-		 .end	= VSOPENRISC_EPLD_IDE_DATA + 0x400 - 1,
+		 .start	= VSOPENRISC_EPLD_IDE_DATA_PA,
+		 .end	= VSOPENRISC_EPLD_IDE_DATA_PA + 0x400 - 1,
 		 .flags	= IORESOURCE_MEM | IORESOURCE_MEM_8BIT,
    	},
 	[1] = {
-		 .start	= VSOPENRISC_EPLD_IDE_CTRL,
-		 .end	= VSOPENRISC_EPLD_IDE_CTRL + 0x100 - 1,
+		 .start	= VSOPENRISC_EPLD_IDE_CTRL_PA,
+		 .end	= VSOPENRISC_EPLD_IDE_CTRL_PA + 0x100 - 1,
 		 .flags	= IORESOURCE_MEM | IORESOURCE_MEM_8BIT,
    	},
 	[2] = {
@@ -124,6 +126,54 @@ static void __init ks8695_add_device_gpio_vsopenrisc(void)
 	platform_device_register(&gpio_vsopenrisc_device);
 }
 
+
+/*****************************************************************************
+ * External GPIO device
+ ****************************************************************************/
+#define	KS8695_MEM_WRITE(offset, v)	__raw_writel((v), KS8695_MEM_VA + (offset))
+#define	KS8695_MEM_READ(offset)		__raw_readl(KS8695_MEM_VA + (offset))
+
+#define EXTIO_SET_ADDR(_start_, _size_) \
+	( \
+	 	( ((_start_) >> 16) << 12) | \
+	 	( (((_start_)+(_size_)-1) >> 16) << 22) \
+	)
+
+#define XBOUNDS(a,b,c)	(max(a,min(b,c)))
+#define EXTIO_SET_TIMG(tacs,tcos,tact,tcoh) \
+	( XBOUNDS(0,(tacs)-0,7)	<< 3	\
+	| XBOUNDS(0,(tcos)-1,7) << 0	\
+	| XBOUNDS(0,(tact)-1,7)	<< 9	\
+	| XBOUNDS(0,(tcoh)-1,7)	<< 6	\
+	)
+
+
+void __init ks8695p_extio_init(void)
+{
+	u32	uReg;
+
+#ifdef	DEBUG_THIS
+	printk(KERN_INFO "%s\n", __FUNCTION__);
+#endif
+
+	/* EXTIO0 has data width word
+	 */
+	uReg = KS8695_MEM_READ(KS8695_ERGCON);
+	uReg = (uReg & ~(0x3 << 16) ) | (0x3 << 16);
+	KS8695_MEM_WRITE(KS8695_ERGCON, uReg);
+
+	/* Enable EXTIO0 and configure timing
+	 */
+	uReg = EXTIO_SET_ADDR(VSOPENRISC_PA_EXTIO0_BASE, VSOPENRISC_EXTIO0_SIZE);
+	/* tacs=32ns tcos=16ns tact=48ns tcoh=16ns
+	 */
+	//uReg |= (0x4<<3) | (0x1<<0) | (0x5<<9) | (0x1<<6);
+	/*  tacs=4*8ns, tcos=2*8ns, tact=7*8ns, tcoh=2*8ns  */
+	uReg |= EXTIO_SET_TIMG(4,2,7,2);
+	KS8695_MEM_WRITE(KS8695_EXTACON0, uReg);
+}
+
+
 #ifdef CONFIG_PCI
 static int micrel_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
@@ -136,52 +186,63 @@ static struct ks8695_pci_cfg __initdata micrel_pci = {
 };
 #endif
 
+/*****************************************************************************
+ * Flash
+ ****************************************************************************/
 #ifdef CONFIG_MTD_CFI
 static struct resource cfi_flash_resource;
-static struct map_info vsopenrisc_map;
-static struct mtd_info *mymtd;
 
-extern int add_mtd_device(struct mtd_info *mtd);
-
-static int vsopenrisc_flash_init(void)
-{
-	// @ 22-31: RB0NPTR, 12-21: RB0BPTR, 0-6: timg, mode
-	__raw_writel(((cfi_flash_resource.end << 6) & 0xffc00000) \
-				| (cfi_flash_resource.start >> 4) \
-				| 0x7c, KS8695_MEM_VA + KS8695_ROMCON0);
-
-	vsopenrisc_map.name = "Whole Flash";
-	vsopenrisc_map.size = VSOPENRISC_FLASH_SIZE;
-	vsopenrisc_map.phys = VSOPENRISC_FLASH_BASE;
-	vsopenrisc_map.virt = ioremap(VSOPENRISC_FLASH_BASE, VSOPENRISC_FLASH_SIZE);
-	vsopenrisc_map.bankwidth = 2;
-
-	simple_map_init(&vsopenrisc_map);
-
-	mymtd = do_map_probe("cfi_probe", &vsopenrisc_map);
-	if (!mymtd)
-		return -ENODEV;
-	
-	add_mtd_device(mymtd);
-	
-	return 0;
-}
-
-static struct flash_platform_data vsopenrisc_flash_data = {
-	.map_name	= "cfi_probe",
+static struct mtd_partition vsopenrisc_partitions[] = {
+	{
+		.name = "Whole Flash",
+		.offset = 0,
+		.size = VSOPENRISC_FLASH_SIZE,
+	},
+	{
+		.name = "RedBoot",
+		.offset = 0,
+		.size = 0x10000,
+	},
+	{
+		.name = "File System",
+		.offset = MTDPART_OFS_NXTBLK,
+		.size = 0x1F7000,
+	},
+	{
+		.name = "Kernel",
+		.offset = MTDPART_OFS_NXTBLK,
+		.size = 0x1F6000,
+	},
+	{
+		.name = "Parameter",
+		.offset = MTDPART_OFS_NXTBLK,
+		.size = 0x1000,
+	},
+	{
+		.name = "RedBoot config",
+		.offset = MTDPART_OFS_NXTBLK,
+		.size = 0x1000,
+	},
+	{
+		.name = "FIS directory",
+		.offset = MTDPART_OFS_NXTBLK,
+		.size = 0x1000,
+	},
+};
+static struct physmap_flash_data vsopenrisc_flash_data = {
 	.width		= 2,
-	.init		= vsopenrisc_flash_init,
+	.parts		= vsopenrisc_partitions,
+	.nr_parts   = ARRAY_SIZE(vsopenrisc_partitions),
 };
 
 static struct resource cfi_flash_resource = {
 	.start		= VSOPENRISC_FLASH_BASE,
-	.end		= VSOPENRISC_FLASH_BASE + VSOPENRISC_FLASH_SIZE - 1,
+	.end		= VSOPENRISC_FLASH_BASE +  VSOPENRISC_FLASH_SIZE - 1,
 	.flags		= IORESOURCE_MEM,
 };
 
-// INFO: to use armflash, you must switch on CONFIG_MTD_ARM_INTEGRATOR
 static struct platform_device cfi_flash_device = {
-	.name 				= "armflash",
+	.name 				= "physmap-flash",
 	.id					= 0,
 	.dev				= {
 			.platform_data = &vsopenrisc_flash_data,
@@ -190,6 +251,7 @@ static struct platform_device cfi_flash_device = {
 	.resource			= &cfi_flash_resource,
 };
 #endif
+
 
 int vs_sysid;
 struct semaphore ser_can_sync_sem;
