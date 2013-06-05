@@ -37,7 +37,7 @@
 #include <md5.h>
 #include <services.h>
 
-int  jffs = 0;
+static int  jffs = 0;
 
 
 #ifdef HAVE_CHILLI

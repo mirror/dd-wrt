@@ -30,7 +30,7 @@
 #include <sys/stat.h>
 #include <services.h>
 
-int  jffs = 0;
+static int  jffs = 0;
 
 
 void start_pptpd(void)
