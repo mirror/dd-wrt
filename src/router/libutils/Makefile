@@ -49,8 +49,12 @@ else
 CFLAGS	= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
 
+ifeq ($(CONFIG_80211AC),y)
+CFLAGS	= -I. -I$(TOP)/shared -I../httpd -Wall -I$(SRCBASE)/
 CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/shared/bcmwifi/include
 CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+endif
+
 CFLAGS += $(MIPS16_OPT) 
 
 
@@ -126,7 +130,7 @@ CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../services/networking -I../madwi
 else
 CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
 endif
-WLDFLAGS = ../wireless-tools/libiw.so.29
+WLDFLAGS = -L $(TOP)/wireless-tools -liw
 else
 WLDFLAGS = -lutils
 endif

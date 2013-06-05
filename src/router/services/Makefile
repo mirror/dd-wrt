@@ -680,7 +680,6 @@ MAD_FLAGS += -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/in
 CFLAGS_EXTRA += -DHAVE_MADWIFI
 ifneq ($(CONFIG_NOWIFI),y)
 OBJS += madwifi.o
-OBJS += ../wireless-tools/libiw.so.29
 endif
 endif
 
@@ -1365,14 +1364,14 @@ endif
 services.so: $(OBJS)
 #	$(AR) rcu -o $@.a $^
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-	$(CC) --shared -c $(NCFLAGS) $(MAD_FLAGS) -o $(NOBJS) $(NFILES)
+	$(CC) --shared -L ../wireless-tools -c $(NCFLAGS) $(MAD_FLAGS) -o $(NOBJS) $(NFILES)  -liw
 endif
 ifeq ($(CONFIG_ATH9K),y)
 ifneq ($(CONFIG_NOWIFI),y)
-	$(CC) -shared -c $(ATH9KCFLAGS)  $(MAD_FLAGS)  $(ATH9KFILES)
+	$(CC) -shared -L ../wireless-tools -c $(ATH9KCFLAGS)  $(MAD_FLAGS)  $(ATH9KFILES) -liw
 endif
 endif
-	$(CC) --shared $(CFLAGS)  $(MAD_FLAGS) -o $@ $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
+	$(CC) --shared -L ../wireless-tools $(CFLAGS)  $(MAD_FLAGS) -o $@ $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
 #	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
 	
 services.a: $(OBJS)
