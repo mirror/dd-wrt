@@ -32,14 +32,6 @@
 
 int  jffs = 0;
 
-if ((nvram_match("usb_enable", "1")
-	&& nvram_match("usb_storage", "1")
-	&& nvram_match("usb_automnt", "1")
-	&& nvram_match("usb_mntpoint", "jffs"))
-	|| (nvram_match("enable_jffs2", "1")
-	&& nvram_match("jffs_mounted", "1")
-	&& nvram_match("sys_enable_jffs2", "1")))
-		jffs = 1;
 
 void start_pptpd(void)
 {
@@ -51,6 +43,16 @@ void start_pptpd(void)
 		stop_pptpd();
 		return;
 	}
+
+if ((nvram_match("usb_enable", "1")
+	&& nvram_match("usb_storage", "1")
+	&& nvram_match("usb_automnt", "1")
+	&& nvram_match("usb_mntpoint", "jffs"))
+	|| (nvram_match("enable_jffs2", "1")
+	&& nvram_match("jffs_mounted", "1")
+	&& nvram_match("sys_enable_jffs2", "1")))
+		jffs = 1;
+
 #ifdef HAVE_PPTP_ACCEL
 	insmod("pptp");
 #endif
