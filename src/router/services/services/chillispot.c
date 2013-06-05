@@ -37,6 +37,17 @@
 #include <md5.h>
 #include <services.h>
 
+int  jffs = 0;
+
+if ((nvram_match("usb_enable", "1")
+	&& nvram_match("usb_storage", "1")
+	&& nvram_match("usb_automnt", "1")
+	&& nvram_match("usb_mntpoint", "jffs"))
+	|| (nvram_match("enable_jffs2", "1")
+	&& nvram_match("jffs_mounted", "1")
+	&& nvram_match("sys_enable_jffs2", "1")))
+		jffs = 1;
+
 #ifdef HAVE_CHILLI
 #ifdef HAVE_HOTSPOT
 void hotspotsys_config(void);
@@ -156,16 +167,7 @@ void stop_chilli(void)
 void main_config(void)
 {
 	char *chillinet;
-	int log_level = 0, jffs = 0;
-	
-	if ((nvram_match("usb_enable", "1")
-		&& nvram_match("usb_storage", "1")
-		&& nvram_match("usb_automnt", "1")
-		&& nvram_match("usb_mntpoint", "jffs"))
-	    || (nvram_match("enable_jffs2", "1")
-		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1")))
-			jffs = 1;
+	int log_level = 0;
 	
 	FILE *fp;
 	log_level = atoi(nvram_safe_get("log_level"));

@@ -30,9 +30,20 @@
 #include <sys/stat.h>
 #include <services.h>
 
+int  jffs = 0;
+
+if ((nvram_match("usb_enable", "1")
+	&& nvram_match("usb_storage", "1")
+	&& nvram_match("usb_automnt", "1")
+	&& nvram_match("usb_mntpoint", "jffs"))
+	|| (nvram_match("enable_jffs2", "1")
+	&& nvram_match("jffs_mounted", "1")
+	&& nvram_match("sys_enable_jffs2", "1")))
+		jffs = 1;
+
 void start_pptpd(void)
 {
-	int ret = 0, mss = 0, jffs = 0;
+	int ret = 0, mss = 0;
 	char *lpTemp;
 	FILE *fp;
 
@@ -43,15 +54,6 @@ void start_pptpd(void)
 #ifdef HAVE_PPTP_ACCEL
 	insmod("pptp");
 #endif
-
-	if ((nvram_match("usb_enable", "1")
-	     && nvram_match("usb_storage", "1")
-	     && nvram_match("usb_automnt", "1")
-	     && nvram_match("usb_mntpoint", "jffs"))
-	    || (nvram_match("enable_jffs2", "1")
-		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1")))
-		jffs = 1;
 		
 	// cprintf("stop vpn modules\n");
 	// stop_vpn_modules ();
