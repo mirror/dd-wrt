@@ -1,3 +1,4 @@
+LIBPLIST_PKG_BUILD_DIR=$(TOP)/ipeth/libplist
 
 ipeth-configure: 
 	cd $(TOP)/ipeth/libxml2 && ./configure  --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" --without-python \
@@ -35,6 +36,7 @@ ipeth-configure:
 	cd $(TOP)/ipeth/libxml2 && make
 	
 	rm -f $(TOP)/ipeth/libplist/CMakeCache.txt
+	$(call CMakeClean,$(LIBPLIST_PKG_BUILD_DIR))
 	(cd  $(TOP)/ipeth/libplist; \
 		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -65,6 +67,7 @@ ipeth-configure:
 
 
 	rm -f $(TOP)/ipeth/libusbmuxd/CMakeCache.txt
+	$(call CMakeClean,$(TOP)/ipeth/libusbmuxd)
 	(cd  $(TOP)/ipeth/libusbmuxd; \
 		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libusbmuxd/include  -ffunction-sections -fdata-sections -Wl,--gc-sections " \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libusbmuxd  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -94,13 +97,21 @@ ipeth-configure:
 	)
 	cd $(TOP)/ipeth/libusbmuxd && make
 
-	cd $(TOP)/ipeth/libimobiledevice && ./configure --without-cython --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libplist/src/ -L$(TOP)/ipeth/libusbmuxd/libusbmuxd -L$(TOP)/zlib" 
+	cd $(TOP)/ipeth/libimobiledevice && ./configure --without-cython --host=$(ARCH)-linux \
+		CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" \
+		LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libusbmuxd/libusbmuxd -L$(TOP)/zlib" \
+		libusbmuxd_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb -I$(TOP)/ipeth/libusbmuxd/libusbmuxd" \
+		libusbmuxd_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a -lusbmuxd" \
+		libplist_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
+		libplist_LIBS="-L$(TOP)/ipeth/libplist/src -lplist" \
+		libplistmm_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
+		libplistmm_LIBS="-L$(TOP)/ipeth/libplist/src -lplist"
 	cd $(TOP)/ipeth/libimobiledevice && make
 
 
 
 
-ipeth:
+ipeth: comgt
 ifneq ($(CONFIG_FREERADIUS),y)
 ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_AIRCRACK),y)
