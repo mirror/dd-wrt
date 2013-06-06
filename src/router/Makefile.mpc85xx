@@ -431,7 +431,7 @@ endif
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
 #	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 	
-	./strip_libs.sh $(ARCH)
+	-./strip_libs.sh $(ARCH)
 	#cd $(TARGETDIR)
 #	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
 	rm -rf $(TARGETDIR)/usr/local
