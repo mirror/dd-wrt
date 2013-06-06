@@ -437,7 +437,7 @@ ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
-	./strip_libs.sh $(ARCH)
+	-./strip_libs.sh $(ARCH)
 
 	cd grub && ./configure --host=i386-linux --target=i386-linux CC="/xfs/toolchains/staging_dir_i386.4.2.1/bin/i386-linux-gcc" LDFLAGS="-static" CFLAGS="-Os -DNEED_PRINTF"
 	make -C grub clean DESTDIR=$(INSTALLDIR)/grub	

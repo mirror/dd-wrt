@@ -273,7 +273,7 @@ ifneq ($(CONFIG_NP28G),y)
 endif
 endif
 #	mipsel-linux-strip $(TARGETDIR)/lib/modules/$(LINUXVER)/*.ko		
-	./strip_libs.sh $(ARCH)
+	-./strip_libs.sh $(ARCH)
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -b 1048576 -nopad
 ifneq ($(CONFIG_WP54G),y)
 ifneq ($(CONFIG_NP28G),y)

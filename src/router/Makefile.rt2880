@@ -427,7 +427,7 @@ endif
 ifeq ($(CONFIG_3G_ONLY),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs
 endif
-	./strip_libs.sh $(ARCH)
+	-./strip_libs.sh $(ARCH)
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -nopad
 ifneq ($(CONFIG_TECHNAXX),y)
 ifneq ($(CONFIG_NEPTUNE),y)

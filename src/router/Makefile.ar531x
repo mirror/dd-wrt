@@ -595,7 +595,7 @@ endif
 ifeq ($(CONFIG_RC),y)
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 endif
-	./strip_libs.sh $(ARCH)
+	-./strip_libs.sh $(ARCH)
 ifeq ($(CONFIG_WRK54G),y)
 	misc/makeDevs $(ARCH)-uclibc/target	
 endif
