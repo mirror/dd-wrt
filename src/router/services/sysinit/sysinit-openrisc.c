@@ -65,7 +65,7 @@ static void install_sdcard(void)
 	}
 	sleep(10);		//give some time until sd is up
 	fprintf(stderr, "check if secondary device is available\n");
-	fp = fopen("/dev/discs/disc1/disc", "rb");
+	fp = fopen("/dev/sda", "rb");
 	if (fp == NULL)		// no cf disc installed or no sd card. doesnt matter, we exit if no secondary device is in
 	{
 		fclose(fp);
@@ -74,11 +74,11 @@ static void install_sdcard(void)
 	fclose(fp);
 	fprintf(stderr, "installing firmware to internal SD Card\n");
 	mkdir("/tmp/install", 0700);
-	int check = mount("/dev/discs/disc1/disc", "/tmp/install", "ext2", MS_MGC_VAL,
+	int check = mount("/dev/sda", "/tmp/install", "ext2", MS_MGC_VAL,
 			  NULL);
 	if (check != 0) {
 		fprintf(stderr, "device isnt formated, use EXT2\n");
-		fp = fopen("/dev/discs/disc1/disc", "rb");
+		fp = fopen("/dev/sda", "rb");
 		fseek(fp, 0, SEEK_END);
 		long size = ftell(fp);
 		size -= 65536 * 16;
@@ -86,7 +86,7 @@ static void install_sdcard(void)
 		char newsize[32];
 		sprintf(newsize, "%d", size);
 		eval("mkfs.ext2", "-b", "4096", "-N", "65536", "-L", "dd-wrt", "/dev/discs/disc1/disc", newsize);
-		mount("/dev/discs/disc1/disc", "/tmp/install", "ext2", MS_MGC_VAL, NULL);
+		mount("/dev/sda", "/tmp/install", "ext2", MS_MGC_VAL, NULL);
 	}
 	fprintf(stderr, "copy files to SD Card\n");
 	eval("cp", "-f", "/tmp/install/usr/local/nvram/nvram.bin", "/tmp/install/usr/local/nvram/nvram.bak");
