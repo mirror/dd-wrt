@@ -1,4 +1,4 @@
-#include <linux/version.h>
+#include <linux/version.h>7
 #include <linux/module.h>
 #include <linux/major.h>
 #include <linux/string.h>
@@ -51,11 +51,11 @@
 #define PROC_NAME_BUZZER		   "vsopenrisc/buzzer"
 #define PROC_NAME_BUZZER_FRQ	   	   "vsopenrisc/buzzer_frq"
 
-static char *table_proc_name[] = { "vsopenrisc/gpio_data"
-								 , "vsopenrisc/gpio_ctrl"
-								 , "vsopenrisc/gpio_irqmask"
-								 , "vsopenrisc/gpio_change"
-								 , "vsopenrisc/gpio_changes" };
+static char *table_proc_name[] = { "gpio_data"
+								 , "gpio_ctrl"
+								 , "gpio_irqmask"
+								 , "gpio_change"
+								 , "gpio_changes" };
 
 static void gpio_set(unsigned long mask, unsigned long value);
 static unsigned long gpio_get(void);
@@ -877,11 +877,12 @@ static int proc_buzzer_write(struct file *file, const char *buffer,
 	return count;
 }
 /****************************************************************************/
+static struct proc_dir_entry *dir;
 
 struct proc_dir_entry *proc_init(char *name, read_proc_t *read_proc, 
 									write_proc_t *write_proc, void *data)
 {
-	struct proc_dir_entry *proc_entry = create_proc_entry(name, 0644, NULL);
+	struct proc_dir_entry *proc_entry = create_proc_entry(name, 0644, dir);
 
 	if (proc_entry == NULL)
 	{
@@ -1027,6 +1028,7 @@ INIT_RET_TYPE gpio_init(void)
 #if LINUX_VERSION_CODE < 0x020100
 	register_symtab(&gpio_syms);
 #endif
+	dir = proc_mkdir("vsopenrisc", NULL);
 
 	proc_init(PROC_NAME_BTN_RST, proc_btn_rst_read, proc_btn_rst_write, NULL);
 	proc_init(PROC_NAME_BTN_WLAN, proc_btn_wlan_read, proc_btn_wlan_write, NULL);
