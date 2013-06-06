@@ -53,8 +53,8 @@ obj-$(CONFIG_NWFLASH)		+= nwflash.o
 obj-$(CONFIG_SCx200_GPIO)	+= scx200_gpio.o
 obj-$(CONFIG_PC8736x_GPIO)	+= pc8736x_gpio.o
 obj-$(CONFIG_NSC_GPIO)		+= nsc_gpio.o
-ifeq ($(CONFIG_ARCH_KS8695_VSOPENRISC),y)
-obj-$(CONFIG_ARCH_KS8695_VSOPENRISC) += gpio_vsopenrisc.o
+ifeq ($(CONFIG_MACH_KS8695_VSOPENRISC),y)
+obj-$(CONFIG_MACH_KS8695_VSOPENRISC) += gpio_vsopenrisc.o
 else
 obj-$(CONFIG_GPIO_DEVICE)	+= gpio_dev.o
 endif
