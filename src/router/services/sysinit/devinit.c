@@ -145,6 +145,10 @@ void start_devinit(void)
 	fprintf(stderr, "starting hotplug\n");
 	system("/etc/hotplug2.startup");
 #endif
+#ifdef HAVE_OPENRISC
+	mkdir("/dev/misc",0700);
+	mknod("/dev/misc/gpio", S_IFCHR | 0644, makedev(125, 0));
+#endif
 #ifdef HAVE_X86
 	fprintf(stderr, "waiting for hotplug\n");
 	char dev[64];
