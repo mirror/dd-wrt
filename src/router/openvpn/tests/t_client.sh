@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # run OpenVPN client against ``test reference'' server
 # - check that ping, http, ... via tunnel works
