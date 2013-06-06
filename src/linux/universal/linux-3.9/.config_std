@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.9.3 Kernel Configuration
+# Linux/mips 3.9.4 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1662,9 +1662,9 @@ CONFIG_BTRFS_FS=m
 CONFIG_EXPORTFS=m
 CONFIG_FILE_LOCKING=y
 # CONFIG_DIRECT_IO is not set
-# CONFIG_FSNOTIFY is not set
+CONFIG_FSNOTIFY=y
 # CONFIG_DNOTIFY is not set
-# CONFIG_INOTIFY_USER is not set
+CONFIG_INOTIFY_USER=y
 # CONFIG_FANOTIFY is not set
 # CONFIG_QUOTA is not set
 # CONFIG_QUOTACTL is not set
