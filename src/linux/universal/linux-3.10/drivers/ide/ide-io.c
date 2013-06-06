@@ -581,10 +581,17 @@ static int drive_is_ready(ide_drive_t *drive)
 	if (drive->waiting_for_dma)
 		return hwif->dma_ops->dma_test_irq(drive);
 
+
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
+	udelay(20); // VSCOM: we need this for our CF Industrial Card
+#endif
+
+#ifndef CONFIG_MACH_KS8695_VSOPENRISC
 	if (hwif->io_ports.ctl_addr &&
 	    (hwif->host_flags & IDE_HFLAG_BROKEN_ALTSTATUS) == 0)
 		stat = hwif->tp_ops->read_altstatus(hwif);
 	else
+#endif
 		/* Note: this may clear a pending IRQ!! */
 		stat = hwif->tp_ops->read_status(hwif);
 
@@ -824,6 +831,7 @@ irqreturn_t ide_intr (int irq, void *dev_id)
 	drive = hwif->cur_dev;
 
 	if (!drive_is_ready(drive))
+	{
 		/*
 		 * This happens regularly when we share a PCI IRQ with
 		 * another device.  Unfortunately, it can also happen
@@ -832,7 +840,7 @@ irqreturn_t ide_intr (int irq, void *dev_id)
 		 * enough advance overhead that the latter isn't a problem.
 		 */
 		goto out;
-
+	}
 	hwif->handler = NULL;
 	hwif->expiry = NULL;
 	hwif->req_gen++;

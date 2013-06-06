@@ -59,7 +59,7 @@ static struct resource ide_resources[] = {
 	[2] = {
 		.start	= KS8695_INTEPLD_IDE,
 		.end	= 0,
-		.flags	= IORESOURCE_IRQ | IRQF_SHARED,
+		.flags	= IORESOURCE_IRQ | IRQF_SHARED | IORESOURCE_IRQ_SHAREABLE, 
 	},
 };
 static struct pata_platform_info __initdata ide_data = {
