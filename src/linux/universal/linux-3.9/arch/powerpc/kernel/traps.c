@@ -1175,6 +1175,7 @@ void alignment_exception(struct pt_regs *regs)
 		_exception(sig, regs, code, regs->dar);
 	else
 		bad_page_fault(regs, regs->dar, sig);
+bail:
 }
 
 void StackOverflow(struct pt_regs *regs)
