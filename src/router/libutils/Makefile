@@ -53,6 +53,7 @@ ifeq ($(CONFIG_80211AC),y)
 CFLAGS	= -I. -I$(TOP)/shared -I../httpd -Wall -I$(SRCBASE)/
 CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/include
 CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+CFLAGS += -I$(SRCBASE)/include.v24 
 endif
 
 CFLAGS += $(MIPS16_OPT) 
