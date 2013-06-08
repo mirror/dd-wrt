@@ -33,7 +33,7 @@
 	<script type="text/javascript">
 	//<![CDATA[
 	document.write("<option value=\"0\" <% nvram_selmatch("wan_conmode", "0", "selected"); %> >" + share.mode_3g_auto + "</option>");
-	document.write("<option value=\"1\" <% nvram_selmatch("wan_conmode", "6", "selected"); %> >" + share.mode_3g_4g + "</option>");
+	document.write("<option value=\"6\" <% nvram_selmatch("wan_conmode", "6", "selected"); %> >" + share.mode_3g_4g + "</option>");
 	document.write("<option value=\"1\" <% nvram_selmatch("wan_conmode", "1", "selected"); %> >" + share.mode_3g_3g + "</option>");
 	document.write("<option value=\"2\" <% nvram_selmatch("wan_conmode", "2", "selected"); %> >" + share.mode_3g_2g + "</option>");
 	document.write("<option value=\"3\" <% nvram_selmatch("wan_conmode", "3", "selected"); %> >" + share.mode_3g_prefer_3g + "</option>");

@@ -362,6 +362,7 @@ static void modeswitch_linktop(int needreset, int devicecount)
 	sleep(2);
 }
 
+#define SIERRADIP 0x100		// direct ip sierra / sierra_net
 #define QMI 0x80		// cdc_wdm + qmi_wwan
 #define ETH 0x40		// usbnet + cdc_ether or usbnet + cdc_ncm
 #define GENERIC 0x20		//
@@ -565,7 +566,7 @@ static struct DEVICES devicelist[] = {
 //	{0x12d1, 0x14db, "option", "0", "0", 2 | ETH, NULL,  "Huawei E353 composite"},	//
 	{0x12d1, 0x14fe, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E352,E353"},	//
 	{0x12d1, 0x1505, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E398"},	//
-	{0x12d1, 0x1506, "option", "2", "0", 2, NULL, "Huawei E367/E398 (modem)"},	//
+	{0x12d1, 0x1506, "option", "2", "0", 2 | QMI, NULL, "Huawei E367/E398 (modem)"},	//
 	{0x12d1, 0x150a, "option", "2", "0", 2 | QMI, NULL, "Huawei E398 (modem)"},	// 
 	{0x12d1, 0x150c, "option", "1", "2", 2 | QMI, NULL, "Huawei E367"},	//
 	{0x12d1, 0x150f, "option", "0", "0", 2 | QMI, NULL, "Huawei E367"},	//
