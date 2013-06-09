@@ -18,6 +18,7 @@ static const char *device;
 #define __uqmi_command(_name, _optname, _arg, _option) { #_optname, _arg##_argument, NULL, CMD_OPT(__UQMI_COMMAND_##_name) }
 static const struct option uqmi_getopt[] = {
 	__uqmi_commands,
+	{ "single", no_argument, NULL, 's' },
 	{ "device", required_argument, NULL, 'd' },
 	{ "keep-client-id", required_argument, NULL, 'k' },
 	{ "release-client-id", required_argument, NULL, 'r' },
@@ -29,6 +30,7 @@ static int usage(const char *progname)
 {
 	fprintf(stderr, "Usage: %s <options|actions>\n"
 		"Options:\n"
+		"  --single, -s:                     Print output as a single line (for scripts)\n"
 		"  --device=NAME, -d NAME:           Set device name to NAME (required)\n"
 		"  --keep-client-id <name>:          Keep Client ID for service <name>\n"
 		"                                    (implies --keep-client-id)\n"
@@ -78,13 +80,13 @@ static void handle_exit_signal(int signal)
 int main(int argc, char **argv)
 {
 	static struct qmi_dev dev;
-	int ch;
+	int ch, ret;
 
 	uloop_init();
 	signal(SIGINT, handle_exit_signal);
 	signal(SIGTERM, handle_exit_signal);
 
-	while ((ch = getopt_long(argc, argv, "d:k:", uqmi_getopt, NULL)) != -1) {
+	while ((ch = getopt_long(argc, argv, "d:k:s", uqmi_getopt, NULL)) != -1) {
 		int cmd_opt = CMD_OPT(ch);
 
 		if (ch < 0 && cmd_opt >= 0 && cmd_opt < __UQMI_COMMAND_LAST) {
@@ -102,6 +104,9 @@ int main(int argc, char **argv)
 		case 'd':
 			device = optarg;
 			break;
+		case 's':
+			single_line = true;
+			break;
 		default:
 			return usage(argv[0]);
 		}
@@ -117,9 +122,9 @@ int main(int argc, char **argv)
 		return 2;
 	}
 
-	uqmi_run_commands(&dev);
+	ret = uqmi_run_commands(&dev) ? 0 : -1;
 
 	qmi_device_close(&dev);
 
-	return 0;
+	return ret;
 }

@@ -46,8 +46,10 @@ enum uqmi_command {
 };
 #undef __uqmi_command
 
+extern bool single_line;
 extern const struct uqmi_cmd_handler uqmi_cmd_handler[];
 void uqmi_add_command(char *arg, int longidx);
-void uqmi_run_commands(struct qmi_dev *qmi);
+bool uqmi_run_commands(struct qmi_dev *qmi);
+void uqmi_add_error(const char *msg);
 
 #endif
