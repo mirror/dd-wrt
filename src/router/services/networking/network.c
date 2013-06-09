@@ -3124,7 +3124,6 @@ void start_wan(int status)
 			fprintf(fp, "%d", clientid);
 			fclose(fp);
 
-			fprintf(fp, "APN=%s", nvram_safe_get("wan_apn"));
 			fp = fopen("/tmp/qmi-connect.sh", "wb");
 			fprintf(fp,"#!/bin/sh\n");
 			fprintf(fp,"REG=0\n");
