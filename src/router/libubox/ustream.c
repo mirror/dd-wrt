@@ -330,8 +330,9 @@ char *ustream_get_read_buf(struct ustream *s, int *buflen)
 
 static void ustream_write_error(struct ustream *s)
 {
+	if (!s->write_error)
+		ustream_state_change(s);
 	s->write_error = true;
-	ustream_state_change(s);
 }
 
 bool ustream_write_pending(struct ustream *s)
