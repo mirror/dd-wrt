@@ -3125,15 +3125,37 @@ void start_wan(int status)
 			fclose(fp);
 
 			fprintf(fp, "APN=%s", nvram_safe_get("wan_apn"));
+			fp = fopen("/tmp/qmi-connect.sh", "wb");
+			fprintf(fp,"#!/bin/sh\n");
+			fprintf(fp,"REG=0\n");
+			fprintf(fp,"COUNT=3\n");
+			fprintf(fp,"while [ $REG = 0 ]\n");
+			fprintf(fp,"do\n");
+			fprintf(fp,"if [ $COUNT = 0 ]\n");
+			fprintf(fp,"then\n");
+			fprintf(fp," exit\n");
+			fprintf(fp,"fi\n");
+			fprintf(fp,"CLIENTID=`cat /tmp/qmi-clientid`\n");
+			fprintf(fp,"REG=`uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --keep-client-id wds --get-serving-system|grep registered|wc -l`\n");
+			fprintf(fp,"if [ $REG = 0 ]\n");
+			fprintf(fp,"then\n");
+			fprintf(fp,"echo \"not yet registered to the network (${COUNT})\" | logger -t wan_dial\n");
+			fprintf(fp,"fi\n");
+			fprintf(fp,"COUNT=$(($COUNT - 1))\n");
+			fprintf(fp,"sleep 5\n");
+			fprintf(fp,"done\n");
 			if (strlen(nvram_safe_get("ppp_username")) > 0 && strlen(nvram_safe_get("ppp_passwd")) > 0) {
-				sysprintf
-				    ("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --username %s --password %s --keep-client-id wds",
-				     clientid, nvram_safe_get("wan_apn"), nvram_safe_get("ppp_username"), nvram_safe_get("ppp_passwd"));
+				fprintf(fp,"uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --username %s --password %s --keep-client-id wds",
+				     nvram_safe_get("wan_apn"), nvram_safe_get("ppp_username"), nvram_safe_get("ppp_passwd"));
 			} else {
-				sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --start-network %s --auth-type both --keep-client-id wds", clientid, nvram_safe_get("wan_apn"));
+				fprintf(fp,"uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --keep-client-id wds\n", nvram_safe_get("wan_apn"));
 			}
-			eval("ifconfig", "wwan0", "up");
-			start_dhcpc("wwan0", NULL, NULL, 1);
+			fprintf(fp,"ifconfig wwan0 up\n");
+			fprintf(fp,"ln -s /sbin/rc /tmp/udhcpc\n");
+			fprintf(fp,"udhcpc -i wwan0 -p /var/run/udhcpc.pid -s /tmp/udhcpc\n");
+			fclose(fp);
+			chmod("/tmp/qmi-connect.sh", 0700);
+			sysprintf("/tmp/qmi-connect.sh &");
 			if (status != REDIAL) {
 				start_redial();
 			}
