@@ -1,4 +1,4 @@
-# Install script for directory: /home/seg/DEV/pb42/src/router/libubox/lua
+# Install script for directory: /home/seg/DEV/xscale/src/router/libubox/lua
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)

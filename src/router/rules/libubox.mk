@@ -18,8 +18,8 @@ libubox: libubox-configure
 	-mkdir -p $(TOP)/_staging
 	-mkdir -p $(STAGING_DIR)/usr/include/libubox
 	-install -D libubox/libubox.so $(STAGING_DIR)/usr/lib/libubox.so
-#	-install -D libubox/libjson_script.so $(STAGING_DIR)/usr/lib/libjson_script.so
-#	-install -D libubox/libblobmsg_json.so $(STAGING_DIR)/usr/lib/libblobmsg_json.so
+	-install -D libubox/libjson_script.so $(STAGING_DIR)/usr/lib/libjson_script.so
+	-install -D libubox/libblobmsg_json.so $(STAGING_DIR)/usr/lib/libblobmsg_json.so
 	-cp libubox/*.h $(STAGING_DIR)/usr/include/libubox
 
 libubox-install:

@@ -13,7 +13,12 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include <json/json.h>
+#ifdef JSONC
+        #include <json.h>
+#else
+        #include <json/json.h>
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -107,6 +112,9 @@ static int add_json_element(const char *key, json_object *obj)
 	case json_type_int:
 		type = "int";
 		break;
+	case json_type_double:
+		type = "double";
+		break;
 	default:
 		return -1;
 	}
@@ -135,6 +143,9 @@ static int add_json_element(const char *key, json_object *obj)
 		break;
 	case json_type_int:
 		fprintf(stdout, "' %d;\n", json_object_get_int(obj));
+		break;
+	case json_type_double:
+		fprintf(stdout, "' %lf;\n", json_object_get_double(obj));
 		break;
 	default:
 		return -1;
@@ -207,6 +218,8 @@ static void jshn_add_object_var(json_object *obj, bool array, const char *prefix
 		new = json_object_new_string(var);
 	} else if (!strcmp(type, "int")) {
 		new = json_object_new_int(atoi(var));
+	} else if (!strcmp(type, "double")) {
+		new = json_object_new_double(strtod(var, NULL));
 	} else if (!strcmp(type, "boolean")) {
 		new = json_object_new_boolean(!!atoi(var));
 	} else {
