@@ -42,7 +42,7 @@ struct DEVICES {
 
 static struct DEVICES devicelist[];
 
-static int scanFor(int Vendor, int Product, char *ext)
+static int scanFor(int Vendor, int Product)
 {
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	char grepstr[128];
@@ -68,32 +68,40 @@ static int scanFor(int Vendor, int Product, char *ext)
 		if (!probe) {
 			count = 1;
 			hub++;
-			continue;
+			goto next;
 		}
 		fclose(probe);
-
-		sprintf(sysfs, "/sys/bus/usb/devices/%d-%d%s/idProduct", count, hub, ext);
-		FILE *modem = fopen(sysfs, "rb");
-		if (!modem) {
-			count++;
-			continue;
+		int i;
+		for (i = 0; i < 9; i++) {
+			if (!i)
+				sprintf(sysfs, "/sys/bus/usb/devices/%d-%d%s/idProduct", count, hub);
+			else
+				sprintf(sysfs, "/sys/bus/usb/devices/%d-%d.%d/idProduct", count, hub, i);
+			FILE *modem = fopen(sysfs, "rb");
+			if (!modem) {
+				count++;
+				goto next;
+			}
+			int idProduct;
+			int idVendor;
+			fscanf(modem, "%X", &idProduct);
+			fclose(modem);
+			if (!i)
+				sprintf(sysfs, "/sys/bus/usb/devices/%d-%d%s/idVendor", count, hub);
+			else
+				sprintf(sysfs, "/sys/bus/usb/devices/%d-%d.%d/idVendor", count, hub, i);
+			modem = fopen(sysfs, "rb");
+			if (!modem) {
+				count++;
+				goto next;
+			}
+			fscanf(modem, "%X", &idVendor);
+			fclose(modem);
+			if (idVendor == Vendor && idProduct == Product)
+				return 1;
 		}
-		int idProduct;
-		int idVendor;
-		fscanf(modem, "%X", &idProduct);
-		fclose(modem);
-		sprintf(sysfs, "/sys/bus/usb/devices/%d-%d%s/idVendor", count, hub, ext);
-		modem = fopen(sysfs, "rb");
-		if (!modem) {
-			count++;
-			continue;
-		}
-		fscanf(modem, "%X", &idVendor);
-		fclose(modem);
-		if (idVendor == Vendor && idProduct == Product)
-			return 1;
-
 		count++;
+	      next:;
 	}
 	return 0;
 #endif
@@ -832,11 +840,7 @@ char *get3GDeviceVendor(void)
 	char *vendor = "unknown";
 	int devicecount = 0;
 	while (devicelist[devicecount].vendor != 0xffff) {
-		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product, "")) {
-			return devicelist[devicecount].name;
-
-		}
-		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product, ".2")) {
+		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product)) {
 			return devicelist[devicecount].name;
 
 		}
@@ -902,7 +906,7 @@ char *get3GControlDevice(void)
 
 	int devicecount = 0;
 	while (devicelist[devicecount].vendor != 0xffff) {
-		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product, "") || scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product, ".2")) {
+		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product)) {
 			fprintf(stderr, "%s detected\n", devicelist[devicecount].name);
 
 #if defined(HAVE_LIBQMI) || defined(HAVE_UQMI)
