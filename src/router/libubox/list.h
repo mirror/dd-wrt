@@ -35,8 +35,11 @@
 #define	prefetch(x)
 
 #ifndef container_of
-#define container_of(ptr, type, member) (           \
-    (type *)( (char *)ptr - offsetof(type,member) ))
+#define container_of(ptr, type, member)					\
+	({								\
+		const typeof(((type *) NULL)->member) *__mptr = (ptr);	\
+		(type *) ((char *) __mptr - offsetof(type, member));	\
+	})
 #endif
 
 struct list_head {

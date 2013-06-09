@@ -267,7 +267,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
  *    (automatically converted to type 'element')
  */
 #define avl_first_element(tree, element, node_member) \
-  container_of((tree)->list_head.next, typeof(*(element)), node_member)
+  container_of((tree)->list_head.next, typeof(*(element)), node_member.list)
 
 /**
  * @param tree pointer to tree
@@ -279,7 +279,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
  *    (automatically converted to type 'element')
  */
 #define avl_last_element(tree, element, node_member) \
-  container_of((tree)->list_head.prev, typeof(*(element)), node_member)
+  container_of((tree)->list_head.prev, typeof(*(element)), node_member.list)
 
 /**
  * This function must not be called for the last element of
@@ -292,7 +292,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
  *    (automatically converted to type 'element')
  */
 #define avl_next_element(element, node_member) \
-  container_of((&(element)->node_member.list)->next, typeof(*(element)), node_member)
+  container_of((&(element)->node_member.list)->next, typeof(*(element)), node_member.list)
 
 /**
  * This function must not be called for the first element of
@@ -305,7 +305,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
  *    (automatically converted to type 'element')
  */
 #define avl_prev_element(element, node_member) \
-  container_of((&(element)->node_member.list)->prev, typeof(*(element)), node_member)
+  container_of((&(element)->node_member.list)->prev, typeof(*(element)), node_member.list)
 
 /**
  * Loop over a block of elements of a tree, used similar to a for() command.
