@@ -94,3 +94,11 @@ cmd_wds_get_packet_service_status_prepare(struct qmi_dev *qmi, struct qmi_reques
 	qmi_set_wds_get_packet_service_status_request(msg);
 	return QMI_CMD_REQUEST;
 }
+
+#define cmd_wds_reset_cb no_cb
+static enum qmi_cmd_result
+cmd_wds_reset_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	qmi_set_wds_reset_request(msg);
+	return QMI_CMD_REQUEST;
+}
