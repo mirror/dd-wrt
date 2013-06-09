@@ -6,7 +6,7 @@ e2fsprogs-configure:
 e2fsprogs:
 	make -C e2fsprogs
 ifeq ($(CONFIG_E2FSPROGS_ADV),y)
-	make -C xfsprogs DEBUG= Q=
+	make -C xfsprogs DEBUG= Q= 
 	make -C btrfsprogs CC="$(CC)" CFLAGS="$(COPTS) -I$(TOP)/e2fsprogs/lib -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L$(TOP)/e2fsprogs/lib/uuid  -ffunction-sections -fdata-sections -Wl,--gc-sections" prefix=/usr
 endif
 

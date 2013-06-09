@@ -24,7 +24,7 @@ libubox: libubox-configure
 
 libubox-install:
 	install -D libubox/libubox.so $(INSTALLDIR)/libubox/usr/lib/libubox.so
-#	install -D libubox/libblobmsg_json.so $(INSTALLDIR)/libubox/usr/lib/libblobmsg_json.so 
+	install -D libubox/libblobmsg_json.so $(INSTALLDIR)/libubox/usr/lib/libblobmsg_json.so 
 
 libubox-clean:
 	if [ -e "$(UBOX_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C libubox clean ; fi
