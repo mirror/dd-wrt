@@ -3,7 +3,7 @@ INCLUDE(CheckLibraryExists)
 INCLUDE(CheckFunctionExists)
 
 PROJECT(ubox C)
-ADD_DEFINITIONS(-Os -Wall -Werror --std=gnu99 -g3 -Wmissing-declarations)
+ADD_DEFINITIONS(-Os -Wall --std=gnu99 -g3 -Wmissing-declarations)
 
 OPTION(BUILD_LUA "build Lua plugin" ON)
 
@@ -12,7 +12,14 @@ IF(APPLE)
   LINK_DIRECTORIES(/opt/local/lib)
 ENDIF()
 
-SET(SOURCES avl.c avl-cmp.c blob.c blobmsg.c uloop.c usock.c ustream.c ustream-fd.c vlist.c utils.c)
+INCLUDE(FindPkgConfig)
+PKG_CHECK_MODULES(JSONC json-c json)
+IF(JSONC_FOUND)
+  ADD_DEFINITIONS(-DJSONC)
+  INCLUDE_DIRECTORIES(${JSONC_INCLUDE_DIRS})
+ENDIF()
+
+SET(SOURCES avl.c avl-cmp.c blob.c blobmsg.c uloop.c usock.c ustream.c ustream-fd.c vlist.c utils.c safe_list.c runqueue.c)
 
 ADD_LIBRARY(ubox SHARED ${SOURCES})
 

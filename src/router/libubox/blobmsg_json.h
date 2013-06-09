@@ -16,13 +16,19 @@
 #ifndef __BLOBMSG_JSON_H
 #define __BLOBMSG_JSON_H
 
-#include <json/json.h>
+#ifdef JSONC
+	#include <json.h>
+#else
+	#include <json/json.h>
+#endif
+
 #include <stdbool.h>
 #include "blobmsg.h"
 
 bool blobmsg_add_object(struct blob_buf *b, json_object *obj);
 bool blobmsg_add_json_element(struct blob_buf *b, const char *name, json_object *obj);
 bool blobmsg_add_json_from_string(struct blob_buf *b, const char *str);
+bool blobmsg_add_json_from_file(struct blob_buf *b, const char *file);
 
 typedef const char *(*blobmsg_json_format_t)(void *priv, struct blob_attr *attr);
 

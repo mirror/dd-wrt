@@ -71,12 +71,10 @@ bool blobmsg_add_json_element(struct blob_buf *b, const char *name, json_object 
 	return ret;
 }
 
-bool blobmsg_add_json_from_string(struct blob_buf *b, const char *str)
+static bool __blobmsg_add_json(struct blob_buf *b, json_object *obj)
 {
-	json_object *obj;
 	bool ret = false;
 
-	obj = json_tokener_parse(str);
 	if (is_error(obj))
 		return false;
 
@@ -88,6 +86,16 @@ bool blobmsg_add_json_from_string(struct blob_buf *b, const char *str)
 out:
 	json_object_put(obj);
 	return ret;
+}
+
+bool blobmsg_add_json_from_file(struct blob_buf *b, const char *file)
+{
+	return __blobmsg_add_json(b, json_object_from_file(file));
+}
+
+bool blobmsg_add_json_from_string(struct blob_buf *b, const char *str)
+{
+	return __blobmsg_add_json(b, json_tokener_parse(str));
 }
 
 
