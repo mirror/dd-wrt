@@ -42,7 +42,7 @@ struct DEVICES {
 
 static struct DEVICES devicelist[];
 
-static int scanFor(int Vendor, int Product)
+static int scanFor(int Vendor, int Product, char *ext)
 {
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	char grepstr[128];
@@ -72,7 +72,7 @@ static int scanFor(int Vendor, int Product)
 		}
 		fclose(probe);
 
-		sprintf(sysfs, "/sys/bus/usb/devices/%d-%d/idProduct", count, hub);
+		sprintf(sysfs, "/sys/bus/usb/devices/%d-%d%s/idProduct", count, hub, ext);
 		FILE *modem = fopen(sysfs, "rb");
 		if (!modem) {
 			count++;
@@ -82,7 +82,7 @@ static int scanFor(int Vendor, int Product)
 		int idVendor;
 		fscanf(modem, "%X", &idProduct);
 		fclose(modem);
-		sprintf(sysfs, "/sys/bus/usb/devices/%d-%d/idVendor", count, hub);
+		sprintf(sysfs, "/sys/bus/usb/devices/%d-%d%s/idVendor", count, hub, ext);
 		modem = fopen(sysfs, "rb");
 		if (!modem) {
 			count++;
@@ -211,9 +211,9 @@ static void modeswitch_huawei_other(int needreset, int devicecount)
 	system("usb_modeswitch -v 0x12d1 -p 0x1031 -M 55534243123456780600000080010a11060000000000000000000000000000");
 	system("usb_modeswitch -v 0x12d1 -p 0x1f01 -M 55534243123456780000000000000011060000000000000000000000000000");	// switch HiLink to modem
 	system("usb_modeswitch -v 0x12d1 -p 0x1f11 -M 55534243123456780000000000000011060000000000000000000000000000");	// switch HiLink to modem
-//	system("usb_modeswitch -v 0x12d1 -p 0x1f01 -M 55534243123456780000000000000011062000000000000100000000000000");	// switch HiLink to eth
-//	system("usb_modeswitch -v 0x12d1 -p 0x1f03 -M 55534243123456780000000000000011062000000000000100000000000000");	// switch HiLink to eth
-//	system("usb_modeswitch -v 0x12d1 -p 0x1f11 -M 55534243123456780002000080000a11062000000000000100000000000000");	// switch HiLink to eth
+//      system("usb_modeswitch -v 0x12d1 -p 0x1f01 -M 55534243123456780000000000000011062000000000000100000000000000"); // switch HiLink to eth
+//      system("usb_modeswitch -v 0x12d1 -p 0x1f03 -M 55534243123456780000000000000011062000000000000100000000000000"); // switch HiLink to eth
+//      system("usb_modeswitch -v 0x12d1 -p 0x1f11 -M 55534243123456780002000080000a11062000000000000100000000000000"); // switch HiLink to eth
 
 	sleep(2);
 }
@@ -421,7 +421,7 @@ static struct DEVICES devicelist[] = {
 	{0x0af0, 0x7a05, NULL, "hso", "hso", 0, &hsoinit_icon, "Option ICON 461"},	//
 	{0x0af0, 0x8120, "option", "2", "2", 3, NULL, "Option GTM681W"},	//
 	{0x0af0, 0x8700, NULL, NULL, NULL, 0, &hsoinit_icon, "Option GI0643"},	//
-//	{0x0af0, 0x8701, NULL, NULL, NULL, 3 | ETH, NULL, "Option GI0643"},	//
+//      {0x0af0, 0x8701, NULL, NULL, NULL, 3 | ETH, NULL, "Option GI0643"},     //
 	{0x0af0, 0x8900, "option", "2", "2", 3, NULL, "Option GTM671W"},	//
 	{0x0af0, 0x9000, "option", "2", "2", 3, NULL, "Option GTM661W"},	//
 	{0x0af0, 0x9200, "option", "2", "2", 3, NULL, "Option GTM671WFS"},	//
@@ -531,7 +531,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x1413, "option", "2", "0", 2, NULL, "HUAWEI/Option EC168"},	//
 	{0x12d1, 0x1414, "option", "2", "0", 2, &modeswitch_huawei_old, "HUAWEI/Option E180"},	//
 	{0x12d1, 0x141b, "option", "1", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
-//	{0x12d1, 0x1432, "option", "0", "0", 2 | ETH, NULL, "HUAWEI E585"},
+//      {0x12d1, 0x1432, "option", "0", "0", 2 | ETH, NULL, "HUAWEI E585"},
 	{0x12d1, 0x1433, "option", "2", "0", 2, NULL, "HUAWEI/Option E1756C"},	//
 	{0x12d1, 0x1436, "option", "2", "0", 2, NULL, "HUAWEI/Option E1800"},	// ecm able
 	{0x12d1, 0x1444, "option", "0", "0", 2, NULL, "HUAWEI/Option E352-R1"},	//
@@ -549,7 +549,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x14b5, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E173"},	//
 	{0x12d1, 0x14b7, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei K4511"},	//
 	{0x12d1, 0x14ba, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E173/E177 (cdrom)"},	//
-//	{0x12d1, 0x14bc, "option", "0", "0", 2 | ETH, NULL,  "Huawei K3773 (net)"},	//
+//      {0x12d1, 0x14bc, "option", "0", "0", 2 | ETH, NULL,  "Huawei K3773 (net)"},     //
 	{0x12d1, 0x14c1, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei K4605"},	//
 	{0x12d1, 0x14c3, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei K5005"},	//
 	{0x12d1, 0x14c4, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei K3771"},	//
@@ -563,7 +563,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x14cf, "option", "2", "0", 2, NULL, "Huawei K3772 (modem)"},	// ncm able
 	{0x12d1, 0x14d1, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E182E"},	//
 	{0x12d1, 0x14d2, "option", "2", "0", 2 | QMI, NULL, "Huawei E173/E177 (modem)"},	//
-//	{0x12d1, 0x14db, "option", "0", "0", 2 | ETH, NULL,  "Huawei E353 composite"},	//
+//      {0x12d1, 0x14db, "option", "0", "0", 2 | ETH, NULL,  "Huawei E353 composite"},  //
 	{0x12d1, 0x14fe, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E352,E353"},	//
 	{0x12d1, 0x1505, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E398"},	//
 	{0x12d1, 0x1506, "option", "2", "0", 2 | QMI, NULL, "Huawei E367/E398 (modem)"},	//
@@ -586,8 +586,8 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x1c10, "option", "2", "0", 2, NULL, "Huawei E173 (modem)"},	//
 	{0x12d1, 0x1c12, "option", "2", "0", 2, NULL, "Huawei E173 (modem)"},	//
 	{0x12d1, 0x1c1b, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E398 (cdrom)"},	//
-//	{0x12d1, 0x1c1e, "option", "2", "0", 2 | NCM, NULL, "Huawei E586 (net)"},	//
-//	{0x12d1, 0x1c1f, "option", "0", "0", 2 | NCM, NULL, "Huawei E587 (net)"},	//
+//      {0x12d1, 0x1c1e, "option", "2", "0", 2 | NCM, NULL, "Huawei E586 (net)"},       //
+//      {0x12d1, 0x1c1f, "option", "0", "0", 2 | NCM, NULL, "Huawei E587 (net)"},       //
 	{0x12d1, 0x1c23, "option", "0", "2", 2 | GENERIC, NULL, "Huawei E173 (modem)"},	//
 	{0x12d1, 0x1c24, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E173 (cdrom)"},	//
 	{0x12d1, 0x1f01, "option", "0", "0", 2, &modeswitch_huawei_other, "Huawei E353 (cdrom)"},	//
@@ -713,7 +713,7 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x1225, "option", "0", "0", 2, &modeswitch_zte_1msg, "ZTE MF668 (cdrom)"},	//
 	{0x19d2, 0x1227, "option", "0", "0", 2, &modeswitch_zte_1msg, "ZTE MF669 (cdrom)"},	//
 	{0x19d2, 0x1252, "option", "1", "3", 2 | QMI, NULL, "ZTE MF669 (modem)"},	//
-//	{0x19d2, 0x1405, "option", "0", "0", 2 | ECM, NULL, "ZTE MF668 (modem)"},	//maybe qmi on the ecm interfaces, must be tested
+//      {0x19d2, 0x1405, "option", "0", "0", 2 | ECM, NULL, "ZTE MF668 (modem)"},       //maybe qmi on the ecm interfaces, must be tested
 	{0x19d2, 0x1517, "option", "0", "0", 2, &modeswitch_zte_2msg, "ZTE MF192 (cdrom)"},	//
 	{0x19d2, 0x1519, "option", "0", "0", 2 | ACM, NULL, "ZTE MF192 (modem)"},	//
 	{0x19d2, 0x1520, "option", "0", "0", 2, &modeswitch_zte_1msg, "ZTE MF652 (cdrom)"},	//
@@ -736,11 +736,11 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0xffff, "option", "1", "0", 2, NULL, "ZTE generic (modem)"},	//
 
 //Infomark
-//	{0x19f2, 0x1700, "option", "0", "0", 0 | ETH, NULL, "Clear Spot Voyager mifi"},	//
+//      {0x19f2, 0x1700, "option", "0", "0", 0 | ETH, NULL, "Clear Spot Voyager mifi"}, //
 
 //Bandrich
 	{0x1a8d, 0x1000, "option", "0", "0", 2, &modeswitch_bandrich, "Bandrich C-100/C-120/C-170/C-180/C-270/C-320/C321 (cdrom)"},	//
-//	{0x1a8d, 0x1001, "option", "1", NULL, 2 | ECM, NULL, "Bandrich C-100/C-120 (netif)"},	//
+//      {0x1a8d, 0x1001, "option", "1", NULL, 2 | ECM, NULL, "Bandrich C-100/C-120 (netif)"},   //
 	{0x1a8d, 0x1002, "option", "1", "0", 2, NULL, "Bandrich C-100/C-120 (modem)"},	//
 	{0x1a8d, 0x1003, "option", "1", "0", 2, NULL, "Bandrich C-100/C-120 (modem)"},	//
 	{0x1a8d, 0x1007, "option", "2", "0", 2, NULL, "Bandrich C-270 (modem)"},	//
@@ -832,7 +832,11 @@ char *get3GDeviceVendor(void)
 	char *vendor = "unknown";
 	int devicecount = 0;
 	while (devicelist[devicecount].vendor != 0xffff) {
-		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product)) {
+		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product, "")) {
+			return devicelist[devicecount].name;
+
+		}
+		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product, ".2")) {
 			return devicelist[devicecount].name;
 
 		}
@@ -894,11 +898,11 @@ char *get3GControlDevice(void)
 	}
 #endif
 	nvram_unset("3gnmvariant");
-//	nvram_set("3gdata", "/dev/usb/tts/0");	// crap
+//      nvram_set("3gdata", "/dev/usb/tts/0");  // crap
 
 	int devicecount = 0;
 	while (devicelist[devicecount].vendor != 0xffff) {
-		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product)) {
+		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product, "") || scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product, ".2")) {
 			fprintf(stderr, "%s detected\n", devicelist[devicecount].name);
 
 #if defined(HAVE_LIBQMI) || defined(HAVE_UQMI)
