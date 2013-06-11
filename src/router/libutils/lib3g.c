@@ -79,8 +79,7 @@ static int scanFor(int Vendor, int Product)
 				sprintf(sysfs, "/sys/bus/usb/devices/%d-%d.%d/idProduct", count, hub, i);
 			FILE *modem = fopen(sysfs, "rb");
 			if (!modem) {
-				count++;
-				goto next;
+				goto next_if;
 			}
 			int idProduct;
 			int idVendor;
@@ -92,13 +91,13 @@ static int scanFor(int Vendor, int Product)
 				sprintf(sysfs, "/sys/bus/usb/devices/%d-%d.%d/idVendor", count, hub, i);
 			modem = fopen(sysfs, "rb");
 			if (!modem) {
-				count++;
-				goto next;
+				goto next_if;
 			}
 			fscanf(modem, "%X", &idVendor);
 			fclose(modem);
 			if (idVendor == Vendor && idProduct == Product)
 				return 1;
+			next_if:;
 		}
 		count++;
 	      next:;
