@@ -744,6 +744,7 @@ hnas.right2="For the user password list, enter one password per line. Passwords 
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
+nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
 
 // ** Hotspot.asp **//
