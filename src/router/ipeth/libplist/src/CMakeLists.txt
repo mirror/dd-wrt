@@ -19,6 +19,8 @@ SET(libplist++_SRC
 	String.cpp
 	Date.cpp
 	Data.cpp
+	Key.cpp
+	Uid.cpp
 	Structure.cpp
 	Array.cpp
 	Dictionary.cpp
@@ -36,7 +38,6 @@ SET_SOURCE_FILES_PROPERTIES(${libcnary_object_files} PROPERTIES EXTERNAL_OBJECT 
 
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPLIST_BYTE_ORDER=${PLIST_BYTE_ORDER}")
 ADD_LIBRARY( plist SHARED ${libplist_SRC} ${libcnary_object_files} )
-ADD_LIBRARY( plist-static STATIC ${libplist_SRC} ${libcnary_object_files} )
 TARGET_LINK_LIBRARIES( plist ${LIBXML2_LIBRARIES} )
 SET_TARGET_PROPERTIES( plist PROPERTIES VERSION ${LIBPLIST_LIBVERSION} )
 SET_TARGET_PROPERTIES( plist PROPERTIES SOVERSION ${LIBPLIST_SOVERSION} )

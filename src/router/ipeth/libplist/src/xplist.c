@@ -126,6 +126,25 @@ static xmlDocPtr new_xml_plist(void)
     return plist_xml;
 }
 
+static struct node_t* new_key_node(const char* name)
+{
+    plist_data_t data = plist_new_plist_data();
+    data->type = PLIST_KEY;
+    int size = strlen(name);
+    data->strval = strdup(name);
+    data->length = size;
+    return node_create(NULL, data);
+}
+
+static struct node_t* new_uint_node(uint64_t uint)
+{
+    plist_data_t data = plist_new_plist_data();
+    data->type = PLIST_UINT;
+    data->intval = uint;
+    data->length = sizeof(uint64_t);
+    return node_create(NULL, data);
+}
+
 static void node_to_xml(node_t* node, void *xml_struct)
 {
     struct xml_node *xstruct = NULL;
@@ -133,6 +152,7 @@ static void node_to_xml(node_t* node, void *xml_struct)
 
     xmlNodePtr child_node = NULL;
     char isStruct = FALSE;
+    char isUIDNode = FALSE;
 
     const xmlChar *tag = NULL;
     char *val = NULL;
@@ -214,6 +234,15 @@ static void node_to_xml(node_t* node, void *xml_struct)
             }
         }
         break;
+    case PLIST_UID:
+        // special case for keyed encoding
+        tag = XPLIST_DICT;
+        isStruct = TRUE;
+        isUIDNode = TRUE;
+        node_data->type = PLIST_DICT;
+        node_attach(node, new_key_node("CF$UID"));
+        node_attach(node, new_uint_node(node_data->intval));
+        break;
     default:
         break;
     }
@@ -237,6 +266,15 @@ static void node_to_xml(node_t* node, void *xml_struct)
     if (node_data->type == PLIST_ARRAY || node_data->type == PLIST_DICT)
         xmlNodeAddContent(child_node, BAD_CAST("\n"));
 
+    //make sure we don't produce <data/> if it's empty
+    if ((node_data->type == PLIST_DATA) && !val) {
+        xmlNodeAddContent(child_node, BAD_CAST("\n"));
+        for (i = 0; i < xstruct->depth; i++)
+        {
+            xmlNodeAddContent(child_node, BAD_CAST("\t"));
+        }
+    }
+
     if (isStruct)
     {
         struct xml_node child = { child_node, xstruct->depth + 1 };
@@ -256,6 +294,17 @@ static void node_to_xml(node_t* node, void *xml_struct)
             xmlNodeAddContent(child_node, BAD_CAST("\t"));
         }
     }
+    if (isUIDNode)
+    {
+        unsigned int num = node_n_children(node);
+        unsigned int i;
+        for (i = num; i > 0; i--) {
+            node_t* ch = node_nth_child(node, i-1);
+            node_detach(node, ch);
+            node_destroy(ch);
+        }
+        node_data->type = PLIST_UID;
+    }
 
     return;
 }
@@ -272,6 +321,7 @@ static void parse_date(const char *strval, struct tm *btime)
     btime->tm_year-=1900;
     btime->tm_mon--;
 #endif
+    btime->tm_isdst=-1;
 }
 
 static void xml_to_node(xmlNodePtr xml_node, plist_t * plist_node)
@@ -294,6 +344,10 @@ static void xml_to_node(xmlNodePtr xml_node, plist_t * plist_node)
             node = node->next;
         if (!node)
             break;
+
+        if (!xmlStrcmp(node->name, BAD_CAST("comment"))) {
+            continue;
+        }
 
         data = plist_new_plist_data();
         subnode = plist_new_node(data);
@@ -342,7 +396,7 @@ static void xml_to_node(xmlNodePtr xml_node, plist_t * plist_node)
         {
             xmlChar *strval = xmlNodeGetContent(node);
             time_t time = 0;
-            if (strlen(strval) >= 11) {
+            if (strlen((const char*)strval) >= 11) {
                 struct tm btime;
                 parse_date((const char*)strval, &btime);
                 time = mktime(&btime);
@@ -406,6 +460,21 @@ static void xml_to_node(xmlNodePtr xml_node, plist_t * plist_node)
         {
             data->type = PLIST_DICT;
             xml_to_node(node, &subnode);
+            if (plist_get_node_type(subnode) == PLIST_DICT) {
+                if (plist_dict_get_size(subnode) == 1) {
+                    plist_t uid = plist_dict_get_item(subnode, "CF$UID");
+                    if (uid) {
+                        uint64_t val = 0;
+                        plist_get_uint_val(uid, &val);
+                        plist_dict_remove_item(subnode, "CF$UID");
+                        plist_data_t nodedata = plist_get_data((node_t*)subnode);
+                        free(nodedata->buff);
+                        nodedata->type = PLIST_UID;
+                        nodedata->length = sizeof(uint64_t);
+                        nodedata->intval = val;
+                    } 
+                }
+            }
             continue;
         }
     }

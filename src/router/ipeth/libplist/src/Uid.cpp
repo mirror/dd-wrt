@@ -1,8 +1,7 @@
 /*
- * Date.h
- * Date node type for C++ binding
+ * Uid.cpp
  *
- * Copyright (c) 2009 Jonathan Beck All Rights Reserved.
+ * Copyright (c) 2012 Nikias Bassen, All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,32 +18,56 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef PLIST__DATE_H
-#define PLIST__DATE_H
-
-#include <plist/Node.h>
-#include <ctime>
-#include <sys/time.h>
+#include <stdlib.h>
+#include <plist/Uid.h>
 
 namespace PList
 {
 
-class Date : public Node
+Uid::Uid(Node* parent) : Node(PLIST_UID, parent)
 {
-public :
-    Date(Node* parent = NULL);
-    Date(plist_t node, Node* parent = NULL);
-    Date(Date& d);
-    Date& operator=(Date& d);
-    Date(timeval t);
-    virtual ~Date();
+}
 
-    Node* Clone();
+Uid::Uid(plist_t node, Node* parent) : Node(node, parent)
+{
+}
 
-    void SetValue(timeval t);
-    timeval GetValue();
+Uid::Uid(PList::Uid& i) : Node(PLIST_UID)
+{
+    plist_set_uid_val(_node, i.GetValue());
+}
+
+Uid& Uid::operator=(PList::Uid& i)
+{
+    plist_free(_node);
+    _node = plist_copy(i.GetPlist());
+    return *this;
+}
+
+Uid::Uid(uint64_t i) : Node(PLIST_UID)
+{
+    plist_set_uid_val(_node, i);
+}
+
+Uid::~Uid()
+{
+}
+
+Node* Uid::Clone()
+{
+    return new Uid(*this);
+}
+
+void Uid::SetValue(uint64_t i)
+{
+    plist_set_uid_val(_node, i);
+}
+
+uint64_t Uid::GetValue()
+{
+    uint64_t i = 0;
+    plist_get_uid_val(_node, &i);
+    return i;
+}
+
 };
-
-};
-
-#endif // PLIST__DATE_H

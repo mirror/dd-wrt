@@ -1,16 +1,6 @@
-cdef extern from *:
-    ctypedef unsigned char uint8_t
-    ctypedef short int int16_t
-    ctypedef unsigned short int uint16_t
-    ctypedef unsigned int uint32_t
-    ctypedef int int32_t
-IF UNAME_MACHINE == 'x86_64':
-    ctypedef unsigned long int uint64_t
-ELSE:
-    ctypedef unsigned long long int uint64_t
-
 cimport cpython
 cimport libc.stdlib
+from libc.stdint cimport *
 
 cdef extern from *:
     ctypedef enum plist_type:
@@ -23,6 +13,7 @@ cdef extern from *:
         PLIST_DATE,
         PLIST_DATA,
         PLIST_KEY,
+        PLIST_UID,
         PLIST_NONE
 
     plist_t plist_new_bool(uint8_t val)
@@ -40,6 +31,14 @@ cdef extern from *:
     plist_t plist_new_date(int32_t sec, int32_t usec)
     void plist_get_date_val(plist_t node, int32_t * sec, int32_t * usec)
     void plist_set_date_val(plist_t node, int32_t sec, int32_t usec)
+
+    plist_t plist_new_key(char *val)
+    void plist_get_key_val(plist_t node, char **val)
+    void plist_set_key_val(plist_t node, char *val)
+
+    plist_t plist_new_uid(uint64_t val)
+    void plist_get_uid_val(plist_t node, uint64_t *val)
+    void plist_set_uid_val(plist_t node, uint64_t val)
 
     plist_t plist_new_string(char *val)
     void plist_get_string_val(plist_t node, char **val)
@@ -186,7 +185,7 @@ cdef class Integer(Node):
             self._c_node = plist_new_uint(int(value))
 
     def __repr__(self):
-        cdef int i = self.get_value()
+        cdef uint64_t i = self.get_value()
         return '<Integer: %s>' % i
 
     def __int__(self):
@@ -213,7 +212,7 @@ cdef class Integer(Node):
     cpdef set_value(self, object value):
         plist_set_uint_val(self._c_node, int(value))
 
-    cpdef int get_value(self):
+    cpdef uint64_t get_value(self):
         cdef uint64_t value
         plist_get_uint_val(self._c_node, &value)
         return value
@@ -270,7 +269,124 @@ cdef Real Real_factory(plist_t c_node, bint managed=True):
     instance._c_node = c_node
     return instance
 
+cdef class Uid(Node):
+    def __cinit__(self, object value=None, *args, **kwargs):
+        if value is None:
+            self._c_node = plist_new_uid(0)
+        else:
+            self._c_node = plist_new_uid(int(value))
+
+    def __repr__(self):
+        cdef uint64_t i = self.get_value()
+        return '<Uid: %s>' % i
+
+    def __int__(self):
+        return self.get_value()
+
+    def __float__(self):
+        return float(self.get_value())
+
+    def __richcmp__(self, other, op):
+        cdef int i = self.get_value()
+        if op == 0:
+            return i < other
+        if op == 1:
+            return i <= other
+        if op == 2:
+            return i == other
+        if op == 3:
+            return i != other
+        if op == 4:
+            return i > other
+        if op == 5:
+            return i >= other
+
+    cpdef set_value(self, object value):
+        plist_set_uid_val(self._c_node, int(value))
+
+    cpdef uint64_t get_value(self):
+        cdef uint64_t value
+        plist_get_uid_val(self._c_node, &value)
+        return value
+
+cdef Uid Uid_factory(plist_t c_node, bint managed=True):
+    cdef Uid instance = Uid.__new__(Uid)
+    instance._c_managed = managed
+    instance._c_node = c_node
+    return instance
+
 from cpython cimport PY_MAJOR_VERSION
+
+cdef class Key(Node):
+    def __cinit__(self, object value=None, *args, **kwargs):
+        cdef:
+            char* c_utf8_data = NULL
+            bytes utf8_data
+        if value is None:
+            raise ValueError("Requires a value")
+        else:
+            if isinstance(value, unicode):
+                utf8_data = value.encode('utf-8')
+            elif (PY_MAJOR_VERSION < 3) and isinstance(value, str):
+                value.encode('ascii') # trial decode
+                utf8_data = value.encode('ascii')
+            else:
+                raise ValueError("Requires unicode input, got %s" % type(value))
+            c_utf8_data = utf8_data
+            self._c_node = plist_new_string("")
+            plist_set_type(self._c_node, PLIST_KEY)
+            #plist_set_key_val(self._c_node, c_utf8_data)
+
+    def __repr__(self):
+        s = self.get_value()
+        return '<Key: %s>' % s.encode('utf-8')
+
+    def __richcmp__(self, other, op):
+        cdef unicode s = self.get_value()
+        if op == 0:
+            return s < other
+        if op == 1:
+            return s <= other
+        if op == 2:
+            return s == other
+        if op == 3:
+            return s != other
+        if op == 4:
+            return s > other
+        if op == 5:
+            return s >= other
+
+    cpdef set_value(self, object value):
+        cdef:
+            char* c_utf8_data = NULL
+            bytes utf8_data
+        if value is None:
+            plist_set_key_val(self._c_node, c_utf8_data)
+        else:
+            if isinstance(value, unicode):
+                utf8_data = value.encode('utf-8')
+            elif (PY_MAJOR_VERSION < 3) and isinstance(value, str):
+                value.encode('ascii') # trial decode
+                utf8_data = value.encode('ascii')
+            else:
+                raise ValueError("Requires unicode input, got %s" % type(value))
+            c_utf8_data = utf8_data
+            plist_set_key_val(self._c_node, c_utf8_data)
+
+    cpdef unicode get_value(self):
+        cdef:
+            char* c_value = NULL
+        plist_get_key_val(self._c_node, &c_value)
+        try:
+            return cpython.PyUnicode_DecodeUTF8(c_value, len(c_value), 'strict')
+        finally:
+            libc.stdlib.free(c_value)
+
+cdef Key Key_factory(plist_t c_node, bint managed=True):
+    cdef Key instance = Key.__new__(Key)
+    instance._c_managed = managed
+    instance._c_node = c_node
+    return instance
 
 cdef class String(Node):
     def __cinit__(self, object value=None, *args, **kwargs):
@@ -283,8 +399,8 @@ cdef class String(Node):
             if isinstance(value, unicode):
                 utf8_data = value.encode('utf-8')
             elif (PY_MAJOR_VERSION < 3) and isinstance(value, str):
-                value.decode('ascii') # trial decode
-                utf8_data = value.decode('ascii')
+                value.encode('ascii') # trial decode
+                utf8_data = value.encode('ascii')
             else:
                 raise ValueError("Requires unicode input, got %s" % type(value))
             c_utf8_data = utf8_data
@@ -319,8 +435,8 @@ cdef class String(Node):
             if isinstance(value, unicode):
                 utf8_data = value.encode('utf-8')
             elif (PY_MAJOR_VERSION < 3) and isinstance(value, str):
-                value.decode('ascii') # trial decode
-                utf8_data = value.decode('ascii')
+                value.encode('ascii') # trial decode
+                utf8_data = value.encode('ascii')
             else:
                 raise ValueError("Requires unicode input, got %s" % type(value))
             c_utf8_data = utf8_data
@@ -331,7 +447,7 @@ cdef class String(Node):
             char* c_value = NULL
         plist_get_string_val(self._c_node, &c_value)
         try:
-            return cpython.PyUnicode_DecodeUTF8(c_value, libc.stdlib.strlen(c_value), 'strict')
+            return cpython.PyUnicode_DecodeUTF8(c_value, len(c_value), 'strict')
         finally:
             libc.stdlib.free(c_value)
 
@@ -512,9 +628,7 @@ cdef class Dict(Node):
         return '<Dict: %s>' % self._map
 
     cpdef dict get_value(self):
-        cdef dict result = cpython.PyDict_New()
         return dict([(key, value.get_value()) for key, value in self.items()])
-        return result
 
     cpdef set_value(self, dict value):
         plist_free(self._c_node)
@@ -546,7 +660,6 @@ cdef class Dict(Node):
 
     cpdef list values(self):
         return cpython.PyDict_Values(self._map)
-        return self._map.values()
 
     cpdef object itervalues(self):
         return self._map.itervalues()
@@ -716,6 +829,8 @@ cdef object plist_t_to_node(plist_t c_plist, bint managed=True):
         return Bool_factory(c_plist, managed)
     if t == PLIST_UINT:
         return Integer_factory(c_plist, managed)
+    if t == PLIST_KEY:
+        return Key_factory(c_plist, managed)
     if t == PLIST_REAL:
         return Real_factory(c_plist, managed)
     if t == PLIST_STRING:
