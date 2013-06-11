@@ -67,7 +67,9 @@ void start_dlna(void)
 		free(cs);
 	}
 	fprintf(fp, "friendly_name=%s:DLNA\n", nvram_safe_get("DD_BOARD"));	//enter any name you want here, but should be unique within a network
-	fprintf(fp, "album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg\n");
+	if (nvram_match("dlna_thumb", "1")) {
+		fprintf(fp, "album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg\n");
+	}
 	fprintf(fp, "inotify=yes\n");
 	fprintf(fp, "enable_tivo=no\n");
 	fprintf(fp, "strict_dlna=no\n");

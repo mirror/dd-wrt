@@ -686,6 +686,12 @@ nas.samba3_legend="Dateifreigabe";
 
 hnas.right2="Nutzer Kennwort Liste: Geben Sie ein Nutzer Kennwort pro Zeile ein. Das Passwort kann hierbei reiner Text oder MD5 Crypt sein.";
 
+// ** DLNA **
+nas.dlna_legend="DLNA Server";
+nas.dlna_srv="MiniDLNA";
+nas.dlna_thumb="Cover Bilder einbinden";
+nas.dlna_dir="Datei Verzeichniss";
+
 
 // **************************************************************** Hotspot.asp **********************************************************************//
 
