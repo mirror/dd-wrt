@@ -797,7 +797,7 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 		ret = sizeof(unsigned long);
 	}
 
-	flush_cache_all();
+//	flush_cache_all();
 
 done:
 	if (name != tmp)
