@@ -181,9 +181,10 @@ static bool __uqmi_run_commands(struct qmi_dev *qmi, bool option)
 	return true;
 }
 
-void uqmi_add_error(const char *msg)
+int uqmi_add_error(const char *msg)
 {
 	blobmsg_add_string(&status, NULL, msg);
+	return QMI_CMD_EXIT;
 }
 
 bool uqmi_run_commands(struct qmi_dev *qmi)
