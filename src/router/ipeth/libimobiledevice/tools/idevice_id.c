@@ -46,15 +46,14 @@ static void print_usage(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	idevice_t phone = NULL;
+	idevice_t device = NULL;
 	lockdownd_client_t client = NULL;
 	char **dev_list = NULL;
-	char *devname = NULL;
+	char *device_name = NULL;
 	int ret = 0;
 	int i;
 	int mode = MODE_SHOW_ID;
-	char udid[41];
-	udid[0] = 0;
+	const char* udid = NULL;
 
 	/* parse cmdline args */
 	for (i = 1; i < argc; i++) {
@@ -79,37 +78,37 @@ int main(int argc, char **argv)
 			print_usage(argc, argv);
 			return 0;
 		}
-		strcpy(udid, argv[i]);
+		udid = argv[i];
 	}
 
 	switch (mode) {
 	case MODE_SHOW_ID:
-		idevice_new(&phone, udid);
-		if (!phone) {
+		idevice_new(&device, udid);
+		if (!device) {
 			fprintf(stderr, "ERROR: No device with UDID=%s attached.\n", udid);
 			return -2;
 		}
 
-		if (LOCKDOWN_E_SUCCESS != lockdownd_client_new(phone, &client, "idevice_id")) {
-			idevice_free(phone);
+		if (LOCKDOWN_E_SUCCESS != lockdownd_client_new(device, &client, "idevice_id")) {
+			idevice_free(device);
 			fprintf(stderr, "ERROR: Connecting to device failed!\n");
 			return -2;
 		}
 
-		if ((LOCKDOWN_E_SUCCESS != lockdownd_get_device_name(client, &devname)) || !devname) {
+		if ((LOCKDOWN_E_SUCCESS != lockdownd_get_device_name(client, &device_name)) || !device_name) {
 			fprintf(stderr, "ERROR: Could not get device name!\n");
 			ret = -2;
 		}
 
 		lockdownd_client_free(client);
-		idevice_free(phone);
+		idevice_free(device);
 
 		if (ret == 0) {
-			printf("%s\n", devname);
+			printf("%s\n", device_name);
 		}
 
-		if (devname) {
-			free(devname);
+		if (device_name) {
+			free(device_name);
 		}
 
 		return ret;

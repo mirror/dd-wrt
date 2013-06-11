@@ -173,11 +173,11 @@ idevice_error_t idevice_new(idevice_t * device, const char *udid)
 	usbmuxd_device_info_t muxdev;
 	int res = usbmuxd_get_device_by_udid(udid, &muxdev);
 	if (res > 0) {
-		idevice_t phone = (idevice_t) malloc(sizeof(struct idevice_private));
-		phone->udid = strdup(muxdev.udid);
-		phone->conn_type = CONNECTION_USBMUXD;
-		phone->conn_data = (void*)(long)muxdev.handle;
-		*device = phone;
+		idevice_t dev = (idevice_t) malloc(sizeof(struct idevice_private));
+		dev->udid = strdup(muxdev.udid);
+		dev->conn_type = CONNECTION_USBMUXD;
+		dev->conn_data = (void*)(long)muxdev.handle;
+		*device = dev;
 		return IDEVICE_E_SUCCESS;
 	}
 	/* other connection types could follow here */
@@ -733,6 +733,7 @@ idevice_error_t idevice_connection_enable_ssl(idevice_connection_t connection)
 		ret = IDEVICE_E_SUCCESS;
 		debug_info("SSL mode enabled, cipher: %s", SSL_get_cipher(ssl));
 	}
+	openssl_init_done = 0;
 #else
 	ssl_data_t ssl_data_loc = (ssl_data_t)malloc(sizeof(struct ssl_data_private));
 
