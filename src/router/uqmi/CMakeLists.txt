@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 
 PROJECT(uqmi C)
-ADD_DEFINITIONS(-Os -ggdb -Wall -Werror --std=gnu99 -Wmissing-declarations)
-#ADD_DEFINITIONS(-Os -ggdb -Wall --std=gnu99 )
+#ADD_DEFINITIONS(-Os -ggdb -Wall -Werror --std=gnu99 -Wmissing-declarations)
+ADD_DEFINITIONS(-Os -ggdb -Wall --std=gnu99 )
 
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 
