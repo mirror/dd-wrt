@@ -85,7 +85,7 @@ static void install_sdcard(void)
 		size /= 4096;
 		char newsize[32];
 		sprintf(newsize, "%d", size);
-		eval("mkfs.ext2", "-b", "4096", "-N", "65536", "-L", "dd-wrt", "/dev/discs/disc1/disc", newsize);
+		eval("mkfs.ext2", "-b", "4096", "-N", "65536", "-L", "dd-wrt", "/dev/sda", newsize);
 		mount("/dev/sda", "/tmp/install", "ext2", MS_MGC_VAL, NULL);
 	}
 	fprintf(stderr, "copy files to SD Card\n");
