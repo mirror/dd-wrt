@@ -25,9 +25,8 @@ cdef class Base:
             return 0
         cdef BaseError err = self._error(ret)
         raise err
-        return -1
 
-    cdef inline BaseError _error(self, int16_t ret): pass
+    cdef BaseError _error(self, int16_t ret): pass
 
 cdef extern from "libimobiledevice/libimobiledevice.h":
     ctypedef enum idevice_error_t:
@@ -131,7 +130,7 @@ cdef class iDeviceConnection(Base):
         err = idevice_disconnect(self._c_connection)
         self.handle_error(err)
 
-    cdef inline BaseError _error(self, int16_t ret):
+    cdef BaseError _error(self, int16_t ret):
         return iDeviceError(ret)
 
 from libc.stdlib cimport *
@@ -149,7 +148,7 @@ cdef class iDevice(Base):
         if self._c_dev is not NULL:
             self.handle_error(idevice_free(self._c_dev))
 
-    cdef inline BaseError _error(self, int16_t ret):
+    cdef BaseError _error(self, int16_t ret):
         return iDeviceError(ret)
 
     cpdef iDeviceConnection connect(self, uint16_t port):
@@ -211,11 +210,28 @@ cdef class PropertyListService(BaseService):
                 plist.plist_free(c_node)
             raise
 
-    cdef inline int16_t _send(self, plist.plist_t node):
+    cpdef object receive_with_timeout(self, int timeout_ms):
+        cdef:
+            plist.plist_t c_node = NULL
+            int16_t err
+        err = self._receive_with_timeout(&c_node, timeout_ms)
+        try:
+            self.handle_error(err)
+
+            return plist.plist_t_to_node(c_node)
+        except BaseError, e:
+            if c_node != NULL:
+                plist.plist_free(c_node)
+            raise
+
+    cdef int16_t _send(self, plist.plist_t node):
         raise NotImplementedError("send is not implemented")
 
-    cdef inline int16_t _receive(self, plist.plist_t* c_node):
+    cdef int16_t _receive(self, plist.plist_t* c_node):
         raise NotImplementedError("receive is not implemented")
+
+    cdef int16_t _receive_with_timeout(self, plist.plist_t* c_node, int timeout_ms):
+        raise NotImplementedError("receive_with_timeout is not implemented")
 
 cdef class DeviceLinkService(PropertyListService):
     pass
@@ -225,8 +241,15 @@ include "mobilesync.pxi"
 include "notification_proxy.pxi"
 include "sbservices.pxi"
 include "mobilebackup.pxi"
+include "mobilebackup2.pxi"
 include "afc.pxi"
 include "file_relay.pxi"
 include "screenshotr.pxi"
 include "installation_proxy.pxi"
 include "mobile_image_mounter.pxi"
+include "webinspector.pxi"
+include "heartbeat.pxi"
+include "diagnostics_relay.pxi"
+include "misagent.pxi"
+include "house_arrest.pxi"
+include "restore.pxi"

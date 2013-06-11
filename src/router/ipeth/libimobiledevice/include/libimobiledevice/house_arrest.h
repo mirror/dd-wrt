@@ -1,6 +1,6 @@
 /**
  * @file libimobiledevice/house_arrest.h
- * @brief Access AppStore application folders and their contents.
+ * @brief Access app folders and their contents.
  * \internal
  *
  * Copyright (c) 2010 Nikias Bassen, All Rights Reserved.
@@ -20,14 +20,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef HOUSE_ARREST_H
-#define HOUSE_ARREST_H
+#ifndef IHOUSE_ARREST_H
+#define IHOUSE_ARREST_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <libimobiledevice/libimobiledevice.h>
+#include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/afc.h>
 
 /** @name Error Codes */
@@ -48,7 +49,7 @@ typedef struct house_arrest_client_private house_arrest_client_private;
 typedef house_arrest_client_private *house_arrest_client_t; /**< The client handle. */
 
 /* Interface */
-house_arrest_error_t house_arrest_client_new(idevice_t device, uint16_t port, house_arrest_client_t *client);
+house_arrest_error_t house_arrest_client_new(idevice_t device, lockdownd_service_descriptor_t service, house_arrest_client_t *client);
 house_arrest_error_t house_arrest_client_free(house_arrest_client_t client);
 
 house_arrest_error_t house_arrest_send_request(house_arrest_client_t client, plist_t dict);

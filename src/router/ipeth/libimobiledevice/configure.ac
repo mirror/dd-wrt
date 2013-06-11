@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(libimobiledevice, 1.1.4, nospam@nowhere.com)
+AC_INIT(libimobiledevice, 1.1.5, nospam@nowhere.com)
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 AC_CONFIG_SRCDIR([src/])
@@ -15,7 +15,7 @@ dnl libtool versioning
 #                 changes to the signature and the semantic)
 #  ? :+1 : ?   == just internal changes
 # CURRENT : REVISION : AGE
-LIBIMOBILEDEVICE_SO_VERSION=3:1:0
+LIBIMOBILEDEVICE_SO_VERSION=4:1:0
 
 AC_SUBST(LIBIMOBILEDEVICE_SO_VERSION)
 
@@ -44,8 +44,6 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
 AC_CHECK_FUNCS([strcasecmp strdup strerror strndup])
 
 AC_CHECK_FUNC(asprintf, [have_asprintf="yes"], [have_asprintf="no"])
@@ -69,6 +67,22 @@ if test "x$ac_cv_have_endian" = "xno"; then
   fi
 fi
 
+# Check for operating system
+AC_MSG_CHECKING([whether to enable WIN32 build settings])
+case ${host_os} in
+  *mingw32*|*cygwin*)
+    win32=true
+    AC_MSG_RESULT([yes])
+    AC_CHECK_TOOL([WINDRES], [windres], AC_MSG_ERROR([windres not found]))
+    AC_SUBST(WINDRES)
+    ;;
+  *)
+    win32=false
+    AC_MSG_RESULT([no])
+    ;;
+esac
+AM_CONDITIONAL(WIN32, test x$win32 = xtrue)
+
 # Cython Python Bindings
 AC_ARG_WITH([cython],
             [AS_HELP_STRING([--without-cython],
@@ -77,16 +91,26 @@ AC_ARG_WITH([cython],
             [build_cython=true])
 if test "$build_cython" = "true"; then
             AM_PATH_PYTHON(2.3)
-            AC_PROG_CYTHON(0.13.0)
+            AC_PROG_CYTHON(0.17.0)
             CYTHON_PYTHON
 else
             CYTHON=false
 fi
 if [test "x$CYTHON" != "xfalse"]; then
-            CYTHON_SUB=cython
+            AC_MSG_CHECKING([for libplist Cython bindings])
             CYTHON_PLIST_INCLUDE_DIR=$($PKG_CONFIG --variable=includedir libplist)/plist/cython
-            AC_SUBST([CYTHON_PLIST_INCLUDE_DIR])
-            cython_python_bindings=yes
+            if [test ! -d "$CYTHON_PLIST_INCLUDE_DIR"]; then
+                CYTHON=false
+                CYTHON_SUB=
+                cython_python_bindings=no
+                AC_MSG_RESULT([no])
+                AC_MSG_WARN([cannot find libplist Cython bindings. You should install your distribution specific libplist Cython bindings package.])
+            else
+                AC_SUBST([CYTHON_PLIST_INCLUDE_DIR])
+                AC_MSG_RESULT([$CYTHON_PLIST_INCLUDE_DIR])
+                CYTHON_SUB=cython
+                cython_python_bindings=yes
+            fi
 else
             CYTHON_SUB=
             cython_python_bindings=no
@@ -154,8 +178,8 @@ AM_CONDITIONAL([ENABLE_DEVTOOLS],[test "x$DEV_SUB" = "xdev"])
 AC_SUBST([DEV_SUB])
 
 AC_ARG_ENABLE([debug-code],
-            [AS_HELP_STRING([--disable-debug-code],
-            [disable debug message reporting in library (default is yes)])],
+            [AS_HELP_STRING([--enable-debug-code],
+            [enable debug message reporting in library (default is no)])],
             [no_debug_code=false],
             [no_debug_code=true])
 if test "$no_debug_code" = true; then
@@ -217,7 +241,7 @@ Configuration for $PACKAGE $VERSION:
   Debug code ..............: $building_debug_code
   Dev tools ...............: $building_dev_tools
   Python bindings .........: $cython_python_bindings
-  SSL support .............: $ssl_provider
+  SSL support backend .....: $ssl_provider
 
   Now type 'make' to build $PACKAGE $VERSION,
   and then 'make install' for installation.

@@ -6,18 +6,24 @@ AM_LDFLAGS = $(libgnutls_LIBS) $(libtasn1_LIBS) $(openssl_LIBS) $(libplist_LIBS)
 if HAVE_CYTHON
 
 BUILT_SOURCES = imobiledevice.c
-PXDINCLUDES = imobiledevice.pxd stdint.pxi $(CYTHON_PLIST_INCLUDE_DIR)/plist.pxd
+PXDINCLUDES = imobiledevice.pxd $(CYTHON_PLIST_INCLUDE_DIR)/plist.pxd
 PXIINCLUDES =					\
-	stdint.pxi					\
 	lockdown.pxi				\
 	mobilesync.pxi				\
 	notification_proxy.pxi		\
 	sbservices.pxi				\
 	mobilebackup.pxi			\
+	mobilebackup2.pxi			\
 	afc.pxi						\
 	file_relay.pxi				\
 	screenshotr.pxi				\
 	installation_proxy.pxi		\
+	webinspector.pxi			\
+	heartbeat.pxi				\
+	diagnostics_relay.pxi		\
+	misagent.pxi				\
+	house_arrest.pxi			\
+	restore.pxi					\
 	mobile_image_mounter.pxi
 
 CLEANFILES =                \

@@ -20,14 +20,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef INSTALLATION_PROXY_H
-#define INSTALLATION_PROXY_H
+#ifndef IINSTALLATION_PROXY_H
+#define IINSTALLATION_PROXY_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <libimobiledevice/libimobiledevice.h>
+#include <libimobiledevice/lockdown.h>
 
 /** @name Error Codes */
 /*@{*/
@@ -51,7 +52,7 @@ typedef instproxy_client_private *instproxy_client_t; /**< The client handle. */
 typedef void (*instproxy_status_cb_t) (const char *operation, plist_t status, void *user_data);
 
 /* Interface */
-instproxy_error_t instproxy_client_new(idevice_t device, uint16_t port, instproxy_client_t *client);
+instproxy_error_t instproxy_client_new(idevice_t device, lockdownd_service_descriptor_t service, instproxy_client_t *client);
 instproxy_error_t instproxy_client_free(instproxy_client_t client);
 
 instproxy_error_t instproxy_browse(instproxy_client_t client, plist_t client_options, plist_t *result);
