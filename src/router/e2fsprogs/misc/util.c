@@ -69,11 +69,11 @@ void proceed_question(void)
 
 	fflush(stdout);
 	fflush(stderr);
-	fputs(_("Proceed anyway? (y,n) "), stdout);
-	buf[0] = 0;
-	if (!fgets(buf, sizeof(buf), stdin) ||
-	    strchr(short_yes, buf[0]) == 0)
-		exit(1);
+//	fputs(_("Proceed anyway? (y,n) "), stdout);
+//	buf[0] = 0;
+//	if (!fgets(buf, sizeof(buf), stdin) ||
+//	    strchr(short_yes, buf[0]) == 0)
+//		exit(1);
 }
 
 void check_plausibility(const char *device)
