@@ -48,6 +48,14 @@ cmd_wds_set_password_prepare(struct qmi_dev *qmi, struct qmi_request *req, struc
 	return QMI_CMD_DONE;
 }
 
+#define cmd_wds_set_autoconnect_cb no_cb
+static enum qmi_cmd_result
+cmd_wds_set_autoconnect_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	qmi_set_ptr(&wds_sn_req, enable_autoconnect, true);
+	return QMI_CMD_DONE;
+}
+
 static void
 cmd_wds_start_network_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
 {
