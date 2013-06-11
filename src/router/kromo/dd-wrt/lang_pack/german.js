@@ -690,7 +690,7 @@ hnas.right2="Nutzer Kennwort Liste: Geben Sie ein Nutzer Kennwort pro Zeile ein.
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
 nas.dlna_thumb="Cover Bilder einbinden";
-nas.dlna_dir="Datei Verzeichniss";
+nas.dlna_dir="Datei Verzeichnis";
 
 
 // **************************************************************** Hotspot.asp **********************************************************************//
@@ -1430,7 +1430,7 @@ service.samba3_srvstr="Server String";
 service.samba3_pub="Öffentliche Freigabe";
 service.samba3_config="Eigene Konfiguration";
 service.samba3_workgrp="Arbeitsgruppe";
-service.samba3_dirpath="Verzechnispfad";
+service.samba3_dirpath="Verzeichnis";
 service.samba3_usr1="Benutzer1";
 service.samba3_pass1=" Passwort1";
 service.samba3_usr2="Benutzer2";
@@ -1439,7 +1439,7 @@ service.samba3_pubacl="Nur Lesen";
 service.samba3_advanced="Erweitert"
 service.samba3_custom="Eigene Konfiguration benutzen";
 service.samba3_shares="Freigaben";
-service.samba3_share_path="Pfad";
+service.samba3_share_path="Verzeichniss";
 service.samba3_share_label="Name";
 service.samba3_share_public="Öffentlich";
 service.samba3_share_access="Zugriff";
