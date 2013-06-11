@@ -19,6 +19,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
  */
 
+#ifndef __AFC_H
+#define __AFC_H
+
 #include <stdint.h>
 #ifdef WIN32
 #include <windows.h>
@@ -27,6 +30,7 @@
 #endif
 
 #include "libimobiledevice/afc.h"
+#include "service.h"
 #include "endianness.h"
 
 #define AFC_MAGIC "CFA6LPAA"
@@ -54,7 +58,7 @@ typedef struct {
 } AFCFilePacket;
 
 struct afc_client_private {
-	idevice_connection_t connection;
+	service_client_t parent;
 	AFCPacket *afc_packet;
 	int file_handle;
 	int lock;
@@ -63,7 +67,7 @@ struct afc_client_private {
 #else
 	pthread_mutex_t mutex;
 #endif
-	int own_connection;
+	int free_parent;
 };
 
 /* AFC Operations */
@@ -99,3 +103,6 @@ enum {
 	AFC_OP_SET_FILE_TIME   = 0x0000001E 	/* set st_mtime */
 };
 
+afc_error_t afc_client_new_with_service_client(service_client_t service_client, afc_client_t *client);
+
+#endif

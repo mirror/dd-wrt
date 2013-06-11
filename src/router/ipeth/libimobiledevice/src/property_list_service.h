@@ -18,9 +18,12 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
  */
-#ifndef PROPERTY_LIST_SERVICE_H
-#define PROPERTY_LIST_SERVICE_H
 
+#ifndef __PROPERTY_LIST_SERVICE_H
+#define __PROPERTY_LIST_SERVICE_H
+
+#include <libimobiledevice/lockdown.h>
+#include "service.h"
 #include "idevice.h"
 
 /* Error Codes */
@@ -33,7 +36,7 @@
 #define PROPERTY_LIST_SERVICE_E_UNKNOWN_ERROR       -256
 
 struct property_list_service_client_private {
-	idevice_connection_t connection;
+	service_client_t parent;
 };
 
 typedef struct property_list_service_client_private *property_list_service_client_t;
@@ -41,7 +44,7 @@ typedef struct property_list_service_client_private *property_list_service_clien
 typedef int16_t property_list_service_error_t;
 
 /* creation and destruction */
-property_list_service_error_t property_list_service_client_new(idevice_t device, uint16_t port, property_list_service_client_t *client);
+property_list_service_error_t property_list_service_client_new(idevice_t device, lockdownd_service_descriptor_t service, property_list_service_client_t *client);
 property_list_service_error_t property_list_service_client_free(property_list_service_client_t client);
 
 /* sending */

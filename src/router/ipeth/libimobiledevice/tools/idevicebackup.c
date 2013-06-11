@@ -51,12 +51,13 @@
 #define LOCK_WAIT 200000
 
 #ifdef WIN32
+#include <windows.h>
 #define sleep(x) Sleep(x*1000)
 #endif
 
 static mobilebackup_client_t mobilebackup = NULL;
 static lockdownd_client_t client = NULL;
-static idevice_t phone = NULL;
+static idevice_t device = NULL;
 
 static int quit_flag = 0;
 
@@ -283,12 +284,11 @@ static char* format_size_for_display(uint64_t size)
 	return strdup(buf);
 }
 
-static plist_t mobilebackup_factory_info_plist_new()
+static plist_t mobilebackup_factory_info_plist_new(const char* udid)
 {
 	/* gather data from lockdown */
 	plist_t value_node = NULL;
 	plist_t root_node = NULL;
-	char *udid = NULL;
 	char *udid_uppercase = NULL;
 
 	plist_t ret = plist_new_dict();
@@ -323,14 +323,12 @@ static plist_t mobilebackup_factory_info_plist_new()
 	plist_dict_insert_item(ret, "Serial Number", plist_copy(value_node));
 
 	value_node = plist_dict_get_item(root_node, "UniqueDeviceID");
-	idevice_get_udid(phone, &udid);
 	plist_dict_insert_item(ret, "Target Identifier", plist_new_string(udid));
 
 	/* uppercase */
-	udid_uppercase = str_toupper(udid);
+	udid_uppercase = str_toupper((char*)udid);
 	plist_dict_insert_item(ret, "Unique Identifier", plist_new_string(udid_uppercase));
 	free(udid_uppercase);
-	free(udid);
 
 	/* FIXME: Embed files as <data> nodes */
 	plist_t files = plist_new_dict();
@@ -455,9 +453,10 @@ static int plist_strcmp(plist_t node, const char *str)
 
 static char *mobilebackup_build_path(const char *backup_directory, const char *name, const char *extension)
 {
-	char* filename = (char*)malloc(strlen(name)+strlen(extension)+1);
+	char* filename = (char*)malloc(strlen(name)+(extension == NULL ? 0: strlen(extension))+1);
 	strcpy(filename, name);
-	strcat(filename, extension);
+	if (extension != NULL)
+		strcat(filename, extension);
 	char *path = build_path(backup_directory, filename, NULL);
 	free(filename);
 	return path;
@@ -746,24 +745,29 @@ static int mobilebackup_check_file_integrity(const char *backup_directory, const
 
 static void do_post_notification(const char *notification)
 {
-	uint16_t nport = 0;
+	lockdownd_service_descriptor_t service = NULL;
 	np_client_t np;
 
 	if (!client) {
-		if (lockdownd_client_new_with_handshake(phone, &client, "idevicebackup") != LOCKDOWN_E_SUCCESS) {
+		if (lockdownd_client_new_with_handshake(device, &client, "idevicebackup") != LOCKDOWN_E_SUCCESS) {
 			return;
 		}
 	}
 
-	lockdownd_start_service(client, NP_SERVICE_NAME, &nport);
-	if (nport) {
-		np_client_new(phone, nport, &np);
+	lockdownd_start_service(client, NP_SERVICE_NAME, &service);
+	if (service && service->port) {
+		np_client_new(device, service, &np);
 		if (np) {
 			np_post_notification(np, notification);
 			np_client_free(np);
 		}
 	} else {
 		printf("Could not start %s\n", NP_SERVICE_NAME);
+	}
+
+	if (service) {
+		lockdownd_service_descriptor_free(service);
+		service = NULL;
 	}
 }
 
@@ -819,9 +823,8 @@ int main(int argc, char *argv[])
 {
 	idevice_error_t ret = IDEVICE_E_UNKNOWN_ERROR;
 	int i;
-	char udid[41];
-	uint16_t port = 0;
-	udid[0] = 0;
+	char* udid = NULL;
+	lockdownd_service_descriptor_t service = NULL;
 	int cmd = -1;
 	int is_full_backup = 0;
 	char *backup_directory = NULL;
@@ -857,7 +860,7 @@ int main(int argc, char *argv[])
 				print_usage(argc, argv);
 				return 0;
 			}
-			strcpy(udid, argv[i]);
+			udid = strdup(argv[i]);
 			continue;
 		}
 		else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
@@ -910,8 +913,8 @@ int main(int argc, char *argv[])
 
 	printf("Backup directory is \"%s\"\n", backup_directory);
 
-	if (udid[0] != 0) {
-		ret = idevice_new(&phone, udid);
+	if (udid) {
+		ret = idevice_new(&device, udid);
 		if (ret != IDEVICE_E_SUCCESS) {
 			printf("No device found with udid %s, is it plugged in?\n", udid);
 			return -1;
@@ -919,23 +922,23 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		ret = idevice_new(&phone, NULL);
+		ret = idevice_new(&device, NULL);
 		if (ret != IDEVICE_E_SUCCESS) {
 			printf("No device found, is it plugged in?\n");
 			return -1;
 		}
 	}
 
-	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &client, "idevicebackup")) {
-		idevice_free(phone);
+	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(device, &client, "idevicebackup")) {
+		idevice_free(device);
 		return -1;
 	}
 
 	/* start notification_proxy */
 	np_client_t np = NULL;
-	ret = lockdownd_start_service(client, NP_SERVICE_NAME, &port);
-	if ((ret == LOCKDOWN_E_SUCCESS) && port) {
-		np_client_new(phone, port, &np);
+	ret = lockdownd_start_service(client, NP_SERVICE_NAME, &service);
+	if ((ret == LOCKDOWN_E_SUCCESS) && service && service->port) {
+		np_client_new(device, service, &np);
 		np_set_notify_callback(np, notify_cb, NULL);
 		const char *noties[5] = {
 			NP_SYNC_CANCEL_REQUEST,
@@ -952,19 +955,29 @@ int main(int argc, char *argv[])
 	afc_client_t afc = NULL;
 	if (cmd == CMD_BACKUP) {
 		/* start AFC, we need this for the lock file */
-		port = 0;
-		ret = lockdownd_start_service(client, "com.apple.afc", &port);
-		if ((ret == LOCKDOWN_E_SUCCESS) && port) {
-			afc_client_new(phone, port, &afc);
+		service->port = 0;
+		service->ssl_enabled = 0;
+		ret = lockdownd_start_service(client, "com.apple.afc", &service);
+		if ((ret == LOCKDOWN_E_SUCCESS) && service->port) {
+			afc_client_new(device, service, &afc);
 		}
 	}
 
+	if (service) {
+		lockdownd_service_descriptor_free(service);
+		service = NULL;
+	}
+
 	/* start mobilebackup service and retrieve port */
-	port = 0;
-	ret = lockdownd_start_service(client, MOBILEBACKUP_SERVICE_NAME, &port);
-	if ((ret == LOCKDOWN_E_SUCCESS) && port) {
-		printf("Started \"%s\" service on port %d.\n", MOBILEBACKUP_SERVICE_NAME, port);
-		mobilebackup_client_new(phone, port, &mobilebackup);
+	ret = lockdownd_start_service(client, MOBILEBACKUP_SERVICE_NAME, &service);
+	if ((ret == LOCKDOWN_E_SUCCESS) && service && service->port) {
+		printf("Started \"%s\" service on port %d.\n", MOBILEBACKUP_SERVICE_NAME, service->port);
+		mobilebackup_client_new(device, service, &mobilebackup);
+
+		if (service) {
+			lockdownd_service_descriptor_free(service);
+			service = NULL;
+		}
 
 		/* check abort conditions */
 		if (quit_flag > 0) {
@@ -1068,7 +1081,7 @@ int main(int argc, char *argv[])
 				}
 				remove(info_path);
 				printf("Creating Info.plist for new backup.\n");
-				info_plist = mobilebackup_factory_info_plist_new();
+				info_plist = mobilebackup_factory_info_plist_new(udid);
 				plist_write_to_filename(info_plist, info_path, PLIST_FORMAT_XML);
 			}
 			free(info_path);
@@ -1697,7 +1710,11 @@ files_out:
 	if (mobilebackup)
 		mobilebackup_client_free(mobilebackup);
 
-	idevice_free(phone);
+	idevice_free(device);
+
+	if (udid) {
+		free(udid);
+	}
 
 	return 0;
 }

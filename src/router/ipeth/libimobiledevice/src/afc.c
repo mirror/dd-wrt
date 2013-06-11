@@ -69,9 +69,7 @@ static void afc_unlock(afc_client_t client)
  * Makes a connection to the AFC service on the device using the given
  * connection.
  *
- * @param connection An idevice_connection_t that must have been previously
- *     connected using idevice_connect(). Note that this connection will
- *     not be closed by calling afc_client_free().
+ * @param service_client A connected service client
  * @param client Pointer that will be set to a newly allocated afc_client_t
  *     upon successful return.
  * 
@@ -79,14 +77,14 @@ static void afc_unlock(afc_client_t client)
  *  invalid, or AFC_E_NO_MEM if there is a memory allocation problem.
  */
 
-afc_error_t afc_client_new_from_connection(idevice_connection_t connection, afc_client_t *client)
+afc_error_t afc_client_new_with_service_client(service_client_t service_client, afc_client_t *client)
 {
-	if (!connection)
+	if (!service_client)
 		return AFC_E_INVALID_ARG;
 
 	afc_client_t client_loc = (afc_client_t) malloc(sizeof(struct afc_client_private));
-	client_loc->connection = connection;
-	client_loc->own_connection = 0;
+	client_loc->parent = service_client;
+	client_loc->free_parent = 0;
 
 	/* allocate a packet */
 	client_loc->afc_packet = (AFCPacket *) malloc(sizeof(AFCPacket));
@@ -113,13 +111,9 @@ afc_error_t afc_client_new_from_connection(idevice_connection_t connection, afc_
 
 /**
  * Makes a connection to the AFC service on the device.
- * This function calls afc_client_new_from_connection() after creating
- * a connection to the specified device and port.
- *
- * @see afc_client_new_from_connection
  * 
  * @param device The device to connect to.
- * @param port The destination port.
+ * @param service The service descriptor returned by lockdownd_start_service.
  * @param client Pointer that will be set to a newly allocated afc_client_t
  *     upon successful return.
  * 
@@ -127,22 +121,21 @@ afc_error_t afc_client_new_from_connection(idevice_connection_t connection, afc_
  *  invalid, AFC_E_MUX_ERROR if the connection cannot be established,
  *  or AFC_E_NO_MEM if there is a memory allocation problem.
  */
-afc_error_t afc_client_new(idevice_t device, uint16_t port, afc_client_t * client)
+afc_error_t afc_client_new(idevice_t device, lockdownd_service_descriptor_t service, afc_client_t * client)
 {
-	if (!device || port==0)
+	if (!device || !service || service->port == 0)
 		return AFC_E_INVALID_ARG;
 
-	/* attempt connection */
-	idevice_connection_t connection = NULL;
-	if (idevice_connect(device, port, &connection) != IDEVICE_E_SUCCESS) {
+	service_client_t parent = NULL;
+	if (service_client_new(device, service, &parent) != SERVICE_E_SUCCESS) {
 		return AFC_E_MUX_ERROR;
 	}
 
-	afc_error_t err = afc_client_new_from_connection(connection, client);
+	afc_error_t err = afc_client_new_with_service_client(parent, client);
 	if (err != AFC_E_SUCCESS) {
-		idevice_disconnect(connection);
+		service_client_free(parent);
 	} else {
-		(*client)->own_connection = 1;
+		(*client)->free_parent = 1;
 	}
 	return err;
 }
@@ -158,9 +151,9 @@ afc_error_t afc_client_free(afc_client_t client)
 	if (!client || !client->afc_packet)
 		return AFC_E_INVALID_ARG;
 
-	if (client->own_connection && client->connection) {
-		idevice_disconnect(client->connection);
-		client->connection = NULL;
+	if (client->free_parent && client->parent) {
+		service_client_free(client->parent);
+		client->parent = NULL;
 	}
 	free(client->afc_packet);
 #ifdef WIN32
@@ -192,7 +185,7 @@ static afc_error_t afc_dispatch_packet(afc_client_t client, const char *data, ui
 	uint32_t offset = 0;
 	uint32_t sent = 0;
 
-	if (!client || !client->connection || !client->afc_packet)
+	if (!client || !client->parent || !client->afc_packet)
 		return AFC_E_INVALID_ARG;
 
 	*bytes_sent = 0;
@@ -225,7 +218,7 @@ static afc_error_t afc_dispatch_packet(afc_client_t client, const char *data, ui
 		/* send AFC packet header */
 		AFCPacket_to_LE(client->afc_packet);
 		sent = 0;
-		idevice_connection_send(client->connection, (void*)client->afc_packet, sizeof(AFCPacket), &sent);
+		service_send(client->parent, (void*)client->afc_packet, sizeof(AFCPacket), &sent);
 		AFCPacket_from_LE(client->afc_packet);
 		if (sent == 0) {
 			/* FIXME: should this be handled as success?! */
@@ -235,7 +228,7 @@ static afc_error_t afc_dispatch_packet(afc_client_t client, const char *data, ui
 
 		/* send AFC packet data */
 		sent = 0;
-		idevice_connection_send(client->connection, data, offset, &sent);
+		service_send(client->parent, data, offset, &sent);
 		if (sent == 0) {
 			return AFC_E_SUCCESS;
 		}
@@ -247,7 +240,7 @@ static afc_error_t afc_dispatch_packet(afc_client_t client, const char *data, ui
 		debug_buffer(data + offset, length - offset);
 
 		sent = 0;
-		idevice_connection_send(client->connection, data + offset, length - offset, &sent);
+		service_send(client->parent, data + offset, length - offset, &sent);
 
 		*bytes_sent = sent;
 		return AFC_E_SUCCESS;
@@ -260,7 +253,7 @@ static afc_error_t afc_dispatch_packet(afc_client_t client, const char *data, ui
 		/* send AFC packet header */
 		AFCPacket_to_LE(client->afc_packet);
 		sent = 0;
-		idevice_connection_send(client->connection, (void*)client->afc_packet, sizeof(AFCPacket), &sent);
+		service_send(client->parent, (void*)client->afc_packet, sizeof(AFCPacket), &sent);
 		AFCPacket_from_LE(client->afc_packet);
 		if (sent == 0) {
 			return AFC_E_SUCCESS;
@@ -271,7 +264,7 @@ static afc_error_t afc_dispatch_packet(afc_client_t client, const char *data, ui
 			debug_info("packet data follows");
 
 			debug_buffer(data, length);
-			idevice_connection_send(client->connection, data, length, &sent);
+			service_send(client->parent, data, length, &sent);
 			*bytes_sent += sent;
 		}
 		return AFC_E_SUCCESS;
@@ -299,7 +292,7 @@ static afc_error_t afc_receive_data(afc_client_t client, char **dump_here, uint3
 	*bytes_recv = 0;
 
 	/* first, read the AFC header */
-	idevice_connection_receive(client->connection, (char*)&header, sizeof(AFCPacket), bytes_recv);
+	service_receive(client->parent, (char*)&header, sizeof(AFCPacket), bytes_recv);
 	AFCPacket_from_LE(&header);
 	if (*bytes_recv == 0) {
 		debug_info("Just didn't get enough.");
@@ -353,7 +346,7 @@ static afc_error_t afc_receive_data(afc_client_t client, char **dump_here, uint3
 
 	*dump_here = (char*)malloc(entire_len);
 	if (this_len > 0) {
-		idevice_connection_receive(client->connection, *dump_here, this_len, bytes_recv);
+		service_receive(client->parent, *dump_here, this_len, bytes_recv);
 		if (*bytes_recv <= 0) {
 			free(*dump_here);
 			*dump_here = NULL;
@@ -371,7 +364,7 @@ static afc_error_t afc_receive_data(afc_client_t client, char **dump_here, uint3
 
 	if (entire_len > this_len) {
 		while (current_count < entire_len) {
-			idevice_connection_receive(client->connection, (*dump_here)+current_count, entire_len - current_count, bytes_recv);
+			service_receive(client->parent, (*dump_here)+current_count, entire_len - current_count, bytes_recv);
 			if (*bytes_recv <= 0) {
 				debug_info("Error receiving data (recv returned %d)", *bytes_recv);
 				break;
@@ -522,7 +515,7 @@ afc_error_t afc_read_directory(afc_client_t client, const char *dir, char ***lis
 }
 
 /**
- * Get device info for a client connection to phone. The device information
+ * Get device information for a connected client. The device information
  * returned is the device model as well as the free space, the total capacity
  * and blocksize on the accessed disk partition.
  * 
@@ -621,7 +614,7 @@ afc_error_t afc_remove_path(afc_client_t client, const char *path)
 	uint32_t bytes = 0;
 	afc_error_t ret = AFC_E_UNKNOWN_ERROR;
 
-	if (!client || !path || !client->afc_packet || !client->connection)
+	if (!client || !path || !client->afc_packet || !client->parent)
 		return AFC_E_INVALID_ARG;
 
 	afc_lock(client);
@@ -649,7 +642,7 @@ afc_error_t afc_remove_path(afc_client_t client, const char *path)
 }
 
 /**
- * Renames a file or directory on the phone.
+ * Renames a file or directory on the device.
  * 
  * @param client The client to have rename.
  * @param from The name to rename from. (must be a fully-qualified path)
@@ -664,7 +657,7 @@ afc_error_t afc_rename_path(afc_client_t client, const char *from, const char *t
 	uint32_t bytes = 0;
 	afc_error_t ret = AFC_E_UNKNOWN_ERROR;
 
-	if (!client || !from || !to || !client->afc_packet || !client->connection)
+	if (!client || !from || !to || !client->afc_packet || !client->parent)
 		return AFC_E_INVALID_ARG;
 
 	afc_lock(client);
@@ -691,7 +684,7 @@ afc_error_t afc_rename_path(afc_client_t client, const char *from, const char *t
 }
 
 /**
- * Creates a directory on the phone.
+ * Creates a directory on the device.
  * 
  * @param client The client to use to make a directory.
  * @param dir The directory's path. (must be a fully-qualified path, I assume
@@ -772,7 +765,7 @@ afc_error_t afc_get_file_info(afc_client_t client, const char *path, char ***inf
 }
 
 /**
- * Opens a file on the phone.
+ * Opens a file on the device.
  * 
  * @param client The client to use to open the file. 
  * @param filename The file to open. (must be a fully-qualified path)
@@ -796,7 +789,7 @@ afc_file_open(afc_client_t client, const char *filename,
 	/* set handle to 0 so in case an error occurs, the handle is invalid */
 	*handle = 0;
 
-	if (!client || !client->connection || !client->afc_packet)
+	if (!client || !client->parent || !client->afc_packet)
 		return AFC_E_INVALID_ARG;
 
 	afc_lock(client);
@@ -852,7 +845,7 @@ afc_file_read(afc_client_t client, uint64_t handle, char *data, uint32_t length,
 	const uint32_t MAXIMUM_READ_SIZE = 1 << 16;
 	afc_error_t ret = AFC_E_SUCCESS;
 
-	if (!client || !client->afc_packet || !client->connection || handle == 0)
+	if (!client || !client->afc_packet || !client->parent || handle == 0)
 		return AFC_E_INVALID_ARG;
 	debug_info("called for length %i", length);
 
@@ -929,7 +922,7 @@ afc_file_write(afc_client_t client, uint64_t handle, const char *data, uint32_t 
 	char *out_buffer = NULL;
 	afc_error_t ret = AFC_E_SUCCESS;
 
-	if (!client || !client->afc_packet || !client->connection || !bytes_written || (handle == 0))
+	if (!client || !client->afc_packet || !client->parent || !bytes_written || (handle == 0))
 		return AFC_E_INVALID_ARG;
 
 	afc_lock(client);
@@ -1002,7 +995,7 @@ afc_file_write(afc_client_t client, uint64_t handle, const char *data, uint32_t 
 }
 
 /**
- * Closes a file on the phone.
+ * Closes a file on the device.
  * 
  * @param client The client to close the file with.
  * @param handle File handle of a previously opened file.
@@ -1044,7 +1037,7 @@ afc_error_t afc_file_close(afc_client_t client, uint64_t handle)
 }
 
 /**
- * Locks or unlocks a file on the phone. 
+ * Locks or unlocks a file on the device. 
  *
  * makes use of flock on the device, see
  * http://developer.apple.com/documentation/Darwin/Reference/ManPages/man2/flock.2.html
@@ -1096,7 +1089,7 @@ afc_error_t afc_file_lock(afc_client_t client, uint64_t handle, afc_lock_op_t op
 }
 
 /**
- * Seeks to a given position of a pre-opened file on the phone. 
+ * Seeks to a given position of a pre-opened file on the device. 
  * 
  * @param client The client to use to seek to the position.
  * @param handle File handle of a previously opened.
@@ -1143,7 +1136,7 @@ afc_error_t afc_file_seek(afc_client_t client, uint64_t handle, int64_t offset, 
 }
 
 /**
- * Returns current position in a pre-opened file on the phone.
+ * Returns current position in a pre-opened file on the device.
  * 
  * @param client The client to use.
  * @param handle File handle of a previously opened file.
@@ -1191,7 +1184,7 @@ afc_error_t afc_file_tell(afc_client_t client, uint64_t handle, uint64_t *positi
 }
 
 /**
- * Sets the size of a file on the phone.
+ * Sets the size of a file on the device.
  * 
  * @param client The client to use to set the file size.
  * @param handle File handle of a previously opened file.
@@ -1238,7 +1231,7 @@ afc_error_t afc_file_truncate(afc_client_t client, uint64_t handle, uint64_t new
 }
 
 /**
- * Sets the size of a file on the phone without prior opening it.
+ * Sets the size of a file on the device without prior opening it.
  * 
  * @param client The client to use to set the file size.
  * @param path The path of the file to be truncated.
@@ -1254,7 +1247,7 @@ afc_error_t afc_truncate(afc_client_t client, const char *path, uint64_t newsize
 	uint64_t size_requested = htole64(newsize);
 	afc_error_t ret = AFC_E_UNKNOWN_ERROR;
 
-	if (!client || !path || !client->afc_packet || !client->connection)
+	if (!client || !path || !client->afc_packet || !client->parent)
 		return AFC_E_INVALID_ARG;
 
 	afc_lock(client);
@@ -1298,7 +1291,7 @@ afc_error_t afc_make_link(afc_client_t client, afc_link_type_t linktype, const c
 	uint64_t type = htole64(linktype);
 	afc_error_t ret = AFC_E_UNKNOWN_ERROR;
 
-	if (!client || !target || !linkname || !client->afc_packet || !client->connection)
+	if (!client || !target || !linkname || !client->afc_packet || !client->parent)
 		return AFC_E_INVALID_ARG;
 
 	afc_lock(client);
@@ -1330,7 +1323,7 @@ afc_error_t afc_make_link(afc_client_t client, afc_link_type_t linktype, const c
 }
 
 /**
- * Sets the modification time of a file on the phone.
+ * Sets the modification time of a file on the device.
  * 
  * @param client The client to use to set the file size.
  * @param path Path of the file for which the modification time should be set.
@@ -1346,7 +1339,7 @@ afc_error_t afc_set_file_time(afc_client_t client, const char *path, uint64_t mt
 	uint64_t mtime_loc = htole64(mtime);
 	afc_error_t ret = AFC_E_UNKNOWN_ERROR;
 
-	if (!client || !path || !client->afc_packet || !client->connection)
+	if (!client || !path || !client->afc_packet || !client->parent)
 		return AFC_E_INVALID_ARG;
 
 	afc_lock(client);

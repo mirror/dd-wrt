@@ -34,12 +34,17 @@
 
 static const char *domains[] = {
 	"com.apple.disk_usage",
+	"com.apple.disk_usage.factory",
 	"com.apple.mobile.battery",
 /* FIXME: For some reason lockdownd segfaults on this, works sometimes though 
 	"com.apple.mobile.debug",. */
 	"com.apple.iqagent",
+	"com.apple.purplebuddy",
+	"com.apple.PurpleBuddy",
+	"com.apple.mobile.chaperone",
 	"com.apple.mobile.third_party_termination",
 	"com.apple.mobile.lockdownd",
+	"com.apple.mobile.lockdown_cache",
 	"com.apple.xcode.developerdomain",
 	"com.apple.international",
 	"com.apple.mobile.data_sync",
@@ -275,19 +280,18 @@ static void print_usage(int argc, char **argv)
 int main(int argc, char *argv[])
 {
 	lockdownd_client_t client = NULL;
-	idevice_t phone = NULL;
+	idevice_t device = NULL;
 	idevice_error_t ret = IDEVICE_E_UNKNOWN_ERROR;
 	int i;
 	int simple = 0;
 	int format = FORMAT_KEY_VALUE;
-	char udid[41];
+	const char* udid = NULL;
 	char *domain = NULL;
 	char *key = NULL;
 	char *xml_doc = NULL;
 	uint32_t xml_length;
 	plist_t node = NULL;
 	plist_type node_type;
-	udid[0] = 0;
 
 	/* parse cmdline args */
 	for (i = 1; i < argc; i++) {
@@ -301,7 +305,7 @@ int main(int argc, char *argv[])
 				print_usage(argc, argv);
 				return 0;
 			}
-			strcpy(udid, argv[i]);
+			udid = argv[i];
 			continue;
 		}
 		else if (!strcmp(argv[i], "-q") || !strcmp(argv[i], "--domain")) {
@@ -343,26 +347,20 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (udid[0] != 0) {
-		ret = idevice_new(&phone, udid);
-		if (ret != IDEVICE_E_SUCCESS) {
+	ret = idevice_new(&device, udid);
+	if (ret != IDEVICE_E_SUCCESS) {
+		if (udid) {
 			printf("No device found with udid %s, is it plugged in?\n", udid);
-			return -1;
-		}
-	}
-	else
-	{
-		ret = idevice_new(&phone, NULL);
-		if (ret != IDEVICE_E_SUCCESS) {
+		} else {
 			printf("No device found, is it plugged in?\n");
-			return -1;
 		}
+		return -1;
 	}
 
 	if (LOCKDOWN_E_SUCCESS != (simple ?
-			lockdownd_client_new(phone, &client, "ideviceinfo"):
-			lockdownd_client_new_with_handshake(phone, &client, "ideviceinfo"))) {
-		idevice_free(phone);
+			lockdownd_client_new(device, &client, "ideviceinfo"):
+			lockdownd_client_new_with_handshake(device, &client, "ideviceinfo"))) {
+		idevice_free(device);
 		return -1;
 	}
 
@@ -396,7 +394,7 @@ int main(int argc, char *argv[])
 	if (domain != NULL)
 		free(domain);
 	lockdownd_client_free(client);
-	idevice_free(phone);
+	idevice_free(device);
 
 	return 0;
 }
