@@ -7,7 +7,7 @@
 .ddwrt_close {
 	width: 23px;
 	height: 23px;
-	background: transparent url(ddwrt/button-close-focus.gif) no-repeat 0 0;
+	background: transparent url(ddwrt/button-close-focus.png) no-repeat 0 0;
 	position: absolute;
 	top: 0px;
 	right: 11px;
@@ -17,7 +17,7 @@
 .ddwrt_minimize {
 	width: 23px;
 	height: 23px;
-	background: transparent url(ddwrt/button-min-focus.gif) no-repeat 0 0;
+	background: transparent url(ddwrt/button-min-focus.png) no-repeat 0 0;
 	position: absolute;
 	top: 0px;
 	right: 55px;
@@ -27,7 +27,7 @@
 .ddwrt_maximize {
 	width: 23px;
 	height: 23px;
-	background: transparent url(ddwrt/button-max-focus.gif) no-repeat 0 0;
+	background: transparent url(ddwrt/button-max-focus.png) no-repeat 0 0;
 	position:absolute;
 	top:0px;
 	right:33px;
@@ -52,16 +52,16 @@
 	background:#fdfdfd;
 }
 .ddwrt_nw {
-	background: transparent url(ddwrt/left-top.gif) no-repeat 0 0;
+	background: transparent url(ddwrt/left-top.png) no-repeat 0 0;
 	width:10px;
 	height:25px;
 }
 .ddwrt_n {
-	background: transparent url(ddwrt/top-middle.gif) repeat-x 0 0;
+	background: transparent url(ddwrt/top-middle.png) repeat-x 0 0;
 	height:25px;
 }
 .ddwrt_ne {
-	background: transparent url(ddwrt/right-top.gif) no-repeat 0 0;
+	background: transparent url(ddwrt/right-top.png) no-repeat 0 0;
 	width:10px;
 	height:25px;
 }

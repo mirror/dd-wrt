@@ -606,7 +606,7 @@ endif
 ifeq ($(CONFIG_KROMO),y)
 	cp -a kromo $(INSTALLDIR)/www/style
 else
-	rm -f $(INSTALLDIR)/www/images/dd-wrt.gif
+	rm -f $(INSTALLDIR)/www/images/dd-wrt.png
 endif
 
 
