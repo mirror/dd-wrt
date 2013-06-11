@@ -184,7 +184,7 @@ sub gen_parse_func($$)
 	print <<EOF;
 {
 	void *tlv_buf = &msg->$type.tlv;
-	int tlv_len = le16_to_cpu(msg->$type.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->$type.tlv_len);
 EOF
 
 	if (gen_has_types($data)) {
@@ -369,7 +369,7 @@ sub gen_tlv_attr_set($$)
 	$data = <<EOF;
 	if ($cond) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 $iterator$size_var
 		__qmi_alloc_reset();
 $var_data
