@@ -29,7 +29,7 @@ body.gui {
 
 /* status info */
 #statusInfo  {
-	background:				#CCCCDD URL(../../images/dd-wrt.gif) bottom right no-repeat;
+	background:				#CCCCDD URL(../../images/dd-wrt.png) bottom right no-repeat;
 	border-color:			#000;
 }
 
