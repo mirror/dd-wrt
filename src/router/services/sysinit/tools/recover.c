@@ -1,7 +1,9 @@
 void start_backup(void)
 {
 	char drive[64];
-#ifdef HAVE_RB600
+#ifdef HAVE_OPENRISC
+	sprintf(drive, "/dev/sda");
+#elif HAVE_RB600
 	sprintf(drive, "/dev/sda");
 #else
 	sprintf(drive, "/dev/%s", getdisc());
@@ -36,7 +38,9 @@ void start_recover(void)
 	FILE *in;
 	char dev[64];
 	fprintf(stderr, "recover broken nvram\n");
-#ifdef HAVE_RB600
+#ifdef HAVE_OPENRISC
+	sprintf(dev, "/dev/sda");
+#elif HAVE_RB600
 	sprintf(dev, "/dev/sda");
 #else
 	sprintf(dev, "/dev/%s", getdisc());
