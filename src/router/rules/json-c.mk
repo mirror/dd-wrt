@@ -6,9 +6,9 @@ json-c-configure:
 		--prefix=$(TOP)/_staging \
 		--libdir=$(TOP)/_staging/usr/lib \
 		--includedir=$(TOP)/_staging/usr/include \
-		CFLAGS="-fPIC -DNEED_PRINTF $(COPTS)" 
+		CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT)" 
 
-json-c: json-c-configure
+json-c:
 	make -C json-c
 	-mkdir -p $(TOP)/_staging
 	make -C json-c install
