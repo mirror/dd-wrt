@@ -14,7 +14,7 @@ uqmi-configure: libubox
 	$(call CMakeClean,$(UQMI_PKG_BUILD_DIR))
 	$(call CMakeConfigure,$(UQMI_PKG_BUILD_DIR),$(UQMI_STAGING_DIR),$(UQMI_CMAKE_OPTIONS),$(UQMI_EXTRA_CFLAGS),$(UQMI_EXTRA_LDFLAGS)) 
 
-uqmi: uqmi-configure
+uqmi:
 	$(MAKE) -C uqmi
 
 uqmi-install:
