@@ -113,10 +113,6 @@ char *nvram_get(const char *name)
 	else
 		value = NULL;
 
-#ifndef HAVE_MICRO
-	if (value)
-		msync(nvram_buf, NVRAM_SPACE, MS_INVALIDATE);
-#endif
 	if (count < 0)
 		perror(PATH_DEV_NVRAM);
 
