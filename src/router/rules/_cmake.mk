@@ -1,9 +1,9 @@
 export TMPDIR=/tmp
 define CMakeConfigure 
 	(cd $(strip $(1)); \
-		CFLAGS="$(CFLAGS) $(EXTRA_CFLAGS) $(4)" \
+		CFLAGS="$(CFLAGS) $(EXTRA_CFLAGS) $(MIPS16_OPT) $(4)" \
 		LDFLAGS="$(5)" \
-		CXXFLAGS="$(CFLAGS) $(EXTRA_CFLAGS)" \
+		CXXFLAGS="$(CFLAGS) $(EXTRA_CFLAGS)  $(MIPS16_OPT)" \
 		cmake \
 			--debug-output \
 			-DCMAKE_SYSTEM_NAME=Linux \
