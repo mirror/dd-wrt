@@ -27,6 +27,7 @@
 #include <linux/slab.h>
 #include <linux/bootmem.h>
 #include <linux/fs.h>
+#include <linux/vmalloc.h>
 #include <linux/miscdevice.h>
 #include <linux/mtd/mtd.h>
 #include <asm/addrspace.h>
@@ -455,7 +456,7 @@ struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name, cons
 		return NULL;
 
 	if (!t) {
-		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC)))
+		if (!(t = vmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1)))
 			return NULL;
 
 		/* Copy name */
@@ -480,7 +481,7 @@ void _nvram_free(struct nvram_tuple *t)
 	if (!t)
 		nvram_offset = 0;
 	else
-		kfree(t);
+		vfree(t);
 }
 
 int nvram_init(void *sih)
@@ -497,10 +498,10 @@ int nvram_set(const char *name, const char *value)
 	spin_lock_irqsave(&nvram_lock, flags);
 	if ((ret = _nvram_set(name, value))) {
 		/* Consolidate space and try again */
-		if ((header = kmalloc(NVRAM_SPACE, GFP_ATOMIC))) {
+		if ((header = vmalloc(NVRAM_SPACE))) {
 			if (_nvram_commit(header) == 0)
 				ret = _nvram_set(name, value);
-			kfree(header);
+			vfree(header);
 		}
 	}
 	spin_unlock_irqrestore(&nvram_lock, flags);
@@ -557,7 +558,7 @@ int nvram_nflash_commit(void)
 	unsigned long flags;
 	u_int32_t offset;
 
-	if (!(buf = kmalloc(NVRAM_SPACE, GFP_KERNEL))) {
+	if (!(buf = vmalloc(NVRAM_SPACE))) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
@@ -588,7 +589,7 @@ int nvram_nflash_commit(void)
 
 done:
 	mutex_unlock(&nvram_sem);
-	kfree(buf);
+	vfree(buf);
 	return ret;
 }
 #endif				/* NFLASH_SUPPORT */
@@ -622,7 +623,7 @@ int nvram_commit(void)
 #endif
 	/* Backup sector blocks to be erased */
 	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
-	if (!(buf = kmalloc(erasesize, GFP_KERNEL))) {
+	if (!(buf = vmalloc(erasesize))) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
@@ -726,7 +727,7 @@ int nvram_commit(void)
 
 done:
 	mutex_unlock(&nvram_sem);
-	kfree(buf);
+	vfree(buf);
 	return ret;
 }
 
@@ -761,7 +762,7 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 	unsigned long off;
 
 	if (count > sizeof(tmp)) {
-		if (!(name = kmalloc(count, GFP_KERNEL)))
+		if (!(name = vmalloc(count)))
 			return -ENOMEM;
 	}
 
@@ -801,7 +802,7 @@ static ssize_t dev_nvram_read(struct file *file, char *buf, size_t count, loff_t
 
 done:
 	if (name != tmp)
-		kfree(name);
+		vfree(name);
 
 	return ret;
 }
@@ -812,7 +813,7 @@ static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
 	ssize_t ret;
 
 	if (count > sizeof(tmp)) {
-		if (!(name = kmalloc(count, GFP_KERNEL)))
+		if (!(name = vmalloc(count)))
 			return -ENOMEM;
 	}
 
@@ -830,7 +831,7 @@ static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
 
 done:
 	if (name != tmp)
-		kfree(name);
+		vfree(name);
 
 	return ret;
 }
@@ -854,10 +855,18 @@ dev_nvram_ioctl(
 
 static int dev_nvram_mmap(struct file *file, struct vm_area_struct *vma)
 {
-	unsigned long offset = __pa(nvram_buf) >> PAGE_SHIFT;
-
-	if (remap_pfn_range(vma, vma->vm_start, offset, vma->vm_end - vma->vm_start, vma->vm_page_prot))
+	unsigned long offset = virt_to_phys(nvram_buf);
+	if (remap_pfn_range(vma,vma->vm_start, offset>>PAGE_SHIFT, vma->vm_end-vma->vm_start,
+			     vma->vm_page_prot))
+		{
 		return -EAGAIN;
+		}
+
+
+//	unsigned long offset = __pa(nvram_buf) >> PAGE_SHIFT;
+//
+//	if (remap_pfn_range(vma, vma->vm_start, offset, vma->vm_end - vma->vm_start, vma->vm_page_prot))
+//		return -EAGAIN;
 
 	return 0;
 }
@@ -962,7 +971,7 @@ static int dev_nvram_init(void)
 	if (nvram_mtd_cfe != NULL && cfenvram) {
 		printk(KERN_INFO "check if nvram copy is required CFE Size is %d\n", NVRAMSIZE);
 		int len;
-		char *buf = kmalloc(NVRAM_SPACE, GFP_ATOMIC);
+		char *buf = vmalloc(NVRAM_SPACE);
 		if (buf == NULL) {
 			printk(KERN_ERR "mem allocation error");
 			goto done_nofree;
@@ -1009,7 +1018,7 @@ static int dev_nvram_init(void)
 //      bcm947xx_machine_restart(NULL);
 
 		      done:;
-			kfree(buf);
+			vfree(buf);
 		      done_nofree:;
 		}
 	}
