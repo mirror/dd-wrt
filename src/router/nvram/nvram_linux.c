@@ -105,9 +105,11 @@ char *nvram_get(const char *name)
 
 	/* Get offset into mmap() space */
 	strcpy((char *)off, name);
+#ifndef HAVE_MICRO
+	msync(nvram_buf, NVRAM_SPACE, MS_SYNC);	
+#endif
 
 	count = read(nvram_fd, off, count);
-
 	if (count == sizeof(unsigned long))
 		value = &nvram_buf[*off];
 	else
