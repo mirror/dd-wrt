@@ -645,9 +645,7 @@ endif
 CFLAGS += -DHAVE_MINIDLNA
 endif
 
-ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
-endif
 
 ifeq ($(CONFIG_PPTPD),y)
 CFLAGS += -DHAVE_PPTPD
