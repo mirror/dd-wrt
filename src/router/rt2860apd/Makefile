@@ -10,10 +10,8 @@ endif
 # If you want to support multiple radius server for multiple bssid, add following line
 CFLAGS +=  -DMULTIPLE_RADIUS -DNEED_PRINTF
 
-ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS 
 LDFLAGS += -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lnvram 
-endif
 
 # If you want to debug daemon, add following line
 #CFLAGS +=  -DDBG 
