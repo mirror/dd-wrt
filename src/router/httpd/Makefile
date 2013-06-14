@@ -775,9 +775,7 @@ ifeq ($(CONFIG_CDEBUG),y)
 CFLAGS += -DCDEBUG
 endif
 
-ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
-endif
 
 ifeq ($(CONFIG_NET_SCH_CODEL),y)
 CFLAGS += -DHAVE_CODEL
