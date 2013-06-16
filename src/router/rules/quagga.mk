@@ -22,6 +22,7 @@ ifeq ($(CONFIG_QUAGGA_STABLE),y)
 else
 	make -C quagga DESTDIR=$(INSTALLDIR)/quagga install
 endif
+	rm -rf $(INSTALLDIR)/quagga/tmp
 	rm -rf $(INSTALLDIR)/quagga/usr/info
 	rm -rf $(INSTALLDIR)/quagga/usr/share
 	rm -rf $(INSTALLDIR)/quagga/usr/include
