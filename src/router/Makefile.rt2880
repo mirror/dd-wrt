@@ -89,7 +89,7 @@ export BASEOPT:=-Os
 #export ARCH:= mipsel
 
 ifeq ($(ARCH),mipsel)
-export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=mips32r2 -mtune=24kec -fno-caller-saves -mno-branch-likely
+export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=24kec -fno-caller-saves -mno-branch-likely
 endif
 ifeq ($(ARCH),arm)
 export COPTS:=$(BASEOPT) -march=armv4 -pipe -funit-at-a-time -msoft-float
@@ -268,69 +268,61 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-	make -f Makefile.rt2880 lib.$(ARCH)-install
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-		"$(ARCH)-uclibc/target/lib/libc.so.0" \
-		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
-
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt_pic.a}" \
-		"$(ARCH)-uclibc/target/lib/libcrypt.so.0" \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-		-Wl,-soname=libcrypt.so.0
-
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libm.so}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libm_pic.a}" \
-		"$(ARCH)-uclibc/target/lib/libm.so.0" \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-		-Wl,-soname=libm.so.0 
-
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread_so.a}" \
-		"$(ARCH)-uclibc/target/lib/libpthread.so.0" \
-		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-		-Wl,-soname=libpthread.so.0
-
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+ifeq ($(CONFIG_LIBDL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+endif
+ifeq ($(CONFIG_LIBRT),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
+endif
+ifeq ($(CONFIG_LIBNSL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
+endif
+ifeq ($(CONFIG_LIBUTIL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+endif
+ifeq ($(CONFIG_LIBCPP),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+endif
+ifeq ($(CONFIG_LIBCRYPT),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+endif
+ifeq ($(CONFIG_LIBM),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+endif
+ifeq ($(CONFIG_LIBRESOLV),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
+endif
+ifeq ($(CONFIG_LIBPTHREAD),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+endif
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
 
 ifneq ($(CONFIG_NOOPT),y)
-	rm -rf $(ARCH)-uclibc/tmp/mklibs-out
-	rm -f $(ARCH)-uclibc/tmp/mklibs-progs
-	mkdir -p $(ARCH)-uclibc/tmp/mklibs-out
+
+	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
+	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
+	-mkdir -p /tmp/$(ARCHITECTURE)/
 	find $(TARGETDIR) -type f -perm +100 -exec \
 		file -r -N -F '' {} + | \
-		awk ' /executable.*dynamically/ { print $$1 }' > $(ARCH)-uclibc/tmp/mklibs-progs
+		awk ' /executable.*dynamically/ { print $$1 }' > /tmp/$(ARCHITECTURE)/mklibs-progs
 
 	find $(TARGETDIR) -type f -name \*.so\* -exec \
 		file -r -N -F '' {} + | \
-		awk ' /shared object/ { print $$1 }' >> $(ARCH)-uclibc/tmp/mklibs-progs
+		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
 
-	mkdir -p $(ARCH)-uclibc/tmp/mklibs-out
+	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
 	mklibs.py -D \
-		-d $(ARCH)-uclibc/tmp/mklibs-out \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
 		-L /lib \
 		-L /usr/lib \
 		--ldlib /lib/ld-uClibc.so.0 \
 		--target $(ARCH)-linux-uclibc \
-		`cat $(ARCH)-uclibc/tmp/mklibs-progs` 2>&1
-	cp $(ARCH)-uclibc/tmp/mklibs-out/* $(TARGETDIR)/lib
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
 endif
-	rm -f $(TARGETDIR)/lib/*.a
-	rm -f $(TARGETDIR)/lib/*.map
-#	cp lib.$(ARCH)/libresolv.so.0 $(TARGETDIR)/lib
-#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
@@ -355,7 +347,7 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 #	$(MAKE) -f Makefile.rt2880 lib.$(ARCH)-install
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) -f Makefile.rt2880 optimize-lib
-	-cp lib.mipsel/libcrypt.so.0 $(TARGETDIR)/lib
+	#-cp lib.mipsel/libcrypt.so.0 $(TARGETDIR)/lib
 	# Install modules into filesystem
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
@@ -366,7 +358,7 @@ endif
 ifeq ($(CONFIG_WAVESAT),y)
 	make -f Makefile.rt2880 wavesat-install
 endif
-	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
 ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
