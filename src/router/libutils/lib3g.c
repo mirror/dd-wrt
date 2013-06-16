@@ -929,6 +929,7 @@ char *get3GControlDevice(void)
 				insmod("cdc-wdm");
 				insmod("usbnet");
 				insmod("qmi_wwan");
+				insmod("zte_ev");
 				insmod(devicelist[devicecount].driver);
 			}
 			if (devicelist[devicecount].datadevice) {
@@ -990,6 +991,7 @@ char *get3GControlDevice(void)
 	insmod("usb_wwan");
 	insmod("sierra");
 	insmod("option");
+	insmod("zte_ev");
 	return ttsdevice;
 }
 
