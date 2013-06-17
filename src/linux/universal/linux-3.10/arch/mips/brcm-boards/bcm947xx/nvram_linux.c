@@ -82,7 +82,7 @@ extern spinlock_t bcm947xx_sih_lock;
 #define NVRAM_SPACE_32K 0x8000
 #define NVRAM_SPACE_60K 0xF000
 
-static char nvram_buf_cfe[NVRAM_SPACE_60K] __attribute__((aligned(PAGE_SIZE)));
+static char nvram_buf_cfe[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 static int NVRAMSIZE = NVRAM_SPACE;
 
 #ifdef NFLASH_SUPPORT
@@ -248,7 +248,7 @@ static int early_nvram_init(void)
 							printk(KERN_NOTICE "map 32K netgear cfe nvram at %X\n", off + 0x50000 - (NVRAM_SPACE_32K));
 							NVRAMSIZE = NVRAM_SPACE_32K;
 							header_cfe = header_cfe3;
-						}
+						} 
 						goto found;
 					}
 				}
@@ -300,6 +300,7 @@ found:
 
 	src = (u32 *)header_cfe;
 	if (src) {
+		printk(KERN_INFO "copy %d bytes as cfe nvram\n", NVRAMSIZE);
 		dst = (u32 *)nvram_buf_cfe;
 		for (i = 0; i < sizeof(struct nvram_header); i += 4)
 			*dst++ = *src++;
