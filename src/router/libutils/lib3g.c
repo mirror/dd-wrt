@@ -97,7 +97,7 @@ static int scanFor(int Vendor, int Product)
 			fclose(modem);
 			if (idVendor == Vendor && idProduct == Product)
 				return 1;
-			next_if:;
+		      next_if:;
 		}
 		count++;
 	      next:;
@@ -372,7 +372,7 @@ static void modeswitch_linktop(int needreset, int devicecount)
 #define SIERRADIP 0x100		// direct ip sierra / sierra_net
 #define QMI 0x80		// cdc_wdm + qmi_wwan
 #define ETH 0x40		// usbnet + cdc_ether or usbnet + cdc_ncm
-#define GENERIC 0x20		//
+#define GENERIC 0x20		// option new_id on-the-fly
 #define ACM 0x10		//cdc_acm
 #define MBIM 0x08		//cdc_mbim
 // 0-7 is variant type
@@ -410,7 +410,7 @@ static struct DEVICES devicelist[] = {
 	{0x05c6, 0x00a0, "option", "2", "0", 0 | GENERIC, NULL, "Axesstel MV241 (modem)"},	//
 	{0x05c6, 0x1000, "option", "0", "0", 0, &modeswitch_zte_1msg, "Generic Qualcomm (cdrom)"},	//
 	{0x05c6, 0x2001, "option", "0", "0", 0, &modeswitch_zte_1msg, "Generic Qualcomm (cdrom)"},	//
-	{0x05c6, 0x6000, "option", "2", "0", 0, NULL, "Siemens SG75 (modem)"},	//
+	{0x05c6, 0x6000, "zte_ev", "2", "0", 0, NULL, "Siemens SG75 (modem)"},	//
 	{0x05c6, 0x6503, "option", "0", "0", 0, &modeswitch_zte_1msg, "Generic Qualcomm (cdrom)"},	//
 	{0x05c6, 0x9000, "option", "1", "2", 0, NULL, "Generic Qualcomm (modem)"},	//
 	{0x05c6, 0xf000, "option", "0", "0", 0, &modeswitch_zte_1msg, "Generic Qualcomm (cdrom)"},	//
@@ -538,19 +538,19 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x1413, "option", "2", "0", 2, NULL, "HUAWEI/Option EC168"},	//
 	{0x12d1, 0x1414, "option", "2", "0", 2, &modeswitch_huawei_old, "HUAWEI/Option E180"},	//
 	{0x12d1, 0x141b, "option", "1", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
-//      {0x12d1, 0x1432, "option", "0", "0", 2 | ETH, NULL, "HUAWEI E585"},
+//      {0x12d1, 0x1432, "option", "0", "0", 2 | QMI, NULL, "HUAWEI E585"},     // ecm attributes but probably qmi
 	{0x12d1, 0x1433, "option", "2", "0", 2, NULL, "HUAWEI/Option E1756C"},	//
-	{0x12d1, 0x1436, "option", "2", "0", 2, NULL, "HUAWEI/Option E1800"},	// ecm able
+	{0x12d1, 0x1436, "option", "2", "0", 2, NULL, "HUAWEI/Option E1800"},	// ecm attributes but probably qmi
 	{0x12d1, 0x1444, "option", "0", "0", 2, NULL, "HUAWEI/Option E352-R1"},	//
 	{0x12d1, 0x1446, "option", "0", "0", 2, &modeswitch_huawei_std, "HUAWEI/Option E1552/E1800 HSPA Modem"},	//
 	{0x12d1, 0x1449, "option", "0", "0", 2, &modeswitch_huawei_std, "HUAWEI/Option E352-R1"},	//
 	{0x12d1, 0x144e, "option", "0", "2", 2, NULL, "Huawei K3806"},	//
 	{0x12d1, 0x1464, "option", "2", "0", 2, NULL, "Huawei K4505"},	//
-	{0x12d1, 0x1465, "option", "2", "0", 2, NULL, "Huawei K3765"},	// ecm able
+	{0x12d1, 0x1465, "option", "2", "0", 2, NULL, "Huawei K3765"},	// ecm attributes but probably qmi
 	{0x12d1, 0x1491, "option", "2", "0", 2, NULL, "Huawei R201"},	//
 	{0x12d1, 0x14a5, "option", "2", "0", 2, NULL, "Huawei E173"},	//
 	{0x12d1, 0x14a8, "option", "2", "0", 2, NULL, "Huawei E173"},	//
-	{0x12d1, 0x14ac, "option", "2", "0", 2, NULL, "HUAWEI/Option newer modems"},	// ecm able
+	{0x12d1, 0x14ac, "option", "2", "0", 2 | QMI, NULL, "HUAWEI/Option newer modems"},	//
 	{0x12d1, 0x14ad, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei K3806"},	//
 	{0x12d1, 0x14ae, "option", "1", "2", 2, NULL, "Huawei K3806"},	//
 	{0x12d1, 0x14b5, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E173"},	//
@@ -573,7 +573,7 @@ static struct DEVICES devicelist[] = {
 //      {0x12d1, 0x14db, "option", "0", "0", 2 | ETH, NULL,  "Huawei E353 composite"},  //
 	{0x12d1, 0x14fe, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E352,E353"},	//
 	{0x12d1, 0x1505, "option", "0", "0", 2, &modeswitch_huawei_std, "Huawei E398"},	//
-	{0x12d1, 0x1506, "option", "2", "0", 2 | QMI, NULL, "Huawei E367/E398 (modem)"},	//
+	{0x12d1, 0x1506, "option", "2", "0", 2, NULL, "Huawei E367/E398 (modem)"},	//can not be QMI flagged!
 	{0x12d1, 0x150a, "option", "2", "0", 2 | QMI, NULL, "Huawei E398 (modem)"},	// 
 	{0x12d1, 0x150c, "option", "1", "2", 2 | QMI, NULL, "Huawei E367"},	//
 	{0x12d1, 0x150f, "option", "0", "0", 2 | QMI, NULL, "Huawei E367"},	//
@@ -639,7 +639,8 @@ static struct DEVICES devicelist[] = {
 	{0x16d5, 0x6202, "option", "2", "0", 2, NULL, "AnyData ADU-620UW"},	//
 	{0x16d5, 0x6501, "option", "1", "0", 2, NULL, "AnyData ADU-300A"},	//
 	{0x16d5, 0x6502, "option", "2", "0", 2, NULL, "AnyData ADU-500A"},	//
-	{0x16d5, 0x6603, "option", "0", "0", 2, NULL, "AnyData ADU-890WH"},	//
+	{0x16d5, 0x6603, "option", "0", "0", 2 | GENERIC, NULL, "AnyData ADU-890WH"},	//
+	{0x16d5, 0x900d, "option", "0", "0", 2 | ACM, NULL, "AnyData ADU-890WH"},	//
 
 //CMOTECH
 	{0x16d8, 0x5543, "option", "0", "0", 0 | ACM, NULL, "Cmotech CNU-550"},	//
@@ -710,6 +711,10 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x1015, "option", "1", "0", 2 | ACM, NULL, "ZTE K3806-Z (modem)"},	// ecm able
 	{0x19d2, 0x1017, "option", "0", "0", 2, &modeswitch_zte_1msg, "ZTE K5006-Z (cdrom)"},	//
 	{0x19d2, 0x1018, "option", "0", "2", 2 | QMI, NULL, "ZTE K5006-Z (modem)"},	//
+	{0x19d2, 0x1171, "option", "0", "0", 2, &modeswitch_zte_1msg, "ZTE K4510-Z (cdrom)"},	//
+	{0x19d2, 0x1173, "option", "0", "0", 2 | ACM, NULL, "ZTE K4510-Z (modem)"},	// ecm able
+	{0x19d2, 0x1175, "option", "0", "0", 2, &modeswitch_zte_1msg, "ZTE K3770-Z (cdrom)"},	//
+	{0x19d2, 0x1177, "option", "0", "0", 2 | ACM, NULL, "ZTE K3770-Z (modem)"},	// ecm able
 	{0x19d2, 0x1179, "option", "0", "0", 2, &modeswitch_zte_1msg, "ZTE K3772-Z (cdrom)"},	//
 	{0x19d2, 0x1181, "option", "0", "0", 2 | ACM, NULL, "ZTE K3772-Z (modem)"},	// ecm able
 	{0x19d2, 0x1201, "option", "0", "0", 2, &modeswitch_zte_1msg, "ZTE MF691 (cdrom)"},	//
@@ -736,11 +741,11 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x2003, "option", "1", "3", 2, NULL, "ZTE MF180 (modem)"},	//
 	{0x19d2, 0xffdd, "option", "1", "0", 2, NULL, "ZTE AC682 (modem)"},	//
 	{0x19d2, 0xffde, "option", "0", "0", 2, &modeswitch_zte_1msg, "ZTE AC682 (cdrom)"},	//
-	{0x19d2, 0xfff1, "option", "1", "0", 2, NULL, "ZTE generic (modem)"},	//
+	{0x19d2, 0xfff1, "zte_ev", "1", "0", 2, NULL, "ZTE generic (modem)"},	//
 	{0x19d2, 0xfff5, "option", "0", "0", 2, &modeswitch_zte_other, "ZTE generic (cdrom)"},	//
 	{0x19d2, 0xfff6, "option", "0", "0", 2, &modeswitch_zte_other, "ZTE generic (cdrom)"},	//
-	{0x19d2, 0xfffe, "option", "1", "0", 2, NULL, "ZTE generic (modem)"},	//
-	{0x19d2, 0xffff, "option", "1", "0", 2, NULL, "ZTE generic (modem)"},	//
+	{0x19d2, 0xfffe, "zte_ev", "1", "0", 2, NULL, "ZTE generic (modem)"},	//
+	{0x19d2, 0xffff, "zte_ev", "1", "0", 2, NULL, "ZTE generic (modem)"},	//
 
 //Infomark
 //      {0x19f2, 0x1700, "option", "0", "0", 0 | ETH, NULL, "Clear Spot Voyager mifi"}, //
