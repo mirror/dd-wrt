@@ -27,6 +27,11 @@ else
 CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
 
+ifeq ($(CONFIG_80211AC),y)
+CFLAGS	= -I.  -I../httpd -Wall -I$(SRCBASE)/
+CFLAGS +=  -I$(LINUXDIR)/brcm/$(ARCH)/include  -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+endif
+
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -fPIC 
 LDFLAGS += -L.
