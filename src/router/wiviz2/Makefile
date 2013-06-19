@@ -14,6 +14,11 @@ INCLUDE=../libpcap_noring
 SOURCES=wiviz.c wl_access.c channelhopper.c
 OBJS=wiviz.o wl_access.o channelhopper.o
 TARGET=wiviz
+
+ifeq ($(CONFIG_80211AC),y)
+CCOPTS	+= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
+endif
+
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
 CCOPTS	+= -I$(SRCBASE)/include.bcm -L../shared -L../nvram -L../libutils -I../shared
@@ -38,6 +43,9 @@ CCOPTS+=-DHAVE_MADWIFI
 endif
 ifeq ($(CONFIG_RT61),y)
 CCOPTS+=-DHAVE_RT2880 
+endif
+ifeq ($(CONFIG_80211AC),y)
+CCOPTS+=-DHAVE_80211AC
 endif
 ifeq ($(CONFIG_TIEXTRA1),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs

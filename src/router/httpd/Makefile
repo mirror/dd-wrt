@@ -41,6 +41,11 @@ endif
 COPTS += $(MIPS16_OPT) 
 
 BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE
+
+ifeq ($(CONFIG_80211AC),y)
+BCFLAGS	+= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
+endif
+
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
 BCFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -Imodules
