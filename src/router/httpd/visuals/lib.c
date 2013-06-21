@@ -111,6 +111,8 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 		} else {
 			websWrite(wp, "OTAi %s (%s)", nvram_get("DD_BOARD"), date);
 		}
+#elif HAVE_SANSFIL
+		websWrite(wp, "SANSFIL %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #else
 
 		websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
