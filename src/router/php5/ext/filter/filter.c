@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2012 The PHP Group                                |
+  | Copyright (c) 1997-2013 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -19,7 +19,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: e523cdc8829892d1b4f9cb7c3c57b2ba1c36b9ea $ */
+/* $Id: da951feb042dd2911ab6e0971453c070716d068b $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -47,6 +47,7 @@ static const filter_list_entry filter_list[] = {
 	{ "validate_url",    FILTER_VALIDATE_URL,           php_filter_validate_url    },
 	{ "validate_email",  FILTER_VALIDATE_EMAIL,         php_filter_validate_email  },
 	{ "validate_ip",     FILTER_VALIDATE_IP,            php_filter_validate_ip     },
+	{ "validate_mac",    FILTER_VALIDATE_MAC,           php_filter_validate_mac    },
 
 	{ "string",          FILTER_SANITIZE_STRING,        php_filter_string          },
 	{ "stripped",        FILTER_SANITIZE_STRING,        php_filter_string          },
@@ -233,6 +234,7 @@ PHP_MINIT_FUNCTION(filter)
 	REGISTER_LONG_CONSTANT("FILTER_VALIDATE_URL", FILTER_VALIDATE_URL, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("FILTER_VALIDATE_EMAIL", FILTER_VALIDATE_EMAIL, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("FILTER_VALIDATE_IP", FILTER_VALIDATE_IP, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("FILTER_VALIDATE_MAC", FILTER_VALIDATE_MAC, CONST_CS | CONST_PERSISTENT);
 
 	REGISTER_LONG_CONSTANT("FILTER_DEFAULT", FILTER_DEFAULT, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("FILTER_UNSAFE_RAW", FILTER_UNSAFE_RAW, CONST_CS | CONST_PERSISTENT);
@@ -318,7 +320,7 @@ PHP_MINFO_FUNCTION(filter)
 {
 	php_info_print_table_start();
 	php_info_print_table_row( 2, "Input Validation and Filtering", "enabled" );
-	php_info_print_table_row( 2, "Revision", "$Id: e523cdc8829892d1b4f9cb7c3c57b2ba1c36b9ea $");
+	php_info_print_table_row( 2, "Revision", "$Id: da951feb042dd2911ab6e0971453c070716d068b $");
 	php_info_print_table_end();
 
 	DISPLAY_INI_ENTRIES();

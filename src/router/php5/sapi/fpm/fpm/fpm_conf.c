@@ -45,6 +45,10 @@
 #include "fpm_log.h"
 #include "fpm_events.h"
 #include "zlog.h"
+#ifdef HAVE_SYSTEMD
+#include "fpm_systemd.h"
+#endif
+
 
 #define STR2STR(a) (a ? a : "undefined")
 #define BOOL2STR(a) (a ? "yes" : "no")
@@ -53,7 +57,9 @@
 
 static int fpm_conf_load_ini_file(char *filename TSRMLS_DC);
 static char *fpm_conf_set_integer(zval *value, void **config, intptr_t offset);
+#if 0 /* not used for now */
 static char *fpm_conf_set_long(zval *value, void **config, intptr_t offset);
+#endif
 static char *fpm_conf_set_time(zval *value, void **config, intptr_t offset);
 static char *fpm_conf_set_boolean(zval *value, void **config, intptr_t offset);
 static char *fpm_conf_set_string(zval *value, void **config, intptr_t offset);
@@ -70,6 +76,11 @@ struct fpm_global_config_s fpm_global_config = {
 	.syslog_facility = -1,
 #endif
 	.process_max = 0,
+	.process_priority = 64, /* 64 means unset */
+#ifdef HAVE_SYSTEMD
+	.systemd_watchdog = 0,
+	.systemd_interval = -1, /* -1 means not set */
+#endif
 };
 static struct fpm_worker_pool_s *current_wp = NULL;
 static int ini_recursion = 0;
@@ -92,10 +103,14 @@ static struct ini_value_parser_s ini_fpm_global_options[] = {
 	{ "emergency_restart_interval",  &fpm_conf_set_time,            GO(emergency_restart_interval) },
 	{ "process_control_timeout",     &fpm_conf_set_time,            GO(process_control_timeout) },
 	{ "process.max",                 &fpm_conf_set_integer,         GO(process_max) },
+	{ "process.priority",            &fpm_conf_set_integer,         GO(process_priority) },
 	{ "daemonize",                   &fpm_conf_set_boolean,         GO(daemonize) },
 	{ "rlimit_files",                &fpm_conf_set_integer,         GO(rlimit_files) },
 	{ "rlimit_core",                 &fpm_conf_set_rlimit_core,     GO(rlimit_core) },
 	{ "events.mechanism",            &fpm_conf_set_string,          GO(events_mechanism) },
+#ifdef HAVE_SYSTEMD
+	{ "systemd_interval",            &fpm_conf_set_time,            GO(systemd_interval) },
+#endif
 	{ 0, 0, 0 }
 };
 
@@ -112,6 +127,7 @@ static struct ini_value_parser_s ini_fpm_pool_options[] = {
 	{ "listen.group",              &fpm_conf_set_string,      WPO(listen_group) },
 	{ "listen.mode",               &fpm_conf_set_string,      WPO(listen_mode) },
 	{ "listen.allowed_clients",    &fpm_conf_set_string,      WPO(listen_allowed_clients) },
+	{ "process.priority",          &fpm_conf_set_integer,     WPO(process_priority) },
 	{ "pm",                        &fpm_conf_set_pm,          WPO(pm) },
 	{ "pm.max_children",           &fpm_conf_set_integer,     WPO(pm_max_children) },
 	{ "pm.start_servers",          &fpm_conf_set_integer,     WPO(pm_start_servers) },
@@ -239,6 +255,7 @@ static char *fpm_conf_set_integer(zval *value, void **config, intptr_t offset) /
 }
 /* }}} */
 
+#if 0 /* not used for now */
 static char *fpm_conf_set_long(zval *value, void **config, intptr_t offset) /* {{{ */
 {
 	char *val = Z_STRVAL_P(value);
@@ -254,6 +271,7 @@ static char *fpm_conf_set_long(zval *value, void **config, intptr_t offset) /* {
 	return NULL;
 }
 /* }}} */
+#endif
 
 static char *fpm_conf_set_time(zval *value, void **config, intptr_t offset) /* {{{ */
 {
@@ -533,12 +551,17 @@ static char *fpm_conf_set_array(zval *key, zval *value, void **config, int conve
 	kv->key = strdup(Z_STRVAL_P(key));
 
 	if (!kv->key) {
+		free(kv);
 		return "fpm_conf_set_array: strdup(key) failed";
 	}
 
 	if (convert_to_bool) {
 		char *err = fpm_conf_set_boolean(value, &subconf, 0);
-		if (err) return err;
+		if (err) {
+			free(kv->key);
+			free(kv);
+			return err;
+		}
 		kv->value = strdup(b ? "1" : "0");
 	} else {
 		kv->value = strdup(Z_STRVAL_P(value));
@@ -549,6 +572,7 @@ static char *fpm_conf_set_array(zval *key, zval *value, void **config, int conve
 
 	if (!kv->value) {
 		free(kv->key);
+		free(kv);
 		return "fpm_conf_set_array: strdup(value) failed";
 	}
 
@@ -571,12 +595,14 @@ static void *fpm_worker_pool_config_alloc() /* {{{ */
 	wp->config = malloc(sizeof(struct fpm_worker_pool_config_s));
 
 	if (!wp->config) { 
+		fpm_worker_pool_free(wp);
 		return 0;
 	}
 
 	memset(wp->config, 0, sizeof(struct fpm_worker_pool_config_s));
 	wp->config->listen_backlog = FPM_BACKLOG_DEFAULT;
 	wp->config->pm_process_idle_timeout = 10; /* 10s by default */
+	wp->config->process_priority = 64; /* 64 means unset */
 
 	if (!fpm_worker_all_pools) {
 		fpm_worker_all_pools = wp;
@@ -671,7 +697,7 @@ static int fpm_evaluate_full_path(char **path, struct fpm_worker_pool_s *wp, cha
 		if (tmp != NULL) {
 
 			if (tmp != *path) {
-				zlog(ZLOG_ERROR, "'$prefix' must be use at the begining of the value");
+				zlog(ZLOG_ERROR, "'$prefix' must be use at the beginning of the value");
 				return -1;
 			}
 
@@ -704,7 +730,7 @@ static int fpm_evaluate_full_path(char **path, struct fpm_worker_pool_s *wp, cha
 
 static int fpm_conf_process_all_pools() /* {{{ */
 {
-	struct fpm_worker_pool_s *wp;
+	struct fpm_worker_pool_s *wp, *wp2;
 
 	if (!fpm_worker_all_pools) {
 		zlog(ZLOG_ERROR, "No pool defined. at least one pool section must be specified in config file");
@@ -723,8 +749,8 @@ static int fpm_conf_process_all_pools() /* {{{ */
 			}
 		}
 
-		/* user */
-		if (!wp->config->user) {
+		/* alert if user is not set only if we are not root*/
+		if (!wp->config->user && !geteuid()) {
 			zlog(ZLOG_ALERT, "[pool %s] user has not been defined", wp->config->name);
 			return -1;
 		}
@@ -738,6 +764,11 @@ static int fpm_conf_process_all_pools() /* {{{ */
 			}
 		} else {
 			zlog(ZLOG_ALERT, "[pool %s] no listen address have been defined!", wp->config->name);
+			return -1;
+		}
+
+		if (wp->config->process_priority != 64 && (wp->config->process_priority < -19 || wp->config->process_priority > 20)) {
+			zlog(ZLOG_ERROR, "[pool %s] process.priority must be included into [-19,20]", wp->config->name);
 			return -1;
 		}
 
@@ -989,7 +1020,7 @@ static int fpm_conf_process_all_pools() /* {{{ */
 			nb_ext = 0;
 
 			/* find the number of extensions */
-			while ((ext = strtok(limit_extensions, " \t"))) {
+			while (strtok(limit_extensions, " \t")) {
 				limit_extensions = NULL;
 				nb_ext++;
 			}
@@ -1011,8 +1042,8 @@ static int fpm_conf_process_all_pools() /* {{{ */
 				nb_ext = 0;
 
 				/* parse the string and save the extension in the array */
-				while ((ext = strtok(security_limit_extensions, " \t"))) {
-					security_limit_extensions = NULL;
+				while ((ext = strtok(limit_extensions, " \t"))) {
+					limit_extensions = NULL;
 					wp->limit_extensions[nb_ext++] = strdup(ext);
 				}
 
@@ -1041,6 +1072,20 @@ static int fpm_conf_process_all_pools() /* {{{ */
 						fpm_evaluate_full_path(&kv->value, wp, NULL, 0);
 					}
 				}
+			}
+		}
+	}
+
+	/* ensure 2 pools do not use the same listening address */
+	for (wp = fpm_worker_all_pools; wp; wp = wp->next) {
+		for (wp2 = fpm_worker_all_pools; wp2; wp2 = wp2->next) {
+			if (wp == wp2) {
+				continue;
+			}
+
+			if (wp->config->listen_address && *wp->config->listen_address && wp2->config->listen_address && *wp2->config->listen_address && !strcmp(wp->config->listen_address, wp2->config->listen_address)) {
+				zlog(ZLOG_ERROR, "[pool %s] unable to set listen address as it's already used in another pool '%s'", wp2->config->name, wp->config->name);
+				return -1;
 			}
 		}
 	}
@@ -1080,6 +1125,7 @@ int fpm_conf_write_pid() /* {{{ */
 
 		if (len != write(fd, buf, len)) {
 			zlog(ZLOG_SYSERROR, "Unable to write to the PID file.");
+			close(fd);
 			return -1;
 		}
 		close(fd);
@@ -1088,12 +1134,17 @@ int fpm_conf_write_pid() /* {{{ */
 }
 /* }}} */
 
-static int fpm_conf_post_process(TSRMLS_D) /* {{{ */
+static int fpm_conf_post_process(int force_daemon TSRMLS_DC) /* {{{ */
 {
 	struct fpm_worker_pool_s *wp;
 
 	if (fpm_global_config.pid_file) {
 		fpm_evaluate_full_path(&fpm_global_config.pid_file, NULL, PHP_LOCALSTATEDIR, 0);
+	}
+
+	if (force_daemon >= 0) {
+		/* forced from command line options */
+		fpm_global_config.daemonize = force_daemon;
 	}
 
 	fpm_globals.log_level = fpm_global_config.log_level;
@@ -1103,9 +1154,20 @@ static int fpm_conf_post_process(TSRMLS_D) /* {{{ */
 		return -1;
 	}
 
+	if (fpm_global_config.process_priority != 64 && (fpm_global_config.process_priority < -19 || fpm_global_config.process_priority > 20)) {
+		zlog(ZLOG_ERROR, "process.priority must be included into [-19,20]");
+		return -1;
+	}
+
 	if (!fpm_global_config.error_log) {
 		fpm_global_config.error_log = strdup("log/php-fpm.log");
 	}
+
+#ifdef HAVE_SYSTEMD
+	if (0 > fpm_systemd_conf()) {
+		return -1;
+	}
+#endif
 
 #ifdef HAVE_SYSLOG_H
 	if (!fpm_global_config.syslog_ident) {
@@ -1423,6 +1485,7 @@ int fpm_conf_load_ini_file(char *filename TSRMLS_DC) /* {{{ */
 
 	if (ini_recursion++ > 4) {
 		zlog(ZLOG_ERROR, "failed to include more than 5 files recusively");
+		close(fd);
 		return -1;
 	}
 
@@ -1485,10 +1548,18 @@ static void fpm_conf_dump() /* {{{ */
 	zlog(ZLOG_NOTICE, "\temergency_restart_threshold = %d", fpm_global_config.emergency_restart_threshold);
 	zlog(ZLOG_NOTICE, "\tprocess_control_timeout = %ds",    fpm_global_config.process_control_timeout);
 	zlog(ZLOG_NOTICE, "\tprocess.max = %d",                 fpm_global_config.process_max);
+	if (fpm_global_config.process_priority == 64) {
+		zlog(ZLOG_NOTICE, "\tprocess.priority = undefined");
+	} else {
+		zlog(ZLOG_NOTICE, "\tprocess.priority = %d", fpm_global_config.process_priority);
+	}
 	zlog(ZLOG_NOTICE, "\tdaemonize = %s",                   BOOL2STR(fpm_global_config.daemonize));
 	zlog(ZLOG_NOTICE, "\trlimit_files = %d",                fpm_global_config.rlimit_files);
 	zlog(ZLOG_NOTICE, "\trlimit_core = %d",                 fpm_global_config.rlimit_core);
 	zlog(ZLOG_NOTICE, "\tevents.mechanism = %s",            fpm_event_machanism_name());
+#ifdef HAVE_SYSTEMD
+	zlog(ZLOG_NOTICE, "\tsystemd_interval = %ds",           fpm_global_config.systemd_interval/1000);
+#endif
 	zlog(ZLOG_NOTICE, " ");
 
 	for (wp = fpm_worker_all_pools; wp; wp = wp->next) {
@@ -1504,6 +1575,11 @@ static void fpm_conf_dump() /* {{{ */
 		zlog(ZLOG_NOTICE, "\tlisten.group = %s",               STR2STR(wp->config->listen_group));
 		zlog(ZLOG_NOTICE, "\tlisten.mode = %s",                STR2STR(wp->config->listen_mode));
 		zlog(ZLOG_NOTICE, "\tlisten.allowed_clients = %s",     STR2STR(wp->config->listen_allowed_clients));
+		if (wp->config->process_priority == 64) {
+			zlog(ZLOG_NOTICE, "\tprocess.priority = undefined");
+		} else {
+			zlog(ZLOG_NOTICE, "\tprocess.priority = %d", wp->config->process_priority);
+		}
 		zlog(ZLOG_NOTICE, "\tpm = %s",                         PM2STR(wp->config->pm));
 		zlog(ZLOG_NOTICE, "\tpm.max_children = %d",            wp->config->pm_max_children);
 		zlog(ZLOG_NOTICE, "\tpm.start_servers = %d",           wp->config->pm_start_servers);
@@ -1542,7 +1618,7 @@ static void fpm_conf_dump() /* {{{ */
 }
 /* }}} */
 
-int fpm_conf_init_main(int test_conf) /* {{{ */
+int fpm_conf_init_main(int test_conf, int force_daemon) /* {{{ */
 {
 	int ret;
 	TSRMLS_FETCH();
@@ -1588,7 +1664,7 @@ int fpm_conf_init_main(int test_conf) /* {{{ */
 		return -1;
 	}
 
-	if (0 > fpm_conf_post_process(TSRMLS_C)) {
+	if (0 > fpm_conf_post_process(force_daemon TSRMLS_CC)) {
 		zlog(ZLOG_ERROR, "failed to post process the configuration");
 		return -1;
 	}

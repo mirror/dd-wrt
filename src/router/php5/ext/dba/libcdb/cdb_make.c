@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2010 The PHP Group                                |
+   | Copyright (c) 1997-2013 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 600b8dd0f9187fe83c489340acb60259c1b16700 $ */
+/* $Id: 154118c15260d2e1f134cf7534ff244ba31b4353 $ */
 
 /* incorporated from D.J.Bernstein's cdb-0.75 (http://cr.yp.to/cdb.html)*/
 
@@ -240,5 +240,5 @@ int cdb_make_finish(struct cdb_make *c TSRMLS_DC)
 /* {{{ cdb_make_version */
 char *cdb_make_version() 
 {
-	return "0.75, $Id: 600b8dd0f9187fe83c489340acb60259c1b16700 $";
+	return "0.75, $Id: 154118c15260d2e1f134cf7534ff244ba31b4353 $";
 }

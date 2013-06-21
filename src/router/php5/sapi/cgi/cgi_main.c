@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
+   | Copyright (c) 1997-2013 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -384,12 +384,16 @@ static const http_error http_error_codes[] = {
 	{413, "Request Entity Too Large"},
 	{414, "Request-URI Too Large"},
 	{415, "Unsupported Media Type"},
+	{428, "Precondition Required"},
+	{429, "Too Many Requests"},
+	{431, "Request Header Fields Too Large"},
 	{500, "Internal Server Error"},
 	{501, "Not Implemented"},
 	{502, "Bad Gateway"},
 	{503, "Service Unavailable"},
 	{504, "Gateway Time-out"},
 	{505, "HTTP Version not supported"},
+	{511, "Network Authentication Required"},
 	{0,   NULL}
 };
 
@@ -880,7 +884,6 @@ static int sapi_cgi_activate(TSRMLS_D)
 			} else {
 				doc_root = getenv("DOCUMENT_ROOT");
 			}
-
 			/* DOCUMENT_ROOT should also be defined at this stage..but better check it anyway */
 			if (doc_root) {
 				doc_root_len = strlen(doc_root);
@@ -893,12 +896,13 @@ static int sapi_cgi_activate(TSRMLS_D)
 				zend_str_tolower(doc_root, doc_root_len);
 #endif
 				php_cgi_ini_activate_user_config(path, path_len, doc_root, doc_root_len, doc_root_len - 1 TSRMLS_CC);
+				
+#ifdef PHP_WIN32
+				efree(doc_root);
+#endif
 			}
 		}
 
-#ifdef PHP_WIN32
-		efree(doc_root);
-#endif
 		efree(path);
 	}
 
@@ -1614,21 +1618,21 @@ PHP_FUNCTION(apache_request_headers) /* {{{ */
 				p = var + 5;
 
 				var = q = t;
-				// First char keep uppercase
+				/* First char keep uppercase */
 				*q++ = *p++;
 				while (*p) {
 					if (*p == '=') {
-						// End of name
+						/* End of name */
 						break;
 					} else if (*p == '_') {
 						*q++ = '-';
 						p++;
-						// First char after - keep uppercase
+						/* First char after - keep uppercase */
 						if (*p && *p!='=') {
 							*q++ = *p++;
 						}
 					} else if (*p >= 'A' && *p <= 'Z') {
-						// lowercase
+						/* lowercase */
 						*q++ = (*p++ - 'A' + 'a');
 					} else {
 						*q++ = *p++;
@@ -2215,9 +2219,9 @@ consult the installation file that came with this distribution, or visit \n\
 								SG(request_info).no_headers = 1;
 							}
 #if ZEND_DEBUG
-							php_printf("PHP %s (%s) (built: %s %s) (DEBUG)\nCopyright (c) 1997-2012 The PHP Group\n%s", PHP_VERSION, sapi_module.name, __DATE__, __TIME__, get_zend_version());
+							php_printf("PHP %s (%s) (built: %s %s) (DEBUG)\nCopyright (c) 1997-2013 The PHP Group\n%s", PHP_VERSION, sapi_module.name, __DATE__, __TIME__, get_zend_version());
 #else
-							php_printf("PHP %s (%s) (built: %s %s)\nCopyright (c) 1997-2012 The PHP Group\n%s", PHP_VERSION, sapi_module.name, __DATE__, __TIME__, get_zend_version());
+							php_printf("PHP %s (%s) (built: %s %s)\nCopyright (c) 1997-2013 The PHP Group\n%s", PHP_VERSION, sapi_module.name, __DATE__, __TIME__, get_zend_version());
 #endif
 							php_request_shutdown((void *) 0);
 							fcgi_shutdown();

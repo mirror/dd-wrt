@@ -91,7 +91,7 @@ class PharCommand extends CLICommand
 			'h' => array(
 				'typ' => 'select',
 				'val' => NULL,
-				'inf' => '<method> Selects the hash algorithmn.',
+				'inf' => '<method> Selects the hash algorithm.',
 				'select' => array('md5' => 'MD5','sha1' => 'SHA1')
 			),
 			'i' => array(
@@ -107,7 +107,7 @@ class PharCommand extends CLICommand
 			'l' => array(
 				'typ' => 'int',
 				'val' => 0,
-				'inf' => '<level>  Number of preceeding subdirectories to strip from file entries',
+				'inf' => '<level>  Number of preceding subdirectories to strip from file entries',
 			),
 			'm' => array(
 				'typ' => 'any',
@@ -461,7 +461,7 @@ class PharCommand extends CLICommand
 			'typ'     => 'any',
 			'val'      => NULL,
 			'required' => 1,
-			'inf'      => '         Any number of input files and directories. If -i is in use then ONLY files and matching thegiven regular expression are being packed. If -x is given then files matching that regular expression are NOT being packed.',
+			'inf'      => '         Any number of input files and directories. If -i is in use then ONLY files and matching the given regular expression are being packed. If -x is given then files matching that regular expression are NOT being packed.',
 		);
 
 		return $args;
@@ -981,7 +981,7 @@ class PharCommand extends CLICommand
 			'type'     => 'any',
 			'val'      => NULL,
 			'required' => 1,
-			'inf'      => '         Any number of input files and directories. If -i is in use then ONLY files and matching thegiven regular expression are being packed. If -x is given then files matching that regular expression are NOT being packed.',
+			'inf'      => '         Any number of input files and directories. If -i is in use then ONLY files and matching the given regular expression are being packed. If -x is given then files matching that regular expression are NOT being packed.',
 		);
 		return $args;
 	}
@@ -1566,7 +1566,7 @@ class PharCommand extends CLICommand
 		$use_ext = extension_loaded('phar');
 		$version = array(
 			'PHP Version' => phpversion(),
-			'phar.phar version' => '$Id: 9e968694c3f62cb89989bcfa2fe021ec4b3c47a0 $',
+			'phar.phar version' => '$Id: cb343675b557b02dd09d0f1902d0ec50f5f482ee $',
 			'Phar EXT version' => $use_ext ? phpversion('phar') : 'Not available',
 			'Phar API version' => Phar::apiVersion(),
 			'Phar-based phar archives' => true,
