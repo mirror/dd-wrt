@@ -1633,6 +1633,7 @@ static int snd_pcm_link(struct snd_pcm_substream *substream, int fd)
 	}
 	if (!snd_pcm_stream_linked(substream)) {
 		substream->group = group;
+		group = NULL;
 		spin_lock_init(&substream->group->lock);
 		INIT_LIST_HEAD(&substream->group->substreams);
 		list_add_tail(&substream->link_list, &substream->group->substreams);
@@ -1647,8 +1648,7 @@ static int snd_pcm_link(struct snd_pcm_substream *substream, int fd)
  _nolock:
 	snd_card_unref(substream1->pcm->card);
 	fput(file);
-	if (res < 0)
-		kfree(group);
+	kfree(group);
 	return res;
 }
 
