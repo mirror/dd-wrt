@@ -346,11 +346,11 @@ ifeq ($(CONFIG_ESPOD),y)
 	cp espod/Wiviz_Survey.asp $(INSTALLDIR)/www
 endif
 ifeq ($(CONFIG_SANSFIL),y)
-        mkdir $(INSTALLDIR)/www/style/sansfil
-        cp sansfil/style.css $(INSTALLDIR)/www/style/sansfil
-        cp sansfil/About.htm $(INSTALLDIR)/www
-        cp sansfil/images/* $(INSTALLDIR)/www/images
-        cp sansfil/help/* $(INSTALLDIR)/www/help
+	mkdir $(INSTALLDIR)/www/style/sansfil
+	cp sansfil/style.css $(INSTALLDIR)/www/style/sansfil
+	cp sansfil/About.htm $(INSTALLDIR)/www
+	cp sansfil/images/* $(INSTALLDIR)/www/images
+	cp sansfil/help/* $(INSTALLDIR)/www/help
 endif
 ifeq ($(CONFIG_NEXTMEDIA),y)
 	mkdir $(INSTALLDIR)/www/style/nextmedia
