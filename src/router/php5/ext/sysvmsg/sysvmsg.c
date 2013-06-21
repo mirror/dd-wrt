@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2012 The PHP Group                                |
+  | Copyright (c) 1997-2013 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: 6360183f0075ec66a3dfa01633b2ed808dd482af $ */
+/* $Id: a57e25e6c32775fb53ad02fa294f63e934911815 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -145,7 +145,7 @@ PHP_MINFO_FUNCTION(sysvmsg)
 {
 	php_info_print_table_start();
 	php_info_print_table_row(2, "sysvmsg support", "enabled");
-	php_info_print_table_row(2, "Revision", "$Id: 6360183f0075ec66a3dfa01633b2ed808dd482af $");
+	php_info_print_table_row(2, "Revision", "$Id: a57e25e6c32775fb53ad02fa294f63e934911815 $");
 	php_info_print_table_end();
 }
 /* }}} */
@@ -228,7 +228,7 @@ PHP_FUNCTION(msg_stat_queue)
 
 
 /* {{{ proto bool msg_queue_exists(int key)
-   Check wether a message queue exists */
+   Check whether a message queue exists */
 PHP_FUNCTION(msg_queue_exists)
 {
 	long key;
