@@ -65,6 +65,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "buffalo", 0},
 #elif HAVE_WIKINGS
 	{"router_style", "wikings", 0},
+#elif HAVE_SANSFIL
+	{"router_style", "sansfil", 0},
 #elif HAVE_ESPOD
 	{"router_style", "espod", 0},
 #elif HAVE_NEXTMEDIA
@@ -866,6 +868,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_BKM)
 	{"wl0_ssid", "BKM-HSDL", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "BKM-HSDL", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_SANSFIL)
+	{"ath0_ssid", "SANSFIL", 0},
 #elif defined(HAVE_ERC)
 	{"wl0_ssid", "ERC", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "ERC", 0},	/* Service set ID (network name) */
@@ -1380,6 +1384,8 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"router_name", "MAKSAT", 0},
 #endif
+#elif  HAVE_SANSFIL
+	{"router_name", "SANSFIL", 0},
 #elif  HAVE_TRIMAX
 	{"router_name", "M2M", 0},
 #elif  HAVE_WIKINGS

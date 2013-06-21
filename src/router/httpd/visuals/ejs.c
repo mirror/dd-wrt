@@ -1347,6 +1347,8 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 	} else {
 		websWrite(wp, "OTAi %s", nvram_get("DD_BOARD"));
 	}
+#elif defined(HAVE_SANSFIL)
+	websWrite(wp, "%s", "SANSFIL");
 #else
 	websWrite(wp, "%s", nvram_safe_get("DD_BOARD"));
 #endif
@@ -2182,9 +2184,12 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");
 #elif HAVE_ESPOD
 	websWrite(wp, "\t\t<title>ESPOD Technologies");
+#elif HAVE_SANSFIL
+	websWrite(wp, "\t\t<title>SANSFIL (build %s)", SVN_REVISION);
 #else
 	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"), SVN_REVISION);
 #endif
+
 	if (strlen(argv[0]) != 0) {
 		websWrite(wp, " - %s", live_translate(argv[0]));
 	}
