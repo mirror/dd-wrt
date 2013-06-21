@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | phar php single-file executable PHP extension                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 2005-2012 The PHP Group                                |
+  | Copyright (c) 2005-2013 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -17,7 +17,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: 2a47d3d0354109d8077e34d59f1228ccfd021d59 $ */
+/* $Id: c5042cc34acebcc0926625b57dff03deebbe6472 $ */
 
 #define PHAR_MAIN 1
 #include "phar_internal.h"
@@ -2647,11 +2647,8 @@ int phar_flush(phar_archive_data *phar, char *user_stub, long len, int convert, 
 				len = -len;
 			}
 			user_stub = 0;
-#if PHP_MAJOR_VERSION >= 6
-			if (!(len = php_stream_copy_to_mem(stubfile, (void **) &user_stub, len, 0)) || !user_stub) {
-#else
+
 			if (!(len = php_stream_copy_to_mem(stubfile, &user_stub, len, 0)) || !user_stub) {
-#endif
 				if (closeoldfile) {
 					php_stream_close(oldfile);
 				}
@@ -3667,7 +3664,7 @@ PHP_MINFO_FUNCTION(phar) /* {{{ */
 	php_info_print_table_header(2, "Phar: PHP Archive support", "enabled");
 	php_info_print_table_row(2, "Phar EXT version", PHP_PHAR_VERSION);
 	php_info_print_table_row(2, "Phar API version", PHP_PHAR_API_VERSION);
-	php_info_print_table_row(2, "SVN revision", "$Id: 2a47d3d0354109d8077e34d59f1228ccfd021d59 $");
+	php_info_print_table_row(2, "SVN revision", "$Id: c5042cc34acebcc0926625b57dff03deebbe6472 $");
 	php_info_print_table_row(2, "Phar-based phar archives", "enabled");
 	php_info_print_table_row(2, "Tar-based phar archives", "enabled");
 	php_info_print_table_row(2, "ZIP-based phar archives", "enabled");

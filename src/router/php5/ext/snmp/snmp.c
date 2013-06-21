@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
+   | Copyright (c) 1997-2013 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -551,35 +551,60 @@ static void php_snmp_error(zval *object, const char *docref TSRMLS_DC, int type,
 static void php_snmp_getvalue(struct variable_list *vars, zval *snmpval TSRMLS_DC, int valueretrieval)
 {
 	zval *val;
-#ifdef BUGGY_SNMPRINT_VALUE
-	char sbuf[2048];
-#else
-	char sbuf[64];
-#endif
+	char sbuf[512];
 	char *buf = &(sbuf[0]);
 	char *dbuf = (char *)NULL;
 	int buflen = sizeof(sbuf) - 1;
 	int val_len = vars->val_len;
 	
-	if ((valueretrieval & SNMP_VALUE_PLAIN) == 0) {
-		val_len += 32; /* snprint_value will add type info into value, make some space for it */
+	/* use emalloc() for large values, use static array otherwize */
+
+	/* There is no way to know the size of buffer snprint_value() needs in order to print a value there.
+	 * So we are forced to probe it
+	 */
+	while ((valueretrieval & SNMP_VALUE_PLAIN) == 0) {
+		*buf = '\0';
+		if (snprint_value(buf, buflen, vars->name, vars->name_length, vars) == -1) {
+			if (val_len > 512*1024) {
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "snprint_value() asks for a buffer more than 512k, Net-SNMP bug?");
+				break;
+			}
+			 /* buffer is not long enough to hold full output, double it */
+			val_len *= 2;
+		} else {
+			break;
+		}
+
+		if (buf == dbuf) {
+			dbuf = (char *)erealloc(dbuf, val_len + 1);
+		} else {
+			dbuf = (char *)emalloc(val_len + 1);
+		}
+
+		if (!dbuf) {
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "emalloc() failed: %s, fallback to static buffer", strerror(errno));
+			buf = &(sbuf[0]);
+			buflen = sizeof(sbuf) - 1;
+			break;
+		}
+
+		buf = dbuf;
+		buflen = val_len;
 	}
 
-	/* use emalloc() for large values, use static array otherwize */
-	if(val_len > buflen){
+	if((valueretrieval & SNMP_VALUE_PLAIN) && val_len > buflen){
 		if ((dbuf = (char *)emalloc(val_len + 1))) {
 			buf = dbuf;
 			buflen = val_len;
 		} else {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "emalloc() failed: %s, fallback to static array", strerror(errno));
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "emalloc() failed: %s, fallback to static buffer", strerror(errno));
 		}
 	}
-
-	*buf = 0;
 
 	MAKE_STD_ZVAL(val);
 
 	if (valueretrieval & SNMP_VALUE_PLAIN) {
+		*buf = 0;
 		switch (vars->type) {
 		case ASN_BIT_STR:		/* 0x03, asn1.h */
 			ZVAL_STRINGL(val, (char *)vars->val.bitstring, vars->val_len, 1);
@@ -652,7 +677,7 @@ static void php_snmp_getvalue(struct variable_list *vars, zval *snmpval TSRMLS_D
 			break;
 		}
 	} else /* use Net-SNMP value translation */ {
-		snprint_value(buf, buflen, vars->name, vars->name_length, vars);
+		/* we have desired string in buffer, just use it */
 		ZVAL_STRING(val, buf, 1);
 	}
 
@@ -694,7 +719,7 @@ static void php_snmp_internal(INTERNAL_FUNCTION_PARAMETERS, int st,
 	zval *snmpval = NULL;
 	int snmp_errno;
 
-	/* we start with retval=FALSE. If any actual data is aquired, retval will be set to appropriate type */
+	/* we start with retval=FALSE. If any actual data is acquired, retval will be set to appropriate type */
 	RETVAL_FALSE;
 	
 	/* reset errno and errstr */
@@ -832,9 +857,9 @@ retry:
 							}
 						} else if (st & SNMP_USE_SUFFIX_AS_KEYS && st & SNMP_CMD_WALK) {
 							snprint_objid(buf2, sizeof(buf2), vars->name, vars->name_length);
-							if (objid_query->vars[0].name_length <= vars->name_length && snmp_oid_compare(objid_query->vars[0].name, objid_query->vars[0].name_length, vars->name, objid_query->vars[0].name_length) == 0) {
+							if (rootlen <= vars->name_length && snmp_oid_compare(root, rootlen, vars->name, rootlen) == 0) {
 								buf2[0] = '\0';
-								count = objid_query->vars[0].name_length;
+								count = rootlen;
 								while(count < vars->name_length){
 									sprintf(buf, "%lu.", vars->name[count]);
 									strcat(buf2, buf);
@@ -1096,8 +1121,7 @@ static int php_snmp_parse_oid(zval *object, int st, struct objid_query *objid_qu
 static int netsnmp_session_init(php_snmp_session **session_p, int version, char *hostname, char *community, int timeout, int retries TSRMLS_DC)
 {
 	php_snmp_session *session;
-	char *pptr;
-	char buf[MAX_NAME_LEN];
+	char *pptr, *host_ptr;
 	int force_ipv6 = FALSE;
 	int n;
 	struct sockaddr **psal;
@@ -1111,8 +1135,6 @@ static int netsnmp_session_init(php_snmp_session **session_p, int version, char 
 	}
 	memset(session, 0, sizeof(php_snmp_session));
 
-	strlcpy(buf, hostname, sizeof(buf));
-
 	snmp_sess_init(session);
 
 	session->version = version;
@@ -1123,23 +1145,25 @@ static int netsnmp_session_init(php_snmp_session **session_p, int version, char 
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "emalloc() failed while copying hostname");
 		return (-1);
 	}
-	*(session->peername) = '\0';
+	/* we copy original hostname for further processing */
+	strlcpy(session->peername, hostname, MAX_NAME_LEN);
+	host_ptr = session->peername;
 
 	/* Reading the hostname and its optional non-default port number */
-	if (*hostname == '[') { /* IPv6 address */
+	if (*host_ptr == '[') { /* IPv6 address */
 		force_ipv6 = TRUE;
-		hostname++;
-		if ((pptr = strchr(hostname, ']'))) {
+		host_ptr++;
+		if ((pptr = strchr(host_ptr, ']'))) {
 			if (pptr[1] == ':') {
 				session->remote_port = atoi(pptr + 2);
 			}
 			*pptr = '\0';
 		} else {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "mailformed IPv6 address, closing square bracket missing");
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "malformed IPv6 address, closing square bracket missing");
 			return (-1);
 		}
 	} else { /* IPv4 address */
-		if ((pptr = strchr(hostname, ':'))) {
+		if ((pptr = strchr(host_ptr, ':'))) {
 			session->remote_port = atoi(pptr + 1);
 			*pptr = '\0';
 		}
@@ -1147,11 +1171,13 @@ static int netsnmp_session_init(php_snmp_session **session_p, int version, char 
 
 	/* since Net-SNMP library requires 'udp6:' prefix for all IPv6 addresses (in FQDN form too) we need to
 	   perform possible name resolution before running any SNMP queries */
-	if ((n = php_network_getaddresses(hostname, SOCK_DGRAM, &psal, NULL TSRMLS_CC)) == 0) { /* some resover error */
+	if ((n = php_network_getaddresses(host_ptr, SOCK_DGRAM, &psal, NULL TSRMLS_CC)) == 0) { /* some resolver error */
 		/* warnings sent, bailing out */
 		return (-1);
 	}
 
+	/* we have everything we need in psal, flush peername and fill it properly */
+	*(session->peername) = '\0';
 	res = psal;
 	while (n-- > 0) {
 		pptr = session->peername;
@@ -1161,9 +1187,10 @@ static int netsnmp_session_init(php_snmp_session **session_p, int version, char 
 			continue;
 		}
 		if ((*res)->sa_family == AF_INET6) {
-			strcpy(session->peername, "udp6:");
+			strcpy(session->peername, "udp6:[");
 			pptr = session->peername + strlen(session->peername);
 			inet_ntop((*res)->sa_family, &(((struct sockaddr_in6*)(*res))->sin6_addr), pptr, MAX_NAME_LEN);
+			strcat(pptr, "]");
 		} else if ((*res)->sa_family == AF_INET) {
 			inet_ntop((*res)->sa_family, &(((struct sockaddr_in*)(*res))->sin_addr), pptr, MAX_NAME_LEN);
 		} else {
@@ -1181,7 +1208,7 @@ static int netsnmp_session_init(php_snmp_session **session_p, int version, char 
 	}
 
 	if (strlen(session->peername) == 0) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Unknown failure while resolving '%s'", buf);
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Unknown failure while resolving '%s'", hostname);
 		return (-1);
 	}
 	/* XXX FIXME
@@ -1844,7 +1871,7 @@ PHP_METHOD(snmp, close)
 /* }}} */
 
 /* {{{ proto mixed SNMP::get(mixed object_id [, bool preserve_keys])
-   Fetch a SNMP object returing scalar for single OID and array of oid->value pairs for multi OID request */
+   Fetch a SNMP object returning scalar for single OID and array of oid->value pairs for multi OID request */
 PHP_METHOD(snmp, get)
 {
 	php_snmp(INTERNAL_FUNCTION_PARAM_PASSTHRU, SNMP_CMD_GET, (-1));
@@ -1852,7 +1879,7 @@ PHP_METHOD(snmp, get)
 /* }}} */
 
 /* {{{ proto mixed SNMP::getnext(mixed object_id)
-   Fetch a SNMP object returing scalar for single OID and array of oid->value pairs for multi OID request */
+   Fetch a SNMP object returning scalar for single OID and array of oid->value pairs for multi OID request */
 PHP_METHOD(snmp, getnext)
 {
 	php_snmp(INTERNAL_FUNCTION_PARAM_PASSTHRU, SNMP_CMD_GETNEXT, (-1));
@@ -2455,20 +2482,26 @@ PHP_MINFO_FUNCTION(snmp)
 
 /* {{{ snmp_module_deps[]
  */
+#if ZEND_MODULE_API_NO >= 20050922
 static const zend_module_dep snmp_module_deps[] = {
 #ifdef HAVE_SPL
 	ZEND_MOD_REQUIRED("spl")
 #endif
 	ZEND_MOD_END
 };
+#endif
 /* }}} */
 
 /* {{{ snmp_module_entry
  */
 zend_module_entry snmp_module_entry = {
+#if ZEND_MODULE_API_NO >= 20050922
 	STANDARD_MODULE_HEADER_EX,
 	NULL,
 	snmp_module_deps,
+#else
+	STANDARD_MODULE_HEADER,
+#endif
 	"snmp",
 	snmp_functions,
 	PHP_MINIT(snmp),

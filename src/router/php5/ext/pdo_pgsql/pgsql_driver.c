@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2012 The PHP Group                                |
+  | Copyright (c) 1997-2013 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -76,7 +76,7 @@ int _pdo_pgsql_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, int errcode, const char *
 		einfo->errmsg = NULL;
 	}
 
-	if (sqlstate == NULL) {
+	if (sqlstate == NULL || strlen(sqlstate) >= sizeof(pdo_error_type)) {
 		strcpy(*pdo_err, "HY000");
 	}
 	else {

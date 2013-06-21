@@ -16,6 +16,7 @@ AC_DEFUN([AC_FPM_STDLIBS],
   AC_CHECK_HEADERS([errno.h fcntl.h stdio.h stdlib.h unistd.h sys/uio.h])
   AC_CHECK_HEADERS([sys/select.h sys/socket.h sys/time.h])
   AC_CHECK_HEADERS([arpa/inet.h netinet/in.h])
+  AC_CHECK_HEADERS([sysexits.h])
 ])
 
 AC_DEFUN([AC_FPM_PRCTL],
@@ -192,6 +193,8 @@ AC_DEFUN([AC_FPM_TRACE],
       have_ptrace=no
       have_broken_ptrace=yes
       AC_MSG_RESULT([no])
+    ], [
+      AC_MSG_RESULT([skipped (cross compiling)])
     ])
   fi
 
@@ -264,6 +267,8 @@ AC_DEFUN([AC_FPM_TRACE],
     ], [
       proc_mem_file=""
       AC_MSG_RESULT([no])
+    ], [
+      AC_MSG_RESULT([skipped (cross compiling)])
     ])
   fi
   
@@ -558,6 +563,26 @@ if test "$PHP_FPM" != "no"; then
   [  --with-fpm-group[=GRP]  Set the group for php-fpm to run as. For a system user, this 
                   should usually be set to match the fpm username (default: nobody)], nobody, no)
 
+  PHP_ARG_WITH(fpm-systemd,,
+  [  --with-fpm-systemd      Activate systemd integration], no, no)
+
+  if test "$PHP_FPM_SYSTEMD" != "no" ; then
+    AC_CHECK_LIB(systemd-daemon, sd_notify, SYSTEMD_LIBS="-lsystemd-daemon")
+    AC_CHECK_HEADERS(systemd/sd-daemon.h, [HAVE_SD_DAEMON_H="yes"], [HAVE_SD_DAEMON_H="no"])
+    if test $HAVE_SD_DAEMON_H = "no" || test -z "${SYSTEMD_LIBS}"; then
+      AC_MSG_ERROR([Your system does not support systemd.])
+    else
+      AC_DEFINE(HAVE_SYSTEMD, 1, [FPM use systemd integration])
+      PHP_FPM_SD_FILES="fpm/fpm_systemd.c"
+      PHP_ADD_LIBRARY(systemd-daemon)
+      php_fpm_systemd=notify
+    fi
+  else
+    php_fpm_systemd=simple
+  fi
+  PHP_SUBST_OLD(php_fpm_systemd)
+  AC_DEFINE_UNQUOTED(PHP_FPM_SYSTEMD, "$php_fpm_systemd", [fpm systemd service type])
+
   if test -z "$PHP_FPM_USER" -o "$PHP_FPM_USER" = "yes" -o "$PHP_FPM_USER" = "no"; then
     php_fpm_user="nobody"
   else
@@ -584,7 +609,7 @@ if test "$PHP_FPM" != "no"; then
 
   PHP_ADD_BUILD_DIR(sapi/fpm/fpm)
   PHP_ADD_BUILD_DIR(sapi/fpm/fpm/events)
-  PHP_OUTPUT(sapi/fpm/php-fpm.conf sapi/fpm/init.d.php-fpm sapi/fpm/php-fpm.8 sapi/fpm/status.html)
+  PHP_OUTPUT(sapi/fpm/php-fpm.conf sapi/fpm/init.d.php-fpm sapi/fpm/php-fpm.service sapi/fpm/php-fpm.8 sapi/fpm/status.html)
   PHP_ADD_MAKEFILE_FRAGMENT([$abs_srcdir/sapi/fpm/Makefile.frag])
 
   SAPI_FPM_PATH=sapi/fpm/php-fpm
@@ -626,7 +651,7 @@ if test "$PHP_FPM" != "no"; then
 		fpm/events/port.c \
   "
 
-  PHP_SELECT_SAPI(fpm, program, $PHP_FPM_FILES $PHP_FPM_TRACE_FILES, $PHP_FPM_CFLAGS, '$(SAPI_FPM_PATH)')
+  PHP_SELECT_SAPI(fpm, program, $PHP_FPM_FILES $PHP_FPM_TRACE_FILES $PHP_FPM_SD_FILES, $PHP_FPM_CFLAGS, '$(SAPI_FPM_PATH)')
 
   case $host_alias in
       *aix*)

@@ -1832,7 +1832,7 @@ AC_TRY_COMPILE([
 ])
 
 dnl -------------------------------------------------------------------------
-dnl Library/function existance and build sanity checks
+dnl Library/function existence and build sanity checks
 dnl -------------------------------------------------------------------------
 
 dnl
@@ -2226,7 +2226,7 @@ AC_DEFUN([PHP_SETUP_ICU],[
     AC_MSG_RESULT([$icu_install_prefix])
 
     dnl Check ICU version
-    AC_MSG_CHECKING([for ICU 3.4 or greater])
+    AC_MSG_CHECKING([for ICU 4.0 or greater])
     icu_version_full=`$ICU_CONFIG --version`
     ac_IFS=$IFS
     IFS="."
@@ -2235,8 +2235,8 @@ AC_DEFUN([PHP_SETUP_ICU],[
     icu_version=`expr [$]1 \* 1000 + [$]2`
     AC_MSG_RESULT([found $icu_version_full])
 
-    if test "$icu_version" -lt "3004"; then
-      AC_MSG_ERROR([ICU version 3.4 or later is required])
+    if test "$icu_version" -lt "4000"; then
+      AC_MSG_ERROR([ICU version 4.0 or later is required])
     fi
 
     ICU_VERSION=$icu_version
@@ -2342,8 +2342,10 @@ AC_DEFUN([PHP_SETUP_OPENSSL],[
       AC_MSG_ERROR([OpenSSL version 0.9.6 or greater required.])
     fi
 
-    if test -n "$OPENSSL_LIBS" && test -n "$OPENSSL_INCS"; then
+    if test -n "$OPENSSL_LIBS"; then
       PHP_EVAL_LIBLINE($OPENSSL_LIBS, $1)
+    fi
+    if test -n "$OPENSSL_INCS"; then
       PHP_EVAL_INCLINE($OPENSSL_INCS)
     fi
   fi
@@ -2449,7 +2451,12 @@ AC_DEFUN([PHP_SETUP_ICONV], [
   dnl
   dnl Check libc first if no path is provided in --with-iconv
   dnl
+
   if test "$PHP_ICONV" = "yes"; then
+    dnl Reset LIBS temporarily as it may have already been included
+    dnl -liconv in.
+    LIBS_save="$LIBS"
+    LIBS=
     AC_CHECK_FUNC(iconv, [
       found_iconv=yes
     ],[
@@ -2459,6 +2466,7 @@ AC_DEFUN([PHP_SETUP_ICONV], [
         found_iconv=yes
       ])
     ])
+    LIBS="$LIBS_save"
   fi
 
   dnl
@@ -2926,6 +2934,9 @@ dnl Add providerdesc.o into global objects when needed
   *solaris*)
     PHP_GLOBAL_OBJS="[$]PHP_GLOBAL_OBJS [$]ac_bdir[$]ac_provsrc.o"
     ;;
+  *linux*)
+    PHP_GLOBAL_OBJS="[$]PHP_GLOBAL_OBJS [$]ac_bdir[$]ac_provsrc.o"
+    ;;
   esac
 
 dnl DTrace objects
@@ -2954,12 +2965,12 @@ dnl Generate Makefile.objects entries
   cat>>Makefile.objects<<EOF
 
 $ac_bdir[$]ac_hdrobj: $abs_srcdir/$ac_provsrc
-	dtrace -h -C -s $ac_srcdir[$]ac_provsrc -o \$[]@ && \$(SED) -ibak 's,PHP_,DTRACE_,g' \$[]@
+	CFLAGS="\$(CFLAGS_CLEAN)" dtrace -h -C -s $ac_srcdir[$]ac_provsrc -o \$[]@ && \$(SED) -ibak 's,PHP_,DTRACE_,g' \$[]@
 
 \$(PHP_DTRACE_OBJS): $ac_bdir[$]ac_hdrobj
 
 $ac_bdir[$]ac_provsrc.o: \$(PHP_DTRACE_OBJS)
-	dtrace -G -o \$[]@ -s $abs_srcdir/$ac_provsrc $dtrace_objs
+	CFLAGS="\$(CFLAGS_CLEAN)" dtrace -G -o \$[]@ -s $abs_srcdir/$ac_provsrc $dtrace_objs
 
 EOF
 ])

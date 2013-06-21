@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
+   | Copyright (c) 1997-2013 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -26,7 +26,7 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id: bf2eaf558b050b6d2e6d098bed6345af7e842ea4 $ */
+/* $Id: 44bfa713983a99b3e59477f6532e5fb51b6dee94 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -1341,7 +1341,7 @@ PHP_MINFO_FUNCTION(oci)
 	php_info_print_table_start();
 	php_info_print_table_row(2, "OCI8 Support", "enabled");
 	php_info_print_table_row(2, "Version", PHP_OCI8_VERSION);
-	php_info_print_table_row(2, "Revision", "$Id: bf2eaf558b050b6d2e6d098bed6345af7e842ea4 $");
+	php_info_print_table_row(2, "Revision", "$Id: 44bfa713983a99b3e59477f6532e5fb51b6dee94 $");
 
 	snprintf(buf, sizeof(buf), "%ld", OCI_G(num_persistent));
 	php_info_print_table_row(2, "Active Persistent Connections", buf);
@@ -3197,7 +3197,7 @@ static int php_oci_create_session(php_oci_connection *connection, php_oci_spool 
 		PHP_OCI_CALL_RETURN(OCI_G(errcode), OCIAttrGet, ((dvoid *)actual_spool->poolh, OCI_HTYPE_SPOOL, (dvoid *)&numopen, (ub4 *)0, OCI_ATTR_SPOOL_OPEN_COUNT, OCI_G(err)));
 		PHP_OCI_CALL_RETURN(OCI_G(errcode), OCIAttrGet, ((dvoid *)actual_spool->poolh, OCI_HTYPE_SPOOL, (dvoid *)&numbusy, (ub4 *)0, OCI_ATTR_SPOOL_BUSY_COUNT, OCI_G(err)));
 		numfree = numopen - numbusy;	/* number of free connections in the pool */
-		php_printf ("OCI8 DEBUG L1: (numopen=%d)(numbusy=%d) at (%s:%d) \n", numopen, numbusy, __FILE__, __LINE__);
+		php_printf ("OCI8 DEBUG L1: (numopen=%d)(numbusy=%d)(numfree=%d) at (%s:%d) \n", numopen, numbusy, numfree, __FILE__, __LINE__);
 	} /* }}} */
 
 		/* Ping loop: Ping and loop till we get a good connection. When a database instance goes

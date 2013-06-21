@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
+   | Copyright (c) 1997-2013 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -59,7 +59,7 @@
 #include "mod_mm.h"
 #endif
 
-PHPAPI ZEND_DECLARE_MODULE_GLOBALS(ps);
+PHPAPI ZEND_DECLARE_MODULE_GLOBALS(ps)
 
 static int php_session_rfc1867_callback(unsigned int event, void *event_data, void **extra TSRMLS_DC);
 static int (*php_session_rfc1867_orig_callback)(unsigned int event, void *event_data, void **extra TSRMLS_DC);
@@ -1154,6 +1154,7 @@ static int php_session_cache_limiter(TSRMLS_D) /* {{{ */
 
 #define COOKIE_SET_COOKIE "Set-Cookie: "
 #define COOKIE_EXPIRES	"; expires="
+#define COOKIE_MAX_AGE	"; Max-Age="
 #define COOKIE_PATH		"; path="
 #define COOKIE_DOMAIN	"; domain="
 #define COOKIE_SECURE	"; secure"
@@ -1201,6 +1202,9 @@ static void php_session_send_cookie(TSRMLS_D) /* {{{ */
 			smart_str_appends(&ncookie, COOKIE_EXPIRES);
 			smart_str_appends(&ncookie, date_fmt);
 			efree(date_fmt);
+
+			smart_str_appends(&ncookie, COOKIE_MAX_AGE);
+			smart_str_append_long(&ncookie, PS(cookie_lifetime));
 		}
 	}
 
@@ -2220,6 +2224,9 @@ static PHP_MSHUTDOWN_FUNCTION(session) /* {{{ */
 #ifdef HAVE_LIBMM
 	PHP_MSHUTDOWN(ps_mm) (SHUTDOWN_FUNC_ARGS_PASSTHRU);
 #endif
+
+	/* restore the orig callback */
+	php_rfc1867_callback = php_session_rfc1867_orig_callback;
 
 	ps_serializers[PREDEFINED_SERIALIZERS].name = NULL;
 	memset(&ps_modules[PREDEFINED_MODULES], 0, (MAX_MODULES-PREDEFINED_MODULES)*sizeof(ps_module *));
