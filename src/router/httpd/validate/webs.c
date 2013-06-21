@@ -1913,6 +1913,8 @@ void add_vifs_single(char *prefix, int device)
 #else
 	nvram_set(v2, "maksat_vap");
 #endif
+#elif defined(HAVE_SANSFIL)	 
+	nvram_set(v2, "sansfil_vap");
 #elif defined(HAVE_TRIMAX)
 	nvram_set(v2, "m2m_vap");
 #elif defined(HAVE_WIKINGS)
