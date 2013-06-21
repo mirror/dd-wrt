@@ -548,6 +548,8 @@ int main(int argc, char **argv)
 #ifndef HAVE_CORENET
 #ifdef HAVE_TMK
 	fprintf(fp, "KMT-WAS %s (c) 2013 KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#elif HAVE_SANSFIL
+	fprintf(fp, "SANSFIL %s (c) 2013 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #else
 #ifdef DIST
 	if (strlen(DIST) > 0)

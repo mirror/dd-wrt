@@ -1725,6 +1725,8 @@ static void configure_single(int count)
 #else
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "maksat_vap"));
 #endif
+#elif defined(HAVE_SANSFIL)
+                sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "SANSFIL_vap"));
 #elif defined(HAVE_TRIMAX)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "m2m_vap"));
 #elif defined(HAVE_WIKINGS)
