@@ -1,6 +1,6 @@
 php5-configure:
 	rm -f php5/config.cache
-	cd php5 && './configure' '--host=$(ARCH)-linux' '--program-prefix=' '--program-suffix=' '--prefix=/usr' '--exec-prefix=/usr' '--bindir=/usr/bin' '--datadir=/usr/share' '--includedir=/usr/include' '--infodir=/usr/share/info' '--libdir=/usr/lib' '--libexecdir=/usr/lib' '--localstatedir=/var' '--mandir=/usr/share/man' '--sbindir=/usr/sbin' '--sysconfdir=/etc' '--disable-nls' '--disable-shared' '--disable-static' '--disable-rpath' '--disable-debug' '--without-pear' '--disable-spl' '--with-config-file-path=/etc' '--disable-ipv6' '--enable-magic-quotes' '--enable-memory-limit' '--disable-short-tags' '--disable-ctype' '--disable-dom' '--disable-ftp' '--without-gettext' '--without-iconv' '--disable-xml' '--disable-xmlreader' '--disable-xmlwriter' '--disable-libxml' '--without-libxml-dir' '--disable-mbstring' '--disable-mbregex' '--without-openssl' '--without-sqlite' '--without-sqlite3' '--without-pear' '--disable-phar' '--disable-pdo' '--with-kerberos=no' '--disable-simplexml' '--disable-soap' '--enable-sockets' '--disable-tokenizer' '--without-curl' '--without-gd' '--without-freetype-dir' '--without-xpm-dir' '--without-ttf' '--without-t1lib' '--disable-gd-jis-conv' '--enable-cli' '--disable-cgi' '--disable-fastcgi' '--enable-force-cgi-redirect' '--enable-discard-path' 'CFLAGS=$(COPTS) -DNEED_PRINTF -ldl' 'LDFLAGS=-ldl'
+	cd php5 && './configure' '--host=$(ARCH)-linux' '--program-prefix=' '--program-suffix=' '--prefix=/usr' '--exec-prefix=/usr' '--bindir=/usr/bin' '--datadir=/usr/share' '--includedir=/usr/include' '--infodir=/usr/share/info' '--libdir=/usr/lib' '--libexecdir=/usr/lib' '--localstatedir=/var' '--mandir=/usr/share/man' '--sbindir=/usr/sbin' '--sysconfdir=/etc' '--disable-nls' '--disable-shared' '--disable-static' '--disable-rpath' '--disable-debug' '--without-pear' '--disable-spl' '--with-config-file-path=/etc' '--disable-ipv6' '--enable-magic-quotes' '--enable-memory-limit' '--disable-short-tags' '--disable-ctype' '--disable-dom' '--disable-ftp' '--without-gettext' '--without-iconv' '--disable-xml' '--disable-xmlreader' '--disable-xmlwriter' '--disable-libxml' '--without-libxml-dir' '--disable-mbstring' '--disable-mbregex' '--without-openssl' '--without-sqlite' '--without-sqlite3' '--without-pear' '--disable-phar' '--disable-pdo' '--with-kerberos=no' '--disable-simplexml' '--disable-soap' '--enable-sockets' '--disable-tokenizer' '--without-curl' '--without-gd' '--without-freetype-dir' '--without-xpm-dir' '--without-ttf' '--without-t1lib' '--disable-gd-jis-conv' '--enable-cli' '--enable-cgi' '--enable-fastcgi' '--enable-force-cgi-redirect' '--enable-discard-path' 'CFLAGS=$(COPTS) -DNEED_PRINTF -ldl' 'LDFLAGS=-ldl'
 
 php5:
 	make -j 4 -C php5
@@ -11,4 +11,9 @@ php5-clean:
 php5-install:
 	install -D php5/sapi/cli/php $(INSTALLDIR)/php5/usr/bin/php
 	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php
-
+ifeq ($(CONFIG_PHPCGI),y)
+	install -D php5/sapi/cgi/php-cgi $(INSTALLDIR)/php5/usr/bin/php-cgi
+	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php-cgi
+	mkdir -p $(INSTALLDIR)/php5/etc
+	printf "short_open_tag=on\ncgi.fix_pathinfo=1\n" >$(INSTALLDIR)/php5/etc/php.ini
+endif
