@@ -25,9 +25,6 @@
 #undef BETHREADS
 
 /* */
-#undef BUGGY_SNMPRINT_VALUE
-
-/* */
 #undef CDB_INCLUDE_FILE
 
 /* Define if system uses EBCDIC */
@@ -131,6 +128,9 @@
 
 /* Whether to build odbc as dynamic module */
 #undef COMPILE_DL_ODBC
+
+/* Whether to build opcache as dynamic module */
+#undef COMPILE_DL_OPCACHE
 
 /* Whether to build openssl as dynamic module */
 #undef COMPILE_DL_OPENSSL
@@ -514,9 +514,6 @@
 /* */
 #undef HAVE_CODBC
 
-/* */
-#undef HAVE_COLORCLOSESTHWB
-
 /* Whether you have a Continuity Server */
 #undef HAVE_CONTINUITY
 
@@ -558,9 +555,6 @@
 
 /* Have cURL with SSL support */
 #undef HAVE_CURL_SSL
-
-/* */
-#undef HAVE_CURL_VERSION_INFO
 
 /* Define to 1 if you have the `cuserid' function. */
 #undef HAVE_CUSERID
@@ -714,46 +708,13 @@
 #undef HAVE_GCVT
 
 /* */
-#undef HAVE_GDIMAGECOLORRESOLVE
-
-/* */
 #undef HAVE_GD_BUNDLED
 
 /* */
 #undef HAVE_GD_CACHE_CREATE
 
 /* */
-#undef HAVE_GD_DYNAMIC_CTX_EX
-
-/* */
-#undef HAVE_GD_FONTCACHESHUTDOWN
-
-/* */
-#undef HAVE_GD_FONTMUTEX
-
-/* */
-#undef HAVE_GD_FREEFONTCACHE
-
-/* */
-#undef HAVE_GD_GD2
-
-/* */
-#undef HAVE_GD_GIF_CREATE
-
-/* */
-#undef HAVE_GD_GIF_CTX
-
-/* */
-#undef HAVE_GD_GIF_READ
-
-/* */
-#undef HAVE_GD_IMAGEELLIPSE
-
-/* */
-#undef HAVE_GD_IMAGESETBRUSH
-
-/* */
-#undef HAVE_GD_IMAGESETTILE
+#undef HAVE_GD_FREETYPE
 
 /* */
 #undef HAVE_GD_JPG
@@ -762,22 +723,7 @@
 #undef HAVE_GD_PNG
 
 /* */
-#undef HAVE_GD_STRINGFT
-
-/* */
-#undef HAVE_GD_STRINGFTEX
-
-/* */
-#undef HAVE_GD_STRINGTTF
-
-/* */
-#undef HAVE_GD_WBMP
-
-/* */
 #undef HAVE_GD_WEBP
-
-/* */
-#undef HAVE_GD_XBM
 
 /* */
 #undef HAVE_GD_XPM
@@ -1050,18 +996,6 @@
 #undef HAVE_LIBGD
 
 /* */
-#undef HAVE_LIBGD13
-
-/* */
-#undef HAVE_LIBGD15
-
-/* */
-#undef HAVE_LIBGD20
-
-/* */
-#undef HAVE_LIBGD204
-
-/* */
 #undef HAVE_LIBICONV
 
 /* */
@@ -1197,6 +1131,9 @@
 
 /* Define to 1 if you have the <monetary.h> header file. */
 #undef HAVE_MONETARY_H
+
+/* Define if you have mprotect() function */
+#undef HAVE_MPROTECT
 
 /* Define to 1 if you have the `mremap' function. */
 #undef HAVE_MREMAP
@@ -1366,6 +1303,9 @@
 /* PostgreSQL 7.2.0 or later */
 #undef HAVE_PQESCAPE
 
+/* PostgreSQL 9.0 or later */
+#undef HAVE_PQESCAPELITERAL
+
 /* PostgreSQL 8.1.4 or later */
 #undef HAVE_PQESCAPE_BYTEA_CONN
 
@@ -1435,6 +1375,9 @@
 /* */
 #undef HAVE_PSPELL
 
+/* Define to 1 if the PS_STRINGS thing exists. */
+#undef HAVE_PS_STRINGS
+
 /* do we have ptrace? */
 #undef HAVE_PTRACE
 
@@ -1495,6 +1438,9 @@
 /* */
 #undef HAVE_SAPDB
 
+/* Whether you have sockaddr_storage.ss_family */
+#undef HAVE_SA_SS_FAMILY
+
 /* Define to 1 if you have the `scandir' function. */
 #undef HAVE_SCANDIR
 
@@ -1539,6 +1485,21 @@
 
 /* */
 #undef HAVE_SHMOP
+
+/* Define if you have SysV IPC SHM support */
+#undef HAVE_SHM_IPC
+
+/* Define if you have mmap(MAP_ANON) SHM support */
+#undef HAVE_SHM_MMAP_ANON
+
+/* Define if you have mmap() SHM support */
+#undef HAVE_SHM_MMAP_FILE
+
+/* Define if you have POSIX mmap() SHM support */
+#undef HAVE_SHM_MMAP_POSIX
+
+/* Define if you have mmap("/dev/zero") SHM support */
+#undef HAVE_SHM_MMAP_ZERO
 
 /* Define to 1 if you have the `shutdown' function. */
 #undef HAVE_SHUTDOWN
@@ -1795,6 +1756,12 @@
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
 
+/* FPM use systemd integration */
+#undef HAVE_SYSTEMD
+
+/* Define to 1 if you have the <systemd/sd-daemon.h> header file. */
+#undef HAVE_SYSTEMD_SD_DAEMON_H
+
 /* */
 #undef HAVE_SYSVMSG
 
@@ -1838,6 +1805,9 @@
 
 /* Define to 1 if you have the <sys/poll.h> header file. */
 #undef HAVE_SYS_POLL_H
+
+/* Define to 1 if you have the <sys/pstat.h> header file. */
+#undef HAVE_SYS_PSTAT_H
 
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #undef HAVE_SYS_RESOURCE_H
@@ -1970,7 +1940,7 @@
 /* Define to 1 if `utime(file, NULL)' sets file's timestamp to the present. */
 #undef HAVE_UTIME_NULL
 
-/* Wether struct utsname has domainname */
+/* Whether struct utsname has domainname */
 #undef HAVE_UTSNAME_DOMAINNAME
 
 /* Define to 1 if you have the `vasprintf' function. */
@@ -2081,7 +2051,10 @@
 /* Enable compressed protocol support */
 #undef MYSQLND_COMPRESSION_WANTED
 
-/* Enable SSL support */
+/* Enable mysqlnd code that uses OpenSSL directly */
+#undef MYSQLND_HAVE_SSL
+
+/* Enable core mysqlnd SSL code */
 #undef MYSQLND_SSL_SUPPORTED
 
 /* Whether mysqlnd is enabled */
@@ -2138,14 +2111,14 @@
 /* Define if your system has fork/vfork/CreateProcess */
 #undef PHP_CAN_SUPPORT_PROC_OPEN
 
-/* */
-#undef PHP_CURL_URL_WRAPPERS
-
 /* Whether the system supports extended DES salt */
 #undef PHP_EXT_DES_CRYPT
 
 /* fpm group name */
 #undef PHP_FPM_GROUP
+
+/* fpm systemd service type */
+#undef PHP_FPM_SYSTEMD
 
 /* fpm user name */
 #undef PHP_FPM_USER
@@ -2269,6 +2242,9 @@
 
 /* */
 #undef SOLARIS
+
+/* have sqlite3 with column metadata enabled */
+#undef SQLITE_ENABLE_COLUMN_METADATA
 
 /* have sqlite3 with extension support */
 #undef SQLITE_OMIT_LOAD_EXTENSION

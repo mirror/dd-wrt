@@ -1,5 +1,7 @@
 --TEST--
 Optional long parameter might be null
+--SKIPIF--
+<?php extension_loaded('mbstring') or die('skip mbstring not available'); ?>
 --FILE--
 <?php
 echo mb_strpos('abb', 'b', null, 'UTF-8') . "\n";
@@ -28,5 +30,3 @@ baz
 baz
 foo
 ==DONE==
---XFAIL--
-mb functions fail to allow null instead of actual value

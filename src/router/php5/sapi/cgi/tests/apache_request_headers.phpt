@@ -1,5 +1,7 @@
 --TEST--
 apache_request_headers() stack overflow.
+--INI--
+default_charset="UTF-8"
 --SKIPIF--
 <?php 
 include "skipif.inc"; 
@@ -15,12 +17,12 @@ $file = dirname(__FILE__)."/012.test.php";
 
 file_put_contents($file, '<?php print_r(apache_request_headers()); ?>');
 
-passthru("$php $file");
+passthru("$php -n $file");
 
 $names = array('HTTP_X_TEST', 'HTTP_X__TEST', 'HTTP_X_');
 foreach ($names as $name) {
 	putenv($name."=".str_repeat("A", 256));
-	passthru("$php -q $file");
+	passthru("$php -n -q $file");
 	putenv($name);
 }
 unlink($file);
@@ -29,7 +31,7 @@ echo "Done\n";
 ?>
 --EXPECTF--	
 X-Powered-By: PHP/%s
-Content-type: text/html
+Content-type: text/%s
 
 Array
 (

@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
+   | Copyright (c) 1997-2013 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -105,7 +105,6 @@ typedef struct {
 	/* this is necessary for the CGI SAPI module */
 	char *argv0;
 
-	/* this is necessary for Safe Mode */
 	char *current_user;
 	int current_user_length;
 

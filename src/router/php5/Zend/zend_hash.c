@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2012 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) 1998-2013 Zend Technologies Ltd. (http://www.zend.com) |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        | 
@@ -527,6 +527,7 @@ ZEND_API int zend_hash_del_key_or_index(HashTable *ht, const char *arKey, uint n
 			if (ht->pInternalPointer == p) {
 				ht->pInternalPointer = p->pListNext;
 			}
+			ht->nNumOfElements--;
 			if (ht->pDestructor) {
 				ht->pDestructor(p->pData);
 			}
@@ -535,7 +536,6 @@ ZEND_API int zend_hash_del_key_or_index(HashTable *ht, const char *arKey, uint n
 			}
 			pefree(p, ht->persistent);
 			HANDLE_UNBLOCK_INTERRUPTIONS();
-			ht->nNumOfElements--;
 			return SUCCESS;
 		}
 		p = p->pNext;
@@ -1171,6 +1171,24 @@ ZEND_API int zend_hash_get_current_key_ex(const HashTable *ht, char **str_index,
 	return HASH_KEY_NON_EXISTANT;
 }
 
+ZEND_API void zend_hash_get_current_key_zval_ex(const HashTable *ht, zval *key, HashPosition *pos) {
+	Bucket *p;
+
+	IS_CONSISTENT(ht);
+
+	p = pos ? (*pos) : ht->pInternalPointer;
+
+	if (!p) {
+		Z_TYPE_P(key) = IS_NULL;
+	} else if (p->nKeyLength) {
+		Z_TYPE_P(key) = IS_STRING;
+		Z_STRVAL_P(key) = estrndup(p->arKey, p->nKeyLength - 1);
+		Z_STRLEN_P(key) = p->nKeyLength - 1;
+	} else {
+		Z_TYPE_P(key) = IS_LONG;
+		Z_LVAL_P(key) = p->h;
+	}
+}
 
 ZEND_API int zend_hash_get_current_key_type_ex(HashTable *ht, HashPosition *pos)
 {
@@ -1302,6 +1320,7 @@ ZEND_API int zend_hash_update_current_key_ex(HashTable *ht, int key_type, const 
 					if (ht->pInternalPointer == p) {
 						ht->pInternalPointer = p->pListNext;
 					}
+					ht->nNumOfElements--;
 					if (ht->pDestructor) {
 						ht->pDestructor(p->pData);
 					}
@@ -1309,7 +1328,6 @@ ZEND_API int zend_hash_update_current_key_ex(HashTable *ht, int key_type, const 
 						pefree(p->pData, ht->persistent);
 					}
 					pefree(p, ht->persistent);
-					ht->nNumOfElements--;
 					HANDLE_UNBLOCK_INTERRUPTIONS();
 					return FAILURE;
 				}
@@ -1337,6 +1355,7 @@ ZEND_API int zend_hash_update_current_key_ex(HashTable *ht, int key_type, const 
 			if (ht->pInternalPointer == q) {
 				ht->pInternalPointer = q->pListNext;
 			}
+			ht->nNumOfElements--;
 			if (ht->pDestructor) {
 				ht->pDestructor(q->pData);
 			}
@@ -1344,7 +1363,6 @@ ZEND_API int zend_hash_update_current_key_ex(HashTable *ht, int key_type, const 
 				pefree(q->pData, ht->persistent);
 			}
 			pefree(q, ht->persistent);
-			ht->nNumOfElements--;
 		}
 
 		if (p->pNext) {
