@@ -88,14 +88,6 @@ struct dummy_super_block {
 	u32	s_magic ;
 };
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
-/* Enable CPU wait or not */
-extern int cpu_wait_enable;
-#else
-int coherentio;   /* init to 0 => no DMA cache coherency (may be set by user) */
-int hw_coherentio;/* init to 0 => no HW DMA cache coherency (reflects real HW) */
-#endif
-
 /* Global SB handle */
 si_t *bcm947xx_sih = NULL;
 DEFINE_SPINLOCK(bcm947xx_sih_lock);
