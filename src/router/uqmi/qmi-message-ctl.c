@@ -6,7 +6,7 @@
 #define get_next(_size) ({ void *_buf = &tlv->data[ofs]; ofs += _size; if (ofs > cur_tlv_len) goto error_len; _buf; })
 #define copy_tlv(_val, _size) \
 	do { \
-		int __size = _size; \
+		unsigned int __size = _size; \
 		if (__size > 0) \
 			memcpy(__qmi_alloc_static(__size), _val, __size); \
 	} while (0);
@@ -24,7 +24,7 @@ int qmi_set_ctl_set_instance_id_request(struct qmi_msg *msg, struct qmi_ctl_set_
 
 	if (req->set.id) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.id, 1);
@@ -39,9 +39,10 @@ int qmi_set_ctl_set_instance_id_request(struct qmi_msg *msg, struct qmi_ctl_set_
 int qmi_parse_ctl_set_instance_id_response(struct qmi_msg *msg, struct qmi_ctl_set_instance_id_response *res)
 {
 	void *tlv_buf = &msg->ctl.tlv;
-	int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -52,6 +53,10 @@ int qmi_parse_ctl_set_instance_id_response(struct qmi_msg *msg, struct qmi_ctl_s
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			qmi_set(res, link_id, le16_to_cpu(*(uint16_t *) get_next(2)));
 			break;
 
@@ -79,9 +84,10 @@ int qmi_set_ctl_get_version_info_request(struct qmi_msg *msg)
 int qmi_parse_ctl_get_version_info_response(struct qmi_msg *msg, struct qmi_ctl_get_version_info_response *res)
 {
 	void *tlv_buf = &msg->ctl.tlv;
-	int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -92,8 +98,12 @@ int qmi_parse_ctl_get_version_info_response(struct qmi_msg *msg, struct qmi_ctl_
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			i = *(uint8_t *) get_next(1);
-			res->data.service_list = __qmi_alloc_static(i);
+			res->data.service_list = __qmi_alloc_static(i * sizeof(res->data.service_list[0]));
 			while(i-- > 0) {
 				res->data.service_list[res->data.service_list_n].service = *(uint8_t *) get_next(1);
 				res->data.service_list[res->data.service_list_n].major_version = le16_to_cpu(*(uint16_t *) get_next(2));
@@ -123,7 +133,7 @@ int qmi_set_ctl_allocate_cid_request(struct qmi_msg *msg, struct qmi_ctl_allocat
 
 	if (req->set.service) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.service, 1);
@@ -138,9 +148,10 @@ int qmi_set_ctl_allocate_cid_request(struct qmi_msg *msg, struct qmi_ctl_allocat
 int qmi_parse_ctl_allocate_cid_response(struct qmi_msg *msg, struct qmi_ctl_allocate_cid_response *res)
 {
 	void *tlv_buf = &msg->ctl.tlv;
-	int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -151,6 +162,10 @@ int qmi_parse_ctl_allocate_cid_response(struct qmi_msg *msg, struct qmi_ctl_allo
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			res->set.allocation_info = 1;
 			res->data.allocation_info.service = *(uint8_t *) get_next(1);
 			res->data.allocation_info.cid = *(uint8_t *) get_next(1);
@@ -176,7 +191,7 @@ int qmi_set_ctl_release_cid_request(struct qmi_msg *msg, struct qmi_ctl_release_
 
 	if (req->set.release_info) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.release_info.service, 1);
@@ -192,9 +207,10 @@ int qmi_set_ctl_release_cid_request(struct qmi_msg *msg, struct qmi_ctl_release_
 int qmi_parse_ctl_release_cid_response(struct qmi_msg *msg, struct qmi_ctl_release_cid_response *res)
 {
 	void *tlv_buf = &msg->ctl.tlv;
-	int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -205,6 +221,10 @@ int qmi_parse_ctl_release_cid_response(struct qmi_msg *msg, struct qmi_ctl_relea
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			res->set.release_info = 1;
 			res->data.release_info.service = *(uint8_t *) get_next(1);
 			res->data.release_info.cid = *(uint8_t *) get_next(1);
@@ -230,7 +250,7 @@ int qmi_set_ctl_set_data_format_request(struct qmi_msg *msg, struct qmi_ctl_set_
 
 	if (req->set.format) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.format, 1);
@@ -241,7 +261,7 @@ int qmi_set_ctl_set_data_format_request(struct qmi_msg *msg, struct qmi_ctl_set_
 
 	if (req->set.protocol) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint16_t, cpu_to_le16(req->data.protocol), 2);
@@ -256,9 +276,10 @@ int qmi_set_ctl_set_data_format_request(struct qmi_msg *msg, struct qmi_ctl_set_
 int qmi_parse_ctl_set_data_format_response(struct qmi_msg *msg, struct qmi_ctl_set_data_format_response *res)
 {
 	void *tlv_buf = &msg->ctl.tlv;
-	int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -269,6 +290,10 @@ int qmi_parse_ctl_set_data_format_response(struct qmi_msg *msg, struct qmi_ctl_s
 
 		switch(tlv->type) {
 		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			qmi_set(res, protocol, le16_to_cpu(*(uint16_t *) get_next(2)));
 			break;
 
@@ -296,7 +321,7 @@ int qmi_set_ctl_sync_request(struct qmi_msg *msg)
 int qmi_parse_ctl_sync_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->ctl.tlv;
-	int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }

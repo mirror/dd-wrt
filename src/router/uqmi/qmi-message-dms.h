@@ -1,13 +1,13 @@
 struct qmi_dms_set_event_report_request {
 	struct {
-		int power_state_reporting : 1;
-		int battery_level_report_limits : 1;
-		int pin_state_reporting : 1;
-		int activation_state_reporting : 1;
-		int operating_mode_reporting : 1;
-		int uim_state_reporting : 1;
-		int wireless_disable_state_reporting : 1;
-		int prl_init_reporting : 1;
+		unsigned int power_state_reporting : 1;
+		unsigned int battery_level_report_limits : 1;
+		unsigned int pin_state_reporting : 1;
+		unsigned int activation_state_reporting : 1;
+		unsigned int operating_mode_reporting : 1;
+		unsigned int uim_state_reporting : 1;
+		unsigned int wireless_disable_state_reporting : 1;
+		unsigned int prl_init_reporting : 1;
 	} set;
 	struct {
 		bool power_state_reporting;
@@ -26,7 +26,7 @@ struct qmi_dms_set_event_report_request {
 
 struct qmi_dms_get_capabilities_response {
 	struct {
-		int info : 1;
+		unsigned int info : 1;
 	} set;
 	struct {
 		struct {
@@ -34,7 +34,7 @@ struct qmi_dms_get_capabilities_response {
 			uint32_t max_rx_channel_rate;
 			QmiDmsDataServiceCapability data_service_capability;
 			QmiDmsSimCapability sim_capability;
-			int radio_interface_list_n;
+			unsigned int radio_interface_list_n;
 			QmiDmsRadioInterface *radio_interface_list;
 		} info;
 	} data;
@@ -84,7 +84,7 @@ struct qmi_dms_get_ids_response {
 
 struct qmi_dms_get_power_state_response {
 	struct {
-		int info : 1;
+		unsigned int info : 1;
 	} set;
 	struct {
 		struct {
@@ -96,7 +96,7 @@ struct qmi_dms_get_power_state_response {
 
 struct qmi_dms_uim_set_pin_protection_request {
 	struct {
-		int info : 1;
+		unsigned int info : 1;
 	} set;
 	struct {
 		struct {
@@ -109,7 +109,7 @@ struct qmi_dms_uim_set_pin_protection_request {
 
 struct qmi_dms_uim_set_pin_protection_response {
 	struct {
-		int pin_retries_status : 1;
+		unsigned int pin_retries_status : 1;
 	} set;
 	struct {
 		struct {
@@ -121,7 +121,7 @@ struct qmi_dms_uim_set_pin_protection_response {
 
 struct qmi_dms_uim_verify_pin_request {
 	struct {
-		int info : 1;
+		unsigned int info : 1;
 	} set;
 	struct {
 		struct {
@@ -133,7 +133,7 @@ struct qmi_dms_uim_verify_pin_request {
 
 struct qmi_dms_uim_verify_pin_response {
 	struct {
-		int pin_retries_status : 1;
+		unsigned int pin_retries_status : 1;
 	} set;
 	struct {
 		struct {
@@ -145,7 +145,7 @@ struct qmi_dms_uim_verify_pin_response {
 
 struct qmi_dms_uim_unblock_pin_request {
 	struct {
-		int info : 1;
+		unsigned int info : 1;
 	} set;
 	struct {
 		struct {
@@ -158,7 +158,7 @@ struct qmi_dms_uim_unblock_pin_request {
 
 struct qmi_dms_uim_unblock_pin_response {
 	struct {
-		int pin_retries_status : 1;
+		unsigned int pin_retries_status : 1;
 	} set;
 	struct {
 		struct {
@@ -170,7 +170,7 @@ struct qmi_dms_uim_unblock_pin_response {
 
 struct qmi_dms_uim_change_pin_request {
 	struct {
-		int info : 1;
+		unsigned int info : 1;
 	} set;
 	struct {
 		struct {
@@ -183,7 +183,7 @@ struct qmi_dms_uim_change_pin_request {
 
 struct qmi_dms_uim_change_pin_response {
 	struct {
-		int pin_retries_status : 1;
+		unsigned int pin_retries_status : 1;
 	} set;
 	struct {
 		struct {
@@ -195,8 +195,8 @@ struct qmi_dms_uim_change_pin_response {
 
 struct qmi_dms_uim_get_pin_status_response {
 	struct {
-		int pin1_status : 1;
-		int pin2_status : 1;
+		unsigned int pin1_status : 1;
+		unsigned int pin2_status : 1;
 	} set;
 	struct {
 		struct {
@@ -222,9 +222,9 @@ struct qmi_dms_get_hardware_revision_response {
 
 struct qmi_dms_get_operating_mode_response {
 	struct {
-		int mode : 1;
-		int offline_reason : 1;
-		int hardware_restricted_mode : 1;
+		unsigned int mode : 1;
+		unsigned int offline_reason : 1;
+		unsigned int hardware_restricted_mode : 1;
 	} set;
 	struct {
 		QmiDmsOperatingMode mode;
@@ -235,7 +235,7 @@ struct qmi_dms_get_operating_mode_response {
 
 struct qmi_dms_set_operating_mode_request {
 	struct {
-		int mode : 1;
+		unsigned int mode : 1;
 	} set;
 	struct {
 		QmiDmsOperatingMode mode;
@@ -244,9 +244,9 @@ struct qmi_dms_set_operating_mode_request {
 
 struct qmi_dms_get_time_response {
 	struct {
-		int device_time : 1;
-		int system_time : 1;
-		int user_time : 1;
+		unsigned int device_time : 1;
+		unsigned int system_time : 1;
+		unsigned int user_time : 1;
 	} set;
 	struct {
 		struct {
@@ -260,8 +260,8 @@ struct qmi_dms_get_time_response {
 
 struct qmi_dms_get_prl_version_response {
 	struct {
-		int version : 1;
-		int prl_only_preference : 1;
+		unsigned int version : 1;
+		unsigned int prl_only_preference : 1;
 	} set;
 	struct {
 		uint16_t version;
@@ -271,7 +271,7 @@ struct qmi_dms_get_prl_version_response {
 
 struct qmi_dms_get_activation_state_response {
 	struct {
-		int info : 1;
+		unsigned int info : 1;
 	} set;
 	struct {
 		QmiDmsActivationState info;
@@ -288,7 +288,7 @@ struct qmi_dms_activate_automatic_request {
 
 struct qmi_dms_activate_manual_request {
 	struct {
-		int info : 1;
+		unsigned int info : 1;
 	} set;
 	struct {
 		struct {
@@ -304,7 +304,7 @@ struct qmi_dms_activate_manual_request {
 
 struct qmi_dms_get_user_lock_state_response {
 	struct {
-		int enabled : 1;
+		unsigned int enabled : 1;
 	} set;
 	struct {
 		bool enabled;
@@ -313,7 +313,7 @@ struct qmi_dms_get_user_lock_state_response {
 
 struct qmi_dms_set_user_lock_state_request {
 	struct {
-		int info : 1;
+		unsigned int info : 1;
 	} set;
 	struct {
 		struct {
@@ -325,7 +325,7 @@ struct qmi_dms_set_user_lock_state_request {
 
 struct qmi_dms_set_user_lock_code_request {
 	struct {
-		int info : 1;
+		unsigned int info : 1;
 	} set;
 	struct {
 		struct {
@@ -339,7 +339,7 @@ struct qmi_dms_read_user_data_response {
 	struct {
 	} set;
 	struct {
-		int user_data_n;
+		unsigned int user_data_n;
 		uint8_t *user_data;
 	} data;
 };
@@ -348,7 +348,7 @@ struct qmi_dms_write_user_data_request {
 	struct {
 	} set;
 	struct {
-		int user_data_n;
+		unsigned int user_data_n;
 		uint8_t *user_data;
 	} data;
 };
@@ -357,7 +357,7 @@ struct qmi_dms_read_eri_file_response {
 	struct {
 	} set;
 	struct {
-		int eri_file_n;
+		unsigned int eri_file_n;
 		uint8_t *eri_file;
 	} data;
 };
@@ -388,7 +388,7 @@ struct qmi_dms_uim_get_iccid_response {
 
 struct qmi_dms_uim_get_ck_status_request {
 	struct {
-		int facility : 1;
+		unsigned int facility : 1;
 	} set;
 	struct {
 		QmiDmsUimFacility facility;
@@ -397,8 +397,8 @@ struct qmi_dms_uim_get_ck_status_request {
 
 struct qmi_dms_uim_get_ck_status_response {
 	struct {
-		int ck_status : 1;
-		int operation_blocking_facility : 1;
+		unsigned int ck_status : 1;
+		unsigned int operation_blocking_facility : 1;
 	} set;
 	struct {
 		struct {
@@ -412,7 +412,7 @@ struct qmi_dms_uim_get_ck_status_response {
 
 struct qmi_dms_uim_set_ck_protection_request {
 	struct {
-		int facility : 1;
+		unsigned int facility : 1;
 	} set;
 	struct {
 		struct {
@@ -425,7 +425,7 @@ struct qmi_dms_uim_set_ck_protection_request {
 
 struct qmi_dms_uim_set_ck_protection_response {
 	struct {
-		int verify_retries_left : 1;
+		unsigned int verify_retries_left : 1;
 	} set;
 	struct {
 		uint8_t verify_retries_left;
@@ -434,7 +434,7 @@ struct qmi_dms_uim_set_ck_protection_response {
 
 struct qmi_dms_uim_unblock_ck_request {
 	struct {
-		int facility : 1;
+		unsigned int facility : 1;
 	} set;
 	struct {
 		struct {
@@ -446,7 +446,7 @@ struct qmi_dms_uim_unblock_ck_request {
 
 struct qmi_dms_uim_unblock_ck_response {
 	struct {
-		int unblock_retries_left : 1;
+		unsigned int unblock_retries_left : 1;
 	} set;
 	struct {
 		uint8_t unblock_retries_left;
@@ -463,7 +463,7 @@ struct qmi_dms_uim_get_imsi_response {
 
 struct qmi_dms_uim_get_state_response {
 	struct {
-		int state : 1;
+		unsigned int state : 1;
 	} set;
 	struct {
 		QmiDmsUimState state;
@@ -472,8 +472,8 @@ struct qmi_dms_uim_get_state_response {
 
 struct qmi_dms_get_band_capabilities_response {
 	struct {
-		int band_capability : 1;
-		int lte_band_capability : 1;
+		unsigned int band_capability : 1;
+		unsigned int lte_band_capability : 1;
 	} set;
 	struct {
 		QmiDmsBandCapability band_capability;
@@ -493,7 +493,7 @@ struct qmi_dms_get_firmware_preference_response {
 	struct {
 	} set;
 	struct {
-		int list_n;
+		unsigned int list_n;
 		struct {
 			QmiDmsFirmwareImageType type;
 			uint8_t unique_id[16];
@@ -504,11 +504,11 @@ struct qmi_dms_get_firmware_preference_response {
 
 struct qmi_dms_set_firmware_preference_request {
 	struct {
-		int download_override : 1;
-		int modem_storage_index : 1;
+		unsigned int download_override : 1;
+		unsigned int modem_storage_index : 1;
 	} set;
 	struct {
-		int list_n;
+		unsigned int list_n;
 		struct {
 			QmiDmsFirmwareImageType type;
 			uint8_t unique_id[16];
@@ -523,7 +523,7 @@ struct qmi_dms_set_firmware_preference_response {
 	struct {
 	} set;
 	struct {
-		int image_download_list_n;
+		unsigned int image_download_list_n;
 		QmiDmsFirmwareImageType *image_download_list;
 	} data;
 };
@@ -532,12 +532,12 @@ struct qmi_dms_list_stored_images_response {
 	struct {
 	} set;
 	struct {
-		int list_n;
+		unsigned int list_n;
 		struct {
 			QmiDmsFirmwareImageType type;
 			uint8_t maximum_images;
 			uint8_t index_of_running_image;
-			int sublist_n;
+			unsigned int sublist_n;
 			struct {
 				uint8_t storage_index;
 				uint8_t failure_count;
@@ -550,7 +550,7 @@ struct qmi_dms_list_stored_images_response {
 
 struct qmi_dms_delete_stored_image_request {
 	struct {
-		int image : 1;
+		unsigned int image : 1;
 	} set;
 	struct {
 		struct {
@@ -563,8 +563,8 @@ struct qmi_dms_delete_stored_image_request {
 
 struct qmi_dms_set_time_request {
 	struct {
-		int time_value : 1;
-		int time_reference_type : 1;
+		unsigned int time_value : 1;
+		unsigned int time_reference_type : 1;
 	} set;
 	struct {
 		uint64_t time_value;
@@ -574,7 +574,7 @@ struct qmi_dms_set_time_request {
 
 struct qmi_dms_get_stored_image_info_request {
 	struct {
-		int image : 1;
+		unsigned int image : 1;
 	} set;
 	struct {
 		struct {
@@ -587,9 +587,9 @@ struct qmi_dms_get_stored_image_info_request {
 
 struct qmi_dms_get_stored_image_info_response {
 	struct {
-		int boot_version : 1;
-		int pri_version : 1;
-		int oem_lock_id : 1;
+		unsigned int boot_version : 1;
+		unsigned int pri_version : 1;
+		unsigned int oem_lock_id : 1;
 	} set;
 	struct {
 		struct {
@@ -606,7 +606,7 @@ struct qmi_dms_get_stored_image_info_response {
 
 struct qmi_dms_get_alt_net_config_response {
 	struct {
-		int config : 1;
+		unsigned int config : 1;
 	} set;
 	struct {
 		bool config;
@@ -615,7 +615,7 @@ struct qmi_dms_get_alt_net_config_response {
 
 struct qmi_dms_set_alt_net_config_request {
 	struct {
-		int config : 1;
+		unsigned int config : 1;
 	} set;
 	struct {
 		bool config;
