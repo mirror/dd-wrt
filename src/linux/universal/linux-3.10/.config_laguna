@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.0-rc6 Kernel Configuration
+# Linux/arm 3.10.0-rc7 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -386,7 +386,6 @@ CONFIG_CMDLINE="console=ttyS0,115200 panic=10 root=/dev/mtdblock3 rootfstype=squ
 # CONFIG_CMDLINE_EXTEND is not set
 CONFIG_CMDLINE_FORCE=y
 # CONFIG_XIP_KERNEL is not set
-# CONFIG_KEXEC is not set
 # CONFIG_CRASH_DUMP is not set
 # CONFIG_AUTO_ZRELADDR is not set
 
