@@ -1,6 +1,6 @@
 struct qmi_nas_abort_request {
 	struct {
-		int transaction_id : 1;
+		unsigned int transaction_id : 1;
 	} set;
 	struct {
 		uint16_t transaction_id;
@@ -9,23 +9,23 @@ struct qmi_nas_abort_request {
 
 struct qmi_nas_set_event_report_request {
 	struct {
-		int signal_strength_indicator : 1;
-		int rf_band_information : 1;
-		int registration_reject_reason : 1;
-		int rssi_indicator : 1;
-		int ecio_indicator : 1;
-		int io_indicator : 1;
-		int sinr_indicator : 1;
-		int error_rate_indicator : 1;
-		int ecio_threshold : 1;
-		int sinr_threshold : 1;
-		int lte_snr_delta : 1;
-		int lte_rsrp_delta : 1;
+		unsigned int signal_strength_indicator : 1;
+		unsigned int rf_band_information : 1;
+		unsigned int registration_reject_reason : 1;
+		unsigned int rssi_indicator : 1;
+		unsigned int ecio_indicator : 1;
+		unsigned int io_indicator : 1;
+		unsigned int sinr_indicator : 1;
+		unsigned int error_rate_indicator : 1;
+		unsigned int ecio_threshold : 1;
+		unsigned int sinr_threshold : 1;
+		unsigned int lte_snr_delta : 1;
+		unsigned int lte_rsrp_delta : 1;
 	} set;
 	struct {
 		struct {
 			bool report;
-			int thresholds_n;
+			unsigned int thresholds_n;
 			int8_t *thresholds;
 		} signal_strength_indicator;
 		bool rf_band_information;
@@ -49,12 +49,12 @@ struct qmi_nas_set_event_report_request {
 		bool error_rate_indicator;
 		struct {
 			bool report;
-			int thresholds_n;
+			unsigned int thresholds_n;
 			int16_t *thresholds;
 		} ecio_threshold;
 		struct {
 			bool report;
-			int thresholds_n;
+			unsigned int thresholds_n;
 			uint8_t *thresholds;
 		} sinr_threshold;
 		struct {
@@ -70,21 +70,21 @@ struct qmi_nas_set_event_report_request {
 
 struct qmi_nas_register_indications_request {
 	struct {
-		int system_selection_preference : 1;
-		int ddtm_events : 1;
-		int serving_system_events : 1;
-		int dual_standby_preference : 1;
-		int subscription_info : 1;
-		int network_time : 1;
-		int system_info : 1;
-		int signal_info : 1;
-		int error_rate : 1;
-		int hdr_new_uati_assigned : 1;
-		int hdr_session_closed : 1;
-		int managed_roaming : 1;
-		int current_plmn_name : 1;
-		int embms_status : 1;
-		int rf_band_information : 1;
+		unsigned int system_selection_preference : 1;
+		unsigned int ddtm_events : 1;
+		unsigned int serving_system_events : 1;
+		unsigned int dual_standby_preference : 1;
+		unsigned int subscription_info : 1;
+		unsigned int network_time : 1;
+		unsigned int system_info : 1;
+		unsigned int signal_info : 1;
+		unsigned int error_rate : 1;
+		unsigned int hdr_new_uati_assigned : 1;
+		unsigned int hdr_session_closed : 1;
+		unsigned int managed_roaming : 1;
+		unsigned int current_plmn_name : 1;
+		unsigned int embms_status : 1;
+		unsigned int rf_band_information : 1;
 	} set;
 	struct {
 		bool system_selection_preference;
@@ -107,7 +107,7 @@ struct qmi_nas_register_indications_request {
 
 struct qmi_nas_get_signal_strength_request {
 	struct {
-		int request_mask : 1;
+		unsigned int request_mask : 1;
 	} set;
 	struct {
 		QmiNasSignalStrengthRequest request_mask;
@@ -116,36 +116,36 @@ struct qmi_nas_get_signal_strength_request {
 
 struct qmi_nas_get_signal_strength_response {
 	struct {
-		int signal_strength : 1;
-		int io : 1;
-		int sinr : 1;
-		int rsrq : 1;
-		int lte_snr : 1;
-		int lte_rsrp : 1;
+		unsigned int signal_strength : 1;
+		unsigned int io : 1;
+		unsigned int sinr : 1;
+		unsigned int rsrq : 1;
+		unsigned int lte_snr : 1;
+		unsigned int lte_rsrp : 1;
 	} set;
 	struct {
 		struct {
 			int8_t strength;
 			QmiNasRadioInterface radio_interface;
 		} signal_strength;
-		int strength_list_n;
+		unsigned int strength_list_n;
 		struct {
 			int8_t strength;
 			QmiNasRadioInterface radio_interface;
 		} *strength_list;
-		int rssi_list_n;
+		unsigned int rssi_list_n;
 		struct {
 			uint8_t rssi;
 			QmiNasRadioInterface radio_interface;
 		} *rssi_list;
-		int ecio_list_n;
+		unsigned int ecio_list_n;
 		struct {
 			int8_t ecio;
 			QmiNasRadioInterface radio_interface;
 		} *ecio_list;
 		int32_t io;
 		QmiNasEvdoSinrLevel sinr;
-		int error_rate_list_n;
+		unsigned int error_rate_list_n;
 		struct {
 			uint16_t rate;
 			QmiNasRadioInterface radio_interface;
@@ -161,7 +161,7 @@ struct qmi_nas_get_signal_strength_response {
 
 struct qmi_nas_network_scan_request {
 	struct {
-		int network_type : 1;
+		unsigned int network_type : 1;
 	} set;
 	struct {
 		QmiNasNetworkScanType network_type;
@@ -172,20 +172,20 @@ struct qmi_nas_network_scan_response {
 	struct {
 	} set;
 	struct {
-		int network_information_n;
+		unsigned int network_information_n;
 		struct {
 			uint16_t mcc;
 			uint16_t mnc;
 			QmiNasNetworkStatus network_status;
 			char *description;
 		} *network_information;
-		int radio_access_technology_n;
+		unsigned int radio_access_technology_n;
 		struct {
 			uint16_t mcc;
 			uint16_t mnc;
 			QmiNasRadioInterface radio_interface;
 		} *radio_access_technology;
-		int mnc_pcs_digit_include_status_n;
+		unsigned int mnc_pcs_digit_include_status_n;
 		struct {
 			uint16_t mcc;
 			uint16_t mnc;
@@ -196,10 +196,10 @@ struct qmi_nas_network_scan_response {
 
 struct qmi_nas_initiate_network_register_request {
 	struct {
-		int action : 1;
-		int manual_registration_info_3gpp : 1;
-		int change_duration : 1;
-		int mnc_pcs_digit_include_status : 1;
+		unsigned int action : 1;
+		unsigned int manual_registration_info_3gpp : 1;
+		unsigned int change_duration : 1;
+		unsigned int mnc_pcs_digit_include_status : 1;
 	} set;
 	struct {
 		QmiNasNetworkRegisterType action;
@@ -215,28 +215,28 @@ struct qmi_nas_initiate_network_register_request {
 
 struct qmi_nas_get_serving_system_response {
 	struct {
-		int serving_system : 1;
-		int roaming_indicator : 1;
-		int current_plmn : 1;
-		int cdma_system_id : 1;
-		int cdma_base_station_info : 1;
-		int default_roaming_indicator : 1;
-		int time_zone_3gpp2 : 1;
-		int cdma_p_rev : 1;
-		int time_zone_3gpp : 1;
-		int daylight_saving_time_adjustment_3gpp : 1;
-		int lac_3gpp : 1;
-		int cid_3gpp : 1;
-		int concurrent_service_info_3gpp2 : 1;
-		int prl_indicator_3gpp2 : 1;
-		int dtm_support : 1;
-		int detailed_service_status : 1;
-		int cdma_system_info : 1;
-		int hdr_personality : 1;
-		int lte_tac : 1;
-		int call_barring_status : 1;
-		int umts_primary_scrambling_code : 1;
-		int mnc_pcs_digit_include_status : 1;
+		unsigned int serving_system : 1;
+		unsigned int roaming_indicator : 1;
+		unsigned int current_plmn : 1;
+		unsigned int cdma_system_id : 1;
+		unsigned int cdma_base_station_info : 1;
+		unsigned int default_roaming_indicator : 1;
+		unsigned int time_zone_3gpp2 : 1;
+		unsigned int cdma_p_rev : 1;
+		unsigned int time_zone_3gpp : 1;
+		unsigned int daylight_saving_time_adjustment_3gpp : 1;
+		unsigned int lac_3gpp : 1;
+		unsigned int cid_3gpp : 1;
+		unsigned int concurrent_service_info_3gpp2 : 1;
+		unsigned int prl_indicator_3gpp2 : 1;
+		unsigned int dtm_support : 1;
+		unsigned int detailed_service_status : 1;
+		unsigned int cdma_system_info : 1;
+		unsigned int hdr_personality : 1;
+		unsigned int lte_tac : 1;
+		unsigned int call_barring_status : 1;
+		unsigned int umts_primary_scrambling_code : 1;
+		unsigned int mnc_pcs_digit_include_status : 1;
 	} set;
 	struct {
 		struct {
@@ -244,11 +244,11 @@ struct qmi_nas_get_serving_system_response {
 			QmiNasAttachState cs_attach_state;
 			QmiNasAttachState ps_attach_state;
 			QmiNasNetworkType selected_network;
-			int radio_interfaces_n;
+			unsigned int radio_interfaces_n;
 			QmiNasRadioInterface *radio_interfaces;
 		} serving_system;
 		QmiNasRoamingIndicatorStatus roaming_indicator;
-		int data_service_capability_n;
+		unsigned int data_service_capability_n;
 		QmiNasDataCapability *data_service_capability;
 		struct {
 			uint16_t mcc;
@@ -264,7 +264,7 @@ struct qmi_nas_get_serving_system_response {
 			int32_t base_station_latitude;
 			int32_t base_station_longitude;
 		} cdma_base_station_info;
-		int roaming_indicator_list_n;
+		unsigned int roaming_indicator_list_n;
 		struct {
 			QmiNasRadioInterface radio_interface;
 			QmiNasRoamingIndicatorStatus roaming_indicator;
@@ -311,9 +311,9 @@ struct qmi_nas_get_serving_system_response {
 
 struct qmi_nas_get_home_network_response {
 	struct {
-		int home_network : 1;
-		int home_system_id : 1;
-		int home_network_3gpp2 : 1;
+		unsigned int home_network : 1;
+		unsigned int home_system_id : 1;
+		unsigned int home_network_3gpp2 : 1;
 	} set;
 	struct {
 		struct {
@@ -337,7 +337,7 @@ struct qmi_nas_get_home_network_response {
 
 struct qmi_nas_set_technology_preference_request {
 	struct {
-		int current : 1;
+		unsigned int current : 1;
 	} set;
 	struct {
 		struct {
@@ -349,8 +349,8 @@ struct qmi_nas_set_technology_preference_request {
 
 struct qmi_nas_get_technology_preference_response {
 	struct {
-		int active : 1;
-		int persistent : 1;
+		unsigned int active : 1;
+		unsigned int persistent : 1;
 	} set;
 	struct {
 		struct {
@@ -365,7 +365,7 @@ struct qmi_nas_get_rf_band_information_response {
 	struct {
 	} set;
 	struct {
-		int list_n;
+		unsigned int list_n;
 		struct {
 			QmiNasRadioInterface radio_interface;
 			QmiNasActiveBand active_band_class;
@@ -376,18 +376,18 @@ struct qmi_nas_get_rf_band_information_response {
 
 struct qmi_nas_set_system_selection_preference_request {
 	struct {
-		int emergency_mode : 1;
-		int mode_preference : 1;
-		int band_preference : 1;
-		int cdma_prl_preference : 1;
-		int roaming_preference : 1;
-		int lte_band_preference : 1;
-		int network_selection_preference : 1;
-		int change_duration : 1;
-		int service_domain_preference : 1;
-		int gsm_wcdma_acquisition_order_preference : 1;
-		int mnc_pds_digit_include_status : 1;
-		int td_scdma_band_preference : 1;
+		unsigned int emergency_mode : 1;
+		unsigned int mode_preference : 1;
+		unsigned int band_preference : 1;
+		unsigned int cdma_prl_preference : 1;
+		unsigned int roaming_preference : 1;
+		unsigned int lte_band_preference : 1;
+		unsigned int network_selection_preference : 1;
+		unsigned int change_duration : 1;
+		unsigned int service_domain_preference : 1;
+		unsigned int gsm_wcdma_acquisition_order_preference : 1;
+		unsigned int mnc_pds_digit_include_status : 1;
+		unsigned int td_scdma_band_preference : 1;
 	} set;
 	struct {
 		bool emergency_mode;
@@ -411,17 +411,17 @@ struct qmi_nas_set_system_selection_preference_request {
 
 struct qmi_nas_get_system_selection_preference_response {
 	struct {
-		int emergency_mode : 1;
-		int mode_preference : 1;
-		int band_preference : 1;
-		int cdma_prl_preference : 1;
-		int roaming_preference : 1;
-		int lte_band_preference : 1;
-		int network_selection_preference : 1;
-		int service_domain_preference : 1;
-		int gsm_wcdma_acquisition_order_preference : 1;
-		int td_scdma_band_preference : 1;
-		int manual_network_selection : 1;
+		unsigned int emergency_mode : 1;
+		unsigned int mode_preference : 1;
+		unsigned int band_preference : 1;
+		unsigned int cdma_prl_preference : 1;
+		unsigned int roaming_preference : 1;
+		unsigned int lte_band_preference : 1;
+		unsigned int network_selection_preference : 1;
+		unsigned int service_domain_preference : 1;
+		unsigned int gsm_wcdma_acquisition_order_preference : 1;
+		unsigned int td_scdma_band_preference : 1;
+		unsigned int manual_network_selection : 1;
 	} set;
 	struct {
 		bool emergency_mode;
@@ -444,30 +444,30 @@ struct qmi_nas_get_system_selection_preference_response {
 
 struct qmi_nas_get_system_info_response {
 	struct {
-		int cdma_service_status : 1;
-		int hdr_service_status : 1;
-		int gsm_service_status : 1;
-		int wcdma_service_status : 1;
-		int lte_service_status : 1;
-		int cdma_system_info : 1;
-		int hdr_system_info : 1;
-		int gsm_system_info : 1;
-		int wcdma_system_info : 1;
-		int lte_system_info : 1;
-		int additional_cdma_system_info : 1;
-		int additional_hdr_system_info : 1;
-		int additional_gsm_system_info : 1;
-		int additional_wcdma_system_info : 1;
-		int additional_lte_system_info : 1;
-		int gsm_call_barring_status : 1;
-		int wcdma_call_barring_status : 1;
-		int lte_voice_support : 1;
-		int gsm_cipher_domain : 1;
-		int wcdma_cipher_domain : 1;
-		int td_scdma_service_status : 1;
-		int td_scdma_system_info : 1;
-		int lte_embms_coverage_info_support : 1;
-		int sim_reject_info : 1;
+		unsigned int cdma_service_status : 1;
+		unsigned int hdr_service_status : 1;
+		unsigned int gsm_service_status : 1;
+		unsigned int wcdma_service_status : 1;
+		unsigned int lte_service_status : 1;
+		unsigned int cdma_system_info : 1;
+		unsigned int hdr_system_info : 1;
+		unsigned int gsm_system_info : 1;
+		unsigned int wcdma_system_info : 1;
+		unsigned int lte_system_info : 1;
+		unsigned int additional_cdma_system_info : 1;
+		unsigned int additional_hdr_system_info : 1;
+		unsigned int additional_gsm_system_info : 1;
+		unsigned int additional_wcdma_system_info : 1;
+		unsigned int additional_lte_system_info : 1;
+		unsigned int gsm_call_barring_status : 1;
+		unsigned int wcdma_call_barring_status : 1;
+		unsigned int lte_voice_support : 1;
+		unsigned int gsm_cipher_domain : 1;
+		unsigned int wcdma_cipher_domain : 1;
+		unsigned int td_scdma_service_status : 1;
+		unsigned int td_scdma_system_info : 1;
+		unsigned int lte_embms_coverage_info_support : 1;
+		unsigned int sim_reject_info : 1;
 	} set;
 	struct {
 		struct {
@@ -688,12 +688,12 @@ struct qmi_nas_get_system_info_response {
 
 struct qmi_nas_get_signal_info_response {
 	struct {
-		int cdma_signal_strength : 1;
-		int hdr_signal_strength : 1;
-		int gsm_signal_strength : 1;
-		int wcdma_signal_strength : 1;
-		int lte_signal_strength : 1;
-		int tdma_signal_strength : 1;
+		unsigned int cdma_signal_strength : 1;
+		unsigned int hdr_signal_strength : 1;
+		unsigned int gsm_signal_strength : 1;
+		unsigned int wcdma_signal_strength : 1;
+		unsigned int lte_signal_strength : 1;
+		unsigned int tdma_signal_strength : 1;
 	} set;
 	struct {
 		struct {
@@ -723,40 +723,40 @@ struct qmi_nas_get_signal_info_response {
 
 struct qmi_nas_config_signal_info_request {
 	struct {
-		int lte_report : 1;
+		unsigned int lte_report : 1;
 	} set;
 	struct {
-		int rssi_threshold_n;
+		unsigned int rssi_threshold_n;
 		int8_t *rssi_threshold;
-		int ecio_threshold_n;
+		unsigned int ecio_threshold_n;
 		int16_t *ecio_threshold;
-		int sinr_threshold_n;
+		unsigned int sinr_threshold_n;
 		uint8_t *sinr_threshold;
-		int lte_snr_threshold_n;
+		unsigned int lte_snr_threshold_n;
 		int16_t *lte_snr_threshold;
-		int io_threshold_n;
+		unsigned int io_threshold_n;
 		int32_t *io_threshold;
-		int rsrq_threshold_n;
+		unsigned int rsrq_threshold_n;
 		int8_t *rsrq_threshold;
-		int rsrp_threshold_n;
+		unsigned int rsrp_threshold_n;
 		int16_t *rsrp_threshold;
 		struct {
 			uint8_t rate;
 			uint8_t average_period;
 		} lte_report;
-		int rscp_threshold_n;
+		unsigned int rscp_threshold_n;
 		int8_t *rscp_threshold;
 	} data;
 };
 
 struct qmi_nas_get_cdma_position_info_response {
 	struct {
-		int cdma_position_info : 1;
+		unsigned int cdma_position_info : 1;
 	} set;
 	struct {
 		struct {
 			int8_t ui_in_idle_mode;
-			int basestations_n;
+			unsigned int basestations_n;
 			struct {
 				QmiNasCdmaPilotType pilot_type;
 				uint16_t system_id;

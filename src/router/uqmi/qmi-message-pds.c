@@ -6,7 +6,7 @@
 #define get_next(_size) ({ void *_buf = &tlv->data[ofs]; ofs += _size; if (ofs > cur_tlv_len) goto error_len; _buf; })
 #define copy_tlv(_val, _size) \
 	do { \
-		int __size = _size; \
+		unsigned int __size = _size; \
 		if (__size > 0) \
 			memcpy(__qmi_alloc_static(__size), _val, __size); \
 	} while (0);
@@ -28,7 +28,7 @@ int qmi_set_pds_reset_request(struct qmi_msg *msg)
 int qmi_parse_pds_reset_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
@@ -40,7 +40,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.nmea_position_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.nmea_position_reporting, 1);
@@ -51,7 +51,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.extended_nmea_position_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.extended_nmea_position_reporting, 1);
@@ -62,7 +62,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.parsed_position_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.parsed_position_reporting, 1);
@@ -73,7 +73,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.external_xtra_data_request_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.external_xtra_data_request_reporting, 1);
@@ -84,7 +84,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.external_time_injection_request_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.external_time_injection_request_reporting, 1);
@@ -95,7 +95,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.external_wifi_position_request_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.external_wifi_position_request_reporting, 1);
@@ -106,7 +106,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.satellite_information_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.satellite_information_reporting, 1);
@@ -117,7 +117,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.vx_network_initiated_request_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.vx_network_initiated_request_reporting, 1);
@@ -128,7 +128,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.supl_network_initiated_prompt_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.supl_network_initiated_prompt_reporting, 1);
@@ -139,7 +139,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.umts_cp_network_initiated_prompt_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.umts_cp_network_initiated_prompt_reporting, 1);
@@ -150,7 +150,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.pds_comm_event_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.pds_comm_event_reporting, 1);
@@ -161,7 +161,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.accelerometer_data_streaming_ready_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.accelerometer_data_streaming_ready_reporting, 1);
@@ -172,7 +172,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.gyro_data_streaming_ready_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.gyro_data_streaming_ready_reporting, 1);
@@ -183,7 +183,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.time_sync_request_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.time_sync_request_reporting, 1);
@@ -194,7 +194,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.position_reliability_indicator_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.position_reliability_indicator_reporting, 1);
@@ -205,7 +205,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.sensor_data_usage_indicator_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.sensor_data_usage_indicator_reporting, 1);
@@ -216,7 +216,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.time_source_information_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.time_source_information_reporting, 1);
@@ -227,7 +227,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.heading_uncertainty_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.heading_uncertainty_reporting, 1);
@@ -238,7 +238,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.nmea_debug_strings_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.nmea_debug_strings_reporting, 1);
@@ -249,7 +249,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 
 	if (req->set.extended_external_xtra_data_request_reporting) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.extended_external_xtra_data_request_reporting, 1);
@@ -264,7 +264,7 @@ int qmi_set_pds_set_event_report_request(struct qmi_msg *msg, struct qmi_pds_set
 int qmi_parse_pds_set_event_report_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
@@ -280,9 +280,10 @@ int qmi_set_pds_get_gps_service_state_request(struct qmi_msg *msg)
 int qmi_parse_pds_get_gps_service_state_response(struct qmi_msg *msg, struct qmi_pds_get_gps_service_state_response *res)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -293,6 +294,10 @@ int qmi_parse_pds_get_gps_service_state_response(struct qmi_msg *msg, struct qmi
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			res->set.state = 1;
 			res->data.state.gps_service_state = *(uint8_t *) get_next(1);
 			res->data.state.tracking_session_state = *(uint8_t *) get_next(1);
@@ -318,7 +323,7 @@ int qmi_set_pds_set_gps_service_state_request(struct qmi_msg *msg, struct qmi_pd
 
 	if (req->set.state) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.state.gps_service_state, 1);
@@ -333,7 +338,7 @@ int qmi_set_pds_set_gps_service_state_request(struct qmi_msg *msg, struct qmi_pd
 int qmi_parse_pds_set_gps_service_state_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
@@ -349,9 +354,10 @@ int qmi_set_pds_get_auto_tracking_state_request(struct qmi_msg *msg)
 int qmi_parse_pds_get_auto_tracking_state_response(struct qmi_msg *msg, struct qmi_pds_get_auto_tracking_state_response *res)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -362,6 +368,10 @@ int qmi_parse_pds_get_auto_tracking_state_response(struct qmi_msg *msg, struct q
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			res->set.state = 1;
 			res->data.state.auto_tracking_state = *(uint8_t *) get_next(1);
 			break;
@@ -386,7 +396,7 @@ int qmi_set_pds_set_auto_tracking_state_request(struct qmi_msg *msg, struct qmi_
 
 	if (req->set.state) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.state.auto_tracking_state, 1);
@@ -401,7 +411,7 @@ int qmi_set_pds_set_auto_tracking_state_request(struct qmi_msg *msg, struct qmi_
 int qmi_parse_pds_set_auto_tracking_state_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
