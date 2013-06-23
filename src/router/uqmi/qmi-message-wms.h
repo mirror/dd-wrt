@@ -1,6 +1,6 @@
 struct qmi_wms_set_event_report_request {
 	struct {
-		int new_mt_message_indicator : 1;
+		unsigned int new_mt_message_indicator : 1;
 	} set;
 	struct {
 		struct {
@@ -11,16 +11,16 @@ struct qmi_wms_set_event_report_request {
 
 struct qmi_wms_raw_send_request {
 	struct {
-		int raw_message_data : 1;
-		int cdma_force_on_dc : 1;
-		int cdma_follow_on_dc : 1;
-		int gsm_wcdma_link_timer : 1;
-		int sms_on_ims : 1;
+		unsigned int raw_message_data : 1;
+		unsigned int cdma_force_on_dc : 1;
+		unsigned int cdma_follow_on_dc : 1;
+		unsigned int gsm_wcdma_link_timer : 1;
+		unsigned int sms_on_ims : 1;
 	} set;
 	struct {
 		struct {
 			QmiWmsMessageFormat format;
-			int raw_data_n;
+			unsigned int raw_data_n;
 			uint8_t *raw_data;
 		} raw_message_data;
 		struct {
@@ -37,11 +37,11 @@ struct qmi_wms_raw_send_request {
 
 struct qmi_wms_raw_send_response {
 	struct {
-		int message_id : 1;
-		int cdma_cause_code : 1;
-		int cdma_error_class : 1;
-		int gsm_wcdma_cause_info : 1;
-		int message_delivery_failure_type : 1;
+		unsigned int message_id : 1;
+		unsigned int cdma_cause_code : 1;
+		unsigned int cdma_error_class : 1;
+		unsigned int gsm_wcdma_cause_info : 1;
+		unsigned int message_delivery_failure_type : 1;
 	} set;
 	struct {
 		uint16_t message_id;
@@ -57,13 +57,13 @@ struct qmi_wms_raw_send_response {
 
 struct qmi_wms_raw_write_request {
 	struct {
-		int raw_message_data : 1;
+		unsigned int raw_message_data : 1;
 	} set;
 	struct {
 		struct {
 			QmiWmsStorageType storage_type;
 			QmiWmsMessageFormat format;
-			int raw_data_n;
+			unsigned int raw_data_n;
 			uint8_t *raw_data;
 		} raw_message_data;
 	} data;
@@ -71,7 +71,7 @@ struct qmi_wms_raw_write_request {
 
 struct qmi_wms_raw_write_response {
 	struct {
-		int memory_index : 1;
+		unsigned int memory_index : 1;
 	} set;
 	struct {
 		uint32_t memory_index;
@@ -80,9 +80,9 @@ struct qmi_wms_raw_write_response {
 
 struct qmi_wms_raw_read_request {
 	struct {
-		int message_memory_storage_id : 1;
-		int message_mode : 1;
-		int sms_on_ims : 1;
+		unsigned int message_memory_storage_id : 1;
+		unsigned int message_mode : 1;
+		unsigned int sms_on_ims : 1;
 	} set;
 	struct {
 		struct {
@@ -96,13 +96,13 @@ struct qmi_wms_raw_read_request {
 
 struct qmi_wms_raw_read_response {
 	struct {
-		int raw_message_data : 1;
+		unsigned int raw_message_data : 1;
 	} set;
 	struct {
 		struct {
 			QmiWmsMessageTagType message_tag;
 			QmiWmsMessageFormat format;
-			int raw_data_n;
+			unsigned int raw_data_n;
 			uint8_t *raw_data;
 		} raw_message_data;
 	} data;
@@ -110,8 +110,8 @@ struct qmi_wms_raw_read_response {
 
 struct qmi_wms_modify_tag_request {
 	struct {
-		int message_tag : 1;
-		int message_mode : 1;
+		unsigned int message_tag : 1;
+		unsigned int message_mode : 1;
 	} set;
 	struct {
 		struct {
@@ -125,10 +125,10 @@ struct qmi_wms_modify_tag_request {
 
 struct qmi_wms_delete_request {
 	struct {
-		int memory_storage : 1;
-		int memory_index : 1;
-		int message_tag : 1;
-		int message_mode : 1;
+		unsigned int memory_storage : 1;
+		unsigned int memory_index : 1;
+		unsigned int message_tag : 1;
+		unsigned int message_mode : 1;
 	} set;
 	struct {
 		QmiWmsStorageType memory_storage;
@@ -140,7 +140,7 @@ struct qmi_wms_delete_request {
 
 struct qmi_wms_get_message_protocol_response {
 	struct {
-		int message_protocol : 1;
+		unsigned int message_protocol : 1;
 	} set;
 	struct {
 		QmiWmsMessageProtocol message_protocol;
@@ -149,9 +149,9 @@ struct qmi_wms_get_message_protocol_response {
 
 struct qmi_wms_list_messages_request {
 	struct {
-		int storage_type : 1;
-		int message_tag : 1;
-		int message_mode : 1;
+		unsigned int storage_type : 1;
+		unsigned int message_tag : 1;
+		unsigned int message_mode : 1;
 	} set;
 	struct {
 		QmiWmsStorageType storage_type;
@@ -164,7 +164,7 @@ struct qmi_wms_list_messages_response {
 	struct {
 	} set;
 	struct {
-		int message_list_n;
+		unsigned int message_list_n;
 		struct {
 			uint32_t memory_index;
 			QmiWmsMessageTagType message_tag;
@@ -174,10 +174,10 @@ struct qmi_wms_list_messages_response {
 
 struct qmi_wms_set_routes_request {
 	struct {
-		int transfer_status_report : 1;
+		unsigned int transfer_status_report : 1;
 	} set;
 	struct {
-		int route_list_n;
+		unsigned int route_list_n;
 		struct {
 			QmiWmsMessageType message_type;
 			QmiWmsMessageClass message_class;
@@ -190,10 +190,10 @@ struct qmi_wms_set_routes_request {
 
 struct qmi_wms_get_routes_response {
 	struct {
-		int transfer_status_report : 1;
+		unsigned int transfer_status_report : 1;
 	} set;
 	struct {
-		int route_list_n;
+		unsigned int route_list_n;
 		struct {
 			QmiWmsMessageType message_type;
 			QmiWmsMessageClass message_class;
@@ -206,8 +206,8 @@ struct qmi_wms_get_routes_response {
 
 struct qmi_wms_send_from_memory_storage_request {
 	struct {
-		int information : 1;
-		int sms_on_ims : 1;
+		unsigned int information : 1;
+		unsigned int sms_on_ims : 1;
 	} set;
 	struct {
 		struct {
@@ -221,11 +221,11 @@ struct qmi_wms_send_from_memory_storage_request {
 
 struct qmi_wms_send_from_memory_storage_response {
 	struct {
-		int message_id : 1;
-		int cdma_cause_code : 1;
-		int cdma_error_class : 1;
-		int gsm_wcdma_cause_info : 1;
-		int message_delivery_failure_type : 1;
+		unsigned int message_id : 1;
+		unsigned int cdma_cause_code : 1;
+		unsigned int cdma_error_class : 1;
+		unsigned int gsm_wcdma_cause_info : 1;
+		unsigned int message_delivery_failure_type : 1;
 	} set;
 	struct {
 		uint16_t message_id;
