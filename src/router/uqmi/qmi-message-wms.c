@@ -6,7 +6,7 @@
 #define get_next(_size) ({ void *_buf = &tlv->data[ofs]; ofs += _size; if (ofs > cur_tlv_len) goto error_len; _buf; })
 #define copy_tlv(_val, _size) \
 	do { \
-		int __size = _size; \
+		unsigned int __size = _size; \
 		if (__size > 0) \
 			memcpy(__qmi_alloc_static(__size), _val, __size); \
 	} while (0);
@@ -28,7 +28,7 @@ int qmi_set_wms_reset_request(struct qmi_msg *msg)
 int qmi_parse_wms_reset_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
@@ -40,7 +40,7 @@ int qmi_set_wms_set_event_report_request(struct qmi_msg *msg, struct qmi_wms_set
 
 	if (req->set.new_mt_message_indicator) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.new_mt_message_indicator.report, 1);
@@ -55,7 +55,7 @@ int qmi_set_wms_set_event_report_request(struct qmi_msg *msg, struct qmi_wms_set
 int qmi_parse_wms_set_event_report_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
@@ -67,8 +67,8 @@ int qmi_set_wms_raw_send_request(struct qmi_msg *msg, struct qmi_wms_raw_send_re
 
 	if (req->set.raw_message_data) {
 		void *buf;
-		int ofs;
-		int i;
+		unsigned int ofs;
+		unsigned int i;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.raw_message_data.format, 1);
@@ -83,7 +83,7 @@ int qmi_set_wms_raw_send_request(struct qmi_msg *msg, struct qmi_wms_raw_send_re
 
 	if (req->set.cdma_force_on_dc) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.cdma_force_on_dc.force, 1);
@@ -95,7 +95,7 @@ int qmi_set_wms_raw_send_request(struct qmi_msg *msg, struct qmi_wms_raw_send_re
 
 	if (req->set.cdma_follow_on_dc) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.cdma_follow_on_dc.follow, 1);
@@ -106,7 +106,7 @@ int qmi_set_wms_raw_send_request(struct qmi_msg *msg, struct qmi_wms_raw_send_re
 
 	if (req->set.gsm_wcdma_link_timer) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.gsm_wcdma_link_timer, 1);
@@ -117,7 +117,7 @@ int qmi_set_wms_raw_send_request(struct qmi_msg *msg, struct qmi_wms_raw_send_re
 
 	if (req->set.sms_on_ims) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.sms_on_ims, 1);
@@ -132,9 +132,10 @@ int qmi_set_wms_raw_send_request(struct qmi_msg *msg, struct qmi_wms_raw_send_re
 int qmi_parse_wms_raw_send_response(struct qmi_msg *msg, struct qmi_wms_raw_send_response *res)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -145,24 +146,44 @@ int qmi_parse_wms_raw_send_response(struct qmi_msg *msg, struct qmi_wms_raw_send
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			qmi_set(res, message_id, le16_to_cpu(*(uint16_t *) get_next(2)));
 			break;
 
 		case 0x10:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
 			qmi_set(res, cdma_cause_code, le16_to_cpu(*(uint16_t *) get_next(2)));
 			break;
 
 		case 0x11:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
 			qmi_set(res, cdma_error_class, *(uint8_t *) get_next(1));
 			break;
 
 		case 0x12:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
 			res->set.gsm_wcdma_cause_info = 1;
 			res->data.gsm_wcdma_cause_info.rp_cause = le16_to_cpu(*(uint16_t *) get_next(2));
 			res->data.gsm_wcdma_cause_info.tp_cause = *(uint8_t *) get_next(1);
 			break;
 
 		case 0x13:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
 			qmi_set(res, message_delivery_failure_type, *(uint8_t *) get_next(1));
 			break;
 
@@ -186,8 +207,8 @@ int qmi_set_wms_raw_write_request(struct qmi_msg *msg, struct qmi_wms_raw_write_
 
 	if (req->set.raw_message_data) {
 		void *buf;
-		int ofs;
-		int i;
+		unsigned int ofs;
+		unsigned int i;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.raw_message_data.storage_type, 1);
@@ -207,9 +228,10 @@ int qmi_set_wms_raw_write_request(struct qmi_msg *msg, struct qmi_wms_raw_write_
 int qmi_parse_wms_raw_write_response(struct qmi_msg *msg, struct qmi_wms_raw_write_response *res)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -220,6 +242,10 @@ int qmi_parse_wms_raw_write_response(struct qmi_msg *msg, struct qmi_wms_raw_wri
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			qmi_set(res, memory_index, le32_to_cpu(*(uint32_t *) get_next(4)));
 			break;
 
@@ -243,7 +269,7 @@ int qmi_set_wms_raw_read_request(struct qmi_msg *msg, struct qmi_wms_raw_read_re
 
 	if (req->set.message_memory_storage_id) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.message_memory_storage_id.storage_type, 1);
@@ -255,7 +281,7 @@ int qmi_set_wms_raw_read_request(struct qmi_msg *msg, struct qmi_wms_raw_read_re
 
 	if (req->set.message_mode) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.message_mode, 1);
@@ -266,7 +292,7 @@ int qmi_set_wms_raw_read_request(struct qmi_msg *msg, struct qmi_wms_raw_read_re
 
 	if (req->set.sms_on_ims) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.sms_on_ims, 1);
@@ -281,9 +307,10 @@ int qmi_set_wms_raw_read_request(struct qmi_msg *msg, struct qmi_wms_raw_read_re
 int qmi_parse_wms_raw_read_response(struct qmi_msg *msg, struct qmi_wms_raw_read_response *res)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -294,11 +321,15 @@ int qmi_parse_wms_raw_read_response(struct qmi_msg *msg, struct qmi_wms_raw_read
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			res->set.raw_message_data = 1;
 			res->data.raw_message_data.message_tag = *(uint8_t *) get_next(1);
 			res->data.raw_message_data.format = *(uint8_t *) get_next(1);
 			i = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.raw_message_data.raw_data = __qmi_alloc_static(i);
+			res->data.raw_message_data.raw_data = __qmi_alloc_static(i * sizeof(res->data.raw_message_data.raw_data[0]));
 			while(i-- > 0) {
 				res->data.raw_message_data.raw_data[res->data.raw_message_data.raw_data_n] = *(uint8_t *) get_next(1);
 				res->data.raw_message_data.raw_data_n++;
@@ -325,7 +356,7 @@ int qmi_set_wms_modify_tag_request(struct qmi_msg *msg, struct qmi_wms_modify_ta
 
 	if (req->set.message_tag) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.message_tag.storage_type, 1);
@@ -338,7 +369,7 @@ int qmi_set_wms_modify_tag_request(struct qmi_msg *msg, struct qmi_wms_modify_ta
 
 	if (req->set.message_mode) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.message_mode, 1);
@@ -353,7 +384,7 @@ int qmi_set_wms_modify_tag_request(struct qmi_msg *msg, struct qmi_wms_modify_ta
 int qmi_parse_wms_modify_tag_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
@@ -365,7 +396,7 @@ int qmi_set_wms_delete_request(struct qmi_msg *msg, struct qmi_wms_delete_reques
 
 	if (req->set.memory_storage) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.memory_storage, 1);
@@ -376,7 +407,7 @@ int qmi_set_wms_delete_request(struct qmi_msg *msg, struct qmi_wms_delete_reques
 
 	if (req->set.memory_index) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint32_t, cpu_to_le32(req->data.memory_index), 4);
@@ -387,7 +418,7 @@ int qmi_set_wms_delete_request(struct qmi_msg *msg, struct qmi_wms_delete_reques
 
 	if (req->set.message_tag) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.message_tag, 1);
@@ -398,7 +429,7 @@ int qmi_set_wms_delete_request(struct qmi_msg *msg, struct qmi_wms_delete_reques
 
 	if (req->set.message_mode) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.message_mode, 1);
@@ -413,7 +444,7 @@ int qmi_set_wms_delete_request(struct qmi_msg *msg, struct qmi_wms_delete_reques
 int qmi_parse_wms_delete_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
@@ -429,9 +460,10 @@ int qmi_set_wms_get_message_protocol_request(struct qmi_msg *msg)
 int qmi_parse_wms_get_message_protocol_response(struct qmi_msg *msg, struct qmi_wms_get_message_protocol_response *res)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -442,6 +474,10 @@ int qmi_parse_wms_get_message_protocol_response(struct qmi_msg *msg, struct qmi_
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			qmi_set(res, message_protocol, *(uint8_t *) get_next(1));
 			break;
 
@@ -465,7 +501,7 @@ int qmi_set_wms_list_messages_request(struct qmi_msg *msg, struct qmi_wms_list_m
 
 	if (req->set.storage_type) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.storage_type, 1);
@@ -476,7 +512,7 @@ int qmi_set_wms_list_messages_request(struct qmi_msg *msg, struct qmi_wms_list_m
 
 	if (req->set.message_tag) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.message_tag, 1);
@@ -487,7 +523,7 @@ int qmi_set_wms_list_messages_request(struct qmi_msg *msg, struct qmi_wms_list_m
 
 	if (req->set.message_mode) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.message_mode, 1);
@@ -502,9 +538,10 @@ int qmi_set_wms_list_messages_request(struct qmi_msg *msg, struct qmi_wms_list_m
 int qmi_parse_wms_list_messages_response(struct qmi_msg *msg, struct qmi_wms_list_messages_response *res)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -515,8 +552,12 @@ int qmi_parse_wms_list_messages_response(struct qmi_msg *msg, struct qmi_wms_lis
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			i = le32_to_cpu(*(uint32_t *) get_next(4));
-			res->data.message_list = __qmi_alloc_static(i);
+			res->data.message_list = __qmi_alloc_static(i * sizeof(res->data.message_list[0]));
 			while(i-- > 0) {
 				res->data.message_list[res->data.message_list_n].memory_index = le32_to_cpu(*(uint32_t *) get_next(4));
 				res->data.message_list[res->data.message_list_n].message_tag = *(uint8_t *) get_next(1);
@@ -545,8 +586,8 @@ int qmi_set_wms_set_routes_request(struct qmi_msg *msg, struct qmi_wms_set_route
 
 	if (req->data.route_list) {
 		void *buf;
-		int ofs;
-		int i;
+		unsigned int ofs;
+		unsigned int i;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint16_t, cpu_to_le16(req->data.route_list_n), 2);
@@ -563,7 +604,7 @@ int qmi_set_wms_set_routes_request(struct qmi_msg *msg, struct qmi_wms_set_route
 
 	if (req->set.transfer_status_report) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.transfer_status_report, 1);
@@ -578,7 +619,7 @@ int qmi_set_wms_set_routes_request(struct qmi_msg *msg, struct qmi_wms_set_route
 int qmi_parse_wms_set_routes_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
@@ -594,9 +635,10 @@ int qmi_set_wms_get_routes_request(struct qmi_msg *msg)
 int qmi_parse_wms_get_routes_response(struct qmi_msg *msg, struct qmi_wms_get_routes_response *res)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -607,8 +649,12 @@ int qmi_parse_wms_get_routes_response(struct qmi_msg *msg, struct qmi_wms_get_ro
 
 		switch(tlv->type) {
 		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			i = le16_to_cpu(*(uint16_t *) get_next(2));
-			res->data.route_list = __qmi_alloc_static(i);
+			res->data.route_list = __qmi_alloc_static(i * sizeof(res->data.route_list[0]));
 			while(i-- > 0) {
 				res->data.route_list[res->data.route_list_n].message_type = *(uint8_t *) get_next(1);
 				res->data.route_list[res->data.route_list_n].message_class = *(uint8_t *) get_next(1);
@@ -620,6 +666,10 @@ int qmi_parse_wms_get_routes_response(struct qmi_msg *msg, struct qmi_wms_get_ro
 			break;
 
 		case 0x10:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
 			qmi_set(res, transfer_status_report, *(uint8_t *) get_next(1));
 			break;
 
@@ -643,7 +693,7 @@ int qmi_set_wms_send_from_memory_storage_request(struct qmi_msg *msg, struct qmi
 
 	if (req->set.information) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.information.storage_type, 1);
@@ -656,7 +706,7 @@ int qmi_set_wms_send_from_memory_storage_request(struct qmi_msg *msg, struct qmi
 
 	if (req->set.sms_on_ims) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 
 		__qmi_alloc_reset();
 		put_tlv_var(uint8_t, req->data.sms_on_ims, 1);
@@ -671,9 +721,10 @@ int qmi_set_wms_send_from_memory_storage_request(struct qmi_msg *msg, struct qmi
 int qmi_parse_wms_send_from_memory_storage_response(struct qmi_msg *msg, struct qmi_wms_send_from_memory_storage_response *res)
 {
 	void *tlv_buf = &msg->svc.tlv;
-	int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
 	struct tlv *tlv;
 	int i;
+	uint32_t found[1] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -684,24 +735,44 @@ int qmi_parse_wms_send_from_memory_storage_response(struct qmi_msg *msg, struct 
 
 		switch(tlv->type) {
 		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
 			qmi_set(res, message_id, le16_to_cpu(*(uint16_t *) get_next(2)));
 			break;
 
 		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
 			qmi_set(res, cdma_cause_code, le16_to_cpu(*(uint16_t *) get_next(2)));
 			break;
 
 		case 0x12:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
 			qmi_set(res, cdma_error_class, *(uint8_t *) get_next(1));
 			break;
 
 		case 0x13:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
 			res->set.gsm_wcdma_cause_info = 1;
 			res->data.gsm_wcdma_cause_info.rp_cause = le16_to_cpu(*(uint16_t *) get_next(2));
 			res->data.gsm_wcdma_cause_info.tp_cause = *(uint8_t *) get_next(1);
 			break;
 
 		case 0x14:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
 			qmi_set(res, message_delivery_failure_type, *(uint8_t *) get_next(1));
 			break;
 

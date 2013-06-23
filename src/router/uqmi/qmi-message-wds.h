@@ -1,6 +1,6 @@
 struct qmi_wds_abort_request {
 	struct {
-		int transaction_id : 1;
+		unsigned int transaction_id : 1;
 	} set;
 	struct {
 		uint16_t transaction_id;
@@ -9,19 +9,19 @@ struct qmi_wds_abort_request {
 
 struct qmi_wds_start_network_request {
 	struct {
-		int primary_dns_address_preference : 1;
-		int secondary_dns_address_preference : 1;
-		int primary_nbns_address_preference : 1;
-		int secondary_nbns_address_preference : 1;
-		int ipv4_address_preference : 1;
-		int authentication_preference : 1;
-		int ip_family_preference : 1;
-		int technology_preference : 1;
-		int profile_index_3gpp : 1;
-		int profile_index_3gpp2 : 1;
-		int enable_autoconnect : 1;
-		int extended_technology_preference : 1;
-		int call_type : 1;
+		unsigned int primary_dns_address_preference : 1;
+		unsigned int secondary_dns_address_preference : 1;
+		unsigned int primary_nbns_address_preference : 1;
+		unsigned int secondary_nbns_address_preference : 1;
+		unsigned int ipv4_address_preference : 1;
+		unsigned int authentication_preference : 1;
+		unsigned int ip_family_preference : 1;
+		unsigned int technology_preference : 1;
+		unsigned int profile_index_3gpp : 1;
+		unsigned int profile_index_3gpp2 : 1;
+		unsigned int enable_autoconnect : 1;
+		unsigned int extended_technology_preference : 1;
+		unsigned int call_type : 1;
 	} set;
 	struct {
 		uint32_t primary_dns_address_preference;
@@ -45,9 +45,9 @@ struct qmi_wds_start_network_request {
 
 struct qmi_wds_start_network_response {
 	struct {
-		int packet_data_handle : 1;
-		int call_end_reason : 1;
-		int verbose_call_end_reason : 1;
+		unsigned int packet_data_handle : 1;
+		unsigned int call_end_reason : 1;
+		unsigned int verbose_call_end_reason : 1;
 	} set;
 	struct {
 		uint32_t packet_data_handle;
@@ -61,8 +61,8 @@ struct qmi_wds_start_network_response {
 
 struct qmi_wds_stop_network_request {
 	struct {
-		int packet_data_handle : 1;
-		int disable_autoconnect : 1;
+		unsigned int packet_data_handle : 1;
+		unsigned int disable_autoconnect : 1;
 	} set;
 	struct {
 		uint32_t packet_data_handle;
@@ -72,7 +72,7 @@ struct qmi_wds_stop_network_request {
 
 struct qmi_wds_get_packet_service_status_response {
 	struct {
-		int connection_status : 1;
+		unsigned int connection_status : 1;
 	} set;
 	struct {
 		QmiWdsConnectionStatus connection_status;
@@ -81,7 +81,7 @@ struct qmi_wds_get_packet_service_status_response {
 
 struct qmi_wds_get_current_settings_request {
 	struct {
-		int requested_settings : 1;
+		unsigned int requested_settings : 1;
 	} set;
 	struct {
 		QmiWdsGetCurrentSettingsRequestedSettings requested_settings;
@@ -90,24 +90,24 @@ struct qmi_wds_get_current_settings_request {
 
 struct qmi_wds_get_current_settings_response {
 	struct {
-		int pdp_type : 1;
-		int primary_ipv4_dns_address : 1;
-		int secondary_ipv4_dns_address : 1;
-		int gprs_granted_qos : 1;
-		int authentication : 1;
-		int ipv4_address : 1;
-		int profile_id : 1;
-		int ipv4_gateway_address : 1;
-		int ipv4_gateway_subnet_mask : 1;
-		int pcscf_address_using_pco : 1;
-		int ipv6_address : 1;
-		int ipv6_gateway_address : 1;
-		int ipv6_primary_dns_address : 1;
-		int ipv6_secondary_dns_address : 1;
-		int mtu : 1;
-		int ip_family : 1;
-		int imcn_flag : 1;
-		int extended_technology_preference : 1;
+		unsigned int pdp_type : 1;
+		unsigned int primary_ipv4_dns_address : 1;
+		unsigned int secondary_ipv4_dns_address : 1;
+		unsigned int gprs_granted_qos : 1;
+		unsigned int authentication : 1;
+		unsigned int ipv4_address : 1;
+		unsigned int profile_id : 1;
+		unsigned int ipv4_gateway_address : 1;
+		unsigned int ipv4_gateway_subnet_mask : 1;
+		unsigned int pcscf_address_using_pco : 1;
+		unsigned int ipv6_address : 1;
+		unsigned int ipv6_gateway_address : 1;
+		unsigned int ipv6_primary_dns_address : 1;
+		unsigned int ipv6_secondary_dns_address : 1;
+		unsigned int mtu : 1;
+		unsigned int ip_family : 1;
+		unsigned int imcn_flag : 1;
+		unsigned int extended_technology_preference : 1;
 	} set;
 	struct {
 		char *profile_name;
@@ -132,9 +132,9 @@ struct qmi_wds_get_current_settings_response {
 		uint32_t ipv4_gateway_address;
 		uint32_t ipv4_gateway_subnet_mask;
 		uint8_t pcscf_address_using_pco;
-		int pcscf_server_address_list_n;
+		unsigned int pcscf_server_address_list_n;
 		uint32_t *pcscf_server_address_list;
-		int pcscf_domain_name_list_n;
+		unsigned int pcscf_domain_name_list_n;
 		char **pcscf_domain_name_list;
 		struct {
 			uint16_t address[8];
@@ -147,7 +147,7 @@ struct qmi_wds_get_current_settings_response {
 		uint16_t ipv6_primary_dns_address[8];
 		uint16_t ipv6_secondary_dns_address[8];
 		uint32_t mtu;
-		int domain_name_list_n;
+		unsigned int domain_name_list_n;
 		char **domain_name_list;
 		QmiWdsIpFamily ip_family;
 		int8_t imcn_flag;
@@ -157,8 +157,8 @@ struct qmi_wds_get_current_settings_response {
 
 struct qmi_wds_get_data_bearer_technology_response {
 	struct {
-		int current : 1;
-		int last : 1;
+		unsigned int current : 1;
+		unsigned int last : 1;
 	} set;
 	struct {
 		QmiWdsDataBearerTechnology current;
@@ -168,8 +168,8 @@ struct qmi_wds_get_data_bearer_technology_response {
 
 struct qmi_wds_get_current_data_bearer_technology_response {
 	struct {
-		int current : 1;
-		int last : 1;
+		unsigned int current : 1;
+		unsigned int last : 1;
 	} set;
 	struct {
 		struct {
@@ -187,7 +187,7 @@ struct qmi_wds_get_current_data_bearer_technology_response {
 
 struct qmi_wds_set_ip_family_request {
 	struct {
-		int preference : 1;
+		unsigned int preference : 1;
 	} set;
 	struct {
 		QmiWdsIpFamily preference;

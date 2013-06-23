@@ -1,25 +1,25 @@
 struct qmi_pds_set_event_report_request {
 	struct {
-		int nmea_position_reporting : 1;
-		int extended_nmea_position_reporting : 1;
-		int parsed_position_reporting : 1;
-		int external_xtra_data_request_reporting : 1;
-		int external_time_injection_request_reporting : 1;
-		int external_wifi_position_request_reporting : 1;
-		int satellite_information_reporting : 1;
-		int vx_network_initiated_request_reporting : 1;
-		int supl_network_initiated_prompt_reporting : 1;
-		int umts_cp_network_initiated_prompt_reporting : 1;
-		int pds_comm_event_reporting : 1;
-		int accelerometer_data_streaming_ready_reporting : 1;
-		int gyro_data_streaming_ready_reporting : 1;
-		int time_sync_request_reporting : 1;
-		int position_reliability_indicator_reporting : 1;
-		int sensor_data_usage_indicator_reporting : 1;
-		int time_source_information_reporting : 1;
-		int heading_uncertainty_reporting : 1;
-		int nmea_debug_strings_reporting : 1;
-		int extended_external_xtra_data_request_reporting : 1;
+		unsigned int nmea_position_reporting : 1;
+		unsigned int extended_nmea_position_reporting : 1;
+		unsigned int parsed_position_reporting : 1;
+		unsigned int external_xtra_data_request_reporting : 1;
+		unsigned int external_time_injection_request_reporting : 1;
+		unsigned int external_wifi_position_request_reporting : 1;
+		unsigned int satellite_information_reporting : 1;
+		unsigned int vx_network_initiated_request_reporting : 1;
+		unsigned int supl_network_initiated_prompt_reporting : 1;
+		unsigned int umts_cp_network_initiated_prompt_reporting : 1;
+		unsigned int pds_comm_event_reporting : 1;
+		unsigned int accelerometer_data_streaming_ready_reporting : 1;
+		unsigned int gyro_data_streaming_ready_reporting : 1;
+		unsigned int time_sync_request_reporting : 1;
+		unsigned int position_reliability_indicator_reporting : 1;
+		unsigned int sensor_data_usage_indicator_reporting : 1;
+		unsigned int time_source_information_reporting : 1;
+		unsigned int heading_uncertainty_reporting : 1;
+		unsigned int nmea_debug_strings_reporting : 1;
+		unsigned int extended_external_xtra_data_request_reporting : 1;
 	} set;
 	struct {
 		bool nmea_position_reporting;
@@ -47,7 +47,7 @@ struct qmi_pds_set_event_report_request {
 
 struct qmi_pds_get_gps_service_state_response {
 	struct {
-		int state : 1;
+		unsigned int state : 1;
 	} set;
 	struct {
 		struct {
@@ -59,7 +59,7 @@ struct qmi_pds_get_gps_service_state_response {
 
 struct qmi_pds_set_gps_service_state_request {
 	struct {
-		int state : 1;
+		unsigned int state : 1;
 	} set;
 	struct {
 		struct {
@@ -70,7 +70,7 @@ struct qmi_pds_set_gps_service_state_request {
 
 struct qmi_pds_get_auto_tracking_state_response {
 	struct {
-		int state : 1;
+		unsigned int state : 1;
 	} set;
 	struct {
 		struct {
@@ -81,7 +81,7 @@ struct qmi_pds_get_auto_tracking_state_response {
 
 struct qmi_pds_set_auto_tracking_state_request {
 	struct {
-		int state : 1;
+		unsigned int state : 1;
 	} set;
 	struct {
 		struct {
