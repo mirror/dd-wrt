@@ -104,7 +104,7 @@ int guessbootsize(void *offset, unsigned int maxscan)
 	maxscan -= 0x20000;
 	maxscan /= 4;
 	zcom=0;
-	if (!strncmp((char *)(ofsb + 0x29da), "myloram.bin", 11)) {
+	if (!strncmp((char *)(ofsb + 0x29da), "myloram.bin", 11) || !strncmp((char *)(ofsb + 0x29ba), "myloram.bin", 11)) {
 		printk(KERN_EMERG "compex WP72E detected\n");
 		nocalibration=1;
 		return 0x30000;	// compex, lzma image
