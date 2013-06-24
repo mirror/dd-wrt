@@ -2169,6 +2169,10 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifdef HAVE_LANGUAGE
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
 #endif
+// temp
+#ifdef HAVE_FREECWMP
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"lang_pack/freecwmp_english.js\"></script>\n");
+#endif
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n", style);
 	websWrite(wp, "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n", style);
 
