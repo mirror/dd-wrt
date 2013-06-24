@@ -84,6 +84,7 @@ obj-$(CONFIG_MILKFISH) += milkfish
 obj-$(CONFIG_MC) += glib20 mc
 obj-$(CONFIG_NOCAT) += nocat
 obj-$(CONFIG_RTPPROXY) += rtpproxy
+obj-$(CONFIG_ZABBIX) += zabbix
 obj-$(CONFIG_SAMBA) += samba
 obj-$(CONFIG_SAMBA3) += samba3
 obj-$(CONFIG_SAMBA3) += jansson
