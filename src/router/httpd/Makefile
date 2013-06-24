@@ -219,6 +219,10 @@ CFLAGS += -DHAVE_GUESTPORT
 endif
 endif
 
+ifeq ($(CONFIG_FREECWMP),y)
+CFLAGS += -DHAVE_FREECWMP
+endif
+
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
 OBJS += upgrade_rb500.o
