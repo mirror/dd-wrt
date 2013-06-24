@@ -178,6 +178,7 @@ include rules/iftop.mk
 include rules/iptraf.mk
 include rules/squid.mk
 include rules/proftpd.mk
+include rules/zabbix.mk
 include rules/ippd.mk
 include rules/pcmcia.mk
 include rules/gcom.mk
