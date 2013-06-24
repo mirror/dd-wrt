@@ -914,6 +914,9 @@ void setRouter(char *name)
 #else
 	nvram_set(NVROUTER, "Excellent");
 #endif
+#elif HAVE_SANSFIL
+	nvram_set("DD_BOARD", "SANSFIL");
+	nvram_set("DD_BOARD2", name);
 #elif HAVE_ESPOD
 	if (name)
 		nvram_set("DD_BOARD2", name);
