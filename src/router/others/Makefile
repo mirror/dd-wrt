@@ -15,6 +15,9 @@ endif
 ifdef CONFIG_TRIMAX
  MOTD_ADD:=.m2m
 endif
+ifdef CONFIG_SANSFIL
+ MOTD_ADD:=.sansfil
+endif
 install:
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/init.d
