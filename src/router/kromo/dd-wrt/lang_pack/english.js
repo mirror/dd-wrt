@@ -747,6 +747,7 @@ nas.dlna_srv="MiniDLNA";
 nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
 
+
 // ** Hotspot.asp **//
 var hotspot=new Object();
 hotspot.titl="Hotspot";
@@ -1563,6 +1564,11 @@ service.samba3_user_shares="Access Shares";
 service.dlna_type_audio="Audio";
 service.dlna_type_video="Video";
 service.dlna_type_images="Images";
+
+// Zabbix
+service.zabbix_legend="Zabbix";
+service.zabbix_cl="Client";
+service.zabbix_serverip="Zabbix Server IP";
 
 // ** eop-tunnel.asp **//
 var eoip=new Object();
