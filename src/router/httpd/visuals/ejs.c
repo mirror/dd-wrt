@@ -3824,7 +3824,9 @@ void ej_tf_upnp(webs_t wp, int argc, char_t ** argv)
 void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_BUFFALO
+#ifndef HAVE_FREECWMP
 	show_onlineupdates(wp, argc, argv);
+#endif
 #endif
 } extern char *request_url;
 
