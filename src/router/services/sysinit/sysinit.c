@@ -1985,6 +1985,7 @@ void start_restore_defaults(void)
 	case ROUTER_BUFFALO_WZR600DHP2:
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR1750:
+	case ROUTER_DLINK_DIR868:
 	case ROUTER_ASUS_AC56U:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
 		    || !nvram_get("vlan2ports")
