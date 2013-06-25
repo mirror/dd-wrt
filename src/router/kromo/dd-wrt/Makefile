@@ -632,6 +632,10 @@ endif
 ifeq ($(CONFIG_ALFA_BRANDING2),y)
 	cp -f alfa/logo22.png $(INSTALLDIR)/www/style/xirian/logo.png
 endif
+ifeq ($(CONFIG_ANTAIRA),y)
+	cp -f antaira/logo.png $(INSTALLDIR)/www/style
+	cp -f antaira/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+endif
 
 ifneq ($(CONFIG_USB),y)
 	rm -f $(INSTALLDIR)/www/USB.asp
