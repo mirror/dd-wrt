@@ -646,11 +646,11 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 	romfsb = (struct romfs_super_block *) buf;
 	cramfsb = (struct cramfs_super *) buf;
 	squashfsb = (void *) buf;
-	squashfsb2 = (void *) buf + 0x90;
+	squashfsb2 = (void *) &buf[0x60];
 	trx = (struct trx_header *) buf;
 
 	/* Look at every block boundary till 16MB; higher space is reserved for application data. */
-	blocksize = mtd->erasesize;
+	blocksize = 65536;
 	printk("lookup_nflash_rootfs_offset: offset = 0x%x\n", offset);
 	for (off = offset; off < offset + size; off += blocksize) {
 		mask = blocksize - 1;
@@ -692,7 +692,7 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 			       mtd->name, off / blocksize);
 			break;
 		}
-
+		
 		if (squashfsb->s_magic == SQUASHFS_MAGIC) {
 			rootfssize = squashfsb->bytes_used;
 			printk(KERN_NOTICE
@@ -700,10 +700,9 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 			       mtd->name, off / blocksize);
 			break;
 		}
-
 		if (squashfsb2->s_magic == SQUASHFS_MAGIC) {
 			rootfssize = squashfsb2->bytes_used;
-			off+=0x90;
+			off+=0x60;
 			printk(KERN_NOTICE
 			       "%s: squash filesystem with lzma found at block %d\n",
 			       mtd->name, off / blocksize);
