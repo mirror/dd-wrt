@@ -980,6 +980,13 @@ int internal_getRouterBrand()
 #elif HAVE_NORTHSTAR
 	unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
+	if (boardnum == 24 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("gpio7", "wps_button")) {
+		setRouter("Dlink-DIR868L");
+		return ROUTER_DLINK_DIR868;
+	}
+
 	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("gpio15", "wps_button")) {
@@ -4999,6 +5006,12 @@ int led_control(int type, int act)
 		diag_gpio = 0x02e;
 		diag_gpio_disabled = 0x02d;
 		usb_gpio = 0x02f;
+		break;
+	case ROUTER_DLINK_DIR868:
+		usb_power = 0x00a;
+		connected_gpio= 0x102;
+		disconnected_gpio = 0x103;
+		power_gpio = 0x100;
 		break;
 	case ROUTER_ASUS_AC67U:
 	case ROUTER_ASUS_AC56U:
