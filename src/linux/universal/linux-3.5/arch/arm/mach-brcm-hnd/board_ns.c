@@ -369,7 +369,7 @@ size_t rootfssize=0;
 /* boot;nvram;kernel;rootfs;empty */
 #define FLASH_PARTS_NUM	(6+MTD_PARTS+PLC_PARTS+FAILSAFE_PARTS)
 
-static struct mtd_partition bcm947xx_flash_parts[FLASH_PARTS_NUM] = {{0}};
+static struct mtd_partition bcm947xx_flash_parts[FLASH_PARTS_NUM+1] = {{0}};
 static uint lookup_flash_rootfs_offset(struct mtd_info *mtd, int *trx_off, size_t size)
 {
 	struct romfs_super_block *romfsb;
@@ -450,6 +450,7 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 	uint vmlz_off, knl_size;
 	uint32 top = 0;
 	uint32 bootsz;
+	uint32 maxsize=0;
 #ifdef CONFIG_FAILSAFE_UPGRADE
 	char *img_boot = nvram_get(BOOTPARTITION);
 	char *imag_1st_offset = nvram_get(IMAGE_FIRST_OFFSET);
@@ -471,6 +472,14 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 
 	}
 #endif	/* CONFIG_FAILSAFE_UPGRADE */
+	
+	if (nvram_match("boardnum","24") && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("gpio7", "wps_button")) {
+	    maxsize = 0x200000;
+	    size = maxsize;
+	}
+
 
 	bootdev = soc_boot_dev((void *)sih);
 	knldev = soc_knl_dev((void *)sih);
@@ -578,6 +587,8 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 		bootsz = boot_partition_size(sfl_info->base);
 		printk("Boot partition size = %d(0x%x)\n", bootsz, bootsz);
 		/* Size pmon */
+		if (maxsize)
+		    bootsz = maxsize;
 		bcm947xx_flash_parts[nparts].name = "boot";
 		bcm947xx_flash_parts[nparts].size = bootsz;
 		bcm947xx_flash_parts[nparts].offset = top;
@@ -615,7 +626,10 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 	/* Setup nvram MTD partition */
 	bcm947xx_flash_parts[nparts].name = "nvram";
 	bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
-	bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
+	if (maxsize)
+	    bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
+	    else
+	    bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
 	nparts++;
 
 	return bcm947xx_flash_parts;
