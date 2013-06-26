@@ -5009,9 +5009,10 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_DLINK_DIR868:
 		usb_power = 0x00a;
-		connected_gpio= 0x102;
-		disconnected_gpio = 0x103;
-		power_gpio = 0x100;
+		connected_gpio= 0x103;
+		disconnected_gpio = 0x101;
+		power_gpio = 0x102;
+		diag_gpio = 0x100;
 		break;
 	case ROUTER_ASUS_AC67U:
 	case ROUTER_ASUS_AC56U:
