@@ -231,8 +231,7 @@ void start_sysinit(void)
 			buf[26] = 0;
 			fprintf(stderr, "set 5g mac %s\n", &buf[9]);
 			nvram_set("pci/2/0/macaddr", &buf[9]);
-			nvram_set("pci/2/1/macaddr", &buf[9]);
-
+			nvram_unset("pci/2/1/macaddr");
 			fp = popen("cat /dev/mtdblock0|grep wlan24mac", "rb");
 			fread(buf, 1, 27, fp);
 			fclose(fp);
@@ -433,12 +432,14 @@ void start_sysinit(void)
 			t = dir868_1_1params;
 			while (t->name) {
 				fprintf(stderr, "set pci/1/1/%s to %s\n", t->name, t->value);
+				usleep(10);
 				nvram_nset(t->value, "pci/1/1/%s", t->name);
 				t++;
 			}
 			t = dir868_2_1params;
 			while (t->name) {
 				fprintf(stderr, "set pci/2/1/%s to %s\n", t->name, t->value);
+				usleep(10);
 				nvram_nset(t->value, "pci/2/1/%s", t->name);
 				t++;
 			}
