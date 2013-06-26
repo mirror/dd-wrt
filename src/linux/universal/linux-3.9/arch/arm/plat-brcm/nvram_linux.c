@@ -33,7 +33,6 @@
 #include <linux/slab.h>
 #include <linux/bootmem.h>
 #include <linux/fs.h>
-#include <linux/vmalloc.h>
 #include <linux/miscdevice.h>
 #include <linux/mtd/mtd.h>
 
@@ -338,7 +337,7 @@ _nvram_realloc(struct nvram_tuple *t, const char *name, const char *value)
 		return NULL;
 
 	if (!t) {
-		if (!(t = vmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1)))
+		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1,GFP_ATOMIC)))
 			return NULL;
 
 		/* Copy name */
@@ -369,7 +368,7 @@ _nvram_free(struct nvram_tuple *t)
 		nvram_offset = 0;
 		memset( nvram_buf, 0, sizeof(nvram_buf) );
 	} else {
-		vfree(t);
+		kfree(t);
 	}
 }
 
@@ -390,10 +389,10 @@ nvram_set(const char *name, const char *value)
 	if ((ret = _nvram_set(name, value))) {
 		printk( KERN_INFO "nvram: consolidating space!\n");
 		/* Consolidate space and try again */
-		if ((header = vmalloc(NVRAM_SPACE))) {
+		if ((header = kmalloc(NVRAM_SPACE,GFP_ATOMIC))) {
 			if (_nvram_commit(header) == 0)
 				ret = _nvram_set(name, value);
-			vfree(header);
+			kfree(header);
 		}
 	}
 	spin_unlock_irqrestore(&nvram_lock, flags);
@@ -455,7 +454,7 @@ nvram_nflash_commit(void)
 	unsigned long flags;
 	u_int32_t offset;
 
-	if (!(buf = vmalloc(NVRAM_SPACE))) {
+	if (!(buf = kmalloc(NVRAM_SPACE,GFP_ATOMIC))) {
 		printk(KERN_WARNING "nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
@@ -486,7 +485,7 @@ nvram_nflash_commit(void)
 
 done:
 	mutex_unlock(&nvram_sem);
-	vfree(buf);
+	kfree(buf);
 	return ret;
 }
 #endif
@@ -522,7 +521,7 @@ nvram_commit(void)
 #endif
 	/* Backup sector blocks to be erased */
 	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
-	if (!(buf = vmalloc(erasesize))) {
+	if (!(buf = kmalloc(erasesize,GFP_ATOMIC))) {
 		printk(KERN_WARNING "nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
@@ -628,7 +627,7 @@ nvram_commit(void)
 
 done:
 	mutex_unlock(&nvram_sem);
-	vfree(buf);
+	kfree(buf);
 	return ret;
 }
 
@@ -665,7 +664,7 @@ dev_nvram_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 	unsigned long off;
 
 	if ((count+1) > sizeof(tmp)) {
-		if (!(name = vmalloc(count+1)))
+		if (!(name = kmalloc(count+1,GFP_ATOMIC)))
 			return -ENOMEM;
 	}
 
@@ -704,7 +703,7 @@ dev_nvram_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 #endif
 done:
 	if (name != tmp)
-		vfree(name);
+		kfree(name);
 
 	return ret;
 }
@@ -716,7 +715,7 @@ dev_nvram_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 	ssize_t ret;
 
 	if (count > sizeof(tmp)) {
-		if (!(name = vmalloc(count)))
+		if (!(name = kmalloc(count,GFP_ATOMIC)))
 			return -ENOMEM;
 	}
 
@@ -736,7 +735,7 @@ dev_nvram_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 		ret = count;
 done:
 	if (name != tmp)
-		vfree(name);
+		kfree(name);
 
 	return ret;
 }
