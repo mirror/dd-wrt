@@ -69,8 +69,8 @@ void lock(void)
 	}
 	in = fopen("/tmp/.nvlock", "wb");
 	if (in) {
-	    fprintf(in, "lock");
-	    fclose(in);
+		fprintf(in, "lock");
+		fclose(in);
 	}
 }
 
@@ -81,10 +81,10 @@ void unlock(void)
 
 char *nvram_get(const char *name)
 {
-lock();
+	lock();
 	size_t count = strlen(name) + 1;
-	char tmp[100], *value;
-	unsigned long *off = (unsigned long *)tmp;
+	char *value;
+	unsigned long *off;
 
 	if (nvram_fd < 0) {
 #ifdef HAVE_X86
@@ -100,17 +100,15 @@ lock();
 			return NULL;
 		}
 	}
-	if (count > sizeof(tmp)) {
-		if (!(off = malloc(count))) {
-			unlock();
-			return NULL;
-		}
+	if (!(off = malloc(count))) {
+		unlock();
+		return NULL;
 	}
 
 	/* Get offset into mmap() space */
 	strcpy((char *)off, name);
 #ifndef HAVE_MICRO
-	msync(nvram_buf, NVRAM_SPACE, MS_SYNC);	
+	msync(nvram_buf, NVRAM_SPACE, MS_SYNC);
 #endif
 
 	count = read(nvram_fd, off, count);
@@ -122,8 +120,7 @@ lock();
 	if (count < 0)
 		perror(PATH_DEV_NVRAM);
 
-	if (off != (unsigned long *)tmp)
-		free(off);
+	free(off);
 	unlock();
 
 	return value;
@@ -171,7 +168,7 @@ void nvram_close(void)		//dummy
 
 static int _nvram_set(const char *name, const char *value)
 {
-lock();
+	lock();
 	size_t count = strlen(name) + 1;
 	char *buf;
 	int ret;
@@ -191,7 +188,7 @@ lock();
 	/* Unset if value is NULL */
 	if (value)
 		count += strlen(value) + 2;
-		
+
 	if (!(buf = malloc(count))) {
 		unlock();
 		return -ENOMEM;
@@ -201,7 +198,7 @@ lock();
 		sprintf(buf, "%s=%s", name, value);
 	else
 		strcpy(buf, name);
-	
+
 	count = strlen(buf) + 1;
 	ret = write(nvram_fd, buf, count);
 
@@ -209,7 +206,7 @@ lock();
 		perror(PATH_DEV_NVRAM);
 
 	free(buf);
-unlock();
+	unlock();
 	return (ret == count) ? 0 : ret;
 }
 
@@ -283,6 +280,7 @@ int nvram_commit(void)
 	sync();
 	return ret;
 }
+
 #if 0
 int file2nvram(char *filename, char *varname)
 {
@@ -337,9 +335,9 @@ int nvram2file(char *varname, char *filename)
 	//fprintf(stderr,"=================> nvram2file %s = [%s] \n",varname,buf);
 	while (buf[i]) {
 		if (buf[i] == '~') {
-			putc(0,fp);
+			putc(0, fp);
 		} else {
-			putc(buf[i],fp);
+			putc(buf[i], fp);
 		}
 		i++;
 	}
