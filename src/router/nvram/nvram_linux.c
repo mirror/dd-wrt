@@ -68,8 +68,10 @@ void lock(void)
 		sleep(1);
 	}
 	in = fopen("/tmp/.nvlock", "wb");
-	fprintf(in, "lock");
-	fclose(in);
+	if (in) {
+	    fprintf(in, "lock");
+	    fclose(in);
+	}
 }
 
 void unlock(void)
@@ -79,7 +81,7 @@ void unlock(void)
 
 char *nvram_get(const char *name)
 {
-//lock();
+lock();
 	size_t count = strlen(name) + 1;
 	char tmp[100], *value;
 	unsigned long *off = (unsigned long *)tmp;
@@ -87,18 +89,20 @@ char *nvram_get(const char *name)
 	if (nvram_fd < 0) {
 #ifdef HAVE_X86
 		FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
-		if (in == NULL)
+		if (in == NULL) {
+			unlock();
 			return NULL;
+		}
 		fclose(in);
 #endif
 		if (nvram_init(NULL)) {
-			//unlock();
+			unlock();
 			return NULL;
 		}
 	}
 	if (count > sizeof(tmp)) {
 		if (!(off = malloc(count))) {
-			//unlock();
+			unlock();
 			return NULL;
 		}
 	}
@@ -120,7 +124,7 @@ char *nvram_get(const char *name)
 
 	if (off != (unsigned long *)tmp)
 		free(off);
-	//unlock();
+	unlock();
 
 	return value;
 }
@@ -167,40 +171,45 @@ void nvram_close(void)		//dummy
 
 static int _nvram_set(const char *name, const char *value)
 {
+lock();
 	size_t count = strlen(name) + 1;
-	char tmp[100], *buf = tmp;
+	char *buf;
 	int ret;
 
 	if (nvram_fd < 0)
-		if ((ret = nvram_init(NULL)))
+		if ((ret = nvram_init(NULL))) {
+			unlock();
 			return ret;
+		}
 
 	/* Wolf add - keep nvram varname to sane len - may prevent corruption */
-	if (strlen(name) > 64)
+	if (strlen(name) > 64) {
+		unlock();
 		return -ENOMEM;
+	}
 
 	/* Unset if value is NULL */
 	if (value)
 		count += strlen(value) + 2;
-
-	if (count > sizeof(tmp)) {
-		if (!(buf = malloc(count)))
-			return -ENOMEM;
+		
+	if (!(buf = malloc(count))) {
+		unlock();
+		return -ENOMEM;
 	}
 
 	if (value)
 		sprintf(buf, "%s=%s", name, value);
 	else
 		strcpy(buf, name);
-
+	
+	count = strlen(buf) + 1;
 	ret = write(nvram_fd, buf, count);
 
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 
-	if (buf != tmp)
-		free(buf);
-
+	free(buf);
+unlock();
 	return (ret == count) ? 0 : ret;
 }
 
