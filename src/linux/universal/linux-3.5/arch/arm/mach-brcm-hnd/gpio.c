@@ -181,6 +181,12 @@ if ((boardnum == 0) && nvram_match("boardtype", "0x0646") && (nvram_match("board
 }
 
 
+if ((boardnum == 24) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110")))
+{
+		printk(KERN_EMERG "DLink DIR-868 init\n");
+		isac66 = 1;
+}
+
 
 gpio_init_flag=1;
 	return 0;
