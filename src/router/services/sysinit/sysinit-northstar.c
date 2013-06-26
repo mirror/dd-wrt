@@ -231,7 +231,7 @@ void start_sysinit(void)
 			buf[26] = 0;
 			fprintf(stderr, "set 5g mac %s\n", &buf[9]);
 			nvram_set("pci/2/0/macaddr", &buf[9]);
-			nvram_unset("pci/2/1/macaddr");
+			nvram_set("pci/2/1/macaddr", &buf[9]);
 			fp = popen("cat /dev/mtdblock0|grep wlan24mac", "rb");
 			fread(buf, 1, 27, fp);
 			fclose(fp);
@@ -278,7 +278,6 @@ void start_sysinit(void)
 				{"boardtype", "0x621", 0},
 				{"boardflags3", "0x0", 0},
 				{"boardnum", "0", 0},
-				{"macaddr", "00:90:4c:d4:00:00", 0},
 				{"ccode", "20785", 0},
 				{"regrev", "27", 0},
 				{"aa2g", "0", 0},
@@ -431,15 +430,13 @@ void start_sysinit(void)
 			struct nvram_tuple *t;
 			t = dir868_1_1params;
 			while (t->name) {
-				fprintf(stderr, "set pci/1/1/%s to %s\n", t->name, t->value);
-				usleep(10);
+//				fprintf(stderr, "set pci/1/1/%s to %s\n", t->name, t->value);
 				nvram_nset(t->value, "pci/1/1/%s", t->name);
 				t++;
 			}
 			t = dir868_2_1params;
 			while (t->name) {
-				fprintf(stderr, "set pci/2/1/%s to %s\n", t->name, t->value);
-				usleep(10);
+//				fprintf(stderr, "set pci/2/1/%s to %s\n", t->name, t->value);
 				nvram_nset(t->value, "pci/2/1/%s", t->name);
 				t++;
 			}
