@@ -3074,6 +3074,9 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_USBIP
 	{"usb_ip", "0", 0},
 #endif
+#ifdef HAVE_ZABBIX
+	{"zabbix_enable", "0", 0},
+#endif
 	{0, 0, 0}
 };
 #else
