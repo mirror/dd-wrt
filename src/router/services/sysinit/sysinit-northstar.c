@@ -120,29 +120,6 @@ void start_sysinit(void)
 	fprintf(stderr, "try modules for ethernet adapters\n");
 	nvram_set("intel_eth", "0");
 
-	//load mmc drivers
-	/*
-	 * network drivers 
-	 */
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		close(s);
-	}
-	eval("ifconfig", "eth0", "up");
-	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-	eval("vconfig", "add", "eth0", "1");
-	eval("vconfig", "add", "eth0", "2");
-	insmod("switch-core");
-	insmod("switch-robo");
-
-	writeproc("/proc/irq/163/smp_affinity", "2");
-	writeproc("/proc/irq/169/smp_affinity", "2");
-	writeproc("/proc/irq/112/smp_affinity", "2");
 
 	mkdir("/dev/gpio", 0700);
 	mknod("/dev/gpio/in", S_IFCHR | 0644, makedev(127, 0));
@@ -242,10 +219,10 @@ void start_sysinit(void)
 		break;
 	case ROUTER_DLINK_DIR868:
 		
-		if (nvram_get("pci/1/0/vendid")==NULL)
+		if (nvram_get("pci/1/1/vendid")==NULL)
 		{
 
-		char buf[64];
+		unsigned char buf[64];
 		FILE *fp=popen("cat /dev/mtdblock0|grep lanmac","rb");
 		fread(buf,1,24,fp);
 		fclose(fp);
@@ -256,7 +233,7 @@ void start_sysinit(void)
 		fread(buf,1,26,fp);
 		fclose(fp);
 		buf[26]=0;
-		nvram_set("pci/2/0/macaddr",&buf[9]);
+//		nvram_set("pci/2/0/macaddr",&buf[9]);
 		nvram_set("pci/2/1/macaddr",&buf[9]);
 
 
@@ -264,11 +241,11 @@ void start_sysinit(void)
 		fread(buf,1,27,fp);
 		fclose(fp);
 		buf[27]=0;
-		nvram_set("pci/1/0/macaddr",&buf[10]);
+//		nvram_set("pci/1/0/macaddr",&buf[10]);
 		nvram_set("pci/1/1/macaddr",&buf[10]);
+		nvram_commit();
 
-
-
+/*
 		nvram_set("pci/1/0/vendid", "0x14E4");
 		nvram_set("pci/1/0/maxp2ga0", "0x56");
 		nvram_set("pci/1/0/maxp2ga1", "0x56");
@@ -291,8 +268,7 @@ void start_sysinit(void)
 		nvram_set("pci/1/0/pa2gw2a2", "0xF900");
 		nvram_set("pci/1/0/ag0", "0x0");
 		nvram_set("pci/1/0/ag1", "0x0");
-		nvram_commit();
-		nvram_set("pci/1/1/vendid", "0x14E4");
+		nvram_commit();*/
 		nvram_set("pci/1/1/maxp2ga0", "0x56");
 		nvram_set("pci/1/1/maxp2ga1", "0x56");
 		nvram_set("pci/1/1/maxp2ga2", "0x56");
@@ -315,7 +291,7 @@ void start_sysinit(void)
 		nvram_set("pci/1/1/ag0", "0x0");
 		nvram_set("pci/1/1/ag1", "0x0");
 		nvram_commit();
-
+/*
 		nvram_set("pci/2/0/sromrev", "11");
 		nvram_set("pci/2/0/venid", "0x14E4");
 		nvram_set("pci/2/0/vendid", "0x14E4");
@@ -476,7 +452,7 @@ void start_sysinit(void)
 		nvram_set("pci/2/0/maxp5ga2", "92,92,92,92");
 		nvram_set("pci/2/0/pa5ga2", "0xff2e,0x197b,0xfcd8,0xff2d,0x196e,0xfcdc,0xff30,0x1a7d,0xfcc2,0xff2e,0x1ac6,0xfcb4");
 		nvram_commit();
-
+*/
 		nvram_set("pci/2/1/sromrev", "11");
 		nvram_set("pci/2/1/venid", "0x14E4");
 		nvram_set("pci/2/1/vendid", "0x14E4");
@@ -636,6 +612,10 @@ void start_sysinit(void)
 		nvram_set("pci/2/1/maxp5ga2", "92,92,92,92");
 		nvram_set("pci/2/1/pa5ga2", "0xff2e,0x197b,0xfcd8,0xff2d,0x196e,0xfcdc,0xff30,0x1a7d,0xfcc2,0xff2e,0x1ac6,0xfcb4");
 		nvram_commit();
+
+
+		nvram_set("pci/1/1/vendid", "0x14E4");
+
 		}
 	default:
 		nvram_default_get("wl_country_code", "US");
@@ -645,6 +625,32 @@ void start_sysinit(void)
 		nvram_default_get("wl0_country_rev", "0");
 		nvram_default_get("wl1_country_rev", "0");
 
+	}
+
+	insmod("et");
+	//load mmc drivers
+	eval("ifconfig", "eth0", "up");
+	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+	eval("vconfig", "add", "eth0", "1");
+	eval("vconfig", "add", "eth0", "2");
+	insmod("switch-core");
+	insmod("switch-robo");
+
+	writeproc("/proc/irq/163/smp_affinity", "2");
+	writeproc("/proc/irq/169/smp_affinity", "2");
+	writeproc("/proc/irq/112/smp_affinity", "2");
+
+	/*
+	 * network drivers 
+	 */
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+		char eabuf[32];
+
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+//		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		close(s);
 	}
 
 	insmod("wl");
