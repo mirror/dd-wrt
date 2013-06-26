@@ -252,7 +252,7 @@ void start_sysinit(void)
 		buf[24]=0;
 		nvram_set("et0macaddr",&buf[7]);
 
-		FILE *fp=popen("cat /dev/mtdblock0|grep wlan5mac","rb");
+		fp=popen("cat /dev/mtdblock0|grep wlan5mac","rb");
 		fread(buf,1,26,fp);
 		fclose(fp);
 		buf[26]=0;
@@ -260,7 +260,7 @@ void start_sysinit(void)
 		nvram_set("pci/2/1/macaddr",&buf[9]);
 
 
-		FILE *fp=popen("cat /dev/mtdblock0|grep wlan24mac","rb");
+		fp=popen("cat /dev/mtdblock0|grep wlan24mac","rb");
 		fread(buf,1,27,fp);
 		fclose(fp);
 		buf[27]=0;
