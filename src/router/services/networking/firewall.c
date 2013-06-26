@@ -68,7 +68,7 @@
  * possible files path 
  */
 #define IPTABLES_SAVE_FILE		"/tmp/.ipt"
-#define CRONTAB 				"/tmp/crontab"
+#define CRONTAB 			"/tmp/crontab"
 #define IPTABLES_RULE_STAT		"/tmp/.rule"
 
 /*
@@ -1981,12 +1981,36 @@ void filter_output(void)
 
 static void filter_forward(void)
 {
-
+	char *filter_web_hosts, *filter_web_urls;
 	char *next;
 	char dev[16];
 	char var[80];
 
 	char vifs[256];		// 
+	
+	int i=0;
+	int filter_host_url = 0;
+	
+	
+	while( i<15 && filter_host_url == 0)
+	{
+	  i++;
+	  
+	  filter_web_hosts = nvram_nget("filter_web_host%d", i);
+	  filter_web_urls  = nvram_nget("filter_web_url%d", i);
+	  
+	  if (filter_web_hosts && strcmp(filter_web_hosts, "") || filter_web_urls && strcmp(filter_web_urls, "")) {
+		filter_host_url = 1;
+	  }
+	}
+	
+	
+	/*
+	 * If webfilter is not used we can put this rule on top in order to increase WAN<->LAN throughput
+	 */
+	if(!filter_host_url)
+		save2file("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s\n", log_accept);
+	
 	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 		save2file("-A FORWARD -i %s -j %s\n", nvram_safe_get("tvnicfrom"), log_accept);
 		save2file("-A FORWARD -o %s -j %s\n", nvram_safe_get("tvnicfrom"), log_accept);
@@ -2026,11 +2050,24 @@ static void filter_forward(void)
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */
 	save2file("-A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+	
+	/*
+	 * Filter Web application 
+	 */
+	// if (webfilter)
+	// save2file ("-A FORWARD -i %s -o %s -p tcp --dport %d "
+	// "-m webstr --content %d -j %s\n",
+	// lanface, wanface, HTTP_PORT, webfilter, log_reject);
+	if (webfilter && strlen(wanface)) {
+		insmod("ipt_webstr");
+		save2file("-A FORWARD -i %s -o %s -p tcp " "-m webstr --content %d -j %s\n", lanface, wanface, webfilter, log_reject);
+	}
 
 	/*
-	 * Accept those established/related connections 
+	 * If webfilter is used this rule must be evaluated after webstr rule
 	 */
-	save2file("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s\n", log_accept);
+	if(filter_host_url)
+		save2file("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s\n", log_accept);
 
 	/*
 	 * Accept the redirect, might be seen as INVALID, packets 
@@ -2043,17 +2080,6 @@ static void filter_forward(void)
 	if (nvram_match("pptpd_lockdown", "1"))
 		save2file("-A FORWARD -i %s -j %s\n", lanface, log_drop);
 
-	/*
-	 * Filter Web application 
-	 */
-	// if (webfilter)
-	// save2file ("-A FORWARD -i %s -o %s -p tcp --dport %d "
-	// "-m webstr --content %d -j %s\n",
-	// lanface, wanface, HTTP_PORT, webfilter, log_reject);
-	if (webfilter && strlen(wanface)) {
-		insmod("ipt_webstr");
-		save2file("-A FORWARD -i %s -o %s -p tcp " "-m webstr --content %d -j %s\n", lanface, wanface, webfilter, log_reject);
-	}
 
 	/*
 	 * Filter by destination ports "filter_port" if firewall on 
@@ -2411,6 +2437,12 @@ void start_firewall(void)
 	int log_level = 0;
 	system("cat /proc/net/ip_conntrack_flush");
 
+#ifndef	HAVE_80211AC
+	/*
+	 * Improve WAN<->LAN Performance on K26
+	 */
+	system("echo 120 > /proc/sys/net/core/netdev_max_backlog");
+#endif	
 	/*
 	 * Block obviously spoofed IP addresses 
 	 */
