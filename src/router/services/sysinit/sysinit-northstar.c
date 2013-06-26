@@ -85,7 +85,28 @@ void start_sysinit(void)
 	/*
 	 * Setup console 
 	 */
-
+	if (nvram_get("bootflags")==NULL)
+	    {
+	    FILE *fp = fopen("/dev/mtdblock0","rb");
+		if (fp)
+		    {
+		    fseek(fp,0,SEEK_END);
+		    long seek = ftell(fp);
+		    fprintf(stderr,"length = %X\n");
+		    if (seek == 0x200000)
+			{
+			char *temp = malloc(65536);
+			fseek(fp,seek-0x10000,SEEK_SET);
+			fread(temp,1,65536,fp);
+			fclose(fp);
+			fp=fopen("/tmp/nvramcopy","wb");
+			fwrite(temp,1,65536,fp);
+			sysprintf("mtd -f write /tmp/nvramcopy nvram");
+			sys_reboot(); 
+			}
+			fclose(fp);
+		    }
+	    }
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
@@ -220,6 +241,34 @@ void start_sysinit(void)
 
 		break;
 	case ROUTER_DLINK_DIR868:
+		
+		if (nvram_get("pci/1/0/vendid")==NULL)
+		{
+
+		char buf[64];
+		FILE *fp=popen("cat /dev/mtdblock0|grep lanmac","rb");
+		fread(buf,1,24,fp);
+		fclose(fp);
+		buf[24]=0;
+		nvram_set("et0macaddr",&buf[7]);
+
+		FILE *fp=popen("cat /dev/mtdblock0|grep wlan5mac","rb");
+		fread(buf,1,26,fp);
+		fclose(fp);
+		buf[26]=0;
+		nvram_set("pci/2/0/macaddr",&buf[9]);
+		nvram_set("pci/2/1/macaddr",&buf[9]);
+
+
+		FILE *fp=popen("cat /dev/mtdblock0|grep wlan24mac","rb");
+		fread(buf,1,27,fp);
+		fclose(fp);
+		buf[27]=0;
+		nvram_set("pci/1/0/macaddr",&buf[10]);
+		nvram_set("pci/1/1/macaddr",&buf[10]);
+
+
+
 		nvram_set("pci/1/0/vendid", "0x14E4");
 		nvram_set("pci/1/0/maxp2ga0", "0x56");
 		nvram_set("pci/1/0/maxp2ga1", "0x56");
@@ -242,7 +291,7 @@ void start_sysinit(void)
 		nvram_set("pci/1/0/pa2gw2a2", "0xF900");
 		nvram_set("pci/1/0/ag0", "0x0");
 		nvram_set("pci/1/0/ag1", "0x0");
-
+		nvram_commit();
 		nvram_set("pci/1/1/vendid", "0x14E4");
 		nvram_set("pci/1/1/maxp2ga0", "0x56");
 		nvram_set("pci/1/1/maxp2ga1", "0x56");
@@ -265,6 +314,7 @@ void start_sysinit(void)
 		nvram_set("pci/1/1/pa2gw2a2", "0xF900");
 		nvram_set("pci/1/1/ag0", "0x0");
 		nvram_set("pci/1/1/ag1", "0x0");
+		nvram_commit();
 
 		nvram_set("pci/2/0/sromrev", "11");
 		nvram_set("pci/2/0/venid", "0x14E4");
@@ -328,6 +378,8 @@ void start_sysinit(void)
 		nvram_set("pci/2/0/mcsbw202gpo", "0");
 		nvram_set("pci/2/0/mcsbw402gpo", "0");
 		nvram_set("pci/2/0/dot11agofdmhrbw202g", "0");
+
+		nvram_commit();
 		nvram_set("pci/2/0/ofdmlrbw202gpo", "0");
 		nvram_set("pci/2/0/mcsbw205glpo", "3398914833");
 		nvram_set("pci/2/0/mcsbw405glpo", "3398914833");
@@ -423,6 +475,7 @@ void start_sysinit(void)
 		nvram_set("pci/2/0/rxgains5gtrelnabypa2", "1");
 		nvram_set("pci/2/0/maxp5ga2", "92,92,92,92");
 		nvram_set("pci/2/0/pa5ga2", "0xff2e,0x197b,0xfcd8,0xff2d,0x196e,0xfcdc,0xff30,0x1a7d,0xfcc2,0xff2e,0x1ac6,0xfcb4");
+		nvram_commit();
 
 		nvram_set("pci/2/1/sromrev", "11");
 		nvram_set("pci/2/1/venid", "0x14E4");
@@ -519,6 +572,7 @@ void start_sysinit(void)
 		nvram_set("pci/2/1/dot11agduphrpo", "0");
 		nvram_set("pci/2/1/dot11agduplrpo", "0");
 		nvram_set("pci/2/1/pcieingress_war", "15");
+		nvram_commit();
 		nvram_set("pci/2/1/sar2g", "18");
 		nvram_set("pci/2/1/sar5g", "15");
 		nvram_set("pci/2/1/noiselvl2ga0", "31");
@@ -581,7 +635,8 @@ void start_sysinit(void)
 		nvram_set("pci/2/1/rxgains5gtrelnabypa2", "1");
 		nvram_set("pci/2/1/maxp5ga2", "92,92,92,92");
 		nvram_set("pci/2/1/pa5ga2", "0xff2e,0x197b,0xfcd8,0xff2d,0x196e,0xfcdc,0xff30,0x1a7d,0xfcc2,0xff2e,0x1ac6,0xfcb4");
-
+		nvram_commit();
+		}
 	default:
 		nvram_default_get("wl_country_code", "US");
 		nvram_default_get("wl0_country_code", "US");
