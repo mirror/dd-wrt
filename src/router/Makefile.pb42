@@ -885,12 +885,15 @@ ifeq ($(CONFIG_WP546),y)
 endif
 endif
 endif
+ifndef CONFIG_WPE72_SIZE
+CONFIG_WPE72_SIZE=0x3d0000	
+endif
 ifeq ($(CONFIG_WPE72),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.lsx bs=65536 conv=sync
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.lsx
 	-./tools/compex/mkmylofw -B WP72E \
-		-p0x30000:0x3d0000:alp:0x80060000 \
-		-b0x30000:0x3d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
+		-p0x30000:$(CONFIG_WPE72_SIZE):alp:0x80060000 \
+		-b0x30000:$(CONFIG_WPE72_SIZE)::$(ARCH)-uclibc/vmlinux.lsx 	\
 		mips-uclibc/wpe72.img
 endif
 ifeq ($(CONFIG_UBNTM),y)
