@@ -19,6 +19,9 @@ endif
 ifeq ($(CONFIG_SANSFIL),y)
 DD_CFLAGS += -DHAVE_SANSFIL
 endif
+ifeq ($(CONFIG_KORENRON),y)
+DD_CFLAGS += -DHAVE_KORENRON
+endif
 ifeq ($(CONFIG_ANTAIRA),y)
 DD_CFLAGS += -DHAVE_ANTAIRA
 endif
