@@ -65,15 +65,11 @@
 	rsm	PSW_SM_I, %r0	/* barrier for "Relied upon Translation */
 	mtsp	%r0, %sr4
 	mtsp	%r0, %sr5
-	mfsp	%sr7, %r1
-	or,=    %r0,%r1,%r0	/* Only save sr7 in sr3 if sr7 != 0 */
-	mtsp	%r1, %sr3
+	mtsp	%r0, %sr6
 	tovirt_r1 %r29
 	load32	KERNEL_PSW, %r1
 
 	rsm     PSW_SM_QUIET,%r0	/* second "heavy weight" ctl op */
-	mtsp	%r0, %sr6
-	mtsp	%r0, %sr7
 	mtctl	%r0, %cr17	/* Clear IIASQ tail */
 	mtctl	%r0, %cr17	/* Clear IIASQ head */
 	mtctl	%r1, %ipsw
@@ -119,17 +115,20 @@
 
 	/* we save the registers in the task struct */
 
+	copy	%r30, %r17
 	mfctl   %cr30, %r1
+	ldo	THREAD_SZ_ALGN(%r1), %r30
+	mtsp	%r0,%sr7
+	mtsp	%r16,%sr3
 	tophys  %r1,%r9
 	LDREG	TI_TASK(%r9), %r1	/* thread_info -> task_struct */
 	tophys  %r1,%r9
 	ldo     TASK_REGS(%r9),%r9
-	STREG   %r30, PT_GR30(%r9)
+	STREG   %r17,PT_GR30(%r9)
 	STREG   %r29,PT_GR29(%r9)
 	STREG   %r26,PT_GR26(%r9)
+	STREG	%r16,PT_SR7(%r9)
 	copy    %r9,%r29
-	mfctl   %cr30, %r1
-	ldo	THREAD_SZ_ALGN(%r1), %r30
 	.endm
 
 	.macro  get_stack_use_r30
@@ -137,10 +136,12 @@
 	/* we put a struct pt_regs on the stack and save the registers there */
 
 	tophys  %r30,%r9
-	STREG   %r30,PT_GR30(%r9)
+	copy	%r30,%r1
 	ldo	PT_SZ_ALGN(%r30),%r30
+	STREG   %r1,PT_GR30(%r9)
 	STREG   %r29,PT_GR29(%r9)
 	STREG   %r26,PT_GR26(%r9)
+	STREG	%r16,PT_SR7(%r9)
 	copy    %r9,%r29
 	.endm
 
@@ -2013,6 +2014,47 @@ ftrace_stub:
 ENDPROC(return_to_handler)
 #endif	/* CONFIG_FUNCTION_TRACER */
 
+#ifdef CONFIG_IRQSTACKS
+/* void call_on_stack(unsigned long param1, void *func,
+		      unsigned long new_stack) */
+ENTRY(call_on_stack)
+	copy	%sp, %r1
+
+	/* Regarding the HPPA calling conventions for function pointers,
+	   we assume the PIC register is not changed across call.  For
+	   CONFIG_64BIT, the argument pointer is left to point at the
+	   argument region allocated for the call to call_on_stack. */
+# ifdef CONFIG_64BIT
+	/* Switch to new stack.  We allocate two 128 byte frames.  */
+	ldo	256(%arg2), %sp
+	/* Save previous stack pointer and return pointer in frame marker */
+	STREG	%rp, -144(%sp)
+	/* Calls always use function descriptor */
+	LDREG	16(%arg1), %arg1
+	bve,l	(%arg1), %rp
+	STREG	%r1, -136(%sp)
+	LDREG	-144(%sp), %rp
+	bve	(%rp)
+	LDREG	-136(%sp), %sp
+# else
+	/* Switch to new stack.  We allocate two 64 byte frames.  */
+	ldo	128(%arg2), %sp
+	/* Save previous stack pointer and return pointer in frame marker */
+	STREG	%r1, -68(%sp)
+	STREG	%rp, -84(%sp)
+	/* Calls use function descriptor if PLABEL bit is set */
+	bb,>=,n	%arg1, 30, 1f
+	depwi	0,31,2, %arg1
+	LDREG	0(%arg1), %arg1
+1:
+	be,l	0(%sr4,%arg1), %sr0, %r31
+	copy	%r31, %rp
+	LDREG	-84(%sp), %rp
+	bv	(%rp)
+	LDREG	-68(%sp), %sp
+# endif /* CONFIG_64BIT */
+ENDPROC(call_on_stack)
+#endif /* CONFIG_IRQSTACKS */
 
 get_register:
 	/*
