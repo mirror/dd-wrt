@@ -91,6 +91,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "ipr", 0},
 #elif HAVE_ENEO
 	{"router_style", "eneo", 0},
+#elif HAVE_KORENRON
+	{"router_style", "korenron", 0},
 #else
 	{"router_style", "elegant", 0},
 #endif
@@ -233,6 +235,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath2_regdomain", "UNITED_STATES_(PUBLIC_SAFETY)", 0},	/* ath0 regulatory domain */
 #elif HAVE_IPR
 	{"lan_ipaddr", "192.168.14.14", 0},	/* LAN ip address */
+#elif HAVE_KORENRON
+	{"lan_ipaddr", "10.0.0.1", 0}, 		/* LAN ip address */
+	{"lan_gateway", "10.0.0.254", 0},	/* Gateway */
 #else
 	{"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #endif
@@ -609,6 +614,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"http_username", "$1$y5qEiLaV$/2cQErs8qxs./J3pl2l2F.", 0},	/* HTTP username) */
 #elif HAVE_IAS
 	{"http_username", "$1$LJZEFe0/$TMujOR/zbGMDwxgb3KP0J.", 0},
+#elif HAVE_KORENRON
+        {"http_username", "$1$9thN/f9/$nnZ35gSQvAaV0EPh.WJs8.", 0},     /* HTTP username */
 #else
 	{"http_username", "bJ/GddyoJuiU2", 0},	/* Username */
 #endif
@@ -640,6 +647,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"http_passwd", "$1$y5qEiLaV$KNvLd5jrLCfYko/e6e7lZ1", 0},	/* HTTP password) */
 #elif HAVE_IPR
 	{"http_passwd", "$1$E1quEPpk$d.nw/cqhR1qsi.ECGT5ed0", 0},	/* HTTP password) */
+#elif HAVE_KORENRON
+	{"http_passwd", "$1$9thN/f9/$nnZ35gSQvAaV0EPh.WJs8.", 0},	/* HTTP password */
 #else
 	{"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
 #endif
@@ -810,6 +819,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_ssid", "RemoteEngineer", 0},	/* Service set ID (network name) */
 #elif HAVE_34TELECOM
 	{"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
+#elif HAVE_KORENRON
+	{"wl_ssid", "WBR2000", 0}, /* Service set ID (network name) */
 #else
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
@@ -882,6 +893,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_crypto", "aes", 0},	/* ath0 encryption type */
 	{"ath0_security_mode", "psk2", 0},	/* ath0 encryption type */
 	{"ath0_wpa_psk", "marcomarco14", 0},	/* ath0 encryption key */
+#elif defined(HAVE_KORENRON)
+        {"wl0_ssid", "WBR2000", 0},      /* Service set ID (network name) */
+        {"ath0_ssid", "WBR2000", 0},     /* Service set ID (network name) */
 #else
 #ifndef HAVE_BUFFALO
 	{"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
@@ -1409,6 +1423,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "CWT", 0},	/* Router name) */
 #elif HAVE_IPR
 	{"router_name", "IPR", 0},
+#elif HAVE_KORENRON
+	{"router_name", "KORENRON", 0},
 #else
 	{"router_name", MODEL_NAME, 0},	/* Router name string */
 #endif
@@ -2229,6 +2245,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"snmpd_sysname", "ESPOD Technologies", 0},
 #elif defined(HAVE_NEXTMEDIA)
 	{"snmpd_sysname", "nextmedia", 0},
+#elif defined(HAVE_KORENRON)
+	{"snmpd_sysname", "KORENRON", 0},
 #else
 	{"snmpd_sysname", "dd-wrt", 0},
 #endif

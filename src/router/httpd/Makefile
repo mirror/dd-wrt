@@ -393,6 +393,9 @@ endif
 ifeq ($(CONFIG_BKM),y)
 CFLAGS += -DHAVE_BKM
 endif
+ifeq ($(CONFIG_KORENRON),y)
+CFLAGS += -DHAVE_KORENRON
+endif
 ifeq ($(CONFIG_STATUS_GPIO),y)
 CFLAGS += -DHAVE_STATUS_GPIO
 endif
