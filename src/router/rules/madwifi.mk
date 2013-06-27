@@ -154,7 +154,7 @@ madwifi-install:
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=xscale-be-elf-wrt300n install
 else
 
-ifeq ($(CONFIG_NEXTMEDIA),y)
+ifeq ($(CONFIG_RAIEXTRA),y)
 
 madwifi:
 	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=xscale-nextmedia-be-elf  
