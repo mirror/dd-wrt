@@ -1349,6 +1349,8 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 	}
 #elif defined(HAVE_SANSFIL)
 	websWrite(wp, "%s", "SANSFIL");
+#elif HAVE_KORENRON
+        websWrite(wp, "\t\t<title>KORENRON (build %s)", SVN_REVISION);
 #else
 	websWrite(wp, "%s", nvram_safe_get("DD_BOARD"));
 #endif

@@ -18,6 +18,9 @@ endif
 ifdef CONFIG_SANSFIL
  MOTD_ADD:=.sansfil
 endif
+ifdef CONFIG_KORENRON
+ MOTD_ADD:=.korenron
+endif
 install:
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/init.d

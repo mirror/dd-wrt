@@ -1910,6 +1910,8 @@ void start_restore_defaults(void)
 		nvram_set("lan_ipaddr", "192.168.180.1");
 #elif HAVE_BUFFALO
 		nvram_set("lan_ipaddr", "192.168.11.1");
+#elif HAVE_KORENRON
+		nvram_set("lan_ipaddr", "10.0.0.1");
 #else
 		nvram_set("lan_ipaddr", "192.168.1.1");
 #endif
