@@ -508,6 +508,13 @@ ifeq ($(CONFIG_BKM),y)
 	#mkdir $(INSTALLDIR)/www/style/maksat
 	#cp maksat/maksat/* $(INSTALLDIR)/www/style/maksat
 endif
+ifeq ($(CONFIG_KORENRON),y)
+	mkdir $(INSTALLDIR)/www/style/korenron
+	cp korenron/images/* $(INSTALLDIR)/www/images
+	cp korenron/style.css $(INSTALLDIR)/www/style/korenron
+	cp korenron/help/* $(INSTALLDIR)/www/help/
+	cp korenron/About.htm $(INSTALLDIR)/www
+endif
 ifneq ($(CONFIG_STATUS_GPIO),y)
 	rm -f $(INSTALLDIR)/www/Gpio.asp 
 endif
