@@ -25,3 +25,6 @@ endif
 ifeq ($(CONFIG_ANTAIRA),y)
 DD_CFLAGS += -DHAVE_ANTAIRA
 endif
+ifeq ($(CONFIG_WIRCOM),y)
+DD_CFLAGS += -DHAVE_WIRCOM
+endif

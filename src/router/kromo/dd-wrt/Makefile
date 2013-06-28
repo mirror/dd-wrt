@@ -515,6 +515,12 @@ ifeq ($(CONFIG_KORENRON),y)
 	cp korenron/help/* $(INSTALLDIR)/www/help/
 	cp korenron/About.htm $(INSTALLDIR)/www
 endif
+ifeq ($(CONFIG_WIRCOM),y)
+	mkdir $(INSTALLDIR)/www/style/wircom
+	cp wircom/images/logo.png $(INSTALLDIR)/www/style
+	cp wircom/style.css $(INSTALLDIR)/www/style/wircom
+	cp wircom/common.css $(INSTALLDIR)/www/style/wircom
+endif
 ifneq ($(CONFIG_STATUS_GPIO),y)
 	rm -f $(INSTALLDIR)/www/Gpio.asp 
 endif
