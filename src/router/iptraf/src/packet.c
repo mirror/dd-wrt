@@ -51,24 +51,6 @@ static int in_cksum(u_short * addr, int len)
 	return (u_short) (~sum);
 }
 
-static unsigned int get_tr_ip_offset(char *pkt)
-{
-	struct trh_hdr *trh;
-	unsigned int riflen = 0;
-
-	trh = (struct trh_hdr *) pkt;
-
-	/*
-	 * Check if this packet has TR routing information and get
-	 * its length.
-	 */
-	if (trh->saddr[0] & TR_RII)
-		riflen = (ntohs(trh->rcf) & TR_RCF_LEN_MASK) >> 8;
-
-	return sizeof(struct trh_hdr) - TR_MAXRIFLEN + riflen +
-	    sizeof(struct trllc);
-}
-
 static int packet_adjust(struct pkt_hdr *pkt)
 {
 	int retval = 0;
@@ -108,15 +90,6 @@ static int packet_adjust(struct pkt_hdr *pkt)
 		pkt->pkt_payload = pkt->pkt_buf;
 		pkt->pkt_payload += sizeof(struct fddihdr);
 		pkt->pkt_len -= sizeof(struct fddihdr);
-		break;
-	case ARPHRD_IEEE802_TR:
-	case ARPHRD_IEEE802:
-		pkt->pkt_payload = pkt->pkt_buf;
-		/* Token Ring patch supplied by Tomas Dvorak */
-		/* Get the start of the IP packet from the Token Ring frame. */
-		unsigned int dataoffset = get_tr_ip_offset(pkt->pkt_payload);
-		pkt->pkt_payload += dataoffset;
-		pkt->pkt_len -= dataoffset;
 		break;
 	default:
 		/* return a NULL packet to signal an unrecognized link */

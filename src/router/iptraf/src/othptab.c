@@ -193,12 +193,6 @@ struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
 					      saddr), new_entry->smacaddr);
 			convmacaddr((char *) (((struct fddihdr *) packet)->
 					      daddr), new_entry->dmacaddr);
-		} else if ((pkt->pkt_hatype == ARPHRD_IEEE802)
-			   || (pkt->pkt_hatype == ARPHRD_IEEE802_TR)) {
-			convmacaddr((char *) (((struct trh_hdr *) packet)->
-					      saddr), new_entry->smacaddr);
-			convmacaddr((char *) (((struct trh_hdr *) packet)->
-					      daddr), new_entry->dmacaddr);
 		}
 	}
 

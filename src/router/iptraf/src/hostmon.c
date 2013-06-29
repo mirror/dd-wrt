@@ -1004,16 +1004,6 @@ void hostmon(const struct OPTIONS *options, time_t facilitytime, char *ifptr,
 				       FDDI_K_ALEN);
 				list = flist;
 				break; }
-			case ARPHRD_IEEE802:
-			case ARPHRD_IEEE802_TR: {
-				struct trh_hdr *hdr_trh =
-					(struct trh_hdr *)pkt.pkt_buf;
-				memcpy(scratch_saddr, hdr_trh->saddr,
-				       TR_ALEN);
-				memcpy(scratch_daddr, hdr_trh->daddr,
-				       TR_ALEN);
-				list = flist;
-				break; }
 			default:
 				/* unknown link protocol */
 				continue;
