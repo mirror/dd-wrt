@@ -620,10 +620,6 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 		} else if (linkproto == ARPHRD_FDDI) {
 			convmacaddr((char *) (((struct fddihdr *) packet)->
 					      saddr), newmacaddr);
-		} else if ((linkproto == ARPHRD_IEEE802)
-			   || (linkproto == ARPHRD_IEEE802_TR)) {
-			convmacaddr((char *) (((struct trh_hdr *) packet)->
-					      saddr), newmacaddr);
 		}
 
 		if (tableentry->smacaddr[0] != '\0') {
