@@ -211,6 +211,7 @@ obj-$(CONFIG_BUFFALO) += buffalo_flash
 obj-$(CONFIG_ATH9K) += ath9k 
 obj-$(CONFIG_ATH9K) += iw 
 obj-$(CONFIG_ATH9K) += crda 
+obj-$(CONFIG_ATH9K_DRIVER_ONLY) += libnltiny ath9k iw crda
 obj-$(CONFIG_LIBNLTINY) += libnltiny
 obj-$(CONFIG_HOTPLUG2) += hotplug2 udev
 obj-$(CONFIG_UBOOTENV) += ubootenv
@@ -237,9 +238,14 @@ obj-$(CONFIG_UQMI) += json-c libubox uqmi
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 obj-$(CONFIG_STRONGSWAN) += gmp strongswan sqlite
 
+obj-$(CONFIG_MTDUTILS) += mtd-utils
+#obj-$(CONFIG_OPROFILE) += oprofile
+ifeq ($(CONFIG_BCMMODERN),y)
+obj-$(CONFIG_WPS) += brcmwps
+endif
 #obj-y+=anchorfree
 obj-y+=ttraff
-#obj-y+=speedtest
+obj-y+=speedtest
 obj-$(CONFIG_MKIMAGE) += mkimage
 obj-y+=configs
 
