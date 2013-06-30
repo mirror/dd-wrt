@@ -93,9 +93,6 @@ export BASEOPT:=-Os
 #export ARCH:= mipsel
 
 
-ifeq ($(CONFIG_WPE72_SIZE),)
-export CONFIG_WPE72_SIZE:=0x3d0000	
-endif
 
 ifeq ($(ARCH),mipsel)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
@@ -889,6 +886,9 @@ ifeq ($(CONFIG_WP546),y)
 		mips-uclibc/wp546.img
 endif
 endif
+endif
+ifeq ($(CONFIG_WPE72_SIZE),)
+	CONFIG_WPE72_SIZE:=0x3d0000	
 endif
 ifeq ($(CONFIG_WPE72),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.lsx bs=65536 conv=sync
