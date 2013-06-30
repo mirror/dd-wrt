@@ -290,7 +290,11 @@ endif
 ifeq ($(CONFIG_USB),y)
 CFLAGS_EXTRA += -DHAVE_USB
 ifneq ($(CONFIG_3G_ONLY),y)
+ifeq ($(CONFIG_USB_ADVANCED),y)
+OBJS += usb_hotplug_adv.o
+else
 OBJS += usb_hotplug.o
+endif
 else
 CFLAGS_EXTRA += -DHAVE_3G_ONLY
 endif
