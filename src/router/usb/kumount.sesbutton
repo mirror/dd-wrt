@@ -1,0 +1,53 @@
+#!/bin/sh
+
+
+if [ "$(nvram get usb_ses_umount )" = "1" ]; then
+
+  #TODO need to use leds that are available on different models
+  #`/sbin/gpio disable 3`
+
+  LOGENTRY="`date +%b` `date +%d` `date +%R`:`date +%S` `whoami` kumount.info: umounting all usb drives"
+  echo $LOGENTRY >> /var/log/messages
+
+  #flush caches
+  `sync`
+
+  #kill services
+  killall proftpd
+  killall smbd
+  killall minidlna
+ # TODO kill other services that are not part of the firmware 
+ # disable for now, since fuser returns all processes if not mounted, so we need to first check if these are mounted
+ #`fuser -k -m /jffs`
+ #`fuser -k -m /opt`
+ #`fuser -k -m /mnt`
+
+
+  `/sbin/blkid > /tmp/blkid.dump`
+
+  while read line; do
+    part=`echo $line | cut -d: -f1`
+    if [ $part != "" ]; then
+
+      ptype=`disktype $part | grep 'Linux swap'`
+
+      if [ "$ptype" != "" ]; then
+	  `/sbin/swapoff $part`
+      else
+	  `/bin/umount $part`
+      fi
+
+    fi
+  done < /tmp/blkid.dump
+
+
+  #signal we are done
+  #sleep 1
+  #`/sbin/gpio enable 3`
+  #sleep 1
+  #`/sbin/gpio disable 3`
+  #sleep 1
+  #`/sbin/gpio enable 3`
+
+echo "<b>Drives have been umounted</b>" >/tmp/disktype.dump
+fi
