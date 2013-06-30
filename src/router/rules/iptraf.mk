@@ -1,8 +1,7 @@
 iptraf-configure:
 	cd iptraf && ./configure --prefix=/usr --host=$(ARCH)-linux CFLAGS="$(COPTS) -I$(TOP)/ncurses/include -L$(TOP)/ncurses/lib"
 
-#clean is killling to much ;-)
-iptraf: iptraf-configure
+iptraf:
 	make -C iptraf
 
 iptraf-clean:
