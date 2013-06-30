@@ -17,6 +17,8 @@ ifneq ($(wildcard ../cy_conf.mak),)
   include ../cy_conf.mak
 endif
 
+CONFIG_WPE72_SIZE?=0x3d0000
+
 #
 # Paths
 #
@@ -890,18 +892,10 @@ endif
 ifeq ($(CONFIG_WPE72),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.lsx bs=65536 conv=sync
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.lsx
-ifeq ($(CONFIG_WPE72_SIZE),)
 	-./tools/compex/mkmylofw -B WP72E \
-		-p0x30000:0x3d0000:alp:0x80060000 \
-		-b0x30000:0x3d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
+		-p0x30000:$(strip $(CONFIG_WPE72_SIZE)):alp:0x80060000 \
+		-b0x30000:$(strip $(CONFIG_WPE72_SIZE))::$(ARCH)-uclibc/vmlinux.lsx 	\
 		mips-uclibc/wpe72.img
-else
-
-	-./tools/compex/mkmylofw -B WP72E \
-		-p0x30000:$(CONFIG_WPE72_SIZE):alp:0x80060000 \
-		-b0x30000:$(CONFIG_WPE72_SIZE)::$(ARCH)-uclibc/vmlinux.lsx 	\
-		mips-uclibc/wpe72.img
-endif
 endif
 ifeq ($(CONFIG_UBNTM),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
