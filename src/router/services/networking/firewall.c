@@ -1842,9 +1842,9 @@ static void filter_input(void)
 	if (remotessh) {
 
 		if (nvram_match("limit_ssh", "1"))
-			save2file("-A INPUT -i %s -p tcp --dport %s -j logbrute\n", wanface, nvram_safe_get("sshd_port"));
+			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j logbrute\n", wanface, nvram_safe_get("lan_ipaddr") , nvram_safe_get("sshd_port"));
 		else
-			save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("sshd_port"), TARG_PASS);
+			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"), TARG_PASS);
 	}
 #endif
 	/*
@@ -1863,9 +1863,9 @@ static void filter_input(void)
 #ifndef HAVE_MICRO
 	if (remotetelnet) {
 		if (nvram_match("limit_telnet", "1"))
-			save2file("-A INPUT -i %s -p tcp --dport 23 -j logbrute\n", wanface);
+			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j logbrute\n", wanface, nvram_safe_get("lan_ipaddr"));
 		else
-			save2file("-A INPUT -i %s -p tcp --dport 23 -j %s\n", wanface, TARG_PASS);
+			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), TARG_PASS);
 	}
 #endif
 	if (remotetelnet) {
