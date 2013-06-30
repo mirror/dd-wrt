@@ -296,8 +296,56 @@ else
 endif
 ifeq ($(CONFIG_USB_ADVANCED),y)
 	echo "CONFIG_HDPARM=y" >> busybox/.config
+	echo "CONFIG_BLKID=y" >> busybox/.config
+	echo "CONFIG_FEATURE_BLKID_TYPE=n" >> busybox/.config
+	echo "CONFIG_VOLUMEID=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_EXT=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_BTRFS=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_REISERFS=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_FAT=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_EXFAT=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_HFS=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_JFS=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_XFS=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_NILFS=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_NTFS=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_ISO9660=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_UDF=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_LUKS=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_LINUXSWAP=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_CRAMFS=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_ROMFS=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_SQUASHFS=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_SYSV=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_OCFS2=y" >> busybox/.config
+	echo "CONFIG_FEATURE_VOLUMEID_LINUXRAID=y" >> busybox/.config
+	echo "CONFIG_FEATURE_MOUNT_LABEL=y" >> busybox/.config	
+	echo "CONFIG_FEATURE_MKSWAP_UUID=y" >> busybox/.config
 else
 	echo "# CONFIG_HDPARM is not set" >> busybox/.config
+	echo "# CONFIG_BLKID is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_BLKID_TYPE is not set" >> busybox/.config
+	echo "# CONFIG_VOLUMEID is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_EXT is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_BTRFS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_REISERFS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_FAT is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_EXFAT is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_HFS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_JFS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_XFS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_NILFS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_NTFS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_ISO9660 is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_UDF is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_LUKS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_LINUXSWAP is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_CRAMFS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_ROMFS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_SQUASHFS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_SYSV is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_OCFS2 is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_LINUXRAID is not set" >> busybox/.config
 endif
 ifeq ($(CONFIG_SWAP),y)
 	echo "CONFIG_MKSWAP=y" >> busybox/.config

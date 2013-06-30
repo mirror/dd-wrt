@@ -723,6 +723,9 @@ usb.usb_automnt="Automatic Drive Mount";
 usb.usb_mntpoint="Disk Mount Point";
 usb.usb_runonmount="Run-on-mount Script Name";
 usb.usb_diskinfo="Disk Info";
+usb.usb_mntjffs="Mount this Partition to /jffs";
+usb.usb_mntopt="Mount this Partition to /opt";
+usb.usb_ses_umount="Use SES Button to remove drives";
 
 // ** NAS.asp **//
 var nas=new Object();
