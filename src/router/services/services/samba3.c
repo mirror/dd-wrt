@@ -184,6 +184,9 @@ void stop_samba3(void)
 {
 	stop_process("smbd", "samba");
 	stop_process("nmbd", "nmbd");
+	//make sure pids are gone otherwise samba refuses to start 
+	sysprintf("rm -rf %s", "/var/run/*smb.conf.pid");
+	
 }
 #endif
 
