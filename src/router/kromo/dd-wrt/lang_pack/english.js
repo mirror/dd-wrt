@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//		English reference translation file - DD-WRT V24 SP2       24/JAN/2012				//
+//		English reference translation file - DD-WRT V24 SP2       01/JUL/2012				//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -740,16 +740,14 @@ nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_subdir="Anonymous Home Sub-directory";
 nas.samba3_legend="File Sharing";
 nas.samba3="Samba Server";
-
-var hnas=new Object();
-hnas.right2="For the user password list, enter one password per line. Passwords can be plain text or MD5 crypt.";
-
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
 nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
 
+var hnas=new Object();
+hnas.right2="For the user password list, enter one password per line. Passwords can be plain text or MD5 crypt.";
 
 // ** Hotspot.asp **//
 var hotspot=new Object();
@@ -908,7 +906,7 @@ idx_h.srv="Heart Beat Server";
 idx_h.con_strgy="Connection Strategy";
 idx_h.max_idle="Connect on Demand: Max Idle Time";
 idx_h.alive="Keep Alive: Redial Period";
-idx_h.reconnect="Force reconnect";
+idx_h.reconnect="Force Reconnect";
 
 
 // ** index_l2tp.asp **//
@@ -2316,6 +2314,7 @@ ias.hl_setup_card="Setup Card";
 ias.hl_client_access="For Client Access";
 ias.hl_for_conf="For Configuration";
 ias.hl_guest_card="Guest Card";
+
 
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
