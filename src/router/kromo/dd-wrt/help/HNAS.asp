@@ -9,16 +9,22 @@
 			<dl>
 				
 				<dt><% tran("nas.proftpd_srv"); %></dt>
-				<dd>FTP Server enables you to serve files : <br/>
+				<dd>FTP Server enables you to share files : <br/>
 					<ul>
-						<li>Possibility to serve files over the Internet</li>
-						<li>Possibility to serve files on local network</li>
+						<li>Over the Internet - WAN</li>
+						<li>On local network</li>
 					</ul>
 				</dd>
-				<dt><% tran("nas.sambasrv_legend"); %></dt>
+				<dt><% tran("nas.dlna_legend"); %></dt>
+				<dd>DLNA Server enables you to share media : <br/>
+					<ul>
+						<li>You need a dlna capable client e.g. TV to view files served by the router.</li>
+					</ul>
+				</dd>
+				<dt><% tran("nas.samba3"); %></dt>
 				<dd>SAMBA Server enables you to acces files : <br/>
 					<ul>
-						<li>Possibility to access files on router from local network</li>
+						<li>On router from local network through file explorer</li>
 					</ul>
 				</dd> 
 				
