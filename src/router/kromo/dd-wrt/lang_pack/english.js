@@ -747,7 +747,8 @@ nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
 
 var hnas=new Object();
-hnas.right2="For the user password list, enter one password per line. Passwords can be plain text or MD5 crypt.";
+hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through ftp or samba.";
+
 
 // ** Hotspot.asp **//
 var hotspot=new Object();
