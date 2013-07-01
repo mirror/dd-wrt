@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 27.jan.2013, svn 20579	//
+//				Slovenian translation DD-WRT by Eko, last revision: 01.jul.2013, svn 21949	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -292,7 +292,7 @@ errmsg.err10="Potrditveno geslo se ne ujema z vnešenim geslom. Prosimo, da pono
 errmsg.err11="V geslu presledki niso dovoljeni";
 errmsg.err12="Vnesti morate ukaz.";
 errmsg.err13="Posodabljanje ni uspelo.";
-errmsg.err45="Ni na voljo v načinu HTTPS! Prosimo, da uporabite način HTTP.";
+errmsg.err45="Ni na voljo v načinu HTTPS! Prosimo uporabite način HTTP.";
 errmsg.err46="Ni na voljo v načinu HTTPS";
 
 //common.js error messages
@@ -308,7 +308,7 @@ errmsg.err22="WAN MAC naslov ni pravilen.";
 errmsg.err23="Nepravilna šestnajstiška vrednost ";
 errmsg.err24=" najdena v MAC naslovu ";
 errmsg.err25="Vrednost ključa ni pravilna.";
-errmsg.err26="Dožina ključa ni pravilna.";
+errmsg.err26="Dolžina ključa ni pravilna.";
 errmsg.err27="Nepravina podmrežna maska.";
 errmsg.err28=" ima nepravilni znak, biti mora [ 0 - 9 ].";
 errmsg.err29=" ima nepravilno ASCII kodo.";
@@ -319,6 +319,7 @@ errmsg.err33="IP naslov in prehod ne moreta biti enaka.";
 errmsg.err34=" ne sme vsebovati presledka.";
 errmsg.err110="Končna številka mora biti večja kot začetna številka";
 errmsg.err111="Napravilen IP naslov";
+errmsg.err112="Napačni znaki \"<invchars>\" v polju \"<fieldname>\"";
 
 //Wol.asp error messages
 errmsg.err35="Vnesti morate MAC naslov za zagon.";
@@ -356,7 +357,7 @@ errmsg.err51="Usmerjevalnik trenutno uporablja privzeto geslo. Zaradi varnosti m
 errmsg.err52="Geslo se ne ujema.";
 
 // Port_Services.asp error messages
-errmsg.err53="Ko končate, kliknite gumb Uporabi, da shranite nastavitve.";
+errmsg.err53="Ko končate kliknite gumb Uporabi, da shranite nastavitve.";
 errmsg.err54="Vnesti morate ime storitve.";
 errmsg.err55="Ime storitve že obstaja.";
 
@@ -722,6 +723,9 @@ usb.usb_automnt="Samodejni priklop diska";
 usb.usb_mntpoint="Priklopna točka";
 usb.usb_runonmount="Run-on-mount ime skripta";
 usb.usb_diskinfo="Disk info";
+usb.usb_mntjffs="Priklopi to particijo na /jffs";
+usb.usb_mntopt="Priklopi to particijo na /opt";
+usb.usb_ses_umount="Uporabi SES gumb za odklop diskov";
 
 // ** NAS.asp **//
 
@@ -735,14 +739,15 @@ nas.proftpd_writeen="Dovoli pisanje";
 nas.proftpd_anon="Anonimna prijava (samo za branje)";
 nas.proftpd_anon_dir="Podmapa za anonimno prijavo";
 nas.samba3_legend="Souporaba datotek";
-
-
-hnas.right2="Lista Uporabnik Geslo: V vsako linijo vnesite enega Uporabnika Geslo. Geslo je lahko v navadni obliki ali v MD5 crypt.";
-
+nas.samba3="Samba strežnik";
 // ** DLNA **
 nas.dlna_legend="DLNA strežnik";
 nas.dlna_srv="MiniDLNA";
+nas.dlna_thumb="Vključi naslovni logotip";
 nas.dlna_dir="Mapa za datoteke";
+
+
+hnas.right2="Lista Uporabnik Geslo: V vsako linijo vnesite enega Uporabnika Geslo. Geslo je lahko v navadni obliki ali v MD5 crypt.";
 
 // ** Hotspot.asp **//
 
@@ -753,7 +758,7 @@ hotspot.nowifibridge="Loči WiFi od LAN mosta";
 hotspot.hotspot="Chillispot";
 hotspot.pserver="IP/DNS glavnega Radius strežnika";
 hotspot.bserver="IP/DNS nadomestnega Radius strežnika";
-hotspot.dns="DNS IP";
+hotspot.dns="DNS strežnik IP";
 hotspot.url="Preusmerjeni URL";
 hotspot.dhcp="DHCP vmesnik";
 hotspot.radnas="Radius NAS ID";
@@ -762,8 +767,11 @@ hotspot.uam="UAM skrivnost";
 hotspot.uamserver="UAM strežnik";
 hotspot.uamport="UAM vrata";
 hotspot.uamdns="UAM vsak DNS";
-hotspot.allowuam="UAM dopuščeni";
+hotspot.allowuam="UAM dopuščeni (ločeni z vejico)";
+hotspot.allowuad="UAM domene (ločene s presledkom)";
 hotspot.macauth="MACauth";
+hotspot.macpasswd="MAC geslo";
+hotspot.sec8021Xauth="Overjanje 802.1X (EAP)";
 hotspot.option="Dodatne Chillispot možnosti";
 hotspot.fon_chilli="Chillispot lokalno uporabniško upravljanje";
 hotspot.fon_user="Seznam uporabnikov";
@@ -787,7 +795,7 @@ hotspot.nocat_port="Izloči vrata";
 hotspot.nocat_timeout="Časovna omejitev prijave";
 hotspot.nocat_verbose="Obširnost";
 hotspot.nocat_route="Samo usmerjevanje";
-hotspot.nocat_MAClist="Seznam dovoljenih MAC naslovov";
+hotspot.nocat_MAClist="Seznam dovoljenih MAC";
 hotspot.smtp_legend="Preusmeritev SMTP";
 hotspot.smtp_srv="Preusmeritev SMTP";
 hotspot.smtp_ip="SMTP ciljni IP";
@@ -825,6 +833,10 @@ hotspot.wifidog_username="HTTP strežnik: uporabniško ime";
 hotspot.wifidog_password="HTTP strežnik: geslo";
 hotspot.wifidog_auth="HTTP strežnik: podpora overjanju";
 
+//help container
+
+hstatus_hots.right1="conup/condown:<br><i>Kadar je USB ali JFFS priklopljen na jffs, lahko uporabite skripe v /jffs/etc/chilli/</i><br>Lokalni uporabniki:<br><i>Kadar uporabljante samo lokalne uporabnike nastavite primarni radius na 127.0.0.1</i>";
+
 // ** Hotspotsystem **//
 
 hotspotsys.legend="Sistem Hotspot";
@@ -832,6 +844,7 @@ hotspotsys.nobridge="Loči WiFi od LAN mosta";
 hotspotsys.uamenable="Posebne domene";
 hotspotsys.loginonsplash="Prijava na splash strani";
 hotspotsys.allowuam="UAM dopuščeni";
+hotspotsys.allowuad="UAM domene (ločene s presledkom)";
 hotspotsys.whitelabelproto="White label protokol";
 hotspotsys.whitelabel="White label domena";
 hotspotsys.operatorid="ID operaterja";
@@ -935,6 +948,7 @@ idx.stp="STP";
 idx.stp_mess="(onemogoči za COMCAST ISP)";
 idx.optional="Dodatne nastavitve";
 idx.mtu="MTU";
+idx.txqlen="Dolžina TX čakalne vrste";
 idx.h23="Nastavitev mreže";
 idx.routerip="IP naslov usmerjevalnika";
 idx.lanip="Lokalni IP naslov";
@@ -1091,11 +1105,12 @@ management.lang_russian="rusčina";
 management.lang_romanian="romunščina";
 management.lang_slovenian="slovenščina";
 management.lang_spanish="španščina";
+management.lang_serbian="srbščina";
 management.lang_swedish="švedščina";
 management.lang_japanese="japonščina";
 management.lang_hungarian="madžarščina";
 management.lang_latvian="Latvijščina";
-management.net_legend="Nastavitve IP filtra (nastavite za P2P)";
+management.net_legend="Nastavitve IP filtra (prilagodi za P2P)";
 management.net_conctrl="TCP nadzor zgostitve";
 management.net_port="Največje št. vrat";
 management.net_tcptimeout="TCP časovna omejitev (v sekundah)";
@@ -1154,6 +1169,10 @@ qos.h2="Kakovost storitev (QoS)";
 qos.legend="QoS nastavitve";
 qos.srv="Zaženi QoS";
 qos.type="Paketni načrt";
+qos.aqd="Čakalni načrt";
+qos.aqd_sfq="SFQ";
+qos.aqd_codel="CODEL";
+qos.aqd_fqcodel="FQ_CODEL";
 qos.uplink="Hitrost prenosa od vas (kbit/s)";
 qos.dnlink="Hitrost prenosa k vam (kbit/s)";
 qos.gaming="Optimiziraj za igre";
@@ -1172,15 +1191,21 @@ qos.maxrate_o="Največja hitrost";
 qos.legend4="MAC prioriteta";
 qos.legend5="Prioriteta ethernet vrat";
 qos.legend6="Privzeti nivo pasovne širine";
+qos.legend7="Prednost paketov TCP";
+qos.pktdesc="Daj prednost majhnim TCP paketom z naslednjimi zastavicami:";
+qos.pktack="ACK";
+qos.pktrst="RST";
+qos.pktsyn="SYN";
+qos.pktfin="FIN";
 qos.enabledefaultlvls="Omogoči privzete omejitve po uporabniku";
 qos.bandwidth="Pasovna širina v kbit/s";
 
 //help container
 
-hqos.right1="Hitrost prenosa od vas:";
-hqos.right2="Nastavite na 80%-95% (maks.) vaše skupne hitrosti prenosa od vas.";
-hqos.right3="Hitrost prenosa k vam:";
-hqos.right4="Nastavite na 80%-100% (maks.) vaše skupne hitrosti prenosa k vam.";
+hqos.right1="";
+hqos.right2="Povezava navzgor:<br>Nastavite na 80%-95% (maks.) vaše skupne hitrosti prenosa od vas.<br>Povezava navzdol:<br>Nastavite na 80%-100% (maks.) vaše skupne hitrosti prenosa k vam.";
+hqos.right3="";
+hqos.right4="Omogoči privzete limite po uporabniku:<br>Omogoča nastavitev limite po uporabniku ali za vse uporabnike.";
 hqos.right6="Nadzirate lahko hitrost prenosa glede na aplikacijo, ki uporablja pasovno širino.";
 hqos.right8="Določite lahko prioriteto za ves promet z določenega IPja ali obsega IPjev.";
 hqos.right10="Določite lahko hitrost za ves promet z določene naprave na vaši mreži tako, da določite ime naprave, določite prioriteto in vnesete MAC naslov.";
@@ -1199,6 +1224,7 @@ routetbl.th1="Ciljna LAN mreža";
 route.titl="Usmerjevanje";
 route.h2="Napredno usmerjevanje";
 route.metric="Metrika";
+route.flags="Zastavice";
 route.mod="Način";
 route.bgp_legend="BGP nastavitve";
 route.bgp_ip="Sosednji IP";
@@ -1383,6 +1409,7 @@ service.vpnd_clcon="Skripta za priklop odjemalca";
 service.vpnd_ccddef="CCD-Dir DEFAULT datoteka";
 service.vpnd_dhcpbl="Prepreči DHCP skozi tunel";
 service.vpn_redirgate="Preusmeri privzeti prehod";
+service.vpnd_static="Statični ključ";
 service.vpn_legend="OpenVPN odjemalec";
 service.vpn_srv="Začni OpenVPN";
 service.vpn_ipname="Strežnikov IP/ime";
@@ -1425,7 +1452,7 @@ service.ssh_forwarding="SSH TCP posredovanje";
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS gumb";
 service.radiooff_legend_aoss="Funkcija AOSS gumba";
-service.radiooff_srv="Uporabi ta gumb za izključitev radia";
+service.radiooff_srv="Izključitev radia";
 service.radiooff_srv_aoss="AOSS";
 service.radiooff_srv_disabled="Neuporabljeno";
 service.radiooff_bootoff="Ob zagonu izključi radio";
@@ -1474,7 +1501,7 @@ service.warn_pass="Geslo za SMTP overjanje";
 service.milkfish_siprouter="Milkfish SIP Router";
 service.milkfish_alias="Alias";
 service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Main Switch";
+service.milkfish_mainswitch="SIP Router";
 service.milkfish_fromswitch="From-Substitution";
 service.milkfish_fromdomain="From-Domain";
 service.milkfish_username="Milkfish Username";
@@ -1498,15 +1525,15 @@ service.milkfish_contact="Contact";
 service.milkfish_agent="User Agent";
 service.milkfish_registrations="Active Registrations";
 //service.milkfish_="";//
-service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
-service.hmilkfish_right4="Enables/Disables From:-Headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled, if you want to allow callees to call you back if your WAN IP has changed";
-service.hmilkfish_right6="Callee calls back this Domain (instead of your WAN IP) when you send it as your From:-Domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect";
-service.hmilkfish_right8="Here goes your Milkfish Community Forum Username - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Registration allocates you yourname.homesip.net";
-service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
-service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
-service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="Enables/Disables Dynamic SIP (i.e. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right2="Enable or disable your Milkfish SIP router.";
+service.hmilkfish_right4="Enable or disable from:-headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled if you want to allow callees to call you back if your WAN IP has changed.";
+service.hmilkfish_right6="Callee calls back this domain (instead of your WAN IP) when you send it as your from:-domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect.";
+service.hmilkfish_right8="Put your Milkfish community forum username here.  Register at yourname.homesip.net.";
+service.hmilkfish_right10="Put your Milkfish community forum password here. Register at yourname.homesip.net.";
+service.hmilkfish_right12="Enable or disable basic SIP tracing on your router.";
+service.hmilkfish_right14="Local SIP subscribers are locally managed SIP accounts.";
+service.hmilkfish_right16="Local SIP aliases are SIP forwards similar to Email forwards. Can be used to forward alphanumeric-to-numeric phone user accounts or vice versa.";
+service.hmilkfish_right18="Enable or disables dynamic SIP (i.e. Homesip.net service). You will need to set your username and password.";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1535,6 +1562,14 @@ service.samba3_users="Uporabniki";
 service.samba3_username="Uporabniško ime";
 service.samba3_password="Geslo";
 service.samba3_user_shares="Dostop do souporabe";
+service.dlna_type_audio="Avdio";
+service.dlna_type_video="Video";
+service.dlna_type_images="Slike";
+
+// Zabbix
+service.zabbix_legend="Zabbix";
+service.zabbix_cl="Odjemalec";
+service.zabbix_serverip="Zabbix strežnik IP";
 
 // ** eop-tunnel.asp **//
 
@@ -1874,7 +1909,7 @@ aoss.start="Začni AOSS pogajanje";
 aoss.securitymodes="Varnostni načini";
 aoss.wpaaes="WPA AES";
 aoss.wpatkip="WPA TKIP";
-aoss.wep="WEP64 / 128";
+aoss.wep="WEP 64/128";
 aoss.client_name="Ime odjemalca";
 aoss.security="Varnost";
 aoss.connectivity="Povezovanje";
@@ -1913,6 +1948,7 @@ nintendo.spotpass.servers="Dovoli strežnike";
 
 
 sec80211x.xsuptype="Tip XSupplicanta";
+sec80211x.keyxchng="EAP upravljanje ključev";
 sec80211x.servercertif="Certifikat javnega strežnika";
 sec80211x.clientcertif="Certifikat odjemalca";
 sec80211x.phase2="Phase2";
@@ -2019,8 +2055,8 @@ freeradius.users="Uporabniki";
 freeradius.clients="Odjemalci";
 freeradius.username="Uporabniško ime";
 freeradius.password="Geslo";
-freeradius.downstream="Downstream";
-freeradius.upstream="Upstream";
+freeradius.downstream="Downspeed";
+freeradius.upstream="Upspeed";
 freeradius.sharedkey="Deljeni kjluč";
 
 
@@ -2032,7 +2068,7 @@ freeradius.email="Email naslov";
 freeradius.common="Skupno ime certifikata";
 freeradius.expiration="Rok veljavnosti (dni)";
 freeradius.passphrase="Geslo";
-freeradius.generate="Izdelaj certifikat";
+//freeradius.generate="Izdelaj certifikat";
 freeradius.cert_status="Status certifikata";
 freeradius.port="Radius vrata";
 
@@ -2262,6 +2298,24 @@ hsas.other="Druge nastavitve: pomoč";
 haoss.basic="\"AirStation One-Touch Secure System\" (AOSS) vam omogoča, da povežete AOSS sposobne odjemalce na vašo dostopno točko brez potrebe po ročni nastavitvi.";
 haoss.securitymodes="AOSS varnostni načini določajo, kateri načini so sprejeti za AOSS pogajanje. Če odjemalec podpira samo načine, ki niso omogočeni, se ne more povezati.";
 haoss.wps="WPS omogoči podporo za Wifi Protected Setup z uporabo gumba na vašem usmerjevalniku ali s PIN kodo natisnjeno na vašem odjemalcu ali aplikaciji";
+
+
+ias.title="Namestitev";
+ias.card_info="Namesti kartico";
+ias.edit_note="Klikni na poljubno polje za urejanje podatkov.";
+ias.assistant="Zaženi pomočnika za namestitev";
+ias.print_setup_card="Natisni nastavitve kartice";
+ias.print_guest_card="Natisni kartico gosta";
+ias.apply_changes="Shrani spremembe";
+ias.wlnetwork="Brezžična mreža";
+ias.wlinfo_2_4_GHz="(2.4 Ghz) - združljivo z 802.11n/g/b";
+ias.wlinfo_5_GHz="(5 Ghz) - združljivo z 802.11n/a";
+ias.hl_setup_card="Namesti kartico";
+ias.hl_client_access="Za odjemalčev dostop";
+ias.hl_for_conf="Za konfiguracijo";
+ias.hl_guest_card="Kartica gosta";
+
+
 // *******************		OLD PAGES 	****************//
 // ********************** DHCPTable.asp ****************//
 
