@@ -684,7 +684,7 @@ nas.proftpd_anon="Anonymer Login (Nur-Lesen)";
 nas.proftpd_anon_subdir="Anonymes Basisverzeichnis";
 nas.samba3_legend="Dateifreigabe";
 
-hnas.right2="Nutzer Kennwort Liste: Geben Sie ein Nutzer Kennwort pro Zeile ein. Das Passwort kann hierbei reiner Text oder MD5 Crypt sein.";
+hnas.right2="Um eine neue Freigabe zu erstellen Pfad und Freigabename eintragen. Anschließend User und deren Rechte für FTP und Samba Zugriff spezifizieren";
 
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
