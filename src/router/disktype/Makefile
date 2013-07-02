@@ -16,7 +16,7 @@ OBJS   = main.o lib.o \
          buffer.o file.o cdaccess.o cdimage.o vpc.o compressed.o \
          detect.o dos.o cdrom.o \
          linux.o unix.o archives.o \
-         udf.o blank.o
+         udf.o blank.o cloop.o apple.o beos.o amiga.o atari.o
 
 TARGET = disktype
 
