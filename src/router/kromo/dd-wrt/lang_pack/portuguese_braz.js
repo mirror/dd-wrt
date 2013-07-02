@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//      Update (21665 based)               - DD-WRT V24 SP2 by mrc_torres 30/MAY/2013       //
+//      Update (21956 based)               - DD-WRT V24 SP2 by mrc_torres 01/JUL/2013       //
 //      Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006       //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -693,7 +693,10 @@ usb.usb_printer="Suporte a Impressora USB";
 usb.usb_automnt="Montagem de Drive Automática";
 usb.usb_mntpoint="Ponto de Montagem de Disco";
 usb.usb_runonmount="Nome de Script Run-on-mount";
-usb.usb_diskinfo="Informação de Disco";
+usb.usb_diskinfo="Informações do Disco";
+usb.usb_mntjffs="Monte esta Partição em /jffs";
+usb.usb_mntopt="Monte esta Partição em /opt";
+usb.usb_ses_umount="Use o Botão SES para remover drives";
 
 // ** NAS.asp **//
 nas.titl="NAS";
@@ -708,12 +711,13 @@ nas.proftpd_anon_subdir="Sub-diretório Home Anônimo";
 nas.samba3_legend="Compartilhamento de Arquivos";
 nas.samba3="Servidor Samba"; 
 
-hnas.right2="Na lista de senhas de usuários entre com uma senha de usuário por linha. A senha pode ser em texto plano ou em criptografia MD5.";
-
 // ** DLNA ** 
 nas.dlna_legend="Servidor DLNA"; 
 nas.dlna_srv="MiniDLNA"; 
+nas.dlna_thumb="Incluir Arte da Capa";
 nas.dlna_dir="Pasta de Arquivos"; 
+
+hnas.right2="A fim de compartilhar recursos adicione novos compartilhamentos fornecendo o caminho e o nome do compartilhamento. Defina os usuários que podem acessar o compartilhamento através de ftp ou samba.";
 
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
@@ -865,7 +869,7 @@ idx_h.srv="Servidor Heart Beat";
 idx_h.con_strgy="Estratégia de Conexão";
 idx_h.max_idle="Conectar sob Demanda: Tempo Ocioso Máximo";
 idx_h.alive="Keep Alive: Período de Rediscagem";
-idx_h.reconnect="Forçar reconexão";
+idx_h.reconnect="Forçar Reconexão";
 
 
 // ** index_l2tp.asp **//
@@ -1499,6 +1503,11 @@ service.samba3_user_shares="Acessos Compartilhados";
 service.dlna_type_audio="Áudio"; 
 service.dlna_type_video="Vídeo"; 
 service.dlna_type_images="Imagens";
+
+// Zabbix
+service.zabbix_legend="Zabbix";
+service.zabbix_cl="Cliente";
+service.zabbix_serverip="Endereço IP do servidor Zabbix";
 
 // ** eop-tunnel.asp **//
 eoip.titl="Túnel EoIP";
@@ -2185,6 +2194,7 @@ ias.hl_setup_card="Cartão de Configuração";
 ias.hl_client_access="Para Acesso Cliente"; 
 ias.hl_for_conf="Para Configuração"; 
 ias.hl_guest_card="Cartão de Convidado"; 
+
 
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
