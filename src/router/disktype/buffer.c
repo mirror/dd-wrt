@@ -174,8 +174,8 @@ u8 get_buffer_real(SOURCE *s, u8 pos, u8 len, void *inbuf, void **outbuf)
       /* allocate one temporarily, will be free()'d at the next call */
       cache->tempbuf = malloc(len);
       if (cache->tempbuf == NULL) {
-	error("Out of memory, still going");
-	return 0;
+        error("Out of memory, still going");
+        return 0;
       }
       mybuf = cache->tempbuf;
     }
@@ -183,38 +183,38 @@ u8 get_buffer_real(SOURCE *s, u8 pos, u8 len, void *inbuf, void **outbuf)
     /* draw data from all covered chunks */
     got = 0;
     for (curr_chunk = first_chunk; curr_chunk <= last_chunk;
-	 curr_chunk += CHUNKSIZE) {
+         curr_chunk += CHUNKSIZE) {
       /* get that chunk */
       c = ensure_chunk(s, cache, curr_chunk);
       /* NOTE: curr_chunk == c->start */
 
       if (pos > curr_chunk) {
-	/* copy from middle of chunk */
-	/* NOTE:
-	   - we're in the first chunk, i.e. pos < curr_chunk + CHUNKSIZE
-	   - pos >= curr_chunk
-	   - got == 0
-	   - we must read to the end (else it would be the one-chunk case),
-	     i.e. pos + len > curr_chunk + CHUNKSIZE
-	   BUT: the chunk may be only partially filled
-	*/
-	if (c->end > pos) {
-	  tocopy = c->end - pos;
-	  memcpy(mybuf, c->buf + (pos & CHUNKMASK), tocopy);
-	} else
-	  tocopy = 0;
+        /* copy from middle of chunk */
+        /* NOTE:
+           - we're in the first chunk, i.e. pos < curr_chunk + CHUNKSIZE
+           - pos >= curr_chunk
+           - got == 0
+           - we must read to the end (else it would be the one-chunk case),
+             i.e. pos + len > curr_chunk + CHUNKSIZE
+           BUT: the chunk may be only partially filled
+        */
+        if (c->end > pos) {
+          tocopy = c->end - pos;
+          memcpy(mybuf, c->buf + (pos & CHUNKMASK), tocopy);
+        } else
+          tocopy = 0;
       } else {
-	/* copy from start of chunk */
-	tocopy = MINIMUM(c->len, len - got);  /* c->len can be zero */
-	if (tocopy)
-	  memcpy(mybuf + got, c->buf, tocopy);
+        /* copy from start of chunk */
+        tocopy = MINIMUM(c->len, len - got);  /* c->len can be zero */
+        if (tocopy)
+          memcpy(mybuf + got, c->buf, tocopy);
       }
       got += tocopy;
 
       /* stop after an incomplete chunk (possibly-okay for the last one,
-	 not-so-nice for earlier ones, but treated all the same) */
+         not-so-nice for earlier ones, but treated all the same) */
       if (c->len < CHUNKSIZE)
-	break;
+        break;
     }
 
     /* calculate return data */
@@ -245,16 +245,16 @@ static CHUNK * ensure_chunk(SOURCE *s, CACHE *cache, u8 start)
       /* try to read data between seq_pos and start */
       curr_chunk = s->seq_pos & ~CHUNKMASK;
       while (curr_chunk < start) {  /* runs at least once, due to the if()
-				       and the formula of curr_chunk */
-	ensure_chunk(s, cache, curr_chunk);
-	curr_chunk += CHUNKSIZE;
-	if (s->seq_pos < curr_chunk)
-	  break;  /* it didn't work out... */
+                                       and the formula of curr_chunk */
+        ensure_chunk(s, cache, curr_chunk);
+        curr_chunk += CHUNKSIZE;
+        if (s->seq_pos < curr_chunk)
+          break;  /* it didn't work out... */
       }
 
       /* re-check precondition since s->size may have changed */
       if (s->size_known && c->end >= s->size)
-	return c;  /* there is no more data to read */
+        return c;  /* there is no more data to read */
     }
 
     if (s->seq_pos != c->end)   /* c->end is where we'll continue reading */
@@ -266,34 +266,34 @@ static CHUNK * ensure_chunk(SOURCE *s, CACHE *cache, u8 start)
     /* use block-oriented read_block() method */
 
     if (s->blocksize < MINBLOCKSIZE ||
-	s->blocksize > CHUNKSIZE ||
-	((s->blocksize & (s->blocksize - 1)) != 0)) {
+        s->blocksize > CHUNKSIZE ||
+        ((s->blocksize & (s->blocksize - 1)) != 0)) {
       bailout("Internal error: Invalid block size %d", s->blocksize);
     }
 
     for (rel_start = 0; rel_start < CHUNKSIZE; rel_start = rel_end) {
       rel_end = rel_start + s->blocksize;
       if (c->len >= rel_end)
-	continue;  /* already read */
+        continue;  /* already read */
       pos = c->start + rel_start;
       if (s->size_known && pos >= s->size)
-	break;     /* whole block is past end of file */
+        break;     /* whole block is past end of file */
 
       /* read it */
       if (s->read_block(s, pos, c->buf + rel_start)) {
-	/* success */
-	c->len = rel_end;
-	c->end = c->start + c->len;
+        /* success */
+        c->len = rel_end;
+        c->end = c->start + c->len;
       } else {
-	/* failure */
-	c->len = rel_start;  /* this is safe as it can only mean a shrink */
-	c->end = c->start + c->len;
-	/* note the new end of file if necessary */
-	if (!s->size_known || s->size > c->end) {
-	  s->size_known = 1;
-	  s->size = c->end;
-	}
-	break;
+        /* failure */
+        c->len = rel_start;  /* this is safe as it can only mean a shrink */
+        c->end = c->start + c->len;
+        /* note the new end of file if necessary */
+        if (!s->size_known || s->size > c->end) {
+          s->size_known = 1;
+          s->size = c->end;
+        }
+        break;
       }
     }
 
@@ -308,20 +308,20 @@ static CHUNK * ensure_chunk(SOURCE *s, CACHE *cache, u8 start)
       toread = CHUNKSIZE - c->len;
     }
     result = s->read_bytes(s, c->start + c->len, toread,
-			   c->buf + c->len);
+                           c->buf + c->len);
     if (result > 0) {
       /* adjust offsets */
       c->len += result;
       c->end = c->start + c->len;
       if (s->sequential)
-	s->seq_pos += result;
+        s->seq_pos += result;
     }
     if (result < toread) {
       /* we fell short, so it must have been an error or end-of-file */
       /* make sure we don't try again */
       if (!s->size_known || s->size > c->end) {
-	s->size_known = 1;
-	s->size = c->end;
+        s->size_known = 1;
+        s->size = c->end;
       }
     }
   }
@@ -406,25 +406,25 @@ void close_source(SOURCE *s)
 #endif
       chain = cache->hashtab[hpos];
       if (chain != NULL) {
-	trav = chain;
-	do {
+        trav = chain;
+        do {
 #if PROFILE
-	  printf(" %lluK", trav->start >> 10);
-	  if (trav->len != CHUNKSIZE)
-	    printf(":%llu", trav->len);
+          printf(" %lluK", trav->start >> 10);
+          if (trav->len != CHUNKSIZE)
+            printf(":%llu", trav->len);
 #endif
-	  nexttrav = trav->next;
-	  free(trav->buf);
-	  free(trav);
-	  trav = nexttrav;
-	} while (trav != chain);
+          nexttrav = trav->next;
+          free(trav->buf);
+          free(trav);
+          trav = nexttrav;
+        } while (trav != chain);
 #if PROFILE
-	printf("\n");
+        printf("\n");
 #endif
       }
 #if PROFILE
       else
-	printf(" empty\n");
+        printf(" empty\n");
 #endif
     }
   }

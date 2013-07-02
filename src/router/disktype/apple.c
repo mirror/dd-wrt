@@ -33,7 +33,7 @@
 
 void detect_apple_partmap(SECTION *section, int level)
 {
-  int i, magic, count;
+  int i, sectorsize, magic, count;
   char s[256], append[64];
   unsigned char *buf;
   u8 start, size;
@@ -50,51 +50,56 @@ void detect_apple_partmap(SECTION *section, int level)
     }
   */
 
-  if (get_buffer(section, 512, 512, (void **)&buf) < 512)
-    return;
-
-  magic = get_be_short(buf);
-  if (magic == 0x5453) {
-    print_line(level, "Old-style Apple partition map");
-    return;
-  }
-  if (magic != 0x504D)
-    return;
-
-  /* get partition count and print info */
-  count = get_be_long(buf + 4);
-  print_line(level, "Apple partition map, %d entries", count);
-
-  for (i = 1; i <= count; i++) {
-    /* read the right sector */
-    /* NOTE: the previous run through the loop might have called
-     *  get_buffer indirectly, invalidating our old pointer */
-    if (i > 1 && get_buffer(section, i * 512, 512, (void **)&buf) < 512)
+  for (sectorsize = 512; sectorsize <= 4096; sectorsize <<= 1) {
+    if (get_buffer(section, sectorsize, sectorsize, (void **)&buf) < sectorsize)
       return;
 
-    /* check signature */
-    if (get_be_short(buf) != 0x504D) {
-      print_line(level, "Partition %d: invalid signature, skipping", i);
+    magic = get_be_short(buf);
+    if (magic == 0x5453) {
+      print_line(level, "Old-style Apple partition map");
+      return;
+    }
+    if (magic != 0x504D)
       continue;
+
+    /* get partition count and print info */
+    count = get_be_long(buf + 4);
+    print_line(level, "Apple partition map, %d entries, %d byte sectors",
+               count, sectorsize);
+
+    for (i = 1; i <= count; i++) {
+      /* read the right sector */
+      /* NOTE: the previous run through the loop might have called
+       *  get_buffer indirectly, invalidating our old pointer */
+      if (i > 1 && get_buffer(section, i * sectorsize, sectorsize,
+                              (void **)&buf) < sectorsize)
+        return;
+
+      /* check signature */
+      if (get_be_short(buf) != 0x504D) {
+        print_line(level, "Partition %d: invalid signature, skipping", i);
+        continue;
+      }
+
+      /* get position and size */
+      start = get_be_long(buf + 8);
+      size = get_be_long(buf + 12);
+      sprintf(append, " from %llu", start);
+      format_blocky_size(s, size, sectorsize, "sectors", append);
+      print_line(level, "Partition %d: %s",
+                 i, s);
+
+      /* get type */
+      get_string(buf + 48, 32, s);
+      print_line(level+1, "Type \"%s\"", s);
+
+      /* recurse for content detection */
+      if (start > count && size > 0) {  /* avoid recursion on self */
+        analyze_recursive(section, level + 1,
+                          start * sectorsize, size * sectorsize, 0);
+      }
     }
-
-    /* get position and size */
-    start = get_be_long(buf + 8);
-    size = get_be_long(buf + 12);
-    sprintf(append, " from %llu", start);
-    format_blocky_size(s, size, 512, "sectors", append);
-    print_line(level, "Partition %d: %s",
-	       i, s);
-
-    /* get type */
-    get_string(buf + 48, 32, s);
-    print_line(level+1, "Type \"%s\"", s);
-
-    /* recurse for content detection */
-    if (start > count && size > 0) {  /* avoid recursion on self */
-      analyze_recursive(section, level + 1,
-			start * 512, size * 512, 0);
-    }
+    return;  /* don't try bigger sector sizes */
   }
 }
 
@@ -138,11 +143,11 @@ void detect_apple_volume(SECTION *section, int level)
       print_line(level, "HFS wrapper for HFS Plus");
 
       offset = (u8)get_be_short(buf + 0x7e) * blocksize +
-	(u8)blockstart * 512;
+        (u8)blockstart * 512;
       /* TODO: size */
 
       analyze_recursive(section, level + 1,
-			offset, 0, 0);
+                        offset, 0, 0);
     }
 
   } else if (magic == 0x482B) {
@@ -181,7 +186,7 @@ void detect_apple_volume(SECTION *section, int level)
     if ((firstleafnode + 1) * nodesize > cataloglength)
       return;  /* the location is beyond the end of the catalog */
     if (get_buffer(section, catalogstart + firstleafnode * nodesize,
-		   nodesize, (void **)&buf) < nodesize)
+                   nodesize, (void **)&buf) < nodesize)
       return;
 
     /* the first record in this leaf node should be for parent id 1 */
