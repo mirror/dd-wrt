@@ -670,7 +670,17 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 	trx = (struct trx_header *) buf;
 
 	/* Look at every block boundary till 16MB; higher space is reserved for application data. */
-	blocksize = 65536;
+	
+	blocksize = mtd->erasesize;//65536;
+
+	if (nvram_match("boardnum","24") && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("gpio7", "wps_button")) {
+		printk(KERN_INFO "DIR-686L Hack for detecting filesystems\n");
+		blocksize = 65536;
+	}
+
+
 	printk("lookup_nflash_rootfs_offset: offset = 0x%x\n", offset);
 	for (off = offset; off < offset + size; off += blocksize) {
 		mask = blocksize - 1;
@@ -693,6 +703,8 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 			cramfsb = (struct cramfs_super *)((unsigned char *)cramfsb + shift);
 			squashfsb = (struct squashfs_super_block *)
 				((unsigned char *)squashfsb + shift);
+			squashfsb2 = NULL;
+			printk(KERN_INFO "found TRX Header on nflash!\n");
 			continue;
 		}
 
@@ -720,7 +732,7 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 			       mtd->name, off / blocksize);
 			break;
 		}
-		if (squashfsb2->s_magic == SQUASHFS_MAGIC) {
+		if (squashfsb2 && squashfsb2->s_magic == SQUASHFS_MAGIC) {
 			rootfssize = squashfsb2->bytes_used;
 			off+=0x60;
 			printk(KERN_NOTICE
