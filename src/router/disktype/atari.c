@@ -95,10 +95,10 @@ void detect_atari_partmap(SECTION *section, int level)
       strcat(append, ", bootable");
     format_blocky_size(s, size, 512, "sectors", append);
     print_line(level, "Partition %d: %s",
-	       i+1, s);
+               i+1, s);
 
     print_line(level + 1, "Type \"%s\" (%s)", type,
-	       get_name_for_type(type));
+               get_name_for_type(type));
 
     if (memcmp(type, "XGM", 3) == 0) {
       /* extended partition */
@@ -106,7 +106,7 @@ void detect_atari_partmap(SECTION *section, int level)
     } else {
       /* recurse for content detection */
       analyze_recursive(section, level + 1,
-			(u8)start * 512, (u8)size * 512, 0);
+                        (u8)start * 512, (u8)size * 512, 0);
     }
   }
 }
@@ -141,28 +141,28 @@ static void detect_atari_partmap_ext(SECTION *section, u8 extbase, int level)
       size = sizes[i];
       type = types[i];
       if ((flags[i] & 1) == 0)
-	continue;
+        continue;
 
       if (memcmp(type, "XGM", 3) == 0) {
-	/* link to next table */
+        /* link to next table */
 
-	nexttablebase = extbase + start;
+        nexttablebase = extbase + start;
 
       } else {
-	/* real partition */
+        /* real partition */
 
-	sprintf(append, " from %lu", start);
-	format_blocky_size(s, size, 512, "sectors", append);
-	print_line(level, "Partition %d: %s",
-		   extpartnum, s);
-	extpartnum++;
+        sprintf(append, " from %lu", start);
+        format_blocky_size(s, size, 512, "sectors", append);
+        print_line(level, "Partition %d: %s",
+                   extpartnum, s);
+        extpartnum++;
 
-	print_line(level + 1, "Type \"%s\" (%s)", type,
-		   get_name_for_type(type));
+        print_line(level + 1, "Type \"%s\" (%s)", type,
+                   get_name_for_type(type));
 
-	/* recurse for content detection */
-	analyze_recursive(section, level + 1,
-			  (tablebase + start) * 512, (u8)size * 512, 0);
+        /* recurse for content detection */
+        analyze_recursive(section, level + 1,
+                          (tablebase + start) * 512, (u8)size * 512, 0);
       }
     }
   }

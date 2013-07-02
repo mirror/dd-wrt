@@ -120,42 +120,42 @@ void detect_ufs(SECTION *section, int level)
       magic = get_ve_long(en, buf + 1372);
 
       if (magic == 0x00011954) {
-	print_line(level, "UFS file system, %d KiB offset, %s",
-		   at, get_ve_name(en));
+        print_line(level, "UFS file system, %d KiB offset, %s",
+                   at, get_ve_name(en));
       } else if (magic == 0x00095014) {
-	print_line(level, "UFS file system, %d KiB offset, long file names, %s",
-		   at, get_ve_name(en));
+        print_line(level, "UFS file system, %d KiB offset, long file names, %s",
+                   at, get_ve_name(en));
       } else if (magic == 0x00195612) {
-	print_line(level, "UFS file system, %d KiB offset, fs_featurebits, %s",
-		   at, get_ve_name(en));
+        print_line(level, "UFS file system, %d KiB offset, fs_featurebits, %s",
+                   at, get_ve_name(en));
       } else if (magic == 0x05231994) {
-	print_line(level, "UFS file system, %d KiB offset, fs_featurebits, >4GB support, %s",
-		   at, get_ve_name(en));
+        print_line(level, "UFS file system, %d KiB offset, fs_featurebits, >4GB support, %s",
+                   at, get_ve_name(en));
       } else if (magic == 0x19540119) {
-	print_line(level, "UFS2 file system, %d KiB offset, %s",
-		   at, get_ve_name(en));
+        print_line(level, "UFS2 file system, %d KiB offset, %s",
+                   at, get_ve_name(en));
       } else
-	continue;
+        continue;
 
       /* volume name by FreeBSD convention */
       get_string(buf + 680, 32, s);
       if (s[0])
-	print_line(level + 1, "Volume name \"%s\" (in superblock)", s);
+        print_line(level + 1, "Volume name \"%s\" (in superblock)", s);
 
       /* last mount point */
       get_string(buf + 212, 255, s);  /* actually longer, but varies */
       if (s[0])
-	print_line(level + 1, "Last mounted at \"%s\"", s);
+        print_line(level + 1, "Last mounted at \"%s\"", s);
 
       /* volume name by Darwin convention */
       if (get_buffer(section, 7 * 1024, 1024, (void **)&buf) == 1024) {
-	if (get_ve_long(en, buf) == 0x4c41424c &&  /* "LABL" */
-	    get_ve_long(en, buf + 8) == 1) {       /* version 1 */
-	  namelen = get_ve_short(en, buf + 16);
-	  get_string(buf + 18, namelen, s);  /* automatically limits to 255 */
-	  print_line(level + 1, "Volume name \"%s\" (in label v%lu)",
-		     s, get_ve_long(en, buf + 8));
-	}
+        if (get_ve_long(en, buf) == 0x4c41424c &&  /* "LABL" */
+            get_ve_long(en, buf + 8) == 1) {       /* version 1 */
+          namelen = get_ve_short(en, buf + 16);
+          get_string(buf + 18, namelen, s);  /* automatically limits to 255 */
+          print_line(level + 1, "Volume name \"%s\" (in label v%lu)",
+                     s, get_ve_long(en, buf + 8));
+        }
       }
 
       return;
@@ -181,35 +181,35 @@ void detect_sysv(SECTION *section, int level)
 
     for (en = 0; en < 2; en++) {
       if (get_ve_long(en, buf + 1016) == 0x2b5544) {
-	blocksize_code = get_ve_long(en, buf + 1020);
-	s[0] = 0;
-	if (blocksize_code == 1)
-	  strcpy(s, "512 byte blocks");
-	else if (blocksize_code == 2)
-	  strcpy(s, "1 KiB blocks");
-	else if (blocksize_code == 3)
-	  strcpy(s, "2 KiB blocks");
-	else
-	  snprintf(s, 255, "unknown block size code %d", (int)blocksize_code);
+        blocksize_code = get_ve_long(en, buf + 1020);
+        s[0] = 0;
+        if (blocksize_code == 1)
+          strcpy(s, "512 byte blocks");
+        else if (blocksize_code == 2)
+          strcpy(s, "1 KiB blocks");
+        else if (blocksize_code == 3)
+          strcpy(s, "2 KiB blocks");
+        else
+          snprintf(s, 255, "unknown block size code %d", (int)blocksize_code);
 
-	print_line(level, "XENIX file system (SysV variant), %s, %s",
-		   get_ve_name(en), s);
-	return;
+        print_line(level, "XENIX file system (SysV variant), %s, %s",
+                   get_ve_name(en), s);
+        return;
       }
 
       if (get_ve_long(en, buf + 504) == 0xfd187e20) {
-	blocksize_code = get_ve_long(en, buf + 508);
-	s[0] = 0;
-	if (blocksize_code == 1)
-	  strcpy(s, "512 byte blocks");
-	else if (blocksize_code == 2)
-	  strcpy(s, "1 KiB blocks");
-	else
-	  snprintf(s, 255, "unknown block size code %d", (int)blocksize_code);
+        blocksize_code = get_ve_long(en, buf + 508);
+        s[0] = 0;
+        if (blocksize_code == 1)
+          strcpy(s, "512 byte blocks");
+        else if (blocksize_code == 2)
+          strcpy(s, "1 KiB blocks");
+        else
+          snprintf(s, 255, "unknown block size code %d", (int)blocksize_code);
 
-	print_line(level, "SysV file system, %s, %s",
-		   get_ve_name(en), s);
-	return;
+        print_line(level, "SysV file system, %s, %s",
+                   get_ve_name(en), s);
+        return;
       }
     }
   }
@@ -278,10 +278,10 @@ void detect_bsd_disklabel(SECTION *section, int level)
     print_line(level, "BSD disklabel (at sector 1), %d partitions", partcount);
   } else if (partcount > 8 && partcount <= 16) {
     print_line(level, "BSD disklabel (at sector 1), %d partitions (more than usual, but valid)",
-	       partcount);
+               partcount);
   } else if (partcount > 16) {
     print_line(level, "BSD disklabel (at sector 1), %d partitions (broken, limiting to 16)",
-	       partcount);
+               partcount);
     partcount = 16;
   }
   if (sectsize != 512) {
@@ -298,8 +298,8 @@ void detect_bsd_disklabel(SECTION *section, int level)
     if (types[i] != 0 || i == 2) {
       offset = (u8)starts[i] * 512;
       if (!min_offset_valid || offset < min_offset) {
-	min_offset = offset;
-	min_offset_valid = 1;
+        min_offset = offset;
+        min_offset_valid = 1;
       }
     }
   }
@@ -330,10 +330,10 @@ void detect_bsd_disklabel(SECTION *section, int level)
     sprintf(append, " from %lu", starts[i]);
     format_blocky_size(s, sizes[i], 512, "sectors", append);
     print_line(level, "Partition %c: %s",
-	       pn, s);
+               pn, s);
 
     print_line(level + 1, "Type %d (%s)",
-	       types[i], get_name_for_bsdtype(types[i]));
+               types[i], get_name_for_bsdtype(types[i]));
 
     if (types[i] == 0 || sizes[i] == 0)
       continue;
@@ -346,28 +346,29 @@ void detect_bsd_disklabel(SECTION *section, int level)
 
       /* recurse for content detection, but carefully */
       analyze_recursive(section, level + 1,
-			offset - base_offset, (u8)sizes[i] * 512,
-			FLAG_IN_DISKLABEL);
+                        offset - base_offset, (u8)sizes[i] * 512,
+                        FLAG_IN_DISKLABEL);
       did_recurse = 1;
     } else {
       /* recurse for content detection */
       analyze_recursive(section, level + 1,
-			offset - base_offset, (u8)sizes[i] * 512,
-			0);
+                        offset - base_offset, (u8)sizes[i] * 512,
+                        0);
     }
   }
 
   if (did_recurse)
     stop_detect();  /* don't run other detectors; we already did that
-		       for an overlapping partition. */
+                       for an overlapping partition. */
 }
 
 /*
- * FreeBSD boot loader (?)
+ * FreeBSD, OpenBSD, NetBSD boot loaders
  */
 
 void detect_bsd_loader(SECTION *section, int level)
 {
+  int i;
   unsigned char *buf;
 
   if (section->flags & FLAG_IN_DISKLABEL)
@@ -377,16 +378,51 @@ void detect_bsd_loader(SECTION *section, int level)
     if (get_le_short(buf + 0x1b0) == 0xbb66) {
       print_line(level, "FreeBSD boot manager (i386 boot0 at sector 0)");
     } else if (get_le_long(buf + 0x1f6) == 0 &&
-	       get_le_long(buf + 0x1fa) == 50000 &&
-	       get_le_short(buf + 0x1fe) == 0xaa55) {
+               get_le_long(buf + 0x1fa) == 50000 &&
+               get_le_short(buf + 0x1fe) == 0xaa55) {
       print_line(level, "FreeBSD boot loader (i386 boot1 at sector 0)");
+    } else if (find_memory(buf, 512, "!Loading", 8) >= 0) {
+      print_line(level, "OpenBSD boot loader (i386 biosboot)");
+    } else if (find_memory(buf, 512, "Not a bootxx image", 18) >= 0) {
+      print_line(level, "NetBSD/i386 boot loader (pbr.S, at sector 0)");
+    }
+  }
+
+  if (get_buffer(section, 0, 2048, (void **)&buf) == 2048) {
+    if (find_memory(buf, 2048, "Starting the BTX loader", 23) >= 0) {
+      print_line(level, "FreeBSD boot loader (CD loader)");
+    } else if (find_memory(buf, 2048, "/cdboot\0/CDBOOT\0", 16) >= 0) {
+      print_line(level, "OpenBSD boot loader (cdbr)");
     }
   }
 
   if (get_buffer(section, 1024, 512, (void **)&buf) == 512) {
     if (memcmp(buf + 2, "BTX", 3) == 0) {
       print_line(level, "FreeBSD boot loader (i386 boot2/BTX %d.%02d at sector 2)",
-		 (int)buf[5], (int)buf[6]);
+                 (int)buf[5], (int)buf[6]);
+    }
+  }
+
+  for (i = 0; i < 4; i++) {
+    if (get_buffer(section, i * 512, 512, (void **)&buf) == 512) {
+      int magic = -1;
+      if ((get_le_long(buf + 4) | 0x0f) == (0x7886b6d0 | 0x0f)) {
+        magic = get_le_long(buf + 4) & 0x0f;
+      } else if ((get_le_long(buf + 500) | 0x0f) == (0x7886b6d0 | 0x0f)) {
+        magic = get_le_long(buf + 500) & 0x0f;
+      }
+      if (magic >= 0) {
+        if (magic == 1)
+          print_line(level, "NetBSD/i386 boot loader (magic 1, bootxx.S, at sector %d)", i);
+        else if (magic == 2)
+          print_line(level, "NetBSD/i386 boot loader (magic 2, biosboot.S, at sector %d)", i);
+        else if (magic == 3)
+          print_line(level, "NetBSD/i386 boot loader (magic 3, start_pxe.S, at sector %d)", i);
+        else if (magic == 4)
+          print_line(level, "NetBSD/i386 boot loader (magic 4, fatboot.S, at sector %d)", i);
+        else
+          print_line(level, "NetBSD/i386 boot loader (magic %d, unknown, at sector %d)", magic, i);
+      }
     }
   }
 }
@@ -508,17 +544,17 @@ void detect_solaris_vtoc(SECTION *section, int level)
   partcount = get_le_short(buf + 30);
   if (partcount > 16) {
     print_line(level, "Solaris x86 disklabel, version 1, %d partitions (limiting to 16)",
-	       partcount);
+               partcount);
     partcount = 16;
   } else {
     print_line(level, "Solaris x86 disklabel, version 1, %d partitions",
-	       partcount);
+               partcount);
   }
 
   sectorsize = get_le_short(buf + 28);
   if (sectorsize != 512)
     print_line(level + 1, "Unusual sector size %d bytes, your mileage may vary",
-	       sectorsize);
+               sectorsize);
 
   get_string(buf + 20, 8, s);
   if (s[0])
@@ -539,10 +575,10 @@ void detect_solaris_vtoc(SECTION *section, int level)
     sprintf(append, " from %lu", starts[i]);
     format_blocky_size(s, sizes[i], 512, "sectors", append);
     print_line(level, "Partition %d: %s",
-	       i, s);
+               i, s);
 
     print_line(level + 1, "Type %d (%s)",
-	       types[i], get_name_for_vtoctype(types[i]));
+               types[i], get_name_for_vtoctype(types[i]));
 
     offset = (u8)starts[i] * 512;
     if (offset == 0) {
@@ -550,20 +586,20 @@ void detect_solaris_vtoc(SECTION *section, int level)
 
       /* recurse for content detection, but carefully */
       analyze_recursive(section, level + 1,
-			offset, (u8)sizes[i] * 512,
-			FLAG_IN_DISKLABEL);
+                        offset, (u8)sizes[i] * 512,
+                        FLAG_IN_DISKLABEL);
       did_recurse = 1;
     } else {
       /* recurse for content detection */
       analyze_recursive(section, level + 1,
-			offset, (u8)sizes[i] * 512,
-			0);
+                        offset, (u8)sizes[i] * 512,
+                        0);
     }
   }
 
   if (did_recurse)
     stop_detect();  /* don't run other detectors; we already did that
-		       for an overlapping partition. */
+                       for an overlapping partition. */
 }
 
 /*
@@ -607,7 +643,7 @@ void detect_vxfs(SECTION *section, int level)
     if (get_ve_long(en, buf) == 0xA501FCF5) {
       version = get_ve_long(en, buf + 4);
       print_line(level, "Veritas VxFS file system, version %d, %s",
-		 version, get_ve_name(en));
+                 version, get_ve_name(en));
 
       blocksize = get_ve_long(en, buf + 32);
       blockcount = get_ve_long(en, buf + 36);
