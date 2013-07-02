@@ -138,9 +138,9 @@ void start_ftpsrv(void)
 				cunext = cu->next;
 				free(cu);
 			}
-			csunext = csu->next;
-			free(csu);
+			csunext = csu->next;	
 		}
+		free(csu);
 
 		fprintf(fp, "DenyAll\n");
 		fprintf(fp, "</Limit>\n");
