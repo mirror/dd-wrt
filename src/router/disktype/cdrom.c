@@ -96,8 +96,8 @@ void detect_iso(SECTION *section, int level)
     case 0:  /* El Torito */
       /* check signature */
       if (memcmp(buf+7, "EL TORITO SPECIFICATION", 23) != 0) {
-	print_line(level+1, "Boot record of unknown format");
-	break;
+        print_line(level+1, "Boot record of unknown format");
+        break;
       }
 
       bcpos = get_le_long(buf + 0x47);
@@ -116,7 +116,7 @@ void detect_iso(SECTION *section, int level)
       /* read Volume ID */
       format_utf16_be(buf + 40, 32, t);
       for (i = strlen(t)-1; i >= 0 && t[i] == ' '; i--)
-	t[i] = 0;
+        t[i] = 0;
       print_line(level+1, "Joliet extension, volume name \"%s\"", t);
       break;
 

@@ -61,8 +61,8 @@ void detect_ext234(SECTION *section, int level)
     if (get_le_long(buf + 100) & 0x0078)
       fslevel = 4;
     /* Ext4 sets min_extra_isize even on external journals */
-//    if (get_le_short(buf + 348) >= 0x1c)
-//      fslevel = 4;
+    if (get_le_short(buf + 348) >= 0x1c)
+      fslevel = 4;
     /* Ext4dev TEST_FILESYS flag */
     if (get_le_long(buf + 352) & 0x0004)
       is_dev = 1;
@@ -148,13 +148,13 @@ void detect_reiser(SECTION *section, int level)
     } else if (memcmp(buf + 52, "ReIsEr3Fs", 9) == 0) {
       newformat = get_le_short(buf + 72);
       if (newformat == 0) {
-	print_line(level, "ReiserFS file system (old 3.5 format, non-standard journal, starts at %d KiB)", at);
+        print_line(level, "ReiserFS file system (old 3.5 format, non-standard journal, starts at %d KiB)", at);
       } else if (newformat == 2) {
-	print_line(level, "ReiserFS file system (new 3.6 format, non-standard journal, starts at %d KiB)", at);
-	newformat = 1;
+        print_line(level, "ReiserFS file system (new 3.6 format, non-standard journal, starts at %d KiB)", at);
+        newformat = 1;
       } else {
-	print_line(level, "ReiserFS file system (v3 magic, but unknown version %d, starts at %d KiB)", newformat, at);
-	continue;
+        print_line(level, "ReiserFS file system (v3 magic, but unknown version %d, starts at %d KiB)", newformat, at);
+        continue;
       }
     } else
       continue;
@@ -212,7 +212,7 @@ void detect_reiser4(SECTION *section, int level)
 
   format_size(s, blocksize);
   print_line(level, "Reiser4 file system (%s, block size %s)",
-	     layout_name, s);
+             layout_name, s);
 
   /* get label and UUID */
   get_string(buf + 36, 16, s);
@@ -279,8 +279,8 @@ void detect_linux_raid(SECTION *section, int level)
     return;
 
   print_line(level, "Linux RAID disk, version %lu.%lu.%lu",
-	     get_le_long(buf + 4), get_le_long(buf + 8),
-	     get_le_long(buf + 12));
+             get_le_long(buf + 4), get_le_long(buf + 8),
+             get_le_long(buf + 12));
 
   /* get some data */
   rlevel = (int)(long)get_le_long(buf + 28);   /* is signed, actually */
@@ -291,10 +291,10 @@ void detect_linux_raid(SECTION *section, int level)
   /* find the name for the personality in the table */
   if (rlevel < -4 || rlevel > 5 || levels[rlevel+4] == NULL) {
     print_line(level + 1, "Unknown RAID level %d using %d regular %d spare disks",
-	       rlevel, raid_disks, spare);
+               rlevel, raid_disks, spare);
   } else {
     print_line(level + 1, "%s set using %d regular %d spare disks",
-	       levels[rlevel+4], raid_disks, spare);
+               levels[rlevel+4], raid_disks, spare);
   }
 
   /* get the UUID */
@@ -327,8 +327,8 @@ void detect_linux_lvm(SECTION *section, int level)
 
   minor_version = get_le_short(buf + 2);
   print_line(level, "Linux LVM1 volume, version %d%s",
-	     minor_version,
-	     (minor_version < 1 || minor_version > 2) ? " (unknown)" : "");
+             minor_version,
+             (minor_version < 1 || minor_version > 2) ? " (unknown)" : "");
 
   /* volume group name */
   get_string(buf + 172, 128, s);
@@ -363,7 +363,7 @@ void detect_linux_lvm(SECTION *section, int level)
   /* try to detect from first PE */
   if (pe_start > 0) {
     analyze_recursive(section, level + 1,
-		      pe_start, 0, 0);
+                      pe_start, 0, 0);
     /* TODO: elaborate on this by reading the PE allocation map */
   }
 }
@@ -396,16 +396,16 @@ void detect_linux_lvm2(SECTION *section, int level)
     if (memcmp(buf + 24, "LVM2 001", 8) != 0) {
       get_string(buf + 24, 8, s);
       print_line(level, "LABELONE label at sector %d, unknown type \"%s\"",
-		 at, s);
+                 at, s);
       return;
     }
 
     print_line(level, "Linux LVM2 volume, version 001");
     print_line(level + 1, "LABELONE label at sector %d",
-	       at);
+               at);
 
     if (labeloffset >= 512 || labelsector > 256 ||
-	labelsector != at) {
+        labelsector != at) {
       print_line(level + 1, "LABELONE data inconsistent, aborting analysis");
       return;
     }
@@ -423,10 +423,10 @@ void detect_linux_lvm2(SECTION *section, int level)
     mdoffset = 0;
     for (i = 0; i < 16; i++)
       if (get_le_quad(buf + labeloffset + 40 + i * 16) == 0) {
-	i++;
-	mdoffset = get_le_quad(buf + labeloffset + 40 + i * 16);
-	mdsize = get_le_quad(buf + labeloffset + 40 + i * 16 + 8);
-	break;
+        i++;
+        mdoffset = get_le_quad(buf + labeloffset + 40 + i * 16);
+        mdsize = get_le_quad(buf + labeloffset + 40 + i * 16 + 8);
+        break;
       }
     if (mdoffset == 0)
       return;
@@ -466,28 +466,28 @@ void detect_linux_swap(SECTION *section, int level)
 
     if (memcmp((char *)buf + 512 - 10, "SWAP-SPACE", 10) == 0) {
       print_line(level, "Linux swap, version 1, %d KiB pages",
-		 pagesize >> 10);
+                 pagesize >> 10);
     }
     if (memcmp((char *)buf + 512 - 10, "SWAPSPACE2", 10) == 0) {
       if (get_buffer(section, 1024, 512, (void **)&buf) != 512)
-	break;  /* really shouldn't happen */
+        break;  /* really shouldn't happen */
 
       for (en = 0; en < 2; en++) {
-	version = get_ve_long(en, buf);
-	if (version >= 1 && version < 10)
-	  break;
+        version = get_ve_long(en, buf);
+        if (version >= 1 && version < 10)
+          break;
       }
       if (en < 2) {
-	print_line(level, "Linux swap, version 2, subversion %d, %d KiB pages, %s",
-		   (int)version, pagesize >> 10, get_ve_name(en));
-	if (version == 1) {
-	  pages = get_ve_long(en, buf + 4) - 1;
-	  format_blocky_size(s, pages, pagesize, "pages", NULL);
-	  print_line(level + 1, "Swap size %s", s);
-	}
+        print_line(level, "Linux swap, version 2, subversion %d, %d KiB pages, %s",
+                   (int)version, pagesize >> 10, get_ve_name(en));
+        if (version == 1) {
+          pages = get_ve_long(en, buf + 4) - 1;
+          format_blocky_size(s, pages, pagesize, "pages", NULL);
+          print_line(level + 1, "Swap size %s", s);
+        }
       } else {
-	print_line(level, "Linux swap, version 2, illegal subversion, %d KiB pages",
-		   pagesize >> 10);
+        print_line(level, "Linux swap, version 2, illegal subversion, %d KiB pages",
+                   pagesize >> 10);
       }
     }
   }
@@ -527,13 +527,13 @@ void detect_linux_misc(SECTION *section, int level)
     }
     if (version) {
       print_line(level, "Minix file system (v%d, %d chars)",
-		 version, namesize);
+                 version, namesize);
       if (version == 1)
-	blocks = get_le_short(buf + 1024 + 2);
+        blocks = get_le_short(buf + 1024 + 2);
       else
-	blocks = get_le_long(buf + 1024 + 20);
+        blocks = get_le_long(buf + 1024 + 20);
       blocks = (blocks - get_le_short(buf + 1024 + 8))
-	<< get_le_short(buf + 1024 + 10);
+        << get_le_short(buf + 1024 + 10);
       format_blocky_size(s, blocks, 1024, "blocks", NULL);
       print_line(level + 1, "Volume size %s", s);
     }
@@ -554,18 +554,18 @@ void detect_linux_misc(SECTION *section, int level)
       break;
     for (en = 0; en < 2; en++) {
       if (get_ve_long(en, buf + off) == 0x28cd3d45) {
-	print_line(level, "Linux cramfs, starts sector %d, %s",
-		   off >> 9, get_ve_name(en));
+        print_line(level, "Linux cramfs, starts sector %d, %s",
+                   off >> 9, get_ve_name(en));
 
-	get_string(buf + off + 48, 16, s);
-	print_line(level + 1, "Volume name \"%s\"", s);
+        get_string(buf + off + 48, 16, s);
+        print_line(level + 1, "Volume name \"%s\"", s);
 
-	size = get_ve_long(en, buf + off + 4);
-	blocks = get_ve_long(en, buf + off + 40);
-	format_size_verbose(s, size);
-	print_line(level + 1, "Compressed size %s", s);
-	format_blocky_size(s, blocks, 4096, "blocks", " -assumed-");
-	print_line(level + 1, "Data size %s", s);
+        size = get_ve_long(en, buf + off + 4);
+        blocks = get_ve_long(en, buf + off + 40);
+        format_size_verbose(s, size);
+        print_line(level + 1, "Compressed size %s", s);
+        format_blocky_size(s, blocks, 4096, "blocks", " -assumed-");
+        print_line(level + 1, "Data size %s", s);
       }
     }
   }
@@ -578,16 +578,16 @@ void detect_linux_misc(SECTION *section, int level)
       major = get_ve_short(en, buf + 28);
       minor = get_ve_short(en, buf + 30);
       print_line(level, "Linux squashfs, version %d.%d, %s",
-		 major, minor, get_ve_name(en));
+                 major, minor, get_ve_name(en));
 
       if (major > 2)
-	size = get_ve_quad(en, buf + 63);
+        size = get_ve_quad(en, buf + 63);
       else
-	size = get_ve_long(en, buf + 8);
+        size = get_ve_long(en, buf + 8);
       if (major > 1)
-	blocksize = get_ve_long(en, buf + 51);
+        blocksize = get_ve_long(en, buf + 51);
       else
-	blocksize = get_ve_short(en, buf + 32);
+        blocksize = get_ve_short(en, buf + 32);
 
       format_size_verbose(s, size);
       print_line(level + 1, "Compressed size %s", s);
@@ -617,7 +617,7 @@ void detect_linux_loader(SECTION *section, int level)
 
   /* boot sector stuff */
   if (executable && (memcmp(buf + 2, "LILO", 4) == 0 ||
-		     memcmp(buf + 6, "LILO", 4) == 0))
+                     memcmp(buf + 6, "LILO", 4) == 0))
     print_line(level, "LILO boot loader");
   if (executable && memcmp(buf + 3, "SYSLINUX", 8) == 0)
     print_line(level, "SYSLINUX boot loader");
@@ -626,25 +626,25 @@ void detect_linux_loader(SECTION *section, int level)
 
   /* we know GRUB a little better... */
   if (executable &&
-      find_memory(buf, 512, "Geom\0Hard Disk\0Read\0 Error\0", 27) >= 0) {
+      find_memory(buf, 512, "Geom\0Hard Disk\0Read\0 Error", 26) >= 0) {
     if (buf[0x3e] == 3) {
       print_line(level, "GRUB boot loader, compat version %d.%d, boot drive 0x%02x",
-		 (int)buf[0x3e], (int)buf[0x3f], (int)buf[0x40]);
+                 (int)buf[0x3e], (int)buf[0x3f], (int)buf[0x40]);
     } else if (executable && buf[0x1bc] == 2 && buf[0x1bd] <= 2) {
       id = buf[0x3e];
       if (id == 0x10) {
-	print_line(level, "GRUB boot loader, compat version %d.%d, normal version",
-		   (int)buf[0x1bc], (int)buf[0x1bd]);
+        print_line(level, "GRUB boot loader, compat version %d.%d, normal version",
+                   (int)buf[0x1bc], (int)buf[0x1bd]);
       } else if (id == 0x20) {
-	print_line(level, "GRUB boot loader, compat version %d.%d, LBA version",
-		   (int)buf[0x1bc], (int)buf[0x1bd]);
+        print_line(level, "GRUB boot loader, compat version %d.%d, LBA version",
+                   (int)buf[0x1bc], (int)buf[0x1bd]);
       } else {
-	print_line(level, "GRUB boot loader, compat version %d.%d",
-		   (int)buf[0x1bc], (int)buf[0x1bd]);
+        print_line(level, "GRUB boot loader, compat version %d.%d",
+                   (int)buf[0x1bc], (int)buf[0x1bd]);
       }
     } else {
       print_line(level, "GRUB boot loader, unknown compat version %d",
-		 buf[0x3e]);
+                 buf[0x3e]);
     }
   }
 
@@ -660,7 +660,7 @@ void detect_linux_loader(SECTION *section, int level)
     char *number = (char *)buf + 164;
     char *total = (char *)buf + 172;
     print_line(level, "Debian floppy split, name \"%s\", disk %s of %s",
-	       name, number, total);
+               name, number, total);
   }
 }
 

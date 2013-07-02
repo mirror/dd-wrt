@@ -89,7 +89,7 @@ typedef void (*DETECTOR)(SECTION *section, int level);
 void analyze_source(SOURCE *s, int level);
 void analyze_source_special(SOURCE *s, int level, u8 pos, u8 size);
 void analyze_recursive(SECTION *section, int level,
-		       u8 rel_pos, u8 size, int flags);
+                       u8 rel_pos, u8 size, int flags);
 void stop_detect(void);
 
 /* file source functions */
@@ -149,7 +149,7 @@ void get_pstring(void *from, char *to);
 void get_padded_string(void *from, int len, char pad, char *to);
 
 int find_memory(void *haystack, int haystack_len,
-		void *needle, int needle_len);
+                void *needle, int needle_len);
 
 /* name table lookups */
 

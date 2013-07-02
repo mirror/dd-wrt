@@ -181,7 +181,7 @@ void detect_amiga_partmap(SECTION *section, int level)
   part_ptr = get_be_long(buf + 28);
   for (i = 1; part_ptr != 0xffffffffUL; i++) {
     if (get_buffer(section, (u8)part_ptr * 512, 256,
-		   (void **)&buf) < 256) {
+                   (void **)&buf) < 256) {
       print_line(level, "Partition %d: Can't read partition info block");
       break;
     }
@@ -218,7 +218,7 @@ void detect_amiga_partmap(SECTION *section, int level)
     /* detect contents */
     if (size > 0 && start > 0) {
       analyze_recursive(section, level + 1,
-			start * 512, size * 512, 0);
+                        start * 512, size * 512, 0);
     }
   }
 }

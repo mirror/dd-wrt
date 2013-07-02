@@ -51,7 +51,7 @@ typedef struct vhd_source {
  */
 
 static SOURCE *init_vhd_source(SECTION *section, int level,
-			       u8 total_size, u8 sparse_offset);
+                               u8 total_size, u8 sparse_offset);
 static int read_block_vhd(SOURCE *s, u8 pos, void *buf);
 static void close_vhd(SOURCE *s);
 
@@ -100,7 +100,7 @@ void detect_vhd(SECTION *section, int level)
     print_line(level, "Connectix Virtual PC hard disk image, differential");
   } else {
     print_line(level, "Connectix Virtual PC hard disk image, unknown type %d",
-	       type);
+               type);
   }
   format_size_verbose(s, total_size);
   print_line(level + 1, "Disk size %s", s);
@@ -127,7 +127,7 @@ void detect_vhd(SECTION *section, int level)
  */
 
 static SOURCE *init_vhd_source(SECTION *section, int level,
-			       u8 total_size, u8 sparse_offset)
+                               u8 total_size, u8 sparse_offset)
 {
   VHD_SOURCE *vs;
   unsigned char *buf;
@@ -160,7 +160,7 @@ static SOURCE *init_vhd_source(SECTION *section, int level,
 
   format_size(s, vs->chunk_size);
   print_line(level + 1, "Dynamic sizing uses %lu chunks of %s",
-	     vs->chunk_count, s);
+             vs->chunk_count, s);
 
   if ((u8)vs->chunk_count * vs->chunk_size < total_size) {
     print_line(level + 1, "Error: Sparse parameters don't match total size");
@@ -168,13 +168,13 @@ static SOURCE *init_vhd_source(SECTION *section, int level,
   }
   if (vs->chunk_size < 4096) {
     print_line(level + 1, "Error: Sparse chunk size too small (%lu bytes)",
-	       vs->chunk_size);
+               vs->chunk_size);
     goto errorexit;
   }
   if (vs->chunk_size > 2*1024*1024) {
     /* written-to bitmap wouldn't fit in one sector */
     print_line(level + 1, "Error: Sparse chunk size too large (%lu bytes)",
-	       vs->chunk_size);
+               vs->chunk_size);
     goto errorexit;
   }
 
@@ -190,7 +190,7 @@ static SOURCE *init_vhd_source(SECTION *section, int level,
 
   /* read the chunk map */
   if (get_buffer_real(section->source, vs->off + map_offset, map_size,
-		      (void *)vs->raw_map, NULL) < map_size) {
+                      (void *)vs->raw_map, NULL) < map_size) {
     print_line(level + 1, "Error reading the sparse image map");
     goto errorexit;
   }
@@ -231,21 +231,21 @@ static int read_block_vhd(SOURCE *s, u8 pos, void *buf)
     } else {
       chunk_disk_off = vs->off + (u8)chunk_start_sector * 512;
       if (get_buffer_real(fs, chunk_disk_off, 512,
-			  NULL, (void **)&filebuf) < 512)
-	present = 0;
+                          NULL, (void **)&filebuf) < 512)
+        present = 0;
       else
-	present = 1;
+        present = 1;
     }
 
     if (!present) {
       vs->chunks[chunk] = (VHD_CHUNK *)malloc(sizeof(VHD_CHUNK));
       if (vs->chunks[chunk] == NULL)
-	bailout("Out of memory");
+        bailout("Out of memory");
       vs->chunks[chunk]->present = 0;
     } else {
       vs->chunks[chunk] = (VHD_CHUNK *)malloc(sizeof(VHD_CHUNK) + 512);
       if (vs->chunks[chunk] == NULL)
-	bailout("Out of memory");
+        bailout("Out of memory");
       vs->chunks[chunk]->present = 1;
       vs->chunks[chunk]->off = chunk_disk_off + 512;
       memcpy(vs->chunks[chunk]->bitmap, filebuf, 512);
@@ -288,7 +288,7 @@ static void close_vhd(SOURCE *s)
   if (vs->chunks != NULL) {
     for (chunk = 0; chunk < vs->chunk_count; chunk++) {
       if (vs->chunks[chunk] != NULL)
-	free(vs->chunks[chunk]);
+        free(vs->chunks[chunk]);
     }
     free(vs->chunks);
   }

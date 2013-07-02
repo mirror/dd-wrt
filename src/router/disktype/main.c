@@ -36,6 +36,9 @@
  */
 
 static void analyze_file(const char *filename);
+static void analyze_stdin(void);
+static int analyze_stat(struct stat *sb, const char *filename);
+static void analyze_fd(int fd, int filekind, const char *filename);
 static void print_kind(int filekind, u8 size, int size_known);
 
 #ifdef USE_MACOS_TYPE
@@ -48,20 +51,25 @@ static void show_macos_type(const char *filename);
 
 int main(int argc, char *argv[])
 {
-  int i = 1;
+  int i;
 
   /* argument check */
   if (argc < 2) {
-    fprintf(stderr, "Usage: %s <device/file>...\n", PROGNAME);
-    return 1;
+    if (isatty(0)) {
+      fprintf(stderr, "Usage: %s <device/file>...\n", PROGNAME);
+      return 1;
+    } else {
+      print_line(0, "");
+      analyze_stdin();
+    }
   }
 
   /* loop over filenames */
   print_line(0, "");
-//  for (i = 1; i < argc; i++) {
+  for (i = 1; i < argc; i++) {
     analyze_file(argv[i]);
     print_line(0, "");
-//  }
+  }
 
   return 0;
 }
@@ -73,10 +81,13 @@ int main(int argc, char *argv[])
 static void analyze_file(const char *filename)
 {
   int fd, filekind;
-  u8 filesize;
   struct stat sb;
-  char *reason;
-  SOURCE *s;
+
+  /* accept '-' as an alias for stdin */
+  if (strcmp(filename, "-") == 0) {
+    analyze_stdin();
+    return;
+  }
 
   print_line(0, "--- %s", filename);
 
@@ -85,32 +96,9 @@ static void analyze_file(const char *filename)
     errore("Can't stat %.300s", filename);
     return;
   }
-
-  filekind = 0;
-  filesize = 0;
-  reason = NULL;
-  if (S_ISREG(sb.st_mode)) {
-    filesize = sb.st_size;
-    print_kind(filekind, filesize, 1);
-  } else if (S_ISBLK(sb.st_mode))
-    filekind = 1;
-  else if (S_ISCHR(sb.st_mode))
-    filekind = 2;
-  else if (S_ISDIR(sb.st_mode))
-    reason = "Is a directory";
-  else if (S_ISFIFO(sb.st_mode))
-    reason = "Is a FIFO";
-#ifdef S_ISSOCK
-  else if (S_ISSOCK(sb.st_mode))
-    reason = "Is a socket";
-#endif
-  else
-    reason = "Is an unknown kind of special file";
-
-  if (reason != NULL) {
-    error("%.300s: %s", filename, reason);
+  filekind = analyze_stat(&sb, filename);
+  if (filekind < 0)
     return;
-  }
 
   /* Mac OS type & creator code (if running on Mac OS X) */
 #ifdef USE_MACOS_TYPE
@@ -118,16 +106,75 @@ static void analyze_file(const char *filename)
     show_macos_type(filename);
 #endif
 
-  /* empty regular files need no further analysis */
-  if (filekind == 0 && filesize == 0)
-    return;
-
   /* open for reading */
   fd = open(filename, O_RDONLY);
   if (fd < 0) {
     errore("Can't open %.300s", filename);
     return;
   }
+
+  /* go for it */
+  analyze_fd(fd, filekind, filename);
+}
+
+static void analyze_stdin(void)
+{
+  int fd = 0;
+  int filekind;
+  const char *filename = "stdin";
+  struct stat sb;
+
+  print_line(0, "--- Standard Input");
+
+  /* stat check */
+  if (fstat(fd, &sb) < 0) {
+    errore("Can't stat %.300s", filename);
+    return;
+  }
+  filekind = analyze_stat(&sb, filename);
+  if (filekind < 0)
+    return;
+
+  /* go for it */
+  analyze_fd(fd, filekind, filename);
+}
+
+static int analyze_stat(struct stat *sb, const char *filename)
+{
+  int filekind = 0;
+  u8 filesize;
+  char *reason;
+
+  reason = NULL;
+  if (S_ISREG(sb->st_mode)) {
+    filesize = sb->st_size;
+    print_kind(filekind, filesize, 1);
+  } else if (S_ISBLK(sb->st_mode))
+    filekind = 1;
+  else if (S_ISCHR(sb->st_mode))
+    filekind = 2;
+  else if (S_ISDIR(sb->st_mode))
+    reason = "Is a directory";
+  else if (S_ISFIFO(sb->st_mode))
+    filekind = 3;
+#ifdef S_ISSOCK
+  else if (S_ISSOCK(sb->st_mode))
+    filekind = 4;
+#endif
+  else
+    reason = "Is an unknown kind of special file";
+
+  if (reason != NULL) {
+    error("%.300s: %s", filename, reason);
+    return -1;
+  }
+
+  return filekind;
+}
+
+static void analyze_fd(int fd, int filekind, const char *filename)
+{
+  SOURCE *s;
 
   /* (try to) guard against TTY character devices */
   if (filekind == 2) {
@@ -161,6 +208,10 @@ static void print_kind(int filekind, u8 size, int size_known)
     kindname = "Block device";
   else if (filekind == 2)
     kindname = "Character device";
+  else if (filekind == 3)
+    kindname = "FIFO";
+  else if (filekind == 4)
+    kindname = "Socket";
   else
     kindname = "Unknown kind";
 
@@ -188,7 +239,7 @@ static void show_macos_type(const char *filename)
   err = FSPathMakeRef(filename, &ref, NULL);
   if (err == 0) {
     err = FSGetCatalogInfo(&ref, kFSCatInfoFinderInfo,
-			   &info, NULL, NULL, NULL);
+                           &info, NULL, NULL, NULL);
   }
 
   if (err == 0) {
@@ -205,7 +256,7 @@ static void show_macos_type(const char *filename)
       format_ascii(creatorcode, s2);
 
       print_line(0, "Type code \"%s\", creator code \"%s\"",
-		 s1, s2);
+                 s1, s2);
     } else {
       print_line(0, "No type and creator code");
     }

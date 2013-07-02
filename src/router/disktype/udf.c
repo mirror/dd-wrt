@@ -64,16 +64,16 @@ void detect_udf(SECTION *section, int level)
       return;
     /* empty ID check (end of sequence) */
     if (buffer[2] == buffer[1] &&
-	buffer[3] == buffer[1] &&
-	buffer[4] == buffer[1] &&
-	buffer[5] == buffer[1])
+        buffer[3] == buffer[1] &&
+        buffer[4] == buffer[1] &&
+        buffer[5] == buffer[1])
       break;
     if (recog_state == 0 && memcmp(buffer, sig_bea, 7) == 0)
       recog_state = 1;
     if (recog_state == 1 && memcmp(buffer, sig_tea, 7) == 0)
       recog_state = 0;
     if (recog_state == 1 && (memcmp(buffer, sig_nsr2, 7) == 0 ||
-			     memcmp(buffer, sig_nsr3, 7) == 0)) {
+                             memcmp(buffer, sig_nsr3, 7) == 0)) {
       detected = 1;
       break;
     }
@@ -139,29 +139,29 @@ static int probe_udf(SECTION *section, int level, int sector_size)
     switch (get_le_short(buffer)) {
     case 1:   /* Primary Volume Descriptor */
       if (!seen_primary) {
-	seen_primary = 1;
+        seen_primary = 1;
 
-	if (buffer[24] == 8) {
-	  get_string(buffer + 25, 30, s);
-	  print_line(level+1, "Volume name \"%s\"", s);
-	} else if (buffer[24] == 16) {
-	  format_utf16_le(buffer + 25, 30, s);
-	  print_line(level+1, "Volume name \"%s\"", s);
-	} else {
-	  print_line(level+1, "Volume name encoding not supported");
-	}
+        if (buffer[24] == 8) {
+          get_string(buffer + 25, 30, s);
+          print_line(level+1, "Volume name \"%s\"", s);
+        } else if (buffer[24] == 16) {
+          format_utf16_le(buffer + 25, 30, s);
+          print_line(level+1, "Volume name \"%s\"", s);
+        } else {
+          print_line(level+1, "Volume name encoding not supported");
+        }
 
       }
       break;
 
     case 6:   /* Logical Volume Descriptor */
       if (!seen_logical) {
-	seen_logical = 1;
+        seen_logical = 1;
 
-	if (memcmp(buffer + 216+1, "*OSTA UDF Compliant", 19) == 0) {
-	  print_line(level+1, "UDF version %x.%02x",
-		     (int)buffer[216+25], (int)buffer[216+24]);
-	}
+        if (memcmp(buffer + 216+1, "*OSTA UDF Compliant", 19) == 0) {
+          print_line(level+1, "UDF version %x.%02x",
+                     (int)buffer[216+25], (int)buffer[216+24]);
+        }
 
       }
       break;

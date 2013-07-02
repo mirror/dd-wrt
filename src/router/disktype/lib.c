@@ -127,8 +127,8 @@ static int format_raw_size(char *buf, u8 size)
     if ((size % unit_size) == 0) {
       card = size / unit_size;
       sprintf(buf, "%d %s",
-	      (int)card,
-	      unit_names[unit_index]);
+              (int)card,
+              unit_names[unit_index]);
       return unit_index ? 0 : 1;
     }
 
@@ -136,12 +136,12 @@ static int format_raw_size(char *buf, u8 size)
     for (dd = 3; dd >= 1; dd--) {
       card = (size * dd_mult[dd] + (unit_size >> 1)) / unit_size;
       if (card >= 10000)
-	continue;  /* more than four significant digits */
+        continue;  /* more than four significant digits */
 
       sprintf(buf, "%d.%0*d %s",
-	          (int)(card / dd_mult[dd]),
-	      dd, (int)(card % dd_mult[dd]),
-	      unit_names[unit_index]);
+                  (int)(card / dd_mult[dd]),
+              dd, (int)(card % dd_mult[dd]),
+              unit_names[unit_index]);
       return 0;
     }
   }
@@ -152,7 +152,7 @@ static int format_raw_size(char *buf, u8 size)
 }
 
 void format_blocky_size(char *buf, u8 count, u4 blocksize,
-			const char *blockname, const char *append)
+                        const char *blockname, const char *append)
 {
   int used;
   u8 total_size;
@@ -493,7 +493,7 @@ int find_memory(void *haystack, int haystack_len,
 
   while (pos < searchlen) {
     p = memchr((char *)haystack + pos, *(unsigned char *)needle,
-	       searchlen - pos);
+               searchlen - pos);
     if (p == NULL)
       return -1;
     pos = (char *)p - (char *)haystack;

@@ -2,7 +2,7 @@
  * dos.c
  * Detection of DOS parition maps and file systems
  *
- * Copyright (c) 2003-2006 Christoph Pfisterer
+ * Copyright (c) 2003-2007 Christoph Pfisterer
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -32,6 +32,7 @@
  *
  * Taken from fdisk/i386_sys_types.c and fdisk/common.h of
  * util-linux 2.11n (as packaged by Debian), Feb 08, 2003.
+ * Various local tweaks and additions.
  */
 
 struct systypes {
@@ -41,41 +42,44 @@ struct systypes {
 
 struct systypes i386_sys_types[] = {
   { 0x00, "Empty" },
-  { 0x01, "FAT12" },
+  { 0x01, "FAT12 (CHS)" },
   { 0x02, "XENIX root" },
   { 0x03, "XENIX usr" },
-  { 0x04, "FAT16 <32M" },
-  { 0x05, "Extended" },
-  { 0x06, "FAT16" },
-  { 0x07, "HPFS/NTFS" },
+  { 0x04, "FAT16 <32M (CHS)" },
+  { 0x05, "Extended (CHS)" },
+  { 0x06, "FAT16 (CHS)" },
+  { 0x07, "NTFS/HPFS" },
   { 0x08, "AIX" },
-  { 0x09, "AIX bootable" },
-  { 0x0a, "OS/2 Boot Manager" },
-  { 0x0b, "Win95 FAT32" },
-  { 0x0c, "Win95 FAT32 (LBA)" },
-  { 0x0e, "Win95 FAT16 (LBA)" },
-  { 0x0f, "Win95 Ext'd (LBA)" },
+  { 0x09, "AIX Boot / Coherent" },
+  { 0x0a, "OS/2 Boot Manager / OPUS" },
+  { 0x0b, "FAT32 (CHS)" },
+  { 0x0c, "FAT32 (LBA)" },
+  { 0x0e, "FAT16 (LBA)" },
+  { 0x0f, "Extended (LBA)" },
   { 0x10, "OPUS" },
-  { 0x11, "Hidden FAT12" },
-  { 0x12, "Compaq diagnostics" },
-  { 0x14, "Hidden FAT16 <32M" },
-  { 0x16, "Hidden FAT16" },
-  { 0x17, "Hidden HPFS/NTFS" },
+  { 0x11, "Hidden FAT12 (CHS)" },
+  { 0x12, "Compaq Diagnostics" },
+  { 0x14, "Hidden FAT16 <32M (CHS)" },
+  { 0x16, "Hidden FAT16 (CHS)" },
+  { 0x17, "Hidden NTFS/HPFS" },
   { 0x18, "AST SmartSleep" },
-  { 0x1b, "Hidden Win95 FAT32" },
-  { 0x1c, "Hidden Win95 FAT32 (LBA)" },
-  { 0x1e, "Hidden Win95 FAT16 (LBA)" },
+  { 0x19, "Willowtech Photon coS" },
+  { 0x1b, "Hidden FAT32 (CHS)" },
+  { 0x1c, "Hidden FAT32 (LBA)" },
+  { 0x1e, "Hidden FAT16 (LBA)" },
+  { 0x20, "Willowsoft OFS1" },
   { 0x24, "NEC DOS" },
+  { 0x38, "Theos" },
   { 0x39, "Plan 9" },
-  { 0x3c, "PartitionMagic recovery" },
-  { 0x40, "Venix 80286" },
+  { 0x3c, "PartitionMagic Recovery" },
+  { 0x40, "Venix 80286 / LynxOS" },
   { 0x41, "PPC PReP Boot" },
   { 0x42, "SFS / MS LDM" },
   { 0x4d, "QNX4.x" },
   { 0x4e, "QNX4.x 2nd part" },
   { 0x4f, "QNX4.x 3rd part" },
   { 0x50, "OnTrack DM" },
-  { 0x51, "OnTrack DM6 Aux1" },
+  { 0x51, "OnTrack DM6 Aux1 / Novell" },
   { 0x52, "CP/M" },
   { 0x53, "OnTrack DM6 Aux3" },
   { 0x54, "OnTrackDM6" },
@@ -84,8 +88,12 @@ struct systypes i386_sys_types[] = {
   { 0x5c, "Priam Edisk" },
   { 0x61, "SpeedStor" },
   { 0x63, "GNU HURD or SysV" },
-  { 0x64, "Novell Netware 286" },
-  { 0x65, "Novell Netware 386" },
+  { 0x64, "Novell Netware 2.xx" },
+  { 0x65, "Novell Netware 3.xx" },
+  { 0x66, "Novell Netware 386" },
+  { 0x67, "Novell" },
+  { 0x68, "Novell" },
+  { 0x69, "Novell" },
   { 0x70, "DiskSecure Multi-Boot" },
   { 0x75, "PC/IX" },
   { 0x78, "XOSL" },
@@ -94,22 +102,29 @@ struct systypes i386_sys_types[] = {
   { 0x82, "Linux swap / Solaris" },
   { 0x83, "Linux" },
   { 0x84, "OS/2 hidden C: drive" },
-  { 0x85, "Linux extended" },
-  { 0x86, "NTFS volume set" },
+  { 0x85, "Linux Extended" },
+  { 0x86, "NT FAT volume set" },
   { 0x87, "NTFS volume set" },
   { 0x8e, "Linux LVM" },
   { 0x93, "Amoeba" },
   { 0x94, "Amoeba BBT" },
+  { 0x99, "Mylex EISA SCSI" },
   { 0x9f, "BSD/OS" },
   { 0xa0, "IBM Thinkpad hibernation" },
   { 0xa5, "FreeBSD" },
   { 0xa6, "OpenBSD" },
   { 0xa7, "NeXTSTEP" },
+  { 0xa8, "Mac OS X UFS" },
   { 0xa9, "NetBSD" },
-  { 0xaf, "Mac OS X" },
+  { 0xab, "Mac OS X Boot" },
+  { 0xac, "Apple RAID" },
+  { 0xaf, "Mac OS X HFS+" },
   { 0xb7, "BSDI fs" },
   { 0xb8, "BSDI swap" },
   { 0xbb, "Boot Wizard hidden" },
+  { 0xbe, "Solaris Boot" },
+  { 0xbf, "Solaris" },
+  { 0xc0, "CTOS" },
   { 0xc1, "DRDOS/sec (FAT-12)" },
   { 0xc4, "DRDOS/sec (FAT-16 < 32M)" },
   { 0xc6, "DRDOS/sec (FAT-16)" },
@@ -118,19 +133,19 @@ struct systypes i386_sys_types[] = {
   { 0xdb, "CP/M / CTOS / ..." },
   { 0xde, "Dell Utility" },
   { 0xdf, "BootIt" },
-  { 0xe1, "DOS access" },
-  { 0xe3, "DOS R/O" },
+  { 0xe1, "DOS access / SpeedStor" },
+  { 0xe3, "DOS R/O / SpeedStor" },
   { 0xe4, "SpeedStor" },
-  { 0xeb, "BeOS fs" },
-  { 0xee, "EFI GPT protective" },
+  { 0xeb, "BeOS" },
+  { 0xee, "EFI GPT Protective" },
   { 0xef, "EFI System (FAT)" },
-  { 0xf0, "Linux/PA-RISC boot" },
+  { 0xf0, "Linux/PA-RISC Boot" },
   { 0xf1, "SpeedStor" },
+  { 0xf2, "DOS Secondary" },
   { 0xf4, "SpeedStor" },
-  { 0xf2, "DOS secondary" },
-  { 0xfd, "Linux raid autodetect" },
+  { 0xfd, "Linux RAID" },
   { 0xfe, "LANstep" },
-  { 0xff, "BBT" },
+  { 0xff, "Xenix BBT" },
   { 0, 0 }
 };
 
@@ -150,7 +165,7 @@ char * get_name_for_mbrtype(int type)
  */
 
 static void detect_dos_partmap_ext(SECTION *section, u8 extbase,
-				   int level, int *extpartnum);
+                                   int level, int *extpartnum);
 
 void detect_dos_partmap(SECTION *section, int level)
 {
@@ -204,7 +219,7 @@ void detect_dos_partmap(SECTION *section, int level)
       strcat(append, ", bootable");
     format_blocky_size(s, size, 512, "sectors", append);
     print_line(level, "Partition %d: %s",
-	       i+1, s);
+               i+1, s);
 
     print_line(level + 1, "Type 0x%02X (%s)", type, get_name_for_mbrtype(type));
 
@@ -214,13 +229,13 @@ void detect_dos_partmap(SECTION *section, int level)
     } else if (type != 0xee) {
       /* recurse for content detection */
       analyze_recursive(section, level + 1,
-			(u8)start * 512, (u8)size * 512, 0);
+                        (u8)start * 512, (u8)size * 512, 0);
     }
   }
 }
 
 static void detect_dos_partmap_ext(SECTION *section, u8 extbase,
-				   int level, int *extpartnum)
+                                   int level, int *extpartnum)
 {
   unsigned char *buf;
   u8 tablebase, nexttablebase;
@@ -253,28 +268,28 @@ static void detect_dos_partmap_ext(SECTION *section, u8 extbase,
       size = sizes[i];
       type = types[i];
       if (size == 0)
-	continue;
+        continue;
 
       if (type == 0x05 || type == 0x85) {
-	/* inner extended partition */
+        /* inner extended partition */
 
-	nexttablebase = extbase + start;
+        nexttablebase = extbase + start;
 
       } else {
-	/* logical partition */
+        /* logical partition */
 
-	sprintf(append, " from %llu+%lu", tablebase, start);
-	format_blocky_size(s, size, 512, "sectors", append);
-	print_line(level, "Partition %d: %s",
-		   *extpartnum, s);
-	(*extpartnum)++;
-	print_line(level + 1, "Type 0x%02X (%s)", type, get_name_for_mbrtype(type));
+        sprintf(append, " from %llu+%lu", tablebase, start);
+        format_blocky_size(s, size, 512, "sectors", append);
+        print_line(level, "Partition %d: %s",
+                   *extpartnum, s);
+        (*extpartnum)++;
+        print_line(level + 1, "Type 0x%02X (%s)", type, get_name_for_mbrtype(type));
 
-	/* recurse for content detection */
-	if (type != 0xee) {
-	  analyze_recursive(section, level + 1,
-			    (tablebase + start) * 512, (u8)size * 512, 0);
-	}
+        /* recurse for content detection */
+        if (type != 0xee) {
+          analyze_recursive(section, level + 1,
+                            (tablebase + start) * 512, (u8)size * 512, 0);
+        }
       }
     }
   }
@@ -306,7 +321,23 @@ struct gpttypes gpt_types[] = {
   { "\xB5\x7C\x6E\x51\xCF\x6E\xD6\x11\x8F\xF8\x00\x02\x2D\x09\x71\x2B", "FreeBSD Swap" },
   { "\xB6\x7C\x6E\x51\xCF\x6E\xD6\x11\x8F\xF8\x00\x02\x2D\x09\x71\x2B", "FreeBSD UFS" },
   { "\xB8\x7C\x6E\x51\xCF\x6E\xD6\x11\x8F\xF8\x00\x02\x2D\x09\x71\x2B", "FreeBSD Vinum" },
-  { "\x00\x53\x46\x48\x00\x00\xAA\x11\xAA\x11\x00\x30\x65\x43\xEC\xAC", "Mac HFS+" },
+  { "\x00\x53\x46\x48\x00\x00\xAA\x11\xAA\x11\x00\x30\x65\x43\xEC\xAC", "Mac OS X HFS+" },
+  { "\x00\x53\x46\x55\x00\x00\xAA\x11\xAA\x11\x00\x30\x65\x43\xEC\xAC", "Mac OS X UFS" },
+  { "\x74\x6F\x6F\x42\x00\x00\xAA\x11\xAA\x11\x00\x30\x65\x43\xEC\xAC", "Mac OS X Boot" },
+  { "\x44\x49\x41\x52\x00\x00\xAA\x11\xAA\x11\x00\x30\x65\x43\xEC\xAC", "Apple RAID" },
+  { "\x44\x49\x41\x52\x4F\x5F\xAA\x11\xAA\x11\x00\x30\x65\x43\xEC\xAC", "Apple RAID (Offline)" },
+  { "\x65\x62\x61\x4C\x00\x6C\xAA\x11\xAA\x11\x00\x30\x65\x43\xEC\xAC", "Apple Label" },
+  { "\x7f\x23\x96\x6A\xD2\x1D\xB2\x11\x99\xa6\x08\x00\x20\x73\x66\x31", "Solaris Reserved" },
+  { "\x45\xCB\x82\x6A\xD2\x1D\xB2\x11\x99\xa6\x08\x00\x20\x73\x66\x31", "Solaris Boot" },
+  { "\x4D\xCF\x85\x6A\xD2\x1D\xB2\x11\x99\xa6\x08\x00\x20\x73\x66\x31", "Solaris Root" },
+  { "\x6F\xC4\x87\x6A\xD2\x1D\xB2\x11\x99\xa6\x08\x00\x20\x73\x66\x31", "Solaris Swap" },
+  { "\xC3\x8C\x89\x6A\xD2\x1D\xB2\x11\x99\xa6\x08\x00\x20\x73\x66\x31", "Solaris Usr" },
+  { "\x2B\x64\x8B\x6A\xD2\x1D\xB2\x11\x99\xa6\x08\x00\x20\x73\x66\x31", "Solaris Backup" },
+  { "\xC7\x2A\x8D\x6A\xD2\x1D\xB2\x11\x99\xa6\x08\x00\x20\x73\x66\x31", "Solaris Stand" },
+  { "\xE9\xF2\x8E\x6A\xD2\x1D\xB2\x11\x99\xa6\x08\x00\x20\x73\x66\x31", "Solaris Var" },
+  { "\x39\xBA\x90\x6A\xD2\x1D\xB2\x11\x99\xa6\x08\x00\x20\x73\x66\x31", "Solaris Home" },
+  { "\xA5\x83\x92\x6A\xD2\x1D\xB2\x11\x99\xa6\x08\x00\x20\x73\x66\x31", "Solaris ALTSCTR" },
+  { "\x3B\x5A\x94\x6A\xD2\x1D\xB2\x11\x99\xa6\x08\x00\x20\x73\x66\x31", "Solaris Cache" },
   { 0, 0 }
 };
 
@@ -323,6 +354,7 @@ static char * get_name_for_guid(void *guid)
 void detect_gpt_partmap(SECTION *section, int level)
 {
   unsigned char *buf;
+  u4 blocksize, revision;
   u8 diskblocks, partmap_start, start, end, size;
   u4 partmap_count, partmap_entry_size;
   u4 i;
@@ -333,68 +365,81 @@ void detect_gpt_partmap(SECTION *section, int level)
   if (section->pos != 0)
     return;
 
-  /* get LBA 1: GPT header */
-  if (get_buffer(section, 512, 512, (void **)&buf) < 512)
-    return;
-
-  /* check signature */
-  if (memcmp(buf, "EFI PART", 8) != 0)
-    return;
-
-  /* get header information */
-  if (get_le_quad(buf + 0x18) != 1)
-    return;
-  diskblocks = get_le_quad(buf + 0x20) + 1;
-  partmap_start = get_le_quad(buf + 0x48);
-  partmap_count = get_le_long(buf + 0x50);
-  partmap_entry_size = get_le_long(buf + 0x54);
-
-  print_line(level, "GPT partition map, %d entries", (int)partmap_count);
-  format_blocky_size(s, diskblocks, 512, "sectors", NULL);
-  print_line(level+1, "Disk size %s", s);
-  format_guid(buf + 0x38, s);
-  print_line(level+1, "Disk GUID %s", s);
-
-  /* get entries */
-  last_unused = 0;
-  for (i = 0; i < partmap_count; i++) {
-    if (get_buffer(section, (partmap_start * 512) + i * partmap_entry_size, partmap_entry_size, (void **)&buf) < partmap_entry_size)
-      return;
-
-    if (memcmp(buf, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16) == 0) {
-      if (last_unused == 0)
-	print_line(level, "Partition %d: unused", i+1);
-      last_unused = 1;
+  for (blocksize = 512; blocksize <= 4096; blocksize <<= 1) {
+    /* get LBA 1: GPT header */
+    if (get_buffer(section, blocksize, blocksize, (void **)&buf) < blocksize)
       continue;
+    /* check signature */
+    if (memcmp(buf, "EFI PART", 8) != 0)
+      continue;
+
+    format_size(s, blocksize);
+    revision = get_le_long(buf + 0x08);
+    if (revision != 0x00010000) {
+      print_line(level, "GPT partition map, block size %s, unknown revision "
+                 "%d.%d", s, (int)(revision >> 16), (int)(revision & 0xffff));
+      return;
     }
+
+    /* get header information */
+    if (get_le_quad(buf + 0x18) != 1) {
+      print_line(level, "GPT partition map, block size %s, MyLBA != 1", s);
+      return;
+    }
+    diskblocks = get_le_quad(buf + 0x20) + 1;
+    partmap_start = get_le_quad(buf + 0x48);
+    partmap_count = get_le_long(buf + 0x50);
+    partmap_entry_size = get_le_long(buf + 0x54);
+
+    print_line(level, "GPT partition map, block size %s, %d entries",
+               s, (int)partmap_count);
+    format_blocky_size(s, diskblocks, blocksize, "blocks", NULL);
+    print_line(level+1, "Disk size %s", s);
+    format_guid(buf + 0x38, s);
+    print_line(level+1, "Disk GUID %s", s);
+
+    /* get entries */
     last_unused = 0;
+    for (i = 0; i < partmap_count; i++) {
+      if (get_buffer(section, (partmap_start * blocksize) + i * partmap_entry_size, partmap_entry_size, (void **)&buf) < partmap_entry_size)
+        return;
 
-    /* size */
-    start = get_le_quad(buf + 0x20);
-    end = get_le_quad(buf + 0x28);
-    size = end + 1 - start;
+      if (memcmp(buf, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16) == 0) {
+        if (last_unused == 0)
+          print_line(level, "Partition %d: unused", i+1);
+        last_unused = 1;
+        continue;
+      }
+      last_unused = 0;
 
-    sprintf(append, " from %llu", start);
-    format_blocky_size(s, size, 512, "sectors", append);
-    print_line(level, "Partition %d: %s", i+1, s);
+      /* size */
+      start = get_le_quad(buf + 0x20);
+      end = get_le_quad(buf + 0x28);
+      size = end + 1 - start;
 
-    /* type */
-    format_guid(buf, s);
-    print_line(level+1, "Type %s (GUID %s)", get_name_for_guid(buf), s);
+      sprintf(append, " from %llu", start);
+      format_blocky_size(s, size, blocksize, "blocks", append);
+      print_line(level, "Partition %d: %s", i+1, s);
 
-    /* partition name */
-    format_utf16_le(buf + 0x38, 72, s);
-    print_line(level+1, "Partition Name \"%s\"", s);
+      /* type */
+      format_guid(buf, s);
+      print_line(level+1, "Type %s (GUID %s)", get_name_for_guid(buf), s);
 
-    /* GUID */
-    format_guid(buf + 0x10, s);
-    print_line(level+1, "Partition GUID %s", s);
+      /* partition name */
+      format_utf16_le(buf + 0x38, 72, s);
+      print_line(level+1, "Partition Name \"%s\"", s);
 
-    /* recurse for content detection */
-    if (start > 0 && size > 0) {  /* avoid recursion on self */
-      analyze_recursive(section, level + 1,
-			start * 512, size * 512, 0);
+      /* GUID */
+      format_guid(buf + 0x10, s);
+      print_line(level+1, "Partition GUID %s", s);
+
+      /* recurse for content detection */
+      if (start > 0 && size > 0) {  /* avoid recursion on self */
+        analyze_recursive(section, level + 1,
+                          start * blocksize, size * blocksize, 0);
+      }
     }
+    break;  /* don't try bigger block sizes */
   }
 }
 
@@ -484,13 +529,13 @@ void detect_fat(SECTION *section, int level)
   if (atari_csum == 0x1234)
     strcpy(s, ", ATARI ST bootable");
   print_line(level, "%s file system (hints score %d of %d%s)",
-	     fatnames[fattype], score, 5, s);
+             fatnames[fattype], score, 5, s);
 
   if (sectsize > 512)
     print_line(level + 1, "Unusual sector size %lu bytes", sectsize);
 
   format_blocky_size(s, clustercount, clustersize * sectsize,
-		     "clusters", NULL);
+                     "clusters", NULL);
   print_line(level + 1, "Volume size %s", s);
 
   /* get the cached volume name if present */
@@ -499,18 +544,18 @@ void detect_fat(SECTION *section, int level)
       memcpy(s, buf + 43, 11);
       s[11] = 0;
       for (i = 10; i >= 0 && s[i] == ' '; i--)
-	s[i] = 0;
+        s[i] = 0;
       if (strcmp(s, "NO NAME") != 0)
-	print_line(level + 1, "Volume name \"%s\"", s);
+        print_line(level + 1, "Volume name \"%s\"", s);
     }
   } else {
     if (buf[66] == 0x29) {
       memcpy(s, buf + 71, 11);
       s[11] = 0;
       for (i = 10; i >= 0 && s[i] == ' '; i--)
-	s[i] = 0;
+        s[i] = 0;
       if (strcmp(s, "NO NAME") != 0)
-	print_line(level + 1, "Volume name \"%s\"", s);
+        print_line(level + 1, "Volume name \"%s\"", s);
     }
   }
 }
@@ -573,7 +618,7 @@ void detect_hpfs(SECTION *section, int level)
     return;
 
   print_line(level, "HPFS file system (version %d, functional version %d)",
-	     (int)buf[8], (int)buf[9]);
+             (int)buf[8], (int)buf[9]);
 
   sectcount = get_le_long(buf + 16);
   format_blocky_size(s, sectcount, 512, "sectors", NULL);
@@ -598,12 +643,24 @@ void detect_dos_loader(SECTION *section, int level)
   if (fill < 512)
     return;
 
-  if (find_memory(buf, fill, "NTLDR", 5) >= 0)
+  if (find_memory(buf, fill, "BOOTMGR", 5) >= 0)
+    print_line(level, "Windows BOOTMGR boot loader");
+  else if (find_memory(buf, fill, "NTLDR", 5) >= 0)
     print_line(level, "Windows NTLDR boot loader");
   else if (find_memory(buf, 512, "WINBOOT SYS", 11) >= 0)
     print_line(level, "Windows 95/98/ME boot loader");
   else if (find_memory(buf, 512, "MSDOS   SYS", 11) >= 0)
     print_line(level, "Windows / MS-DOS boot loader");
+  else if (find_memory(buf, 512, "CPUBOOT SYS", 11) >= 0 ||
+           find_memory(buf, 512, "KERNEL  SYS", 11) >= 0)
+    print_line(level, "FreeDOS boot loader");
+  else if (find_memory(buf, 512, "OS2LDR", 6) >= 0 ||
+           find_memory(buf, 512, "OS2BOOT", 7) >= 0)
+    print_line(level, "OS/2 / eComStation boot loader");
+  else if (find_memory(buf, fill, "freeldr.sys", 11) >= 0)
+    print_line(level, "ReactOS freeldr boot loader");
+  else if (find_memory(buf, fill, "SETUPLDR.SYS", 12) >= 0)
+    print_line(level, "ReactOS CD boot loader");
 }
 
 /* EOF */
