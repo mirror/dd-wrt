@@ -107,6 +107,7 @@ static ssize_t gpio_proc_write(struct file* file, const char __user * buffer,
   return procfs_buffer_size;
 }
 
+extern int ath_nopcie;
 
 
 static const struct file_operations fops_data = {
@@ -126,6 +127,8 @@ register_proc (void)
 #else
   int gpiocount = 16;
 #endif
+  if (ath_nopcie)
+    return;
   /* create directory gpio */
   gpio_dir = proc_mkdir ("wl0gpio", NULL);
   if (gpio_dir == NULL)
